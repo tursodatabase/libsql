@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.30 2002/03/11 02:06:13 drh Exp $
+** $Id: tclsqlite.c,v 1.31 2002/04/12 10:08:59 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -268,10 +268,12 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   SqliteDb *pDb = (SqliteDb*)cd;
   int choice;
   static char *DB_optStrs[] = {
-     "busy",   "close",  "complete",  "eval",  "last_insert_rowid", "timeout", 0
+     "busy",  "changes",            "close",    "complete", 
+     "eval",  "last_insert_rowid",  "timeout",  0
   };
   enum DB_opts {
-     DB_BUSY,  DB_CLOSE, DB_COMPLETE, DB_EVAL, DB_LAST_INSERT_ROWID, DB_TIMEOUT
+     DB_BUSY, DB_CHANGES,           DB_CLOSE,   DB_COMPLETE,
+     DB_EVAL, DB_LAST_INSERT_ROWID, DB_TIMEOUT
   };
 
   if( objc<2 ){
@@ -317,6 +319,25 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
         sqlite_busy_handler(pDb->db, 0, 0);
       }
     }
+    break;
+  }
+
+  /*
+  **     $db changes
+  **
+  ** Return the number of rows that were modified, inserted, or deleted by
+  ** the most recent "eval".
+  */
+  case DB_CHANGES: {
+    Tcl_Obj *pResult;
+    int nChange;
+    if( objc!=2 ){
+      Tcl_WrongNumArgs(interp, 2, objv, "");
+      return TCL_ERROR;
+    }
+    nChange = sqlite_changes(pDb->db);
+    pResult = Tcl_GetObjResult(interp);
+    Tcl_SetIntObj(pResult, nChange);
     break;
   }
 

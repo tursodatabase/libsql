@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.31 2002/04/06 14:10:48 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.32 2002/04/12 10:09:00 drh Exp $}
 
 puts {<html>
 <head>
@@ -843,6 +843,8 @@ with caution.</p>
     <p>When on, the COUNT_CHANGES pragma causes the callback function to
     be invoked once for each DELETE, INSERT, or UPDATE operation.  The
     argument is the number of rows that were changed.</p>
+    <p>This pragma may be removed from future versions of SQLite.
+    Consider using the <b>sqlite_changes()</b> API function instead.</p></li>
 
 <li><p><b>PRAGMA default_cache_size;
        <br>PRAGMA default_cache_size = </b><i>Number-of-pages</i><b>;</b></p>

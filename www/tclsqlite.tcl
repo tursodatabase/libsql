@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the tclsqlite.html file.
 #
-set rcsid {$Id: tclsqlite.tcl,v 1.6 2002/01/16 21:00:28 drh Exp $}
+set rcsid {$Id: tclsqlite.tcl,v 1.7 2002/04/12 10:09:00 drh Exp $}
 
 puts {<html>
 <head>
@@ -50,12 +50,13 @@ the database is stored.
 
 <p>
 Once an SQLite database is open, it can be controlled using 
-methods of the <i>dbcmd</i>.  There are currently 6 methods
+methods of the <i>dbcmd</i>.  There are currently 7 methods
 defined:</p>
 
 <p>
 <ul>
 <li> busy
+<li> changes
 <li> close
 <li> complete
 <li> eval
@@ -247,6 +248,12 @@ should return "1" if it wants SQLite to abandon the current operation.
 
 <p>The "last_insert_rowid" method returns an integer which is the ROWID
 of the most recently inserted database row.</p>
+
+<h2>The "changes" method</h2>
+
+<p>The "changes" method returns an integer which is the number of rows
+in the database that were inserted, deleted, and/or modified by the most
+recent "eval" method.</p>
 
 }
 

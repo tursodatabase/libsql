@@ -13,7 +13,7 @@
 # This file implements tests for the conflict resolution extension
 # to SQLite.
 #
-# $Id: conflict.test,v 1.10 2002/04/09 03:28:01 drh Exp $
+# $Id: conflict.test,v 1.11 2002/04/12 10:09:00 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -399,6 +399,9 @@ do_test conflict-7.2 {
     UPDATE OR IGNORE t1 SET a=1000;
   }
 } {1}
+do_test conflict-7.2.1 {
+  db changes
+} {1}
 do_test conflict-7.3 {
   execsql {
     SELECT b FROM t1 WHERE a=1000;
@@ -415,6 +418,9 @@ do_test conflict-7.5 {
     UPDATE OR REPLACE t1 SET a=1001;
   }
 } {50}
+do_test conflict-7.5.1 {
+  db changes
+} {50}
 do_test conflict-7.6 {
   execsql {
     SELECT b FROM t1 WHERE a=1001;
@@ -425,6 +431,9 @@ do_test conflict-7.7 {
     SELECT count(*) FROM t1;
   }
 } {1}
+do_test conflict-7.7.1 {
+  db changes
+} {0}
 
 # Make sure the row count is right for rows that are ignored on
 # an insert.
@@ -438,30 +447,48 @@ do_test conflict-8.1 {
     INSERT OR IGNORE INTO t1 VALUES(2,3);
   }
 } {1}
+do_test conflict-8.1.1 {
+  db changes
+} {1}
 do_test conflict-8.2 {
   execsql {
     INSERT OR IGNORE INTO t1 VALUES(2,4);
   }
+} {0}
+do_test conflict-8.2.1 {
+  db changes
 } {0}
 do_test conflict-8.3 {
   execsql {
     INSERT OR REPLACE INTO t1 VALUES(2,4);
   }
 } {1}
+do_test conflict-8.3.1 {
+  db changes
+} {1}
 do_test conflict-8.4 {
   execsql {
     INSERT OR IGNORE INTO t1 SELECT * FROM t1;
   }
+} {0}
+do_test conflict-8.4.1 {
+  db changes
 } {0}
 do_test conflict-8.5 {
   execsql {
     INSERT OR IGNORE INTO t1 SELECT a+2,b+2 FROM t1;
   }
 } {2}
+do_test conflict-8.5.1 {
+  db changes
+} {2}
 do_test conflict-8.6 {
   execsql {
     INSERT OR IGNORE INTO t1 SELECT a+3,b+3 FROM t1;
   }
+} {3}
+do_test conflict-8.6.1 {
+  db changes
 } {3}
 
 do_test insert-99.1 {

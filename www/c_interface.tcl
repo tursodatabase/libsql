@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: c_interface.tcl,v 1.25 2002/03/04 02:26:17 drh Exp $}
+set rcsid {$Id: c_interface.tcl,v 1.26 2002/04/12 10:09:00 drh Exp $}
 
 puts {<html>
 <head>
@@ -307,6 +307,8 @@ useful interfaces.  These extended routines are as follows:
 <blockquote><pre>
 int sqlite_last_insert_rowid(sqlite*);
 
+int sqlite_changes(sqlite*);
+
 int sqlite_get_table(
   sqlite*,
   char *sql,
@@ -388,6 +390,22 @@ for that column is not specified in the VALUES clause of the insert, then
 the key is automatically generated.  You can find the value of the key
 for the most recent INSERT statement using the
 <b>sqlite_last_insert_rowid()</b> API function.</p>
+
+<h2>The number of rows that changed</h2>
+
+<p>The <b>sqlite_changes()</b> API function returns the number of rows
+that were inserted, deleted, or modified during the most recent
+<b>sqlite_exec()</b> call.  The number reported includes any changes
+that were later undo by a ROLLBACK or ABORT.  But rows that are
+deleted because of a DROP TABLE are <em>not</em> counted.</p>
+
+<p>SQLite implements the command "<b>DELETE FROM table</b>" (without
+a WHERE clause) by dropping the table then recreating it.  
+This is much faster than deleting the elements of the table individually.
+But it also means that the value returned from <b>sqlite_changes()</b>
+will be zero regardless of the number of elements that were originally
+in the table.  If an accurate count of the number of elements deleted
+is necessary, use "<b>DELETE FROM table WHERE 1</b>" instead.</p>
 
 <h2>Querying without using a callback function</h2>
 

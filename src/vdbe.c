@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.137 2002/04/09 03:15:07 drh Exp $
+** $Id: vdbe.c,v 1.138 2002/04/12 10:09:00 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -3155,19 +3155,16 @@ case OP_NewRecno: {
 ** stack.  The key is the next value down on the stack.  The key must
 ** be an integer.  The stack is popped twice by this instruction.
 **
-** If P2==1 then overwriting is prohibited.  If a prior entry with
-** the same key exists, an SQLITE_CONSTRAINT exception is raised.
+** If P2==1 then the row change count is incremented.  If P2==0 the
+** row change count is unmodified.
 */
-/* Opcode: PutStrKey P1 P2 *
+/* Opcode: PutStrKey P1 * *
 **
 ** Write an entry into the database file P1.  A new entry is
 ** created if it doesn't already exist or the data for an existing
 ** entry is overwritten.  The data is the value on the top of the
 ** stack.  The key is the next value down on the stack.  The key must
 ** be a string.  The stack is popped twice by this instruction.
-**
-** If P2==1 then overwriting is prohibited.  If a prior entry with
-** the same key exists, an SQLITE_CONSTRAINT exception is raised.
 */
 case OP_PutIntKey:
 case OP_PutStrKey: {
@@ -3188,16 +3185,7 @@ case OP_PutStrKey: {
       iKey = intToKey(aStack[nos].i);
       zKey = (char*)&iKey;
       db->lastRowid = aStack[nos].i;
-    }
-    if( pOp->p2 ){
-      int res;
-      rc = sqliteBtreeMoveto(p->aCsr[i].pCursor, zKey, nKey, &res);
-      if( res==0 && rc==SQLITE_OK ){
-        rc = SQLITE_CONSTRAINT;
-      }
-      if( rc!=SQLITE_OK ){
-        goto abort_due_to_error;
-      }
+      if( pOp->p2 ) db->nChange++;
     }
     rc = sqliteBtreeInsert(p->aCsr[i].pCursor, zKey, nKey,
                         zStack[tos], aStack[tos].n);
@@ -3208,7 +3196,7 @@ case OP_PutStrKey: {
   break;
 }
 
-/* Opcode: Delete P1 * *
+/* Opcode: Delete P1 P2 *
 **
 ** Delete the record at which the P1 cursor is currently pointing.
 **
@@ -3216,12 +3204,16 @@ case OP_PutStrKey: {
 ** record in the table. If it is left pointing at the next record, then
 ** the next Next instruction will be a no-op.  Hence it is OK to delete
 ** a record from within an Next loop.
+**
+** The row change counter is incremented if P2==1 and is unmodified
+** if P2==0.
 */
 case OP_Delete: {
   int i = pOp->p1;
   if( VERIFY( i>=0 && i<p->nCursor && ) p->aCsr[i].pCursor!=0 ){
     rc = sqliteBtreeDelete(p->aCsr[i].pCursor);
   }
+  if( pOp->p2 ) db->nChange++;
   break;
 }
 

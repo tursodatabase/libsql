@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.68 2002/03/06 22:01:36 drh Exp $
+** $Id: main.c,v 1.69 2002/04/12 10:08:59 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -422,6 +422,13 @@ int sqlite_last_insert_rowid(sqlite *db){
 }
 
 /*
+** Return the number of changes in the most recent call to sqlite_exec().
+*/
+int sqlite_changes(sqlite *db){
+  return db->nChange;
+}
+
+/*
 ** Close an existing SQLite database
 */
 void sqlite_close(sqlite *db){
@@ -526,6 +533,8 @@ int sqlite_exec(
       return rc;
     }
   }
+  if( db->recursionDepth==0 ){ db->nChange = 0; }
+  db->recursionDepth++;
   memset(&sParse, 0, sizeof(sParse));
   sParse.db = db;
   sParse.pBe = db->pBe;
@@ -544,6 +553,7 @@ int sqlite_exec(
   if( sParse.rc==SQLITE_SCHEMA ){
     clearHashTable(db, 1);
   }
+  db->recursionDepth--;
   return sParse.rc;
 }
 
