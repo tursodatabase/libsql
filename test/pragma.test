@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.26 2004/11/23 10:52:51 danielk1977 Exp $
+# $Id: pragma.test,v 1.27 2004/11/23 11:16:42 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -388,6 +388,8 @@ do_test pragma-7.3 {
 # pragma-8.2: PRAGMA user_version
 #
 
+ifcapable schema_version {
+
 # First check that we can set the schema version and then retrieve the
 # same value.
 do_test pragma-8.1.1 {
@@ -583,5 +585,7 @@ do_test pragma-8.2.15 {
     PRAGMA user_version;
   }
 } {-450}
+
+} ; # ifcapable schema_version
 
 finish_test
