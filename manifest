@@ -1,5 +1,5 @@
-C Rename\ssqlite.dll\sto\ssqlite3.dll.\s(CVS\s1665)
-D 2004-06-22T14:41:36
+C Update\sthe\schanges.html\swebpage\sfor\sversion\s3.0.1.\s(CVS\s1666)
+D 2004-06-22T14:47:01
 F Makefile.in 0a3d7aaefa50717bd550b0cf568a51072c4c103c
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -198,7 +198,7 @@ F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
 F www/c_interface.tcl 2176519fc2bd2d2cf6fe74fd806fc2d8362de2c8
 F www/capi3.tcl af6938cc417fe323d7570b95d2e9a019bbff637e
 F www/capi3ref.tcl ae6c0ed88f601119c15de964b7b4b2f8c9b05831
-F www/changes.tcl 4d75f4c2a8bba2bb26b0fd4f3a48999e06b4025f
+F www/changes.tcl 29701180c74161380a4d3a1cd6640fe50bc1fae1
 F www/common.tcl f786e6be86fb2627ceb30e770e9efa83b9c67a3a
 F www/conflict.tcl fb8a2ba83746c7fdfd9e52fa7f6aaf5c422b8246
 F www/copyright-release.html 294e011760c439c44951a6bfecd4c81a1ae359e8
@@ -228,7 +228,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl af528563442e3039928f9018327a18157e53a44f
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 6dd7b02537c20af2074ada70c3fd4294dd46742d
-R 082d2eabc913cbc62ad07fc3c9334cca
+P a82cb4d30a1191322e61faedc9c48472d0686c98
+R c7ec457fab14e015d86fd3b8ec72a537
 U drh
-Z 0f97c6160038e797fea45ada917f34bc
+Z 00affbda14c76cc98559ddbf61a1056e

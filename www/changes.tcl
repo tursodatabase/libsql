@@ -21,6 +21,12 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2004 June 22 (3.0.1 alpha)} {
+<li><font color="red"><b>
+    *** Alpha Release - Research And Testing Use Only ***</b></font>
+<li>Lots of bug fixes.</li>
+}
+
 chng {2004 June 18 (3.0.0 alpha)} {
 <li><font color="red"><b>
     *** Alpha Release - Research And Testing Use Only ***</b></font>
