@@ -1,5 +1,5 @@
-C Change\sthe\sway\sthat\slemon\shandles\s%extra_argument.\s(CVS\s427)
-D 2002-03-11T13:55:50
+C Fix\sthe\sreturn\stype\sof\sthe\sxStep\sfunction\sin\sthe\sFuncDef\sstructure\ndefinition.\s(CVS\s428)
+D 2002-03-12T23:10:05
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -41,7 +41,7 @@ F src/select.c 1288243cacdee338ee49e3e30fcda1a701a0c8c8
 F src/shell.c b3454229599246b944cdb5b95753af3fca5d8bb0
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 1dae50411aee9439860d7fbe315183c582d27197
-F src/sqliteInt.h 6f4a1bea4858089eb516f59562762965c6ef5cb8
+F src/sqliteInt.h 73e7d0f39a3c11d395fc422986959261bd193eba
 F src/table.c 203a09d5d0009eeeb1f670370d52b4ce163a3b52
 F src/tclsqlite.c df847b71b28277f1cfa1ee1e3e51452ffe5a9a26
 F src/test1.c d46ab7a82a9c16a3b1ee363cb4c0f98c5ff65743
@@ -130,7 +130,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P d3f66b44e501ac30aededefbec7ebe224cf080ad
-R 5b4206f42a1c3f4e538f039b464efaa5
+P ffc387a48a9864b7f323314fbf8295b5bb2a3bd1
+R e0b28d95a30c69538bb70896ff36a449
 U drh
-Z 6aea2d933cffdbb0d05c974f21cfe84d
+Z c0c9c247fbc3f261cc47765335980f94
