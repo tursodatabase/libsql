@@ -26,7 +26,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.1 2000/05/29 14:26:01 drh Exp $
+** $Id: main.c,v 1.2 2000/05/31 22:58:39 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -121,6 +121,7 @@ sqlite *sqlite_open(const char *zFilename, int mode, char **pzErrMsg){
   if( pzErrMsg ) *pzErrMsg = 0;
   if( db==0 ){
     sqliteSetString(pzErrMsg, "out of memory", 0);
+    sqliteStrRealloc(pzErrMsg);
     return 0;
   }
   
@@ -215,5 +216,6 @@ int sqlite_exec(
   sParse.xCallback = xCallback;
   sParse.pArg = pArg;
   nErr = sqliteRunParser(&sParse, zSql, pzErrMsg);
+  sqliteStrRealloc(pzErrMsg);
   return nErr;
 }
