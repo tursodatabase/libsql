@@ -1,5 +1,5 @@
-C Add\sthe\sability\sto\sparse\sFOREIGN\sKEYs.\s\sForeign\skeys\sare\sstill\signored,\nbut\sat\sleast\sthey\snow\sdo\snot\scause\sa\ssyntax\serror.\s(CVS\s603)
-D 2002-06-02T18:19:00
+C Fix\sa\scompiler\swarning.\s(CVS\s604)
+D 2002-06-02T18:22:06
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -23,7 +23,7 @@ F src/btree.h 8abeabfe6e0b1a990b64fa457592a6482f6674f3
 F src/build.c 36e42718a7a94f554ea39508993378482f5335c7
 F src/delete.c a2b098cbbf518e6b641847e26de85827793bc523
 F src/encode.c 346b12b46148506c32038524b95c4631ab46d760
-F src/expr.c 4c1b3b3dd0263a36661976a2071f947bf6a4048b
+F src/expr.c 8ce9c22655735ff62b1e33ab11ad9d44c4ab99c6
 F src/func.c 061a520a122da7e4f9dcac15697bb996aac7d5df
 F src/hash.c 6a6236b89c8c060c65dabd300a1c8ce7c10edb72
 F src/hash.h dca065dda89d4575f3176e75e9a3dc0f4b4fb8b9
@@ -136,7 +136,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 7acbf84b492202d8b5a05276a95b475027eb5f58
-R 877ef09a15f8898a71498bdf36c4a9ea
+P 6fdcee3c99e994ef3ab83a0cc57344cdb16210df
+R 84cb93cd645bc6a21c3f645c617f9a5e
 U drh
-Z 5f9a38c2f7b726600f68471f0ff58f27
+Z 6dc156e6736d2538f2d30b5501e72ea4

@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.68 2002/06/02 18:19:00 drh Exp $
+** $Id: expr.c,v 1.69 2002/06/02 18:22:06 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -347,9 +347,9 @@ int sqliteExprIsInteger(Expr *p, int *pValue){
       return 1;
     }
     case TK_STRING: {
-      char *z = p->token.z;
+      const char *z = p->token.z;
       int n = p->token.n;
-      if( n>0 && z=='-' ){ z++; n--; }
+      if( n>0 && z[0]=='-' ){ z++; n--; }
       while( n>0 && *z && isdigit(*z) ){ z++; n--; }
       if( n==0 ){
         *pValue = atoi(p->token.z);
