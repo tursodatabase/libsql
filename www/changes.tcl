@@ -17,6 +17,11 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2000 June 21} {
+<li>Clean up comments and variable names.  Changes to documentation.
+    No functional changes to the code.</li>
+}
+
 chng {2000 June 19} {
 <li>Column names in UPDATE statements were case sensitive.
     This mistake has now been fixed.</li>
