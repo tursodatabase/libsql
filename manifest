@@ -1,5 +1,5 @@
-C Use\ssqliteErrorMsg\sinstead\sof\ssqliteSetString\swhereever\spractical.\s(CVS\s1264)
-D 2004-02-22T18:40:57
+C Code\scleanup\sin\sbuild.c.\s(CVS\s1265)
+D 2004-02-22T18:56:49
 F Makefile.in cfd75c46b335881999333a9e4b982fa8491f200b
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -27,7 +27,7 @@ F src/auth.c 4fa3b05bd19445d1c474d6751c4a508d6ea0abe1
 F src/btree.c 0a40efb01fa3a431a16d8604f603431d8c9cebfa
 F src/btree.h 41cb3ff6ebc3f6da2d0a074e39ff8c7a2287469f
 F src/btree_rb.c 32b2cb4285c0fbd53b89de021637b63d52257e54
-F src/build.c 160e623334897d2cc362db34ed0f9bcb10e6fa6a
+F src/build.c dbeef48d1f6f134d8a3de9f9bb6928812c3fbfee
 F src/copy.c 391ce142f6b1faa093867ecee134f61a5028a9af
 F src/date.c 3025642cee50d5c41aef4a22cbc41aa7e543c922
 F src/delete.c 8e2ff752bf485906effcc64f267cdd7227463567
@@ -189,7 +189,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 9b3bcde1530091602e551435ffd7820eb79727d5
-R d797e4457343833d61bf9ff409e94242
+P 69aac043af7f93e7b3f036622c0ac9261cae1839
+R 31316bc136a82339f6877cfbb462944f
 U drh
-Z 97d7595e018edb09b04d76c0b0766e57
+Z c273a71cca2efed399051894b17dbdca

@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.172 2004/02/22 18:40:57 drh Exp $
+** $Id: build.c,v 1.173 2004/02/22 18:56:49 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -728,34 +728,16 @@ primary_key_exit:
 */
 int sqliteCollateType(const char *zType, int nType){
   int i;
-  for(i=0; i<nType-1; i++){
-    switch( zType[i] ){
-      case 'b':
-      case 'B': {
-        if( i<nType-3 && sqliteStrNICmp(&zType[i],"blob",4)==0 ){
-          return SQLITE_SO_TEXT;
-        }
-        break;
-      }
-      case 'c':
-      case 'C': {
-        if( i<nType-3 && (sqliteStrNICmp(&zType[i],"char",4)==0 ||
-                           sqliteStrNICmp(&zType[i],"clob",4)==0)
-        ){
-          return SQLITE_SO_TEXT;
-        }
-        break;
-      }
-      case 'x':
-      case 'X': {
-        if( i>=2 && sqliteStrNICmp(&zType[i-2],"text",4)==0 ){
-          return SQLITE_SO_TEXT;
-        }
-        break;
-      }
-      default: {
-        break;
-      }
+  for(i=0; i<nType-3; i++){
+    int c = *(zType++) | 0x60;
+    if( (c=='b' || c=='c') && sqliteStrNICmp(zType, "lob", 3)==0 ){
+      return SQLITE_SO_TEXT;
+    }
+    if( c=='c' && sqliteStrNICmp(zType, "har", 3)==0 ){
+      return SQLITE_SO_TEXT;
+    }
+    if( c=='t' && sqliteStrNICmp(zType, "ext", 3)==0 ){
+      return SQLITE_SO_TEXT;
     }
   }
   return SQLITE_SO_NUM;
