@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.69 2004/06/17 19:04:17 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.70 2004/06/18 11:25:21 danielk1977 Exp $}
 source common.tcl
 header {Query Language Understood by SQLite}
 puts {
@@ -132,7 +132,7 @@ statement.</p>
 <p>You can read from and write to an attached database and you
 can modify the schema of the attached database.  This is a new
 feature of SQLite version 3.0.  In SQLite 2.8, schema changes
-to attached databases were not allows.</p>
+to attached databases were not allowed.</p>
 
 <p>You cannot create a new table with the same name as a table in 
 an attached database, but you can attach a database which contains
@@ -345,8 +345,7 @@ all CREATE INDEX statements
 are read from the <b>sqlite_master</b> table and used to regenerate
 SQLite's internal representation of the index layout.</p>
 
-<p>Indexes cannot be added on tables in attached databases.
-Indexes are removed with the <a href="#dropindex">DROP INDEX</a> 
+<p>Indexes are removed with the <a href="#dropindex">DROP INDEX</a> 
 command.</p>
 }
 
@@ -359,7 +358,7 @@ CREATE [TEMP | TEMPORARY] TABLE <table-name> (
   [, <constraint>]*
 )
 } {sql-command} {
-CREATE [TEMP | TEMPORARY] TABLE <table-name> AS <select-statement>
+CREATE [TEMP | TEMPORARY] TABLE [<database-name>.] <table-name> AS <select-statement>
 } {column-def} {
 <name> [<type>] [[CONSTRAINT <name>] <column-constraint>]*
 } {type} {
@@ -424,6 +423,12 @@ the database is closed.  Any indices created on a temporary table
 are also temporary.  Temporary tables and indices are stored in a
 separate file distinct from the main database file.</p>
 
+<p> If a <database-name> is specified, then the table is created in 
+the named database. It is an error to specify both a <database-name>
+and the TEMP keyword, unless the <database-name> is "temp". If no
+database name is specified, and the TEMP keyword is not present,
+the table is created in the main database.</p>
+
 <p>The optional conflict-clause following each constraint
 allows the specification of an alternative default
 constraint conflict resolution algorithm for that constraint.
@@ -463,8 +468,7 @@ The text of CREATE TEMPORARY TABLE statements are stored in the
 </p>
 
 <p>Tables are removed using the <a href="#droptable">DROP TABLE</a> 
-statement.  Non-temporary tables in an attached database cannot be 
-dropped.</p>
+statement.  </p>
 }
 
 
@@ -628,7 +632,7 @@ attached database.</p>
 Section {CREATE VIEW} {createview}
 
 Syntax {sql-command} {
-CREATE [TEMP | TEMPORARY] VIEW <view-name> AS <select-statement>
+CREATE [TEMP | TEMPORARY] VIEW [<database-name>.] <view-name> AS <select-statement>
 }
 
 puts {
@@ -637,6 +641,17 @@ puts {
 statement.  Once the view is created, it can be used in the FROM clause
 of another SELECT in place of a table name.
 </p>
+
+<p>If the "TEMP" or "TEMPORARY" keyword occurs in between "CREATE"
+and "TABLE" then the table that is created is only visible to the
+process that opened the database and is automatically deleted when
+the database is closed.</p>
+
+<p> If a <database-name> is specified, then the view is created in 
+the named database. It is an error to specify both a <database-name>
+and the TEMP keyword, unless the <database-name> is "temp". If no
+database name is specified, and the TEMP keyword is not present,
+the table is created in the main database.</p>
 
 <p>You cannot COPY, DELETE, INSERT or UPDATE a view.  Views are read-only 
 in SQLite.  However, in many cases you can use a <a href="#trigger">
@@ -705,7 +720,7 @@ command.</p>
 Section {DROP TABLE} droptable
 
 Syntax {sql-command} {
-DROP TABLE <table-name>
+DROP TABLE [<database-name>.] <table-name>
 }
 
 puts {
@@ -1141,10 +1156,10 @@ It is given its own section in this document because it is not
 part of standard SQL and therefore might not be familiar.</p>
 
 <p>The syntax for the ON CONFLICT clause is as shown above for
-the CREATE TABLE, CREATE INDEX, and BEGIN TRANSACTION commands.
-For the COPY, INSERT, and UPDATE commands, the keywords
-"ON CONFLICT" are replaced by "OR", to make the syntax seem more
-natural.  But the meaning of the clause is the same either way.</p>
+the CREATE TABLE and CREATE INDEX commands.  For the COPY, INSERT, and
+UPDATE commands, the keywords "ON CONFLICT" are replaced by "OR", to make
+the syntax seem more natural.  But the meaning of the clause is the same
+either way.</p>
 
 <p>The ON CONFLICT clause specifies an algorithm used to resolve
 constraint conflicts.  There are five choices: ROLLBACK, ABORT,
@@ -1195,33 +1210,8 @@ value, then the ABORT algorithm is used.</p>
 statisfy a constraint, it does not invoke delete triggers on those
 rows.  But that may change in a future release.</p>
 
-</dd>
-</dl>
-
-<p>
-The conflict resolution algorithm can be specified in three places,
-in order from lowest to highest precedence:
-</p>
-
-<ol>
-<li><p>
-On individual constraints within a CREATE TABLE or CREATE INDEX
-statement.
-</p></li>
-
-<li><p>
-On a BEGIN TRANSACTION command.
-</p></li>
-
-<li><p>
-In the OR clause of a COPY, INSERT, or UPDATE command.
-</p></li>
-</ol>
-
 <p>The algorithm specified in the OR clause of a COPY, INSERT, or UPDATE
-overrides any algorithm specified on the BEGIN TRANSACTION command and
-the algorithm specified on the BEGIN TRANSACTION command overrides the
-algorithm specified in the a CREATE TABLE or CREATE INDEX.
+overrides any algorithm specified in a CREATE TABLE or CREATE INDEX.
 If no algorithm is specified anywhere, the ABORT algorithm is used.</p>
 
 }
@@ -1605,10 +1595,11 @@ inserts and deletes can leave the database file structure fragmented,
 which slows down disk access to the database contents.
 
 The VACUUM command cleans
-the database by copying its contents to a temporary database file and 
+the main database by copying its contents to a temporary database file and 
 reloading the original database file from the copy.  This eliminates 
 free pages,  aligns table data to be contiguous, and otherwise cleans 
-up the database file structure.</p>
+up the database file structure. It is not possible to perform the same
+process on an attached database file.</p>
 
 <p>This command will fail if there is an active transaction.  This 
 command has no effect on an in-memory database.</p>

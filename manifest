@@ -1,5 +1,5 @@
-C Fix\sa\scouple\sof\sgcc\swarnings.\s(CVS\s1615)
-D 2004-06-18T06:02:35
+C Fix\stypos\sand\sminor\serrors\sin\slang.tcl.\s(CVS\s1616)
+D 2004-06-18T11:25:21
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -210,7 +210,7 @@ F www/faq.tcl 3a1776818d9bd973ab0c3048ec7ad6b1ad091ae5
 F www/fileformat.tcl f71a06a0d533c7df408539c64113b4adeaf29764
 F www/formatchng.tcl d1dfecedfb25e122ab513a1e0948b15cb4f0be46
 F www/index.tcl 9783a8370bf16dfc20e81f1cf14489f95408353e
-F www/lang.tcl 608a3504fe59699699ca6faf3f7142e067a9f383
+F www/lang.tcl 5193e27d5ab92ffa98427ef0fcc55d7a7c0e3ac3
 F www/lockingv3.tcl afcd22f0f063989cff2f4d57bbc38d719b4c6e75
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
 F www/nulls.tcl f31330db8c978e675f5cd263067b32b822effa6f
@@ -225,7 +225,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl f9a4c1a12864e129f6717d22313be01d5657e3aa
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 39a415eaa65964742e40b7ea4d471fa04007c6c9
-R 1f87c66183bcd20f5c4dd0f1294ea301
+P 960f55f3ecbef4581c8cb7be860023ba10de4e96
+R a54f9360f1d233838325028d874d84d6
 U danielk1977
-Z a8b87d949b3bcf0bc23b2b09209c47b5
+Z dca5f137789ab1a1b476735e27fe6318
