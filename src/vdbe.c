@@ -36,7 +36,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.192 2003/01/07 02:47:48 drh Exp $
+** $Id: vdbe.c,v 1.193 2003/01/07 13:43:46 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -776,14 +776,11 @@ static AggElem *_AggInFocus(Agg *p){
 
 /*
 ** Convert the given stack entity into a string if it isn't one
-** already.  Return non-zero if we run out of memory.
-**
-** NULLs are converted into an empty string.
+** already.
 */
-#define Stringify(P,I) ((aStack[I].flags & STK_Str)==0 ? hardStringify(P,I) : 0)
+#define Stringify(P,I) if((aStack[I].flags & STK_Str)==0){hardStringify(P,I);}
 static int hardStringify(Vdbe *p, int i){
   Stack *pStack = &p->aStack[i];
-  char **pzStack = &p->zStack[i];
   int fg = pStack->flags;
   if( fg & STK_Real ){
     sprintf(pStack->z,"%.15g",pStack->r);
@@ -792,9 +789,33 @@ static int hardStringify(Vdbe *p, int i){
   }else{
     pStack->z[0] = 0;
   }
-  *pzStack = pStack->z;
-  pStack->n = strlen(*pzStack)+1;
+  p->zStack[i] = pStack->z;
+  pStack->n = strlen(pStack->z)+1;
   pStack->flags = STK_Str;
+  return 0;
+}
+
+/*
+** Convert the given stack entity into a string that has been obtained
+** from sqliteMalloc().  This is different from Stringify() above in that
+** Stringify() will use the NBFS bytes of static string space if the string
+** will fit but this routine always mallocs for space.
+** Return non-zero if we run out of memory.
+*/
+#define Dynamicify(P,I) ((aStack[I].flags & STK_Dyn)==0 ? hardDynamicify(P,I):0)
+static int hardDynamicify(Vdbe *p, int i){
+  Stack *pStack = &p->aStack[i];
+  int fg = pStack->flags;
+  char *z;
+  if( (fg & STK_Str)==0 ){
+    hardStringify(p, i);
+  }
+  assert( (fg & STK_Dyn)==0 );
+  z = sqliteMallocRaw( pStack->n );
+  if( z==0 ) return 1;
+  memcpy(z, p->zStack[i], pStack->n);
+  p->zStack[i] = z;
+  pStack->flags |= STK_Dyn;
   return 0;
 }
 
@@ -1740,7 +1761,7 @@ case OP_Callback: {
     if( aStack[j].flags & STK_Null ){
       zStack[j] = 0;
     }else{
-      if( Stringify(p, j) ) goto no_mem;
+      Stringify(p, j);
     }
   }
   zStack[p->tos+1] = 0;
@@ -1817,7 +1838,7 @@ case OP_Concat: {
       nByte = -1;
       break;
     }else{
-      if( Stringify(p, i) ) goto no_mem;
+      Stringify(p, i);
       nByte += aStack[i].n - 1 + nSep;
     }
   }
@@ -1987,7 +2008,7 @@ case OP_Function: {
     if( aStack[i].flags & STK_Null ){
       zStack[i] = 0;
     }else{
-      if( Stringify(p, i) ) goto no_mem;
+      Stringify(p, i);
     }
   }
   ctx.pFunc = (FuncDef*)pOp->p3;
@@ -2283,7 +2304,8 @@ case OP_Ge: {
     aStack[tos].flags = STK_Int;
     c = aStack[nos].i - aStack[tos].i;
   }else{
-    if( Stringify(p, tos) || Stringify(p, nos) ) goto no_mem;
+    Stringify(p, tos);
+    Stringify(p, nos);
     c = sqliteCompare(zStack[nos], zStack[tos]);
   }
   switch( pOp->opcode ){
@@ -2433,7 +2455,8 @@ case OP_StrGe: {
     }
     break;
   }else{
-    if( Stringify(p, tos) || Stringify(p, nos) ) goto no_mem;
+    Stringify(p, tos);
+    Stringify(p, nos);
     c = strcmp(zStack[nos], zStack[tos]);
   }
   /* The asserts on each case of the following switch are there to verify
@@ -2694,6 +2717,7 @@ case OP_MakeRecord: {
   u32 addr;
   int addUnique = 0;   /* True to cause bytes to be added to make the
                        ** generated record distinct */
+  char zTemp[NBFS];    /* Temp space for small records */
 
   /* Assuming the record contains N fields, the record format looks
   ** like this:
@@ -2720,7 +2744,7 @@ case OP_MakeRecord: {
     if( (aStack[i].flags & STK_Null) ){
       addUnique = pOp->p2;
     }else{
-      if( Stringify(p, i) ) goto no_mem;
+      Stringify(p, i);
       nByte += aStack[i].n;
     }
   }
@@ -2737,8 +2761,12 @@ case OP_MakeRecord: {
     rc = SQLITE_TOOBIG;
     goto abort_due_to_error;
   }
-  zNewRecord = sqliteMallocRaw( nByte );
-  if( zNewRecord==0 ) goto no_mem;
+  if( nByte<=NBFS ){
+    zNewRecord = zTemp;
+  }else{
+    zNewRecord = sqliteMallocRaw( nByte );
+    if( zNewRecord==0 ) goto no_mem;
+  }
   j = 0;
   addr = idxWidth*(nField+1) + addUnique*sizeof(uniqueCnt);
   for(i=p->tos-nField+1; i<=p->tos; i++){
@@ -2774,8 +2802,16 @@ case OP_MakeRecord: {
   PopStack(p, nField);
   p->tos++;
   aStack[p->tos].n = nByte;
-  aStack[p->tos].flags = STK_Str | STK_Dyn;
-  zStack[p->tos] = zNewRecord;
+  if( nByte<=NBFS ){
+    assert( zNewRecord==zTemp );
+    memcpy(aStack[p->tos].z, zTemp, nByte);
+    zStack[p->tos] = aStack[p->tos].z;
+    aStack[p->tos].flags = STK_Str;
+  }else{
+    assert( zNewRecord!=zTemp );
+    aStack[p->tos].flags = STK_Str | STK_Dyn;
+    zStack[p->tos] = zNewRecord;
+  }
   break;
 }
 
@@ -2851,6 +2887,7 @@ case OP_MakeKey: {
   int addRowid;
   int i, j;
   int containsNull = 0;
+  char zTemp[NBFS];
 
   addRowid = pOp->opcode==OP_MakeIdxKey;
   nField = pOp->p1;
@@ -2890,8 +2927,12 @@ case OP_MakeKey: {
     goto abort_due_to_error;
   }
   if( addRowid ) nByte += sizeof(u32);
-  zNewKey = sqliteMallocRaw( nByte );
-  if( zNewKey==0 ) goto no_mem;
+  if( nByte<=NBFS ){
+    zNewKey = zTemp;
+  }else{
+    zNewKey = sqliteMallocRaw( nByte );
+    if( zNewKey==0 ) goto no_mem;
+  }
   j = 0;
   for(i=p->tos-nField+1; i<=p->tos; i++){
     if( aStack[i].flags & STK_Null ){
@@ -2919,8 +2960,15 @@ case OP_MakeKey: {
   }
   p->tos++;
   aStack[p->tos].n = nByte;
-  aStack[p->tos].flags = STK_Str|STK_Dyn;
-  zStack[p->tos] = zNewKey;
+  if( nByte<=NBFS ){
+    assert( zNewKey==zTemp );
+    zStack[p->tos] = aStack[p->tos].z;
+    memcpy(zStack[p->tos], zTemp, nByte);
+    aStack[p->tos].flags = STK_Str;
+  }else{
+    aStack[p->tos].flags = STK_Str|STK_Dyn;
+    zStack[p->tos] = zNewKey;
+  }
   break;
 }
 
@@ -2936,7 +2984,7 @@ case OP_IncrKey: {
   int tos = p->tos;
 
   VERIFY( if( tos<0 ) goto bad_instruction );
-  if( Stringify(p, tos) ) goto no_mem;
+  Stringify(p, tos);
   if( aStack[tos].flags & (STK_Static|STK_Ephem) ){
     /* CANT HAPPEN.  The IncrKey opcode is only applied to keys
     ** generated by MakeKey or MakeIdxKey and the results of those
@@ -3364,7 +3412,7 @@ case OP_MoveTo: {
       pC->lastRecno = aStack[tos].i;
       pC->recnoIsValid = res==0;
     }else{
-      if( Stringify(p, tos) ) goto no_mem;
+      Stringify(p, tos);
       sqliteBtreeMoveto(pC->pCursor, zStack[tos], aStack[tos].n, &res);
       pC->recnoIsValid = 0;
     }
@@ -3440,7 +3488,7 @@ case OP_Found: {
   VERIFY( if( tos<0 ) goto not_enough_stack; )
   if( VERIFY( i>=0 && i<p->nCursor && ) (pC = &p->aCsr[i])->pCursor!=0 ){
     int res, rx;
-    if( Stringify(p, tos) ) goto no_mem;
+    Stringify(p, tos);
     rx = sqliteBtreeMoveto(pC->pCursor, zStack[tos], aStack[tos].n, &res);
     alreadyExists = rx==SQLITE_OK && res==0;
   }
@@ -3496,7 +3544,7 @@ case OP_IsUnique: {
 
     /* Make sure K is a string and make zKey point to K
     */
-    if( Stringify(p, nos) ) goto no_mem;
+    Stringify(p, nos);
     zKey = zStack[nos];
     nKey = aStack[nos].n;
     assert( nKey >= 4 );
@@ -3709,7 +3757,7 @@ case OP_PutStrKey: {
     char *zKey;
     int nKey, iKey;
     if( pOp->opcode==OP_PutStrKey ){
-      if( Stringify(p, nos) ) goto no_mem;
+      Stringify(p, nos);
       nKey = aStack[nos].n;
       zKey = zStack[nos];
     }else{
@@ -4199,7 +4247,7 @@ case OP_IdxGE: {
   if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
     int res, rc;
  
-    if( Stringify(p, tos) ) goto no_mem;
+    Stringify(p, tos);
     rc = sqliteBtreeKeyCompare(pCrsr, zStack[tos], aStack[tos].n, 4, &res);
     if( rc!=SQLITE_OK ){
       break;
@@ -4462,7 +4510,7 @@ case OP_SortPut: {
   int nos = tos - 1;
   Sorter *pSorter;
   VERIFY( if( tos<1 ) goto not_enough_stack; )
-  if( Stringify(p, tos) || Stringify(p, nos) ) goto no_mem;
+  if( Dynamicify(p, tos) || Dynamicify(p, nos) ) goto no_mem;
   pSorter = sqliteMallocRaw( sizeof(Sorter) );
   if( pSorter==0 ) goto no_mem;
   pSorter->pNext = p->pSort;
@@ -4502,7 +4550,7 @@ case OP_SortMakeRec: {
   nByte = 0;
   for(i=p->tos-nField+1; i<=p->tos; i++){
     if( (aStack[i].flags & STK_Null)==0 ){
-      if( Stringify(p, i) ) goto no_mem;
+      Stringify(p, i);
       nByte += aStack[i].n;
     }
   }
@@ -4555,7 +4603,7 @@ case OP_SortMakeKey: {
     if( (aStack[i].flags & STK_Null)!=0 ){
       nByte += 2;
     }else{
-      if( Stringify(p, i) ) goto no_mem;
+      Stringify(p, i);
       nByte += aStack[i].n+2;
     }
   }
@@ -4999,7 +5047,7 @@ case OP_AggFunc: {
     if( aStack[i].flags & STK_Null ){
       zStack[i] = 0;
     }else{
-      if( Stringify(p, i) ) goto no_mem;
+      Stringify(p, i);
     }
   }
   i = aStack[p->tos].i;
@@ -5042,7 +5090,7 @@ case OP_AggFocus: {
   int nKey;
 
   VERIFY( if( tos<0 ) goto not_enough_stack; )
-  if( Stringify(p, tos) ) goto no_mem;
+  Stringify(p, tos);
   zKey = zStack[tos]; 
   nKey = aStack[tos].n;
   pElem = sqliteHashFind(&p->agg.hash, zKey, nKey);
@@ -5192,7 +5240,7 @@ case OP_SetInsert: {
   }else{
     int tos = p->tos;
     if( tos<0 ) goto not_enough_stack;
-    if( Stringify(p, tos) ) goto no_mem;
+    Stringify(p, tos);
     sqliteHashInsert(&p->aSet[i].hash, zStack[tos], aStack[tos].n, p);
     POPSTACK;
   }
@@ -5210,7 +5258,7 @@ case OP_SetFound: {
   int i = pOp->p1;
   int tos = p->tos;
   VERIFY( if( tos<0 ) goto not_enough_stack; )
-  if( Stringify(p, tos) ) goto no_mem;
+  Stringify(p, tos);
   if( i>=0 && i<p->nSet &&
        sqliteHashFind(&p->aSet[i].hash, zStack[tos], aStack[tos].n)){
     pc = pOp->p2 - 1;
@@ -5229,7 +5277,7 @@ case OP_SetNotFound: {
   int i = pOp->p1;
   int tos = p->tos;
   VERIFY( if( tos<0 ) goto not_enough_stack; )
-  if( Stringify(p, tos) ) goto no_mem;
+  Stringify(p, tos);
   if( i<0 || i>=p->nSet ||
        sqliteHashFind(&p->aSet[i].hash, zStack[tos], aStack[tos].n)==0 ){
     pc = pOp->p2 - 1;
