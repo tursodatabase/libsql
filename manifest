@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\schange\scounting\sthat\scomes\sup\swhen\ssqlite3_finalize()\sis\ncalled\sright\safter\ssqlite3_reset().\s(CVS\s2266)
-D 2005-01-23T19:04:43
+C Minor\schanges\sto\savoid\swarnings\son\ssome\scompilers.\s(CVS\s2267)
+D 2005-01-23T22:41:37
 F Makefile.in ffd81f5e926d40b457071b4de8d7c1fa18f39b5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -36,7 +36,7 @@ F src/cursor.c de73c00aefc4747ad59b5105cf38bbff0667922e
 F src/date.c f3d1f5cd1503dabf426a198f3ebef5afbc122a7f
 F src/delete.c b3accca9c38d9a67dbd724f67b04151a13735ebd
 F src/experimental.c 8cc66b2be6a011055d75ef19ed2584bcfbb585ad
-F src/expr.c bf0875b10597b96375e84191d56106be9092827d
+F src/expr.c abadaf7b858084949ac36316a335384498c5b0e2
 F src/func.c dc188d862d7276ea897655b248e2cb17022686e3
 F src/hash.c a97721a55440b7bea31ffe471bb2f6b4123cddd5
 F src/hash.h 1b0c445e1c89ff2aaad9b4605ba61375af001e84
@@ -210,7 +210,7 @@ F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/view.test 5aac4c79eb86e297a53c8c4a2543dc193034e66d
 F test/where.test ffb790dfda75d977bae7a1f5830351623f76861b
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
-F tool/lemon.c eb3b2bbefc0d442fa459f4f1924e598e804eca9c
+F tool/lemon.c 4a3b5ccc76d959b8caa5f127d23a7e14d4470b4e
 F tool/lempar.c 1e61d2b6cb9d8affa264a13336bc0c088498caa4
 F tool/memleak.awk 4e7690a51bf3ed757e611273d43fe3f65b510133
 F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
@@ -271,7 +271,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P 6c631b86e5e166f650d3f7d53c773aa859391c2b
-R badff4651b06e2e518e6daf9bd21152e
-U drh
-Z 72696f1bdbc58463d008ce4c60e3e8a1
+P 1a64295e055d083539e05f069df6f1bea12e14b2
+R d8849dc8719dcdd857520d8fcc0fa116
+U danielk1977
+Z b4da30a39691547fb689e1e570bb8249

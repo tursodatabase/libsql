@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.187 2005/01/21 08:13:15 danielk1977 Exp $
+** $Id: expr.c,v 1.188 2005/01/23 22:41:37 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -990,7 +990,6 @@ static int nameResolverStep(void *pArg, Expr *pExpr){
   NameContext *pNC = (NameContext*)pArg;
   SrcList *pSrcList;
   Parse *pParse;
-  int i;
 
   assert( pNC!=0 );
   pSrcList = pNC->pSrcList;
@@ -1000,6 +999,7 @@ static int nameResolverStep(void *pArg, Expr *pExpr){
   ExprSetProperty(pExpr, EP_Resolved);
 #ifndef NDEBUG
   if( pSrcList ){
+    int i;
     for(i=0; i<pSrcList->nSrc; i++){
       assert( pSrcList->a[i].iCursor>=0 && pSrcList->a[i].iCursor<pParse->nTab);
     }
