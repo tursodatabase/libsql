@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.18 2000/06/06 01:50:43 drh Exp $
+** $Id: vdbe.c,v 1.19 2000/06/06 03:31:22 drh Exp $
 */
 #include "sqliteInt.h"
 #include <unistd.h>
@@ -476,7 +476,7 @@ static void SetInsert(Set *p, char *zKey){
   for(pElem=p->apHash[h]; pElem; pElem=pElem->pHash){
     if( strcmp(pElem->zKey, zKey)==0 ) return;
   }
-  pElem = sqliteMalloc( sizeof(pElem) + strlen(zKey) );
+  pElem = sqliteMalloc( sizeof(*pElem) + strlen(zKey) );
   if( pElem==0 ) return;
   strcpy(pElem->zKey, zKey);
   pElem->pNext = p->pAll;
@@ -2893,6 +2893,7 @@ int sqliteVdbeExec(
           pc = pOp->p2 - 1;
         }
         PopStack(p, 1);
+        break;
       }
 
       /* Opcode: SetNotFound P1 P2 *
@@ -2910,6 +2911,7 @@ int sqliteVdbeExec(
           pc = pOp->p2 - 1;
         }
         PopStack(p, 1);
+        break;
       }
 
       /* An other opcode is illegal...

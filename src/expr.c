@@ -23,7 +23,7 @@
 *************************************************************************
 ** This file contains C code routines used for processing expressions
 **
-** $Id: expr.c,v 1.7 2000/06/06 01:50:43 drh Exp $
+** $Id: expr.c,v 1.8 2000/06/06 03:31:22 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -179,6 +179,9 @@ int sqliteExprResolveIds(Parse *pParse, IdList *pTabList, Expr *pExpr){
         v = pParse->pVdbe = sqliteVdbeCreate(pParse->db->pBe);
       }
       if( v==0 ) return 1;
+      if( sqliteExprResolveIds(pParse, pTabList, pExpr->pLeft) ){
+        return 1;
+      }
       if( pExpr->pSelect ){
         /* Case 1:     expr IN (SELECT ...)
         **
@@ -228,6 +231,7 @@ int sqliteExprResolveIds(Parse *pParse, IdList *pTabList, Expr *pExpr){
           }
         }
       }
+      break;
     }
 
     case TK_SELECT: {
@@ -589,6 +593,7 @@ void sqliteExprIfTrue(Parse *pParse, Expr *pExpr, int dest){
       break;
     }
     case TK_IN: {
+      sqliteExprCode(pParse, pExpr->pLeft);
       if( pExpr->pSelect ){
         sqliteVdbeAddOp(v, OP_Found, pExpr->iTable, dest, 0, 0);
       }else{
@@ -679,6 +684,7 @@ void sqliteExprIfFalse(Parse *pParse, Expr *pExpr, int dest){
       break;
     }
     case TK_IN: {
+      sqliteExprCode(pParse, pExpr->pLeft);
       if( pExpr->pSelect ){
         sqliteVdbeAddOp(v, OP_NotFound, pExpr->iTable, dest, 0, 0);
       }else{
