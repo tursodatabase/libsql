@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.30 2001/12/31 02:48:51 drh Exp $
+** $Id: insert.c,v 1.31 2002/01/04 03:09:30 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -84,7 +84,7 @@ void sqliteInsert(
   }
 
   /* Figure out how many columns of data are supplied.  If the data
-  ** is comming from a SELECT statement, then this step has to generate
+  ** is coming from a SELECT statement, then this step has to generate
   ** all the code to implement the SELECT statement and leave the data
   ** in a temporary table.  If data is coming from an expression list,
   ** then we just have to count the number of expressions.

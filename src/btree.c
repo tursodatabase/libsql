@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.45 2001/12/15 14:22:19 drh Exp $
+** $Id: btree.c,v 1.46 2002/01/04 03:09:29 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -728,6 +728,7 @@ static int newDatabase(Btree *pBt){
 ** unless a transaction is started first:
 **
 **      sqliteBtreeCreateTable()
+**      sqliteBtreeCreateIndex()
 **      sqliteBtreeClearTable()
 **      sqliteBtreeDropTable()
 **      sqliteBtreeInsert()
@@ -2227,8 +2228,13 @@ int sqliteBtreeDelete(BtCursor *pCur){
 }
 
 /*
-** Create a new BTree in the same file.  Write into *piTable the index
-** of the root page of the new table.
+** Create a new BTree table.  Write into *piTable the page
+** number for the root page of the new table.
+**
+** In the current implementation, BTree tables and BTree indices are the 
+** the same.  But in the future, we may change this so that BTree tables
+** are restricted to having a 4-byte integer key and arbitrary data and
+** BTree indices are restricted to having an arbitrary key and no data.
 */
 int sqliteBtreeCreateTable(Btree *pBt, int *piTable){
   MemPage *pRoot;
@@ -2243,6 +2249,31 @@ int sqliteBtreeCreateTable(Btree *pBt, int *piTable){
   zeroPage(pRoot);
   sqlitepager_unref(pRoot);
   *piTable = (int)pgnoRoot;
+  return SQLITE_OK;
+}
+
+/*
+** Create a new BTree index.  Write into *piTable the page
+** number for the root page of the new index.
+**
+** In the current implementation, BTree tables and BTree indices are the 
+** the same.  But in the future, we may change this so that BTree tables
+** are restricted to having a 4-byte integer key and arbitrary data and
+** BTree indices are restricted to having an arbitrary key and no data.
+*/
+int sqliteBtreeCreateIndex(Btree *pBt, int *piIndex){
+  MemPage *pRoot;
+  Pgno pgnoRoot;
+  int rc;
+  if( !pBt->inTrans ){
+    return SQLITE_ERROR;  /* Must start a transaction first */
+  }
+  rc = allocatePage(pBt, &pRoot, &pgnoRoot);
+  if( rc ) return rc;
+  assert( sqlitepager_iswriteable(pRoot) );
+  zeroPage(pRoot);
+  sqlitepager_unref(pRoot);
+  *piIndex = (int)pgnoRoot;
   return SQLITE_OK;
 }
 

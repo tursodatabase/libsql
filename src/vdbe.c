@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.103 2001/12/31 02:48:51 drh Exp $
+** $Id: vdbe.c,v 1.104 2002/01/04 03:09:30 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2537,12 +2537,16 @@ case OP_Open: {
   break;
 }
 
-/* Opcode: OpenTemp P1 * *
+/* Opcode: OpenTemp P1 P2 *
 **
-** Open a new cursor that points to a table in a temporary database
-** file.  The temporary file is opened read/write even if the main
-** database is read-only.  The temporary file is deleted when the
-** cursor is closed.
+** Open a new cursor that points to a table or index in a temporary
+** database file.  The temporary file is opened read/write even if 
+** the main database is read-only.  The temporary file is deleted
+** when the cursor is closed.
+**
+** The cursor points to a BTree table if P2==0 and to a BTree index
+** if P2==1.  A BTree table must have an integer key and can have arbitrary
+** data.  A BTree index has no data but can have an arbitrary key.
 **
 ** This opcode is used for tables that exist for the duration of a single
 ** SQL statement only.  Tables created using CREATE TEMPORARY TABLE
@@ -2570,10 +2574,18 @@ case OP_OpenTemp: {
   memset(pCx, 0, sizeof(*pCx));
   rc = sqliteBtreeOpen(0, 0, TEMP_PAGES, &pCx->pBt);
   if( rc==SQLITE_OK ){
-    rc = sqliteBtreeCursor(pCx->pBt, 2, 1, &pCx->pCursor);
+    rc = sqliteBtreeBeginTrans(pCx->pBt);
   }
   if( rc==SQLITE_OK ){
-    rc = sqliteBtreeBeginTrans(pCx->pBt);
+    if( pOp->p2 ){
+      int pgno;
+      rc = sqliteBtreeCreateIndex(pCx->pBt, &pgno);
+      if( rc==SQLITE_OK ){
+        rc = sqliteBtreeCursor(pCx->pBt, pgno, 1, &pCx->pCursor);
+      }
+    }else{
+      rc = sqliteBtreeCursor(pCx->pBt, 2, 1, &pCx->pCursor);
+    }
   }
   break;
 }
@@ -3224,14 +3236,19 @@ case OP_Clear: {
 ** number into the parser's internal data structures that describe the
 ** new table.
 **
+** The difference between a table and an index is this:  A table must
+** have a 4-byte integer key and can have arbitrary data.  An index
+** has an arbitrary key but no data.
+**
 ** See also: CreateIndex
 */
 /* Opcode: CreateIndex * P2 P3
 **
-** This instruction does exactly the same thing as CreateTable.  It
-** has a different name for historical reasons.
+** Allocate a new index in the main database file if P2==0 or in the
+** auxiliary database file if P2==1.  Push the page number of the
+** root page of the new index onto the stack.
 **
-** See also: CreateTable
+** See documentation on OP_CreateTable for additional information.
 */
 case OP_CreateIndex:
 case OP_CreateTable: {
@@ -3239,7 +3256,11 @@ case OP_CreateTable: {
   int pgno;
   VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
   assert( pOp->p3!=0 && pOp->p3type==P3_POINTER );
-  rc = sqliteBtreeCreateTable(pOp->p2 ? db->pBeTemp : pBt, &pgno);
+  if( pOp->opcode==OP_CreateTable ){
+    rc = sqliteBtreeCreateTable(pOp->p2 ? db->pBeTemp : pBt, &pgno);
+  }else{
+    rc = sqliteBtreeCreateIndex(pOp->p2 ? db->pBeTemp : pBt, &pgno);
+  }
   if( rc==SQLITE_OK ){
     aStack[i].i = pgno;
     aStack[i].flags = STK_Int;

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.52 2001/12/31 02:48:51 drh Exp $
+** $Id: select.c,v 1.53 2002/01/04 03:09:30 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -546,7 +546,7 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
           return 1;
         }
         if( p->op!=TK_ALL ){
-          sqliteVdbeAddOp(v, OP_OpenTemp, unionTab, 0);
+          sqliteVdbeAddOp(v, OP_OpenTemp, unionTab, 1);
           sqliteVdbeAddOp(v, OP_KeyAsData, unionTab, 1);
         }else{
           sqliteVdbeAddOp(v, OP_OpenTemp, unionTab, 0);
@@ -608,7 +608,7 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
       if( p->pOrderBy && matchOrderbyToColumn(pParse,p,p->pOrderBy,tab1,1) ){
         return 1;
       }
-      sqliteVdbeAddOp(v, OP_OpenTemp, tab1, 0);
+      sqliteVdbeAddOp(v, OP_OpenTemp, tab1, 1);
       sqliteVdbeAddOp(v, OP_KeyAsData, tab1, 1);
 
       /* Code the SELECTs to our left into temporary table "tab1".
@@ -618,7 +618,7 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
 
       /* Code the current SELECT into temporary table "tab2"
       */
-      sqliteVdbeAddOp(v, OP_OpenTemp, tab2, 0);
+      sqliteVdbeAddOp(v, OP_OpenTemp, tab2, 1);
       sqliteVdbeAddOp(v, OP_KeyAsData, tab2, 1);
       p->pPrior = 0;
       rc = sqliteSelect(pParse, p, SRT_Union, tab2);
@@ -932,7 +932,7 @@ int sqliteSelect(
   /* Begin the database scan
   */
   if( isDistinct ){
-    sqliteVdbeAddOp(v, OP_OpenTemp, distinct, 0);
+    sqliteVdbeAddOp(v, OP_OpenTemp, distinct, 1);
   }
   pWInfo = sqliteWhereBegin(pParse, pTabList, pWhere, 0);
   if( pWInfo==0 ) return 1;

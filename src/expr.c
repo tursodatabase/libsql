@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.35 2001/12/21 14:30:43 drh Exp $
+** $Id: expr.c,v 1.36 2002/01/04 03:09:30 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -244,7 +244,7 @@ int sqliteExprResolveIds(Parse *pParse, IdList *pTabList, Expr *pExpr){
         ** table.  The cursor number of the temporary table has already
         ** been put in iTable by sqliteExprResolveInSelect().
         */
-        sqliteVdbeAddOp(v, OP_OpenTemp, pExpr->iTable, 0);
+        sqliteVdbeAddOp(v, OP_OpenTemp, pExpr->iTable, 1);
         if( sqliteSelect(pParse, pExpr->pSelect, SRT_Set, pExpr->iTable) );
       }else if( pExpr->pList ){
         /* Case 2:     expr IN (exprlist)

@@ -17,6 +17,11 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2002 Jan 3 (2.2.1)} {
+<li>Bug fix: An attempt to delete a single row of a table with a WHERE
+    clause of "ROWID=x" when no such rowid exists was causing an error.</li>
+}
+
 chng {2001 Dec 22 (2.2.0)} {
 <li>Columns of type INTEGER PRIMARY KEY are actually used as the primary
     key in underlying B-Tree representation of the table.</li>
