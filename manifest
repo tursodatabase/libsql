@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sthreads\sand\sthe\sglobal\sdatabase\slist\sin\smain.c.\s(CVS\s2434)
-D 2005-03-29T23:34:58
+C Fix\sa\smemory\sleak\sin\sthe\sTCL\sbindings.\s(CVS\s2435)
+D 2005-03-31T18:26:21
 F Makefile.in 5c00d0037104de2a50ac7647a5f12769795957a3
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -63,7 +63,7 @@ F src/shell.c 25b3217d7c64e6497225439d261a253a23efff26
 F src/sqlite.h.in 33e7201f78b3f4aa306d885b69e68fa0f0286368
 F src/sqliteInt.h 474c20597ee66bb3a666bed0abd76e7be579184a
 F src/table.c 25b3ff2b39b7d87e8d4a5da0713d68dfc06cbee9
-F src/tclsqlite.c 29e56ecdb94c4066dbe6b088d12cc2404bc9597e
+F src/tclsqlite.c 650b9ae64d7d9b40b3c8cd8bf27224139a10028e
 F src/test1.c 32a158ca4aca2e9b43d911eda4552253df9a207d
 F src/test2.c 7f0ef466706ac01414e1136b96e5d8a65cb97545
 F src/test3.c 683e1e3819152ffd35da2f201e507228921148d0
@@ -278,7 +278,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P 844f01af726f5e478a4ef32f39be9f20360a0d96
-R 1c3790c82c48862642a6dbd8402d2f28
-U danielk1977
-Z cea0fd35b8cef97f59b2f45aa29f11bc
+P 4aa05d2251b0cf6323ea695330de9ccf7e071bed
+R 0919f1f178fbb1b8f09dba3854669561
+U drh
+Z b01513e52c97e8110618542320799180
