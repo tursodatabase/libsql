@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.67 2002/01/29 18:41:25 drh Exp $
+** $Id: build.c,v 1.68 2002/01/29 23:07:02 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -866,6 +866,7 @@ void sqliteCreateIndex(
   int hideName = 0;         /* Do not put table name in the hash table */
 
   if( pParse->nErr || sqlite_malloc_failed ) goto exit_create_index;
+  if( onError==OE_Default ) onError = OE_Abort;
 
   /*
   ** Find the table that is to be indexed.  Return early if not found.

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle DELETE FROM statements.
 **
-** $Id: delete.c,v 1.24 2002/01/29 18:41:25 drh Exp $
+** $Id: delete.c,v 1.25 2002/01/29 23:07:02 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -201,25 +201,49 @@ void sqliteGenerateRowDelete(
   Table *pTab,       /* Table containing the row to be deleted */
   int base           /* Cursor number for the table */
 ){
+  sqliteVdbeAddOp(v, OP_MoveTo, base, 0);
+  sqliteGenerateRowIndexDelete(v, pTab, base, 0);
+  sqliteVdbeAddOp(v, OP_Delete, base, 0);
+}
+
+/*
+** This routine generates VDBE code that causes the deletion of all
+** index entries associated with a single row of a single table.
+**
+** The VDBE must be in a particular state when this routine is called.
+** These are the requirements:
+**
+**   1.  A read/write cursor pointing to pTab, the table containing the row
+**       to be deleted, must be opened as cursor number "base".
+**
+**   2.  Read/write cursors for all indices of pTab must be open as
+**       cursor number base+i for the i-th index.
+**
+**   3.  The "base" cursor must be pointing to the row that is to be
+**       deleted.
+*/
+void sqliteGenerateRowIndexDelete(
+  Vdbe *v,           /* Generate code into this VDBE */
+  Table *pTab,       /* Table containing the row to be deleted */
+  int base,          /* Cursor number for the table */
+  char *aIdxUsed     /* Only delete if aIdxUsed!=0 && aIdxUsed[i]!=0 */
+){
   int i;
   Index *pIdx;
 
-  sqliteVdbeAddOp(v, OP_MoveTo, base, 0);
-  if( pTab->pIndex ){
-    for(i=1, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){
-      int j;
-      sqliteVdbeAddOp(v, OP_Recno, base, 0);
-      for(j=0; j<pIdx->nColumn; j++){
-        int idx = pIdx->aiColumn[j];
-        if( idx==pTab->iPKey ){
-          sqliteVdbeAddOp(v, OP_Dup, j, 0);
-        }else{
-          sqliteVdbeAddOp(v, OP_Column, base, idx);
-        }
+  for(i=1, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){
+    int j;
+    if( aIdxUsed!=0 && aIdxUsed[i-1]==0 ) continue;
+    sqliteVdbeAddOp(v, OP_Recno, base, 0);
+    for(j=0; j<pIdx->nColumn; j++){
+      int idx = pIdx->aiColumn[j];
+      if( idx==pTab->iPKey ){
+        sqliteVdbeAddOp(v, OP_Dup, j, 0);
+      }else{
+        sqliteVdbeAddOp(v, OP_Column, base, idx);
       }
-      sqliteVdbeAddOp(v, OP_MakeIdxKey, pIdx->nColumn, 0);
-      sqliteVdbeAddOp(v, OP_IdxDelete, base+i, 0);
     }
+    sqliteVdbeAddOp(v, OP_MakeIdxKey, pIdx->nColumn, 0);
+    sqliteVdbeAddOp(v, OP_IdxDelete, base+i, 0);
   }
-  sqliteVdbeAddOp(v, OP_Delete, base, 0);
 }

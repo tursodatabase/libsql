@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.29 2002/01/29 18:41:25 drh Exp $
+** $Id: update.c,v 1.30 2002/01/29 23:07:02 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -29,20 +29,23 @@ void sqliteUpdate(
   int i, j;              /* Loop counters */
   Table *pTab;           /* The table to be updated */
   IdList *pTabList = 0;  /* List containing only pTab */
-  int end, addr;         /* A couple of addresses in the generated code */
+  int addr;              /* VDBE instruction address of the start of the loop */
   WhereInfo *pWInfo;     /* Information about the WHERE clause */
   Vdbe *v;               /* The virtual database engine */
   Index *pIdx;           /* For looping over indices */
   int nIdx;              /* Number of indices that need updating */
+  int nIdxTotal;         /* Total number of indices */
   int base;              /* Index of first available table cursor */
   sqlite *db;            /* The database structure */
   Index **apIdx = 0;     /* An array of indices that need updating too */
+  char *aIdxUsed = 0;    /* aIdxUsed[i] if the i-th index is used */
   int *aXRef = 0;        /* aXRef[i] is the index in pChanges->a[] of the
                          ** an expression for the i-th column of the table.
                          ** aXRef[i]==-1 if the i-th column is not changed. */
   int openOp;            /* Opcode used to open tables */
   int chngRecno;         /* True if the record number is being changed */
   Expr *pRecnoExpr;      /* Expression defining the new record number */
+  int openAll;           /* True if all indices need to be opened */
 
   if( pParse->nErr || sqlite_malloc_failed ) goto update_cleanup;
   db = pParse->db;
@@ -123,7 +126,7 @@ void sqliteUpdate(
   ** key includes one of the columns named in pChanges or if the record
   ** number of the original table entry is changing.
   */
-  for(nIdx=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+  for(nIdx=nIdxTotal=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, nIdxTotal++){
     if( chngRecno ){
       i = 0;
     }else {
@@ -133,11 +136,12 @@ void sqliteUpdate(
     }
     if( i<pIdx->nColumn ) nIdx++;
   }
-  if( nIdx>0 ){
-    apIdx = sqliteMalloc( sizeof(Index*) * nIdx );
+  if( nIdxTotal>0 ){
+    apIdx = sqliteMalloc( sizeof(Index*) * nIdx + nIdxTotal );
     if( apIdx==0 ) goto update_cleanup;
+    aIdxUsed = (char*)&apIdx[nIdx];
   }
-  for(nIdx=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+  for(nIdx=j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
     if( chngRecno ){
       i = 0;
     }else{
@@ -145,7 +149,12 @@ void sqliteUpdate(
         if( aXRef[pIdx->aiColumn[i]]>=0 ) break;
       }
     }
-    if( i<pIdx->nColumn ) apIdx[nIdx++] = pIdx;
+    if( i<pIdx->nColumn ){
+      apIdx[nIdx++] = pIdx;
+      aIdxUsed[j] = 1;
+    }else{
+      aIdxUsed[j] = 0;
+    }
   }
 
   /* Begin generating code.
@@ -178,14 +187,30 @@ void sqliteUpdate(
   }
 
   /* Rewind the list of records that need to be updated and
-  ** open every index that needs updating.
+  ** open every index that needs updating.  Note that if any
+  ** index could potentially invoke a REPLACE conflict resolution 
+  ** action, then we need to open all indices because we might need
+  ** to be deleting some records.
   */
   sqliteVdbeAddOp(v, OP_ListRewind, 0, 0);
   base = pParse->nTab;
   openOp = pTab->isTemp ? OP_OpenWrAux : OP_OpenWrite;
   sqliteVdbeAddOp(v, openOp, base, pTab->tnum);
-  for(i=0; i<nIdx; i++){
-    sqliteVdbeAddOp(v, openOp, base+i+1, apIdx[i]->tnum);
+  if( onError==OE_Replace ){
+    openAll = 1;
+  }else{
+    openAll = 0;
+    for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+      if( pIdx->onError==OE_Replace ){
+        openAll = 1;
+        break;
+      }
+    }
+  }
+  for(i=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
+    if( openAll || aIdxUsed[i] ){
+      sqliteVdbeAddOp(v, openOp, base+i+1, pIdx->tnum);
+    }
   }
 
   /* Loop over every record that needs updating.  We have to load
@@ -194,42 +219,28 @@ void sqliteUpdate(
   ** Also, the old data is needed to delete the old index entires.
   ** So make the cursor point at the old record.
   */
-  end = sqliteVdbeMakeLabel(v);
-  addr = sqliteVdbeAddOp(v, OP_ListRead, 0, end);
+  addr = sqliteVdbeAddOp(v, OP_ListRead, 0, 0);
   sqliteVdbeAddOp(v, OP_Dup, 0, 0);
   sqliteVdbeAddOp(v, OP_MoveTo, base, 0);
 
-  /* Delete the old indices for the current record.
-  */
-  for(i=0; i<nIdx; i++){
-    sqliteVdbeAddOp(v, OP_Dup, 0, 0);
-    pIdx = apIdx[i];
-    for(j=0; j<pIdx->nColumn; j++){
-      int x = pIdx->aiColumn[j];
-      if( x==pTab->iPKey ){
-        sqliteVdbeAddOp(v, OP_Dup, j, 0);
-      }else{
-        sqliteVdbeAddOp(v, OP_Column, base, x);
-      }
-    }
-    sqliteVdbeAddOp(v, OP_MakeIdxKey, pIdx->nColumn, 0);
-    sqliteVdbeAddOp(v, OP_IdxDelete, base+i+1, 0);
-  }
-
-  /* If changing the record number, remove the old record number
-  ** from the top of the stack and replace it with the new one.
+  /* If the record number will change, push the record number as it
+  ** will be after the update. (The old record number is currently
+  ** on top of the stack.)
   */
   if( chngRecno ){
-    sqliteVdbeAddOp(v, OP_Pop, 1, 0);
-    sqliteExprCode(pParse, pRecnoExpr);
-    sqliteVdbeAddOp(v, OP_MustBeInt, 0, 0);
+    if( pTab->iPKey<0 || (j = aXRef[pTab->iPKey])<0 ){
+      sqliteVdbeAddOp(v, OP_Dup, 0, 0);
+    }else{
+      sqliteExprCode(pParse, pChanges->a[j].pExpr);
+      sqliteVdbeAddOp(v, OP_MustBeInt, 0, 0);
+    }
   }
 
   /* Compute new data for this record.  
   */
   for(i=0; i<pTab->nCol; i++){
     if( i==pTab->iPKey ){
-      sqliteVdbeAddOp(v, OP_Dup, i, 0);
+      sqliteVdbeAddOp(v, OP_String, 0, 0);
       continue;
     }
     j = aXRef[i];
@@ -240,35 +251,26 @@ void sqliteUpdate(
     }
   }
 
+  /* Do constraint checks
+  */
+  sqliteGenerateConstraintChecks(pParse, pTab, base, aIdxUsed, chngRecno,
+                                 onError, addr,1);
+
+  /* Delete the old indices for the current record.
+  */
+  sqliteGenerateRowIndexDelete(v, pTab, base, aIdxUsed);
+
   /* If changing the record number, delete the old record.
   */
   if( chngRecno ){
     sqliteVdbeAddOp(v, OP_Delete, 0, 0);
   }
 
-  /* Insert new index entries that correspond to the new data
+  /* Create the new index entries and the new record.
   */
-  for(i=0; i<nIdx; i++){
-    sqliteVdbeAddOp(v, OP_Dup, pTab->nCol, 0); /* The KEY */
-    pIdx = apIdx[i];
-    for(j=0; j<pIdx->nColumn; j++){
-      int idx = pIdx->aiColumn[j];
-      if( idx==pTab->iPKey ){
-        sqliteVdbeAddOp(v, OP_Dup, j, 0);
-      }else{
-        sqliteVdbeAddOp(v, OP_Dup, j+pTab->nCol-idx, 0);
-      }
-    }
-    sqliteVdbeAddOp(v, OP_MakeIdxKey, pIdx->nColumn, 0);
-    sqliteVdbeAddOp(v, OP_IdxPut, base+i+1, pIdx->isUnique);
-  }
+  sqliteCompleteInsertion(pParse, pTab, base, aIdxUsed, chngRecno);
 
-  /* Write the new data back into the database.
-  */
-  sqliteVdbeAddOp(v, OP_MakeRecord, pTab->nCol, 0);
-  sqliteVdbeAddOp(v, OP_PutIntKey, base, 0);
-
-  /* Increment the count of rows affected by the update
+  /* Increment the row counter 
   */
   if( db->flags & SQLITE_CountRows ){
     sqliteVdbeAddOp(v, OP_AddImm, 1, 0);
@@ -278,7 +280,7 @@ void sqliteUpdate(
   ** all record selected by the WHERE clause have been updated.
   */
   sqliteVdbeAddOp(v, OP_Goto, 0, addr);
-  sqliteVdbeResolveLabel(v, end);
+  sqliteVdbeChangeP2(v, addr, sqliteVdbeCurrentAddr(v));
   sqliteVdbeAddOp(v, OP_ListReset, 0, 0);
   if( (db->flags & SQLITE_InTrans)==0 ){
     sqliteVdbeAddOp(v, OP_Commit, 0, 0);

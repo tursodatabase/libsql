@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.109 2002/01/29 18:41:25 drh Exp $
+** $Id: vdbe.c,v 1.110 2002/01/29 23:07:02 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1299,9 +1299,7 @@ case OP_Pull: {
 case OP_Push: {
   int from = p->tos;
   int to = p->tos - pOp->p1;
-  int i;
-  Stack ts;
-  char *tz;
+
   VERIFY( if( to<0 ) goto not_enough_stack; )
   if( aStack[to].flags & STK_Dyn ){
     sqliteFree(zStack[to]);
@@ -2756,35 +2754,53 @@ case OP_Found: {
 
 /* Opcode: IsUnique P1 P2 *
 **
-** The top of the stack is an index key created using MakeIdxKey.  If
-** there does not exist an entry in P1 that exactly matches the top of
-** the stack, then jump immediately to P2.  If there are no entries
-** in P1 that match all but the last four bytes of the top of the stack
-** then also jump to P2.  The index key on the top of the stack is
-** unchanged.
+** The top of the stack is an integer record number.  Call this
+** record number R.  The next on the stack is an index key created
+** using MakeIdxKey.  Call it K.  This instruction pops R from the
+** stack but it leaves K unchanged.
 **
-** If there is an entry in P1 which differs from the index key on the
-** top of the stack only in the last four bytes, then do not jump. 
-** Instead, push the last four bytes of the existing P1 entry onto the
-** stack and fall through.  This new stack element is the record number
-** of an existing entry this preventing the index key on the stack from
-** being a unique key.
+** P1 is an index.  So all but the last four bytes of K are an
+** index string.  The last four bytes of K are a record number.
+**
+** This instruction asks if there is an entry in P1 where the
+** index string matches K but the record number is different
+** from R.  If there is no such entry, then there is an immediate
+** jump to P2.  If any entry does exist where the index string
+** matches K but the record number is not R, then the record
+** number for that entry is pushed onto the stack and control
+** falls through to the next instruction.
 **
 ** See also: Distinct, NotFound, NotExists
 */
 case OP_IsUnique: {
   int i = pOp->p1;
   int tos = p->tos;
+  int nos = tos-1;
   BtCursor *pCrsr;
+  int R;
 
-  VERIFY( if( tos<0 ) goto not_enough_stack; )
+  /* Pop the value R off the top of the stack
+  */
+  VERIFY( if( nos<0 ) goto not_enough_stack; )
+  Integerify(p, tos);
+  R = aStack[tos].i;   
+  POPSTACK;
   if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
     int res, rc;
-    int v1, v2;
-    char *zKey = zStack[tos];
-    int nKey = aStack[tos].n;
-    if( Stringify(p, tos) ) goto no_mem;
-    assert( aStack[tos].n >= 4 );
+    int v;         /* The record number on the P1 entry that matches K */
+    char *zKey;    /* The value of K */
+    int nKey;      /* Number of bytes in K */
+
+    /* Make sure K is a string and make zKey point to K
+    */
+    if( Stringify(p, nos) ) goto no_mem;
+    zKey = zStack[nos];
+    nKey = aStack[nos].n;
+    assert( nKey >= 4 );
+
+    /* Search for an entry in P1 where all but the last four bytes match K.
+    ** If there is no such entry, jump immediately to P2.
+    */
     rc = sqliteBtreeMoveto(pCrsr, zKey, nKey-4, &res);
     if( rc!=SQLITE_OK ) goto abort_due_to_error;
     if( res<0 ){
@@ -2800,15 +2816,27 @@ case OP_IsUnique: {
       pc = pOp->p2 - 1;
       break;
     }
-    sqliteBtreeKey(pCrsr, nKey - 4, 4, (char*)&v1);
-    memcpy((char*)&v2, &zKey[nKey-4], 4);
-    if( v1==v2 ){
+
+    /* At this point, pCrsr is pointing to an entry in P1 where all but
+    ** the last for bytes of the key match K.  Check to see if the last
+    ** four bytes of the key are different from R.  If the last four
+    ** bytes equal R then jump immediately to P2.
+    */
+    sqliteBtreeKey(pCrsr, nKey - 4, 4, (char*)&v);
+    v = keyToInt(v);
+    if( v==R ){
       pc = pOp->p2 - 1;
       break;
     }
-    tos = ++p->tos;
+
+    /* The last four bytes of the key are different from R.  Convert the
+    ** last four bytes of the key into an integer and push it onto the
+    ** stack.  (These bytes are the record number of an entry that
+    ** violates a UNIQUE constraint.)
+    */
+    p->tos++;
     VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
-    aStack[tos].i = keyToInt(v1);
+    aStack[tos].i = v;
     aStack[tos].flags = STK_Int;
   }
   break;
@@ -2830,14 +2858,13 @@ case OP_IsUnique: {
 case OP_NotExists: {
   int i = pOp->p1;
   int tos = p->tos;
-  int alreadyExists = 0;
-  Cursor *pC;
+  BtCursor *pCrsr;
   VERIFY( if( tos<0 ) goto not_enough_stack; )
-  if( VERIFY( i>=0 && i<p->nCursor && ) (pC = &p->aCsr[i])->pCursor!=0 ){
+  if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
     int res, rx, iKey;
     assert( aStack[tos].flags & STK_Int );
     iKey = intToKey(aStack[tos].i);
-    rx = sqliteBtreeMoveto(pC->pCursor, (char*)&iKey, sizeof(int), &res);
+    rx = sqliteBtreeMoveto(pCrsr, (char*)&iKey, sizeof(int), &res);
     if( rx!=SQLITE_OK || res!=0 ){
        pc = pOp->p2 - 1;
     }
@@ -2910,7 +2937,7 @@ case OP_NewRecno: {
   break;
 }
 
-/* Opcode: PutIK P1 P2 *
+/* Opcode: PutIntKey P1 P2 *
 **
 ** Write an entry into the database file P1.  A new entry is
 ** created if it doesn't already exist or the data for an existing
@@ -2921,7 +2948,7 @@ case OP_NewRecno: {
 ** If P2==1 then overwriting is prohibited.  If a prior entry with
 ** the same key exists, an SQLITE_CONSTRAINT exception is raised.
 */
-/* Opcode: PutSK P1 P2 *
+/* Opcode: PutStrKey P1 P2 *
 **
 ** Write an entry into the database file P1.  A new entry is
 ** created if it doesn't already exist or the data for an existing

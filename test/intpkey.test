@@ -13,7 +13,7 @@
 # This file implements tests for the special processing associated
 # with INTEGER PRIMARY KEY columns.
 #
-# $Id: intpkey.test,v 1.6 2002/01/16 21:00:28 drh Exp $
+# $Id: intpkey.test,v 1.7 2002/01/29 23:07:02 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -179,6 +179,7 @@ do_test intpkey-2.1.4 {
     SELECT * FROM t1 WHERE b>='y' AND rowid<10
   }
 } {-3 y z}
+
 do_test intpkey-2.2 {
   execsql {
     UPDATE t1 SET a=8 WHERE b=='y';
