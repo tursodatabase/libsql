@@ -1,5 +1,5 @@
-C Fix\sprogress\stest\serror\s1-2\s(CVS\s1115)
-D 2003-10-23T15:27:12
+C Fork\sthe\stree\sfor\sproject\s"shrike"\s(CVS\s1118)
+D 2003-10-30T07:00:00
 F Makefile.in ab585a91e34bc33928a1b6181fa2f6ebd4fb17e1
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -174,7 +174,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P c637caf13f579959ecdb6b134d0114e8efbcac60
+P c3a495026c7eafd576042a05a9a5f585ba8ba9b9
 R 836e4a87e08b64cd5a3c29c6f69b3de9
-U peter
-Z efd6d1a18f32d0e0f9939dc422d205d4
+U drh
+Z de7377f7ee1c2dc37770413072c96044
