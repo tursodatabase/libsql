@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.171 2004/05/11 08:48:11 danielk1977 Exp $
+** $Id: main.c,v 1.172 2004/05/11 09:05:49 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -122,59 +122,6 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **azColName){
   }
   return nErr;
 }
-
-/*
-** This is a callback procedure used to reconstruct a table.  The
-** name of the table to be reconstructed is passed in as argv[0].
-**
-** This routine is used to automatically upgrade a database from
-** format version 1 or 2 to version 3.  The correct operation of
-** this routine relys on the fact that no indices are used when
-** copying a table out to a temporary file.
-**
-** The change from version 2 to version 3 occurred between SQLite
-** version 2.5.6 and 2.6.0 on 2002-July-18.  
-*/
-static
-int upgrade_3_callback(void *pInit, int argc, char **argv, char **NotUsed){
-  InitData *pData = (InitData*)pInit;
-  int rc;
-  Table *pTab;
-  Trigger *pTrig;
-  char *zErr = 0;
-
-  pTab = sqlite3FindTable(pData->db, argv[0], 0);
-  assert( pTab!=0 );
-  assert( sqlite3StrICmp(pTab->zName, argv[0])==0 );
-  if( pTab ){
-    pTrig = pTab->pTrigger;
-    pTab->pTrigger = 0;  /* Disable all triggers before rebuilding the table */
-  }
-  rc = sqlite3_exec_printf(pData->db,
-    "CREATE TEMP TABLE sqlite_x AS SELECT * FROM '%q'; "
-    "DELETE FROM '%q'; "
-    "INSERT INTO '%q' SELECT * FROM sqlite_x; "
-    "DROP TABLE sqlite_x;",
-    0, 0, &zErr, argv[0], argv[0], argv[0]);
-  if( zErr ){
-    if( *pData->pzErrMsg ) sqlite3_freemem(*pData->pzErrMsg);
-    *pData->pzErrMsg = zErr;
-  }
-
-  /* If an error occurred in the SQL above, then the transaction will
-  ** rollback which will delete the internal symbol tables.  This will
-  ** cause the structure that pTab points to be deleted.  In case that
-  ** happened, we need to refetch pTab.
-  */
-  pTab = sqlite3FindTable(pData->db, argv[0], 0);
-  if( pTab ){
-    assert( sqlite3StrICmp(pTab->zName, argv[0])==0 );
-    pTab->pTrigger = pTrig;  /* Re-enable triggers */
-  }
-  return rc!=SQLITE_OK;
-}
-
-
 
 /*
 ** Attempt to read the database schema and initialize internal
