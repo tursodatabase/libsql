@@ -1,5 +1,5 @@
-C Added\sprototypes\sto\ssqlite.h\sfor\ssqlite_freemem(),\ssqlite_libversion()\nand\ssqlite_libencoding().\s(CVS\s424)
-D 2002-03-08T02:12:00
+C Bug\sfix:\supdates\swithin\sa\stransaction\swould\sfail\sif\sthere\swas\sexisted\na\stemporary\stable.\s(CVS\s425)
+D 2002-03-10T21:21:00
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -51,7 +51,7 @@ F src/threadtest.c 81f0598e0f031c1bd506af337fdc1b7e8dff263f
 F src/tokenize.c 4b5d30590a744b9bb5605a92d1f620ab2e7e75af
 F src/update.c 7dd714a6a7fa47f849ebb36b6d915974d6c6accb
 F src/util.c b34cd91387bbfdc79319ea451a7d120cef478120
-F src/vdbe.c ce375b8948fb3b21da50536b7d063a3071b5c982
+F src/vdbe.c 51e99d994da8ade61dcc9a2c1e8f7ab7c6b29d33
 F src/vdbe.h f9be1f6e9a336c3ff4d14ea7489ee976e07460cc
 F src/where.c 34d91fd5d822c2663caeb023f72d60df316ebf29
 F test/all.test 6aa106eee4d7127afa5cee97c51a783a79694ead
@@ -102,8 +102,8 @@ F test/update.test 3cf1ca0565f678063c2dfa9a7948d2d66ae1a778
 F test/vacuum.test 059871b312eb910bbe49dafde1d01490cc2c6bbe
 F test/view.test 4a8a9cf59b54409228c7b9b918ed8bf9bade1220
 F test/where.test 032d581c3de4893eba33b569e581c46b941bb02a
-F tool/lemon.c a26214e008a7351c0c9fc57c5aab44b403c36c42
-F tool/lempar.c 2ff255186fffb38a43a9f7b010e87eee6308edcc
+F tool/lemon.c e6b3d8df512bf6a753dab1b0490dd78e13adb033
+F tool/lempar.c 5c7d2b78bf9326ccea50b5835eb1574e6c51ad71
 F tool/memleak.awk 296dfbce7a9ca499b95ce04e30334e64a50052e0
 F tool/opNames.awk 5ba1f48aa854ee3b7c3d2b54233665bc3e649ea2
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
@@ -130,7 +130,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 0a51323561b7235d46621d9fa25c7111b81c528f
-R 2e2e1c2d75770caa56f9aafcd306e22d
+P 145516c93b1a03231e7d84f7f799a39655d7aa99
+R 6aa24ae4349921bb6f6914f243156bfe
 U drh
-Z 292b53c85ffb3f284a41becff7211dbe
+Z 61ec9c5d0ba02401da95448b5e8eb2b6

@@ -2756,9 +2756,9 @@ int *lineno;
  if( rp->code ){
    fprintf(out,"#line %d \"%s\"\n{",rp->line,lemp->filename);
    for(cp=rp->code; *cp; cp++){
-     if( isalpha(*cp) && (cp==rp->code || !isalnum(cp[-1])) ){
+     if( isalpha(*cp) && (cp==rp->code || (!isalnum(cp[-1]) && cp[-1]!='_')) ){
        char saved;
-       for(xp= &cp[1]; isalnum(*xp); xp++);
+       for(xp= &cp[1]; isalnum(*xp) || *xp=='_'; xp++);
        saved = *xp;
        *xp = 0;
        if( rp->lhsalias && strcmp(cp,rp->lhsalias)==0 ){

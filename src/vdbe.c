@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.133 2002/03/06 22:01:36 drh Exp $
+** $Id: vdbe.c,v 1.134 2002/03/10 21:21:00 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2468,7 +2468,7 @@ case OP_IncrKey: {
 case OP_Checkpoint: {
   rc = sqliteBtreeBeginCkpt(pBt);
   if( rc==SQLITE_OK && db->pBeTemp ){
-     rc = sqliteBtreeBeginCkpt(pBt);
+     rc = sqliteBtreeBeginCkpt(db->pBeTemp);
   }
   break;
 }

@@ -201,9 +201,9 @@ const char *ParseTokenName(int tokenType){
 ** A pointer to a parser.  This pointer is used in subsequent calls
 ** to Parse and ParseFree.
 */
-void *ParseAlloc(void *(*mallocProc)(int)){
+void *ParseAlloc(void *(*mallocProc)(size_t)){
   yyParser *pParser;
-  pParser = (yyParser*)(*mallocProc)( (int)sizeof(yyParser) );
+  pParser = (yyParser*)(*mallocProc)( (size_t)sizeof(yyParser) );
   if( pParser ){
     pParser->idx = -1;
   }
