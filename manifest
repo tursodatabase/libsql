@@ -1,5 +1,5 @@
-C Remove\sthe\ssqlite3_libencoding()\sapi\sand\sthe\sISO8859\sencoding\soption.\s(CVS\s1523)
-D 2004-06-02T00:41:09
+C Work\stoward\scombining\sthe\sOP_MakeKey,\sOP_MakeIdxKey,\sand\sOP_MakeRecord\nopcodes\sinto\sone.\s\sThe\swork\sis\sincomplete.\s(CVS\s1524)
+D 2004-06-02T01:22:02
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -25,7 +25,7 @@ F sqlite.def fc4f5734786fe4743cfe2aa98eb2da4b089edb5f
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F src/attach.c c315c58cb16fd6e913b3bfa6412aedecb4567fa5
 F src/auth.c 5c2f0bea4729c98c2be3b69d6b466fc51448fe79
-F src/btree.c 652efb14a17ba26759f73ca167f7d1e5d6651eb3
+F src/btree.c bf725408c6ac656327b0f5546c7c5d1eb065d181
 F src/btree.h 1e2beb41b4b4a4fc41da67cb4692614938066f2f
 F src/build.c 13985630bf6b3db4c7e7d4c9476bb94495b7d5fa
 F src/date.c 8e6fa3173386fb29fdef012ee08a853c1e9908b2
@@ -55,7 +55,7 @@ F src/printf.c ef750e8e2398ca7e8b58be991075f08c6a7f0e53
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c 0297717eb7331604687c2e29c147d3a311359df1
 F src/shell.c a9e2ad8f6c1d39b04bad61a0ec655e9a3a360b50
-F src/sqlite.h.in 021965a94f5799c8308003cb6e3b01e3b36a8b88
+F src/sqlite.h.in 8236db65bc6d8f5f47dc5a5e86c4a9bce42f2adf
 F src/sqliteInt.h 1aa9f7d5f88d13442d39c1bc9216c73e9b6c5191
 F src/table.c af14284fa36c8d41f6829e3f2819dce07d3e2de2
 F src/tclsqlite.c 3db6b868bd844bfb71720c8e573f4c9b0d536bd5
@@ -70,11 +70,11 @@ F src/update.c 259f06e7b22c684b2d3dda54a18185892d6e9573
 F src/utf.c c8be20ecdcb10659e23c43e35d835460e964d248
 F src/util.c d3d2f62ec94160db3cb2b092267405ba99122152
 F src/vacuum.c c91acc316127411980982938d050b299d42b81ef
-F src/vdbe.c cc754eddc0d2e741e57c4557c77754d8bbd93eeb
+F src/vdbe.c 4ce596ee57b663d4c428bee5c40f51094525acd9
 F src/vdbe.h e73f890e0f2a6c42b183d7d6937947930fe4fdeb
-F src/vdbeInt.h 5d357541db688b21ce05a88b3ea4d9a1fb09f232
+F src/vdbeInt.h f19df2246cf61f4dc27b13c0f9c278a379a935ee
 F src/vdbeapi.c 77d2e681a992ef189032cd9c1b7bf922f01ebe3e
-F src/vdbeaux.c 17b99f8d5fb6ec097e38b793c282ddc8a301a5a3
+F src/vdbeaux.c 5842109cc9fa76bd454305861c5936b370b9458a
 F src/vdbemem.c 5d029d83bc60eaf9c45837fcbc0b03348ec95d7a
 F src/where.c 444a7c3a8b1eb7bba072e489af628555d21d92a4
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
@@ -214,7 +214,7 @@ F www/support.tcl 1801397edd271cc39a2aadd54e701184b5181248
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P c17b864103fe5e6def0f650eadb7b2cc6e87144f
-R f4cae94848dada7ca979780be2518e9d
+P b53640ed2232aaf173a71636073477d80407d11f
+R 65e9a4b0c9422591cc77c047015d1b85
 U drh
-Z 839a132eb4ffa52deddad34237e579b7
+Z f635685494f9f4de060c8aaaeeb301d1

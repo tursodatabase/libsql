@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.154 2004/05/31 10:01:35 danielk1977 Exp $
+** $Id: btree.c,v 1.155 2004/06/02 01:22:02 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1504,6 +1504,7 @@ create_cursor_exception:
   return rc;
 }
 
+#if 0  /* Not Used */
 /*
 ** Change the value of the comparison function used by a cursor.
 */
@@ -1515,6 +1516,7 @@ void sqlite3BtreeSetCompare(
   pCur->xCompare = xCmp ? xCmp : dfltCompare;
   pCur->pArg = pArg;
 }
+#endif
 
 /*
 ** Close a cursor.  The read lock on the database file is released

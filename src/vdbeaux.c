@@ -1323,38 +1323,13 @@ int sqlite3VdbeSerialGet(
 }
 
 /*
-** The following is the comparison function for (non-integer)
-** keys in the btrees.  This function returns negative, zero, or
-** positive if the first key is less than, equal to, or greater than
-** the second.
-**
-** This function assumes that each key consists of one or more type/blob
-** pairs, encoded using the sqlite3VdbeSerialXXX() functions above. 
-**
-** Following the type/blob pairs, each key may have a single 0x00 byte
-** followed by a varint. A key may only have this traling 0x00/varint
-** pair if it has at least as many type/blob pairs as the key it is being
-** compared to.
-*/
-int sqlite3VdbeKeyCompare(
-  void *userData,
-  int nKey1, const void *pKey1, 
-  int nKey2, const void *pKey2
-){
-  return sqlite3VdbeRowCompare(userData,nKey1,pKey1,nKey2,pKey2);
-}
-
-/*
-** This function compares the two table row records specified by 
+** This function compares the two table rows or index records specified by 
 ** {nKey1, pKey1} and {nKey2, pKey2}, returning a negative, zero
 ** or positive integer if {nKey1, pKey1} is less than, equal to or 
-** greater than {nKey2, pKey2}.
-**
-** This function is pretty inefficient and will probably be replaced
-** by something else in the near future. It is currently required
-** by compound SELECT operators. 
+** greater than {nKey2, pKey2}.  Both Key1 and Key2 must be byte strings
+** composed by the OP_MakeRecord opcode of the VDBE.
 */
-int sqlite3VdbeRowCompare(
+int sqlite3VdbeRecordCompare(
   void *userData,
   int nKey1, const void *pKey1, 
   int nKey2, const void *pKey2
@@ -1429,8 +1404,10 @@ int sqlite3VdbeRowCompare(
 }
 
 /*
-** The argument is an index key that contains the ROWID at the end.
-** Return the length of the rowid.
+** The argument is an index entry composed using the OP_MakeRecord opcode.
+** The last entry in this record should be an integer (specifically
+** an integer rowid).  This routine returns the number of bytes in
+** that integer.
 */
 int sqlite3VdbeIdxRowidLen(int nKey, const u8 *aKey){
   u32 szHdr;        /* Size of the header */
@@ -1443,9 +1420,9 @@ int sqlite3VdbeIdxRowidLen(int nKey, const u8 *aKey){
   
 
 /*
-** pCur points at an index entry. Read the rowid (varint occuring at
-** the end of the entry and store it in *rowid. Return SQLITE_OK if
-** everything works, or an error code otherwise.
+** pCur points at an index entry created using the OP_MakeRecord opcode.
+** Read the rowid (the last field in the record) and store it in *rowid.
+** Return SQLITE_OK if everything works, or an error code otherwise.
 */
 int sqlite3VdbeIdxRowid(BtCursor *pCur, i64 *rowid){
   u64 nCellKey;
@@ -1505,7 +1482,7 @@ int sqlite3VdbeIdxKeyCompare(
     return rc;
   }
   lenRowid = sqlite3VdbeIdxRowidLen(m.n, m.z);
-  *res = sqlite3VdbeKeyCompare(pC->pKeyInfo, m.n-lenRowid, m.z, nKey, pKey);
+  *res = sqlite3VdbeRecordCompare(pC->pKeyInfo, m.n-lenRowid, m.z, nKey, pKey);
   if( m.flags & MEM_Dyn ){
     sqliteFree(m.z);
   }

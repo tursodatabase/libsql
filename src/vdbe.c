@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.354 2004/05/31 23:56:43 danielk1977 Exp $
+** $Id: vdbe.c,v 1.355 2004/06/02 01:22:02 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -222,9 +222,8 @@ static Sorter *Merge(Sorter *pLeft, Sorter *pRight, KeyInfo *pKeyInfo){
   pTail = &sHead;
   pTail->pNext = 0;
   while( pLeft && pRight ){
-    int c = sqlite3VdbeKeyCompare(pKeyInfo, pLeft->nKey, pLeft->zKey,
-                                  pRight->nKey, pRight->zKey);
-    /* int c = sqlite3SortCompare(pLeft->zKey, pRight->zKey); */
+    int c = sqlite3VdbeRecordCompare(pKeyInfo, pLeft->nKey, pLeft->zKey,
+                                     pRight->nKey, pRight->zKey);
     if( c<=0 ){
       pTail->pNext = pLeft;
       pLeft = pLeft->pNext;
@@ -2043,25 +2042,53 @@ case OP_Column: {
 **
 ** If P3 is NULL then all index fields have the affinity NONE.
 */
+/* Opcode MakeRecord P1 P2 P3
+**
+** Convert the top abs(P1) entries of the stack into a single entry
+** suitable for use as a data record in a database table or as a key
+** in an index.  The details of the format are irrelavant as long as
+** the OP_Column opcode can decode the record later and as long as the
+** sqlite3VdbeRecordCompare function will correctly compare two encoded
+** records.  Refer to source code comments for the details of the record
+** format.
+**
+** The original stack entries are popped from the stack if P1>0 but
+** remain on the stack if P1<0.
+**
+** If P2 is not zero and one or more of the entries are NULL, then jump
+** to P2.  This feature can be used to skip a uniqueness test on indices.
+**
+** P3 may be a string that is P1 characters long.  The nth character of the
+** string indicates the column affinity that should be used for the nth
+** field of the index key (i.e. the first character of P3 corresponds to the
+** lowest element on the stack).
+**
+**  Character      Column affinity
+**  ------------------------------
+**  'n'            NUMERIC
+**  'i'            INTEGER
+**  't'            TEXT
+**  'o'            NONE
+**
+** If P3 is NULL then all index fields have the affinity NONE.
+*/
 case OP_MakeKey:
 case OP_MakeIdxKey:
 case OP_MakeRecord: {
   /* Assuming the record contains N fields, the record format looks
   ** like this:
   **
-  ** --------------------------------------------------------------------------
-  ** | header-siz | type 0 | type 1 | ... | type N-1 | data0 | ... | data N-1 | 
-  ** --------------------------------------------------------------------------
+  ** ------------------------------------------------------------------------
+  ** | hdr-size | type 0 | type 1 | ... | type N-1 | data0 | ... | data N-1 | 
+  ** ------------------------------------------------------------------------
   **
   ** Data(0) is taken from the lowest element of the stack and data(N-1) is
   ** the top of the stack.
   **
   ** Each type field is a varint representing the serial type of the 
   ** corresponding data element (see sqlite3VdbeSerialType()). The
-  ** num-fields field is also a varint storing N.
-  ** 
-  ** TODO: Even when the record is short enough for Mem::zShort, this opcode
-  **   allocates it dynamically.
+  ** hdr-size field is also a varint which is the offset from the beginning
+  ** of the record to data0.
   */
   int nField = pOp->p1;
   unsigned char *zNewRecord;
@@ -2451,12 +2478,10 @@ case OP_OpenWrite: {
   pCur->nullRow = 1;
   if( pX==0 ) break;
   do{
-    /* When opening cursors, always supply the comparison function
-    ** sqlite3VdbeKeyCompare(). If the table being opened is of type
-    ** INTKEY, the btree layer won't call the comparison function anyway.
-    */
+    /* We always provide a key comparison function.  If the table being
+    ** opened is of type INTKEY, the comparision function will be ignored. */
     rc = sqlite3BtreeCursor(pX, p2, wrFlag,
-             sqlite3VdbeKeyCompare, pOp->p3,
+             sqlite3VdbeRecordCompare, pOp->p3,
              &pCur->pCursor);
     pCur->pKeyInfo = (KeyInfo*)pOp->p3;
     if( pCur->pKeyInfo ){
@@ -2542,7 +2567,7 @@ case OP_OpenTemp: {
       rc = sqlite3BtreeCreateTable(pCx->pBt, &pgno, BTREE_ZERODATA); 
       if( rc==SQLITE_OK ){
         assert( pgno==MASTER_ROOT+1 );
-        rc = sqlite3BtreeCursor(pCx->pBt, pgno, 1, sqlite3VdbeKeyCompare,
+        rc = sqlite3BtreeCursor(pCx->pBt, pgno, 1, sqlite3VdbeRecordCompare,
             pOp->p3, &pCx->pCursor);
         pCx->pKeyInfo = (KeyInfo*)pOp->p3;
         pCx->pKeyInfo->enc = p->db->enc;
@@ -3162,10 +3187,6 @@ case OP_SetCounts: {
 ** off (if P2==0).  In key-as-data mode, the OP_Column opcode pulls
 ** data off of the key rather than the data.  This is used for
 ** processing compound selects.
-**
-** This opcode also instructs the cursor that the keys used will be
-** serialized in the record format usually used for table data, not
-** the usual index key format.
 */
 case OP_KeyAsData: {
   int i = pOp->p1;
@@ -3173,7 +3194,6 @@ case OP_KeyAsData: {
   assert( i>=0 && i<p->nCursor );
   pC = p->apCsr[i];
   pC->keyAsData = pOp->p2;
-  sqlite3BtreeSetCompare(pC->pCursor, sqlite3VdbeRowCompare, pC->pKeyInfo);
   break;
 }
 
