@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.306 2004/05/20 01:12:35 danielk1977 Exp $
+** $Id: vdbe.c,v 1.307 2004/05/20 02:42:17 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -500,6 +500,13 @@ static void applyAffinity(Mem *pRec, char affinity){
   }
 }
 
+/*
+** Move data out of a btree key or data field and into a Mem structure.
+** The data or key is taken from the entry that pCur is currently pointing
+** to.  offset and amt determine what portion of the data or key to retrieve.
+** key is true to get the key or false to get data.  The result is written
+** into the pMem element.
+*/
 static int getBtreeMem(
   BtCursor *pCur,   /* Cursor pointing at record to retrieve. */
   int offset,       /* Offset from the start of data to return bytes from. */
@@ -1972,8 +1979,8 @@ case OP_Column: {
   int nn;
 
   char *zData;       
-  Mem zMem;
-  zMem.flags = 0;
+  Mem sMem;
+  sMem.flags = 0;
 
   assert( i<p->nCursor );
   pTos++;
@@ -2087,11 +2094,11 @@ case OP_Column: {
         max_space = payloadSize;
       }
 
-      rc = getBtreeMem(pCrsr, 0, max_space, pC->keyAsData, &zMem);
+      rc = getBtreeMem(pCrsr, 0, max_space, pC->keyAsData, &sMem);
       if( rc!=SQLITE_OK ){
         goto abort_due_to_error;
       }
-      zData = zMem.z;
+      zData = sMem.z;
     }
 
     /* Read all the serial types for the record.  At the end of this block
@@ -2103,8 +2110,8 @@ case OP_Column: {
     pC->nHeader = offset;
     pC->cacheValid = 1;
 
-    Release(&zMem);
-    zMem.flags = 0;
+    Release(&sMem);
+    sMem.flags = 0;
   }
 
   /* Compute the offset from the beginning of the record to the beginning
@@ -2119,12 +2126,12 @@ case OP_Column: {
     zData = &zRec[offset];
   }else{
     len = sqlite3VdbeSerialTypeLen(pC->aType[p2]);
-    getBtreeMem(pCrsr, offset, len, pC->keyAsData, &zMem);
-    zData = zMem.z;
+    getBtreeMem(pCrsr, offset, len, pC->keyAsData, &sMem);
+    zData = sMem.z;
   }
   sqlite3VdbeSerialGet(zData, pC->aType[p2], pTos);
 
-  Release(&zMem);
+  Release(&sMem);
   break;
 }
 
