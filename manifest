@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sthe\sheader\scomment\sto\sthe\sMakeRecord\sopcode\sso\sthat\sthe\ndocumentation\sgenerator\swill\sactually\ssee\sthe\sopcode\sdescription.\nTicket\s#1001.\s(CVS\s2102)
-D 2004-11-15T23:42:28
+C Allow\sbtree\scursors\sto\spersist\sthrough\sBtreeDelete()\scalls.\s(CVS\s2103)
+D 2004-11-16T04:57:24
 F Makefile.in e747bb5ba34ccbdd81f79dcf1b2b33c02817c21d
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -29,7 +29,7 @@ F sqlite3.def dbaeb20c153e1d366e8f421b55a573f5dfc00863
 F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
 F src/attach.c e49d09dad9f5f9fb10b4b0c1be5a70ae4c45e689
 F src/auth.c 3b81f2a42f48a62c2c9c9b0eda31a157c681edea
-F src/btree.c b0b6238c54302e779aa9cb958c8c6da7cab4a090
+F src/btree.c 967b42616d0dc06d1bc9eb12d0af95252163df01
 F src/btree.h 861e40b759a195ba63819740e484390012cf81ab
 F src/build.c a95eb1181247368b0ffe2eed121a43735976a964
 F src/date.c 65536e7ea04fdde6e0551264fca15966966e171f
@@ -101,7 +101,7 @@ F test/btree4.test 3797b4305694c7af6828675b0f4b1424b8ca30e4
 F test/btree5.test 8e5ff32c02e685d36516c6499add9375fe1377f2
 F test/btree6.test a5ede6bfbbb2ec8b27e62813612c0f28e8f3e027
 F test/btree7.test a6d3b842db22af97dd14b989e90a2fd96066b72f
-F test/btree8.test eee59cfd3a0151adbc7d85e5373f31ae6d4c3061
+F test/btree8.test f0841e71ea311faf3fa04d5c80a75ccb9dc6d2c9
 F test/capi2.test 1ec97bf8896185aec2366c7d07b01edef6ae4b7e
 F test/capi3.test c9b162838cda7f61c6cfefed304b69287f2fc688
 F test/capi3b.test 5b6a66f9f295f79f443b5d3f33187fa5ef6cf336
@@ -258,7 +258,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl fdacb0ba2d39831e8a6240d05a490026ad4c4e4c
-P bb2d9ff881e4c6fe0cf60a13609d39426346fa9d
-R 2be6540265abc47343fc0c7a5238dac8
-U drh
-Z 7898d7d96ac0e92187c4488997a79889
+P 33c9b647aa70d1a9dab0e999daf853aa71d7df37
+R 50b298d755ddcbf483d54572fec74d25
+U danielk1977
+Z 8f5fe953592a6b674b59302a9768154c

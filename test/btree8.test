@@ -9,9 +9,11 @@
 #
 #***********************************************************************
 # This file implements regression tests for SQLite library.  The
-# focus of this script is btree database backend.
+# focus of this script is btree database backend. Specifically,
+# this file tests that existing cursors are correctly repositioned 
+# when entries are inserted into or deleted from btrees.
 #
-# $Id: btree8.test,v 1.1 2004/11/13 13:19:56 danielk1977 Exp $
+# $Id: btree8.test,v 1.2 2004/11/16 04:57:25 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -55,13 +57,12 @@ foreach key $keys {
 }
 btree_commit $::bt
 
-# set btree_trace 1
-
 # Now write more entries to the table (and overwriting the ones that exist).
 # After each write, check that the cursors created above still point to the
 # same entries.
 btree_begin_transaction $::bt
 set ::write_csr [btree_cursor $::bt $::tnum 1]
+set first_entry $testnum
 for {set i $testnum} {$i < 5000 && $nErr==0 } {incr i} {
   set datalen [expr int(rand()*20.0)]
 
@@ -77,9 +78,34 @@ for {set i $testnum} {$i < 5000 && $nErr==0 } {incr i} {
     } $key
   }
 }
+
+# Now delete entries from the table.
+btree_first $::write_csr
+for {set i $first_entry} {$i < 5000 && $nErr==0 } {incr i} {
+
+  do_test btree8-2.$i.1 {
+    btree_key $::write_csr
+  } $i
+  do_test btree8-2.$i.2 {
+    btree_delete $::write_csr
+    btree_next $::write_csr
+    expr 0
+  } {0}
+  set testnum 2
+  foreach csr $csr_list key $keys {
+    incr testnum
+    if {$key <= $i } {
+      set key 0
+    }
+    do_test btree8-2.$i.$testnum {
+      btree_key $::csr
+    } $key
+  }
+}
+
 btree_close_cursor $::write_csr
 btree_commit $::bt
-if {$::nErr>0} { puts $::csr_list }
+if {$::nErr>0} { puts $::csr_list ; exit }
 foreach csr $csr_list {
   btree_close_cursor $csr
 }
@@ -92,6 +118,7 @@ set csr_list [list]
 # [num_to_string 456 10] -> "456.456.45"
 #
 proc num_to_string {num len} {
+  set num [format %.4d $num]
   return [string range [string repeat "$num." $len] 0 [expr $len-1]]
 }
 
@@ -108,7 +135,7 @@ btree_begin_transaction $::bt
 set testnum 0
 foreach key $skeys {
   incr testnum 
-  do_test btree-8-2.$testnum {
+  do_test btree-8-3.$testnum {
     set csr [btree_cursor $::bt $::inum 1]
     btree_insert $csr $key ""
     lappend csr_list $csr
@@ -124,21 +151,73 @@ btree_commit $::bt
 # same entries.
 btree_begin_transaction $::bt
 set ::write_csr [btree_cursor $::bt $::inum 1]
+set first_entry $testnum
 for {set i $testnum} {$i < 5000 && $nErr==0 } {incr i} {
   set skey [num_to_string $i 20]
 
-  do_test btree8-2.$i.1 {
+  do_test btree-8-3.$i.1 {
     btree_insert $::write_csr $skey ""
   } {}
 
   set testnum 1
   foreach csr $csr_list key $skeys {
     incr testnum
-    do_test btree8-2.$i.$testnum {
+    do_test btree-8-3.$i.$testnum {
       btree_key $::csr
     } $key
   }
 }
+btree_commit $::bt
+btree_begin_transaction $::bt
+
+proc lremove {l key} {
+  set idx [lsearch $l $key]
+  return [concat [lrange $l 0 [expr $idx-1]] [lrange $l [expr $idx+1] end]]
+}
+proc K {x y} {set x}
+proc lshuffle { list } {
+    set n [llength $list]
+    while {$n>0} {
+        set j [expr {int(rand()*$n)}]
+        lappend slist [lindex $list $j]
+        set list [lreplace [K $list [set list {}]] $j $j]
+        incr n -1
+    }
+    return $slist
+}
+
+# Now delete entries from the index. Do this in a random order, to try to
+# ensure that internal and external nodes are deleted.
+for {set i $first_entry} {$i < 5000} {incr i} {
+  lappend delete_order $i
+}
+set delete_order [lshuffle $delete_order]
+
+btree_first $::write_csr
+foreach i $delete_order { 
+  do_test btree8-4.$i.1 {
+    btree_move_to $::write_csr [num_to_string $i 20]
+    btree_key $::write_csr
+  } [num_to_string $i 20]
+  do_test btree8-4.$i.2 {
+    btree_delete $::write_csr
+  } {}
+
+  set delete_order [lremove $delete_order $i]
+  set testnum 2
+  foreach csr $csr_list key $keys {
+    incr testnum
+    if { [lsearch $delete_order $key]==-1 } {
+      set skey ""
+    } else {
+      set skey [num_to_string $key 20]
+    }
+    do_test btree8-4.$i.$testnum {
+      btree_key $::csr
+    } $skey
+  }
+}
+
 btree_close_cursor $::write_csr
 btree_commit $::bt
 if {$::nErr>0} { puts $::csr_list }
