@@ -12,7 +12,7 @@
 ** This is the implementation of generic hash-tables
 ** used in SQLite.
 **
-** $Id: hash.c,v 1.13 2004/06/30 03:08:25 drh Exp $
+** $Id: hash.c,v 1.14 2004/06/30 22:43:22 drh Exp $
 */
 #include "sqliteInt.h"
 #include <assert.h>
@@ -20,7 +20,7 @@
 /* Turn bulk memory into a hash table object by initializing the
 ** fields of the Hash structure.
 **
-** "new" is a pointer to the hash table that is to be initialized.
+** "pNew" is a pointer to the hash table that is to be initialized.
 ** keyClass is one of the constants SQLITE_HASH_INT, SQLITE_HASH_POINTER,
 ** SQLITE_HASH_BINARY, or SQLITE_HASH_STRING.  The value of keyClass 
 ** determines what kind of key the hash table will use.  "copyKey" is
@@ -29,16 +29,16 @@
 ** sense for SQLITE_HASH_STRING and SQLITE_HASH_BINARY and is ignored
 ** for other key classes.
 */
-void sqlite3HashInit(Hash *new, int keyClass, int copyKey){
-  assert( new!=0 );
+void sqlite3HashInit(Hash *pNew, int keyClass, int copyKey){
+  assert( pNew!=0 );
   assert( keyClass>=SQLITE_HASH_INT && keyClass<=SQLITE_HASH_BINARY );
-  new->keyClass = keyClass;
-  new->copyKey = copyKey &&
+  pNew->keyClass = keyClass;
+  pNew->copyKey = copyKey &&
                 (keyClass==SQLITE_HASH_STRING || keyClass==SQLITE_HASH_BINARY);
-  new->first = 0;
-  new->count = 0;
-  new->htsize = 0;
-  new->ht = 0;
+  pNew->first = 0;
+  pNew->count = 0;
+  pNew->htsize = 0;
+  pNew->ht = 0;
 }
 
 /* Remove all entries from a hash table.  Reclaim all memory.

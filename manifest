@@ -1,5 +1,5 @@
-C Up\sthe\sversion\snumber\sto\s3.0.2\sand\smake\schanges\sto\sthe\swebsite\sin\npreparation\sfor\sthe\sfirst\sbeta\srelease.\s(CVS\s1786)
-D 2004-06-30T22:35:07
+C Do\snot\suse\s"new"\sas\sa\svariable\sname\s-\ssome\scompilers\sthink\sit\sis\sa\skeyword.\s(CVS\s1787)
+D 2004-06-30T22:43:22
 F Makefile.in f5788bf4daea9b25424df5ccb529ac3438efb2b2
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -34,7 +34,7 @@ F src/delete.c e81545e546f6bc87d7508a93a09ca70695265af3
 F src/encode.c a876af473d1d636faa3dca51c7571f2e007eea37
 F src/expr.c d8ee92a9c11113a013f7853acb55453a8e0b2e92
 F src/func.c 5a15cfb0f1d9e5abbd42407205d5d6e2b0c09fb2
-F src/hash.c 148e3512f1b4e90f8477f852c70b36a137b116a7
+F src/hash.c f0a2f22c2a7052d67053b5f4690ea3010bb3fb9f
 F src/hash.h 762d95f1e567664d1eafc1687de755626be962fb
 F src/insert.c d99ffe87e1e1397f4233afcd06841d52d6b17b18
 F src/legacy.c ad23746f15f67e34577621b1875f639c94839e1f
@@ -233,7 +233,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 48b31540db5f0212a7e37e4833b760615afe13a3
-R 57e00a64fec64b6bc856aec68b6407c7
+P 0b73b7a074896f45573e612992d08a22124fc485
+R f5f234e6d9fc32a1acebf966d8937fb9
 U drh
-Z 8f392c5cdced73fd13140c2e9f0d5003
+Z 3f1e35c1e38b1c2c127038249b9a806d
