@@ -1,5 +1,5 @@
-C Minor\sfixes\srelated\sto\sthe\stests\sin\smisuse.test\s(CVS\s1738)
-D 2004-06-26T09:50:12
+C Fix\serror\smessage\sreturned\swhen\sa\sdatabase\scannot\sbe\sopened.\s(CVS\s1739)
+D 2004-06-26T10:02:16
 F Makefile.in cb7a9889c38723f72b2506c4236ff30a05ff172b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -38,7 +38,7 @@ F src/hash.c 440c2f8cb373ee1b4e13a0988489c7cd95d55b6f
 F src/hash.h 762d95f1e567664d1eafc1687de755626be962fb
 F src/insert.c d99ffe87e1e1397f4233afcd06841d52d6b17b18
 F src/legacy.c ad23746f15f67e34577621b1875f639c94839e1f
-F src/main.c 7551892fd677fac1ddb1429f70bf53d7e01eeb93
+F src/main.c 37b6d15942b6d7b69b92686b32d6bae9d41a3e9b
 F src/md5.c 7ae1c39044b95de2f62e066f47bb1deb880a1070
 F src/os.h d1780e0db95cad01f213d48da22ab490eb4fd345
 F src/os_common.h ba1b7306e16e2091718f2c48db0fe6c1d7a31bb8
@@ -229,7 +229,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 4e20720984e1fd6822ead785d758374d2704b7fb
-R 49b5250eaaec471bbc6b3f93826e25f5
+P 0af3ff39422e02afdfdaf2005ab5eb01b496dc72
+R 74fc53b1d0ec565dfae6b2c9c8d55906
 U danielk1977
-Z 797c0e00173b158ed66a18d7f85e63d1
+Z 2a622ffd85c9a9c2ded97785e4e9ce71

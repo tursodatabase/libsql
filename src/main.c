@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.235 2004/06/26 09:50:12 danielk1977 Exp $
+** $Id: main.c,v 1.236 2004/06/26 10:02:16 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -844,7 +844,10 @@ const char *sqlite3_errmsg(sqlite3 *db){
     */
     return sqlite3ErrStr(SQLITE_NOMEM);
   }
-  if( db->magic!=SQLITE_MAGIC_OPEN && db->magic!=SQLITE_MAGIC_BUSY ){
+  if( db->magic!=SQLITE_MAGIC_OPEN && 
+      db->magic!=SQLITE_MAGIC_BUSY &&
+      db->magic!=SQLITE_MAGIC_CLOSED 
+  ){
     return sqlite3ErrStr(SQLITE_MISUSE);
   }
   if( !sqlite3_value_text(db->pErr) ){
