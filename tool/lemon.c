@@ -12,13 +12,6 @@
 #include <ctype.h>
 #include <stdlib.h>
 
-extern void qsort();
-extern double strtod();
-extern long strtol();
-extern void free();
-extern int access();
-extern int atoi();
-
 #ifndef __WIN32__
 #   if defined(_WIN32) || defined(WIN32)
 #	define __WIN32__
@@ -40,7 +33,6 @@ extern void *malloc();
 /******** From the file "action.h" *************************************/
 struct action *Action_new();
 struct action *Action_sort();
-void Action_add();
 
 /********* From the file "assert.h" ************************************/
 void myassert();
@@ -374,7 +366,7 @@ struct action *ap2;
 struct action *Action_sort(ap)
 struct action *ap;
 {
-  ap = (struct action *)msort(ap,&ap->next,actioncmp);
+  ap = (struct action *)msort((char *)ap,(char **)&ap->next,actioncmp);
   return ap;
 }
 
@@ -811,7 +803,7 @@ struct state *stp;     /* The state from which successors are computed */
 
     /* The state "newstp" is reached from the state "stp" by a shift action
     ** on the symbol "sp" */
-    Action_add(&stp->ap,SHIFT,sp,newstp);
+    Action_add(&stp->ap,SHIFT,sp,(char *)newstp);
   }
 }
 
@@ -912,7 +904,7 @@ struct lemon *lemp;
           if( SetFind(cfp->fws,j) ){
             /* Add a reduce action to the state "stp" which will reduce by the
             ** rule "cfp->rp" if the lookahead symbol is "lemp->symbols[j]" */
-            Action_add(&stp->ap,REDUCE,lemp->symbols[j],cfp->rp);
+            Action_add(&stp->ap,REDUCE,lemp->symbols[j],(char *)cfp->rp);
           }
 	}
       }
@@ -1188,14 +1180,14 @@ struct lemon *lemp;
 
 /* Sort the configuration list */
 void Configlist_sort(){
-  current = (struct config *)msort(current,&(current->next),Configcmp);
+  current = (struct config *)msort((char *)current,(char **)&(current->next),Configcmp);
   currentend = 0;
   return;
 }
 
 /* Sort the basis configuration list */
 void Configlist_sortbasis(){
-  basis = (struct config *)msort(current,&(current->bp),Configcmp);
+  basis = (struct config *)msort((char *)current,(char **)&(current->bp),Configcmp);
   basisend = 0;
   return;
 }
@@ -1447,6 +1439,7 @@ char **argv;
     fprintf(stderr,"%d parsing conflicts.\n",lem.nconflict);
   }
   exit(lem.errorcnt + lem.nconflict);
+  return (lem.errorcnt + lem.nconflict);
 }
 /******************** From the file "msort.c" *******************************/
 /*
