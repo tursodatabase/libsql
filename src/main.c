@@ -26,7 +26,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.26 2001/04/05 15:57:13 drh Exp $
+** $Id: main.c,v 1.27 2001/04/06 16:13:43 drh Exp $
 */
 #include "sqliteInt.h"
 #include <unistd.h>
@@ -195,9 +195,9 @@ const char sqlite_version[] = SQLITE_VERSION;
 ** following global constant always lets us know.
 */
 #ifdef SQLITE_UTF8
-char sqlite_encoding[] = "UTF-8";
+const char sqlite_encoding[] = "UTF-8";
 #else
-char sqlite_encoding[] = "iso8859";
+const char sqlite_encoding[] = "iso8859";
 #endif
 
 /*

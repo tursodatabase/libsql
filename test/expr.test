@@ -23,7 +23,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing expressions.
 #
-# $Id: expr.test,v 1.12 2001/04/05 15:57:14 drh Exp $
+# $Id: expr.test,v 1.13 2001/04/06 16:13:43 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -162,7 +162,7 @@ test_expr expr-5.12 {t1='abc', t2='ABC'} {t1 NOT LIKE t2} 0
 # The following tests only work on versions of TCL that support
 # Unicode and SQLite configured for UTF-8 support.
 #
-if {"\u1234"!="u1234" && $::sqlite_encoding=="UTF-8"} {
+if {"\u1234"!="u1234" && [sqlite -encoding]=="UTF-8"} {
   test_expr expr-5.13 "t1='a\u0080c', t2='A_C'" {t1 LIKE t2} 1
   test_expr expr-5.14 "t1='a\u07FFc', t2='A_C'" {t1 LIKE t2} 1
   test_expr expr-5.15 "t1='a\u0800c', t2='A_C'" {t1 LIKE t2} 1
@@ -179,7 +179,7 @@ if {"\u1234"!="u1234" && $::sqlite_encoding=="UTF-8"} {
 
 # Theses tests are for when SQLite assumes iso8859 characters.
 #
-if {$::sqlite_encoding=="iso8859"} {
+if {[sqlite -encoding]=="iso8859"} {
   catch {encoding system iso8859-1}
   test_expr expr-5.50 "t1='a\266c', t2='A_C'"  {t1 LIKE t2} 1
   test_expr expr-5.51 "t1='a\347', t2='A_'"  {t1 LIKE t2} 1
@@ -215,7 +215,7 @@ test_expr expr-6.25 {t1='ac', t2='a*?c'} {t1 GLOB t2} 0
 
 # These tests only work on versions of TCL that support Unicode
 #
-if {"\u1234"!="u1234" && $::sqlite_encoding=="UTF-8"} {
+if {"\u1234"!="u1234" && [sqlite -encoding]=="UTF-8"} {
   test_expr expr-6.26 "t1='a\u0080c', t2='a?c'" {t1 GLOB t2} 1
   test_expr expr-6.27 "t1='a\u07ffc', t2='a?c'" {t1 GLOB t2} 1
   test_expr expr-6.28 "t1='a\u0800c', t2='a?c'" {t1 GLOB t2} 1
@@ -236,7 +236,7 @@ if {"\u1234"!="u1234" && $::sqlite_encoding=="UTF-8"} {
 
 # Theses tests are for when SQLite assumes iso8859 characters.
 #
-if {$::sqlite_encoding=="iso8859"} {
+if {[sqlite -encoding]=="iso8859"} {
   catch {encoding system iso8859-1}
   test_expr expr-6.50 "t1='a\266c', t2='a?c'" {t1 GLOB t2} 1
   test_expr expr-6.51 "t1='a\266', t2='a?'" {t1 GLOB t2} 1

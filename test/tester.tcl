@@ -23,7 +23,34 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.13 2001/04/04 11:48:58 drh Exp $
+# $Id: tester.tcl,v 1.14 2001/04/06 16:13:43 drh Exp $
+
+# Make sure tclsqlite was compiled correctly.  Abort now with an
+# error message if not.
+#
+if {[sqlite -tcl-uses-utf]} {
+  if {"\u1234"=="u1234"} {
+    puts stderr "***** BUILD PROBLEM *****"
+    puts stderr "$argv0 was linked against an older version"
+    puts stderr "of TCL that does not support Unicode, but uses a header"
+    puts stderr "file (\"tcl.h\") from a new TCL version that does support"
+    puts stderr "Unicode.  This combination causes internal errors."
+    puts stderr "Recompile using a TCL library and header file that match"
+    puts stderr "and try again.\n**************************"
+    exit 1
+  }
+} else {
+  if {"\u1234"!="u1234"} {
+    puts stderr "***** BUILD PROBLEM *****"
+    puts stderr "$argv0 was linked against an newer version"
+    puts stderr "of TCL that supports Unicode, but uses a header file"
+    puts stderr "(\"tcl.h\") from a old TCL version that does not support"
+    puts stderr "Unicode.  This combination causes internal errors."
+    puts stderr "Recompile using a TCL library and header file that match"
+    puts stderr "and try again.\n**************************"
+    exit 1
+  }
+}
 
 # Create a test database
 #

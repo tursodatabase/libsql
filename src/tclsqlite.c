@@ -23,7 +23,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.15 2001/04/05 15:57:13 drh Exp $
+** $Id: tclsqlite.c,v 1.16 2001/04/06 16:13:43 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -385,11 +385,38 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
 **
 ** The second argument is the name of the directory that contains
 ** the sqlite database that is to be accessed.
+**
+** For testing purposes, we also support the following:
+**
+**  sqlite -encoding
+**
+**       Return the encoding used by LIKE and GLOB operators.  Choices
+**       are UTF-8 and iso8859.
+**
+**  sqlite -tcl-uses-utf
+**
+**       Return "1" if compiled with a Tcl uses UTF-8.  Return "0" if
+**       not.  Used by tests to make sure the library was compiled 
+**       correctly.
 */
 static int DbMain(void *cd, Tcl_Interp *interp, int argc, char **argv){
   int mode;
   SqliteDb *p;
   char *zErrMsg;
+  if( argc==2 ){
+    if( strcmp(argv[1],"-encoding")==0 ){
+      Tcl_AppendResult(interp,sqlite_encoding,0);
+      return TCL_OK;
+    }
+    if( strcmp(argv[1],"-tcl-uses-utf")==0 ){
+#ifdef TCL_UTF_MAX
+      Tcl_AppendResult(interp,"1",0);
+#else
+      Tcl_AppendResult(interp,"0",0);
+#endif
+      return TCL_OK;
+    }
+  }
   if( argc!=3 && argc!=4 ){
     Tcl_AppendResult(interp,"wrong # args: should be \"", argv[0],
        " HANDLE FILENAME ?MODE?\"", 0);
@@ -429,7 +456,6 @@ static int DbMain(void *cd, Tcl_Interp *interp, int argc, char **argv){
 */
 int Sqlite_Init(Tcl_Interp *interp){
   Tcl_CreateCommand(interp, "sqlite", DbMain, 0, 0);
-  Tcl_SetVar(interp,"sqlite_encoding",sqlite_encoding,TCL_GLOBAL_ONLY);
   Tcl_PkgProvide(interp, "sqlite", "1.0");
   return TCL_OK;
 }

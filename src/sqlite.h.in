@@ -24,7 +24,7 @@
 ** This header file defines the interface that the sqlite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.11 2001/04/05 15:57:13 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.12 2001/04/06 16:13:43 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -55,7 +55,7 @@ extern const char sqlite_version[];
 ** see.  The character encoding makes a difference for the LIKE and GLOB
 ** operators and for the LENGTH() and SUBSTR() functions.
 */
-extern char sqlite_encoding[];
+extern const char sqlite_encoding[];
 
 /*
 ** Each open sqlite database is represented by an instance of the
