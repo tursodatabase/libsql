@@ -1,9 +1,9 @@
-C Added\sthe\sdefault_cache_size\sand\sdefault_synchronous\spragmas.\s\sAdded\sadditional\ntests\sfor\spragmas.\s\sAdded\sa\snew\sspeedtest\sscript.\s(CVS\s421)
-D 2002-03-06T22:01:35
+C Beta\s2\s(CVS\s422)
+D 2002-03-06T22:04:21
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
-F VERSION bb1eea85a80e8034130db85d6c0857abe42c9460
+F VERSION 4bed6a4fd03c5b6580757d22549c836e7cf6211a
 F aclocal.m4 11faa843caa38fd451bc6aeb43e248d1723a269d
 F config.guess f38b1e93d1e0fa6f5a6913e9e7b12774b9232588
 F config.log 6a73d03433669b10a3f0c221198c3f26b9413914
@@ -130,7 +130,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P b7a7dae919be0e4c35b1fe8cb24fa7359a4b1200
-R 4ed5325a3b84cb330db6f062fc9a97e7
+P 161c0c5f5db66815e4345c9b5f7a600c03a67475
+R 3e03ae5c01680d33425f0072c8b68c25
 U drh
-Z 34b0d04d29e433a78df2f11cc397e416
+Z 96d5d728f7e04cc6a1fbcba0b35bb16e
