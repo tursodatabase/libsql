@@ -1,5 +1,5 @@
-C Change\sthe\sMEMORY_DEBUG\smacro\sto\sSQLITE_DEBUG.\s(CVS\s1546)
-D 2004-06-09T14:01:51
+C Add\sthe\s"lock_status"\spragma\s-\sonly\savailable\swhen\sSQLITE_DEBUG\sis\sdefined.\nUsed\sfor\stesting\sonly.\s(CVS\s1547)
+D 2004-06-09T14:17:21
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -47,10 +47,10 @@ F src/os_unix.c 3747274f2712e95f605c0ec66df5ad26e3711e82
 F src/os_unix.h 7999f2246c6347707e98f7078871ea8ca605df3f
 F src/os_win.c a13b85a0d4889e3d0b254ed2a61354acddc59fc4
 F src/os_win.h 004eec47b1780fcaf07420ddc2072294b698d48c
-F src/pager.c 3fddd1e5b3e449b19e4f762ab1f1d10786d56d28
-F src/pager.h 0c7b5ac45c69e690c45d160d03bdc8fbd2d4657b
+F src/pager.c c483bef234b89531f9fdf6067231d248260d762b
+F src/pager.h 3576e5f1a0719f74df3082df73f7b39890b06654
 F src/parse.y 097438674976355a10cf177bd97326c548820b86
-F src/pragma.c d63b011bf860cec032b7da90b56643d189602ee5
+F src/pragma.c 3251628662963f30a95133b19d59e4bc08226c76
 F src/printf.c 63b15f1ea9fe3daa066bb7430fd20d4a2d717dc8
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c 1f8355e702f109f6771f82a9bfe7aac4c82cbaf2
@@ -218,7 +218,7 @@ F www/support.tcl 1801397edd271cc39a2aadd54e701184b5181248
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P beab038c71eecbabb1351b0c98a71f32ea013285
-R 4fb29233149257f0d3747b745eb94817
+P 428b685b7174ef4589176def1028ad1c9461ff7e
+R b811ffa94f6a9084cf35549f784cc75b
 U drh
-Z 903dfd3a43373a03e2e446ce02ca114d
+Z 897e459988003c5f46676db9047d5c51

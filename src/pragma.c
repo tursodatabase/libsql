@@ -11,10 +11,15 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.39 2004/06/09 12:30:06 danielk1977 Exp $
+** $Id: pragma.c,v 1.40 2004/06/09 14:17:21 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
+
+#ifdef SQLITE_DEBUG
+# include "pager.h"
+# include "btree.h"
+#endif
 
 /*
 ** Interpret the given string as a boolean value.
@@ -807,6 +812,37 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       }
     }
   }else
+
+#ifdef SQLITE_DEBUG
+  /*
+  ** Report the current state of file logs for all databases
+  */
+  if( sqlite3StrICmp(zLeft, "lock_status")==0 ){
+    static char *azLockName[] = {
+      "unlocked", "shared", "reserved", "pending", "exclusive"
+    };
+    int i;
+    Vdbe *v = sqlite3GetVdbe(pParse);
+    sqlite3VdbeSetNumCols(v, 2);
+    sqlite3VdbeSetColName(v, 0, "database", P3_STATIC);
+    sqlite3VdbeSetColName(v, 1, "status", P3_STATIC);
+    for(i=0; i<db->nDb; i++){
+      Btree *pBt;
+      Pager *pPager;
+      if( db->aDb[i].zName==0 ) continue;
+      sqlite3VdbeOp3(v, OP_String, 0, 0, db->aDb[i].zName, P3_STATIC);
+      pBt = db->aDb[i].pBt;
+      if( pBt==0 || (pPager = sqlite3BtreePager(pBt))==0 ){
+        sqlite3VdbeOp3(v, OP_String, 0, 0, "closed", P3_STATIC);
+      }else{
+        int j = sqlite3pager_lockstate(pPager);
+        sqlite3VdbeOp3(v, OP_String, 0, 0, 
+            (j>=0 && j<=4) ? azLockName[j] : "unknown", P3_STATIC);
+      }
+      sqlite3VdbeAddOp(v, OP_Callback, 2, 0);
+    }
+  }else
+#endif
 
   {}
   sqliteFree(zLeft);

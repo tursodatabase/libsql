@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.113 2004/06/07 16:27:46 drh Exp $
+** @(#) $Id: pager.c,v 1.114 2004/06/09 14:17:21 drh Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -2704,6 +2704,17 @@ int sqlite3pager_sync(Pager *pPager, const char *zMaster){
 sync_exit:
   return rc;
 }
+
+#ifdef SQLITE_DEBUG
+/*
+** Return the current state of the file lock for the given pager.
+** The return value is one of NO_LOCK, SHARED_LOCK, RESERVED_LOCK,
+** PENDING_LOCK, or EXCLUSIVE_LOCK.
+*/
+int sqlite3pager_lockstate(Pager *pPager){
+  return pPager->fd.locktype;
+}
+#endif
 
 #ifdef SQLITE_TEST
 /*
