@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.71 2004/07/18 20:52:32 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.72 2004/09/08 13:06:21 drh Exp $}
 source common.tcl
 header {Query Language Understood by SQLite}
 puts {
@@ -183,8 +183,7 @@ ROLLBACK [TRANSACTION [<name>]]
 
 puts {
 <p>Beginning in version 2.0, SQLite supports transactions with
-rollback and atomic commit.  See <a href="#attach">ATTACH</a> for
-an exception when there are attached databases.</p>
+rollback and atomic commit.</p>
 
 <p>The optional transaction name is ignored. SQLite currently 
 does not allow nested transactions.</p>
@@ -261,6 +260,9 @@ puts {
 <p>The COPY command is available in SQLite version 2.8 and earlier.
 The COPY command has been removed from SQLite version 3.0 due to
 complications in trying to support it in a mixed UTF-8/16 environment.
+In version 3.0, the <a href="sqlite.html">command-line shell</a>
+contains a new command <b>.import</b> that can be used as a substitute
+for COPY.
 </p>
 
 <p>The COPY command is an extension used to load large amounts of
@@ -389,10 +391,10 @@ for use by the engine.</p>
 
 <p>Each column definition is the name of the column followed by the
 datatype for that column, then one or more optional column constraints.
-SQLite is <a href="datatypes.html">typeless</a>.
 The datatype for the column does not restrict what data may be put
 in that column.
-All information is stored as null-terminated strings.
+See <a href="datatype3.html">Datatypes In SQLite Version 3</a> for
+additional information.
 The UNIQUE constraint causes an index to be created on the specified
 columns.  This index must contain unique keys.
 The DEFAULT constraint
@@ -448,8 +450,9 @@ work.</p>
 <p>There are no arbitrary limits on the number
 of columns or on the number of constraints in a table.
 The total amount of data in a single row is limited to about
-1 megabytes.  (This limit can be increased to 16MB by changing
-a single #define in the source code and recompiling.)</p>
+1 megabytes in version 2.8.  In version 3.0 there is no arbitrary
+limit on the amount of data in a row.</p>
+
 
 <p>The CREATE TABLE AS form defines the table to be
 the result set of a query.  The names of the table columns are
@@ -704,7 +707,8 @@ DROP INDEX [<database-name> .] <index-name>
 }
 
 puts {
-<p>The DROP INDEX statement removes an index added with the <a href="#createindex">
+<p>The DROP INDEX statement removes an index added
+with the <a href="#createindex">
 CREATE INDEX</a> statement.  The index named is completely removed from
 the disk.  The only way to recover the index is to reenter the
 appropriate CREATE INDEX command.  Non-temporary indexes on tables in 
@@ -921,7 +925,7 @@ their result across all rows of the result set.</p>
 
 <p>The functions shown below are available by default.  Additional
 functions may be written in C and added to the database engine using
-the <a href="c_interface.html#cfunc">sqlite_create_function()</a>
+the <a href="capi3ref.html#cfunc">sqlite3_create_function()</a>
 API.</p>
 
 <table border=0 cellpadding=10>
@@ -941,8 +945,8 @@ all arguments are NULL then NULL is returned.  There must be at least
 <a name="globFunc"></a>
 <td valign="top" align="right">glob(<i>X</i>,<i>Y</i>)</td>
 <td valign="top">This function is used to implement the
-"<b>Y GLOB X</b>" syntax of SQLite.  The
-<a href="c_interface.html#cfunc">sqlite_create_function()</a> 
+"<b>X GLOB Y</b>" syntax of SQLite.  The
+<a href="capi3ref.html#sqlite3_create_function">sqlite3_create_function()</a> 
 interface can
 be used to override this function and thereby change the operation
 of the <a href="#glob">GLOB</a> operator.</td>
@@ -973,8 +977,8 @@ characters is returned, not the number of bytes.</td>
 <a name="likeFunc"></a>
 <td valign="top" align="right">like(<i>X</i>,<i>Y</i>)</td>
 <td valign="top">This function is used to implement the
-"<b>Y LIKE X</b>" syntax of SQL.  The
-<a href="c_interface.html#cfunc">sqlite_create_function()</a> 
+"<b>X LIKE Y</b>" syntax of SQL.  The
+<a href="capi3ref.html#sqlite3_create_function">sqlite_create_function()</a> 
 interface can
 be used to override this function and thereby change the operation
 of the <a href="#like">LIKE</a> operator.</td>
@@ -1010,6 +1014,17 @@ only a single argument.</td>
 <td valign="top" align="right">nullif(<i>X</i>,<i>Y</i>)</td>
 <td valign="top">Return the first argument if the arguments are different, 
 otherwise return NULL.</td>
+</tr>
+
+<tr>
+<td valign="top" align="right">quote(<i>X</i>)</td>
+<td valign="top">This routine returns a string which is the value of
+its argument suitable for inclusion into another SQL statement.
+Strings are surrounded by single-quotes with escapes on interior quotes
+as needed.  BLOBs are encoded as hexadecimal literals.
+The current implementation of VACUUM uses this function.  The function
+is also useful when writing triggers to implement undo/redo functionality.
+</td>
 </tr>
 
 <tr>
@@ -1053,8 +1068,9 @@ then characters indices refer to actual UTF-8 characters, not bytes.</td>
 <tr>
 <td valign="top" align="right">typeof(<i>X</i>)</td>
 <td valign="top">Return the type of the expression <i>X</i>.  The only 
-return values are "numeric" and "text".  SQLite's type handling is 
-explained in <a href="datatypes.html">Datatypes in SQLite</a>.</td>
+return values are "null", "integer", "real", "text", and "blob".
+SQLite's type handling is 
+explained in <a href="datatype3.html">Datatypes in SQLite Version 3</a>.</td>
 </tr>
 
 <tr>
@@ -1069,7 +1085,8 @@ UTF-8 strings.</td>
 <p>
 The following aggregate functions are available by default.  Additional
 aggregate functions written in C may be added using the 
-<a href="c_interface.html#cfunc">sqlite_create_aggregate()</a> API.</p>
+<a href="capi3ref.html#sqlite3_create_function">sqlite3_create_function()</a>
+API.</p>
 
 <table border=0 cellpadding=10>
 <tr>
@@ -1270,8 +1287,10 @@ is returned it is as an integer.</p>
 <li><p><b>PRAGMA default_cache_size;
        <br>PRAGMA default_cache_size = </b><i>Number-of-pages</i><b>;</b></p>
     <p>Query or change the maximum number of database disk pages that SQLite
-    will hold in memory at once.  Each page uses 1K on disk and about 1.5K in memory.
-    This pragma works like the <a href="#pragma_cache_size"><b>cache_size</b></a> 
+    will hold in memory at once.  Each page uses 1K on disk and about
+    1.5K in memory.
+    This pragma works like the
+    <a href="#pragma_cache_size"><b>cache_size</b></a> 
     pragma with the additional
     feature that it changes the cache size persistently.  With this pragma,
     you can set the cache size once and that setting is retained and reused
@@ -1308,7 +1327,9 @@ is returned it is as an integer.</p>
     <p>This pragma changes the synchronous mode persistently.  Once changed,
     the mode stays as set even if the database is closed and reopened.  The
     <a href="#pragma_synchronous"><b>synchronous</b></a> pragma does the same 
-    thing but only applies the setting to the current session.</p></li>
+    thing but only applies the setting to the current session.
+    
+    </p></li>
 
 <a name="pragma_default_temp_store"></a>
 <li><p><b>PRAGMA default_temp_store;

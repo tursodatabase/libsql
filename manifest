@@ -1,5 +1,5 @@
-C Wildcards\swith\sthe\ssame\sname\smap\sinto\sthe\ssame\svariable\snumber.\s\sNew\napi\ssqlite3_bind_parameter_index()\sadded\sto\smap\swildcard\snames\sinto\nwildcard\sindex\snumbers.\s\sSupport\sfor\s"?nnn"\swildcards.\s(CVS\s1945)
-D 2004-09-07T16:19:53
+C Documentation\supdates.\s(CVS\s1946)
+D 2004-09-08T13:06:21
 F Makefile.in 65a7c43fcaf9a710d62f120b11b6e435eeb4a450
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -210,9 +210,9 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.gif f845a64772062e82d17980a349f95f1f0b4c8054
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
-F www/arch.tcl b833057e89aeb43335c0bf84a3d5b7f9d11df6fa
+F www/arch.tcl 126611ffd57e0dfac28d71ab04d7a78697ab4b80
 F www/arch2.fig ae2432145c26cfa148fa0116589517ad3cd5fc65
-F www/arch2.gif 49c6bb36160f03ca2b89eaa5bfb1f560c7d68ee7
+F www/arch2.gif 6f2d47c4e0c5842c0d6b5513fd8249393d7c7003
 F www/arch2b.fig d22a2c9642d584b89d4088b1e51e2bb0f7c04bed
 F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
 F www/c_interface.tcl 83b39203e1ded4c2dab97f42edf31279a308efcb
@@ -233,7 +233,7 @@ F www/faq.tcl 3a1776818d9bd973ab0c3048ec7ad6b1ad091ae5
 F www/fileformat.tcl f71a06a0d533c7df408539c64113b4adeaf29764
 F www/formatchng.tcl d1dfecedfb25e122ab513a1e0948b15cb4f0be46
 F www/index.tcl 618733d540dcf28226cc8eb00816f0baaa03064d
-F www/lang.tcl b2ba401104a76e7842469b33a968f5eda9bd462b
+F www/lang.tcl 604683def6e987db1703faf580d9b2150905fda1
 F www/lockingv3.tcl afcd22f0f063989cff2f4d57bbc38d719b4c6e75
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
 F www/nulls.tcl ede975a29def48838c606d4a0c0185d44f90a789
@@ -248,7 +248,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P f323e4f86a08fe6448cbd4ff7cab459e8039d9f1
-R b14b673cf74913bc0aa77288120014ba
+P 435b3f301fbb6953adc974c7f03589b06e9114c3
+R e9ed3557bbf8633eb729c636ad21e3fd
 U drh
-Z abec07c7d353cf60af4ed426f1ba4bbf
+Z d578a3410535617a4415c71c00fd3edf
