@@ -566,7 +566,7 @@ int sqlite3VdbeList(
       p->rc = SQLITE_INTERRUPT;
     }
     rc = SQLITE_ERROR;
-    sqlite3SetString(&p->zErrMsg, sqlite3_error_string(p->rc), (char*)0);
+    sqlite3SetString(&p->zErrMsg, sqlite3ErrStr(p->rc), (char*)0);
   }else{
     Op *pOp = &p->aOp[i];
     Mem *pMem = p->aStack;
@@ -935,7 +935,7 @@ int sqlite3VdbeReset(Vdbe *p, char **pzErrMsg){
   int needXcommit = 0;
 
   if( p->magic!=VDBE_MAGIC_RUN && p->magic!=VDBE_MAGIC_HALT ){
-    sqlite3SetString(pzErrMsg, sqlite3_error_string(SQLITE_MISUSE), (char*)0);
+    sqlite3SetString(pzErrMsg, sqlite3ErrStr(SQLITE_MISUSE), (char*)0);
     sqlite3Error(p->db, SQLITE_MISUSE, 0 ,0);
     db->activeVdbeCnt--;
     return SQLITE_MISUSE;
@@ -949,7 +949,7 @@ int sqlite3VdbeReset(Vdbe *p, char **pzErrMsg){
     }
     p->zErrMsg = 0;
   }else if( p->rc ){
-    sqlite3SetString(pzErrMsg, sqlite3_error_string(p->rc), (char*)0);
+    sqlite3SetString(pzErrMsg, sqlite3ErrStr(p->rc), (char*)0);
     sqlite3Error(p->db, p->rc, 0);
   }else{
     sqlite3Error(p->db, SQLITE_OK, 0);
@@ -1042,9 +1042,9 @@ int sqlite3VdbeFinalize(Vdbe *p, char **pzErrMsg){
   sqlite *db;
 
   if( p->magic!=VDBE_MAGIC_RUN && p->magic!=VDBE_MAGIC_HALT ){
-    sqlite3SetString(pzErrMsg, sqlite3_error_string(SQLITE_MISUSE), (char*)0);
+    sqlite3SetString(pzErrMsg, sqlite3ErrStr(SQLITE_MISUSE), (char*)0);
     if( p->magic==VDBE_MAGIC_INIT ){
-      sqlite3Error(p->db, SQLITE_MISUSE, sqlite3_error_string(SQLITE_MISUSE),0);
+      sqlite3Error(p->db, SQLITE_MISUSE, 0);
     }
     return SQLITE_MISUSE;
   }

@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.100 2004/05/31 19:34:33 drh Exp $
+** $Id: shell.c,v 1.101 2004/05/31 23:56:43 danielk1977 Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -1063,7 +1063,7 @@ static void process_input(struct callback_data *p, FILE *in){
           sqlite3_free(zErrMsg);
           zErrMsg = 0;
         }else{
-          printf("SQL error: %s\n", sqlite3_error_string(rc));
+          printf("SQL error: %s\n", sqlite3ErrStr(rc));
         }
       }
       free(zSql);

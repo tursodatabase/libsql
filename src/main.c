@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.200 2004/05/31 19:34:33 drh Exp $
+** $Id: main.c,v 1.201 2004/05/31 23:56:43 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -212,7 +212,7 @@ static int sqlite3InitOne(sqlite *db, int iDb, char **pzErrMsg){
   if( db->aDb[iDb].pBt==0 ) return SQLITE_OK;
   rc = sqlite3BtreeCursor(db->aDb[iDb].pBt, MASTER_ROOT, 0, 0, 0, &curMain);
   if( rc!=SQLITE_OK && rc!=SQLITE_EMPTY ){
-    sqlite3SetString(pzErrMsg, sqlite3_error_string(rc), (char*)0);
+    sqlite3SetString(pzErrMsg, sqlite3ErrStr(rc), (char*)0);
     return rc;
   }
 
@@ -239,7 +239,7 @@ static int sqlite3InitOne(sqlite *db, int iDb, char **pzErrMsg){
       rc = sqlite3BtreeGetMeta(db->aDb[iDb].pBt, i+1, &meta[i]);
     }
     if( rc ){
-      sqlite3SetString(pzErrMsg, sqlite3_error_string(rc), (char*)0);
+      sqlite3SetString(pzErrMsg, sqlite3ErrStr(rc), (char*)0);
       sqlite3BtreeCloseCursor(curMain);
       return rc;
     }
@@ -493,7 +493,7 @@ void sqlite3RollbackAll(sqlite *db){
 ** Return a static string that describes the kind of error specified in the
 ** argument.
 */
-const char *sqlite3_error_string(int rc){
+const char *sqlite3ErrStr(int rc){
   const char *z;
   switch( rc ){
     case SQLITE_OK:         z = "not an error";                          break;
@@ -789,12 +789,12 @@ const char *sqlite3_errmsg(sqlite3 *db){
     /* If db is NULL, then assume that a malloc() failed during an
     ** sqlite3_open() call.
     */
-    return sqlite3_error_string(SQLITE_NOMEM);
+    return sqlite3ErrStr(SQLITE_NOMEM);
   }
   if( db->zErrMsg ){
     return db->zErrMsg;
   }
-  return sqlite3_error_string(db->errCode);
+  return sqlite3ErrStr(db->errCode);
 }
 
 /*

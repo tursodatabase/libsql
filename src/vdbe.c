@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.353 2004/05/31 18:51:58 drh Exp $
+** $Id: vdbe.c,v 1.354 2004/05/31 23:56:43 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2271,7 +2271,7 @@ case OP_Transaction: {
           p->pTos = pTos;
           return SQLITE_BUSY;
         }else if( (*db->xBusyCallback)(db->pBusyArg, "", busy++)==0 ){
-          sqlite3SetString(&p->zErrMsg, sqlite3_error_string(rc), (char*)0);
+          sqlite3SetString(&p->zErrMsg, sqlite3ErrStr(rc), (char*)0);
           busy = 0;
         }
         break;
@@ -2473,7 +2473,7 @@ case OP_OpenWrite: {
           p->pTos = &pTos[1 + (pOp->p2<=0)]; /* Operands must remain on stack */
           return SQLITE_BUSY;
         }else if( (*db->xBusyCallback)(db->pBusyArg, pOp->p3, ++busy)==0 ){
-          sqlite3SetString(&p->zErrMsg, sqlite3_error_string(rc), (char*)0);
+          sqlite3SetString(&p->zErrMsg, sqlite3ErrStr(rc), (char*)0);
           busy = 0;
         }
         break;
@@ -4527,7 +4527,7 @@ abort_due_to_misuse:
 abort_due_to_error:
   if( p->zErrMsg==0 ){
     if( sqlite3_malloc_failed ) rc = SQLITE_NOMEM;
-    sqlite3SetString(&p->zErrMsg, sqlite3_error_string(rc), (char*)0);
+    sqlite3SetString(&p->zErrMsg, sqlite3ErrStr(rc), (char*)0);
   }
   goto vdbe_halt;
 
@@ -4542,6 +4542,6 @@ abort_due_to_interrupt:
   }else{
     rc = SQLITE_INTERRUPT;
   }
-  sqlite3SetString(&p->zErrMsg, sqlite3_error_string(rc), (char*)0);
+  sqlite3SetString(&p->zErrMsg, sqlite3ErrStr(rc), (char*)0);
   goto vdbe_halt;
 }

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.265 2004/05/31 18:51:58 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.266 2004/05/31 23:56:43 danielk1977 Exp $
 */
 #include "config.h"
 #include "sqlite3.h"
@@ -1357,3 +1357,4 @@ int sqlite3utfTranslate(const void *, int , u8 , void **, int *, u8);
 u8 sqlite3UtfReadBom(const void *zData, int nData);
 void *sqlite3HexToBlob(const char *z);
 int sqlite3TwoPartName(Parse *, Token *, Token *, Token **);
+const char *sqlite3ErrStr(int);
