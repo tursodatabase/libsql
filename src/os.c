@@ -580,20 +580,6 @@ int sqliteOsFileSize(OsFile *id, int *pSize){
 }
 
 /*
-** Return the process ID for the current process.  This
-** only works under Unix.  Under windows, a constant is returned.
-*/
-int sqliteOsProcessId(void){
-#if OS_UNIX
-  return getpid();
-#endif
-#if OS_WIN
-  return 1;
-#endif
-}
-
-
-/*
 ** Change the status of the lock on the file "id" to be a readlock.
 ** If the file was write locked, then this reduces the lock to a read.
 ** If the file was read locked, then this acquires a new read lock.

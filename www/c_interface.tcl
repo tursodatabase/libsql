@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: c_interface.tcl,v 1.32 2002/07/30 17:42:10 drh Exp $}
+set rcsid {$Id: c_interface.tcl,v 1.33 2002/08/02 10:36:10 drh Exp $}
 
 puts {<html>
 <head>
@@ -301,9 +301,6 @@ is used incorrectly.  Examples of incorrect usage include calling
 <b>sqlite_exec()</b> after the database has been closed using
 <b>sqlite_close()</b> or calling <b>sqlite_exec()</b> with the same
 database pointer simultaneously from two separate threads.
-This error code will also be returned under Unix if <b>sqlite_exec()</b>
-is called while a transaction is pending that was started in another
-process or thread that has a different process ID.  
 </p></dd>
 </dl>
 </blockquote>
@@ -816,14 +813,6 @@ different that this you will have to recompile.
 Under Unix, an <b>sqlite*</b> pointer should not be carried across a
 <b>fork()</b> system call into the child process.  The child process
 should open its own copy of the database after the <b>fork()</b>.
-</p>
-
-<p>
-When using LinuxThreads (where each thread has its own process ID)
-it is illegal to start a transaction in one thread and then attempt
-to read or write the database from a different thread.  This
-restriction does not apply to Posix threads where all threads share
-the same process ID.
 </p>
 
 <h2>Usage Examples</h2>

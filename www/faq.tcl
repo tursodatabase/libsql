@@ -1,7 +1,7 @@
 #
 # Run this script to generated a faq.html output file
 #
-set rcsid {$Id: faq.tcl,v 1.12 2002/07/30 17:42:10 drh Exp $}
+set rcsid {$Id: faq.tcl,v 1.13 2002/08/02 10:36:10 drh Exp $}
 
 puts {<html>
 <head>
@@ -234,9 +234,7 @@ faq {
 
   <p>Under UNIX, you should not carry an open SQLite database across
   a fork() system call into the child process.  Problems will result
-  if you do.  Under LinuxThreads, because each thread has its own
-  process ID, you may not start a transaction in one thread and attempt
-  to complete it in another.</p>
+  if you do.</p>
 }
 
 faq {
