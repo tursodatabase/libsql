@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test3.c,v 1.24 2004/05/04 17:27:28 drh Exp $
+** $Id: test3.c,v 1.25 2004/05/07 02:26:28 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -626,7 +626,7 @@ static int btree_delete(
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[1], (int*)&pCur) ) return TCL_ERROR;
-  rc = sqliteBtreeDelete(pCur);
+  rc = sqlite3BtreeDelete(pCur);
   if( rc ){
     Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;
@@ -655,7 +655,7 @@ static int btree_insert(
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[1], (int*)&pCur) ) return TCL_ERROR;
-  rc = sqliteBtreeInsert(pCur, argv[2], strlen(argv[2]),
+  rc = sqlite3BtreeInsert(pCur, argv[2], strlen(argv[2]),
                          argv[3], strlen(argv[3]));
   if( rc ){
     Tcl_AppendResult(interp, errorName(rc), 0);
@@ -688,7 +688,7 @@ static int btree_next(
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[1], (int*)&pCur) ) return TCL_ERROR;
-  rc = sqliteBtreeNext(pCur, &res);
+  rc = sqlite3BtreeNext(pCur, &res);
   if( rc ){
     Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;
@@ -722,7 +722,7 @@ static int btree_prev(
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[1], (int*)&pCur) ) return TCL_ERROR;
-  rc = sqliteBtreePrevious(pCur, &res);
+  rc = sqlite3BtreePrevious(pCur, &res);
   if( rc ){
     Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;
@@ -755,7 +755,7 @@ static int btree_first(
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[1], (int*)&pCur) ) return TCL_ERROR;
-  rc = sqliteBtreeFirst(pCur, &res);
+  rc = sqlite3BtreeFirst(pCur, &res);
   if( rc ){
     Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;
@@ -788,12 +788,42 @@ static int btree_last(
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[1], (int*)&pCur) ) return TCL_ERROR;
-  rc = sqliteBtreeLast(pCur, &res);
+  rc = sqlite3BtreeLast(pCur, &res);
   if( rc ){
     Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;
   }
   sprintf(zBuf,"%d",res);
+  Tcl_AppendResult(interp, zBuf, 0);
+  return SQLITE_OK;
+}
+
+/*
+** Usage:   btree_keysize ID
+**
+** Return the number of bytes of key.  
+*/
+static int btree_keysize(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  const char **argv      /* Text of each argument */
+){
+  BtCursor *pCur;
+  int rc;
+  u64 n64;
+  u32 n;
+  char zBuf[50];
+
+  if( argc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+       " ID\"", 0);
+    return TCL_ERROR;
+  }
+  if( Tcl_GetInt(interp, argv[1], (int*)&pCur) ) return TCL_ERROR;
+  sqlite3BtreeKeySize(pCur, &n64);
+  n = (u32)n64
+  sprintf(zBuf, "%u", n);
   Tcl_AppendResult(interp, zBuf, 0);
   return SQLITE_OK;
 }
@@ -811,7 +841,7 @@ static int btree_key(
 ){
   BtCursor *pCur;
   int rc;
-  int n;
+  u64 n;
   char *zBuf;
 
   if( argc!=2 ){
@@ -820,7 +850,7 @@ static int btree_key(
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[1], (int*)&pCur) ) return TCL_ERROR;
-  sqliteBtreeKeySize(pCur, &n);
+  sqlite3BtreeKeySize(pCur, &n);
   zBuf = malloc( n+1 );
   rc = sqliteBtreeKey(pCur, 0, n, zBuf);
   if( rc!=n ){
@@ -860,7 +890,7 @@ static int btree_data(
   if( Tcl_GetInt(interp, argv[1], (int*)&pCur) ) return TCL_ERROR;
   sqliteBtreeDataSize(pCur, &n);
   zBuf = malloc( n+1 );
-  rc = sqliteBtreeData(pCur, 0, n, zBuf);
+  rc = sqlite3BtreeData(pCur, 0, n, zBuf);
   if( rc!=n ){
     char zMsg[100];
     free(zBuf);
@@ -886,7 +916,8 @@ static int btree_payload_size(
   const char **argv      /* Text of each argument */
 ){
   BtCursor *pCur;
-  int n1, n2;
+  int n2;
+  u32 n1;
   char zBuf[50];
 
   if( argc!=2 ){
@@ -895,8 +926,8 @@ static int btree_payload_size(
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[1], (int*)&pCur) ) return TCL_ERROR;
-  sqliteBtreeKeySize(pCur, &n1);
-  sqliteBtreeDataSize(pCur, &n2);
+  sqlite3BtreeKeySize(pCur, &n1);
+  sqlite3BtreeDataSize(pCur, &n2);
   sprintf(zBuf, "%d", n1+n2);
   Tcl_AppendResult(interp, zBuf, 0);
   return SQLITE_OK;
@@ -935,7 +966,7 @@ static int btree_cursor_dump(
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[1], (int*)&pCur) ) return TCL_ERROR;
-  rc = sqliteBtreeCursorDump(pCur, aResult);
+  rc = sqlite3BtreeCursorDump(pCur, aResult);
   if( rc ){
     Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;
@@ -992,8 +1023,6 @@ int Sqlitetest3_Init(Tcl_Interp *interp){
     Tcl_CreateCommand(interp, aCmd[i].zName, aCmd[i].xProc, 0, 0);
   }
   Tcl_LinkVar(interp, "pager_refinfo_enable", (char*)&pager_refinfo_enable,
-     TCL_LINK_INT);
-  Tcl_LinkVar(interp, "btree_native_byte_order",(char*)&btree_native_byte_order,
      TCL_LINK_INT);
   return TCL_OK;
 }
