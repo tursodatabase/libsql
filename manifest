@@ -1,5 +1,5 @@
-C Fix\sfor\sticket\s#111:\sUpdate\sthe\sdocumentation\sto\sexplain\sthat\syou\smay\snot\r\nstart\sa\stransaction\sin\sone\sthread\sand\scomplete\sit\sin\sanother\sthread\sunder\r\nLinux\sThreads\swhere\seach\sthread\shas\sits\sown\sprocess\sID.\s(CVS\s695)
-D 2002-07-30T17:42:10
+C Fix\sfor\sticket\s#114:\sCorrectly\shandle\sSQLITE_BUSY\sif\sit\soccurs\sduring\ndatabase\sinitialization.\s(CVS\s696)
+D 2002-07-30T18:43:41
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -28,7 +28,7 @@ F src/func.c e45cd908b9b723d9b91473d09e12c23f786b3fc2
 F src/hash.c 6a6236b89c8c060c65dabd300a1c8ce7c10edb72
 F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
 F src/insert.c 9bc794863ea2988a7b8667ef010b3c46b26dba38
-F src/main.c d759cb3ed9c4e1f12c392425f47fa15691260039
+F src/main.c 4a9b0bae947bc276093f3eb4202ad2f3904da422
 F src/md5.c 0ae1f3e2cac92d06fc6246d1b4b8f61a2fe66d3b
 F src/os.c edb22daad525f49681f41c76683a16c1d39755c7
 F src/os.h 5b9a69875c880d1665ae040cbca1f7b9c82198ab
@@ -77,7 +77,7 @@ F test/lock.test f1b55dc61632e99d241643cc8e7c03774f09f623
 F test/main.test c66b564554b770ee7fdbf6a66c0cd90329bc2c85
 F test/malloc.test 7ba32a9ebd3aeed52ae4aaa6d42ca37e444536fd
 F test/minmax.test 29bc5727c3e4c792d5c4745833dd4b505905819e
-F test/misc1.test 13584dda012d7d10b5163c2cecd60ab25496b987
+F test/misc1.test eb47435bb2d9417f72afdb673d1883b9d783cf6b
 F test/misuse.test a3aa2b18a97e4c409a1fcaff5151a4dd804a0162
 F test/notnull.test b1f3e42fc475b0b5827b27b2e9b562081995ff30
 F test/null.test 5c2b57307e4b6178aae825eb65ddbee01e76b0fd
@@ -142,7 +142,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P be1315755ef801b5ec07f469134e0d33a3ece990
-R a079c5e56f534c0ce7676afdebb45812
+P 0b0c0492cc1e55c1c4feba6e92765ea09896096c
+R a473164afc293bc42dd2cac7939e21de
 U drh
-Z 60f9e91154609c6dea4c51f07544d2bf
+Z 4386be0810f97b9bb5d92a2b7f47c244

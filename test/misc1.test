@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc1.test,v 1.10 2002/06/28 01:02:39 drh Exp $
+# $Id: misc1.test,v 1.11 2002/07/30 18:43:42 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -300,5 +300,21 @@ do_test misc1-10.9 {
 do_test misc1-10.10 {
   execsql {SELECT x1 FROM manycol WHERE x0=100}
 } {102}
+
+# Make sure the initialization works even if a database is opened while
+# another process has the database locked.
+#
+do_test misc1-11.1 {
+  execsql {BEGIN}
+  sqlite db2 test.db
+  set rc [catch {db2 eval {SELECT count(*) FROM t1}} msg]
+  lappend rc $msg
+} {1 {database is locked}}
+do_test misc1-11.2 {
+  execsql {COMMIT}
+  set rc [catch {db2 eval {SELECT count(*) FROM t1}} msg]
+  db2 close
+  lappend rc $msg
+} {0 3}
 
 finish_test
