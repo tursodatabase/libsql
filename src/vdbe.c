@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.106 2002/01/14 09:28:20 drh Exp $
+** $Id: vdbe.c,v 1.107 2002/01/16 21:00:27 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2731,6 +2731,13 @@ case OP_NewRecno: {
     ** never cause a problem.  You are much, much more likely to have a
     ** hardware failure than for this algorithm to fail.
     **
+    ** The analysis in the previous paragraph assumes that you have a good
+    ** source of random numbers.  Is a library function like lrand48()
+    ** good enough?  Maybe. Maybe not. It's hard to know whether there
+    ** might be subtle bugs is some implementations of lrand48() that
+    ** could cause problems. To avoid uncertainty, SQLite uses its own 
+    ** random number generator based on the RC4 algorithm.
+    **
     ** To promote locality of reference for repetitive inserts, the
     ** first few attempts at chosing a rowid pick values just a little
     ** larger than the previous rowid.  This has been shown experimentally
@@ -2790,6 +2797,7 @@ case OP_Put: {
       nKey = sizeof(int);
       iKey = intToKey(aStack[nos].i);
       zKey = (char*)&iKey;
+      db->lastRowid = aStack[nos].i;
     }
     if( pOp->p2 ){
       int res;

@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.5 2001/11/08 00:45:21 drh Exp $
+** $Id: test1.c,v 1.6 2002/01/16 21:00:27 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -148,6 +148,31 @@ static int test_get_table_printf(
   sqlite_free_table(aResult);
   if( zErr ) free(zErr);
   return TCL_OK;
+}
+
+
+/*
+** Usage:  sqlite_last_insert_rowid DB
+**
+** Returns the integer ROWID of the most recent insert.
+*/
+static int test_last_rowid(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  sqlite *db;
+  char zBuf[30];
+
+  if( argc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " DB\"", 0);
+    return TCL_ERROR;
+  }
+  db = (sqlite*)atoi(argv[1]);
+  sprintf(zBuf, "%d", sqlite_last_insert_rowid(db));
+  Tcl_AppendResult(interp, zBuf, 0);
+  return SQLITE_OK;
 }
 
 /*
@@ -308,6 +333,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
   Tcl_CreateCommand(interp, "sqlite_mprintf_str", sqlite_mprintf_str, 0, 0);
   Tcl_CreateCommand(interp, "sqlite_mprintf_double", sqlite_mprintf_double,0,0);
   Tcl_CreateCommand(interp, "sqlite_open", sqlite_test_open, 0, 0);
+  Tcl_CreateCommand(interp, "sqlite_last_insert_rowid", test_last_rowid, 0, 0);
   Tcl_CreateCommand(interp, "sqlite_exec_printf", test_exec_printf, 0, 0);
   Tcl_CreateCommand(interp, "sqlite_get_table_printf", test_get_table_printf,
       0, 0);

@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the tclsqlite.html file.
 #
-set rcsid {$Id: tclsqlite.tcl,v 1.5 2001/11/24 13:23:05 drh Exp $}
+set rcsid {$Id: tclsqlite.tcl,v 1.6 2002/01/16 21:00:28 drh Exp $}
 
 puts {<html>
 <head>
@@ -50,7 +50,7 @@ the database is stored.
 
 <p>
 Once an SQLite database is open, it can be controlled using 
-methods of the <i>dbcmd</i>.  There are currently 5 methods
+methods of the <i>dbcmd</i>.  There are currently 6 methods
 defined:</p>
 
 <p>
@@ -59,6 +59,7 @@ defined:</p>
 <li> close
 <li> complete
 <li> eval
+<li> last_insert_rowid
 <li> timeout
 </ul>
 </p>
@@ -241,6 +242,11 @@ callback will do some other useful work for a short while then return
 so that the lock can be tried again.  The callback procedure should
 return "0" if it wants SQLite to try again to open the database and
 should return "1" if it wants SQLite to abandon the current operation.
+
+<h2>The "last_insert_rowid" method</h2>
+
+<p>The "last_insert_rowid" method returns an integer which is the ROWID
+of the most recently inserted database row.</p>
 
 }
 

@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.24 2001/12/22 14:49:25 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.25 2002/01/16 21:00:27 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -161,6 +161,17 @@ int sqlite_exec(
 #define SQLITE_TOOBIG      18   /* Too much data for one row of a table */
 #define SQLITE_CONSTRAINT  19   /* Abort due to contraint violation */
 #define SQLITE_MISMATCH    20   /* Data type mismatch */
+
+/*
+** Each entry in an SQLite table has a unique integer key.  (The key is
+** the value of the INTEGER PRIMARY KEY column if there is such a column,
+** otherwise the key is generated at random.  The unique key is always
+** available as the ROWID, OID, or _ROWID_ column.)  The following routine
+** returns the integer key of the most recent insert in the database.
+**
+** This function is similar to the mysql_insert_id() function from MySQL.
+*/
+int sqlite_last_insert_rowid(sqlite*);
 
 /* If the parameter to this routine is one of the return value constants
 ** defined above, then this routine returns a constant text string which

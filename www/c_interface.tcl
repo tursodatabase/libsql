@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: c_interface.tcl,v 1.22 2001/12/22 19:27:41 drh Exp $}
+set rcsid {$Id: c_interface.tcl,v 1.23 2002/01/16 21:00:28 drh Exp $}
 
 puts {<html>
 <head>
@@ -305,6 +305,8 @@ useful interfaces.  These extended routines are as follows:
 </p>
 
 <blockquote><pre>
+int sqlite_last_insert_rowid(sqlite*);
+
 int sqlite_get_table(
   sqlite*,
   char *sql,
@@ -370,6 +372,22 @@ int sqlite_get_table_vprintf(
 
 <p>All of the above definitions are included in the "sqlite.h"
 header file that comes in the source tree.</p>
+
+<h2>The ROWID of the most recent insert</h2>
+
+<p>Every row of an SQLite table has a unique integer key.  If the
+table has a column labeled INTEGER PRIMARY KEY, then that column
+servers as the key.  If there is no INTEGER PRIMARY KEY column then
+the key is a random integer.  The key for a row can be accessed in
+a SELECT statement or used in a WHERE or ORDER BY clause using any
+of the names "ROWID", "OID", or "_ROWID_".</p>
+
+<p>When you do an insert into a table that does not have an INTEGER PRIMARY
+KEY column, or if the table does have an INTEGER PRIMARY KEY but the value
+for that column is not specified in the VALUES clause of the insert, then
+the key is automatically generated.  You can find the value of the key
+for the most recent INSERT statement using the
+<b>sqlite_last_insert_rowid()</b> API function.</p>
 
 <h2>Querying without using a callback function</h2>
 

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.76 2002/01/09 03:20:00 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.77 2002/01/16 21:00:27 drh Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -181,6 +181,7 @@ struct sqlite {
   Hash idxHash;                 /* All (named) indices indexed by name */
   Hash tblDrop;                 /* Uncommitted DROP TABLEs */
   Hash idxDrop;                 /* Uncommitted DROP INDEXs */
+  int lastRowid;                /* ROWID of most recent insert */
   int nextRowid;                /* Next generated rowID */
 };
 

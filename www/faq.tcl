@@ -1,7 +1,7 @@
 #
 # Run this script to generated a faq.html output file
 #
-set rcsid {$Id: faq.tcl,v 1.5 2001/12/22 19:27:41 drh Exp $}
+set rcsid {$Id: faq.tcl,v 1.6 2002/01/16 21:00:28 drh Exp $}
 
 puts {<html>
 <head>
@@ -81,6 +81,11 @@ SELECT * FROM ex1;
   the case and you cannot count on that behavior.  The keys will never
   be sequential.  If you need sequential keys, use the counter implemention
   described first.</p>
+
+  <p>Beginning with version 2.2.3, there is a new API function named
+  <b>sqlite_last_insert_rowid()</b> which will return the integer key
+  for the most recent insert operation.  See the API documentation for
+  details.</p>
 }
 
 faq {

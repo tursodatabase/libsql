@@ -17,10 +17,11 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
-chng {2002 Jan 14 (2.2.3)} {
+chng {2002 Jan 16 (2.2.3)} {
 <li>Fix warning messages in VC++ 7.0.  (Patches from nicolas352001)</li>
 <li>Make the library thread-safe.  (The code is there and appears to work
     but has not been stressed.)</li>
+<li>Added the new <b>sqlite_last_insert_rowid()</b> API function.</li>
 }
 
 chng {2002 Jan 13 (2.2.2)} {

@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.55 2002/01/10 14:31:49 drh Exp $
+** $Id: main.c,v 1.56 2002/01/16 21:00:27 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -356,6 +356,13 @@ static void clearHashTable(sqlite *db, int preserveTemps){
   }
   sqliteHashClear(&temp1);
   db->flags &= ~SQLITE_Initialized;
+}
+
+/*
+** Return the ROWID of the most recent insert
+*/
+int sqlite_last_insert_rowid(sqlite *db){
+  return db->lastRowid;
 }
 
 /*
