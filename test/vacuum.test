@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the VACUUM statement.
 #
-# $Id: vacuum.test,v 1.10 2003/04/25 13:28:03 drh Exp $
+# $Id: vacuum.test,v 1.11 2003/08/15 13:24:53 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -120,6 +120,18 @@ do_test vacuum-2.4 {
   cksum db2
 } $cksum
 
+# Ticket #427.  Make sure VACUUM works when the EMPTY_RESULT_CALLBACKS
+# pragma is turned on.
+#
+do_test vacuum-3.1 {
+  db close
+  file delete test.db
+  sqlite db test.db
+  execsql {
+    PRAGMA empty_result_callbacks=on;
+    VACUUM;
+  }
+} {}
 
 catch {db2 close}
 
