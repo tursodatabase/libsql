@@ -86,7 +86,7 @@
     HANDLE h;               /* Handle for accessing the file */
     int locked;             /* 0: unlocked, <0: write lock, >0: read lock */
   };
-# ifdef _MSC_VER
+# if defined(_MSC_VER) || defined(__BORLANDC__)
     typedef __int64 off_t;
 # else
     typedef long long off_t;
