@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.1 2003/04/06 21:08:24 drh Exp $
+** $Id: pragma.c,v 1.2 2003/04/13 18:26:51 paul Exp $
 */
 #include "sqliteInt.h"
 
@@ -62,6 +62,21 @@ static int getSafetyLevel(char *z){
     if( sqliteStrICmp(z,aKey[i].zWord)==0 ) return aKey[i].val;
   }
   return 1;
+}
+
+/*
+** Interpret the given string as a temp db location. Return 1 for file
+** backed temporary databases, 2 for the Red-Black tree in memory database
+** and 0 to use the compile-time default.
+*/
+static int getTmpdbLocation(char *z){
+    if (sqliteStrICmp(z, "file") == 0) {
+	return 1;
+    } else if (sqliteStrICmp(z, "memory") == 0) {
+	return 2;
+    } else {
+	return 0;
+    }
 }
 
 /*
@@ -421,6 +436,62 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       sqliteVdbeAddOp(v, OP_String, 0, 0);
       sqliteVdbeChangeP3(v, -1, db->aDb[i].zName, P3_STATIC);
       sqliteVdbeAddOp(v, OP_Callback, 2, 0);
+    }
+  }else
+  /*
+  **   PRAGMA tmpdb_location
+  **   PRAGMA tmpdb_location= DEFAULT|MEMORY|FILE
+  **
+  ** Return or set the local value of the tmpdb_location flag.  Changing
+  ** the local value does not make changes to the disk file and the default
+  ** value will be restored the next time the database is opened.
+  **
+  ** Note that it is possible for the library compile-time options to
+  ** override this setting
+  */
+  if( sqliteStrICmp(zLeft, "tmpdb_location")==0 ){
+    static VdbeOp getTmpDbLoc[] = {
+      { OP_ColumnName,  0, 0,        "tmpdb_location"},
+      { OP_Callback,    1, 0,        0},
+    };
+    if( pRight->z==pLeft->z ){
+      sqliteVdbeAddOp(v, OP_Integer, db->tmpdb_loc, 0);
+      sqliteVdbeAddOpList(v, ArraySize(getTmpDbLoc), getTmpDbLoc);
+    }else{
+      if (&db->aDb[1].pBt != 0) {
+	sqliteErrorMsg(pParse, "The temporary database already exists, its location cannot now be changed");
+      } else {
+	db->tmpdb_loc = getTmpdbLocation(zRight);
+      }
+    }
+  }else
+  /*
+  **   PRAGMA default_tmpdb_location
+  **   PRAGMA default_tmpdb_location= DEFAULT|MEMORY|FILE
+  **
+  ** Return or set the value of the persistent tmpdb_location flag (as
+  ** well as the value currently in force).
+  **
+  ** Note that it is possible for the library compile-time options to
+  ** override this setting
+  */
+  if( sqliteStrICmp(zLeft, "default_tmpdb_location")==0 ){
+    static VdbeOp getTmpDbLoc[] = {
+      { OP_ColumnName,  0, 0,        "tmpdb_location"},
+      { OP_ReadCookie,  0, 5,        0},
+      { OP_Callback,    1, 0,        0}};
+    if( pRight->z==pLeft->z ){
+      sqliteVdbeAddOpList(v, ArraySize(getTmpDbLoc), getTmpDbLoc);
+    }else{
+      if (&db->aDb[1].pBt != 0) {
+	sqliteErrorMsg(pParse, "The temporary database already exists, its location cannot now be changed");
+      } else {
+	sqliteBeginWriteOperation(pParse, 0, 0);
+	db->tmpdb_loc = getTmpdbLocation(zRight);
+	sqliteVdbeAddOp(v, OP_Integer, db->tmpdb_loc, 0);
+	sqliteVdbeAddOp(v, OP_SetCookie, 0, 5);
+	sqliteEndWriteOperation(pParse);
+      }
     }
   }else
 

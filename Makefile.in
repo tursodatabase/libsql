@@ -57,6 +57,17 @@ LIBREADLINE = @TARGET_READLINE_LIBS@
 # ENCODING  = ISO8859
 ENCODING = @ENCODING@
 
+# Flags controlling use of the in memory btree implementation
+# INCOREDB says whether to build btree_rb.c
+# TEMPDBINCORE controls the default placement of temporary databases.
+# ALLOWATTACHMEM controls whether ATTACH DATABASE ':memory:' is supported
+INCOREDB = @INCOREDB@
+TEMPDBINCORE = @TEMPDBINCORE@
+ALLOWATTACHMEM = @ALLOWATTACHMEM@
+
+INCOREFLAGS = -DINCOREDB=${INCOREDB} -DTEMPDBINCORE=${TEMPDBINCORE} 
+INCOREFLAGS += -DALLOWATTACHMEM=${ALLOWATTACHMEM}
+
 # You should not have to change anything below this line
 ###############################################################################
 
@@ -68,6 +79,10 @@ LIBOBJ = attach.lo auth.lo btree.lo build.lo copy.lo \
          printf.lo random.lo select.lo table.lo tokenize.lo \
          update.lo util.lo vacuum.lo vdbe.lo \
          where.lo trigger.lo
+
+ifeq (${INCOREDB},1)
+LIBOBJ += btree_rb.lo
+endif
 
 # All of the source code files.
 #
@@ -177,11 +192,14 @@ lemon:	$(TOP)/tool/lemon.c $(TOP)/tool/lempar.c
 btree.lo:	$(TOP)/src/btree.c $(HDR) $(TOP)/src/pager.h
 	$(LIBTOOL) $(TCC) -c $(TOP)/src/btree.c
 
+btree_rb.lo:	$(TOP)/src/btree_rb.c $(HDR)
+	$(LIBTOOL) $(TCC) -c $(TOP)/src/btree_rb.c
+
 build.lo:	$(TOP)/src/build.c $(HDR)
 	$(LIBTOOL) $(TCC) -c $(TOP)/src/build.c
 
 main.lo:	$(TOP)/src/main.c $(HDR)
-	$(LIBTOOL) $(TCC) -c $(TOP)/src/main.c
+	$(LIBTOOL) $(TCC) -c ${INCOREFLAGS} $(TOP)/src/main.c
 
 pager.lo:	$(TOP)/src/pager.c $(HDR) $(TOP)/src/pager.h
 	$(LIBTOOL) $(TCC) -c $(TOP)/src/pager.c

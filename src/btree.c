@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.87 2003/04/06 20:44:45 drh Exp $
+** $Id: btree.c,v 1.88 2003/04/13 18:26:51 paul Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -49,7 +49,11 @@
 ** BTree begins on page 2 of the file.  (Pages are numbered beginning with
 ** 1, not 0.)  Thus a minimum database contains 2 pages.
 */
-/* We don't want the btree function macros */
+
+/* We don't want the btree function macros as they clash with the functions
+** defined in this file. This may be fixed in future by renaming the macros
+** or the functions defined here, or both.
+*/
 #define SQLITE_NO_BTREE_DEFS
 
 #include "sqliteInt.h"

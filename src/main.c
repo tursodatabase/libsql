@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.121 2003/04/05 03:42:27 drh Exp $
+** $Id: main.c,v 1.122 2003/04/13 18:26:51 paul Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1054,4 +1054,48 @@ void *sqlite_commit_hook(
   db->xCommitCallback = xCallback;
   db->pCommitArg = pArg;
   return pOld;
+}
+
+/*
+** This routine is called when sqlite wants to open a btree.  zFilename is
+** either the name of a btree file or the magic name ":memory:" which opens an
+** in-memory btree or ":temp:" which opens a temporary btree. This may either
+** be in memory or backed by a temporary file depending on run-time settings.
+*/
+int sqliteBtreeFactory(
+  const sqlite *db,	    /* Main database when opening aux otherwise 0 */
+  const char *zFilename,    /* Name of the file containing the BTree database */
+  int omitJournal,          /* if TRUE then do not journal this file */
+  int nCache,               /* How many pages in the page cache */
+  Btree **ppBtree){         /* Pointer to new Btree object written here */
+
+  assert( zFilename != 0 );
+  assert( ppBtree != 0);
+
+  if (strcmp(zFilename, ":memory:") == 0) {
+    if (ALLOWATTACHMEM) {
+      return sqliteRBtreeOpen(0, 0, 0, ppBtree);
+    } else {
+      return SQLITE_CANTOPEN;
+    }
+  } else if (strcmp(zFilename, ":temp:") == 0) {
+    if (TEMPDBINCORE == 0) {
+      /* Always use file based temporary DB */
+      return sqliteBtreeOpen(0, omitJournal, nCache, ppBtree);
+    } else if (TEMPDBINCORE == 1 || TEMPDBINCORE == 2) {
+      /* Switch depending on compile-time and/or runtime settings. */
+      int location = db->tmpdb_loc == 0 ? TEMPDBINCORE : db->tmpdb_loc;
+
+      if (location == 1) {
+        return sqliteBtreeOpen(zFilename, omitJournal, nCache, ppBtree);
+      } else {
+        return sqliteRBtreeOpen(0, 0, 0, ppBtree);
+      }
+    } else {
+      /* Always use in-core DB */
+      return sqliteRBtreeOpen(0, 0, 0, ppBtree);
+    }
+  } else {
+    return sqliteBtreeOpen(zFilename, omitJournal, nCache, ppBtree);
+  }
 }

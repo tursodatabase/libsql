@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.170 2003/04/03 15:46:04 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.171 2003/04/13 18:26:52 paul Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -241,6 +241,7 @@ struct sqlite {
   u8 want_to_close;             /* Close after all VDBEs are deallocated */
   int next_cookie;              /* Next value of aDb[0].schema_cookie */
   int cache_size;               /* Number of pages to use in the cache */
+  int tmpdb_loc;                /* Temp DB loc */
   int nTable;                   /* Number of tables in the database */
   void *pBusyArg;               /* 1st Argument to the busy callback */
   int (*xBusyCallback)(void *,const char*,int);  /* The busy callback */
@@ -1097,3 +1098,4 @@ void sqliteDeferForeignKey(Parse*, int);
 #endif
 void sqliteAttach(Parse*, Token*, Token*);
 void sqliteDetach(Parse*, Token*);
+int sqliteBtreeFactory(const sqlite *db, const char *zFilename, int mode, int nPg, Btree **ppBtree);
