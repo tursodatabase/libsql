@@ -1,5 +1,5 @@
-C Fix\sthe\spager\sso\sthat\scorrect\srollbacks\soccur\swhen\ssynchronous\sis\sturned\soff.\r\nThis\scheck-in\salso\sincluded\sunrelated\sdocumentation\supdates.\s(CVS\s866)
-D 2003-02-15T23:09:17
+C Fix\smore\sbugs.\s\sThe\snew\srollback\sjournal\simplementation\snow\spasses\sall\nregression\stests\sunder\sLinux.\s(CVS\s867)
+D 2003-02-16T19:13:37
 F Makefile.in 6606854b1512f185b8e8c779b8d7fc2750463d64
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -33,7 +33,7 @@ F src/main.c f88dfe09ed79588899cb4013836dd940f73a17fa
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
 F src/os.c ed27e178e0c4b71f2807da81b8851f0fadc50778
 F src/os.h afa3e096213bad86845f8bdca81a9e917505e401
-F src/pager.c bffccf853a20032d89b592572309ea8a15a7f3ed
+F src/pager.c 47509f6b2dbf1cba46e52602c1dacf04f9d66e10
 F src/pager.h e5b8e301a732007766dc04880c764d7ee1aa34dd
 F src/parse.y cdaed5009423d851708848bd279147c268e6022e
 F src/printf.c f8fd911a8738f9b2eb07aca2870473d34707055d
@@ -45,7 +45,7 @@ F src/sqlite.h.in 6f648803f2ffb9beb35cb1cfa42b323d55519171
 F src/sqliteInt.h 2ae2c24fde8f7bb8040db964223d6e551e979358
 F src/table.c eed2098c9b577aa17f8abe89313a9c4413f57d63
 F src/tclsqlite.c 8167d40fd34036701e07492d07a6f9e5c4015241
-F src/test1.c eb05abd3ec6822f800476c04aed4db112690b144
+F src/test1.c 99add9d634a4e67790d71da02c12a83c69384697
 F src/test2.c 5014337d8576b731cce5b5a14bec4f0daf432700
 F src/test3.c c12ea7f1c3fbbd58904e81e6cb10ad424e6fc728
 F src/threadtest.c d641a5219e718e18a1a80a50eb9bb549f451f42e
@@ -89,7 +89,7 @@ F test/misc1.test 2876987a723b4053db081069007cd6aadf80b62b
 F test/misuse.test a3aa2b18a97e4c409a1fcaff5151a4dd804a0162
 F test/notnull.test 7a08117a71e74b0321aaa937dbeb41a09d6eb1d0
 F test/null.test 5c2b57307e4b6178aae825eb65ddbee01e76b0fd
-F test/pager.test d3a2e2f00999f97e056822a39d5ee2fad18bf12c
+F test/pager.test dd31da9bee94a82e2e87e58cf286cfe809f8fc5f
 F test/pragma.test d45d130f532bfe86ebd5ba74862d88b36ded8998
 F test/printf.test a29b8afa24edb4411adfe473b12ac32c84098fce
 F test/quick.test b372c8dad4fa1554747e90683fc72e59c0c98502
@@ -155,7 +155,7 @@ F www/speed.tcl 4d463e2aea41f688ed320a937f93ff885be918c3
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P dc53d92141c931fb133149355c3a1ea64030e676
-R 571b9c5813a6dfc27b61cc9c2ebc6b12
+P 3ef0ad8a4f2696a58aff9d812f90038c2c63f3fc
+R cc7da005c4e40adf620f5417209a13cc
 U drh
-Z b201cdfd990195584437ce2ba1bc7248
+Z 54bed9eac4c6092a2059a4c6f2fdfdc6

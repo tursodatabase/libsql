@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.20 2003/01/29 22:58:26 drh Exp $
+** $Id: test1.c,v 1.21 2003/02/16 19:13:37 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -827,6 +827,28 @@ static int test_finalize(
 }
 
 /*
+** Usage:    breakpoint
+**
+** This routine exists for one purpose - to provide a place to put a
+** breakpoint with GDB that can be triggered using TCL code.  The use
+** for this is when a particular test fails on (say) the 1485th iteration.
+** In the TCL test script, we can add code like this:
+**
+**     if {$i==1485} breakpoint
+**
+** Then run testfixture in the debugger and wait for the breakpoint to
+** fire.  Then additional breakpoints can be set to trace down the bug.
+*/
+static int test_breakpoint(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  return TCL_OK;         /* Do nothing */
+}
+
+/*
 ** Register commands with the TCL interpreter.
 */
 int Sqlitetest1_Init(Tcl_Interp *interp){
@@ -858,6 +880,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite_compile",                 (Tcl_CmdProc*)test_compile          },
      { "sqlite_step",                    (Tcl_CmdProc*)test_step             },
      { "sqlite_finalize",                (Tcl_CmdProc*)test_finalize         },
+     { "breakpoint",                     (Tcl_CmdProc*)test_breakpoint       },
   };
   int i;
 

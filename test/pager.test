@@ -11,13 +11,14 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is page cache subsystem.
 #
-# $Id: pager.test,v 1.12 2003/01/11 14:19:52 drh Exp $
+# $Id: pager.test,v 1.13 2003/02/16 19:13:37 drh Exp $
 
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
 if {[info commands pager_open]!=""} {
+db close
 
 # Basic sanity check.  Open and close a pager.
 #
@@ -174,6 +175,8 @@ do_test pager-2.28 {
   lappend v $msg
 } {0 {}}
 do_test pager-2.29 {
+  page_unref $::g1
+  set ::g1 [page_get $::p1 1]
   page_read $::g1
 } {Page-One}
 do_test pager-2.99 {

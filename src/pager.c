@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.77 2003/02/15 23:09:17 drh Exp $
+** @(#) $Id: pager.c,v 1.78 2003/02/16 19:13:37 drh Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -484,9 +484,9 @@ static int pager_playback_one_page(Pager *pPager, OsFile *jfd, int format){
   u32 cksum;
 
   rc = read32bits(format, jfd, &pgRec.pgno);
-  if( rc!=SQLITE_OK ) return SQLITE_DONE;
+  if( rc!=SQLITE_OK ) return rc;
   rc = sqliteOsRead(jfd, &pgRec.aData, sizeof(pgRec.aData));
-  if( rc!=SQLITE_OK ) return SQLITE_DONE;
+  if( rc!=SQLITE_OK ) return rc;
 
   /* Sanity checking on the page.  This is more important that I originally
   ** thought.  If a power failure occurs while the journal is being written,
@@ -501,7 +501,7 @@ static int pager_playback_one_page(Pager *pPager, OsFile *jfd, int format){
   }
   if( format>=JOURNAL_FORMAT_3 ){
     rc = read32bits(format, jfd, &cksum);
-    if( rc ) return SQLITE_DONE;
+    if( rc ) return rc;
     if( pager_cksum(pPager, pgRec.pgno, pgRec.aData)!=cksum ){
       return SQLITE_DONE;
     }
@@ -511,11 +511,9 @@ static int pager_playback_one_page(Pager *pPager, OsFile *jfd, int format){
   ** at the same time, if there is one.
   */
   pPg = pager_lookup(pPager, pgRec.pgno);
-  if( pPg==0 || pPg->needSync==0 ){
-    TRACE2("PLAYBACK %d\n", pgRec.pgno);
-    sqliteOsSeek(&pPager->fd, (pgRec.pgno-1)*(off_t)SQLITE_PAGE_SIZE);
-    rc = sqliteOsWrite(&pPager->fd, pgRec.aData, SQLITE_PAGE_SIZE);
-  }
+  TRACE2("PLAYBACK %d\n", pgRec.pgno);
+  sqliteOsSeek(&pPager->fd, (pgRec.pgno-1)*(off_t)SQLITE_PAGE_SIZE);
+  rc = sqliteOsWrite(&pPager->fd, pgRec.aData, SQLITE_PAGE_SIZE);
   if( pPg ){
     if( pPg->nRef==0 ||
         memcmp(PGHDR_TO_DATA(pPg), pgRec.aData, SQLITE_PAGE_SIZE)==0
@@ -556,7 +554,7 @@ static int pager_playback_one_page(Pager *pPager, OsFile *jfd, int format){
 ** pPager->errMask and SQLITE_CORRUPT is returned.  If it all
 ** works, then this routine returns SQLITE_OK.
 */
-static int pager_playback(Pager *pPager){
+static int pager_playback(Pager *pPager, int useJournalSize){
   off_t szJ;               /* Size of the journal file in bytes */
   int nRec;                /* Number of Records in the journal */
   int i;                   /* Loop counter */
@@ -601,7 +599,7 @@ static int pager_playback(Pager *pPager){
     if( rc ) goto end_playback;
     rc = read32bits(format, &pPager->jfd, &pPager->cksumInit);
     if( rc ) goto end_playback;
-    if( nRec==0xffffffff ){
+    if( nRec==0xffffffff || useJournalSize ){
       nRec = (szJ - JOURNAL_HDR_SZ(3))/JOURNAL_PG_SZ(3);
     }
   }else{
@@ -1066,7 +1064,8 @@ static int syncAllPages(Pager *pPager){
           if( rc!=0 ) return rc;
         }
         sqliteOsSeek(&pPager->jfd, sizeof(aJournalMagic1));
-        write32bits(&pPager->jfd, pPager->nRec);
+        rc = write32bits(&pPager->jfd, pPager->nRec);
+        if( rc ) return rc;
         szJ = JOURNAL_HDR_SZ(journal_format) +
                  pPager->nRec*JOURNAL_PG_SZ(journal_format);
         sqliteOsSeek(&pPager->jfd, szJ);
@@ -1225,7 +1224,7 @@ int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage){
        /* Playback and delete the journal.  Drop the database write
        ** lock and reacquire the read lock.
        */
-       rc = pager_playback(pPager);
+       rc = pager_playback(pPager, 0);
        if( rc!=SQLITE_OK ){
          return rc;
        }
@@ -1661,12 +1660,12 @@ int sqlitepager_write(void *pData){
       if( journal_format>=JOURNAL_FORMAT_3 ){
         *(u32*)PGHDR_TO_EXTRA(pPg) = saved;
       }
-      pPager->nRec++;
       if( rc!=SQLITE_OK ){
         sqlitepager_rollback(pPager);
         pPager->errMask |= PAGER_ERR_FULL;
         return rc;
       }
+      pPager->nRec++;
       assert( pPager->aInJournal!=0 );
       pPager->aInJournal[pPg->pgno/8] |= 1<<(pPg->pgno&7);
       pPg->needSync = !pPager->noSync;
@@ -1881,14 +1880,14 @@ int sqlitepager_rollback(Pager *pPager){
 
   if( pPager->errMask!=0 && pPager->errMask!=PAGER_ERR_FULL ){
     if( pPager->state>=SQLITE_WRITELOCK ){
-      pager_playback(pPager);
+      pager_playback(pPager, 1);
     }
     return pager_errcode(pPager);
   }
   if( pPager->state!=SQLITE_WRITELOCK ){
     return SQLITE_OK;
   }
-  rc = pager_playback(pPager);
+  rc = pager_playback(pPager, 1);
   if( rc!=SQLITE_OK ){
     rc = SQLITE_CORRUPT;
     pPager->errMask |= PAGER_ERR_CORRUPT;
