@@ -23,7 +23,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing expressions.
 #
-# $Id: expr.test,v 1.5 2000/06/06 13:54:16 drh Exp $
+# $Id: expr.test,v 1.6 2000/06/07 15:23:56 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -140,11 +140,15 @@ test_expr expr-5.2 {t1='abc', t2='ABC'} {t1 LIKE t2} 1
 test_expr expr-5.3 {t1='abc', t2='A_C'} {t1 LIKE t2} 1
 test_expr expr-5.4 {t1='abc', t2='abc_'} {t1 LIKE t2} 0
 test_expr expr-5.5 {t1='abc', t2='A%C'} {t1 LIKE t2} 1
+test_expr expr-5.5b {t1='ac', t2='A%C'} {t1 LIKE t2} 1
 test_expr expr-5.6 {t1='abxyzzyc', t2='A%C'} {t1 LIKE t2} 1
 test_expr expr-5.7 {t1='abxyzzy', t2='A%C'} {t1 LIKE t2} 0
 test_expr expr-5.8 {t1='abxyzzycx', t2='A%C'} {t1 LIKE t2} 0
-test_expr expr-5.9 {t1='abc', t2='xyz'} {t1 NOT LIKE t2} 1
-test_expr expr-5.10 {t1='abc', t2='ABC'} {t1 NOT LIKE t2} 0
+test_expr expr-5.9 {t1='abc', t2='A%_C'} {t1 LIKE t2} 1
+test_expr expr-5.9b {t1='ac', t2='A%_C'} {t1 LIKE t2} 0
+test_expr expr-5.10 {t1='abxyzzyc', t2='A%_C'} {t1 LIKE t2} 1
+test_expr expr-5.11 {t1='abc', t2='xyz'} {t1 NOT LIKE t2} 1
+test_expr expr-5.12 {t1='abc', t2='ABC'} {t1 NOT LIKE t2} 0
 
 test_expr expr-6.1 {t1='abc', t2='xyz'} {t1 GLOB t2} 0
 test_expr expr-6.2 {t1='abc', t2='ABC'} {t1 GLOB t2} 0
