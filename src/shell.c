@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.115 2004/10/06 14:39:07 drh Exp $
+** $Id: shell.c,v 1.116 2004/10/07 00:32:40 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -242,7 +242,8 @@ struct callback_data {
 #define MODE_Html     4  /* Generate an XHTML table */
 #define MODE_Insert   5  /* Generate SQL "insert" statements */
 #define MODE_Tcl      6  /* Generate ANSI-C or TCL quoted elements */
-#define MODE_NUM_OF   7  /* The number of modes (not a mode itself) */
+#define MODE_Csv      7  /* Quote strings, numbers are plain */
+#define MODE_NUM_OF   8  /* The number of modes (not a mode itself) */
 
 char *modeDescr[MODE_NUM_OF] = {
   "line",
@@ -252,6 +253,7 @@ char *modeDescr[MODE_NUM_OF] = {
   "html",
   "insert",
   "tcl",
+  "csv",
 };
 
 /*
@@ -336,6 +338,25 @@ static void output_html_string(FILE *out, const char *z){
       break;
     }
     z += i + 1;
+  }
+}
+
+/*
+** Output a single term of CSV.  Actually, p->separator is used for
+** the separator, which may or may not be a comma.  p->nullvalue is
+** the null value.  Strings are quoted using ANSI-C rules.  Numbers
+** appear outside of quotes.
+*/
+static void output_csv(struct callback_data *p, const char *z, int bSep){
+  if( z==0 ){
+    fprintf(p->out,"%s",p->nullvalue);
+  }else if( isNumber(z, 0) ){
+    fprintf(p->out,"%s",z);
+  }else{
+    output_c_string(p->out, z);
+  }
+  if( bSep ){
+    fprintf(p->out, p->separator);
   }
 }
 
@@ -470,6 +491,20 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
       for(i=0; i<nArg; i++){
         output_c_string(p->out, azArg[i] ? azArg[i] : p->nullvalue);
         fprintf(p->out, "%s", p->separator);
+      }
+      fprintf(p->out,"\n");
+      break;
+    }
+    case MODE_Csv: {
+      if( p->cnt++==0 && p->showHeader ){
+        for(i=0; i<nArg; i++){
+          output_csv(p, azCol[i], i<nArg-1);
+        }
+        fprintf(p->out,"\n");
+      }
+      if( azArg==0 ) break;
+      for(i=0; i<nArg; i++){
+        output_csv(p, azArg[i], i<nArg-1);
       }
       fprintf(p->out,"\n");
       break;
@@ -1114,7 +1149,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     }else if( strncmp(azArg[1],"tcl",n2)==0 ){
       p->mode = MODE_Tcl;
     }else if( strncmp(azArg[1],"csv",n2)==0 ){
-      p->mode = MODE_List;
+      p->mode = MODE_Csv;
       strcpy(p->separator, ",");
     }else if( strncmp(azArg[1],"tabs",n2)==0 ){
       p->mode = MODE_List;
