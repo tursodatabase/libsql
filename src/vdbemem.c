@@ -147,9 +147,38 @@ int sqlite3VdbeMemNulTerminate(Mem *pMem){
   if( (pMem->flags & MEM_Term)!=0 || (pMem->flags & (MEM_Str|MEM_Blob))==0 ){
     return SQLITE_OK;   /* Nothing to do */
   }
-  /* Only static or ephemeral strings can be unterminated */
-  assert( (pMem->flags & (MEM_Static|MEM_Ephem))!=0 );
-  return sqlite3VdbeMemMakeWriteable(pMem);
+
+  if( pMem->flags & (MEM_Static|MEM_Ephem) ){
+    return sqlite3VdbeMemMakeWriteable(pMem);
+  }else{
+    if( pMem->flags & MEM_Dyn ){
+      if( pMem->xDel ){
+        char *z = sqliteMalloc(pMem->n+2);
+        if( !z ) return SQLITE_NOMEM;
+        memcpy(z, pMem->z, pMem->n);
+        pMem->xDel(pMem->z);
+        pMem->xDel = 0;
+        pMem->z = z;
+      }else{
+        pMem->z = sqliteRealloc(pMem->z, pMem->n+2);
+        if( !pMem->z ) return SQLITE_NOMEM;
+      }
+    }else{
+      assert( pMem->flags & MEM_Short );
+      if( pMem->n+2>NBFS ){
+        char *z = sqliteMalloc(pMem->n+2);
+        if( !z ) return SQLITE_NOMEM;
+        memcpy(z, pMem->z, pMem->n);
+        pMem->flags &= !(MEM_Short);
+        pMem->flags |= MEM_Dyn;
+        pMem->xDel = 0;
+        pMem->z = z;
+      }
+    }
+    pMem->z[pMem->n++] = 0;
+    pMem->z[pMem->n++] = 0;
+  }
+  return SQLITE_OK;
 }
 
 /*

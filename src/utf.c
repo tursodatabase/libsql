@@ -12,7 +12,7 @@
 ** This file contains routines used to translate between UTF-8, 
 ** UTF-16, UTF-16BE, and UTF-16LE.
 **
-** $Id: utf.c,v 1.19 2004/06/12 00:42:35 danielk1977 Exp $
+** $Id: utf.c,v 1.20 2004/06/17 05:36:44 danielk1977 Exp $
 **
 ** Notes on UTF-8:
 **
@@ -85,7 +85,7 @@ struct UtfString {
 ** correctly (unless they are encoded as composite characters, which would
 ** doubtless cause much trouble).
 */
-#define LOWERCASE(x) (x<91?(int)(UpperToLower[x]):x);
+#define LOWERCASE(x) (x<91?(int)(UpperToLower[x]):x)
 static unsigned char UpperToLower[91] = {
       0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17,
      18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35,
@@ -708,4 +708,59 @@ int sqlite3utfTranslate(
     *nOut = strlen(*zOut);
   }
   return SQLITE_OK;
+}
+
+#define sqliteNextChar(X)  while( (0xc0&*++(X))==0x80 ){}
+
+/*
+** Compare two UTF-8 strings for equality using the "LIKE" operator of
+** SQL.  The '%' character matches any sequence of 0 or more
+** characters and '_' matches any single character.  Case is
+** not significant.
+*/
+int sqlite3utf8LikeCompare(
+  const unsigned char *zPattern, 
+  const unsigned char *zString
+){
+  register int c;
+  int c2;
+
+  while( (c = LOWERCASE(*zPattern))!=0 ){
+    switch( c ){
+      case '%': {
+        while( (c=zPattern[1]) == '%' || c == '_' ){
+          if( c=='_' ){
+            if( *zString==0 ) return 0;
+            sqliteNextChar(zString);
+          }
+          zPattern++;
+        }
+        if( c==0 ) return 1;
+        c = LOWERCASE(c);
+        while( (c2=LOWERCASE(*zString))!=0 ){
+          while( c2 != 0 && c2 != c ){ 
+            zString++;
+            c2 = LOWERCASE(*zString); 
+          }
+          if( c2==0 ) return 0;
+          if( sqlite3utf8LikeCompare(&zPattern[1],zString) ) return 1;
+          sqliteNextChar(zString);
+        }
+        return 0;
+      }
+      case '_': {
+        if( *zString==0 ) return 0;
+        sqliteNextChar(zString);
+        zPattern++;
+        break;
+      }
+      default: {
+        if( c != LOWERCASE(*zString) ) return 0;
+        zPattern++;
+        zString++;
+        break;
+      }
+    }
+  }
+  return *zString==0;
 }

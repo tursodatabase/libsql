@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.70 2004/06/16 10:39:24 danielk1977 Exp $
+** $Id: func.c,v 1.71 2004/06/17 05:36:44 danielk1977 Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -317,8 +317,8 @@ void deleteLike(void *pLike){
 }
 
 
+#if 0
 /* #define TRACE_LIKE */
-
 #if defined(TRACE_LIKE) && !defined(NDEBUG)
 char *dumpLike(LikePattern *pLike){
   int i;
@@ -541,6 +541,31 @@ skip_read:
     sqlite3_result_int(context, 1);
   }else{
     sqlite3_result_int(context, 0);
+  }
+}
+#endif
+
+/*
+** Implementation of the like() SQL function.  This function implements
+** the build-in LIKE operator.  The first argument to the function is the
+** pattern and the second argument is the string.  So, the SQL statements:
+**
+**       A LIKE B
+**
+** is implemented as like(B,A).
+**
+** If the pointer retrieved by via a call to sqlite3_user_data() is
+** not NULL, then this function uses UTF-16. Otherwise UTF-8.
+*/
+static void likeFunc(
+  sqlite3_context *context, 
+  int argc, 
+  sqlite3_value **argv
+){
+  const unsigned char *zA = sqlite3_value_text(argv[0]);
+  const unsigned char *zB = sqlite3_value_text(argv[1]);
+  if( zA && zB ){
+    sqlite3_result_int(context, sqlite3utf8LikeCompare(zA, zB));
   }
 }
 
@@ -785,6 +810,36 @@ static void test_destructor_count(
 ){
   sqlite3_result_int(pCtx, test_destructor_count_var);
 }
+
+static void free_test_auxdata(void *p) {sqliteFree(p);}
+static void test_auxdata(
+  sqlite3_context *pCtx, 
+  int nArg,
+  sqlite3_value **argv
+){
+  int i;
+  char *zRet = sqliteMalloc(nArg*2);
+  if( !zRet ) return;
+  for(i=0; i<nArg; i++){
+    char const *z = sqlite3_value_text(argv[i]);
+    if( z ){
+      char *zAux = sqlite3_get_auxdata(pCtx, i);
+      if( zAux ){
+        zRet[i*2] = '1';
+        if( strcmp(zAux, z) ){
+          sqlite3_result_error(pCtx, "Auxilary data corruption", -1);
+          return;
+        }
+      }else{
+        zRet[i*2] = '0';
+        zAux = sqliteStrDup(z);
+        sqlite3_set_auxdata(pCtx, i, zAux, free_test_auxdata);
+      }
+      zRet[i*2+1] = ' ';
+    }
+  }
+  sqlite3_result_text(pCtx, zRet, 2*nArg-1, free_test_auxdata);
+}
 #endif
 
 /*
@@ -965,7 +1020,7 @@ void sqlite3RegisterBuiltinFunctions(sqlite *db){
     { "ifnull",                      2, 0, SQLITE_UTF8, 1, ifnullFunc },
     { "random",                     -1, 0, SQLITE_UTF8, 0, randomFunc },
     { "like",                        2, 0, SQLITE_UTF8, 0, likeFunc   },
-    { "like",                        2, 2, SQLITE_UTF16,0, likeFunc   },
+/* { "like",                        2, 2, SQLITE_UTF16,0, likeFunc   }, */
     { "glob",                        2, 0, SQLITE_UTF8, 0, globFunc   },
     { "nullif",                      2, 0, SQLITE_UTF8, 0, nullifFunc },
     { "sqlite_version",              0, 0, SQLITE_UTF8, 0, versionFunc},
@@ -981,6 +1036,7 @@ void sqlite3RegisterBuiltinFunctions(sqlite *db){
     { "randstr",                     2, 0, SQLITE_UTF8, 0, randStr    },
     { "test_destructor",             1, 0, SQLITE_UTF8, 0, test_destructor},
     { "test_destructor_count", 0, 0, SQLITE_UTF8, 0, test_destructor_count},
+    { "test_auxdata",               -1, 0, SQLITE_UTF8, 0, test_auxdata},
 #endif
   };
   static struct {

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing built-in functions.
 #
-# $Id: func.test,v 1.21 2004/06/12 09:25:30 danielk1977 Exp $
+# $Id: func.test,v 1.22 2004/06/17 05:36:45 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -337,7 +337,14 @@ do_test func-11.1 {
 } [sqlite -version]
 
 # Test that destructors passed to sqlite by calls to sqlite3_result_text()
-# etc. are called.
+# etc. are called. These tests use two special user-defined functions
+# (implemented in func.c) only available in test builds. 
+#
+# Function test_destructor() takes one argument and returns a copy of the
+# text form of that argument. A destructor is associated with the return
+# value. Function test_destructor_count() returns the number of outstanding
+# destructor calls for values returned by test_destructor().
+#
 do_test func-12.1 {
   execsql {
     SELECT test_destructor('hello world'), test_destructor_count();
@@ -371,6 +378,61 @@ do_test func-12.6 {
     SELECT test_destructor_count();
   }
 } {0}
+do_test func-12.7 {
+  execsql {
+    DROP TABLE t4;
+  }
+} {}
+
+# Test that the auxdata API for scalar functions works. This test uses
+# a special user-defined function only available in test builds,
+# test_auxdata(). Function test_auxdata() takes any number of arguments.
+do_test func-13.1 {
+  execsql {
+    SELECT test_auxdata('hello world');
+  }
+} {0}
+do_test func-13.2 {
+  execsql {
+    CREATE TABLE t4(a, b);
+    INSERT INTO t4 VALUES('abc', 'def');
+    INSERT INTO t4 VALUES('ghi', 'jkl');
+  }
+} {}
+do_test func-13.3 {
+  execsql {
+    SELECT test_auxdata('hello world') FROM t4;
+  }
+} {0 1}
+do_test func-13.4 {
+  execsql {
+    SELECT test_auxdata('hello world', 123) FROM t4;
+  }
+} {{0 0} {1 1}}
+do_test func-13.5 {
+  execsql {
+    SELECT test_auxdata('hello world', a) FROM t4;
+  }
+} {{0 0} {1 0}}
+do_test func-13.6 {
+  execsql {
+    SELECT test_auxdata('hello'||'world', a) FROM t4;
+  }
+} {{0 0} {1 0}}
+
+# Test that auxilary data is preserved between calls for SQL variables.
+do_test func-13.7 {
+  db close
+  set DB [sqlite db test.db]
+  set sql "SELECT test_auxdata( ? , a ) FROM t4;"
+  set STMT [sqlite3_prepare $DB $sql -1 TAIL]
+  sqlite3_bind_text $STMT 1 hello -1
+  set res [list]
+  while { "SQLITE_ROW"==[sqlite3_step $STMT] } {
+    lappend res [sqlite3_column_text $STMT 0]
+  }
+  lappend res [sqlite3_finalize $STMT]
+} {{0 0} {1 0} SQLITE_OK}
 
 
 finish_test
