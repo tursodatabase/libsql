@@ -1,5 +1,5 @@
-C Get\sVACUUM\sworking\son\sdatabases\sthat\shave\sreserved\sbytes\sat\sthe\send\nof\seach\spage.\s(CVS\s1963)
-D 2004-09-17T20:02:42
+C The\spage_size\spragma\spreserves\sthe\sreserved\sarea\sat\sthe\send\sof\seach\spage.\s(CVS\s1964)
+D 2004-09-17T20:25:25
 F Makefile.in 9cdfc3af2647055085969968ca2394f24c3c6166
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -54,7 +54,7 @@ F src/os_win.h babd4e912967c6b09088cfe38a45e8005a07ba44
 F src/pager.c db8f6cb80798091fcff95c1f86873381fbfefee6
 F src/pager.h 67739fe649f33be55dba522ca8a9cc4e42d14f71
 F src/parse.y 9389af67bd49b8e5c9d2968b3315a30565b4a200
-F src/pragma.c 1f7781c4bb37a558100e3b044beded171b75cf98
+F src/pragma.c 5fb6647fda4c95edb08447a505e6c98c041e5b31
 F src/printf.c a8b92a3bcb4e9cae8066aea39a7b57b566255509
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c 5f60fc164a6a72ec26eb8221df4ba45aa8ab6f56
@@ -247,7 +247,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P cd200cf8332be2c99a0a312b5f7dcd582a93fd18
-R 260ff196fe720e304616748ce8e1318c
+P 90bb3af6cd827fcf731ba3d641a00ae426d6baca
+R aa6eeefbd20fa345d3aa2d6e6649e024
 U drh
-Z ffe5185b7796c26b209ae9a7dd162ea9
+Z f6a708092cd33df029263c6839c6eb54
