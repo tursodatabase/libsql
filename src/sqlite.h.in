@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.47 2003/04/24 01:45:04 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.48 2003/06/06 15:44:01 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -391,6 +391,7 @@ int sqlite_get_table_vprintf(
   va_list ap             /* Arguments to the format string */
 );
 char *sqlite_mprintf(const char*,...);
+char *sqlite_vmprintf(const char*, va_list);
 
 /*
 ** Windows systems should call this routine to free memory that

@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sspeed.html.\s(CVS\s1007)
-D 2003-06-05T15:05:35
+C Add\sa\sprototype\sfor\sthe\ssqlite_vmprintf()\sfunction\sto\ssqlite.h.\s(CVS\s1008)
+D 2003-06-06T15:44:01
 F Makefile.in 1ff85c27d4350c74118341024e8a4fb2a04a3a43
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -46,7 +46,7 @@ F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c 76b3a5cda76421cfe82d6a96c72308c2518cb2f9
 F src/shell.c b63089a91d6584df06eaa2e53ea1150c68ab1e61
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
-F src/sqlite.h.in eec06462cba262c0ee03f38462a18a4bc66dda4e
+F src/sqlite.h.in 58329e102ee5df8753620487f608a91611ba4592
 F src/sqliteInt.h d1d883d9116dadf63ffe1bafe17ba6455b7db59e
 F src/table.c 4301926464d88d2c2c7cd21c3360aa75bf068b95
 F src/tclsqlite.c 9e25f98f1765afa0716144ef57abda75c88f688d
@@ -165,7 +165,7 @@ F www/speed.tcl 296cc5632d069b56d3ef5409ca0df90f486c10fb
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 1bcaa841a396e4d592de30d10846f7cefbbdcd0e
-R 153745ab98bc187ead9120d15632c3e2
+P d01e6fbdde314f2edfcd43fcda3dc8bedb6bf2ba
+R af0151c4aadf0e4deb4d695b7bb1ee7b
 U drh
-Z d9aa6c60314c53d81452a52dca08849f
+Z dc35f13e2b46a0752ae6dd9ce93b5233
