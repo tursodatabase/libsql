@@ -1169,7 +1169,12 @@ u64 sqlite3VdbeSerialType(const Mem *pMem){
     return 5;
   }
   if( flags&MEM_Str ){
-    return (pMem->n*2 + 13);
+    /* We assume that the string is NULL-terminated. We don't store the
+    ** NULL-terminator - it is implied by the string storage class.
+    */
+    assert( pMem->n>0 );
+    assert( pMem->z[pMem->n-1]=='\0' );
+    return (pMem->n*2 + 11); /* (pMem->n-1)*2 + 13 */
   }
   if( flags&MEM_Blob ){
     return (pMem->n*2 + 12);
@@ -1286,15 +1291,17 @@ int sqlite3VdbeSerialGet(const unsigned char *buf, u64 serial_type, Mem *pMem){
   
   /* String or blob */
   assert( serial_type>=12 );
+  len = sqlite3VdbeSerialTypeLen(serial_type);
   if( serial_type&0x01 ){
     pMem->flags = MEM_Str;
+    pMem->n = len+1;
   }else{
     pMem->flags = MEM_Blob;
+    pMem->n = len;
   }
-  len = sqlite3VdbeSerialTypeLen(serial_type);
-  pMem->n = len;
-  if( len>NBFS ){
-    pMem->z = sqliteMallocRaw( len );
+
+  if( (pMem->n)>NBFS ){
+    pMem->z = sqliteMallocRaw( pMem->n );
     if( !pMem->z ){
       return -1;
     }
@@ -1303,7 +1310,11 @@ int sqlite3VdbeSerialGet(const unsigned char *buf, u64 serial_type, Mem *pMem){
     pMem->z = pMem->zShort;
     pMem->flags |= MEM_Short;
   }
+
   memcpy(pMem->z, buf, len); 
+  if( pMem->flags&MEM_Str ){
+    pMem->z[len] = '\0';
+  }
 
   return len;
 }
@@ -1460,6 +1471,30 @@ int sqlite3VdbeKeyCompare(
 
   return 0;
 }
+
+/*
+** This function compares the two table row records specified by 
+** {nKey1, pKey1} and {nKey2, pKey2}, returning a negative, zero
+** or positive integer if {nKey1, pKey1} is less than, equal to or 
+** greater than {nKey2, pKey2}.
+**
+** This function is pretty inefficient and will probably be replace
+** by something else in the near future. It is currently required
+** by compound SELECT operators. 
+*/
+int sqlite3VdbeRowCompare(
+  void *userData,
+  int nKey1, const void *pKey1, 
+  int nKey2, const void *pKey2
+){
+  int offset1 = 0;
+  int offset2 = 0;
+  const unsigned char *aKey1 = (const unsigned char *)pKey1;
+  const unsigned char *aKey2 = (const unsigned char *)pKey2;
+
+  assert( userData==0 );
+}
+  
 
 /*
 ** pCur points at an index entry. Read the rowid (varint occuring at
