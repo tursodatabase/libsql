@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.33 2001/04/04 12:33:36 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.34 2001/04/04 21:10:19 drh Exp $}
 
 puts {<html>
 <head><title>SQLite: An SQL Database Library Built Atop GDBM</title></head>
@@ -46,7 +46,8 @@ included.</li>
 the <a href="http://www.google.com/search?q=gnu+readline+library">GNU
 Readline library</a></li>
 <li>A Tcl-based test suite provides near 100% code coverage</li>
-<li>7500+ lines of C code.  No external dependencies other than GDBM.</li>
+<li>Approximately 9500 lines of C code.  No external dependencies other 
+than GDBM.</li>
 <li>Built and tested under Linux, HPUX, and WinNT.</li>
 </ul>
 </p>
@@ -61,20 +62,16 @@ all code except for a few areas which are unreachable or which are
 only reached when <tt>malloc()</tt> fails.  The code has been tested
 for memory leaks and is found to be clean.</p>
 
-<p><b>Important Note:</b>  A bug was found in the processing of UPDATE
-statements when the WHERE clause contained some terms that could be 
-satisfied using indices and other terms which could not.  The problem
-was fixed in version 1.0.22.  Users of prior versions of SQLite should
-consider upgrading.</p>
+<p><b>Important Note:</b>  Beginning with version 1.0.29, the LIKE and
+GLOB operators assume both operands are UTF-8 strings.  Prior to that,
+both operators assumed plain ASCII strings.  Users of earlier versions
+of SQLite that invoke LIKE or GLOB to compare strings containing
+characters greater than 127 may have problems when they upgrade to
+version 1.0.29 or later.</p>
 
-<p>
-Among the SQL features that SQLite does not currently implement are:</p>
-
-<p>
-<ul>
-<li>constraints are parsed but are not enforced</li>
-</ul>
-</p>
+<p><b>Important Note:</b>  Serious bugs have been found in versions
+1.0.22 on Unix and 1.0.26 on Windows.  Users of these or earlier
+versions of SQLite should upgrade.</p>
 
 <h2>Documentation</h2>
 

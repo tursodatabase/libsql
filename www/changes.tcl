@@ -17,6 +17,13 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2001 Apr 5 (1.0.29)} {
+<li>The LIKE and GLOB operators now assume both operands are
+    UTF-8 strings.
+    <font color="red">** This change could potentially
+    break existing code **</font></li>
+}
+
 chng {2001 Apr 4 (1.0.28)} {
 <li>Added limited support for transactions.  At this point, transactions
     will do table locking on the GDBM backend.  There is no support (yet)
