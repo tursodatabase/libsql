@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.84 2002/03/04 02:26:16 drh Exp $
+** $Id: build.c,v 1.85 2002/03/05 01:11:13 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -423,7 +423,8 @@ void sqliteStartTable(Parse *pParse, Token *pStart, Token *pName, int isTemp){
   if( !pParse->initFlag && (v = sqliteGetVdbe(pParse))!=0 ){
     sqliteBeginWriteOperation(pParse);
     if( !isTemp ){
-      sqliteVdbeAddOp(v, OP_SetCookie, db->file_format, 1);
+      sqliteVdbeAddOp(v, OP_Integer, db->file_format, 0);
+      sqliteVdbeAddOp(v, OP_SetCookie, 0, 1);
       sqliteVdbeAddOp(v, OP_OpenWrite, 0, 2);
       sqliteVdbeChangeP3(v, -1, MASTER_NAME, P3_STATIC);
       sqliteVdbeAddOp(v, OP_NewRecno, 0, 0);
@@ -794,7 +795,8 @@ void sqliteEndTable(Parse *pParse, Token *pEnd, Select *pSelect){
       sqliteVdbeAddOp(v, OP_MakeRecord, 5, 0);
       sqliteVdbeAddOp(v, OP_PutIntKey, 0, 0);
       changeCookie(db);
-      sqliteVdbeAddOp(v, OP_SetCookie, db->next_cookie, 0);
+      sqliteVdbeAddOp(v, OP_Integer, db->next_cookie, 0);
+      sqliteVdbeAddOp(v, OP_SetCookie, 0, 0);
       sqliteVdbeAddOp(v, OP_Close, 0, 0);
     }
     if( pSelect ){
@@ -1023,7 +1025,8 @@ void sqliteDropTable(Parse *pParse, Token *pName, int isView){
       { OP_Ne,         0, ADDR(8),  0},
       { OP_Delete,     0, 0,        0},
       { OP_Next,       0, ADDR(4),  0}, /* 8 */
-      { OP_SetCookie,  0, 0,        0}, /* 9 */
+      { OP_Integer,    0, 0,        0}, /* 9 */
+      { OP_SetCookie,  0, 0,        0},
       { OP_Close,      0, 0,        0},
     };
     Index *pIdx;
@@ -1337,7 +1340,8 @@ void sqliteCreateIndex(
     if( pTable!=0 ){
       if( !isTemp ){
         changeCookie(db);
-        sqliteVdbeAddOp(v, OP_SetCookie, db->next_cookie, 0);
+        sqliteVdbeAddOp(v, OP_Integer, db->next_cookie, 0);
+        sqliteVdbeAddOp(v, OP_SetCookie, 0, 0);
         sqliteVdbeAddOp(v, OP_Close, 0, 0);
       }
       sqliteEndWriteOperation(pParse);
@@ -1387,7 +1391,8 @@ void sqliteDropIndex(Parse *pParse, Token *pName){
       { OP_Next,       0, ADDR(4), 0},
       { OP_Goto,       0, ADDR(10),0},
       { OP_Delete,     0, 0,       0}, /* 9 */
-      { OP_SetCookie,  0, 0,       0}, /* 10 */
+      { OP_Integer,    0, 0,       0}, /* 10 */
+      { OP_SetCookie,  0, 0,       0},
       { OP_Close,      0, 0,       0},
     };
     int base;
@@ -1732,8 +1737,58 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
   }
  
   if( sqliteStrICmp(zLeft,"cache_size")==0 ){
-    int size = atoi(zRight);
-    sqliteBtreeSetCacheSize(db->pBe, size);
+    static VdbeOp getCacheSize[] = {
+      { OP_ReadCookie,  0, 2,        0},
+      { OP_AbsValue,    0, 0,        0},
+      { OP_ColumnCount, 1, 0,        0},
+      { OP_ColumnName,  0, 0,        "cache_size"},
+      { OP_Callback,    1, 0,        0},
+    };
+    Vdbe *v = sqliteGetVdbe(pParse);
+    if( v==0 ) return;
+    if( pRight->z==pLeft->z ){
+      sqliteVdbeAddOpList(v, ArraySize(getCacheSize), getCacheSize);
+    }else{
+      int addr;
+      int size = atoi(zRight);
+      if( size<0 ) size = -size;
+      sqliteBeginWriteOperation(pParse);
+      sqliteVdbeAddOp(v, OP_Integer, size, 0);
+      sqliteVdbeAddOp(v, OP_ReadCookie, 0, 2);
+      addr = sqliteVdbeAddOp(v, OP_Integer, 0, 0);
+      sqliteVdbeAddOp(v, OP_Ge, 0, addr+3);
+      sqliteVdbeAddOp(v, OP_Negative, 0, 0);
+      sqliteVdbeAddOp(v, OP_SetCookie, 0, 2);
+      sqliteEndWriteOperation(pParse);
+    }
+  }else
+
+  if( sqliteStrICmp(zLeft,"synchronous")==0 ){
+    static VdbeOp getSync[] = {
+      { OP_Integer,     0, 0,        0},
+      { OP_ReadCookie,  0, 2,        0},
+      { OP_Integer,     0, 0,        0},
+      { OP_Lt,          0, 5,        0},
+      { OP_AddImm,      1, 0,        0},
+      { OP_ColumnCount, 1, 0,        0},
+      { OP_ColumnName,  0, 0,        "synchronous"},
+      { OP_Callback,    1, 0,        0},
+    };
+    Vdbe *v = sqliteGetVdbe(pParse);
+    if( v==0 ) return;
+    if( pRight->z==pLeft->z ){
+      sqliteVdbeAddOpList(v, ArraySize(getSync), getSync);
+    }else{
+      int addr;
+      sqliteBeginWriteOperation(pParse);
+      sqliteVdbeAddOp(v, OP_ReadCookie, 0, 2);
+      sqliteVdbeAddOp(v, OP_AbsValue, 0, 0);
+      if( !getBoolean(zRight) ){
+        sqliteVdbeAddOp(v, OP_Negative, 0, 0);
+      }
+      sqliteVdbeAddOp(v, OP_SetCookie, 0, 2);
+      sqliteEndWriteOperation(pParse);
+    }
   }else
 
   if( sqliteStrICmp(zLeft, "vdbe_trace")==0 ){

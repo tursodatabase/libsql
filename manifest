@@ -1,5 +1,5 @@
-C Updates\sto\sthe\sdocumentation.\s\sChanged\sversion\snumber\sto\s2.4.0-beta1\s(CVS\s417)
-D 2002-03-04T02:26:16
+C Add\sthe\sability\sto\sturn\sof\scalls\sto\sfsync()\susing\sthe\s"synchronous"\spragma.\nIncreased\sthe\sdefault\scache\ssize\sfrom\s100\sto\s2000\sand\smade\sthe\s"cache_size"\npragma\spersistent.\s(CVS\s418)
+D 2002-03-05T01:11:13
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -21,27 +21,27 @@ F sqlite.1 2e2bb0529ef468ade9e4322bd609d0695fb9ded9
 F src/TODO af7f3cab0228e34149cf98e073aa83d45878e7e6
 F src/btree.c d25ea795a0f7017bc2099c437e6cc01d4c31b22d
 F src/btree.h 8abeabfe6e0b1a990b64fa457592a6482f6674f3
-F src/build.c e11b0daa79ba894c7476c33372b1dc42b13471e6
+F src/build.c 0f3c6b6482e0b74284b22661de1b813a0bfb0197
 F src/delete.c 577da499162291c1855f0b304b211bffcf9da945
 F src/expr.c e12ca550536c0bae7a3acef49dfa3068fe5f0900
 F src/func.c 87516e7dc37190c24af77593931a5d09d797520a
 F src/hash.c cc259475e358baaf299b00a2c7370f2b03dda892
 F src/hash.h dca065dda89d4575f3176e75e9a3dc0f4b4fb8b9
 F src/insert.c 42bfd145efd428d7e5f200dd49ea0b816fc30d79
-F src/main.c 5651146585ae613e759fcf372ee064e4940c2463
+F src/main.c 3015c23faeff1709b1528f07c0bfe839284090a8
 F src/md5.c 52f677bfc590e09f71d07d7e327bd59da738d07c
-F src/os.c f6bc9b7ab530346bb7fef2ed39f2f1f214bc14ea
+F src/os.c db969ecd1bcb4fef01b0b541b8b17401b0eb7ed2
 F src/os.h a17596ecc7f38a228b83ecdb661fb03ce44726d6
-F src/pager.c 0aa358a378c416ee0b0be5bf03fa7c35f7992c9b
+F src/pager.c 41af87908cd76a50d7e22cf3c7a4d479e3c9a512
 F src/pager.h feb18aab2f6dea439393f23a382699b9b1053c32
-F src/parse.y 25b794bfbed2a68d13d7d40a986a0ebe2beb3e24
+F src/parse.y f7483ccff7b8f16d3655df59775d85b62b06897e
 F src/printf.c 300a90554345751f26e1fc0c0333b90a66110a1d
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c 49c78aa0c96dda036846937b516658536db98b56
 F src/shell.c b3454229599246b944cdb5b95753af3fca5d8bb0
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in a9b5772604265f98f3120573ef29e37b9d917216
-F src/sqliteInt.h dde4e52e234e54e8ac9d3a1964e93c5fa6c2de15
+F src/sqliteInt.h 46f41e2f4cf90cdbe002f6b4143ae3f16ae0b872
 F src/table.c 203a09d5d0009eeeb1f670370d52b4ce163a3b52
 F src/tclsqlite.c b9cf346e95291cb4c4f1bf5ac1d77db6b8ad023d
 F src/test1.c 33efd350dca27c52c58c553c04fd3a6a51f13c1f
@@ -51,7 +51,7 @@ F src/threadtest.c 81f0598e0f031c1bd506af337fdc1b7e8dff263f
 F src/tokenize.c 4b5d30590a744b9bb5605a92d1f620ab2e7e75af
 F src/update.c 7dd714a6a7fa47f849ebb36b6d915974d6c6accb
 F src/util.c 00a35b421c92ae0d7cfa51bd87f7d4995f464d19
-F src/vdbe.c 4989cd3e6f4f699c9b08cd1980d1b588cede5c1f
+F src/vdbe.c 0b634bbe3d1a770136b9f7324804bb55903a9b17
 F src/vdbe.h f9be1f6e9a336c3ff4d14ea7489ee976e07460cc
 F src/where.c 34d91fd5d822c2663caeb023f72d60df316ebf29
 F test/all.test 7a8a8a7a579ed2bb4d8976d55402f21eacd58049
@@ -108,11 +108,12 @@ F tool/opNames.awk 5ba1f48aa854ee3b7c3d2b54233665bc3e649ea2
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/renumberOps.awk 6d067177ad5f8d711b79577b462da9b3634bd0a9
 F tool/report1.txt 9eae07f26a8fc53889b45fc833a66a33daa22816
+F tool/speedtest.tcl 31a2f06e3d2153f4311b13cd6fd5e19b7adc8373
 F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 72a0c80e9054cc7025a50928d28d9c75c02c2b8b
 F www/c_interface.tcl 567cda531aac9d68a61ef02e26c6b202bd856db2
-F www/changes.tcl cdd351b0f358bc23ca6243f3ca52c35ca1bede26
+F www/changes.tcl b43d9e32ed7af9a93c5a9b7321abe2ee6a8f4ea9
 F www/conflict.tcl 81dd21f9a679e60aae049e9dd8ab53d59570cda2
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
 F www/download.tcl a6d75b8b117cd33dcb090bef7e80d7556d28ebe0
@@ -127,7 +128,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 813077623087ffc6cd506f57cf6d1e3d9239f806
-R fe676fb38cbe5a2068c89e56308a155d
+P 36a8fe0ad0ee2a67afafc04125dcc085ec1b5a13
+R e93330a0aa7a7fa6a56e7a5c31b63757
 U drh
-Z 9a81a81e1e363e5bb6c841e14ddef308
+Z b84940384f009522e2520b7d71139ff4

@@ -43,6 +43,20 @@
 # include <winbase.h>
 #endif
 
+/*
+** Macros for performance tracing.  Normally turned off
+*/
+#if 0
+static int last_page = 0;
+#define SEEK(X)     last_page=(X)
+#define TRACE1(X)   fprintf(stderr,X)
+#define TRACE2(X,Y) fprintf(stderr,X,Y)
+#else
+#define SEEK(X)
+#define TRACE1(X)
+#define TRACE2(X,Y)
+#endif
+
 
 #if OS_UNIX
 /*
@@ -477,6 +491,7 @@ int sqliteOsRead(OsFile *id, void *pBuf, int amt){
 #if OS_UNIX
   int got;
   SimulateIOError(SQLITE_IOERR);
+  TRACE2("READ %d\n", last_page);
   got = read(id->fd, pBuf, amt);
   if( got<0 ) got = 0;
   return got==amt ? SQLITE_OK : SQLITE_IOERR;
@@ -499,6 +514,7 @@ int sqliteOsWrite(OsFile *id, const void *pBuf, int amt){
 #if OS_UNIX
   int wrote;
   SimulateIOError(SQLITE_IOERR);
+  TRACE2("WRITE %d\n", last_page);
   wrote = write(id->fd, pBuf, amt);
   if( wrote<amt ) return SQLITE_FULL;
   return SQLITE_OK;
@@ -517,6 +533,7 @@ int sqliteOsWrite(OsFile *id, const void *pBuf, int amt){
 ** Move the read/write pointer in a file.
 */
 int sqliteOsSeek(OsFile *id, int offset){
+  SEEK(offset/1024 + 1);
 #if OS_UNIX
   lseek(id->fd, offset, SEEK_SET);
   return SQLITE_OK;
@@ -532,6 +549,7 @@ int sqliteOsSeek(OsFile *id, int offset){
 */
 int sqliteOsSync(OsFile *id){
   SimulateIOError(SQLITE_IOERR);
+  TRACE1("SYNC\n");
 #if OS_UNIX
   return fsync(id->fd)==0 ? SQLITE_OK : SQLITE_IOERR;
 #endif

@@ -38,6 +38,8 @@ chng {2002 Mar * (2.4.0)} {
     impact database integrity, since the
     pages contain no real data, but it does make large INSERT operations
     about 2.5 times faster and large DELETEs about 5 times faster.</li>
+<li>Made the CACHE_SIZE pragma persistent</li>
+<li>Added the SYNCHRONOUS pragma</li>
 }
 
 chng {2002 Feb 18 (2.3.3)} {

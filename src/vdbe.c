@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.130 2002/03/03 02:49:51 drh Exp $
+** $Id: vdbe.c,v 1.131 2002/03/05 01:11:14 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2555,7 +2555,8 @@ case OP_Rollback: {
 **
 ** If P2>0, then read global database parameter number P2.  There is
 ** a small fixed number of global database parameters.  P2==1 is the
-** database version number.  Other parameters are currently unused.
+** database version number.  P2==2 is the recommended pager cache size.
+** Other parameters are currently unused.
 **
 ** There must be a read-lock on the database (either a transaction
 ** must be started or there must be an open cursor) before
@@ -2572,11 +2573,12 @@ case OP_ReadCookie: {
   break;
 }
 
-/* Opcode: SetCookie P1 P2 *
+/* Opcode: SetCookie * P2 *
 **
 ** When P2==0,
 ** this operation changes the value of the schema cookie on the database.
-** The new value is P1.  When P2>0, the value of global database parameter
+** The new value is top of the stack.
+** When P2>0, the value of global database parameter
 ** number P2 is changed.  See ReadCookie for more information about
 ** global database parametes.
 **
@@ -2589,11 +2591,14 @@ case OP_ReadCookie: {
 case OP_SetCookie: {
   int aMeta[SQLITE_N_BTREE_META];
   assert( pOp->p2<SQLITE_N_BTREE_META );
+  VERIFY( if( p->tos<0 ) goto not_enough_stack; )
+  Integerify(p, p->tos)
   rc = sqliteBtreeGetMeta(pBt, aMeta);
   if( rc==SQLITE_OK ){
-    aMeta[1+pOp->p2] = pOp->p1;
+    aMeta[1+pOp->p2] = aStack[p->tos].i;
     rc = sqliteBtreeUpdateMeta(pBt, aMeta);
   }
+  POPSTACK;
   break;
 }
 

@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.41 2002/03/02 20:41:59 drh Exp $
+** @(#) $Id: pager.c,v 1.42 2002/03/05 01:11:14 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -93,7 +93,7 @@ struct PgHdr {
 ** How big to make the hash table used for locating in-memory pages
 ** by page number.  Knuth says this should be a prime number.
 */
-#define N_PG_HASH 373
+#define N_PG_HASH 2003
 
 /*
 ** A open page cache is an instance of the following structure.
@@ -103,8 +103,6 @@ struct Pager {
   char *zJournal;             /* Name of the journal file */
   OsFile fd, jfd;             /* File descriptors for database and journal */
   OsFile cpfd;                /* File descriptor for the checkpoint journal */
-  int journalOpen;            /* True if journal file descriptors is valid */
-  int ckptOpen;               /* True if the checkpoint journal is open */
   int dbSize;                 /* Number of pages in the file */
   int origDbSize;             /* dbSize before the current change */
   int ckptSize, ckptJSize;    /* Size of database and journal at ckpt_begin() */
@@ -114,13 +112,16 @@ struct Pager {
   int nRef;                   /* Number of in-memory pages with PgHdr.nRef>0 */
   int mxPage;                 /* Maximum number of pages to hold in cache */
   int nHit, nMiss, nOvfl;     /* Cache hits, missing, and LRU overflows */
-  unsigned char state;        /* SQLITE_UNLOCK, _READLOCK or _WRITELOCK */
-  unsigned char errMask;      /* One of several kinds of errors */
-  unsigned char tempFile;     /* zFilename is a temporary file */
-  unsigned char readOnly;     /* True for a read-only database */
-  unsigned char needSync;     /* True if an fsync() is needed on the journal */
-  unsigned char *aInJournal;  /* One bit for each page in the database file */
-  unsigned char *aInCkpt;     /* One bit for each page in the database */
+  u8 journalOpen;             /* True if journal file descriptors is valid */
+  u8 ckptOpen;                /* True if the checkpoint journal is open */
+  u8 noSync;                  /* Do not sync the journal if true */
+  u8 state;                   /* SQLITE_UNLOCK, _READLOCK or _WRITELOCK */
+  u8 errMask;                 /* One of several kinds of errors */
+  u8 tempFile;                /* zFilename is a temporary file */
+  u8 readOnly;                /* True for a read-only database */
+  u8 needSync;                /* True if an fsync() is needed on the journal */
+  u8 *aInJournal;             /* One bit for each page in the database file */
+  u8 *aInCkpt;                /* One bit for each page in the database */
   PgHdr *pFirst, *pLast;      /* List of free pages */
   PgHdr *pAll;                /* List of all pages */
   PgHdr *aHash[N_PG_HASH];    /* Hash table to map page number of PgHdr */
@@ -435,6 +436,12 @@ end_ckpt_playback:
 ** Change the maximum number of in-memory pages that are allowed.
 */
 void sqlitepager_set_cachesize(Pager *pPager, int mxPage){
+  if( mxPage>=0 ){
+    pPager->noSync = 0;
+  }else{
+    pPager->noSync = 1;
+    mxPage = -mxPage;
+  }
   if( mxPage>10 ){
     pPager->mxPage = mxPage;
   }
@@ -800,9 +807,8 @@ int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage){
       /* Recycle an older page.  First locate the page to be recycled.
       ** Try to find one that is not dirty and is near the head of
       ** of the free list */
-      int cnt = pPager->mxPage/2;
       pPg = pPager->pFirst;
-      while( pPg->dirty && 0<cnt-- && pPg->pNextFree ){
+      while( pPg && pPg->dirty ){
         pPg = pPg->pNextFree;
       }
 
@@ -818,7 +824,7 @@ int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage){
       ** near future.  That is way we write all dirty pages after a
       ** sync.
       */
-      if( pPg==0 || pPg->dirty ){
+      if( pPg==0 ){
         int rc = syncAllPages(pPager);
         if( rc!=0 ){
           sqlitepager_rollback(pPager);
@@ -1081,7 +1087,7 @@ int sqlitepager_write(void *pData){
     }
     assert( pPager->aInJournal!=0 );
     pPager->aInJournal[pPg->pgno/8] |= 1<<(pPg->pgno&7);
-    pPager->needSync = 1;
+    pPager->needSync = !pPager->noSync;
     pPg->inJournal = 1;
     if( pPager->ckptOpen ){
       pPager->aInCkpt[pPg->pgno/8] |= 1<<(pPg->pgno&7);
@@ -1209,7 +1215,9 @@ int sqlitepager_commit(Pager *pPager){
     rc = sqliteOsWrite(&pPager->fd, PGHDR_TO_DATA(pPg), SQLITE_PAGE_SIZE);
     if( rc!=SQLITE_OK ) goto commit_abort;
   }
-  if( sqliteOsSync(&pPager->fd)!=SQLITE_OK ) goto commit_abort;
+  if( !pPager->noSync && sqliteOsSync(&pPager->fd)!=SQLITE_OK ){
+    goto commit_abort;
+  }
   rc = pager_unwritelock(pPager);
   pPager->dbSize = -1;
   return rc;

@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.66 2002/02/28 00:41:11 drh Exp $
+** $Id: main.c,v 1.67 2002/03/05 01:11:14 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -42,6 +42,13 @@ static int sqliteOpenCb(void *pDb, int argc, char **argv, char **azColName){
 
   assert( argc==4 );
   switch( argv[0][0] ){
+    case 'c': {  /* Recommended pager cache size */
+      int size = atoi(argv[3]);
+      if( size!=0 ){
+        sqliteBtreeSetCacheSize(db->pBe, size);
+      }
+      break;
+    }
     case 'f': {  /* File format */
       db->file_format = atoi(argv[3]);
       break;
@@ -176,6 +183,14 @@ static int sqliteInit(sqlite *db, char **pzErrMsg){
     { OP_ReadCookie, 0, 1,  0},
     { OP_Callback,   4, 0,  0},
 
+    /* Send the recommended pager cache size to the callback routine
+    */
+    { OP_String,     0, 0,  "cache-size"},
+    { OP_String,     0, 0,  0},
+    { OP_String,     0, 0,  0},
+    { OP_ReadCookie, 0, 2,  0},
+    { OP_Callback,   4, 0,  0},
+
     /* Send the initial schema cookie to the callback
     */
     { OP_String,     0, 0,  "schema_cookie"},
@@ -192,45 +207,45 @@ static int sqliteInit(sqlite *db, char **pzErrMsg){
     */
     { OP_ReadCookie, 0, 1,  0},
     { OP_Integer,    2, 0,  0},
-    { OP_Lt,         0, 23, 0},
+    { OP_Lt,         0, 28, 0},
 
     /* This is the code for doing a single scan through the SQLITE_MASTER
     ** table.  This code runs for format 2 and greater.
     */
-    { OP_Rewind,     0, 21, 0},
-    { OP_Column,     0, 0,  0},           /* 15 */
+    { OP_Rewind,     0, 26, 0},
+    { OP_Column,     0, 0,  0},           /* 20 */
     { OP_Column,     0, 1,  0},
     { OP_Column,     0, 3,  0},
     { OP_Column,     0, 4,  0},
     { OP_Callback,   4, 0,  0},
-    { OP_Next,       0, 15, 0},
-    { OP_Close,      0, 0,  0},           /* 21 */
+    { OP_Next,       0, 20, 0},
+    { OP_Close,      0, 0,  0},           /* 26 */
     { OP_Halt,       0, 0,  0},
 
     /* This is the code for doing two passes through SQLITE_MASTER.  This
     ** code runs for file format 1.
     */
-    { OP_Rewind,     0, 43, 0},           /* 23 */
-    { OP_Column,     0, 0,  0},           /* 24 */
+    { OP_Rewind,     0, 48, 0},           /* 28 */
+    { OP_Column,     0, 0,  0},           /* 29 */
     { OP_String,     0, 0,  "table"},
-    { OP_Ne,         0, 32, 0},
+    { OP_Ne,         0, 37, 0},
     { OP_Column,     0, 0,  0},
     { OP_Column,     0, 1,  0},
     { OP_Column,     0, 3,  0},
     { OP_Column,     0, 4,  0},
     { OP_Callback,   4, 0,  0},
-    { OP_Next,       0, 24, 0},           /* 32 */
-    { OP_Rewind,     0, 43, 0},           /* 33 */
-    { OP_Column,     0, 0,  0},           /* 34 */
+    { OP_Next,       0, 29, 0},           /* 37 */
+    { OP_Rewind,     0, 48, 0},           /* 38 */
+    { OP_Column,     0, 0,  0},           /* 39 */
     { OP_String,     0, 0,  "index"},
-    { OP_Ne,         0, 42, 0},
+    { OP_Ne,         0, 47, 0},
     { OP_Column,     0, 0,  0},
     { OP_Column,     0, 1,  0},
     { OP_Column,     0, 3,  0},
     { OP_Column,     0, 4,  0},
     { OP_Callback,   4, 0,  0},
-    { OP_Next,       0, 34, 0},           /* 42 */
-    { OP_Close,      0, 0,  0},           /* 43 */
+    { OP_Next,       0, 39, 0},           /* 47 */
+    { OP_Close,      0, 0,  0},           /* 48 */
     { OP_Halt,       0, 0,  0},
   };
 
