@@ -1,5 +1,5 @@
-C Reduce\sthe\srandomness\sin\sthe\ssqliteRandomSeed()\sroutine\sin\sorder\sto\ssilence\r\nbogus\serrors\sfrom\svalgrind.\s\sTickets\s#535\sand\s#536.\s(CVS\s1149)
-D 2003-12-31T13:21:18
+C Fix\sa\sbug\s(ticket\s#541)\sintroduced\sby\sthe\sprevious\scheck-in\s((1149)).\s(CVS\s1150)
+D 2003-12-31T16:00:19
 F Makefile.in 0515ff9218ad8d5a8f6220f0494b8ef94c67013b
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -38,7 +38,7 @@ F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
 F src/insert.c 01f66866f35c986eab4a57373ca689a3255ef2df
 F src/main.c 3dd3cae00bade294011da5a3cf9ff660a610c545
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
-F src/os.c b8e16216618ae5509dad86c0ed134070dc10b3fd
+F src/os.c 0412e9832d1727b1372314dbff32a3afe5bd50ae
 F src/os.h 4101ce267c2f5c8a34914e6af122e97907fcb205
 F src/pager.c ca24fced1ca4c2b8ea519d5fe8ec69a2d846276f
 F src/pager.h 5da62c83443f26b1792cfd72c96c422f91aadd31
@@ -179,7 +179,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P 9392c514501be333a3c22b552dc036e083eb22b4
-R ff58e113a9959802e5ad1974f1699fc1
+P cfe0acf9ec6c89f1e77b8be7dcc23029984de1ce
+R bd7bc4a0a89447eb7b81180428e32615
 U drh
-Z 4c7ee21cd76b2c28c8264da0d2b1edcb
+Z 967e9ffc32cb26a95315daa790ab082a

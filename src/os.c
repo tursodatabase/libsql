@@ -1455,19 +1455,23 @@ int sqliteOsRandomSeed(char *zBuf){
   */
   memset(zBuf, 0, 256);
 #if OS_UNIX && !defined(SQLITE_TEST)
-  int pid;
-  time((time_t*)zBuf);
-  pid = getpid();
-  memcpy(&zBuf[sizeof(time_t)], &pid, sizeof(pid));
+  {
+    int pid;
+    time((time_t*)zBuf);
+    pid = getpid();
+    memcpy(&zBuf[sizeof(time_t)], &pid, sizeof(pid));
+  }
 #endif
 #if OS_WIN && !defined(SQLITE_TEST)
   GetSystemTime((LPSYSTEMTIME)zBuf);
 #endif
 #if OS_MAC
-  int pid;
-  Microseconds((UnsignedWide*)zBuf);
-  pid = getpid();
-  memcpy(&zBuf[sizeof(UnsignedWide)], &pid, sizeof(pid));
+  {
+    int pid;
+    Microseconds((UnsignedWide*)zBuf);
+    pid = getpid();
+    memcpy(&zBuf[sizeof(UnsignedWide)], &pid, sizeof(pid));
+  }
 #endif
   return SQLITE_OK;
 }
