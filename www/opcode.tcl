@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: opcode.tcl,v 1.10 2002/08/11 20:10:49 drh Exp $}
+set rcsid {$Id: opcode.tcl,v 1.11 2003/06/02 06:29:31 jplyon Exp $}
 
 puts {<html>
 <head>
@@ -237,7 +237,7 @@ puts {
 <tr><th>Opcode&nbsp;Name</th><th>Description</th></tr>}
 foreach op [lsort -dictionary $OpcodeList] {
   puts {<tr><td valign="top" align="center">}
-  puts "$op"
+  puts "<a name=\"$op\">$op</a>"
   puts "<td>[string trim $Opcode($op:text)]</td></tr>"
 }
 puts {</table></p>}
