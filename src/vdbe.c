@@ -36,7 +36,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.204 2003/02/16 22:21:32 drh Exp $
+** $Id: vdbe.c,v 1.205 2003/02/20 01:48:13 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -4191,6 +4191,7 @@ case OP_NullRow: {
 
   if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
     p->aCsr[i].nullRow = 1;
+    p->aCsr[i].recnoIsValid = 0;
   }
   break;
 }

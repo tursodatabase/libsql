@@ -1,5 +1,5 @@
-C Fix\sthe\sparsing\sof\sthe\sLIMIT\sclause\swhen\sthe\slimit\sand\soffset\sare\sseparated\nby\sa\scomma.\s\sThe\soffset\scomes\sbefore\sthe\slimit\sin\sthat\scase.\sTicket\s#245.\s(CVS\s872)
-D 2003-02-20T00:44:52
+C When\sthe\sright\stable\sin\sa\sLEFT\sOUTER\sJOIN\scontains\san\sINTEGER\sPRIMARY\sKEY\nmake\ssure\sthat\skey\sis\sNULL\sif\sthere\sis\sno\srow\sin\sthe\sright\stable\sthat\nmatches\sthe\scurrent\srow\sin\sthe\sleft\stable.\s\sTickets\s#246\sand\s#247.\s(CVS\s873)
+D 2003-02-20T01:48:13
 F Makefile.in 6606854b1512f185b8e8c779b8d7fc2750463d64
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -53,7 +53,7 @@ F src/tokenize.c bc40937d6666f188037aa3e54f0a2661a6fef6d1
 F src/trigger.c da142decd2808bc39e801f3bb1f161dbc2bd4005
 F src/update.c f06afa9bf1f777d17702e0f6e33cf44c44bc4f75
 F src/util.c 73b668d1ed468df650dc00685a5e4ffa6887feb4
-F src/vdbe.c fc4c23e41935f14d446dcc74bda2a8f6288cda76
+F src/vdbe.c 4906e666ffbe49e6d9aa03b9ef43cad8213d3a85
 F src/vdbe.h ed43771f1dc2b994d5c484fdf2eab357c6ef0ee3
 F src/where.c ba96cab1fb076f025b6eae3fb0aead769fd2c96f
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
@@ -78,7 +78,7 @@ F test/insert.test a122afb86911e77c181d912348866a5b1a61eeab
 F test/insert2.test c288375a64dad3295044714f0dfed4a193cf067f
 F test/intpkey.test e0e283b0cbeaa97eeee183e1cdb91fa73d720866
 F test/ioerr.test 45c8feebe608d7f456fea27ff27a0aaaf0b9c636
-F test/join.test 178b25dc3c5be6cbdd195b904e66bee62475d0bf
+F test/join.test c97267c19294bf1fa4e81087edad179828bced88
 F test/limit.test 9ffb965a0f5bf7152187ef3d8d1249b96e5620bf
 F test/lock.test 388a3a10962d2d571c0c1821cc35bf069ee73473
 F test/main.test c66b564554b770ee7fdbf6a66c0cd90329bc2c85
@@ -155,7 +155,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 5db98b3f4048fc8cd28d8fd225f2b0221ccf1d17
-R 8776043362c8c9062e2ce89efb27c5e7
+P 6ef91a364b2922f078b7de81816bca3f2ca0fe46
+R 6cd2342e328368bdcfdfb261e7153b9c
 U drh
-Z 7efa93af63d1c797dd26115959a7737f
+Z 02cf9dbf86ae6f6970569d7a82f43c8c
