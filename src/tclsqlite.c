@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.43 2002/11/04 19:32:26 drh Exp $
+** $Id: tclsqlite.c,v 1.44 2003/01/31 17:21:50 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -52,6 +52,7 @@ struct SqliteDb {
   Tcl_Interp *interp;   /* The interpreter used for this database */
   char *zBusy;          /* The busy callback routine */
   SqlFunc *pFunc;       /* List of SQL functions */
+  int rc;               /* Return code of most recent sqlite_exec() */
 };
 
 /*
@@ -328,14 +329,15 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   int choice;
   static const char *DB_strs[] = {
     "busy",               "changes",           "close",
-    "complete",           "eval",              "function",
-    "last_insert_rowid",  "open_aux_file",     "timeout",
-    0                    
+    "complete",           "errorcode",         "eval",
+    "function",           "last_insert_rowid", "open_aux_file",
+    "timeout",            0                    
   };
   enum DB_enum {
     DB_BUSY,              DB_CHANGES,          DB_CLOSE,
-    DB_COMPLETE,          DB_EVAL,             DB_FUNCTION,
-    DB_LAST_INSERT_ROWID, DB_OPEN_AUX_FILE,    DB_TIMEOUT,
+    DB_COMPLETE,          DB_ERRORCODE,        DB_EVAL,
+    DB_FUNCTION,          DB_LAST_INSERT_ROWID,DB_OPEN_AUX_FILE,
+    DB_TIMEOUT,          
   };
 
   if( objc<2 ){
@@ -430,6 +432,17 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     Tcl_SetBooleanObj(pResult, isComplete);
     break;
   }
+
+  /*
+  **    $db errorcode
+  **
+  ** Return the numeric error code that was returned by the most recent
+  ** call to sqlite_exec().
+  */
+  case DB_ERRORCODE: {
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(pDb->rc));
+    break;
+  }
    
   /*
   **    $db eval $sql ?array {  ...code... }?
@@ -483,6 +496,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       rc = sqlite_exec(pDb->db, zSql, DbEvalCallback2, pList, &zErrMsg);
       Tcl_SetObjResult(interp, pList);
     }
+    pDb->rc = rc;
     if( rc==SQLITE_ABORT ){
       if( zErrMsg ) free(zErrMsg);
       rc = cbData.tcl_rc;
@@ -571,6 +585,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     }
     zFilename = Tcl_GetStringFromObj(objv[2], 0);
     rc = sqlite_open_aux_file(pDb->db, zFilename, &zErrMsg);
+    pDb->rc = rc;
     if( rc!=0 ){
       if( zErrMsg ){
         Tcl_AppendResult(interp, zErrMsg, 0);

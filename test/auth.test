@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the sqlite_set_authorizer() API.
 #
-# $Id: auth.test,v 1.4 2003/01/14 13:48:21 drh Exp $
+# $Id: auth.test,v 1.5 2003/01/31 17:21:50 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -19,7 +19,7 @@ source $testdir/tester.tcl
 
 if {[info command sqlite_set_authorizer]!=""} {
 
-do_test auth-1.1 {
+do_test auth-1.1.1 {
   db close
   set ::DB [sqlite db test.db]
   proc auth {code arg1 arg2} {
@@ -31,6 +31,9 @@ do_test auth-1.1 {
   sqlite_set_authorizer $::DB ::auth
   catchsql {CREATE TABLE t1(a,b,c)}
 } {1 {not authorized}}
+do_test auth-1.1.2 {
+  db errorcode
+} {23}
 do_test auth-1.2 {
   execsql {SELECT name FROM sqlite_master}
 } {}
@@ -45,6 +48,9 @@ do_test auth-1.3.1 {
   catchsql {CREATE TABLE t1(a,b,c)}
 } {1 {not authorized}}
 do_test auth-1.3.2 {
+  db errorcode
+} {23}
+do_test auth-1.3.3 {
   set ::authargs
 } {t1 {}}
 do_test auth-1.4 {
@@ -1612,7 +1618,7 @@ do_test auth-2.8 {
   }
   catchsql {SELECT ROWID,b,c FROM t2}
 } {0 {{} 2 33 {} 8 9}}
-do_test auth-2.9 {
+do_test auth-2.9.1 {
   proc auth {code arg1 arg2} {
     if {$code=="SQLITE_READ" && $arg1=="t2" && $arg2=="ROWID"} {
       return bogus
@@ -1621,6 +1627,9 @@ do_test auth-2.9 {
   }
   catchsql {SELECT ROWID,b,c FROM t2}
 } {1 {illegal return value (999) from the authorization function - should be SQLITE_OK, SQLITE_IGNORE, or SQLITE_DENY}}
+do_test auth-2.9.2 {
+  db errorcode
+} {21}
 do_test auth-2.10 {
   proc auth {code arg1 arg2} {
     if {$code=="SQLITE_SELECT"} {
