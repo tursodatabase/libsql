@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.283 2004/05/12 07:33:33 danielk1977 Exp $
+** $Id: vdbe.c,v 1.284 2004/05/12 11:24:03 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2277,6 +2277,75 @@ case OP_MakeKey: {
     pTos->z = zNewKey;
     pTos->flags = MEM_Str | MEM_Dyn;
   }
+  break;
+}
+
+/* Opcode: MakeIdxKey3 P1 P2 P3
+**
+** Convert the top P1 entries of the stack into a single entry suitable
+** for use as the key in an index.  In addition, take one additional integer
+** off of the stack, treat that integer as an eight-byte record number, and
+** append the integer to the key as a varint.  Thus a total of P1+1 entries
+** are popped from the stack for this instruction and a single entry is
+** pushed back.  The first P1 entries that are popped are strings and the
+** last entry (the lowest on the stack) is an integer record number.
+*/
+case OP_MakeKey3:
+case OP_MakeIdxKey3: {
+  Mem *pRec;
+  Mem *pData0;
+  int nField;
+  u64 rowid;
+  int nByte = 0;
+  int addRowid;
+  char *zKey;      /* The new key */
+ 
+  nField = pOp->p1;
+  pData0 = &pTos[1-nField];
+  assert( pData0>=p->aStack );
+
+  addRowid = (pOp->opcode==OP_MakeIdxKey?1:0);
+
+  /* Calculate the number of bytes required for the new index key and
+  ** store that number in nByte. Also set rowid to the record number to
+  ** append to the index key.
+  */
+  for(pRec=pData0; pRec<=pTos; pRec++){
+    u64 serial_type = sqlite3VdbeSerialType(pRec);
+    nByte += sqlite3VarintLen(serial_type);
+    nByte += sqlite3VdbeSerialTypeLen(serial_type);
+  }
+  if( addRowid ){
+    pRec = &pData0[-nField];
+    assert( pRec>=p->aStack );
+    Integerify(pRec);
+    rowid = pRec->i;
+    nByte += sqlite3VarintLen(rowid);
+  }
+
+  /* Allocate space for the new key */
+  zKey = sqliteMalloc(nByte);
+  if( !zKey ){
+    rc = SQLITE_NOMEM;
+    goto abort_due_to_error;
+  }
+  
+  /* Build the key in the buffer pointed to by zKey. */
+  for(pRec=pData0; pRec<=pTos; pRec++){
+    zKey += sqlite3PutVarint(zKey, sqlite3VdbeSerialType(pRec));
+    zKey += sqlite3VdbeSerialPut(zKey, pRec);
+  }
+  if( addRowid ){
+    sqlite3PutVarint(zKey, rowid);
+  }
+
+  /* Pop the consumed values off the stack and push on the new key. */
+  popStack(&pTos, nField+addRowid);
+  pTos++;
+  pTos->flags = MEM_Blob|MEM_Dyn;
+  pTos->z = zKey;
+  pTos->n = nByte;
+
   break;
 }
 

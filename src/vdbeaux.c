@@ -1298,93 +1298,122 @@ int sqlite3VdbeSerialGet(const unsigned char *buf, u64 serial_type, Mem *pMem){
 }
 
 /*
+** Compare the values contained by the two memory cells, returning
+** negative, zero or positive if pMem1 is less than, equal to, or greater
+** than pMem2. Sorting order is NULL's first, followed by numbers (integers
+** and reals) sorted numerically, followed by text ordered by memcmp() and
+** finally blob's ordered by memcmp().
+**
+** Two NULL values are considered equal by this function.
+*/
+int compareMemCells(Mem *pMem1, Mem *pMem2){
+  int rc;
+  int combined_flags = pMem1->flags|pMem2->flags; 
+ 
+  /* If one value is NULL, it is less than the other. If both values
+  ** are NULL, return 0.
+  */
+  if( combined_flags&MEM_Null ){
+    return (pMem2->flags&MEM_Null) - (pMem1->flags&MEM_Null);
+  }
+
+  /* If one value is a number and the other is not, the number is less.
+  ** If both are numbers, compare as reals if one is a real, or as integers
+  ** if both values are integers.
+  */
+  if( combined_flags&(MEM_Int|MEM_Real) ){
+    if( !(pMem1->flags&(MEM_Int|MEM_Real)) ){
+      return 1;
+    }
+    if( !(pMem2->flags&(MEM_Int|MEM_Real)) ){
+      return -1;
+    }
+
+    if( combined_flags&MEM_Real ){
+      if( pMem1->flags&MEM_Int ){
+        pMem1->r = pMem1->i;
+      }
+      if( pMem2->flags&MEM_Int ){
+        pMem2->r = pMem2->i;
+      }
+      if( pMem1->r < pMem2->r ) return -1;
+      if( pMem1->r > pMem2->r ) return 1;
+      return 0;
+    }
+
+    if( pMem1->i < pMem2->i ) return -1;
+    if( pMem1->i > pMem2->i ) return 1;
+    return 0;
+  }
+
+  /* Both values must be strings or blobs. If only one is a string, then
+  ** that value is less. Otherwise, compare with memcmp(). If memcmp()
+  ** returns 0 and one value is longer than the other, then that value
+  ** is greater.
+  */
+  rc = (pMem2->flags&MEM_Null) - (pMem1->flags&MEM_Null);
+  if( rc ){
+    return rc;
+  }
+  rc = memcmp(pMem1->z, pMem2->z, (pMem1->n>pMem2->n)?pMem2->n:pMem1->n);
+  if( rc ){
+    return rc;
+  }
+
+  if( pMem1->n < pMem2->n ) return -1;
+  if( pMem1->n > pMem2->n ) return 1;
+  return 0;
+}
+
+/*
 ** The following is the comparison function for (non-integer)
 ** keys in the btrees.  This function returns negative, zero, or
 ** positive if the first key is less than, equal to, or greater than
 ** the second.
 **
-** The key consists of multiple fields.  Each field begins with a variable
-** length integer which determines the field type and the number of bytes
-** of key data to follow for that field.
-**
-**   initial varint     bytes to follow    type
-**   --------------     ---------------    ---------------
-**      0                     0            NULL
-**      1                     1            signed integer
-**      2                     2            signed integer
-**      3                     4            signed integer
-**      4                     8            signed integer
-**      5                     8            IEEE float
-**     6..12                               reserved for expansion
-**    N>=12 and even       (N-12)/2        BLOB
-**    N>=13 and odd        (N-13)/2        text
-**
-** For a particular database, text is always either UTF-8, UTF-16BE, or
-** UTF-16LE.  Which of these three formats to use is determined by one
-** of the meta values in the file header.
-**
+** This function assumes that each key consists of one or more type/blob
+** pairs, encoded using the sqlite3VdbeSerialXXX() functions above. One
+** of the keys may have some trailing data appended to it. This is OK
+** provided that the other key does not have more type/blob pairs than
+** the key with the trailing data.
 */
-#if 0
 int sqlite3VdbeKeyCompare(
-  void *userData,
+  void *userData,                         /* not used yet */
   int nKey1, const unsigned char *aKey1, 
-  int nKey2, const unsigned char *aKey2,
+  int nKey2, const unsigned char *aKey2
 ){
-  KeyClass *pKeyClass = (KeyClass*)userData;
-  i1 = i2 = 0;
-  for(i1=i2=0; pKeyClass!=0; pKeyClass=pKeyClass->pNext){
-    if( varint32(aKey1, &i1, nKey1, &n1) ) goto bad_key;
-    if( varint32(aKey2, &i2, nKey2, &n2) ) goto bad_key;
-    if( n1==0 ){
-      if( n2>0 ) return -1;
-      /* both values are NULL.  consider them equal for sorting purposes. */
-    }else if( n2==0 ){
-      /* right value is NULL but the left value is not.  right comes first */
-      return +1;
-    }else if( n1<=5 ){
-      if( n2>5 ) return -1;
-      /* both values are numbers.  sort them numerically */
-      /******* Finish this ********/
-    }else if( n2<=5 ){
-      /* right value is numeric and left is TEXT or BLOB.  right comes first */
-      return +1;
-    }else if( n1<12 || n2<12 ){
-      /* bad coding for either the left or the right value */
-      goto bad_key;
-    }else if( (n1&0x01)==0 ){
-      if( n2&0x01)!=0 ) return -1;
-      /* both values are BLOB.  use memcmp() */
-      n1 = (n1-12)/2;
-      n2 = (n2-12)/2;
-      if( i1+n1>nKey1 || i2+n2>nKey2 ) goto bad_key;
-      c = memcmp(&aKey1[i1], &aKey2[i2], n1<n2 ? n1 : n2);
-      if( c!=0 ){
-        return c | 1;
-      }
-      if( n1!=n2 ){
-        return (n1-n2) | 1;
-      }
-      i1 += n1;
-      i2 += n2;
-    }else if( n2&0x01)!=0 ){
-      /* right value if BLOB and left is TEXT.  BLOB comes first */
-      return +1;
-    }else{
-      /* both values are TEXT.  use the supplied comparison function */
-      n1 = (n1-13)/2;
-      n2 = (n2-13)/2;
-      if( i1+n1>nKey1 || i2+n2>nKey2 ) goto bad_key;
-      c = pKeyClass->xCompare(pKeyClass->pUser, n1, &aKey1[i1], n2, &aKey2[i2]);
-      if( c!=0 ){
-        return c | 1;
-      }
-      i1 += n1;
-      i2 += n2;
-    } 
+  int offset1 = 0;
+  int offset2 = 0;
+
+  while( offset1<nKey1 && offset2<nKey2 ){
+    Mem mem1;
+    Mem mem2;
+    u64 serial_type1;
+    u64 serial_type2;
+    int rc;
+
+    offset1 += sqlite3GetVarint(&aKey1[offset1], &serial_type1);
+    offset2 += sqlite3GetVarint(&aKey2[offset2], &serial_type2);
+    offset1 += sqlite3VdbeSerialGet(&aKey1[offset1], serial_type1, &mem1);
+    offset2 += sqlite3VdbeSerialGet(&aKey2[offset2], serial_type2, &mem2);
+
+    rc = compareMemCells(&mem1, &mem2);
+    if( mem1.flags&MEM_Dyn ){
+      sqliteFree(mem1.z);
+    }
+    if( mem2.flags&MEM_Dyn ){
+      sqliteFree(mem2.z);
+    }
+    if( rc!=0 ){
+      return rc;
+    }
+  }
+
+  if( offset1<nKey1 ){
+    return 1;
+  }
+  if( offset2<nKey2 ){
+    return -1;
   }
   return 0;
-
-bad_key:
-  return 1;
 }
-#endif

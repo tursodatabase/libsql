@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.230 2004/05/12 07:33:33 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.231 2004/05/12 11:24:03 danielk1977 Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -258,6 +258,7 @@ typedef struct TriggerStack TriggerStack;
 typedef struct FKey FKey;
 typedef struct Db Db;
 typedef struct AuthContext AuthContext;
+typedef struct KeyClass KeyClass;
 
 /*
 ** Each database file to be accessed by the system is an instance

@@ -1,0 +1,200 @@
+# 2001 September 15
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library. 
+#
+# $Id:
+
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+#
+# Test cases are organized as follows:
+#
+# types-1.*: Insert some records with integers of various sizes, checking 
+#            that the integers are stored correctly and can be retrieved.
+# types-2.*: Insert and retrieve some records with reals.
+# types-3.*: Insert and retrieve some records with NULLs.
+# types-4.*: Insert and retrieve some records with strings of various sizes.
+# types-5.*: Some tests inserting and retrieving records with several
+#            fields each.
+#
+
+# Open the table with root-page $rootpage at the btree
+# level. Return a list that is the length of each record
+# in the table, in the tables default scanning order.
+proc record_sizes {rootpage} {
+  set bt [btree_open test.db 10 0]
+  set c [btree_cursor $bt $rootpage 0]
+  btree_first $c
+  while 1 {
+    lappend res [btree_payload_size $c]
+    if {[btree_next $c]} break
+  }
+  btree_close_cursor $c
+  btree_close $bt
+  set res
+}
+
+
+# Create a table and insert some 1-byte integers. Make sure they 
+# can be read back OK. These should be 3 byte records.
+do_test types-1.1 {
+  execsql {
+    CREATE TABLE t1(a integer);
+    INSERT INTO t1 VALUES(0);
+    INSERT INTO t1 VALUES(120);
+    INSERT INTO t1 VALUES(-120);
+  }
+} {}
+do_test types-1.2 {
+  execsql {
+    SELECT a FROM t1;
+  }
+} {0 120 -120}
+
+# Try some 2-byte integers (4 byte records)
+do_test types-1.3 {
+  execsql {
+    INSERT INTO t1 VALUES(30000);
+    INSERT INTO t1 VALUES(-30000);
+  }
+} {}
+do_test types-1.4 {
+  execsql {
+    SELECT a FROM t1;
+  }
+} {0 120 -120 30000 -30000}
+
+# 4-byte integers (6 byte records)
+do_test types-1.5 {
+  execsql {
+    INSERT INTO t1 VALUES(2100000000);
+    INSERT INTO t1 VALUES(-2100000000);
+  }
+} {}
+do_test types-1.6 {
+  execsql {
+    SELECT a FROM t1;
+  }
+} {0 120 -120 30000 -30000 2100000000 -2100000000}
+
+# 8-byte integers (10 byte records)
+do_test types-1.7 {
+  execsql {
+    INSERT INTO t1 VALUES(9000000*1000000*1000000);
+    INSERT INTO t1 VALUES(-9000000*1000000*1000000);
+  }
+} {}
+do_test types-1.8 {
+  execsql {
+    SELECT a FROM t1;
+  }
+} [list 0 120 -120 30000 -30000 2100000000 -2100000000 \
+        9000000000000000000 -9000000000000000000]
+
+# Check that all the record sizes are as we expected.
+do_test types-1.9 {
+  set root [db eval {select rootpage from sqlite_master where name = 't1'}]
+  record_sizes $root
+} {3 3 3 4 4 6 6 10 10}
+
+# Insert some reals. These should be 10 byte records.
+do_test types-2.1 {
+  execsql {
+    CREATE TABLE t2(a float);
+    INSERT INTO t2 VALUES(0.0 + 0.0);
+    INSERT INTO t2 VALUES(12345.678 + 0.0);
+    INSERT INTO t2 VALUES(-12345.678 + 0.0);
+  }
+} {}
+do_test types-2.2 {
+  execsql {
+    SELECT a FROM t2;
+  }
+} {0 12345.678 -12345.678}
+
+# Check that all the record sizes are as we expected.
+do_test types-2.3 {
+  set root [db eval {select rootpage from sqlite_master where name = 't2'}]
+  record_sizes $root
+} {10 10 10}
+
+# Insert a NULL. This should be a two byte record.
+do_test types-3.1 {
+  execsql {
+    CREATE TABLE t3(a nullvalue);
+    INSERT INTO t3 VALUES(NULL);
+  }
+} {}
+do_test types-3.2 {
+  execsql {
+    SELECT a ISNULL FROM t3;
+  }
+} {1}
+
+# Check that all the record sizes are as we expected.
+do_test types-3.3 {
+  set root [db eval {select rootpage from sqlite_master where name = 't3'}]
+  record_sizes $root
+} {2}
+
+# Insert a couple of strings.
+do_test types-4.1 {
+  set string10 abcdefghij
+  set string500 [string repeat $string10 50]
+  set string500000 [string repeat $string10 50000]
+
+  execsql "
+    CREATE TABLE t4(a string);
+    INSERT INTO t4 VALUES('$string10');
+    INSERT INTO t4 VALUES('$string500');
+    INSERT INTO t4 VALUES('$string500000');
+  "
+} {}
+do_test types-4.2 {
+  execsql {
+    SELECT a FROM t4;
+  }
+} [list $string10 $string500 $string500000]
+
+# Check that all the record sizes are as we expected.
+do_test types-4.3 {
+  set root [db eval {select rootpage from sqlite_master where name = 't4'}]
+  record_sizes $root
+} {13 504 500005}
+
+do_test types-5.1 {
+  execsql {
+    DROP TABLE t1;
+    DROP TABLE t2;
+    DROP TABLE t3;
+    DROP TABLE t4;
+    CREATE TABLE t1(a, b, c);
+  }
+} {}
+do_test types-5.2 {
+  set string10 abcdefghij
+  set string500 [string repeat $string10 50]
+  set string500000 [string repeat $string10 50000]
+
+  execsql "INSERT INTO t1 VALUES(NULL, '$string10', 4000);"
+  execsql "INSERT INTO t1 VALUES('$string500', 4000, NULL);"
+  execsql "INSERT INTO t1 VALUES(4000, NULL, '$string500000');"
+} {}
+do_test types-5.3 {
+  execsql {
+    SELECT * FROM t1;
+  }
+} [list {} $string10 4000 $string500 4000 {} 4000 {} $string500000]
+
+
+finish_test

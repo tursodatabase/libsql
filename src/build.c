@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.181 2004/05/11 07:11:52 danielk1977 Exp $
+** $Id: build.c,v 1.182 2004/05/12 11:24:03 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1228,14 +1228,16 @@ void sqlite3DropTable(Parse *pParse, Token *pName, int isView){
   v = sqlite3GetVdbe(pParse);
   if( v ){
     static VdbeOpList dropTable[] = {
-      { OP_Rewind,     0, ADDR(8),  0},
+      { OP_Rewind,     0, ADDR(10), 0},
       { OP_String,     0, 0,        0}, /* 1 */
       { OP_MemStore,   1, 1,        0},
       { OP_MemLoad,    1, 0,        0}, /* 3 */
       { OP_Column,     0, 2,        0},
-      { OP_Ne,         0, ADDR(7),  0},
+      { OP_Ne,         0, ADDR(9),  0},
       { OP_Delete,     0, 0,        0},
-      { OP_Next,       0, ADDR(3),  0}, /* 7 */
+      { OP_Rewind,     0, ADDR(10), 0},
+      { OP_Goto,       0, ADDR(3),  0},
+      { OP_Next,       0, ADDR(3),  0}, /* 9 */
     };
     Index *pIdx;
     Trigger *pTrigger;
