@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: quick.test,v 1.8 2004/05/13 11:34:17 danielk1977 Exp $
+# $Id: quick.test,v 1.9 2004/05/13 11:46:00 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -28,23 +28,22 @@ set EXCLUDE {
   format3.test
 }
 
-lappend EXCLUDE interrupt.test    ;# seg-faults (?)
-lappend EXCLUDE intpkey.test      ;# seg-faults (?)
+lappend EXCLUDE interrupt.test    ;# assert() fails in btree
 lappend EXCLUDE ioerr.test        ;# seg-faults (?)
 lappend EXCLUDE memdb.test        ;# fails - malformed database
 lappend EXCLUDE misc3.test        ;# seg-faults (?)
 lappend EXCLUDE printf.test       ;# sqlite3_XX vs sqlite_XX problem
 lappend EXCLUDE rowid.test        ;# sql logic error
 lappend EXCLUDE table.test        ;# assert() fails in pager
-lappend EXCLUDE trans.test        ;# assert() fails in btree
-lappend EXCLUDE vacuum.test       ;# assert() fails in btree
+lappend EXCLUDE trans.test        ;# assert() fails in pager
+lappend EXCLUDE vacuum.test       ;# seg-fault
 
 lappend EXCLUDE auth.test         ;# Cannot attach empty databases.
 lappend EXCLUDE tableapi.test     ;# sqlite3_XX vs sqlite_XX problem
 lappend EXCLUDE version.test      ;# uses the btree_meta API (not updated)
 
 # Some tests fail in these file, possibly because of the manifest
-# type-aware indices.
+# type-aware indices (or possibly not).
 lappend EXCLUDE delete.test
 lappend EXCLUDE update.test 
 lappend EXCLUDE misc1.test 
@@ -57,6 +56,7 @@ lappend EXCLUDE trigger2.test
 lappend EXCLUDE where.test
 lappend EXCLUDE unique.test 
 lappend EXCLUDE limit.test
+lappend EXCLUDE intpkey.test
 
 
 if {[sqlite -has-codec]} {
