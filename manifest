@@ -1,5 +1,5 @@
-C Documentation\supdates\sprior\sto\sthe\sreleae\sof\s2.7.0.\s(CVS\s728)
-D 2002-08-25T20:11:19
+C Version\s2.7.0\s(CVS\s729)
+D 2002-08-25T20:58:12
 F Makefile.in bcb81f40d9a17bd94f59e67157b1e1c54c046c2b
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -147,7 +147,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P c602603e7cd8dc5c8bb9db2748eacab650de5bf0
+P e2d95f85a3c4beeb5f8e78498f52fc00475f38ed
 R 1887224d7be529eb62028d618058de77
 U drh
-Z f85ad7a4a68c1afc1c9866ad59b71b62
+Z 2d9f1fc80b5f3e7813cac3b3ac44d578
