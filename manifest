@@ -1,6 +1,6 @@
-C Btree\schecks\sthe\sautovacuum\sflag\safter\slocking\sthe\sdatabase\sfile.\s(CVS\s2341)
-D 2005-02-15T16:23:02
-F Makefile.in d928187101fa3d78426cf48ca30e39d0fb714e57
+C Split\sthe\slogic\sfor\sthe\sALTER\sTABLE\scommand\soff\sinto\sa\sseparate\ssource\ncode\sfile.\s(CVS\s2342)
+D 2005-02-15T20:47:57
+F Makefile.in 76443a83549d1539105e12d13bd0054a05ab2214
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
 F VERSION 9e556d0985199b130268c3b8e5615b90dda7e829
@@ -16,7 +16,7 @@ F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
-F main.mk 834d5f2feb8d0f79fb3d2bb9db5afac2b3da7349
+F main.mk 632150f494ae1a96c8ac3cda0229a77cd18cb843
 F mkdll.sh 468d4f41d3ea98221371df4825cfbffbaac4d7e4
 F mkopcodec.awk bd46ad001c98dfbab07b1713cb8e692fa0e5415d
 F mkopcodeh.awk e4d010870a3e98fd4323635c31565a3ca8584741
@@ -27,16 +27,17 @@ F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F sqlite3.1 01fdb467ce387a83248857c92f9e801df9e4611c
 F sqlite3.def dbaeb20c153e1d366e8f421b55a573f5dfc00863
 F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
+F src/alter.c 4e38440d4491a52b55c0c42d5c9b1b1890f0a13d
 F src/attach.c f78f76bc6a8e5e487ca53636e21ccba2484a9a61
 F src/auth.c 18c5a0befe20f3a58a41e3ddd78f372faeeefe1f
 F src/btree.c 5c6e81855deec3d1eac5ae03e4c8db6c2595421f
 F src/btree.h 2e2cc923224649337d7217df0dd32b06673ca180
-F src/build.c 09333b6006d26d411dbaa918601be1054c09fff3
+F src/build.c 7db7f593093caeb223c849a0fd7ca428dcda631e
 F src/date.c f3d1f5cd1503dabf426a198f3ebef5afbc122a7f
 F src/delete.c 4b94395b52a8f7785acd71135c2ce54f3f5550b3
 F src/experimental.c 8cc66b2be6a011055d75ef19ed2584bcfbb585ad
 F src/expr.c e160aabb59ff3c02e8e00ca4b30d00b94664c519
-F src/func.c 4538f82c8ae5f753012f15c4f22cffd578280c56
+F src/func.c deba954e40c9bcfaafa899f382176f2c1eb8b1d6
 F src/hash.c 2b1b13f7400e179631c83a1be0c664608c8f021f
 F src/hash.h 1b0c445e1c89ff2aaad9b4605ba61375af001e84
 F src/insert.c 0456649d4d48396f918e7ea1fecbf3d66ed90816
@@ -271,7 +272,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P 138577d0a5c41f3de4f9adc9ab6e312a65ff8888
-R f81718102e4042ffed922f8685264bda
+P 6610188f09d08c65c46a140685b403aa74f71a19
+R d76aba4c3459eff26416d9c4987a204d
 U drh
-Z ba532001e1e18d6f4d6553ba708c367b
+Z ecefb64241ae1525534fd4f0e437a46d

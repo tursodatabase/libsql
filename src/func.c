@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.94 2005/02/09 01:40:25 danielk1977 Exp $
+** $Id: func.c,v 1.95 2005/02/15 20:47:57 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -541,13 +541,13 @@ static void versionFunc(
 ** the CREATE TABLE or CREATE INDEX statement is replaced with the second
 ** argument and the result returned. Examples:
 **
-** sqlite_alter_table('CREATE TABLE abc(a, b, c)', 'def')
+** sqlite_rename_table('CREATE TABLE abc(a, b, c)', 'def')
 **     -> 'CREATE TABLE def(a, b, c)'
 **
-** sqlite_alter_table('CREATE INDEX i ON abc(a)', 'def')
+** sqlite_rename_table('CREATE INDEX i ON abc(a)', 'def')
 **     -> 'CREATE INDEX i ON def(a, b, c)'
 */
-static void altertableFunc(
+static void renameTableFunc(
   sqlite3_context *context,
   int argc,
   sqlite3_value **argv
@@ -594,10 +594,10 @@ static void altertableFunc(
 ** ALTER TABLE command. The first argument is the text of a CREATE TRIGGER 
 ** statement. The second is a table name. The table name in the CREATE 
 ** TRIGGER statement is replaced with the second argument and the result 
-** returned. This is analagous to altertableFunc() above, except for CREATE
+** returned. This is analagous to renameTableFunc() above, except for CREATE
 ** TRIGGER, not CREATE INDEX and CREATE TABLE.
 */
-static void altertriggerFunc(
+static void renameTriggerFunc(
   sqlite3_context *context,
   int argc,
   sqlite3_value **argv
@@ -1123,9 +1123,9 @@ void sqlite3RegisterBuiltinFunctions(sqlite3 *db){
     { "changes",            0, 1, SQLITE_UTF8,    0, changes    },
     { "total_changes",      0, 1, SQLITE_UTF8,    0, total_changes },
 #ifndef SQLITE_OMIT_ALTERTABLE
-    { "sqlite_alter_table", 2, 0, SQLITE_UTF8,    0, altertableFunc},
+    { "sqlite_rename_table",  2, 0, SQLITE_UTF8,  0, renameTableFunc},
 #ifndef SQLITE_OMIT_TRIGGER
-    { "sqlite_alter_trigger", 2, 0, SQLITE_UTF8,  0, altertriggerFunc},
+    { "sqlite_rename_trigger",2, 0, SQLITE_UTF8,  0, renameTriggerFunc},
 #endif
 #endif
 #ifdef SQLITE_SOUNDEX

@@ -54,7 +54,7 @@ TCCX = $(TCC) $(OPTS) $(THREADSAFE) $(USLEEP) -I. -I$(TOP)/src
 
 # Object files for the SQLite library.
 #
-LIBOBJ+= attach.o auth.o btree.o build.o date.o delete.o \
+LIBOBJ+= alter.o attach.o auth.o btree.o build.o date.o delete.o \
          expr.o func.o hash.o insert.o \
          main.o opcodes.o os_unix.o os_win.o \
          pager.o parse.o pragma.o printf.o random.o \
@@ -66,6 +66,7 @@ LIBOBJ+= attach.o auth.o btree.o build.o date.o delete.o \
 # All of the source code files.
 #
 SRC = \
+  $(TOP)/src/alter.c \
   $(TOP)/src/attach.c \
   $(TOP)/src/auth.c \
   $(TOP)/src/btree.c \
@@ -195,6 +196,9 @@ lemon:	$(TOP)/tool/lemon.c $(TOP)/tool/lempar.c
 
 # Rules to build individual files
 #
+alter.o:	$(TOP)/src/alter.c $(HDR)
+	$(TCCX) -c $(TOP)/src/alter.c
+
 attach.o:	$(TOP)/src/attach.c $(HDR)
 	$(TCCX) -c $(TOP)/src/attach.c
 
