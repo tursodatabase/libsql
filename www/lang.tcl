@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.78 2004/11/19 11:59:24 danielk1977 Exp $}
+set rcsid {$Id: lang.tcl,v 1.79 2004/11/20 08:17:18 danielk1977 Exp $}
 source common.tcl
 
 if {[llength $argv]>0} {
@@ -74,6 +74,8 @@ foreach {section} [lsort -index 0 -dictionary {
   {{DROP TRIGGER} droptrigger}
   {{ATTACH DATABASE} attach}
   {{DETACH DATABASE} detach}
+  {REINDEX reindex}
+  {{ALTER TABLE} altertable}
 }] {
   foreach {s_title s_tag} $section {}
   puts "<li><a href=\"[slink $s_tag]\">$s_title</a></li>"
@@ -132,6 +134,28 @@ proc Section {name label} {
   puts "<h1>$name</h1>\n"
 }
 
+Section {ALTER TABLE} altertable
+
+Syntax {sql-statement} {
+ALTER TABLE [<database-name> .] <table-name> RENAME TO <new-table-name>
+}
+
+puts {
+<p>SQLite's version of the ALTER TABLE command allows the user to 
+rename an existing table. The table identified by 
+<i>[database-name.]table-name</i> is renamed to
+<i>new-table-name</i>. This command cannot be used to move a
+table between attached databases, only to rename a table within
+the same database.</p>
+
+<p>If the table being renamed has triggers or indices, then these remain
+attached to the table after it has been renamed. However, if there are
+any view definitions, or statements executed by triggers that refer to
+the table being renamed, these are not automatically modified to use the new
+table name. If this is required, the triggers or view definitions must be
+dropped and recreated to use the new table name by hand.
+</p>
+}
 
 Section {ATTACH DATABASE} attach
 
@@ -1299,6 +1323,35 @@ If no algorithm is specified anywhere, the ABORT algorithm is used.</p>
 # <p>For additional information, see 
 # <a href="conflict.html">conflict.html</a>.</p>
 
+Section REINDEX reindex
+
+Syntax {sql-statement} {
+  REINDEX <collation name>
+}
+Syntax {sql-statement} {
+  REINDEX [<database-name> .] <table/index-name>
+}
+
+puts {
+<p>The REINDEX command is used to delete and recreate indices from scratch.
+This is primarily useful when the definition of a collation sequence has 
+changed.
+</p>
+
+<p>In the first form, all indices in all attached databases that use the
+named collation sequence are recreated. In the second form, if 
+<i>[database-name.]table/index-name</i> identifies a table, then all indices
+associated with the table are rebuilt. If an index is identified, then only
+this specific index is deleted and recreated.
+</p>
+
+<p>If no <i>database-name</i> is specified and there exists both a table or
+index and a collation sequence of the specified name, then indices associated
+with the collation sequence only are reconstructed. This ambiguity may be
+dispelled by always specifying a <i>database-name</i> when reindexing a
+specific table or index.
+}
+
 Section REPLACE replace
 
 Syntax {sql-statement} {
@@ -1560,6 +1613,7 @@ keyword_list {
   *DETACH
   EACH
   END
+  EXPLAIN
   *EXPLAIN
   *FAIL
   FOR
@@ -1617,6 +1671,7 @@ keyword_list {
   DROP
   ELSE
   EXCEPT
+  ESCAPE
   FOREIGN
   FROM 
   *GLOB

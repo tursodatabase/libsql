@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the pragma.html file.
 #
-set rcsid {$Id: pragma.tcl,v 1.5 2004/11/20 06:05:56 danielk1977 Exp $}
+set rcsid {$Id: pragma.tcl,v 1.6 2004/11/20 08:17:18 danielk1977 Exp $}
 source common.tcl
 header {Pragma statements supported by SQLite}
 
@@ -224,6 +224,7 @@ Section {Pragmas to query the database schema} schema
 
 puts {
 <ul>
+<a name="pragma_database_list"></a>
 <li><p><b>PRAGMA database_list;</b></p>
     <p>For each open database, invoke the callback function once with
     information about that database.  Arguments include the index and 
@@ -231,24 +232,28 @@ puts {
     the main database.  The second row will be for the database used to 
     store temporary tables.</p></li>
 
+<a name="pragma_foreign_key_list"></a>
 <li><p><b>PRAGMA foreign_key_list(</b><i>table-name</i><b>);</b></p>
     <p>For each foreign key that references a column in the argument
     table, invoke the callback function with information about that
     foreign key. The callback function will be invoked once for each
     column in each foreign key.</p></li>
 
+<a name="pragma_index_info"></a>
 <li><p><b>PRAGMA index_info(</b><i>index-name</i><b>);</b></p>
     <p>For each column that the named index references, invoke the 
     callback function
     once with information about that column, including the column name,
     and the column number.</p></li>
 
+<a name="pragma_index_list"></a>
 <li><p><b>PRAGMA index_list(</b><i>table-name</i><b>);</b></p>
     <p>For each index on the named table, invoke the callback function
     once with information about that index.  Arguments include the
     index name and a flag to indicate whether or not the index must be
     unique.</p></li>
 
+<a name="pragma_table_info"></a>
 <li><p><b>PRAGMA table_info(</b><i>table-name</i><b>);</b></p>
     <p>For each column in the named table, invoke the callback function
     once with information about that column, including the column name,
@@ -262,6 +267,8 @@ Section {Pragmas to query/modify version values} version
 puts {
 
 <ul>
+<a name="pragma_schema_version"></a>
+<a name="pragma_user_version"></a>
 <li><p><b>PRAGMA [database.]schema_version; 
        <br>PRAGMA [database.]schema_version = </b><i>integer </i><b>;
        <br>PRAGMA [database.]user_version;

@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the compile.html file.
 #
-set rcsid {$Id: compile.tcl,v 1.1 2004/11/20 06:05:56 danielk1977 Exp $ }
+set rcsid {$Id: compile.tcl,v 1.2 2004/11/20 08:17:18 danielk1977 Exp $ }
 source common.tcl
 header {Compilation Options For SQLite}
 
@@ -62,12 +62,18 @@ compilation switches all have the same effect:<br>
 -DSQLITE_OMIT_ALTERTABLE=0
 </p>
 
+<p>If any of these options are defined, then the same set of SQLITE_OMIT_XXX
+options must also be defined when using the 'lemon' tool to generate a parse.c
+file. Because of this, these options may only used when the library is built
+from source, not from the collection of pre-packaged C files provided for
+non-UNIX like platforms on the website.
+</p>
+
 <p><b>SQLITE_OMIT_ALTERTABLE</b><br>
 When this option is defined, the 
 <a href="lang_altertable.html">ALTER TABLE</a> command is not included in the 
 library. Executing an ALTER TABLE statement causes a parse error.
 </p>
-<p><i>TODO: Need a link here - ALTER TABLE is not documented yet</i><p>
 
 <p><b>SQLITE_OMIT_AUTHORIZATION</b><br>
 Defining this option omits the authorization callback feature from the
@@ -181,8 +187,7 @@ API function is not present in the library.
 When this option is defined, the <a href="lang_reindex.html">REINDEX</a> 
 command is not included in the library. Executing a REINDEX statement causes 
 a parse error.
-
-<p><i>TODO: Need a link here - REINDEX is not documented yet</i><p>
+</p>
 
 <p><b>SQLITE_OMIT_SCHEMA_PRAGMAS</b><br>
 Defining this option omits pragmas for querying the database schema from 
@@ -195,23 +200,36 @@ pragmas are omitted.
 </p>
 
 <p><b>SQLITE_OMIT_SCHEMA_VERSION_PRAGMAS</b><br>
-Defining this option omits pragmas for querying the database schema from 
-the build. Currently, the 
-<a href="pragma.html#pragma_table_info">table_info</a>,
-<a href="pragma.html#pragma_index_info">index_info</a>,
-<a href="pragma.html#pragma_index_list">index_list</a> and
-<a href="pragma.html#pragma_database_list">database_list</a>
+Defining this option omits pragmas for querying and modifying the 
+database schema version and user version from the build. Specifically, the 
+<a href="pragma.html#pragma_schema_version">schema_version</a> and
+<a href="pragma.html#pragma_user_version">user_version</a>
 pragmas are omitted.
-</p>
 
 <p><b>SQLITE_OMIT_TCL_VARIABLE</b><br>
-<i>Document me!</i></p>
+<p>If this macro is defined, then the special "$<variable-name>" syntax
+used to automatically bind SQL variables to TCL variables is omitted.
+</p>
 
 <p><b>SQLITE_OMIT_TRIGGER</b><br>
-<i>Document me!</i></p>
+Defining this option omits support for VIEW objects. Neither the 
+<a href="lang_createtrigger.html">CREATE TRIGGER</a> or 
+<a href="lang_droptrigger.html">DROP TRIGGER</a> 
+commands are available in this case, attempting to execute either will result
+in a parse error.
+</p>
+<p>
+WARNING: If this macro is defined, it will not be possible to open a database
+for which the schema contains TRIGGER objects. 
+</p>
 
 <p><b>SQLITE_OMIT_UTF16</b><br>
-<i>Document me!</i></p>
+This macro is used to omit support for UTF16 text encoding. When this is
+defined all API functions that return or accept UTF16 encoded text are
+unavailable. These functions can be identified by the fact that they end
+with '16', for example sqlite3_prepare16(), sqlite3_column_text16() and
+sqlite3_bind_text16().
+</p>
 
 <p><b>SQLITE_OMIT_VACUUM</b><br>
 When this option is defined, the <a href="lang_vacuum.html">VACUUM</a> 
@@ -220,7 +238,16 @@ a parse error.
 </p>
 
 <p><b>SQLITE_OMIT_VIEW</b><br>
-<i>Document me!</i></p>
+Defining this option omits support for VIEW objects. Neither the 
+<a href="lang_createview.html">CREATE VIEW</a> or 
+<a href="lang_dropview.html">DROP VIEW</a> 
+commands are available in this case, attempting to execute either will result
+in a parse error.
+</p>
+<p>
+WARNING: If this macro is defined, it will not be possible to open a database
+for which the schema contains VIEW objects. 
+</p>
 }
 footer $rcsid
 
