@@ -11,10 +11,18 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the VACUUM statement.
 #
-# $Id: vacuum.test,v 1.27 2004/11/03 13:59:06 drh Exp $
+# $Id: vacuum.test,v 1.28 2004/11/04 04:42:28 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+# If the VACUUM statement is disabled in the current build, skip all
+# the tests in this file.
+#
+ifcapable {!vacuum} {
+  finish_test
+  return
+}
 
 set fcnt 1
 proc cksum {{db db}} {

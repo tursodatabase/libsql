@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach.test,v 1.27 2004/10/31 02:22:50 drh Exp $
+# $Id: attach.test,v 1.28 2004/11/04 04:42:28 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -454,11 +454,11 @@ do_test attach-4.5 {
     SELECT * FROM db2.t3;
   }
 } {1 2 9 10}
+execsql {
+  DETACH db2;
+}
 ifcapable {trigger} {
   do_test attach-4.6 {
-    execsql {
-      DETACH db2;
-    }
     execsql {
       CREATE TABLE t4(x);
       CREATE TRIGGER t3r3 AFTER INSERT ON t3 BEGIN
@@ -479,6 +479,23 @@ ifcapable {trigger} {
     }
   } {main.11}
 }
+ifcapable {!trigger} {
+  # When we do not have trigger support, set up the table like they
+  # would have been had triggers been there.  The tests that follow need
+  # this setup.
+  execsql {
+    CREATE TABLE t4(x);
+    INSERT INTO t3 VALUES(6,7);
+    INSERT INTO t4 VALUES('db2.6');
+    INSERT INTO t4 VALUES('db2.13');
+  } db2
+  execsql {
+    CREATE TABLE t4(y);
+    INSERT INTO main.t3 VALUES(11,12);
+    INSERT INTO t4 VALUES('main.11');
+  }
+}
+
 
 # This one is tricky.  On the UNION ALL select, we have to make sure
 # the schema for both main and db2 is valid before starting to execute
@@ -496,6 +513,7 @@ do_test attach-4.8 {
 } {db2.6 db2.13 main.11}
 
 do_test attach-4.9 {
+  ifcapable {!trigger} {execsql {INSERT INTO main.t4 VALUES('main.15')}}
   execsql {
     INSERT INTO main.t3 VALUES(15,16);
     SELECT * FROM db2.t4 UNION ALL SELECT * FROM main.t4;
@@ -530,6 +548,7 @@ do_test attach-4.13 {
 
 # Tests for the sqliteFix...() routines in attach.c
 #
+ifcapable {trigger} {
 do_test attach-5.1 {
   db close
   sqlite3 db test.db
@@ -609,6 +628,7 @@ do_test attach-5.9 {
     END;
   } db2
 } {1 {trigger r5 cannot reference objects in database temp}}
+} ;# endif trigger
 
 # Check to make sure we get a sensible error if unable to open
 # the file that we are trying to attach.

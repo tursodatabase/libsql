@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE INDEX statement.
 #
-# $Id: index.test,v 1.33 2004/11/03 16:27:02 drh Exp $
+# $Id: index.test,v 1.34 2004/11/04 04:42:28 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -598,11 +598,13 @@ do_test index-18.3 {
     CREATE VIEW sqlite_v1 AS SELECT * FROM t7;
   }
 } {1 {object name reserved for internal use: sqlite_v1}}
-do_test index-18.4 {
-  catchsql {
-    CREATE TRIGGER sqlite_tr1 BEFORE INSERT ON t7 BEGIN SELECT 1; END;
-  }
-} {1 {object name reserved for internal use: sqlite_tr1}}
+ifcapable {trigger} {
+  do_test index-18.4 {
+    catchsql {
+      CREATE TRIGGER sqlite_tr1 BEFORE INSERT ON t7 BEGIN SELECT 1; END;
+    }
+  } {1 {object name reserved for internal use: sqlite_tr1}}
+}
 do_test index-18.5 {
   execsql {
     DROP TABLE t7;

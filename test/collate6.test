@@ -12,10 +12,18 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is collation sequences in concert with triggers.
 #
-# $Id: collate6.test,v 1.1 2004/06/11 10:51:41 danielk1977 Exp $
+# $Id: collate6.test,v 1.2 2004/11/04 04:42:28 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+# There are no tests in this file that will work without
+# trigger support.
+#
+ifcapable {!trigger} {
+  finish_test
+  return
+}
 
 # Create a case-insensitive collation type NOCASE for use in testing. 
 # Normally, capital letters are less than their lower-case counterparts.
@@ -101,6 +109,3 @@ do_test collate6-1.9 {
 
 
 finish_test
-
-
-

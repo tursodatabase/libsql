@@ -61,6 +61,14 @@ do_test lastinsert-1.4 {
     }
 } {0 3}
 
+# All remaining tests involve triggers.  Skip them if triggers are not
+# supported in this build.
+#
+ifcapable {!trigger} {
+  finish_test
+  return
+}
+
 # ----------------------------------------------------------------------------
 # 2.x - tests with after insert trigger
 
@@ -316,4 +324,3 @@ do_test lastinsert-7.6 {
 } {0 1205}
 
 finish_test
-

@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and schema changes to attached databases.
 #
-# $Id: attach3.test,v 1.9 2004/07/19 00:56:24 drh Exp $
+# $Id: attach3.test,v 1.10 2004/11/04 04:42:28 drh Exp $
 #
 
 
@@ -153,6 +153,7 @@ do_test attach3-6.2 {
   }
 } {}
 
+ifcapable {trigger} {
 # Create a trigger in the auxilary database.
 do_test attach3-7.1 {
   execsql {
@@ -211,6 +212,7 @@ do_test attach3-9.2 {
     SELECT count(*) FROM sqlite_temp_master;
   }
 } {0}
+} ;# endif trigger
 
 # Make sure the aux.sqlite_master table is read-only
 do_test attach3-10.0 {

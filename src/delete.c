@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle DELETE FROM statements.
 **
-** $Id: delete.c,v 1.84 2004/10/31 02:22:49 drh Exp $
+** $Id: delete.c,v 1.85 2004/11/04 04:42:28 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -81,13 +81,15 @@ void sqlite3DeleteFrom(
   Index *pIdx;           /* For looping over indices of the table */
   int iCur;              /* VDBE Cursor number for pTab */
   sqlite3 *db;           /* Main database structure */
-  int isView;            /* True if attempting to delete from a view */
   AuthContext sContext;  /* Authorization context */
+  int oldIdx = -1;       /* Cursor for the OLD table of AFTER triggers */
 
+#ifndef SQLITE_OMIT_TRIGGER
+  int isView;                  /* True if attempting to delete from a view */
   int row_triggers_exist = 0;  /* True if any triggers exist */
   int before_triggers;         /* True if there are BEFORE triggers */
   int after_triggers;          /* True if there are AFTER triggers */
-  int oldIdx = -1;             /* Cursor for the OLD table of AFTER triggers */
+#endif
 
   sContext.pParse = 0;
   if( pParse->nErr || sqlite3_malloc_failed ){
@@ -271,7 +273,7 @@ void sqlite3DeleteFrom(
         sqlite3VdbeAddOp(v, OP_Close, iCur, 0);
       }
 
-      sqlite3CodeRowTrigger(pParse, TK_DELETE, 0, TK_BEFORE, pTab, -1, 
+      (void)sqlite3CodeRowTrigger(pParse, TK_DELETE, 0, TK_BEFORE, pTab, -1, 
           oldIdx, (pParse->trigStack)?pParse->trigStack->orconf:OE_Default,
 	  addr);
     }
@@ -305,7 +307,7 @@ void sqlite3DeleteFrom(
         }
         sqlite3VdbeAddOp(v, OP_Close, iCur, 0);
       }
-      sqlite3CodeRowTrigger(pParse, TK_DELETE, 0, TK_AFTER, pTab, -1, 
+      (void)sqlite3CodeRowTrigger(pParse, TK_DELETE, 0, TK_AFTER, pTab, -1, 
           oldIdx, (pParse->trigStack)?pParse->trigStack->orconf:OE_Default,
 	  addr);
     }

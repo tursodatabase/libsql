@@ -12,7 +12,7 @@
 # focus of this file is testing the magic ROWID column that is
 # found on all tables.
 #
-# $Id: rowid.test,v 1.16 2004/06/27 21:31:40 drh Exp $
+# $Id: rowid.test,v 1.17 2004/11/04 04:42:28 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -368,6 +368,7 @@ do_test rowid-7.8 {
   }
 } {2 66 3 111}
 
+ifcapable {trigger} {
 # Make sure AFTER triggers that do INSERTs do not change the last_insert_rowid.
 # Ticket #290
 #
@@ -419,6 +420,17 @@ do_test rowid-8.8 {
     SELECT rowid, * FROM t4;
   }
 } {1 1 2 133 3 134}
+} ;# endif trigger
+
+# If triggers are not enable, simulate their effect for the tests that
+# follow.
+ifcapable {!trigger} {
+  execsql {
+    CREATE TABLE t3(a integer primary key);
+    INSERT INTO t3 VALUES(123);
+    INSERT INTO t3 VALUES(124);
+  }
+}
 
 # ticket #377: Comparison between integer primiary key and floating point
 # values.
