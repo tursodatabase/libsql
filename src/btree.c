@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.197 2004/11/02 14:24:34 drh Exp $
+** $Id: btree.c,v 1.198 2004/11/02 14:40:32 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1564,8 +1564,9 @@ set_child_ptrmaps_out:
 static void modifyPagePointer(MemPage *pPage, Pgno iFrom, Pgno iTo, u8 eType){
 
   if( eType==PTRMAP_OVERFLOW2 ){
+    /* The pointer is always the first 4 bytes of the page in this case.  */
     assert( get4byte(pPage->aData)==iFrom );
-    put4byte(pPage->aData, iFrom);
+    put4byte(pPage->aData, iTo);
   }else{
     int isInitOrig = pPage->isInit;
     int i;
@@ -1573,8 +1574,6 @@ static void modifyPagePointer(MemPage *pPage, Pgno iFrom, Pgno iTo, u8 eType){
 
     initPage(pPage, 0);
     nCell = pPage->nCell;
-
-   /*  assert( !pPage->leaf && eType==PTRMAP_BTREE ); */
 
     for(i=0; i<nCell; i++){
       u8 *pCell = findCell(pPage, i);
@@ -1695,8 +1694,8 @@ static int autoVacuumCommit(Btree *pBt){
     }while( iFreePage>finDbSize );
 
     /* Move page iDbPage from it's current location to page number iFreePage */
-    TRACE(("AUTOVACUUM: Moving %d to free page %d (ptr page %d)\n", 
-        iDbPage, iFreePage, iPtrPage));
+    TRACE(("AUTOVACUUM: Moving %d to free page %d (ptr page %d type %d)\n", 
+        iDbPage, iFreePage, iPtrPage, eType));
     releasePage(pFreeMemPage);
     pFreeMemPage = 0;
     rc = sqlite3pager_movepage(pPager, pDbPage, iFreePage);
@@ -1706,10 +1705,21 @@ static int autoVacuumCommit(Btree *pBt){
     /* If pDbPage was a btree-page, then it may have child pages and/or cells
     ** that point to overflow pages. The pointer map entries for all these
     ** pages need to be changed.
+    **
+    ** If pDbPage is an overflow page, then the first 4 bytes may store a
+    ** pointer to a subsequent overflow page. If this is the case, then
+    ** the pointer map needs to be updated for the subsequent overflow page.
     */
     if( eType==PTRMAP_BTREE ){
       rc = setChildPtrmaps(pDbMemPage);
       if( rc!=SQLITE_OK ) goto autovacuum_out;
+    }else{
+      Pgno nextOvfl = get4byte(pDbPage);
+      if( nextOvfl!=0 ){
+        assert( nextOvfl<=origDbSize );
+        rc = ptrmapPut(pBt, nextOvfl, PTRMAP_OVERFLOW2, iFreePage);
+        if( rc!=SQLITE_OK ) goto autovacuum_out;
+      }
     }
     releasePage(pDbMemPage);
     pDbMemPage = 0;

@@ -1,5 +1,5 @@
-C Require\sthat\sthe\spage\ssize\sbe\sa\spower\sof\s2.\s(CVS\s2038)
-D 2004-11-02T14:24:34
+C Fix\san\sauto-vacuum\sbug\sfor\sbtree\sentries\sthat\sspan\smore\sthan\sone\soverflow\spage.\s(CVS\s2039)
+D 2004-11-02T14:40:32
 F Makefile.in 9e90c685d69f09039015a6b1f3b0a48e9738c9e5
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -29,7 +29,7 @@ F sqlite3.def dbaeb20c153e1d366e8f421b55a573f5dfc00863
 F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
 F src/attach.c e49d09dad9f5f9fb10b4b0c1be5a70ae4c45e689
 F src/auth.c 3b81f2a42f48a62c2c9c9b0eda31a157c681edea
-F src/btree.c 057e97744f4e9ca02d4815db554fd95fdabd60d5
+F src/btree.c 5958f65a3795e91fd017e4902b6ee7fe98169eb0
 F src/btree.h 94dfec0a1722d33359b23e7e310f2b64ffedf029
 F src/build.c bb896c5f85ab749d17ae5d730235134c12c08033
 F src/date.c 34bdb0082db7ec2a83ef00063f7b44e61ee19dad
@@ -87,7 +87,7 @@ F test/attach.test 6ad560eb3e77751a4faecd77da09deac9e38cc41
 F test/attach2.test f7795123d3051ace1672b6d23973da6435de3745
 F test/attach3.test 6d060986ff004ebb89e1876a331d96c6bb62269e
 F test/auth.test 1cc252d9e7b3bdc1314199cbf3a0d3c5ed026c21
-F test/autovacuum.test 77eec318b1be7764b8dcb3198c035edc30cd319f
+F test/autovacuum.test 9ab4fcfb98ac1537548d61ce1e1718794aac4719
 F test/bigfile.test d3744a8821ce9abb8697f2826a3e3d22b719e89f
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
 F test/bind.test a8682ba41433b93bb36a4213a43f282ca9aec5a9
@@ -252,7 +252,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl fdacb0ba2d39831e8a6240d05a490026ad4c4e4c
-P d12481f09cbe51c7ea499bc22afec5de3af14ad4
-R ce7547bdb8b99a29e1e65ec61753f1b6
-U drh
-Z ac7564dbdf799e2f506094e004f86e98
+P c33b34dbe9657b151b9ab00a6b50a255fae623f8
+R 6249b189aa86705bd047e7b6eada805a
+U danielk1977
+Z d61c7336a7d899fa402be79ab44af7cd
