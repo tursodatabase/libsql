@@ -1,5 +1,5 @@
-C Tighten\sup\sthe\sCREATE\sINDEX\ssyntax\saccepted\sby\sthe\sparser.\s(CVS\s2329)
-D 2005-02-14T06:38:40
+C Make\ssure\sthat\swhen\sa\sCREATE\sINDEX\sfails,\sit\sdoes\snot\sleave\sa\sresidue\sbehind\nthat\scan\scorrupt\sthe\sdatabase.\s\sTicket\s#1115.\s(CVS\s2330)
+D 2005-02-14T20:48:19
 F Makefile.in d928187101fa3d78426cf48ca30e39d0fb714e57
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -31,7 +31,7 @@ F src/attach.c f78f76bc6a8e5e487ca53636e21ccba2484a9a61
 F src/auth.c 18c5a0befe20f3a58a41e3ddd78f372faeeefe1f
 F src/btree.c 2432adf957c68e7243b198c174b0f316f9717844
 F src/btree.h 2e2cc923224649337d7217df0dd32b06673ca180
-F src/build.c 9783b4bd230a22d0eaf7a3a1b521192d0ce85707
+F src/build.c 09333b6006d26d411dbaa918601be1054c09fff3
 F src/date.c f3d1f5cd1503dabf426a198f3ebef5afbc122a7f
 F src/delete.c 4b94395b52a8f7785acd71135c2ce54f3f5550b3
 F src/experimental.c 8cc66b2be6a011055d75ef19ed2584bcfbb585ad
@@ -131,6 +131,7 @@ F test/hook.test f8605cde4c77b2c6a4a73723bf6c507796a64dda
 F test/in.test ed134f8d477a6280297ced1646de83cccf8f196d
 F test/index.test 51e01a0928b4b61228917ddd8c6c0e2466547f6f
 F test/index2.test 9ad98243fd7fe833795a9cc662f371f0eed4ff4f
+F test/index3.test 72bd07b508022db688ec536c460345d24a3912e3
 F test/insert.test f39cb2306199c6f9d8959b843c9199d799217055
 F test/insert2.test 065f179a21b42f9746b97571b8ad10b092e90913
 F test/insert3.test c67f0240b1c17e71fa2ed8bb6de064928f549f95
@@ -270,7 +271,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P f3c51de7599ed6d3bcdd227e290ad75829840957
-R 7921af0145748c8a37437dad53c32c4a
-U danielk1977
-Z 64aa5c96551e695b1d8501bf1ee83810
+P 41d2214b83dd52acdda64a50d0c1ef16009d06d0
+R 9e0bcb38fd98e646a6dce64083f59531
+U drh
+Z b1359ca9d31266c1dc27ad6e9e05dbe4

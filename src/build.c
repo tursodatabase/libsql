@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.309 2005/02/09 07:05:46 danielk1977 Exp $
+** $Id: build.c,v 1.310 2005/02/14 20:48:20 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2421,7 +2421,7 @@ void sqlite3CreateIndex(
 
     /* Create the rootpage for the index
     */
-    sqlite3BeginWriteOperation(pParse, 0, iDb);
+    sqlite3BeginWriteOperation(pParse, 1, iDb);
     sqlite3VdbeAddOp(v, OP_CreateIndex, iDb, 0);
     sqlite3VdbeAddOp(v, OP_MemStore, iMem, 0);
 
