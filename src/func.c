@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.43.2.1 2004/06/23 21:16:52 drh Exp $
+** $Id: func.c,v 1.43.2.2 2004/07/18 21:14:05 drh Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -517,6 +517,7 @@ static void minmaxStep(sqlite_func *context, int argc, const char **argv){
   int mask;    /* 0 for min() or 0xffffffff for max() */
 
   assert( argc==2 );
+  if( argv[0]==0 ) return;  /* Ignore NULL values */
   if( argv[1][0]=='n' ){
     xCompare = sqliteCompare;
   }else{
@@ -526,17 +527,9 @@ static void minmaxStep(sqlite_func *context, int argc, const char **argv){
   assert( mask==0 || mask==-1 );
   p = sqlite_aggregate_context(context, sizeof(*p));
   if( p==0 || argc<1 ) return;
-  if( mask==0 && p->zBuf[0]>=2 ) return;
-  if( argv[0]==0 ){
-    if( mask==0 ){
-      p->zBuf[0] |= 2;
-    }
-    return;
-  }
-  assert( p->zBuf[0]<2 );
   if( p->z==0 || (xCompare(argv[0],p->z)^mask)<0 ){
     int len;
-    if( p->zBuf[0]!=0 ){
+    if( p->zBuf[0] ){
       sqliteFree(p->z);
     }
     len = strlen(argv[0]);
@@ -557,7 +550,7 @@ static void minMaxFinalize(sqlite_func *context){
   if( p && p->z && p->zBuf[0]<2 ){
     sqlite_set_result_string(context, p->z, strlen(p->z));
   }
-  if( p && (p->zBuf[0]&1)!=0 ){
+  if( p && p->zBuf[0] ){
     sqliteFree(p->z);
   }
 }
