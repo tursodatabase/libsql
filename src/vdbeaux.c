@@ -1426,15 +1426,28 @@ int sqlite3VdbeSerialGet(const unsigned char *buf, u64 serial_type, Mem *pMem){
 **
 ** Two NULL values are considered equal by this function.
 */
-int sqlite3MemCompare(Mem *pMem1, Mem *pMem2){
+int sqlite3MemCompare(const Mem *pMem1, const Mem *pMem2, const CollSeq *pColl){
   int rc;
-  int combined_flags = pMem1->flags|pMem2->flags; 
+  int f1, f2;
+  int combined_flags;
+
+  /* Interchange pMem1 and pMem2 if the collating sequence specifies
+  ** DESC order.
+  */
+  if( pColl && pColl->reverseOrder ){
+    const Mem *pTemp = pMem1;
+    pMem1 = pMem2;
+    pMem2 = pTemp;
+  }
+  f1 = pMem1->flags;
+  f2 = pMem2->flags;
+  combined_flags = f1|f2;
  
   /* If one value is NULL, it is less than the other. If both values
   ** are NULL, return 0.
   */
   if( combined_flags&MEM_Null ){
-    return (pMem2->flags&MEM_Null) - (pMem1->flags&MEM_Null);
+    return (f2&MEM_Null) - (f1&MEM_Null);
   }
 
   /* If one value is a number and the other is not, the number is less.
@@ -1442,44 +1455,61 @@ int sqlite3MemCompare(Mem *pMem1, Mem *pMem2){
   ** if both values are integers.
   */
   if( combined_flags&(MEM_Int|MEM_Real) ){
-    i64 diff;
-    if( !(pMem1->flags&(MEM_Int|MEM_Real)) ){
+    if( !(f1&(MEM_Int|MEM_Real)) ){
       return 1;
     }
-    if( !(pMem2->flags&(MEM_Int|MEM_Real)) ){
+    if( !(f2&(MEM_Int|MEM_Real)) ){
       return -1;
     }
-    if( combined_flags&MEM_Real ){
-      if( pMem1->flags&MEM_Int ){
-        pMem1->r = pMem1->i;
+    if( (f1 & f2 & MEM_Int)==0 ){
+      double r1, r2;
+      if( (f1&MEM_Real)==0 ){
+        r1 = pMem1->i;
+      }else{
+        r1 = pMem1->r;
       }
-      if( pMem2->flags&MEM_Int ){
-        pMem2->r = pMem2->i;
+      if( (f2&MEM_Real)==0 ){
+        r2 = pMem2->i;
+      }else{
+        r2 = pMem2->r;
       }
-      if( pMem1->r < pMem2->r ) return -1;
-      if( pMem1->r > pMem2->r ) return 1;
+      if( r1<r2 ) return -1;
+      if( r1>r2 ) return 1;
+      return 0;
+    }else{
+      assert( f1&MEM_Int );
+      assert( f2&MEM_Int );
+      if( pMem1->i < pMem2->i ) return -1;
+      if( pMem1->i > pMem2->i ) return 1;
       return 0;
     }
-    diff = pMem1->i - pMem2->i;
-    return diff<0 ? -1 : diff==0 ? 0 : +1;
   }
 
-  rc = (pMem2->flags&MEM_Null) - (pMem1->flags&MEM_Null);
-  if( rc ){
-    return rc;
+  /* If one value is a string and the other is a blob, the string is less.
+  ** If both are strings, compare using the collating functions.
+  */
+  if( combined_flags&MEM_Str ){
+    if( (f1 & MEM_Str)==0 ){
+      return 1;
+    }
+    if( (f2 & MEM_Str)==0 ){
+      return -1;
+    }
+    if( pColl && pColl->xCmp ){
+      return pColl->xCmp(pColl->pUser, pMem1->n, pMem1->z, pMem2->n, pMem2->z);
+    }else{
+      /* If no collating sequence is defined, fall through into the
+      ** blob case below and use memcmp() for the comparison. */
+    }
   }
-
-  /* Both values must be strings or blobs. If only one is a string, then
-  ** that value is less. Otherwise, compare with memcmp(). If memcmp()
-  ** returns 0 and one value is longer than the other, then that value
-  ** is greater.
+ 
+  /* Both values must be blobs.  Compare using memcmp().
   */
   rc = memcmp(pMem1->z, pMem2->z, (pMem1->n>pMem2->n)?pMem2->n:pMem1->n);
-  if( rc ){
-    return rc;
+  if( rc==0 ){
+    rc = pMem1->n - pMem2->n;
   }
-
-  return (pMem1->n - pMem2->n);
+  return rc;
 }
 
 /*
@@ -1539,7 +1569,7 @@ int sqlite3VdbeKeyCompare(
     offset1 += sqlite3VdbeSerialGet(&aKey1[offset1], serial_type1, &mem1);
     offset2 += sqlite3VdbeSerialGet(&aKey2[offset2], serial_type2, &mem2);
 
-    rc = sqlite3MemCompare(&mem1, &mem2);
+    rc = sqlite3MemCompare(&mem1, &mem2, 0);
     if( mem1.flags&MEM_Dyn ){
       sqliteFree(mem1.z);
     }
@@ -1624,7 +1654,7 @@ int sqlite3VdbeRowCompare(
     offset1 += sqlite3VdbeSerialGet(&aKey1[offset1], serial_type1, &mem1);
     offset2 += sqlite3VdbeSerialGet(&aKey2[offset2], serial_type2, &mem2);
 
-    rc = sqlite3MemCompare(&mem1, &mem2);
+    rc = sqlite3MemCompare(&mem1, &mem2, 0);
     if( mem1.flags&MEM_Dyn ){
       sqliteFree(mem1.z);
     }

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.307 2004/05/20 02:42:17 drh Exp $
+** $Id: vdbe.c,v 1.308 2004/05/20 13:54:54 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1484,7 +1484,7 @@ mismatch:
   break;
 }
 
-/* Opcode: Eq P1 P2 *
+/* Opcode: Eq P1 P2 P3
 **
 ** Pop the top two elements from the stack.  If they are equal, then
 ** jump to instruction P2.  Otherwise, continue to the next instruction.
@@ -1508,131 +1508,38 @@ mismatch:
 ** stack if the jump would have been taken, or a 0 if not.  Push a
 ** NULL if either operand was NULL.
 **
+** If P3 is not NULL it is a pointer to a collating sequence (a CollSeq
+** structure) that defines how to compare text.
 */
-/* Opcode: Ne P1 P2 *
+/* Opcode: Ne P1 P2 P3
 **
-** Pop the top two elements from the stack.  If they are not equal, then
-** jump to instruction P2.  Otherwise, continue to the next instruction.
-**
-** The least significant byte of P1 may be either 0x00 or 0x01. If either
-** operand is NULL (and thus if the result is unknown) then take the jump
-** only if the least significant byte of P1 is 0x01.
-**
-** The second least significant byte of P1 must be an affinity character -
-** 'n', 't', 'i' or 'o' - or 0x00. An attempt is made to coerce both values
-** according to the affinity before the comparison is made. If the byte is
-** 0x00, then numeric affinity is used.
-**
-** Once any conversions have taken place, and neither value is NULL, 
-** the values are compared. If both values are blobs, or both are text,
-** then memcmp() is used to determine the results of the comparison. If
-** both values are numeric, then a numeric comparison is used. If the
-** two values are of different types, then they are inequal.
-**
-** If P2 is zero, do not jump.  Instead, push an integer 1 onto the
-** stack if the jump would have been taken, or a 0 if not.  Push a
-** NULL if either operand was NULL.
+** This works just like the Eq opcode except that the jump is taken if
+** the operands from the stack are not equal.  See the Eq opcode for
+** additional information.
 */
-/* Opcode: Lt P1 P2 *
+/* Opcode: Lt P1 P2 P3
 **
-** Pop the top two elements from the stack.  If second element (the
-** next on stack) is less than the first (the top of stack), then
-** jump to instruction P2.  Otherwise, continue to the next instruction.
-** In other words, jump if NOS<TOS.
-**
-** The least significant byte of P1 may be either 0x00 or 0x01. If either
-** operand is NULL (and thus if the result is unknown) then take the jump
-** only if the least significant byte of P1 is 0x01.
-**
-** The second least significant byte of P1 must be an affinity character -
-** 'n', 't', 'i' or 'o' - or 0x00. An attempt is made to coerce both values
-** according to the affinity before the comparison is made. If the byte is
-** 0x00, then numeric affinity is used.
-**
-** Once any conversions have taken place, and neither value is NULL, 
-** the values are compared. If both values are blobs, or both are text,
-** then memcmp() is used to determine the results of the comparison. If
-** both values are numeric, then a numeric comparison is used. If the
-** two values are of different types, then they are inequal.
-**
-** If P2 is zero, do not jump.  Instead, push an integer 1 onto the
-** stack if the jump would have been taken, or a 0 if not.  Push a
-** NULL if either operand was NULL.
+** This works just like the Eq opcode except that the jump is taken if
+** the 2nd element down on the task is less than the top of the stack.
+** See the Eq opcode for additional information.
 */
-/* Opcode: Le P1 P2 *
+/* Opcode: Le P1 P2 P3
 **
-** Pop the top two elements from the stack.  If second element (the
-** next on stack) is less than or equal to the first (the top of stack),
-** then jump to instruction P2. In other words, jump if NOS<=TOS.
-**
-** The least significant byte of P1 may be either 0x00 or 0x01. If either
-** operand is NULL (and thus if the result is unknown) then take the jump
-** only if the least significant byte of P1 is 0x01.
-**
-** The second least significant byte of P1 must be an affinity character -
-** 'n', 't', 'i' or 'o' - or 0x00. An attempt is made to coerce both values
-** according to the affinity before the comparison is made. If the byte is
-** 0x00, then numeric affinity is used.
-**
-** Once any conversions have taken place, and neither value is NULL, 
-** the values are compared. If both values are blobs, or both are text,
-** then memcmp() is used to determine the results of the comparison. If
-** both values are numeric, then a numeric comparison is used. If the
-** two values are of different types, then they are inequal.
-**
-** If P2 is zero, do not jump.  Instead, push an integer 1 onto the
-** stack if the jump would have been taken, or a 0 if not.  Push a
-** NULL if either operand was NULL.
+** This works just like the Eq opcode except that the jump is taken if
+** the 2nd element down on the task is less than or equal to the
+** top of the stack.  See the Eq opcode for additional information.
 */
-/* Opcode: Gt P1 P2 *
+/* Opcode: Gt P1 P2 P3
 **
-** Pop the top two elements from the stack.  If second element (the
-** next on stack) is greater than the first (the top of stack),
-** then jump to instruction P2. In other words, jump if NOS>TOS.
-**
-** The least significant byte of P1 may be either 0x00 or 0x01. If either
-** operand is NULL (and thus if the result is unknown) then take the jump
-** only if the least significant byte of P1 is 0x01.
-**
-** The second least significant byte of P1 must be an affinity character -
-** 'n', 't', 'i' or 'o' - or 0x00. An attempt is made to coerce both values
-** according to the affinity before the comparison is made. If the byte is
-** 0x00, then numeric affinity is used.
-**
-** Once any conversions have taken place, and neither value is NULL, 
-** the values are compared. If both values are blobs, or both are text,
-** then memcmp() is used to determine the results of the comparison. If
-** both values are numeric, then a numeric comparison is used. If the
-** two values are of different types, then they are inequal.
-**
-** If P2 is zero, do not jump.  Instead, push an integer 1 onto the
-** stack if the jump would have been taken, or a 0 if not.  Push a
-** NULL if either operand was NULL.
+** This works just like the Eq opcode except that the jump is taken if
+** the 2nd element down on the task is greater than the top of the stack.
+** See the Eq opcode for additional information.
 */
-/* Opcode: Ge P1 P2 *
+/* Opcode: Ge P1 P2 P3
 **
-** Pop the top two elements from the stack.  If second element (the next
-** on stack) is greater than or equal to the first (the top of stack),
-** then jump to instruction P2. In other words, jump if NOS>=TOS.
-**
-** The least significant byte of P1 may be either 0x00 or 0x01. If either
-** operand is NULL (and thus if the result is unknown) then take the jump
-** only if the least significant byte of P1 is 0x01.
-**
-** The second least significant byte of P1 must be an affinity character -
-** 'n', 't', 'i' or 'o' - or 0x00. An attempt is made to coerce both values
-** according to the affinity before the comparison is made. If the byte is
-** 0x00, then numeric affinity is used.
-**
-** Once any conversions have taken place, and neither value is NULL, 
-** the values are compared. If both values are blobs, or both are text,
-** then memcmp() is used to determine the results of the comparison. If
-** both values are numeric, then a numeric comparison is used. If the
-** two values are of different types, then they are inequal.
-**
-** If P2 is zero, do not jump.  Instead, push an integer 1 onto the
-** stack if the jump would have been taken, or a 0 if not.  Push a
-** NULL if either operand was NULL.
+** This works just like the Eq opcode except that the jump is taken if
+** the 2nd element down on the task is greater than or equal to the
+** top of the stack.  See the Eq opcode for additional information.
 */
 case OP_Eq:
 case OP_Ne:
@@ -1668,7 +1575,8 @@ case OP_Ge: {
   applyAffinity(pNos, affinity);
   applyAffinity(pTos, affinity);
 
-  res = sqlite3MemCompare(pNos, pTos);
+  assert( pOp->p3type==P3_COLLSEQ || pOp->p3==0 );
+  res = sqlite3MemCompare(pNos, pTos, (CollSeq*)pOp->p3);
   switch( pOp->opcode ){
     case OP_Eq:    res = res==0;     break;
     case OP_Ne:    res = res!=0;     break;

@@ -15,7 +15,7 @@
 ** or VDBE.  The VDBE implements an abstract machine that runs a
 ** simple program to access and modify the underlying database.
 **
-** $Id: vdbe.h,v 1.77 2004/05/18 23:21:36 drh Exp $
+** $Id: vdbe.h,v 1.78 2004/05/20 13:54:54 drh Exp $
 */
 #ifndef _SQLITE_VDBE_H_
 #define _SQLITE_VDBE_H_
@@ -65,6 +65,7 @@ typedef struct VdbeOpList VdbeOpList;
 #define P3_DYNAMIC  (-1)  /* Pointer to a string obtained from sqliteMalloc() */
 #define P3_STATIC   (-2)  /* Pointer to a static string */
 #define P3_POINTER  (-3)  /* P3 is a pointer to some structure or object */
+#define P3_COLLSEQ  (-4)  /* P3 is a pointer to a CollSeq structure */
 
 /*
 ** The following macro converts a relative address in the p2 field

@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.123 2004/05/19 20:41:03 drh Exp $
+** $Id: expr.c,v 1.124 2004/05/20 13:54:54 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -55,6 +55,11 @@ char sqlite3ExprAffinity(Expr *pExpr){
   return pExpr->affinity;
 }
 
+/*
+** pExpr is the left operand of a comparison operator.  aff2 is the
+** type affinity of the right operand.  This routine returns the
+** type affinity that should be used for the comparison operator.
+*/
 char sqlite3CompareAffinity(Expr *pExpr, char aff2){
   char aff1 = sqlite3ExprAffinity(pExpr);
   if( aff1 && aff2 ){
@@ -79,6 +84,10 @@ char sqlite3CompareAffinity(Expr *pExpr, char aff2){
   }
 }
 
+/*
+** pExpr is a comparison operator.  Return the type affinity that should
+** be applied to both operands prior to doing the comparison.
+*/
 static char comparisonAffinity(Expr *pExpr){
   char aff;
   assert( pExpr->op==TK_EQ || pExpr->op==TK_IN || pExpr->op==TK_LT ||

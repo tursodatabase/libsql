@@ -1,5 +1,5 @@
-C Fix\sproblems\swith\stypes\sand\sthe\srecognition\sof\sBLOB\sas\shaving\sno\saffinity.\s(CVS\s1418)
-D 2004-05-20T12:41:20
+C sqlite3MemCompare\snow\stakes\sa\sCollSeq*\sargument.\s(CVS\s1419)
+D 2004-05-20T13:54:54
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -32,7 +32,7 @@ F src/copy.c 4d2038602fd0549d80c59bda27d96f13ea9b5e29
 F src/date.c 0eb0a89960bb45c7f7e768748605a7a97b0c8064
 F src/delete.c 2e1dda38345416a1ea1c0a6468589a7472334dac
 F src/encode.c a876af473d1d636faa3dca51c7571f2e007eea37
-F src/expr.c 34fceec0ae7d9108d6cf98b0685d3d2afa962728
+F src/expr.c 22ee818d11c6dec2a4d1e8117b42c59928995e49
 F src/func.c cfbb7096efb58e2857e3b312a8958a12774b625a
 F src/hash.c 440c2f8cb373ee1b4e13a0988489c7cd95d55b6f
 F src/hash.h 762d95f1e567664d1eafc1687de755626be962fb
@@ -64,10 +64,10 @@ F src/update.c 1f6687f8d1085f896a24c0fa13d802223ed55539
 F src/utf.c c27c4f1120f7aaef00cd6942b3d9e3f4ca4fe0e4
 F src/util.c 5cbeb452da09cfc7248de9948c15b14d840723f7
 F src/vacuum.c c134702e023db8778e6be59ac0ea7b02315b5476
-F src/vdbe.c fe412966e48948b680a5bc25796e6e9727174b4b
-F src/vdbe.h 314e9c07db73a42a6ba91ab7539e27652fc88870
-F src/vdbeInt.h 97b95c622ea467d39879ae97d07732ebb4891b76
-F src/vdbeaux.c c48157e910b16010812f67daf981141d3b913e64
+F src/vdbe.c 4aedca4e37bd4762c1ad7f90e0ababf4ad52aa29
+F src/vdbe.h e75fe13aff16cc6e840371f473762615239264e4
+F src/vdbeInt.h 69a7dd040f0656e211d4e20b3cafdcee8461107e
+F src/vdbeaux.c b770802151f30589bd063f434174d230aa043406
 F src/where.c 626b2cbc4290d8be6c04ad7c8395f46d4e21d0d8
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
 F test/attach.test cb9b884344e6cfa5e165965d5b1adea679a24c83
@@ -195,7 +195,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 948307f07d6f8cc1cc186167ff7aaa5dfd5d8a2e
-R 59f05a5952887901890856f7cd04108e
+P 8411718f0ac17e9c2376fdf8b5fa0cc5fc88be9b
+R 0120dca1e321b23f5d0817fb2f4d18f3
 U drh
-Z 90bb81f98be65daf25dbb23b209b7296
+Z 85c2c075127be3f9e1f00b69921810df
