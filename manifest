@@ -1,5 +1,5 @@
-C Bug\sfix:\sBe\ssure\sto\ssends\sNULLs\sto\sthe\scallback\swhen\sthe\scolumn\svalue\sis\sNULL.\s(CVS\s313)
-D 2001-11-13T19:36:55
+C Version\s2.1.1\s(CVS\s460)
+D 2001-11-13T19:45:00
 F Makefile.in 6801df952cb1df64aa32e4de85fed24511d28efd
 F Makefile.template 1fdb891f14083ee0b63cf7282f91529634438e7a
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -115,7 +115,7 @@ F www/speed.tcl 212a91d555384e01873160d6a189f1490c791bc2
 F www/sqlite.tcl 6a21242a272e9c0939a04419a51c3d50cae33e3e
 F www/tclsqlite.tcl 13d50723f583888fc80ae1a38247c0ab415066fa
 F www/vdbe.tcl bb7d620995f0a987293e9d4fb6185a3b077e9b44
-P 94ce8282360d4a0dd2032564aae06f0f1902cb5b
+P 207a57ad2e4e1a44a4c0231b1ba334594402d6cd
 R 0a13d7b08edf071b64dd2f420eda4445
 U drh
-Z 4e8da0eeb123fa0d40f2df74bd98f9ea
+Z 06ae806c460464b0dc58a849aecc6f76
