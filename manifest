@@ -1,5 +1,5 @@
-C Updates\sprior\sto\srelease\s2.6.3.\s(CVS\s706)
-D 2002-08-13T00:01:17
+C Version\s2.6.3\s(CVS\s707)
+D 2002-08-13T00:02:10
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 0f288908fb6b1186b1594d753f79dc06c32b1dd7
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -143,7 +143,7 @@ F www/speed.tcl 7fc83f1b018e1ecc451838449542c3079ed12425
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 2fb3fdcdf06c1206bf14da640c2f9e599455f0eb
+P 34c4149eea7a48927e36867f4e25ff7fac40c66e
 R b96ce82652418ef9a905306828af0c0e
 U drh
-Z deb07850c800510c6c72c2a0a0ce1719
+Z a3f773bf3a0d32a4220b77aeb88fa1db
