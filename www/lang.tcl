@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.9 2001/09/20 01:44:44 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.10 2001/09/28 17:47:14 drh Exp $}
 
 puts {<html>
 <head>
@@ -119,7 +119,7 @@ ROLLBACK [TRANSACTION [<name>]]
 puts {
 <p>Beginning in version 2.0, SQLite supports transactions with
 rollback and atomic commit.  However, only a single level of
-transaction is required.  In other words, transactions
+transaction is allowed.  In other words, transactions
 may not be nested.
 </p>
 
@@ -173,7 +173,7 @@ puts "\"[Operator \\.]\".</p>"
 Section {CREATE INDEX} createindex
 
 Syntax {sql-statement} {
-CREATE INDEX <index-name> 
+CREATE [UNIQUE] INDEX <index-name> 
 ON <table-name> ( <column-name> [, <column-name>]* )
 } {column-name} {
 <name> [ ASC | DESC ]
@@ -190,6 +190,10 @@ implementation.</p>
 
 <p>There are no arbitrary limits on the number of indices that can be
 attached to a single table, nor on the number of columns in an index.</p>
+
+<p>If the UNIQUE keyword appears between CREATE and INDEX then duplicate
+index entries are not allowed.  Any attempt to insert a duplicate entry
+will result in a rollback and an error message.</p>
 
 <p>The exact text
 of each CREATE INDEX statement is stored in the <b>sqlite_master</b>
@@ -234,10 +238,12 @@ is the name of the table that records the database schema.</p>
 <p>Each column definition is the name of the column followed by the
 datatype for that column, then one or more optional column constraints.
 The datatype for the column is ignored.  All information
-is stored as null-terminated strings.  The constraints are also ignored,
-except that the PRIMARY KEY constraint will cause an index to be automatically
-created that implements the primary key and the DEFAULT constraint
-which specifies a default value to use when doing an INSERT.
+is stored as null-terminated strings.
+The UNIQUE constraint causes an index to be created on the specified
+columns.  This index must contain unique keys.  The PRIMARY KEY constraint
+is an alias for UNIQUE.
+The DEFAULT constraint
+specifies a default value to use when doing an INSERT.
 </p>
 
 <p>There are no arbitrary limits on the number

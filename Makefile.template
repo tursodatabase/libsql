@@ -284,11 +284,7 @@ fulltest:	testfixture$(EXE) sqlite$(EXE)
 test:	testfixture$(EXE) sqlite$(EXE)
 	./testfixture$(EXE) $(TOP)/test/quick.test
 
-sqlite.tar.gz:	
-	pwd=`pwd`; cd $(TOP)/..; tar czf $$pwd/sqlite.tar.gz sqlite
-
-index.html:	$(TOP)/www/index.tcl sqlite.tar.gz last_change
-	cp ../sqlite-*.tar.gz .
+index.html:	$(TOP)/www/index.tcl last_change
 	tclsh $(TOP)/www/index.tcl `cat $(TOP)/VERSION` >index.html
 
 sqlite.html:	$(TOP)/www/sqlite.tcl
@@ -327,11 +323,13 @@ tclsqlite.html:	$(TOP)/www/tclsqlite.tcl
 speed.html:	$(TOP)/www/speed.tcl
 	tclsh $(TOP)/www/speed.tcl >speed.html
 
+download.html:	$(TOP)/www/download.tcl
+	tclsh $(TOP)/www/download.tcl >download.html
+
 
 # Files to be published on the website.
 #
-PUBLISH = \
-  sqlite.tar.gz \
+DOC = \
   index.html \
   sqlite.html \
   changes.html \
@@ -344,13 +342,12 @@ PUBLISH = \
   crosscompile.html \
   mingw.html \
   tclsqlite.html \
+  download.html \
   speed.html
 
-website:	$(PUBLISH)
-
-publish:	$(PUBLISH)
-	chmod 0644 $(PUBLISH) sqlite-*.tar.gz
-	scp $(PUBLISH) sqlite-*.tar.gz hwaci@oak.he.net:public_html/sw/sqlite
+doc:	$(DOC)
+	mkdir -p doc
+	mv $(DOC) doc
 
 install:	sqlite libsqlite.a sqlite.h
 	mv sqlite /usr/bin
@@ -359,7 +356,7 @@ install:	sqlite libsqlite.a sqlite.h
 
 clean:	
 	rm -f *.o sqlite libsqlite.a sqlite.h
-	rm -f lemon lempar.c parse.* sqlite.tar.gz
+	rm -f lemon lempar.c parse.* sqlite*.tar.gz
 	rm -f $(PUBLISH)
 	rm -f *.da *.bb *.bbg gmon.out
 	rm -rf tsrc

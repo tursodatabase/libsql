@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.23 2001/09/16 00:13:27 drh Exp $
+** $Id: tclsqlite.c,v 1.24 2001/09/28 17:47:14 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -434,6 +434,15 @@ static int DbMain(void *cd, Tcl_Interp *interp, int argc, char **argv){
 }
 
 /*
+** Provide a dummy Tcl_InitStubs if we are using this as a static
+** library.
+*/
+#ifndef USE_TCL_STUBS
+# undef  Tcl_InitStubs
+# define Tcl_InitStubs(a,b,c)
+#endif
+
+/*
 ** Initialize this module.
 **
 ** This Tcl module contains only a single new Tcl command named "sqlite".
@@ -443,11 +452,21 @@ static int DbMain(void *cd, Tcl_Interp *interp, int argc, char **argv){
 ** for additional information.
 */
 int Sqlite_Init(Tcl_Interp *interp){
+  Tcl_InitStubs(interp, "8.0", 0);
+  Tcl_CreateCommand(interp, "sqlite", DbMain, 0, 0);
+  Tcl_PkgProvide(interp, "sqlite", "1.0");
+  return TCL_OK;
+}
+int Tclsqlite_Init(Tcl_Interp *interp){
+  Tcl_InitStubs(interp, "8.0", 0);
   Tcl_CreateCommand(interp, "sqlite", DbMain, 0, 0);
   Tcl_PkgProvide(interp, "sqlite", "1.0");
   return TCL_OK;
 }
 int Sqlite_SafeInit(Tcl_Interp *interp){
+  return TCL_OK;
+}
+int Tclsqlite_SafeInit(Tcl_Interp *interp){
   return TCL_OK;
 }
 

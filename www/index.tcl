@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.41 2001/09/25 01:51:00 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.42 2001/09/28 17:47:14 drh Exp $}
 
 puts {<html>
 <head><title>SQLite: An SQL Database Engine In A C Library</title></head>
@@ -27,9 +27,17 @@ an example of how to use the SQLite library.</p>
 <p>SQLite is <b>not</b> a client library used to connect to a
 big database server.  SQLite <b>is</b> the server.  The SQLite
 library reads and writes directly to and from the database files
-on disk.</p>
+on disk.</p>}
 
-<h2>Features</h2>
+puts {<table align="right"hspace="10">
+<tr><td align="center" bgcolor="#8ee5ee">
+<table border="2"><tr><td align="center">
+<a href="download.html"><big><b>Download<br>SQLite
+</td></tr></table>
+</td></tr>
+</table>}
+
+puts {<h2>Features</h2>
 
 <p><ul>
 <li>Implements a large subset of SQL92.</li>
@@ -42,7 +50,8 @@ on disk.</p>
 <li>Very simple 
 <a href="c_interface.html">C/C++ interface</a> requires the use of only
 three functions and one opaque structure.</li>
-<li>A TCL interface to the library is included.</li>
+<li>A <a href="tclsqlite.html">TCL interface</a>
+    to the library is included.</li>
 <li>A TCL-based test suite provides near 100% code coverage.</li>
 <li>Self-contained: no external dependencies.</li>
 <li>Built and tested under Linux and Win2K.</li>
@@ -51,35 +60,13 @@ three functions and one opaque structure.</li>
 </p>
 }
 
-puts {<h2>Download</h2>}
+puts {<h2>Download</h2>
 
-puts {<table align="right"hspace="10">
-<tr><td align="center" bgcolor="#8ee5ee">
-<table border="2"><tr><td align="center">
-<a href="sqlite.tar.gz"><big><b>Download SQLite<br>}
-puts "version $vers<br>"
-puts {Now!
-</td></tr></table>
-</td></tr>
-</table>}
-
-
-puts {<p>You can download a tarball containing all source
-code for SQLite
+<p>
+Precompiled binaries for Linux and Windows and the complete
+source tree are available for <a href="download.html">download</a>.
+</p>
 }
-puts "version $vers"
-puts {
-(including the TCL scripts that generate the
-HTML files for this website) at <a href="sqlite.tar.gz">sqlite.tar.gz</a>.}
-puts "This is a [file size sqlite.tar.gz] byte download."
-set historical [lsort -dict [glob -nocomplain sqlite-*.tar.gz]]
-if {$historical!=""} {
-  puts {The following historical versions of SQLite are also available:}
-  foreach x $historical {
-     puts "<a href=\"$x\">$x</a> ([file size $x] bytes)"
-  }
-}
-puts {</p>}
 
 puts {<h2>Current Status</h2>
 
@@ -88,17 +75,6 @@ There are currently no <em>known</em> memory leaks or debilitating bugs
 in the library.  <a href="http://gcc.gnu.org/onlinedocs/gcov_1.html">Gcov</a>
 is used to verify test coverage.</p>
 
-<p>Known bugs:</p>
-
-<ul>
-<li><p>
-  The LIKE operator is suppose to ignore case. 
-  But it only ignores case for 7-bit Latin characters.
-  The case of 8-bit iso8859 characters or UTF-8 characters is
-  signification.  Hence, <b>'a'&nbsp;LIKE&nbsp;'A'</b> returns
-  TRUE but <b>'&aelig;'&nbsp;LIKE&nbsp;'&AElig;'</b> returns FALSE.
-</p></li>
-</ul>
 
 <h2>Documentation</h2>
 
@@ -150,14 +126,6 @@ $ ../sqlite/configure
 $ make                       <i> Builds "sqlite" and "libsqlite.a" </i>
 $ make test                  <i> Optional: run regression tests </i>
 </pre></blockquote>
-
-<p>The Win2K version of SQLite was built using the MingW32 cross-compiler
-running under Linux.  You have to give the configure script hints to make
-this work.  Read the comments at the beginning of the file
-<b>configure.in</b> for additional information.  The source code is
-general enough that it should be possible to compile SQLite using VC++,
-though the author has no desire or motivation to try.
-</p>
 }
 
 puts {<h2>Command-line Usage Example</h2>

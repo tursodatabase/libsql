@@ -17,6 +17,15 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2001 Sep 28 (2.0.0)} {
+<li>Automatically build binaries for Linux and Windows and put them on
+    the website.</li>
+}
+
+chng {2001 Sep 28 (2.0-alpha-4)} {
+<li>Incorporate makefile patches form A. Rottmann to use LIBTOOL</li>
+}
+
 chng {2001 Sep 27 (2.0-alpha-3)} {
 <li>SQLite now honors the UNIQUE keyword in CREATE UNIQUE INDEX.  Primary
     keys are required to be unique.</li>
