@@ -23,6 +23,8 @@ chng {2002 Feb * (2.3.3)} {
 <li>Added support for sub-queries in the FROM clause of a SELECT.</li>
 <li>More efficient implementation of sqliteFileExists() under Windows.
     (by Joel Luscy)</li>
+<li>The VALUES clause of an INSERT can now contain expressions, including
+    scalar SELECT clauses.</li>
 }
 
 chng {2002 Feb 14 (2.3.2)} {

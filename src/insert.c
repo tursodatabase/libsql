@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.42 2002/02/03 19:06:03 drh Exp $
+** $Id: insert.c,v 1.43 2002/02/18 13:56:37 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -100,10 +100,20 @@ void sqliteInsert(
     assert( pSelect->pEList );
     nColumn = pSelect->pEList->nExpr;
   }else{
+    IdList dummy;
     assert( pList!=0 );
     srcTab = -1;
     assert( pList );
     nColumn = pList->nExpr;
+    for(i=0; i<nColumn; i++){
+      sqliteExprResolveInSelect(pParse, pList->a[i].pExpr);
+    }
+    dummy.nId = 0;
+    for(i=0; i<nColumn; i++){
+      if( sqliteExprResolveIds(pParse, &dummy, 0, pList->a[i].pExpr) ){
+        goto insert_cleanup;
+      }
+    }
   }
 
   /* Make sure the number of columns in the source data matches the number

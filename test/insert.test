@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the INSERT statement.
 #
-# $Id: insert.test,v 1.7 2002/02/03 19:06:03 drh Exp $
+# $Id: insert.test,v 1.8 2002/02/18 13:56:37 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -162,5 +162,35 @@ do_test insert-3.5 {
   set x
 } {ok}
 
+do_test insert-4.1 {
+  execsql {
+    CREATE TABLE t3(a,b,c);
+    INSERT INTO t3 VALUES(1+2+3,4,5);
+    SELECT * FROM t3;
+  }
+} {6 4 5}
+do_test insert-4.2 {
+  execsql {
+    INSERT INTO t3 VALUES((SELECT max(a) FROM t3)+1,5,6);
+    SELECT * FROM t3 ORDER BY a;
+  }
+} {6 4 5 7 5 6}
+do_test insert-4.3 {
+  catchsql {
+    INSERT INTO t3 VALUES((SELECT max(a) FROM t3)+1,t3.a,6);
+    SELECT * FROM t3 ORDER BY a;
+  }
+} {1 {no such column: t3.a}}
+do_test insert-4.4 {
+  execsql {
+    INSERT INTO t3 VALUES((SELECT b FROM t3 WHERE a=0),6,7);
+    SELECT * FROM t3 ORDER BY a;
+  }
+} {{} 6 7 6 4 5 7 5 6}
+do_test insert-4.5 {
+  execsql {
+    SELECT b,c FROM t3 WHERE a IS NULL;
+  }
+} {6 7}
 
 finish_test

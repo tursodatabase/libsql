@@ -1,5 +1,5 @@
-C Additional\stests\sfor\sthe\ssub-query\sfeature.\s(CVS\s375)
-D 2002-02-18T13:35:33
+C Allow\sgeneral\sexpressions\sin\sthe\sVALUES\sclause\sof\san\sINSERT\sstatement.\s(CVS\s376)
+D 2002-02-18T13:56:37
 F Makefile.in 9fa4277413bf1d9cf91365f07d4108d7d87ed2af
 F Makefile.template 3372d45f8853afdb70bd30cc6fb50a3cd9069834
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -26,14 +26,14 @@ F src/delete.c f8ad71be53cf18656b6573de65395852fe817f0c
 F src/expr.c 7aff65ea0732b07d36925087ad611019103ad69a
 F src/hash.c 8f7c740ef2eaaa8decfa8751f2be30680b123e46
 F src/hash.h d1ce47900c7325af5e41c4feb4855c4bf2b841e7
-F src/insert.c 98edfd1ae7da7558cbaad3ae5023e1ea271513a6
+F src/insert.c 9453cbba2a62f8a2fb37d77cbdc5c84aa24752d7
 F src/main.c 300320ba68d3e5b22c2c5b2c07fa884878202181
 F src/md5.c 52f677bfc590e09f71d07d7e327bd59da738d07c
 F src/os.c f6bc9b7ab530346bb7fef2ed39f2f1f214bc14ea
 F src/os.h a17596ecc7f38a228b83ecdb661fb03ce44726d6
 F src/pager.c d261a3a0b4e96a400ef5432297edec09b041e9c7
 F src/pager.h b28f004e2f5541dc60cc32db01bf80cf4d056283
-F src/parse.y f7a6d8122b2d65ae8ded78721d0995f47ad277e1
+F src/parse.y 39c336ff9ad75429205feaa704d6c1832c648c81
 F src/printf.c 300a90554345751f26e1fc0c0333b90a66110a1d
 F src/random.c f6b36bec5ebd3edb3440224bf5bf811fe4ac9a1b
 F src/select.c d2bbaf4cba97b4c40503d0dc47e8b729e7088e0b
@@ -64,7 +64,7 @@ F test/expr.test c8a495050dcec3f9e68538c3ef466726933302c1
 F test/func.test 51dbe3f8a4c28972751697423e6acc5d6b551df1
 F test/in.test c09312672e3f0709fa02c8e2e9cd8fb4bd6269aa
 F test/index.test c8a471243bbf878974b99baf5badd59407237cf3
-F test/insert.test 5e75827fc255cff240c30f11ccb635067dfc70ce
+F test/insert.test 68c71b2fe6ad5b879845a1a70390955316fec68d
 F test/insert2.test 3fd6547056114bbb2da1d8cd7778affda4a30a12
 F test/intpkey.test ce3de8326082929667cf356855426519cfe2f5c7
 F test/ioerr.test 57d9bffaca18b34f9e976f786eadc2591d6efc6a
@@ -108,7 +108,7 @@ F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 72a0c80e9054cc7025a50928d28d9c75c02c2b8b
 F www/c_interface.tcl 82a026b1681757f13b3f62e035f3a31407c1d353
-F www/changes.tcl 836ec1f2e87e5d21c4cbc1f7531194e84962dd94
+F www/changes.tcl e97a76943c2c4029f6ffba60c4dc6c24478e151c
 F www/conflict.tcl 81dd21f9a679e60aae049e9dd8ab53d59570cda2
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
 F www/download.tcl a6d75b8b117cd33dcb090bef7e80d7556d28ebe0
@@ -123,7 +123,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P d3d59261da9bef3250e99444167ad6ef98764574
-R 76e39ed07dfb31018506c2491ca420cc
+P a0019fce701fc858134f0a33bda9a511e41a09f8
+R b95029b9b39abf918f39e16a59c21b3e
 U drh
-Z 6f65c1d3be6a2b9892d59e07f4ed69c8
+Z 7c3a4a0f74cd2eb9fb88495aad858df0
