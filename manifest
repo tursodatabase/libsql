@@ -1,5 +1,5 @@
-C Hyperlinks\sand\sminor\sadditions/corrections\sfor\slang.tcl\s(CVS\s1011)
-D 2003-06-07T08:56:09
+C Major\supdate\sof\svdbe\stutorial\sto\s2.8.0\sengine.\s(CVS\s1012)
+D 2003-06-07T08:57:58
 F Makefile.in 98a14dc13a78ca0e12007e974c93aeb098db7f68
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -164,8 +164,8 @@ F www/quickstart.tcl 4e97bef825e6a4153c43afb9f97235fc4da278ab
 F www/speed.tcl 296cc5632d069b56d3ef5409ca0df90f486c10fb
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
-F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P a97dca73aed0b42d8dcf944360667ae93c5324fd
-R 990a0b4df2d173c5db871c0c6065292b
+F www/vdbe.tcl 14fdcc7fe8a60a6ba8584903636db8dc37eef26a
+P 685a179aae535431ec46922f1aff50a54112e959
+R d6e85951f3ba270b0e12272eb94105d7
 U jplyon
-Z a49d0c549bf8970eaa53731030e4c6b4
+Z 7226a2f79c96b354956ea3473fe74d79
