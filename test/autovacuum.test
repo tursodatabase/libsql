@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the SELECT statement.
 #
-# $Id: autovacuum.test,v 1.9 2004/11/05 15:45:11 danielk1977 Exp $
+# $Id: autovacuum.test,v 1.10 2004/11/08 12:32:50 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -128,6 +128,12 @@ foreach delete_order $delete_orders {
 #                   the free root-page location.
 # autovacuum-2.4.*: Check that a table can be created correctly when the
 #                   root-page it requires is on the free-list.
+# autovacuum-2.5.*: Check that a table with indices can be dropped. This
+#                   is slightly tricky because dropping one of the
+#                   indices/table btrees could move the root-page of another.
+#                   The code-generation layer of SQLite overcomes this problem
+#                   by dropping the btrees in descending order of root-pages.
+#                   This test ensures that this actually happens.
 #
 do_test autovacuum-2.1.1 {
   execsql {
@@ -292,6 +298,135 @@ do_test autovacuum-2.4.7 {
   execsql COMMIT
   file_pages
 } 1
+
+# Create some tables with indices to drop.
+do_test autovacuum-2.5.1 {
+  execsql {
+    CREATE TABLE av1(a PRIMARY KEY, b, c);
+    INSERT INTO av1 VALUES('av1 a', 'av1 b', 'av1 c');
+
+    CREATE TABLE av2(a PRIMARY KEY, b, c);
+    CREATE INDEX av2_i1 ON av2(b);
+    CREATE INDEX av2_i2 ON av2(c);
+    INSERT INTO av2 VALUES('av2 a', 'av2 b', 'av2 c');
+
+    CREATE TABLE av3(a PRIMARY KEY, b, c);
+    CREATE INDEX av3_i1 ON av3(b);
+    INSERT INTO av3 VALUES('av3 a', 'av3 b', 'av3 c');
+
+    CREATE TABLE av4(a, b, c);
+    CREATE INDEX av4_i1 ON av4(a);
+    CREATE INDEX av4_i2 ON av4(b);
+    CREATE INDEX av4_i3 ON av4(c);
+    CREATE INDEX av4_i4 ON av4(a, b, c);
+    INSERT INTO av4 VALUES('av4 a', 'av4 b', 'av4 c');
+  }
+} {}
+
+do_test autovacuum-2.5.2 {
+  execsql {
+    SELECT name, rootpage FROM sqlite_master;
+  }
+} [list av1 4  sqlite_autoindex_av1_1 3 \
+        av2 6  sqlite_autoindex_av2_1 5 av2_i1 7 av2_i2 8 \
+        av3 10 sqlite_autoindex_av3_1 9 av3_i1 11 \
+        av4 12 av4_i1 13 av4_i2 14 av4_i3 15 av4_i4 16 \
+]
+
+# The following 4 tests are SELECT queries that use the indices created.
+# If the root-pages in the internal schema are not updated correctly when
+# a table or indice is moved, these queries will fail. They are repeated
+# after each table is dropped (i.e. as test cases 2.5.*.[1..4]).
+do_test autovacuum-2.5.2.1 {
+  execsql {
+    SELECT * FROM av1 WHERE a = 'av1 a';
+  }
+} {{av1 a} {av1 b} {av1 c}}
+do_test autovacuum-2.5.2.2 {
+  execsql {
+    SELECT * FROM av2 WHERE a = 'av2 a' AND b = 'av2 b' AND c = 'av2 c'
+  }
+} {{av2 a} {av2 b} {av2 c}}
+do_test autovacuum-2.5.2.3 {
+  execsql {
+    SELECT * FROM av3 WHERE a = 'av3 a' AND b = 'av3 b';
+  }
+} {{av3 a} {av3 b} {av3 c}}
+do_test autovacuum-2.5.2.4 {
+  execsql {
+    SELECT * FROM av4 WHERE a = 'av4 a' AND b = 'av4 b' AND c = 'av4 c';
+  }
+} {{av4 a} {av4 b} {av4 c}}
+
+# Drop table av3. Indices av4_i2, av4_i3 and av4_i4 are moved to fill the two
+# root pages vacated. The operation proceeds as:
+# Step 1: Delete av3_i1 (root-page 11). Move root-page of av4_i4 to page 11.
+# Step 2: Delete av3 (root-page 10). Move root-page of av4_i3 to page 10.
+# Step 3: Delete sqlite_autoindex_av1_3 (root-page 9). Move av4_i2 to page 9.
+do_test autovacuum-2.5.3 {
+  execsql {
+    DROP TABLE av3;
+    SELECT name, rootpage FROM sqlite_master;
+  }
+} [list av1 4  sqlite_autoindex_av1_1 3 \
+        av2 6  sqlite_autoindex_av2_1 5 av2_i1 7 av2_i2 8 \
+        av4 12 av4_i1 13 av4_i2 9 av4_i3 10 av4_i4 11 \
+]
+do_test autovacuum-2.5.2.1 {
+  execsql {
+    SELECT * FROM av1 WHERE a = 'av1 a';
+  }
+} {{av1 a} {av1 b} {av1 c}}
+do_test autovacuum-2.5.2.2 {
+  execsql {
+    SELECT * FROM av2 WHERE a = 'av2 a' AND b = 'av2 b' AND c = 'av2 c'
+  }
+} {{av2 a} {av2 b} {av2 c}}
+do_test autovacuum-2.5.2.4 {
+  execsql {
+    SELECT * FROM av4 WHERE a = 'av4 a' AND b = 'av4 b' AND c = 'av4 c';
+  }
+} {{av4 a} {av4 b} {av4 c}}
+
+# Drop table av1:
+# Step 1: Delete av1 (root page 4). Root-page of av4_i1 fills the gap.
+# Step 2: Delete sqlite_autoindex_av1_1 (root page 3). Move av4 to the gap.
+do_test autovacuum-2.5.4 {
+  execsql {
+    DROP TABLE av1;
+    SELECT name, rootpage FROM sqlite_master;
+  }
+} [list av2 6  sqlite_autoindex_av2_1 5 av2_i1 7 av2_i2 8 \
+        av4 3 av4_i1 4 av4_i2 9 av4_i3 10 av4_i4 11 \
+]
+do_test autovacuum-2.5.2.2 {
+  execsql {
+    SELECT * FROM av2 WHERE a = 'av2 a' AND b = 'av2 b' AND c = 'av2 c'
+  }
+} {{av2 a} {av2 b} {av2 c}}
+do_test autovacuum-2.5.2.4 {
+  execsql {
+    SELECT * FROM av4 WHERE a = 'av4 a' AND b = 'av4 b' AND c = 'av4 c';
+  }
+} {{av4 a} {av4 b} {av4 c}}
+
+# Drop table av4:
+# Step 1: Delete av4_i4.
+# Step 2: Delete av4_i3.
+# Step 3: Delete av4_i2.
+# Step 4: Delete av4_i1. av2_i2 replaces it.
+# Step 5: Delete av4. av2_i1 replaces it.
+do_test autovacuum-2.5.4 {
+  execsql {
+    DROP TABLE av4;
+    SELECT name, rootpage FROM sqlite_master;
+  }
+} [list av2 6 sqlite_autoindex_av2_1 5 av2_i1 3 av2_i2 4]
+do_test autovacuum-2.5.2.2 {
+  execsql {
+    SELECT * FROM av2 WHERE a = 'av2 a' AND b = 'av2 b' AND c = 'av2 c'
+  }
+} {{av2 a} {av2 b} {av2 c}}
 
 #--------------------------------------------------------------------------
 # Test cases autovacuum-3.* test the operation of the "PRAGMA auto_vacuum"
