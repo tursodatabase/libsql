@@ -1,5 +1,5 @@
-C LIMIT\soccurs\safter\sDISTINCT.\s\sTicket\s#749.\s(CVS\s1823)
-D 2004-07-19T23:16:39
+C Refinements\sto\sthe\sLIMIT\spatch\s(1823)\sfor\sticket\s#749.\s(CVS\s1825)
+D 2004-07-19T23:38:11
 F Makefile.in 4a5e570a9e2d35b09c31b3cf01b78cea764ade4b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -57,7 +57,7 @@ F src/parse.y 51c8e696276c409618e66a4ccf316fcff245506e
 F src/pragma.c 8326df8c400f573eb43004dfb8e53e5102acb3e4
 F src/printf.c 36090f6d7b4946539de97c1850675ce55ef66c16
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
-F src/select.c d4585c55c460dad2019964e5d0ae18f9b91cd142
+F src/select.c b8d0a8325552e46bf295ccfdad54668404fad88b
 F src/shell.c ebec5da57ea401f4886eefc790917b939d94d595
 F src/sqlite.h.in aaf46c8d458efd8aca694ec4f18c6ecf616ee55e
 F src/sqliteInt.h aeae6793d1db335ec1179ad9f26b0affc0ec658a
@@ -129,7 +129,7 @@ F test/join3.test 8d989e52413199065bd630b3d0a6b2329d173099
 F test/join4.test 8dec387d06b3a4685e1104048065cf5236b99b93
 F test/lastinsert.test 31382f88b9b0270333ac9e4a17f2c2f4732da718
 F test/laststmtchanges.test 417aa27eb2b5cdfafb46e390e2c9ddd0a20eba43
-F test/limit.test 404a540e3fede22cab5667e12d7e3788617b07dc
+F test/limit.test e4ee72ab4869992950f8cfce256e04a0a2a98b23
 F test/lock.test 1dbf1d06b0a7eb36237b4f107cfb3da9726b449e
 F test/lock2.test 4108cabaa108a142e5eed83de3b13b6e579c12cf
 F test/main.test e8c4d9ca6d1e5f5e55e6550d31aec488883b2ed9
@@ -237,7 +237,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P a0f107ca66f825cc1fd10b15157b22fd9cc0f95c
-R 2a77d36b9d379fa39cee995a7b6ac780
+P e6bc8aa80824a9156e78fc99b5ac7045b97d29c3
+R a1595d94360f07506cd424fa5219917d
 U drh
-Z ebf8b5ec73a9dc2627883459f07e7b7c
+Z 4dcf250616b0eecc7cd0cb15ba666c1d

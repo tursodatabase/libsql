@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.198 2004/07/19 23:16:39 drh Exp $
+** $Id: select.c,v 1.199 2004/07/19 23:38:11 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -324,13 +324,12 @@ static void pushOntoSorter(Parse *pParse, Vdbe *v, ExprList *pOrderBy){
 ** Add code to implement the OFFSET and LIMIT
 */
 static void codeLimiter(
-  Parse *pParse,    /* Parsing context */
+  Vdbe *v,          /* Generate code into this VM */
   Select *p,        /* The SELECT statement being coded */
   int iContinue,    /* Jump here to skip the current record */
   int iBreak,       /* Jump here to end the loop */
   int nPop          /* Number of times to pop stack when jumping */
 ){
-  Vdbe *v = pParse->pVdbe;
   if( p->iOffset>=0 ){
     int addr = sqlite3VdbeCurrentAddr(v) + 2;
     if( nPop>0 ) addr++;
@@ -380,7 +379,7 @@ static int selectInnerLoop(
   */
   hasDistinct = distinct>=0 && pEList && pEList->nExpr>0;
   if( pOrderBy==0 && !hasDistinct ){
-    codeLimiter(pParse, p, iContinue, iBreak, 0);
+    codeLimiter(v, p, iContinue, iBreak, 0);
   }
 
   /* Pull the requested columns.
@@ -413,7 +412,7 @@ static int selectInnerLoop(
     sqlite3VdbeAddOp(v, OP_String8, 0, 0);
     sqlite3VdbeAddOp(v, OP_PutStrKey, distinct, 0);
     if( pOrderBy==0 ){
-      codeLimiter(pParse, p, iContinue, iBreak, nColumn);
+      codeLimiter(v, p, iContinue, iBreak, nColumn);
     }
   }
 
@@ -582,7 +581,7 @@ static void generateSortTail(
   }
   sqlite3VdbeOp3(v, OP_Sort, 0, 0, (char*)pInfo, P3_KEYINFO_HANDOFF);
   addr = sqlite3VdbeAddOp(v, OP_SortNext, 0, end1);
-  codeLimiter(pParse, p, addr, end2, 1);
+  codeLimiter(v, p, addr, end2, 1);
   switch( eDest ){
     case SRT_Table:
     case SRT_TempTable: {

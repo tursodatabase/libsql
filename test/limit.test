@@ -12,7 +12,7 @@
 # focus of this file is testing the LIMIT ... OFFSET ... clause
 #  of SELECT statements.
 #
-# $Id: limit.test,v 1.14 2004/07/19 23:16:39 drh Exp $
+# $Id: limit.test,v 1.15 2004/07/19 23:38:11 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -90,7 +90,6 @@ do_test limit-3.1 {
   }
 } {50 51 52 53 54}
 
-btree_breakpoint
 do_test limit-4.1 {
   execsql {
     BEGIN;
@@ -295,17 +294,23 @@ do_test limit-7.12 {
   }
 } {30}
 
-# Tests for limit in conjunction with distinct
+# Tests for limit in conjunction with distinct.  The distinct should
+# occur before both the limit and the offset.  Ticket #749.
 #
 do_test limit-8.1 {
   execsql {
-    SELECT DISTINCT x/100 FROM t3 LIMIT 5;
+    SELECT DISTINCT round(x/100) FROM t3 LIMIT 5;
   }
 } {0 1 2 3 4}
 do_test limit-8.2 {
   execsql {
-    SELECT DISTINCT x/100 FROM t3 LIMIT 5 OFFSET 5;
+    SELECT DISTINCT round(x/100) FROM t3 LIMIT 5 OFFSET 5;
   }
 } {5 6 7 8 9}
+do_test limit-8.3 {
+  execsql {
+    SELECT DISTINCT round(x/100) FROM t3 LIMIT 5 OFFSET 25;
+  }
+} {25 26 27 28 29}
 
 finish_test
