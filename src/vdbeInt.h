@@ -301,6 +301,9 @@ int sqlite3VdbeByteSwap(int);
 #if !defined(NDEBUG) || defined(VDBE_PROFILE)
 void sqlite3VdbePrintOp(FILE*, int, Op*);
 #endif
+int sqlite3VdbeSerialize(const Mem *, unsigned char *);
+int sqlite3VdbeSerialLen(const Mem *);
+int sqlite3VdbeDeserialize(Mem *, const unsigned char *);
 
 int sqlite2BtreeKeyCompare(BtCursor *, const void *, int, int, int *);
 

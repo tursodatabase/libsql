@@ -1101,6 +1101,33 @@ int sqlite2BtreeKeyCompare(
 }
 
 /*
+** Write the serialized form of the value held by pMem into zBuf. Return
+** the number of bytes written.
+*/
+int sqlite3VdbeSerialize(
+  const Mem *pMem,      /* Pointer to vdbe value to serialize */
+  unsigned char *zBuf   /* Buffer to write to */
+){
+}
+
+/*
+** Return the number of bytes that would be consumed by the serialized
+** form of the value held by pMem. Return negative if an error occurs.
+*/
+int sqlite3VdbeSerialLen(const Mem *pMem){
+}
+
+/*
+** Deserialize a value from zBuf and store it in *pMem. Return the number
+** of bytes written, or negative if an error occurs.
+*/
+int sqlite3VdbeDeserialize(
+  Mem *pMem,                   /* structure to write new value to */
+  const unsigned char *zBuf    /* Buffer to read from */
+){
+}
+
+/*
 ** The following is the comparison function for (non-integer)
 ** keys in the btrees.  This function returns negative, zero, or
 ** positive if the first key is less than, equal to, or greater than
