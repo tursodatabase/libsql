@@ -453,7 +453,7 @@ echo > confdefs.h
 
 # A filename unique to this package, relative to the directory that
 # configure is in, which we can look for to find out if srcdir is correct.
-ac_unique_file=src/sqlite.h
+ac_unique_file=src/sqlite.h.in
 
 # Find the source files, if location was not specified.
 if test -z "$srcdir"; then
@@ -525,7 +525,7 @@ fi
 
 
 # The following RCS revision string applies to configure.in
-# $Revision: 1.5 $
+# $Revision: 1.6 $
 
 #########
 # Make sure we are not building in a subdirectory of the source tree.
