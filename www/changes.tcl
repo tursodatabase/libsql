@@ -17,6 +17,16 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2001 Dec 14 (2.1.7)} {
+<li>Fix a bug in <b>CREATE TEMPORARY TABLE</b> which was causing the
+    table to be initially allocated in the main database file instead
+    of in the separate temporary file.  This bug could cause the library
+    to suffer an assertion failure and it cause cause "page leaks" in the
+    main database file.
+<li>Fix a bug in the b-tree subsystem that could sometimes cause the first
+    row of a table to be repeated during a database scan.</li>
+}
+
 chng {2001 Dec 14 (2.1.6)} {
 <li>Fix the locking mechanism yet again to prevent
     <b>sqlite_exec()</b> from returning SQLITE_PROTOCOL

@@ -37,7 +37,7 @@ gcc -fPIC $OPTS -O2 -I. -I$TCLDIR -shared *.c $TCLSTUBLIB -o tclsqlite.so
 strip tclsqlite.so
 mv tclsqlite.so ..
 cd ..
-rm -f tclsqlite.so
+rm -f tclsqlite.so.gz
 gzip tclsqlite.so
 
 # Build the tclsqlite.dll shared library that can be imported into tclsh

@@ -1,9 +1,9 @@
-C Fix\sa\sbug\sin\sthe\ssqliteBtreeFirst()\sfunction\swhich\swas\scausing\sthe\sfirst\nrow\sof\sa\stable\sto\sbe\srepeated\sduring\sa\sscan.\s(CVS\s328)
-D 2001-12-15T02:47:28
+C Release\s2.1.7\s(CVS\s329)
+D 2001-12-15T02:58:19
 F Makefile.in 352fed589f09dd94347e0bb391d047118ebd6105
 F Makefile.template 0fbf0ee1fe38183d760170a13e91fffec64e73f5
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
-F VERSION 1943794ff83649775b2cc2e31bf3e3390e952fbf
+F VERSION b971ae09c25173d53f5df4cfc62821ff99fc1bfe
 F aclocal.m4 11faa843caa38fd451bc6aeb43e248d1723a269d
 F config.guess f38b1e93d1e0fa6f5a6913e9e7b12774b9232588
 F config.log 6a73d03433669b10a3f0c221198c3f26b9413914
@@ -17,7 +17,7 @@ F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F libtool c56e618713c9510a103bda6b95f3ea3900dcacd6
 F ltmain.sh e9ed72eb1d690f447c13945eaf69e28af531eda1
-F publish.sh 33cbe6798969f637698044023c139080e5d772a6
+F publish.sh cb0f8f7bcb65b8360d0f6668a216a9ac9d5da892
 F src/TODO af7f3cab0228e34149cf98e073aa83d45878e7e6
 F src/btree.c c27474fdafb7036eef17673c7291e54c2116d6ff
 F src/btree.h 0250a0a577a98cc64ddf1582d50c08b8d2451650
@@ -104,7 +104,7 @@ F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 72a0c80e9054cc7025a50928d28d9c75c02c2b8b
 F www/c_interface.tcl 58922228e8fdb0f6af3561a051ee8ccec6dbfd17
-F www/changes.tcl e0be983df11a904e14def78526509080a57fca98
+F www/changes.tcl e307a93dea256ff902a4d73ae06e6e5152494bbd
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
 F www/download.tcl 1ea61f9d89a2a5a9b2cee36b0d5cf97321bdefe0
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
@@ -117,7 +117,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 880ef67cb4f2797b95bf1368fc4e0d8ca0fda956
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 96f707413699eec16053a0323affbe8bf3760c14
-R c16b7f44f1165aa12d6687c129be8884
+P 1404ac076b2155778b6b21546b30df6f45ea7ba7
+R 25381412185e86f2b4f47122fef4a2a7
 U drh
-Z 199292d6d0682db07ec614d09be7bc7b
+Z db369242d2bf573e749f5780d9daeb32
