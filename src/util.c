@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.126 2005/01/13 02:14:25 danielk1977 Exp $
+** $Id: util.c,v 1.127 2005/01/17 07:53:44 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -27,11 +27,11 @@ void print_stack_trace(){
   int i;
   int n = backtrace(bt, 30);
 
-  sqlite3DebugPrintf("STACK: ");
+  fprintf(stderr, "STACK: ");
   for(i=0; i<n;i++){
-    sqlite3DebugPrintf("%p ", bt[i]);
+    fprintf(stderr, "%p ", bt[i]);
   }
-  sqlite3DebugPrintf("\n");
+  fprintf(stderr, "\n");
 }
 #else
 #define print_stack_trace()

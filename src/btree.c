@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.240 2005/01/17 02:12:19 danielk1977 Exp $
+** $Id: btree.c,v 1.241 2005/01/17 07:53:44 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -495,15 +495,14 @@ static int ptrmapPut(Btree *pBt, Pgno key, u8 eType, Pgno parent){
   if( eType!=pPtrmap[offset] || get4byte(&pPtrmap[offset+1])!=parent ){
     TRACE(("PTRMAP_UPDATE: %d->(%d,%d)\n", key, eType, parent));
     rc = sqlite3pager_write(pPtrmap);
-    if( rc!=0 ){
-      return rc;
+    if( rc==SQLITE_OK ){
+      pPtrmap[offset] = eType;
+      put4byte(&pPtrmap[offset+1], parent);
     }
-    pPtrmap[offset] = eType;
-    put4byte(&pPtrmap[offset+1], parent);
   }
 
   sqlite3pager_unref(pPtrmap);
-  return SQLITE_OK;
+  return rc;
 }
 
 /*

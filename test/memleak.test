@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: memleak.test,v 1.7 2004/09/03 18:38:46 drh Exp $
+# $Id: memleak.test,v 1.8 2005/01/17 07:53:44 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -41,8 +41,17 @@ set EXCLUDE {
   btree2.test
   trans.test
   crash.test
-  corrupt.test
+  autovacuum_crash.test
 }
+# Test files btree2.test and btree4.test don't work if the 
+# SQLITE_DEFAULT_AUTOVACUUM macro is defined to true (because they depend
+# on tables being allocated starting at page 2).
+#
+ifcapable default_autovacuum {
+  lappend EXCLUDE btree2.test
+  lappend EXCLUDE btree4.test
+}
+
 if {[sqlite3 -has-codec]} {
   # lappend EXCLUDE 
 }

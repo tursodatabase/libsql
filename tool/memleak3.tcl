@@ -13,7 +13,8 @@ exec `which tclsh` $0 "$@"
 set doco "
 This script is a tool to help track down memory leaks in the sqlite
 library. The library must be compiled with the preprocessor symbol
-SQLITE_DEBUG set to at least 2. It must be set to 3 to enable stack traces.
+SQLITE_MEMDEBUG set to at least 2. It must be set to 3 to enable stack 
+traces.
 
 To use, run the leaky application and save the standard error output.
 Then, execute this program with the first argument the name of the
@@ -47,6 +48,7 @@ proc process_input {input_file array_name} {
   set input [open $input_file]
 
   set MALLOC {([[:digit:]]+) malloc ([[:digit:]]+) bytes at 0x([[:xdigit:]]+)}
+  # set STACK {^[[:digit:]]+: STACK: (.*)$}
   set STACK {^STACK: (.*)$}
   set FREE {[[:digit:]]+ free ([[:digit:]]+) bytes at 0x([[:xdigit:]]+)}
   set REALLOC {([[:digit:]]+) realloc ([[:digit:]]+) to ([[:digit:]]+)}

@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.31 2005/01/10 02:48:49 danielk1977 Exp $
+# $Id: pragma.test,v 1.32 2005/01/17 07:53:44 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -708,6 +708,11 @@ do_test pragma-10.3 {
 } {1}
 
 } ;# ifcapable trigger
+
+# Reset the sqlite3_temp_directory variable for the next run of tests:
+sqlite3 dbX :memory:
+dbX eval {PRAGMA temp_store_directory = ""}
+dbX close
 
 finish_test
 
