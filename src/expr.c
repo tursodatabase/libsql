@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.73 2002/06/20 11:36:49 drh Exp $
+** $Id: expr.c,v 1.74 2002/06/26 02:45:04 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -888,6 +888,22 @@ int sqliteExprType(Expr *p){
       assert( p->pSelect->pEList->nExpr>0 );
       p = p->pSelect->pEList->a[0].pExpr;
       break;
+
+    case TK_CASE: {
+      if( p->pRight && sqliteExprType(p->pRight)==SQLITE_SO_NUM ){
+        return SQLITE_SO_NUM;
+      }
+      if( p->pList ){
+        int i;
+        ExprList *pList = p->pList;
+        for(i=1; i<pList->nExpr; i+=2){
+          if( sqliteExprType(pList->a[i].pExpr)==SQLITE_SO_NUM ){
+            return SQLITE_SO_NUM;
+          }
+        }
+      }
+      return SQLITE_SO_TEXT;
+    }
 
     default:
       assert( p->op==TK_ABORT );  /* Can't Happen */

@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.160 2002/06/25 13:16:04 drh Exp $
+** $Id: vdbe.c,v 1.161 2002/06/26 02:45:04 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1578,7 +1578,7 @@ case OP_ColumnCount: {
 ** a coredump.
 */
 case OP_ColumnName: {
-  p->azColName[pOp->p1] = pOp->p3 ? pOp->p3 : "";
+  p->azColName[pOp->p1] = pOp->p3;
   p->nCallback = 0;
   break;
 }
