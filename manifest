@@ -1,5 +1,5 @@
-C Open\sthe\sjournal\sfile\sfor\sread-only\swhen\sdoing\sa\splayback.\s\sTicket\s#351.\s(CVS\s1019)
-D 2003-06-14T11:42:58
+C Bug\sfix:\ssqliteFree()\scalled\stwice\son\sthe\ssame\sallocation\sduring\serror\nhandling\sin\sattach.c.\s(CVS\s1020)
+D 2003-06-14T12:04:08
 F Makefile.in 98a14dc13a78ca0e12007e974c93aeb098db7f68
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -19,7 +19,7 @@ F publish.sh 86b5e8535830a2588f62ce1d5d1ef00e1dede23a
 F spec.template 238f7db425a78dc1bb7682e56e3834c7270a3f5e
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
-F src/attach.c 0f0dd4b0d2dbd7432a46bed74114c7cc8de4c8e3
+F src/attach.c 9f78b4aaac02a2b09ff108e92cbaee3199e7962a
 F src/auth.c c8f50d4507e37779d96ff3c55417bc2b612dfed6
 F src/btree.c 6656625305e5e99adda818a772bf7432a7b15d97
 F src/btree.h 9b7c09f1e64274d7bb74a57bbfc63778f67b1048
@@ -165,7 +165,7 @@ F www/speed.tcl 296cc5632d069b56d3ef5409ca0df90f486c10fb
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 14fdcc7fe8a60a6ba8584903636db8dc37eef26a
-P 3afb7b3586be81202c76692afea9d2b7a63b4b93
-R 91e497d8c49cdf07678d9dc6985d9f6e
+P 66ac7aea3df8533a49c8c05ba57c5a7015626828
+R b06dcdd6b553a19e46a027e98a44ba32
 U drh
-Z 8bb44e08ee869ed017552dfc2baeceb2
+Z 445a5a073c1f73d1fb50205ccb14b347
