@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: c_interface.tcl,v 1.36 2003/01/29 22:58:27 drh Exp $}
+set rcsid {$Id: c_interface.tcl,v 1.37 2003/03/01 19:45:35 drh Exp $}
 
 puts {<html>
 <head>
@@ -660,7 +660,8 @@ for the most recent INSERT statement using the
 
 <p>The <b>sqlite_changes</b> API function returns the number of rows
 that were inserted, deleted, or modified during the most recent
-<b>sqlite_exec</b> call.  The number reported includes any changes
+<b>sqlite_exec</b> call of by <b>sqlite_step</b> calls since the
+most recent <b>sqlite_compile</b>.  The number reported includes any changes
 that were later undone by a ROLLBACK or ABORT.  But rows that are
 deleted because of a DROP TABLE are <em>not</em> counted.</p>
 

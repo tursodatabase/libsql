@@ -36,7 +36,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.205 2003/02/20 01:48:13 drh Exp $
+** $Id: vdbe.c,v 1.206 2003/03/01 19:45:34 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1300,7 +1300,7 @@ int sqliteVdbeList(
       p->rc = SQLITE_MISUSE;
     }
   }
-  return p->rc==SQLITE_OK ? SQLITE_OK : SQLITE_ERROR;
+  return p->rc==SQLITE_OK ? SQLITE_DONE : SQLITE_ERROR;
 }
 
 /*

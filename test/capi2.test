@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi2.test,v 1.4 2003/02/16 22:21:33 drh Exp $
+# $Id: capi2.test,v 1.5 2003/03/01 19:45:35 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -389,6 +389,60 @@ do_test capi2-6.28 {
 do_test capi2-6.99 {
   list [catch {sqlite_finalize $VM1} msg] [set msg]
 } {0 {}}
+execsql {ROLLBACK}
+
+do_test capi2-7.1 {
+  stepsql $DB {
+    SELECT * FROM t1
+  }
+} {0 1 2 3}
+do_test capi2-7.2 {
+  stepsql $DB {
+    PRAGMA count_changes=on
+  }
+} {0}
+do_test capi2-7.3 {
+  stepsql $DB {
+    UPDATE t1 SET a=a+10;
+  }
+} {0 1}
+do_test capi2-7.4 {
+  stepsql $DB {
+    INSERT INTO t1 SELECT a+1,b+1,c+1 FROM t1;
+  }
+} {0 1}
+do_test capi2-7.5 {
+  stepsql $DB {
+    UPDATE t1 SET a=a+10;
+  }
+} {0 2}
+do_test capi2-7.6 {
+  stepsql $DB {
+    SELECT * FROM t1;
+  }
+} {0 21 2 3 22 3 4}
+do_test capi2-7.7 {
+  stepsql $DB {
+    INSERT INTO t1 SELECT a+2,b+2,c+2 FROM t1;
+  }
+} {0 2}
+do_test capi2-7.8 {
+  stepsql $DB {
+    SELECT * FROM t1;
+  }
+} {0 21 2 3 22 3 4 23 4 5 24 5 6}
+do_test capi2-7.9 {
+  stepsql $DB {
+    UPDATE t1 SET a=a-20;
+    SELECT * FROM t1;
+  }
+} {0 4 1 2 3 2 3 4 3 4 5 4 5 6}
+do_test capi2-7.10 {
+  set x [stepsql $DB {EXPLAIN SELECT * FROM t1}]
+  lindex $x 0
+} {0}
+
+
 
 db2 close
 

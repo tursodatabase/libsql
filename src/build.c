@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.130 2003/02/26 13:52:51 drh Exp $
+** $Id: build.c,v 1.131 2003/03/01 19:45:34 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2194,6 +2194,8 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
   char *zLeft = 0;
   char *zRight = 0;
   sqlite *db = pParse->db;
+  Vdbe *v = sqliteGetVdbe(pParse);
+  if( v==0 ) return;
 
   zLeft = sqliteStrNDup(pLeft->z, pLeft->n);
   sqliteDequote(zLeft);
@@ -2237,8 +2239,6 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       { OP_ColumnName,  0, 0,        "cache_size"},
       { OP_Callback,    1, 0,        0},
     };
-    Vdbe *v = sqliteGetVdbe(pParse);
-    if( v==0 ) return;
     if( pRight->z==pLeft->z ){
       sqliteVdbeAddOpList(v, ArraySize(getCacheSize), getCacheSize);
     }else{
@@ -2277,8 +2277,6 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       { OP_ColumnName,  0, 0,        "cache_size"},
       { OP_Callback,    1, 0,        0},
     };
-    Vdbe *v = sqliteGetVdbe(pParse);
-    if( v==0 ) return;
     if( pRight->z==pLeft->z ){
       int size = db->cache_size;;
       if( size<0 ) size = -size;
@@ -2327,8 +2325,6 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       { OP_AddImm,     -1, 0,        0},  /* 10 */
       { OP_Callback,    1, 0,        0}
     };
-    Vdbe *v = sqliteGetVdbe(pParse);
-    if( v==0 ) return;
     if( pRight->z==pLeft->z ){
       int addr = sqliteVdbeAddOpList(v, ArraySize(getSync), getSync);
       sqliteVdbeChangeP2(v, addr+3, addr+10);
@@ -2372,8 +2368,6 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       { OP_ColumnName,  0, 0,        "synchronous"},
       { OP_Callback,    1, 0,        0},
     };
-    Vdbe *v = sqliteGetVdbe(pParse);
-    if( v==0 ) return;
     if( pRight->z==pLeft->z ){
       sqliteVdbeAddOp(v, OP_Integer, db->safety_level-1, 0);
       sqliteVdbeAddOpList(v, ArraySize(getSync), getSync);
@@ -2446,10 +2440,8 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
 
   if( sqliteStrICmp(zLeft, "table_info")==0 ){
     Table *pTab;
-    Vdbe *v;
     pTab = sqliteFindTable(db, zRight);
-    if( pTab ) v = sqliteGetVdbe(pParse);
-    if( pTab && v ){
+    if( pTab ){
       static VdbeOp tableInfoPreface[] = {
         { OP_ColumnName,  0, 0,       "cid"},
         { OP_ColumnName,  1, 0,       "name"},
@@ -2478,10 +2470,8 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
   if( sqliteStrICmp(zLeft, "index_info")==0 ){
     Index *pIdx;
     Table *pTab;
-    Vdbe *v;
     pIdx = sqliteFindIndex(db, zRight);
-    if( pIdx ) v = sqliteGetVdbe(pParse);
-    if( pIdx && v ){
+    if( pIdx ){
       static VdbeOp tableInfoPreface[] = {
         { OP_ColumnName,  0, 0,       "seqno"},
         { OP_ColumnName,  1, 0,       "cid"},
@@ -2505,13 +2495,12 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
   if( sqliteStrICmp(zLeft, "index_list")==0 ){
     Index *pIdx;
     Table *pTab;
-    Vdbe *v;
     pTab = sqliteFindTable(db, zRight);
     if( pTab ){
       v = sqliteGetVdbe(pParse);
       pIdx = pTab->pIndex;
     }
-    if( pTab && pIdx && v ){
+    if( pTab && pIdx ){
       int i = 0; 
       static VdbeOp indexListPreface[] = {
         { OP_ColumnName,  0, 0,       "seq"},
@@ -2563,8 +2552,6 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       { OP_IntegrityCk, 1, 1,        0},    /* 15 */
       { OP_Callback,    1, 0,        0},
     };
-    Vdbe *v = sqliteGetVdbe(pParse);
-    if( v==0 ) return;
     sqliteVdbeAddOpList(v, ArraySize(checkDb), checkDb);
   }else
 
