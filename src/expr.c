@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.165 2004/09/25 13:12:15 drh Exp $
+** $Id: expr.c,v 1.166 2004/10/04 13:19:24 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1180,41 +1180,19 @@ static void codeInteger(Vdbe *v, const char *z, int n){
 /*
 ** Generate code into the current Vdbe to evaluate the given
 ** expression and leave the result on the top of stack.
+**
+** This code depends on the fact that certain token values (ex: TK_EQ)
+** are the same as opcode values (ex: OP_Eq) that implement the corresponding
+** operation.  Special comments in vdbe.c and the mkopcodeh.awk script in
+** the make process cause these values to align.  Assert()s in the code
+** below verify that the numbers are aligned correctly.
 */
 void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
   Vdbe *v = pParse->pVdbe;
   int op;
   if( v==0 || pExpr==0 ) return;
-  switch( pExpr->op ){
-    case TK_PLUS:     op = OP_Add;      break;
-    case TK_MINUS:    op = OP_Subtract; break;
-    case TK_STAR:     op = OP_Multiply; break;
-    case TK_SLASH:    op = OP_Divide;   break;
-    case TK_AND:      op = OP_And;      break;
-    case TK_OR:       op = OP_Or;       break;
-    case TK_LT:       op = OP_Lt;       break;
-    case TK_LE:       op = OP_Le;       break;
-    case TK_GT:       op = OP_Gt;       break;
-    case TK_GE:       op = OP_Ge;       break;
-    case TK_NE:       op = OP_Ne;       break;
-    case TK_EQ:       op = OP_Eq;       break;
-    case TK_ISNULL:   op = OP_IsNull;   break;
-    case TK_NOTNULL:  op = OP_NotNull;  break;
-    case TK_NOT:      op = OP_Not;      break;
-    case TK_UMINUS:   op = OP_Negative; break;
-    case TK_BITAND:   op = OP_BitAnd;   break;
-    case TK_BITOR:    op = OP_BitOr;    break;
-    case TK_BITNOT:   op = OP_BitNot;   break;
-    case TK_LSHIFT:   op = OP_ShiftLeft;  break;
-    case TK_RSHIFT:   op = OP_ShiftRight; break;
-    case TK_REM:      op = OP_Remainder;  break;
-    case TK_FLOAT:    op = OP_Real;       break;
-    case TK_STRING:   op = OP_String8;    break;
-    case TK_BLOB:     op = OP_HexBlob;    break;
-    case TK_CONCAT:   op = OP_Concat;     break;
-    default: op = 0; break;
-  }
-  switch( pExpr->op ){
+  op = pExpr->op;
+  switch( op ){
     case TK_COLUMN: {
       if( pParse->useAgg ){
         sqlite3VdbeAddOp(v, OP_AggGet, 0, pExpr->iAgg);
@@ -1236,11 +1214,14 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
     }
     case TK_FLOAT:
     case TK_STRING: {
+      assert( TK_FLOAT==OP_Real );
+      assert( TK_STRING==OP_String8 );
       sqlite3VdbeOp3(v, op, 0, 0, pExpr->token.z, pExpr->token.n);
       sqlite3VdbeDequoteP3(v, -1);
       break;
     }
     case TK_BLOB: {
+      assert( TK_BLOB==OP_HexBlob );
       sqlite3VdbeOp3(v, op, 0, 0, pExpr->token.z+1, pExpr->token.n-1);
       sqlite3VdbeDequoteP3(v, -1);
       break;
@@ -1262,6 +1243,12 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
     case TK_GE:
     case TK_NE:
     case TK_EQ: {
+      assert( TK_LT==OP_Lt );
+      assert( TK_LE==OP_Le );
+      assert( TK_GT==OP_Gt );
+      assert( TK_GE==OP_Ge );
+      assert( TK_EQ==OP_Eq );
+      assert( TK_NE==OP_Ne );
       sqlite3ExprCode(pParse, pExpr->pLeft);
       sqlite3ExprCode(pParse, pExpr->pRight);
       codeCompare(pParse, pExpr->pLeft, pExpr->pRight, op, 0, 0);
@@ -1279,6 +1266,17 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
     case TK_LSHIFT:
     case TK_RSHIFT: 
     case TK_CONCAT: {
+      assert( TK_AND==OP_And );
+      assert( TK_OR==OP_Or );
+      assert( TK_PLUS==OP_Add );
+      assert( TK_MINUS==OP_Subtract );
+      assert( TK_REM==OP_Remainder );
+      assert( TK_BITAND==OP_BitAnd );
+      assert( TK_BITOR==OP_BitOr );
+      assert( TK_SLASH==OP_Divide );
+      assert( TK_LSHIFT==OP_ShiftLeft );
+      assert( TK_RSHIFT==OP_ShiftRight );
+      assert( TK_CONCAT==OP_Concat );
       sqlite3ExprCode(pParse, pExpr->pLeft);
       sqlite3ExprCode(pParse, pExpr->pRight);
       sqlite3VdbeAddOp(v, op, 0, 0);
@@ -1303,6 +1301,8 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
     }
     case TK_BITNOT:
     case TK_NOT: {
+      assert( TK_BITNOT==OP_BitNot );
+      assert( TK_NOT==OP_Not );
       sqlite3ExprCode(pParse, pExpr->pLeft);
       sqlite3VdbeAddOp(v, op, 0, 0);
       break;
@@ -1310,13 +1310,15 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
     case TK_ISNULL:
     case TK_NOTNULL: {
       int dest;
+      assert( TK_ISNULL==OP_IsNull );
+      assert( TK_NOTNULL==OP_NotNull );
       sqlite3VdbeAddOp(v, OP_Integer, 1, 0);
       sqlite3ExprCode(pParse, pExpr->pLeft);
       dest = sqlite3VdbeCurrentAddr(v) + 2;
       sqlite3VdbeAddOp(v, op, 1, dest);
       sqlite3VdbeAddOp(v, OP_AddImm, -1, 0);
+      break;
     }
-    break;
     case TK_AGG_FUNCTION: {
       sqlite3VdbeAddOp(v, OP_AggGet, 0, pExpr->iAgg);
       break;
@@ -1503,23 +1505,19 @@ int sqlite3ExprCodeExprList(
 **
 ** If the expression evaluates to NULL (neither true nor false), then
 ** take the jump if the jumpIfNull flag is true.
+**
+** This code depends on the fact that certain token values (ex: TK_EQ)
+** are the same as opcode values (ex: OP_Eq) that implement the corresponding
+** operation.  Special comments in vdbe.c and the mkopcodeh.awk script in
+** the make process cause these values to align.  Assert()s in the code
+** below verify that the numbers are aligned correctly.
 */
 void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
   Vdbe *v = pParse->pVdbe;
   int op = 0;
   if( v==0 || pExpr==0 ) return;
-  switch( pExpr->op ){
-    case TK_LT:       op = OP_Lt;       break;
-    case TK_LE:       op = OP_Le;       break;
-    case TK_GT:       op = OP_Gt;       break;
-    case TK_GE:       op = OP_Ge;       break;
-    case TK_NE:       op = OP_Ne;       break;
-    case TK_EQ:       op = OP_Eq;       break;
-    case TK_ISNULL:   op = OP_IsNull;   break;
-    case TK_NOTNULL:  op = OP_NotNull;  break;
-    default:  break;
-  }
-  switch( pExpr->op ){
+  op = pExpr->op;
+  switch( op ){
     case TK_AND: {
       int d2 = sqlite3VdbeMakeLabel(v);
       sqlite3ExprIfFalse(pParse, pExpr->pLeft, d2, !jumpIfNull);
@@ -1542,6 +1540,12 @@ void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
     case TK_GE:
     case TK_NE:
     case TK_EQ: {
+      assert( TK_LT==OP_Lt );
+      assert( TK_LE==OP_Le );
+      assert( TK_GT==OP_Gt );
+      assert( TK_GE==OP_Ge );
+      assert( TK_EQ==OP_Eq );
+      assert( TK_NE==OP_Ne );
       sqlite3ExprCode(pParse, pExpr->pLeft);
       sqlite3ExprCode(pParse, pExpr->pRight);
       codeCompare(pParse, pExpr->pLeft, pExpr->pRight, op, dest, jumpIfNull);
@@ -1549,6 +1553,8 @@ void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
     }
     case TK_ISNULL:
     case TK_NOTNULL: {
+      assert( TK_ISNULL==OP_IsNull );
+      assert( TK_NOTNULL==OP_NotNull );
       sqlite3ExprCode(pParse, pExpr->pLeft);
       sqlite3VdbeAddOp(v, op, 1, dest);
       break;
@@ -1597,17 +1603,38 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
   Vdbe *v = pParse->pVdbe;
   int op = 0;
   if( v==0 || pExpr==0 ) return;
-  switch( pExpr->op ){
-    case TK_LT:       op = OP_Ge;       break;
-    case TK_LE:       op = OP_Gt;       break;
-    case TK_GT:       op = OP_Le;       break;
-    case TK_GE:       op = OP_Lt;       break;
-    case TK_NE:       op = OP_Eq;       break;
-    case TK_EQ:       op = OP_Ne;       break;
-    case TK_ISNULL:   op = OP_NotNull;  break;
-    case TK_NOTNULL:  op = OP_IsNull;   break;
-    default:  break;
-  }
+
+  /* The value of pExpr->op and op are related as follows:
+  **
+  **       pExpr->op            op
+  **       ---------          ----------
+  **       TK_ISNULL          OP_NotNull
+  **       TK_NOTNULL         OP_IsNull
+  **       TK_NE              OP_Eq
+  **       TK_EQ              OP_Ne
+  **       TK_GT              OP_Le
+  **       TK_LE              OP_Gt
+  **       TK_GE              OP_Lt
+  **       TK_LT              OP_Ge
+  **
+  ** For other values of pExpr->op, op is undefined and unused.
+  ** The value of TK_ and OP_ constants are arranged such that we
+  ** can compute the mapping above using the following expression.
+  ** Assert()s verify that the computation is correct.
+  */
+  op = ((pExpr->op+(TK_ISNULL&1))^1)-(TK_ISNULL&1);
+
+  /* Verify correct alignment of TK_ and OP_ constants
+  */
+  assert( pExpr->op!=TK_ISNULL || op==OP_NotNull );
+  assert( pExpr->op!=TK_NOTNULL || op==OP_IsNull );
+  assert( pExpr->op!=TK_NE || op==OP_Eq );
+  assert( pExpr->op!=TK_EQ || op==OP_Ne );
+  assert( pExpr->op!=TK_LT || op==OP_Ge );
+  assert( pExpr->op!=TK_LE || op==OP_Gt );
+  assert( pExpr->op!=TK_GT || op==OP_Le );
+  assert( pExpr->op!=TK_GE || op==OP_Lt );
+
   switch( pExpr->op ){
     case TK_AND: {
       sqlite3ExprIfFalse(pParse, pExpr->pLeft, dest, jumpIfNull);

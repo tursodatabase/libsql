@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.139 2004/09/30 14:22:47 drh Exp $
+** @(#) $Id: parse.y,v 1.140 2004/10/04 13:19:24 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -137,11 +137,17 @@ id(A) ::= ID(X).         {A = X;}
 // causes them to be assigned integer values that are close together,
 // which keeps parser tables smaller.
 //
+// The token values assigned to these symbols is determined by the order
+// in which lemon first sees them.  It must be the case that ISNULL/NOTNULL,
+// NE/EQ, GT/LE, and GE/LT are separated by only a single value.  See
+// the sqlite3ExprIfFalse() routine for additional information on this
+// constraint.
+//
 %left OR.
 %left AND.
 %right NOT.
-%left ISNULL NOTNULL IS LIKE GLOB BETWEEN IN NE EQ.
-%left GT GE LT LE.
+%left IS LIKE GLOB BETWEEN IN ISNULL NOTNULL NE EQ.
+%left GT LE GE LT.
 %left BITAND BITOR LSHIFT RSHIFT.
 %left PLUS MINUS.
 %left STAR SLASH REM.

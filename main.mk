@@ -255,18 +255,16 @@ pager.o:	$(TOP)/src/pager.c $(HDR) $(TOP)/src/pager.h
 opcodes.o:	opcodes.c
 	$(TCCX) -c opcodes.c
 
-opcodes.c:	$(TOP)/src/vdbe.c
+opcodes.c:	opcodes.h
 	echo '/* Automatically generated file.  Do not edit */' >opcodes.c
 	echo 'char *sqlite3OpcodeNames[] = { "???", ' >>opcodes.c
-	grep '^case OP_' $(TOP)/src/vdbe.c | \
-	  sed -e 's/^.*OP_/  "/' -e 's/:.*$$/", /' >>opcodes.c
+	grep OP_ opcodes.h | sort -n +2 | \
+	  sed -e 's/^.*OP_/  "/' -e 's/ [ 0-9]*$$/", /' >>opcodes.c
 	echo '};' >>opcodes.c
 
-opcodes.h:	$(TOP)/src/vdbe.h
+opcodes.h:	parse.h $(TOP)/src/vdbe.c $(TOP)/mkopcodeh.awk
 	echo '/* Automatically generated file.  Do not edit */' >opcodes.h
-	grep '^case OP_' $(TOP)/src/vdbe.c | \
-	  sed -e 's/://' | \
-	  awk '{printf "#define %-30s %3d\n", $$2, ++cnt}' >>opcodes.h
+	cat parse.h $(TOP)/src/vdbe.c | awk -f $(TOP)/mkopcodeh.awk >>opcodes.h
 
 os_mac.o:	$(TOP)/src/os_mac.c $(HDR)
 	$(TCCX) -c $(TOP)/src/os_mac.c
