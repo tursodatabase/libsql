@@ -72,12 +72,14 @@ struct Cursor {
   Bool deferredMoveto;  /* A call to sqlite3BtreeMoveto() is needed */
   Bool intKey;          /* True if the table requires integer keys */
   Bool zeroData;        /* True if table contains keys only - no data */
-  Bool incrKey;         /* Searches on the table simulate OP_IncrKey */
+  u8 bogusIncrKey;      /* Something for pIncrKey to point to if pKeyInfo==0 */
   i64 movetoTarget;     /* Argument to the deferred sqlite3BtreeMoveto() */
   Btree *pBt;           /* Separate file holding temporary table */
   int nData;            /* Number of bytes in pData */
   char *pData;          /* Data for a NEW or OLD pseudo-table */
   i64 iKey;             /* Key for the NEW or OLD pseudo-table row */
+  u8 *pIncrKey;         /* Pointer to pKeyInfo->incrKey */
+  KeyInfo *pKeyInfo;    /* Info about index keys needed by index cursors */
 
   /* Cached information about the header for the data record that the
   ** cursor is currently pointing to */

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.240 2004/05/20 11:00:52 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.241 2004/05/20 22:16:30 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -260,6 +260,8 @@ typedef struct Db Db;
 typedef struct AuthContext AuthContext;
 typedef struct KeyClass KeyClass;
 typedef struct CollSeq CollSeq;
+typedef struct KeyInfo KeyInfo;
+
 
 /*
 ** Each database file to be accessed by the system is an instance
@@ -376,7 +378,7 @@ struct sqlite {
   int (*xCommitCallback)(void*);/* Invoked at every commit. */
   Hash aFunc;                   /* All functions that can be in SQL exprs */
   Hash aCollSeq;                /* All collating sequences */
-  CollSeq *pDfltColl;           /* The default collating sequence (memcmp) */
+  CollSeq *pDfltColl;           /* The default collating sequence (BINARY) */
   i64 lastRowid;                /* ROWID of most recent insert (see above) */
   i64 priorNewRowid;            /* Last randomly generated ROWID */
   int magic;                    /* Magic number for detect library misuse */
@@ -491,18 +493,10 @@ struct CollSeq {
 };
 
 /*
-** The allowed sort orders.
-**
-** The TEXT and NUM values use bits that do not overlap with DESC and ASC.
-** That way the two can be combined into a single number.
+** A sort order can be either ASC or DESC.
 */
-#define SQLITE_SO_UNK       0  /* Use the default collating type.  (SCT_NUM) */
-#define SQLITE_SO_TEXT      2  /* Sort using memcmp() */
-#define SQLITE_SO_NUM       4  /* Sort using sqlite3Compare() */
-#define SQLITE_SO_TYPEMASK  6  /* Mask to extract the collating sequence */
 #define SQLITE_SO_ASC       0  /* Sort in ascending order */
-#define SQLITE_SO_DESC      1  /* Sort in descending order */
-#define SQLITE_SO_DIRMASK   1  /* Mask to extract the sort direction */
+#define SQLITE_SO_DESC      1  /* Sort in ascending order */
 
 /*
 ** Column affinity types.
@@ -641,6 +635,21 @@ struct FKey {
 
 #define OE_Default  99  /* Do whatever the default action is */
 
+
+/*
+** An instance of the following structure is passed as the first
+** argument to sqlite3VdbeKeyCompare and is used to control the 
+** comparison of the two index keys.
+**
+** If the KeyInfo.incrKey value is true and the comparison would
+** otherwise be equal, then return a result as if the second key larger.
+*/
+struct KeyInfo {
+  u8 incrKey;         /* Increase 2nd key by epsilon before comparison */
+  int nField;         /* Number of entries in aColl[] */
+  CollSeq *aColl[1];  /* Collating sequence for each term of the key */
+};
+
 /*
 ** Each SQL index is represented in memory by an
 ** instance of the following structure.
@@ -678,6 +687,7 @@ struct Index {
   u8 iDb;          /* Index in sqlite.aDb[] of where this index is stored */
   char *zColAff;   /* String defining the affinity of each column */
   Index *pNext;    /* The next index associated with the same table */
+  KeyInfo keyInfo; /* Info on how to order keys.  MUST BE LAST */
 };
 
 /*
@@ -732,7 +742,6 @@ struct Token {
 */
 struct Expr {
   u8 op;                 /* Operation performed by this node */
-  u8 dataType;           /* Either SQLITE_SO_TEXT or SQLITE_SO_NUM */
   char affinity;         /* The affinity of the column or 0 if not a column */
   u8 iDb;                /* Database referenced by this expression */
   u8 flags;              /* Various flags.  See below */
@@ -1200,8 +1209,9 @@ void sqlite3AddNotNull(Parse*, int);
 void sqlite3AddPrimaryKey(Parse*, IdList*, int);
 void sqlite3AddColumnType(Parse*,Token*,Token*);
 void sqlite3AddDefaultValue(Parse*,Token*,int);
-int sqlite3CollateType(const char*, int);
-void sqlite3AddCollateType(Parse*, int);
+void sqlite3AddCollateType(Parse*, const char*, int);
+CollSeq *sqlite3ChangeCollatingFunction(sqlite*,const char*,int,
+                  void*, int(*)(void*,int,const void*,int,const void*));
 void sqlite3EndTable(Parse*,Token*,Select*);
 void sqlite3CreateView(Parse*,Token*,Token*,Select*,int);
 int sqlite3ViewGetColumnNames(Parse*,Table*);
@@ -1343,4 +1353,3 @@ int sqlite3IndexAffinityOk(Expr *pExpr, char idx_affinity);
 char sqlite3ExprAffinity(Expr *pExpr);
 int sqlite3atoi64(const char*, i64*);
 void sqlite3Error(sqlite *, int, const char*,...);
-

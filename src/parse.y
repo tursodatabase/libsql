@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.115 2004/05/20 12:41:20 drh Exp $
+** @(#) $Id: parse.y,v 1.116 2004/05/20 22:16:29 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -193,9 +193,7 @@ ccons ::= CHECK LP expr RP onconf.
 ccons ::= REFERENCES nm(T) idxlist_opt(TA) refargs(R).
                                 {sqlite3CreateForeignKey(pParse,0,&T,TA,R);}
 ccons ::= defer_subclause(D).   {sqlite3DeferForeignKey(pParse,D);}
-ccons ::= COLLATE id(C).  {
-   sqlite3AddCollateType(pParse, sqlite3CollateType(C.z, C.n));
-}
+ccons ::= COLLATE id(C).  {sqlite3AddCollateType(pParse, C.z, C.n);}
 
 // The next group of rules parses the arguments to a REFERENCES clause
 // that determine if the referential integrity checking is deferred or
@@ -437,23 +435,23 @@ using_opt(U) ::= .                        {U = 0;}
 orderby_opt(A) ::= .                          {A = 0;}
 orderby_opt(A) ::= ORDER BY sortlist(X).      {A = X;}
 sortlist(A) ::= sortlist(X) COMMA sortitem(Y) collate(C) sortorder(Z). {
-  A = sqlite3ExprListAppend(X,Y,0);
-  if( A ) A->a[A->nExpr-1].sortOrder = C+Z;
+  A = sqlite3ExprListAppend(X,Y,&C);
+  if( A ) A->a[A->nExpr-1].sortOrder = Z;
 }
 sortlist(A) ::= sortitem(Y) collate(C) sortorder(Z). {
-  A = sqlite3ExprListAppend(0,Y,0);
-  if( A ) A->a[0].sortOrder = C+Z;
+  A = sqlite3ExprListAppend(0,Y,&C);
+  if( A ) A->a[0].sortOrder = Z;
 }
 sortitem(A) ::= expr(X).   {A = X;}
 
 %type sortorder {int}
-%type collate {int}
+%type collate {Token}
 
 sortorder(A) ::= ASC.           {A = SQLITE_SO_ASC;}
 sortorder(A) ::= DESC.          {A = SQLITE_SO_DESC;}
 sortorder(A) ::= .              {A = SQLITE_SO_ASC;}
-collate(C) ::= .                {C = SQLITE_SO_UNK;}
-collate(C) ::= COLLATE id(X).   {C = sqlite3CollateType(X.z, X.n);}
+collate(C) ::= .                {C.z = 0; C.n = 0;}
+collate(C) ::= COLLATE id(X).   {C = X;}
 
 %type groupby_opt {ExprList*}
 %destructor groupby_opt {sqlite3ExprListDelete($$);}

@@ -15,7 +15,7 @@
 ** or VDBE.  The VDBE implements an abstract machine that runs a
 ** simple program to access and modify the underlying database.
 **
-** $Id: vdbe.h,v 1.78 2004/05/20 13:54:54 drh Exp $
+** $Id: vdbe.h,v 1.79 2004/05/20 22:16:30 drh Exp $
 */
 #ifndef _SQLITE_VDBE_H_
 #define _SQLITE_VDBE_H_
@@ -39,6 +39,9 @@ struct VdbeOp {
   int p2;             /* Second parameter (often the jump destination) */
   char *p3;           /* Third parameter */
   int p3type;         /* P3_STATIC, P3_DYNAMIC or P3_POINTER */
+#ifndef NDEBUG
+  char *zComment;     /* Comments explaining what this opcode does */
+#endif
 #ifdef VDBE_PROFILE
   int cnt;            /* Number of times this instruction was executed */
   long long cycles;   /* Total time spend executing this instruction */
@@ -66,6 +69,7 @@ typedef struct VdbeOpList VdbeOpList;
 #define P3_STATIC   (-2)  /* Pointer to a static string */
 #define P3_POINTER  (-3)  /* P3 is a pointer to some structure or object */
 #define P3_COLLSEQ  (-4)  /* P3 is a pointer to a CollSeq structure */
+#define P3_KEYINFO  (-5)  /* P3 is a pointer to a KeyInfo structure */
 
 /*
 ** The following macro converts a relative address in the p2 field
@@ -80,22 +84,6 @@ typedef struct VdbeOpList VdbeOpList;
 ** header file that defines a number for each opcode used by the VDBE.
 */
 #include "opcodes.h"
-
-/*
-** An instance of the following structure is passed as the first
-** argument to sqlite3VdbeKeyCompare and is used to control the 
-** comparison of the two keys.
-**
-** If the KeyInfo.incrKey value is true and the comparison would
-** otherwise be equal, then return a result as if the second key larger.
-*/
-typedef struct KeyInfo KeyInfo;
-struct KeyInfo {
-  u8 incrKey;           /* Increase value of 2nd key by epsilon */
-  u8 reverseOrder;      /* If true, reverse the comparison order */
-  int nField;           /* Number of entries in aColl[] */
-  struct CollSeq *aColl[1];  /* Collating sequence for each term of the key */
-};
 
 /*
 ** Prototypes for the VDBE interface.  See comments on the implementation
@@ -125,5 +113,12 @@ void sqlite3VdbeTrace(Vdbe*,FILE*);
 void sqlite3VdbeCompressSpace(Vdbe*,int);
 int sqlite3VdbeReset(Vdbe*,char **);
 int sqliteVdbeSetVariables(Vdbe*,int,const char**);
+
+#ifndef NDEBUG
+  void sqlite3VdbeComment(Vdbe*, const char*, ...);
+# define VdbeComment(X)  sqlite3VdbeComment X
+#else
+# define VdbeComment(X)
+#endif
 
 #endif

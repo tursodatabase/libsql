@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.177 2004/05/20 11:00:52 danielk1977 Exp $
+** $Id: main.c,v 1.178 2004/05/20 22:16:29 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -376,6 +376,24 @@ const char sqlite3_encoding[] = "iso8859";
 #endif
 
 /*
+** This is the default collating function named "BINARY" which is always
+** available.
+*/
+static int binaryCollatingFunc(
+  void *NotUsed,
+  int nKey1, const void *pKey1,
+  int nKey2, const void *pKey2
+){
+  int rc, n;
+  n = nKey1<nKey2 ? nKey1 : nKey2;
+  rc = memcmp(pKey1, pKey2, n);
+  if( rc==0 ){
+    rc = nKey1 - nKey2;
+  }
+  return rc;
+}
+
+/*
 ** Open a new SQLite database.  Construct an "sqlite" structure to define
 ** the state of this database and return a pointer to that structure.
 **
@@ -399,12 +417,15 @@ sqlite *sqlite3_open(const char *zFilename, int mode, char **pzErrMsg){
   db->aDb = db->aDbStatic;
   /* db->flags |= SQLITE_ShortColNames; */
   sqlite3HashInit(&db->aFunc, SQLITE_HASH_STRING, 1);
+  sqlite3HashInit(&db->aCollSeq, SQLITE_HASH_STRING, 0);
   for(i=0; i<db->nDb; i++){
     sqlite3HashInit(&db->aDb[i].tblHash, SQLITE_HASH_STRING, 0);
     sqlite3HashInit(&db->aDb[i].idxHash, SQLITE_HASH_STRING, 0);
     sqlite3HashInit(&db->aDb[i].trigHash, SQLITE_HASH_STRING, 0);
     sqlite3HashInit(&db->aDb[i].aFKey, SQLITE_HASH_STRING, 1);
   }
+  db->pDfltColl =
+     sqlite3ChangeCollatingFunction(db, "BINARY", 6, 0, binaryCollatingFunc);
   
   /* Open the backend database driver */
   if( zFilename[0]==':' && strcmp(zFilename,":memory:")==0 ){

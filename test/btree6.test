@@ -13,7 +13,7 @@
 # the B+tree tables.  B+trees store all data on the leaves rather
 # that storing data with keys on interior nodes.
 #
-# $Id: btree6.test,v 1.3 2004/05/13 11:34:17 danielk1977 Exp $
+# $Id: btree6.test,v 1.4 2004/05/20 22:16:31 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -102,7 +102,7 @@ expr srand(1)
 # Do the tests.
 #
 set cnt 0
-for {set i 1} {$i<=100} {incr i} {
+for {set i 1} {$i<=40} {incr i} {
   do_test btree6-1.$i.1 {
     random_inserts $cur 200
     incr cnt 200

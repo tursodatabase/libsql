@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.170 2004/05/20 03:02:47 drh Exp $
+** $Id: select.c,v 1.171 2004/05/20 22:16:29 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -324,19 +324,11 @@ static void pushOntoSorter(Parse *pParse, Vdbe *v, ExprList *pOrderBy){
   if( zSortOrder==0 ) return;
   for(i=0; i<pOrderBy->nExpr; i++){
     int order = pOrderBy->a[i].sortOrder;
-    int type;
     int c;
-    if( (order & SQLITE_SO_TYPEMASK)==SQLITE_SO_TEXT ){
-      type = SQLITE_SO_TEXT;
-    }else if( (order & SQLITE_SO_TYPEMASK)==SQLITE_SO_NUM ){
-      type = SQLITE_SO_NUM;
+    if( order==SQLITE_SO_ASC ){
+      c = 'A';
     }else{
-      type = sqlite3ExprType(pOrderBy->a[i].pExpr);
-    }
-    if( (order & SQLITE_SO_DIRMASK)==SQLITE_SO_ASC ){
-      c = type==SQLITE_SO_TEXT ? 'A' : '+';
-    }else{
-      c = type==SQLITE_SO_TEXT ? 'D' : '-';
+      c = 'D';
     }
     zSortOrder[i] = c;
     sqlite3ExprCode(pParse, pOrderBy->a[i].pExpr);
@@ -344,28 +336,6 @@ static void pushOntoSorter(Parse *pParse, Vdbe *v, ExprList *pOrderBy){
   zSortOrder[pOrderBy->nExpr] = 0;
   sqlite3VdbeOp3(v, OP_SortMakeKey, pOrderBy->nExpr, 0, zSortOrder, P3_DYNAMIC);
   sqlite3VdbeAddOp(v, OP_SortPut, 0, 0);
-}
-
-/*
-** This routine adds a P3 argument to the last VDBE opcode that was
-** inserted. The P3 argument added is a string suitable for the 
-** OP_MakeKey or OP_MakeIdxKey opcodes.  The string consists of
-** characters 't' or 'n' depending on whether or not the various
-** fields of the key to be generated should be treated as numeric
-** or as text.  See the OP_MakeKey and OP_MakeIdxKey opcode
-** documentation for additional information about the P3 string.
-** See also the sqlite3AddIdxKeyType() routine.
-*/
-void sqlite3AddKeyType(Vdbe *v, ExprList *pEList){
-  int nColumn = pEList->nExpr;
-  char *zType = sqliteMalloc( nColumn+1 );
-  int i;
-  if( zType==0 ) return;
-  for(i=0; i<nColumn; i++){
-    zType[i] = sqlite3ExprType(pEList->a[i].pExpr)==SQLITE_SO_NUM ? 'n' : 't';
-  }
-  zType[i] = 0;
-  sqlite3VdbeChangeP3(v, -1, zType, P3_DYNAMIC);
 }
 
 /*
@@ -432,8 +402,8 @@ static int selectInnerLoop(
 #if NULL_ALWAYS_DISTINCT
     sqlite3VdbeAddOp(v, OP_IsNull, -pEList->nExpr, sqlite3VdbeCurrentAddr(v)+7);
 #endif
+    /* Deliberately leave the affinity string off of the following OP_MakeKey */
     sqlite3VdbeAddOp(v, OP_MakeKey, pEList->nExpr, 1);
-    sqlite3AddKeyType(v, pEList);
     sqlite3VdbeAddOp(v, OP_Distinct, distinct, sqlite3VdbeCurrentAddr(v)+3);
     sqlite3VdbeAddOp(v, OP_Pop, pEList->nExpr+1, 0);
     sqlite3VdbeAddOp(v, OP_Goto, 0, iContinue);
@@ -682,11 +652,9 @@ static void generateColumnTypes(
         zType = pTab->aCol[iCol].zType;
       }
     }else{
-      if( sqlite3ExprType(p)==SQLITE_SO_TEXT ){
-        zType = "TEXT";
-      }else{
-        zType = "NUMERIC";
-      }
+      zType = "ANY";
+      /** TODO:  Perhaps something related to the affinity of the 
+      ** exprsssion? */
     }
     sqlite3VdbeOp3(v, OP_ColumnName, i + pEList->nExpr, 0, zType, 0);
   }
@@ -1079,13 +1047,6 @@ void sqlite3SelectUnbind(Select *p){
 **
 ** Any entry that does not match is flagged as an error.  The number
 ** of errors is returned.
-**
-** This routine does NOT correctly initialize the Expr.dataType  field
-** of the ORDER BY expressions.  The multiSelectSortOrder() routine
-** must be called to do that after the individual select statements
-** have all been analyzed.  This routine is unable to compute Expr.dataType
-** because it must be called before the individual select statements
-** have been analyzed.
 */
 static int matchOrderbyToColumn(
   Parse *pParse,          /* A place to leave error messages */
@@ -1170,55 +1131,7 @@ Vdbe *sqlite3GetVdbe(Parse *pParse){
   return v;
 }
 
-/*
-** This routine sets the Expr.dataType field on all elements of
-** the pOrderBy expression list.  The pOrderBy list will have been
-** set up by matchOrderbyToColumn().  Hence each expression has
-** a TK_COLUMN as its root node.  The Expr.iColumn refers to a 
-** column in the result set.   The datatype is set to SQLITE_SO_TEXT
-** if the corresponding column in p and every SELECT to the left of
-** p has a datatype of SQLITE_SO_TEXT.  If the cooressponding column
-** in p or any of the left SELECTs is SQLITE_SO_NUM, then the datatype
-** of the order-by expression is set to SQLITE_SO_NUM.
-**
-** Examples:
-**
-**     CREATE TABLE one(a INTEGER, b TEXT);
-**     CREATE TABLE two(c VARCHAR(5), d FLOAT);
-**
-**     SELECT b, b FROM one UNION SELECT d, c FROM two ORDER BY 1, 2;
-**
-** The primary sort key will use SQLITE_SO_NUM because the "d" in
-** the second SELECT is numeric.  The 1st column of the first SELECT
-** is text but that does not matter because a numeric always overrides
-** a text.
-**
-** The secondary key will use the SQLITE_SO_TEXT sort order because
-** both the (second) "b" in the first SELECT and the "c" in the second
-** SELECT have a datatype of text.
-*/ 
-static void multiSelectSortOrder(Select *p, ExprList *pOrderBy){
-  int i;
-  ExprList *pEList;
-  if( pOrderBy==0 ) return;
-  if( p==0 ){
-    for(i=0; i<pOrderBy->nExpr; i++){
-      pOrderBy->a[i].pExpr->dataType = SQLITE_SO_TEXT;
-    }
-    return;
-  }
-  multiSelectSortOrder(p->pPrior, pOrderBy);
-  pEList = p->pEList;
-  for(i=0; i<pOrderBy->nExpr; i++){
-    Expr *pE = pOrderBy->a[i].pExpr;
-    if( pE->dataType==SQLITE_SO_NUM ) continue;
-    assert( pE->iColumn>=0 );
-    if( pEList->nExpr>pE->iColumn ){
-      pE->dataType = sqlite3ExprType(pEList->a[pE->iColumn].pExpr);
-    }
-  }
-}
-
+#if 0  /***** This routine needs deleting *****/
 static void multiSelectAffinity(Select *p, char *zAff){
   int i;
 
@@ -1231,6 +1144,7 @@ static void multiSelectAffinity(Select *p, char *zAff){
     }
   }
 }
+#endif
 
 /*
 ** Compute the iLimit and iOffset fields of the SELECT based on the
@@ -1279,6 +1193,35 @@ static void computeLimitRegisters(Parse *pParse, Select *p){
 }
 
 /*
+** Generate VDBE instructions that will open a transient table that
+** will be used for an index or to store keyed results for a compound
+** select.  In other words, open a transient table that needs a
+** KeyInfo structure.  The number of columns in the KeyInfo is determined
+** by the result set of the SELECT statement in the second argument.
+**
+** Make the new table a KeyAsData table if keyAsData is true.
+*/
+static void openTempIndex(Parse *pParse, Select *p, int iTab, int keyAsData){
+  KeyInfo *pKeyInfo;
+  int nColumn = p->pEList->nExpr;
+  sqlite *db = pParse->db;
+  int i;
+  Vdbe *v = pParse->pVdbe;
+
+  pKeyInfo = sqliteMalloc( sizeof(*pKeyInfo)+nColumn*sizeof(CollSeq*) );
+  if( pKeyInfo==0 ) return;
+  pKeyInfo->nField = nColumn;
+  for(i=0; i<nColumn; i++){
+    pKeyInfo->aColl[i] = db->pDfltColl;
+  }
+  sqlite3VdbeOp3(v, OP_OpenTemp, iTab, 0, (char*)pKeyInfo, P3_KEYINFO);
+  sqliteFree(pKeyInfo);
+  if( keyAsData ){
+    sqlite3VdbeAddOp(v, OP_KeyAsData, iTab, 1);
+  }
+}
+
+/*
 ** This routine is called to process a query that is really the union
 ** or intersection of two or more separate queries.
 **
@@ -1320,6 +1263,7 @@ static int multiSelect(
   Vdbe *v;            /* Generate code to this VDBE */
   char *affStr = 0;
 
+#if 0 /* NOT USED */
   if( !aff ){
     int len;
     rc = fillInColumnList(pParse, p);
@@ -1335,6 +1279,7 @@ static int multiSelect(
     memset(affStr, (int)SQLITE_AFF_NUMERIC, len-1);
     aff = affStr;
   }
+#endif
 
   /* Make sure there is no ORDER BY or LIMIT clause on prior SELECTs.  Only
   ** the last SELECT in the series may have an ORDER BY or LIMIT.
@@ -1424,8 +1369,7 @@ static int multiSelect(
           goto multi_select_end;
         }
         if( p->op!=TK_ALL ){
-          sqlite3VdbeAddOp(v, OP_OpenTemp, unionTab, 1);
-          sqlite3VdbeAddOp(v, OP_KeyAsData, unionTab, 1);
+          openTempIndex(pParse, p, unionTab, 1);
         }else{
           sqlite3VdbeAddOp(v, OP_OpenTemp, unionTab, 0);
         }
@@ -1481,7 +1425,6 @@ static int multiSelect(
         sqlite3VdbeAddOp(v, OP_Rewind, unionTab, iBreak);
         computeLimitRegisters(pParse, p);
         iStart = sqlite3VdbeCurrentAddr(v);
-        multiSelectSortOrder(p, p->pOrderBy);
         rc = selectInnerLoop(pParse, p, p->pEList, unionTab, p->pEList->nExpr,
                              p->pOrderBy, -1, eDest, iParm, 
                              iCont, iBreak, 0);
@@ -1514,8 +1457,7 @@ static int multiSelect(
         rc = 1;
         goto multi_select_end;
       }
-      sqlite3VdbeAddOp(v, OP_OpenTemp, tab1, 1);
-      sqlite3VdbeAddOp(v, OP_KeyAsData, tab1, 1);
+      openTempIndex(pParse, p, tab1, 1);
       assert( p->pEList );
 
       /* Code the SELECTs to our left into temporary table "tab1".
@@ -1527,8 +1469,7 @@ static int multiSelect(
 
       /* Code the current SELECT into temporary table "tab2"
       */
-      sqlite3VdbeAddOp(v, OP_OpenTemp, tab2, 1);
-      sqlite3VdbeAddOp(v, OP_KeyAsData, tab2, 1);
+      openTempIndex(pParse, p, tab2, 1);
       p->pPrior = 0;
       nLimit = p->nLimit;
       p->nLimit = -1;
@@ -1556,7 +1497,6 @@ static int multiSelect(
       computeLimitRegisters(pParse, p);
       iStart = sqlite3VdbeAddOp(v, OP_FullKey, tab1, 0);
       sqlite3VdbeAddOp(v, OP_NotFound, tab2, iCont);
-      multiSelectSortOrder(p, p->pOrderBy);
       rc = selectInnerLoop(pParse, p, p->pEList, tab1, p->pEList->nExpr,
                              p->pOrderBy, -1, eDest, iParm, 
                              iCont, iBreak, 0);
@@ -1584,6 +1524,7 @@ static int multiSelect(
   }
 
 multi_select_end:
+#if 0  /*** NOT USED ****/
   if( affStr ){
     if( rc!=SQLITE_OK ){
       sqliteFree(affStr);
@@ -1592,6 +1533,7 @@ multi_select_end:
       sqlite3VdbeOp3(v, OP_Noop, 0, 0, affStr, P3_DYNAMIC);
     }
   }
+#endif
   return rc;
 }
 
@@ -1621,7 +1563,6 @@ static void substExpr(Expr *pExpr, int iTable, ExprList *pEList){
       pNew = pEList->a[pExpr->iColumn].pExpr;
       assert( pNew!=0 );
       pExpr->op = pNew->op;
-      pExpr->dataType = pNew->dataType;
       assert( pExpr->pLeft==0 );
       pExpr->pLeft = sqlite3ExprDup(pNew->pLeft);
       assert( pExpr->pRight==0 );
@@ -2011,7 +1952,7 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
   computeLimitRegisters(pParse, p);
   if( pSrc->a[0].pSelect==0 ){
     sqlite3VdbeAddOp(v, OP_Integer, pTab->iDb, 0);
-    sqlite3VdbeOp3(v, OP_OpenRead, base, pTab->tnum, pTab->zName, 0);
+    sqlite3VdbeAddOp(v, OP_OpenRead, base, pTab->tnum);
     sqlite3VdbeAddOp(v, OP_SetNumColumns, base, pTab->nCol);
   }
   cont = sqlite3VdbeMakeLabel(v);
@@ -2019,7 +1960,8 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
     sqlite3VdbeAddOp(v, seekOp, base, 0);
   }else{
     sqlite3VdbeAddOp(v, OP_Integer, pIdx->iDb, 0);
-    sqlite3VdbeOp3(v, OP_OpenRead, base+1, pIdx->tnum, pIdx->zName, P3_STATIC);
+    sqlite3VdbeOp3(v, OP_OpenRead, base+1, pIdx->tnum,
+                   (char*)&pIdx->keyInfo, P3_KEYINFO);
     sqlite3VdbeAddOp(v, seekOp, base+1, 0);
     sqlite3VdbeAddOp(v, OP_IdxRecno, base+1, 0);
     sqlite3VdbeAddOp(v, OP_Close, base+1, 0);
@@ -2274,6 +2216,7 @@ int sqlite3Select(
     generateColumnNames(pParse, pTabList, pEList);
   }
 
+#if 1  /* I do not think we need the following code any more.... */
   /* If the destination is SRT_Union, then set the number of columns in
   ** the records that will be inserted into the temporary table. The caller
   ** couldn't do this, in case the select statement is of the form 
@@ -2288,6 +2231,7 @@ int sqlite3Select(
   if( eDest==SRT_Union ){
     sqlite3VdbeAddOp(v, OP_SetNumColumns, iParm, pEList->nExpr);
   }
+#endif
 
   /* Generate code for all sub-queries in the FROM clause
   */
@@ -2416,7 +2360,7 @@ int sqlite3Select(
   */
   if( isDistinct ){
     distinct = pParse->nTab++;
-    sqlite3VdbeAddOp(v, OP_OpenTemp, distinct, 1);
+    openTempIndex(pParse, p, distinct, 0);
   }else{
     distinct = -1;
   }
@@ -2447,8 +2391,9 @@ int sqlite3Select(
       for(i=0; i<pGroupBy->nExpr; i++){
         sqlite3ExprCode(pParse, pGroupBy->a[i].pExpr);
       }
+      /* No affinity string is attached to the following OP_MakeKey 
+      ** because we do not need to do any coercion of datatypes. */
       sqlite3VdbeAddOp(v, OP_MakeKey, pGroupBy->nExpr, 0);
-      sqlite3AddKeyType(v, pGroupBy);
       lbl1 = sqlite3VdbeMakeLabel(v);
       sqlite3VdbeAddOp(v, OP_AggFocus, 0, lbl1);
       for(i=0, pAgg=pParse->aAgg; i<pParse->nAgg; i++, pAgg++){

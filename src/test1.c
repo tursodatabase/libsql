@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.42 2004/05/20 11:00:52 danielk1977 Exp $
+** $Id: test1.c,v 1.43 2004/05/20 22:16:30 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -1407,6 +1407,49 @@ static int test_prepare16(
   return TCL_OK;
 }
 
+
+/*
+** This is a collating function named "REVERSE" which sorts text
+** in reverse order.
+*/
+static int reverseCollatingFunc(
+  void *NotUsed,
+  int nKey1, const void *pKey1,
+  int nKey2, const void *pKey2
+){
+  int rc, n;
+  n = nKey1<nKey2 ? nKey1 : nKey2;
+  rc = memcmp(pKey1, pKey2, n);
+  if( rc==0 ){
+    rc = nKey1 - nKey2;
+  }
+  return -rc;
+}
+
+/*
+** Usage: add_reverse_collating_func DB 
+**
+** This routine adds a collation named "REVERSE" to database given.
+** REVERSE is used for testing only.
+*/
+static int reverse_collfunc(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3 *db;
+
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB");
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  sqlite3ChangeCollatingFunction(db, "REVERSE", 7, 0, reverseCollatingFunc);
+  return TCL_OK;
+}
+
+
 /*
 ** Register commands with the TCL interpreter.
 */
@@ -1419,31 +1462,31 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      char *zName;
      Tcl_CmdProc *xProc;
   } aCmd[] = {
-     { "sqlite3_mprintf_int",             (Tcl_CmdProc*)sqlite3_mprintf_int    },
-     { "sqlite3_mprintf_str",             (Tcl_CmdProc*)sqlite3_mprintf_str    },
-     { "sqlite3_mprintf_double",          (Tcl_CmdProc*)sqlite3_mprintf_double },
-     { "sqlite3_mprintf_scaled",          (Tcl_CmdProc*)sqlite3_mprintf_scaled },
-     { "sqlite3_mprintf_z_test",          (Tcl_CmdProc*)test_mprintf_z        },
-     { "sqlite3_open",                    (Tcl_CmdProc*)sqlite_test_open      },
-     { "sqlite3_last_insert_rowid",       (Tcl_CmdProc*)test_last_rowid       },
-     { "sqlite3_exec_printf",             (Tcl_CmdProc*)test_exec_printf      },
-     { "sqlite3_get_table_printf",        (Tcl_CmdProc*)test_get_table_printf },
-     { "sqlite3_close",                   (Tcl_CmdProc*)sqlite_test_close     },
-     { "sqlite3_create_function",         (Tcl_CmdProc*)test_create_function  },
-     { "sqlite3_create_aggregate",        (Tcl_CmdProc*)test_create_aggregate },
-     { "sqlite_register_test_function",  (Tcl_CmdProc*)test_register_func    },
-     { "sqlite_abort",                   (Tcl_CmdProc*)sqlite_abort          },
-     { "sqlite_datatypes",               (Tcl_CmdProc*)sqlite_datatypes      },
+     { "sqlite3_mprintf_int",           (Tcl_CmdProc*)sqlite3_mprintf_int    },
+     { "sqlite3_mprintf_str",           (Tcl_CmdProc*)sqlite3_mprintf_str    },
+     { "sqlite3_mprintf_double",        (Tcl_CmdProc*)sqlite3_mprintf_double },
+     { "sqlite3_mprintf_scaled",        (Tcl_CmdProc*)sqlite3_mprintf_scaled },
+     { "sqlite3_mprintf_z_test",        (Tcl_CmdProc*)test_mprintf_z        },
+     { "sqlite3_open",                  (Tcl_CmdProc*)sqlite_test_open      },
+     { "sqlite3_last_insert_rowid",     (Tcl_CmdProc*)test_last_rowid       },
+     { "sqlite3_exec_printf",           (Tcl_CmdProc*)test_exec_printf      },
+     { "sqlite3_get_table_printf",      (Tcl_CmdProc*)test_get_table_printf },
+     { "sqlite3_close",                 (Tcl_CmdProc*)sqlite_test_close     },
+     { "sqlite3_create_function",       (Tcl_CmdProc*)test_create_function  },
+     { "sqlite3_create_aggregate",      (Tcl_CmdProc*)test_create_aggregate },
+     { "sqlite_register_test_function", (Tcl_CmdProc*)test_register_func    },
+     { "sqlite_abort",                  (Tcl_CmdProc*)sqlite_abort          },
+     { "sqlite_datatypes",              (Tcl_CmdProc*)sqlite_datatypes      },
 #ifdef MEMORY_DEBUG
-     { "sqlite_malloc_fail",             (Tcl_CmdProc*)sqlite_malloc_fail    },
-     { "sqlite_malloc_stat",             (Tcl_CmdProc*)sqlite_malloc_stat    },
+     { "sqlite_malloc_fail",            (Tcl_CmdProc*)sqlite_malloc_fail    },
+     { "sqlite_malloc_stat",            (Tcl_CmdProc*)sqlite_malloc_stat    },
 #endif
-     { "sqlite_compile",                 (Tcl_CmdProc*)test_compile          },
-     { "sqlite_step",                    (Tcl_CmdProc*)test_step             },
-     { "sqlite_finalize",                (Tcl_CmdProc*)test_finalize         },
-     { "sqlite_bind",                    (Tcl_CmdProc*)test_bind             },
-     { "sqlite_reset",                   (Tcl_CmdProc*)test_reset            },
-     { "breakpoint",                     (Tcl_CmdProc*)test_breakpoint       },
+     { "sqlite_compile",                (Tcl_CmdProc*)test_compile          },
+     { "sqlite_step",                   (Tcl_CmdProc*)test_step             },
+     { "sqlite_finalize",               (Tcl_CmdProc*)test_finalize         },
+     { "sqlite_bind",                   (Tcl_CmdProc*)test_bind             },
+     { "sqlite_reset",                  (Tcl_CmdProc*)test_reset            },
+     { "breakpoint",                    (Tcl_CmdProc*)test_breakpoint       },
   };
   static struct {
      char *zName;
@@ -1461,6 +1504,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_errmsg16",              (Tcl_ObjCmdProc*)test_errmsg16      },
      { "sqlite3_prepare",               (Tcl_ObjCmdProc*)test_prepare       },
      { "sqlite3_prepare16",             (Tcl_ObjCmdProc*)test_prepare16     },
+     { "add_reverse_collating_func",    (Tcl_ObjCmdProc*)reverse_collfunc   },
   };
   int i;
 
@@ -1482,5 +1526,3 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
       (char*)&sqlite_static_bind_value, TCL_LINK_STRING);
   return TCL_OK;
 }
-
-

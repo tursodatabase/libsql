@@ -100,6 +100,7 @@ int sqlite3VdbeAddOp(Vdbe *p, int op, int p1, int p2){
   pOp->p3 = 0;
   pOp->p3type = P3_NOTUSED;
 #ifndef NDEBUG
+  pOp->zComment = 0;
   if( sqlite3_vdbe_addop_trace ) sqlite3VdbePrintOp(0, i, &p->aOp[i]);
 #endif
   return i;
@@ -226,6 +227,7 @@ int sqlite3VdbeAddOpList(Vdbe *p, int nOp, VdbeOpList const *aOp){
       pOut->p3 = pIn->p3;
       pOut->p3type = pIn->p3 ? P3_STATIC : P3_NOTUSED;
 #ifndef NDEBUG
+      pOut->zComment = 0;
       if( sqlite3_vdbe_addop_trace ){
         sqlite3VdbePrintOp(0, i+addr, &p->aOp[i+addr]);
       }
@@ -274,7 +276,10 @@ void sqlite3VdbeChangeP2(Vdbe *p, int addr, int val){
 **
 ** If n==P3_STATIC  it means that zP3 is a pointer to a constant static
 ** string and we can just copy the pointer.  n==P3_POINTER means zP3 is
-** a pointer to some object other than a string.
+** a pointer to some object other than a string.  n==P3_COLLSEQ and
+** n==P3_KEYINFO mean that zP3 is a pointer to a CollSeq or KeyInfo
+** structure.  A copy is made of KeyInfo structures into memory obtained
+** from sqliteMalloc.
 **
 ** If addr<0 then change P3 on the most recently inserted instruction.
 */
@@ -294,6 +299,19 @@ void sqlite3VdbeChangeP3(Vdbe *p, int addr, const char *zP3, int n){
   if( zP3==0 ){
     pOp->p3 = 0;
     pOp->p3type = P3_NOTUSED;
+  }else if( n==P3_KEYINFO ){
+    KeyInfo *pKeyInfo;
+    int nField, nByte;
+    nField = ((KeyInfo*)zP3)->nField;
+    nByte = sizeof(*pKeyInfo) + (nField-1)*sizeof(pKeyInfo->aColl[0]);
+    pKeyInfo = sqliteMalloc( nByte );
+    pOp->p3 = (char*)pKeyInfo;
+    if( pKeyInfo ){
+      memcpy(pKeyInfo, zP3, nByte);
+      pOp->p3type = P3_KEYINFO;
+    }else{
+      pOp->p3type = P3_NOTUSED;
+    }
   }else if( n<0 ){
     pOp->p3 = (char*)zP3;
     pOp->p3type = n;
@@ -322,11 +340,11 @@ void sqlite3VdbeDequoteP3(Vdbe *p, int addr){
   }
   pOp = &p->aOp[addr];
   if( pOp->p3==0 || pOp->p3[0]==0 ) return;
-  if( pOp->p3type==P3_POINTER ) return;
-  if( pOp->p3type!=P3_DYNAMIC ){
+  if( pOp->p3type==P3_STATIC ){
     pOp->p3 = sqliteStrDup(pOp->p3);
     pOp->p3type = P3_DYNAMIC;
   }
+  assert( pOp->p3type==P3_DYNAMIC );
   sqlite3Dequote(pOp->p3);
 }
 
@@ -342,13 +360,11 @@ void sqlite3VdbeCompressSpace(Vdbe *p, int addr){
   assert( p->magic==VDBE_MAGIC_INIT );
   if( p->aOp==0 || addr<0 || addr>=p->nOp ) return;
   pOp = &p->aOp[addr];
-  if( pOp->p3type==P3_POINTER ){
-    return;
-  }
-  if( pOp->p3type!=P3_DYNAMIC ){
+  if( pOp->p3type==P3_STATIC ){
     pOp->p3 = sqliteStrDup(pOp->p3);
     pOp->p3type = P3_DYNAMIC;
   }
+  assert( pOp->p3type==P3_DYNAMIC );
   z = (unsigned char*)pOp->p3;
   if( z==0 ) return;
   i = j = 0;
@@ -364,6 +380,23 @@ void sqlite3VdbeCompressSpace(Vdbe *p, int addr){
   while( j>0 && isspace(z[j-1]) ){ j--; }
   z[j] = 0;
 }
+
+#ifndef NDEBUG
+/*
+** Add comment text to the most recently inserted opcode
+*/
+void sqlite3VdbeAddComment(Vdbe *p, const char *zFormat, ...){
+  va_list ap;
+  VdbeOp *pOp;
+  char *zText;
+  va_start(ap, zFormat);
+  zText = sqlite3_vmprintf(zFormat, ap);
+  va_end(ap);
+  pOp = &p->aOp[p->nOp-1];
+  sqliteFree(pOp->zComment);
+  pOp->zComment = zText;
+}
+#endif
 
 /*
 ** Search the current program starting at instruction addr for the given
@@ -504,22 +537,85 @@ int sqlite3_aggregate_count(sqlite_func *p){
   return p->cnt;
 }
 
+/*
+** Compute a string that describes the P3 parameter for an opcode.
+** Use zTemp for any required temporary buffer space.
+*/
+static char *displayP3(Op *pOp, char *zTemp, int nTemp){
+  char *zP3;
+  assert( nTemp>=20 );
+  switch( pOp->p3type ){
+    case P3_POINTER: {
+      sprintf(zTemp, "ptr(%#x)", (int)pOp->p3);
+      zP3 = zTemp;
+      break;
+    }
+    case P3_KEYINFO: {
+      int i, j;
+      KeyInfo *pKeyInfo = (KeyInfo*)pOp->p3;
+      sprintf(zTemp, "keyinfo(%d", pKeyInfo->nField);
+      i = strlen(zTemp);
+      for(j=0; j<pKeyInfo->nField; j++){
+        CollSeq *pColl = pKeyInfo->aColl[j];
+        if( pColl ){
+          int n = strlen(pColl->zName);
+          if( i+n>nTemp-6 ){
+            strcpy(&zTemp[i],",...");
+            break;
+          }
+          zTemp[i++] = ',';
+          if( pColl->reverseOrder ){
+            zTemp[i++] = '-';
+          }
+          strcpy(&zTemp[i], pColl->zName);
+          i += n;
+        }else if( i+4<nTemp-6 ){
+          strcpy(&zTemp[i],",nil");
+          i += 4;
+        }
+      }
+      zTemp[i++] = ')';
+      zTemp[i] = 0;
+      assert( i<nTemp );
+      zP3 = zTemp;
+      break;
+    }
+    case P3_COLLSEQ: {
+      CollSeq *pColl = (CollSeq*)pOp->p3;
+      sprintf(zTemp, "collseq(%s%.20s)", 
+         pColl->reverseOrder ? "-" : "", pColl->zName);
+      zP3 = zTemp;
+      break;
+    }
+    default: {
+      zP3 = pOp->p3;
+      if( zP3==0 ){
+        zP3 = "";
+      }
+    }
+  }
+  return zP3;
+}
+
+
 #if !defined(NDEBUG) || defined(VDBE_PROFILE)
 /*
 ** Print a single opcode.  This routine is used for debugging only.
 */
 void sqlite3VdbePrintOp(FILE *pOut, int pc, Op *pOp){
   char *zP3;
-  char zPtr[40];
-  if( pOp->p3type==P3_POINTER ){
-    sprintf(zPtr, "ptr(%#x)", (int)pOp->p3);
-    zP3 = zPtr;
-  }else{
-    zP3 = pOp->p3;
-  }
+  char zPtr[50];
+  static const char *zFormat1 = "%4d %-13s %4d %4d %s\n";
+  static const char *zFormat2 = "%4d %-13s %4d %4d %-20s -- %s\n";
   if( pOut==0 ) pOut = stdout;
-  fprintf(pOut,"%4d %-12s %4d %4d %s\n",
-      pc, sqlite3OpcodeNames[pOp->opcode], pOp->p1, pOp->p2, zP3 ? zP3 : "");
+  zP3 = displayP3(pOp, zPtr, sizeof(zPtr));
+#ifdef NDEBUG
+  fprintf(pOut, zFormat1,
+      pc, sqlite3OpcodeNames[pOp->opcode], pOp->p1, pOp->p2, zP3);
+#else
+  fprintf(pOut, pOp->zComment ? zFormat2 : zFormat1,
+      pc, sqlite3OpcodeNames[pOp->opcode], pOp->p1, pOp->p2, zP3,pOp->zComment);
+#endif
   fflush(pOut);
 }
 #endif
@@ -562,16 +658,13 @@ int sqlite3VdbeList(
     rc = SQLITE_ERROR;
     sqlite3SetString(&p->zErrMsg, sqlite3_error_string(p->rc), (char*)0);
   }else{
+    Op *pOp = &p->aOp[i];
     sprintf(p->zArgv[0],"%d",i);
-    sprintf(p->zArgv[2],"%d", p->aOp[i].p1);
-    sprintf(p->zArgv[3],"%d", p->aOp[i].p2);
-    if( p->aOp[i].p3type==P3_POINTER ){
-      sprintf(p->aStack[4].zShort, "ptr(%#x)", (int)p->aOp[i].p3);
-      p->zArgv[4] = p->aStack[4].zShort;
-    }else{
-      p->zArgv[4] = p->aOp[i].p3;
-    }
-    p->zArgv[1] = sqlite3OpcodeNames[p->aOp[i].opcode];
+    sprintf(p->zArgv[2],"%d", pOp->p1);
+    sprintf(p->zArgv[3],"%d", pOp->p2);
+    p->zArgv[4] =
+          displayP3(pOp, p->aStack[4].zShort, sizeof(p->aStack[4].zShort));
+    p->zArgv[1] = sqlite3OpcodeNames[pOp->opcode];
     p->pc = i+1;
     p->azResColumn = p->zArgv;
     p->nResColumn = 5;
@@ -1165,9 +1258,13 @@ void sqlite3VdbeDelete(Vdbe *p){
     p->nOp = 0;
   }
   for(i=0; i<p->nOp; i++){
-    if( p->aOp[i].p3type==P3_DYNAMIC ){
-      sqliteFree(p->aOp[i].p3);
+    Op *pOp = &p->aOp[i];
+    if( pOp->p3type==P3_DYNAMIC || pOp->p3type==P3_KEYINFO ){
+      sqliteFree(pOp->p3);
     }
+#ifndef NDEBUG
+    sqliteFree(pOp->zComment);
+#endif
   }
   for(i=0; i<p->nVar; i++){
     if( p->apVar[i].flags&MEM_Dyn ){
@@ -1196,7 +1293,7 @@ int sqlite3VdbeCursorMoveto(Cursor *p){
     }else{
       sqlite3BtreeMoveto(p->pCursor,(char*)&p->movetoTarget,sizeof(i64),&res);
     }
-    p->incrKey = 0;
+    *p->pIncrKey = 0;
     p->lastRecno = keyToInt(p->movetoTarget);
     p->recnoIsValid = res==0;
     if( res<0 ){
@@ -1421,8 +1518,8 @@ int sqlite3VdbeSerialGet(const unsigned char *buf, u64 serial_type, Mem *pMem){
 ** Compare the values contained by the two memory cells, returning
 ** negative, zero or positive if pMem1 is less than, equal to, or greater
 ** than pMem2. Sorting order is NULL's first, followed by numbers (integers
-** and reals) sorted numerically, followed by text ordered by memcmp() and
-** finally blob's ordered by memcmp().
+** and reals) sorted numerically, followed by text ordered by the collating
+** sequence pColl and finally blob's ordered by memcmp().
 **
 ** Two NULL values are considered equal by this function.
 */
@@ -1531,12 +1628,14 @@ int sqlite3VdbeKeyCompare(
   int nKey1, const void *pKey1, 
   int nKey2, const void *pKey2
 ){
-  Cursor *pC = (Cursor *)userData;
+  KeyInfo *pKeyInfo = (KeyInfo*)userData;
   int offset1 = 0;
   int offset2 = 0;
+  int i = 0;
   const unsigned char *aKey1 = (const unsigned char *)pKey1;
   const unsigned char *aKey2 = (const unsigned char *)pKey2;
   
+  assert( pKeyInfo!=0 );
   while( offset1<nKey1 && offset2<nKey2 ){
     Mem mem1;
     Mem mem2;
@@ -1555,11 +1654,12 @@ int sqlite3VdbeKeyCompare(
     */
     if( !serial_type1 || !serial_type2 ){
       assert( !serial_type1 && !serial_type2 );
-      assert( !pC || !pC->incrKey );
       sqlite3GetVarint(&aKey1[offset1], &serial_type1);
       sqlite3GetVarint(&aKey2[offset2], &serial_type2);
       return ( (i64)serial_type1 - (i64)serial_type2 );
     }
+
+    assert( i<pKeyInfo->nField );
 
     /* Assert that there is enough space left in each key for the blob of
     ** data to go with the serial type just read. This assert may fail if
@@ -1569,7 +1669,7 @@ int sqlite3VdbeKeyCompare(
     offset1 += sqlite3VdbeSerialGet(&aKey1[offset1], serial_type1, &mem1);
     offset2 += sqlite3VdbeSerialGet(&aKey2[offset2], serial_type2, &mem2);
 
-    rc = sqlite3MemCompare(&mem1, &mem2, 0);
+    rc = sqlite3MemCompare(&mem1, &mem2, pKeyInfo->aColl[i]);
     if( mem1.flags&MEM_Dyn ){
       sqliteFree(mem1.z);
     }
@@ -1579,13 +1679,14 @@ int sqlite3VdbeKeyCompare(
     if( rc!=0 ){
       return rc;
     }
+    i++;
   }
 
   /* One of the keys ran out of fields, but all the fields up to that point
   ** were equal. If the incrKey flag is true, then the second key is
   ** treated as larger.
   */
-  if( pC && pC->incrKey ){
+  if( pKeyInfo->incrKey ){
     assert( offset2==nKey2 );
     return -1;
   }
@@ -1615,7 +1716,7 @@ int sqlite3VdbeRowCompare(
   int nKey1, const void *pKey1, 
   int nKey2, const void *pKey2
 ){
-  Cursor *pC = (Cursor *)userData;
+  KeyInfo *pKeyInfo = (KeyInfo*)userData;
   int offset1 = 0;
   int offset2 = 0;
   int toffset1 = 0;
@@ -1624,16 +1725,16 @@ int sqlite3VdbeRowCompare(
   const unsigned char *aKey1 = (const unsigned char *)pKey1;
   const unsigned char *aKey2 = (const unsigned char *)pKey2;
 
-  assert( pC );
-  assert( pC->nField>0 );
+  assert( pKeyInfo );
+  assert( pKeyInfo->nField>0 );
 
-  for( i=0; i<pC->nField; i++ ){
+  for( i=0; i<pKeyInfo->nField; i++ ){
     u64 dummy;
     offset1 += sqlite3GetVarint(&aKey1[offset1], &dummy);
     offset2 += sqlite3GetVarint(&aKey1[offset1], &dummy);
   }
 
-  for( i=0; i<pC->nField; i++ ){
+  for( i=0; i<pKeyInfo->nField; i++ ){
     Mem mem1;
     Mem mem2;
     u64 serial_type1;
@@ -1654,7 +1755,7 @@ int sqlite3VdbeRowCompare(
     offset1 += sqlite3VdbeSerialGet(&aKey1[offset1], serial_type1, &mem1);
     offset2 += sqlite3VdbeSerialGet(&aKey2[offset2], serial_type2, &mem2);
 
-    rc = sqlite3MemCompare(&mem1, &mem2, 0);
+    rc = sqlite3MemCompare(&mem1, &mem2, pKeyInfo->aColl[i]);
     if( mem1.flags&MEM_Dyn ){
       sqliteFree(mem1.z);
     }
@@ -1712,10 +1813,12 @@ int sqlite3VdbeIdxRowid(BtCursor *pCur, i64 *rowid){
 }
 
 /*
-** Compare the key of index entry that cursor pC is point to against
+** Compare the key of the index entry that cursor pC is point to against
 ** the key string in pKey (of length nKey).  Write into *pRes a number
 ** that is negative, zero, or positive if pC is less than, equal to,
 ** or greater than pKey.  Return SQLITE_OK on success.
+**
+** pKey might contain fewer terms than the cursor.
 */
 int sqlite3VdbeIdxKeyCompare(
   Cursor *pC,                 /* The cursor to compare against */
@@ -1752,7 +1855,7 @@ int sqlite3VdbeIdxKeyCompare(
   len = nCellKey-2;
   while( pCellKey[len] && --len );
 
-  *res = sqlite3VdbeKeyCompare(pC, len, pCellKey, nKey, pKey);
+  *res = sqlite3VdbeKeyCompare(pC->pKeyInfo, len, pCellKey, nKey, pKey);
   
   if( freeCellKey ){
     sqliteFree(pCellKey);

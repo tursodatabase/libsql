@@ -12,7 +12,7 @@
 ** This module contains C code that generates VDBE code used to process
 ** the WHERE clause of SQL statements.
 **
-** $Id: where.c,v 1.99 2004/05/19 20:41:04 drh Exp $
+** $Id: where.c,v 1.100 2004/05/20 22:16:30 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -222,15 +222,15 @@ static Index *findSortingIndex(
 
   assert( pOrderBy!=0 );
   assert( pOrderBy->nExpr>0 );
-  sortOrder = pOrderBy->a[0].sortOrder & SQLITE_SO_DIRMASK;
+  sortOrder = pOrderBy->a[0].sortOrder;
   for(i=0; i<pOrderBy->nExpr; i++){
     Expr *p;
-    if( (pOrderBy->a[i].sortOrder & SQLITE_SO_DIRMASK)!=sortOrder ){
+    if( pOrderBy->a[i].sortOrder!=sortOrder ){
       /* Indices can only be used if all ORDER BY terms are either
       ** DESC or ASC.  Indices cannot be used on a mixture. */
       return 0;
     }
-    if( (pOrderBy->a[i].sortOrder & SQLITE_SO_TYPEMASK)!=SQLITE_SO_UNK ){
+    if( pOrderBy->a[i].zName!=0 ){
       /* Do not sort by index if there is a COLLATE clause */
       return 0;
     }
@@ -678,13 +678,13 @@ WhereInfo *sqlite3WhereBegin(
     pTab = pTabList->a[i].pTab;
     if( pTab->isTransient || pTab->pSelect ) continue;
     sqlite3VdbeAddOp(v, OP_Integer, pTab->iDb, 0);
-    sqlite3VdbeOp3(v, OP_OpenRead, pTabList->a[i].iCursor, pTab->tnum,
-                     pTab->zName, P3_STATIC);
+    sqlite3VdbeAddOp(v, OP_OpenRead, pTabList->a[i].iCursor, pTab->tnum);
     sqlite3VdbeAddOp(v, OP_SetNumColumns, pTabList->a[i].iCursor, pTab->nCol);
     sqlite3CodeVerifySchema(pParse, pTab->iDb);
     if( (pIx = pWInfo->a[i].pIdx)!=0 ){
       sqlite3VdbeAddOp(v, OP_Integer, pIx->iDb, 0);
-      sqlite3VdbeOp3(v, OP_OpenRead, pWInfo->a[i].iCur, pIx->tnum,pIx->zName,0);
+      sqlite3VdbeOp3(v, OP_OpenRead, pWInfo->a[i].iCur, pIx->tnum,
+                     (char*)&pIx->keyInfo, P3_KEYINFO);
     }
   }
 

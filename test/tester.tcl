@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.32 2004/05/12 11:24:03 danielk1977 Exp $
+# $Id: tester.tcl,v 1.33 2004/05/20 22:16:31 drh Exp $
 
 # Make sure tclsqlite was compiled correctly.  Abort now with an
 # error message if not.
@@ -74,11 +74,12 @@ set nTest 0
 set nProb 0
 set skip_test 0
 set failList {}
+set maxErr 1000
 
 # Invoke the do_test procedure to run a single test 
 #
 proc do_test {name cmd expected} {
-  global argv nErr nTest skip_test
+  global argv nErr nTest skip_test maxErr
   if {$skip_test} {
     set skip_test 0
     return
@@ -102,12 +103,12 @@ proc do_test {name cmd expected} {
     puts "\nError: $result"
     incr nErr
     lappend ::failList $name
-    if {$nErr>100} {puts "*** Giving up..."; finalize_testing}
+    if {$nErr>$maxErr} {puts "*** Giving up..."; finalize_testing}
   } elseif {[string compare $result $expected]} {
     puts "\nExpected: \[$expected\]\n     Got: \[$result\]"
     incr nErr
     lappend ::failList $name
-    if {$nErr>=100} {puts "*** Giving up..."; finalize_testing}
+    if {$nErr>=$maxErr} {puts "*** Giving up..."; finalize_testing}
   } else {
     puts " Ok"
   }

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.308 2004/05/20 13:54:54 drh Exp $
+** $Id: vdbe.c,v 1.309 2004/05/20 22:16:30 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2187,7 +2187,7 @@ case OP_MakeRecord: {
 **  't'            TEXT
 **  'o'            NONE
 **
-** If P3 is NULL then all index fields have the affinity NUMERIC.
+** If P3 is NULL then datatype coercion occurs.
 */
 case OP_MakeKey:
 case OP_MakeIdxKey: {
@@ -2202,8 +2202,8 @@ case OP_MakeIdxKey: {
   int offset = 0;
   char *zAffinity = pOp->p3;
  
-  assert( zAffinity );
   nField = pOp->p1;
+  assert( zAffinity==0 || strlen(zAffinity)>=nField );
   pData0 = &pTos[1-nField];
   assert( pData0>=p->aStack );
 
@@ -2223,7 +2223,9 @@ case OP_MakeIdxKey: {
   */
   for(pRec=pData0; pRec<=pTos; pRec++){
     u64 serial_type;
-    applyAffinity(pRec, zAffinity[pRec-pData0]);
+    if( zAffinity ){
+      applyAffinity(pRec, zAffinity[pRec-pData0]);
+    }
     if( pRec->flags&MEM_Null ){
       containsNull = 1;
     }
@@ -2513,10 +2515,9 @@ case OP_VerifyCookie: {
 ** to get a read lock but fails, the script terminates with an
 ** SQLITE_BUSY error code.
 **
-** The P3 value is the name of the table or index being opened.
-** The P3 value is not actually used by this opcode and may be
-** omitted.  But the code generator usually inserts the index or
-** table name into P3 to make the code easier to read.
+** The P3 value is a pointer to a KeyInfo structure that defines the
+** content and collating sequence of indices.  P3 is NULL for cursors
+** that are not pointing to indices.
 **
 ** See also OpenWrite.
 */
@@ -2525,10 +2526,9 @@ case OP_VerifyCookie: {
 ** Open a read/write cursor named P1 on the table or index whose root
 ** page is P2.  If P2==0 then take the root page number from the stack.
 **
-** The P3 value is the name of the table or index being opened.
-** The P3 value is not actually used by this opcode and may be
-** omitted.  But the code generator usually inserts the index or
-** table name into P3 to make the code easier to read.
+** The P3 value is a pointer to a KeyInfo structure that defines the
+** content and collating sequence of indices.  P3 is NULL for cursors
+** that are not pointing to indices.
 **
 ** This instruction works just like OpenRead except that it opens the cursor
 ** in read/write mode.  For a given table, there can be one or more read-only
@@ -2576,8 +2576,15 @@ case OP_OpenWrite: {
     ** sqlite3VdbeKeyCompare(). If the table being opened is of type
     ** INTKEY, the btree layer won't call the comparison function anyway.
     */
-    rc = sqlite3BtreeCursor(pX, p2, wrFlag, sqlite3VdbeKeyCompare, pCur,
-        &pCur->pCursor);
+    rc = sqlite3BtreeCursor(pX, p2, wrFlag,
+             sqlite3VdbeKeyCompare, pOp->p3,
+             &pCur->pCursor);
+    pCur->pKeyInfo = (KeyInfo*)pOp->p3;
+    if( pCur->pKeyInfo ){
+      pCur->pIncrKey = &pCur->pKeyInfo->incrKey;
+    }else{
+      pCur->pIncrKey = &pCur->bogusIncrKey;
+    }
     switch( rc ){
       case SQLITE_BUSY: {
         if( db->xBusyCallback==0 ){
@@ -2611,16 +2618,16 @@ case OP_OpenWrite: {
   break;
 }
 
-/* Opcode: OpenTemp P1 P2 *
+/* Opcode: OpenTemp P1 * P3
 **
 ** Open a new cursor to a transient table.
 ** The transient cursor is always opened read/write even if 
 ** the main database is read-only.  The transient table is deleted
 ** automatically when the cursor is closed.
 **
-** The cursor points to a BTree table if P2==0 and to a BTree index
-** if P2==1.  A BTree table must have an integer key and can have arbitrary
-** data.  A BTree index has no data but can have an arbitrary key.
+** The cursor points to a BTree table if P3==0 and to a BTree index
+** if P3 is not 0.  If P3 is not NULL, it points to a KeyInfo structure
+** that defines the format of keys in the index.
 **
 ** This opcode is used for tables that exist for the duration of a single
 ** SQL statement only.  Tables created using CREATE TEMPORARY TABLE
@@ -2649,17 +2656,21 @@ case OP_OpenTemp: {
     ** opening it. If a transient table is required, just use the
     ** automatically created table with root-page 1 (an INTKEY table).
     */
-    if( pOp->p2 ){
+    if( pOp->p3 ){
       int pgno;
+      assert( pOp->p3type==P3_KEYINFO );
       rc = sqlite3BtreeCreateTable(pCx->pBt, &pgno, BTREE_ZERODATA); 
       if( rc==SQLITE_OK ){
         assert( pgno==MASTER_ROOT+1 );
         rc = sqlite3BtreeCursor(pCx->pBt, pgno, 1, sqlite3VdbeKeyCompare,
-            pCx, &pCx->pCursor);
+            pOp->p3, &pCx->pCursor);
+        pCx->pKeyInfo = (KeyInfo*)pOp->p3;
+        pCx->pIncrKey = &pCx->pKeyInfo->incrKey;
       }
     }else{
       rc = sqlite3BtreeCursor(pCx->pBt, MASTER_ROOT, 1, 0, 0, &pCx->pCursor);
       pCx->intKey = 1;
+      pCx->pIncrKey = &pCx->bogusIncrKey;
     }
   }
   break;
@@ -2685,6 +2696,7 @@ case OP_OpenPseudo: {
   memset(pCx, 0, sizeof(*pCx));
   pCx->nullRow = 1;
   pCx->pseudoTable = 1;
+  pCx->pIncrKey = &pCx->bogusIncrKey;
   break;
 }
 
@@ -2755,7 +2767,7 @@ case OP_MoveGt: {
     int res, oc;
     oc = pOp->opcode;
     pC->nullRow = 0;
-    pC->incrKey = oc==OP_MoveGt || oc==OP_MoveLe;
+    *pC->pIncrKey = oc==OP_MoveGt || oc==OP_MoveLe;
     if( pC->intKey ){
       i64 iKey;
       assert( !pOp->p3 );
@@ -2772,17 +2784,13 @@ case OP_MoveGt: {
       pC->lastRecno = pTos->i;
       pC->recnoIsValid = res==0;
     }else{
-      if( pOp->p3 ){
-        pC->incrKey = 1;
-      }
       Stringify(pTos);
       sqlite3BtreeMoveto(pC->pCursor, pTos->z, pTos->n, &res);
-      pC->incrKey = 0;
       pC->recnoIsValid = 0;
     }
     pC->deferredMoveto = 0;
     pC->cacheValid = 0;
-    pC->incrKey = 0;
+    *pC->pIncrKey = 0;
     sqlite3_search_count++;
     if( oc==OP_MoveGe || oc==OP_MoveGt ){
       if( res<0 ){
@@ -3282,7 +3290,7 @@ case OP_KeyAsData: {
   assert( i>=0 && i<p->nCursor );
   pC = p->apCsr[i];
   pC->keyAsData = pOp->p2;
-  sqlite3BtreeSetCompare(pC->pCursor, sqlite3VdbeRowCompare, pC);
+  sqlite3BtreeSetCompare(pC->pCursor, sqlite3VdbeRowCompare, pC->pKeyInfo);
   break;
 }
 
@@ -3811,10 +3819,10 @@ case OP_IdxGE: {
  
     Stringify(pTos);
     assert( pC->deferredMoveto==0 );
-    pC->incrKey = pOp->p3!=0;
+    *pC->pIncrKey = pOp->p3!=0;
     assert( pOp->p3==0 || pOp->opcode!=OP_IdxGT );
     rc = sqlite3VdbeIdxKeyCompare(pC, pTos->n, pTos->z, &res);
-    pC->incrKey = 0;
+    *pC->pIncrKey = 0;
     if( rc!=SQLITE_OK ){
       break;
     }

@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.124 2004/05/20 13:54:54 drh Exp $
+** $Id: expr.c,v 1.125 2004/05/20 22:16:29 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -588,10 +588,6 @@ static int lookupName(
         /* Substitute the rowid (column -1) for the INTEGER PRIMARY KEY */
         pExpr->iColumn = j==pTab->iPKey ? -1 : j;
         pExpr->affinity = pTab->aCol[j].affinity;
-
-        /* FIX ME: Expr::dataType will be removed... */
-        pExpr->dataType =
-            (pCol->affinity==SQLITE_AFF_TEXT?SQLITE_SO_TEXT:SQLITE_SO_NUM);
         break;
       }
     }
@@ -624,9 +620,6 @@ static int lookupName(
           cnt++;
           pExpr->iColumn = j==pTab->iPKey ? -1 : j;
           pExpr->affinity = pTab->aCol[j].affinity;
-          /* FIX ME: Expr::dataType will be removed... */
-          pExpr->dataType =
-              (pCol->affinity==SQLITE_AFF_TEXT?SQLITE_SO_TEXT:SQLITE_SO_NUM);
           break;
         }
       }
@@ -639,7 +632,6 @@ static int lookupName(
   if( cnt==0 && cntTab==1 && sqlite3IsRowid(zCol) ){
     cnt = 1;
     pExpr->iColumn = -1;
-    pExpr->dataType = SQLITE_SO_NUM;
     pExpr->affinity = SQLITE_AFF_INTEGER;
   }
 
@@ -805,6 +797,8 @@ int sqlite3ExprResolveIds(
     case TK_IN: {
       char affinity;
       Vdbe *v = sqlite3GetVdbe(pParse);
+      KeyInfo keyInfo;
+
       if( v==0 ) return 1;
       if( sqlite3ExprResolveIds(pParse, pSrcList, pEList, pExpr->pLeft) ){
         return 1;
@@ -825,7 +819,11 @@ int sqlite3ExprResolveIds(
       ** is used.
       */
       pExpr->iTable = pParse->nTab++;
-      sqlite3VdbeAddOp(v, OP_OpenTemp, pExpr->iTable, 1);
+      memset(&keyInfo, 0, sizeof(keyInfo));
+      keyInfo.nField = 1;
+      keyInfo.aColl[0] = pParse->db->pDfltColl;
+      sqlite3VdbeOp3(v, OP_OpenTemp, pExpr->iTable, 0, \
+           (char*)&keyInfo, P3_KEYINFO);
 
       if( pExpr->pSelect ){
         /* Case 1:     expr IN (SELECT ...)
@@ -1002,28 +1000,8 @@ int sqlite3ExprCheck(Parse *pParse, Expr *pExpr, int allowAgg, int *pIsAgg){
         nErr = sqlite3ExprCheck(pParse, pExpr->pList->a[i].pExpr,
                                allowAgg && !is_agg, pIsAgg);
       }
-      if( pDef==0 ){
-        /* Already reported an error */
-      }else if( pDef->dataType>=0 ){
-        if( pDef->dataType<n ){
-          pExpr->dataType = 
-             sqlite3ExprType(pExpr->pList->a[pDef->dataType].pExpr);
-        }else{
-          pExpr->dataType = SQLITE_SO_NUM;
-        }
-      }else if( pDef->dataType==SQLITE_ARGS ){
-        pDef->dataType = SQLITE_SO_TEXT;
-        for(i=0; i<n; i++){
-          if( sqlite3ExprType(pExpr->pList->a[i].pExpr)==SQLITE_SO_NUM ){
-            pExpr->dataType = SQLITE_SO_NUM;
-            break;
-          }
-        }
-      }else if( pDef->dataType==SQLITE_NUMERIC ){
-        pExpr->dataType = SQLITE_SO_NUM;
-      }else{
-        pExpr->dataType = SQLITE_SO_TEXT;
-      }
+      /** TODO:  Compute pExpr->affinity based on the expected return
+      ** type of the function */
     }
     default: {
       if( pExpr->pLeft ){
@@ -1047,95 +1025,37 @@ int sqlite3ExprCheck(Parse *pParse, Expr *pExpr, int allowAgg, int *pIsAgg){
 }
 
 /*
-** Return either SQLITE_SO_NUM or SQLITE_SO_TEXT to indicate whether the
-** given expression should sort as numeric values or as text.
+** Return one of the SQLITE_AFF_* affinity types that indicates the likely
+** data type of the result of the given expression.
+**
+** Not every expression has a fixed type.  If the type cannot be determined
+** at compile-time, then try to return the type affinity if the expression
+** is a column.  Otherwise just return SQLITE_AFF_NONE.
 **
 ** The sqlite3ExprResolveIds() and sqlite3ExprCheck() routines must have
 ** both been called on the expression before it is passed to this routine.
 */
 int sqlite3ExprType(Expr *p){
-  if( p==0 ) return SQLITE_SO_NUM;
+  if( p==0 ) return SQLITE_AFF_NONE;
   while( p ) switch( p->op ){
-    case TK_PLUS:
-    case TK_MINUS:
-    case TK_STAR:
-    case TK_SLASH:
-    case TK_AND:
-    case TK_OR:
-    case TK_ISNULL:
-    case TK_NOTNULL:
-    case TK_NOT:
-    case TK_UMINUS:
-    case TK_UPLUS:
-    case TK_BITAND:
-    case TK_BITOR:
-    case TK_BITNOT:
-    case TK_LSHIFT:
-    case TK_RSHIFT:
-    case TK_REM:
-    case TK_INTEGER:
-    case TK_FLOAT:
-    case TK_IN:
-    case TK_BETWEEN:
-    case TK_GLOB:
-    case TK_LIKE:
-      return SQLITE_SO_NUM;
-
-    case TK_STRING:
-    case TK_NULL:
     case TK_CONCAT:
-    case TK_VARIABLE:
-      return SQLITE_SO_TEXT;
-
-    case TK_LT:
-    case TK_LE:
-    case TK_GT:
-    case TK_GE:
-    case TK_NE:
-    case TK_EQ:
-      if( sqlite3ExprType(p->pLeft)==SQLITE_SO_NUM ){
-        return SQLITE_SO_NUM;
-      }
-      p = p->pRight;
-      break;
+      return SQLITE_AFF_TEXT;
 
     case TK_AS:
       p = p->pLeft;
       break;
 
-    case TK_COLUMN:
-    case TK_FUNCTION:
-    case TK_AGG_FUNCTION:
-      return p->dataType;
+    case TK_NULL:
+      return SQLITE_AFF_NONE;
 
-    case TK_SELECT:
-      assert( p->pSelect );
-      assert( p->pSelect->pEList );
-      assert( p->pSelect->pEList->nExpr>0 );
-      p = p->pSelect->pEList->a[0].pExpr;
-      break;
-
-    case TK_CASE: {
-      if( p->pRight && sqlite3ExprType(p->pRight)==SQLITE_SO_NUM ){
-        return SQLITE_SO_NUM;
-      }
-      if( p->pList ){
-        int i;
-        ExprList *pList = p->pList;
-        for(i=1; i<pList->nExpr; i+=2){
-          if( sqlite3ExprType(pList->a[i].pExpr)==SQLITE_SO_NUM ){
-            return SQLITE_SO_NUM;
-          }
-        }
-      }
-      return SQLITE_SO_TEXT;
-    }
+    case TK_SELECT:   /*** FIX ME ****/
+    case TK_COLUMN:   /*** FIX ME ****/
+    case TK_CASE:     /*** FIX ME ****/
 
     default:
-      assert( p->op==TK_ABORT );  /* Can't Happen */
-      break;
+      return SQLITE_AFF_NUMERIC;
   }
-  return SQLITE_SO_NUM;
+  return SQLITE_AFF_NONE;
 }
 
 /*
@@ -1444,9 +1364,8 @@ int sqlite3ExprCodeExprList(
   for(pItem=pList->a, i=0; i<n; i++, pItem++){
     sqlite3ExprCode(pParse, pItem->pExpr);
     if( includeTypes ){
-      sqlite3VdbeOp3(v, OP_String, 0, 0, 
-         sqlite3ExprType(pItem->pExpr)==SQLITE_SO_NUM ? "numeric" : "text",
-         P3_STATIC);
+      /** DEPRECATED.  This will go away with the new function interface **/
+      sqlite3VdbeOp3(v, OP_String, 0, 0, "numeric", P3_STATIC);
     }
   }
   return includeTypes ? n*2 : n;

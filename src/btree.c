@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.144 2004/05/20 02:01:27 drh Exp $
+** $Id: btree.c,v 1.145 2004/05/20 22:16:29 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1406,10 +1406,13 @@ create_cursor_exception:
   return rc;
 }
 
+/*
+** Change the value of the comparison function used by a cursor.
+*/
 void sqlite3BtreeSetCompare(
-  BtCursor *pCur,
-  int(* xCmp)(void*,int,const void*,int,const void*),
-  void *pArg
+  BtCursor *pCur,     /* The cursor to whose comparison function is changed */
+  int(*xCmp)(void*,int,const void*,int,const void*), /* New comparison func */
+  void *pArg          /* First argument to xCmp() */
 ){
   pCur->xCompare = xCmp ? xCmp : dfltCompare;
   pCur->pArg = pArg;

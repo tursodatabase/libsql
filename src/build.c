@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.189 2004/05/20 12:41:20 drh Exp $
+** $Id: build.c,v 1.190 2004/05/20 22:16:29 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -591,6 +591,7 @@ void sqlite3AddColumn(Parse *pParse, Token *pName){
   ** will be called next to set pCol->affinity correctly.
   */
   pCol->affinity = SQLITE_AFF_NUMERIC;
+  pCol->pColl = pParse->db->pDfltColl;
   p->nCol++;
 }
 
@@ -703,7 +704,9 @@ void sqlite3AddPrimaryKey(Parse *pParse, IdList *pList, int onError){
   }else{
     for(i=0; i<pList->nId; i++){
       for(iCol=0; iCol<pTab->nCol; iCol++){
-        if( sqlite3StrICmp(pList->a[i].zName, pTab->aCol[iCol].zName)==0 ) break;
+        if( sqlite3StrICmp(pList->a[i].zName, pTab->aCol[iCol].zName)==0 ){
+          break;
+        }
       }
       if( iCol<pTab->nCol ) pTab->aCol[iCol].isPrimKey = 1;
     }
@@ -726,44 +729,73 @@ primary_key_exit:
 }
 
 /*
-** Return the appropriate collating type given a type name.
-**
-** The collation type is text (SQLITE_SO_TEXT) if the type
-** name contains the character stream "text" or "blob" or
-** "clob".  Any other type name is collated as numeric
-** (SQLITE_SO_NUM).
+** Return a pointer to CollSeq given the name of a collating sequence.
+** If the collating sequence did not previously exist, create it but
+** assign it an NULL comparison function.
 */
-int sqlite3CollateType(const char *zType, int nType){
-  int i;
-  for(i=0; i<nType-3; i++){
-    int c = *(zType++) | 0x60;
-    if( (c=='b' || c=='c') && sqlite3StrNICmp(zType, "lob", 3)==0 ){
-      return SQLITE_SO_TEXT;
-    }
-    if( c=='c' && sqlite3StrNICmp(zType, "har", 3)==0 ){
-      return SQLITE_SO_TEXT;
-    }
-    if( c=='t' && sqlite3StrNICmp(zType, "ext", 3)==0 ){
-      return SQLITE_SO_TEXT;
-    }
+CollSeq *sqlite3CollateType(Parse *pParse, const char *zType, int nType){
+  CollSeq *pColl;
+  sqlite *db = pParse->db;
+
+  pColl = sqlite3HashFind(&db->aCollSeq, zType, nType);
+  if( pColl==0 ){
+    sqlite3ChangeCollatingFunction(db, zType, nType, 0, 0);
+    pColl = sqlite3HashFind(&db->aCollSeq, zType, nType);
   }
-  return SQLITE_SO_NUM;
+  return pColl;
 }
 
 /*
-** This routine is called by the parser while in the middle of
-** parsing a CREATE TABLE statement.  A "COLLATE" clause has
-** been seen on a column.  This routine sets the Column.sortOrder on
-** the column currently under construction.
+** Set the collation function of the most recently parsed table column
+** to the CollSeq given.
 */
-void sqlite3AddCollateType(Parse *pParse, int collType){
+void sqlite3AddCollateType(Parse *pParse, const char *zType, int nType){
   Table *p;
-  int i;
-  if( (p = pParse->pNewTable)==0 ) return;
-  i = p->nCol-1;
+  CollSeq *pColl;
+  sqlite *db = pParse->db;
 
-  /* FIX ME */
-  /* if( i>=0 ) p->aCol[i].sortOrder = collType; */
+  if( (p = pParse->pNewTable)==0 ) return;
+  pColl = sqlite3HashFind(&db->aCollSeq, zType, nType);
+  if( pColl==0 ){
+    pColl = sqlite3ChangeCollatingFunction(db, zType, nType, 0, 0);
+  }
+  if( pColl ){
+    p->aCol[p->nCol-1].pColl = pColl;
+  }
+}
+
+/*
+** Create or modify a collating sequence entry in the sqlite.aCollSeq
+** table.
+**
+** Once an entry is added to the sqlite.aCollSeq table, it can never
+** be removed, though is comparison function or user data can be changed.
+**
+** Return a pointer to the collating function that was created or modified.
+*/
+CollSeq *sqlite3ChangeCollatingFunction(
+  sqlite *db,             /* Database into which to insert the collation */
+  const char *zName,      /* Name of the collation */
+  int nName,              /* Number of characters in zName */
+  void *pUser,            /* First argument to xCmp */
+  int (*xCmp)(void*,int,const void*,int,const void*) /* Comparison function */
+){
+  CollSeq *pColl;
+
+  pColl = sqlite3HashFind(&db->aCollSeq, zName, nName);
+  if( pColl==0 ){
+    pColl = sqliteMallocRaw( sizeof(*pColl) + nName + 1 );
+    if( pColl==0 ){
+      return 0;
+    }
+    pColl->zName = (char*)&pColl[1];
+    pColl->reverseOrder = 0;
+    memcpy(pColl->zName, zName, nName+1);
+    sqlite3HashInsert(&db->aCollSeq, pColl->zName, nName, pColl);
+  }
+  pColl->pUser = pUser;
+  pColl->xCmp = xCmp;
+  return pColl;
 }
 
 /*
@@ -1606,9 +1638,9 @@ void sqlite3CreateIndex(
   ** Allocate the index structure. 
   */
   pIndex = sqliteMalloc( sizeof(Index) + strlen(zName) + 1 +
-                        sizeof(int)*pList->nId );
+                        (sizeof(int) + sizeof(CollSeq*))*pList->nId );
   if( pIndex==0 ) goto exit_create_index;
-  pIndex->aiColumn = (int*)&pIndex[1];
+  pIndex->aiColumn = (int*)&pIndex->keyInfo.aColl[pList->nId];
   pIndex->zName = (char*)&pIndex->aiColumn[pList->nId];
   strcpy(pIndex->zName, zName);
   pIndex->pTable = pTab;
@@ -1632,7 +1664,9 @@ void sqlite3CreateIndex(
       goto exit_create_index;
     }
     pIndex->aiColumn[i] = j;
+    pIndex->keyInfo.aColl[i] = pTab->aCol[j].pColl;
   }
+  pIndex->keyInfo.nField = pList->nId;
 
   /* Link the new Index structure to its table and to the other
   ** in-memory database structures. 
@@ -1713,8 +1747,9 @@ void sqlite3CreateIndex(
       sqlite3VdbeCode(v,
           OP_Dup,       0,      0,
           OP_Integer,   isTemp, 0,
-          OP_OpenWrite, 1,      0,
       0);
+      sqlite3VdbeOp3(v, OP_OpenWrite, 1, 0,
+                     (char*)&pIndex->keyInfo, P3_KEYINFO);
     }
     addr = sqlite3VdbeAddOp(v, OP_String, 0, 0);
     if( pStart && pEnd ){
@@ -1725,7 +1760,8 @@ void sqlite3CreateIndex(
     sqlite3VdbeAddOp(v, OP_PutIntKey, 0, 0);
     if( pTable ){
       sqlite3VdbeAddOp(v, OP_Integer, pTab->iDb, 0);
-      sqlite3VdbeOp3(v, OP_OpenRead, 2, pTab->tnum, pTab->zName, 0);
+      sqlite3VdbeAddOp(v, OP_OpenRead, 2, pTab->tnum);
+      /* VdbeComment((v, "%s", pTab->zName)); */
       sqlite3VdbeAddOp(v, OP_SetNumColumns, 2, pTab->nCol);
       lbl2 = sqlite3VdbeMakeLabel(v);
       sqlite3VdbeAddOp(v, OP_Rewind, 2, lbl2);
