@@ -1,5 +1,5 @@
-C Have\sthe\svdbe\shandle\sstrings\sin\sthe\ssame\sencoding\sas\sthe\sdatabase.\s(CVS\s1445)
-D 2004-05-24T07:04:26
+C Fix\sfor\sretrieving\sUTF-16\slittle-endian\stext\sfrom\sa\sbig-endian\sdatabase.\s(CVS\s1446)
+D 2004-05-24T07:34:48
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -69,7 +69,7 @@ F src/update.c 1a5e9182596f3ea8c7a141e308a3d2a7e5689fee
 F src/utf.c 441c5918ee3777cd8e9611cbb810312ed314737d
 F src/util.c 4c0adcbc9ce6678dd046931253e45d623c6d279f
 F src/vacuum.c 8734f89742f246abd91dbd3e087fc153bddbfbad
-F src/vdbe.c d5d15429c0be735d325d53d0dadbb2197a9f405d
+F src/vdbe.c 58ba70a2216d720a25fe5fc8dbea9e8102f74cd3
 F src/vdbe.h 391d5642a83af686f35c228fcd36cb4456d68f44
 F src/vdbeInt.h 6c2444a60fc030b275dc0cff407cdaa79d84ce86
 F src/vdbeaux.c 7f0c4ad22d5e61465d509467e2535293b468373a
@@ -129,7 +129,7 @@ F test/pager2.test 7ff175a28484fd324df9315dfe35f6fb159910ec
 F test/pragma.test e763be8238c8a5a0cd8b75e8eec70b957da6081b
 F test/printf.test 46b3d07d59d871d0831b4a657f6dfcafe0574850
 F test/progress.test 701b6115c2613128ececdfe1398a1bd0e1a4cfb3 x
-F test/quick.test f5d81aa4d609a2a47e9000a43c58ae78b359b868
+F test/quick.test 8800cd2f6b45ce2cafadb0e3d5161688c61c946a
 F test/quote.test 08f23385c685d3dc7914ec760d492cacea7f6e3d
 F test/rowid.test 863e6e75878cccf03d166fe52023f20e09508683
 F test/select1.test 3bfcccd2eadcddbb07f1f5da6550aee8484ea4fb
@@ -202,7 +202,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P f47de3a933b51b37629a0ca2e492a534a12e7339
-R 0d8b15870c4105fdf982c7cf1ceb6e90
+P b7155db2b13aa3ca5f6c68e948d9e8740ebcac47
+R 126af0b27186d92fd9082fbe410f6f8b
 U danielk1977
-Z 680dc16bbdc1913b8e540b4d62c8fcee
+Z b2514b88eb1049ff9f7f80c33c5b5ddd

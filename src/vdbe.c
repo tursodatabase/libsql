@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.322 2004/05/24 07:04:27 danielk1977 Exp $
+** $Id: vdbe.c,v 1.323 2004/05/24 07:34:48 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -142,6 +142,100 @@ static int encToFlags(u8 enc){
 */
 #define SetEncodingFlags(pMem, enc) ((pMem)->flags = \
 ((pMem->flags & ~(MEM_Utf8|MEM_Utf16le|MEM_Utf16be))) | encToFlags(enc))
+static int SetEncoding(Mem*, int);
+
+/*
+** Convert the given stack entity into a string if it isn't one
+** already. Return non-zero if a malloc() fails.
+*/
+#define Stringify(P, enc) \
+(!((P)->flags&(MEM_Str|MEM_Blob)) && hardStringify(P, enc))
+static int hardStringify(Mem *pStack, u8 enc){
+  int rc = SQLITE_OK;
+  int fg = pStack->flags;
+
+  assert( !(fg&(MEM_Str|MEM_Blob)) );
+  assert( fg&(MEM_Int|MEM_Real|MEM_Null) );
+
+  if( fg & MEM_Null ){      
+    /* A NULL value is converted to a zero length string */
+    pStack->zShort[0] = 0;
+    pStack->zShort[1] = 0;
+    pStack->flags = MEM_Str | MEM_Short | MEM_Term;
+    pStack->z = pStack->zShort;
+    pStack->n = (enc==TEXT_Utf8?1:2);
+  }else{
+    /* For a Real or Integer, use sqlite3_snprintf() to produce the UTF-8
+    ** string representation of the value. Then, if the required encoding
+    ** is UTF-16le or UTF-16be do a translation.
+    ** 
+    ** FIX ME: It would be better if sqlite3_snprintf() could do UTF-16.
+    */
+    if( fg & MEM_Real ){
+      sqlite3_snprintf(NBFS, pStack->zShort, "%.15g", pStack->r);
+    }else if( fg & MEM_Int ){
+      sqlite3_snprintf(NBFS, pStack->zShort, "%lld", pStack->i);
+    }
+    pStack->n = strlen(pStack->zShort) + 1;
+    pStack->z = pStack->zShort;
+    pStack->flags = MEM_Str | MEM_Short | MEM_Term;
+
+    /* Flip the string to UTF-16 if required */
+    SetEncodingFlags(pStack, TEXT_Utf8);
+    rc = SetEncoding(pStack, encToFlags(enc)|MEM_Term);
+  }
+
+  return rc;
+}
+
+/*
+** Convert the given stack entity into a string that has been obtained
+** from sqliteMalloc().  This is different from Stringify() above in that
+** Stringify() will use the NBFS bytes of static string space if the string
+** will fit but this routine always mallocs for space.
+** Return non-zero if we run out of memory.
+*/
+#define Dynamicify(P, enc) \
+(((P)->flags & MEM_Dyn)==0 ? hardDynamicify(P, enc):0)
+static int hardDynamicify(Mem *pStack, u8 enc){
+  int fg = pStack->flags;
+  char *z;
+  if( (fg & MEM_Str)==0 ){
+    hardStringify(pStack, enc);
+  }
+  assert( (fg & MEM_Dyn)==0 );
+  z = sqliteMallocRaw( pStack->n );
+  if( z==0 ) return 1;
+  memcpy(z, pStack->z, pStack->n);
+  pStack->z = z;
+  pStack->flags |= MEM_Dyn;
+  return 0;
+}
+
+/*
+** An ephemeral string value (signified by the MEM_Ephem flag) contains
+** a pointer to a dynamically allocated string where some other entity
+** is responsible for deallocating that string.  Because the stack entry
+** does not control the string, it might be deleted without the stack
+** entry knowing it.
+**
+** This routine converts an ephemeral string into a dynamically allocated
+** string that the stack entry itself controls.  In other words, it
+** converts an MEM_Ephem string into an MEM_Dyn string.
+*/
+#define Deephemeralize(P) \
+   if( ((P)->flags&MEM_Ephem)!=0 && hardDeephem(P) ){ goto no_mem;}
+static int hardDeephem(Mem *pStack){
+  char *z;
+  assert( (pStack->flags & MEM_Ephem)!=0 );
+  z = sqliteMallocRaw( pStack->n );
+  if( z==0 ) return 1;
+  memcpy(z, pStack->z, pStack->n);
+  pStack->z = z;
+  pStack->flags &= ~MEM_Ephem;
+  pStack->flags |= MEM_Dyn;
+  return 0;
+}
 
 /*
 ** If pMem is a string object, this routine sets the encoding of the string
@@ -171,23 +265,37 @@ int SetEncoding(Mem *pMem, int flags){
   enc2 = flagsToEnc(flags);
 
   if( enc1!=enc2 ){
-    /* If the current encoding does not match the desired encoding, then
-    ** we will need to do some translation between encodings.
-    */
-    char *z;
-    int n;
-    int rc = sqlite3utfTranslate(pMem->z,pMem->n,enc1,(void **)&z,&n,enc2);
-    if( rc!=SQLITE_OK ){
-      return rc;
+    if( enc1==TEXT_Utf8 || enc2==TEXT_Utf8 ){
+      /* If the current encoding does not match the desired encoding, then
+      ** we will need to do some translation between encodings.
+      */
+      char *z;
+      int n;
+      int rc = sqlite3utfTranslate(pMem->z,pMem->n,enc1,(void **)&z,&n,enc2);
+      if( rc!=SQLITE_OK ){
+        return rc;
+      }
+  
+      /* Result of sqlite3utfTranslate is currently always dynamically
+      ** allocated and nul terminated. This might be altered as a performance
+      ** enhancement later.
+      */
+      pMem->z = z;
+      pMem->n = n;
+      pMem->flags = (MEM_Str | MEM_Dyn | MEM_Term | flags);
+    }else{
+      /* Must be translating between UTF-16le and UTF-16be. */
+      int i;
+      if( pMem->flags&MEM_Static ){
+        Dynamicify(pMem, enc1);
+      }
+      for(i=0; i<pMem->n; i+=2){
+        char c = pMem->z[i];
+        pMem->z[i] = pMem->z[i+1];
+        pMem->z[i+1] = c;
+      }
+      SetEncodingFlags(pMem, enc2);
     }
-
-    /* Result of sqlite3utfTranslate is currently always dynamically
-    ** allocated and nul terminated. This might be altered as a performance
-    ** enhancement later.
-    */
-    pMem->z = z;
-    pMem->n = n;
-    pMem->flags = (MEM_Str | MEM_Dyn | MEM_Term | flags);
   }
 
   if( (flags&MEM_Term) && !(pMem->flags&MEM_Term) ){
@@ -287,101 +395,6 @@ static void hardRealify(Mem *pStack, u8 enc){
   }
 /*  pStack->flags |= MEM_Real; */
   pStack->flags = MEM_Real;
-}
-
-
-/*
-** Convert the given stack entity into a string if it isn't one
-** already. Return non-zero if a malloc() fails.
-*/
-#define Stringify(P, enc) \
-(!((P)->flags&(MEM_Str|MEM_Blob)) && hardStringify(P, enc))
-static int hardStringify(Mem *pStack, u8 enc){
-  int rc = SQLITE_OK;
-  int fg = pStack->flags;
-
-  assert( !(fg&(MEM_Str|MEM_Blob)) );
-  assert( fg&(MEM_Int|MEM_Real|MEM_Null) );
-
-  if( fg & MEM_Null ){      
-    /* A NULL value is converted to a zero length string */
-    pStack->zShort[0] = 0;
-    pStack->zShort[1] = 0;
-    pStack->flags = MEM_Str | MEM_Short | MEM_Term;
-    pStack->z = pStack->zShort;
-    pStack->n = (enc==TEXT_Utf8?1:2);
-  }else{
-    /* For a Real or Integer, use sqlite3_snprintf() to produce the UTF-8
-    ** string representation of the value. Then, if the required encoding
-    ** is UTF-16le or UTF-16be do a translation.
-    ** 
-    ** FIX ME: It would be better if sqlite3_snprintf() could do UTF-16.
-    */
-    if( fg & MEM_Real ){
-      sqlite3_snprintf(NBFS, pStack->zShort, "%.15g", pStack->r);
-    }else if( fg & MEM_Int ){
-      sqlite3_snprintf(NBFS, pStack->zShort, "%lld", pStack->i);
-    }
-    pStack->n = strlen(pStack->zShort) + 1;
-    pStack->z = pStack->zShort;
-    pStack->flags = MEM_Str | MEM_Short | MEM_Term;
-
-    /* Flip the string to UTF-16 if required */
-    SetEncodingFlags(pStack, TEXT_Utf8);
-    rc = SetEncoding(pStack, encToFlags(enc)|MEM_Term);
-  }
-
-  return rc;
-}
-
-
-/*
-** Convert the given stack entity into a string that has been obtained
-** from sqliteMalloc().  This is different from Stringify() above in that
-** Stringify() will use the NBFS bytes of static string space if the string
-** will fit but this routine always mallocs for space.
-** Return non-zero if we run out of memory.
-*/
-#define Dynamicify(P, enc) \
-(((P)->flags & MEM_Dyn)==0 ? hardDynamicify(P, enc):0)
-static int hardDynamicify(Mem *pStack, u8 enc){
-  int fg = pStack->flags;
-  char *z;
-  if( (fg & MEM_Str)==0 ){
-    hardStringify(pStack, enc);
-  }
-  assert( (fg & MEM_Dyn)==0 );
-  z = sqliteMallocRaw( pStack->n );
-  if( z==0 ) return 1;
-  memcpy(z, pStack->z, pStack->n);
-  pStack->z = z;
-  pStack->flags |= MEM_Dyn;
-  return 0;
-}
-
-/*
-** An ephemeral string value (signified by the MEM_Ephem flag) contains
-** a pointer to a dynamically allocated string where some other entity
-** is responsible for deallocating that string.  Because the stack entry
-** does not control the string, it might be deleted without the stack
-** entry knowing it.
-**
-** This routine converts an ephemeral string into a dynamically allocated
-** string that the stack entry itself controls.  In other words, it
-** converts an MEM_Ephem string into an MEM_Dyn string.
-*/
-#define Deephemeralize(P) \
-   if( ((P)->flags&MEM_Ephem)!=0 && hardDeephem(P) ){ goto no_mem;}
-static int hardDeephem(Mem *pStack){
-  char *z;
-  assert( (pStack->flags & MEM_Ephem)!=0 );
-  z = sqliteMallocRaw( pStack->n );
-  if( z==0 ) return 1;
-  memcpy(z, pStack->z, pStack->n);
-  pStack->z = z;
-  pStack->flags &= ~MEM_Ephem;
-  pStack->flags |= MEM_Dyn;
-  return 0;
 }
 
 /*
