@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\sNOCASE\scollating\sfunction.\s(CVS\s1917)
-D 2004-08-29T20:08:59
+C Change\sthe\sname\sof\sthe\sglobal\svariable\sto\ssqlite3_temp_directory\sto\navoid\sa\snaming\sconflict\swith\sversion\s2.8.\s(CVS\s1918)
+D 2004-08-29T23:42:14
 F Makefile.in 65a7c43fcaf9a710d62f120b11b6e435eeb4a450
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -48,9 +48,9 @@ F src/os_mac.c 3d31e26be1411acfb7961033098631b4f3486fdf
 F src/os_mac.h 51d2445f47e182ed32d3bd6937f81070c6fd9bd4
 F src/os_test.c d3cb336448d28cb6238f8c0d7a44b0ff010601ea
 F src/os_test.h 6a26a4978492e4bbdbf385554958418ff02db162
-F src/os_unix.c 3239a45dbd2f50195bfc97f1ed35cb8fe5a3f60c
+F src/os_unix.c a5625eed7ab071d1715df783f4684945ae538a22
 F src/os_unix.h f3097815e041e82e24d92505e1ff61ba24172d13
-F src/os_win.c feba371674076e4fb8c0b214c579e877677e34d5
+F src/os_win.c 9e2887825b1a32f0ceb1b73b93ffe29a112cd86f
 F src/os_win.h babd4e912967c6b09088cfe38a45e8005a07ba44
 F src/pager.c 6ecf24602f56ac98914685d449f6653903f36fec
 F src/pager.h 67739fe649f33be55dba522ca8a9cc4e42d14f71
@@ -60,11 +60,11 @@ F src/printf.c 17b28a1eedfe8129b05de981719306c18c3f1327
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c 400b2dcc8e05c0101a65a370f7ebb33c9c85f0b3
 F src/shell.c 42f65424a948f197f389e13bc7aaa3cf24dafd0c
-F src/sqlite.h.in d619f3dd276845c2ff3fbeaed1d037563fc419f0
+F src/sqlite.h.in b89ced1acc705bc9c79a2a4e725ac0eb64bd0614
 F src/sqliteInt.h c7ed161ecc40f9fd0f080fbcc00e34bd7d6735ee
 F src/table.c 4521c278892f60e4d630788c0ea5cf4db1e75c49
 F src/tclsqlite.c b7dd8b3531b70188d03354db530de0f2ffcac697
-F src/test1.c b87fae63b2994c150a579c4101f302be48ad77bc
+F src/test1.c 3670f318c473b5a81cae548d9cc42da3f6a6efee
 F src/test2.c f4c2f3928f1998fd8cb75a81e33a60e025ea85d4
 F src/test3.c 94d0a2a90bccd85802488cb42c69ec8afd2e4646
 F src/test4.c c38766914e924091516030b6a8b677d849c08bf0
@@ -245,7 +245,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P f3fe8c9fa63ed50e033f6caf7927cc3a998bcaa1
-R 2781578b96dab50d1d99ff3260018e0b
+P 32c2974af67abbbfa75c46afdab59ea6d5c15beb
+R 3347a7f98eb5a4e40a0194704c888c75
 U drh
-Z c3f90e7e5e5793e44cb6a402086f8315
+Z 011af6407c824924cbc813caa53fa330

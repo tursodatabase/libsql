@@ -202,7 +202,7 @@ int sqlite3OsOpenDirectory(
 ** name of a directory, then that directory will be used to store
 ** temporary files.
 */
-const char *sqlite_temp_directory = 0;
+const char *sqlite3_temp_directory = 0;
 
 /*
 ** Create a temporary file name in zBuf.  zBuf must be big enough to
@@ -215,8 +215,8 @@ int sqlite3OsTempFileName(char *zBuf){
     "0123456789";
   int i, j;
   char zTempPath[SQLITE_TEMPNAME_SIZE];
-  if( sqlite_temp_directory ){
-    strncpy(zTempPath, sqlite_temp_directory, SQLITE_TEMPNAME_SIZE-30);
+  if( sqlite3_temp_directory ){
+    strncpy(zTempPath, sqlite3_temp_directory, SQLITE_TEMPNAME_SIZE-30);
     zTempPath[SQLITE_TEMPNAME_SIZE-30] = 0;
   }else{
     GetTempPathA(SQLITE_TEMPNAME_SIZE-30, zTempPath);
