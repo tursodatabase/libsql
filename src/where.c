@@ -12,7 +12,7 @@
 ** This module contains C code that generates VDBE code used to process
 ** the WHERE clause of SQL statements.
 **
-** $Id: where.c,v 1.108 2004/07/19 02:12:14 drh Exp $
+** $Id: where.c,v 1.109 2004/07/19 17:25:25 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -695,7 +695,7 @@ WhereInfo *sqlite3WhereBegin(
 
   /* Open all tables in the pTabList and all indices used by those tables.
   */
-  sqlite3CodeVerifySchema(pParse, 1);  /* Inserts the cookie verifier Goto */
+  sqlite3CodeVerifySchema(pParse, -1); /* Insert the cookie verifier Goto */
   for(i=0; i<pTabList->nSrc; i++){
     Table *pTab;
     Index *pIx;

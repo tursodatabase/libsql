@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.244 2004/06/30 11:54:07 danielk1977 Exp $
+** $Id: main.c,v 1.245 2004/07/19 17:25:25 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -52,10 +52,10 @@ static void corruptSchema(InitData *pData, const char *zExtra){
 **
 ** Each callback contains the following information:
 **
-**     argv[0] = "file-format" or "schema-cookie" or "table" or "index"
-**     argv[1] = table or index name or meta statement type.
-**     argv[2] = root page number for table or index.  NULL for meta.
-**     argv[3] = SQL text for a CREATE TABLE or CREATE INDEX statement.
+**     argv[0] = "table" or "index" or "view" or "trigger"
+**     argv[1] = name of thing being created
+**     argv[2] = root page number for table or index.  NULL for trigger or view.
+**     argv[3] = SQL text for the CREATE statement.
 **     argv[4] = "1" for temporary files, "0" for main database, "2" or more
 **               for auxiliary database files.
 **
@@ -922,7 +922,7 @@ int sqlite3_errcode(sqlite3 *db){
 }
 
 /*
-** Check schema cookies in all databases except TEMP.  If any cookie is out
+** Check schema cookies in all databases.  If any cookie is out
 ** of date, return 0.  If all schema cookies are current, return 1.
 */
 static int schemaIsValid(sqlite *db){
@@ -934,7 +934,6 @@ static int schemaIsValid(sqlite *db){
 
   for(iDb=0; allOk && iDb<db->nDb; iDb++){
     Btree *pBt;
-    if( iDb==1 ) continue;
     pBt = db->aDb[iDb].pBt;
     if( pBt==0 ) continue;
     rc = sqlite3BtreeCursor(pBt, MASTER_ROOT, 0, 0, 0, &curTemp);

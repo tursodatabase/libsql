@@ -13,7 +13,7 @@
 # This file implements tests for joins, including outer joins, where
 # there are a large number of tables involved in the join.
 #
-# $Id: join3.test,v 1.1 2004/07/19 02:12:14 drh Exp $
+# $Id: join3.test,v 1.2 2004/07/19 17:25:25 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -45,14 +45,8 @@ for {set N 1} {$N<=40} {incr N} {
       append sql " $sep t[expr {$i+1}].x==t$i.x+1"
       set sep AND
     }
-#if {$N==32} {btree_breakpoint}
-#if {$N==33} {
-#explain $sql
-#execsql {PRAGMA vdbe_trace=on}
-#}
     execsql $sql
   } $result
-#if {$N==33} exit
 }
 
 finish_test

@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.237 2004/06/29 08:59:35 danielk1977 Exp $
+** $Id: build.c,v 1.238 2004/07/19 17:25:25 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -69,18 +69,16 @@ void sqlite3FinishCoding(Parse *pParse){
     ** transaction on each used database and to verify the schema cookie
     ** on each used database.
     */
-    if( pParse->cookieMask!=0 ){
+    if( pParse->cookieGoto>0 ){
       u32 mask;
       int iDb;
-      sqlite3VdbeChangeP2(v, pParse->cookieGoto, sqlite3VdbeCurrentAddr(v));
+      sqlite3VdbeChangeP2(v, pParse->cookieGoto-1, sqlite3VdbeCurrentAddr(v));
       for(iDb=0, mask=1; iDb<db->nDb; mask<<=1, iDb++){
         if( (mask & pParse->cookieMask)==0 ) continue;
         sqlite3VdbeAddOp(v, OP_Transaction, iDb, (mask & pParse->writeMask)!=0);
-        if( iDb!=1 ){
-          sqlite3VdbeAddOp(v, OP_VerifyCookie, iDb, pParse->cookieValue[iDb]);
-        }
+        sqlite3VdbeAddOp(v, OP_VerifyCookie, iDb, pParse->cookieValue[iDb]);
       }
-      sqlite3VdbeAddOp(v, OP_Goto, 0, pParse->cookieGoto+1);
+      sqlite3VdbeAddOp(v, OP_Goto, 0, pParse->cookieGoto);
     }
   }
 
@@ -101,6 +99,7 @@ void sqlite3FinishCoding(Parse *pParse){
   pParse->nAgg = 0;
   pParse->nVar = 0;
   pParse->cookieMask = 0;
+  pParse->cookieGoto = 0;
 }
 
 /*
@@ -1378,9 +1377,7 @@ void sqlite3EndTable(Parse *pParse, Token *pEnd, Select *pSelect){
     }
     sqlite3VdbeOp3(v, OP_MakeRecord, 5, 0, "tttit", P3_STATIC);
     sqlite3VdbeAddOp(v, OP_PutIntKey, 0, 0);
-    if( p->iDb!=1 ){
-      sqlite3ChangeCookie(db, v, p->iDb);
-    }
+    sqlite3ChangeCookie(db, v, p->iDb);
     sqlite3VdbeAddOp(v, OP_Close, 0, 0);
 
     sqlite3EndWriteOperation(pParse);
@@ -2198,9 +2195,7 @@ void sqlite3CreateIndex(
       sqlite3VdbeAddOp(v, OP_Close, 1, 0);
     }
     if( pTblName!=0 ){
-      if( !isTemp ){
-        sqlite3ChangeCookie(db, v, iDb);
-      }
+      sqlite3ChangeCookie(db, v, iDb);
       sqlite3VdbeAddOp(v, OP_Close, 0, 0);
       sqlite3EndWriteOperation(pParse);
     }
@@ -2300,9 +2295,7 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName){
     sqlite3OpenMasterTable(v, pIndex->iDb);
     base = sqlite3VdbeAddOpList(v, ArraySize(dropIndex), dropIndex);
     sqlite3VdbeChangeP3(v, base+1, pIndex->zName, 0);
-    if( pIndex->iDb!=1 ){
-      sqlite3ChangeCookie(db, v, pIndex->iDb);
-    }
+    sqlite3ChangeCookie(db, v, pIndex->iDb);
     sqlite3VdbeAddOp(v, OP_Close, 0, 0);
     sqlite3VdbeAddOp(v, OP_Destroy, pIndex->tnum, pIndex->iDb);
     sqlite3EndWriteOperation(pParse);
@@ -2533,14 +2526,18 @@ void sqlite3RollbackTransaction(Parse *pParse){
 ** the VDBE program.  But this routine can be called after much other
 ** code has been generated.  So here is what we do:
 **
-** The first time this routine is called, we code an OP_Gosub that
+** The first time this routine is called, we code an OP_Goto that
 ** will jump to a subroutine at the end of the program.  Then we
 ** record every database that needs its schema verified in the
 ** pParse->cookieMask field.  Later, after all other code has been
 ** generated, the subroutine that does the cookie verifications and
-** starts the transactions will be coded and the OP_Gosub P2 value
+** starts the transactions will be coded and the OP_Goto P2 value
 ** will be made to point to that subroutine.  The generation of the
 ** cookie verification subroutine code happens in sqlite3FinishCoding().
+**
+** If iDb<0 then code the OP_Goto only - don't set flag to verify the
+** schema on any databases.  This can be used to position the OP_Goto
+** early in the code, before we know if any database tables will be used.
 */
 void sqlite3CodeVerifySchema(Parse *pParse, int iDb){
   sqlite *db;
@@ -2550,16 +2547,18 @@ void sqlite3CodeVerifySchema(Parse *pParse, int iDb){
   v = sqlite3GetVdbe(pParse);
   if( v==0 ) return;  /* This only happens if there was a prior error */
   db = pParse->db;
-  assert( iDb>=0 && iDb<db->nDb );
-  assert( db->aDb[iDb].pBt!=0 || iDb==1 );
-  assert( iDb<32 );
-  if( pParse->cookieMask==0 ){
-    pParse->cookieGoto = sqlite3VdbeAddOp(v, OP_Goto, 0, 0);
+  if( pParse->cookieGoto==0 ){
+    pParse->cookieGoto = sqlite3VdbeAddOp(v, OP_Goto, 0, 0)+1;
   }
-  mask = 1<<iDb;
-  if( (pParse->cookieMask & mask)==0 ){
-    pParse->cookieMask |= mask;
-    pParse->cookieValue[iDb] = db->aDb[iDb].schema_cookie;
+  if( iDb>=0 ){
+    assert( iDb<db->nDb );
+    assert( db->aDb[iDb].pBt!=0 || iDb==1 );
+    assert( iDb<32 );
+    mask = 1<<iDb;
+    if( (pParse->cookieMask & mask)==0 ){
+      pParse->cookieMask |= mask;
+      pParse->cookieValue[iDb] = db->aDb[iDb].schema_cookie;
+    }
   }
 }
 
