@@ -21,6 +21,16 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2004 August 8 (3.0.4 beta)} {
+<li>CREATE TABLE and DROP TABLE now work correctly as prepared statements.</li>
+<li>Fix a bug in VACUUM and UNIQUE indices.</li>
+<li>Add the ".import" command to the command-line shell.</li>
+<li>Fix a bug that could cause index corruption when an attempt to
+    delete rows of a table is blocked by a pending query.</li>
+<li>Library size optimizations.</li>
+<li>Other minor bug fixes.</li>
+}
+
 chng {2004 July 22 (2.8.15)} {
 <li>This is a maintenance release only.  Various minor bugs have been
 fixed and some portability enhancements are added.</li>

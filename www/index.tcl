@@ -58,22 +58,13 @@ proc newsitem {date title text} {
   puts "<hr width=\"50%\">"
 }
 
-newsitem {2004-Jly-22} {Version 3.0.3 (beta)} {
-  The second beta release of SQLite version 3.0 is now available.
-  This new beta fixes many bugs and adds support for databases with
-  varying page sizes.  The next 3.0 release will probably be called
-  a final or stable release.
-
-  Version 3.0 adds support for internationalization and a new
-  more compact file format. 
-  <a href="version3.html">Details.</a>
-  The API and file format have been fixed since 3.0.2.  All
-  regression tests pass (over 100000 tests) and the test suite
-  exercises over 95% of the code.
-
-  SQLite version 3.0 is made possible in part by AOL
-  developers supporting and embracing great Open-Source Software.
+newsitem {2004-Aug-08} {Version 3.0.4 (beta)} {
+  The third beta release of SQLite version 3.0 is now available.
+  This new beta fixes several bugs including a database corruption
+  problem that can occur when doing a DELETE while a SELECT is pending.
+  Expect at least one more beta before version 3.0 goes final.
 }
+
 
 newsitem {2004-Jly-22} {Version 2.8.15} {
   SQLite version 2.8.15 is a maintenance release for the version 2.8
@@ -88,4 +79,4 @@ puts {
 <p align="right"><a href="oldnews.html">Old news...</a></p>
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.91 2004/07/22 19:06:32 drh Exp $}
+footer {$Id: index.tcl,v 1.92 2004/08/09 00:04:05 drh Exp $}
