@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.342 2004/11/22 10:02:11 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.343 2004/11/22 19:12:21 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -307,6 +307,8 @@ typedef struct AuthContext AuthContext;
 typedef struct KeyClass KeyClass;
 typedef struct CollSeq CollSeq;
 typedef struct KeyInfo KeyInfo;
+typedef struct SqlCursor SqlCursor;
+typedef struct Fetch Fetch;
 
 /*
 ** Each database file to be accessed by the system is an instance
@@ -420,7 +422,10 @@ struct sqlite3 {
   void *pProgressArg;           /* Argument to the progress callback */
   int nProgressOps;             /* Number of opcodes for progress callback */
 #endif
-
+#ifndef SQLITE_OMIT_CURSOR
+  int nSqlCursor;               /* Number of slots in apSqlCursor[] */
+  SqlCursor **apSqlCursor;      /* Pointers to all active SQL cursors */
+#endif
   int errCode;                  /* Most recent error code (SQLITE_*) */
   u8 enc;                       /* Text encoding for this database. */
   u8 autoCommit;                /* The auto-commit flag. */
@@ -429,9 +434,8 @@ struct sqlite3 {
   void *pCollNeededArg;
   sqlite3_value *pValue;        /* Value used for transient conversions */
   sqlite3_value *pErr;          /* Most recent error message */
-
   char *zErrMsg;                /* Most recent error message (UTF-8 encoded) */
-  char *zErrMsg16;              /* Most recent error message (UTF-8 encoded) */
+  char *zErrMsg16;              /* Most recent error message (UTF-16 encoded) */
 };
 
 /*
@@ -929,16 +933,18 @@ struct WhereInfo {
 };
 
 /*
+** An instance of the following structure is used to store information
+** about a single FETCH sql command.
+*/
+struct Fetch {
+  SqlCursor *pCursor;  /* Cursor used by the fetch */
+  int isBackwards;     /* Cursor moves backwards if true, forward if false */
+  int doRewind;        /* True to rewind cursor before starting */
+};
+
+/*
 ** An instance of the following structure contains all information
 ** needed to generate code for a single SELECT statement.
-**
-** The zSelect field is used when the Select structure must be persistent.
-** Normally, the expression tree points to tokens in the original input
-** string that encodes the select.  But if the Select structure must live
-** longer than its input string (for example when it is used to describe
-** a VIEW) we have to make a copy of the input string so that the nodes
-** of the expression tree will have something to point to.  zSelect is used
-** to hold that copy.
 **
 ** nLimit is set to -1 if there is no LIMIT clause.  nOffset is set to 0.
 ** If there is a LIMIT clause, the parser sets nLimit to the value of the
@@ -958,8 +964,8 @@ struct Select {
   Select *pPrior;        /* Prior select in a compound select statement */
   int nLimit, nOffset;   /* LIMIT and OFFSET values.  -1 means not used */
   int iLimit, iOffset;   /* Memory registers holding LIMIT & OFFSET counters */
-  char *zSelect;         /* Complete text of the SELECT command */
   IdList **ppOpenTemp;   /* OP_OpenTemp addresses used by multi-selects */
+  Fetch *pFetch;         /* If this stmt is part of a FETCH command */
 };
 
 /*
@@ -1039,6 +1045,11 @@ struct Parse {
   u8 explain;          /* True if the EXPLAIN flag is found on the query */
   u8 useAgg;           /* If true, extract field values from the aggregator
                        ** while generating expressions.  Normally false */
+#ifndef SQLITE_OMIT_CURSOR
+  u8 fetchDir;         /* The direction argument to the FETCH command */
+  int dirArg1;         /* First argument to the direction */
+  int dirArg2;         /* Second argument to the direction */
+#endif
   int nAgg;            /* Number of aggregate expressions */
   AggExpr *aAgg;       /* An array of aggregate expressions */
   Token sErrToken;     /* The token at which the error occurred */
@@ -1050,6 +1061,7 @@ struct Parse {
   Trigger *pNewTrigger;     /* Trigger under construct by a CREATE TRIGGER */
   TriggerStack *trigStack;  /* Trigger actions being coded */
   const char *zAuthContext; /* The 6th parameter to db->xAuth callbacks */
+  
 };
 
 /*
@@ -1212,6 +1224,18 @@ typedef struct {
   char **pzErrMsg;    /* Error message stored here */
 } InitData;
 
+/*
+** Each SQL cursor (a cursor created by the DECLARE ... CURSOR syntax)
+** is represented by an instance of the following structure.
+*/
+struct SqlCursor {
+  char *zName;           /* Name of this cursor */
+  int idx;               /* Index of this cursor in db->apSqlCursor[] */
+  Select *pSelect;       /* The SELECT statement that defines this cursor */
+  int nPtr;              /* Number of slots in aPtr[] */
+  sqlite3_value *aPtr;   /* Values that define the current cursor position */
+};
+
 
 /*
  * This global flag is set for performance testing of triggers. When it is set
@@ -1314,6 +1338,7 @@ void sqlite3SelectUnbind(Select*);
 Table *sqlite3SrcListLookup(Parse*, SrcList*);
 int sqlite3IsReadOnly(Parse*, Table*, int);
 void sqlite3OpenTableForReading(Vdbe*, int iCur, Table*);
+void sqlite3OpenTable(Vdbe*, int iCur, Table*, int);
 void sqlite3DeleteFrom(Parse*, SrcList*, Expr*);
 void sqlite3Update(Parse*, SrcList*, ExprList*, Expr*, int);
 WhereInfo *sqlite3WhereBegin(Parse*, SrcList*, Expr*, int, ExprList**);
@@ -1462,5 +1487,12 @@ void sqlite3Reindex(Parse*, Token*, Token*);
 void sqlite3AlterRenameTable(Parse*, SrcList*, Token*);
 int sqlite3GetToken(const unsigned char *, int *);
 void sqlite3NestedParse(Parse*, const char*, ...);
+
+#ifndef SQLITE_OMIT_CURSOR
+void sqlite3CursorDelete(SqlCursor*);
+void sqlite3CursorCreate(Parse*, Token*, Select*);
+void sqlite3CursorClose(Parse*, Token*);
+void sqlite3Fetch(Parse*, Token*, IdList*);
+#endif /* SQLITE_OMIT_CURSOR */
 
 #endif

@@ -1,14 +1,17 @@
+# 2004 November 10
 #
-# The author or author's hereby grant to the public domain a non-exclusive,
-# fully paid-up, perpetual, license in the software and all related
-# intellectual property to make, have made, use, have used, reproduce,
-# prepare derivative works, distribute, perform and display the work.  
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
 #
 #*************************************************************************
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing the ALTER TABLE statement.
 #
-# $Id: alter.test,v 1.7 2004/11/22 13:35:42 danielk1977 Exp $
+# $Id: alter.test,v 1.8 2004/11/22 19:12:21 drh Exp $
 #
 
 set testdir [file dirname $argv0]

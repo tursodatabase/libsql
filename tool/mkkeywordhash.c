@@ -55,40 +55,45 @@ struct Keyword {
 #else
 #  define CONFLICT   32
 #endif
+#ifdef SQLITE_OMIT_CURSOR
+#  define CURSOR     0
+#else
+#  define CURSOR     64
+#endif
 #ifdef SQLITE_OMIT_EXPLAIN
 #  define EXPLAIN    0
 #else
-#  define EXPLAIN    64
+#  define EXPLAIN    128
 #endif
 #ifdef SQLITE_OMIT_FOREIGN_KEY
 #  define FKEY       0
 #else
-#  define FKEY       128
+#  define FKEY       256
 #endif
 #ifdef SQLITE_OMIT_PRAGMA
 #  define PRAGMA     0
 #else
-#  define PRAGMA     256
+#  define PRAGMA     512
 #endif
 #ifdef SQLITE_OMIT_REINDEX
 #  define REINDEX    0
 #else
-#  define REINDEX    512
+#  define REINDEX    1024
 #endif
 #ifdef SQLITE_OMIT_TRIGGER
 #  define TRIGGER    0
 #else
-#  define TRIGGER    1024
+#  define TRIGGER    2048
 #endif
 #ifdef SQLITE_OMIT_VACUUM
 #  define VACUUM     0
 #else
-#  define VACUUM     2048
+#  define VACUUM     4096
 #endif
 #ifdef SQLITE_OMIT_VIEW
 #  define VIEW       0
 #else
-#  define VIEW       4096
+#  define VIEW       8192
 #endif
 
 
@@ -97,6 +102,7 @@ struct Keyword {
 */
 static Keyword aKeywordTable[] = {
   { "ABORT",            "TK_ABORT",        CONFLICT|TRIGGER       },
+  { "ABSOLUTE",         "TK_ABSOLUTE",     CURSOR                 },
   { "AFTER",            "TK_AFTER",        TRIGGER                },
   { "ALL",              "TK_ALL",          ALWAYS                 },
   { "ALTER",            "TK_ALTER",        ALTER                  },
@@ -112,16 +118,20 @@ static Keyword aKeywordTable[] = {
   { "CASCADE",          "TK_CASCADE",      FKEY                   },
   { "CASE",             "TK_CASE",         ALWAYS                 },
   { "CHECK",            "TK_CHECK",        ALWAYS                 },
+  { "CLOSE",            "TK_CLOSE",        CURSOR                 },
   { "COLLATE",          "TK_COLLATE",      ALWAYS                 },
   { "COMMIT",           "TK_COMMIT",       ALWAYS                 },
   { "CONFLICT",         "TK_CONFLICT",     CONFLICT               },
   { "CONSTRAINT",       "TK_CONSTRAINT",   ALWAYS                 },
   { "CREATE",           "TK_CREATE",       ALWAYS                 },
   { "CROSS",            "TK_JOIN_KW",      ALWAYS                 },
+  { "CURSOR",           "TK_CURSOR",       CURSOR                 },
+  { "CURRENT",          "TK_CURRENT",      CURSOR                 },
   { "CURRENT_DATE",     "TK_CDATE",        ALWAYS                 },
   { "CURRENT_TIME",     "TK_CTIME",        ALWAYS                 },
   { "CURRENT_TIMESTAMP","TK_CTIMESTAMP",   ALWAYS                 },
   { "DATABASE",         "TK_DATABASE",     ATTACH                 },
+  { "DECLARE",          "TK_DECLARE",      CURSOR                 },
   { "DEFAULT",          "TK_DEFAULT",      ALWAYS                 },
   { "DEFERRED",         "TK_DEFERRED",     ALWAYS                 },
   { "DEFERRABLE",       "TK_DEFERRABLE",   FKEY                   },
@@ -138,6 +148,8 @@ static Keyword aKeywordTable[] = {
   { "EXCLUSIVE",        "TK_EXCLUSIVE",    ALWAYS                 },
   { "EXPLAIN",          "TK_EXPLAIN",      EXPLAIN                },
   { "FAIL",             "TK_FAIL",         CONFLICT|TRIGGER       },
+  { "FETCH",            "TK_FETCH",        CURSOR                 },
+  { "FIRST",            "TK_FIRST",        CURSOR                 },
   { "FOR",              "TK_FOR",          TRIGGER                },
   { "FOREIGN",          "TK_FOREIGN",      FKEY                   },
   { "FROM",             "TK_FROM",         ALWAYS                 },
@@ -164,6 +176,7 @@ static Keyword aKeywordTable[] = {
   { "LIMIT",            "TK_LIMIT",        ALWAYS                 },
   { "MATCH",            "TK_MATCH",        ALWAYS                 },
   { "NATURAL",          "TK_JOIN_KW",      ALWAYS                 },
+  { "NEXT",             "TK_NEXT",         CURSOR                 },
   { "NOT",              "TK_NOT",          ALWAYS                 },
   { "NOTNULL",          "TK_NOTNULL",      ALWAYS                 },
   { "NULL",             "TK_NULL",         ALWAYS                 },
@@ -174,10 +187,12 @@ static Keyword aKeywordTable[] = {
   { "ORDER",            "TK_ORDER",        ALWAYS                 },
   { "OUTER",            "TK_JOIN_KW",      ALWAYS                 },
   { "PRAGMA",           "TK_PRAGMA",       PRAGMA                 },
+  { "PRIOR",            "TK_PRIOR",        CURSOR                 },
   { "PRIMARY",          "TK_PRIMARY",      ALWAYS                 },
   { "RAISE",            "TK_RAISE",        TRIGGER                },
   { "REFERENCES",       "TK_REFERENCES",   FKEY                   },
   { "REINDEX",          "TK_REINDEX",      REINDEX                },
+  { "RELATIVE",         "TK_RELATIVE",     CURSOR                 },
   { "RENAME",           "TK_RENAME",       ALTER                  },
   { "REPLACE",          "TK_REPLACE",      CONFLICT               },
   { "RESTRICT",         "TK_RESTRICT",     FKEY                   },

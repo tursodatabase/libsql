@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.172 2004/11/20 20:44:14 drh Exp $
+** $Id: expr.c,v 1.173 2004/11/22 19:12:20 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -503,10 +503,10 @@ Select *sqlite3SelectDup(Select *p){
   pNew->pPrior = sqlite3SelectDup(p->pPrior);
   pNew->nLimit = p->nLimit;
   pNew->nOffset = p->nOffset;
-  pNew->zSelect = 0;
   pNew->iLimit = -1;
   pNew->iOffset = -1;
   pNew->ppOpenTemp = 0;
+  pNew->pFetch = 0;
   return pNew;
 }
 

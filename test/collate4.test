@@ -12,7 +12,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is page cache subsystem.
 #
-# $Id: collate4.test,v 1.4 2004/11/03 16:27:02 drh Exp $
+# $Id: collate4.test,v 1.5 2004/11/22 19:12:21 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -669,6 +669,7 @@ do_test collate4-4.15 {
 # These indices are never used for sorting in SQLite. And you can't
 # create another index on an INTEGER PRIMARY KEY column, so we don't have 
 # to test that.
+# (Revised 2004-Nov-22):  The ROWID can be used for sorting now.
 #
 do_test collate4-6.0 {
   execsql {
@@ -682,12 +683,12 @@ do_test collate4-6.1 {
   cksort {
     SELECT * FROM collate4t1 ORDER BY 1;
   }
-} {10 15 101 sort}
+} {10 15 101 nosort}
 do_test collate4-6.2 {
   cksort {
     SELECT * FROM collate4t1 ORDER BY oid;
   }
-} {10 15 101 sort}
+} {10 15 101 nosort}
 do_test collate4-6.3 {
   cksort {
     SELECT * FROM collate4t1 ORDER BY oid||'' COLLATE TEXT;

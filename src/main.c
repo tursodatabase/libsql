@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.267 2004/11/22 05:26:27 danielk1977 Exp $
+** $Id: main.c,v 1.268 2004/11/22 19:12:20 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -499,6 +499,13 @@ int sqlite3_close(sqlite3 *db){
   if( db->pErr ){
     sqlite3ValueFree(db->pErr);
   }
+
+#ifndef SQLITE_OMIT_CURSOR
+  for(j=0; j<db->nSqlCursor; j++){
+    sqlite3CursorDelete(db->apSqlCursor[j]);
+  }
+  sqliteFree(db->apSqlCursor);
+#endif
 
   db->magic = SQLITE_MAGIC_ERROR;
   sqliteFree(db);
