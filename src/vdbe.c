@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.54 2001/04/04 11:48:58 drh Exp $
+** $Id: vdbe.c,v 1.55 2001/04/04 21:22:14 drh Exp $
 */
 #include "sqliteInt.h"
 #include <unistd.h>
@@ -2522,7 +2522,6 @@ int sqliteVdbeExec(
       */
       case OP_ListRead: {
         int i = pOp->p1;
-        int val, amt;
         Keylist *pKeylist;
         VERIFY(if( i<0 || i>=p->nList ) goto bad_instruction;)
         pKeylist = p->apList[i];

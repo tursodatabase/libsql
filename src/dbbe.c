@@ -30,10 +30,11 @@
 ** relatively simple to convert to a different database such
 ** as NDBM, SDBM, or BerkeleyDB.
 **
-** $Id: dbbe.c,v 1.25 2001/03/20 22:05:00 drh Exp $
+** $Id: dbbe.c,v 1.26 2001/04/04 21:22:14 drh Exp $
 */
 #include "sqliteInt.h"
 #include <unistd.h>
+#include <ctype.h>
 
 /*
 ** This routine opens a new database.  It looks at the first
