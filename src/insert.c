@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.62 2002/06/19 20:32:44 drh Exp $
+** $Id: insert.c,v 1.63 2002/07/05 21:42:37 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -616,6 +616,7 @@ void sqliteGenerateConstraintChecks(
       }
     }
     jumpInst1 = sqliteVdbeAddOp(v, OP_MakeIdxKey, pIdx->nColumn, 0);
+    if( pParse->db->file_format>=3 ) sqliteAddIdxKeyType(v, pIdx);
     onError = pIdx->onError;
     if( onError==OE_None ) continue;
     if( overrideError!=OE_Default ){
@@ -640,7 +641,7 @@ void sqliteGenerateConstraintChecks(
         break;
       }
       case OE_Replace: {
-        sqliteGenerateRowDelete(v, pTab, base, 0);
+        sqliteGenerateRowDelete(pParse->db, v, pTab, base, 0);
         if( isUpdate ){
           sqliteVdbeAddOp(v, OP_Dup, nCol+extra+1+hasTwoRecnos, 1);
           sqliteVdbeAddOp(v, OP_MoveTo, base, 0);

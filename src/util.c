@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.46 2002/06/14 20:58:45 drh Exp $
+** $Id: util.c,v 1.47 2002/07/05 21:42:37 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -705,11 +705,15 @@ int sqliteCompare(const char *atext, const char *btext){
 ** returns negative, zero, or positive if the first argument is less
 ** than, equal to, or greater than the first.  (Result is a-b).
 **
-** Every string begins with either a "+" or "-" character.  If the
-** character is "-" then the return value is negated.  This is done
-** to implement a sort in descending order.
+** Each string begins with one of the characters "+", "-", "A", "D".
+** This character determines the sort order and collating sequence:
 **
-** For sorting purposes, pur numeric strings (strings for which the
+**     +      Sort numerically in ascending order
+**     -      Sort numerically in descending order
+**     A      Sort as strings in ascending order
+**     D      Sort as strings in descending order.
+**
+** For the "+" and "-" sorting, pure numeric strings (strings for which the
 ** isNum() function above returns TRUE) always compare less than strings
 ** that are not pure numerics.  Within non-numeric strings, substrings
 ** of digits compare in numerical order.  Finally, case is used only
@@ -721,6 +725,10 @@ int sqliteCompare(const char *atext, const char *btext){
 ** lexigraphical order.  This routine does the additional processing
 ** to sort substrings of digits into numerical order and to use case
 ** only as a tie-breaker.
+**
+** The special rules above apply only to numeric sorting, when the
+** prefix is "+" or "-".  If the prefix is "A" or "D" then plain old
+** "strcmp()" is used for the comparison.
 */
 int sqliteSortCompare(const char *a, const char *b){
   int len;
@@ -728,6 +736,7 @@ int sqliteSortCompare(const char *a, const char *b){
   int isNumA, isNumB;
 
   while( res==0 && *a && *b ){
+    assert( a[0]==b[0] );
     if( a[1]==0 ){
       res = -1;
       break;
@@ -735,41 +744,46 @@ int sqliteSortCompare(const char *a, const char *b){
       res = +1;
       break;
     }
-    isNumA = sqliteIsNumber(&a[1]);
-    isNumB = sqliteIsNumber(&b[1]);
-    if( isNumA ){
-      double rA, rB;
-      if( !isNumB ){
-        res = -1;
-        break;
-      }
-      rA = atof(&a[1]);
-      rB = atof(&b[1]);
-      if( rA<rB ){
-        res = -1;
-        break;
-      }
-      if( rA>rB ){
+    if( a[0]=='A' || a[0]=='D' ){
+      res = strcmp(&a[1],&b[1]);
+      if( res ) break;
+    }else{
+      isNumA = sqliteIsNumber(&a[1]);
+      isNumB = sqliteIsNumber(&b[1]);
+      if( isNumA ){
+        double rA, rB;
+        if( !isNumB ){
+          res = -1;
+          break;
+        }
+        rA = atof(&a[1]);
+        rB = atof(&b[1]);
+        if( rA<rB ){
+          res = -1;
+          break;
+        }
+        if( rA>rB ){
+          res = +1;
+          break;
+        }
+      }else if( isNumB ){
         res = +1;
         break;
-      }
-    }else if( isNumB ){
-      res = +1;
-      break;
-    }else{
-      res = sortStrCmp(&a[1],&b[1],0);
-      if( res==0 ){
-        res = sortStrCmp(&a[1],&b[1],1);
-      }
-      if( res!=0 ){
-        break;
+      }else{
+        res = sortStrCmp(&a[1],&b[1],0);
+        if( res==0 ){
+          res = sortStrCmp(&a[1],&b[1],1);
+        }
+        if( res!=0 ){
+          break;
+        }
       }
     }
     len = strlen(&a[1]) + 2;
     a += len;
     b += len;
   }
-  if( *a=='-' ) res = -res;
+  if( *a=='-' || *a=='D' ) res = -res;
   return res;
 }
 

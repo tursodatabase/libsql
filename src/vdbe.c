@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.163 2002/06/29 02:20:09 drh Exp $
+** $Id: vdbe.c,v 1.164 2002/07/05 21:42:37 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2632,7 +2632,7 @@ case OP_MakeRecord: {
 ** P3 is a string that is P1 characters long.  Each character is either
 ** an 'n' or a 't' to indicates if the argument should be numeric or
 ** text.  The first character corresponds to the lowest element on the
-** stack.
+** stack.  If P3 is NULL then all arguments are assumed to be numeric.
 **
 ** See also: MakeIdxKey, SortMakeKey
 */
@@ -2661,7 +2661,7 @@ case OP_MakeRecord: {
 ** P3 is a string that is P1 characters long.  Each character is either
 ** an 'n' or a 't' to indicates if the argument should be numeric or
 ** text.  The first character corresponds to the lowest element on the
-** stack.
+** stack.  If P3 is null then all arguments are assumed to be numeric.
 **
 ** See also:  MakeKey, SortMakeKey
 */

@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.100 2002/06/28 12:18:47 drh Exp $
+** $Id: build.c,v 1.101 2002/07/05 21:42:36 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -463,6 +463,14 @@ void sqliteAddColumnType(Parse *pParse, Token *pFirst, Token *pLast){
   pCol->sortOrder = SQLITE_SO_NUM;
   for(i=0; z[i]; i++){
     switch( z[i] ){
+      case 'b':
+      case 'B': {
+        if( sqliteStrNICmp(&z[i],"blob",4)==0 ){
+          pCol->sortOrder = SQLITE_SO_TEXT;
+          return;
+        }
+        break;
+      }
       case 'c':
       case 'C': {
         if( sqliteStrNICmp(&z[i],"char",4)==0 ||
@@ -1093,6 +1101,39 @@ void sqliteDropTable(Parse *pParse, Token *pName, int isView){
 }
 
 /*
+** This routine constructs a P3 string suitable for an OP_MakeIdxKey
+** opcode and adds that P3 string to the most recently inserted instruction
+** in the virtual machine.  The P3 string consists of a single character
+** for each column in the index pIdx of table pTab.  If the column uses
+** a numeric sort order, then the P3 string character corresponding to
+** that column is 'n'.  If the column uses a text sort order, then the
+** P3 string is 't'.  See the OP_MakeIdxKey opcode documentation for
+** additional information.  See also the sqliteAddKeyType() routine.
+*/
+void sqliteAddIdxKeyType(Vdbe *v, Index *pIdx){
+  char *zType;
+  Table *pTab;
+  int i, n;
+  assert( pIdx!=0 && pIdx->pTable!=0 );
+  pTab = pIdx->pTable;
+  n = pIdx->nColumn;
+  zType = sqliteMalloc( n+1 );
+  if( zType==0 ) return;
+  for(i=0; i<n; i++){
+    int iCol = pIdx->aiColumn[i];
+    assert( iCol>=0 && iCol<pTab->nCol );
+    if( (pTab->aCol[iCol].sortOrder & SQLITE_SO_TYPEMASK)==SQLITE_SO_TEXT ){
+      zType[i] = 't';
+    }else{
+      zType[i] = 'n';
+    }
+  }
+  zType[n] = 0;
+  sqliteVdbeChangeP3(v, -1, zType, n);
+  sqliteFree(zType);
+}
+
+/*
 ** Create a new index for an SQL table.  pIndex is the name of the index 
 ** and pTable is the name of the table that is to be indexed.  Both will 
 ** be NULL for a primary key or an index that is created to satisfy a
@@ -1355,6 +1396,7 @@ void sqliteCreateIndex(
         sqliteVdbeAddOp(v, OP_Column, 2, pIndex->aiColumn[i]);
       }
       sqliteVdbeAddOp(v, OP_MakeIdxKey, pIndex->nColumn, 0);
+      if( db->file_format>=3 ) sqliteAddIdxKeyType(v, pIndex);
       sqliteVdbeAddOp(v, OP_IdxPut, 1, pIndex->onError!=OE_None);
       sqliteVdbeAddOp(v, OP_Next, 2, lbl1);
       sqliteVdbeResolveLabel(v, lbl2);

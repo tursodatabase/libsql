@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle DELETE FROM statements.
 **
-** $Id: delete.c,v 1.38 2002/06/19 14:27:05 drh Exp $
+** $Id: delete.c,v 1.39 2002/07/05 21:42:37 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -261,7 +261,7 @@ void sqliteDeleteFrom(
     }
 
     /* Delete the row */
-    sqliteGenerateRowDelete(v, pTab, base, pParse->trigStack==0);
+    sqliteGenerateRowDelete(db, v, pTab, base, pParse->trigStack==0);
 
     /* If there are row triggers, close all cursors then invoke
     ** the AFTER triggers
@@ -329,6 +329,7 @@ delete_from_cleanup:
 ** entries that point to that record.
 */
 void sqliteGenerateRowDelete(
+  sqlite *db,        /* The database containing the index */
   Vdbe *v,           /* Generate code into this VDBE */
   Table *pTab,       /* Table containing the row to be deleted */
   int base,          /* Cursor number for the table */
@@ -336,7 +337,7 @@ void sqliteGenerateRowDelete(
 ){
   int addr;
   addr = sqliteVdbeAddOp(v, OP_NotExists, base, 0);
-  sqliteGenerateRowIndexDelete(v, pTab, base, 0);
+  sqliteGenerateRowIndexDelete(db, v, pTab, base, 0);
   sqliteVdbeAddOp(v, OP_Delete, base, count);
   sqliteVdbeChangeP2(v, addr, sqliteVdbeCurrentAddr(v));
 }
@@ -358,6 +359,7 @@ void sqliteGenerateRowDelete(
 **       deleted.
 */
 void sqliteGenerateRowIndexDelete(
+  sqlite *db,        /* The database containing the index */
   Vdbe *v,           /* Generate code into this VDBE */
   Table *pTab,       /* Table containing the row to be deleted */
   int base,          /* Cursor number for the table */
@@ -379,6 +381,7 @@ void sqliteGenerateRowIndexDelete(
       }
     }
     sqliteVdbeAddOp(v, OP_MakeIdxKey, pIdx->nColumn, 0);
+    if( db->file_format>=3 ) sqliteAddIdxKeyType(v, pIdx);
     sqliteVdbeAddOp(v, OP_IdxDelete, base+i, 0);
   }
 }

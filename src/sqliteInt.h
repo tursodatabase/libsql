@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.133 2002/06/29 02:20:09 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.134 2002/07/05 21:42:37 drh Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -871,6 +871,8 @@ void sqliteIdListDelete(IdList*);
 void sqliteSrcListDelete(SrcList*);
 void sqliteCreateIndex(Parse*, Token*, Token*, IdList*, int, Token*, Token*);
 void sqliteDropIndex(Parse*, Token*);
+void sqliteAddKeyType(Vdbe*, ExprList*);
+void sqliteAddIdxKeyType(Vdbe*, Index*);
 int sqliteSelect(Parse*, Select*, int, int, Select*, int, int*);
 Select *sqliteSelectNew(ExprList*,SrcList*,Expr*,ExprList*,Expr*,ExprList*,
                         int,int,int);
@@ -909,8 +911,8 @@ char *sqlite_mprintf(const char *, ...);
 int sqliteExprIsConstant(Expr*);
 int sqliteExprIsInteger(Expr*, int*);
 int sqliteIsRowid(const char*);
-void sqliteGenerateRowDelete(Vdbe*, Table*, int, int);
-void sqliteGenerateRowIndexDelete(Vdbe*, Table*, int, char*);
+void sqliteGenerateRowDelete(sqlite*, Vdbe*, Table*, int, int);
+void sqliteGenerateRowIndexDelete(sqlite*, Vdbe*, Table*, int, char*);
 void sqliteGenerateConstraintChecks(Parse*,Table*,int,char*,int,int,int,int);
 void sqliteCompleteInsertion(Parse*, Table*, int, char*, int, int);
 void sqliteBeginWriteOperation(Parse*, int);
