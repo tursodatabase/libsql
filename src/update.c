@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.14 2001/09/16 00:13:27 drh Exp $
+** $Id: update.c,v 1.15 2001/09/23 02:35:53 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -34,12 +34,14 @@ void sqliteUpdate(
   Index *pIdx;           /* For looping over indices */
   int nIdx;              /* Number of indices that need updating */
   int base;              /* Index of first available table cursor */
+  sqlite *db;            /* The database structure */
   Index **apIdx = 0;     /* An array of indices that need updating too */
   int *aXRef = 0;        /* aXRef[i] is the index in pChanges->a[] of the
                          ** an expression for the i-th column of the table.
                          ** aXRef[i]==-1 if the i-th column is not changed. */
 
   if( pParse->nErr || sqlite_malloc_failed ) goto update_cleanup;
+  db = pParse->db;
 
   /* Locate the table which we want to update.  This table has to be
   ** put in an IdList structure because some of the subroutines we
@@ -49,7 +51,7 @@ void sqliteUpdate(
   pTabList = sqliteIdListAppend(0, pTableName);
   if( pTabList==0 ) goto update_cleanup;
   for(i=0; i<pTabList->nId; i++){
-    pTabList->a[i].pTab = sqliteFindTable(pParse->db, pTabList->a[i].zName);
+    pTabList->a[i].pTab = sqliteFindTable(db, pTabList->a[i].zName);
     if( pTabList->a[i].pTab==0 ){
       sqliteSetString(&pParse->zErrMsg, "no such table: ", 
          pTabList->a[i].zName, 0);
@@ -132,9 +134,10 @@ void sqliteUpdate(
   */
   v = sqliteGetVdbe(pParse);
   if( v==0 ) goto update_cleanup;
-  if( (pParse->db->flags & SQLITE_InTrans)==0 ){
+  if( (db->flags & SQLITE_InTrans)==0 ){
     sqliteVdbeAddOp(v, OP_Transaction, 0, 0, 0, 0);
-    sqliteVdbeAddOp(v, OP_VerifyCookie, pParse->db->schema_cookie, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_VerifyCookie, db->schema_cookie, 0, 0, 0);
+    pParse->schemaVerified = 1;
   }
 
   /* Begin the database scan
@@ -156,9 +159,9 @@ void sqliteUpdate(
   */
   sqliteVdbeAddOp(v, OP_ListRewind, 0, 0, 0, 0);
   base = pParse->nTab;
-  sqliteVdbeAddOp(v, OP_Open, base, pTab->tnum, 0, 0);
+  sqliteVdbeAddOp(v, OP_OpenWrite, base, pTab->tnum, 0, 0);
   for(i=0; i<nIdx; i++){
-    sqliteVdbeAddOp(v, OP_Open, base+i+1, apIdx[i]->tnum, 0, 0);
+    sqliteVdbeAddOp(v, OP_OpenWrite, base+i+1, apIdx[i]->tnum, 0, 0);
   }
 
   /* Loop over every record that needs updating.  We have to load
@@ -216,7 +219,7 @@ void sqliteUpdate(
   */
   sqliteVdbeAddOp(v, OP_Goto, 0, addr, 0, 0);
   sqliteVdbeAddOp(v, OP_ListClose, 0, 0, 0, end);
-  if( (pParse->db->flags & SQLITE_InTrans)==0 ){
+  if( (db->flags & SQLITE_InTrans)==0 ){
     sqliteVdbeAddOp(v, OP_Commit, 0, 0, 0, 0);
   }
 

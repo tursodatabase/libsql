@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.18 2001/09/16 00:13:27 drh Exp $
+** $Id: insert.c,v 1.19 2001/09/23 02:35:53 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -47,14 +47,16 @@ void sqliteInsert(
   int nColumn;          /* Number of columns in the data */
   int base;             /* First available cursor */
   int iCont, iBreak;    /* Beginning and end of the loop over srcTab */
+  sqlite *db;           /* The main database structure */
 
   if( pParse->nErr || sqlite_malloc_failed ) goto insert_cleanup;
+  db = pParse->db;
 
   /* Locate the table into which we will be inserting new information.
   */
   zTab = sqliteTableNameFromToken(pTableName);
   if( zTab==0 ) goto insert_cleanup;
-  pTab = sqliteFindTable(pParse->db, zTab);
+  pTab = sqliteFindTable(db, zTab);
   sqliteFree(zTab);
   if( pTab==0 ){
     sqliteSetNString(&pParse->zErrMsg, "no such table: ", 0, 
@@ -73,9 +75,10 @@ void sqliteInsert(
   */
   v = sqliteGetVdbe(pParse);
   if( v==0 ) goto insert_cleanup;
-  if( (pParse->db->flags & SQLITE_InTrans)==0 ){
+  if( (db->flags & SQLITE_InTrans)==0 ){
     sqliteVdbeAddOp(v, OP_Transaction, 0, 0, 0, 0);
-    sqliteVdbeAddOp(v, OP_VerifyCookie, pParse->db->schema_cookie, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_VerifyCookie, db->schema_cookie, 0, 0, 0);
+    pParse->schemaVerified = 1;
   }
 
   /* Figure out how many columns of data are supplied.  If the data
@@ -152,9 +155,9 @@ void sqliteInsert(
   ** all indices of that table.
   */
   base = pParse->nTab;
-  sqliteVdbeAddOp(v, OP_Open, base, pTab->tnum, pTab->zName, 0);
+  sqliteVdbeAddOp(v, OP_OpenWrite, base, pTab->tnum, pTab->zName, 0);
   for(idx=1, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, idx++){
-    sqliteVdbeAddOp(v, OP_Open, idx+base, pIdx->tnum, pIdx->zName, 0);
+    sqliteVdbeAddOp(v, OP_OpenWrite, idx+base, pIdx->tnum, pIdx->zName, 0);
   }
 
   /* If the data source is a SELECT statement, then we have to create
@@ -237,7 +240,7 @@ void sqliteInsert(
     sqliteVdbeAddOp(v, OP_Goto, 0, iCont, 0, 0);
     sqliteVdbeAddOp(v, OP_Noop, 0, 0, 0, iBreak);
   }
-  if( (pParse->db->flags & SQLITE_InTrans)==0 ){
+  if( (db->flags & SQLITE_InTrans)==0 ){
     sqliteVdbeAddOp(v, OP_Commit, 0, 0, 0, 0);
   }
 

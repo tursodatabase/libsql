@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.73 2001/09/22 18:12:10 drh Exp $
+** $Id: vdbe.c,v 1.74 2001/09/23 02:35:53 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -676,6 +676,19 @@ static void cleanupCursor(Cursor *pCx){
 }
 
 /*
+** Close all cursors
+*/
+static void closeAllCursors(Vdbe *p){
+  int i;
+  for(i=0; i<p->nCursor; i++){
+    cleanupCursor(&p->aCsr[i]);
+  }
+  sqliteFree(p->aCsr);
+  p->aCsr = 0;
+  p->nCursor = 0;
+}
+
+/*
 ** Clean up the VM after execution.
 **
 ** This routine will automatically close any cursors, lists, and/or
@@ -686,12 +699,7 @@ static void Cleanup(Vdbe *p){
   PopStack(p, p->tos+1);
   sqliteFree(p->azColName);
   p->azColName = 0;
-  for(i=0; i<p->nCursor; i++){
-    cleanupCursor(&p->aCsr[i]);
-  }
-  sqliteFree(p->aCsr);
-  p->aCsr = 0;
-  p->nCursor = 0;
+  closeAllCursors(p);
   for(i=0; i<p->nMem; i++){
     if( p->aMem[i].s.flags & STK_Dyn ){
       sqliteFree(p->aMem[i].z);
@@ -777,30 +785,30 @@ void sqliteVdbeDelete(Vdbe *p){
 static char *zOpName[] = { 0,
   "Transaction",       "Commit",            "Rollback",          "ReadCookie",
   "SetCookie",         "VerifyCookie",      "Open",              "OpenTemp",
-  "Close",             "MoveTo",            "Fcnt",              "NewRecno",
-  "Put",               "Distinct",          "Found",             "NotFound",
-  "Delete",            "Column",            "KeyAsData",         "Recno",
-  "FullKey",           "Rewind",            "Next",              "Destroy",
-  "Clear",             "CreateIndex",       "CreateTable",       "Reorganize",
-  "BeginIdx",          "NextIdx",           "PutIdx",            "DeleteIdx",
-  "MemLoad",           "MemStore",          "ListOpen",          "ListWrite",
-  "ListRewind",        "ListRead",          "ListClose",         "SortOpen",
-  "SortPut",           "SortMakeRec",       "SortMakeKey",       "Sort",
-  "SortNext",          "SortKey",           "SortCallback",      "SortClose",
-  "FileOpen",          "FileRead",          "FileColumn",        "FileClose",
-  "AggReset",          "AggFocus",          "AggIncr",           "AggNext",
-  "AggSet",            "AggGet",            "SetInsert",         "SetFound",
-  "SetNotFound",       "SetClear",          "MakeRecord",        "MakeKey",
-  "MakeIdxKey",        "Goto",              "If",                "Halt",
-  "ColumnCount",       "ColumnName",        "Callback",          "Integer",
-  "String",            "Null",              "Pop",               "Dup",
-  "Pull",              "Add",               "AddImm",            "Subtract",
-  "Multiply",          "Divide",            "Min",               "Max",
-  "Like",              "Glob",              "Eq",                "Ne",
-  "Lt",                "Le",                "Gt",                "Ge",
-  "IsNull",            "NotNull",           "Negative",          "And",
-  "Or",                "Not",               "Concat",            "Noop",
-  "Strlen",            "Substr",          
+  "OpenWrite",         "Close",             "MoveTo",            "Fcnt",
+  "NewRecno",          "Put",               "Distinct",          "Found",
+  "NotFound",          "Delete",            "Column",            "KeyAsData",
+  "Recno",             "FullKey",           "Rewind",            "Next",
+  "Destroy",           "Clear",             "CreateIndex",       "CreateTable",
+  "Reorganize",        "BeginIdx",          "NextIdx",           "PutIdx",
+  "DeleteIdx",         "MemLoad",           "MemStore",          "ListOpen",
+  "ListWrite",         "ListRewind",        "ListRead",          "ListClose",
+  "SortOpen",          "SortPut",           "SortMakeRec",       "SortMakeKey",
+  "Sort",              "SortNext",          "SortKey",           "SortCallback",
+  "SortClose",         "FileOpen",          "FileRead",          "FileColumn",
+  "FileClose",         "AggReset",          "AggFocus",          "AggIncr",
+  "AggNext",           "AggSet",            "AggGet",            "SetInsert",
+  "SetFound",          "SetNotFound",       "SetClear",          "MakeRecord",
+  "MakeKey",           "MakeIdxKey",        "Goto",              "If",
+  "Halt",              "ColumnCount",       "ColumnName",        "Callback",
+  "Integer",           "String",            "Null",              "Pop",
+  "Dup",               "Pull",              "Add",               "AddImm",
+  "Subtract",          "Multiply",          "Divide",            "Min",
+  "Max",               "Like",              "Glob",              "Eq",
+  "Ne",                "Lt",                "Le",                "Gt",
+  "Ge",                "IsNull",            "NotNull",           "Negative",
+  "And",               "Or",                "Not",               "Concat",
+  "Noop",              "Strlen",            "Substr",          
 };
 
 /*
@@ -1985,7 +1993,7 @@ case OP_VerifyCookie: {
 
 /* Opcode: Open P1 P2 P3
 **
-** Open a new cursor for the database table whose root page is
+** Open a read-only cursor for the database table whose root page is
 ** P2 in the main database file.  Give the new cursor an identifier
 ** of P1.  The P1 values need not be contiguous but all P1 values
 ** should be small integers.  It is an error for P1 to be negative.
@@ -2006,6 +2014,16 @@ case OP_VerifyCookie: {
 ** omitted.  But the code generator usually inserts the index or
 ** table name into P3 to make the code easier to read.
 */
+/* Opcode: OpenWrite P1 P2 P3
+**
+** Open a read/write cursor named P1 on the table or index whose root
+** page is P2.  If P2==0 then take the root page number from the stack.
+**
+** This instruction works just like Open except that it opens the cursor
+** in read/write mode.  For a given table, there can be one or more read-only
+** cursors or a single read/write cursor but not both.
+*/
+case OP_OpenWrite:
 case OP_Open: {
   int busy = 0;
   int i = pOp->p1;
@@ -2035,7 +2053,8 @@ case OP_Open: {
   cleanupCursor(&p->aCsr[i]);
   memset(&p->aCsr[i], 0, sizeof(Cursor));
   do{
-    rc = sqliteBtreeCursor(pBt, p2, &p->aCsr[i].pCursor);
+    int wrFlag = pOp->opcode==OP_OpenWrite;
+    rc = sqliteBtreeCursor(pBt, p2, wrFlag, &p->aCsr[i].pCursor);
     switch( rc ){
       case SQLITE_BUSY: {
         if( xBusy==0 || (*xBusy)(pBusyArg, pOp->p3, ++busy)==0 ){
@@ -2081,7 +2100,7 @@ case OP_OpenTemp: {
   memset(pCx, 0, sizeof(*pCx));
   rc = sqliteBtreeOpen(0, 0, TEMP_PAGES, &pCx->pBt);
   if( rc==SQLITE_OK ){
-    rc = sqliteBtreeCursor(pCx->pBt, 2, &pCx->pCursor);
+    rc = sqliteBtreeCursor(pCx->pBt, 2, 1, &pCx->pCursor);
   }
   if( rc==SQLITE_OK ){
     rc = sqliteBtreeBeginTrans(pCx->pBt);
@@ -2637,7 +2656,7 @@ case OP_PutIdx: {
   BtCursor *pCrsr;
   VERIFY( if( tos<0 ) goto not_enough_stack; )
   if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
-    sqliteBtreeInsert(pCrsr, zStack[tos], aStack[tos].n, "", 0);
+    rc = sqliteBtreeInsert(pCrsr, zStack[tos], aStack[tos].n, "", 0);
   }
   POPSTACK;
   break;
@@ -2657,7 +2676,7 @@ case OP_DeleteIdx: {
     int rx, res;
     rx = sqliteBtreeMoveto(pCrsr, zStack[tos], aStack[tos].n, &res);
     if( rx==SQLITE_OK && res==0 ){
-      sqliteBtreeDelete(pCrsr);
+      rc = sqliteBtreeDelete(pCrsr);
     }
   }
   POPSTACK;
@@ -3784,7 +3803,8 @@ cleanup:
     rc = SQLITE_INTERNAL;
     sqliteSetString(pzErrMsg, "table or index root page not set", 0);
   }
-  if( rc!=SQLITE_OK && (db->flags & SQLITE_InTrans)!=0 ){
+  if( rc!=SQLITE_OK ){
+    closeAllCursors(p);
     sqliteBtreeRollback(pBt);
     sqliteRollbackInternalChanges(db);
     db->flags &= ~SQLITE_InTrans;

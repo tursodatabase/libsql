@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle DELETE FROM statements.
 **
-** $Id: delete.c,v 1.14 2001/09/16 00:13:27 drh Exp $
+** $Id: delete.c,v 1.15 2001/09/23 02:35:53 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -32,11 +32,13 @@ void sqliteDeleteFrom(
   WhereInfo *pWInfo;     /* Information about the WHERE clause */
   Index *pIdx;           /* For looping over indices of the table */
   int base;              /* Index of the first available table cursor */
+  sqlite *db;            /* Main database structure */
 
   if( pParse->nErr || sqlite_malloc_failed ){
     pTabList = 0;
     goto delete_from_cleanup;
   }
+  db = pParse->db;
 
   /* Locate the table which we want to delete.  This table has to be
   ** put in an IdList structure because some of the subroutines we
@@ -46,7 +48,7 @@ void sqliteDeleteFrom(
   pTabList = sqliteIdListAppend(0, pTableName);
   if( pTabList==0 ) goto delete_from_cleanup;
   for(i=0; i<pTabList->nId; i++){
-    pTabList->a[i].pTab = sqliteFindTable(pParse->db, pTabList->a[i].zName);
+    pTabList->a[i].pTab = sqliteFindTable(db, pTabList->a[i].zName);
     if( pTabList->a[i].pTab==0 ){
       sqliteSetString(&pParse->zErrMsg, "no such table: ", 
          pTabList->a[i].zName, 0);
@@ -78,14 +80,15 @@ void sqliteDeleteFrom(
   */
   v = sqliteGetVdbe(pParse);
   if( v==0 ) goto delete_from_cleanup;
-  if( (pParse->db->flags & SQLITE_InTrans)==0 ){
+  if( (db->flags & SQLITE_InTrans)==0 ){
     sqliteVdbeAddOp(v, OP_Transaction, 0, 0, 0, 0);
-    sqliteVdbeAddOp(v, OP_VerifyCookie, pParse->db->schema_cookie, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_VerifyCookie, db->schema_cookie, 0, 0, 0);
+    pParse->schemaVerified = 1;
   }
 
 
   /* Special case: A DELETE without a WHERE clause deletes everything.
-  ** It is easier just to clear all information the database tables directly.
+  ** It is easier just to erase the whole table.
   */
   if( pWhere==0 ){
     sqliteVdbeAddOp(v, OP_Clear, pTab->tnum, 0, 0, 0);
@@ -118,9 +121,9 @@ void sqliteDeleteFrom(
     */
     base = pParse->nTab;
     sqliteVdbeAddOp(v, OP_ListRewind, 0, 0, 0, 0);
-    sqliteVdbeAddOp(v, OP_Open, base, pTab->tnum, 0, 0);
+    sqliteVdbeAddOp(v, OP_OpenWrite, base, pTab->tnum, 0, 0);
     for(i=1, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){
-      sqliteVdbeAddOp(v, OP_Open, base+i, pIdx->tnum, 0, 0);
+      sqliteVdbeAddOp(v, OP_OpenWrite, base+i, pIdx->tnum, 0, 0);
     }
     end = sqliteVdbeMakeLabel(v);
     addr = sqliteVdbeAddOp(v, OP_ListRead, 0, end, 0, 0);
@@ -140,7 +143,7 @@ void sqliteDeleteFrom(
     sqliteVdbeAddOp(v, OP_Goto, 0, addr, 0, 0);
     sqliteVdbeAddOp(v, OP_ListClose, 0, 0, 0, end);
   }
-  if( (pParse->db->flags & SQLITE_InTrans)==0 ){
+  if( (db->flags & SQLITE_InTrans)==0 ){
     sqliteVdbeAddOp(v, OP_Commit, 0, 0, 0, 0);
   }
 

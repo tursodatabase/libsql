@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is btree database backend
 #
-# $Id: btree.test,v 1.9 2001/09/16 00:13:28 drh Exp $
+# $Id: btree.test,v 1.10 2001/09/23 02:35:53 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -54,7 +54,7 @@ do_test btree-1.4.1 {
   lindex [btree_pager_stats $::b1] 1
 } {1}
 do_test btree-1.5 {
-  set rc [catch {btree_cursor $::b1 2} ::c1]
+  set rc [catch {btree_cursor $::b1 2 1} ::c1]
   if {$rc} {lappend rc $::c1}
   set rc
 } {0}
@@ -86,7 +86,7 @@ do_test btree-1.12 {
 # Reopen the database and attempt to read the record that we wrote.
 #
 do_test btree-2.1 {
-  set rc [catch {btree_cursor $::b1 2} ::c1]
+  set rc [catch {btree_cursor $::b1 2 1} ::c1]
   if {$rc} {lappend rc $::c1}
   set rc
 } {0}
@@ -209,7 +209,7 @@ do_test btree-3.24 {
   file size test1.bt
 } {2048}
 do_test btree-3.25 {
-  set rc [catch {btree_cursor $::b1 2} ::c1]
+  set rc [catch {btree_cursor $::b1 2 1} ::c1]
   if {$rc} {lappend rc $::c1}
   set rc
 } {0}
@@ -339,7 +339,7 @@ do_test btree-4.7 {
 do_test btree-4.8 {
   btree_close $::b1
   set ::b1 [btree_open test1.bt]
-  set ::c1 [btree_cursor $::b1 2]
+  set ::c1 [btree_cursor $::b1 2 1]
   lindex [btree_pager_stats $::b1] 1
 } {2}
 do_test btree-4.9 {
@@ -421,7 +421,7 @@ do_test btree-6.2.1 {
   lindex [btree_pager_stats $::b1] 1
 } {1}
 do_test btree-6.2.2 {
-  set ::c2 [btree_cursor $::b1 $::t2]
+  set ::c2 [btree_cursor $::b1 $::t2 1]
   lindex [btree_pager_stats $::b1] 1
 } {2}
 do_test btree-6.2.3 {
@@ -430,7 +430,7 @@ do_test btree-6.2.3 {
 } {ten}
 do_test btree-6.3 {
   btree_commit $::b1
-  set ::c1 [btree_cursor $::b1 2]
+  set ::c1 [btree_cursor $::b1 2 1]
   lindex [btree_pager_stats $::b1] 1
 } {3}
 do_test btree-6.3.1 {
@@ -465,7 +465,7 @@ do_test btree-6.8.1 {
   lindex [btree_get_meta $::b1] 0
 } {0}
 do_test btree-6.9 {
-  set ::c2 [btree_cursor $::b1 $::t2]
+  set ::c2 [btree_cursor $::b1 $::t2 1]
   lindex [btree_pager_stats $::b1] 1
 } {3}
 
@@ -479,7 +479,7 @@ do_test btree-6.9.1 {
 do_test btree-6.10 {
   btree_close_cursor $::c1
   btree_drop_table $::b1 2
-  set ::c1 [btree_cursor $::b1 2]
+  set ::c1 [btree_cursor $::b1 2 1]
   btree_move_to $::c1 {}
   btree_key $::c1
 } {}
@@ -631,7 +631,7 @@ do_test btree-8.9 {
   btree_close_cursor $::c1
   btree_close $::b1
   set ::b1 [btree_open test1.bt]
-  set ::c1 [btree_cursor $::b1 2]
+  set ::c1 [btree_cursor $::b1 2 1]
   btree_move_to $::c1 020
   btree_data $::c1
 } $::data
@@ -653,7 +653,7 @@ do_test btree-8.12 {
   lindex [btree_get_meta $::b1] 0
 } {4}
 do_test btree-8.12.1 {
-  set ::c1 [btree_cursor $::b1 2]
+  set ::c1 [btree_cursor $::b1 2 1]
   btree_insert $::c1 ${::keyprefix}1 1
   btree_data $::c1
 } {1}
@@ -700,7 +700,7 @@ do_test btree-8.22 {
 do_test btree-8.23 {
   btree_close_cursor $::c1
   btree_drop_table $::b1 2
-  set ::c1 [btree_cursor $::b1 2]
+  set ::c1 [btree_cursor $::b1 2 1]
   lindex [btree_get_meta $::b1] 0
 } {4}
 do_test btree-8.24 {
@@ -790,7 +790,7 @@ do_test btree-10.1 {
   lindex [btree_pager_stats $::b1] 1
 } {1}
 do_test btree-10.2 {
-  set ::c1 [btree_cursor $::b1 2]
+  set ::c1 [btree_cursor $::b1 2 1]
   lindex [btree_pager_stats $::b1] 1
 } {2}
 do_test btree-10.3 {
@@ -851,7 +851,7 @@ do_test btree-11.2 {
   lindex [btree_pager_stats $::b1] 1
 } {1}
 do_test btree-11.3 {
-  set ::c1 [btree_cursor $::b1 2]
+  set ::c1 [btree_cursor $::b1 2 1]
   lindex [btree_pager_stats $::b1] 1
 } {2}
 #btree_page_dump $::b1 2

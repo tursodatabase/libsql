@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test3.c,v 1.11 2001/09/16 00:13:27 drh Exp $
+** $Id: test3.c,v 1.12 2001/09/23 02:35:53 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -499,7 +499,7 @@ static int btree_sanity_check(
 }
 
 /*
-** Usage:   btree_cursor ID TABLENUM
+** Usage:   btree_cursor ID TABLENUM WRITEABLE
 **
 ** Create a new cursor.  Return the ID for the cursor.
 */
@@ -513,16 +513,18 @@ static int btree_cursor(
   int iTable;
   BtCursor *pCur;
   int rc;
+  int wrFlag;
   char zBuf[30];
 
-  if( argc!=3 ){
+  if( argc!=4 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID TABLENUM\"", 0);
+       " ID TABLENUM WRITEABLE\"", 0);
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[1], (int*)&pBt) ) return TCL_ERROR;
   if( Tcl_GetInt(interp, argv[2], &iTable) ) return TCL_ERROR;
-  rc = sqliteBtreeCursor(pBt, iTable, &pCur);
+  if( Tcl_GetBoolean(interp, argv[3], &wrFlag) ) return TCL_ERROR;
+  rc = sqliteBtreeCursor(pBt, iTable, wrFlag, &pCur);
   if( rc ){
     Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;

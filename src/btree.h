@@ -12,7 +12,7 @@
 ** This header file defines the interface that the sqlite B-Tree file
 ** subsystem.
 **
-** @(#) $Id: btree.h,v 1.14 2001/09/16 00:13:26 drh Exp $
+** @(#) $Id: btree.h,v 1.15 2001/09/23 02:35:53 drh Exp $
 */
 #ifndef _BTREE_H_
 #define _BTREE_H_
@@ -32,7 +32,7 @@ int sqliteBtreeCreateTable(Btree*, int*);
 int sqliteBtreeDropTable(Btree*, int);
 int sqliteBtreeClearTable(Btree*, int);
 
-int sqliteBtreeCursor(Btree*, int iTable, BtCursor **ppCur);
+int sqliteBtreeCursor(Btree*, int iTable, int wrFlag, BtCursor **ppCur);
 int sqliteBtreeMoveto(BtCursor*, const void *pKey, int nKey, int *pRes);
 int sqliteBtreeDelete(BtCursor*);
 int sqliteBtreeInsert(BtCursor*, const void *pKey, int nKey,

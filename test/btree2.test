@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is btree database backend
 #
-# $Id: btree2.test,v 1.7 2001/09/16 00:13:28 drh Exp $
+# $Id: btree2.test,v 1.8 2001/09/23 02:35:53 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -48,7 +48,7 @@ do_test btree2-1.4 {
   btree_create_table $::b
 } {6}
 do_test btree2-1.5 {
-  set ::c2 [btree_cursor $::b 2]
+  set ::c2 [btree_cursor $::b 2 1]
   btree_insert $::c2 {one} {1}
   btree_delete $::c2
   btree_close_cursor $::c2
@@ -95,7 +95,7 @@ proc build_db {N L} {
   for {set i 2} {$i<=6} {incr i} {
     catch {btree_close_cursor [set ::c$i]}
     btree_clear_table $::b $i
-    set ::c$i [btree_cursor $::b $i]
+    set ::c$i [btree_cursor $::b $i 1]
   }
   btree_insert $::c2 N $N
   btree_insert $::c2 L $L
@@ -281,11 +281,11 @@ foreach {N L} {
   puts "**** N=$N L=$L ****"
   set hash [md5file test2.bt]
   do_test btree2-$testno.1 [subst -nocommands {
-    set ::c2 [btree_cursor $::b 2]
-    set ::c3 [btree_cursor $::b 3]
-    set ::c4 [btree_cursor $::b 4]
-    set ::c5 [btree_cursor $::b 5]
-    set ::c6 [btree_cursor $::b 6]
+    set ::c2 [btree_cursor $::b 2 1]
+    set ::c3 [btree_cursor $::b 3 1]
+    set ::c4 [btree_cursor $::b 4 1]
+    set ::c5 [btree_cursor $::b 5 1]
+    set ::c6 [btree_cursor $::b 6 1]
     btree_begin_transaction $::b
     build_db $N $L
     check_invariants
@@ -301,11 +301,11 @@ foreach {N L} {
   } $hash
   do_test btree2-$testno.3 [subst -nocommands {
     btree_begin_transaction $::b
-    set ::c2 [btree_cursor $::b 2]
-    set ::c3 [btree_cursor $::b 3]
-    set ::c4 [btree_cursor $::b 4]
-    set ::c5 [btree_cursor $::b 5]
-    set ::c6 [btree_cursor $::b 6]
+    set ::c2 [btree_cursor $::b 2 1]
+    set ::c3 [btree_cursor $::b 3 1]
+    set ::c4 [btree_cursor $::b 4 1]
+    set ::c5 [btree_cursor $::b 5 1]
+    set ::c6 [btree_cursor $::b 6 1]
     build_db $N $L
     check_invariants
   }] {}
@@ -327,11 +327,11 @@ foreach {N L} {
   do_test btree2-$testno.7 {
     btree_close $::b
     set ::b [btree_open test2.bt]
-    set ::c2 [btree_cursor $::b 2]
-    set ::c3 [btree_cursor $::b 3]
-    set ::c4 [btree_cursor $::b 4]
-    set ::c5 [btree_cursor $::b 5]
-    set ::c6 [btree_cursor $::b 6]
+    set ::c2 [btree_cursor $::b 2 1]
+    set ::c3 [btree_cursor $::b 3 1]
+    set ::c4 [btree_cursor $::b 4 1]
+    set ::c5 [btree_cursor $::b 5 1]
+    set ::c6 [btree_cursor $::b 6 1]
     check_invariants
   } {}
 
@@ -375,11 +375,11 @@ foreach {N L} {
     } $hash
     # exec cp test2.bt test2.bt.bu2
     btree_begin_transaction $::b
-    set ::c2 [btree_cursor $::b 2]
-    set ::c3 [btree_cursor $::b 3]
-    set ::c4 [btree_cursor $::b 4]
-    set ::c5 [btree_cursor $::b 5]
-    set ::c6 [btree_cursor $::b 6]
+    set ::c2 [btree_cursor $::b 2 1]
+    set ::c3 [btree_cursor $::b 3 1]
+    set ::c4 [btree_cursor $::b 4 1]
+    set ::c5 [btree_cursor $::b 5 1]
+    set ::c6 [btree_cursor $::b 6 1]
     do_test $testid.5 [subst {
       random_changes $n $I $K $D
     }] {}
@@ -402,11 +402,11 @@ foreach {N L} {
     do_test $testid.9 {
       btree_close $::b
       set ::b [btree_open test2.bt]
-      set ::c2 [btree_cursor $::b 2]
-      set ::c3 [btree_cursor $::b 3]
-      set ::c4 [btree_cursor $::b 4]
-      set ::c5 [btree_cursor $::b 5]
-      set ::c6 [btree_cursor $::b 6]
+      set ::c2 [btree_cursor $::b 2 1]
+      set ::c3 [btree_cursor $::b 3 1]
+      set ::c4 [btree_cursor $::b 4 1]
+      set ::c5 [btree_cursor $::b 5 1]
+      set ::c6 [btree_cursor $::b 6 1]
       check_invariants
     } {}
     incr num2

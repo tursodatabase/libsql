@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.18 2001/09/20 01:44:43 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.19 2001/09/23 02:35:53 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -138,19 +138,20 @@ int sqlite_exec(
 #define SQLITE_INTERNAL  2    /* An internal logic error in SQLite */
 #define SQLITE_PERM      3    /* Access permission denied */
 #define SQLITE_ABORT     4    /* Callback routine requested an abort */
-#define SQLITE_BUSY      5    /* One or more database files are locked */
-#define SQLITE_NOMEM     6    /* A malloc() failed */
-#define SQLITE_READONLY  7    /* Attempt to write a readonly database */
-#define SQLITE_INTERRUPT 8    /* Operation terminated by sqlite_interrupt() */
-#define SQLITE_IOERR     9    /* Some kind of disk I/O error occurred */
-#define SQLITE_CORRUPT   10   /* The database disk image is malformed */
-#define SQLITE_NOTFOUND  11   /* (Internal Only) Table or record not found */
-#define SQLITE_FULL      12   /* Insertion failed because database is full */
-#define SQLITE_CANTOPEN  13   /* Unable to open the database file */
-#define SQLITE_PROTOCOL  14   /* Database lock protocol error */
-#define SQLITE_EMPTY     15   /* (Internal Only) Database table is empty */
-#define SQLITE_SCHEMA    16   /* The database schema changed */
-#define SQLITE_TOOBIG    17   /* Too much data for one row of a table */
+#define SQLITE_BUSY      5    /* The database file is locked */
+#define SQLITE_LOCKED    6    /* A table in the database is locked */
+#define SQLITE_NOMEM     7    /* A malloc() failed */
+#define SQLITE_READONLY  8    /* Attempt to write a readonly database */
+#define SQLITE_INTERRUPT 9    /* Operation terminated by sqlite_interrupt() */
+#define SQLITE_IOERR     10   /* Some kind of disk I/O error occurred */
+#define SQLITE_CORRUPT   11   /* The database disk image is malformed */
+#define SQLITE_NOTFOUND  12   /* (Internal Only) Table or record not found */
+#define SQLITE_FULL      13   /* Insertion failed because database is full */
+#define SQLITE_CANTOPEN  14   /* Unable to open the database file */
+#define SQLITE_PROTOCOL  15   /* Database lock protocol error */
+#define SQLITE_EMPTY     16   /* (Internal Only) Database table is empty */
+#define SQLITE_SCHEMA    17   /* The database schema changed */
+#define SQLITE_TOOBIG    18   /* Too much data for one row of a table */
 
 /* This function causes any pending database operation to abort and
 ** return at its earliest opportunity.  This routine is typically

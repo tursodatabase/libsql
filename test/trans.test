@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: trans.test,v 1.5 2001/09/17 20:48:30 drh Exp $
+# $Id: trans.test,v 1.6 2001/09/23 02:35:53 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -94,13 +94,13 @@ do_test trans-3.2 {
     SELECT a FROM two ORDER BY a;
   } altdb} msg]
   lappend v $msg
-} {1 {database in use by another process}}
+} {1 {database is locked}}
 do_test trans-3.3 {
   set v [catch {execsql {
     SELECT a FROM one ORDER BY a;
   } altdb} msg]
   lappend v $msg
-} {1 {database in use by another process}}
+} {1 {database is locked}}
 do_test trans-3.4 {
   set v [catch {execsql {
     INSERT INTO one VALUES(4,'four');
@@ -112,13 +112,13 @@ do_test trans-3.5 {
     SELECT a FROM two ORDER BY a;
   } altdb} msg]
   lappend v $msg
-} {1 {database in use by another process}}
+} {1 {database is locked}}
 do_test trans-3.6 {
   set v [catch {execsql {
     SELECT a FROM one ORDER BY a;
   } altdb} msg]
   lappend v $msg
-} {1 {database in use by another process}}
+} {1 {database is locked}}
 do_test trans-3.7 {
   set v [catch {execsql {
     INSERT INTO two VALUES(4,'IV');
@@ -130,13 +130,13 @@ do_test trans-3.8 {
     SELECT a FROM two ORDER BY a;
   } altdb} msg]
   lappend v $msg
-} {1 {database in use by another process}}
+} {1 {database is locked}}
 do_test trans-3.9 {
   set v [catch {execsql {
     SELECT a FROM one ORDER BY a;
   } altdb} msg]
   lappend v $msg
-} {1 {database in use by another process}}
+} {1 {database is locked}}
 do_test trans-3.10 {
   execsql {END TRANSACTION}
 } {}
@@ -189,13 +189,13 @@ do_test trans-4.4 {
     SELECT a FROM two ORDER BY a;
   } altdb} msg]
   lappend v $msg
-} {1 {database in use by another process}}
+} {1 {database is locked}}
 do_test trans-4.5 {
   set v [catch {execsql {
     SELECT a FROM one ORDER BY a;
   } altdb} msg]
   lappend v $msg
-} {1 {database in use by another process}}
+} {1 {database is locked}}
 do_test trans-4.6 {
   set v [catch {execsql {
     BEGIN TRANSACTION;
@@ -208,13 +208,13 @@ do_test trans-4.7 {
     SELECT a FROM two ORDER BY a;
   } altdb} msg]
   lappend v $msg
-} {1 {database in use by another process}}
+} {1 {database is locked}}
 do_test trans-4.8 {
   set v [catch {execsql {
     SELECT a FROM one ORDER BY a;
   } altdb} msg]
   lappend v $msg
-} {1 {database in use by another process}}
+} {1 {database is locked}}
 do_test trans-4.9 {
   set v [catch {execsql {
     END TRANSACTION;

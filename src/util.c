@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.27 2001/09/19 13:22:40 drh Exp $
+** $Id: util.c,v 1.28 2001/09/23 02:35:53 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -973,7 +973,8 @@ const char *sqliteErrStr(int rc){
     case SQLITE_INTERNAL:   z = "internal SQLite implementation flaw";   break;
     case SQLITE_PERM:       z = "access permission denied";              break;
     case SQLITE_ABORT:      z = "callback requested query abort";        break;
-    case SQLITE_BUSY:       z = "database in use by another process";    break;
+    case SQLITE_BUSY:       z = "database is locked";                    break;
+    case SQLITE_LOCKED:     z = "database table is locked";              break;
     case SQLITE_NOMEM:      z = "out of memory";                         break;
     case SQLITE_READONLY:   z = "attempt to write a readonly database";  break;
     case SQLITE_INTERRUPT:  z = "interrupted";                           break;

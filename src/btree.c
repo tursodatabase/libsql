@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.29 2001/09/16 00:13:26 drh Exp $
+** $Id: btree.c,v 1.30 2001/09/23 02:35:53 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -312,6 +312,7 @@ struct Btree {
   BtCursor *pCursor;    /* A list of all open cursors */
   PageOne *page1;       /* First page of the database */
   int inTrans;          /* True if a transaction is in progress */
+  Hash locks;           /* Key: root page number.  Data: lock count */
 };
 typedef Btree Bt;
 
@@ -326,6 +327,7 @@ struct BtCursor {
   Pgno pgnoRoot;            /* The root page of this tree */
   MemPage *pPage;           /* Page that contains the entry */
   int idx;                  /* Index of the entry in pPage->apCell[] */
+  u8 wrFlag;                /* True if writable */
   u8 bSkipNext;             /* sqliteBtreeNext() is no-op if true */
   u8 iMatch;                /* compare result from last sqliteBtreeMoveto() */
 };
@@ -619,6 +621,7 @@ int sqliteBtreeOpen(
   sqlitepager_set_destructor(pBt->pPager, pageDestructor);
   pBt->pCursor = 0;
   pBt->page1 = 0;
+  sqliteHashInit(&pBt->locks, SQLITE_HASH_INT, 0);
   *ppBtree = pBt;
   return SQLITE_OK;
 }
@@ -631,6 +634,7 @@ int sqliteBtreeClose(Btree *pBt){
     sqliteBtreeCloseCursor(pBt->pCursor);
   }
   sqlitepager_close(pBt->pPager);
+  sqliteHashClear(&pBt->locks);
   sqliteFree(pBt);
   return SQLITE_OK;
 }
@@ -771,17 +775,25 @@ int sqliteBtreeCommit(Btree *pBt){
 }
 
 /*
-** Rollback the transaction in progress.  All cursors must be
-** closed before this routine is called.
+** Rollback the transaction in progress.  All cursors will be
+** invalided by this operation.  Any attempt to use a cursor
+** that was open at the beginning of this operation will result
+** in an error.
 **
 ** This will release the write lock on the database file.  If there
 ** are no active cursors, it also releases the read lock.
 */
 int sqliteBtreeRollback(Btree *pBt){
   int rc;
-  if( pBt->pCursor!=0 ) return SQLITE_ERROR;
+  BtCursor *pCur;
   if( pBt->inTrans==0 ) return SQLITE_OK;
   pBt->inTrans = 0;
+  for(pCur=pBt->pCursor; pCur; pCur=pCur->pNext){
+    if( pCur->pPage ){
+      sqlitepager_unref(pCur->pPage);
+      pCur->pPage = 0;
+    }
+  }
   rc = sqlitepager_rollback(pBt->pPager);
   unlockBtreeIfUnused(pBt);
   return rc;
@@ -792,9 +804,11 @@ int sqliteBtreeRollback(Btree *pBt){
 ** iTable.  The act of acquiring a cursor gets a read lock on 
 ** the database file.
 */
-int sqliteBtreeCursor(Btree *pBt, int iTable, BtCursor **ppCur){
+int sqliteBtreeCursor(Btree *pBt, int iTable, int wrFlag, BtCursor **ppCur){
   int rc;
   BtCursor *pCur;
+  int nLock;
+
   if( pBt->page1==0 ){
     rc = lockBtree(pBt);
     if( rc!=SQLITE_OK ){
@@ -816,7 +830,15 @@ int sqliteBtreeCursor(Btree *pBt, int iTable, BtCursor **ppCur){
   if( rc!=SQLITE_OK ){
     goto create_cursor_exception;
   }
+  nLock = (int)sqliteHashFind(&pBt->locks, 0, iTable);
+  if( nLock<0 || (nLock>0 && wrFlag) ){
+    rc = SQLITE_LOCKED;
+    goto create_cursor_exception;
+  }
+  nLock = wrFlag ? -1 : nLock+1;
+  sqliteHashInsert(&pBt->locks, 0, iTable, (void*)nLock);
   pCur->pBt = pBt;
+  pCur->wrFlag = wrFlag;
   pCur->idx = 0;
   pCur->pNext = pBt->pCursor;
   if( pCur->pNext ){
@@ -842,6 +864,7 @@ create_cursor_exception:
 ** when the last cursor is closed.
 */
 int sqliteBtreeCloseCursor(BtCursor *pCur){
+  int nLock;
   Btree *pBt = pCur->pBt;
   if( pCur->pPrev ){
     pCur->pPrev->pNext = pCur->pNext;
@@ -851,8 +874,14 @@ int sqliteBtreeCloseCursor(BtCursor *pCur){
   if( pCur->pNext ){
     pCur->pNext->pPrev = pCur->pPrev;
   }
-  sqlitepager_unref(pCur->pPage);
+  if( pCur->pPage ){
+    sqlitepager_unref(pCur->pPage);
+  }
   unlockBtreeIfUnused(pBt);
+  nLock = (int)sqliteHashFind(&pBt->locks, 0, pCur->pgnoRoot);
+  assert( nLock!=0 );
+  nLock = nLock<0 ? 0 : nLock-1;
+  sqliteHashInsert(&pBt->locks, 0, pCur->pgnoRoot, (void*)nLock);
   sqliteFree(pCur);
   return SQLITE_OK;
 }
@@ -865,7 +894,9 @@ static void getTempCursor(BtCursor *pCur, BtCursor *pTempCur){
   memcpy(pTempCur, pCur, sizeof(*pCur));
   pTempCur->pNext = 0;
   pTempCur->pPrev = 0;
-  sqlitepager_ref(pTempCur->pPage);
+  if( pTempCur->pPage ){
+    sqlitepager_ref(pTempCur->pPage);
+  }
 }
 
 /*
@@ -873,7 +904,9 @@ static void getTempCursor(BtCursor *pCur, BtCursor *pTempCur){
 ** function above.
 */
 static void releaseTempCursor(BtCursor *pCur){
-  sqlitepager_unref(pCur->pPage);
+  if( pCur->pPage ){
+    sqlitepager_unref(pCur->pPage);
+  }
 }
 
 /*
@@ -888,8 +921,7 @@ int sqliteBtreeKeySize(BtCursor *pCur, int *pSize){
   MemPage *pPage;
 
   pPage = pCur->pPage;
-  assert( pPage!=0 );
-  if( pCur->idx >= pPage->nCell ){
+  if( pPage==0 || pCur->idx >= pPage->nCell ){
     *pSize = 0;
   }else{
     pCell = pPage->apCell[pCur->idx];
@@ -971,7 +1003,7 @@ int sqliteBtreeKey(BtCursor *pCur, int offset, int amt, char *zBuf){
   if( offset<0 ) return 0; 
   if( amt==0 ) return 0;
   pPage = pCur->pPage;
-  assert( pPage!=0 );
+  if( pPage==0 ) return 0;
   if( pCur->idx >= pPage->nCell ){
     return 0;
   }
@@ -998,8 +1030,7 @@ int sqliteBtreeDataSize(BtCursor *pCur, int *pSize){
   MemPage *pPage;
 
   pPage = pCur->pPage;
-  assert( pPage!=0 );
-  if( pCur->idx >= pPage->nCell ){
+  if( pPage==0 || pCur->idx >= pPage->nCell ){
     *pSize = 0;
   }else{
     pCell = pPage->apCell[pCur->idx];
@@ -1024,8 +1055,7 @@ int sqliteBtreeData(BtCursor *pCur, int offset, int amt, char *zBuf){
   if( offset<0 ) return 0;
   if( amt==0 ) return 0;
   pPage = pCur->pPage;
-  assert( pPage!=0 );
-  if( pCur->idx >= pPage->nCell ){
+  if( pPage==0 || pCur->idx >= pPage->nCell ){
     return 0;
   }
   pCell = pPage->apCell[pCur->idx];
@@ -1190,6 +1220,7 @@ static int moveToLeftmost(BtCursor *pCur){
 */
 int sqliteBtreeFirst(BtCursor *pCur, int *pRes){
   int rc;
+  if( pCur->pPage==0 ) return SQLITE_ABORT;
   rc = moveToRoot(pCur);
   if( rc ) return rc;
   if( pCur->pPage->nCell==0 ){
@@ -1225,6 +1256,7 @@ int sqliteBtreeFirst(BtCursor *pCur, int *pRes){
 */
 int sqliteBtreeMoveto(BtCursor *pCur, const void *pKey, int nKey, int *pRes){
   int rc;
+  if( pCur->pPage==0 ) return SQLITE_ABORT;
   pCur->bSkipNext = 0;
   rc = moveToRoot(pCur);
   if( rc ) return rc;
@@ -1275,6 +1307,9 @@ int sqliteBtreeMoveto(BtCursor *pCur, const void *pKey, int nKey, int *pRes){
 */
 int sqliteBtreeNext(BtCursor *pCur, int *pRes){
   int rc;
+  if( pCur->pPage==0 ){
+    return SQLITE_ABORT;
+  }
   if( pCur->bSkipNext ){
     pCur->bSkipNext = 0;
     if( pRes ) *pRes = 0;
@@ -2045,8 +2080,14 @@ int sqliteBtreeInsert(
   MemPage *pPage;
   Btree *pBt = pCur->pBt;
 
+  if( pCur->pPage==0 ){
+    return SQLITE_ABORT;  /* A rollback destroyed this cursor */
+  }
   if( !pCur->pBt->inTrans || nKey+nData==0 ){
     return SQLITE_ERROR;  /* Must start a transaction first */
+  }
+  if( !pCur->wrFlag ){
+    return SQLITE_PERM;   /* Cursor not open for writing */
   }
   rc = sqliteBtreeMoveto(pCur, pKey, nKey, &loc);
   if( rc ) return rc;
@@ -2090,11 +2131,17 @@ int sqliteBtreeDelete(BtCursor *pCur){
   int rc;
   Pgno pgnoChild;
 
+  if( pCur->pPage==0 ){
+    return SQLITE_ABORT;  /* A rollback destroyed this cursor */
+  }
   if( !pCur->pBt->inTrans ){
     return SQLITE_ERROR;  /* Must start a transaction first */
   }
   if( pCur->idx >= pPage->nCell ){
     return SQLITE_ERROR;  /* The cursor is not pointing to anything */
+  }
+  if( !pCur->wrFlag ){
+    return SQLITE_PERM;   /* Did not open this cursor for writing */
   }
   rc = sqlitepager_write(pPage);
   if( rc ) return rc;
@@ -2207,8 +2254,13 @@ static int clearDatabasePage(Btree *pBt, Pgno pgno, int freePageFlag){
 */
 int sqliteBtreeClearTable(Btree *pBt, int iTable){
   int rc;
+  int nLock;
   if( !pBt->inTrans ){
     return SQLITE_ERROR;  /* Must start a transaction first */
+  }
+  nLock = (int)sqliteHashFind(&pBt->locks, 0, iTable);
+  if( nLock ){
+    return SQLITE_LOCKED;
   }
   rc = clearDatabasePage(pBt, (Pgno)iTable, 0);
   if( rc ){

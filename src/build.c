@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.38 2001/09/22 18:12:10 drh Exp $
+** $Id: build.c,v 1.39 2001/09/23 02:35:53 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -54,6 +54,7 @@ void sqliteExec(Parse *pParse){
       rc = sqliteVdbeExec(pParse->pVdbe, pParse->xCallback, pParse->pArg, 
                           &pParse->zErrMsg, db->pBusyArg,
                           db->xBusyCallback);
+      if( rc ) pParse->nErr++;
     }
     sqliteVdbeDelete(pParse->pVdbe);
     pParse->pVdbe = 0;
@@ -372,6 +373,7 @@ void sqliteStartTable(Parse *pParse, Token *pStart, Token *pName){
     if( v ){
       sqliteVdbeAddOp(v, OP_Transaction, 0, 0, 0, 0);
       sqliteVdbeAddOp(v, OP_VerifyCookie, db->schema_cookie, 0, 0, 0);
+      pParse->schemaVerified = 1;
     }
   }
 }
@@ -502,7 +504,7 @@ void sqliteEndTable(Parse *pParse, Token *pEnd){
     v = sqliteGetVdbe(pParse);
     if( v==0 ) return;
     n = (int)pEnd->z - (int)pParse->sFirstToken.z + 1;
-    sqliteVdbeAddOp(v, OP_Open, 0, 2, MASTER_NAME, 0);
+    sqliteVdbeAddOp(v, OP_OpenWrite, 0, 2, MASTER_NAME, 0);
     sqliteVdbeAddOp(v, OP_NewRecno, 0, 0, 0, 0);
     sqliteVdbeAddOp(v, OP_String, 0, 0, "table", 0);
     sqliteVdbeAddOp(v, OP_String, 0, 0, p->zName, 0);
@@ -583,7 +585,7 @@ void sqliteDropTable(Parse *pParse, Token *pName){
   v = sqliteGetVdbe(pParse);
   if( v ){
     static VdbeOp dropTable[] = {
-      { OP_Open,       0, 2,        MASTER_NAME},
+      { OP_OpenWrite,  0, 2,        MASTER_NAME},
       { OP_Rewind,     0, 0,        0},
       { OP_String,     0, 0,        0}, /* 2 */
       { OP_Next,       0, ADDR(9),  0}, /* 3 */
@@ -600,6 +602,7 @@ void sqliteDropTable(Parse *pParse, Token *pName){
     if( (db->flags & SQLITE_InTrans)==0 ){
       sqliteVdbeAddOp(v, OP_Transaction, 0, 0, 0, 0);
       sqliteVdbeAddOp(v, OP_VerifyCookie, db->schema_cookie, 0, 0, 0);
+      pParse->schemaVerified = 1;
     }
     base = sqliteVdbeAddOpList(v, ArraySize(dropTable), dropTable);
     sqliteVdbeChangeP3(v, base+2, pTable->zName, 0);
@@ -779,14 +782,14 @@ void sqliteCreateIndex(
   */
   else if( pParse->initFlag==0 && pTable!=0 ){
     static VdbeOp addTable[] = {
-      { OP_Open,        2, 2, MASTER_NAME},
+      { OP_OpenWrite,   2, 2, MASTER_NAME},
       { OP_NewRecno,    2, 0, 0},
       { OP_String,      0, 0, "index"},
       { OP_String,      0, 0, 0},  /* 3 */
       { OP_String,      0, 0, 0},  /* 4 */
       { OP_CreateIndex, 1, 0, 0},
       { OP_Dup,         0, 0, 0},
-      { OP_Open,        1, 0, 0},  /* 7 */
+      { OP_OpenWrite,   1, 0, 0},  /* 7 */
       { OP_Null,        0, 0, 0},
       { OP_String,      0, 0, 0},  /* 9 */
       { OP_MakeRecord,  6, 0, 0},
@@ -804,6 +807,7 @@ void sqliteCreateIndex(
     if( pTable!=0 && (db->flags & SQLITE_InTrans)==0 ){
       sqliteVdbeAddOp(v, OP_Transaction, 0, 0, 0, 0);
       sqliteVdbeAddOp(v, OP_VerifyCookie, db->schema_cookie, 0, 0, 0);
+      pParse->schemaVerified = 1;
     }
     if( pStart && pEnd ){
       int base;
@@ -875,7 +879,7 @@ void sqliteDropIndex(Parse *pParse, Token *pName){
   v = sqliteGetVdbe(pParse);
   if( v ){
     static VdbeOp dropIndex[] = {
-      { OP_Open,       0, 2,       MASTER_NAME},
+      { OP_OpenWrite,  0, 2,       MASTER_NAME},
       { OP_Rewind,     0, 0,       0}, 
       { OP_String,     0, 0,       0}, /* 2 */
       { OP_Next,       0, ADDR(8), 0}, /* 3 */
@@ -892,6 +896,7 @@ void sqliteDropIndex(Parse *pParse, Token *pName){
     if( (db->flags & SQLITE_InTrans)==0 ){
       sqliteVdbeAddOp(v, OP_Transaction, 0, 0, 0, 0);
       sqliteVdbeAddOp(v, OP_VerifyCookie, db->schema_cookie, 0, 0, 0);
+      pParse->schemaVerified = 1;
     }
     base = sqliteVdbeAddOpList(v, ArraySize(dropIndex), dropIndex);
     sqliteVdbeChangeP3(v, base+2, pIndex->zName, 0);
@@ -1065,13 +1070,14 @@ void sqliteCopy(
     if( (db->flags & SQLITE_InTrans)==0 ){
       sqliteVdbeAddOp(v, OP_Transaction, 0, 0, 0, 0);
       sqliteVdbeAddOp(v, OP_VerifyCookie, db->schema_cookie, 0, 0, 0);
+      pParse->schemaVerified = 1;
     }
     addr = sqliteVdbeAddOp(v, OP_FileOpen, 0, 0, 0, 0);
     sqliteVdbeChangeP3(v, addr, pFilename->z, pFilename->n);
     sqliteVdbeDequoteP3(v, addr);
-    sqliteVdbeAddOp(v, OP_Open, 0, pTab->tnum, pTab->zName, 0);
+    sqliteVdbeAddOp(v, OP_OpenWrite, 0, pTab->tnum, pTab->zName, 0);
     for(i=1, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
-      sqliteVdbeAddOp(v, OP_Open, i, pIdx->tnum, pIdx->zName, 0);
+      sqliteVdbeAddOp(v, OP_OpenWrite, i, pIdx->tnum, pIdx->zName, 0);
     }
     end = sqliteVdbeMakeLabel(v);
     addr = sqliteVdbeAddOp(v, OP_FileRead, pTab->nCol, end, 0, 0);
@@ -1138,6 +1144,7 @@ void sqliteVacuum(Parse *pParse, Token *pTableName){
   if( (db->flags & SQLITE_InTrans)==0 ){
     sqliteVdbeAddOp(v, OP_Transaction, 0, 0, 0, 0);
     sqliteVdbeAddOp(v, OP_VerifyCookie, db->schema_cookie, 0, 0, 0);
+    pParse->schemaVerified = 1;
   }
   if( zName ){
     sqliteVdbeAddOp(v, OP_Reorganize, 0, 0, zName, 0);
@@ -1176,6 +1183,7 @@ void sqliteBeginTransaction(Parse *pParse){
   if( v ){
     sqliteVdbeAddOp(v, OP_Transaction, 1, 0, 0, 0);
     sqliteVdbeAddOp(v, OP_VerifyCookie, db->schema_cookie, 0, 0, 0);
+    pParse->schemaVerified = 1;
   }
   db->flags |= SQLITE_InTrans;
 }
