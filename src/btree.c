@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.39 2001/11/10 13:51:08 drh Exp $
+** $Id: btree.c,v 1.40 2001/11/21 02:21:12 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -53,26 +53,6 @@
 #include "pager.h"
 #include "btree.h"
 #include <assert.h>
-
-
-/*
-** Primitive data types.  u32 must be 4 bytes and u16 must be 2 bytes.
-** The uptr type must be big enough to hold a pointer.
-** Change these typedefs when porting to new architectures.
-*/
-typedef unsigned int uptr;
-
-/* There are already defined in sqliteInt.h...
-** typedef unsigned int u32;
-** typedef unsigned short int u16;
-** typedef unsigned char u8;
-*/
-
-/*
-** This macro casts a pointer to an integer.  Useful for doing
-** pointer arithmetic.
-*/
-#define Addr(X)  ((uptr)X)
 
 /*
 ** Forward declarations of structures used only in this file.
@@ -829,7 +809,7 @@ int sqliteBtreeRollback(Btree *pBt){
 int sqliteBtreeCursor(Btree *pBt, int iTable, int wrFlag, BtCursor **ppCur){
   int rc;
   BtCursor *pCur;
-  int nLock;
+  ptr nLock;
 
   if( pBt->page1==0 ){
     rc = lockBtree(pBt);
@@ -852,7 +832,7 @@ int sqliteBtreeCursor(Btree *pBt, int iTable, int wrFlag, BtCursor **ppCur){
   if( rc!=SQLITE_OK ){
     goto create_cursor_exception;
   }
-  nLock = (int)sqliteHashFind(&pBt->locks, 0, iTable);
+  nLock = (ptr)sqliteHashFind(&pBt->locks, 0, iTable);
   if( nLock<0 || (nLock>0 && wrFlag) ){
     rc = SQLITE_LOCKED;
     goto create_cursor_exception;
@@ -886,7 +866,7 @@ create_cursor_exception:
 ** when the last cursor is closed.
 */
 int sqliteBtreeCloseCursor(BtCursor *pCur){
-  int nLock;
+  ptr nLock;
   Btree *pBt = pCur->pBt;
   if( pCur->pPrev ){
     pCur->pPrev->pNext = pCur->pNext;
@@ -900,7 +880,7 @@ int sqliteBtreeCloseCursor(BtCursor *pCur){
     sqlitepager_unref(pCur->pPage);
   }
   unlockBtreeIfUnused(pBt);
-  nLock = (int)sqliteHashFind(&pBt->locks, 0, pCur->pgnoRoot);
+  nLock = (ptr)sqliteHashFind(&pBt->locks, 0, pCur->pgnoRoot);
   assert( nLock!=0 || sqlite_malloc_failed );
   nLock = nLock<0 ? 0 : nLock-1;
   sqliteHashInsert(&pBt->locks, 0, pCur->pgnoRoot, (void*)nLock);
@@ -2293,11 +2273,11 @@ static int clearDatabasePage(Btree *pBt, Pgno pgno, int freePageFlag){
 */
 int sqliteBtreeClearTable(Btree *pBt, int iTable){
   int rc;
-  int nLock;
+  ptr nLock;
   if( !pBt->inTrans ){
     return SQLITE_ERROR;  /* Must start a transaction first */
   }
-  nLock = (int)sqliteHashFind(&pBt->locks, 0, iTable);
+  nLock = (ptr)sqliteHashFind(&pBt->locks, 0, iTable);
   if( nLock ){
     return SQLITE_LOCKED;
   }

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.21 2001/11/07 14:22:00 drh Exp $
+** $Id: update.c,v 1.22 2001/11/21 02:21:12 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -110,7 +110,7 @@ void sqliteUpdate(
     }
   }
 
-  /* Allocate memory for the array apIdx[] and fill it pointers to every
+  /* Allocate memory for the array apIdx[] and fill it with pointers to every
   ** index that needs to be updated.  Indices only need updating if their
   ** key includes one of the columns named in pChanges.
   */
@@ -193,7 +193,7 @@ void sqliteUpdate(
     sqliteVdbeAddOp(v, OP_IdxDelete, base+i+1, 0);
   }
 
-  /* Compute a completely new data for this record.  
+  /* Compute new data for this record.  
   */
   for(i=0; i<pTab->nCol; i++){
     j = aXRef[i];

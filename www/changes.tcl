@@ -17,6 +17,10 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2001 Nov ?? (2.1.2)} {
+<li>Changes to support 64-bit architectures.</li>
+}
+
 chng {2001 Nov 13 (2.1.1)} {
 <li>Bug fix: Sometimes arbirary strings were passed to the callback
     function when the actual value of a column was NULL.</li>

@@ -12,7 +12,7 @@
 ** This is the implementation of generic hash-tables
 ** used in SQLite.
 **
-** $Id: hash.c,v 1.3 2001/10/22 02:58:10 drh Exp $
+** $Id: hash.c,v 1.4 2001/11/21 02:21:12 drh Exp $
 */
 #include "sqliteInt.h"
 #include <assert.h>
@@ -68,11 +68,13 @@ static int intCompare(const void *pKey1, int n1, const void *pKey2, int n2){
 ** Hash and comparison functions when the mode is SQLITE_HASH_POINTER
 */
 static int ptrHash(const void *pKey, int nKey){
-  nKey = (int)pKey;
-  return nKey ^ (nKey<<8) ^ (nKey>>8);
+  uptr x = Addr(pKey);
+  return x ^ (x<<8) ^ (x>>8);
 }
 static int ptrCompare(const void *pKey1, int n1, const void *pKey2, int n2){
-  return ((int)pKey2) - (int)pKey1;
+  if( pKey1==pKey2 ) return 0;
+  if( pKey1<pKey2 ) return -1;
+  return 1;
 }
 
 /*

@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.31 2001/11/06 04:00:19 drh Exp $
+** $Id: util.c,v 1.32 2001/11/21 02:21:12 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -769,7 +769,8 @@ int sqliteSortCompare(const char *a, const char *b){
 ** The following procedure converts a double-precision floating point
 ** number into a string.  The resulting string has the property that
 ** two such strings comparied using strcmp() or memcmp() will give the
-** same results as comparing the original floating point numbers.
+** same results as a numeric comparison of the original floating point
+** numbers.
 **
 ** This routine is used to generate database keys from floating point
 ** numbers such that the keys sort in the same order as the original

@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.55 2001/11/07 16:48:27 drh Exp $
+** $Id: build.c,v 1.56 2001/11/21 02:21:12 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -101,7 +101,7 @@ Expr *sqliteExpr(int op, Expr *pLeft, Expr *pRight, Token *pToken){
 void sqliteExprSpan(Expr *pExpr, Token *pLeft, Token *pRight){
   if( pExpr ){
     pExpr->span.z = pLeft->z;
-    pExpr->span.n = pRight->n + (int)pRight->z - (int)pLeft->z;
+    pExpr->span.n = pRight->n + Addr(pRight->z) - Addr(pLeft->z);
   }
 }
 
@@ -498,7 +498,7 @@ void sqliteAddColumnType(Parse *pParse, Token *pFirst, Token *pLast){
   i = p->nCol-1;
   if( i<0 ) return;
   pz = &p->aCol[i].zType;
-  n = pLast->n + ((int)pLast->z) - (int)pFirst->z;
+  n = pLast->n + Addr(pLast->z) - Addr(pFirst->z);
   sqliteSetNString(pz, pFirst->z, n, 0);
   z = *pz;
   if( z==0 ) return;
@@ -618,7 +618,7 @@ void sqliteEndTable(Parse *pParse, Token *pEnd){
 
     v = sqliteGetVdbe(pParse);
     if( v==0 ) return;
-    n = (int)pEnd->z - (int)pParse->sFirstToken.z + 1;
+    n = Addr(pEnd->z) - Addr(pParse->sFirstToken.z) + 1;
     if( !p->isTemp ){
       sqliteVdbeAddOp(v, OP_NewRecno, 0, 0);
       sqliteVdbeAddOp(v, OP_String, 0, 0);
@@ -972,7 +972,7 @@ void sqliteCreateIndex(
     if( !isTemp ){
       addr = sqliteVdbeAddOp(v, OP_String, 0, 0);
       if( pStart && pEnd ){
-        n = (int)pEnd->z - (int)pStart->z + 1;
+        n = Addr(pEnd->z) - Addr(pStart->z) + 1;
         sqliteVdbeChangeP3(v, addr, pStart->z, n);
       }
       sqliteVdbeAddOp(v, OP_MakeRecord, 5, 0);

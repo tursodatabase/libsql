@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the vdbe.html file.
 #
-set rcsid {$Id: vdbe.tcl,v 1.7 2001/09/28 23:11:24 drh Exp $}
+set rcsid {$Id: vdbe.tcl,v 1.8 2001/11/21 02:21:13 drh Exp $}
 
 puts {<html>
 <head>
@@ -1616,7 +1616,7 @@ difficulty understanding the rest.</p>
 
 <p>If you find errors in either the documentation or the code,
 feel free to fix them and/or contact the author at
-<a href="drh@hwaci.com">drh@hwaci.com</a>.  Your bug fixes or
+<a href="mailto:drh@hwaci.com">drh@hwaci.com</a>.  Your bug fixes or
 suggestions are always welcomed.</p>
 }
 
