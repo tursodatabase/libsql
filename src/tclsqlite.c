@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.32 2002/05/10 13:14:07 drh Exp $
+** $Id: tclsqlite.c,v 1.33 2002/06/25 19:31:18 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -267,24 +267,26 @@ static int DbBusyHandler(void *cd, const char *zTable, int nTries){
 static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   SqliteDb *pDb = (SqliteDb*)cd;
   int choice;
-  static char *DB_optStrs[] = {
-     "busy",  "changes",            "close",    "complete", 
-     "eval",  "last_insert_rowid",  "timeout",  0
+  static char *DB_strs[] = {
+    "busy",               "changes",           "close",
+    "complete",           "eval",              "last_insert_rowid",
+    "open_aux_file",      "timeout",           0
   };
-  enum DB_opts {
-     DB_BUSY, DB_CHANGES,           DB_CLOSE,   DB_COMPLETE,
-     DB_EVAL, DB_LAST_INSERT_ROWID, DB_TIMEOUT
+  enum DB_enum {
+    DB_BUSY,              DB_CHANGES,          DB_CLOSE,
+    DB_COMPLETE,          DB_EVAL,             DB_LAST_INSERT_ROWID,
+    DB_OPEN_AUX_FILE,     DB_TIMEOUT,          
   };
 
   if( objc<2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "SUBCOMMAND ...");
     return TCL_ERROR;
   }
-  if( Tcl_GetIndexFromObj(interp, objv[1], DB_optStrs, "option", 0, &choice) ){
+  if( Tcl_GetIndexFromObj(interp, objv[1], DB_strs, "option", 0, &choice) ){
     return TCL_ERROR;
   }
 
-  switch( (enum DB_opts)choice ){
+  switch( (enum DB_enum)choice ){
 
   /*    $db busy ?CALLBACK?
   **
@@ -460,6 +462,34 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     rowid = sqlite_last_insert_rowid(pDb->db);
     pResult = Tcl_GetObjResult(interp);
     Tcl_SetIntObj(pResult, rowid);
+    break;
+  }
+
+  /*
+  **     $db open_aux_file  FILENAME
+  **
+  ** Begin using FILENAME as the database file used to store temporary
+  ** tables.
+  */
+  case DB_OPEN_AUX_FILE: {
+    const char *zFilename;
+    char *zErrMsg = 0;
+    int rc;
+    if( objc!=3 ){
+      Tcl_WrongNumArgs(interp, 2, objv, "FILENAME");
+      return TCL_ERROR;
+    }
+    zFilename = Tcl_GetStringFromObj(objv[2], 0);
+    rc = sqlite_open_aux_file(pDb->db, zFilename, &zErrMsg);
+    if( rc!=0 ){
+      if( zErrMsg ){
+        Tcl_AppendResult(interp, zErrMsg, 0);
+        free(zErrMsg);
+      }else{
+        Tcl_AppendResult(interp, sqlite_error_string(rc), 0);
+      }
+      return TCL_ERROR;
+    }
     break;
   }
 

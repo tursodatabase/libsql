@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.84 2002/06/25 01:09:11 drh Exp $
+** $Id: main.c,v 1.85 2002/06/25 19:31:18 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -710,7 +710,9 @@ int sqlite_create_aggregate(
 }
 
 /*
-** Change the datatype for all functions with a given name.
+** Change the datatype for all functions with a given name.  See the
+** header comment for the prototype of this function in sqlite.h for
+** additional information.
 */
 int sqlite_function_type(sqlite *db, const char *zName, int dataType){
   FuncDef *p = (FuncDef*)sqliteHashFind(&db->aFunc, zName, strlen(zName));
@@ -719,4 +721,44 @@ int sqlite_function_type(sqlite *db, const char *zName, int dataType){
     p = p->pNext;
   }
   return SQLITE_OK;
+}
+
+/*
+** Attempt to open the file named in the argument as the auxiliary database
+** file.  The auxiliary database file is used to store TEMP tables.  But
+** by using this API, it is possible to trick SQLite into opening two
+** separate databases and acting on them as if they were one.
+**
+** This routine closes the existing auxiliary database file, which will
+** cause any previously created TEMP tables to be created.
+**
+** The zName parameter can be a NULL pointer or an empty string to cause
+** a temporary file to be opened and automatically deleted when closed.
+*/
+int sqlite_open_aux_file(sqlite *db, const char *zName, char **pzErrMsg){
+  int rc;
+  if( zName && zName[0]==0 ) zName = 0;
+  if( sqliteSafetyOn(db) ) goto openaux_misuse;
+  sqliteResetInternalSchema(db);
+  if( db->pBeTemp!=0 ){
+    sqliteBtreeClose(db->pBeTemp);
+  }
+  rc = sqliteBtreeOpen(zName, 0, MAX_PAGES, &db->pBeTemp);
+  if( rc ){
+    if( zName==0 ) zName = "a temporary file";
+    sqliteSetString(pzErrMsg, "unable to open ", zName, 
+      ": ", sqlite_error_string(rc), 0);
+    sqliteStrRealloc(pzErrMsg);
+    sqliteSafetyOff(db);
+    return rc;
+  }
+  rc = sqliteInit(db, pzErrMsg);
+  if( sqliteSafetyOff(db) ) goto openaux_misuse;
+  sqliteStrRealloc(pzErrMsg);
+  return rc;
+
+openaux_misuse:
+  sqliteSetString(pzErrMsg, sqlite_error_string(SQLITE_MISUSE), 0);
+  sqliteStrRealloc(pzErrMsg);
+  return SQLITE_MISUSE;
 }
