@@ -1,5 +1,5 @@
-C Fix\sfor\sbug\s#2:\sAdd\ssupport\sfor\sTABLE.*\sin\sSELECT\sstatements.\s(CVS\s518)
-D 2002-04-04T02:10:56
+C Add\san\sfflush()\scall\sto\sshell.c\sto\sinsure\sthat\sall\soutput\shas\sbeen\swritten\nbefore\swe\sprompt\sfor\sa\snew\sline\sof\sinput.\s(CVS\s519)
+D 2002-04-04T15:10:12
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -39,7 +39,7 @@ F src/parse.y d63f93b67edf9e318afea87b71d69af3334a9649
 F src/printf.c 300a90554345751f26e1fc0c0333b90a66110a1d
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c 92aef3f69e90dc065d680d88b1f075409e9249bb
-F src/shell.c b3454229599246b944cdb5b95753af3fca5d8bb0
+F src/shell.c cf57c66e6cc1bc3c2c78602da25308ce04cb1179
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 1dae50411aee9439860d7fbe315183c582d27197
 F src/sqliteInt.h 73e7d0f39a3c11d395fc422986959261bd193eba
@@ -131,7 +131,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P ffdeec3087e168acaa04a6331e91369e2e0f8345
-R 2030ad886be3f6f3ab16a87454cce255
+P c2320eabfe44d6eb05c02b76547e5bd48a29943c
+R ef6fd0215a968b215139b8a713f806b2
 U drh
-Z 6dbde5dc0db37de113b78d968afab2db
+Z e1fdaafdc22b731c2498d3444c88f13c

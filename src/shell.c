@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.47 2002/03/03 23:06:01 drh Exp $
+** $Id: shell.c,v 1.48 2002/04/04 15:10:12 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -783,7 +783,7 @@ static void process_input(struct callback_data *p, FILE *in){
   char *zSql = 0;
   int nSql = 0;
   char *zErrMsg;
-  while( (zLine = one_input_line(zSql, in))!=0 ){
+  while( fflush(p->out), (zLine = one_input_line(zSql, in))!=0 ){
     if( p->echoOn ) printf("%s\n", zLine);
     if( zLine && zLine[0]=='.' && nSql==0 ){
       do_meta_command(zLine, db, p);
