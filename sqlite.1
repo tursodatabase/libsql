@@ -23,8 +23,8 @@ sqlite \- A command line interface for SQLite
 .SS SUMMARY
 .PP
 sqlite is a terminal-based front-end to the SQLite library. It enables
-you to type in queries interactivly, issue them to SQLite and see the
-results. Alternativly, you can specify SQL code on the commandline. In
+you to type in queries interactively, issue them to SQLite and see the
+results. Alternatively, you can specify SQL code on the command-line. In
 addition it provides a number of meta-commands.
 
 .SH DESCRIPTION
@@ -132,8 +132,8 @@ Set output mode to 'line'.
 .B \-column
 Set output mode to 'column'.
 .TP
-.BI \-seperator\  seperator
-Specify which output field seperator for 'list' mode to use.
+.BI \-separator\  separator
+Specify which output field separator for 'list' mode to use.
 Default is '|'.
 .TP
 .BI \-nullvalue\  string
@@ -151,11 +151,11 @@ The SQLite program has different output modes, which define the way
 the output (from queries) is formatted.
 
 In 'list' mode, which is the default, one record per line is output,
-each field seperated by the seperator specified with the
-\fB-seperator\fP option or \fB.seprator\fP command.
+each field separated by the separator specified with the
+\fB-separator\fP option or \fB.separator\fP command.
 
 In 'line' mode, each column is output on its own line, records are
-seperated by blank lines.
+separated by blank lines.
 
 In HTML mode, an XHTML table is generated.
 
@@ -198,5 +198,6 @@ http://www.hwaci.com/sw/sqlite/
 .br
 The sqlite-doc package
 .SH AUTHOR
-This manual page was written by Andreas Rottmann <rotty@debian.org>,
-for the Debian GNU/Linux system (but may be used by others).
+This manual page was originally written by Andreas Rottmann
+<rotty@debian.org>, for the Debian GNU/Linux system (but may be used
+by others).

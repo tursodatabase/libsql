@@ -1,13 +1,11 @@
-C Version\s2.4.10\s(CVS\s550)
-D 2002-05-03T00:18:12
+C Fix\stypos\sin\sthe\sman-page\s(sqlite.1)\sand\sremove\stwo\sunused\sfiles.\nPatches\sfrom\sAndreas\sRottmann.\s(CVS\s551)
+D 2002-05-06T11:34:27
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
 F VERSION 6e80c9947485276e468a2630f3c89616498507bf
 F aclocal.m4 11faa843caa38fd451bc6aeb43e248d1723a269d
 F config.guess f38b1e93d1e0fa6f5a6913e9e7b12774b9232588
-F config.log 6a73d03433669b10a3f0c221198c3f26b9413914
-F config.status eea88b8fe8b8b82d69b886382061efa9b77131cc
 F config.sub f14b07d544ca26b5d698259045136b783e18fc7f
 F configure 9303d975dbd577fbe61e615045ddc02015b59fb5 x
 F configure.ac 38e2e5594cab99eb3a753b0614fcc36f4ddbbb48
@@ -18,7 +16,7 @@ F libtool c56e618713c9510a103bda6b95f3ea3900dcacd6
 F ltmain.sh e9ed72eb1d690f447c13945eaf69e28af531eda1
 F publish.sh d115bd49631e3bb0d799e7dc1da51f9866d67647
 F spec.template 238f7db425a78dc1bb7682e56e3834c7270a3f5e
-F sqlite.1 6b339cb747b45f8e7ea0335b06291b6d52067b31
+F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
 F src/TODO af7f3cab0228e34149cf98e073aa83d45878e7e6
 F src/btree.c 7dd7ddc66459982dd0cb9800958c1f8d65a32d9f
 F src/btree.h 8abeabfe6e0b1a990b64fa457592a6482f6674f3
@@ -132,7 +130,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 67838bbc800a1acdd91af8e43f5a65494fb9d690
-R 5d30e48f63589957c83bcafdc3ad7839
+P 5f3618142f7e4654e85ca08383d6d7c1b3395c66
+R 7d7d850e3031b292a6fad784a9897f60
 U drh
-Z f25f0b492acb188aa02ceb32116236f7
+Z 1a769610dfaa62dadca70e2cf713c5c9
