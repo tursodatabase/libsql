@@ -1,6 +1,6 @@
-C The\sBTree\slayer\snow\sreturns\sSQLITE_READONLY\son\san\sattempt\sto\sopen\sa\swrite\r\ncursor\son\sa\sread-only\sdatabase.\s\sPreviously,\sthe\sfailure\swould\snot\soccur\r\nuntil\sthere\swas\san\sattempt\sto\swrite\sto\sthe\scursor.\s(CVS\s1289)
-D 2004-03-10T13:42:38
-F Makefile.in afc6c0377773421633e592347097ad036eef6aeb
+C *\sAdded\srule\sfor\srebuilding\sMakefile\sfrom\sMakefile.in.\n*\sFixed\sdouble-slash\sproblem\sinduced\sby\sadding\sDESTDIR\ssupport.\s(CVS\s1290)
+D 2004-03-10T16:32:03
+F Makefile.in a889656d6a99a86eb15f0e1cf30e1965d1be7898
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
 F VERSION 4328de2a5fb5000699b907ca405cb9d84ba4e097
@@ -188,7 +188,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P b6817e99bd97f427b1cfd16328d612e1a7d70d0a
-R dd6d5acc23ee81f1b56620c2e34fbfdc
-U drh
-Z e8a7d40432246c6ffa11556ef33fac86
+P 8a8be4687bf9fd88952b303f30f93aa6fed75b60
+R 9bbe16af7ca71edc39e06e48c7b7023d
+U a.rottmann
+Z 94764d77b0b3395c4ed9d65a7a9d46a5
