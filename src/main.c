@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.260 2004/09/15 13:38:11 drh Exp $
+** $Id: main.c,v 1.261 2004/09/25 14:39:18 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -669,9 +669,7 @@ void sqlite3_interrupt(sqlite3 *db){
 ** SQLite is a DLL.  For some reason, it does not work to call free()
 ** directly.
 **
-** Note that we need to call free() not sqliteFree() here, since every
-** string that is exported from SQLite should have already passed through
-** sqlite3StrRealloc().
+** Note that we need to call free() not sqliteFree() here.
 */
 void sqlite3_free(char *p){ free(p); }
 

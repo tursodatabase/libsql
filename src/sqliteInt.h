@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.323 2004/09/25 13:12:16 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.324 2004/09/25 14:39:19 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -197,16 +197,13 @@ struct BusyHandler {
 # define sqliteRealloc(X,Y) sqlite3Realloc_(X,Y,__FILE__,__LINE__)
 # define sqliteStrDup(X)    sqlite3StrDup_(X,__FILE__,__LINE__)
 # define sqliteStrNDup(X,Y) sqlite3StrNDup_(X,Y,__FILE__,__LINE__)
-  void sqlite3StrRealloc(char**);
 #else
 # define sqliteFree          sqlite3FreeX
 # define sqliteMalloc        sqlite3Malloc
 # define sqliteMallocRaw     sqlite3MallocRaw
 # define sqliteRealloc       sqlite3Realloc
-/* # define sqliteRealloc_(X,Y) sqlite3Realloc(X,Y) */
-# define sqlite3StrRealloc(X)
-# define sqliteStrDup         sqlite3StrDup
-# define sqliteStrNDup        sqlite3StrNDup
+# define sqliteStrDup        sqlite3StrDup
+# define sqliteStrNDup       sqlite3StrNDup
 #endif
 
 /*
@@ -1208,7 +1205,6 @@ char *sqlite3VMPrintf(const char*, va_list);
 void sqlite3DebugPrintf(const char*, ...);
 void *sqlite3TextToPtr(const char*);
 void sqlite3SetString(char **, const char *, ...);
-void sqlite3SetNString(char **, ...);
 void sqlite3ErrorMsg(Parse*, const char*, ...);
 void sqlite3Dequote(char*);
 int sqlite3KeywordCode(const char*, int);

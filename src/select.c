@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.210 2004/09/25 13:12:16 drh Exp $
+** $Id: select.c,v 1.211 2004/09/25 14:39:19 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -116,13 +116,12 @@ int sqlite3JoinType(Parse *pParse, Token *pA, Token *pB, Token *pC){
      (jointype & (JT_INNER|JT_OUTER))==(JT_INNER|JT_OUTER) ||
      (jointype & JT_ERROR)!=0
   ){
-    static Token dummy = { 0, 0 };
-    char *zSp1 = " ", *zSp2 = " ";
-    if( pB==0 ){ pB = &dummy; zSp1 = 0; }
-    if( pC==0 ){ pC = &dummy; zSp2 = 0; }
-    sqlite3SetNString(&pParse->zErrMsg, "unknown or unsupported join type: ", 0,
-       pA->z, pA->n, zSp1, 1, pB->z, pB->n, zSp2, 1, pC->z, pC->n, (char*)0);
-    pParse->nErr++;
+    const char *zSp1 = " ";
+    const char *zSp2 = " ";
+    if( pB==0 ){ zSp1++; }
+    if( pC==0 ){ zSp2++; }
+    sqlite3ErrorMsg(pParse, "unknown or unsupported join type: "
+       "%T%s%T%s%T", pA, zSp1, pB, zSp2, pC);
     jointype = JT_INNER;
   }else if( jointype & JT_RIGHT ){
     sqlite3ErrorMsg(pParse, 
@@ -480,7 +479,6 @@ static int selectInnerLoop(
       if( pOrderBy ){
         pushOntoSorter(pParse, v, pOrderBy);
       }else{
-        char const *affStr;
         char aff = (iParm>>16)&0xFF;
         aff = sqlite3CompareAffinity(pEList->a[0].pExpr, aff);
         sqlite3VdbeOp3(v, OP_MakeRecord, 1, 0, &aff, 1);

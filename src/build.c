@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.253 2004/09/15 13:38:11 drh Exp $
+** $Id: build.c,v 1.254 2004/09/25 14:39:18 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -785,8 +785,8 @@ void sqlite3AddColumnType(Parse *pParse, Token *pFirst, Token *pLast){
   pCol = &p->aCol[i];
   pz = &pCol->zType;
   n = pLast->n + Addr(pLast->z) - Addr(pFirst->z);
-  sqlite3SetNString(pz, pFirst->z, n, (char*)0);
-  z = *pz;
+  assert( pCol->zType==0 );
+  z = pCol->zType = sqlite3MPrintf("%.*s", n, pFirst->z);
   if( z==0 ) return;
   for(i=j=0; z[i]; i++){
     int c = z[i];
@@ -808,17 +808,13 @@ void sqlite3AddColumnType(Parse *pParse, Token *pFirst, Token *pLast){
 void sqlite3AddDefaultValue(Parse *pParse, Token *pVal, int minusFlag){
   Table *p;
   int i;
-  char **pz;
+  char *z;
   if( (p = pParse->pNewTable)==0 ) return;
   i = p->nCol-1;
   if( i<0 ) return;
-  pz = &p->aCol[i].zDflt;
-  if( minusFlag ){
-    sqlite3SetNString(pz, "-", 1, pVal->z, pVal->n, (char*)0);
-  }else{
-    sqlite3SetNString(pz, pVal->z, pVal->n, (char*)0);
-  }
-  sqlite3Dequote(*pz);
+  assert( p->aCol[i].zDflt==0 );
+  z = p->aCol[i].zDflt = sqlite3MPrintf("%s%T", minusFlag ? "-" : "", pVal);
+  sqlite3Dequote(z);
 }
 
 /*
@@ -1016,8 +1012,7 @@ static int synthCollSeq(Parse *pParse, CollSeq *pColl){
     }
   }
   if( pParse->nErr==0 ){
-    sqlite3SetNString(&pParse->zErrMsg, "no such collation sequence: ", 
-        -1, z, n, (char*)0);
+    sqlite3ErrorMsg(pParse, "no such collation sequence: %.*s", n, z);
   }
   pParse->nErr++;
   return SQLITE_ERROR;
@@ -1082,6 +1077,7 @@ CollSeq *sqlite3LocateCollSeq(Parse *pParse, const char *zName, int nName){
   u8 enc = pParse->db->enc;
   u8 initbusy = pParse->db->init.busy;
   CollSeq *pColl = sqlite3FindCollSeq(pParse->db, enc, zName, nName, initbusy);
+  if( nName<0 ) nName = strlen(zName);
   if( !initbusy && (!pColl || !pColl->xCmp) ){
     /* No collation sequence of this type for this encoding is registered.
     ** Call the collation factory to see if it can supply us with one.
@@ -1101,10 +1097,8 @@ CollSeq *sqlite3LocateCollSeq(Parse *pParse, const char *zName, int nName){
   /* If nothing has been found, write the error message into pParse */
   if( !initbusy && (!pColl || !pColl->xCmp) ){
     if( pParse->nErr==0 ){
-      sqlite3SetNString(&pParse->zErrMsg, "no such collation sequence: ", -1,
-          zName, nName, (char*)0);
+      sqlite3ErrorMsg(pParse, "no such collation sequence: %.*s", nName, zName);
     }
-    pParse->nErr++;
     pColl = 0;
   }
   return pColl;

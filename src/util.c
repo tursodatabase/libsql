@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.117 2004/09/08 20:13:06 drh Exp $
+** $Id: util.c,v 1.118 2004/09/25 14:39:19 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -215,28 +215,6 @@ void *sqlite3Realloc_(void *oldP, int n, char *zFile, int line){
 }
 
 /*
-** Make a duplicate of a string into memory obtained from malloc()
-** Free the original string using sqliteFree().
-**
-** This routine is called on all strings that are passed outside of
-** the SQLite library.  That way clients can free the string using free()
-** rather than having to call sqliteFree().
-*/
-void sqlite3StrRealloc(char **pz){
-  char *zNew;
-  if( pz==0 || *pz==0 ) return;
-  zNew = malloc( strlen(*pz) + 1 );
-  if( zNew==0 ){
-    sqlite3_malloc_failed++;
-    sqliteFree(*pz);
-    *pz = 0;
-  }
-  strcpy(zNew, *pz);
-  sqliteFree(*pz);
-  *pz = zNew;
-}
-
-/*
 ** Make a copy of a string in memory obtained from sqliteMalloc()
 */
 char *sqlite3StrDup_(const char *z, char *zFile, int line){
@@ -387,48 +365,6 @@ void sqlite3SetString(char **pz, const char *zFirst, ...){
   fprintf(stderr,"string at 0x%x is %s\n", (int)*pz, *pz);
 #endif
 #endif
-}
-
-/*
-** Works like sqlite3SetString, but each string is now followed by
-** a length integer which specifies how much of the source string 
-** to copy (in bytes).  -1 means use the whole string.  The 1st 
-** argument must either be NULL or point to memory obtained from 
-** sqliteMalloc().
-*/
-void sqlite3SetNString(char **pz, ...){
-  va_list ap;
-  int nByte;
-  const char *z;
-  char *zResult;
-  int n;
-
-  if( pz==0 ) return;
-  nByte = 0;
-  va_start(ap, pz);
-  while( (z = va_arg(ap, const char*))!=0 ){
-    n = va_arg(ap, int);
-    if( n<=0 ) n = strlen(z);
-    nByte += n;
-  }
-  va_end(ap);
-  sqliteFree(*pz);
-  *pz = zResult = sqliteMallocRaw( nByte + 1 );
-  if( zResult==0 ) return;
-  va_start(ap, pz);
-  while( (z = va_arg(ap, const char*))!=0 ){
-    n = va_arg(ap, int);
-    if( n<=0 ) n = strlen(z);
-    memcpy(zResult, z, n);
-    zResult += n;
-  }
-  *zResult = 0;
-#ifdef SQLITE_DEBUG
-#if SQLITE_DEBUG>1
-  fprintf(stderr,"string at 0x%x is %s\n", (int)*pz, *pz);
-#endif
-#endif
-  va_end(ap);
 }
 
 /*
