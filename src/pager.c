@@ -27,7 +27,7 @@
 ** all writes in order to support rollback.  Locking is used to limit
 ** access to one or more reader or one writer.
 **
-** @(#) $Id: pager.c,v 1.6 2001/05/21 13:45:10 drh Exp $
+** @(#) $Id: pager.c,v 1.7 2001/05/24 21:06:36 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -113,6 +113,7 @@ struct Pager {
   int dbSize;                 /* Number of pages in the file */
   int origDbSize;             /* dbSize before the current change */
   int nExtra;                 /* Add this many bytes to each in-memory page */
+  void (*xDestructor)(void*); /* Call this routine when freeing pages */
   int nPage;                  /* Total number of in-memory pages */
   int nRef;                   /* Number of in-memory pages with PgHdr.nRef>0 */
   int mxPage;                 /* Maximum number of pages to hold in cache */
@@ -479,6 +480,17 @@ int sqlitepager_open(
 }
 
 /*
+** Set the destructor for this pager.  If not NULL, the destructor is called
+** when the reference count on the page reaches zero.  
+**
+** The destructor is not called as a result sqlitepager_close().  
+** Destructors are only called by sqlitepager_unref().
+*/
+void sqlitepager_set_destructor(Pager *pPager, void (*xDesc)(void*)){
+  pPager->xDestructor = xDesc;
+}
+
+/*
 ** Return the total number of pages in the file opened by pPager.
 */
 int sqlitepager_pagecount(Pager *pPager){
@@ -806,8 +818,8 @@ int sqlitepager_unref(void *pData){
   pPager = pPg->pPager;
   pPg->nRef--;
 
-  /* When the number of references to a page reach 0, add the
-  ** page to the freelist.
+  /* When the number of references to a page reach 0, call the
+  ** destructor and add the page to the freelist.
   */
   if( pPg->nRef==0 ){
     pPg->pNextFree = 0;
@@ -817,6 +829,9 @@ int sqlitepager_unref(void *pData){
       pPg->pPrevFree->pNextFree = pPg;
     }else{
       pPager->pFirst = pPg;
+    }
+    if( pPager->xDestructor ){
+      pPager->xDestructor(pData);
     }
   
     /* When all pages reach the freelist, drop the read lock from
