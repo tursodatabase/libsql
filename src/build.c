@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.287 2004/11/23 15:41:16 danielk1977 Exp $
+** $Id: build.c,v 1.288 2004/11/23 16:31:17 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2956,13 +2956,13 @@ void sqlite3AlterRenameTable(
   assert( pSrc->nSrc==1 );
 
   pTab = sqlite3LocateTable(pParse, pSrc->a[0].zName, pSrc->a[0].zDatabase);
-  if( !pTab ) return;
+  if( !pTab ) goto exit_alter_table;
   iDb = pTab->iDb;
   zDb = db->aDb[iDb].zName;
 
   /* Get a NULL terminated version of the new table name. */
   zName = sqlite3NameFromToken(pName);
-  if( !zName ) return;
+  if( !zName ) goto exit_alter_table;
 
   /* Check that a table or index named 'zName' does not already exist
   ** in database iDb. If so, this is an error.
@@ -2970,8 +2970,7 @@ void sqlite3AlterRenameTable(
   if( sqlite3FindTable(db, zName, zDb) || sqlite3FindIndex(db, zName, zDb) ){
     sqlite3ErrorMsg(pParse, 
         "there is already another table or index with this name: %s", zName);
-    sqliteFree(zName);
-    return;
+    goto exit_alter_table;
   }
 
   /* Make sure it is not a system table being altered, or a reserved name
@@ -2979,19 +2978,16 @@ void sqlite3AlterRenameTable(
   */
   if( strlen(pTab->zName)>6 && 0==sqlite3StrNICmp(pTab->zName, "sqlite_", 7) ){
     sqlite3ErrorMsg(pParse, "table %s may not be altered", pTab->zName);
-    sqliteFree(zName);
-    return;
+    goto exit_alter_table;
   }
   if( SQLITE_OK!=sqlite3CheckObjectName(pParse, zName) ){
-    sqliteFree(zName);
-    return;
+    goto exit_alter_table;
   }
 
 #ifndef SQLITE_OMIT_AUTHORIZATION
   /* Invoke the authorization callback. */
   if( sqlite3AuthCheck(pParse, SQLITE_ALTER_TABLE, zDb, pTab->zName, 0) ){
-    sqliteFree(zName);
-    return;
+    goto exit_alter_table;
   }
 #endif
 
@@ -3001,8 +2997,7 @@ void sqlite3AlterRenameTable(
   */
   v = sqlite3GetVdbe(pParse);
   if( v==0 ){
-    sqliteFree(zName);
-    return;
+    goto exit_alter_table;
   }
   sqlite3BeginWriteOperation(pParse, 0, iDb);
   sqlite3ChangeCookie(db, v, iDb);
@@ -3098,6 +3093,8 @@ zName,
 #endif
   }
 
+exit_alter_table:
+  sqlite3SrcListDelete(pSrc);
   sqliteFree(zName);
 }
 #endif
