@@ -63,7 +63,7 @@ ENCODING = @ENCODING@
 #
 LIBOBJ = btree.lo build.lo delete.lo expr.lo func.lo hash.lo insert.lo \
          main.lo os.lo pager.lo parse.lo printf.lo random.lo select.lo \
-         table.lo tokenize.lo update.lo util.lo vdbe.lo where.lo
+         table.lo tokenize.lo update.lo util.lo vdbe.lo where.lo trigger.lo
 
 # All of the source code files.
 #
@@ -94,7 +94,8 @@ SRC = \
   $(TOP)/src/util.c \
   $(TOP)/src/vdbe.c \
   $(TOP)/src/vdbe.h \
-  $(TOP)/src/where.c
+  $(TOP)/src/where.c \
+  $(TOP)/src/trigger.c
 
 # Source code to the test files.
 #
@@ -210,6 +211,9 @@ select.lo:	$(TOP)/src/select.c $(HDR)
 
 table.lo:	$(TOP)/src/table.c $(HDR)
 	$(LIBTOOL) $(TCC) -c $(TOP)/src/table.c
+
+trigger.lo:	$(TOP)/src/trigger.c $(HDR)
+	$(LIBTOOL) $(TCC) -c $(TOP)/src/trigger.c
 
 update.lo:	$(TOP)/src/update.c $(HDR)
 	$(LIBTOOL) $(TCC) -c $(TOP)/src/update.c

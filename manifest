@@ -1,6 +1,6 @@
-C Added\sFOR\sEACH\sROW\striggers\sfunctionality\s(CVS\s562)
-D 2002-05-15T08:30:13
-F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
+C Add\sthe\sMakefile.in\sthat\swas\sforgotten\swith\scheckin\s#562\s(CVS\s563)
+D 2002-05-15T08:43:10
+F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
 F VERSION 45e2ae5cf63867a750b544c539f79a076d53a9a0
@@ -134,7 +134,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 06cdaf1c80f7bc25fc555c7c8a35258faed2d2e9
-R f9f4dba69771590feeaaa99270d2ac88
+P 794bf67b6b36fce8854d5daff12f21dbb943240c
+R 08d6d280437ddbf6c3512d0683d6a10e
 U danielk1977
-Z 1a13ba7db9cc1bf25e7e68999e113789
+Z 654e041ad87e42741720cd7b74aa49a7
