@@ -1,5 +1,5 @@
-C Update\sthe\sTCL\sAPI\sdocumentation.\s(CVS\s1841)
-D 2004-07-21T14:54:50
+C Updates\scomments\sin\ssqlite.h.in\sthat\sdescribe\sthe\sdestructor\sparameter\nto\ssqlite3_bind_....\s(CVS\s1842)
+D 2004-07-21T15:21:36
 F Makefile.in 4a5e570a9e2d35b09c31b3cf01b78cea764ade4b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -59,7 +59,7 @@ F src/printf.c 36090f6d7b4946539de97c1850675ce55ef66c16
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c aefda626660086addca4ce85c34aeef5d0f44c25
 F src/shell.c ebec5da57ea401f4886eefc790917b939d94d595
-F src/sqlite.h.in aaf46c8d458efd8aca694ec4f18c6ecf616ee55e
+F src/sqlite.h.in f43cde2bf8a92c09653358f30b2312424464ed37
 F src/sqliteInt.h 788b13a74c421ab68068ab7fe50ec68ee22db1be
 F src/table.c 4521c278892f60e4d630788c0ea5cf4db1e75c49
 F src/tclsqlite.c 62848128011e59291902c6e5c6f910c05956fcbb
@@ -237,7 +237,7 @@ F www/tclsqlite.tcl 06a86cba4d7fc88e2bcd633b57702d3d16abebb5
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 814c58d470922d77cfcc6c4d5d26c1ec4c28ca60
-R 989c0b62d999fe7b2d2fdf46e2127970
+P df306ad9ee522b20f017be0be83d9e071d525f8e
+R ae7b12b9273ae356dcc22ade3f89aa5e
 U drh
-Z 09b729a02d4b7660bd6c731be4f9bb7d
+Z 985db816d659e2b46dad451a399fdfd0

@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.108 2004/07/15 14:15:02 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.109 2004/07/21 15:21:36 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -603,10 +603,13 @@ typedef struct Mem sqlite3_value;
 ** index of the wildcard.  The first "?" has an index of 1.  ":N:" wildcards
 ** use the index N.
 **
-** When the eCopy parameter is true, a copy of the value is made into
-** memory obtained and managed by SQLite.  When eCopy is false, SQLite
-** assumes that the value is a constant and just stores a pointer to the
-** value without making a copy.
+** The fifth parameter to sqlite3_bind_blob(), sqlite3_bind_text(), and
+** sqlite3_bind_text16() is a destructor used to dispose of the BLOB or
+** text after SQLite has finished with it.  If the fifth argument is the
+** special value SQLITE_STATIC, then the library assumes that the information
+** is in static, unmanaged space and does not need to be freed.  If the
+** fifth argument has the value SQLITE_TRANSIENT, then SQLite makes its
+** own private copy of the data.
 **
 ** The sqlite3_bind_* routine must be called before sqlite3_step() after
 ** an sqlite3_prepare() or sqlite3_reset().  Unbound wildcards are interpreted
