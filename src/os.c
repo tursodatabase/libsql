@@ -435,8 +435,10 @@ int sqliteOsTempFileName(char *zBuf){
   int i, j;
   char zTempPath[SQLITE_TEMPNAME_SIZE];
   GetTempPath(SQLITE_TEMPNAME_SIZE-30, zTempPath);
+  for(i=strlen(zTempPath); i>0 && zTempPath[i-1]=='\\'; i--){}
+  zTempPath[i] = 0;
   for(;;){
-    sprintf(zBuf, "%s/sqlite_", zTempPath);
+    sprintf(zBuf, "%s\\sqlite_", zTempPath);
     j = strlen(zBuf);
     for(i=0; i<15; i++){
       int n = sqliteRandomByte() % sizeof(zChars);

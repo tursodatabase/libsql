@@ -1,5 +1,5 @@
-C Update\strigger2.test\sto\smatch\scheckin\s591.\sAlso\sfix\sticket\s#51\s(by\sdocumenting\sproblem)\s(CVS\s595)
-D 2002-05-28T06:55:27
+C Remove\sextra\s\\\scharacters\sfrom\stemporary\sfilenames\sunder\swindows.\n(Ticket\s#52)\s(CVS\s596)
+D 2002-05-29T12:44:53
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -30,7 +30,7 @@ F src/hash.h dca065dda89d4575f3176e75e9a3dc0f4b4fb8b9
 F src/insert.c 24b4e146319bada6f82a1d5eae6b38b3065d132f
 F src/main.c 6e53c49a390fabd5fecce9e3b128c61c85208000
 F src/md5.c 0ae1f3e2cac92d06fc6246d1b4b8f61a2fe66d3b
-F src/os.c 5ab8b6b4590d0c1ab8e96c67996c170e4462e0fc
+F src/os.c 9cc40c5384baba4a85e160e67807645ca98ba3cc
 F src/os.h 4a361fccfbc4e7609b3e1557f604f94c1e96ad10
 F src/pager.c ba5740104cc27b342cd43eebfdc44d60f64a3ded
 F src/pager.h 6fddfddd3b73aa8abc081b973886320e3c614f0e
@@ -135,7 +135,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P f8041f3d4d3350b4086cd6ba3e9006bdde8546a9
-R dcf69cfc889213b158f1eb6566b040bc
-U danielk1977
-Z 836623c82517c3cf20d6687f62fbc098
+P 5e74d0964b8fd99eda798e3737217aa499cc1726
+R b2a667c33a3dc036c20c07778d3a668a
+U drh
+Z 79cd389a43b2907c33c18067e98b1634
