@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.260 2004/02/12 13:02:56 drh Exp $
+** $Id: vdbe.c,v 1.261 2004/02/13 14:07:13 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2969,6 +2969,12 @@ case OP_PutStrKey: {
       if( pC->nextRowidValid && pTos->i>=pC->nextRowid ){
         pC->nextRowidValid = 0;
       }
+    }
+    if( pTos->flags & MEM_Null ){
+      pTos->z = 0;
+      pTos->n = 0;
+    }else{
+      assert( pTos->flags & MEM_Str );
     }
     if( pC->pseudoTable ){
       /* PutStrKey does not work for pseudo-tables.
