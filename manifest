@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sthat\scould\scause\sUPDATE\sto\sfail\sfor\sa\stable\sthat\scontains\nboth\san\sINTEGER\sPRIMARY\sKEY\sand\san\sindex.\s(CVS\s346)
-D 2002-01-14T02:56:25
+C Version\s2.2.2\s(CVS\s451)
+D 2002-01-14T03:00:00
 F Makefile.in 9fa4277413bf1d9cf91365f07d4108d7d87ed2af
 F Makefile.template c88ffcb9c339e718f434d0c7f045bcd7eea125af
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -119,7 +119,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 880ef67cb4f2797b95bf1368fc4e0d8ca0fda956
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P ba89da603135e5f63f6f97ba3adad02682375c07
+P 96cd07a881d7bea86a66d7dfe54713be9c81cb4c
 R a1a9962b00d5c92a1a7c16dd24629b0d
 U drh
-Z aeca75f74932caada8d3a000ff881f69
+Z 4dbf22ff719a9b7e3428eeb6319e1299
