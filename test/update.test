@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the UPDATE statement.
 #
-# $Id: update.test,v 1.15 2004/02/10 13:41:53 drh Exp $
+# $Id: update.test,v 1.16 2005/01/15 00:40:43 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -557,6 +557,38 @@ do_test update-13.5 {
 } 16384
 
 integrity_check update-13.6
+
+ifcapable {trigger} {
+# Test for proper detection of malformed WHEN clauses on UPDATE triggers.
+#
+do_test update-14.1 {
+  execsql {
+    CREATE TABLE t3(a,b,c);
+    CREATE TRIGGER t3r1 BEFORE UPDATE on t3 WHEN nosuchcol BEGIN
+      SELECT 'illegal WHEN clause';
+    END;
+  }
+} {}
+do_test update-14.2 {
+  catchsql {
+    UPDATE t3 SET a=1;
+  }
+} {1 {no such column: nosuchcol}}
+do_test update-14.3 {
+  execsql {
+    CREATE TABLE t4(a,b,c);
+    CREATE TRIGGER t4r1 AFTER UPDATE on t4 WHEN nosuchcol BEGIN
+      SELECT 'illegal WHEN clause';
+    END;
+  }
+} {}
+do_test update-14.4 {
+  catchsql {
+    UPDATE t4 SET a=1;
+  }
+} {1 {no such column: nosuchcol}}
+
+} ;# ifcapable {trigger}
 
 
 finish_test
