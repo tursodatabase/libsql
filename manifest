@@ -1,5 +1,5 @@
-C Add\sthe\ssqlite3_collation_needed()\sAPI\sand\sfix\ssome\serror\shandling\scases\ninvolving\sunknown\scollation\ssequences.\s(CVS\s1563)
-D 2004-06-10T10:51:48
+C Add\sthe\ssqlite3_collation_needed()\sAPI\sand\sfix\ssome\serror\shandling\scases\ninvolving\sunknown\scollation\ssequences.\s(CVS\s1564)
+D 2004-06-10T10:51:53
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -219,7 +219,7 @@ F www/support.tcl 1801397edd271cc39a2aadd54e701184b5181248
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P edf069b9f4044ed2a80962c7722052bf1b80bf45
+P 518d82d3b1ab996d675f45c94d740c98578a04a6
 R 9cc8eb0d8d516e56f0a005459d5bbc05
 U danielk1977
-Z 33f5dc7ea962340095db9932693801c6
+Z 25a8aff272a87359157d326e3bffc5a6
