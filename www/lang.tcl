@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.52 2003/05/03 19:04:04 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.53 2003/05/04 07:02:55 jplyon Exp $}
 
 puts {<html>
 <head>
@@ -29,7 +29,8 @@ that are part of the syntactic markup itself are shown in black roman.</p>
 
 <p>This document is just an overview of the SQL syntax implemented
 by SQLite.  Many low-level productions are omitted.  For detailed information
-on the language that SQLite understands, refer to the source code.</p>
+on the language that SQLite understands, refer to the source code and
+the grammar file "parse.y".</p>
 
 
 <p>SQLite implements the follow syntax:</p>
@@ -52,14 +53,17 @@ foreach {section} [lsort -index 0 -dictionary {
   {EXPLAIN explain}
   {expression expr}
   {{BEGIN TRANSACTION} transaction}
+  {{COMMIT TRANSACTION} transaction}
+  {{END TRANSACTION} transaction}
+  {{ROLLBACK TRANSACTION} transaction}
   {PRAGMA pragma}
   {{ON CONFLICT clause} conflict}
   {{CREATE VIEW} createview}
   {{DROP VIEW} dropview}
   {{CREATE TRIGGER} createtrigger}
   {{DROP TRIGGER} droptrigger}
-  {{ATTACH DATABASE} attachdatabase}
-  {{DETACH DATABASE} detachdatabase}
+  {{ATTACH DATABASE} attach}
+  {{DETACH DATABASE} detach}
 }] {
   puts "<li><a href=\"#[lindex $section 1]\">[lindex $section 0]</a></li>"
 }
@@ -112,21 +116,39 @@ proc Example {text} {
 }
 
 
-Section {ATTACH DATABASE} attachdatabase
+Section {ATTACH DATABASE} attach
 
 Syntax {sql-statement} {
 ATTACH [DATABASE] <database-filename> AS <database-name>
 }
 
 puts {
-<p>The ATTACH DATABASE statement lets you add a preexisting 
-database file to the current database connection.</p>
+<p>The ATTACH DATABASE statement adds a preexisting database 
+file to the current database connection.  If the filename contains 
+punctuation characters it must be quoted.  The names 'main' and 
+'temp' refer to the main database and the database used for 
+temporary tables.  These cannot be detached.  Attached databases 
+are removed using the <a href="#detach">DETACH DATABASE</a> 
+statement.</p>
 
-<p>You can read and write to the attached database, but you cannot 
-CREATE TABLE or DROP TABLE in the attached database. You can only 
-CREATE and DROP in the original database.</p>
+<p>You can read from and write to an attached database, but you cannot 
+alter the schema of an attached database.  You can only CREATE and 
+DROP in the original database.</p>
 
-<p>With an attached database, transactions are not atomic. 
+<p>You cannot create a new table with the same name as a table in 
+an attached database, but you can attach a database which contains
+tables whose names are duplicates of tables in the main database.</p>
+
+<p>Tables in an attached database can be referred to using the syntax 
+<i>database-name.table-name</i>.  If an attached table doesn't have 
+a duplicate table name in the main database, it doesn't require a 
+database name prefix.  When a database is attached, all of its 
+tables which don't have duplicate names become the 'default' table
+of that name.  Any tables of that name attached afterwards require the table 
+prefix. If the 'default' table of a given name is detached, then 
+the last table of that name attached becomes the new default.</p>
+
+<p>When there are attached databases, transactions are not atomic. 
 Transactions continue to be atomic within each individual
 database file. But if your machine crashes in the middle
 of a COMMIT where you have updated two or more database
@@ -158,12 +180,17 @@ ROLLBACK [TRANSACTION [<name>]]
 
 puts {
 <p>Beginning in version 2.0, SQLite supports transactions with
-rollback and atomic commit.</p>
+rollback and atomic commit.  See <a href="#attach">ATTACH</a> for
+an exception when there are attached databases.</p>
+
+<p>The optional transaction name is ignored. SQLite currently 
+doesn't allow nested transactions.  Attempting to start a new 
+transaction inside another is an error.</p>
 
 <p>
 No changes can be made to the database except within a transaction.
 Any command that changes the database (basically, any SQL command
-other than SELECT) will automatically starts a transaction if
+other than SELECT) will automatically start a transaction if
 one is not already in effect.  Automatically started transactions
 are committed at the conclusion of the command.
 </p>
@@ -199,7 +226,6 @@ Syntax {comment} {<SQL-comment> | <C-comment>
 } {C-comment} {/STAR <multiple-lines> [STAR/]
 }
 
-
 puts {
 <p> Comments aren't SQL commands, but can occur in SQL queries. They are 
 treated as whitespace by the parser. They can begin anywhere whitespace 
@@ -221,10 +247,9 @@ C comments do not nest. SQL comments inside a C comment will be ignored.
 Section COPY copy
 
 Syntax {sql-statement} {
-COPY [ OR <conflict-algorithm> ] <table-name> FROM <filename>
+COPY [ OR <conflict-algorithm> ] [<database-name> .] <table-name> FROM <filename>
 [ USING DELIMITERS <delim> ]
 }
-
 
 puts {
 <p>The COPY command is an extension used to load large amounts of
@@ -263,12 +288,11 @@ Section {CREATE INDEX} createindex
 
 Syntax {sql-statement} {
 CREATE [TEMP | TEMPORARY] [UNIQUE] INDEX <index-name> 
-ON <table-name> ( <column-name> [, <column-name>]* )
+ON [<database-name> .] <table-name> ( <column-name> [, <column-name>]* )
 [ ON CONFLICT <conflict-algorithm> ]
 } {column-name} {
 <name> [ ASC | DESC ]
 }
-
 
 puts {
 <p>The CREATE INDEX command consists of the keywords "CREATE INDEX" followed
@@ -303,6 +327,10 @@ being indexed is temporary.  Everytime the database is opened,
 all CREATE INDEX statements
 are read from the <b>sqlite_master</b> table and used to regenerate
 SQLite's internal representation of the index layout.</p>
+
+<p>Non-temporary indexes cannot be added on tables in attached 
+databases.  They are removed with the <a href="#dropindex">DROP INDEX</a> 
+command.</p>
 }
 
 
@@ -412,6 +440,10 @@ in place of the original command.
 The text of CREATE TEMPORARY TABLE statements are stored in the
 <b>sqlite_temp_master</b> table.
 </p>
+
+<p>Tables are removed using the <a href="#droptable">DROP TABLE</a> 
+statement.  Non-temporary tables in an attached database cannot be 
+dropped.</p>
 }
 
 
@@ -419,13 +451,13 @@ Section {CREATE TRIGGER} createtrigger
 
 Syntax {sql-statement} {
 CREATE [TEMP | TEMPORARY] TRIGGER <trigger-name> [ BEFORE | AFTER ]
-<database-event> ON <table-name>
+<database-event> ON [<database-name> .] <table-name>
 <trigger-action>
 }
 
 Syntax {sql-statement} {
 CREATE [TEMP | TEMPORARY] TRIGGER <trigger-name> INSTEAD OF
-<database-event> ON <view-name>
+<database-event> ON [<database-name> .] <view-name>
 <trigger-action>
 }
 
@@ -437,7 +469,7 @@ UPDATE OF <column-list>
 }
 
 Syntax {trigger-action} {
-[ FOR EACH ROW ] [ WHEN <expression> ] 
+[ FOR EACH ROW | FOR EACH STATEMENT ] [ WHEN <expression> ] 
 BEGIN 
   <trigger-step> ; [ <trigger-step> ; ]*
 END
@@ -565,6 +597,10 @@ the statement that caused the trigger program to execute and any subsequent
     to execute is itself part of a trigger program, then that trigger program
     resumes execution at the beginning of the next step.
 </p>
+
+<p>Triggers are removed using the <a href="#droptrigger">DROP TRIGGER</a>
+statement.  Non-temporary triggers cannot be added on a table in an 
+attached database.</p>
 }
 
 
@@ -580,14 +616,17 @@ statement.  Once the view is created, it can be used in the FROM clause
 of another SELECT in place of a table name.
 </p>
 
-<p>You cannot COPY, INSERT or UPDATE a view.  Views are read-only.</p>
+<p>You cannot COPY, INSERT or UPDATE a view.  Views are read-only 
+in SQLite.  Views are removed with the <a href="#dropview">DROP VIEW</a> 
+command.  Non-temporary views cannot be created on tables in an attached 
+database.</p>
 }
 
 
 Section DELETE delete
 
 Syntax {sql-statement} {
-DELETE FROM <table-name> [WHERE <expr>]
+DELETE FROM [<database-name> .] <table-name> [WHERE <expr>]
 }
 
 puts {
@@ -602,15 +641,15 @@ the expression are removed.</p>
 }
 
 
-Section {DETACH DATABASE} detachdatabase
+Section {DETACH DATABASE} detach
 
 Syntax {sql-command} {
 DETACH [DATABASE] <database-name>
 }
 
 puts {
-<p>This statement detaches an additional database file previoiusly attached
-using the ATTACH DATABASE statement.</p>
+<p>This statement detaches an additional database file previously attached
+using the <a href="#attach">ATTACH DATABASE</a> statement.</p>
 
 <p>This statement will fail if SQLite is in the middle of a transaction.</p>
 }
@@ -619,14 +658,15 @@ using the ATTACH DATABASE statement.</p>
 Section {DROP INDEX} dropindex
 
 Syntax {sql-command} {
-DROP INDEX <index-name>
+DROP INDEX [<database-name> .] <index-name>
 }
 
 puts {
-<p>The DROP INDEX statement consists of the keywords "DROP INDEX" followed
-by the name of the index.  The index named is completely removed from
+<p>The DROP INDEX statement removes an index added with the <a href="#createindex">
+CREATE INDEX</a> statement.  The index named is completely removed from
 the disk.  The only way to recover the index is to reenter the
-appropriate CREATE INDEX command.</p>
+appropriate CREATE INDEX command.  Non-temporary indexes on tables in 
+an attached database cannot be dropped.</p>
 }
 
 
@@ -637,19 +677,25 @@ DROP TABLE <table-name>
 }
 
 puts {
-<p>The DROP TABLE statement consists of the keywords "DROP TABLE" followed
-by the name of the table.  The table named is completely removed from
-the disk.  The table can not be recovered.  All indices associated with
-the table are also deleted.</p>}
+<p>The DROP TABLE statement removes a table added with the <a href=
+"#createtable">CREATE TABLE</a> statement.  The name specified is the
+table name.  It is completely removed from the database schema and the 
+disk file.  The table can not be recovered.  All indices associated 
+with the table are also deleted.  Non-temporary tables in an attached 
+database cannot be dropped.</p>
+}
 
 
 Section {DROP TRIGGER} droptrigger
 Syntax {sql-statement} {
-DROP TRIGGER <trigger-name>
+DROP TRIGGER [<database-name> .] <trigger-name>
 }
 puts { 
-  <p>Used to drop a trigger from the database schema. Note that triggers
-  are automatically dropped when the associated table is dropped.</p>
+<p>The DROP TRIGGER statement removes a trigger created by the 
+<a href="#createtrigger">CREATE TRIGGER</a> statement.  The trigger is 
+deleted from the database schema. Note that triggers are automatically 
+dropped when the associated table is dropped.  Non-temporary triggers 
+cannot be dropped on attached tables.</p>
 }
 
 
@@ -660,9 +706,12 @@ DROP VIEW <view-name>
 }
 
 puts {
-<p>The DROP VIEW statement consists of the keywords "DROP VIEW" followed
-by the name of the view.  The view named is removed from the database.
-But no actual data is modified.</p>}
+<p>The DROP VIEW statement removes a view created by the <a href=
+"#createview">CREATE VIEW</a> statement.  The name specified is the 
+view name.  It is removed from the database schema, but no actual data 
+in the underlying base tables is modified.  Non-temporary views in 
+attached databases cannot be dropped.</p>
+}
 
 
 Section EXPLAIN explain
@@ -695,6 +744,7 @@ Syntax {expr} {
 ( <expr> ) |
 <column-name> |
 <table-name> . <column-name> |
+<database-name> . <table-name> . <column-name> |
 <literal-value> |
 <function-name> ( <expr-list> | STAR ) |
 <expr> (+) |
@@ -985,8 +1035,8 @@ The usual sort order is used to determine the minimum.</td>
 Section INSERT insert
 
 Syntax {sql-statement} {
-INSERT [OR <conflict-algorithm>] INTO <table-name> [(<column-list>)] VALUES(<value-list>) |
-INSERT [OR <conflict-algorithm>] INTO <table-name> [(<column-list>)] <select-statement>
+INSERT [OR <conflict-algorithm>] INTO [<database-name> .] <table-name> [(<column-list>)] VALUES(<value-list>) |
+INSERT [OR <conflict-algorithm>] INTO [<database-name> .] <table-name> [(<column-list>)] <select-statement>
 }
 
 puts {
@@ -1305,15 +1355,15 @@ Unknown pragmas are ignored.</p>
 Section REPLACE replace
 
 Syntax {sql-statement} {
-REPLACE INTO <table-name> [( <column-list> )] VALUES ( <value-list> ) |
-REPLACE INTO <table-name> [( <column-list> )] <select-statement>
+REPLACE INTO [<database-name> .] <table-name> [( <column-list> )] VALUES ( <value-list> ) |
+REPLACE INTO [<database-name> .] <table-name> [( <column-list> )] <select-statement>
 }
 
 puts {
 <p>The REPLACE command is an alias for the "INSERT OR REPLACE" variant
-of the <a href="#insert">INSERT command</a>.  This alias is provided for
+of the <a href="#insert">INSERT</a> command.  This alias is provided for
 compatibility with MySQL.  See the 
-<a href="#insert">INSERT command</a> documentation for additional
+<a href="#insert">INSERT</a> command documentation for additional
 information.</p>  
 }
 
@@ -1338,7 +1388,7 @@ STAR | <table-name> . STAR | <expr> [ [AS] <string> ]
 <table-name> [AS <alias>] |
 ( <select> ) [AS <alias>]
 } {join-op} {
-, | [NATURAL] [LEFT | RIGHT | FULL] [OUTER | INNER] JOIN
+, | [NATURAL] [LEFT | RIGHT | FULL] [OUTER | INNER | CROSS] JOIN
 } {join-args} {
 [ON <expr>] [USING ( <id-list> )]
 } {sort-expr-list} {
@@ -1360,6 +1410,11 @@ puts "[Operator *] then all columns of all tables are substituted"
 puts {for that one expression.  If the expression is the name of}
 puts "a table followed by [Operator .*] then the result is all columns"
 puts {in that one table.</p>
+
+<p>The DISTINCT keyword causes a subset of result rows to be returned, 
+in which each result row is different.  NULL values are not treated as 
+distinct from eachother.  The default behavior is that all result rows 
+be returned, which can be made explicit with the keyword ALL.</p>
 
 <p>The query is executed against one or more tables specified after
 the FROM keyword.  If multiple tables names are separated by commas,
@@ -1413,7 +1468,7 @@ are connected into a compound, they group from left to right.</p>
 Section UPDATE update
 
 Syntax {sql-statement} {
-UPDATE [ OR <conflict-algorithm> ] <table-name>
+UPDATE [ OR <conflict-algorithm> ] [<database-name> .] <table-name>
 SET <assignment> [, <assignment>]*
 [WHERE <expr>]
 } {assignment} {
@@ -1458,6 +1513,33 @@ file structure.  The index or table name argument is now ignored.</p>
 
 <p>This command will fail if there is an active transaction.  This 
 command has no effect on an in-memory database.</p>
+}
+
+
+Section {SQLite keywords} keywords
+
+puts {
+<p>The following keywords are used by SQLite. Most are either reserved 
+words in SQL-92 or were listed as potential reserved words.  Those which 
+aren't are shown in italics.  Not all of these words are actually used
+by SQLite.  SQLite doesn't currently enforce reserved words, so most of
+these can actually be used for the names of SQLite objects such as 
+tables, columns, and views, but they must be generally be enclosed by 
+brackes or quotes to avoid confusing the parser.</p>
+
+<p><i>_ROWID_</i> <i>ABORT</i> AFTER ALL AND AS ASC <i>ATTACH</i> 
+BEFORE BEGIN BETWEEN BY CASCADE CASE CHECK <i>CLUSTER</i> COLLATE 
+COMMIT <i>CONFLICT</i> CONSTRAINT <i>COPY</i> CREATE CROSS 
+<i>DATABASE</i> DEFAULT DEFERRED DEFERRABLE DELETE <i>DELIMITERS</i> 
+DESC <i>DETACH</i> DISTINCT DROP EACH ELSE END EXCEPT <i>EXPLAIN</i> 
+<i>FAIL</i> FOR FOREIGN FROM FULL <i>GLOB</i> GROUP HAVING IGNORE 
+IMMEDIATE IN <i>INDEX</i> INITIALLY INNER INSERT <i>INSTEAD</i> 
+INTERSECT INTO IS <i>ISNULL</i> JOIN KEY LEFT LIKE LIMIT MATCH NATURAL 
+NOT <i>NOTNULL</i> NULL OF <i>OFFSET</i> ON OR ORDER OUTER <i>PRAGMA</i> 
+PRIMARY <i>RAISE</i> REFERENCES <i>REPLACE</i> RESTRICT RIGHT ROLLBACK 
+<i>ROW</i> <i>ROWID</i> SELECT SET <i>STATEMENT</i> TABLE <i>TEMP</i> 
+TEMPORARY THEN TRANSACTION TRIGGER UNION UNIQUE UPDATE USING <i>VACUUM</i> 
+VALUES VIEW WHEN WHERE</p>
 }
 
 

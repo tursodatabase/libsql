@@ -1,5 +1,5 @@
-C More\sdocumentation\supdates.\s(CVS\s951)
-D 2003-05-03T19:04:04
+C new\ssection\sfor\skeywords,\smore\sdocs\sfor\sattached\sdatabases\s,\slinks,\scleanup\s(CVS\s952)
+D 2003-05-04T07:02:55
 F Makefile.in 004acec253ecdde985c8ecd5b7c9accdb210378f
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -155,7 +155,7 @@ F www/faq.tcl 12d1788d4abcfe1ff3054e17605df2418883bf6f
 F www/fileformat.tcl d9b586416c0d099b82e02e469d532c9372f98f3f
 F www/formatchng.tcl cbaf0f410096c71f86a7537cf9249fa04b9a659c
 F www/index.tcl b155eba45136d19e7aa6ba979d4093180c335cf7
-F www/lang.tcl 46fb1a380021aa1e7a51104b53b4066e54ba9b64
+F www/lang.tcl 56f4c1996795204317c850ecf039c851692625d4
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
 F www/nulls.tcl 29497dac2bc5b437aa7e2e94577dad4d8933ed26
 F www/omitted.tcl 118062f40a203fcb88b8d68ef1d7c0073ac191ec
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P fd28c5229ece1d90e24d0ecaa518d8df5a4f55f0
-R 0f44dbdd9ad557cbceb63cfdf312e27b
-U drh
-Z 7676704ebf2d2713ee0ac3dc2cc0e3d3
+P 24b9b569240d2108b17420d85cafdc718c67269f
+R f59caf097b77c12dfe5196947fa850d1
+U jplyon
+Z 15d8de3d7ad598167e85986bd9fd5378
