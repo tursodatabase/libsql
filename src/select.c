@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.87 2002/05/27 03:25:52 drh Exp $
+** $Id: select.c,v 1.88 2002/05/27 12:24:48 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -402,6 +402,15 @@ static int selectInnerLoop(
     assert( nColumn==1 );
     sqliteVdbeAddOp(v, OP_MemStore, iParm, 1);
     sqliteVdbeAddOp(v, OP_Goto, 0, iBreak);
+  }else
+
+  /* Discard the results.  This is used for SELECT statements inside
+  ** the body of a TRIGGER.  The purpose of such selects is to call
+  ** user-defined functions that have side effects.  We do not care
+  ** about the actual results of the select.
+  */
+  if( eDest==SRT_Discard ){
+    sqliteVdbeAddOp(v, OP_Pop, nColumn, 0);
   }else
 
   /* If none of the above, send the data to the callback function.

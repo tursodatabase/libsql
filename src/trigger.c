@@ -480,13 +480,7 @@ static int codeTriggerProgram(
     pParse->trigStack->orconf = orconf;
     switch( pTriggerStep->op ){
       case TK_SELECT: {
-        int tmp_tbl = pParse->nTab++;
-	sqliteVdbeAddOp(pParse->pVdbe, OP_OpenTemp, tmp_tbl, 0);
-	sqliteVdbeAddOp(pParse->pVdbe, OP_KeyAsData, tmp_tbl, 1);
-	sqliteSelect(pParse, pTriggerStep->pSelect, SRT_Union, 
-	    tmp_tbl, 0, 0, 0);
-	sqliteVdbeAddOp(pParse->pVdbe, OP_Close, tmp_tbl, 0);
-	pParse->nTab--;
+	sqliteSelect(pParse, pTriggerStep->pSelect, SRT_Discard, 0, 0, 0, 0);
 	break;
       }
       case TK_UPDATE: {
