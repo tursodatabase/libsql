@@ -1597,3 +1597,18 @@ char *sqliteOsFullPathname(const char *zRelative){
   return zFull;
 #endif
 }
+
+/*
+** Find the current time (in Universal Coordinated Time).  Write the
+** current time and date as a Julian Day number into *prNow and
+** return 0.  Return 1 if the time and date cannot be found.
+*/
+int sqliteOsCurrentTime(double *prNow){
+#if OS_UNIX
+  time_t t;
+  time(&t);
+  *prNow = t/86400.0 + 2440587.5;
+  return 0;
+#endif
+  return 1;
+}

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.195 2003/07/30 12:34:12 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.196 2003/08/09 21:32:28 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -87,6 +87,7 @@
 /* #define SQLITE_OMIT_AUTHORIZATION  1 */
 /* #define SQLITE_OMIT_INMEMORYDB     1 */
 /* #define SQLITE_OMIT_VACUUM         1 */
+/* #define SQLITE_OMIT_TIMEDATE_FUNCS 1 */
 
 /*
 ** Integers of known sizes.  These typedefs might change for architectures

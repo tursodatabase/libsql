@@ -16,13 +16,14 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.26 2003/06/28 16:20:23 drh Exp $
+** $Id: func.c,v 1.27 2003/08/09 21:32:28 drh Exp $
 */
 #include <ctype.h>
 #include <math.h>
 #include <stdlib.h>
 #include <assert.h>
 #include "sqliteInt.h"
+#include "os.h"
 
 /*
 ** Implementation of the non-aggregate min() and max() functions
@@ -497,6 +498,312 @@ static void minMaxFinalize(sqlite_func *context){
   }
 }
 
+/****************************************************************************
+** Time and date functions.
+**
+** SQLite processes all times and dates as Julian Day numbers.  The
+** dates and times are stored as the number of days since noon
+** in Greenwich on January 01, 4713 B.C.  (a.k.a -4713-01-01 12:00:00)
+** This implement requires years to be expressed as a 4-digit number
+** which means that only dates between 0000-01-01 and 9999-12-31 can
+** be represented, even though julian day numbers allow a much wider
+** range of dates.
+**
+** The Gregorian calendar system is used for all dates and times,
+** even those that predate the Gregorian calendar.  Historians often
+** use the Julian calendar for dates prior to 1582-10-15 and for some
+** dates afterwards, depending on locale.  Beware of this difference.
+**
+** The conversion algorithms are implemented based on descriptions
+** in the following text:
+**
+**      Jean Meeus
+**      Astronomical Algorithms, 2nd Edition, 1998
+**      ISBM 0-943396-61-1
+**      Willmann-Bell, Inc
+**      Richmond, Virginia (USA)
+*/
+#ifndef SQLITE_OMIT_DATETIME_FUNCS
+
+/*
+** Convert N digits from zDate into an integer.  Return
+** -1 if zDate does not begin with N digits.
+*/
+static int getDigits(const char *zDate, int N){
+  int val = 0;
+  while( N-- ){
+    if( !isdigit(*zDate) ) return -1;
+    val = val*10 + *zDate - '0';
+    zDate++;
+  }
+  return val;
+}
+
+/*
+** Parse dates of the form HH:MM:SS or HH:MM.  Store the
+** result (in days) in *prJD.
+**
+** Return 1 if there is a parsing error and 0 on success.
+*/
+static int parseHhMmSs(const char *zDate, double *prJD){
+  int h, m, s;
+  h = getDigits(zDate, 2);
+  if( h<0 || zDate[2]!=':' ) return 1;
+  zDate += 3;
+  m = getDigits(zDate, 2);
+  if( m<0 || m>59 ) return 1;
+  zDate += 2;
+  if( *zDate==':' ){
+    s = getDigits(&zDate[1], 2);
+    if( s<0 || s>59 ) return 1;
+    zDate += 3;
+  }else{
+    s = 0;
+  }
+  while( isspace(*zDate) ){ zDate++; }
+  *prJD = (h*3600.0 + m*60.0 + s)/86400.0;
+  return 0;
+}
+
+/*
+** Parse dates of the form
+**
+**     YYYY-MM-DD HH:MM:SS
+**     YYYY-MM-DD HH:MM
+**     YYYY-MM-DD
+**
+** Write the result as a julian day number in *prJD.  Return 0
+** on success and 1 if the input string is not a well-formed
+** date.
+*/
+static int parseYyyyMmDd(const char *zDate, double *prJD){
+  int Y, M, D;
+  double rTime;
+  int A, B, X1, X2;
+
+  Y = getDigits(zDate, 4);
+  if( Y<0 || zDate[4]!='-' ) return 1;
+  zDate += 5;
+  M = getDigits(zDate, 2);
+  if( M<=0 || M>12 || zDate[2]!='-' ) return 1;
+  zDate += 3;
+  D = getDigits(zDate, 2);
+  if( D<=0 || D>31 ) return 1;
+  zDate += 2;
+  while( isspace(*zDate) ){ zDate++; }
+  if( isdigit(*zDate) ){
+    if( parseHhMmSs(zDate, &rTime) ) return 1;
+  }else if( *zDate==0 ){
+    rTime = 0.0;
+  }else{ 
+    return 1;
+  }
+
+  /* The year, month, and day are now stored in Y, M, and D.  Convert
+  ** these into the Julian Day number.  See Meeus page 61.
+  */
+  if( M<=2 ){
+    Y--;
+    M += 12;
+  }
+  A = Y/100;
+  B = 2 - A + (A/4);
+  X1 = 365.25*(Y+4716);
+  X2 = 30.6001*(M+1);
+  *prJD = X1 + X2 + D + B - 1524.5 + rTime;
+  return 0;
+}
+
+/*
+** Attempt to parse the given string into a Julian Day Number.  Return
+** the number of errors.
+**
+** The following are acceptable forms for the input string:
+**
+**      YYYY-MM-DD
+**      YYYY-MM-DD HH:MM
+**      YYYY-MM-DD HH:MM:SS
+**      HH:MM
+**      HH:MM:SS
+**      DDDD.DD 
+**      now
+*/
+static int parseDateOrTime(const char *zDate, double *prJD){
+  int i;
+  for(i=0; isdigit(zDate[i]); i++){}
+  if( i==4 && zDate[i]=='-' ){
+    return parseYyyyMmDd(zDate, prJD);
+  }else if( i==2 && zDate[i]==':' ){
+    return parseHhMmSs(zDate, prJD);
+  }else if( i==0 && sqliteStrICmp(zDate,"now")==0 ){
+    return sqliteOsCurrentTime(prJD);
+  }else if( sqliteIsNumber(zDate) ){
+    *prJD = atof(zDate);
+    return 0;
+  }
+  return 1;
+}
+
+/*
+** Break up a julian day number into year, month, day, and seconds.
+** This function assume the Gregorian calendar - even for dates prior
+** to the invention of the Gregorian calendar in 1582.
+**
+** See Meeus page 63.
+*/
+static void decomposeDate(double JD, int *pY, int *pM, int *pD, int *pS){
+  int Z, A, B, C, D, E, X1;
+  Z = JD + 0.5;
+  A = (Z - 1867216.25)/36524.25;
+  A = Z + 1 + A - (A/4);
+  B = A + 1524;
+  C = (B - 122.1)/365.25;
+  D = 365.25*C;
+  E = (B-D)/30.6001;
+  X1 = 30.6001*E;
+  *pD = B - D - X1;
+  *pM = E<14 ? E-1 : E-13;
+  *pY = *pD>2 ? C - 4716 : C - 4715;
+  *pS = (JD + 0.5 - Z)*86400.0;
+}
+
+/*
+** Check to see that all arguments are valid date strings.  If any is
+** not a valid date string, return 0.  If all are valid, return 1.
+** Write into *prJD the sum of the julian day numbers for all date
+** strings.
+*/
+static int isDate(
+  sqlite_func *context,
+  int argc,
+  const char **argv,
+  double *prJD
+){
+  double r;
+  int i;
+  *prJD = 0.0;
+  for(i=0; i<argc; i++){
+    if( argv[i]==0 ) return 0;
+    if( parseDateOrTime(argv[i], &r) ) return 0;
+    *prJD += r;
+  }
+  return 1;
+}
+
+/*
+** The following routines implement the various date and time functions
+** of SQLite.
+*/
+static void juliandayFunc(sqlite_func *context, int argc, const char **argv){
+  double JD;
+  if( isDate(context, argc, argv, &JD) ){
+    sqlite_set_result_double(context, JD);
+  }
+}
+static void timestampFunc(sqlite_func *context, int argc, const char **argv){
+  double JD;
+  if( isDate(context, argc, argv, &JD) ){
+    int Y, M, D, h, m, s;
+    char zBuf[100];
+    decomposeDate(JD, &Y, &M, &D, &s);
+    h = s/3600;
+    s -= h*3600;
+    m = s/60;
+    s -= m*60;
+    sprintf(zBuf, "%04d-%02d-%02d %02d:%02d:%02d", Y, M, D, h, m, s);
+    sqlite_set_result_string(context, zBuf, -1);
+  }
+}
+static void timeFunc(sqlite_func *context, int argc, const char **argv){
+  double JD;
+  if( isDate(context, argc, argv, &JD) ){
+    int Y, M, D, h, m, s;
+    char zBuf[100];
+    decomposeDate(JD, &Y, &M, &D, &s);
+    h = s/3600;
+    s -= h*3600;
+    m = s/60;
+    s -= m*60;
+    sprintf(zBuf, "%02d:%02d:%02d", h, m, s);
+    sqlite_set_result_string(context, zBuf, -1);
+  }
+}
+static void dateFunc(sqlite_func *context, int argc, const char **argv){
+  double JD;
+  if( isDate(context, argc, argv, &JD) ){
+    int Y, M, D, s;
+    char zBuf[100];
+    decomposeDate(JD, &Y, &M, &D, &s);
+    sprintf(zBuf, "%04d-%02d-%02d", Y, M, D);
+    sqlite_set_result_string(context, zBuf, -1);
+  }
+}
+static void yearFunc(sqlite_func *context, int argc, const char **argv){
+  double JD;
+  if( isDate(context, argc, argv, &JD) ){
+    int Y, M, D, s;
+    decomposeDate(JD, &Y, &M, &D, &s);
+    sqlite_set_result_int(context, Y);
+  }
+}
+static void monthFunc(sqlite_func *context, int argc, const char **argv){
+  double JD;
+  if( isDate(context, argc, argv, &JD) ){
+    int Y, M, D, s;
+    decomposeDate(JD, &Y, &M, &D, &s);
+    sqlite_set_result_int(context, M);
+  }
+}
+static void dayofweekFunc(sqlite_func *context, int argc, const char **argv){
+  double JD;
+  if( isDate(context, argc, argv, &JD) ){
+    int Z = JD + 1.5;
+    sqlite_set_result_int(context, Z % 7);
+  }
+}
+static void dayofmonthFunc(sqlite_func *context, int argc, const char **argv){
+  double JD;
+  if( isDate(context, argc, argv, &JD) ){
+    int Y, M, D, s;
+    decomposeDate(JD, &Y, &M, &D, &s);
+    sqlite_set_result_int(context, D);
+  }
+}
+static void secondFunc(sqlite_func *context, int argc, const char **argv){
+  double JD;
+  if( isDate(context, argc, argv, &JD) ){
+    int Y, M, D, h, m, s;
+    decomposeDate(JD, &Y, &M, &D, &s);
+    h = s/3600;
+    s -= h*3600;
+    m = s/60;
+    s -= m*60;
+    sqlite_set_result_int(context, s);
+  }
+}
+static void minuteFunc(sqlite_func *context, int argc, const char **argv){
+  double JD;
+  if( isDate(context, argc, argv, &JD) ){
+    int Y, M, D, h, m, s;
+    decomposeDate(JD, &Y, &M, &D, &s);
+    h = s/3600;
+    s -= h*3600;
+    m = s/60;
+    sqlite_set_result_int(context, m);
+  }
+}
+static void hourFunc(sqlite_func *context, int argc, const char **argv){
+  double JD;
+  if( isDate(context, argc, argv, &JD) ){
+    int Y, M, D, h, s;
+    decomposeDate(JD, &Y, &M, &D, &s);
+    h = s/3600;
+    sqlite_set_result_int(context, h);
+  }
+}
+#endif /* !defined(SQLITE_OMIT_DATETIME_FUNCS) */
+/***************************************************************************/
+
 /*
 ** This function registered all of the above C functions as SQL
 ** functions.  This should be the only routine in this file with
@@ -529,6 +836,19 @@ void sqliteRegisterBuiltinFunctions(sqlite *db){
     { "glob",       2, SQLITE_NUMERIC, globFunc   },
     { "nullif",     2, SQLITE_ARGS,    nullifFunc },
     { "sqlite_version",0,SQLITE_TEXT,  versionFunc},
+#ifndef SQLITE_OMIT_DATETIME_FUNCS
+    { "julianday", -1, SQLITE_NUMERIC, juliandayFunc   },
+    { "timestamp", -1, SQLITE_TEXT,    timestampFunc   },
+    { "time",      -1, SQLITE_TEXT,    timeFunc        },
+    { "date",      -1, SQLITE_TEXT,    dateFunc        },
+    { "year",      -1, SQLITE_NUMERIC, yearFunc        },
+    { "month",     -1, SQLITE_NUMERIC, monthFunc       },
+    { "dayofmonth",-1, SQLITE_NUMERIC, dayofmonthFunc  },
+    { "dayofweek", -1, SQLITE_NUMERIC, dayofweekFunc   },
+    { "hour",      -1, SQLITE_NUMERIC, hourFunc        },
+    { "minute",    -1, SQLITE_NUMERIC, minuteFunc      },
+    { "second",    -1, SQLITE_NUMERIC, secondFunc      },
+#endif
 #ifdef SQLITE_SOUNDEX
     { "soundex",    1, SQLITE_TEXT,    soundexFunc},
 #endif

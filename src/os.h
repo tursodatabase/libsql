@@ -171,6 +171,7 @@ int sqliteOsWriteLock(OsFile*);
 int sqliteOsUnlock(OsFile*);
 int sqliteOsRandomSeed(char*);
 int sqliteOsSleep(int ms);
+int sqliteOsCurrentTime(double*);
 void sqliteOsEnterMutex(void);
 void sqliteOsLeaveMutex(void);
 char *sqliteOsFullPathname(const char*);
