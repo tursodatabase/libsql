@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.187 2004/05/18 09:58:07 danielk1977 Exp $
+** $Id: build.c,v 1.188 2004/05/20 12:10:20 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -767,36 +767,37 @@ void sqlite3AddCollateType(Parse *pParse, int collType){
 }
 
 /*
-** Parse the column type name zType (length nType) and return the
+** Scan the column type name zType (length nType) and return the
 ** associated affinity type.
 */
 char sqlite3AffinityType(const char *zType, int nType){
-  /* FIX ME: This could be done more efficiently */
   int n, i;
   struct {
-    const char *zSub;
-    int nSub;
-    char affinity;
+    const char *zSub;  /* Keywords substring to search for */
+    int nSub;          /* length of zSub */
+    char affinity;     /* Affinity to return if it matches */
   } substrings[] = {
-    {"INT", 3, SQLITE_AFF_INTEGER},
-    {"REAL", 4, SQLITE_AFF_NUMERIC},
-    {"FLOAT", 5, SQLITE_AFF_NUMERIC},
-    {"DOUBLE", 6, SQLITE_AFF_NUMERIC},
-    {"NUM", 3, SQLITE_AFF_NUMERIC},
+    {"INT",  3, SQLITE_AFF_INTEGER},
     {"CHAR", 4, SQLITE_AFF_TEXT},
     {"CLOB", 4, SQLITE_AFF_TEXT},
-    {"TEXT", 4, SQLITE_AFF_TEXT}
+    {"TEXT", 4, SQLITE_AFF_TEXT},
+    {"BLOB", 4, SQLITE_AFF_NONE},
   };
 
-  for(n=0; n<(nType-2); n++){
-    for(i=0; i<sizeof(substrings)/sizeof(substrings[0]); i++){
-      if( 0==sqlite3StrNICmp(&zType[n], substrings[i].zSub, substrings[i].nSub) ){
+  for(i=0; i<sizeof(substrings)/sizeof(substrings[0]); i++){
+    int c1 = substrings[i].zSub[0];
+    int c2 = tolower(c1);
+    int limit = nType - substrings[i].nSub;
+    const char *z = substrings[i].zSub;
+    for(n=0; n<=limit; n++){
+      int c = zType[n];
+      if( (c==c1 || c==c2)
+             && 0==sqlite3StrNICmp(&zType[n], z, substrings[i].nSub) ){
         return substrings[i].affinity;
       }
     }
   }
-
-  return SQLITE_AFF_NONE;
+  return SQLITE_AFF_NUMERIC;
 }
 
 /*
@@ -2167,6 +2168,3 @@ void sqlite3EndWriteOperation(Parse *pParse){
     sqlite3VdbeAddOp(v, OP_Commit, 0, 0);
   }
 }
-
-
-
