@@ -411,6 +411,7 @@ docs.html:	$(TOP)/www/docs.tcl
 	tclsh $(TOP)/www/docs.tcl >docs.html
 
 download.html:	$(TOP)/www/download.tcl
+	mkdir -p doc
 	tclsh $(TOP)/www/download.tcl >download.html
 
 faq.html:	$(TOP)/www/faq.tcl

@@ -1,5 +1,5 @@
-C Apply\s(1679)\sto\sversion\s3.\s\sTicket\s#777.\s(CVS\s1680)
-D 2004-06-24T00:20:05
+C Minor\sfix\sfor\s'make\sdoc'.\s(CVS\s1681)
+D 2004-06-24T01:30:44
 F Makefile.in 0a3d7aaefa50717bd550b0cf568a51072c4c103c
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -17,7 +17,7 @@ F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
-F main.mk a14f6389bce136c336206ec58b69305ab12ba5fa
+F main.mk 51cdc61a9eccc7e430acdb236991ba0dbafc0341
 F mkdll.sh 68d34a961a1fdfa15ef27fc4f4740be583112124
 F publish.sh 4193d9022fb7cf9beecd313bed3d1d68b8386fbe
 F spec.template a38492f1c1dd349fc24cb0565e08afc53045304b
@@ -229,7 +229,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 53c553c760a84e213c2277588bcc292892c2b0ce
-R 8f108e97dd623d6ab372f3a14356bdf0
+P 0a26b9158095f0995fce2f0ccdfb383ab26c76a5
+R 2334459ae060c779df0c7d3f0dad87cd
 U danielk1977
-Z 2dd152c9007a76ff0b7936eed63977ea
+Z 19bd2d41d742043379404961708e6caf
