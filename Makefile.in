@@ -49,7 +49,7 @@ LIBREADLINE = @TARGET_READLINE_LIBS@
 #
 LIBOBJ = build.o dbbe.o delete.o expr.o insert.o \
          main.o parse.o select.o tokenize.o update.o \
-         util.o vdbe.o where.o
+         util.o vdbe.o where.o tclsqlite.o
 
 # All of the source code files.
 #
@@ -156,6 +156,9 @@ select.o:	$(TOP)/src/select.c $(HDR)
 
 update.o:	$(TOP)/src/update.c $(HDR)
 	$(TCC) $(GDBM_FLAGS) -c $(TOP)/src/update.c
+
+tclsqlite.o:	$(TOP)/src/tclsqlite.c $(HDR)
+	$(TCC) $(GDBM_FLAGS) $(TCL_FLAGS) -c $(TOP)/src/tclsqlite.c
 
 gdbmdump:	$(TOP)/tool/gdbmdump.c
 	$(TCC) $(GDBM_FLAGS) -o gdbmdump $(TOP)/tool/gdbmdump.c $(LIBGDBM)

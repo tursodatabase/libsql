@@ -23,8 +23,10 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.8 2000/08/17 09:50:00 drh Exp $
+** $Id: tclsqlite.c,v 1.9 2000/09/21 13:01:37 drh Exp $
 */
+#ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
+
 #include "sqlite.h"
 #include <tcl.h>
 #include <stdlib.h>
@@ -38,7 +40,7 @@ typedef struct SqliteDb SqliteDb;
 struct SqliteDb {
   sqlite *db;           /* The "real" database structure */
   Tcl_Interp *interp;   /* The interpreter used for this database */
-  char *zBusy;          /* The name of the busy callback routine */
+  char *zBusy;          /* The busy callback routine */
 };
 
 /*
@@ -49,7 +51,7 @@ typedef struct CallbackData CallbackData;
 struct CallbackData {
   Tcl_Interp *interp;       /* The TCL interpreter */
   char *zArray;             /* The array into which data is written */
-  char *zCode;              /* The code to execute for each row */
+  Tcl_Obj *pCode;           /* The code to execute for each row */
   int once;                 /* Set only for the first invocation of callback */
 };
 
@@ -84,8 +86,34 @@ static int DbEvalCallback(
     }
   }
   cbData->once = 0;
-  rc = Tcl_Eval(cbData->interp, cbData->zCode);
+  rc = Tcl_EvalObj(cbData->interp, cbData->pCode);
   return rc;
+}
+
+/*
+** This is an alternative callback for database queries.  Instead
+** of invoking a TCL script to handle the result, this callback just
+** appends each column of the result to a list.  After the query
+** is complete, the list is returned.
+*/
+static int DbEvalCallback2(
+  void *clientData,      /* An instance of CallbackData */
+  int nCol,              /* Number of columns in the result */
+  char ** azCol,         /* Data for each column */
+  char ** azN            /* Name for each column */
+){
+  Tcl_Obj *pList = (Tcl_Obj*)clientData;
+  int i;
+  for(i=0; i<nCol; i++){
+    Tcl_Obj *pElem;
+    if( azCol[i] && *azCol[i] ){
+      pElem = Tcl_NewStringObj(azCol[i], -1);
+    }else{
+      pElem = Tcl_NewObj();
+    }
+    Tcl_ListObjAppendElement(0, pList, pElem);
+  }
+  return 0;
 }
 
 /*
@@ -139,58 +167,70 @@ static int DbBusyHandler(void *cd, const char *zTable, int nTries){
 ** and calls that connection "db1".  The second command causes this
 ** subroutine to be invoked.
 */
-static int DbCmd(void *cd, Tcl_Interp *interp, int argc, char **argv){
-  char *z;
-  int n, c;
+static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   SqliteDb *pDb = (SqliteDb*)cd;
-  if( argc<2 ){
-    Tcl_AppendResult(interp,"wrong # args: should be \"", argv[0],
-        " SUBCOMMAND ...\"", 0);
+  int choice;
+  static char *DB_optStrs[] = {
+     "busy",   "close",  "complete",  "eval",  "timeout"
+  };
+  enum DB_opts {
+     DB_BUSY,  DB_CLOSE, DB_COMPLETE, DB_EVAL, DB_TIMEOUT
+  };
+
+  if( objc<2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "SUBCOMMAND ...");
     return TCL_ERROR;
   }
-  z = argv[1];
-  n = strlen(z);
-  c = z[0];
+  if( Tcl_GetIndexFromObj(interp, objv[1], DB_optStrs, "option", 0, &choice) ){
+    return TCL_ERROR;
+  }
+
+  switch( (enum DB_opts)choice ){
 
   /*    $db busy ?CALLBACK?
   **
   ** Invoke the given callback if an SQL statement attempts to open
   ** a locked database file.
   */
-  if( c=='b' && strncmp(z,"busy",n)==0 ){
-    if( argc>3 ){
-      Tcl_AppendResult(interp,"wrong # args: should be \"",
-         argv[0], " busy ?CALLBACK?", 0);
+  case DB_BUSY: {
+    if( objc>3 ){
+      Tcl_WrongNumArgs(interp, 2, objv, "CALLBACK");
       return TCL_ERROR;
-    }else if( argc==2 ){
+    }else if( objc==2 ){
       if( pDb->zBusy ){
         Tcl_AppendResult(interp, pDb->zBusy, 0);
       }
     }else{
+      char *zBusy;
+      int len;
       if( pDb->zBusy ){
         Tcl_Free(pDb->zBusy);
-        pDb->zBusy = 0;
       }
-      if( argv[2][0] ){
-        pDb->zBusy = Tcl_Alloc( strlen(argv[2]) + 1 );
-        if( pDb->zBusy ){
-          strcpy(pDb->zBusy, argv[2]);
-        }
+      zBusy = Tcl_GetStringFromObj(objv[2], &len);
+      if( zBusy && len>0 ){
+        pDb->zBusy = Tcl_Alloc( len + 1 );
+        strcpy(pDb->zBusy, zBusy);
+      }else{
+        pDb->zBusy = 0;
       }
       if( pDb->zBusy ){
         pDb->interp = interp;
         sqlite_busy_handler(pDb->db, DbBusyHandler, pDb);
+      }else{
+        sqlite_busy_handler(pDb->db, 0, 0);
       }
     }
-  }else
+    break;
+  }
 
   /*    $db close
   **
   ** Shutdown the database
   */
-  if( c=='c' && n>=2 && strncmp(z,"close",n)==0 ){
-    Tcl_DeleteCommand(interp, argv[0]);
-  }else
+  case DB_CLOSE: {
+    Tcl_DeleteCommand(interp, Tcl_GetStringFromObj(objv[0], 0));
+    break;
+  }
 
   /*    $db complete SQL
   **
@@ -198,16 +238,18 @@ static int DbCmd(void *cd, Tcl_Interp *interp, int argc, char **argv){
   ** additional lines of input are needed.  This is similar to the
   ** built-in "info complete" command of Tcl.
   */
-  if( c=='c' && n>=2 && strncmp(z,"complete",n)==0 ){
-    char *zRes;
-    if( argc!=3 ){
-      Tcl_AppendResult(interp,"wrong # args: should be \"", argv[0],
-          " complete SQL\"", 0);
+  case DB_COMPLETE: {
+    Tcl_Obj *pResult;
+    int isComplete;
+    if( objc!=3 ){
+      Tcl_WrongNumArgs(interp, 2, objv, "SQL");
       return TCL_ERROR;
     }
-    zRes = sqlite_complete(argv[2]) ? "1" : "0";
-    Tcl_SetResult(interp, zRes, TCL_VOLATILE);
-  }else
+    isComplete = sqlite_complete( Tcl_GetStringFromObj(objv[2], 0) );
+    pResult = Tcl_GetObjResult(interp);
+    Tcl_SetBooleanObj(pResult, isComplete);
+    break;
+  }
    
   /*
   **    $db eval $sql ?array {  ...code... }?
@@ -218,57 +260,59 @@ static int DbCmd(void *cd, Tcl_Interp *interp, int argc, char **argv){
   ** If "array" is an empty string, then the values are placed in variables
   ** that have the same name as the fields extracted by the query.
   */
-  if( c=='e' && strncmp(z,"eval",n)==0 ){
+  case DB_EVAL: {
     CallbackData cbData;
     char *zErrMsg;
+    char *zSql;
     int rc;
 
-    if( argc!=5 && argc!=3 ){
-      Tcl_AppendResult(interp,"wrong # args: should be \"", argv[0],
-         " eval SQL ?ARRAY-NAME CODE?", 0);
+    if( objc!=5 && objc!=3 ){
+      Tcl_WrongNumArgs(interp, 2, objv, "SQL ?ARRAY-NAME CODE?");
       return TCL_ERROR;
     }
     pDb->interp = interp;
-    if( argc==5 ){
+    zSql = Tcl_GetStringFromObj(objv[2], 0);
+    Tcl_IncrRefCount(objv[2]);
+    if( objc==5 ){
       cbData.interp = interp;
       cbData.once = 1;
-      cbData.zArray = argv[3];
-      cbData.zCode = argv[4];
+      cbData.zArray = Tcl_GetStringFromObj(objv[3], 0);
+      cbData.pCode = objv[4];
       zErrMsg = 0;
-      rc = sqlite_exec(pDb->db, argv[2], DbEvalCallback, &cbData, &zErrMsg);
+      Tcl_IncrRefCount(objv[3]);
+      Tcl_IncrRefCount(objv[4]);
+      rc = sqlite_exec(pDb->db, zSql, DbEvalCallback, &cbData, &zErrMsg);
+      Tcl_DecrRefCount(objv[4]);
+      Tcl_DecrRefCount(objv[3]);
     }else{
-      rc = sqlite_exec(pDb->db, argv[2], 0, 0, &zErrMsg);
+      Tcl_Obj *pList = Tcl_NewObj();
+      rc = sqlite_exec(pDb->db, zSql, DbEvalCallback2, pList, &zErrMsg);
+      Tcl_SetObjResult(interp, pList);
     }
     if( zErrMsg ){
       Tcl_SetResult(interp, zErrMsg, TCL_VOLATILE);
       free(zErrMsg);
     }
+    Tcl_DecrRefCount(objv[2]);
     return rc;
-  }else
+  }
 
   /*
   **     $db timeout MILLESECONDS
   **
   ** Delay for the number of milliseconds specified when a file is locked.
   */
-  if( c=='t' && strncmp(z,"timeout",n)==0 ){
+  case DB_TIMEOUT: {
     int ms;
-    if( argc!=3 ){
-      Tcl_AppendResult(interp,"wrong # args: should be \"", argv[0],
-          " timeout MILLISECONDS", 0);
+    if( objc!=3 ){
+      Tcl_WrongNumArgs(interp, 2, objv, "MILLISECONDS");
       return TCL_ERROR;
     }
-    if( Tcl_GetInt(interp, argv[2], &ms) ) return TCL_ERROR;
+    if( Tcl_GetIntFromObj(interp, objv[2], &ms) ) return TCL_ERROR;
     sqlite_busy_timeout(pDb->db, ms);
-  }else
-
-  /* The default
-  */
-  {
-    Tcl_AppendResult(interp,"unknown subcommand \"", z, 
-        "\" - should be one of: close complete eval", 0);
-    return TCL_ERROR;
+    break;
   }
+  } /* End of the SWITCH statement */
   return TCL_OK;
 }
 
@@ -314,7 +358,7 @@ static int DbMain(void *cd, Tcl_Interp *interp, int argc, char **argv){
     free(zErrMsg);
     return TCL_ERROR;
   }
-  Tcl_CreateCommand(interp, argv[1], DbCmd, (char*)p, DbDeleteCmd);
+  Tcl_CreateObjCommand(interp, argv[1], DbObjCmd, (char*)p, DbDeleteCmd);
   return TCL_OK;
 }
 
@@ -397,3 +441,5 @@ int TCLSH_MAIN(int argc, char **argv){
   return 0;
 }
 #endif /* TCLSH */
+
+#endif /* !defined(NO_TCL) */

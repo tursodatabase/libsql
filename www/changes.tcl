@@ -17,6 +17,13 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2000 Sep 21 (Not Released)} {
+<li>Change the tclsqlite "eval" method to return a list of results if
+    no callback script is specified.</li>
+<li>Change tclsqlite.c to use the Tcl_Obj interface</li>
+<li>Add tclsqlite.c to the libsqlite.a library</li>
+}
+
 chng {2000 Sep 13 (Version 1.0.5)} {
 <li>Changed the print format for floating point values from "%g" to "%.15g".
     </li>

@@ -525,7 +525,7 @@ fi
 
 
 # The following RCS revision string applies to configure.in
-# $Revision: 1.6 $
+# $Revision: 1.7 $
 
 #########
 # Make sure we are not building in a subdirectory of the source tree.
@@ -1374,6 +1374,9 @@ fi
     fi
   done
 fi
+if test "$found" = "no"; then
+  TARGET_TCL_INC="-DNO_TCL=1"
+fi
 
 
 ##########
@@ -1387,14 +1390,14 @@ else
   LIBS=""
   
 echo $ac_n "checking for library containing gdbm_open""... $ac_c" 1>&6
-echo "configure:1391: checking for library containing gdbm_open" >&5
+echo "configure:1394: checking for library containing gdbm_open" >&5
 if eval "test \"`echo '$''{'ac_cv_search_gdbm_open'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   ac_func_search_save_LIBS="$LIBS"
 ac_cv_search_gdbm_open="no"
 cat > conftest.$ac_ext <<EOF
-#line 1398 "configure"
+#line 1401 "configure"
 #include "confdefs.h"
 /* Override any gcc2 internal prototype to avoid an error.  */
 /* We use char because int might match the return type of a gcc2
@@ -1405,7 +1408,7 @@ int main() {
 gdbm_open()
 ; return 0; }
 EOF
-if { (eval echo configure:1409: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+if { (eval echo configure:1412: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   rm -rf conftest*
   ac_cv_search_gdbm_open="none required"
 else
@@ -1416,7 +1419,7 @@ rm -f conftest*
 test "$ac_cv_search_gdbm_open" = "no" && for i in gdbm; do
 LIBS="-l$i  $ac_func_search_save_LIBS"
 cat > conftest.$ac_ext <<EOF
-#line 1420 "configure"
+#line 1423 "configure"
 #include "confdefs.h"
 /* Override any gcc2 internal prototype to avoid an error.  */
 /* We use char because int might match the return type of a gcc2
@@ -1427,7 +1430,7 @@ int main() {
 gdbm_open()
 ; return 0; }
 EOF
-if { (eval echo configure:1431: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+if { (eval echo configure:1434: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   rm -rf conftest*
   ac_cv_search_gdbm_open="-l$i"
 break
@@ -1455,7 +1458,7 @@ fi
 # Figure out where to get the GDBM header files.
 #
 echo $ac_n "checking GDBM header files""... $ac_c" 1>&6
-echo "configure:1459: checking GDBM header files" >&5
+echo "configure:1462: checking GDBM header files" >&5
 found=no
 if test "$config_TARGET_GDBM_INC" != ""; then
   TARGET_GDBM_INC=$config_TARGET_GDBM_INC
@@ -1467,17 +1470,17 @@ else
   echo "$ac_t""not specified: still searching..." 1>&6
   ac_safe=`echo "gdbm.h" | sed 'y%./+-%__p_%'`
 echo $ac_n "checking for gdbm.h""... $ac_c" 1>&6
-echo "configure:1471: checking for gdbm.h" >&5
+echo "configure:1474: checking for gdbm.h" >&5
 if eval "test \"`echo '$''{'ac_cv_header_$ac_safe'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 1476 "configure"
+#line 1479 "configure"
 #include "confdefs.h"
 #include <gdbm.h>
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
-{ (eval echo configure:1481: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+{ (eval echo configure:1484: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
 ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 if test -z "$ac_err"; then
   rm -rf conftest*
@@ -1504,7 +1507,7 @@ if test "$found" = "no"; then
     
 ac_safe=`echo "$dir/include/gdbm.h" | sed 'y%./+-%__p_%'`
 echo $ac_n "checking for $dir/include/gdbm.h""... $ac_c" 1>&6
-echo "configure:1508: checking for $dir/include/gdbm.h" >&5
+echo "configure:1511: checking for $dir/include/gdbm.h" >&5
 if eval "test \"`echo '$''{'ac_cv_file_$ac_safe'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
@@ -1545,14 +1548,14 @@ else
   LIBS=""
   
 echo $ac_n "checking for library containing readline""... $ac_c" 1>&6
-echo "configure:1549: checking for library containing readline" >&5
+echo "configure:1552: checking for library containing readline" >&5
 if eval "test \"`echo '$''{'ac_cv_search_readline'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   ac_func_search_save_LIBS="$LIBS"
 ac_cv_search_readline="no"
 cat > conftest.$ac_ext <<EOF
-#line 1556 "configure"
+#line 1559 "configure"
 #include "confdefs.h"
 /* Override any gcc2 internal prototype to avoid an error.  */
 /* We use char because int might match the return type of a gcc2
@@ -1563,7 +1566,7 @@ int main() {
 readline()
 ; return 0; }
 EOF
-if { (eval echo configure:1567: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+if { (eval echo configure:1570: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   rm -rf conftest*
   ac_cv_search_readline="none required"
 else
@@ -1574,7 +1577,7 @@ rm -f conftest*
 test "$ac_cv_search_readline" = "no" && for i in readline; do
 LIBS="-l$i  $ac_func_search_save_LIBS"
 cat > conftest.$ac_ext <<EOF
-#line 1578 "configure"
+#line 1581 "configure"
 #include "confdefs.h"
 /* Override any gcc2 internal prototype to avoid an error.  */
 /* We use char because int might match the return type of a gcc2
@@ -1585,7 +1588,7 @@ int main() {
 readline()
 ; return 0; }
 EOF
-if { (eval echo configure:1589: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+if { (eval echo configure:1592: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   rm -rf conftest*
   ac_cv_search_readline="-l$i"
 break
@@ -1613,7 +1616,7 @@ fi
 # Figure out where to get the READLINE header files.
 #
 echo $ac_n "checking readline header files""... $ac_c" 1>&6
-echo "configure:1617: checking readline header files" >&5
+echo "configure:1620: checking readline header files" >&5
 found=no
 if test "$config_TARGET_READLINE_INC" != ""; then
   TARGET_READLINE_INC=$config_TARGET_READLINE_INC
@@ -1625,17 +1628,17 @@ else
   echo "$ac_t""not specified: still searching..." 1>&6
   ac_safe=`echo "readline.h" | sed 'y%./+-%__p_%'`
 echo $ac_n "checking for readline.h""... $ac_c" 1>&6
-echo "configure:1629: checking for readline.h" >&5
+echo "configure:1632: checking for readline.h" >&5
 if eval "test \"`echo '$''{'ac_cv_header_$ac_safe'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 1634 "configure"
+#line 1637 "configure"
 #include "confdefs.h"
 #include <readline.h>
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
-{ (eval echo configure:1639: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+{ (eval echo configure:1642: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
 ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 if test -z "$ac_err"; then
   rm -rf conftest*
@@ -1662,7 +1665,7 @@ if test "$found" = "no"; then
     
 ac_safe=`echo "$dir/include/readline.h" | sed 'y%./+-%__p_%'`
 echo $ac_n "checking for $dir/include/readline.h""... $ac_c" 1>&6
-echo "configure:1666: checking for $dir/include/readline.h" >&5
+echo "configure:1669: checking for $dir/include/readline.h" >&5
 if eval "test \"`echo '$''{'ac_cv_file_$ac_safe'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
@@ -1691,7 +1694,7 @@ fi
     
 ac_safe=`echo "$dir/include/readline/readline.h" | sed 'y%./+-%__p_%'`
 echo $ac_n "checking for $dir/include/readline/readline.h""... $ac_c" 1>&6
-echo "configure:1695: checking for $dir/include/readline/readline.h" >&5
+echo "configure:1698: checking for $dir/include/readline/readline.h" >&5
 if eval "test \"`echo '$''{'ac_cv_file_$ac_safe'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
@@ -1735,12 +1738,12 @@ fi
 # Figure out whether or not we have a "usleep()" function.
 #
 echo $ac_n "checking for usleep""... $ac_c" 1>&6
-echo "configure:1739: checking for usleep" >&5
+echo "configure:1742: checking for usleep" >&5
 if eval "test \"`echo '$''{'ac_cv_func_usleep'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 1744 "configure"
+#line 1747 "configure"
 #include "confdefs.h"
 /* System header to define __stub macros and hopefully few prototypes,
     which can conflict with char usleep(); below.  */
@@ -1763,7 +1766,7 @@ usleep();
 
 ; return 0; }
 EOF
-if { (eval echo configure:1767: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+if { (eval echo configure:1770: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   rm -rf conftest*
   eval "ac_cv_func_usleep=yes"
 else
