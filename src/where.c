@@ -12,7 +12,7 @@
 ** This module contains C code that generates VDBE code used to process
 ** the WHERE clause of SQL statements.
 **
-** $Id: where.c,v 1.110 2004/07/19 19:14:01 drh Exp $
+** $Id: where.c,v 1.111 2004/07/20 18:23:15 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -162,12 +162,34 @@ static int allowedOp(int op){
 }
 
 /*
+** Swap two integers.
+*/
+#define SWAP(TYPE,A,B) {TYPE t=A; A=B; B=t;}
+
+/*
+** Return the index in the SrcList that uses cursor iCur.  If iCur is
+** used by the first entry in SrcList return 0.  If iCur is used by
+** the second entry return 1.  And so forth.
+**
+** SrcList is the set of tables in the FROM clause in the order that
+** they will be processed.  The value returned here gives us an index
+** of which tables will be processed first.
+*/
+static int tableOrder(SrcList *pList, int iCur){
+  int i;
+  for(i=0; i<pList->nSrc; i++){
+    if( pList->a[i].iCursor==iCur ) return i;
+  }
+  return -1;
+}
+
+/*
 ** The input to this routine is an ExprInfo structure with only the
 ** "p" field filled in.  The job of this routine is to analyze the
 ** subexpression and populate all the other fields of the ExprInfo
 ** structure.
 */
-static void exprAnalyze(ExprMaskSet *pMaskSet, ExprInfo *pInfo){
+static void exprAnalyze(SrcList *pSrc, ExprMaskSet *pMaskSet, ExprInfo *pInfo){
   Expr *pExpr = pInfo->p;
   pInfo->prereqLeft = exprTableUsage(pMaskSet, pExpr->pLeft);
   pInfo->prereqRight = exprTableUsage(pMaskSet, pExpr->pRight);
@@ -185,6 +207,32 @@ static void exprAnalyze(ExprMaskSet *pMaskSet, ExprInfo *pInfo){
       pInfo->indexable = 1;
     }
   }
+  if( pInfo->indexable ){
+    assert( pInfo->idxLeft!=pInfo->idxRight );
+
+    /* We want the expression to be of the form "X = expr", not "expr = X".
+    ** So flip it over if necessary.  If the expression is "X = Y", then
+    ** we want Y to come from an earlier table than X.
+    **
+    ** The collating sequence rule is to always choose the left expression.
+    ** So if we do a flip, we also have to move the collating sequence.
+    */
+    if( tableOrder(pSrc,pInfo->idxLeft)<tableOrder(pSrc,pInfo->idxRight) ){
+      assert( pExpr->op!=TK_IN );
+      SWAP(CollSeq*,pExpr->pRight->pColl,pExpr->pLeft->pColl);
+      SWAP(Expr*,pExpr->pRight,pExpr->pLeft);
+      switch( pExpr->op ){
+        case TK_LT:   pExpr->op = TK_GT;  break;
+        case TK_LE:   pExpr->op = TK_GE;  break;
+        case TK_GT:   pExpr->op = TK_LT;  break;
+        case TK_GE:   pExpr->op = TK_LE;  break;
+        default:      break;
+      }
+      SWAP(unsigned, pInfo->prereqLeft, pInfo->prereqRight);
+      SWAP(short int, pInfo->idxLeft, pInfo->idxRight);
+    }
+  }      
+
 }
 
 /*
@@ -400,11 +448,12 @@ WhereInfo *sqlite3WhereBegin(
   int nExpr;           /* Number of subexpressions in the WHERE clause */
   int loopMask;        /* One bit set for each outer loop */
   int haveKey = 0;     /* True if KEY is on the stack */
+  ExprInfo *pTerm;     /* A single term in the WHERE clause; ptr to aExpr[] */
   ExprMaskSet maskSet; /* The expression mask set */
   int iDirectEq[32];   /* Term of the form ROWID==X for the N-th table */
   int iDirectLt[32];   /* Term of the form ROWID<X or ROWID<=X */
   int iDirectGt[32];   /* Term of the form ROWID>X or ROWID>=X */
-  ExprInfo aExpr[101]; /* The WHERE clause is divided into these expressions */
+  ExprInfo aExpr[101]; /* The WHERE clause is divided into these terms */
 
   /* pushKey is only allowed if there is a single table (as in an INSERT or
   ** UPDATE statement)
@@ -430,7 +479,7 @@ WhereInfo *sqlite3WhereBegin(
   */
   pWInfo = sqliteMalloc( sizeof(WhereInfo) + pTabList->nSrc*sizeof(WhereLevel));
   if( sqlite3_malloc_failed ){
-    sqliteFree(pWInfo);
+    /* sqliteFree(pWInfo); // Leak memory when malloc fails */
     return 0;
   }
   pWInfo->pParse = pParse;
@@ -448,25 +497,26 @@ WhereInfo *sqlite3WhereBegin(
 
   /* Analyze all of the subexpressions.
   */
-  for(i=0; i<nExpr; i++){
-    exprAnalyze(&maskSet, &aExpr[i]);
+  for(pTerm=aExpr, i=0; i<nExpr; i++, pTerm++){
+    TriggerStack *pStack;
+    exprAnalyze(pTabList, &maskSet, pTerm);
 
     /* If we are executing a trigger body, remove all references to
     ** new.* and old.* tables from the prerequisite masks.
     */
-    if( pParse->trigStack ){
+    if( (pStack = pParse->trigStack)!=0 ){
       int x;
-      if( (x = pParse->trigStack->newIdx) >= 0 ){
+      if( (x=pStack->newIdx) >= 0 ){
         int mask = ~getMask(&maskSet, x);
-        aExpr[i].prereqRight &= mask;
-        aExpr[i].prereqLeft &= mask;
-        aExpr[i].prereqAll &= mask;
+        pTerm->prereqRight &= mask;
+        pTerm->prereqLeft &= mask;
+        pTerm->prereqAll &= mask;
       }
-      if( (x = pParse->trigStack->oldIdx) >= 0 ){
+      if( (x=pStack->oldIdx) >= 0 ){
         int mask = ~getMask(&maskSet, x);
-        aExpr[i].prereqRight &= mask;
-        aExpr[i].prereqLeft &= mask;
-        aExpr[i].prereqAll &= mask;
+        pTerm->prereqRight &= mask;
+        pTerm->prereqLeft &= mask;
+        pTerm->prereqAll &= mask;
       }
     }
   }
@@ -509,26 +559,17 @@ WhereInfo *sqlite3WhereBegin(
     iDirectEq[i] = -1;
     iDirectLt[i] = -1;
     iDirectGt[i] = -1;
-    for(j=0; j<nExpr; j++){
-      if( aExpr[j].idxLeft==iCur && aExpr[j].p->pLeft->iColumn<0
-            && (aExpr[j].prereqRight & loopMask)==aExpr[j].prereqRight ){
-        switch( aExpr[j].p->op ){
+    for(pTerm=aExpr, j=0; j<nExpr; j++, pTerm++){
+      Expr *pX = pTerm->p;
+      if( pTerm->idxLeft==iCur && pX->pLeft->iColumn<0
+            && (pTerm->prereqRight & loopMask)==pTerm->prereqRight ){
+        switch( pX->op ){
           case TK_IN:
           case TK_EQ: iDirectEq[i] = j; break;
           case TK_LE:
           case TK_LT: iDirectLt[i] = j; break;
           case TK_GE:
           case TK_GT: iDirectGt[i] = j;  break;
-        }
-      }
-      if( aExpr[j].idxRight==iCur && aExpr[j].p->pRight->iColumn<0
-            && (aExpr[j].prereqLeft & loopMask)==aExpr[j].prereqLeft ){
-        switch( aExpr[j].p->op ){
-          case TK_EQ: iDirectEq[i] = j;  break;
-          case TK_LE:
-          case TK_LT: iDirectGt[i] = j;  break;
-          case TK_GE:
-          case TK_GT: iDirectLt[i] = j;  break;
         }
       }
     }
@@ -571,26 +612,27 @@ WhereInfo *sqlite3WhereBegin(
       int nEq, m, score;
 
       if( pIdx->nColumn>32 ) continue;  /* Ignore indices too many columns */
-      for(j=0; j<nExpr; j++){
-        CollSeq *pColl = sqlite3ExprCollSeq(pParse, aExpr[j].p->pLeft);
-        if( !pColl && aExpr[j].p->pRight ){
-          pColl = sqlite3ExprCollSeq(pParse, aExpr[j].p->pRight);
+      for(pTerm=aExpr, j=0; j<nExpr; j++, pTerm++){
+        CollSeq *pColl = sqlite3ExprCollSeq(pParse, pTerm->p->pLeft);
+        Expr *pX = pTerm->p;
+        if( !pColl && pX->pRight ){
+          pColl = sqlite3ExprCollSeq(pParse, pX->pRight);
         }
         if( !pColl ){
           pColl = pParse->db->pDfltColl;
         }
-        if( aExpr[j].idxLeft==iCur 
-             && (aExpr[j].prereqRight & loopMask)==aExpr[j].prereqRight ){
-          int iColumn = aExpr[j].p->pLeft->iColumn;
+        if( pTerm->idxLeft==iCur 
+             && (pTerm->prereqRight & loopMask)==pTerm->prereqRight ){
+          int iColumn = pX->pLeft->iColumn;
           int k;
           char idxaff = pIdx->pTable->aCol[iColumn].affinity; 
           for(k=0; k<pIdx->nColumn; k++){
             /* If the collating sequences or affinities don't match, 
             ** ignore this index.  */
             if( pColl!=pIdx->keyInfo.aColl[k] ) continue;
-            if( !sqlite3IndexAffinityOk(aExpr[j].p, idxaff) ) continue;
+            if( !sqlite3IndexAffinityOk(pX, idxaff) ) continue;
             if( pIdx->aiColumn[k]==iColumn ){
-              switch( aExpr[j].p->op ){
+              switch( pX->op ){
                 case TK_IN: {
                   if( k==0 ) inMask |= 1;
                   break;
@@ -607,42 +649,6 @@ WhereInfo *sqlite3WhereBegin(
                 case TK_GE:
                 case TK_GT: {
                   gtMask |= 1<<k;
-                  break;
-                }
-                default: {
-                  /* CANT_HAPPEN */
-                  assert( 0 );
-                  break;
-                }
-              }
-              break;
-            }
-          }
-        }
-        if( aExpr[j].idxRight==iCur 
-             && (aExpr[j].prereqLeft & loopMask)==aExpr[j].prereqLeft ){
-          int iColumn = aExpr[j].p->pRight->iColumn;
-          int k;
-          char idxaff = pIdx->pTable->aCol[iColumn].affinity; 
-          for(k=0; k<pIdx->nColumn; k++){
-            /* If the collating sequences or affinities don't match, 
-            ** ignore this index.  */
-            if( pColl!=pIdx->keyInfo.aColl[k] ) continue;
-            if( !sqlite3IndexAffinityOk(aExpr[j].p, idxaff) ) continue;
-            if( pIdx->aiColumn[k]==iColumn ){
-              switch( aExpr[j].p->op ){
-                case TK_EQ: {
-                  eqMask |= 1<<k;
-                  break;
-                }
-                case TK_LE:
-                case TK_LT: {
-                  gtMask |= 1<<k;
-                  break;
-                }
-                case TK_GE:
-                case TK_GT: {
-                  ltMask |= 1<<k;
                   break;
                 }
                 default: {
@@ -770,26 +776,25 @@ WhereInfo *sqlite3WhereBegin(
       **          we reference multiple rows using a "rowid IN (...)"
       **          construct.
       */
+      Expr *pX;
       k = iDirectEq[i];
       assert( k<nExpr );
-      assert( aExpr[k].p!=0 );
-      assert( aExpr[k].idxLeft==iCur || aExpr[k].idxRight==iCur );
+      pTerm = &aExpr[k];
+      assert( pTerm->p!=0 );
+      assert( pTerm->idxLeft==iCur || pTerm->idxRight==iCur );
       brk = pLevel->brk = sqlite3VdbeMakeLabel(v);
-      if( aExpr[k].idxLeft==iCur ){
-        Expr *pX = aExpr[k].p;
-        if( pX->op!=TK_IN ){
-          sqlite3ExprCode(pParse, aExpr[k].p->pRight);
-        }else{
-          sqlite3VdbeAddOp(v, OP_Rewind, pX->iTable, brk);
-          sqlite3VdbeAddOp(v, OP_KeyAsData, pX->iTable, 1);
-          pLevel->inP2 = sqlite3VdbeAddOp(v, OP_IdxColumn, pX->iTable, 0);
-          pLevel->inOp = OP_Next;
-          pLevel->inP1 = pX->iTable;
-        }
+      pX = pTerm->p;
+      assert( pTerm->idxLeft==iCur );
+      if( pX->op!=TK_IN ){
+        sqlite3ExprCode(pParse, pTerm->p->pRight);
       }else{
-        sqlite3ExprCode(pParse, aExpr[k].p->pLeft);
+        sqlite3VdbeAddOp(v, OP_Rewind, pX->iTable, brk);
+        sqlite3VdbeAddOp(v, OP_KeyAsData, pX->iTable, 1);
+        pLevel->inP2 = sqlite3VdbeAddOp(v, OP_IdxColumn, pX->iTable, 0);
+        pLevel->inOp = OP_Next;
+        pLevel->inP1 = pX->iTable;
       }
-      disableTerm(pLevel, &aExpr[k].p);
+      disableTerm(pLevel, &pTerm->p);
       cont = pLevel->cont = sqlite3VdbeMakeLabel(v);
       sqlite3VdbeAddOp(v, OP_MustBeInt, 1, brk);
       haveKey = 0;
@@ -807,41 +812,30 @@ WhereInfo *sqlite3WhereBegin(
       ** constraints that column.  If the WHERE clause term is X=expr, then
       ** evaluation expr and leave the result on the stack */
       for(j=0; j<nColumn; j++){
-        for(k=0; k<nExpr; k++){
-          Expr *pX = aExpr[k].p;
+        for(pTerm=aExpr, k=0; k<nExpr; k++, pTerm++){
+          Expr *pX = pTerm->p;
           if( pX==0 ) continue;
-          if( aExpr[k].idxLeft==iCur
-             && (aExpr[k].prereqRight & loopMask)==aExpr[k].prereqRight 
+          if( pTerm->idxLeft==iCur
+             && (pTerm->prereqRight & loopMask)==pTerm->prereqRight 
              && pX->pLeft->iColumn==pIdx->aiColumn[j]
           ){
             char idxaff = pIdx->pTable->aCol[pX->pLeft->iColumn].affinity;
-            if( sqlite3IndexAffinityOk(aExpr[k].p, idxaff) ){
+            if( sqlite3IndexAffinityOk(pTerm->p, idxaff) ){
               if( pX->op==TK_EQ ){
                 sqlite3ExprCode(pParse, pX->pRight);
-                disableTerm(pLevel, &aExpr[k].p);
+                disableTerm(pLevel, &pTerm->p);
                 break;
               }
+              assert( pX->op==TK_IN && nColumn==1 );
               if( pX->op==TK_IN && nColumn==1 ){
                 sqlite3VdbeAddOp(v, OP_Rewind, pX->iTable, brk);
                 sqlite3VdbeAddOp(v, OP_KeyAsData, pX->iTable, 1);
                 pLevel->inP2 = sqlite3VdbeAddOp(v, OP_IdxColumn, pX->iTable, 0);
                 pLevel->inOp = OP_Next;
                 pLevel->inP1 = pX->iTable;
-                disableTerm(pLevel, &aExpr[k].p);
+                disableTerm(pLevel, &pTerm->p);
                 break;
               }
-            }
-          }
-          if( aExpr[k].idxRight==iCur
-             && aExpr[k].p->op==TK_EQ
-             && (aExpr[k].prereqLeft & loopMask)==aExpr[k].prereqLeft
-             && aExpr[k].p->pRight->iColumn==pIdx->aiColumn[j]
-          ){
-            char idxaff = pIdx->pTable->aCol[pX->pRight->iColumn].affinity;
-            if( sqlite3IndexAffinityOk(aExpr[k].p, idxaff) ){
-              sqlite3ExprCode(pParse, aExpr[k].p->pLeft);
-              disableTerm(pLevel, &aExpr[k].p);
-              break;
             }
           }
         }
@@ -902,39 +896,33 @@ WhereInfo *sqlite3WhereBegin(
       if( iDirectGt[i]>=0 ){
         k = iDirectGt[i];
         assert( k<nExpr );
-        assert( aExpr[k].p!=0 );
-        assert( aExpr[k].idxLeft==iCur || aExpr[k].idxRight==iCur );
-        if( aExpr[k].idxLeft==iCur ){
-          sqlite3ExprCode(pParse, aExpr[k].p->pRight);
-        }else{
-          sqlite3ExprCode(pParse, aExpr[k].p->pLeft);
-        }
+        pTerm = &aExpr[k];
+        assert( pTerm->p!=0 );
+        assert( pTerm->idxLeft==iCur );
+        sqlite3ExprCode(pParse, pTerm->p->pRight);
         sqlite3VdbeAddOp(v, OP_ForceInt,
-          aExpr[k].p->op==TK_LT || aExpr[k].p->op==TK_GT, brk);
+          pTerm->p->op==TK_LT || pTerm->p->op==TK_GT, brk);
         sqlite3VdbeAddOp(v, OP_MoveGe, iCur, brk);
-        disableTerm(pLevel, &aExpr[k].p);
+        disableTerm(pLevel, &pTerm->p);
       }else{
         sqlite3VdbeAddOp(v, OP_Rewind, iCur, brk);
       }
       if( iDirectLt[i]>=0 ){
         k = iDirectLt[i];
         assert( k<nExpr );
-        assert( aExpr[k].p!=0 );
-        assert( aExpr[k].idxLeft==iCur || aExpr[k].idxRight==iCur );
-        if( aExpr[k].idxLeft==iCur ){
-          sqlite3ExprCode(pParse, aExpr[k].p->pRight);
-        }else{
-          sqlite3ExprCode(pParse, aExpr[k].p->pLeft);
-        }
+        pTerm = &aExpr[k];
+        assert( pTerm->p!=0 );
+        assert( pTerm->idxLeft==iCur );
+        sqlite3ExprCode(pParse, pTerm->p->pRight);
         /* sqlite3VdbeAddOp(v, OP_MustBeInt, 0, sqlite3VdbeCurrentAddr(v)+1); */
         pLevel->iMem = pParse->nMem++;
         sqlite3VdbeAddOp(v, OP_MemStore, pLevel->iMem, 1);
-        if( aExpr[k].p->op==TK_LT || aExpr[k].p->op==TK_GT ){
+        if( pTerm->p->op==TK_LT || pTerm->p->op==TK_GT ){
           testOp = OP_Ge;
         }else{
           testOp = OP_Gt;
         }
-        disableTerm(pLevel, &aExpr[k].p);
+        disableTerm(pLevel, &pTerm->p);
       }
       start = sqlite3VdbeCurrentAddr(v);
       pLevel->op = OP_Next;
@@ -981,24 +969,15 @@ WhereInfo *sqlite3WhereBegin(
       /* Evaluate the equality constraints
       */
       for(j=0; j<nEqColumn; j++){
-        for(k=0; k<nExpr; k++){
-          if( aExpr[k].p==0 ) continue;
-          if( aExpr[k].idxLeft==iCur
-             && aExpr[k].p->op==TK_EQ
-             && (aExpr[k].prereqRight & loopMask)==aExpr[k].prereqRight 
-             && aExpr[k].p->pLeft->iColumn==pIdx->aiColumn[j]
+        for(pTerm=aExpr, k=0; k<nExpr; k++, pTerm++){
+          if( pTerm->p==0 ) continue;
+          if( pTerm->idxLeft==iCur
+             && pTerm->p->op==TK_EQ
+             && (pTerm->prereqRight & loopMask)==pTerm->prereqRight 
+             && pTerm->p->pLeft->iColumn==pIdx->aiColumn[j]
           ){
-            sqlite3ExprCode(pParse, aExpr[k].p->pRight);
-            disableTerm(pLevel, &aExpr[k].p);
-            break;
-          }
-          if( aExpr[k].idxRight==iCur
-             && aExpr[k].p->op==TK_EQ
-             && (aExpr[k].prereqLeft & loopMask)==aExpr[k].prereqLeft
-             && aExpr[k].p->pRight->iColumn==pIdx->aiColumn[j]
-          ){
-            sqlite3ExprCode(pParse, aExpr[k].p->pLeft);
-            disableTerm(pLevel, &aExpr[k].p);
+            sqlite3ExprCode(pParse, pTerm->p->pRight);
+            disableTerm(pLevel, &pTerm->p);
             break;
           }
         }
@@ -1025,27 +1004,17 @@ WhereInfo *sqlite3WhereBegin(
       ** key computed here really ends up being the start key.
       */
       if( (score & 1)!=0 ){
-        for(k=0; k<nExpr; k++){
-          Expr *pExpr = aExpr[k].p;
+        for(pTerm=aExpr, k=0; k<nExpr; k++, pTerm++){
+          Expr *pExpr = pTerm->p;
           if( pExpr==0 ) continue;
-          if( aExpr[k].idxLeft==iCur
+          if( pTerm->idxLeft==iCur
              && (pExpr->op==TK_LT || pExpr->op==TK_LE)
-             && (aExpr[k].prereqRight & loopMask)==aExpr[k].prereqRight 
+             && (pTerm->prereqRight & loopMask)==pTerm->prereqRight 
              && pExpr->pLeft->iColumn==pIdx->aiColumn[j]
           ){
             sqlite3ExprCode(pParse, pExpr->pRight);
             leFlag = pExpr->op==TK_LE;
-            disableTerm(pLevel, &aExpr[k].p);
-            break;
-          }
-          if( aExpr[k].idxRight==iCur
-             && (pExpr->op==TK_GT || pExpr->op==TK_GE)
-             && (aExpr[k].prereqLeft & loopMask)==aExpr[k].prereqLeft
-             && pExpr->pRight->iColumn==pIdx->aiColumn[j]
-          ){
-            sqlite3ExprCode(pParse, pExpr->pLeft);
-            leFlag = pExpr->op==TK_GE;
-            disableTerm(pLevel, &aExpr[k].p);
+            disableTerm(pLevel, &pTerm->p);
             break;
           }
         }
@@ -1082,27 +1051,17 @@ WhereInfo *sqlite3WhereBegin(
       ** "start" key really ends up being used as the termination key.
       */
       if( (score & 2)!=0 ){
-        for(k=0; k<nExpr; k++){
-          Expr *pExpr = aExpr[k].p;
+        for(pTerm=aExpr, k=0; k<nExpr; k++, pTerm++){
+          Expr *pExpr = pTerm->p;
           if( pExpr==0 ) continue;
-          if( aExpr[k].idxLeft==iCur
+          if( pTerm->idxLeft==iCur
              && (pExpr->op==TK_GT || pExpr->op==TK_GE)
-             && (aExpr[k].prereqRight & loopMask)==aExpr[k].prereqRight 
+             && (pTerm->prereqRight & loopMask)==pTerm->prereqRight 
              && pExpr->pLeft->iColumn==pIdx->aiColumn[j]
           ){
             sqlite3ExprCode(pParse, pExpr->pRight);
             geFlag = pExpr->op==TK_GE;
-            disableTerm(pLevel, &aExpr[k].p);
-            break;
-          }
-          if( aExpr[k].idxRight==iCur
-             && (pExpr->op==TK_LT || pExpr->op==TK_LE)
-             && (aExpr[k].prereqLeft & loopMask)==aExpr[k].prereqLeft
-             && pExpr->pRight->iColumn==pIdx->aiColumn[j]
-          ){
-            sqlite3ExprCode(pParse, pExpr->pLeft);
-            geFlag = pExpr->op==TK_LE;
-            disableTerm(pLevel, &aExpr[k].p);
+            disableTerm(pLevel, &pTerm->p);
             break;
           }
         }
@@ -1163,18 +1122,18 @@ WhereInfo *sqlite3WhereBegin(
     /* Insert code to test every subexpression that can be completely
     ** computed using the current set of tables.
     */
-    for(j=0; j<nExpr; j++){
-      if( aExpr[j].p==0 ) continue;
-      if( (aExpr[j].prereqAll & loopMask)!=aExpr[j].prereqAll ) continue;
-      if( pLevel->iLeftJoin && !ExprHasProperty(aExpr[j].p,EP_FromJoin) ){
+    for(pTerm=aExpr, j=0; j<nExpr; j++, pTerm++){
+      if( pTerm->p==0 ) continue;
+      if( (pTerm->prereqAll & loopMask)!=pTerm->prereqAll ) continue;
+      if( pLevel->iLeftJoin && !ExprHasProperty(pTerm->p,EP_FromJoin) ){
         continue;
       }
       if( haveKey ){
         haveKey = 0;
         sqlite3VdbeAddOp(v, OP_MoveGe, iCur, 0);
       }
-      sqlite3ExprIfFalse(pParse, aExpr[j].p, cont, 1);
-      aExpr[j].p = 0;
+      sqlite3ExprIfFalse(pParse, pTerm->p, cont, 1);
+      pTerm->p = 0;
     }
     brk = cont;
 
@@ -1185,9 +1144,9 @@ WhereInfo *sqlite3WhereBegin(
       pLevel->top = sqlite3VdbeCurrentAddr(v);
       sqlite3VdbeAddOp(v, OP_Integer, 1, 0);
       sqlite3VdbeAddOp(v, OP_MemStore, pLevel->iLeftJoin, 1);
-      for(j=0; j<nExpr; j++){
-        if( aExpr[j].p==0 ) continue;
-        if( (aExpr[j].prereqAll & loopMask)!=aExpr[j].prereqAll ) continue;
+      for(pTerm=aExpr, j=0; j<nExpr; j++, pTerm++){
+        if( pTerm->p==0 ) continue;
+        if( (pTerm->prereqAll & loopMask)!=pTerm->prereqAll ) continue;
         if( haveKey ){
           /* Cannot happen.  "haveKey" can only be true if pushKey is true
           ** an pushKey can only be true for DELETE and UPDATE and there are
@@ -1196,8 +1155,8 @@ WhereInfo *sqlite3WhereBegin(
           haveKey = 0;
           sqlite3VdbeAddOp(v, OP_MoveGe, iCur, 0);
         }
-        sqlite3ExprIfFalse(pParse, aExpr[j].p, cont, 1);
-        aExpr[j].p = 0;
+        sqlite3ExprIfFalse(pParse, pTerm->p, cont, 1);
+        pTerm->p = 0;
       }
     }
   }

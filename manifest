@@ -1,5 +1,5 @@
-C Lemon\scollapses\scommon\sdestructors\sand\sreduce\sactions\sinto\sa\ssingle\scase.\s(CVS\s1837)
-D 2004-07-20T14:06:52
+C Simplify\sthe\swhere.c\slogic\sby\sflipping\sexpression\sover\sso\sthat\sthe\scontrolling\nvariable\sis\salways\son\sthe\sleft.\s(CVS\s1838)
+D 2004-07-20T18:23:15
 F Makefile.in 4a5e570a9e2d35b09c31b3cf01b78cea764ade4b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -80,7 +80,7 @@ F src/vdbeInt.h 7160653a006b6d2c4a00d204112a095bdf842ab6
 F src/vdbeapi.c c5c6d8f162a9581dde497b1a4034f9a0bf54c355
 F src/vdbeaux.c 4de85e30ca4a83ea0a45eceb7e88ac7a48f4c237
 F src/vdbemem.c bbf621377343bee046547712a144a94f387bb1eb
-F src/where.c 9009033f311281934d946ecaba759cd65b9dbea8
+F src/where.c cf8a54641eea01f1af5d09529ad69166db92f658
 F test/all.test 3b692eb43583b52c99c344b2fa8934512d179016
 F test/attach.test 3acdffccbf5f78b07746771b9490758718e28856
 F test/attach2.test b175333059e86c82dbf593fc922522ecb0f8aff8
@@ -237,7 +237,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 522ff721ccc33c4b89072fed4e451f0df82e8140
-R e671edd7c958b648f09895c28b19b648
+P 3c5aa850eeec5c75c5200a3707852cc5fc9e780b
+R 85614d781cba6751b913b133092132cd
 U drh
-Z 365b5316c2e2676737e040bedd0d4f8a
+Z 550b1f0e24b844483d3dbfa3a8f89d17
