@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.54 2004/01/15 02:44:03 drh Exp $
+** $Id: tclsqlite.c,v 1.55 2004/02/01 01:22:52 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -486,19 +486,21 @@ static int auth_callback(
 static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   SqliteDb *pDb = (SqliteDb*)cd;
   int choice;
+  int rc = TCL_OK;
   static const char *DB_strs[] = {
     "authorizer",         "busy",              "changes",
     "close",              "commit_hook",       "complete",
     "errorcode",          "eval",              "function",
     "last_insert_rowid",  "onecolumn",         "progress",
-    "timeout",            "trace",             0
+    "rekey",              "timeout",           "trace",
+    0                    
   };
   enum DB_enum {
     DB_AUTHORIZER,        DB_BUSY,             DB_CHANGES,
     DB_CLOSE,             DB_COMMIT_HOOK,      DB_COMPLETE,
     DB_ERRORCODE,         DB_EVAL,             DB_FUNCTION,
     DB_LAST_INSERT_ROWID, DB_ONECOLUMN,        DB_PROGRESS,
-    DB_TIMEOUT,           DB_TRACE,            
+    DB_REKEY,             DB_TIMEOUT,          DB_TRACE,
   };
 
   if( objc<2 ){
@@ -747,7 +749,6 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     CallbackData cbData;
     char *zErrMsg;
     char *zSql;
-    int rc;
 #ifdef UTF_TRANSLATION_NEEDED
     Tcl_DString dSql;
     int i;
@@ -865,7 +866,6 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   ** Return a single column from a single row of the given SQL query.
   */
   case DB_ONECOLUMN: {
-    int rc;
     char *zSql;
     char *zErrMsg = 0;
     if( objc!=3 ){
@@ -875,7 +875,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     zSql = Tcl_GetStringFromObj(objv[2], 0);
     rc = sqlite_exec(pDb->db, zSql, DbEvalCallback3, interp, &zErrMsg);
     if( rc==SQLITE_ABORT ){
-      /* Do nothing.  This is normal. */
+      rc = SQLITE_OK;
     }else if( zErrMsg ){
       Tcl_SetResult(interp, zErrMsg, TCL_VOLATILE);
       free(zErrMsg);
@@ -884,6 +884,29 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       Tcl_AppendResult(interp, sqlite_error_string(rc), 0);
       rc = TCL_ERROR;
     }
+    break;
+  }
+
+  /*
+  **     $db rekey KEY
+  **
+  ** Change the encryption key on the currently open database.
+  */
+  case DB_REKEY: {
+    int nKey;
+    void *pKey;
+    if( objc!=3 ){
+      Tcl_WrongNumArgs(interp, 2, objv, "KEY");
+      return TCL_ERROR;
+    }
+    pKey = Tcl_GetByteArrayFromObj(objv[2], &nKey);
+#ifdef SQLITE_HAS_CRYPTO
+    rc = sqlite_rekey(pDb->db, pKey, nKey);
+    if( rc ){
+      Tcl_AppendResult(interp, sqlite_error_string(rc), 0);
+      rc = TCL_ERROR;
+    }
+#endif
     break;
   }
 
@@ -940,11 +963,11 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   }
 
   } /* End of the SWITCH statement */
-  return TCL_OK;
+  return rc;
 }
 
 /*
-**   sqlite DBNAME FILENAME ?MODE?
+**   sqlite DBNAME FILENAME ?MODE? ?-key KEY?
 **
 ** This is the main Tcl command.  When the "sqlite" Tcl command is
 ** invoked, this routine runs to process that command.
@@ -974,21 +997,34 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
 **       not.  Used by tests to make sure the library was compiled 
 **       correctly.
 */
-static int DbMain(void *cd, Tcl_Interp *interp, int argc, char **argv){
+static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   int mode;
   SqliteDb *p;
+  void *pKey = 0;
+  int nKey = 0;
+  const char *zArg;
   char *zErrMsg;
+  const char *zFile;
   char zBuf[80];
-  if( argc==2 ){
-    if( strcmp(argv[1],"-encoding")==0 ){
+  if( objc==2 ){
+    zArg = Tcl_GetStringFromObj(objv[1], 0);
+    if( strcmp(zArg,"-encoding")==0 ){
       Tcl_AppendResult(interp,sqlite_encoding,0);
       return TCL_OK;
     }
-    if( strcmp(argv[1],"-version")==0 ){
+    if( strcmp(zArg,"-version")==0 ){
       Tcl_AppendResult(interp,sqlite_version,0);
       return TCL_OK;
     }
-    if( strcmp(argv[1],"-tcl-uses-utf")==0 ){
+    if( strcmp(zArg,"-has-crypto")==0 ){
+#ifdef SQLITE_HAS_CRYPTO
+      Tcl_AppendResult(interp,"1",0);
+#else
+      Tcl_AppendResult(interp,"0",0);
+#endif
+      return TCL_OK;
+    }
+    if( strcmp(zArg,"-tcl-uses-utf")==0 ){
 #ifdef TCL_UTF_MAX
       Tcl_AppendResult(interp,"1",0);
 #else
@@ -997,14 +1033,26 @@ static int DbMain(void *cd, Tcl_Interp *interp, int argc, char **argv){
       return TCL_OK;
     }
   }
-  if( argc!=3 && argc!=4 ){
-    Tcl_AppendResult(interp,"wrong # args: should be \"", argv[0],
-       " HANDLE FILENAME ?MODE?\"", 0);
+  if( objc==5 || objc==6 ){
+    zArg = Tcl_GetStringFromObj(objv[objc-2], 0);
+    if( strcmp(zArg,"-key")==0 ){
+      pKey = Tcl_GetByteArrayFromObj(objv[objc-1], &nKey);
+      objc -= 2;
+    }
+  }
+  if( objc!=3 && objc!=4 ){
+    Tcl_WrongNumArgs(interp, 1, objv, 
+#ifdef SQLITE_HAS_CRYPTO
+      "HANDLE FILENAME ?-key CRYPTOKEY?"
+#else
+      "HANDLE FILENAME ?MODE?"
+#endif
+    );
     return TCL_ERROR;
   }
-  if( argc==3 ){
+  if( objc==3 ){
     mode = 0666;
-  }else if( Tcl_GetInt(interp, argv[3], &mode)!=TCL_OK ){
+  }else if( Tcl_GetIntFromObj(interp, objv[3], &mode)!=TCL_OK ){
     return TCL_ERROR;
   }
   zErrMsg = 0;
@@ -1014,14 +1062,21 @@ static int DbMain(void *cd, Tcl_Interp *interp, int argc, char **argv){
     return TCL_ERROR;
   }
   memset(p, 0, sizeof(*p));
-  p->db = sqlite_open(argv[2], mode, &zErrMsg);
+  zFile = Tcl_GetStringFromObj(objv[2], 0);
+#ifdef SQLITE_HAS_CRYPTO
+  if( nKey>0 ){
+    p->db = sqlite_open_encrypted(zFile, pKey, nKey, &zErrMsg);
+  }else
+#endif
+  p->db = sqlite_open(zFile, mode, &zErrMsg);
   if( p->db==0 ){
     Tcl_SetResult(interp, zErrMsg, TCL_VOLATILE);
     Tcl_Free((char*)p);
     free(zErrMsg);
     return TCL_ERROR;
   }
-  Tcl_CreateObjCommand(interp, argv[1], DbObjCmd, (char*)p, DbDeleteCmd);
+  zArg = Tcl_GetStringFromObj(objv[1], 0);
+  Tcl_CreateObjCommand(interp, zArg, DbObjCmd, (char*)p, DbDeleteCmd);
 
   /* The return value is the value of the sqlite* pointer
   */
@@ -1063,13 +1118,13 @@ static int DbMain(void *cd, Tcl_Interp *interp, int argc, char **argv){
 */
 int Sqlite_Init(Tcl_Interp *interp){
   Tcl_InitStubs(interp, "8.0", 0);
-  Tcl_CreateCommand(interp, "sqlite", (Tcl_CmdProc*)DbMain, 0, 0);
+  Tcl_CreateObjCommand(interp, "sqlite", (Tcl_ObjCmdProc*)DbMain, 0, 0);
   Tcl_PkgProvide(interp, "sqlite", "2.0");
   return TCL_OK;
 }
 int Tclsqlite_Init(Tcl_Interp *interp){
   Tcl_InitStubs(interp, "8.0", 0);
-  Tcl_CreateCommand(interp, "sqlite", (Tcl_CmdProc*)DbMain, 0, 0);
+  Tcl_CreateObjCommand(interp, "sqlite", (Tcl_ObjCmdProc*)DbMain, 0, 0);
   Tcl_PkgProvide(interp, "sqlite", "2.0");
   return TCL_OK;
 }

@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.83 2003/12/04 20:51:41 drh Exp $
+** $Id: shell.c,v 1.84 2004/02/01 01:22:51 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -186,6 +186,7 @@ struct callback_data {
                          ** .explain ON */
   char outfile[FILENAME_MAX]; /* Filename for *out */
   const char *zDbFilename;    /* name of the database file */
+  char *zKey;                 /* Encryption key */
 };
 
 /*
@@ -489,6 +490,9 @@ static char zHelp[] =
   ".prompt MAIN CONTINUE  Replace the standard prompts\n"
   ".quit                  Exit this program\n"
   ".read FILENAME         Execute SQL in FILENAME\n"
+#ifdef SQLITE_HAS_CRYPTO
+  ".rekey OLD NEW NEW     Change the encryption key\n"
+#endif
   ".schema ?TABLE?        Show the CREATE statements\n"
   ".separator STRING      Change separator string for \"list\" mode\n"
   ".show                  Show the current values for various settings\n"
@@ -507,20 +511,21 @@ static void process_input(struct callback_data *p, FILE *in);
 static void open_db(struct callback_data *p){
   if( p->db==0 ){
     char *zErrMsg = 0;
-    p->db = db = sqlite_open(p->zDbFilename, 0666, &zErrMsg);
-    if( db==0 ){
-      p->db = db = sqlite_open(p->zDbFilename, 0444, &zErrMsg);
-      if( db==0 ){
-        if( zErrMsg ){
-          fprintf(stderr,"Unable to open database \"%s\": %s\n", 
-             p->zDbFilename, zErrMsg);
-        }else{
-          fprintf(stderr,"Unable to open database %s\n", p->zDbFilename);
-        }
-        exit(1);
+#ifdef SQLITE_HAS_CRYPTO
+    if( p->zKey && p->zKey[0] ){
+      int n = strlen(p->zKey);
+      p->db = sqlite_open_encrypted(p->zDbFilename, p->zKey, n, &zErrMsg);
+    }else
+#endif
+    p->db = sqlite_open(p->zDbFilename, 0, &zErrMsg);
+    if( p->db==0 ){
+      if( zErrMsg ){
+        fprintf(stderr,"Unable to open database \"%s\": %s\n", 
+           p->zDbFilename, zErrMsg);
       }else{
-        fprintf(stderr,"Database \"%s\" opened READ ONLY!\n", p->zDbFilename);
+        fprintf(stderr,"Unable to open database %s\n", p->zDbFilename);
       }
+      exit(1);
     }
   }
 }
@@ -780,6 +785,22 @@ static int do_meta_command(char *zLine, struct callback_data *p){
       fclose(alt);
     }
   }else
+
+#ifdef SQLITE_HAS_CRYPTO
+  if( c=='r' && strncmp(azArg[0],"rekey", n)==0 && nArg==4 ){
+    char *zOld = p->zKey;
+    if( zOld==0 ) zOld = "";
+    if( strcmp(azArg[1],zOld) ){
+      fprintf(stderr,"old key is incorrect\n");
+    }else if( strcmp(azArg[2], azArg[3]) ){
+      fprintf(stderr,"2nd copy of new key does not match the 1st\n");
+    }else{
+      sqlite_freemem(p->zKey);
+      p->zKey = sqlite_mprintf("%s", azArg[2]);
+      sqlite_rekey(p->db, p->zKey, strlen(p->zKey));
+    }
+  }else
+#endif
 
   if( c=='s' && strncmp(azArg[0], "schema", n)==0 ){
     struct callback_data data;
@@ -1105,9 +1126,13 @@ static char *find_home_dir(void){
 ** Read input from the file given by sqliterc_override.  Or if that
 ** parameter is NULL, take input from ~/.sqliterc
 */
-static void process_sqliterc(struct callback_data *p, char *sqliterc_override){
+static void process_sqliterc(
+  struct callback_data *p,        /* Configuration data */
+  const char *sqliterc_override   /* Name of config file. NULL to use default */
+){
   char *home_dir = NULL;
-  char *sqliterc = sqliterc_override;
+  const char *sqliterc = sqliterc_override;
+  char *zBuf;
   FILE *in = NULL;
 
   if (sqliterc == NULL) {
@@ -1116,17 +1141,20 @@ static void process_sqliterc(struct callback_data *p, char *sqliterc_override){
       fprintf(stderr,"%s: cannot locate your home directory!\n", Argv0);
       return;
     }
-    sqliterc = malloc(strlen(home_dir) + 15);
-    if( sqliterc==0 ){
+    zBuf = malloc(strlen(home_dir) + 15);
+    if( zBuf==0 ){
       fprintf(stderr,"%s: out of memory!\n", Argv0);
       exit(1);
     }
-    sprintf(sqliterc,"%s/.sqliterc",home_dir);
+    sprintf(zBuf,"%s/.sqliterc",home_dir);
     free(home_dir);
+    sqliterc = (const char*)zBuf;
   }
   in = fopen(sqliterc,"r");
-  if(in && isatty(fileno(stdout))) {
-    printf("Loading resources from %s\n",sqliterc);
+  if( in ){
+    if( isatty(fileno(stdout)) ){
+      printf("Loading resources from %s\n",sqliterc);
+    }
     process_input(p,in);
     fclose(in);
   }
@@ -1174,15 +1202,13 @@ void main_init(struct callback_data *data) {
 int main(int argc, char **argv){
   char *zErrMsg = 0;
   struct callback_data data;
-  int origArgc = argc;
-  char **origArgv = argv;
+  const char *zInitFile = 0;
+  char *zFirstCmd = 0;
   int i;
   extern int sqliteOsFileExists(const char*);
 
 #ifdef __MACOS__
   argc = ccommand(&argv);
-  origArgc = argc;
-  origArgv = argv;
 #endif
 
   Argv0 = argv[0];
@@ -1195,15 +1221,30 @@ int main(int argc, char **argv){
   signal(SIGINT, interrupt_handler);
 #endif
 
-  /* Locate the name of the database file
+  /* Do an initial pass through the command-line argument to locate
+  ** the name of the database file, the name of the initialization file,
+  ** and the first command to execute.
   */
-  for(i=1; i<argc; i++){
+  for(i=1; i<argc-1; i++){
     if( argv[i][0]!='-' ) break;
     if( strcmp(argv[i],"-separator")==0 || strcmp(argv[i],"-nullvalue")==0 ){
       i++;
+    }else if( strcmp(argv[i],"-init")==0 ){
+      i++;
+      zInitFile = argv[i];
+    }else if( strcmp(argv[i],"-key")==0 ){
+      i++;
+      data.zKey = sqlite_mprintf("%s",argv[i]);
     }
   }
-  data.zDbFilename = i<argc ? argv[i] : ":memory:";
+  if( i<argc ){
+    data.zDbFilename = argv[i++];
+  }else{
+    data.zDbFilename = ":memory:";
+  }
+  if( i<argc ){
+    zFirstCmd = argv[i++];
+  }
   data.out = stdout;
 
   /* Go ahead and open the database file if it already exists.  If the
@@ -1215,96 +1256,63 @@ int main(int argc, char **argv){
     open_db(&data);
   }
 
-  /* Process the ~/.sqliterc file, if there is one
+  /* Process the initialization file if there is one.  If no -init option
+  ** is given on the command line, look for a file named ~/.sqliterc and
+  ** try to process it.
   */
-  process_sqliterc(&data,NULL);
+  process_sqliterc(&data,zInitFile);
 
-  /* Process command-line options
+  /* Make a second pass through the command-line argument and set
+  ** options.  This second pass is delayed until after the initialization
+  ** file is processed so that the command-line arguments will override
+  ** settings in the initialization file.
   */
-  while( argc>=2 && argv[1][0]=='-' ){
-    if( argc>=3 && strcmp(argv[1],"-init")==0 ){
-      /* If we get a -init to do, we have to pretend that
-      ** it replaced the .sqliterc file. Soooo, in order to
-      ** do that we need to start from scratch...*/
-      main_init(&data);
-
-      /* treat this file as the sqliterc... */
-      process_sqliterc(&data,argv[2]);
-
-      /* fix up the command line so we do not re-read
-      ** the option next time around... */
-      {
-        int i = 1;
-        for(i=1;i<=argc-2;i++) {
-          argv[i] = argv[i+2];
-        }
-      }
-      origArgc-=2;
-
-      /* and reset the command line options to be re-read.*/
-      argv = origArgv;
-      argc = origArgc;
-
-    }else if( strcmp(argv[1],"-html")==0 ){
+  for(i=1; i<argc && argv[i][0]=='-'; i++){
+    char *z = argv[i];
+    if( strcmp(z,"-init")==0 || strcmp(z,"-key")==0 ){
+      i++;
+    }else if( strcmp(z,"-html")==0 ){
       data.mode = MODE_Html;
-      argc--;
-      argv++;
-    }else if( strcmp(argv[1],"-list")==0 ){
+    }else if( strcmp(z,"-list")==0 ){
       data.mode = MODE_List;
-      argc--;
-      argv++;
-    }else if( strcmp(argv[1],"-line")==0 ){
+    }else if( strcmp(z,"-line")==0 ){
       data.mode = MODE_Line;
-      argc--;
-      argv++;
-    }else if( strcmp(argv[1],"-column")==0 ){
+    }else if( strcmp(z,"-column")==0 ){
       data.mode = MODE_Column;
-      argc--;
-      argv++;
-    }else if( argc>=3 && strcmp(argv[1],"-separator")==0 ){
-      sprintf(data.separator,"%.*s",(int)sizeof(data.separator)-1,argv[2]);
-      argc -= 2;
-      argv += 2;
-    }else if( argc>=3 && strcmp(argv[1],"-nullvalue")==0 ){
-      sprintf(data.nullvalue,"%.*s",(int)sizeof(data.nullvalue)-1,argv[2]);
-      argc -= 2;
-      argv += 2;
-    }else if( strcmp(argv[1],"-header")==0 ){
+    }else if( strcmp(z,"-separator")==0 ){
+      i++;
+      sprintf(data.separator,"%.*s",(int)sizeof(data.separator)-1,argv[i]);
+    }else if( strcmp(z,"-nullvalue")==0 ){
+      i++;
+      sprintf(data.nullvalue,"%.*s",(int)sizeof(data.nullvalue)-1,argv[i]);
+    }else if( strcmp(z,"-header")==0 ){
       data.showHeader = 1;
-      argc--;
-      argv++;
-    }else if( strcmp(argv[1],"-noheader")==0 ){
+    }else if( strcmp(z,"-noheader")==0 ){
       data.showHeader = 0;
-      argc--;
-      argv++;
-    }else if( strcmp(argv[1],"-echo")==0 ){
+    }else if( strcmp(z,"-echo")==0 ){
       data.echoOn = 1;
-      argc--;
-      argv++;
-    }else if( strcmp(argv[1],"-version")==0 ){
+    }else if( strcmp(z,"-version")==0 ){
       printf("%s\n", sqlite_version);
       return 1;
-    }else if( strcmp(argv[1],"-help")==0 ){
+    }else if( strcmp(z,"-help")==0 ){
       usage(1);
     }else{
-      fprintf(stderr,"%s: unknown option: %s\n", Argv0, argv[1]);
+      fprintf(stderr,"%s: unknown option: %s\n", Argv0, z);
       fprintf(stderr,"Use -help for a list of options.\n");
       return 1;
     }
   }
 
-  if( argc<2 ){
-    usage(0);
-  }else if( argc==3 ){
+  if( zFirstCmd ){
     /* Run just the command that follows the database name
     */
-    if( argv[2][0]=='.' ){
-      do_meta_command(argv[2], &data);
+    if( zFirstCmd[0]=='.' ){
+      do_meta_command(zFirstCmd, &data);
       exit(0);
     }else{
       int rc;
       open_db(&data);
-      rc = sqlite_exec(db, argv[2], callback, &data, &zErrMsg);
+      rc = sqlite_exec(db, zFirstCmd, callback, &data, &zErrMsg);
       if( rc!=0 && zErrMsg!=0 ){
         fprintf(stderr,"SQL error: %s\n", zErrMsg);
         exit(1);
