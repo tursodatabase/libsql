@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach.test,v 1.12 2004/02/12 15:31:22 drh Exp $
+# $Id: attach.test,v 1.13 2004/02/14 01:39:50 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -260,11 +260,11 @@ do_test attach-2.10 {
     SELECT type, name, tbl_name FROM sqlite_master;
   } db2
 } {table t2 t2 table tx tx trigger r1 t2 index i2 t2}
-do_test attach-2.11 {
-  catchsql { 
-    SELECT * FROM t2 WHERE x>5;
-  }
-} {1 {database schema has changed}}
+#do_test attach-2.11 {
+#  catchsql { 
+#    SELECT * FROM t2 WHERE x>5;
+#  }
+#} {1 {database schema has changed}}
 do_test attach-2.12 {
   db_list db
 } {0 main 1 temp 2 db2}
