@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.457 2005/03/09 12:26:51 danielk1977 Exp $
+** $Id: vdbe.c,v 1.458 2005/03/17 03:15:40 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2008,6 +2008,7 @@ case OP_MakeRecord: {
   int nData = 0;         /* Number of bytes of data space */
   int nHdr = 0;          /* Number of bytes of header space */
   int nByte = 0;         /* Space required for this record */
+  int nVarint;           /* Number of bytes in a varint */
   u32 serial_type;       /* Type field */
   int containsNull = 0;  /* True if any of the data fields are NULL */
   char zTemp[NBFS];      /* Space to hold small records */
@@ -2058,7 +2059,10 @@ case OP_MakeRecord: {
   }
 
   /* Add the initial header varint and total the size */
-  nHdr += sqlite3VarintLen(nHdr);
+  nHdr += nVarint = sqlite3VarintLen(nHdr);
+  if( nVarint<sqlite3VarintLen(nHdr) ){
+    nHdr++;
+  }
   nByte = nHdr+nData;
 
   /* Allocate space for the new record. */
@@ -2087,7 +2091,7 @@ case OP_MakeRecord: {
   if( addRowid ){
     zCsr += sqlite3VdbeSerialPut(zCsr, pRowid);
   }
-  assert( zCsr==(zNewRecord+nByte) );
+  assert( zCsr<=(zNewRecord+nByte) );
 
   /* Pop entries off the stack if required. Push the new record on. */
   if( !leaveOnStack ){

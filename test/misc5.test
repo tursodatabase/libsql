@@ -1,0 +1,44 @@
+# 2005 Mar 16
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.
+#
+# This file implements tests for miscellanous features that were
+# left out of other test files.
+#
+# $Id: misc5.test,v 1.1 2005/03/17 03:15:40 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# Build records using the MakeRecord opcode such that the size of the 
+# header is at the transition point in the size of a varint.
+#
+# This test causes an assertion failure or a buffer overrun in version
+# 3.1.5 and earlier.
+#
+for {set i 120} {$i<140} {incr i} {
+  do_test misc5-1.$i {
+    catchsql {DROP TABLE t1}
+    set sql1 {CREATE TABLE t1}
+    set sql2 {INSERT INTO t1 VALUES}
+    set sep (
+    for {set j 0} {$j<$i} {incr j} {
+      append sql1 ${sep}a$j
+      append sql2 ${sep}$j
+      set sep ,
+    }
+    append sql1 {);}
+    append sql2 {);}
+    execsql $sql1$sql2
+  } {}
+}
+
+finish_test
