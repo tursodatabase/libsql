@@ -13,7 +13,7 @@
 ** the WHERE clause of SQL statements.  Also found here are subroutines
 ** to generate VDBE code to evaluate expressions.
 **
-** $Id: where.c,v 1.22 2001/10/08 13:22:33 drh Exp $
+** $Id: where.c,v 1.23 2001/10/13 01:06:49 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -290,15 +290,16 @@ WhereInfo *sqliteWhereBegin(
 
     pTab = pTabList->a[i].pTab;
     openOp = pTab->isTemp ? OP_OpenAux : OP_Open;
-    sqliteVdbeAddOp(v, openOp, base+i, pTab->tnum, pTab->zName, 0);
+    sqliteVdbeAddOp(v, openOp, base+i, pTab->tnum);
+    sqliteVdbeChangeP3(v, -1, pTab->zName, P3_STATIC);
     if( i==0 && !pParse->schemaVerified &&
           (pParse->db->flags & SQLITE_InTrans)==0 ){
-      sqliteVdbeAddOp(v, OP_VerifyCookie, pParse->db->schema_cookie, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_VerifyCookie, pParse->db->schema_cookie, 0);
       pParse->schemaVerified = 1;
     }
     if( i<ARRAYSIZE(aIdx) && aIdx[i]!=0 ){
-      sqliteVdbeAddOp(v, openOp, base+pTabList->nId+i, aIdx[i]->tnum,
-          aIdx[i]->zName, 0);
+      sqliteVdbeAddOp(v, openOp, base+pTabList->nId+i, aIdx[i]->tnum);
+      sqliteVdbeChangeP3(v, -1, aIdx[i]->zName, P3_STATIC);
     }
   }
   memcpy(pWInfo->aIdx, aIdx, sizeof(aIdx));
@@ -344,20 +345,21 @@ WhereInfo *sqliteWhereBegin(
           break;
         }
       }
-      sqliteVdbeAddOp(v, OP_AddImm, 0, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_AddImm, 0, 0);
       if( i==pTabList->nId-1 && pushKey ){
         haveKey = 1;
       }else{
-        sqliteVdbeAddOp(v, OP_NotFound, base+idx, brk, 0, 0);
+        sqliteVdbeAddOp(v, OP_NotFound, base+idx, brk);
         haveKey = 0;
       }
     }else if( pIdx==0 ){
       /* Case 2:  There was no usable index.  We must do a complete
       ** scan of the table.
       */
-      sqliteVdbeAddOp(v, OP_Rewind, base+idx, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_Rewind, base+idx, 0);
       cont = sqliteVdbeMakeLabel(v);
-      sqliteVdbeAddOp(v, OP_Next, base+idx, brk, 0, cont);
+      sqliteVdbeResolveLabel(v, cont);
+      sqliteVdbeAddOp(v, OP_Next, base+idx, brk);
       haveKey = 0;
     }else{
       /* Case 3:  We do have a usable index in pIdx.
@@ -384,13 +386,14 @@ WhereInfo *sqliteWhereBegin(
           }
         }
       }
-      sqliteVdbeAddOp(v, OP_MakeKey, pIdx->nColumn, 0, 0, 0);
-      sqliteVdbeAddOp(v, OP_BeginIdx, base+pTabList->nId+i, 0, 0, 0);
-      sqliteVdbeAddOp(v, OP_NextIdx, base+pTabList->nId+i, brk, 0, cont);
+      sqliteVdbeAddOp(v, OP_MakeKey, pIdx->nColumn, 0);
+      sqliteVdbeAddOp(v, OP_BeginIdx, base+pTabList->nId+i, 0);
+      sqliteVdbeResolveLabel(v, cont);
+      sqliteVdbeAddOp(v, OP_NextIdx, base+pTabList->nId+i, brk);
       if( i==pTabList->nId-1 && pushKey ){
         haveKey = 1;
       }else{
-        sqliteVdbeAddOp(v, OP_MoveTo, base+idx, 0, 0, 0);
+        sqliteVdbeAddOp(v, OP_MoveTo, base+idx, 0);
         haveKey = 0;
       }
     }
@@ -405,7 +408,7 @@ WhereInfo *sqliteWhereBegin(
       if( (aExpr[j].prereqLeft & loopMask)!=aExpr[j].prereqLeft ) continue;
       if( haveKey ){
         haveKey = 0;
-        sqliteVdbeAddOp(v, OP_MoveTo, base+idx, 0, 0, 0);
+        sqliteVdbeAddOp(v, OP_MoveTo, base+idx, 0);
       }
       sqliteExprIfFalse(pParse, aExpr[j].p, cont);
       aExpr[j].p = 0;
@@ -414,7 +417,7 @@ WhereInfo *sqliteWhereBegin(
   }
   pWInfo->iContinue = cont;
   if( pushKey && !haveKey ){
-    sqliteVdbeAddOp(v, OP_Recno, base, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_Recno, base, 0);
   }
   sqliteFree(aOrder);
   return pWInfo;
@@ -429,16 +432,18 @@ void sqliteWhereEnd(WhereInfo *pWInfo){
   int brk = pWInfo->iBreak;
   int base = pWInfo->base;
 
-  sqliteVdbeAddOp(v, OP_Goto, 0, pWInfo->iContinue, 0, 0);
+  sqliteVdbeAddOp(v, OP_Goto, 0, pWInfo->iContinue);
   for(i=0; i<pWInfo->pTabList->nId; i++){
-    sqliteVdbeAddOp(v, OP_Close, base+i, 0, 0, brk);
+    sqliteVdbeResolveLabel(v, brk);
+    sqliteVdbeAddOp(v, OP_Close, base+i, 0);
     brk = 0;
     if( i<ARRAYSIZE(pWInfo->aIdx) && pWInfo->aIdx[i]!=0 ){
-      sqliteVdbeAddOp(v, OP_Close, base+pWInfo->pTabList->nId+i, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_Close, base+pWInfo->pTabList->nId+i, 0);
     }
   }
   if( brk!=0 ){
-    sqliteVdbeAddOp(v, OP_Noop, 0, 0, 0, brk);
+    sqliteVdbeResolveLabel(v, brk);
+    sqliteVdbeAddOp(v, OP_Noop, 0, 0);
   }
   sqliteFree(pWInfo);
   return;

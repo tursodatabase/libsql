@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.22 2001/10/08 13:22:33 drh Exp $
+** $Id: insert.c,v 1.23 2001/10/13 01:06:48 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -77,8 +77,8 @@ void sqliteInsert(
   v = sqliteGetVdbe(pParse);
   if( v==0 ) goto insert_cleanup;
   if( (db->flags & SQLITE_InTrans)==0 ){
-    sqliteVdbeAddOp(v, OP_Transaction, 0, 0, 0, 0);
-    sqliteVdbeAddOp(v, OP_VerifyCookie, db->schema_cookie, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_Transaction, 0, 0);
+    sqliteVdbeAddOp(v, OP_VerifyCookie, db->schema_cookie, 0);
     pParse->schemaVerified = 1;
   }
 
@@ -91,7 +91,7 @@ void sqliteInsert(
   if( pSelect ){
     int rc;
     srcTab = pParse->nTab++;
-    sqliteVdbeAddOp(v, OP_OpenTemp, srcTab, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_OpenTemp, srcTab, 0);
     rc = sqliteSelect(pParse, pSelect, SRT_Table, srcTab);
     if( rc || pParse->nErr || sqlite_malloc_failed ) goto insert_cleanup;
     assert( pSelect->pEList );
@@ -157,9 +157,11 @@ void sqliteInsert(
   */
   base = pParse->nTab;
   openOp = pTab->isTemp ? OP_OpenWrAux : OP_OpenWrite;
-  sqliteVdbeAddOp(v, openOp, base, pTab->tnum, pTab->zName, 0);
+  sqliteVdbeAddOp(v, openOp, base, pTab->tnum);
+  sqliteVdbeChangeP3(v, -1, pTab->zName, P3_STATIC);
   for(idx=1, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, idx++){
-    sqliteVdbeAddOp(v, openOp, idx+base, pIdx->tnum, pIdx->zName, 0);
+    sqliteVdbeAddOp(v, openOp, idx+base, pIdx->tnum);
+    sqliteVdbeChangeP3(v, -1, pIdx->zName, P3_STATIC);
   }
 
   /* If the data source is a SELECT statement, then we have to create
@@ -168,16 +170,16 @@ void sqliteInsert(
   ** and the loop is not used.
   */
   if( srcTab>=0 ){
-    sqliteVdbeAddOp(v, OP_Rewind, srcTab, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_Rewind, srcTab, 0);
     iBreak = sqliteVdbeMakeLabel(v);
-    iCont = sqliteVdbeAddOp(v, OP_Next, srcTab, iBreak, 0, 0);
+    iCont = sqliteVdbeAddOp(v, OP_Next, srcTab, iBreak);
   }
 
   /* Create a new entry in the table and fill it with data.
   */
-  sqliteVdbeAddOp(v, OP_NewRecno, base, 0, 0, 0);
+  sqliteVdbeAddOp(v, OP_NewRecno, base, 0);
   if( pTab->pIndex ){
-    sqliteVdbeAddOp(v, OP_Dup, 0, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_Dup, 0, 0);
   }
   for(i=0; i<pTab->nCol; i++){
     if( pColumn==0 ){
@@ -188,22 +190,23 @@ void sqliteInsert(
       }
     }
     if( pColumn && j>=pColumn->nId ){
-      sqliteVdbeAddOp(v, OP_String, 0, 0, pTab->aCol[i].zDflt, 0);
+      sqliteVdbeAddOp(v, OP_String, 0, 0);
+      sqliteVdbeChangeP3(v, -1, pTab->aCol[i].zDflt, P3_STATIC);
     }else if( srcTab>=0 ){
-      sqliteVdbeAddOp(v, OP_Column, srcTab, i, 0, 0); 
+      sqliteVdbeAddOp(v, OP_Column, srcTab, i); 
     }else{
       sqliteExprCode(pParse, pList->a[j].pExpr);
     }
   }
-  sqliteVdbeAddOp(v, OP_MakeRecord, pTab->nCol, 0, 0, 0);
-  sqliteVdbeAddOp(v, OP_Put, base, 0, 0, 0);
+  sqliteVdbeAddOp(v, OP_MakeRecord, pTab->nCol, 0);
+  sqliteVdbeAddOp(v, OP_Put, base, 0);
 
   /* Create appropriate entries for the new data row in all indices
   ** of the table.
   */
   for(idx=1, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, idx++){
     if( pIdx->pNext ){
-      sqliteVdbeAddOp(v, OP_Dup, 0, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_Dup, 0, 0);
     }
     for(i=0; i<pIdx->nColumn; i++){
       int idx = pIdx->aiColumn[i];
@@ -215,25 +218,27 @@ void sqliteInsert(
         }
       }
       if( pColumn && j>=pColumn->nId ){
-        sqliteVdbeAddOp(v, OP_String, 0, 0, pTab->aCol[idx].zDflt, 0);
+        sqliteVdbeAddOp(v, OP_String, 0, 0);
+        sqliteVdbeChangeP3(v, -1, pTab->aCol[idx].zDflt, P3_STATIC);
       }else if( srcTab>=0 ){
-        sqliteVdbeAddOp(v, OP_Column, srcTab, idx, 0, 0); 
+        sqliteVdbeAddOp(v, OP_Column, srcTab, idx); 
       }else{
         sqliteExprCode(pParse, pList->a[j].pExpr);
       }
     }
-    sqliteVdbeAddOp(v, OP_MakeIdxKey, pIdx->nColumn, 0, 0, 0);
-    sqliteVdbeAddOp(v, OP_PutIdx, idx+base, pIdx->isUnique, 0, 0);
+    sqliteVdbeAddOp(v, OP_MakeIdxKey, pIdx->nColumn, 0);
+    sqliteVdbeAddOp(v, OP_PutIdx, idx+base, pIdx->isUnique);
   }
 
   /* The bottom of the loop, if the data source is a SELECT statement
   */
   if( srcTab>=0 ){
-    sqliteVdbeAddOp(v, OP_Goto, 0, iCont, 0, 0);
-    sqliteVdbeAddOp(v, OP_Noop, 0, 0, 0, iBreak);
+    sqliteVdbeAddOp(v, OP_Goto, 0, iCont);
+    sqliteVdbeResolveLabel(v, iBreak);
+    sqliteVdbeAddOp(v, OP_Noop, 0, 0);
   }
   if( (db->flags & SQLITE_InTrans)==0 ){
-    sqliteVdbeAddOp(v, OP_Commit, 0, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_Commit, 0, 0);
   }
 
 

@@ -15,7 +15,7 @@
 ** or VDBE.  The VDBE implements an abstract machine that runs a
 ** simple program to access and modify the underlying database.
 **
-** $Id: vdbe.h,v 1.27 2001/10/12 17:30:05 drh Exp $
+** $Id: vdbe.h,v 1.28 2001/10/13 01:06:49 drh Exp $
 */
 #ifndef _SQLITE_VDBE_H_
 #define _SQLITE_VDBE_H_
@@ -38,9 +38,17 @@ struct VdbeOp {
   int p1;             /* First operand */
   int p2;             /* Second parameter (often the jump destination) */
   char *p3;           /* Third parameter */
-  int p3dyn;          /* True if p3 is malloced.  False if it is static */
+  int p3type;         /* P3_STATIC, P3_DYNAMIC or P3_POINTER */
 };
 typedef struct VdbeOp VdbeOp;
+
+/*
+** Allowed values of VdbeOp.p3type
+*/
+#define P3_NOTUSED    0   /* The P3 parameter is not used */
+#define P3_DYNAMIC    1   /* Pointer to a string obtained from sqliteMalloc() */
+#define P3_STATIC   (-1)  /* Pointer to a static string */
+#define P3_POINTER  (-2)  /* P3 is a pointer to some structure or object */
 
 /*
 ** The following macro converts a relative address in the p2 field
@@ -199,7 +207,7 @@ typedef struct VdbeOp VdbeOp;
 */
 Vdbe *sqliteVdbeCreate(sqlite*);
 void sqliteVdbeCreateCallback(Vdbe*, int*);
-int sqliteVdbeAddOp(Vdbe*,int,int,int,const char*,int);
+int sqliteVdbeAddOp(Vdbe*,int,int,int);
 int sqliteVdbeAddOpList(Vdbe*, int nOp, VdbeOp const *aOp);
 void sqliteVdbeChangeP1(Vdbe*, int addr, int P1);
 void sqliteVdbeChangeP3(Vdbe*, int addr, char *zP1, int N);

@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.29 2001/10/06 16:33:03 drh Exp $
+** $Id: expr.c,v 1.30 2001/10/13 01:06:48 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -234,7 +234,7 @@ int sqliteExprResolveIds(Parse *pParse, IdList *pTabList, Expr *pExpr){
         ** table.  The cursor number of the temporary table has already
         ** been put in iTable by sqliteExprResolveInSelect().
         */
-        sqliteVdbeAddOp(v, OP_OpenTemp, pExpr->iTable, 0, 0, 0);
+        sqliteVdbeAddOp(v, OP_OpenTemp, pExpr->iTable, 0);
         if( sqliteSelect(pParse, pExpr->pSelect, SRT_Set, pExpr->iTable) );
       }else if( pExpr->pList ){
         /* Case 2:     expr IN (exprlist)
@@ -262,14 +262,14 @@ int sqliteExprResolveIds(Parse *pParse, IdList *pTabList, Expr *pExpr){
             case TK_FLOAT:
             case TK_INTEGER:
             case TK_STRING: {
-              int addr = sqliteVdbeAddOp(v, OP_SetInsert, iSet, 0, 0, 0);
+              int addr = sqliteVdbeAddOp(v, OP_SetInsert, iSet, 0);
               sqliteVdbeChangeP3(v, addr, pE2->token.z, pE2->token.n);
               sqliteVdbeDequoteP3(v, addr);
               break;
             }
             default: {
               sqliteExprCode(pParse, pE2);
-              sqliteVdbeAddOp(v, OP_SetInsert, iSet, 0, 0, 0);
+              sqliteVdbeAddOp(v, OP_SetInsert, iSet, 0);
               break;
             }
           }
@@ -501,32 +501,32 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
   switch( pExpr->op ){
     case TK_COLUMN: {
       if( pParse->useAgg ){
-        sqliteVdbeAddOp(v, OP_AggGet, 0, pExpr->iAgg, 0, 0);
+        sqliteVdbeAddOp(v, OP_AggGet, 0, pExpr->iAgg);
       }else if( pExpr->iColumn>=0 ){
-        sqliteVdbeAddOp(v, OP_Column, pExpr->iTable, pExpr->iColumn, 0, 0);
+        sqliteVdbeAddOp(v, OP_Column, pExpr->iTable, pExpr->iColumn);
       }else{
-        sqliteVdbeAddOp(v, OP_Recno, pExpr->iTable, 0, 0, 0);
+        sqliteVdbeAddOp(v, OP_Recno, pExpr->iTable, 0);
       }
       break;
     }
     case TK_INTEGER: {
       int i = atoi(pExpr->token.z);
-      sqliteVdbeAddOp(v, OP_Integer, i, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_Integer, i, 0);
       break;
     }
     case TK_FLOAT: {
-      int addr = sqliteVdbeAddOp(v, OP_String, 0, 0, 0, 0);
+      int addr = sqliteVdbeAddOp(v, OP_String, 0, 0);
       sqliteVdbeChangeP3(v, addr, pExpr->token.z, pExpr->token.n);
       break;
     }
     case TK_STRING: {
-      int addr = sqliteVdbeAddOp(v, OP_String, 0, 0, 0, 0);
+      int addr = sqliteVdbeAddOp(v, OP_String, 0, 0);
       sqliteVdbeChangeP3(v, addr, pExpr->token.z, pExpr->token.n);
       sqliteVdbeDequoteP3(v, addr);
       break;
     }
     case TK_NULL: {
-      sqliteVdbeAddOp(v, OP_String, 0, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_String, 0, 0);
       break;
     }
     case TK_AND:
@@ -537,13 +537,13 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
     case TK_SLASH: {
       sqliteExprCode(pParse, pExpr->pLeft);
       sqliteExprCode(pParse, pExpr->pRight);
-      sqliteVdbeAddOp(v, op, 0, 0, 0, 0);
+      sqliteVdbeAddOp(v, op, 0, 0);
       break;
     }
     case TK_CONCAT: {
       sqliteExprCode(pParse, pExpr->pLeft);
       sqliteExprCode(pParse, pExpr->pRight);
-      sqliteVdbeAddOp(v, OP_Concat, 2, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_Concat, 2, 0);
       break;
     }
     case TK_LT:
@@ -555,25 +555,26 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
     case TK_LIKE: 
     case TK_GLOB: {
       int dest;
-      sqliteVdbeAddOp(v, OP_Integer, 1, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_Integer, 1, 0);
       sqliteExprCode(pParse, pExpr->pLeft);
       sqliteExprCode(pParse, pExpr->pRight);
       dest = sqliteVdbeCurrentAddr(v) + 2;
-      sqliteVdbeAddOp(v, op, 0, dest, 0, 0);
-      sqliteVdbeAddOp(v, OP_AddImm, -1, 0, 0, 0);
+      sqliteVdbeAddOp(v, op, 0, dest);
+      sqliteVdbeAddOp(v, OP_AddImm, -1, 0);
       break;
     }
     case TK_UMINUS: {
       assert( pExpr->pLeft );
       if( pExpr->pLeft->op==TK_INTEGER ){
         int i = atoi(pExpr->pLeft->token.z);
-        sqliteVdbeAddOp(v, OP_Integer, -i, 0, 0, 0);
+        sqliteVdbeAddOp(v, OP_Integer, -i, 0);
         break;
       }else if( pExpr->pLeft->op==TK_FLOAT ){
         Token *p = &pExpr->pLeft->token;
         char *z = sqliteMalloc( p->n + 2 );
         sprintf(z, "-%.*s", p->n, p->z);
-        sqliteVdbeAddOp(v, OP_String, 0, 0, z, 0);
+        sqliteVdbeAddOp(v, OP_String, 0, 0);
+        sqliteVdbeChangeP3(v, -1, z, p->n+1);
         sqliteFree(z);
         break;
       }
@@ -581,25 +582,25 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
     }
     case TK_NOT: {
       sqliteExprCode(pParse, pExpr->pLeft);
-      sqliteVdbeAddOp(v, op, 0, 0, 0, 0);
+      sqliteVdbeAddOp(v, op, 0, 0);
       break;
     }
     case TK_ISNULL:
     case TK_NOTNULL: {
       int dest;
-      sqliteVdbeAddOp(v, OP_Integer, 1, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_Integer, 1, 0);
       sqliteExprCode(pParse, pExpr->pLeft);
       dest = sqliteVdbeCurrentAddr(v) + 2;
-      sqliteVdbeAddOp(v, op, 0, dest, 0, 0);
-      sqliteVdbeAddOp(v, OP_AddImm, -1, 0, 0, 0);
+      sqliteVdbeAddOp(v, op, 0, dest);
+      sqliteVdbeAddOp(v, OP_AddImm, -1, 0);
       break;
     }
     case TK_AGG_FUNCTION: {
-      sqliteVdbeAddOp(v, OP_AggGet, 0, pExpr->iAgg, 0, 0);
+      sqliteVdbeAddOp(v, OP_AggGet, 0, pExpr->iAgg);
       if( pExpr->iColumn==FN_Avg ){
         assert( pParse->iAggCount>=0 && pParse->iAggCount<pParse->nAgg );
-        sqliteVdbeAddOp(v, OP_AggGet, 0, pParse->iAggCount, 0, 0);
-        sqliteVdbeAddOp(v, OP_Divide, 0, 0, 0, 0);
+        sqliteVdbeAddOp(v, OP_AggGet, 0, pParse->iAggCount);
+        sqliteVdbeAddOp(v, OP_Divide, 0, 0);
       }
       break;
     }
@@ -610,7 +611,7 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
       ExprList *pList = pExpr->pList;
       switch( id ){
         case FN_Fcnt: {
-          sqliteVdbeAddOp(v, OP_Fcnt, 0, 0, 0, 0);
+          sqliteVdbeAddOp(v, OP_Fcnt, 0, 0);
           break;
         }
         case FN_Min: 
@@ -619,21 +620,21 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
           for(i=0; i<pList->nExpr; i++){
             sqliteExprCode(pParse, pList->a[i].pExpr);
             if( i>0 ){
-              sqliteVdbeAddOp(v, op, 0, 0, 0, 0);
+              sqliteVdbeAddOp(v, op, 0, 0);
             }
           }
           break;
         }
         case FN_Length: {
           sqliteExprCode(pParse, pList->a[0].pExpr);
-          sqliteVdbeAddOp(v, OP_Strlen, 0, 0, 0, 0);
+          sqliteVdbeAddOp(v, OP_Strlen, 0, 0);
           break;
         }
         case FN_Substr: {
           for(i=0; i<pList->nExpr; i++){
             sqliteExprCode(pParse, pList->a[i].pExpr);
           }
-          sqliteVdbeAddOp(v, OP_Substr, 0, 0, 0, 0);
+          sqliteVdbeAddOp(v, OP_Substr, 0, 0);
           break;
         }
         default: {
@@ -644,27 +645,27 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
       break;
     }
     case TK_SELECT: {
-      sqliteVdbeAddOp(v, OP_MemLoad, pExpr->iColumn, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_MemLoad, pExpr->iColumn, 0);
       break;
     }
     case TK_IN: {
       int addr;
-      sqliteVdbeAddOp(v, OP_Integer, 1, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_Integer, 1, 0);
       sqliteExprCode(pParse, pExpr->pLeft);
       addr = sqliteVdbeCurrentAddr(v);
       if( pExpr->pSelect ){
-        sqliteVdbeAddOp(v, OP_Found, pExpr->iTable, addr+2, 0, 0);
+        sqliteVdbeAddOp(v, OP_Found, pExpr->iTable, addr+2);
       }else{
-        sqliteVdbeAddOp(v, OP_SetFound, pExpr->iTable, addr+2, 0, 0);
+        sqliteVdbeAddOp(v, OP_SetFound, pExpr->iTable, addr+2);
       }
-      sqliteVdbeAddOp(v, OP_AddImm, -1, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_AddImm, -1, 0);
       break;
     }
     case TK_BETWEEN: {
       int lbl = sqliteVdbeMakeLabel(v);
-      sqliteVdbeAddOp(v, OP_Integer, 0, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_Integer, 0, 0);
       sqliteExprIfFalse(pParse, pExpr, lbl);
-      sqliteVdbeAddOp(v, OP_AddImm, 1, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_AddImm, 1, 0);
       sqliteVdbeResolveLabel(v, lbl);
       break;
     }
@@ -721,39 +722,40 @@ void sqliteExprIfTrue(Parse *pParse, Expr *pExpr, int dest){
     case TK_GLOB: {
       sqliteExprCode(pParse, pExpr->pLeft);
       sqliteExprCode(pParse, pExpr->pRight);
-      sqliteVdbeAddOp(v, op, 0, dest, 0, 0);
+      sqliteVdbeAddOp(v, op, 0, dest);
       break;
     }
     case TK_ISNULL:
     case TK_NOTNULL: {
       sqliteExprCode(pParse, pExpr->pLeft);
-      sqliteVdbeAddOp(v, op, 0, dest, 0, 0);
+      sqliteVdbeAddOp(v, op, 0, dest);
       break;
     }
     case TK_IN: {
       sqliteExprCode(pParse, pExpr->pLeft);
       if( pExpr->pSelect ){
-        sqliteVdbeAddOp(v, OP_Found, pExpr->iTable, dest, 0, 0);
+        sqliteVdbeAddOp(v, OP_Found, pExpr->iTable, dest);
       }else{
-        sqliteVdbeAddOp(v, OP_SetFound, pExpr->iTable, dest, 0, 0);
+        sqliteVdbeAddOp(v, OP_SetFound, pExpr->iTable, dest);
       }
       break;
     }
     case TK_BETWEEN: {
       int lbl = sqliteVdbeMakeLabel(v);
       sqliteExprCode(pParse, pExpr->pLeft);
-      sqliteVdbeAddOp(v, OP_Dup, 0, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_Dup, 0, 0);
       sqliteExprCode(pParse, pExpr->pList->a[0].pExpr);
-      sqliteVdbeAddOp(v, OP_Lt, 0, lbl, 0, 0);
+      sqliteVdbeAddOp(v, OP_Lt, 0, lbl);
       sqliteExprCode(pParse, pExpr->pList->a[1].pExpr);
-      sqliteVdbeAddOp(v, OP_Le, 0, dest, 0, 0);
-      sqliteVdbeAddOp(v, OP_Integer, 0, 0, 0, 0);
-      sqliteVdbeAddOp(v, OP_Pop, 1, 0, 0, lbl);
+      sqliteVdbeAddOp(v, OP_Le, 0, dest);
+      sqliteVdbeAddOp(v, OP_Integer, 0, 0);
+      sqliteVdbeResolveLabel(v, lbl);
+      sqliteVdbeAddOp(v, OP_Pop, 1, 0);
       break;
     }
     default: {
       sqliteExprCode(pParse, pExpr);
-      sqliteVdbeAddOp(v, OP_If, 0, dest, 0, 0);
+      sqliteVdbeAddOp(v, OP_If, 0, dest);
       break;
     }
   }
@@ -806,48 +808,48 @@ void sqliteExprIfFalse(Parse *pParse, Expr *pExpr, int dest){
     case TK_EQ: {
       sqliteExprCode(pParse, pExpr->pLeft);
       sqliteExprCode(pParse, pExpr->pRight);
-      sqliteVdbeAddOp(v, op, 0, dest, 0, 0);
+      sqliteVdbeAddOp(v, op, 0, dest);
       break;
     }
     case TK_LIKE:
     case TK_GLOB: {
       sqliteExprCode(pParse, pExpr->pLeft);
       sqliteExprCode(pParse, pExpr->pRight);
-      sqliteVdbeAddOp(v, op, 1, dest, 0, 0);
+      sqliteVdbeAddOp(v, op, 1, dest);
       break;
     }
     case TK_ISNULL:
     case TK_NOTNULL: {
       sqliteExprCode(pParse, pExpr->pLeft);
-      sqliteVdbeAddOp(v, op, 0, dest, 0, 0);
+      sqliteVdbeAddOp(v, op, 0, dest);
       break;
     }
     case TK_IN: {
       sqliteExprCode(pParse, pExpr->pLeft);
       if( pExpr->pSelect ){
-        sqliteVdbeAddOp(v, OP_NotFound, pExpr->iTable, dest, 0, 0);
+        sqliteVdbeAddOp(v, OP_NotFound, pExpr->iTable, dest);
       }else{
-        sqliteVdbeAddOp(v, OP_SetNotFound, pExpr->iTable, dest, 0, 0);
+        sqliteVdbeAddOp(v, OP_SetNotFound, pExpr->iTable, dest);
       }
       break;
     }
     case TK_BETWEEN: {
       int addr;
       sqliteExprCode(pParse, pExpr->pLeft);
-      sqliteVdbeAddOp(v, OP_Dup, 0, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_Dup, 0, 0);
       sqliteExprCode(pParse, pExpr->pList->a[0].pExpr);
       addr = sqliteVdbeCurrentAddr(v);
-      sqliteVdbeAddOp(v, OP_Ge, 0, addr+3, 0, 0);
-      sqliteVdbeAddOp(v, OP_Pop, 1, 0, 0, 0);
-      sqliteVdbeAddOp(v, OP_Goto, 0, dest, 0, 0);
+      sqliteVdbeAddOp(v, OP_Ge, 0, addr+3);
+      sqliteVdbeAddOp(v, OP_Pop, 1, 0);
+      sqliteVdbeAddOp(v, OP_Goto, 0, dest);
       sqliteExprCode(pParse, pExpr->pList->a[1].pExpr);
-      sqliteVdbeAddOp(v, OP_Gt, 0, dest, 0, 0);
+      sqliteVdbeAddOp(v, OP_Gt, 0, dest);
       break;
     }
     default: {
       sqliteExprCode(pParse, pExpr);
-      sqliteVdbeAddOp(v, OP_Not, 0, 0, 0, 0);
-      sqliteVdbeAddOp(v, OP_If, 0, dest, 0, 0);
+      sqliteVdbeAddOp(v, OP_Not, 0, 0);
+      sqliteVdbeAddOp(v, OP_If, 0, dest);
       break;
     }
   }

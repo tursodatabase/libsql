@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.38 2001/10/06 16:33:03 drh Exp $
+** $Id: select.c,v 1.39 2001/10/13 01:06:48 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -110,7 +110,7 @@ static int selectInnerLoop(
     nColumn = pEList->nExpr;
   }else{
     for(i=0; i<nColumn; i++){
-      sqliteVdbeAddOp(v, OP_Column, srcTab, i, 0, 0);
+      sqliteVdbeAddOp(v, OP_Column, srcTab, i);
     }
   }
 
@@ -120,12 +120,14 @@ static int selectInnerLoop(
   */
   if( distinct>=0 ){
     int lbl = sqliteVdbeMakeLabel(v);
-    sqliteVdbeAddOp(v, OP_MakeKey, pEList->nExpr, 1, 0, 0);
-    sqliteVdbeAddOp(v, OP_Distinct, distinct, lbl, 0, 0);
-    sqliteVdbeAddOp(v, OP_Pop, pEList->nExpr+1, 0, 0, 0);
-    sqliteVdbeAddOp(v, OP_Goto, 0, iContinue, 0, 0);
-    sqliteVdbeAddOp(v, OP_String, 0, 0, "", lbl);
-    sqliteVdbeAddOp(v, OP_Put, distinct, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_MakeKey, pEList->nExpr, 1);
+    sqliteVdbeAddOp(v, OP_Distinct, distinct, lbl);
+    sqliteVdbeAddOp(v, OP_Pop, pEList->nExpr+1, 0);
+    sqliteVdbeAddOp(v, OP_Goto, 0, iContinue);
+    sqliteVdbeResolveLabel(v, lbl);
+    sqliteVdbeAddOp(v, OP_String, 0, 0);
+    sqliteVdbeChangeP3(v, -1, "", P3_STATIC);
+    sqliteVdbeAddOp(v, OP_Put, distinct, 0);
   }
 
   /* If there is an ORDER BY clause, then store the results
@@ -133,7 +135,7 @@ static int selectInnerLoop(
   */
   if( pOrderBy ){
     char *zSortOrder;
-    sqliteVdbeAddOp(v, OP_SortMakeRec, nColumn, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_SortMakeRec, nColumn, 0);
     zSortOrder = sqliteMalloc( pOrderBy->nExpr + 1 );
     if( zSortOrder==0 ) return 1;
     for(i=0; i<pOrderBy->nExpr; i++){
@@ -141,27 +143,29 @@ static int selectInnerLoop(
       sqliteExprCode(pParse, pOrderBy->a[i].pExpr);
     }
     zSortOrder[pOrderBy->nExpr] = 0;
-    sqliteVdbeAddOp(v, OP_SortMakeKey, pOrderBy->nExpr, 0, zSortOrder, 0);
+    sqliteVdbeAddOp(v, OP_SortMakeKey, pOrderBy->nExpr, 0);
+    sqliteVdbeChangeP3(v, -1, zSortOrder, strlen(zSortOrder));
     sqliteFree(zSortOrder);
-    sqliteVdbeAddOp(v, OP_SortPut, 0, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_SortPut, 0, 0);
   }else 
 
   /* In this mode, write each query result to the key of the temporary
   ** table iParm.
   */
   if( eDest==SRT_Union ){
-    sqliteVdbeAddOp(v, OP_MakeRecord, nColumn, 0, 0, 0);
-    sqliteVdbeAddOp(v, OP_String, iParm, 0, "", 0);
-    sqliteVdbeAddOp(v, OP_Put, iParm, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_MakeRecord, nColumn, 0);
+    sqliteVdbeAddOp(v, OP_String, iParm, 0);
+    sqliteVdbeChangeP3(v, -1, "", P3_STATIC);
+    sqliteVdbeAddOp(v, OP_Put, iParm, 0);
   }else 
 
   /* Store the result as data using a unique key.
   */
   if( eDest==SRT_Table ){
-    sqliteVdbeAddOp(v, OP_MakeRecord, nColumn, 0, 0, 0);
-    sqliteVdbeAddOp(v, OP_NewRecno, iParm, 0, 0, 0);
-    sqliteVdbeAddOp(v, OP_Pull, 1, 0, 0, 0);
-    sqliteVdbeAddOp(v, OP_Put, iParm, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_MakeRecord, nColumn, 0);
+    sqliteVdbeAddOp(v, OP_NewRecno, iParm, 0);
+    sqliteVdbeAddOp(v, OP_Pull, 1, 0);
+    sqliteVdbeAddOp(v, OP_Put, iParm, 0);
   }else 
 
   /* Construct a record from the query result, but instead of
@@ -169,9 +173,9 @@ static int selectInnerLoop(
   ** the temporary table iParm.
   */
   if( eDest==SRT_Except ){
-    int addr = sqliteVdbeAddOp(v, OP_MakeRecord, nColumn, 0, 0, 0);
-    sqliteVdbeAddOp(v, OP_NotFound, iParm, addr+3, 0, 0);
-    sqliteVdbeAddOp(v, OP_Delete, iParm, 0, 0, 0);
+    int addr = sqliteVdbeAddOp(v, OP_MakeRecord, nColumn, 0);
+    sqliteVdbeAddOp(v, OP_NotFound, iParm, addr+3);
+    sqliteVdbeAddOp(v, OP_Delete, iParm, 0);
   }else 
 
   /* If we are creating a set for an "expr IN (SELECT ...)" construct,
@@ -180,8 +184,9 @@ static int selectInnerLoop(
   */
   if( eDest==SRT_Set ){
     assert( nColumn==1 );
-    sqliteVdbeAddOp(v, OP_String, 0, 0, "", 0);
-    sqliteVdbeAddOp(v, OP_Put, iParm, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_String, 0, 0);
+    sqliteVdbeChangeP3(v, -1, "", P3_STATIC);
+    sqliteVdbeAddOp(v, OP_Put, iParm, 0);
   }else 
 
 
@@ -191,14 +196,14 @@ static int selectInnerLoop(
   */
   if( eDest==SRT_Mem ){
     assert( nColumn==1 );
-    sqliteVdbeAddOp(v, OP_MemStore, iParm, 0, 0, 0);
-    sqliteVdbeAddOp(v, OP_Goto, 0, iBreak, 0, 0);
+    sqliteVdbeAddOp(v, OP_MemStore, iParm, 0);
+    sqliteVdbeAddOp(v, OP_Goto, 0, iBreak);
   }else
 
   /* If none of the above, send the data to the callback function.
   */
   {
-    sqliteVdbeAddOp(v, OP_Callback, nColumn, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_Callback, nColumn, 0);
   }
   return 0;
 }
@@ -212,11 +217,12 @@ static int selectInnerLoop(
 static void generateSortTail(Vdbe *v, int nColumn){
   int end = sqliteVdbeMakeLabel(v);
   int addr;
-  sqliteVdbeAddOp(v, OP_Sort, 0, 0, 0, 0);
-  addr = sqliteVdbeAddOp(v, OP_SortNext, 0, end, 0, 0);
-  sqliteVdbeAddOp(v, OP_SortCallback, nColumn, 0, 0, 0);
-  sqliteVdbeAddOp(v, OP_Goto, 0, addr, 0, 0);
-  sqliteVdbeAddOp(v, OP_SortClose, 0, 0, 0, end);
+  sqliteVdbeAddOp(v, OP_Sort, 0, 0);
+  addr = sqliteVdbeAddOp(v, OP_SortNext, 0, end);
+  sqliteVdbeAddOp(v, OP_SortCallback, nColumn, 0);
+  sqliteVdbeAddOp(v, OP_Goto, 0, addr);
+  sqliteVdbeResolveLabel(v, end);
+  sqliteVdbeAddOp(v, OP_SortClose, 0, 0);
 }
 
 /*
@@ -230,25 +236,26 @@ void generateColumnNames(Parse *pParse, IdList *pTabList, ExprList *pEList){
   int i;
   if( pParse->colNamesSet || v==0 || sqlite_malloc_failed ) return;
   pParse->colNamesSet = 1;
-  sqliteVdbeAddOp(v, OP_ColumnCount, pEList->nExpr, 0, 0, 0);
+  sqliteVdbeAddOp(v, OP_ColumnCount, pEList->nExpr, 0);
   for(i=0; i<pEList->nExpr; i++){
     Expr *p;
-    int addr;
     if( pEList->a[i].zName ){
       char *zName = pEList->a[i].zName;
-      sqliteVdbeAddOp(v, OP_ColumnName, i, 0, zName, 0);
+      sqliteVdbeAddOp(v, OP_ColumnName, i, 0);
+      sqliteVdbeChangeP3(v, -1, zName, strlen(zName));
       continue;
     }
     p = pEList->a[i].pExpr;
     if( p==0 ) continue;
     if( p->span.z && p->span.z[0] ){
-      addr = sqliteVdbeAddOp(v,OP_ColumnName, i, 0, 0, 0);
-      sqliteVdbeChangeP3(v, addr, p->span.z, p->span.n);
+      int addr = sqliteVdbeAddOp(v,OP_ColumnName, i, 0);
+      sqliteVdbeChangeP3(v, -1, p->span.z, p->span.n);
       sqliteVdbeCompressSpace(v, addr);
     }else if( p->op!=TK_COLUMN || pTabList==0 ){
       char zName[30];
       sprintf(zName, "column%d", i+1);
-      sqliteVdbeAddOp(v, OP_ColumnName, i, 0, zName, 0);
+      sqliteVdbeAddOp(v, OP_ColumnName, i, 0);
+      sqliteVdbeChangeP3(v, -1, zName, strlen(zName));
     }else{
       if( pTabList->nId>1 || (pParse->db->flags & SQLITE_FullColNames)!=0 ){
         char *zName = 0;
@@ -258,12 +265,14 @@ void generateColumnNames(Parse *pParse, IdList *pTabList, ExprList *pEList){
         zTab = pTabList->a[p->iTable].zAlias;
         if( zTab==0 ) zTab = pTab->zName;
         sqliteSetString(&zName, zTab, ".", pTab->aCol[p->iColumn].zName, 0);
-        sqliteVdbeAddOp(v, OP_ColumnName, i, 0, zName, 0);
+        sqliteVdbeAddOp(v, OP_ColumnName, i, 0);
+        sqliteVdbeChangeP3(v, -1, zName, strlen(zName));
         sqliteFree(zName);
       }else{
         Table *pTab = pTabList->a[0].pTab;
         char *zName = pTab->aCol[p->iColumn].zName;
-        sqliteVdbeAddOp(v, OP_ColumnName, i, 0, zName, 0);
+        sqliteVdbeAddOp(v, OP_ColumnName, i, 0);
+        sqliteVdbeChangeP3(v, -1, zName, P3_STATIC);
       }
     }
   }
@@ -504,10 +513,10 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
           return 1;
         }
         if( p->op!=TK_ALL ){
-          sqliteVdbeAddOp(v, OP_OpenTemp, unionTab, 0, 0, 0);
-          sqliteVdbeAddOp(v, OP_KeyAsData, unionTab, 1, 0, 0);
+          sqliteVdbeAddOp(v, OP_OpenTemp, unionTab, 0);
+          sqliteVdbeAddOp(v, OP_KeyAsData, unionTab, 1);
         }else{
-          sqliteVdbeAddOp(v, OP_OpenTemp, unionTab, 0, 0, 0);
+          sqliteVdbeAddOp(v, OP_OpenTemp, unionTab, 0);
         }
       }
 
@@ -536,17 +545,18 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
         assert( p->pEList );
         generateColumnNames(pParse, 0, p->pEList);
         if( p->pOrderBy ){
-          sqliteVdbeAddOp(v, OP_SortOpen, 0, 0, 0, 0);
+          sqliteVdbeAddOp(v, OP_SortOpen, 0, 0);
         }
-        sqliteVdbeAddOp(v, OP_Rewind, unionTab, 0, 0, 0);
+        sqliteVdbeAddOp(v, OP_Rewind, unionTab, 0);
         iBreak = sqliteVdbeMakeLabel(v);
-        iCont = sqliteVdbeAddOp(v, OP_Next, unionTab, iBreak, 0, 0);
+        iCont = sqliteVdbeAddOp(v, OP_Next, unionTab, iBreak);
         rc = selectInnerLoop(pParse, 0, unionTab, p->pEList->nExpr,
                              p->pOrderBy, -1, eDest, iParm, 
                              iCont, iBreak);
         if( rc ) return 1;
-        sqliteVdbeAddOp(v, OP_Goto, 0, iCont, 0, 0);
-        sqliteVdbeAddOp(v, OP_Close, unionTab, 0, 0, iBreak);
+        sqliteVdbeAddOp(v, OP_Goto, 0, iCont);
+        sqliteVdbeResolveLabel(v, iBreak);
+        sqliteVdbeAddOp(v, OP_Close, unionTab, 0);
         if( p->pOrderBy ){
           generateSortTail(v, p->pEList->nExpr);
         }
@@ -566,8 +576,8 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
       if( p->pOrderBy && matchOrderbyToColumn(pParse,p,p->pOrderBy,tab1,1) ){
         return 1;
       }
-      sqliteVdbeAddOp(v, OP_OpenTemp, tab1, 0, 0, 0);
-      sqliteVdbeAddOp(v, OP_KeyAsData, tab1, 1, 0, 0);
+      sqliteVdbeAddOp(v, OP_OpenTemp, tab1, 0);
+      sqliteVdbeAddOp(v, OP_KeyAsData, tab1, 1);
 
       /* Code the SELECTs to our left into temporary table "tab1".
       */
@@ -576,8 +586,8 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
 
       /* Code the current SELECT into temporary table "tab2"
       */
-      sqliteVdbeAddOp(v, OP_OpenTemp, tab2, 0, 0, 0);
-      sqliteVdbeAddOp(v, OP_KeyAsData, tab2, 1, 0, 0);
+      sqliteVdbeAddOp(v, OP_OpenTemp, tab2, 0);
+      sqliteVdbeAddOp(v, OP_KeyAsData, tab2, 1);
       p->pPrior = 0;
       rc = sqliteSelect(pParse, p, SRT_Union, tab2);
       p->pPrior = pPrior;
@@ -589,20 +599,21 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
       assert( p->pEList );
       generateColumnNames(pParse, 0, p->pEList);
       if( p->pOrderBy ){
-        sqliteVdbeAddOp(v, OP_SortOpen, 0, 0, 0, 0);
+        sqliteVdbeAddOp(v, OP_SortOpen, 0, 0);
       }
-      sqliteVdbeAddOp(v, OP_Rewind, tab1, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_Rewind, tab1, 0);
       iBreak = sqliteVdbeMakeLabel(v);
-      iCont = sqliteVdbeAddOp(v, OP_Next, tab1, iBreak, 0, 0);
-      sqliteVdbeAddOp(v, OP_FullKey, tab1, 0, 0, 0);
-      sqliteVdbeAddOp(v, OP_NotFound, tab2, iCont, 0, 0);
+      iCont = sqliteVdbeAddOp(v, OP_Next, tab1, iBreak);
+      sqliteVdbeAddOp(v, OP_FullKey, tab1, 0);
+      sqliteVdbeAddOp(v, OP_NotFound, tab2, iCont);
       rc = selectInnerLoop(pParse, 0, tab1, p->pEList->nExpr,
                              p->pOrderBy, -1, eDest, iParm, 
                              iCont, iBreak);
       if( rc ) return 1;
-      sqliteVdbeAddOp(v, OP_Goto, 0, iCont, 0, 0);
-      sqliteVdbeAddOp(v, OP_Close, tab2, 0, 0, iBreak);
-      sqliteVdbeAddOp(v, OP_Close, tab1, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_Goto, 0, iCont);
+      sqliteVdbeResolveLabel(v, iBreak);
+      sqliteVdbeAddOp(v, OP_Close, tab2, 0);
+      sqliteVdbeAddOp(v, OP_Close, tab1, 0);
       if( p->pOrderBy ){
         generateSortTail(v, p->pEList->nExpr);
       }
@@ -842,7 +853,7 @@ int sqliteSelect(
   v = sqliteGetVdbe(pParse);
   if( v==0 ) return 1;
   if( pOrderBy ){
-    sqliteVdbeAddOp(v, OP_SortOpen, 0, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_SortOpen, 0, 0);
   }
 
   /* Identify column names if we will be using in the callback.  This
@@ -855,20 +866,20 @@ int sqliteSelect(
   /* Reset the aggregator
   */
   if( isAgg ){
-    sqliteVdbeAddOp(v, OP_AggReset, 0, pParse->nAgg, 0, 0);
+    sqliteVdbeAddOp(v, OP_AggReset, 0, pParse->nAgg);
   }
 
   /* Initialize the memory cell to NULL
   */
   if( eDest==SRT_Mem ){
-    sqliteVdbeAddOp(v, OP_String, 0, 0, 0, 0);
-    sqliteVdbeAddOp(v, OP_MemStore, iParm, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_String, 0, 0);
+    sqliteVdbeAddOp(v, OP_MemStore, iParm, 0);
   }
 
   /* Begin the database scan
   */
   if( isDistinct ){
-    sqliteVdbeAddOp(v, OP_OpenTemp, distinct, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_OpenTemp, distinct, 0);
   }
   pWInfo = sqliteWhereBegin(pParse, pTabList, pWhere, 0);
   if( pWInfo==0 ) return 1;
@@ -892,7 +903,7 @@ int sqliteSelect(
       for(i=0; i<pGroupBy->nExpr; i++){
         sqliteExprCode(pParse, pGroupBy->a[i].pExpr);
       }
-      sqliteVdbeAddOp(v, OP_MakeKey, pGroupBy->nExpr, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_MakeKey, pGroupBy->nExpr, 0);
       doFocus = 1;
     }else{
       doFocus = 0;
@@ -903,16 +914,17 @@ int sqliteSelect(
         }
       }
       if( doFocus ){
-        sqliteVdbeAddOp(v, OP_String, 0, 0, "", 0);
+        sqliteVdbeAddOp(v, OP_String, 0, 0);
+        sqliteVdbeChangeP3(v, -1, "", P3_STATIC);
       }
     }
     if( doFocus ){
       int lbl1 = sqliteVdbeMakeLabel(v);
-      sqliteVdbeAddOp(v, OP_AggFocus, 0, lbl1, 0, 0);
+      sqliteVdbeAddOp(v, OP_AggFocus, 0, lbl1);
       for(i=0; i<pParse->nAgg; i++){
         if( pParse->aAgg[i].isAgg ) continue;
         sqliteExprCode(pParse, pParse->aAgg[i].pExpr);
-        sqliteVdbeAddOp(v, OP_AggSet, 0, i, 0, 0);
+        sqliteVdbeAddOp(v, OP_AggSet, 0, i);
       }
       sqliteVdbeResolveLabel(v, lbl1);
     }
@@ -922,21 +934,21 @@ int sqliteSelect(
       if( !pParse->aAgg[i].isAgg ) continue;
       pE = pParse->aAgg[i].pExpr;
       if( pE==0 ){
-        sqliteVdbeAddOp(v, OP_AggIncr, 1, i, 0, 0);
+        sqliteVdbeAddOp(v, OP_AggIncr, 1, i);
         continue;
       }
       assert( pE->op==TK_AGG_FUNCTION );
       assert( pE->pList!=0 && pE->pList->nExpr==1 );
       sqliteExprCode(pParse, pE->pList->a[0].pExpr);
-      sqliteVdbeAddOp(v, OP_AggGet, 0, i, 0, 0);
+      sqliteVdbeAddOp(v, OP_AggGet, 0, i);
       switch( pE->iColumn ){
         case FN_Min:  op = OP_Min;   break;
         case FN_Max:  op = OP_Max;   break;
         case FN_Avg:  op = OP_Add;   break;
         case FN_Sum:  op = OP_Add;   break;
       }
-      sqliteVdbeAddOp(v, op, 0, 0, 0, 0);
-      sqliteVdbeAddOp(v, OP_AggSet, 0, i, 0, 0);
+      sqliteVdbeAddOp(v, op, 0, 0);
+      sqliteVdbeAddOp(v, OP_AggSet, 0, i);
     }
   }
 
@@ -951,7 +963,7 @@ int sqliteSelect(
   if( isAgg ){
     int endagg = sqliteVdbeMakeLabel(v);
     int startagg;
-    startagg = sqliteVdbeAddOp(v, OP_AggNext, 0, endagg, 0, 0);
+    startagg = sqliteVdbeAddOp(v, OP_AggNext, 0, endagg);
     pParse->useAgg = 1;
     if( pHaving ){
       sqliteExprIfFalse(pParse, pHaving, startagg);
@@ -960,8 +972,9 @@ int sqliteSelect(
                     startagg, endagg) ){
       return 1;
     }
-    sqliteVdbeAddOp(v, OP_Goto, 0, startagg, 0, 0);
-    sqliteVdbeAddOp(v, OP_Noop, 0, 0, 0, endagg);
+    sqliteVdbeAddOp(v, OP_Goto, 0, startagg);
+    sqliteVdbeResolveLabel(v, endagg);
+    sqliteVdbeAddOp(v, OP_Noop, 0, 0);
     pParse->useAgg = 0;
   }
 

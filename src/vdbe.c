@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.82 2001/10/09 04:19:47 drh Exp $
+** $Id: vdbe.c,v 1.83 2001/10/13 01:06:48 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -233,24 +233,20 @@ void sqliteVdbeTrace(Vdbe *p, FILE *trace){
 **
 **    op              The opcode for this instruction
 **
-**    p1, p2, p3      Three operands.
+**    p1, p2          First two of the three possible operands.
 **
-**    lbl             A symbolic label for this instruction.
-**
-** Symbolic labels are negative numbers that stand for the address
-** of instructions that have yet to be coded.  When the instruction
-** is coded, its real address is substituted in the p2 field of
-** prior and subsequent instructions that have the lbl value in
-** their p2 fields.
+** Use the sqliteVdbeResolveLabel() function to fix an address and
+** the sqliteVdbeChangeP3() function to change the value of the P3
+** operand.
 */
-int sqliteVdbeAddOp(Vdbe *p, int op, int p1, int p2, const char *p3, int lbl){
-  int i, j;
+int sqliteVdbeAddOp(Vdbe *p, int op, int p1, int p2){
+  int i;
 
   i = p->nOp;
   p->nOp++;
   if( i>=p->nOpAlloc ){
     int oldSize = p->nOpAlloc;
-    p->nOpAlloc = p->nOpAlloc*2 + 10;
+    p->nOpAlloc = p->nOpAlloc*2 + 100;
     p->aOp = sqliteRealloc(p->aOp, p->nOpAlloc*sizeof(Op));
     if( p->aOp==0 ){
       p->nOp = 0;
@@ -265,18 +261,8 @@ int sqliteVdbeAddOp(Vdbe *p, int op, int p1, int p2, const char *p3, int lbl){
     p2 = p->aLabel[-1-p2];
   }
   p->aOp[i].p2 = p2;
-  if( p3 && p3[0] ){
-    p->aOp[i].p3 = sqliteStrDup(p3);
-    p->aOp[i].p3dyn = 1;
-  }else{
-    p->aOp[i].p3 = 0;
-  }
-  if( lbl<0 && (-lbl)<=p->nLabel ){
-    p->aLabel[-1-lbl] = i;
-    for(j=0; j<i; j++){
-      if( p->aOp[j].p2==lbl ) p->aOp[j].p2 = i;
-    }
-  }
+  p->aOp[i].p3 = 0;
+  p->aOp[i].p3type = P3_NOTUSED;
   return i;
 }
 
@@ -323,9 +309,11 @@ int sqliteVdbeAddOpList(Vdbe *p, int nOp, VdbeOp const *aOp){
     int i;
     for(i=0; i<nOp; i++){
       int p2 = aOp[i].p2;
-      if( p2<0 ) p2 = addr + ADDR(p2);
-      sqliteVdbeAddOp(p, aOp[i].opcode, aOp[i].p1, p2, aOp[i].p3, 0);
+      p->aOp[i+addr] = aOp[i];
+      if( p2<0 ) p->aOp[i+addr].p2 = addr + ADDR(p2);
+      p->aOp[i+addr].p3type = aOp[i].p3 ? P3_STATIC : P3_NOTUSED;
     }
+    p->nOp += nOp;
   }
   return addr;
 }
@@ -353,22 +341,33 @@ void sqliteVdbeChangeP1(Vdbe *p, int addr, int val){
 ** A value of n==0 means copy bytes of zP3 up to and including the
 ** first null byte.  If n>0 then copy n+1 bytes of zP3.
 **
-** If n<0 then zP3 is assumed to be a pointer to a static string.
-** P3 is made to point directly to this string without any copying.
+** If n==P3_STATIC  it means that zP3 is a pointer to a constant static
+** string we can just copy the pointer.  n==P3_POINTER means zP3 is
+** a pointer to some object other than a string.
+**
+** If addr<0 then change P3 on the most recently inserted instruction.
 */
 void sqliteVdbeChangeP3(Vdbe *p, int addr, char *zP3, int n){
-  if( p && addr>=0 && p->nOp>addr && zP3 ){
-    Op *pOp = &p->aOp[addr];
-    if( pOp->p3 && pOp->p3dyn ){
-      sqliteFree(pOp->p3);
-    }
-    if( n<0 ){
-      pOp->p3 = zP3;
-      pOp->p3dyn = 0;
-    }else{
-      sqliteSetNString(&p->aOp[addr].p3, zP3, n, 0);
-      pOp->p3dyn = 1;
-    }
+  Op *pOp;
+  if( p==0 ) return;
+  if( addr<0 || addr>=p->nOp ){
+    addr = p->nOp - 1;
+    if( addr<0 ) return;
+  }
+  pOp = &p->aOp[addr];
+  if( pOp->p3 && pOp->p3type==P3_DYNAMIC ){
+    sqliteFree(pOp->p3);
+    pOp->p3 = 0;
+  }
+  if( zP3==0 ){
+    pOp->p3 = 0;
+    pOp->p3type = P3_NOTUSED;
+  }else if( n<0 ){
+    pOp->p3 = zP3;
+    pOp->p3type = n;
+  }else{
+    sqliteSetNString(&pOp->p3, zP3, n, 0);
+    pOp->p3type = P3_DYNAMIC;
   }
 }
 
@@ -386,11 +385,12 @@ void sqliteVdbeDequoteP3(Vdbe *p, int addr){
   if( addr<0 || addr>=p->nOp ) return;
   pOp = &p->aOp[addr];
   if( pOp->p3==0 || pOp->p3[0]==0 ) return;
-  if( !pOp->p3dyn ){
+  if( pOp->p3type==P3_POINTER ) return;
+  if( pOp->p3type!=P3_DYNAMIC ){
     pOp->p3 = sqliteStrDup(pOp->p3);
-    pOp->p3dyn = 1;
+    pOp->p3type = P3_DYNAMIC;
   }
-  if( pOp->p3 ) sqliteDequote(pOp->p3);
+  sqliteDequote(pOp->p3);
 }
 
 /*
@@ -404,9 +404,11 @@ void sqliteVdbeCompressSpace(Vdbe *p, int addr){
   Op *pOp;
   if( addr<0 || addr>=p->nOp ) return;
   pOp = &p->aOp[addr];
-  if( !pOp->p3dyn ){
+  if( pOp->p3type!=P3_DYNAMIC ){
     pOp->p3 = sqliteStrDup(pOp->p3);
-    pOp->p3dyn = 1;
+    pOp->p3type = P3_DYNAMIC;
+  }else if( pOp->p3type!=P3_STATIC ){
+    return;
   }
   z = pOp->p3;
   if( z==0 ) return;
@@ -770,7 +772,7 @@ void sqliteVdbeDelete(Vdbe *p){
     p->nOp = 0;
   }
   for(i=0; i<p->nOp; i++){
-    if( p->aOp[i].p3dyn ){
+    if( p->aOp[i].p3type==P3_DYNAMIC ){
       sqliteFree(p->aOp[i].p3);
     }
   }
@@ -873,7 +875,7 @@ int sqliteVdbeList(
     sprintf(zAddr,"%d",i);
     sprintf(zP1,"%d", p->aOp[i].p1);
     sprintf(zP2,"%d", p->aOp[i].p2);
-    azValue[4] = p->aOp[i].p3;
+    azValue[4] = p->aOp[i].p3type!=P3_POINTER ? p->aOp[i].p3 : "";
     azValue[1] = zOpName[p->aOp[i].opcode];
     if( xCallback(pArg, 5, azValue, azColumnNames) ){
       rc = SQLITE_ABORT;
@@ -2871,7 +2873,7 @@ case OP_CreateTable: {
   int i = ++p->tos;
   int pgno;
   VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
-  assert( pOp->p3!=0 && pOp->p3dyn==0 );
+  assert( pOp->p3!=0 && pOp->p3type==P3_POINTER );
   rc = sqliteBtreeCreateTable(pOp->p2 ? db->pBeTemp : pBt, &pgno);
   if( rc==SQLITE_OK ){
     aStack[i].i = pgno;
