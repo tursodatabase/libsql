@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3ref.tcl,v 1.14 2004/10/10 17:24:54 drh Exp $}
+set rcsid {$Id: capi3ref.tcl,v 1.15 2004/11/18 02:04:10 drh Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -476,7 +476,7 @@ int sqlite3_create_function(
   const char *zFunctionName,
   int nArg,
   int eTextRep,
-  void*,
+  void *pUserData,
   void (*xFunc)(sqlite3_context*,int,sqlite3_value**),
   void (*xStep)(sqlite3_context*,int,sqlite3_value**),
   void (*xFinal)(sqlite3_context*)
@@ -486,7 +486,7 @@ int sqlite3_create_function16(
   const void *zFunctionName,
   int nArg,
   int eTextRep,
-  void*,
+  void *pUserData,
   void (*xFunc)(sqlite3_context*,int,sqlite3_value**),
   void (*xStep)(sqlite3_context*,int,sqlite3_value**),
   void (*xFinal)(sqlite3_context*)
@@ -512,6 +512,19 @@ int sqlite3_create_function16(
  The third parameter is the number of arguments that the function or
  aggregate takes. If this parameter is negative, then the function or
  aggregate may take any number of arguments.
+
+ The fourth parameter, eTextRep, specifies what type of text arguments
+ this function prefers to receive.  Any function should be able to work
+ work with UTF-8, UTF-16le, or UTF-16be.  But some implementations may be
+ more efficient with one representation than another.  Users are allowed
+ to specify separate implementations for the same function which are called
+ depending on the text representation of the arguments.  The the implementation
+ which provides the best match is used.  If there is only a single
+ implementation which does not care what text representation is used,
+ then the fourth parameter should be SQLITE_ANY.
+
+ The fifth parameter is an arbitrary pointer.  The function implementations
+ can gain access to this pointer using the sqlite_user_data() API.
 
  The sixth, seventh and  eighth, xFunc, xStep and xFinal, are
  pointers to user implemented C functions that implement the user
