@@ -91,18 +91,13 @@
 #define EXCLUSIVE_LOCK  4
 
 /*
-** Windows file locking notes:
+** File Locking Notes:  (Mostly about windows but also some info for Unix)
 **
 ** We cannot use LockFileEx() or UnlockFileEx() on Win95/98/ME because
 ** those functions are not available.  So we use only LockFile() and
 ** UnlockFile().
 **
 ** LockFile() prevents not just writing but also reading by other processes.
-** (This is a design error on the part of Windows, but there is nothing
-** we can do about that.)  So the region used for locking is at the
-** end of the file where it is unlikely to ever interfere with an
-** actual read attempt.
-**
 ** A SHARED_LOCK is obtained by locking a single randomly-chosen 
 ** byte out of a specific range of bytes. The lock byte is obtained at 
 ** random so two separate readers can probably access the file at the 
@@ -129,16 +124,32 @@
 ** These #defines are available in os.h so that Unix can use the same
 ** byte ranges for locking.  This leaves open the possiblity of having
 ** clients on win95, winNT, and unix all talking to the same shared file
-** and all locking correctly.
+** and all locking correctly.  To do so would require that samba (or whatever
+** tool is being used for file sharing) implements locks correctly between
+** windows and unix.  I'm guessing that isn't likely to happen, but by
+** using the same locking range we are at least open to the possibility.
 **
 ** Locking in windows is manditory.  For this reason, we cannot store
 ** actual data in the bytes used for locking.  The pager never allocates
-** the pages involved in locking therefore.
+** the pages involved in locking therefore.  SHARED_SIZE is selected so
+** that all locks will fit on a single page even at the minimum page size.
+** PENDING_BYTE defines the beginning of the locks.  By default PENDING_BYTE
+** is set high so that we don't have to allocate an unused page except
+** for very large databases.  But one should test the page skipping logic 
+** by setting PENDING_BYTE low and running the entire regression suite.
+**
+** Changing the value of PENDING_BYTE results in a subtly incompatible
+** file format.  Depending on how it is changed, you might not notice
+** the incompatibility right away, even running a full regression test.
+** The default location of PENDING_BYTE is the first byte past the
+** 1GB boundary.
+**
 */
-#define SHARED_SIZE       10238
-#define SHARED_FIRST      (0x3fffffff - (SHARED_SIZE - 1))
-#define RESERVED_BYTE     (SHARED_FIRST - 1)
-#define PENDING_BYTE      (RESERVED_BYTE - 1)
+#define PENDING_BYTE      0x40000000  /* First byte past the 1GB boundary */
+/* #define PENDING_BYTE     0x5400   // Page 20 - for testing */
+#define RESERVED_BYTE     (PENDING_BYTE+1)
+#define SHARED_FIRST      (PENDING_BYTE+2)
+#define SHARED_SIZE       510
 
 
 int sqlite3OsDelete(const char*);

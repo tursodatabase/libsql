@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.126 2004/06/14 06:03:57 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.127 2004/06/15 01:40:29 drh Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -1205,6 +1205,9 @@ int sqlite3pager_pagecount(Pager *pPager){
     return 0;
   }
   n /= SQLITE_PAGE_SIZE;
+  if( !pPager->memDb && n==PENDING_BYTE/SQLITE_PAGE_SIZE ){
+    n++;
+  }
   if( pPager->state!=PAGER_UNLOCK ){
     pPager->dbSize = n;
   }
@@ -2209,6 +2212,9 @@ int sqlite3pager_write(void *pData){
   */
   if( pPager->dbSize<(int)pPg->pgno ){
     pPager->dbSize = pPg->pgno;
+    if( !pPager->memDb && pPager->dbSize==PENDING_BYTE/pPager->pageSize ){
+      pPager->dbSize++;
+    }
   }
   return rc;
 }

@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.166 2004/06/14 06:03:57 danielk1977 Exp $
+** $Id: btree.c,v 1.167 2004/06/15 01:40:29 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -207,6 +207,7 @@
 #include "sqliteInt.h"
 #include "pager.h"
 #include "btree.h"
+#include "os.h"
 #include <assert.h>
 
 
@@ -4146,6 +4147,10 @@ char *sqlite3BtreeIntegrityCheck(Btree *pBt, int *aRoot, int nRoot){
   }
   sCheck.anRef = sqliteMallocRaw( (sCheck.nPage+1)*sizeof(sCheck.anRef[0]) );
   for(i=0; i<=sCheck.nPage; i++){ sCheck.anRef[i] = 0; }
+  i = PENDING_BYTE/pBt->pageSize + 1;
+  if( i<=sCheck.nPage ){
+    sCheck.anRef[i] = 1;
+  }
   sCheck.zErrMsg = 0;
 
   /* Check the integrity of the freelist

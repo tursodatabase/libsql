@@ -1,5 +1,5 @@
-C Add\sthe\ssqlite3OsFileModTime()\sinterface.\s\sBut\sit\sis\sstill\sunused.\s\sThe\nchange\scounter\sin\spage\s1\sis\salways\sincremented.\s(CVS\s1594)
-D 2004-06-15T00:29:04
+C Do\snot\suse\sthe\spage\scontaining\slocks\sfor\sanything\sto\savoid\sproblems\swith\nthe\smanditory\sfile\slocking\son\swindows.\s(CVS\s1595)
+D 2004-06-15T01:40:29
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -26,7 +26,7 @@ F sqlite.def fc4f5734786fe4743cfe2aa98eb2da4b089edb5f
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F src/attach.c 93b8ecec4a8d7b4e9f2479e2327d90c9d01765e8
 F src/auth.c 204e1e9c45e64315589bc8b62cba5d9de29b6a3c
-F src/btree.c 1bed18993e54483de8ff869142e82c48847e1d50
+F src/btree.c a9aabed057eacdaf617caeddc7b136bd831ab22c
 F src/btree.h 32f96abef464cf8765b23ca669acfe90d191fcc5
 F src/build.c 916a84fa5f8bfd44dbe14c3d7c923dd07ee7373f
 F src/date.c 65b483caeb0e4dd663667d2f927caa058168ebff
@@ -40,7 +40,7 @@ F src/insert.c 68c7f3ddd6a7f1e5596d6996da1a2861b3789a3a
 F src/legacy.c ad23746f15f67e34577621b1875f639c94839e1f
 F src/main.c a62c08c9d315c3ebc58bfb6b52ab5953ee8a3089
 F src/md5.c d77a389955759c8329bb357e3d71bac3d6eb710b
-F src/os.h be7323afb3d371bcab438556ddb5fda397e3d815
+F src/os.h 1cb5f0293a30288451fe3c0c73815cf208212ed1
 F src/os_common.h ba1b7306e16e2091718f2c48db0fe6c1d7a31bb8
 F src/os_mac.c 129029f9faecf1133edcf72eaedd54c1c838b140
 F src/os_mac.h 51d2445f47e182ed32d3bd6937f81070c6fd9bd4
@@ -48,7 +48,7 @@ F src/os_unix.c 7eac2e840300848818f53e6e78cd19d128e936bd
 F src/os_unix.h 1cd6133cf66dea704b8646b70b2dfdcbdd9b3738
 F src/os_win.c a60f9ebfb0ce3e5b2ce259f981af59a50b24fc8d
 F src/os_win.h 004eec47b1780fcaf07420ddc2072294b698d48c
-F src/pager.c d42af374b23b50805b42c08cbba5bd70dd73964f
+F src/pager.c bf81f3c8105f8b257ee07575d0040ee2c3822a51
 F src/pager.h bc58d32a9dee464f7268fb68652c130a4216e438
 F src/parse.y 097438674976355a10cf177bd97326c548820b86
 F src/pragma.c e288bd122d3ca41ec2032475abde1ff5fa3095f4
@@ -223,7 +223,7 @@ F www/support.tcl 1801397edd271cc39a2aadd54e701184b5181248
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P af6edd2c0ad160435acd5bfa7af36c4f394f0bb8
-R 8390b0ef3815bc1230f728916c2a8366
+P 186c6f93e12978907c5f0ff81d90bdf7367b9274
+R 39de485059268cbc8025aa3dc3a9cdaa
 U drh
-Z b91d1156cec1d19e076cf36f8583344f
+Z f0561e35a6d128f341936bb7b7366398
