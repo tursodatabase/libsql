@@ -1305,7 +1305,7 @@ char **argv;
 /*
 ** Return a pointer to the next structure in the linked list.
 */
-#define NEXT(A) (*(char**)(((int)A)+offset))
+#define NEXT(A) (*(char**)(((unsigned long)A)+offset))
 
 /*
 ** Inputs:
@@ -1379,11 +1379,11 @@ char *list;
 char **next;
 int (*cmp)();
 {
-  int offset;
+  unsigned long offset;
   char *ep;
   char *set[LISTSIZE];
   int i;
-  offset = (int)next - (int)list;
+  offset = (unsigned long)next - (unsigned long)list;
   for(i=0; i<LISTSIZE; i++) set[i] = 0;
   while( list ){
     ep = list;
@@ -1531,7 +1531,7 @@ FILE *err;
         if( *end ){
           if( err ){
             fprintf(err,"%sillegal character in floating-point argument.\n",emsg);
-            errline(i,((int)end)-(int)argv[i],err);
+            errline(i,((unsigned long)end)-(unsigned long)argv[i],err);
           }
           errcnt++;
         }
@@ -1542,7 +1542,7 @@ FILE *err;
         if( *end ){
           if( err ){
             fprintf(err,"%sillegal character in integer argument.\n",emsg);
-            errline(i,((int)end)-(int)argv[i],err);
+            errline(i,((unsigned long)end)-(unsigned long)argv[i],err);
           }
           errcnt++;
         }
@@ -2625,7 +2625,7 @@ struct lemon *lemp;
 
   cp = strrchr(lemp->filename,'.');
   if( cp ){
-    sprintf(buf,"%.*s.lt",(int)cp-(int)lemp->filename,lemp->filename);
+    sprintf(buf,"%.*s.lt",(unsigned long)cp-(unsigned long)lemp->filename,lemp->filename);
   }else{
     sprintf(buf,"%s.lt",lemp->filename);
   }

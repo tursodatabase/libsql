@@ -1,5 +1,5 @@
-C Version\s2.0.7\s(CVS\s463)
-D 2001-10-22T03:00:00
+C Make\slemon\s64-bit\sclean\s(CVS\s294)
+D 2001-10-25T20:37:17
 F Makefile.in 6801df952cb1df64aa32e4de85fed24511d28efd
 F Makefile.template 1fdb891f14083ee0b63cf7282f91529634438e7a
 F README 93d2977cc5c6595c448de16bdefc312b9d401533
@@ -91,7 +91,7 @@ F test/unique.test ef1f67607a7109e9c0842cd8557550fb121d7ec6
 F test/update.test 8cf76467d46b1650539763c95d5208340c61d561
 F test/vacuum.test 8acf8669f3b627e54149b25165b034aa06c2432e
 F test/where.test 43d5ac94da3f3722375307f948884dc79b326a91
-F tool/lemon.c 5533b63e5cdbb1efc939abac3c2f4f37ac839488
+F tool/lemon.c bfd036ab9309c7f34e1357d9a065ad137814e741
 F tool/lempar.c 9b604e6a8b3d55c0b9cbcb130a7302fb8bafe2b9
 F tool/memleak.awk 296dfbce7a9ca499b95ce04e30334e64a50052e0
 F tool/opNames.awk 5ba1f48aa854ee3b7c3d2b54233665bc3e649ea2
@@ -114,7 +114,7 @@ F www/speed.tcl ab7d6d3bc898472bd94320a5d3c63de928d4804b
 F www/sqlite.tcl 6a21242a272e9c0939a04419a51c3d50cae33e3e
 F www/tclsqlite.tcl 13d50723f583888fc80ae1a38247c0ab415066fa
 F www/vdbe.tcl bb7d620995f0a987293e9d4fb6185a3b077e9b44
-P f8328a5f11801c5124f9a8dace22df3c1cfb2191
-R 123ebf892398ed7efe52cb42cd131987
+P b0442cb9c64682b6f98bf8f26f50bb54bdfd9013
+R 32105803ca01e82d865a4315992e9dcb
 U drh
-Z b312054a8667af4612baea400c53bbff
+Z 410df64d0289bddfbc85d5b3184781c8
