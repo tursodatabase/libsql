@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.232 2004/06/21 08:18:52 danielk1977 Exp $
+** $Id: main.c,v 1.233 2004/06/22 12:13:55 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -436,7 +436,7 @@ static int nocaseCollatingFunc(
 /*
 ** Return the ROWID of the most recent insert
 */
-long long int sqlite3_last_insert_rowid(sqlite *db){
+sqlite_int64 sqlite3_last_insert_rowid(sqlite *db){
   return db->lastRowid;
 }
 

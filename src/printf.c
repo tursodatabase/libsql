@@ -345,7 +345,7 @@ static int vxprintf(
     */
     switch( xtype ){
       case etRADIX:
-        if( flag_longlong )   longvalue = va_arg(ap,INT64_TYPE);
+        if( flag_longlong )   longvalue = va_arg(ap,sqlite_int64);
         else if( flag_long )  longvalue = va_arg(ap,long int);
         else                  longvalue = va_arg(ap,int);
 #if 1

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.298 2004/06/22 11:29:02 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.299 2004/06/22 12:13:55 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -99,11 +99,12 @@
 **
 **         cc '-DUINTPTR_TYPE=long long int' ...
 */
-#ifndef INT64_TYPE
-# define INT64_TYPE long long int
-#endif
 #ifndef UINT64_TYPE
-# define UINT64_TYPE unsigned long long int
+# if defined(_MSC_VER) || defined(__BORLANDC__)
+#   define UINT64_TYPE unsigned __int64
+# else
+#   define UINT64_TYPE unsigned long long int
+# endif
 #endif
 #ifndef UINT32_TYPE
 # define UINT32_TYPE unsigned int
@@ -117,14 +118,17 @@
 #ifndef INT8_TYPE
 # define INT8_TYPE signed char
 #endif
+#ifndef LONGDOUBLE_TYPE
+# define LONGDOUBLE_TYPE long double
+#endif
 #ifndef INTPTR_TYPE
 # if SQLITE_PTR_SZ==4
 #   define INTPTR_TYPE int
 # else
-#   define INTPTR_TYPE long long
+#   define INTPTR_TYPE sqlite_int64
 # endif
 #endif
-typedef INT64_TYPE i64;            /* 8-byte signed integer */
+typedef sqlite_int64 i64;          /* 8-byte signed integer */
 typedef UINT64_TYPE u64;           /* 8-byte unsigned integer */
 typedef UINT32_TYPE u32;           /* 4-byte unsigned integer */
 typedef UINT16_TYPE u16;           /* 2-byte unsigned integer */
@@ -148,15 +152,6 @@ typedef struct sqlite sqlite;
 */
 #include "vdbe.h"
 #include "btree.h"
-
-/*
-** Most C compilers these days recognize "long double", don't they?
-** Just in case we encounter one that does not, we will create a macro
-** for long double so that it can be easily changed to just "double".
-*/
-#ifndef LONGDOUBLE_TYPE
-# define LONGDOUBLE_TYPE long double
-#endif
 
 /*
 ** This macro casts a pointer to an integer.  Useful for doing

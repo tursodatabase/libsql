@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.105 2004/06/21 06:50:28 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.106 2004/06/22 12:13:55 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -42,6 +42,18 @@ extern const char sqlite3_version[];
 ** following opaque structure.
 */
 typedef struct sqlite sqlite3;
+
+
+/*
+** Some compilers do not support the "long long" datatype.  So we have
+** to do a typedef that for 64-bit integers that depends on what compiler
+** is being used.
+*/
+#if defined(_MSC_VER) || defined(__BORLANDC__)
+  typedef __int64 sqlite_int64;
+#else
+  typedef long long int sqlite_int64;
+#endif
 
 
 /*
@@ -152,7 +164,7 @@ int sqlite3_exec(
 **
 ** This function is similar to the mysql_insert_id() function from MySQL.
 */
-long long int sqlite3_last_insert_rowid(sqlite3*);
+sqlite_int64 sqlite3_last_insert_rowid(sqlite3*);
 
 /*
 ** This function returns the number of database rows that were changed
@@ -623,7 +635,7 @@ typedef struct Mem sqlite3_value;
 int sqlite3_bind_blob(sqlite3_stmt*, int, const void*, int n, void(*)(void*));
 int sqlite3_bind_double(sqlite3_stmt*, int, double);
 int sqlite3_bind_int(sqlite3_stmt*, int, int);
-int sqlite3_bind_int64(sqlite3_stmt*, int, long long int);
+int sqlite3_bind_int64(sqlite3_stmt*, int, sqlite_int64);
 int sqlite3_bind_null(sqlite3_stmt*, int);
 int sqlite3_bind_text(sqlite3_stmt*, int, const char*, int n, void(*)(void*));
 int sqlite3_bind_text16(sqlite3_stmt*, int, const void*, int, void(*)(void*));
@@ -802,7 +814,7 @@ int sqlite3_column_bytes(sqlite3_stmt*, int iCol);
 int sqlite3_column_bytes16(sqlite3_stmt*, int iCol);
 double sqlite3_column_double(sqlite3_stmt*, int iCol);
 int sqlite3_column_int(sqlite3_stmt*, int iCol);
-long long int sqlite3_column_int64(sqlite3_stmt*, int iCol);
+sqlite_int64 sqlite3_column_int64(sqlite3_stmt*, int iCol);
 const unsigned char *sqlite3_column_text(sqlite3_stmt*, int iCol);
 const void *sqlite3_column_text16(sqlite3_stmt*, int iCol);
 int sqlite3_column_type(sqlite3_stmt*, int iCol);
@@ -908,7 +920,7 @@ int sqlite3_value_bytes(sqlite3_value*);
 int sqlite3_value_bytes16(sqlite3_value*);
 double sqlite3_value_double(sqlite3_value*);
 int sqlite3_value_int(sqlite3_value*);
-long long int sqlite3_value_int64(sqlite3_value*);
+sqlite_int64 sqlite3_value_int64(sqlite3_value*);
 const unsigned char *sqlite3_value_text(sqlite3_value*);
 const void *sqlite3_value_text16(sqlite3_value*);
 const void *sqlite3_value_text16le(sqlite3_value*);
@@ -986,7 +998,7 @@ void sqlite3_result_double(sqlite3_context*, double);
 void sqlite3_result_error(sqlite3_context*, const char*, int);
 void sqlite3_result_error16(sqlite3_context*, const void*, int);
 void sqlite3_result_int(sqlite3_context*, int);
-void sqlite3_result_int64(sqlite3_context*, long long int);
+void sqlite3_result_int64(sqlite3_context*, sqlite_int64);
 void sqlite3_result_null(sqlite3_context*);
 void sqlite3_result_text(sqlite3_context*, const char*, int, void(*)(void*));
 void sqlite3_result_text16(sqlite3_context*, const void*, int, void(*)(void*));

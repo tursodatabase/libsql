@@ -385,7 +385,7 @@ int sqlite3VdbeMemCopy(Mem*, const Mem*);
 int sqlite3VdbeMemMove(Mem*, Mem*);
 int sqlite3VdbeMemNulTerminate(Mem*);
 int sqlite3VdbeMemSetStr(Mem*, const char*, int, u8, void(*)(void*));
-void sqlite3VdbeMemSetInt64(Mem*, long long int);
+void sqlite3VdbeMemSetInt64(Mem*, i64);
 void sqlite3VdbeMemSetDouble(Mem*, double);
 void sqlite3VdbeMemSetNull(Mem*);
 int sqlite3VdbeMemMakeWriteable(Mem*);

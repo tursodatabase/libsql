@@ -52,7 +52,7 @@ int sqlite3_value_int(sqlite3_value *pVal){
   sqlite3VdbeMemIntegerify(pMem);
   return (int)pVal->i;
 }
-long long int sqlite3_value_int64(sqlite3_value *pVal){
+sqlite_int64 sqlite3_value_int64(sqlite3_value *pVal){
   Mem *pMem = (Mem *)pVal;
   sqlite3VdbeMemIntegerify(pMem);
   return pVal->i;
@@ -324,7 +324,7 @@ double sqlite3_column_double(sqlite3_stmt *pStmt, int i){
 int sqlite3_column_int(sqlite3_stmt *pStmt, int i){
   return sqlite3_value_int( columnMem(pStmt,i) );
 }
-long long int sqlite3_column_int64(sqlite3_stmt *pStmt, int i){
+sqlite_int64 sqlite3_column_int64(sqlite3_stmt *pStmt, int i){
   return sqlite3_value_int64( columnMem(pStmt,i) );
 }
 const unsigned char *sqlite3_column_text(sqlite3_stmt *pStmt, int i){
@@ -468,9 +468,9 @@ int sqlite3_bind_double(sqlite3_stmt *pStmt, int i, double rValue){
   return SQLITE_OK;
 }
 int sqlite3_bind_int(sqlite3_stmt *p, int i, int iValue){
-  return sqlite3_bind_int64(p, i, (long long int)iValue);
+  return sqlite3_bind_int64(p, i, (i64)iValue);
 }
-int sqlite3_bind_int64(sqlite3_stmt *pStmt, int i, long long int iValue){
+int sqlite3_bind_int64(sqlite3_stmt *pStmt, int i, sqlite_int64 iValue){
   int rc;
   Vdbe *p = (Vdbe *)pStmt;
   rc = vdbeUnbind(p, i);
