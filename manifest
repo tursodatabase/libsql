@@ -1,5 +1,5 @@
-C The\sdownload.tcl\sscript\sused\sto\sgenerate\sdownload.html\smust\srun\sout\sof\nthe\sdoc\ssubdirectory\sof\sthe\sbuild.\s(CVS\s1667)
-D 2004-06-22T14:52:26
+C Fix\stypos\sin\sweb\sdocumentation.\s\sTickets\s#770\sand\s#771.\s(CVS\s1668)
+D 2004-06-22T14:57:54
 F Makefile.in 0a3d7aaefa50717bd550b0cf568a51072c4c103c
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -226,9 +226,9 @@ F www/sqlite.tcl b51fd15f0531a54874de785a9efba323eecd5975
 F www/support.tcl 1801397edd271cc39a2aadd54e701184b5181248
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
-F www/version3.tcl af528563442e3039928f9018327a18157e53a44f
+F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P d5d28e9822ba9177acfd72ebd87c293a4fac4784
-R 81bbb159e7d5473c4b3489de52500e71
+P 80c7b13ff39c88474587b1899505bac83a0b8812
+R 2c20ba5b608dc97c31a1297639248d6a
 U drh
-Z e8fd8d16827062c29789d47358b7d377
+Z 2c2ee46ab3ae007d7f446eebbb4c86e3
