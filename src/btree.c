@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.107 2004/05/02 21:12:19 drh Exp $
+** $Id: btree.c,v 1.108 2004/05/03 19:49:33 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -467,7 +467,7 @@ static int allocateSpace(MemPage *pPage, int nByte){
   if( nByte<4 ) nByte = 4;
   if( pPage->nFree<nByte || pPage->isOverfull ) return 0;
   hdr = pPage->hdrOffset;
-  if( data[hdr+5]>=252 ){
+  if( data[hdr+5]>=60 ){
     defragmentPage(pPage);
   }
   addr = hdr+1;
@@ -1098,7 +1098,7 @@ int sqlite3BtreeBeginStmt(Btree *pBt){
   if( !pBt->inTrans || pBt->inStmt ){
     return pBt->readOnly ? SQLITE_READONLY : SQLITE_ERROR;
   }
-  rc = pBt->readOnly ? SQLITE_OK : sqlitepager_ckpt_begin(pBt->pPager);
+  rc = pBt->readOnly ? SQLITE_OK : sqlitepager_stmt_begin(pBt->pPager);
   pBt->inStmt = 1;
   return rc;
 }
@@ -1111,7 +1111,7 @@ int sqlite3BtreeBeginStmt(Btree *pBt){
 int sqlite3BtreeCommitStmt(Btree *pBt){
   int rc;
   if( pBt->inStmt && !pBt->readOnly ){
-    rc = sqlitepager_ckpt_commit(pBt->pPager);
+    rc = sqlitepager_stmt_commit(pBt->pPager);
   }else{
     rc = SQLITE_OK;
   }
@@ -1131,7 +1131,7 @@ int sqlite3BtreeRollbackStmt(Btree *pBt){
   int rc;
   BtCursor *pCur;
   if( pBt->inStmt==0 || pBt->readOnly ) return SQLITE_OK;
-  rc = sqlitepager_ckpt_rollback(pBt->pPager);
+  rc = sqlitepager_stmt_rollback(pBt->pPager);
   for(pCur=pBt->pCursor; pCur; pCur=pCur->pNext){
     MemPage *pPage = pCur->pPage;
     if( pPage && !pPage->isInit ){
@@ -1991,7 +1991,7 @@ static int allocatePage(Btree *pBt, MemPage **ppPage, Pgno *pPgno, Pgno nearby){
   pPage1 = pBt->pPage1;
   n = get4byte(&pPage1->aData[36]);
   if( n>0 ){
-    /* There exists pages on the freelist.  Reuse one of those pages. */
+    /* There are pages on the freelist.  Reuse one of those pages. */
     MemPage *pTrunk;
     rc = sqlitepager_write(pPage1->aData);
     if( rc ) return rc;
@@ -2133,28 +2133,16 @@ static int clearCell(MemPage *pPage, unsigned char *pCell){
 }
 
 /*
-** Compute the number of bytes required by a cell header.  Fill in
-** the nData and nKey values of the header that pHeader points to.
-*/
-static int makeCellHeader(
-  MemPage *pPage,          /* The page that will contain the cell */
-  u64 nKey,                /* Size of key, or the key value if intKey */
-  int nData,               /* Size of data.  Ignored for zerodata */
-  unsigned char *pHeader   /* Write header bytes here */
-){
-  int n = 2;
-  if( !pPage->leaf ) n += 4;
-  if( !pPage->zeroData ){
-    n += putVarint(&pHeader[n], nData);
-  }
-  n += putVarint(&pHeader[n], nKey);
-  return n;
-}
-
-/*
-** Fill in the payload section of a cell into the space provided.  If
-** the payload will not completely fit in the cell, allocate additional
-** overflow pages and fill them in.
+** Create the byte sequence used to represent a cell on page pPage
+** and write that byte sequence into pCell[].  Overflow pages are
+** allocated and filled in as necessary.  The calling procedure
+** is responsible for making sure sufficient space has been allocated
+** for pCell[].
+**
+** Note that pCell does not necessary need to point to the pPage->aData
+** area.  pCell might point to some temporary storage.  The cell will
+** be constructed in this temporary area then copied into pPage->aData
+** later.
 */
 static int fillInCell(
   MemPage *pPage,                /* The page that contains the cell */
@@ -2174,12 +2162,25 @@ static int fillInCell(
   Pgno pgnoOvfl = 0;
   int nHeader;
 
-  nHeader = makeCellHeader(pPage, pCell, nKey, nData);
+  /* Fill in the header. */
+  nHeader = 2;
+  if( !pPage->leaf ){
+    nHeader += 4;
+  }
+  if( !pPage->zeroData ){
+    nHeader += putVarint(&pCell[nHeader], nData);
+  }
+  nHeader += putVarint(&pCell[nHeader], nKey);
+  
+  /* Fill in the payload */
+  if( pPage->zeroData ){
+    nData = 0;
+  }
   nPayload = nData;
   if( pPage->intKey ){
     pSrc = pData;
     nSrc = nData;
-    nSrc2 = 0;
+    nData = 0;
   }else{
     nPayload += nKey;
     pSrc = pKey;
@@ -2354,10 +2355,12 @@ static void relinkCellList(MemPage *pPage){
 }
 
 /*
-** Make a copy of the contents of pFrom into pTo.  The pFrom->aCell[]
+** Move the content of the page at pFrom over to pTo.  The pFrom->aCell[]
 ** pointers that point into pFrom->aData[] must be adjusted to point
 ** into pTo->aData[] instead.  But some pFrom->aCell[] entries might
 ** not point to pFrom->aData[].  Those are unchanged.
+**
+** Over this operation completes, the meta data for pFrom is zeroed.
 */
 static void copyPage(MemPage *pTo, MemPage *pFrom){
   uptr from, to;
@@ -2368,23 +2371,18 @@ static void copyPage(MemPage *pTo, MemPage *pFrom){
   assert( pTo->hdrOffset==0 );
   ofst = pFrom->hdrOffset;
   pageSize = pTo->pBt->pageSize;
-  memcpy(pTo->aData, &pFrom->aData[ofst], pageSize - ofst);
-  pTo->pParent = 0;
-  pTo->isInit = 1;
-  resizeCellArray(pTo, pFrom->nCell);
-  pTo->nCell = pFrom->nCell;
-  pTo->nFree = pFrom->nFree + ofst;
+  sqliteFree(pTo->aCell);
+  memcpy(pTo->aData, &pFrom->aData[ofst], pageSize - ofst + sizeof(MemPage));
+  memset(pFrom, 0, sizeof(MemPage));
   assert( pTo->aData[5]<155 );
   pTo->aData[5] += ofst;
   pTo->isOverfull = pFrom->isOverfull;
   to = Addr(pTo->aData);
-  from = Addr(pFrom->aData);
+  from = Addr(&pFrom->aData[ofst]);
   for(i=0; i<pTo->nCell; i++){
-    uptr x = Addr(pFrom->aCell[i]);
-    if( x>from && x<from+pageSize ){
+    uptr x = Addr(pTo->aCell[i]);
+    if( x>from && x<from+pageSize-ofst ){
       *((uptr*)&pTo->aCell[i]) = x + to - from;
-    }else{
-      pTo->aCell[i] = pFrom->aCell[i];
     }
   }
 }
@@ -2451,6 +2449,9 @@ static int balance(MemPage *pPage){
   int nxDiv;                   /* Next divider slot in pParent->apCell[] */
   int rc;                      /* The return code */
   int iCur;                    /* apCell[iCur] is the cell of the cursor */
+  int leafCorrection;          /* 4 if pPage is a leaf.  0 if not */
+  int usableSpace;             /* Bytes in pPage beyond the header */
+  int pageFlags;               /* Value of pPage->aData[0] */
   MemPage *pOldCurPage;        /* The cursor originally points to this page */
   int subtotal;                /* Subtotal of bytes in cells on one page */
   MemPage *apOld[NB];          /* pPage and up to two siblings */
@@ -2630,6 +2631,8 @@ static int balance(MemPage *pPage){
     rc = initPage(apOld[i], pParent);
     if( rc ) goto balance_cleanup;
     apOld[i]->idxParent = k;
+    apCopy[i] = 0;
+    assert( i==nOld );
     nOld++;
   }
 
@@ -2844,12 +2847,16 @@ static int balance(MemPage *pPage){
   */
 balance_cleanup:
   for(i=0; i<nOld; i++){
-    if( apOld[i]!=0 ) sqlitepager_unref(apOld[i]->aData);
+    releasePage(apOld[i]);
+    if( apCopy[i] ){
+      releasePage(apCopy[i]->pParent);
+      sqliteFree(apCopy[i]->aCell);
+    }
   }
   for(i=0; i<nNew; i++){
-    sqlitepager_unref(apNew[i]->aData);
+    releasePage(apNew[i]);
   }
-  sqlitepager_unref(pParent->aData);
+  releasePage(pParent);
   return rc;
 }
 
@@ -2874,8 +2881,9 @@ static int checkReadLocks(BtCursor *pCur){
   for(p=pCur->pShared; p!=pCur; p=p->pShared){
     assert( p );
     assert( p->pgnoRoot==pCur->pgnoRoot );
+    assert( p->pPage->pgno==sqlitepager_pagenumber(p->pPage->aData);
     if( p->wrFlag==0 ) return SQLITE_LOCKED;
-    if( sqlitepager_pagenumber(p->pPage)!=p->pgnoRoot ){
+    if( p->pPage->pgno!=p->pgnoRoot ){
       moveToRoot(p);
     }
   }
@@ -2885,7 +2893,7 @@ static int checkReadLocks(BtCursor *pCur){
 /*
 ** Insert a new record into the BTree.  The key is given by (pKey,nKey)
 ** and the data is given by (pData,nData).  The cursor is used only to
-** define what database the record should be inserted into.  The cursor
+** define what table the record should be inserted into.  The cursor
 ** is left pointing at a random location.
 **
 ** For an INTKEY table, only the nKey value of the key is used.  pKey is
@@ -2920,9 +2928,8 @@ int sqlite3BtreeInsert(
   rc = sqlite3BtreeMoveto(pCur, pKey, nKey, &loc);
   if( rc ) return rc;
   pPage = pCur->pPage;
-  assert( nData==0 || pPage->zeroData!=0 );
   assert( pPage->isInit );
-  rc = sqlitepager_write(pPage);
+  rc = sqlitepager_write(pPage->aData);
   if( rc ) return rc;
   rc = fillInCell(pPage, &newCell, pKey, nKey, pData, nData, &szNew);
   if( rc ) return rc;
@@ -2982,7 +2989,7 @@ int sqlite3BtreeDelete(BtCursor *pCur){
   if( checkReadLocks(pCur) ){
     return SQLITE_LOCKED; /* The table pCur points to has a read lock */
   }
-  rc = sqlitepager_write(pPage);
+  rc = sqlitepager_write(pPage->aData);
   if( rc ) return rc;
   pCell = pPage->aCell[pCur->idx];
   if( !pPage->leaf ){
@@ -3007,7 +3014,7 @@ int sqlite3BtreeDelete(BtCursor *pCur){
       if( rc!=SQLITE_NOMEM ) rc = SQLITE_CORRUPT;
       return rc;
     }
-    rc = sqlitepager_write(leafCur.pPage);
+    rc = sqlitepager_write(leafCur.pPage->aData);
     if( rc ) return rc;
     dropCell(pPage, pCur->idx, cellSize(pPage, pCell));
     pNext = leafCur.pPage->aCell[leafCur.idx];
@@ -3052,7 +3059,7 @@ int sqlite3BtreeCreateTable(Btree *pBt, int *piTable, int flags){
   if( rc ) return rc;
   assert( sqlitepager_iswriteable(pRoot->aData) );
   zeroPage(pBt, pRoot);
-  sqlitepager_unref(pRoot);
+  sqlitepager_unref(pRoot->aData);
   *piTable = (int)pgnoRoot;
   return SQLITE_OK;
 }
@@ -3276,7 +3283,7 @@ static int fileBtreePageDump(Btree *pBt, int pgno, int recursive){
     }
     fileBtreePageDump(pBt, get4byte(&pPage->aData[hdrOffset+6]), 1);
   }
-  sqlitepager_unref(pPage);
+  sqlitepager_unref(pPage->aData);
   return SQLITE_OK;
 }
 #endif
@@ -3302,7 +3309,8 @@ static int fileBtreeCursorDump(BtCursor *pCur, int *aResult){
   MemPage *pPage = pCur->pPage;
   Btree *pBt = pCur->pBt;
   assert( pPage->isInit );
-  aResult[0] = sqlitepager_pagenumber(pPage);
+  aResult[0] = sqlitepager_pagenumber(pPage->aData);
+  assert( aResult[0]==pPage->pgno );
   aResult[1] = pCur->idx;
   aResult[2] = pPage->nCell;
   if( pCur->idx>=0 && pCur->idx<pPage->nCell ){
@@ -3492,7 +3500,7 @@ static int checkTreePage(
   if( (rc = initPage(pPage, pParent))!=0 ){
     sprintf(zMsg, "initPage() returns error code %d", rc);
     checkAppendMsg(pCheck, zContext, zMsg);
-    sqlitepager_unref(pPage);
+    releasePage(pPage);
     return 0;
   }
 
