@@ -1,5 +1,5 @@
-C Version\s2.1.0\sprerelease\s(CVS\s309)
-D 2001-11-12T12:43:22
+C Fix\sto\sthe\sSUBSTR()\sfunction\sand\sto\sthe\sbigrow\stest.\s(CVS\s310)
+D 2001-11-12T13:10:53
 F Makefile.in 6801df952cb1df64aa32e4de85fed24511d28efd
 F Makefile.template 1fdb891f14083ee0b63cf7282f91529634438e7a
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -49,11 +49,11 @@ F src/test3.c d6775f95fd91f5b3cf0e2382a28e5aaeb68f745b
 F src/tokenize.c 830e9ef684334070a26583d94770bb869e2727bf
 F src/update.c b1e315e20b98a013d30fd9ff3b7d9dc4f29b39b3
 F src/util.c ac83973ecc647d3d3c58708f148442365abf9b94
-F src/vdbe.c 807d648da2113eb65b2d5c59c18e51cd8896a972
+F src/vdbe.c 43005a896d2e61368001620c66c4fe3769cd03c9
 F src/vdbe.h cd4c8647051a0c22c0e133c375f1cd17bb8b1e06
 F src/where.c d51e6380dcd0ddb6767add378f266ffb1555403a
 F test/all.test 2a51e5395ac7c2c539689b123b9782a05e3837fe
-F test/bigrow.test 9458134d67f81559845f934fdd6802fe19a68ad1
+F test/bigrow.test 1f098f85586d2117bdb3412d27eba45252bc8a6e
 F test/btree.test 47952c7a0c22660566264c68c0664592b7da85ce
 F test/btree2.test 08e9485619265cbaf5d11bd71f357cdc26bb87e0
 F test/copy.test 768e6f1701a07d08090e1ca7f7dcce0a7a72b43e
@@ -115,7 +115,7 @@ F www/speed.tcl 212a91d555384e01873160d6a189f1490c791bc2
 F www/sqlite.tcl 6a21242a272e9c0939a04419a51c3d50cae33e3e
 F www/tclsqlite.tcl 13d50723f583888fc80ae1a38247c0ab415066fa
 F www/vdbe.tcl bb7d620995f0a987293e9d4fb6185a3b077e9b44
-P 2d2ad264aad6fbdcef586e73d750e3fde842252f
-R 16c00ab1c6dd8026c015350394df2b49
+P 4f4ac42214610d900a5d6db63a511d9e7b22f0f9
+R e411b3c66de534a8413fb698adfa9839
 U drh
-Z a0e64c7188bd5b5811337fabdc6b35c2
+Z 3eccdf57f8fc40705e6bc160315f6362

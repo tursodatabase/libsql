@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.97 2001/11/10 13:51:09 drh Exp $
+** $Id: vdbe.c,v 1.98 2001/11/12 13:10:53 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -3986,11 +3986,12 @@ case OP_Substr: {
   if( pOp->p1==0 ){
     VERIFY( if( p->tos<0 ) goto not_enough_stack; )
     Integerify(p, p->tos);
-    start = aStack[p->tos].i - 1;
+    start = aStack[p->tos].i;
     POPSTACK;
   }else{
-    start = pOp->p1 - 1;
+    start = pOp->p1;
   }
+  if( start>0 ) start--;
   VERIFY( if( p->tos<0 ) goto not_enough_stack; )
   if( Stringify(p, p->tos) ) goto no_mem;
 
@@ -4093,7 +4094,13 @@ default: {
           int j, k;
           char zBuf[100];
           zBuf[0] = ' ';
-          zBuf[1] = (aStack[i].flags & STK_Dyn)!=0 ? 'z' : 's';
+          if( aStack[i].flags & STK_Dyn ){
+            zBuf[1] = 'z';
+          }else if( aStack[i].flags & STK_Static ){
+            zBuf[1] = 't';
+          }else{
+            zBuf[1] = 's';
+          }
           zBuf[2] = '[';
           k = 3;
           for(j=0; j<20 && j<aStack[i].n; j++){
