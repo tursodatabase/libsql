@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: lock.test,v 1.16 2002/08/18 20:28:07 drh Exp $
+# $Id: lock.test,v 1.17 2002/08/29 23:59:50 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -243,6 +243,34 @@ do_test lock-3.1 {
   lappend r $msg
 } {1 {cannot start a transaction within a transaction}}
 integrity_check lock-3.2
+
+# Make sure the busy handler and error messages work when
+# opening a new pointer to the database while another pointer
+# has the database locked.
+#
+do_test lock-4.1 {
+  db2 close
+  catch {db eval ROLLBACK}
+  db eval BEGIN
+  sqlite db2 ./test.db
+  set rc [catch {db2 eval {SELECT * FROM t1}} msg]
+  lappend rc $msg
+} {1 {database is locked}}
+do_test lock-4.2 {
+  set ::callback_value {}
+  set rc [catch {db2 eval {SELECT * FROM t1}} msg]
+  lappend rc $msg $::callback_value
+} {1 {database is locked} {}}
+do_test lock-4.3 {
+  proc callback {file count} {
+    lappend ::callback_value $count
+    if {$count>4} break
+  }
+  db2 busy callback
+  set rc [catch {db2 eval {SELECT * FROM t1}} msg]
+  lappend rc $msg $::callback_value
+} {1 {database is locked} {1 2 3 4 5}}
+
 
 do_test lock-999.1 {
   rename db2 {}

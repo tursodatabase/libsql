@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.98 2002/08/24 18:24:54 drh Exp $
+** $Id: main.c,v 1.99 2002/08/29 23:59:48 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -251,6 +251,7 @@ int sqliteInit(sqlite *db, char **pzErrMsg){
   if( db->pBe==0 ) return SQLITE_OK;
   rc = sqliteBtreeCursor(db->pBe, 2, 0, &curMain);
   if( rc ){
+    sqliteSetString(pzErrMsg, sqlite_error_string(rc), 0);
     sqliteResetInternalSchema(db);
     return rc;
   }
@@ -259,6 +260,7 @@ int sqliteInit(sqlite *db, char **pzErrMsg){
   */
   rc = sqliteBtreeGetMeta(db->pBe, meta);
   if( rc ){
+    sqliteSetString(pzErrMsg, sqlite_error_string(rc), 0);
     sqliteResetInternalSchema(db);
     sqliteBtreeCloseCursor(curMain);
     return rc;
@@ -601,7 +603,9 @@ int sqlite_exec(
   if( pzErrMsg ) *pzErrMsg = 0;
   if( sqliteSafetyOn(db) ) goto exec_misuse;
   if( (db->flags & SQLITE_Initialized)==0 ){
-    int rc = sqliteInit(db, pzErrMsg);
+    int rc, cnt = 1;
+    while( (rc = sqliteInit(db, pzErrMsg))==SQLITE_BUSY
+       && db->xBusyCallback && db->xBusyCallback(db->pBusyArg, "", cnt++)!=0 ){}
     if( rc!=SQLITE_OK ){
       sqliteStrRealloc(pzErrMsg);
       sqliteSafetyOff(db);

@@ -1,5 +1,5 @@
-C Slightly\sfaster\sINSERTs\sfrom\sa\sSELECT\sby\savoiding\san\sintermediate\stable.\nBut\sit\sdidn't\smake\snearly\sas\smuch\sdifference\sas\sI\shad\shoped.\s(CVS\s732)
-D 2002-08-28T03:00:58
+C If\sthe\sdatabase\sis\slocked\swhen\ssqlite_open()\sis\scalled,\ssqlite_exec()\sshould\nstill\shonor\sthe\sbusy\scallback\sand\sshould\sreturn\san\serror\smessage\stogether\nwith\sthe\sSQLITE_BUSY\sresult\scode.\s(CVS\s733)
+D 2002-08-29T23:59:48
 F Makefile.in bcb81f40d9a17bd94f59e67157b1e1c54c046c2b
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -28,7 +28,7 @@ F src/func.c e45cd908b9b723d9b91473d09e12c23f786b3fc2
 F src/hash.c 6a6236b89c8c060c65dabd300a1c8ce7c10edb72
 F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
 F src/insert.c a2f5455009904476b43ec5304a181b505235f72f
-F src/main.c 9f2633cb20cb9cc740353f57178450319c12b743
+F src/main.c 26a31201133c93b6065e11b49a83f5b987642e96
 F src/md5.c 0ae1f3e2cac92d06fc6246d1b4b8f61a2fe66d3b
 F src/os.c 00d10655e1dc9a52b4aabca58c8d8e45048057b0
 F src/os.h 3009379b06941e7796a9812d1b6cbc59b26248c8
@@ -73,7 +73,7 @@ F test/intpkey.test f3620158fd7963af1306b01047277f10ae91a30b
 F test/ioerr.test 57d9bffaca18b34f9e976f786eadc2591d6efc6a
 F test/join.test 90a620f2a2d015e5139d5a4cde0eeb4cf62523bf
 F test/limit.test dd932f7572fe78e82ef621ef62f0cc480c7e541e
-F test/lock.test 2bc3c32ca2caf45c884bb1e78ec67d70792a1228
+F test/lock.test 5079615ba0ef0899c4cbade42ffec291620a2819
 F test/main.test c66b564554b770ee7fdbf6a66c0cd90329bc2c85
 F test/malloc.test 7ba32a9ebd3aeed52ae4aaa6d42ca37e444536fd
 F test/minmax.test 29bc5727c3e4c792d5c4745833dd4b505905819e
@@ -108,7 +108,7 @@ F test/trigger4.test 9a5c1406344d743020c2753ae8d6dfe6eb75f818
 F test/unique.test 572aa791327c1e8d797932263e9d67f176cfdb44
 F test/update.test 7ffb062d580a972e7870d0f51d5af3ab9bfeae08
 F test/vacuum.test 059871b312eb910bbe49dafde1d01490cc2c6bbe
-F test/version.test c7057526e14c7e3da5718b88e7f566f4182fd5c5
+F test/version.test b4284c60109c514f1dc5b6525a7da9793c7bab0d
 F test/view.test 76d3fe155f1215f9dde1ccad1d1bce5c803132d0
 F test/where.test c7aba40ad9178acf9c898e53aac9e447e2d2f2f7
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
@@ -147,7 +147,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P f1534489484afdb835ad8e6f97909fbe76dbe414
-R e0d3b63d78fe10e969ff04668037a39d
+P 723362e74f79c784314d042e3a8c8a9bf07cbd5e
+R d3f1307d8c46375a980460c037609d53
 U drh
-Z 1807e27a4648862e140898b176210cca
+Z bb935c1bbfda9bc17c2a93e729ad5eb0
