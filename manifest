@@ -1,5 +1,5 @@
-C Correctly\shandle\sjoins\sof\smove\sthan\s32\stables.\s\sTicket\s#806.\s(CVS\s1813)
-D 2004-07-19T02:24:03
+C Fix\sfor\sticket\s#813.\s(CVS\s1820)
+D 2004-07-19T19:30:50
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -61,11 +61,11 @@ F src/trigger.c a9927b57c865b6f3df3fb5e40c9824d722660ded
 F src/update.c bd391079138e67d09c9af34528ca4137c29242d1
 F src/util.c 48f1e99803e924433477a7ccbdab35663acb621d
 F src/vacuum.c 36a19aa877c696c4ec8b78300c19f4059d2617a7
-F src/vdbe.c 0853ab9983b7adbba8c012bb8b152d8453bf8a97
+F src/vdbe.c 4b35f2c1a5b3500ac8969ce8655ec2b806284d29
 F src/vdbe.h ac987945e4dd6f987bca534c6005899f089fc270
 F src/vdbeInt.h b40ff02ce39fd076e6ff3369e19c1bbfe1986682
 F src/vdbeaux.c 14ff0eb6ed9d5998f927433c91b0a3d13d81f4f6
-F src/where.c 3a85d88ec1447bda08d6a7a90d763dd6a0ceddcf
+F src/where.c ce4968e37382808ec76a47385384ee21ad9e979e
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
 F test/attach.test ba8261d38da6b6a7d4f78ec543c548c4418582ef
 F test/attach2.test ce61e6185b3cd891cc0e9a4c868fcc65eb92fc55
@@ -131,7 +131,7 @@ F test/sort.test ba07b107c16070208e6aab3cadea66ba079d85ba
 F test/subselect.test f0fea8cf9f386d416d64d152e3c65f9116d0f50f
 F test/table.test 371a1fc1c470982b2f68f9732f903a5d96f949c4
 F test/tableapi.test e0c4cce61e58343caa84dab33fa6823cb35fe1e1
-F test/tclsqlite.test a684fc191b81e6cded8a81263663d5a130fbb013
+F test/tclsqlite.test 109ed5fbfe23e24f49eff6984dfa8a6bed8b5281
 F test/temptable.test a770ba6308d7f7332fce985086b8e06bed6430c2
 F test/tester.tcl 2f1d43df1311c9dc06acaa7a82e87bfea85dea5f
 F test/thread1.test 53f050d5be6932d9430df7756edd379366508ff6
@@ -189,7 +189,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P f9b2aa8f8a6c0a7f74af2844a80fe14b85d05a45
-R 7602201687962f870e55ba293d7c4589
+P 5ba0acd6c788b6ec07b29dc40c17265f8fb8a337
+R 04b738396073cd6e3f5def26476223ed
 U drh
-Z 66fa816cf92b236bf8ebf0582e88ba0f
+Z e025b922d80b327cd770a3f0a861e529
