@@ -1617,6 +1617,14 @@ char *sqliteOsFullPathname(const char *zRelative){
 }
 
 /*
+** The following variable, if set to a now-zero value, become the result
+** returned from sqliteOsCurrentTime().  This is used for testing.
+*/
+#ifdef SQLITE_TEST
+int sqlite_current_time = 0;
+#endif
+
+/*
 ** Find the current time (in Universal Coordinated Time).  Write the
 ** current time and date as a Julian Day number into *prNow and
 ** return 0.  Return 1 if the time and date cannot be found.
@@ -1626,7 +1634,6 @@ int sqliteOsCurrentTime(double *prNow){
   time_t t;
   time(&t);
   *prNow = t/86400.0 + 2440587.5;
-  return 0;
 #endif
 #if OS_WIN
   FILETIME ft;
@@ -1638,7 +1645,10 @@ int sqliteOsCurrentTime(double *prNow){
   now = ((double)ft.dwHighDateTime) * 4294967296.0; 
   *prNow = (now + ft.dwLowDateTime)/864000000000.0 + 2305813.5;
 #endif
+#ifdef SQLITE_TEST
+  if( sqlite_current_time ){
+    *prNow = sqlite_current_time/86400.0 + 2440587.5;
+  }
+#endif
   return 0;
-
-  return 1;
 }
