@@ -24,7 +24,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.22 2000/08/22 13:27:22 drh Exp $
+** $Id: shell.c,v 1.23 2000/08/22 13:40:19 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -684,7 +684,9 @@ int main(int argc, char **argv){
     int istty = isatty(0);
     if( istty ){
       printf(
-        "Enter \".help\" for instructions\n"
+        "SQLite version %s\n"
+        "Enter \".help\" for instructions\n",
+        sqlite_version
       );
     }
     while( (zLine = one_input_line(zSql, istty))!=0 ){

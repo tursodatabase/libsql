@@ -26,7 +26,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.16 2000/08/02 13:47:42 drh Exp $
+** $Id: main.c,v 1.17 2000/08/22 13:40:19 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -183,6 +183,11 @@ static int sqliteInit(sqlite *db, char **pzErrMsg){
   }
   return rc;
 }
+
+/*
+** The version of the library
+*/
+const char sqlite_version[] = SQLITE_VERSION_STRING;
 
 /*
 ** Open a new SQLite database.  Construct an "sqlite" structure to define

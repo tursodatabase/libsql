@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: c_interface.tcl,v 1.6 2000/07/28 14:32:51 drh Exp $}
+set rcsid {$Id: c_interface.tcl,v 1.7 2000/08/22 13:40:20 drh Exp $}
 
 puts {<html>
 <head>
@@ -47,6 +47,8 @@ int sqlite_complete(const char *sql);
 void sqlite_busy_handler(sqlite*, int (*)(void*,const char*,int), void*);
 
 void sqlite_busy_timeout(sqlite*, int ms);
+
+const char sqlite_version[];
 
 #define SQLITE_OK        0    /* Successful result */
 #define SQLITE_INTERNAL  1    /* An internal logic error in SQLite */
@@ -229,6 +231,16 @@ then <b>sqlite_exec()</b> is called and the input buffer is reset.  If
 <b>sqlite_complete()</b> returns false, then the prompt is changed to
 the continuation prompt and another line of text is read and added to
 the input buffer.</p>
+
+<h2>Library version string</h2>
+
+<p>The SQLite library exports the string constant named
+<b>sqlite_version</b> which contains the version number of the
+library.  The header file contains a macro SQLITE_VERSION
+with the same information.  If desired, a program can compare
+the SQLITE_VERSION macro against the <b>sqlite_version</b>
+string constant to verify that the version number of the
+header file and the library match.</p> 
 
 <h2>Changing the libraries reponse to locked files</h2>
 
