@@ -1,5 +1,5 @@
-C Begin\stesting\sthe\snew\sATTACH\sand\sDETACH\scommands.\s(CVS\s898)
-D 2003-04-05T03:42:27
+C More\stesting\sof\sATTACH\sand\sDETACH.\s(CVS\s899)
+D 2003-04-05T16:56:29
 F Makefile.in 3c4ba24253e61c954d67adbbb4245e7117c5357e
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -22,7 +22,7 @@ F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F src/auth.c f37bfc9451b8c1fa52f34adff474560018892729
 F src/btree.c 7eae5413a7f957bb0733bcab6fab31c6943c51d2
 F src/btree.h 024d2dd21310c202d648c6244dec885e48efa9ad
-F src/build.c 346e93724f32ec1aa0ed429a004a5e9d7b3372be
+F src/build.c 8f158c26c89464e33de4b83a0964042462ea9977
 F src/delete.c 58d698779a6b7f819718ecd45b310a9de8537088
 F src/encode.c faf03741efe921755ec371cf4a6984536de00042
 F src/expr.c b8daee83f837b24a22d889200bdd74973ca2d8db
@@ -58,7 +58,7 @@ F src/vdbe.c 540c480912e11e23f5c08a31b8b3594df016f4d1
 F src/vdbe.h 985c24f312d10f9ef8f9a8b8ea62fcdf68e82f21
 F src/where.c e5733f7d5e9cc4ed3590dc3401f779e7b7bb8127
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
-F test/attach.test 93414915d0c27f4e5a384b61792591cd4757fcca
+F test/attach.test 4912f001bf807b898083cfdef0f6d24f1533e4d7
 F test/auth.test bf039c94d629f64085c268e8be477fc8ff1202a7
 F test/bigfile.test 1cd8256d4619c39bea48147d344f348823e78678
 F test/bigrow.test 8ab252dba108f12ad64e337b0f2ff31a807ac578
@@ -157,7 +157,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 452128c6fd9a0d82bfab21374fc2041638d264db
-R a56a50d034078b39c733a78422380132
+P 7a0f8024a1323a15d0c83afe9302400736f01fe8
+R 46fc1ff8621b9b0935cd818bb39b2c75
 U drh
-Z 584b6bf3cd679c184cb1aafc492c3c1b
+Z a79dcf89f73a5ac08f2e57c1e7e0b648

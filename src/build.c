@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.140 2003/04/05 03:42:27 drh Exp $
+** $Id: build.c,v 1.141 2003/04/05 16:56:29 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2613,6 +2613,24 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
     }
   }else
 
+  if( sqliteStrICmp(zLeft, "database_list")==0 ){
+    int i;
+    static VdbeOp indexListPreface[] = {
+      { OP_ColumnName,  0, 0,       "seq"},
+      { OP_ColumnName,  1, 0,       "name"},
+    };
+
+    sqliteVdbeAddOpList(v, ArraySize(indexListPreface), indexListPreface);
+    for(i=0; i<db->nDb; i++){
+      if( db->aDb[i].pBt==0 ) continue;
+      assert( db->aDb[i].zName!=0 );
+      sqliteVdbeAddOp(v, OP_Integer, i, 0);
+      sqliteVdbeAddOp(v, OP_String, 0, 0);
+      sqliteVdbeChangeP3(v, -1, db->aDb[i].zName, P3_STATIC);
+      sqliteVdbeAddOp(v, OP_Callback, 2, 0);
+    }
+  }else
+
 #ifndef NDEBUG
   if( sqliteStrICmp(zLeft, "parser_trace")==0 ){
     extern void sqliteParserTrace(FILE*, char *);
@@ -2673,11 +2691,13 @@ void sqliteAttach(Parse *pParse, Token *pFilename, Token *pDbname){
   if( db->file_format<4 ){
     sqliteErrorMsg(pParse, "cannot attach auxiliary databases to an "
        "older format master database", 0);
+    pParse->rc = SQLITE_ERROR;
     return;
   }
-  if( db->nDb>=MAX_ATTACHED ){
+  if( db->nDb>=MAX_ATTACHED+2 ){
     sqliteErrorMsg(pParse, "too many attached databases - max %d", 
        MAX_ATTACHED);
+    pParse->rc = SQLITE_ERROR;
     return;
   }
   if( db->aDb==db->aDbStatic ){
@@ -2703,6 +2723,8 @@ void sqliteAttach(Parse *pParse, Token *pFilename, Token *pDbname){
   for(i=0; i<db->nDb; i++){
     if( db->aDb[i].zName && sqliteStrICmp(db->aDb[i].zName, zName)==0 ){
       sqliteErrorMsg(pParse, "database %z is already in use", zName);
+      db->nDb--;
+      pParse->rc = SQLITE_ERROR;
       return;
     }
   }
@@ -2722,6 +2744,7 @@ void sqliteAttach(Parse *pParse, Token *pFilename, Token *pDbname){
   if( rc ){
     sqliteResetInternalSchema(db, 0);
     pParse->nErr++;
+    pParse->rc = SQLITE_ERROR;
   }
 }
 
@@ -2748,10 +2771,16 @@ void sqliteDetach(Parse *pParse, Token *pDbname){
     return;
   }
   if( i<2 ){
-    sqliteErrorMsg(pParse, "cannot detached database %T", pDbname);
+    sqliteErrorMsg(pParse, "cannot detach database %T", pDbname);
     return;
   }
   sqliteBtreeClose(db->aDb[i].pBt);
   db->aDb[i].pBt = 0;
-  sqliteResetInternalSchema(db, 0);
+  sqliteResetInternalSchema(db, i);
+  db->nDb--;
+  if( i<db->nDb ){
+    db->aDb[i] = db->aDb[db->nDb];
+    memset(&db->aDb[db->nDb], 0, sizeof(db->aDb[0]));
+    sqliteResetInternalSchema(db, i);
+  }
 }
