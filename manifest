@@ -1,5 +1,5 @@
-C Make\ssure\shash\sfunctions\salways\sreturn\snon-negative.\s(CVS\s969)
-D 2003-05-12T23:06:53
+C Fix\sa\s#ifdefs\sthat\sare\sused\sto\scomment-out\sthe\sVACUUM\scommand.\s(CVS\s970)
+D 2003-05-13T00:21:59
 F Makefile.in 004acec253ecdde985c8ecd5b7c9accdb210378f
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -58,7 +58,7 @@ F src/tokenize.c 2ba93fe10d5f57f0cc20b07417c3244a30c324b3
 F src/trigger.c 8ee811986080de60d9d883ad96daffea82014f27
 F src/update.c dc3b680b4cf2cb6d839950b68d632850746639b9
 F src/util.c 8065b78806a5132119452d9e0417cf071e6f02f9
-F src/vacuum.c 14ac3073203fa021e01ffe33db56968ad79a8344
+F src/vacuum.c 0820984615786c9ccdaad8032a792309b354a8eb
 F src/vdbe.c e9e560b0c568fb4ffb189d3e0d91628a33d2a367
 F src/vdbe.h 985c24f312d10f9ef8f9a8b8ea62fcdf68e82f21
 F src/where.c ef11773a07cf075740378d7d1cbabf328146fdc9
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 3da10d2d02e331f136fcf857dc4c435c67ee7196
-R 4e32f2787678262cce8381eeed283f3f
+P 39a3e403f0440acb2f85a064ec23d404f9cdfbc4
+R 7306809a4e8852d48a70b3ad0f0f7bc9
 U drh
-Z 9359b7aa0886849f400e188f1dbf3d43
+Z 964a58c640b88c89eec4f9710b117e21
