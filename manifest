@@ -1,5 +1,5 @@
-C Fix\sbugs\sin\sALTER\sTABLE\srelated\sto\s(a)\swhitespace\sin\stable\sdefn,\s(b)\stemp\striggers.\s(CVS\s2112)
-D 2004-11-19T05:14:55
+C When\sdropping\sa\stable,\supdate\sthe\ssqlite_sequence\stable\sfirst,\sas\sauto-vacuum\smode\smay\sneed\sto\smove\ssqlite_sequence\swhen\sthe\sbtree\stable\sis\sdropped.\s(CVS\s2113)
+D 2004-11-19T07:07:31
 F Makefile.in e747bb5ba34ccbdd81f79dcf1b2b33c02817c21d
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -31,7 +31,7 @@ F src/attach.c e49d09dad9f5f9fb10b4b0c1be5a70ae4c45e689
 F src/auth.c 3b81f2a42f48a62c2c9c9b0eda31a157c681edea
 F src/btree.c 49b09718cd988d1c7c981b03e94679bc10b5f711
 F src/btree.h 861e40b759a195ba63819740e484390012cf81ab
-F src/build.c 467e940702206e950d810e765586a787ec06dd5b
+F src/build.c 27897ee30d914e503cc948370858ed54c940d4bf
 F src/date.c 65536e7ea04fdde6e0551264fca15966966e171f
 F src/delete.c be9d039b819f4a5d0fdfaeceace139ba189ef819
 F src/expr.c 4ee3e47358c92a919062255b14057a7a8f641e01
@@ -64,7 +64,7 @@ F src/sqlite.h.in a44eac0716bf4751447160d5c8ed049ece66d45a
 F src/sqliteInt.h dd26056a172a5d488a78846b5ed8db6953db4e5d
 F src/table.c 25b3ff2b39b7d87e8d4a5da0713d68dfc06cbee9
 F src/tclsqlite.c 7f1a1a678140e6901c8954590ca2aabe50b48f71
-F src/test1.c 8c330b53aa04d234ea7da6a90141ce9958a8901c
+F src/test1.c 33818d5894681236240daaea1d379b463c7e9019
 F src/test2.c b11fa244fff02190707dd0879987c37c75e61fc8
 F src/test3.c 6f1ec93e13632a004b527049535079eda84c459d
 F src/test4.c 7c6b9fc33dd1f3f93c7f1ee6e5e6d016afa6c1df
@@ -259,7 +259,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl fdacb0ba2d39831e8a6240d05a490026ad4c4e4c
-P c61b7de107cea76b561d0d6cd90c752b62c5df95
-R 2dccc389e14622418d8f9c23b5390305
+P 1fd8e835a3656799c23f4ef6ea1311fecf5a15cb
+R f7502d84d016bfe7e59d6b1281918ee0
 U danielk1977
-Z dfa16d84296b817116f68efa4f87c5bd
+Z aee34b960e1efd640d84c3f0d865dd8b

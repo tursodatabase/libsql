@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.114 2004/11/14 21:56:30 drh Exp $
+** $Id: test1.c,v 1.115 2004/11/19 07:07:31 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -2516,7 +2516,7 @@ static void set_options(Tcl_Interp *interp){
 #else
   Tcl_SetVar2(interp, "sqlite_options", "autovacuum", "1", TCL_GLOBAL_ONLY);
 #endif /* SQLITE_OMIT_AUTOVACUUM */
-#if !defined(SQLITE_DEFAULT_AUTOVACCUM) || SQLITE_DEFAULT_AUTOVACUUM==0
+#if !defined(SQLITE_DEFAULT_AUTOVACUUM) || SQLITE_DEFAULT_AUTOVACUUM==0
   Tcl_SetVar2(interp,"sqlite_options","default_autovacuum","0",TCL_GLOBAL_ONLY);
 #else
   Tcl_SetVar2(interp,"sqlite_options","default_autovacuum","1",TCL_GLOBAL_ONLY);
