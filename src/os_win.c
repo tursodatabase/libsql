@@ -508,7 +508,7 @@ int sqlite3OsLock(OsFile *id, int locktype){
 ** file by this or any other process. If such a lock is held, return
 ** non-zero, otherwise zero.
 */
-int sqlite3OsCheckWriteLock(OsFile *id){
+int sqlite3OsCheckReservedLock(OsFile *id){
   int rc;
   if( id->locktype>=RESERVED_LOCK ){
     rc = 1;
@@ -525,14 +525,19 @@ int sqlite3OsCheckWriteLock(OsFile *id){
 }
 
 /*
-** Unlock the given file descriptor.  If the file descriptor was
-** not previously locked, then this routine is a no-op.  If this
-** library was compiled with large file support (LFS) but LFS is not
-** available on the host, then an SQLITE_NOLFS is returned.
+** Lower the locking level on file descriptor id to locktype.  locktype
+** must be either NO_LOCK or SHARED_LOCK.
+**
+** If the locking level of the file descriptor is already at or below
+** the requested locking level, this routine is a no-op.
+**
+** It is not possible for this routine to fail.
 */
-int sqlite3OsUnlock(OsFile *id){
+int sqlite3OsUnlock(OsFile *id, int locktype){
   int rc, type;
-  TRACE4("UNLOCK %d was %d(%d)\n", id->h, id->locktype, id->sharedLockByte);
+  assert( locktype<=SHARED_LOCK );
+  TRACE4("UNLOCK %d to %d was %d(%d)\n", id->h, locktype,
+          id->locktype, id->sharedLockByte);
   type = id->locktype;
   if( type>=EXCLUSIVE_LOCK ){
     UnlockFile(id->h, SHARED_FIRST, 0, SHARED_SIZE, 0);
@@ -540,13 +545,13 @@ int sqlite3OsUnlock(OsFile *id){
   if( type>=RESERVED_LOCK ){
     UnlockFile(id->h, RESERVED_BYTE, 0, 1, 0);
   }
-  if( type>=SHARED_LOCK && type<EXCLUSIVE_LOCK ){
+  if( locktype==NO_LOCK && type>=SHARED_LOCK && type<EXCLUSIVE_LOCK ){
     unlockReadLock(id);
   }
   if( type>=PENDING_LOCK ){
     UnlockFile(id->h, PENDING_BYTE, 0, 1, 0);
   }
-  id->locktype = NO_LOCK;
+  id->locktype = locktype;
   return SQLITE_OK;
 }
 

@@ -64,7 +64,7 @@ typedef struct OsFile OsFile;
 struct OsFile {
   struct openCnt *pOpen;    /* Info about all open fd's on this inode */
   struct lockInfo *pLock;   /* Info about locks on this inode */
-  int fd;                   /* The file descriptor */
+  int h;                    /* The file descriptor */
   int locktype;             /* The type of lock held on this fd */
   int dirfd;                /* File descriptor for the directory */
 };

@@ -156,9 +156,6 @@ int sqlite3OsSeek(OsFile*, off_t offset);
 int sqlite3OsSync(OsFile*);
 int sqlite3OsTruncate(OsFile*, off_t size);
 int sqlite3OsFileSize(OsFile*, off_t *pSize);
-int sqlite3OsReadLock(OsFile*);
-int sqlite3OsWriteLock(OsFile*);
-int sqlite3OsUnlock(OsFile*);
 int sqlite3OsRandomSeed(char*);
 int sqlite3OsSleep(int ms);
 int sqlite3OsCurrentTime(double*);
@@ -166,6 +163,7 @@ void sqlite3OsEnterMutex(void);
 void sqlite3OsLeaveMutex(void);
 char *sqlite3OsFullPathname(const char*);
 int sqlite3OsLock(OsFile*, int);
-int sqlite3OsCheckWriteLock(OsFile *id);
+int sqlite3OsUnlock(OsFile*, int);
+int sqlite3OsCheckReservedLock(OsFile *id);
 
 #endif /* _SQLITE_OS_H_ */

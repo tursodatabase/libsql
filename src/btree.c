@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.161 2004/06/07 16:27:46 drh Exp $
+** $Id: btree.c,v 1.162 2004/06/09 17:37:23 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -261,7 +261,7 @@ static const char zMagicHeader[] = "SQLite format 3";
 ** The pageDestructor() routine handles that chore.
 */
 struct MemPage {
-  u8 isInit;           /* True if previously initialized */
+  u8 isInit;           /* True if previously initialized. MUST BE FIRST! */
   u8 idxShift;         /* True if Cell indices have changed */
   u8 nOverflow;        /* Number of overflow cell bodies in aCell[] */
   u8 intKey;           /* True if intkey flag is set */
@@ -963,6 +963,22 @@ static void pageDestructor(void *pData, int pageSize){
 }
 
 /*
+** During a rollback, when the pager reloads information into the cache
+** so that the cache is restored to its original state at the start of
+** the transaction, for each page restored this routine is called.
+**
+** This routine needs to reset the extra data section at the end of the
+** page to agree with the restored data.
+*/
+static void pageReinit(void *pData, int pageSize){
+  MemPage *pPage = (MemPage*)&((char*)pData)[pageSize];
+  if( pPage->isInit ){
+    pPage->isInit = 0;
+    initPage(pPage, pPage->pParent);
+  }
+}
+
+/*
 ** Open a new database.
 **
 ** Actually, this routine just sets up the internal data structures
@@ -1011,6 +1027,7 @@ int sqlite3BtreeOpen(
     return rc;
   }
   sqlite3pager_set_destructor(pBt->pPager, pageDestructor);
+  sqlite3pager_set_reiniter(pBt->pPager, pageReinit);
   pBt->pCursor = 0;
   pBt->pPage1 = 0;
   pBt->readOnly = sqlite3pager_isreadonly(pBt->pPager);

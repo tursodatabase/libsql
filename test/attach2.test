@@ -12,9 +12,8 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach2.test,v 1.13 2004/06/09 14:01:58 drh Exp $
+# $Id: attach2.test,v 1.14 2004/06/09 17:37:29 drh Exp $
 #
-set sqlite_os_trace 0
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -147,6 +146,14 @@ db close
 for {set i 2} {$i<=15} {incr i} {
   catch {db$i close}
 }
+
+# A procedure to verify the status of locks on a database.
+#
+proc lock_status {testnum db expected_result} {
+  do_test attach2-$testnum [subst {
+    execsql {PRAGMA lock_status} $db
+  }] $expected_result
+}
 set sqlite_os_trace 0
 
 # Tests attach2-4.* test that read-locks work correctly with attached
@@ -158,6 +165,9 @@ do_test attach2-4.1 {
   execsql {ATTACH 'test2.db' as file2} db2
 } {}
 
+lock_status 4.1.1 db {main unlocked temp unlocked file2 unlocked}
+lock_status 4.1.2 db2 {main unlocked temp unlocked file2 unlocked}
+
 do_test attach2-4.2 {
   # Handle 'db' read-locks test.db
   execsql {BEGIN}
@@ -166,10 +176,18 @@ do_test attach2-4.2 {
   #    db  - shared(main)
   #    db2 -
 } {}
+
+lock_status 4.2.1 db {main shared temp shared file2 unlocked}
+lock_status 4.2.2 db2 {main unlocked temp unlocked file2 unlocked}
+
 do_test attach2-4.3 {
   # The read lock held by db does not prevent db2 from reading test.db
   execsql {SELECT * FROM t1} db2
 } {}
+
+lock_status 4.3.1 db {main shared temp shared file2 unlocked}
+lock_status 4.3.2 db2 {main unlocked temp unlocked file2 unlocked}
+
 do_test attach2-4.4 {
   # db is holding a read lock on test.db, so we should not be able
   # to commit a write to test.db from db2
@@ -177,6 +195,10 @@ do_test attach2-4.4 {
     INSERT INTO t1 VALUES(1, 2)
   } db2 
 } {1 {database is locked}}
+
+lock_status 4.4.1 db {main shared temp shared file2 unlocked}
+lock_status 4.4.2 db2 {main unlocked temp unlocked file2 unlocked}
+
 do_test attach2-4.5 {
   # Handle 'db2' reserves file2.
   execsql {BEGIN} db2
@@ -185,6 +207,10 @@ do_test attach2-4.5 {
   #    db  - shared(main)
   #    db2 - reserved(file2)
 } {}
+
+lock_status 4.5.1 db {main shared temp shared file2 unlocked}
+lock_status 4.5.2 db2 {main unlocked temp reserved file2 reserved}
+
 do_test attach2-4.6.1 {
   # Reads are allowed against a reserved database.
   catchsql {
@@ -194,38 +220,57 @@ do_test attach2-4.6.1 {
   #    db  - shared(main), shared(file2)
   #    db2 - reserved(file2)
 } {0 {}}
+
+lock_status 4.6.1.1 db {main shared temp shared file2 shared}
+lock_status 4.6.1.2 db2 {main unlocked temp reserved file2 reserved}
+
 do_test attach2-4.6.2 {
   # Writes against a reserved database are not allowed.
   catchsql {
     UPDATE file2.t1 SET a=0;
   }
 } {1 {database is locked}}
+
+lock_status 4.6.2.1 db {main shared temp reserved file2 shared}
+lock_status 4.6.2.2 db2 {main unlocked temp reserved file2 reserved}
+
 do_test attach2-4.7 {
   # Ensure handle 'db' retains the lock on the main file after
   # failing to obtain a write-lock on file2.
   catchsql {
     INSERT INTO t1 VALUES(1, 2)
   } db2 
-} {1 {database is locked}}
+} {0 {}}
+
+lock_status 4.7.1 db {main shared temp reserved file2 shared}
+lock_status 4.7.2 db2 {main reserved temp reserved file2 reserved}
+
 do_test attach2-4.8 {
-  # Read lock the main file with db2. Now both db and db2 have a read lock
-  # on the main file, db2 has a write-lock on file2.
+  # We should still be able to read test.db from db2
   execsql {SELECT * FROM t1} db2
-  # Lock status:
-  #    db  - shared(main), shared(file2)
-  #    db2 - shared(main), reserved(file2)
-} {}
+} {1 2}
+
+lock_status 4.8.1 db {main shared temp reserved file2 shared}
+lock_status 4.8.2 db2 {main reserved temp reserved file2 reserved}
+
 do_test attach2-4.9 {
   # Try to upgrade the handle 'db' lock.
   catchsql {
     INSERT INTO t1 VALUES(1, 2)
   }
-  list $r $msg
 } {1 {database is locked}}
+
+lock_status 4.9.1 db {main shared temp reserved file2 shared}
+lock_status 4.9.2 db2 {main reserved temp reserved file2 reserved}
+
 do_test attach2-4.10 {
   # Release the locks held by handle 'db2'
   execsql {COMMIT} db2
 } {}
+
+lock_status 4.10.1 db {main shared temp reserved file2 shared}
+lock_status 4.10.2 db2 {main unlocked temp unlocked file2 unlocked}
+
 do_test attach2-4.11 {
   execsql {SELECT * FROM file2.t1}
 } {1 2}

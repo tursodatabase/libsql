@@ -934,7 +934,7 @@ static int vdbeCommit(sqlite *db){
   ** database) has a transaction active.   There is no need for the
   ** master-journal.
   */
-  if( nTrans<=1 ){
+  if( nTrans<=100 ){  /**** FIX ME ****/
     for(i=0; rc==SQLITE_OK && i<db->nDb; i++){ 
       Btree *pBt = db->aDb[i].pBt;
       if( pBt ){
@@ -964,12 +964,10 @@ static int vdbeCommit(sqlite *db){
 
     /* Select a master journal file name */
     do {
-      int random;
-      if( zMaster ){
-        sqliteFree(zMaster);
-      }    
+      u32 random;
+      sqliteFree(zMaster);
       sqlite3Randomness(sizeof(random), &random);
-      zMaster = sqlite3_mprintf("%s%d", zMainFile, random);
+      zMaster = sqlite3MPrintf("%s-mj%08X", zMainFile, random);
       if( !zMaster ){
         return SQLITE_NOMEM;
       }
