@@ -358,12 +358,21 @@ static int vxprintf(
         if( longvalue==0 && infop->base==8 ) flag_alternateform = 0;
 #endif
         if( infop->flags & FLAG_SIGNED ){
-          if( *(long*)&longvalue<0 ){
-            longvalue = -*(long*)&longvalue;
-            prefix = '-';
-          }else if( flag_plussign )  prefix = '+';
-          else if( flag_blanksign )  prefix = ' ';
-          else                       prefix = 0;
+          if( flag_longlong ){
+            if( *(i64*)&longvalue<0 ){
+              longvalue = -*(i64*)&longvalue;
+              prefix = '-';
+            }else if( flag_plussign )  prefix = '+';
+            else if( flag_blanksign )  prefix = ' ';
+            else                       prefix = 0;
+          }else{
+            if( *(long*)&longvalue<0 ){
+              longvalue = -*(long*)&longvalue;
+              prefix = '-';
+            }else if( flag_plussign )  prefix = '+';
+            else if( flag_blanksign )  prefix = ' ';
+            else                       prefix = 0;
+          }
         }else                        prefix = 0;
         if( flag_zeropad && precision<width-(prefix!=0) ){
           precision = width-(prefix!=0);

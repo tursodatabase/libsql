@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.282 2004/05/11 09:57:35 drh Exp $
+** $Id: vdbe.c,v 1.283 2004/05/12 07:33:33 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -199,7 +199,7 @@ static int hardStringify(Mem *pStack){
   if( fg & MEM_Real ){
     sqlite3_snprintf(sizeof(pStack->zShort),pStack->zShort,"%.15g",pStack->r);
   }else if( fg & MEM_Int ){
-    sqlite3_snprintf(sizeof(pStack->zShort),pStack->zShort,"%d",pStack->i);
+    sqlite3_snprintf(sizeof(pStack->zShort),pStack->zShort,"%lld",pStack->i);
   }else{
     pStack->zShort[0] = 0;
   }
@@ -1014,7 +1014,7 @@ case OP_Remainder: {
     Release(pTos);
     pTos->flags = MEM_Null;
   }else if( (pTos->flags & pNos->flags & MEM_Int)==MEM_Int ){
-    int a, b;
+    i64 a, b;
     a = pTos->i;
     b = pNos->i;
     switch( pOp->opcode ){
@@ -1811,45 +1811,48 @@ case OP_NotNull: {
 
 /* Opcode: Column3 P1 P2 *
 **
-** This opcode (not yet in use) is a replacement for the current
-** OP_Column3 that supports the SQLite3 manifest typing feature.
+** This opcode (not yet in use) is a replacement for the current OP_Column3
+** that supports the SQLite3 manifest typing feature.
 **
-** Interpret the data that cursor P1 points to as
-** a structure built using the MakeRecord instruction.
-** (See the MakeRecord opcode for additional information about
-** the format of the data.)
-** Push onto the stack the value of the P2-th column contained
-** in the data.
+** Interpret the data that cursor P1 points to as a structure built using
+** the MakeRecord instruction.  (See the MakeRecord opcode for additional
+** information about the format of the data.) Push onto the stack the value
+** of the P2-th column contained in the data.
 **
-** If the KeyAsData opcode has previously executed on this cursor,
-** then the field might be extracted from the key rather than the
-** data.
+** If the KeyAsData opcode has previously executed on this cursor, then the
+** field might be extracted from the key rather than the data.
 **
-** If P1 is negative, then the record is stored on the stack rather
-** than in a table.  For P1==-1, the top of the stack is used.
-** For P1==-2, the next on the stack is used.  And so forth.  The
-** value pushed is always just a pointer into the record which is
-** stored further down on the stack.  The column value is not copied.
+** If P1 is negative, then the record is stored on the stack rather than in
+** a table.  For P1==-1, the top of the stack is used.  For P1==-2, the
+** next on the stack is used.  And so forth.  The value pushed is always
+** just a pointer into the record which is stored further down on the
+** stack.  The column value is not copied.
 */
-case OP_Column3: {
-  int payloadSize;
+case OP_Column: {
+  int payloadSize;   /* Number of bytes in the record */
   int i = pOp->p1;
-  int p2 = pOp->p2;
+  int p2 = pOp->p2;  /* column number to retrieve */
   Cursor *pC;
-  char *zRec;
+  char *zRec;        /* Pointer to record-data from stack or pseudo-table. */
   BtCursor *pCrsr;
 
-  char *zHdr = 0;
-  int freeZHdr = 0;
-  int dataOffsetLen;
-  u64 dataOffset;
-  char *zIdx = 0;
-  int cnt;
-  u64 idxN;
-  u64 idxN1;
+  char *zData;       
+  int freeZdata = 0; /* zData requires sqliteFree() */
+
+  u64 nFields;       /* number of fields in the record */
+  u64 *aTypes;       /* An array of serial types (size nFields) */
+
+  int len;           /* The length of the serialized data for the column */
+  int offset;
+  int nn;
 
   assert( i<p->nCursor );
   pTos++;
+
+  /* This block sets the variable payloadSize, and if the data is coming
+  ** from the stack or from a pseudo-table zRec. If the data is coming
+  ** from a real cursor, then zRec is left as NULL.
+  */
   if( i<0 ){
     assert( &pTos[i]>=p->aStack );
     assert( pTos[i].flags & MEM_Str );
@@ -1882,89 +1885,140 @@ case OP_Column3: {
     break;
   }
 
-  /* Read the data-offset for this record */
-  if( zRec ){
-    dataOffsetLen = sqlite3GetVarint(zRec, &dataOffset);
-  }else{
-    unsigned char zDataOffset[9];
-    if( pC->keyAsData ){
-      sqlite3BtreeKey(pCrsr, 0, 9, zDataOffset);
-    }else{
-      sqlite3BtreeData(pCrsr, 0, 9, zDataOffset);
-    }
-    dataOffsetLen = sqlite3GetVarint(zDataOffset, &dataOffset);
-  }
-
-  /* Set zHdr to point at the start of the Idx() fields of the
-  ** record. Set freeZHdr to 1 if we need to sqliteFree(zHdr) later.
+  /* Read the number of fields for the record.
+  ** FIX ME: The Cursor object should cache this data and the array of
+  ** field types for subsequent OP_Column instructions.
   */
   if( zRec ){
-    zHdr = zRec + dataOffsetLen;
+    zData = zRec;
   }else{
-    zHdr = sqliteMalloc(dataOffset);
-    if( !zHdr ){
-      rc = SQLITE_NOMEM;
-      goto abort_due_to_error;
-    }
-    freeZHdr = 1;
+    /* We can assume that 9 bytes (maximum length of a varint) fits
+    ** on the main page in all cases.
+    */
     if( pC->keyAsData ){
-      sqlite3BtreeKey(pCrsr, dataOffsetLen, dataOffset, zHdr);
+      zData = (char *)sqlite3BtreeKeyFetch(pCrsr, 9>payloadSize?payloadSize:9);
     }else{
-      sqlite3BtreeData(pCrsr, dataOffsetLen, dataOffset, zHdr);
+      zData = (char *)sqlite3BtreeDataFetch(pCrsr, 9>payloadSize?payloadSize:9);
     }
+    assert( zData );
   }
+  offset = sqlite3GetVarint(zData, &nFields);
 
-  /* Find the Nth byte of zHdr that does not have the 0x80
-  ** bit set. The byte after this one is the start of the Idx(N)
-  ** varint. Then read Idx(N) and Idx(N+1)
-  */
-  cnt = p2;
-  zIdx = zHdr;
-  while( cnt>0 ){
-    assert( (zIdx-zHdr)<dataOffset );
-    if( !(*zIdx & 0x80) ) cnt--;
-    zIdx++;
-  }
-  zIdx += sqlite3GetVarint(zIdx, &idxN);
-  sqlite3GetVarint(zIdx, &idxN1);
-
-  /* Set zHdr to point at the field data */
-  if( freeZHdr ){
-    sqliteFree(zHdr);
-    freeZHdr = 0;
-  }
-  if( zRec ){
-    zHdr = zRec + (dataOffsetLen + dataOffset + idxN);
-  }else{
-    cnt = idxN1 - idxN;
-    assert( cnt>0 );
-    zHdr = sqliteMalloc(cnt);
-    if( !zHdr ){
-      rc = SQLITE_NOMEM;
-      goto abort_due_to_error;
+  if( !zRec ){
+    /* If the record is stored in a table, see if enough of it is on
+    ** the main page to use sqlite3BtreeDataFetch() to get the data
+    ** containing the nFields serial types (varints). This will almost
+    ** always work, but if it doesn't sqliteMalloc() space and use
+    ** sqlite3BtreeData().
+    **
+    ** Estimate the maximum space required by the nFields varints by
+    ** assuming the maximum space for each is the length required to store:
+    **
+    **     (<record length> * 2) + 13
+    **
+    ** This is the serial-type for a text object as long as the record
+    ** itself. In all cases the length required to store this is three
+    ** bytes or less. 
+    */
+    int max_space = sqlite3VarintLen((((u64)payloadSize)<<1)+13)*nFields;
+    max_space += offset;
+    if( max_space>payloadSize ){
+      max_space = payloadSize;
     }
-    freeZHdr = 1;
+
     if( pC->keyAsData ){
-      sqlite3BtreeKey(pCrsr, dataOffsetLen+dataOffset+idxN, cnt, zHdr);
+      zData = (char *)sqlite3BtreeKeyFetch(pCrsr, max_space);
     }else{
-      sqlite3BtreeData(pCrsr, dataOffsetLen+dataOffset+idxN, cnt, zHdr);
+      zData = (char *)sqlite3BtreeDataFetch(pCrsr, max_space);
+    }
+    if( !zData ){
+      /* This code will run very infrequently (e.g. tables with several
+      ** hundred columns).
+      */
+      zData = (char *)sqliteMalloc(offset+max_space);
+      if( !zData ){
+        rc = SQLITE_NOMEM;
+        goto abort_due_to_error;
+      }
+      if( pC->keyAsData ){
+        rc = sqlite3BtreeKey(pCrsr, 0, max_space, zData);
+      }else{
+        rc = sqlite3BtreeData(pCrsr, 0, max_space, zData);
+      }
+      if( rc!=SQLITE_OK ){
+        sqliteFree(zData);
+        goto abort_due_to_error;
+      }
+      freeZdata = 1;
     }
   }
 
-  /* Deserialize the field value directory into the top of the
-  ** stack. If the deserialized length does not match the expected
-  ** length, this indicates corruption.
+  /* Dynamically allocate space for the aTypes array. and read all
+  ** the serial types for the record. At the end of this block variable
+  ** offset is set to the offset to the start of Data0 in the record.
   */
-  if( (idxN1-idxN)!=sqlite3VdbeDeserialize(pTos, zHdr) ){
-    if( freeZHdr ){
-      sqliteFree(zHdr);
+  aTypes = (u64 *)sqliteMalloc(sizeof(u64)*nFields);
+  if( !aTypes ){
+    if( freeZdata ){
+      sqliteFree(zData);
+      freeZdata = 0;
     }
-    rc = SQLITE_CORRUPT;
+    rc = SQLITE_NOMEM;
     goto abort_due_to_error;
   }
+  for(nn=0; nn<nFields; nn++){
+    offset += sqlite3GetVarint(&zData[offset], &aTypes[nn]);
+  }
+ 
+  if( freeZdata ){
+    freeZdata = 0;
+    sqliteFree(zData);
+  }
 
-  if( freeZHdr ){
-    sqliteFree(zHdr);
+  for(nn=0; nn<p2; nn++){
+    offset += sqlite3VdbeSerialTypeLen(aTypes[nn]);
+  }
+  len = sqlite3VdbeSerialTypeLen(aTypes[p2]);
+
+  if( !zRec ){
+    /* If the record is stored in a table, see if enough of it
+    ** is on the main page to read our column using
+    ** sqlite3BtreeDataFetch(). If not sqliteMalloc() space and read data
+    ** with sqlite3BtreeData().
+    */
+    if( pC->keyAsData ){
+      zData = (char *)sqlite3BtreeKeyFetch(pCrsr, offset+len);
+    }else{
+      zData = (char *)sqlite3BtreeDataFetch(pCrsr, offset+len);
+    }
+    if( !zData && len>0 ){
+      zData = (char *)sqliteMalloc(len);
+      if( !zData ){
+        sqliteFree(aTypes);
+        rc = SQLITE_NOMEM;
+        goto abort_due_to_error;
+      }
+      if( pC->keyAsData ){
+        rc = sqlite3BtreeKey(pCrsr, offset, len, zData);
+      }else{
+        rc = sqlite3BtreeData(pCrsr, offset, len, zData);
+      }
+      if( rc!=SQLITE_OK ){
+        sqliteFree( aTypes );
+        sqliteFree( zData );
+        goto abort_due_to_error;
+      }
+      freeZdata = 1;
+      offset = 0;
+    }
+  }
+
+  /* Deserialize the value directly into the top of the stack */
+  sqlite3VdbeSerialGet(&zData[offset], aTypes[p2], pTos);
+
+  sqliteFree(aTypes);
+  if( freeZdata ){
+    sqliteFree(zData);
   }
   break;
 }
@@ -1981,220 +2035,77 @@ case OP_Column3: {
 ** opcode can decode the record later.  Refer to source code
 ** comments for the details of the record format.
 */
-case OP_MakeRecord3: {
+case OP_MakeRecord: {
   /* Assuming the record contains N fields, the record format looks
   ** like this:
   **
   ** --------------------------------------------------------------------------
-  ** | data-offset | idx1 | ... | idx(N-1) | idx(N) | data0 | ... | data(N-1) |
+  ** | num-fields | type 0 | type 1 | ... | type N-1 | data0 | ... | data N-1 | 
   ** --------------------------------------------------------------------------
   **
   ** Data(0) is taken from the lowest element of the stack and data(N-1) is
   ** the top of the stack.
   **
-  ** The data-offset and each of the idx() entries is stored as a 1-9 
-  ** byte variable-length integer (see comments in btree.c). The
-  ** data-offset contains the offset from the end of itself to the start 
-  ** of data(0).
+  ** Each type field is a varint representing the serial type of the 
+  ** corresponding data element (see sqlite3VdbeSerialType()). The
+  ** num-fields field is also a varint storing N.
   ** 
-  ** Idx(k) contains the offset from the start of data(0) to the first 
-  ** byte of data(k). Idx(0) is implicitly 0. Hence:
-  ** 
-  **    sizeof(data-offset) + data-offset + Idx(N) 
-  **
-  ** is the number of bytes in the record. The offset to start of data(X)
-  ** is sizeof(data-offset) + data-offset + Idx(X
-  **
   ** TODO: Even when the record is short enough for Mem::zShort, this opcode
   **   allocates it dynamically.
   */
-  int nDataLen = 0;
-  int nHdrLen = 0;
-  int data_offset = 0;
   int nField = pOp->p1;
   unsigned char *zNewRecord;
-  unsigned char *zHdr;
+  unsigned char *zCsr;
   Mem *pRec;
+  int nBytes;    /* Space required for this record */
 
   Mem *pData0 = &pTos[1-nField];
   assert( pData0>=p->aStack );
 
-  /* Loop through the elements that will make up the record, determining
-  ** the aggregate length of the Data() segments and the data_offset.
+  /* Loop through the elements that will make up the record to figure
+  ** out how much space is required for the new record.
   */
-  for(pRec=pData0; pRec!=pTos; pRec++){
-    nDataLen += sqlite3VdbeSerialLen(pRec);
-    data_offset += sqlite3VarintLen(nDataLen);
-  }
- 
-  /* The size of the header is the data-offset + the size of the
-  ** data-offset as a varint. If the size of the header combined with
-  ** the size of the Data() segments is greater than MAX_BYTES_PER_ROW, 
-  ** report an error.
-  */
-  nHdrLen = data_offset + sqlite3VarintLen(data_offset);
-  if( (nHdrLen+nDataLen)>MAX_BYTES_PER_ROW ){
-    rc = SQLITE_TOOBIG;
-    goto abort_due_to_error;
+  nBytes = sqlite3VarintLen(nField);
+  for(pRec=pData0; pRec<=pTos; pRec++){
+    u64 serial_type = sqlite3VdbeSerialType(pRec);
+    nBytes += sqlite3VdbeSerialTypeLen(serial_type);
+    nBytes += sqlite3VarintLen(serial_type);
   }
 
-  /* Allocate space for the new row. */
-  zNewRecord = sqliteMalloc(nHdrLen+nDataLen);
+  /* Allocate space for the new record. */
+  zNewRecord = sqliteMalloc(nBytes);
   if( !zNewRecord ){
     rc = SQLITE_NOMEM;
     goto abort_due_to_error;
   }
 
-  /* Write the data offset */
-  zHdr = zNewRecord;
-  zHdr += sqlite3PutVarint(zHdr, data_offset);
+  /* Write the record */
+  zCsr = zNewRecord;
+  zCsr += sqlite3PutVarint(zCsr, nField);             /* number of fields */
+  for(pRec=pData0; pRec<=pTos; pRec++){
+    u64 serial_type = sqlite3VdbeSerialType(pRec);
+    zCsr += sqlite3PutVarint(zCsr, serial_type);      /* serial type */
+  }
+  for(pRec=pData0; pRec<=pTos; pRec++){
+    zCsr += sqlite3VdbeSerialPut(zCsr, pRec);  /* serial data */
+  }
 
-  /* Loop through the values on the stack writing both the serialized value
-  ** and the the Idx() offset for each.
+  /* If zCsr has not been advanced exactly nBytes bytes, then one
+  ** of the sqlite3PutVarint() or sqlite3VdbeSerialPut() calls above
+  ** failed. This indicates a corrupted memory cell or code bug.
   */
-  nDataLen = 0;
-  for(pRec=pData0; pRec!=pTos; pRec++){
-    nDataLen += sqlite3VdbeSerialize(pRec, &zNewRecord[nDataLen]);
-    zHdr += sqlite3PutVarint(zHdr, nDataLen);
+  if( zCsr!=(zNewRecord+nBytes) ){
+    rc = SQLITE_INTERNAL;
+    goto abort_due_to_error;
   }
 
   /* Pop nField entries from the stack and push the new entry on */
   popStack(&pTos, nField);
   pTos++;
-  pTos->n = nDataLen+nHdrLen;
+  pTos->n = nBytes;
   pTos->z = zNewRecord;
   pTos->flags = MEM_Str | MEM_Dyn;
 
-  break;
-}
-
-/* Opcode: MakeRecord P1 P2 *
-**
-** Convert the top P1 entries of the stack into a single entry
-** suitable for use as a data record in a database table.  The
-** details of the format are irrelavant as long as the OP_Column
-** opcode can decode the record later.  Refer to source code
-** comments for the details of the record format.
-**
-** If P2 is true (non-zero) and one or more of the P1 entries
-** that go into building the record is NULL, then add some extra
-** bytes to the record to make it distinct for other entries created
-** during the same run of the VDBE.  The extra bytes added are a
-** counter that is reset with each run of the VDBE, so records
-** created this way will not necessarily be distinct across runs.
-** But they should be distinct for transient tables (created using
-** OP_OpenTemp) which is what they are intended for.
-**
-** (Later:) The P2==1 option was intended to make NULLs distinct
-** for the UNION operator.  But I have since discovered that NULLs
-** are indistinct for UNION.  So this option is never used.
-*/
-case OP_MakeRecord: {
-  char *zNewRecord;
-  int nByte;
-  int nField;
-  int i, j;
-  int idxWidth;
-  u32 addr;
-  Mem *pRec;
-  int addUnique = 0;   /* True to cause bytes to be added to make the
-                       ** generated record distinct */
-  char zTemp[NBFS];    /* Temp space for small records */
-
-  /* Assuming the record contains N fields, the record format looks
-  ** like this:
-  **
-  **   -------------------------------------------------------------------
-  **   | idx0 | idx1 | ... | idx(N-1) | idx(N) | data0 | ... | data(N-1) |
-  **   -------------------------------------------------------------------
-  **
-  ** All data fields are converted to strings before being stored and
-  ** are stored with their null terminators.  NULL entries omit the
-  ** null terminator.  Thus an empty string uses 1 byte and a NULL uses
-  ** zero bytes.  Data(0) is taken from the lowest element of the stack
-  ** and data(N-1) is the top of the stack.
-  **
-  ** Each of the idx() entries is either 1, 2, or 3 bytes depending on
-  ** how big the total record is.  Idx(0) contains the offset to the start
-  ** of data(0).  Idx(k) contains the offset to the start of data(k).
-  ** Idx(N) contains the total number of bytes in the record.
-  */
-  nField = pOp->p1;
-  pRec = &pTos[1-nField];
-  assert( pRec>=p->aStack );
-  nByte = 0;
-  for(i=0; i<nField; i++, pRec++){
-    if( pRec->flags & MEM_Null ){
-      addUnique = pOp->p2;
-    }else{
-      Stringify(pRec);
-      nByte += pRec->n;
-    }
-  }
-  if( addUnique ) nByte += sizeof(p->uniqueCnt);
-  if( nByte + nField + 1 < 256 ){
-    idxWidth = 1;
-  }else if( nByte + 2*nField + 2 < 65536 ){
-    idxWidth = 2;
-  }else{
-    idxWidth = 3;
-  }
-  nByte += idxWidth*(nField + 1);
-  if( nByte>MAX_BYTES_PER_ROW ){
-    rc = SQLITE_TOOBIG;
-    goto abort_due_to_error;
-  }
-  if( nByte<=NBFS ){
-    zNewRecord = zTemp;
-  }else{
-    zNewRecord = sqliteMallocRaw( nByte );
-    if( zNewRecord==0 ) goto no_mem;
-  }
-  j = 0;
-  addr = idxWidth*(nField+1) + addUnique*sizeof(p->uniqueCnt);
-  for(i=0, pRec=&pTos[1-nField]; i<nField; i++, pRec++){
-    zNewRecord[j++] = addr & 0xff;
-    if( idxWidth>1 ){
-      zNewRecord[j++] = (addr>>8)&0xff;
-      if( idxWidth>2 ){
-        zNewRecord[j++] = (addr>>16)&0xff;
-      }
-    }
-    if( (pRec->flags & MEM_Null)==0 ){
-      addr += pRec->n;
-    }
-  }
-  zNewRecord[j++] = addr & 0xff;
-  if( idxWidth>1 ){
-    zNewRecord[j++] = (addr>>8)&0xff;
-    if( idxWidth>2 ){
-      zNewRecord[j++] = (addr>>16)&0xff;
-    }
-  }
-  if( addUnique ){
-    memcpy(&zNewRecord[j], &p->uniqueCnt, sizeof(p->uniqueCnt));
-    p->uniqueCnt++;
-    j += sizeof(p->uniqueCnt);
-  }
-  for(i=0, pRec=&pTos[1-nField]; i<nField; i++, pRec++){
-    if( (pRec->flags & MEM_Null)==0 ){
-      memcpy(&zNewRecord[j], pRec->z, pRec->n);
-      j += pRec->n;
-    }
-  }
-  popStack(&pTos, nField);
-  pTos++;
-  pTos->n = nByte;
-  if( nByte<=NBFS ){
-    assert( zNewRecord==zTemp );
-    memcpy(pTos->zShort, zTemp, nByte);
-    pTos->z = pTos->zShort;
-    pTos->flags = MEM_Str | MEM_Short;
-  }else{
-    assert( zNewRecord!=zTemp );
-    pTos->z = zNewRecord;
-    pTos->flags = MEM_Str | MEM_Dyn;
-  }
   break;
 }
 
@@ -3398,135 +3309,6 @@ case OP_RowData: {
     pTos->flags = MEM_Str|MEM_Ephem;
   }else{
     pTos->flags = MEM_Null;
-  }
-  break;
-}
-
-/* Opcode: Column P1 P2 *
-**
-** Interpret the data that cursor P1 points to as
-** a structure built using the MakeRecord instruction.
-** (See the MakeRecord opcode for additional information about
-** the format of the data.)
-** Push onto the stack the value of the P2-th column contained
-** in the data.
-**
-** If the KeyAsData opcode has previously executed on this cursor,
-** then the field might be extracted from the key rather than the
-** data.
-**
-** If P1 is negative, then the record is stored on the stack rather
-** than in a table.  For P1==-1, the top of the stack is used.
-** For P1==-2, the next on the stack is used.  And so forth.  The
-** value pushed is always just a pointer into the record which is
-** stored further down on the stack.  The column value is not copied.
-*/
-case OP_Column: {
-  int amt, offset, end, payloadSize;
-  int i = pOp->p1;
-  int p2 = pOp->p2;
-  Cursor *pC;
-  char *zRec;
-  BtCursor *pCrsr;
-  int idxWidth;
-  unsigned char aHdr[10];
-
-  assert( i<p->nCursor );
-  pTos++;
-  if( i<0 ){
-    assert( &pTos[i]>=p->aStack );
-    assert( pTos[i].flags & MEM_Str );
-    zRec = pTos[i].z;
-    payloadSize = pTos[i].n;
-  }else if( (pC = &p->aCsr[i])->pCursor!=0 ){
-    sqlite3VdbeCursorMoveto(pC);
-    zRec = 0;
-    pCrsr = pC->pCursor;
-    if( pC->nullRow ){
-      payloadSize = 0;
-    }else if( pC->keyAsData ){
-      u64 pl64;
-      assert( !pC->intKey );
-      sqlite3BtreeKeySize(pCrsr, &pl64);
-      payloadSize = pl64;
-    }else{
-      sqlite3BtreeDataSize(pCrsr, &payloadSize);
-    }
-  }else if( pC->pseudoTable ){
-    payloadSize = pC->nData;
-    zRec = pC->pData;
-    assert( payloadSize==0 || zRec!=0 );
-  }else{
-    payloadSize = 0;
-  }
-
-  /* Figure out how many bytes in the column data and where the column
-  ** data begins.
-  */
-  if( payloadSize==0 ){
-    pTos->flags = MEM_Null;
-    break;
-  }else if( payloadSize<256 ){
-    idxWidth = 1;
-  }else if( payloadSize<65536 ){
-    idxWidth = 2;
-  }else{
-    idxWidth = 3;
-  }
-
-  /* Figure out where the requested column is stored and how big it is.
-  */
-  if( payloadSize < idxWidth*(p2+1) ){
-    rc = SQLITE_CORRUPT;
-    goto abort_due_to_error;
-  }
-  if( zRec ){
-    memcpy(aHdr, &zRec[idxWidth*p2], idxWidth*2);
-  }else if( pC->keyAsData ){
-    sqlite3BtreeKey(pCrsr, idxWidth*p2, idxWidth*2, (char*)aHdr);
-  }else{
-    sqlite3BtreeData(pCrsr, idxWidth*p2, idxWidth*2, (char*)aHdr);
-  }
-  offset = aHdr[0];
-  end = aHdr[idxWidth];
-  if( idxWidth>1 ){
-    offset |= aHdr[1]<<8;
-    end |= aHdr[idxWidth+1]<<8;
-    if( idxWidth>2 ){
-      offset |= aHdr[2]<<16;
-      end |= aHdr[idxWidth+2]<<16;
-    }
-  }
-  amt = end - offset;
-  if( amt<0 || offset<0 || end>payloadSize ){
-    rc = SQLITE_CORRUPT;
-    goto abort_due_to_error;
-  }
-
-  /* amt and offset now hold the offset to the start of data and the
-  ** amount of data.  Go get the data and put it on the stack.
-  */
-  pTos->n = amt;
-  if( amt==0 ){
-    pTos->flags = MEM_Null;
-  }else if( zRec ){
-    pTos->flags = MEM_Str | MEM_Ephem;
-    pTos->z = &zRec[offset];
-  }else{
-    if( amt<=NBFS ){
-      pTos->flags = MEM_Str | MEM_Short;
-      pTos->z = pTos->zShort;
-    }else{
-      char *z = sqliteMallocRaw( amt );
-      if( z==0 ) goto no_mem;
-      pTos->flags = MEM_Str | MEM_Dyn;
-      pTos->z = z;
-    }
-    if( pC->keyAsData ){
-      sqlite3BtreeKey(pCrsr, offset, amt, pTos->z);
-    }else{
-      sqlite3BtreeData(pCrsr, offset, amt, pTos->z);
-    }
   }
   break;
 }

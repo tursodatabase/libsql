@@ -1107,17 +1107,28 @@ int sqlite2BtreeKeyCompare(
 }
 
 /*
-** The following three functions:
+** The following functions:
 **
-** sqlite3VdbeSerialize()
+** sqlite3VdbeSerialType()
+** sqlite3VdbeSerialTypeLen()
+** sqlite3VdbeSerialRead()
 ** sqlite3VdbeSerialLen()
-** sqlite3VdbeDeserialize()
+** sqlite3VdbeSerialWrite()
 **
 ** encapsulate the code that serializes values for storage in SQLite
-** databases. Each serialized value consists of a variable length integer
-** followed by type specific storage.
+** data and index records. Each serialized value consists of a
+** 'serial-type' and a blob of data. The serial type is an 8-byte unsigned
+** integer, stored as a varint.
 **
-**   initial varint     bytes to follow    type
+** In an SQLite index record, the serial type is stored directly before
+** the blob of data that it corresponds to. In a table record, all serial
+** types are stored at the start of the record, and the blobs of data at
+** the end. Hence these functions allow the caller to handle the
+** serial-type and data blob seperately.
+**
+** The following table describes the various storage classes for data:
+**
+**   serial type        bytes of data      type
 **   --------------     ---------------    ---------------
 **      0                     0            NULL
 **      1                     1            signed integer
@@ -1132,149 +1143,145 @@ int sqlite2BtreeKeyCompare(
 */
 
 /*
-** Write the serialized form of the value held by pMem into zBuf. Return
-** the number of bytes written.
+** Return the serial-type for the value stored in pMem.
 */
-int sqlite3VdbeSerialize(
-  const Mem *pMem,      /* Pointer to vdbe value to serialize */
-  unsigned char *zBuf   /* Buffer to write to */
-){
-  if( pMem->flags&MEM_Null ){
-    return sqlite3PutVarint(zBuf, 0);
+u64 sqlite3VdbeSerialType(const Mem *pMem){
+  int flags = pMem->flags;
+
+  if( flags&MEM_Null ){
+    return 0;
   }
-
-  if( pMem->flags&MEM_Real ){
-    assert(!"TODO: float");
+  if( flags&MEM_Int ){
+    /* Figure out whether to use 1, 2, 4 or 8 bytes. */
+    i64 i = pMem->i;
+    if( i>=-127 && i<=127 ) return 1;
+    if( i>=-32767 && i<=32767 ) return 2;
+    if( i>=-2147483647 && i<=2147483647 ) return 3;
+    return 4;
   }
-
-  if( pMem->flags&MEM_Str ){
-    int data_type_len;
-    u64 data_type = (pMem->n*2+31);
-
-    data_type_len = sqlite3PutVarint(zBuf, data_type); 
-    memcpy(&zBuf[data_type_len], pMem->z, pMem->n);
-    return pMem->n + data_type_len;
+  if( flags&MEM_Real ){
+    return 5;
   }
-
-  if( pMem->flags& MEM_Int ){
-    u64 absval;
-    int size = 8;
-    int ii;
-
-    if( pMem->i<0 ){
-      absval = pMem->i * -1;
-    }else{
-      absval = pMem->i;
-    }
-    if( absval<=127 ){
-      size = 1;
-      sqlite3PutVarint(zBuf, 1);
-    }else if( absval<=32767 ){
-      size = 2;
-      sqlite3PutVarint(zBuf, 2);
-    }else if( absval<=2147483647 ){
-      size = 4;
-      sqlite3PutVarint(zBuf, 3);
-    }else{
-      size = 8;
-      sqlite3PutVarint(zBuf, 4);
-    }
-
-    for(ii=0; ii<size; ii++){
-      zBuf[ii+1] = (pMem->i >> (8*ii)) & 0xFF;
-    }
-    if( pMem->i<0 ){
-      zBuf[size] = zBuf[size] & 0x80;
-    }
-
-    return size+1;
+  if( flags&MEM_Str ){
+    return (pMem->n*2 + 13);
   }
-
-  return -1;
+  if( flags&MEM_Blob ){
+    return (pMem->n*2 + 12);
+  }
+  return 0;
 }
 
 /*
-** Return the number of bytes that would be consumed by the serialized
-** form of the value held by pMem. Return negative if an error occurs.
+** Return the length of the data corresponding to the supplied serial-type.
 */
-int sqlite3VdbeSerialLen(const Mem *pMem){
-  if( pMem->flags&MEM_Null ){
-    return 1; /* Varint 0 is 1 byte */
+int sqlite3VdbeSerialTypeLen(u64 serial_type){
+  switch(serial_type){
+    case 0: return 0;                  /* NULL */
+    case 1: return 1;                  /* 1 byte integer */
+    case 2: return 2;                  /* 2 byte integer */
+    case 3: return 4;                  /* 4 byte integer */
+    case 4: return 8;                  /* 8 byte integer */
+    case 5: return 8;                  /* 8 byte float */
   }
-  if( pMem->flags&MEM_Real ){
-    return 9; /* Varing 5 (1 byte) + 8 bytes IEEE float */    
-  }
-  if( pMem->flags&MEM_Str ){
-    return pMem->n + sqlite3VarintLen((pMem->n*2)+13);
-  }
-  if( pMem->flags& MEM_Int ){
-    u64 absval;
-    if( pMem->i<0 ){
-      absval = pMem->i * -1;
-    }else{
-      absval = pMem->i;
-    }
-    if( absval<=127 ) return 2;        /* 1 byte integer */
-    if( absval<=32767 ) return 3;      /* 2 byte integer */
-    if( absval<=2147483647 ) return 5; /* 4 byte integer */
-    return 9;                         /* 8 byte integer */
-  }
-
-  return -1;
+  assert( serial_type>=12 );
+  return ((serial_type-12)>>1);        /* text or blob */
 }
 
 /*
-** Deserialize a value from zBuf and store it in *pMem. Return the number
-** of bytes written, or negative if an error occurs.
-*/
-int sqlite3VdbeDeserialize(
-  Mem *pMem,                   /* structure to write new value to */
-  const unsigned char *zBuf    /* Buffer to read from */
-){
-  u64 data_type;
-  int ret;
+** Write the serialized data blob for the value stored in pMem into 
+** buf. It is assumed that the caller has allocated sufficient space.
+** Return the number of bytes written.
+*/ 
+int sqlite3VdbeSerialPut(unsigned char *buf, const Mem *pMem){
+  u64 serial_type = sqlite3VdbeSerialType(pMem);
+  int len;
+ 
+  /* NULL */
+  if( serial_type==0 ){
+    return 0;
+  }
+ 
+  /* Integer */
+  if( serial_type<5 ){
+    i64 i = pMem->i;
+    len = sqlite3VdbeSerialTypeLen(serial_type);
+    while( len-- ){
+      buf[len] = (i&0xFF);
+      i = i >> 8;
+    }
+    return sqlite3VdbeSerialTypeLen(serial_type);
+  }
+
+  /* Float */
+  if( serial_type==5 ){
+    /* TODO: byte ordering? */
+    assert( sizeof(double)==8 );
+    memcpy(buf, &pMem->r, 8);
+    return 8;
+  }
+  
+  /* String or blob */
+  assert( serial_type>=12 );
+  len = sqlite3VdbeSerialTypeLen(serial_type);
+  memcpy(buf, pMem->z, len);
+  return len;
+}
+
+/*
+** Deserialize the data blob pointed to by buf as serial type serial_type
+** and store the result in pMem.  Return the number of bytes read.
+*/ 
+int sqlite3VdbeSerialGet(const unsigned char *buf, u64 serial_type, Mem *pMem){
   int len;
 
-  memset(pMem, 0, sizeof(Mem));
-  ret = sqlite3GetVarint(zBuf, &data_type);
+  /* memset(pMem, 0, sizeof(pMem)); */
+  pMem->flags = 0;
+  pMem->z = 0;
 
-  if( data_type==0 ){  /* NULL */
+  /* NULL */
+  if( serial_type==0 ){
     pMem->flags = MEM_Null;
-    return ret;
+    return 0;
   }
+ 
+  /* Integer */
+  if( serial_type<5 ){
+    i64 i = 0;
+    int n;
+    len = sqlite3VdbeSerialTypeLen(serial_type);
 
-  /* FIX ME: update for 8-byte integers */
-  if( data_type>0 && data_type<5 ){  /* 1, 2, 4 or 8 byte integer */
-    int ii;
-    int bytes = 1 << (data_type-1);
-
+    if( buf[0]&0x80 ){
+      for(n=0; n<(8-len); n++){
+        i = (i<<8)+0xFF;
+      }
+    }
+    for(n=0; n<len; n++){
+      i = i << 8;
+      i = i + buf[n];
+    }
     pMem->flags = MEM_Int;
-    pMem->i = 0;
-
-    for(ii=0; ii<bytes; ii++){
-      pMem->i = (pMem->i<<8) + zBuf[ii+ret];
-    }
-
-    /* If this is a 1, 2 or 4 byte integer, extend the sign-bit if need be. */
-    if( bytes<8 && pMem->i & (1<<(bytes*8-1)) ){
-      pMem->i = pMem->i - (1<<(bytes*8));
-    }
-
-    return ret+bytes;
+    pMem->i = i;
+    return sqlite3VdbeSerialTypeLen(serial_type);
   }
 
-  if( data_type==5 ){ /* IEEE float */
-    assert(!"TODO: float");
+  /* Float */
+  if( serial_type==5 ){
+    /* TODO: byte ordering? */
+    assert( sizeof(double)==8 );
+    memcpy(&pMem->r, buf, 8);
+    pMem->flags = MEM_Real;
+    return 8;
   }
-
-  /* Must be text or a blob */
-  assert( data_type>=12 );
-  len = (data_type-12)/2;
-  pMem->flags = MEM_Str;  /* FIX ME: there should be a MEM_Blob or similar */
-
-  /* If the length of the text or blob is greater than NBFS, use space
-  ** dynamically allocated. Otherwise, store the value in Mem::zShort.
-  */
+  
+  /* String or blob */
+  assert( serial_type>=12 );
+  if( serial_type&0x01 ){
+    pMem->flags = MEM_Str;
+  }else{
+    pMem->flags = MEM_Blob;
+  }
+  len = sqlite3VdbeSerialTypeLen(serial_type);
+  pMem->n = len;
   if( len>NBFS ){
     pMem->z = sqliteMalloc( len );
     if( !pMem->z ){
@@ -1285,10 +1292,9 @@ int sqlite3VdbeDeserialize(
     pMem->z = pMem->zShort;
     pMem->flags |= MEM_Short;
   }
-  memcpy(pMem->z, &zBuf[ret], len); 
-  ret += len;
+  memcpy(pMem->z, buf, len); 
 
-  return ret;
+  return len;
 }
 
 /*
