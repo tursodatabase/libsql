@@ -25,6 +25,17 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2003 July 22 (2.8.5)} {
+<li>Make LIMIT work on a compound SELECT statement.</li>
+<li>LIMIT 0 now shows no rows.  Use LIMIT -1 to see all rows.</li>
+<li>Correctly handle comparisons between an INTEGER PRIMARY KEY and
+    a floating point number.</li>
+<li>Fix several important bugs in the new ATTACH and DETACH commands.</li>
+<li>Updated the <a href="nulls.html">NULL-handling document</a>.</li> 
+<li>Allow NULL arguments in sqlite_compile() and sqlite_step().</li>
+<li>Many minor bug fixes</li>
+}
+
 chng {2003 June 29 (2.8.4)} {
 <li>Enhanced the "PRAGMA integrity_check" command to verify indices.</li>
 <li>Added authorization hooks for the new ATTACH and DETACH commands.</li>

@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.75 2003/07/16 17:10:45 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.76 2003/07/22 12:42:00 drh Exp $}
 
 puts {<html>
 <head><title>SQLite: An Embeddable SQL Database Engine</title></head>
@@ -63,7 +63,9 @@ puts {<h2>Features</h2>
 <a href="c_interface.html">C/C++ interface</a> requires the use of only
 three functions and one opaque structure.</li>
 <li><a href="tclsqlite.html">TCL bindings</a> included.
-    Bindings for many other languages available separately.</li>
+    Bindings for many other languages 
+    <a href="http://cvs.hwaci.com/sqlite/wiki?p=SqliteWrappers>
+    available separately.</a></li>
 <li>Simple, well-commented source code.</li>
 <li>Automated test suite provides near 100% code coverage.</li>
 <li>Self-contained: no external dependencies.</li>
