@@ -1,9 +1,9 @@
-C Fix\sproblems\swith\sTEMP\sindices\sthat\slead\sto\scorrupt\sdatabases.\s\sThese\nproblems\swere\sdiscovered\swhile\sworking\son\sticket\s#317.\s\sNo\ssure\syet\sif\nthat\sticket\sis\sfixed.\s(CVS\s981)
-D 2003-05-17T17:35:11
+C Bump\sthe\sversion\snumber\sand\supdate\sthe\schange\slog.\s\sWe\sare\srushing\sout\nrelease\s2.8.2\sbecause\sof\sthe\sdatabase\scorruption\sproblem\sfixed\sby\nthe\sprevious\scheck-in.\s(CVS\s982)
+D 2003-05-17T17:38:38
 F Makefile.in 1ff85c27d4350c74118341024e8a4fb2a04a3a43
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
-F VERSION 861f3b65982ad74cf5a8ddc9ce5df857c4c7a3bf
+F VERSION 17a91274e8604eecfb3f1821abaa4c310ceb8d93
 F aclocal.m4 ff32919e75f42b2d4213fe3c6f79dd0fe47f7769
 F config.guess 831db445a8ae31d1f773fce85e14c16c8677417d
 F config.sub 975368989965310238930ecf8e7f06a23061dbb1
@@ -146,7 +146,7 @@ F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 44b589fc01d6829d43447ab40588b00aec5b9734
 F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
 F www/c_interface.tcl 5b54a6f65b70b02da2f6df4f8a23a4b10032e89e
-F www/changes.tcl 3c4a94fe05cffa6bc09ee94d5858f847e82eb2d5
+F www/changes.tcl c1041b34f4a45b93f231fb4b55a7952654742dff
 F www/conflict.tcl 81dd21f9a679e60aae049e9dd8ab53d59570cda2
 F www/datatypes.tcl 0cb28565580554fa7e03e8fcb303e87ce57757ae
 F www/download.tcl 0932d7f4f0e8b2adbbd22fac73132f86e43ab4a9
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 590f963b6599e4e235d7369f19c63cece4b2ad95
-R 869048a3307d9ca8d4b394c814d0ad0e
+P 01398fb78bab7e5c6f439f2b743f26e82118468a
+R 9ef2fffc5f0c5816e46decff70d83cb0
 U drh
-Z 2835ef2dc75e2e6d87e08c87fdd8ab29
+Z 18d2414f422d53fd69af47aebe3deace

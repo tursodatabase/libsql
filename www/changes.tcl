@@ -25,6 +25,11 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2003 May 17 (2.8.2)} {
+<li>Fix a problem that will corrupt the database file if you drop a
+    table from the main database that has a TEMP index.</li>
+}
+
 chng {2003 May 16 (2.8.1)} {
 <li>Reactivated the VACUUM command that reclaims unused disk space in 
     a database file.</li>
