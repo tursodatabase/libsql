@@ -1,4 +1,4 @@
-# 2004 Jan 24
+# 2005 Jan 24
 #
 # The author disclaims copyright to this source code.  In place of
 # a legal notice, here is a blessing:
@@ -13,7 +13,7 @@
 # This file tests the various conditions under which an SQLITE_SCHEMA
 # error should be returned.
 #
-# $Id: schema.test,v 1.2 2005/01/24 13:03:32 danielk1977 Exp $
+# $Id: schema.test,v 1.3 2005/01/25 04:27:55 danielk1977 Exp $
 
 #---------------------------------------------------------------------
 # When any of the following types of SQL statements or actions are 
@@ -31,6 +31,14 @@
 #
 # Note: Test cases schema-6.* are missing right now.
 #
+# Test cases schema-9.* and schema-10.* test some specific bugs
+# that came up during development.
+#
+# Test cases schema-11.* test that it is impossible to delete or
+# change a collation sequence or user-function while SQL statements
+# are executing. Adding new collations or functions is allowed.
+#
+# Note: Test cases schema-11.* are also missing right now.
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -154,6 +162,26 @@ do_test schema-5.4 {
 } {SQLITE_SCHEMA}
 
 #---------------------------------------------------------------------
+# Tests 6.* check that prepared statements are invalidated when
+# a user-function is deleted (but not when one is added).
+do_test schema-6.1 {
+  set sql {SELECT * FROM abc;}
+  set ::STMT [sqlite3_prepare $::DB $sql -1 TAIL]
+  db function hello_function {}
+  sqlite3_step $::STMT
+} {SQLITE_DONE}
+do_test schema-6.2 {
+  sqlite3_reset $::STMT
+} {SQLITE_OK}
+do_test schema-6.3 {
+  sqlite_delete_function $::DB hello_function
+  sqlite3_step $::STMT
+} {SQLITE_ERROR}
+do_test schema-6.4 {
+  sqlite3_finalize $::STMT
+} {SQLITE_SCHEMA}
+
+#---------------------------------------------------------------------
 # Tests 7.* check that prepared statements are invalidated when
 # a collation sequence is deleted (but not when one is added).
 #
@@ -254,6 +282,50 @@ do_test schema-10.4 {
 do_test schema-10.5 {
   db2 close
 } {}
+
+#---------------------------------------------------------------------
+# Attempting to delete or replace a user-function or collation sequence 
+# while there are active statements returns an SQLITE_BUSY error.
+#
+# schema-11.1 - 11.4: User function.
+# schema-11.5 - 11.8: Collation sequence.
+#
+do_test schema-11.1 {
+  db function tstfunc {}
+  set sql {SELECT * FROM abc}
+  set ::STMT [sqlite3_prepare $::DB $sql -1 TAIL]
+  sqlite3_step $::STMT
+} {SQLITE_ROW}
+do_test schema-11.2 {
+  sqlite_delete_function $::DB tstfunc
+} {SQLITE_BUSY}
+do_test schema-11.3 {
+  set rc [catch {
+    db function tstfunc {}
+  } msg]
+  list $rc $msg
+} {1 {Unable to delete/modify user-function due to active statements}}
+do_test schema-11.4 {
+  sqlite3_finalize $::STMT
+} {SQLITE_OK}
+do_test schema-11.5 {
+  db collate tstcollate {}
+  set sql {SELECT * FROM abc}
+  set ::STMT [sqlite3_prepare $::DB $sql -1 TAIL]
+  sqlite3_step $::STMT
+} {SQLITE_ROW}
+do_test schema-11.6 {
+  sqlite_delete_collation $::DB tstcollate
+} {SQLITE_BUSY}
+do_test schema-11.7 {
+  set rc [catch {
+    db collate tstcollate {}
+  } msg]
+  list $rc $msg
+} {1 {Unable to delete/modify collation sequence due to active statements}}
+do_test schema-11.8 {
+  sqlite3_finalize $::STMT
+} {SQLITE_OK}
 
 finish_test
 

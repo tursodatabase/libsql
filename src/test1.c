@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.127 2005/01/22 03:03:55 drh Exp $
+** $Id: test1.c,v 1.128 2005/01/25 04:27:55 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -2600,6 +2600,58 @@ static int test_sleep(
 #endif
 
 /*
+** Usage: sqlite_delete_function DB function-name
+**
+** Delete the user function 'function-name' from database handle DB. It
+** is assumed that the user function was created as UTF8, any number of
+** arguments (the way the TCL interface does it).
+*/
+static int delete_function(
+  void * clientData,
+  Tcl_Interp *interp,
+  int argc,
+  char **argv
+){
+  int rc;
+  sqlite3 *db;
+  if( argc!=3 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], 
+        " DB function-name", 0);
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
+  rc = sqlite3_create_function(db, argv[2], -1, SQLITE_UTF8, 0, 0, 0, 0);
+  Tcl_SetResult(interp, (char *)errorName(rc), TCL_STATIC);
+  return TCL_OK;
+}
+
+/*
+** Usage: sqlite_delete_collation DB collation-name
+**
+** Delete the collation sequence 'collation-name' from database handle 
+** DB. It is assumed that the collation sequence was created as UTF8 (the 
+** way the TCL interface does it).
+*/
+static int delete_collation(
+  void * clientData,
+  Tcl_Interp *interp,
+  int argc,
+  char **argv
+){
+  int rc;
+  sqlite3 *db;
+  if( argc!=3 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], 
+        " DB function-name", 0);
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
+  rc = sqlite3_create_collation(db, argv[2], SQLITE_UTF8, 0, 0);
+  Tcl_SetResult(interp, (char *)errorName(rc), TCL_STATIC);
+  return TCL_OK;
+}
+
+/*
 ** Usage:  tcl_variable_type VARIABLENAME
 **
 ** Return the name of the internal representation for the
@@ -2840,6 +2892,8 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
 #if 0
      { "sqlite3_sleep",                 (Tcl_CmdProc*)test_sleep            },
 #endif
+     { "sqlite_delete_function",       (Tcl_CmdProc*)delete_function        },
+     { "sqlite_delete_collation",      (Tcl_CmdProc*)delete_collation       }
   };
   static struct {
      char *zName;

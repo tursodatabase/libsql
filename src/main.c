@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.274 2005/01/24 10:25:59 danielk1977 Exp $
+** $Id: main.c,v 1.275 2005/01/25 04:27:55 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -736,6 +736,22 @@ int sqlite3_create_function(
 #else
   enc = SQLITE_UTF8;
 #endif
+  
+  /* Check if an existing function is being overridden or deleted. If so,
+  ** and there are active VMs, then return SQLITE_BUSY. If a function
+  ** is being overridden/deleted but there are no active VMs, allow the
+  ** operation to continue but invalidate all precompiled statements.
+  */
+  p = sqlite3FindFunction(db, zFunctionName, nName, nArg, enc, 0);
+  if( p && p->iPrefEnc==enc && p->nArg==nArg ){
+    if( db->activeVdbeCnt ){
+      sqlite3Error(db, SQLITE_BUSY, 
+        "Unable to delete/modify user-function due to active statements");
+      return SQLITE_BUSY;
+    }else{
+      sqlite3ExpirePreparedStatements(db);
+    }
+  }
 
   p = sqlite3FindFunction(db, zFunctionName, nName, nArg, enc, 1);
   if( p==0 ) return SQLITE_NOMEM;
@@ -1288,10 +1304,17 @@ int sqlite3_create_collation(
     return SQLITE_ERROR;
   }
 
-  /* If removing a collation sequence, then set the expired flag for
-  ** all precompiled statements.
+  /* Check if this call is removing or replacing an existing collation 
+  ** sequence. If so, and there are active VMs, return busy. If there
+  ** are no active VMs, invalidate any pre-compiled statements.
   */
-  if( !xCompare ){
+  pColl = sqlite3FindCollSeq(db, (u8)enc, zName, strlen(zName), 0);
+  if( pColl && pColl->xCmp ){
+    if( db->activeVdbeCnt ){
+      sqlite3Error(db, SQLITE_BUSY, 
+        "Unable to delete/modify collation sequence due to active statements");
+      return SQLITE_BUSY;
+    }
     sqlite3ExpirePreparedStatements(db);
   }
 
