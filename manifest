@@ -1,5 +1,5 @@
-C Update\sthe\sMakefile.in,\sversion\snumber,\schange\slog,\setc\sfor\sthe\s3.0.0\nrelease.\s(CVS\s1617)
-D 2004-06-18T11:29:36
+C Fix\stypos\sin\scapi3.tcl\s(CVS\s1618)
+D 2004-06-18T11:34:09
 F Makefile.in 5125bd6b92fca76275a6fc6c6ff425484b8cec0a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -193,7 +193,7 @@ F www/arch2.fig 613b5ac63511109064c2f93c5754ee662219937d
 F www/arch2.gif 49c6bb36160f03ca2b89eaa5bfb1f560c7d68ee7
 F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
 F www/c_interface.tcl 2176519fc2bd2d2cf6fe74fd806fc2d8362de2c8
-F www/capi3.tcl 9e6a4b21f464d84b385dd5e78292880fc74a47ab
+F www/capi3.tcl af6938cc417fe323d7570b95d2e9a019bbff637e
 F www/capi3ref.tcl 68a03fa5c15f01d04fbb073f8153078f1ba6f672
 F www/changes.tcl 4d75f4c2a8bba2bb26b0fd4f3a48999e06b4025f
 F www/common.tcl f786e6be86fb2627ceb30e770e9efa83b9c67a3a
@@ -225,7 +225,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl f9a4c1a12864e129f6717d22313be01d5657e3aa
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 61db159c7d1d971266e487d44e3eb5bf6ac9a8e3
-R e6fbb42a68049b9de9558297a2c68e0d
-U drh
-Z ecac902f72be9022c498944e0133e800
+P 917391e05ef45fd1eae883a99e6bbe6d7df3cc1c
+R e652117e65d118a6c36b9df849e95e4a
+U danielk1977
+Z 65641b4e96f5d9c91c06d2c81c03a7c6

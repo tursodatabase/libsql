@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3.tcl,v 1.4 2004/06/17 19:04:17 drh Exp $}
+set rcsid {$Id: capi3.tcl,v 1.5 2004/06/18 11:34:09 danielk1977 Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -7,11 +7,10 @@ puts {
 <h3>1.0 Overview</h3>
 
 <p>
-SQLite version 3.0 will be a new version of SQLite, derived from
+SQLite version 3.0 is a new version of SQLite, derived from
 the SQLite 2.8.13 code base, but with an incompatible file format
 and API.
-SQLite version 3.0 is intended to answer the increasing demand
-for the following features:
+SQLite version 3.0 was created to answer demand for the following features:
 </p>
 
 <ul>
@@ -21,29 +20,26 @@ for the following features:
 </ul>
 
 <p>
-It became necessary to move to version 3.0
-to implement these features because each
-requires incompatible changes to the database file format.  Other
-incompatible changes, such as a cleanup of the API, were introduced
-at the same time under the theory that it is best to get your
-incompatible changes out of the way all at once.
+It was necessary to move to version 3.0 to implement these features because
+each requires incompatible changes to the database file format.  Other
+incompatible changes, such as a cleanup of the API, were introduced at the
+same time under the theory that it is best to get your incompatible changes
+out of the way all at once.  
 </p>
 
 <p>
 The API for version 3.0 is similar to the version 2.X API,
 but with some important changes.  Most noticeably, the "<tt>sqlite_</tt>"
 prefix that occurs on the beginning of all API functions and data
-structures will be changed to "<tt>sqlite3_</tt>".  
-This will avoid confusion between the two APIs and allow
-linking against both SQLite 2.X and SQLite 3.0 at the same time,
-if desired.
+structures are changed to "<tt>sqlite3_</tt>".  
+This avoids confusion between the two APIs and allows linking against both
+SQLite 2.X and SQLite 3.0 at the same time.
 </p>
 
 <p>
 There is no agreement on what the C datatype for a UTF-16
 string should be.  Therefore, SQLite uses a generic type of void*
-to refer to UTF-16 strings.
-Client software can cast the void*
+to refer to UTF-16 strings.  Client software can cast the void* 
 to whatever datatype is appropriate for their system.
 </p>
 
@@ -92,8 +88,8 @@ a pointer to the sqlite3 structure as the version 2 interface did.
 The difference between sqlite3_open()
 and sqlite3_open16() is that sqlite3_open16() takes UTF-16 (in host native
 byte order) for the name of the database file.  If a new database file
-needs to be created, then sqlite3_open16() will set the internal text
-representation to UTF-16 whereas sqlite3_open() will set the text
+needs to be created, then sqlite3_open16() sets the internal text
+representation to UTF-16 whereas sqlite3_open() sets the text
 representation to UTF-8.
 </p>
 
@@ -105,10 +101,10 @@ set using PRAGMA statements.
 </p>
 
 <p>
-The sqlite3_errcode() routine will return the result code for the most
-recent major API call.  sqlite3_errmsg() will return an English-language
-text error message for the most recent error.  The error message will
-be represented in UTF-8 and will be ephemeral - it could disappear on
+The sqlite3_errcode() routine returns a result code for the most
+recent major API call.  sqlite3_errmsg() returns an English-language
+text error message for the most recent error.  The error message is
+represented in UTF-8 and will be ephemeral - it could disappear on
 the next call to any SQLite API function.  sqlite3_errmsg16() works like
 sqlite3_errmsg() except that it returns the error message represented
 as UTF-16 in host native byte order.
@@ -178,8 +174,8 @@ calls to the prepared statement interface.
 
 <p>
 The sqlite3_prepare interface compiles a single SQL statement into byte code
-for later execution.
-This interface is now the preferred way of accessing the database.
+for later execution.  This interface is now the preferred way of accessing
+the database.
 </p>
 
 <p>
