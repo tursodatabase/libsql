@@ -1,5 +1,5 @@
-C Additional\stesting\sof\sthe\sATTACH\scommand\swith\sbug\sfixes\sfor\sthe\snew\sproblems\nthat\sthe\stests\sfound.\s(CVS\s998)
-D 2003-06-03T01:47:11
+C Avoid\scorrupting\sindices\swhen\sdoing\sa\sREPLACE\son\sa\stable\swith\san\nINTEGER\sPRIMARY\sKEY\sthat\salso\shas\sanother\sindex.\s\sTicket\s#334.\s(CVS\s999)
+D 2003-06-04T12:23:31
 F Makefile.in 1ff85c27d4350c74118341024e8a4fb2a04a3a43
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -32,7 +32,7 @@ F src/expr.c ebdb0f3ee039c8030de25935ce2df030966540a6
 F src/func.c 33bbce6acaf9578ac99aa1f689968ccaf2ce43a2
 F src/hash.c 058f077c1f36f266581aa16f907a3903abf64aa3
 F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
-F src/insert.c e34301f41a69cf59c4d75962b2ca5e1af427b5f0
+F src/insert.c 6a61c6d1ef17396d0e87e555806653fddab0b084
 F src/main.c 945f9b6855007b28a6c910584d1ca5adff92d821
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
 F src/os.c 080238f03015057879cdf53bc4af9e497f2ba724
@@ -83,7 +83,7 @@ F test/format3.test b05cb2968841553698290f2833f72894f156024e
 F test/func.test 000515779001ac6899eec4b54e65c6e2501279d4
 F test/in.test 22de8a3eb27265aab723adc513bea0e76bef70c6
 F test/index.test 90ef4c426865f15937858bd433cc82b9c11af913
-F test/insert.test 5697ba098e4d8a6f0151f281b7e39dec9c439e05
+F test/insert.test e73709f2fee30e003ce131e7ca66ad3dcfac662a
 F test/insert2.test c288375a64dad3295044714f0dfed4a193cf067f
 F test/intpkey.test 39f49fd993350f7f3ab255e5cfbf9a09d8f8800e
 F test/ioerr.test 5dbaf09f96b56ee01cf3edd762b96eb4ad2c9ca4
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P daf7b94017f03638da1ef65830f3762be030b93c
-R 64dc9487d2ea82a1f70ee389c18ab473
+P 3e8889d7ce5e99fc855526fc1bb62ddbe282bfc5
+R 9165bb0816719b739dc59ff58a777b66
 U drh
-Z 95bab4cd51ed3d170690377c2faf1c26
+Z 94bfab46c8d22deaac737964000d29aa
