@@ -19,6 +19,7 @@ proc chng {date desc} {
 
 chng {2000 Aug 18 (Version 1.0.1)} {
 <li>Fix a bug in the configure script.</li>
+<li>Minor revisions to the website.</li>
 }
 
 chng {2000 Aug 17 (Version 1.0)} {

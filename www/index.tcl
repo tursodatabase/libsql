@@ -1,12 +1,12 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.27 2000/08/17 10:22:34 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.28 2000/08/18 09:58:52 drh Exp $}
 
 puts {<html>
-<head><title>SQLite: An SQL Database Engine Built Atop GDBM</title></head>
+<head><title>SQLite: An SQL Database Library Built Atop GDBM</title></head>
 <body bgcolor=white>
-<h1 align=center>SQLite: An SQL Database Engine Built Atop
+<h1 align=center>SQLite: An SQL Database Library Built Atop
 <a href="http://www.gnu.org/software/gdbm/gdbm.html">GDBM</a></h1>
 <p align=center>}
 puts "This page was last modified on [lrange $rcsid 3 4] GMT<br>"
@@ -17,33 +17,17 @@ puts {</p>}
 
 puts {<h2>Introduction</h2>
 
-<p>SQLite is an SQL database engine built on top of the
-<a href="http://www.gnu.org/software/gdbm/gdbm.html">GDBM library</a>.
-SQLite includes a standalone command-line
-access program (<a href="sqlite.html">sqlite</a>)
-and a C library (<a href="c_interface.html">libsqlite.a</a>)
-that can be linked
-with a C/C++ program to provide SQL database access without
-a separate RDBMS.</p>
+<p>SQLite is an SQL database library
+(<a href="c_interface.html">libsqlite.a</a>) that uses
+<a href="http://www.gnu.org/software/gdbm/gdbm.html">GDBM</a>
+as its underlying file storage mechanism.
+Programs that link the SQLite library can have SQL database
+access without running a separate RDBMS process.
+The distribution comes with a standalone command-line
+access program (<a href="sqlite.html">sqlite</a>) that can
+be used to administer an SQLite database and which serves as
+an example of how to use the SQLite library.</p>
 
-<h2>Important News Flash!</h2>
-<p>
-The SQLite file format was changed in an incompatible way on
-Aug 2, 2000.  If you are updated the library and have databases
-built using the old version of the library, you should save your
-old databases into an ASCII file then reimport those
-database using the new library.  For example, if you change the
-name of the old <b>sqlite</b> utility to "old-sqlite" and
-change the name of the old database directory to "old-db", then
-you can reconstruct the database as follows:</p>
-
-<blockquote><pre>
-echo .dump | old-sqlite old-db | sqlite db
-</pre></blockquote>
-
-<p>This file format change was made to work around a potential 
-inefficiency in GDBM that comes up when large indices are created 
-on tables where many entries in the table have the same index key.</p>
 
 <h2>Features</h2>
 
@@ -87,6 +71,25 @@ Among the SQL features that SQLite does not currently implement are:</p>
 <li>no support for transactions or rollback</li>
 </ul>
 </p>
+
+<h2>Important News Flash!</h2>
+<p>
+The SQLite file format was changed in an incompatible way on
+Aug 2, 2000.  If you are updated the library and have databases
+built using the old version of the library, you should save your
+old databases into an ASCII file then reimport the
+database using the new library.  For example, if you change the
+name of the old <b>sqlite</b> utility to "old-sqlite" and
+change the name of the old database directory to "old-db", then
+you can reconstruct the database as follows:</p>
+
+<blockquote><pre>
+echo .dump | old-sqlite old-db | sqlite db
+</pre></blockquote>
+
+<p>This file format change was made to work around a potential 
+inefficiency in GDBM that comes up when large indices are created 
+on tables where many entries in the table have the same index key.</p>
 
 <h2>Documentation</h2>
 
