@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.35 2001/04/05 15:57:14 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.36 2001/04/05 16:49:44 drh Exp $}
 
 puts {<html>
 <head><title>SQLite: An SQL Database Library Built Atop GDBM</title></head>
@@ -55,12 +55,23 @@ than GDBM.</li>
 <h2>Current Status</h2>
 
 <p>A <a href="changes.html">change history</a> is available online.
-There are currently no <em>known</em> bugs or memory leaks
+There are currently no <em>known</em> memory leaks or debilitating bugs
 in the library.  <a href="http://gcc.gnu.org/onlinedocs/gcov_1.html">Gcov</a>
 is used to verify test coverage.  The test suite currently exercises
 all code except for a few areas which are unreachable or which are
-only reached when <tt>malloc()</tt> fails.  The code has been tested
-for memory leaks and is found to be clean.</p>
+only reached when <tt>malloc()</tt> fails.</p>
+
+<p>Known bugs:</p>
+
+<ul>
+<li><p>
+  The LIKE operator is suppose to ignore case. 
+  But it only ignores case for 7-bit Latin characters.
+  The case of 8-bit iso8859 characters or UTF-8 characters is
+  signification.  Hence, <b>'a'&nbsp;LIKE&nbsp;'A'</b> returns
+  TRUE but <b>'&aelig;'&nbsp;LIKE&nbsp;'&AElig;'</b>" returns FALSE.
+</p></li>
+</ul>
 
 <p><b>Important Note:</b>  Serious bugs have been found in versions
 1.0.22 on Unix and 1.0.26 on Windows.  Users of these or earlier
