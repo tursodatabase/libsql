@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.347 2004/12/18 18:40:27 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.348 2004/12/19 00:11:35 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -309,6 +309,7 @@ typedef struct CollSeq CollSeq;
 typedef struct KeyInfo KeyInfo;
 typedef struct SqlCursor SqlCursor;
 typedef struct Fetch Fetch;
+typedef struct CursorSubst CursorSubst;
 
 /*
 ** Each database file to be accessed by the system is an instance
@@ -910,8 +911,9 @@ struct SrcList {
 */
 struct WhereLevel {
   int iMem;            /* Memory cell used by this level */
-  Index *pIdx;         /* Index used */
-  int iCur;            /* Cursor number used for this index */
+  Index *pIdx;         /* Index used.  NULL if no index */
+  int iTabCur;         /* The VDBE cursor used to access the table */
+  int iIdxCur;         /* The VDBE cursor used to acesss pIdx */
   int score;           /* How well this indexed scored */
   int brk;             /* Jump here to break out of the loop */
   int cont;            /* Jump here to continue with the next loop cycle */
@@ -932,6 +934,7 @@ struct WhereLevel {
 struct WhereInfo {
   Parse *pParse;
   SrcList *pTabList;   /* List of tables in the join */
+  int iTop;            /* The very beginning of the WHERE loop */
   int iContinue;       /* Jump here to continue with next record */
   int iBreak;          /* Jump here to break out of the loop */
   int nLevel;          /* Number of nested loop */
@@ -1067,7 +1070,6 @@ struct Parse {
   Trigger *pNewTrigger;     /* Trigger under construct by a CREATE TRIGGER */
   TriggerStack *trigStack;  /* Trigger actions being coded */
   const char *zAuthContext; /* The 6th parameter to db->xAuth callbacks */
-  
 };
 
 /*

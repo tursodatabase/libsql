@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the use of indices in WHERE clases.
 #
-# $Id: where.test,v 1.25 2004/12/18 18:40:28 drh Exp $
+# $Id: where.test,v 1.26 2004/12/19 00:11:36 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -151,35 +151,35 @@ do_test where-1.29 {
 
 do_test where-1.30 {
   count {SELECT w FROM t1 WHERE w>97}
-} {98 99 100 6}
+} {98 99 100 3}
 do_test where-1.31 {
   count {SELECT w FROM t1 WHERE w>=97}
-} {97 98 99 100 8}
+} {97 98 99 100 4}
 do_test where-1.33 {
   count {SELECT w FROM t1 WHERE w==97}
-} {97 3}
+} {97 2}
 do_test where-1.34 {
   count {SELECT w FROM t1 WHERE w+1==98}
 } {97 99}
 do_test where-1.35 {
   count {SELECT w FROM t1 WHERE w<3}
-} {1 2 4}
+} {1 2 2}
 do_test where-1.36 {
   count {SELECT w FROM t1 WHERE w<=3}
-} {1 2 3 6}
+} {1 2 3 3}
 do_test where-1.37 {
   count {SELECT w FROM t1 WHERE w+1<=4 ORDER BY w}
-} {1 2 3 199}
+} {1 2 3 99}
 
 do_test where-1.38 {
   count {SELECT (w) FROM t1 WHERE (w)>(97)}
-} {98 99 100 6}
+} {98 99 100 3}
 do_test where-1.39 {
   count {SELECT (w) FROM t1 WHERE (w)>=(97)}
-} {97 98 99 100 8}
+} {97 98 99 100 4}
 do_test where-1.40 {
   count {SELECT (w) FROM t1 WHERE (w)==(97)}
-} {97 3}
+} {97 2}
 do_test where-1.41 {
   count {SELECT (w) FROM t1 WHERE ((w)+(1))==(98)}
 } {97 99}
@@ -237,19 +237,19 @@ do_test where-3.1 {
     SELECT A.w, B.p, C.w FROM t1 as A, t2 as B, t1 as C
     WHERE C.w=101-B.p AND B.r=10202-A.y AND A.w=11
   }
-} {11 90 11 9}
+} {11 90 11 8}
 do_test where-3.2 {
   count {
     SELECT A.w, B.p, C.w FROM t1 as A, t2 as B, t1 as C
     WHERE C.w=101-B.p AND B.r=10202-A.y AND A.w=12
   }
-} {12 89 12 9}
+} {12 89 12 8}
 do_test where-3.3 {
   count {
     SELECT A.w, B.p, C.w FROM t1 as A, t2 as B, t1 as C
     WHERE A.w=15 AND B.p=C.w AND B.r=10202-A.y
   }
-} {15 86 86 9}
+} {15 86 86 8}
 
 # Test to see that the special case of a constant WHERE clause is
 # handled.
@@ -417,7 +417,7 @@ do_test where-6.8 {
   cksort {
     SELECT * FROM t3 WHERE a IN (3,5,7,1,9,4,2) ORDER BY a LIMIT 3
   }
-} {1 100 4 2 99 9 3 98 16 nosort}
+} {1 100 4 2 99 9 3 98 16 sort}
 do_test where-6.9.1 {
   cksort {
     SELECT * FROM t3 WHERE a=1 AND c>0 ORDER BY a LIMIT 3
@@ -457,12 +457,12 @@ do_test where-6.9.8 {
   cksort {
     SELECT * FROM t3 WHERE a=1 AND c>0 ORDER BY a DESC, c ASC LIMIT 3
   }
-} {1 100 4 sort}
+} {1 100 4 nosort}
 do_test where-6.9.9 {
   cksort {
     SELECT * FROM t3 WHERE a=1 AND c>0 ORDER BY a ASC, c DESC LIMIT 3
   }
-} {1 100 4 sort}
+} {1 100 4 nosort}
 do_test where-6.10 {
   cksort {
     SELECT * FROM t3 WHERE a=1 AND c>0 ORDER BY a LIMIT 3

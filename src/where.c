@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.122 2004/12/18 18:40:27 drh Exp $
+** $Id: where.c,v 1.123 2004/12/19 00:11:35 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -297,103 +297,6 @@ static void exprAnalyze(SrcList *pSrc, ExprMaskSet *pMaskSet, ExprInfo *pInfo){
 }
 
 /*
-** pOrderBy is an ORDER BY clause from a SELECT statement.  pTab is the
-** left-most table in the FROM clause of that same SELECT statement and
-** the table has a cursor number of "base".
-**
-** This routine attempts to find an index for pTab that generates the
-** correct record sequence for the given ORDER BY clause.  The return value
-** is a pointer to an index that does the job.  NULL is returned if the
-** table has no index that will generate the correct sort order.
-**
-** If there are two or more indices that generate the correct sort order
-** and pPreferredIdx is one of those indices, then return pPreferredIdx.
-**
-** nEqCol is the number of columns of pPreferredIdx that are used as
-** equality constraints.  Any index returned must have exactly this same
-** set of columns.  The ORDER BY clause only matches index columns beyond the
-** the first nEqCol columns.
-**
-** All terms of the ORDER BY clause must be either ASC or DESC.  The
-** *pbRev value is set to 1 if the ORDER BY clause is all DESC and it is
-** set to 0 if the ORDER BY clause is all ASC.
-**
-** TODO:  If earlier terms of an ORDER BY clause match all terms of a
-** UNIQUE index, then subsequent terms of the ORDER BY can be ignored.
-** This optimization needs to be implemented.
-*/
-static Index *findSortingIndex(
-  Parse *pParse,          /* Parsing context */
-  Table *pTab,            /* The table to be sorted */
-  int base,               /* Cursor number for pTab */
-  ExprList *pOrderBy,     /* The ORDER BY clause */
-  Index *pPreferredIdx,   /* Use this index, if possible and not NULL */
-  int nEqCol,             /* Number of index columns used with == constraints */
-  int *pbRev              /* Set to 1 if ORDER BY is DESC */
-){
-  int i, j;                    /* Loop counters */
-  Index *pMatch;               /* Best matching index so far */
-  Index *pIdx;                 /* Current index */
-  int sortOrder;               /* Which direction we are sorting */
-  sqlite3 *db = pParse->db;
-
-  assert( pOrderBy!=0 );
-  assert( pOrderBy->nExpr>0 );
-  assert( pPreferredIdx!=0 || nEqCol==0 );
-  sortOrder = pOrderBy->a[0].sortOrder;
-  for(i=0; i<pOrderBy->nExpr; i++){
-    Expr *p;
-    if( pOrderBy->a[i].sortOrder!=sortOrder ){
-      /* Indices can only be used if all ORDER BY terms are either
-      ** DESC or ASC.  Indices cannot be used on a mixture. */
-      return 0;
-    }
-    p = pOrderBy->a[i].pExpr;
-    if( p->op!=TK_COLUMN || p->iTable!=base ){
-      /* Can not use an index sort on anything that is not a column in the
-      ** left-most table of the FROM clause */
-      return 0;
-    }
-  }
-
-  /* If we get this far, it means the ORDER BY clause consists of columns
-  ** that are all either ascending or descending and which refer only to
-  ** the left-most table of the FROM clause.  Find the index that is best
-  ** used for sorting.
-  */
-  pMatch = 0;
-  for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-    int nExpr = pOrderBy->nExpr;
-    if( pIdx->nColumn < nEqCol || pIdx->nColumn < nExpr ) continue;
-    for(i=j=0; i<nEqCol; i++){
-      CollSeq *pColl = sqlite3ExprCollSeq(pParse, pOrderBy->a[j].pExpr);
-      if( !pColl ) pColl = db->pDfltColl;
-      if( pPreferredIdx->aiColumn[i]!=pIdx->aiColumn[i] ) break;
-      if( pPreferredIdx->keyInfo.aColl[i]!=pIdx->keyInfo.aColl[i] ) break;
-      if( j<nExpr && 
-          pOrderBy->a[j].pExpr->iColumn==pIdx->aiColumn[i] &&
-          pColl==pIdx->keyInfo.aColl[i]
-      ){ 
-        j++; 
-      }
-    }
-    if( i<nEqCol ) continue;
-    for(i=0; i+j<nExpr; i++){
-      CollSeq *pColl = sqlite3ExprCollSeq(pParse, pOrderBy->a[i+j].pExpr);
-      if( !pColl ) pColl = db->pDfltColl;
-      if( pOrderBy->a[i+j].pExpr->iColumn!=pIdx->aiColumn[i+nEqCol] ||
-          pColl!=pIdx->keyInfo.aColl[i+nEqCol] ) break;
-    }
-    if( i+j>=nExpr ){
-      pMatch = pIdx;
-      if( pIdx==pPreferredIdx ) break;
-    }
-  }
-  *pbRev = sortOrder==SQLITE_SO_DESC;
-  return pMatch;
-}
-
-/*
 ** This routine decides if pIdx can be used to satisfy the ORDER BY
 ** clause.  If it can, it returns 1.  If pIdx cannot satisfy the
 ** ORDER BY clause, this routine returns 0.
@@ -450,8 +353,9 @@ static int isSortingIndex(
     }
     pColl = sqlite3ExprCollSeq(pParse, pExpr);
     if( !pColl ) pColl = db->pDfltColl;
-    if( pExpr->iColumn!=pIdx->aiColumn[i] && pColl!=pIdx->keyInfo.aColl[i] ){
-      if( i<=nEqCol ){
+    if( pExpr->iColumn!=pIdx->aiColumn[i] || pColl!=pIdx->keyInfo.aColl[i] ){
+      /* Term j of the ORDER BY clause does not match column i of the index */
+      if( i<nEqCol ){
         /* If an index column that is constrained by == fails to match an
         ** ORDER BY term, that is OK.  Just ignore that column of the index
         */
@@ -577,7 +481,7 @@ static void codeEqualityTerm(
     Vdbe *v = pParse->pVdbe;
     sqlite3VdbeAddOp(v, OP_Rewind, iTab, brk);
     sqlite3VdbeAddOp(v, OP_KeyAsData, iTab, 1);
-    pLevel->inP2 = sqlite3VdbeAddOp(v, OP_IdxColumn, iTab, 0);
+    pLevel->inP2 = sqlite3VdbeAddOp(v, OP_Column, iTab, 0);
     pLevel->inOp = OP_Next;
     pLevel->inP1 = iTab;
   }
@@ -681,13 +585,15 @@ WhereInfo *sqlite3WhereBegin(
   int brk, cont = 0;         /* Addresses used during code generation */
   int nExpr;           /* Number of subexpressions in the WHERE clause */
   Bitmask loopMask;    /* One bit set for each outer loop */
-  int haveKey = 0;     /* True if KEY is on the stack */
+  int haveRowid = 0;   /* True if the ROWID is on the stack */
   ExprInfo *pTerm;     /* A single term in the WHERE clause; ptr to aExpr[] */
   ExprMaskSet maskSet; /* The expression mask set */
   int iDirectEq[BMS];  /* Term of the form ROWID==X for the N-th table */
   int iDirectLt[BMS];  /* Term of the form ROWID<X or ROWID<=X */
   int iDirectGt[BMS];  /* Term of the form ROWID>X or ROWID>=X */
   ExprInfo aExpr[101]; /* The WHERE clause is divided into these terms */
+  struct SrcList_item *pTabItem;  /* A single entry from pTabList */
+  WhereLevel *pLevel;             /* A single level in the pWInfo list */
 
   /* pushKey is only allowed if there is a single table (as in an INSERT or
   ** UPDATE statement)
@@ -771,12 +677,13 @@ WhereInfo *sqlite3WhereBegin(
   ** to the limit of 32 bits in an integer bitmask.
   */
   loopMask = 0;
-  for(i=0; i<pTabList->nSrc && i<ARRAYSIZE(iDirectEq); i++){
+  pTabItem = pTabList->a;
+  pLevel = pWInfo->a;
+  for(i=0; i<pTabList->nSrc && i<ARRAYSIZE(iDirectEq); i++,pTabItem++,pLevel++){
     int j;
-    WhereLevel *pLevel = &pWInfo->a[i];
-    int iCur = pTabList->a[i].iCursor;       /* The cursor for this table */
+    int iCur = pTabItem->iCursor;            /* The cursor for this table */
     Bitmask mask = getMask(&maskSet, iCur);  /* Cursor mask for this table */
-    Table *pTab = pTabList->a[i].pTab;
+    Table *pTab = pTabItem->pTab;
     Index *pIdx;
     Index *pBestIdx = 0;
     int bestScore = 0;
@@ -790,7 +697,7 @@ WhereInfo *sqlite3WhereBegin(
     **
     ** (Added:) Treat ROWID IN expr like ROWID=expr.
     */
-    pLevel->iCur = -1;
+    pLevel->iIdxCur = -1;
     iDirectEq[i] = -1;
     iDirectLt[i] = -1;
     iDirectGt[i] = -1;
@@ -933,10 +840,26 @@ WhereInfo *sqlite3WhereBegin(
 
       /* Give bonus points if this index can be used for sorting
       */
-      if( i==0 && score>0 && ppOrderBy && *ppOrderBy ){
+      if( i==0 && score!=16 && ppOrderBy && *ppOrderBy ){
         int base = pTabList->a[0].iCursor;
         if( isSortingIndex(pParse, pIdx, pTab, base, *ppOrderBy, nEq, &bRev) ){
           score += 2;
+        }
+      }
+
+      /* Check to see if we can get away with using just the index without
+      ** ever reading the table.  If that is the case, then add one bonus
+      ** point to the score.
+      */
+      if( score && pTabItem->colUsed < (((Bitmask)1)<<(BMS-1)) ){
+        for(m=0, j=0; j<pIdx->nColumn; j++){
+          int x = pIdx->aiColumn[j];
+          if( x<BMS-1 ){
+            m |= ((Bitmask)1)<<x;
+          }
+        }
+        if( (pTabItem->colUsed & m)==pTabItem->colUsed ){
+          score++;
         }
       }
 
@@ -954,7 +877,7 @@ WhereInfo *sqlite3WhereBegin(
     pLevel->bRev = bestRev;
     loopMask |= mask;
     if( pBestIdx ){
-      pLevel->iCur = pParse->nTab++;
+      pLevel->iIdxCur = pParse->nTab++;
     }
   }
 
@@ -962,73 +885,88 @@ WhereInfo *sqlite3WhereBegin(
   ** use of an index on the first table.
   */
   if( ppOrderBy && *ppOrderBy && pTabList->nSrc>0 ){
-     Index *pSortIdx = 0;     /* Index that satisfies the ORDER BY clause */
-     Index *pIdx;             /* Index derived from the WHERE clause */
-     Table *pTab;             /* Left-most table in the FROM clause */
-     int bRev = 0;            /* True to reverse the output order */
-     int iCur;                /* Btree-cursor that will be used by pTab */
-     WhereLevel *pLevel0 = &pWInfo->a[0];
+    Index *pIdx;             /* Index derived from the WHERE clause */
+    Table *pTab;             /* Left-most table in the FROM clause */
+    int bRev = 0;            /* True to reverse the output order */
+    int iCur;                /* Btree-cursor that will be used by pTab */
+    WhereLevel *pLevel0 = &pWInfo->a[0];
 
-     pTab = pTabList->a[0].pTab;
-     pIdx = pLevel0->pIdx;
-     iCur = pTabList->a[0].iCursor;
-     if( pIdx==0 && sortableByRowid(iCur, *ppOrderBy, &bRev) ){
-       /* The ORDER BY clause specifies ROWID order, which is what we
-       ** were going to be doing anyway...
-       */
-       *ppOrderBy = 0;
-       pLevel0->bRev = bRev;
-     }else if( pLevel0->score==16 ){
-       /* If there is already an IN index on the left-most table,
-       ** it will not give the correct sort order.
-       ** So, pretend that no suitable index is found.
-       */
-     }else if( iDirectEq[0]>=0 || iDirectLt[0]>=0 || iDirectGt[0]>=0 ){
-       /* If the left-most column is accessed using its ROWID, then do
-       ** not try to sort by index.  But do delete the ORDER BY clause
-       ** if it is redundant.
-       */
-     }else{
-       int nEqCol = (pLevel0->score+16)/32;
-       pSortIdx = findSortingIndex(pParse, pTab, iCur, 
-                                   *ppOrderBy, pIdx, nEqCol, &bRev);
-     }
-     if( pSortIdx && (pIdx==0 || pIdx==pSortIdx) ){
-       if( pIdx==0 ){
-         pLevel0->pIdx = pSortIdx;
-         pLevel0->iCur = pParse->nTab++;
-       }
-       pLevel0->bRev = bRev;
-       *ppOrderBy = 0;
-     }
-  }
-
-  /* Open all tables in the pTabList and all indices used by those tables.
-  */
-  sqlite3CodeVerifySchema(pParse, -1); /* Insert the cookie verifier Goto */
-  for(i=0; i<pTabList->nSrc; i++){
-    Table *pTab;
-    Index *pIx;
-
-    pTab = pTabList->a[i].pTab;
-    if( pTab->isTransient || pTab->pSelect ) continue;
-    sqlite3OpenTableForReading(v, pTabList->a[i].iCursor, pTab);
-    sqlite3CodeVerifySchema(pParse, pTab->iDb);
-    if( (pIx = pWInfo->a[i].pIdx)!=0 ){
-      sqlite3VdbeAddOp(v, OP_Integer, pIx->iDb, 0);
-      sqlite3VdbeOp3(v, OP_OpenRead, pWInfo->a[i].iCur, pIx->tnum,
-                     (char*)&pIx->keyInfo, P3_KEYINFO);
+    pTab = pTabList->a[0].pTab;
+    pIdx = pLevel0->pIdx;
+    iCur = pTabList->a[0].iCursor;
+    if( pIdx==0 && sortableByRowid(iCur, *ppOrderBy, &bRev) ){
+      /* The ORDER BY clause specifies ROWID order, which is what we
+      ** were going to be doing anyway...
+      */
+      *ppOrderBy = 0;
+      pLevel0->bRev = bRev;
+    }else if( pLevel0->score==16 ){
+      /* If there is already an IN index on the left-most table,
+      ** it will not give the correct sort order.
+      ** So, pretend that no suitable index is found.
+      */
+    }else if( iDirectEq[0]>=0 || iDirectLt[0]>=0 || iDirectGt[0]>=0 ){
+      /* If the left-most column is accessed using its ROWID, then do
+      ** not try to sort by index.  But do delete the ORDER BY clause
+      ** if it is redundant.
+      */
+    }else if( (pLevel0->score&2)!=0 ){
+      /* The index that was selected for searching will cause rows to
+      ** appear in sorted order.
+      */
+      *ppOrderBy = 0;
     }
   }
+
+  /* Open all tables in the pTabList and any indices selected for
+  ** searching those tables.
+  */
+  sqlite3CodeVerifySchema(pParse, -1); /* Insert the cookie verifier Goto */
+  pLevel = pWInfo->a;
+  for(i=0, pTabItem=pTabList->a; i<pTabList->nSrc; i++, pTabItem++, pLevel++){
+    Table *pTab;
+    Index *pIx;
+    int iIdxCur = pLevel->iIdxCur;
+
+    pTab = pTabItem->pTab;
+    if( pTab->isTransient || pTab->pSelect ) continue;
+    if( (pLevel->score & 1)==0 ){
+      sqlite3OpenTableForReading(v, pTabItem->iCursor, pTab);
+    }
+    pLevel->iTabCur = pTabItem->iCursor;
+    if( (pIx = pLevel->pIdx)!=0 ){
+      sqlite3VdbeAddOp(v, OP_Integer, pIx->iDb, 0);
+      sqlite3VdbeOp3(v, OP_OpenRead, iIdxCur, pIx->tnum,
+                     (char*)&pIx->keyInfo, P3_KEYINFO);
+    }
+    if( (pLevel->score & 1)!=0 ){
+      sqlite3VdbeAddOp(v, OP_KeyAsData, iIdxCur, 1);
+      sqlite3VdbeAddOp(v, OP_SetNumColumns, iIdxCur, pIx->nColumn+1);
+    }
+    sqlite3CodeVerifySchema(pParse, pTab->iDb);
+  }
+  pWInfo->iTop = sqlite3VdbeCurrentAddr(v);
 
   /* Generate the code to do the search
   */
   loopMask = 0;
-  for(i=0; i<pTabList->nSrc; i++){
+  pLevel = pWInfo->a;
+  pTabItem = pTabList->a;
+  for(i=0; i<pTabList->nSrc; i++, pTabItem++, pLevel++){
     int j, k;
-    int iCur = pTabList->a[i].iCursor;
-    Index *pIdx;
-    WhereLevel *pLevel = &pWInfo->a[i];
+    int iCur = pTabItem->iCursor;  /* The VDBE cursor for the table */
+    Index *pIdx;       /* The index we will be using */
+    int iIdxCur;       /* The VDBE cursor for the index */
+    int omitTable;     /* True if we use the index only */
+
+    pIdx = pLevel->pIdx;
+    iIdxCur = pLevel->iIdxCur;
+    pLevel->inOp = OP_Noop;
+
+    /* Check to see if it is appropriate to omit the use of the table
+    ** here and use its index instead.
+    */
+    omitTable = (pLevel->score&1)!=0;
 
     /* If this is the right table of a LEFT OUTER JOIN, allocate and
     ** initialize a memory cell that records if this table matches any
@@ -1042,8 +980,6 @@ WhereInfo *sqlite3WhereBegin(
       VdbeComment((v, "# init LEFT JOIN no-match flag"));
     }
 
-    pIdx = pLevel->pIdx;
-    pLevel->inOp = OP_Noop;
     if( i<ARRAYSIZE(iDirectEq) && (k = iDirectEq[i])>=0 ){
       /* Case 1:  We can directly reference a single row using an
       **          equality comparison against the ROWID field.  Or
@@ -1054,14 +990,15 @@ WhereInfo *sqlite3WhereBegin(
       pTerm = &aExpr[k];
       assert( pTerm->p!=0 );
       assert( pTerm->idxLeft==iCur );
+      assert( omitTable==0 );
       brk = pLevel->brk = sqlite3VdbeMakeLabel(v);
       codeEqualityTerm(pParse, pTerm, brk, pLevel);
       cont = pLevel->cont = sqlite3VdbeMakeLabel(v);
       sqlite3VdbeAddOp(v, OP_MustBeInt, 1, brk);
-      haveKey = 0;
       sqlite3VdbeAddOp(v, OP_NotExists, iCur, brk);
+      haveRowid = 0;
       pLevel->op = OP_Noop;
-    }else if( pIdx!=0 && pLevel->score>0 && (pLevel->score&0x0c)==0 ){
+    }else if( pIdx!=0 && pLevel->score>3 && (pLevel->score&0x0c)==0 ){
       /* Case 2:  There is an index and all terms of the WHERE clause that
       **          refer to the index using the "==" or "IN" operators.
       */
@@ -1100,27 +1037,26 @@ WhereInfo *sqlite3WhereBegin(
       ** iteration of the scan to see if the scan has finished. */
       if( pLevel->bRev ){
         /* Scan in reverse order */
-        sqlite3VdbeAddOp(v, OP_MoveLe, pLevel->iCur, brk);
+        sqlite3VdbeAddOp(v, OP_MoveLe, iIdxCur, brk);
         start = sqlite3VdbeAddOp(v, OP_MemLoad, pLevel->iMem, 0);
-        sqlite3VdbeAddOp(v, OP_IdxLT, pLevel->iCur, brk);
+        sqlite3VdbeAddOp(v, OP_IdxLT, iIdxCur, brk);
         pLevel->op = OP_Prev;
       }else{
         /* Scan in the forward order */
-        sqlite3VdbeAddOp(v, OP_MoveGe, pLevel->iCur, brk);
+        sqlite3VdbeAddOp(v, OP_MoveGe, iIdxCur, brk);
         start = sqlite3VdbeAddOp(v, OP_MemLoad, pLevel->iMem, 0);
-        sqlite3VdbeOp3(v, OP_IdxGE, pLevel->iCur, brk, "+", P3_STATIC);
+        sqlite3VdbeOp3(v, OP_IdxGE, iIdxCur, brk, "+", P3_STATIC);
         pLevel->op = OP_Next;
       }
-      sqlite3VdbeAddOp(v, OP_RowKey, pLevel->iCur, 0);
+      sqlite3VdbeAddOp(v, OP_RowKey, iIdxCur, 0);
       sqlite3VdbeAddOp(v, OP_IdxIsNull, nColumn, cont);
-      sqlite3VdbeAddOp(v, OP_IdxRecno, pLevel->iCur, 0);
-      if( i==pTabList->nSrc-1 && pushKey ){
-        haveKey = 1;
+      if( omitTable ){
+        haveRowid = 0;
       }else{
-        sqlite3VdbeAddOp(v, OP_MoveGe, iCur, 0);
-        haveKey = 0;
+        sqlite3VdbeAddOp(v, OP_IdxRecno, iIdxCur, 0);
+        haveRowid = 1;
       }
-      pLevel->p1 = pLevel->iCur;
+      pLevel->p1 = iIdxCur;
       pLevel->p2 = start;
     }else if( i<ARRAYSIZE(iDirectLt) && (iDirectLt[i]>=0 || iDirectGt[i]>=0) ){
       /* Case 3:  We have an inequality comparison against the ROWID field.
@@ -1129,6 +1065,7 @@ WhereInfo *sqlite3WhereBegin(
       int start;
       int bRev = pLevel->bRev;
 
+      assert( omitTable==0 );
       brk = pLevel->brk = sqlite3VdbeMakeLabel(v);
       cont = pLevel->cont = sqlite3VdbeMakeLabel(v);
       if( bRev ){
@@ -1178,7 +1115,7 @@ WhereInfo *sqlite3WhereBegin(
         sqlite3VdbeAddOp(v, OP_MemLoad, pLevel->iMem, 0);
         sqlite3VdbeAddOp(v, testOp, 0, brk);
       }
-      haveKey = 0;
+      haveRowid = 0;
     }else if( pIdx==0 ){
       /* Case 4:  There is no usable index.  We must do a complete
       **          scan of the entire database table.
@@ -1186,6 +1123,7 @@ WhereInfo *sqlite3WhereBegin(
       int start;
       int opRewind;
 
+      assert( omitTable==0 );
       brk = pLevel->brk = sqlite3VdbeMakeLabel(v);
       cont = pLevel->cont = sqlite3VdbeMakeLabel(v);
       if( pLevel->bRev ){
@@ -1199,7 +1137,7 @@ WhereInfo *sqlite3WhereBegin(
       start = sqlite3VdbeCurrentAddr(v);
       pLevel->p1 = iCur;
       pLevel->p2 = start;
-      haveKey = 0;
+      haveRowid = 0;
     }else{
       /* Case 5: The WHERE clause term that refers to the right-most
       **         column of the index is an inequality.  For example, if
@@ -1283,12 +1221,12 @@ WhereInfo *sqlite3WhereBegin(
         buildIndexProbe(v, nCol, brk, pIdx);
         if( pLevel->bRev ){
           int op = leFlag ? OP_MoveLe : OP_MoveLt;
-          sqlite3VdbeAddOp(v, op, pLevel->iCur, brk);
+          sqlite3VdbeAddOp(v, op, iIdxCur, brk);
         }else{
           sqlite3VdbeAddOp(v, OP_MemStore, pLevel->iMem, 1);
         }
       }else if( pLevel->bRev ){
-        sqlite3VdbeAddOp(v, OP_Last, pLevel->iCur, brk);
+        sqlite3VdbeAddOp(v, OP_Last, iIdxCur, brk);
       }
 
       /* Generate the start key.  This is the key that defines the lower
@@ -1327,12 +1265,12 @@ WhereInfo *sqlite3WhereBegin(
           testOp = OP_IdxLT;
         }else{
           int op = geFlag ? OP_MoveGe : OP_MoveGt;
-          sqlite3VdbeAddOp(v, op, pLevel->iCur, brk);
+          sqlite3VdbeAddOp(v, op, iIdxCur, brk);
         }
       }else if( pLevel->bRev ){
         testOp = OP_Noop;
       }else{
-        sqlite3VdbeAddOp(v, OP_Rewind, pLevel->iCur, brk);
+        sqlite3VdbeAddOp(v, OP_Rewind, iIdxCur, brk);
       }
 
       /* Generate the the top of the loop.  If there is a termination
@@ -1342,25 +1280,24 @@ WhereInfo *sqlite3WhereBegin(
       start = sqlite3VdbeCurrentAddr(v);
       if( testOp!=OP_Noop ){
         sqlite3VdbeAddOp(v, OP_MemLoad, pLevel->iMem, 0);
-        sqlite3VdbeAddOp(v, testOp, pLevel->iCur, brk);
+        sqlite3VdbeAddOp(v, testOp, iIdxCur, brk);
         if( (leFlag && !pLevel->bRev) || (!geFlag && pLevel->bRev) ){
           sqlite3VdbeChangeP3(v, -1, "+", P3_STATIC);
         }
       }
-      sqlite3VdbeAddOp(v, OP_RowKey, pLevel->iCur, 0);
+      sqlite3VdbeAddOp(v, OP_RowKey, iIdxCur, 0);
       sqlite3VdbeAddOp(v, OP_IdxIsNull, nEqColumn + ((score&4)!=0), cont);
-      sqlite3VdbeAddOp(v, OP_IdxRecno, pLevel->iCur, 0);
-      if( i==pTabList->nSrc-1 && pushKey ){
-        haveKey = 1;
+      if( omitTable ){
+        haveRowid = 0;
       }else{
-        sqlite3VdbeAddOp(v, OP_MoveGe, iCur, 0);
-        haveKey = 0;
+        sqlite3VdbeAddOp(v, OP_IdxRecno, iIdxCur, 0);
+        haveRowid = 1;
       }
 
       /* Record the instruction used to terminate the loop.
       */
       pLevel->op = pLevel->bRev ? OP_Prev : OP_Next;
-      pLevel->p1 = pLevel->iCur;
+      pLevel->p1 = iIdxCur;
       pLevel->p2 = start;
     }
     loopMask |= getMask(&maskSet, iCur);
@@ -1374,9 +1311,13 @@ WhereInfo *sqlite3WhereBegin(
       if( pLevel->iLeftJoin && !ExprHasProperty(pTerm->p,EP_FromJoin) ){
         continue;
       }
-      if( haveKey ){
-        haveKey = 0;
-        sqlite3VdbeAddOp(v, OP_MoveGe, iCur, 0);
+      if( haveRowid ){
+        haveRowid = 0;
+        if( omitTable ){
+          sqlite3VdbeAddOp(v, OP_Pop, 1, 0);
+        }else{
+          sqlite3VdbeAddOp(v, OP_MoveGe, iCur, 0);
+        }
       }
       sqlite3ExprIfFalse(pParse, pTerm->p, cont, 1);
       pTerm->p = 0;
@@ -1394,21 +1335,31 @@ WhereInfo *sqlite3WhereBegin(
       for(pTerm=aExpr, j=0; j<nExpr; j++, pTerm++){
         if( pTerm->p==0 ) continue;
         if( (pTerm->prereqAll & loopMask)!=pTerm->prereqAll ) continue;
-        if( haveKey ){
-          /* Cannot happen.  "haveKey" can only be true if pushKey is true
+        if( haveRowid ){
+          /* Cannot happen.  "haveRowid" can only be true if pushKey is true
           ** an pushKey can only be true for DELETE and UPDATE and there are
           ** no outer joins with DELETE and UPDATE.
           */
-          haveKey = 0;
+          assert( 0 );
+          haveRowid = 0;
           sqlite3VdbeAddOp(v, OP_MoveGe, iCur, 0);
         }
         sqlite3ExprIfFalse(pParse, pTerm->p, cont, 1);
         pTerm->p = 0;
       }
     }
+
+    if( haveRowid && (i<pTabList->nSrc-1 || !pushKey) ){
+      haveRowid = 0;
+      if( omitTable ){
+        sqlite3VdbeAddOp(v, OP_Pop, 1, 0);
+      }else{
+        sqlite3VdbeAddOp(v, OP_MoveGe, iCur, 0);
+      }
+    }    
   }
   pWInfo->iContinue = cont;
-  if( pushKey && !haveKey ){
+  if( pushKey && !haveRowid ){
     sqlite3VdbeAddOp(v, OP_Recno, pTabList->a[0].iCursor, 0);
   }
   freeMaskSet(&maskSet);
@@ -1424,7 +1375,10 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
   int i;
   WhereLevel *pLevel;
   SrcList *pTabList = pWInfo->pTabList;
+  struct SrcList_item *pTabItem;
 
+  /* Generate loop termination code.
+  */
   for(i=pTabList->nSrc-1; i>=0; i--){
     pLevel = &pWInfo->a[i];
     sqlite3VdbeResolveLabel(v, pLevel->cont);
@@ -1438,25 +1392,72 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     if( pLevel->iLeftJoin ){
       int addr;
       addr = sqlite3VdbeAddOp(v, OP_MemLoad, pLevel->iLeftJoin, 0);
-      sqlite3VdbeAddOp(v, OP_NotNull, 1, addr+4 + (pLevel->iCur>=0));
+      sqlite3VdbeAddOp(v, OP_NotNull, 1, addr+4 + (pLevel->iIdxCur>=0));
       sqlite3VdbeAddOp(v, OP_NullRow, pTabList->a[i].iCursor, 0);
-      if( pLevel->iCur>=0 ){
-        sqlite3VdbeAddOp(v, OP_NullRow, pLevel->iCur, 0);
+      if( pLevel->iIdxCur>=0 ){
+        sqlite3VdbeAddOp(v, OP_NullRow, pLevel->iIdxCur, 0);
       }
       sqlite3VdbeAddOp(v, OP_Goto, 0, pLevel->top);
     }
   }
+
+  /* The "break" point is here, just past the end of the outer loop.
+  ** Set it.
+  */
   sqlite3VdbeResolveLabel(v, pWInfo->iBreak);
-  for(i=0; i<pTabList->nSrc; i++){
-    Table *pTab = pTabList->a[i].pTab;
+
+  /* Close all of the cursors
+  */
+  pLevel = pWInfo->a;
+  pTabItem = pTabList->a;
+  for(i=0; i<pTabList->nSrc; i++, pTabItem++, pLevel++){
+    Table *pTab = pTabItem->pTab;
     assert( pTab!=0 );
     if( pTab->isTransient || pTab->pSelect ) continue;
-    pLevel = &pWInfo->a[i];
-    sqlite3VdbeAddOp(v, OP_Close, pTabList->a[i].iCursor, 0);
+    if( (pLevel->score & 1)==0 ){
+      sqlite3VdbeAddOp(v, OP_Close, pTabItem->iCursor, 0);
+    }
     if( pLevel->pIdx!=0 ){
-      sqlite3VdbeAddOp(v, OP_Close, pLevel->iCur, 0);
+      sqlite3VdbeAddOp(v, OP_Close, pLevel->iIdxCur, 0);
+    }
+
+    /* Make all cursor substitutions for cases where we want to use
+    ** just the index and never reference the table.
+    ** 
+    ** Calls to the code generator in between sqlite3WhereBegin and
+    ** sqlite3WhereEnd will have created code that references the table
+    ** directly.  This loop scans all that code looking for opcodes
+    ** that reference the table and converts them into opcodes that
+    ** reference the index.
+    */
+    if( pLevel->score & 1 ){
+      int i, j, last;
+      VdbeOp *pOp;
+      Index *pIdx = pLevel->pIdx;
+
+      assert( pIdx!=0 );
+      pOp = sqlite3VdbeGetOp(v, pWInfo->iTop);
+      last = sqlite3VdbeCurrentAddr(v);
+      for(i=pWInfo->iTop; i<last; i++, pOp++){
+        if( pOp->p1!=pLevel->iTabCur ) continue;
+        if( pOp->opcode==OP_Column ){
+          pOp->p1 = pLevel->iIdxCur;
+          for(j=0; j<pIdx->nColumn; j++){
+            if( pOp->p2==pIdx->aiColumn[j] ){
+              pOp->p2 = j;
+              break;
+            }
+          }
+        }else if( pOp->opcode==OP_Recno ){
+          pOp->p1 = pLevel->iIdxCur;
+          pOp->opcode = OP_IdxRecno;
+        }
+      }
     }
   }
+
+  /* Final cleanup
+  */
   sqliteFree(pWInfo);
   return;
 }
