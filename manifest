@@ -1,5 +1,5 @@
-C Enhance\suser\sfunction\sAPI\sto\ssupport\sassociation\sof\smeta-data\swith\sconstant\narguments\sand\sthe\sspecification\sof\stext\sencoding\spreference.\sThe\sLIKE\noperator\stakes\sadvantage\sof\sboth.\s(CVS\s1534)
-D 2004-06-06T09:44:04
+C Performance\simprovements\sfor\sLIKE.\sIt\sis\sstill\stoo\sslow\sthough.\s(CVS\s1535)
+D 2004-06-06T12:41:50
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -31,8 +31,8 @@ F src/build.c e12e602f06e37a0fbcb49af17cba68ad85e101b6
 F src/date.c 8e6fa3173386fb29fdef012ee08a853c1e9908b2
 F src/delete.c b30f08250c9ed53a25a13c7c04599c1e8753992d
 F src/encode.c a876af473d1d636faa3dca51c7571f2e007eea37
-F src/expr.c f05a5594679fe5297d41578d2e0ffff827772906
-F src/func.c e873366ba5ad97926336fd05c3af22ca54ad3e74
+F src/expr.c 2b18dd4ed178e39989f22d75bf0e68ba6ed3923c
+F src/func.c 730741443e8de788de370e2b0d641df69d174697
 F src/hash.c 440c2f8cb373ee1b4e13a0988489c7cd95d55b6f
 F src/hash.h 762d95f1e567664d1eafc1687de755626be962fb
 F src/insert.c 4268d9e3959cc845ea243fb4ec7507269404dad9
@@ -67,8 +67,8 @@ F src/test5.c 44178ce85c3afd2004ab4eeb5cfd7487116ce366
 F src/tokenize.c 183c5d7da11affab5d70d903d33409c8c0ce6c5b
 F src/trigger.c 04b2c310d0d056b213609cab6df5fff03d5eaf88
 F src/update.c 259f06e7b22c684b2d3dda54a18185892d6e9573
-F src/utf.c 0e83deb064da62c202c1765e6194e938ca16d20f
-F src/util.c 026035fcb4d34cce0b541c4b8b0b058d93cb1da6
+F src/utf.c c2c8e445bfea724f3502609d6389fe66651f02ab
+F src/util.c 8b3680271111bcdf5b395916b08b9a6684e0e73d
 F src/vacuum.c b921eb778842592e1fb48a9d4cef7e861103878f
 F src/vdbe.c 392c6b02c525ea12dff403ba4ceb42b0afcb42f5
 F src/vdbe.h 46f74444a213129bc4b5ce40124dd8ed613b0cde
@@ -215,7 +215,7 @@ F www/support.tcl 1801397edd271cc39a2aadd54e701184b5181248
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 9e6cd9ec75f726ef85e60f593aaa895791315071
-R f098c036151f30238f65c2c50a0dd90e
+P 92337d8f79b9754cd61c73e7db2e792a1f482f50
+R fd9052eaad985197e4f082c9d9a0d480
 U danielk1977
-Z 5b48605b31bccaed46d70ecdd5c38ae2
+Z a1980072adc559c578b2d7aa47186c8d

@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.97 2004/06/06 09:44:05 danielk1977 Exp $
+** $Id: util.c,v 1.98 2004/06/06 12:41:50 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -917,7 +917,7 @@ int sqlite3SortCompare(const char *a, const char *b){
 ** UCS character.  This only works right if z points to a well-formed
 ** UTF-8 string.
 */
-static int sqlite3ReadUtf8(const unsigned char *z){
+int sqlite3ReadUtf8(const unsigned char *z){
   int c;
   static const int initVal[] = {
       0,   1,   2,   3,   4,   5,   6,   7,   8,   9,  10,  11,  12,  13,  14,

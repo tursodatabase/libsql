@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.63 2004/06/06 09:44:04 danielk1977 Exp $
+** $Id: func.c,v 1.64 2004/06/06 12:41:50 danielk1977 Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -418,7 +418,11 @@ LikePattern *compileLike(sqlite3_value *pPattern, u8 enc){
       if( pc_state<0 ){
         aState[n].failstate = -1;
       }else if( pc_state==n ){
-        aState[n].failstate = pc_state;
+        if( c ){
+          aState[n].failstate = pc_state;
+        }else{
+          aState[n].failstate = -2;
+        }
       }else{
         int k = pLike->aState[n-1].failstate;
         while( k>pc_state && aState[k+1].val!=-1 && aState[k+1].val!=c ){
@@ -461,13 +465,13 @@ static void likeFunc(
   int argc, 
   sqlite3_value **argv
 ){
-  int s;
-  int c;
-  int nc;
+  register int c;
   u8 enc;
   int offset = 0;
   const unsigned char *zString;
   LikePattern *pLike = sqlite3_get_auxdata(context, 0); 
+  struct LikeState *aState;
+  register struct LikeState *pState;
 
   /* If either argument is NULL, the result is NULL */
   if( sqlite3_value_type(argv[1])==SQLITE_NULL || 
@@ -479,6 +483,7 @@ static void likeFunc(
   if( sqlite3_user_data(context) ){
     enc = TEXT_Utf16;
     zString = (const unsigned char *)sqlite3_value_text16(argv[1]);
+    assert(0);
   }else{
     enc = TEXT_Utf8;
     zString = sqlite3_value_text(argv[1]);
@@ -493,33 +498,39 @@ static void likeFunc(
     }
     sqlite3_set_auxdata(context, 0, pLike, deleteLike);
   }
+  aState = pLike->aState;
+  pState = aState;
 
-  s = 0;
-  nc = 1;
   do {
-    int val = pLike->aState[s].val;
-    if( nc ) c = sqlite3ReadUniChar(zString, &offset, &enc, 1);
+    if( enc==TEXT_Utf8 ){
+      c = zString[offset++];
+      if( c&0x80 ){
+        offset--;
+        c = sqlite3ReadUniChar(zString, &offset, &enc, 1);
+      }
+    }else{
+      c = sqlite3ReadUniChar(zString, &offset, &enc, 1);
+    }
+
+skip_read:
 
 #if defined(TRACE_LIKE) && !defined(NDEBUG)
     printf("State=%d:(%d, %d) Input=%d\n", 
-        s, pLike->aState[s].val, 
-        pLike->aState[s].failstate, c);
+        (aState - pState), pState->val, pState->failstate, c);
 #endif
 
-    if( val==-1 || val==c ){
-      s++;
-      nc = 1;
+    if( pState->val==-1 || pState->val==c ){
+      pState++;
     }else{
-      if( pLike->aState[s].failstate==s ){
-        nc = 1;
-      }else{
-        nc = 0;
-        s = pLike->aState[s].failstate;
+      struct LikeState *pFailState = &aState[pState->failstate];
+      if( pState!=pFailState ){
+        pState = pFailState;
+        if( c && pState>=aState ) goto skip_read;
       }
     }
-  }while( c && s>=0 );
+  }while( c && pState>=aState );
 
-  if( s==pLike->nState ){
+  if( (pState-aState)==pLike->nState || (pState-aState)<-1 ){
     sqlite3_result_int(context, 1);
   }else{
     sqlite3_result_int(context, 0);
@@ -916,8 +927,8 @@ void sqlite3RegisterBuiltinFunctions(sqlite *db){
       case 1: pArg = db; break;
       case 2: pArg = (void *)(-1); break;
     }
-    sqlite3_create_function(db, aFuncs[i].zName, aFuncs[i].nArg, 0, 0,
-        pArg, aFuncs[i].xFunc, 0, 0);
+    sqlite3_create_function(db, aFuncs[i].zName, aFuncs[i].nArg,
+        aFuncs[i].eTextRep, 0, pArg, aFuncs[i].xFunc, 0, 0);
   }
   for(i=0; i<sizeof(aAggs)/sizeof(aAggs[0]); i++){
     void *pArg = 0;

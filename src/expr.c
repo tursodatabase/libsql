@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.135 2004/06/06 09:44:04 danielk1977 Exp $
+** $Id: expr.c,v 1.136 2004/06/06 12:41:50 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1752,6 +1752,7 @@ FuncDef *sqlite3FindFunction(
     pBest->nArg = nArg;
     pBest->pNext = pFirst;
     pBest->zName = (char*)&pBest[1];
+    pBest->iPrefEnc = eTextRep;
     memcpy(pBest->zName, zName, nName);
     pBest->zName[nName] = 0;
     sqlite3HashInsert(&db->aFunc, pBest->zName, nName, (void*)pBest);
