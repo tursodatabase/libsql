@@ -23,7 +23,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE TABLE statement.
 #
-# $Id: table.test,v 1.1 2000/05/29 23:58:12 drh Exp $
+# $Id: table.test,v 1.2 2000/05/30 03:12:22 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -96,17 +96,17 @@ do_test table-2.1 {
   execsql {CREATE TABLE test2(one text)}
   set v [catch {execsql {CREATE TABLE test2(two text)}} msg]
   lappend v $msg
-} {1 {table "test2" already exists}}
+} {1 {table test2 already exists}}
 do_test table-2.1b {
   set v [catch {execsql {CREATE TABLE sqlite_master(two text)}} msg]
   lappend v $msg
-} {1 {table "sqlite_master" already exists}}
+} {1 {table sqlite_master already exists}}
 do_test table-2.1c {
   db close
   sqlite db testdb
   set v [catch {execsql {CREATE TABLE sqlite_master(two text)}} msg]
   lappend v $msg
-} {1 {table "sqlite_master" already exists}}
+} {1 {table sqlite_master already exists}}
 do_test table-2.1d {
   execsql {DROP TABLE test2; SELECT name FROM sqlite_master}
 } {}
@@ -117,13 +117,13 @@ do_test table-2.2 {
   execsql {CREATE TABLE test2(one text); CREATE INDEX test3 ON test2(one)}
   set v [catch {execsql {CREATE TABLE test3(two text)}} msg]
   lappend v $msg
-} {1 {there is already an index named "test3"}}
+} {1 {there is already an index named test3}}
 do_test table-2.2b {
   db close
   sqlite db testdb
   set v [catch {execsql {CREATE TABLE test3(two text)}} msg]
   lappend v $msg
-} {1 {there is already an index named "test3"}}
+} {1 {there is already an index named test3}}
 do_test table-2.2c {
   execsql {DROP INDEX test3}
   set v [catch {execsql {CREATE TABLE test3(two text)}} msg]
@@ -169,21 +169,21 @@ do_test table-3.1 {
 do_test table-3.2 {
   set v [catch {execsql {CREATE TABLE BIG(xyz foo)}} msg]
   lappend v $msg
-} {1 {table "BIG" already exists}}
+} {1 {table BIG already exists}}
 do_test table-3.3 {
   set v [catch {execsql {CREATE TABLE biG(xyz foo)}} msg]
   lappend v $msg
-} {1 {table "biG" already exists}}
+} {1 {table biG already exists}}
 do_test table-3.4 {
   set v [catch {execsql {CREATE TABLE bIg(xyz foo)}} msg]
   lappend v $msg
-} {1 {table "bIg" already exists}}
+} {1 {table bIg already exists}}
 do_test table-3.5 {
   db close
   sqlite db testdb
   set v [catch {execsql {CREATE TABLE Big(xyz foo)}} msg]
   lappend v $msg
-} {1 {table "Big" already exists}}
+} {1 {table Big already exists}}
 do_test table-3.6 {
   execsql {DROP TABLE big}
   execsql {SELECT name FROM sqlite_master}
@@ -248,7 +248,7 @@ do_test table-5.1 {
 do_test table-5.2 {
   set v [catch {execsql {DROP TABLE sqlite_master}} msg]
   lappend v $msg
-} {1 {table "sqlite_master" may not be dropped}}
+} {1 {table sqlite_master may not be dropped}}
 
 # Make sure an EXPLAIN does not really create a new table
 #

@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** when syntax rules are reduced.
 **
-** $Id: build.c,v 1.4 2000/05/30 00:51:27 drh Exp $
+** $Id: build.c,v 1.5 2000/05/30 03:12:21 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -207,15 +207,15 @@ void sqliteStartTable(Parse *pParse, Token *pStart, Token *pName){
   zName = sqliteTableNameFromToken(pName);
   pTable = sqliteFindTable(pParse->db, zName);
   if( pTable!=0 ){
-    sqliteSetNString(&pParse->zErrMsg, "table \"", 0, pName->z, pName->n,
-        "\" already exists", 0, 0);
+    sqliteSetNString(&pParse->zErrMsg, "table ", 0, pName->z, pName->n,
+        " already exists", 0, 0);
     sqliteFree(zName);
     pParse->nErr++;
     return;
   }
   if( sqliteFindIndex(pParse->db, zName) ){
-    sqliteSetString(&pParse->zErrMsg, "there is already an index named \"", 
-       zName, "\"", 0);
+    sqliteSetString(&pParse->zErrMsg, "there is already an index named ", 
+       zName, 0);
     sqliteFree(zName);
     pParse->nErr++;
     return;
@@ -338,8 +338,8 @@ void sqliteDropTable(Parse *pParse, Token *pName){
   pTable = sqliteTableFromToken(pParse, pName);
   if( pTable==0 ) return;
   if( pTable->readOnly ){
-    sqliteSetString(&pParse->zErrMsg, "table \"", pTable->zName, 
-       "\" may not be dropped", 0);
+    sqliteSetString(&pParse->zErrMsg, "table ", pTable->zName, 
+       " may not be dropped", 0);
     pParse->nErr++;
     return;
   }
@@ -447,14 +447,14 @@ void sqliteCreateIndex(
     sqliteSetString(&zName, pTab->zName, "__primary_key", 0);
   }
   if( sqliteFindIndex(pParse->db, zName) ){
-    sqliteSetString(&pParse->zErrMsg, "index \"", zName, 
-       "\" already exists", 0);
+    sqliteSetString(&pParse->zErrMsg, "index ", zName, 
+       " already exists", 0);
     pParse->nErr++;
     goto exit_create_index;
   }
   if( sqliteFindTable(pParse->db, zName) ){
-    sqliteSetString(&pParse->zErrMsg, "there is already a table named \"",
-       zName, "\"", 0);
+    sqliteSetString(&pParse->zErrMsg, "there is already a table named ",
+       zName, 0);
     pParse->nErr++;
     goto exit_create_index;
   }
@@ -596,8 +596,8 @@ void sqliteDropIndex(Parse *pParse, Token *pName){
   pIndex = sqliteFindIndex(pParse->db, zName);
   sqliteFree(zName);
   if( pIndex==0 ){
-    sqliteSetNString(&pParse->zErrMsg, "no such index: \"", 0, 
-        pName->z, pName->n, "\"", 1, 0);
+    sqliteSetNString(&pParse->zErrMsg, "no such index: ", 0, 
+        pName->z, pName->n, 0);
     pParse->nErr++;
     return;
   }
@@ -753,14 +753,14 @@ void sqliteInsert(
   pTab = sqliteFindTable(pParse->db, zTab);
   sqliteFree(zTab);
   if( pTab==0 ){
-    sqliteSetNString(&pParse->zErrMsg, "no such table: \"", 0, 
-        pTableName->z, pTableName->n, "\"", 1, 0);
+    sqliteSetNString(&pParse->zErrMsg, "no such table: ", 0, 
+        pTableName->z, pTableName->n, 0);
     pParse->nErr++;
     goto insert_cleanup;
   }
   if( pTab->readOnly ){
-    sqliteSetString(&pParse->zErrMsg, "table \"", pTab->zName,
-        "\" may not be modified", 0);
+    sqliteSetString(&pParse->zErrMsg, "table ", pTab->zName,
+        " may not be modified", 0);
     pParse->nErr++;
     goto insert_cleanup;
   }
@@ -893,13 +893,13 @@ int sqliteExprResolveIds(Parse *pParse, IdList *pTabList, Expr *pExpr){
         }
       }
       if( cnt==0 ){
-        sqliteSetNString(&pParse->zErrMsg, "unknown field name: \"", -1,  
-          pExpr->token.z, pExpr->token.n, "\"", -1, 0);
+        sqliteSetNString(&pParse->zErrMsg, "no such field: ", -1,  
+          pExpr->token.z, pExpr->token.n, 0);
         pParse->nErr++;
         return 1;
       }else if( cnt>1 ){
-        sqliteSetNString(&pParse->zErrMsg, "ambiguous field name: \"", -1,  
-          pExpr->token.z, pExpr->token.n, "\"", -1, 0);
+        sqliteSetNString(&pParse->zErrMsg, "ambiguous field name: ", -1,  
+          pExpr->token.z, pExpr->token.n, 0);
         pParse->nErr++;
         return 1;
       }
@@ -941,13 +941,13 @@ int sqliteExprResolveIds(Parse *pParse, IdList *pTabList, Expr *pExpr){
         }
       }
       if( cnt==0 ){
-        sqliteSetNString(&pParse->zErrMsg, "unknown field name: \"", -1,  
-          pLeft->token.z, pLeft->token.n, ".", 1, z, n, "\"", 1, 0);
+        sqliteSetNString(&pParse->zErrMsg, "no such field: ", -1,  
+          pLeft->token.z, pLeft->token.n, ".", 1, z, n, 0);
         pParse->nErr++;
         return 1;
       }else if( cnt>1 ){
-        sqliteSetNString(&pParse->zErrMsg, "ambiguous field name: \"", -1,  
-          pExpr->token.z, pExpr->token.n, ".", 1, z, n, "\"", 1, 0);
+        sqliteSetNString(&pParse->zErrMsg, "ambiguous field name: ", -1,  
+          pExpr->token.z, pExpr->token.n, ".", 1, z, n, 0);
         pParse->nErr++;
         return 1;
       }
@@ -1004,8 +1004,8 @@ void sqliteSelect(
   for(i=0; i<pTabList->nId; i++){
     pTabList->a[i].pTab = sqliteFindTable(pParse->db, pTabList->a[i].zName);
     if( pTabList->a[i].pTab==0 ){
-      sqliteSetString(&pParse->zErrMsg, "unknown table \"", 
-         pTabList->a[i].zName, "\"", 0);
+      sqliteSetString(&pParse->zErrMsg, "no such table: ", 
+         pTabList->a[i].zName, 0);
       pParse->nErr++;
       goto select_cleanup;
     }
@@ -1179,8 +1179,8 @@ void sqliteDeleteFrom(
       goto delete_from_cleanup;
     }
     if( pTabList->a[i].pTab->readOnly ){
-      sqliteSetString(&pParse->zErrMsg, "table \"", pTabList->a[i].zName,
-        "\" may not be modified", 0);
+      sqliteSetString(&pParse->zErrMsg, "table ", pTabList->a[i].zName,
+        " may not be modified", 0);
       pParse->nErr++;
       goto delete_from_cleanup;
     }
@@ -1277,14 +1277,14 @@ void sqliteUpdate(
   for(i=0; i<pTabList->nId; i++){
     pTabList->a[i].pTab = sqliteFindTable(pParse->db, pTabList->a[i].zName);
     if( pTabList->a[i].pTab==0 ){
-      sqliteSetString(&pParse->zErrMsg, "unknown table \"", 
-         pTabList->a[i].zName, "\"", 0);
+      sqliteSetString(&pParse->zErrMsg, "no such table: ", 
+         pTabList->a[i].zName, 0);
       pParse->nErr++;
       goto update_cleanup;
     }
     if( pTabList->a[i].pTab->readOnly ){
-      sqliteSetString(&pParse->zErrMsg, "table \"", pTabList->a[i].zName,
-        "\" may not be modified", 0);
+      sqliteSetString(&pParse->zErrMsg, "table ", pTabList->a[i].zName,
+        " may not be modified", 0);
       pParse->nErr++;
       goto update_cleanup;
     }
@@ -1313,8 +1313,8 @@ void sqliteUpdate(
       }
     }
     if( j>=pTab->nCol ){
-      sqliteSetString(&pParse->zErrMsg, "no such field: \"", 
-         pChanges->a[i].zName, "\"", 0);
+      sqliteSetString(&pParse->zErrMsg, "no such field: ", 
+         pChanges->a[i].zName, 0);
       pParse->nErr++;
       goto update_cleanup;
     }

@@ -23,7 +23,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the INSERT statement.
 #
-# $Id: insert.test,v 1.1 2000/05/30 00:51:27 drh Exp $
+# $Id: insert.test,v 1.2 2000/05/30 03:12:22 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -33,14 +33,14 @@ source $testdir/tester.tcl
 do_test insert-1.1 {
   set v [catch {execsql {INSERT INTO test1 VALUES(1,2,3)}} msg]
   lappend v $msg
-} {1 {no such table: "test1"}}
+} {1 {no such table: test1}}
 
 # Try to insert into sqlite_master
 #
 do_test insert-1.2 {
   set v [catch {execsql {INSERT INTO sqlite_master VALUES(1,2,3,4)}} msg]
   lappend v $msg
-} {1 {table "sqlite_master" may not be modified}}
+} {1 {table sqlite_master may not be modified}}
 
 # Try to insert the wrong number of entries.
 #

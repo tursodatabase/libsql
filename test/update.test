@@ -1,0 +1,119 @@
+# Copyright (c) 1999, 2000 D. Richard Hipp
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public
+# License as published by the Free Software Foundation; either
+# version 2 of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public
+# License along with this library; if not, write to the
+# Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+# Boston, MA  02111-1307, USA.
+#
+# Author contact information:
+#   drh@hwaci.com
+#   http://www.hwaci.com/drh/
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing the UPDATE statement.
+#
+# $Id: update.test,v 1.1 2000/05/30 03:12:22 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# Try to update an non-existent table
+#
+do_test update-1.1 {
+  set v [catch {execsql {UPDATE test1 SET f2=5 WHERE f1<1}} msg]
+  lappend v $msg
+} {1 {no such table: test1}}
+
+# Try to update a read-only table
+#
+do_test update-2.1 {
+  set v [catch \
+       {execsql {UPDATE sqlite_master SET name='xyz' WHERE name='123'}} msg]
+  lappend v $msg
+} {1 {table sqlite_master may not be modified}}
+
+# Create a table to work with
+#
+do_test update-3.1 {
+  execsql {CREATE TABLE test1(f1 int,f2 int)}
+  for {set i 1} {$i<=10} {incr i} {
+    set sql "INSERT INTO test1 VALUES($i,[expr {int(pow(2,$i))}])"
+    execsql $sql
+  }
+  execsql {SELECT * FROM test1 ORDER BY f1}
+} {1 2 2 4 3 8 4 16 5 32 6 64 7 128 8 256 9 512 10 1024}
+
+# Unknown field name in an expression
+#
+do_test update-3.2 {
+  set v [catch {execsql {UPDATE test1 SET f1=f3*2 WHERE f2==32}} msg]
+  lappend v $msg
+} {1 {no such field: f3}}
+do_test update-3.3 {
+  set v [catch {execsql {UPDATE test1 SET f1=test2.f1*2 WHERE f2==32}} msg]
+  lappend v $msg
+} {1 {no such field: test2.f1}}
+do_test update-3.4 {
+  set v [catch {execsql {UPDATE test1 SET f3=f1*2 WHERE f2==32}} msg]
+  lappend v $msg
+} {1 {no such field: f3}}
+
+# Actually do some updates
+#
+do_test update-3.5 {
+  execsql {UPDATE test1 SET f2=f2*3}
+  execsql {SELECT * FROM test1 ORDER BY f1}
+} {1 6 2 12 3 24 4 48 5 96 6 192 7 384 8 768 9 1536 10 3072}
+do_test update-3.6 {
+  execsql {UPDATE test1 SET f2=f2/3 WHERE f1<=5}
+  execsql {SELECT * FROM test1 ORDER BY f1}
+} {1 2 2 4 3 8 4 16 5 32 6 192 7 384 8 768 9 1536 10 3072}
+do_test update-3.7 {
+  execsql {UPDATE test1 SET f2=f2/3 WHERE f1>5}
+  execsql {SELECT * FROM test1 ORDER BY f1}
+} {1 2 2 4 3 8 4 16 5 32 6 64 7 128 8 256 9 512 10 1024}
+
+# Swap the values of f1 and f2 for all elements
+#
+do_test update-3.8 {
+  execsql {UPDATE test1 SET f2=f1, f1=f2}
+  execsql {SELECT * FROM test1 ORDER BY f1}
+} {2 1 4 2 8 3 16 4 32 5 64 6 128 7 256 8 512 9 1024 10}
+
+# Create an index and make sure updating works with an index.
+#
+do_test update-3.9 {
+  execsql {CREATE INDEX index1 ON test1(f1)}
+  execsql {CREATE INDEX index2 ON test1(f1)}
+  execsql {UPDATE test1 SET f1=1025 WHERE f2==10}
+  execsql {SELECT * FROM test1 ORDER BY f1}
+} {2 1 4 2 8 3 16 4 32 5 64 6 128 7 256 8 512 9 1025 10}
+do_test update-3.10 {
+  execsql {SELECT * FROM test1 WHERE f1=1025}
+} {1025 10}
+do_test update-3.11 {
+  execsql {UPDATE test1 SET f2=11 WHERE f1==1025}
+  execsql {SELECT * FROM test1 ORDER BY f1}
+} {2 1 4 2 8 3 16 4 32 5 64 6 128 7 256 8 512 9 1025 11}
+do_test update-3.12 {
+  execsql {SELECT * FROM test1 WHERE f1=1025}
+} {1025 11}
+
+
+
+
+
+
+
+finish_test

@@ -23,7 +23,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the DELETE FROM statement.
 #
-# $Id: delete.test,v 1.1 2000/05/30 00:51:27 drh Exp $
+# $Id: delete.test,v 1.2 2000/05/30 03:12:22 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -40,7 +40,7 @@ do_test delete-1.1 {
 do_test delete-2.1 {
   set v [catch {execsql {DELETE FROM sqlite_master}} msg]
   lappend v $msg
-} {1 {table "sqlite_master" may not be modified}}
+} {1 {table sqlite_master may not be modified}}
 
 
 
