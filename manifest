@@ -1,6 +1,6 @@
-C Change\sthe\sname\sof\sthe\sTCL\scommand\sfrom\s"sqlite"\sto\s"sqlite3"\sso\sthat\sboth\nSQLite\sversion\s2\sand\sSQLite\sversion\s3\scan\sbe\sused\sby\sTcl\sat\sthe\ssame\stime.\s(CVS\s1626)
-D 2004-06-19T00:16:31
-F Makefile.in 2659cbce885c1365cb0a5fbeeed5ad69a354fa70
+C fix\sdependencies\sfor\stestfixture\sin\sMakefile.in\s(CVS\s1627)
+D 2004-06-19T02:19:39
+F Makefile.in d69d53c543518c1572ee0a8e8723d7e00bdb2266
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
 F VERSION 8c6981d7f982c3e2986fda2f34282264a4db344c
@@ -225,7 +225,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl af528563442e3039928f9018327a18157e53a44f
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 5f383c1ee1a2aec9e192f29528ec2a02f2329d19
-R 771d23822749d0f28022d62dca364529
-U drh
-Z a954a2a14da20f7be34b1e468ea6d033
+P d705d051bed2b92b6c3bbcc75fe5b056633b9c31
+R 98029011cfa4c6389636b174deced918
+U dougcurrie
+Z d0a7909e9532f0b290607d1238c66326
