@@ -11,10 +11,18 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.357 2005/01/19 23:24:51 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.358 2005/01/20 02:14:31 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
+
+/*
+** Cursor support is turned off unless the SQLITE_ENABLE_CURSOR option
+** is defined.
+*/
+#ifndef SQLITE_ENABLE_CURSOR
+# define SQLITE_OMIT_CURSOR 1
+#endif
 
 /*
 ** These #defines should enable >2GB file support on Posix if the

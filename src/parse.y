@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.159 2005/01/19 23:24:50 drh Exp $
+** @(#) $Id: parse.y,v 1.160 2005/01/20 02:14:31 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -598,7 +598,7 @@ term(A) ::= INTEGER(X).      {A = sqlite3Expr(@X, 0, 0, &X);}
 term(A) ::= FLOAT(X).        {A = sqlite3Expr(@X, 0, 0, &X);}
 term(A) ::= STRING(X).       {A = sqlite3Expr(@X, 0, 0, &X);}
 expr(A) ::= BLOB(X).         {A = sqlite3Expr(@X, 0, 0, &X);}
-%ifndef SQLITE_OMIT_CURSOR
+%ifdef SQLITE_ENABLE_CURSOR
 expr(A) ::= CURRENT OF id.
 %endif 
 expr(A) ::= REGISTER(X).     {A = sqlite3RegisterExpr(pParse, &X);}
@@ -960,7 +960,7 @@ cmd ::= ALTER TABLE fullname(X) RENAME TO nm(Z). {
 %endif
 
 ////////////////////////////// CURSORS //////////////////////////////////////
-%ifndef SQLITE_OMIT_CURSOR
+%ifdef SQLITE_ENABLE_CURSOR
 cmd ::= DECLARE nm(X) CURSOR FOR select(Y).  {sqlite3CursorCreate(pParse,&X,Y);}
 cmd ::= CLOSE nm(X).                         {sqlite3CursorClose(pParse,&X);}
 
@@ -986,4 +986,4 @@ count_opt(A) ::= signed(X). {A = X;}
 %type comma_count_opt {int}
 comma_count_opt(A) ::= .                 {A = 1;}
 comma_count_opt(A) ::= COMMA signed(X).  {A = X;}
-%endif // SQLITE_OMIT_CURSOR
+%endif // SQLITE_ENABLE_CURSOR

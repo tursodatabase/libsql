@@ -1,5 +1,5 @@
-C Expression\sgenerator\sbug\sfix.\s(CVS\s2239)
-D 2005-01-20T01:51:26
+C Turn\sSQLITE_OMIT_CURSOR\son\sby\sdefault.\s(CVS\s2240)
+D 2005-01-20T02:14:31
 F Makefile.in ffd81f5e926d40b457071b4de8d7c1fa18f39b5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -32,7 +32,7 @@ F src/auth.c 3b81f2a42f48a62c2c9c9b0eda31a157c681edea
 F src/btree.c 97101cce85304edbaedafc5f39ab12e2dc78b076
 F src/btree.h 74d19cf40ab49fd69abe9e4e12a6c321ad86c497
 F src/build.c da5ecd9880f2d19d5e77fe48b722577494dd3290
-F src/cursor.c f883813759742068890b1f699335872bfa8fdf41
+F src/cursor.c de73c00aefc4747ad59b5105cf38bbff0667922e
 F src/date.c f3d1f5cd1503dabf426a198f3ebef5afbc122a7f
 F src/delete.c cbf54c0634c53ef683f7af8ad5c5d5637c9efb90
 F src/experimental.c 8cc66b2be6a011055d75ef19ed2584bcfbb585ad
@@ -54,14 +54,14 @@ F src/os_win.c 3c0b0a3bc33318cf555a1cd130232ad1b9a5a711
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c 6319578f176cbc53eb044940ce484fae244ba6c5
 F src/pager.h 9eba8c53dd91eae7f3f90743b2ee242da02a9862
-F src/parse.y a1084470b331c1dc434e180ca888d15907bdc1cf
+F src/parse.y 276efb30de5d8582bda9b6a98b17aac6875ab3e9
 F src/pragma.c ac594f74c90ffec043c43e49358719ffeb491eec
 F src/printf.c 3d20b21cfecadacecac3fb7274e746cb81d3d357
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c e147c81d57f7146d90a4d5a01f523dfec43808f4
 F src/shell.c 591364a0e9ca4ce53873e21e0294476c0c2b4770
 F src/sqlite.h.in 8249b697d71ef6d7f7f752ba4ca04058e9e8b5ff
-F src/sqliteInt.h a79a526b2f3c695226add233a41a5c8be3251a09
+F src/sqliteInt.h c1acfbeb8b84444e5b86dfce19ff42b5854f6478
 F src/table.c 25b3ff2b39b7d87e8d4a5da0713d68dfc06cbee9
 F src/tclsqlite.c fd27457b228118be96524dae285146c76efe032b
 F src/test1.c 59fc0f0c35cb3bccdf166f36a1a5f9ffb0b951e7
@@ -270,7 +270,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl c3b50d3ac31c54be2a1af9b488a89d22f1e6e746
-P ff5b338cfbd4a957c8ea5e72d6340df25be68a6f
-R 59ec52e5db7355662ed1e08a5dc0c9e6
+P 39cf97a902523b1e3953da8fca6983119700d682
+R 47f53bbb1e06be32151ae23092be7a73
 U drh
-Z cb0f8edc0bd42cc8b295dc12adb0cf91
+Z 004b42e64ccef610aa89616e9ea6aebc

@@ -21,10 +21,10 @@
 ** cursors, they are really very different things.  It is worth your while
 ** to fully understand the difference.
 **
-** @(#) $Id: cursor.c,v 1.2 2004/11/23 01:47:30 drh Exp $
+** @(#) $Id: cursor.c,v 1.3 2005/01/20 02:14:31 drh Exp $
 */
-#ifndef SQLITE_OMIT_CURSOR
 #include "sqliteInt.h"
+#ifndef SQLITE_OMIT_CURSOR
 #include "vdbeInt.h"
 
 /*
