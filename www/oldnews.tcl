@@ -94,7 +94,7 @@ newsitem {2004-Jun-18} {Version 3.0.0 (alpha) Released} {
 newsitem {2004-Jun-09} {Version 2.8.14 Released} {
   SQLite version 2.8.14 is a patch release to the stable 2.8 series.
   There is no reason to upgrade if 2.8.13 is working ok for you.
-  This is only a bug-fix release.  Most developement effort is
+  This is only a bug-fix release.  Most development effort is
   going into version 3.0.0 which is due out soon.
 }
 
@@ -116,4 +116,4 @@ newsitem {2004-Apr-23} {Work Begins On SQLite Version 3} {
   Plans are to continue to support SQLite version 2.8 with
   bug fixes.  But all new development will occur in version 3.0.
 }
-footer {$Id: oldnews.tcl,v 1.5 2004/09/18 18:00:24 drh Exp $}
+footer {$Id: oldnews.tcl,v 1.6 2004/10/10 17:24:55 drh Exp $}

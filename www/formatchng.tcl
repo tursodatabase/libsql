@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the formatchng.html file.
 #
-set rcsid {$Id: formatchng.tcl,v 1.11 2004/06/16 03:02:04 drh Exp $ }
+set rcsid {$Id: formatchng.tcl,v 1.12 2004/10/10 17:24:55 drh Exp $ }
 source common.tcl
 header {File Format Changes in SQLite}
 puts {
@@ -154,7 +154,7 @@ occurred since version 1.0.0:
   <td><p>Version 2.8.0 introduces a change to the format of the rollback
   journal file.  The main database file format is unchanged.  Versions
   2.7.6 and earlier can read and write 2.8.0 databases and vice versa.
-  Version 2.8.0 can rollback a transation that was started by version
+  Version 2.8.0 can rollback a transaction that was started by version
   2.7.6 and earlier.  But version 2.7.6 and earlier cannot rollback a
   transaction started by version 2.8.0 or later.</p>
 

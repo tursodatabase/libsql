@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.73 2004/10/05 02:41:43 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.74 2004/10/10 17:24:55 drh Exp $}
 source common.tcl
 header {Query Language Understood by SQLite}
 puts {
@@ -11,7 +11,7 @@ puts {
 language.  But it does <a href="omitted.html">omit some features</a>
 while at the same time
 adding a few features of its own.  This document attempts to
-describe percisely what parts of the SQL language SQLite does
+describe precisely what parts of the SQL language SQLite does
 and does not support.  A list of <a href="#keywords">keywords</a> is 
 given at the end.</p>
 
@@ -202,7 +202,7 @@ command.  Such transactions usually persist until the next
 COMMIT or ROLLBACK command.  But a transaction will also 
 ROLLBACK if the database is closed or if an error occurs
 and the ROLLBACK conflict resolution algorithm is specified.
-See the documention on the <a href="#conflict">ON CONFLICT</a>
+See the documentation on the <a href="#conflict">ON CONFLICT</a>
 clause for additional information about the ROLLBACK
 conflict resolution algorithm.
 </p>
@@ -218,7 +218,7 @@ write operation creates a RESERVED lock.   Because the acquisition of
 locks is deferred until they are needed, it is possible that another
 thread or process could create a separate transaction and write to
 the database after the BEGIN on the current thread has executed.
-If the transation is immediate, then RESERVED locks
+If the transaction is immediate, then RESERVED locks
 are acquired on all databases as soon as the BEGIN command is
 executed, without waiting for the
 database to be used.  After a BEGIN IMMEDIATE, you are guaranteed that
@@ -378,7 +378,7 @@ See the section titled
 <p>The exact text
 of each CREATE INDEX statement is stored in the <b>sqlite_master</b>
 or <b>sqlite_temp_master</b> table, depending on whether the table
-being indexed is temporary.  Everytime the database is opened,
+being indexed is temporary.  Every time the database is opened,
 all CREATE INDEX statements
 are read from the <b>sqlite_master</b> table and used to regenerate
 SQLite's internal representation of the index layout.</p>
@@ -496,7 +496,7 @@ the names of the columns in the result.</p>
 
 <p>The exact text
 of each CREATE TABLE statement is stored in the <b>sqlite_master</b>
-table.  Everytime the database is opened, all CREATE TABLE statements
+table.  Every time the database is opened, all CREATE TABLE statements
 are read from the <b>sqlite_master</b> table and used to regenerate
 SQLite's internal representation of the table layout.
 If the original command was a CREATE TABLE AS then then an equivalent
@@ -871,7 +871,7 @@ AND
 OR</font>
 </pre></blockquote>
 
-<p>Supported unary operaters are these:</p>
+<p>Supported unary operators are these:</p>
 
 <blockquote><pre>
 <font color="#2c2cf0"><big>-    +    !    ~</big></font>
@@ -894,7 +894,7 @@ operand modulo its right operand.</p>"
 puts {
 
 <a name="like"></a>
-<p>The LIKE operator does a wildcard comparision.  The operand
+<p>The LIKE operator does a wildcard comparison.  The operand
 to the right contains the wildcards.}
 puts "A percent symbol [Operator %] in the right operand
 matches any sequence of zero or more characters on the left.
@@ -951,7 +951,7 @@ by the NOT keyword to invert the sense of the test.</p>
 operand of an IN operator, then the first row of the result of the
 SELECT becomes the value used in the expression.  If the SELECT yields
 more than one result row, all rows after the first are ignored.  If
-the SELECT yeilds no rows, then the value of the SELECT is NULL.</p>
+the SELECT yields no rows, then the value of the SELECT is NULL.</p>
 
 <p>Both simple and aggregate functions are supported.  A simple
 function can be used in any expression.  Simple functions return
@@ -1040,7 +1040,7 @@ only a single argument.</td>
 <tr>
 <td valign="top" align="right">min(<i>X</i>,<i>Y</i>,...)</td>
 <td valign="top">Return the argument with the minimum value.  Arguments
-may be strings in addition to numbers.  The mminimum value is determined
+may be strings in addition to numbers.  The minimum value is determined
 by the usual sort order.  Note that <b>min()</b> is a simple function when
 it has 2 or more arguments but converts to an aggregate function if given
 only a single argument.</td>
@@ -1261,7 +1261,7 @@ by the default value for that column.  If the column has no default
 value, then the ABORT algorithm is used.</p>
 
 <p>When this conflict resolution strategy deletes rows in order to
-statisfy a constraint, it does not invoke delete triggers on those
+satisfy a constraint, it does not invoke delete triggers on those
 rows.  But that may change in a future release.</p>
 
 <p>The algorithm specified in the OR clause of a COPY, INSERT, or UPDATE
@@ -1315,7 +1315,7 @@ is returned it is as an integer.</p>
 <li><p><b>PRAGMA database_list;</b></p>
     <p>For each open database, invoke the callback function once with
     information about that database.  Arguments include the index and 
-    the name the datbase was attached with.  The first row will be for 
+    the name the database was attached with.  The first row will be for 
     the main database.  The second row will be for the database used to 
     store temporary tables.</p></li>
 
@@ -1330,7 +1330,7 @@ is returned it is as an integer.</p>
     pragma with the additional
     feature that it changes the cache size persistently.  With this pragma,
     you can set the cache size once and that setting is retained and reused
-    everytime you reopen the database.</p></li>
+    every time you reopen the database.</p></li>
 
 <a name="pragma_default_synchronous"></a>
 <li><p><b>PRAGMA default_synchronous;
@@ -1543,7 +1543,7 @@ puts {in that one table.</p>
 
 <p>The DISTINCT keyword causes a subset of result rows to be returned, 
 in which each result row is different.  NULL values are not treated as 
-distinct from eachother.  The default behavior is that all result rows 
+distinct from each other.  The default behavior is that all result rows 
 be returned, which can be made explicit with the keyword ALL.</p>
 
 <p>The query is executed against one or more tables specified after
@@ -1633,7 +1633,7 @@ VACUUM [<index-or-table-name>]
 }
 
 puts {
-<p>The VACUUM command is an SQLite extension modelled after a similar
+<p>The VACUUM command is an SQLite extension modeled after a similar
 command found in PostgreSQL.  If VACUUM is invoked with the name of a
 table or index then it is suppose to clean up the named table or index.
 In version 1.0 of SQLite, the VACUUM command would invoke 
@@ -1642,7 +1642,7 @@ In version 1.0 of SQLite, the VACUUM command would invoke
 <p>
 VACUUM became a no-op when the GDBM backend was removed from
 SQLITE in version 2.0.0.
-VACUUM was reimplimented in version 2.8.1.
+VACUUM was reimplemented in version 2.8.1.
 The index or table name argument is now ignored.
 </p>
 
@@ -1686,7 +1686,7 @@ case-insensitive.</p>
 	<td>Interpreted as an identifier if it matches a known identifier 
 	and occurs in a legal identifier context, otherwise as a string. 
 <tr>	<td> [keyword]
-	<td> Always interpreted as an identifer. (This notation is used 
+	<td> Always interpreted as an identifier. (This notation is used 
 	by MS Access and SQL Server.)
 </table>
 

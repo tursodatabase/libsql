@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3ref.tcl,v 1.13 2004/09/30 13:43:14 drh Exp $}
+set rcsid {$Id: capi3ref.tcl,v 1.14 2004/10/10 17:24:54 drh Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -35,7 +35,7 @@ api {result-codes} {
 #define SQLITE_EMPTY       16   /* (Internal Only) Database table is empty */
 #define SQLITE_SCHEMA      17   /* The database schema changed */
 #define SQLITE_TOOBIG      18   /* Too much data for one row of a table */
-#define SQLITE_CONSTRAINT  19   /* Abort due to contraint violation */
+#define SQLITE_CONSTRAINT  19   /* Abort due to constraint violation */
 #define SQLITE_MISMATCH    20   /* Data type mismatch */
 #define SQLITE_MISUSE      21   /* Library used incorrectly */
 #define SQLITE_NOLFS       22   /* Uses OS features not supported on host */
@@ -170,8 +170,8 @@ api {} {
 } {
  This routine sets a busy handler that sleeps for a while when a
  table is locked.  The handler will sleep multiple times until 
- at least "ms" milleseconds of sleeping have been done.  After
- "ms" milleseconds of sleeping, the handler returns 0 which
+ at least "ms" milliseconds of sleeping have been done.  After
+ "ms" milliseconds of sleeping, the handler returns 0 which
  causes sqlite3_exec() to return SQLITE_BUSY.
 
  Calling this routine with an argument less than or equal to zero
@@ -498,7 +498,7 @@ int sqlite3_create_function16(
 #define SQLITE_ANY      5
 } {
  These two functions are used to add user functions or aggregates
- implemented in C to the SQL langauge interpreted by SQLite. The
+ implemented in C to the SQL language interpreted by SQLite. The
  difference only between the two is that the second parameter, the
  name of the (scalar) function or aggregate, is encoded in UTF-8 for
  sqlite3_create_function() and UTF-16 for sqlite3_create_function16().
@@ -520,7 +520,7 @@ int sqlite3_create_function16(
  and xFinal parameters. An aggregate function requires an implementation
  of xStep and xFinal, but NULL should be passed for xFunc. To delete an
  existing user function or aggregate, pass NULL for all three function
- callback. Specifying an inconstent set of callback values, such as an
+ callback. Specifying an inconstant set of callback values, such as an
  xFunc and an xFinal, or an xStep but no xFinal, SQLITE_ERROR is
  returned.
 }
@@ -635,7 +635,7 @@ int sqlite3_finalize(sqlite3_stmt *pStmt);
  virtual machine.  If the virtual machine has not completed execution
  when this routine is called, that is like encountering an error or
  an interrupt.  (See sqlite3_interrupt().)  Incomplete updates may be
- rolled back and transactions cancelled,  depending on the circumstances,
+ rolled back and transactions canceled,  depending on the circumstances,
  and the result code returned will be SQLITE_ABORT.
 }
 
@@ -730,7 +730,7 @@ char *sqlite3_vmprintf(const char*, va_list);
 } {
  These routines are variants of the "sprintf()" from the
  standard C library.  The resulting string is written into memory
- obtained from malloc() so that there is never a possiblity of buffer
+ obtained from malloc() so that there is never a possibility of buffer
  overflow.  These routines also implement some additional formatting
  options that are useful for constructing SQL statements.
 
@@ -1002,7 +1002,7 @@ int sqlite3_step(sqlite3_stmt*);
  Perhaps it was called on a virtual machine that had already been
  finalized or on one that had previously returned SQLITE_ERROR or
  SQLITE_DONE.  Or it could be the case the the same database connection
- is being used simulataneously by two or more threads.
+ is being used simultaneously by two or more threads.
 }
 
 api {} {

@@ -1,7 +1,7 @@
 #
 # Run this script to generated a faq.html output file
 #
-set rcsid {$Id: faq.tcl,v 1.25 2004/09/18 18:00:24 drh Exp $}
+set rcsid {$Id: faq.tcl,v 1.26 2004/10/10 17:24:55 drh Exp $}
 source common.tcl
 header {SQLite Frequently Asked Questions</title>}
 
@@ -335,7 +335,7 @@ faq {
   What is the maximum size of a VARCHAR in SQLite?
 } {
   <p>SQLite does not enforce datatype constraints.
-  A VARCHAR column can hold as much data as you care to put it in.</p>
+  A VARCHAR column can hold as much data as you care to put in it.</p>
 }
 
 faq {
@@ -344,7 +344,7 @@ faq {
   <p>SQLite version 3.0 lets you puts BLOB data into any column, even
   columns that are declared to hold some other type.</p>
 
-  <p>SQLite version 2.8 would hold store text data without embedded
+  <p>SQLite version 2.8 will store any text data without embedded
   '\000' characters.  If you need to store BLOB data in SQLite version
   2.8 you'll want to encode that data first.
   There is a source file named 
@@ -402,7 +402,7 @@ faq {
 }
 
 faq {
-  Can I use SQLite in my commerical product without paying royalties?
+  Can I use SQLite in my commercial product without paying royalties?
 } {
   <p>Yes.  SQLite is in the public domain.  No claim of ownership is made
   to any part of the code.  You can do anything you want with it.</p>

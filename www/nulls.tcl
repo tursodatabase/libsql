@@ -1,7 +1,7 @@
 #
 # Run this script to generated a nulls.html output file
 #
-set rcsid {$Id: nulls.tcl,v 1.7 2004/08/30 14:58:12 drh Exp $}
+set rcsid {$Id: nulls.tcl,v 1.8 2004/10/10 17:24:55 drh Exp $}
 source common.tcl
 header {NULL Handling in SQLite}
 puts {
@@ -30,7 +30,7 @@ A copy of the test script is found at the end of this document.
 <p>
 SQLite was originally coded in such a way that the answer to
 all questions in the chart below would be "Yes".  But the
-expriments run on other SQL engines showed that none of them
+experiments run on other SQL engines showed that none of them
 worked this way.  So SQLite was modified to work the same as
 Oracle, PostgreSQL, and DB2.  This involved making NULLs
 indistinct for the purposes of the SELECT DISTINCT statement and

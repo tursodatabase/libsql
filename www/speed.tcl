@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the speed.html file.
 #
-set rcsid {$Id: speed.tcl,v 1.14 2004/05/31 15:06:30 drh Exp $ }
+set rcsid {$Id: speed.tcl,v 1.15 2004/10/10 17:24:55 drh Exp $ }
 source common.tcl
 header {SQLite Database Speed Comparison}
 
@@ -75,7 +75,7 @@ tests.
 I am told that the default PostgreSQL configuration in RedHat 7.3
 is unnecessarily conservative (it is designed to
 work on a machine with 8MB of RAM) and that PostgreSQL could
-be made to run a lot faster with some knowledgable configuration
+be made to run a lot faster with some knowledgeable configuration
 tuning.
 Matt Sergeant reports that he has tuned his PostgreSQL installation
 and rerun the tests shown below.  His results show that
@@ -248,7 +248,7 @@ COMMIT;<br>
 
 <p>
 This test still does 100 full table scans but it uses
-uses string comparisons instead of numerical comparisions.
+uses string comparisons instead of numerical comparisons.
 SQLite is over three times faster than PostgreSQL here and about 30%
 faster than MySQL.
 </p>

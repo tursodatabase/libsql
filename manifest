@@ -1,5 +1,5 @@
-C New\slinks\son\sthe\scommon\sheader\spage\sof\sthe\swebsite.\s(CVS\s2013)
-D 2004-10-09T15:54:33
+C Typos\sand\sspelling\serrors\sin\sdocumention.\s(CVS\s2014)
+D 2004-10-10T17:24:54
 F Makefile.in 52c1cc106cad9148d4b7cb387b458e82dc86b339
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -214,45 +214,45 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.gif f845a64772062e82d17980a349f95f1f0b4c8054
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
-F www/arch.tcl 126611ffd57e0dfac28d71ab04d7a78697ab4b80
+F www/arch.tcl 03a6c66b1b34209d2897352e058377b421f0b80e
 F www/arch2.fig ae2432145c26cfa148fa0116589517ad3cd5fc65
 F www/arch2.gif 6f2d47c4e0c5842c0d6b5513fd8249393d7c7003
 F www/arch2b.fig d22a2c9642d584b89d4088b1e51e2bb0f7c04bed
 F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
 F www/c_interface.tcl 83b39203e1ded4c2dab97f42edf31279a308efcb
 F www/capi3.tcl 5c1cb163f4d2a54e2d0e22dcc399dd71245c8b89
-F www/capi3ref.tcl 3d34b40270f126a98d09c3613ab31f609c47c79b
-F www/changes.tcl 16a490bbe5520705861abf36387a5e6b8c18456a
+F www/capi3ref.tcl aa8b12a1c633c5aaca03657e8ed04c963cb698c6
+F www/changes.tcl 9450fb133517433442bf7c6395537a55f7ec957f
 F www/common.tcl 2ea19d725e67bac2cd0fb67c375ae9ce1d4b3e5b
-F www/conflict.tcl fb8a2ba83746c7fdfd9e52fa7f6aaf5c422b8246
+F www/conflict.tcl cdd0f4b59b0ba6d61f67e6a38f3ae45853bacb30
 F www/copyright-release.html 294e011760c439c44951a6bfecd4c81a1ae359e8
 F www/copyright-release.pdf cfca3558fc97095e57c6117d08f1f5b80d95125a
 F www/copyright.tcl 82c9670c7ddb0311912ab7fe24703f33c531066c
-F www/datatype3.tcl 2bb7dbfa4dd518a6e5fb3cb1cd8296797976d205
-F www/datatypes.tcl 566004b81c36877397ddbe6e1907aae6065f6b41
+F www/datatype3.tcl dea659d2dcc1f3d6eefdb8a2f52c04de3cdb6476
+F www/datatypes.tcl 7c786d2e8ff434346764534ec015966d17efce60
 F www/docs.tcl 4b5f7fca464e66ed7f929063a8b2b9e101ba902d
-F www/download.tcl 958931d67680a2ff7044d5ed77ced1825a2a8c63
+F www/download.tcl e9cebc67ac35c9c026b94ec01383ab8a7cf367f0
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
-F www/faq.tcl 8cf9f59fd93868c9954223a99db244c9975fa43b
-F www/fileformat.tcl f71a06a0d533c7df408539c64113b4adeaf29764
-F www/formatchng.tcl d1dfecedfb25e122ab513a1e0948b15cb4f0be46
+F www/faq.tcl bce6f03a9d00366e7f9eba9174167930b9f1b4ad
+F www/fileformat.tcl 900c95b9633abc3dcfc384d9ddd8eb4876793059
+F www/formatchng.tcl bfbf14dbf5181e771d06da7797767b0200b36d8a
 F www/index.tcl ae29ea8a5bdde5a8031a9ac0935ac16dd921b4ef
-F www/lang.tcl dde78c1415ee2d19fc30360808ca6f0e2ea71c30
+F www/lang.tcl ba4fbca6342938f0240efdd84e83d5badcd72667
 F www/lockingv3.tcl afcd22f0f063989cff2f4d57bbc38d719b4c6e75
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
-F www/nulls.tcl ede975a29def48838c606d4a0c0185d44f90a789
-F www/oldnews.tcl 6566f0a25fa6244ec68d0cf8cc5af2318c6bba1e
+F www/nulls.tcl ec35193f92485b87b90a994a01d0171b58823fcf
+F www/oldnews.tcl 6e8d41458e591de980fb29659c0d80b721be2aff
 F www/omitted.tcl 7bd62b6f0f53b60c5360895b16b3af8407bbca03
-F www/opcode.tcl e8c421fd2c70c503b25cedb3f9617a1f387ac7ea
+F www/opcode.tcl dafa030a5a3cc24a2f9fd4cfbfb7d7323d2151b0
 F www/quickstart.tcl 2ed129615479870b9f1f8b1527f21ebfcfb71e76
-F www/speed.tcl 19cf0c1bf73c4b534dfafc95b3eacff4825740b4
+F www/speed.tcl de99c82c4729a10b6733463636f15473c4ec95bc
 F www/sqlite.tcl b51fd15f0531a54874de785a9efba323eecd5975
 F www/support.tcl 96c8324cea27b5ded53ff5c60c127ba2053f688e
 F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
-F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 3d04eef9b7decd21acc30d47af1bb1386333c351
-R 5b6e3a4730a036c9637fe30fe0a20361
+F www/whentouse.tcl fdacb0ba2d39831e8a6240d05a490026ad4c4e4c
+P 6d6246f150f27042b8ede0fe73ecca1aefd2c3e4
+R 88d9ee15725dd536964fb7018cab9c17
 U drh
-Z 28d561798961c31e6211cf6a4a66c43a
+Z fed8782376658a7d3a3b9ac3e74ac16d

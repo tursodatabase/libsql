@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the goals.html file.
 #
-set rcsid {$Id: whentouse.tcl,v 1.1 2004/01/27 15:58:38 drh Exp $}
+set rcsid {$Id: whentouse.tcl,v 1.2 2004/10/10 17:24:55 drh Exp $}
 
 puts {<html>
 <head><title>Appropriate Uses of SQLite</title></head>
@@ -38,7 +38,7 @@ but first and foremost, SQLite strives to be simple.
 Simplicity in a database engine can be either a strength or a
 weakness, depending on what you are trying to do.  In order to
 achieve simplicity, SQLite has had to sacrifice other characteristics
-that some people find useful, such as high concurrancy, fine-grained
+that some people find useful, such as high concurrency, fine-grained
 access control, a rich set of built-in functions, stored procedures,
 esoteric SQL language features, XML and/or Java extensions,
 tera- or peta-byte scalability, and so forth.  If you need these
@@ -150,7 +150,7 @@ a colleague.
 <li><p><b>Stand-in for an enterprise database during demos or testing</b></p>
 
 <p>
-If you are writting a client application for an enterprise database engine,
+If you are writing a client application for an enterprise database engine,
 it makes sense to use a generic database backend that allows you to connect
 to many different kinds of SQL database engines.  It makes even better
 sense to
@@ -207,14 +207,14 @@ the underlying filesystem implementation, there is nothing SQLite
 can do to prevent it.</p>
 
 <p>A good rule of thumb is that you should avoid using SQLite
-in situations where the same database will be accessed simultenously
+in situations where the same database will be accessed simultaneously
 from many computers over a network filesystem.</p>
 </li>
 
 <li><p><b>High-volume Websites</b></p>
 
 <p>SQLite will normally work fine as the database backend to a website.
-But if you website is so busy that your are thinking of splitted the
+But if you website is so busy that your are thinking of splitting the
 database component off onto a separate machine, then you should 
 definitely consider using an enterprise-class client/server database
 engine instead of SQLite.</p>
@@ -234,7 +234,7 @@ consider using a different database engine.
 </p>
 </li>
 
-<li><p><b>High Concurrancy</b></p>
+<li><p><b>High Concurrency</b></p>
 
 <p>
 SQLite uses reader/writer locks on the entire database file.  That means
@@ -246,7 +246,7 @@ database.
 For many situations, this is not a problem.  Each application
 does its database work quickly and moves on, and no lock lasts for more
 than a few dozen milliseconds.  But there are some problems that require
-more concurrancy, and those problems will need to seek a different
+more concurrency, and those problems will need to seek a different
 solution.
 </p>
 </li>

@@ -1,7 +1,7 @@
 #
 # Run this script to generated a datatypes.html output file
 #
-set rcsid {$Id: datatypes.tcl,v 1.7 2004/05/31 15:06:30 drh Exp $}
+set rcsid {$Id: datatypes.tcl,v 1.8 2004/10/10 17:24:55 drh Exp $}
 source common.tcl
 header {Datatypes In SQLite version 2}
 puts {
@@ -145,7 +145,7 @@ is assumed that you are using version 2.7.0 or later of SQLite.
 
 <p>
 For an expression, the datatype of the result is often determined by
-the outermost operator.  For example, arithmatic operators ("+", "*", "%")
+the outermost operator.  For example, arithmetic operators ("+", "*", "%")
 always return a numeric results.  The string concatenation operator
 ("||") returns a text result.  And so forth.  If you are ever in doubt
 about the datatype of an expression you can use the special <b>typeof()</b>

@@ -1,7 +1,7 @@
 #
 # Run this script to generated a fileformat.html output file
 #
-set rcsid {$Id: fileformat.tcl,v 1.12 2004/05/31 15:06:30 drh Exp $}
+set rcsid {$Id: fileformat.tcl,v 1.13 2004/10/10 17:24:55 drh Exp $}
 source common.tcl
 header {SQLite Database File Format (Version 2)}
 puts {
@@ -29,7 +29,7 @@ layers in the architecture.
 </ul>
 
 <p>
-We wil describe each layer beginning with the bottom (pager)
+We will describe each layer beginning with the bottom (pager)
 layer and working upwards.
 </p>
 
@@ -641,7 +641,7 @@ byte index of the corresponding column value.  Thus, Offset 0 contains
 the byte index for Value 0, Offset 1 contains the byte offset
 of Value 1, and so forth.  The number of bytes in a column value can
 always be found by subtracting offsets.  This allows NULLs to be
-recovered from the record unabiguously.
+recovered from the record unambiguously.
 </p>
 
 <p>
@@ -678,7 +678,7 @@ additional information on this encoding.)  Numbers are also nul-terminated.
 Text values consists of the character 'c' followed by a copy of the
 text string and a nul-terminator.  These encoding rules result in
 NULLs being sorted first, followed by numerical values in numerical
-order, followed by text values in lexigraphical order.
+order, followed by text values in lexicographical order.
 </p>
 
 <h4>4.4 &nbsp; SQL Schema Storage And Root B-Tree Page Numbers</h4>

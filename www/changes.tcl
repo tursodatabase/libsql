@@ -318,7 +318,7 @@ chng {2002 Sep 25 (2.7.2)} {
 <li>Honor the ORDER BY and LIMIT clause of a SELECT even if the
     result set is used for an INSERT.</li>
 <li>Do not put write locks on the file used to hold TEMP tables.</li>
-<li>Added documention on SELECT DISTINCT and on how SQLite handles NULLs.</li>
+<li>Added documentation on SELECT DISTINCT and on how SQLite handles NULLs.</li>
 <li>Fix a problem that was causing poor performance when many thousands
     of SQL statements were executed by a single sqlite_exec() call.</li>
 }
@@ -333,7 +333,7 @@ chng {2002 Aug 25 (2.7.0)} {
 <li>Make a distinction between numeric and text values when sorting.
     Text values sort according to memcmp().  Numeric values sort in
     numeric order.</li>
-<li>Allow multiple simulataneous readers under windows by simulating
+<li>Allow multiple simultaneous readers under windows by simulating
     the reader/writers locks that are missing from Win95/98/ME.</li>
 <li>An error is now returned when trying to start a transaction if
     another transaction is already active.</li>
@@ -433,12 +433,12 @@ chng {2002 Jun 17 (2.5.0)} {
 <li>Add support for the full SQL-92 join syntax and LEFT OUTER JOINs.</li>
 <li>Double-quoted strings interpreted as column names not text literals.</li>
 <li>Parse (but do not implement) foreign keys.</li>
-<li>Performance improvemenets in the parser, pager, and WHERE clause code
+<li>Performance improvements in the parser, pager, and WHERE clause code
     generator.</li>
 <li>Make the LIMIT clause work on subqueries.  (ORDER BY still does not
     work, though.)</li>
 <li>Added the "%Q" expansion to sqlite_*_printf().</li>
-<li>Bug fixes too numerious to mention (see the change log).</li>
+<li>Bug fixes too numerous to mention (see the change log).</li>
 }
 
 chng {2002 May 09 (2.4.12)} {
@@ -483,7 +483,7 @@ chng {2002 Apr 06 (2.4.7)} {
     SELECT statement.</li>
 <li>Permit SELECT statements without a FROM clause.</li>
 <li>Added the <b>last_insert_rowid()</b> SQL function.</li>
-<li>Do not count rows where the IGNORE conflict resultion occurs in
+<li>Do not count rows where the IGNORE conflict resolution occurs in
     the row count.</li>
 <li>Make sure functions expressions in the VALUES clause of an INSERT
     are correct.</li>
@@ -555,7 +555,7 @@ chng {2002 Mar 10 (2.4.0)} {
 <li>Added support for VIEWs.</li>
 <li>Added the subquery flattening optimizer.</li>
 <li>Modified the B-Tree and Pager modules so that disk pages that do not
-    contain real data (free pages) are not journalled and are not
+    contain real data (free pages) are not journaled and are not
     written from memory back to the disk when they change.  This does not 
     impact database integrity, since the
     pages contain no real data, but it does make large INSERT operations
@@ -717,7 +717,7 @@ chng {2001 Nov 22 (2.1.2)} {
 }
 
 chng {2001 Nov 13 (2.1.1)} {
-<li>Bug fix: Sometimes arbirary strings were passed to the callback
+<li>Bug fix: Sometimes arbitrary strings were passed to the callback
     function when the actual value of a column was NULL.</li>
 }
 
@@ -765,7 +765,7 @@ chng {2001 Oct 14 (2.0.5)} {
 }
 
 chng {2001 Oct 13 (2.0.4)} {
-<li>Bug fix: an abscure and relatively harmless bug was causing one of
+<li>Bug fix: an obscure and relatively harmless bug was causing one of
     the tests to fail when gcc optimizations are turned on.  This release
     fixes the problem.</li>
 }

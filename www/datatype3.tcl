@@ -1,4 +1,4 @@
-set rcsid {$Id: datatype3.tcl,v 1.7 2004/07/19 00:39:46 drh Exp $}
+set rcsid {$Id: datatype3.tcl,v 1.8 2004/10/10 17:24:55 drh Exp $}
 source common.tcl
 header {Datatypes In SQLite Version 3}
 puts {
@@ -173,7 +173,7 @@ two values being compared, according to the following rules:</P>
 
 	<LI><P>A TEXT value is less than a BLOB value. When two TEXT values
 	are compared, the C library function memcmp() is usually used to
-	determine the result. However this can be overriden, as described
+	determine the result. However this can be overridden, as described
 	under 'User-defined collation Sequences' below.</P>
 
 	<LI><P>When two BLOB values are compared, the result is always
