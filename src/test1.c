@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.68 2004/05/31 23:56:43 danielk1977 Exp $
+** $Id: test1.c,v 1.69 2004/06/01 14:09:29 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -111,6 +111,21 @@ static int getStmtPointer(
   sqlite3_stmt **ppStmt
 ){
   if( sscanf(zArg, PTR_FMT, (void**)ppStmt)!=1 ){
+    Tcl_AppendResult(interp, "\"", zArg, "\" is not a valid pointer value", 0);
+    return TCL_ERROR;
+  }
+  return TCL_OK;
+}
+
+/*
+** Decode a pointer to an sqlite3_stmt object.
+*/
+static int getFilePointer(
+  Tcl_Interp *interp, 
+  const char *zArg,  
+  OsFile **ppFile
+){
+  if( sscanf(zArg, PTR_FMT, (void**)ppFile)!=1 ){
     Tcl_AppendResult(interp, "\"", zArg, "\" is not a valid pointer value", 0);
     return TCL_ERROR;
   }
@@ -1677,7 +1692,144 @@ static int test_stmt_int(
   return TCL_OK;
 }
 
+/*
+** Usage:  sqlite3OsOpenReadWrite <filename>
+*/
+static int test_sqlite3OsOpenReadWrite(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  OsFile * pFile;
+  int rc;
+  int dummy;
+  char zBuf[100];
 
+  if( objc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", 
+       Tcl_GetString(objv[0]), " filename", 0);
+    return TCL_ERROR;
+  }
+
+  pFile = sqliteMalloc(sizeof(OsFile));
+  rc = sqlite3OsOpenReadWrite(Tcl_GetString(objv[1]), pFile, &dummy);
+  if( rc!=SQLITE_OK ){
+    sqliteFree(pFile);
+    Tcl_SetResult(interp, (char *)errorName(rc), TCL_STATIC);
+    return TCL_ERROR;
+  }
+  makePointerStr(interp, zBuf, pFile);
+  Tcl_SetResult(interp, zBuf, 0);
+  return TCL_ERROR;
+}
+
+/*
+** Usage:  sqlite3OsClose <file handle>
+*/
+static int test_sqlite3OsClose(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  OsFile * pFile;
+  int rc;
+
+  if( objc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", 
+       Tcl_GetString(objv[0]), " filehandle", 0);
+    return TCL_ERROR;
+  }
+
+  if( getFilePointer(interp, Tcl_GetString(objv[1]), &pFile) ){
+    return TCL_ERROR;
+  }
+  rc = sqlite3OsClose(pFile);
+  if( rc!=SQLITE_OK ){
+    Tcl_SetResult(interp, (char *)errorName(rc), TCL_STATIC);
+    return TCL_ERROR;
+  }
+  sqliteFree(pFile);
+  return TCL_OK;
+}
+
+/*
+** Usage:  sqlite3OsLock <file handle> <locktype>
+*/
+static int test_sqlite3OsLock(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  OsFile * pFile;
+  int rc;
+
+  if( objc!=3 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", 
+        Tcl_GetString(objv[0]), 
+        " filehandle (SHARED|RESERVED|PENDING|EXCLUSIVE)", 0);
+    return TCL_ERROR;
+  }
+
+  if( getFilePointer(interp, Tcl_GetString(objv[1]), &pFile) ){
+    return TCL_ERROR;
+  }
+
+  if( 0==strcmp("SHARED", Tcl_GetString(objv[2])) ){
+    rc = sqlite3OsLock(pFile, SHARED_LOCK);
+  }
+  else if( 0==strcmp("RESERVED", Tcl_GetString(objv[2])) ){
+    rc = sqlite3OsLock(pFile, RESERVED_LOCK);
+  }
+  else if( 0==strcmp("PENDING", Tcl_GetString(objv[2])) ){
+    rc = sqlite3OsLock(pFile, PENDING_LOCK);
+  }
+  else if( 0==strcmp("EXCLUSIVE", Tcl_GetString(objv[2])) ){
+    rc = sqlite3OsLock(pFile, EXCLUSIVE_LOCK);
+  }else{
+    Tcl_AppendResult(interp, "wrong # args: should be \"", 
+        Tcl_GetString(objv[0]), 
+        " filehandle (SHARED|RESERVED|PENDING|EXCLUSIVE)", 0);
+    return TCL_ERROR;
+  }
+
+  if( rc!=SQLITE_OK ){
+    Tcl_SetResult(interp, (char *)errorName(rc), TCL_STATIC);
+    return TCL_ERROR;
+  }
+  return TCL_OK;
+}
+
+/*
+** Usage:  sqlite3OsUnlock <file handle>
+*/
+static int test_sqlite3OsUnlock(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  OsFile * pFile;
+  int rc;
+
+  if( objc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", 
+       Tcl_GetString(objv[0]), " filehandle", 0);
+    return TCL_ERROR;
+  }
+
+  if( getFilePointer(interp, Tcl_GetString(objv[1]), &pFile) ){
+    return TCL_ERROR;
+  }
+  rc = sqlite3OsUnlock(pFile);
+  if( rc!=SQLITE_OK ){
+    Tcl_SetResult(interp, (char *)errorName(rc), TCL_STATIC);
+    return TCL_ERROR;
+  }
+  return TCL_OK;
+}
 
 /*
 ** Register commands with the TCL interpreter.
@@ -1752,6 +1904,12 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_column_text16", test_stmt_utf16,    sqlite3_column_text16},
      { "sqlite3_column_decltype16", test_stmt_utf16,sqlite3_column_decltype16},
      { "sqlite3_column_name16", test_stmt_utf16,    sqlite3_column_name16},
+
+     /* Functions from os.h */
+     { "sqlite3OsOpenReadWrite",test_sqlite3OsOpenReadWrite, 0 },
+     { "sqlite3OsClose",        test_sqlite3OsClose, 0 },
+     { "sqlite3OsLock",         test_sqlite3OsLock, 0 },
+     { "sqlite3OsUnlock",       test_sqlite3OsUnlock, 0 },
 
   };
   int i;

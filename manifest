@@ -1,5 +1,5 @@
-C Fix\stypo\son\shomepage\s(CVS\s1519)
-D 2004-06-01T12:59:50
+C Unix\sversion\sof\ssqlite3OsLock().\s(CVS\s1520)
+D 2004-06-01T14:09:29
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -39,11 +39,11 @@ F src/insert.c 4268d9e3959cc845ea243fb4ec7507269404dad9
 F src/legacy.c ad23746f15f67e34577621b1875f639c94839e1f
 F src/main.c 66c6c35e94f57a7505f7f44b5a9504fb60ca0730
 F src/md5.c 4302e84ae516c616bb079c4e6d038c0addb33481
-F src/os.h ab42f4a7c4c716f26b988e759b6e12085a3bfc67
+F src/os.h 833b9639720d1602d9bfa4ca69c615ec2bfe625a
 F src/os_common.h 744286a27de55c52f1b18921e8d17abbf7fafc0f
 F src/os_mac.c b823874690615ace0dd520d3ad1fe8bfd864b7e0
 F src/os_mac.h 51d2445f47e182ed32d3bd6937f81070c6fd9bd4
-F src/os_unix.c 585665eccd31a9bb4dc090bc6b5e29d8d42899f0
+F src/os_unix.c 3dc2868d7ff477323f2eaedda0e05921afb6f124
 F src/os_unix.h 426e1480f0847a7f8ba22aa9ac5115520875610b
 F src/os_win.c 92b51a38437b98d8aa3ac05b57c71e1d1092e5be
 F src/os_win.h 5d41af24caaef6c13a2d8e2399caa1c57d45c84d
@@ -59,7 +59,7 @@ F src/sqlite.h.in d8222d4a1f76468560b60f2b7f5b592995ebd5cf
 F src/sqliteInt.h 8a3a6dc8ef5141563698a3b7a62fca7158cff1f5
 F src/table.c af14284fa36c8d41f6829e3f2819dce07d3e2de2
 F src/tclsqlite.c ed8663e7703346ace72ca3899dba15dbfc0883d7
-F src/test1.c 42c494918ecfab5a86586a28a66a73968312aad1
+F src/test1.c 4a3cc1b628a29f24c0a43227a035d0f2a96eb634
 F src/test2.c 6195a1ca2c8d0d2d93644e86da3289b403486872
 F src/test3.c 86117b74ec7353d76f5cd85c144c7cda23a7e11b
 F src/test4.c caf675e443460ec76b04d78e1688986c17c82cec
@@ -214,7 +214,7 @@ F www/support.tcl 67682848d6ddd283370451dc3da2e56cded9fc9a
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 915cba57123f859c7f128bd52580573877c502ba
-R 869771be1ad6b0ff5d2cfdaa96e9bfc9
-U drh
-Z b8d78d36bfca5048d38c8cf79e8d6789
+P a84ece250035d02e399ec208aded524c20c12737
+R 3b5d7842c2050c5f20aa6a72a163fd62
+U danielk1977
+Z e93eb17e32e32c7486f10dc44fff52c2

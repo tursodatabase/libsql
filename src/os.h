@@ -80,6 +80,14 @@
 # define TEMP_FILE_PREFIX "sqlite_"
 #endif
 
+/*
+** The following values may be passed as the second argument to
+** sqlite3OsLock().
+*/
+#define SHARED_LOCK     1
+#define RESERVED_LOCK   2
+#define PENDING_LOCK    3
+#define EXCLUSIVE_LOCK  4
 
 int sqlite3OsDelete(const char*);
 int sqlite3OsFileExists(const char*);
@@ -105,5 +113,6 @@ int sqlite3OsCurrentTime(double*);
 void sqlite3OsEnterMutex(void);
 void sqlite3OsLeaveMutex(void);
 char *sqlite3OsFullPathname(const char*);
+int sqlite3OsLock(OsFile*, int);
 
 #endif /* _SQLITE_OS_H_ */
