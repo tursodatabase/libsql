@@ -1,5 +1,5 @@
-C A\sfew\smore\scomment\schanges.\sNo\scode\salterations.\s(CVS\s1689)
-D 2004-06-25T08:32:26
+C Remove\sduplicate\ssqlite3_changes()\sdeclaration.\sTicket\s#779.\s(CVS\s1690)
+D 2004-06-25T10:25:11
 F Makefile.in cb7a9889c38723f72b2506c4236ff30a05ff172b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -58,7 +58,7 @@ F src/printf.c 3090c8ff397d549bc0de09b16d8ab7fd37a0c3f7
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c f02a65af34231031896e8442161cb5251e191e75
 F src/shell.c 24b641700c9d90f361fcfa4f432c5b4aff704e6d
-F src/sqlite.h.in 1f400a561fca3b1df73677d2d97046425d47cae4
+F src/sqlite.h.in b70fded2bdfeaddfb06adea3888118b722975136
 F src/sqliteInt.h dd796b6abc6d50505fe33c54f0143d7000681a41
 F src/table.c af14284fa36c8d41f6829e3f2819dce07d3e2de2
 F src/tclsqlite.c 8d093146332b2f0cbf2a8ebe8597d481619308a3
@@ -229,7 +229,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 084f3fffbdeb1e2b375817ae1111b867c9d32559
-R 3d04f41857d7d71eac91c498ab85aa4a
+P b68b4a4262c2ab60f9a7cc0c206b9db207f86933
+R 154f6b0bea60bc2b9117a79b58e12295
 U danielk1977
-Z 3b801fb007c493686ca074ae1ca89a83
+Z f05729835e5346445df4f2313c2ee805

@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.106 2004/06/22 12:13:55 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.107 2004/06/25 10:25:11 danielk1977 Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -205,26 +205,6 @@ int sqlite3_changes(sqlite3*);
 ** "DELETE FROM table WHERE 1" instead.
 */
 int sqlite3_total_changes(sqlite3*);
-
-/*
-** This function returns the number of database rows that were changed
-** by the last INSERT, UPDATE, or DELETE statment completed.  The change
-** count is not updated by SQL statements other than INSERT, UPDATE or
-** DELETE.
-**
-** Changes are counted, even if they are later undone by a ROLLBACK or
-** ABORT. Changes associated with trigger programs that execute as a
-** result of the INSERT, UPDATE, or DELETE statement are not counted.
-**
-** SQLite implements the command "DELETE FROM table" without a WHERE clause
-** by dropping and recreating the table.  (This is much faster than going
-** through and deleting individual elements form the table.)  Because of
-** this optimization, the change count for "DELETE FROM table" will be
-** zero regardless of the number of elements that were originally in the
-** table. To get an accurate count of the number of rows deleted, use
-** "DELETE FROM table WHERE 1" instead.
-*/
-int sqlite3_changes(sqlite3*);
 
 /* This function causes any pending database operation to abort and
 ** return at its earliest opportunity.  This routine is typically
