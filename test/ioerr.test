@@ -15,7 +15,7 @@
 # The tests in this file use special facilities that are only
 # available in the SQLite test fixture.
 #
-# $Id: ioerr.test,v 1.8 2005/01/10 12:59:53 danielk1977 Exp $
+# $Id: ioerr.test,v 1.9 2005/01/11 10:25:07 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -132,6 +132,45 @@ for {set n 1} {$go} {incr n} {
     sqlite3 db test.db
     cksum
   } $cksum
+}
+set ::sqlite_io_error_pending 0
+
+set ::go 1
+for {set n 1} {$go} {incr n} {
+  do_test ioerr-3.$n.1 {
+    set ::sqlite_io_error_pending 0
+    db close
+    catch {file delete -force test.db}
+    catch {file delete -force test.db-journal}
+    sqlite3 db test.db
+    execsql {
+      PRAGMA cache_size = 10;
+      BEGIN;
+      CREATE TABLE abc(a);
+      INSERT INTO abc VALUES(randstr(1500,1500)); -- Page 4 is overflow
+    }
+    for {set i 0} {$i<150} {incr i} {
+      execsql {
+        INSERT INTO abc VALUES(randstr(100,100)); 
+      }
+    }
+    execsql COMMIT
+  } {}
+  do_test ioerr-3.$n.2 [subst {
+    set ::sqlite_io_error_pending $n
+  }] $n
+  do_test ioerr-3.$n.3 {
+    set r [catch {db eval {
+      CREATE TABLE abc2(a);
+      BEGIN;
+      DELETE FROM abc WHERE length(a)>100;
+      UPDATE abc SET a = randstr(90,90);
+      COMMIT;
+      CREATE TABLE abc3(a);
+    }} msg]
+    set ::go [expr {$::sqlite_io_error_pending<=0}]
+    expr {$::sqlite_io_error_pending>0 || $r!=0}
+  } {1}
 }
 set ::sqlite_io_error_pending 0
 

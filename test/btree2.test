@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is btree database backend
 #
-# $Id: btree2.test,v 1.13 2004/05/10 16:18:48 drh Exp $
+# $Id: btree2.test,v 1.14 2005/01/11 10:25:07 danielk1977 Exp $
 
 
 set testdir [file dirname $argv0]
@@ -143,10 +143,16 @@ proc check_invariants {} {
   set L [btree_data $::c2]
   set LM1 [expr {$L-1}]
   for {set i 1} {$i<=$N} {incr i} {
-    set key [btree_key $::c3]
+    set key {}
+    if {![btree_eof $::c3]} {
+      set key [btree_key $::c3]
+    }
     if {[scan $key %d k]<1} {set k 0}
     if {$k!=$i} {
-      set key [btree_key $::c4]
+      set key {}
+      if {![btree_eof $::c4]} {
+        set key [btree_key $::c4]
+      }
       if {[scan $key %d k]<1} {set k 0}
       if {$k!=$i} {
         return "Key $i is missing from both foreground and background"
@@ -252,19 +258,26 @@ proc random_changes {n I K D} {
       btree_delete $::c3
     } else {
       if {$c<0} {btree_next $::c3}
-      if {[string match $basekey* [btree_key $::c3]]} {
-        btree_delete $::c3
+      if {![btree_eof $::c3]} {
+        if {[string match $basekey* [btree_key $::c3]]} {
+          btree_delete $::c3
+        }
       }
     }
     if {[set c [btree_move_to $::c4 $basekey]]==0} {
       btree_delete $::c4
     } else {
       if {$c<0} {btree_next $::c4}
-      if {[string match $basekey* [btree_key $::c4]]} {
-        btree_delete $::c4
+      if {![btree_eof $::c4]} {
+        if {[string match $basekey* [btree_key $::c4]]} {
+          btree_delete $::c4
+        }
       }
     }
-    if {[scan [btree_key $::c4] %d kx]<1} {set kx -1}
+    set kx -1
+    if {![btree_eof $::c4]} {
+      if {[scan [btree_key $::c4] %d kx]<1} {set kx -1}
+    }
     if {$kx==$k} {
       btree_delete $::c4
     }

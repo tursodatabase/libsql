@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is btree database backend
 #
-# $Id: btree.test,v 1.34 2005/01/10 12:59:53 danielk1977 Exp $
+# $Id: btree.test,v 1.35 2005/01/11 10:25:07 danielk1977 Exp $
 
 
 set testdir [file dirname $argv0]
@@ -197,10 +197,13 @@ do_test btree-3.20.1 {
 do_test btree-3.20.2 {
   btree_eof $::c1
 } {1}
-do_test btree-3.21 {
-  set rc [catch {btree_data $::c1} res]
-  lappend rc $res
-} {1 SQLITE_INTERNAL}
+# This test case used to test that one couldn't request data from an 
+# invalid cursor. That is now an assert()ed condition.
+#
+# do_test btree-3.21 {
+#   set rc [catch {btree_data $::c1} res]
+#   lappend rc $res
+# } {1 SQLITE_INTERNAL}
 
 # Commit the changes, reopen and reread the data
 #
@@ -278,10 +281,13 @@ do_test btree-3.39 {
   btree_next $::c1
   btree_key $::c1
 } {0}
-do_test btree-3.40 {
-  set rc [catch {btree_data $::c1} res]
-  lappend rc $res
-} {1 SQLITE_INTERNAL}
+# This test case used to test that requesting data from an invalid cursor
+# returned SQLITE_INTERNAL. That is now an assert()ed condition.
+#
+# do_test btree-3.40 {
+#   set rc [catch {btree_data $::c1} res]
+#   lappend rc $res
+# } {1 SQLITE_INTERNAL}
 do_test btree-3.41 {
   lindex [btree_pager_stats $::b1] 1
 } {1}
@@ -489,10 +495,13 @@ do_test btree-6.9 {
   lindex [btree_pager_stats $::b1] 1
 } {2}
 
-do_test btree-6.9.1 {
-  btree_move_to $::c2 {}
-  btree_key $::c2
-} {}
+# This test case used to test that requesting the key from an invalid cursor
+# returned an empty string.  But that is now an assert()ed condition.
+#
+# do_test btree-6.9.1 {
+#   btree_move_to $::c2 {}
+#   btree_key $::c2
+# } {}
 
 # If we drop table 1 it just clears the table.  Table 1 always exists.
 #
@@ -1035,8 +1044,10 @@ btree_pager_ref_dump $::b1
 
 # Miscellaneous tests.
 #
-# btree-16.1 - Check that a statement cannot be started if a transaction is not
-#              active.
+# btree-16.1 - Check that a statement cannot be started if a transaction 
+#              is not active.
+# btree-16.2 - Check that it is an error to request more payload from a 
+#              btree entry than the entry contains.
 do_test btree-16.1 {
   catch {btree_begin_statement $::b1} msg
   set msg
@@ -1057,6 +1068,89 @@ do_test btree-16.4 {
   catch {btree_data $::c1 [expr [btree_payload_size $::c1] + 10]} msg
   set msg
 } SQLITE_ERROR
+
+if {$tcl_platform(platform)=="unix"} {
+  do_test btree-16.5 {
+    btree_close $::b1
+    set ::origperm [file attributes test1.bt -permissions]
+    file attributes test1.bt -permissions o-w,g-w,a-w
+    set ::b1 [btree_open test1.bt 2000 0]
+    catch {btree_cursor $::b1 2 1} msg
+    file attributes test1.bt -permissions $::origperm
+    btree_close $::b1
+    set ::b1 [btree_open test1.bt 2000 0]
+    set msg
+  } {SQLITE_READONLY}
+}
+
+do_test btree-16.6 {
+  set ::c1 [btree_cursor $::b1 2 1]
+  set ::c2 [btree_cursor $::b1 2 1]
+  btree_begin_transaction $::b1
+  for {set i 0} {$i<100} {incr i} {
+    btree_insert $::c1 $i [string repeat helloworld 10]
+  }
+  btree_last $::c2
+  btree_insert $::c1 100 [string repeat helloworld 10]
+} {}
+
+do_test btree-16.7 {
+  btree_close_cursor $::c1
+  btree_close_cursor $::c2
+  btree_commit $::b1
+  set ::c1 [btree_cursor $::b1 2 1]
+  catch {btree_insert $::c1 101 helloworld} msg
+  set msg
+} {SQLITE_ERROR}
+do_test btree-16.8 {
+  btree_first $::c1
+  catch {btree_delete $::c1} msg
+  set msg
+} {SQLITE_ERROR}
+do_test btree-16.9 {
+  btree_close_cursor $::c1
+  btree_begin_transaction $::b1
+  set ::c1 [btree_cursor $::b1 2 0]
+  catch {btree_insert $::c1 101 helloworld} msg
+  set msg
+} {SQLITE_PERM}
+do_test btree-16.10 {
+  catch {btree_delete $::c1} msg
+  set msg
+} {SQLITE_PERM}
+do_test btree-16.11 {
+  btree_close_cursor $::c1
+  set ::c2 [btree_cursor $::b1 2 1]
+  set ::c1 [btree_cursor $::b1 2 0]
+  catch {btree_insert $::c2 101 helloworld} msg
+  set msg
+} {SQLITE_LOCKED}
+do_test btree-16.12 {
+  btree_first $::c2
+  catch {btree_delete $::c2} msg
+  set msg
+} {SQLITE_LOCKED}
+do_test btree-16.13 {
+  catch {btree_clear_table $::b1 2} msg
+  set msg
+} {SQLITE_LOCKED}
+do_test btree-16.14 {
+  btree_close_cursor $::c1
+  btree_close_cursor $::c2
+  btree_commit $::b1
+  catch {btree_clear_table $::b1 2} msg
+  set msg
+} {SQLITE_ERROR}
+do_test btree-16.15 {
+  catch {btree_drop_table $::b1 2} msg
+  set msg
+} {SQLITE_ERROR}
+do_test btree-16.16 {
+  btree_begin_transaction $::b1
+  set ::c1 [btree_cursor $::b1 2 0]
+  catch {btree_drop_table $::b1 2} msg
+  set msg
+} {SQLITE_LOCKED}
 
 do_test btree-99.1 {
   btree_close $::b1

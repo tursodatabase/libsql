@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.82 2005/01/08 15:44:26 drh Exp $
+** $Id: pragma.c,v 1.83 2005/01/11 10:25:08 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -285,7 +285,7 @@ void sqlite3Pragma(
       int size = pBt ? sqlite3BtreeGetPageSize(pBt) : 0;
       returnSingleInt(pParse, "page_size", size);
     }else{
-      sqlite3BtreeSetPageSize(pBt, atoi(zRight), sqlite3BtreeGetReserve(pBt));
+      sqlite3BtreeSetPageSize(pBt, atoi(zRight), -1);
     }
   }else
 #endif /* SQLITE_OMIT_PAGER_PRAGMAS */

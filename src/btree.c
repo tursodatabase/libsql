@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.229 2005/01/10 12:59:52 danielk1977 Exp $
+** $Id: btree.c,v 1.230 2005/01/11 10:25:07 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -356,7 +356,6 @@ struct BtCursor {
   CellInfo info;            /* A parse of the cell we are pointing at */
   u8 wrFlag;                /* True if writable */
   u8 isValid;               /* TRUE if points to a valid entry */
-  u8 status;                /* Set to SQLITE_ABORT if cursors is invalidated */
 };
 
 /*
@@ -953,7 +952,6 @@ static int initPage(
   MemPage *pParent       /* The parent.  Might be NULL */
 ){
   int pc;            /* Address of a freeblock within pPage->aData[] */
-  int i;             /* Loop counter */
   int hdr;           /* Offset to beginning of page header */
   u8 *data;          /* Equal to pPage->aData */
   Btree *pBt;        /* The main btree structure */
@@ -997,15 +995,10 @@ static int initPage(
   /* Compute the total free space on the page */
   pc = get2byte(&data[hdr+1]);
   nFree = data[hdr+7] + top - (cellOffset + 2*pPage->nCell);
-  i = 0;
   while( pc>0 ){
     int next, size;
     if( pc>usableSize-4 ){
       /* Free block is off the page */
-      return SQLITE_CORRUPT;  /* bkpt-CORRUPT */
-    }
-    if( i++>SQLITE_MAX_PAGE_SIZE/4 ){
-      /* The free block list forms an infinite loop */
       return SQLITE_CORRUPT;  /* bkpt-CORRUPT */
     }
     next = get2byte(&data[pc]);
@@ -1295,6 +1288,9 @@ int sqlite3BtreeSetSafetyLevel(Btree *pBt, int level){
 ** of the database file used for locking (beginning at PENDING_BYTE,
 ** the first byte past the 1GB boundary, 0x40000000) needs to occur
 ** at the beginning of a page.
+**
+** If parameter nReserve is less than zero, then the number of reserved
+** bytes per page is left unchanged.
 */
 int sqlite3BtreeSetPageSize(Btree *pBt, int pageSize, int nReserve){
   if( pBt->pageSizeFixed ){
@@ -1904,6 +1900,7 @@ static void invalidateCursors(Btree *pBt){
 ** Print debugging information about all cursors to standard output.
 */
 void sqlite3BtreeCursorList(Btree *pBt){
+#ifndef SQLITE_OMIT_CURSOR
   BtCursor *pCur;
   for(pCur=pBt->pCursor; pCur; pCur=pCur->pNext){
     MemPage *pPage = pCur->pPage;
@@ -1914,6 +1911,7 @@ void sqlite3BtreeCursorList(Btree *pBt){
        pCur->isValid ? "" : " eof"
     );
   }
+#endif
 }
 #endif
 
@@ -2117,7 +2115,6 @@ int sqlite3BtreeCursor(
   pCur->pPrev = 0;
   pBt->pCursor = pCur;
   pCur->isValid = 0;
-  pCur->status = SQLITE_OK;
   *ppCur = pCur;
   return SQLITE_OK;
 
@@ -2344,9 +2341,7 @@ static int getPayload(
 ** the available payload.
 */
 int sqlite3BtreeKey(BtCursor *pCur, u32 offset, u32 amt, void *pBuf){
-  if( !pCur->isValid ){
-    return pCur->status;
-  }
+  assert( pCur->isValid );
   assert( pCur->pPage!=0 );
   assert( pCur->pPage->intKey==0 );
   assert( pCur->idx>=0 && pCur->idx<pCur->pPage->nCell );
@@ -2363,9 +2358,7 @@ int sqlite3BtreeKey(BtCursor *pCur, u32 offset, u32 amt, void *pBuf){
 ** the available payload.
 */
 int sqlite3BtreeData(BtCursor *pCur, u32 offset, u32 amt, void *pBuf){
-  if( !pCur->isValid ){
-    return pCur->status ? pCur->status : SQLITE_INTERNAL;
-  }
+  assert( pCur->isValid );
   assert( pCur->pPage!=0 );
   assert( pCur->idx>=0 && pCur->idx<pCur->pPage->nCell );
   return getPayload(pCur, offset, amt, pBuf, 1);
@@ -2603,9 +2596,6 @@ static int moveToRightmost(BtCursor *pCur){
 */
 int sqlite3BtreeFirst(BtCursor *pCur, int *pRes){
   int rc;
-  if( pCur->status ){
-    return pCur->status;
-  }
   rc = moveToRoot(pCur);
   if( rc ) return rc;
   if( pCur->isValid==0 ){
@@ -2625,9 +2615,6 @@ int sqlite3BtreeFirst(BtCursor *pCur, int *pRes){
 */
 int sqlite3BtreeLast(BtCursor *pCur, int *pRes){
   int rc;
-  if( pCur->status ){
-    return pCur->status;
-  }
   rc = moveToRoot(pCur);
   if( rc ) return rc;
   if( pCur->isValid==0 ){
@@ -2670,10 +2657,6 @@ int sqlite3BtreeLast(BtCursor *pCur, int *pRes){
 */
 int sqlite3BtreeMoveto(BtCursor *pCur, const void *pKey, i64 nKey, int *pRes){
   int rc;
-
-  if( pCur->status ){
-    return pCur->status;
-  }
   rc = moveToRoot(pCur);
   if( rc ) return rc;
   assert( pCur->pPage );
@@ -3274,7 +3257,7 @@ static int fillInCell(
 #endif
       if( rc ){
         releasePage(pToRelease);
-        clearCell(pPage, pCell);
+        /* clearCell(pPage, pCell); */
         return rc;
       }
       put4byte(pPrior, pgnoOvfl);
@@ -3873,7 +3856,8 @@ static int balance_nonroot(MemPage *pPage){
       pNew = apNew[i] = apOld[i];
       pgnoNew[i] = pgnoOld[i];
       apOld[i] = 0;
-      sqlite3pager_write(pNew->aData);
+      rc = sqlite3pager_write(pNew->aData);
+      if( rc ) goto balance_cleanup;
     }else{
       rc = allocatePage(pBt, &pNew, &pgnoNew[i], pgnoNew[i-1], 0);
       if( rc ) goto balance_cleanup;
@@ -4236,9 +4220,6 @@ int sqlite3BtreeInsert(
   unsigned char *oldCell;
   unsigned char *newCell = 0;
 
-  if( pCur->status ){
-    return pCur->status;  /* A rollback destroyed this cursor */
-  }
   if( pBt->inTrans!=TRANS_WRITE ){
     /* Must start a transaction before doing an insert */
     return pBt->readOnly ? SQLITE_READONLY : SQLITE_ERROR;
@@ -4310,9 +4291,6 @@ int sqlite3BtreeDelete(BtCursor *pCur){
   Btree *pBt = pCur->pBt;
 
   assert( pPage->isInit );
-  if( pCur->status ){
-    return pCur->status;  /* A rollback destroyed this cursor */
-  }
   if( pBt->inTrans!=TRANS_WRITE ){
     /* Must start a transaction before doing a delete */
     return pBt->readOnly ? SQLITE_READONLY : SQLITE_ERROR;
@@ -4338,7 +4316,8 @@ int sqlite3BtreeDelete(BtCursor *pCur){
   if( !pPage->leaf ){
     pgnoChild = get4byte(pCell);
   }
-  clearCell(pPage, pCell);
+  rc = clearCell(pPage, pCell);
+  if( rc ) return rc;
 
   if( !pPage->leaf ){
     /*
@@ -4410,9 +4389,7 @@ int sqlite3BtreeCreateTable(Btree *pBt, int *piTable, int flags){
     /* Must start a transaction first */
     return pBt->readOnly ? SQLITE_READONLY : SQLITE_ERROR;
   }
-  if( pBt->readOnly ){
-    return SQLITE_READONLY;
-  }
+  assert( !pBt->readOnly );
 
   /* It is illegal to create a table if any cursors are open on the
   ** database. This is because in auto-vacuum mode the backend may
@@ -4771,6 +4748,7 @@ int sqlite3BtreeFlags(BtCursor *pCur){
 ** is used for debugging and testing only.
 */
 #ifdef SQLITE_TEST
+#ifndef SQLITE_OMIT_BTREEPAGEDUMP
 static int btreePageDump(Btree *pBt, int pgno, int recursive, MemPage *pParent){
   int rc;
   MemPage *pPage;
@@ -4867,8 +4845,11 @@ static int btreePageDump(Btree *pBt, int pgno, int recursive, MemPage *pParent){
   fflush(stdout);
   return SQLITE_OK;
 }
+#endif
 int sqlite3BtreePageDump(Btree *pBt, int pgno, int recursive){
+#ifndef SQLITE_OMIT_BTREEPAGEDUMP
   return btreePageDump(pBt, pgno, recursive, 0);
+#endif
 }
 #endif
 

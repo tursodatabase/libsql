@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.180 2005/01/08 12:42:39 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.181 2005/01/11 10:25:08 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -935,12 +935,14 @@ static int pager_playback_one_page(Pager *pPager, OsFile *jfd, int useCksum){
     rc = sqlite3OsWrite(&pPager->fd, aData, pPager->pageSize);
   }
   if( pPg ){
-    /* No page should ever be rolled back that is in use, except for page
-    ** 1 which is held in use in order to keep the lock on the database
-    ** active.
+    /* No page should ever be explicitly rolled back that is in use, except
+    ** for page 1 which is held in use in order to keep the lock on the
+    ** database active. However such a page may be rolled back as a result
+    ** of an internal error resulting in an automatic call to
+    ** sqlite3pager_rollback().
     */
     void *pData;
-    assert( pPg->nRef==0 || pPg->pgno==1 );
+    /* assert( pPg->nRef==0 || pPg->pgno==1 ); */
     pData = PGHDR_TO_DATA(pPg);
     memcpy(pData, aData, pPager->pageSize);
     if( pPager->xDestructor ){  /*** FIX ME:  Should this be xReinit? ***/

@@ -1,0 +1,189 @@
+# 2001 October 12
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing for correct handling of I/O errors
+# such as writes failing because the disk is full.
+# 
+# The tests in this file use special facilities that are only
+# available in the SQLite test fixture.
+#
+# $Id: autovacuum_ioerr2.test,v 1.1 2005/01/11 10:25:07 danielk1977 Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+proc opendb {} {
+  catch {file delete -force test.db}
+  catch {file delete -force test.db-journal}
+  sqlite3 db test.db
+  execsql {pragma auto_vacuum = 1}
+  execsql {SELECT * FROM sqlite_master}
+}
+
+set ::go 1
+for {set n 1} {$go} {incr n} {
+  do_test autovacuum-ioerr2-1.$n.1 {
+    set ::sqlite_io_error_pending 0
+    db close
+    opendb
+    execsql {
+      CREATE TABLE abc(a);
+      INSERT INTO abc VALUES(randstr(1500,1500));
+    }
+    expr [file size test.db]/1024
+  } {4}
+  do_test autovacuum-ioerr2-1.$n.2 [subst {
+    set ::sqlite_io_error_pending $n
+  }] $n
+  do_test autovacuum-ioerr2-1.$n.3 {
+    set r [catch {db eval {
+      CREATE TABLE abc2(a);
+      BEGIN;
+      DELETE FROM abc;
+      INSERT INTO abc VALUES(randstr(1500,1500));
+      CREATE TABLE abc3(a);
+      COMMIT;
+    }} msg]
+    set ::go [expr {$::sqlite_io_error_pending<=0}]
+    expr {$::sqlite_io_error_pending>0 || $r!=0}
+  } {1}
+}
+set ::sqlite_io_error_pending 0
+
+set ::go 1
+for {set n 1} {$go} {incr n} {
+  do_test autovacuum-ioerr2-2.$n.1 {
+    set ::sqlite_io_error_pending 0
+    db close
+    opendb
+    execsql {
+      PRAGMA cache_size = 10;
+      BEGIN;
+      CREATE TABLE abc(a);
+      INSERT INTO abc VALUES(randstr(1100,1100)); -- Page 4 is overflow
+      INSERT INTO abc VALUES(randstr(1100,1100)); -- Page 5 is overflow
+    }
+    for {set i 0} {$i<150} {incr i} {
+      execsql {
+        INSERT INTO abc VALUES(randstr(100,100)); 
+      }
+    }
+    execsql COMMIT
+    expr [file size test.db]/1024
+  } {24}
+  do_test autovacuum-ioerr2-2.$n.2 [subst {
+    set ::sqlite_io_error_pending $n
+  }] $n
+  do_test autovacuum-ioerr2-2.$n.3 {
+    set r [catch {db eval {
+      BEGIN;
+      DELETE FROM abc WHERE length(a)>100;
+      UPDATE abc SET a = randstr(90,90);
+      CREATE TABLE abc3(a);
+      COMMIT;
+    }} msg]
+    set ::go [expr {$::sqlite_io_error_pending<=0}]
+    expr {$::sqlite_io_error_pending>0 || $r!=0}
+  } {1}
+}
+set ::sqlite_io_error_pending 0
+
+set ::go 1
+for {set n 1} {$go} {incr n} {
+  do_test autovacuum-ioerr2-3.$n.1 {
+    set ::sqlite_io_error_pending 0
+    db close
+    opendb
+    execsql {
+      CREATE TABLE abc(a);
+      CREATE TABLE abc2(b);
+    }
+  } {}
+  do_test autovacuum-ioerr2-3.$n.2 [subst {
+    set ::sqlite_io_error_pending $n
+  }] $n
+  do_test autovacuum-ioerr2-3.$n.3 {
+    set r [catch {db eval {
+      BEGIN;
+      INSERT INTO abc2 VALUES(10);
+      DROP TABLE abc;
+      COMMIT;
+      DROP TABLE abc2;
+    }} msg]
+    set ::go [expr {$::sqlite_io_error_pending<=0}]
+    expr {$::sqlite_io_error_pending>0 || $r!=0}
+  } {1}
+}
+set ::sqlite_io_error_pending 0
+
+do_test autovacuum-ioerr2.4.0 {
+  db close
+  opendb
+  execsql {
+    PRAGMA cache_size = 10;
+    BEGIN;
+    CREATE TABLE abc(a);
+    INSERT INTO abc VALUES(randstr(1100,1100)); -- Page 4 is overflow
+    INSERT INTO abc VALUES(randstr(1100,1100)); -- Page 5 is overflow
+  }
+  for {set i 0} {$i<2500} {incr i} {
+    execsql {
+      INSERT INTO abc VALUES(randstr(100,100)); 
+    }
+  }
+  execsql COMMIT
+  file copy -force test.db backup.db
+} {}
+
+proc opendb2 {} {
+  catch {file delete -force test.db}
+  catch {file delete -force test.db-journal}
+  file copy backup.db test.db
+  sqlite3 db test.db
+  execsql {select * from sqlite_master}
+  execsql {PRAGMA cache_size = 10}
+  return ""
+}
+
+set ::go 1
+for {set n 1} {$go} {incr n} {
+  do_test autovacuum-ioerr2-4.$n.1 {
+    set ::sqlite_io_error_pending 0
+    db close
+    opendb2
+  } {}
+  do_test autovacuum-ioerr2-4.$n.2 [subst {
+    set ::sqlite_io_error_pending $n
+  }] $n
+  do_test autovacuum-ioerr2-4.$n.3 {
+    set r [catch {db eval {
+      BEGIN;
+      DELETE FROM abc WHERE oid < 3;
+      UPDATE abc SET a = randstr(100,100) WHERE oid > 2300;
+      UPDATE abc SET a = randstr(1100,1100) WHERE oid = 
+          (select max(oid) from abc);
+      COMMIT;
+    }} msg]
+    set ::go [expr {$::sqlite_io_error_pending<=0}]
+    expr {$::sqlite_io_error_pending>0 || $r!=0}
+  } {1}
+}
+set ::sqlite_io_error_pending 0
+
+
+rename opendb ""
+db close
+catch {file delete -force test.db}
+catch {file delete -force test.db-journal}
+
+finish_test
+
+

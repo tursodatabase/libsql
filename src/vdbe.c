@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.437 2005/01/10 12:59:53 danielk1977 Exp $
+** $Id: vdbe.c,v 1.438 2005/01/11 10:25:08 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2565,12 +2565,18 @@ case OP_MoveGt: {
         pTos--;
         break;
       }
-      sqlite3BtreeMoveto(pC->pCursor, 0, (u64)iKey, &res);
+      rc = sqlite3BtreeMoveto(pC->pCursor, 0, (u64)iKey, &res);
+      if( rc!=SQLITE_OK ){
+        goto abort_due_to_error;
+      }
       pC->lastRecno = pTos->i;
       pC->recnoIsValid = res==0;
     }else{
       Stringify(pTos, db->enc);
-      sqlite3BtreeMoveto(pC->pCursor, pTos->z, pTos->n, &res);
+      rc = sqlite3BtreeMoveto(pC->pCursor, pTos->z, pTos->n, &res);
+      if( rc!=SQLITE_OK ){
+        goto abort_due_to_error;
+      }
       pC->recnoIsValid = 0;
     }
     pC->deferredMoveto = 0;
@@ -2579,7 +2585,10 @@ case OP_MoveGt: {
     sqlite3_search_count++;
     if( oc==OP_MoveGe || oc==OP_MoveGt ){
       if( res<0 ){
-        sqlite3BtreeNext(pC->pCursor, &res);
+        rc = sqlite3BtreeNext(pC->pCursor, &res);
+        if( rc!=SQLITE_OK ){
+          goto abort_due_to_error;
+        }
         pC->recnoIsValid = 0;
       }else{
         res = 0;
@@ -2800,12 +2809,14 @@ case OP_NotExists: {
     assert( pTos->flags & MEM_Int );
     assert( p->apCsr[i]->intKey );
     iKey = intToKey(pTos->i);
-    rx = sqlite3BtreeMoveto(pCrsr, 0, iKey, &res);
+    // rx = sqlite3BtreeMoveto(pCrsr, 0, iKey, &res);
+    rc = sqlite3BtreeMoveto(pCrsr, 0, iKey, &res);
     pC->lastRecno = pTos->i;
     pC->recnoIsValid = res==0;
     pC->nullRow = 0;
     pC->cacheValid = 0;
-    if( rx!=SQLITE_OK || res!=0 ){
+    // if( rx!=SQLITE_OK || res!=0 ){
+    if( res!=0 ){
       pc = pOp->p2 - 1;
       pC->recnoIsValid = 0;
     }
