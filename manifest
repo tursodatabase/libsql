@@ -1,5 +1,5 @@
-C Simplify\sthe\swhere.c\slogic\sby\sflipping\sexpression\sover\sso\sthat\sthe\scontrolling\nvariable\sis\salways\son\sthe\sleft.\s(CVS\s1838)
-D 2004-07-20T18:23:15
+C Minor\scoding\senhancements.\s(CVS\s1839)
+D 2004-07-21T02:53:30
 F Makefile.in 4a5e570a9e2d35b09c31b3cf01b78cea764ade4b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -33,7 +33,7 @@ F src/build.c a4b1e80b13c570c7c962f500fa58045450b5a0cd
 F src/date.c e1bb384a7856c18dce9cadb0afbe6934ba5ddb00
 F src/delete.c e81545e546f6bc87d7508a93a09ca70695265af3
 F src/encode.c a876af473d1d636faa3dca51c7571f2e007eea37
-F src/expr.c df21bde644eca66276eafe0c97734fc8f930f4ab
+F src/expr.c a4e8ac69c872f86bc207364be0e32d0638f61e90
 F src/func.c b163fb49efec999eb7bf982f7de5b9be388301f3
 F src/hash.c f0a2f22c2a7052d67053b5f4690ea3010bb3fb9f
 F src/hash.h 762d95f1e567664d1eafc1687de755626be962fb
@@ -74,7 +74,7 @@ F src/update.c b66b1896c9da54678ba3eff2bf0b4d291a95986a
 F src/utf.c f03535db72bfa09e24202ccdd245f21d2fc65f0a
 F src/util.c 2aacc79b7bf5df5859813dafd3bf3258f67a5234
 F src/vacuum.c b8546f4921719458cc537b9e736df52a8256399c
-F src/vdbe.c a88514694be86eca792dd4d291e766f3c1831876
+F src/vdbe.c 5a7d1ee9d7356df6b53be64c1776824a33f6f2fb
 F src/vdbe.h 75b241c02431b9c0f16eaa9cdbb34146c6287f52
 F src/vdbeInt.h 7160653a006b6d2c4a00d204112a095bdf842ab6
 F src/vdbeapi.c c5c6d8f162a9581dde497b1a4034f9a0bf54c355
@@ -237,7 +237,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 3c5aa850eeec5c75c5200a3707852cc5fc9e780b
-R 85614d781cba6751b913b133092132cd
+P ec8bfa3891dbf0f3172e31cf322974c03f9af59a
+R 9e5a169fd77b5347506f033f7c0bac3e
 U drh
-Z 550b1f0e24b844483d3dbfa3a8f89d17
+Z 16e953d85e2aa59a57853642a9ecf96b

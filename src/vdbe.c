@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.402 2004/07/19 17:25:25 drh Exp $
+** $Id: vdbe.c,v 1.403 2004/07/21 02:53:30 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -290,54 +290,43 @@ static Cursor *allocateCursor(Vdbe *p, int iCur){
 **
 */
 static void applyAffinity(Mem *pRec, char affinity, u8 enc){
-  switch( affinity ){
-    case SQLITE_AFF_INTEGER:
-    case SQLITE_AFF_NUMERIC:
-      if( 0==(pRec->flags&(MEM_Real|MEM_Int)) ){
-        /* pRec does not have a valid integer or real representation. 
-        ** Attempt a conversion if pRec has a string representation and
-        ** it looks like a number.
-        */
-        int realnum;
-        sqlite3VdbeMemNulTerminate(pRec);
-        if( pRec->flags&MEM_Str && sqlite3IsNumber(pRec->z, &realnum, enc) ){
-          if( realnum ){
-            Realify(pRec);
-          }else{
-            Integerify(pRec);
-          }
-        }
-      }
-
-      if( affinity==SQLITE_AFF_INTEGER ){
-        /* For INTEGER affinity, try to convert a real value to an int */
-        if( (pRec->flags&MEM_Real) && !(pRec->flags&MEM_Int) ){
-          pRec->i = pRec->r;
-          if( ((double)pRec->i)==pRec->r ){
-            pRec->flags |= MEM_Int;
-          }
-        }
-      }
-      break;
-
-    case SQLITE_AFF_TEXT:
-      /* Only attempt the conversion if there is an integer or real
-      ** representation (blob and NULL do not get converted) but no string
-      ** representation.
+  if( affinity==SQLITE_AFF_NONE ){
+    /* do nothing */
+  }else if( affinity==SQLITE_AFF_TEXT ){
+    /* Only attempt the conversion to TEXT if there is an integer or real
+    ** representation (blob and NULL do not get converted) but no string
+    ** representation.
+    */
+    if( 0==(pRec->flags&MEM_Str) && (pRec->flags&(MEM_Real|MEM_Int)) ){
+      sqlite3VdbeMemStringify(pRec, enc);
+    }
+    pRec->flags &= ~(MEM_Real|MEM_Int);
+  }else{
+    if( 0==(pRec->flags&(MEM_Real|MEM_Int)) ){
+      /* pRec does not have a valid integer or real representation. 
+      ** Attempt a conversion if pRec has a string representation and
+      ** it looks like a number.
       */
-      if( 0==(pRec->flags&MEM_Str) && (pRec->flags&(MEM_Real|MEM_Int)) ){
-        sqlite3VdbeMemStringify(pRec, enc);
+      int realnum;
+      sqlite3VdbeMemNulTerminate(pRec);
+      if( pRec->flags&MEM_Str && sqlite3IsNumber(pRec->z, &realnum, enc) ){
+        if( realnum ){
+          Realify(pRec);
+        }else{
+          Integerify(pRec);
+        }
       }
-      pRec->flags &= ~(MEM_Real|MEM_Int);
+    }
 
-      break;
-
-    case SQLITE_AFF_NONE:
-      /* Affinity NONE. Do nothing. */
-      break;
-
-    default:
-      assert(0);
+    if( affinity==SQLITE_AFF_INTEGER ){
+      /* For INTEGER affinity, try to convert a real value to an int */
+      if( (pRec->flags&MEM_Real) && !(pRec->flags&MEM_Int) ){
+        pRec->i = pRec->r;
+        if( ((double)pRec->i)==pRec->r ){
+          pRec->flags |= MEM_Int;
+        }
+      }
+    }
   }
 }
 
@@ -608,11 +597,7 @@ case OP_Goto: {
 ** with a fatal error.
 */
 case OP_Gosub: {
-  if( p->returnDepth>=sizeof(p->returnStack)/sizeof(p->returnStack[0]) ){
-    sqlite3SetString(&p->zErrMsg, "return address stack overflow", (char*)0);
-    p->rc = SQLITE_INTERNAL;
-    return SQLITE_ERROR;
-  }
+  assert( p->returnDepth<sizeof(p->returnStack)/sizeof(p->returnStack[0]) );
   p->returnStack[p->returnDepth++] = pc+1;
   pc = pOp->p2 - 1;
   break;
@@ -625,11 +610,7 @@ case OP_Gosub: {
 ** processing aborts with a fatal error.
 */
 case OP_Return: {
-  if( p->returnDepth<=0 ){
-    sqlite3SetString(&p->zErrMsg, "return address stack underflow", (char*)0);
-    p->rc = SQLITE_INTERNAL;
-    return SQLITE_ERROR;
-  }
+  assert( p->returnDepth>0 );
   p->returnDepth--;
   pc = p->returnStack[p->returnDepth] - 1;
   break;
@@ -658,9 +639,7 @@ case OP_Halt: {
   if( pOp->p1!=SQLITE_OK ){
     p->rc = pOp->p1;
     p->errorAction = pOp->p2;
-    if( pOp->p3 ){
-      sqlite3SetString(&p->zErrMsg, pOp->p3, (char*)0);
-    }
+    sqlite3SetString(&p->zErrMsg, pOp->p3, (char*)0);
     return SQLITE_ERROR;
   }else{
     p->rc = SQLITE_OK;
@@ -813,6 +792,7 @@ case OP_Variable: {
   assert( j>=0 && j<p->nVar );
 
   pTos++;
+  /* sqlite3VdbeMemCopyStatic(pTos, &p->apVar[j]); */
   memcpy(pTos, &p->apVar[j], sizeof(*pTos)-NBFS);
   pTos->xDel = 0;
   if( pTos->flags&(MEM_Str|MEM_Blob) ){
@@ -1297,15 +1277,15 @@ case OP_Function: {
 /* Opcode: ShiftLeft * * *
 **
 ** Pop the top two elements from the stack.  Convert both elements
-** to integers.  Push back onto the stack the top element shifted
-** left by N bits where N is the second element on the stack.
+** to integers.  Push back onto the stack the second element shifted
+** left by N bits where N is the top element on the stack.
 ** If either operand is NULL, the result is NULL.
 */
 /* Opcode: ShiftRight * * *
 **
 ** Pop the top two elements from the stack.  Convert both elements
-** to integers.  Push back onto the stack the top element shifted
-** right by N bits where N is the second element on the stack.
+** to integers.  Push back onto the stack the second element shifted
+** right by N bits where N is the top element on the stack.
 ** If either operand is NULL, the result is NULL.
 */
 case OP_BitAnd:
@@ -1322,8 +1302,8 @@ case OP_ShiftRight: {
     pTos->flags = MEM_Null;
     break;
   }
-  a = sqlite3VdbeIntValue(pTos);
-  b = sqlite3VdbeIntValue(pNos);
+  a = sqlite3VdbeIntValue(pNos);
+  b = sqlite3VdbeIntValue(pTos);
   switch( pOp->opcode ){
     case OP_BitAnd:      a &= b;     break;
     case OP_BitOr:       a |= b;     break;
@@ -1366,8 +1346,8 @@ case OP_AddImm: {
 case OP_ForceInt: {
   int v;
   assert( pTos>=p->aStack );
-  if( (pTos->flags & (MEM_Int|MEM_Real))==0 && ((pTos->flags & MEM_Str)==0 
-      || sqlite3IsNumber(pTos->z, 0, db->enc)==0) ){
+  applyAffinity(pTos, SQLITE_AFF_INTEGER, db->enc);
+  if( (pTos->flags & (MEM_Int|MEM_Real))==0 ){
     Release(pTos);
     pTos--;
     pc = pOp->p2 - 1;
@@ -1400,48 +1380,18 @@ case OP_ForceInt: {
 */
 case OP_MustBeInt: {
   assert( pTos>=p->aStack );
-  if( pTos->flags & MEM_Int ){
-    /* Do nothing */
-  }else if( pTos->flags & MEM_Real ){
-    int i = (int)pTos->r;
-    double r = (double)i;
-    if( r!=pTos->r ){
-      goto mismatch;
+  applyAffinity(pTos, SQLITE_AFF_INTEGER, db->enc);
+  if( (pTos->flags & MEM_Int)==0 ){
+    if( pOp->p2==0 ){
+      rc = SQLITE_MISMATCH;
+      goto abort_due_to_error;
+    }else{
+      if( pOp->p1 ) popStack(&pTos, 1);
+      pc = pOp->p2 - 1;
     }
-    pTos->i = i;
-  }else if( pTos->flags & MEM_Str ){
-    i64 v;
-    if( sqlite3VdbeChangeEncoding(pTos, SQLITE_UTF8)
-       || sqlite3VdbeMemNulTerminate(pTos) ){
-      goto no_mem;
-    }
-    if( !sqlite3atoi64(pTos->z, &v) ){
-      double r;
-      if( !sqlite3IsNumber(pTos->z, 0, SQLITE_UTF8) ){
-        goto mismatch;
-      }
-      Realify(pTos);
-      v = (int)pTos->r;
-      r = (double)v;
-      if( r!=pTos->r ){
-        goto mismatch;
-      }
-    }
-    pTos->i = v;
   }else{
-    goto mismatch;
-  }
-  Release(pTos);
-  pTos->flags = MEM_Int;
-  break;
-
-mismatch:
-  if( pOp->p2==0 ){
-    rc = SQLITE_MISMATCH;
-    goto abort_due_to_error;
-  }else{
-    if( pOp->p1 ) popStack(&pTos, 1);
-    pc = pOp->p2 - 1;
+    Release(pTos);
+    pTos->flags = MEM_Int;
   }
   break;
 }

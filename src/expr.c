@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.151 2004/07/19 00:39:45 drh Exp $
+** $Id: expr.c,v 1.152 2004/07/21 02:53:30 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1167,16 +1167,11 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
     case TK_REM:
     case TK_BITAND:
     case TK_BITOR:
-    case TK_SLASH: {
-      sqlite3ExprCode(pParse, pExpr->pLeft);
-      sqlite3ExprCode(pParse, pExpr->pRight);
-      sqlite3VdbeAddOp(v, op, 0, 0);
-      break;
-    }
+    case TK_SLASH:
     case TK_LSHIFT:
     case TK_RSHIFT: {
-      sqlite3ExprCode(pParse, pExpr->pRight);
       sqlite3ExprCode(pParse, pExpr->pLeft);
+      sqlite3ExprCode(pParse, pExpr->pRight);
       sqlite3VdbeAddOp(v, op, 0, 0);
       break;
     }
