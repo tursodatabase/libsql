@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.83 2003/05/02 14:32:13 drh Exp $
+** $Id: insert.c,v 1.84 2003/05/16 02:30:27 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -668,9 +668,10 @@ void sqliteGenerateConstraintChecks(
     if( onError==OE_None ) continue;
     if( overrideError!=OE_Default ){
       onError = overrideError;
-    }else if( onError==OE_Default ){
+    }else if( pParse->db->onError!=OE_Default ){
       onError = pParse->db->onError;
-      if( onError==OE_Default ) onError = OE_Abort;
+    }else if( onError==OE_Default ){
+      onError = OE_Abort;
     }
     if( onError==OE_Replace && pTab->aCol[i].zDflt==0 ){
       onError = OE_Abort;
@@ -718,9 +719,10 @@ void sqliteGenerateConstraintChecks(
     onError = pTab->keyConf;
     if( overrideError!=OE_Default ){
       onError = overrideError;
-    }else if( onError==OE_Default ){
+    }else if( pParse->db->onError!=OE_Default ){
       onError = pParse->db->onError;
-      if( onError==OE_Default ) onError = OE_Abort;
+    }else if( onError==OE_Default ){
+      onError = OE_Abort;
     }
     if( onError!=OE_Replace ){
       if( isUpdate ){
@@ -782,9 +784,10 @@ void sqliteGenerateConstraintChecks(
     if( onError==OE_None ) continue;  /* pIdx is not a UNIQUE index */
     if( overrideError!=OE_Default ){
       onError = overrideError;
-    }else if( onError==OE_Default ){
+    }else if( pParse->db->onError!=OE_Default ){
       onError = pParse->db->onError;
-      if( onError==OE_Default ) onError = OE_Abort;
+    }else if( onError==OE_Default ){
+      onError = OE_Abort;
     }
 
     /* Check to see if the new index entry will be unique */

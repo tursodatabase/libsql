@@ -1,5 +1,5 @@
-C Removed\s3rd\s(file)\scolumn\sfrom\sPRAGMA\sdatabase_list\suntil\stests\sare\sfixed.\s(CVS\s974)
-D 2003-05-13T08:01:34
+C Make\ssure\sthe\sON\sCONFLICT\sclause\son\sa\sBEGIN\soverrides\sthe\sconflict\sresolution\nspecified\sby\san\sindex.\s\sThis\sfixes\sa\sbug\sreported\son\sthe\snewsgroup.\s(CVS\s975)
+D 2003-05-16T02:30:27
 F Makefile.in 004acec253ecdde985c8ecd5b7c9accdb210378f
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -32,7 +32,7 @@ F src/expr.c a666ef5220ca90ebcf40c8ccc783966a345a7616
 F src/func.c 33bbce6acaf9578ac99aa1f689968ccaf2ce43a2
 F src/hash.c 058f077c1f36f266581aa16f907a3903abf64aa3
 F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
-F src/insert.c c230a8c216f6788095d46f0e270406a93aae45af
+F src/insert.c fac16589e644b2d4bb615c5e782bcfd0453a052a
 F src/main.c 16e68905793b118552a9cf43a9f77ca1d9e395a9
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
 F src/os.c 94b618c0c0a76210e53857d77c96d2f042dc33b1
@@ -73,8 +73,8 @@ F test/btree3.test e597fb59be2ac0ea69c62aaa2064e998e528b665
 F test/btree3rb.test 127efcf5cdfcc352054e7db12622b01cdd8b36ac
 F test/btree4.test fa955a3d7a8bc91d6084b7f494f9e5d1bdfb15b6
 F test/btree4rb.test ae6f0438512edcb45cf483471cd6070a765963a9
-F test/capi2.test fb94bed9e236074c5e255cfd25e3e32344e24855
-F test/conflict.test 80cf3780c8686b92db4ce0f60bca46a000537327
+F test/capi2.test dddfe84d41c876e5339efae41f8e688760454fba
+F test/conflict.test 70d38ff29b532813320c17740738a556ee0ec95d
 F test/copy.test 73df5ed3112e858e006a8b7ddb4c9bab6a25d0fb
 F test/delete.test 1586a00574e699a9913bc3403261813e8a93e6b9
 F test/expr.test 48bc6400627532ec97e233809e33d336468bc84c
@@ -92,7 +92,7 @@ F test/limit.test 9ffb965a0f5bf7152187ef3d8d1249b96e5620bf
 F test/lock.test 388a3a10962d2d571c0c1821cc35bf069ee73473
 F test/main.test 6a851b5992c4881a725a3d9647e629199df8de9d
 F test/malloc.test 7ba32a9ebd3aeed52ae4aaa6d42ca37e444536fd
-F test/memdb.test 3acf1453a5705d1aa524d3027667ca3d9c77c69f
+F test/memdb.test ab1d16eb3179272016b1fe5fa3988e9c2f6c5594
 F test/memleak.test a18e6810cae96d2f6f5136920267adbefc8e1e90
 F test/minmax.test b54ac3bc45460a4976b08ef363e05c032418726e
 F test/misc1.test 865c907df58195364eaf2e69426e9674bc8d1a8c
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P f267a8a4ff52eb7ee3ac20a8e3a8ab5fe19e445d
-R 4c116ad646a5d45f20337623549b2e99
-U jplyon
-Z d2079033f7e558e2136afb4a88150abf
+P 4183cf97676e64d19978941a7c4a3fe521fcb1fb
+R ceda8451adba59b6260a922bc13b596c
+U drh
+Z ca1fb5800fb2c1a110aee865c12a3008
