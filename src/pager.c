@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.63 2003/01/02 14:43:57 drh Exp $
+** @(#) $Id: pager.c,v 1.64 2003/01/03 02:04:27 drh Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -444,7 +444,7 @@ static int pager_playback(Pager *pPager){
   if( rc!=SQLITE_OK ){
     goto end_playback;
   }
-  if( nRec <= sizeof(aMagic)+sizeof(Pgno) ){
+  if( nRec < sizeof(aMagic)+sizeof(Pgno) ){
     goto end_playback;
   }
   nRec = (nRec - (sizeof(aMagic)+sizeof(Pgno))) / sizeof(PageRecord);

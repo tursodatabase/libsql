@@ -1,5 +1,5 @@
-C Code\soptimizations\sto\shelp\sthe\slibrary\srun\sfaster.\s(CVS\s808)
-D 2003-01-02T14:43:56
+C Allow\sthe\srollback\sjournal\sto\sbe\sempty\sexcept\sfor\sits\sheader.\nTicket\s#212.\s(CVS\s809)
+D 2003-01-03T02:04:27
 F Makefile.in 868c17a1ae1c07603d491274cc8f86c04acf2a1e
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -32,7 +32,7 @@ F src/main.c cee05c2ba23b5e78f9671f319dbd68e2130e0f68
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
 F src/os.c 740022806209e44cab0abddfb1fee65c77702e21
 F src/os.h 09fd96b4d733aae2f3b98b2ae9ceea40b8fd780d
-F src/pager.c 255c5d14ff489071021bf1374654836f2516abb3
+F src/pager.c e7d05fa23a61f109c2276bb05be7a8d6721980f1
 F src/pager.h 540833e8cb826b80ce2e39aa917deee5e12db626
 F src/parse.y 469c9636ff713e63c00234662209f11668671ae9
 F src/printf.c 5c50fc1da75c8f5bf432b1ad17d91d6653acd167
@@ -152,7 +152,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P a1c071ea18766932c90275c704e078134c67be68
-R 007ca29b327fd24b8c788dde75e1f089
+P db745e87dc26cf1a35cdcec18f4b659742e14120
+R a2eb3af8e1d5fb0a64abc7b1644d24dd
 U drh
-Z 65610790d7e7e89a7d7be7a3a45c0c23
+Z 3fb10791064333a0f71d6fcfe3547d9c
