@@ -12,7 +12,7 @@
 # focus of this file is testing the LIMIT ... OFFSET ... clause
 #  of SELECT statements.
 #
-# $Id: limit.test,v 1.17 2004/11/22 08:43:32 danielk1977 Exp $
+# $Id: limit.test,v 1.18 2004/11/22 13:35:42 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -219,6 +219,7 @@ do_test limit-6.8 {
 # Make sure LIMIT works well with compound SELECT statements.
 # Ticket #393
 #
+ifcapable compound {
 do_test limit-7.1.1 {
   catchsql {
     SELECT x FROM t2 LIMIT 5 UNION ALL SELECT a FROM t6;
@@ -295,6 +296,7 @@ do_test limit-7.12 {
        ORDER BY 1 DESC LIMIT 1 OFFSET 1;
   }
 } {30}
+} ;# ifcapable compound
 
 # Tests for limit in conjunction with distinct.  The distinct should
 # occur before both the limit and the offset.  Ticket #749.

@@ -12,10 +12,15 @@
 # focus of this file is testing UNION, INTERSECT and EXCEPT operators
 # in SELECT statements.
 #
-# $Id: select4.test,v 1.16 2004/05/27 17:22:56 drh Exp $
+# $Id: select4.test,v 1.17 2004/11/22 13:35:42 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+# Most tests in this file depend on compound-select. But there are a couple
+# right at the end that test DISTINCT, so we cannot omit the entire file.
+#
+ifcapable compound {
 
 # Build some test data
 #
@@ -467,6 +472,8 @@ do_test select4-7.4 {
     ORDER BY n LIMIT 2
   }
 } {n 1 log 0 n 2 log 1}
+
+} ;# ifcapable compound
 
 # Make sure DISTINCT works appropriately on TEXT and NUMERIC columns.
 do_test select4-8.1 {

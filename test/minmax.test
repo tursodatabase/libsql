@@ -13,7 +13,7 @@
 # aggregate min() and max() functions and which are handled as
 # as a special case.
 #
-# $Id: minmax.test,v 1.13 2004/08/20 18:34:20 drh Exp $
+# $Id: minmax.test,v 1.14 2004/11/22 13:35:42 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -122,6 +122,7 @@ do_test minmax-3.3 {
   set sqlite_search_count
 } {0}
 
+ifcapable compound {
 do_test minmax-4.1 {
   execsql {
     SELECT coalesce(min(x+0),-1), coalesce(max(x+0),-1) FROM
@@ -142,6 +143,7 @@ do_test minmax-4.3 {
     GROUP BY y ORDER BY y;
   }
 } {1 1 1 2 2 3 3 4 5 4 8 9 5 5 6 6 0 1}
+} ;# ifcapable compound
 
 # Make sure the min(x) and max(x) optimizations work on empty tables
 # including empty tables with indices. Ticket #296.
@@ -261,6 +263,7 @@ do_test minmax-8.2 {
 # Ticket #658:  Test the min()/max() optimization when the FROM clause
 # is a subquery.
 #
+ifcapable compound {
 do_test minmax-9.1 {
   execsql {
     SELECT max(rowid) FROM (
@@ -275,6 +278,7 @@ do_test minmax-9.2 {
     )
   }
 } {{}}
+} ;# ifcapable compound
 
 # If there is a NULL in an aggregate max() or min(), ignore it.  An
 # aggregate min() or max() will only return NULL if all values are NULL.

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing VIEW statements.
 #
-# $Id: view.test,v 1.20 2004/11/22 08:43:32 danielk1977 Exp $
+# $Id: view.test,v 1.21 2004/11/22 13:35:42 danielk1977 Exp $
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
@@ -146,6 +146,8 @@ do_test view-3.3 {
     SELECT * FROM v1 LIMIT 1
   }
 } {xyz 2 pqr 7 c-b 1}
+
+ifcapable compound {
 do_test  view-3.4 {
   execsql2 {
     CREATE VIEW v3 AS SELECT a FROM t1 UNION SELECT b FROM t1 ORDER BY b;
@@ -162,6 +164,7 @@ do_test  view-3.5 {
     SELECT y FROM v4 ORDER BY y LIMIT 4;
   }
 } {y 2 y 3 y 5 y 6}
+} ;# ifcapable compound
 
 
 do_test view-4.1 {

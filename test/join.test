@@ -12,7 +12,7 @@
 #
 # This file implements tests for joins, including outer joins.
 #
-# $Id: join.test,v 1.12 2004/11/22 08:43:32 danielk1977 Exp $
+# $Id: join.test,v 1.13 2004/11/22 13:35:42 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -369,6 +369,7 @@ do_test join-8.3 {
 # Both queries should generate the same results so the answer should
 # be an empty set.
 #
+ifcapable compound {
 do_test join-9.1 {
   execsql {
     BEGIN;
@@ -393,5 +394,6 @@ do_test join-9.2 {
   }
 } {}
 } ;# ifcapable view
+} ;# ifcapable compound
 
 finish_test

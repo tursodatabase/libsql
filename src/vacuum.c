@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.34 2004/11/20 19:18:56 drh Exp $
+** $Id: vacuum.c,v 1.35 2004/11/22 13:35:41 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -175,14 +175,17 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   */
   rc = execExecSql(db, 
       "SELECT 'CREATE TABLE vacuum_db.' || substr(sql,14,100000000) "
-      "  FROM sqlite_master WHERE type='table' "
-      "UNION ALL "
-      "SELECT 'CREATE INDEX vacuum_db.' || substr(sql,14,100000000) "
-      "  FROM sqlite_master WHERE sql LIKE 'CREATE INDEX %' "
-      "UNION ALL "
+      "  FROM sqlite_master WHERE type='table'");
+  if( rc!=SQLITE_OK ) goto end_of_vacuum;
+  rc = execExecSql(db, 
+      "SELECT 'CREATE INDEX vacuum_db.' || substr(sql,14,100000000)"
+      "  FROM sqlite_master WHERE sql LIKE 'CREATE INDEX %' ");
+  if( rc!=SQLITE_OK ) goto end_of_vacuum;
+  rc = execExecSql(db, 
       "SELECT 'CREATE UNIQUE INDEX vacuum_db.' || substr(sql,21,100000000) "
-      "  FROM sqlite_master WHERE sql LIKE 'CREATE UNIQUE INDEX %'"
-      "UNION ALL "
+      "  FROM sqlite_master WHERE sql LIKE 'CREATE UNIQUE INDEX %'");
+  if( rc!=SQLITE_OK ) goto end_of_vacuum;
+  rc = execExecSql(db, 
       "SELECT 'CREATE VIEW vacuum_db.' || substr(sql,13,100000000) "
       "  FROM sqlite_master WHERE type='view'"
   );

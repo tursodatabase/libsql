@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the SELECT statement.
 #
-# $Id: select1.test,v 1.36 2004/08/20 18:34:20 drh Exp $
+# $Id: select1.test,v 1.37 2004/11/22 13:35:42 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -434,6 +434,8 @@ do_test select1-6.9 {
          ORDER BY A.f1, B.f1}} msg]
   lappend v $msg
 } {0 {A.f1 11 B.f1 11 A.f1 11 B.f1 33 A.f1 33 B.f1 11 A.f1 33 B.f1 33}}
+
+ifcapable compound {
 do_test select1-6.10 {
   set v [catch {execsql2 {
     SELECT f1 FROM test1 UNION SELECT f2 FROM test1
@@ -448,6 +450,7 @@ do_test select1-6.11 {
   }} msg]
   lappend v $msg
 } {0 {f2+100 11 f2+100 33 f2+100 122 f2+100 144}}
+} ;#ifcapable compound
 
 do_test select1-7.1 {
   set v [catch {execsql {
@@ -455,12 +458,14 @@ do_test select1-7.1 {
   }} msg]
   lappend v $msg
 } {1 {near ";": syntax error}}
+ifcapable compound {
 do_test select1-7.2 {
   set v [catch {execsql {
      SELECT f1 FROM test1 UNION SELECT WHERE;
   }} msg]
   lappend v $msg
 } {1 {near "WHERE": syntax error}}
+} ;# ifcapable compound
 do_test select1-7.3 {
   set v [catch {execsql {SELECT f1 FROM test1 as 'hi', test2 as}} msg]
   lappend v $msg
@@ -713,38 +718,50 @@ do_test select1-12.4 {
   execsql {
     DELETE FROM t3;
     INSERT INTO t3 VALUES(1,2);
+  }
+} {}
+
+ifcapable compound {
+do_test select1-12.5 {
+  execsql {
     SELECT * FROM t3 UNION SELECT 3 AS 'a', 4 ORDER BY a;
   }
 } {1 2 3 4}
-do_test select1-12.5 {
+
+do_test select1-12.6 {
   execsql {
     SELECT 3, 4 UNION SELECT * FROM t3;
   }
 } {1 2 3 4}
-do_test select1-12.6 {
+} ;# ifcapable compound
+
+do_test select1-12.7 {
   execsql {
     SELECT * FROM t3 WHERE a=(SELECT 1);
   }
 } {1 2}
-do_test select1-12.7 {
+do_test select1-12.8 {
   execsql {
     SELECT * FROM t3 WHERE a=(SELECT 2);
   }
 } {}
-do_test select1-12.8 {
+
+ifcapable compound {
+do_test select1-12.9 {
   execsql2 {
     SELECT x FROM (
       SELECT a,b FROM t3 UNION SELECT a AS 'x', b AS 'y' FROM t4 ORDER BY a,b
     ) ORDER BY x;
   }
 } {x 1 x 3}
-do_test select1-12.9 {
+do_test select1-12.10 {
   execsql2 {
     SELECT z.x FROM (
       SELECT a,b FROM t3 UNION SELECT a AS 'x', b AS 'y' FROM t4 ORDER BY a,b
     ) AS 'z' ORDER BY x;
   }
 } {z.x 1 z.x 3}
+} ;# ifcapable compound
 
 
 finish_test

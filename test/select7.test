@@ -10,11 +10,13 @@
 # focus of this file is testing compute SELECT statements and nested
 # views.
 #
-# $Id: select7.test,v 1.2 2004/11/22 08:43:32 danielk1977 Exp $
+# $Id: select7.test,v 1.3 2004/11/22 13:35:42 danielk1977 Exp $
 
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+ifcapable compound {
 
 # A 3-way INTERSECT.  Ticket #875
 do_test select7-1.1 {
@@ -47,6 +49,8 @@ do_test select7-2.1 {
   }
 } {1 1}
 } ;# ifcapable view
+
+} ;# ifcapable compound
 
 
 finish_test

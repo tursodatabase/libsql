@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach.test,v 1.30 2004/11/22 08:43:32 danielk1977 Exp $
+# $Id: attach.test,v 1.31 2004/11/22 13:35:42 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -505,6 +505,7 @@ ifcapable {!trigger} {
 # fail and the query will abort but we will have already output some
 # results.  When the query is retried, the results will be repeated.
 #
+ifcapable compound {
 do_test attach-4.8 {
   execsql {
     ATTACH DATABASE 'test2.db' AS db2;
@@ -520,6 +521,16 @@ do_test attach-4.9 {
     SELECT * FROM db2.t4 UNION ALL SELECT * FROM main.t4;
   }
 } {db2.6 db2.13 main.11 main.15}
+} ;# ifcapable compound
+
+ifcapable !compound {
+  ifcapable {!trigger} {execsql {INSERT INTO main.t4 VALUES('main.15')}}
+  execsql {
+    ATTACH DATABASE 'test2.db' AS db2;
+    INSERT INTO db2.t3 VALUES(13,14);
+    INSERT INTO main.t3 VALUES(15,16);
+  } 
+} ;# ifcapable !compound
 
 ifcapable view {
 do_test attach-4.10 {
