@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.62 2002/02/19 15:00:08 drh Exp $
+** $Id: select.c,v 1.63 2002/02/19 22:42:05 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -783,22 +783,28 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
 
   /* Begin generating code
   */
-  base = pParse->nTab;
-  eList.nExpr = 1;
-  memset(&eListItem, 0, sizeof(eListItem));
-  eList.a = &eListItem;
-  eList.a[0].pExpr = pExpr;
+  if( !pParse->schemaVerified && (pParse->db->flags & SQLITE_InTrans)==0 ){
+    sqliteVdbeAddOp(v, OP_VerifyCookie, pParse->db->schema_cookie, 0);
+    pParse->schemaVerified = 1;
+  }
   openOp = pTab->isTemp ? OP_OpenAux : OP_Open;
+  base = pParse->nTab;
   sqliteVdbeAddOp(v, openOp, base, pTab->tnum);
+  sqliteVdbeChangeP3(v, -1, pTab->zName, P3_STATIC);
   if( pIdx==0 ){
     sqliteVdbeAddOp(v, seekOp, base, 0);
   }else{
     sqliteVdbeAddOp(v, openOp, base+1, pIdx->tnum);
+    sqliteVdbeChangeP3(v, -1, pIdx->zName, P3_STATIC);
     sqliteVdbeAddOp(v, seekOp, base+1, 0);
     sqliteVdbeAddOp(v, OP_IdxRecno, base+1, 0);
     sqliteVdbeAddOp(v, OP_Close, base+1, 0);
     sqliteVdbeAddOp(v, OP_MoveTo, base, 0);
   }
+  eList.nExpr = 1;
+  memset(&eListItem, 0, sizeof(eListItem));
+  eList.a = &eListItem;
+  eList.a[0].pExpr = pExpr;
   cont = sqliteVdbeMakeLabel(v);
   selectInnerLoop(pParse, &eList, base, 1, 0, -1, eDest, iParm, cont, cont);
   sqliteVdbeResolveLabel(v, cont);
@@ -1011,6 +1017,7 @@ int sqliteSelect(
   ** in the result set.
   */
   if( simpleMinMaxQuery(pParse, p, eDest, iParm) ){
+    rc = 0;
     goto select_end;
   }
 

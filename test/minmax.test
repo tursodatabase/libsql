@@ -1,0 +1,126 @@
+# 2001 September 15
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing SELECT statements that contain
+# aggregate min() and max() functions and which are handled as
+# as a special case.
+#
+# $Id: minmax.test,v 1.1 2002/02/19 22:42:06 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+do_test minmax-1.0 {
+  execsql {
+    BEGIN;
+    CREATE TABLE t1(x, y);
+    INSERT INTO t1 VALUES(1,1);
+    INSERT INTO t1 VALUES(2,2);
+    INSERT INTO t1 VALUES(3,2);
+    INSERT INTO t1 VALUES(4,3);
+    INSERT INTO t1 VALUES(5,3);
+    INSERT INTO t1 VALUES(6,3);
+    INSERT INTO t1 VALUES(7,3);
+    INSERT INTO t1 VALUES(8,4);
+    INSERT INTO t1 VALUES(9,4);
+    INSERT INTO t1 VALUES(10,4);
+    INSERT INTO t1 VALUES(11,4);
+    INSERT INTO t1 VALUES(12,4);
+    INSERT INTO t1 VALUES(13,4);
+    INSERT INTO t1 VALUES(14,4);
+    INSERT INTO t1 VALUES(15,4);
+    INSERT INTO t1 VALUES(16,5);
+    INSERT INTO t1 VALUES(17,5);
+    INSERT INTO t1 VALUES(18,5);
+    INSERT INTO t1 VALUES(19,5);
+    INSERT INTO t1 VALUES(20,5);
+    COMMIT;
+    SELECT DISTINCT y FROM t1 ORDER BY y;
+  }
+} {1 2 3 4 5}
+
+do_test minmax-1.1 {
+  set sqlite_search_count 0
+  execsql {SELECT min(x) FROM t1}
+} {1}
+do_test minmax-1.2 {
+  set sqlite_search_count
+} {19}
+do_test minmax-1.3 {
+  set sqlite_search_count 0
+  execsql {SELECT max(x) FROM t1}
+} {20}
+do_test minmax-1.4 {
+  set sqlite_search_count
+} {19}
+do_test minmax-1.5 {
+  execsql {CREATE INDEX t1i1 ON t1(x)}
+  set sqlite_search_count 0
+  execsql {SELECT min(x) FROM t1}
+} {1}
+do_test minmax-1.6 {
+  set sqlite_search_count
+} {1}
+do_test minmax-1.7 {
+  set sqlite_search_count 0
+  execsql {SELECT max(x) FROM t1}
+} {20}
+do_test minmax-1.8 {
+  set sqlite_search_count
+} {1}
+do_test minmax-1.9 {
+  set sqlite_search_count 0
+  execsql {SELECT max(y) FROM t1}
+} {5}
+do_test minmax-1.10 {
+  set sqlite_search_count
+} {19}
+
+do_test minmax-2.0 {
+  execsql {
+    CREATE TABLE t2(a INTEGER PRIMARY KEY, b);
+    INSERT INTO t2 SELECT * FROM t1;
+  }
+  set sqlite_search_count 0
+  execsql {SELECT min(a) FROM t2}
+} {1}
+do_test minmax-2.1 {
+  set sqlite_search_count
+} {0}
+do_test minmax-2.2 {
+  set sqlite_search_count 0
+  execsql {SELECT max(a) FROM t2}
+} {20}
+do_test minmax-2.3 {
+  set sqlite_search_count
+} {0}
+
+do_test minmax-3.0 {
+  execsql {INSERT INTO t2 VALUES((SELECT max(a) FROM t2)+1,999)}
+  set sqlite_search_count 0
+  execsql {SELECT max(a) FROM t2}
+} {21}
+do_test minmax-3.1 {
+  set sqlite_search_count
+} {0}
+do_test minmax-3.2 {
+  execsql {INSERT INTO t2 VALUES((SELECT max(a) FROM t2)+1,999)}
+  set sqlite_search_count 0
+  execsql {
+    SELECT b FROM t2 WHERE a=(SELECT max(a) FROM t2)
+  }
+} {999}
+do_test minmax-3.3 {
+  set sqlite_search_count
+} {0}
+
+
+finish_test

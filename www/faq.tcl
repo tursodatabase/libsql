@@ -1,7 +1,7 @@
 #
 # Run this script to generated a faq.html output file
 #
-set rcsid {$Id: faq.tcl,v 1.7 2002/01/22 03:13:43 drh Exp $}
+set rcsid {$Id: faq.tcl,v 1.8 2002/02/19 22:42:06 drh Exp $}
 
 puts {<html>
 <head>
@@ -27,60 +27,39 @@ proc faq {question answer} {
 faq {
   How do I create an AUTOINCREMENT field.
 } {
-  SQLite does not support AUTOINCREMENT.  If you need a unique key for
-  a new entry in a table, you can create an auxiliary table
-  with a single entry that holds the next available value for that key.
-  Like this:
+  <p>Short answer: A column declared INTEGER PRIMARY KEY will
+  autoincrement.</p>
+
+  <p>Here is the long answer:
+  Beginning with version SQLite 2.3.4, If you declare a column of
+  a table to be INTEGER PRIMARY KEY, then whenever you insert a NULL
+  into that column of the table, the NULL is automatically converted
+  into an integer which is one greater than the largest value of that
+  column over all other rows in the table, or 1 if the table is empty.
+  For example, suppose you have a table like this:
 <blockquote><pre>
-CREATE TABLE counter(cnt);
-INSERT INTO counter VALUES(1);
-</pre></blockquote>
-  Once you have a counter set up, you can generate a unique key as follows:
-<blockquote><pre>
-BEGIN TRANSACTION;
-SELECT cnt FROM counter;
-UPDATE counter SET cnt=cnt+1;
-COMMIT;
-</pre></blockquote>
-  There are other ways of simulating the effect of AUTOINCREMENT but
-  this approach seems to be the easiest and most efficient.
-
-  <p><i>New in SQLite version 2.2.0:</i>
-  If one of the columns in a table has type INTEGER PRIMARY KEY and
-  you do an INSERT on that table that does not specify a value for
-  the primary key, then a unique random number is inserted automatically
-  in that column.  This automatically generated key is random, not 
-  sequential, but you can still use it as a unique identifier.</p>
-
-  <p>Here is an example of how the INTEGER PRIMARY KEY feature can be
-  used:</p>
-
-  <blockquote><pre>
-CREATE TABLE ex2(
-  cnum INTEGER PRIMARY KEY,
-  name TEXT,
-  email TEXT
+CREATE TABLE t1(
+  a INTEGER PRIMARY KEY,
+  b INTEGER
 );
-INSERT INTO ex2(name,email) VALUES('drh','drh@hwaci.com');
-INSERT INTO ex2(name,email) VALUES('alle','alle@hwaci.com');
-SELECT * FROM ex1;
 </pre></blockquote>
-
-  <p>Notice that the primary key column <b>cnum</b> is not specified on
-  the INSERT statements.  The output of the SELECT on the last line will
-  be something like this:</p>
-
-  <blockquote>
-     1597027670|drh|drh@hwaci.com<br>
-     1597027853|alle|alle@hwaci.com
-  </blockquote>
-
-  <p>The randomly generated keys in this case are 1597027670 and
-  1597027853.  You will probably get different keys every time you
-  try this.  The keys will often be ascending, but this is not always
-  the case and you cannot count on that behavior.  The keys will never
-  be sequential.  If you need sequential keys, use the counter implemention
-  described first.</p>
+  <p>With this table, the statement</p>
+<blockquote><pre>
+INSERT INTO t1 VALUES(NULL,123);
+</pre></blockquote>
+  <p>is logically equivalent to saying:</p>
+<blockquote><pre>
+INSERT INTO t1 VALUES((SELECT max(a) FROM t1)+1,123);
+</pre></blockquote>
+  <p>For SQLite version 2.2.0 through 2.3.3, if you insert a NULL into
+  an INTEGER PRIMARY KEY column, the NULL will be changed to a unique
+  integer, but it will a semi-random integer.  Unique keys generated this
+  way will not be sequential.  For SQLite version 2.3.4 and beyond, the
+  unique keys will be sequential until the largest key reaches a value
+  of 2147483647.  That is the largest 32-bit signed integer and cannot
+  be incremented, so subsequent insert attempts will revert to the
+  semi-random key generation algorithm of SQLite version 2.3.3 and
+  earlier.</p>
 
   <p>Beginning with version 2.2.3, there is a new API function named
   <b>sqlite_last_insert_rowid()</b> which will return the integer key

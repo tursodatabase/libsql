@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.119 2002/02/19 15:00:08 drh Exp $
+** $Id: vdbe.c,v 1.120 2002/02/19 22:42:05 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -71,6 +71,7 @@ struct Cursor {
   Bool recnoIsValid;    /* True if lastRecno is valid */
   Bool keyAsData;       /* The OP_Column command works on key instead of data */
   Bool atFirst;         /* True if pointing to first entry */
+  Bool useRandomRowid;  /* Generate new record numbers semi-randomly */
   Btree *pBt;           /* Separate file holding temporary table */
 };
 typedef struct Cursor Cursor;
@@ -2913,10 +2914,18 @@ case OP_NewRecno: {
   if( VERIFY( i<0 || i>=p->nCursor || ) (pC = &p->aCsr[i])->pCursor==0 ){
     v = 0;
   }else{
-    /* A probablistic algorithm is used to locate an unused rowid.
-    ** We select a rowid at random and see if it exists in the table.
-    ** If it does not exist, we have succeeded.  If the random rowid
-    ** does exist, we select a new one and try again, up to 1000 times.
+    /* The next rowid or record number (different terms for the same
+    ** thing) is obtained in a two-step algorithm.
+    **
+    ** First we attempt to find the largest existing rowid and add one
+    ** to that.  But if the largest existing rowid is already the maximum
+    ** positive integer, we have to fall through to the second
+    ** probabilistic algorithm
+    **
+    ** The second algorithm is to select a rowid at random and see if
+    ** it already exists in the table.  If it does not exist, we have
+    ** succeeded.  If the random rowid does exist, we select a new one
+    ** and try again, up to 1000 times.
     **
     ** For a table with less than 2 billion entries, the probability
     ** of not finding a unused rowid is about 1.0e-300.  This is a 
@@ -2932,28 +2941,46 @@ case OP_NewRecno: {
     ** random number generator based on the RC4 algorithm.
     **
     ** To promote locality of reference for repetitive inserts, the
-    ** first few attempts at chosing a rowid pick values just a little
+    ** first few attempts at chosing a random rowid pick values just a little
     ** larger than the previous rowid.  This has been shown experimentally
     ** to double the speed of the COPY operation.
     */
     int res, rx, cnt, x;
     cnt = 0;
-    v = db->nextRowid;
-    do{
-      if( cnt>5 ){
-        v = sqliteRandomInteger();
+    if( !pC->useRandomRowid ){
+      rx = sqliteBtreeLast(pC->pCursor, &res);
+      if( res ){
+        v = 1;
       }else{
-        v += sqliteRandomByte() + 1;
+        sqliteBtreeKey(pC->pCursor, 0, sizeof(v), (void*)&v);
+        v = keyToInt(v);
+        if( v==0x7fffffff ){
+          pC->useRandomRowid = 1;
+        }else{
+          v++;
+        }
       }
-      if( v==0 ) continue;
-      x = intToKey(v);
-      rx = sqliteBtreeMoveto(pC->pCursor, &x, sizeof(int), &res);
-      cnt++;
-    }while( cnt<1000 && rx==SQLITE_OK && res==0 );
-    db->nextRowid = v;
-    if( rx==SQLITE_OK && res==0 ){
-      rc = SQLITE_FULL;
-      goto abort_due_to_error;
+    }
+    if( pC->useRandomRowid ){
+      v = db->priorNewRowid;
+      cnt = 0;
+      do{
+        if( v==0 || cnt>2 ){
+          v = sqliteRandomInteger();
+          if( cnt<5 ) v &= 0xffffff;
+        }else{
+          v += sqliteRandomByte() + 1;
+        }
+        if( v==0 ) continue;
+        x = intToKey(v);
+        rx = sqliteBtreeMoveto(pC->pCursor, &x, sizeof(int), &res);
+        cnt++;
+      }while( cnt<1000 && rx==SQLITE_OK && res==0 );
+      db->priorNewRowid = v;
+      if( rx==SQLITE_OK && res==0 ){
+        rc = SQLITE_FULL;
+        goto abort_due_to_error;
+      }
     }
   }
   VERIFY( NeedStack(p, p->tos+1); )

@@ -13,7 +13,7 @@
 # This file implements tests for the special processing associated
 # with INTEGER PRIMARY KEY columns.
 #
-# $Id: intpkey.test,v 1.7 2002/01/29 23:07:02 drh Exp $
+# $Id: intpkey.test,v 1.8 2002/02/19 22:42:06 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -111,19 +111,19 @@ do_test intpkey-1.10 {
 #
 do_test intpkey-1.11 {
   execsql {
-    UPDATE t1 SET a=7 WHERE b='one';
+    UPDATE t1 SET a=4 WHERE b='one';
     SELECT * FROM t1;
   }
-} {5 hello world 6 second entry 7 one two}
+} {4 one two 5 hello world 6 second entry}
 
 # Make sure SELECT statements are able to use the primary key column
 # as an index.
 #
 do_test intpkey-1.12 {
   execsql {
-    SELECT * FROM t1 WHERE a==7;
+    SELECT * FROM t1 WHERE a==4;
   }
-} {7 one two}
+} {4 one two}
 
 # Try to insert a non-integer value into the primary key field.  This
 # should result in a data type mismatch.
@@ -148,7 +148,7 @@ do_test intpkey-1.15 {
 } {0 {}}
 do_test intpkey-1.16 {
   execsql {SELECT * FROM t1}
-} {-3 y z 5 hello world 6 second entry 7 one two}
+} {-3 y z 4 one two 5 hello world 6 second entry}
 
 #### INDICES
 # Check to make sure indices work correctly with integer primary keys
@@ -190,35 +190,35 @@ do_test intpkey-2.3 {
   execsql {
     SELECT rowid, * FROM t1;
   }
-} {5 5 hello world 6 6 second entry 7 7 one two 8 8 y z}
+} {4 4 one two 5 5 hello world 6 6 second entry 8 8 y z}
 do_test intpkey-2.4 {
   execsql {
     SELECT rowid, * FROM t1 WHERE b<'second'
   }
-} {5 5 hello world 7 7 one two}
+} {5 5 hello world 4 4 one two}
 do_test intpkey-2.4.1 {
   execsql {
     SELECT rowid, * FROM t1 WHERE 'second'>b
   }
-} {5 5 hello world 7 7 one two}
+} {5 5 hello world 4 4 one two}
 do_test intpkey-2.4.2 {
   execsql {
     SELECT rowid, * FROM t1 WHERE 8>rowid AND 'second'>b
   }
-} {5 5 hello world 7 7 one two}
+} {4 4 one two 5 5 hello world}
 do_test intpkey-2.4.3 {
   execsql {
     SELECT rowid, * FROM t1 WHERE 8>rowid AND 'second'>b AND 0<rowid
   }
-} {5 5 hello world 7 7 one two}
+} {4 4 one two 5 5 hello world}
 do_test intpkey-2.5 {
   execsql {
     SELECT rowid, * FROM t1 WHERE b>'a'
   }
-} {5 5 hello world 7 7 one two 6 6 second entry 8 8 y z}
+} {5 5 hello world 4 4 one two 6 6 second entry 8 8 y z}
 do_test intpkey-2.6 {
   execsql {
-    DELETE FROM t1 WHERE rowid=7;
+    DELETE FROM t1 WHERE rowid=4;
     SELECT * FROM t1 WHERE b>'a';
   }
 } {5 hello world 6 second entry 8 y z}

@@ -12,7 +12,7 @@
 # focus of this file is testing the magic ROWID column that is
 # found on all tables.
 #
-# $Id: rowid.test,v 1.7 2002/01/04 03:09:30 drh Exp $
+# $Id: rowid.test,v 1.8 2002/02/19 22:42:06 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -155,18 +155,18 @@ do_test rowid-2.12 {
 do_test rowid-3.1 {
   execsql {
     CREATE TABLE t2(rowid int, x int, y int);
-    INSERT INTO t2 VALUES(1,2,3);
+    INSERT INTO t2 VALUES(0,2,3);
     INSERT INTO t2 VALUES(4,5,6);
     INSERT INTO t2 VALUES(7,8,9);
     SELECT * FROM t2 ORDER BY x;
   }
-} {1 2 3 4 5 6 7 8 9}
+} {0 2 3 4 5 6 7 8 9}
 do_test rowid-3.2 {
   execsql {SELECT * FROM t2 ORDER BY rowid}
-} {1 2 3 4 5 6 7 8 9}
+} {0 2 3 4 5 6 7 8 9}
 do_test rowid-3.3 {
   execsql {SELECT rowid, x, y FROM t2 ORDER BY rowid}
-} {1 2 3 4 5 6 7 8 9}
+} {0 2 3 4 5 6 7 8 9}
 do_test rowid-3.4 {
   set r1 [execsql {SELECT _rowid_, rowid FROM t2 ORDER BY rowid}]
   foreach {a b c d e f} $r1 {}
@@ -271,8 +271,9 @@ do_test rowid-6.1 {
   }
 } {1 2 3 4 5 6 7 8}
 do_test rowid-6.2 {
-  for {set ::norow 1} {[execsql {SELECT x FROM t1 WHERE rowid=10}]!=""} \
-    {incr ::norow} {}
+  for {set ::norow 1} {1} {incr ::norow} {
+    if {[execsql "SELECT x FROM t1 WHERE rowid=$::norow"]==""}  break
+  }
   execsql [subst {
     DELETE FROM t1 WHERE rowid=$::norow
   }]
@@ -283,5 +284,73 @@ do_test rowid-6.3 {
   }
 } {1 2 3 4 5 6 7 8}
 
+# Beginning with version 2.3.4, SQLite computes rowids of new rows by
+# finding the maximum current rowid and adding one.  It falls back to
+# the old random algorithm if the maximum rowid is the largest integer.
+# The following tests are for this new behavior.
+#
+do_test rowid-7.0 {
+  execsql {
+    DELETE FROM t1;
+    DROP TABLE t2;
+    DROP INDEX idxt1;
+    INSERT INTO t1 VALUES(1,2);
+    SELECT rowid, * FROM t1;
+  }
+} {1 1 2}
+do_test rowid-7.1 {
+  execsql {
+    INSERT INTO t1 VALUES(99,100);
+    SELECT rowid,* FROM t1
+  }
+} {1 1 2 2 99 100}
+do_test rowid-7.2 {
+  execsql {
+    CREATE TABLE t2(a INTEGER PRIMARY KEY, b);
+    INSERT INTO t2(b) VALUES(55);
+    SELECT * FROM t2;
+  }
+} {1 55}
+do_test rowid-7.3 {
+  execsql {
+    INSERT INTO t2(b) VALUES(66);
+    SELECT * FROM t2;
+  }
+} {1 55 2 66}
+do_test rowid-7.4 {
+  execsql {
+    INSERT INTO t2(a,b) VALUES(1000000,77);
+    INSERT INTO t2(b) VALUES(88);
+    SELECT * FROM t2;
+  }
+} {1 55 2 66 1000000 77 1000001 88}
+do_test rowid-7.5 {
+  execsql {
+    INSERT INTO t2(a,b) VALUES(2147483647,99);
+    INSERT INTO t2(b) VALUES(11);
+    SELECT b FROM t2 ORDER BY b;
+  }
+} {11 55 66 77 88 99}
+do_test rowid-7.6 {
+  execsql {
+    SELECT b FROM t2 WHERE a NOT IN(1,2,1000000,1000001,2147483647);
+  }
+} {11}
+do_test rowid-7.7 {
+  execsql {
+    INSERT INTO t2(b) VALUES(22);
+    INSERT INTO t2(b) VALUES(33);
+    INSERT INTO t2(b) VALUES(44);
+    INSERT INTO t2(b) VALUES(55);
+    SELECT b FROM t2 WHERE a NOT IN(1,2,1000000,1000001,2147483647) ORDER BY b;
+  }
+} {11 22 33 44 55}
+do_test rowid-7.8 {
+  execsql {
+    DELETE FROM t2 WHERE a!=2;
+    INSERT INTO t2(b) VALUES(111);
+    SELECT * FROM t2;
+  }
+} {2 66 3 111}
 
 finish_test

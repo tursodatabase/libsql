@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.25 2002/02/19 13:39:23 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.26 2002/02/19 22:42:06 drh Exp $}
 
 puts {<html>
 <head>
@@ -292,7 +292,7 @@ may only hold unique integer values.  (Except for this one case,
 SQLite ignores the datatype specification of columns and allows
 any kind of data to be put in a column regardless of its declared
 datatype.)  If a table does not have an INTEGER PRIMARY KEY column,
-then the B-Tree key will be a randomly generated integer.  The
+then the B-Tree key will be a automatically generated integer.  The
 B-Tree key for a row can always be accessed using one of the
 special names "<b>ROWID</b>", "<b>OID</b>", or "<b>_ROWID_</b>".
 This is true regardless of whether or not there is an INTEGER
