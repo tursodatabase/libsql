@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.197 2003/08/23 22:40:54 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.198 2003/09/06 22:18:08 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -604,7 +604,9 @@ struct Token {
 ** it can be accessed after all aggregates are computed.
 **
 ** If the expression is a function, the Expr.iTable is an integer code
-** representing which function.
+** representing which function.  If the expression is an unbound variable
+** marker (a question mark character '?' in the original SQL) then the
+** Expr.iTable holds the index number for that variable.
 **
 ** The Expr.pSelect field points to a SELECT statement.  The SELECT might
 ** be the right operand of an IN operator.  Or, if a scalar SELECT appears
@@ -866,6 +868,7 @@ struct Parse {
   int nMem;            /* Number of memory cells used so far */
   int nSet;            /* Number of sets used so far */
   int nAgg;            /* Number of aggregate expressions */
+  int nVar;            /* Number of '?' variables seen in the SQL so far */
   AggExpr *aAgg;       /* An array of aggregate expressions */
   const char *zAuthContext; /* The 6th parameter to db->xAuth callbacks */
   Trigger *pNewTrigger;     /* Trigger under construct by a CREATE TRIGGER */

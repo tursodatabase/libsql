@@ -568,6 +568,7 @@ int sqliteVdbeList(
 */
 void sqliteVdbeMakeReady(
   Vdbe *p,                       /* The VDBE */
+  int nVar,                      /* Number of '?' see in the SQL statement */
   sqlite_callback xCallback,     /* Result callback */
   void *pCallbackArg,            /* 1st argument to xCallback() */
   int isExplain                  /* True if the EXPLAIN keywords is present */
@@ -591,10 +592,17 @@ void sqliteVdbeMakeReady(
   **
   ** Allocation all the stack space we will ever need.
   */
+  p->nVar = nVar>=0 ? nVar : p->nVar;
   n = isExplain ? 10 : p->nOp;
-  p->aStack = sqliteMalloc( n*(sizeof(p->aStack[0]) + 2*sizeof(char*)) );
+  p->aStack = sqliteMalloc(
+    n*(sizeof(p->aStack[0]) + 2*sizeof(char*))   /* aStack and zStack */
+    + p->nVar*(sizeof(char*)+sizeof(int)+1)      /* azVar, anVar, abVar */
+  );
   p->zStack = (char**)&p->aStack[n];
   p->azColName = (char**)&p->zStack[n];
+  p->azVar = (char**)&p->azColName[n];
+  p->anVar = (int*)&p->azVar[p->nVar];
+  p->abVar = (u8*)&p->anVar[p->nVar];
 
   sqliteHashInit(&p->agg.hash, SQLITE_HASH_BINARY, 0);
   p->agg.pSearch = 0;
@@ -740,15 +748,6 @@ static void closeAllCursors(Vdbe *p){
 }
 
 /*
-** Delete the variables in p->azVariable[]
-*/
-static void ClearVariableArray(Vdbe *p){
-  sqliteFree(p->azVariable);
-  p->nVariable = 0;
-  p->azVariable = 0;
-}
-
-/*
 ** Clean up the VM after execution.
 **
 ** This routine will automatically close any cursors, lists, and/or
@@ -808,7 +807,6 @@ static void Cleanup(Vdbe *p){
   }
   sqliteFree(p->zErrMsg);
   p->zErrMsg = 0;
-  ClearVariableArray(p);
 }
 
 /*
@@ -927,37 +925,33 @@ int sqliteVdbeFinalize(Vdbe *p, char **pzErrMsg){
 **
 ** This routine overrides any prior call.
 */
-int sqliteVdbeSetVariables(Vdbe *p, int nValue, const char **azValue){
-  int i, n;
-  char *z;
-  if( p->magic!=VDBE_MAGIC_RUN || p->pc!=0 || p->nVariable!=0 ){
+int sqlite_bind(sqlite_vm *pVm, int i, const char *zVal, int len, int copy){
+  Vdbe *p = (Vdbe*)pVm;
+  if( p->magic!=VDBE_MAGIC_RUN || p->pc!=0 ){
     return SQLITE_MISUSE;
   }
-  ClearVariableArray(p);
-  if( nValue==0 ){
-    p->nVariable = 0;
-    p->azVariable = 0;
+  if( i<1 || i>p->nVar ){
+    return SQLITE_RANGE;
   }
-  for(i=n=0; i<nValue; i++){
-    if( azValue[i] ) n += strlen(azValue[i]) + 1;
+  i--;
+  if( p->abVar[i] ){
+    sqliteFree(p->azVar[i]);
   }
-  p->azVariable = sqliteMalloc( sizeof(p->azVariable[0])*nValue + n );
-  if( p->azVariable==0 ){
-    p->nVariable = 0;
-    return SQLITE_NOMEM;
+  if( zVal==0 ){
+    copy = 0;
+    len = 0;
   }
-  z = (char*)&p->azVariable[nValue];
-  for(i=0; i<nValue; i++){
-    if( azValue[i]==0 ){
-      p->azVariable[i] = 0;
-    }else{
-      p->azVariable[i] = z;
-      n = strlen(azValue[i]);
-      memcpy(z, azValue[i], n+1);
-      z += n+1;
-    }
+  if( len<0 ){
+    len = strlen(zVal)+1;
   }
-  p->nVariable = nValue;
+  if( copy ){
+    p->azVar[i] = sqliteMalloc( len );
+    if( p->azVar[i] ) memcpy(p->azVar[i], zVal, len);
+  }else{
+    p->azVar[i] = zVal;
+  }
+  p->abVar[i] = copy;
+  p->anVar[i] = len;
   return SQLITE_OK;
 }
 
@@ -987,6 +981,9 @@ void sqliteVdbeDelete(Vdbe *p){
     if( p->aOp[i].p3type==P3_DYNAMIC ){
       sqliteFree(p->aOp[i].p3);
     }
+  }
+  for(i=0; i<p->nVar; i++){
+    if( p->abVar[i] ) sqliteFree(p->azVar[i]);
   }
   sqliteFree(p->aOp);
   sqliteFree(p->aLabel);

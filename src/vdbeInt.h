@@ -235,8 +235,10 @@ struct Vdbe {
   FILE *pFile;        /* At most one open file handler */
   int nField;         /* Number of file fields */
   char **azField;     /* Data for each file field */
-  int nVariable;          /* Number of entries in azVariable[] */
-  char **azVariable;      /* Values for the OP_Variable opcode */
+  int nVar;           /* Number of entries in azVariable[] */
+  char **azVar;       /* Values for the OP_Variable opcode */
+  int *anVar;         /* Length of each value in azVariable[] */
+  u8 *abVar;          /* TRUE if azVariable[i] needs to be sqliteFree()ed */
   char *zLine;            /* A single line from the input file */
   int nLineAlloc;         /* Number of spaces allocated for zLine */
   int magic;              /* Magic number for sanity checking */

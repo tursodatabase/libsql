@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.27 2003/09/06 01:10:48 drh Exp $
+** $Id: test1.c,v 1.28 2003/09/06 22:18:08 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -806,11 +806,22 @@ static int test_reset(
 }
 
 /*
-** Usage:  sqlite_instantiate  VM  ARGS...
-**
-** Set the values of variables (ex: $1, $2, etc) in the original SQL string.
+** This is the "static_bind_value" that variables are bound to when
+** the FLAG option of sqlite_bind is "static"
 */
-static int test_instantiate(
+static char *sqlite_static_bind_value = 0;
+
+/*
+** Usage:  sqlite_bind  VM  IDX  VALUE  FLAGS
+**
+** Sets the value of the IDX-th occurance of "?" in the original SQL
+** string.  VALUE is the new value.  If FLAGS=="null" then VALUE is
+** ignored and the value is set to NULL.  If FLAGS=="static" then
+** the value is set to the value of a static variable named
+** "sqlite_static_bind_value".  If FLAGS=="normal" then a copy
+** of the VALUE is made.
+*/
+static int test_bind(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
@@ -818,13 +829,25 @@ static int test_instantiate(
 ){
   sqlite_vm *vm;
   int rc;
-  if( argc<2 ){
+  int idx;
+  if( argc!=5 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], 
-       " VM ARGS...\"", 0);
+       " VM IDX VALUE (null|static|normal)\"", 0);
     return TCL_ERROR;
   }
   if( getVmPointer(interp, argv[1], &vm) ) return TCL_ERROR;
-  rc = sqlite_instantiate(vm, argc-2, &argv[2]);
+  if( Tcl_GetInt(interp, argv[2], &idx) ) return TCL_ERROR;
+  if( strcmp(argv[4],"null")==0 ){
+    rc = sqlite_bind(vm, idx, 0, 0, 0);
+  }else if( strcmp(argv[4],"static")==0 ){
+    rc = sqlite_bind(vm, idx, sqlite_static_bind_value, -1, 0);
+  }else if( strcmp(argv[4],"normal")==0 ){
+    rc = sqlite_bind(vm, idx, argv[3], -1, 1);
+  }else{
+    Tcl_AppendResult(interp, "4th argument should be "
+        "\"null\" or \"static\" or \"normal\"", 0);
+    return TCL_ERROR;
+  }
   if( rc ){
     char zBuf[50];
     sprintf(zBuf, "(%d) ", rc);
@@ -887,7 +910,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite_compile",                 (Tcl_CmdProc*)test_compile          },
      { "sqlite_step",                    (Tcl_CmdProc*)test_step             },
      { "sqlite_finalize",                (Tcl_CmdProc*)test_finalize         },
-     { "sqlite_instantiate",             (Tcl_CmdProc*)test_instantiate      },
+     { "sqlite_bind",                    (Tcl_CmdProc*)test_bind             },
      { "sqlite_reset",                   (Tcl_CmdProc*)test_reset            },
      { "breakpoint",                     (Tcl_CmdProc*)test_breakpoint       },
   };
@@ -900,5 +923,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
       (char*)&sqlite_search_count, TCL_LINK_INT);
   Tcl_LinkVar(interp, "sqlite_open_file_count", 
       (char*)&sqlite_open_file_count, TCL_LINK_INT);
+  Tcl_LinkVar(interp, "sqlite_static_bind_value",
+      (char*)&sqlite_static_bind_value, TCL_LINK_STRING);
   return TCL_OK;
 }

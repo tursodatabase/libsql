@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.51 2003/09/06 01:10:48 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.52 2003/09/06 22:18:08 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -166,6 +166,7 @@ int sqlite_exec(
 #define SQLITE_NOLFS       22   /* Uses OS features not supported on host */
 #define SQLITE_AUTH        23   /* Authorization denied */
 #define SQLITE_FORMAT      24   /* Auxiliary database format error */
+#define SQLITE_RANGE       25   /* 2nd parameter to sqlite_bind out of range */
 #define SQLITE_ROW         100  /* sqlite_step() has another row ready */
 #define SQLITE_DONE        101  /* sqlite_step() has finished executing */
 
@@ -695,31 +696,38 @@ int sqlite_finalize(sqlite_vm*, char **pzErrMsg);
 **
 ** If sqlite_reset() returns SQLITE_SCHEMA, then *ppVm is set to NULL.
 **
+******* THIS IS AN EXPERIMENTAL API AND IS SUBJECT TO CHANGE ******
 */
-int sqlite_reset(sqlite_vm *, char **pzErrMsg);
+int sqlite_reset(sqlite_vm*, char **pzErrMsg);
 
 /*
-** If the SQL that was handed to sqlite_compile contains variables of
-** the form $1, $2, $3, etc. then this routine assigns values to those
-** variables.  azValue[0] is assigned to $1.  azValue[1] is assigned
-** to $2.  And so forth.  The value of variable $0 will always be NULL.
-** The values of any variable $N where N>nValue will be NULL.  If any
-** azValue[] is a NULL pointer, then the corresponding variable will be
-** NULL.
+** If the SQL that was handed to sqlite_compile contains variables that
+** are represeted in the SQL text by a question mark ('?').  This routine
+** is used to assign values to those variables.
+**
+** The first parameter is a virtual machine obtained from sqlite_compile().
+** The 2nd "idx" parameter determines which variable in the SQL statement
+** to bind the value to.  The left most '?' is 1.  The 3rd parameter is
+** the value to assign to that variable.  The 4th parameter is the number
+** of bytes in the value, including the terminating \000 for strings.
+** Finally, the 5th "copy" parameter is TRUE if SQLite should make its
+** own private copy of this value, or false if the space that the 3rd
+** parameter points to will be unchanging and can be used directly by
+** SQLite.
+**
+** Unbound variables are treated as having a value of NULL.  To explicitly
+** set a variable to NULL, call this routine with the 3rd parameter as a
+** NULL pointer.
+**
+** If the 4th "len" parameter is -1, then strlen() is used to find the
+** length.
 **
 ** This routine can only be called immediately after sqlite_compile()
 ** or sqlite_reset() and before any calls to sqlite_step().
 **
-** This routine makes copies of all strings in azValue[] so the values
-** passed in can be changed or deleted immediately after this call.  The
-** copies are deallocated when sqlite_finalize() or sqlite_reset() is
-** invoked.
-**
 ******* THIS IS AN EXPERIMENTAL API AND IS SUBJECT TO CHANGE ******
 */
-int sqlite_instantiate(sqlite_vm*, int, const char**);
-
-
+int sqlite_bind(sqlite_vm*, int idx, const char *value, int len, int copy);
 
 #ifdef __cplusplus
 }  /* End of the 'extern "C"' block */

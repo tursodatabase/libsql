@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.141 2003/09/06 01:10:47 drh Exp $
+** $Id: main.c,v 1.142 2003/09/06 22:18:08 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -695,31 +695,6 @@ int sqlite_compile(
   return sqliteMain(db, zSql, 0, 0, pzTail, ppVm, pzErrMsg);
 }
 
-/*
-** If the SQL that was handed to sqlite_compile contains variables of
-** the form $1, $2, $3, etc. then this routine assigns values to those
-** variables.  azValue[0] is assigned to $1.  azValue[1] is assigned
-** to $2.  And so forth.  The value of variable $0 will always be NULL.
-** The values of any variable $N where N>nValue will be NULL.  If any
-** azValue[] is a NULL pointer, then the corresponding variable will be
-** NULL.
-**
-** This routine can only be called immediately after sqlite_compile()
-** or sqlite_reset() and before any calls to sqlite_step().
-**
-** This routine makes copies of all strings in azValue[] so the values
-** passed in can be changed or deleted immediately after this call.  The
-** copies are deallocated when sqlite_finalize() or sqlite_reset() is
-** invoked.
-*/
-int sqlite_instantiate(
-  sqlite_vm *pVm,
-  int nValue,
-  const char **azValue
-){
-  return sqliteVdbeSetVariables((Vdbe*)pVm, nValue, azValue);
-}
-
 
 /*
 ** The following routine destroys a virtual machine that is created by
@@ -753,7 +728,7 @@ int sqlite_reset(
   char **pzErrMsg            /* OUT: Write error messages here */
 ){
   int rc = sqliteVdbeReset((Vdbe*)pVm, pzErrMsg);
-  sqliteVdbeMakeReady((Vdbe*)pVm, 0, 0, 0);
+  sqliteVdbeMakeReady((Vdbe*)pVm, -1, 0, 0, 0);
   sqliteStrRealloc(pzErrMsg);
   return rc;
 }
@@ -790,6 +765,7 @@ const char *sqlite_error_string(int rc){
     case SQLITE_NOLFS:      z = "kernel lacks large file support";       break;
     case SQLITE_AUTH:       z = "authorization denied";                  break;
     case SQLITE_FORMAT:     z = "auxiliary database format error";       break;
+    case SQLITE_RANGE:      z = "bind index out of range";               break;
     default:                z = "unknown error";                         break;
   }
   return z;

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.239 2003/09/06 20:12:01 drh Exp $
+** $Id: vdbe.c,v 1.240 2003/09/06 22:18:08 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -711,14 +711,17 @@ case OP_String: {
 **
 ** Push the value of variable P1 onto the stack.  A variable is
 ** an unknown in the original SQL string as handed to sqlite_compile().
-** The first variable is $1, the second is $2, and so forth.  The
-** value of the variables is determined by sqlite_instantiate().
+** Any occurance of the '?' character in the original SQL is considered
+** a variable.  Variables in the SQL string are number from left to
+** right beginning with 1.  The values of variables are set using the
+** sqlite_bind() API.
 */
 case OP_Variable: {
   int i = ++p->tos;
-  if( pOp->p1>0 && pOp->p1<=p->nVariable && p->azVariable[pOp->p1-1]!=0 ){
-    zStack[i] = p->azVariable[pOp->p1-1];
-    aStack[i].n = strlen(zStack[i]) + 1;
+  int j = pOp->p1 - 1;
+  if( j>=0 && j<p->nVar && p->azVar[j]!=0 ){
+    zStack[i] = p->azVar[j];
+    aStack[i].n = p->anVar[j];
     aStack[i].flags = STK_Str | STK_Static;
   }else{
     zStack[i] = 0;

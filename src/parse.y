@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.100 2003/09/06 01:10:48 drh Exp $
+** @(#) $Id: parse.y,v 1.101 2003/09/06 22:18:08 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -541,7 +541,10 @@ expr(A) ::= expr(B) ORACLE_OUTER_JOIN.
 expr(A) ::= INTEGER(X).      {A = sqliteExpr(TK_INTEGER, 0, 0, &X);}
 expr(A) ::= FLOAT(X).        {A = sqliteExpr(TK_FLOAT, 0, 0, &X);}
 expr(A) ::= STRING(X).       {A = sqliteExpr(TK_STRING, 0, 0, &X);}
-expr(A) ::= VARIABLE(X).     {A = sqliteExpr(TK_VARIABLE, 0, 0, &X);}
+expr(A) ::= VARIABLE(X).     {
+  A = sqliteExpr(TK_VARIABLE, 0, 0, &X);
+  if( A ) A->iTable = ++pParse->nVar;
+}
 expr(A) ::= ID(X) LP exprlist(Y) RP(E). {
   A = sqliteExprFunction(Y, &X);
   sqliteExprSpan(A,&X,&E);
