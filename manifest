@@ -1,5 +1,5 @@
-C Rewind\sthe\scheckpoint\sjournal\safter\seach\sstatement\sto\savoid\sallowing\nthe\sfile\sto\sbecome\stoo\slarge.\s(CVS\s744)
-D 2002-09-05T19:10:33
+C Fix\sa\smemory\sleak\sthat\soccurred\swhen\ssqlite_open()\sfailed.\s(CVS\s745)
+D 2002-09-05T23:21:37
 F Makefile.in 420fada882179cb72ffd07313f3fd693f9f06640
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -28,7 +28,7 @@ F src/func.c e45cd908b9b723d9b91473d09e12c23f786b3fc2
 F src/hash.c 6a6236b89c8c060c65dabd300a1c8ce7c10edb72
 F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
 F src/insert.c a2f5455009904476b43ec5304a181b505235f72f
-F src/main.c 367c0d2c72457dacddea28b5ba6634ffeaa9aa67
+F src/main.c ff7c05ef88fa1374e5540ce20173ae8e1836f8a4
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
 F src/os.c 091a89297bf80927cde146cd1dbf89c908864f3a
 F src/os.h 3009379b06941e7796a9812d1b6cbc59b26248c8
@@ -151,7 +151,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P f5c2654768a6201fc554b59f1b2f56bcce738bc4
-R ba6b5d116c23b25933186a08cf2bfa2c
+P f4288520dfd1587446e50fa7ef23f75f6f63a7cf
+R b654a135f51d4e05c88ecdd8c52d16ce
 U drh
-Z c676a7940e61f82095f5a594ad34abda
+Z 9f9892a64753c83b38229bcb1fa2dd28
