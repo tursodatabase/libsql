@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.167 2004/06/15 01:40:29 drh Exp $
+** $Id: btree.c,v 1.168 2004/06/15 02:13:27 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -2788,14 +2788,14 @@ static int balance(MemPage*);
 /*
 ** This routine redistributes Cells on pPage and up to NN*2 siblings
 ** of pPage so that all pages have about the same amount of free space.
-** Usually one sibling on either side of pPage is used in the balancing,
-** though both siblings might come from one side if pPage is the first
+** Usually NN siblings on either side of pPage is used in the balancing,
+** though more siblings might come from one side if pPage is the first
 ** or last child of its parent.  If pPage has fewer than 2*NN siblings
 ** (something which can only happen if pPage is the root page or a 
 ** child of root) then all available siblings participate in the balancing.
 **
-** The number of siblings of pPage might be increased or decreased by
-** one in an effort to keep pages nearly full but not over full. The root page
+** The number of siblings of pPage might be increased or decreased by one or
+** two in an effort to keep pages nearly full but not over full. The root page
 ** is special and is allowed to be nearly empty. If pPage is 
 ** the root page, then the depth of the tree might be increased
 ** or decreased by one, as necessary, to keep the root page from being

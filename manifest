@@ -1,5 +1,5 @@
-C Do\snot\suse\sthe\spage\scontaining\slocks\sfor\sanything\sto\savoid\sproblems\swith\nthe\smanditory\sfile\slocking\son\swindows.\s(CVS\s1595)
-D 2004-06-15T01:40:29
+C Update\scomments\sin\sbtree.c.\s\sNo\schanges\sto\scode.\s(CVS\s1596)
+D 2004-06-15T02:13:27
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -26,7 +26,7 @@ F sqlite.def fc4f5734786fe4743cfe2aa98eb2da4b089edb5f
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F src/attach.c 93b8ecec4a8d7b4e9f2479e2327d90c9d01765e8
 F src/auth.c 204e1e9c45e64315589bc8b62cba5d9de29b6a3c
-F src/btree.c a9aabed057eacdaf617caeddc7b136bd831ab22c
+F src/btree.c 9e60ffbc24d92889d1e799cd16b15c9fbbfc5021
 F src/btree.h 32f96abef464cf8765b23ca669acfe90d191fcc5
 F src/build.c 916a84fa5f8bfd44dbe14c3d7c923dd07ee7373f
 F src/date.c 65b483caeb0e4dd663667d2f927caa058168ebff
@@ -223,7 +223,7 @@ F www/support.tcl 1801397edd271cc39a2aadd54e701184b5181248
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 186c6f93e12978907c5f0ff81d90bdf7367b9274
-R 39de485059268cbc8025aa3dc3a9cdaa
+P 5a814202777f381caf5337b37e11c9ab8b8f554a
+R b05c49849b20b6bbd0391b8efa373046
 U drh
-Z f0561e35a6d128f341936bb7b7366398
+Z ad351ed4b4238509d8c979104170ecf8
