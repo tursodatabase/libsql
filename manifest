@@ -1,5 +1,5 @@
-C add\ssqlite3_get_auxdata\ssqlite3_set_auxdata\sC\sAPI\sexports\s(CVS\s1869)
-D 2004-07-26T15:31:21
+C Get\sVACUUM\sworking\swith\sUNIQUE\sindices.\s\sTicket\s#829.\s(CVS\s1870)
+D 2004-07-26T23:07:52
 F Makefile.in 4a5e570a9e2d35b09c31b3cf01b78cea764ade4b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -73,7 +73,7 @@ F src/trigger.c 360cf8f12edd4eb3a8a2895b136aac238c3cf44e
 F src/update.c b66b1896c9da54678ba3eff2bf0b4d291a95986a
 F src/utf.c f03535db72bfa09e24202ccdd245f21d2fc65f0a
 F src/util.c 2aacc79b7bf5df5859813dafd3bf3258f67a5234
-F src/vacuum.c 23ec8c5f3134c6315f883d648fa63b72d8c3ead3
+F src/vacuum.c 9978a5760c2c430bc5b5e66505a02dad76f25813
 F src/vdbe.c f40f4ca4d9a7ba7c330e5673419f32dd3512547c
 F src/vdbe.h 75b241c02431b9c0f16eaa9cdbb34146c6287f52
 F src/vdbeInt.h 3d8e08c54dcb5ca2169db8bb3a37b81a12efaecd
@@ -180,7 +180,7 @@ F test/types2.test f23c147a2ab3e51d5dbcfa9987200db5acba7aa7
 F test/unique.test 0e38d4cc7affeef2527720d1dafd1f6870f02f2b
 F test/update.test b29bd9061a1150426dab6959806fcc73a41b1217
 F test/utf16.test 459c2f5ab80c60092c603630a348c32d6e59c558
-F test/vacuum.test 51d3a52535f77af6fb6fa7e742230f4958a708c1
+F test/vacuum.test 3aabfb73dcafffed01fefd0789f2fcc8540b9b52
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/view.test ca5c296989d3045f121be9a67588ff88c64874a8
 F test/where.test 9c5752b807b78078fab8da6f52e689832579ca20
@@ -240,7 +240,7 @@ F www/tclsqlite.tcl 06a86cba4d7fc88e2bcd633b57702d3d16abebb5
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P e3cad1ab6226089265b4d15c6fc67cc33a31425f
-R 40da3b6dcd5f1faf460eec98cdfa23eb
-U dougcurrie
-Z a41c984af00128c15325725263cd022e
+P 15bfb2d153b9ffbb6b59146e1288d0e2e4cdf66f
+R ee707c764e2bb8451fb37013b45cc605
+U drh
+Z ba6b19d006dc27280511a74c7f232d33

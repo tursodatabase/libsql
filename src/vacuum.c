@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.27 2004/07/24 14:35:59 drh Exp $
+** $Id: vacuum.c,v 1.28 2004/07/26 23:07:52 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -160,11 +160,17 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite *db){
   ** in the temporary database.
   */
   rc = execExecSql(db, 
-      "SELECT 'CREATE ' || type || ' vacuum_db.' || "
-      "substr(sql, length(type)+9, 1000000) "
-      "FROM sqlite_master "
-      "WHERE type != 'trigger' AND sql IS NOT NULL "
-      "ORDER BY (type != 'table');" 
+      "SELECT 'CREATE TABLE vacuum_db.' || substr(sql,14,100000000) "
+      "  FROM sqlite_master WHERE type='table' "
+      "UNION ALL "
+      "SELECT 'CREATE INDEX vacuum_db.' || substr(sql,14,100000000) "
+      "  FROM sqlite_master WHERE sql LIKE 'CREATE INDEX %' "
+      "UNION ALL "
+      "SELECT 'CREATE UNIQUE INDEX vacuum_db.' || substr(sql,21,100000000) "
+      "  FROM sqlite_master WHERE sql LIKE 'CREATE UNIQUE INDEX %'"
+      "UNION ALL "
+      "SELECT 'CREATE VIEW vacuum_db.' || substr(sql,13,100000000) "
+      "  FROM sqlite_master WHERE type='view'"
   );
   if( rc!=SQLITE_OK ) goto end_of_vacuum;
 
@@ -186,10 +192,8 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite *db){
   ** point also.
   */
   rc = execExecSql(db, 
-      "SELECT 'CREATE ' || type || ' vacuum_db.' || "
-      "substr(sql, length(type)+9, 1000000) "
-      "FROM sqlite_master "
-      "WHERE type = 'trigger' AND sql IS NOT NULL;"
+      "SELECT 'CREATE TRIGGER  vacuum_db.' || substr(sql, 16, 1000000) "
+      "FROM sqlite_master WHERE type='trigger'"
   );
   if( rc!=SQLITE_OK ) goto end_of_vacuum;
 

@@ -11,11 +11,12 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the VACUUM statement.
 #
-# $Id: vacuum.test,v 1.23 2004/06/30 10:54:30 danielk1977 Exp $
+# $Id: vacuum.test,v 1.24 2004/07/26 23:07:52 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+set fcnt 1
 proc cksum {{db db}} {
   set sql "SELECT name, type, sql FROM sqlite_master ORDER BY name, type"
   set txt [$db eval $sql]\n
@@ -23,8 +24,15 @@ proc cksum {{db db}} {
   foreach tbl [$db eval $sql] {
     append txt [$db eval "SELECT * FROM $tbl"]\n
   }
-  foreach prag {default_synchronous default_cache_size} {
+  foreach prag {default_cache_size} {
     append txt $prag-[$db eval "PRAGMA $prag"]\n
+  }
+  if 1 {
+    global fcnt
+    set fd [open dump$fcnt.txt w]
+    puts -nonewline $fd $txt
+    close $fd
+    incr fcnt
   }
   set cksum [string length $txt]-[md5 $txt]
   # puts $cksum-[file size test.db]
@@ -44,6 +52,7 @@ do_test vacuum-1.1 {
     INSERT INTO t1 SELECT NULL, b||'-'||rowid, c||'-'||rowid FROM t1;
     INSERT INTO t1 SELECT NULL, b||'-'||rowid, c||'-'||rowid FROM t1;
     CREATE INDEX i1 ON t1(b,c);
+    CREATE UNIQUE INDEX i2 ON t1(c,a);
     CREATE TABLE t2 AS SELECT * FROM t1;
     COMMIT;
     DROP TABLE t2;
