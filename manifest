@@ -1,5 +1,5 @@
-C Fix\san\sinfinite\sloop\sin\sthe\scode\sgenerator\sfor\sINSERT.\s\sTicket\s#1140.\s(CVS\s2410)
-D 2005-03-21T01:20:58
+C fix\stypo\sin\sCREATE\sVIEW\sdocumentation.\s\sTicket\s#1135.\s(CVS\s2411)
+D 2005-03-21T01:24:02
 F Makefile.in 5c00d0037104de2a50ac7647a5f12769795957a3
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -260,7 +260,7 @@ F www/faq.tcl 1e348dec52dc0f21f4216fd6918c69c56daa4cfd
 F www/fileformat.tcl 900c95b9633abc3dcfc384d9ddd8eb4876793059
 F www/formatchng.tcl ec974d74a87f7ae69d0626848bfcf716865c3291
 F www/index.tcl d205e4f360829c2f2805b7d4c11f8b293e1f6bac
-F www/lang.tcl 5b4c95284d5284970526104b676dcdffe1889927
+F www/lang.tcl b121bfd638fd3fd6db7450d82cf8c8145f4753df
 F www/lockingv3.tcl f59b19d6c8920a931f096699d6faaf61c05db55f
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
 F www/nulls.tcl ec35193f92485b87b90a994a01d0171b58823fcf
@@ -277,7 +277,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P b48784cf65420da5ccdf779504e3c0b5c0f2471d
-R 672678ded19de8ecd9285bc2b337f447
+P 876d09d9145775956913e975c29e81d7553839ac
+R 102adcb61d5e412e042bc001de9a5328
 U drh
-Z cfa0ed114867b2787c7c40a2be3dcf16
+Z 0f028b267572ce51730f974e5e04b5b2
