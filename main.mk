@@ -421,6 +421,9 @@ datatypes.html:	$(TOP)/www/datatypes.tcl
 datatype3.html:	$(TOP)/www/datatype3.tcl
 	tclsh $(TOP)/www/datatype3.tcl >datatype3.html
 
+different.html:	$(TOP)/www/different.tcl
+	tclsh $(TOP)/www/different.tcl >different.html
+
 docs.html:	$(TOP)/www/docs.tcl
 	tclsh $(TOP)/www/docs.tcl >docs.html
 
@@ -509,6 +512,7 @@ DOC = \
   conflict.html \
   datatypes.html \
   datatype3.html \
+  different.html \
   docs.html \
   download.html \
   faq.html \

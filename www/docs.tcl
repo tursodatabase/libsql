@@ -1,7 +1,7 @@
 # This script generates the "docs.html" page that describes various
 # sources of documentation available for SQLite.
 #
-set rcsid {$Id: docs.tcl,v 1.9 2005/01/03 01:33:00 drh Exp $}
+set rcsid {$Id: docs.tcl,v 1.10 2005/03/12 15:55:11 drh Exp $}
 source common.tcl
 header {SQLite Documentation}
 puts {
@@ -23,6 +23,11 @@ doc {Appropriate Uses For SQLite} {whentouse.html} {
   This document describes situations where SQLite is an approriate
   database engine to use versus situations where a client/server
   database engine might be a better choice.
+}
+
+doc {Distinctive Features} {different.html} {
+  This document enumerates and describes some of the features of
+  SQLite that make it different from other SQL database engines.
 }
 
 doc {SQLite In 5 Minutes Or Less} {quickstart.html} {

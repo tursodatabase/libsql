@@ -1,4 +1,4 @@
-set rcsid {$Id: different.tcl,v 1.2 2005/01/20 22:48:49 drh Exp $}
+set rcsid {$Id: different.tcl,v 1.3 2005/03/12 15:55:11 drh Exp $}
 source common.tcl
 header {Distinctive Features Of SQLite}
 puts {
@@ -81,7 +81,7 @@ feature onefile {Single Database File} {
 
 feature small {Compact} {
   When optimized for size, the whole SQLite library with everything enabled
-  is less than 220KiB in size (as measured on an ix86 using the "size"
+  is less than 225KiB in size (as measured on an ix86 using the "size"
   utility from the GNU compiler suite.)  Unneeded features can be disabled
   at compile-time to further reduce the size of the library to under
   170KiB if desired.
@@ -96,24 +96,91 @@ feature small {Compact} {
 }
 
 feature typing {Manifest typing} {
-  
+  Most SQL database engines use static typing.  A datatype is associated
+  with each column in a table and only values of that particular datatype
+  are allowed to be stored in that column.  SQLite relaxes this restriction
+  by using manifest typing.
+  In manifest typing, the datatype is a property of the value itself, not 
+  of the column in which the value is stored.
+  SQLite thus allows the user to store
+  any value of any datatype into any column regardless of the declared type
+  of that column.  (There are some exceptions to this rule: An INTEGER
+  PRIMARY KEY column may only store integers.  And SQLite attempts to coerce
+  values into the declared datatype of the column when it can.)
+  <p>
+  The SQL language specification calls for static typing.  So some people
+  feel that the use of manifest typing in SQLite is a bug.  But the authors
+  of SQLite feel very strongly that this is a feature.  The authors argue
+  that static typing is a bug in the SQL specification that SQLite has fixed
+  in a backwards compatible way.
+}
+
+feature flex {Variable-length records} {
+  Most other SQL database engines allocated a fixed amount of disk space
+  for each row in a most tables.  They play special tricks for handling
+  BLOBs and CLOBs which can be of wildly varying length.  But for most
+  tables, if you declare a column to be a VARCHAR(100) then the database
+  engine will allocate
+  100 bytes of disk space regardless of how much information you actually
+  store in that column.
+  <p>
+  SQLite, in contrast, use only the amount of disk space actually
+  needed to store the information in a row.  If you store a single
+  character in a VARCHAR(100) column, then only a single byte of disk
+  space is consumed.  (Actually two bytes - there is some overhead at
+  the beginning of each column to record its datatype and length.)
+  <p>
+  The use of variable-length records by SQLite has a number of advantages.
+  It results in smaller database files, obviously.  It also makes the
+  database run faster, since there is less information to move to and from
+  disk.  And, the use of variable-length records makes it possible for
+  SQLite to employ manifest typing instead of static typing.
 }
 
 feature readable {Readable source code} {
+  The source code to SQLite is designed to be readable and accessible to
+  the average programmer.  All procedures and and data structures and many
+  automatic variables are carefully commented with useful information about
+  what they do.  Boilerplate commenting is omitted.
 }
 
 feature vdbe {SQL statements compile into virtual machine code} {
+  Every SQL database engine compiles each SQL statement into some kind of
+  internal data structure which is then used to carry out the work of the
+  statement.  But in most SQL engines that internal data structure is a
+  complex web of interlinked structures and objects.  In SQLite, the compiled
+  form of statements is a short program in a machine-language like
+  representation.  Users of the database can view this 
+  <a href="opcode.html">virtual machine language</a>
+  by prepending the <a href="lang_explain.html">EXPLAIN</a> keyword
+  to a query.
+  <p>
+  The use of a virtual machine in SQLite has been a great benefit to
+  library's development.  The virtual machine provides a crisp, well-defined
+  junction between the front-end of SQLite (the part that parses SQL
+  statements and generates virtual machine code) and the back-end (the
+  part that executes the virtual machine code and computes a result.)
+  The virtual machine allows the developers to see clearly and in an
+  easily readable form what SQLite is trying to do with each statement
+  it compiles, which is a tremendous help in debuggings.
+  Depending on how it is compiled, SQLite also has the capability of
+  tracing the execution of the virtual machine - printing each
+  virtual machine instruction and its result as it executes.
 }
 
-feature binding {Tight bindings to dynamic languages} {
-}
+#feature binding {Tight bindings to dynamic languages} {
+#  Because it is embedded, SQLite can have a much tighter and more natural
+#  binding to high-level dynamic languages such as Tcl, Perl, Python,
+#  PHP, and Ruby.
+#  For example, 
+#}
 
 feature license {Public domain} {
   The source code for SQLite is in the public domain.  No claim of copyright
   is made on any part of the core source code.  (The documentation and test
   code is a different matter - some sections of documentation and test logic
   are governed by open-sources licenses.)  All contributors to the
-  SQLite core software have signed releases specifically disavowing any
+  SQLite core software have signed affidavits specifically disavowing any
   copyright interest in the code.  This means that anybody is able to legally
   do anything they want with the SQLite source code.
   <p>
@@ -134,6 +201,19 @@ feature license {Public domain} {
 }
 
 feature extensions {SQL language extensions} {
+  SQLite provides a number of enhancements to the SQL language 
+  not normally found in other database engines.
+  The EXPLAIN keyword and manifest typing have already been mentioned
+  above.  SQLite also provides statements such as 
+  <a href="lang_replace.html">REPLACE</a> and the
+  <a href="lang_conflict.html">ON CONFLICT</a> clause that allow for
+  added control over the resolution of constraint conflicts.
+  SQLite supports <a href="lang_attach.html">ATTACH</a> and
+  <a href="lang_detach.html">DETACH</a> commands that allow multiple
+  independent databases to be used together in the same query.
+  And SQLite defines APIs that allows the user to add new
+  <a href="capi3ref.html#sqlite3_create_function>SQL functions</a>
+  and <a href="capi3ref.html#sqlite3_create_collation>collating sequences</a>.
 }
 
 

@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the speed.html file.
 #
-set rcsid {$Id: speed.tcl,v 1.16 2005/01/21 18:19:29 drh Exp $ }
+set rcsid {$Id: speed.tcl,v 1.17 2005/03/12 15:55:11 drh Exp $ }
 source common.tcl
 header {SQLite Database Speed Comparison}
 
@@ -10,7 +10,7 @@ puts {
 
 <font color="red"><b>
 Note:  This document is old.  It describes a speed comparison between
-an older version of SQLite against archic versions of MySQL and PostgreSQL.
+an older version of SQLite against archaic versions of MySQL and PostgreSQL.
 Readers are invited to contribute more up-to-date speed comparisons
 on the <a href="http://www.sqlite.org/cvstrac/wiki">SQLite Wiki</a>.
 <p>

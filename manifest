@@ -1,5 +1,5 @@
-C Version\s3.1.5\s(CVS\s2382)
-D 2005-03-11T18:06:53
+C Documentation\supdates.\s\sAdded\sthe\s"distinctive\sfeatures"\spage.\s(CVS\s2383)
+D 2005-03-12T15:55:11
 F Makefile.in 5c00d0037104de2a50ac7647a5f12769795957a3
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -16,7 +16,7 @@ F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
-F main.mk 632150f494ae1a96c8ac3cda0229a77cd18cb843
+F main.mk 3acc5ae52addd43fd1858fe99fca54a49bca6a56
 F mkdll.sh 5ec23622515d5bf8969404e80cfb5e220ddf0512
 F mkopcodec.awk bd46ad001c98dfbab07b1713cb8e692fa0e5415d
 F mkopcodeh.awk e4d010870a3e98fd4323635c31565a3ca8584741
@@ -249,8 +249,8 @@ F www/copyright-release.pdf cfca3558fc97095e57c6117d08f1f5b80d95125a
 F www/copyright.tcl 82c9670c7ddb0311912ab7fe24703f33c531066c
 F www/datatype3.tcl 1d14f70ab73075556b95e76a5c13e5b03f7f6c47
 F www/datatypes.tcl 7c786d2e8ff434346764534ec015966d17efce60
-F www/different.tcl 051086bc273a36808dc08d58ed098611fb53e315
-F www/docs.tcl 09e5eccffad783fe65fac87772f5265e9bb64abe
+F www/different.tcl 1bff4f968e7080f33148d91ca800f803838f320f
+F www/docs.tcl 95f464d6ae02fe265a845ba60d44e053ab5cb5d5
 F www/download.tcl 3af00c0e8fd915961707cddb4c2260f5cf59f3c1
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/faq.tcl 1e348dec52dc0f21f4216fd6918c69c56daa4cfd
@@ -267,14 +267,14 @@ F www/opcode.tcl 5bd68059416b223515a680d410a9f7cb6736485f
 F www/optimizing.tcl f0b2538988d1bbad16cbfe63ec6e8f48c9eb04e5
 F www/pragma.tcl 3b7d88d6545e9b8ea4a3661e0be5e0f0e9817466
 F www/quickstart.tcl 6f6f694b6139be2d967b1492eb9a6bdf7058aa60
-F www/speed.tcl 1f8fb33df0d5bebf29508af763db3ee019c45967
+F www/speed.tcl 656ed5be8cc9d536353e1a96927b925634a62933
 F www/sqlite.tcl b51fd15f0531a54874de785a9efba323eecd5975
 F www/support.tcl 3955da0fd82be68cc5c83d347c05095e80967051
 F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
-F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
+F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P baddb06450e6948334faef4afa7cbfba40a2aa0f
-R dc82974a3228fea88ec10f436f957e81
+P b1792ae51666f27bc47cf986937a3caacdd3a9f7
+R ae5ab2337936f8b14b51431c67974b2a
 U drh
-Z 182e19dd94e55cce93f9ec86e717bb1a
+Z 6b216f6f11e1748fb1efcd8b223e6a22
