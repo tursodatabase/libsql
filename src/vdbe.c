@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.110 2002/01/29 23:07:02 drh Exp $
+** $Id: vdbe.c,v 1.111 2002/01/30 00:54:56 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1211,6 +1211,7 @@ case OP_String: {
 ** P1 elements are popped off of the top of stack and discarded.
 */
 case OP_Pop: {
+  assert( p->tos+1>=pOp->p1 );
   PopStack(p, pOp->p1);
   break;
 }
