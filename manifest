@@ -1,5 +1,5 @@
-C Another\sbug\sfix\sfrom\stwo\scheck-ins\sago.\s(CVS\s2062)
-D 2004-11-05T05:23:59
+C When\susing\ssqlite3NestedParse()\sto\smodify\sthe\ssqlite_master\stable,\sdo\snot\scode\sOP_Callback.\s(CVS\s2063)
+D 2004-11-05T06:02:07
 F Makefile.in c4d2416860f472a1e3393714d0372074197565df
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -33,12 +33,12 @@ F src/btree.c f97b5a3919147fe36f776d08c80212ba3ea883aa
 F src/btree.h 3166388fa58c5594d8064d38b43440d79da38fb6
 F src/build.c 06a4eb8f29e9b356f85ff4eac64c112fe5ff7d3d
 F src/date.c 34bdb0082db7ec2a83ef00063f7b44e61ee19dad
-F src/delete.c 832adc6fe1c07b7e28e1b4c1038d2b06f7397dd4
+F src/delete.c 6a54fd9f0fa6b93e13e40368a8b7206e3aae760c
 F src/expr.c be18081d2959a2cc53846d0fbedfec40fbfa1d6e
 F src/func.c 600e506bccf7648df8ad03efb417560d0f7ad4c1
 F src/hash.c a97721a55440b7bea31ffe471bb2f6b4123cddd5
 F src/hash.h 1b0c445e1c89ff2aaad9b4605ba61375af001e84
-F src/insert.c 17f66e2c32e551122f45cea11db3e664471418d6
+F src/insert.c b6ad8e90153ffb0c03bb7a0e04b14f8ddf096d92
 F src/legacy.c d58ea507bce885298a2c8c3cbb0f4bff5d47830b
 F src/main.c ba1b26f03af4b7f8be3394748123dd671b9ea147
 F src/md5.c 7ae1c39044b95de2f62e066f47bb1deb880a1070
@@ -71,7 +71,7 @@ F src/test4.c 7c6b9fc33dd1f3f93c7f1ee6e5e6d016afa6c1df
 F src/test5.c b001fa7f1b9e2dc5c2331de62fc641b5ab2bd7a1
 F src/tokenize.c c48221284e729be067237a8cfd7848fb62ee4a92
 F src/trigger.c f9a0a8d3a87238de1a934eeb7d0b6b1f13e6a55b
-F src/update.c 7b17b281d600bf3e220b3c5718e0883442dee722
+F src/update.c 50ac56ab8109846eda843591d63527c94e862bc3
 F src/utf.c f4f83acd73389090e32d6589d307fc55d794c7ed
 F src/util.c 005fdf2d008f3429d081766ad6098fdd86d8d8e6
 F src/vacuum.c ecb4a2c6f1ac5cc9b394dc64d3bb14ca650c4f60
@@ -252,7 +252,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl fdacb0ba2d39831e8a6240d05a490026ad4c4e4c
-P 9d259d48defda57ab0bd66460bd2ba7f3a2695e9
-R 92da916c53f47131944620c16002f610
-U drh
-Z 7c042e1052dcd679d1913cf5116ea822
+P c46eef2f6d32b8546e1441e7e6f103e6ad97f1f4
+R 6ef3d4d89352eb9cafe604d4c02915f0
+U danielk1977
+Z b1ca05da6dffb52204ebc09339eae99e

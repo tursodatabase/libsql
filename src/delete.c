@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle DELETE FROM statements.
 **
-** $Id: delete.c,v 1.86 2004/11/05 00:43:12 drh Exp $
+** $Id: delete.c,v 1.87 2004/11/05 06:02:07 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -328,9 +328,11 @@ void sqlite3DeleteFrom(
   }
 
   /*
-  ** Return the number of rows that were deleted.
+  ** Return the number of rows that were deleted. If this routine is 
+  ** generating code because of a call to sqlite3NestedParse(), do not
+  ** invoke the callback function.
   */
-  if( db->flags & SQLITE_CountRows ){
+  if( db->flags & SQLITE_CountRows && pParse->nested==0 ){
     sqlite3VdbeAddOp(v, OP_Callback, 1, 0);
     sqlite3VdbeSetNumCols(v, 1);
     sqlite3VdbeSetColName(v, 0, "rows deleted", P3_STATIC);

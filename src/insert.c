@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.121 2004/11/04 04:42:28 drh Exp $
+** $Id: insert.c,v 1.122 2004/11/05 06:02:07 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -634,9 +634,11 @@ void sqlite3Insert(
   }
 
   /*
-  ** Return the number of rows inserted.
+  ** Return the number of rows inserted. If this routine is 
+  ** generating code because of a call to sqlite3NestedParse(), do not
+  ** invoke the callback function.
   */
-  if( db->flags & SQLITE_CountRows ){
+  if( db->flags & SQLITE_CountRows && pParse->nested==0 ){
     sqlite3VdbeAddOp(v, OP_MemLoad, iCntMem, 0);
     sqlite3VdbeAddOp(v, OP_Callback, 1, 0);
     sqlite3VdbeSetNumCols(v, 1);
