@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: memleak.test,v 1.6 2004/08/01 03:52:18 drh Exp $
+# $Id: memleak.test,v 1.7 2004/09/03 18:38:46 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -41,6 +41,7 @@ set EXCLUDE {
   btree2.test
   trans.test
   crash.test
+  corrupt.test
 }
 if {[sqlite3 -has-codec]} {
   # lappend EXCLUDE 
