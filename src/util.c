@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.63 2003/05/12 23:06:53 drh Exp $
+** $Id: util.c,v 1.64 2003/06/02 06:17:10 jplyon Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -317,7 +317,8 @@ char *sqliteStrNDup(const char *z, int n){
 ** Create a string from the 2nd and subsequent arguments (up to the
 ** first NULL argument), store the string in memory obtained from
 ** sqliteMalloc() and make the pointer indicated by the 1st argument
-** point to that string.
+** point to that string.  The 1st argument must either be NULL or 
+** point to memory obtained from sqliteMalloc().
 */
 void sqliteSetString(char **pz, const char *zFirst, ...){
   va_list ap;
@@ -355,7 +356,9 @@ void sqliteSetString(char **pz, const char *zFirst, ...){
 /*
 ** Works like sqliteSetString, but each string is now followed by
 ** a length integer which specifies how much of the source string 
-** to copy (in bytes).  -1 means use the whole string.
+** to copy (in bytes).  -1 means use the whole string.  The 1st 
+** argument must either be NULL or point to memory obtained from 
+** sqliteMalloc().
 */
 void sqliteSetNString(char **pz, ...){
   va_list ap;

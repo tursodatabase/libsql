@@ -1,5 +1,5 @@
-C Additions\sand\scorrections\sto\svdbe\sdocumentation\scomments.\s(CVS\s992)
-D 2003-06-02T06:15:59
+C Added\scomments.\s(CVS\s993)
+D 2003-06-02T06:17:10
 F Makefile.in 1ff85c27d4350c74118341024e8a4fb2a04a3a43
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -57,7 +57,7 @@ F src/threadtest.c d641a5219e718e18a1a80a50eb9bb549f451f42e
 F src/tokenize.c 2ba93fe10d5f57f0cc20b07417c3244a30c324b3
 F src/trigger.c 5caf7697e6cd4cfaf38d55bff31580f4124d836f
 F src/update.c 24260b4fda00c9726d27699a0561d53c0dccc397
-F src/util.c 8065b78806a5132119452d9e0417cf071e6f02f9
+F src/util.c 18d16fa3171e34b6f6f73ef0c61e7d9b73b78826
 F src/vacuum.c 0820984615786c9ccdaad8032a792309b354a8eb
 F src/vdbe.c 0f09d140c311a843676c0e9f9a8272ed47cad7a4
 F src/vdbe.h 985c24f312d10f9ef8f9a8b8ea62fcdf68e82f21
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 903adbe802ca0e987b867e5ad33aae02ad2a43d4
-R 1faee166345b5258cc454681cf26ee88
+P b648987de3383d6835df58aa0efee54fa8f10d26
+R 5d5339e91bb10ccbd66d69854fac689d
 U jplyon
-Z 9b96c607be8d8a960afc568f1f869702
+Z 3d1689d57ad8cd168de42209fa17631f
