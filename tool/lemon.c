@@ -3664,6 +3664,20 @@ int mhflag;     /* Output in makeheaders format if true */
       fprintf(out,"      break;\n"); lineno++;
     }
   }
+  if( lemp->vardest ){
+    struct symbol *dflt_sp = 0;
+    for(i=0; i<lemp->nsymbol; i++){
+      struct symbol *sp = lemp->symbols[i];
+      if( sp==0 || sp->type==TERMINAL ||
+          sp->index<=0 || sp->destructor!=0 ) continue;
+      fprintf(out,"    case %d:\n",sp->index); lineno++;
+      dflt_sp = sp;
+    }
+    if( dflt_sp!=0 ){
+      emit_destructor_code(out,dflt_sp,lemp,&lineno);
+      fprintf(out,"      break;\n"); lineno++;
+    }
+  }
   for(i=0; i<lemp->nsymbol; i++){
     struct symbol *sp = lemp->symbols[i];
     if( sp==0 || sp->type==TERMINAL || sp->destructor==0 ) continue;
@@ -3682,20 +3696,6 @@ int mhflag;     /* Output in makeheaders format if true */
 
     emit_destructor_code(out,lemp->symbols[i],lemp,&lineno);
     fprintf(out,"      break;\n"); lineno++;
-  }
-  if( lemp->vardest ){
-    struct symbol *dflt_sp = 0;
-    for(i=0; i<lemp->nsymbol; i++){
-      struct symbol *sp = lemp->symbols[i];
-      if( sp==0 || sp->type==TERMINAL ||
-          sp->index<=0 || sp->destructor!=0 ) continue;
-      fprintf(out,"    case %d:\n",sp->index); lineno++;
-      dflt_sp = sp;
-    }
-    if( dflt_sp!=0 ){
-      emit_destructor_code(out,dflt_sp,lemp,&lineno);
-      fprintf(out,"      break;\n"); lineno++;
-    }
   }
   tplt_xfer(lemp->name,in,out,&lineno);
 
