@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.66 2004/05/20 11:00:52 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.67 2004/05/21 01:47:27 danielk1977 Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -596,7 +596,7 @@ int sqlite3_set_authorizer(
 
 /*
 ** Register a function that is called at every invocation of sqlite3_exec()
-** or sqlite3_compile().  This function can be used (for example) to generate
+** or sqlite3_prepare().  This function can be used (for example) to generate
 ** a log file of all SQL executed against a database.
 */
 void *sqlite3_trace(sqlite*, void(*xTrace)(void*,const char*), void*);
@@ -727,11 +727,11 @@ int sqlite3_finalize(sqlite_vm*, char **pzErrMsg);
 int sqlite3_reset(sqlite_vm*, char **pzErrMsg);
 
 /*
-** If the SQL that was handed to sqlite3_compile contains variables that
+** If the SQL that was handed to sqlite3_prepare contains variables that
 ** are represeted in the SQL text by a question mark ('?').  This routine
 ** is used to assign values to those variables.
 **
-** The first parameter is a virtual machine obtained from sqlite3_compile().
+** The first parameter is a virtual machine obtained from sqlite3_prepare().
 ** The 2nd "idx" parameter determines which variable in the SQL statement
 ** to bind the value to.  The left most '?' is 1.  The 3rd parameter is
 ** the value to assign to that variable.  The 4th parameter is the number
@@ -748,7 +748,7 @@ int sqlite3_reset(sqlite_vm*, char **pzErrMsg);
 ** If the 4th "len" parameter is -1, then strlen() is used to find the
 ** length.
 **
-** This routine can only be called immediately after sqlite3_compile()
+** This routine can only be called immediately after sqlite3_prepare()
 ** or sqlite3_reset() and before any calls to sqlite3_step().
 **
 ******* THIS IS AN EXPERIMENTAL API AND IS SUBJECT TO CHANGE ******
@@ -868,33 +868,33 @@ typedef sqlite sqlite3;
 
 /*
 ** This routine is used to bind a 32-bit integer value to a variable
-** in an SQL statement compiled by sqlite3_compile(). See comments for
-** sqlite3_compile() for more details on SQL statement variables.
+** in an SQL statement compiled by sqlite3_prepare(). See comments for
+** sqlite3_prepare() for more details on SQL statement variables.
 **
 ** The first argument is a pointer to an SQL statement previously
-** obtained from a call to sqlite3_compile(). The second parameter "i"
+** obtained from a call to sqlite3_prepare(). The second parameter "i"
 ** determines the parameter to bind the value "iValue" to.
 */
 int sqlite3_bind_int32(sqlite3_stmt*, int i, int iValue);
 
 /*
 ** This routine is used to bind a 64-bit integer value to a variable
-** in an SQL statement compiled by sqlite3_compile(). See comments for
-** sqlite3_compile() for more details on SQL statement variables.
+** in an SQL statement compiled by sqlite3_prepare(). See comments for
+** sqlite3_prepare() for more details on SQL statement variables.
 **
 ** The first argument is a pointer to an SQL statement previously
-** obtained from a call to sqlite3_compile(). The second parameter "i"
+** obtained from a call to sqlite3_prepare(). The second parameter "i"
 ** determines the parameter to bind the value "iValue" to.
 */
 int sqlite3_bind_int64(sqlite3_stmt*, int i, long long int iValue);
 
 /*
 ** This routine is used to bind a real (floating point) value to a variable
-** in an SQL statement compiled by sqlite3_compile(). See comments for
-** sqlite3_compile() for more details on SQL statement variables.
+** in an SQL statement compiled by sqlite3_prepare(). See comments for
+** sqlite3_prepare() for more details on SQL statement variables.
 **
 ** The first argument is a pointer to an SQL statement previously obtained
-** from a call to sqlite3_compile(). The second parameter "i" determines
+** from a call to sqlite3_prepare(). The second parameter "i" determines
 ** the parameter to bind the value "iValue" to. Internally, SQLite will
 ** manipulate the value as a 64-bit IEEE float.
 */
@@ -902,22 +902,22 @@ int sqlite3_bind_double(sqlite3_stmt*, int i, double iValue);
 
 /*
 ** This routine is used to bind a NULL value to a variable in an SQL
-** statement compiled by sqlite3_compile(). See comments for
-** sqlite3_compile() for more details on SQL statement variables.
+** statement compiled by sqlite3_prepare(). See comments for
+** sqlite3_prepare() for more details on SQL statement variables.
 **
 ** The first argument is a pointer to an SQL statement previously obtained
-** from a call to sqlite3_compile(). The second parameter "i" determines
+** from a call to sqlite3_prepare(). The second parameter "i" determines
 ** the parameter to bind the NULL value to.
 */
 int sqlite3_bind_null(sqlite3_stmt*, int i);
 
 /*
 ** This routine is used to bind a UTF-8 string value to a variable in an
-** SQL statement compiled by sqlite3_compile(). See comments for
-** sqlite3_compile() for more details on SQL statement variables.
+** SQL statement compiled by sqlite3_prepare(). See comments for
+** sqlite3_prepare() for more details on SQL statement variables.
 **
 ** The first argument is a pointer to an SQL statement previously obtained
-** from a call to sqlite3_compile(). The second parameter "i" determines
+** from a call to sqlite3_prepare(). The second parameter "i" determines
 ** the parameter to bind the value to. Parameter three "z" is a pointer
 ** to the UTF-8 string. 
 **
@@ -936,11 +936,11 @@ int sqlite3_bind_text(sqlite3_stmt*, int i, const char* z, int n, int eCopy);
 
 /*
 ** This routine is used to bind a UTF-16 string value to a variable in an
-** SQL statement compiled by sqlite3_compile(). See comments for
-** sqlite3_compile() for more details on SQL statement variables.
+** SQL statement compiled by sqlite3_prepare(). See comments for
+** sqlite3_prepare() for more details on SQL statement variables.
 **
 ** The first argument is a pointer to an SQL statement previously obtained
-** from a call to sqlite3_compile(). The second parameter "i" determines
+** from a call to sqlite3_prepare(). The second parameter "i" determines
 ** the parameter to bind the value to. Parameter three "z" is a pointer to
 ** the UTF-16 string. If the string does not begin with a byte-order-mark,
 ** it is assumed to be encoded in the native byte order of the machine.
@@ -960,11 +960,11 @@ int sqlite3_bind_text16(sqlite3_stmt*, int i, const void *z, int, int eCopy);
 
 /*
 ** This routine is used to bind a blob value to a variable in an
-** SQL statement compiled by sqlite3_compile(). See comments for
-** sqlite3_compile() for more details on SQL statement variables.
+** SQL statement compiled by sqlite3_prepare(). See comments for
+** sqlite3_prepare() for more details on SQL statement variables.
 **
 ** The first argument is a pointer to an SQL statement previously obtained
-** from a call to sqlite3_compile(). The second parameter "i" determines
+** from a call to sqlite3_prepare(). The second parameter "i" determines
 ** the parameter to bind the value to. Parameter three "z" is a pointer to
 ** the blob of data.
 **
@@ -1025,6 +1025,27 @@ const char *sqlite3_errmsg(sqlite3*);
 */
 const void *sqlite3_errmsg16(sqlite3*);
 
+/*
+** To execute an SQL query, it must first be compiled into a byte-code
+** program using this routine. The first parameter "db" is an SQLite
+** database handle. The second parameter "zSql" is the statement
+** to be compiled, encoded as UTF-8 text. If the next parameter, "nBytes",
+** is less than zero, then zSql is read up to the first nul terminator.
+** If "nBytes" is not less than zero, then it is the length of the
+** string zSql, in bytes (not characters).
+**
+** *pzTail is made to point to the first character past the end of the first
+** SQL statement in zSql.  This routine only compiles the first statement
+** in zSql, so *pzTail is left pointing to what remains uncompiled.
+**
+** *ppStmt is left pointing to a compiled SQL statement that can be
+** executed using sqlite3_step().  Or if there is an error, *ppStmt may be
+** set to NULL.  If the input text contained no SQL (if the input is and
+** empty string or a comment) then *ppStmt is set to NULL.
+**
+** On success, SQLITE_OK is returned.  Otherwise an error code is returned.
+** 
+*/
 int sqlite3_prepare(
   sqlite3 *db,            /* Database handle */
   const char *zSql,       /* SQL statement, UTF-8 encoded */
@@ -1041,10 +1062,21 @@ int sqlite3_prepare16(
   const void **pzTail     /* OUT: Pointer to unused portion of zSql */
 );
 
+int sqlite3_open_new(
+  const char *filename,   /* Database filename (UTF-8) */
+  sqlite3 **ppDb,         /* OUT: SQLite db handle */
+  const char **args       /* Null terminated array of option strings */
+);
+
+int sqlite3_open16(
+  const void *filename,   /* Database filename (UTF-16) */
+  sqlite3 **ppDb,         /* OUT: SQLite db handle */
+  const char **args       /* Null terminated array of option strings */
+);
+
+
 #if 0
 
-int sqlite3_open(const char*, sqlite3**, const char**);
-int sqlite3_open16(const void*, sqlite3**, const char**);
 int sqlite3_close(sqlite3*);
 
 int sqlite3_finalize(sqlite3_stmt*);

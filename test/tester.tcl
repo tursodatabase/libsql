@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.33 2004/05/20 22:16:31 drh Exp $
+# $Id: tester.tcl,v 1.34 2004/05/21 01:47:27 danielk1977 Exp $
 
 # Make sure tclsqlite was compiled correctly.  Abort now with an
 # error message if not.
@@ -198,7 +198,7 @@ proc stepsql {dbptr sql} {
   set sql [string trim $sql]
   set r 0
   while {[string length $sql]>0} {
-    if {[catch {sqlite_compile $dbptr $sql sqltail} vm]} {
+    if {[catch {sqlite3_prepare $dbptr $sql -1 sqltail} vm]} {
       return [list 1 $vm]
     }
     set sql [string trim $sqltail]

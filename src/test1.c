@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.43 2004/05/20 22:16:30 drh Exp $
+** $Id: test1.c,v 1.44 2004/05/21 01:47:27 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -129,36 +129,6 @@ static int makePointerStr(Tcl_Interp *interp, char *zPtr, void *p){
       return TCL_ERROR;
     }
   }
-  return TCL_OK;
-}
-
-/*
-** Usage:   sqlite3_open filename
-**
-** Returns:  The name of an open database.
-*/
-static int sqlite_test_open(
-  void *NotUsed,
-  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
-  int argc,              /* Number of arguments */
-  char **argv            /* Text of each argument */
-){
-  sqlite *db;
-  char *zErr = 0;
-  char zBuf[100];
-  if( argc!=2 ){
-    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " FILENAME\"", 0);
-    return TCL_ERROR;
-  }
-  db = sqlite3_open(argv[1], 0666, &zErr);
-  if( db==0 ){
-    Tcl_AppendResult(interp, zErr, 0);
-    free(zErr);
-    return TCL_ERROR;
-  }
-  if( makePointerStr(interp, zBuf, db) ) return TCL_ERROR;
-  Tcl_AppendResult(interp, zBuf, 0);
   return TCL_OK;
 }
 
@@ -782,47 +752,6 @@ static int sqlite_datatypes(
 }
 
 /*
-** Usage:  sqlite3_compile  DB  SQL  ?TAILVAR?
-**
-** Attempt to compile an SQL statement.  Return a pointer to the virtual
-** machine used to execute that statement.  Unprocessed SQL is written
-** into TAILVAR.
-*/
-static int test_compile(
-  void *NotUsed,
-  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
-  int argc,              /* Number of arguments */
-  char **argv            /* Text of each argument */
-){
-  sqlite *db;
-  sqlite_vm *vm;
-  int rc;
-  char *zErr = 0;
-  const char *zTail;
-  char zBuf[50];
-  if( argc!=3 && argc!=4 ){
-    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], 
-       " DB SQL TAILVAR", 0);
-    return TCL_ERROR;
-  }
-  if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
-  rc = sqlite3_compile(db, argv[2], argc==4 ? &zTail : 0, &vm, &zErr);
-  if( argc==4 ) Tcl_SetVar(interp, argv[3], zTail, 0);
-  if( rc ){
-    assert( vm==0 );
-    sprintf(zBuf, "(%d) ", rc);
-    Tcl_AppendResult(interp, zBuf, zErr, 0);
-    sqlite3_freemem(zErr);
-    return TCL_ERROR;
-  }
-  if( vm ){
-    if( makePointerStr(interp, zBuf, vm) ) return TCL_ERROR;
-    Tcl_AppendResult(interp, zBuf, 0);
-  }
-  return TCL_OK;
-}
-
-/*
 ** Usage:  sqlite3_step  VM  ?NVAR?  ?VALUEVAR?  ?COLNAMEVAR?
 **
 ** Step a virtual machine.  Return a the result code as a string.
@@ -1330,6 +1259,7 @@ static int test_prepare(
   const char *zTail = 0;
   sqlite3_stmt *pStmt = 0;
   char zBuf[50];
+  int rc;
 
   if( objc!=5 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", 
@@ -1340,19 +1270,24 @@ static int test_prepare(
   zSql = Tcl_GetString(objv[2]);
   if( Tcl_GetIntFromObj(interp, objv[3], &bytes) ) return TCL_ERROR;
 
-  if( SQLITE_OK!=sqlite3_prepare(db, zSql, bytes, &pStmt, &zTail) ){
-    return TCL_ERROR;
-  }
-
+  rc = sqlite3_prepare(db, zSql, bytes, &pStmt, &zTail);
   if( zTail ){
     if( bytes>=0 ){
       bytes = bytes - (zTail-zSql);
     }
     Tcl_ObjSetVar2(interp, objv[4], 0, Tcl_NewStringObj(zTail, bytes), 0);
   }
+  if( rc!=SQLITE_OK ){
+    assert( pStmt==0 );
+    sprintf(zBuf, "(%d) ", rc);
+    Tcl_AppendResult(interp, zBuf, sqlite3_errmsg(db), 0);
+    return TCL_ERROR;
+  }
 
-  if( makePointerStr(interp, zBuf, pStmt) ) return TCL_ERROR;
-  Tcl_AppendResult(interp, zBuf, 0);
+  if( pStmt ){
+    if( makePointerStr(interp, zBuf, pStmt) ) return TCL_ERROR;
+    Tcl_AppendResult(interp, zBuf, 0);
+  }
   return TCL_OK;
 }
 
@@ -1400,13 +1335,70 @@ static int test_prepare16(
   pTail = Tcl_NewByteArrayObj((u8 *)zTail, objlen);
   Tcl_IncrRefCount(pTail);
   Tcl_ObjSetVar2(interp, objv[4], 0, pTail, 0);
-  // Tcl_DecrRefCount(pTail);
+  Tcl_DecrRefCount(pTail);
 
-  if( makePointerStr(interp, zBuf, pStmt) ) return TCL_ERROR;
+  if( pStmt ){
+    if( makePointerStr(interp, zBuf, pStmt) ) return TCL_ERROR;
+  }
   Tcl_AppendResult(interp, zBuf, 0);
   return TCL_OK;
 }
 
+/*
+** Usage: sqlite3_open filename ?options-list?
+*/
+static int test_open(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  const char *zFilename;
+  sqlite3 *db;
+  int rc;
+  char zBuf[100];
+
+  if( objc!=3 && objc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", 
+       Tcl_GetString(objv[0]), " filename options-list", 0);
+    return TCL_ERROR;
+  }
+
+  zFilename = Tcl_GetString(objv[1]);
+  rc = sqlite3_open_new(zFilename, &db, 0);
+  
+  if( makePointerStr(interp, zBuf, db) ) return TCL_ERROR;
+  Tcl_AppendResult(interp, zBuf, 0);
+  return TCL_OK;
+}
+
+/*
+** Usage: sqlite3_open16 filename options
+*/
+static int test_open16(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  const void *zFilename;
+  sqlite3 *db;
+  int rc;
+  char zBuf[100];
+
+  if( objc!=3 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", 
+       Tcl_GetString(objv[0]), " filename options-list", 0);
+    return TCL_ERROR;
+  }
+
+  zFilename = Tcl_GetByteArrayFromObj(objv[1], 0);
+  rc = sqlite3_open16(zFilename, &db, 0);
+  
+  if( makePointerStr(interp, zBuf, db) ) return TCL_ERROR;
+  Tcl_AppendResult(interp, zBuf, 0);
+  return TCL_OK;
+}
 
 /*
 ** This is a collating function named "REVERSE" which sorts text
@@ -1467,7 +1459,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_mprintf_double",        (Tcl_CmdProc*)sqlite3_mprintf_double },
      { "sqlite3_mprintf_scaled",        (Tcl_CmdProc*)sqlite3_mprintf_scaled },
      { "sqlite3_mprintf_z_test",        (Tcl_CmdProc*)test_mprintf_z        },
-     { "sqlite3_open",                  (Tcl_CmdProc*)sqlite_test_open      },
+//     { "sqlite3_open",                  (Tcl_CmdProc*)sqlite_test_open      },
      { "sqlite3_last_insert_rowid",     (Tcl_CmdProc*)test_last_rowid       },
      { "sqlite3_exec_printf",           (Tcl_CmdProc*)test_exec_printf      },
      { "sqlite3_get_table_printf",      (Tcl_CmdProc*)test_get_table_printf },
@@ -1481,12 +1473,11 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite_malloc_fail",            (Tcl_CmdProc*)sqlite_malloc_fail    },
      { "sqlite_malloc_stat",            (Tcl_CmdProc*)sqlite_malloc_stat    },
 #endif
-     { "sqlite_compile",                (Tcl_CmdProc*)test_compile          },
-     { "sqlite_step",                   (Tcl_CmdProc*)test_step             },
-     { "sqlite_finalize",               (Tcl_CmdProc*)test_finalize         },
-     { "sqlite_bind",                   (Tcl_CmdProc*)test_bind             },
-     { "sqlite_reset",                  (Tcl_CmdProc*)test_reset            },
-     { "breakpoint",                    (Tcl_CmdProc*)test_breakpoint       },
+     { "sqlite_step",                    (Tcl_CmdProc*)test_step             },
+     { "sqlite_finalize",                (Tcl_CmdProc*)test_finalize         },
+     { "sqlite_bind",                    (Tcl_CmdProc*)test_bind             },
+     { "sqlite_reset",                   (Tcl_CmdProc*)test_reset            },
+     { "breakpoint",                     (Tcl_CmdProc*)test_breakpoint       },
   };
   static struct {
      char *zName;
@@ -1504,6 +1495,8 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_errmsg16",              (Tcl_ObjCmdProc*)test_errmsg16      },
      { "sqlite3_prepare",               (Tcl_ObjCmdProc*)test_prepare       },
      { "sqlite3_prepare16",             (Tcl_ObjCmdProc*)test_prepare16     },
+     { "sqlite3_open",                  (Tcl_ObjCmdProc*)test_open          },
+     { "sqlite3_open16",                (Tcl_ObjCmdProc*)test_open16        },
      { "add_reverse_collating_func",    (Tcl_ObjCmdProc*)reverse_collfunc   },
   };
   int i;

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the VACUUM statement.
 #
-# $Id: vacuum.test,v 1.15 2004/02/14 16:31:04 drh Exp $
+# $Id: vacuum.test,v 1.16 2004/05/21 01:47:27 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -130,12 +130,12 @@ do_test vacuum-3.1 {
   }
 } {}
 
-# Ticket #464.  Make sure VACUUM works with the sqlite_compile() API.
+# Ticket #464.  Make sure VACUUM works with the sqlite3_prepare() API.
 #
 do_test vacuum-4.1 {
   db close
   set DB [sqlite db test.db]
-  set VM [sqlite_compile $DB {VACUUM} TAIL]
+  set VM [sqlite3_prepare $DB {VACUUM} -1 TAIL]
   sqlite_step $VM N VALUES COLNAMES
 } {SQLITE_DONE}
 do_test vacuum-4.2 {

@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach2.test,v 1.7 2004/05/13 11:34:17 danielk1977 Exp $
+# $Id: attach2.test,v 1.8 2004/05/21 01:47:27 danielk1977 Exp $
 #
 
 
@@ -124,13 +124,13 @@ do_test attach2-2.12 {
 do_test attach2-3.1 {
   db close
   set DB [sqlite db test.db]
-  set rc [catch {sqlite_compile $DB "ATTACH 'test2.db' AS t2" TAIL} VM]
+  set rc [catch {sqlite3_prepare $DB "ATTACH 'test2.db' AS t2" -1 TAIL} VM]
   if {$rc} {lappend rc $VM}
   sqlite_finalize $VM
   set rc
 } {0}
 do_test attach2-3.2 {
-  set rc [catch {sqlite_compile $DB "DETACH t2" TAIL} VM]
+  set rc [catch {sqlite3_prepare $DB "DETACH t2" -1 TAIL} VM]
   if {$rc} {lappend rc $VM}
   sqlite_finalize $VM
   set rc

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi2.test,v 1.10 2003/08/05 13:13:38 drh Exp $
+# $Id: capi2.test,v 1.11 2004/05/21 01:47:27 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -23,7 +23,7 @@ do_test capi2-1.1 {
   db close
   set DB [sqlite db test.db]
   execsql {CREATE TABLE t1(a,b,c)}
-  set VM [sqlite_compile $DB {SELECT name, rowid FROM sqlite_master} TAIL]
+  set VM [sqlite3_prepare $DB {SELECT name, rowid FROM sqlite_master} -1 TAIL]
   set TAIL
 } {}
 do_test capi2-1.2 {
@@ -61,7 +61,7 @@ do_test capi2-1.10 {
 } {}
 
 # Check to make sure that the "tail" of a multi-statement SQL script
-# is returned by sqlite_compile.
+# is returned by sqlite3_prepare.
 #
 do_test capi2-2.1 {
   set SQL {
@@ -69,7 +69,7 @@ do_test capi2-2.1 {
     SELECT name, rowid FROM sqlite_temp_master;
     -- A comment at the end
   }
-  set VM [sqlite_compile $DB $SQL SQL]
+  set VM [sqlite3_prepare $DB $SQL -1 SQL]
   set SQL
 } {
     SELECT name, rowid FROM sqlite_temp_master;
@@ -87,7 +87,7 @@ do_test capi2-2.4 {
   sqlite_finalize $VM
 } {}
 do_test capi2-2.5 {
-  set VM [sqlite_compile $DB $SQL SQL]
+  set VM [sqlite3_prepare $DB $SQL -1 SQL]
   set SQL
 } {
     -- A comment at the end
@@ -100,7 +100,7 @@ do_test capi2-2.7 {
   sqlite_finalize $VM
 } {}
 do_test capi2-2.8 {
-  set VM [sqlite_compile $DB $SQL SQL]
+  set VM [sqlite3_prepare $DB $SQL -1 SQL]
   list $SQL $VM
 } {{} {}}
 
@@ -108,37 +108,37 @@ do_test capi2-2.8 {
 #
 do_test capi2-3.1 {
   set rc [catch {
-      sqlite_compile $DB {select bogus from sqlite_master} TAIL
+      sqlite3_prepare $DB {select bogus from sqlite_master} -1 TAIL
   } msg]
   lappend rc $msg $TAIL
 } {1 {(1) no such column: bogus} {}}
 do_test capi2-3.2 {
   set rc [catch {
-      sqlite_compile $DB {select bogus from } TAIL
+      sqlite3_prepare $DB {select bogus from } -1 TAIL
   } msg]
   lappend rc $msg $TAIL
 } {1 {(1) near " ": syntax error} {}}
 do_test capi2-3.3 {
   set rc [catch {
-      sqlite_compile $DB {;;;;select bogus from sqlite_master} TAIL
+      sqlite3_prepare $DB {;;;;select bogus from sqlite_master} -1 TAIL
   } msg]
   lappend rc $msg $TAIL
 } {1 {(1) no such column: bogus} {}}
 do_test capi2-3.4 {
   set rc [catch {
-      sqlite_compile $DB {select bogus from sqlite_master;x;} TAIL
+      sqlite3_prepare $DB {select bogus from sqlite_master;x;} -1 TAIL
   } msg]
   lappend rc $msg $TAIL
 } {1 {(1) no such column: bogus} {x;}}
 do_test capi2-3.5 {
   set rc [catch {
-      sqlite_compile $DB {select bogus from sqlite_master;;;x;} TAIL
+      sqlite3_prepare $DB {select bogus from sqlite_master;;;x;} -1 TAIL
   } msg]
   lappend rc $msg $TAIL
 } {1 {(1) no such column: bogus} {;;x;}}
 do_test capi2-3.6 {
   set rc [catch {
-      sqlite_compile $DB {select 5/0} TAIL
+      sqlite3_prepare $DB {select 5/0} -1 TAIL
   } VM]
   lappend rc $TAIL
 } {0 {}}
@@ -153,7 +153,7 @@ do_test capi2-3.8 {
 } {}
 do_test capi2-3.9 {
   execsql {CREATE UNIQUE INDEX i1 ON t1(a)}
-  set VM [sqlite_compile $DB {INSERT INTO t1 VALUES(1,2,3)} TAIL]
+  set VM [sqlite3_prepare $DB {INSERT INTO t1 VALUES(1,2,3)} -1 TAIL]
   set TAIL
 } {}
 do_test capi2-3.9b {db changes} {0}
@@ -172,7 +172,7 @@ do_test capi2-3.12 {
   list [catch {sqlite_finalize $VM} msg] [set msg]
 } {1 {(21) library routine called out of sequence}}
 do_test capi2-3.13 {
-  set VM [sqlite_compile $DB {INSERT INTO t1 VALUES(1,3,4)} TAIL]
+  set VM [sqlite3_prepare $DB {INSERT INTO t1 VALUES(1,3,4)} -1 TAIL]
   list [sqlite_step $VM N VALUE COLNAME] [set N] [set VALUE] [set COLNAME]
 } {SQLITE_ERROR 0 {} {}}
 do_test capi2-3.13b {db changes} {0}
@@ -180,7 +180,7 @@ do_test capi2-3.14 {
   list [catch {sqlite_finalize $VM} msg] [set msg]
 } {1 {(19) column a is not unique}}
 do_test capi2-3.15 {
-  set VM [sqlite_compile $DB {CREATE TABLE t2(a NOT NULL, b)} TAIL]
+  set VM [sqlite3_prepare $DB {CREATE TABLE t2(a NOT NULL, b)} -1 TAIL]
   set TAIL
 } {}
 do_test capi2-3.16 {
@@ -190,7 +190,7 @@ do_test capi2-3.17 {
   list [catch {sqlite_finalize $VM} msg] [set msg]
 } {0 {}}
 do_test capi2-3.18 {
-  set VM [sqlite_compile $DB {INSERT INTO t2 VALUES(NULL,2)} TAIL]
+  set VM [sqlite3_prepare $DB {INSERT INTO t2 VALUES(NULL,2)} -1 TAIL]
   list [sqlite_step $VM N VALUE COLNAME] [set N] [set VALUE] [set COLNAME]
 } {SQLITE_ERROR 0 {} {}}
 do_test capi2-3.19 {
@@ -200,15 +200,15 @@ do_test capi2-3.19 {
 # Two or more virtual machines exists at the same time.
 #
 do_test capi2-4.1 {
-  set VM1 [sqlite_compile $DB {INSERT INTO t2 VALUES(1,2)} TAIL]
+  set VM1 [sqlite3_prepare $DB {INSERT INTO t2 VALUES(1,2)} -1 TAIL]
   set TAIL
 } {}
 do_test capi2-4.2 {
-  set VM2 [sqlite_compile $DB {INSERT INTO t2 VALUES(2,3)} TAIL]
+  set VM2 [sqlite3_prepare $DB {INSERT INTO t2 VALUES(2,3)} -1 TAIL]
   set TAIL
 } {}
 do_test capi2-4.3 {
-  set VM3 [sqlite_compile $DB {INSERT INTO t2 VALUES(3,4)} TAIL]
+  set VM3 [sqlite3_prepare $DB {INSERT INTO t2 VALUES(3,4)} -1 TAIL]
   set TAIL
 } {}
 do_test capi2-4.4 {
@@ -242,9 +242,9 @@ do_test capi2-4.12 {
 # Interleaved SELECTs
 #
 do_test capi2-5.1 {
-  set VM1 [sqlite_compile $DB {SELECT * FROM t2} TAIL]
-  set VM2 [sqlite_compile $DB {SELECT * FROM t2} TAIL]
-  set VM3 [sqlite_compile $DB {SELECT * FROM t2} TAIL]
+  set VM1 [sqlite3_prepare $DB {SELECT * FROM t2} -1 TAIL]
+  set VM2 [sqlite3_prepare $DB {SELECT * FROM t2} -1 TAIL]
+  set VM3 [sqlite3_prepare $DB {SELECT * FROM t2} -1 TAIL]
   list [sqlite_step $VM1 N VALUE COLNAME] [set N] [set VALUE] [set COLNAME]
 } {SQLITE_ROW 2 {2 3} {a b {} {}}}
 do_test capi2-5.2 {
@@ -297,7 +297,7 @@ do_test capi2-6.1 {
     INSERT INTO t3 SELECT x+8 FROM t3;
     COMMIT;
   }
-  set VM1 [sqlite_compile $DB {SELECT * FROM t3} TAIL]
+  set VM1 [sqlite3_prepare $DB {SELECT * FROM t3} -1 TAIL]
   sqlite db2 test.db
   execsql {BEGIN} db2
 } {}
@@ -457,15 +457,15 @@ do_test capi2-7.12 {
 # Ticket #261 - make sure we can finalize before the end of a query.
 #
 do_test capi2-8.1 {
-  set VM1 [sqlite_compile $DB {SELECT * FROM t2} TAIL]
+  set VM1 [sqlite3_prepare $DB {SELECT * FROM t2} -1 TAIL]
   sqlite_finalize $VM1
 } {}
   
-# Tickets #384 and #385 - make sure the TAIL argument to sqlite_compile
+# Tickets #384 and #385 - make sure the TAIL argument to sqlite3_prepare
 # and all of the return pointers in sqlite_step can be null.
 #
 do_test capi2-9.1 {
-  set VM1 [sqlite_compile $DB {SELECT * FROM t2}]
+  set VM1 [sqlite3_prepare $DB {SELECT * FROM t2} -1 DUMMY]
   sqlite_step $VM1
   sqlite_finalize $VM1
 } {}

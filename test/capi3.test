@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi3.test,v 1.1 2004/05/20 11:00:53 danielk1977 Exp $
+# $Id: capi3.test,v 1.2 2004/05/21 01:47:27 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -45,6 +45,8 @@ proc utf8 {str} {
 #
 # capi3-1.*: Test sqlite3_prepare 
 # capi3-2.*: Test sqlite3_prepare16
+# capi3-3.*: Test sqlite3_open
+# capi3-4.*: Test sqlite3_open16
 #
 
 db close
@@ -104,6 +106,54 @@ do_test capi3-2.4 {
 do_test capi3-2.5 {
   sqlite3_errmsg $DB
 } {no such column: namex}
+
+# rename sqlite3_open sqlite3_open_old
+# proc sqlite3_open {fname options} {sqlite3_open_new $fname $options}
+
+do_test capi3-3.1 {
+  set db2 [sqlite3_open test.db {}]
+  sqlite3_errcode $db2
+} {SQLITE_OK}
+# FIX ME: Should test the db handle works.
+do_test capi3-3.2 {
+  sqlite3_close $db2
+} {}
+do_test capi3-3.3 {
+  catch {
+    set db2 [sqlite3_open /bogus/path/test.db {}]
+  }
+  sqlite3_errcode $db2
+} {SQLITE_CANTOPEN}
+do_test capi3-3.4 {
+  sqlite3_errmsg $db2
+} {unable to open database file}
+do_test capi3-3.4 {
+  sqlite3_close $db2
+} {}
+
+# rename sqlite3_open ""
+# rename sqlite3_open_old sqlite3_open
+
+do_test capi3-4.1 {
+  set db2 [sqlite3_open16 [utf16 test.db] {}]
+  sqlite3_errcode $db2
+} {SQLITE_OK}
+# FIX ME: Should test the db handle works.
+do_test capi3-4.2 {
+  sqlite3_close $db2
+} {}
+do_test capi3-4.3 {
+  catch {
+    set db2 [sqlite3_open16 [utf16 /bogus/path/test.db] {}]
+  }
+  sqlite3_errcode $db2
+} {SQLITE_CANTOPEN}
+do_test capi3-4.4 {
+  utf8 [sqlite3_errmsg16 $db2]
+} {unable to open database file}
+do_test capi3-4.4 {
+  sqlite3_close $db2
+} {}
 
 finish_test
 

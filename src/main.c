@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.178 2004/05/20 22:16:29 drh Exp $
+** $Id: main.c,v 1.179 2004/05/21 01:47:27 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1055,14 +1055,51 @@ int sqlite3BtreeFactory(
   return sqlite3BtreeOpen(zFilename, ppBtree, nCache, btree_flags);
 }
 
+/*
+** Return UTF-8 encoded English language explanation of the most recent
+** error.
+*/
 const char *sqlite3_errmsg(sqlite3 *db){
+  if( !db ){
+    /* If db is NULL, then assume that a malloc() failed during an
+    ** sqlite3_open() call.
+    */
+    return sqlite3_error_string(SQLITE_NOMEM);
+  }
   if( db->zErrMsg ){
     return db->zErrMsg;
   }
   return sqlite3_error_string(db->errCode);
 }
 
+/*
+** Return UTF-16 encoded English language explanation of the most recent
+** error.
+*/
 const void *sqlite3_errmsg16(sqlite3 *db){
+  if( !db ){
+    /* If db is NULL, then assume that a malloc() failed during an
+    ** sqlite3_open() call. We have a static version of the string 
+    ** "out of memory" encoded using UTF-16 just for this purpose.
+    **
+    ** Because all the characters in the string are in the unicode
+    ** range 0x00-0xFF, if we pad the big-endian string with a 
+    ** zero byte, we can obtain the little-endian string with
+    ** &big_endian[1].
+    */
+    static char outOfMemBe[] = {
+      0, 'o', 0, 'u', 0, 't', 0, ' ', 
+      0, 'o', 0, 'f', 0, ' ', 
+      0, 'm', 0, 'e', 0, 'm', 0, 'o', 0, 'r', 0, 'y', 0, 0, 0
+    };
+    static char *outOfMemLe = &outOfMemBe[1];
+
+    if( SQLITE3_BIGENDIAN ){
+      return (void *)outOfMemBe;
+    }else{
+      return (void *)outOfMemLe;
+    }
+  }
   if( !db->zErrMsg16 ){
     char const *zErr8 = sqlite3_errmsg(db);
     if( SQLITE3_BIGENDIAN ){
@@ -1209,6 +1246,118 @@ int sqlite3_prepare16(
     *pzTail = (u8 *)zSql + sqlite3utf16ByteLen(zSql, chars_parsed);
   }
  
+  return rc;
+}
+
+/*
+** This routine does the work of opening a database on behalf of
+** sqlite3_open() and sqlite3_open16(). The database filename "zFilename"  
+** is UTF-8 encoded. The fourth argument, "def_enc" is one of the TEXT_*
+** macros from sqliteInt.h. If we end up creating a new database file
+** (not opening an existing one), the text encoding of the database
+** will be set to this value.
+*/
+static int openDatabase(
+  const char *zFilename, /* Database filename UTF-8 encoded */
+  sqlite3 **ppDb,        /* OUT: Returned database handle */
+  const char **options,  /* Null terminated list of db options, or null */
+  u8 def_enc             /* One of TEXT_Utf8, TEXT_Utf16le or TEXT_Utf16be */
+){
+  sqlite3 *db;
+  int rc, i;
+  char *zErrMsg = 0;
+
+  /* Allocate the sqlite data structure */
+  db = sqliteMalloc( sizeof(sqlite) );
+  if( db==0 ) goto opendb_out;
+  db->onError = OE_Default;
+  db->priorNewRowid = 0;
+  db->magic = SQLITE_MAGIC_BUSY;
+  db->nDb = 2;
+  db->aDb = db->aDbStatic;
+  /* db->flags |= SQLITE_ShortColNames; */
+  sqlite3HashInit(&db->aFunc, SQLITE_HASH_STRING, 1);
+  sqlite3HashInit(&db->aCollSeq, SQLITE_HASH_STRING, 0);
+  for(i=0; i<db->nDb; i++){
+    sqlite3HashInit(&db->aDb[i].tblHash, SQLITE_HASH_STRING, 0);
+    sqlite3HashInit(&db->aDb[i].idxHash, SQLITE_HASH_STRING, 0);
+    sqlite3HashInit(&db->aDb[i].trigHash, SQLITE_HASH_STRING, 0);
+    sqlite3HashInit(&db->aDb[i].aFKey, SQLITE_HASH_STRING, 1);
+  }
+  db->pDfltColl =
+     sqlite3ChangeCollatingFunction(db, "BINARY", 6, 0, binaryCollatingFunc);
+  
+  /* Open the backend database driver */
+  if( zFilename[0]==':' && strcmp(zFilename,":memory:")==0 ){
+    db->temp_store = 2;
+  }
+  rc = sqlite3BtreeFactory(db, zFilename, 0, MAX_PAGES, &db->aDb[0].pBt);
+  if( rc!=SQLITE_OK ){
+    /* FIX ME: sqlite3BtreeFactory() should call sqlite3Error(). */
+    sqlite3Error(db, rc, 0);
+    db->magic = SQLITE_MAGIC_CLOSED;
+    goto opendb_out;
+  }
+  db->aDb[0].zName = "main";
+  db->aDb[1].zName = "temp";
+
+  /* Attempt to read the schema */
+  sqlite3RegisterBuiltinFunctions(db);
+  rc = sqlite3Init(db, &zErrMsg);
+  if( sqlite3_malloc_failed ){
+    sqlite3_close(db);
+    db = 0;
+    goto opendb_out;
+  }else if( rc!=SQLITE_OK && rc!=SQLITE_BUSY ){
+    sqlite3Error(db, rc, "%s", zErrMsg, 0);
+    db->magic = SQLITE_MAGIC_CLOSED;
+  }else{
+    db->magic = SQLITE_MAGIC_OPEN;
+  }
+  if( zErrMsg ) sqliteFree(zErrMsg);
+
+opendb_out:
+  *ppDb = db;
+  return sqlite3_errcode(db);
+}
+
+/*
+** Open a new database handle.
+*/
+int sqlite3_open_new(
+  const char *zFilename, 
+  sqlite3 **ppDb, 
+  const char **options
+){
+  return openDatabase(zFilename, ppDb, options, TEXT_Utf8);
+}
+
+/*
+** Open a new database handle.
+*/
+int sqlite3_open16(
+  const void *zFilename, 
+  sqlite3 **ppDb, 
+  const char **options
+){
+  char *zFilename8;   /* zFilename encoded in UTF-8 instead of UTF-16 */
+  int rc;
+
+  assert( ppDb );
+
+  zFilename8 = sqlite3utf16to8(zFilename, -1);
+  if( !zFilename8 ){
+    *ppDb = 0;
+    return SQLITE_NOMEM;
+  }
+
+  if( SQLITE3_BIGENDIAN ){
+    rc = openDatabase(zFilename8, ppDb, options, TEXT_Utf16be);
+  }else{
+    rc = openDatabase(zFilename8, ppDb, options, TEXT_Utf16le);
+  }
+
+  sqliteFree(zFilename8);
   return rc;
 }
 

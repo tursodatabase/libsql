@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.242 2004/05/21 01:29:06 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.243 2004/05/21 01:47:27 danielk1977 Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -282,6 +282,7 @@ struct Db {
   u16 flags;           /* Flags associated with this database */
   void *pAux;          /* Auxiliary data.  Usually NULL */
   void (*xFreeAux)(void*);  /* Routine to free pAux */
+  u8 textEnc;          /* Text encoding for this database. */
 };
 
 /*
@@ -315,6 +316,12 @@ struct Db {
 #define DB_SchemaLoaded    0x0004  /* The schema has been loaded */
 #define DB_UnresetViews    0x0008  /* Some views have defined column names */
 
+/*
+** Possible values for the Db.textEnc field.
+*/
+#define TEXT_Utf8             1
+#define TEXT_Utf16le          2
+#define TEXT_Utf16be          3
 
 /*
 ** Each database is an instance of the following structure.
