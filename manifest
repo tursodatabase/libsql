@@ -1,5 +1,5 @@
-C Add\sthe\sOP_Concat8\sopcode,\ssimilar\sin\sconcept\sto\sOP_String8.\s(CVS\s1648)
-D 2004-06-21T09:06:42
+C Avoid\sopening\sa\stemp\stable\sfor\saggregate\squeries\swith\sno\sGROUP\sBY\sclause.\s(CVS\s1649)
+D 2004-06-21T10:45:07
 F Makefile.in d69d53c543518c1572ee0a8e8723d7e00bdb2266
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -28,7 +28,7 @@ F src/attach.c 05102e2e8ac43ce639d07b47a99c7772a62420e6
 F src/auth.c 60db23b98bb94c8b0178180faaf49dc116674217
 F src/btree.c 0cf8a52a57a7eb13d50719114ee1fa353e89d7d3
 F src/btree.h 32f96abef464cf8765b23ca669acfe90d191fcc5
-F src/build.c b1180cfc82b29fae42f9eac84aa869f3f7e207a8
+F src/build.c ffcd0cd8cd8aac1a45d852c6364c6b5b07cd9dc4
 F src/date.c b3e8b2bef1e3f2ce24e5b057203036defb18c3f1
 F src/delete.c 19287dd204569519636a04eca2b66c49c26e9266
 F src/encode.c a876af473d1d636faa3dca51c7571f2e007eea37
@@ -54,7 +54,7 @@ F src/parse.y 097438674976355a10cf177bd97326c548820b86
 F src/pragma.c 0750e1c360647dbe0a991f16133b0fe5e42e5039
 F src/printf.c 823b6a5cbedb6971a9e62f5d83204fe9b0be7c1b
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
-F src/select.c 7305795965f7702c6d95fc023dee138b40e90d41
+F src/select.c f02a65af34231031896e8442161cb5251e191e75
 F src/shell.c 24b641700c9d90f361fcfa4f432c5b4aff704e6d
 F src/sqlite.h.in a3d593016d1a1a514d7a26c8a353b58caf62e798
 F src/sqliteInt.h b379bc549c9d812090d6c33ff5f229b34346ac0c
@@ -71,11 +71,11 @@ F src/update.c b66b1896c9da54678ba3eff2bf0b4d291a95986a
 F src/utf.c 3a2596013e4b9582d075ca742de7f067ff7dee95
 F src/util.c e31e35d3d76cab7a02045095064897eca49cbce3
 F src/vacuum.c fcb930215a3f6c50087300782555f61ad11dd80c
-F src/vdbe.c 78d675c104d917a3061218775dddc5283cfff49d
+F src/vdbe.c 206ac8aa50978ff2870c3e53dc3564dff5ae8d33
 F src/vdbe.h 2d87155e31e84bb00cdc48cc1ce6987a3a484250
-F src/vdbeInt.h 4d56da610923efa8d4c9db89dff17cb721e69a9b
+F src/vdbeInt.h c0740932621a8d4aac20e0c4235ce44eb5e8dce6
 F src/vdbeapi.c 8a9421341e09b506a934132c9015f26362ae8c0e
-F src/vdbeaux.c 4e0d90a74e315194449e42e097d04028b521887b
+F src/vdbeaux.c b89e05d8a1be4a27ba98c0ae369642c12a2cb44f
 F src/vdbemem.c 9359c53386e070fea9f5403cab0c6f0cfe36496b
 F src/where.c 6507074d8ce3f78e7a4cd33f667f11e62020553e
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
@@ -225,7 +225,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl af528563442e3039928f9018327a18157e53a44f
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 7a33daef5b49b1f2d89f27e0063372fe4f1702c8
-R 7ca92734bb4802e7f5046704b052bee6
+P bbd3e93348bc3a1178f5278c6cf0b82e75bbf642
+R 721de3571b9dffe04fab1715f24d4561
 U danielk1977
-Z f888e07c9fa8c25fdc20925aefd11399
+Z c3a890995f7791045ca127dcbcc39544

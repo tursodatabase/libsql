@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.383 2004/06/21 09:06:42 danielk1977 Exp $
+** $Id: vdbe.c,v 1.384 2004/06/21 10:45:09 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -170,11 +170,12 @@ static int AggInsert(Agg *p, char *zKey, int nKey){
   memcpy(pElem->zKey, zKey, nKey);
   pElem->nKey = nKey;
 
-  assert( p->pCsr );
-  rc = sqlite3BtreeInsert(p->pCsr, zKey, nKey, &pElem, sizeof(AggElem*));
-  if( rc!=SQLITE_OK ){
-    sqliteFree(pElem);
-    return rc;
+  if( p->pCsr ){
+    rc = sqlite3BtreeInsert(p->pCsr, zKey, nKey, &pElem, sizeof(AggElem*));
+    if( rc!=SQLITE_OK ){
+      sqliteFree(pElem);
+      return rc;
+    }
   }
 
   for(i=0; i<p->nMem; i++){
@@ -4259,19 +4260,29 @@ case OP_MemIncr: {
   break;
 }
 
-/* Opcode: AggReset * P2 P3
+/* Opcode: AggReset P1 P2 P3
 **
 ** Reset the aggregator so that it no longer contains any data.
 ** Future aggregator elements will contain P2 values each and be sorted
 ** using the KeyInfo structure pointed to by P3.
+**
+** If P1 is non-zero, then only a single aggregator row is available (i.e.
+** there is no GROUP BY expression). In this case it is illegal to invoke
+** OP_AggFocus.
 */
 case OP_AggReset: {
   assert( !pOp->p3 || pOp->p3type==P3_KEYINFO );
-  rc = sqlite3VdbeAggReset(db, &p->agg, (KeyInfo *)pOp->p3);
+  if( pOp->p1 ){
+    rc = sqlite3VdbeAggReset(0, &p->agg, (KeyInfo *)pOp->p3);
+    p->agg.nMem = pOp->p2;    /* Agg.nMem is used by AggInsert() */
+    AggInsert(&p->agg, 0, 0);
+  }else{
+    rc = sqlite3VdbeAggReset(db, &p->agg, (KeyInfo *)pOp->p3);
+    p->agg.nMem = pOp->p2;
+  }
   if( rc!=SQLITE_OK ){
     goto abort_due_to_error;
   }
-  p->agg.nMem = pOp->p2;
   p->agg.apFunc = sqliteMalloc( p->agg.nMem*sizeof(p->agg.apFunc[0]) );
   if( p->agg.apFunc==0 ) goto no_mem;
   break;
@@ -4368,6 +4379,8 @@ case OP_AggFocus: {
   Stringify(pTos, db->enc);
   zKey = pTos->z;
   nKey = pTos->n;
+  assert( p->agg.pBtree );
+  assert( p->agg.pCsr );
   rc = sqlite3BtreeMoveto(p->agg.pCsr, zKey, nKey, &res);
   if( rc!=SQLITE_OK ){
     goto abort_due_to_error;
@@ -4462,11 +4475,19 @@ case OP_AggNext: {
   CHECK_FOR_INTERRUPT;
   if( p->agg.searching==0 ){
     p->agg.searching = 1;
-    rc = sqlite3BtreeFirst(p->agg.pCsr, &res);
-    if( rc!=SQLITE_OK ) goto abort_due_to_error;
+    if( p->agg.pCsr ){
+      rc = sqlite3BtreeFirst(p->agg.pCsr, &res);
+      if( rc!=SQLITE_OK ) goto abort_due_to_error;
+    }else{
+      res = 0;
+    }
   }else{
-    rc = sqlite3BtreeNext(p->agg.pCsr, &res);
-    if( rc!=SQLITE_OK ) goto abort_due_to_error;
+    if( p->agg.pCsr ){
+      rc = sqlite3BtreeNext(p->agg.pCsr, &res);
+      if( rc!=SQLITE_OK ) goto abort_due_to_error;
+    }else{
+      res = 1;
+    }
   }
   if( res!=0 ){
     pc = pOp->p2 - 1;
@@ -4475,10 +4496,10 @@ case OP_AggNext: {
     sqlite3_context ctx;
     Mem *aMem;
 
-    rc = sqlite3BtreeData(p->agg.pCsr, 0, sizeof(AggElem*),
-        (char *)&p->agg.pCurrent);
-    if( rc!=SQLITE_OK ){
-      goto abort_due_to_error;
+    if( p->agg.pCsr ){
+      rc = sqlite3BtreeData(p->agg.pCsr, 0, sizeof(AggElem*),
+          (char *)&p->agg.pCurrent);
+      if( rc!=SQLITE_OK ) goto abort_due_to_error;
     }
     aMem = p->agg.pCurrent->aMem;
     for(i=0; i<p->agg.nMem; i++){

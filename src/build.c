@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.228 2004/06/21 09:06:42 danielk1977 Exp $
+** $Id: build.c,v 1.229 2004/06/21 10:45:07 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -959,17 +959,20 @@ CollSeq *sqlite3FindCollSeq(
   return pColl;
 }
 
+/*
+** Invoke the 'collation needed' callback to request a collation sequence
+** in the database text encoding of name zName, length nName.
+** If the collation sequence
+*/
 static void callCollNeeded(sqlite *db, const char *zName, int nName){
-  /* No collation sequence of this type for this encoding is registered.
-  ** Call the collation factory to see if it can supply us with one.
-  */
   char const *zExternal = 0;
   assert( !db->xCollNeeded || !db->xCollNeeded16 );
   if( nName<0 ) nName = strlen(zName);
   if( db->xCollNeeded ){
     zExternal = sqliteStrNDup(zName, nName);
     if( !zExternal ) return;
-      db->xCollNeeded(db->pCollNeededArg, db, (int)db->enc, zExternal);
+    db->xCollNeeded(db->pCollNeededArg, db, (int)db->enc, zExternal);
+    sqliteFree(zExternal);
   }
   if( db->xCollNeeded16 ){
     sqlite3_value *pTmp = sqlite3GetTransientValue(db);
@@ -980,12 +983,14 @@ static void callCollNeeded(sqlite *db, const char *zName, int nName){
   }
 }
 
+/*
+** This routine is called if the collation factory fails to deliver a
+** collation function in the best encoding but there may be other versions
+** of this collation function (for other text encodings) available. Use one
+** of these instead if they exist. Avoid a UTF-8 <-> UTF-16 conversion if
+** possible.
+*/
 static int synthCollSeq(Parse *pParse, CollSeq *pColl){
-  /* The collation factory failed to deliver a function but there may be
-  ** other versions of this collation function (for other text encodings)
-  ** available. Use one of these instead. Avoid a UTF-8 <-> UTF-16
-  ** conversion if possible.
-  */
   CollSeq *pColl2 = 0;
   char *z = pColl->zName;
   int n = strlen(z);
@@ -1040,6 +1045,9 @@ static int synthCollSeq(Parse *pParse, CollSeq *pColl){
 */
 int sqlite3CheckCollSeq(Parse *pParse, CollSeq *pColl){
   if( pColl && !pColl->xCmp ){
+    /* No collation sequence of this type for this encoding is registered.
+    ** Call the collation factory to see if it can supply us with one.
+    */
     callCollNeeded(pParse->db, pColl->zName, strlen(pColl->zName));
     if( !pColl->xCmp && synthCollSeq(pParse, pColl) ){
       return SQLITE_ERROR;

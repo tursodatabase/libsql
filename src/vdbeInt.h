@@ -238,11 +238,7 @@ struct Agg {
   int nMem;            /* Number of values stored in each AggElem */
   AggElem *pCurrent;   /* The AggElem currently in focus */
   FuncDef **apFunc;    /* Information about aggregate functions */
-#if 0
-  HashElem *pSearch;   /* The hash element for pCurrent */
-  Hash hash;           /* Hash table of all aggregate elements */
-#endif
-  Btree *pBtree;       /* The temporary btree used to group elements */
+  Btree *pBtree;       /* The tmp. btree used to group elements, if required. */
   BtCursor *pCsr;      /* Read/write cursor to the table in pBtree */
   int nTab;            /* Root page of the table in pBtree */
   u8 searching;        /* True between the first AggNext and AggReset */

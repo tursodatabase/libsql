@@ -672,6 +672,35 @@ void sqlite3VdbeSorterReset(Vdbe *p){
 }
 
 /*
+** Free all resources allociated with AggElem pElem, an element of
+** aggregate pAgg.
+*/
+int freeAggElem(AggElem *pElem, Agg *pAgg){
+  int i;
+  for(i=0; i<pAgg->nMem; i++){
+    Mem *pMem = &pElem->aMem[i];
+    if( pAgg->apFunc[i] && (pMem->flags & MEM_AggCtx)!=0 ){
+      sqlite3_context ctx;
+      ctx.pFunc = pAgg->apFunc[i];
+      ctx.s.flags = MEM_Null;
+      ctx.pAgg = pMem->z;
+      ctx.cnt = pMem->i;
+      ctx.isStep = 0;
+      ctx.isError = 0;
+      (*pAgg->apFunc[i]->xFinalize)(&ctx);
+      pMem->z = ctx.pAgg;
+      if( pMem->z!=0 && pMem->z!=pMem->zShort ){
+        sqliteFree(pMem->z);
+      }
+      sqlite3VdbeMemRelease(&ctx.s);
+    }else{
+      sqlite3VdbeMemRelease(pMem);
+    }
+  }
+  sqliteFree(pElem);
+}
+
+/*
 ** Reset an Agg structure.  Delete all its contents.
 **
 ** For installable aggregate functions, if the step function has been
@@ -715,27 +744,7 @@ int sqlite3VdbeAggReset(sqlite *db, Agg *pAgg, KeyInfo *pKeyInfo){
         return rc;
       }
       assert( pAgg->apFunc!=0 );
-      for(i=0; i<pAgg->nMem; i++){
-        Mem *pMem = &pElem->aMem[i];
-        if( pAgg->apFunc[i] && (pMem->flags & MEM_AggCtx)!=0 ){
-          sqlite3_context ctx;
-          ctx.pFunc = pAgg->apFunc[i];
-          ctx.s.flags = MEM_Null;
-          ctx.pAgg = pMem->z;
-          ctx.cnt = pMem->i;
-          ctx.isStep = 0;
-          ctx.isError = 0;
-          (*pAgg->apFunc[i]->xFinalize)(&ctx);
-          pMem->z = ctx.pAgg;
-          if( pMem->z!=0 && pMem->z!=pMem->zShort ){
-            sqliteFree(pMem->z);
-          }
-          sqlite3VdbeMemRelease(&ctx.s);
-        }else{
-          sqlite3VdbeMemRelease(pMem);
-        }
-      }
-      sqliteFree(pElem);
+      freeAggElem(pElem, pAgg);
       rc=sqlite3BtreeNext(pCsr, &res);
     }
     if( rc!=SQLITE_OK ){
@@ -744,6 +753,13 @@ int sqlite3VdbeAggReset(sqlite *db, Agg *pAgg, KeyInfo *pKeyInfo){
 
     sqlite3BtreeCloseCursor(pCsr);
     sqlite3BtreeClearTable(pAgg->pBtree, pAgg->nTab);
+  }else{ 
+    /* The cursor may not be open because the aggregator was never used,
+    ** or it could be that it was used but there was no GROUP BY clause.
+    */
+    if( pAgg->pCurrent ){
+      freeAggElem(pAgg->pCurrent, pAgg);
+    }
   }
 
   /* If db is not NULL and we have not yet and we have not yet opened
@@ -1313,9 +1329,9 @@ int sqlite3VdbeFinalize(Vdbe *p){
 
 /*
 ** Call the destructor for each auxdata entry in pVdbeFunc for which
-** the corresponding bit in mask is set.  Auxdata entries beyond 31
+** the corresponding bit in mask is clear.  Auxdata entries beyond 31
 ** are always destroyed.  To destroy all auxdata entries, call this
-** routine with mask==-1.
+** routine with mask==0.
 */
 void sqlite3VdbeDeleteAuxData(VdbeFunc *pVdbeFunc, int mask){
   int i;
@@ -1358,7 +1374,7 @@ void sqlite3VdbeDelete(Vdbe *p){
     }
     if( pOp->p3type==P3_VDBEFUNC ){
       VdbeFunc *pVdbeFunc = (VdbeFunc *)pOp->p3;
-      sqlite3VdbeDeleteAuxData(pVdbeFunc, -1);
+      sqlite3VdbeDeleteAuxData(pVdbeFunc, 0);
       sqliteFree(pVdbeFunc);
     }
 #ifndef NDEBUG
