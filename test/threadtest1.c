@@ -144,7 +144,7 @@ void db_execute(sqlite *db, const char *zFile, const char *zFormat, ...){
   va_end(ap);
   if( verbose ) printf("EXEC %s: %s\n", zFile, zSql);
   rc = sqlite_exec(db, zSql, 0, 0, &zErrMsg);
-  if( rc==SQLITE_SCHEMA ){
+  while( rc==SQLITE_SCHEMA ){
     if( zErrMsg ) free(zErrMsg);
     rc = sqlite_exec(db, zSql, 0, 0, &zErrMsg);
   }
