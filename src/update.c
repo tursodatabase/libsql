@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.64 2003/04/25 17:52:11 drh Exp $
+** $Id: update.c,v 1.65 2003/05/02 14:32:14 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -38,7 +38,7 @@ void sqliteUpdate(
   Index *pIdx;           /* For looping over indices */
   int nIdx;              /* Number of indices that need updating */
   int nIdxTotal;         /* Total number of indices */
-  int base;              /* Index of first available table cursor */
+  int iCur;              /* VDBE Cursor number of pTab */
   sqlite *db;            /* The database structure */
   Index **apIdx = 0;     /* An array of indices that need updating too */
   char *aIdxUsed = 0;    /* aIdxUsed[i]==1 if the i-th index is used */
@@ -98,7 +98,7 @@ void sqliteUpdate(
   ** need to occur right after the database cursor.  So go ahead and
   ** allocate enough space, just in case.
   */
-  base = pParse->nTab++;
+  pTabList->a[0].iCursor = iCur = pParse->nTab++;
   for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
     pParse->nTab++;
   }
@@ -111,7 +111,7 @@ void sqliteUpdate(
   */
   chngRecno = 0;
   for(i=0; i<pChanges->nExpr; i++){
-    if( sqliteExprResolveIds(pParse, base, pTabList, 0, pChanges->a[i].pExpr) ){
+    if( sqliteExprResolveIds(pParse, pTabList, 0, pChanges->a[i].pExpr) ){
       goto update_cleanup;
     }
     if( sqliteExprCheck(pParse, pChanges->a[i].pExpr, 0, 0) ){
@@ -185,7 +185,7 @@ void sqliteUpdate(
   ** WHERE clause.
   */
   if( pWhere ){
-    if( sqliteExprResolveIds(pParse, base, pTabList, 0, pWhere) ){
+    if( sqliteExprResolveIds(pParse, pTabList, 0, pWhere) ){
       goto update_cleanup;
     }
     if( sqliteExprCheck(pParse, pWhere, 0, 0) ){
@@ -211,13 +211,13 @@ void sqliteUpdate(
   if( isView ){
     Select *pView;
     pView = sqliteSelectDup(pTab->pSelect);
-    sqliteSelect(pParse, pView, SRT_TempTable, base, 0, 0, 0);
+    sqliteSelect(pParse, pView, SRT_TempTable, iCur, 0, 0, 0);
     sqliteSelectDelete(pView);
   }
 
   /* Begin the database scan
   */
-  pWInfo = sqliteWhereBegin(pParse, base, pTabList, pWhere, 1, 0);
+  pWInfo = sqliteWhereBegin(pParse, pTabList, pWhere, 1, 0);
   if( pWInfo==0 ) goto update_cleanup;
 
   /* Remember the index of every item to be updated.
@@ -252,14 +252,14 @@ void sqliteUpdate(
     sqliteVdbeAddOp(v, OP_Dup, 0, 0);
     if( !isView ){
       sqliteVdbeAddOp(v, OP_Integer, pTab->iDb, 0);
-      sqliteVdbeAddOp(v, OP_OpenRead, base, pTab->tnum);
+      sqliteVdbeAddOp(v, OP_OpenRead, iCur, pTab->tnum);
     }
-    sqliteVdbeAddOp(v, OP_MoveTo, base, 0);
+    sqliteVdbeAddOp(v, OP_MoveTo, iCur, 0);
 
     /* Generate the OLD table
     */
-    sqliteVdbeAddOp(v, OP_Recno, base, 0);
-    sqliteVdbeAddOp(v, OP_RowData, base, 0);
+    sqliteVdbeAddOp(v, OP_Recno, iCur, 0);
+    sqliteVdbeAddOp(v, OP_RowData, iCur, 0);
     sqliteVdbeAddOp(v, OP_PutIntKey, oldIdx, 0);
 
     /* Generate the NEW table
@@ -267,7 +267,7 @@ void sqliteUpdate(
     if( chngRecno ){
       sqliteExprCode(pParse, pRecnoExpr);
     }else{
-      sqliteVdbeAddOp(v, OP_Recno, base, 0);
+      sqliteVdbeAddOp(v, OP_Recno, iCur, 0);
     }
     for(i=0; i<pTab->nCol; i++){
       if( i==pTab->iPKey ){
@@ -276,7 +276,7 @@ void sqliteUpdate(
       }
       j = aXRef[i];
       if( j<0 ){
-        sqliteVdbeAddOp(v, OP_Column, base, i);
+        sqliteVdbeAddOp(v, OP_Column, iCur, i);
       }else{
         sqliteExprCode(pParse, pChanges->a[j].pExpr);
       }
@@ -284,7 +284,7 @@ void sqliteUpdate(
     sqliteVdbeAddOp(v, OP_MakeRecord, pTab->nCol, 0);
     sqliteVdbeAddOp(v, OP_PutIntKey, newIdx, 0);
     if( !isView ){
-      sqliteVdbeAddOp(v, OP_Close, base, 0);
+      sqliteVdbeAddOp(v, OP_Close, iCur, 0);
     }
 
     /* Fire the BEFORE and INSTEAD OF triggers
@@ -303,7 +303,7 @@ void sqliteUpdate(
     ** to be deleting some records.
     */
     sqliteVdbeAddOp(v, OP_Integer, pTab->iDb, 0);
-    sqliteVdbeAddOp(v, OP_OpenWrite, base, pTab->tnum);
+    sqliteVdbeAddOp(v, OP_OpenWrite, iCur, pTab->tnum);
     if( onError==OE_Replace ){
       openAll = 1;
     }else{
@@ -318,8 +318,8 @@ void sqliteUpdate(
     for(i=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
       if( openAll || aIdxUsed[i] ){
         sqliteVdbeAddOp(v, OP_Integer, pIdx->iDb, 0);
-        sqliteVdbeAddOp(v, OP_OpenWrite, base+i+1, pIdx->tnum);
-        assert( pParse->nTab>base+i+1 );
+        sqliteVdbeAddOp(v, OP_OpenWrite, iCur+i+1, pIdx->tnum);
+        assert( pParse->nTab>iCur+i+1 );
       }
     }
 
@@ -334,7 +334,7 @@ void sqliteUpdate(
       addr = sqliteVdbeAddOp(v, OP_ListRead, 0, 0);
       sqliteVdbeAddOp(v, OP_Dup, 0, 0);
     }
-    sqliteVdbeAddOp(v, OP_NotExists, base, addr);
+    sqliteVdbeAddOp(v, OP_NotExists, iCur, addr);
 
     /* If the record number will change, push the record number as it
     ** will be after the update. (The old record number is currently
@@ -354,7 +354,7 @@ void sqliteUpdate(
       }
       j = aXRef[i];
       if( j<0 ){
-        sqliteVdbeAddOp(v, OP_Column, base, i);
+        sqliteVdbeAddOp(v, OP_Column, iCur, i);
       }else{
         sqliteExprCode(pParse, pChanges->a[j].pExpr);
       }
@@ -362,22 +362,22 @@ void sqliteUpdate(
 
     /* Do constraint checks
     */
-    sqliteGenerateConstraintChecks(pParse, pTab, base, aIdxUsed, chngRecno, 1,
+    sqliteGenerateConstraintChecks(pParse, pTab, iCur, aIdxUsed, chngRecno, 1,
                                    onError, addr);
 
     /* Delete the old indices for the current record.
     */
-    sqliteGenerateRowIndexDelete(db, v, pTab, base, aIdxUsed);
+    sqliteGenerateRowIndexDelete(db, v, pTab, iCur, aIdxUsed);
 
     /* If changing the record number, delete the old record.
     */
     if( chngRecno ){
-      sqliteVdbeAddOp(v, OP_Delete, base, 0);
+      sqliteVdbeAddOp(v, OP_Delete, iCur, 0);
     }
 
     /* Create the new index entries and the new record.
     */
-    sqliteCompleteInsertion(pParse, pTab, base, aIdxUsed, chngRecno, 1, -1);
+    sqliteCompleteInsertion(pParse, pTab, iCur, aIdxUsed, chngRecno, 1, -1);
   }
 
   /* Increment the row counter 
@@ -393,10 +393,10 @@ void sqliteUpdate(
     if( !isView ){
       for(i=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
         if( openAll || aIdxUsed[i] )
-          sqliteVdbeAddOp(v, OP_Close, base+i+1, 0);
+          sqliteVdbeAddOp(v, OP_Close, iCur+i+1, 0);
       }
-      sqliteVdbeAddOp(v, OP_Close, base, 0);
-      pParse->nTab = base;
+      sqliteVdbeAddOp(v, OP_Close, iCur, 0);
+      pParse->nTab = iCur;
     }
     if( sqliteCodeRowTrigger(pParse, TK_UPDATE, pChanges, TK_AFTER, pTab, 
           newIdx, oldIdx, onError, addr) ){
@@ -415,11 +415,11 @@ void sqliteUpdate(
   if( !row_triggers_exist ){
     for(i=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
       if( openAll || aIdxUsed[i] ){
-        sqliteVdbeAddOp(v, OP_Close, base+i+1, 0);
+        sqliteVdbeAddOp(v, OP_Close, iCur+i+1, 0);
       }
     }
-    sqliteVdbeAddOp(v, OP_Close, base, 0);
-    pParse->nTab = base;
+    sqliteVdbeAddOp(v, OP_Close, iCur, 0);
+    pParse->nTab = iCur;
   }else{
     sqliteVdbeAddOp(v, OP_Close, newIdx, 0);
     sqliteVdbeAddOp(v, OP_Close, oldIdx, 0);

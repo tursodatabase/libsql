@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.94 2003/04/22 20:30:39 drh Exp $
+** $Id: expr.c,v 1.95 2003/05/02 14:32:13 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -194,6 +194,7 @@ SrcList *sqliteSrcListDup(SrcList *p){
     pNew->a[i].zName = sqliteStrDup(p->a[i].zName);
     pNew->a[i].zAlias = sqliteStrDup(p->a[i].zAlias);
     pNew->a[i].jointype = p->a[i].jointype;
+    pNew->a[i].iCursor = p->a[i].iCursor;
     pNew->a[i].pTab = 0;
     pNew->a[i].pSelect = sqliteSelectDup(p->a[i].pSelect);
     pNew->a[i].pOn = sqliteExprDup(p->a[i].pOn);
@@ -402,13 +403,16 @@ int sqliteIsRowid(const char *z){
 */
 int sqliteExprResolveIds(
   Parse *pParse,     /* The parser context */
-  int base,          /* VDBE cursor number for first entry in pTabList */
   SrcList *pTabList, /* List of tables used to resolve column names */
   ExprList *pEList,  /* List of expressions used to resolve "AS" */
   Expr *pExpr        /* The expression to be analyzed. */
 ){
+  int i;
+
   if( pExpr==0 || pTabList==0 ) return 0;
-  assert( base+pTabList->nSrc<=pParse->nTab );
+  for(i=0; i<pTabList->nSrc; i++){
+    assert( pTabList->a[i].iCursor>=0 && pTabList->a[i].iCursor<pParse->nTab );
+  }
   switch( pExpr->op ){
     /* Double-quoted strings (ex: "abc") are used as identifiers if
     ** possible.  Otherwise they remain as strings.  Single-quoted
@@ -430,7 +434,6 @@ int sqliteExprResolveIds(
     */
     case TK_ID: {
       int cnt = 0;      /* Number of matches */
-      int i;            /* Loop counter */
       char *z;
       int iDb = -1;
 
@@ -447,7 +450,7 @@ int sqliteExprResolveIds(
         for(j=0; j<pTab->nCol; j++){
           if( sqliteStrICmp(pTab->aCol[j].zName, z)==0 ){
             cnt++;
-            pExpr->iTable = i + base;
+            pExpr->iTable = pTabList->a[i].iCursor;
             pExpr->iDb = pTab->iDb;
             if( j==pTab->iPKey ){
               /* Substitute the record number for the INTEGER PRIMARY KEY */
@@ -476,7 +479,7 @@ int sqliteExprResolveIds(
       }
       if( cnt==0 && iDb>=0 && sqliteIsRowid(z) ){
         pExpr->iColumn = -1;
-        pExpr->iTable = base;
+        pExpr->iTable = pTabList->a[0].iCursor;
         pExpr->iDb = iDb;
         cnt = 1 + (pTabList->nSrc>1);
         pExpr->op = TK_COLUMN;
@@ -491,7 +494,7 @@ int sqliteExprResolveIds(
         return 1;
       }
       if( pExpr->op==TK_COLUMN ){
-        sqliteAuthRead(pParse, pExpr, pTabList, base);
+        sqliteAuthRead(pParse, pExpr, pTabList);
       }
       break; 
     }
@@ -550,13 +553,13 @@ int sqliteExprResolveIds(
           }
         }
         if( 0==(cntTab++) ){
-          pExpr->iTable = i + base;
+          pExpr->iTable = pTabList->a[i].iCursor;
           pExpr->iDb = pTab->iDb;
         }
         for(j=0; j<pTab->nCol; j++){
           if( sqliteStrICmp(pTab->aCol[j].zName, zRight)==0 ){
             cnt++;
-            pExpr->iTable = i + base;
+            pExpr->iTable = pTabList->a[i].iCursor;
             pExpr->iDb = pTab->iDb;
             /* Substitute the rowid (column -1) for the INTEGER PRIMARY KEY */
             pExpr->iColumn = j==pTab->iPKey ? -1 : j;
@@ -620,14 +623,14 @@ int sqliteExprResolveIds(
       sqliteExprDelete(pExpr->pRight);
       pExpr->pRight = 0;
       pExpr->op = TK_COLUMN;
-      sqliteAuthRead(pParse, pExpr, pTabList, base);
+      sqliteAuthRead(pParse, pExpr, pTabList);
       break;
     }
 
     case TK_IN: {
       Vdbe *v = sqliteGetVdbe(pParse);
       if( v==0 ) return 1;
-      if( sqliteExprResolveIds(pParse, base, pTabList, pEList, pExpr->pLeft) ){
+      if( sqliteExprResolveIds(pParse, pTabList, pEList, pExpr->pLeft) ){
         return 1;
       }
       if( pExpr->pSelect ){
@@ -697,11 +700,11 @@ int sqliteExprResolveIds(
     /* For all else, just recursively walk the tree */
     default: {
       if( pExpr->pLeft
-      && sqliteExprResolveIds(pParse, base, pTabList, pEList, pExpr->pLeft) ){
+      && sqliteExprResolveIds(pParse, pTabList, pEList, pExpr->pLeft) ){
         return 1;
       }
       if( pExpr->pRight 
-      && sqliteExprResolveIds(pParse, base, pTabList, pEList, pExpr->pRight) ){
+      && sqliteExprResolveIds(pParse, pTabList, pEList, pExpr->pRight) ){
         return 1;
       }
       if( pExpr->pList ){
@@ -709,7 +712,7 @@ int sqliteExprResolveIds(
         ExprList *pList = pExpr->pList;
         for(i=0; i<pList->nExpr; i++){
           Expr *pArg = pList->a[i].pExpr;
-          if( sqliteExprResolveIds(pParse, base, pTabList, pEList, pArg) ){
+          if( sqliteExprResolveIds(pParse, pTabList, pEList, pArg) ){
             return 1;
           }
         }

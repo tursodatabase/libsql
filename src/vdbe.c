@@ -36,7 +36,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.220 2003/04/25 15:37:58 drh Exp $
+** $Id: vdbe.c,v 1.221 2003/05/02 14:32:14 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -3517,27 +3517,6 @@ case OP_OpenPseudo: {
   memset(pCx, 0, sizeof(*pCx));
   pCx->nullRow = 1;
   pCx->pseudoTable = 1;
-  break;
-}
-
-/*
-** Opcode: RenameCursor P1 P2 *
-**
-** Rename cursor number P1 as cursor number P2.  If P2 was previously
-** opened is is closed before the renaming occurs.
-*/
-case OP_RenameCursor: {
-  int from = pOp->p1;
-  int to = pOp->p2;
-  VERIFY( if( from<0 || to<0 ) goto bad_instruction; )
-  if( to<p->nCursor && p->aCsr[to].pCursor ){
-    cleanupCursor(&p->aCsr[to]);
-  }
-  expandCursorArraySize(p, to);
-  if( from<p->nCursor ){
-    memcpy(&p->aCsr[to], &p->aCsr[from], sizeof(p->aCsr[0]));
-    memset(&p->aCsr[from], 0, sizeof(p->aCsr[0]));
-  }
   break;
 }
 

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing VIEW statements.
 #
-# $Id: view.test,v 1.13 2003/04/24 01:45:05 drh Exp $
+# $Id: view.test,v 1.14 2003/05/02 14:32:15 drh Exp $
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
@@ -296,6 +296,16 @@ do_test view-8.5 {
     SELECT mx+10, mx*2 FROM v8;
   }
 } {13 6}
+do_test view-8.6 {
+  execsql {
+    SELECT mx+10, pqr FROM v6, v8 WHERE xyz=2;
+  }
+} {13 7}
+do_test view-8.7 {
+  execsql {
+    SELECT mx+10, pqr FROM v6, v8 WHERE xyz>2;
+  }
+} {13 13 13 19 13 27}
 
 # Tests for a bug found by Michiel de Wit involving ORDER BY in a VIEW.
 #

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.82 2003/04/24 01:45:04 drh Exp $
+** $Id: insert.c,v 1.83 2003/05/02 14:32:13 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -98,7 +98,7 @@ void sqliteInsert(
   Vdbe *v;              /* Generate code into this virtual machine */
   Index *pIdx;          /* For looping over indices of the table */
   int nColumn;          /* Number of columns in the data */
-  int base;             /* First available cursor */
+  int base;             /* VDBE Cursor number for pTab */
   int iCont, iBreak;    /* Beginning and end of the loop over srcTab */
   sqlite *db;           /* The main database structure */
   int keyColumn = -1;   /* Column that is the INTEGER PRIMARY KEY */
@@ -245,7 +245,7 @@ void sqliteInsert(
     nColumn = pList->nExpr;
     dummy.nSrc = 0;
     for(i=0; i<nColumn; i++){
-      if( sqliteExprResolveIds(pParse, 0, &dummy, 0, pList->a[i].pExpr) ){
+      if( sqliteExprResolveIds(pParse, &dummy, 0, pList->a[i].pExpr) ){
         goto insert_cleanup;
       }
       if( sqliteExprCheck(pParse, pList->a[i].pExpr, 0, 0) ){

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.182 2003/04/29 16:20:46 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.183 2003/05/02 14:32:14 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -717,7 +717,6 @@ struct WhereInfo {
   SrcList *pTabList;   /* List of tables in the join */
   int iContinue;       /* Jump here to continue with next record */
   int iBreak;          /* Jump here to break out of the loop */
-  int base;            /* Index of first Open opcode */
   int nLevel;          /* Number of nested loop */
   int savedNTab;       /* Value of pParse->nTab before WhereBegin() */
   int peakNTab;        /* Value of pParse->nTab after WhereBegin() */
@@ -754,7 +753,6 @@ struct Select {
   Select *pPrior;        /* Prior select in a compound select statement */
   int nLimit, nOffset;   /* LIMIT and OFFSET values.  -1 means not used */
   char *zSelect;         /* Complete text of the SELECT command */
-  int base;              /* Index of VDBE cursor for left-most FROM table */
 };
 
 /*
@@ -1039,6 +1037,7 @@ IdList *sqliteIdListAppend(IdList*, Token*);
 int sqliteIdListIndex(IdList*,const char*);
 SrcList *sqliteSrcListAppend(SrcList*, Token*, Token*);
 void sqliteSrcListAddAlias(SrcList*, Token*);
+void sqliteSrcListAssignCursors(Parse*, SrcList*);
 void sqliteIdListDelete(IdList*);
 void sqliteSrcListDelete(SrcList*);
 void sqliteCreateIndex(Parse*,Token*,SrcList*,IdList*,int,int,Token*,Token*);
@@ -1054,7 +1053,7 @@ Table *sqliteSrcListLookup(Parse*, SrcList*);
 int sqliteIsReadOnly(Parse*, Table*, int);
 void sqliteDeleteFrom(Parse*, SrcList*, Expr*);
 void sqliteUpdate(Parse*, SrcList*, ExprList*, Expr*, int);
-WhereInfo *sqliteWhereBegin(Parse*, int, SrcList*, Expr*, int, ExprList**);
+WhereInfo *sqliteWhereBegin(Parse*, SrcList*, Expr*, int, ExprList**);
 void sqliteWhereEnd(WhereInfo*);
 void sqliteExprCode(Parse*, Expr*);
 void sqliteExprIfTrue(Parse*, Expr*, int, int);
@@ -1072,7 +1071,7 @@ int sqliteExprCheck(Parse*, Expr*, int, int*);
 int sqliteExprType(Expr*);
 int sqliteExprCompare(Expr*, Expr*);
 int sqliteFuncId(Token*);
-int sqliteExprResolveIds(Parse*, int, SrcList*, ExprList*, Expr*);
+int sqliteExprResolveIds(Parse*, SrcList*, ExprList*, Expr*);
 int sqliteExprAnalyzeAggregates(Parse*, Expr*);
 Vdbe *sqliteGetVdbe(Parse*);
 int sqliteRandomByte(void);
@@ -1120,12 +1119,12 @@ int sqliteJoinType(Parse*, Token*, Token*, Token*);
 void sqliteCreateForeignKey(Parse*, IdList*, Token*, IdList*, int);
 void sqliteDeferForeignKey(Parse*, int);
 #ifndef SQLITE_OMIT_AUTHORIZATION
-  void sqliteAuthRead(Parse*,Expr*,SrcList*,int);
+  void sqliteAuthRead(Parse*,Expr*,SrcList*);
   int sqliteAuthCheck(Parse*,int, const char*, const char*, const char*);
   void sqliteAuthContextPush(Parse*, AuthContext*, const char*);
   void sqliteAuthContextPop(AuthContext*);
 #else
-# define sqliteAuthRead(a,b,c,d)
+# define sqliteAuthRead(a,b,c)
 # define sqliteAuthCheck(a,b,c,d)    SQLITE_OK
 # define sqliteAuthContextPush(a,b,c)
 # define sqliteAuthContextPop(a)

@@ -14,7 +14,7 @@
 ** systems that do not need this facility may omit it by recompiling
 ** the library with -DSQLITE_OMIT_AUTHORIZATION=1
 **
-** $Id: auth.c,v 1.8 2003/04/25 17:52:11 drh Exp $
+** $Id: auth.c,v 1.9 2003/05/02 14:32:13 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -76,8 +76,8 @@ static void sqliteAuthBadReturnCode(Parse *pParse, int rc){
 
 /*
 ** The pExpr should be a TK_COLUMN expression.  The table referred to
-** is in pTabList with an offset of base.  Check to see if it is OK to read
-** this particular column.
+** is in pTabList or else it is the NEW or OLD table of a trigger.  
+** Check to see if it is OK to read this particular column.
 **
 ** If the auth function returns SQLITE_IGNORE, change the TK_COLUMN 
 ** instruction into a TK_NULL.  If the auth function returns SQLITE_DENY,
@@ -86,8 +86,7 @@ static void sqliteAuthBadReturnCode(Parse *pParse, int rc){
 void sqliteAuthRead(
   Parse *pParse,        /* The parser context */
   Expr *pExpr,          /* The expression to check authorization on */
-  SrcList *pTabList,    /* All table that pExpr might refer to */
-  int base              /* Offset of pTabList relative to pExpr */
+  SrcList *pTabList     /* All table that pExpr might refer to */
 ){
   sqlite *db = pParse->db;
   int rc;
@@ -98,7 +97,9 @@ void sqliteAuthRead(
 
   if( db->xAuth==0 ) return;
   assert( pExpr->op==TK_COLUMN );
-  iSrc = pExpr->iTable - base;
+  for(iSrc=0; iSrc<pTabList->nSrc; iSrc++){
+    if( pExpr->iTable==pTabList->a[iSrc].iCursor ) break;
+  }
   if( iSrc>=0 && iSrc<pTabList->nSrc ){
     pTab = pTabList->a[iSrc].pTab;
   }else{

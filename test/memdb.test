@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is in-memory database backend.
 #
-# $Id: memdb.test,v 1.2 2003/04/20 23:45:23 drh Exp $
+# $Id: memdb.test,v 1.3 2003/05/02 14:32:15 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -53,15 +53,25 @@ do_test memdb-1.1 {
 # make lots of changes to t3, then rollback and take another signature.
 # The two signatures should be the same.
 #
-proc signature {} {
-  return [db eval {SELECT count(*), md5sum(x) FROM t3}]
+proc signature {{fn {}}} {
+  set rx [db eval {SELECT x FROM t3}]
+  # set r1 [md5 $rx\n]
+  if {$fn!=""} {
+    # set fd [open $fn w]
+    # puts $fd $rx
+    # close $fd
+  }
+  # set r [db eval {SELECT count(*), md5sum(x) FROM t3}]
+  # puts "SIG($fn)=$r1"
+  return [list [string length $rx] $rx]
 }
 
 # Do rollbacks.  Make sure the signature does not change.
 #
 set limit 10
 for {set i 2} {$i<=$limit} {incr i} {
-  set ::sig [signature]
+  set ::sig [signature one]
+  # puts "sig=$sig"
   set cnt [lindex $::sig 0]
   set ::journal_format [expr {($i%3)+1}]
   if {$i%2==0} {
@@ -77,8 +87,10 @@ for {set i 2} {$i<=$limit} {incr i} {
        INSERT INTO t3 SELECT randstr(10,10)||x FROM t3;
        ROLLBACK;
      }
-     signature
+     set sig2 [signature two]
   } $sig
+  # puts "sig2=$sig2"
+  # if {$sig2!=$sig} exit
   do_test memdb-1.$i.2-$cnt {
      execsql {
        BEGIN;
