@@ -1,6 +1,6 @@
-C If\sthe\sdatabase\sis\slocked\swhen\ssqlite_open()\sis\scalled,\ssqlite_exec()\sshould\nstill\shonor\sthe\sbusy\scallback\sand\sshould\sreturn\san\serror\smessage\stogether\nwith\sthe\sSQLITE_BUSY\sresult\scode.\s(CVS\s733)
-D 2002-08-29T23:59:48
-F Makefile.in bcb81f40d9a17bd94f59e67157b1e1c54c046c2b
+C Fix\sfor\sticket\s#145:\sInclude\sthe\sfunc.c\ssource\sfile\sin\sthe\sbuild\sof\stestfixture\nso\sthat\sthe\s"randstr()"\sfunction\swill\sbe\savailable.\s(CVS\s734)
+D 2002-08-31T16:33:25
+F Makefile.in 420fada882179cb72ffd07313f3fd693f9f06640
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
 F VERSION a8c86d12b1459b66b47ef640f3f0c87822c25901
@@ -147,7 +147,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 723362e74f79c784314d042e3a8c8a9bf07cbd5e
-R d3f1307d8c46375a980460c037609d53
+P 78a0229a7e5e33fe642847381f5514e6ec30f29f
+R d1aee1b6d455eca5263b2e9712360fc3
 U drh
-Z bb935c1bbfda9bc17c2a93e729ad5eb0
+Z 2eba446c82c736106cbd3a0923580fc4
