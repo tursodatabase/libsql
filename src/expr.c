@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.115 2004/05/08 08:23:24 danielk1977 Exp $
+** $Id: expr.c,v 1.116 2004/05/10 10:34:37 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -166,7 +166,7 @@ ExprList *sqlite3ExprListDup(ExprList *p){
       sqlite3TokenCopy(&pNewExpr->span, &pOldExpr->span);
     }
     assert( pNewExpr==0 || pNewExpr->span.z!=0 
-            || pOldExpr->span.z==0 || sqlite_malloc_failed );
+            || pOldExpr->span.z==0 || sqlite3_malloc_failed );
     pItem->zName = sqliteStrDup(p->a[i].zName);
     pItem->sortOrder = p->a[i].sortOrder;
     pItem->isAgg = p->a[i].isAgg;
@@ -436,7 +436,7 @@ static int lookupName(
   }
   zCol = sqliteStrNDup(pColumnToken->z, pColumnToken->n);
   sqlite3Dequote(zCol);
-  if( sqlite_malloc_failed ){
+  if( sqlite3_malloc_failed ){
     return 1;  /* Leak memory (zDb and zTab) if malloc fails */
   }
   assert( zTab==0 || pEList==0 );

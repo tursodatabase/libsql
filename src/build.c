@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.178 2004/05/10 01:17:37 danielk1977 Exp $
+** $Id: build.c,v 1.179 2004/05/10 10:34:35 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -71,7 +71,7 @@ void sqlite3Exec(Parse *pParse){
   if( v==0 && (v = sqlite3GetVdbe(pParse))!=0 ){
     sqlite3VdbeAddOp(v, OP_Halt, 0, 0);
   }
-  if( sqlite_malloc_failed ) return;
+  if( sqlite3_malloc_failed ) return;
   if( v && pParse->nErr==0 ){
     FILE *trace = (db->flags & SQLITE_VdbeTrace)!=0 ? stdout : 0;
     sqlite3VdbeTrace(v, trace);
@@ -884,7 +884,7 @@ void sqlite3EndTable(Parse *pParse, Token *pEnd, Select *pSelect){
   Table *p;
   sqlite *db = pParse->db;
 
-  if( (pEnd==0 && pSelect==0) || pParse->nErr || sqlite_malloc_failed ) return;
+  if( (pEnd==0 && pSelect==0) || pParse->nErr || sqlite3_malloc_failed ) return;
   p = pParse->pNewTable;
   if( p==0 ) return;
 
@@ -1018,7 +1018,7 @@ void sqlite3CreateView(
   /* Make a copy of the entire SELECT statement that defines the view.
   ** This will force all the Expr.token.z values to be dynamically
   ** allocated rather than point to the input string - which means that
-  ** they will persist after the current sqlite_exec() call returns.
+  ** they will persist after the current sqlite3_exec() call returns.
   */
   p->pSelect = sqlite3SelectDup(pSelect);
   sqlite3SelectDelete(pSelect);
@@ -1179,7 +1179,7 @@ void sqlite3DropTable(Parse *pParse, Token *pName, int isView){
   sqlite *db = pParse->db;
   int iDb;
 
-  if( pParse->nErr || sqlite_malloc_failed ) return;
+  if( pParse->nErr || sqlite3_malloc_failed ) return;
   pTable = sqlite3TableFromToken(pParse, pName);
   if( pTable==0 ) return;
   iDb = pTable->iDb;
@@ -1487,7 +1487,7 @@ void sqlite3CreateIndex(
   int isTemp;      /* True for a temporary index */
   sqlite *db = pParse->db;
 
-  if( pParse->nErr || sqlite_malloc_failed ) goto exit_create_index;
+  if( pParse->nErr || sqlite3_malloc_failed ) goto exit_create_index;
   if( db->init.busy 
      && sqlite3FixInit(&sFix, pParse, db->init.iDb, "index", pName)
      && sqlite3FixSrcList(&sFix, pTable)
@@ -1759,7 +1759,7 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName){
   Vdbe *v;
   sqlite *db = pParse->db;
 
-  if( pParse->nErr || sqlite_malloc_failed ) return;
+  if( pParse->nErr || sqlite3_malloc_failed ) return;
   assert( pName->nSrc==1 );
   pIndex = sqlite3FindIndex(db, pName->a[0].zName, pName->a[0].zDatabase);
   if( pIndex==0 ){
@@ -2020,7 +2020,7 @@ void sqlite3BeginTransaction(Parse *pParse, int onError){
   sqlite *db;
 
   if( pParse==0 || (db=pParse->db)==0 || db->aDb[0].pBt==0 ) return;
-  if( pParse->nErr || sqlite_malloc_failed ) return;
+  if( pParse->nErr || sqlite3_malloc_failed ) return;
   if( sqlite3AuthCheck(pParse, SQLITE_TRANSACTION, "BEGIN", 0, 0) ) return;
   if( db->flags & SQLITE_InTrans ){
     sqlite3ErrorMsg(pParse, "cannot start a transaction within a transaction");
@@ -2040,7 +2040,7 @@ void sqlite3CommitTransaction(Parse *pParse){
   sqlite *db;
 
   if( pParse==0 || (db=pParse->db)==0 || db->aDb[0].pBt==0 ) return;
-  if( pParse->nErr || sqlite_malloc_failed ) return;
+  if( pParse->nErr || sqlite3_malloc_failed ) return;
   if( sqlite3AuthCheck(pParse, SQLITE_TRANSACTION, "COMMIT", 0, 0) ) return;
   if( (db->flags & SQLITE_InTrans)==0 ){
     sqlite3ErrorMsg(pParse, "cannot commit - no transaction is active");
@@ -2063,7 +2063,7 @@ void sqlite3RollbackTransaction(Parse *pParse){
   Vdbe *v;
 
   if( pParse==0 || (db=pParse->db)==0 || db->aDb[0].pBt==0 ) return;
-  if( pParse->nErr || sqlite_malloc_failed ) return;
+  if( pParse->nErr || sqlite3_malloc_failed ) return;
   if( sqlite3AuthCheck(pParse, SQLITE_TRANSACTION, "ROLLBACK", 0, 0) ) return;
   if( (db->flags & SQLITE_InTrans)==0 ){
     sqlite3ErrorMsg(pParse, "cannot rollback - no transaction is active");

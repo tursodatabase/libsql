@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the COPY command.
 **
-** $Id: copy.c,v 1.10 2004/05/08 08:23:24 danielk1977 Exp $
+** $Id: copy.c,v 1.11 2004/05/10 10:34:35 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -42,7 +42,7 @@ void sqlite3Copy(
   sqlite *db = pParse->db;
 
 
-  if( sqlite_malloc_failed  ) goto copy_cleanup;
+  if( sqlite3_malloc_failed  ) goto copy_cleanup;
   assert( pTableName->nSrc==1 );
   pTab = sqlite3SrcListLookup(pParse, pTableName);
   if( pTab==0 || sqlite3IsReadOnly(pParse, pTab, 0) ) goto copy_cleanup;

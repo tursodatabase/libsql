@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.95 2004/05/08 08:23:25 danielk1977 Exp $
+** $Id: insert.c,v 1.96 2004/05/10 10:34:40 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -116,7 +116,7 @@ void sqlite3Insert(
   int after_triggers;         /* True if there are AFTER triggers */
   int newIdx = -1;            /* Cursor for the NEW table */
 
-  if( pParse->nErr || sqlite_malloc_failed ) goto insert_cleanup;
+  if( pParse->nErr || sqlite3_malloc_failed ) goto insert_cleanup;
   db = pParse->db;
 
   /* Locate the table into which we will be inserting new information.
@@ -182,7 +182,7 @@ void sqlite3Insert(
     iSelectLoop = sqlite3VdbeCurrentAddr(v);
     iInsertBlock = sqlite3VdbeMakeLabel(v);
     rc = sqlite3Select(pParse, pSelect, SRT_Subroutine, iInsertBlock, 0,0,0);
-    if( rc || pParse->nErr || sqlite_malloc_failed ) goto insert_cleanup;
+    if( rc || pParse->nErr || sqlite3_malloc_failed ) goto insert_cleanup;
     iCleanup = sqlite3VdbeMakeLabel(v);
     sqlite3VdbeAddOp(v, OP_Goto, 0, iCleanup);
     assert( pSelect->pEList );
@@ -574,12 +574,12 @@ insert_cleanup:
 **  Constraint type  Action       What Happens
 **  ---------------  ----------   ----------------------------------------
 **  any              ROLLBACK     The current transaction is rolled back and
-**                                sqlite_exec() returns immediately with a
+**                                sqlite3_exec() returns immediately with a
 **                                return code of SQLITE_CONSTRAINT.
 **
 **  any              ABORT        Back out changes from the current command
 **                                only (do not do a complete rollback) then
-**                                cause sqlite_exec() to return immediately
+**                                cause sqlite3_exec() to return immediately
 **                                with SQLITE_CONSTRAINT.
 **
 **  any              FAIL         Sqlite_exec() returns immediately with a

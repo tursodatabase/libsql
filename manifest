@@ -1,5 +1,5 @@
-C Add\ssome\sfunctions\sto\sserialize\sand\sdeserialize\svdbe\svalues\s(used\nby\smanifest\styping).\s(CVS\s1336)
-D 2004-05-10T10:05:54
+C Change\sthe\snames\sof\sexternal\ssymbols\sfrom\ssqlite_XXX\sto\ssqlite3_XXX.\s(CVS\s1337)
+D 2004-05-10T10:34:34
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -22,21 +22,21 @@ F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
 F sqlite.def fc4f5734786fe4743cfe2aa98eb2da4b089edb5f
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F src/attach.c fa9a58234406d84eeb900517d0c0adc4b2da051a
-F src/auth.c a2a46e3ed7799134cf3d2dd5ae6650115f26b653
-F src/btree.c b4c04b7867ccabaa1b04d5691a1bc6d0a27e6c6b
+F src/auth.c 5c2f0bea4729c98c2be3b69d6b466fc51448fe79
+F src/btree.c b5950a1fece49f4a57f49a88b80610aae120bf16
 F src/btree.h 7c3939a2e5f782c1ebac3bf43c02a16febad6df1
-F src/btree_rb.c 47e5b5ec90846af392b5668b34648198ba459561
-F src/build.c 44ee22de8168465ba99d780dbb2091b9c2822e56
-F src/copy.c 3c33157f6b4919d6851602b78008c67d466cdadd
-F src/date.c ca325e0752a88656ba798bc0666fa41498941732
-F src/delete.c c6f881904504619ef00c495d535aa0c60a1ddbdc
+F src/btree_rb.c 9d7973e266ee6f9c61ce592f68742ce9cd5b10e5
+F src/build.c 8d9965b3ce5dcc1bd4dac60bd0f14524fea269cb
+F src/copy.c 4d2038602fd0549d80c59bda27d96f13ea9b5e29
+F src/date.c 1564caa119511a1bb23dd0b1530ad38ed8c3349b
+F src/delete.c 889a7e9f0365622a2ad5859d9c9df10ece12e363
 F src/encode.c a876af473d1d636faa3dca51c7571f2e007eea37
-F src/expr.c efd9daf50407ed27a0a50753e6d6c086320260cd
-F src/func.c f87eec5cf103f739ba32866660ce22d000c5723f
+F src/expr.c 7667e214b17a100e013005d42c1b91be73d9ecfe
+F src/func.c 6cf6501f092b41c8cd9368b09c287016c0576438
 F src/hash.c 440c2f8cb373ee1b4e13a0988489c7cd95d55b6f
 F src/hash.h 762d95f1e567664d1eafc1687de755626be962fb
-F src/insert.c 954c0ddabc10899526c975b403ca4352d253f2e0
-F src/main.c f60224784f2f3d862ad116777cfe6596dbaaeb16
+F src/insert.c 2d082257784a8613b1b50cd5bbf42b9466646a0e
+F src/main.c 45f0dc84265d18b0e99500dced4975df8a041481
 F src/md5.c 01d2f55b06316d242749759b6a37186439ef7fe3
 F src/os.c 4092dcc87e66f49ed660fae1519569a0cee34da0
 F src/os.h fbb2f6595fc34fa351830d88fe1c6b85118f0383
@@ -187,7 +187,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 9ea8e8ab23d46adb2970ccf62340703ec42345fa
-R 618584a23469029fa2139630ad76562b
+P 05434497ba5d9971d23144eb4b9d709c233f6546
+R 61565b7b4d0b0c747dc3c710b9222d1e
 U danielk1977
-Z 0608f60d741fd851f2193190bf722d0f
+Z cdb3555cc5ea64d3d31c0c0c46963b23

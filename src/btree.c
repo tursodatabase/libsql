@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.120 2004/05/09 20:40:11 drh Exp $
+** $Id: btree.c,v 1.121 2004/05/10 10:34:34 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -643,7 +643,7 @@ static void freeSpace(MemPage *pPage, int start, int size){
 static int resizeCellArray(MemPage *pPage, int nNewSz){
   if( pPage->nCellAlloc<nNewSz ){
     pPage->aCell = sqliteRealloc(pPage->aCell, nNewSz*sizeof(pPage->aCell[0]) );
-    if( sqlite_malloc_failed ) return SQLITE_NOMEM;
+    if( sqlite3_malloc_failed ) return SQLITE_NOMEM;
     pPage->nCellAlloc = nNewSz;
   }
   return SQLITE_OK;

@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree_rb.c,v 1.25 2004/05/08 08:23:23 danielk1977 Exp $
+** $Id: btree_rb.c,v 1.26 2004/05/10 10:34:35 danielk1977 Exp $
 **
 ** This file implements an in-core database using Red-Black balanced
 ** binary trees.
@@ -617,12 +617,12 @@ int sqliteRbtreeOpen(
 ){
   Rbtree **ppRbtree = (Rbtree**)ppBtree;
   *ppRbtree = (Rbtree *)sqliteMalloc(sizeof(Rbtree));
-  if( sqlite_malloc_failed ) goto open_no_mem;
+  if( sqlite3_malloc_failed ) goto open_no_mem;
   sqlite3HashInit(&(*ppRbtree)->tblHash, SQLITE_HASH_INT, 0);
 
   /* Create a binary tree for the SQLITE_MASTER table at location 2 */
   btreeCreateTable(*ppRbtree, 2);
-  if( sqlite_malloc_failed ) goto open_no_mem;
+  if( sqlite3_malloc_failed ) goto open_no_mem;
   (*ppRbtree)->next_idx = 3;
   (*ppRbtree)->pOps = &sqliteRbtreeOps;
   /* Set file type to 4; this is so that "attach ':memory:' as ...."  does not
@@ -647,7 +647,7 @@ static int memRbtreeCreateTable(Rbtree* tree, int* n)
 
   *n = tree->next_idx++;
   btreeCreateTable(tree, *n);
-  if( sqlite_malloc_failed ) return SQLITE_NOMEM;
+  if( sqlite3_malloc_failed ) return SQLITE_NOMEM;
 
   /* Set up the rollback structure (if we are not doing this as part of a
    * rollback) */
@@ -720,7 +720,7 @@ static int memRbtreeCursor(
   RbtCursor *pCur;
   assert(tree);
   pCur = *ppCur = sqliteMalloc(sizeof(RbtCursor));
-  if( sqlite_malloc_failed ) return SQLITE_NOMEM;
+  if( sqlite3_malloc_failed ) return SQLITE_NOMEM;
   pCur->pTree  = sqlite3HashFind(&tree->tblHash, 0, iTable);
   assert( pCur->pTree );
   pCur->pRbtree = tree;
@@ -764,7 +764,7 @@ static int memRbtreeInsert(
   /* Take a copy of the input data now, in case we need it for the 
    * replace case */
   pData = sqliteMallocRaw(nData);
-  if( sqlite_malloc_failed ) return SQLITE_NOMEM;
+  if( sqlite3_malloc_failed ) return SQLITE_NOMEM;
   memcpy(pData, pDataInput, nData);
 
   /* Move the cursor to a node near the key to be inserted. If the key already
@@ -784,7 +784,7 @@ static int memRbtreeInsert(
     if( pNode==0 ) return SQLITE_NOMEM;
     pNode->nKey = nKey;
     pNode->pKey = sqliteMallocRaw(nKey);
-    if( sqlite_malloc_failed ) return SQLITE_NOMEM;
+    if( sqlite3_malloc_failed ) return SQLITE_NOMEM;
     memcpy(pNode->pKey, pKey, nKey);
     pNode->nData = nData;
     pNode->pData = pData; 
@@ -821,7 +821,7 @@ static int memRbtreeInsert(
       pOp->iTab = pCur->iTree;
       pOp->nKey = pNode->nKey;
       pOp->pKey = sqliteMallocRaw( pOp->nKey );
-      if( sqlite_malloc_failed ) return SQLITE_NOMEM;
+      if( sqlite3_malloc_failed ) return SQLITE_NOMEM;
       memcpy( pOp->pKey, pNode->pKey, pOp->nKey );
       btreeLogRollbackOp(pCur->pRbtree, pOp);
     }
@@ -837,7 +837,7 @@ static int memRbtreeInsert(
       pOp->iTab = pCur->iTree;
       pOp->nKey = pCur->pNode->nKey;
       pOp->pKey = sqliteMallocRaw( pOp->nKey );
-      if( sqlite_malloc_failed ) return SQLITE_NOMEM;
+      if( sqlite3_malloc_failed ) return SQLITE_NOMEM;
       memcpy( pOp->pKey, pCur->pNode->pKey, pOp->nKey );
       pOp->nData = pCur->pNode->nData;
       pOp->pData = pCur->pNode->pData;

@@ -16,7 +16,7 @@
 ** sqlite3RegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.17 2004/05/08 08:23:24 danielk1977 Exp $
+** $Id: date.c,v 1.18 2004/05/10 10:34:35 danielk1977 Exp $
 **
 ** NOTES:
 **
@@ -666,7 +666,7 @@ static void juliandayFunc(sqlite_func *context, int argc, const char **argv){
   DateTime x;
   if( isDate(argc, argv, &x)==0 ){
     computeJD(&x);
-    sqlite_set_result_double(context, x.rJD);
+    sqlite3_set_result_double(context, x.rJD);
   }
 }
 
@@ -682,7 +682,7 @@ static void datetimeFunc(sqlite_func *context, int argc, const char **argv){
     computeYMD_HMS(&x);
     sprintf(zBuf, "%04d-%02d-%02d %02d:%02d:%02d",x.Y, x.M, x.D, x.h, x.m,
            (int)(x.s));
-    sqlite_set_result_string(context, zBuf, -1);
+    sqlite3_set_result_string(context, zBuf, -1);
   }
 }
 
@@ -697,7 +697,7 @@ static void timeFunc(sqlite_func *context, int argc, const char **argv){
     char zBuf[100];
     computeHMS(&x);
     sprintf(zBuf, "%02d:%02d:%02d", x.h, x.m, (int)x.s);
-    sqlite_set_result_string(context, zBuf, -1);
+    sqlite3_set_result_string(context, zBuf, -1);
   }
 }
 
@@ -712,7 +712,7 @@ static void dateFunc(sqlite_func *context, int argc, const char **argv){
     char zBuf[100];
     computeYMD(&x);
     sprintf(zBuf, "%04d-%02d-%02d", x.Y, x.M, x.D);
-    sqlite_set_result_string(context, zBuf, -1);
+    sqlite3_set_result_string(context, zBuf, -1);
   }
 }
 
@@ -832,7 +832,7 @@ static void strftimeFunc(sqlite_func *context, int argc, const char **argv){
     }
   }
   z[j] = 0;
-  sqlite_set_result_string(context, z, -1);
+  sqlite3_set_result_string(context, z, -1);
   if( z!=zBuf ){
     sqliteFree(z);
   }
@@ -864,10 +864,10 @@ void sqlite3RegisterDateTimeFunctions(sqlite *db){
   int i;
 
   for(i=0; i<sizeof(aFuncs)/sizeof(aFuncs[0]); i++){
-    sqlite_create_function(db, aFuncs[i].zName,
+    sqlite3_create_function(db, aFuncs[i].zName,
            aFuncs[i].nArg, aFuncs[i].xFunc, 0);
     if( aFuncs[i].xFunc ){
-      sqlite_function_type(db, aFuncs[i].zName, aFuncs[i].dataType);
+      sqlite3_function_type(db, aFuncs[i].zName, aFuncs[i].dataType);
     }
   }
 }

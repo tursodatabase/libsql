@@ -9,12 +9,12 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** This file contains code used to implement the sqlite_set_authorizer()
+** This file contains code used to implement the sqlite3_set_authorizer()
 ** API.  This facility is an optional feature of the library.  Embedded
 ** systems that do not need this facility may omit it by recompiling
 ** the library with -DSQLITE_OMIT_AUTHORIZATION=1
 **
-** $Id: auth.c,v 1.13 2004/05/08 08:23:21 danielk1977 Exp $
+** $Id: auth.c,v 1.14 2004/05/10 10:34:34 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -62,7 +62,7 @@
 ** the table and the column that are being accessed.  The auth function
 ** should return either SQLITE_OK, SQLITE_DENY, or SQLITE_IGNORE.  If
 ** SQLITE_OK is returned, it means that access is allowed.  SQLITE_DENY
-** means that the SQL statement will never-run - the sqlite_exec() call
+** means that the SQL statement will never-run - the sqlite3_exec() call
 ** will return with an error.  SQLITE_IGNORE means that the SQL statement
 ** should run but attempts to read the specified column will return NULL
 ** and attempts to write the column will be ignored.
@@ -70,7 +70,7 @@
 ** Setting the auth function to NULL disables this hook.  The default
 ** setting of the auth function is NULL.
 */
-int sqlite_set_authorizer(
+int sqlite3_set_authorizer(
   sqlite *db,
   int (*xAuth)(void*,int,const char*,const char*,const char*,const char*),
   void *pArg
