@@ -1,5 +1,5 @@
-C Fix\stypos\sin\sthe\snames\sof\ssome\sregression\stests.\s\sTicket\s#962.\s(CVS\s2023)
-D 2004-10-18T21:34:47
+C Fix\sa\stypo\sin\sthe\squickstart\sdocument.\s(CVS\s2024)
+D 2004-10-19T01:31:20
 F Makefile.in 52c1cc106cad9148d4b7cb387b458e82dc86b339
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -244,7 +244,7 @@ F www/nulls.tcl ec35193f92485b87b90a994a01d0171b58823fcf
 F www/oldnews.tcl 7aa4478e64631859770a5fe4b413919ba6ee8a08
 F www/omitted.tcl 7bd62b6f0f53b60c5360895b16b3af8407bbca03
 F www/opcode.tcl dafa030a5a3cc24a2f9fd4cfbfb7d7323d2151b0
-F www/quickstart.tcl 2ed129615479870b9f1f8b1527f21ebfcfb71e76
+F www/quickstart.tcl 6f6f694b6139be2d967b1492eb9a6bdf7058aa60
 F www/speed.tcl de99c82c4729a10b6733463636f15473c4ec95bc
 F www/sqlite.tcl b51fd15f0531a54874de785a9efba323eecd5975
 F www/support.tcl 96c8324cea27b5ded53ff5c60c127ba2053f688e
@@ -252,7 +252,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl fdacb0ba2d39831e8a6240d05a490026ad4c4e4c
-P 552ec6770a942fa014242b10fab87b58210dcf08
-R 109ae7279c435db66c569e9f72fd37e6
+P 77542beb31349b85bdf404c46980da346dde3266
+R 1123ff5a190f3a3d9924f56a26743d11
 U drh
-Z 83be03b351c2ffa2ce42be98b070933d
+Z 3306edbad41620ea46cbe737f2e21213
