@@ -13,7 +13,7 @@
 ** the WHERE clause of SQL statements.  Also found here are subroutines
 ** to generate VDBE code to evaluate expressions.
 **
-** $Id: where.c,v 1.63 2002/08/15 13:50:50 drh Exp $
+** $Id: where.c,v 1.64 2002/08/28 03:01:01 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1102,9 +1102,11 @@ void sqliteWhereEnd(WhereInfo *pWInfo){
       sqliteVdbeAddOp(v, OP_Close, pLevel->iCur, 0);
     }
   }
+#if 0  /* Never reuse a cursor */
   if( pWInfo->pParse->nTab==pWInfo->peakNTab ){
     pWInfo->pParse->nTab = pWInfo->savedNTab;
   }
+#endif
   sqliteFree(pWInfo);
   return;
 }

@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.172 2002/08/26 19:55:08 drh Exp $
+** $Id: vdbe.c,v 1.173 2002/08/28 03:01:00 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -537,6 +537,18 @@ void sqliteVdbeCompressSpace(Vdbe *p, int addr){
   }
   while( j>0 && isspace(z[j-1]) ){ j--; }
   z[j] = 0;
+}
+
+/*
+** Search for the current program for the given opcode and P2
+** value.  Return 1 if found and 0 if not found.
+*/
+int sqliteVdbeFindOp(Vdbe *p, int op, int p2){
+  int i;
+  for(i=0; i<p->nOp; i++){
+    if( p->aOp[i].opcode==op && p->aOp[i].p2==p2 ) return 1;
+  }
+  return 0;
 }
 
 /*
@@ -5231,7 +5243,7 @@ cleanup:
   }
   sqliteBtreeCommitCkpt(pBt);
   if( db->pBeTemp ) sqliteBtreeCommitCkpt(db->pBeTemp);
-  assert( p->tos<pc );
+  assert( p->tos<pc || sqlite_malloc_failed==1 );
   return rc;
 
   /* Jump to here if a malloc() fails.  It's hard to get a malloc()

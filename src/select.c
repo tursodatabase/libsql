@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.110 2002/08/25 19:20:40 drh Exp $
+** $Id: select.c,v 1.111 2002/08/28 03:00:59 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -517,6 +517,14 @@ static int selectInnerLoop(
         assert( eDest==SRT_Callback );
         sqliteVdbeAddOp(v, OP_Callback, nColumn, 0);
       }
+      break;
+    }
+
+    /* Invoke a subroutine to handle the results.  The subroutine itself
+    ** is responsible for popping the results off of the stack.
+    */
+    case SRT_Subroutine: {
+      sqliteVdbeAddOp(v, OP_Gosub, 0, iParm);
       break;
     }
 
@@ -1075,7 +1083,6 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
   int rc;             /* Success code from a subroutine */
   Select *pPrior;     /* Another SELECT immediately to our left */
   Vdbe *v;            /* Generate code to this VDBE */
-  int base;           /* Baseline value for pParse->nTab */
 
   /* Make sure there is no ORDER BY clause on prior SELECTs.  Only the 
   ** last SELECT in the series may have an ORDER BY.
@@ -1103,7 +1110,6 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
 
   /* Generate code for the left and right SELECT statements.
   */
-  base = pParse->nTab;
   switch( p->op ){
     case TK_ALL: {
       if( p->pOrderBy==0 ){
@@ -1258,7 +1264,6 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
     pParse->nErr++;
     return 1;
   }
-  pParse->nTab = base;
   return 0;
 }
 
@@ -2080,7 +2085,7 @@ int sqliteSelect(
   ** successful coding of the SELECT.
   */
 select_end:
-  pParse->nTab = base;
+  /* pParse->nTab = base; */
   sqliteAggregateInfoReset(pParse);
   return rc;
 }

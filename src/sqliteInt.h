@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.143 2002/08/24 18:24:55 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.144 2002/08/28 03:00:59 drh Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -610,6 +610,7 @@ struct Select {
 #define SRT_TempTable    8  /* Store result in a trasient table */
 #define SRT_Discard      9  /* Do not save the results anywhere */
 #define SRT_Sorter      10  /* Store results in the sorter */
+#define SRT_Subroutine  11  /* Call a subroutine to handle results */
 
 /*
 ** When a SELECT uses aggregate functions (like "count(*)" or "avg(f1)")

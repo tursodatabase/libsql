@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.65 2002/07/31 00:32:50 drh Exp $
+** $Id: insert.c,v 1.66 2002/08/28 03:00:58 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -30,6 +30,58 @@
 ** statement above, and pSelect is NULL.  For the second form, pList is
 ** NULL and pSelect is a pointer to the select statement used to generate
 ** data for the insert.
+**
+** The code generated follows one of three templates.  For a simple
+** select with data coming from a VALUES clause, the code executes
+** once straight down through.  The template looks like this:
+**
+**         open write cursor to <table> and its indices
+**         puts VALUES clause expressions onto the stack
+**         write the resulting record into <table>
+**         cleanup
+**
+** If the statement is of the form
+**
+**   INSERT INTO <table> SELECT ...
+**
+** And the SELECT clause does not read from <table> at any time, then
+** the generated code follows this template:
+**
+**         goto B
+**      A: setup for the SELECT
+**         loop over the tables in the SELECT
+**           gosub C
+**         end loop
+**         cleanup after the SELECT
+**         goto D
+**      B: open write cursor to <table> and its indices
+**         goto A
+**      C: insert the select result into <table>
+**         return
+**      D: cleanup
+**
+** The third template is used if the insert statement takes its
+** values from a SELECT but the data is being inserted into a table
+** that is also read as part of the SELECT.  In the third form,
+** we have to use a intermediate table to store the results of
+** the select.  The template is like this:
+**
+**         goto B
+**      A: setup for the SELECT
+**         loop over the tables in the SELECT
+**           gosub C
+**         end loop
+**         cleanup after the SELECT
+**         goto D
+**      C: insert the select result into the intermediate table
+**         return
+**      B: open a cursor to an intermediate table
+**         goto A
+**      D: open write cursor to <table> and its indices
+**         loop over the intermediate table
+**           transfer values form intermediate table into <table>
+**         end the loop
+**         cleanup
 */
 void sqliteInsert(
   Parse *pParse,        /* Parser context */
@@ -44,7 +96,6 @@ void sqliteInsert(
   int i, j, idx;        /* Loop counters */
   Vdbe *v;              /* Generate code into this virtual machine */
   Index *pIdx;          /* For looping over indices of the table */
-  int srcTab;           /* Date comes from this temporary cursor if >=0 */
   int nColumn;          /* Number of columns in the data */
   int base;             /* First available cursor */
   int iCont, iBreak;    /* Beginning and end of the loop over srcTab */
@@ -52,6 +103,12 @@ void sqliteInsert(
   int openOp;           /* Opcode used to open cursors */
   int keyColumn = -1;   /* Column that is the INTEGER PRIMARY KEY */
   int endOfLoop;        /* Label for the end of the insertion loop */
+  int useTempTable;     /* Store SELECT results in intermediate table */
+  int srcTab;           /* Data comes from this temporary cursor if >=0 */
+  int iSelectLoop;      /* Address of code that implements the SELECT */
+  int iCleanup;         /* Address of the cleanup code */
+  int iInsertBlock;     /* Address of the subroutine used to insert data */
+  int iCntMem;          /* Memory cell used for the row counter */
 
   int row_triggers_exist = 0; /* True if there are FOR EACH ROW triggers */
   int newIdx = -1;
@@ -111,23 +168,66 @@ void sqliteInsert(
   }
 
   /* Figure out how many columns of data are supplied.  If the data
-  ** is coming from a SELECT statement, then this step has to generate
-  ** all the code to implement the SELECT statement and leave the data
-  ** in a temporary table.  If data is coming from an expression list,
-  ** then we just have to count the number of expressions.
+  ** is coming from a SELECT statement, then this step also generates
+  ** all the code to implement the SELECT statement and invoke a subroutine
+  ** to process each row of the result. (Template 2.) If the SELECT
+  ** statement uses the the table that is being inserted into, then the
+  ** subroutine is also coded here.  That subroutine stores the SELECT
+  ** results in a temporary table. (Template 3.)
   */
   if( pSelect ){
-    int rc;
-    srcTab = pParse->nTab++;
-    sqliteVdbeAddOp(v, OP_OpenTemp, srcTab, 0);
-    rc = sqliteSelect(pParse, pSelect, SRT_Table, srcTab, 0,0,0);
+    /* Data is coming from a SELECT.  Generate code to implement that SELECT
+    */
+    int rc, iInitCode;
+    int opCode;
+    iInitCode = sqliteVdbeAddOp(v, OP_Goto, 0, 0);
+    iSelectLoop = sqliteVdbeCurrentAddr(v);
+    iInsertBlock = sqliteVdbeMakeLabel(v);
+    rc = sqliteSelect(pParse, pSelect, SRT_Subroutine, iInsertBlock, 0,0,0);
     if( rc || pParse->nErr || sqlite_malloc_failed ) goto insert_cleanup;
+    iCleanup = sqliteVdbeMakeLabel(v);
+    sqliteVdbeAddOp(v, OP_Goto, 0, iCleanup);
     assert( pSelect->pEList );
     nColumn = pSelect->pEList->nExpr;
+
+    /* Set useTempTable to TRUE if the result of the SELECT statement
+    ** should be written into a temporary table.  Set to FALSE if each
+    ** row of the SELECT can be written directly into the result table.
+    */
+    opCode = pTab->isTemp ? OP_OpenTemp : OP_Open;
+    useTempTable = row_triggers_exist || sqliteVdbeFindOp(v,opCode,pTab->tnum);
+
+    if( useTempTable ){
+      /* Generate the subroutine that SELECT calls to process each row of
+      ** the result.  Store the result in a temporary table
+      */
+      srcTab = pParse->nTab++;
+      sqliteVdbeResolveLabel(v, iInsertBlock);
+      sqliteVdbeAddOp(v, OP_MakeRecord, nColumn, 0);
+      sqliteVdbeAddOp(v, OP_NewRecno, srcTab, 0);
+      sqliteVdbeAddOp(v, OP_Pull, 1, 0);
+      sqliteVdbeAddOp(v, OP_PutIntKey, srcTab, 0);
+      sqliteVdbeAddOp(v, OP_Return, 0, 0);
+
+      /* The following code runs first because the GOTO at the very top
+      ** of the program jumps to it.  Create the temporary table, then jump
+      ** back up and execute the SELECT code above.
+      */
+      sqliteVdbeChangeP2(v, iInitCode, sqliteVdbeCurrentAddr(v));
+      sqliteVdbeAddOp(v, OP_OpenTemp, srcTab, 0);
+      sqliteVdbeAddOp(v, OP_Goto, 0, iSelectLoop);
+      sqliteVdbeResolveLabel(v, iCleanup);
+    }else{
+      sqliteVdbeChangeP2(v, iInitCode, sqliteVdbeCurrentAddr(v));
+    }
   }else{
+    /* This is the case if the data for the INSERT is coming from a VALUES
+    ** clause
+    */
     SrcList dummy;
     assert( pList!=0 );
     srcTab = -1;
+    useTempTable = 0;
     assert( pList );
     nColumn = pList->nExpr;
     dummy.nSrc = 0;
@@ -208,15 +308,18 @@ void sqliteInsert(
     keyColumn = pTab->iPKey;
   }
 
-  /* Open the temp table for FOR EACH ROW triggers */
+  /* Open the temp table for FOR EACH ROW triggers
+  */
   if( row_triggers_exist ){
     sqliteVdbeAddOp(v, OP_OpenTemp, newIdx, 0);
   }
     
   /* Initialize the count of rows to be inserted
   */
-  if( db->flags & SQLITE_CountRows && !pParse->trigStack ){
-    sqliteVdbeAddOp(v, OP_Integer, 0, 0);  /* Initialize the row count */
+  if( db->flags & SQLITE_CountRows ){
+    iCntMem = pParse->nMem++;
+    sqliteVdbeAddOp(v, OP_Integer, 0, 0);
+    sqliteVdbeAddOp(v, OP_MemStore, iCntMem, 1);
   }
 
   /* Open tables and indices if there are no row triggers */
@@ -232,15 +335,18 @@ void sqliteInsert(
     pParse->nTab += idx;
   }
 
-  /* If the data source is a SELECT statement, then we have to create
+  /* If the data source is a temporary table, then we have to create
   ** a loop because there might be multiple rows of data.  If the data
-  ** source is an expression list, then exactly one row will be inserted
-  ** and the loop is not used.
+  ** source is a subroutine call from the SELECT statement, then we need
+  ** to launch the SELECT statement processing.
   */
-  if( srcTab>=0 ){
+  if( useTempTable ){
     iBreak = sqliteVdbeMakeLabel(v);
     sqliteVdbeAddOp(v, OP_Rewind, srcTab, iBreak);
     iCont = sqliteVdbeCurrentAddr(v);
+  }else if( pSelect ){
+    sqliteVdbeAddOp(v, OP_Goto, 0, iSelectLoop);
+    sqliteVdbeResolveLabel(v, iInsertBlock);
   }
 
   endOfLoop = sqliteVdbeMakeLabel(v);
@@ -259,8 +365,10 @@ void sqliteInsert(
       if( pColumn && j>=pColumn->nId ){
         sqliteVdbeAddOp(v, OP_String, 0, 0);
         sqliteVdbeChangeP3(v, -1, pTab->aCol[i].zDflt, P3_STATIC);
-      }else if( srcTab>=0 ){
+      }else if( useTempTable ){
         sqliteVdbeAddOp(v, OP_Column, srcTab, j); 
+      }else if( pSelect ){
+        sqliteVdbeAddOp(v, OP_Dup, nColumn-j-1, 1);
       }else{
         sqliteExprCode(pParse, pList->a[j].pExpr);
       }
@@ -296,8 +404,10 @@ void sqliteInsert(
   */
   if( !pTab->pSelect ){
     if( keyColumn>=0 ){
-      if( srcTab>=0 ){
+      if( useTempTable ){
         sqliteVdbeAddOp(v, OP_Column, srcTab, keyColumn);
+      }else if( pSelect ){
+        sqliteVdbeAddOp(v, OP_Dup, nColumn - keyColumn - 1, 1);
       }else{
         sqliteExprCode(pParse, pList->a[keyColumn].pExpr);
       }
@@ -334,8 +444,10 @@ void sqliteInsert(
       if( pColumn && j>=pColumn->nId ){
         sqliteVdbeAddOp(v, OP_String, 0, 0);
         sqliteVdbeChangeP3(v, -1, pTab->aCol[i].zDflt, P3_STATIC);
-      }else if( srcTab>=0 ){
+      }else if( useTempTable ){
         sqliteVdbeAddOp(v, OP_Column, srcTab, j); 
+      }else if( pSelect ){
+        sqliteVdbeAddOp(v, OP_Dup, i+nColumn-j, 1);
       }else{
         sqliteExprCode(pParse, pList->a[j].pExpr);
       }
@@ -349,8 +461,8 @@ void sqliteInsert(
 
     /* Update the count of rows that are inserted
     */
-    if( (db->flags & SQLITE_CountRows)!=0 && !pParse->trigStack){
-      sqliteVdbeAddOp(v, OP_AddImm, 1, 0);
+    if( (db->flags & SQLITE_CountRows)!=0 ){
+      sqliteVdbeAddOp(v, OP_MemIncr, iCntMem, 0);
     }
   }
 
@@ -373,10 +485,14 @@ void sqliteInsert(
   /* The bottom of the loop, if the data source is a SELECT statement
   */
   sqliteVdbeResolveLabel(v, endOfLoop);
-  if( srcTab>=0 ){
+  if( useTempTable ){
     sqliteVdbeAddOp(v, OP_Next, srcTab, iCont);
     sqliteVdbeResolveLabel(v, iBreak);
     sqliteVdbeAddOp(v, OP_Close, srcTab, 0);
+  }else if( pSelect ){
+    sqliteVdbeAddOp(v, OP_Pop, nColumn, 0);
+    sqliteVdbeAddOp(v, OP_Return, 0, 0);
+    sqliteVdbeResolveLabel(v, iCleanup);
   }
 
   if( !row_triggers_exist ){
@@ -392,10 +508,11 @@ void sqliteInsert(
   /*
   ** Return the number of rows inserted.
   */
-  if( db->flags & SQLITE_CountRows && !pParse->trigStack ){
+  if( db->flags & SQLITE_CountRows ){
     sqliteVdbeAddOp(v, OP_ColumnCount, 1, 0);
     sqliteVdbeAddOp(v, OP_ColumnName, 0, 0);
     sqliteVdbeChangeP3(v, -1, "rows inserted", P3_STATIC);
+    sqliteVdbeAddOp(v, OP_MemLoad, iCntMem, 0);
     sqliteVdbeAddOp(v, OP_Callback, 1, 0);
   }
 
