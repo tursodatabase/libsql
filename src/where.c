@@ -13,7 +13,7 @@
 ** the WHERE clause of SQL statements.  Also found here are subroutines
 ** to generate VDBE code to evaluate expressions.
 **
-** $Id: where.c,v 1.50 2002/06/09 01:55:20 drh Exp $
+** $Id: where.c,v 1.51 2002/06/14 20:58:45 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -103,7 +103,7 @@ static int exprTableUsage(int base, Expr *p){
 /*
 ** Return TRUE if the given operator is one of the operators that is
 ** allowed for an indexable WHERE clause.  The allowed operators are
-** "=", "<", ">", "<=", and ">=".
+** "=", "<", ">", "<=", ">=", and "IN".
 */
 static int allowedOp(int op){
   switch( op ){
@@ -156,6 +156,58 @@ static void exprAnalyze(int base, ExprInfo *pInfo){
 ** in order to complete the WHERE clause processing.
 **
 ** If an error occurs, this routine returns NULL.
+**
+** The basic idea is to do a nested loop, one loop for each table in
+** the FROM clause of a select.  (INSERT and UPDATE statements are the
+** same as a SELECT with only a single table in the FROM clause.)  For
+** example, if the SQL is this:
+**
+**       SELECT * FROM t1, t2, t3 WHERE ...;
+**
+** Then the code generated is conceptually like the following:
+**
+**      foreach row1 in t1 do       \    Code generated
+**        foreach row2 in t2 do      |-- by sqliteWhereBegin()
+**          foreach row3 in t3 do   /
+**            ...
+**          end                     \    Code generated
+**        end                        |-- by sqliteWhereEnd()
+**      end                         /
+**
+** There are Btree cursors associated with each table.  t1 uses cursor
+** "base".  t2 uses cursor "base+1".  And so forth.  This routine generates
+** the code to open those cursors.  sqliteWhereEnd() generates the code
+** to close them.
+**
+** If the WHERE clause is empty, the foreach loops must each scan their
+** entire tables.  Thus a three-way join is an O(N^3) operation.  But if
+** the tables have indices and there are terms in the WHERE clause that
+** refer to those indices, a complete table scan can be avoided and the
+** code will run much faster.  Most of the work of this routine is checking
+** to see if there are indices that can be used to speed up the loop.
+**
+** Terms of the WHERE clause are also used to limit which rows actually
+** make it to the "..." in the middle of the loop.  After each "foreach",
+** terms of the WHERE clause that use only terms in that loop and outer
+** loops are evaluated and if false a jump is made around all subsequent
+** inner loops (or around the "..." if the test occurs within the inner-
+** most loop)
+**
+** OUTER JOINS
+**
+** An outer join of tables t1 and t2 is conceptally coded as follows:
+**
+**    foreach row1 in t1 do
+**      flag = 0
+**      foreach row2 in t2 do
+**        start:
+**          ...
+**          flag = 1
+**      end
+**      if flag==0 goto start
+**    end
+**
+** In words, if the right
 */
 WhereInfo *sqliteWhereBegin(
   Parse *pParse,       /* The parser context */
@@ -178,6 +230,11 @@ WhereInfo *sqliteWhereBegin(
   int iDirectGt[32];   /* Term of the form ROWID>X or ROWID>=X */
   ExprInfo aExpr[50];  /* The WHERE clause is divided into these expressions */
 
+  /* pushKey is only allowed if there is a single table (as in an INSERT or
+  ** UPDATE statement)
+  */
+  assert( pushKey==0 || pTabList->nSrc==1 );
+  
   /* Allocate space for aOrder[] and aiMem[]. */
   aOrder = sqliteMalloc( sizeof(int) * pTabList->nSrc );
 
@@ -332,14 +389,17 @@ WhereInfo *sqliteWhereBegin(
     ** If score&2 is not 0 then there is an inequality used as the
     ** start key.  (ex: "x>...");
     **
-    ** The IN operator as in "<expr> IN (...)" is treated the same as
-    ** an equality comparison.
+    ** The IN operator (as in "<expr> IN (...)") is treated the same as
+    ** an equality comparison except that it can only be used on the
+    ** left-most column of an index and other terms of the WHERE clause
+    ** cannot be used in conjunction with the IN operator to help satisfy
+    ** other columns of the index.
     */
     for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-      int eqMask = 0;  /* Index columns covered by an x=... constraint */
-      int ltMask = 0;  /* Index columns covered by an x<... constraint */
-      int gtMask = 0;  /* Index columns covered by an x>... constraint */
-      int inMask = 0;  /* Index columns covered by an x IN .. constraint */
+      int eqMask = 0;  /* Index columns covered by an x=... term */
+      int ltMask = 0;  /* Index columns covered by an x<... term */
+      int gtMask = 0;  /* Index columns covered by an x>... term */
+      int inMask = 0;  /* Index columns covered by an x IN .. term */
       int nEq, m, score;
 
       if( pIdx->isDropped ) continue;   /* Ignore dropped indices */
@@ -468,7 +528,7 @@ WhereInfo *sqliteWhereBegin(
 
     /* If this is the right table of a LEFT OUTER JOIN, allocate and
     ** initialize a memory cell that record if this table matches any
-    ** row of the left table in the join.
+    ** row of the left table of the join.
     */
     if( i>0 && (pTabList->a[i-1].jointype & JT_LEFT)!=0 ){
       if( !pParse->nMem ) pParse->nMem++;
@@ -481,7 +541,9 @@ WhereInfo *sqliteWhereBegin(
     pLevel->inOp = OP_Noop;
     if( i<ARRAYSIZE(iDirectEq) && iDirectEq[i]>=0 ){
       /* Case 1:  We can directly reference a single row using an
-      **          equality comparison against the ROWID field.
+      **          equality comparison against the ROWID field.  Or
+      **          we reference multiple rows using a "rowid IN (...)"
+      **          construct.
       */
       k = iDirectEq[i];
       assert( k<nExpr );
@@ -515,7 +577,8 @@ WhereInfo *sqliteWhereBegin(
       sqliteVdbeAddOp(v, OP_NotExists, base+idx, brk);
       pLevel->op = OP_Noop;
     }else if( pIdx!=0 && pLevel->score%4==0 ){
-      /* Case 2:  All index constraints are equality operators.
+      /* Case 2:  There is an index and all terms of the WHERE clause that
+      **          refer to the index use the "==" or "IN" operators.
       */
       int start;
       int testOp;
@@ -646,7 +709,7 @@ WhereInfo *sqliteWhereBegin(
       }
       haveKey = 0;
     }else if( pIdx==0 ){
-      /* Case 4:  There was no usable index.  We must do a complete
+      /* Case 4:  There is no usable index.  We must do a complete
       **          scan of the entire database table.
       */
       int start;
@@ -660,8 +723,12 @@ WhereInfo *sqliteWhereBegin(
       pLevel->p2 = start;
       haveKey = 0;
     }else{
-      /* Case 5: The contraint on the right-most index field is
-      **         an inequality.
+      /* Case 5: The WHERE clause term that refers to the right-most
+      **         column of the index is an inequality.  For example, if
+      **         the index is on (x,y,z) and the WHERE clause is of the
+      **         form "x=5 AND y<10" then this case is used.  Only the
+      **         right-most column can be an inequality - the rest must
+      **         use the "==" operator.
       */
       int score = pLevel->score;
       int nEqColumn = score/4;
@@ -695,7 +762,7 @@ WhereInfo *sqliteWhereBegin(
         }
       }
 
-      /* Duplicate the equality contraint values because they will all be
+      /* Duplicate the equality term values because they will all be
       ** used twice: once to make the termination key and once to make the
       ** start key.
       */
@@ -705,7 +772,7 @@ WhereInfo *sqliteWhereBegin(
 
       /* Generate the termination key.  This is the key value that
       ** will end the search.  There is no termination key if there
-      ** are no equality contraints and no "X<..." constraint.
+      ** are no equality terms and no "X<..." term.
       */
       if( (score & 1)!=0 ){
         for(k=0; k<nExpr; k++){
@@ -747,8 +814,8 @@ WhereInfo *sqliteWhereBegin(
       }
 
       /* Generate the start key.  This is the key that defines the lower
-      ** bound on the search.  There is no start key if there are not
-      ** equality constraints and if there is no "X>..." constraint.  In
+      ** bound on the search.  There is no start key if there are no
+      ** equality terms and if there is no "X>..." term.  In
       ** that case, generate a "Rewind" instruction in place of the
       ** start key search.
       */
@@ -850,7 +917,8 @@ WhereInfo *sqliteWhereBegin(
 }
 
 /*
-** Generate the end of the WHERE loop.
+** Generate the end of the WHERE loop.  See comments on 
+** sqliteWhereBegin() for additional information.
 */
 void sqliteWhereEnd(WhereInfo *pWInfo){
   Vdbe *v = pWInfo->pParse->pVdbe;

@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.45 2002/05/31 15:51:25 drh Exp $
+** $Id: util.c,v 1.46 2002/06/14 20:58:45 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -1084,7 +1084,7 @@ sqliteLikeCompare(const unsigned char *zPattern, const unsigned char *zString){
 ** same sqlite* pointer at the same time.  There is a race 
 ** condition so it is possible that the error is not detected.
 ** But usually the problem will be seen.  The result will be an
-** error which can be used to debugging the application that is
+** error which can be used to debug the application that is
 ** using SQLite incorrectly.
 */
 int sqliteSafetyOn(sqlite *db){
