@@ -12,7 +12,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is page cache subsystem.
 #
-# $Id: collate4.test,v 1.2 2004/06/11 10:51:41 danielk1977 Exp $
+# $Id: collate4.test,v 1.3 2004/07/18 21:33:02 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -589,7 +589,7 @@ do_test collate4-4.3 {
   count {
     SELECT min(a) FROM collate4t1;
   }
-} {10 1}
+} {10 2}
 do_test collate4-4.4 {
   count {
     SELECT max(a) FROM collate4t1;

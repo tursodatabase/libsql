@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.400 2004/06/30 23:04:33 drh Exp $
+** $Id: vdbe.c,v 1.401 2004/07/18 21:33:02 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2661,9 +2661,8 @@ case OP_MoveGt: {
       if( res<0 ){
         sqlite3BtreeNext(pC->pCursor, &res);
         pC->recnoIsValid = 0;
-        if( res && pOp->p2>0 ){
-          pc = pOp->p2 - 1;
-        }
+      }else{
+        res = 0;
       }
     }else{
       assert( oc==OP_MoveLt || oc==OP_MoveLe );
@@ -2676,8 +2675,12 @@ case OP_MoveGt: {
         */
         res = sqlite3BtreeEof(pC->pCursor);
       }
-      if( res && pOp->p2>0 ){
+    }
+    if( res ){
+      if( pOp->p2>0 ){
         pc = pOp->p2 - 1;
+      }else{
+        pC->nullRow = 1;
       }
     }
   }
