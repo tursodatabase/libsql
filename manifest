@@ -1,5 +1,5 @@
-C 2.0-Alpha-2\srelease\s(CVS\s1724)
-D 2001-09-20T01:44:44
+C Web\ssite\schanges\sprior\sto\srelease\s2.0-Alpha-2.\s(CVS\s259)
+D 2001-09-20T12:32:53
 F Makefile.in 0af884b48d7dbcd01d73a9d93cb3e19b34c9f087
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
 F VERSION 6942aa44940d2972bd72f671a631060106e77f7e
@@ -85,17 +85,17 @@ F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl c1891efdc00cd76eec72bdbf8b446195902932a3
 F www/c_interface.tcl 52ae81c89bf906b358e04857bd3f76b1a7f61c1b
-F www/changes.tcl 0a791dbf5af35d7adde6fcce8465829d599f000e
+F www/changes.tcl bf028a66d00a15a6c6a67a11c89c63bb60d5292b
 F www/crosscompile.tcl c99efacb3aefaa550c6e80d91b240f55eb9fd33e
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
-F www/index.tcl 13829cd0338bc12ccc50fbcdec17d77dab6d35e0
+F www/index.tcl d65c6eaf66afac5b8a4b0394f691be02a2c3be20
 F www/lang.tcl d093693db5d4d7b7127d134807e4e65dea0e5dee
 F www/mingw.tcl fc5f4ba9d336b6e8c97347cc6496d6162461ef60
 F www/opcode.tcl 60222aeb57a7855b2582c374b8753cb5bb53c4ab
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 13d50723f583888fc80ae1a38247c0ab415066fa
 F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P d2a1aac46782c0d3852e34a3b32a6b2ccd93a256
-R da13c8d8c124b473a3b231a811f4208c
+P 548c55e8498826834f946598baf72e2d4b7283b8
+R 1753929adc0f169566743fb2cccd868c
 U drh
-Z 609a22ea0235cfab37f3581f1ce4f2ba
+Z f2e9206a582317931d33fc08cbe53d59
