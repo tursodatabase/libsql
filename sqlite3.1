@@ -2,7 +2,7 @@
 .\" First parameter, NAME, should be all caps
 .\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
 .\" other parameters are allowed: see man(7), man(1)
-.TH SQLITE 1 "Mon Apr 15 23:49:17 2002"
+.TH SQLITE3 1 "Mon Apr 15 23:49:17 2002"
 .\" Please adjust this date whenever revising the manpage.
 .\"
 .\" Some roff macros, for reference:
@@ -16,96 +16,126 @@
 .\" .sp <n>    insert n+1 empty lines
 .\" for manpage-specific macros, see man(7)
 .SH NAME
-sqlite3 \- A command line interface for SQLite verson 3
+.B sqlite3 
+\- A command line interface for SQLite version 3
+
 .SH SYNOPSIS
-.B sqlite
-.RI [ options ] " filename " [ SQL ]
-.SS SUMMARY
+.B sqlite3
+.RI [ options ]
+.RI [ databasefile ]
+.RI [ SQL ]
+
+.SH SUMMARY
 .PP
-sqlite is a terminal-based front-end to the SQLite library. It enables
-you to type in queries interactively, issue them to SQLite and see the
-results. Alternatively, you can specify SQL code on the command-line. In
-addition it provides a number of meta-commands.
+.B sqlite3
+is a terminal-based front-end to the SQLite library that can evaluate
+queries interactively and display the results in multiple formats.
+.B sqlite3
+can also be used within shell scripts and other applications to provide
+batch processing features.
 
 .SH DESCRIPTION
-This manual page documents briefly the
-.B sqlite
-command.
-This manual page was written for the Debian GNU/Linux distribution
-because the original program does not have a manual page.
-.SS GETTING STARTED
-.PP
-To start the sqlite program, just type "sqlite" followed by the name
-the file that holds the SQLite database. If the file does not exist, a
-new one is created automatically. The sqlite program will then prompt
-you to enter SQL. Type in SQL statements (terminated by a semicolon),
-press "Enter" and the SQL will be executed.
+To start a
+.B sqlite3
+interactive session, invoke the
+.B sqlite3
+command and optionally provide the name of a database file.  If the
+database file does not exist, it will be created.  If the database file
+does exist, it will be opened.
 
-For example, to create a new SQLite database named "ex1" with a single
-table named "tbl1", you might do this:
+For example, to create a new database file named "mydata.db", create
+a table named "memos" and insert a couple of records into that table:
 .sp
-.nf
-$ sqlite3 ex1
-SQLite version 3.0.8
+$ 
+.B sqlite3 mydata.db
+.br
+SQLite version 3.1.3
+.br
 Enter ".help" for instructions
-sqlite> create table tbl1(one varchar(10), two smallint);
-sqlite> insert into tbl1 values('hello!',10);
-sqlite> insert into tbl1 values('goodbye', 20);
-sqlite> select * from tbl1;
-hello!|10
-goodbye|20
+.br
+sqlite>
+.B create table memos(text, priority INTEGER);
+.br
+sqlite>
+.B insert into memos values('deliver project description', 10);
+.br
+sqlite>
+.B insert into memos values('lunch with Christine', 100);
+.br
+sqlite>
+.B select * from memos;
+.br
+deliver project description|10
+.br
+lunch with Christine|100
+.br
 sqlite>
 .sp
-.fi
+
+If no database name is supplied, the ATTACH sql command can be used
+to attach to existing or create new database files.  ATTACH can also
+be used to attach to multiple databases within the same interactive
+session.  This is useful for migrating data between databases,
+possibly changing the schema along the way.
+
+Optionally, a SQL statement or set of SQL statements can be supplied as
+a single argument.  Multiple statements should be separated by
+semi-colons.
+
+For example:
+.sp
+$ 
+.B sqlite3 -line mydata.db 'select * from memos where priority > 20;'
+.br
+    text = lunch with Christine
+.br
+priority = 100
+.br
+.sp
 
 .SS SQLITE META-COMMANDS
 .PP
-Most of the time, sqlite just reads lines of input and passes them on
-to the SQLite library for execution. But if an input line begins with
-a dot ("."), then that line is intercepted and interpreted by the
-sqlite program itself. These "dot commands" are typically used to
-change the output format of queries, or to execute certain prepackaged
-query statements.
+The interactive interpreter offers a set of meta-commands that can be
+used to control the output format, examine the currently attached
+database files, or perform administrative operations upon the
+attached databases (such as rebuilding indices).   Meta-commands are
+always prefixed with a dot (.).
 
-For a listing of the available dot commands, you can enter ".help" at
-any time. For example:
+A list of available meta-commands can be viewed at any time by issuing
+the '.help' command.  For example:
 .sp
+sqlite>
+.B .help
 .nf
 .cc |
-sqlite> .help
-.dump ?TABLE? ...      Dump the database in an text format
+.databases             List names and files of attached databases
+.dump ?TABLE? ...      Dump the database in an SQL text format
 .echo ON|OFF           Turn command echo on or off
 .exit                  Exit this program
 .explain ON|OFF        Turn output mode suitable for EXPLAIN on or off.
-                       "off" will revert to the output mode that was
-                       previously in effect
 .header(s) ON|OFF      Turn display of headers on or off
 .help                  Show this message
+.import FILE TABLE     Import data from FILE into TABLE
 .indices TABLE         Show names of all indices on TABLE
-.mode MODE             Set mode to one of "line(s)", "column(s)",
-                       "insert", "list", or "html"
-.mode insert TABLE     Generate SQL insert statements for TABLE
-.nullvalue STRING      Print STRING instead of nothing for NULL data
+.mode MODE ?TABLE?     Set output mode where MODE is one of:
+                         csv      Comma-separated values
+                         column   Left-aligned columns.  (See .width)
+                         html     HTML <table> code
+                         insert   SQL insert statements for TABLE
+                         line     One value per line
+                         list     Values delimited by .separator string
+                         tabs     Tab-separated values
+                         tcl      TCL list elements
+.nullvalue STRING      Print STRING in place of NULL values
 .output FILENAME       Send output to FILENAME
 .output stdout         Send output to the screen
 .prompt MAIN CONTINUE  Replace the standard prompts
-                       "sqlite > " and "   ...> "
-                       with the strings MAIN and CONTINUE
-                       CONTINUE is optional.
 .quit                  Exit this program
 .read FILENAME         Execute SQL in FILENAME
-.reindex ?TABLE?       Rebuild indices
 .schema ?TABLE?        Show the CREATE statements
-.separator STRING      Change separator string for "list" mode
-.show                  Show the current values for the following:
-                       .echo
-                       .explain
-                       .mode
-                       .nullvalue
-                       .output
-                       .separator
-                       .width
-.tables ?PATTERN?      List names of tables matching a pattern
+.separator STRING      Change separator used by output mode and .import
+.show                  Show the current values for various settings
+.tables ?PATTERN?      List names of tables matching a LIKE pattern
 .timeout MS            Try opening locked tables for MS milliseconds
 .width NUM NUM ...     Set column widths for "column" mode
 sqlite>
@@ -114,59 +144,59 @@ sqlite>
 .fi
 
 .SH OPTIONS
-The program has the following options:
+.B sqlite3
+has the following options:
 .TP
 .BI \-init\ file
-Read in and process 'file', which contains "dot commands".
-You can use this file to initialize display settings.
-.TP
-.B \-html
-Set output mode to HTML.
-.TP
-.B \-list
-Set output mode to 'list'.
-.TP
-.B \-line
-Set output mode to 'line'.
-.TP
-.B \-column
-Set output mode to 'column'.
-.TP
-.BI \-separator\  separator
-Specify which output field separator for 'list' mode to use.
-Default is '|'.
-.TP
-.BI \-nullvalue\  string
-When a null is encountered, print 'string'. Default is no string.
-.TP
-.B \-[no]header
-Turn headers on or off. Default is off.
+Read and execute commands from
+.I file
+, which can contain a mix of SQL statements and meta-commands.
 .TP
 .B \-echo
 Print commands before execution.
+.TP
+.B \-[no]header
+Turn headers on or off.
+.TP
+.B \-column
+Query results will be displayed in a table like form, using
+whitespace characters to separate the columns and align the
+output.
+.TP
+.B \-html
+Query results will be output as simple HTML tables.
+.TP
+.B \-line
+Query results will be displayed with one value per line, rows
+separated by a blank line.  Designed to be easily parsed by
+scripts or other programs
+.TP
+.B \-list
+Query results will be displayed with the separator (|, by default)
+character between each field value.  The default.
+.TP
+.BI \-separator\  separator
+Set output field separator.  Default is '|'.
+.TP
+.BI \-nullvalue\  string
+Set string used to represent NULL values.  Default is ''
+(empty string).
+.TP
+.B \-version
+Show SQLite version.
+.TP
+.B \-help
+Show help on options and exit.
 
-
-.SH OUTPUT MODE
-The SQLite program has different output modes, which define the way
-the output (from queries) is formatted.
-
-In 'list' mode, which is the default, one record per line is output,
-each field separated by the separator specified with the
-\fB-separator\fP option or \fB.separator\fP command.
-
-In 'line' mode, each column is output on its own line, records are
-separated by blank lines.
-
-In HTML mode, an XHTML table is generated.
-
-In 'column' mode, one record per line is output, aligned neatly in colums.
 
 .SH INIT FILE
-sqlite can be initialized using resource files. These can be combined with
-command line arguments to set up sqlite exactly the way you want it.
-Initialization proceeds as follows:
+.B sqlite3
+reads an initialization file to set the configuration of the
+interactive environment.  Throughout initialization, any previously
+specified setting can be overridden.  The sequence of initialization is
+as follows:
 
-o The defaults of
+o The default configuration is established as follows:
 
 .sp
 .nf
@@ -179,25 +209,21 @@ continue prompt = "   ...> "
 .sp
 .fi
 
-are established.
+o If the file 
+.B ~/.sqliterc
+exists, it is processed first.
+can be found in the user's home directory, it is
+read and processed.  It should generally only contain meta-commands.
 
-o If a file .sqliterc can be found in the user's home directory, it is
-read and processed. It should only contain "dot commands".  If the
-file is not found or cannot be read, processing continues without
-notification.
+o If the -init option is present, the specified file is processed.
 
-o If a file is specified on the command line with the -init option, it
-is processed in the same manner as .sqliterc
-
-o All other command line options are processed
-
-o The database is opened and you are now ready to begin.
+o All other command line options are processed.
 
 .SH SEE ALSO
-http://www.hwaci.com/sw/sqlite/
+http://www.sqlite.org/
 .br
 The sqlite-doc package
 .SH AUTHOR
 This manual page was originally written by Andreas Rottmann
 <rotty@debian.org>, for the Debian GNU/Linux system (but may be used
-by others).
+by others).   It was subsequently revised by Bill Bumgarner <bbum@mac.com>.
