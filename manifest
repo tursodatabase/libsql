@@ -1,5 +1,5 @@
-C Change\sthe\sCVSTrac\swebsite\sto\swww.sqlite.org.\s\sUpdate\schange\ssummary\sfor\r\nthe\s2.8.6\srelease.\s(CVS\s1079)
-D 2003-08-22T02:34:30
+C Version\s2.8.6\s(CVS\s1080)
+D 2003-08-22T03:00:00
 F Makefile.in 4168f80989c60b195d378bcaa2e2046df03ee2ec
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -168,7 +168,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P dc36365eea7d0c8767d8947393a8d2746c02b220
+P a4e3e075e3b36e0f5f692067c5bf5e1b660d893d
 R 2b873f18d52e7cd646dc86505cc9d590
 U drh
-Z 7835004780d1605f83cd87c26754dc2c
+Z 3086609ad6b63303ab73f4ef9de88394
