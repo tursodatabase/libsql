@@ -266,6 +266,9 @@ mingw.html:	$(TOP)/www/mingw.tcl
 tclsqlite.html:	$(TOP)/www/tclsqlite.tcl
 	tclsh $(TOP)/www/tclsqlite.tcl >tclsqlite.html
 
+speed.html:	$(TOP)/www/speed.tcl
+	tclsh $(TOP)/www/speed.tcl >speed.html
+
 
 # Files to be published on the website.
 #
@@ -282,7 +285,8 @@ PUBLISH = \
   c_interface.html \
   crosscompile.html \
   mingw.html \
-  tclsqlite.html
+  tclsqlite.html \
+  speed.html
 
 website:	$(PUBLISH)
 

@@ -1,8 +1,8 @@
-C Tests\sfor\sinserting\slots\sof\sdata\s(~64K)\sinto\sa\ssingle\srow\sof\sa\stable.\s(CVS\s264)
-D 2001-09-24T03:12:40
-F Makefile.in 18eea9a3486939fced70aa95b691be766c2c995d
+C Prepare\sfor\sAlpha-3\s(CVS\s265)
+D 2001-09-25T01:50:59
+F Makefile.in fe9d96d6a7b04b3000a24692c2a3761840bbbf97
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
-F VERSION 6942aa44940d2972bd72f671a631060106e77f7e
+F VERSION 17fadc361fb942d644f92116388409c937c9fa79
 F configure aad857a97ca28a584228869186eb4cd7dbebbb3a x
 F configure.in 0000c0d62beb47cae1d2d81a197c7fe6efd56a45
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
@@ -91,14 +91,15 @@ F www/c_interface.tcl 52ae81c89bf906b358e04857bd3f76b1a7f61c1b
 F www/changes.tcl 7e5a04a59a417a9fd4c94ce38543adbca0e01937
 F www/crosscompile.tcl c99efacb3aefaa550c6e80d91b240f55eb9fd33e
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
-F www/index.tcl d65c6eaf66afac5b8a4b0394f691be02a2c3be20
+F www/index.tcl fd8ef2d78f22022d2baea03371a1add75d98d236
 F www/lang.tcl d093693db5d4d7b7127d134807e4e65dea0e5dee
 F www/mingw.tcl fc5f4ba9d336b6e8c97347cc6496d6162461ef60
 F www/opcode.tcl 60222aeb57a7855b2582c374b8753cb5bb53c4ab
+F www/speed.tcl 7320bb981f67a5ef18397cbfeb74fd3ac5f4e58f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 13d50723f583888fc80ae1a38247c0ab415066fa
 F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P bb4313a94bc079d072078f353e54f3804971060d
-R 69829e6305936fff1b9496182feb41ef
+P a462c85083d23aa34bd3d0c61d01062fc5ae8230
+R 7b8aaac299ca08d5a78dcf95d8a2bf19
 U drh
-Z 400cf1b054cf4870465ea4bfa97da0d6
+Z 2a5bd12e8fd0e8799083fed248ef84d4
