@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.286 2004/11/22 11:51:13 danielk1977 Exp $
+** $Id: build.c,v 1.287 2004/11/23 15:41:16 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2038,6 +2038,13 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
   int tnum;                      /* Root page of index */
   Vdbe *v;                       /* Generate code into this virtual machine */
   int isUnique;                  /* True for a unique index */
+
+#ifndef SQLITE_OMIT_AUTHORIZATION
+  if( sqlite3AuthCheck(pParse, SQLITE_REINDEX, pIndex->zName, 0,
+      pParse->db->aDb[pIndex->iDb].zName ) ){
+    return;
+  }
+#endif
 
   v = sqlite3GetVdbe(pParse);
   if( v==0 ) return;
