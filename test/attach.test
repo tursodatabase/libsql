@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach.test,v 1.33 2005/01/21 04:25:47 danielk1977 Exp $
+# $Id: attach.test,v 1.34 2005/01/21 11:55:27 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -679,6 +679,19 @@ if {$tcl_platform(platform)=="unix"} {
   } {1 {unable to open database: cannot-read}}
   file delete -force cannot-read
 }
+
+# Check the error message if we try to access a database that has
+# not been attached.
+do_test attach-6.3 {
+  catchsql {
+    CREATE TABLE no_such_db.t1(a, b, c);
+  }
+} {1 {unknown database no_such_db}}
+do_test attach-6.4 {
+  catchsql {
+    CREATE TEMP TABLE db2.temp1(a, b, c);
+  }
+} {1 {temporary table name must be unqualified}}
 
 for {set i 2} {$i<=15} {incr i} {
   catch {db$i close}

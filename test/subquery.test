@@ -11,11 +11,16 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing correlated subqueries
 #
-# $Id: subquery.test,v 1.1 2005/01/21 02:34:44 drh Exp $
+# $Id: subquery.test,v 1.2 2005/01/21 11:55:28 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+ifcapable !subquery {
+  finish_test
+  return
+}
 
 do_test subquery-1.1 {
   execsql {

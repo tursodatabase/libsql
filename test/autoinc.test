@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing the AUTOINCREMENT features.
 #
-# $Id: autoinc.test,v 1.2 2004/11/22 13:35:42 danielk1977 Exp $
+# $Id: autoinc.test,v 1.3 2005/01/21 11:55:27 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -475,6 +475,14 @@ do_test autoinc-7.1 {
     SELECT * FROM t7;
   }
 } {3 345}
+
+# Test that if the AUTOINCREMENT is applied to a non integer primary key
+# the error message is sensible.
+do_test autoinc-7.2 {
+  catchsql {
+    CREATE TABLE t8(x TEXT PRIMARY KEY AUTOINCREMENT);
+  }
+} {1 {AUTOINCREMENT is only allowed on an INTEGER PRIMARY KEY}}
 
 catch {db2 close}
 finish_test

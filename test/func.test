@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing built-in functions.
 #
-# $Id: func.test,v 1.32 2005/01/20 02:17:02 danielk1977 Exp $
+# $Id: func.test,v 1.33 2005/01/21 11:55:28 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -461,4 +461,19 @@ do_test func-15.1 {
   }
 } {1 {user function error}}
 
+# Test the quote function for BLOB and NULL values.
+do_test func-16.1 {
+  execsql {
+    CREATE TABLE tbl2(a, b);
+  }
+  set STMT [sqlite3_prepare $::DB "INSERT INTO tbl2 VALUES(?, ?)" -1 TAIL]
+  sqlite3_bind_blob $::STMT 1 abc 3
+  sqlite3_step $::STMT
+  sqlite3_finalize $::STMT
+  execsql {
+    SELECT quote(a), quote(b) FROM tbl2;
+  }
+} {X'616263' NULL}
+
 finish_test
+

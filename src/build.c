@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.296 2005/01/21 00:44:22 danielk1977 Exp $
+** $Id: build.c,v 1.297 2005/01/21 11:55:27 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -427,6 +427,7 @@ void sqlite3DeleteTable(sqlite3 *db, Table *pTable){
     sqliteDeleteIndex(db, pIndex);
   }
 
+#ifndef SQLITE_OMIT_FOREIGN_KEY
   /* Delete all foreign keys associated with this table.  The keys
   ** should have already been unlinked from the db->aFKey hash table 
   */
@@ -437,6 +438,7 @@ void sqlite3DeleteTable(sqlite3 *db, Table *pTable){
                            pFKey->zTo, strlen(pFKey->zTo)+1)!=pFKey );
     sqliteFree(pFKey);
   }
+#endif
 
   /* Delete the Table structure itself.
   */
@@ -462,6 +464,7 @@ void sqlite3UnlinkAndDeleteTable(sqlite3 *db, int iDb, const char *zTabName){
   pDb = &db->aDb[iDb];
   p = sqlite3HashInsert(&pDb->tblHash, zTabName, strlen(zTabName)+1, 0);
   if( p ){
+#ifndef SQLITE_OMIT_FOREIGN_KEY
     for(pF1=p->pFKey; pF1; pF1=pF1->pNextFrom){
       int nTo = strlen(pF1->zTo) + 1;
       pF2 = sqlite3HashFind(&pDb->aFKey, pF1->zTo, nTo);
@@ -474,6 +477,7 @@ void sqlite3UnlinkAndDeleteTable(sqlite3 *db, int iDb, const char *zTabName){
         }
       }
     }
+#endif
     sqlite3DeleteTable(db, p);
   }
   db->flags |= SQLITE_InternChanges;
@@ -517,7 +521,7 @@ void sqlite3OpenMasterTable(Vdbe *v, int iDb){
 ** does not exist.
 */
 static int findDb(sqlite3 *db, Token *pName){
-  int i;         /* Database number */
+  int i = -1;    /* Database number */
   int n;         /* Number of characters in the name */
   Db *pDb;       /* A database whose name space is being searched */
   char *zName;   /* Name we are searching for */
@@ -525,15 +529,14 @@ static int findDb(sqlite3 *db, Token *pName){
   zName = sqlite3NameFromToken(pName);
   if( zName ){
     n = strlen(zName);
-    for(pDb=db->aDb, i=0; i<db->nDb; i++, pDb++){
+    for(i=(db->nDb-1), pDb=&db->aDb[i]; i>=0; i--, pDb--){
       if( n==strlen(pDb->zName) && 0==sqlite3StrICmp(pDb->zName, zName) ){
-        sqliteFree(zName);
-        return i;
+        break;
       }
     }
     sqliteFree(zName);
   }
-  return -1;
+  return i;
 }
 
 /* The table or view or trigger name is passed to this routine via tokens
@@ -1061,6 +1064,7 @@ static void callCollNeeded(sqlite3 *db, const char *zName, int nName){
     db->xCollNeeded(db->pCollNeededArg, db, (int)db->enc, zExternal);
     sqliteFree(zExternal);
   }
+#ifndef SQLITE_OMIT_UTF16
   if( db->xCollNeeded16 ){
     char const *zExternal;
     sqlite3_value *pTmp = sqlite3GetTransientValue(db);
@@ -1069,6 +1073,7 @@ static void callCollNeeded(sqlite3 *db, const char *zName, int nName){
     if( !zExternal ) return;
     db->xCollNeeded16(db->pCollNeededArg, db, (int)db->enc, zExternal);
   }
+#endif
 }
 
 /*
@@ -1402,11 +1407,13 @@ void sqlite3EndTable(Parse *pParse, Token *pEnd, Select *pSelect){
       sqlite3VdbeAddOp(v, OP_CreateTable, p->iDb, 0);
       zType = "table";
       zType2 = "TABLE";
+#ifndef SQLITE_OMIT_VIEW
     }else{
       /* A view */
       sqlite3VdbeAddOp(v, OP_Integer, 0, 0);
       zType = "view";
       zType2 = "VIEW";
+#endif
     }
 
     /* If this is a CREATE TABLE xx AS SELECT ..., execute the SELECT
@@ -1496,11 +1503,13 @@ void sqlite3EndTable(Parse *pParse, Token *pEnd, Select *pSelect){
       assert( p==pOld );  /* Malloc must have failed inside HashInsert() */
       return;
     }
+#ifndef SQLITE_OMIT_FOREIGN_KEY
     for(pFKey=p->pFKey; pFKey; pFKey=pFKey->pNextFrom){
       int nTo = strlen(pFKey->zTo) + 1;
       pFKey->pNextTo = sqlite3HashFind(&pDb->aFKey, pFKey->zTo, nTo);
       sqlite3HashInsert(&pDb->aFKey, pFKey->zTo, nTo, pFKey);
     }
+#endif
     pParse->pNewTable = 0;
     db->nTable++;
     db->flags |= SQLITE_InternChanges;
@@ -1811,6 +1820,11 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView){
     sqlite3ErrorMsg(pParse, "table %s may not be dropped", pTab->zName);
     goto exit_drop_table;
   }
+
+#ifndef SQLITE_OMIT_VIEW
+  /* Ensure DROP TABLE is not used on a view, and DROP VIEW is not used
+  ** on a table.
+  */
   if( isView && pTab->pSelect==0 ){
     sqlite3ErrorMsg(pParse, "use DROP TABLE to delete table %s", pTab->zName);
     goto exit_drop_table;
@@ -1819,6 +1833,7 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView){
     sqlite3ErrorMsg(pParse, "use DROP VIEW to delete view %s", pTab->zName);
     goto exit_drop_table;
   }
+#endif
 
   /* Generate code to remove the table from the master table
   ** on disk.
@@ -2144,10 +2159,12 @@ void sqlite3CreateIndex(
     sqlite3ErrorMsg(pParse, "table %s may not be indexed", pTab->zName);
     goto exit_create_index;
   }
+#ifndef SQLITE_OMIT_VIEW
   if( pTab->pSelect ){
     sqlite3ErrorMsg(pParse, "views may not be indexed");
     goto exit_create_index;
   }
+#endif
   isTemp = pTab->iDb==1;
 
   /*
@@ -2806,6 +2823,7 @@ void sqlite3BeginWriteOperation(Parse *pParse, int setStatement, int iDb){
   }
 }
 
+#ifndef SQLITE_OMIT_UTF16
 /* 
 ** Return the transient sqlite3_value object used for encoding conversions
 ** during SQL compilation.
@@ -2816,6 +2834,7 @@ sqlite3_value *sqlite3GetTransientValue(sqlite3 *db){
   }
   return db->pValue;
 }
+#endif
 
 /*
 ** Check to see if pIndex uses the collating sequence pColl.  Return

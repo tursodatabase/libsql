@@ -1,5 +1,5 @@
-C Exclude\sa\sfew\smore\slines\sof\scode\susing\sOMIT\smacros.\s(CVS\s2253)
-D 2005-01-21T08:13:14
+C Improve\stest\scoverage\sfor\sminimum\sfeature\sbuilds.\s(CVS\s2254)
+D 2005-01-21T11:55:26
 F Makefile.in ffd81f5e926d40b457071b4de8d7c1fa18f39b5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -29,9 +29,9 @@ F sqlite3.def dbaeb20c153e1d366e8f421b55a573f5dfc00863
 F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
 F src/attach.c cecf5ab42cff34416372a0210b14abb50ed48ef9
 F src/auth.c 3b81f2a42f48a62c2c9c9b0eda31a157c681edea
-F src/btree.c 812ee6b8eed884801a40b71f674cddf56a5e0888
+F src/btree.c e68ae12c8b12ef9d45d58d931c36c184055a3880
 F src/btree.h 74d19cf40ab49fd69abe9e4e12a6c321ad86c497
-F src/build.c 9c9e9dbb9d8619f0755be79fcb30df5a8347a8ed
+F src/build.c b60b1f1f48521fe5b4bf98a189cadc205b2e8065
 F src/cursor.c de73c00aefc4747ad59b5105cf38bbff0667922e
 F src/date.c f3d1f5cd1503dabf426a198f3ebef5afbc122a7f
 F src/delete.c b3accca9c38d9a67dbd724f67b04151a13735ebd
@@ -64,7 +64,7 @@ F src/sqlite.h.in 8249b697d71ef6d7f7f752ba4ca04058e9e8b5ff
 F src/sqliteInt.h 01ea63415bb96ad8ab6e26bede2aa6a39cefb082
 F src/table.c 25b3ff2b39b7d87e8d4a5da0713d68dfc06cbee9
 F src/tclsqlite.c fd27457b228118be96524dae285146c76efe032b
-F src/test1.c c4f2a1d6ad8f14a1168a4c933ce5c5cb2d243d86
+F src/test1.c 35c055c934ea9797d1b8ca7083ced6a9b263f2ec
 F src/test2.c bbc2ecc58ceeab12d1e40970f831b1017524e40d
 F src/test3.c 683e1e3819152ffd35da2f201e507228921148d0
 F src/test4.c 7c6b9fc33dd1f3f93c7f1ee6e5e6d016afa6c1df
@@ -85,11 +85,11 @@ F src/where.c f4127cc2633ee0f74790ab7f09f5af832489e44e
 F tclinstaller.tcl 36478c3bbfc5b93ceac42d94e3c736937b808432
 F test/all.test 7f0988442ab811dfa41793b5b550f5828ce316f3
 F test/alter.test 95c57a4f461fa81293e0dccef7f83889aadb169a
-F test/attach.test 660ed5ed29e864fc6c1710845e939df79467ed34
+F test/attach.test 3391776495dc9434c8f3c67a7591db2aef0cd4fa
 F test/attach2.test eeb987770f4dbe68bd29afdbc2e8cff0142e6eb5
 F test/attach3.test c05c70b933afbde0901dab9da3e66ee842c09f38
 F test/auth.test 559e0816b8100740624ebb0ab7aab05f5c92831c
-F test/autoinc.test c071e51ff167b8e889212273588d9cca71845b70
+F test/autoinc.test c6daf10ffce8a898cd375b4a71615a741a6029d0
 F test/autovacuum.test a87871f29761093dc171e97c9d0dd5ae7d43b0d1
 F test/autovacuum_crash.test 05a63b8805b20cfba7ace82856ce4ccdda075a31
 F test/autovacuum_ioerr.test 9cf27275ca47b72e188a47c53b61b6d583a01d24
@@ -126,9 +126,9 @@ F test/diskfull.test e2f6cfd868713ead06dc82b84a4938e868128fc0
 F test/enc.test 7a03417a1051fe8bc6c7641cf4c8c3f7e0066d52
 F test/enc2.test e5e95be36676df5ba7c4c4c837cabcdf9fe01f5b
 F test/enc3.test f6a5f0b7b7f3a88f030d3143729b87cd5c86d837
-F test/expr.test b2ce68f4b3298dd06867468b770ca2604068014e
+F test/expr.test 54d9d1cc05eb731fa62daa70f2d7163f8a03c54d
 F test/fkey1.test 81bb13caaa78f58d7d191d7f535529f7c91d821a
-F test/func.test 47443316dfc7f78f173b207e35d63caeab42b7fe
+F test/func.test 9a467351e2a50c8846623ac7451d3bc2516b6e6d
 F test/hook.test f8605cde4c77b2c6a4a73723bf6c507796a64dda
 F test/in.test ed134f8d477a6280297ced1646de83cccf8f196d
 F test/index.test 51e01a0928b4b61228917ddd8c6c0e2466547f6f
@@ -182,7 +182,7 @@ F test/select5.test 94db800bbeff2e426c0175e07f7a71d4617853b5
 F test/select6.test ba1b4dd18a85bf9070c6df8d933ac4cfcacea6a6
 F test/select7.test 63fb77d50f4dfdac4d4115842f083d2eb33a198c
 F test/sort.test 87882e6c72a75d45e98a1c802c1ded0eac557d85
-F test/subquery.test 34ee5ea73751f880e4d9af9149bd9e14156347ae
+F test/subquery.test a3ed9f11a4e576ff31b539ab5d65953dc3d27a81
 F test/subselect.test 3f3f7a940dc3195c3139f4d530385cb54665d614
 F test/table.test a6b6b897731b4971f06db165d65bd608a9f2d461
 F test/tableapi.test 6a66d58b37d46dc0f2b3c7d4bd2617d209399bd1
@@ -271,7 +271,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P d4e19efcef68d834c55c7d496cdb3696d63a31a2
-R f22d940e12f93d2a72377ccf52f1ee48
+P c6fc49e61033419e78b6b10638d57f4942087961
+R 72b61915b4b55438a51d57f3746cef1c
 U danielk1977
-Z ac1cb2768224dd061522306186c6fe8f
+Z 90e04e1ec937afd20abd081dbd664846
