@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.208 2004/01/15 02:44:03 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.209 2004/01/16 15:55:38 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -587,6 +587,10 @@ struct Index {
 /*
 ** Each token coming out of the lexer is an instance of
 ** this structure.  Tokens are also used as part of an expression.
+**
+** Note if Token.z==0 then Token.dyn and Token.n are undefined and
+** may contain random values.  Do not make any assuptions about Token.dyn
+** and Token.n when Token.z==0.
 */
 struct Token {
   const char *z;      /* Text of the token.  Not NULL-terminated! */

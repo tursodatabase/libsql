@@ -1,5 +1,5 @@
-C Fix\sa\sbuffer-overflow\sproblem\sin\sthe\srandStr\sfunction\s(used\sonly\sfor\stesting).\s(CVS\s1182)
-D 2004-01-16T13:58:18
+C Incremental\scode\scompaction\sin\sexpr.c.\s\sNow\sabout\s4%\ssmaller.\nLots\smore\swork\sto\sdo.\s(CVS\s1183)
+D 2004-01-16T15:55:38
 F Makefile.in 0515ff9218ad8d5a8f6220f0494b8ef94c67013b
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -31,7 +31,7 @@ F src/copy.c 9e47975ea96751c658bcf1a0c4f0bb7c6ee61e73
 F src/date.c bb89fdb9c89e367b9a728c58cb96e4823974a2c1
 F src/delete.c 0f81e6799c089487615d38e042a2de4d2d6192bc
 F src/encode.c 9e70ea1e4e746f23f18180949e94f1bb1c2220d3
-F src/expr.c 866a6d7aacc2825aa13056ccbea1a16f436a1ca5
+F src/expr.c 5ecbce47b7f163bb1f64bc5e19fbb115ab468f98
 F src/func.c 564c0bbe93c290774b305c0199237b8e8bcbda53
 F src/hash.c 9b56ef3b291e25168f630d5643a4264ec011c70e
 F src/hash.h 3247573ab95b9dd90bcca0307a75d9a16da1ccc7
@@ -49,7 +49,7 @@ F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c 2712bd4d311ebe7dbf8fd7596a809042657db85f
 F src/shell.c 3b067edc098c45caca164bcad1fa79192c3ec5ae
 F src/sqlite.h.in c70d8533cd5a5ae8af580597dbc726693ef82de9
-F src/sqliteInt.h 99df38d3c16cc727030c218a3fc61de08c071d08
+F src/sqliteInt.h c5b727d5d07b88654c204c0fc1ae79c9f635a008
 F src/table.c d845cb101b5afc1f7fea083c99e3d2fa7998d895
 F src/tclsqlite.c 85810fc4a850e2178d71aa5efe576dcd331db596
 F src/test1.c e8652055d04d241d4fb437b5c33ff07d9f13b4b4
@@ -180,7 +180,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P 5e85025be7aa4a03b0cfb4d0f28a2e44653b9d3f
-R aaef1a0aff5b12b7d4f36cc6a72499f1
+P 42c79edc2e8d1051b3bca915b4b205c601b8077f
+R 36f16e7773dddd52ae0de77fcf909446
 U drh
-Z ebbe741602d66e22ec8fa796a8084911
+Z 7d1bc38e295a20482fad97622944af0e

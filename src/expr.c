@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.104 2004/01/14 03:12:42 drh Exp $
+** $Id: expr.c,v 1.105 2004/01/16 15:55:38 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -26,8 +26,7 @@ Expr *sqliteExpr(int op, Expr *pLeft, Expr *pRight, Token *pToken){
   Expr *pNew;
   pNew = sqliteMalloc( sizeof(Expr) );
   if( pNew==0 ){
-    sqliteExprDelete(pLeft);
-    sqliteExprDelete(pRight);
+    /* When malloc fails, we leak memory from pLeft and pRight */
     return 0;
   }
   pNew->op = op;
@@ -38,9 +37,9 @@ Expr *sqliteExpr(int op, Expr *pLeft, Expr *pRight, Token *pToken){
     pNew->token = *pToken;
     pNew->span = *pToken;
   }else{
-    pNew->token.dyn = 0;
-    pNew->token.z = 0;
-    pNew->token.n = 0;
+    assert( pNew->token.dyn==0 );
+    assert( pNew->token.z==0 );
+    assert( pNew->token.n==0 );
     if( pLeft && pRight ){
       sqliteExprSpan(pNew, &pLeft->span, &pRight->span);
     }else{
@@ -55,14 +54,15 @@ Expr *sqliteExpr(int op, Expr *pLeft, Expr *pRight, Token *pToken){
 ** text between the two given tokens.
 */
 void sqliteExprSpan(Expr *pExpr, Token *pLeft, Token *pRight){
-  if( pExpr && pRight && pRight->z && pLeft && pLeft->z ){
+  assert( pRight!=0 );
+  assert( pLeft!=0 );
+  /* Note: pExpr might be NULL due to a prior malloc failure */
+  if( pExpr && pRight->z && pLeft->z ){
     if( pLeft->dyn==0 && pRight->dyn==0 ){
       pExpr->span.z = pLeft->z;
       pExpr->span.n = pRight->n + Addr(pRight->z) - Addr(pLeft->z);
     }else{
       pExpr->span.z = 0;
-      pExpr->span.n = 0;
-      pExpr->span.dyn = 0;
     }
   }
 }
@@ -75,18 +75,16 @@ Expr *sqliteExprFunction(ExprList *pList, Token *pToken){
   Expr *pNew;
   pNew = sqliteMalloc( sizeof(Expr) );
   if( pNew==0 ){
-    sqliteExprListDelete(pList);
+    /* sqliteExprListDelete(pList); // Leak pList when malloc fails */
     return 0;
   }
   pNew->op = TK_FUNCTION;
   pNew->pList = pList;
-  pNew->token.dyn = 0;
   if( pToken ){
     assert( pToken->dyn==0 );
     pNew->token = *pToken;
   }else{
     pNew->token.z = 0;
-    pNew->token.n = 0;
   }
   pNew->span = pNew->token;
   return pNew;
@@ -97,12 +95,12 @@ Expr *sqliteExprFunction(ExprList *pList, Token *pToken){
 */
 void sqliteExprDelete(Expr *p){
   if( p==0 ) return;
-  if( p->span.dyn && p->span.z ) sqliteFree((char*)p->span.z);
-  if( p->token.dyn && p->token.z ) sqliteFree((char*)p->token.z);
-  if( p->pLeft ) sqliteExprDelete(p->pLeft);
-  if( p->pRight ) sqliteExprDelete(p->pRight);
-  if( p->pList ) sqliteExprListDelete(p->pList);
-  if( p->pSelect ) sqliteSelectDelete(p->pSelect);
+  if( p->span.dyn ) sqliteFree((char*)p->span.z);
+  if( p->token.dyn ) sqliteFree((char*)p->token.z);
+  sqliteExprDelete(p->pLeft);
+  sqliteExprDelete(p->pRight);
+  sqliteExprListDelete(p->pList);
+  sqliteSelectDelete(p->pSelect);
   sqliteFree(p);
 }
 
@@ -129,13 +127,9 @@ Expr *sqliteExprDup(Expr *p){
     pNew->token.z = sqliteStrDup(p->token.z);
     pNew->token.dyn = 1;
   }else{
-    pNew->token.z = 0;
-    pNew->token.n = 0;
-    pNew->token.dyn = 0;
+    assert( pNew->token.z==0 );
   }
   pNew->span.z = 0;
-  pNew->span.n = 0;
-  pNew->span.dyn = 0;
   pNew->pLeft = sqliteExprDup(p->pLeft);
   pNew->pRight = sqliteExprDup(p->pRight);
   pNew->pList = sqliteExprListDup(p->pList);
@@ -149,9 +143,7 @@ void sqliteTokenCopy(Token *pTo, Token *pFrom){
     pTo->z = sqliteStrNDup(pFrom->z, pFrom->n);
     pTo->dyn = 1;
   }else{
-    pTo->n = 0;
     pTo->z = 0;
-    pTo->dyn = 0;
   }
 }
 ExprList *sqliteExprListDup(ExprList *p){
@@ -187,19 +179,21 @@ SrcList *sqliteSrcListDup(SrcList *p){
   int nByte;
   if( p==0 ) return 0;
   nByte = sizeof(*p) + (p->nSrc>0 ? sizeof(p->a[0]) * (p->nSrc-1) : 0);
-  pNew = sqliteMalloc( nByte );
+  pNew = sqliteMallocRaw( nByte );
   if( pNew==0 ) return 0;
   pNew->nSrc = pNew->nAlloc = p->nSrc;
   for(i=0; i<p->nSrc; i++){
-    pNew->a[i].zDatabase = sqliteStrDup(p->a[i].zDatabase);
-    pNew->a[i].zName = sqliteStrDup(p->a[i].zName);
-    pNew->a[i].zAlias = sqliteStrDup(p->a[i].zAlias);
-    pNew->a[i].jointype = p->a[i].jointype;
-    pNew->a[i].iCursor = p->a[i].iCursor;
-    pNew->a[i].pTab = 0;
-    pNew->a[i].pSelect = sqliteSelectDup(p->a[i].pSelect);
-    pNew->a[i].pOn = sqliteExprDup(p->a[i].pOn);
-    pNew->a[i].pUsing = sqliteIdListDup(p->a[i].pUsing);
+    struct SrcList_item *pNewItem = &pNew->a[i];
+    struct SrcList_item *pOldItem = &p->a[i];
+    pNewItem->zDatabase = sqliteStrDup(pOldItem->zDatabase);
+    pNewItem->zName = sqliteStrDup(pOldItem->zName);
+    pNewItem->zAlias = sqliteStrDup(pOldItem->zAlias);
+    pNewItem->jointype = pOldItem->jointype;
+    pNewItem->iCursor = pOldItem->iCursor;
+    pNewItem->pTab = 0;
+    pNewItem->pSelect = sqliteSelectDup(pOldItem->pSelect);
+    pNewItem->pOn = sqliteExprDup(pOldItem->pOn);
+    pNewItem->pUsing = sqliteIdListDup(pOldItem->pUsing);
   }
   return pNew;
 }
@@ -207,21 +201,23 @@ IdList *sqliteIdListDup(IdList *p){
   IdList *pNew;
   int i;
   if( p==0 ) return 0;
-  pNew = sqliteMalloc( sizeof(*pNew) );
+  pNew = sqliteMallocRaw( sizeof(*pNew) );
   if( pNew==0 ) return 0;
   pNew->nId = pNew->nAlloc = p->nId;
-  pNew->a = sqliteMalloc( p->nId*sizeof(p->a[0]) );
+  pNew->a = sqliteMallocRaw( p->nId*sizeof(p->a[0]) );
   if( pNew->a==0 ) return 0;
   for(i=0; i<p->nId; i++){
-    pNew->a[i].zName = sqliteStrDup(p->a[i].zName);
-    pNew->a[i].idx = p->a[i].idx;
+    struct IdList_item *pNewItem = &pNew->a[i];
+    struct IdList_item *pOldItem = &p->a[i];
+    pNewItem->zName = sqliteStrDup(pOldItem->zName);
+    pNewItem->idx = pOldItem->idx;
   }
   return pNew;
 }
 Select *sqliteSelectDup(Select *p){
   Select *pNew;
   if( p==0 ) return 0;
-  pNew = sqliteMalloc( sizeof(*p) );
+  pNew = sqliteMallocRaw( sizeof(*p) );
   if( pNew==0 ) return 0;
   pNew->isDistinct = p->isDistinct;
   pNew->pEList = sqliteExprListDup(p->pEList);
@@ -250,28 +246,28 @@ ExprList *sqliteExprListAppend(ExprList *pList, Expr *pExpr, Token *pName){
   if( pList==0 ){
     pList = sqliteMalloc( sizeof(ExprList) );
     if( pList==0 ){
-      sqliteExprDelete(pExpr);
+      /* sqliteExprDelete(pExpr); // Leak memory if malloc fails */
       return 0;
     }
-    pList->nAlloc = 0;
+    assert( pList->nAlloc==0 );
   }
   if( pList->nAlloc<=pList->nExpr ){
-    struct ExprList_item *a;
     pList->nAlloc = pList->nAlloc*2 + 4;
-    a = sqliteRealloc(pList->a, pList->nAlloc*sizeof(pList->a[0]));
-    if( a==0 ){
-      sqliteExprDelete(pExpr);
+    pList->a = sqliteRealloc(pList->a, pList->nAlloc*sizeof(pList->a[0]));
+    if( pList->a==0 ){
+      /* sqliteExprDelete(pExpr); // Leak memory if malloc fails */
+      pList->nExpr = pList->nAlloc = 0;
       return pList;
     }
-    pList->a = a;
   }
-  if( pList->a && (pExpr || pName) ){
-    i = pList->nExpr++;
-    memset(&pList->a[i], 0, sizeof(pList->a[i]));
-    pList->a[i].pExpr = pExpr;
+  assert( pList->a!=0 );
+  if( pExpr || pName ){
+    struct ExprList_item *pItem = &pList->a[pList->nExpr++];
+    memset(pItem, 0, sizeof(*pItem));
+    pItem->pExpr = pExpr;
     if( pName ){
-      sqliteSetNString(&pList->a[i].zName, pName->z, pName->n, 0);
-      sqliteDequote(pList->a[i].zName);
+      sqliteSetNString(&pItem->zName, pName->z, pName->n, 0);
+      sqliteDequote(pItem->zName);
     }
   }
   return pList;
