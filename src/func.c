@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.88 2004/11/17 16:41:30 danielk1977 Exp $
+** $Id: func.c,v 1.89 2004/11/18 13:49:26 drh Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -372,7 +372,7 @@ static int patternCompare(
         }
         zPattern++;
       }
-      if( c && sqlite3ReadUtf8(&zPattern[1])==esc ){
+      if( c && esc && sqlite3ReadUtf8(&zPattern[1])==esc ){
         u8 const *zTemp = &zPattern[1];
         sqliteNextChar(zTemp);
         c = *zTemp;
@@ -433,7 +433,7 @@ static int patternCompare(
       if( c2==0 || (seen ^ invert)==0 ) return 0;
       sqliteNextChar(zString);
       zPattern++;
-    }else if( !prevEscape && sqlite3ReadUtf8(zPattern)==esc){
+    }else if( esc && !prevEscape && sqlite3ReadUtf8(zPattern)==esc){
       prevEscape = 1;
       sqliteNextChar(zPattern);
     }else{
