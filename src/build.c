@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.247 2004/08/18 02:10:15 drh Exp $
+** $Id: build.c,v 1.248 2004/08/18 15:58:23 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2551,7 +2551,7 @@ void sqlite3BeginWriteOperation(Parse *pParse, int setStatement, int iDb){
   if( setStatement ){
     sqlite3VdbeAddOp(v, OP_Statement, iDb, 0);
   }
-  if( iDb!=1 ){
+  if( iDb!=1 && pParse->db->aDb[1].pBt!=0 ){
     sqlite3BeginWriteOperation(pParse, setStatement, 1);
   }
 }

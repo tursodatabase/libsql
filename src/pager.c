@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.155 2004/08/18 02:10:15 drh Exp $
+** @(#) $Id: pager.c,v 1.156 2004/08/18 15:58:23 drh Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -30,18 +30,15 @@
 ** Macros for troubleshooting.  Normally turned off
 */
 #if 0
-static Pager *mainPager = 0;
-#define SET_PAGER(X)  if( mainPager==0 ) mainPager = (X)
-#define CLR_PAGER(X)  if( mainPager==(X) ) mainPager = 0
-#define TRACE1(X)     if( pPager==mainPager ) sqlite3DebugPrintf(X)
-#define TRACE2(X,Y)   if( pPager==mainPager ) sqlite3DebugPrintf(X,Y)
-#define TRACE3(X,Y,Z) if( pPager==mainPager ) sqlite3DebugPrintf(X,Y,Z)
+#define TRACE1(X)       sqlite3DebugPrintf(X)
+#define TRACE2(X,Y)     sqlite3DebugPrintf(X,Y)
+#define TRACE3(X,Y,Z)   sqlite3DebugPrintf(X,Y,Z)
+#define TRACE4(X,Y,Z,W) sqlite3DebugPrintf(X,Y,Z,W)
 #else
-#define SET_PAGER(X)
-#define CLR_PAGER(X)
 #define TRACE1(X)
 #define TRACE2(X,Y)
 #define TRACE3(X,Y,Z)
+#define TRACE4(X,Y,Z,W)
 #endif
 
 
@@ -871,7 +868,7 @@ static int pager_playback_one_page(Pager *pPager, OsFile *jfd, int useCksum){
   */
   pPg = pager_lookup(pPager, pgno);
   assert( pPager->state>=PAGER_EXCLUSIVE || pPg );
-  TRACE2("PLAYBACK page %d\n", pgno);
+  TRACE3("PLAYBACK %d page %d\n", pPager->fd.h, pgno);
   if( pPager->state>=PAGER_EXCLUSIVE ){
     sqlite3OsSeek(&pPager->fd, (pgno-1)*(off_t)pPager->pageSize);
     rc = sqlite3OsWrite(&pPager->fd, aData, pPager->pageSize);
@@ -1000,7 +997,7 @@ static int pager_reload_cache(Pager *pPager){
     if( (int)pPg->pgno <= pPager->origDbSize ){
       sqlite3OsSeek(&pPager->fd, pPager->pageSize*(off_t)(pPg->pgno-1));
       rc = sqlite3OsRead(&pPager->fd, zBuf, pPager->pageSize);
-      TRACE2("REFETCH page %d\n", pPg->pgno);
+      TRACE3("REFETCH %d page %d\n", pPager->fd.h, pPg->pgno);
       if( rc ) break;
       CODEC(pPager, zBuf, pPg->pgno, 2);
     }else{
@@ -1458,7 +1455,7 @@ int sqlite3pager_open(
     sqliteFree(zFullPathname);
     return SQLITE_NOMEM;
   }
-  SET_PAGER(pPager);
+  TRACE3("OPEN %d %s\n", fd.h, zFullPathname);
   pPager->zFilename = (char*)&pPager[1];
   pPager->zDirectory = &pPager->zFilename[nameLen+1];
   pPager->zJournal = &pPager->zDirectory[nameLen+1];
@@ -1728,6 +1725,7 @@ int sqlite3pager_close(Pager *pPager){
     pNext = pPg->pNextAll;
     sqliteFree(pPg);
   }
+  TRACE2("CLOSE %d\n", pPager->fd.h);
   sqlite3OsClose(&pPager->fd);
   assert( pPager->journalOpen==0 );
   /* Temp files are automatically deleted by the OS
@@ -1735,7 +1733,6 @@ int sqlite3pager_close(Pager *pPager){
   **   sqlite3OsDelete(pPager->zFilename);
   ** }
   */
-  CLR_PAGER(pPager);
   if( pPager->zFilename!=(char*)&pPager[1] ){
     assert( 0 );  /* Cannot happen */
     sqliteFree(pPager->zFilename);
@@ -1945,7 +1942,7 @@ static int pager_write_pagelist(PgHdr *pList){
     assert( pList->dirty );
     sqlite3OsSeek(&pPager->fd, (pList->pgno-1)*(off_t)pPager->pageSize);
     CODEC(pPager, PGHDR_TO_DATA(pList), pList->pgno, 6);
-    TRACE2("STORE page %d\n", pList->pgno);
+    TRACE3("STORE %d page %d\n", pPager->fd.h, pList->pgno);
     rc = sqlite3OsWrite(&pPager->fd, PGHDR_TO_DATA(pList), pPager->pageSize);
     CODEC(pPager, PGHDR_TO_DATA(pList), pList->pgno, 0);
     if( rc ) return rc;
@@ -2222,7 +2219,7 @@ int sqlite3pager_get(Pager *pPager, Pgno pgno, void **ppPage){
       assert( pPager->memDb==0 );
       sqlite3OsSeek(&pPager->fd, (pgno-1)*(off_t)pPager->pageSize);
       rc = sqlite3OsRead(&pPager->fd, PGHDR_TO_DATA(pPg), pPager->pageSize);
-      TRACE2("FETCH page %d\n", pPg->pgno);
+      TRACE3("FETCH %d page %d\n", pPager->fd.h, pPg->pgno);
       CODEC(pPager, PGHDR_TO_DATA(pPg), pPg->pgno, 3);
       if( rc!=SQLITE_OK ){
         off_t fileSize;
@@ -2516,7 +2513,7 @@ int sqlite3pager_write(void *pData){
       u32 saved;
       if( pPager->memDb ){
         PgHistory *pHist = PGHDR_TO_HIST(pPg, pPager);
-        TRACE2("JOURNAL page %d\n", pPg->pgno);
+        TRACE3("JOURNAL %d page %d\n", pPager->fd.h, pPg->pgno);
         assert( pHist->pOrig==0 );
         pHist->pOrig = sqliteMallocRaw( pPager->pageSize );
         if( pHist->pOrig ){
@@ -2533,7 +2530,8 @@ int sqlite3pager_write(void *pData){
         store32bits(pPg->pgno, pPg, -4);
         rc = sqlite3OsWrite(&pPager->jfd, &((char*)pData)[-4], szPg);
         pPager->journalOff += szPg;
-        TRACE3("JOURNAL page %d needSync=%d\n", pPg->pgno, pPg->needSync);
+        TRACE4("JOURNAL %d page %d needSync=%d\n",
+                pPager->fd.h, pPg->pgno, pPg->needSync);
         CODEC(pPager, pData, pPg->pgno, 0);
         *(u32*)PGHDR_TO_EXTRA(pPg, pPager) = saved;
         if( rc!=SQLITE_OK ){
@@ -2553,7 +2551,8 @@ int sqlite3pager_write(void *pData){
       }
     }else{
       pPg->needSync = !pPager->journalStarted && !pPager->noSync;
-      TRACE3("APPEND page %d needSync=%d\n", pPg->pgno, pPg->needSync);
+      TRACE4("APPEND %d page %d needSync=%d\n",
+              pPager->fd.h, pPg->pgno, pPg->needSync);
     }
     if( pPg->needSync ){
       pPager->needSync = 1;
@@ -2574,12 +2573,12 @@ int sqlite3pager_write(void *pData){
       if( pHist->pStmt ){
         memcpy(pHist->pStmt, PGHDR_TO_DATA(pPg), pPager->pageSize);
       }
-      TRACE2("STMT-JOURNAL page %d\n", pPg->pgno);
+      TRACE3("STMT-JOURNAL %d page %d\n", pPager->fd.h, pPg->pgno);
     }else{
       store32bits(pPg->pgno, pPg, -4);
       CODEC(pPager, pData, pPg->pgno, 7);
       rc = sqlite3OsWrite(&pPager->stfd, ((char*)pData)-4, pPager->pageSize+4);
-      TRACE2("STMT-JOURNAL page %d\n", pPg->pgno);
+      TRACE3("STMT-JOURNAL %d page %d\n", pPager->fd.h, pPg->pgno);
       CODEC(pPager, pData, pPg->pgno, 0);
       if( rc!=SQLITE_OK ){
         sqlite3pager_rollback(pPager);
@@ -2826,9 +2825,9 @@ int sqlite3pager_rollback(Pager *pPager){
       pHist = PGHDR_TO_HIST(p, pPager);
       if( pHist->pOrig ){
         memcpy(PGHDR_TO_DATA(p), pHist->pOrig, pPager->pageSize);
-        TRACE2("ROLLBACK-PAGE %d\n", p->pgno);
+        TRACE3("ROLLBACK-PAGE %d of %d\n", p->pgno, pPager->fd.h);
       }else{
-        TRACE2("PAGE %d is clean\n", p->pgno);
+        TRACE3("PAGE %d is clean on %d\n", p->pgno, pPager->fd.h);
       }
       clearHistory(pHist);
       p->dirty = 0;

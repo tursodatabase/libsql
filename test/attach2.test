@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach2.test,v 1.23 2004/08/18 02:10:15 drh Exp $
+# $Id: attach2.test,v 1.24 2004/08/18 15:58:24 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -197,7 +197,7 @@ do_test attach2-4.4 {
 } {1 {database is locked}}
 
 lock_status 4.4.1 db {main shared temp closed file2 unlocked}
-lock_status 4.4.2 db2 {main unlocked temp unlocked file2 unlocked}
+lock_status 4.4.2 db2 {main unlocked temp closed file2 unlocked}
 
 do_test attach2-4.5 {
   # Handle 'db2' reserves file2.
@@ -209,7 +209,7 @@ do_test attach2-4.5 {
 } {}
 
 lock_status 4.5.1 db {main shared temp closed file2 unlocked}
-lock_status 4.5.2 db2 {main unlocked temp reserved file2 reserved}
+lock_status 4.5.2 db2 {main unlocked temp closed file2 reserved}
 
 do_test attach2-4.6.1 {
   # Reads are allowed against a reserved database.
@@ -222,7 +222,7 @@ do_test attach2-4.6.1 {
 } {0 {}}
 
 lock_status 4.6.1.1 db {main shared temp closed file2 shared}
-lock_status 4.6.1.2 db2 {main unlocked temp reserved file2 reserved}
+lock_status 4.6.1.2 db2 {main unlocked temp closed file2 reserved}
 
 do_test attach2-4.6.2 {
   # Writes against a reserved database are not allowed.
@@ -231,8 +231,8 @@ do_test attach2-4.6.2 {
   }
 } {1 {database is locked}}
 
-lock_status 4.6.2.1 db {main shared temp reserved file2 shared}
-lock_status 4.6.2.2 db2 {main unlocked temp reserved file2 reserved}
+lock_status 4.6.2.1 db {main shared temp closed file2 shared}
+lock_status 4.6.2.2 db2 {main unlocked temp closed file2 reserved}
 
 do_test attach2-4.7 {
   # Ensure handle 'db' retains the lock on the main file after
@@ -242,16 +242,16 @@ do_test attach2-4.7 {
   } db2 
 } {0 {}}
 
-lock_status 4.7.1 db {main shared temp reserved file2 shared}
-lock_status 4.7.2 db2 {main reserved temp reserved file2 reserved}
+lock_status 4.7.1 db {main shared temp closed file2 shared}
+lock_status 4.7.2 db2 {main reserved temp closed file2 reserved}
 
 do_test attach2-4.8 {
   # We should still be able to read test.db from db2
   execsql {SELECT * FROM t1} db2
 } {1 2}
 
-lock_status 4.8.1 db {main shared temp reserved file2 shared}
-lock_status 4.8.2 db2 {main reserved temp reserved file2 reserved}
+lock_status 4.8.1 db {main shared temp closed file2 shared}
+lock_status 4.8.2 db2 {main reserved temp closed file2 reserved}
 
 do_test attach2-4.9 {
   # Try to upgrade the handle 'db' lock.
@@ -260,8 +260,8 @@ do_test attach2-4.9 {
   }
 } {1 {database is locked}}
 
-lock_status 4.9.1 db {main shared temp reserved file2 shared}
-lock_status 4.9.2 db2 {main reserved temp reserved file2 reserved}
+lock_status 4.9.1 db {main shared temp closed file2 shared}
+lock_status 4.9.2 db2 {main reserved temp closed file2 reserved}
 
 btree_breakpoint
 do_test attach2-4.10 {
@@ -269,8 +269,8 @@ do_test attach2-4.10 {
   catchsql {COMMIT} db2
 } {1 {database is locked}}
 
-lock_status 4.10.1 db {main shared temp reserved file2 shared}
-lock_status 4.10.2 db2 {main pending temp reserved file2 reserved}
+lock_status 4.10.1 db {main shared temp closed file2 shared}
+lock_status 4.10.2 db2 {main pending temp closed file2 reserved}
 
 set sqlite_os_trace 0
 btree_breakpoint
@@ -279,16 +279,16 @@ do_test attach2-4.11 {
   catchsql {COMMIT}
 } {0 {}}
 
-lock_status 4.11.1 db {main unlocked temp unlocked file2 unlocked}
-lock_status 4.11.2 db2 {main pending temp reserved file2 reserved}
+lock_status 4.11.1 db {main unlocked temp closed file2 unlocked}
+lock_status 4.11.2 db2 {main pending temp closed file2 reserved}
 
 do_test attach2-4.12 {
   # Now we can commit db2
   catchsql {COMMIT} db2
 } {0 {}}
 
-lock_status 4.12.1 db {main unlocked temp unlocked file2 unlocked}
-lock_status 4.12.2 db2 {main unlocked temp unlocked file2 unlocked}
+lock_status 4.12.1 db {main unlocked temp closed file2 unlocked}
+lock_status 4.12.2 db2 {main unlocked temp closed file2 unlocked}
 
 do_test attach2-4.13 {
   execsql {SELECT * FROM file2.t1}
