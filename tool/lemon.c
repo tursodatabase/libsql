@@ -1606,12 +1606,11 @@ int k;
 FILE *err;
 {
   int spcnt, i;
-  spcnt = 0;
   if( argv[0] ) fprintf(err,"%s",argv[0]);
   spcnt = strlen(argv[0]) + 1;
   for(i=1; i<n && argv[i]; i++){
     fprintf(err," %s",argv[i]);
-    spcnt += strlen(argv[i]+1);
+    spcnt += strlen(argv[i])+1;
   }
   spcnt += k;
   for(; argv[i]; i++) fprintf(err," %s",argv[i]);
