@@ -12,11 +12,17 @@
 # focus of this script testing the ability of SQLite to handle database
 # files larger than 4GB.
 #
-# $Id: bigfile.test,v 1.2 2002/12/17 14:13:49 drh Exp $
+# $Id: bigfile.test,v 1.3 2003/12/19 12:31:22 drh Exp $
 #
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+# These tests only work for Tcl version 8.4 and later.  Prior to 8.4,
+# Tcl was unable to handle large files.
+#
+scan $::tcl_version %f vx
+if {$vx<8.4} return
 
 # This is the md5 checksum of all the data in table t1 as created
 # by the first test.  We will use this number to make sure that data
