@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.127 2003/01/29 18:46:52 drh Exp $
+** $Id: build.c,v 1.128 2003/02/01 13:53:28 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -820,27 +820,6 @@ void sqliteEndTable(Parse *pParse, Token *pEnd, Select *pSelect){
   p = pParse->pNewTable;
   if( p==0 ) return;
 
-  /* Add the table to the in-memory representation of the database.
-  */
-  assert( pParse->nameClash==0 || pParse->initFlag==1 );
-  if( pParse->explain==0 && pParse->nameClash==0 ){
-    Table *pOld;
-    FKey *pFKey;
-    pOld = sqliteHashInsert(&db->tblHash, p->zName, strlen(p->zName)+1, p);
-    if( pOld ){
-      assert( p==pOld );  /* Malloc must have failed inside HashInsert() */
-      return;
-    }
-    for(pFKey=p->pFKey; pFKey; pFKey=pFKey->pNextFrom){
-      int nTo = strlen(pFKey->zTo) + 1;
-      pFKey->pNextTo = sqliteHashFind(&db->aFKey, pFKey->zTo, nTo);
-      sqliteHashInsert(&db->aFKey, pFKey->zTo, nTo, pFKey);
-    }
-    pParse->pNewTable = 0;
-    db->nTable++;
-    db->flags |= SQLITE_InternChanges;
-  }
-
   /* If the table is generated from a SELECT, then construct the
   ** list of columns and the text of the table.
   */
@@ -923,6 +902,27 @@ void sqliteEndTable(Parse *pParse, Token *pEnd, Select *pSelect){
       sqliteSelect(pParse, pSelect, SRT_Table, 1, 0, 0, 0);
     }
     sqliteEndWriteOperation(pParse);
+  }
+
+  /* Add the table to the in-memory representation of the database.
+  */
+  assert( pParse->nameClash==0 || pParse->initFlag==1 );
+  if( pParse->explain==0 && pParse->nameClash==0 && pParse->nErr==0 ){
+    Table *pOld;
+    FKey *pFKey;
+    pOld = sqliteHashInsert(&db->tblHash, p->zName, strlen(p->zName)+1, p);
+    if( pOld ){
+      assert( p==pOld );  /* Malloc must have failed inside HashInsert() */
+      return;
+    }
+    for(pFKey=p->pFKey; pFKey; pFKey=pFKey->pNextFrom){
+      int nTo = strlen(pFKey->zTo) + 1;
+      pFKey->pNextTo = sqliteHashFind(&db->aFKey, pFKey->zTo, nTo);
+      sqliteHashInsert(&db->aFKey, pFKey->zTo, nTo, pFKey);
+    }
+    pParse->pNewTable = 0;
+    db->nTable++;
+    db->flags |= SQLITE_InternChanges;
   }
 }
 

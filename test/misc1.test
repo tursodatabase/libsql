@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc1.test,v 1.19 2003/01/29 18:46:54 drh Exp $
+# $Id: misc1.test,v 1.20 2003/02/01 13:53:28 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -464,5 +464,20 @@ do_test misc1-14.3 {
   file exists ./test.db-journal
 } {0}
 
+# A failed create table should not leave the table in the internal
+# data structures.  Ticket #238.
+#
+do_test misc1-15.1 {
+  catchsql {
+    CREATE TABLE t10 AS SELECT c1;
+  }
+} {1 {no such column: c1}}
+do_test misc1-15.2 {
+  catchsql {
+    CREATE TABLE t10 AS SELECT 1;
+  }
+  # The bug in ticket #238 causes the statement above to fail with
+  # the error "table t10 alread exists"
+} {0 {}}
 
 finish_test

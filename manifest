@@ -1,5 +1,5 @@
-C The\ssqlite_exec()\sfunction\snow\sreturns\sSQLITE_AUTH\swhen\sauthorization\sfails.\nTicket\s#231.\s(CVS\s857)
-D 2003-01-31T17:21:50
+C When\sa\sCREATE\sTABLE\s...\sAS\sSELECT\sstatement\sfails,\smake\ssure\sthe\stable\sname\nis\sremoved\sfrom\sthe\sinternal\shash\stables.\s\sTicket\s#238.\s(CVS\s858)
+D 2003-02-01T13:53:28
 F Makefile.in 6606854b1512f185b8e8c779b8d7fc2750463d64
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -21,7 +21,7 @@ F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
 F src/auth.c f37bfc9451b8c1fa52f34adff474560018892729
 F src/btree.c 668402ca441592d85da521309625bd1bcc6f010e
 F src/btree.h 17710339f7a8f46e3c7d6d0d4648ef19c584ffda
-F src/build.c 6e0310086b8e2deef74f0d4fb3297c4e8fcf6222
+F src/build.c f13728865b6de5eb1ecc61827d334dc881ca1fb5
 F src/delete.c cbd499f3f9297504c42e328af89bef1a2113d04c
 F src/encode.c faf03741efe921755ec371cf4a6984536de00042
 F src/expr.c bd690b3a6174e97a0f16800e78c8aeae749a4e71
@@ -85,7 +85,7 @@ F test/main.test c66b564554b770ee7fdbf6a66c0cd90329bc2c85
 F test/malloc.test 7ba32a9ebd3aeed52ae4aaa6d42ca37e444536fd
 F test/memleak.test b4f59aa44488793b00feff2011d77d0f05b22468
 F test/minmax.test 29bc5727c3e4c792d5c4745833dd4b505905819e
-F test/misc1.test 6d61d1282f2d1f1c184f50e0373d9ffc7d42f744
+F test/misc1.test 2876987a723b4053db081069007cd6aadf80b62b
 F test/misuse.test a3aa2b18a97e4c409a1fcaff5151a4dd804a0162
 F test/notnull.test 7a08117a71e74b0321aaa937dbeb41a09d6eb1d0
 F test/null.test 5c2b57307e4b6178aae825eb65ddbee01e76b0fd
@@ -155,7 +155,7 @@ F www/speed.tcl 4d463e2aea41f688ed320a937f93ff885be918c3
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 187d9c405891e543fc706f8ddb41f3966a842214
-R e72cd3d7f826c0bad837a962239e2bd9
+P d93c1aeb544a5b1056424945eb43854213b30e50
+R b5d305d3382423fe9540f0b4e0c64173
 U drh
-Z 1c620db2c2b284ab3836973fab10f6c5
+Z cd3aa5a5b1d7b6dd053874302f832e4b
