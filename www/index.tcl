@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.3 2000/05/29 18:50:16 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.4 2000/05/30 00:05:13 drh Exp $}
 
 puts {<html>
 <head><title>SQLite: An SQL Frontend For GDBM</title></head>
@@ -64,7 +64,7 @@ currently understands the following SQL commands:</p>
 </ul>
 </p>
 
-<p>Some the many SQL features that SQLite does not (currently) 
+<p>A few of the many SQL features that SQLite does not (currently) 
 implement are as follows:</p>
 
 <p>
