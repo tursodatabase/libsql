@@ -1,5 +1,5 @@
-C Fix\sa\sC++-ism\sin\sthe\scode.\s(CVS\s2430)
-D 2005-03-29T13:17:46
+C Fix\sminor\sdisplay\sbugs\sin\ssqlite3_analyzer.\s(CVS\s2431)
+D 2005-03-29T13:18:17
 F Makefile.in 5c00d0037104de2a50ac7647a5f12769795957a3
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -229,7 +229,7 @@ F tool/report1.txt 9eae07f26a8fc53889b45fc833a66a33daa22816
 F tool/showdb.c 3559eac5a3b46e9b558d50856946b25e77633236
 F tool/showjournal.c ec3b171be148656827c4949fbfb8ab4370822f87
 F tool/space_used.tcl f714c41a59e326b8b9042f415b628b561bafa06b
-F tool/spaceanal.tcl 184f5e590ccadb0b3d05e252c4e867c214e7ecd2
+F tool/spaceanal.tcl 5b47b70b9a0d216ec63a5b5547b3642dd308e53a
 F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
@@ -278,7 +278,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P 7e54d3c7289c091d449844d21b923e553f1d1f5f
-R f245d4dc2227a598a23dfc18cf50b5d7
+P 312587acf9e94e1d12390a9a0206c9464815e8d7
+R dc2f0753c9b287644a0190ef21c35e62
 U drh
-Z 04bfdc8e7d327224ec41d75e396cd099
+Z c10e8f81820862b366b8f40a91f3532a

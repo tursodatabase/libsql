@@ -375,7 +375,7 @@ proc percent {num denom {of {}}} {
   if {$denom==0.0} {return ""}
   set v [expr {$num*100.0/$denom}]
   set of {}
-  if {$v==1.0 || $v==0.0 || ($v>1.0 && $v<99.0)} {
+  if {$v==100.0 || $v<0.001 || ($v>1.0 && $v<99.0)} {
     return [format {%5.1f%% %s} $v $of]
   } elseif {$v<0.1 || $v>99.9} {
     return [format {%7.3f%% %s} $v $of]
@@ -602,7 +602,7 @@ puts "*** Page counts for all tables with their indices ********************"
 puts ""
 mem eval {SELECT tblname, count(*) AS cnt, 
               int(sum(int_pages+leaf_pages+ovfl_pages)) AS size
-          FROM space_used GROUP BY tblname ORDER BY size DESC, tblname} {} {
+          FROM space_used GROUP BY tblname ORDER BY size+0 DESC, tblname} {} {
   statline [string toupper $tblname] $size [percent $size $file_pgcnt]
 }
 
