@@ -1,5 +1,5 @@
-C Homepage\schanges\sprior\sto\sversion\s2.2.1.\s(CVS\s344)
-D 2002-01-09T13:35:11
+C Version\s2.2.1\s(CVS\s452)
+D 2002-01-09T13:45:00
 F Makefile.in 9fa4277413bf1d9cf91365f07d4108d7d87ed2af
 F Makefile.template c88ffcb9c339e718f434d0c7f045bcd7eea125af
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -119,7 +119,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 880ef67cb4f2797b95bf1368fc4e0d8ca0fda956
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 0a3aa99e11ec9803cea646092bc21676e75a6670
+P e78b1ea23ccda4bc476fbb070586dcac2cc83331
 R af480a8ae42089cfdb3a02b61e4f93f1
 U drh
-Z 1df247b7c01d7834c3b7fede8f1eb5f7
+Z 3dbcd152ef063de125b37abe863b56e2
