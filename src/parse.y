@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.165 2005/02/05 12:48:48 danielk1977 Exp $
+** @(#) $Id: parse.y,v 1.166 2005/02/14 06:38:40 danielk1977 Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -780,10 +780,10 @@ expritem(A) ::= .                       {A = 0;}
 ///////////////////////////// The CREATE INDEX command ///////////////////////
 //
 cmd ::= CREATE(S) uniqueflag(U) INDEX nm(X) dbnm(D)
-        ON fullname(Y) LP idxlist(Z) RP(E) onconf(R). {
+        ON nm(Y) LP idxlist(Z) RP(E) onconf(R). {
   if( U!=OE_None ) U = R;
   if( U==OE_Default) U = OE_Abort;
-  sqlite3CreateIndex(pParse, &X, &D, Y, Z, U, &S, &E);
+  sqlite3CreateIndex(pParse, &X, &D, sqlite3SrcListAppend(0,&Y,0),Z,U, &S, &E);
 }
 
 %type uniqueflag {int}

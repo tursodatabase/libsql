@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing the ALTER TABLE statement.
 #
-# $Id: alter.test,v 1.9 2005/01/27 00:30:52 danielk1977 Exp $
+# $Id: alter.test,v 1.10 2005/02/14 06:38:40 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -186,7 +186,7 @@ do_test alter-1.8.2 {
     CREATE TABLE t4(a PRIMARY KEY, b, c);
     CREATE TABLE aux.t4(a PRIMARY KEY, b, c);
     CREATE INDEX i4 ON t4(b);
-    CREATE INDEX aux.i4 ON aux.t4(b);
+    CREATE INDEX aux.i4 ON t4(b);
   }
 } {}
 do_test alter-1.8.3 {
