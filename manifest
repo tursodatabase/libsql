@@ -1,5 +1,5 @@
-C Version\s1.0.1\s(CVS\s498)
-D 2000-08-18T10:00:00
+C bug\sfix\sin\slemon\s(CVS\s136)
+D 2000-08-20T11:42:46
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 8a4cc1bdcbb870f76d0c769136cf973af07586a4
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -51,7 +51,7 @@ F test/update.test 62f6ce99ff31756aab0ca832ff6d34c5a87b6250
 F test/vacuum.test 8becf5cfeb897108b35cdd996793e7f1df2f28fd
 F test/where.test bbab5a308055fb6087dc23d600b4ad2b72797397
 F tool/gdbmdump.c 529e67c78d920606ba196326ea55b57b75fcc82b
-F tool/lemon.c 1f0e96515c12e9e413f5b8fdebc79ddcf18ddc9d
+F tool/lemon.c b13a31798574af881753d38f4da7d505929259c3
 F tool/lempar.c a1eec94d6eacc12332368660ec65f3b248853833
 F tool/memleak.awk a0a11dd84bf4582acc81c3c61271021ae49b3f15
 F tool/opNames.awk 2bd9071a138e4e2be13dc98fe066398a61219e1e
@@ -70,7 +70,7 @@ F www/mingw.tcl fc5f4ba9d336b6e8c97347cc6496d6162461ef60
 F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/vdbe.tcl bcbfc33bcdd0ebad95eab31286adb9e1bc289520
-P 0a0576e2f9e5404dff68683ef6fdf04d3a350b1a
-R daae31cc2fdf6b916266f6f1a822eb85
+P e8521fc10dcfa02fc4ae35fa83f5bae4864a3d28
+R 2bfd5297c4192f367ec3bc3ac09f66cd
 U drh
-Z f2686e35294c7b3de875075d8b271275
+Z 11385936acc435dde4a9410bb5644970
