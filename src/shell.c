@@ -24,7 +24,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.13 2000/06/15 15:57:23 drh Exp $
+** $Id: shell.c,v 1.14 2000/06/15 16:49:49 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -206,6 +206,28 @@ static void output_quoted_string(FILE *out, const char *z){
 }
 
 /*
+** Output the given string with characters that are special to
+** HTML escaped.
+*/
+static void output_html_string(FILE *out, const char *z){
+  int i;
+  while( *z ){
+    for(i=0; z[i] && z[i]!='<' && z[i]!='&'; i++){}
+    if( i>0 ){
+      fprintf(out,"%.*s",i,z);
+    }
+    if( z[i]=='<' ){
+      fprintf(out,"&lt;");
+    }else if( z[i]=='&' ){
+      fprintf(out,"&amp;");
+    }else{
+      break;
+    }
+    z += i + 1;
+  }
+}
+
+/*
 ** This is the callback routine that the SQLite library
 ** invokes for each row of a query result.
 */
@@ -290,7 +312,9 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
       }
       fprintf(p->out,"<TR>");
       for(i=0; i<nArg; i++){
-        fprintf(p->out,"<TD>%s</TD>",azArg[i] ? azArg[i] : "");
+        fprintf(p->out,"<TD>");
+        output_html_string(p->out, azArg[i] ? azArg[i] : "");
+        fprintf(p->out,"</TD>\n");
       }
       fprintf(p->out,"</TD></TR>\n");
       break;
@@ -352,6 +376,7 @@ static char zHelp[] =
   ".indices TABLE         Show names of all indices on TABLE\n"
   ".mode MODE             Set mode to one of \"line\", \"column\", "
                                       "\"list\", or \"html\"\n"
+  ".mode insert TABLE     Generate SQL insert statements for TABLE\n"
   ".output FILENAME       Send output to FILENAME\n"
   ".output stdout         Send output to the screen\n"
   ".schema ?TABLE?        Show the CREATE statements\n"
