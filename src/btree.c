@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.139 2004/05/14 21:12:23 drh Exp $
+** $Id: btree.c,v 1.140 2004/05/15 00:29:24 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -709,7 +709,8 @@ static int initPage(
   int c, pc, i, hdr;
   unsigned char *data;
   int usableSize;
-  /* int sumCell = 0;       // Total size of all cells */
+  int nCell, nFree;
+  u8 *aCell[MX_PAGE_SIZE/2];
 
 
   assert( pPage->pBt!=0 );
@@ -739,43 +740,37 @@ static int initPage(
   usableSize = pPage->pBt->usableSize;
 
   /* Initialize the cell count and cell pointers */
+  i = 0;
   pc = get2byte(&data[hdr+3]);
+  nCell = 0;
   while( pc>0 ){
     if( pc>=usableSize ) return SQLITE_CORRUPT;
-    if( pPage->nCell>usableSize ) return SQLITE_CORRUPT;
-    pPage->nCell++;
+    if( nCell>sizeof(aCell)/sizeof(aCell[0]) ) return SQLITE_CORRUPT;
+    aCell[nCell++] = &data[pc];
     pc = get2byte(&data[pc]);
   }
-  if( resizeCellArray(pPage, pPage->nCell) ){
+  if( resizeCellArray(pPage, nCell) ){
     return SQLITE_NOMEM;
   }
-  pc = get2byte(&data[hdr+3]);
-  for(i=0; pc>0; i++){
-    pPage->aCell[i] = &data[pc];
-    /* sumCell += cellSize(pPage, &data[pc]); */
-    pc = get2byte(&data[pc]);
-  }
+  pPage->nCell = nCell;
+  memcpy(pPage->aCell, aCell, nCell*sizeof(aCell[0]));
 
   /* Compute the total free space on the page */
-  pPage->nFree = data[hdr+5];
   pc = get2byte(&data[hdr+1]);
+  nFree = data[hdr+5];
+  i = 0;
   while( pc>0 ){
     int next, size;
     if( pc>=usableSize ) return SQLITE_CORRUPT;
+    if( i++>MX_PAGE_SIZE ) return SQLITE_CORRUPT;
     next = get2byte(&data[pc]);
     size = get2byte(&data[pc+2]);
     if( next>0 && next<=pc+size+3 ) return SQLITE_CORRUPT;
-    pPage->nFree += size;
+    nFree += size;
     pc = next;
   }
-  if( pPage->nFree>=usableSize ) return SQLITE_CORRUPT;
-
-  /* Sanity check:  Cells and freespace and header must sum to the size
-  ** a page.
-  if( sumCell+pPage->nFree+hdr+10-pPage->leaf*4 != usableSize ){
-    return SQLITE_CORRUPT;
-  }
-  */
+  pPage->nFree = nFree;
+  if( nFree>=usableSize ) return SQLITE_CORRUPT;
 
   pPage->isInit = 1;
   pageIntegrity(pPage);
