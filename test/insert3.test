@@ -1,0 +1,97 @@
+# 2005 January 13
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing corner cases of the INSERT statement.
+#
+# $Id: insert3.test,v 1.1 2005/01/14 01:22:01 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# Create a table and a corresponding insert trigger.  Do a self-insert
+# into the table.
+#
+do_test insert3-1.0 {
+  execsql {
+    CREATE TABLE t1(a,b);
+    CREATE TABLE log(x UNIQUE, y);
+    CREATE TRIGGER r1 AFTER INSERT ON t1 BEGIN
+      UPDATE log SET y=y+1 WHERE x=new.a;
+      INSERT OR IGNORE INTO log VALUES(new.a, 1);
+    END;
+    INSERT INTO t1 VALUES('hello','world');
+    INSERT INTO t1 VALUES(5,10);
+    SELECT * FROM log ORDER BY x;
+  }
+} {5 1 hello 1}
+do_test insert3-1.1 {
+  execsql {
+    INSERT INTO t1 SELECT a, b+10 FROM t1;
+    SELECT * FROM log ORDER BY x;
+  }
+} {5 2 hello 2}
+do_test insert3-1.2 {
+  execsql {
+    CREATE TABLE log2(x PRIMARY KEY,y);
+    CREATE TRIGGER r2 BEFORE INSERT ON t1 BEGIN
+      UPDATE log2 SET y=y+1 WHERE x=new.b;
+      INSERT OR IGNORE INTO log2 VALUES(new.b,1);
+    END;
+    INSERT INTO t1 VALUES(453,'hi');
+    SELECT * FROM log ORDER BY x;
+  }
+} {5 2 453 1 hello 2}
+do_test insert3-1.3 {
+  execsql {
+    SELECT * FROM log2 ORDER BY x;
+  }
+} {hi 1}
+do_test insert3-1.4 {
+  execsql {
+    INSERT INTO t1 SELECT * FROM t1;
+    SELECT 'a:', x, y FROM log UNION ALL SELECT 'b:', x, y FROM log2 ORDER BY x;
+  }
+} {a: 5 4 b: 10 2 b: 20 1 a: 453 2 a: hello 4 b: hi 2 b: world 1}
+do_test insert3-1.5 {
+  execsql {
+    INSERT INTO t1(a) VALUES('xyz');
+    SELECT * FROM log ORDER BY x;
+  }
+} {5 4 453 2 hello 4 xyz 1}
+
+do_test insert3-2.1 {
+  execsql {
+    CREATE TABLE t2(
+      a INTEGER PRIMARY KEY,
+      b DEFAULT 'b',
+      c DEFAULT 'c'
+    );
+    CREATE TABLE t2dup(a,b,c);
+    CREATE TRIGGER t2r1 BEFORE INSERT ON t2 BEGIN
+      INSERT INTO t2dup(a,b,c) VALUES(new.a,new.b,new.c);
+    END;
+    INSERT INTO t2(a) VALUES(123);
+    INSERT INTO t2(b) VALUES(234);
+    INSERT INTO t2(c) VALUES(345);
+    SELECT * FROM t2dup;
+  }
+} {123 b c -1 234 c -1 b 345}
+do_test insert3-2.2 {
+  execsql {
+    DELETE FROM t2dup;
+    INSERT INTO t2(a) SELECT 1 FROM t1 LIMIT 1;
+    INSERT INTO t2(b) SELECT 987 FROM t1 LIMIT 1;
+    INSERT INTO t2(c) SELECT 876 FROM t1 LIMIT 1;
+    SELECT * FROM t2dup;
+  }
+} {1 b c -1 987 c -1 b 876}
+
+finish_test
