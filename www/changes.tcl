@@ -17,6 +17,11 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chan {2000 May 31} {
+<li>Added support for aggregate functions (Ex: <b>COUNT(*)<b>, <b>MIN(...)</b>)
+to the SELECT statement.</li>
+}
+
 chng {2000 May 30} {
 <li>Added the <b>LIKE</b> operator.</li>
 <li>Added a <b>GLOB</b> operator: similar to <B>LIKE</B> 

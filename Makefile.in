@@ -47,7 +47,9 @@ LIBREADLINE = @TARGET_READLINE_LIBS@
 
 # Object files for the SQLite library.
 #
-LIBOBJ = build.o dbbe.o main.o parse.o tokenize.o util.o vdbe.o where.o
+LIBOBJ = build.o dbbe.o delete.o expr.o insert.o \
+         main.o parse.o select.o tokenize.o update.o \
+         util.o vdbe.o where.o
 
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
@@ -109,6 +111,21 @@ vdbe.o:	$(TOP)/src/vdbe.c $(HDR)
 
 where.o:	$(TOP)/src/where.c $(HDR)
 	$(TCC) $(GDBM_FLAGS) -c $(TOP)/src/where.c
+
+delete.o:	$(TOP)/src/delete.c $(HDR)
+	$(TCC) $(GDBM_FLAGS) -c $(TOP)/src/delete.c
+
+expr.o:	$(TOP)/src/expr.c $(HDR)
+	$(TCC) $(GDBM_FLAGS) -c $(TOP)/src/expr.c
+
+insert.o:	$(TOP)/src/insert.c $(HDR)
+	$(TCC) $(GDBM_FLAGS) -c $(TOP)/src/insert.c
+
+select.o:	$(TOP)/src/select.c $(HDR)
+	$(TCC) $(GDBM_FLAGS) -c $(TOP)/src/select.c
+
+update.o:	$(TOP)/src/update.c $(HDR)
+	$(TCC) $(GDBM_FLAGS) -c $(TOP)/src/update.c
 
 gdbmdump:	$(TOP)/tool/gdbmdump.c
 	$(TCC) $(GDBM_FLAGS) -o gdbmdump $(TOP)/tool/gdbmdump.c $(LIBGDBM)

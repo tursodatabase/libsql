@@ -1,25 +1,30 @@
-C :-)\s(CVS\s20)
-D 2000-05-31T02:27:49
+C added\saggregate\sfunctions\slike\scount(*)\s(CVS\s21)
+D 2000-05-31T15:34:52
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
-F Makefile.in dd79c78825935c5711ce45c372b0ac0f194b6d43
+F Makefile.in 7ac2fef265940d93a544cb454efa836451559a71
 F README 6b5960603c7f8bf42fc022b4b6436f242f238dbb
 F configure 00a5b5c82147a576fa6e82d7c1b0d55c321d6d2c x
 F configure.in 6ccfd5fc80517f7cfe605a7fc7e0f62d962a233c
 F doc/lemon.html e233a3e97a779c7a87e1bc4528c664a58e49dd47
-F src/build.c c6b500077913cde55871d1f9c0d17d4ee4a86828
+F src/build.c 03f83e95d46e328a2ac08aace102b142ea38e6d7
 F src/dbbe.c dc9439f839d13e633158808e352056b531f17e1b
 F src/dbbe.h b678e31c32fa252e6fba830ad16ed8978d1521a9
+F src/delete.c 16ef3418b19be9ab39db836c693970ca7bbff605
+F src/expr.c 91970700e3e39b2b725b028c166f588a5bb0c038
+F src/insert.c bd34716d0bba5561f6b55101adbf16fa75f872e8
 F src/main.c 25cce7bce0eb3ba10bada7c05f4b38dc6dbbc86f
-F src/parse.y 05de7dec046dd8bd11f8cc3513ff8b27624618c8
+F src/parse.y bdfcd0a3fe7d6ad4b41dc2cbc0d04c4302f609b0
+F src/select.c 540fae91639d93ea1ef348882197554896841a2f
 F src/shell.c c5752d32cdeaa7d548d4f91177b697b023a00381
 F src/sqlite.h 2397c17a8f4ca90c09acab0100dc7e2f8f441b69
-F src/sqliteInt.h 9ac3f9e05bbc5913531473c86d4742343ae670c5
+F src/sqliteInt.h 81552acdedb0c3b256510a66c0f656d35d2ea2bd
 F src/tclsqlite.c 9efd29f79ded6a900aa3d142169c8bfe03b7affd
 F src/tokenize.c 5b066f314646d6c5396a253315e5e95d107e1800
+F src/update.c 9194f548dafc9884d79489874e22974ed67cd6a2
 F src/util.c 6b4327d7fbf684f8635155d4acb847ae991b3ebc
-F src/vdbe.c 74ff55bc2910e25bd811638233f6c02fb1a17fbc
+F src/vdbe.c 11d8e4f6e25044ceace5e7a5c160b74b0537492c
 F src/vdbe.h 02b470d344caed04451c896be7a775068dbdf076
-F src/where.c fd9faea693083c1bde83f824b98f7eb81c4762cc
+F src/where.c bed9a8360cbfbf712bdc397c8e22216a5e5f9800
 F test/all.test 66a8a5b8291a472157944edcdce51a320ebd1f35
 F test/copy.test 641bd3cfaab61c4ee32889587e21e4c70788a97a
 F test/delete.test 814d53e3b0d2d7069fb17e005d4041454d6585d4
@@ -36,10 +41,10 @@ F tool/opNames.awk 2bd9071a138e4e2be13dc98fe066398a61219e1e
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/renumberOps.awk 6d067177ad5f8d711b79577b462da9b3634bd0a9
 F www/c_interface.tcl f875864edf7974157d1c257ca08de854660882a5
-F www/changes.tcl 38ff869ccbf99388d53abd08aeea4e24e2bb23b7
-F www/index.tcl 57a97afafe04ab53d1996ba3a61ac41fa8453f5a
+F www/changes.tcl f6d75118ac266313ebcdafa79b779b82dde44cc0
+F www/index.tcl 600e85c207929bedb9c6fd221aa7875fd8f43edf
 F www/sqlite.tcl 7deb564df188ad4523adecfe2365de6d09f6dfd9
-P 03725ce5ae871247789ece0f2c3426f74ba575e7
-R bab7f299b23f92a0096c17a89a463018
+P 01d85b35e9c4ca5619ad21a4232a8f8bf9ec3538
+R 05da1ee70a5c666d9e2d499f8f42ff62
 U drh
-Z e30b944ebaee88defeb667112902d5c8
+Z d21127e72e51c417dbc3dc88c1114902

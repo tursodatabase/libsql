@@ -26,7 +26,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.3 2000/05/31 02:27:49 drh Exp $
+** @(#) $Id: parse.y,v 1.4 2000/05/31 15:34:53 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -254,8 +254,8 @@ expr(A) ::= ID(X) DOT ID(Y). {Expr *temp1 = sqliteExpr(TK_ID, 0, 0, &X);
 expr(A) ::= INTEGER(X).      {A = sqliteExpr(TK_INTEGER, 0, 0, &X);}
 expr(A) ::= FLOAT(X).        {A = sqliteExpr(TK_FLOAT, 0, 0, &X);}
 expr(A) ::= STRING(X).       {A = sqliteExpr(TK_STRING, 0, 0, &X);}
-// expr(A) ::= ID(X) LP exprlist(Y) RP.  {A = sqliteExprFunction(Y, &X);}
-// expr(A) ::= ID(X) LP STAR RP.         {A = sqliteExprFunction(0, &X);}
+expr(A) ::= ID(X) LP exprlist(Y) RP.  {A = sqliteExprFunction(Y, &X);}
+expr(A) ::= ID(X) LP STAR RP.         {A = sqliteExprFunction(0, &X);}
 expr(A) ::= expr(X) AND expr(Y).   {A = sqliteExpr(TK_AND, X, Y, 0);}
 expr(A) ::= expr(X) OR expr(Y).    {A = sqliteExpr(TK_OR, X, Y, 0);}
 expr(A) ::= expr(X) LT expr(Y).    {A = sqliteExpr(TK_LT, X, Y, 0);}
@@ -282,13 +282,12 @@ expr(A) ::= PLUS expr(X). [NOT]    {A = X;}
 %type expritem {Expr*}
 %destructor expritem {sqliteExprDelete($$);}
 
-/*
 exprlist(A) ::= exprlist(X) COMMA expritem(Y). 
    {A = sqliteExprListAppend(X,Y,0);}
 exprlist(A) ::= expritem(X).            {A = sqliteExprListAppend(0,X,0);}
 expritem(A) ::= expr(X).                {A = X;}
 expritem(A) ::= .                       {A = 0;}
-*/
+
 
 cmd ::= CREATE(S) uniqueflag INDEX ID(X) ON ID(Y) LP idxlist(Z) RP(E).
     {sqliteCreateIndex(pParse, &X, &Y, Z, &S, &E);}
