@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.79 2003/10/22 22:15:28 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.80 2003/12/15 17:51:19 drh Exp $}
 
 puts {<html>
 <head><title>SQLite: An Embeddable SQL Database Engine</title></head>
@@ -52,7 +52,7 @@ puts {<h2>Features</h2>
     (<a href="omitted.html">Features not supported</a>)</li>
 <li>A complete database (with multiple tables and indices) is
     stored in a single disk file.</li>
-<li>Atomic commit and rollback protect data integrity.</li>
+<li>ACID (Atomic, Consistent, Isolated, Durable) transactions.</li>
 <li>Database files can be freely shared between machines with
     different byte orders.</li>
 <li>Supports databases up to 2 terabytes (2^41 bytes) in size.</li>
@@ -67,7 +67,7 @@ three functions and one opaque structure.</li>
     <a href="http://www.sqlite.org/cvstrac/wiki?p=SqliteWrappers">
     available separately.</a></li>
 <li>Simple, well-commented source code.</li>
-<li>Automated test suite provides near 100% code coverage.</li>
+<li>Automated test suite provides over 90% code coverage.</li>
 <li>Self-contained: no external dependencies.</li>
 <li>Built and tested under Linux and Windows.</li>
 <li>Sources are in the <a href="copyright.html">public domain</a>.
@@ -91,18 +91,10 @@ at the
 <a href="download.html">available for download</a> on this site.  You
 can also obtain the latest changes by anonymous CVS access:
 <blockquote><pre>
-cvs -d :pserver:anonymous@cvs.hwaci.com:/home/cvs/sqlite login
-cvs -d :pserver:anonymous@cvs.hwaci.com:/home/cvs/sqlite checkout sqlite
+cvs -d :pserver:anonymous@www.sqlite.org:/sqlite login
+cvs -d :pserver:anonymous@www.sqlite.org:/sqlite checkout sqlite
 </pre></blockquote>
 When prompted for a password, enter "anonymous".
-</p>
-
-<p>Note that the CVS server is located on a cable modem with a dynamic
-IP address.  The IP address changes every 3 or 4 months.  After an
-IP address change
-occurs it usually takes a day or two for the new DNS information to propagate.
-So if you have trouble accessing the CVS server, it could be because the
-IP address has recently changed.  Try again in a few days.
 </p>
 
 <p>
