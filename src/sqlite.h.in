@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.72 2004/05/24 09:10:11 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.73 2004/05/24 12:39:02 danielk1977 Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -422,6 +422,7 @@ const char *sqlite3_libencoding(void);
 ** the implementations of user-defined functions.
 */
 typedef struct sqlite_func sqlite_func;
+typedef struct Mem sqlite3_value;
 
 /*
 ** Use the following routines to create new user-defined functions.  See
@@ -431,7 +432,7 @@ int sqlite3_create_function(
   sqlite*,                  /* Database where the new function is registered */
   const char *zName,        /* Name of the new function */
   int nArg,                 /* Number of arguments.  -1 means any number */
-  void (*xFunc)(sqlite_func*,int,const char**),  /* C code to implement */
+  void (*xFunc)(sqlite_func*,int,sqlite3_value **),  /* C code to implement */
   void *pUserData           /* Available via the sqlite3_user_data() call */
 );
 int sqlite3_create_aggregate(
@@ -1339,8 +1340,6 @@ long long int sqlite3_column_int(sqlite3_stmt*,int);
 ** SQLITE3_BLOB      0.0
 */
 double sqlite3_column_float(sqlite3_stmt*,int);
-
-typedef struct Mem sqlite3_value;
 
 /*
 ** Return the type of the sqlite3_value* passed as the first argument. 

@@ -16,7 +16,7 @@
 ** sqlite3RegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.20 2004/05/24 07:04:26 danielk1977 Exp $
+** $Id: date.c,v 1.21 2004/05/24 12:39:02 danielk1977 Exp $
 **
 ** NOTES:
 **
@@ -641,12 +641,14 @@ static int parseModifier(const char *zMod, DateTime *p){
 ** the resulting time into the DateTime structure p.  Return 0
 ** on success and 1 if there are any errors.
 */
-static int isDate(int argc, const char **argv, DateTime *p){
+static int isDate(int argc, sqlite3_value **argv, DateTime *p){
   int i;
   if( argc==0 ) return 1;
-  if( argv[0]==0 || parseDateOrTime(argv[0], p) ) return 1;
+  if( SQLITE3_NULL==sqlite3_value_type(argv[0]) || 
+      parseDateOrTime(sqlite3_value_data(argv[0]), p) ) return 1;
   for(i=1; i<argc; i++){
-    if( argv[i]==0 || parseModifier(argv[i], p) ) return 1;
+    if( SQLITE3_NULL==sqlite3_value_type(argv[i]) || 
+        parseModifier(sqlite3_value_data(argv[i]), p) ) return 1;
   }
   return 0;
 }
@@ -662,7 +664,7 @@ static int isDate(int argc, const char **argv, DateTime *p){
 **
 ** Return the julian day number of the date specified in the arguments
 */
-static void juliandayFunc(sqlite_func *context, int argc, const char **argv){
+static void juliandayFunc(sqlite_func *context, int argc, sqlite3_value **argv){
   DateTime x;
   if( isDate(argc, argv, &x)==0 ){
     computeJD(&x);
@@ -675,7 +677,7 @@ static void juliandayFunc(sqlite_func *context, int argc, const char **argv){
 **
 ** Return YYYY-MM-DD HH:MM:SS
 */
-static void datetimeFunc(sqlite_func *context, int argc, const char **argv){
+static void datetimeFunc(sqlite_func *context, int argc, sqlite3_value **argv){
   DateTime x;
   if( isDate(argc, argv, &x)==0 ){
     char zBuf[100];
@@ -691,7 +693,7 @@ static void datetimeFunc(sqlite_func *context, int argc, const char **argv){
 **
 ** Return HH:MM:SS
 */
-static void timeFunc(sqlite_func *context, int argc, const char **argv){
+static void timeFunc(sqlite_func *context, int argc, sqlite3_value **argv){
   DateTime x;
   if( isDate(argc, argv, &x)==0 ){
     char zBuf[100];
@@ -706,7 +708,7 @@ static void timeFunc(sqlite_func *context, int argc, const char **argv){
 **
 ** Return YYYY-MM-DD
 */
-static void dateFunc(sqlite_func *context, int argc, const char **argv){
+static void dateFunc(sqlite_func *context, int argc, sqlite3_value **argv){
   DateTime x;
   if( isDate(argc, argv, &x)==0 ){
     char zBuf[100];
@@ -735,13 +737,13 @@ static void dateFunc(sqlite_func *context, int argc, const char **argv){
 **   %Y  year 0000-9999
 **   %%  %
 */
-static void strftimeFunc(sqlite_func *context, int argc, const char **argv){
+static void strftimeFunc(sqlite_func *context, int argc, sqlite3_value **argv){
   DateTime x;
   int n, i, j;
   char *z;
-  const char *zFmt = argv[0];
+  const char *zFmt = sqlite3_value_data(argv[0]);
   char zBuf[100];
-  if( argv[0]==0 || isDate(argc-1, argv+1, &x) ) return;
+  if( zFmt==0 || isDate(argc-1, argv+1, &x) ) return;
   for(i=0, n=1; zFmt[i]; i++, n++){
     if( zFmt[i]=='%' ){
       switch( zFmt[i+1] ){
@@ -851,7 +853,7 @@ void sqlite3RegisterDateTimeFunctions(sqlite *db){
      char *zName;
      int nArg;
      int dataType;
-     void (*xFunc)(sqlite_func*,int,const char**);
+     void (*xFunc)(sqlite_func*,int,sqlite3_value**);
   } aFuncs[] = {
 #ifndef SQLITE_OMIT_DATETIME_FUNCS
     { "julianday", -1, SQLITE_NUMERIC, juliandayFunc   },

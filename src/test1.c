@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.47 2004/05/22 10:33:04 danielk1977 Exp $
+** $Id: test1.c,v 1.48 2004/05/24 12:39:02 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -307,11 +307,11 @@ static int sqlite_test_close(
 ** Implementation of the x_coalesce() function.
 ** Return the first argument non-NULL argument.
 */
-static void ifnullFunc(sqlite_func *context, int argc, const char **argv){
+static void ifnullFunc(sqlite_func *context, int argc, sqlite3_value **argv){
   int i;
   for(i=0; i<argc; i++){
-    if( argv[i] ){
-      sqlite3_set_result_string(context, argv[i], -1);
+    if( SQLITE3_NULL!=sqlite3_value_type(argv[i]) ){
+      sqlite3_set_result_string(context, sqlite3_value_data(argv[i]), -1);
       break;
     }
   }
@@ -376,10 +376,15 @@ static int execFuncCallback(void *pData, int argc, char **argv, char **NotUsed){
 ** This routine simulates the effect of having two threads attempt to
 ** use the same database at the same time.
 */
-static void sqlite3ExecFunc(sqlite_func *context, int argc, const char **argv){
+static void sqlite3ExecFunc(
+  sqlite_func *context, 
+  int argc,  
+  sqlite3_value **argv
+){
   struct dstr x;
   memset(&x, 0, sizeof(x));
-  sqlite3_exec((sqlite*)sqlite3_user_data(context), argv[0], 
+  sqlite3_exec((sqlite*)sqlite3_user_data(context),
+      sqlite3_value_data(argv[0]),
       execFuncCallback, &x, 0);
   sqlite3_set_result_string(context, x.z, x.nUsed);
   sqliteFree(x.z);
@@ -648,20 +653,22 @@ static int sqlite_abort(
 ** The following routine is a user-defined SQL function whose purpose
 ** is to test the sqlite_set_result() API.
 */
-static void testFunc(sqlite_func *context, int argc, const char **argv){
+static void testFunc(sqlite_func *context, int argc, sqlite3_value **argv){
   while( argc>=2 ){
-    if( argv[0]==0 ){
+    const char *zArg0 = sqlite3_value_data(argv[0]);
+    const char *zArg1 = sqlite3_value_data(argv[1]);
+    if( zArg0==0 ){
       sqlite3_set_result_error(context, "first argument to test function "
          "may not be NULL", -1);
-    }else if( sqlite3StrICmp(argv[0],"string")==0 ){
-      sqlite3_set_result_string(context, argv[1], -1);
-    }else if( argv[1]==0 ){
+    }else if( sqlite3StrICmp(zArg0,"string")==0 ){
+      sqlite3_set_result_string(context, zArg1, -1);
+    }else if( zArg1==0 ){
       sqlite3_set_result_error(context, "2nd argument may not be NULL if the "
          "first argument is not \"string\"", -1);
-    }else if( sqlite3StrICmp(argv[0],"int")==0 ){
-      sqlite3_set_result_int(context, atoi(argv[1]));
-    }else if( sqlite3StrICmp(argv[0],"double")==0 ){
-      sqlite3_set_result_double(context, sqlite3AtoF(argv[1], 0));
+    }else if( sqlite3StrICmp(zArg0,"int")==0 ){
+      sqlite3_set_result_int(context, atoi(zArg1));
+    }else if( sqlite3StrICmp(zArg0,"double")==0 ){
+      sqlite3_set_result_double(context, sqlite3AtoF(zArg1, 0));
     }else{
       sqlite3_set_result_error(context,"first argument should be one of: "
           "string int double", -1);

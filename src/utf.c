@@ -12,7 +12,7 @@
 ** This file contains routines used to translate between UTF-8, 
 ** UTF-16, UTF-16BE, and UTF-16LE.
 **
-** $Id: utf.c,v 1.9 2004/05/23 13:30:58 danielk1977 Exp $
+** $Id: utf.c,v 1.10 2004/05/24 12:39:02 danielk1977 Exp $
 **
 ** Notes on UTF-8:
 **
@@ -608,3 +608,5 @@ int sqlite3utfTranslate(
   }
   return SQLITE_OK;
 }
+
+

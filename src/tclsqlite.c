@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.66 2004/05/22 09:21:21 danielk1977 Exp $
+** $Id: tclsqlite.c,v 1.67 2004/05/24 12:39:02 danielk1977 Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -379,7 +379,7 @@ static int DbCommitHandler(void *cd){
 ** This routine is called to evaluate an SQL function implemented
 ** using TCL script.
 */
-static void tclSqlFunc(sqlite_func *context, int argc, const char **argv){
+static void tclSqlFunc(sqlite_func *context, int argc, sqlite3_value **argv){
   SqlFunc *p = sqlite3_user_data(context);
   Tcl_DString cmd;
   int i;
@@ -388,7 +388,11 @@ static void tclSqlFunc(sqlite_func *context, int argc, const char **argv){
   Tcl_DStringInit(&cmd);
   Tcl_DStringAppend(&cmd, p->zScript, -1);
   for(i=0; i<argc; i++){
-    Tcl_DStringAppendElement(&cmd, argv[i] ? argv[i] : "");
+    if( SQLITE3_NULL==sqlite3_value_type(argv[i]) ){
+      Tcl_DStringAppendElement(&cmd, "");
+    }else{
+      Tcl_DStringAppendElement(&cmd, sqlite3_value_data(argv[i]));
+    }
   }
   rc = Tcl_Eval(p->interp, Tcl_DStringValue(&cmd));
   if( rc ){

@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.185 2004/05/22 17:41:59 drh Exp $
+** $Id: main.c,v 1.186 2004/05/24 12:39:02 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -861,7 +861,7 @@ int sqlite3_create_function(
   sqlite *db,          /* Add the function to this database connection */
   const char *zName,   /* Name of the function to add */
   int nArg,            /* Number of arguments */
-  void (*xFunc)(sqlite_func*,int,const char**),  /* The implementation */
+  void (*xFunc)(sqlite_func*,int,sqlite3_value **), /* The implementation */
   void *pUserData      /* User data */
 ){
   FuncDef *p;
