@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.331 2004/11/05 00:43:12 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.332 2004/11/05 03:56:02 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -106,6 +106,14 @@
 /* #define SQLITE_OMIT_VACUUM         1 */
 /* #define SQLITE_OMIT_DATETIME_FUNCS 1 */
 /* #define SQLITE_OMIT_PROGRESS_CALLBACK 1 */
+
+/*
+** GCC does not define the offsetof() macro so we'll have to do it
+** ourselves.
+*/
+#ifndef offsetof
+#define offsetof(STRUCTURE,FIELD) ((int)((char*)&((STRUCTURE*)0)->FIELD))
+#endif
 
 /*
 ** Integers of known sizes.  These typedefs might change for architectures
@@ -993,42 +1001,51 @@ struct AggExpr {
 ** An SQL parser context.  A copy of this structure is passed through
 ** the parser and down into all the parser action routine in order to
 ** carry around information that is global to the entire parse.
+**
+** The structure is divided into two parts.  When the parser and code
+** generate call themselves recursively, the first part of the structure
+** is constant but the second part is reset at the beginning and end of
+** each recursion.
 */
 struct Parse {
   sqlite3 *db;         /* The main database structure */
   int rc;              /* Return code from execution */
   char *zErrMsg;       /* An error message */
-  Token sErrToken;     /* The token at which the error occurred */
-  Token sNameToken;    /* Token with unqualified schema object name */
-  Token sLastToken;    /* The last token parsed */
-  const char *zSql;    /* All SQL text */
-  const char *zTail;   /* All SQL text past the last semicolon parsed */
-  Table *pNewTable;    /* A table being constructed by CREATE TABLE */
   Vdbe *pVdbe;         /* An engine for executing database bytecode */
   u8 colNamesSet;      /* TRUE after OP_ColumnName has been issued to pVdbe */
-  u8 explain;          /* True if the EXPLAIN flag is found on the query */
   u8 nameClash;        /* A permanent table name clashes with temp table name */
-  u8 useAgg;           /* If true, extract field values from the aggregator
-                       ** while generating expressions.  Normally false */
   u8 checkSchema;      /* Causes schema cookie check after an error */
   u8 nested;           /* Number of nested calls to the parser/code generator */
   int nErr;            /* Number of errors seen */
   int nTab;            /* Number of previously allocated VDBE cursors */
   int nMem;            /* Number of memory cells used so far */
   int nSet;            /* Number of sets used so far */
-  int nAgg;            /* Number of aggregate expressions */
-  int nVar;            /* Number of '?' variables seen in the SQL so far */
-  int nVarExpr;        /* Number of used slots in apVarExpr[] */
-  int nVarExprAlloc;   /* Number of allocated slots in apVarExpr[] */
-  Expr **apVarExpr;    /* Pointers to :aaa and $aaaa wildcard expressions */
-  AggExpr *aAgg;       /* An array of aggregate expressions */
-  const char *zAuthContext; /* The 6th parameter to db->xAuth callbacks */
-  Trigger *pNewTrigger;     /* Trigger under construct by a CREATE TRIGGER */
-  TriggerStack *trigStack;  /* Trigger actions being coded */
   u32 cookieMask;      /* Bitmask of schema verified databases */
   int cookieValue[MAX_ATTACHED+2];  /* Values of cookies to verify */
   int cookieGoto;      /* Address of OP_Goto to cookie verifier subroutine */
   u32 writeMask;       /* Start a write transaction on these databases */
+
+  /* Above is constant between recursions.  Below is reset before and after
+  ** each recursion */
+
+  int nVar;            /* Number of '?' variables seen in the SQL so far */
+  int nVarExpr;        /* Number of used slots in apVarExpr[] */
+  int nVarExprAlloc;   /* Number of allocated slots in apVarExpr[] */
+  Expr **apVarExpr;    /* Pointers to :aaa and $aaaa wildcard expressions */
+  u8 explain;          /* True if the EXPLAIN flag is found on the query */
+  u8 useAgg;           /* If true, extract field values from the aggregator
+                       ** while generating expressions.  Normally false */
+  int nAgg;            /* Number of aggregate expressions */
+  AggExpr *aAgg;       /* An array of aggregate expressions */
+  Token sErrToken;     /* The token at which the error occurred */
+  Token sNameToken;    /* Token with unqualified schema object name */
+  Token sLastToken;    /* The last token parsed */
+  const char *zSql;    /* All SQL text */
+  const char *zTail;   /* All SQL text past the last semicolon parsed */
+  Table *pNewTable;    /* A table being constructed by CREATE TABLE */
+  Trigger *pNewTrigger;     /* Trigger under construct by a CREATE TRIGGER */
+  TriggerStack *trigStack;  /* Trigger actions being coded */
+  const char *zAuthContext; /* The 6th parameter to db->xAuth callbacks */
 };
 
 /*

@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.206 2004/11/05 01:45:14 danielk1977 Exp $
+** $Id: btree.c,v 1.207 2004/11/05 03:56:01 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -3391,14 +3391,6 @@ static void assemblePage(
   assert( cellbody==pPage->pBt->usableSize );
   pPage->nCell = nCell;
 }
-
-/*
-** GCC does not define the offsetof() macro so we'll have to do it
-** ourselves.
-*/
-#ifndef offsetof
-#define offsetof(STRUCTURE,FIELD) ((int)((char*)&((STRUCTURE*)0)->FIELD))
-#endif
 
 /*
 ** The following parameters determine how many adjacent pages get involved

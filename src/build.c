@@ -23,7 +23,11 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.262 2004/11/05 01:24:13 danielk1977 Exp $
+<<<<<<< build.c
+** $Id: build.c,v 1.263 2004/11/05 03:56:02 drh Exp $
+=======
+** $Id: build.c,v 1.263 2004/11/05 03:56:02 drh Exp $
+>>>>>>> 1.262
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -123,22 +127,26 @@ void sqlite3FinishCoding(Parse *pParse){
 **
 ** Not everything is nestable.  This facility is designed to permit
 ** INSERT, UPDATE, and DELETE operations against SQLITE_MASTER.  Use
-** care if you decide to try to use this routine for some other purpose.
+** care if you decide to try to use this routine for some other purposes.
 */
 void sqlite3NestedParse(Parse *pParse, const char *zFormat, ...){
   va_list ap;
   char *zSql;
   int rc;
-  Parse savedState;
+# define SAVE_SZ  (sizeof(Parse) - offsetof(Parse,nVar))
+  char saveBuf[SAVE_SZ];
+
   if( pParse->nErr ) return;
   assert( pParse->nested<10 );  /* Nesting should only be of limited depth */
   va_start(ap, zFormat);
   zSql = sqlite3VMPrintf(zFormat, ap);
   va_end(ap);
   pParse->nested++;
-  savedState = *pParse;
+  memcpy(saveBuf, &pParse->nVar, SAVE_SZ);
+  memset(&pParse->nVar, 0, SAVE_SZ);
   rc = sqlite3RunParser(pParse, zSql, 0);
   sqliteFree(zSql);
+  memcpy(&pParse->nVar, saveBuf, SAVE_SZ);
   pParse->nested--;
 }
 
@@ -573,7 +581,8 @@ int sqlite3TwoPartName(
 ** is reserved for internal use.
 */
 int sqlite3CheckObjectName(Parse *pParse, const char *zName){
-  if( !pParse->db->init.busy && 0==sqlite3StrNICmp(zName, "sqlite_", 7) ){
+  if( !pParse->db->init.busy && pParse->nested==0 
+          && 0==sqlite3StrNICmp(zName, "sqlite_", 7) ){
     sqlite3ErrorMsg(pParse, "object name reserved for internal use: %s", zName);
     return SQLITE_ERROR;
   }
@@ -1636,7 +1645,7 @@ static void destroyRootPage(Vdbe *v, int iTable, int iDb){
   ** reflect this. It is assumed that cursor number 0 is a write-cursor
   ** opened on the sqlite_master table.
   */
-  static const VdbeOpList updateMaster[] = {
+  static /*const*/ VdbeOpList updateMaster[] = {
     /* If the Op_Destroy pushed a 0 onto the stack, then skip the following
     ** code. sqlite_master does not need updating in this case.
     */
@@ -1668,7 +1677,7 @@ static void destroyRootPage(Vdbe *v, int iTable, int iDb){
 #endif
 
   sqlite3VdbeAddOp(v, OP_Destroy, iTable, iDb);
-  sqlite3VdbeAddOp(v, OP_Pop, 1, 0);
+  /* sqlite3VdbeAddOp(v, OP_Pop, 1, 0); */
 #ifndef SQLITE_OMIT_AUTOVACUUM
   base = sqlite3VdbeAddOpList(v, ArraySize(updateMaster), updateMaster);
   sqlite3VdbeChangeP1(v, base+13, iTable);
@@ -1735,7 +1744,6 @@ static void destroyTable(Vdbe *v, Table *pTab){
 void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView){
   Table *pTab;
   Vdbe *v;
-  int base;
   sqlite3 *db = pParse->db;
   int iDb;
 
@@ -1794,22 +1802,6 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView){
   */
   v = sqlite3GetVdbe(pParse);
   if( v ){
-    static const VdbeOpList dropTable[] = {
-      { OP_Rewind,     0, ADDR(13), 0},
-      { OP_String8,    0, 0,        0}, /* 1 */
-      { OP_MemStore,   1, 1,        0},
-      { OP_MemLoad,    1, 0,        0}, /* 3 */
-      { OP_Column,     0, 2,        0}, /* sqlite_master.tbl_name */
-      { OP_Ne,         0, ADDR(12), 0},
-      { OP_String8,    0, 0,        "trigger"},
-      { OP_Column,     0, 2,        0}, /* sqlite_master.type */
-      { OP_Eq,         0, ADDR(12), 0},
-      { OP_Delete,     0, 0,        0},
-      { OP_Rewind,     0, ADDR(13), 0},
-      { OP_Goto,       0, ADDR(3),  0},
-      { OP_Next,       0, ADDR(3),  0}, /* 12 */
-    };
-    /* Index *pIdx; */
     Trigger *pTrigger;
     sqlite3BeginWriteOperation(pParse, 0, pTab->iDb);
 
@@ -1831,20 +1823,12 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView){
     ** created in the temp database that refers to a table in another
     ** database.
     */
-    sqlite3OpenMasterTable(v, pTab->iDb);
-    base = sqlite3VdbeAddOpList(v, ArraySize(dropTable), dropTable);
-    sqlite3VdbeChangeP3(v, base+1, pTab->zName, 0);
-    sqlite3ChangeCookie(db, v, pTab->iDb);
+    sqlite3NestedParse(pParse, 
+        "DELETE FROM %Q.%Q WHERE tbl_name=%Q and type!='trigger'",
+        db->aDb[pTab->iDb].zName, SCHEMA_TABLE(pTab->iDb), pTab->zName);
     if( !isView ){
-/*
-      sqlite3VdbeAddOp(v, OP_Destroy, pTab->tnum, pTab->iDb);
-      for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-        sqlite3VdbeAddOp(v, OP_Destroy, pIdx->tnum, pIdx->iDb);
-      }
-*/
       destroyTable(v, pTab);
     }
-    sqlite3VdbeAddOp(v, OP_Close, 0, 0);
     sqlite3VdbeOp3(v, OP_DropTable, pTab->iDb, 0, pTab->zName, 0);
   }
   sqliteViewResetAll(db, iDb);
