@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.108 2004/11/23 15:41:16 danielk1977 Exp $
+** $Id: tclsqlite.c,v 1.109 2004/12/02 20:17:02 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -1287,7 +1287,7 @@ int TCLSH_MAIN(int argc, char **argv){
     int i;
     Tcl_SetVar(interp,"argv0",argv[1],TCL_GLOBAL_ONLY);
     Tcl_SetVar(interp,"argv", "", TCL_GLOBAL_ONLY);
-    for(i=2; i<argc; i++){
+    for(i=3-TCLSH; i<argc; i++){
       Tcl_SetVar(interp, "argv", argv[i],
           TCL_GLOBAL_ONLY | TCL_LIST_ELEMENT | TCL_APPEND_VALUE);
     }

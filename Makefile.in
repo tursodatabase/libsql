@@ -414,7 +414,7 @@ testfixture$(TEXE):	$(TOP)/src/tclsqlite.c libtclsqlite3.la libsqlite3.la $(TEST
 	$(LTLINK) -DTCLSH=1 -DSQLITE_TEST=1\
                 $(THREADSAFE) $(TEMP_STORE)\
                 -o testfixture $(TESTSRC) $(TOP)/src/tclsqlite.c \
-		libtclsqlite3.la libsqlite3.la $(LIBTCL)
+		libtclsqlite3.la $(LIBTCL)
 
 crashtest$(TEXE):	$(TOP)/src/tclsqlite.c libsqlite3.la $(TESTSRC) $(TOP)/src/os_test.c
 	$(LTLINK) -DOS_TEST=1 -DTCLSH=1 -DSQLITE_TEST=1 \
@@ -430,6 +430,19 @@ fulltest:	testfixture$(TEXE) sqlite3$(TEXE) crashtest$(TEXE)
 test:	testfixture$(TEXE) sqlite3$(TEXE)
 	./testfixture $(TOP)/test/quick.test
 
+sqlite3_analyzer$(TEXE):	$(TOP)/src/tclsqlite.c libtclsqlite3.la \
+				$(TESTSRC) $(TOP)/tool/spaceanal.tcl
+	sed \
+	  -e '/^#/d' \
+	  -e 's,\\,\\\\,g' \
+	  -e 's,",\\",g' \
+	  -e 's,^,",' \
+	  -e 's,$$,\\n",' \
+	  $(TOP)/tool/spaceanal.tcl >spaceanal_tcl.h
+	$(LTLINK) -DTCLSH=2 -DSQLITE_TEST=1\
+                $(THREADSAFE) $(TEMP_STORE)\
+                -o sqlite3_analyzer$(EXE) $(TESTSRC) $(TOP)/src/tclsqlite.c \
+		libtclsqlite3.la $(LIBTCL)
 
 # Rules used to build documentation
 #
