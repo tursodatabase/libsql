@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.44 2004/05/21 01:47:27 danielk1977 Exp $
+** $Id: test1.c,v 1.45 2004/05/21 10:08:54 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -812,31 +812,58 @@ static int test_step(
 }
 
 /*
-** Usage:  sqlite3_finalize  VM 
+** Usage:  sqlite3_finalize  STMT 
 **
-** Shutdown a virtual machine.
+** Finalize a statement handle.
 */
 static int test_finalize(
-  void *NotUsed,
-  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
-  int argc,              /* Number of arguments */
-  char **argv            /* Text of each argument */
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
 ){
-  sqlite_vm *vm;
+  sqlite3_stmt *pStmt;
   int rc;
-  char *zErrMsg = 0;
-  if( argc!=2 ){
-    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], 
-       " VM\"", 0);
+
+  if( objc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"",
+        Tcl_GetStringFromObj(objv[0], 0), " <STMT>", 0);
     return TCL_ERROR;
   }
-  if( getVmPointer(interp, argv[1], &vm) ) return TCL_ERROR;
-  rc = sqlite3_finalize(vm, &zErrMsg);
+
+  if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
+
+  rc = sqlite3_finalize_new(pStmt);
   if( rc ){
-    char zBuf[50];
-    sprintf(zBuf, "(%d) ", rc);
-    Tcl_AppendResult(interp, zBuf, zErrMsg, 0);
-    sqlite3_freemem(zErrMsg);
+    return TCL_ERROR;
+  }
+  return TCL_OK;
+}
+
+/*
+** Usage:  sqlite3_reset  STMT 
+**
+** Finalize a statement handle.
+*/
+static int test_reset(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_stmt *pStmt;
+  int rc;
+
+  if( objc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"",
+        Tcl_GetStringFromObj(objv[0], 0), " <STMT>", 0);
+    return TCL_ERROR;
+  }
+
+  if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
+
+  rc = sqlite3_reset_new(pStmt);
+  if( rc ){
     return TCL_ERROR;
   }
   return TCL_OK;
@@ -847,31 +874,6 @@ static int test_finalize(
 **
 ** Reset a virtual machine and prepare it to be run again.
 */
-static int test_reset(
-  void *NotUsed,
-  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
-  int argc,              /* Number of arguments */
-  char **argv            /* Text of each argument */
-){
-  sqlite_vm *vm;
-  int rc;
-  char *zErrMsg = 0;
-  if( argc!=2 ){
-    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], 
-       " VM\"", 0);
-    return TCL_ERROR;
-  }
-  if( getVmPointer(interp, argv[1], &vm) ) return TCL_ERROR;
-  rc = sqlite3_reset(vm, &zErrMsg);
-  if( rc ){
-    char zBuf[50];
-    sprintf(zBuf, "(%d) ", rc);
-    Tcl_AppendResult(interp, zBuf, zErrMsg, 0);
-    sqlite3_freemem(zErrMsg);
-    return TCL_ERROR;
-  }
-  return TCL_OK;
-}
 
 /*
 ** This is the "static_bind_value" that variables are bound to when
@@ -1401,6 +1403,33 @@ static int test_open16(
 }
 
 /*
+** Usage: sqlite3_step STMT
+**
+** Advance the statement to the next row.
+*/
+static int test_step_new(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_stmt *pStmt;
+  int rc;
+
+  if( objc!=3 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", 
+       Tcl_GetString(objv[0]), " STMT", 0);
+    return TCL_ERROR;
+  }
+
+  if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
+  rc = sqlite3_step_new(pStmt);
+
+  if( rc!=SQLITE_OK ) return TCL_ERROR;
+  return TCL_OK;
+}
+
+/*
 ** This is a collating function named "REVERSE" which sorts text
 ** in reverse order.
 */
@@ -1474,9 +1503,9 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite_malloc_stat",            (Tcl_CmdProc*)sqlite_malloc_stat    },
 #endif
      { "sqlite_step",                    (Tcl_CmdProc*)test_step             },
-     { "sqlite_finalize",                (Tcl_CmdProc*)test_finalize         },
+// { "sqlite_finalize",                (Tcl_CmdProc*)test_finalize         },
      { "sqlite_bind",                    (Tcl_CmdProc*)test_bind             },
-     { "sqlite_reset",                   (Tcl_CmdProc*)test_reset            },
+// { "sqlite_reset",                   (Tcl_CmdProc*)test_reset            },
      { "breakpoint",                     (Tcl_CmdProc*)test_breakpoint       },
   };
   static struct {
@@ -1497,6 +1526,9 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_prepare16",             (Tcl_ObjCmdProc*)test_prepare16     },
      { "sqlite3_open",                  (Tcl_ObjCmdProc*)test_open          },
      { "sqlite3_open16",                (Tcl_ObjCmdProc*)test_open16        },
+     { "sqlite3_finalize",              (Tcl_ObjCmdProc*)test_finalize     },
+     { "sqlite3_reset",                 (Tcl_ObjCmdProc*)test_reset        },
+     { "sqlite3_step",                  (Tcl_ObjCmdProc*)test_step_new      },
      { "add_reverse_collating_func",    (Tcl_ObjCmdProc*)reverse_collfunc   },
   };
   int i;

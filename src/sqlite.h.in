@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.67 2004/05/21 01:47:27 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.68 2004/05/21 10:08:54 danielk1977 Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -998,6 +998,12 @@ int sqlite3_bind_blob(sqlite3_stmt*, int i, const void *z, int n, int eCopy);
 ** sqlite3_bind_text
 ** sqlite3_bind_text16
 ** sqlite3_bind_blob
+** sqlite3_open
+** sqlite3_open16
+** sqlite3_prepare
+** sqlite3_prepare16
+** sqlite3_step
+** sqlite3_finalize
 **
 ** Assuming no other intervening sqlite3_* API calls are made, the error
 ** code returned by this function is associated with the same error as
@@ -1032,9 +1038,9 @@ const void *sqlite3_errmsg16(sqlite3*);
 ** to be compiled, encoded as UTF-8 text. If the next parameter, "nBytes",
 ** is less than zero, then zSql is read up to the first nul terminator.
 ** If "nBytes" is not less than zero, then it is the length of the
-** string zSql, in bytes (not characters).
+** string zSql in bytes (not characters).
 **
-** *pzTail is made to point to the first character past the end of the first
+** *pzTail is made to point to the first byte past the end of the first
 ** SQL statement in zSql.  This routine only compiles the first statement
 ** in zSql, so *pzTail is left pointing to what remains uncompiled.
 **
@@ -1054,6 +1060,27 @@ int sqlite3_prepare(
   const char **pzTail     /* OUT: Pointer to unused portion of zSql */
 );
 
+/*
+** To execute an SQL query, it must first be compiled into a byte-code
+** program using this routine. The first parameter "db" is an SQLite
+** database handle. The second parameter "zSql" is the statement
+** to be compiled, encoded as UTF-16 text. If the next parameter, "nBytes",
+** is less than zero, then zSql is read up to the first pair of successive
+** 0x00 bytes.  If "nBytes" is not less than zero, then it is the length of
+** the string zSql in bytes (not characters).
+**
+** *pzTail is made to point to the first byte past the end of the first
+** SQL statement in zSql.  This routine only compiles the first statement
+** in zSql, so *pzTail is left pointing to what remains uncompiled.
+**
+** *ppStmt is left pointing to a compiled SQL statement that can be
+** executed using sqlite3_step().  Or if there is an error, *ppStmt may be
+** set to NULL.  If the input text contained no SQL (if the input is and
+** empty string or a comment) then *ppStmt is set to NULL.
+**
+** On success, SQLITE_OK is returned.  Otherwise an error code is returned.
+** 
+*/
 int sqlite3_prepare16(
   sqlite3 *db,            /* Database handle */
   const void *zSql,       /* SQL statement, UTF-16 encoded */
@@ -1061,6 +1088,120 @@ int sqlite3_prepare16(
   sqlite3_stmt **ppStmt,  /* OUT: Statement handle */
   const void **pzTail     /* OUT: Pointer to unused portion of zSql */
 );
+
+/*
+** Return the number of columns in the result set returned by the compiled
+** SQL statement. This routine returns 0 if pStmt is an SQL statement
+** that does not return data (for example an UPDATE).
+*/
+int sqlite3_column_count(sqlite3_stmt *pStmt);
+
+/*
+** The first parameter is a compiled SQL statement. This function returns
+** the column heading for the Nth column of that statement, where N is the
+** second function parameter. The string returned is UTF-8 encoded.
+*/
+const char *sqlite3_column_name(sqlite3_stmt*,int);
+
+/*
+** The first parameter is a compiled SQL statement. This function returns
+** the column heading for the Nth column of that statement, where N is the
+** second function parameter. The string returned is UTF-16 encoded.
+*/
+const void *sqlite3_column_name16(sqlite3_stmt*,int);
+
+/*
+** The first parameter is a compiled SQL statement. If this statement
+** is a SELECT statement, the Nth column of the returned result set 
+** of the SELECT is a table column then the declared type of the table
+** column is returned. If the Nth column of the result set is not at table
+** column, then a NULL pointer is returned. The returned string is always
+** UTF-8 encoded. For example, in the database schema:
+**
+** CREATE TABLE t1(c1 VARINT);
+**
+** And the following statement compiled:
+**
+** SELECT c1 + 1, 0 FROM t1;
+**
+** Then this routine would return the string "VARIANT" for the second
+** result column (i==1), and a NULL pointer for the first result column
+** (i==0).
+*/
+const char *sqlite3_column_decltype(sqlite3_stmt *, int i);
+
+/*
+** The first parameter is a compiled SQL statement. If this statement
+** is a SELECT statement, the Nth column of the returned result set 
+** of the SELECT is a table column then the declared type of the table
+** column is returned. If the Nth column of the result set is not at table
+** column, then a NULL pointer is returned. The returned string is always
+** UTF-16 encoded. For example, in the database schema:
+**
+** CREATE TABLE t1(c1 VARINT);
+**
+** And the following statement compiled:
+**
+** SELECT c1 + 1, 0 FROM t1;
+**
+** Then this routine would return the string "VARIANT" for the second
+** result column (i==1), and a NULL pointer for the first result column
+** (i==0).
+*/
+const void *sqlite3_column_decltype16(sqlite3_stmt*,int);
+
+/* 
+** After an SQL query has been compiled with a call to either
+** sqlite3_prepare() or sqlite3_prepare16(), then this function must be
+** called one or more times to execute the statement.
+**
+** The return value will be either SQLITE_BUSY, SQLITE_DONE, 
+** SQLITE_ROW, SQLITE_ERROR, or SQLITE_MISUSE.
+**
+** SQLITE_BUSY means that the database engine attempted to open
+** a locked database and there is no busy callback registered.
+** Call sqlite3_step() again to retry the open.
+**
+** SQLITE_DONE means that the statement has finished executing
+** successfully.  sqlite3_step() should not be called again on this virtual
+** machine.
+**
+** If the SQL statement being executed returns any data, then 
+** SQLITE_ROW is returned each time a new row of data is ready
+** for processing by the caller. The values may be accessed using
+** the sqlite3_column_*() functions described below. sqlite3_step()
+** is called again to retrieve the next row of data.
+** 
+** SQLITE_ERROR means that a run-time error (such as a constraint
+** violation) has occurred.  sqlite3_step() should not be called again on
+** the VM. More information may be found by calling sqlite3_errmsg().
+**
+** SQLITE_MISUSE means that the this routine was called inappropriately.
+** Perhaps it was called on a virtual machine that had already been
+** finalized or on one that had previously returned SQLITE_ERROR or
+** SQLITE_DONE.  Or it could be the case the the same database connection
+** is being used simulataneously by two or more threads.
+*/
+int sqlite3_step_new(sqlite3_stmt*);
+
+
+/*
+** The sqlite3_finalize() function is called to delete a compiled
+** SQL statement obtained by a previous call to sqlite3_prepare()
+** or sqlite3_prepare16(). If the statement was executed successfully, or
+** not executed at all, then SQLITE_OK is returned. If execution of the
+** statement failed then an error code is returned. 
+*/
+int sqlite3_finalize_new(sqlite3_stmt *pStmt);
+
+/*
+** The sqlite3_reset() function is called to reset a compiled SQL
+** statement obtained by a previous call to sqlite3_prepare() or
+** sqlite3_prepare16() back to it's initial state, ready to be re-executed.
+** Any SQL statement variables that had values bound to them using
+** the sqlite3_bind_*() API retain their values.
+*/
+int sqlite3_reset_new(sqlite3_stmt *pStmt);
 
 int sqlite3_open_new(
   const char *filename,   /* Database filename (UTF-8) */
@@ -1074,15 +1215,16 @@ int sqlite3_open16(
   const char **args       /* Null terminated array of option strings */
 );
 
-
-#if 0
-
-int sqlite3_close(sqlite3*);
-
-int sqlite3_finalize(sqlite3_stmt*);
-int sqlite3_reset(sqlite3_stmt*);
-
-int sqlite3_step(sqlite3_stmt*);
+/*
+** Return the number of values in the current row of the result set.
+**
+** After a call to sqlite3_step() that returns SQLITE_ROW, this routine
+** will return the same value as the sqlite3_column_count() function.
+** After sqlite3_step() has returned an SQLITE_DONE, SQLITE_BUSY or
+** error code, or before sqlite3_step() has been called on a 
+** compiled SQL statement, this routine returns zero.
+*/
+int sqlite3_value_count(sqlite3_stmt *pStmt);
 
 #define SQLITE3_INTEGER  1
 #define SQLITE3_FLOAT    2
@@ -1090,19 +1232,90 @@ int sqlite3_step(sqlite3_stmt*);
 #define SQLITE3_BLOB     4
 #define SQLITE3_NULL     5
 
-int sqlite3_column_count(sqlite3_stmt*);
-int sqlite3_column_type(sqlite3_stmt*,int);
-const char *sqlite3_column_decltype(sqlite3_stmt*,int);
-const void *sqlite3_column_decltype16(sqlite3_stmt*,int);
-const char *sqlite3_column_name(sqlite3_stmt*,int);
-const void *sqlite3_column_name16(sqlite3_stmt*,int);
-const unsigned char *sqlite3_column_data(sqlite3_stmt*,int);
-const void *sqlite3_column_data16(sqlite3_stmt*,int);
-int sqlite3_column_bytes(sqlite3_stmt*,int);
-long long int sqlite3_column_int(sqlite3_stmt*,int);
-double sqlite3_column_float(sqlite3_stmt*,int);
+/*
+** The first parameter is a compiled SQL statement for which the most
+** recent call to sqlite3_step() has returned SQLITE_ROW. This routine
+** retrieves the type of the Nth column of the current row, where
+** N is the second function parameter.
+**
+** The value type is one of SQLITE3_INTEGER, SQLITE3_FLOAT, SQLITE3_TEXT,
+** SQLITE3_BLOB and SQLITE3_NULL.
+*/
+int sqlite3_column_type(sqlite3_stmt *pStmt, int i);
 
-#endif
+/*
+** The first parameter is a compiled SQL statement for which the most
+** recent call to sqlite3_step() has returned SQLITE_ROW. This routine
+** retrieves the value of the Nth column of the current row, where
+** N is the second function parameter.
+**
+** The value returned depends on the type of the SQL column value, as
+** returned by sqlite3_column_type():
+**
+** SQLITE3_NULL      A Null pointer.
+** SQLITE3_INTEGER   String representation of the integer, UTF-8 encoded.
+** SQLITE3_FLOAT     String representation of the real, UTF-8 encoded.
+** SQLITE3_TEXT      The string UTF-8 encoded.
+** SQLITE3_BLOB      A pointer to the blob of data.
+*/
+const unsigned char *sqlite3_column_data(sqlite3_stmt*,int);
+
+/*
+** The first parameter is a compiled SQL statement for which the most
+** recent call to sqlite3_step() has returned SQLITE_ROW. This routine
+** retrieves the value of the Nth column of the current row, where
+** N is the second function parameter.
+**
+** The value returned depends on the type of the SQL column value, as
+** returned by sqlite3_column_type():
+**
+** SQLITE3_NULL      A Null pointer.
+** SQLITE3_INTEGER   String representation of the integer, UTF-16 encoded.
+** SQLITE3_FLOAT     String representation of the real, UTF-16 encoded.
+** SQLITE3_TEXT      The string UTF-16 encoded.
+** SQLITE3_BLOB      A pointer to the blob of data.
+*/
+const void *sqlite3_column_data16(sqlite3_stmt*,int);
+
+/*
+** The first parameter is a compiled SQL statement for which the most
+** recent call to sqlite3_step() has returned SQLITE_ROW. This routine
+** retrieves the length of the data in bytse returned by the
+** sqlite3_column_data() routine for the same second parameter value.
+**
+** If sqlite3_column_data() returns a UTF-8 string, then the length
+** returned by this function includes the nul terminator character at the
+** end of the UTF-8 string.
+*/
+int sqlite3_column_bytes(sqlite3_stmt*,int);
+
+/*
+** The first parameter is a compiled SQL statement for which the most
+** recent call to sqlite3_step() has returned SQLITE_ROW. This routine
+** retrieves the value of the Nth column of the current row, where
+** N is the second function parameter as an integer.
+**
+** SQLITE3_NULL      0
+** SQLITE3_INTEGER   The integer value.
+** SQLITE3_FLOAT     The integer component of the real (2^63 if too large)
+** SQLITE3_TEXT      Integer conversion of string, or 0
+** SQLITE3_BLOB      0
+*/
+long long int sqlite3_column_int(sqlite3_stmt*,int);
+
+/*
+** The first parameter is a compiled SQL statement for which the most
+** recent call to sqlite3_step() has returned SQLITE_ROW. This routine
+** retrieves the value of the Nth column of the current row, where
+** N is the second function parameter as an integer.
+**
+** SQLITE3_NULL      0.0
+** SQLITE3_INTEGER   The value of the integer. Some rounding may occur.
+** SQLITE3_FLOAT     The value of the float.
+** SQLITE3_TEXT      Real number conversion of string, or 0.0
+** SQLITE3_BLOB      0.0
+*/
+double sqlite3_column_float(sqlite3_stmt*,int);
 
 #ifdef __cplusplus
 }  /* End of the 'extern "C"' block */

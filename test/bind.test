@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the sqlite_bind API.
 #
-# $Id: bind.test,v 1.5 2004/05/21 02:11:41 danielk1977 Exp $
+# $Id: bind.test,v 1.6 2004/05/21 10:08:55 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -31,7 +31,7 @@ do_test bind-1.3 {
   execsql {SELECT rowid, * FROM t1}
 } {1 {} {} {}}
 do_test bind-1.4 {
-  sqlite_reset $VM
+  sqlite3_reset $VM
   sqlite_bind $VM 1 {test value 1} normal
   sqlite_step $VM N VALUES COLNAMES
 } SQLITE_DONE
@@ -39,7 +39,7 @@ do_test bind-1.5 {
   execsql {SELECT rowid, * FROM t1}
 } {1 {} {} {} 2 {test value 1} {} {}}
 do_test bind-1.6 {
-  sqlite_reset $VM
+  sqlite3_reset $VM
   sqlite_bind $VM 3 {'test value 2'} normal
   sqlite_step $VM N VALUES COLNAMES
 } SQLITE_DONE
@@ -47,7 +47,7 @@ do_test bind-1.7 {
   execsql {SELECT rowid, * FROM t1}
 } {1 {} {} {} 2 {test value 1} {} {} 3 {test value 1} {} {'test value 2'}}
 do_test bind-1.8 {
-  sqlite_reset $VM
+  sqlite3_reset $VM
   set sqlite_static_bind_value 123
   sqlite_bind $VM 1 {} static
   sqlite_bind $VM 2 {abcdefg} normal
@@ -57,14 +57,14 @@ do_test bind-1.8 {
   execsql {SELECT rowid, * FROM t1}
 } {1 123 abcdefg {}}
 do_test bind-1.9 {
-  sqlite_reset $VM
+  sqlite3_reset $VM
   sqlite_bind $VM 1 {456} normal
   sqlite_step $VM N VALUES COLNAMES
   execsql {SELECT rowid, * FROM t1}
 } {1 123 abcdefg {} 2 456 abcdefg {}}
 
 do_test bind-1.99 {
-  sqlite_finalize $VM
+  sqlite3_finalize $VM
 } {}
 
 do_test bind-2.1 {
@@ -81,14 +81,14 @@ do_test bind-2.2 {
   sqlite3_bind_int32 $VM 2 456
   sqlite3_bind_int32 $VM 3 789
   sqlite_step $VM N VALUES COLNAMES
-  sqlite_reset $VM
+  sqlite3_reset $VM
   execsql {SELECT rowid, * FROM t1}
 } {1 123 456 789}
 do_test bind-2.3 {
   sqlite3_bind_int32 $VM 2 -2000000000
   sqlite3_bind_int32 $VM 3 2000000000
   sqlite_step $VM N VALUES COLNAMES
-  sqlite_reset $VM
+  sqlite3_reset $VM
   execsql {SELECT rowid, * FROM t1}
 } {1 123 456 789 2 123 -2000000000 2000000000}
 do_test bind-2.4 {
@@ -106,7 +106,7 @@ do_test bind-3.1 {
   sqlite3_bind_int64 $VM 2 -2000000000000
   sqlite3_bind_int64 $VM 3 2000000000000
   sqlite_step $VM N VALUES COLNAMES
-  sqlite_reset $VM
+  sqlite3_reset $VM
   execsql {SELECT rowid, * FROM t1}
 } {1 32 -2000000000000 2000000000000}
 do_test bind-3.2 {
@@ -124,7 +124,7 @@ do_test bind-4.1 {
   sqlite3_bind_double $VM 2 0.00001
   sqlite3_bind_double $VM 3 123456789
   sqlite_step $VM N VALUES COLNAMES
-  sqlite_reset $VM
+  sqlite3_reset $VM
   execsql {SELECT rowid, * FROM t1}
 } {1 1234.1234 1e-05 123456789}
 do_test bind-4.2 {
@@ -142,7 +142,7 @@ do_test bind-5.1 {
   sqlite3_bind_null $VM 2
   sqlite3_bind_null $VM 3 
   sqlite_step $VM N VALUES COLNAMES
-  sqlite_reset $VM
+  sqlite3_reset $VM
   execsql {SELECT rowid, * FROM t1}
 } {1 {} {} {}}
 do_test bind-5.2 {
@@ -160,7 +160,7 @@ do_test bind-6.1 {
   sqlite3_bind_text $VM 2 "." 2
   sqlite3_bind_text $VM 3 world -1
   sqlite_step $VM N VALUES COLNAMES
-  sqlite_reset $VM
+  sqlite3_reset $VM
   execsql {SELECT rowid, * FROM t1}
 } {1 hello . world}
 do_test bind-6.2 {
@@ -178,7 +178,7 @@ do_test bind-7.1 {
   sqlite3_bind_text16 $VM 2 [encoding convertto unicode ""] 0
   sqlite3_bind_text16 $VM 3 [encoding convertto unicode world] 10
   sqlite_step $VM N VALUES COLNAMES
-  sqlite_reset $VM
+  sqlite3_reset $VM
   execsql {SELECT rowid, * FROM t1}
 } {1 hello {} world}
 do_test bind-7.2 {
@@ -216,7 +216,7 @@ do_test bind-8.7 {
 
 
 do_test bind-9.99 {
-  sqlite_finalize $VM
+  sqlite3_finalize $VM
 } {}
 
 

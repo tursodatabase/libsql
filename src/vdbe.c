@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.312 2004/05/21 03:01:59 drh Exp $
+** $Id: vdbe.c,v 1.313 2004/05/21 10:08:54 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -68,126 +68,6 @@ int sqlite3_search_count = 0;
 ** in an ordinary build.
 */
 int sqlite3_interrupt_count = 0;
-
-/*
-** Advance the virtual machine to the next output row.
-**
-** The return vale will be either SQLITE_BUSY, SQLITE_DONE, 
-** SQLITE_ROW, SQLITE_ERROR, or SQLITE_MISUSE.
-**
-** SQLITE_BUSY means that the virtual machine attempted to open
-** a locked database and there is no busy callback registered.
-** Call sqlite3_step() again to retry the open.  *pN is set to 0
-** and *pazColName and *pazValue are both set to NULL.
-**
-** SQLITE_DONE means that the virtual machine has finished
-** executing.  sqlite3_step() should not be called again on this
-** virtual machine.  *pN and *pazColName are set appropriately
-** but *pazValue is set to NULL.
-**
-** SQLITE_ROW means that the virtual machine has generated another
-** row of the result set.  *pN is set to the number of columns in
-** the row.  *pazColName is set to the names of the columns followed
-** by the column datatypes.  *pazValue is set to the values of each
-** column in the row.  The value of the i-th column is (*pazValue)[i].
-** The name of the i-th column is (*pazColName)[i] and the datatype
-** of the i-th column is (*pazColName)[i+*pN].
-**
-** SQLITE_ERROR means that a run-time error (such as a constraint
-** violation) has occurred.  The details of the error will be returned
-** by the next call to sqlite3_finalize().  sqlite3_step() should not
-** be called again on the VM.
-**
-** SQLITE_MISUSE means that the this routine was called inappropriately.
-** Perhaps it was called on a virtual machine that had already been
-** finalized or on one that had previously returned SQLITE_ERROR or
-** SQLITE_DONE.  Or it could be the case the the same database connection
-** is being used simulataneously by two or more threads.
-*/
-int sqlite3_step(
-  sqlite_vm *pVm,              /* The virtual machine to execute */
-  int *pN,                     /* OUT: Number of columns in result */
-  const char ***pazValue,      /* OUT: Column data */
-  const char ***pazColName     /* OUT: Column names and datatypes */
-){
-  Vdbe *p = (Vdbe*)pVm;
-  sqlite *db;
-  int rc;
-
-  if( p->magic!=VDBE_MAGIC_RUN ){
-    return SQLITE_MISUSE;
-  }
-  db = p->db;
-  if( sqlite3SafetyOn(db) ){
-    p->rc = SQLITE_MISUSE;
-    return SQLITE_MISUSE;
-  }
-  if( p->explain ){
-    rc = sqlite3VdbeList(p);
-  }else{
-    rc = sqlite3VdbeExec(p);
-  }
-  if( rc==SQLITE_DONE || rc==SQLITE_ROW ){
-    if( pazColName ) *pazColName = (const char**)p->azColName;
-    if( pN ) *pN = p->nResColumn;
-  }else{
-    if( pazColName) *pazColName = 0;
-    if( pN ) *pN = 0;
-  }
-  if( pazValue ){
-    if( rc==SQLITE_ROW ){
-      *pazValue = (const char**)p->azResColumn;
-    }else{
-      *pazValue = 0;
-    }
-  }
-  if( sqlite3SafetyOff(db) ){
-    return SQLITE_MISUSE;
-  }
-  return rc;
-}
-
-/*
-** Insert a new aggregate element and make it the element that
-** has focus.
-**
-** Return 0 on success and 1 if memory is exhausted.
-*/
-static int AggInsert(Agg *p, char *zKey, int nKey){
-  AggElem *pElem, *pOld;
-  int i;
-  Mem *pMem;
-  pElem = sqliteMalloc( sizeof(AggElem) + nKey +
-                        (p->nMem-1)*sizeof(pElem->aMem[0]) );
-  if( pElem==0 ) return 1;
-  pElem->zKey = (char*)&pElem->aMem[p->nMem];
-  memcpy(pElem->zKey, zKey, nKey);
-  pElem->nKey = nKey;
-  pOld = sqlite3HashInsert(&p->hash, pElem->zKey, pElem->nKey, pElem);
-  if( pOld!=0 ){
-    assert( pOld==pElem );  /* Malloc failed on insert */
-    sqliteFree(pOld);
-    return 0;
-  }
-  for(i=0, pMem=pElem->aMem; i<p->nMem; i++, pMem++){
-    pMem->flags = MEM_Null;
-  }
-  p->pCurrent = pElem;
-  return 0;
-}
-
-/*
-** Get the AggElem currently in focus
-*/
-#define AggInFocus(P)   ((P).pCurrent ? (P).pCurrent : _AggInFocus(&(P)))
-static AggElem *_AggInFocus(Agg *p){
-  HashElem *pElem = sqliteHashFirst(&p->hash);
-  if( pElem==0 ){
-    AggInsert(p,"",1);
-    pElem = sqliteHashFirst(&p->hash);
-  }
-  return pElem ? sqliteHashData(pElem) : 0;
-}
 
 #define NulTermify(P) if(((P)->flags & MEM_Str)==0){hardStringify(P);} \
                       else if(((P)->flags & MEM_Term)==0){hardNulTermify(P);}
@@ -238,7 +118,7 @@ static int hardNulTermify(Mem *pStack){
 ** Convert the given stack entity into a string if it isn't one
 ** already.
 */
-#define Stringify(P) if(((P)->flags & MEM_Str)==0){hardStringify(P);}
+#define Stringify(P) if(!((P)->flags&(MEM_Str|MEM_Blob))){hardStringify(P);}
 static int hardStringify(Mem *pStack){
   int fg = pStack->flags;
   if( fg & MEM_Real ){
@@ -250,55 +130,7 @@ static int hardStringify(Mem *pStack){
   }
   pStack->z = pStack->zShort;
   pStack->n = strlen(pStack->zShort)+1;
-  pStack->flags = MEM_Str | MEM_Short | MEM_Term;
-  return 0;
-}
-
-/*
-** Convert the given stack entity into a string that has been obtained
-** from sqliteMalloc().  This is different from Stringify() above in that
-** Stringify() will use the NBFS bytes of static string space if the string
-** will fit but this routine always mallocs for space.
-** Return non-zero if we run out of memory.
-*/
-#define Dynamicify(P) (((P)->flags & MEM_Dyn)==0 ? hardDynamicify(P):0)
-static int hardDynamicify(Mem *pStack){
-  int fg = pStack->flags;
-  char *z;
-  if( (fg & MEM_Str)==0 ){
-    hardStringify(pStack);
-  }
-  assert( (fg & MEM_Dyn)==0 );
-  z = sqliteMallocRaw( pStack->n );
-  if( z==0 ) return 1;
-  memcpy(z, pStack->z, pStack->n);
-  pStack->z = z;
-  pStack->flags |= MEM_Dyn;
-  return 0;
-}
-
-/*
-** An ephemeral string value (signified by the MEM_Ephem flag) contains
-** a pointer to a dynamically allocated string where some other entity
-** is responsible for deallocating that string.  Because the stack entry
-** does not control the string, it might be deleted without the stack
-** entry knowing it.
-**
-** This routine converts an ephemeral string into a dynamically allocated
-** string that the stack entry itself controls.  In other words, it
-** converts an MEM_Ephem string into an MEM_Dyn string.
-*/
-#define Deephemeralize(P) \
-   if( ((P)->flags&MEM_Ephem)!=0 && hardDeephem(P) ){ goto no_mem;}
-static int hardDeephem(Mem *pStack){
-  char *z;
-  assert( (pStack->flags & MEM_Ephem)!=0 );
-  z = sqliteMallocRaw( pStack->n );
-  if( z==0 ) return 1;
-  memcpy(z, pStack->z, pStack->n);
-  pStack->z = z;
-  pStack->flags &= ~MEM_Ephem;
-  pStack->flags |= MEM_Dyn;
+  pStack->flags = MEM_Str | MEM_Short | MEM_Term | MEM_Utf8;
   return 0;
 }
 
@@ -307,19 +139,6 @@ static int hardDeephem(Mem *pStack){
 ** leaves the Mem.flags field in an inconsistent state.
 */
 #define Release(P) if((P)->flags&MEM_Dyn){ sqliteFree((P)->z); }
-
-/*
-** Pop the stack N times.
-*/
-static void popStack(Mem **ppTos, int N){
-  Mem *pTos = *ppTos;
-  while( N>0 ){
-    N--;
-    Release(pTos);
-    pTos--;
-  }
-  *ppTos = pTos;
-}
 
 /*
 ** Convert the given stack entity into a integer if it isn't one
@@ -358,6 +177,525 @@ static void hardRealify(Mem *pStack){
     pStack->r = 0.0;
   }
   pStack->flags |= MEM_Real;
+}
+
+/*
+** If pMem is a string object, this routine sets the encoding of the string
+** (to one of UTF-8 or UTF16) and whether or not the string is
+** nul-terminated. If pMem is not a string object, then this routine is
+** a no-op.
+**
+** If argument "utf16" is true, then this routine will attempt to convert
+** the string to native byte order UTF-16 encoding. Otherwise, the
+** conversion is to UTF-8 encoding. If the "term" argument is true, then a
+** nul terminator is added to the string if it does not already have one.
+**
+**
+**
+** SQLITE_OK is returned if the conversion is successful (or not required).
+** SQLITE_NOMEM may be returned if a malloc() fails during conversion
+** between formats.
+*/
+static int SetEncoding(Mem *pMem, int flags){
+  int f;
+  if( !(pMem->flags&MEM_Str) ){
+    return SQLITE_OK;
+  }
+
+  f = (pMem->flags)&(MEM_Utf8|MEM_Utf16le|MEM_Utf16be|MEM_Term);
+  assert( flags==(flags&(MEM_Utf8|MEM_Utf16le|MEM_Utf16be|MEM_Term)));
+  if( f==flags ){
+    return SQLITE_OK;
+  }
+
+  if( (SQLITE3_BIGENDIAN    && (f&MEM_Utf16le)) ||
+      (SQLITE3_LITTLEENDIAN && (f&MEM_Utf16be)) ){
+    int i;
+    for(i=0; i<pMem->n; i+=2){
+      char c = pMem->z[i];
+      pMem->z[i] = pMem->z[i+1];
+      pMem->z[i+1] = c;
+    }
+  }
+
+  if( (flags&MEM_Utf8) && (f&(MEM_Utf16le|MEM_Utf16be)) ){
+    char *z = sqlite3utf16to8(pMem->z, pMem->n); 
+    if( !z ){
+      return SQLITE_NOMEM;
+    }
+    Release(pMem);
+    pMem->z = z;
+    pMem->n = strlen(z)+1;
+    pMem->flags = (MEM_Utf8|MEM_Dyn|MEM_Str|MEM_Term);
+    return SQLITE_OK;
+  }
+
+  if( (flags&MEM_Utf16le) && (f&MEM_Utf8) ){
+    char *z = sqlite3utf8to16le(pMem->z, pMem->n); 
+    if( !z ){
+      return SQLITE_NOMEM;
+    }
+    Release(pMem);
+    pMem->z = z;
+    pMem->n = sqlite3utf16ByteLen(z, -1) + 2;
+    pMem->flags = (MEM_Utf16le|MEM_Dyn|MEM_Str|MEM_Term);
+    return SQLITE_OK;
+  }
+
+  if( (flags&MEM_Utf16be) && (f&MEM_Utf8) ){
+    char *z = sqlite3utf8to16be(pMem->z, pMem->n); 
+    if( !z ){
+      return SQLITE_NOMEM;
+    }
+    Release(pMem);
+    pMem->z = z;
+    pMem->n = sqlite3utf16ByteLen(z, -1) + 2;
+    pMem->flags = (MEM_Utf16be|MEM_Dyn|MEM_Str|MEM_Term);
+    return SQLITE_OK;
+  }
+
+  if( (flags&MEM_Term) && !(f&&MEM_Term) ){
+    NulTermify(pMem);
+  }
+
+  return SQLITE_OK;
+}
+
+/*
+** Convert the given stack entity into a string that has been obtained
+** from sqliteMalloc().  This is different from Stringify() above in that
+** Stringify() will use the NBFS bytes of static string space if the string
+** will fit but this routine always mallocs for space.
+** Return non-zero if we run out of memory.
+*/
+#define Dynamicify(P) (((P)->flags & MEM_Dyn)==0 ? hardDynamicify(P):0)
+static int hardDynamicify(Mem *pStack){
+  int fg = pStack->flags;
+  char *z;
+  if( (fg & MEM_Str)==0 ){
+    hardStringify(pStack);
+  }
+  assert( (fg & MEM_Dyn)==0 );
+  z = sqliteMallocRaw( pStack->n );
+  if( z==0 ) return 1;
+  memcpy(z, pStack->z, pStack->n);
+  pStack->z = z;
+  pStack->flags |= MEM_Dyn;
+  return 0;
+}
+
+/*
+** Advance the virtual machine to the next output row.
+**
+** The return vale will be either SQLITE_BUSY, SQLITE_DONE, 
+** SQLITE_ROW, SQLITE_ERROR, or SQLITE_MISUSE.
+**
+** SQLITE_BUSY means that the virtual machine attempted to open
+** a locked database and there is no busy callback registered.
+** Call sqlite3_step() again to retry the open.  *pN is set to 0
+** and *pazColName and *pazValue are both set to NULL.
+**
+** SQLITE_DONE means that the virtual machine has finished
+** executing.  sqlite3_step() should not be called again on this
+** virtual machine.  *pN and *pazColName are set appropriately
+** but *pazValue is set to NULL.
+**
+** SQLITE_ROW means that the virtual machine has generated another
+** row of the result set.  *pN is set to the number of columns in
+** the row.  *pazColName is set to the names of the columns followed
+** by the column datatypes.  *pazValue is set to the values of each
+** column in the row.  The value of the i-th column is (*pazValue)[i].
+** The name of the i-th column is (*pazColName)[i] and the datatype
+** of the i-th column is (*pazColName)[i+*pN].
+**
+** SQLITE_ERROR means that a run-time error (such as a constraint
+** violation) has occurred.  The details of the error will be returned
+** by the next call to sqlite3_finalize().  sqlite3_step() should not
+** be called again on the VM.
+**
+** SQLITE_MISUSE means that the this routine was called inappropriately.
+** Perhaps it was called on a virtual machine that had already been
+** finalized or on one that had previously returned SQLITE_ERROR or
+** SQLITE_DONE.  Or it could be the case the the same database connection
+** is being used simulataneously by two or more threads.
+*/
+int sqlite3_step(
+  sqlite_vm *pVm,              /* The virtual machine to execute */
+  int *pN,                     /* OUT: Number of columns in result */
+  const char ***pazValue,      /* OUT: Column data */
+  const char ***pazColName     /* OUT: Column names and datatypes */
+){
+  sqlite3_stmt *pStmt = (sqlite3_stmt*)pVm;
+  int rc;
+
+  rc = sqlite3_step_new(pStmt);
+
+  if( pazValue ) *pazValue = 0;
+  if( pazColName ) *pazColName = 0;
+  if( pN ) *pN = 0;
+
+  if( rc==SQLITE_DONE || rc==SQLITE_ROW ){
+    int i;
+    int cols = sqlite3_column_count(pStmt) * (pazColName?1:0);
+    int vals = sqlite3_value_count(pStmt) * (pazValue?1:0);
+
+    /* Temporary memory leak */
+    if( cols ) *pazColName = sqliteMalloc(sizeof(char *)*cols * 2); 
+    if( pN ) *pN = cols;
+
+    for(i=0; i<cols; i++){
+      (*pazColName)[i] = sqlite3_column_name(pStmt, i);
+    }
+    for(i=cols; i<(2*cols); i++){
+      (*pazColName)[i] = sqlite3_column_decltype(pStmt, i-cols);
+    }
+
+    if( rc==SQLITE_ROW ){
+      if( vals ) *pazValue = sqliteMalloc(sizeof(char *)*vals); 
+      for(i=0; i<vals; i++){
+        (*pazValue)[i] = sqlite3_column_data(pStmt, i);
+      }
+    }
+  }
+
+  return rc;
+}
+
+/*
+** Execute the statement pStmt, either until a row of data is ready, the
+** statement is completely executed or an error occurs.
+*/
+int sqlite3_step_new(sqlite3_stmt *pStmt){
+  Vdbe *p = (Vdbe*)pStmt;
+  sqlite *db;
+  int rc;
+
+  if( p->magic!=VDBE_MAGIC_RUN ){
+    return SQLITE_MISUSE;
+  }
+  db = p->db;
+  if( sqlite3SafetyOn(db) ){
+    p->rc = SQLITE_MISUSE;
+    return SQLITE_MISUSE;
+  }
+  if( p->explain ){
+    rc = sqlite3VdbeList(p);
+  }else{
+    rc = sqlite3VdbeExec(p);
+  }
+
+  if( sqlite3SafetyOff(db) ){
+    rc = SQLITE_MISUSE;
+  }
+
+  sqlite3Error(p->db, rc, p->zErrMsg);
+  return rc;
+}
+
+/*
+** Return the number of columns in the result set for the statement pStmt.
+*/
+int sqlite3_column_count(sqlite3_stmt *pStmt){
+  Vdbe *pVm = (Vdbe *)pStmt;
+  return pVm->nResColumn;
+}
+
+/*
+** Return the number of values available from the current row of the
+** currently executing statement pStmt.
+*/
+int sqlite3_value_count(sqlite3_stmt *pStmt){
+  Vdbe *pVm = (Vdbe *)pStmt;
+  if( !pVm->resOnStack ) return 0;
+  return pVm->nResColumn;
+}
+
+/*
+** Return the value of the 'i'th column of the current row of the currently
+** executing statement pStmt.
+*/
+const unsigned char *sqlite3_column_data(sqlite3_stmt *pStmt, int i){
+  int vals;
+  Vdbe *pVm = (Vdbe *)pStmt;
+  Mem *pVal;
+
+  vals = sqlite3_value_count(pStmt);
+  if( i>=vals || i<0 ){
+    sqlite3Error(pVm->db, SQLITE_RANGE, 0);
+    return 0;
+  }
+
+  pVal = &pVm->pTos[(1-vals)+i];
+  if( pVal->flags&MEM_Null ){
+    return 0;
+  }
+
+  if( !pVal->flags&MEM_Blob ){
+    Stringify(pVal);
+    SetEncoding(pVal, MEM_Utf8|MEM_Term);
+  }
+
+  return pVal->z;
+}
+
+/*
+** Return the number of bytes of data that will be returned by the
+** equivalent sqlite3_column_data() call.
+*/
+int sqlite3_column_bytes(sqlite3_stmt *pStmt, int i){
+  Vdbe *pVm = (Vdbe *)pStmt;
+  int vals;
+
+  vals = sqlite3_value_count(pStmt);
+  if( i>=vals || i<0 ){
+    sqlite3Error(pVm->db, SQLITE_RANGE, 0);
+    return 0;
+  }
+
+  if( sqlite3_column_data(pStmt, i) ){
+    return pVm->pTos[(1-vals)+i].n;
+  }
+  return 0;
+}
+
+/*
+** Return the value of the 'i'th column of the current row of the currently
+** executing statement pStmt.
+*/
+long long int sqlite3_column_int(sqlite3_stmt *pStmt, int i){
+  int vals;
+  Vdbe *pVm = (Vdbe *)pStmt;
+  Mem *pVal;
+
+  vals = sqlite3_value_count(pStmt);
+  if( i>=vals || i<0 ){
+    sqlite3Error(pVm->db, SQLITE_RANGE, 0);
+    return 0;
+  }
+
+  pVal = &pVm->pTos[(1-vals)+i];
+  Integerify(pVal);
+  return pVal->i;
+}
+
+/*
+** Return the value of the 'i'th column of the current row of the currently
+** executing statement pStmt.
+*/
+double sqlite3_column_float(sqlite3_stmt *pStmt, int i){
+  int vals;
+  Vdbe *pVm = (Vdbe *)pStmt;
+  Mem *pVal;
+
+  vals = sqlite3_value_count(pStmt);
+  if( i>=vals || i<0 ){
+    sqlite3Error(pVm->db, SQLITE_RANGE, 0);
+    return 0;
+  }
+
+  pVal = &pVm->pTos[(1-vals)+i];
+  Realify(pVal);
+  return pVal->r;
+}
+
+/*
+** Return the name of the Nth column of the result set returned by SQL
+** statement pStmt.
+*/
+const char *sqlite3_column_name(sqlite3_stmt *pStmt, int N){
+  Vdbe *p = (Vdbe *)pStmt;
+
+  if( N>=sqlite3_column_count(pStmt) || N<0 ){
+    sqlite3Error(p->db, SQLITE_RANGE, 0);
+    return 0;
+  }
+
+  return p->azColName[N];
+}
+
+/*
+** Return the type of the 'i'th column of the current row of the currently
+** executing statement pStmt.
+*/
+int sqlite3_column_type(sqlite3_stmt *pStmt, int i){
+  int vals;
+  Vdbe *p = (Vdbe *)pStmt;
+  int f;
+
+  vals = sqlite3_value_count(pStmt);
+  if( i>=vals || i<0 ){
+    sqlite3Error(p->db, SQLITE_RANGE, 0);
+    return 0;
+  }
+
+  f = p->pTos[(1-vals)+i].flags;
+
+  if( f&MEM_Null ){
+    return SQLITE3_NULL;
+  }
+  if( f&MEM_Int ){
+    return SQLITE3_INTEGER;
+  }
+  if( f&MEM_Real ){
+    return SQLITE3_FLOAT;
+  }
+  if( f&MEM_Str ){
+    return SQLITE3_TEXT;
+  }
+  if( f&MEM_Blob ){
+    return SQLITE3_BLOB;
+  }
+  assert(0);
+}
+
+/*
+** This routine returns either the column name, or declaration type (see
+** sqlite3_column_decltype16() ) of the 'i'th column of the result set of
+** SQL statement pStmt. The returned string is UTF-16 encoded.
+**
+** The declaration type is returned if 'decltype' is true, otherwise
+** the column name.
+*/
+static const void *columnName16(sqlite3_stmt *pStmt, int i, int decltype){
+  Vdbe *p = (Vdbe *)pStmt;
+
+  if( i>=sqlite3_column_count(pStmt) || i<0 ){
+    sqlite3Error(p->db, SQLITE_RANGE, 0);
+    return 0;
+  }
+
+  if( decltype ){
+    i += p->nResColumn;
+  }
+
+  if( !p->azColName16 ){
+    p->azColName16 = (void **)sqliteMalloc(sizeof(void *)*p->nResColumn*2);
+    if( !p->azColName16 ){
+      sqlite3Error(p->db, SQLITE_NOMEM, 0);
+      return 0;
+    }
+  }
+  if( !p->azColName16[i] ){
+    if( SQLITE3_BIGENDIAN ){
+      p->azColName16[i] = sqlite3utf8to16be(p->azColName[i], -1);
+    }
+    if( !p->azColName16[i] ){
+      sqlite3Error(p->db, SQLITE_NOMEM, 0);
+      return 0;
+    }
+  }
+  return p->azColName16[i];
+}
+
+/*
+** Return the name of the 'i'th column of the result set of SQL statement
+** pStmt, encoded as UTF-16.
+*/
+const void *sqlite3_column_name16(sqlite3_stmt *pStmt, int i){
+  return columnName16(pStmt, i, 0);
+}
+
+/*
+** Return the column declaration type (if applicable) of the 'i'th column
+** of the result set of SQL statement pStmt, encoded as UTF-8.
+*/
+const char *sqlite3_column_decltype(sqlite3_stmt *pStmt, int i){
+  Vdbe *p = (Vdbe *)pStmt;
+
+  if( i>=sqlite3_column_count(pStmt) || i<0 ){
+    sqlite3Error(p->db, SQLITE_RANGE, 0);
+    return 0;
+  }
+
+  return p->azColName[i+p->nResColumn];
+}
+
+/*
+** Return the column declaration type (if applicable) of the 'i'th column
+** of the result set of SQL statement pStmt, encoded as UTF-16.
+*/
+const void *sqlite3_column_decltype16(sqlite3_stmt *pStmt, int i){
+  return columnName16(pStmt, i, 1);
+}
+
+/*
+** Insert a new aggregate element and make it the element that
+** has focus.
+**
+** Return 0 on success and 1 if memory is exhausted.
+*/
+static int AggInsert(Agg *p, char *zKey, int nKey){
+  AggElem *pElem, *pOld;
+  int i;
+  Mem *pMem;
+  pElem = sqliteMalloc( sizeof(AggElem) + nKey +
+                        (p->nMem-1)*sizeof(pElem->aMem[0]) );
+  if( pElem==0 ) return 1;
+  pElem->zKey = (char*)&pElem->aMem[p->nMem];
+  memcpy(pElem->zKey, zKey, nKey);
+  pElem->nKey = nKey;
+  pOld = sqlite3HashInsert(&p->hash, pElem->zKey, pElem->nKey, pElem);
+  if( pOld!=0 ){
+    assert( pOld==pElem );  /* Malloc failed on insert */
+    sqliteFree(pOld);
+    return 0;
+  }
+  for(i=0, pMem=pElem->aMem; i<p->nMem; i++, pMem++){
+    pMem->flags = MEM_Null;
+  }
+  p->pCurrent = pElem;
+  return 0;
+}
+
+/*
+** Get the AggElem currently in focus
+*/
+#define AggInFocus(P)   ((P).pCurrent ? (P).pCurrent : _AggInFocus(&(P)))
+static AggElem *_AggInFocus(Agg *p){
+  HashElem *pElem = sqliteHashFirst(&p->hash);
+  if( pElem==0 ){
+    AggInsert(p,"",1);
+    pElem = sqliteHashFirst(&p->hash);
+  }
+  return pElem ? sqliteHashData(pElem) : 0;
+}
+
+/*
+** An ephemeral string value (signified by the MEM_Ephem flag) contains
+** a pointer to a dynamically allocated string where some other entity
+** is responsible for deallocating that string.  Because the stack entry
+** does not control the string, it might be deleted without the stack
+** entry knowing it.
+**
+** This routine converts an ephemeral string into a dynamically allocated
+** string that the stack entry itself controls.  In other words, it
+** converts an MEM_Ephem string into an MEM_Dyn string.
+*/
+#define Deephemeralize(P) \
+   if( ((P)->flags&MEM_Ephem)!=0 && hardDeephem(P) ){ goto no_mem;}
+static int hardDeephem(Mem *pStack){
+  char *z;
+  assert( (pStack->flags & MEM_Ephem)!=0 );
+  z = sqliteMallocRaw( pStack->n );
+  if( z==0 ) return 1;
+  memcpy(z, pStack->z, pStack->n);
+  pStack->z = z;
+  pStack->flags &= ~MEM_Ephem;
+  pStack->flags |= MEM_Dyn;
+  return 0;
+}
+
+/*
+** Pop the stack N times.
+*/
+static void popStack(Mem **ppTos, int N){
+  Mem *pTos = *ppTos;
+  while( N>0 ){
+    N--;
+    Release(pTos);
+    pTos--;
+  }
+  *ppTos = pTos;
 }
 
 /*
@@ -649,6 +987,7 @@ int sqlite3VdbeExec(
     popStack(&pTos, p->popStack);
     p->popStack = 0;
   }
+  p->resOnStack = 0;
   CHECK_FOR_INTERRUPT;
   for(pc=p->pc; rc==SQLITE_OK; pc++){
     assert( pc>=0 && pc<p->nOp );
@@ -824,7 +1163,7 @@ case OP_Integer: {
   pTos->flags = MEM_Int;
   if( pOp->p3 ){
     pTos->z = pOp->p3;
-    pTos->flags |= MEM_Str | MEM_Static;
+    pTos->flags |= MEM_Utf8 | MEM_Str | MEM_Static;
     pTos->n = strlen(pOp->p3)+1;
     if( pTos->i==0 ){
       sqlite3GetInt64(pTos->z, &pTos->i);
@@ -846,7 +1185,7 @@ case OP_String: {
   }else{
     pTos->z = z;
     pTos->n = strlen(z) + 1;
-    pTos->flags = MEM_Str | MEM_Static;
+    pTos->flags = MEM_Str | MEM_Static | MEM_Utf8 | MEM_Term;
   }
   break;
 }
@@ -865,7 +1204,7 @@ case OP_Real: {
   pTos->r = sqlite3AtoF(z, 0);
   pTos->z = z;
   pTos->n = strlen(z)+1;
-  pTos->flags = MEM_Real|MEM_Str|MEM_Static;
+  pTos->flags = MEM_Real|MEM_Str|MEM_Static|MEM_Utf8;
   break;
 }
 
@@ -959,7 +1298,7 @@ case OP_Dup: {
   assert( pFrom<=pTos && pFrom>=p->aStack );
   pTos++;
   memcpy(pTos, pFrom, sizeof(*pFrom)-NBFS);
-  if( pTos->flags & MEM_Str ){
+  if( pTos->flags & (MEM_Str|MEM_Blob) ){
     if( pOp->p2 && (pTos->flags & (MEM_Dyn|MEM_Ephem)) ){
       pTos->flags &= ~MEM_Dyn;
       pTos->flags |= MEM_Ephem;
@@ -999,14 +1338,14 @@ case OP_Pull: {
     *pFrom = pFrom[1];
     assert( (pFrom->flags & MEM_Ephem)==0 );
     if( pFrom->flags & MEM_Short ){
-      assert( pFrom->flags & MEM_Str );
+      assert( pFrom->flags & (MEM_Str|MEM_Blob) );
       assert( pFrom->z==pFrom[1].zShort );
       pFrom->z = pFrom->zShort;
     }
   }
   *pTos = ts;
   if( pTos->flags & MEM_Short ){
-    assert( pTos->flags & MEM_Str );
+    assert( pTos->flags & (MEM_Str|MEM_Blob) );
     assert( pTos->z==pTos[-pOp->p1].zShort );
     pTos->z = pTos->zShort;
   }
@@ -1074,6 +1413,8 @@ case OP_Callback: {
       azArgv[i] = pCol->z;
     }
   }
+  p->resOnStack = 1;
+
   azArgv[i] = 0;
   p->nCallback++;
   p->azResColumn = azArgv;
@@ -1148,7 +1489,7 @@ case OP_Concat: {
   }
   pTos++;
   pTos->n = nByte;
-  pTos->flags = MEM_Str|MEM_Dyn;
+  pTos->flags = MEM_Str|MEM_Dyn|MEM_Utf8;
   pTos->z = zNew;
   break;
 }
@@ -1833,7 +2174,7 @@ case OP_Class: {
   };
 
   Release(pTos);
-  pTos->flags = MEM_Str|MEM_Static;
+  pTos->flags = MEM_Str|MEM_Static|MEM_Utf8;
 
   for(i=0; i<5; i++){
     if( classes[i].mask&flags ){
@@ -1906,7 +2247,7 @@ case OP_Column: {
     u64 colType;    /* The serial type of the value being read. */
 
     assert( &pTos[i-1]>=p->aStack );
-    assert( pTos[i].flags & MEM_Str );
+    assert( pTos[i].flags & MEM_Blob );
     assert( pTos[i-1].flags & MEM_Int );
 
     if( pTos[i].n==0 ){
@@ -2148,7 +2489,7 @@ case OP_MakeRecord: {
   pTos++;
   pTos->n = nBytes;
   pTos->z = zNewRecord;
-  pTos->flags = MEM_Str | MEM_Dyn;
+  pTos->flags = MEM_Blob | MEM_Dyn;
 
   break;
 }
@@ -2276,7 +2617,7 @@ case OP_MakeIdxKey: {
     popStack(&pTos, nField+addRowid);
   }
   pTos++;
-  pTos->flags = MEM_Str|MEM_Dyn; /* TODO: should eventually be MEM_Blob */
+  pTos->flags = MEM_Blob|MEM_Dyn; /* TODO: should eventually be MEM_Blob */
   pTos->z = zKey;
   pTos->n = nByte;
 
@@ -3201,7 +3542,7 @@ case OP_PutStrKey: {
       pTos->z = 0;
       pTos->n = 0;
     }else{
-      assert( pTos->flags & MEM_Str );
+      assert( pTos->flags & (MEM_Blob|MEM_Str) );
     }
     if( pC->pseudoTable ){
       /* PutStrKey does not work for pseudo-tables.
@@ -3341,12 +3682,12 @@ case OP_RowData: {
     }
     pTos->n = n;
     if( n<=NBFS ){
-      pTos->flags = MEM_Str | MEM_Short;
+      pTos->flags = MEM_Blob | MEM_Short;
       pTos->z = pTos->zShort;
     }else{
       char *z = sqliteMallocRaw( n );
       if( z==0 ) goto no_mem;
-      pTos->flags = MEM_Str | MEM_Dyn;
+      pTos->flags = MEM_Blob | MEM_Dyn;
       pTos->z = z;
     }
     if( pC->keyAsData || pOp->opcode==OP_RowKey ){
@@ -3357,7 +3698,7 @@ case OP_RowData: {
   }else if( pC->pseudoTable ){
     pTos->n = pC->nData;
     pTos->z = pC->pData;
-    pTos->flags = MEM_Str|MEM_Ephem;
+    pTos->flags = MEM_Blob|MEM_Ephem;
   }else{
     pTos->flags = MEM_Null;
   }
@@ -3481,10 +3822,10 @@ case OP_FullKey: {
     if( amt>NBFS ){
       z = sqliteMallocRaw( amt );
       if( z==0 ) goto no_mem;
-      pTos->flags = MEM_Str | MEM_Dyn;
+      pTos->flags = MEM_Blob | MEM_Dyn;
     }else{
       z = pTos->zShort;
-      pTos->flags = MEM_Str | MEM_Short;
+      pTos->flags = MEM_Blob | MEM_Short;
     }
     sqlite3BtreeKey(pCrsr, 0, amt, z);
     pTos->z = z;
@@ -3634,7 +3975,7 @@ case OP_IdxPut: {
   BtCursor *pCrsr;
   assert( pTos>=p->aStack );
   assert( i>=0 && i<p->nCursor );
-  assert( pTos->flags & MEM_Str );
+  assert( pTos->flags & MEM_Blob );
   if( (pCrsr = (pC = p->apCsr[i])->pCursor)!=0 ){
     int nKey = pTos->n;
     const char *zKey = pTos->z;
@@ -3690,7 +4031,7 @@ case OP_IdxDelete: {
   Cursor *pC;
   BtCursor *pCrsr;
   assert( pTos>=p->aStack );
-  assert( pTos->flags & MEM_Str );
+  assert( pTos->flags & MEM_Blob );
   assert( i>=0 && i<p->nCursor );
   if( (pCrsr = (pC = p->apCsr[i])->pCursor)!=0 ){
     int rx, res;
@@ -3857,7 +4198,7 @@ case OP_IdxIsNull: {
   const char *z;
 
   assert( pTos>=p->aStack );
-  assert( pTos->flags & MEM_Str );
+  assert( pTos->flags & MEM_Blob );
   z = pTos->z;
   n = pTos->n;
   for(k=0; k<n && i>0; i--){
@@ -4002,11 +4343,11 @@ case OP_IntegrityCk: {
     if( z ) sqliteFree(z);
     pTos->z = "ok";
     pTos->n = 3;
-    pTos->flags = MEM_Str | MEM_Static;
+    pTos->flags = MEM_Utf8 | MEM_Str | MEM_Static;
   }else{
     pTos->z = z;
     pTos->n = strlen(z) + 1;
-    pTos->flags = MEM_Str | MEM_Dyn;
+    pTos->flags = MEM_Utf8 | MEM_Str | MEM_Dyn;
   }
   sqliteFree(aRoot);
   break;
@@ -4246,7 +4587,7 @@ case OP_SortNext: {
     pTos++;
     pTos->z = pSorter->pData;
     pTos->n = pSorter->nData;
-    pTos->flags = MEM_Str|MEM_Dyn;
+    pTos->flags = MEM_Blob|MEM_Dyn;
     sqliteFree(pSorter->zKey);
     sqliteFree(pSorter);
   }else{
@@ -4425,7 +4766,7 @@ case OP_FileColumn: {
   if( z ){
     pTos->n = strlen(z) + 1;
     pTos->z = z;
-    pTos->flags = MEM_Str | MEM_Ephem;
+    pTos->flags = MEM_Utf8 | MEM_Str | MEM_Ephem;
   }else{
     pTos->flags = MEM_Null;
   }
@@ -4501,7 +4842,7 @@ case OP_MemLoad: {
   assert( i>=0 && i<p->nMem );
   pTos++;
   memcpy(pTos, &p->aMem[i], sizeof(pTos[0])-NBFS);;
-  if( pTos->flags & MEM_Str ){
+  if( pTos->flags & (MEM_Str|MEM_Blob) ){
     pTos->flags |= MEM_Ephem;
     pTos->flags &= ~(MEM_Dyn|MEM_Static|MEM_Short);
   }
@@ -4682,7 +5023,7 @@ case OP_AggGet: {
   pTos++;
   pMem = &pFocus->aMem[i];
   *pTos = *pMem;
-  if( pTos->flags & MEM_Str ){
+  if( pTos->flags & (MEM_Str|MEM_Blob) ){
     pTos->flags &= ~(MEM_Dyn|MEM_Static|MEM_Short);
     pTos->flags |= MEM_Ephem;
   }
@@ -4847,7 +5188,7 @@ case OP_SetNext: {
   pTos++;
   pTos->z = sqliteHashKey(pSet->prev);
   pTos->n = sqliteHashKeysize(pSet->prev);
-  pTos->flags = MEM_Str | MEM_Ephem;
+  pTos->flags = MEM_Utf8 | MEM_Str | MEM_Ephem;
   break;
 }
 
@@ -4933,7 +5274,7 @@ default: {
           fprintf(p->trace, " i:%lld", pTos[i].i);
         }else if( pTos[i].flags & MEM_Real ){
           fprintf(p->trace, " r:%g", pTos[i].r);
-        }else if( pTos[i].flags & MEM_Str ){
+        }else if( pTos[i].flags & (MEM_Str|MEM_Blob) ){
           int j, k;
           char zBuf[100];
           zBuf[0] = ' ';

@@ -269,6 +269,7 @@ struct Vdbe {
   Mem *pTos;          /* Top entry in the operand stack */
   char **zArgv;       /* Text values used by the callback */
   char **azColName;   /* Becomes the 4th parameter to callbacks */
+  void **azColName16; /* UTF-16 encoded equivalent of azColName */
   int nCursor;        /* Number of slots in apCsr[] */
   Cursor **apCsr;     /* One element of this array for each open cursor */
   Sorter *pSort;      /* A linked list of objects to be sorted */
@@ -301,6 +302,7 @@ struct Vdbe {
   int returnDepth;        /* Next unused element in returnStack[] */
   int nResColumn;         /* Number of columns in one row of the result set */
   char **azResColumn;     /* Values for one row of result */ 
+  u8 resOnStack;          /* True if there are result values on the stack */
   int popStack;           /* Pop the stack this much on entry to VdbeExec() */
   char *zErrMsg;          /* Error message written here */
   u8 explain;             /* True if EXPLAIN present on SQL command */
@@ -337,3 +339,5 @@ int sqlite3VdbeIdxRowid(BtCursor *, i64 *);
 int sqlite3MemCompare(const Mem*, const Mem*, const CollSeq*);
 int sqlite3VdbeKeyCompare(void*,int,const void*,int, const void*);
 int sqlite3VdbeRowCompare(void*,int,const void*,int, const void*);
+int sqlite3VdbeExec(Vdbe*);
+int sqlite3VdbeList(Vdbe*);

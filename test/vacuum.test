@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the VACUUM statement.
 #
-# $Id: vacuum.test,v 1.16 2004/05/21 01:47:27 danielk1977 Exp $
+# $Id: vacuum.test,v 1.17 2004/05/21 10:08:55 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -139,7 +139,7 @@ do_test vacuum-4.1 {
   sqlite_step $VM N VALUES COLNAMES
 } {SQLITE_DONE}
 do_test vacuum-4.2 {
-  sqlite_finalize $VM
+  sqlite3_finalize $VM
 } {}
 
 # Ticket #515.  VACUUM after deleting and recreating the table that

@@ -460,7 +460,7 @@ char *sqlite3_set_result_string(sqlite_func *p, const char *zResult, int n){
     if( n<NBFS-1 ){
       memcpy(p->s.zShort, zResult, n);
       p->s.zShort[n] = 0;
-      p->s.flags = MEM_Str | MEM_Short;
+      p->s.flags = MEM_Utf8 | MEM_Str | MEM_Short;
       p->s.z = p->s.zShort;
     }else{
       p->s.z = sqliteMallocRaw( n+1 );
@@ -468,7 +468,7 @@ char *sqlite3_set_result_string(sqlite_func *p, const char *zResult, int n){
         memcpy(p->s.z, zResult, n);
         p->s.z[n] = 0;
       }
-      p->s.flags = MEM_Str | MEM_Dyn;
+      p->s.flags = MEM_Utf8 | MEM_Str | MEM_Dyn;
     }
     p->s.n = n+1;
   }
@@ -937,9 +937,11 @@ int sqlite3VdbeReset(Vdbe *p, char **pzErrMsg){
 
   if( p->magic!=VDBE_MAGIC_RUN && p->magic!=VDBE_MAGIC_HALT ){
     sqlite3SetString(pzErrMsg, sqlite3_error_string(SQLITE_MISUSE), (char*)0);
+    sqlite3Error(p->db, SQLITE_MISUSE, sqlite3_error_string(SQLITE_MISUSE),0);
     return SQLITE_MISUSE;
   }
   if( p->zErrMsg ){
+    sqlite3Error(p->db, p->rc, "%s", p->zErrMsg, 0);
     if( pzErrMsg && *pzErrMsg==0 ){
       *pzErrMsg = p->zErrMsg;
     }else{
@@ -948,6 +950,9 @@ int sqlite3VdbeReset(Vdbe *p, char **pzErrMsg){
     p->zErrMsg = 0;
   }else if( p->rc ){
     sqlite3SetString(pzErrMsg, sqlite3_error_string(p->rc), (char*)0);
+    sqlite3Error(p->db, p->rc, "%s", sqlite3_error_string(p->rc) , 0);
+  }else{
+    sqlite3Error(p->db, SQLITE_OK, 0);
   }
   Cleanup(p);
   if( p->rc!=SQLITE_OK ){
@@ -1023,6 +1028,9 @@ int sqlite3VdbeFinalize(Vdbe *p, char **pzErrMsg){
 
   if( p->magic!=VDBE_MAGIC_RUN && p->magic!=VDBE_MAGIC_HALT ){
     sqlite3SetString(pzErrMsg, sqlite3_error_string(SQLITE_MISUSE), (char*)0);
+    if( p->magic==VDBE_MAGIC_INIT ){
+      sqlite3Error(p->db, SQLITE_MISUSE, sqlite3_error_string(SQLITE_MISUSE),0);
+    }
     return SQLITE_MISUSE;
   }
   db = p->db;
@@ -1490,7 +1498,7 @@ int sqlite3VdbeSerialGet(const unsigned char *buf, u64 serial_type, Mem *pMem){
   assert( serial_type>=12 );
   len = sqlite3VdbeSerialTypeLen(serial_type);
   if( serial_type&0x01 ){
-    pMem->flags = MEM_Str;
+    pMem->flags = MEM_Str|MEM_Utf8;
     pMem->n = len+1;
   }else{
     pMem->flags = MEM_Blob;
@@ -1869,3 +1877,6 @@ int sqlite3VdbeIdxKeyCompare(
   }
   return SQLITE_OK;
 }
+
+
+
