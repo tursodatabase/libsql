@@ -13,11 +13,18 @@
 # file format change that may be used in the future to implement
 # "ALTER TABLE ... ADD COLUMN".
 #
-# $Id: alter3.test,v 1.1 2005/03/17 05:03:41 danielk1977 Exp $
+# $Id: alter3.test,v 1.2 2005/03/17 07:00:55 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
-source $testdir/tester.tcl
+
+# If SQLITE_OMIT_ALTERTABLE is defined, omit this file.
+ifcapable !altertable {
+  finish_test
+  return
+}
+
+ource $testdir/tester.tcl
 
 # Test Organisation:
 # ------------------
