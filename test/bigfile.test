@@ -12,7 +12,7 @@
 # focus of this script testing the ability of SQLite to handle database
 # files larger than 4GB.
 #
-# $Id: bigfile.test,v 1.5 2004/06/19 00:16:31 drh Exp $
+# $Id: bigfile.test,v 1.6 2004/06/30 11:28:13 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -23,6 +23,10 @@ source $testdir/tester.tcl
 #
 scan $::tcl_version %f vx
 if {$vx<8.4} return
+
+# Mac OS X does not handle large files efficiently.  So skip this test
+# on that platform.
+if {$tcl_platform(os)=="Darwin"} return
 
 # This is the md5 checksum of all the data in table t1 as created
 # by the first test.  We will use this number to make sure that data

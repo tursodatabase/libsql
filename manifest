@@ -1,5 +1,5 @@
-C When\sa\sstatement\scauses\sa\sROLLBACK\sdue\sto\san\sON\sCONFLICT\sclause,\sother\sactive\nVMs\sabort.\s(CVS\s1778)
-D 2004-06-30T11:14:19
+C Skip\sbigfile.test\son\sMac\sOS\sX.\s\sDarwin\sdoes\snot\shandle\slarge\ssparse\sfiles\nefficiently\sand\sso\sthis\stest\stakes\sa\sreally\slong\stime.\s(CVS\s1779)
+D 2004-06-30T11:28:13
 F Makefile.in cb7a9889c38723f72b2506c4236ff30a05ff172b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -85,7 +85,7 @@ F test/attach.test 3acdffccbf5f78b07746771b9490758718e28856
 F test/attach2.test 3cd1d4a69e0ec307d0b68a44a96c9c8e1e253d65
 F test/attach3.test c4cc0b806783ce3d860af6b80c947f93ffb14270
 F test/auth.test 23d1dbf2235635409fee36535a344edc7494aea2
-F test/bigfile.test a1101b46528ad7282fb9b323d25da18672a3bd0a
+F test/bigfile.test 62722ac4b420dfbcdceb137b8634e2cf2865fe27
 F test/bigrow.test 8ab252dba108f12ad64e337b0f2ff31a807ac578
 F test/bind.test ca031e902f63fb7d69545b4a47b0c7aea8747ffe
 F test/blob.test 8727a7b46b2073a369cfc9bcb6f54dd366b9d884
@@ -233,7 +233,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 4077f9a30b0c30a8749a596031aa4f7adc3a4891
-R c74b8042375ac1ecced768631e1e7c90
+P 0fedf74e30026afe2c8caacff3d62cf5c1b1f528
+R f265cdcdb3e5a78d515ac3546d48dc57
 U drh
-Z bbd3e84a33ffc460275952232aa91883
+Z 2c3428bd0192b36fbf29e70c8322b7d0
