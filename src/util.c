@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.25 2001/09/16 00:13:27 drh Exp $
+** $Id: util.c,v 1.26 2001/09/18 22:17:44 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -390,10 +390,10 @@ static unsigned char UpperToLower[] = {
 */
 int sqliteHashNoCase(const char *z, int n){
   int h = 0;
-  int c;
   if( n<=0 ) n = strlen(z);
-  while( n-- > 0 && (c = *z++)!=0 ){
-    h = (h<<3) ^ h ^ UpperToLower[c];
+  while( n > 0  ){
+    h = (h<<3) ^ h ^ UpperToLower[*z++];
+    n--;
   }
   if( h<0 ) h = -h;
   return h;

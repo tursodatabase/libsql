@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.71 2001/09/18 02:02:23 drh Exp $
+** $Id: vdbe.c,v 1.72 2001/09/18 22:17:44 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -142,6 +142,7 @@ struct Agg {
 };
 struct AggElem {
   char *zKey;            /* The key to this AggElem */
+  int nKey;              /* Number of bytes in the key, including '\0' at end */
   AggElem *pHash;        /* Next AggElem with the same hash on zKey */
   AggElem *pNext;        /* Next AggElem in a list of them all */
   Mem aMem[1];           /* The values for this AggElem */
@@ -479,7 +480,7 @@ static void AggReset(Agg *p){
 ** Add the given AggElem to the hash array
 */
 static void AggEnhash(Agg *p, AggElem *pElem){
-  int h = sqliteHashNoCase(pElem->zKey, 0) % p->nHash;
+  int h = sqliteHashNoCase(pElem->zKey, pElem->nKey) % p->nHash;
   pElem->pHash = p->apHash[h];
   p->apHash[h] = pElem;
 }
@@ -509,18 +510,19 @@ static void AggRehash(Agg *p, int nHash){
 **
 ** Return 0 on success and 1 if memory is exhausted.
 */
-static int AggInsert(Agg *p, char *zKey){
+static int AggInsert(Agg *p, char *zKey, int nKey){
   AggElem *pElem;
   int i;
   if( p->nHash <= p->nElem*2 ){
     AggRehash(p, p->nElem*2 + 19);
   }
   if( p->nHash==0 ) return 1;
-  pElem = sqliteMalloc( sizeof(AggElem) + strlen(zKey) + 1 +
+  pElem = sqliteMalloc( sizeof(AggElem) + nKey +
                         (p->nMem-1)*sizeof(pElem->aMem[0]) );
   if( pElem==0 ) return 1;
   pElem->zKey = (char*)&pElem->aMem[p->nMem];
-  strcpy(pElem->zKey, zKey);
+  memcpy(pElem->zKey, zKey, nKey);
+  pElem->nKey = nKey;
   AggEnhash(p, pElem);
   pElem->pNext = p->pFirst;
   p->pFirst = pElem;
@@ -541,7 +543,7 @@ static AggElem *_AggInFocus(Agg *p){
   if( pFocus ){
     p->pCurrent = pFocus;
   }else{
-    AggInsert(p,"");
+    AggInsert(p,"",1);
     pFocus = p->pCurrent = p->pFirst;
   }
   return pFocus;
@@ -2311,6 +2313,22 @@ case OP_NewRecno: {
   if( VERIFY( i<0 || i>=p->nCursor || ) p->aCsr[i].pCursor==0 ){
     v = 0;
   }else{
+    /* A probablistic algorithm is used to locate an unused rowid.
+    ** We select a rowid at random and see if it exists in the table.
+    ** If it does not exist, we have succeeded.  If the random rowid
+    ** does exist, we select a new one and try again, up to 1000 times.
+    **
+    ** For a table with less than 2 billion entries, the probability
+    ** of not finding a unused rowid is about 1.0e-300.  This is a 
+    ** non-zero probability, but it is still vanishingly small and should
+    ** never cause a problem.  You are much, much more likely to have a
+    ** hardware failure than for this algorithm to fail.
+    **
+    ** To promote locality of reference for repetitive inserts, the
+    ** first few attempts at chosing a rowid pick values just a little
+    ** larger than the previous rowid.  This has been shown experimentally
+    ** to double the speed of the COPY operation.
+    */
     int res, rx, cnt;
     static int x = 0;
     union {
@@ -2319,7 +2337,7 @@ case OP_NewRecno: {
     } ux;
     cnt = 0;
     do{
-      if( x==0 || cnt>5 ){
+      if( cnt>5 ){
         x = sqliteRandomInteger();
       }else{
         x += sqliteRandomByte() + 1;
@@ -2332,7 +2350,7 @@ case OP_NewRecno: {
       v = ux.i;
       rx = sqliteBtreeMoveto(p->aCsr[i].pCursor, &v, sizeof(v), &res);
       cnt++;
-    }while( cnt<200 && rx==SQLITE_OK && res==0 );
+    }while( cnt<1000 && rx==SQLITE_OK && res==0 );
     if( rx==SQLITE_OK && res==0 ){
       rc = SQLITE_FULL;
       goto abort_due_to_error;
@@ -3457,16 +3475,16 @@ case OP_AggFocus: {
   if( p->agg.nHash<=0 ){
     pElem = 0;
   }else{
-    int h = sqliteHashNoCase(zKey, nKey-1) % p->agg.nHash;
+    int h = sqliteHashNoCase(zKey, nKey) % p->agg.nHash;
     for(pElem=p->agg.apHash[h]; pElem; pElem=pElem->pHash){
-      if( strcmp(pElem->zKey, zKey)==0 ) break;
+      if( pElem->nKey==nKey && memcmp(pElem->zKey, zKey, nKey)==0 ) break;
     }
   }
   if( pElem ){
     p->agg.pCurrent = pElem;
     pc = pOp->p2 - 1;
   }else{
-    AggInsert(&p->agg, zKey);
+    AggInsert(&p->agg, zKey, nKey);
     if( sqlite_malloc_failed ) goto no_mem;
   }
   POPSTACK;
