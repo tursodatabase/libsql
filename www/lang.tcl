@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.47 2003/01/11 14:19:52 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.48 2003/01/26 15:28:18 jplyon Exp $}
 
 puts {<html>
 <head>
@@ -47,6 +47,7 @@ foreach {section} [lsort -index 0 -dictionary {
   {DELETE delete}
   {UPDATE update}
   {SELECT select}
+  {comment comment}
   {COPY copy}
   {EXPLAIN explain}
   {expression expr}
@@ -158,6 +159,33 @@ and by the OR clauses on COPY, INSERT, and UPDATE commands.
 </p>
 }
 
+
+Section comment comment
+
+Syntax {comment} {<SQL-comment> | <C-comment>
+} {SQL-comment} {-- <single-line>
+} {C-comment} {/STAR <multiple-lines> [STAR/]
+}
+
+
+puts {
+<p> Comments aren't SQL commands, but can occur in SQL queries. They are 
+treated as whitespace by the parser. They can begin anywhere whitespace 
+can be found, including inside expressions that span multiple lines.
+</p>
+
+<p> SQL comments only extend to the end of the current line.</p>
+
+<p> C comments can span any number of lines. If there is no terminating
+delimiter, they extend to the end of the input. This is not treated as 
+an error. A new SQL statement can begin on a line after a multiline 
+comment ends. C comments can be embedded anywhere whitespace can occur, 
+including inside expressions, and in the middle of other SQL statements.
+C comments do not nest. SQL comments inside a C comment will be ignored.
+</p>
+}
+
+
 Section COPY copy
 
 Syntax {sql-statement} {
@@ -172,12 +200,12 @@ data into a table.  It is modeled after a similar command found
 in PostgreSQL.  In fact, the SQLite COPY command is specifically
 designed to be able to read the output of the PostgreSQL dump
 utility <b>pg_dump</b> so that data can be easily transferred from
-PostgreSQL into SQLite.<p>
+PostgreSQL into SQLite.</p>
 
 <p>The table-name is the name of an existing table which is to
 be filled with data.  The filename is a string or identifier that
 names a file from which data will be read.  The filename can be
-the <b>STDIN</b> to read data from standard input.<p>
+the <b>STDIN</b> to read data from standard input.</p>
 
 <p>Each line of the input file is converted into a single record
 in the table.  Columns are separated by tabs.  If a tab occurs as
