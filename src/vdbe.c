@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.276 2004/05/11 02:10:07 danielk1977 Exp $
+** $Id: vdbe.c,v 1.277 2004/05/11 04:54:49 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2734,7 +2734,7 @@ case OP_OpenTemp: {
     /* If a transient index is required, create it by calling
     ** sqlite3BtreeCreateTable() with the BTREE_ZERODATA flag before
     ** opening it. If a transient table is required, just use the
-    ** automatically created table with root-page 1.
+    ** automatically created table with root-page 1 (an INTKEY table).
     */
     if( pOp->p2 ){
       int pgno;
@@ -2745,6 +2745,7 @@ case OP_OpenTemp: {
       }
     }else{
       rc = sqlite3BtreeCursor(pCx->pBt, MASTER_ROOT, 1, 0, 0, &pCx->pCursor);
+      pCx->intKey = 1;
     }
   }
   break;
@@ -3208,19 +3209,18 @@ case OP_PutStrKey: {
       assert( pNos->flags & MEM_Int );
 
       /* If the table is an INTKEY table, set nKey to the value of
-      ** the integer key, and zKey to NULL.
+      ** the integer key, and zKey to NULL. Otherwise, set nKey to
+      ** sizeof(i64) and point zKey at iKey. iKey contains the integer
+      ** key in the on-disk byte order.
       */
+      iKey = intToKey(pNos->i);
       if( pC->intKey ){
         nKey = intToKey(pNos->i);
-        assert( keyToInt(nKey)==pNos->i );
         zKey = 0;
       }else{
-        /* TODO: can this happen? zKey is not correctly byte-ordered here! */
-        assert(!"TODO");
         nKey = sizeof(i64);
         zKey = (char*)&iKey;
       }
-      iKey = pNos->i;
 
       if( pOp->p2 & OPFLAG_NCHANGE ) db->nChange++;
       if( pOp->p2 & OPFLAG_LASTROWID ) db->lastRowid = pNos->i;
@@ -3427,7 +3427,10 @@ case OP_Column: {
     if( pC->nullRow ){
       payloadSize = 0;
     }else if( pC->keyAsData ){
-      /* TODO: sqlite3BtreeKeySize(pCrsr, &payloadSize); */
+      assert( !pC->intKey );
+      u64 pl64;
+      sqlite3BtreeKeySize(pCrsr, &pl64);
+      payloadSize = pl64;
     }else{
       sqlite3BtreeDataSize(pCrsr, &payloadSize);
     }
