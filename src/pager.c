@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.136 2004/06/23 01:05:27 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.137 2004/06/23 10:43:10 danielk1977 Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -479,11 +479,15 @@ static int pager_unwritelock(Pager *pPager){
       pPg->dirty = 0;
       pPg->needSync = 0;
     }
+    pPager->dirtyCache = 0;
+    pPager->nMaster = 0;
+    pPager->nRec = 0;
   }else{
     assert( pPager->dirtyCache==0 || pPager->useJournal==0 );
   }
   sqlite3OsUnlock(&pPager->fd, SHARED_LOCK);
   pPager->state = PAGER_SHARED;
+  pPager->origDbSize = 0;
   return SQLITE_OK;
 }
 
@@ -508,7 +512,12 @@ static int pager_unwritelock(Pager *pPager){
 ** chance of failing the checksum and thus detecting the problem.
 */
 static u32 pager_cksum(Pager *pPager, Pgno pgno, const char *aData){
-  u32 cksum = pPager->cksumInit + pgno;
+  u32 cksum = pPager->cksumInit;
+  int i = pPager->pageSize-200;
+  while( i>0 ){
+    cksum += aData[i];
+    i -= 200;
+  }
   return cksum;
 }
 
@@ -840,7 +849,9 @@ static int pager_playback(Pager *pPager, int useJournalSize){
   /* (2) Read the number of pages stored in the journal.  */
   rc = read32bits(&pPager->jfd, (u32*)&nRec);
   if( rc ) goto end_playback;
-  if( nRec==0xffffffff || useJournalSize ){
+  if( nRec==0xffffffff || useJournalSize || 
+      nRec>(szJ - JOURNAL_HDR_SZ(pPager))/JOURNAL_PG_SZ(pPager)
+  ){
     nRec = (szJ - JOURNAL_HDR_SZ(pPager))/JOURNAL_PG_SZ(pPager);
   }
 
@@ -1007,6 +1018,8 @@ void sqlite3pager_set_cachesize(Pager *pPager, int mxPage){
   }
   if( mxPage>10 ){
     pPager->mxPage = mxPage;
+  }else{
+    pPager->mxPage = 10;
   }
 }
 
@@ -2409,19 +2422,6 @@ int sqlite3pager_commit(Pager *pPager){
     return rc;
   }
   assert( pPager->journalOpen );
-#if 0
-  rc = syncJournal(pPager, 0);
-  if( rc!=SQLITE_OK ){
-    goto commit_abort;
-  }
-  pPg = pager_get_all_dirty_pages(pPager);
-  if( pPg ){
-    rc = pager_write_pagelist(pPg);
-    if( rc || (!pPager->noSync && sqlite3OsSync(&pPager->fd)!=SQLITE_OK) ){
-      goto commit_abort;
-    }
-  }
-#endif
   rc = sqlite3pager_sync(pPager, 0);
   if( rc!=SQLITE_OK ){
     goto commit_abort;

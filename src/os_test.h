@@ -34,6 +34,6 @@ struct OsTestFile {
   OsTestFile *pNext;
 };
 
-void sqlite3SetCrashseed(int seed);
+void sqlite3SetCrashParams(int iDelay, char const *zFile);
 
 #endif /* _SQLITE_OS_UNIX_H_ */

@@ -60,40 +60,53 @@
 
 
 /*
-** The crash-seed. Accessed via functions crashseed() and
-** sqlite3SetCrashseed().
+** The following variables control when a simulated crash occurs.
+**
+** If iCrashDelay is non-zero, then zCrashFile contains (full path) name of
+** a file that SQLite will call sqlite3OsSync() on. Each time this happens
+** iCrashDelay is decremented. If iCrashDelay is zero after being
+** decremented, a "crash" occurs during the sync() operation.
+**
+** In other words, a crash occurs the iCrashDelay'th time zCrashFile is
+** synced.
 */
-static int crashseed_var = 0;
+static int iCrashDelay = 0;
+char zCrashFile[256];
 
 /*
-** This function is used to set the value of the 'crash-seed' integer.
-**
-** If the crash-seed is 0, the default value, then whenever sqlite3OsSync()
-** or sqlite3OsClose() is called, the write cache is written to disk before
-** the os_unix.c Sync() or Close() function is called.
-**
-** If the crash-seed is non-zero, then it is used to determine a subset of
-** the write-cache to actually write to disk before calling Sync() or
-** Close() in os_unix.c. The actual subset of writes selected is not
-** significant, except that it is constant for a given value of the
-** crash-seed and cache contents. Before returning, exit(-1) is invoked.
+** Set the value of the two crash parameters.
 */
-void sqlite3SetCrashseed(int seed){
+void sqlite3SetCrashParams(int iDelay, char const *zFile){
   sqlite3OsEnterMutex();
-  crashseed_var = seed;
+  assert( strlen(zFile)<256 );
+  strcpy(zCrashFile, zFile);
+  iCrashDelay = iDelay;
   sqlite3OsLeaveMutex();
 }
 
 /*
-** Retrieve the current value of the crash-seed.
+** File zPath is being sync()ed. Return non-zero if this should
+** cause a crash.
 */
-static int crashseed(){
-  int i;
+static int crashRequired(char const *zPath){
+  int r;
+  int n;
   sqlite3OsEnterMutex();
-  i = crashseed_var;
+  n = strlen(zCrashFile);
+  if( zCrashFile[n-1]=='*' ){
+    n--;
+  }else if( strlen(zPath)>n ){
+    n = strlen(zPath);
+  }
+  r = ( 
+    iCrashDelay>0 &&
+    !strncmp(zPath, zCrashFile, n) &&
+    --iCrashDelay==0
+  )?1:0;
   sqlite3OsLeaveMutex();
-  return i;
+  return r;
 }
+
 
 static OsTestFile *pAllFiles = 0;
 
@@ -177,6 +190,8 @@ static int cacheBlock(OsTestFile *pFile, int blk){
   return SQLITE_OK;
 }
 
+/* #define TRACE_WRITECACHE  */
+
 /*
 ** Write the cache of pFile to disk. If crash is non-zero, randomly
 ** skip blocks when writing. The cache is deleted before returning.
@@ -197,16 +212,13 @@ static int writeCache2(OsTestFile *pFile, int crash){
         sqlite3Randomness(1, &random);
         if( random & 0x01 ){
           skip = 1;
-/*
-          printf("Not writing block %d of %s\n", i, pFile->zName);
-*/
+#ifdef TRACE_WRITECACHE
+printf("Not writing block %d of %s\n", i, pFile->zName); 
         }else{
-/*
-          printf("Writing block %d of %s\n", i, pFile->zName);
-*/
+printf("Writing block %d of %s\n", i, pFile->zName); 
+#endif
         }
       }
-
       if( rc==SQLITE_OK ){
         rc = sqlite3RealSeek(&pFile->fd, BLOCK_OFFSET(i));
       }
@@ -235,18 +247,22 @@ static int writeCache2(OsTestFile *pFile, int crash){
 ** Write the cache to disk.
 */
 static int writeCache(OsTestFile *pFile){
-  int cs = crashseed();
-  if( cs==1 ){
-    /* FIX ME: writeCache2() should be called on all open files here. */
-    OsTestFile *pFile;
-    for(pFile=pAllFiles; pFile; pFile=pFile->pNext){
-      writeCache2(pFile, 1);
+  if( pFile->apBlk ){
+    int c = crashRequired(pFile->zName);
+    if( c ){
+      OsTestFile *p;
+#ifdef TRACE_WRITECACHE
+      printf("Crash during sync of %s\n", pFile->zName);
+#endif
+      for(p=pAllFiles; p; p=p->pNext){
+        writeCache2(p, 1);
+      }
+      exit(-1);
+    }else{
+      return writeCache2(pFile, 0);
     }
-    exit(-1);
-  }else{
-    if( cs>0 ) sqlite3SetCrashseed(cs-1);
-    return writeCache2(pFile, 0);
   }
+  return SQLITE_OK;
 }
 
 /*
