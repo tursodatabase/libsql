@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.56 2003/05/07 13:37:31 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.57 2003/05/10 02:54:02 jplyon Exp $}
 
 puts {<html>
 <head>
@@ -21,7 +21,8 @@ language.  But it does <a href="omitted.html">omit some features</a>
 while at the same time
 adding a few features of its own.  This document attempts to
 describe percisely what parts of the SQL language SQLite does
-and does not support.</p>
+and does not support.  A list of <a href="#keywords">keywords<a/> is 
+given at the end.</p>
 
 <p>In all of the syntax diagrams that follow, literal text is shown in
 bold blue.  Non-terminal symbols are shown in italic red.  Operators
@@ -88,6 +89,12 @@ proc Syntax {args} {
     regsub -all {[|,.*()]} $body {<big>&</big>} body
     regsub -all { = } $body { <big>=</big> } body
     regsub -all {STAR} $body {<big>*</big>} body
+    ## These metacharacters must be handled to undo being
+    ## treated as SQL punctuation characters above.
+    regsub -all {RPPLUS} $body {</font></b>)+<b><font color="#2c2cf0">} body
+    regsub -all {LP} $body {</font></b>(<b><font color="#2c2cf0">} body
+    regsub -all {RP} $body {</font></b>)<b><font color="#2c2cf0">} body
+    ## Place the left-hand side of the rule in the 2nd table column.
     puts "<td><b><font color=\"#2c2cf0\">$body</font></b></td></tr>"
   }
   puts {</table>}
@@ -754,7 +761,7 @@ Syntax {expr} {
 <expr> [NOT] IN ( <value-list> ) |
 <expr> [NOT] IN ( <select-statement> ) |
 ( <select-statement> ) |
-CASE [<expr>] ( WHEN <expr> THEN <expr> )+ [ELSE <expr>] END
+CASE [<expr>] LP WHEN <expr> THEN <expr> RPPLUS [ELSE <expr>] END
 } {like-op} {
 LIKE | GLOB | NOT LIKE | NOT GLOB
 }
@@ -801,6 +808,7 @@ The operator [Operator %] outputs the remainder of its left
 operand modulo its right operand.</p>"
 puts {
 
+<a name="like"></a>
 <p>The LIKE operator does a wildcard comparision.  The operand
 to the right contains the wildcards.}
 puts "A percent symbol [Operator %] in the right operand
@@ -814,13 +822,18 @@ side against lower case characters on the other.
 characters.  Hence the LIKE operator is case sensitive for
 8-bit iso8859 characters or UTF-8 characters.  For example,
 the expression <b>'a'&nbsp;LIKE&nbsp;'A'</b> is TRUE but
-<b>'&aelig;'&nbsp;LIKE&nbsp;'&AElig;'</b> is FALSE.)
+<b>'&aelig;'&nbsp;LIKE&nbsp;'&AElig;'</b> is FALSE.).  The infix 
+LIKE operator is identical the user function <a href="#likeFunc">
+like(<i>X</i>,<i>Y</i>)</a>.
 </p>
 
+<a name="glob"></a>
 <p>The GLOB operator is similar to LIKE but uses the Unix
 file globbing syntax for its wildcards.  Also, GLOB is case
 sensitive, unlike LIKE.  Both GLOB and LIKE may be preceded by
-the NOT keyword to invert the sense of the test.</p>
+the NOT keyword to invert the sense of the test.  The infix GLOB 
+operator is identical the user function <a href="#globFunc">
+glob(<i>X</i>,<i>Y</i>)</a>.</p>
 
 <p>A column name can be any of the names defined in the CREATE TABLE
 statement or one of the following special identifiers: "<b>ROWID</b>",
@@ -888,13 +901,14 @@ all arguments are NULL then NULL is returned.</td>
 </tr>
 
 <tr>
+<a name="globFunc"></a>
 <td valign="top" align="right">glob(<i>X</i>,<i>Y</i>)</td>
 <td valign="top">This function is used to implement the
 "<b>Y GLOB X</b>" syntax of SQLite.  The
 <a href="c_interface.html#cfunc">sqlite_create_function()</a> 
 interface can
 be used to override this function and thereby change the operation
-of the GLOB operator.</td>
+of the <a href="#glob">GLOB</a> operator.</td>
 </tr>
 
 <tr>
@@ -912,13 +926,14 @@ characters is returned, not the number of bytes.</td>
 </tr>
 
 <tr>
+<a name="likeFunc"></a>
 <td valign="top" align="right">like(<i>X</i>,<i>Y</i>)</td>
 <td valign="top">This function is used to implement the
 "<b>Y LIKE X</b>" syntax of SQL.  The
 <a href="c_interface.html#cfunc">sqlite_create_function()</a> 
 interface can
 be used to override this function and thereby change the operation
-of the LIKE operator.</td>
+of the <a href="#like">LIKE</a> operator.</td>
 </tr>
 
 <tr>
@@ -1046,7 +1061,7 @@ If no column-list is specified then the number of values must
 be the same as the number of columns in the table.  If a column-list
 is specified, then the number of values must match the number of
 specified columns.  Columns of the table that do not appear in the
-column list are fill with the default value, or with NULL if not
+column list are filled with the default value, or with NULL if not
 default value is specified.
 </p>
 
@@ -1375,9 +1390,9 @@ with caution.</p>
 
 <a name="pragma_temp_store"></a>
 <li><p><b>PRAGMA temp_store;
-       <br>PRAGMA temp_store = default;
-       <br>PRAGMA temp_store = memory;
-       <br>PRAGMA temp_store = file;</b></p>
+       <br>PRAGMA temp_store = DEFAULT;
+       <br>PRAGMA temp_store = MEMORY;
+       <br>PRAGMA temp_store = FILE;</b></p>
     <p>Query or change the setting of the "temp_store" flag affecting
     the database for the duration of the current database connection.
     The temp_store flag reverts to its default value when the database
@@ -1422,7 +1437,7 @@ SELECT [ALL | DISTINCT] <result> [FROM <table-list>]
 [HAVING <expr>]
 [<compound-op> <select>]*
 [ORDER BY <sort-expr-list>]
-[LIMIT <integer> [OFFSET <integer>]]
+[LIMIT <integer> [LP OFFSET | , RP <integer>]]
 } {result} {
 <result-column> [, <result-column>]*
 } {result-column} {
@@ -1567,7 +1582,7 @@ puts {
 <p>The following keywords are used by SQLite. Most are either reserved 
 words in SQL-92 or were listed as potential reserved words.  Those which 
 aren't are shown in italics.  Not all of these words are actually used
-by SQLite.  Keywords are not reserved in SQLite.  Any Keyword can be used 
+by SQLite.  Keywords are not reserved in SQLite.  Any keyword can be used 
 as an identifier for SQLite objects (columns, databases, indexes, tables, 
 triggers, views, ...) but must generally be enclosed by brackets or 
 quotes to avoid confusing the parser.  Keyword matching in SQLite is 
