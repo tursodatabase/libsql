@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the vdbe.html file.
 #
-set rcsid {$Id: vdbe.tcl,v 1.4 2000/07/28 14:32:51 drh Exp $}
+set rcsid {$Id: vdbe.tcl,v 1.5 2000/07/30 20:04:43 drh Exp $}
 
 puts {<html>
 <head>
@@ -14,11 +14,12 @@ The Virtual Database Engine of SQLite
 puts "<p align=center>
 (This page was last modified on [lrange $rcsid 3 4] GMT)
 </p>"
-puts {
-<blockquote><font color="red"><b>This document is
-currently under development.  It is incomplete and contains
-errors.  Use it accordingly.</b></font></blockquote>
-}
+
+# puts {
+# <blockquote><font color="red"><b>This document is
+# currently under development.  It is incomplete and contains
+# errors.  Use it accordingly.</b></font></blockquote>
+# }
 
 puts {
 <p>If you want to know how the SQLite library works internally,
@@ -96,6 +97,9 @@ INSERT INTO examp VALUES('Hello, World!',99);
 <p>We can see the VDBE program that SQLite uses to implement this
 INSERT using the <b>sqlite</b> command-line utility.  First start
 up <b>sqlite</b> on a new, empty database, then create the table.
+Next change the output format of <b>sqlite</b> to a form that
+is designed to work with VDBE program dumps by entering the
+".explain" command.
 Finally, enter the INSERT statement shown above, but precede the
 INSERT with the special keyword "EXPLAIN".  The EXPLAIN keyword
 will cause <b>sqlite</b> to print the VDBE program rather than 
@@ -153,7 +157,7 @@ another cursor open for writing that same file.</p>
 <p>The second instruction, New, generates an integer key that
 has not been previously used in the file "examp".  The New instruction
 uses its P1 operand as the handle of a cursor for the file
-for which the new key will be generated.  The new key is
+for which the new key will be generated.  The generated key is
 pushed onto the stack.  The P2 and P3 operands are not used
 by the New instruction.</p>
 
@@ -197,7 +201,7 @@ stack {A data record holding "Hello, World!" and 99} \
   {A random integer key}
 
 puts {<p>The last instruction pops the top two elements from the stack
-and uses them as data and key to make a new entry in database
+and uses them as data and key to make a new entry in the
 database file pointed to by cursor P1.  This instruction is where
 the insert actually occurs.</p>
 
@@ -301,7 +305,9 @@ int Callback(void *pUserData, int nColumn, char *azData[], char *azColumnName[])
 </pre></blockquote>
 
 <p>The SQLite library supplies the VDBE with a pointer to the callback function
-itself, and the <b>pUserData</b> pointer.  The job of the VDBE is to
+and the <b>pUserData</b> pointer.  (Both the callback and the user data were
+originally passed in as argument to the <b>sqlite_exec()</b> API function.)
+The job of the VDBE is to
 come up with values for <b>nColumn</b>, <b>azData[]</b>, 
 and <b>azColumnName[]</b>.
 <b>nColumn</b> is the number of columns in the results, of course.
@@ -755,18 +761,859 @@ table.  This text is fed back into the SQLite parser
 and used to reconstruct the
 internal data structures describing the index or table.</p>
 
-<h2>Using Indexes To Speed Searches</h2>
-<i>TBD</i>
+<h2>Using Indexes To Speed Searching</h2>
+
+<p>In the example queries above, every row of the table being
+queried must be loaded off of the disk and examined, even if only
+a small percentage of the rows end up in the result.  This can
+take a long time on a big table.  To speed things up, SQLite
+can use an index.</p>
+
+<p>An GDBM file associates a key with some data.  For a SQLite
+table, the GDBM file is set up so that the key is a integer
+and the data is the information for one row of the table.
+Indices in SQLite reverse this arrangement.  The GDBM key
+is (some of) the information being stored and the GDBM data 
+is an integer.
+To access a table row that has some particular
+content, we first look up the content in the GDBM index file to find
+its integer index, then we use that integer to look up the
+complete record in the GDBM table file.</p>
+
+<p>Note that because GDBM uses hashing instead of b-trees, indices
+are only helpful when the WHERE clause of the SELECT statement
+contains tests for equality.  Inequalities will not work since there
+is no way to ask GDBM to fetch records that do not match a key.
+So, in other words, queries like the following will use an index
+if it is available:</p>
+
+<blockquote><pre>
+SELECT * FROM examp WHERE two==50;
+</pre></blockquote>
+
+<p>If there exists an index that maps the "two" column of the "examp"
+table into integers, then SQLite will use that index to find the integer
+keys of all rows in examp that have a value of 50 for column two.
+But the following query will not use an index:</p>
+
+<blockquote><pre>
+SELECT * FROM examp WHERE two<50;
+</pre></blockquote>
+
+<p>GDBM does not have the ability to select records based on
+a magnitude comparison, and so there is no way to use an index
+to speed the search in this case.</p>
+
+<p>To understand better how indices work, lets first look at how
+they are created.  Let's go ahead and put an index on the two
+column of the examp table.  We have:</p>
+
+<blockquote><pre>
+CREATE INDEX examp_idx1 ON examp(two);
+</pre></blockquote>
+
+<p>The VDBE code generated by the above statement looks like the
+following:</p>
+}
+
+Code {
+addr  opcode        p1     p2     p3                                      
+----  ------------  -----  -----  ----------------------------------------
+0     Open          0      0      examp                                   
+1     Open          1      1      examp_idx1                              
+2     Open          2      1      sqlite_master                           
+3     New           2      0                                              
+4     String        0      0      index                                   
+5     String        0      0      examp_idx1                              
+6     String        0      0      examp                                   
+7     String        0      0      CREATE INDEX examp_idx1 ON examp(two)   
+8     MakeRecord    4      0                                              
+9     Put           2      0                                              
+10    Close         2      0                                              
+11    Next          0      17                                             
+12    Key           0      0                                              
+13    Field         0      1                                              
+14    MakeKey       1      0                                              
+15    PutIdx        1      0                                              
+16    Goto          0      11                                             
+17    Noop          0      0                                              
+18    Close         1      0                                              
+19    Close         0      0                                              
+}
+
+puts {
+<p>Remember that every table (except sqlite_master) and every named
+index has an entry in the sqlite_master table.  Since we are creating
+a new index, we have to add a new entry to sqlite_master.  This is
+handled by instructions 2 through 10.  Adding an entry to sqlite_master
+works just like any other INSERT statement so we will not say anymore
+about it here.  In this example, we want to focus on populating the
+new index with valid data, which happens on instructions 0 and 1 and
+on instructions 11 through 19.</p>
+
+<p>The first thing that happens is that we open the table being
+indexed for reading.  In order to construct an index for a table,
+we have to know what is in that table.  The second instruction
+opens the index file for writing.</p>
+
+<p>Instructions 11 through 16 implement a loop over every row
+of the table being indexed.  For each table row, we first extract
+the integer key for that row in instruction 12, then get the
+value of the two column in instruction 13.  The MakeKey instruction
+at 14 converts data from the two column (which is on the top of
+the stack) into a valid index key.  For an index on a single column,
+this is basically a no-op.  But if the P1 operand to MakeKey had
+been greater than one multiple entries would have been popped from
+the stack and converted into a single index key.  The PutIdx
+instruction at 15 is what actually creates the index entry.  PutIdx
+pops two elements from the stack.  The top of the stack is used as
+a key to fetch an entry from the GDBM index file.  Then the integer
+which was second on stack is added to the set of integers for that
+index and the new record is written back to the GDBM file.  Note
+that the same index entry can store multiple integers if there
+are two or more table entries with the same value for the two
+column.
+</p>
+
+<p>Now let's look at how this index will be used.  Consider the
+following query:</p>
+
+<blockquote><pre>
+SELECT * FROM examp WHERE two==50;
+</pre></blockquote>
+
+<p>SQLite generates the following VDBE code to handle this query:</p>
+}
+
+Code {
+addr  opcode        p1     p2     p3                                      
+----  ------------  -----  -----  ----------------------------------------
+0     ColumnCount   2      0                                              
+1     ColumnName    0      0      one                                     
+2     ColumnName    1      0      two                                     
+3     Open          0      0      examp                                   
+4     Open          1      0      examp_idx1                              
+5     Integer       50     0                                              
+6     MakeKey       1      0                                              
+7     Fetch         1      0                                              
+8     NextIdx       1      14                                             
+9     Fetch         0      0                                              
+10    Field         0      0                                              
+11    Field         0      1                                              
+12    Callback      2      0                                              
+13    Goto          0      8                                              
+14    Close         0      0                                              
+15    Close         1      0                                              
+}
+
+puts {
+<p>The SELECT begins in a familiar fashion.  First the column
+names are initialized and the table being queried is opened.
+Things become different beginning with instruction 4 where
+the index file is also opened.  Instructions 5 and 6 make
+a key with the value of 50 and instruction 7 fetches the
+record of the GDBM index file that has this key.  This will
+be the only fetch from the index file.</p>
+
+<p>Instructions 8 through 13 implement a loop over all
+integers in the payload of the index record that was fetched
+by instruction 7.  The NextIdx operation works much like
+the Next and ListRead operations that are discussed above.
+Each NextIdx instruction reads a single integer from the
+payload of the index record and falls through, except that
+if there are no more records it jumps immediately to 14.</p>
+
+<p>The Fetch instruction at 9 loads a single record from
+the GDBM file that holds the table.  Then there are two
+Field instructions to construct the result and the callback
+is invoked.  All this is the same as we have seen before.
+The only difference is that the loop is now constructed using
+NextIdx instead of Next.</p>
+
+<p>Since the index is used to look up values in the table,
+it is important that the index and table be kept consistent.
+Now that there is an index on the examp table, we will have
+to update that index whenever data is inserted, deleted, or
+changed in the examp table.  Remember the first example above
+how we were able to insert a new row into the examp table using
+only 6 VDBE instructions.  Now that this table is indexed, 10
+instructions are required.  The SQL statement is this:</p>
+
+<blockquote><pre>
+INSERT INTO examp VALUES('Hello, World!',99);
+</pre></blockquote>
+
+<p>And the generated code looks like this:</p>
+}
+
+Code {
+addr  opcode        p1     p2     p3                                      
+----  ------------  -----  -----  ----------------------------------------
+0     Open          0      1      examp                                   
+1     Open          1      1      examp_idx1                              
+2     New           0      0                                              
+3     Dup           0      0                                              
+4     String        0      0      Hello, World!                           
+5     Integer       99     0                                              
+6     MakeRecord    2      0                                              
+7     Put           0      0                                              
+8     Integer       99     0                                              
+9     MakeKey       1      0                                              
+10    PutIdx        1      0                                              
+}
+
+puts {
+<p>At this point, you should understand the VDBE well enough to
+figure out on your own how the above program works.  So we will
+not discuss it further in this text.</p>
+
 <h2>Joins</h2>
-<i>TBD</i>
+
+<p>In a join, two or more tables are combined to generate a single
+result.  The result table consists of every possible combination
+of rows from the tables being joined.  The easiest and most natural
+way to implement this is with nested loops.</p>
+
+<p>Recall the query template discussed above where there was a
+single loop that searched through every record of the table.
+In a join we have basically the same thing except that there
+are nested loops.  For example, to join two tables, the query
+template might look something like this:</p>
+
+<p>
+<ol>
+<li>Initialize the <b>azColumnName[]</b> array for the callback.</li>
+<li>Open two cursors, one to each of the two tables being queried.</li>
+<li>For each record in the first table, do:
+    <ol type="a">
+    <li>For each record in the second table do:
+      <ol type="i">
+      <li>If the WHERE clause evaluates to FALSE, then skip the steps that
+          follow and continue to the next record.</li>
+      <li>Compute all columns for the current row of the result.</li>
+      <li>Invoke the callback function for the current row of the result.</li>
+      </ol></li>
+    </ol>
+<li>Close both cursors.</li>
+</ol>
+</p>
+
+<p>This template will work, but it is likely to be slow since we
+are now dealing with an O(N<sup>2</sup>) loop.  But it often works
+out that the WHERE clause can be factored into terms and that one or
+more of those terms will involve only columns in the first table.
+When this happens, we can factor part of the WHERE clause test out of
+the inner loop and gain a lot of efficiency.  So a better template
+would be something like this:</p>
+
+<p>
+<ol>
+<li>Initialize the <b>azColumnName[]</b> array for the callback.</li>
+<li>Open two cursors, one to each of the two tables being queried.</li>
+<li>For each record in the first table, do:
+    <ol type="a">
+    <li>Evaluate terms of the WHERE clause that only involve columns from
+        the first table.  If any term is false (meaning that the whole
+        WHERE clause must be false) then skip the rest of this loop and
+        continue to the next record.</li>
+    <li>For each record in the second table do:
+      <ol type="i">
+      <li>If the WHERE clause evaluates to FALSE, then skip the steps that
+          follow and continue to the next record.</li>
+      <li>Compute all columns for the current row of the result.</li>
+      <li>Invoke the callback function for the current row of the result.</li>
+      </ol></li>
+    </ol>
+<li>Close both cursors.</li>
+</ol>
+</p>
+
+<p>Additional speed-up can occur if an index can be used to speed
+the search of either or the two loops.</p>
+
+<p>SQLite always constructs the loops in the same order as the
+tables appear in the FROM clause of the SELECT statement.  The
+left-most table becomes the outer loop and the right-most table
+becomes the inner loop.  It is possible, in theory, to reorder
+the loops in some circumstances to speed the evaluation of the
+join.  But SQLite does not attempt this optimization.</p>
+
+<p>You can see how SQLite constructs nested loops in the following
+example:</p>
+
+<blockquote><pre>
+CREATE TABLE examp2(three int, four int);
+SELECT * FROM examp, examp2 WHERE two<50 AND four==two;
+</pre></blockquote>
+}
+
+Code {
+addr  opcode        p1     p2     p3                                      
+----  ------------  -----  -----  ----------------------------------------
+0     ColumnCount   4      0                                              
+1     ColumnName    0      0      examp.one                               
+2     ColumnName    1      0      examp.two                               
+3     ColumnName    2      0      examp2.three                            
+4     ColumnName    3      0      examp2.four                             
+5     Open          0      0      examp                                   
+6     Open          1      0      examp2                                  
+7     Next          0      21                                             
+8     Field         0      1                                              
+9     Integer       50     0                                              
+10    Ge            0      7                                              
+11    Next          1      7                                              
+12    Field         1      1                                              
+13    Field         0      1                                              
+14    Ne            0      11                                             
+15    Field         0      0                                              
+16    Field         0      1                                              
+17    Field         1      0                                              
+18    Field         1      1                                              
+19    Callback      4      0                                              
+20    Goto          0      11                                             
+21    Close         0      0                                              
+22    Close         1      0                                              
+}
+
+puts {
+<p>The outer loop over table examp is implement by instructions
+7 through 20.  The inner loop is instructions 11 through 20.
+Notice that the "two<50" term of the WHERE expression involves
+only columns from the first table and can be factored out of
+the inner loop.  SQLite does this and implements the "two<50"
+test in instructions 8 through 10.  The "four==two" test is
+implement by instructions 12 through 14 in the inner loop.</p>
+
+<p>SQLite does not impose any arbitrary limits on the tables in
+a join.  It also allows a table to be joined with itself.</p>
+
 <h2>The ORDER BY clause</h2>
-<i>TBD</i>
+
+<p>As noted previously, GDBM does not have any facility for
+handling inequalities.  A consequence of this is that we cannot
+sort on disk using GDBM.  All sorted must be done in memory.</p>
+
+<p>SQLite implements the ORDER BY clause using a special
+set of instruction control an object called a sorter.  In the
+inner-most loop of the query, where there would normally be
+a Callback instruction, instead a record is constructed that
+contains both callback parameters and a key.  This record
+is added to a linked list.  After the query loop finishes,
+the list of records is sort and this walked.  For each record
+on the list, the callback is invoked.  Finally, the sorter
+is closed and memory is deallocated.</p>
+
+<p>We can see the process in action in the following query:</p>
+
+<blockquote><pre>
+SELECT * FROM examp ORDER BY one DESC, two;
+</pre></blockquote>
+}
+
+Code {
+addr  opcode        p1     p2     p3                                      
+----  ------------  -----  -----  ----------------------------------------
+0     SortOpen      0      0                                              
+1     ColumnCount   2      0                                              
+2     ColumnName    0      0      one                                     
+3     ColumnName    1      0      two                                     
+4     Open          0      0      examp                                   
+5     Next          0      14                                             
+6     Field         0      0                                              
+7     Field         0      1                                              
+8     SortMakeRec   2      0                                              
+9     Field         0      0                                              
+10    Field         0      1                                              
+11    SortMakeKey   2      0      -+                                      
+12    SortPut       0      0                                              
+13    Goto          0      5                                              
+14    Close         0      0                                              
+15    Sort          0      0                                              
+16    SortNext      0      19                                             
+17    SortCallback  2      0                                              
+18    Goto          0      16                                             
+19    SortClose     0      0    
+}
+
+puts {
+<p>The sorter is opened on the first instruction.  The VDBE allows
+any number of sorters, but in practice no more than one is every used.</p>
+
+<p>The query loop is built from instructions 5 through 13.  Instructions
+6 through 8 build a record that contains the azData[] values for a single
+invocation of the callback.  A sort key is generated by instructions
+9 through 11.  Instruction 12 combines the invocation record and the
+sort key into a single entry and puts that entry on the sort list.<p>
+
+<p>The P3 argument of instruction 11 is of particular interest.  The
+sort key is formed by prepending one character from P3 to each string
+and concatenating all the strings.  The sort comparison function will
+look at this character to determine whether the sort order is
+ascending or descending.  In this example, the first column should be
+sorted in descending order so its prefix is "-" and the second column
+should sort in ascending order so its prefix is "+".</p>
+
+<p>After the query loop ends, the table being queried is closed at
+instruction 14.  This is done early in order to allow other processes
+or threads to access that table, if desired.  The list of records
+that was built up inside the query loop is sorted by the instruction
+at 15.  Instructions 16 through 18 walk through the record list
+(which is now in sorted order) and invoke the callback once for
+each record.  Finally, the sorter is closed at instruction 19.</p>
+
 <h2>Aggregate Functions And The GROUP BY and HAVING Clauses</h2>
-<i>TBD</i>
+
+<p>To compute aggregate functions, the VDBE implements a special 
+data structure and instructions for controlling that data structure.
+The data structure is an unordered set of buckets, where each bucket
+has a key and one or more memory locations.  Within the query
+loop, the GROUP BY clause is used to construct a key and the bucket
+with that key is brought into focus.  A new bucket is created with
+the key if one did not previously exist.  Once the bucket is in
+focus, the memory locations of the bucket are used to accumulate
+the values of the various aggregate functions.  After the query
+loop terminates, the each bucket is visited once to generate a
+single row of the results.</p>
+
+<p>An example will help to clarify this concept.  Consider the
+following query:</p>
+
+<blockquote><pre>
+SELECT three, min(three+four)+avg(four) 
+FROM examp2
+GROUP BY three;
+</pre></blockquote>
+}
+
+puts {
+<p>The VDBE code generated for this query is as follows:</p>
+}
+
+Code {
+addr  opcode        p1     p2     p3                                      
+----  ------------  -----  -----  ----------------------------------------
+0     ColumnCount   2      0                                              
+1     ColumnName    0      0      three                                   
+2     ColumnName    1      0      min(three+four)+avg(four)               
+3     AggReset      0      4                                              
+4     Open          0      0      examp2                                  
+5     Next          0      23                                             
+6     Field         0      0                                              
+7     MakeKey       1      0                                              
+8     AggFocus      0      11                                             
+9     Field         0      0                                              
+10    AggSet        0      0                                              
+11    Field         0      0                                              
+12    Field         0      1                                              
+13    Add           0      0                                              
+14    AggGet        0      1                                              
+15    Min           0      0                                              
+16    AggSet        0      1                                              
+17    AggIncr       1      2                                              
+18    Field         0      1                                              
+19    AggGet        0      3                                              
+20    Add           0      0                                              
+21    AggSet        0      3                                              
+22    Goto          0      5                                              
+23    Close         0      0                                              
+24    AggNext       0      33                                             
+25    AggGet        0      0                                              
+26    AggGet        0      1                                              
+27    AggGet        0      3                                              
+28    AggGet        0      2                                              
+29    Divide        0      0                                              
+30    Add           0      0                                              
+31    Callback      2      0                                              
+32    Goto          0      24                                             
+33    Noop          0      0                                              
+}
+
+puts {
+<p>The first instruction of interest is the AggReset at 3.
+The AggReset instruction initializes the set of buckets to be the
+empty set and specifies the number of memory slots available in each
+bucket.  In this example, each bucket will hold four memory slots.
+It is not obvious, but if you look closely at the rest of the program
+you can figure out what each of these four slots is intended for.</p>
+
+<blockquote><table border="2" cellpadding="5">
+<tr><th>Memory Slot</th><th>Intended Use Of This Memory Slot</th></tr>
+<tr><td>0</td><td>The "three" column -- the key to the bucket</td></tr>
+<tr><td>1</td><td>The minimum "three+four" value</td></tr>
+<tr><td>2</td><td>The number of records with the same key. This value
+   divides the value in slot 3 to compute "avg(four)".</td></tr>
+<tr><td>3</td><td>The sum of all "four" values. This is used to compute 
+   "avg(four)".</td></tr>
+</table></blockquote>
+
+<p>The query loop is implement by instructions 5 through 22.
+The aggregate key specified by the GROUP BY clause is computed
+by instructions 6 and 7.  Instruction 8 causes the appropriate
+bucket to come into focus.  If a bucket with the given key does
+not already exists, a new bucket is created and control falls
+through to instructions 9 and 10 which initialize the bucket.
+If the bucket does already exist, then a jump is made to instruction
+11.  The values of aggregate functions are updated by the instructions
+between 11 and 21.  Instructions 11 through 16 update memory
+slot 1 to hold the next value "min(three+four)".  The counter in
+slot 2 is incremented by instruction 17.  Finally the sum of
+the "four" column is updated by instructions 18 through 21.</p>
+
+<p>After the query loop is finished, the GDBM table is closed at
+instruction 23 so that its lock will be released and it can be
+used by other threads or processes.  The next step is to loop
+over all aggregate buckets and output one row of the result for
+each bucket.  This is done by the loop at instructions 24
+through 32.  The AggNext instruction at 24 brings the next bucket
+into focus, or jumps to the end of the loop if all buckets have
+been examined already.  The first column of the result ("three")
+is computed by instruction 25.  The second result column
+("min(three+four)+avg(four)") is computed by instructions
+26 through 30.  Notice how the avg() function is computed
+as if it where sum()/count().  Finally, the callback is invoked
+at instruction 31.</p>
+
+<p>In summary then, any query with aggregate functions is implemented
+by two loops.  The first loop scans the input table and computes
+aggregate information into buckets and the second loop scans through
+all the buckets to compute the final result.</p>
+
+<p>The realization that an aggregate query is really two consequtive
+loops makes it much easier to understand the difference between
+a WHERE clause and a HAVING clause in SQL query statement.  The
+WHERE clause is a restriction on the first loop and the HAVING
+clause is a restriction on the second loop.  You can see this
+by adding both a WHERE and a HAVING clause to our example query:</p>
+
+
+<blockquote><pre>
+SELECT three, min(three+four)+avg(four) 
+FROM examp2
+WHERE three>four
+GROUP BY three
+HAVING avg(four)<10;
+</pre></blockquote>
+}
+
+Code {
+addr  opcode        p1     p2     p3                                      
+----  ------------  -----  -----  ----------------------------------------
+0     ColumnCount   2      0                                              
+1     ColumnName    0      0      three                                   
+2     ColumnName    1      0      min(three+four)+avg(four)               
+3     AggReset      0      4                                              
+4     Open          0      0      examp2                                  
+5     Next          0      26                                             
+6     Field         0      0                                              
+7     Field         0      1                                              
+8     Le            0      5                                              
+9     Field         0      0                                              
+10    MakeKey       1      0                                              
+11    AggFocus      0      14                                             
+12    Field         0      0                                              
+13    AggSet        0      0                                              
+14    Field         0      0                                              
+15    Field         0      1                                              
+16    Add           0      0                                              
+17    AggGet        0      1                                              
+18    Min           0      0                                              
+19    AggSet        0      1                                              
+20    AggIncr       1      2                                              
+21    Field         0      1                                              
+22    AggGet        0      3                                              
+23    Add           0      0                                              
+24    AggSet        0      3                                              
+25    Goto          0      5                                              
+26    Close         0      0                                              
+27    AggNext       0      41                                             
+28    AggGet        0      3                                              
+29    AggGet        0      2                                              
+30    Divide        0      0                                              
+31    Integer       10     0                                              
+32    Ge            0      27                                             
+33    AggGet        0      0                                              
+34    AggGet        0      1                                              
+35    AggGet        0      3                                              
+36    AggGet        0      2                                              
+37    Divide        0      0                                              
+38    Add           0      0                                              
+39    Callback      2      0                                              
+40    Goto          0      27                                             
+41    Noop          0      0                                              
+}
+
+puts {
+<p>The code generated in this last example is the same as the
+previous except for the addition of two conditional jumps used
+to implement the extra WHERE and HAVING clauses.  The WHERE
+clause is implemented by instructions 6 through 8 in the query
+loop.  The HAVING clause is implemented by instruction 28 through
+32 in the output loop.</p>
+
 <h2>Using SELECT Statements As Terms In An Expression</h2>
-<i>TBD</i>
+
+<p>The very name "Structured Query Language" tells us that SQL should
+support nested queries.  And, in fact, two different kinds of nesting
+are supported.  Any SELECT statement that returns a single-row, single-column
+result can be used as a term in an expression of another SELECT statement.
+And, a SELECT statement that returns a single-column, multi-row result
+can be used as the right-hand operand of the IN and NOT IN operators.
+We will begin this section with an example of the first kind of nesting,
+where a single-row, single-column SELECT is used as a term in an expression
+of another SELECT.  Here is our example:</p>
+
+<blockquote><pre>
+SELECT * FROM examp
+WHERE two!=(SELECT three FROM examp2
+            WHERE four=5);
+</pre></blockquote>
+
+<p>The way SQLite deals with this is to first run the inner SELECT
+(the one against examp2) and store its result in a private memory
+cell.  SQLite then substitutes the value of this private memory
+cell for the inner SELECT when it evaluations the outer SELECT.
+The code looks like this:</p>
+}
+
+Code {
+addr  opcode        p1     p2     p3                                      
+----  ------------  -----  -----  ----------------------------------------
+0     Null          0      0                                              
+1     MemStore      0      0                                              
+2     Open          0      0      examp2                                  
+3     Next          0      11                                             
+4     Field         0      1                                              
+5     Integer       5      0                                              
+6     Ne            0      3                                              
+7     Field         0      0                                              
+8     MemStore      0      0                                              
+9     Goto          0      11                                             
+10    Goto          0      3                                              
+11    Close         0      0                                              
+12    ColumnCount   2      0                                              
+13    ColumnName    0      0      one                                     
+14    ColumnName    1      0      two                                     
+15    Open          0      0      examp                                   
+16    Next          0      24                                             
+17    Field         0      1                                              
+18    MemLoad       0      0                                              
+19    Eq            0      16                                             
+20    Field         0      0                                              
+21    Field         0      1                                              
+22    Callback      2      0                                              
+23    Goto          0      16                                             
+24    Close         0      0                                              
+}
+
+puts {
+<p>The private memory cell is initialized to NULL by the first
+two instructions.  Instructions 2 through 11 implement the inner
+SELECT statement against the examp2 table.  Notice that instead of
+sending the result to a callback or storing the result on a sorter,
+the result of the query is pushed into the memory cell by instruction
+8 and the loop is abandoned by the jump at instruction 9.  
+The jump at instruction at 10 is vestigial and
+never executes.</p>
+
+<p>The outer SELECT is implemented by instructions 12 through 24.
+In particular, the WHERE clause that contains the nested select
+is implemented by instructions 17 through 19.  You can see that
+the result of the inner select is loaded onto the stack by instruction
+18 and used by the conditional jump at 19.</p>
+
+<p>When the result of a sub-select is a scalar, a single private memory
+cell can be used, as shown in the previous
+example.  But when the result of a sub-select is a vector, such
+as when the sub-select is the right-hand operand of IN or NOT IN,
+a different approach is needed.  In this case, 
+the result of the sub-select is
+stored in a temporary GDBM table and the contents of that table
+are tested using the Found or NotFound operators.  Consider this
+example:</p>
+
+<blockquote><pre>
+SELECT * FROM examp
+WHERE two IN (SELECT three FROM examp2);
+</pre></blockquote>
+
+<p>The code generated to implement this last query is as follows:</p>
+}
+
+Code {
+addr  opcode        p1     p2     p3                                      
+----  ------------  -----  -----  ----------------------------------------
+0     Open          0      1                                              
+1     Open          1      0      examp2                                  
+2     Next          1      7                                              
+3     Field         1      0                                              
+4     String        0      0                                              
+5     Put           0      0                                              
+6     Goto          0      2                                              
+7     Close         1      0                                              
+8     ColumnCount   2      0                                              
+9     ColumnName    0      0      one                                     
+10    ColumnName    1      0      two                                     
+11    Open          1      0      examp                                   
+12    Next          1      19                                             
+13    Field         1      1                                              
+14    NotFound      0      12                                             
+15    Field         1      0                                              
+16    Field         1      1                                              
+17    Callback      2      0                                              
+18    Goto          0      12                                             
+19    Close         1      0                                              
+}
+
+puts {
+<p>The temporary table in which the results of the inner SELECT are
+stored is created by instruction 0.  Notice that the P3 field of
+this Open instruction is empty.  An empty P3 field on an Open
+instruction tells the VDBE to create a temporary table.  This temporary
+table will be automatically deleted from the disk when the
+VDBE halts.</p>
+
+<p>The inner SELECT statement is implemented by instructions 1 through 7.
+All this code does is make an entry in the temporary table for each
+row of the examp2 table.  The key for each temporary table entry
+is the "three" column of examp2 and the data 
+entries is an empty string since it is never used.</p>
+
+<p>The outer SELECT is implemented by instructions 8 through 19.  In
+particular, the WHERE clause containing the IN operator is implemented
+by two instructions at 13 and 14.  Instruction 13 pushes the value of
+the "two" column for the current row onto the stack and instruction 14
+tests to see if top of the stack matches any key in the temporary table.
+All the rest of the code is the same as what has been shown before.</p>
+
 <h2>Compound SELECT Statements</h2>
-<i>TBD</i>
+
+<p>SQLite also allows two or more SELECT statements to be joined as
+peers using operators UNION, UNION ALL, INTERSECT, and EXCEPT.  These
+compound select statements are implemented using temporary tables.
+The implementation is slightly different for each operator, but the
+basic ideas are the same.  For an example we will use the EXCEPT
+operator.</p>
+
+<blockquote><pre>
+SELECT two FROM examp
+EXCEPT
+SELECT four FROM examp2;
+</pre></blockquote>
+
+<p>The result of this last example should be every unique value
+of the two column in the examp table except any value that is
+in the four column of examp2 is removed.  The code to implement
+this query is as follows:</p>
+}
+
+Code {
+addr  opcode        p1     p2     p3                                      
+----  ------------  -----  -----  ----------------------------------------
+0     Open          0      1                                              
+1     KeyAsData     0      1                                              
+2     Open          1      0      examp                                   
+3     Next          1      9                                              
+4     Field         1      1                                              
+5     MakeRecord    1      0                                              
+6     String        0      0                                              
+7     Put           0      0                                              
+8     Goto          0      3                                              
+9     Close         1      0                                              
+10    Open          1      0      examp2                                  
+11    Next          1      16                                             
+12    Field         1      1                                              
+13    MakeRecord    1      0                                              
+14    Delete        0      0                                              
+15    Goto          0      11                                             
+16    Close         1      0                                              
+17    ColumnCount   1      0                                              
+18    ColumnName    0      0      four                                    
+19    Next          0      23                                             
+20    Field         0      0                                              
+21    Callback      1      0                                              
+22    Goto          0      19                                             
+23    Close         0      0                                              
+}
+
+puts {
+<p>The temporary table in which the result is built is created by
+instruction 0.  Three loops then follow.  The loop at instructions
+3 through 8 implements the first SELECT statement.  The second
+SELECT statement is implemented by the loop at instructions 11 through
+15.  Finally, a loop at instructions 19 through 22 reads the temporary
+table and invokes the callback once for each row in the result.</p>
+
+<p>Instruction 1 is of particular importance in this example.  Normally,
+the Field opcode extracts the value of a column from a larger
+record in the data of a GDBM file entry.  Instructions 1 sets a flag on
+the temporary table so that Field will instead treat the key of the
+GDBM file entry as if it were data and extract column information from
+the key.</p>
+
+<p>Here is what is going to happen:  The first SELECT statement
+will construct rows of the result and save each row as the key of
+an entry in the temporary table.  The data for each entry in the
+temporary table is a never used so we fill it in with an empty string.
+The second SELECT statement also constructs rows, but the rows
+constructed by the second SELECT are removed from the temporary table.
+That is why we want the rows to be stored in the key of the GDBM file
+instead of in the data -- so they can be easily located and deleted.</p>
+
+<p>Let's look more closely at what is happening here.  The first
+SELECT is implemented by the loop at instructions 3 through 8.
+Instruction 4 extracts the value of the "two" column from "examp"
+and instruction 5 converts this into a row.  Instruction 6 pushes
+an empty string onto the stack.  Finally, instruction 7 writes the
+row into the temporary table.  But remember, the Put opcode uses
+the top of the stack as the GDBM data and the next on stack as the
+GDBM key.  For an INSERT statement, the row generated by the
+MakeRecord opcode is the GDBM data and the GDBM key is an integer
+created by the New opcode.  But here the roles are reversed and
+the row created by MakeRecord is the GDBM key and the GDBM data is
+just an empty string.</p>
+
+<p>The second SELECT is implemented by instructions 11 through 15.
+A new result row is created from the "four" column of table "examp2"
+by instructions 12 and 13.  But instead of using Put to write this
+new row into the temporary table, we instead call Delete to remove
+it from the temporary table if it exists.</p>
+
+<p>The result of the compound select is sent to the callback routine
+by the loop at instructions 19 through 22.  There is nothing new
+or remarkable about this loop, except for the fact that the Field 
+instruction at 20 will be extracting a column out of the GDBM key
+rather than the GDBM data.</p>
+
+<h2>Summary</h2>
+
+<p>This article has reviewed all of the major techniques used by
+SQLite's VDBE to implement SQL statements.  What has not been shown
+is that most of these techniques can be used in combination to
+generate code for an appropriately complex query statement.  For
+example, we have shown how sorting is accomplished on a simple query
+and we have shown how to implement a compound query.  But we did
+not give an example of sorting in a compound query.  This is because
+sorting a compound query does not introduce any new concepts: it
+merely combines two previous ideas (sorting and compounding)
+in the same VDBE program.</p>
+
+<p>For additional information on how the SQLite library
+functions, the reader is directed to look at the SQLite source
+code directly.  If you understand the material in this article,
+you should not have much difficulty in following the sources.
+Serious students of the internals of SQLite will probably
+also what to make a careful study of the VDBE opcodes
+as documented <a href="opcode.html">here</a>.  Most of the
+opcode documentation is extracted from comments in the source
+code using a script so you can also get information about the
+various opcodes directly from the <b>vdbe.c</b> source file.
+If you have successfully read this far, you should have little
+difficulty understanding the rest.</p>
+
+<p>If you find errors in either the documentation or the code,
+feel free to fix them and/or contact the author at
+<a href="drh@hwaci.com">drh@hwaci.com</a>.  Your bug fixes or
+suggestions are always welcomed.</p>
 }
 
 puts {

@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: opcode.tcl,v 1.3 2000/06/23 17:02:09 drh Exp $}
+set rcsid {$Id: opcode.tcl,v 1.4 2000/07/30 20:04:43 drh Exp $}
 
 puts {<html>
 <head>
@@ -55,8 +55,8 @@ by the SQLite library.  This document describes the operation of that
 virtual machine.</p>
 
 <p>This document is intended as a reference, not a tutorial.
-A separate <a href="vdbe.html">Virtual Machine Tutorial</a> is currently
-in preparation.  If you are looking for a narrative description
+A separate <a href="vdbe.html">Virtual Machine Tutorial</a> is 
+available.  If you are looking for a narrative description
 of how the virtual machine works, you should read the tutorial
 and not this document.  Once you have a basic idea of what the
 virtual machine does, you can refer back to this document for

@@ -1,5 +1,5 @@
-C better\scolumn\snames\sin\sthe\sshell\s(CVS\s111)
-D 2000-07-29T13:20:21
+C documentation\supdates\s(CVS\s112)
+D 2000-07-30T20:04:43
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 9e6dcd232e594fb599a5e9ba8bcf45e6c6e2fe72
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -22,7 +22,7 @@ F src/tclsqlite.c 9f358618ae803bedf4fb96da5154fd45023bc1f7
 F src/tokenize.c 77ff8164a8751994bc9926ce282847f653ac0c16
 F src/update.c 51b9ef7434b15e31096155da920302e9db0d27fc
 F src/util.c fcd7ac9d2be8353f746e52f665e6c4f5d6b3b805
-F src/vdbe.c b9ce1439931a56bdbec560d41d32f623b5d4b1c7
+F src/vdbe.c 4308e226d5b33a72dfe2c88a44eb0a63381fe24b
 F src/vdbe.h 6c5653241633c583549c2d8097394ab52550eb63
 F src/where.c 420f666a38b405cd58bd7af832ed99f1dbc7d336
 F test/all.test 0950c135cab7e60c07bd745ccfad1476211e5bd7
@@ -63,10 +63,10 @@ F www/changes.tcl 4491a4c835a87945ec4b493d8fed8e31e7917db5
 F www/fileformat.tcl f3a70650e942262f8285d53097d48f0b3aa59862
 F www/index.tcl 58c9a33ceba12f5efee446c6b10b4f6523a214e1
 F www/lang.tcl 1645e9107d75709be4c6099b643db235bbe0a151
-F www/opcode.tcl 401bdc639509c2f17d3bb97cbbdfdc22a61faa07
+F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl 69781eaffb02e17aa4af28b76a2bedb19baa8e9f
-F www/vdbe.tcl 3330c700ef9c212a169f568a595361e4cce749ed
-P 3bf434d93a54a24f4882d0d9375f82ceee0b7602
-R 62d5ed1a73773f8306d7f2d4bcc6586d
+F www/vdbe.tcl bcbfc33bcdd0ebad95eab31286adb9e1bc289520
+P 57022a9d504e553d862f363b164c42ba53d8b489
+R f7bf520ee9c56f3008ca4098d4e4be60
 U drh
-Z 12cb62dbb78ef20fcb0d4c8ab57670db
+Z d5fb118e39f2c1e4c12a967c5d47998a

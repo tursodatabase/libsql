@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.36 2000/07/29 13:06:59 drh Exp $
+** $Id: vdbe.c,v 1.37 2000/07/30 20:04:43 drh Exp $
 */
 #include "sqliteInt.h"
 #include <unistd.h>
@@ -1970,7 +1970,7 @@ int sqliteVdbeExec(
       /* Opcode: KeyAsData P1 P2 *
       **
       ** Turn the key-as-data mode for cursor P1 either on (if P2==1) or
-      ** off (if P2==0).  In key-as-data mode, the OP_Fetch opcode pulls
+      ** off (if P2==0).  In key-as-data mode, the OP_Field opcode pulls
       ** data off of the key rather than the data.  This is useful for
       ** processing compound selects.
       */
