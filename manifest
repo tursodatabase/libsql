@@ -1,5 +1,5 @@
-C Check\sfor\smiscompiled\sTcl\s(CVS\s205)
-D 2001-04-06T16:15:28
+C Version\s1.0.30\s(CVS\s473)
+D 2001-04-06T16:20:00
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 25791375ce9f4f5b57d4cab67f0d58d772c96451
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -94,7 +94,7 @@ F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 06f81c401f79a04f2c5ebfb97e7c176225c0aef2
 F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P 735d8b5c13b5e2602b37940377fced098be210c1
+P 5b65746383c509048c80b7aff536d1204fd1d127
 R f07b6ba51358f496162e586514c5cd88
 U drh
-Z b32a92625a91eb078feff33335193f47
+Z ad8ecefbe3c2d25277befbe640696a09
