@@ -184,7 +184,7 @@ A hot journal is created when a process is in the middle of a database
 update and a program or operating system crash or power failure prevents 
 the update from completing.
 Hot journals are an exception condition. 
-Hot journals exist to facility recovery from crashes and power failures.
+Hot journals exist to recover from crashes and power failures.
 If everything is working correctly 
 (that is, if there are no crashes or power failures)
 you will never get a hot journal.
