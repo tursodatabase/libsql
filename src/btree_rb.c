@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree_rb.c,v 1.11 2003/06/01 01:10:33 drh Exp $
+** $Id: btree_rb.c,v 1.12 2003/06/09 11:53:13 drh Exp $
 **
 ** This file implements an in-core database using Red-Black balanced
 ** binary trees.
@@ -1325,7 +1325,6 @@ static int memRbtreeRollbackCkpt(Rbtree* tree)
   tree->pCheckRollback = 0;
   tree->pCheckRollbackTail = 0;
   tree->eTransState = TRANS_INTRANSACTION;
-  return SQLITE_OK;
   return SQLITE_OK;
 }
 

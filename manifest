@@ -1,5 +1,5 @@
-C Documented\sSQL\sfns\sIFNULL()\sand\sNULLIF().\s(CVS\s1015)
-D 2003-06-08T08:36:34
+C Remove\sredundant\s"return"\sstatement\sfrom\sbtree_rb.c.\s(CVS\s1016)
+D 2003-06-09T11:53:13
 F Makefile.in 98a14dc13a78ca0e12007e974c93aeb098db7f68
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -23,7 +23,7 @@ F src/attach.c 0f0dd4b0d2dbd7432a46bed74114c7cc8de4c8e3
 F src/auth.c c8f50d4507e37779d96ff3c55417bc2b612dfed6
 F src/btree.c 6656625305e5e99adda818a772bf7432a7b15d97
 F src/btree.h 9b7c09f1e64274d7bb74a57bbfc63778f67b1048
-F src/btree_rb.c 7fc5930cdd0df739b5ad7f4d63fd913758caae8a
+F src/btree_rb.c f8c2cb0fc276c87f685dd7e61ee78372a9bc2f4d
 F src/build.c 936d10b33b326546280690bee7f20efaf19a6fe8
 F src/copy.c 9e47975ea96751c658bcf1a0c4f0bb7c6ee61e73
 F src/delete.c 0f81e6799c089487615d38e042a2de4d2d6192bc
@@ -165,7 +165,7 @@ F www/speed.tcl 296cc5632d069b56d3ef5409ca0df90f486c10fb
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 14fdcc7fe8a60a6ba8584903636db8dc37eef26a
-P 7d3405b95bae74e0c476a7bdf708ca518723eaf7
-R 70e6f0a74b3b545144652db7473f3b65
-U jplyon
-Z 0185e23f4d75ba1076c2f3f0760f318d
+P 190252fee0a86eb6f8c24a2402e36482e3bd514c
+R 4b3b942c303798c00a8f192b881ce228
+U drh
+Z c6a76e9f9b368cd131d46f27b2edd6d2
