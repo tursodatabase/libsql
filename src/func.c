@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.43.2.2 2004/07/18 21:14:05 drh Exp $
+** $Id: func.c,v 1.43.2.3 2004/07/18 23:03:11 drh Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -157,20 +157,20 @@ static void roundFunc(sqlite_func *context, int argc, const char **argv){
 ** Implementation of the upper() and lower() SQL functions.
 */
 static void upperFunc(sqlite_func *context, int argc, const char **argv){
-  char *z;
+  unsigned char *z;
   int i;
   if( argc<1 || argv[0]==0 ) return;
-  z = sqlite_set_result_string(context, argv[0], -1);
+  z = (unsigned char*)sqlite_set_result_string(context, argv[0], -1);
   if( z==0 ) return;
   for(i=0; z[i]; i++){
     if( islower(z[i]) ) z[i] = toupper(z[i]);
   }
 }
 static void lowerFunc(sqlite_func *context, int argc, const char **argv){
-  char *z;
+  unsigned char *z;
   int i;
   if( argc<1 || argv[0]==0 ) return;
-  z = sqlite_set_result_string(context, argv[0], -1);
+  z = (unsigned char*)sqlite_set_result_string(context, argv[0], -1);
   if( z==0 ) return;
   for(i=0; z[i]; i++){
     if( isupper(z[i]) ) z[i] = tolower(z[i]);
