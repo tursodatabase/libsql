@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.267 2004/06/02 00:41:09 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.268 2004/06/04 06:22:02 danielk1977 Exp $
 */
 #include "config.h"
 #include "sqlite3.h"
@@ -264,6 +264,7 @@ typedef struct AuthContext AuthContext;
 typedef struct KeyClass KeyClass;
 typedef struct CollSeq CollSeq;
 typedef struct KeyInfo KeyInfo;
+typedef struct BusyHandler BusyHandler;
 
 
 /*
@@ -327,6 +328,20 @@ struct Db {
 #define TEXT_Utf16         (SQLITE_BIGENDIAN?TEXT_Utf16be:TEXT_Utf16le)
 
 /*
+** An instance of the following structure is used to store the busy-handler
+** callback for a given sqlite handle. 
+**
+** The sqlite.busyHandler member of the sqlite struct contains the busy
+** callback for the database handle. Each pager opened via the sqlite
+** handle is passed a pointer to sqlite.busyHandler. The busy-handler
+** callback is currently invoked only from within pager.c.
+*/
+struct BusyHandler {
+  int (*xFunc)(void *,const char*,int);  /* The busy callback */
+  void *pArg;                            /* First arg to busy callback */
+};
+
+/*
 ** Each database is an instance of the following structure.
 **
 ** The sqlite.temp_store determines where temporary database files
@@ -369,8 +384,7 @@ struct sqlite {
   int next_cookie;              /* Next value of aDb[0].schema_cookie */
   int cache_size;               /* Number of pages to use in the cache */
   int nTable;                   /* Number of tables in the database */
-  void *pBusyArg;               /* 1st Argument to the busy callback */
-  int (*xBusyCallback)(void *,const char*,int);  /* The busy callback */
+  BusyHandler busyHandler;      /* Busy callback */
   void *pCommitArg;             /* Argument to xCommitCallback() */   
   int (*xCommitCallback)(void*);/* Invoked at every commit. */
   Hash aFunc;                   /* All functions that can be in SQL exprs */

@@ -15,7 +15,7 @@
 ** is used for testing the SQLite routines for converting between
 ** the various supported unicode encodings.
 **
-** $Id: test5.c,v 1.7 2004/06/02 00:41:10 drh Exp $
+** $Id: test5.c,v 1.8 2004/06/04 06:22:02 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"         /* to get SQLITE_BIGENDIAN */
@@ -248,7 +248,7 @@ int Sqlitetest5_Init(Tcl_Interp *interp){
     { "sqlite_utf8to16be",       (Tcl_ObjCmdProc*)sqlite_utf8to16be  },
     { "sqlite_utf16to16le",      (Tcl_ObjCmdProc*)sqlite_utf16to16le },
     { "sqlite_utf16to16be",      (Tcl_ObjCmdProc*)sqlite_utf16to16be },
-    { "binarize",                (Tcl_ObjCmdProc*)binarize }
+    { "binarize",                (Tcl_ObjCmdProc*)binarize },
   };
   int i;
   for(i=0; i<sizeof(aCmd)/sizeof(aCmd[0]); i++){

@@ -13,7 +13,7 @@
 ** subsystem.  See comments in the source code for a detailed description
 ** of what each interface routine does.
 **
-** @(#) $Id: btree.h,v 1.52 2004/06/03 16:08:41 danielk1977 Exp $
+** @(#) $Id: btree.h,v 1.53 2004/06/04 06:22:01 danielk1977 Exp $
 */
 #ifndef _BTREE_H_
 #define _BTREE_H_
@@ -30,7 +30,13 @@ typedef struct Btree Btree;
 typedef struct BtCursor BtCursor;
 
 
-int sqlite3BtreeOpen(const char *zFilename, Btree **, int nCache, int flags);
+int sqlite3BtreeOpen(
+  const char *zFilename, 
+  Btree **, 
+  int nCache, 
+  int flags,
+  void *pBusyHandler
+);
 
 /* The flags parameter to sqlite3BtreeOpen can be the bitwise or of the
 ** following values.

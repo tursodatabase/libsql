@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.110 2004/06/03 16:08:42 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.111 2004/06/04 06:22:01 danielk1977 Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -213,6 +213,7 @@ struct Pager {
   PgHdr *pStmt;               /* List of pages in the statement subjournal */
   PgHdr *aHash[N_PG_HASH];    /* Hash table to map page number of PgHdr */
   int nMaster;                /* Number of bytes to reserve for master j.p */
+  BusyHandler *pBusyHandler;  /* Pointer to sqlite.busyHandler */
 };
 
 /*
@@ -1080,7 +1081,8 @@ int sqlite3pager_open(
   const char *zFilename,   /* Name of the database file to open */
   int mxPage,              /* Max number of in-memory cache pages */
   int nExtra,              /* Extra bytes append to each in-memory page */
-  int useJournal           /* TRUE to use a rollback journal on this file */
+  int useJournal,          /* TRUE to use a rollback journal on this file */
+  void  *pBusyHandler      /* Busy callback */
 ){
   Pager *pPager;
   char *zFullPathname;
@@ -1161,6 +1163,7 @@ int sqlite3pager_open(
   pPager->pFirstSynced = 0;
   pPager->pLast = 0;
   pPager->nExtra = nExtra;
+  pPager->pBusyHandler = (BusyHandler *)pBusyHandler;
   memset(pPager->aHash, 0, sizeof(pPager->aHash));
   *ppPager = pPager;
   return SQLITE_OK;
@@ -1603,9 +1606,21 @@ int sqlite3pager_get(Pager *pPager, Pgno pgno, void **ppPage){
   ** on the database file.
   */
   if( pPager->nRef==0 && !pPager->memDb ){
-    rc = sqlite3OsReadLock(&pPager->fd);
-    if( rc!=SQLITE_OK ){
-      return rc;
+    int busy = 1;
+    while( busy ){
+      rc = sqlite3OsReadLock(&pPager->fd);
+      if( rc==SQLITE_BUSY && 
+          pPager->pBusyHandler && 
+          pPager->pBusyHandler->xFunc && 
+          pPager->pBusyHandler->xFunc(pPager->pBusyHandler->pArg, "", busy++)
+      ){
+        rc = SQLITE_OK;
+      }else{
+        busy = 0;
+      }
+      if( rc!=SQLITE_OK ){
+        return rc;
+      }
     }
     pPager->state = SQLITE_READLOCK;
 
@@ -2004,9 +2019,21 @@ int sqlite3pager_begin(void *pData, int nMaster){
       pPager->state = SQLITE_WRITELOCK;
       pPager->origDbSize = pPager->dbSize;
     }else{
-      rc = sqlite3OsWriteLock(&pPager->fd);
-      if( rc!=SQLITE_OK ){
-        return rc;
+      int busy = 1;
+      while( busy ){
+        rc = sqlite3OsWriteLock(&pPager->fd);
+        if( rc==SQLITE_BUSY && 
+            pPager->pBusyHandler && 
+            pPager->pBusyHandler->xFunc && 
+            pPager->pBusyHandler->xFunc(pPager->pBusyHandler->pArg, "", busy++)
+        ){
+          rc = SQLITE_OK;
+        }else{
+          busy = 0;
+        }
+        if( rc!=SQLITE_OK ){
+          return rc;
+        }
       }
       pPager->nMaster = nMaster;
       pPager->state = SQLITE_WRITELOCK;

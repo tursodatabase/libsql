@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.356 2004/06/03 16:08:42 danielk1977 Exp $
+** $Id: vdbe.c,v 1.357 2004/06/04 06:22:02 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2281,40 +2281,27 @@ case OP_AutoCommit: {
 ** If P2 is zero, then a read-lock is obtained on the database file.
 */
 case OP_Transaction: {
-  int busy = 1;
   int i = pOp->p1;
   Btree *pBt;
 
   assert( i>=0 && i<db->nDb );
   pBt = db->aDb[i].pBt;
 
-  while( pBt && busy ){
+  if( pBt ){
     int nMaster = strlen(sqlite3BtreeGetFilename(db->aDb[0].pBt))+11;
-    rc = sqlite3BtreeBeginTrans(db->aDb[i].pBt, pOp->p2, nMaster);
-    switch( rc ){
-      case SQLITE_BUSY: {
-        if( db->xBusyCallback==0 ){
+    rc = sqlite3BtreeBeginTrans(pBt, pOp->p2, nMaster);
+    if( rc==SQLITE_BUSY ){
+        if( db->busyHandler.xFunc==0 ){
           p->pc = pc;
           p->rc = SQLITE_BUSY;
           p->pTos = pTos;
           return SQLITE_BUSY;
-        }else if( (*db->xBusyCallback)(db->pBusyArg, "", busy++)==0 ){
+        }else{
           sqlite3SetString(&p->zErrMsg, sqlite3ErrStr(rc), (char*)0);
-          busy = 0;
         }
-        break;
-      }
-      case SQLITE_READONLY: {
-        rc = SQLITE_OK;
-        /* Fall thru into the next case */
-      }
-      case SQLITE_OK: {
-        busy = 0;
-        break;
-      }
-      default: {
-        goto abort_due_to_error;
-      }
+    }
+    if( rc!=SQLITE_OK && rc!=SQLITE_READONLY && rc!=SQLITE_BUSY ){
+      goto abort_due_to_error;
     }
   }
   break;
@@ -2445,7 +2432,6 @@ case OP_VerifyCookie: {
 */
 case OP_OpenRead:
 case OP_OpenWrite: {
-  int busy = 0;
   int i = pOp->p1;
   int p2 = pOp->p2;
   int wrFlag;
@@ -2478,49 +2464,44 @@ case OP_OpenWrite: {
   sqlite3VdbeCleanupCursor(pCur);
   pCur->nullRow = 1;
   if( pX==0 ) break;
-  do{
-    /* We always provide a key comparison function.  If the table being
-    ** opened is of type INTKEY, the comparision function will be ignored. */
-    rc = sqlite3BtreeCursor(pX, p2, wrFlag,
-             sqlite3VdbeRecordCompare, pOp->p3,
-             &pCur->pCursor);
-    pCur->pKeyInfo = (KeyInfo*)pOp->p3;
-    if( pCur->pKeyInfo ){
-      pCur->pIncrKey = &pCur->pKeyInfo->incrKey;
-      pCur->pKeyInfo->enc = p->db->enc;
-    }else{
-      pCur->pIncrKey = &pCur->bogusIncrKey;
+  /* We always provide a key comparison function.  If the table being
+  ** opened is of type INTKEY, the comparision function will be ignored. */
+  rc = sqlite3BtreeCursor(pX, p2, wrFlag,
+           sqlite3VdbeRecordCompare, pOp->p3,
+           &pCur->pCursor);
+  pCur->pKeyInfo = (KeyInfo*)pOp->p3;
+  if( pCur->pKeyInfo ){
+    pCur->pIncrKey = &pCur->pKeyInfo->incrKey;
+    pCur->pKeyInfo->enc = p->db->enc;
+  }else{
+    pCur->pIncrKey = &pCur->bogusIncrKey;
+  }
+  switch( rc ){
+    case SQLITE_BUSY: {
+      if( db->busyHandler.xFunc ){
+        p->pc = pc;
+        p->rc = SQLITE_BUSY;
+        p->pTos = &pTos[1 + (pOp->p2<=0)]; /* Operands must remain on stack */
+        return SQLITE_BUSY;
+      }else{
+        sqlite3SetString(&p->zErrMsg, sqlite3ErrStr(rc), (char*)0);
+      }
+      break;
     }
-    switch( rc ){
-      case SQLITE_BUSY: {
-        if( db->xBusyCallback==0 ){
-          p->pc = pc;
-          p->rc = SQLITE_BUSY;
-          p->pTos = &pTos[1 + (pOp->p2<=0)]; /* Operands must remain on stack */
-          return SQLITE_BUSY;
-        }else if( (*db->xBusyCallback)(db->pBusyArg, pOp->p3, ++busy)==0 ){
-          sqlite3SetString(&p->zErrMsg, sqlite3ErrStr(rc), (char*)0);
-          busy = 0;
-        }
-        break;
-      }
-      case SQLITE_OK: {
-        int flags = sqlite3BtreeFlags(pCur->pCursor);
-        pCur->intKey = (flags & BTREE_INTKEY)!=0;
-        pCur->zeroData = (flags & BTREE_ZERODATA)!=0;
-        busy = 0;
-        break;
-      }
-      case SQLITE_EMPTY: {
-        rc = SQLITE_OK;
-        busy = 0;
-        break;
-      }
-      default: {
-        goto abort_due_to_error;
-      }
+    case SQLITE_OK: {
+      int flags = sqlite3BtreeFlags(pCur->pCursor);
+      pCur->intKey = (flags & BTREE_INTKEY)!=0;
+      pCur->zeroData = (flags & BTREE_ZERODATA)!=0;
+      break;
     }
-  }while( busy );
+    case SQLITE_EMPTY: {
+      rc = SQLITE_OK;
+      break;
+    }
+    default: {
+      goto abort_due_to_error;
+    }
+  }
   break;
 }
 
