@@ -1,5 +1,5 @@
-C Do\snot\sset\snew\serror\smessages\safter\sa\smalloc\sfailure.\s(CVS\s1758)
-D 2004-06-29T10:53:55
+C Comment\sout\sunused\sroutine\sin\sos_unix.c.\s(CVS\s1759)
+D 2004-06-29T11:08:20
 F Makefile.in cb7a9889c38723f72b2506c4236ff30a05ff172b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -46,7 +46,7 @@ F src/os_mac.c 3d31e26be1411acfb7961033098631b4f3486fdf
 F src/os_mac.h 51d2445f47e182ed32d3bd6937f81070c6fd9bd4
 F src/os_test.c ef353f73a2ad85a239d7a77c4a5df2e1377f3848
 F src/os_test.h 6a26a4978492e4bbdbf385554958418ff02db162
-F src/os_unix.c 8acbb7190cd6d91d076bd51da902daf2874bfbd2
+F src/os_unix.c 7df6ae05faa5b84164193d3694cb71b66661bbf3
 F src/os_unix.h 00c1f82b526ab2fb7ee5ddd555ea4ed68363c93a
 F src/os_win.c 84549f6cc815237533c5d0eb3697352b03478d96
 F src/os_win.h babd4e912967c6b09088cfe38a45e8005a07ba44
@@ -231,7 +231,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 157db33e09399f31bcdaf58ea90fe618fefcd9bd
-R efbd6afb1b44337868e9f35c6c978aeb
+P f46251ee0a654e9aa927df31968f7792f771caa9
+R d4d6b611d4afd22aee43dded3239ed4c
 U drh
-Z 9bb08bb81ba05e89f979e5bf3a48c272
+Z 15420c5c1d1b1c4fee403f219d0530a7

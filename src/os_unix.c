@@ -1207,6 +1207,7 @@ int sqlite3OsCurrentTime(double *prNow){
   return 0;
 }
 
+#if 0 /* NOT USED */
 /*
 ** Find the time that the file was last modified.  Write the
 ** modification time and date as a Julian Day number into *prNow and
@@ -1224,5 +1225,6 @@ int sqlite3OsFileModTime(OsFile *id, double *prNow){
   }
   return rc;
 }
+#endif /* NOT USED */
 
 #endif /* OS_UNIX */
