@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.93 2004/05/28 11:37:28 danielk1977 Exp $
+** $Id: util.c,v 1.94 2004/05/28 16:00:22 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -393,7 +393,7 @@ void sqlite3SetNString(char **pz, ...){
   while( (z = va_arg(ap, const char*))!=0 ){
     n = va_arg(ap, int);
     if( n<=0 ) n = strlen(z);
-    strncpy(zResult, z, n);
+    memcpy(zResult, z, n);
     zResult += n;
   }
   *zResult = 0;
@@ -1330,7 +1330,3 @@ void *sqlite3HexToBlob(const char *z){
   }
   return zBlob;
 }
-
-
-
-

@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.196 2004/05/28 12:33:31 danielk1977 Exp $
+** $Id: build.c,v 1.197 2004/05/28 16:00:22 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1875,7 +1875,7 @@ void sqlite3CreateIndex(
     }
     sqlite3VdbeAddOp(v, OP_String, 0, 0);
     if( pStart && pEnd ){
-      sqlite3VdbeChangeP3(v, -1, "CREATE INDEX ", n);
+      sqlite3VdbeChangeP3(v, -1, "CREATE INDEX ", P3_STATIC);
       sqlite3VdbeAddOp(v, OP_String, 0, 0);
       n = Addr(pEnd->z) - Addr(pName->z) + 1;
       sqlite3VdbeChangeP3(v, -1, pName->z, n);
@@ -1890,17 +1890,8 @@ void sqlite3CreateIndex(
       sqlite3VdbeAddOp(v, OP_SetNumColumns, 2, pTab->nCol);
       lbl2 = sqlite3VdbeMakeLabel(v);
       sqlite3VdbeAddOp(v, OP_Rewind, 2, lbl2);
-      lbl1 = sqlite3VdbeAddOp(v, OP_Recno, 2, 0);
-      for(i=0; i<pIndex->nColumn; i++){
-        int iCol = pIndex->aiColumn[i];
-        if( pTab->iPKey==iCol ){
-          sqlite3VdbeAddOp(v, OP_Dup, i, 0);
-        }else{
-          sqlite3VdbeAddOp(v, OP_Column, 2, iCol);
-        }
-      }
-      sqlite3VdbeAddOp(v, OP_MakeIdxKey, pIndex->nColumn, 0);
-      sqlite3IndexAffinityStr(v, pIndex);
+      lbl1 = sqlite3VdbeCurrentAddr(v);
+      sqlite3GenerateIndexKey(v, pIndex, 2);
       sqlite3VdbeOp3(v, OP_IdxPut, 1, pIndex->onError!=OE_None,
                       "indexed columns are not unique", P3_STATIC);
       sqlite3VdbeAddOp(v, OP_Next, 2, lbl1);

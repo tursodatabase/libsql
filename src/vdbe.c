@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.344 2004/05/28 11:37:28 danielk1977 Exp $
+** $Id: vdbe.c,v 1.345 2004/05/28 16:00:22 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1869,7 +1869,11 @@ case OP_Column: {
     aType = pC->aType;
     aOffset = pC->aOffset;
   }else{
-    aType = sqliteMallocRaw( 2*nField*sizeof(aType) );
+    if( pC && pC->aType ){
+      aType = pC->aType;
+    }else{
+      aType = sqliteMallocRaw( 2*nField*sizeof(aType) );
+    }
     aOffset = &aType[nField];
     if( aType==0 ){
       goto no_mem;
@@ -1944,6 +1948,7 @@ case OP_Column: {
     zData = sMem.z;
   }
   sqlite3VdbeSerialGet(zData, aType[p2], pTos);
+  sqlite3VdbeMemMakeWriteable(pTos);
   pTos->enc = db->enc;
   if( rc!=SQLITE_OK ){
     goto abort_due_to_error;
@@ -2049,6 +2054,7 @@ case OP_MakeRecord: {
   int addRowid;      /* True to append a rowid column at the end */
   u32 serial_type;   /* Type field */
   int containsNull;  /* True if any of the data fields are NULL */
+  char zTemp[NBFS];  /* Space to hold small records */
 
   Mem *pData0 = &pTos[1-nField];
   assert( pData0>=p->aStack );
@@ -2094,9 +2100,13 @@ case OP_MakeRecord: {
   }
 
   /* Allocate space for the new record. */
-  zNewRecord = sqliteMallocRaw(nByte);
-  if( !zNewRecord ){
-    goto no_mem;
+  if( nByte>sizeof(zTemp) ){
+    zNewRecord = sqliteMallocRaw(nByte);
+    if( !zNewRecord ){
+      goto no_mem;
+    }
+  }else{
+    zNewRecord = zTemp;
   }
 
   /* Write the record */
@@ -2131,8 +2141,16 @@ case OP_MakeRecord: {
   }
   pTos++;
   pTos->n = nByte;
-  pTos->z = zNewRecord;
-  pTos->flags = MEM_Blob | MEM_Dyn;
+  if( nByte<=sizeof(zTemp) ){
+    assert( zNewRecord==zTemp );
+    pTos->z = pTos->zShort;
+    memcpy(pTos->zShort, zTemp, nByte);
+    pTos->flags = MEM_Blob | MEM_Short;
+  }else{
+    assert( zNewRecord!=zTemp );
+    pTos->z = zNewRecord;
+    pTos->flags = MEM_Blob | MEM_Dyn;
+  }
 
   /* If P2 is non-zero, and if the key contains a NULL value, and if this
   ** was an OP_MakeIdxKey instruction, not OP_MakeKey, jump to P2.

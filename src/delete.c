@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle DELETE FROM statements.
 **
-** $Id: delete.c,v 1.70 2004/05/26 10:11:05 danielk1977 Exp $
+** $Id: delete.c,v 1.71 2004/05/28 16:00:22 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -379,17 +379,34 @@ void sqlite3GenerateRowIndexDelete(
   for(i=1, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){
     int j;
     if( aIdxUsed!=0 && aIdxUsed[i-1]==0 ) continue;
-    sqlite3VdbeAddOp(v, OP_Recno, iCur, 0);
-    for(j=0; j<pIdx->nColumn; j++){
-      int idx = pIdx->aiColumn[j];
-      if( idx==pTab->iPKey ){
-        sqlite3VdbeAddOp(v, OP_Dup, j, 0);
-      }else{
-        sqlite3VdbeAddOp(v, OP_Column, iCur, idx);
-      }
-    }
-    sqlite3VdbeAddOp(v, OP_MakeIdxKey, pIdx->nColumn, 0);
-    sqlite3IndexAffinityStr(v, pIdx);
+    sqlite3GenerateIndexKey(v, pIdx, iCur);
     sqlite3VdbeAddOp(v, OP_IdxDelete, iCur+i, 0);
   }
+}
+
+/*
+** Generate code that will assemble an index key and put it on the top
+** of the tack.  The key with be for index pIdx which is an index on pTab.
+** iCur is the index of a cursor open on the pTab table and pointing to
+** the entry that needs indexing.
+*/
+void sqlite3GenerateIndexKey(
+  Vdbe *v,           /* Generate code into this VDBE */
+  Index *pIdx,       /* The index for which to generate a key */
+  int iCur           /* Cursor number for the pIdx->pTable table */
+){
+  int j;
+  Table *pTab = pIdx->pTable;
+
+  sqlite3VdbeAddOp(v, OP_Recno, iCur, 0);
+  for(j=0; j<pIdx->nColumn; j++){
+    int idx = pIdx->aiColumn[j];
+    if( idx==pTab->iPKey ){
+      sqlite3VdbeAddOp(v, OP_Dup, j, 0);
+    }else{
+      sqlite3VdbeAddOp(v, OP_Column, iCur, idx);
+    }
+  }
+  sqlite3VdbeAddOp(v, OP_MakeIdxKey, pIdx->nColumn, 0);
+  sqlite3IndexAffinityStr(v, pIdx);
 }

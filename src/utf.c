@@ -12,7 +12,7 @@
 ** This file contains routines used to translate between UTF-8, 
 ** UTF-16, UTF-16BE, and UTF-16LE.
 **
-** $Id: utf.c,v 1.12 2004/05/27 09:28:43 danielk1977 Exp $
+** $Id: utf.c,v 1.13 2004/05/28 16:00:22 drh Exp $
 **
 ** Notes on UTF-8:
 **
@@ -25,9 +25,9 @@
 **
 ** Notes on UTF-16:  (with wwww+1==uuuuu)
 **
-**      Word-0            Word-1             Value
-**  110110wwwwxxxxxx 110111yyyyyyyyyy        000uuuuu xxxxxxyy yyyyyyyy
-**  xxxxxxxxyyyyyyyy                         00000000 xxxxxxxx yyyyyyyy
+**      Word-0               Word-1          Value
+**  110110ww wwzzzzyy   110111yy yyxxxxxx    000uuuuu zzzzyyyy yyxxxxxx
+**  zzzzyyyy yyxxxxxx                        00000000 zzzzyyyy yyxxxxxx
 **
 **
 ** BOM or Byte Order Mark:

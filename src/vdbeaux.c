@@ -1219,6 +1219,13 @@ u32 sqlite3VdbeSerialType(Mem *pMem){
 */
 int sqlite3VdbeSerialTypeLen(u32 serial_type){
   assert( serial_type!=0 );
+  if( serial_type>6 ){
+    return (serial_type-12)/2;
+  }else{
+    static u8 aSize[] = { 0, 1, 2, 4, 8, 8, 0, };
+    return aSize[serial_type];
+  }
+#if 0
   switch(serial_type){
     case 6: return 0;                  /* NULL */
     case 1: return 1;                  /* 1 byte integer */
@@ -1229,6 +1236,7 @@ int sqlite3VdbeSerialTypeLen(u32 serial_type){
   }
   assert( serial_type>=12 );
   return ((serial_type-12)>>1);        /* text or blob */
+#endif
 }
 
 /*
@@ -1329,7 +1337,6 @@ int sqlite3VdbeSerialGet(
   }else{
     pMem->flags = MEM_Blob | MEM_Ephem;
   }
-  sqlite3VdbeMemMakeWriteable(pMem);
   return len;
 }
 
