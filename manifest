@@ -1,5 +1,5 @@
-C Perpare\sto\sfork\sSQLite2.0\sdevelop\sinto\sa\sseparate\stree\s(CVS\s184)
-D 2001-02-11T16:58:22
+C Version\s1.0.20\s(CVS\s484)
+D 2001-02-11T17:00:00
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 7efa81e2985b45ba73db27d55b70cc927f5abfd7
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -91,7 +91,7 @@ F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 06f81c401f79a04f2c5ebfb97e7c176225c0aef2
 F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P 6adb6078871114ba19ab601bb94d43ff9e03e43f
+P 4f00e27f17a15504543c5bbb8765c88bacd7257e
 R 3ed34f8024572f0ced21ee5caed411da
 U drh
-Z 56b41e6c371943f084f1d3f2aaab9dea
+Z 78a5bacec5b12e6bbdd9fbd83a1f5831
