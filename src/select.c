@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.227 2005/01/18 17:20:10 drh Exp $
+** $Id: select.c,v 1.228 2005/01/18 17:40:04 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -160,7 +160,9 @@ static void setToken(Token *p, const char *z){
 static void addWhereTerm(
   const char *zCol,        /* Name of the column */
   const Table *pTab1,      /* First table */
+  const char *zAlias1,     /* Alias for first table.  May be NULL */
   const Table *pTab2,      /* Second table */
+  const char *zAlias2,     /* Alias for second table.  May be NULL */
   Expr **ppExpr            /* Add the equality term to this expression */
 ){
   Token dummy;
@@ -171,9 +173,15 @@ static void addWhereTerm(
   setToken(&dummy, zCol);
   pE1a = sqlite3Expr(TK_ID, 0, 0, &dummy);
   pE2a = sqlite3Expr(TK_ID, 0, 0, &dummy);
-  setToken(&dummy, pTab1->zName);
+  if( zAlias1==0 ){
+    zAlias1 = pTab1->zName;
+  }
+  setToken(&dummy, zAlias1);
   pE1b = sqlite3Expr(TK_ID, 0, 0, &dummy);
-  setToken(&dummy, pTab2->zName);
+  if( zAlias2==0 ){
+    zAlias2 = pTab2->zName;
+  }
+  setToken(&dummy, zAlias2);
   pE2b = sqlite3Expr(TK_ID, 0, 0, &dummy);
   pE1c = sqlite3Expr(TK_DOT, pE1b, pE1a, 0);
   pE2c = sqlite3Expr(TK_DOT, pE2b, pE2a, 0);
@@ -241,7 +249,8 @@ static int sqliteProcessJoin(Parse *pParse, Select *p){
       for(j=0; j<pLeftTab->nCol; j++){
         char *zName = pLeftTab->aCol[j].zName;
         if( columnIndex(pRightTab, zName)>=0 ){
-          addWhereTerm(zName, pLeftTab, pRightTab, &p->pWhere);
+          addWhereTerm(zName, pLeftTab, pLeft->zAlias, 
+                              pRightTab, pRight->zAlias, &p->pWhere);
         }
       }
     }
@@ -279,7 +288,8 @@ static int sqliteProcessJoin(Parse *pParse, Select *p){
             "not present in both tables", zName);
           return 1;
         }
-        addWhereTerm(zName, pLeftTab, pRightTab, &p->pWhere);
+        addWhereTerm(zName, pLeftTab, pLeft->zAlias, 
+                            pRightTab, pRight->zAlias, &p->pWhere);
       }
     }
   }
