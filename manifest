@@ -1,5 +1,5 @@
-C Rearrange\smemory\sallocation\sin\ssqlite3VdbeMakeReady\sto\stry\sto\swork\saround\nsome\sbyte-alignment\sproblems\son\sSparc.\s(CVS\s2002)
-D 2004-10-05T17:37:36
+C Fix\sthe\s".import"\scommand\sof\sthe\scommand-line\sshell\sso\sthat\sit\signores\n\\n\sand\s\\r\sat\sthe\send\sof\sa\sline.\s\sTicket\s#939.\s(CVS\s2003)
+D 2004-10-06T14:39:07
 F Makefile.in 78ddc9fca09ab6e3b75a79ecf8d490e34cd0519c
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -59,7 +59,7 @@ F src/pragma.c 4a071a1908aa7fb5930a9d73fd300a6aa2ac07e1
 F src/printf.c 40770e1f553612d13dfc86d236086e69baa62fe1
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c 96b1489111abe9b584be2f2cce26ad6f2d425b4e
-F src/shell.c 0856973c2b94e22664bc43f398ba3fc22d5e080c
+F src/shell.c bfd23e7293f468587c94f8375dfa969ce5dcd253
 F src/sqlite.h.in 9bb76ff9e79ee72e6d529ff6ab1c252d513c3864
 F src/sqliteInt.h 610f25a92c0ce5edf40d12087c643c310e1d7d05
 F src/table.c 25b3ff2b39b7d87e8d4a5da0713d68dfc06cbee9
@@ -250,7 +250,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 0415af325739fd4e0bd4761c889719355a1ec4ff
-R e89157b4e00ba8f0209c420ebd34655f
+P f623d6e74fb5f6f70a22c06278b2bb1b4b7f9b85
+R 50bde6f04c39893f91c23c1114101ce8
 U drh
-Z 2e9077980f61e3df7d6059849a32a371
+Z 9d4f078082e7ca6946a15a06c5a6ac0b

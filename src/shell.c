@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.114 2004/09/24 12:50:03 drh Exp $
+** $Id: shell.c,v 1.115 2004/10/06 14:39:07 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -1039,7 +1039,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
       i = 0;
       lineno++;
       azCol[0] = zLine;
-      for(i=0, z=zLine; *z; z++){
+      for(i=0, z=zLine; *z && *z!='\n' && *z!='\r'; z++){
         if( *z==p->separator[0] && strncmp(z, p->separator, nSep)==0 ){
           *z = 0;
           i++;
