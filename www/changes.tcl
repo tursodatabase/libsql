@@ -26,6 +26,8 @@ chng {2002 Feb * (2.3.3)} {
 <li>The VALUES clause of an INSERT can now contain expressions, including
     scalar SELECT clauses.</li>
 <li>Added support for CREATE TABLE AS SELECT</li>
+<li>Bug fix: Creating and dropping a table all within a single
+    transaction was not working.</li>
 }
 
 chng {2002 Feb 14 (2.3.2)} {

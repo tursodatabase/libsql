@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\sCREATE\sTABLE\sAS.\s(CVS\s377)
-D 2002-02-18T18:30:32
+C Bug\sfix:\sCREATE\sTABLE,\sfollowed\sby\sDROP\sTABLE\swithin\sthe\ssame\stransaction\sis\nworking\snow.\s(CVS\s378)
+D 2002-02-18T22:49:59
 F Makefile.in 9fa4277413bf1d9cf91365f07d4108d7d87ed2af
 F Makefile.template 3372d45f8853afdb70bd30cc6fb50a3cd9069834
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -21,7 +21,7 @@ F sqlite.1 2e2bb0529ef468ade9e4322bd609d0695fb9ded9
 F src/TODO af7f3cab0228e34149cf98e073aa83d45878e7e6
 F src/btree.c 340254ee2ea8b3bd8b60f9768b20382b4909eec0
 F src/btree.h b131caa44354d0305734d87b1c71440b4c436608
-F src/build.c 6643e708b99ee801305584f81550a1e4095b5f97
+F src/build.c 955a0094f4af52dc23293b17349ff1a0ae990eb2
 F src/delete.c f8ad71be53cf18656b6573de65395852fe817f0c
 F src/expr.c 7aff65ea0732b07d36925087ad611019103ad69a
 F src/hash.c 8f7c740ef2eaaa8decfa8751f2be30680b123e46
@@ -33,7 +33,7 @@ F src/os.c f6bc9b7ab530346bb7fef2ed39f2f1f214bc14ea
 F src/os.h a17596ecc7f38a228b83ecdb661fb03ce44726d6
 F src/pager.c d261a3a0b4e96a400ef5432297edec09b041e9c7
 F src/pager.h b28f004e2f5541dc60cc32db01bf80cf4d056283
-F src/parse.y 722bc0b6aacb5a8c365b187bb84e740d802cb51b
+F src/parse.y b82278917959eefd05bd08c90e07a4fa5917ea51
 F src/printf.c 300a90554345751f26e1fc0c0333b90a66110a1d
 F src/random.c f6b36bec5ebd3edb3440224bf5bf811fe4ac9a1b
 F src/select.c d2bbaf4cba97b4c40503d0dc47e8b729e7088e0b
@@ -51,7 +51,7 @@ F src/update.c 95459f94a061860bf8e5716b3426a5ba85c79103
 F src/util.c f31f3d6198a0d1296a16f5a6ceec423a932cbbf6
 F src/vdbe.c 94704a5733db95b78cc902208c5e8e26a784e7f8
 F src/vdbe.h 3d49d22ba9ad14ea0e380bc582ff57347eaddb59
-F src/where.c f4bc12e172823ff9dc55e0c86031460a8043886a
+F src/where.c f79bc3179379b46b131a67ab10713779368dceee
 F test/all.test 7a8a8a7a579ed2bb4d8976d55402f21eacd58049
 F test/bigrow.test 8ab252dba108f12ad64e337b0f2ff31a807ac578
 F test/btree.test 6ab4dc5f595905a276ef588fad3c9236dc07a47b
@@ -108,7 +108,7 @@ F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 72a0c80e9054cc7025a50928d28d9c75c02c2b8b
 F www/c_interface.tcl 82a026b1681757f13b3f62e035f3a31407c1d353
-F www/changes.tcl 46137c6e31a9b805dddaebac048177bc48fee1e7
+F www/changes.tcl 9df7e8208e00cb9e9988f5e239da72d4c46628db
 F www/conflict.tcl 81dd21f9a679e60aae049e9dd8ab53d59570cda2
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
 F www/download.tcl a6d75b8b117cd33dcb090bef7e80d7556d28ebe0
@@ -123,7 +123,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P ec1f3fae6f8cd8466892cd370e1802e492a76e6e
-R 30ea68cf718b068f84b3b8ebb60eb037
+P 78a50971e9adc8739e7888201c79465a40e1a152
+R ec588117a78704be8b36ea36b54ef170
 U drh
-Z 8fa30e75945f1116f95b36a95a26e476
+Z 76dfc832e7d97e5e1ad7b5a7cf543e04

@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.75 2002/02/18 18:30:32 drh Exp $
+** $Id: build.c,v 1.76 2002/02/18 22:49:59 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -899,7 +899,7 @@ void sqliteDropTable(Parse *pParse, Token *pName){
     sqliteBeginWriteOperation(pParse);
     if( !pTable->isTemp ){
       base = sqliteVdbeAddOpList(v, ArraySize(dropTable), dropTable);
-      sqliteVdbeChangeP3(v, base+2, pTable->zName, P3_STATIC);
+      sqliteVdbeChangeP3(v, base+2, pTable->zName, 0);
       changeCookie(db);
       sqliteVdbeChangeP1(v, base+9, db->next_cookie);
     }
