@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi2.test,v 1.14 2004/06/19 00:16:31 drh Exp $
+# $Id: capi2.test,v 1.15 2004/06/21 06:50:29 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -227,11 +227,11 @@ do_test capi2-3.10 {
 
 # Update for v3 - the change has not actually happened until the query is
 # finalized. Is this going to cause trouble for anyone? Lee Nelson maybe?
-do_test capi2-3.10b {sqlite3_changes $DB} {1}
+do_test capi2-3.10b {db changes} {0}
 do_test capi2-3.11 {
   sqlite3_finalize $VM
 } {SQLITE_OK}
-do_test capi2-3.11b {sqlite3_changes $DB} {1}
+do_test capi2-3.11b {db changes} {1}
 do_test capi2-3.12 {
   sqlite3_finalize $VM
 } {SQLITE_MISUSE}
@@ -242,7 +242,11 @@ do_test capi2-3.13 {
        [get_row_values $VM] \
        [get_column_names $VM]
 } {SQLITE_ERROR 0 {} {}}
-do_test capi2-3.13b {db changes} {0}
+
+# Update for v3: Preparing a statement does not affect the change counter.
+# (Test result changes from 0 to 1).
+do_test capi2-3.13b {db changes} {1}
+
 do_test capi2-3.14 {
   list [sqlite3_finalize $VM] [sqlite3_errmsg $DB]
 } {SQLITE_CONSTRAINT {column a is not unique}}
@@ -602,9 +606,16 @@ do_test capi2-7.10 {
     SELECT * FROM t1;
   }
 } {0 4 1 2 3 2 3 4 3 4 5 4 5 6}
+
+# Update for version 3: A SELECT statement no longer resets the change
+# counter (Test result changes from 0 to 4).
 do_test capi2-7.11 {
   sqlite3_changes $DB
-} {0}
+} {4}
+do_test capi2-7.11a {
+  execsql {SELECT count(*) FROM t1}
+} {4}
+
 do_test capi2-7.12 {
   set x [stepsql $DB {EXPLAIN SELECT * FROM t1}]
   lindex $x 0

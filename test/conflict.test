@@ -13,7 +13,7 @@
 # This file implements tests for the conflict resolution extension
 # to SQLite.
 #
-# $Id: conflict.test,v 1.21 2004/05/31 08:55:34 danielk1977 Exp $
+# $Id: conflict.test,v 1.22 2004/06/21 06:50:29 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -383,9 +383,12 @@ do_test conflict-7.7 {
     SELECT count(*) FROM t1;
   }
 } {1}
+
+# Update for version 3: A SELECT statement no longer resets the change
+# counter (Test result changes from 0 to 50).
 do_test conflict-7.7.1 {
   db changes
-} {0}
+} {50}
 
 # Make sure the row count is right for rows that are ignored on
 # an insert.

@@ -645,6 +645,7 @@ void sqlite3VdbeMakeReady(
   p->popStack =  0;
   p->explain |= isExplain;
   p->magic = VDBE_MAGIC_RUN;
+  p->nChange = 0;
 #ifdef VDBE_PROFILE
   {
     int i;
@@ -1247,6 +1248,15 @@ int sqlite3VdbeReset(Vdbe *p, char **pzErrMsg){
     }
   }
 
+  /* If this was an INSERT, UPDATE or DELETE, set the change counter. */
+  if( p->changeCntOn ){
+    if( !xFunc || xFunc==sqlite3BtreeCommitStmt ){
+      sqlite3VdbeSetChanges(db, p->nChange);
+    }else{
+      sqlite3VdbeSetChanges(db, 0);
+    }
+    p->nChange = 0;
+  }
 
   if( p->rc!=SQLITE_OK ){
     sqlite3RollbackInternalChanges(db);
@@ -1355,7 +1365,6 @@ void sqlite3VdbeDelete(Vdbe *p){
       sqliteFree(pOp->p3);
     }
     if( pOp->p3type==P3_VDBEFUNC ){
-      int j;
       VdbeFunc *pVdbeFunc = (VdbeFunc *)pOp->p3;
       sqlite3VdbeDeleteAuxData(pVdbeFunc, -1);
       sqliteFree(pVdbeFunc);
@@ -1755,3 +1764,23 @@ int sqlite3VdbeIdxKeyCompare(
   sqlite3VdbeMemRelease(&m);
   return SQLITE_OK;
 }
+
+/*
+** This routine sets the value to be returned by subsequent calls to
+** sqlite3_changes() on the database handle 'db'. 
+*/
+void sqlite3VdbeSetChanges(sqlite3 *db, int nChange){
+  db->nChange = nChange;
+  db->nTotalChange += nChange;
+}
+
+/*
+** Set a flag in the vdbe to update the change counter when it is finalised
+** or reset.
+*/
+void sqlite3VdbeCountChanges(Vdbe *p){
+  p->changeCntOn = 1;
+}
+
+
+

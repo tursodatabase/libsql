@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.295 2004/06/19 16:06:12 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.296 2004/06/21 06:50:28 danielk1977 Exp $
 */
 #include "config.h"
 #include "sqlite3.h"
@@ -318,16 +318,6 @@ struct Db {
 #define DB_SchemaLoaded    0x0001  /* The schema has been loaded */
 #define DB_UnresetViews    0x0002  /* Some views have defined column names */
 
-#if 0
-/*
-** Possible values for the Db.textEnc field.
-*/
-#define TEXT_Utf8          1
-#define TEXT_Utf16le       2
-#define TEXT_Utf16be       3
-#define TEXT_Utf16         (SQLITE_BIGENDIAN?TEXT_Utf16be:TEXT_Utf16le)
-#endif
-
 #define SQLITE_UTF16NATIVE (SQLITE_BIGENDIAN?SQLITE_UTF16BE:SQLITE_UTF16LE)
 
 /*
@@ -394,13 +384,12 @@ struct sqlite {
   i64 lastRowid;                /* ROWID of most recent insert (see above) */
   i64 priorNewRowid;            /* Last randomly generated ROWID */
   int magic;                    /* Magic number for detect library misuse */
-  int nChange;                  /* Number of rows changed (see above) */
-  int lsChange;                 /* Last statement change count (see above) */
-  int csChange;                 /* Current statement change count (see above) */
-  struct sqlite3InitInfo {       /* Information used during initialization */
-    int iDb;                       /* When back is being initialized */
-    int newTnum;                   /* Rootpage of table being initialized */
-    u8 busy;                       /* TRUE if currently initializing */
+  int nChange;                  /* Value returned by sqlite3_changes() */
+  int nTotalChange;             /* Value returned by sqlite3_total_changes() */
+  struct sqlite3InitInfo {      /* Information used during initialization */
+    int iDb;                    /* When back is being initialized */
+    int newTnum;                /* Rootpage of table being initialized */
+    u8 busy;                    /* TRUE if currently initializing */
   } init;
   struct Vdbe *pVdbe;           /* List of active virtual machines */
   int activeVdbeCnt;            /* Number of vdbes currently executing */
@@ -1050,7 +1039,6 @@ struct AuthContext {
 */
 #define OPFLAG_NCHANGE   1    /* Set to update db->nChange */
 #define OPFLAG_LASTROWID 2    /* Set to update db->lastRowid */
-#define OPFLAG_CSCHANGE  4    /* Set to update db->csChange */
 
 /*
  * Each trigger present in the database schema is stored as an instance of
@@ -1402,6 +1390,7 @@ CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr);
 int sqlite3CheckCollSeq(Parse *, CollSeq *);
 int sqlite3CheckIndexCollSeq(Parse *, Index *);
 int sqlite3CheckObjectName(Parse *, const char *);
+void sqlite3VdbeSetChanges(sqlite3 *, int);
 
 const void *sqlite3ValueText(sqlite3_value*, u8);
 int sqlite3ValueBytes(sqlite3_value*, u8);

@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.89 2004/06/19 08:18:21 danielk1977 Exp $
+** $Id: tclsqlite.c,v 1.90 2004/06/21 06:50:28 danielk1977 Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -69,7 +69,6 @@ struct SqliteDb {
   SqlFunc *pFunc;       /* List of SQL functions */
   SqlCollate *pCollate; /* List of SQL collation functions */
   int rc;               /* Return code of most recent sqlite3_exec() */
-  int nChange;          /* Database changes for the most recent eval */
   Tcl_Obj *pCollateNeeded;  /* Collation needed script */
 };
 
@@ -395,18 +394,19 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     "authorizer",         "busy",                   "changes",
     "close",              "commit_hook",            "complete",
     "errorcode",          "eval",                   "function",
-    "last_insert_rowid",  "last_statement_changes", "onecolumn",
+    "last_insert_rowid",  "onecolumn",
     "progress",           "rekey",                  "timeout",
     "trace",              "collate",                "collation_needed",
-    0                    
+    "total_changes",      0                    
   };
   enum DB_enum {
     DB_AUTHORIZER,        DB_BUSY,                   DB_CHANGES,
     DB_CLOSE,             DB_COMMIT_HOOK,            DB_COMPLETE,
     DB_ERRORCODE,         DB_EVAL,                   DB_FUNCTION,
-    DB_LAST_INSERT_ROWID, DB_LAST_STATEMENT_CHANGES, DB_ONECOLUMN,        
+    DB_LAST_INSERT_ROWID, DB_ONECOLUMN,        
     DB_PROGRESS,          DB_REKEY,                  DB_TIMEOUT,
-    DB_TRACE,             DB_COLLATE,                DB_COLLATION_NEEDED
+    DB_TRACE,             DB_COLLATE,                DB_COLLATION_NEEDED,
+    DB_TOTAL_CHANGES
   };
 
   if( objc<2 ){
@@ -547,43 +547,20 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     break;
   }
 
-  /*
-  **     $db changes
+  /*     $db changes
   **
   ** Return the number of rows that were modified, inserted, or deleted by
-  ** the most recent "eval".
+  ** the most recent INSERT, UPDATE or DELETE statement, not including 
+  ** any changes made by trigger programs.
   */
   case DB_CHANGES: {
     Tcl_Obj *pResult;
-    int nChange;
     if( objc!=2 ){
       Tcl_WrongNumArgs(interp, 2, objv, "");
       return TCL_ERROR;
     }
-    /* nChange = sqlite3_changes(pDb->db); */
-    nChange = pDb->nChange;
     pResult = Tcl_GetObjResult(interp);
-    Tcl_SetIntObj(pResult, nChange);
-    break;
-  }
-
-  /*
-  **     $db last_statement_changes
-  **
-  ** Return the number of rows that were modified, inserted, or deleted by
-  ** the last statment to complete execution (excluding changes due to
-  ** triggers)
-  */
-  case DB_LAST_STATEMENT_CHANGES: {
-    Tcl_Obj *pResult;
-    int lsChange;
-    if( objc!=2 ){
-      Tcl_WrongNumArgs(interp, 2, objv, "");
-      return TCL_ERROR;
-    }
-    lsChange = sqlite3_last_statement_changes(pDb->db);
-    pResult = Tcl_GetObjResult(interp);
-    Tcl_SetIntObj(pResult, lsChange);
+    Tcl_SetIntObj(pResult, sqlite3_changes(pDb->db));
     break;
   }
 
@@ -685,7 +662,6 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       return TCL_ERROR;
     }
 
-    pDb->nChange = 0;
     zSql = Tcl_GetStringFromObj(objv[2], 0);
     while( zSql[0] ){
       int i;
@@ -750,7 +726,6 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
         break;
       }
 
-      pDb->nChange += sqlite3_changes(pDb->db);
       zSql = zLeft;
     }
 
@@ -957,6 +932,23 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     pDb->pCollateNeeded = Tcl_DuplicateObj(objv[2]);
     Tcl_IncrRefCount(pDb->pCollateNeeded);
     sqlite3_collation_needed(pDb->db, pDb, tclCollateNeeded);
+    break;
+  }
+
+  /*
+  **     $db total_changes
+  **
+  ** Return the number of rows that were modified, inserted, or deleted 
+  ** since the database handle was created.
+  */
+  case DB_TOTAL_CHANGES: {
+    Tcl_Obj *pResult;
+    if( objc!=2 ){
+      Tcl_WrongNumArgs(interp, 2, objv, "");
+      return TCL_ERROR;
+    }
+    pResult = Tcl_GetObjResult(interp);
+    Tcl_SetIntObj(pResult, sqlite3_total_changes(pDb->db));
     break;
   }
 

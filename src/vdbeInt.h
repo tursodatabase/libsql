@@ -287,9 +287,8 @@ struct Keylist {
 */
 typedef struct Context Context;
 struct Context {
-  int lastRowid;    /* Last insert rowid (from db->lastRowid) */
-  int lsChange;     /* Last statement change count (from db->lsChange) */
-  int csChange;     /* Current statement change count (from db->csChange) */
+  int lastRowid;    /* Last insert rowid (sqlite3.lastRowid) */
+  int nChange;      /* Statement changes (Vdbe.nChanges)     */
 };
 
 /*
@@ -347,6 +346,8 @@ struct Vdbe {
   u8 resOnStack;          /* True if there are result values on the stack */
   u8 explain;             /* True if EXPLAIN present on SQL command */
   u8 autoCommitOn;        /* True if autocommit got turned on by this program */
+  int nChange;            /* Number of db changes made since last reset */
+  u8 changeCntOn;         /* True to update the change-counter */
 };
 
 /*

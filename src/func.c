@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.74 2004/06/19 17:33:07 drh Exp $
+** $Id: func.c,v 1.75 2004/06/21 06:50:28 danielk1977 Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -273,10 +273,10 @@ static void last_insert_rowid(
 }
 
 /*
-** Implementation of the change_count() SQL function.  The return
-** value is the same as the sqlite3_changes() API function.
+** Implementation of the changes() SQL function.  The return value is the
+** same as the sqlite3_changes() API function.
 */
-static void change_count(
+static void changes(
   sqlite3_context *context,
   int arg,
   sqlite3_value **argv
@@ -286,18 +286,19 @@ static void change_count(
 }
 
 /*
-** Implementation of the last_statement_change_count() SQL function.  The
-** return value is the same as the sqlite3_last_statement_changes() API
-** function.
+** Implementation of the total_changes() SQL function.  The return value is
+** the same as the sqlite3_total_changes() API function.
 */
-static void last_statement_change_count(
-  sqlite3_context *context, 
+static void total_changes(
+  sqlite3_context *context,
   int arg,
   sqlite3_value **argv
 ){
   sqlite *db = sqlite3_user_data(context);
-  sqlite3_result_int(context, sqlite3_last_statement_changes(db));
+  sqlite3_result_int(context, sqlite3_total_changes(db));
 }
+
+#if 0
 
 /*
 ** A LIKE pattern compiles to an instance of the following structure. Refer
@@ -315,9 +316,6 @@ typedef struct LikePattern LikePattern;
 void deleteLike(void *pLike){
   sqliteFree(pLike);
 }
-
-
-#if 0
 /* #define TRACE_LIKE */
 #if defined(TRACE_LIKE) && !defined(NDEBUG)
 char *dumpLike(LikePattern *pLike){
@@ -1041,9 +1039,8 @@ void sqlite3RegisterBuiltinFunctions(sqlite *db){
     { "sqlite_version",              0, 0, SQLITE_UTF8, 0, versionFunc},
     { "quote",                       1, 0, SQLITE_UTF8, 0, quoteFunc  },
     { "last_insert_rowid",           0, 1, SQLITE_UTF8, 0, last_insert_rowid },
-    { "change_count",                0, 1, SQLITE_UTF8, 0, change_count      },
-    { "last_statement_change_count", 0, 1, SQLITE_UTF8, 0, 
-       last_statement_change_count },
+    { "changes",                     0, 1, SQLITE_UTF8, 0, changes    },
+    { "total_changes",               0, 1, SQLITE_UTF8, 0, total_changes },
 #ifdef SQLITE_SOUNDEX
     { "soundex",                     1, 0, SQLITE_UTF8, 0, soundexFunc},
 #endif

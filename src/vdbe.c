@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.381 2004/06/19 15:40:23 drh Exp $
+** $Id: vdbe.c,v 1.382 2004/06/21 06:50:29 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -3066,11 +3066,9 @@ case OP_NewRecno: {
 ** be an integer.  The stack is popped twice by this instruction.
 **
 ** If the OPFLAG_NCHANGE flag of P2 is set, then the row change count is
-** incremented (otherwise not).  If the OPFLAG_CSCHANGE flag is set,
-** then the current statement change count is incremented (otherwise not).
-** If the OPFLAG_LASTROWID flag of P2 is set, then rowid is
-** stored for subsequent return by the sqlite3_last_insert_rowid() function
-** (otherwise it's unmodified).
+** incremented (otherwise not).  If the OPFLAG_LASTROWID flag of P2 is set,
+** then rowid is stored for subsequent return by the
+** sqlite3_last_insert_rowid() function (otherwise it's unmodified).
 */
 /* Opcode: PutStrKey P1 * *
 **
@@ -3115,9 +3113,8 @@ case OP_PutStrKey: {
         zKey = (char*)&iKey;
       }
 
-      if( pOp->p2 & OPFLAG_NCHANGE ) db->nChange++;
+      if( pOp->p2 & OPFLAG_NCHANGE ) p->nChange++;
       if( pOp->p2 & OPFLAG_LASTROWID ) db->lastRowid = pNos->i;
-      if( pOp->p2 & OPFLAG_CSCHANGE ) db->csChange++;
       if( pC->nextRowidValid && pTos->i>=pC->nextRowid ){
         pC->nextRowidValid = 0;
       }
@@ -3169,8 +3166,7 @@ case OP_PutStrKey: {
 ** a record from within an Next loop.
 **
 ** If the OPFLAG_NCHANGE flag of P2 is set, then the row change count is
-** incremented (otherwise not).  If OPFLAG_CSCHANGE flag is set,
-** then the current statement change count is incremented (otherwise not).
+** incremented (otherwise not).
 **
 ** If P1 is a pseudo-table, then this instruction is a no-op.
 */
@@ -3186,19 +3182,22 @@ case OP_Delete: {
     pC->nextRowidValid = 0;
     pC->cacheValid = 0;
   }
-  if( pOp->p2 & OPFLAG_NCHANGE ) db->nChange++;
-  if( pOp->p2 & OPFLAG_CSCHANGE ) db->csChange++;
+  if( pOp->p2 & OPFLAG_NCHANGE ) p->nChange++;
   break;
 }
 
-/* Opcode: SetCounts * * *
+/* Opcode: ResetCount P1 * *
 **
-** Called at end of statement.  Updates lsChange (last statement change count)
-** and resets csChange (current statement change count) to 0.
+** This opcode resets the VMs internal change counter to 0. If P1 is true,
+** then the value of the change counter is copied to the database handle
+** change counter (returned by subsequent calls to sqlite3_changes())
+** before it is reset. This is used by trigger programs.
 */
-case OP_SetCounts: {
-  db->lsChange=db->csChange;
-  db->csChange=0;
+case OP_ResetCount: {
+  if( pOp->p1 ){
+    sqlite3VdbeSetChanges(p->db, p->nChange);
+  }
+  p->nChange = 0;
   break;
 }
 
@@ -3994,9 +3993,12 @@ case OP_ListReset: {
 case OP_ListPush: {
   p->keylistStackDepth++;
   assert(p->keylistStackDepth > 0);
+
+  /* FIX ME: This should be allocated at compile time. */
   p->keylistStack = sqliteRealloc(p->keylistStack, 
           sizeof(Keylist *) * p->keylistStackDepth);
   if( p->keylistStack==0 ) goto no_mem;
+
   p->keylistStack[p->keylistStackDepth - 1] = p->pList;
   p->pList = 0;
   break;
@@ -4028,13 +4030,20 @@ case OP_ListPop: {
 */
 case OP_ContextPush: {
   p->contextStackDepth++;
-  assert(p->contextStackDepth > 0);
+  assert( p->contextStackDepth>0 );
+
+  /* FIX ME: This should be allocated as part of the vdbe at compile-time */
   p->contextStack = sqliteRealloc(p->contextStack, 
           sizeof(Context) * p->contextStackDepth);
   if( p->contextStack==0 ) goto no_mem;
+
   p->contextStack[p->contextStackDepth - 1].lastRowid = p->db->lastRowid;
+  p->contextStack[p->contextStackDepth - 1].nChange = p->nChange;
+
+#if 0
   p->contextStack[p->contextStackDepth - 1].lsChange = p->db->lsChange;
   p->contextStack[p->contextStackDepth - 1].csChange = p->db->csChange;
+#endif
   break;
 }
 
@@ -4048,8 +4057,11 @@ case OP_ContextPop: {
   assert(p->contextStackDepth > 0);
   p->contextStackDepth--;
   p->db->lastRowid = p->contextStack[p->contextStackDepth].lastRowid;
+  p->nChange = p->contextStack[p->contextStackDepth].nChange;
+#if 0
   p->db->lsChange = p->contextStack[p->contextStackDepth].lsChange;
   p->db->csChange = p->contextStack[p->contextStackDepth].csChange;
+#endif
   if( p->contextStackDepth == 0 ){
     sqliteFree(p->contextStack);
     p->contextStack = 0;

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle DELETE FROM statements.
 **
-** $Id: delete.c,v 1.75 2004/06/17 07:53:02 danielk1977 Exp $
+** $Id: delete.c,v 1.76 2004/06/21 06:50:27 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -142,6 +142,7 @@ void sqlite3DeleteFrom(
   if( v==0 ){
     goto delete_from_cleanup;
   }
+  sqlite3VdbeCountChanges(v);
   sqlite3BeginWriteOperation(pParse, row_triggers_exist, pTab->iDb);
 
   /* If we are trying to delete from a view, construct that view into
@@ -271,7 +272,7 @@ void sqlite3DeleteFrom(
       }
 
       /* Delete the row */
-      sqlite3GenerateRowDelete(db, v, pTab, iCur, pParse->trigStack==0);
+      sqlite3GenerateRowDelete(db, v, pTab, iCur, 1);
     }
 
     /* If there are row triggers, close all cursors then invoke
@@ -303,7 +304,6 @@ void sqlite3DeleteFrom(
       pParse->nTab = iCur;
     }
   }
-  sqlite3VdbeAddOp(v, OP_SetCounts, 0, 0);
   sqlite3EndWriteOperation(pParse);
 
   /*
@@ -352,8 +352,7 @@ void sqlite3GenerateRowDelete(
   int addr;
   addr = sqlite3VdbeAddOp(v, OP_NotExists, iCur, 0);
   sqlite3GenerateRowIndexDelete(db, v, pTab, iCur, 0);
-  sqlite3VdbeAddOp(v, OP_Delete, iCur,
-    (count?OPFLAG_NCHANGE:0) | OPFLAG_CSCHANGE);
+  sqlite3VdbeAddOp(v, OP_Delete, iCur, (count?OPFLAG_NCHANGE:0));
   sqlite3VdbeChangeP2(v, addr, sqlite3VdbeCurrentAddr(v));
 }
 

@@ -650,28 +650,34 @@ static int codeTriggerProgram(
       case TK_UPDATE: {
         SrcList *pSrc;
         pSrc = targetSrcList(pParse, pTriggerStep);
+        sqlite3VdbeAddOp(pParse->pVdbe, OP_ResetCount, 0, 0);
         sqlite3VdbeAddOp(pParse->pVdbe, OP_ListPush, 0, 0);
         sqlite3Update(pParse, pSrc,
 		sqlite3ExprListDup(pTriggerStep->pExprList), 
 		sqlite3ExprDup(pTriggerStep->pWhere), orconf);
         sqlite3VdbeAddOp(pParse->pVdbe, OP_ListPop, 0, 0);
+        sqlite3VdbeAddOp(pParse->pVdbe, OP_ResetCount, 1, 0);
         break;
       }
       case TK_INSERT: {
         SrcList *pSrc;
         pSrc = targetSrcList(pParse, pTriggerStep);
+        sqlite3VdbeAddOp(pParse->pVdbe, OP_ResetCount, 0, 0);
         sqlite3Insert(pParse, pSrc,
           sqlite3ExprListDup(pTriggerStep->pExprList), 
           sqlite3SelectDup(pTriggerStep->pSelect), 
           sqlite3IdListDup(pTriggerStep->pIdList), orconf);
+        sqlite3VdbeAddOp(pParse->pVdbe, OP_ResetCount, 1, 0);
         break;
       }
       case TK_DELETE: {
         SrcList *pSrc;
+        sqlite3VdbeAddOp(pParse->pVdbe, OP_ResetCount, 0, 0);
         sqlite3VdbeAddOp(pParse->pVdbe, OP_ListPush, 0, 0);
         pSrc = targetSrcList(pParse, pTriggerStep);
         sqlite3DeleteFrom(pParse, pSrc, sqlite3ExprDup(pTriggerStep->pWhere));
         sqlite3VdbeAddOp(pParse->pVdbe, OP_ListPop, 0, 0);
+        sqlite3VdbeAddOp(pParse->pVdbe, OP_ResetCount, 1, 0);
         break;
       }
       default:
