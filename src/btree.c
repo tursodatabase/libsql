@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.112 2004/05/07 23:50:57 drh Exp $
+** $Id: btree.c,v 1.113 2004/05/08 02:03:23 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1451,7 +1451,7 @@ static int getPayload(
       if( a + offset > ovflSize ){
         a = ovflSize - offset;
       }
-      memcpy(pBuf, &aPayload[offset], a);
+      memcpy(pBuf, &aPayload[offset+4], a);
       offset = 0;
       amt -= a;
       pBuf += a;
@@ -2067,11 +2067,14 @@ static int allocatePage(Btree *pBt, MemPage **ppPage, Pgno *pPgno, Pgno nearby){
       }
       put4byte(&aData[4], n-1);
       *pPgno = get4byte(&aData[8+closest*4]);
-      memcpy(&aData[8+closest*4], &aData[4+closest*n], 4);
+      if( closest<k-1 ){
+        memcpy(&aData[8+closest*4], &aData[4+k*4], 4);
+      }
+      put4byte(&pTrunk->aData[4], k-1);
       rc = getPage(pBt, *pPgno, ppPage);
       releasePage(pTrunk);
       if( rc==SQLITE_OK ){
-        sqlite3pager_dont_rollback(*ppPage);
+        sqlite3pager_dont_rollback((*ppPage)->aData);
         rc = sqlite3pager_write((*ppPage)->aData);
       }
     }
@@ -2195,6 +2198,7 @@ static int fillInCell(
   int nSrc, n, rc;
   int spaceLeft;
   MemPage *pOvfl = 0;
+  MemPage *pToRelease = 0;
   unsigned char *pPrior;
   unsigned char *pPayload;
   Btree *pBt = pPage->pBt;
@@ -2238,10 +2242,13 @@ static int fillInCell(
     if( spaceLeft==0 ){
       rc =  allocatePage(pBt, &pOvfl, &pgnoOvfl, pgnoOvfl);
       if( rc ){
+        releasePage(pToRelease);
         clearCell(pPage, pCell);
         return rc;
       }
       put4byte(pPrior, pgnoOvfl);
+      releasePage(pToRelease);
+      pToRelease = pOvfl;
       pPrior = pOvfl->aData;
       put4byte(pPrior, 0);
       pPayload = &pOvfl->aData[4];
@@ -2253,16 +2260,15 @@ static int fillInCell(
     memcpy(pPayload, pSrc, n);
     nPayload -= n;
     pPayload += n;
+    pSrc += n;
     nSrc -= n;
     spaceLeft -= n;
     if( nSrc==0 ){
       nSrc = nData;
       pSrc = pData;
     }
-    if( pOvfl && (spaceLeft==0 || nPayload==0) ){
-      releasePage(pOvfl);
-    }
   }
+  releasePage(pToRelease);
   return SQLITE_OK;
 }
 

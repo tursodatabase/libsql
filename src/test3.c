@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test3.c,v 1.28 2004/05/07 23:50:57 drh Exp $
+** $Id: test3.c,v 1.29 2004/05/08 02:03:23 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -1020,6 +1020,25 @@ static int btree_cursor_dump(
 }
 
 /*
+** The command is provided for the purpose of setting breakpoints.
+** in regression test scripts.
+**
+** By setting a GDB breakpoint on this procedure and executing the
+** btree_breakpoint command in a test script, we can stop GDB at
+** the point in the script where the btree_breakpoint command is
+** inserted.  This is useful for debugging.
+*/
+static int btree_breakpoint(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  const char **argv      /* Text of each argument */
+){
+  return TCL_OK;
+}
+
+
+/*
 ** Register commands with the TCL interpreter.
 */
 int Sqlitetest3_Init(Tcl_Interp *interp){
@@ -1057,6 +1076,7 @@ int Sqlitetest3_Init(Tcl_Interp *interp){
      { "btree_last",               (Tcl_CmdProc*)btree_last               },
      { "btree_cursor_dump",        (Tcl_CmdProc*)btree_cursor_dump        },
      { "btree_integrity_check",    (Tcl_CmdProc*)btree_integrity_check    },
+     { "btree_breakpoint",         (Tcl_CmdProc*)btree_breakpoint         },
   };
   int i;
 

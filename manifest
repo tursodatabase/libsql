@@ -1,5 +1,5 @@
-C More\sbug\sfixes\sin\sbtree.c.\s(CVS\s1322)
-D 2004-05-07T23:50:57
+C More\sbug\sfixes\sin\sbtree.c.\s(CVS\s1323)
+D 2004-05-08T02:03:23
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -23,7 +23,7 @@ F sqlite.def fc4f5734786fe4743cfe2aa98eb2da4b089edb5f
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F src/attach.c b01db0d3211f673d8e670abf7eaad04591d40d14
 F src/auth.c 4fa3b05bd19445d1c474d6751c4a508d6ea0abe1
-F src/btree.c a5fafa6179c80ca422fea96b4553525648f5535e
+F src/btree.c 1ab8767ab7b2e591b632a6e28e10af97941f4f76
 F src/btree.h ba5d3bfadc3f46f86df525ac07274dc497af856a
 F src/btree_rb.c 99feb3ff835106d018a483a1ce403e5cf9c718bc
 F src/build.c 76fbca30081decd6615dee34b48c927ed5063752
@@ -54,7 +54,7 @@ F src/table.c d845cb101b5afc1f7fea083c99e3d2fa7998d895
 F src/tclsqlite.c 9fe6fc0c20820e9411dfea407635de9b9d3ae0e3
 F src/test1.c 9aa62b89d420e6763b5e7ae89a47f6cf87370477
 F src/test2.c 9d611c45e1b07039a2bd95f5ea73178362b23229
-F src/test3.c cec7eee9e64f95a3d2e4a3c242e081f560f98cf8
+F src/test3.c f0539fb9e605f5b3f8fb71e0c897931b8cff8aa3
 F src/test4.c 6e3e31acfaf21d66420fc35fda5b17dc0000cc8d
 F src/test5.c 3ff0565057b8d23e20092d5c6c0b7cb0d932c51e
 F src/tokenize.c 6676b946fd8825b67ab52140af4fdc57a70bda48
@@ -75,7 +75,7 @@ F test/auth.test 5c4d95cdaf539c0c236e20ce1f71a93e7dde9185
 F test/bigfile.test ea904b853ce2d703b16c5ce90e2b54951bc1ae81
 F test/bigrow.test 8ab252dba108f12ad64e337b0f2ff31a807ac578
 F test/bind.test 56a57043b42c4664ca705f6050e56717a8a6699a
-F test/btree.test c8a548edf00f46ceb5b9db8bd5c250e95b744c48
+F test/btree.test 54caf3f97934711dac9a47ac4119b033dd4caffa
 F test/btree2.test e3b81ec33dc2f89b3e6087436dfe605b870c9080
 F test/btree3.test e597fb59be2ac0ea69c62aaa2064e998e528b665
 F test/btree3rb.test 127efcf5cdfcc352054e7db12622b01cdd8b36ac
@@ -190,7 +190,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P d394b2b217d4d728f9eba397262bf9d36195719e
-R 04bebd7ff9ebbf1a875d441cf21d682e
+P a80939ef714ec884950b4a1f4f809ffa37fdfa59
+R 779830de46b9f26aa95cf36a64b9d819
 U drh
-Z ae2d2cf62d0e5010d2f2e28dfebc946c
+Z a42ee28f0c51193d2a98927224408150
