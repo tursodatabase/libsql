@@ -1,5 +1,5 @@
-C Documentation\supdates.\s\sAdded\sthe\s"distinctive\sfeatures"\spage.\s(CVS\s2383)
-D 2005-03-12T15:55:11
+C Fix\stypo\sin\sdocumentation.\s(CVS\s2384)
+D 2005-03-12T18:03:59
 F Makefile.in 5c00d0037104de2a50ac7647a5f12769795957a3
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -239,7 +239,7 @@ F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
 F www/autoinc.tcl b357f5ba954b046ee35392ce0f884a2fcfcdea06
 F www/c_interface.tcl b51b08591554c16a0c3ef718364a508ac25abc7e
 F www/capi3.tcl 7a7cc225fe02eb7ab861a6019b08baa0014409e1
-F www/capi3ref.tcl aec15cee5db96cd7ad5658b9988ee2730bf58f86
+F www/capi3ref.tcl f395ff43a56ef087407b0e5ba6604f2f8c32cc14
 F www/changes.tcl dbace6eb8ecf10f5e7047d77115feb1742e56610
 F www/common.tcl de758130d54d95d151ea0d17a2ae5b92e1bb01de
 F www/compile.tcl 65b26bdfc964b66c5f0af841718a52f9795ceb05
@@ -274,7 +274,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P b1792ae51666f27bc47cf986937a3caacdd3a9f7
-R ae5ab2337936f8b14b51431c67974b2a
+P 33a0191638a4d6b33422f62487bfb9a0089d3cff
+R 2c190de0bffdef6a18303ed58cf43144
 U drh
-Z 6b216f6f11e1748fb1efcd8b223e6a22
+Z d98e1a0c532519fa0eb91c504a344f0c

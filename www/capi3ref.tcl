@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3ref.tcl,v 1.18 2005/03/11 04:39:58 drh Exp $}
+set rcsid {$Id: capi3ref.tcl,v 1.19 2005/03/12 18:03:59 drh Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -284,7 +284,7 @@ int sqlite3_column_type(sqlite3_stmt*, int iCol);
  case the first argument is a pointer to the SQL statement that is being
  executed (the sqlite_stmt* that was returned from sqlite3_prepare()) and
  the second argument is the index of the column for which information 
- should be returned.  iCol is zero-indexed.  The left-most column as an
+ should be returned.  iCol is zero-indexed.  The left-most column has an
  index of 0.
 
  If the SQL statement is not currently point to a valid row, or if the
