@@ -1,5 +1,5 @@
-C Correctly\shandle\sthe\ssituation\swhere\sa\scollation\ssequence\sis\savailable,\sbut\nnot\sin\sthe\spreferred\sencoding.\s(CVS\s1565)
-D 2004-06-10T14:01:08
+C Add\snew\scontributed\slogo\sTIFF.\s(CVS\s1566)
+D 2004-06-10T22:51:42
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -7,6 +7,7 @@ F VERSION 4490ff094970c0e36eff0cbe2adcdb3a701f6ad6
 F aclocal.m4 7daea4c35e88de30d5a3f6f7a2ab99720e803bbd
 F art/SQLite.eps 9b43cc99cfd2be687d386faea6862ea68d6a72b2
 F art/SQLite.gif 1bbb94484963f1382e27e1c5e86dd0c1061eba2b
+F art/SQLiteLogo3.tiff b9e6bf022ae939bc986cddb8ab99583ca1b02cb3
 F config.guess 2103e94b15dc57112d7b9ee152c6fac5288895b4
 F config.sub 9bf686ec001ae7bc53f5b3563c90c62d4c6d48be
 F configure 6a156e79aaddba2e0e6816972d99989f48cc1699 x
@@ -219,7 +220,7 @@ F www/support.tcl 1801397edd271cc39a2aadd54e701184b5181248
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 67500546ea24fd7a30348960c98cd257dbfa965f
-R 393c5de920a400aa587d8f21dc793fbe
-U danielk1977
-Z 3447cf118fd13bbb0c99c8f654b072b2
+P 49ab4794e1b5be5cbb3b87a65477659762487cf8
+R 248d68f3e0451ccee26e84d45e60226c
+U drh
+Z 5e2791e245ed383e2c61d4a359e961de
