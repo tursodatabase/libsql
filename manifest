@@ -1,5 +1,5 @@
-C Do\snot\sattempt\sto\sread\sthe\sjournal\sfile\son\swindows\sbecause\smanditory\slocking\non\swindows\swill\snot\sallow\sit.\s\sTicket\s#1166.\s(CVS\s2404)
-D 2005-03-20T22:54:56
+C Fix\sfor\sticket\s#1167\s(CVS\s2405)
+D 2005-03-20T23:18:58
 F Makefile.in 5c00d0037104de2a50ac7647a5f12769795957a3
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -98,7 +98,7 @@ F test/autovacuum_ioerr.test 9cf27275ca47b72e188a47c53b61b6d583a01d24
 F test/autovacuum_ioerr2.test 2f8a3fb31f833fd0ca86ad4ad98913c73e807572
 F test/bigfile.test d3744a8821ce9abb8697f2826a3e3d22b719e89f
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
-F test/bind.test 04ff6df093ce9b8108f5f450410a60a910f44340
+F test/bind.test bf1a99cb5471c8ec9958f7af0c8608d824535558
 F test/blob.test fc41fe95bdc10da51f0dee73ce86e75ce1d6eb9d
 F test/btree.test 8aa7424aeec844df990273fe36447e5d7e407261
 F test/btree2.test dbce930b549d5ac883a7d8905c976209ea241db3
@@ -277,7 +277,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P 0471d6b86fd67c22da832beb280b31305c5aa812
-R c2e1c57aacb99b0760384179d479ac8b
+P 1865e0d81c827cc879dde96c6a9f42e740b6a560
+R 972e08d5ec310ce60698cf6b6ea30915
 U drh
-Z fcec3f31f07e212ea322d3208c7712fe
+Z 31ff3bc2cefdbf561966a8371bf8188f

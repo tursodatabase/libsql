@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the sqlite_bind API.
 #
-# $Id: bind.test,v 1.30 2005/02/12 08:59:59 danielk1977 Exp $
+# $Id: bind.test,v 1.31 2005/03/20 23:18:58 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -200,7 +200,9 @@ do_test bind-4.1 {
   sqlite3_bind_double $VM 3 123456789
   sqlite_step $VM N VALUES COLNAMES
   sqlite3_reset $VM
-  execsql {SELECT rowid, * FROM t1}
+  set x [execsql {SELECT rowid, * FROM t1}]
+  regsub {1e-005} $x {1e-05} y
+  set y
 } {1 1234.1234 1e-05 123456789.0}
 do_test bind-4.2 {
   execsql {SELECT typeof(a), typeof(b), typeof(c) FROM t1}
