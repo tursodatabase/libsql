@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.22 2002/02/03 19:06:04 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.23 2002/02/18 03:21:47 drh Exp $}
 
 puts {<html>
 <head>
@@ -782,7 +782,7 @@ information.</p>
 Section SELECT select
 
 Syntax {sql-statement} {
-SELECT <result> FROM <table-list> 
+SELECT <result> FROM <table-list>
 [WHERE <expression>]
 [GROUP BY <expr-list>]
 [HAVING <expression>]
@@ -790,11 +790,14 @@ SELECT <result> FROM <table-list>
 [ORDER BY <sort-expr-list>]
 [LIMIT <integer> [OFFSET <integer>]]
 } {result} {
-STAR | <result-column> [, <result-column>]*
+<result-column> [, <result-column>]*
 } {result-column} {
-<expression> [ [AS] <string> ]
+STAR | <expression> [ [AS] <string> ]
 } {table-list} {
-<table-name> [, <table-name>]*
+<table> [, <table>]*
+} {table} {
+<table-name> [AS <alias>] |
+( <select> ) [AS <alias>]
 } {sort-expr-list} {
 <expr> [<sort-order>] [, <expr> [<sort-order>]]*
 } {sort-order} {
@@ -809,13 +812,15 @@ result of a SELECT is zero or more rows of data where each row
 has a fixed number of columns.  The number of columns in the
 result is specified by the expression list in between the
 SELECT and FROM keywords.  Any arbitrary expression can be used
-as a result.  If the result specification is just}
-puts "[Operator *] then all columns of all tables are used as the result."
-puts {</p>
+as a result.  If a result expression is }
+puts "[Operator *] then all columns of all tables are substituted"
+puts {for that one expression.</p>
 
 <p>The query is executed again one or more tables specified after
 the FROM keyword.  If more than one table is specified, then the
-query is against the join of the various tables.</p>
+query is against the (inner) join of the various tables.  A sub-query
+in parentheses may be substituted for any table name in the FROM clause.
+</p>
 
 <p>The WHERE clause can be used to limit the number of rows over
 which the query operates.  In the current implementation,

@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\ssubqueries\sin\sthe\sFROM\sclause\sof\sa\sSELECT.\s\sStill\sneed\nto\sadd\stests\sfor\sthis\sfeature.\s(CVS\s372)
-D 2002-02-18T01:17:00
+C Test\sand\sdocumentation\supdates\sfor\ssub-queries.\s(CVS\s373)
+D 2002-02-18T03:21:46
 F Makefile.in 9fa4277413bf1d9cf91365f07d4108d7d87ed2af
 F Makefile.template 3372d45f8853afdb70bd30cc6fb50a3cd9069834
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -36,7 +36,7 @@ F src/pager.h b28f004e2f5541dc60cc32db01bf80cf4d056283
 F src/parse.y f7a6d8122b2d65ae8ded78721d0995f47ad277e1
 F src/printf.c 300a90554345751f26e1fc0c0333b90a66110a1d
 F src/random.c f6b36bec5ebd3edb3440224bf5bf811fe4ac9a1b
-F src/select.c 48c14a44da6bc04a6e19f2c5da15b5ea984ede13
+F src/select.c d2bbaf4cba97b4c40503d0dc47e8b729e7088e0b
 F src/shell.c c102dfe388c7618a668c944ff157c49cb48f28e3
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in f57074c84a2c112a5093ba7a9d9636aa9cacc87c
@@ -84,6 +84,7 @@ F test/select2.test ed2c1882857106b85478f54f67000e14966be4c4
 F test/select3.test 9469c332250a75a0ef1771fb5da62dc04ec77f18
 F test/select4.test 29a2ffb187f3d8b6ca42a0a6b619e9cabe12e228
 F test/select5.test c2a6c4a003316ee42cbbd689eebef8fdce0db2ac
+F test/select6.test 510377ac09e3b5de9a164eea7732395c6813f0ca
 F test/sort.test 3b996ce7ca385f9cd559944ac0f4027a23aa546b
 F test/subselect.test 335d3dad8d585726c447dfee8d9c4f7383c76b78
 F test/table.test 3ef4254d62ece31a3872ab11cdaec846f6fa8fd1
@@ -115,14 +116,14 @@ F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/faq.tcl 32cbc134879871604070d4cc3a32e73fb22a35f9
 F www/formatchng.tcl 2d9a35c787823b48d72a5c64bb5414a43e26d5ad
 F www/index.tcl fba075f31a9cbbf13e6adec080e4943db54dbc05
-F www/lang.tcl 58077cb0c383fb312c04bf2ab6a80d7b1c525987
+F www/lang.tcl 4865287af7bb8649d8d985772a13e2f6ec639a3e
 F www/mingw.tcl f1c7c0a7f53387dd9bb4f8c7e8571b7561510ebc
 F www/opcode.tcl bdec8ef9f100dbd87bbef8976c54b88e43fd8ccc
 F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 2336b1eadaedf2556a1988acc7bdf133135154dc
-R b61f3cbe24d03942a9f4eed0442e350a
+P 89ffa9ff132858b62a91df1fb7fe49b2d58c01e7
+R 7ab01fed9c641afece9998e0036b69da
 U drh
-Z 5a9cc96ed308ce034a9e31eeae708204
+Z c93e572aa74a691d85a071d29df82a3d

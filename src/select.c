@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.60 2002/02/18 01:17:00 drh Exp $
+** $Id: select.c,v 1.61 2002/02/18 03:21:46 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -330,6 +330,10 @@ Table *sqliteResultSetOfSelect(Parse *pParse, char *zTabName, Select *pSelect){
       pTab->aCol[i].zName = sqliteStrDup(pEList->a[i].zName);
     }else if( (p=pEList->a[i].pExpr)->span.z && p->span.z[0] ){
       sqliteSetNString(&pTab->aCol[i].zName, p->span.z, p->span.n, 0);
+    }else if( p->op==TK_DOT && p->pRight && p->pRight->token.z &&
+           p->pRight->token.z[0] ){
+      sqliteSetNString(&pTab->aCol[i].zName, 
+           p->pRight->token.z, p->pRight->token.n, 0);
     }else{
       char zBuf[30];
       sprintf(zBuf, "column%d", i+1);
@@ -781,7 +785,6 @@ int sqliteSelect(
   ** errors before this routine starts.
   */
   if( pParse->nErr>0 ) goto select_end;
-  sqliteAggregateInfoReset(pParse);
 
   /* Look up every table in the table list and create an appropriate
   ** columnlist in pEList if there isn't one already.  (The parser leaves
@@ -908,8 +911,28 @@ int sqliteSelect(
     }
   }
 
+  /* Begin generating code.
+  */
+  v = sqliteGetVdbe(pParse);
+  if( v==0 ) goto select_end;
+
+  /* Generate code for all sub-queries in the FROM clause
+  */
+  for(i=0; i<pTabList->nId; i++){
+    int oldNTab;
+    Table *pTab = pTabList->a[i].pTab;
+    if( !pTab->isTransient ) continue;
+    assert( pTabList->a[i].pSelect!=0 );
+    oldNTab = pParse->nTab;
+    pParse->nTab += i+1;
+    sqliteVdbeAddOp(v, OP_OpenTemp, oldNTab+i, 0);
+    sqliteSelect(pParse, pTabList->a[i].pSelect, SRT_Table, oldNTab+i);
+    pParse->nTab = oldNTab;
+  }
+
   /* Do an analysis of aggregate expressions.
   */
+  sqliteAggregateInfoReset(pParse);
   if( isAgg ){
     assert( pParse->nAgg==0 && pParse->iAggCount<0 );
     for(i=0; i<pEList->nExpr; i++){
@@ -934,25 +957,6 @@ int sqliteSelect(
         }
       }
     }
-  }
-
-  /* Begin generating code.
-  */
-  v = sqliteGetVdbe(pParse);
-  if( v==0 ) goto select_end;
-
-  /* Generate code for all sub-queries in the FROM clause
-  */
-  for(i=0; i<pTabList->nId; i++){
-    int oldNTab;
-    Table *pTab = pTabList->a[i].pTab;
-    if( !pTab->isTransient ) continue;
-    assert( pTabList->a[i].pSelect!=0 );
-    oldNTab = pParse->nTab;
-    pParse->nTab += i+1;
-    sqliteVdbeAddOp(v, OP_OpenTemp, oldNTab+i, 0);
-    sqliteSelect(pParse, pTabList->a[i].pSelect, SRT_Table, oldNTab+i);
-    pParse->nTab = oldNTab;
   }
 
   /* Set the limiter
