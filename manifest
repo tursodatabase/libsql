@@ -1,5 +1,5 @@
-C Remove\sunnecessary\s"#include\s<sqliteInt.h>"\sfrom\sthe\sshell\scode.\s(CVS\s971)
-D 2003-05-13T00:24:41
+C A\schange\sto\slemon\srelated\sto\sticket\s#313.\s(CVS\s972)
+D 2003-05-13T00:34:21
 F Makefile.in 004acec253ecdde985c8ecd5b7c9accdb210378f
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -130,7 +130,7 @@ F test/version.test 605fd0d7e7d571370c32b12dbf395b58953de246
 F test/view.test 408fa464da35cf9c1fd9054c988f7e755a1cb0b6
 F test/where.test d719129a052280fe245a2ddcbd09bcc0b8c17ce4
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
-F tool/lemon.c 14fedcde9cf70aa6040b89de164cf8f56f92a4b9
+F tool/lemon.c 93db920de9479657d04ca73e9368db7fc2969990
 F tool/lempar.c 73a991cc3017fb34804250fa901488b5147b3717
 F tool/memleak.awk 16ef9493dcd36146f806e75148f4bb0201a123ec
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e x
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 22d5324073a727627d4294870a441fa2316fb049
-R 9a128b996778255d75786e14cba56097
+P 6e5c497a42e52236edae8d99b4892d4b93db43f5
+R 69a880e1b2d874e61c11bcde90394d82
 U drh
-Z 40b9e2cefeacb83ef238454ec82c959e
+Z 5ae2aae0ce967bbf39ab04b5c6aafdca

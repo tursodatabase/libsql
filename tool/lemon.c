@@ -2906,8 +2906,7 @@ int mhflag;                 /* True if generating makeheaders output */
     for(j=0; stddt[j]; j++){
       hash = hash*53 + stddt[j];
     }
-    if( hash<0 ) hash = -hash;
-    hash = hash%arraysize;
+    hash = (hash & 0x7fffffff)%arraysize;
     while( types[hash] ){
       if( strcmp(types[hash],stddt)==0 ){
         sp->dtnum = hash + 1;
