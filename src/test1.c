@@ -13,19 +13,13 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.102 2004/09/07 16:19:54 drh Exp $
+** $Id: test1.c,v 1.103 2004/09/08 20:13:05 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
 #include "os.h"
 #include <stdlib.h>
 #include <string.h>
-
-#if OS_WIN
-# define PTR_FMT "%x"
-#else
-# define PTR_FMT "%p"
-#endif
 
 static const char * errorName(int rc){
   const char *zName = 0;
@@ -68,12 +62,7 @@ static const char * errorName(int rc){
 ** Decode a pointer to an sqlite3 object.
 */
 static int getDbPointer(Tcl_Interp *interp, const char *zA, sqlite3 **ppDb){
-  if( sscanf(zA, PTR_FMT, (void**)ppDb)!=1 && 
-      (zA[0]!='0' || zA[1]!='x' || sscanf(&zA[2], PTR_FMT, (void**)ppDb)!=1)
-  ){
-    Tcl_AppendResult(interp, "\"", zA, "\" is not a valid pointer value", 0);
-    return TCL_ERROR;
-  }
+  *ppDb = (sqlite3*)sqlite3TextToPtr(zA);
   return TCL_OK;
 }
 
@@ -85,10 +74,7 @@ static int getStmtPointer(
   const char *zArg,  
   sqlite3_stmt **ppStmt
 ){
-  if( sscanf(zArg, PTR_FMT, (void**)ppStmt)!=1 ){
-    Tcl_AppendResult(interp, "\"", zArg, "\" is not a valid pointer value", 0);
-    return TCL_ERROR;
-  }
+  *ppStmt = (sqlite3_stmt*)sqlite3TextToPtr(zArg);
   return TCL_OK;
 }
 
@@ -100,10 +86,7 @@ static int getFilePointer(
   const char *zArg,  
   OsFile **ppFile
 ){
-  if( sscanf(zArg, PTR_FMT, (void**)ppFile)!=1 ){
-    Tcl_AppendResult(interp, "\"", zArg, "\" is not a valid pointer value", 0);
-    return TCL_ERROR;
-  }
+  *ppFile = (OsFile*)sqlite3TextToPtr(zArg);
   return TCL_OK;
 }
 
@@ -121,19 +104,7 @@ static int getFilePointer(
 ** that helps.  If nothing works, a fatal error is generated.
 */
 static int makePointerStr(Tcl_Interp *interp, char *zPtr, void *p){
-  void *p2;
-  sprintf(zPtr, PTR_FMT, p);
-  if( sscanf(zPtr, PTR_FMT, &p2)!=1 || p2!=p ){
-    sprintf(zPtr, "0x" PTR_FMT, p);
-    if( sscanf(zPtr, PTR_FMT, &p2)!=1 || p2!=p ){
-      Tcl_AppendResult(interp, "unable to convert a pointer to a string "
-         "in the file " __FILE__ " in function makePointerStr().  Please "
-         "report this problem to the SQLite mailing list or as a new but "
-         "report.  Please provide detailed information about how you compiled "
-         "SQLite and what computer you are running on.", 0);
-      return TCL_ERROR;
-    }
-  }
+  sqlite3_snprintf(100, zPtr, "%p", p);
   return TCL_OK;
 }
 

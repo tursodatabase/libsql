@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test2.c,v 1.24 2004/07/22 01:19:35 drh Exp $
+** $Id: test2.c,v 1.25 2004/09/08 20:13:06 drh Exp $
 */
 #include "os.h"
 #include "sqliteInt.h"
@@ -88,7 +88,7 @@ static int pager_open(
   }
   sqlite3pager_set_cachesize(pPager, nPage);
   sqlite3pager_set_pagesize(pPager, test_pagesize);
-  sprintf(zBuf,"0x%x",(int)pPager);
+  sqlite3_snprintf(sizeof(zBuf),zBuf,"%p",pPager);
   Tcl_AppendResult(interp, zBuf, 0);
   return TCL_OK;
 }
@@ -111,7 +111,7 @@ static int pager_close(
        " ID\"", 0);
     return TCL_ERROR;
   }
-  if( Tcl_GetInt(interp, argv[1], (int*)&pPager) ) return TCL_ERROR;
+  pPager = sqlite3TextToPtr(argv[1]);
   rc = sqlite3pager_close(pPager);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, errorName(rc), 0);
@@ -138,7 +138,7 @@ static int pager_rollback(
        " ID\"", 0);
     return TCL_ERROR;
   }
-  if( Tcl_GetInt(interp, argv[1], (int*)&pPager) ) return TCL_ERROR;
+  pPager = sqlite3TextToPtr(argv[1]);
   rc = sqlite3pager_rollback(pPager);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, errorName(rc), 0);
@@ -165,7 +165,7 @@ static int pager_commit(
        " ID\"", 0);
     return TCL_ERROR;
   }
-  if( Tcl_GetInt(interp, argv[1], (int*)&pPager) ) return TCL_ERROR;
+  pPager = sqlite3TextToPtr(argv[1]);
   rc = sqlite3pager_commit(pPager);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, errorName(rc), 0);
@@ -192,7 +192,7 @@ static int pager_stmt_begin(
        " ID\"", 0);
     return TCL_ERROR;
   }
-  if( Tcl_GetInt(interp, argv[1], (int*)&pPager) ) return TCL_ERROR;
+  pPager = sqlite3TextToPtr(argv[1]);
   rc = sqlite3pager_stmt_begin(pPager);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, errorName(rc), 0);
@@ -219,7 +219,7 @@ static int pager_stmt_rollback(
        " ID\"", 0);
     return TCL_ERROR;
   }
-  if( Tcl_GetInt(interp, argv[1], (int*)&pPager) ) return TCL_ERROR;
+  pPager = sqlite3TextToPtr(argv[1]);
   rc = sqlite3pager_stmt_rollback(pPager);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, errorName(rc), 0);
@@ -246,7 +246,7 @@ static int pager_stmt_commit(
        " ID\"", 0);
     return TCL_ERROR;
   }
-  if( Tcl_GetInt(interp, argv[1], (int*)&pPager) ) return TCL_ERROR;
+  pPager = sqlite3TextToPtr(argv[1]);
   rc = sqlite3pager_stmt_commit(pPager);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, errorName(rc), 0);
@@ -273,7 +273,7 @@ static int pager_stats(
        " ID\"", 0);
     return TCL_ERROR;
   }
-  if( Tcl_GetInt(interp, argv[1], (int*)&pPager) ) return TCL_ERROR;
+  pPager = sqlite3TextToPtr(argv[1]);
   a = sqlite3pager_stats(pPager);
   for(i=0; i<9; i++){
     static char *zName[] = {
@@ -282,7 +282,7 @@ static int pager_stats(
     };
     char zBuf[100];
     Tcl_AppendElement(interp, zName[i]);
-    sprintf(zBuf,"%d",a[i]);
+    sqlite3_snprintf(sizeof(zBuf),zBuf,"%d",a[i]);
     Tcl_AppendElement(interp, zBuf);
   }
   return TCL_OK;
@@ -306,8 +306,8 @@ static int pager_pagecount(
        " ID\"", 0);
     return TCL_ERROR;
   }
-  if( Tcl_GetInt(interp, argv[1], (int*)&pPager) ) return TCL_ERROR;
-  sprintf(zBuf,"%d",sqlite3pager_pagecount(pPager));
+  pPager = sqlite3TextToPtr(argv[1]);
+  sqlite3_snprintf(sizeof(zBuf),zBuf,"%d",sqlite3pager_pagecount(pPager));
   Tcl_AppendResult(interp, zBuf, 0);
   return TCL_OK;
 }
@@ -333,14 +333,14 @@ static int page_get(
        " ID PGNO\"", 0);
     return TCL_ERROR;
   }
-  if( Tcl_GetInt(interp, argv[1], (int*)&pPager) ) return TCL_ERROR;
+  pPager = sqlite3TextToPtr(argv[1]);
   if( Tcl_GetInt(interp, argv[2], &pgno) ) return TCL_ERROR;
   rc = sqlite3pager_get(pPager, pgno, &pPage);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;
   }
-  sprintf(zBuf,"0x%x",(int)pPage);
+  sqlite3_snprintf(sizeof(zBuf),zBuf,"%p",pPage);
   Tcl_AppendResult(interp, zBuf, 0);
   return TCL_OK;
 }
@@ -366,11 +366,11 @@ static int page_lookup(
        " ID PGNO\"", 0);
     return TCL_ERROR;
   }
-  if( Tcl_GetInt(interp, argv[1], (int*)&pPager) ) return TCL_ERROR;
+  pPager = sqlite3TextToPtr(argv[1]);
   if( Tcl_GetInt(interp, argv[2], &pgno) ) return TCL_ERROR;
   pPage = sqlite3pager_lookup(pPager, pgno);
   if( pPage ){
-    sprintf(zBuf,"0x%x",(int)pPage);
+    sqlite3_snprintf(sizeof(zBuf),zBuf,"%p",pPage);
     Tcl_AppendResult(interp, zBuf, 0);
   }
   return TCL_OK;
@@ -394,7 +394,7 @@ static int page_unref(
        " PAGE\"", 0);
     return TCL_ERROR;
   }
-  if( Tcl_GetInt(interp, argv[1], (int*)&pPage) ) return TCL_ERROR;
+  pPage = sqlite3TextToPtr(argv[1]);
   rc = sqlite3pager_unref(pPage);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, errorName(rc), 0);
@@ -421,7 +421,7 @@ static int page_read(
        " PAGE\"", 0);
     return TCL_ERROR;
   }
-  if( Tcl_GetInt(interp, argv[1], (int*)&pPage) ) return TCL_ERROR;
+  pPage = sqlite3TextToPtr(argv[1]);
   memcpy(zBuf, pPage, sizeof(zBuf));
   Tcl_AppendResult(interp, zBuf, 0);
   return TCL_OK;
@@ -445,8 +445,8 @@ static int page_number(
        " PAGE\"", 0);
     return TCL_ERROR;
   }
-  if( Tcl_GetInt(interp, argv[1], (int*)&pPage) ) return TCL_ERROR;
-  sprintf(zBuf, "%d", sqlite3pager_pagenumber(pPage));
+  pPage = sqlite3TextToPtr(argv[1]);
+  sqlite3_snprintf(sizeof(zBuf), zBuf, "%d", sqlite3pager_pagenumber(pPage));
   Tcl_AppendResult(interp, zBuf, 0);
   return TCL_OK;
 }
@@ -469,7 +469,7 @@ static int page_write(
        " PAGE DATA\"", 0);
     return TCL_ERROR;
   }
-  if( Tcl_GetInt(interp, argv[1], (int*)&pPage) ) return TCL_ERROR;
+  pPage = sqlite3TextToPtr(argv[1]);
   rc = sqlite3pager_write(pPage);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, errorName(rc), 0);

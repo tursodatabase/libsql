@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.188 2004/09/05 00:33:43 drh Exp $
+** $Id: btree.c,v 1.189 2004/09/08 20:13:05 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1404,8 +1404,8 @@ void sqlite3BtreeCursorList(Btree *pBt){
   for(pCur=pBt->pCursor; pCur; pCur=pCur->pNext){
     MemPage *pPage = pCur->pPage;
     char *zMode = pCur->wrFlag ? "rw" : "ro";
-    printf("CURSOR %08x rooted at %4d(%s) currently at %d.%d%s\n",
-       (int)pCur, pCur->pgnoRoot, zMode,
+    sqlite3DebugPrintf("CURSOR %p rooted at %4d(%s) currently at %d.%d%s\n",
+       pCur, pCur->pgnoRoot, zMode,
        pPage ? pPage->pgno : 0, pCur->idx,
        pCur->isValid ? "" : " eof"
     );
@@ -3898,7 +3898,7 @@ int sqlite3BtreePageDump(Btree *pBt, int pgno, int recursive){
   pPage->leaf = (c & PTF_LEAF)!=0;
   pPage->hasData = !(pPage->zeroData || (!pPage->leaf && pPage->leafData));
   nCell = get2byte(&data[hdr+3]);
-  printf("PAGE %d:  flags=0x%02x  frag=%d   parent=%d\n", pgno,
+  sqlite3DebugPrintf("PAGE %d:  flags=0x%02x  frag=%d   parent=%d\n", pgno,
     data[hdr], data[hdr+7], 
     (pPage->isInit && pPage->pParent) ? pPage->pParent->pgno : 0);
   assert( hdr == (pgno==1 ? 100 : 0) );
@@ -3928,13 +3928,13 @@ int sqlite3BtreePageDump(Btree *pBt, int pgno, int recursive){
       if( payload[j]<0x20 || payload[j]>0x7f ) payload[j] = '.';
     }
     payload[sz] = 0;
-    printf(
+    sqlite3DebugPrintf(
       "cell %2d: i=%-10s chld=%-4d nk=%-4lld nd=%-4d payload=%s\n",
       i, range, child, info.nKey, info.nData, payload
     );
   }
   if( !pPage->leaf ){
-    printf("right_child: %d\n", get4byte(&data[hdr+8]));
+    sqlite3DebugPrintf("right_child: %d\n", get4byte(&data[hdr+8]));
   }
   nFree = 0;
   i = 0;
@@ -3943,13 +3943,13 @@ int sqlite3BtreePageDump(Btree *pBt, int pgno, int recursive){
     int sz = get2byte(&data[idx+2]);
     sprintf(range,"%d..%d", idx, idx+sz-1);
     nFree += sz;
-    printf("freeblock %2d: i=%-10s size=%-4d total=%d\n",
+    sqlite3DebugPrintf("freeblock %2d: i=%-10s size=%-4d total=%d\n",
        i, range, sz, nFree);
     idx = get2byte(&data[idx]);
     i++;
   }
   if( idx!=0 ){
-    printf("ERROR: next freeblock index out of range: %d\n", idx);
+    sqlite3DebugPrintf("ERROR: next freeblock index out of range: %d\n", idx);
   }
   if( recursive && !pPage->leaf ){
     for(i=0; i<nCell; i++){

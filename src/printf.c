@@ -73,6 +73,7 @@
                           NULL pointers replaced by SQL NULL.  %Q */
 #define etTOKEN      14 /* a pointer to a Token structure */
 #define etSRCLIST    15 /* a pointer to a SrcList */
+#define etPOINTER    16 /* The %p conversion */
 
 
 /*
@@ -123,7 +124,7 @@ static et_info fmtinfo[] = {
   {  'i', 10, 1, etRADIX,      "0123456789",       0    },
   {  'n',  0, 0, etSIZE,       0,                  0    },
   {  '%',  0, 0, etPERCENT,    0,                  0    },
-  {  'p', 10, 0, etRADIX,      "0123456789",       0    },
+  {  'p', 16, 0, etPOINTER,    "0123456789abcdef", "x0" },
   {  'T',  0, 2, etTOKEN,      0,                  0    },
   {  'S',  0, 2, etSRCLIST,    0,                  0    },
 };
@@ -345,6 +346,10 @@ static int vxprintf(
     **   infop                       Pointer to the appropriate info struct.
     */
     switch( xtype ){
+      case etPOINTER:
+        flag_longlong = sizeof(char*)==sizeof(i64);
+        flag_long = sizeof(char*)==sizeof(long int);
+        /* Fall through into the next case */
       case etRADIX:
         if( infop->flags & FLAG_SIGNED ){
           i64 v;
