@@ -13,7 +13,7 @@
 ** the WHERE clause of SQL statements.  Also found here are subroutines
 ** to generate VDBE code to evaluate expressions.
 **
-** $Id: where.c,v 1.38 2002/03/02 17:04:09 drh Exp $
+** $Id: where.c,v 1.39 2002/04/02 01:58:58 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -89,6 +89,12 @@ static int exprTableUsage(int base, Expr *p){
   }
   if( p->pLeft ){
     mask |= exprTableUsage(base, p->pLeft);
+  }
+  if( p->pList ){
+    int i;
+    for(i=0; i<p->pList->nExpr; i++){
+      mask |= exprTableUsage(base, p->pList->a[i].pExpr);
+    }
   }
   return mask;
 }

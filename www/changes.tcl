@@ -25,7 +25,12 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
-chng {2002 Mar 31 (2.4.5)} {
+chng {2002 Apr 01 (2.4.5)} {
+<li>Bug fix: Correctly handle functions that appear in the WHERE clause
+    of a SELECT.</li>
+<li>When the PRAGMA vdbe_trace=ON is set, correctly print the P3 operand
+    value when it is a pointer to a structure rather than a pointer to
+    a string.</li>
 <li>When inserting an explicit NULL into an INTEGER PRIMARY KEY, convert
     the NULL value into a unique key automatically.</li>
 }
