@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.17 2000/06/09 03:51:27 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.18 2000/06/09 14:14:34 drh Exp $}
 
 puts {<html>
 <head><title>SQLite: An SQL Database Engine Built Atop GDBM</title></head>
@@ -92,14 +92,13 @@ Among the SQL features that SQLite does not currently implement are:</p>
 <p><ul>
 <li>Information on the <a href="sqlite.html">sqlite</a>
     command-line utility.</li>
+<li>The <a href="lang.html">SQL Language</a> subset understood by SQLite.</li>
 <li>The <a href="c_interface.html">C/C++ Interface</a>.</li>
 <li>The <a href="fileformat.html">file format</a> used by SQLite databases.</li>
 <li>The <a href="arch.html">Architecture of the SQLite Library</a> describes
-    how the library is put together.  <b>(preliminary)</b></li>
+    how the library is put together.</li>
 <li>A description of the <a href="opcode.html">virtual machine</a> that
-    SQLite uses to access the database.  <b>(preliminary)</b></li>
-<li>The <a href="lang.html">SQL Language</a> subset understood by SQLite.
-    <b>(under development)</b></li>
+    SQLite uses to access the database.</li>
 </ul>
 </p>
 

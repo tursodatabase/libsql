@@ -194,7 +194,7 @@ arch.html:	$(TOP)/www/arch.tcl
 arch.png:	$(TOP)/www/arch.png
 	cp $(TOP)/www/arch.png .
 
-opcode.html:	$(TOP)/www/opcode.tcl
+opcode.html:	$(TOP)/www/opcode.tcl $(TOP)/src/vdbe.c
 	tclsh $(TOP)/www/opcode.tcl $(TOP)/src/vdbe.c >opcode.html
 
 

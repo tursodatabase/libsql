@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: opcode.tcl,v 1.1 2000/06/09 01:58:37 drh Exp $}
+set rcsid {$Id: opcode.tcl,v 1.2 2000/06/09 14:14:34 drh Exp $}
 
 puts {<html>
 <head>
@@ -51,7 +51,7 @@ puts {
 <p>In order to execute an SQL statement, the SQLite library first parses
 the SQL, analyzes the statement, then generates a short program to execute
 the statement.  The program is generated for a "virtual machine" implemented
-by the SQLite library.  The document describes the operation of that
+by the SQLite library.  This document describes the operation of that
 virtual machine.</p>
 
 <p>The source code to the virtual machine is in the <b>vdbe.c</b> source
@@ -80,13 +80,13 @@ that it allocated is released and all database files it may
 have had open are closed.</p>
 
 <p>The virtual machine also contains an operand stack of unlimited
-depth.  Many of the opcodes use operands from the stack.  The details
-are described in the descriptions of each opcode.</p>
+depth.  Many of the opcodes use operands from the stack.  See the
+individual opcode descriptions for details.</p>
 
 <p>The virtual machine can have zero or more cursors.  Each cursor
 is a pointer into a single GDBM file.  There can be multiple
 cursors pointing at the same file.
-All cursors operate independenly.
+All cursors operate independently, even cursors pointing to the same file.
 The only way for the virtual machine to interact with a GDBM
 file is through a cursor.
 Instructions in the virtual
@@ -112,6 +112,8 @@ historical accident.  In practice no more than one sorter
 <p>The virtual machine may contain an arbitrary number of "Lists".
 Each list stores a list of integers.  Lists are used to hold the
 GDBM keys for records of a GDBM file that needs to be modified.
+(See the <a href="fileformat.html">file format</a> description for
+more information on GDBM keys in SQLite table files.)
 The WHERE clause of an UPDATE or DELETE statement scans through
 the table and writes the GDBM key of every record to be modified
 into a list.  Then the list is played back and the table is modified

@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: arch.tcl,v 1.1 2000/06/09 01:58:51 drh Exp $}
+set rcsid {$Id: arch.tcl,v 1.2 2000/06/09 14:14:34 drh Exp $}
 
 puts {<html>
 <head>
@@ -24,7 +24,7 @@ puts {
 </table>
 <p>This file describes the architecture of the SQLite library.
 A block diagram showing the main components of SQLite
-and how that interrelate is shown at the right.  The text that
+and how they interrelate is shown at the right.  The text that
 follows will provide a quick overview of each of these components.
 </p>
 
@@ -63,8 +63,7 @@ the tokenizer to call the parser.  YACC has it backwards.</p>
 their context.  The parser for SQLite is generated using the
 <a href="http://www.hwaci.com/sw/lemon/">Lemon</a> LALR(1) parser
 generator.  Lemon does the same job as YACC/BISON, but is uses
-a different input syntax which is less error-prone than the 
-clumsy YACC/BISON syntax.  
+a different input syntax which is less error-prone.
 Lemon also generates a parser which is reentrant and thread-safe.
 And lemon defines the concept of a non-terminal destructor so
 that it does not leak memory when syntax errors are encountered.
@@ -79,12 +78,21 @@ lemon is found in the "doc" subdirectory of the distribution.
 
 <h2>Code Generator</h2>
 
-<p>After the parser assemblies tokens into complete SQL statements,
+<p>After the parser assembles tokens into complete SQL statements,
 it calls the code generator to produce virtual machine code that
-will do the work that the SQL statements request.  There are six
+will do the work that the SQL statements request.  There are seven
 files in the code generator:  <b>build.c</b>, <b>delete.c</b>,
-<b>expr.c</b>, <b>select.c</b>, <b>update.c</b>, and <b>where.c</b>.
-In these files is where most of the serious magic happens.</p>
+<b>expr.c</b>, <b>insert.c</b> <b>select.c</b>, <b>update.c</b>, 
+and <b>where.c</b>.
+In these files is where most of the serious magic happens.
+<b>expr.c</b> handles code generation for expressions.
+<b>where.c</b> handles code generation for WHERE clauses on
+SELECT, UPDATE and DELETE statements.  The files
+<b>delete.c</b>, <b>insert.c</b>, <b>select.c</b>, and
+<b>update.c</b> handle the code generation for SQL statements
+with the same names.  (Each of these files calls routines
+in <b>expr.c</b> and <b>where.c</b> as necessary.)  All other
+SQL statements are coded out of <b>build.c</b>.</p>
 
 <h2>Virtual Machine</h2>
 
@@ -93,7 +101,8 @@ the virtual machine.  Additional information about the virtual
 machine is <a href="opcode.html">available separately</a>.
 To summarize, the virtual machine implements an abstract computing
 engine specifically designed to manipulate database files.  The
-machine as a stack.  Each instruction contains an opcode and
+machine has a stack which is used for intermediate storage.
+Each instruction contains an opcode and
 up to three additional operands.</p>
 
 <p>The virtual machine is entirely contained in a single

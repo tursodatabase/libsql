@@ -26,7 +26,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.19 2000/06/08 16:26:24 drh Exp $
+** @(#) $Id: parse.y,v 1.20 2000/06/09 14:14:33 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -296,7 +296,7 @@ fieldlist(A) ::= id(Y).                    {A = sqliteIdListAppend(0,&Y);}
 %left EQ NE ISNULL NOTNULL IS LIKE GLOB BETWEEN IN.
 %left GT GE LT LE.
 %left PLUS MINUS.
-%left STAR SLASH PERCENT.
+%left STAR SLASH.
 %right UMINUS.
 
 %type expr {Expr*}

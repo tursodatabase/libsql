@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.31 2000/06/09 01:58:37 drh Exp $
+** $Id: vdbe.c,v 1.32 2000/06/09 14:14:34 drh Exp $
 */
 #include "sqliteInt.h"
 #include <unistd.h>
@@ -1675,16 +1675,19 @@ int sqliteVdbeExec(
 
       /* Opcode: Open P1 P2 P3
       **
-      ** Open a new database table named P3.  Give it an identifier P1.
+      ** Open a new cursor for the database table named P3.  Give the
+      ** cursor an identifier P1.
       ** Open readonly if P2==0 and for reading and writing if P2!=0.
       ** The table is created if it does not already exist and P2!=0.
-      ** If there is already another table opened on P1, then the old
-      ** table is closed first.  All tables are automatically closed when
+      ** If there is already another cursor opened with identifier P1,
+      ** then the old cursor is closed first.
+      ** All cursors are automatically closed when
       ** the VDBE finishes execution.  The P1 values need not be
       ** contiguous but all P1 values should be small integers.  It is
       ** an error for P1 to be negative.
       **
-      ** If P3 is null or an empty string, a temporary table is opened.
+      ** If P3 is null or an empty string, a temporary table created.
+      ** This table is automatically deleted when the cursor is closed.
       */
       case OP_Open: {
         int i = pOp->p1;
@@ -1742,7 +1745,7 @@ int sqliteVdbeExec(
       ** Pop the top of the stack and use its value as a key to fetch
       ** a record from database table or index P1.  The data is held
       ** in the P1 cursor until needed.  The data is not pushed onto the
-      ** stack or anything like that.
+      ** stack.
       */
       case OP_Fetch: {
         int i = pOp->p1;
@@ -1768,6 +1771,9 @@ int sqliteVdbeExec(
       ** does not exist in table P1, then jump to P2.  If the record
       ** does already exist, then fall thru.  The record is not retrieved.
       ** The key is not popped from the stack.
+      **
+      ** This operation is similar to NotFound except that this operation
+      ** does not pop the key from the stack.
       */
       /* Opcode: Found P1 P2 *
       **
@@ -1779,9 +1785,12 @@ int sqliteVdbeExec(
       /* Opcode: NotFound P1 P2 *
       **
       ** Use the top of the stack as a key.  If a record with that key
-      ** does exist in table P1, then jump to P2.  If the record
-      ** does not exist, then fall thru.  The record is not retrieved.
+      ** does not exist in table P1, then jump to P2.  If the record
+      ** does exist, then fall thru.  The record is not retrieved.
       ** The key is popped from the stack.
+      **
+      ** The difference between this operation and Distinct is that
+      ** Distinct does not pop the key from the stack.
       */
       case OP_Distinct:
       case OP_NotFound:
@@ -1911,7 +1920,7 @@ int sqliteVdbeExec(
       ** The value pushed is just a pointer to the data in the cursor.
       ** The value will go away the next time a record is fetched from P1,
       ** or when P1 is closed.  Make a copy of the string (using
-      ** "Concat 1 0 0" if it needs to persist longer than that.
+      ** "Concat 1 0 0") if it needs to persist longer than that.
       **
       ** If the KeyAsData opcode has previously executed on this cursor,
       ** then the field might be extracted from the key rather than the
@@ -2065,7 +2074,7 @@ int sqliteVdbeExec(
 
       /* Opcode: PutIdx P1 * *
       **
-      ** The top of the stack hold an index key (proably made using the
+      ** The top of the stack hold an index key (probably made using the
       ** MakeKey instruction) and next on stack holds an index value for
       ** a table.  Locate the record in the index P1 that has the key 
       ** and insert the index value into its
@@ -2526,7 +2535,7 @@ int sqliteVdbeExec(
       /* Opcode: FileOpen * * P3
       **
       ** Open the file named by P3 for reading using the FileRead opcode.
-      ** If P3 is "stdin" then output standard input for reading.
+      ** If P3 is "stdin" then open standard input for reading.
       */
       case OP_FileOpen: {
         if( pOp->p3==0 ) goto bad_instruction;
@@ -2572,11 +2581,13 @@ int sqliteVdbeExec(
 
       /* Opcode: FileRead P1 P2 P3
       **
-      ** Read a single line of input the open file (the file opened using
+      ** Read a single line of input from the open file (the file opened using
       ** FileOpen).  If we reach end-of-file, jump immediately to P2.  If
       ** we are able to get another line, split the line apart using P3 as
-      ** a delimiter.  There should be exactly P1 fields.  Throw an exception
-      ** if the number of fields is different from P1.
+      ** a delimiter.  There should be P1 fields.  If the input line contains
+      ** more than P1 fields, ignore the excess.  If the input line contains
+      ** fewer than P1 fields, assume the remaining fields contain an
+      ** empty string.
       */
       case OP_FileRead: {
         int n, eol, nField, i, c, nDelim;
