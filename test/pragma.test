@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.5 2003/06/15 23:42:25 drh Exp $
+# $Id: pragma.test,v 1.6 2003/07/27 17:26:23 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -177,6 +177,18 @@ do_test pragma-2.2 {
   }
   sqlite_datatypes $::DB {SELECT * FROM sqlite_master}
 } {text text text integer text}
+
+# Make sure we can read the schema when empty_result_callbacks are
+# turned on. Ticket #406
+do_test pragma-2.2.1 {
+  execsql {
+    BEGIN;
+    CREATE TABLE tabx(a,b,c,d);
+    ROLLBACK;
+    SELECT count(*) FROM sqlite_master;
+  }
+} {0}
+
 do_test pragma-2.3 {
   execsql {
     CREATE TABLE t1(

@@ -1,5 +1,5 @@
-C In\sthe\sVDBE,\swhen\san\sinteger\svalue\swill\snot\sfit\sinto\sa\s32-bit\sint,\sstore\sit\nin\sa\sdouble\sinstead.\s\sTicket\s#408.\s(CVS\s1064)
-D 2003-07-27T17:16:07
+C Make\ssure\sthe\sschema\sloader\scallback\scan\shandle\sEMPTY_RESULT_CALLBACKS\sbeing\non.\s\sTicket\s#406.\s(CVS\s1065)
+D 2003-07-27T17:26:23
 F Makefile.in 9ad23ed4ca97f9670c4496432e3fbd4b3760ebde
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -33,7 +33,7 @@ F src/func.c 6b23578d48a8be98a664db145a635c2fa9ddb57b
 F src/hash.c 058f077c1f36f266581aa16f907a3903abf64aa3
 F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
 F src/insert.c fc4c26a0bb505fb802babfb9a7b7a1d4be2e3061
-F src/main.c ce96c3c09f15104247f0367159a80937d4222d00
+F src/main.c 2500392bad5629b6d70b06ac5a076958acb49b92
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
 F src/os.c 2f24ede4d3464ac38d24d113e0d44d3c7d460be4
 F src/os.h 9e5bbddff123187295e3d00d49af06192cd1cd49
@@ -102,7 +102,7 @@ F test/misuse.test a3aa2b18a97e4c409a1fcaff5151a4dd804a0162
 F test/notnull.test 7a08117a71e74b0321aaa937dbeb41a09d6eb1d0
 F test/null.test 5c2b57307e4b6178aae825eb65ddbee01e76b0fd
 F test/pager.test dd31da9bee94a82e2e87e58cf286cfe809f8fc5f
-F test/pragma.test 4c707a6f7d3cbf72d46ed9d9eb0e1ea6e42dc3e4
+F test/pragma.test e7cb7ffd765c9158868b0b7a3771d54a0d5f5072
 F test/printf.test 3ed02f1361402c0767492cd5cef4650e61df8308
 F test/quick.test c527bdb899b12a8cd8ceecce45f72922099f4095
 F test/quote.test 08f23385c685d3dc7914ec760d492cacea7f6e3d
@@ -168,7 +168,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P 95fba440e79c066c0d6f6205a3d7dcb6c870b1c9
-R e9b4de6f6867968162bbbf4cd0e0f4a9
+P 7514c3db165e8cc5c696b2b345844949a0e45a61
+R 85b9f91d179fe7af6d0cda86f9bcda89
 U drh
-Z 3a09a33ae6ae46b79a22e81ad9d2a3ad
+Z 4a83ca4578ca29e5406602c40689d847
