@@ -1,0 +1,105 @@
+# 2001 September 23
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is stressing the library by putting large amounts
+# of data in a single row of a table.
+#
+# $Id: bigrow.test,v 1.1 2001/09/24 03:12:40 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# Make a big string that we can use for test data
+#
+do_test bigrow-1.0 {
+  set ::bigstr {}
+  for {set i 1} {$i<=9999} {incr i} {
+    set sep [string index "abcdefghijklmnopqrstuvwxyz" [expr {$i%26}]]
+    append ::bigstr "$sep [format %04d $i] "
+  }
+  string length $::bigstr
+} {69993}
+
+# Make a table into which we can insert some but records.
+#
+do_test bigrow-1.1 {
+  execsql {
+    CREATE TABLE t1(a text, b text, c text);
+    SELECT name FROM sqlite_master
+      WHERE type='table' OR type='index'
+      ORDER BY name
+  }
+} {t1}
+
+do_test bigrow-1.2 {
+  set ::big1 [string range $::bigstr 0 65519]
+  set sql "INSERT INTO t1 VALUES('abc',"
+  append sql "'$::big1', 'xyz');"
+  execsql $sql
+  execsql {SELECT a, c FROM t1}
+} {abc xyz}
+do_test bigrow-1.3 {
+  execsql {SELECT b FROM t1}
+} [list $::big1]
+do_test bigrow-1.4 {
+  set sql "INSERT INTO t1 VALUES('abc',"
+  append sql "'[string range $::bigstr 0 65520]', 'xyz');"
+  set r [catch {execsql $sql} msg]
+  lappend r $msg
+} {1 {too much data for one table row}}
+
+do_test bigrow-1.5 {
+  execsql {
+    UPDATE t1 SET a=b, b=a;
+    SELECT b,c FROM t1
+  }
+} {abc xyz}
+do_test bigrow-1.6 {
+  execsql {
+    SELECT * FROM t1
+  }
+} [list $::big1 abc xyz]
+do_test bigrow-1.7 {
+  execsql {
+    INSERT INTO t1 VALUES('1','2','3');
+    INSERT INTO t1 VALUES('A','B','C');
+    SELECT b FROM t1 WHERE a=='1';
+  }
+} {2}
+do_test bigrow-1.8 {
+  execsql "SELECT b FROM t1 WHERE a=='$::big1'"
+} {abc}
+do_test bigrow-1.9 {
+  execsql "SELECT b FROM t1 WHERE a!='$::big1' ORDER BY a"
+} {B 2}
+
+# Try doing some indexing on big columns
+#
+do_test bigrow-2.1 {
+  execsql {
+    CREATE INDEX i1 ON t1(a)
+  }
+  execsql "SELECT b FROM t1 WHERE a=='$::big1'"
+} {abc}
+do_test bigrow-2.2 {
+  execsql {
+    UPDATE t1 SET a=b, b=a
+  }
+  execsql "SELECT b FROM t1 WHERE a=='abc'"
+} [list $::big1]
+do_test bigrow-2.3 {
+  execsql {
+    UPDATE t1 SET a=b, b=a
+  }
+  execsql "SELECT b FROM t1 WHERE a=='$::big1'"
+} {abc}
+
+finish_test

@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.40 2001/09/23 19:46:52 drh Exp $
+** $Id: build.c,v 1.41 2001/09/24 03:12:40 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -136,7 +136,8 @@ void sqliteExprDelete(Expr *p){
 ** of that table.  Return NULL if not found.
 */
 Table *sqliteFindTable(sqlite *db, char *zName){
-  return sqliteHashFind(&db->tblHash, zName, strlen(zName)+1);
+  Table *p = sqliteHashFind(&db->tblHash, zName, strlen(zName)+1);
+  return (p==0 || p->isDelete) ? 0 : p;
 }
 
 /*
@@ -145,7 +146,8 @@ Table *sqliteFindTable(sqlite *db, char *zName){
 ** of that index.  Return NULL if not found.
 */
 Index *sqliteFindIndex(sqlite *db, char *zName){
-  return sqliteHashFind(&db->idxHash, zName, strlen(zName)+1);
+  Index *p = sqliteHashFind(&db->idxHash, zName, strlen(zName)+1);
+  return (p==0 || p->isDelete) ? 0 : p;
 }
 
 /*

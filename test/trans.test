@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: trans.test,v 1.6 2001/09/23 02:35:53 drh Exp $
+# $Id: trans.test,v 1.7 2001/09/24 03:12:41 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -272,5 +272,138 @@ do_test trans-5.7 {
   } msg]
   lappend v $msg
 } {1 {no such table: one}}
+
+# Test commits and rollbacks of table CREATE TABLEs, CREATE INDEXs
+# DROP TABLEs and DROP INDEXs
+#
+do_test trans-5.8 {
+  execsql {
+    SELECT name fROM sqlite_master 
+    WHERE type='table' OR type='index'
+    ORDER BY name
+  }
+} {}
+do_test trans-5.9 {
+  execsql {
+    BEGIN TRANSACTION;
+    CREATE TABLE t1(a int, b int, c int);
+    SELECT name fROM sqlite_master 
+    WHERE type='table' OR type='index'
+    ORDER BY name;
+  }
+} {t1}
+do_test trans-5.10 {
+  execsql {
+    CREATE INDEX i1 ON t1(a);
+    SELECT name fROM sqlite_master 
+    WHERE type='table' OR type='index'
+    ORDER BY name;
+  }
+} {i1 t1}
+do_test trans-5.11 {
+  execsql {
+    COMMIT;
+    SELECT name fROM sqlite_master 
+    WHERE type='table' OR type='index'
+    ORDER BY name;
+  }
+} {i1 t1}
+do_test trans-5.12 {
+  execsql {
+    BEGIN TRANSACTION;
+    CREATE TABLE t2(a int, b int, c int);
+    CREATE INDEX i2a ON t2(a);
+    CREATE INDEX i2b ON t2(b);
+    DROP TABLE t1;
+    SELECT name fROM sqlite_master 
+    WHERE type='table' OR type='index'
+    ORDER BY name;
+  }
+} {i2a i2b t2}
+do_test trans-5.13 {
+  execsql {
+    ROLLBACK;
+    SELECT name fROM sqlite_master 
+    WHERE type='table' OR type='index'
+    ORDER BY name;
+  }
+} {i1 t1}
+do_test trans-5.14 {
+  execsql {
+    BEGIN TRANSACTION;
+    DROP INDEX i1;
+    SELECT name fROM sqlite_master 
+    WHERE type='table' OR type='index'
+    ORDER BY name;
+  }
+} {t1}
+do_test trans-5.15 {
+  execsql {
+    ROLLBACK;
+    SELECT name fROM sqlite_master 
+    WHERE type='table' OR type='index'
+    ORDER BY name;
+  }
+} {i1 t1}
+do_test trans-5.16 {
+  execsql {
+    BEGIN TRANSACTION;
+    DROP INDEX i1;
+    CREATE TABLE t2(x int, y int, z int);
+    CREATE INDEX i2x ON t2(x);
+    CREATE INDEX i2y ON t2(y);
+    INSERT INTO t2 VALUES(1,2,3);
+    SELECT name fROM sqlite_master 
+    WHERE type='table' OR type='index'
+    ORDER BY name;
+  }
+} {i2x i2y t1 t2}
+do_test trans-5.17 {
+  execsql {
+    COMMIT;
+    SELECT name fROM sqlite_master 
+    WHERE type='table' OR type='index'
+    ORDER BY name;
+  }
+} {i2x i2y t1 t2}
+do_test trans-5.18 {
+  execsql {
+    SELECT * FROM t2;
+  }
+} {1 2 3}
+do_test trans-5.19 {
+  execsql {
+    SELECT x FROM t2 WHERE y=2;
+  }
+} {1}
+do_test trans-5.20 {
+  execsql {
+    BEGIN TRANSACTION;
+    DROP TABLE t1;
+    DROP TABLE t2;
+    SELECT name fROM sqlite_master 
+    WHERE type='table' OR type='index'
+    ORDER BY name;
+  }
+} {}
+do_test trans-5.21 {
+  set r [catch {execsql {
+    SELECT * FROM t2
+  }} msg]
+  lappend r $msg
+} {1 {no such table: t2}}
+do_test trans-5.22 {
+  execsql {
+    ROLLBACK;
+    SELECT name fROM sqlite_master 
+    WHERE type='table' OR type='index'
+    ORDER BY name;
+  }
+} {i2x i2y t1 t2}
+do_test trans-5.23 {
+  execsql {
+    SELECT * FROM t2;
+  }
+} {1 2 3}
 
 finish_test

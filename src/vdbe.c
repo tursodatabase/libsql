@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.76 2001/09/23 20:17:55 drh Exp $
+** $Id: vdbe.c,v 1.77 2001/09/24 03:12:40 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2301,10 +2301,6 @@ case OP_NewRecno: {
     ** to double the speed of the COPY operation.
     */
     int res, rx, cnt, x;
-    union {
-       char zBuf[sizeof(int)];
-       int i;
-    } ux;
     cnt = 0;
     v = db->nextRowid;
     do{
