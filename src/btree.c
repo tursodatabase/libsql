@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.212 2004/11/06 00:02:48 drh Exp $
+** $Id: btree.c,v 1.213 2004/11/06 12:26:08 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -5071,6 +5071,8 @@ static int checkTreePage(
   int maxLocal, usableSize;
   char zContext[100];
   char *hit;
+
+  sprintf(zContext, "Page %d: ", iPage);
 
   /* Check that the page exists
   */

@@ -1,5 +1,5 @@
-C Compile\sand\spass\sthe\squick\sregression\stests\swith\sautovacuum\sdisabled.\s(CVS\s2073)
-D 2004-11-06T00:02:48
+C Auto-vacuum:\sEnsure\spages\sto\sbe\sremoved\sby\sdatabase\struncation\sare\sin\sthe\sjournal\sfile.\sAlso\sfix\san\ssqlite3pager_movepage()\sbug.\s(CVS\s2074)
+D 2004-11-06T12:26:08
 F Makefile.in c4d2416860f472a1e3393714d0372074197565df
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -29,7 +29,7 @@ F sqlite3.def dbaeb20c153e1d366e8f421b55a573f5dfc00863
 F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
 F src/attach.c e49d09dad9f5f9fb10b4b0c1be5a70ae4c45e689
 F src/auth.c 3b81f2a42f48a62c2c9c9b0eda31a157c681edea
-F src/btree.c 32b5c8d45744d8710475ae99744a0ca9a402d2a0
+F src/btree.c 8ae13efe790fc462ee590ba96e1940f4c943fe19
 F src/btree.h 861e40b759a195ba63819740e484390012cf81ab
 F src/build.c fba59507d36d27effbeba59bdd2a720071b7673a
 F src/date.c 34bdb0082db7ec2a83ef00063f7b44e61ee19dad
@@ -46,13 +46,13 @@ F src/os.h 5834a404b7c8318dc1928c9fc0137a65c9c0416c
 F src/os_common.h 0e7f428ba0a6c40a61bc56c4e96f493231301b73
 F src/os_mac.c 7367dab0c44ab0b2c4337e73ac6f6f97f171c2cb
 F src/os_mac.h 608fdf39eafa1ce25fc8cb223b8b0a073341d4da
-F src/os_test.c d9a21852d170f20adeae6f224d1beba2cb5af8aa
+F src/os_test.c 91e5f22dd89491e5e1554820e715805f43fa4ece
 F src/os_test.h 6a26a4978492e4bbdbf385554958418ff02db162
 F src/os_unix.c 5824b22ba41fe9d514ef9169aac1b5fde73af229
 F src/os_unix.h f3097815e041e82e24d92505e1ff61ba24172d13
 F src/os_win.c 9482dfc92f289b68205bb2c9315757c7e3946bfb
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 868c67e4ff8a1785c06caaf483fddb5a95013af0
+F src/pager.c 0523c8a122f95b41008b87cae2cc1d368452dbfc
 F src/pager.h 9eba8c53dd91eae7f3f90743b2ee242da02a9862
 F src/parse.y 8456726833755ecd6dac9bcd8af205c8dc419d01
 F src/pragma.c 6a0ae7721e614c5a921e918ab5206d5e654f1a6f
@@ -253,7 +253,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl fdacb0ba2d39831e8a6240d05a490026ad4c4e4c
-P 11dba47e61279bdf3be6f64a6259b877f3bf6155
-R 8f5f401812cf89b0176d6494be1ddd1b
-U drh
-Z 7c63afdfe773d316c41b855a4f0f6dac
+P 89b9026a5371f1c5589f04e3b69171ec1f605b7b
+R 8ad60b55265f20042b59f34c42d3206d
+U danielk1977
+Z 6d567165f557419cc4b6243e52dc95f0
