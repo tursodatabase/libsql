@@ -15,7 +15,7 @@
 ** or VDBE.  The VDBE implements an abstract machine that runs a
 ** simple program to access and modify the underlying database.
 **
-** $Id: vdbe.h,v 1.55 2002/06/14 22:38:43 drh Exp $
+** $Id: vdbe.h,v 1.56 2002/06/20 11:36:50 drh Exp $
 */
 #ifndef _SQLITE_VDBE_H_
 #define _SQLITE_VDBE_H_
@@ -187,27 +187,37 @@ typedef struct VdbeOp VdbeOp;
 #define OP_ShiftLeft         102
 #define OP_ShiftRight        103
 #define OP_AbsValue          104
+
+/* Note: The code generator assumes that OP_XX+6==OP_StrXX */
 #define OP_Eq                105
 #define OP_Ne                106
 #define OP_Lt                107
 #define OP_Le                108
 #define OP_Gt                109
 #define OP_Ge                110
-#define OP_IsNull            111
-#define OP_NotNull           112
-#define OP_Negative          113
-#define OP_And               114
-#define OP_Or                115
-#define OP_Not               116
-#define OP_Concat            117
-#define OP_Noop              118
-#define OP_Function          119
+#define OP_StrEq             111
+#define OP_StrNe             112
+#define OP_StrLt             113
+#define OP_StrLe             114
+#define OP_StrGt             115
+#define OP_StrGe             116
+/* Note: the code generator assumes that OP_XX+6==OP_StrXX */
 
-#define OP_Limit             120
-#define OP_LimitCk           121
+#define OP_IsNull            117
+#define OP_NotNull           118
+#define OP_Negative          119
+#define OP_And               120
+#define OP_Or                121
+#define OP_Not               122
+#define OP_Concat            123
+#define OP_Noop              124
+#define OP_Function          125
+
+#define OP_Limit             126
+#define OP_LimitCk           127
 
 
-#define OP_MAX               121
+#define OP_MAX               127
 
 /*
 ** Prototypes for the VDBE interface.  See comments on the implementation

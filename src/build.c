@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.96 2002/06/17 17:07:20 drh Exp $
+** $Id: build.c,v 1.97 2002/06/20 11:36:49 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -504,6 +504,7 @@ void sqliteAddColumn(Parse *pParse, Token *pName){
   Table *p;
   int i;
   char *z = 0;
+  Column *pCol;
   if( (p = pParse->pNewTable)==0 ) return;
   sqliteSetNString(&z, pName->z, pName->n, 0);
   if( z==0 ) return;
@@ -522,8 +523,11 @@ void sqliteAddColumn(Parse *pParse, Token *pName){
     if( aNew==0 ) return;
     p->aCol = aNew;
   }
-  memset(&p->aCol[p->nCol], 0, sizeof(p->aCol[0]));
-  p->aCol[p->nCol++].zName = z;
+  pCol = &p->aCol[p->nCol];
+  memset(pCol, 0, sizeof(p->aCol[0]));
+  pCol->zName = z;
+  pCol->sortOrder = SQLITE_SO_NUM;
+  p->nCol++;
 }
 
 /*
@@ -554,10 +558,12 @@ void sqliteAddColumnType(Parse *pParse, Token *pFirst, Token *pLast){
   int i, j;
   int n;
   char *z, **pz;
+  Column *pCol;
   if( (p = pParse->pNewTable)==0 ) return;
   i = p->nCol-1;
   if( i<0 ) return;
-  pz = &p->aCol[i].zType;
+  pCol = &p->aCol[i];
+  pz = &pCol->zType;
   n = pLast->n + Addr(pLast->z) - Addr(pFirst->z);
   sqliteSetNString(pz, pFirst->z, n, 0);
   z = *pz;
@@ -568,6 +574,31 @@ void sqliteAddColumnType(Parse *pParse, Token *pFirst, Token *pLast){
     z[j++] = c;
   }
   z[j] = 0;
+  pCol->sortOrder = SQLITE_SO_NUM;
+  for(i=0; z[i]; i++){
+    switch( z[i] ){
+      case 'c':
+      case 'C': {
+        if( sqliteStrNICmp(&z[i],"char",4)==0 ||
+                sqliteStrNICmp(&z[i],"clob",4)==0 ){
+          pCol->sortOrder = SQLITE_SO_TEXT;
+          return;
+        }
+        break;
+      }
+      case 'x':
+      case 'X': {
+        if( i>=2 && sqliteStrNICmp(&z[i-2],"text",4)==0 ){
+          pCol->sortOrder = SQLITE_SO_TEXT;
+          return;
+        }
+        break;
+      }
+      default: {
+        break;
+      }
+    }
+  }
 }
 
 /*

@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.31 2002/05/10 05:44:56 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.32 2002/06/20 11:36:50 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -425,6 +425,27 @@ int sqlite_create_aggregate(
   void (*xFinalize)(sqlite_func*),       /* Called once to get final result */
   void *pUserData           /* Available via the sqlite_user_data() call */
 );
+
+/*
+** Use the following routine to define the datatype returned by a
+** user-defined function.  The second argument can be one of the
+** constants SQLITE_NUMERIC, SQLITE_TEXT, or SQLITE_ARGS or it
+** can be an integer greater than or equal to zero.  The datatype
+** will be numeric or text (the only two types supported) if the
+** argument is SQLITE_NUMERIC or SQLITE_TEXT.  If the argument is
+** SQLITE_ARGS, then the datatype is numeric if any argument to the
+** function is numeric and is text otherwise.  If the second argument
+** is an integer, then the datatype of the result is the same as the
+** parameter to the function that corresponds to that integer.
+*/
+int sqlite_function_type(
+  sqlite *db,               /* The database there the function is registered */
+  const char *zName,        /* Name of the function */
+  int datatype              /* The datatype for this function */
+);
+#define SQLITE_NUMERIC     (-1)
+#define SQLITE_TEXT        (-2)
+#define SQLITE_ARGS        (-3)
 
 /*
 ** The user function implementations call one of the following four routines

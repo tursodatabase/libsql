@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.156 2002/06/14 22:38:43 drh Exp $
+** $Id: vdbe.c,v 1.157 2002/06/20 11:36:50 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1077,10 +1077,11 @@ static char *zOpName[] = { 0,
   "Divide",            "Remainder",         "BitAnd",            "BitOr",
   "BitNot",            "ShiftLeft",         "ShiftRight",        "AbsValue",
   "Eq",                "Ne",                "Lt",                "Le",
-  "Gt",                "Ge",                "IsNull",            "NotNull",
-  "Negative",          "And",               "Or",                "Not",
-  "Concat",            "Noop",              "Function",          "Limit",
-  "LimitCk",
+  "Gt",                "Ge",                "StrEq",             "StrNe",
+  "StrLt",             "StrLe",             "StrGt",             "StrGe",
+  "IsNull",            "NotNull",           "Negative",          "And",
+  "Or",                "Not",               "Concat",            "Noop",
+  "Function",          "Limit",             "LimitCk",         
 };
 
 /*
@@ -1992,6 +1993,11 @@ mismatch:
 ** If either operand is NULL (and thus if the result is unknown) then
 ** take the jump if P1 is true.
 **
+** If both values are numeric, they are converted to doubles using atof()
+** and compared for equality that way.  Otherwise the strcmp() library
+** routine is used for the comparison.  For a pure text comparison
+** use OP_StrEq.
+**
 ** If P2 is zero, do not jump.  Instead, push an integer 1 onto the
 ** stack if the jump would have been taken, or a 0 if not.  Push a
 ** NULL if either operand was NULL.
@@ -2003,6 +2009,11 @@ mismatch:
 **
 ** If either operand is NULL (and thus if the result is unknown) then
 ** take the jump if P1 is true.
+**
+** If both values are numeric, they are converted to doubles using atof()
+** and compared in that format.  Otherwise the strcmp() library
+** routine is used for the comparison.  For a pure text comparison
+** use OP_StrNe.
 **
 ** If P2 is zero, do not jump.  Instead, push an integer 1 onto the
 ** stack if the jump would have been taken, or a 0 if not.  Push a
@@ -2018,6 +2029,12 @@ mismatch:
 ** If either operand is NULL (and thus if the result is unknown) then
 ** take the jump if P1 is true.
 **
+** If both values are numeric, they are converted to doubles using atof()
+** and compared in that format.  Numeric values are always less than
+** non-numeric values.  If both operands are non-numeric, the strcmp() library
+** routine is used for the comparison.  For a pure text comparison
+** use OP_StrLt.
+**
 ** If P2 is zero, do not jump.  Instead, push an integer 1 onto the
 ** stack if the jump would have been taken, or a 0 if not.  Push a
 ** NULL if either operand was NULL.
@@ -2030,6 +2047,12 @@ mismatch:
 **
 ** If either operand is NULL (and thus if the result is unknown) then
 ** take the jump if P1 is true.
+**
+** If both values are numeric, they are converted to doubles using atof()
+** and compared in that format.  Numeric values are always less than
+** non-numeric values.  If both operands are non-numeric, the strcmp() library
+** routine is used for the comparison.  For a pure text comparison
+** use OP_StrLe.
 **
 ** If P2 is zero, do not jump.  Instead, push an integer 1 onto the
 ** stack if the jump would have been taken, or a 0 if not.  Push a
@@ -2044,6 +2067,12 @@ mismatch:
 ** If either operand is NULL (and thus if the result is unknown) then
 ** take the jump if P1 is true.
 **
+** If both values are numeric, they are converted to doubles using atof()
+** and compared in that format.  Numeric values are always less than
+** non-numeric values.  If both operands are non-numeric, the strcmp() library
+** routine is used for the comparison.  For a pure text comparison
+** use OP_StrGt.
+**
 ** If P2 is zero, do not jump.  Instead, push an integer 1 onto the
 ** stack if the jump would have been taken, or a 0 if not.  Push a
 ** NULL if either operand was NULL.
@@ -2056,6 +2085,12 @@ mismatch:
 **
 ** If either operand is NULL (and thus if the result is unknown) then
 ** take the jump if P1 is true.
+**
+** If both values are numeric, they are converted to doubles using atof()
+** and compared in that format.  Numeric values are always less than
+** non-numeric values.  If both operands are non-numeric, the strcmp() library
+** routine is used for the comparison.  For a pure text comparison
+** use OP_StrGe.
 **
 ** If P2 is zero, do not jump.  Instead, push an integer 1 onto the
 ** stack if the jump would have been taken, or a 0 if not.  Push a
@@ -2095,6 +2130,145 @@ case OP_Ge: {
   }else{
     if( Stringify(p, tos) || Stringify(p, nos) ) goto no_mem;
     c = sqliteCompare(zStack[nos], zStack[tos]);
+  }
+  switch( pOp->opcode ){
+    case OP_Eq:    c = c==0;     break;
+    case OP_Ne:    c = c!=0;     break;
+    case OP_Lt:    c = c<0;      break;
+    case OP_Le:    c = c<=0;     break;
+    case OP_Gt:    c = c>0;      break;
+    default:       c = c>=0;     break;
+  }
+  POPSTACK;
+  POPSTACK;
+  if( pOp->p2 ){
+    if( c ) pc = pOp->p2-1;
+  }else{
+    p->tos++;
+    aStack[nos].flags = STK_Int;
+    aStack[nos].i = c;
+  }
+  break;
+}
+
+/* Opcode: StrEq P1 P2 *
+**
+** Pop the top two elements from the stack.  If they are equal, then
+** jump to instruction P2.  Otherwise, continue to the next instruction.
+**
+** If either operand is NULL (and thus if the result is unknown) then
+** take the jump if P1 is true.
+**
+** The strcmp() library routine is used for the comparison.  For a
+** numeric comparison, use OP_Eq.
+**
+** If P2 is zero, do not jump.  Instead, push an integer 1 onto the
+** stack if the jump would have been taken, or a 0 if not.  Push a
+** NULL if either operand was NULL.
+*/
+/* Opcode: StrNe P1 P2 *
+**
+** Pop the top two elements from the stack.  If they are not equal, then
+** jump to instruction P2.  Otherwise, continue to the next instruction.
+**
+** If either operand is NULL (and thus if the result is unknown) then
+** take the jump if P1 is true.
+**
+** The strcmp() library routine is used for the comparison.  For a
+** numeric comparison, use OP_Ne.
+**
+** If P2 is zero, do not jump.  Instead, push an integer 1 onto the
+** stack if the jump would have been taken, or a 0 if not.  Push a
+** NULL if either operand was NULL.
+*/
+/* Opcode: StrLt P1 P2 *
+**
+** Pop the top two elements from the stack.  If second element (the
+** next on stack) is less than the first (the top of stack), then
+** jump to instruction P2.  Otherwise, continue to the next instruction.
+** In other words, jump if NOS<TOS.
+**
+** If either operand is NULL (and thus if the result is unknown) then
+** take the jump if P1 is true.
+**
+** The strcmp() library routine is used for the comparison.  For a
+** numeric comparison, use OP_Lt.
+**
+** If P2 is zero, do not jump.  Instead, push an integer 1 onto the
+** stack if the jump would have been taken, or a 0 if not.  Push a
+** NULL if either operand was NULL.
+*/
+/* Opcode: StrLe P1 P2 *
+**
+** Pop the top two elements from the stack.  If second element (the
+** next on stack) is less than or equal to the first (the top of stack),
+** then jump to instruction P2. In other words, jump if NOS<=TOS.
+**
+** If either operand is NULL (and thus if the result is unknown) then
+** take the jump if P1 is true.
+**
+** The strcmp() library routine is used for the comparison.  For a
+** numeric comparison, use OP_Le.
+**
+** If P2 is zero, do not jump.  Instead, push an integer 1 onto the
+** stack if the jump would have been taken, or a 0 if not.  Push a
+** NULL if either operand was NULL.
+*/
+/* Opcode: StrGt P1 P2 *
+**
+** Pop the top two elements from the stack.  If second element (the
+** next on stack) is greater than the first (the top of stack),
+** then jump to instruction P2. In other words, jump if NOS>TOS.
+**
+** If either operand is NULL (and thus if the result is unknown) then
+** take the jump if P1 is true.
+**
+** The strcmp() library routine is used for the comparison.  For a
+** numeric comparison, use OP_Gt.
+**
+** If P2 is zero, do not jump.  Instead, push an integer 1 onto the
+** stack if the jump would have been taken, or a 0 if not.  Push a
+** NULL if either operand was NULL.
+*/
+/* Opcode: StrGe P1 P2 *
+**
+** Pop the top two elements from the stack.  If second element (the next
+** on stack) is greater than or equal to the first (the top of stack),
+** then jump to instruction P2. In other words, jump if NOS>=TOS.
+**
+** If either operand is NULL (and thus if the result is unknown) then
+** take the jump if P1 is true.
+**
+** The strcmp() library routine is used for the comparison.  For a
+** numeric comparison, use OP_Ge.
+**
+** If P2 is zero, do not jump.  Instead, push an integer 1 onto the
+** stack if the jump would have been taken, or a 0 if not.  Push a
+** NULL if either operand was NULL.
+*/
+case OP_StrEq:
+case OP_StrNe:
+case OP_StrLt:
+case OP_StrLe:
+case OP_StrGt:
+case OP_StrGe: {
+  int tos = p->tos;
+  int nos = tos - 1;
+  int c;
+  VERIFY( if( nos<0 ) goto not_enough_stack; )
+  if( (aStack[nos].flags | aStack[tos].flags) & STK_Null ){
+    POPSTACK;
+    POPSTACK;
+    if( pOp->p2 ){
+      if( pOp->p1 ) pc = pOp->p2-1;
+    }else{
+      p->tos++;
+      aStack[nos].flags = STK_Null;
+    }
+    break;
+  }else{
+    if( Stringify(p, tos) || Stringify(p, nos) ) goto no_mem;
+    c = strcmp(zStack[nos], zStack[tos]);
   }
   switch( pOp->opcode ){
     case OP_Eq:    c = c==0;     break;
@@ -2435,7 +2609,7 @@ case OP_MakeRecord: {
   break;
 }
 
-/* Opcode: MakeKey P1 P2 *
+/* Opcode: MakeKey P1 P2 P3
 **
 ** Convert the top P1 entries of the stack into a single entry suitable
 ** for use as the key in an index.  The top P1 records are
@@ -2449,9 +2623,14 @@ case OP_MakeRecord: {
 ** data is popped off the stack first then the new key is pushed
 ** back in its place.
 **
+** P3 is a string that is P1 characters long.  Each character is either
+** an 'n' or a 't' to indicates if the argument should be numeric or
+** text.  The first character corresponds to the lowest element on the
+** stack.
+**
 ** See also: MakeIdxKey, SortMakeKey
 */
-/* Opcode: MakeIdxKey P1 P2 *
+/* Opcode: MakeIdxKey P1 P2 P3
 **
 ** Convert the top P1 entries of the stack into a single entry suitable
 ** for use as the key in an index.  In addition, take one additional integer
@@ -2473,6 +2652,11 @@ case OP_MakeRecord: {
 ** guaranteed to be unique.  This jump can be used to skip a subsequent
 ** uniqueness test.
 **
+** P3 is a string that is P1 characters long.  Each character is either
+** an 'n' or a 't' to indicates if the argument should be numeric or
+** text.  The first character corresponds to the lowest element on the
+** stack.
+**
 ** See also:  MakeKey, SortMakeKey
 */
 case OP_MakeIdxKey:
@@ -2488,13 +2672,15 @@ case OP_MakeKey: {
   nField = pOp->p1;
   VERIFY( if( p->tos+1+addRowid<nField ) goto not_enough_stack; )
   nByte = 0;
-  for(i=p->tos-nField+1; i<=p->tos; i++){
+  for(j=0, i=p->tos-nField+1; i<=p->tos; i++, j++){
     int flags = aStack[i].flags;
     int len;
     char *z;
     if( flags & STK_Null ){
       nByte += 2;
       containsNull = 1;
+    }else if( pOp->p3 && pOp->p3[j]=='t' ){
+      Stringify(p, i);
     }else if( flags & STK_Real ){
       z = aStack[i].z;
       sqliteRealToSortable(aStack[i].r, &z[1]);

@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.72 2002/06/17 17:07:20 drh Exp $
+** $Id: expr.c,v 1.73 2002/06/20 11:36:49 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -460,8 +460,10 @@ int sqliteExprResolveIds(
             if( j==pTab->iPKey ){
               /* Substitute the record number for the INTEGER PRIMARY KEY */
               pExpr->iColumn = -1;
+              pExpr->dataType = SQLITE_SO_NUM;
             }else{
               pExpr->iColumn = j;
+              pExpr->dataType = pTab->aCol[j].sortOrder & SQLITE_SO_TYPEMASK;
             }
             pExpr->op = TK_COLUMN;
           }
@@ -485,6 +487,7 @@ int sqliteExprResolveIds(
         pExpr->iTable = base;
         cnt = 1 + (pTabList->nSrc>1);
         pExpr->op = TK_COLUMN;
+        pExpr->dataType = SQLITE_SO_NUM;
       }
       sqliteFree(z);
       if( cnt==0 && pExpr->token.z[0]!='"' ){
@@ -546,6 +549,7 @@ int sqliteExprResolveIds(
             }else{
               pExpr->iColumn = j;
             }
+            pExpr->dataType = pTab->aCol[j].sortOrder & SQLITE_SO_TYPEMASK;
           }
         }
       }
@@ -568,10 +572,12 @@ int sqliteExprResolveIds(
 
         if( t ){ 
 	  int j;
-          for(j=0; j < pTriggerStack->pTab->nCol; j++) {
-            if( sqliteStrICmp(pTriggerStack->pTab->aCol[j].zName, zRight)==0 ){
+          Table *pTab = pTriggerStack->pTab;
+          for(j=0; j < pTab->nCol; j++) {
+            if( sqliteStrICmp(pTab->aCol[j].zName, zRight)==0 ){
               cnt++;
               pExpr->iColumn = j;
+              pExpr->dataType = pTab->aCol[j].sortOrder & SQLITE_SO_TYPEMASK;
             }
           }
 	}
@@ -580,6 +586,7 @@ int sqliteExprResolveIds(
       if( cnt==0 && cntTab==1 && sqliteIsRowid(zRight) ){
         cnt = 1;
         pExpr->iColumn = -1;
+        pExpr->dataType = SQLITE_SO_NUM;
       }
       sqliteFree(zLeft);
       sqliteFree(zRight);
@@ -714,10 +721,11 @@ int sqliteExprCheck(Parse *pParse, Expr *pExpr, int allowAgg, int *pIsAgg){
   if( pExpr==0 ) return 0;
   switch( pExpr->op ){
     case TK_FUNCTION: {
-      int n = pExpr->pList ? pExpr->pList->nExpr : 0;
-      int no_such_func = 0;
-      int wrong_num_args = 0;
-      int is_agg = 0;
+      int n = pExpr->pList ? pExpr->pList->nExpr : 0;  /* Number of arguments */
+      int no_such_func = 0;       /* True if no such function exists */
+      int is_type_of = 0;         /* True if is the special TypeOf() function */
+      int wrong_num_args = 0;     /* True if wrong number of arguments */
+      int is_agg = 0;             /* True if is an aggregate function */
       int i;
       FuncDef *pDef;
 
@@ -727,7 +735,12 @@ int sqliteExprCheck(Parse *pParse, Expr *pExpr, int allowAgg, int *pIsAgg){
         pDef = sqliteFindFunction(pParse->db,
            pExpr->token.z, pExpr->token.n, -1, 0);
         if( pDef==0 ){
-          no_such_func = 1;
+          if( n==1 && pExpr->token.n==6
+               && sqliteStrNICmp(pExpr->token.z, "typeof", 6)==0 ){
+            is_type_of = 1;
+          }else {
+            no_such_func = 1;
+          }
         }else{
           wrong_num_args = 1;
         }
@@ -758,6 +771,37 @@ int sqliteExprCheck(Parse *pParse, Expr *pExpr, int allowAgg, int *pIsAgg){
         nErr = sqliteExprCheck(pParse, pExpr->pList->a[i].pExpr,
                                allowAgg && !is_agg, pIsAgg);
       }
+      if( pDef==0 ){
+        if( is_type_of ){
+          pExpr->op = TK_STRING;
+          if( sqliteExprType(pExpr->pList->a[0].pExpr)==SQLITE_SO_NUM ){
+            pExpr->token.z = "numeric";
+            pExpr->token.n = 7;
+          }else{
+            pExpr->token.z = "text";
+            pExpr->token.n = 4;
+          }
+        }
+      }else if( pDef->dataType>=0 ){
+        if( pDef->dataType<n ){
+          pExpr->dataType = 
+             sqliteExprType(pExpr->pList->a[pDef->dataType].pExpr);
+        }else{
+          pExpr->dataType = SQLITE_SO_NUM;
+        }
+      }else if( pDef->dataType==SQLITE_ARGS ){
+        pDef->dataType = SQLITE_SO_TEXT;
+        for(i=0; i<n; i++){
+          if( sqliteExprType(pExpr->pList->a[i].pExpr)==SQLITE_SO_NUM ){
+            pExpr->dataType = SQLITE_SO_NUM;
+            break;
+          }
+        }
+      }else if( pDef->dataType==SQLITE_NUMERIC ){
+        pExpr->dataType = SQLITE_SO_NUM;
+      }else{
+        pExpr->dataType = SQLITE_SO_TEXT;
+      }
     }
     default: {
       if( pExpr->pLeft ){
@@ -778,6 +822,78 @@ int sqliteExprCheck(Parse *pParse, Expr *pExpr, int allowAgg, int *pIsAgg){
     }
   }
   return nErr;
+}
+
+/*
+** Return either SQLITE_SO_NUM or SQLITE_SO_TEXT to indicate whether the
+** given expression should sort as numeric values or as text.
+**
+** The sqliteExprResolveIds() and sqliteExprCheck() routines must have
+** both been called on the expression before it is passed to this routine.
+*/
+int sqliteExprType(Expr *p){
+  if( p==0 ) return SQLITE_SO_NUM;
+  while( p ) switch( p->op ){
+    case TK_PLUS:
+    case TK_MINUS:
+    case TK_STAR:
+    case TK_SLASH:
+    case TK_AND:
+    case TK_OR:
+    case TK_ISNULL:
+    case TK_NOTNULL:
+    case TK_NOT:
+    case TK_UMINUS:
+    case TK_BITAND:
+    case TK_BITOR:
+    case TK_BITNOT:
+    case TK_LSHIFT:
+    case TK_RSHIFT:
+    case TK_REM:
+    case TK_INTEGER:
+    case TK_FLOAT:
+    case TK_IN:
+    case TK_BETWEEN:
+      return SQLITE_SO_NUM;
+
+    case TK_STRING:
+    case TK_NULL:
+    case TK_CONCAT:
+      return SQLITE_SO_TEXT;
+
+    case TK_LT:
+    case TK_LE:
+    case TK_GT:
+    case TK_GE:
+    case TK_NE:
+    case TK_EQ:
+      if( sqliteExprType(p->pLeft)==SQLITE_SO_NUM ){
+        return SQLITE_SO_NUM;
+      }
+      p = p->pRight;
+      break;
+
+    case TK_AS:
+      p = p->pLeft;
+      break;
+
+    case TK_COLUMN:
+    case TK_FUNCTION:
+    case TK_AGG_FUNCTION:
+      return p->dataType;
+
+    case TK_SELECT:
+      assert( p->pSelect );
+      assert( p->pSelect->pEList );
+      assert( p->pSelect->pEList->nExpr>0 );
+      p = p->pSelect->pEList->a[0].pExpr;
+      break;
+
+    default:
+      assert( p->op==TK_ABORT );  /* Can't Happen */
+      break;
+  }
+  return SQLITE_SO_NUM;
 }
 
 /*
@@ -856,6 +972,17 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
       sqliteVdbeAddOp(v, OP_String, 0, 0);
       break;
     }
+    case TK_LT:
+    case TK_LE:
+    case TK_GT:
+    case TK_GE:
+    case TK_NE:
+    case TK_EQ: {
+      if( pParse->db->file_format>=3 && sqliteExprType(pExpr)==SQLITE_SO_TEXT ){
+        op += 6;  /* Convert numeric opcodes to text opcodes */
+      }
+      /* Fall through into the next case */
+    }
     case TK_AND:
     case TK_OR:
     case TK_PLUS:
@@ -864,13 +991,7 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
     case TK_REM:
     case TK_BITAND:
     case TK_BITOR:
-    case TK_SLASH:
-    case TK_LT:
-    case TK_LE:
-    case TK_GT:
-    case TK_GE:
-    case TK_NE:
-    case TK_EQ: {
+    case TK_SLASH: {
       sqliteExprCode(pParse, pExpr->pLeft);
       sqliteExprCode(pParse, pExpr->pRight);
       sqliteVdbeAddOp(v, op, 0, 0);
@@ -1090,6 +1211,9 @@ void sqliteExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
     case TK_EQ: {
       sqliteExprCode(pParse, pExpr->pLeft);
       sqliteExprCode(pParse, pExpr->pRight);
+      if( pParse->db->file_format>=3 && sqliteExprType(pExpr)==SQLITE_SO_TEXT ){
+        op += 6;  /* Convert numeric opcodes to text opcodes */
+      }
       sqliteVdbeAddOp(v, op, jumpIfNull, dest);
       break;
     }
@@ -1180,6 +1304,9 @@ void sqliteExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
     case TK_GE:
     case TK_NE:
     case TK_EQ: {
+      if( pParse->db->file_format>=3 && sqliteExprType(pExpr)==SQLITE_SO_TEXT ){
+        op += 6;  /* Convert numeric opcodes to text opcodes */
+      }
       sqliteExprCode(pParse, pExpr->pLeft);
       sqliteExprCode(pParse, pExpr->pRight);
       sqliteVdbeAddOp(v, op, jumpIfNull, dest);
@@ -1395,6 +1522,7 @@ FuncDef *sqliteFindFunction(
   if( p==0 && createFlag && (p = sqliteMalloc(sizeof(*p)))!=0 ){
     p->nArg = nArg;
     p->pNext = pFirst;
+    p->dataType = pFirst ? pFirst->dataType : SQLITE_NUMERIC;
     sqliteHashInsert(&db->aFunc, zName, nName, (void*)p);
   }
   return p;

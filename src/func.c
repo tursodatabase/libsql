@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.20 2002/06/09 10:14:19 drh Exp $
+** $Id: func.c,v 1.21 2002/06/20 11:36:49 drh Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -416,42 +416,44 @@ void sqliteRegisterBuiltinFunctions(sqlite *db){
   static struct {
      char *zName;
      int nArg;
+     int dataType;
      void (*xFunc)(sqlite_func*,int,const char**);
   } aFuncs[] = {
-    { "min",       -1, minFunc    },
-    { "min",        0, 0          },
-    { "max",       -1, maxFunc    },
-    { "max",        0, 0          },
-    { "length",     1, lengthFunc },
-    { "substr",     3, substrFunc },
-    { "abs",        1, absFunc    },
-    { "round",      1, roundFunc  },
-    { "round",      2, roundFunc  },
-    { "upper",      1, upperFunc  },
-    { "lower",      1, lowerFunc  },
-    { "coalesce",  -1, ifnullFunc },
-    { "coalesce",   0, 0          },
-    { "coalesce",   1, 0          },
-    { "ifnull",     2, ifnullFunc },
-    { "random",    -1, randomFunc },
-    { "like",       2, likeFunc   },
-    { "glob",       2, globFunc   },
-    { "nullif",     2, nullifFunc },
+    { "min",       -1, SQLITE_ARGS,    minFunc    },
+    { "min",        0, 0,              0          },
+    { "max",       -1, SQLITE_ARGS,    maxFunc    },
+    { "max",        0, 0,              0          },
+    { "length",     1, SQLITE_NUMERIC, lengthFunc },
+    { "substr",     3, SQLITE_TEXT,    substrFunc },
+    { "abs",        1, SQLITE_NUMERIC, absFunc    },
+    { "round",      1, SQLITE_NUMERIC, roundFunc  },
+    { "round",      2, SQLITE_NUMERIC, roundFunc  },
+    { "upper",      1, SQLITE_TEXT,    upperFunc  },
+    { "lower",      1, SQLITE_TEXT,    lowerFunc  },
+    { "coalesce",  -1, SQLITE_ARGS,    ifnullFunc },
+    { "coalesce",   0, 0,              0          },
+    { "coalesce",   1, 0,              0          },
+    { "ifnull",     2, SQLITE_ARGS,    ifnullFunc },
+    { "random",    -1, SQLITE_NUMERIC, randomFunc },
+    { "like",       2, SQLITE_NUMERIC, likeFunc   },
+    { "glob",       2, SQLITE_NUMERIC, globFunc   },
+    { "nullif",     2, SQLITE_ARGS,    nullifFunc },
   };
   static struct {
     char *zName;
     int nArg;
+    int dataType;
     void (*xStep)(sqlite_func*,int,const char**);
     void (*xFinalize)(sqlite_func*);
   } aAggs[] = {
-    { "min",    1, minStep,      minMaxFinalize },
-    { "max",    1, maxStep,      minMaxFinalize },
-    { "sum",    1, sumStep,      sumFinalize    },
-    { "avg",    1, sumStep,      avgFinalize    },
-    { "count",  0, countStep,    countFinalize  },
-    { "count",  1, countStep,    countFinalize  },
+    { "min",    1, 0,              minStep,      minMaxFinalize },
+    { "max",    1, 0,              maxStep,      minMaxFinalize },
+    { "sum",    1, SQLITE_NUMERIC, sumStep,      sumFinalize    },
+    { "avg",    1, SQLITE_NUMERIC, sumStep,      avgFinalize    },
+    { "count",  0, SQLITE_NUMERIC, countStep,    countFinalize  },
+    { "count",  1, SQLITE_NUMERIC, countStep,    countFinalize  },
 #if 0
-    { "stddev", 1, stdDevStep,   stdDevFinalize },
+    { "stddev", 1, SQLITE_NUMERIC, stdDevStep,   stdDevFinalize },
 #endif
   };
   int i;
@@ -459,11 +461,16 @@ void sqliteRegisterBuiltinFunctions(sqlite *db){
   for(i=0; i<sizeof(aFuncs)/sizeof(aFuncs[0]); i++){
     sqlite_create_function(db, aFuncs[i].zName,
            aFuncs[i].nArg, aFuncs[i].xFunc, 0);
+    if( aFuncs[i].xFunc ){
+      sqlite_function_type(db, aFuncs[i].zName, aFuncs[i].dataType);
+    }
   }
   sqlite_create_function(db, "last_insert_rowid", 0, 
            last_insert_rowid, db);
+  sqlite_function_type(db, "last_insert_rowid", SQLITE_NUMERIC);
   for(i=0; i<sizeof(aAggs)/sizeof(aAggs[0]); i++){
     sqlite_create_aggregate(db, aAggs[i].zName,
            aAggs[i].nArg, aAggs[i].xStep, aAggs[i].xFinalize, 0);
+    sqlite_function_type(db, aAggs[i].zName, aAggs[i].dataType);
   }
 }

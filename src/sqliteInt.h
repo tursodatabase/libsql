@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.126 2002/06/19 14:27:05 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.127 2002/06/20 11:36:50 drh Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -176,7 +176,18 @@ typedef struct TriggerStep TriggerStep;
 typedef struct TriggerStack TriggerStack;
 
 /*
-** Each database is an instance of the following structure
+** Each database is an instance of the following structure.
+**
+** The sqlite.file_format is initialized by the database file
+** and helps determines how the data in the database file is
+** represented.  This field allows newer versions of the library
+** to read and write older databases.  The various file formats
+** are as follows:
+**
+**     file_format==1    Version 2.1.0.
+**     file_format==2    Version 2.2.0. Add support for INTEGER PRIMARY KEY.
+**     file_format==3    Version 2.6.0. Add support for separate numeric and
+**                       text datatypes.
 */
 struct sqlite {
   Btree *pBe;                   /* The B*Tree backend */
@@ -244,6 +255,7 @@ struct FuncDef {
   void (*xStep)(sqlite_func*,int,const char**);  /* Aggregate function step */
   void (*xFinalize)(sqlite_func*);           /* Aggregate function finializer */
   int nArg;                                  /* Number of arguments */
+  int dataType;                              /* Datatype of the result */
   void *pUserData;                           /* User data parameter */
   FuncDef *pNext;                            /* Next function with same name */
 };
@@ -876,6 +888,7 @@ int sqliteGlobCompare(const unsigned char*,const unsigned char*);
 int sqliteLikeCompare(const unsigned char*,const unsigned char*);
 char *sqliteTableNameFromToken(Token*);
 int sqliteExprCheck(Parse*, Expr*, int, int*);
+int sqliteExprType(Expr*);
 int sqliteExprCompare(Expr*, Expr*);
 int sqliteFuncId(Token*);
 int sqliteExprResolveIds(Parse*, int, SrcList*, ExprList*, Expr*);
