@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.134 2004/05/14 01:58:13 drh Exp $
+** $Id: btree.c,v 1.135 2004/05/14 12:17:46 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1134,7 +1134,7 @@ static int newDatabase(Btree *pBt){
   data[22] = pBt->minEmbedFrac;
   data[23] = pBt->minLeafFrac;
   memset(&data[24], 0, 100-24);
-  zeroPage(pP1, PTF_INTKEY|PTF_LEAF );
+  zeroPage(pP1, PTF_INTKEY|PTF_LEAF|PTF_LEAFDATA );
   return SQLITE_OK;
 }
 
