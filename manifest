@@ -1,5 +1,5 @@
-C Enhancements\sto\sthe\sDELETE\scommand\s(CVS\s194)
-D 2001-03-20T22:05:00
+C Version\s1.0.27\s(CVS\s476)
+D 2001-03-20T22:15:00
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 7efa81e2985b45ba73db27d55b70cc927f5abfd7
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -91,7 +91,7 @@ F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 06f81c401f79a04f2c5ebfb97e7c176225c0aef2
 F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P 99f9ea412f87cfb518cfb34f0e187fd1baf56761
+P daea156e2430762e683ff5460f9f8bb3204ae168
 R e053fcd301655951022cbe2ddba947b1
 U drh
-Z 61cc14fc5b8ff57148f02f9ffc944cce
+Z ad447a72b5a7a06ad29b2399f5aa6480
