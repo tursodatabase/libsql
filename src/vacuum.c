@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.25 2004/06/30 06:30:26 danielk1977 Exp $
+** $Id: vacuum.c,v 1.26 2004/06/30 09:49:24 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -82,7 +82,9 @@ static int execExecSql(sqlite3 *db, const char *zSql){
 */
 void sqlite3Vacuum(Parse *pParse, Token *pTableName){
   Vdbe *v = sqlite3GetVdbe(pParse);
-  sqlite3VdbeAddOp(v, OP_Vacuum, 0, 0);
+  if( v ){
+    sqlite3VdbeAddOp(v, OP_Vacuum, 0, 0);
+  }
   return;
 }
 
@@ -110,9 +112,13 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite *db){
   ** temporary filename in the same directory as the original file.
   */
   zFilename = sqlite3BtreeGetFilename(db->aDb[0].pBt);
-  if( zFilename==0 ){
-    /* The in-memory database. Do nothing. */
-    goto end_of_vacuum;
+  assert( zFilename );
+  if( zFilename[0]=='\0' ){
+    /* The in-memory database. Do nothing. Return directly to avoid causing
+    ** an error trying to DETACH the vacuum_db (which never got attached)
+    ** in the exit-handler.
+    */
+    return SQLITE_OK;
   }
   nFilename = strlen(zFilename);
   zTemp = sqliteMalloc( nFilename+100 );
@@ -121,11 +127,11 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite *db){
     goto end_of_vacuum;
   }
   strcpy(zTemp, zFilename);
-  for(i=0; i<10; i++){
+  i = 0;
+  do {
     zTemp[nFilename] = '-';
     randomName((unsigned char*)&zTemp[nFilename+1]);
-    if( !sqlite3OsFileExists(zTemp) ) break;
-  }
+  } while( i<10 && sqlite3OsFileExists(zTemp) );
 
   /* Attach the temporary database as 'vacuum_db'. The synchronous pragma
   ** can be set to 'off' for this file, as it is not recovered if a crash
@@ -136,7 +142,6 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite *db){
   ** An optimisation would be to use a non-journaled pager.
   */
   zSql = sqlite3MPrintf("ATTACH '%s' AS vacuum_db;", zTemp);
-  execSql(db, "PRAGMA vacuum_db.synchronous = off;");
   if( !zSql ){
     rc = SQLITE_NOMEM;
     goto end_of_vacuum;
@@ -145,6 +150,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite *db){
   sqliteFree(zSql);
   zSql = 0;
   if( rc!=SQLITE_OK ) goto end_of_vacuum;
+  execSql(db, "PRAGMA vacuum_db.synchronous = off;");
 
   /* Begin a transaction */
   rc = execSql(db, "BEGIN;");
@@ -231,7 +237,11 @@ end_of_vacuum:
   ** is closed by the DETACH.
   */
   db->autoCommit = 1;
-  execSql(db, "DETACH vacuum_db;");
+  if( rc==SQLITE_OK ){
+    rc = execSql(db, "DETACH vacuum_db;");
+  }else{
+    execSql(db, "DETACH vacuum_db;");
+  }
   if( zTemp ){
     sqlite3OsDelete(zTemp);
     sqliteFree(zTemp);

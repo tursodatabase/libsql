@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.242 2004/06/29 13:18:24 danielk1977 Exp $
+** $Id: main.c,v 1.243 2004/06/30 09:49:24 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -962,6 +962,10 @@ int sqlite3_prepare(
   Parse sParse;
   char *zErrMsg = 0;
   int rc = SQLITE_OK;
+
+  if( sqlite3_malloc_failed ){
+    return SQLITE_NOMEM;
+  }
 
   assert( ppStmt );
   *ppStmt = 0;

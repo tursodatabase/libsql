@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the VACUUM statement.
 #
-# $Id: vacuum.test,v 1.21 2004/06/19 00:16:32 drh Exp $
+# $Id: vacuum.test,v 1.22 2004/06/30 09:49:24 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -199,5 +199,14 @@ do_test vacuum-6.4 {
     select count(*) from "abc abc" WHERE a = X'00112233';
   }
 } {1}
+
+# Check what happens when an in-memory database is vacuumed.
+do_test vacuum-7.0 {
+  sqlite3 db2 :memory:
+  execsql {
+    CREATE TABLE t1(t);
+    VACUUM;
+  } db2
+} {}
 
 # finish_test
