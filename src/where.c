@@ -12,7 +12,7 @@
 ** This module contains C code that generates VDBE code used to process
 ** the WHERE clause of SQL statements.
 **
-** $Id: where.c,v 1.92 2004/05/14 11:00:53 danielk1977 Exp $
+** $Id: where.c,v 1.93 2004/05/14 11:16:56 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -803,16 +803,10 @@ WhereInfo *sqlite3WhereBegin(
       if( nColumn==pIdx->nColumn || pLevel->bRev ){
         testOp = OP_IdxGT;
       }else{
-/*
-        sqlite3VdbeAddOp(v, OP_Dup, 0, 0);
-        sqlite3VdbeAddOp(v, OP_IncrKey, 0, 0);
-        sqlite3VdbeAddOp(v, OP_MemStore, pLevel->iMem, 1);
-*/
         testOp = OP_IdxGE;
       }
       if( pLevel->bRev ){
         /* Scan in reverse order */
-        /* sqlite3VdbeAddOp(v, OP_IncrKey, 0, 0); */
         sqlite3VdbeAddOp(v, OP_MoveLt, pLevel->iCur, brk);
         sqlite3VdbeChangeP3(v, -1, "+", P3_STATIC);
         start = sqlite3VdbeAddOp(v, OP_MemLoad, pLevel->iMem, 0);
@@ -1010,11 +1004,6 @@ WhereInfo *sqlite3WhereBegin(
         sqlite3VdbeAddOp(v, OP_Goto, 0, brk);
         sqlite3VdbeAddOp(v, OP_MakeKey, nCol, 0);
         sqlite3AddIdxKeyType(v, pIdx);
-/*
-        if( leFlag ){
-          sqlite3VdbeAddOp(v, OP_IncrKey, 0, 0);
-        }
-*/
         if( pLevel->bRev ){
           sqlite3VdbeAddOp(v, OP_MoveLt, pLevel->iCur, brk);
           if( !geFlag ){
@@ -1071,11 +1060,6 @@ WhereInfo *sqlite3WhereBegin(
         sqlite3VdbeAddOp(v, OP_Goto, 0, brk);
         sqlite3VdbeAddOp(v, OP_MakeKey, nCol, 0);
         sqlite3AddIdxKeyType(v, pIdx);
-/*
-        if( !geFlag ){
-          sqlite3VdbeAddOp(v, OP_IncrKey, 0, 0);
-        }
-*/
         if( pLevel->bRev ){
           pLevel->iMem = pParse->nMem++;
           sqlite3VdbeAddOp(v, OP_MemStore, pLevel->iMem, 1);

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.288 2004/05/14 11:00:53 danielk1977 Exp $
+** $Id: vdbe.c,v 1.289 2004/05/14 11:16:56 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2203,177 +2203,6 @@ case OP_MakeRecord: {
 /* Opcode: MakeKey P1 P2 P3
 **
 ** Convert the top P1 entries of the stack into a single entry suitable
-** for use as the key in an index.  The top P1 records are
-** converted to strings and merged.  The null-terminators 
-** are retained and used as separators.
-** The lowest entry in the stack is the first field and the top of the
-** stack becomes the last.
-**
-** If P2 is not zero, then the original entries remain on the stack
-** and the new key is pushed on top.  If P2 is zero, the original
-** data is popped off the stack first then the new key is pushed
-** back in its place.
-**
-** P3 is a string that is P1 characters long.  Each character is either
-** an 'n' or a 't' to indicates if the argument should be intepreted as
-** numeric or text type.  The first character of P3 corresponds to the
-** lowest element on the stack.  If P3 is NULL then all arguments are
-** assumed to be of the numeric type.
-**
-** The type makes a difference in that text-type fields may not be 
-** introduced by 'b' (as described in the next paragraph).  The
-** first character of a text-type field must be either 'a' (if it is NULL)
-** or 'c'.  Numeric fields will be introduced by 'b' if their content
-** looks like a well-formed number.  Otherwise the 'a' or 'c' will be
-** used.
-**
-** The key is a concatenation of fields.  Each field is terminated by
-** a single 0x00 character.  A NULL field is introduced by an 'a' and
-** is followed immediately by its 0x00 terminator.  A numeric field is
-** introduced by a single character 'b' and is followed by a sequence
-** of characters that represent the number such that a comparison of
-** the character string using memcpy() sorts the numbers in numerical
-** order.  The character strings for numbers are generated using the
-** sqlite3RealToSortable() function.  A text field is introduced by a
-** 'c' character and is followed by the exact text of the field.  The
-** use of an 'a', 'b', or 'c' character at the beginning of each field
-** guarantees that NULLs sort before numbers and that numbers sort
-** before text.  0x00 characters do not occur except as separators
-** between fields.
-**
-** See also: MakeIdxKey, SortMakeKey
-*/
-/* Opcode: MakeIdxKey P1 P2 P3
-**
-** Convert the top P1 entries of the stack into a single entry suitable
-** for use as the key in an index.  In addition, take one additional integer
-** off of the stack, treat that integer as an eight-byte record number, and
-** append the integer to the key.  Thus a total of P1+1 entries are
-** popped from the stack for this instruction and a single entry is pushed
-** back.  The first P1 entries that are popped are strings and the last
-** entry (the lowest on the stack) is an integer record number.
-**
-** The converstion of the first P1 string entries occurs just like in
-** MakeKey.  Each entry is separated from the others by a null.
-** The entire concatenation is null-terminated.  The lowest entry
-** in the stack is the first field and the top of the stack becomes the
-** last.
-**
-** If P2 is not zero and one or more of the P1 entries that go into the
-** generated key is NULL, then jump to P2 after the new key has been
-** pushed on the stack.  In other words, jump to P2 if the key is
-** guaranteed to be unique.  This jump can be used to skip a subsequent
-** uniqueness test.
-**
-** P3 is a string that is P1 characters long.  Each character is either
-** an 'n' or a 't' to indicates if the argument should be numeric or
-** text.  The first character corresponds to the lowest element on the
-** stack.  If P3 is null then all arguments are assumed to be numeric.
-**
-** See also:  MakeKey, SortMakeKey
-*/
-case OP_MakeIdxKey2:
-case OP_MakeKey2: {
-  char *zNewKey;
-  int nByte;
-  int nField;
-  int addRowid;
-  int i, j;
-  int containsNull = 0;
-  Mem *pRec;
-  char zTemp[NBFS];
-
-  addRowid = pOp->opcode==OP_MakeIdxKey;
-  nField = pOp->p1;
-  pRec = &pTos[1-nField];
-  assert( pRec>=p->aStack );
-  nByte = 0;
-  for(j=0, i=0; i<nField; i++, j++, pRec++){
-    int flags = pRec->flags;
-    int len;
-    char *z;
-    if( flags & MEM_Null ){
-      nByte += 2;
-      containsNull = 1;
-    }else if( pOp->p3 && pOp->p3[j]=='t' ){
-      Stringify(pRec);
-      pRec->flags &= ~(MEM_Int|MEM_Real);
-      nByte += pRec->n+1;
-    }else if( (flags & (MEM_Real|MEM_Int))!=0 || sqlite3IsNumber(pRec->z, 0) ){
-      if( (flags & (MEM_Real|MEM_Int))==MEM_Int ){
-        pRec->r = pRec->i;
-      }else if( (flags & (MEM_Real|MEM_Int))==0 ){
-        pRec->r = sqlite3AtoF(pRec->z, 0);
-      }
-      Release(pRec);
-      z = pRec->zShort;
-      sqlite3RealToSortable(pRec->r, z);
-      len = strlen(z);
-      pRec->z = 0;
-      pRec->flags = MEM_Real;
-      pRec->n = len+1;
-      nByte += pRec->n+1;
-    }else{
-      nByte += pRec->n+1;
-    }
-  }
-  if( nByte+sizeof(u32)>MAX_BYTES_PER_ROW ){
-    rc = SQLITE_TOOBIG;
-    goto abort_due_to_error;
-  }
-  if( addRowid ) nByte += sizeof(i64);
-  if( nByte<=NBFS ){
-    zNewKey = zTemp;
-  }else{
-    zNewKey = sqliteMallocRaw( nByte );
-    if( zNewKey==0 ) goto no_mem;
-  }
-  j = 0;
-  pRec = &pTos[1-nField];
-  for(i=0; i<nField; i++, pRec++){
-    if( pRec->flags & MEM_Null ){
-      zNewKey[j++] = 'a';
-      zNewKey[j++] = 0;
-    }else if( pRec->flags==MEM_Real ){
-      zNewKey[j++] = 'b';
-      memcpy(&zNewKey[j], pRec->zShort, pRec->n);
-      j += pRec->n;
-    }else{
-      assert( pRec->flags & MEM_Str );
-      zNewKey[j++] = 'c';
-      memcpy(&zNewKey[j], pRec->z, pRec->n);
-      j += pRec->n;
-    }
-  }
-  if( addRowid ){
-    i64 iKey;
-    pRec = &pTos[-nField];
-    assert( pRec>=p->aStack );
-    Integerify(pRec);
-    iKey = intToKey(pRec->i);
-    memcpy(&zNewKey[j], &iKey, sizeof(i64));
-    popStack(&pTos, nField+1);
-    if( pOp->p2 && containsNull ) pc = pOp->p2 - 1;
-  }else{
-    if( pOp->p2==0 ) popStack(&pTos, nField);
-  }
-  pTos++;
-  pTos->n = nByte;
-  if( nByte<=NBFS ){
-    assert( zNewKey==zTemp );
-    pTos->z = pTos->zShort;
-    memcpy(pTos->zShort, zTemp, nByte);
-    pTos->flags = MEM_Str | MEM_Short;
-  }else{
-    pTos->z = zNewKey;
-    pTos->flags = MEM_Str | MEM_Dyn;
-  }
-  break;
-}
-
-/* Opcode: MakeKey P1 P2 P3
-**
-** Convert the top P1 entries of the stack into a single entry suitable
 ** for use as the key in an index. If P2 is not zero, then the original 
 ** entries are popped off the stack. If P2 is zero, the original entries
 ** remain on the stack.
@@ -2507,32 +2336,6 @@ case OP_MakeIdxKey: {
   if( pOp->p2 && containsNull && addRowid ){
     pc = pOp->p2 - 1;
   }
-  break;
-}
-
-/* Opcode: IncrKey * * *
-**
-** The top of the stack should contain an index key generated by
-** The MakeKey opcode.  This routine increases the least significant
-** byte of that key by one.  This is used so that the MoveTo opcode
-** will move to the first entry greater than the key rather than to
-** the key itself.
-**
-*/
-case OP_IncrKey: {
-  assert( pTos>=p->aStack );
-  /* The IncrKey opcode is only applied to keys generated by
-  ** MakeKey or MakeIdxKey and the results of those operands
-  ** are always dynamic strings or zShort[] strings.  So we
-  ** are always free to modify the string in place.
-  */
-  assert( pTos->flags & (MEM_Dyn|MEM_Short) );
-  /*
-  ** FIX ME: This technique is now broken due to manifest types in index
-  ** keys.
-  */
-  assert(0);
-  pTos->z[pTos->n-1]++;
   break;
 }
 
