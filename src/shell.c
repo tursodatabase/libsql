@@ -24,7 +24,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.2 2000/05/29 17:44:25 drh Exp $
+** $Id: shell.c,v 1.3 2000/05/30 18:45:24 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -34,9 +34,88 @@
 #include <ctype.h>
 
 #if !defined(NO_READLINE)
-#include <readline/readline.h>
-#include <readline/history.h>
+# include <readline/readline.h>
+# include <readline/history.h>
+#else
+# define readline getline
+# define add_history(X) 
 #endif
+
+/*
+** This routine reads a line of text from standard input, stores
+** the text in memory obtained from malloc() and returns a pointer
+** to the text.  NULL is returned at end of file, or if malloc()
+** fails.
+**
+** The interface is like "readline" but no command-line editing
+** is done.
+*/
+static char *getline(char *zPrompt){
+  char *zLine;
+  int nLine;
+  char *z;
+  int n;
+  int eol;
+
+  if( zPrompt && *zPrompt ){
+    printf("%s",zPrompt);
+    fflush(stdout);
+  }
+  nLine = 100;
+  zLine = malloc( nLine );
+  if( zLine==0 ) return 0;
+  n = 0;
+  eol = 0;
+  while( !eol ){
+    if( n+100>nLine ){
+      nLine = nLine*2 + 100;
+      zLine = realloc(zLine, nLine);
+      if( zLine==0 ) return 0;
+    }
+    if( fgets(&zLine[n], nLine - n, stdin)==0 ){
+      if( n==0 ){
+        free(zLine);
+        return 0;
+      }
+      zLine[n] = 0;
+      eol = 1;
+      break;
+    }
+    while( zLine[n] ){ n++; }
+    if( n>0 && zLine[n-1]=='\n' ){
+      n--;
+      zLine[n] = 0;
+      eol = 1;
+    }
+  }
+  zLine = realloc( zLine, n+1 );
+  return zLine;
+}
+
+/*
+** Retrieve a single line of input text.  "isatty" is true if text
+** is coming from a terminal.  In that case, we issue a prompt and
+** attempt to use "readline" for command-line editing.  If "isatty"
+** is false, use "getline" instead of "readline" and issue to prompt.
+**
+** zPrior is a string of prior text retrieved.  If not the empty
+** string, then issue a continuation prompt.
+*/
+static char *one_input_line(const char *zPrior, int isatty){
+  char *zPrompt;
+  char *zResult;
+  if( !isatty ){
+    return getline(0);
+  }
+  if( zPrior && zPrior[0] ){
+    zPrompt = "   ...> ";
+  }else{
+    zPrompt = "sqlite> ";
+  }
+  zResult = readline(zPrompt);
+  add_history(zResult);
+  return zResult;
+}
 
 /*
 ** An pointer to an instance of this structure is passed from
@@ -345,8 +424,7 @@ int main(int argc, char **argv){
         "Enter \".help\" for instructions\n"
       );
     }
-    while( (zLine = readline(istty ? (zSql==0 ? "sql> " : ".... ") : 0))!=0 ){
-      add_history(zLine);
+    while( (zLine = one_input_line(zSql, istty))!=0 ){
       if( zLine && zLine[0]=='.' ){
         do_meta_command(zLine, db, &data);
         free(zLine);
