@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.200 2004/07/20 00:20:23 drh Exp $
+** $Id: select.c,v 1.201 2004/07/20 01:45:20 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -988,11 +988,11 @@ static int fillInColumnList(Parse *pParse, Select *p){
         /* This expression is a "*" or a "TABLE.*" and needs to be
         ** expanded. */
         int tableSeen = 0;      /* Set to 1 when TABLE matches */
-        Token *pName;           /* text of name of TABLE */
+        char *zTName;            /* text of name of TABLE */
         if( pE->op==TK_DOT && pE->pLeft ){
-          pName = &pE->pLeft->token;
+          zTName = sqlite3NameFromToken(&pE->pLeft->token);
         }else{
-          pName = 0;
+          zTName = 0;
         }
         for(i=0; i<pTabList->nSrc; i++){
           Table *pTab = pTabList->a[i].pTab;
@@ -1000,9 +1000,8 @@ static int fillInColumnList(Parse *pParse, Select *p){
           if( zTabName==0 || zTabName[0]==0 ){ 
             zTabName = pTab->zName;
           }
-          if( pName && (zTabName==0 || zTabName[0]==0 || 
-                 sqlite3StrNICmp(pName->z, zTabName, pName->n)!=0 ||
-                 zTabName[pName->n]!=0) ){
+          if( zTName && (zTabName==0 || zTabName[0]==0 || 
+                 sqlite3StrICmp(zTName, zTabName)!=0) ){
             continue;
           }
           tableSeen = 1;
@@ -1047,13 +1046,14 @@ static int fillInColumnList(Parse *pParse, Select *p){
           }
         }
         if( !tableSeen ){
-          if( pName ){
-            sqlite3ErrorMsg(pParse, "no such table: %T", pName);
+          if( zTName ){
+            sqlite3ErrorMsg(pParse, "no such table: %s", zTName);
           }else{
             sqlite3ErrorMsg(pParse, "no tables specified");
           }
           rc = 1;
         }
+        sqliteFree(zTName);
       }
     }
     sqlite3ExprListDelete(pEList);
