@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.47 2001/10/22 02:58:10 drh Exp $
+** $Id: main.c,v 1.48 2001/11/03 23:57:09 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -428,7 +428,7 @@ int sqlite_complete(const char *zSql){
 */
 int sqlite_exec(
   sqlite *db,                 /* The database on which the SQL executes */
-  char *zSql,                 /* The SQL to be executed */
+  const char *zSql,           /* The SQL to be executed */
   sqlite_callback xCallback,  /* Invoke this callback routine */
   void *pArg,                 /* First argument to xCallback() */
   char **pzErrMsg             /* Write error messages here */

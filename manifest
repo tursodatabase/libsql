@@ -1,5 +1,5 @@
-C Remove\scruft:\srestrict\sthe\snumber\sof\ssorters\sand\slists\sin\sthe\sVDBE\sto\sone\nsince\sno\smore\sthan\sone\swas\sever\sused\sanyway.\s\sThis\seliminates\sseveral\nop-codes\sand\ssimplifies\sthe\simplementation\sof\sseveral\sothers.\s(CVS\s297)
-D 2001-11-01T14:41:34
+C Added\s"const"\sto\slots\sof\s"char*"\sparameters\sin\sthe\sAPI.\s(CVS\s298)
+D 2001-11-03T23:57:09
 F Makefile.in 6801df952cb1df64aa32e4de85fed24511d28efd
 F Makefile.template 1fdb891f14083ee0b63cf7282f91529634438e7a
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -27,21 +27,21 @@ F src/expr.c 2dd0252ced345c1e64db015b94dc6b5d7a57eef3
 F src/hash.c d0110e6da70a5962e21575fccf8206f7d9d75e00
 F src/hash.h a5f5b3ce2d086a172c5879b0b06a27a82eac9fac
 F src/insert.c b65c1d4b848e45d41e9dcccd2b226ca335de67b6
-F src/main.c 47922699c75e24ffec071cdf300405436e5bb16e
+F src/main.c e2ae5e14a3f936d5fa7e3d9d9477610b5f16e7eb
 F src/md5.c 52f677bfc590e09f71d07d7e327bd59da738d07c
 F src/os.c 66b677479eae37e30bdfbe32deb0fe6a2efca983
 F src/os.h bed702c9e3b768bc3cb1b12c90b83d099c1546be
 F src/pager.c 0bd0b4b693edb43c72774e3e749d8667e2ae7094
 F src/pager.h a0d4c5ae271914aa07b62aee0707997d6932b6ca
 F src/parse.y 148e4cd134d3cbd816dcb0df50e49e498faa6ba4
-F src/printf.c 167fbfb192b4dce48154398f22dbc614e9f5d088
+F src/printf.c 300a90554345751f26e1fc0c0333b90a66110a1d
 F src/random.c 2a9cc2c9716d14815fd4c2accf89d87a1143e46b
 F src/select.c c34b02eafaa69fde6b4428df7861c3417b3079f9
 F src/shell.c 71597951753b56a97fea1c7a30908f31e635c00c
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
-F src/sqlite.h.in f2c40c869ff40ad3e60d8a3b1f72777fa28b32fc
+F src/sqlite.h.in 934de9112747ad8d8e7d5fec44876246b24ca5a3
 F src/sqliteInt.h 9a18aebf42a805ba02f55eba2239beabe35f02b3
-F src/table.c be9c7bf883c731c6719f0fcc188ea2bac8ae7122
+F src/table.c c89698bd5bb4b8d14722d6ee7e9be014c383d24a
 F src/tclsqlite.c 4896e078495bf868742f5394dcf01c5efe5bea02
 F src/test1.c e4b31f62ea71963cbae44338acf477a04fc8fc49
 F src/test2.c e9f99aa5ee73872819259d6612c11e55e1644321
@@ -114,7 +114,7 @@ F www/speed.tcl 212a91d555384e01873160d6a189f1490c791bc2
 F www/sqlite.tcl 6a21242a272e9c0939a04419a51c3d50cae33e3e
 F www/tclsqlite.tcl 13d50723f583888fc80ae1a38247c0ab415066fa
 F www/vdbe.tcl bb7d620995f0a987293e9d4fb6185a3b077e9b44
-P b2cb118fb7c6713684d32a48a7ba8ffffe596687
-R 11be61d659c8d3b7f97b8d20e188eb7e
+P e1370276c2a0d045b29c981ddcb59f737e19a91c
+R fb7f20c8fe87aa63faec6df38adee18f
 U drh
-Z 1756e792427d370fb3a08a33a148f36d
+Z a5329e1c376ad697c312a452a3c161ed

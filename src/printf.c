@@ -737,7 +737,7 @@ char *sqlite_vmprintf(const char *zFormat, va_list ap){
 */
 int sqlite_exec_printf(
   sqlite *db,                   /* An open database */
-  char *sqlFormat,              /* printf-style format string for the SQL */
+  const char *sqlFormat,        /* printf-style format string for the SQL */
   sqlite_callback xCallback,    /* Callback function */
   void *pArg,                   /* 1st argument to callback function */
   char **errmsg,                /* Error msg written here */
@@ -753,7 +753,7 @@ int sqlite_exec_printf(
 }
 int sqlite_exec_vprintf(
   sqlite *db,                   /* An open database */
-  char *sqlFormat,              /* printf-style format string for the SQL */
+  const char *sqlFormat,        /* printf-style format string for the SQL */
   sqlite_callback xCallback,    /* Callback function */
   void *pArg,                   /* 1st argument to callback function */
   char **errmsg,                /* Error msg written here */
@@ -769,7 +769,7 @@ int sqlite_exec_vprintf(
 }
 int sqlite_get_table_printf(
   sqlite *db,            /* An open database */
-  char *sqlFormat,       /* printf-style format string for the SQL */
+  const char *sqlFormat, /* printf-style format string for the SQL */
   char ***resultp,       /* Result written to a char *[]  that this points to */
   int *nrow,             /* Number of result rows written here */
   int *ncol,             /* Number of result columns written here */
@@ -786,7 +786,7 @@ int sqlite_get_table_printf(
 }
 int sqlite_get_table_vprintf(
   sqlite *db,            /* An open database */
-  char *sqlFormat,       /* printf-style format string for the SQL */
+  const char *sqlFormat, /* printf-style format string for the SQL */
   char ***resultp,       /* Result written to a char *[]  that this points to */
   int *nrow,             /* Number of result rows written here */
   int *ncolumn,          /* Number of result columns written here */

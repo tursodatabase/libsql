@@ -116,7 +116,7 @@ static int sqlite_get_table_cb(void *pArg, int nCol, char **argv, char **colv){
 */
 int sqlite_get_table(
   sqlite *db,                 /* The database on which the SQL executes */
-  char *zSql,                 /* The SQL to be executed */
+  const char *zSql,           /* The SQL to be executed */
   char ***pazResult,          /* Write the result table here */
   int *pnRow,                 /* Write the number of rows in the result here */
   int *pnColumn,              /* Write the number of columns of result here */
