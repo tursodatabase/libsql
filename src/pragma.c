@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.21 2004/05/11 07:11:53 danielk1977 Exp $
+** $Id: pragma.c,v 1.22 2004/05/11 08:48:11 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -577,9 +577,9 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
     /* Code to do an BTree integrity check on a single database file.
     */
     static VdbeOpList checkDb[] = {
-      { OP_SetInsert,   0, 0,        "2"},
+      { OP_SetInsert,   0, 0,        "1"},
       { OP_Integer,     0, 0,        0},    /* 1 */
-      { OP_OpenRead,    0, 2,        0},
+      { OP_OpenRead,    0, MASTER_ROOT, 0},
       { OP_Rewind,      0, 7,        0},    /* 3 */
       { OP_Column,      0, 3,        0},    /* 4 */
       { OP_SetInsert,   0, 0,        0},

@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.170 2004/05/11 07:11:53 danielk1977 Exp $
+** $Id: main.c,v 1.171 2004/05/11 08:48:11 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -268,7 +268,7 @@ static int sqlite3InitOne(sqlite *db, int iDb, char **pzErrMsg){
   if( rc==SQLITE_OK ){
     int i;
     for(i=0; rc==SQLITE_OK && i<SQLITE_N_BTREE_META; i++){
-      rc = sqlite3BtreeGetMeta(db->aDb[iDb].pBt, i+1, &meta[i]);
+      rc = sqlite3BtreeGetMeta(db->aDb[iDb].pBt, i, &meta[i]);
     }
     if( rc ){
       sqlite3SetString(pzErrMsg, sqlite3_error_string(rc), (char*)0);

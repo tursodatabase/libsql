@@ -1,5 +1,5 @@
-C Remove\scode\sdealing\swith\sold\sfile\sformats.\s(CVS\s1354)
-D 2004-05-11T07:11:52
+C More\ssmall\schanges\sto\sget\stest\scases\sto\sexecute.\s(CVS\s1355)
+D 2004-05-11T08:48:11
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -36,14 +36,14 @@ F src/func.c 6cf6501f092b41c8cd9368b09c287016c0576438
 F src/hash.c 440c2f8cb373ee1b4e13a0988489c7cd95d55b6f
 F src/hash.h 762d95f1e567664d1eafc1687de755626be962fb
 F src/insert.c 1e63d2774c4d893363e0c072f19d4c92a4ab982d
-F src/main.c 07dbefd62294f9b5100210161f4af4da2e6fb0ff
+F src/main.c 2732115c888440caaebf50fc791b13cfdcc5dcd7
 F src/md5.c 8e39fdae6d8776b87558e91dcc94740c9b635a9c
 F src/os.c ddcda92f7fd71b4513c57c1ec797917f206d504e
 F src/os.h fbb2f6595fc34fa351830d88fe1c6b85118f0383
 F src/pager.c 43556f37b80efdccb853dbf86b3d09470d791d0d
 F src/pager.h 0c95b18f2785b58bfbb2b6f6a221f23caf378687
 F src/parse.y d0258aa3cc8b0c5742b07b699d10fa98f3caea7d
-F src/pragma.c cef4b66bd22d43f6c71c91e7d6925f9b214c301e
+F src/pragma.c 2ab2a12b62ec5370b9221f44b4743a633a90bfa8
 F src/printf.c 8aa5d88509f46f064f57d0a8419e7b5f3b9fd559
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c ca99ae4db14a45a436ec51d3e6bd48d44a3efb3c
@@ -63,7 +63,7 @@ F src/update.c 6ca82fc4a0fb4d7f134e961921c906f6f3c8bc74
 F src/utf.c fc799748d43fe1982d157b871e3e420a19c85d4f
 F src/util.c 778a8cd03ad6e52778602d20a3132c7d2d1b0a0c
 F src/vacuum.c c134702e023db8778e6be59ac0ea7b02315b5476
-F src/vdbe.c 4ff07e53292eb28df4f5ea1acae3ef5cd4206915
+F src/vdbe.c b9a499da850260eca461883b50319036338e4d25
 F src/vdbe.h 2dc4d1161b64f5684faa6a2d292e318a185ecb2e
 F src/vdbeInt.h ff85e432a43eb7533b17c9cece2baaf813ba8711
 F src/vdbeaux.c feee0e94cd5fe520cd024287446d8b387a221a4b
@@ -188,7 +188,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 941d0fdc97ad0a2ba0e823ce40022bdef857aa6e
-R 16e70b539b0afb4036f677ee3f6bf7c9
+P dfde112116b982017a5516590ff1780e8aa519ce
+R a865e61ee80395ceaf86ba7cc2e435b0
 U danielk1977
-Z df9cf5602eb49f1df00c4efad7a7a79a
+Z d6e32fdd48dc789f36c98b88caac2221

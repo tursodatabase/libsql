@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.279 2004/05/11 06:55:15 danielk1977 Exp $
+** $Id: vdbe.c,v 1.280 2004/05/11 08:48:11 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2935,8 +2935,8 @@ case OP_Found: {
 ** using MakeIdxKey.  Call it K.  This instruction pops R from the
 ** stack but it leaves K unchanged.
 **
-** P1 is an index.  So all but the last four bytes of K are an
-** index string.  The last four bytes of K are a record number.
+** P1 is an index.  So all but the last eight bytes of K are an
+** index string.  The last eight bytes of K are a record number.
 **
 ** This instruction asks if there is an entry in P1 where the
 ** index string matches K but the record number is different
@@ -2953,7 +2953,7 @@ case OP_IsUnique: {
   Mem *pNos = &pTos[-1];
   Cursor *pCx;
   BtCursor *pCrsr;
-  int R;
+  i64 R;
 
   /* Pop the value R off the top of the stack
   */
@@ -2966,7 +2966,7 @@ case OP_IsUnique: {
   pCrsr = pCx->pCursor;
   if( pCrsr!=0 ){
     int res, rc;
-    int v;         /* The record number on the P1 entry that matches K */
+    i64 v;         /* The record number on the P1 entry that matches K */
     char *zKey;    /* The value of K */
     int nKey;      /* Number of bytes in K */
 
@@ -2975,13 +2975,14 @@ case OP_IsUnique: {
     Stringify(pNos);
     zKey = pNos->z;
     nKey = pNos->n;
-    assert( nKey >= 4 );
+    assert( nKey >= 8 );
 
-    /* Search for an entry in P1 where all but the last four bytes match K.
+    /* Search for an entry in P1 where all but the last eight bytes match K.
     ** If there is no such entry, jump immediately to P2.
     */
     assert( p->aCsr[i].deferredMoveto==0 );
-    rc = sqlite3BtreeMoveto(pCrsr, zKey, nKey-4, &res);
+    assert( p->aCsr[i].intKey==0 );
+    rc = sqlite3BtreeMoveto(pCrsr, zKey, nKey-8, &res);
     if( rc!=SQLITE_OK ) goto abort_due_to_error;
     if( res<0 ){
       rc = sqlite3BtreeNext(pCrsr, &res);
@@ -2991,7 +2992,7 @@ case OP_IsUnique: {
       }
     }
     /* FIX ME - the sqlite2BtreeKeyCompare() function is a temporary hack */
-    rc = sqlite2BtreeKeyCompare(pCrsr, zKey, nKey-4, 4, &res); 
+    rc = sqlite2BtreeKeyCompare(pCrsr, zKey, nKey-8, 8, &res); 
     if( rc!=SQLITE_OK ) goto abort_due_to_error;
     if( res>0 ){
       pc = pOp->p2 - 1;
@@ -2999,11 +3000,11 @@ case OP_IsUnique: {
     }
 
     /* At this point, pCrsr is pointing to an entry in P1 where all but
-    ** the last for bytes of the key match K.  Check to see if the last
-    ** four bytes of the key are different from R.  If the last four
+    ** the last eight bytes of the key match K.  Check to see if the last
+    ** eight bytes of the key are different from R.  If the last four
     ** bytes equal R then jump immediately to P2.
     */
-    sqlite3BtreeKey(pCrsr, nKey - 4, 4, (char*)&v);
+    sqlite3BtreeKey(pCrsr, nKey - sizeof(i64), sizeof(i64), (char*)&v);
     v = keyToInt(v);
     if( v==R ){
       pc = pOp->p2 - 1;
