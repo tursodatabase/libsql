@@ -1,5 +1,5 @@
-C The\sVACUUM\scommand\sis\snow\sfunctioning\s(again).\s\sNeed\sto\sdo\smore\stesting.\s(CVS\s916)
-D 2003-04-18T02:31:04
+C Fix\sfor\sticket\s#297\s-\sbug\sin\ssqliteSortCompare().\s(CVS\s917)
+D 2003-04-18T17:45:14
 F Makefile.in df3a4db41a7450468b5fe934d9dd8f723b631249
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -57,7 +57,7 @@ F src/threadtest.c d641a5219e718e18a1a80a50eb9bb549f451f42e
 F src/tokenize.c a88cfb6f698d047e14d5064fa6c4ecb709bf8fa4
 F src/trigger.c 45b67f6c4338245288e4662c6a5b802ae3a66e5d
 F src/update.c 7f1aa8912876a682a692676f8adb215ddffad295
-F src/util.c 13c338a7d0e1e6290ca227edb0d6d7be6a7c7127
+F src/util.c 87635cfdfffa056a8d3147719357aa442374f78c
 F src/vacuum.c e24781e38db36d1c9f578b6b3613bf0989ebd63c
 F src/vdbe.c d453e8c95c9fac5a5e067c5c58243b3ae75699fc
 F src/vdbe.h 985c24f312d10f9ef8f9a8b8ea62fcdf68e82f21
@@ -109,7 +109,7 @@ F test/select3.test 445a1a3dde4e2fd32541b311f55da5e2f8079d76
 F test/select4.test e7e9a32fa745246cb99fadbeb63af4843a17925b
 F test/select5.test c2a6c4a003316ee42cbbd689eebef8fdce0db2ac
 F test/select6.test efb8d0c07a440441db87db2c4ade6904e1407e85
-F test/sort.test 61a729023ae4ac3be9b225dc0be026fb43fec4e6
+F test/sort.test ba07b107c16070208e6aab3cadea66ba079d85ba
 F test/subselect.test f0fea8cf9f386d416d64d152e3c65f9116d0f50f
 F test/table.test 371a1fc1c470982b2f68f9732f903a5d96f949c4
 F test/tableapi.test 3c80421a889e1d106df16e5800fa787f0d2914a6
@@ -162,7 +162,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 1e5e00fb73c308378efd034cb291caf338c9fe84
-R 6d712256ba5bd6d3c2dab4df16be375d
+P 6e948d9aaea109c683ac4fcc4714e335b545d22b
+R d350172ce34cbf799885ede2eb5043c7
 U drh
-Z 2b3763770265c14f822420062ba64ba6
+Z a203462f3c9a0a6b91b58e9eba1fc107

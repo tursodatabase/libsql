@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE TABLE statement.
 #
-# $Id: sort.test,v 1.8 2003/01/18 20:11:07 drh Exp $
+# $Id: sort.test,v 1.9 2003/04/18 17:45:15 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -346,5 +346,16 @@ do_test sort-7.14 {
     SELECT b FROM t4 UNION SELECT b FROM v4 ORDER BY 1 COLLATE varchar;
   }
 } {1 11 12 2}
+
+# Ticket #297
+#
+do_test sort-8.1 {
+  execsql {
+    CREATE TABLE t5(a real, b text);
+    INSERT INTO t5 VALUES(100,'A1');
+    INSERT INTO t5 VALUES(100.0,'A2');
+    SELECT * FROM t5 ORDER BY a, b;
+  }
+} {100 A1 100.0 A2}
 
 finish_test
