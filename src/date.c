@@ -16,7 +16,7 @@
 ** sqliteRegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.8 2004/01/08 02:17:32 drh Exp $
+** $Id: date.c,v 1.9 2004/01/17 01:16:21 drh Exp $
 **
 ** NOTES:
 **
@@ -452,8 +452,9 @@ static int parseModifier(const char *zMod, DateTime *p){
   int rc = 1;
   int n;
   double r;
-  char z[30];
-  for(n=0; n<sizeof(z)-1 && zMod[n]; n++){
+  char *z, zBuf[30];
+  z = zBuf;
+  for(n=0; n<sizeof(zBuf)-1 && zMod[n]; n++){
     z[n] = tolower(zMod[n]);
   }
   z[n] = 0;
@@ -526,22 +527,22 @@ static int parseModifier(const char *zMod, DateTime *p){
       ** or month or year.
       */
       if( strncmp(z, "start of ", 9)!=0 ) break;
-      zMod = &z[9];
+      z += 9;
       computeYMD(p);
       p->validHMS = 1;
       p->h = p->m = 0;
       p->s = 0.0;
       p->validTZ = 0;
       p->validJD = 0;
-      if( strcmp(zMod,"month")==0 ){
+      if( strcmp(z,"month")==0 ){
         p->D = 1;
         rc = 0;
-      }else if( strcmp(zMod,"year")==0 ){
+      }else if( strcmp(z,"year")==0 ){
         computeYMD(p);
         p->M = 1;
         p->D = 1;
         rc = 0;
-      }else if( strcmp(zMod,"day")==0 ){
+      }else if( strcmp(z,"day")==0 ){
         rc = 0;
       }
       break;
@@ -560,11 +561,10 @@ static int parseModifier(const char *zMod, DateTime *p){
     case '9': {
       n = getValue(z, &r);
       if( n<=0 ) break;
-      zMod = &z[n];
-      while( isspace(zMod[0]) ) zMod++;
-      n = strlen(zMod);
+      z += n;
+      while( isspace(z[0]) ) z++;
+      n = strlen(z);
       if( n>10 || n<3 ) break;
-      strcpy(z, zMod);
       if( z[n-1]=='s' ){ z[n-1] = 0; n--; }
       computeJD(p);
       rc = 0;
