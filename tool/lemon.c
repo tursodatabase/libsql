@@ -770,7 +770,7 @@ struct lemon *lemp;
     stp = lemp->sorted[i];
     assert( stp->ap );
     stp->ap = Action_sort(stp->ap);
-    for(ap=stp->ap; ap && ap->next; ap=nap){
+    for(ap=stp->ap; ap && ap->next; ap=ap->next){
       for(nap=ap->next; nap && nap->sp==ap->sp; nap=nap->next){
          /* The two actions "ap" and "nap" have the same lookahead.
          ** Figure out which one should be used */
@@ -848,9 +848,17 @@ struct symbol *errsym;   /* The error symbol (if defined.  NULL otherwise) */
       apx->type = RD_RESOLVED;
     }
   }else{
-    /* Can't happen.  Shifts have to come before Reduces on the
-    ** list because the reduces were added last.  Hence, if apx->type==REDUCE
-    ** then it is impossible for apy->type==SHIFT */
+    assert( 
+      apx->type==SH_RESOLVED ||
+      apx->type==RD_RESOLVED ||
+      apx->type==CONFLICT ||
+      apy->type==SH_RESOLVED ||
+      apy->type==RD_RESOLVED ||
+      apy->type==CONFLICT
+    );
+    /* The REDUCE/SHIFT case cannot happen because SHIFTs come before
+    ** REDUCEs on the list.  If we reach this point it must be because
+    ** the parser conflict had already been resolved. */
   }
   return errcnt;
 }
@@ -3256,48 +3264,59 @@ struct lemon *lemp;
 /* Reduce the size of the action tables, if possible, by making use
 ** of defaults.
 **
-** In this version, if all REDUCE actions use the same rule, make
-** them the default.  Only default them if there are more than one.
+** In this version, we take the most frequent REDUCE action and make
+** it the default.  Only default a reduce if there are more than one.
 */
 void CompressTables(lemp)
 struct lemon *lemp;
 {
   struct state *stp;
-  struct action *ap;
-  struct rule *rp;
+  struct action *ap, *ap2;
+  struct rule *rp, *rp2, *rbest;
+  int nbest, n;
   int i;
   int cnt;
 
   for(i=0; i<lemp->nstate; i++){
     stp = lemp->sorted[i];
+    nbest = 0;
+    rbest = 0;
 
-    /* Find the first REDUCE action */
-    for(ap=stp->ap; ap && ap->type!=REDUCE; ap=ap->next);
-    if( ap==0 ) continue;
-
-    /* Remember the rule used */
-    rp = ap->x.rp;
-
-    /* See if all other REDUCE acitons use the same rule */
-    cnt = 1;
-    for(ap=ap->next; ap; ap=ap->next){
-      if( ap->type==REDUCE ){
-        if( ap->x.rp!=rp ) break;
-        cnt++;
+    for(ap=stp->ap; ap; ap=ap->next){
+      if( ap->type!=REDUCE ) continue;
+      rp = ap->x.rp;
+      if( rp==rbest ) continue;
+      n = 1;
+      for(ap2=ap->next; ap2; ap2=ap2->next){
+        if( ap2->type!=REDUCE ) continue;
+        rp2 = ap2->x.rp;
+        if( rp2==rbest ) continue;
+        if( rp2==rp ) n++;
+      }
+      if( n>nbest ){
+        nbest = n;
+        rbest = rp;
       }
     }
-    if( ap || cnt==1 ) continue;
+ 
+    /* Do not make a default if the number of rules to default
+    ** is not at least 2 */
+    if( nbest<2 ) continue;
 
-    /* Combine all REDUCE actions into a single default */
-    for(ap=stp->ap; ap && ap->type!=REDUCE; ap=ap->next);
+
+    /* Combine matching REDUCE actions into a single default */
+    for(ap=stp->ap; ap; ap=ap->next){
+      if( ap->type==REDUCE && ap->x.rp==rbest ) break;
+    }
     assert( ap );
     ap->sp = Symbol_new("{default}");
     for(ap=ap->next; ap; ap=ap->next){
-      if( ap->type==REDUCE ) ap->type = NOT_USED;
+      if( ap->type==REDUCE && ap->x.rp==rbest ) ap->type = NOT_USED;
     }
     stp->ap = Action_sort(stp->ap);
   }
 }
+
 /***************** From the file "set.c" ************************************/
 /*
 ** Set manipulation routines for the LEMON parser generator.
