@@ -1,5 +1,5 @@
-C Changes\sin\ssupport\sof\susing\sa\scodec.\s(CVS\s1844)
-D 2004-07-22T02:40:38
+C Changes\sin\ssupport\sof\susing\sa\scodec.\s(CVS\s1845)
+D 2004-07-22T02:40:39
 F Makefile.in 4a5e570a9e2d35b09c31b3cf01b78cea764ade4b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -237,7 +237,7 @@ F www/tclsqlite.tcl 06a86cba4d7fc88e2bcd633b57702d3d16abebb5
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 4cf6e9db757931aba2f300b7869305434d6f2d2b
+P b77bec35742f07d79da3e85baee09a90c1494415
 R 3e3f31107533fb8a64f00d1c99d78fca
 U drh
-Z 4e21b294cde7a5a6cba9c0f4a48f1a9a
+Z 0ca92d2eb65daa15aadbbce8e6c55b3b
