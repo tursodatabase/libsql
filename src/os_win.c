@@ -279,6 +279,7 @@ int sqlite3OsWrite(OsFile *id, const void *pBuf, int amt){
   DWORD wrote;
   assert( id->isOpen );
   SimulateIOError(SQLITE_IOERR);
+  SimulateDiskfullError;
   TRACE3("WRITE %d lock=%d\n", id->h, id->locktype);
   while( amt>0 && (rc = WriteFile(id->h, pBuf, amt, &wrote, 0))!=0 && wrote>0 ){
     amt -= wrote;
