@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.51 2002/02/03 19:06:03 drh Exp $
+** $Id: btree.c,v 1.52 2002/02/03 19:15:02 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -2459,9 +2459,9 @@ int sqliteBtreeUpdateMeta(Btree *pBt, int *aMeta){
 ** All the code the follows is for testing and troubleshooting the BTree
 ** subsystem.  None of the code that follows is used during normal operation.
 ** All of the following code is omitted if the library is compiled with
-** the -DNDEBUG=1 compiler option.
+** the -DNDEBUG2=1 compiler option.
 ******************************************************************************/
-#ifndef NDEBUG
+#ifndef NDEBUG2
 
 /*
 ** Print a disassembly of the given page on standard output.  This routine

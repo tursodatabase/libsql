@@ -1,5 +1,5 @@
-C Fix\sa\sserious\sbug\sin\sINSERT\swhen\sthe\ssource\sis\sa\sSELECT.\s(CVS\s366)
-D 2002-02-03T19:06:03
+C Reenable\stesting\scode\seven\sif\sNDEBUG\sis\sdefined.\s(CVS\s367)
+D 2002-02-03T19:15:02
 F Makefile.in 9fa4277413bf1d9cf91365f07d4108d7d87ed2af
 F Makefile.template 3372d45f8853afdb70bd30cc6fb50a3cd9069834
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -19,8 +19,8 @@ F ltmain.sh e9ed72eb1d690f447c13945eaf69e28af531eda1
 F publish.sh 5b59f4aff037aafa0e4a3b6fa599495dbd73f360
 F sqlite.1 2e2bb0529ef468ade9e4322bd609d0695fb9ded9
 F src/TODO af7f3cab0228e34149cf98e073aa83d45878e7e6
-F src/btree.c 9d7a185510113c7d3a6e7ee9d4912f89838533a6
-F src/btree.h 53476ad4f76537591dceded79fa484a2dc168888
+F src/btree.c 340254ee2ea8b3bd8b60f9768b20382b4909eec0
+F src/btree.h b131caa44354d0305734d87b1c71440b4c436608
 F src/build.c 29504057ac5e2f40c08f19cb1574bd0512353169
 F src/delete.c f8ad71be53cf18656b6573de65395852fe817f0c
 F src/expr.c a2a87dbd411a508ff89dffa90505ad42dac2f920
@@ -122,7 +122,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 7c65029e5bf26eb640aef529a7421cd0d6ffd1a9
-R 4e3b7ab35202d05c1b0326ce879539fa
+P 20ea737536700b016385c70105a2af8b2bffce2b
+R fc7dddb7f2cee20f2fcdc9937b75f980
 U drh
-Z 666cc540a7569a442b5d9d36de8269cd
+Z bcdd992e6a7f8afe077674aafce72087
