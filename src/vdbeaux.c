@@ -388,7 +388,7 @@ char *sqlite_set_result_string(sqlite_func *p, const char *zResult, int n){
     if( n<NBFS-1 ){
       memcpy(p->s.zShort, zResult, n);
       p->s.zShort[n] = 0;
-      p->s.flags = MEM_Str;
+      p->s.flags = MEM_Str | MEM_Short;
       p->s.z = p->s.zShort;
     }else{
       p->s.z = sqliteMallocRaw( n+1 );
@@ -597,8 +597,8 @@ void sqliteVdbeMakeReady(
     assert( nVar>=0 );
     n = isExplain ? 10 : p->nOp;
     p->aStack = sqliteMalloc(
-    n*(sizeof(p->aStack[0]) + 2*sizeof(char*))     /* aStack and zArgv */
-      + p->nVar*(sizeof(char*)+sizeof(int)+1)      /* azVar, anVar, abVar */
+      n*(sizeof(p->aStack[0]) + 2*sizeof(char*))     /* aStack and zArgv */
+        + p->nVar*(sizeof(char*)+sizeof(int)+1)    /* azVar, anVar, abVar */
     );
     p->zArgv = (char**)&p->aStack[n];
     p->azColName = (char**)&p->zArgv[n];
@@ -614,7 +614,7 @@ void sqliteVdbeMakeReady(
     p->trace = stdout;
   }
 #endif
-  p->tos = -1;
+  p->pTos = &p->aStack[-1];
   p->pc = 0;
   p->rc = SQLITE_OK;
   p->uniqueCnt = 0;
@@ -648,22 +648,6 @@ void sqliteVdbeSorterReset(Vdbe *p){
     sqliteFree(pSorter->zKey);
     sqliteFree(pSorter->pData);
     sqliteFree(pSorter);
-  }
-}
-
-/*
-** Pop the stack N times.  Free any memory associated with the
-** popped stack elements.
-*/
-void sqliteVdbePopStack(Vdbe *p, int N){
-  assert( N>=0 );
-  if( p->aStack==0 ) return;
-  while( N-- > 0 ){
-    if( p->aStack[p->tos].flags & MEM_Dyn ){
-      sqliteFree(p->aStack[p->tos].z);
-    }
-    p->aStack[p->tos].flags = 0;
-    p->tos--;
   }
 }
 
@@ -758,7 +742,16 @@ static void closeAllCursors(Vdbe *p){
 */
 static void Cleanup(Vdbe *p){
   int i;
-  sqliteVdbePopStack(p, p->tos+1);
+  if( p->aStack ){
+    Mem *pTos = p->pTos;
+    while( pTos>=p->aStack ){
+      if( pTos->flags & MEM_Dyn ){
+        sqliteFree(pTos->z);
+      }
+      pTos--;
+    }
+    p->pTos = pTos;
+  }
   closeAllCursors(p);
   if( p->aMem ){
     for(i=0; i<p->nMem; i++){
@@ -871,7 +864,7 @@ int sqliteVdbeReset(Vdbe *p, char **pzErrMsg){
       db->aDb[i].inTrans = 1;
     }
   }
-  assert( p->tos<p->pc || sqlite_malloc_failed==1 );
+  assert( p->pTos<&p->aStack[p->pc] || sqlite_malloc_failed==1 );
 #ifdef VDBE_PROFILE
   {
     FILE *out = fopen("vdbe_profile.out", "a");

@@ -10,6 +10,9 @@
   mem[$10] = $0
 }
 /[0-9]+ free / {
+  if (mem[$6]=="") {
+    print "*** free without a malloc at",$6
+  }
   mem[$6] = "";
   str[$6] = ""
 }

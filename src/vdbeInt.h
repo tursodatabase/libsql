@@ -129,12 +129,13 @@ typedef struct Mem Mem;
 #define MEM_Dyn       0x0010   /* Need to call sqliteFree() on Mem.z */
 #define MEM_Static    0x0020   /* Mem.z points to a static string */
 #define MEM_Ephem     0x0040   /* Mem.z points to an ephemeral string */
+#define MEM_Short     0x0080   /* Mem.z points to Mem.zShort */
 
 /* The following MEM_ value appears only in AggElem.aMem.s.flag fields.
 ** It indicates that the corresponding AggElem.aMem.z points to a
 ** aggregate function context that needs to be finalized.
 */
-#define MEM_AggCtx    0x0040   /* Mem.z points to an agg function context */
+#define MEM_AggCtx    0x0100   /* Mem.z points to an agg function context */
 
 /*
 ** The "context" argument for a installable function.  A pointer to an
@@ -223,8 +224,8 @@ struct Vdbe {
   int nLabel;         /* Number of labels used */
   int nLabelAlloc;    /* Number of slots allocated in aLabel[] */
   int *aLabel;        /* Space to hold the labels */
-  int tos;            /* Index of top of stack */
   Mem *aStack;        /* The operand stack, except string values */
+  Mem *pTos;          /* Top entry in the operand stack */
   char **zArgv;       /* Text values used by the callback */
   char **azColName;   /* Becomes the 4th parameter to callbacks */
   int nCursor;        /* Number of slots in aCsr[] */
@@ -273,16 +274,6 @@ struct Vdbe {
 #define VDBE_MAGIC_RUN      0xbdf20da3    /* VDBE is ready to execute */
 #define VDBE_MAGIC_HALT     0x519c2973    /* VDBE has completed execution */
 #define VDBE_MAGIC_DEAD     0xb606c3c8    /* The VDBE has been deallocated */
-
-/*
-** Here is a macro to handle the common case of popping the stack
-** once.  This macro only works from within the sqliteVdbeExec()
-** function.
-*/
-#define POPSTACK \
-  assert(p->tos>=0); \
-  if( aStack[p->tos].flags & MEM_Dyn ) sqliteFree(aStack[p->tos].z); \
-  p->tos--;
 
 /*
 ** Function prototypes

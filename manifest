@@ -1,5 +1,5 @@
-C Rework\sthe\sVDBE\sdata\sstructures\sto\scombine\sstring\srepresentations\sinto\sthe\nsame\sstructure\swith\sinteger\sand\sfloating\spoint.\s\sThis\sopens\sthe\sdoor\sto\nsignificant\soptimizations.\s(CVS\s1202)
-D 2004-01-30T14:49:17
+C Rework\sinternal\sdata\sstructures\sto\smake\sthe\sVDBE\sabout\s15%\ssmaller.\s(CVS\s1203)
+D 2004-01-31T19:22:56
 F Makefile.in 0515ff9218ad8d5a8f6220f0494b8ef94c67013b
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -61,10 +61,10 @@ F src/trigger.c ce83e017b407d046e909d05373d7f8ee70f9f7f9
 F src/update.c 24260b4fda00c9726d27699a0561d53c0dccc397
 F src/util.c 64995b5949a5d377629ffd2598747bc771cade1e
 F src/vacuum.c 77485a64a6e4e358170f150fff681c1624a092b0
-F src/vdbe.c fcd5b6f27b3041ef022cf04ecaf63bbdccf88950
+F src/vdbe.c 36a93b5e213100b4c25ca614e69b74a5056154d6
 F src/vdbe.h 3957844e46fea71fd030e78f6a3bd2f7e320fb43
-F src/vdbeInt.h 6f12f5b9344cbb0e5cc2277458d84f7b951122bf
-F src/vdbeaux.c 358d955a23d29e268a3b45c428e49292b89dfcf5
+F src/vdbeInt.h 8a3baf749115cba81a810b7a52208aef055eda7b
+F src/vdbeaux.c c55d87d6658487e87ef09ca80c1aa2f314024fed
 F src/where.c 1302d728bd338c237e6a8282e4e3eadbbdf11e45
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
 F test/attach.test c26848402e7ac829e043e1fa5e0eb87032e5d81d
@@ -147,7 +147,7 @@ F test/where.test cb3a2ed062ce4b5f08aff2d08027c6a46d68c47b
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/lemon.c e37dcb5b8cdb16f4ac98338134bf8d8cd28e399f
 F tool/lempar.c 0b5e7a58634e0d448929b8e85f7981c2aa708d57
-F tool/memleak.awk 16ef9493dcd36146f806e75148f4bb0201a123ec
+F tool/memleak.awk b744b6109566206c746d826f6ecdba34662216bc
 F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e x
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
@@ -182,7 +182,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P af73fbca839f8cbe39c21f1f9e439fe9b79005c8
-R 498fe1480c9c56c03607a7a6c9f9b96c
+P c0faa1c67a967f028cd018e58988fb08bc814d3d
+R ee0cff331d148b843c9a28e532dc12e0
 U drh
-Z 222ac74ccb7f92ccb269c2c94a8bca52
+Z 9c3d28234884b5bb6cce05f45417ae61
