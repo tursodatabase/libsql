@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.125 2004/05/11 00:58:56 drh Exp $
+** $Id: btree.c,v 1.126 2004/05/11 02:10:07 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -309,7 +309,7 @@ static unsigned int getVarint(unsigned char *p, u64 *pResult){
   u64 x = p[0] & 0x7f;
   int n = 0;
   while( (p[n++]&0x80)!=0 ){
-    x |= (p[n]&0x7f)<<(n*7);
+    x |= ((u64)(p[n]&0x7f))<<(n*7);
   }
   *pResult = x;
   return n;

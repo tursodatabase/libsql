@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.275 2004/05/11 00:28:43 danielk1977 Exp $
+** $Id: vdbe.c,v 1.276 2004/05/11 02:10:07 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -3211,7 +3211,8 @@ case OP_PutStrKey: {
       ** the integer key, and zKey to NULL.
       */
       if( pC->intKey ){
-        nKey = pNos->i;
+        nKey = intToKey(pNos->i);
+        assert( keyToInt(nKey)==pNos->i );
         zKey = 0;
       }else{
         /* TODO: can this happen? zKey is not correctly byte-ordered here! */
