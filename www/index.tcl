@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.61 2002/08/11 20:10:49 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.62 2002/08/12 12:29:58 drh Exp $}
 
 puts {<html>
 <head><title>SQLite: An SQL Database Engine In A C Library</title></head>
@@ -213,10 +213,4 @@ puts {<h2>Related Sites</h2>
 </ul>}
 
 puts {
-<p><hr /></p>
-<p>
-<a href="../index.html"><img src="/goback.jpg" border=0 />
-More Open Source Software</a> from Hwaci.
-</p>
-
 </body></html>}

@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.49 2002/07/07 16:52:47 drh Exp $
+** @(#) $Id: pager.c,v 1.50 2002/08/12 12:29:57 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -124,6 +124,7 @@ struct Pager {
   u8 needSync;                /* True if an fsync() is needed on the journal */
   u8 dirtyFile;               /* True if database file has changed in any way */
   u8 alwaysRollback;          /* Disable dont_rollback() for all pages */
+  u8 journalFormat;           /* Version number of the journal file */
   u8 *aInJournal;             /* One bit for each page in the database file */
   u8 *aInCkpt;                /* One bit for each page in the database */
   PgHdr *pFirst, *pLast;      /* List of free pages */
@@ -153,10 +154,30 @@ struct PageRecord {
 /*
 ** Journal files begin with the following magic string.  The data
 ** was obtained from /dev/random.  It is used only as a sanity check.
+**
+** There are two journal formats.  The older journal format writes
+** 32-bit integers in the byte-order of the host machine.  The new
+** format writes integers as big-endian.  All new journals use the
+** new format, but we have to be able to read an older journal in order
+** to roll it back.
 */
-static const unsigned char aJournalMagic[] = {
+static const unsigned char aOldJournalMagic[] = {
   0xd9, 0xd5, 0x05, 0xf9, 0x20, 0xa1, 0x63, 0xd4,
 };
+static const unsigned char aJournalMagic[] = {
+  0xd9, 0xd5, 0x05, 0xf9, 0x20, 0xa1, 0x63, 0xd5,
+};
+#define SQLITE_NEW_JOURNAL_FORMAT 1
+#define SQLITE_OLD_JOURNAL_FORMAT 0
+
+/*
+** The following integer, if set, causes journals to be written in the
+** old format.  This is used for testing purposes only - to make sure
+** the code is able to rollback an old journal.
+*/
+#ifdef SQLITE_TEST
+int pager_old_format = 0;
+#endif
 
 /*
 ** Hash a page number
@@ -181,6 +202,41 @@ static const unsigned char aJournalMagic[] = {
 #else
 # define REFINFO(X)
 #endif
+
+/*
+** Read a 32-bit integer from the given file descriptor
+*/
+static int read32bits(Pager *pPager, OsFile *fd, u32 *pRes){
+  u32 res;
+  int rc;
+  rc = sqliteOsRead(fd, &res, sizeof(res));
+  if( rc==SQLITE_OK && pPager->journalFormat==SQLITE_NEW_JOURNAL_FORMAT ){
+    unsigned char ac[4];
+    memcpy(ac, &res, 4);
+    res = (ac[0]<<24) | (ac[1]<<16) | (ac[2]<<8) | ac[3];
+  }
+  *pRes = res;
+  return rc;
+}
+
+/*
+** Write a 32-bit integer into the given file descriptor.  Writing
+** is always done using the new journal format.
+*/
+static int write32bits(OsFile *fd, u32 val){
+  unsigned char ac[4];
+#ifdef SQLITE_TEST
+  if( pager_old_format ){
+    return sqliteOsWrite(fd, &val, 4);
+  }
+#endif
+  ac[0] = (val>>24) & 0xff;
+  ac[1] = (val>>16) & 0xff;
+  ac[2] = (val>>8) & 0xff;
+  ac[3] = val & 0xff;
+  return sqliteOsWrite(fd, ac, 4);
+}
+
 
 /*
 ** Convert the bits in the pPager->errMask into an approprate
@@ -281,7 +337,9 @@ static int pager_playback_one_page(Pager *pPager, OsFile *jfd){
   PgHdr *pPg;              /* An existing page in the cache */
   PageRecord pgRec;
 
-  rc = sqliteOsRead(jfd, &pgRec, sizeof(pgRec));
+  rc = read32bits(pPager, jfd, &pgRec.pgno);
+  if( rc!=SQLITE_OK ) return rc;
+  rc = sqliteOsRead(jfd, &pgRec.aData, sizeof(pgRec.aData));
   if( rc!=SQLITE_OK ) return rc;
 
   /* Sanity checking on the page */
@@ -347,11 +405,19 @@ static int pager_playback(Pager *pPager){
   ** database file back to its original size.
   */
   rc = sqliteOsRead(&pPager->jfd, aMagic, sizeof(aMagic));
-  if( rc!=SQLITE_OK || memcmp(aMagic,aJournalMagic,sizeof(aMagic))!=0 ){
+  if( rc!=SQLITE_OK ){
     rc = SQLITE_PROTOCOL;
     goto end_playback;
   }
-  rc = sqliteOsRead(&pPager->jfd, &mxPg, sizeof(mxPg));
+  if( memcmp(aMagic, aOldJournalMagic, sizeof(aMagic))==0 ){
+    pPager->journalFormat = SQLITE_OLD_JOURNAL_FORMAT;
+  }else if( memcmp(aMagic, aJournalMagic, sizeof(aMagic))==0 ){
+    pPager->journalFormat = SQLITE_NEW_JOURNAL_FORMAT;
+  }else{
+    rc = SQLITE_PROTOCOL;
+    goto end_playback;
+  }
+  rc = read32bits(pPager, &pPager->jfd, &mxPg);
   if( rc!=SQLITE_OK ){
     goto end_playback;
   }
@@ -416,6 +482,7 @@ static int pager_ckpt_playback(Pager *pPager){
   /* Copy original pages out of the checkpoint journal and back into the
   ** database file.
   */
+  pPager->journalFormat = SQLITE_NEW_JOURNAL_FORMAT;
   for(i=nRec-1; i>=0; i--){
     rc = pager_playback_one_page(pPager, &pPager->cpfd);
     if( rc!=SQLITE_OK ) goto end_ckpt_playback;
@@ -847,7 +914,7 @@ int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage){
       ** database.  But syncing is a very slow operation.  So after a
       ** sync, it is best to write everything we can back to the main
       ** database to minimize the risk of having to sync again in the
-      ** near future.  That is way we write all dirty pages after a
+      ** near future.  That is why we write all dirty pages after a
       ** sync.
       */
       if( pPg==0 ){
@@ -1073,9 +1140,18 @@ int sqlitepager_begin(void *pData){
     pPager->state = SQLITE_WRITELOCK;
     sqlitepager_pagecount(pPager);
     pPager->origDbSize = pPager->dbSize;
+#ifdef SQLITE_TEST
+    if( pager_old_format ){
+      rc = sqliteOsWrite(&pPager->jfd, aOldJournalMagic,
+                         sizeof(aOldJournalMagic));
+    }else{
+      rc = sqliteOsWrite(&pPager->jfd, aJournalMagic, sizeof(aJournalMagic));
+    }
+#else
     rc = sqliteOsWrite(&pPager->jfd, aJournalMagic, sizeof(aJournalMagic));
+#endif
     if( rc==SQLITE_OK ){
-      rc = sqliteOsWrite(&pPager->jfd, &pPager->dbSize, sizeof(Pgno));
+      rc = write32bits(&pPager->jfd, pPager->dbSize);
     }
     if( rc!=SQLITE_OK ){
       rc = pager_unwritelock(pPager);
@@ -1144,7 +1220,7 @@ int sqlitepager_write(void *pData){
   ** journal if it is not there already.
   */
   if( !pPg->inJournal && (int)pPg->pgno <= pPager->origDbSize ){
-    rc = sqliteOsWrite(&pPager->jfd, &pPg->pgno, sizeof(Pgno));
+    rc = write32bits(&pPager->jfd, pPg->pgno);
     if( rc==SQLITE_OK ){
       rc = sqliteOsWrite(&pPager->jfd, pData, SQLITE_PAGE_SIZE);
     }
@@ -1168,7 +1244,7 @@ int sqlitepager_write(void *pData){
   */
   if( pPager->ckptInUse && !pPg->inCkpt && (int)pPg->pgno<=pPager->ckptSize ){
     assert( pPg->inJournal || (int)pPg->pgno>pPager->origDbSize );
-    rc = sqliteOsWrite(&pPager->cpfd, &pPg->pgno, sizeof(Pgno));
+    rc = write32bits(&pPager->cpfd, pPg->pgno);
     if( rc==SQLITE_OK ){
       rc = sqliteOsWrite(&pPager->cpfd, pData, SQLITE_PAGE_SIZE);
     }

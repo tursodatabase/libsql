@@ -1,5 +1,5 @@
-C Fix\sfor\sticket\s#9:\sAdd\sthe\sability\sto\sread\slittle-endian\sdatabase\sfiles\nfrom\sa\sbig-endian\smachine\sand\svice\sversa.\s(CVS\s704)
-D 2002-08-11T20:10:47
+C Fix\sfor\sticket\s#9\s(again).\s\sThe\srollback\sjournal\sfiles\sshould\snow\salso\sbe\nbyte-order\sindependent.\s(CVS\s705)
+D 2002-08-12T12:29:57
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -32,8 +32,8 @@ F src/main.c 0f5d0f6f27333a851d848bfdd7bfa67a37cea12b
 F src/md5.c 0ae1f3e2cac92d06fc6246d1b4b8f61a2fe66d3b
 F src/os.c 9665974085ebe1d40d56d1145045b3d64f12cbce
 F src/os.h 4a361fccfbc4e7609b3e1557f604f94c1e96ad10
-F src/pager.c b8415b02a2a5c4e9d8bfd45311a5f15e785c7f1f
-F src/pager.h 6fddfddd3b73aa8abc081b973886320e3c614f0e
+F src/pager.c ca54e21cad43270027b6872ffe3b6e86a5099dfb
+F src/pager.h 6991c9c2dc5e4c7f2df4d4ba47d1c6458f763a32
 F src/parse.y 66e7da55b34b57f81ca07e50d1dcc430b1c1bf74
 F src/printf.c 06f4c8725063e0faf0e34824ab70feace7146bf7
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
@@ -45,7 +45,7 @@ F src/sqliteInt.h b40ef4cdcfc98e2e9417e73b896c8b2bfec545eb
 F src/table.c eed2098c9b577aa17f8abe89313a9c4413f57d63
 F src/tclsqlite.c c502819c209011659e1bbb428cbac5670cce7f79
 F src/test1.c 456cb080db85056be723e770435d9509afc3a83a
-F src/test2.c 669cc22781c6461a273416ec1a7414d25c081730
+F src/test2.c 279057a854359665b89122070ac1fc472acce1b2
 F src/test3.c b99d5ab68ee672f1fbb00520723b5c21bac35822
 F src/threadtest.c 72bce0a284647314847bbea44616ceb056bfb77f
 F src/tokenize.c b5500e193a82b5b9888fbf947efd90d3b4858178
@@ -100,7 +100,7 @@ F test/tableapi.test 3c80421a889e1d106df16e5800fa787f0d2914a6
 F test/tclsqlite.test 6f4b9760681c7dbca52a18d0ab46a1679cdc79b9
 F test/temptable.test 9ed7ec0288f887e132de66d90c428ad109105f67
 F test/tester.tcl 6f603d90881bd835ea27c568a7fecaa57dce91cc
-F test/trans.test 1fd1ecdece1eca22abe631674c3bd24046df4150
+F test/trans.test b8a51e9f61d55d0185a813695a55a7fad8fe8ab7
 F test/trigger1.test bb63749fa8a395a60541100607d86381604b7194
 F test/trigger2.test f739876942a26c63d42387321a89b75ec93af48a
 F test/trigger3.test 7dfe798d7e72c13720394685fe353112e3f31adf
@@ -135,7 +135,7 @@ F www/download.tcl 29aa6679ca29621d10613f60ebbbda18f4b91c49
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/faq.tcl 5e3f71ced26a6dc863bd8d7afd711bf16c99acf6
 F www/formatchng.tcl 502847353450adaf76d187d87374bce20dd07e0e
-F www/index.tcl 72684d0dbad02f58edd27e71ccf11a797c4bd6e9
+F www/index.tcl 6c9b78fa8cb117fa5af2ccff56a47eef798f39a4
 F www/lang.tcl 8c3d0bda030f110c754b5edbad75eddf5dbe2ed1
 F www/mingw.tcl f1c7c0a7f53387dd9bb4f8c7e8571b7561510ebc
 F www/opcode.tcl 33c5f2061a05c5d227c72b84c080b3bf74c74f8b
@@ -143,7 +143,7 @@ F www/speed.tcl 7fc83f1b018e1ecc451838449542c3079ed12425
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 61bb3af7405aa7b54f3e5519537ea483879eed39
-R c9670f7561402c0ee88efdafe6f79692
+P ce4b943bf68c160445a58ffccfbabbbd30d9829b
+R eceb789f2b856b82ace2f266f575aef0
 U drh
-Z 718b1cc10029822de3a6f0da6b7466de
+Z 583bd24d9680709c13934b197d486934
