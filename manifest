@@ -1,5 +1,5 @@
-C Fix\sa\sVDBE\sstack\soverflow\sthat\soccurs\swhen\sthe\sleft-hand\sside\sof\san\sIN\nexpression\sis\sNULL\sand\sthe\sresult\sis\sstored\son\sthe\sstack\srather\sthan\sused\nto\scontrol\sa\sjump.\s\sTicket\s#668.\s(CVS\s1299)
-D 2004-03-17T23:32:08
+C Change\sthe\s".database"\scommand\sin\sthe\sshell\sto\sallocate\smore\scharacters\sto\nthe\sdatabase\sname\sand\sfilename.\s(CVS\s1300)
+D 2004-03-17T23:42:13
 F Makefile.in 5d50a7d2a6a641e90a0312fc30d4e9c96b3903da
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -47,7 +47,7 @@ F src/pragma.c 621d319580e9e23712ec232e8be1786cdae06b36
 F src/printf.c 8c58b7b6d4069eec6ebe2d46bdbc3a89a367bf95
 F src/random.c 775913e0b7fbd6295d21f12a7bd35b46387c44b2
 F src/select.c 3833e2b64cc6d249385ee44e13bf49c9ae5b903d
-F src/shell.c 01fdfff666631cfe7f8047cfe9a8a62e56b37b50
+F src/shell.c 920af040d3a33ea8919c82cee45b424ad841cee0
 F src/sqlite.h.in 35bec264dfb4965bbfeb7e75221f8658f210c30d
 F src/sqliteInt.h 235ce244b62bb26cc9ab394fb7a0724dd4e65c83
 F src/table.c d845cb101b5afc1f7fea083c99e3d2fa7998d895
@@ -188,7 +188,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 0a12473c4ae370ec34f1f431dd6d7d6ffa25d41a
-R 78357d97f8c7b89c610dec1a1190b368
+P fc7a7975b03c144c2db3566facd008d3701c735e
+R 27f8a17f6a5bc218c66951d71c19907c
 U drh
-Z 1080973831d1d9ef12eb93cdd69e8b88
+Z 1ed9d826f53f7d6dd9bd0241bd44560c
