@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.54 2002/02/19 15:00:07 drh Exp $
+** $Id: btree.c,v 1.55 2002/02/19 22:43:59 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1308,7 +1308,7 @@ static int moveToLeftmost(BtCursor *pCur){
 
 /* Move the cursor to the first entry in the table.  Return SQLITE_OK
 ** on success.  Set *pRes to 0 if the cursor actually points to something
-** or set *pRes to 1 if the table is empty and there is no first element.
+** or set *pRes to 1 if the table is empty.
 */
 int sqliteBtreeFirst(BtCursor *pCur, int *pRes){
   int rc;
@@ -1327,7 +1327,7 @@ int sqliteBtreeFirst(BtCursor *pCur, int *pRes){
 
 /* Move the cursor to the last entry in the table.  Return SQLITE_OK
 ** on success.  Set *pRes to 0 if the cursor actually points to something
-** or set *pRes to 1 if the table is empty and there is no first element.
+** or set *pRes to 1 if the table is empty.
 */
 int sqliteBtreeLast(BtCursor *pCur, int *pRes){
   int rc;

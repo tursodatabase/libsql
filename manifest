@@ -1,5 +1,5 @@
-C New\sROWIDs\sare\snumbered\ssequentially.\s(CVS\s383)
-D 2002-02-19T22:42:05
+C Fix\sa\scomment.\s(CVS\s384)
+D 2002-02-19T22:43:59
 F Makefile.in 9fa4277413bf1d9cf91365f07d4108d7d87ed2af
 F Makefile.template 3372d45f8853afdb70bd30cc6fb50a3cd9069834
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -19,7 +19,7 @@ F ltmain.sh e9ed72eb1d690f447c13945eaf69e28af531eda1
 F publish.sh 5b59f4aff037aafa0e4a3b6fa599495dbd73f360
 F sqlite.1 2e2bb0529ef468ade9e4322bd609d0695fb9ded9
 F src/TODO af7f3cab0228e34149cf98e073aa83d45878e7e6
-F src/btree.c 8256ea416850fbd2af0ae50779b1a4b604de13c2
+F src/btree.c 495275fe14f3b718cf2f691dce979d4c0e1f8e5d
 F src/btree.h 8abeabfe6e0b1a990b64fa457592a6482f6674f3
 F src/build.c 088acf87a92b00edda1206ccafac3518660b1b3b
 F src/delete.c f8ad71be53cf18656b6573de65395852fe817f0c
@@ -125,7 +125,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P cc5abfe392bdb8c3ed00e0610bc2b41851bfc9d7
-R d110cdfb274a665cf18a7abdadd913ff
+P 1686196a8aea326f616bc8205df99cd84d955ec4
+R 42c062c2ca75817e3567e6aa37103eaa
 U drh
-Z 2f4375a6c2ee111a8d6db399f5e3350c
+Z 4a1d19ca8703d5210ddbf3e99038aa5f
