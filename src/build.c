@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.295 2005/01/19 23:24:50 drh Exp $
+** $Id: build.c,v 1.296 2005/01/21 00:44:22 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -3014,7 +3014,8 @@ void sqlite3AlterRenameTable(
             "WHEN name LIKE 'sqlite_autoindex%%' AND type='index' THEN "
               "'sqlite_autoindex_' || %Q || substr(name, %d+18,10) "
             "ELSE name END "
-      "WHERE tbl_name=%Q AND type IN ('table', 'index', 'trigger');", 
+      "WHERE tbl_name=%Q AND "
+          "(type='table' OR type='index' OR type='trigger');", 
       zDb, SCHEMA_TABLE(iDb), zName, zName, zName, 
 #ifndef SQLITE_OMIT_TRIGGER
 zName,
@@ -3045,10 +3046,10 @@ zName,
       if( pTrig->iDb==1 ){
         if( !zTempTrig ){
           zTempTrig = 
-              sqlite3MPrintf("type = 'trigger' AND name IN(%Q", pTrig->name);
+              sqlite3MPrintf("type = 'trigger' AND (name=%Q", pTrig->name);
         }else{
           tmp = zTempTrig;
-          zTempTrig = sqlite3MPrintf("%s, %Q", zTempTrig, pTrig->name);
+          zTempTrig = sqlite3MPrintf("%s OR name=%Q", zTempTrig, pTrig->name);
           sqliteFree(tmp);
         }
       }
