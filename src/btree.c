@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.247 2005/02/12 08:59:56 danielk1977 Exp $
+** $Id: btree.c,v 1.248 2005/02/15 16:23:02 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -304,6 +304,9 @@ struct Btree {
   u8 minEmbedFrac;      /* Minimum payload as % of total page size */
   u8 minLeafFrac;       /* Minimum leaf payload as % of total page size */
   u8 pageSizeFixed;     /* True if the page size can no longer be changed */
+#ifndef SQLITE_OMIT_AUTOVACUUM
+  u8 autoVacuum;        /* True if database supports auto-vacuum */
+#endif
   u16 pageSize;         /* Total number of bytes on a page */
   u16 psAligned;        /* pageSize rounded up to a multiple of 8 */
   u16 usableSize;       /* Number of usable bytes on each page */
@@ -311,9 +314,6 @@ struct Btree {
   int minLocal;         /* Minimum local payload in non-LEAFDATA tables */
   int maxLeaf;          /* Maximum local payload in a LEAFDATA table */
   int minLeaf;          /* Minimum local payload in a LEAFDATA table */
-#ifndef SQLITE_OMIT_AUTOVACUUM
-  u8 autoVacuum;        /* True if database supports auto-vacuum */
-#endif
 };
 typedef Btree Bt;
 
@@ -1444,6 +1444,9 @@ static int lockBtree(Btree *pBt){
     pBt->maxEmbedFrac = page1[21];
     pBt->minEmbedFrac = page1[22];
     pBt->minLeafFrac = page1[23];
+#ifndef SQLITE_OMIT_AUTOVACUUM
+    pBt->autoVacuum = (get4byte(&page1[36 + 4*4])?1:0);
+#endif
   }
 
   /* maxLocal is the maximum amount of payload to store locally for
@@ -1923,25 +1926,6 @@ static int countWriteCursors(Btree *pBt){
     if( pCur->wrFlag ) r++;
   }
   return r;
-}
-#endif
-
-#if 0
-/*
-** Invalidate all cursors
-*/
-static void invalidateCursors(Btree *pBt){
-  BtCursor *pCur;
-  for(pCur=pBt->pCursor; pCur; pCur=pCur->pNext){
-    MemPage *pPage = pCur->pPage;
-    if( pPage /* && !pPage->isInit */ ){
-      pageIntegrity(pPage);
-      releasePage(pPage);
-      pCur->pPage = 0;
-      pCur->isValid = 0;
-      pCur->status = SQLITE_ABORT;
-    }
-  }
 }
 #endif
 
