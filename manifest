@@ -1,5 +1,5 @@
-C Shell\scommand-line\sparsing\senhancements\ssuggested\sby\sMike\sHall.\s(CVS\s956)
-D 2003-05-04T18:30:59
+C Added\stests\strying\s(unsuccessfully)\sto\sreproduce\sticket\s#304.\s(CVS\s957)
+D 2003-05-04T20:42:56
 F Makefile.in 004acec253ecdde985c8ecd5b7c9accdb210378f
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -76,7 +76,7 @@ F test/btree4rb.test ae6f0438512edcb45cf483471cd6070a765963a9
 F test/capi2.test fb94bed9e236074c5e255cfd25e3e32344e24855
 F test/conflict.test 80cf3780c8686b92db4ce0f60bca46a000537327
 F test/copy.test 73df5ed3112e858e006a8b7ddb4c9bab6a25d0fb
-F test/delete.test 5821a95a66061ae09723a88938f23d10d8a881ad
+F test/delete.test 1586a00574e699a9913bc3403261813e8a93e6b9
 F test/expr.test 48bc6400627532ec97e233809e33d336468bc84c
 F test/fkey1.test d65c824459916249bee501532d6154ddab0b5db7
 F test/format3.test 64ab6c4db132b28a645996d413530f7b2a462cc2
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ffde644361e1d8e2a44a235ff23ad3b43d640df2
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 54b33a5ed9f7a89435c2f1395a3177e8c778bb8a
-R 930631e910c36602dc612ec54d800b90
+P 5656fe48b192dc84cb5977f826ff99d81684791f
+R cdec87c4eaf662069dea6dbf74494ed5
 U drh
-Z d822521ca3d5d75a1584b57c79080393
+Z 054b394f2a79b867a0d598db2de3f85c
