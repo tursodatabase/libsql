@@ -379,7 +379,7 @@ static void md5finalize(sqlite_func *context){
   p = sqlite3_aggregate_context(context, sizeof(*p));
   MD5Final(digest,p);
   DigestToBase16(digest, zBuf);
-  sqlite3_set_result_string(context, zBuf, strlen(zBuf));
+  sqlite3_result_text(context, zBuf, -1, 1);
 }
 void Md5_Register(sqlite *db){
   sqlite3_create_aggregate(db, "md5sum", -1, md5step, md5finalize, 0);

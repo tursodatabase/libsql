@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.49 2004/05/24 23:48:27 danielk1977 Exp $
+** $Id: test1.c,v 1.50 2004/05/25 11:47:26 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -311,7 +311,7 @@ static void ifnullFunc(sqlite_func *context, int argc, sqlite3_value **argv){
   int i;
   for(i=0; i<argc; i++){
     if( SQLITE3_NULL!=sqlite3_value_type(argv[i]) ){
-      sqlite3_set_result_string(context, sqlite3_value_data(argv[i]), -1);
+      sqlite3_result_text(context, sqlite3_value_data(argv[i]), -1, 1);
       break;
     }
   }
@@ -386,7 +386,7 @@ static void sqlite3ExecFunc(
   sqlite3_exec((sqlite*)sqlite3_user_data(context),
       sqlite3_value_data(argv[0]),
       execFuncCallback, &x, 0);
-  sqlite3_set_result_string(context, x.z, x.nUsed);
+  sqlite3_result_text(context, x.z, x.nUsed, 1);
   sqliteFree(x.z);
 }
 
@@ -441,7 +441,7 @@ static void countStep(sqlite_func *context, int argc, sqlite3_value **argv){
 static void countFinalize(sqlite_func *context){
   CountCtx *p;
   p = sqlite3_aggregate_context(context, sizeof(*p));
-  sqlite3_set_result_int(context, p ? p->n : 0);
+  sqlite3_result_int32(context, p ? p->n : 0);
 }
 
 /*
@@ -658,19 +658,19 @@ static void testFunc(sqlite_func *context, int argc, sqlite3_value **argv){
     const char *zArg0 = sqlite3_value_data(argv[0]);
     const char *zArg1 = sqlite3_value_data(argv[1]);
     if( zArg0==0 ){
-      sqlite3_set_result_error(context, "first argument to test function "
+      sqlite3_result_error(context, "first argument to test function "
          "may not be NULL", -1);
     }else if( sqlite3StrICmp(zArg0,"string")==0 ){
-      sqlite3_set_result_string(context, zArg1, -1);
+      sqlite3_result_text(context, zArg1, -1, 1);
     }else if( zArg1==0 ){
-      sqlite3_set_result_error(context, "2nd argument may not be NULL if the "
+      sqlite3_result_error(context, "2nd argument may not be NULL if the "
          "first argument is not \"string\"", -1);
     }else if( sqlite3StrICmp(zArg0,"int")==0 ){
-      sqlite3_set_result_int(context, atoi(zArg1));
+      sqlite3_result_int32(context, atoi(zArg1));
     }else if( sqlite3StrICmp(zArg0,"double")==0 ){
-      sqlite3_set_result_double(context, sqlite3AtoF(zArg1, 0));
+      sqlite3_result_double(context, sqlite3AtoF(zArg1, 0));
     }else{
-      sqlite3_set_result_error(context,"first argument should be one of: "
+      sqlite3_result_error(context,"first argument should be one of: "
           "string int double", -1);
     }
     argc -= 2;

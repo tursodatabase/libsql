@@ -117,8 +117,15 @@ struct Sorter {
 #define NBFS 32
 
 /*
-** A single level of the stack or a single memory cell
-** is an instance of the following structure. 
+** Internally, the vdbe manipulates nearly all SQL values as Mem
+** structures. Each Mem struct may cache multiple representations (string,
+** integer etc.) of the same value.  A value (and therefore Mem structure)
+** has the following properties:
+**
+** Each value has a manifest type. The manifest type of the value stored
+** in a Mem struct is returned by the MemType(Mem*) macro. The type is
+** one of SQLITE3_NULL, SQLITE3_INTEGER, SQLITE3_REAL, SQLITE3_TEXT or
+** SQLITE3_BLOB.
 */
 struct Mem {
   i64 i;              /* Integer value */
@@ -129,6 +136,33 @@ struct Mem {
   char zShort[NBFS];  /* Space for short strings */
 };
 typedef struct Mem Mem;
+
+/*
+** The following three macros are used to set the value and manifest type
+** stored by a Mem structure.
+**
+** MemSetNull - Set the value to NULL.
+** MemSetInt  - Set the value to an integer.
+** MemSetReal - Set the value to a real.
+** MemSetStr - Set the value to a string.
+*/
+#define MemSetNull(p) sqlite3VdbeMemSetNull(p)
+#define MemSetInt(p,v) sqlite3VdbeMemSetInt(p,v)
+#define MemSetReal(p,v) sqlite3VdbeMemSetReal(p,v)
+#define MemSetStr(p,z,n,enc,eCopy) sqlite3VdbeMemSetStr(p,z,n,enc,eCopy)
+
+/*
+** This macro is used to ensure a string stored in a Mem struct is NULL
+** terminated. When used on an object that is not a string or is a nul
+** terminated string this is a no-op. When used on a non-nul-terminated
+** string a nul terminator character is appended.
+**
+** Non-zero is returned if a malloc() fails.
+*/
+#define MemNulTerminate(p) ( \
+  ((p)->flags&MEM_Str) && \
+  !((p)->flags&MEM_Term) && \
+  sqlite3VdbeMemNulTerminate(p) )
 
 /*
 ** Allowed values for Mem.flags.
@@ -147,7 +181,6 @@ typedef struct Mem Mem;
 #define MEM_Int       0x0004   /* Value is an integer */
 #define MEM_Real      0x0008   /* Value is a real number */
 #define MEM_Blob      0x0010   /* Value is a BLOB */
-#define MEM_Struct    0x0020   /* Value is some kind of struct */
 
 #define MEM_Term      0x0200   /* String has a nul terminator character */
 
@@ -361,9 +394,10 @@ int sqlite2BtreeKeyCompare(BtCursor *, const void *, int, int, int *);
 int sqlite3VdbeIdxKeyCompare(Cursor*, int , const unsigned char*, int*);
 int sqlite3VdbeIdxRowid(BtCursor *, i64 *);
 int sqlite3MemCompare(const Mem*, const Mem*, const CollSeq*);
-int sqlite3MemCopy(Mem*, const Mem*);
 int sqlite3VdbeKeyCompare(void*,int,const void*,int, const void*);
 int sqlite3VdbeRowCompare(void*,int,const void*,int, const void*);
 int sqlite3VdbeExec(Vdbe*);
 int sqlite3VdbeList(Vdbe*);
 int sqlite3VdbeSetEncoding(Mem *, u8);
+int sqlite3VdbeMemCopy(Mem*, const Mem*);
+int sqlite3VdbeMemNulTerminate(Mem *);

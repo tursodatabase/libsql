@@ -425,82 +425,10 @@ VdbeOp *sqlite3VdbeGetOp(Vdbe *p, int addr){
 }
 
 /*
-** The following group or routines are employed by installable functions
-** to return their results.
-**
-** The sqlite3_set_result_string() routine can be used to return a string
-** value or to return a NULL.  To return a NULL, pass in NULL for zResult.
-** A copy is made of the string before this routine returns so it is safe
-** to pass in an ephemeral string.
-**
-** sqlite3_set_result_error() works like sqlite3_set_result_string() except
-** that it signals a fatal error.  The string argument, if any, is the
-** error message.  If the argument is NULL a generic substitute error message
-** is used.
-**
-** The sqlite3_set_result_int() and sqlite3_set_result_double() set the return
-** value of the user function to an integer or a double.
-**
-** These routines are defined here in vdbe.c because they depend on knowing
-** the internals of the sqlite_func structure which is only defined in 
-** this source file.
-*/
-char *sqlite3_set_result_string(sqlite_func *p, const char *zResult, int n){
-  assert( !p->isStep );
-  if( p->s.flags & MEM_Dyn ){
-    sqliteFree(p->s.z);
-  }
-  if( zResult==0 ){
-    p->s.flags = MEM_Null;
-    n = 0;
-    p->s.z = 0;
-    p->s.n = 0;
-  }else{
-    if( n<0 ) n = strlen(zResult);
-    if( n<NBFS-1 ){
-      memcpy(p->s.zShort, zResult, n);
-      p->s.zShort[n] = 0;
-      p->s.flags = MEM_Utf8 | MEM_Str | MEM_Short;
-      p->s.z = p->s.zShort;
-    }else{
-      p->s.z = sqliteMallocRaw( n+1 );
-      if( p->s.z ){
-        memcpy(p->s.z, zResult, n);
-        p->s.z[n] = 0;
-      }
-      p->s.flags = MEM_Utf8 | MEM_Str | MEM_Dyn;
-    }
-    p->s.n = n+1;
-  }
-  return p->s.z;
-}
-void sqlite3_set_result_int(sqlite_func *p, int iResult){
-  assert( !p->isStep );
-  if( p->s.flags & MEM_Dyn ){
-    sqliteFree(p->s.z);
-  }
-  p->s.i = iResult;
-  p->s.flags = MEM_Int;
-}
-void sqlite3_set_result_double(sqlite_func *p, double rResult){
-  assert( !p->isStep );
-  if( p->s.flags & MEM_Dyn ){
-    sqliteFree(p->s.z);
-  }
-  p->s.r = rResult;
-  p->s.flags = MEM_Real;
-}
-void sqlite3_set_result_error(sqlite_func *p, const char *zMsg, int n){
-  assert( !p->isStep );
-  sqlite3_set_result_string(p, zMsg, n);
-  p->isError = 1;
-}
-
-/*
 ** Extract the user data from a sqlite_func structure and return a
 ** pointer to it.
 */
-void *sqlite3_user_data(sqlite_func *p){
+void *sqlite3_user_data(sqlite3_context *p){
   assert( p && p->pFunc );
   return p->pFunc->pUserData;
 }
@@ -1462,33 +1390,6 @@ int sqlite3MemCompare(const Mem *pMem1, const Mem *pMem2, const CollSeq *pColl){
 }
 
 /*
-** Copy the contents of memory cell pFrom into pTo.
-*/
-int sqlite3MemCopy(Mem *pTo, const Mem *pFrom){
-  if( pTo->flags&MEM_Dyn ){
-    sqliteFree(pTo->z);
-  }
-
-  memcpy(pTo, pFrom, sizeof(*pFrom));
-  if( pTo->flags&MEM_Short ){
-    pTo->z = pTo->zShort;
-  }
-  else if( pTo->flags&(MEM_Ephem|MEM_Dyn) ){
-    pTo->flags = pTo->flags&(~(MEM_Static|MEM_Ephem|MEM_Short|MEM_Dyn));
-    if( pTo->n>NBFS ){
-      pTo->z = sqliteMalloc(pTo->n);
-      if( !pTo->z ) return SQLITE_NOMEM;
-      pTo->flags |= MEM_Dyn;
-    }else{
-      pTo->z = pTo->zShort;
-      pTo->flags |= MEM_Short;
-    }
-    memcpy(pTo->z, pFrom->z, pTo->n);
-  }
-  return SQLITE_OK;
-}
-
-/*
 ** The following is the comparison function for (non-integer)
 ** keys in the btrees.  This function returns negative, zero, or
 ** positive if the first key is less than, equal to, or greater than
@@ -1753,3 +1654,230 @@ int sqlite3VdbeIdxKeyCompare(
   }
   return SQLITE_OK;
 }
+
+/*
+** Parameter "enc" is one of TEXT_Utf8, TEXT_Utf16le or TEXT_Utf16be.
+** Return the corresponding MEM_Utf* value.
+*/
+static int encToFlags(u8 enc){
+  switch( enc ){
+    case TEXT_Utf8: return MEM_Utf8;
+    case TEXT_Utf16be: return MEM_Utf16be;
+    case TEXT_Utf16le: return MEM_Utf16le;
+  }
+  assert(0);
+}
+static u8 flagsToEnc(int flags){
+  switch( flags&(MEM_Utf8|MEM_Utf16be|MEM_Utf16le) ){
+    case MEM_Utf8: return TEXT_Utf8;
+    case MEM_Utf16le: return TEXT_Utf16le;
+    case MEM_Utf16be: return TEXT_Utf16be;
+  }
+  return 0;
+}
+
+/*
+** Delete any previous value and set the value stored in *pMem to NULL.
+*/
+void sqlite3VdbeMemSetNull(Mem *pMem){
+  if( pMem->flags&MEM_Dyn ){
+    sqliteFree(pMem->z);
+  }
+  pMem->flags = MEM_Null;
+}
+
+/*
+** Delete any previous value and set the value stored in *pMem to val,
+** manifest type INTEGER.
+*/
+void sqlite3VdbeMemSetInt(Mem *pMem, i64 val){
+  MemSetNull(pMem);
+  pMem->i = val;
+  pMem->flags = MEM_Int;
+}
+
+/*
+** Delete any previous value and set the value stored in *pMem to val,
+** manifest type REAL.
+*/
+void sqlite3VdbeMemSetReal(Mem *pMem, double val){
+  MemSetNull(pMem);
+  pMem->r = val;
+  pMem->flags = MEM_Real;
+}
+
+/*
+** Copy the contents of memory cell pFrom into pTo.
+*/
+int sqlite3VdbeMemCopy(Mem *pTo, const Mem *pFrom){
+  if( pTo->flags&MEM_Dyn ){
+    sqliteFree(pTo->z);
+  }
+
+  memcpy(pTo, pFrom, sizeof(*pFrom));
+  if( pTo->flags&MEM_Short ){
+    pTo->z = pTo->zShort;
+  }
+  else if( pTo->flags&(MEM_Ephem|MEM_Dyn) ){
+    pTo->flags = pTo->flags&(~(MEM_Static|MEM_Ephem|MEM_Short|MEM_Dyn));
+    if( pTo->n>NBFS ){
+      pTo->z = sqliteMalloc(pTo->n);
+      if( !pTo->z ) return SQLITE_NOMEM;
+      pTo->flags |= MEM_Dyn;
+    }else{
+      pTo->z = pTo->zShort;
+      pTo->flags |= MEM_Short;
+    }
+    memcpy(pTo->z, pFrom->z, pTo->n);
+  }
+  return SQLITE_OK;
+}
+
+int sqlite3VdbeMemSetStr(
+  Mem *pMem,          /* Memory cell to set to string value */
+  const char *z,      /* String pointer */
+  int n,              /* Bytes in string, or negative */
+  u8 enc,             /* Encoding of z */
+  int eCopy           /* True if this function should make a copy of z */
+){
+  Mem tmp;
+
+  if( !z ){
+    /* If z is NULL, just set *pMem to contain NULL. */
+    MemSetNull(pMem);
+    return SQLITE_OK;
+  }
+
+  tmp.z = (char *)z;
+  if( eCopy ){
+    tmp.flags = MEM_Ephem|MEM_Str;
+  }else{
+    tmp.flags = MEM_Static|MEM_Str;
+  }
+  tmp.flags |= encToFlags(enc);
+  tmp.n = n;
+  switch( enc ){
+    case 0:
+      tmp.flags |= MEM_Blob;
+      break;
+
+    case TEXT_Utf8:
+      tmp.flags |= MEM_Utf8;
+      if( n<0 ) tmp.n = strlen(z)+1;
+      tmp.flags |= ((tmp.z[tmp.n-1])?0:MEM_Term);
+      break;
+
+    case TEXT_Utf16le:
+    case TEXT_Utf16be:
+      tmp.flags |= (enc==TEXT_Utf16le?MEM_Utf16le:MEM_Utf16be);
+      if( n<0 ) tmp.n = sqlite3utf16ByteLen(z,-1)+1;
+      tmp.flags |= ((tmp.z[tmp.n-1]||tmp.z[tmp.n-2])?0:MEM_Term);
+      break;
+
+    default:
+      assert(0);
+  }
+  return sqlite3VdbeMemCopy(pMem, &tmp);
+}
+
+int sqlite3VdbeMemNulTerminate(Mem *pMem){
+  int nulTermLen;
+  int f = pMem->flags;
+
+  assert( pMem->flags&MEM_Str && !pMem->flags&MEM_Term );
+  assert( flagsToEnc(pMem->flags) );
+
+  nulTermLen = (flagsToEnc(f)==TEXT_Utf8?1:2);
+
+  if( pMem->n+nulTermLen<=NBFS ){
+    /* If the string plus the nul terminator will fit in the Mem.zShort
+    ** buffer, and it is not already stored there, copy it there.
+    */
+    if( !(f&MEM_Short) ){
+      memcpy(pMem->z, pMem->zShort, pMem->n);
+      if( f&MEM_Dyn ){
+        sqliteFree(pMem->z);
+      }
+      pMem->z = pMem->zShort;
+      pMem->flags &= ~(MEM_Static|MEM_Ephem|MEM_Dyn);
+      pMem->flags |= MEM_Short;
+    }
+  }else{
+    /* Otherwise we have to malloc for memory. If the string is already
+    ** dynamic, use sqliteRealloc(). Otherwise sqliteMalloc() enough
+    ** space for the string and the nul terminator, and copy the string
+    ** data there.
+    */
+    if( f&MEM_Dyn ){
+      pMem->z = (char *)sqliteRealloc(pMem->z, pMem->n+nulTermLen);
+      if( !pMem->z ){
+        return SQLITE_NOMEM;
+      }
+    }else{
+      char *z = (char *)sqliteMalloc(pMem->n+nulTermLen);
+      memcpy(z, pMem->z, pMem->n);
+      pMem->z = z;
+      pMem->flags &= ~(MEM_Static|MEM_Ephem|MEM_Short);
+      pMem->flags |= MEM_Dyn;
+    }
+  }
+
+  /* pMem->z now points at the string data, with enough space at the end
+  ** to insert the nul nul terminator. pMem->n has not yet been updated.
+  */
+  memcpy(&pMem->z[pMem->n], "\0\0", nulTermLen);
+  pMem->n += nulTermLen;
+  pMem->flags |= MEM_Term;
+}
+
+/*
+** The following nine routines, named sqlite3_result_*(), are used to
+** return values or errors from user-defined functions and aggregate
+** operations. They are commented in the header file sqlite.h (sqlite.h.in)
+*/
+void sqlite3_result_int32(sqlite3_context *pCtx, int iVal){
+  MemSetInt(&pCtx->s, iVal);
+}
+void sqlite3_result_int64(sqlite3_context *pCtx, i64 iVal){
+  MemSetInt(&pCtx->s, iVal);
+}
+void sqlite3_result_double(sqlite3_context *pCtx, double rVal){
+  MemSetReal(&pCtx->s, rVal);
+}
+void sqlite3_result_null(sqlite3_context *pCtx){
+  MemSetNull(&pCtx->s);
+}
+void sqlite3_result_text(
+  sqlite3_context *pCtx, 
+  const char *z, 
+  int n,
+  int eCopy
+){
+  MemSetStr(&pCtx->s, z, n, TEXT_Utf8, eCopy);
+}
+void sqlite3_result_text16(
+  sqlite3_context *pCtx, 
+  const void *z, 
+  int n, 
+  int eCopy
+){
+  MemSetStr(&pCtx->s, z, n, TEXT_Utf16, eCopy);
+}
+void sqlite3_result_blob(
+  sqlite3_context *pCtx, 
+  const void *z, 
+  int n, 
+  int eCopy
+){
+  assert( n>0 );
+  MemSetStr(&pCtx->s, z, n, 0, eCopy);
+}
+void sqlite3_result_error(sqlite3_context *pCtx, const char *z, int n){
+  pCtx->isError = 1;
+  MemSetStr(&pCtx->s, z, n, TEXT_Utf8, 1);
+}
+void sqlite3_result_error16(sqlite3_context *pCtx, const void *z, int n){
+  pCtx->isError = 1;
+  MemSetStr(&pCtx->s, z, n, TEXT_Utf16, 1);
+}
+

@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.74 2004/05/24 23:48:27 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.75 2004/05/25 11:47:26 danielk1977 Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -463,36 +463,6 @@ int sqlite3_function_type(
 #define SQLITE_NUMERIC     (-1)
 #define SQLITE_TEXT        (-2)
 #define SQLITE_ARGS        (-3)
-
-/*
-** The user function implementations call one of the following four routines
-** in order to return their results.  The first parameter to each of these
-** routines is a copy of the first argument to xFunc() or xFinialize().
-** The second parameter to these routines is the result to be returned.
-** A NULL can be passed as the second parameter to sqlite3_set_result_string()
-** in order to return a NULL result.
-**
-** The 3rd argument to _string and _error is the number of characters to
-** take from the string.  If this argument is negative, then all characters
-** up to and including the first '\000' are used.
-**
-** The sqlite3_set_result_string() function allocates a buffer to hold the
-** result and returns a pointer to this buffer.  The calling routine
-** (that is, the implmentation of a user function) can alter the content
-** of this buffer if desired.
-*/
-char *sqlite3_set_result_string(sqlite_func*,const char*,int);
-void sqlite3_set_result_int(sqlite_func*,int);
-void sqlite3_set_result_double(sqlite_func*,double);
-void sqlite3_set_result_error(sqlite_func*,const char*,int);
-
-/*
-** The pUserData parameter to the sqlite3_create_function() and
-** sqlite3_create_aggregate() routines used to register user functions
-** is available to the implementation of the function using this
-** call.
-*/
-void *sqlite3_user_data(sqlite_func*);
 
 /*
 ** Aggregate functions use the following routine to allocate
@@ -1411,6 +1381,98 @@ long long int sqlite3_value_int(sqlite3_value*);
 ** SQLITE3_BLOB      0.0
 */
 double sqlite3_value_float(sqlite3_value*);
+
+typedef sqlite_func sqlite3_context;
+
+void *sqlite3_get_context(sqlite3_context*, int nbyte);
+
+/*
+** The pUserData parameter to the sqlite3_create_function() and
+** sqlite3_create_aggregate() routines used to register user functions
+** is available to the implementation of the function using this
+** call.
+*/
+void *sqlite3_user_data(sqlite3_context*);
+
+/*
+** The following three functions may be called from within a user-defined
+** function callback or a user-defined aggregate finalizer callback. The
+** result of the user-defined function or aggregate is set to the value of
+** the second parameter. Any value previously set as the return value via
+** an sqlite3_result_*() call is overwritten.
+**
+** The first parameter to each of these routines must be a copy of the
+** sqlite3_context* pointer passed to the user-defined function or
+** aggregate finalizer function.
+*/
+void sqlite3_result_int32(sqlite3_context*, int);
+void sqlite3_result_int64(sqlite3_context*, long long int);
+void sqlite3_result_double(sqlite3_context*, double);
+
+/*
+** This function may be called from within a user-defined function callback
+** or a user-defined aggregate finalizer callback. The result of the
+** user-defined function or aggregate is set to NULL.  Any value previously
+** set as the return value via an sqlite3_result_*() call is overwritten.
+**
+** The parameter to this routine must be a copy of the sqlite3_context*
+** pointer passed to the user-defined function or aggregate finalizer
+** function.
+*/
+void sqlite3_result_null(sqlite3_context*);
+
+/*
+** The following two functions may be called from within a user-defined or
+** a user-defined aggregate finalizer callback to return a text value. 
+** The second parameter is a pointer to the string, encoded in UTF-8 
+** for sqlite3_result_text() and UTF-16 (machine byte order) for
+** sqlite3_result_text16(). 
+**
+** If the third parameter, n,  is positive, it is the number of bytes (not
+** characters) in the string data. A negative n value indicates that the
+** string may be read up to the nul terminator character.
+**
+** If the fourth parameter is non-zero, then a copy is made of the string.
+** Otherwise, SQLite stores a pointer to the original string data.
+**
+** The first parameter to this routine must be a copy of the
+** sqlite3_context* pointer passed to the user-defined function or
+** aggregate finalizer function.
+*/
+void sqlite3_result_text(sqlite3_context*, const char*, int n, int eCopy);
+void sqlite3_result_text16(sqlite3_context*, const void*, int n, int eCopy);
+
+/*
+** The following function may be called from within a user-defined or a
+** user-defined aggregate finalizer callback to return a blob value.  The
+** second parameter is a pointer to the blob of data. The third parameter
+** is the number of bytes of data in the blob.
+**
+** If the fourth parameter is non-zero, then a copy is made of the blob.
+** Otherwise, SQLite stores a pointer to the original blob data.
+**
+** The first parameter to this routine must be a copy of the
+** sqlite3_context* pointer passed to the user-defined function or
+** aggregate finalizer function.
+*/
+void sqlite3_result_blob(sqlite3_context*, const void*, int n, int eCopy);
+
+/*
+** These routines are used from within a user-defined or a user-defined
+** aggregate finalizer callback to return an error. The second parameter
+** is a pointer to a string describing the error, or NULL if no explanation
+** is provided.
+**
+** The string should be encoded in UTF-8 for sqlite3_result_error() and
+** UTF-16 (machine byte order) for sqlite3_result_error16().
+**
+** If not negative, the third parameter is the number of bytes (not
+** characters) in the string passed as the second argument. If the third
+** parameter is negative, then the string is read up to the first nul
+** terminator character.
+*/
+void sqlite3_result_error(sqlite3_context*, const char*, int);
+void sqlite3_result_error16(sqlite3_context*, const void*, int);
 
 #ifdef __cplusplus
 }  /* End of the 'extern "C"' block */

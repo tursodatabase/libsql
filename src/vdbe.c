@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.327 2004/05/24 23:48:27 danielk1977 Exp $
+** $Id: vdbe.c,v 1.328 2004/05/25 11:47:26 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -69,14 +69,109 @@ int sqlite3_search_count = 0;
 */
 int sqlite3_interrupt_count = 0;
 
+/*
+** This macro takes a single parameter, a pointer to a Mem structure.
+** It returns the string encoding for the Mem structure, one of TEXT_Utf8
+** TEXT_Utf16le or TEXT_Utf16be.
+*/
+#define MemEnc(p) ( \
+   p->flags&MEM_Utf16le?TEXT_Utf16le: \
+  (p->flags&MEM_Utf16le?TEXT_Utf16be:TEXT_Utf8) )
+
+/*
+** The following macros each take one parameter, a pointer to a Mem
+** structure. The value returned is non-zero if the value stored in 
+** the Mem structure is of or can be losslessly converted to the
+** type implicit in the macro name.
+** 
+** MemIsNull     # NULL values
+** MemIsInt      # Ints and reals and strings that can be converted to ints.
+** MemIsReal     # Reals, ints and strings that look like numbers
+** MemIsStr      # Strings, reals and ints.
+** MemIsBlob     # Blobs.
+**
+** These macros do not alter the contents of the Mem structure.
+*/
+#define MemIsNull(p) ((p)->flags&Mem_Null)
+#define MemIsBlob(p) ((p)->flags&Mem_Blob)
+#define MemIsStr(p) ((p)->flags&(MEM_Int|MEM_Real|MEM_Str))
+#define MemIsInt(p) ((p)->flags&MEM_Int || hardMemIsInt(p))
+#define MemIsReal(p) ((p)->flags&(MEM_Int|MEM_Real) || hardMemIsReal(p))
+static int hardMemIsInt(Mem *p){
+  assert( !(p->flags&(MEM_Int|MEM_Real)) );
+  if( p->flags&MEM_Str ){
+    int realnum = 0;
+    if( sqlite3IsNumber(p->z, &realnum, MemEnc(p)) && !realnum ){
+      return 1;
+    }
+  }
+  return 0;
+}
+static int hardMemIsReal(Mem *p){
+  assert( !(p->flags&(MEM_Int|MEM_Real)) );
+  if( p->flags&MEM_Str && sqlite3IsNumber(p->z, 0, MemEnc(p)) ){
+    return 1;
+  }
+  return 0;
+}
+
+/*
+** The following two macros each take one parameter, a pointer to a Mem
+** structure. They return the value stored in the Mem structure coerced
+** to a 64-bit integer or real, respectively.
+**
+** MemInt
+** MemReal
+**
+** These macros do not alter the contents of the Mem structure, although
+** they may cache the integer or real value cast of the value.
+*/
+#define MemInt(p) (((p)->flags&MEM_Int)?(p)->i:hardMemInt(p))
+#define MemReal(p) (((p)->flags&MEM_Real)?(p)->i:hardMemReal(p))
+static i64 hardMemInt(Mem *p){
+  assert( !(p->flags&MEM_Int) );
+  if( !MemIsInt(p) ) return 0;
+
+  if( p->flags&MEM_Real ){
+    p->i = p->r;
+  }else{
+    assert( p->flags&MEM_Str );
+    sqlite3atoi64(p->z, &(p->i), MemEnc(p));
+  }
+  p->flags |= MEM_Int;
+  return p->i;
+}
+static double hardMemReal(Mem *p){
+  assert( !(p->flags&MEM_Real) );
+  if( !MemIsReal(p) ) return 0.0;
+
+  if( p->flags&MEM_Int ){
+    p->r = p->i;
+  }else{
+    assert( p->flags&MEM_Str );
+    /* p->r = sqlite3AtoF(p->z, 0, MemEnc(p)); */
+    p->r = sqlite3AtoF(p->z, 0);
+  }
+  p->flags |= MEM_Real;
+  return p->r;
+}
+
+
 #if 0
 /*
-** NulTermify
-** Stringify
-** Integerify
-** Realify
-** SetEncoding
-** Release
+** MemStr(Mem *pMem)
+** MemBlob(Mem *pMem)
+** MemBloblen(Mem *pMem)
+**
+** MemType(Mem *pMem)
+**
+** MemSetBlob
+** MemSetStr
+**
+** MemSetEnc
+** MemSetType
+**
+** MemCopy
 */
 struct MemRecord {
   char *zData;    /* Serialized record */
@@ -2012,6 +2107,7 @@ case OP_Callback: {
   for(i=0; i<pOp->p1; i++){
     Mem *pVal = &pTos[0-i];
     SetEncodingFlags(pVal, db->enc);
+    MemNulTerminate(pVal);
   }
 
   p->resOnStack = 1;
@@ -2274,14 +2370,14 @@ case OP_Function: {
   (*ctx.pFunc->xFunc)(&ctx, n, apVal);
   if( sqlite3SafetyOn(db) ) goto abort_due_to_misuse;
   popStack(&pTos, n);
+
+  /* Copy the result of the function to the top of the stack */
   pTos++;
   *pTos = ctx.s;
-  if( pTos->flags & MEM_Str ){
-    pTos->flags |= MEM_Term;
-  }
   if( pTos->flags & MEM_Short ){
     pTos->z = pTos->zShort;
   }
+  /* If the function returned an error, throw an exception */
   if( ctx.isError ){
     sqlite3SetString(&p->zErrMsg, 
        (pTos->flags & MEM_Str)!=0 ? pTos->z : "user function error", (char*)0);
@@ -2289,7 +2385,6 @@ case OP_Function: {
   }
 
   if( pTos->flags&MEM_Str ){
-    SetEncodingFlags(pTos, TEXT_Utf8);
     SetEncoding(pTos, encToFlags(db->enc)|MEM_Term);
   }
 
