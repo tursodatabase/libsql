@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.62 2002/06/06 23:16:05 drh Exp $
+** $Id: btree.c,v 1.63 2002/06/21 13:09:17 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -367,6 +367,7 @@ static void defragmentPage(MemPage *pPage){
   char newPage[SQLITE_PAGE_SIZE];
 
   assert( sqlitepager_iswriteable(pPage) );
+  assert( pPage->isInit );
   pc = sizeof(PageHdr);
   pPage->u.hdr.firstCell = pc;
   memcpy(newPage, pPage->u.aDisk, pc);
@@ -417,6 +418,7 @@ static int allocateSpace(MemPage *pPage, int nByte){
 
   assert( sqlitepager_iswriteable(pPage) );
   assert( nByte==ROUNDUP(nByte) );
+  assert( pPage->isInit );
   if( pPage->nFree<nByte || pPage->isOverfull ) return 0;
   pIdx = &pPage->u.hdr.firstFree;
   p = (FreeBlk*)&pPage->u.aDisk[*pIdx];
@@ -464,6 +466,7 @@ static void freeSpace(MemPage *pPage, int start, int size){
   assert( sqlitepager_iswriteable(pPage) );
   assert( size == ROUNDUP(size) );
   assert( start == ROUNDUP(start) );
+  assert( pPage->isInit );
   pIdx = &pPage->u.hdr.firstFree;
   idx = *pIdx;
   while( idx!=0 && idx<start ){
@@ -1367,6 +1370,7 @@ int sqliteBtreeLast(BtCursor *pCur, int *pRes){
   if( pCur->pPage==0 ) return SQLITE_ABORT;
   rc = moveToRoot(pCur);
   if( rc ) return rc;
+  assert( pCur->pPage->isInit );
   if( pCur->pPage->nCell==0 ){
     *pRes = 1;
     return SQLITE_OK;
@@ -1432,6 +1436,7 @@ int sqliteBtreeMoveto(BtCursor *pCur, const void *pKey, int nKey, int *pRes){
       }
     }
     assert( lwr==upr+1 );
+    assert( pPage->isInit );
     if( lwr>=pPage->nCell ){
       chldPg = pPage->u.hdr.rightChild;
     }else{
@@ -1460,6 +1465,7 @@ int sqliteBtreeNext(BtCursor *pCur, int *pRes){
     if( pRes ) *pRes = 1;
     return SQLITE_ABORT;
   }
+  assert( pCur->pPage->isInit );
   if( pCur->bSkipNext && pCur->idx<pCur->pPage->nCell ){
     pCur->bSkipNext = 0;
     if( pRes ) *pRes = 0;
@@ -1936,6 +1942,7 @@ static int balance(Btree *pBt, MemPage *pPage, BtCursor *pCur){
   if( pParent==0 ){
     Pgno pgnoChild;
     MemPage *pChild;
+    assert( pPage->isInit );
     if( pPage->nCell==0 ){
       if( pPage->u.hdr.rightChild ){
         /*
@@ -1999,6 +2006,7 @@ static int balance(Btree *pBt, MemPage *pPage, BtCursor *pCur){
   }
   rc = sqlitepager_write(pParent);
   if( rc ) return rc;
+  assert( pParent->isInit );
   
   /*
   ** Find the Cell in the parent page whose h.leftChild points back
@@ -2310,6 +2318,7 @@ int sqliteBtreeInsert(
   rc = sqliteBtreeMoveto(pCur, pKey, nKey, &loc);
   if( rc ) return rc;
   pPage = pCur->pPage;
+  assert( pPage->isInit );
   rc = sqlitepager_write(pPage);
   if( rc ) return rc;
   rc = fillInCell(pBt, &newCell, pKey, nKey, pData, nData);
@@ -2349,6 +2358,7 @@ int sqliteBtreeDelete(BtCursor *pCur){
   int rc;
   Pgno pgnoChild;
 
+  assert( pPage->isInit );
   if( pCur->pPage==0 ){
     return SQLITE_ABORT;  /* A rollback destroyed this cursor */
   }
@@ -2467,6 +2477,8 @@ static int clearDatabasePage(Btree *pBt, Pgno pgno, int freePageFlag){
   rc = sqlitepager_get(pBt->pPager, pgno, (void**)&pPage);
   if( rc ) return rc;
   rc = sqlitepager_write(pPage);
+  if( rc ) return rc;
+  rc = initPage(pPage, pgno, 0);
   if( rc ) return rc;
   idx = pPage->u.hdr.firstCell;
   while( idx>0 ){

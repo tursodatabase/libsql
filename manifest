@@ -1,5 +1,5 @@
-C Fix\sfor\sticket\s#78:\sAvoid\san\sassertion\sfailure\swhen\ssqlite_close()\sto\sbe\ncalled\sin\sthe\smiddle\sof\sa\stransaction.\s(CVS\s634)
-D 2002-06-21T11:55:49
+C Fix\sfor\sticket\s#76:\sFix\sa\sdatabase\scorruption\sthat\smight\soccur\swhen\ndropping\stables\sor\sindices.\s(CVS\s635)
+D 2002-06-21T13:09:17
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -18,7 +18,7 @@ F publish.sh d115bd49631e3bb0d799e7dc1da51f9866d67647
 F spec.template 238f7db425a78dc1bb7682e56e3834c7270a3f5e
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
 F src/TODO af7f3cab0228e34149cf98e073aa83d45878e7e6
-F src/btree.c 8b86be8f234c1c5dab3186f69cee2544ec9d7257
+F src/btree.c 6aaa67d7eab70c2531dc13e5d9eb87e626c0b4d7
 F src/btree.h 8abeabfe6e0b1a990b64fa457592a6482f6674f3
 F src/build.c 95eac6ce4ae2871388d49066c78dd0657ce40a1f
 F src/delete.c 44c45460b1e03033756e35adc6d569ffbf30b725
@@ -137,7 +137,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P d28a2ecc91c0a6d64725887dcf2758f69553eb59
-R 7c501d6833981a37701d9630a4f2a397
+P 2532792a5875f9cc0f7d8eaf90dd49d1f6025ca3
+R 3fe0ffaffb77713981828251190bdd81
 U drh
-Z 04318c7b992ec9784c65132ba98bdc91
+Z 08d058b9c9d8b8b2fa6e6514672f1243
