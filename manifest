@@ -1,5 +1,5 @@
-C Bump\sthe\sversion\snumber\sto\s2.7.2.\s(CVS\s755)
-D 2002-09-25T19:26:59
+C Version\s2.7.2\s(CVS\s756)
+D 2002-09-25T19:50:18
 F Makefile.in d6c9a85c2a5e696843201d090dcf8bf2f8716f2a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -149,7 +149,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P b0d27a377a9f6134f81108fe45c8c868ab4d4411
+P a164528e8c6df3569ab178a3b737744dcccb64e7
 R 6b3b49333db1fe81ae49602c8806a88b
 U drh
-Z c182cb4ceec14be26b636f8139424645
+Z d8e6d7ec440fa5d20f0b92f7d17ba232
