@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sEXPLAIN\son\spragmas\sthat\sreturn\ssingle\sinteger\svalues.\nTicket\s#886\s(CVS\s1929)
-D 2004-09-02T15:14:01
+C Fix\sVACUUM\sso\sthat\sit\sworks\son\sfiles\swhose\sname\scontains\s'.\s\sTicket\s#873\s(CVS\s1930)
+D 2004-09-02T15:27:42
 F Makefile.in 65a7c43fcaf9a710d62f120b11b6e435eeb4a450
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -74,7 +74,7 @@ F src/trigger.c 40e10f4b219b55e56478bc17480ce77654300e8d
 F src/update.c bbe126c67529bd699016af2d72bc4ceb8fd41527
 F src/utf.c 328890099db492dda5620ee5f924e244c6e57ff7
 F src/util.c d5aaf211543fb6e285654fada50252c857ac78aa
-F src/vacuum.c 9978a5760c2c430bc5b5e66505a02dad76f25813
+F src/vacuum.c 47bf6837d39f5849b8eda7d037d3e21a26f736bc
 F src/vdbe.c 45f659497b479f001c2f4e8251474aba3975b9f8
 F src/vdbe.h e081c72cd0f7c19d49b1927460aeefcf0fbc85ac
 F src/vdbeInt.h f8df57a9dc272967991f806e612628e0aa57e705
@@ -188,7 +188,7 @@ F test/types2.test f23c147a2ab3e51d5dbcfa9987200db5acba7aa7
 F test/unique.test 0e38d4cc7affeef2527720d1dafd1f6870f02f2b
 F test/update.test b29bd9061a1150426dab6959806fcc73a41b1217
 F test/utf16.test 459c2f5ab80c60092c603630a348c32d6e59c558
-F test/vacuum.test 3aabfb73dcafffed01fefd0789f2fcc8540b9b52
+F test/vacuum.test 6bce0f84fff255b943abed3b345c9e0ce287e2b6
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/view.test ca5c296989d3045f121be9a67588ff88c64874a8
 F test/where.test 40dcffcb77ad0a00960cef2b5b1212c77fd02199
@@ -248,7 +248,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P d1b29156558f1c576002cdb2544dffaa693da39b
-R 876d7cb431e79f53a95298099ca098db
+P 8ce3d730b0bf1a9b9472ff38c58c462ebc3566e3
+R 5cb40b505228cad9596ad1bd46dde600
 U drh
-Z 4c9b3e6574259aabf5da8d25cc31a80e
+Z 24f6f1eb1399d91b4eb6174a206010ae
