@@ -17,6 +17,11 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2002 Feb * (2.3.4)} {
+<li>Change the name of the sanity_check PRAGMA to <b>integrity_check</b>
+    and make it available in all compiles.</li>
+}
+
 chng {2002 Feb 18 (2.3.3)} {
 <li>Allow identifiers to be quoted in square brackets, for compatibility
     with MS-Access.</li>
@@ -33,7 +38,7 @@ chng {2002 Feb 18 (2.3.3)} {
 chng {2002 Feb 14 (2.3.2)} {
 <li>Bug fix: There was an incorrect assert() in pager.c.  The real code was
     all correct (as far as is known) so everything should work OK if you
-    compile with -DNDEBUG=1.  But without disability the assertions, there
+    compile with -DNDEBUG=1.  When asserts are not disabled, there
     could be a fault.</li>
 }
 

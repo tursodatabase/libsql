@@ -12,7 +12,7 @@
 # focus of this file is testing the INSERT statement that takes is
 # result from a SELECT.
 #
-# $Id: insert2.test,v 1.6 2002/02/03 19:06:03 drh Exp $
+# $Id: insert2.test,v 1.7 2002/02/19 13:39:23 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -113,7 +113,7 @@ do_test insert2-2.3 {
 } {hi 2 1}
 
 do_test insert2-4.0 {
-  set x [execsql {PRAGMA sanity_check}]
+  set x [execsql {PRAGMA integrity_check}]
   if {$x==""} {set x ok}
   set x
 } {ok}

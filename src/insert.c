@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.43 2002/02/18 13:56:37 drh Exp $
+** $Id: insert.c,v 1.44 2002/02/19 13:39:22 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -368,7 +368,7 @@ insert_cleanup:
 ** is used.  Or if pParse->onError==OE_Default then the onError value
 ** for the constraint is used.
 **
-** The calling routine must an open read/write cursor for pTab with
+** The calling routine must open a read/write cursor for pTab with
 ** cursor number "base".  All indices of pTab must also have open
 ** read/write cursors with cursor number base+i for the i-th cursor.
 ** Except, if there is no possibility of a REPLACE action then

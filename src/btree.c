@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.52 2002/02/03 19:15:02 drh Exp $
+** $Id: btree.c,v 1.53 2002/02/19 13:39:22 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -2458,15 +2458,13 @@ int sqliteBtreeUpdateMeta(Btree *pBt, int *aMeta){
 ** The complete implementation of the BTree subsystem is above this line.
 ** All the code the follows is for testing and troubleshooting the BTree
 ** subsystem.  None of the code that follows is used during normal operation.
-** All of the following code is omitted if the library is compiled with
-** the -DNDEBUG2=1 compiler option.
 ******************************************************************************/
-#ifndef NDEBUG2
 
 /*
 ** Print a disassembly of the given page on standard output.  This routine
 ** is used for debugging and testing only.
 */
+#ifdef SQLITE_TEST
 int sqliteBtreePageDump(Btree *pBt, int pgno, int recursive){
   int rc;
   MemPage *pPage;
@@ -2535,7 +2533,9 @@ int sqliteBtreePageDump(Btree *pBt, int pgno, int recursive){
   sqlitepager_unref(pPage);
   return SQLITE_OK;
 }
+#endif
 
+#ifdef SQLITE_TEST
 /*
 ** Fill aResult[] with information about the entry and page that the
 ** cursor is pointing to.
@@ -2575,7 +2575,9 @@ int sqliteBtreeCursorDump(BtCursor *pCur, int *aResult){
   aResult[7] = pPage->u.hdr.rightChild;
   return SQLITE_OK;
 }
+#endif
 
+#ifdef SQLITE_TEST
 /*
 ** Return the pager associated with a BTree.  This routine is used for
 ** testing and debugging only.
@@ -2583,13 +2585,14 @@ int sqliteBtreeCursorDump(BtCursor *pCur, int *aResult){
 Pager *sqliteBtreePager(Btree *pBt){
   return pBt->pPager;
 }
+#endif
 
 /*
 ** This structure is passed around through all the sanity checking routines
 ** in order to keep track of some global state information.
 */
-typedef struct SanityCheck SanityCheck;
-struct SanityCheck {
+typedef struct IntegrityCk IntegrityCk;
+struct IntegrityCk {
   Btree *pBt;    /* The tree being checked out */
   Pager *pPager; /* The associated pager.  Also accessible by pBt->pPager */
   int nPage;     /* Number of pages in the database */
@@ -2602,7 +2605,7 @@ struct SanityCheck {
 /*
 ** Append a message to the error message string.
 */
-static void checkAppendMsg(SanityCheck *pCheck, char *zMsg1, char *zMsg2){
+static void checkAppendMsg(IntegrityCk *pCheck, char *zMsg1, char *zMsg2){
   if( pCheck->zErrMsg ){
     char *zOld = pCheck->zErrMsg;
     pCheck->zErrMsg = 0;
@@ -2621,7 +2624,7 @@ static void checkAppendMsg(SanityCheck *pCheck, char *zMsg1, char *zMsg2){
 **
 ** Also check that the page number is in bounds.
 */
-static int checkRef(SanityCheck *pCheck, int iPage, char *zContext){
+static int checkRef(IntegrityCk *pCheck, int iPage, char *zContext){
   if( iPage==0 ) return 1;
   if( iPage>pCheck->nPage ){
     char zBuf[100];
@@ -2642,7 +2645,7 @@ static int checkRef(SanityCheck *pCheck, int iPage, char *zContext){
 ** Check the integrity of the freelist or of an overflow page list.
 ** Verify that the number of pages on the list is N.
 */
-static void checkList(SanityCheck *pCheck, int iPage, int N, char *zContext){
+static void checkList(IntegrityCk *pCheck, int iPage, int N, char *zContext){
   char zMsg[100];
   while( N-- ){
     OverflowPage *pOvfl;
@@ -2698,7 +2701,7 @@ static int keyCompare(
 **          the root of the tree.
 */
 static int checkTreePage(
-  SanityCheck *pCheck,  /* Context for the sanity check */
+  IntegrityCk *pCheck,  /* Context for the sanity check */
   int iPage,            /* Page number of the page to check */
   MemPage *pParent,     /* Parent page */
   char *zParentContext, /* Parent context */
@@ -2843,10 +2846,10 @@ static int checkTreePage(
 ** and a pointer to that error message is returned.  The calling function
 ** is responsible for freeing the error message when it is done.
 */
-char *sqliteBtreeSanityCheck(Btree *pBt, int *aRoot, int nRoot){
+char *sqliteBtreeIntegrityCheck(Btree *pBt, int *aRoot, int nRoot){
   int i;
   int nRef;
-  SanityCheck sCheck;
+  IntegrityCk sCheck;
 
   nRef = *sqlitepager_stats(pBt->pPager);
   if( lockBtree(pBt)!=SQLITE_OK ){
@@ -2897,5 +2900,3 @@ char *sqliteBtreeSanityCheck(Btree *pBt, int *aRoot, int nRoot){
   sqliteFree(sCheck.anRef);
   return sCheck.zErrMsg;
 }
-
-#endif /* !defined(NDEBUG) */

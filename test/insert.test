@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the INSERT statement.
 #
-# $Id: insert.test,v 1.8 2002/02/18 13:56:37 drh Exp $
+# $Id: insert.test,v 1.9 2002/02/19 13:39:23 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -157,7 +157,7 @@ do_test insert-3.4 {
   execsql {SELECT * FROM test2 WHERE f1=22 AND f2=-4.44}
 } {22 -4.44 hi abc-123 wham}
 do_test insert-3.5 {
-  set x [execsql {PRAGMA sanity_check}]
+  set x [execsql {PRAGMA integrity_check}]
   if {$x==""} {set x ok}
   set x
 } {ok}

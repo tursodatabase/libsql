@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test3.c,v 1.13 2001/11/09 13:41:10 drh Exp $
+** $Id: test3.c,v 1.14 2002/02/19 13:39:23 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -461,13 +461,13 @@ static int btree_pager_ref_dump(
 }
 
 /*
-** Usage:   btree_sanity_check ID ROOT ...
+** Usage:   btree_integrity_check ID ROOT ...
 **
 ** Look through every page of the given BTree file to verify correct
 ** formatting and linkage.  Return a line of text for each problem found.
 ** Return an empty string if everything worked.
 */
-static int btree_sanity_check(
+static int btree_integrity_check(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
@@ -490,7 +490,7 @@ static int btree_sanity_check(
   for(i=0; i<argc-2; i++){
     if( Tcl_GetInt(interp, argv[i+2], &aRoot[i]) ) return TCL_ERROR;
   }
-  zResult = sqliteBtreeSanityCheck(pBt, aRoot, nRoot);
+  zResult = sqliteBtreeIntegrityCheck(pBt, aRoot, nRoot);
   if( zResult ){
     Tcl_AppendResult(interp, zResult, 0);
     free(zResult); 
@@ -833,7 +833,7 @@ int Sqlitetest3_Init(Tcl_Interp *interp){
   Tcl_CreateCommand(interp, "btree_key", btree_key, 0, 0);
   Tcl_CreateCommand(interp, "btree_data", btree_data, 0, 0);
   Tcl_CreateCommand(interp, "btree_cursor_dump", btree_cursor_dump, 0, 0);
-  Tcl_CreateCommand(interp, "btree_sanity_check", btree_sanity_check, 0, 0);
+  Tcl_CreateCommand(interp, "btree_integrity_check", btree_integrity_check,0,0);
   Tcl_LinkVar(interp, "pager_refinfo_enable", (char*)&pager_refinfo_enable,
      TCL_LINK_INT);
   return TCL_OK;

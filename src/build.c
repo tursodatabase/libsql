@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.76 2002/02/18 22:49:59 drh Exp $
+** $Id: build.c,v 1.77 2002/02/19 13:39:22 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1799,8 +1799,7 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
   }else
 #endif
 
-#ifndef NDEBUG
-  if( sqliteStrICmp(zLeft, "sanity_check")==0 ){
+  if( sqliteStrICmp(zLeft, "integrity_check")==0 ){
     static VdbeOp checkDb[] = {
       { OP_SetInsert,   0, 0,        "2"},
       { OP_Open,        0, 2,        0},
@@ -1808,7 +1807,7 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       { OP_Column,      0, 3,        0},
       { OP_SetInsert,   0, 0,        0},
       { OP_Next,        0, 3,        0},
-      { OP_SanityCheck, 0, 0,        0},
+      { OP_IntegrityCk, 0, 0,        0},
       { OP_ColumnCount, 1, 0,        0},
       { OP_ColumnName,  0, 0,        "sanity_check"},
       { OP_Callback,    1, 0,        0},
@@ -1817,7 +1816,6 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
     if( v==0 ) return;
     sqliteVdbeAddOpList(v, ArraySize(checkDb), checkDb);
   }else
-#endif
 
   {}
   sqliteFree(zLeft);

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is btree database backend
 #
-# $Id: btree2.test,v 1.9 2001/10/22 02:58:11 drh Exp $
+# $Id: btree2.test,v 1.10 2002/02/19 13:39:23 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -53,7 +53,7 @@ do_test btree2-1.5 {
   btree_delete $::c2
   btree_close_cursor $::c2
   btree_commit $::b
-  btree_sanity_check $::b 2 3 4 5 6
+  btree_integrity_check $::b 2 3 4 5 6
 } {}
 
 # This test module works by making lots of pseudo-random changes to a
@@ -125,7 +125,7 @@ proc make_payload {keynum L len} {
 # success or an error message if something is amiss.
 #
 proc check_invariants {} {
-  set ck [btree_sanity_check $::b 2 3 4 5 6]
+  set ck [btree_integrity_check $::b 2 3 4 5 6]
   if {$ck!=""} {
     puts "\n*** SANITY:\n$ck"
     exit
@@ -259,7 +259,7 @@ proc random_changes {n I K D} {
     } elseif {[btree_move_to $::c6 $basekey]==0} {
       btree_delete $::c6
     }
-    # set ck [btree_sanity_check $::b 2 3 4 5 6]
+    # set ck [btree_integrity_check $::b 2 3 4 5 6]
     # if {$ck!=""} {
     #   puts "\nSANITY CHECK FAILED!\n$ck"
     #   exit
