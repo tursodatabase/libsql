@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the ATTACH and DETACH commands.
 **
-** $Id: attach.c,v 1.3 2003/04/15 19:22:23 drh Exp $
+** $Id: attach.c,v 1.4 2003/05/31 16:21:12 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -127,4 +127,137 @@ void sqliteDetach(Parse *pParse, Token *pDbname){
     memset(&db->aDb[db->nDb], 0, sizeof(db->aDb[0]));
     sqliteResetInternalSchema(db, i);
   }
+}
+
+/*
+** Initialize a DbFixer structure.  This routine must be called prior
+** to passing the structure to one of the sqliteFixAAAA() routines below.
+**
+** The return value indicates whether or not fixation is required.  TRUE
+** means we do need to fix the database references, FALSE means we do not.
+*/
+int sqliteFixInit(
+  DbFixer *pFix,      /* The fixer to be initialized */
+  Parse *pParse,      /* Error messages will be written here */
+  int iDb,            /* This is the database that must must be used */
+  const char *zType,  /* "view", "trigger", or "index" */
+  const Token *pName  /* Name of the view, trigger, or index */
+){
+  sqlite *db;
+
+  if( iDb<0 || iDb==1 ) return 0;
+  db = pParse->db;
+  assert( db->nDb>iDb );
+  pFix->zDb = db->aDb[iDb].zName;
+  pFix->zType = zType;
+  pFix->pName = pName;
+  return 1;
+}
+
+/*
+** The following set of routines walk through the parse tree and assign
+** a specific database to all table references where the database name
+** was left unspecified in the original SQL statement.  The pFix structure
+** must have been initialized by a prior call to sqliteFixInit().
+**
+** These routines are used to make sure that an index, trigger, or
+** view in one database does not refer to objects in a different database.
+** (Exception: indices, triggers, and views in the TEMP database are
+** allowed to refer to anything.)  If a reference is explicitly made
+** to an object in a different database, an error message is added to
+** pParse->zErrMsg and these routines return non-zero.  If everything
+** checks out, these routines return 0.
+*/
+int sqliteFixSrcList(
+  DbFixer *pFix,       /* Context of the fixation */
+  SrcList *pList       /* The Source list to check and modify */
+){
+  int i;
+  const char *zDb;
+
+  if( pList==0 ) return 0;
+  zDb = pFix->zDb;
+  for(i=0; i<pList->nSrc; i++){
+    if( pList->a[i].zDatabase==0 ){
+      pList->a[i].zDatabase = sqliteStrDup(zDb);
+    }else if( sqliteStrICmp(pList->a[i].zDatabase,zDb)!=0 ){
+      sqliteErrorMsg(pFix->pParse,
+         "%s %.*s cannot reference objects in database %s",
+         pFix->zType, pFix->pName->n, pFix->pName->z, pList->a[i].zDatabase);
+      return 1;
+    }
+    if( sqliteFixSelect(pFix, pList->a[i].pSelect) ) return 1;
+    if( sqliteFixExpr(pFix, pList->a[i].pOn) ) return 1;
+  }
+  return 0;
+}
+int sqliteFixSelect(
+  DbFixer *pFix,       /* Context of the fixation */
+  Select *pSelect      /* The SELECT statement to be fixed to one database */
+){
+  while( pSelect ){
+    if( sqliteFixExprList(pFix, pSelect->pEList) ){
+      return 1;
+    }
+    if( sqliteFixSrcList(pFix, pSelect->pSrc) ){
+      return 1;
+    }
+    if( sqliteFixExpr(pFix, pSelect->pWhere) ){
+      return 1;
+    }
+    if( sqliteFixExpr(pFix, pSelect->pHaving) ){
+      return 1;
+    }
+    pSelect = pSelect->pPrior;
+  }
+  return 0;
+}
+int sqliteFixExpr(
+  DbFixer *pFix,     /* Context of the fixation */
+  Expr *pExpr        /* The expression to be fixed to one database */
+){
+  while( pExpr ){
+    if( sqliteFixSelect(pFix, pExpr->pSelect) ){
+      return 1;
+    }
+    if( sqliteFixExprList(pFix, pExpr->pList) ){
+      return 1;
+    }
+    if( sqliteFixExpr(pFix, pExpr->pRight) ){
+      return 1;
+    }
+    pExpr = pExpr->pLeft;
+  }
+  return 0;
+}
+int sqliteFixExprList(
+  DbFixer *pFix,     /* Context of the fixation */
+  ExprList *pList    /* The expression to be fixed to one database */
+){
+  int i;
+  if( pList==0 ) return 0;
+  for(i=0; i<pList->nExpr; i++){
+    if( sqliteFixExpr(pFix, pList->a[i].pExpr) ){
+      return 1;
+    }
+  }
+  return 0;
+}
+int sqliteFixTriggerStep(
+  DbFixer *pFix,     /* Context of the fixation */
+  TriggerStep *pStep /* The trigger step be fixed to one database */
+){
+  while( pStep ){
+    if( sqliteFixSelect(pFix, pStep->pSelect) ){
+      return 1;
+    }
+    if( sqliteFixExpr(pFix, pStep->pWhere) ){
+      return 1;
+    }
+    if( sqliteFixExprList(pFix, pStep->pExprList) ){
+      return 1;
+    }
+    pStep = pStep->pNext;
+  }
+  return 0;
 }

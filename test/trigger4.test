@@ -83,19 +83,19 @@ do_test trigger4-3.1 {
     drop table test2;
     insert into test values(7,8,9);
   }
-} {1 {no such table: test2}}
+} {1 {no such table: main.test2}}
 do_test trigger4-3.2 {
   db close
   sqlite db test.db
   catchsql {
     insert into test values(7,8,9);
   }
-} {1 {no such table: test2}}
+} {1 {no such table: main.test2}}
 do_test trigger4-3.3 {
   catchsql {
     update test set a=222 where id=1;
   }
-} {1 {no such table: test2}}
+} {1 {no such table: main.test2}}
 do_test trigger4-3.4 {
   execsql {
     select * from test1;

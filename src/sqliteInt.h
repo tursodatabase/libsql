@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.188 2003/05/29 17:50:55 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.189 2003/05/31 16:21:13 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -857,7 +857,6 @@ struct Parse {
                        ** while generating expressions.  Normally false */
   u8 iDb;              /* Index of database whose schema is being parsed */
   u8 useCallback;      /* True if callbacks should be used to report results */
-  int useDb;           /* Restrict references to tables in this database */
   int newTnum;         /* Table number to use when reparsing CREATE TABLEs */
   int nErr;            /* Number of errors seen */
   int nTab;            /* Number of previously allocated VDBE cursors */
@@ -905,6 +904,7 @@ struct Trigger {
   IdList *pColumns;       /* If this is an UPDATE OF <column-list> trigger,
                              the <column-list> is stored here */
   int foreach;            /* One of TK_ROW or TK_STATEMENT */
+  Token *pNameToken;      /* Token containing zName. Use during parsing only */
 
   TriggerStep *step_list; /* Link list of trigger program steps             */
   Trigger *pNext;         /* Next trigger associated with the table */
@@ -999,6 +999,19 @@ struct TriggerStack {
   int ignoreJump;      /* where to jump to for a RAISE(IGNORE) */
   Trigger *pTrigger;   /* The trigger currently being coded */
   TriggerStack *pNext; /* Next trigger down on the trigger stack */
+};
+
+/*
+** The following structure contains information used by the sqliteFix...
+** routines as they walk the parse tree to make database references
+** explicit.  
+*/
+typedef struct DbFixer DbFixer;
+struct DbFixer {
+  Parse *pParse;      /* The parsing context.  Error messages written here */
+  const char *zDb;    /* Make sure all objects are contained in this database */
+  const char *zType;  /* Type of the container - used for error messages */
+  const Token *pName; /* Name of the container - used for error messages */
 };
 
 /*
@@ -1171,3 +1184,9 @@ void sqliteAttach(Parse*, Token*, Token*);
 void sqliteDetach(Parse*, Token*);
 int sqliteBtreeFactory(const sqlite *db, const char *zFilename,
                        int mode, int nPg, Btree **ppBtree);
+int sqliteFixInit(DbFixer*, Parse*, int, const char*, const Token*);
+int sqliteFixSrcList(DbFixer*, SrcList*);
+int sqliteFixSelect(DbFixer*, Select*);
+int sqliteFixExpr(DbFixer*, Expr*);
+int sqliteFixExprList(DbFixer*, ExprList*);
+int sqliteFixTriggerStep(DbFixer*, TriggerStep*);

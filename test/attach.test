@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach.test,v 1.5 2003/05/17 19:23:52 drh Exp $
+# $Id: attach.test,v 1.6 2003/05/31 16:21:13 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -368,6 +368,107 @@ do_test attach-3.14 {
   # caused a rollback.
   execsql {SELECT * FROM t1}
 } {1 2 3 4}
+
+# Ticket #323
+do_test attach-4.1 {
+  execsql {DETACH db2}
+  db2 close
+  sqlite db2 test2.db
+  execsql {
+    CREATE TABLE t3(x,y);
+    CREATE UNIQUE INDEX t3i1 ON t3(x);
+    INSERT INTO t3 VALUES(1,2);
+    SELECT * FROM t3;
+  } db2;
+} {1 2}
+do_test attach-4.2 {
+  execsql {
+    CREATE TABLE t3(a,b);
+    CREATE UNIQUE INDEX t3i1b ON t3(a);
+    INSERT INTO t3 VALUES(9,10);
+    SELECT * FROM t3;
+  }
+} {9 10}
+do_test attach-4.3 {
+  execsql {
+    ATTACH DATABASE 'test2.db' AS db2;
+    SELECT * FROM db2.t3;
+  }
+} {1 2}
+do_test attach-4.4 {
+  execsql {
+    SELECT * FROM main.t3;
+  }
+} {9 10}
+do_test attach-4.5 {
+  execsql {
+    INSERT INTO db2.t3 VALUES(9,10);
+    SELECT * FROM db2.t3;
+  }
+} {1 2 9 10}
+do_test attach-4.6 {
+  execsql {
+    DETACH db2;
+  }
+  execsql {
+    CREATE TABLE t4(x);
+    CREATE TRIGGER t3r3 AFTER INSERT ON t3 BEGIN
+      INSERT INTO t4 VALUES('db2.' || NEW.x);
+    END;
+    INSERT INTO t3 VALUES(6,7);
+    SELECT * FROM t4;
+  } db2
+} {db2.6}
+do_test attach-4.7 {
+  execsql {
+    CREATE TABLE t4(y);
+    CREATE TRIGGER t3r3 AFTER INSERT ON t3 BEGIN
+      INSERT INTO t4 VALUES('main.' || NEW.a);
+    END;
+    INSERT INTO main.t3 VALUES(11,12);
+    SELECT * FROM main.t4;
+  }
+} {main.11}
+do_test attach-4.8 {
+  execsql {
+    ATTACH DATABASE 'test2.db' AS db2;
+    INSERT INTO db2.t3 VALUES(13,14);
+    SELECT * FROM db2.t4 UNION ALL SELECT * FROM main.t4;
+  }
+} {db2.6 db2.13 main.11}
+do_test attach-4.9 {
+  execsql {
+    INSERT INTO main.t3 VALUES(15,16);
+    SELECT * FROM db2.t4 UNION ALL SELECT * FROM main.t4;
+  }
+} {db2.6 db2.13 main.11 main.15}
+do_test attach-4.10 {
+  execsql {
+    DETACH DATABASE db2;
+  }
+  execsql {
+    CREATE VIEW v3 AS SELECT x*100+y FROM t3;
+    SELECT * FROM v3;
+  } db2
+} {102 910 607 1314}
+do_test attach-4.11 {
+  execsql {
+    CREATE VIEW v3 AS SELECT a*100+b FROM t3;
+    SELECT * FROM v3;
+  }
+} {910 1112 1516}
+do_test attach-4.12 {
+  execsql {
+    ATTACH DATABASE 'test2.db' AS db2;
+    SELECT * FROM db2.v3;
+  }
+} {102 910 607 1314}
+do_test attach-4.13 {
+  execsql {
+    SELECT * FROM main.v3;
+  }
+} {910 1112 1516}
+
 
 for {set i 2} {$i<=15} {incr i} {
   catch {db$i close}

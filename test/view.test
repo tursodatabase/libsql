@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing VIEW statements.
 #
-# $Id: view.test,v 1.15 2003/05/02 16:04:17 drh Exp $
+# $Id: view.test,v 1.16 2003/05/31 16:21:13 drh Exp $
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
@@ -68,7 +68,7 @@ do_test view-1.6 {
     DROP TABLE t1;
     SELECT * FROM v1 ORDER BY a;
   }
-} {1 {no such table: t1}}
+} {1 {no such table: main.t1}}
 do_test view-1.7 {
   execsql {
     CREATE TABLE t1(x,a,b,c);

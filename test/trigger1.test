@@ -222,7 +222,7 @@ do_test trigger-3.2 {
     INSERT INTO t1 VALUES(1,2);
     SELECT * FROM t2;
   }
-} {1 {table "t2" is not in database "main"}}
+} {1 {no such table: main.t2}}
 do_test trigger-3.3 {
   db close
   set rc [catch {sqlite db test.db} err]
@@ -234,14 +234,14 @@ do_test trigger-3.4 {
     INSERT INTO t1 VALUES(1,2);
     SELECT * FROM t2;
   }
-} {1 {no such table: t2}}
+} {1 {no such table: main.t2}}
 do_test trigger-3.5 {
   catchsql {
     CREATE TEMP TABLE t2(x,y);
     INSERT INTO t1 VALUES(1,2);
     SELECT * FROM t2;
   }
-} {1 {table "t2" is not in database "main"}}
+} {1 {no such table: main.t2}}
 do_test trigger-3.6 {
   catchsql {
     DROP TRIGGER r1;

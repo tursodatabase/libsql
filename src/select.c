@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.139 2003/05/17 17:35:12 drh Exp $
+** $Id: select.c,v 1.140 2003/05/31 16:21:13 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1657,6 +1657,7 @@ static int flattenSubquery(
     if( pSrc->a[iFrom].pTab && pSrc->a[iFrom].pTab->isTransient ){
       sqliteDeleteTable(0, pSrc->a[iFrom].pTab);
     }
+    sqliteFree(pSrc->a[iFrom].zDatabase);
     sqliteFree(pSrc->a[iFrom].zName);
     sqliteFree(pSrc->a[iFrom].zAlias);
     if( nSubSrc>1 ){

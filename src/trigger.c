@@ -64,7 +64,12 @@ void sqliteBeginTrigger(
   */
   if( sqlite_malloc_failed ) goto trigger_cleanup;
   assert( pTableName->nSrc==1 );
+  assert( pTableName->a[0].zDatabase==0 );
+  if( pParse->initFlag ){
+    pTableName->a[0].zDatabase = db->aDb[pParse->iDb].zName;
+  }
   tab = sqliteSrcListLookup(pParse, pTableName);
+  pTableName->a[0].zDatabase = 0;
   if( !tab ){
     goto trigger_cleanup;
   }
@@ -133,6 +138,7 @@ void sqliteBeginTrigger(
   nt->pWhen = sqliteExprDup(pWhen);
   nt->pColumns = sqliteIdListDup(pColumns);
   nt->foreach = foreach;
+  nt->pNameToken = pName;
   assert( pParse->pNewTrigger==0 );
   pParse->pNewTrigger = nt;
 
@@ -152,8 +158,9 @@ void sqliteFinishTrigger(
   TriggerStep *pStepList, /* The triggered program */
   Token *pAll             /* Token that describes the complete CREATE TRIGGER */
 ){
-  Trigger *nt;              /* The trigger whose construction is finishing up */
+  Trigger *nt = 0;          /* The trigger whose construction is finishing up */
   sqlite *db = pParse->db;  /* The database */
+  DbFixer sFix;
 
   if( pParse->nErr || pParse->pNewTrigger==0 ) goto triggerfinish_cleanup;
   nt = pParse->pNewTrigger;
@@ -163,6 +170,11 @@ void sqliteFinishTrigger(
     pStepList->pTrig = nt;
     pStepList = pStepList->pNext;
   }
+  if( sqliteFixInit(&sFix, pParse, nt->iDb, "trigger", nt->pNameToken) 
+          && sqliteFixTriggerStep(&sFix, nt->step_list) ){
+    goto triggerfinish_cleanup;
+  }
+  nt->pNameToken = 0;
 
   /* if we are not initializing, and this trigger is not on a TEMP table, 
   ** build the sqlite_master entry
@@ -201,15 +213,15 @@ void sqliteFinishTrigger(
     Table *pTab;
     sqliteHashInsert(&db->aDb[nt->iDb].trigHash, 
                      nt->name, strlen(nt->name)+1, nt);
-    pTab = sqliteLocateTable(pParse, nt->table, 0);
+    pTab = sqliteLocateTable(pParse, nt->table, db->aDb[nt->iTabDb].zName);
     assert( pTab!=0 );
     nt->pNext = pTab->pTrigger;
     pTab->pTrigger = nt;
-  }else{
-    sqliteDeleteTrigger(nt);
+    nt = 0;
   }
 
 triggerfinish_cleanup:
+  sqliteDeleteTrigger(nt);
   sqliteDeleteTrigger(pParse->pNewTrigger);
   pParse->pNewTrigger = 0;
   sqliteDeleteTriggerStep(pStepList);
@@ -548,6 +560,36 @@ int sqliteTriggersExist(
 }
 
 /*
+** Convert the pStep->target token into a SrcList and return a pointer
+** to that SrcList.
+**
+** This routine adds a specific database name, if needed, to the target when
+** forming the SrcList.  This prevents a trigger in one database from
+** referring to a target in another database.  An exception is when the
+** trigger is in TEMP in which case it can refer to any other database it
+** wants.
+*/
+static SrcList *targetSrcList(
+  Parse *pParse,       /* The parsing context */
+  TriggerStep *pStep   /* The trigger containing the target token */
+){
+  Token sDb;           /* Dummy database name token */
+  int iDb;             /* Index of the database to use */
+  SrcList *pSrc;       /* SrcList to be returned */
+
+  iDb = pStep->pTrig->iDb;
+  if( iDb==0 || iDb>=2 ){
+    assert( iDb<pParse->db->nDb );
+    sDb.z = pParse->db->aDb[iDb].zName;
+    sDb.n = strlen(sDb.z);
+    pSrc = sqliteSrcListAppend(0, &sDb, &pStep->target);
+  } else {
+    pSrc = sqliteSrcListAppend(0, &pStep->target, 0);
+  }
+  return pSrc;
+}
+
+/*
 ** Generate VDBE code for zero or more statements inside the body of a
 ** trigger.  
 */
@@ -561,11 +603,9 @@ static int codeTriggerProgram(
 
   while( pTriggerStep ){
     int saveNTab = pParse->nTab;
-    int saveUseDb = pParse->useDb;
+ 
     orconf = (orconfin == OE_Default)?pTriggerStep->orconf:orconfin;
     pParse->trigStack->orconf = orconf;
-    pParse->useDb = pTriggerStep->pTrig->iDb;
-    if( pParse->useDb==1 ) pParse->useDb = -1;
     switch( pTriggerStep->op ){
       case TK_SELECT: {
 	Select * ss = sqliteSelectDup(pTriggerStep->pSelect);		  
@@ -577,7 +617,7 @@ static int codeTriggerProgram(
       }
       case TK_UPDATE: {
         SrcList *pSrc;
-        pSrc = sqliteSrcListAppend(0, &pTriggerStep->target, 0);
+        pSrc = targetSrcList(pParse, pTriggerStep);
         sqliteVdbeAddOp(pParse->pVdbe, OP_ListPush, 0, 0);
         sqliteUpdate(pParse, pSrc,
 		sqliteExprListDup(pTriggerStep->pExprList), 
@@ -587,7 +627,7 @@ static int codeTriggerProgram(
       }
       case TK_INSERT: {
         SrcList *pSrc;
-        pSrc = sqliteSrcListAppend(0, &pTriggerStep->target, 0);
+        pSrc = targetSrcList(pParse, pTriggerStep);
         sqliteInsert(pParse, pSrc,
           sqliteExprListDup(pTriggerStep->pExprList), 
           sqliteSelectDup(pTriggerStep->pSelect), 
@@ -597,7 +637,7 @@ static int codeTriggerProgram(
       case TK_DELETE: {
         SrcList *pSrc;
         sqliteVdbeAddOp(pParse->pVdbe, OP_ListPush, 0, 0);
-        pSrc = sqliteSrcListAppend(0, &pTriggerStep->target, 0);
+        pSrc = targetSrcList(pParse, pTriggerStep);
         sqliteDeleteFrom(pParse, pSrc, sqliteExprDup(pTriggerStep->pWhere));
         sqliteVdbeAddOp(pParse->pVdbe, OP_ListPop, 0, 0);
         break;
@@ -606,7 +646,6 @@ static int codeTriggerProgram(
         assert(0);
     } 
     pParse->nTab = saveNTab;
-    pParse->useDb = saveUseDb;
     pTriggerStep = pTriggerStep->pNext;
   }
 
