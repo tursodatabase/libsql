@@ -1,5 +1,5 @@
-C Suppress\ssuperfluous\sOP_OpenTemps\swhen\sflattening\ssubqueries.\s(CVS\s412)
-D 2002-03-03T03:03:53
+C Additional\stests\sof\sflattening\s(CVS\s413)
+D 2002-03-03T03:11:15
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -87,7 +87,7 @@ F test/select2.test ed2c1882857106b85478f54f67000e14966be4c4
 F test/select3.test 9469c332250a75a0ef1771fb5da62dc04ec77f18
 F test/select4.test 29a2ffb187f3d8b6ca42a0a6b619e9cabe12e228
 F test/select5.test c2a6c4a003316ee42cbbd689eebef8fdce0db2ac
-F test/select6.test 522b4865bfdd433b7745cb45e8df1dbc53a4eaf3
+F test/select6.test 4eeb20b272eb74fc8ec84cf1eef38a059e286f19
 F test/sort.test 3b996ce7ca385f9cd559944ac0f4027a23aa546b
 F test/subselect.test 335d3dad8d585726c447dfee8d9c4f7383c76b78
 F test/table.test 17b0b6eafa3faaee5545b7a94e6c1ff73f0880f3
@@ -127,7 +127,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 2c05389eda391e38894fc6969e29766df82a8fec
-R 5b2798dd95ce729696863e062872c5f6
+P 000441c8fec48cc172894eb767ae9549b8ed8c34
+R 24805131582f86d48311ce93e94f3f8a
 U drh
-Z 5e040130dc2022feb4cc36a0d9eb62b1
+Z 3a153c17836fc93f2d1c0f6283ce9159
