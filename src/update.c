@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.12 2001/09/13 13:46:57 drh Exp $
+** $Id: update.c,v 1.13 2001/09/15 00:57:29 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -146,6 +146,7 @@ void sqliteUpdate(
   if( v==0 ) goto update_cleanup;
   if( (pParse->db->flags & SQLITE_InTrans)==0 ){
     sqliteVdbeAddOp(v, OP_Transaction, 0, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_VerifyCookie, pParse->db->schema_cookie, 0, 0, 0);
   }
 
   /* Begin the database scan

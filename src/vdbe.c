@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.66 2001/09/14 16:42:12 drh Exp $
+** $Id: vdbe.c,v 1.67 2001/09/15 00:57:29 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -760,6 +760,23 @@ static void KeylistFree(Keylist *p){
 }
 
 /*
+** Close a cursor and release all the resources that cursor happens
+** to hold.
+*/
+static void cleanupCursor(Cursor *pCx){
+  if( pCx->pCursor ){
+    sqliteBtreeCloseCursor(pCx->pCursor);
+  }
+  if( pCx->zKey ){
+    sqliteFree(pCx->zKey);
+  }
+  if( pCx->pBt ){
+    sqliteBtreeClose(pCx->pBt);
+  }
+  memset(pCx, 0, sizeof(Cursor));
+}
+
+/*
 ** Clean up the VM after execution.
 **
 ** This routine will automatically close any cursors, lists, and/or
@@ -771,19 +788,7 @@ static void Cleanup(Vdbe *p){
   sqliteFree(p->azColName);
   p->azColName = 0;
   for(i=0; i<p->nCursor; i++){
-    Cursor *pCx = &p->aCsr[i];
-    if( pCx->pCursor ){
-      sqliteBtreeCloseCursor(pCx->pCursor);
-      pCx->pCursor = 0;
-    }
-    if( pCx->zKey ){
-      sqliteFree(pCx->zKey);
-      pCx->zKey = 0;
-    }
-    if( pCx->pBt ){
-      sqliteBtreeClose(pCx->pBt);
-      pCx->pBt = 0;
-    }
+    cleanupCursor(&p->aCsr[i]);
   }
   sqliteFree(p->aCsr);
   p->aCsr = 0;
@@ -871,31 +876,32 @@ void sqliteVdbeDelete(Vdbe *p){
 ** this array, then copy and paste it into this file, if you want.
 */
 static char *zOpName[] = { 0,
-  "Transaction",       "Commit",            "Rollback",          "Open",
-  "OpenTemp",          "Close",             "MoveTo",            "Fcnt",
-  "NewRecno",          "Put",               "Distinct",          "Found",
-  "NotFound",          "Delete",            "Column",            "KeyAsData",
-  "Recno",             "FullKey",           "Rewind",            "Next",
-  "Destroy",           "Clear",             "CreateIndex",       "CreateTable",
-  "Reorganize",        "BeginIdx",          "NextIdx",           "PutIdx",
-  "DeleteIdx",         "MemLoad",           "MemStore",          "ListOpen",
-  "ListWrite",         "ListRewind",        "ListRead",          "ListClose",
-  "SortOpen",          "SortPut",           "SortMakeRec",       "SortMakeKey",
-  "Sort",              "SortNext",          "SortKey",           "SortCallback",
-  "SortClose",         "FileOpen",          "FileRead",          "FileColumn",
-  "FileClose",         "AggReset",          "AggFocus",          "AggIncr",
-  "AggNext",           "AggSet",            "AggGet",            "SetInsert",
-  "SetFound",          "SetNotFound",       "SetClear",          "MakeRecord",
-  "MakeKey",           "MakeIdxKey",        "Goto",              "If",
-  "Halt",              "ColumnCount",       "ColumnName",        "Callback",
-  "Integer",           "String",            "Null",              "Pop",
-  "Dup",               "Pull",              "Add",               "AddImm",
-  "Subtract",          "Multiply",          "Divide",            "Min",
-  "Max",               "Like",              "Glob",              "Eq",
-  "Ne",                "Lt",                "Le",                "Gt",
-  "Ge",                "IsNull",            "NotNull",           "Negative",
-  "And",               "Or",                "Not",               "Concat",
-  "Noop",              "Strlen",            "Substr",          
+  "Transaction",       "Commit",            "Rollback",          "ReadCookie",
+  "SetCookie",         "VerifyCookie",      "Open",              "OpenTemp",
+  "Close",             "MoveTo",            "Fcnt",              "NewRecno",
+  "Put",               "Distinct",          "Found",             "NotFound",
+  "Delete",            "Column",            "KeyAsData",         "Recno",
+  "FullKey",           "Rewind",            "Next",              "Destroy",
+  "Clear",             "CreateIndex",       "CreateTable",       "Reorganize",
+  "BeginIdx",          "NextIdx",           "PutIdx",            "DeleteIdx",
+  "MemLoad",           "MemStore",          "ListOpen",          "ListWrite",
+  "ListRewind",        "ListRead",          "ListClose",         "SortOpen",
+  "SortPut",           "SortMakeRec",       "SortMakeKey",       "Sort",
+  "SortNext",          "SortKey",           "SortCallback",      "SortClose",
+  "FileOpen",          "FileRead",          "FileColumn",        "FileClose",
+  "AggReset",          "AggFocus",          "AggIncr",           "AggNext",
+  "AggSet",            "AggGet",            "SetInsert",         "SetFound",
+  "SetNotFound",       "SetClear",          "MakeRecord",        "MakeKey",
+  "MakeIdxKey",        "Goto",              "If",                "Halt",
+  "ColumnCount",       "ColumnName",        "Callback",          "Integer",
+  "String",            "Null",              "Pop",               "Dup",
+  "Pull",              "Add",               "AddImm",            "Subtract",
+  "Multiply",          "Divide",            "Min",               "Max",
+  "Like",              "Glob",              "Eq",                "Ne",
+  "Lt",                "Le",                "Gt",                "Ge",
+  "IsNull",            "NotNull",           "Negative",          "And",
+  "Or",                "Not",               "Concat",            "Noop",
+  "Strlen",            "Substr",          
 };
 
 /*
@@ -1974,6 +1980,73 @@ case OP_Rollback: {
   break;
 }
 
+/* Opcode: ReadCookie * * *
+**
+** Read the magic cookie from the database file and push it onto the
+** stack.  The magic cookie is an integer that is used like a version
+** number for the database schema.  Everytime the schema changes, the
+** cookie changes to a new random value.  This opcode is used during
+** initialization to read the initial cookie value so that subsequent
+** database accesses can verify that the cookie has not changed.
+**
+** There must be a read-lock on the database (either a transaction
+** must be started or there must be a prior OP_Open opcode) before
+** executing this instruction.
+*/
+case OP_ReadCookie: {
+  int i = ++p->tos;
+  int aMeta[SQLITE_N_BTREE_META];
+  VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
+  rc = sqliteBtreeGetMeta(pBt, aMeta);
+  aStack[i].i = aMeta[1];
+  aStack[i].flags = STK_Int;
+  break;
+}
+
+/* Opcode: SetCookie P1 * *
+**
+** This operation changes the value of the cookie on the database.
+** The new value is P1.
+**
+** The cookie changes its value whenever the database schema changes.
+** That way, other processes can recognize when the schema has changed
+** and reread it.
+**
+** A transaction must be started before executing this opcode.
+*/
+case OP_SetCookie: {
+  int aMeta[SQLITE_N_BTREE_META];
+  rc = sqliteBtreeGetMeta(pBt, aMeta);
+  if( rc==SQLITE_OK ){
+    aMeta[1] = pOp->p1;
+    rc = sqliteBtreeUpdateMeta(pBt, aMeta);
+  }
+  break;
+}
+
+/* Opcode: VerifyCookie P1 * *
+**
+** Check the current value of the database cookie and make sure it is
+** equal to P1.  If it is not, abort with an SQLITE_SCHEMA error.
+**
+** The cookie changes its value whenever the database schema changes.
+** This operation is used to detech when that the cookie has changed
+** and that the current process needs to reread the schema.
+**
+** Either a transaction needs to have been started or an OP_Open needs
+** to be executed (to establish a read lock) before this opcode is
+** invoked.
+*/
+case OP_VerifyCookie: {
+  int aMeta[SQLITE_N_BTREE_META];
+  rc = sqliteBtreeGetMeta(pBt, aMeta);
+  if( rc==SQLITE_OK && aMeta[1]!=pOp->p1 ){
+    sqliteSetString(pzErrMsg, "database schema has changed", 0);
+    rc = SQLITE_SCHEMA;
+  }
+  break;
+}
+
 /* Opcode: Open P1 P2 P3
 **
 ** Open a new cursor for the database table whose root page is
@@ -2013,9 +2086,8 @@ case OP_Open: {
       memset(&p->aCsr[j], 0, sizeof(Cursor));
     }
     p->nCursor = i+1;
-  }else if( p->aCsr[i].pCursor ){
-    sqliteBtreeCloseCursor(p->aCsr[i].pCursor);
   }
+  cleanupCursor(&p->aCsr[i]);
   memset(&p->aCsr[i], 0, sizeof(Cursor));
   do{
     rc = sqliteBtreeCursor(pBt, p2, &p->aCsr[i].pCursor);
@@ -2058,10 +2130,9 @@ case OP_OpenTemp: {
       memset(&p->aCsr[j], 0, sizeof(Cursor));
     }
     p->nCursor = i+1;
-  }else if( p->aCsr[i].pCursor ){
-    sqliteBtreeCloseCursor(p->aCsr[i].pCursor);
   }
   pCx = &p->aCsr[i];
+  cleanupCursor(pCx);
   memset(pCx, 0, sizeof(*pCx));
   rc = sqliteBtreeOpen(0, 0, TEMP_PAGES, &pCx->pBt);
   if( rc==SQLITE_OK ){
@@ -2081,17 +2152,7 @@ case OP_OpenTemp: {
 case OP_Close: {
   int i = pOp->p1;
   if( i>=0 && i<p->nCursor && p->aCsr[i].pCursor ){
-    Cursor *pCx = &p->aCsr[i];
-    sqliteBtreeCloseCursor(pCx->pCursor);
-    pCx->pCursor = 0;
-    if( pCx->zKey ){
-      sqliteFree(pCx->zKey);
-      pCx->zKey = 0;
-    }
-    if( pCx->pBt ){
-      sqliteBtreeClose(pCx->pBt);
-      pCx->pBt = 0;
-    }
+    cleanupCursor(&p->aCsr[i]);
   }
   break;
 }
@@ -2523,6 +2584,7 @@ case OP_BeginIdx: {
   VERIFY( if( tos<0 ) goto not_enough_stack; )
   if( i>=0 && i<p->nCursor && (pCrsr = &p->aCsr[i])->pCursor!=0 ){
     if( Stringify(p, tos) ) goto no_mem;
+    if( pCrsr->zKey ) sqliteFree(pCrsr->zKey);
     pCrsr->nKey = aStack[tos].n;
     pCrsr->zKey = sqliteMalloc( 2*(pCrsr->nKey + 1) );
     if( pCrsr->zKey==0 ) goto no_mem;

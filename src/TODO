@@ -3,5 +3,4 @@
   *  "OPTIMIZE select" statement to automatically create indices and/or
      invoke a CLUSTER command.
   *  "CREATE INDEX FOR select" to automatically generate needed indices.
-  *  Implement a PRAGMA command
   *  Parse and use constraints.

@@ -23,7 +23,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.47 2001/09/14 18:54:09 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.48 2001/09/15 00:57:29 drh Exp $
 */
 #include "sqlite.h"
 #include "vdbe.h"
@@ -143,6 +143,8 @@ struct sqlite {
   Btree *pBe;                   /* The B*Tree backend */
   int flags;                    /* Miscellanous flags. See below */
   int file_format;              /* What file format version is this database? */
+  int schema_cookie;            /* Magic number that changes with the schema */
+  int next_cookie;              /* Value of schema_cookie after commit */
   int nTable;                   /* Number of tables in the database */
   void *pBusyArg;               /* 1st Argument to the busy callback */
   int (*xBusyCallback)(void *,const char*,int);  /* The busy callback */
@@ -376,6 +378,8 @@ struct Parse {
   int iAggCount;       /* Index of the count(*) aggregate in aAgg[] */
   int useAgg;          /* If true, extract field values from the aggregator
                        ** while generating expressions.  Normally false */
+  int schemaVerified;  /* True if an OP_VerifySchema has been coded someplace
+                       ** other than after an OP_Transaction */
 };
 
 /*

@@ -24,7 +24,7 @@
 ** This header file defines the interface that the sqlite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.14 2001/09/13 13:46:57 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.15 2001/09/15 00:57:29 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -160,6 +160,7 @@ int sqlite_exec(
 #define SQLITE_CANTOPEN  13   /* Unable to open the database file */
 #define SQLITE_PROTOCOL  14   /* Database lock protocol error */
 #define SQLITE_EMPTY     15   /* Database table is empty */
+#define SQLITE_SCHEMA    16   /* The database schema changed */
 
 /* This function causes any pending database operation to abort and
 ** return at its earliest opportunity.  This routine is typically

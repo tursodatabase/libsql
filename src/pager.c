@@ -27,7 +27,7 @@
 ** all writes in order to support rollback.  Locking is used to limit
 ** access to one or more reader or to one writer.
 **
-** @(#) $Id: pager.c,v 1.18 2001/09/14 18:54:09 drh Exp $
+** @(#) $Id: pager.c,v 1.19 2001/09/15 00:57:29 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -684,6 +684,28 @@ int sqlitepager_ref(void *pData){
 }
 
 /*
+** Sync the journal and write all free dirty pages to the database file.
+*/
+static int syncAllPages(Pager *pPager){
+  PgHdr *pPg;
+  int rc = SQLITE_OK;
+  if( pPager->needSync ){
+    rc = fsync(pPager->jfd);
+    if( rc!=0 ) return rc;
+    pPager->needSync = 0;
+  }
+  for(pPg=pPager->pFirst; pPg; pPg=pPg->pNextFree){
+    if( pPg->dirty ){
+      pager_seek(pPager->fd, (pPg->pgno-1)*SQLITE_PAGE_SIZE);
+      rc = pager_write(pPager->fd, PGHDR_TO_DATA(pPg), SQLITE_PAGE_SIZE);
+      if( rc!=SQLITE_OK ) break;
+      pPg->dirty = 0;
+    }
+  }
+  return SQLITE_OK;
+}
+
+/*
 ** Acquire a page.
 **
 ** A read lock on the disk file is obtained when the first page acquired. 
@@ -791,15 +813,28 @@ int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage){
       /* Recycle an older page.  First locate the page to be recycled.
       ** Try to find one that is not dirty and is near the head of
       ** of the free list */
-      /* int cnt = pPager->mxPage/2; */
-      int cnt = 10;
+      int cnt = pPager->mxPage/2;
       pPg = pPager->pFirst;
       while( pPg->dirty && 0<cnt-- && pPg->pNextFree ){
         pPg = pPg->pNextFree;
       }
-      if( pPg==0 || pPg->dirty ) pPg = pPager->pFirst;
+      if( pPg==0 || pPg->dirty ){
+        int rc = syncAllPages(pPager);
+        if( rc!=0 ){
+          sqlitepager_rollback(pPager);
+          *ppPage = 0;
+          return SQLITE_IOERR;
+        }
+        pPg = pPager->pFirst;
+      }
       assert( pPg->nRef==0 );
 
+
+#if 0
+      /****  Since putting in the call to syncAllPages() above, this code
+      ** is no longer used.  I've kept it here for historical reference
+      ** only.
+      */
       /* If the page to be recycled is dirty, sync the journal and write 
       ** the old page into the database. */
       if( pPg->dirty ){
@@ -825,6 +860,8 @@ int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage){
           return rc;
         }
       }
+#endif
+      assert( pPg->dirty==0 );
 
       /* Unlink the old page from the free list and the hash table
       */

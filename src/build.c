@@ -33,7 +33,7 @@
 **     COPY
 **     VACUUM
 **
-** $Id: build.c,v 1.34 2001/09/14 18:54:08 drh Exp $
+** $Id: build.c,v 1.35 2001/09/15 00:57:28 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -67,6 +67,7 @@ void sqliteExec(Parse *pParse){
     pParse->pVdbe = 0;
     pParse->colNamesSet = 0;
     pParse->rc = rc;
+    pParse->schemaVerified = 0;
   }
 }
 
@@ -278,6 +279,7 @@ static void sqliteUnlinkAndDeleteTable(sqlite *db, Table *pTable){
 void sqliteCommitInternalChanges(sqlite *db){
   int i;
   if( (db->flags & SQLITE_InternChanges)==0 ) return;
+  db->schema_cookie = db->next_cookie;
   for(i=0; i<N_HASH; i++){
     Table *pTable, *pNext;
     for(pTable = db->apTblHash[i]; pTable; pTable=pNext){
@@ -314,6 +316,7 @@ void sqliteCommitInternalChanges(sqlite *db){
 void sqliteRollbackInternalChanges(sqlite *db){
   int i;
   if( (db->flags & SQLITE_InternChanges)==0 ) return;
+  db->next_cookie = db->schema_cookie;
   for(i=0; i<N_HASH; i++){
     Table *pTable, *pNext;
     for(pTable = db->apTblHash[i]; pTable; pTable=pNext){
@@ -398,6 +401,7 @@ void sqliteStartTable(Parse *pParse, Token *pStart, Token *pName){
     Vdbe *v = sqliteGetVdbe(pParse);
     if( v ){
       sqliteVdbeAddOp(v, OP_Transaction, 0, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_VerifyCookie, db->schema_cookie, 0, 0, 0);
     }
   }
 }
@@ -448,6 +452,30 @@ void sqliteAddDefaultValue(Parse *pParse, Token *pVal, int minusFlag){
     sqliteSetNString(pz, pVal->z, pVal->n, 0);
   }
   sqliteDequote(*pz);
+}
+
+/*
+** Come up with a new random value for the schema cookie.  Make sure
+** the new value is different from the old.
+**
+** The schema cookie is used to determine when the schema for the
+** database changes.  After each schema change, the cookie value
+** changes.  When a process first reads the schema it records the
+** cookie.  Thereafter, whenever it goes to access the database,
+** it checks the cookie to make sure the schema has not changed
+** since it was last read.
+**
+** This plan is not completely bullet-proof.  It is possible for
+** the schema to change multiple times and for the cookie to be
+** set back to prior value.  But schema changes are infrequent
+** and the probability of hitting the same cookie value is only
+** 1 chance in 2^32.  So we're safe enough.
+*/
+static void changeCookie(sqlite *db){
+  if( db->next_cookie==db->schema_cookie ){
+    db->next_cookie = db->schema_cookie + sqliteRandomByte() + 1;
+    db->flags |= SQLITE_InternChanges;
+  }
 }
 
 /*
@@ -503,6 +531,7 @@ void sqliteEndTable(Parse *pParse, Token *pEnd){
       { OP_String,      0, 0, 0},            /* 6 */
       { OP_MakeRecord,  5, 0, 0},
       { OP_Put,         0, 0, 0},
+      { OP_SetCookie,   0, 0, 0},            /* 9 */
     };
     int n, base;
     Vdbe *v;
@@ -515,6 +544,8 @@ void sqliteEndTable(Parse *pParse, Token *pEnd){
     sqliteVdbeTableRootAddr(v, &p->tnum);
     sqliteVdbeChangeP3(v, base+5, p->zName, 0);
     sqliteVdbeChangeP3(v, base+6, pParse->sFirstToken.z, n);
+    changeCookie(db);
+    sqliteVdbeChangeP1(v, base+9, db->next_cookie);
     sqliteVdbeAddOp(v, OP_Close, 0, 0, 0, 0);
     if( p->pIndex ){
       /* If the table has a primary key, create an index in the database
@@ -586,15 +617,19 @@ void sqliteDropTable(Parse *pParse, Token *pName){
       { OP_Delete,     0, 0,        0},
       { OP_Goto,       0, ADDR(3),  0},
       { OP_Destroy,    0, 0,        0}, /* 9 */
+      { OP_SetCookie,  0, 0,        0}, /* 10 */
       { OP_Close,      0, 0,        0},
     };
     Index *pIdx;
     if( (db->flags & SQLITE_InTrans)==0 ){
       sqliteVdbeAddOp(v, OP_Transaction, 0, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_VerifyCookie, db->schema_cookie, 0, 0, 0);
     }
     base = sqliteVdbeAddOpList(v, ArraySize(dropTable), dropTable);
     sqliteVdbeChangeP3(v, base+2, pTable->zName, 0);
     sqliteVdbeChangeP1(v, base+9, pTable->tnum);
+    changeCookie(db);
+    sqliteVdbeChangeP1(v, base+10, db->next_cookie);
     for(pIdx=pTable->pIndex; pIdx; pIdx=pIdx->pNext){
       sqliteVdbeAddOp(v, OP_Destroy, pIdx->tnum, 0, 0, 0);
     }
@@ -772,6 +807,7 @@ void sqliteCreateIndex(
       { OP_String,      0, 0, 0},  /* 8 */
       { OP_MakeRecord,  5, 0, 0},
       { OP_Put,         2, 0, 0},
+      { OP_SetCookie,   0, 0, 0},  /* 11 */
       { OP_Close,       2, 0, 0},
     };
     int n;
@@ -783,6 +819,7 @@ void sqliteCreateIndex(
     if( v==0 ) goto exit_create_index;
     if( pTable!=0 && (db->flags & SQLITE_InTrans)==0 ){
       sqliteVdbeAddOp(v, OP_Transaction, 0, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_VerifyCookie, db->schema_cookie, 0, 0, 0);
     }
     if( pStart && pEnd ){
       int base;
@@ -793,6 +830,8 @@ void sqliteCreateIndex(
       sqliteVdbeChangeP3(v, base+6, pIndex->zName, 0);
       sqliteVdbeChangeP3(v, base+7, pTab->zName, 0);
       sqliteVdbeChangeP3(v, base+8, pStart->z, n);
+      changeCookie(db);
+      sqliteVdbeChangeP1(v, base+11, db->next_cookie);
     }
     sqliteVdbeAddOp(v, OP_Open, 0, pTab->tnum, pTab->zName, 0);
     lbl1 = sqliteVdbeMakeLabel(v);
@@ -861,16 +900,20 @@ void sqliteDropIndex(Parse *pParse, Token *pName){
       { OP_Ne,         0, ADDR(3), 0},
       { OP_Delete,     0, 0,       0},
       { OP_Destroy,    0, 0,       0}, /* 8 */
+      { OP_SetCookie,  0, 0,       0}, /* 9 */
       { OP_Close,      0, 0,       0},
     };
     int base;
 
     if( (db->flags & SQLITE_InTrans)==0 ){
       sqliteVdbeAddOp(v, OP_Transaction, 0, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_VerifyCookie, db->schema_cookie, 0, 0, 0);
     }
     base = sqliteVdbeAddOpList(v, ArraySize(dropIndex), dropIndex);
     sqliteVdbeChangeP3(v, base+2, pIndex->zName, 0);
     sqliteVdbeChangeP1(v, base+8, pIndex->tnum);
+    changeCookie(db);
+    sqliteVdbeChangeP1(v, base+9, db->next_cookie);
     if( (db->flags & SQLITE_InTrans)==0 ){
       sqliteVdbeAddOp(v, OP_Commit, 0, 0, 0, 0);
     }
@@ -1037,6 +1080,7 @@ void sqliteCopy(
   if( v ){
     if( (db->flags & SQLITE_InTrans)==0 ){
       sqliteVdbeAddOp(v, OP_Transaction, 0, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_VerifyCookie, db->schema_cookie, 0, 0, 0);
     }
     addr = sqliteVdbeAddOp(v, OP_FileOpen, 0, 0, 0, 0);
     sqliteVdbeChangeP3(v, addr, pFilename->z, pFilename->n);
@@ -1109,6 +1153,7 @@ void sqliteVacuum(Parse *pParse, Token *pTableName){
   if( v==0 ) goto vacuum_cleanup;
   if( (db->flags & SQLITE_InTrans)==0 ){
     sqliteVdbeAddOp(v, OP_Transaction, 0, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_VerifyCookie, db->schema_cookie, 0, 0, 0);
   }
   if( zName ){
     sqliteVdbeAddOp(v, OP_Reorganize, 0, 0, zName, 0);
@@ -1147,6 +1192,7 @@ void sqliteBeginTransaction(Parse *pParse){
   v = sqliteGetVdbe(pParse);
   if( v ){
     sqliteVdbeAddOp(v, OP_Transaction, 1, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_VerifyCookie, db->schema_cookie, 0, 0, 0);
   }
   db->flags |= SQLITE_InTrans;
 }

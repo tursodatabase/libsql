@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle DELETE FROM statements.
 **
-** $Id: delete.c,v 1.12 2001/09/13 21:53:10 drh Exp $
+** $Id: delete.c,v 1.13 2001/09/15 00:57:29 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -92,6 +92,7 @@ void sqliteDeleteFrom(
   if( v==0 ) goto delete_from_cleanup;
   if( (pParse->db->flags & SQLITE_InTrans)==0 ){
     sqliteVdbeAddOp(v, OP_Transaction, 0, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_VerifyCookie, pParse->db->schema_cookie, 0, 0, 0);
   }
 
 

@@ -26,7 +26,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.35 2001/09/14 16:42:12 drh Exp $
+** $Id: main.c,v 1.36 2001/09/15 00:57:29 drh Exp $
 */
 #include "sqliteInt.h"
 #if defined(HAVE_USLEEP) && HAVE_USLEEP
@@ -51,7 +51,12 @@ static int sqliteOpenCb(void *pDb, int argc, char **argv, char **azColName){
   assert( argc==4 );
   switch( argv[0][0] ){
     case 'm': {  /* Meta information */
-      sscanf(argv[1],"file format %d",&db->file_format);
+      if( strcmp(argv[1],"file-format")==0 ){
+        db->file_format = atoi(argv[3]);
+      }else if( strcmp(argv[1],"schema-cookie")==0 ){
+        db->schema_cookie = atoi(argv[3]);
+        db->next_cookie = db->schema_cookie;
+      }
       break;
     }
     case 'i':
@@ -170,7 +175,12 @@ static int sqliteInit(sqlite *db, char **pzErrMsg){
     { OP_Column,   0, 4,  0},
     { OP_Callback, 4, 0,  0},
     { OP_Goto,     0, 24, 0},
-    { OP_Close,    0, 0,  0},           /* 34 */
+    { OP_String,   0, 0,  "meta"},      /* 34 */
+    { OP_String,   0, 0,  "schema-cookie"},
+    { OP_String,   0, 0,  ""},
+    { OP_ReadCookie,0,0,  0},
+    { OP_Callback, 4, 0,  0},
+    { OP_Close,    0, 0,  0},
     { OP_Halt,     0, 0,  0},
   };
 
@@ -281,11 +291,16 @@ no_mem_on_open:
 }
 
 /*
-** Close an existing SQLite database
+** Erase all schema information from the schema hash table.
+**
+** The database schema is normally read in once when the database
+** is first opened and stored in a hash table in the sqlite structure.
+** This routine erases the stored schema.  This erasure occurs because
+** either the database is being closed or because some other process
+** changed the schema and this process needs to reread it.
 */
-void sqlite_close(sqlite *db){
+static void clearHashTable(sqlite *db){
   int i;
-  sqliteBtreeClose(db->pBe);
   for(i=0; i<N_HASH; i++){
     Table *pNext, *pList = db->apTblHash[i];
     db->apTblHash[i] = 0;
@@ -296,6 +311,15 @@ void sqlite_close(sqlite *db){
       pList = pNext;
     }
   }
+  db->flags &= ~SQLITE_Initialized;
+}
+
+/*
+** Close an existing SQLite database
+*/
+void sqlite_close(sqlite *db){
+  sqliteBtreeClose(db->pBe);
+  clearHashTable(db);
   sqliteFree(db);
 }
 
@@ -387,6 +411,9 @@ int sqlite_exec(
     sParse.rc = SQLITE_NOMEM;
   }
   sqliteStrRealloc(pzErrMsg);
+  if( sParse.rc==SQLITE_SCHEMA ){
+    clearHashTable(db);
+  }
   return sParse.rc;
 }
 

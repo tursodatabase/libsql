@@ -26,7 +26,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.22 2001/09/13 13:46:57 drh Exp $
+** $Id: util.c,v 1.23 2001/09/15 00:57:29 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -978,25 +978,26 @@ sqliteLikeCompare(const unsigned char *zPattern, const unsigned char *zString){
 ** argument.
 */
 const char *sqliteErrStr(int rc){
-  char *z = 0;
+  const char *z;
   switch( rc ){
-    case SQLITE_OK:          z = "not an error";  break;
-    case SQLITE_ERROR:       z = "SQL logic error or missing database"; break;
-    case SQLITE_INTERNAL:    z = "internal SQLite implementation flaw"; break;
-    case SQLITE_PERM:        z = "access permission denied"; break;
-    case SQLITE_ABORT:       z = "callback requested query abort"; break;
-    case SQLITE_BUSY:        z = "database in use by another process"; break;
-    case SQLITE_NOMEM:       z = "out of memory"; break;
-    case SQLITE_READONLY:    z = "attempt to write a readonly database"; break;
-    case SQLITE_INTERRUPT:   z = "interrupted"; break;
-    case SQLITE_IOERR:       z = "disk I/O error"; break;
-    case SQLITE_CORRUPT:     z = "database disk image is malformed"; break;
-    case SQLITE_NOTFOUND:    z = "table or record not found"; break;
-    case SQLITE_FULL:        z = "database is full"; break;
-    case SQLITE_CANTOPEN:    z = "unable to open database file"; break;
-    case SQLITE_PROTOCOL:    z = "database locking protocol failure"; break;
-    case SQLITE_EMPTY:       z = "table contains no data";
-    default:
+    case SQLITE_OK:         z = "not an error";                          break;
+    case SQLITE_ERROR:      z = "SQL logic error or missing database";   break;
+    case SQLITE_INTERNAL:   z = "internal SQLite implementation flaw";   break;
+    case SQLITE_PERM:       z = "access permission denied";              break;
+    case SQLITE_ABORT:      z = "callback requested query abort";        break;
+    case SQLITE_BUSY:       z = "database in use by another process";    break;
+    case SQLITE_NOMEM:      z = "out of memory";                         break;
+    case SQLITE_READONLY:   z = "attempt to write a readonly database";  break;
+    case SQLITE_INTERRUPT:  z = "interrupted";                           break;
+    case SQLITE_IOERR:      z = "disk I/O error";                        break;
+    case SQLITE_CORRUPT:    z = "database disk image is malformed";      break;
+    case SQLITE_NOTFOUND:   z = "table or record not found";             break;
+    case SQLITE_FULL:       z = "database is full";                      break;
+    case SQLITE_CANTOPEN:   z = "unable to open database file";          break;
+    case SQLITE_PROTOCOL:   z = "database locking protocol failure";     break;
+    case SQLITE_EMPTY:      z = "table contains no data";                break;
+    case SQLITE_SCHEMA:     z = "database schema has changed";           break;
+    default:                z = "unknown error";                         break;
   }
   return z;
 }
