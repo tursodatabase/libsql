@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.102 2004/08/25 04:07:02 drh Exp $
+** $Id: tclsqlite.c,v 1.103 2004/08/26 00:56:05 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -698,6 +698,9 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     sqlite3_stmt *pStmt;   /* Compiled SQL statment */
     Tcl_Obj *pArray;       /* Name of array into which results are written */
     Tcl_Obj *pScript;      /* Script to run for each result set */
+    Tcl_Obj **apParm;      /* Parameters that need a Tcl_DecrRefCount() */
+    int nParm;             /* Number of entries used in apParm[] */
+    Tcl_Obj *aParm[10];    /* Static space for apParm[] in the common case */
 
     Tcl_Obj *pRet = Tcl_NewObj();
     Tcl_IncrRefCount(pRet);
@@ -717,6 +720,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       pScript = objv[4];
     }
 
+    Tcl_IncrRefCount(objv[2]);
     zSql = Tcl_GetStringFromObj(objv[2], 0);
     while( zSql[0] ){
       int i;      /* Loop counter */
@@ -741,8 +745,14 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
         }
       }
 
-      /* Bind values to wildcards that begin with $ */  
+      /* Bind values to wildcards that begin with $ or : */  
       nVar = sqlite3_bind_parameter_count(pStmt);
+      nParm = 0;
+      if( nVar>sizeof(aParm)/sizeof(aParm[0]) ){
+        apParm = (Tcl_Obj**)Tcl_Alloc(nVar*sizeof(apParm[0]));
+      }else{
+        apParm = aParm;
+      }
       for(i=1; i<=nVar; i++){
         const char *zVar = sqlite3_bind_parameter_name(pStmt, i);
         if( zVar[0]=='$' || zVar[0]==':' ){
@@ -755,6 +765,8 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
             if( c=='b' && strcmp(zType,"bytearray")==0 ){
               data = Tcl_GetByteArrayFromObj(pVar, &n);
               sqlite3_bind_blob(pStmt, i, data, n, SQLITE_STATIC);
+              Tcl_IncrRefCount(pVar);
+              apParm[nParm++] = pVar;
             }else if( (c=='b' && strcmp(zType,"boolean")==0) ||
                   (c=='i' && strcmp(zType,"int")==0) ){
               Tcl_GetIntFromObj(interp, pVar, &n);
@@ -766,6 +778,8 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
             }else{
               data = Tcl_GetStringFromObj(pVar, &n);
               sqlite3_bind_text(pStmt, i, data, n, SQLITE_STATIC);
+              Tcl_IncrRefCount(pVar);
+              apParm[nParm++] = pVar;
             }
           }
         }
@@ -853,6 +867,14 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
         Tcl_Free((char*)apColName);
       }
 
+      /* Free the bound string and blob parameters */
+      for(i=0; i<nParm; i++){
+        Tcl_DecrRefCount(apParm[i]);
+      }
+      if( apParm!=aParm ){
+        Tcl_Free((char*)apParm);
+      }
+
       /* Finalize the statement.  If the result code is SQLITE_SCHEMA, then
       ** try again to execute the same statement
       */
@@ -868,6 +890,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
 
       zSql = zLeft;
     }
+    Tcl_DecrRefCount(objv[2]);
 
     if( rc==TCL_OK ){
       Tcl_SetObjResult(interp, pRet);
