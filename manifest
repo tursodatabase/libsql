@@ -1,5 +1,5 @@
-C AUTOINCREMENT\sdocumentation\sadded.\s\sImprovements\sto\slang.html.\s(CVS\s2129)
-D 2004-11-21T01:02:00
+C Fix\sauth.test\sto\swork\swhen\sSQLITE_OMIT_ALTERTABLE\sis\sdefined.\s(CVS\s2130)
+D 2004-11-22T03:34:21
 F Makefile.in 8291610f5839939a5fbff4dbbf85adb0fe1ac37f
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -87,7 +87,7 @@ F test/alter.test 2b4478c4906e4d1504b1a121b4ffbc8d11043b53
 F test/attach.test e305dd59a375e37c658c6d401f19f8a95880bf9a
 F test/attach2.test 399128a7b3b209a339a8dbf53ca2ed42eb982d1a
 F test/attach3.test 8a0309e284cf9aa1d7d6cc444989031881f7a21c
-F test/auth.test cf13e449cb253f75d6584b376202c94bbdd53ec9
+F test/auth.test 6dd796db7481d9dfde52e455f6b3d2cd7891b888
 F test/autoinc.test 11330758197e0301d3600a071230d45b2f6a65b7
 F test/autovacuum.test d0517eb9fa7bb12c9e7f3b5d6fd4275d22e57c15
 F test/autovacuum_crash.test 2dca85cbcc497098e45e8847c86407eb3554f3d4
@@ -261,7 +261,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl fdacb0ba2d39831e8a6240d05a490026ad4c4e4c
-P 4ab1d012f0f365c46bcabe67eace891eeaa78d70
-R 36dcf878f43a703fc736b88e118828a1
-U drh
-Z ef040ca6aab550074695604039d8de29
+P ac72a1d5518f7b505ae2a1bd3be3d71db461ae7e
+R 4f352ed77aa5a0ed224822d223da24bb
+U danielk1977
+Z d8a009fbe425878d217baf1f91871aef
