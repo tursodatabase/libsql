@@ -1,0 +1,101 @@
+# Copyright (c) 1999, 2000 D. Richard Hipp
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public
+# License as published by the Free Software Foundation; either
+# version 2 of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public
+# License along with this library; if not, write to the
+# Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+# Boston, MA  02111-1307, USA.
+#
+# Author contact information:
+#   drh@hwaci.com
+#   http://www.hwaci.com/drh/
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this script is database locks.
+#
+# $Id: lock.test,v 1.1 2000/07/28 14:32:50 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+
+# Create a largish table
+#
+do_test lock-1.0 {
+  execsql {CREATE TABLE big(f1 int, f2 int, f3 int)}
+  set f [open ./testdata1.txt w]
+  for {set i 1} {$i<=500} {incr i} {
+    puts $f "$i\t[expr {$i*2}]\t[expr {$i*3}]"
+  }
+  close $f
+  execsql {COPY big FROM './testdata1.txt'}
+  file delete -force ./testdata1.txt
+} {}
+
+do_test lock-1.1 {
+  # Create a background query that gives us a read lock on the big table
+  #
+  set f [open slow.sql w]
+  puts $f "SELECT a.f1, b.f1 FROM big AS a, big AS B"
+  puts $f "WHERE a.f1+b.f1==0.5;"
+  close $f
+  set ::lock_pid [exec ./sqlite testdb <slow.sql &]
+  after 10
+  set v {}
+} {}
+
+do_test lock-1.2 {
+  # Now try to update the database
+  #
+  set v [catch {execsql {UPDATE big SET f2='xyz' WHERE f1=11}} msg]
+  lappend v $msg
+} {1 {table big is locked}}
+
+do_test lock-1.3 {
+  # Try to update the database in a separate process
+  #
+  set f [open update.sql w]
+  puts $f ".timeout 0"
+  puts $f "UPDATE big SET f2='xyz' WHERE f1=11;"
+  puts $f "SELECT f2 FROM big WHERE f1=11;"
+  close $f
+  exec ./sqlite testdb <update.sql
+} "SQL error: table big is locked\n22"
+
+do_test lock-1.4 {
+  # Try to update the database using a timeout
+  #
+  set f [open update.sql w]
+  puts $f ".timeout 1000"
+  puts $f "UPDATE big SET f2='xyz' WHERE f1=11;"
+  puts $f "SELECT f2 FROM big WHERE f1=11;"
+  close $f
+  exec ./sqlite testdb <update.sql
+} "SQL error: table big is locked\n22"
+
+do_test lock-1.5 {
+  # Try to update the database using a timeout
+  #
+  set f [open update.sql w]
+  puts $f ".timeout 10000"
+  puts $f "UPDATE big SET f2='xyz' WHERE f1=11;"
+  puts $f "SELECT f2 FROM big WHERE f1=11;"
+  close $f
+  exec ./sqlite testdb <update.sql
+} {xyz}
+
+catch {exec ps -uax | grep $::lock_pid}
+catch {exec kill -HUP $::lock_pid}
+catch {exec kill -9 $::lock_pid}
+
+finish_test

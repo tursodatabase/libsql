@@ -26,7 +26,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.13 2000/06/21 13:59:12 drh Exp $
+** $Id: main.c,v 1.14 2000/07/28 14:32:49 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -134,7 +134,8 @@ static int sqliteInit(sqlite *db, char **pzErrMsg){
     return 1;
   }
   sqliteVdbeAddOpList(vdbe, sizeof(initProg)/sizeof(initProg[0]), initProg);
-  rc = sqliteVdbeExec(vdbe, sqliteOpenCb, db, pzErrMsg);
+  rc = sqliteVdbeExec(vdbe, sqliteOpenCb, db, pzErrMsg, 
+                      db->pBusyArg, db->xBusyCallback);
   sqliteVdbeDelete(vdbe);
   if( rc==SQLITE_OK ){
     Table *pTab;
@@ -275,4 +276,72 @@ int sqlite_exec(
   rc = sqliteRunParser(&sParse, zSql, pzErrMsg);
   sqliteStrRealloc(pzErrMsg);
   return rc;
+}
+
+/*
+** This routine implements a busy callback that sleeps and tries
+** again until a timeout value is reached.  The timeout value is
+** an integer number of milliseconds passed in as the first
+** argument.
+*/
+static int sqlite_default_busy_callback(
+ void *Timeout,           /* Maximum amount of time to wait */
+ const char *NotUsed,     /* The name of the table that is busy */
+ int count                /* Number of times table has been busy */
+){
+  int rc;
+#ifdef HAVE_USLEEP
+  int delay = 10000;
+  int prior_delay = 0;
+  int timeout = (int)Timeout;
+  int i;
+
+  for(i=1; i<count; i++){ 
+    prior_delay += delay;
+    delay = delay*2;
+    if( delay>=1000000 ){
+      delay = 1000000;
+      prior_delay += 1000000*(count - i - 1);
+      break;
+    }
+  }
+  if( prior_delay + delay > timeout*1000 ){
+    delay = timeout*1000 - prior_delay;
+    if( delay<=0 ) return 0;
+  }
+  usleep(delay);
+  return 1;
+#else
+  int timeout = (int)Timeout;
+  if( (count+1)*1000 > timeout ){
+    return 0;
+  }
+  sleep(1);
+  return 1;
+#endif
+}
+
+/*
+** This routine sets the busy callback for an Sqlite database to the
+** given callback function with the given argument.
+*/
+void sqlite_busy_handler(
+  sqlite *db,
+  int (*xBusy)(void*,const char*,int),
+  void *pArg
+){
+  db->xBusyCallback = xBusy;
+  db->pBusyArg = pArg;
+}
+
+/*
+** This routine installs a default busy handler that waits for the
+** specified number of milliseconds before returning 0.
+*/
+void sqlite_busy_timeout(sqlite *db, int ms){
+  if( ms>0 ){
+    sqlite_busy_handler(db, sqlite_default_busy_callback, (void*)ms);
+  }else{
+    sqlite_busy_handler(db, 0, 0);
+  }
 }

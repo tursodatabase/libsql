@@ -30,7 +30,7 @@
 ** relatively simple to convert to a different database such
 ** as NDBM, SDBM, or BerkeleyDB.
 **
-** $Id: dbbe.c,v 1.15 2000/06/21 13:59:11 drh Exp $
+** $Id: dbbe.c,v 1.16 2000/07/28 14:32:49 drh Exp $
 */
 #include "sqliteInt.h"
 #include <gdbm.h>
@@ -382,7 +382,12 @@ int sqliteDbbeOpenCursor(
   pCursr->pFile = pFile;
   pCursr->readPending = 0;
   pCursr->needRewind = 1;
-  *ppCursr = pCursr;
+  if( rc!=SQLITE_OK ){
+    sqliteDbbeCloseCursor(pCursr);
+    *ppCursr = 0;
+  }else{
+    *ppCursr = pCursr;
+  }
   return rc;
 }
 

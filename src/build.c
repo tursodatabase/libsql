@@ -33,7 +33,7 @@
 **     COPY
 **     VACUUM
 **
-** $Id: build.c,v 1.19 2000/06/21 13:59:11 drh Exp $
+** $Id: build.c,v 1.20 2000/07/28 14:32:49 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -56,7 +56,8 @@ void sqliteExec(Parse *pParse){
       FILE *trace = (pParse->db->flags & SQLITE_VdbeTrace)!=0 ? stderr : 0;
       sqliteVdbeTrace(pParse->pVdbe, trace);
       sqliteVdbeExec(pParse->pVdbe, pParse->xCallback, pParse->pArg, 
-                     &pParse->zErrMsg);
+                     &pParse->zErrMsg, pParse->db->pBusyArg,
+                     pParse->db->xBusyCallback);
     }
     sqliteVdbeDelete(pParse->pVdbe);
     pParse->pVdbe = 0;

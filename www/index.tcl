@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.18 2000/06/09 14:14:34 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.19 2000/07/28 14:32:51 drh Exp $}
 
 puts {<html>
 <head><title>SQLite: An SQL Database Engine Built Atop GDBM</title></head>
@@ -50,8 +50,8 @@ an separate RDBMS.</p>
 <li>Import and export data from 
 <a href="http://www.postgresql.org/">PostgreSQL</a>.</li>
 <li>Very simple 
-<a href="c_interface.html">C/C++ interface</a> uses only
-four functions and one opaque structure.</li>
+<a href="c_interface.html">C/C++ interface</a> requires the use of only
+three functions and one opaque structure.</li>
 <li>A <a href="http://dev.scriptics.com/">Tcl</a> interface is
 included.</li>
 <li>Command-line access program <a href="sqlite.html">sqlite</a> uses

@@ -151,7 +151,7 @@ AC_INIT(src/sqlite.h)
 dnl Put the RCS revision string after AC_INIT so that it will also
 dnl show in in configure.
 # The following RCS revision string applies to configure.in
-# $Revision: 1.3 $
+# $Revision: 1.4 $
 
 #########
 # Make sure we are not building in a subdirectory of the source tree.
@@ -508,6 +508,11 @@ else
 fi
 AC_SUBST(TARGET_READLINE_INC)
 AC_SUBST(TARGET_HAVE_READLINE)
+
+#########
+# Figure out whether or not we have a "usleep()" function.
+#
+AC_CHECK_FUNC(usleep, [TARGET_CFLAGS="$TARGET_CFLAGS -DHAVE_USLEEP=1"])
 
 #########
 # Generate the output files.

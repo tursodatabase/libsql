@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.34 2000/06/21 13:59:13 drh Exp $
+** $Id: vdbe.c,v 1.35 2000/07/28 14:32:50 drh Exp $
 */
 #include "sqliteInt.h"
 #include <unistd.h>
@@ -868,13 +868,22 @@ static Sorter *Merge(Sorter *pLeft, Sorter *pRight){
 ** Other fatal errors return SQLITE_ERROR.
 **
 ** If a database file could not be opened because it is locked by
-** another database instance, then this routine returns SQLITE_BUSY.
+** another database instance, then the xBusy() callback is invoked
+** with pBusyArg as its first argument, the name of the table as the
+** second argument, and the number of times the open has been attempted
+** as the third argument.  The xBusy() callback will typically wait
+** for the database file to be openable, then return.  If xBusy()
+** returns non-zero, another attempt is made to open the file.  If
+** xBusy() returns zero, or if xBusy is NULL, then execution halts
+** and this routine returns SQLITE_BUSY.
 */
 int sqliteVdbeExec(
   Vdbe *p,                   /* The VDBE */
   sqlite_callback xCallback, /* The callback */
   void *pArg,                /* 1st argument to callback */
-  char **pzErrMsg            /* Error msg written here */
+  char **pzErrMsg,           /* Error msg written here */
+  void *pBusyArg,            /* 1st argument to the busy callback */
+  int (*xBusy)(void*,const char*,int)  /* Called when a file is busy */
 ){
   int pc;                    /* The program counter */
   Op *pOp;                   /* Current operation */
@@ -1698,6 +1707,7 @@ int sqliteVdbeExec(
       ** deleted when the cursor is closed.
       */
       case OP_Open: {
+        int busy = 0;
         int i = pOp->p1;
         if( i<0 ) goto bad_instruction;
         if( i>=p->nCursor ){
@@ -1709,26 +1719,35 @@ int sqliteVdbeExec(
         }else if( p->aCsr[i].pCursor ){
           sqliteDbbeCloseCursor(p->aCsr[i].pCursor);
         }
-        rc = sqliteDbbeOpenCursor(p->pBe, pOp->p3, pOp->p2,&p->aCsr[i].pCursor);
-        switch( rc ){
-          case SQLITE_BUSY: {
-            sqliteSetString(pzErrMsg,"table ", pOp->p3, " is locked", 0);
-            break;
+        do {
+          rc = sqliteDbbeOpenCursor(p->pBe,pOp->p3,pOp->p2,&p->aCsr[i].pCursor);
+          switch( rc ){
+            case SQLITE_BUSY: {
+              if( xBusy==0 || (*xBusy)(pBusyArg, pOp->p3, ++busy)==0 ){
+                sqliteSetString(pzErrMsg,"table ", pOp->p3, " is locked", 0);
+                busy = 0;
+              }
+              break;
+            }
+            case SQLITE_PERM: {
+              sqliteSetString(pzErrMsg, pOp->p2 ? "write" : "read",
+                " permission denied for table ", pOp->p3, 0);
+              break;
+            }
+            case SQLITE_READONLY: {
+              sqliteSetString(pzErrMsg,"table ", pOp->p3, 
+                 " is readonly", 0);
+              break;
+            }
+            case SQLITE_NOMEM: {
+              goto no_mem;
+            }
+            case SQLITE_OK: {
+              busy = 0;
+              break;
+            }
           }
-          case SQLITE_PERM: {
-            sqliteSetString(pzErrMsg, pOp->p2 ? "write" : "read",
-              " permission denied for table ", pOp->p3, 0);
-            break;
-          }
-          case SQLITE_READONLY: {
-            sqliteSetString(pzErrMsg,"table ", pOp->p3, 
-               " is readonly", 0);
-            break;
-          }
-          case SQLITE_NOMEM: {
-            goto no_mem;
-          }
-        }
+        }while( busy );
         p->aCsr[i].index = 0;
         p->aCsr[i].keyAsData = 0;
         break;

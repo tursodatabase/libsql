@@ -164,7 +164,7 @@ tclsqlite:	$(TOP)/src/tclsqlite.c libsqlite.a
 	$(TCC) $(TCL_FLAGS) -DTCLSH=1 -o tclsqlite \
 		$(TOP)/src/tclsqlite.c libsqlite.a $(LIBGDBM) $(LIBTCL)
 
-test:	tclsqlite
+test:	tclsqlite sqlite
 	./tclsqlite $(TOP)/test/all.test
 
 sqlite.tar.gz:	

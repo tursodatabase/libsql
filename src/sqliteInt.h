@@ -23,7 +23,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.25 2000/06/21 13:59:12 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.26 2000/07/28 14:32:50 drh Exp $
 */
 #include "sqlite.h"
 #include "dbbe.h"
@@ -122,6 +122,8 @@ typedef struct AggExpr AggExpr;
 struct sqlite {
   Dbbe *pBe;                 /* The backend driver */
   int flags;                 /* Miscellanous flags */
+  void *pBusyArg;            /* 1st Argument to the busy callback */
+  int (*xBusyCallback)(void *,const char*,int);
   Table *apTblHash[N_HASH];  /* All tables of the database */
   Index *apIdxHash[N_HASH];  /* All indices of the database */
 };

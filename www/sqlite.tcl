@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: sqlite.tcl,v 1.10 2000/06/23 17:02:09 drh Exp $}
+set rcsid {$Id: sqlite.tcl,v 1.11 2000/07/28 14:32:51 drh Exp $}
 
 puts {<html>
 <head>
@@ -156,6 +156,7 @@ sqlite> (((.help)))
 .schema ?TABLE?        Show the CREATE statements
 .separator STRING      Change separator string for "list" mode
 .tables                List names all tables in the database
+.timeout MS            Try opening locked tables for MS milliseconds
 .width NUM NUM ...     Set column widths for "column" mode
 sqlite> 
 }
@@ -467,6 +468,13 @@ addr  opcode        p1     p2     p3
 }
 
 puts {
+
+<p>The ".timeout" command sets the amount of time that the <b>sqlite</b>
+program will wait for locks to clear on files it is trying to access
+before returning an error.  The default value of the timeout is zero so
+that an error is returned immediately if any needed database table or
+index is locked.</p>
+
 <p>And finally, we mention the ".exit" command which causes the
 sqlite program to exit.</p>
 

@@ -24,7 +24,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.15 2000/06/21 13:59:12 drh Exp $
+** $Id: shell.c,v 1.16 2000/07/28 14:32:49 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -112,7 +112,7 @@ static char *one_input_line(const char *zPrior, int isatty){
     zPrompt = "sqlite> ";
   }
   zResult = readline(zPrompt);
-  add_history(zResult);
+  if( zResult ) add_history(zResult);
   return zResult;
 }
 
@@ -382,6 +382,7 @@ static char zHelp[] =
   ".schema ?TABLE?        Show the CREATE statements\n"
   ".separator STRING      Change separator string for \"list\" mode\n"
   ".tables                List names all tables in the database\n"
+  ".timeout MS            Try opening locked tables for MS milliseconds\n"
   ".width NUM NUM ...     Set column widths for \"column\" mode\n"
 ;
 
@@ -554,7 +555,7 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
     sprintf(p->separator, "%.*s", (int)ArraySize(p->separator)-1, azArg[1]);
   }else
 
-  if( c=='t' && strncmp(azArg[0], "tables", n)==0 ){
+  if( c=='t' && n>1 && strncmp(azArg[0], "tables", n)==0 ){
     struct callback_data data;
     char *zErrMsg = 0;
     static char zSql[] = 
@@ -567,6 +568,10 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
       fprintf(stderr,"Error: %s\n", zErrMsg);
       free(zErrMsg);
     }
+  }else
+
+  if( c=='t' && n>1 && strncmp(azArg[0], "timeout", n)==0 && nArg>=2 ){
+    sqlite_busy_timeout(db, atoi(azArg[1]));
   }else
 
   if( c=='w' && strncmp(azArg[0], "width", n)==0 ){

@@ -24,7 +24,7 @@
 ** This header file defines the interface that the sqlite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h,v 1.3 2000/06/02 01:51:20 drh Exp $
+** @(#) $Id: sqlite.h,v 1.4 2000/07/28 14:32:50 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -94,12 +94,16 @@ typedef int (*sqlite_callback)(void*,int,char**, char**);
 ** message is written into memory obtained from malloc() and
 ** *errmsg is made to point to that message.  If errmsg==NULL,
 ** then no error message is ever written.  The return value is
-** SQLITE_ERROR if an error occurs.
+** SQLITE_ERROR if an error occurs.  The calling function is
+** responsible for freeing the memory that holds the error
+** message.
 **
 ** If the query could not be executed because a database file is
-** locked or busy, then this function returns SQLITE_BUSY.  If
-** the query could not be executed because a file is missing or
-** has incorrect permissions, this function returns SQLITE_ERROR.
+** locked or busy, then this function returns SQLITE_BUSY.  (This
+** behavior can be modified somewhat using the sqlite_busy_handler()
+** and sqlite_busy_timeout() functions below.) If the query could 
+** not be executed because a file is missing or has incorrect 
+** permissions, this function returns SQLITE_ERROR.
 */
 int sqlite_exec(
   sqlite*,                      /* An open database */
@@ -121,8 +125,6 @@ int sqlite_exec(
 #define SQLITE_NOMEM     6    /* A malloc() failed */
 #define SQLITE_READONLY  7    /* Attempt to write a readonly database */
 
-
-
 /* This function returns true if the given input string comprises
 ** one or more complete SQL statements.
 **
@@ -131,5 +133,41 @@ int sqlite_exec(
 ** false.
 */
 int sqlite_complete(const char *sql);
+
+/*
+** This routine identifies a callback function that is invoked
+** whenever an attempt is made to open a database table that is
+** currently locked by another process or thread.  If the busy callback
+** is NULL, then sqlite_exec() returns SQLITE_BUSY immediately if
+** it finds a locked table.  If the busy callback is not NULL, then
+** sqlite_exec() invokes the callback with three arguments.  The
+** second argument is the name of the locked table and the third
+** argument is the number of times the table has been busy.  If the
+** busy callback returns 0, then sqlite_exec() immediately returns
+** SQLITE_BUSY.  If the callback returns non-zero, then sqlite_exec()
+** tries to open the table again and the cycle repeats.
+**
+** The default busy callback is NULL.
+**
+** Sqlite is re-entrant, so the busy handler may start a new query. 
+** (It is not clear why anyone would every want to do this, but it
+** is allowed, in theory.)  But the busy handler may not close the
+** database.  Closing the database from a busy handler will delete 
+** data structures out from under the executing query and will 
+** probably result in a coredump.
+*/
+void sqlite_busy_handler(sqlite*, int(*)(void*,const char*,int), void*);
+
+/*
+** This routine sets a busy handler that sleeps for a while when a
+** table is locked.  The handler will sleep multiple times until 
+** at least "ms" milleseconds of sleeping have been done.  After
+** "ms" milleseconds of sleeping, the handler returns 0 which
+** causes sqlite_exec() to return SQLITE_BUSY.
+**
+** Calling this routine with an argument less than or equal to zero
+** turns off all busy handlers.
+*/
+void sqlite_busy_timeout(sqlite*, int ms);
 
 #endif /* _SQLITE_H_ */

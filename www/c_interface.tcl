@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: c_interface.tcl,v 1.5 2000/06/21 13:59:14 drh Exp $}
+set rcsid {$Id: c_interface.tcl,v 1.6 2000/07/28 14:32:51 drh Exp $}
 
 puts {<html>
 <head>
@@ -22,7 +22,8 @@ programming interface.</p>
 
 <h2>The API</h2>
 
-<p>The interface to the SQLite library consists of 4 functions,
+<p>The interface to the SQLite library consists of six functions
+(only three of which are required),
 one opaque data structure, and some constants used as return
 values from sqlite_exec():</p>
 
@@ -42,6 +43,10 @@ int sqlite_exec(
 );
 
 int sqlite_complete(const char *sql);
+
+void sqlite_busy_handler(sqlite*, int (*)(void*,const char*,int), void*);
+
+void sqlite_busy_timeout(sqlite*, int ms);
 
 #define SQLITE_OK        0    /* Successful result */
 #define SQLITE_INTERNAL  1    /* An internal logic error in SQLite */
@@ -224,6 +229,47 @@ then <b>sqlite_exec()</b> is called and the input buffer is reset.  If
 <b>sqlite_complete()</b> returns false, then the prompt is changed to
 the continuation prompt and another line of text is read and added to
 the input buffer.</p>
+
+<h2>Changing the libraries reponse to locked files</h2>
+
+<p>The GDBM library supports database locks at the file level.
+If a GDBM database file is opened for reading, then that same
+file cannot be reopened for writing until all readers have closed
+the file.  If a GDBM file is open for writing, then the file cannot
+be reopened for reading or writing until it is closed.</p>
+
+<p>If the SQLite library attempts to open a GDBM file and finds that
+the file is locked, the default action is to abort the current
+operation and return SQLITE_BUSY.  But this is not always the most
+convenient behavior, so a mechanism exists to change it.</p>
+
+<p>The <b>sqlite_busy_handler()</b> procedure can be used to register
+a busy callback with an open SQLite database.  The busy callback will
+be invoked whenever SQLite tries to open a GDBM file that is locked.
+The callback will typically do some other useful work, or perhaps sleep,
+in order to give the lock a chance to clear.  If the callback returns
+non-zero, then SQLite tries again to open the GDBM file and the cycle
+repeats.  If the callback returns zero, then SQLite aborts the current
+operation and returns SQLITE_BUSY.</p>
+
+<p>The arguments to <b>sqlite_busy_handler()</b> are the opaque
+structure returned from <b>sqlite_open()</b>, a pointer to the busy
+callback function, and a generic pointer that will be passed as
+the first argument to the busy callback.  When SQLite invokes the
+busy callback, it sends it three arguments:  the generic pointer
+that was passed in as the third argument to <b>sqlite_busy_handler</b>,
+the name of the database table or index that the library is trying
+to open, and the number of times that the library has attempted to
+open the database table or index.</p>
+
+<p>For the common case where we want the busy callback to sleep,
+the SQLite library provides a convenience routine <b>sqlite_busy_timeout()</b>.
+The first argument to <b>sqlite_busy_timeout()</b> is a pointer to
+an open SQLite database and the second argument is a number of milliseconds.
+After <b>sqlite_busy_timeout()</b> has been executed, the SQLite library
+will wait for the lock to clear for at least the number of milliseconds 
+specified before it returns SQLITE_BUSY.  Specifying zero milliseconds for
+the timeout restores the default behavior.</p>
 
 <h2>Usage Examples</h2>
 
