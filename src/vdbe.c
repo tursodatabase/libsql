@@ -36,7 +36,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.195 2003/01/11 13:30:58 drh Exp $
+** $Id: vdbe.c,v 1.196 2003/01/12 17:28:19 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -926,20 +926,16 @@ static void hardRealify(Vdbe *p, int i){
 ** popped stack elements.
 */
 static void PopStack(Vdbe *p, int N){
-  char **pzStack;
-  Stack *pStack;
+  assert( N>=0 );
   if( p->zStack==0 ) return;
-  pStack = &p->aStack[p->tos];
-  pzStack = &p->zStack[p->tos];
-  p->tos -= N;
+  assert( p->aStack );
   while( N-- > 0 ){
-    if( pStack->flags & STK_Dyn ){
-      sqliteFree(*pzStack);
+    if( p->aStack[p->tos].flags & STK_Dyn ){
+      sqliteFree(p->zStack[p->tos]);
     }
-    pStack->flags = 0;
-    *pzStack = 0;
-    pStack--;
-    pzStack--;
+    p->aStack[p->tos].flags = 0;
+    p->zStack[p->tos] = 0;
+    p->tos--;
   }
 }
 
@@ -949,8 +945,9 @@ static void PopStack(Vdbe *p, int N){
 ** function.
 */
 #define POPSTACK \
- if( aStack[p->tos].flags & STK_Dyn ) sqliteFree(zStack[p->tos]); \
- p->tos--;
+  assert(p->tos>=0); \
+  if( aStack[p->tos].flags & STK_Dyn ) sqliteFree(zStack[p->tos]); \
+  p->tos--;
 
 /*
 ** Return TRUE if zNum is a floating-point or integer number.
@@ -1396,7 +1393,6 @@ int sqliteVdbeExec(
   unsigned long long start;
   int origPc;
 #endif
-
 
   /* No instruction ever pushes more than a single element onto the
   ** stack.  And the stack never grows on successive executions of the
