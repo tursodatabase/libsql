@@ -13,18 +13,25 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.21 2003/02/16 19:13:37 drh Exp $
+** $Id: test1.c,v 1.22 2003/02/16 22:21:32 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
+#include "os.h"
 #include <stdlib.h>
 #include <string.h>
+
+#if OS_WIN
+# define PTR_FMT "%x"
+#else
+# define PTR_FMT "%p"
+#endif
 
 /*
 ** Decode a pointer to an sqlite object.
 */
 static int getDbPointer(Tcl_Interp *interp, const char *zArg, sqlite **ppDb){
-  if( sscanf(zArg, "%p", (void**)ppDb)!=1 ){
+  if( sscanf(zArg, PTR_FMT, (void**)ppDb)!=1 ){
     Tcl_AppendResult(interp, "\"", zArg, "\" is not a valid pointer value", 0);
     return TCL_ERROR;
   }
@@ -35,7 +42,7 @@ static int getDbPointer(Tcl_Interp *interp, const char *zArg, sqlite **ppDb){
 ** Decode a pointer to an sqlite_vm object.
 */
 static int getVmPointer(Tcl_Interp *interp, const char *zArg, sqlite_vm **ppVm){
-  if( sscanf(zArg, "%p", (void**)ppVm)!=1 ){
+  if( sscanf(zArg, PTR_FMT, (void**)ppVm)!=1 ){
     Tcl_AppendResult(interp, "\"", zArg, "\" is not a valid pointer value", 0);
     return TCL_ERROR;
   }
@@ -67,7 +74,7 @@ static int sqlite_test_open(
     free(zErr);
     return TCL_ERROR;
   }
-  sprintf(zBuf,"%p", db);
+  sprintf(zBuf,PTR_FMT, db);
   Tcl_AppendResult(interp, zBuf, 0);
   return TCL_OK;
 }
@@ -735,7 +742,7 @@ static int test_compile(
     return TCL_ERROR;
   }
   if( vm ){
-    sprintf(zBuf, "%p", vm);
+    sprintf(zBuf, PTR_FMT, vm);
     Tcl_AppendResult(interp, zBuf, 0);
   }
   return TCL_OK;
@@ -853,6 +860,7 @@ static int test_breakpoint(
 */
 int Sqlitetest1_Init(Tcl_Interp *interp){
   extern int sqlite_search_count;
+  extern int sqlite_open_file_count;
   static struct {
      char *zName;
      Tcl_CmdProc *xProc;
@@ -889,5 +897,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
   }
   Tcl_LinkVar(interp, "sqlite_search_count", 
       (char*)&sqlite_search_count, TCL_LINK_INT);
+  Tcl_LinkVar(interp, "sqlite_open_file_count", 
+      (char*)&sqlite_open_file_count, TCL_LINK_INT);
   return TCL_OK;
 }

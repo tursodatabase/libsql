@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: quick.test,v 1.4 2002/08/24 18:24:57 drh Exp $
+# $Id: quick.test,v 1.5 2003/02/16 22:21:33 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -24,12 +24,21 @@ set EXCLUDE {
   btree2.test
   malloc.test
   memleak.test
+  misuse.test
 }
 
 foreach testfile [lsort -dictionary [glob $testdir/*.test]] {
   set tail [file tail $testfile]
   if {[lsearch -exact $EXCLUDE $tail]>=0} continue
   source $testfile
+  catch {db close}
+  if {$sqlite_open_file_count>0} {
+    puts "$tail did not close all files: $sqlite_open_file_count"
+    incr nErr
+    lappend ::failList $tail
+  }
 }
+source $testdir/misuse.test
 
+set sqlite_open_file_count 0
 really_finish_test

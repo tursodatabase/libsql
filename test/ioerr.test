@@ -15,7 +15,7 @@
 # The tests in this file use special facilities that are only
 # available in the SQLite test fixture.
 #
-# $Id: ioerr.test,v 1.1 2001/10/12 17:30:05 drh Exp $
+# $Id: ioerr.test,v 1.2 2003/02/16 22:21:33 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -26,6 +26,7 @@ for {set n 1} {$go} {incr n} {
     set ::sqlite_io_error_pending 0
     db close
     catch {file delete -force test.db}
+    catch {file delete -force test.db-journal}
     sqlite db test.db
     execsql {SELECT * FROM sqlite_master}
   } {}

@@ -225,6 +225,16 @@ static void local_ioerr(){
 #define SimulateIOError(A)
 #endif
 
+/*
+** When testing, keep a count of the number of open files.
+*/
+#ifdef SQLITE_TEST
+int sqlite_open_file_count = 0;
+#define OpenCounter(X)  sqlite_open_file_count+=(X)
+#else
+#define OpenCounter(X)
+#endif
+
 
 /*
 ** Delete the named file
@@ -296,6 +306,7 @@ int sqliteOsOpenReadWrite(
   }
   id->locked = 0;
   TRACE3("OPEN    %-3d %s\n", id->fd, zFilename);
+  OpenCounter(+1);
   return SQLITE_OK;
 #endif
 #if OS_WIN
@@ -325,6 +336,7 @@ int sqliteOsOpenReadWrite(
   }
   id->h = h;
   id->locked = 0;
+  OpenCounter(+1);
   return SQLITE_OK;
 #endif
 #if OS_MAC
@@ -374,6 +386,7 @@ int sqliteOsOpenReadWrite(
   }
   id->locked = 0;
   id->delOnClose = 0;
+  OpenCounter(+1);
   return SQLITE_OK;
 #endif
 }
@@ -415,6 +428,7 @@ int sqliteOsOpenExclusive(const char *zFilename, OsFile *id, int delFlag){
     unlink(zFilename);
   }
   TRACE3("OPEN-EX %-3d %s\n", id->fd, zFilename);
+  OpenCounter(+1);
   return SQLITE_OK;
 #endif
 #if OS_WIN
@@ -439,6 +453,7 @@ int sqliteOsOpenExclusive(const char *zFilename, OsFile *id, int delFlag){
   }
   id->h = h;
   id->locked = 0;
+  OpenCounter(+1);
   return SQLITE_OK;
 #endif
 #if OS_MAC
@@ -467,6 +482,7 @@ int sqliteOsOpenExclusive(const char *zFilename, OsFile *id, int delFlag){
   id->delOnClose = delFlag;
   if (delFlag)
     id->pathToDel = sqliteOsFullPathname(zFilename);
+  OpenCounter(+1);
   return SQLITE_OK;
 #endif
 }
@@ -493,6 +509,7 @@ int sqliteOsOpenReadOnly(const char *zFilename, OsFile *id){
   }
   id->locked = 0;
   TRACE3("OPEN-RO %-3d %s\n", id->fd, zFilename);
+  OpenCounter(+1);
   return SQLITE_OK;
 #endif
 #if OS_WIN
@@ -509,6 +526,7 @@ int sqliteOsOpenReadOnly(const char *zFilename, OsFile *id){
   }
   id->h = h;
   id->locked = 0;
+  OpenCounter(+1);
   return SQLITE_OK;
 #endif
 #if OS_MAC
@@ -534,6 +552,7 @@ int sqliteOsOpenReadOnly(const char *zFilename, OsFile *id){
   }
   id->locked = 0;
   id->delOnClose = 0;
+  OpenCounter(+1);
   return SQLITE_OK;
 #endif
 }
@@ -651,10 +670,12 @@ int sqliteOsClose(OsFile *id){
   releaseLockInfo(id->pLock);
   sqliteOsLeaveMutex();
   TRACE2("CLOSE   %-3d\n", id->fd);
+  OpenCounter(-1);
   return SQLITE_OK;
 #endif
 #if OS_WIN
   CloseHandle(id->h);
+  OpenCounter(-1);
   return SQLITE_OK;
 #endif
 #if OS_MAC
@@ -669,6 +690,8 @@ int sqliteOsClose(OsFile *id){
     unlink(id->pathToDel);
     sqliteFree(id->pathToDel);
   }
+  OpenCounter(-1);
+  return SQLITE_OK;
 #endif
 }
 

@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.23 2002/06/25 13:16:04 drh Exp $
+# $Id: tester.tcl,v 1.24 2003/02/16 22:21:33 drh Exp $
 
 # Make sure tclsqlite was compiled correctly.  Abort now with an
 # error message if not.
@@ -158,7 +158,7 @@ proc finish_test {} {
   finalize_testing
 }
 proc finalize_testing {} {
-  global nTest nErr nProb
+  global nTest nErr nProb sqlite_open_file_count
   if {$nErr==0} memleak_check
   catch {db close}
   puts "$nErr errors out of $nTest tests"
@@ -166,6 +166,10 @@ proc finalize_testing {} {
   if {$nProb>0} {
     puts "$nProb probabilistic tests also failed, but this does"
     puts "not necessarily indicate a malfunction."
+  }
+  if {$sqlite_open_file_count} {
+    puts "$sqlite_open_file_count files were left open"
+    incr nErr
   }
   exit [expr {$nErr>0}]
 }

@@ -36,7 +36,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.203 2003/01/29 22:58:26 drh Exp $
+** $Id: vdbe.c,v 1.204 2003/02/16 22:21:32 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -5741,5 +5741,8 @@ int sqliteVdbeFinalize(Vdbe *p, char **pzErrMsg){
 #endif
   rc = p->rc;
   sqliteVdbeDelete(p);
+  if( db->want_to_close && db->pVdbe==0 ){
+    sqlite_close(db);
+  }
   return rc;
 }
