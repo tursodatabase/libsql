@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.209 2004/09/19 02:15:26 drh Exp $
+** $Id: select.c,v 1.210 2004/09/25 13:12:16 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -483,8 +483,7 @@ static int selectInnerLoop(
         char const *affStr;
         char aff = (iParm>>16)&0xFF;
         aff = sqlite3CompareAffinity(pEList->a[0].pExpr, aff);
-        affStr = sqlite3AffinityString(aff);
-        sqlite3VdbeOp3(v, OP_MakeRecord, 1, 0, affStr, P3_STATIC);
+        sqlite3VdbeOp3(v, OP_MakeRecord, 1, 0, &aff, 1);
         sqlite3VdbeAddOp(v, OP_String8, 0, 0);
         sqlite3VdbeAddOp(v, OP_PutStrKey, (iParm&0x0000FFFF), 0);
       }

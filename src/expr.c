@@ -12,23 +12,10 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.164 2004/09/24 12:24:07 drh Exp $
+** $Id: expr.c,v 1.165 2004/09/25 13:12:15 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
-
-char const *sqlite3AffinityString(char affinity){
-  switch( affinity ){
-    case SQLITE_AFF_INTEGER: return "i";
-    case SQLITE_AFF_NUMERIC: return "n";
-    case SQLITE_AFF_TEXT:    return "t";
-    case SQLITE_AFF_NONE:    return "o";
-    default:
-      assert(0);
-  }
-  return 0;
-}
-
 
 /*
 ** Return the 'affinity' of the expression pExpr if any.
@@ -184,7 +171,7 @@ static int codeCompare(
 ){
   int p1 = binaryCompareP1(pLeft, pRight, jumpIfNull);
   CollSeq *p3 = binaryCompareCollSeq(pParse, pLeft, pRight);
-  return sqlite3VdbeOp3(pParse->pVdbe, opcode, p1, dest, (void *)p3, P3_COLLSEQ);
+  return sqlite3VdbeOp3(pParse->pVdbe, opcode, p1, dest, (void*)p3, P3_COLLSEQ);
 }
 
 /*
@@ -970,11 +957,9 @@ int sqlite3ExprResolveIds(
         ** a column, use numeric affinity.
         */
         int i;
-        char const *affStr;
         if( !affinity ){
           affinity = SQLITE_AFF_NUMERIC;
         }
-        affStr = sqlite3AffinityString(affinity);
         keyInfo.aColl[0] = pExpr->pLeft->pColl;
 
         /* Loop through each expression in <exprlist>. */
@@ -993,7 +978,7 @@ int sqlite3ExprResolveIds(
 
           /* Evaluate the expression and insert it into the temp table */
           sqlite3ExprCode(pParse, pE2);
-          sqlite3VdbeOp3(v, OP_MakeRecord, 1, 0, affStr, P3_STATIC);
+          sqlite3VdbeOp3(v, OP_MakeRecord, 1, 0, &affinity, 1);
           sqlite3VdbeAddOp(v, OP_String8, 0, 0);
           sqlite3VdbeAddOp(v, OP_PutStrKey, pExpr->iTable, 0);
         }
@@ -1374,13 +1359,13 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
     }
     case TK_IN: {
       int addr;
-      char const *affStr;
+      char affinity;
 
       /* Figure out the affinity to use to create a key from the results
       ** of the expression. affinityStr stores a static string suitable for
       ** P3 of OP_MakeRecord.
       */
-      affStr = sqlite3AffinityString(comparisonAffinity(pExpr));
+      affinity = comparisonAffinity(pExpr);
 
       sqlite3VdbeAddOp(v, OP_Integer, 1, 0);
 
@@ -1393,7 +1378,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       sqlite3VdbeAddOp(v, OP_Pop, 2, 0);
       sqlite3VdbeAddOp(v, OP_String8, 0, 0);
       sqlite3VdbeAddOp(v, OP_Goto, 0, addr+7);
-      sqlite3VdbeOp3(v, OP_MakeRecord, 1, 0, affStr, P3_STATIC); /* addr + 4 */
+      sqlite3VdbeOp3(v, OP_MakeRecord, 1, 0, &affinity, 1);   /* addr + 4 */
       sqlite3VdbeAddOp(v, OP_Found, pExpr->iTable, addr+7);
       sqlite3VdbeAddOp(v, OP_AddImm, -1, 0);                  /* addr + 6 */
 
