@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.16 2004/07/22 15:02:26 drh Exp $
+# $Id: pragma.test,v 1.17 2004/07/24 17:38:30 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -306,6 +306,7 @@ catchsql {COMMIT;}
 # Test schema-query pragmas
 #
 do_test pragma-6.1 {
+  set res {}
   foreach {idx name file} [execsql {pragma database_list}] {
     lappend res $idx $name
   }

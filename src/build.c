@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.242 2004/07/24 14:35:58 drh Exp $
+** $Id: build.c,v 1.243 2004/07/24 17:38:29 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -192,6 +192,14 @@ Index *sqlite3FindIndex(sqlite *db, const char *zName, const char *zDb){
 }
 
 /*
+** Reclaim the memory used by an index
+*/
+static void freeIndex(Index *p){
+  sqliteFree(p->zColAff);
+  sqliteFree(p);
+}
+
+/*
 ** Remove the given index from the index hash table, and free
 ** its memory structures.
 **
@@ -209,10 +217,7 @@ static void sqliteDeleteIndex(sqlite *db, Index *p){
     sqlite3HashInsert(&db->aDb[p->iDb].idxHash, pOld->zName,
                      strlen(pOld->zName)+1, pOld);
   }
-  if( p->zColAff ){
-    sqliteFree(p->zColAff);
-  }
-  sqliteFree(p);
+  freeIndex(p);
 }
 
 /*
@@ -220,17 +225,25 @@ static void sqliteDeleteIndex(sqlite *db, Index *p){
 ** the index from the index hash table and free its memory
 ** structures.
 */
-void sqlite3UnlinkAndDeleteIndex(sqlite *db, Index *pIndex){
-  if( pIndex->pTable->pIndex==pIndex ){
-    pIndex->pTable->pIndex = pIndex->pNext;
-  }else{
-    Index *p;
-    for(p=pIndex->pTable->pIndex; p && p->pNext!=pIndex; p=p->pNext){}
-    if( p && p->pNext==pIndex ){
-      p->pNext = pIndex->pNext;
+void sqlite3UnlinkAndDeleteIndex(sqlite *db, int iDb, const char *zIdxName){
+  Index *pIndex;
+  int len;
+
+  len = strlen(zIdxName);
+  pIndex = sqlite3HashInsert(&db->aDb[iDb].idxHash, zIdxName, len+1, 0);
+  if( pIndex ){
+    if( pIndex->pTable->pIndex==pIndex ){
+      pIndex->pTable->pIndex = pIndex->pNext;
+    }else{
+      Index *p;
+      for(p=pIndex->pTable->pIndex; p && p->pNext!=pIndex; p=p->pNext){}
+      if( p && p->pNext==pIndex ){
+        p->pNext = pIndex->pNext;
+      }
     }
+    freeIndex(pIndex);
   }
-  sqliteDeleteIndex(db, pIndex);
+  db->flags |= SQLITE_InternChanges;
 }
 
 /*
@@ -329,6 +342,23 @@ void sqlite3CommitInternalChanges(sqlite *db){
 }
 
 /*
+** Clear the column names from a table or view.
+*/
+static void sqliteResetColumnNames(Table *pTable){
+  int i;
+  Column *pCol;
+  assert( pTable!=0 );
+  for(i=0, pCol=pTable->aCol; i<pTable->nCol; i++, pCol++){
+    sqliteFree(pCol->zName);
+    sqliteFree(pCol->zDflt);
+    sqliteFree(pCol->zType);
+  }
+  sqliteFree(pTable->aCol);
+  pTable->aCol = 0;
+  pTable->nCol = 0;
+}
+
+/*
 ** Remove the memory data structures associated with the given
 ** Table.  No changes are made to disk by this routine.
 **
@@ -344,7 +374,6 @@ void sqlite3CommitInternalChanges(sqlite *db){
 ** unlinked.
 */
 void sqlite3DeleteTable(sqlite *db, Table *pTable){
-  int i;
   Index *pIndex, *pNext;
   FKey *pFKey, *pNextFKey;
 
@@ -371,17 +400,9 @@ void sqlite3DeleteTable(sqlite *db, Table *pTable){
 
   /* Delete the Table structure itself.
   */
-  for(i=0; i<pTable->nCol; i++){
-    Column *pCol = &pTable->aCol[i];
-    sqliteFree(pCol->zName);
-    sqliteFree(pCol->zDflt);
-    sqliteFree(pCol->zType);
-  }
+  sqliteResetColumnNames(pTable);
   sqliteFree(pTable->zName);
-  sqliteFree(pTable->aCol);
-  if( pTable->zColAff ){
-    sqliteFree(pTable->zColAff);
-  }
+  sqliteFree(pTable->zColAff);
   sqlite3SelectDelete(pTable->pSelect);
   sqliteFree(pTable);
 }
@@ -390,26 +411,32 @@ void sqlite3DeleteTable(sqlite *db, Table *pTable){
 ** Unlink the given table from the hash tables and the delete the
 ** table structure with all its indices and foreign keys.
 */
-static void sqliteUnlinkAndDeleteTable(sqlite *db, Table *p){
-  Table *pOld;
+void sqlite3UnlinkAndDeleteTable(sqlite *db, int iDb, const char *zTabName){
+  Table *p;
   FKey *pF1, *pF2;
-  int i = p->iDb;
+  Db *pDb;
+
   assert( db!=0 );
-  pOld = sqlite3HashInsert(&db->aDb[i].tblHash, p->zName, strlen(p->zName)+1,0);
-  assert( pOld==0 || pOld==p );
-  for(pF1=p->pFKey; pF1; pF1=pF1->pNextFrom){
-    int nTo = strlen(pF1->zTo) + 1;
-    pF2 = sqlite3HashFind(&db->aDb[i].aFKey, pF1->zTo, nTo);
-    if( pF2==pF1 ){
-      sqlite3HashInsert(&db->aDb[i].aFKey, pF1->zTo, nTo, pF1->pNextTo);
-    }else{
-      while( pF2 && pF2->pNextTo!=pF1 ){ pF2=pF2->pNextTo; }
-      if( pF2 ){
-        pF2->pNextTo = pF1->pNextTo;
+  assert( iDb>=0 && iDb<db->nDb );
+  assert( zTabName && zTabName[0] );
+  pDb = &db->aDb[iDb];
+  p = sqlite3HashInsert(&pDb->tblHash, zTabName, strlen(zTabName)+1, 0);
+  if( p ){
+    for(pF1=p->pFKey; pF1; pF1=pF1->pNextFrom){
+      int nTo = strlen(pF1->zTo) + 1;
+      pF2 = sqlite3HashFind(&pDb->aFKey, pF1->zTo, nTo);
+      if( pF2==pF1 ){
+        sqlite3HashInsert(&pDb->aFKey, pF1->zTo, nTo, pF1->pNextTo);
+      }else{
+        while( pF2 && pF2->pNextTo!=pF1 ){ pF2=pF2->pNextTo; }
+        if( pF2 ){
+          pF2->pNextTo = pF1->pNextTo;
+        }
       }
     }
+    sqlite3DeleteTable(db, p);
   }
-  sqlite3DeleteTable(db, p);
+  db->flags |= SQLITE_InternChanges;
 }
 
 /*
@@ -1531,28 +1558,6 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
 }
 
 /*
-** Clear the column names from the VIEW pTable.
-**
-** This routine is called whenever any other table or view is modified.
-** The view passed into this routine might depend directly or indirectly
-** on the modified or deleted table so we need to clear the old column
-** names so that they will be recomputed.
-*/
-static void sqliteViewResetColumnNames(Table *pTable){
-  int i;
-  Column *pCol;
-  assert( pTable!=0 && pTable->pSelect!=0 );
-  for(i=0, pCol=pTable->aCol; i<pTable->nCol; i++, pCol++){
-    sqliteFree(pCol->zName);
-    sqliteFree(pCol->zDflt);
-    sqliteFree(pCol->zType);
-  }
-  sqliteFree(pTable->aCol);
-  pTable->aCol = 0;
-  pTable->nCol = 0;
-}
-
-/*
 ** Clear the column names from every VIEW in database idx.
 */
 static void sqliteViewResetAll(sqlite *db, int idx){
@@ -1561,7 +1566,7 @@ static void sqliteViewResetAll(sqlite *db, int idx){
   for(i=sqliteHashFirst(&db->aDb[idx].tblHash); i; i=sqliteHashNext(i)){
     Table *pTab = sqliteHashData(i);
     if( pTab->pSelect ){
-      sqliteViewResetColumnNames(pTab);
+      sqliteResetColumnNames(pTab);
     }
   }
   DbClearProperty(db, idx, DB_UnresetViews);
@@ -1660,11 +1665,7 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView){
     while( pTrigger ){
       assert( pTrigger->iDb==pTab->iDb || pTrigger->iDb==1 );
       sqlite3DropTriggerPtr(pParse, pTrigger, 1);
-      if( pParse->explain ){
-        pTrigger = pTrigger->pNext;
-      }else{
-        pTrigger = pTab->pTrigger;
-      }
+      pTrigger = pTrigger->pNext;
     }
 
     /* Drop all SQLITE_MASTER table and index entries that refer to the
@@ -1685,17 +1686,8 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView){
         sqlite3VdbeAddOp(v, OP_Destroy, pIdx->tnum, pIdx->iDb);
       }
     }
+    sqlite3VdbeOp3(v, OP_DropTable, pTab->iDb, 0, pTab->zName, 0);
     sqlite3EndWriteOperation(pParse);
-  }
-
-  /* Delete the in-memory description of the table.
-  **
-  ** Exception: if the SQL statement began with the EXPLAIN keyword,
-  ** then no changes should be made.
-  */
-  if( !pParse->explain ){
-    sqliteUnlinkAndDeleteTable(db, pTab);
-    db->flags |= SQLITE_InternChanges;
   }
   sqliteViewResetAll(db, iDb);
 
@@ -2192,7 +2184,9 @@ void sqlite3CreateIndex(
 
   /* Clean up before exiting */
 exit_create_index:
-  if( pIndex ) sqliteFree(pIndex);
+  if( pIndex ){
+    freeIndex(pIndex);
+  }
   sqlite3ExprListDelete(pList);
   sqlite3SrcListDelete(pTblName);
   sqliteFree(zName);
@@ -2261,14 +2255,8 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName){
     sqlite3ChangeCookie(db, v, pIndex->iDb);
     sqlite3VdbeAddOp(v, OP_Close, 0, 0);
     sqlite3VdbeAddOp(v, OP_Destroy, pIndex->tnum, pIndex->iDb);
+    sqlite3VdbeOp3(v, OP_DropIndex, pIndex->iDb, 0, pIndex->zName, 0);
     sqlite3EndWriteOperation(pParse);
-  }
-
-  /* Delete the in-memory description of this index.
-  */
-  if( !pParse->explain ){
-    sqlite3UnlinkAndDeleteIndex(db, pIndex);
-    db->flags |= SQLITE_InternChanges;
   }
 
 exit_drop_index:

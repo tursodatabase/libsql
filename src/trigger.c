@@ -141,7 +141,7 @@ void sqlite3BeginTrigger(
     if( sqlite3AuthCheck(pParse, code, zName, pTab->zName, zDbTrig) ){
       goto trigger_cleanup;
     }
-    if( sqlite3AuthCheck(pParse, SQLITE_INSERT, SCHEMA_TABLE(pTab->iDb), 0, zDb)){
+    if( sqlite3AuthCheck(pParse, SQLITE_INSERT, SCHEMA_TABLE(pTab->iDb),0,zDb)){
       goto trigger_cleanup;
     }
   }
@@ -213,13 +213,13 @@ void sqlite3FinishTrigger(
   if( !db->init.busy ){
     static VdbeOpList insertTrig[] = {
       { OP_NewRecno,   0, 0,  0          },
-      { OP_String8,     0, 0,  "trigger"  },
-      { OP_String8,     0, 0,  0          },  /* 2: trigger name */
-      { OP_String8,     0, 0,  0          },  /* 3: table name */
+      { OP_String8,    0, 0,  "trigger"  },
+      { OP_String8,    0, 0,  0          },  /* 2: trigger name */
+      { OP_String8,    0, 0,  0          },  /* 3: table name */
       { OP_Integer,    0, 0,  0          },
-      { OP_String8,     0, 0,  "CREATE TRIGGER "},
-      { OP_String8,     0, 0,  0          },  /* 6: SQL */
-      { OP_Concat8,     2, 0,  0          }, 
+      { OP_String8,    0, 0,  "CREATE TRIGGER "},
+      { OP_String8,    0, 0,  0          },  /* 6: SQL */
+      { OP_Concat8,    2, 0,  0          }, 
       { OP_MakeRecord, 5, 0,  "tttit"    },
       { OP_PutIntKey,  0, 0,  0          },
     };
@@ -239,10 +239,12 @@ void sqlite3FinishTrigger(
       sqlite3ChangeCookie(db, v, nt->iDb);
     }
     sqlite3VdbeAddOp(v, OP_Close, 0, 0);
+    sqlite3VdbeOp3(v, OP_ParseSchema, nt->iDb, 0, 
+       sqlite3MPrintf("type='trigger' AND name='%q'", nt->name), P3_DYNAMIC);
     sqlite3EndWriteOperation(pParse);
   }
 
-  if( !pParse->explain ){
+  if( db->init.busy ){
     Table *pTab;
     sqlite3HashInsert(&db->aDb[nt->iDb].trigHash, 
                      nt->name, strlen(nt->name)+1, nt);
@@ -445,6 +447,15 @@ drop_trigger_cleanup:
 }
 
 /*
+** Return a pointer to the Table structure for the table that a trigger
+** is set on.
+*/
+static Table *tableOfTrigger(sqlite3 *db, Trigger *pTrigger){
+  return sqlite3FindTable(db,pTrigger->table,db->aDb[pTrigger->iTabDb].zName);
+}
+
+
+/*
 ** Drop a trigger given a pointer to that trigger.  If nested is false,
 ** then also generate code to remove the trigger from the SQLITE_MASTER
 ** table.
@@ -453,17 +464,19 @@ void sqlite3DropTriggerPtr(Parse *pParse, Trigger *pTrigger, int nested){
   Table   *pTable;
   Vdbe *v;
   sqlite *db = pParse->db;
+  int iDb;
 
-  assert( pTrigger->iDb<db->nDb );
-  pTable = sqlite3FindTable(db,pTrigger->table,db->aDb[pTrigger->iTabDb].zName);
+  iDb = pTrigger->iDb;
+  assert( iDb>=0 && iDb<db->nDb );
+  pTable = tableOfTrigger(db, pTrigger);
   assert(pTable);
-  assert( pTable->iDb==pTrigger->iDb || pTrigger->iDb==1 );
+  assert( pTable->iDb==iDb || iDb==1 );
 #ifndef SQLITE_OMIT_AUTHORIZATION
   {
     int code = SQLITE_DROP_TRIGGER;
-    const char *zDb = db->aDb[pTrigger->iDb].zName;
-    const char *zTab = SCHEMA_TABLE(pTrigger->iDb);
-    if( pTrigger->iDb==1 ) code = SQLITE_DROP_TEMP_TRIGGER;
+    const char *zDb = db->aDb[iDb].zName;
+    const char *zTab = SCHEMA_TABLE(iDb);
+    if( iDb==1 ) code = SQLITE_DROP_TEMP_TRIGGER;
     if( sqlite3AuthCheck(pParse, code, pTrigger->name, pTable->zName, zDb) ||
       sqlite3AuthCheck(pParse, SQLITE_DELETE, zTab, 0, zDb) ){
       return;
@@ -487,20 +500,26 @@ void sqlite3DropTriggerPtr(Parse *pParse, Trigger *pTrigger, int nested){
       { OP_Next,       0, ADDR(1),  0}, /* 8 */
     };
 
-    sqlite3BeginWriteOperation(pParse, 0, pTrigger->iDb);
-    sqlite3OpenMasterTable(v, pTrigger->iDb);
+    sqlite3BeginWriteOperation(pParse, 0, iDb);
+    sqlite3OpenMasterTable(v, iDb);
     base = sqlite3VdbeAddOpList(v,  ArraySize(dropTrigger), dropTrigger);
     sqlite3VdbeChangeP3(v, base+1, pTrigger->name, 0);
-    sqlite3ChangeCookie(db, v, pTrigger->iDb);
+    sqlite3ChangeCookie(db, v, iDb);
     sqlite3VdbeAddOp(v, OP_Close, 0, 0);
+    sqlite3VdbeOp3(v, OP_DropTrigger, iDb, 0, pTrigger->name, 0);
   }
+}
 
-  /*
-  ** If this is not an "explain", then delete the trigger structure.
-  */
-  if( !pParse->explain ){
-    const char *zName = pTrigger->name;
-    int nName = strlen(zName);
+/*
+** Remove a trigger from the hash tables of the sqlite* pointer.
+*/
+void sqlite3UnlinkAndDeleteTrigger(sqlite3 *db, int iDb, const char *zName){
+  Trigger *pTrigger;
+  int nName = strlen(zName);
+  pTrigger = sqlite3HashInsert(&(db->aDb[iDb].trigHash), zName, nName+1, 0);
+  if( pTrigger ){
+    Table *pTable = tableOfTrigger(db, pTrigger);
+    assert( pTable!=0 );
     if( pTable->pTrigger == pTrigger ){
       pTable->pTrigger = pTrigger->pNext;
     }else{
@@ -514,8 +533,8 @@ void sqlite3DropTriggerPtr(Parse *pParse, Trigger *pTrigger, int nested){
       }
       assert(cc);
     }
-    sqlite3HashInsert(&(db->aDb[pTrigger->iDb].trigHash), zName, nName+1, 0);
     sqlite3DeleteTrigger(pTrigger);
+    db->flags |= SQLITE_InternChanges;
   }
 }
 
