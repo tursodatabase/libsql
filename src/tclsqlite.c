@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.59 2004/02/25 22:51:06 rdc Exp $
+** $Id: tclsqlite.c,v 1.59.2.1 2004/06/19 11:57:40 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -1165,12 +1165,18 @@ int Et_AppInit(Tcl_Interp *interp){
   return Sqlite_Init(interp);
 }
 #endif
+/***************************************************************************
+** The remaining code is only included if the TCLSH macro is defined to
+** be an integer greater than 0
+*/
+#if defined(TCLSH) && TCLSH>0
 
 /*
 ** If the macro TCLSH is defined and is one, then put in code for the
-** "main" routine that will initialize Tcl.
+** "main" routine that implement a interactive shell into which the user
+** can type TCL commands.
 */
-#if defined(TCLSH) && TCLSH==1
+#if TCLSH==1
 static char zMainloop[] =
   "set line {}\n"
   "while {![eof stdin]} {\n"
@@ -1193,27 +1199,39 @@ static char zMainloop[] =
     "}\n"
   "}\n"
 ;
+#endif /* TCLSH==1 */
 
-#define TCLSH_MAIN main   /* Needed to fake out mktclapp */
-int TCLSH_MAIN(int argc, char **argv){
-  Tcl_Interp *interp;
-  Tcl_FindExecutable(argv[0]);
-  interp = Tcl_CreateInterp();
+int Libsqlite_Init( Tcl_Interp *interp) {
+#ifdef TCL_THREADS
+  if (Thread_Init(interp) == TCL_ERROR) {
+    return TCL_ERROR;
+  }
+#endif
   Sqlite_Init(interp);
 #ifdef SQLITE_TEST
   {
     extern int Sqlitetest1_Init(Tcl_Interp*);
     extern int Sqlitetest2_Init(Tcl_Interp*);
     extern int Sqlitetest3_Init(Tcl_Interp*);
-    extern int Sqlitetest4_Init(Tcl_Interp*);
     extern int Md5_Init(Tcl_Interp*);
     Sqlitetest1_Init(interp);
     Sqlitetest2_Init(interp);
     Sqlitetest3_Init(interp);
-    Sqlitetest4_Init(interp);
     Md5_Init(interp);
+    Tcl_StaticPackage(interp, "sqlite", Libsqlite_Init, Libsqlite_Init);
   }
 #endif
+  return TCL_OK;
+}
+
+#define TCLSH_MAIN main   /* Needed to fake out mktclapp */
+#if TCLSH==1
+int TCLSH_MAIN(int argc, char **argv){
+#ifndef TCL_THREADS
+  Tcl_Interp *interp;
+  Tcl_FindExecutable(argv[0]);
+  interp = Tcl_CreateInterp();
+  Libsqlite_Init(interp);
   if( argc>=2 ){
     int i;
     Tcl_SetVar(interp,"argv0",argv[1],TCL_GLOBAL_ONLY);
@@ -1226,13 +1244,50 @@ int TCLSH_MAIN(int argc, char **argv){
       const char *zInfo = Tcl_GetVar(interp, "errorInfo", TCL_GLOBAL_ONLY);
       if( zInfo==0 ) zInfo = interp->result;
       fprintf(stderr,"%s: %s\n", *argv, zInfo);
-      return 1;
+      return TCL_ERROR;
     }
   }else{
     Tcl_GlobalEval(interp, zMainloop);
   }
   return 0;
+#else
+  Tcl_Main(argc, argv, Libsqlite_Init);
+#endif /* TCL_THREADS */
+  return 0;
 }
+#endif /* TCLSH==1 */
+
+
+/*
+** If the macro TCLSH is set to 2, then implement a space analysis tool.
+*/
+#if TCLSH==2
+static char zAnalysis[] = 
+#include "spaceanal_tcl.h"
+;
+
+int main(int argc, char **argv){
+  Tcl_Interp *interp;
+  int i;
+  Tcl_FindExecutable(argv[0]);
+  interp = Tcl_CreateInterp();
+  Libsqlite_Init(interp);
+  Tcl_SetVar(interp,"argv0",argv[0],TCL_GLOBAL_ONLY);
+  Tcl_SetVar(interp,"argv", "", TCL_GLOBAL_ONLY);
+  for(i=1; i<argc; i++){
+    Tcl_SetVar(interp, "argv", argv[i],
+        TCL_GLOBAL_ONLY | TCL_LIST_ELEMENT | TCL_APPEND_VALUE);
+  }
+  if( Tcl_GlobalEval(interp, zAnalysis)!=TCL_OK ){
+    const char *zInfo = Tcl_GetVar(interp, "errorInfo", TCL_GLOBAL_ONLY);
+    if( zInfo==0 ) zInfo = interp->result;
+    fprintf(stderr,"%s: %s\n", *argv, zInfo);
+    return TCL_ERROR;
+  }
+  return 0;
+}
+#endif /* TCLSH==2 */
+
 #endif /* TCLSH */
 
-#endif /* !defined(NO_TCL) */
+#endif /* NO_TCL */

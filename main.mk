@@ -156,6 +156,20 @@ sqlite$(EXE):	$(TOP)/src/shell.c libsqlite.a sqlite.h
 	$(TCCX) $(READLINE_FLAGS) -o sqlite$(EXE) $(TOP)/src/shell.c \
 		libsqlite.a $(LIBREADLINE) $(THREADLIB)
 
+sqlite_analyzer$(EXE):	$(TOP)/src/tclsqlite.c libsqlite.a $(TESTSRC) \
+			$(TOP)/tool/spaceanal.tcl
+	sed \
+	  -e '/^#/d' \
+	  -e 's,\\,\\\\,g' \
+	  -e 's,",\\",g' \
+	  -e 's,^,",' \
+	  -e 's,$$,\\n",' \
+	  $(TOP)/tool/spaceanal.tcl >spaceanal_tcl.h
+	$(TCCX) $(TCL_FLAGS) -DTCLSH=2 -DSQLITE_TEST=1 -static -o \
+ 		sqlite_analyzer$(EXE) $(TESTSRC) $(TOP)/src/tclsqlite.c \
+		libsqlite.a $(LIBTCL)
+
+
 # This target creates a directory named "tsrc" and fills it with
 # copies of all of the C source code and header files needed to
 # build on the target system.  Some of the C source code and header

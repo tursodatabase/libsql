@@ -26,7 +26,7 @@ chmod +x $srcdir/install-sh
 VERS=`cat $srcdir/VERSION`
 VERSW=`sed 's/\./_/g' $srcdir/VERSION`
 
-# Start building stuff.
+# Start by building an sqlite shell for linux.
 #
 make clean
 make sqlite
@@ -184,7 +184,7 @@ mkdir $HOME/rpm/SRPMS
 mkdir $HOME/rpm/SPECS
 
 # create the spec file from the template
-sed s/SQLITE_VERSION/$vers/g $srcdir/spec.template > $HOME/rpm/SPECS/sqlite.spec
+sed s/SQLITE_VERSION/$VERS/g $srcdir/spec.template > $HOME/rpm/SPECS/sqlite.spec
 
 # copy the source tarball to the rpm directory
 cp doc/sqlite-$VERS.tar.gz $HOME/rpm/SOURCES/.
