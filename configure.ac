@@ -1,9 +1,4 @@
 #
-# This file describes a "configure" script that is used to build
-# makefiles for a particular platform.  Process this file using 
-# Autoconf version 1.13 in order to generate that script.  All 
-# lines of this file up to the AC_INIT macro are ignored.
-#
 # The build process allows for using a cross-compiler.  But the default
 # action is to target the same platform that we are running on.  The
 # configure script needs to discover the following properties of the 
@@ -65,7 +60,8 @@
 #    TCL_*
 #
 #        Lots of values are read in from the tclConfig.sh script,
-#        if that script is available.
+#        if that script is available.  This values are used for
+#        constructing and installing the TCL extension.
 #
 #    TARGET_READLINE_LIBS
 #
@@ -120,7 +116,7 @@ AC_INIT(src/sqlite.h.in)
 dnl Put the RCS revision string after AC_INIT so that it will also
 dnl show in in configure.
 # The following RCS revision string applies to configure.in
-# $Revision: 1.12 $
+# $Revision: 1.13 $
 
 #########
 # Programs needed
@@ -136,11 +132,12 @@ if test "$program_prefix" = "NONE"; then
 fi
 AC_SUBST(program_prefix)
 
-if test -f VERSION; then
-  VERSION=`cat VERSION`
-  echo "Version set to $VERSION"
-fi
+VERSION=[`cat $srcdir/VERSION | sed 's/^\([0-9]*\.*[0-9]*\).*/\1/'`]
+echo "Version set to $VERSION"
 AC_SUBST(VERSION)
+RELEASE=`cat $srcdir/VERSION`
+echo "Release set to $RELEASE"
+AC_SUBST(RELEASE)
 
 #########
 # Check to see if the --with-hints=FILE option is used.  If there is none,
