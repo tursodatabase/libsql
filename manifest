@@ -1,5 +1,5 @@
-C Documentation\supdates\s(CVS\s2015)
-D 2004-10-10T18:00:47
+C The\smkopcodeh.awk\sscript\sremoves\s\\r\sfor\suse\swith\smsys.\s\sTicket\s#954.\s(CVS\s2016)
+D 2004-10-10T19:11:36
 F Makefile.in 52c1cc106cad9148d4b7cb387b458e82dc86b339
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -20,7 +20,7 @@ F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
 F main.mk bf65bb9f839aa8777796c9846816be590a7cd4b0
 F mkdll.sh 468d4f41d3ea98221371df4825cfbffbaac4d7e4
 F mkopcodec.awk 80311cdeb16d78017cc62e4ad6c6d008e5fe0e17
-F mkopcodeh.awk 0e4d553956adecb750b7311d7a443cf203379b92
+F mkopcodeh.awk 877459a51b4c75a99d7336159790aca51e4c2cad
 F mkso.sh 7b67da1d63070875ba948e749aee9ef50ce36e3d
 F publish.sh 72bde067dda3fc2d33e92f20253b924e3b97da30
 F spec.template b2f6c4e488cbc3b993a57deba22cbc36203c4da3
@@ -252,7 +252,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl fdacb0ba2d39831e8a6240d05a490026ad4c4e4c
-P 16e2ace2db5c051aefe7f72504ad6c1cc5e7a0f4
-R 044fc47f5f0df07bfbaa4c878503df88
+P a4546c09d7a42f9086e63a38008a87df030b4374
+R 4bd86439cf3c601cb1055f0e2e3b0427
 U drh
-Z fb6ef68b6b212d45c47bd957b29caef4
+Z 712f414f010d71216995b1387c12cdf0

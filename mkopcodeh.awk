@@ -22,6 +22,7 @@
 /^case OP_/ {
   name = $2
   gsub(/:/,"",name)
+  gsub("\r","",name)
   op[name] = -1
   for(i=3; i<NF-2; i++){
     if($i=="same" && $(i+1)=="as"){
