@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.140 2004/05/15 00:29:24 drh Exp $
+** $Id: btree.c,v 1.141 2004/05/16 16:24:37 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -2812,7 +2812,8 @@ static int balance(MemPage *pPage){
   assert( pPage->isInit );
   assert( sqlite3pager_iswriteable(pPage->aData) );
   pBt = pPage->pBt;
-  if( !pPage->isOverfull && pPage->nFree<pBt->usableSize*2/3 && pPage->nCell>=2){
+  if( !pPage->isOverfull && pPage->nFree<pBt->usableSize*2/3
+        && pPage->nCell>=2){
     relinkCellList(pPage);
     return SQLITE_OK;
   }
@@ -3004,10 +3005,13 @@ static int balance(MemPage *pPage){
   **
   ** If the siblings are on leaf pages, then the child pointers of the
   ** divider cells are stripped from the cells before they are copied
-  ** into aSpace[].  In this wall, all cells in apCell[] are without
+  ** into aSpace[].  In this way, all cells in apCell[] are without
   ** child pointers.  If siblings are not leaves, then all cell in
   ** apCell[] include child pointers.  Either way, all cells in apCell[]
   ** are alike.
+  **
+  ** leafCorrection:  4 if pPage is a leaf.  0 if pPage is not a leaf.
+  **       leafData:  1 if pPage holds key+data and pParent holds only keys.
   */
   nCell = 0;
   leafCorrection = pPage->leaf*4;
@@ -3022,6 +3026,11 @@ static int balance(MemPage *pPage){
     if( i<nOld-1 ){
       int sz = cellSize(pParent, apDiv[i]);
       if( leafData ){
+        /* With the LEAFDATA flag, pParent cells hold only INTKEYs that
+        ** are duplicates of keys on the child pages.  We need to remove
+        ** the divider cells from pParent, but the dividers cells are not
+        ** added to apCell[] because they are duplicates of child cells.
+        */
         dropCell(pParent, nxDiv, sz);
       }else{
         u8 *pTemp;
@@ -3054,8 +3063,14 @@ static int balance(MemPage *pPage){
   ** in apCell[] of the cell that divides page i from page i+1.  
   ** cntNew[k] should equal nCell.
   **
-  ** This little patch of code is critical for keeping the tree
-  ** balanced. 
+  ** Values computed by this block:
+  **
+  **           k: The total number of sibling pages
+  **    szNew[i]: Spaced used on the i-th sibling page.
+  **   cntNew[i]: Index in apCell[] and szCell[] for the first cell to
+  **              the right of the i-th sibling page.
+  ** usableSpace: Number of bytes of space available on each sibling.
+  ** 
   */
   usableSpace = pBt->usableSize - 10 + leafCorrection;
   for(subtotal=k=i=0; i<nCell; i++){
@@ -3071,13 +3086,34 @@ static int balance(MemPage *pPage){
   szNew[k] = subtotal;
   cntNew[k] = nCell;
   k++;
+
+  /*
+  ** The packing computed by the previous block is biased toward the siblings
+  ** on the left side.  The left siblings are always nearly full, while the
+  ** right-most sibling might be nearly empty.  This block of code attempts
+  ** to adjust the packing of siblings to get a better balance.
+  **
+  ** This adjustment is more than an optimization.  The packing above might
+  ** be so out of balance as to be illegal.  For example, the right-most
+  ** sibling might be completely empty.  This adjustment is not optional.
+  */
   for(i=k-1; i>0; i--){
-    while( szNew[i]<usableSpace/2 ){
+    int szRight = szNew[i];  /* Size of sibling on the right */
+    int szLeft = szNew[i-1]; /* Size of sibling on the left */
+    int r;              /* Index of right-most cell in left sibling */
+    int d;              /* Index of first cell to the left of right sibling */
+
+    r = cntNew[i-1] - 1;
+    d = r + 1 - leafData;
+    while( szRight==0 || szRight+szCell[d]<=szLeft-szCell[r] ){
+      szRight += szCell[d];
+      szLeft -= szCell[r];
       cntNew[i-1]--;
-      assert( cntNew[i-1]>0 );
-      szNew[i] += szCell[cntNew[i-1]];
-      szNew[i-1] -= szCell[cntNew[i-1]-1];
+      r = cntNew[i-1] - 1;
+      d = r + 1 - leafData;
     }
+    szNew[i] = szRight;
+    szNew[i-1] = szLeft;
   }
   assert( cntNew[0]>0 );
 

@@ -1,5 +1,5 @@
-C Fix\stwo\sbugs\sthat\swere\scausing\slots\sof\stests\sto\sfail.\s(CVS\s1386)
-D 2004-05-16T11:57:28
+C Fix\sa\sbug\sin\sthe\sBTree\sbalancing\sroutine.\s(CVS\s1387)
+D 2004-05-16T16:24:37
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -23,7 +23,7 @@ F sqlite.def fc4f5734786fe4743cfe2aa98eb2da4b089edb5f
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F src/attach.c c315c58cb16fd6e913b3bfa6412aedecb4567fa5
 F src/auth.c 5c2f0bea4729c98c2be3b69d6b466fc51448fe79
-F src/btree.c 05aefd3eec56690d9731bf090203b57d8ae4bf19
+F src/btree.c bf8d9592b66fb9ba89a5be13fd99a7d8b8a67d7f
 F src/btree.h 6f51ad0ffebfba71295fcacdbe86007512200050
 F src/btree_rb.c 9d7973e266ee6f9c61ce592f68742ce9cd5b10e5
 F src/build.c fd37eda7100d2507c647df43f9f3ce56a2f59ab4
@@ -192,7 +192,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P a4af838f8d1b81ec6c8db97655c6876aca0738d9
-R a401956638c6d55c9de15d1b9c3564d6
-U danielk1977
-Z d5bacfd02a451c5d78cf0909159519e5
+P 5cba8a510c0aeae740db695e960c60e5f6c303f5
+R 25cd950de731900e925b6b5361c9fbb9
+U drh
+Z fd6768d10af70b66f5ace479a66938d7
