@@ -1,5 +1,5 @@
-C Change\sthe\sway\stoken\smemory\sis\sallocated\sin\san\seffort\sto\sfix\sticket\s#136.\nThere\sis\snow\sa\smemory\sleak\swhen\susing\sviews\sof\sviews.\s(CVS\s725)
-D 2002-08-24T18:24:52
+C Fix\sthe\smemory\sleak\sintroduced\sby\scheck-in\s(725).\s(CVS\s726)
+D 2002-08-25T18:29:12
 F Makefile.in bcb81f40d9a17bd94f59e67157b1e1c54c046c2b
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -37,7 +37,7 @@ F src/pager.h 6991c9c2dc5e4c7f2df4d4ba47d1c6458f763a32
 F src/parse.y 1b180e14b6346e323bd4279469748716f412cc1c
 F src/printf.c 5c50fc1da75c8f5bf432b1ad17d91d6653acd167
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
-F src/select.c 7aa3c3784452ca8f154ae9b3b250ccedc1633354
+F src/select.c bef25919ad813685d60d03a393728bf5766ec0cb
 F src/shell.c 9e9a6eb6bca07f01e6472a603f908a0127ea50ff
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in d3999a9c6374675779058d6cfe5431131618e92b
@@ -51,8 +51,8 @@ F src/threadtest.c 72bce0a284647314847bbea44616ceb056bfb77f
 F src/tokenize.c 8bd6251e5237c9a16d0bbfb9894925eb129985fa
 F src/trigger.c cc8c6769c2ca37166490ed2b305986268faa3bf8
 F src/update.c f07e6ed2c517c92871e54d3f5886d1cf56121b11
-F src/util.c bdbf0aedcec21ede2248126bbbe734bcc070b7c8
-F src/vdbe.c 5b3bb8ac3bb8dd777abd9fae64a293bfdcc13c54
+F src/util.c 60bc91db77cf488618ec4720cb06eedb7f959268
+F src/vdbe.c 92bcd4661641fba76680c762971bdca7995594d6
 F src/vdbe.h a9292f2b5fcecef924fa255fb74609e9cbc776c2
 F src/where.c ce42cce65d7bf42341627f3fb0a17f69fea6a4f4
 F test/all.test efd958d048c70a3247997c482f0b33561f7759f0
@@ -109,12 +109,12 @@ F test/unique.test 572aa791327c1e8d797932263e9d67f176cfdb44
 F test/update.test 7ffb062d580a972e7870d0f51d5af3ab9bfeae08
 F test/vacuum.test 059871b312eb910bbe49dafde1d01490cc2c6bbe
 F test/version.test c7057526e14c7e3da5718b88e7f566f4182fd5c5
-F test/view.test e4d60d68ea3965fe0cc8fa83ba9aa42e23199801
+F test/view.test ed18cebaa19fa949cad4bc7e7f2d8d71001153cf
 F test/where.test c7aba40ad9178acf9c898e53aac9e447e2d2f2f7
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/lemon.c 022adc2830c2705828f744d2c59798bd462eb465
 F tool/lempar.c 73a991cc3017fb34804250fa901488b5147b3717
-F tool/memleak.awk 296dfbce7a9ca499b95ce04e30334e64a50052e0
+F tool/memleak.awk 16ef9493dcd36146f806e75148f4bb0201a123ec
 F tool/opNames.awk 5ba1f48aa854ee3b7c3d2b54233665bc3e649ea2
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/renumberOps.awk 6d067177ad5f8d711b79577b462da9b3634bd0a9
@@ -147,7 +147,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 97fc4a71a12b52cda67b5192c3bd7bd10ac0c7a6
-R e9cbaf493a319211c9d9a2010395d53a
+P 22d8726e61eec0e53893f492cb2163824b87a23e
+R 4234452349011dbb44aad5f2e4ed57e1
 U drh
-Z df71dce9abf1e8c9e6b3a2493526cd33
+Z 4b5d6fc436ecc6188dd50e32ce24f78e

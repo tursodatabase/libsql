@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.48 2002/08/13 23:02:57 drh Exp $
+** $Id: util.c,v 1.49 2002/08/25 18:29:12 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -39,6 +39,9 @@ int sqlite_malloc_failed = 0;
 int sqlite_nMalloc;         /* Number of sqliteMalloc() calls */
 int sqlite_nFree;           /* Number of sqliteFree() calls */
 int sqlite_iMallocFail;     /* Fail sqliteMalloc() after this many calls */
+#if MEMORY_DEBUG>1
+static int memcnt = 0;
+#endif
 
 
 /*
@@ -75,7 +78,8 @@ void *sqliteMalloc_(int n, char *zFile, int line){
   p = &pi[2];
   memset(p, 0, n);
 #if MEMORY_DEBUG>1
-  fprintf(stderr,"malloc %d bytes at 0x%x from %s:%d\n", n, (int)p, zFile,line);
+  fprintf(stderr,"%06d malloc %d bytes at 0x%x from %s:%d\n",
+      ++memcnt, n, (int)p, zFile,line);
 #endif
   return p;
 }
@@ -101,7 +105,8 @@ void sqliteFree_(void *p, char *zFile, int line){
     }
     memset(pi, 0xff, (k+3)*sizeof(int));
 #if MEMORY_DEBUG>1
-    fprintf(stderr,"free %d bytes at 0x%x from %s:%d\n", n, (int)p, zFile,line);
+    fprintf(stderr,"%06d free %d bytes at 0x%x from %s:%d\n",
+         ++memcnt, n, (int)p, zFile,line);
 #endif
     free(pi);
   }
@@ -151,8 +156,8 @@ void *sqliteRealloc_(void *oldP, int n, char *zFile, int line){
   memset(oldPi, 0, (oldK+3)*sizeof(int));
   free(oldPi);
 #if MEMORY_DEBUG>1
-  fprintf(stderr,"realloc %d to %d bytes at 0x%x to 0x%x at %s:%d\n", oldN, n,
-    (int)oldP, (int)p, zFile, line);
+  fprintf(stderr,"%06d realloc %d to %d bytes at 0x%x to 0x%x at %s:%d\n",
+    ++memcnt, oldN, n, (int)oldP, (int)p, zFile, line);
 #endif
   return p;
 }

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.108 2002/08/24 18:24:54 drh Exp $
+** $Id: select.c,v 1.109 2002/08/25 18:29:12 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -808,6 +808,7 @@ static int fillInColumnList(Parse *pParse, Select *p){
         if( sqliteViewGetColumnNames(pParse, pTab) ){
           return 1;
         }
+        sqliteSelectDelete(pTabList->a[i].pSelect);
         pTabList->a[i].pSelect = sqliteSelectDup(pTab->pSelect);
       }
     }
@@ -1309,8 +1310,11 @@ static void substExpr(Expr *pExpr, int iTable, ExprList *pEList, int iSub){
     pNew = pEList->a[pExpr->iColumn].pExpr;
     assert( pNew!=0 );
     pExpr->op = pNew->op;
+    assert( pExpr->pLeft==0 );
     pExpr->pLeft = sqliteExprDup(pNew->pLeft);
+    assert( pExpr->pRight==0 );
     pExpr->pRight = sqliteExprDup(pNew->pRight);
+    assert( pExpr->pList==0 );
     pExpr->pList = sqliteExprListDup(pNew->pList);
     pExpr->iTable = pNew->iTable;
     pExpr->iColumn = pNew->iColumn;
@@ -1495,6 +1499,7 @@ int flattenSubquery(Select *p, int iFrom, int isAgg, int subqueryIsAgg){
   }
   pSrc->a[iFrom].pTab = pSubSrc->a[0].pTab;
   pSubSrc->a[0].pTab = 0;
+  assert( pSrc->a[iFrom].pSelect==pSub );
   pSrc->a[iFrom].pSelect = pSubSrc->a[0].pSelect;
   pSubSrc->a[0].pSelect = 0;
   sqliteSelectDelete(pSub);

@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.169 2002/08/15 01:26:10 drh Exp $
+** $Id: vdbe.c,v 1.170 2002/08/25 18:29:13 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -253,6 +253,16 @@ struct Vdbe {
 };
 
 /*
+** When debugging the code generator in a symbolic debugger, on can
+** set the sqlite_vdbe_addop_trace to 1 and all opcodes will be printed
+** as they are added to the instruction stream.
+*/
+#ifndef NDEBUG
+int sqlite_vdbe_addop_trace = 0;
+static void vdbePrintOp(FILE*, int, Op*);
+#endif
+
+/*
 ** Create a new virtual database engine.
 */
 Vdbe *sqliteVdbeCreate(sqlite *db){
@@ -312,6 +322,9 @@ int sqliteVdbeAddOp(Vdbe *p, int op, int p1, int p2){
   p->aOp[i].p2 = p2;
   p->aOp[i].p3 = 0;
   p->aOp[i].p3type = P3_NOTUSED;
+#ifndef NDEBUG
+  if( sqlite_vdbe_addop_trace ) vdbePrintOp(0, i, &p->aOp[i]);
+#endif
   return i;
 }
 
@@ -397,6 +410,9 @@ int sqliteVdbeAddOpList(Vdbe *p, int nOp, VdbeOp const *aOp){
       p->aOp[i+addr] = aOp[i];
       if( p2<0 ) p->aOp[i+addr].p2 = addr + ADDR(p2);
       p->aOp[i+addr].p3type = aOp[i].p3 ? P3_STATIC : P3_NOTUSED;
+#ifndef NDEBUG
+      if( sqlite_vdbe_addop_trace ) vdbePrintOp(0, i+addr, &p->aOp[i+addr]);
+#endif
     }
     p->nOp += nOp;
   }
@@ -1266,6 +1282,26 @@ static char *vdbe_fgets(char *zBuf, int nBuf, FILE *in){
   return i>0 ? zBuf : 0;
 }
 
+#ifndef NDEBUG
+/*
+** Print a single opcode.  This routine is used for debugging only.
+*/
+static void vdbePrintOp(FILE *pOut, int pc, Op *pOp){
+  char *zP3;
+  char zPtr[40];
+  if( pOp->p3type==P3_POINTER ){
+    sprintf(zPtr, "ptr(%#x)", (int)pOp->p3);
+    zP3 = zPtr;
+  }else{
+    zP3 = pOp->p3;
+  }
+  if( pOut==0 ) pOut = stdout;
+  fprintf(pOut,"%4d %-12s %4d %4d %s\n",
+      pc, zOpName[pOp->opcode], pOp->p1, pOp->p2, zP3 ? zP3 : "");
+  fflush(pOut);
+}
+#endif
+
 /*
 ** Execute the program in the VDBE.
 **
@@ -1358,17 +1394,7 @@ int sqliteVdbeExec(
     */
 #ifndef NDEBUG
     if( p->trace ){
-      char *zP3;
-      char zPtr[40];
-      if( pOp->p3type==P3_POINTER ){
-        sprintf(zPtr, "ptr(%#x)", (int)pOp->p3);
-        zP3 = zPtr;
-      }else{
-        zP3 = pOp->p3;
-      }
-      fprintf(p->trace,"%4d %-12s %4d %4d %s\n",
-        pc, zOpName[pOp->opcode], pOp->p1, pOp->p2, zP3 ? zP3 : "");
-      fflush(p->trace);
+      vdbePrintOp(p->trace, pc, pOp);
     }
 #endif
 
