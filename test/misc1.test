@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc1.test,v 1.7 2002/06/06 23:42:28 drh Exp $
+# $Id: misc1.test,v 1.8 2002/06/09 01:16:01 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -237,6 +237,26 @@ do_test misc1-8.2 {
     SELECT t1.*;
   }
 } {1 {no such table: t1}}
+
+execsql {
+  DROP TABLE t1;
+  DROP TABLE t2;
+  DROP TABLE t3;
+  DROP TABLE t4;
+}
+
+# If an integer is too big to be represented as a 32-bit machine integer,
+# then treat it as a string.
+#
+do_test misc1-9.1 {
+  catchsql {
+    CREATE TABLE t1(a unique not null, b unique not null);
+    INSERT INTO t1 VALUES('a',12345678901234567890);
+    INSERT INTO t1 VALUES('b',12345678911234567890);
+    INSERT INTO t1 VALUES('c',12345678921234567890);
+    SELECT * FROM t1;
+  }
+} {0 {a 12345678901234567890 b 12345678911234567890 c 12345678921234567890}}
 
 
 finish_test

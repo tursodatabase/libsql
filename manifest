@@ -1,5 +1,5 @@
-C Add\soptimizations\sfor\sthe\sIN\soperator\sin\sWHERE\sclauses.\s\sThis\sis\sa\spartial\nimplementation\sof\senhancement\s#63.\s\sStill\sneed\sto\sadd\stest\scases.\s(CVS\s610)
-D 2002-06-08T23:25:09
+C Fix\sfor\sticket\s#65:\sIf\san\sinteger\svalue\sis\stoo\sbig\sto\sbe\srepresented\sas\sa\n32-bit\sinteger,\sthen\streat\sit\sas\sa\sstring.\s(CVS\s611)
+D 2002-06-09T01:16:01
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -23,7 +23,7 @@ F src/btree.h 8abeabfe6e0b1a990b64fa457592a6482f6674f3
 F src/build.c 36e42718a7a94f554ea39508993378482f5335c7
 F src/delete.c a2b098cbbf518e6b641847e26de85827793bc523
 F src/encode.c 346b12b46148506c32038524b95c4631ab46d760
-F src/expr.c 8ce9c22655735ff62b1e33ab11ad9d44c4ab99c6
+F src/expr.c cd2e3311c84533fad19336d3bbfdc3be3400d377
 F src/func.c 061a520a122da7e4f9dcac15697bb996aac7d5df
 F src/hash.c 6a6236b89c8c060c65dabd300a1c8ce7c10edb72
 F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
@@ -77,7 +77,7 @@ F test/lock.test 3fcfd46a73119f6a18094673328a32c7b3047a8f
 F test/main.test c66b564554b770ee7fdbf6a66c0cd90329bc2c85
 F test/malloc.test 7ba32a9ebd3aeed52ae4aaa6d42ca37e444536fd
 F test/minmax.test 29bc5727c3e4c792d5c4745833dd4b505905819e
-F test/misc1.test 87490d33b36022610d1e56d1bd5c5b1edfebe753
+F test/misc1.test faae0b01cce45a75fe8011b1f462c3ef36fb9bda
 F test/misuse.test a3aa2b18a97e4c409a1fcaff5151a4dd804a0162
 F test/notnull.test b1f3e42fc475b0b5827b27b2e9b562081995ff30
 F test/null.test 5c2b57307e4b6178aae825eb65ddbee01e76b0fd
@@ -136,7 +136,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P d939294994e5f6c7862b66573301e111e56a2681
-R 3ccd9ba147258740a1a4d6ac8604b91f
+P 8481e841ebdeabe07bf780246bda1aa053eb60b7
+R 6174dd4e5dfa7253bbd8e3c34a08582a
 U drh
-Z 0bb147d1fd50388db4609fcd1f1c4973
+Z 84f663882ed0b11c01ed6267485637fc
