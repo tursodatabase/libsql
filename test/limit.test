@@ -12,7 +12,7 @@
 # focus of this file is testing the LIMIT ... OFFSET ... clause
 #  of SELECT statements.
 #
-# $Id: limit.test,v 1.20 2005/01/15 01:52:33 drh Exp $
+# $Id: limit.test,v 1.21 2005/01/20 02:17:02 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -331,29 +331,31 @@ do_test limit-9.2 {
     SELECT * FROM (SELECT * FROM t7 LIMIT 3);
   }
 } {1 2 3}
-do_test limit-9.3 {
-  execsql {
-    SELECT * FROM (SELECT * FROM t6 LIMIT 3)
-    UNION
-    SELECT * FROM (SELECT * FROM t7 LIMIT 3)
-    ORDER BY 1
-  }
-} {1 2 3}
-do_test limit-9.4 {
-  execsql {
-    SELECT * FROM (SELECT * FROM t6 LIMIT 3)
-    UNION
-    SELECT * FROM (SELECT * FROM t7 LIMIT 3)
-    ORDER BY 1
-    LIMIT 2
-  }
-} {1 2}
-do_test limit-9.5 {
-  catchsql {
-    SELECT * FROM t6 LIMIT 3
-    UNION
-    SELECT * FROM t7 LIMIT 3
-  }
-} {1 {LIMIT clause should come after UNION not before}}
+ifcapable compound {
+  do_test limit-9.3 {
+    execsql {
+      SELECT * FROM (SELECT * FROM t6 LIMIT 3)
+      UNION
+      SELECT * FROM (SELECT * FROM t7 LIMIT 3)
+      ORDER BY 1
+    }
+  } {1 2 3}
+  do_test limit-9.4 {
+    execsql {
+      SELECT * FROM (SELECT * FROM t6 LIMIT 3)
+      UNION
+      SELECT * FROM (SELECT * FROM t7 LIMIT 3)
+      ORDER BY 1
+      LIMIT 2
+    }
+  } {1 2}
+  do_test limit-9.5 {
+    catchsql {
+      SELECT * FROM t6 LIMIT 3
+      UNION
+      SELECT * FROM t7 LIMIT 3
+    }
+  } {1 {LIMIT clause should come after UNION not before}}
+}
 
 finish_test

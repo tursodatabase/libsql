@@ -11,10 +11,17 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the 'progress callback'.
 #
-# $Id: progress.test,v 1.4 2004/10/18 21:34:47 drh Exp $
+# $Id: progress.test,v 1.5 2005/01/20 02:17:02 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+# If the progress callback is not available in this build, skip this
+# whole file.
+ifcapable !progress {
+  finish_test
+  return
+}
 
 # Build some test data
 #

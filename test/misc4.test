@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc4.test,v 1.11 2005/01/18 17:20:10 drh Exp $
+# $Id: misc4.test,v 1.12 2005/01/20 02:17:02 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -122,24 +122,26 @@ do_test misc4-4.1 {
 # Ticket #1036.  When creating tables from a SELECT on a view, use the
 # short names of columns.
 #
-do_test misc4-5.1 {
-  execsql {
-    create table t4(a,b);
-    create table t5(a,c);
-    insert into t4 values (1,2);
-    insert into t5 values (1,3);
-    create view myview as select t4.a a from t4 inner join t5 on t4.a=t5.a;
-    create table problem as select * from myview; 
-  }
-  execsql2 {
-    select * FROM problem;
-  }
-} {a 1}
-do_test misc4-5.2 {
-  execsql2 {
-    create table t6 as select * from t4, t5;
-    select * from t6;
-  }
-} {a 1 b 2 a:1 1 c 3}
+ifcapable view {
+  do_test misc4-5.1 {
+    execsql {
+      create table t4(a,b);
+      create table t5(a,c);
+      insert into t4 values (1,2);
+      insert into t5 values (1,3);
+      create view myview as select t4.a a from t4 inner join t5 on t4.a=t5.a;
+      create table problem as select * from myview; 
+    }
+    execsql2 {
+      select * FROM problem;
+    }
+  } {a 1}
+  do_test misc4-5.2 {
+    execsql2 {
+      create table t6 as select * from t4, t5;
+      select * from t6;
+    }
+  } {a 1 b 2 a:1 1 c 3}
+}
 
 finish_test
