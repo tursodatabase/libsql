@@ -95,32 +95,32 @@ void sqliteCreateTrigger(
   ** build the sqlite_master entry
   */
   if( !pParse->initFlag && !tab->isTemp ){
+    static VdbeOp insertTrig[] = {
+      { OP_OpenWrite,  0, 2,  MASTER_NAME},
+      { OP_NewRecno,   0, 0,  0          },
+      { OP_String,     0, 0,  "trigger"  },
+      { OP_String,     0, 0,  0          },  /* 3: trigger name */
+      { OP_String,     0, 0,  0          },  /* 4: table name */
+      { OP_Integer,    0, 0,  0          },
+      { OP_String,     0, 0,  0          },  /* 6: SQL */
+      { OP_MakeRecord, 5, 0,  0          },
+      { OP_PutIntKey,  0, 0,  0          },
+      { OP_Integer,    0, 0,  0          },  /* 9: Next cookie */
+      { OP_SetCookie,  0, 0,  0          },
+      { OP_Close,      0, 0,  0          },
+    };
+    int addr;
+    Vdbe *v;
 
     /* Make an entry in the sqlite_master table */
-    sqliteBeginWriteOperation(pParse);
-
-    sqliteVdbeAddOp(pParse->pVdbe,        OP_OpenWrite, 0, 2);
-    sqliteVdbeChangeP3(pParse->pVdbe, -1, MASTER_NAME,           P3_STATIC);
-    sqliteVdbeAddOp(pParse->pVdbe,        OP_NewRecno,  0, 0);
-    sqliteVdbeAddOp(pParse->pVdbe,        OP_String,    0, 0);
-    sqliteVdbeChangeP3(pParse->pVdbe, -1, "trigger",             P3_STATIC);
-    sqliteVdbeAddOp(pParse->pVdbe,        OP_String,    0, 0);
-    sqliteVdbeChangeP3(pParse->pVdbe, -1, nt->name,        0); 
-    sqliteVdbeAddOp(pParse->pVdbe,        OP_String,    0, 0);
-    sqliteVdbeChangeP3(pParse->pVdbe, -1, nt->table,        0); 
-    sqliteVdbeAddOp(pParse->pVdbe,        OP_Integer,    0, 0);
-    sqliteVdbeAddOp(pParse->pVdbe,        OP_String,    0, 0);
-    sqliteVdbeChangeP3(pParse->pVdbe, -1, nt->strings,     0);
-    sqliteVdbeAddOp(pParse->pVdbe,        OP_MakeRecord, 5, 0);
-    sqliteVdbeAddOp(pParse->pVdbe,        OP_PutIntKey, 0, 1);
-
-    /* Change the cookie, since the schema is changed */
+    v = sqliteGetVdbe(pParse);
+    sqliteBeginWriteOperation(pParse, 0);
+    addr = sqliteVdbeAddOpList(v, ArraySize(insertTrig), insertTrig);
+    sqliteVdbeChangeP3(v, addr+3, nt->name, 0); 
+    sqliteVdbeChangeP3(v, addr+4, nt->table, 0); 
+    sqliteVdbeChangeP3(v, addr+6, nt->strings, 0);
     sqliteChangeCookie(pParse->db);
-    sqliteVdbeAddOp(pParse->pVdbe, OP_Integer, pParse->db->next_cookie, 0);
-    sqliteVdbeAddOp(pParse->pVdbe, OP_SetCookie, 0, 0);
-
-    sqliteVdbeAddOp(pParse->pVdbe,        OP_Close,     0, 0);
-
+    sqliteVdbeChangeP1(v, addr+9, pParse->db->next_cookie);
     sqliteEndWriteOperation(pParse);
   }
 
@@ -160,8 +160,14 @@ trigger_cleanup:
   }
 }
 
-TriggerStep *sqliteTriggerSelectStep(Select * pSelect)
-{
+/*
+** Turn a SELECT statement (that the pSelect parameter points to) into
+** a trigger step.  Return a pointer to a TriggerStep structure.
+**
+** The parser calls this routine when it finds a SELECT statement in
+** body of a TRIGGER.  
+*/
+TriggerStep *sqliteTriggerSelectStep(Select *pSelect){
   TriggerStep *pTriggerStep = sqliteMalloc(sizeof(TriggerStep));
 
   pTriggerStep->op = TK_SELECT;
@@ -171,12 +177,19 @@ TriggerStep *sqliteTriggerSelectStep(Select * pSelect)
   return pTriggerStep;
 }
 
+/*
+** Build a trigger step out of an INSERT statement.  Return a pointer
+** to the new trigger step.
+**
+** The parser calls this routine when it sees an INSERT inside the
+** body of a trigger.
+*/
 TriggerStep *sqliteTriggerInsertStep(
-  Token *pTableName,
-  IdList *pColumn,
-  ExprList *pEList,
-  Select *pSelect,
-  int orconf
+  Token *pTableName,  /* Name of the table into which we insert */
+  IdList *pColumn,    /* List of columns in pTableName to insert into */
+  ExprList *pEList,   /* The VALUE clause: a list of values to be inserted */
+  Select *pSelect,    /* A SELECT statement that supplies values */
+  int orconf          /* The conflict algorithm (OE_Abort, OE_Replace, etc.) */
 ){
   TriggerStep *pTriggerStep = sqliteMalloc(sizeof(TriggerStep));
 
@@ -193,12 +206,17 @@ TriggerStep *sqliteTriggerInsertStep(
   return pTriggerStep;
 }
 
+/*
+** Construct a trigger step that implements an UPDATE statement and return
+** a pointer to that trigger step.  The parser calls this routine when it
+** sees an UPDATE statement inside the body of a CREATE TRIGGER.
+*/
 TriggerStep *sqliteTriggerUpdateStep(
-  Token *pTableName, 
-  ExprList *pEList, 
-  Expr *pWhere, 
-  int orconf)
-{
+  Token *pTableName,   /* Name of the table to be updated */
+  ExprList *pEList,    /* The SET clause: list of column and new values */
+  Expr *pWhere,        /* The WHERE clause */
+  int orconf           /* The conflict algorithm. (OE_Abort, OE_Ignore, etc) */
+){
   TriggerStep *pTriggerStep = sqliteMalloc(sizeof(TriggerStep));
 
   pTriggerStep->op = TK_UPDATE;
@@ -210,8 +228,12 @@ TriggerStep *sqliteTriggerUpdateStep(
   return pTriggerStep;
 }
 
-TriggerStep *sqliteTriggerDeleteStep(Token *pTableName, Expr *pWhere)
-{
+/*
+** Construct a trigger step that implements a DELETE statement and return
+** a pointer to that trigger step.  The parser calls this routine when it
+** sees a DELETE statement inside the body of a CREATE TRIGGER.
+*/
+TriggerStep *sqliteTriggerDeleteStep(Token *pTableName, Expr *pWhere){
   TriggerStep * pTriggerStep = sqliteMalloc(sizeof(TriggerStep));
 
   pTriggerStep->op = TK_DELETE;
@@ -328,7 +350,7 @@ void sqliteDropTrigger(Parse *pParse, Token *pName, int nested)
     };
 
     if( !nested ){
-      sqliteBeginWriteOperation(pParse);
+      sqliteBeginWriteOperation(pParse, 0);
     }
     base = sqliteVdbeAddOpList(pParse->pVdbe, 
         ArraySize(dropTrigger), dropTrigger);
@@ -345,8 +367,16 @@ void sqliteDropTrigger(Parse *pParse, Token *pName, int nested)
   sqliteFree(zName);
 }
 
-static int checkColumnOverLap(IdList * pIdList, ExprList * pEList)
-{
+/*
+** pEList is the SET clause of an UPDATE statement.  Each entry
+** in pEList is of the format <id>=<expr>.  If any of the entries
+** in pEList have an <id> which matches an identifier in pIdList,
+** then return TRUE.  If pIdList==NULL, then it is considered a
+** wildcard that matches anything.  Likewise if pEList==NULL then
+** it matches anything so always return true.  Return false only
+** if there is no match.
+*/
+static int checkColumnOverLap(IdList *pIdList, ExprList *pEList){
   int i, e;
   if( !pIdList )return 1;
   if( !pEList )return 1;
@@ -378,13 +408,13 @@ int always_code_trigger_setup = 0;
  * found in the list specified as pTrigger.
  */
 int sqliteTriggersExist(
-  Parse *pParse, 
-  Trigger *pTrigger,
+  Parse *pParse,          /* Used to check for recursive triggers */
+  Trigger *pTrigger,      /* A list of triggers associated with a table */
   int op,                 /* one of TK_DELETE, TK_INSERT, TK_UPDATE */
   int tr_tm,              /* one of TK_BEFORE, TK_AFTER */
   int foreach,            /* one of TK_ROW or TK_STATEMENT */
-  ExprList *pChanges)
-{
+  ExprList *pChanges      /* Columns that change in an UPDATE statement */
+){
   Trigger * pTriggerCursor;
 
   if( always_code_trigger_setup ){
@@ -410,10 +440,14 @@ int sqliteTriggersExist(
   return 0;
 }
 
+/*
+** Generate VDBE code for zero or more statements inside the body of a
+** trigger.  
+*/
 static int codeTriggerProgram(
-  Parse *pParse, 
-  TriggerStep *pStepList, 
-  int orconfin
+  Parse *pParse,            /* The parser context */
+  TriggerStep *pStepList,   /* List of statements inside the trigger body */
+  int orconfin              /* Conflict algorithm. (OE_Abort, etc) */  
 ){
   TriggerStep * pTriggerStep = pStepList;
   int orconf;
@@ -470,11 +504,15 @@ static int codeTriggerProgram(
 **
 ** When the code that this function generates is executed, the following 
 ** must be true:
-** 1. NO vdbe cursors must be open.
+**
+** 1. No cursors may be open in the main database.  (But newIdx and oldIdx
+**    can be indices of cursors in temporary tables.  See below.)
+**
 ** 2. If the triggers being coded are ON INSERT or ON UPDATE triggers, then
 **    a temporary vdbe cursor (index newIdx) must be open and pointing at
 **    a row containing values to be substituted for new.* expressions in the
 **    trigger program(s).
+**
 ** 3. If the triggers being coded are ON DELETE or ON UPDATE triggers, then
 **    a temporary vdbe cursor (index oldIdx) must be open and pointing at
 **    a row containing values to be substituted for old.* expressions in the
@@ -489,8 +527,8 @@ int sqliteCodeRowTrigger(
   Table *pTab,         /* The table to code triggers from */
   int newIdx,          /* The indice of the "new" row to access */
   int oldIdx,          /* The indice of the "old" row to access */
-  int orconf)          /* ON CONFLICT policy */
-{
+  int orconf           /* ON CONFLICT policy */
+){
   Trigger * pTrigger;
   TriggerStack * pTriggerStack;
 
@@ -611,7 +649,7 @@ void sqliteViewTriggers(
 
   v = sqliteGetVdbe(pParse);
   assert(v);
-  sqliteBeginMultiWriteOperation(pParse);
+  sqliteBeginWriteOperation(pParse, 1);
 
   /* Allocate temp tables */
   oldIdx = pParse->nTab++;

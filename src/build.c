@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.91 2002/05/19 23:43:14 danielk1977 Exp $
+** $Id: build.c,v 1.92 2002/05/21 11:38:11 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -478,7 +478,7 @@ void sqliteStartTable(Parse *pParse, Token *pStart, Token *pName, int isTemp){
   ** now.
   */
   if( !pParse->initFlag && (v = sqliteGetVdbe(pParse))!=0 ){
-    sqliteBeginWriteOperation(pParse);
+    sqliteBeginWriteOperation(pParse, 0);
     if( !isTemp ){
       sqliteVdbeAddOp(v, OP_Integer, db->file_format, 0);
       sqliteVdbeAddOp(v, OP_SetCookie, 0, 1);
@@ -1092,7 +1092,7 @@ void sqliteDropTable(Parse *pParse, Token *pName, int isView){
       { OP_Close,      0, 0,        0},
     };
     Index *pIdx;
-    sqliteBeginWriteOperation(pParse);
+    sqliteBeginWriteOperation(pParse, 0);
     /* Drop all triggers associated with the table being dropped */
     while( pTable->pTrigger ){
       Token tt;
@@ -1355,7 +1355,7 @@ void sqliteCreateIndex(
     v = sqliteGetVdbe(pParse);
     if( v==0 ) goto exit_create_index;
     if( pTable!=0 ){
-      sqliteBeginWriteOperation(pParse);
+      sqliteBeginWriteOperation(pParse, 0);
       if( !isTemp ){
         sqliteVdbeAddOp(v, OP_OpenWrite, 0, 2);
         sqliteVdbeChangeP3(v, -1, MASTER_NAME, P3_STATIC);
@@ -1467,7 +1467,7 @@ void sqliteDropIndex(Parse *pParse, Token *pName){
     int base;
     Table *pTab = pIndex->pTable;
 
-    sqliteBeginWriteOperation(pParse);
+    sqliteBeginWriteOperation(pParse, 0);
     if( !pTab->isTemp ){
       base = sqliteVdbeAddOpList(v, ArraySize(dropIndex), dropIndex);
       sqliteVdbeChangeP3(v, base+2, pIndex->zName, P3_STATIC);
@@ -1588,7 +1588,7 @@ void sqliteCopy(
   v = sqliteGetVdbe(pParse);
   if( v ){
     int openOp;
-    sqliteBeginMultiWriteOperation(pParse);
+    sqliteBeginWriteOperation(pParse, 1);
     addr = sqliteVdbeAddOp(v, OP_FileOpen, 0, 0);
     sqliteVdbeChangeP3(v, addr, pFilename->z, pFilename->n);
     sqliteVdbeDequoteP3(v, addr);
@@ -1669,7 +1669,7 @@ void sqliteBeginTransaction(Parse *pParse, int onError){
   if( pParse==0 || (db=pParse->db)==0 || db->pBe==0 ) return;
   if( pParse->nErr || sqlite_malloc_failed ) return;
   if( db->flags & SQLITE_InTrans ) return;
-  sqliteBeginWriteOperation(pParse);
+  sqliteBeginWriteOperation(pParse, 0);
   db->flags |= SQLITE_InTrans;
   db->onError = onError;
 }
@@ -1708,32 +1708,18 @@ void sqliteRollbackTransaction(Parse *pParse){
 
 /*
 ** Generate VDBE code that prepares for doing an operation that
-** might change the database.  The operation will be atomic in the
-** sense that it will either do its changes completely or not at
-** all.  So there is no need to set a checkpoint is a transaction
-** is already in effect.
+** might change the database.
+**
+** This routine starts a new transaction if we are not already within
+** a transaction.  If we are already within a transaction, then a checkpoint
+** is set if the setCheckpoint parameter is true.  A checkpoint should
+** be set for operations that might fail (due to a constraint) part of
+** the way through and which will need to undo some writes without having to
+** rollback the whole transaction.  For operations where all constraints
+** can be checked before any changes are made to the database, it is never
+** necessary to undo a write and the checkpoint should not be set.
 */
-void sqliteBeginWriteOperation(Parse *pParse){
-  Vdbe *v;
-  v = sqliteGetVdbe(pParse);
-  if( v==0 ) return;
-  if( pParse->trigStack ) return; /* if this is in a trigger */
-  if( (pParse->db->flags & SQLITE_InTrans)==0  ){
-    sqliteVdbeAddOp(v, OP_Transaction, 0, 0);
-    sqliteVdbeAddOp(v, OP_VerifyCookie, pParse->db->schema_cookie, 0);
-    pParse->schemaVerified = 1;
-  }
-}
-
-/*
-** Generate VDBE code that prepares for doing an operation that
-** might change the database.  The operation might not be atomic in
-** the sense that an error may be discovered and the operation might
-** abort after some changes have been made.  If we are in the middle 
-** of a transaction, then this sets a checkpoint.  If we are not in
-** a transaction, then start a transaction.
-*/
-void sqliteBeginMultiWriteOperation(Parse *pParse){
+void sqliteBeginWriteOperation(Parse *pParse, int setCheckpoint){
   Vdbe *v;
   v = sqliteGetVdbe(pParse);
   if( v==0 ) return;
@@ -1742,7 +1728,7 @@ void sqliteBeginMultiWriteOperation(Parse *pParse){
     sqliteVdbeAddOp(v, OP_Transaction, 0, 0);
     sqliteVdbeAddOp(v, OP_VerifyCookie, pParse->db->schema_cookie, 0);
     pParse->schemaVerified = 1;
-  }else{
+  }else if( setCheckpoint ){
     sqliteVdbeAddOp(v, OP_Checkpoint, 0, 0);
   }
 }
@@ -1844,7 +1830,7 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       int addr;
       int size = atoi(zRight);
       if( size<0 ) size = -size;
-      sqliteBeginWriteOperation(pParse);
+      sqliteBeginWriteOperation(pParse, 0);
       sqliteVdbeAddOp(v, OP_Integer, size, 0);
       sqliteVdbeAddOp(v, OP_ReadCookie, 0, 2);
       addr = sqliteVdbeAddOp(v, OP_Integer, 0, 0);
@@ -1935,7 +1921,7 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       int addr;
       int size = db->cache_size;
       if( size<0 ) size = -size;
-      sqliteBeginWriteOperation(pParse);
+      sqliteBeginWriteOperation(pParse, 0);
       sqliteVdbeAddOp(v, OP_ReadCookie, 0, 2);
       sqliteVdbeAddOp(v, OP_Dup, 0, 0);
       addr = sqliteVdbeAddOp(v, OP_Integer, 0, 0);
