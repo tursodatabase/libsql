@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.90 2003/09/06 01:10:47 drh Exp $
+** @(#) $Id: pager.c,v 1.91 2003/12/17 23:57:35 drh Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -520,19 +520,13 @@ static int pager_playback_one_page(Pager *pPager, OsFile *jfd, int format){
   sqliteOsSeek(&pPager->fd, (pgRec.pgno-1)*(off_t)SQLITE_PAGE_SIZE);
   rc = sqliteOsWrite(&pPager->fd, pgRec.aData, SQLITE_PAGE_SIZE);
   if( pPg ){
-    if( pPg->nRef==0 ||
-        memcmp(PGHDR_TO_DATA(pPg), pgRec.aData, SQLITE_PAGE_SIZE)==0
-    ){
-      /* Do not update the data on this page if the page is in use
-      ** and the page has never been modified.  This avoids resetting
-      ** the "extra" data.  That in turn avoids invalidating BTree cursors
-      ** in trees that have never been modified.  The end result is that
-      ** you can have a SELECT going on in one table and ROLLBACK changes
-      ** to a different table and the SELECT is unaffected by the ROLLBACK.
-      */
-      memcpy(PGHDR_TO_DATA(pPg), pgRec.aData, SQLITE_PAGE_SIZE);
-      memset(PGHDR_TO_EXTRA(pPg), 0, pPager->nExtra);
-    }
+    /* No page should ever be rolled back that is in use, except for page
+    ** 1 which is held in use in order to keep the lock on the database
+    ** active.
+    */
+    assert( pPg->nRef==0 || pPg->pgno==1 );
+    memcpy(PGHDR_TO_DATA(pPg), pgRec.aData, SQLITE_PAGE_SIZE);
+    memset(PGHDR_TO_EXTRA(pPg), 0, pPager->nExtra);
     pPg->dirty = 0;
     pPg->needSync = 0;
   }

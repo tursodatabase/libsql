@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc2.test,v 1.10 2003/12/10 01:31:21 drh Exp $
+# $Id: misc2.test,v 1.11 2003/12/17 23:57:36 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -231,3 +231,5 @@ do_test misc2-9.3 {
     SELECT count(*) FROM x;
   }
 } [expr 5*5*5*5]
+
+finish_test

@@ -1,5 +1,5 @@
-C Improvements\sto\sthe\sway\sPRAGMA\sintegrity_check\sworks.\s\sMore\slikely\sto\soutput\nuserful\sinformation\swhen\sgiven\sa\scorrupt\sdatabase.\s(CVS\s1132)
-D 2003-12-16T03:44:48
+C Make\ssure\sthe\spagers\sin-memory\scache\sstates\sin\ssync\swith\sthe\sdisk\sfile.\nTicket\s#529.\s(CVS\s1133)
+D 2003-12-17T23:57:35
 F Makefile.in 5cb273b7d0e945d47ee8b9ad1c2a04ce79927d2d
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -40,7 +40,7 @@ F src/main.c 3dd3cae00bade294011da5a3cf9ff660a610c545
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
 F src/os.c 226d32db1f36f8932b318b1757c8623be6e4244f
 F src/os.h 729395fefcca4b81ae056aa9ff67b72bb40dd9e0
-F src/pager.c 62702dff51d50694d039bc210f31990d1fbba2dd
+F src/pager.c ca24fced1ca4c2b8ea519d5fe8ec69a2d846276f
 F src/pager.h 5da62c83443f26b1792cfd72c96c422f91aadd31
 F src/parse.y c65aa6c5508763806ac9734b0589b93480ec7e7a
 F src/pragma.c deec7342741e371f3042adaee53fcc324c5dd1d4
@@ -104,7 +104,8 @@ F test/memdb.test 6ece25c7c0e6500199d3662607a3edca081abb2a
 F test/memleak.test a18e6810cae96d2f6f5136920267adbefc8e1e90
 F test/minmax.test 6d9b6d6ee34f42e2a58dffece1f76d35f446b3af
 F test/misc1.test 0b98d493b0cf55cb5f53e1f3df8107c166eecb5a
-F test/misc2.test b5813a4add0c4ee6575dc0066ea7b37f033499c0
+F test/misc2.test 10c2ce26407d37411b96273e552d5095393732be
+F test/misc3.test 24b3b3fb96e52c129c70b5ad73c10237a2f3b859
 F test/misuse.test a3aa2b18a97e4c409a1fcaff5151a4dd804a0162
 F test/notnull.test 7a08117a71e74b0321aaa937dbeb41a09d6eb1d0
 F test/null.test c14d0f4739f21e929b8115b72bf0c765b6bb1721
@@ -176,7 +177,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P 653a7dd97ed95e66bd2973169735ee73ee348576
-R 435a13e877cf1f013db1660aef5f3d2f
+P b92c31d6c138f9462730cecfe14f7dde19778e79
+R 5dac2c4103dd7d1b8becf54797b0f5a6
 U drh
-Z b27d1bd5a7237f952a32b8adb3b13abd
+Z 3514ff5b1ce26349633380e9a1db39b1

@@ -1,0 +1,71 @@
+# 2003 December 17
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.
+#
+# This file implements tests for miscellanous features that were
+# left out of other test files.
+#
+# $Id: misc3.test,v 1.1 2003/12/17 23:57:36 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# Ticket #529.  Make sure an ABORT does not damage the in-memory cache
+# that will be used by subsequent statements in the same transaction.
+#
+do_test misc3-1.1 {
+  execsql {
+    CREATE TABLE t1(a UNIQUE,b);
+    INSERT INTO t1
+      VALUES(1,'a23456789_b23456789_c23456789_d23456789_e23456789_');
+    UPDATE t1 SET b=b||b;
+    UPDATE t1 SET b=b||b;
+    UPDATE t1 SET b=b||b;
+    UPDATE t1 SET b=b||b;
+    UPDATE t1 SET b=b||b;
+    INSERT INTO t1 VALUES(2,'x');
+    UPDATE t1 SET b=substr(b,1,500);
+    BEGIN;
+  }
+  catchsql {UPDATE t1 SET a=CASE a WHEN 2 THEN 1 ELSE a END, b='y';}
+  execsql {
+    CREATE TABLE t2(x,y);
+    COMMIT;
+    PRAGMA integrity_check;
+  }
+} ok
+do_test misc3-1.2 {
+  execsql {
+    DROP TABLE t1;
+    DROP TABLE t2;
+    VACUUM;
+    CREATE TABLE t1(a UNIQUE,b);
+    INSERT INTO t1
+       VALUES(1,'a23456789_b23456789_c23456789_d23456789_e23456789_');
+    INSERT INTO t1 SELECT a+1, b||b FROM t1;
+    INSERT INTO t1 SELECT a+2, b||b FROM t1;
+    INSERT INTO t1 SELECT a+4, b FROM t1;
+    INSERT INTO t1 SELECT a+8, b FROM t1;
+    INSERT INTO t1 SELECT a+16, b FROM t1;
+    INSERT INTO t1 SELECT a+32, b FROM t1;
+    INSERT INTO t1 SELECT a+64, b FROM t1;
+
+    BEGIN;
+  }
+  catchsql {UPDATE t1 SET a=CASE a WHEN 128 THEN 127 ELSE a END, b='';}
+  execsql {
+    INSERT INTO t1 VALUES(200,'hello out there');
+    COMMIT;
+    PRAGMA integrity_check;
+  }
+} ok
+
+finish_test
