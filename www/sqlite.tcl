@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: sqlite.tcl,v 1.19 2003/05/04 07:31:10 jplyon Exp $}
+set rcsid {$Id: sqlite.tcl,v 1.20 2003/05/10 02:54:57 jplyon Exp $}
 
 puts {<html>
 <head>
@@ -563,6 +563,18 @@ $ (((sqlite ex1 'select * from tbl1' |)))
 <tr><td>hello<td>10
 <tr><td>goodbye<td>20
 $
+}
+
+puts {
+<h2>Ending shell commands</h2>
+
+<p>
+SQLite commands are normally terminated by a semicolon.  In the shell 
+you can also use the word "GO" (case-insensitive) or a backslash character 
+"\" on a line by itself to end a command.  These are used by SQL Server 
+and Oracle, respectively.  These won't work in <b>sqlite_exec()</b>, 
+because the shell translates these into a semicolon before passing them 
+to that function.</p>
 }
 
 puts {

@@ -1,5 +1,5 @@
-C Fixed\smetacharacter\scoloring\swith\sLP,\sRP,\sPLUS.\nAdded\smore\slinks.\s(CVS\s962)
-D 2003-05-10T02:54:02
+C Documented\sthe\s"GO"\sand\s"\\"\scommand\sterminators.\s(CVS\s963)
+D 2003-05-10T02:54:57
 F Makefile.in 004acec253ecdde985c8ecd5b7c9accdb210378f
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -162,10 +162,10 @@ F www/omitted.tcl 118062f40a203fcb88b8d68ef1d7c0073ac191ec
 F www/opcode.tcl 33c5f2061a05c5d227c72b84c080b3bf74c74f8b
 F www/quickstart.tcl 4e97bef825e6a4153c43afb9f97235fc4da278ab
 F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
-F www/sqlite.tcl ffde644361e1d8e2a44a235ff23ad3b43d640df2
+F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P ca75f1ca12cd88dce688e272d73c3c2282079547
-R 0a8fe2a8e044cb4f18a061cc4a59a233
+P 2bbb08049508829419dd9a3729241b97b017cf36
+R 1d25a4fc1144fa38b78eaed73ce64429
 U jplyon
-Z 66852ddc0c84a5e900bfd52905e03852
+Z d62bb0c1bbe259e95f45f644528a86de
