@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.2 2000/05/29 18:20:15 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.3 2000/05/29 18:50:16 drh Exp $}
 
 puts {<html>
 <head><title>SQLite: An SQL Frontend For GDBM</title></head>
@@ -10,6 +10,20 @@ puts {<html>
 <p align=center>}
 puts "Last modified [lrange $rcsid 3 4] GMT"
 puts {</p>}
+
+puts {
+<blockquote><em><p>
+SQLite is currently "alpha"-quality software under active development.
+It is being release early so that you can have an opportunity
+to comment on its design and implementation and possibly influence
+the direction of its development.  Your constructive comments
+are <b>very</b> important to us and are encouraged.  If you have 
+any suggestions or any words of encouragement, please submit
+them to the mailing list described <a href="#mailinglist">below</a>.</p>
+
+<p>If you are looking for a stable SQL library, check back here in a few
+months...</p></em></blockquote>
+}
 
 puts {<h2>Introduction</h2>
 
@@ -57,7 +71,8 @@ implement are as follows:</p>
 <ul>
 <li>ALTER TABLE</li>
 <li>The GROUP BY or HAVING clauses of a SELECT</li>
-<li>The LIKE or IN</li>
+<li>The LIKE or IN operators</li>
+<li>The COUNT(), MAX(), MIN(), and AVG() functions</li>
 <li>Constraints</li>
 <li>Nested queries</li>
 <li>Transactions or rollback</li>
@@ -82,7 +97,9 @@ know of no reason why it will not work on any other Unix platform,
 or on Windows95/98/NT.</p>
 }
 
-puts {<h2>Mailing List</h2>
+puts {
+<a name="mailinglist" />
+<h2>Mailing List</h2>
 <p>A mailing list has been set up on eGroups for discussion of
 SQLite design issues or for asking questions about SQLite.</p>
 <center>

@@ -136,8 +136,10 @@ PUBLISH = \
   sqlite.html \
   c_interface.html
 
+website:	$(PUBLISH)
+
 publish:	$(PUBLISH)
-	scp hwaci@oak.he.net:public_html/sw/sqlite $(PUBLISH)
+	scp $(PUBLISH) hwaci@oak.he.net:public_html/sw/sqlite
 
 clean:	
 	rm -f *.o sqlite libsqlite.a sqlite.h

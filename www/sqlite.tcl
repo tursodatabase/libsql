@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: sqlite.tcl,v 1.2 2000/05/29 18:20:15 drh Exp $}
+set rcsid {$Id: sqlite.tcl,v 1.3 2000/05/29 18:50:16 drh Exp $}
 
 puts {<html>
 <head>
@@ -278,7 +278,7 @@ sql> (((.mode list)))
 sql> (((.separator |)))
 sql> (((.output test_file_1.txt)))
 sql> (((select * from tbl1;)))
-sql> (((.exit
+sql> (((.exit)))
 $ (((cat test_file_1.txt)))
 hello|10
 goodbye|20
