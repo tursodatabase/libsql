@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.96 2002/06/21 23:01:50 drh Exp $
+** $Id: select.c,v 1.97 2002/06/22 02:33:38 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -441,26 +441,28 @@ static int selectInnerLoop(
       break;
     }
 
+    /* Send the data to the callback function.
+    */
+    case SRT_Callback:
+    case SRT_Sorter: {
+      if( pOrderBy ){
+        sqliteVdbeAddOp(v, OP_SortMakeRec, nColumn, 0);
+        pushOntoSorter(pParse, v, pOrderBy);
+      }else{
+        assert( eDest==SRT_Callback );
+        sqliteVdbeAddOp(v, OP_Callback, nColumn, 0);
+      }
+      break;
+    }
+
     /* Discard the results.  This is used for SELECT statements inside
     ** the body of a TRIGGER.  The purpose of such selects is to call
     ** user-defined functions that have side effects.  We do not care
     ** about the actual results of the select.
     */
-    case SRT_Discard: {
-      sqliteVdbeAddOp(v, OP_Pop, nColumn, 0);
-      break;
-    }
-
-    /* Send the data to the callback function.
-    */
     default: {
-      assert( eDest==SRT_Callback );
-      if( pOrderBy ){
-        sqliteVdbeAddOp(v, OP_SortMakeRec, nColumn, 0);
-        pushOntoSorter(pParse, v, pOrderBy);
-      }else{
-        sqliteVdbeAddOp(v, OP_Callback, nColumn, 0);
-      }
+      assert( eDest==SRT_Discard );
+      sqliteVdbeAddOp(v, OP_Pop, nColumn, 0);
       break;
     }
   }
@@ -482,6 +484,7 @@ static void generateSortTail(
 ){
   int end = sqliteVdbeMakeLabel(v);
   int addr;
+  if( eDest==SRT_Sorter ) return;
   sqliteVdbeAddOp(v, OP_Sort, 0, 0);
   addr = sqliteVdbeAddOp(v, OP_SortNext, 0, end);
   if( p->nOffset>0 ){
@@ -518,7 +521,7 @@ static void generateSortTail(
       break;
     }
     default: {
-      assert( end==0 ); /* Cannot happen */
+      /* Do nothing */
       break;
     }
   }
@@ -998,11 +1001,22 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
     eDest = SRT_Table;
   }
 
-  /* Process the UNION or INTERSECTION
+  /* Generate code for the left and right SELECT statements.
   */
   base = pParse->nTab;
   switch( p->op ){
-    case TK_ALL:
+    case TK_ALL: {
+      if( p->pOrderBy==0 ){
+        rc = sqliteSelect(pParse, pPrior, eDest, iParm, 0, 0, 0);
+        if( rc ) return rc;
+        p->pPrior = 0;
+        rc = sqliteSelect(pParse, p, eDest, iParm, 0, 0, 0);
+        p->pPrior = pPrior;
+        if( rc ) return rc;
+        break;
+      }
+      /* For UNION ALL ... ORDER BY fall through to the next case */
+    }
     case TK_EXCEPT:
     case TK_UNION: {
       int unionTab;    /* Cursor number of the temporary table holding result */

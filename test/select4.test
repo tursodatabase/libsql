@@ -12,7 +12,7 @@
 # focus of this file is testing UNION, INTERSECT and EXCEPT operators
 # in SELECT statements.
 #
-# $Id: select4.test,v 1.11 2002/06/20 03:38:26 drh Exp $
+# $Id: select4.test,v 1.12 2002/06/22 02:33:39 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -72,6 +72,23 @@ do_test select4-1.1e {
     SELECT * FROM t2;
   }
 } {8 7 6 5 5 4 3 2 1 0}
+execsql {DROP TABLE t2}
+do_test select4-1.1f {
+  execsql {
+    SELECT DISTINCT log FROM t1
+    UNION ALL
+    SELECT n FROM t1 WHERE log=2
+  }
+} {0 1 2 3 4 5 3 4}
+do_test select4-1.1g {
+  execsql {
+    CREATE TABLE t2 AS 
+      SELECT DISTINCT log FROM t1
+      UNION ALL
+      SELECT n FROM t1 WHERE log=2;
+    SELECT * FROM t2;
+  }
+} {0 1 2 3 4 5 3 4}
 execsql {DROP TABLE t2}
 do_test select4-1.2 {
   execsql {

@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.82 2002/06/21 11:55:49 drh Exp $
+** $Id: main.c,v 1.83 2002/06/22 02:33:38 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -843,4 +843,5 @@ int sqlite_function_type(sqlite *db, const char *zName, int dataType){
     p->dataType = dataType; 
     p = p->pNext;
   }
+  return SQLITE_OK;
 }
