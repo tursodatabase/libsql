@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.199 2004/11/02 18:05:09 drh Exp $
+** $Id: btree.c,v 1.200 2004/11/03 03:01:17 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1753,11 +1753,6 @@ autovacuum_out:
   /* TODO: A goto autovacuum_out; will fail to call releasePage() on 
   ** outstanding references. Fix.
   */
-#ifndef NDEBUG
-  if( nRef!=*sqlite3pager_stats(pPager) ){
-    sqlite3pager_refdump(pPager);
-  }
-#endif
   assert( nRef==*sqlite3pager_stats(pPager) );
   if( rc!=SQLITE_OK ){
     sqlite3pager_rollback(pPager);
@@ -3174,7 +3169,7 @@ static int reparentChildPages(MemPage *pPage){
     if( pBt->autoVacuum ){
       CellInfo info;
       parseCellPtr(pPage, pCell, &info);
-      if( info.iOverflow ){
+      if( (info.nData+(pPage->intKey?0:info.nKey))>info.nLocal ){
         Pgno pgnoOvfl = get4byte(&pCell[info.iOverflow]);
         rc = ptrmapPut(pBt, pgnoOvfl, PTRMAP_OVERFLOW1, pPage->pgno);
         if( rc!=SQLITE_OK ) return rc;
@@ -3234,7 +3229,7 @@ static void dropCell(MemPage *pPage, int idx, int sz){
 ** Allocating a new entry in pPage->aCell[] implies that 
 ** pPage->nOverflow is incremented.
 */
-static void insertCell(
+static int insertCell(
   MemPage *pPage,   /* Page into which we are copying */
   int i,            /* New cell becomes the i-th cell of the page */
   u8 *pCell,        /* Content of the new cell */
@@ -3291,6 +3286,22 @@ static void insertCell(
     pPage->idxShift = 1;
     pageIntegrity(pPage);
   }
+
+#ifndef SQLITE_OMIT_AUTOVACUUM
+  if( pPage->pBt->autoVacuum ){
+    /* The cell may contain a pointer to an overflow page. If so, write
+    ** the entry for the overflow page into the pointer map.
+    */
+    CellInfo info;
+    parseCellPtr(pPage, pCell, &info);
+    if( (info.nData+(pPage->intKey?0:info.nKey))>info.nLocal ){
+      Pgno pgnoOvfl = get4byte(&pCell[info.iOverflow]);
+      int rc = ptrmapPut(pPage->pBt, pgnoOvfl, PTRMAP_OVERFLOW1, pPage->pgno);
+      if( rc!=SQLITE_OK ) return rc;
+    }
+  }
+#endif
+  return SQLITE_OK;
 }
 
 /*
@@ -3760,7 +3771,8 @@ static int balance_nonroot(MemPage *pPage){
         iSpace += sz;
         assert( iSpace<=pBt->psAligned*5 );
       }
-      insertCell(pParent, nxDiv, pCell, sz, pTemp);
+      rc = insertCell(pParent, nxDiv, pCell, sz, pTemp);
+      if( rc!=SQLITE_OK ) goto balance_cleanup;
       put4byte(findOverflowCell(pParent,nxDiv), pNew->pgno);
       j++;
       nxDiv++;
@@ -4067,7 +4079,8 @@ int sqlite3BtreeInsert(
   }else{
     assert( pPage->leaf );
   }
-  insertCell(pPage, pCur->idx, newCell, szNew, 0);
+  rc = insertCell(pPage, pCur->idx, newCell, szNew, 0);
+  if( rc!=SQLITE_OK ) goto end_insert;
   rc = balance(pPage);
   /* sqlite3BtreePageDump(pCur->pBt, pCur->pgnoRoot, 1); */
   /* fflush(stdout); */
@@ -4147,7 +4160,8 @@ int sqlite3BtreeDelete(BtCursor *pCur){
     assert( MX_CELL_SIZE(pBt)>=szNext+4 );
     tempCell = sqliteMallocRaw( MX_CELL_SIZE(pBt) );
     if( tempCell==0 ) return SQLITE_NOMEM;
-    insertCell(pPage, pCur->idx, pNext-4, szNext+4, tempCell);
+    rc = insertCell(pPage, pCur->idx, pNext-4, szNext+4, tempCell);
+    if( rc!=SQLITE_OK ) return rc;
     put4byte(findOverflowCell(pPage, pCur->idx), pgnoChild);
     rc = balance(pPage);
     sqliteFree(tempCell);
