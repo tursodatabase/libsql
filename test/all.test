@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: all.test,v 1.23 2005/01/03 01:33:00 drh Exp $
+# $Id: all.test,v 1.24 2005/01/07 10:42:48 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -78,6 +78,11 @@ for {set Counter 0} {$Counter<$COUNT && $nErr==0} {incr Counter} {
   if {[info exists Leak]} {
     lappend LeakList $Leak
   }
+
+  # Reset the sqlite3_temp_directory variable for the next run of tests:
+  sqlite3 db :memory:
+  db eval {PRAGMA temp_store_directory = ""}
+  db close
 }
 
 # Do one last test to look for a memory leak in the library.  This will

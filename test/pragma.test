@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.28 2004/12/20 19:01:33 tpoindex Exp $
+# $Id: pragma.test,v 1.29 2005/01/07 10:42:48 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -587,10 +587,11 @@ do_test pragma-8.2.15 {
   }
 } {-450}
 
+} ; # ifcapable schema_version
+
 
 # Test temp_store and temp_store_directory pragmas
 #
-
 do_test pragma-9.1 {
   db close
   sqlite3 db test.db
@@ -660,7 +661,5 @@ do_test pragma-9.10 {
 } {no such table: temp_store_directory_test}
 
 
-
-} ; # ifcapable schema_version
 
 finish_test
