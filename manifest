@@ -1,5 +1,5 @@
-C Fix\sfor\sticket\s#142:\sMake\ssure\swe\sget\sthe\scorrect\ssort\sorder\seven\swhen\sthe\ncolumns\sbeing\ssorted\scontain\sNULLs.\s(CVS\s730)
-D 2002-08-26T19:55:08
+C Change\sthe\stokenizer\sto\signore\sC-style\scomments\s/*...*/\sin\saccordance\swith\nSQL99.\s(CVS\s731)
+D 2002-08-27T14:28:30
 F Makefile.in bcb81f40d9a17bd94f59e67157b1e1c54c046c2b
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -48,7 +48,7 @@ F src/test1.c 456cb080db85056be723e770435d9509afc3a83a
 F src/test2.c 279057a854359665b89122070ac1fc472acce1b2
 F src/test3.c b99d5ab68ee672f1fbb00520723b5c21bac35822
 F src/threadtest.c 72bce0a284647314847bbea44616ceb056bfb77f
-F src/tokenize.c 8bd6251e5237c9a16d0bbfb9894925eb129985fa
+F src/tokenize.c 62c98842447effe92eba9622bb2f9a2a8a4b97ad
 F src/trigger.c c90a292a4bef25e478fd5deda6d300319be6a023
 F src/update.c f07e6ed2c517c92871e54d3f5886d1cf56121b11
 F src/util.c c70d5da5357e01b58392faebae3c3620c1d71f14
@@ -147,7 +147,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 9e341d9c934c2111be6834743f1ce30463b095b6
-R c3833aec2102312b5a02d97350523f61
+P 45847390d007718a4b7a4e9fa445136d013113f8
+R 37afa768fcedc8d2fc0a05d007792ef5
 U drh
-Z 83157ab4770270ac20f0733ba099c807
+Z 451eca83ef39ddfc50a8575792ef9f91
