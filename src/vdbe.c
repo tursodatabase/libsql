@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.442 2005/01/12 09:10:40 danielk1977 Exp $
+** $Id: vdbe.c,v 1.443 2005/01/17 03:40:08 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1825,7 +1825,7 @@ case OP_Column: {
     if( !zRec && avail<szHdr ){
       rc = sqlite3VdbeMemFromBtree(pCrsr, 0, szHdr, pC->keyAsData, &sMem);
       if( rc!=SQLITE_OK ){
-        goto abort_due_to_error;
+        goto op_column_out;
       }
       zData = sMem.z;
     }
@@ -1851,10 +1851,8 @@ case OP_Column: {
     ** we are dealing with a malformed record.
     */
     if( idx!=szHdr || offset!=payloadSize ){
-      sqliteFree(aType);
-      if( pC ) pC->aType = 0;
       rc = SQLITE_CORRUPT;
-      break;
+      goto op_column_out;
     }
 
     /* Remember all aType and aColumn information if we have a cursor
@@ -1876,7 +1874,7 @@ case OP_Column: {
     len = sqlite3VdbeSerialTypeLen(aType[p2]);
     rc = sqlite3VdbeMemFromBtree(pCrsr, aOffset[p2], len, pC->keyAsData, &sMem);
     if( rc!=SQLITE_OK ){
-      goto abort_due_to_error;
+      goto op_column_out;
     }
     zData = sMem.z;
   }
@@ -1901,8 +1899,9 @@ case OP_Column: {
   ** can abandon sMem */
   rc = sqlite3VdbeMemMakeWriteable(pTos);
 
+op_column_out:
   /* Release the aType[] memory if we are not dealing with cursor */
-  if( !pC ){
+  if( !pC || !pC->aType ){
     sqliteFree(aType);
   }
   break;
