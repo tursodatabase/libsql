@@ -1,5 +1,5 @@
-C Removed\snever-used\ssymbol\sSQLITE_ResultDetails.\s(CVS\s965)
-D 2003-05-10T03:04:34
+C Changes\sto\scomments.\s\sIn\sparticular,\sa\slengthy\scomment\swas\sadded\sto\sencode.c\r\nthat\sexplains\show\sthe\sencoder\salgorithm\sworks.\s(CVS\s966)
+D 2003-05-10T03:36:54
 F Makefile.in 004acec253ecdde985c8ecd5b7c9accdb210378f
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -20,14 +20,14 @@ F spec.template 238f7db425a78dc1bb7682e56e3834c7270a3f5e
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F src/attach.c 7ebc7487de43e357a64226f8abef81f2669f2183
-F src/auth.c 53b8923f17f364af84501fa99dc00c779913a26d
+F src/auth.c c8f50d4507e37779d96ff3c55417bc2b612dfed6
 F src/btree.c 077d75aee4ed63f3628698611ba43c87097d458d
 F src/btree.h 23c50e00709de16a5dce1fcea9c0429cc955ff0e
 F src/btree_rb.c 8e00e40be264716e1929987878672e55d9e0e76d
 F src/build.c e24461d42381a36de88de6af06c03d9f14588705
 F src/copy.c 44b13fd4d2444fb53bff8a5ecee1c5f6f86a8263
 F src/delete.c f9536a75b444a21f11b7a1bc0fb8c876f691b013
-F src/encode.c faf03741efe921755ec371cf4a6984536de00042
+F src/encode.c ed720e54ec4ef4d4de651592f1dd1c74d422bbd2
 F src/expr.c a666ef5220ca90ebcf40c8ccc783966a345a7616
 F src/func.c 882c3ed5a02be18cd904715c7ec62947a34a3605
 F src/hash.c 4fc39feb7b7711f6495ee9f2159559bedb043e1f
@@ -59,7 +59,7 @@ F src/trigger.c 8ee811986080de60d9d883ad96daffea82014f27
 F src/update.c dc3b680b4cf2cb6d839950b68d632850746639b9
 F src/util.c 87635cfdfffa056a8d3147719357aa442374f78c
 F src/vacuum.c 14ac3073203fa021e01ffe33db56968ad79a8344
-F src/vdbe.c 829fa31c2169588db7a041950cb95c6bb75811a6
+F src/vdbe.c e9e560b0c568fb4ffb189d3e0d91628a33d2a367
 F src/vdbe.h 985c24f312d10f9ef8f9a8b8ea62fcdf68e82f21
 F src/where.c ef11773a07cf075740378d7d1cbabf328146fdc9
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P bf558e79524c04339f1174dc935e39d47cb33457
-R dbcdc1e6ba937154b079e14cdd4eab7b
-U jplyon
-Z c717a1a241516bca947b8579016988c0
+P 26bd7bb1779e14f19c00e450aaa9529f2aabf131
+R b680c0a504530ce6590f8a3af4ddd816
+U drh
+Z d87b54e38f0dd3d4af38249efc6d41d2

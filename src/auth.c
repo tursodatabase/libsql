@@ -14,7 +14,7 @@
 ** systems that do not need this facility may omit it by recompiling
 ** the library with -DSQLITE_OMIT_AUTHORIZATION=1
 **
-** $Id: auth.c,v 1.9 2003/05/02 14:32:13 drh Exp $
+** $Id: auth.c,v 1.10 2003/05/10 03:36:54 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -28,15 +28,35 @@
 ** Set or clear the access authorization function.
 **
 ** The access authorization function is be called during the compilation
-** phase to verify that the user has read and/or write access permission
+** phase to verify that the user has read and/or write access permission on
 ** various fields of the database.  The first argument to the auth function
 ** is a copy of the 3rd argument to this routine.  The second argument
 ** to the auth function is one of these constants:
 **
-**        SQLITE_READ_COLUMN
-**        SQLITE_WRITE_COLUMN
-**        SQLITE_DELETE_ROW
-**        SQLITE_INSERT_ROW
+**       SQLITE_COPY
+**       SQLITE_CREATE_INDEX
+**       SQLITE_CREATE_TABLE
+**       SQLITE_CREATE_TEMP_INDEX
+**       SQLITE_CREATE_TEMP_TABLE
+**       SQLITE_CREATE_TEMP_TRIGGER
+**       SQLITE_CREATE_TEMP_VIEW
+**       SQLITE_CREATE_TRIGGER
+**       SQLITE_CREATE_VIEW
+**       SQLITE_DELETE
+**       SQLITE_DROP_INDEX
+**       SQLITE_DROP_TABLE
+**       SQLITE_DROP_TEMP_INDEX
+**       SQLITE_DROP_TEMP_TABLE
+**       SQLITE_DROP_TEMP_TRIGGER
+**       SQLITE_DROP_TEMP_VIEW
+**       SQLITE_DROP_TRIGGER
+**       SQLITE_DROP_VIEW
+**       SQLITE_INSERT
+**       SQLITE_PRAGMA
+**       SQLITE_READ
+**       SQLITE_SELECT
+**       SQLITE_TRANSACTION
+**       SQLITE_UPDATE
 **
 ** The third and fourth arguments to the auth function are the name of
 ** the table and the column that are being accessed.  The auth function

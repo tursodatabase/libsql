@@ -36,7 +36,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.221 2003/05/02 14:32:14 drh Exp $
+** $Id: vdbe.c,v 1.222 2003/05/10 03:36:54 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -3453,10 +3453,10 @@ case OP_OpenWrite: {
 
 /* Opcode: OpenTemp P1 P2 *
 **
-** Open a new cursor that points to a table or index in a temporary
-** database file.  The temporary file is opened read/write even if 
-** the main database is read-only.  The temporary file is deleted
-** when the cursor is closed.
+** Open a new cursor to a transient table.
+** The transient cursor is always opened read/write even if 
+** the main database is read-only.  The transient table is deleted
+** automatically when the cursor is closed.
 **
 ** The cursor points to a BTree table if P2==0 and to a BTree index
 ** if P2==1.  A BTree table must have an integer key and can have arbitrary
@@ -3464,7 +3464,7 @@ case OP_OpenWrite: {
 **
 ** This opcode is used for tables that exist for the duration of a single
 ** SQL statement only.  Tables created using CREATE TEMPORARY TABLE
-** are opened using OP_OpenAux or OP_OpenWrAux.  "Temporary" in the
+** are opened using OP_OpenRead or OP_OpenWrite.  "Temporary" in the
 ** context of this opcode means for the duration of a single SQL statement
 ** whereas "Temporary" in the context of CREATE TABLE means for the duration
 ** of the connection to the database.  Same word; different meanings.
@@ -3997,8 +3997,8 @@ case OP_Delete: {
 /* Opcode: KeyAsData P1 P2 *
 **
 ** Turn the key-as-data mode for cursor P1 either on (if P2==1) or
-** off (if P2==0).  In key-as-data mode, the Field opcode pulls
-** data off of the key rather than the data.  This is useful for
+** off (if P2==0).  In key-as-data mode, the OP_Column opcode pulls
+** data off of the key rather than the data.  This is used for
 ** processing compound selects.
 */
 case OP_KeyAsData: {
