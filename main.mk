@@ -310,9 +310,6 @@ arch.png:	$(TOP)/www/arch.png
 opcode.html:	$(TOP)/www/opcode.tcl $(TOP)/src/vdbe.c
 	tclsh $(TOP)/www/opcode.tcl $(TOP)/src/vdbe.c >opcode.html
 
-crosscompile.html:	$(TOP)/www/crosscompile.tcl
-	tclsh $(TOP)/www/crosscompile.tcl >crosscompile.html
-
 mingw.html:	$(TOP)/www/mingw.tcl
 	tclsh $(TOP)/www/mingw.tcl >mingw.html
 
@@ -362,7 +359,6 @@ DOC = \
   arch.png \
   vdbe.html \
   c_interface.html \
-  crosscompile.html \
   mingw.html \
   tclsqlite.html \
   download.html \

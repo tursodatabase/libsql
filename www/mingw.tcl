@@ -1,7 +1,7 @@
 #
-# Run this Tcl script to generate the crosscompile.html file.
+# Run this Tcl script to generate the mingw.html file.
 #
-set rcsid {$Id: mingw.tcl,v 1.3 2001/11/24 13:23:05 drh Exp $}
+set rcsid {$Id: mingw.tcl,v 1.4 2003/03/30 18:58:58 drh Exp $}
 
 puts {<html>
 <head>

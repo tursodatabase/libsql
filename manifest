@@ -1,6 +1,6 @@
-C Detect\swhen\sa\schild\snode\sof\sa\sbtree\spage\shas\szero\sentries\sand\sreport\sthat\nas\sa\scase\sof\sdatabase\scorruption.\s(CVS\s887)
-D 2003-03-30T18:41:22
-F Makefile.in 6917c2149a586f11b47c428f2ba748eb1da04f69
+C Remove\sthe\sobsolete\sdocumentation\son\show\sto\scrosscompile\sversion\s1.0\sof\nSQLite.\s(CVS\s888)
+D 2003-03-30T18:58:58
+F Makefile.in 3c4ba24253e61c954d67adbbb4245e7117c5357e
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
 F VERSION e5b03976c56deafa24511d6ef17d64a28679e9bd
@@ -14,7 +14,7 @@ F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F libtool bbbea7d79c23323e4100103836028e4fad0d9242
 F ltmain.sh abfb9387049fff6996afc6e325736597795baf11
-F main.mk 8b10c5df8a21cdd343986a90c75247bafaebb3aa
+F main.mk 23b24112064bd14656a540abf1699a98ecdd9851
 F publish.sh 86b5e8535830a2588f62ce1d5d1ef00e1dede23a
 F spec.template 238f7db425a78dc1bb7682e56e3834c7270a3f5e
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
@@ -138,7 +138,6 @@ F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
 F www/c_interface.tcl 5b54a6f65b70b02da2f6df4f8a23a4b10032e89e
 F www/changes.tcl 7eb04deffbe116cdb558443f8f7df74ebd021daa
 F www/conflict.tcl 81dd21f9a679e60aae049e9dd8ab53d59570cda2
-F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
 F www/datatypes.tcl 0cb28565580554fa7e03e8fcb303e87ce57757ae
 F www/download.tcl 0932d7f4f0e8b2adbbd22fac73132f86e43ab4a9
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
@@ -147,7 +146,7 @@ F www/fileformat.tcl d9b586416c0d099b82e02e469d532c9372f98f3f
 F www/formatchng.tcl cbaf0f410096c71f86a7537cf9249fa04b9a659c
 F www/index.tcl b155eba45136d19e7aa6ba979d4093180c335cf7
 F www/lang.tcl 9bd9380dceba83d11fe268e0142c05ee06c757db
-F www/mingw.tcl f1c7c0a7f53387dd9bb4f8c7e8571b7561510ebc
+F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
 F www/nulls.tcl 29497dac2bc5b437aa7e2e94577dad4d8933ed26
 F www/omitted.tcl 118062f40a203fcb88b8d68ef1d7c0073ac191ec
 F www/opcode.tcl 33c5f2061a05c5d227c72b84c080b3bf74c74f8b
@@ -156,7 +155,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P b90d9de32d10a71fe81f5bfd0cf57faae8c5c3b4
-R 2edd0e7412987cbf5566b47c204bebb0
+P 66c80ae232a78ecb010280ab1aa684cb78b0662f
+R 208f37d602235a28fca3e23d11ba2cbf
 U drh
-Z 4b34ca6a145e046d4b78a760de2492ba
+Z 125b0a7be77e859c6623ad865623b75e
