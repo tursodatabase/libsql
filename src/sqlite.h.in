@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.28 2002/02/27 19:50:59 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.29 2002/03/08 02:12:00 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -361,6 +361,21 @@ int sqlite_get_table_vprintf(
   char **errmsg,         /* Error msg written here */
   va_list ap             /* Arguments to the format string */
 );
+
+/*
+** Windows systems should call this routine to free memory that
+** is returned in the in the errmsg parameter of sqlite_open() when
+** SQLite is a DLL.  For some reason, it does not work to call free()
+** directly.
+*/
+void sqlite_freemem(void *p);
+
+/*
+** Windows systems need functions to call to return the sqlite_version
+** and sqlite_encoding strings.
+*/
+const char *sqlite_libversion(void);
+const char *sqlite_libencoding(void);
 
 /*
 ** A pointer to the following structure is used to communicate with

@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\ssorting\sof\scompound\sselects.\s(CVS\s423)
-D 2002-03-07T02:02:51
+C Added\sprototypes\sto\ssqlite.h\sfor\ssqlite_freemem(),\ssqlite_libversion()\nand\ssqlite_libencoding().\s(CVS\s424)
+D 2002-03-08T02:12:00
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -40,7 +40,7 @@ F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c 1288243cacdee338ee49e3e30fcda1a701a0c8c8
 F src/shell.c b3454229599246b944cdb5b95753af3fca5d8bb0
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
-F src/sqlite.h.in a9b5772604265f98f3120573ef29e37b9d917216
+F src/sqlite.h.in 1dae50411aee9439860d7fbe315183c582d27197
 F src/sqliteInt.h 6f4a1bea4858089eb516f59562762965c6ef5cb8
 F src/table.c 203a09d5d0009eeeb1f670370d52b4ce163a3b52
 F src/tclsqlite.c b9cf346e95291cb4c4f1bf5ac1d77db6b8ad023d
@@ -130,7 +130,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 6c3fb5470ea94bfc99833ff1c78981262c9165eb
-R a428e07eeafc44ccfa53fd5fc16636e0
+P 0a51323561b7235d46621d9fa25c7111b81c528f
+R 2e2e1c2d75770caa56f9aafcd306e22d
 U drh
-Z dfcc0ce535d59118c84662d1f3390a20
+Z 292b53c85ffb3f284a41becff7211dbe
