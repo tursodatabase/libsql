@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.185 2005/01/21 08:13:15 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.186 2005/01/22 03:39:39 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1254,11 +1254,10 @@ end_playback:
   }
   if( zMaster ){
     /* If there was a master journal and this routine will return true,
-    ** see if it is possible to delete the master journal. If errors 
-    ** occur during this process, ignore them.
+    ** see if it is possible to delete the master journal.
     */
     if( rc==SQLITE_OK ){
-      pager_delmaster(zMaster);
+      rc = pager_delmaster(zMaster);
     }
     sqliteFree(zMaster);
   }

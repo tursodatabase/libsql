@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is page cache subsystem.
 #
-# $Id: pager.test,v 1.22 2005/01/20 02:17:02 danielk1977 Exp $
+# $Id: pager.test,v 1.23 2005/01/22 03:39:39 danielk1977 Exp $
 
 
 set testdir [file dirname $argv0]
@@ -471,8 +471,8 @@ do_test pager-6.1 {
     BEGIN;
     UPDATE abc SET c = randstr(200,200);
   } db2
-  file copy -force test2.db test.db
-  file copy -force test2.db-journal test.db-journal
+  copy_file test2.db test.db
+  copy_file test2.db-journal test.db-journal
 
   set f [open test.db-journal a]
   fconfigure $f -encoding binary
@@ -487,8 +487,8 @@ do_test pager-6.1 {
 } {{CREATE TABLE abc(a, b, c)}}
 
 do_test pager-6.2 {
-  file copy -force test2.db test.db
-  file copy -force test2.db-journal test.db-journal
+  copy_file test2.db test.db
+  copy_file test2.db-journal test.db-journal
 
   set f [open test.db-journal a]
   fconfigure $f -encoding binary
@@ -503,8 +503,8 @@ do_test pager-6.2 {
 } {{CREATE TABLE abc(a, b, c)}}
 
 do_test pager-6.3 {
-  file copy -force test2.db test.db
-  file copy -force test2.db-journal test.db-journal
+  copy_file test2.db test.db
+  copy_file test2.db-journal test.db-journal
 
   set f [open test.db-journal a]
   fconfigure $f -encoding binary

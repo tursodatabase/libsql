@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.45 2005/01/21 03:12:16 danielk1977 Exp $
+# $Id: tester.tcl,v 1.46 2005/01/22 03:39:39 danielk1977 Exp $
 
 # Make sure tclsqlite3 was compiled correctly.  Abort now with an
 # error message if not.
@@ -283,6 +283,143 @@ proc crashsql {crashdelay crashfile sql} {
     exec [file join . crashtest] crash.tcl >@stdout
   } msg]
   lappend r $msg
+}
+
+# Usage: do_ioerr_test <test number> <options...>
+#
+# This proc is used to implement test cases that check that IO errors
+# are correctly handled. The first argument, <test number>, is an integer 
+# used to name the tests executed by this proc. Options are as follows:
+#
+#     -tclprep          TCL script to run to prepare test.
+#     -sqlprep          SQL script to run to prepare test.
+#     -tclbody          TCL script to run with IO error simulation.
+#     -sqlbody          TCL script to run with IO error simulation.
+#     -exclude          List of 'N' values not to test.
+#     -start            Value of 'N' to begin with (default 1)
+#
+#     -cksum            Boolean. If true, test that the database does
+#                       not change during the execution of the test case.
+#
+proc do_ioerr_test {testname args} {
+
+  if {$testname=="ioerr-2"} {
+    breakpoint
+  }
+  set ::ioerropts(-start) 1
+  set ::ioerropts(-cksum) 0
+
+  array set ::ioerropts $args
+
+  set ::go 1
+  for {set n $::ioerropts(-start)} {$::go} {incr n} {
+ 
+    # Skip this IO error if it was specified with the "-exclude" option.
+    if {[info exists ::ioerropts(-exclude)]} {
+      if {[lsearch $::ioerropts(-exclude) $n]!=-1} continue
+    }
+
+    # Delete the files test.db and test2.db, then execute the TCL and 
+    # SQL (in that order) to prepare for the test case.
+    do_test $testname.$n.1 {
+      set ::sqlite_io_error_pending 0
+      catch {db close}
+      catch {file delete -force test.db}
+      catch {file delete -force test.db-journal}
+      catch {file delete -force test2.db}
+      catch {file delete -force test2.db-journal}
+      set ::DB [sqlite3 db test.db]
+      if {[info exists ::ioerropts(-tclprep)]} {
+        eval $::ioerropts(-tclprep)
+      }
+      if {[info exists ::ioerropts(-sqlprep)]} {
+        execsql $::ioerropts(-sqlprep)
+      }
+      expr 0
+    } {0}
+
+    # Read the 'checksum' of the database.
+    if {$::ioerropts(-cksum)} {
+      set checksum [cksum]
+    }
+  
+    # Set the Nth IO error to fail.
+    do_test $testname.$n.2 [subst {
+      set ::sqlite_io_error_pending $n
+    }] $n
+  
+    # Create a single TCL script from the TCL and SQL specified
+    # as the body of the test.
+    set ::ioerrorbody {}
+    if {[info exists ::ioerropts(-tclbody)]} {
+      append ::ioerrorbody "$::ioerropts(-tclbody)\n"
+    }
+    if {[info exists ::ioerropts(-sqlbody)]} {
+      append ::ioerrorbody "db eval {$::ioerropts(-sqlbody)}"
+    }
+
+    # Execute the TCL Script created in the above block. If
+    # there are at least N IO operations performed by SQLite as
+    # a result of the script, the Nth will fail.
+    do_test $testname.$n.3 {
+      set r [catch $::ioerrorbody msg]
+      set ::go [expr {$::sqlite_io_error_pending<=0}]
+      set s [expr $::sqlite_io_error_pending>0]
+      # puts "$::sqlite_io_error_pending $r $msg"
+      expr { ($s && !$r) || (!$s && $r) }
+      # expr {$::sqlite_io_error_pending>0 || $r!=0}
+    } {1}
+
+    # If an IO error occured, then the checksum of the database should
+    # be the same as before the script that caused the IO error was run.
+    if {$::go && $::ioerropts(-cksum)} {
+      do_test $testname.$n.4 {
+        catch {db close}
+        set ::DB [sqlite3 db test.db]
+        cksum
+      } $checksum
+    }
+
+  }
+  set ::sqlite_io_error_pending 0
+  unset ::ioerropts
+}
+
+# Return a checksum based on the contents of database 'db'.
+#
+proc cksum {{db db}} {
+  set txt [$db eval {
+      SELECT name, type, sql FROM sqlite_master order by name
+  }]\n
+  foreach tbl [$db eval {
+      SELECT name FROM sqlite_master WHERE type='table' order by name
+  }] {
+    append txt [$db eval "SELECT * FROM $tbl"]\n
+  }
+  foreach prag {default_synchronous default_cache_size} {
+    append txt $prag-[$db eval "PRAGMA $prag"]\n
+  }
+  set cksum [string length $txt]-[md5 $txt]
+  # puts $cksum-[file size test.db]
+  return $cksum
+}
+
+# Copy file $from into $to. This is used because some versions of
+# TCL for windows (notably the 8.4.1 binary package shipped with the
+# current mingw release) have a broken "file copy" command.
+#
+proc copy_file {from to} {
+  if {$::tcl_platform(platform)=="unix"} {
+    file copy -force $from $to
+  } else {
+    set f [open $from]
+    fconfigure $f -translation binary
+    set t [open $to w]
+    fconfigure $t -translation binary
+    puts -nonewline $t [read $f [file size $from]]
+    close $t
+    close $f
+  }
 }
 
 # If the library is compiled with the SQLITE_DEFAULT_AUTOVACUUM macro set

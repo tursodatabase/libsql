@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE TABLE statement.
 #
-# $Id: table.test,v 1.36 2005/01/21 03:12:16 danielk1977 Exp $
+# $Id: table.test,v 1.37 2005/01/22 03:39:39 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -309,7 +309,6 @@ do_test table-7.3 {
 # Try out the CREATE TABLE AS syntax
 #
 do_test table-8.1 {
-breakpoint
   execsql2 {
     CREATE TABLE t2 AS SELECT * FROM weird;
     SELECT * FROM t2;

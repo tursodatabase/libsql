@@ -13,7 +13,7 @@
 # This file implements tests to make sure SQLite does not crash or
 # segfault if it sees a corrupt database file.
 #
-# $Id: corrupt2.test,v 1.1 2005/01/11 10:25:07 danielk1977 Exp $
+# $Id: corrupt2.test,v 1.2 2005/01/22 03:39:39 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -32,7 +32,7 @@ do_test corrupt2-1.2 {
   # Corrupt the 16 byte magic string at the start of the file
   file delete -force corrupt.db
   file delete -force corrupt.db-journal
-  file copy test.db corrupt.db
+  copy_file test.db corrupt.db
   set f [open corrupt.db a]
   seek $f 8 start
   puts $f blah
@@ -50,7 +50,7 @@ do_test corrupt2-1.3 {
   # Corrupt the page-size (bytes 16 and 17 of page 1).
   file delete -force corrupt.db
   file delete -force corrupt.db-journal
-  file copy test.db corrupt.db
+  copy_file test.db corrupt.db
   set f [open corrupt.db a]
   fconfigure $f -encoding binary
   seek $f 16 start
@@ -69,7 +69,7 @@ do_test corrupt2-1.4 {
   # Corrupt the free-block list on page 1.
   file delete -force corrupt.db
   file delete -force corrupt.db-journal
-  file copy test.db corrupt.db
+  copy_file test.db corrupt.db
   set f [open corrupt.db a]
   fconfigure $f -encoding binary
   seek $f 101 start
@@ -88,7 +88,7 @@ do_test corrupt2-1.5 {
   # Corrupt the free-block list on page 1.
   file delete -force corrupt.db
   file delete -force corrupt.db-journal
-  file copy test.db corrupt.db
+  copy_file test.db corrupt.db
   set f [open corrupt.db a]
   fconfigure $f -encoding binary
   seek $f 101 start

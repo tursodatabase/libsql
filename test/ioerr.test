@@ -15,75 +15,10 @@
 # The tests in this file use special facilities that are only
 # available in the SQLite test fixture.
 #
-# $Id: ioerr.test,v 1.16 2005/01/19 03:47:16 danielk1977 Exp $
+# $Id: ioerr.test,v 1.17 2005/01/22 03:39:39 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-
-# Usage: do_ioerr_test <test number> <options...>
-#
-# The first argument, <test number>, is an integer used to name the
-# tests executed by this proc. Options are as follows:
-#
-#     -tclprep          TCL script to run to prepare test.
-#     -sqlprep          SQL script to run to prepare test.
-#     -tclbody          TCL script to run with IO error simulation.
-#     -sqlbody          TCL script to run with IO error simulation.
-#     -exclude          List of 'N' values not to test.
-#     -start            Value of 'N' to begin with (default 1)
-#
-proc do_ioerr_test {tn args} {
-  array set ::ioerropts $args
-
-  set ::go 1
-  if {![info exists ::ioerropts(-start)]} {
-    set ::ioerropts(-start) 1
-  }
-  for {set n $::ioerropts(-start)} {$::go} {incr n} {
- 
-    if {[info exists ::ioerropts(-exclude)]} {
-      if {[lsearch $::ioerropts(-exclude) $n]!=-1} continue
-    }
-
-    do_test ioerr-$tn.$n.1 {
-      set ::sqlite_io_error_pending 0
-      catch {db close}
-      catch {file delete -force test.db}
-      catch {file delete -force test.db-journal}
-      catch {file delete -force test2.db}
-      catch {file delete -force test2.db-journal}
-  
-      set ::DB [sqlite3 db test.db]
-  
-      if {[info exists ::ioerropts(-tclprep)]} {
-        eval $::ioerropts(-tclprep)
-      }
-      if {[info exists ::ioerropts(-sqlprep)]} {
-        execsql $::ioerropts(-sqlprep)
-      }
-      expr 0
-    } {0}
-  
-    do_test ioerr-$tn.$n.2 [subst {
-      set ::sqlite_io_error_pending $n
-    }] $n
-  
-    set ::ioerrorbody {}
-    if {[info exists ::ioerropts(-tclbody)]} {
-      append ::ioerrorbody "$::ioerropts(-tclbody)\n"
-    }
-    if {[info exists ::ioerropts(-sqlbody)]} {
-      append ::ioerrorbody "db eval {$::ioerropts(-sqlbody)}"
-    }
-    do_test ioerr-$tn.$n.3 {
-      set r [catch $::ioerrorbody msg]
-      set ::go [expr {$::sqlite_io_error_pending<=0}]
-      expr {$::sqlite_io_error_pending>0 || $r!=0}
-    } {1}
-  }
-  set ::sqlite_io_error_pending 0
-  unset ::ioerropts
-}
 
 # If SQLITE_DEFAULT_AUTOVACUUM is set to true, then a simulated IO error
 # on the 8th IO operation in the SQL script below doesn't report an error.
@@ -92,7 +27,7 @@ proc do_ioerr_test {tn args} {
 # file when the file on disk is only 1 page. The pager layer detects that
 # this has happened and suppresses the error returned by the OS layer.
 #
-do_ioerr_test 1 -sqlprep {
+do_ioerr_test ioerr-1 -sqlprep {
   SELECT * FROM sqlite_master;
 } -sqlbody {
   CREATE TABLE t1(a,b,c);
@@ -110,76 +45,40 @@ do_ioerr_test 1 -sqlprep {
   DELETE FROM t1 WHERE a<100;
 } -exclude [expr [string match [execsql {pragma auto_vacuum}] 1] ? 8 : 0]
 
+# Test for IO errors during a VACUUM. 
+#
+# The first IO call is excluded from the test. This call attempts to read
+# the file-header of the temporary database used by VACUUM. Since the
+# database doesn't exist at that point, the IO error is not detected.
+# 
+# Additionally, if auto-vacuum is enabled, the 12th IO error is not 
+# detected. Same reason as the 8th in the test case above.
+#
+# IO error 134 is omitted because this occurs while closing the 
+# temporary database used by vacuum and is not reported.
+#
+do_ioerr_test ioerr-2 -cksum true -sqlprep {
+  BEGIN;
+  CREATE TABLE t1(a, b, c);
+  INSERT INTO t1 VALUES(1, randstr(5,50), randstr(5,50));
+  INSERT INTO t1 SELECT a+2, b||'-'||rowid, c||'-'||rowid FROM t1;
+  INSERT INTO t1 SELECT a+4, b||'-'||rowid, c||'-'||rowid FROM t1;
+  INSERT INTO t1 SELECT a+8, b||'-'||rowid, c||'-'||rowid FROM t1;
+  INSERT INTO t1 SELECT a+16, b||'-'||rowid, c||'-'||rowid FROM t1;
+  INSERT INTO t1 SELECT a+32, b||'-'||rowid, c||'-'||rowid FROM t1;
+  INSERT INTO t1 SELECT a+64, b||'-'||rowid, c||'-'||rowid FROM t1;
+  INSERT INTO t1 SELECT a+128, b||'-'||rowid, c||'-'||rowid FROM t1;
+  INSERT INTO t1 VALUES(1, randstr(600,600), randstr(600,600));
+  CREATE TABLE t2 AS SELECT * FROM t1;
+  CREATE TABLE t3 AS SELECT * FROM t1;
+  COMMIT;
+  DROP TABLE t2;
+} -sqlbody {
+  VACUUM;
+} -exclude [list \
+    1 134 [expr [string match [execsql {pragma auto_vacuum}] 1]?12:-1]]
 
-proc cksum {{db db}} {
-  set txt [$db eval {
-      SELECT name, type, sql FROM sqlite_master order by name
-  }]\n
-  foreach tbl [$db eval {
-      SELECT name FROM sqlite_master WHERE type='table' order by name
-  }] {
-    append txt [$db eval "SELECT * FROM $tbl"]\n
-  }
-  foreach prag {default_synchronous default_cache_size} {
-    append txt $prag-[$db eval "PRAGMA $prag"]\n
-  }
-  set cksum [string length $txt]-[md5 $txt]
-  # puts $cksum-[file size test.db]
-  return $cksum
-}
-
-set ::go 1
-for {set n 1} {$go} {incr n} {
-  if {$n==24} breakpoint
-  do_test ioerr-2.$n.1 {
-    set ::sqlite_io_error_pending 0
-    db close
-    catch {file delete -force test.db}
-    catch {file delete -force test.db-journal}
-    catch {file delete -force test2.db}
-    catch {file delete -force test2.db-journal}
-    sqlite3 db test.db
-    execsql {
-      BEGIN;
-      CREATE TABLE t1(a, b, c);
-      INSERT INTO t1 VALUES(1, randstr(5,50), randstr(5,50));
-      INSERT INTO t1 SELECT a+2, b||'-'||rowid, c||'-'||rowid FROM t1;
-      INSERT INTO t1 SELECT a+4, b||'-'||rowid, c||'-'||rowid FROM t1;
-      INSERT INTO t1 SELECT a+8, b||'-'||rowid, c||'-'||rowid FROM t1;
-      INSERT INTO t1 SELECT a+16, b||'-'||rowid, c||'-'||rowid FROM t1;
-      INSERT INTO t1 SELECT a+32, b||'-'||rowid, c||'-'||rowid FROM t1;
-      INSERT INTO t1 SELECT a+64, b||'-'||rowid, c||'-'||rowid FROM t1;
-      INSERT INTO t1 SELECT a+128, b||'-'||rowid, c||'-'||rowid FROM t1;
-      INSERT INTO t1 VALUES(1, randstr(600,600), randstr(600,600));
-      CREATE TABLE t2 AS SELECT * FROM t1;
-      CREATE TABLE t3 AS SELECT * FROM t1;
-      COMMIT;
-      DROP TABLE t2;
-    }
-    set ::cksum [cksum]
-    execsql {
-      SELECT name FROM sqlite_master WHERE type='table'
-    }
-  } {t1 t3}
-  do_test ioerr-2.$n.2 [subst {
-    set ::sqlite_io_error_pending $n
-  }] $n
-  do_test ioerr-2.$n.3 {
-    set r [catch {db eval {
-      VACUUM;
-    }} msg]
-    set ::go [expr {$::sqlite_io_error_pending<=0}]
-    expr {$::sqlite_io_error_pending>0 || $r!=0}
-    set ::sqlite_io_error_pending 0
-    db close
-    sqlite3 db test.db
-    cksum
-  } $cksum
-}
-set ::sqlite_io_error_pending 0
-
-
-do_ioerr_test 3 -tclprep {
+do_ioerr_test ioerr-3 -tclprep {
   execsql {
     PRAGMA cache_size = 10;
     BEGIN;
@@ -203,7 +102,7 @@ do_ioerr_test 3 -tclprep {
 
 # Test IO errors that can occur retrieving a record header that flows over
 # onto an overflow page.
-do_ioerr_test 4 -tclprep {
+do_ioerr_test ioerr-4 -tclprep {
   set sql "CREATE TABLE abc(a1"
   for {set i 2} {$i<1300} {incr i} {
     append sql ", a$i"
@@ -223,7 +122,7 @@ set ex ""
 if {[string match [execsql {pragma auto_vacuum}] 1]} {
   set ex [list 8 17]
 }
-do_ioerr_test 5 -sqlprep {
+do_ioerr_test ioerr-5 -sqlprep {
   ATTACH 'test2.db' AS test2;
 } -sqlbody {
   BEGIN;
@@ -235,7 +134,12 @@ do_ioerr_test 5 -sqlprep {
 # Test IO errors when replaying two hot journals from a 2-file 
 # transaction. This test only runs on UNIX.
 if {$tcl_platform(platform)=="unix" && [file exists ./crashtest]} {
-  do_ioerr_test 6 -tclprep {
+  do_ioerr_test ioerr-6 -tclprep {
+    execsql {
+      ATTACH 'test2.db' as aux;
+      CREATE TABLE tx(a, b);
+      CREATE TABLE aux.ty(a, b);
+    }
     set rc [crashsql 2 test2.db-journal {
       ATTACH 'test2.db' as aux;
       PRAGMA cache_size = 10;
@@ -248,11 +152,10 @@ if {$tcl_platform(platform)=="unix" && [file exists ./crashtest]} {
       error "Wrong error message: $rc"
     }
   } -sqlbody {
-    ATTACH 'test2.db' as aux;
-    SELECT * FROM t1;
-    SELECT * FROM t2;
+    SELECT * FROM sqlite_master;
+    SELECT * FROM aux.sqlite_master;
   }
-}
+} 
 
 # Test handling of IO errors that occur while rolling back hot journal
 # files.
@@ -261,7 +164,7 @@ if {$tcl_platform(platform)=="unix" && [file exists ./crashtest]} {
 # SQLite holds a mandatory exclusive lock on journal files it has open.
 #
 if {$tcl_platform(platform)!="windows"} {
-  do_ioerr_test 7 -tclprep {
+  do_ioerr_test ioerr-7 -tclprep {
     db close
     sqlite3 db2 test2.db
     db2 eval {
@@ -271,8 +174,8 @@ if {$tcl_platform(platform)!="windows"} {
       BEGIN;
       INSERT INTO t1 VALUES(3, 4);
     }
-    file copy -force test2.db test.db
-    file copy -force test2.db-journal test.db-journal
+    copy_file test2.db test.db
+    copy_file test2.db-journal test.db-journal
     db2 close
   } -tclbody {
     sqlite3 db test.db
@@ -281,15 +184,6 @@ if {$tcl_platform(platform)!="windows"} {
     }
   } -exclude 1
 }
-
-# do_ioerr_test 15 -sqlprep {
-#   CREATE TABLE abc(a UNIQUE, b, c);
-#   INSERT INTO abc VALUES(1, 2, 3);
-# } -sqlbody {
-#   BEGIN;
-#   INSERT INTO abc VALUES(1, 2, 3);
-#   COMMIT;
-# }
 
 finish_test
 

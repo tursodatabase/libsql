@@ -14,7 +14,7 @@
 # special feature is used to see what happens in the library if a malloc
 # were to really fail due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.21 2005/01/19 03:52:55 danielk1977 Exp $
+# $Id: malloc.test,v 1.22 2005/01/22 03:39:39 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -365,8 +365,8 @@ do_malloc_test 14 -tclprep {
     BEGIN;
     INSERT INTO t1 VALUES(3, 4);
   }
-  file copy -force test2.db test.db
-  file copy -force test2.db-journal test.db-journal
+  copy_file test2.db test.db
+  copy_file test2.db-journal test.db-journal
   db2 close
 } -tclbody {
   sqlite3 db test.db
