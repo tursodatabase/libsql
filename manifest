@@ -1,5 +1,5 @@
-C Fix\sfor\sticket\s#147:\sHonor\sthe\sORDER\sBY\sand\sLIMIT\sclauses\sin\sa\sSELECT\seven\nif\sthe\sdestination\sof\sthat\sSELECT\sis\sa\ssubroutine\scall.\s(CVS\s747)
-D 2002-09-08T17:23:42
+C Update\sthe\sSQL\slanguage\sdocumentation\sto\stalk\sabout\sSELECT\sDISTINCT.\s(CVS\s748)
+D 2002-09-12T14:08:32
 F Makefile.in d6c9a85c2a5e696843201d090dcf8bf2f8716f2a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -139,7 +139,7 @@ F www/faq.tcl 207d3e31597c63ed3bbecd58aaeaa38c53d39dd4
 F www/fileformat.tcl a4b5c2c6e89b7d42d09f97fd4d7bbd39cbf24936
 F www/formatchng.tcl b4449e065d2da38b6563bdf12cf46cfe1d4d765e
 F www/index.tcl 190f767c4b0bf44f75bf4af023d644c3e7a1e579
-F www/lang.tcl bf9d830aa0042718ae157e25fc7539f5378c46ff
+F www/lang.tcl 6be4254a751ab183ec974fe65375f50230c777f3
 F www/mingw.tcl f1c7c0a7f53387dd9bb4f8c7e8571b7561510ebc
 F www/nulls.tcl 29497dac2bc5b437aa7e2e94577dad4d8933ed26
 F www/omitted.tcl 118062f40a203fcb88b8d68ef1d7c0073ac191ec
@@ -149,7 +149,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P c4f0bb02387a6e6f254320e1e5eef3d5d8a3c538
-R d53bc433eee4d832716a49a9ea35550f
+P 23fe36c7e88282f6d1b7547ab892ea88f0e65262
+R cb437ad4d3f01e7699b3e8bb2797f1f9
 U drh
-Z fdf23733e2dbe5e105dfffa0429ea82b
+Z 0ee1932374e268052ad2e19b552bf00b

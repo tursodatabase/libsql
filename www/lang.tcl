@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.45 2002/08/25 20:11:19 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.46 2002/09/12 14:08:32 drh Exp $}
 
 puts {<html>
 <head>
@@ -1160,7 +1160,7 @@ information.</p>
 Section SELECT select
 
 Syntax {sql-statement} {
-SELECT <result> [FROM <table-list>]
+SELECT [DISTINCT] <result> [FROM <table-list>]
 [WHERE <expr>]
 [GROUP BY <expr-list>]
 [HAVING <expr>]
