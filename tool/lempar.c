@@ -364,11 +364,11 @@ static int yy_find_shift_action(
 ** return YY_NO_ACTION.
 */
 static int yy_find_reduce_action(
-  yyParser *pParser,        /* The parser */
+  int stateno,              /* Current state number */
   int iLookAhead            /* The look-ahead token */
 ){
   int i;
-  int stateno = pParser->yystack[pParser->yyidx].stateno;
+  /* int stateno = pParser->yystack[pParser->yyidx].stateno; */
  
   i = yy_reduce_ofst[stateno];
   if( i==YY_REDUCE_USE_DFLT ){
@@ -476,7 +476,7 @@ static void yy_reduce(
   yygoto = yyRuleInfo[yyruleno].lhs;
   yysize = yyRuleInfo[yyruleno].nrhs;
   yypParser->yyidx -= yysize;
-  yyact = yy_find_reduce_action(yypParser,yygoto);
+  yyact = yy_find_reduce_action(yymsp[-yysize].stateno,yygoto);
   if( yyact < YYNSTATE ){
 #ifdef NDEBUG
     /* If we are not debugging and the reduce action popped at least
