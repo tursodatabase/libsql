@@ -1044,49 +1044,6 @@ int sqlite3VdbeCursorMoveto(Cursor *p){
   return SQLITE_OK;
 }
 
-#if 0
-/*
-** FIX ME
-**
-** This function is included temporarily so that regression tests have
-** a chance of passing. It always uses memcmp().
-*/
-int sqlite2BtreeKeyCompare(
-  BtCursor *pCur,       /* Pointer to entry to compare against */
-  const void *pKey,     /* Key to compare against entry that pCur points to */
-  int nKey,             /* Number of bytes in pKey */
-  int nIgnore,          /* Ignore this many bytes at the end of pCur */
-  int *pResult          /* Write the result here */
-){
-  const void *pCellKey;
-  void *pMallocedKey;
-  u64 nCellKey;
-  int rc;
-
-  sqlite3BtreeKeySize(pCur, &nCellKey);
-  nCellKey = nCellKey - nIgnore;
-  if( nCellKey<=0 ){
-    *pResult = 0;
-    return SQLITE_OK;
-  }
-
-  pCellKey = sqlite3BtreeKeyFetch(pCur, nCellKey);
-  if( pCellKey ){
-    *pResult = memcmp(pCellKey, pKey, nKey>nCellKey?nCellKey:nKey);
-    return SQLITE_OK;
-  }
-
-  pMallocedKey = sqliteMalloc( nCellKey );
-  if( pMallocedKey==0 ) return SQLITE_NOMEM;
-
-  rc = sqlite3BtreeKey(pCur, 0, nCellKey, pMallocedKey);
-  *pResult = memcmp(pMallocedKey, pKey, nKey>nCellKey?nCellKey:nKey);
-  sqliteFree(pMallocedKey);
-
-  return rc;
-}
-#endif
-
 /*
 ** The following functions:
 **

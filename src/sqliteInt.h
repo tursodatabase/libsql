@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.236 2004/05/18 10:06:26 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.237 2004/05/18 23:21:36 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -259,6 +259,7 @@ typedef struct FKey FKey;
 typedef struct Db Db;
 typedef struct AuthContext AuthContext;
 typedef struct KeyClass KeyClass;
+typedef struct CollSeq CollSeq;
 
 /*
 ** Each database file to be accessed by the system is an instance
@@ -369,6 +370,8 @@ struct sqlite {
   void *pCommitArg;             /* Argument to xCommitCallback() */   
   int (*xCommitCallback)(void*);/* Invoked at every commit. */
   Hash aFunc;                   /* All functions that can be in SQL exprs */
+  Hash aCollSeq;                /* All collating sequences */
+  CollSeq *pDfltColl;           /* The default collating sequence (memcmp) */
   i64 lastRowid;                /* ROWID of most recent insert (see above) */
   i64 priorNewRowid;            /* Last randomly generated ROWID */
   int magic;                    /* Magic number for detect library misuse */
@@ -455,11 +458,28 @@ struct Column {
   char *zName;     /* Name of this column */
   char *zDflt;     /* Default value of this column */
   char *zType;     /* Data type for this column */
+  CollSeq *pColl;  /* Collating sequence.  If NULL, use the default */
   u8 notNull;      /* True if there is a NOT NULL constraint */
   u8 isPrimKey;    /* True if this column is part of the PRIMARY KEY */
-//  u8 sortOrder;    /* Some combination of SQLITE_SO_... values */ 
   char affinity;   /* One of the SQLITE_AFF_... values */
   u8 dottedName;   /* True if zName contains a "." character */
+};
+
+/*
+** A "Collating Sequence" is defined by an instance of the following
+** structure.  Every collating sequence has a name and a comparison
+** function that defines the order of text for that sequence.  The
+** CollSeq.pUser parameter is an extra parameter that passed in as
+** the first argument to the comparison function.
+**
+** If CollSeq.xCmp is NULL, it means that the collating sequence is
+** undefined.  Indices built on an undefined collating sequence may
+** not be read or written.
+*/
+struct CollSeq {
+  char *zName;         /* Name of the collating sequence */
+  void *pUser;         /* First argument to xCmp() */
+  int (*xCmp)(void*,int,const void*,int,const void*); /* Comparison function */
 };
 
 /*
@@ -705,6 +725,7 @@ struct Token {
 struct Expr {
   u8 op;                 /* Operation performed by this node */
   u8 dataType;           /* Either SQLITE_SO_TEXT or SQLITE_SO_NUM */
+  char affinity;         /* The affinity of the column or 0 if not a column */
   u8 iDb;                /* Database referenced by this expression */
   u8 flags;              /* Various flags.  See below */
   Expr *pLeft, *pRight;  /* Left and right subnodes */
@@ -718,7 +739,6 @@ struct Expr {
                          ** result from the iAgg-th element of the aggregator */
   Select *pSelect;       /* When the expression is a sub-select.  Also the
                          ** right side of "<expr> IN (<select>)" */
-  char affinity;         /* The affinity of the column or 0 if not a column */
 };
 
 /*
