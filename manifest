@@ -1,5 +1,5 @@
-C Fix\stypo\sin\sthe\sformatchng.html\sdocument.\s(CVS\s2417)
-D 2005-03-23T01:05:14
+C Fix\sa\stypo\sin\svdbeInt.h.\s\sThis\swas\spotentially\sa\sserious\smistake,\sbut\swe\sgot\nlucky\sand\sit\sis\sbenign.\s(CVS\s2418)
+D 2005-03-23T01:48:48
 F Makefile.in 5c00d0037104de2a50ac7647a5f12769795957a3
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -76,7 +76,7 @@ F src/utf.c bda5eb85039ef16f2d17004c1e18c96e1ab0a80c
 F src/util.c 02bc2750336b021b3f10e61538f665c4b0033b5d
 F src/vacuum.c 5cf598003191bd91c17a64742bad8e46241698a8
 F src/vdbe.c c7973dc0ab52538646018620e3d3c68aa9e6d6c4
-F src/vdbe.h 7e307333d74e134eff237bb9d45fe764e544ad6a
+F src/vdbe.h 7f586cb6d6b57764e5aac1f87107d6a95ddce24c
 F src/vdbeInt.h e80721cd8ff611789e20743eec43363a9fb5a48e
 F src/vdbeapi.c 467caa6e6fb9247528b1c7ab9132ae1b4748e8ac
 F src/vdbeaux.c 91013922626fed75ad091459b7f05f9e86581690
@@ -278,7 +278,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P debf40e8ffa35406685ec027ced1f147ef0487df
-R 94c94ae58ffbd64f0dab2858a42369e1
+P 35ace66f3ebefd4cd1455c923199511ab3b72bb6
+R 4ba6e353433ed3b9a4de1ad1305ee81e
 U drh
-Z 347759878d68c29d25c2b69cc24640cc
+Z baa3cf4075d33884f3f8891f31513410

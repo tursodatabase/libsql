@@ -15,7 +15,7 @@
 ** or VDBE.  The VDBE implements an abstract machine that runs a
 ** simple program to access and modify the underlying database.
 **
-** $Id: vdbe.h,v 1.93 2005/03/09 12:26:51 danielk1977 Exp $
+** $Id: vdbe.h,v 1.94 2005/03/23 01:48:48 drh Exp $
 */
 #ifndef _SQLITE_VDBE_H_
 #define _SQLITE_VDBE_H_
@@ -78,7 +78,7 @@ typedef struct VdbeOpList VdbeOpList;
 ** from a single sqliteMalloc().  But no copy is made and the calling
 ** function should *not* try to free the KeyInfo.
 */
-#define P3_KEYINFO_HANDOFF (-7)
+#define P3_KEYINFO_HANDOFF (-9)
 
 /*
 ** The following macro converts a relative address in the p2 field
