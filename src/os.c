@@ -19,7 +19,13 @@
 
 #ifndef OS_UNIX
 # ifndef OS_WIN
-#  define OS_UNIX 1
+#  if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
+#    define OS_WIN 1
+#    define OS_UNIX 0
+#  else
+#    define OS_WIN 0
+#    define OS_UNIX 1
+#  endif
 # else
 #  define OS_UNIX 0
 # endif
@@ -744,22 +750,65 @@ int sqliteOsSleep(int ms){
 }
 
 /*
+** Macros used to determine whether or not to use threads.  The
+** SQLITE_UNIX_THREADS macro is defined if we are synchronizing for
+** Posix threads and SQLITE_W32_THREADS is defined if we are
+** synchronizing using Win32 threads.
+*/
+#if OS_UNIX && defined(THREADSAFE) && THREADSAFE
+# include <pthread.h>
+# define SQLITE_UNIX_THREADS 1
+#endif
+#if OS_WIN && defined(THREADSAFE) && THREADSAFE
+# define SQLITE_W32_THREADS 1
+#endif
+
+/*
+** Static variables used for thread synchronization
+*/
+static int inMutex = 0;
+#ifdef SQLITE_UNIX_THREADS
+  static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+#endif
+#ifdef SQLITE_W32_THREADS
+  static CRITICAL_SECTION cs;
+#endif
+
+/*
 ** The following pair of routine implement mutual exclusion for
 ** multi-threaded processes.  Only a single thread is allowed to
 ** executed code that is surrounded by EnterMutex() and LeaveMutex().
 **
 ** SQLite uses only a single Mutex.  There is not much critical
 ** code and what little there is executes quickly and without blocking.
-**
-****** TBD:  The mutex is currently unimplemented.  Until it is
-****** implemented, SQLite is not threadsafe.
 */
-static int inMutex = 0;
 void sqliteOsEnterMutex(){
+#ifdef SQLITE_UNIX_THREADS
+  pthread_mutex_lock(&mutex);
+#endif
+#ifdef SQLITE_W32_THREADS
+  static int isInit = 0;
+  while( !isInit ){
+    static long lock = 0;
+    if( InterlockedIncrement(&lock)==1 ){
+      InitializeCriticalSection(&cs);
+      isInit = 1;
+    }else{
+      Sleep(1);
+    }
+  }
+  EnterCriticalSection(&cs);
+#endif
   assert( !inMutex );
   inMutex = 1;
 }
 void sqliteOsLeaveMutex(){
   assert( inMutex );
   inMutex = 0;
+#ifdef SQLITE_UNIX_THREADS
+  pthread_mutex_unlock(&mutex);
+#endif
+#ifdef SQLITE_W32_THREADS
+  LeaveCriticalSection(&cs);
+#endif
 }

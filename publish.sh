@@ -32,7 +32,7 @@ cd tsrc
 rm shell.c
 TCLDIR=/home/drh/tcltk/8.2linux
 TCLSTUBLIB=$TCLDIR/libtclstub8.2g.a
-OPTS='-DUSE_TCL_STUBS=1 -DNDEBUG=1 -DOS_UNIX=1 -DOS_WIN=0'
+OPTS='-DUSE_TCL_STUBS=1 -DNDEBUG=1'
 gcc -fPIC $OPTS -O2 -I. -I$TCLDIR -shared *.c $TCLSTUBLIB -o tclsqlite.so
 strip tclsqlite.so
 mv tclsqlite.so ..
@@ -49,7 +49,7 @@ rm shell.c
 TCLDIR=/home/drh/tcltk/8.2win
 TCLSTUBLIB=$TCLDIR/tclstub82.a
 PATH=$PATH:/opt/mingw/bin
-OPTS='-DUSE_TCL_STUBS=1 -DNDEBUG=1 -DOS_UNIX=0 -DOS_WIN=1'
+OPTS='-DUSE_TCL_STUBS=1 -DNDEBUG=1 -DTHREADSAFE=1'
 CC="i386-mingw32-gcc -O2 $OPTS -I. -I$TCLDIR"
 rm shell.c
 for i in *.c; do
@@ -78,7 +78,7 @@ zip tclsqlite.zip tclsqlite.dll
 make target_source
 cd tsrc
 rm tclsqlite.c
-OPTS='-DSTATIC_BUILD=1 -DNDEBUG=1 -DOS_UNIX=0 -DOS_WIN=1'
+OPTS='-DSTATIC_BUILD=1 -DNDEBUG=1'
 i386-mingw32-gcc -O2 $OPTS -I. -I$TCLDIR *.c -o sqlite.exe
 mv sqlite.exe ..
 cd ..

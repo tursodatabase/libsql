@@ -1,7 +1,7 @@
-C Fix\swarning\smessages\sin\sVC++.\s\sPatches\sfrom\snicolas352001.\s(CVS\s347)
-D 2002-01-14T09:28:20
+C Added\simplementations\sfor\ssqliteOsEnterMutex()\sand\ssqliteOsLeaveMutex().\s(CVS\s348)
+D 2002-01-15T18:39:44
 F Makefile.in 9fa4277413bf1d9cf91365f07d4108d7d87ed2af
-F Makefile.template c88ffcb9c339e718f434d0c7f045bcd7eea125af
+F Makefile.template 3e26a3b9e7aee1b811deaf673e8d8973bdb3f22d
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
 F VERSION e4851f0e1fd8b7411787e28c5062067c23d706f1
 F aclocal.m4 11faa843caa38fd451bc6aeb43e248d1723a269d
@@ -16,7 +16,7 @@ F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F libtool c56e618713c9510a103bda6b95f3ea3900dcacd6
 F ltmain.sh e9ed72eb1d690f447c13945eaf69e28af531eda1
-F publish.sh cb0f8f7bcb65b8360d0f6668a216a9ac9d5da892
+F publish.sh 523db0d8a451df7a8300e193afaa4ac44e41f98c
 F sqlite.1 2e2bb0529ef468ade9e4322bd609d0695fb9ded9
 F src/TODO af7f3cab0228e34149cf98e073aa83d45878e7e6
 F src/btree.c c796e387da340cb628dc1e41f684fc20253f561e
@@ -29,7 +29,7 @@ F src/hash.h a5f5b3ce2d086a172c5879b0b06a27a82eac9fac
 F src/insert.c 813c37719866c583e6ca7660f94f10230f4e385d
 F src/main.c bdce5ed20f2828cd5b390c3880d5820b70e09871
 F src/md5.c 52f677bfc590e09f71d07d7e327bd59da738d07c
-F src/os.c dd91ef215566d9973eefcf6823c9e348c198ffb2
+F src/os.c c615faa4d23e742e0650e0751a6ad2a18438ad53
 F src/os.h 5405a5695bf16889d4fc6caf9d42043caa41c269
 F src/pager.c 1e80a3ba731e454df6bd2e58d32eeba7dd65121b
 F src/pager.h f78d064c780855ff70beacbeba0e2324471b26fe
@@ -37,7 +37,7 @@ F src/parse.y f3fc4fb5766393003577bd175eb611495f6efd9f
 F src/printf.c 300a90554345751f26e1fc0c0333b90a66110a1d
 F src/random.c 2a9cc2c9716d14815fd4c2accf89d87a1143e46b
 F src/select.c bddd8b5d07ffdae0d798c10b20dc7167469a3904
-F src/shell.c f8008f0607f9523ca0f9562b8975c1bcc427d2b3
+F src/shell.c 539a41d4121ed371d438d57d829e53056a54471c
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in a4c11d38d62b1bfbd50a5804edee8ca54c1adc9b
 F src/sqliteInt.h 7a7c5213a422e29883dcfe4c07d1f1def24f03fd
@@ -59,7 +59,7 @@ F test/btree2.test 08e9485619265cbaf5d11bd71f357cdc26bb87e0
 F test/btree3.test 9caa9e22491dd8cd8aa36d7ac3b48b089817c895
 F test/copy.test 768e6f1701a07d08090e1ca7f7dcce0a7a72b43e
 F test/delete.test c904a62129fe102b314a96111a8417f10249e4d8
-F test/expr.test d350ef5b21cc26599357fb93d15b8a5f7b524769
+F test/expr.test c8a495050dcec3f9e68538c3ef466726933302c1
 F test/func.test 51dbe3f8a4c28972751697423e6acc5d6b551df1
 F test/in.test 9323681388be301dc73f370b4cd62c5a33f79d1e
 F test/index.test c8a471243bbf878974b99baf5badd59407237cf3
@@ -86,7 +86,7 @@ F test/sort.test 462c1161eee1abaa7cc93990e0b34d5fdb70ce19
 F test/subselect.test 335d3dad8d585726c447dfee8d9c4f7383c76b78
 F test/table.test 3ef4254d62ece31a3872ab11cdaec846f6fa8fd1
 F test/tableapi.test 51d0c209aa6b1158cb952ec917c656d4ce66e9e4
-F test/tclsqlite.test feca0f2b23ba51d202d67d71e10ba7a8a1621f82
+F test/tclsqlite.test 9cbac5a39e78851df6b3608d3cc6b71617407bdd
 F test/temptable.test 0e9934283259a5e637eec756a7eefd6964c0f79b
 F test/tester.tcl 96db1b49157388edb57e11bf33285e3811a897e4
 F test/trans.test 9e49495c06b1c41f889bf4f0fb195a015b126de0
@@ -105,7 +105,7 @@ F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 72a0c80e9054cc7025a50928d28d9c75c02c2b8b
 F www/c_interface.tcl 9123810452845783fac8e3184929463d9e70d609
-F www/changes.tcl cf67e8dec21d813c48f3cecc00bbfa6bd397dd69
+F www/changes.tcl a3499bf739cd6eecfdfab30485a51a96a048a775
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
 F www/download.tcl 1ea61f9d89a2a5a9b2cee36b0d5cf97321bdefe0
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
@@ -119,7 +119,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 880ef67cb4f2797b95bf1368fc4e0d8ca0fda956
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 7da00a33fece0b03b88c5103ce2b57e4d74ba2e4
-R f896a2416d17f96354fea74d954d8046
+P f3038d218c91b44b70b75a7b881ea24c87fa6a02
+R afcefb473faa5582942ee6c805ad94f5
 U drh
-Z fb35b98556548e06aeb99c6405b80f40
+Z ddd0c4146a965f893289115586945425

@@ -28,6 +28,19 @@ BCC = gcc -g -O2
 #USLEEP = 
 USLEEP = -DHAVE_USLEEP=1
 
+#### If you want the SQLite library to be safe for use within a 
+#    multi-threaded program, then define the following macro
+#    appropriately:
+#
+#THREADSAFE = -DTHREADSAFE=1
+THREADSAFE = -DTHREADSAFE=0
+
+#### Specify any extra linker options needed to make the library
+#    thread safe
+#
+#THREADLIB = -lpthread
+THREADLIB = 
+
 #### Leave MEMORY_DEBUG undefined for maximum speed.  Use MEMORY_DEBUG=1
 #    to check for memory leaks.  Use MEMORY_DEBUG=2 to print a log of all
 #    malloc()s and free()s in order to track down memory leaks.
@@ -40,11 +53,6 @@ USLEEP = -DHAVE_USLEEP=1
 #OPTS = -DMEMORY_DEBUG=1
 #OPTS = 
 OPTS = -DNDEBUG=1
-
-#### Compiler flags that change according to the operating system.
-#
-#OSFLAGS = -DOS_UNIX=0 -DOS_WIN=1
-OSFLAGS = -DOS_UNIX=1 -DOS_WIN=0
 
 #### The suffix to add to executable files.  ".exe" for windows.
 #    Nothing for unix.
@@ -104,7 +112,7 @@ ENCODING = ISO8859
 
 # This is how we compile
 #
-TCCX = $(TCC) $(OPTS) $(OSFLAGS) $(USLEEP) -I. -I$(TOP)/src
+TCCX = $(TCC) $(OPTS) $(THREADSAFE) $(USLEEP) -I. -I$(TOP)/src
 
 # Object files for the SQLite library.
 #
@@ -183,7 +191,7 @@ libsqlite.a:	$(LIBOBJ) tclsqlite.o
 
 sqlite$(EXE):	$(TOP)/src/shell.c libsqlite.a sqlite.h
 	$(TCCX) $(READLINE_FLAGS) -o sqlite$(EXE) $(TOP)/src/shell.c \
-		libsqlite.a $(LIBREADLINE)
+		libsqlite.a $(LIBREADLINE) $(THREADLIB)
 
 # This target creates a directory named "tsrc" and fills it with
 # copies of all of the C source code and header files needed to
