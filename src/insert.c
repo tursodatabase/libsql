@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.79 2003/04/15 19:22:23 drh Exp $
+** $Id: insert.c,v 1.80 2003/04/20 17:29:24 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -401,11 +401,10 @@ void sqliteInsert(
     }
     sqliteVdbeAddOp(v, OP_MakeRecord, pTab->nCol, 0);
     sqliteVdbeAddOp(v, OP_PutIntKey, newIdx, 0);
-    sqliteVdbeAddOp(v, OP_Rewind, newIdx, 0);
 
     /* Fire BEFORE triggers */
-    if( sqliteCodeRowTrigger(pParse, TK_INSERT, 0, TK_BEFORE, pTab, newIdx, -1, 
-        onError, endOfLoop) ){
+    if( sqliteCodeRowTrigger(pParse, TK_INSERT, 0, TK_BEFORE, pTab, 
+        newIdx, -1, onError, endOfLoop) ){
       goto insert_cleanup;
     }
   }
@@ -560,7 +559,7 @@ insert_cleanup:
 ** When this routine is called, the stack contains (from bottom to top)
 ** the following values:
 **
-**    1.  The recno of the row to be updated before it is updated.  This
+**    1.  The recno of the row to be updated before the update.  This
 **        value is omitted unless we are doing an UPDATE that involves a
 **        change to the record number.
 **
@@ -763,10 +762,12 @@ void sqliteGenerateConstraintChecks(
   ** index and making sure that duplicate entries do not already exist.
   ** Add the new records to the indices as we go.
   */
-  extra = 0;
-  for(extra=(-1), iCur=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, iCur++){
-    if( aIdxUsed && aIdxUsed[iCur]==0 ) continue;
-    extra++;    
+  extra = -1;
+  for(iCur=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, iCur++){
+    if( aIdxUsed && aIdxUsed[iCur]==0 ) continue;  /* Skip unused indices */
+    extra++;
+
+    /* Create a key for accessing the index entry */
     sqliteVdbeAddOp(v, OP_Dup, nCol+extra, 1);
     for(i=0; i<pIdx->nColumn; i++){
       int idx = pIdx->aiColumn[i];
@@ -778,16 +779,22 @@ void sqliteGenerateConstraintChecks(
     }
     jumpInst1 = sqliteVdbeAddOp(v, OP_MakeIdxKey, pIdx->nColumn, 0);
     if( pParse->db->file_format>=4 ) sqliteAddIdxKeyType(v, pIdx);
+
+    /* Find out what action to take in case there is an indexing conflict */
     onError = pIdx->onError;
-    if( onError==OE_None ) continue;
+    if( onError==OE_None ) continue;  /* pIdx is not a UNIQUE index */
     if( overrideError!=OE_Default ){
       onError = overrideError;
     }else if( onError==OE_Default ){
       onError = pParse->db->onError;
       if( onError==OE_Default ) onError = OE_Abort;
     }
+
+    /* Check to see if the new index entry will be unique */
     sqliteVdbeAddOp(v, OP_Dup, extra+nCol+1+hasTwoRecnos, 1);
     jumpInst2 = sqliteVdbeAddOp(v, OP_IsUnique, base+iCur+1, 0);
+
+    /* Generate code that executes if the new index entry is not unique */
     switch( onError ){
       case OE_Rollback:
       case OE_Abort:

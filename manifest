@@ -1,5 +1,5 @@
-C Align\sconfig\svars\scontrolling\sin-memory\sDB\swith\scode\s(CVS\s923)
-D 2003-04-20T11:46:35
+C Added\stests\sfor\sthe\sin-memory\sdatabase\sbackend.\s\sAlso\supdated\ssome\scomments\nin\sother\smodules.\s(CVS\s924)
+D 2003-04-20T17:29:24
 F Makefile.in 004acec253ecdde985c8ecd5b7c9accdb210378f
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -23,7 +23,7 @@ F src/attach.c 7ebc7487de43e357a64226f8abef81f2669f2183
 F src/auth.c 2dd558dba4d8ffbed25fe1644e9af242f389f3e9
 F src/btree.c b9487cceb9ea78af9cbae9def34114902f511736
 F src/btree.h 529c98cb0715c62214544fbbe50b946f99a85540
-F src/btree_rb.c 0c4a10b52ae565071635863cc28c5b69fa5517fc
+F src/btree_rb.c 97375d44bc2cf93b6312acd0f3276177c20e77bb
 F src/build.c 66f8ca2457dfdcc6c45e1606696f337418a8c556
 F src/copy.c 8699e571994934c78f70761a1458d7b9e9e75073
 F src/delete.c af65b26d9d13abbf63fdc4e97b88d26c700b04bb
@@ -32,7 +32,7 @@ F src/expr.c 3c0ff6b7b34d483ea03fb86c66f28b929542c782
 F src/func.c 882c3ed5a02be18cd904715c7ec62947a34a3605
 F src/hash.c 4fc39feb7b7711f6495ee9f2159559bedb043e1f
 F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
-F src/insert.c 45d27e3e8447bff4025db2f0dc3bb4e318e602f4
+F src/insert.c ae9ffb52b0c4218e3f00f611acfc600fd082dac4
 F src/main.c d6a7f78ec5269c7ced3380908a7ff04508aa2f8e
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
 F src/os.c 7274951ed6894f383cb889342267ded07caf339b
@@ -56,12 +56,12 @@ F src/test3.c 30985ebdfaf3ee1462a9b0652d3efbdc8d9798f5
 F src/threadtest.c d641a5219e718e18a1a80a50eb9bb549f451f42e
 F src/tokenize.c a88cfb6f698d047e14d5064fa6c4ecb709bf8fa4
 F src/trigger.c 45b67f6c4338245288e4662c6a5b802ae3a66e5d
-F src/update.c 7f1aa8912876a682a692676f8adb215ddffad295
+F src/update.c 803c13ad967850fb18443394e0a5c2b0f0d7ce6f
 F src/util.c 87635cfdfffa056a8d3147719357aa442374f78c
 F src/vacuum.c e24781e38db36d1c9f578b6b3613bf0989ebd63c
 F src/vdbe.c d453e8c95c9fac5a5e067c5c58243b3ae75699fc
 F src/vdbe.h 985c24f312d10f9ef8f9a8b8ea62fcdf68e82f21
-F src/where.c 89eca003346418093138159d79ca833ed9f2401b
+F src/where.c c0709e5cf402f30026b597dce9dc3e74f1d07f8e
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
 F test/attach.test b311c83e370e6b22b79a8279317039440ce64862
 F test/auth.test 8128cd750830cba01b7fd0fba8ddfa1722ea6291
@@ -91,6 +91,7 @@ F test/limit.test 9ffb965a0f5bf7152187ef3d8d1249b96e5620bf
 F test/lock.test 388a3a10962d2d571c0c1821cc35bf069ee73473
 F test/main.test 8108ac48302027bbe4296c30b913adbe6d5d984b
 F test/malloc.test 7ba32a9ebd3aeed52ae4aaa6d42ca37e444536fd
+F test/memdb.test 2ad45c3c3215822c588c0c823137821abd96bded
 F test/memleak.test a18e6810cae96d2f6f5136920267adbefc8e1e90
 F test/minmax.test b54ac3bc45460a4976b08ef363e05c032418726e
 F test/misc1.test 865c907df58195364eaf2e69426e9674bc8d1a8c
@@ -162,7 +163,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P d983accf4a702158f03742fb11959d0fd035a4b4
-R 9c9140e8f7e38e6951b9567de707f4f1
-U paul
-Z e6994638a8674e314247f6f23259eed8
+P 921656db9e3df865aea6b1abe1bc40b1acbeeb47
+R 33f3fc945956a6408c6cd1e1bd368307
+U drh
+Z 30e6aaf687d966a7606c8c8a04b291ba

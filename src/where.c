@@ -10,10 +10,9 @@
 **
 *************************************************************************
 ** This module contains C code that generates VDBE code used to process
-** the WHERE clause of SQL statements.  Also found here are subroutines
-** to generate VDBE code to evaluate expressions.
+** the WHERE clause of SQL statements.
 **
-** $Id: where.c,v 1.75 2003/04/19 16:34:05 drh Exp $
+** $Id: where.c,v 1.76 2003/04/20 17:29:24 drh Exp $
 */
 #include "sqliteInt.h"
 

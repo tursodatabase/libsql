@@ -12,12 +12,16 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.60 2003/04/17 22:57:54 drh Exp $
+** $Id: update.c,v 1.61 2003/04/20 17:29:24 drh Exp $
 */
 #include "sqliteInt.h"
 
 /*
 ** Process an UPDATE statement.
+**
+**   UPDATE OR IGNORE table_wxyz SET a=b, c=d WHERE e<5 AND f NOT NULL;
+**          \_______/ \________/     \______/       \________________/
+*            onError   pTabList      pChanges             pWhere
 */
 void sqliteUpdate(
   Parse *pParse,         /* The parser context */
@@ -37,7 +41,7 @@ void sqliteUpdate(
   int base;              /* Index of first available table cursor */
   sqlite *db;            /* The database structure */
   Index **apIdx = 0;     /* An array of indices that need updating too */
-  char *aIdxUsed = 0;    /* aIdxUsed[i] if the i-th index is used */
+  char *aIdxUsed = 0;    /* aIdxUsed[i]==1 if the i-th index is used */
   int *aXRef = 0;        /* aXRef[i] is the index in pChanges->a[] of the
                          ** an expression for the i-th column of the table.
                          ** aXRef[i]==-1 if the i-th column is not changed. */
@@ -56,10 +60,7 @@ void sqliteUpdate(
   db = pParse->db;
   assert( pTabList->nSrc==1 );
 
-  /* Locate the table which we want to update.  This table has to be
-  ** put in an SrcList structure because some of the subroutines we
-  ** will be calling are designed to work with multiple tables and expect
-  ** an SrcList* parameter instead of just a Table* parameter.
+  /* Locate the table which we want to update. 
   */
   pTab = sqliteSrcListLookup(pParse, pTabList);
   if( pTab==0 ) goto update_cleanup;
@@ -80,7 +81,9 @@ void sqliteUpdate(
   if( aXRef==0 ) goto update_cleanup;
   for(i=0; i<pTab->nCol; i++) aXRef[i] = -1;
 
-  /* If there are FOR EACH ROW triggers, allocate temp tables */
+  /* If there are FOR EACH ROW triggers, allocate cursors for the
+  ** special OLD and NEW tables
+  */
   if( row_triggers_exist ){
     newIdx = pParse->nTab++;
     oldIdx = pParse->nTab++;

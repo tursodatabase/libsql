@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree_rb.c,v 1.5 2003/04/20 11:41:04 paul Exp $
+** $Id: btree_rb.c,v 1.6 2003/04/20 17:29:24 drh Exp $
 **
 ** This file implements an in-core database using Red-Black balanced
 ** binary trees.
@@ -1184,26 +1184,23 @@ static int memBtreeBeginTrans(Btree* tree)
   return SQLITE_OK;
 }
 
-static int memBtreeCommit(Btree* tree)
-{
+/*
+** Delete a linked list of BtRollbackOp structures.
+*/
+static void deleteRollbackList(BtRollbackOp *pOp){
+  while( pOp ){
+    BtRollbackOp *pTmp = pOp->pNext;
+    sqliteFree(pOp->pData);
+    sqliteFree(pOp->pKey);
+    sqliteFree(pOp);
+    pOp = pTmp;
+  }
+}
+
+static int memBtreeCommit(Btree* tree){
   /* Just delete pTransRollback and pCheckRollback */
-  BtRollbackOp *pOp, *pTmp;
-  pOp = tree->pCheckRollback;
-  while( pOp ){
-    pTmp = pOp->pNext;
-    sqliteFree(pOp->pData);
-    sqliteFree(pOp->pKey);
-    sqliteFree(pOp);
-    pOp = pTmp;
-  }
-  pOp = tree->pTransRollback;
-  while( pOp ){
-    pTmp = pOp->pNext;
-    sqliteFree(pOp->pData);
-    sqliteFree(pOp->pKey);
-    sqliteFree(pOp);
-    pOp = pTmp;
-  }
+  deleteRollbackList(tree->pCheckRollback);
+  deleteRollbackList(tree->pTransRollback);
   tree->pTransRollback = 0;
   tree->pCheckRollback = 0;
   tree->pCheckRollbackTail = 0;
