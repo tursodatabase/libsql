@@ -17,6 +17,11 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2000 Aug 8} {
+<li>Added pattern matching to the ".table" command in the "sqlite"
+command shell.</li>
+}
+
 chng {2000 Aug 4} {
 <li>Documentation updates</li>
 <li>Added "busy" and "timeout" methods to the Tcl interface</li>

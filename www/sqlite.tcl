@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: sqlite.tcl,v 1.12 2000/08/04 13:49:03 drh Exp $}
+set rcsid {$Id: sqlite.tcl,v 1.13 2000/08/08 20:19:09 drh Exp $}
 
 puts {<html>
 <head>
@@ -399,7 +399,24 @@ ORDER BY type DESC, name
 </pre></blockquote>
 
 <p>The <b>%s</b> in the query above is replaced by the argument
-to ".schema", of course.</p>
+to ".schema", of course.  Notice that the argument to the ".schema"
+command appears to the right of an SQL LIKE operator.  So you can
+use wildcards in the name of the table.  For example, to get the
+schema for all tables whose names contain the character string
+"abc" you could enter:</p>}
+
+Code {
+sqlite> (((.schema %abc%)))
+}
+
+puts {
+<p>
+Along these same lines,
+the ".table" command also accepts a pattern as its first argument.
+If you give an argument to the .table command, a "%" is both
+appended and prepended and a LIKE clause is added to the query.
+This allows you to list only those tables that match a particular
+pattern.</p>
 
 <h2>Converting An Entire Database To An ASCII Text File</h2>
 

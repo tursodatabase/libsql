@@ -3,6 +3,8 @@
 # A GUI shell for SQLite
 #
 
+# The following code is slighly modified from the original.  See comments
+# for the modifications...
 ############################################################################
 # A console widget for Tcl/Tk.  Invoke console:create with a window name,
 # a prompt string, and a title to get a new top-level window that allows 
@@ -277,8 +279,15 @@ proc console:Enter w {
   } else {
     set cmd $v(prior)\n$line
   }
-  if {[info complete $cmd]} {
-    set rc [catch {uplevel #0 $cmd} res]
+##### Original
+# if {[info complete $cmd]} {    }
+#   set rc [catch {uplevel #0 $cmd} res]
+##### New
+  global DB 
+  if {[$DB complete $cmd]} {
+    set CODE {}
+    set rc [catch {$DB eval $cmd RESULT $CODE}]
+##### End Of Changes
     if {![winfo exists $w]} return
     if {$rc} {
       $w insert end $res\n err

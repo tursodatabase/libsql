@@ -24,7 +24,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.19 2000/08/02 13:47:42 drh Exp $
+** $Id: shell.c,v 1.20 2000/08/08 20:19:09 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -395,7 +395,7 @@ static char zHelp[] =
   ".output stdout         Send output to the screen\n"
   ".schema ?TABLE?        Show the CREATE statements\n"
   ".separator STRING      Change separator string for \"list\" mode\n"
-  ".tables                List names all tables in the database\n"
+  ".tables ?PATTERN?      List names of tables matching a pattern\n"
   ".timeout MS            Try opening locked tables for MS milliseconds\n"
   ".width NUM NUM ...     Set column widths for \"column\" mode\n"
 ;
@@ -574,11 +574,21 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
   if( c=='t' && n>1 && strncmp(azArg[0], "tables", n)==0 ){
     struct callback_data data;
     char *zErrMsg = 0;
-    static char zSql[] = 
-      "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name";
+    char zSql[1000];
     memcpy(&data, p, sizeof(data));
     data.showHeader = 0;
     data.mode = MODE_List;
+    if( nArg==1 ){
+      sprintf(zSql,
+        "SELECT name FROM sqlite_master "
+        "WHERE type='table' "
+        "ORDER BY name");
+    }else{
+      sprintf(zSql,
+        "SELECT name FROM sqlite_master "
+        "WHERE type='table' AND name LIKE '%%%.100s%%' "
+        "ORDER BY name", azArg[1]);
+    }
     sqlite_exec(db, zSql, callback, &data, &zErrMsg);
     if( zErrMsg ){
       fprintf(stderr,"Error: %s\n", zErrMsg);
