@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.46 2002/09/12 14:08:32 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.47 2003/01/11 14:19:52 drh Exp $}
 
 puts {<html>
 <head>
@@ -1116,6 +1116,35 @@ with caution.</p>
     If any problems are found, then a single string is returned which is
     a description of all problems.  If everything is in order, "ok" is
     returned.</p>
+
+<li><p><b>PRAGMA show_datatypes = ON;<br>PRAGMA show_datatypes = OFF;</b></p>
+    <p>When turned on, the SHOW_DATATYPES pragma causes extra entries containing
+    the names of <a href="datatypes.html">datatypes</a> of columns to be
+    appended to the 4th ("columnNames") argument to <b>sqlite_exec()</b>
+    callbacks.  When
+    turned off, the 4th argument to callbacks contains only the column names.
+    SQLite <a href="datatypes.html">datatypes</a> are always either "TEXT"
+    or "NUMERIC".
+    The following chart illustrates the difference for the query
+    "SELECT 'xyzzy', 5, NULL AS empty ":</p>
+
+    <blockquote><table border=0>
+    <tr><th>show_datatypes=OFF</th><th width=30></th>
+        <th>show_datatypes=ON</th></tr>
+    <tr><td valign="top">
+       azCol[0] = "xyzzy";<br>
+       azCol[1] = "5";<br>
+       azCol[2] = "empty";<br>
+       azCol[3] = 0;
+    </td><td></td><td valign="top">
+       azCol[0] = "xyzzy";<br>
+       azCol[1] = "5";<br>
+       azCol[2] = "empty";<br>
+       azCol[3] = "TEXT";<br>
+       azCol[4] = "NUMERIC";<br>
+       azCol[5] = "TEXT";<br>
+       azCol[6] = 0;
+    </td></table></blockquote></li>
 
 <li><p><b>PRAGMA synchronous;
        <br>PRAGMA synchronous = ON;

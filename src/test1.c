@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.13 2002/08/31 18:53:08 drh Exp $
+** $Id: test1.c,v 1.14 2003/01/11 14:19:52 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -507,6 +507,60 @@ static int test_register_func(
 }
 
 /*
+** This SQLite callback records the datatype of all columns.
+**
+** The pArg argument is really a pointer to a TCL interpreter.  The
+** column names are inserted as the result of this interpreter.
+**
+** This routine returns non-zero which causes the query to abort.
+*/
+static int rememberDataTypes(void *pArg, int nCol, char **argv, char **colv){
+  int i;
+  Tcl_Interp *interp = (Tcl_Interp*)pArg;
+  Tcl_Obj *pList, *pElem;
+  if( colv[nCol+1]==0 ){
+    return 1;
+  }
+  pList = Tcl_NewObj();
+  for(i=0; i<nCol; i++){
+    pElem = Tcl_NewStringObj(colv[i+nCol] ? colv[i+nCol] : "NULL", -1);
+    Tcl_ListObjAppendElement(interp, pList, pElem);
+  }
+  Tcl_SetObjResult(interp, pList);
+  return 1;
+}
+
+/*
+** Invoke an SQL statement but ignore all the data in the result.  Instead,
+** return a list that consists of the datatypes of the various columns.
+**
+** This only works if "PRAGMA show_datatypes=on" has been executed against
+** the database connection.
+*/
+static int sqlite_datatypes(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  sqlite *db;
+  int rc;
+  if( argc!=3 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], 
+       " DB SQL", 0);
+    return TCL_ERROR;
+  }
+  db = (sqlite*)strtol(argv[1], 0, 0);
+  rc = sqlite_exec(db, argv[2], rememberDataTypes, interp, 0);
+  if( rc!=0 && rc!=SQLITE_ABORT ){
+    Tcl_AppendResult(interp, sqlite_error_string(rc), 0);
+    return TCL_ERROR;
+  }
+  return TCL_OK;
+}
+
+
+/*
 ** Register commands with the TCL interpreter.
 */
 int Sqlitetest1_Init(Tcl_Interp *interp){
@@ -527,6 +581,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite_create_aggregate",        (Tcl_CmdProc*)test_create_aggregate },
      { "sqlite_register_test_function",  (Tcl_CmdProc*)test_register_func    },
      { "sqlite_abort",                   (Tcl_CmdProc*)sqlite_abort          },
+     { "sqlite_datatypes",               (Tcl_CmdProc*)sqlite_datatypes      },
 #ifdef MEMORY_DEBUG
      { "sqlite_malloc_fail",             (Tcl_CmdProc*)sqlite_malloc_fail    },
      { "sqlite_malloc_stat",             (Tcl_CmdProc*)sqlite_malloc_stat    },

@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.1 2002/03/06 22:01:37 drh Exp $
+# $Id: pragma.test,v 1.2 2003/01/11 14:19:52 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -22,7 +22,7 @@ source $testdir/tester.tcl
 #
 db close
 file delete test.db
-sqlite db test.db
+set DB [sqlite db test.db]
 
 do_test pragma-1.1 {
   execsql {
@@ -108,7 +108,7 @@ do_test pragma-1.9 {
 } {123 123 0 0}
 do_test pragma-1.10 {
   db close
-  sqlite db test.db
+  set ::DB [sqlite db test.db]
   execsql {
     PRAGMA cache_size;
     PRAGMA default_cache_size;
@@ -116,5 +116,44 @@ do_test pragma-1.10 {
     PRAGMA default_synchronous;
   }
 } {123 123 0 0}
+
+do_test pragma-1.11 {
+  execsql {
+    PRAGMA show_datatypes=on;
+    PRAGMA empty_result_callbacks=off;
+  }
+  sqlite_datatypes $::DB {SELECT * FROM sqlite_master}
+} {}
+do_test pragma-1.12 {
+  execsql {
+    PRAGMA empty_result_callbacks=on;
+  }
+  sqlite_datatypes $::DB {SELECT * FROM sqlite_master}
+} {NUMERIC NUMERIC NUMERIC NUMERIC NUMERIC}
+do_test pragma-1.13 {
+  execsql {
+    CREATE TABLE t1(
+       a INTEGER,
+       b TEXT,
+       c WHATEVER,
+       d CLOB,
+       e BLOB,
+       f VARCHAR(123),
+       g nVaRcHaR(432)
+    );
+  }
+  sqlite_datatypes $::DB {SELECT * FROM t1}
+} {NUMERIC TEXT NUMERIC TEXT TEXT TEXT TEXT}
+do_test pragma-1.14 {
+  sqlite_datatypes $::DB {
+     SELECT 1, 'hello', NULL
+  }
+} {NUMERIC TEXT TEXT}
+do_test pragma-1.15 {
+  sqlite_datatypes $::DB {
+     SELECT 1+2 AS X, 'hello' || 5 AS Y, NULL AS Z
+  }
+} {NUMERIC TEXT TEXT}
+
 
 finish_test

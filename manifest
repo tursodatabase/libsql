@@ -1,5 +1,5 @@
-C Remove\sthe\sColumnCount\sopcode,\swhich\shad\sbecome\sa\sno-op.\s(CVS\s821)
-D 2003-01-11T13:30:57
+C Document\sthe\sSHOW_DATATYPES\spragma\sand\sadd\stests\sfor\sit\sto\sthe\stest\ssuite.\nMake\ssure\sdatatypes\sare\sshow\seven\sfor\saliased\scolumns.\nTickets\s#220\sand\s#221.\s(CVS\s822)
+D 2003-01-11T14:19:52
 F Makefile.in 868c17a1ae1c07603d491274cc8f86c04acf2a1e
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -37,14 +37,14 @@ F src/pager.h 540833e8cb826b80ce2e39aa917deee5e12db626
 F src/parse.y 427a17888c117cc9cc35311eda0603d55437f02b
 F src/printf.c 5c50fc1da75c8f5bf432b1ad17d91d6653acd167
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
-F src/select.c 754af8fabcdfae2fd0f49a5b4cce6bc2bcc370f8
+F src/select.c b52c1dccbfc35ff13c84b4321a0bd2ac3a23d2f2
 F src/shell.c c9946847b81b8b7f32ad195498dafbc623c6874f
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 98b1574b2362abe02c4a4c73b9dbf99bcd713ab3
 F src/sqliteInt.h 4f7511446a7616ffa24542dda5bf596776852c2d
 F src/table.c eed2098c9b577aa17f8abe89313a9c4413f57d63
 F src/tclsqlite.c 9f2c00a92338c51171ded8943bd42d77f7e69e64
-F src/test1.c a46e9f61915b32787c5d5a05a4b92e4dacc437d9
+F src/test1.c 5efd7a8b18ff63e570e94cd7c842a74fb08dd511
 F src/test2.c 03f05e984c8e2f2badc44644d42baf72b249096b
 F src/test3.c c12ea7f1c3fbbd58904e81e6cb10ad424e6fc728
 F src/threadtest.c d641a5219e718e18a1a80a50eb9bb549f451f42e
@@ -86,8 +86,8 @@ F test/misc1.test 828ea289e37d396432064ab23d2efc6ce660a0f9
 F test/misuse.test a3aa2b18a97e4c409a1fcaff5151a4dd804a0162
 F test/notnull.test b1f3e42fc475b0b5827b27b2e9b562081995ff30
 F test/null.test 5c2b57307e4b6178aae825eb65ddbee01e76b0fd
-F test/pager.test b0c0d00cd5dce0ce21f16926956b195c0ab5044c
-F test/pragma.test 0b9675ef1f5ba5b43abfa337744445fc5b01a34a
+F test/pager.test d3a2e2f00999f97e056822a39d5ee2fad18bf12c
+F test/pragma.test 94c82c75af9c237866ce5290494a7bc08b661092
 F test/printf.test a29b8afa24edb4411adfe473b12ac32c84098fce
 F test/quick.test b372c8dad4fa1554747e90683fc72e59c0c98502
 F test/quote.test 08f23385c685d3dc7914ec760d492cacea7f6e3d
@@ -142,7 +142,7 @@ F www/faq.tcl 06276ff6c3e369374bb83034cc9d4a7d3a2a34a1
 F www/fileformat.tcl a4b5c2c6e89b7d42d09f97fd4d7bbd39cbf24936
 F www/formatchng.tcl b4449e065d2da38b6563bdf12cf46cfe1d4d765e
 F www/index.tcl 7764032a802318a916ae747b047c9ad5149658a5
-F www/lang.tcl 6be4254a751ab183ec974fe65375f50230c777f3
+F www/lang.tcl 1ea38a9fe867e4fed2220f519f5c0862e7022c53
 F www/mingw.tcl f1c7c0a7f53387dd9bb4f8c7e8571b7561510ebc
 F www/nulls.tcl 29497dac2bc5b437aa7e2e94577dad4d8933ed26
 F www/omitted.tcl 118062f40a203fcb88b8d68ef1d7c0073ac191ec
@@ -152,7 +152,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 13f82d67f60ae869d5bf2e31d9357a860aa62bad
-R 739d9eedd846bdcebaf53de604e2ab96
+P 86deb12d68026913d181f9498144fa56445899f2
+R c01866c76545ca162ef63d830c027659
 U drh
-Z 10fbc95a42ce97941079cb975b1ac545
+Z 9785e9756356084c0f8bc12f51b8fd40
