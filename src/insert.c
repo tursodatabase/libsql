@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.49 2002/04/09 03:15:07 drh Exp $
+** $Id: insert.c,v 1.50 2002/04/09 03:28:01 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -183,15 +183,18 @@ void sqliteInsert(
   }
   pParse->nTab += idx;
 
+  /* Initialize the count of rows to be inserted
+  */
+  if( db->flags & SQLITE_CountRows ){
+    sqliteVdbeAddOp(v, OP_Integer, 0, 0);  /* Initialize the row count */
+  }
+
   /* If the data source is a SELECT statement, then we have to create
   ** a loop because there might be multiple rows of data.  If the data
   ** source is an expression list, then exactly one row will be inserted
   ** and the loop is not used.
   */
   if( srcTab>=0 ){
-    if( db->flags & SQLITE_CountRows ){
-      sqliteVdbeAddOp(v, OP_Integer, 0, 0);  /* Initialize the row count */
-    }
     iBreak = sqliteVdbeMakeLabel(v);
     sqliteVdbeAddOp(v, OP_Rewind, srcTab, iBreak);
     iCont = sqliteVdbeCurrentAddr(v);
@@ -258,10 +261,9 @@ void sqliteInsert(
   sqliteGenerateConstraintChecks(pParse, pTab, base, 0,0,0, onError, endOfLoop);
   sqliteCompleteInsertion(pParse, pTab, base, 0,0,0);
 
-  /* If inserting from a SELECT, keep a count of the number of
-  ** rows inserted.
+  /* Update the count of rows that are inserted
   */
-  if( srcTab>=0 && (db->flags & SQLITE_CountRows)!=0 ){
+  if( (db->flags & SQLITE_CountRows)!=0 ){
     sqliteVdbeAddOp(v, OP_AddImm, 1, 0);
   }
 
@@ -286,9 +288,6 @@ void sqliteInsert(
     sqliteVdbeAddOp(v, OP_ColumnCount, 1, 0);
     sqliteVdbeAddOp(v, OP_ColumnName, 0, 0);
     sqliteVdbeChangeP3(v, -1, "rows inserted", P3_STATIC);
-    if( srcTab<0 ){
-      sqliteVdbeAddOp(v, OP_Integer, 1, 0);
-    }
     sqliteVdbeAddOp(v, OP_Callback, 1, 0);
   }
 
