@@ -440,8 +440,8 @@ install:	sqlite libsqlite.la sqlite.h
 	$(LIBTOOL) $(INSTALL) sqlite $(exec_prefix)/bin
 	$(INSTALL) -d $(prefix)/include
 	$(INSTALL) -m 0644 sqlite.h $(prefix)/include
-	$(INSTALL) -d $(exec_prefix)/lib/pkgconfig; \
-	$(INSTALL) -m 0644 sqlite.pc $(exec_prefix)/lib/pkgconfig; \
+	$(INSTALL) -d $(exec_prefix)/lib/pkgconfig; 
+	$(INSTALL) -m 0644 sqlite.pc $(exec_prefix)/lib/pkgconfig; 
 
 clean:	
 	rm -f *.lo *.la *.o sqlite libsqlite.la sqlite.h opcodes.*
