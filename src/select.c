@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.160 2004/03/02 18:37:41 drh Exp $
+** $Id: select.c,v 1.161 2004/03/13 14:00:36 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1836,18 +1836,23 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
   Vdbe *v;
   int seekOp;
   int cont;
-  ExprList eList;
+  ExprList *pEList, *pList, eList;
   struct ExprList_item eListItem;
+  SrcList *pSrc;
+  
 
   /* Check to see if this query is a simple min() or max() query.  Return
   ** zero if it is  not.
   */
   if( p->pGroupBy || p->pHaving || p->pWhere ) return 0;
-  if( p->pSrc->nSrc!=1 ) return 0;
-  if( p->pEList->nExpr!=1 ) return 0;
-  pExpr = p->pEList->a[0].pExpr;
+  pSrc = p->pSrc;
+  if( pSrc->nSrc!=1 ) return 0;
+  pEList = p->pEList;
+  if( pEList->nExpr!=1 ) return 0;
+  pExpr = pEList->a[0].pExpr;
   if( pExpr->op!=TK_AGG_FUNCTION ) return 0;
-  if( pExpr->pList==0 || pExpr->pList->nExpr!=1 ) return 0;
+  pList = pExpr->pList;
+  if( pList==0 || pList->nExpr!=1 ) return 0;
   if( pExpr->token.n!=3 ) return 0;
   if( sqliteStrNICmp(pExpr->token.z,"min",3)==0 ){
     seekOp = OP_Rewind;
@@ -1856,10 +1861,10 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
   }else{
     return 0;
   }
-  pExpr = pExpr->pList->a[0].pExpr;
+  pExpr = pList->a[0].pExpr;
   if( pExpr->op!=TK_COLUMN ) return 0;
   iCol = pExpr->iColumn;
-  pTab = p->pSrc->a[0].pTab;
+  pTab = pSrc->a[0].pTab;
 
   /* If we get to here, it means the query is of the correct form.
   ** Check to make sure we have an index and make pIdx point to the
@@ -1899,10 +1904,12 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
   ** or last entry in the main table.
   */
   sqliteCodeVerifySchema(pParse, pTab->iDb);
-  base = p->pSrc->a[0].iCursor;
+  base = pSrc->a[0].iCursor;
   computeLimitRegisters(pParse, p);
-  sqliteVdbeAddOp(v, OP_Integer, pTab->iDb, 0);
-  sqliteVdbeOp3(v, OP_OpenRead, base, pTab->tnum, pTab->zName, 0);
+  if( pSrc->a[0].pSelect==0 ){
+    sqliteVdbeAddOp(v, OP_Integer, pTab->iDb, 0);
+    sqliteVdbeOp3(v, OP_OpenRead, base, pTab->tnum, pTab->zName, 0);
+  }
   cont = sqliteVdbeMakeLabel(v);
   if( pIdx==0 ){
     sqliteVdbeAddOp(v, seekOp, base, 0);
@@ -1921,6 +1928,7 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
   selectInnerLoop(pParse, p, &eList, 0, 0, 0, -1, eDest, iParm, cont, cont);
   sqliteVdbeResolveLabel(v, cont);
   sqliteVdbeAddOp(v, OP_Close, base, 0);
+  
   return 1;
 }
 
@@ -2161,14 +2169,6 @@ int sqliteSelect(
     generateColumnNames(pParse, pTabList, pEList);
   }
 
-  /* Check for the special case of a min() or max() function by itself
-  ** in the result set.
-  */
-  if( simpleMinMaxQuery(pParse, p, eDest, iParm) ){
-    rc = 0;
-    goto select_end;
-  }
-
   /* Generate code for all sub-queries in the FROM clause
   */
   for(i=0; i<pTabList->nSrc; i++){
@@ -2196,6 +2196,14 @@ int sqliteSelect(
     pGroupBy = p->pGroupBy;
     pHaving = p->pHaving;
     isDistinct = p->isDistinct;
+  }
+
+  /* Check for the special case of a min() or max() function by itself
+  ** in the result set.
+  */
+  if( simpleMinMaxQuery(pParse, p, eDest, iParm) ){
+    rc = 0;
+    goto select_end;
   }
 
   /* Check to see if this is a subquery that can be "flattened" into its parent.

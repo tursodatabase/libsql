@@ -13,7 +13,7 @@
 # aggregate min() and max() functions and which are handled as
 # as a special case.
 #
-# $Id: minmax.test,v 1.8 2004/02/25 13:47:34 drh Exp $
+# $Id: minmax.test,v 1.9 2004/03/13 14:00:37 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -258,5 +258,22 @@ do_test minmax-8.2 {
   }
 } {34 1234}
 
+# Ticket #658:  Test the min()/max() optimization when the FROM clause
+# is a subquery.
+#
+do_test minmax-9.1 {
+  execsql {
+    SELECT max(rowid) FROM (
+      SELECT max(rowid) FROM t4 UNION SELECT max(rowid) FROM t5
+    )
+  }
+} {1}
+do_test minmax-9.2 {
+  execsql {
+    SELECT max(rowid) FROM (
+      SELECT max(rowid) FROM t4 EXCEPT SELECT max(rowid) FROM t5
+    )
+  }
+} {{}}
 
 finish_test

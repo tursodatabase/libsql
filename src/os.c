@@ -1781,7 +1781,7 @@ char *sqliteOsFullPathname(const char *zRelative){
 }
 
 /*
-** The following variable, if set to a now-zero value, become the result
+** The following variable, if set to a non-zero value, becomes the result
 ** returned from sqliteOsCurrentTime().  This is used for testing.
 */
 #ifdef SQLITE_TEST

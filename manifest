@@ -1,5 +1,5 @@
-C Typecast\sto\swork\saround\sa\sbug\sin\s{quote:\sCodeWarrior}\sStudio\sv9.1.\nTicket\s#654.\s(CVS\s1292)
-D 2004-03-10T18:57:32
+C Fix\sthe\smin/max\soptimizer\sso\sthat\sit\sworks\swhen\sthe\sFROM\sclause\sis\sa\nsubquery.\s\sTicket\s#658.\s(CVS\s1293)
+D 2004-03-13T14:00:36
 F Makefile.in 46788b65500865e3fd965f7617d41697da8a11a1
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -38,7 +38,7 @@ F src/hash.h 3247573ab95b9dd90bcca0307a75d9a16da1ccc7
 F src/insert.c c0485ee2d1b99322894e2d1e0b576fd05ed75616
 F src/main.c 8e1b406d661c6475cc27d4b2b9422d1d2ab94cf7
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
-F src/os.c afcc304d13b0d28755984aa1636e66370210d3e3
+F src/os.c 5f11382733805d4529ec2a30800e117f30995ea8
 F src/os.h 250a3789be609adfee5c5aa20137ce8683276f24
 F src/pager.c b246986e5ba31b15aa3cf91d3b9ec2e608aceb8e
 F src/pager.h 82332878799280145639a48d88cdb4058925e3f6
@@ -46,7 +46,7 @@ F src/parse.y 023720cb8c3bef74e51738bca78335d0dc6d2cfd
 F src/pragma.c 621d319580e9e23712ec232e8be1786cdae06b36
 F src/printf.c 8c58b7b6d4069eec6ebe2d46bdbc3a89a367bf95
 F src/random.c 775913e0b7fbd6295d21f12a7bd35b46387c44b2
-F src/select.c fb4360976fdf7b73f5252f274f8129540d5cd141
+F src/select.c 3833e2b64cc6d249385ee44e13bf49c9ae5b903d
 F src/shell.c 01fdfff666631cfe7f8047cfe9a8a62e56b37b50
 F src/sqlite.h.in 01a7009223517d151da9780b0bb7b748777015dd
 F src/sqliteInt.h 235ce244b62bb26cc9ab394fb7a0724dd4e65c83
@@ -107,7 +107,7 @@ F test/main.test 6a851b5992c4881a725a3d9647e629199df8de9d
 F test/malloc.test 2cfcffb7c858640e01e6520ee1cd54ca57d98e80
 F test/memdb.test 6ece25c7c0e6500199d3662607a3edca081abb2a
 F test/memleak.test 4d5d374c8ea1fc5ac634aed58cac1047848ce65e
-F test/minmax.test d7da9183013ac814a5b032b3542f9caf4c88af42
+F test/minmax.test 9dcf52f713b1b9e61d0a88a51eb8bb2e3c52d0ab
 F test/misc1.test 0b98d493b0cf55cb5f53e1f3df8107c166eecb5a
 F test/misc2.test 10c2ce26407d37411b96273e552d5095393732be
 F test/misc3.test 3eac0f13a3d8ae71c1c5ec884b0192bd68ae7e5f
@@ -188,7 +188,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P af19ab32c5b329b053f3daf3c812eb593b89cd7f
-R dff85ec6dfa3604f2a2a05aec54cbadc
+P 5864fc6937b933b7da0c00e6c4c2ee1b9b939cff
+R 38ce5fb591e7b91ddde53b0f21b20e52
 U drh
-Z 014525b4ccfa6c0ddef9fa2856342ff1
+Z b929c36981acffd0768f9e08052aab34
