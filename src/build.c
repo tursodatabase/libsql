@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.201 2004/05/31 08:26:49 danielk1977 Exp $
+** $Id: build.c,v 1.202 2004/05/31 08:55:34 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2172,7 +2172,7 @@ void sqlite3SrcListDelete(SrcList *pList){
 /*
 ** Begin a transaction
 */
-void sqlite3BeginTransaction(Parse *pParse, int onError){
+void sqlite3BeginTransaction(Parse *pParse){
   sqlite *db;
   Vdbe *v;
 
@@ -2183,8 +2183,6 @@ void sqlite3BeginTransaction(Parse *pParse, int onError){
   v = sqlite3GetVdbe(pParse);
   if( !v ) return;
   sqlite3VdbeAddOp(v, OP_AutoCommit, 0, 0);
-
-  /* FIX ME: Need to deal with onError */
 }
 
 /*

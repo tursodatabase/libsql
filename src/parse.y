@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.124 2004/05/29 10:23:20 danielk1977 Exp $
+** @(#) $Id: parse.y,v 1.125 2004/05/31 08:55:34 danielk1977 Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -76,7 +76,7 @@ explain ::= .           { sqlite3BeginParse(pParse, 0); }
 ///////////////////// Begin and end transactions. ////////////////////////////
 //
 
-cmd ::= BEGIN trans_opt onconf(R).  {sqlite3BeginTransaction(pParse,R);}
+cmd ::= BEGIN trans_opt.  {sqlite3BeginTransaction(pParse);}
 trans_opt ::= .
 trans_opt ::= TRANSACTION.
 trans_opt ::= TRANSACTION nm.

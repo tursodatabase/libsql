@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.262 2004/05/31 08:26:49 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.263 2004/05/31 08:55:34 danielk1977 Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -366,7 +366,6 @@ struct sqlite {
   u8 safety_level;              /* How aggressive at synching data to disk */
   u8 want_to_close;             /* Close after all VDBEs are deallocated */
   u8 temp_store;                /* 1=file, 2=memory, 0=compile-time default */
-  u8 onError;                   /* Default conflict algorithm */
   int next_cookie;              /* Next value of aDb[0].schema_cookie */
   int cache_size;               /* Number of pages to use in the cache */
   int nTable;                   /* Number of tables in the database */
@@ -1263,7 +1262,7 @@ Vdbe *sqlite3GetVdbe(Parse*);
 void sqlite3Randomness(int, void*);
 void sqlite3RollbackAll(sqlite*);
 void sqlite3CodeVerifySchema(Parse*, int);
-void sqlite3BeginTransaction(Parse*, int);
+void sqlite3BeginTransaction(Parse*);
 void sqlite3CommitTransaction(Parse*);
 void sqlite3RollbackTransaction(Parse*);
 int sqlite3ExprIsConstant(Expr*);

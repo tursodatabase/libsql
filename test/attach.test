@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach.test,v 1.19 2004/05/31 08:26:49 danielk1977 Exp $
+# $Id: attach.test,v 1.20 2004/05/31 08:55:34 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -444,13 +444,11 @@ do_test attach-4.8 {
   execsql {
     ATTACH DATABASE 'test2.db' AS db2;
     INSERT INTO db2.t3 VALUES(13,14);
-pragma vdbe_trace = on;
     SELECT * FROM db2.t4 UNION ALL SELECT * FROM main.t4;
   }
 } {db2.6 db2.13 main.11}
 do_test attach-4.9 {
   execsql {
-pragma vdbe_trace = off;
     INSERT INTO main.t3 VALUES(15,16);
     SELECT * FROM db2.t4 UNION ALL SELECT * FROM main.t4;
   }

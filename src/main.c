@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.197 2004/05/31 08:26:49 danielk1977 Exp $
+** $Id: main.c,v 1.198 2004/05/31 08:55:34 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1014,7 +1014,6 @@ static int openDatabase(
   /* Allocate the sqlite data structure */
   db = sqliteMalloc( sizeof(sqlite) );
   if( db==0 ) goto opendb_out;
-  db->onError = OE_Default;
   db->priorNewRowid = 0;
   db->magic = SQLITE_MAGIC_BUSY;
   db->nDb = 2;

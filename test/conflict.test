@@ -13,7 +13,7 @@
 # This file implements tests for the conflict resolution extension
 # to SQLite.
 #
-# $Id: conflict.test,v 1.20 2004/05/31 08:26:49 danielk1977 Exp $
+# $Id: conflict.test,v 1.21 2004/05/31 08:55:34 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -45,17 +45,6 @@ foreach {i conf cmd t0 t1 t2} {
   5 {}       {INSERT OR FAIL}        1 {}  1
   6 {}       {INSERT OR ABORT}       1 {}  1
   7 {}       {INSERT OR ROLLBACK}    1 {}  {}
-  8 IGNORE   INSERT                  0 3   1
-  9 IGNORE   {INSERT OR IGNORE}      0 3   1
- 10 IGNORE   {INSERT OR REPLACE}     0 4   1
- 11 IGNORE   REPLACE                 0 4   1
- 12 IGNORE   {INSERT OR FAIL}        1 {}  1
- 13 IGNORE   {INSERT OR ABORT}       1 {}  1
- 14 IGNORE   {INSERT OR ROLLBACK}    1 {}  {}
- 15 REPLACE  INSERT                  0 4   1
- 16 FAIL     INSERT                  1 {}  1
- 17 ABORT    INSERT                  1 {}  1
- 18 ROLLBACK INSERT                  1 {}  {}
 } {
   if { $conf=={} } {
 
@@ -107,17 +96,6 @@ foreach {i conf cmd t0 t1 t2} {
   5 {}       {INSERT OR FAIL}        1 {}  1
   6 {}       {INSERT OR ABORT}       1 {}  1
   7 {}       {INSERT OR ROLLBACK}    1 {}  {}
-  8 IGNORE   INSERT                  0 3   1
-  9 IGNORE   {INSERT OR IGNORE}      0 3   1
- 10 IGNORE   {INSERT OR REPLACE}     0 4   1
- 11 IGNORE   REPLACE                 0 4   1
- 12 IGNORE   {INSERT OR FAIL}        1 {}  1
- 13 IGNORE   {INSERT OR ABORT}       1 {}  1
- 14 IGNORE   {INSERT OR ROLLBACK}    1 {}  {}
- 15 REPLACE  INSERT                  0 4   1
- 16 FAIL     INSERT                  1 {}  1
- 17 ABORT    INSERT                  1 {}  1
- 18 ROLLBACK INSERT                  1 {}  {}
 } {
   do_test conflict-2.$i {
     if {$conf!=""} {set conf "ON CONFLICT $conf"}
@@ -165,17 +143,6 @@ foreach {i conf cmd t0 t1 t2} {
   5 {}       {INSERT OR FAIL}        1 {}  1
   6 {}       {INSERT OR ABORT}       1 {}  1
   7 {}       {INSERT OR ROLLBACK}    1 {}  {}
-  8 IGNORE   INSERT                  0 3   1
-  9 IGNORE   {INSERT OR IGNORE}      0 3   1
- 10 IGNORE   {INSERT OR REPLACE}     0 4   1
- 11 IGNORE   REPLACE                 0 4   1
- 12 IGNORE   {INSERT OR FAIL}        1 {}  1
- 13 IGNORE   {INSERT OR ABORT}       1 {}  1
- 14 IGNORE   {INSERT OR ROLLBACK}    1 {}  {}
- 15 REPLACE  INSERT                  0 4   1
- 16 FAIL     INSERT                  1 {}  1
- 17 ABORT    INSERT                  1 {}  1
- 18 ROLLBACK INSERT                  1 {}  {}
 } {
   do_test conflict-3.$i {
     if {$conf!=""} {set conf "ON CONFLICT $conf"}
@@ -224,15 +191,6 @@ foreach {i conf1 conf2 cmd t0 t1 t2} {
   9 FAIL     {}       {INSERT OR IGNORE}      0 3   1
  10 ABORT    {}       {INSERT OR REPLACE}     0 4   1
  11 ROLLBACK {}       {INSERT OR IGNORE }     0 3   1
- 12 REPLACE  IGNORE   INSERT                  0 3   1
- 13 IGNORE   REPLACE  INSERT                  0 4   1
- 14 FAIL     IGNORE   INSERT                  0 3   1
- 15 ABORT    REPLACE  INSERT                  0 4   1
- 16 ROLLBACK IGNORE   INSERT                  0 3   1
- 12 IGNORE   REPLACE  INSERT                  0 4   1
- 13 IGNORE   FAIL     INSERT                  1 {}  1
- 14 IGNORE   ABORT    INSERT                  1 {}  1
- 15 IGNORE   ROLLBACK INSERT                  1 {}  {}
 } {
   do_test conflict-4.$i {
     if {$conf1!=""} {set conf1 "ON CONFLICT $conf1"}
@@ -288,13 +246,6 @@ foreach {i conf1 conf2 cmd t0 t1 t2} {
  14 {}       {}       {INSERT OR FAIL}        1 {}  1
  15 {}       {}       {INSERT OR ABORT}       1 {}  1
  16 {}       {}       {INSERT OR ROLLBACK}    1 {}  {}
- 17 {}       IGNORE   INSERT                  0 {}  1
- 18 {}       REPLACE  INSERT                  0 5   1
- 19 {}       FAIL     INSERT                  1 {}  1
- 20 {}       ABORT    INSERT                  1 {}  1
- 21 {}       ROLLBACK INSERT                  1 {}  {}
- 22 REPLACE  FAIL     INSERT                  1 {}  1
- 23 IGNORE   ROLLBACK INSERT                  1 {}  {}
 } {
   if {$t0} {set t1 {t1.c may not be NULL}}
   do_test conflict-5.$i {
@@ -356,16 +307,6 @@ foreach {i conf1 conf2 cmd t0 t1 t2} {
  14 {}       {}       {UPDATE OR FAIL}        1 {6 7 3 4}  1
  15 {}       {}       {UPDATE OR ABORT}       1 {1 2 3 4}  1
  16 {}       {}       {UPDATE OR ROLLBACK}    1 {1 2 3 4}  0
- 17 {}       IGNORE   UPDATE                  0 {6 7 3 9}  1
- 18 {}       REPLACE  UPDATE                  0 {7 6 9}    1
- 19 {}       FAIL     UPDATE                  1 {6 7 3 4}  1
- 20 {}       ABORT    UPDATE                  1 {1 2 3 4}  1
- 21 {}       ROLLBACK UPDATE                  1 {1 2 3 4}  0
- 22 REPLACE  IGNORE   UPDATE                  0 {6 7 3 9}  1
- 23 IGNORE   REPLACE  UPDATE                  0 {7 6 9}    1
- 24 REPLACE  FAIL     UPDATE                  1 {6 7 3 4}  1
- 25 IGNORE   ABORT    UPDATE                  1 {1 2 3 4}  1
- 26 REPLACE  ROLLBACK UPDATE                  1 {1 2 3 4}  0
 } {
   if {$t0} {set t1 {column a is not unique}}
   do_test conflict-6.$i {
@@ -674,9 +615,9 @@ do_test conflict-9.26 {
 do_test conflict-10.1 {
   catchsql {
     DELETE FROM t1;
-    BEGIN ON CONFLICT ROLLBACK;
-    INSERT INTO t1 VALUES(1,2);
-    INSERT INTO t1 VALUES(1,3);
+    BEGIN;
+    INSERT OR ROLLBACK INTO t1 VALUES(1,2);
+    INSERT OR ROLLBACK INTO t1 VALUES(1,3);
     COMMIT;
   }
   execsql {SELECT * FROM t1}
@@ -685,9 +626,9 @@ do_test conflict-10.2 {
   catchsql {
     CREATE TABLE t4(x);
     CREATE UNIQUE INDEX t4x ON t4(x);
-    BEGIN ON CONFLICT ROLLBACK;
-    INSERT INTO t4 VALUES(1);
-    INSERT INTO t4 VALUES(1);
+    BEGIN;
+    INSERT OR ROLLBACK INTO t4 VALUES(1);
+    INSERT OR ROLLBACK INTO t4 VALUES(1);
     COMMIT;
   }
   execsql {SELECT * FROM t4}
