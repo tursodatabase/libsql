@@ -13,7 +13,7 @@
 ** the WHERE clause of SQL statements.  Also found here are subroutines
 ** to generate VDBE code to evaluate expressions.
 **
-** $Id: where.c,v 1.44 2002/05/19 23:43:14 danielk1977 Exp $
+** $Id: where.c,v 1.45 2002/05/21 13:18:26 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -216,21 +216,24 @@ WhereInfo *sqliteWhereBegin(
   */
   for(i=0; i<nExpr; i++){
     exprAnalyze(base, &aExpr[i]);
-    if( pParse->trigStack && pParse->trigStack->newIdx >= 0 ){
-        aExpr[i].prereqRight = 
-            aExpr[i].prereqRight & ~(1 << pParse->trigStack->newIdx - base);
-        aExpr[i].prereqLeft = 
-            aExpr[i].prereqLeft & ~(1 << pParse->trigStack->newIdx - base);
-        aExpr[i].prereqAll = 
-            aExpr[i].prereqAll & ~(1 << pParse->trigStack->newIdx - base);
-    }
-    if( pParse->trigStack && pParse->trigStack->oldIdx >= 0 ){
-        aExpr[i].prereqRight = 
-            aExpr[i].prereqRight & ~(1 << pParse->trigStack->oldIdx - base);
-        aExpr[i].prereqLeft = 
-            aExpr[i].prereqLeft & ~(1 << pParse->trigStack->oldIdx - base);
-        aExpr[i].prereqAll = 
-            aExpr[i].prereqAll & ~(1 << pParse->trigStack->oldIdx - base);
+
+    /* If we are executing a trigger body, remove all references to
+    ** new.* and old.* tables from the prerequisite masks.
+    */
+    if( pParse->trigStack ){
+      int x;
+      if( (x = pParse->trigStack->newIdx) >= 0 ){
+        int mask = ~(1 << (x - base));
+        aExpr[i].prereqRight &= mask;
+        aExpr[i].prereqLeft &= mask;
+        aExpr[i].prereqAll &= mask;
+      }
+      if( (x = pParse->trigStack->oldIdx) >= 0 ){
+        int mask = ~(1 << (x - base));
+        aExpr[i].prereqRight &= mask;
+        aExpr[i].prereqLeft &= mask;
+        aExpr[i].prereqAll &= mask;
+      }
     }
   }
 
@@ -239,7 +242,7 @@ WhereInfo *sqliteWhereBegin(
   ** be the first nested loop and so on.  aOrder[pTabList->nId-1] will
   ** be the innermost loop.
   **
-  ** Someday will put in a good algorithm here to reorder the loops
+  ** Someday we will put in a good algorithm here to reorder the loops
   ** for an effiecient query.  But for now, just use whatever order the
   ** tables appear in in the pTabList.
   */

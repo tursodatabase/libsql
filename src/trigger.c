@@ -247,8 +247,7 @@ TriggerStep *sqliteTriggerDeleteStep(Token *pTableName, Expr *pWhere){
 /* 
 ** Recursively delete a Trigger structure
 */
-void sqliteDeleteTrigger(Trigger *pTrigger)
-{
+void sqliteDeleteTrigger(Trigger *pTrigger){
   TriggerStep *pTriggerStep;
 
   pTriggerStep = pTrigger->step_list;
@@ -673,7 +672,7 @@ void sqliteViewTriggers(
 
   /* Build the updated row if required */
   if( pChanges ){
-    int ii, jj;
+    int ii;
 
     aXRef = sqliteMalloc( sizeof(int) * pTab->nCol );
     if( aXRef==0 ) goto trigger_cleanup;
