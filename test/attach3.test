@@ -1,0 +1,89 @@
+# 2003 July 1
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this script is testing the ATTACH and DETACH commands
+# and schema changes to attached databases.
+#
+# $Id: attach3.test,v 1.1 2004/05/28 11:37:29 danielk1977 Exp $
+#
+
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# Create tables t1 and t2 in the main database
+execsql {
+  CREATE TABLE t1(a, b);
+  CREATE TABLE t2(c, d);
+}
+
+# Create tables t1 and t2 in database file test2.db
+file delete -force test2.db
+sqlite db2 test2.db
+execsql {
+  CREATE TABLE t1(a, b);
+  CREATE TABLE t2(c, d);
+} db2
+db2 close
+
+# Create a table in the auxilary database.
+do_test attach3-1 {
+  execsql {
+    ATTACH 'test2.db' AS aux;
+  }
+} {}
+do_test attach3-2 {
+  execsql {
+    CREATE TABLE aux.t3(e, f);
+  }
+} {}
+do_test attach3-3 {
+  execsql {
+    SELECT * FROM sqlite_master WHERE name = 't3';
+  }
+} {}
+do_test attach3-4 {
+  execsql {
+    SELECT * FROM aux.sqlite_master WHERE name = 't3';
+  }
+} {table t3 t3 4 {CREATE TABLE t3(e, f)}}
+do_test attach3-5 {
+  execsql {
+    INSERT INTO t3 VALUES(1, 2);
+    SELECT * FROM t3;
+  }
+} {1 2}
+
+# Create an index on the auxilary database table.
+do_test attach4-1 {
+  execsql {
+    CREATE INDEX aux.i1 on t3(e);
+  }
+} {}
+execsql {
+  pragma vdbe_trace = off;
+}
+do_test attach4-2 {
+  execsql {
+    SELECT * FROM sqlite_master WHERE name = 'i1';
+  }
+} {}
+do_test attach4-3 {
+  execsql {
+    SELECT * FROM aux.sqlite_master WHERE name = 'i1';
+  }
+} {index i1 t3 5 {CREATE INDEX i1 on t3(e)}}
+
+finish_test
+
+
+
+

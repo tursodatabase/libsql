@@ -205,7 +205,7 @@ void sqlite3FinishTrigger(
     sqlite3VdbeChangeP3(v, addr+3, nt->table, 0); 
     sqlite3VdbeChangeP3(v, addr+5, pAll->z, pAll->n);
     if( nt->iDb==0 ){
-      sqlite3ChangeCookie(db, v);
+      sqlite3ChangeCookie(db, v, 0);
     }
     sqlite3VdbeAddOp(v, OP_Close, 0, 0);
     sqlite3EndWriteOperation(pParse);
@@ -467,7 +467,7 @@ void sqlite3DropTriggerPtr(Parse *pParse, Trigger *pTrigger, int nested){
     base = sqlite3VdbeAddOpList(v,  ArraySize(dropTrigger), dropTrigger);
     sqlite3VdbeChangeP3(v, base+1, pTrigger->name, 0);
     if( pTrigger->iDb==0 ){
-      sqlite3ChangeCookie(db, v);
+      sqlite3ChangeCookie(db, v, 0);
     }
     sqlite3VdbeAddOp(v, OP_Close, 0, 0);
     sqlite3EndWriteOperation(pParse);

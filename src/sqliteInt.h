@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.256 2004/05/27 17:22:56 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.257 2004/05/28 11:37:28 danielk1977 Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -969,7 +969,7 @@ struct Parse {
   int rc;              /* Return code from execution */
   char *zErrMsg;       /* An error message */
   Token sErrToken;     /* The token at which the error occurred */
-  Token sFirstToken;   /* The first token parsed */
+  Token sNameToken;    /* Token with unqualified schema object name */
   Token sLastToken;    /* The last token parsed */
   const char *zTail;   /* All SQL text past the last semicolon parsed */
   Table *pNewTable;    /* A table being constructed by CREATE TABLE */
@@ -1199,7 +1199,7 @@ void sqlite3RollbackInternalChanges(sqlite*);
 void sqlite3CommitInternalChanges(sqlite*);
 Table *sqlite3ResultSetOfSelect(Parse*,char*,Select*);
 void sqlite3OpenMasterTable(Vdbe *v, int);
-void sqlite3StartTable(Parse*,Token*,Token*,int,int);
+void sqlite3StartTable(Parse*,Token*,Token*,Token*,int,int);
 void sqlite3AddColumn(Parse*,Token*);
 void sqlite3AddNotNull(Parse*, int);
 void sqlite3AddPrimaryKey(Parse*, IdList*, int);
@@ -1221,7 +1221,7 @@ void sqlite3SrcListAddAlias(SrcList*, Token*);
 void sqlite3SrcListAssignCursors(Parse*, SrcList*);
 void sqlite3IdListDelete(IdList*);
 void sqlite3SrcListDelete(SrcList*);
-void sqlite3CreateIndex(Parse*,Token*,SrcList*,IdList*,int,Token*,Token*);
+void sqlite3CreateIndex(Parse*,Token*,Token*,Token*,IdList*,int,Token*,Token*);
 void sqlite3DropIndex(Parse*, SrcList*);
 void sqlite3AddKeyType(Vdbe*, ExprList*);
 void sqlite3AddIdxKeyType(Vdbe*, Index*);
@@ -1284,7 +1284,7 @@ void sqlite3RegisterDateTimeFunctions(sqlite*);
 int sqlite3SafetyOn(sqlite*);
 int sqlite3SafetyOff(sqlite*);
 int sqlite3SafetyCheck(sqlite*);
-void sqlite3ChangeCookie(sqlite*, Vdbe*);
+void sqlite3ChangeCookie(sqlite*, Vdbe*, int);
 void sqlite3BeginTrigger(Parse*, Token*,int,int,IdList*,SrcList*,int,Expr*,int);
 void sqlite3FinishTrigger(Parse*, TriggerStep*, Token*);
 void sqlite3DropTrigger(Parse*, SrcList*);
@@ -1350,4 +1350,4 @@ int sqlite3atoi64(const char*, i64*);
 void sqlite3Error(sqlite *, int, const char*,...);
 int sqlite3utfTranslate(const void *, int , u8 , void **, int *, u8);
 u8 sqlite3UtfReadBom(const void *zData, int nData);
-char *sqlite3HexToBlob(const char *z);
+void *sqlite3HexToBlob(const char *z);

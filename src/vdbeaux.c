@@ -610,7 +610,8 @@ int sqlite3VdbeList(
 ** If pOp is an OP_HexBlob opcode, then transform it to an OP_Blob
 ** opcode. 
 */
-static int translateOp(Op *pOp){
+static int translateOp(Op *pOp, u8 enc){
+  
   if( pOp->opcode==OP_HexBlob ){
     pOp->p1 = strlen(pOp->p3)/2;
     if( pOp->p1 ){
@@ -627,6 +628,28 @@ static int translateOp(Op *pOp){
     }
     pOp->opcode = OP_Blob;
   }
+
+  else if( pOp->opcode==OP_String8 ){
+    if( pOp->p3 ){
+      void *z = 0;
+      switch( enc ){
+        case TEXT_Utf16be:
+          z = sqlite3utf8to16be(pOp->p3, -1);
+          if( !z ) return SQLITE_NOMEM;
+          break;
+        case TEXT_Utf16le:
+          z = sqlite3utf8to16be(pOp->p3, -1);
+          if( !z ) return SQLITE_NOMEM;
+          break;
+      }
+      if( z ){
+        if( pOp->p3type==P3_DYNAMIC ) sqliteFree( pOp->p3 );
+        
+      }
+    }
+    pOp->opcode = OP_String;
+  }
+
   return SQLITE_OK;
 }
 
@@ -704,7 +727,7 @@ void sqlite3VdbeMakeReady(
   if( !isExplain ){
     int i;
     for(i=0; i<p->nOp; i++){
-      translateOp(&p->aOp[i]);
+      translateOp(&p->aOp[i], p->db->enc);
     }
   }
 }

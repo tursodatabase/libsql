@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.92 2004/05/27 13:35:20 danielk1977 Exp $
+** $Id: util.c,v 1.93 2004/05/28 11:37:28 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -1299,7 +1299,7 @@ int sqlite3VarintLen(u64 v){
   return i;
 }
 
-char * sqlite3HexToBlob(const char *z){
+void *sqlite3HexToBlob(const char *z){
   char *zBlob;
   int i;
   int n = strlen(z);

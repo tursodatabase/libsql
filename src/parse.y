@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.119 2004/05/27 17:22:55 drh Exp $
+** @(#) $Id: parse.y,v 1.120 2004/05/28 11:37:28 danielk1977 Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -87,8 +87,8 @@ cmd ::= ROLLBACK trans_opt.    {sqlite3RollbackTransaction(pParse);}
 ///////////////////// The CREATE TABLE statement ////////////////////////////
 //
 cmd ::= create_table create_table_args.
-create_table ::= CREATE(X) temp(T) TABLE nm(Y). {
-   sqlite3StartTable(pParse,&X,&Y,T,0);
+create_table ::= CREATE(X) temp(T) TABLE nm(Y) dbnm(Z). {
+   sqlite3StartTable(pParse,&X,&Y,&Z,T,0);
 }
 %type temp {int}
 temp(A) ::= TEMP.  {A = 1;}
@@ -188,7 +188,7 @@ carg ::= DEFAULT NULL.
 ccons ::= NULL onconf.
 ccons ::= NOT NULL onconf(R).               {sqlite3AddNotNull(pParse, R);}
 ccons ::= PRIMARY KEY sortorder onconf(R).  {sqlite3AddPrimaryKey(pParse,0,R);}
-ccons ::= UNIQUE onconf(R).           {sqlite3CreateIndex(pParse,0,0,0,R,0,0);}
+ccons ::= UNIQUE onconf(R).           {sqlite3CreateIndex(pParse,0,0,0,0,R,0,0);}
 ccons ::= CHECK LP expr RP onconf.
 ccons ::= REFERENCES nm(T) idxlist_opt(TA) refargs(R).
                                 {sqlite3CreateForeignKey(pParse,0,&T,TA,R);}
@@ -233,7 +233,7 @@ tcons ::= CONSTRAINT nm.
 tcons ::= PRIMARY KEY LP idxlist(X) RP onconf(R).
                                              {sqlite3AddPrimaryKey(pParse,X,R);}
 tcons ::= UNIQUE LP idxlist(X) RP onconf(R).
-                                       {sqlite3CreateIndex(pParse,0,0,X,R,0,0);}
+                                       {sqlite3CreateIndex(pParse,0,0,0,X,R,0,0);}
 tcons ::= CHECK expr onconf.
 tcons ::= FOREIGN KEY LP idxlist(FA) RP
           REFERENCES nm(T) idxlist_opt(TA) refargs(R) defer_subclause_opt(D). {
@@ -727,12 +727,11 @@ expritem(A) ::= .                       {A = 0;}
 
 ///////////////////////////// The CREATE INDEX command ///////////////////////
 //
-cmd ::= CREATE(S) uniqueflag(U) INDEX nm(X)
-        ON nm(Y) dbnm(D) LP idxlist(Z) RP(E) onconf(R). {
-  SrcList *pSrc = sqlite3SrcListAppend(0, &Y, &D);
+cmd ::= CREATE(S) uniqueflag(U) INDEX nm(X) dbnm(D)
+        ON nm(Y) LP idxlist(Z) RP(E) onconf(R). {
   if( U!=OE_None ) U = R;
   if( U==OE_Default) U = OE_Abort;
-  sqlite3CreateIndex(pParse, &X, pSrc, Z, U, &S, &E);
+  sqlite3CreateIndex(pParse, &X, &D, &Y, Z, U, &S, &E);
 }
 
 %type uniqueflag {int}

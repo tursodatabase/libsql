@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.343 2004/05/28 08:21:09 drh Exp $
+** $Id: vdbe.c,v 1.344 2004/05/28 11:37:28 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -693,20 +693,39 @@ case OP_Real: {
   Realify(pTos, 0);
   break;
 }
+
+#if 0
+/* Opcode: String8 * * P3
+**
+** This opcode does not exist at vdbe execution time.
+*/
+case OP_String8: {
+  break;
+}
+#endif
   
 /* Opcode: String * * P3
 **
 ** The string value P3 is pushed onto the stack.  If P3==0 then a
-** NULL is pushed onto the stack.
+** NULL is pushed onto the stack. P3 is assumed to be a nul terminated
+** string encoded with the database native encoding.
 */
 case OP_String: {
   pTos++;
   if( pOp->p3 ){
     pTos->flags = MEM_Str|MEM_Static|MEM_Term;
-    pTos->enc = TEXT_Utf8;
     pTos->z = pOp->p3;
     pTos->n = strlen(pTos->z);
+    pTos->enc = TEXT_Utf8;
     sqlite3VdbeChangeEncoding(pTos, db->enc);
+/*
+    if( db->enc==TEXT_Utf8 ){
+      pTos->n = strlen(pTos->z);
+    }else{
+      pTos->n  = sqlite3utf16ByteLen(pTos->z, -1);
+    }
+    pTos->enc = db->enc;
+*/
   }else{
     pTos->flags = MEM_Null;
   }
@@ -726,7 +745,11 @@ case OP_HexBlob: {
 /* Opcode: Blob P1 * P3
 **
 ** P3 points to a blob of data P1 bytes long. Push this
-** value onto the stack.
+** value onto the stack. This instruction is not coded directly
+** by the compiler. Instead, the compiler layer specifies
+** an OP_HexBlob opcode, with the hex string representation of
+** the blob as P3. This opcode is transformed to an OP_Blob
+** before execution (within the sqlite3_prepare() function).
 */
 case OP_Blob: {
   pTos++;
