@@ -1,5 +1,5 @@
-C In\slemon,\sallows\sopen()\susing\sthe\s"b"\soption\sto\savoid\s\\r\sproblems\son\swindows.\nTicket\s#897.\s(CVS\s1956)
-D 2004-09-10T00:14:04
+C Fix\san\suninitialized\svariable\sbug\sin\snullif().\s\sTicket\s#898.\s(CVS\s1957)
+D 2004-09-13T13:13:19
 F Makefile.in 7f481bb8cdb032491df611526e6f4eb6af79691d
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -35,7 +35,7 @@ F src/date.c eb8d5fa1a6d5cfc09031c8852d10ff742a94b15b
 F src/delete.c e887f44aae1e33da1643df58abe86cd9cde45ad1
 F src/encode.c a876af473d1d636faa3dca51c7571f2e007eea37
 F src/expr.c 9130794d8c86af2cbf2b8cdc66f2158167fd15b1
-F src/func.c 14bf20710a10fe66266e16da4364ca2dd8c4c36d
+F src/func.c 1fbc5256639586573fd0e70814d6dcd8bc10afc1
 F src/hash.c a97721a55440b7bea31ffe471bb2f6b4123cddd5
 F src/hash.h 1b0c445e1c89ff2aaad9b4605ba61375af001e84
 F src/insert.c bfd21070c28dd94e58ae918260a6985d2b5e4477
@@ -248,7 +248,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 13fba17e3f75c08142db6acc8884a78ac0bcdfd6
-R c6ee5ad3367f00fcaf51226ba83b5c85
+P b5b2e3db09831fe808f9f2692a836eef716df1c5
+R 992ce50ef6a903331a42eb50a0f32e09
 U drh
-Z 3d9fb1c59ad3fcc362d01f6a7bf10d5f
+Z a98b1f7a0cbcaa0996885af9189fff88
