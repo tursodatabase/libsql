@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.56 2002/03/02 19:00:31 drh Exp $
+** $Id: btree.c,v 1.57 2002/03/02 20:41:58 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -64,6 +64,7 @@ typedef struct Cell Cell;
 typedef struct CellHdr CellHdr;
 typedef struct FreeBlk FreeBlk;
 typedef struct OverflowPage OverflowPage;
+typedef struct FreelistInfo FreelistInfo;
 
 /*
 ** All structures on a database page are aligned to 4-byte boundries.
@@ -246,6 +247,18 @@ struct FreeBlk {
 struct OverflowPage {
   Pgno iNext;
   char aPayload[OVERFLOW_SIZE];
+};
+
+/*
+** The PageOne.freeList field points to a linked list of overflow pages
+** hold information about free pages.  The aPayload section of each
+** overflow page contains an instance of the following structure.  The
+** aFree[] array holds the page number of nFree unused pages in the disk
+** file.
+*/
+struct FreelistInfo {
+  int nFree;
+  Pgno aFree[(OVERFLOW_SIZE-sizeof(int))/sizeof(Pgno)];
 };
 
 /*
@@ -1477,9 +1490,11 @@ static int allocatePage(Btree *pBt, MemPage **ppPage, Pgno *pPgno){
   int rc;
   if( pPage1->freeList ){
     OverflowPage *pOvfl;
+    FreelistInfo *pInfo;
+
     rc = sqlitepager_write(pPage1);
     if( rc ) return rc;
-    *pPgno = pPage1->freeList;
+    pPage1->nFree--;
     rc = sqlitepager_get(pBt->pPager, pPage1->freeList, (void**)&pOvfl);
     if( rc ) return rc;
     rc = sqlitepager_write(pOvfl);
@@ -1487,9 +1502,21 @@ static int allocatePage(Btree *pBt, MemPage **ppPage, Pgno *pPgno){
       sqlitepager_unref(pOvfl);
       return rc;
     }
-    pPage1->freeList = pOvfl->iNext;
-    pPage1->nFree--;
-    *ppPage = (MemPage*)pOvfl;
+    pInfo = (FreelistInfo*)pOvfl->aPayload;
+    if( pInfo->nFree==0 ){
+      *pPgno = pPage1->freeList;
+      pPage1->freeList = pOvfl->iNext;
+      *ppPage = (MemPage*)pOvfl;
+    }else{
+      pInfo->nFree--;
+      *pPgno = pInfo->aFree[pInfo->nFree];
+      rc = sqlitepager_get(pBt->pPager, *pPgno, (void**)ppPage);
+      sqlitepager_unref(pOvfl);
+      if( rc==SQLITE_OK ){
+        sqlitepager_dont_rollback(*ppPage);
+        rc = sqlitepager_write(*ppPage);
+      }
+    }
   }else{
     *pPgno = sqlitepager_pagecount(pBt->pPager) + 1;
     rc = sqlitepager_get(pBt->pPager, *pPgno, (void**)ppPage);
@@ -1521,6 +1548,25 @@ static int freePage(Btree *pBt, void *pPage, Pgno pgno){
   if( rc ){
     return rc;
   }
+  pPage1->nFree++;
+  if( pPage1->nFree>0 && pPage1->freeList ){
+    OverflowPage *pFreeIdx;
+    rc = sqlitepager_get(pBt->pPager, pPage1->freeList, (void**)&pFreeIdx);
+    if( rc==SQLITE_OK ){
+      FreelistInfo *pInfo = (FreelistInfo*)pFreeIdx->aPayload;
+      if( pInfo->nFree<(sizeof(pInfo->aFree)/sizeof(pInfo->aFree[0])) ){
+        rc = sqlitepager_write(pFreeIdx);
+        if( rc==SQLITE_OK ){
+          pInfo->aFree[pInfo->nFree] = pgno;
+          pInfo->nFree++;
+          sqlitepager_unref(pFreeIdx);
+          sqlitepager_dont_write(pBt->pPager, pgno);
+          return rc;
+        }
+      }
+      sqlitepager_unref(pFreeIdx);
+    }
+  }
   if( pOvfl==0 ){
     assert( pgno>0 );
     rc = sqlitepager_get(pBt->pPager, pgno, (void**)&pOvfl);
@@ -1534,7 +1580,6 @@ static int freePage(Btree *pBt, void *pPage, Pgno pgno){
   }
   pOvfl->iNext = pPage1->freeList;
   pPage1->freeList = pgno;
-  pPage1->nFree++;
   memset(pOvfl->aPayload, 0, OVERFLOW_SIZE);
   pMemPage = (MemPage*)pPage;
   pMemPage->isInit = 0;
@@ -2703,9 +2748,16 @@ static int checkRef(IntegrityCk *pCheck, int iPage, char *zContext){
 ** Check the integrity of the freelist or of an overflow page list.
 ** Verify that the number of pages on the list is N.
 */
-static void checkList(IntegrityCk *pCheck, int iPage, int N, char *zContext){
+static void checkList(
+  IntegrityCk *pCheck,  /* Integrity checking context */
+  int isFreeList,       /* True for a freelist.  False for overflow page list */
+  int iPage,            /* Page number for first page in the list */
+  int N,                /* Expected number of pages in the list */
+  char *zContext        /* Context for error messages */
+){
+  int i;
   char zMsg[100];
-  while( N-- ){
+  while( N-- > 0 ){
     OverflowPage *pOvfl;
     if( iPage<1 ){
       sprintf(zMsg, "%d pages missing from overflow list", N+1);
@@ -2717,6 +2769,13 @@ static void checkList(IntegrityCk *pCheck, int iPage, int N, char *zContext){
       sprintf(zMsg, "failed to get page %d", iPage);
       checkAppendMsg(pCheck, zContext, zMsg);
       break;
+    }
+    if( isFreeList ){
+      FreelistInfo *pInfo = (FreelistInfo*)pOvfl->aPayload;
+      for(i=0; i<pInfo->nFree; i++){
+        checkRef(pCheck, pInfo->aFree[i], zMsg);
+      }
+      N -= pInfo->nFree;
     }
     iPage = (int)pOvfl->iNext;
     sqlitepager_unref(pOvfl);
@@ -2818,7 +2877,7 @@ static int checkTreePage(
     sprintf(zContext, "On page %d cell %d: ", iPage, i);
     if( sz>MX_LOCAL_PAYLOAD ){
       int nPage = (sz - MX_LOCAL_PAYLOAD + OVERFLOW_SIZE - 1)/OVERFLOW_SIZE;
-      checkList(pCheck, pCell->ovfl, nPage, zContext);
+      checkList(pCheck, 0, pCell->ovfl, nPage, zContext);
     }
 
     /* Check that keys are in the right order
@@ -2923,7 +2982,8 @@ char *sqliteBtreeIntegrityCheck(Btree *pBt, int *aRoot, int nRoot){
 
   /* Check the integrity of the freelist
   */
-  checkList(&sCheck, pBt->page1->freeList, pBt->page1->nFree,"Main freelist: ");
+  checkList(&sCheck, 1, pBt->page1->freeList, pBt->page1->nFree,
+            "Main freelist: ");
 
   /* Check all the tables.
   */

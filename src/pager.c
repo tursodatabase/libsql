@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.40 2002/02/19 13:39:22 drh Exp $
+** @(#) $Id: pager.c,v 1.41 2002/03/02 20:41:59 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -1124,6 +1124,55 @@ int sqlitepager_write(void *pData){
 int sqlitepager_iswriteable(void *pData){
   PgHdr *pPg = DATA_TO_PGHDR(pData);
   return pPg->dirty;
+}
+
+/*
+** A call to this routine tells the pager that it is not necessary to
+** write the information on page "pgno" back to the disk, even though
+** that page might be marked as dirty.
+**
+** The overlying software layer calls this routine when all of the data
+** on the given page is unused.  The pager marks the page as clean so
+** that it does not get written to disk.
+**
+** Tests show that this optimization, together with the
+** sqlitepager_dont_rollback() below, more than double the speed
+** of large INSERT operations and quadruple the speed of large DELETEs.
+*/
+void sqlitepager_dont_write(Pager *pPager, Pgno pgno){
+  PgHdr *pPg;
+  pPg = pager_lookup(pPager, pgno);
+  if( pPg && pPg->dirty ){
+    pPg->dirty = 0;
+  }
+}
+
+/*
+** A call to this routine tells the pager that if a rollback occurs,
+** it is not necessary to restore the data on the given page.  This
+** means that the pager does not have to record the given page in the
+** rollback journal.
+*/
+void sqlitepager_dont_rollback(void *pData){
+  PgHdr *pPg = DATA_TO_PGHDR(pData);
+  Pager *pPager = pPg->pPager;
+
+  if( pPager->state!=SQLITE_WRITELOCK || pPager->journalOpen==0 ) return;
+  if( !pPg->inJournal && (int)pPg->pgno <= pPager->origDbSize ){
+    assert( pPager->aInJournal!=0 );
+    pPager->aInJournal[pPg->pgno/8] |= 1<<(pPg->pgno&7);
+    pPg->inJournal = 1;
+    if( pPager->ckptOpen ){
+      pPager->aInCkpt[pPg->pgno/8] |= 1<<(pPg->pgno&7);
+      pPg->inCkpt = 1;
+    }
+  }
+  if( pPager->ckptOpen && !pPg->inCkpt && (int)pPg->pgno<=pPager->ckptSize ){
+    assert( pPg->inJournal || (int)pPg->pgno>pPager->origDbSize );
+    assert( pPager->aInCkpt!=0 );
+    pPager->aInCkpt[pPg->pgno/8] |= 1<<(pPg->pgno&7);
+    pPg->inCkpt = 1;
+  }
 }
 
 /*
