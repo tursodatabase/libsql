@@ -11,34 +11,35 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the sqlite_*_printf() interface.
 #
-# $Id: printf.test,v 1.13 2004/07/27 13:38:48 drh Exp $
+# $Id: printf.test,v 1.14 2004/09/09 00:35:30 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
 set n 1
 foreach v {1 2 5 10 99 100 1000000 999999999 0 -1 -2 -5 -10 -99 -100 -9999999} {
+  set v32 [expr {$v&0xffffffff}]
   do_test printf-1.$n.1 [subst {
     sqlite3_mprintf_int {Three integers: %d %x %o} $v $v $v
-  }] [format {Three integers: %d %x %o} $v $v $v]
+  }] [format {Three integers: %d %x %o} $v $v32 $v32]
   do_test printf-1.$n.2 [subst {
     sqlite3_mprintf_int {Three integers: (%6d) (%6x) (%6o)} $v $v $v
-  }] [format {Three integers: (%6d) (%6x) (%6o)} $v $v $v]
+  }] [format {Three integers: (%6d) (%6x) (%6o)} $v $v32 $v32]
   do_test printf-1.$n.3 [subst {
     sqlite3_mprintf_int {Three integers: (%-6d) (%-6x) (%-6o)} $v $v $v
-  }] [format {Three integers: (%-6d) (%-6x) (%-6o)} $v $v $v]
+  }] [format {Three integers: (%-6d) (%-6x) (%-6o)} $v $v32 $v32]
   do_test printf-1.$n.4 [subst {
     sqlite3_mprintf_int {Three integers: (%+6d) (%+6x) (%+6o)} $v $v $v
-  }] [format {Three integers: (%+6d) (%+6x) (%+6o)} $v $v $v]
+  }] [format {Three integers: (%+6d) (%+6x) (%+6o)} $v $v32 $v32]
   do_test printf-1.$n.5 [subst {
     sqlite3_mprintf_int {Three integers: (%06d) (%06x) (%06o)} $v $v $v
-  }] [format {Three integers: (%06d) (%06x) (%06o)} $v $v $v]
+  }] [format {Three integers: (%06d) (%06x) (%06o)} $v $v32 $v32]
   do_test printf-1.$n.6 [subst {
     sqlite3_mprintf_int {Three integers: (% 6d) (% 6x) (% 6o)} $v $v $v
-  }] [format {Three integers: (% 6d) (% 6x) (% 6o)} $v $v $v]
+  }] [format {Three integers: (% 6d) (% 6x) (% 6o)} $v $v32 $v32]
   do_test printf-1.$n.7 [subst {
     sqlite3_mprintf_int {Three integers: (%#6d) (%#6x) (%#6o)} $v $v $v
-  }] [format {Three integers: (%#6d) (%#6x) (%#6o)} $v $v $v]
+  }] [format {Three integers: (%#6d) (%#6x) (%#6o)} $v $v32 $v32]
   incr n
 }
 
