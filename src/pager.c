@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.135 2004/06/22 12:18:32 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.136 2004/06/23 01:05:27 danielk1977 Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -792,10 +792,13 @@ static int pager_reload_cache(Pager *pPager){
 ** deleted when the power is restored) we don't care.  
 **
 ** If the file opened as the journal file is not a well-formed
-** journal file then the database will likely already be
-** corrupted, so the PAGER_ERR_CORRUPT bit is set in pPager->errMask
-** and SQLITE_CORRUPT is returned.  If it all works, then this routine
-** returns SQLITE_OK.
+** journal file then all pages up to the first corrupted page are rolled
+** back (or no pages if the journal header is corrupted). The journal file
+** is then deleted and SQLITE_OK returned, just as if no corruption had
+** been encountered.
+**
+** If an I/O or malloc() error occurs, the journal-file is not deleted
+** and an error code is returned.
 */
 static int pager_playback(Pager *pPager, int useJournalSize){
   off_t szJ;               /* Size of the journal file in bytes */
@@ -831,7 +834,6 @@ static int pager_playback(Pager *pPager, int useJournalSize){
   ** at the beginning of the journal. */
   rc = sqlite3OsRead(&pPager->jfd, aMagic, sizeof(aMagic));
   if( rc!=SQLITE_OK || memcmp(aMagic, aJournalMagic, sizeof(aMagic))!=0 ){
-    rc = SQLITE_PROTOCOL;
     goto end_playback;
   }
 
@@ -857,6 +859,7 @@ static int pager_playback(Pager *pPager, int useJournalSize){
   ** specified, only proceed with the playback if it still exists. */
   rc = read32bits(&pPager->jfd, &nMaster);
   if( rc ) goto end_playback;
+  if( szJ < 24+nMaster ) goto end_playback;
   if( nMaster>0 ){
     zMaster = sqliteMalloc(nMaster);
     if( !zMaster ){
@@ -908,15 +911,7 @@ end_playback:
     }
     sqliteFree(zMaster);
   }
-  if( rc!=SQLITE_OK ){
-    /* FIX ME: We shouldn't delete the journal if an error occured during
-    ** rollback. It may have been a transient error and the rollback may
-    ** succeed next time it is attempted.
-    */
-    pager_unwritelock(pPager);
-    pPager->errMask |= PAGER_ERR_CORRUPT;
-    rc = SQLITE_CORRUPT;
-  }else{
+  if( rc==SQLITE_OK ){
     rc = pager_unwritelock(pPager);
   }
   return rc;

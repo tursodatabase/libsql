@@ -118,7 +118,6 @@ TESTSRC = \
   $(TOP)/src/os_mac.c \
   $(TOP)/src/os_unix.c \
   $(TOP)/src/os_win.c \
-  $(TOP)/src/os_test.c \
   $(TOP)/src/pager.c \
   $(TOP)/src/pragma.c \
   $(TOP)/src/printf.c \
@@ -274,9 +273,6 @@ opcodes.h:	$(TOP)/src/vdbe.h
 os_mac.o:	$(TOP)/src/os_mac.c $(HDR)
 	$(TCCX) -c $(TOP)/src/os_mac.c
 
-os_test.o:	$(TOP)/src/os_test.c $(HDR)
-	$(TCCX) -c $(TOP)/src/os_test.c
-
 os_unix.o:	$(TOP)/src/os_unix.c $(HDR)
 	$(TCCX) -c $(TOP)/src/os_unix.c
 
@@ -359,9 +355,9 @@ testfixture$(EXE):	$(TOP)/src/tclsqlite.c libsqlite3.a $(TESTSRC)
 		$(TESTSRC) $(TOP)/src/tclsqlite.c \
 		libsqlite3.a $(LIBTCL) $(THREADLIB)
 
-testfixturex:	$(TOP)/src/tclsqlite.c libsqlite3.a $(TESTSRC)
-	$(TCCX) $(TCL_FLAGS) -DOS_TEST=1 -DTCLSH=1 -DSQLITE_TEST=1 -o testfixturex \
-		$(TESTSRC) $(TOP)/src/tclsqlite.c \
+crashtest:	$(TOP)/src/tclsqlite.c libsqlite3.a $(TESTSRC) $(TOP)/src/os_test.c
+	$(TCCX) $(TCL_FLAGS) -DOS_TEST=1 -DTCLSH=1 -DSQLITE_TEST=1 -o crashtest \
+		$(TESTSRC) $(TOP)/src/os_test.c $(TOP)/src/tclsqlite.c \
 		libsqlite3.a $(LIBTCL) $(THREADLIB)
 
 fulltest:	testfixture$(EXE) sqlite3$(EXE)
