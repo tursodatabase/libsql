@@ -1,5 +1,5 @@
-C Fix\stypos\sin\sweb\sdocumentation.\s\sTickets\s#770\sand\s#771.\s(CVS\s1668)
-D 2004-06-22T14:57:54
+C Version\s3.0.1\sALPHA\s(CVS\s1669)
+D 2004-06-22T14:59:41
 F Makefile.in 0a3d7aaefa50717bd550b0cf568a51072c4c103c
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -228,7 +228,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 80c7b13ff39c88474587b1899505bac83a0b8812
+P 04673066ff6a7c127559ba448fe50a4d95a26347
 R 2c20ba5b608dc97c31a1297639248d6a
 U drh
-Z 2c2ee46ab3ae007d7f446eebbb4c86e3
+Z d8debe02f5236fe47dd4542a10377f03
