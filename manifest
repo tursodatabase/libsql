@@ -1,5 +1,5 @@
-C Remove\sunnecessary\scode\sfrom\sthe\sVDBE.\s(CVS\s814)
-D 2003-01-06T23:54:06
+C Optimizations\sto\sthe\stokenizer.\s(CVS\s815)
+D 2003-01-07T01:44:38
 F Makefile.in 868c17a1ae1c07603d491274cc8f86c04acf2a1e
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -48,7 +48,7 @@ F src/test1.c a46e9f61915b32787c5d5a05a4b92e4dacc437d9
 F src/test2.c 03f05e984c8e2f2badc44644d42baf72b249096b
 F src/test3.c c12ea7f1c3fbbd58904e81e6cb10ad424e6fc728
 F src/threadtest.c d641a5219e718e18a1a80a50eb9bb549f451f42e
-F src/tokenize.c 75e3bb37305b64e118e709752066f494c4f93c30
+F src/tokenize.c 8eaa8f878aa8c6375b567504736a5047f367ce9b
 F src/trigger.c 5ba917fc226b96065108da28186c2efaec53e481
 F src/update.c 881e4c8e7c786545da4fd2d95da19252b2e31137
 F src/util.c e2d108842e02810d3d3242cac0e024b09cdb3c4a
@@ -152,7 +152,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 5809132f5bf40bae2331f887e87fe5baecc15c46
-R b3c7a57b7ec1a787dd9ebcc0f7db6f34
+P b96ec281ff29aad8af340b30c6ff4e129ffeeefb
+R eca56f05aef2b5cf05bae2fe3b0da7b4
 U drh
-Z 5f8c0999fff5fe3e4b7d38d837b9f84a
+Z f083eac995258132bf28df3cbcdc9fef

@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.51 2002/10/27 19:35:35 drh Exp $
+** $Id: tokenize.c,v 1.52 2003/01/07 01:44:38 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -219,7 +219,7 @@ static int sqliteGetToken(const unsigned char *z, int *tokenType){
   int i;
   switch( *z ){
     case ' ': case '\t': case '\n': case '\f': case '\r': {
-      for(i=1; z[i] && isspace(z[i]); i++){}
+      for(i=1; isspace(z[i]); i++){}
       *tokenType = TK_SPACE;
       return i;
     }
@@ -358,10 +358,10 @@ static int sqliteGetToken(const unsigned char *z, int *tokenType){
     case '0': case '1': case '2': case '3': case '4':
     case '5': case '6': case '7': case '8': case '9': {
       *tokenType = TK_INTEGER;
-      for(i=1; z[i] && isdigit(z[i]); i++){}
+      for(i=1; isdigit(z[i]); i++){}
       if( z[i]=='.' ){
         i++;
-        while( z[i] && isdigit(z[i]) ){ i++; }
+        while( isdigit(z[i]) ){ i++; }
         *tokenType = TK_FLOAT;
       }
       if( (z[i]=='e' || z[i]=='E') &&
@@ -370,7 +370,7 @@ static int sqliteGetToken(const unsigned char *z, int *tokenType){
            )
       ){
         i += 2;
-        while( z[i] && isdigit(z[i]) ){ i++; }
+        while( isdigit(z[i]) ){ i++; }
         *tokenType = TK_FLOAT;
       }else if( z[0]=='.' ){
         *tokenType = TK_FLOAT;
@@ -406,7 +406,6 @@ int sqliteRunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   int nErr = 0;
   int i;
   void *pEngine;
-  int once = 1;
   sqlite *db = pParse->db;
   extern void *sqliteParserAlloc(void*(*)(int));
   extern void sqliteParserFree(void*, void(*)(void*));
@@ -420,33 +419,32 @@ int sqliteRunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
     sqliteSetString(pzErrMsg, "out of memory", 0);
     return 1;
   }
-  while( sqlite_malloc_failed==0 && nErr==0 && i>=0 && zSql[i]!=0 ){
+  pParse->sLastToken.dyn = 0;
+  while( sqlite_malloc_failed==0 && zSql[i]!=0 ){
     int tokenType;
     
-    if( (db->flags & SQLITE_Interrupt)!=0 ){
-      pParse->rc = SQLITE_INTERRUPT;
-      sqliteSetString(pzErrMsg, "interrupt", 0);
-      break;
-    }
+    assert( i>=0 );
     pParse->sLastToken.z = &zSql[i];
-    pParse->sLastToken.dyn = 0;
+    assert( pParse->sLastToken.dyn==0 );
     pParse->sLastToken.n = sqliteGetToken((unsigned char*)&zSql[i], &tokenType);
     i += pParse->sLastToken.n;
-    if( once ){
-      pParse->sFirstToken = pParse->sLastToken;
-      once = 0;
-    }
     switch( tokenType ){
       case TK_SPACE:
       case TK_COMMENT: {
+        if( (db->flags & SQLITE_Interrupt)!=0 ){
+          pParse->rc = SQLITE_INTERRUPT;
+          sqliteSetString(pzErrMsg, "interrupt", 0);
+          goto abort_parse;
+        }
         break;
       }
-      case TK_ILLEGAL:
+      case TK_ILLEGAL: {
         sqliteSetNString(pzErrMsg, "unrecognized token: \"", -1, 
            pParse->sLastToken.z, pParse->sLastToken.n, "\"", 1, 0);
         nErr++;
-        break;
-      default:
+        goto abort_parse;cvs
+      }
+      default: {
         sqliteParser(pEngine, tokenType, pParse->sLastToken, pParse);
         if( pParse->zErrMsg && pParse->sErrToken.z ){
           sqliteSetNString(pzErrMsg, "near \"", -1, 
@@ -457,14 +455,18 @@ int sqliteRunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
           nErr++;
           sqliteFree(pParse->zErrMsg);
           pParse->zErrMsg = 0;
+          goto abort_parse;
         }else if( pParse->rc!=SQLITE_OK ){
           sqliteSetString(pzErrMsg, sqlite_error_string(pParse->rc), 0);
           nErr++;
+          goto abort_parse;
         }
         break;
+      }
     }
   }
-  if( zSql[i]==0 ){
+abort_parse:
+  if( zSql[i]==0 && nErr==0 ){
     sqliteParser(pEngine, TK_SEMI, pParse->sLastToken, pParse);
     sqliteParser(pEngine, 0, pParse->sLastToken, pParse);
     if( pParse->zErrMsg && pParse->sErrToken.z ){
