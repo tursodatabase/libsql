@@ -1,5 +1,5 @@
-C Changes\sto\sallow\slibsqlite3.a\sand\slibsqlite.a\sto\sbe\sboth\slinked\sinto\sthe\nsame\sprogram\sat\sthe\ssame\stime.\s(CVS\s1621)
-D 2004-06-18T17:10:16
+C Fix\sdeclaration\sproblem\sin\sthe\sprevious\scheck-in.\s(CVS\s1622)
+D 2004-06-18T17:45:12
 F Makefile.in 5125bd6b92fca76275a6fc6c6ff425484b8cec0a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -57,7 +57,7 @@ F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c 91570af7f13d1c5584f3b711676e1226ee12194e
 F src/shell.c ca519519dcbbc582f6d88f7d0e7583b857fd3469
 F src/sqlite.h.in eacd23af3280603cd8b48979c6f9297b3ac2935c
-F src/sqliteInt.h e1f3a90e9efced7a5f610a390b2cae6150fc025e
+F src/sqliteInt.h 570731b6aed20f0e5dd95b03442a215f17580c19
 F src/table.c af14284fa36c8d41f6829e3f2819dce07d3e2de2
 F src/tclsqlite.c e1e9d89ce93e0372c519cc88d4a3f4df9ce5ff03
 F src/test1.c 963f4417d1770f5238672ff5b817a9103842eeb7
@@ -225,7 +225,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl af528563442e3039928f9018327a18157e53a44f
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P fee0c5e308c3de1937185e2060c8757e605ab3a2
-R 1639c59e9612ce2bf73d0c536753921b
+P 2590fffcaa92adc619f7a927d2b5169d8dfef50a
+R da897760fd987d26eb94c198c43f975a
 U drh
-Z e30013f7bf26f9cf3901cd1c03fa41f3
+Z 7472299a336decf9fcfc4b5af7956e15
