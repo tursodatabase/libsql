@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: opcode.tcl,v 1.2 2000/06/09 14:14:34 drh Exp $}
+set rcsid {$Id: opcode.tcl,v 1.3 2000/06/23 17:02:09 drh Exp $}
 
 puts {<html>
 <head>
@@ -53,6 +53,14 @@ the SQL, analyzes the statement, then generates a short program to execute
 the statement.  The program is generated for a "virtual machine" implemented
 by the SQLite library.  This document describes the operation of that
 virtual machine.</p>
+
+<p>This document is intended as a reference, not a tutorial.
+A separate <a href="vdbe.html">Virtual Machine Tutorial</a> is currently
+in preparation.  If you are looking for a narrative description
+of how the virtual machine works, you should read the tutorial
+and not this document.  Once you have a basic idea of what the
+virtual machine does, you can refer back to this document for
+the details on a particular opcode.</p>
 
 <p>The source code to the virtual machine is in the <b>vdbe.c</b> source
 file.  All of the opcode definitions further down in this document are
@@ -156,8 +164,8 @@ proc Code {body} {
   regsub -all {&} [string trim $body] {\&amp;} body
   regsub -all {>} $body {\&gt;} body
   regsub -all {<} $body {\&lt;} body
-  regsub -all {\(\(\(} $body {<font color="#00671f"><i>} body
-  regsub -all {\)\)\)} $body {</i></font>} body
+  regsub -all {\(\(\(} $body {<font color="#00671f"><u>} body
+  regsub -all {\)\)\)} $body {</u></font>} body
   puts $body
   puts {</pre></blockquote>}
 }

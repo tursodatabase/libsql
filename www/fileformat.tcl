@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the fileformat.html file.
 #
-set rcsid {$Id: fileformat.tcl,v 1.1 2000/06/08 19:38:36 drh Exp $}
+set rcsid {$Id: fileformat.tcl,v 1.2 2000/06/23 17:02:09 drh Exp $}
 
 puts {<html>
 <head>
@@ -27,8 +27,8 @@ proc Code {body} {
   regsub -all {&} [string trim $body] {\&amp;} body
   regsub -all {>} $body {\&gt;} body
   regsub -all {<} $body {\&lt;} body
-  regsub -all {\(\(\(} $body {<font color="#00671f"><i>} body
-  regsub -all {\)\)\)} $body {</i></font>} body
+  regsub -all {\(\(\(} $body {<font color="#00671f"><u>} body
+  regsub -all {\)\)\)} $body {</u></font>} body
   puts $body
   puts {</pre></blockquote>}
 }

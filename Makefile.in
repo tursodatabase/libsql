@@ -188,6 +188,9 @@ fileformat.html:	$(TOP)/www/fileformat.tcl
 lang.html:	$(TOP)/www/lang.tcl
 	tclsh $(TOP)/www/lang.tcl >lang.html
 
+vdbe.html:	$(TOP)/www/vdbe.tcl
+	tclsh $(TOP)/www/vdbe.tcl >vdbe.html
+
 arch.html:	$(TOP)/www/arch.tcl
 	tclsh $(TOP)/www/arch.tcl >arch.html
 
@@ -210,6 +213,7 @@ PUBLISH = \
   opcode.html \
   arch.html \
   arch.png \
+  vdbe.html \
   c_interface.html
 
 website:	$(PUBLISH)
