@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.283 2004/11/19 08:02:14 danielk1977 Exp $
+** $Id: build.c,v 1.284 2004/11/19 08:41:34 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2955,6 +2955,19 @@ void sqlite3AlterRenameTable(
   if( sqlite3FindTable(db, zName, zDb) || sqlite3FindIndex(db, zName, zDb) ){
     sqlite3ErrorMsg(pParse, 
         "there is already another table or index with this name: %s", zName);
+    sqliteFree(zName);
+    return;
+  }
+
+  /* Make sure it is not a system table being altered, or a reserved name
+  ** that the table is being renamed to.
+  */
+  if( strlen(pTab->zName)>6 && 0==sqlite3StrNICmp(pTab->zName, "sqlite_", 7) ){
+    sqlite3ErrorMsg(pParse, "table %s may not be altered", pTab->zName);
+    sqliteFree(zName);
+    return;
+  }
+  if( SQLITE_OK!=sqlite3CheckObjectName(pParse, zName) ){
     sqliteFree(zName);
     return;
   }
