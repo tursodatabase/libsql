@@ -56,6 +56,7 @@ static unsigned int elapse;
 #define TRACE4(X,Y,Z,A)
 #define TRACE5(X,Y,Z,A,B)
 #define TRACE6(X,Y,Z,A,B,C)
+#define TRACE7(X,Y,Z,A,B,C,D)
 #endif
 
 

@@ -1,5 +1,5 @@
-C Ensure\sthe\stcl\sinterface\sreturns\san\serror\swhen\ssqlite3_create_function()\nfails.\s(CVS\s1764)
-D 2004-06-29T13:41:21
+C Fix\sTRACE7\sin\sos_common.h.\s(CVS\s1765)
+D 2004-06-29T13:54:50
 F Makefile.in cb7a9889c38723f72b2506c4236ff30a05ff172b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -41,7 +41,7 @@ F src/legacy.c ad23746f15f67e34577621b1875f639c94839e1f
 F src/main.c 95a915b2fe9bd879aa47f80472654f11e033b7a6
 F src/md5.c 7ae1c39044b95de2f62e066f47bb1deb880a1070
 F src/os.h d1780e0db95cad01f213d48da22ab490eb4fd345
-F src/os_common.h 1e745e582138c01d995f190d7544da3e826f6b2f
+F src/os_common.h fe9604754116bd2f2702d58f82d2d8b89998cb21
 F src/os_mac.c 3d31e26be1411acfb7961033098631b4f3486fdf
 F src/os_mac.h 51d2445f47e182ed32d3bd6937f81070c6fd9bd4
 F src/os_test.c 5ae69ff4f27ed217833825bc836dcdc6cfecba15
@@ -73,7 +73,7 @@ F src/update.c b66b1896c9da54678ba3eff2bf0b4d291a95986a
 F src/utf.c f03535db72bfa09e24202ccdd245f21d2fc65f0a
 F src/util.c 43d0289d49f43c66847ebbeddfb85a2a0d1ddd2d
 F src/vacuum.c 353c7f69dbeb6738434d81798465cc0698844640
-F src/vdbe.c dc9d25cb8dcfe23b8fa963af543b9c65eb99c4a5
+F src/vdbe.c aa0339933c31e4bb3bb83831a185d60be1060cb5
 F src/vdbe.h 75b241c02431b9c0f16eaa9cdbb34146c6287f52
 F src/vdbeInt.h d83fd7389838453d8392915c21f432014afc99cf
 F src/vdbeapi.c ba3722f45db3d3c3509bf5d24f4f868f4c64449d
@@ -232,7 +232,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 15a084e9ea14d093f75c54a321f146c18f4453d7
-R d001e9259ada24a86f646313289cd404
-U danielk1977
-Z c7e8ad38efdba3cc87c6775c9f97fb1a
+P 357a82cd224e33e11870ad7c2f934c27af682881
+R bf2a126fc83c04e6a2818599eb7607b9
+U drh
+Z e226a5c5a0b18ac841dc5c20185e31ab

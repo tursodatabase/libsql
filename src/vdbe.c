@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.393 2004/06/28 13:09:11 danielk1977 Exp $
+** $Id: vdbe.c,v 1.394 2004/06/29 13:54:50 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -985,17 +985,15 @@ case OP_Concat8: {
   */
 }
 
-/* Opcode: Concat P1 P2 P3
+/* Opcode: Concat P1 P2 *
 **
 ** Look at the first P1 elements of the stack.  Append them all 
-** together with the lowest element first.  Use P3 as a separator.  
-** Put the result on the top of the stack.  The original P1 elements
+** together with the lowest element first.  The original P1 elements
 ** are popped from the stack if P2==0 and retained if P2==1.  If
 ** any element of the stack is NULL, then the result is NULL.
 **
-** If P3 is NULL, then use no separator.  When P1==1, this routine
-** makes a copy of the top stack element into memory obtained
-** from sqliteMalloc().
+** When P1==1, this routine makes a copy of the top stack element
+** into memory obtained from sqliteMalloc().
 */
 case OP_Concat: {
   char *zNew;
@@ -1003,26 +1001,11 @@ case OP_Concat: {
   int nField;
   int i, j;
   Mem *pTerm;
-  Mem mSep;     /* Memory cell containing the seperator string, if any */
-
-  if( pOp->p3 ){
-    mSep.z = pOp->p3;
-    if( db->enc==SQLITE_UTF8 ){
-      mSep.n = strlen(mSep.z);
-    }else{
-      mSep.n = sqlite3utf16ByteLen(mSep.z, -1);
-    }
-    mSep.flags = MEM_Str|MEM_Static|MEM_Term;
-    mSep.enc = db->enc;
-  }else{
-    mSep.flags = MEM_Null;
-    mSep.n = 0;
-  }
 
   /* Loop through the stack elements to see how long the result will be. */
   nField = pOp->p1;
   pTerm = &pTos[1-nField];
-  nByte = (nField-1)*mSep.n;
+  nByte = 0;
   for(i=0; i<nField; i++, pTerm++){
     assert( pOp->p2==0 || (pTerm->flags&MEM_Str) );
     if( pTerm->flags&MEM_Null ){
@@ -1056,10 +1039,6 @@ case OP_Concat: {
       assert( pTerm->flags & MEM_Str );
       memcpy(&zNew[j], pTerm->z, n);
       j += n;
-      if( i<nField-1 && !(mSep.flags|MEM_Null) ){
-        memcpy(&zNew[j], mSep.z, mSep.n);
-        j += mSep.n;
-      }
     }
     zNew[j] = 0;
     zNew[j+1] = 0;
