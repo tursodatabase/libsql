@@ -1,5 +1,5 @@
-C Version\s2.7.2\s(CVS\s756)
-D 2002-09-25T19:50:18
+C Fix\san\suninitialized\svariable\sthat\scould\scause\sproblems\swhen\scomparing\r\ntwo\sNULLs.\s(CVS\s757)
+D 2002-09-30T01:31:22
 F Makefile.in d6c9a85c2a5e696843201d090dcf8bf2f8716f2a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -51,7 +51,7 @@ F src/threadtest.c 72bce0a284647314847bbea44616ceb056bfb77f
 F src/tokenize.c 62c98842447effe92eba9622bb2f9a2a8a4b97ad
 F src/trigger.c 5ba917fc226b96065108da28186c2efaec53e481
 F src/update.c 881e4c8e7c786545da4fd2d95da19252b2e31137
-F src/util.c c70d5da5357e01b58392faebae3c3620c1d71f14
+F src/util.c cd28b33c6849c9722ab72758b7b86989bc64fa27
 F src/vdbe.c ac4ccc17d965e5754144cfec493093cf4272c126
 F src/vdbe.h b7584044223104ba7896a7f87b66daebdd6022ba
 F src/where.c 53959c9d94adaf93b409271815e26eafa6ddd515
@@ -149,7 +149,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P a164528e8c6df3569ab178a3b737744dcccb64e7
-R 6b3b49333db1fe81ae49602c8806a88b
+P 59ba43449a53fb32e2dd4259285af8b4206c298a
+R d79b2721fab09e8fee709d7d8b7736bc
 U drh
-Z d8e6d7ec440fa5d20f0b92f7d17ba232
+Z 7449bf236d3644b4386fd46c627627ae
