@@ -57,10 +57,16 @@ void sqlite3VdbeTrace(Vdbe *p, FILE *trace){
 
 /*
 ** Resize the Vdbe.aOp array so that it contains at least N
+** elements. If the Vdbe is in VDBE_MAGIC_RUN state, then
+** the Vdbe.aOp array will be sized to contain exactly N 
 ** elements.
 */
 static void resizeOpArray(Vdbe *p, int N){
-  if( p->nOpAlloc<N ){
+  if( p->magic==VDBE_MAGIC_RUN ){
+    assert( N==p->nOp );
+    p->nOpAlloc = N;
+    p->aOp = sqliteRealloc(p->aOp, N*sizeof(Op));
+  }else if( p->nOpAlloc<N ){
     int oldSize = p->nOpAlloc;
     p->nOpAlloc = N+100;
     p->aOp = sqliteRealloc(p->aOp, p->nOpAlloc*sizeof(Op));
@@ -166,19 +172,35 @@ void sqlite3VdbeResolveLabel(Vdbe *p, int x){
 ** value to its correct non-zero value.
 **
 ** This routine is called once after all opcodes have been inserted.
+**
+** Variable *pMaxFuncArgs is set to the maximum value of any P1 argument 
+** to an OP_Function or P2 to an OP_AggFunc opcode. This is used by 
+** sqlite3VdbeMakeReady() to size the Vdbe.apArg[] array.
 */
-static void resolveP2Values(Vdbe *p){
+static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
   int i;
+  int nMax = 0;
   Op *pOp;
   int *aLabel = p->aLabel;
   if( aLabel==0 ) return;
   for(pOp=p->aOp, i=p->nOp-1; i>=0; i--, pOp++){
+    u8 opcode = pOp->opcode;
+
+    /* Todo: Maybe OP_AggFunc should change to use P1 in the same
+     * way as OP_Function. */
+    if( opcode==OP_Function ){
+      if( pOp->p1>nMax ) nMax = pOp->p1;
+    }else if( opcode==OP_AggFunc ){
+      if( pOp->p2>nMax ) nMax = pOp->p2;
+    }
+
     if( pOp->p2>=0 ) continue;
     assert( -1-pOp->p2<p->nLabel );
     pOp->p2 = aLabel[-1-pOp->p2];
   }
   sqliteFree(p->aLabel);
   p->aLabel = 0;
+  *pMaxFuncArgs = nMax;
 }
 
 /*
@@ -603,6 +625,13 @@ void sqlite3VdbeMakeReady(
   */
   assert( p->nOp>0 );
 
+  /* Set the magic to VDBE_MAGIC_RUN sooner rather than later. This
+   * is because the call to resizeOpArray() below may shrink the
+   * p->aOp[] array to save memory if called when in VDBE_MAGIC_RUN 
+   * state.
+   */
+  p->magic = VDBE_MAGIC_RUN;
+
   /* No instruction ever pushes more than a single element onto the
   ** stack.  And the stack never grows on successive executions of the
   ** same loop.  So the total number of instructions is an upper bound
@@ -611,12 +640,14 @@ void sqlite3VdbeMakeReady(
   ** Allocation all the stack space we will ever need.
   */
   if( p->aStack==0 ){
-    resolveP2Values(p);
+    int nArg;       /* Maximum number of args passed to a user function. */
+    resolveP2Values(p, &nArg);
+    resizeOpArray(p, p->nOp);
     assert( nVar>=0 );
     n = isExplain ? 10 : p->nOp;
     p->aStack = sqliteMalloc(
         n*sizeof(p->aStack[0])         /* aStack */
-      + n*sizeof(Mem*)                 /* apArg */
+      + nArg*sizeof(Mem*)              /* apArg */
       + nVar*sizeof(Mem)               /* aVar */
       + nVar*sizeof(char*)             /* azVar */
       + nMem*sizeof(Mem)               /* aMem */
@@ -630,7 +661,7 @@ void sqlite3VdbeMakeReady(
       p->nVar = nVar;
       p->okVar = 0;
       p->apArg = (Mem**)&p->aVar[nVar];
-      p->azVar = (char**)&p->apArg[n];
+      p->azVar = (char**)&p->apArg[nArg];
       p->apCsr = (Cursor**)&p->azVar[nVar];
       if( nAgg>0 ){
         p->nAgg = nAgg;

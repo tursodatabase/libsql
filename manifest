@@ -1,5 +1,5 @@
-C Fix\ssome\smemory\sleaks\sthat\soccur\safter\sa\smalloc\sfailure.\s(CVS\s2421)
-D 2005-03-28T03:39:56
+C Modifications\sto\sreduce\smemory\sconsumption.\s(CVS\s2422)
+D 2005-03-28T08:44:07
 F Makefile.in 5c00d0037104de2a50ac7647a5f12769795957a3
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -30,7 +30,7 @@ F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
 F src/alter.c 9570af388bc99471ea6e1258817fbf06e3120030
 F src/attach.c 3615dbe960cbee4aa5ea300b8a213dad36527b0f
 F src/auth.c 18c5a0befe20f3a58a41e3ddd78f372faeeefe1f
-F src/btree.c c33c0e6833eb8ac0f0941c1f8e722f7c70dbef57
+F src/btree.c 657fd61dfb4dd37a63416652b1a28700e84b36f7
 F src/btree.h 41a71ce027db9ddee72cb43df2316bbe3a1d92af
 F src/build.c 2589c2ffa263406526d0cc5728405c6c2f9638f6
 F src/date.c 2134ef4388256e8247405178df8a61bd60dc180a
@@ -52,7 +52,7 @@ F src/os_unix.c fba0167576f09e242afd4c4978e1d2944b1da8b5
 F src/os_unix.h 40b2fd1d02cfa45d6c3dea25316fd019cf9fcb0c
 F src/os_win.c 2bbbe6fbb010763c3fa79d5e951afca9b138c6b5
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 4c1322dc8458652eb61d23405edd07a7a201160b
+F src/pager.c 221076cde9af787fc45eec1bfebf5f20e4faacf0
 F src/pager.h 9a417a1e04737c227ebbba3bdf8597d6dd51513a
 F src/parse.y 10c0ace9efce31d5a06e03488a4284b9d97abc56
 F src/pragma.c 4b20dbc0f4b97f412dc511853d3d0c2e0d4adedc
@@ -79,7 +79,7 @@ F src/vdbe.c c7973dc0ab52538646018620e3d3c68aa9e6d6c4
 F src/vdbe.h 7f586cb6d6b57764e5aac1f87107d6a95ddce24c
 F src/vdbeInt.h e80721cd8ff611789e20743eec43363a9fb5a48e
 F src/vdbeapi.c 467caa6e6fb9247528b1c7ab9132ae1b4748e8ac
-F src/vdbeaux.c 91013922626fed75ad091459b7f05f9e86581690
+F src/vdbeaux.c 0932f570d276992c7b3ee989589b6ff9056f97e7
 F src/vdbemem.c 4e853ce3151eaf7906150da85a1b3ce1fe5e8da8
 F src/where.c c4b227458e8993decb515ed9a2fe2d4f5f8e3125
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
@@ -221,7 +221,7 @@ F tool/lemon.c c88936c67f6411608db8fa4254d254f509fa40f6
 F tool/lempar.c e8b0eb00a6b905ce2ebd55965ed243574482cd5f
 F tool/memleak.awk 4e7690a51bf3ed757e611273d43fe3f65b510133
 F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
-F tool/memleak3.tcl b8eb053190e95a55dc188896afb972e8108822d6
+F tool/memleak3.tcl 2b1ab290badf3b26f9ba433baf7fad8def14aea8
 F tool/mkkeywordhash.c 02ac5c523fd6d55364cd70aded5c36ba6651a6bf
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e x
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
@@ -278,7 +278,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P ccb9f4022b3ccb1cc2ab001628fd38becfbf8efe
-R ceb3b5e5af33f6f582749ad4190a9e4b
-U drh
-Z feff361f817d89fa1dffb88a9f3296a3
+P bcb5d72ef146b1019c72220701d385c7b0b5d0bd
+R bb1ad29712ee81032569962fcc3720e5
+U danielk1977
+Z f1d40042415d09b383776e4b14cf65b8
