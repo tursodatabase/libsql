@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing expressions.
 #
-# $Id: expr.test,v 1.40 2004/11/17 16:41:29 danielk1977 Exp $
+# $Id: expr.test,v 1.41 2005/01/11 17:46:42 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -542,5 +542,9 @@ ifcapable datetime {
   } 1
 }
 set sqlite_current_time 0
+
+do_test expr-9.1 {
+  execsql {SELECT round(-('-'||'123'))}
+} 123
 
 finish_test

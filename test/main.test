@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is exercising the code in main.c.
 #
-# $Id: main.test,v 1.18 2004/11/04 04:42:28 drh Exp $
+# $Id: main.test,v 1.19 2005/01/11 17:46:42 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -68,7 +68,7 @@ do_test main-1.14 {
   db complete {SELECT a-b FROM t1; }
 } {1}
 do_test main-1.15 {
-  db complete {SELECT a-b FROM t1 }
+  db complete {SELECT a/e FROM t1 }
 } {0}
 do_test main-1.16 {
   db complete {
@@ -179,7 +179,7 @@ ifcapable {trigger} {
   }
   do_test main-1.28 {
     db complete {
-      CREATE TEMP TRIGGER xyz AFTER DELETE backend BEGIN
+      CREATE TEMPORARY TRIGGER xyz AFTER DELETE backend BEGIN
          UPDATE pqr SET a=5;
     }
   } {0}
@@ -277,7 +277,7 @@ do_test main-3.3 {
   file delete -force testdb
   sqlite3 db testdb
   execsql {
-    create table T1(X REAL);
+    create table T1(X REAL);  /* C-style comments allowed */
     insert into T1 values(0.5);
     insert into T1 values(0.5e2);
     insert into T1 values(0.5e-002);
