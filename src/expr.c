@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.64 2002/05/26 20:54:33 drh Exp $
+** $Id: expr.c,v 1.65 2002/05/30 02:35:12 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -935,6 +935,7 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
       int expr_end_label;
       int null_result_label;
       int jumpInst;
+      int nullBypassInst;
       int addr;
       int nExpr;
       int i;
@@ -947,7 +948,7 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
       null_result_label = sqliteVdbeMakeLabel(v);
       if( pExpr->pLeft ){
         sqliteExprCode(pParse, pExpr->pLeft);
-        sqliteVdbeAddOp(v, OP_IsNull, -1, expr_end_label);
+        nullBypassInst = sqliteVdbeAddOp(v, OP_IsNull, -1, 0);
       }
       for(i=0; i<nExpr; i=i+2){
         sqliteExprCode(pParse, pExpr->pList->a[i].pExpr);
@@ -980,6 +981,7 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
       if( pExpr->pLeft ){
         sqliteVdbeAddOp(v, OP_Pull, 1, 0);
         sqliteVdbeAddOp(v, OP_Pop, 1, 0);
+        sqliteVdbeChangeP2(v, nullBypassInst, sqliteVdbeCurrentAddr(v));
       }
     }
     break;
@@ -1164,8 +1166,7 @@ void sqliteExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
     }
     default: {
       sqliteExprCode(pParse, pExpr);
-      sqliteVdbeAddOp(v, OP_Not, 0, 0);
-      sqliteVdbeAddOp(v, OP_If, jumpIfNull, dest);
+      sqliteVdbeAddOp(v, OP_IfNot, jumpIfNull, dest);
       break;
     }
   }

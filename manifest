@@ -1,5 +1,5 @@
-C Built-in\saggregate\sfunctions\s(MIN,\sSUM,\sAVG,\setc)\sshould\signore\sNULL\sentires.\s(CVS\s597)
-D 2002-05-29T23:22:23
+C Bug\sfix:\sbad\scode\swas\sgenerated\sfor\swhen\sthe\sfirst\soperand\sof\sa\sCASE\nwas\sNULL.\s(CVS\s598)
+D 2002-05-30T02:35:12
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -23,7 +23,7 @@ F src/btree.h 8abeabfe6e0b1a990b64fa457592a6482f6674f3
 F src/build.c 36e42718a7a94f554ea39508993378482f5335c7
 F src/delete.c a2b098cbbf518e6b641847e26de85827793bc523
 F src/encode.c 346b12b46148506c32038524b95c4631ab46d760
-F src/expr.c 1a7a2f5f2b7dd37659783cdb6efaac74a092ba71
+F src/expr.c 86f0c6f26f8b573883ba3219bd91bac5d4618f6b
 F src/func.c 2cd4922913234ad384ccb75dd41bc35259a8338c
 F src/hash.c 6a6236b89c8c060c65dabd300a1c8ce7c10edb72
 F src/hash.h dca065dda89d4575f3176e75e9a3dc0f4b4fb8b9
@@ -63,7 +63,7 @@ F test/btree3.test 9caa9e22491dd8cd8aa36d7ac3b48b089817c895
 F test/conflict.test 5149646703d3930c9111068b5cda7e2e938476e3
 F test/copy.test b3cefcb520c64d7e7dfedbab06b4d4c31fa5b99a
 F test/delete.test c904a62129fe102b314a96111a8417f10249e4d8
-F test/expr.test 518ee35ec8d2c8883544d75a031219c75391fb21
+F test/expr.test ff6fceb9958f94ae3ca23dcc47aff7830b8131bc
 F test/func.test 628ab513b0d9c54251a63e026a26b7b4347e54ab
 F test/in.test c09312672e3f0709fa02c8e2e9cd8fb4bd6269aa
 F test/index.test c8a471243bbf878974b99baf5badd59407237cf3
@@ -135,7 +135,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P ed11abc81e638c21ec1aa0445a6d59de91343095
-R 0dbe1e91bf7fd44e5ab325282618e3b3
+P 19ae12bef210ae5fe171f10833faa38d640c129f
+R 1129c1b4d523e26221972965ea9f1b0e
 U drh
-Z c098e63f0d01ca947f8ca615049ab0d0
+Z 13527e062fc395d3f1e89758ab03474f
