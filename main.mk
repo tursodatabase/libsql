@@ -67,22 +67,10 @@ LIBOBJ = attach.o auth.o btree.o build.o copy.o date.o delete.o \
 # All of the source code files.
 #
 SRC = \
-  $(TOP)/src/btree.c \
-  $(TOP)/src/btree.h \
-  $(TOP)/src/hash.c \
-  $(TOP)/src/hash.h \
-  $(TOP)/src/os.c \
-  $(TOP)/src/pager.c \
-  $(TOP)/src/pager.h \
-  $(TOP)/src/random.c \
-  $(TOP)/src/util.c 
-
-SRC_ORIG = \
   $(TOP)/src/attach.c \
   $(TOP)/src/auth.c \
   $(TOP)/src/btree.c \
   $(TOP)/src/btree.h \
-  $(TOP)/src/btree_rb.c \
   $(TOP)/src/build.c \
   $(TOP)/src/copy.c \
   $(TOP)/src/date.c \
@@ -109,6 +97,7 @@ SRC_ORIG = \
   $(TOP)/src/tclsqlite.c \
   $(TOP)/src/tokenize.c \
   $(TOP)/src/trigger.c \
+  $(TOP)/src/utf.c \
   $(TOP)/src/update.c \
   $(TOP)/src/util.c \
   $(TOP)/src/vacuum.c \
@@ -121,14 +110,6 @@ SRC_ORIG = \
 # Source code to the test files.
 #
 TESTSRC = \
-   $(TOP)/src/os.c \
-   $(TOP)/src/pager.c \
-   $(TOP)/src/test2.c \
-   $(TOP)/src/test3.c \
-   $(TOP)/src/test5.c \
-   $(TOP)/src/md5.c
-
-TESTSRC_ORIG = \
   $(TOP)/src/btree.c \
   $(TOP)/src/func.c \
   $(TOP)/src/os.c \
