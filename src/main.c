@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.175 2004/05/12 11:24:03 danielk1977 Exp $
+** $Id: main.c,v 1.176 2004/05/20 01:40:19 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1148,66 +1148,6 @@ int sqlite3_reset(sqlite3_stmt*){
 int sqlite3_step(sqlite3_stmt *pStmt){
   return sqlite3_step(pStmt);
 }
-
-/*
-** sqlite3_bind_text
-*/
-int sqlite3_bind_text(
-  sqlite3_stmt *pStmt, 
-  int i, 
-  const char *zVal, 
-  int n, 
-  int eCopy
-){
-  return sqlite3_bind(pStmt, i, zVal, n, eCopy);
-}
-
-int sqlite3_bind_text16(
-  sqlite3_stmt *pStmt, 
-  int i, 
-  void *zVal, 
-  int n, 
-  int eCopy
-){
-  int rc;
-  char * zVal8;
-
-  /* convert the first n bytes of the UTF-16 string to UTF-8 */
-  zVal8 = sqlite3utf16to8(zVal, n);
-  if( !zVal8 ){
-    return SQLITE_NOMEM;
-  }
-
-  /* Pass -1 as the length of the UTF-8 string. It is guaranteed to be
-  ** NULL-terminated by sqlite3utf16to8().
-  */
-  rc = sqlite3_bind_text(pStmt, i, zVal8, -1, eCopy);
-  sqliteFree(filename8);
-
-  return rc;
-}
-
-/*
-** sqlite3_bind_null
-*/
-int sqlite3_bind_null(sqlite3_stmt*, int iParm){
-  return sqlite3_bind(pStmt, i, 0, 0, 0);
-}
-
-
-int sqlite3_bind_int32(sqlite3_stmt*, int iParm, int iValue){
-  assert(!"TODO");
-}
-int sqlite3_bind_int64(sqlite3_stmt*, int iParm, long long int iValue){
-  assert(!"TODO");
-}
-int sqlite3_bind_double(sqlite3_stmt*, int iParm, double iValue){
-  assert(!"TODO");
-}
-int sqlite3_bind_blob(sqlite3_stmt*, int i, const void*, int n, int eCopy){
-  assert(!"TODO");
-}
-
 
 int sqlite3_column_count(sqlite3_stmt*){
 }

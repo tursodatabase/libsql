@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.64 2004/05/19 10:34:52 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.65 2004/05/20 01:40:19 danielk1977 Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -863,13 +863,119 @@ int sqlite_decode_binary(const unsigned char *in, unsigned char *out);
 
 typedef sqlite_vm sqlite3_stmt;
 
+/*
+** This routine is used to bind a 32-bit integer value to a variable
+** in an SQL statement compiled by sqlite3_compile(). See comments for
+** sqlite3_compile() for more details on SQL statement variables.
+**
+** The first argument is a pointer to an SQL statement previously
+** obtained from a call to sqlite3_compile(). The second parameter "i"
+** determines the parameter to bind the value "iValue" to.
+*/
 int sqlite3_bind_int32(sqlite3_stmt*, int i, int iValue);
+
+/*
+** This routine is used to bind a 64-bit integer value to a variable
+** in an SQL statement compiled by sqlite3_compile(). See comments for
+** sqlite3_compile() for more details on SQL statement variables.
+**
+** The first argument is a pointer to an SQL statement previously
+** obtained from a call to sqlite3_compile(). The second parameter "i"
+** determines the parameter to bind the value "iValue" to.
+*/
 int sqlite3_bind_int64(sqlite3_stmt*, int i, long long int iValue);
+
+/*
+** This routine is used to bind a real (floating point) value to a variable
+** in an SQL statement compiled by sqlite3_compile(). See comments for
+** sqlite3_compile() for more details on SQL statement variables.
+**
+** The first argument is a pointer to an SQL statement previously obtained
+** from a call to sqlite3_compile(). The second parameter "i" determines
+** the parameter to bind the value "iValue" to. Internally, SQLite will
+** manipulate the value as a 64-bit IEEE float.
+*/
 int sqlite3_bind_double(sqlite3_stmt*, int i, double iValue);
+
+/*
+** This routine is used to bind a NULL value to a variable in an SQL
+** statement compiled by sqlite3_compile(). See comments for
+** sqlite3_compile() for more details on SQL statement variables.
+**
+** The first argument is a pointer to an SQL statement previously obtained
+** from a call to sqlite3_compile(). The second parameter "i" determines
+** the parameter to bind the NULL value to.
+*/
 int sqlite3_bind_null(sqlite3_stmt*, int i);
-int sqlite3_bind_text(sqlite3_stmt*, int i, const char*, int n, int eCopy);
-int sqlite3_bind_text16(sqlite3_stmt*, int i, const void*, int, int eCopy);
-int sqlite3_bind_blob(sqlite3_stmt*, int i, const void*, int n, int eCopy);
+
+/*
+** This routine is used to bind a UTF-8 string value to a variable in an
+** SQL statement compiled by sqlite3_compile(). See comments for
+** sqlite3_compile() for more details on SQL statement variables.
+**
+** The first argument is a pointer to an SQL statement previously obtained
+** from a call to sqlite3_compile(). The second parameter "i" determines
+** the parameter to bind the value to. Parameter three "z" is a pointer
+** to the UTF-8 string. 
+**
+** The fourth "n" parameter is the number of bytes (not characters) in the
+** string pointed to by "z". "n" may or may not include any nul terminator
+** character. If "n" is less than zero, then SQLite assumes that "z" is
+** a nul terminated string.
+**
+** If paramater "eCopy" is true, then SQLite makes a copy of the string
+** pointed to by "z". If "eCopy" is false, then SQLite stores a pointer to
+** the original string data. In this case the caller must ensure that the
+** string data remains stable until after the SQL statement has been
+** finalised or another value bound to variable "i".
+*/
+int sqlite3_bind_text(sqlite3_stmt*, int i, const char* z, int n, int eCopy);
+
+/*
+** This routine is used to bind a UTF-16 string value to a variable in an
+** SQL statement compiled by sqlite3_compile(). See comments for
+** sqlite3_compile() for more details on SQL statement variables.
+**
+** The first argument is a pointer to an SQL statement previously obtained
+** from a call to sqlite3_compile(). The second parameter "i" determines
+** the parameter to bind the value to. Parameter three "z" is a pointer to
+** the UTF-16 string. If the string does not begin with a byte-order-mark,
+** it is assumed to be encoded in the native byte order of the machine.
+**
+** The fourth "n" parameter is the number of bytes (not characters) in the
+** string pointed to by "z". "n" may or may not include any nul terminator
+** character. If "n" is less than zero, then SQLite assumes that "z" is
+** terminated by a pair of 0x00 characters.
+**
+** If paramater "eCopy" is true, then SQLite makes a copy of the string
+** pointed to by "z". If "eCopy" is false, then SQLite stores a pointer to
+** the original string data. In this case the caller must ensure that the
+** string data remains stable until after the SQL statement has been
+** finalised or another value bound to variable "i".
+*/
+int sqlite3_bind_text16(sqlite3_stmt*, int i, const void *z, int, int eCopy);
+
+/*
+** This routine is used to bind a blob value to a variable in an
+** SQL statement compiled by sqlite3_compile(). See comments for
+** sqlite3_compile() for more details on SQL statement variables.
+**
+** The first argument is a pointer to an SQL statement previously obtained
+** from a call to sqlite3_compile(). The second parameter "i" determines
+** the parameter to bind the value to. Parameter three "z" is a pointer to
+** the blob of data.
+**
+** The fourth "n" parameter is the number of bytes in the blob pointed to
+** by "z". "n" may not be less than zero.
+**
+** If paramater "eCopy" is true, then SQLite makes a copy of the blob
+** pointed to by "z". If "eCopy" is false, then SQLite stores a pointer to
+** the original blob data. In this case the caller must ensure that the
+** blob data remains stable until after the SQL statement has been
+** finalised or another value bound to variable "i".
+*/
+int sqlite3_bind_blob(sqlite3_stmt*, int i, const void *z, int n, int eCopy);
+
 
 #if 0
 

@@ -1004,6 +1004,9 @@ static int vdbeBindBlob(
   return SQLITE_OK;
 }
 
+/*
+** Bind a 64 bit integer to an SQL statement variable.
+*/
 int sqlite3_bind_int64(sqlite3_stmt *p, int i, long long int iValue){
   int rc;
   Vdbe *v = (Vdbe *)p;
@@ -1016,10 +1019,16 @@ int sqlite3_bind_int64(sqlite3_stmt *p, int i, long long int iValue){
   return SQLITE_OK;
 }
 
+/*
+** Bind a 32 bit integer to an SQL statement variable.
+*/
 int sqlite3_bind_int32(sqlite3_stmt *p, int i, int iValue){
   return sqlite3_bind_int64(p, i, (long long int)iValue);
 }
 
+/*
+** Bind a double (real) to an SQL statement variable.
+*/
 int sqlite3_bind_double(sqlite3_stmt *p, int i, double iValue){
   int rc;
   Vdbe *v = (Vdbe *)p;
@@ -1032,10 +1041,16 @@ int sqlite3_bind_double(sqlite3_stmt *p, int i, double iValue){
   return SQLITE_OK;
 }
 
+/*
+** Bind a NULL value to an SQL statement variable.
+*/
 int sqlite3_bind_null(sqlite3_stmt* p, int i){
   return vdbeUnbind((Vdbe *)p, i);
 }
 
+/*
+** Bind a UTF-8 text value to an SQL statement variable.
+*/
 int sqlite3_bind_text( 
   sqlite3_stmt *p, 
   int i, 
@@ -1055,6 +1070,9 @@ int sqlite3_bind_text(
   return vdbeBindBlob((Vdbe *)p, i, zData, nData, eCopy, flags);
 }
 
+/*
+** Bind a UTF-16 text value to an SQL statement variable.
+*/
 int sqlite3_bind_text16(
   sqlite3_stmt *p, 
   int i, 
@@ -1084,6 +1102,9 @@ int sqlite3_bind_text16(
   return vdbeBindBlob((Vdbe *)p, i, zData, nData, eCopy, flags);
 }
 
+/*
+** Bind a blob value to an SQL statement variable.
+*/
 int sqlite3_bind_blob(
   sqlite3_stmt *p, 
   int i, 
