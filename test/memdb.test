@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is in-memory database backend.
 #
-# $Id: memdb.test,v 1.6 2003/08/05 13:13:39 drh Exp $
+# $Id: memdb.test,v 1.7 2004/06/09 19:03:55 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -73,7 +73,6 @@ for {set i 2} {$i<=$limit} {incr i} {
   set ::sig [signature one]
   # puts "sig=$sig"
   set cnt [lindex $::sig 0]
-  set ::journal_format [expr {($i%3)+1}]
   if {$i%2==0} {
     execsql {PRAGMA synchronous=FULL}
   } else {

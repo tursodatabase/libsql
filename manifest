@@ -1,5 +1,5 @@
-C Fixes\sto\sthe\sfile\slocking.\s\s109\stests\sare\snow\sfailing.\s(CVS\s1548)
-D 2004-06-09T17:37:23
+C Remove\slegacy\sjournal\sformats.\s(CVS\s1549)
+D 2004-06-09T19:03:55
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -47,7 +47,7 @@ F src/os_unix.c 1d6f3d1a87d4aa0e4490bcc47b3f0ff9b2e37e7a
 F src/os_unix.h 1cd6133cf66dea704b8646b70b2dfdcbdd9b3738
 F src/os_win.c 6b8f9fcc683bb888e07fc485372803baa68faadb
 F src/os_win.h 004eec47b1780fcaf07420ddc2072294b698d48c
-F src/pager.c ee2e2fa71584ce402e0266b342f96efbf74cb45f
+F src/pager.c 5c37b973e827d7a9a45070498356e67ee720f960
 F src/pager.h ca8f293e1d623a7c628a1c5e0c6cf43d5bbb80bf
 F src/parse.y 097438674976355a10cf177bd97326c548820b86
 F src/pragma.c 3251628662963f30a95133b19d59e4bc08226c76
@@ -60,7 +60,7 @@ F src/sqliteInt.h c0a328c7567cdeebe14d7a4668f22946e281ebc9
 F src/table.c af14284fa36c8d41f6829e3f2819dce07d3e2de2
 F src/tclsqlite.c f5c5116720baefb7de5d6acf18baedf1e42756cc
 F src/test1.c f78d6ac0675bc5db48dac9c5379c965bdadb9113
-F src/test2.c ae18537d8a85e5028c955837797f9da461b908b8
+F src/test2.c 05f810c90cf6262d5f352860e87d41a3f34207f9
 F src/test3.c beafd0ccf7b9ae784744be1b1e66ffe8f64c25da
 F src/test4.c a921a69821fd30209589228e64f94e9f715b6fe2
 F src/test5.c 862784cd7a68e7d36f00287aac6e413ca996eaf8
@@ -122,7 +122,7 @@ F test/limit.test 60d7f856ee7846f7130dee67f10f0e726cd70b5d
 F test/lock.test 3dfd0f4f981f759ae1c07c19443e424dc9fdb133
 F test/main.test 6a851b5992c4881a725a3d9647e629199df8de9d
 F test/malloc.test 4e19b96d9cd7d61f4826e6fce03849ad5ad526dd
-F test/memdb.test 6ece25c7c0e6500199d3662607a3edca081abb2a
+F test/memdb.test befe8f26d430d07ba65692243a893a0e82a0b866
 F test/memleak.test 4d5d374c8ea1fc5ac634aed58cac1047848ce65e
 F test/minmax.test 9dcf52f713b1b9e61d0a88a51eb8bb2e3c52d0ab
 F test/misc1.test 06e92b613615d38919bf6fea85536bc685a3da4b
@@ -155,7 +155,7 @@ F test/tester.tcl fc10520db0d3ce4ef6a8b5ab91bd102fc3f4280a
 F test/thread1.test 2fd5c10e82434f6b03be77b61fde5a050668abf2
 F test/threadtest1.c f7f896e62ed46feae1dc411114a48c15a0f82ee2
 F test/threadtest2.c d94ca4114fd1504f7e0ae724bcd83d4b40931d86
-F test/trans.test 45fa0ed87ee487797ea6a30f3ec298a6618531b9
+F test/trans.test eae47c3a25b7f6c45296b1e472a4f8e3b3d91cdf
 F test/trigger1.test 99b7cd9a568ac60aa04bbc3b9db9575ffa97709a
 F test/trigger2.test 0767ab30cb5a2c8402c8524f3d566b410b6f5263
 F test/trigger3.test a95ccace88291449f5eae7139ec438a42f90654d
@@ -218,7 +218,7 @@ F www/support.tcl 1801397edd271cc39a2aadd54e701184b5181248
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 0ecbba78fcde8f7715cd74c674b5040ef4953f6e
-R 81671c9563d17cd7ee532f949a6e58e5
+P dc0763455bbf54c1d8728e16033709caedd6e1c6
+R b4b9380769fdca06ed613331f57399e7
 U drh
-Z 32ba6607d3f053fb955e6ec92a8309ce
+Z 21a5c28788a000b1f8a2eec2e4e3d0e6
