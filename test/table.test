@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE TABLE statement.
 #
-# $Id: table.test,v 1.20 2002/08/31 18:53:09 drh Exp $
+# $Id: table.test,v 1.21 2003/01/04 16:48:10 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -217,9 +217,9 @@ set r {}
 for {set i 1} {$i<=100} {incr i 2} {
   lappend r [format test%03d $i]
 }
-#execsql {--vdbe-trace-on--}
 do_test table-4.2 {
   for {set i 2} {$i<=100} {incr i 2} {
+    # if {$i==38} {execsql {pragma vdbe_trace=on}}
     set sql "DROP TABLE [format TEST%03d $i]"
     execsql $sql
   }

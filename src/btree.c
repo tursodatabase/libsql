@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.76 2003/01/02 14:43:56 drh Exp $
+** $Id: btree.c,v 1.77 2003/01/04 16:48:09 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -319,11 +319,13 @@ struct MemPage {
     char aDisk[SQLITE_PAGE_SIZE];  /* Page data stored on disk */
     PageHdr hdr;                   /* Overlay page header */
   } u;
-  int isInit;                    /* True if auxiliary data is initialized */
+  u8 isInit;                     /* True if auxiliary data is initialized */
+  u8 idxShift;                   /* True if apCell[] indices have changed */
+  u8 isOverfull;                 /* Some apCell[] points outside u.aDisk[] */
   MemPage *pParent;              /* The parent of this page.  NULL for root */
+  int idxParent;                 /* Index in pParent->apCell[] of this node */
   int nFree;                     /* Number of free bytes in u.aDisk[] */
   int nCell;                     /* Number of entries on this page */
-  int isOverfull;                /* Some apCell[] points outside u.aDisk[] */
   Cell *apCell[MX_CELL+2];       /* All data entires in sorted order */
 };
 
@@ -1347,6 +1349,12 @@ static int moveToChild(BtCursor *pCur, int newPgno){
   if( rc ) return rc;
   rc = initPage(pBt, pNewPage, newPgno, pCur->pPage);
   if( rc ) return rc;
+  assert( pCur->idx>=pCur->pPage->nCell
+          || pCur->pPage->apCell[pCur->idx]->h.leftChild==SWAB32(pBt,newPgno) );
+  assert( pCur->idx<pCur->pPage->nCell
+          || pCur->pPage->u.hdr.rightChild==SWAB32(pBt,newPgno) );
+  pNewPage->idxParent = pCur->idx;
+  pCur->pPage->idxShift = 0;
   sqlitepager_unref(pCur->pPage);
   pCur->pPage = pNewPage;
   pCur->idx = 0;
@@ -1364,19 +1372,42 @@ static int moveToChild(BtCursor *pCur, int newPgno){
 static int moveToParent(BtCursor *pCur){
   Pgno oldPgno;
   MemPage *pParent;
-  int i;
+  int idxParent;
   pParent = pCur->pPage->pParent;
   if( pParent==0 ) return SQLITE_INTERNAL;
+  idxParent = pCur->pPage->idxParent;
   oldPgno = sqlitepager_pagenumber(pCur->pPage);
   sqlitepager_ref(pParent);
   sqlitepager_unref(pCur->pPage);
   pCur->pPage = pParent;
-  pCur->idx = pParent->nCell;
-  oldPgno = SWAB32(pCur->pBt, oldPgno);
-  for(i=0; i<pParent->nCell; i++){
-    if( pParent->apCell[i]->h.leftChild==oldPgno ){
-      pCur->idx = i;
-      break;
+  assert( pParent->idxShift==0 );
+  if( pParent->idxShift==0 ){
+    pCur->idx = idxParent;
+#ifndef NDEBUG  
+    /* Verify that pCur->idx is the correct index to point back to the child
+    ** page we just came from 
+    */
+    oldPgno = SWAB32(pCur->pBt, oldPgno);
+    if( pCur->idx<pParent->nCell ){
+      assert( pParent->apCell[idxParent]->h.leftChild==oldPgno );
+    }else{
+      assert( pParent->u.hdr.rightChild==oldPgno );
+    }
+#endif
+  }else{
+    /* The MemPage.idxShift flag indicates that cell indices might have 
+    ** changed since idxParent was set and hence idxParent might be out
+    ** of date.  So recompute the parent cell index by scanning all cells
+    ** and locating the one that points to the child we just came from.
+    */
+    int i;
+    pCur->idx = pParent->nCell;
+    oldPgno = SWAB32(pCur->pBt, oldPgno);
+    for(i=0; i<pParent->nCell; i++){
+      if( pParent->apCell[i]->h.leftChild==oldPgno ){
+        pCur->idx = i;
+        break;
+      }
     }
   }
   return SQLITE_OK;
@@ -1427,6 +1458,7 @@ static int moveToRightmost(BtCursor *pCur){
   int rc;
 
   while( (pgno = pCur->pPage->u.hdr.rightChild)!=0 ){
+    pCur->idx = pCur->pPage->nCell;
     rc = moveToChild(pCur, SWAB32(pCur->pBt, pgno));
     if( rc ) return rc;
   }
@@ -1536,6 +1568,7 @@ int sqliteBtreeMoveto(BtCursor *pCur, const void *pKey, int nKey, int *pRes){
       if( pRes ) *pRes = c;
       return SQLITE_OK;
     }
+    pCur->idx = lwr;
     rc = moveToChild(pCur, SWAB32(pCur->pBt, chldPg));
     if( rc ) return rc;
   }
@@ -1887,7 +1920,7 @@ static int fillInCell(
 ** given in the second argument so that MemPage.pParent holds the
 ** pointer in the third argument.
 */
-static void reparentPage(Pager *pPager, Pgno pgno, MemPage *pNewParent){
+static void reparentPage(Pager *pPager, Pgno pgno, MemPage *pNewParent,int idx){
   MemPage *pThis;
 
   if( pgno==0 ) return;
@@ -1899,6 +1932,7 @@ static void reparentPage(Pager *pPager, Pgno pgno, MemPage *pNewParent){
       pThis->pParent = pNewParent;
       if( pNewParent ) sqlitepager_ref(pNewParent);
     }
+    pThis->idxParent = idx;
     sqlitepager_unref(pThis);
   }
 }
@@ -1915,9 +1949,10 @@ static void reparentChildPages(Btree *pBt, MemPage *pPage){
   int i;
   Pager *pPager = pBt->pPager;
   for(i=0; i<pPage->nCell; i++){
-    reparentPage(pPager, SWAB32(pBt, pPage->apCell[i]->h.leftChild), pPage);
+    reparentPage(pPager, SWAB32(pBt, pPage->apCell[i]->h.leftChild), pPage, i);
   }
-  reparentPage(pPager, SWAB32(pBt, pPage->u.hdr.rightChild), pPage);
+  reparentPage(pPager, SWAB32(pBt, pPage->u.hdr.rightChild), pPage, i);
+  pPage->idxShift = 0;
 }
 
 /*
@@ -1943,6 +1978,7 @@ static void dropCell(Btree *pBt, MemPage *pPage, int idx, int sz){
     pPage->apCell[j] = pPage->apCell[j+1];
   }
   pPage->nCell--;
+  pPage->idxShift = 1;
 }
 
 /*
@@ -1975,6 +2011,7 @@ static void insertCell(Btree *pBt, MemPage *pPage, int i, Cell *pCell, int sz){
     memcpy(&pPage->u.aDisk[idx], pCell, sz);
     pPage->apCell[i] = (Cell*)&pPage->u.aDisk[idx];
   }
+  pPage->idxShift = 1;
 }
 
 /*
@@ -2161,6 +2198,7 @@ static int balance(Btree *pBt, MemPage *pPage, BtCursor *pCur){
     assert( sqlitepager_iswriteable(pChild) );
     copyPage(pChild, pPage);
     pChild->pParent = pPage;
+    pChild->idxParent = pChild->nCell;
     sqlitepager_ref(pPage);
     pChild->isOverfull = 1;
     if( pCur && pCur->pPage==pPage ){
@@ -2195,9 +2233,8 @@ static int balance(Btree *pBt, MemPage *pPage, BtCursor *pCur){
   if( idx<0 && pParent->u.hdr.rightChild==swabPgno ){
     idx = pParent->nCell;
   }
-  if( idx<0 ){
-    return SQLITE_CORRUPT;
-  }
+  assert( idx>=0 );
+  /* assert( pParent->idxShift || idx==pPage->idxParent ); */
 
   /*
   ** Initialize variables so that it will be safe to jump
@@ -2235,6 +2272,7 @@ static int balance(Btree *pBt, MemPage *pPage, BtCursor *pCur){
     if( rc ) goto balance_cleanup;
     rc = initPage(pBt, apOld[i], pgnoOld[i], pParent);
     if( rc ) goto balance_cleanup;
+    apOld[i]->idxParent = k;
     nOld++;
   }
 
