@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.1 2000/05/29 14:26:02 drh Exp $
+** $Id: vdbe.c,v 1.2 2000/05/30 16:27:04 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -103,6 +103,11 @@ struct Vdbe {
   FILE **apList;      /* An open file for each list */
   int nSort;          /* Number of slots in apSort[] */
   Sorter **apSort;    /* An open sorter list */
+  FILE *pFile;        /* At most one open file handler */
+  int nField;         /* Number of file fields */
+  char **azField;     /* Data for each file field */
+  char *zLine;        /* A single line from the input file */
+  int nLineAlloc;     /* Number of spaces allocated for zLine */
 };
 
 /*
@@ -251,26 +256,10 @@ void sqliteVdbeChangeP3(Vdbe *p, int addr, const char *zP3, int n){
 ** resolve to be a single actual quote character within the string.
 */
 void sqliteVdbeDequoteP3(Vdbe *p, int addr){
-  int quote;
-  int i, j;
   char *z;
   if( addr<0 || addr>=p->nOp ) return;
   z = p->aOp[addr].p3;
-  quote = z[0];
-  if( quote!='\'' && quote!='"' ) return;
-  for(i=1, j=0; z[i]; i++){
-    if( z[i]==quote ){
-      if( z[i+1]==quote ){
-        z[j++] = quote;
-        i++;
-      }else{
-        z[j++] = 0;
-        break;
-      }
-    }else{
-      z[j++] = z[i];
-    }
-  }
+  sqliteDequote(z);
 }
 
 /*
@@ -355,6 +344,20 @@ static void Cleanup(Vdbe *p){
   sqliteFree(p->apSort);
   p->apSort = 0;
   p->nSort = 0;
+  if( p->pFile ){
+    if( p->pFile!=stdin ) fclose(p->pFile);
+    p->pFile = 0;
+  }
+  if( p->azField ){
+    sqliteFree(p->azField);
+    p->azField = 0;
+  }
+  p->nField = 0;
+  if( p->zLine ){
+    sqliteFree(p->zLine);
+    p->zLine = 0;
+  }
+  p->nLineAlloc = 0;
 }
 
 /*
@@ -395,7 +398,8 @@ static char *zOpName[] = { 0,
   "ListWrite",      "ListRewind",     "ListRead",       "ListClose",
   "SortOpen",       "SortPut",        "SortMakeRec",    "SortMakeKey",
   "Sort",           "SortNext",       "SortKey",        "SortCallback",
-  "SortClose",      "MakeRecord",     "MakeKey",        "Goto",
+  "SortClose",      "FileOpen",       "FileRead",       "FileField",
+  "FileClose",      "MakeRecord",     "MakeKey",        "Goto",
   "If",             "Halt",           "ColumnCount",    "ColumnName",
   "Callback",       "Integer",        "String",         "Pop",
   "Dup",            "Pull",           "Add",            "AddImm",
@@ -1915,6 +1919,154 @@ int sqliteVdbeExec(
              sqliteFree(pSorter);
            }
         }
+        break;
+      }
+
+      /* Opcode: FileOpen * * P3
+      **
+      ** Open the file named by P3 for reading using the FileRead opcode.
+      ** If P3 is "stdin" then output standard input for reading.
+      */
+      case OP_FileOpen: {
+        if( pOp->p3==0 ) goto bad_instruction;
+        if( p->pFile ){
+          if( p->pFile!=stdin ) fclose(p->pFile);
+          p->pFile = 0;
+        }
+        if( sqliteStrICmp(pOp->p3,"stdin")==0 ){
+          p->pFile = stdin;
+        }else{
+          p->pFile = fopen(pOp->p3, "r");
+        }
+        if( p->pFile==0 ){
+          sqliteSetString(pzErrMsg,"unable to open file: ", pOp->p3, 0);
+          rc = 1;
+          goto cleanup;
+        }
+        break;
+      }
+
+      /* Opcode: FileClose * * *
+      **
+      ** Close a file previously opened using FileOpen.  This is a no-op
+      ** if there is no prior FileOpen call.
+      */
+      case OP_FileClose: {
+        if( p->pFile ){
+          if( p->pFile!=stdin ) fclose(p->pFile);
+          p->pFile = 0;
+        }
+        if( p->azField ){
+          sqliteFree(p->azField);
+          p->azField = 0;
+        }
+        p->nField = 0;
+        if( p->zLine ){
+          sqliteFree(p->zLine);
+          p->zLine = 0;
+        }
+        p->nLineAlloc = 0;
+        break;
+      }
+
+      /* Opcode: FileRead P1 P2 P3
+      **
+      ** Read a single line of input the open file (the file opened using
+      ** FileOpen).  If we reach end-of-file, jump immediately to P2.  If
+      ** we are able to get another line, split the line apart using P3 as
+      ** a delimiter.  There should be exactly P1 fields.  Throw an exception
+      ** if the number of fields is different from P1.
+      */
+      case OP_FileRead: {
+        int n, eol, nField, i, c, nDelim;
+        char *zDelim, *z;
+        if( p->pFile==0 ) goto fileread_jump;
+        nField = pOp->p1;
+        if( nField<=0 ) goto fileread_jump;
+        if( nField!=p->nField || p->azField==0 ){
+          p->azField = sqliteRealloc(p->azField, sizeof(char*)*nField+1);
+          if( p->azField==0 ){
+            p->nField = 0;
+            goto fileread_jump;
+          }
+          p->nField = nField;
+        }
+        n = 0;
+        eol = 0;
+        while( eol==0 ){
+          if( p->zLine==0 || n+200>p->nLineAlloc ){
+            p->nLineAlloc = p->nLineAlloc*2 + 300;
+            p->zLine = sqliteRealloc(p->zLine, p->nLineAlloc);
+            if( p->zLine==0 ){
+              p->nLineAlloc = 0;
+              goto fileread_jump;
+            }
+          }
+          if( fgets(&p->zLine[n], p->nLineAlloc-n, p->pFile)==0 ){
+            eol = 1;
+            p->zLine[n] = 0;
+          }else{
+            while( p->zLine[n] ){ n++; }
+            if( n>0 && p->zLine[n-1]=='\n' ){
+              n--;
+              p->zLine[n] = 0;
+              eol = 1;
+            }
+          }
+        }
+        if( n==0 ) goto fileread_jump;
+        z = p->zLine;
+        if( z[0]=='\\' && z[1]=='.' && z[2]==0 ){
+          goto fileread_jump;
+        }
+        zDelim = pOp->p3;
+        if( zDelim==0 ) zDelim = "\t";
+        c = zDelim[0];
+        nDelim = strlen(zDelim);
+        p->azField[0] = z;
+        for(i=1; *z!=0 && i<nField; i++){
+          while( *z && (*z!=c || strncmp(z,zDelim,nDelim)) ){ z++; }
+          if( *z ){
+            *z = 0;
+            z += nDelim;
+            p->azField[i] = z;
+          }
+        }
+        while( i<nField ){
+          p->azField[i++] = "";
+        }
+        break;
+
+        /* If we reach end-of-file, or if anything goes wrong, jump here.
+        ** This code will cause a jump to P2 */
+      fileread_jump:
+        pc = pOp->p2;
+        if( pc<0 || pc>p->nOp ){
+          sqliteSetString(pzErrMsg, "jump destination out of range", 0);
+          rc = 1;
+        }
+        pc--;
+        break;
+      }
+
+      /* Opcode: FileField P1 * *
+      **
+      ** Push onto the stack the P1-th field of the most recently read line
+      ** from the file.
+      */
+      case OP_FileField: {
+        int i = pOp->p1;
+        char *z;
+        if( NeedStack(p, p->tos+1) ) goto no_mem;
+        if( i>=0 && i<p->nField && p->azField ){
+          z = p->azField[i];
+        }else{
+          z = 0;
+        }
+        if( z==0 ) z = "";
+        p->tos++;
+        p->iStack[p->tos] = strlen(z) + 1;
+        sqliteSetString(&p->zStack[p->tos], z, 0);
         break;
       }
 

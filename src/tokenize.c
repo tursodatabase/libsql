@@ -27,7 +27,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.2 2000/05/30 13:44:20 drh Exp $
+** $Id: tokenize.c,v 1.3 2000/05/30 16:27:04 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -55,9 +55,11 @@ static Keyword aKeywordTable[] = {
   { "BY",                0, TK_BY,               0 },
   { "CHECK",             0, TK_CHECK,            0 },
   { "CONSTRAINT",        0, TK_CONSTRAINT,       0 },
+  { "COPY",              0, TK_COPY,             0 },
   { "CREATE",            0, TK_CREATE,           0 },
   { "DEFAULT",           0, TK_DEFAULT,          0 },
   { "DELETE",            0, TK_DELETE,           0 },
+  { "DELIMITERS",        0, TK_DELIMITERS,       0 },
   { "DESC",              0, TK_DESC,             0 },
   { "DROP",              0, TK_DROP,             0 },
   { "EXPLAIN",           0, TK_EXPLAIN,          0 },
@@ -80,6 +82,7 @@ static Keyword aKeywordTable[] = {
   { "TABLE",             0, TK_TABLE,            0 },
   { "UNIQUE",            0, TK_UNIQUE,           0 },
   { "UPDATE",            0, TK_UPDATE,           0 },
+  { "USING",             0, TK_USING,            0 },
   { "VALUES",            0, TK_VALUES,           0 },
   { "WHERE",             0, TK_WHERE,            0 },
 };
@@ -288,7 +291,7 @@ int sqliteRunParser(Parse *pParse, char *zSql, char **pzErrMsg){
   extern void sqliteParserTrace(FILE*, char *);
 
   i = 0;
-  pEngine = sqliteParserAlloc((void(*)())malloc);
+  pEngine = sqliteParserAlloc((void*(*)(int))malloc);
   if( pEngine==0 ){
     sqliteSetString(pzErrMsg, "out of memory", 0);
     return 1;

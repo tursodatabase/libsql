@@ -26,7 +26,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.1 2000/05/29 20:42:06 drh Exp $
+** @(#) $Id: parse.y,v 1.2 2000/05/30 16:27:04 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -65,7 +65,7 @@ explain ::= EXPLAIN.    {pParse->explain = 1;}
 // The first form of a command is a CREATE TABLE statement.
 //
 cmd ::= create_table create_table_args.
-create_table ::= CREATE(X) TABLE ID(Y).    {sqliteStartTable(pParse,&X,&Y);}
+create_table ::= CREATE(X) TABLE id(Y).    {sqliteStartTable(pParse,&X,&Y);}
 create_table_args ::= LP columnlist conslist_opt RP(X).
                                            {sqliteEndTable(pParse,&X);}
 columnlist ::= columnlist COMMA column.
@@ -76,7 +76,10 @@ columnlist ::= column.
 // an elaborate typename.  Perhaps someday we'll do something with it.
 //
 column ::= columnid type carglist. 
-columnid ::= ID(X).                {sqliteAddColumn(pParse,&X);}
+columnid ::= id(X).                {sqliteAddColumn(pParse,&X);}
+%type id {Token}
+id(A) ::= ID(X).     {A = X;}
+id(A) ::= STRING(X). {A = X;}
 type ::= typename.
 type ::= typename LP signed RP.
 type ::= typename LP signed COMMA signed RP.
@@ -112,12 +115,12 @@ tcons2 ::= PRIMARY KEY LP idxlist(X) RP.
       {sqliteCreateIndex(pParse,0,0,X,0,0);}
 tcons2 ::= UNIQUE LP idlist RP.
 tcons2 ::= CHECK expr.
-idlist ::= idlist COMMA ID.
-idlist ::= ID.
+idlist ::= idlist COMMA id.
+idlist ::= id.
 
 // The next command format is dropping tables.
 //
-cmd ::= DROP TABLE ID(X).          {sqliteDropTable(pParse,&X);}
+cmd ::= DROP TABLE id(X).          {sqliteDropTable(pParse,&X);}
 
 // The select statement
 //
@@ -149,8 +152,8 @@ selcollist(A) ::= sclp(P) expr(X) AS STRING(Y).
 from(A) ::= FROM seltablist(X).               {A = X;}
 stl_prefix(A) ::= seltablist(X) COMMA.        {A = X;}
 stl_prefix(A) ::= .                           {A = 0;}
-seltablist(A) ::= stl_prefix(X) ID(Y).        {A = sqliteIdListAppend(X,&Y);}
-seltablist(A) ::= stl_prefix(X) ID(Y) AS ID(Z).
+seltablist(A) ::= stl_prefix(X) id(Y).        {A = sqliteIdListAppend(X,&Y);}
+seltablist(A) ::= stl_prefix(X) id(Y) AS id(Z).
    {A = sqliteIdListAppend(X,&Y);
     sqliteIdListAddAlias(A,&Z);}
 
@@ -300,4 +303,9 @@ idxlist(A) ::= idxitem(Y).
      {A = sqliteIdListAppend(0,&Y);}
 idxitem(A) ::= ID(X).           {A = X;}
 
-cmd ::= DROP INDEX ID(X).       {sqliteDropIndex(pParse, &X);}
+cmd ::= DROP INDEX id(X).       {sqliteDropIndex(pParse, &X);}
+
+cmd ::= COPY id(X) FROM id(Y) USING DELIMITERS STRING(Z).
+    {sqliteCopy(pParse,&X,&Y,&Z);}
+cmd ::= COPY id(X) FROM id(Y).
+    {sqliteCopy(pParse,&X,&Y,0);}

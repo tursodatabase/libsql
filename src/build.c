@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** when syntax rules are reduced.
 **
-** $Id: build.c,v 1.6 2000/05/30 13:44:19 drh Exp $
+** $Id: build.c,v 1.7 2000/05/30 16:27:04 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -191,6 +191,7 @@ void sqliteDeleteTable(sqlite *db, Table *pTable){
 static char *sqliteTableNameFromToken(Token *pName){
   char *zName = 0;
   sqliteSetNString(&zName, pName->z, pName->n, 0);
+  sqliteDequote(zName);
   return zName;
 }
 
@@ -252,6 +253,7 @@ void sqliteAddColumn(Parse *pParse, Token *pName){
   pz = &p->azCol[p->nCol++];
   *pz = 0;
   sqliteSetNString(pz, pName->z, pName->n, 0);
+  sqliteDequote(*pz);
 }
 
 /*
@@ -665,6 +667,7 @@ ExprList *sqliteExprListAppend(ExprList *pList, Expr *pExpr, Token *pName){
   pList->a[i].zName = 0;
   if( pName ){
     sqliteSetNString(&pList->a[i].zName, pName->z, pName->n, 0);
+    sqliteDequote(pList->a[i].zName);
   }
   return pList;
 }
@@ -702,6 +705,7 @@ IdList *sqliteIdListAppend(IdList *pList, Token *pToken){
   memset(&pList->a[pList->nId], 0, sizeof(pList->a[0]));
   if( pToken ){
     sqliteSetNString(&pList->a[pList->nId].zName, pToken->z, pToken->n, 0);
+    sqliteDequote(pList->a[pList->nId].zName);
   }
   pList->nId++;
   return pList;
@@ -714,6 +718,7 @@ void sqliteIdListAddAlias(IdList *pList, Token *pToken){
   if( pList && pList->nId>0 ){
     int i = pList->nId - 1;
     sqliteSetNString(&pList->a[i].zAlias, pToken->z, pToken->n, 0);
+    sqliteDequote(pList->a[i].zAlias);
   }
 }
 
@@ -1431,5 +1436,87 @@ update_cleanup:
   sqliteIdListDelete(pTabList);
   sqliteExprListDelete(pChanges);
   sqliteExprDelete(pWhere);
+  return;
+}
+
+/*
+** The COPY command is for compatibility with PostgreSQL and specificially
+** for the ability to read the output of pg_dump.  The format is as
+** follows:
+**
+**    COPY table FROM file [USING DELIMITERS string]
+**
+** "table" is an existing table name.  We will read lines of code from
+** file to fill this table with data.  File might be "stdin".  The optional
+** delimiter string identifies the field separators.  The default is a tab.
+*/
+void sqliteCopy(
+  Parse *pParse,       /* The parser context */
+  Token *pTableName,   /* The name of the table into which we will insert */
+  Token *pFilename,    /* The file from which to obtain information */
+  Token *pDelimiter    /* Use this as the field delimiter */
+){
+  Table *pTab;
+  char *zTab;
+  int i, j;
+  Vdbe *v;
+  int addr, end;
+  Index *pIdx;
+
+  zTab = sqliteTableNameFromToken(pTableName);
+  pTab = sqliteFindTable(pParse->db, zTab);
+  sqliteFree(zTab);
+  if( pTab==0 ){
+    sqliteSetNString(&pParse->zErrMsg, "no such table: ", 0, 
+        pTableName->z, pTableName->n, 0);
+    pParse->nErr++;
+    goto copy_cleanup;
+  }
+  if( pTab->readOnly ){
+    sqliteSetString(&pParse->zErrMsg, "table ", pTab->zName,
+        " may not be modified", 0);
+    pParse->nErr++;
+    goto copy_cleanup;
+  }
+  v = pParse->pVdbe = sqliteVdbeCreate(pParse->db->pBe);
+  if( v ){
+    addr = sqliteVdbeAddOp(v, OP_FileOpen, 0, 0, 0, 0);
+    sqliteVdbeChangeP3(v, addr, pFilename->z, pFilename->n);
+    sqliteVdbeAddOp(v, OP_Open, 0, 0, pTab->zName, 0);
+    for(i=1, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
+      sqliteVdbeAddOp(v, OP_Open, i, 0, pIdx->zName, 0);
+    }
+    end = sqliteVdbeMakeLabel(v);
+    addr = sqliteVdbeAddOp(v, OP_FileRead, pTab->nCol, end, 0, 0);
+    if( pDelimiter ){
+      sqliteVdbeChangeP3(v, addr, pDelimiter->z, pDelimiter->n);
+      sqliteVdbeDequoteP3(v, addr);
+    }else{
+      sqliteVdbeChangeP3(v, addr, "\t", 1);
+    }
+    sqliteVdbeAddOp(v, OP_New, 0, 0, 0, 0);
+    if( pTab->pIndex ){
+      sqliteVdbeAddOp(v, OP_Dup, 0, 0, 0, 0);
+    }
+    for(i=0; i<pTab->nCol; i++){
+      sqliteVdbeAddOp(v, OP_FileField, i, 0, 0, 0);
+    }
+    sqliteVdbeAddOp(v, OP_MakeRecord, pTab->nCol, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_Put, 0, 0, 0, 0);
+    for(i=1, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
+      if( pIdx->pNext ){
+        sqliteVdbeAddOp(v, OP_Dup, 0, 0, 0, 0);
+      }
+      for(j=0; j<pIdx->nField; j++){
+        sqliteVdbeAddOp(v, OP_FileField, pIdx->aiField[j], 0, 0, 0);
+      }
+      sqliteVdbeAddOp(v, OP_MakeKey, pIdx->nField, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_PutIdx, i, 0, 0, 0);
+    }
+    sqliteVdbeAddOp(v, OP_Goto, 0, addr, 0, 0);
+    sqliteVdbeAddOp(v, OP_Noop, 0, 0, 0, end);
+  }
+  
+copy_cleanup:
   return;
 }

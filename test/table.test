@@ -23,7 +23,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE TABLE statement.
 #
-# $Id: table.test,v 1.3 2000/05/30 13:44:20 drh Exp $
+# $Id: table.test,v 1.4 2000/05/30 16:27:05 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -88,6 +88,26 @@ do_test table-1.6 {
   sqlite db testdb
   execsql {SELECT name FROM sqlite_master}
 } {}
+
+# Repeat the above steps, but this time quote the table name.
+#
+do_test table-1.10 {
+  execsql {CREATE TABLE "create" (f1 int)}
+  execsql {SELECT name FROM sqlite_master}
+} {create}
+do_test table-1.11 {
+  execsql {DROP TABLE "create"}
+  execsql {SELECT name FROM "sqlite_master"}
+} {}
+do_test table-1.12 {
+  execsql {CREATE TABLE test1("f1 ho" int)}
+  execsql {SELECT name as "X" FROM sqlite_master}
+} {test1}
+do_test table-1.13 {
+  execsql {DROP TABLE "TEST1"}
+  execsql {SELECT name FROM "sqlite_master"}
+} {}
+
 
 
 # Verify that we cannot make two tables with the same name

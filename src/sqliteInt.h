@@ -23,7 +23,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.2 2000/05/30 13:44:20 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.3 2000/05/30 16:27:04 drh Exp $
 */
 #include "sqlite.h"
 #include "dbbe.h"
@@ -219,6 +219,7 @@ int sqliteSortCompare(const char *, const char *);
 int sqliteGetToken(const char*, int *);
 void sqliteSetString(char **, const char *, ...);
 void sqliteSetNString(char **, ...);
+void sqliteDequote(char*);
 int sqliteRunParser(Parse*, char*, char **);
 void sqliteExec(Parse*);
 Expr *sqliteExpr(int, Expr*, Expr*, Token*);
@@ -246,3 +247,4 @@ void sqliteExprCode(Parse*, Expr*);
 void sqliteExprIfTrue(Parse*, Expr*, int);
 void sqliteExprIfFalse(Parse*, Expr*, int);
 Table *sqliteFindTable(sqlite*,char*);
+void sqliteCopy(Parse*, Token*, Token*, Token*);
