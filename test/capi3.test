@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi3.test,v 1.18 2004/06/30 02:35:51 danielk1977 Exp $
+# $Id: capi3.test,v 1.19 2004/06/30 06:30:26 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -498,7 +498,7 @@ do_test capi3-8.2 {
 
   # Build a 5-field row record consisting of 5 null records. This is
   # officially black magic.
-  unset data
+  catch {unset data}
   set data [binary format c6 {6 0 0 0 0 0}]
   btree_insert $::bc 5 $data
 
@@ -601,7 +601,164 @@ db close
 sqlite_malloc_fail 0
 }
 
+# The following tests - capi3-11.* - test that a COMMIT or ROLLBACK
+# statement issued while there are still outstanding VMs that are part of
+# the transaction fails.
+set DB [sqlite3 db test.db]
+sqlite_register_test_function $DB func
+do_test capi3-11.1 {
+  execsql {
+    BEGIN;
+    CREATE TABLE t1(a, b);
+    INSERT INTO t1 VALUES(1, 'int');
+    INSERT INTO t1 VALUES(2, 'notatype');
+  }
+} {}
+do_test capi3-11.2 {
+  set STMT [sqlite3_prepare $DB "SELECT func(b, a) FROM t1" -1 TAIL]
+  sqlite3_step $STMT
+} {SQLITE_ROW}
+do_test capi3-11.3 {
+  catchsql {
+    COMMIT;
+  }
+} {1 {cannot commit transaction - SQL statements in progress}}
+do_test capi3-11.4 {
+  sqlite3_step $STMT
+} {SQLITE_ERROR}
+do_test capi3-11.5 {
+  sqlite3_finalize $STMT
+} {SQLITE_ERROR}
+do_test capi3-11.6 {
+  catchsql {
+    SELECT * FROM t1;
+  }
+} {0 {1 int 2 notatype}}
+do_test capi3-11.7 {
+  catchsql {
+    COMMIT;
+  }
+} {0 {}}
+do_test capi3-11.8 {
+  execsql {
+    CREATE TABLE t2(a);
+    INSERT INTO t2 VALUES(1);
+    INSERT INTO t2 VALUES(2);
+    BEGIN;
+    INSERT INTO t2 VALUES(3);
+  }
+} {}
+do_test capi3-11.9 {
+  set STMT [sqlite3_prepare $DB "SELECT a FROM t2" -1 TAIL]
+  sqlite3_step $STMT
+} {SQLITE_ROW}
+do_test capi3-11.3 {
+  catchsql {
+    ROLLBACK;
+  }
+} {1 {cannot rollback transaction - SQL statements in progress}}
+do_test capi3-11.10 {
+  sqlite3_step $STMT
+} {SQLITE_ROW}
+do_test capi3-11.11 {
+  sqlite3_step $STMT
+} {SQLITE_ROW}
+do_test capi3-11.12 {
+  sqlite3_step $STMT
+} {SQLITE_DONE}
+do_test capi3-11.13 {
+  sqlite3_finalize $STMT
+} {SQLITE_OK}
+do_test capi3-11.14 {
+  execsql {
+    SELECT a FROM t2;
+  }
+} {1 2 3}
+do_test capi3-11.15 {
+  catchsql {
+    ROLLBACK;
+  }
+} {0 {}}
+do_test capi3-11.16 {
+  execsql {
+    SELECT a FROM t2;
+  }
+} {1 2}
+
+# Sanity check on the definition of 'outstanding VM'. This means any VM
+# that has had sqlite3_step() called more recently than sqlite3_finalize() or
+# sqlite3_reset(). So a VM that has just been prepared or reset does not
+# count as an active VM.
+do_test capi3-11.17 {
+  execsql {
+    BEGIN;
+  }
+} {}
+do_test capi3-11.18 {
+  set STMT [sqlite3_prepare $DB "SELECT a FROM t1" -1 TAIL]
+  catchsql {
+    COMMIT;
+  }
+} {0 {}}
+do_test capi3-11.19 {
+  sqlite3_step $STMT
+} {SQLITE_ROW}
+do_test capi3-11.20 {
+  catchsql {
+    BEGIN;
+    COMMIT;
+  }
+} {1 {cannot commit transaction - SQL statements in progress}}
+do_test capi3-11.20 {
+  sqlite3_reset $STMT
+  catchsql {
+    COMMIT;
+  }
+} {0 {}}
+do_test capi3-11.21 {
+  sqlite3_finalize $STMT
+} {SQLITE_OK}
+
+# The following tests - capi3-12.* - check that it's Ok to start a
+# transaction while other VMs are active, and that it's Ok to execute
+# atomic updates in the same situation (so long as they are on a different
+# table).
+do_test capi3-12.1 {
+  set STMT [sqlite3_prepare $DB "SELECT a FROM t2" -1 TAIL]
+  sqlite3_step $STMT
+} {SQLITE_ROW}
+do_test capi3-12.2 {
+  catchsql {
+    INSERT INTO t1 VALUES(3, NULL);
+  }
+} {0 {}}
+do_test capi3-12.3 {
+  catchsql {
+    INSERT INTO t2 VALUES(4);
+  }
+} {1 {database table is locked}}
+do_test capi3-12.4 {
+  catchsql {
+    BEGIN;
+    INSERT INTO t1 VALUES(4, NULL);
+  }
+} {0 {}}
+do_test capi3-12.5 {
+  sqlite3_step $STMT
+} {SQLITE_ROW}
+do_test capi3-12.6 {
+  sqlite3_step $STMT
+} {SQLITE_DONE}
+do_test capi3-12.7 {
+  sqlite3_finalize $STMT
+} {SQLITE_OK}
+do_test capi3-12.8 {
+  execsql {
+    COMMIT;
+    SELECT a FROM t1;
+  }
+} {1 2 3 4}
+
+
 finish_test
-
-
 

@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.24 2004/06/26 08:38:25 danielk1977 Exp $
+** $Id: vacuum.c,v 1.25 2004/06/30 06:30:26 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -97,9 +97,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite *db){
   char *zTemp = 0;        /* a temporary file in same directory as zFilename */
   int i;                  /* Loop counter */
   Btree *pTemp;
-
   char *zSql = 0;
-  sqlite3_stmt *pStmt = 0;
 
   if( !db->autoCommit ){
     sqlite3SetString(pzErrMsg, "cannot VACUUM from within a transaction", 
@@ -129,8 +127,16 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite *db){
     if( !sqlite3OsFileExists(zTemp) ) break;
   }
 
-  /* Attach the temporary database as 'vacuum' */
+  /* Attach the temporary database as 'vacuum_db'. The synchronous pragma
+  ** can be set to 'off' for this file, as it is not recovered if a crash
+  ** occurs anyway. The integrity of the database is maintained by a
+  ** (possibly synchronous) transaction opened on the main database before
+  ** sqlite3BtreeCopyFile() is called.
+  **
+  ** An optimisation would be to use a non-journaled pager.
+  */
   zSql = sqlite3MPrintf("ATTACH '%s' AS vacuum_db;", zTemp);
+  execSql(db, "PRAGMA vacuum_db.synchronous = off;");
   if( !zSql ){
     rc = SQLITE_NOMEM;
     goto end_of_vacuum;
@@ -217,14 +223,20 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite *db){
   }
 
 end_of_vacuum:
-  execSql(db, "ROLLBACK;");
+  /* Currently there is an SQL level transaction open on the vacuum
+  ** database. No locks are held on any other files (since the main file
+  ** was committed at the btree level). So it safe to end the transaction
+  ** by manually setting the autoCommit flag to true and detaching the
+  ** vacuum database. The vacuum_db journal file is deleted when the pager
+  ** is closed by the DETACH.
+  */
+  db->autoCommit = 1;
   execSql(db, "DETACH vacuum_db;");
   if( zTemp ){
     sqlite3OsDelete(zTemp);
     sqliteFree(zTemp);
   }
   if( zSql ) sqliteFree( zSql );
-  if( pStmt ) sqlite3_finalize( pStmt );
 #endif
   return rc;
 } 

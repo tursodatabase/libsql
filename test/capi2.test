@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi2.test,v 1.17 2004/06/26 09:50:12 danielk1977 Exp $
+# $Id: capi2.test,v 1.18 2004/06/30 06:30:26 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -484,18 +484,18 @@ do_test capi2-6.20 {
        [get_row_values $VM1] \
        [get_column_names $VM1]
 } {SQLITE_ROW 1 9 {x counter}}
-do_test capi2-6.21 {
-  execsql {ROLLBACK; SELECT * FROM t1}
-} {1 2 3}
+#do_test capi2-6.21 {
+#  execsql {ROLLBACK; SELECT * FROM t1}
+#} {1 2 3}
 do_test capi2-6.22 {
   list [sqlite3_step $VM1] \
        [sqlite3_column_count $VM1] \
        [get_row_values $VM1] \
        [get_column_names $VM1]
 } {SQLITE_ROW 1 10 {x counter}}
-do_test capi2-6.23 {
-  execsql {BEGIN TRANSACTION;}
-} {}
+#do_test capi2-6.23 {
+#  execsql {BEGIN TRANSACTION;}
+#} {}
 do_test capi2-6.24 {
   list [sqlite3_step $VM1] \
        [sqlite3_column_count $VM1] \
@@ -507,7 +507,7 @@ do_test capi2-6.25 {
     INSERT INTO t1 VALUES(2,3,4);
     SELECT * FROM t1;
   }
-} {1 2 3 2 3 4}
+} {1 3 3 2 3 4}
 do_test capi2-6.26 {
   list [sqlite3_step $VM1] \
        [sqlite3_column_count $VM1] \
