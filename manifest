@@ -1,5 +1,5 @@
-C Update\sthe\sspeed\scomparison\spage.\s(CVS\s840)
-D 2003-01-18T22:01:07
+C Update\scomments.\s\sNo\schanges\sto\scode.\s(CVS\s841)
+D 2003-01-19T03:59:46
 F Makefile.in 6606854b1512f185b8e8c779b8d7fc2750463d64
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -23,22 +23,22 @@ F src/btree.c 131b5903f66e148f0f9af0cedd1c6654932c4e04
 F src/btree.h 17710339f7a8f46e3c7d6d0d4648ef19c584ffda
 F src/build.c 0454fd02e163865c82106dd52dec4a4caf908ebf
 F src/delete.c cbd499f3f9297504c42e328af89bef1a2113d04c
-F src/encode.c 09d1fe8a2e97ff94cce496e2909e2ebc8947960b
+F src/encode.c faf03741efe921755ec371cf4a6984536de00042
 F src/expr.c 382839b92cb66a34cfa71cf1d2bc8fb818226c90
 F src/func.c 90c583f0b91220f7cd411a2407deaf9327245d63
 F src/hash.c 4fc39feb7b7711f6495ee9f2159559bedb043e1f
 F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
 F src/insert.c db954e955970795819145a3649fd2ad116a58890
-F src/main.c a05db522f8182f47e0cc6902327a7c205735d808
+F src/main.c ad3193c56da5acd31bc6cd48aa50dae1962d7c78
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
 F src/os.c 3a652608c296cf639ce63bd31d255db862e45685
 F src/os.h afa3e096213bad86845f8bdca81a9e917505e401
 F src/pager.c 081155624cff7bec54590133b69906a23f9b3659
 F src/pager.h 540833e8cb826b80ce2e39aa917deee5e12db626
 F src/parse.y a4fbfbe3c4254c96dae8c33264fb54af755a3770
-F src/printf.c 5c50fc1da75c8f5bf432b1ad17d91d6653acd167
+F src/printf.c e8e9a0605602cb1a3a2dc754e0978fa9064ecee7
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
-F src/select.c 65373244633151884ea83daffb34ef98382ac3b3
+F src/select.c c3c0b8263587d290592dca8b4371b5c1162ca684
 F src/shell.c cbb29252f0bd7b144d1e3126e64e17e5a314f2fd
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 90657185cff387069d17c5b876a87a6a7a3b6f10
@@ -53,7 +53,7 @@ F src/tokenize.c 7ac1c33e0149647c9eb5959c48992df6906d4809
 F src/trigger.c da142decd2808bc39e801f3bb1f161dbc2bd4005
 F src/update.c f06afa9bf1f777d17702e0f6e33cf44c44bc4f75
 F src/util.c e23f8ffc654923e18f8db2d8e0de97c166fca20f
-F src/vdbe.c dc0a9c1b815c95b14ffe62765cfd528d974c6c1b
+F src/vdbe.c 7796485aa510c89aa378a11d3fbeb6fcf3893433
 F src/vdbe.h 754eba497cfe0c3e352b9c101ab2f811f10d0a55
 F src/where.c 5bf7f1e1d756ab3d25a18b24bb42106cb8e14d18
 F test/all.test 873d30e25a41b3aa48fec5633a7ec1816e107029
@@ -154,7 +154,7 @@ F www/speed.tcl 52759968401d81760fc01f9d3ab6242f6d2a7066
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 71cc292dce59cf8224b205d1cdbff59ad12f1043
-R 843340c3fef7e6ee0ac6b3187554a951
+P 424cb2edb0c51b911791422ce7a9f5284a57f9ce
+R c412fddde0211bcedc2c913718bf3cae
 U drh
-Z 66212ef777c3998af30d067a457e17bb
+Z 08ec0c344754362c114e2ab7933a5823

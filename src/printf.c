@@ -3,8 +3,8 @@
 ** the public domain.  The original comments are included here for
 ** completeness.  They are slightly out-of-date.
 **
-** The following modules is an enhanced replacement for the "printf" programs
-** found in the standard library.  The following enhancements are
+** The following modules is an enhanced replacement for the "printf" subroutines
+** found in the standard C library.  The following enhancements are
 ** supported:
 **
 **      +  Additional functions.  The standard set of "printf" functions

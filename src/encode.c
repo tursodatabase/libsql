@@ -12,10 +12,10 @@
 ** This file contains helper routines used to translate binary data into
 ** a null-terminated string (suitable for use in SQLite) and back again.
 ** These are convenience routines for use by people who want to store binary
-** data in an SQLite database.  The code in this file is used by any other
+** data in an SQLite database.  The code in this file is not used by any other
 ** part of the SQLite library.
 **
-** $Id: encode.c,v 1.4 2003/01/11 14:25:40 drh Exp $
+** $Id: encode.c,v 1.5 2003/01/19 03:59:46 drh Exp $
 */
 #include <string.h>
 

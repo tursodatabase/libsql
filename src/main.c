@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.108 2003/01/18 17:04:09 drh Exp $
+** $Id: main.c,v 1.109 2003/01/19 03:59:47 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -39,7 +39,7 @@ typedef struct {
 **     argv[0] = "file-format" or "schema-cookie" or "table" or "index"
 **     argv[1] = table or index name or meta statement type.
 **     argv[2] = root page number for table or index.  NULL for meta.
-**     argv[3] = SQL create statement for the table or index
+**     argv[3] = SQL text for a CREATE TABLE or CREATE INDEX statement.
 **     argv[4] = "1" for temporary files, "0" for main database
 **
 */
@@ -391,7 +391,7 @@ sqlite *sqlite_open(const char *zFilename, int mode, char **pzErrMsg){
   /* If the database is in formats 1 or 2, then upgrade it to
   ** version 3.  This will reconstruct all indices.  If the
   ** upgrade fails for any reason (ex: out of disk space, database
-  ** is read only, interrupt receive, etc.) then refuse to open.
+  ** is read only, interrupt received, etc.) then refuse to open.
   */
   if( rc==SQLITE_OK && db->file_format<3 ){
     char *zErr = 0;
@@ -786,7 +786,8 @@ void sqlite_freemem(void *p){ free(p); }
 
 /*
 ** Windows systems need functions to call to return the sqlite_version
-** and sqlite_encoding strings.
+** and sqlite_encoding strings since they are unable to access constants
+** within DLLs.
 */
 const char *sqlite_libversion(void){ return sqlite_version; }
 const char *sqlite_libencoding(void){ return sqlite_encoding; }
