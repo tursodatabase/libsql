@@ -607,17 +607,22 @@ int sqlite3OsSeek(OsFile *id, off_t offset){
 int sqlite3OsSync(OsFile *id){
   SimulateIOError(SQLITE_IOERR);
   TRACE2("SYNC    %-3d\n", id->h);
+{
+off_t sz;
+sqlite3OsFileSize(id, &sz);
+fprintf(stderr,"SYNC %d size=%lld...  ", id->h, sz);
+}
   if( fsync(id->h) ){
     return SQLITE_IOERR;
-  }else{
-    if( id->dirfd>=0 ){
-      TRACE2("DIRSYNC %-3d\n", id->dirfd);
-      fsync(id->dirfd);
-      close(id->dirfd);  /* Only need to sync once, so close the directory */
-      id->dirfd = -1;    /* when we are done. */
-    }
-    return SQLITE_OK;
   }
+  if( id->dirfd>=0 ){
+    TRACE2("DIRSYNC %-3d\n", id->dirfd);
+    fsync(id->dirfd);
+    close(id->dirfd);  /* Only need to sync once, so close the directory */
+    id->dirfd = -1;    /* when we are done. */
+  }
+fprintf(stderr,"DONE\n");
+  return SQLITE_OK;
 }
 
 /*

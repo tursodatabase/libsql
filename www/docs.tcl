@@ -1,7 +1,7 @@
 # This script generates the "docs.html" page that describes various
 # sources of documentation available for SQLite.
 #
-set rcsid {$Id: docs.tcl,v 1.4 2004/06/11 17:48:04 drh Exp $}
+set rcsid {$Id: docs.tcl,v 1.5 2004/06/17 19:04:17 drh Exp $}
 source common.tcl
 header {SQLite Documentation}
 puts {
@@ -27,6 +27,9 @@ doc {SQL Syntax} {lang.html} {
 doc {Version 2 C/C++ API} {c_interface.html} {
   A description of the C/C++ interface bindings for SQLite through version 
   2.8
+}
+doc {SQLite Version 3} {version3.html} {
+  A summary of of the changes between SQLite version 2.8 and SQLite version 3.0.
 }
 doc {Version 3 C/C++ API} {capi3.html} {
   A description of the C/C++ interface bindings for SQLite version 3.0.0

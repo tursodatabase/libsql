@@ -458,6 +458,9 @@ tclsqlite.html:	$(TOP)/www/tclsqlite.tcl
 vdbe.html:	$(TOP)/www/vdbe.tcl
 	tclsh $(TOP)/www/vdbe.tcl >vdbe.html
 
+version3.html:	$(TOP)/www/version3.tcl
+	tclsh $(TOP)/www/version3.tcl >version3.html
+
 
 # Files to be published on the website.
 #
@@ -493,7 +496,8 @@ DOC = \
   sqlite.html \
   support.html \
   tclsqlite.html \
-  vdbe.html 
+  vdbe.html \
+  version3.html
 
 doc:	common.tcl $(DOC)
 	mkdir -p doc

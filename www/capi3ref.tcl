@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3ref.tcl,v 1.3 2004/06/12 00:42:36 danielk1977 Exp $}
+set rcsid {$Id: capi3ref.tcl,v 1.4 2004/06/17 19:04:17 drh Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -43,8 +43,8 @@ api {result-codes} {
 #define SQLITE_ROW         100  /* sqlite_step() has another row ready */
 #define SQLITE_DONE        101  /* sqlite_step() has finished executing */
 } {
-The sqlite3.h header file defines macros for the integer result codes
-returned by many API functions.
+Many SQLite functions return an integer result code from the set shown
+above in order to indicates success or failure.
 }
 
 api {} {
@@ -76,8 +76,8 @@ api {} {
   int sqlite3_bind_null(sqlite3_stmt*, int);
   int sqlite3_bind_text(sqlite3_stmt*, int, const char*, int n, void(*)(void*));
   int sqlite3_bind_text16(sqlite3_stmt*, int, const void*, int n, void(*)(void*));
-  #define SQLITE_STATIC      ((void*)0)
-  #define SQLITE_EPHEMERAL   ((void*)8)
+  #define SQLITE_STATIC      ((void(*)(void *))0)
+  #define SQLITE_TRANSIENT   ((void(*)(void *))-1)
 } {
  In the SQL strings input to sqlite3_prepare() and sqlite3_prepare16(),
  one or more literals can be replace by a wildcard "?" or ":N:" where
@@ -94,7 +94,7 @@ api {} {
  text after SQLite has finished with it.  If the fifth argument is the
  special value SQLITE_STATIC, then the library assumes that the information
  is in static, unmanaged space and does not need to be freed.  If the
- fifth argument has the value SQLITE_EPHEMERAL, then SQLite makes its
+ fifth argument has the value SQLITE_TRANSIENT, then SQLite makes its
  on private copy of the data.
 
  The sqlite3_bind_*() routine must be called after
@@ -104,7 +104,7 @@ api {} {
 }
 
 api {} {
-  void sqlite3_busy_handler(sqlite*, int(*)(void*,int), void*);
+  int sqlite3_busy_handler(sqlite*, int(*)(void*,int), void*);
 } {
  This routine identifies a callback function that is invoked
  whenever an attempt is made to open a database table that is
@@ -129,7 +129,7 @@ api {} {
 }
 
 api {} {
-  void sqlite3_busy_timeout(sqlite*, int ms);
+  int sqlite3_busy_timeout(sqlite*, int ms);
 } {
  This routine sets a busy handler that sleeps for a while when a
  table is locked.  The handler will sleep multiple times until 
@@ -142,18 +142,19 @@ api {} {
 }
 
 api {} {
-int sqlite3_changes(sqlite*);
+  int sqlite3_changes(sqlite*);
 } {
  This function returns the number of database rows that were changed
- (or inserted or deleted) by the most recent called sqlite3_exec().
+ (or inserted or deleted) by the most recently completed
+ INSERT, UPDATE, or DELETE
+ statement.  Only changes that are directly specified by the INSERT,
+ UPDATE, or DELETE statement are counted.  Auxiliary changes caused by
+ triggers are not counted.  Use the sqlite3_total_changes() function
+ to find the total number of changes including changes caused by triggers.
 
- All changes are counted, even if they were later undone by a
- ROLLBACK or ABORT.  Except, changes associated with creating and
- dropping tables are not counted.
-
- If a callback invokes sqlite3_exec() recursively, then the changes
- in the inner, recursive call are counted together with the changes
- in the outer call.
+ Within the body of a trigger, the sqlite3_changes() function does work
+ to report the number of rows that were changed for the most recently
+ completed INSERT, UPDATE, or DELETE statement within the trigger body.
 
  SQLite implements the command "DELETE FROM table" without a WHERE clause
  by dropping and recreating the table.  (This is much faster than going
@@ -165,11 +166,39 @@ int sqlite3_changes(sqlite*);
 }
 
 api {} {
-  void sqlite3_close(sqlite *);
+  int sqlite3_total_changes(sqlite*);
 } {
- Call this function with a pointer to a structure that was previously
- returned from sqlite3_open() or sqlite3_open16()
- and the corresponding database will by closed.
+  This function returns the total number of database rows that have
+  be modified, inserted, or deleted since the database connection was
+  created using sqlite3_open().  All changes are counted, including
+  changes by triggers and changes to TEMP and auxiliary databases.
+  Except, changes to the SQLITE_MASTER table (caused by statements 
+  such as CREATE TABLE) are not counted.  Nor are changes counted when
+  an entire table is deleted using DROP TABLE.
+
+  See also the sqlite3_changes() API.
+
+  SQLite implements the command "DELETE FROM table" without a WHERE clause
+  by dropping and recreating the table.  (This is much faster than going
+  through and deleting individual elements form the table.)  Because of
+  this optimization, the change count for "DELETE FROM table" will be
+  zero regardless of the number of elements that were originally in the
+  table. To get an accurate count of the number of rows deleted, use
+  "DELETE FROM table WHERE 1" instead.
+}
+
+api {} {
+  int sqlite3_close(sqlite *);
+} {
+  Call this function with a pointer to a structure that was previously
+  returned from sqlite3_open() or sqlite3_open16()
+  and the corresponding database will by closed.
+
+  SQLITE_OK is returned if the close is successful.  If there are
+  prepared statements that have not been finalized, then SQLITE_BUSY
+  is returned.  SQLITE_ERROR might be returned if the argument is not
+  a valid connection pointer returned by sqlite3_open() or if the connection
+  pointer has been closed previously.
 }
 
 api {} {
@@ -229,16 +258,18 @@ int sqlite3_column_type(sqlite3_stmt*, int iCol);
 api {} {
 int sqlite3_column_count(sqlite3_stmt *pStmt);
 } {
- Return the number of columns in the result set returned by the compiled
+ Return the number of columns in the result set returned by the prepared
  SQL statement. This routine returns 0 if pStmt is an SQL statement
  that does not return data (for example an UPDATE).
+
+ See also sqlite3_data_count().
 }
 
 api {} {
 const char *sqlite3_column_decltype(sqlite3_stmt *, int i);
 const void *sqlite3_column_decltype16(sqlite3_stmt*,int);
 } {
- The first parameter is a compiled SQL statement. If this statement
+ The first parameter is a prepared SQL statement. If this statement
  is a SELECT statement, the Nth column of the returned result set 
  of the SELECT is a table column then the declared type of the table
  column is returned. If the Nth column of the result set is not at table
@@ -266,38 +297,27 @@ api {} {
 const char *sqlite3_column_name(sqlite3_stmt*,int);
 const void *sqlite3_column_name16(sqlite3_stmt*,int);
 } {
- The first parameter is a compiled SQL statement. This function returns
+ The first parameter is a prepared SQL statement. This function returns
  the column heading for the Nth column of that statement, where N is the
  second function parameter.  The string returned is UTF-8 for
  sqlite3_column_name() and UTF-16 for sqlite3_column_name16().
 }
 
 api {} {
-void *sqlite3_commit_hook(sqlite*, int(*)(void*), void*);
+void *sqlite3_commit_hook(sqlite*, int(*xCallback)(void*), void *pArg);
 } {
- This routine configures a callback function - the progress callback - that
- is invoked periodically during long running calls to sqlite3_exec(),
- sqlite3_step() and sqlite3_get_table().
- An example use for this API is to keep
- a GUI updated during a large query.
+ <i>Experimental</i>
 
- The progress callback is invoked once for every N virtual machine opcodes,
- where N is the second argument to this function. The progress callback
- itself is identified by the third argument to this function. The fourth
- argument to this function is a void pointer passed to the progress callback
- function each time it is invoked.
+ Register a callback function to be invoked whenever a new transaction
+ is committed.  The pArg argument is passed through to the callback.
+ callback.  If the callback function returns non-zero, then the commit
+ is converted into a rollback.
 
- If a call to sqlite3_exec(), sqlite3_step() or sqlite3_get_table() results 
- in less than N opcodes being executed, then the progress callback is not
- invoked.
- 
- To remove the progress callback altogether, pass NULL as the third
- argument to this function.
+ If another function was previously registered, its pArg value is returned.
+ Otherwise NULL is returned.
 
- If the progress callback returns a result other than 0, then the current 
- query is immediately terminated and any database changes rolled back. If the
- query was part of a larger transaction, then the transaction is not rolled
- back and remains active. The sqlite3_exec() call returns SQLITE_ABORT. 
+ Registering a NULL function disables the callback.  Only a single commit
+ hook callback can be registered at a time.
 }
 
 api {} {
@@ -345,7 +365,9 @@ int sqlite3_create_collation16(
  The third argument must be one of the constants SQLITE_UTF8,
  SQLITE_UTF16LE or SQLITE_UTF16BE, indicating that the user-supplied
  routine expects to be passed pointers to strings encoded using UTF-8,
- UTF-16 little-endian or UTF-16 big-endian respectively.
+ UTF-16 little-endian or UTF-16 big-endian respectively.  The
+ SQLITE_UTF16 constant indicates that text strings are expected in
+ UTF-16 in the native byte order of the host machine.
 
  A pointer to the user supplied routine must be passed as the fifth
  argument. If it is NULL, this is the same as deleting the collation
@@ -404,7 +426,6 @@ int sqlite3_create_function(
   const char *zFunctionName,
   int nArg,
   int eTextRep,
-  int iCollateArg,
   void*,
   void (*xFunc)(sqlite3_context*,int,sqlite3_value**),
   void (*xStep)(sqlite3_context*,int,sqlite3_value**),
@@ -415,7 +436,6 @@ int sqlite3_create_function16(
   const void *zFunctionName,
   int nArg,
   int eTextRep,
-  int iCollateArg,
   void*,
   void (*xFunc)(sqlite3_context*,int,sqlite3_value**),
   void (*xStep)(sqlite3_context*,int,sqlite3_value**),
@@ -443,7 +463,7 @@ int sqlite3_create_function16(
  aggregate takes. If this parameter is negative, then the function or
  aggregate may take any number of arguments.
 
- The seventh, eighth and ninth parameters, xFunc, xStep and xFinal, are
+ The sixth, seventh and  eighth, xFunc, xStep and xFinal, are
  pointers to user implemented C functions that implement the user
  function or aggregate. A scalar function requires an implementation of
  the xFunc callback only, NULL pointers should be passed as the xStep
@@ -464,7 +484,7 @@ int sqlite3_data_count(sqlite3_stmt *pStmt);
  will return the same value as the sqlite3_column_count() function.
  After sqlite3_step() has returned an SQLITE_DONE, SQLITE_BUSY or
  error code, or before sqlite3_step() has been called on a 
- compiled SQL statement, this routine returns zero.
+ prepared SQL statement, this routine returns zero.
 }
 
 api {} {
@@ -550,11 +570,14 @@ int sqlite3_exec(
 api {} {
 int sqlite3_finalize(sqlite3_stmt *pStmt);
 } {
- The sqlite3_finalize() function is called to delete a compiled
+ The sqlite3_finalize() function is called to delete a prepared
  SQL statement obtained by a previous call to sqlite3_prepare()
  or sqlite3_prepare16(). If the statement was executed successfully, or
  not executed at all, then SQLITE_OK is returned. If execution of the
  statement failed then an error code is returned. 
+
+ All prepared statements must finalized before sqlite3_close() is
+ called or else the close will fail with a return code of SQLITE_BUSY.
 
  This routine can be called at any point during the execution of the
  virtual machine.  If the virtual machine has not completed execution
@@ -636,12 +659,6 @@ api {sqlite3_interrupt} {
  or Ctrl-C where the user wants a long query operation to halt
  immediately.
 } {}
-
-api {} {
-int sqlite3_last_statement_changes(sqlite*);
-} {
-Experimental
-}
 
 api {} {
 long long int sqlite3_last_insert_rowid(sqlite*);
@@ -810,7 +827,7 @@ void sqlite3_progress_handler(sqlite*, int, int(*)(void*), void*);
 api {} {
 int sqlite3_reset(sqlite3_stmt *pStmt);
 } {
- The sqlite3_reset() function is called to reset a compiled SQL
+ The sqlite3_reset() function is called to reset a prepared SQL
  statement obtained by a previous call to sqlite3_prepare() or
  sqlite3_prepare16() back to it's initial state, ready to be re-executed.
  Any SQL statement variables that had values bound to them using
@@ -834,6 +851,10 @@ void sqlite3_result_value(sqlite3_context*, sqlite3_value*);
  User-defined functions invoke the following routines in order to
  set their return value.  The sqlite3_result_value() routine is used
  to return an exact copy of one of the parameters to the function.
+
+ The operation of these routines is very similar to the operation of
+ sqlite3_bind_blob() and its cousins.  Refer to the documentation there
+ for additional information.
 }
 
 api {} {
@@ -842,7 +863,6 @@ int sqlite3_set_authorizer(
   int (*xAuth)(void*,int,const char*,const char*,const char*,const char*),
   void *pUserData
 );
-#define SQLITE_COPY                  0   /* Table Name      File Name       */
 #define SQLITE_CREATE_INDEX          1   /* Index Name      Table Name      */
 #define SQLITE_CREATE_TABLE          2   /* Table Name      NULL            */
 #define SQLITE_CREATE_TEMP_INDEX     3   /* Index Name      Table Name      */
@@ -896,7 +916,7 @@ int sqlite3_set_authorizer(
 api {} {
 int sqlite3_step(sqlite3_stmt*);
 } {
- After an SQL query has been compiled with a call to either
+ After an SQL query has been prepared with a call to either
  sqlite3_prepare() or sqlite3_prepare16(), then this function must be
  called one or more times to execute the statement.
 
@@ -994,12 +1014,14 @@ for {set j 0} {$j<3} {incr j} {
   puts {<ul>}
   while {$i<$limit && $i<$n} {
     set name $sname($i)
-    puts "<li><a href=\"#$name\">$name</a></li>"
+    if {[regexp {^sqlite} $name]} {set display $name} {set display <i>$name</i>}
+    puts "<li><a href=\"#$name\">$display</a></li>"
     incr i
   }
   puts {</ul></td>}
 }
 puts "</table>"
+puts "<!-- $n entries.  $nrow rows in 3 columns -->"
 
 proc resolve_name {ignore_list name} {
   global name_to_idx

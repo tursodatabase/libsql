@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3.tcl,v 1.3 2004/06/01 10:01:25 drh Exp $}
+set rcsid {$Id: capi3.tcl,v 1.4 2004/06/17 19:04:17 drh Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -27,6 +27,7 @@ requires incompatible changes to the database file format.  Other
 incompatible changes, such as a cleanup of the API, were introduced
 at the same time under the theory that it is best to get your
 incompatible changes out of the way all at once.
+</p>
 
 <p>
 The API for version 3.0 is similar to the version 2.X API,
@@ -48,12 +49,37 @@ to whatever datatype is appropriate for their system.
 
 <h3>2.0 C/C++ Interface</h3>
 
+<p>
+The API for SQLite 3.0 three includes 83 separate functions in addition
+to several data structures and #defines.  (A complete
+<a href="capi3ref.html">API reference</a> is provided as a separate document.)
+Fortunately, the interface is not nearly as complex as its size implies.
+Simple programs can still make due with only 3 functions:
+<a href="capi3ref.html#sqlite3_open">sqlite3_open()</a>,
+<a href="capi3ref.html#sqlite3_exec">sqlite3_exec()</a>, and
+<a href="capi3ref.html#sqlite3_close">sqlite3_close()</a>.
+More control over the execution of the database engine is provided
+using
+<a href="capi3ref.html#sqlite3_prepare">sqlite3_prepare()</a>
+to compile an SQLite statement into byte code and
+<a href="capi3ref.html#sqlite3_prepare">sqlite3_step()</a>
+to execute that bytecode.
+A family of routines with names beginning with 
+<a href="capi3ref.html#sqlite3_column_blob">sqlite3_column_</a>
+is used to extract informatiom about the result set of a query.
+Many interface functions come in pairs, with both a UTF-8 and
+and UTF-16 version.  And there is a collection of routines
+used to implement user-defined SQL functions and user-defined
+text collating sequences.
+</p>
+
+
 <h4>2.1 Opening and closing a database</h4>
 
 <blockquote><pre>
    typedef struct sqlite3 sqlite3;
-   int sqlite3_open(const char*, sqlite3**, const char**);
-   int sqlite3_open16(const void*, sqlite3**, const char**);
+   int sqlite3_open(const char*, sqlite3**);
+   int sqlite3_open16(const void*, sqlite3**);
    int sqlite3_close(sqlite3*);
    const char *sqlite3_errmsg(sqlite3*);
    const void *sqlite3_errmsg16(sqlite3*);
@@ -62,7 +88,8 @@ to whatever datatype is appropriate for their system.
 
 <p>
 The sqlite3_open() routine returns an integer error code rather than
-a pointer to the sqlite3 structure.  The difference between sqlite3_open()
+a pointer to the sqlite3 structure as the version 2 interface did.
+The difference between sqlite3_open()
 and sqlite3_open16() is that sqlite3_open16() takes UTF-16 (in host native
 byte order) for the name of the database file.  If a new database file
 needs to be created, then sqlite3_open16() will set the internal text
@@ -71,12 +98,10 @@ representation to UTF-8.
 </p>
 
 <p>
-The third "const char**" argument to sqlite3_open() is a NULL-terminated
-list of keyword/value pairs that define options to apply to the open
-request.  The third argument may be NULL if there are no options.
-This extra argument provides an expandable way of supporting new features
-in future releases.  For example, a future release may contain an
-option to define an encryption/decryption key.
+The opening and/or creating of the database file is deferred until the
+file is actually needed.  This allows options and parameters, such
+as the native text representation and default page size, to be
+set using PRAGMA statements.
 </p>
 
 <p>
@@ -126,24 +151,56 @@ They are as follows:
 <h4>2.2 Executing SQL statements</h4>
 
 <blockquote><pre>
+   typedef int (*sqlite_callback)(void*,int,char**, char**);
+   int sqlite3_exec(sqlite3*, const char *sql, sqlite_callback, void*, char**);
+</pre></blockquote>
+
+<p>
+The sqlite3_exec function works much as it did in SQLite version 2.
+Zero or more SQL statements specified in the second parameter are compiled
+and executed.  Query results are returned to a callback routine.
+See the <a href="capi3ref.html#sqlite3_exec">API reference</a> for additional
+information.
+</p>
+
+<p>
+In SQLite version 3, the sqlite3_exec routine is just a wrapper around
+calls to the prepared statement interface.
+</p>
+
+<blockquote><pre>
    typedef struct sqlite3_stmt sqlite3_stmt;
-   int sqlite3_prepare(sqlite3*, const char*, sqlite3_stmt**, const char**);
-   int sqlite3_prepare16(sqlite3*, const void*, sqlite3_stmt**, const void**);
+   int sqlite3_prepare(sqlite3*, const char*, int, sqlite3_stmt**, const char**);
+   int sqlite3_prepare16(sqlite3*, const void*, int, sqlite3_stmt**, const void**);
    int sqlite3_finalize(sqlite3_stmt*);
    int sqlite3_reset(sqlite3_stmt*);
 </pre></blockquote>
 
 <p>
-The non-callback API is now the preferred way of accessing the database.
-Wrapper functions that emulate the older callback API may (or may not)
-be provided.
+The sqlite3_prepare interface compiles a single SQL statement into byte code
+for later execution.
+This interface is now the preferred way of accessing the database.
 </p>
 
 <p>
-The sqlite3_prepare() function compiles an single SQL statement.
-The statement may contain tokens of the form "?" or "?nnn" or ":nnn:"
+The SQL statement is a UTF-8 string for sqlite3_prepare().
+The sqlite3_prepare16() works the same way except
+that it expects a UTF-16 string as SQL input.
+Only the first SQL statement in the input string is compiled.
+The fourth parameter is filled in with a pointer to the next (uncompiled)
+SQLite statement in the input string, if any.
+The sqlite3_finalize() routine deallocates a prepared SQL statement.
+All prepared statements must be finalized before the database can be
+closed.
+The sqlite3_reset() routine resets a prepared SQL statement so that it
+can be executed again.
+</p>
+
+<p>
+The SQL statement may contain tokens of the form "?" or "?nnn" or ":nnn:"
 where "nnn" is an integer.  Such tokens represent unspecified literal values
-(or wildcard) to be filled in later by the sqlite3_bind() API.
+(or wildcards) to be filled in later by the 
+<a href="capi3ref.html#sqlite3_bind_blob">sqlite3_bind</a> interface.
 Each wildcard as an associated number given
 by the "nnn" that follows the "?".  If the "?" is not followed by an
 integer, then its number one more than the number of prior wildcards
@@ -153,26 +210,14 @@ all instance of that wildcard will be filled in with the same value.
 Unbound wildcards have a value of NULL.
 </p>
 
-
-<p>The SQL statement is a UTF-8 string for sqlite3_prepare().
-The sqlite3_prepare16() works the same way except
-that it expects a UTF-16 string as SQL input.
-Only the first SQL statement in the input string is compiled.
-The fourth parameter is filled in with a pointer to the next (uncompiled)
-SQLite statement in the input string, if any.
-The sqlite3_finalize() routine deallocates a prepared SQL statement.
-The sqlite3_reset() routine resets a prepared SQL statement so that it
-can be executed again.
-</p>
-
 <blockquote><pre>
-   int sqlite3_bind_blob(sqlite3_stmt*, int, const void*, int n, int eCopy);
+   int sqlite3_bind_blob(sqlite3_stmt*, int, const void*, int n, void(*)(void*));
    int sqlite3_bind_double(sqlite3_stmt*, int, double);
    int sqlite3_bind_int(sqlite3_stmt*, int, int);
    int sqlite3_bind_int64(sqlite3_stmt*, int, long long int);
    int sqlite3_bind_null(sqlite3_stmt*, int);
-   int sqlite3_bind_text(sqlite3_stmt*, int, const char*, int n, int eCopy);
-   int sqlite3_bind_text16(sqlite3_stmt*, int, const void*, int n, int eCopy);
+   int sqlite3_bind_text(sqlite3_stmt*, int, const char*, int n, void(*)(void*));
+   int sqlite3_bind_text16(sqlite3_stmt*, int, const void*, int n, void(*)(void*));
    int sqlite3_bind_value(sqlite3_stmt*, int, const sqlite3_value*);
 </pre></blockquote>
 
@@ -202,26 +247,38 @@ of the result set:
 </p>
 
 <blockquote><pre>
-   int sqlite3_column_count(sqlite3_stmt*);
-   int sqlite3_column_type(sqlite3_stmt*,int);
-   const char *sqlite3_column_decltype(sqlite3_stmt *, int i);
-   const char *sqlite3_column_decltype16(sqlite3_stmt *, int i);
-   const char *sqlite3_column_name(sqlite3_stmt*,int);
-   const void *sqlite3_column_name16(sqlite3_stmt*,int);
    const void *sqlite3_column_blob(sqlite3_stmt*, int iCol);
    int sqlite3_column_bytes(sqlite3_stmt*, int iCol);
    int sqlite3_column_bytes16(sqlite3_stmt*, int iCol);
+   int sqlite3_column_count(sqlite3_stmt*);
+   const char *sqlite3_column_decltype(sqlite3_stmt *, int iCol);
+   const void *sqlite3_column_decltype16(sqlite3_stmt *, int iCol);
    double sqlite3_column_double(sqlite3_stmt*, int iCol);
    int sqlite3_column_int(sqlite3_stmt*, int iCol);
    long long int sqlite3_column_int64(sqlite3_stmt*, int iCol);
+   const char *sqlite3_column_name(sqlite3_stmt*, int iCol);
+   const void *sqlite3_column_name16(sqlite3_stmt*, int iCol);
    const unsigned char *sqlite3_column_text(sqlite3_stmt*, int iCol);
    const void *sqlite3_column_text16(sqlite3_stmt*, int iCol);
    int sqlite3_column_type(sqlite3_stmt*, int iCol);
 </pre></blockquote>
 
 <p>
-The sqlite3_column_count() function returns the number of columns in
-the results set.   The sqlite3_column_type() function returns the
+The 
+<a href="capi3ref.html#sqlite3_column_count">sqlite3_column_count()</a>
+function returns the number of columns in
+the results set.  sqlite3_column_count() can be called at any time after
+sqlite3_prepare().  
+<a href="capi3ref.html#sqlite3_data_count">sqlite3_data_count()</a>
+works similarly to
+sqlite3_column_count() except that it only works following sqlite3_step().
+If the previous call to sqlite3_step() returned SQLITE_DONE or an error code,
+then sqlite3_data_count() will return 0 whereas sqlite3_column_count() will
+continue to return the number of columns in the result set.
+</p>
+
+<p>
+The sqlite3_column_type() function returns the
 datatype for the value in the Nth column.  The return value is one
 of these:
 </p>
@@ -252,6 +309,12 @@ sqlite3_column_int64() returns 64-bit INTEGER data.
 Finally, sqlite3_column_double() return floating point data.
 </p>
 
+<p>
+It is not necessary to retrieve data in the format specify by
+sqlite3_column_type().  If a different format is requested, the data
+is converted automatically.
+</p>
+
 <h4>2.3 User-defined functions</h4>
 
 <p>
@@ -265,7 +328,6 @@ User defined functions can be created using the following routine:
      const char *zFunctionName,
      int nArg,
      int eTextRep,
-     int iCollateArg,
      void*,
      void (*xFunc)(sqlite3_context*,int,sqlite3_value**),
      void (*xStep)(sqlite3_context*,int,sqlite3_value**),
@@ -276,16 +338,16 @@ User defined functions can be created using the following routine:
      const void *zFunctionName,
      int nArg,
      int eTextRep,
-     int iCollateArg,
      void*,
      void (*xFunc)(sqlite3_context*,int,sqlite3_value**),
      void (*xStep)(sqlite3_context*,int,sqlite3_value**),
      void (*xFinal)(sqlite3_context*)
    );
    #define SQLITE3_UTF8     1
-   #define SQLITE3_UTF16LE  2
+   #define SQLITE3_UTF16    2
    #define SQLITE3_UTF16BE  3
-   #define SQLITE3_ANY      4
+   #define SQLITE3_UTF16LE  4
+   #define SQLITE3_ANY      5
 </pre></blockquote>
 
 <p>
@@ -297,9 +359,6 @@ be one of the parameters defined above.  SQLite version 3 allows multiple
 implementations of the same function using different text representations.
 The database engine chooses the function that minimization the number
 of text conversions required.
-The iCollateArg parameter indicates that the collating sequence for the
-result is to be the same as the collating sequence of the iCollateArg-th
-parameter.
 </p>
 
 <p>
@@ -341,15 +400,15 @@ to report results:
 <blockquote><pre>
    void *sqlite3_aggregate_context(sqlite3_context*, int nbyte);
    void *sqlite3_user_data(sqlite3_context*);
-   void sqlite3_result_blob(sqlite3_context*, const void*, int n, int eCopy);
+   void sqlite3_result_blob(sqlite3_context*, const void*, int n, void(*)(void*));
    void sqlite3_result_double(sqlite3_context*, double);
    void sqlite3_result_error(sqlite3_context*, const char*, int);
    void sqlite3_result_error16(sqlite3_context*, const void*, int);
    void sqlite3_result_int(sqlite3_context*, int);
    void sqlite3_result_int64(sqlite3_context*, long long int);
    void sqlite3_result_null(sqlite3_context*);
-   void sqlite3_result_text(sqlite3_context*, const char*, int n, int eCopy);
-   void sqlite3_result_text16(sqlite3_context*, const void*, int n, int eCopy);
+   void sqlite3_result_text(sqlite3_context*, const char*, int n, void(*)(void*));
+   void sqlite3_result_text16(sqlite3_context*, const void*, int n, void(*)(void*));
    void sqlite3_result_value(sqlite3_context*, sqlite3_value*);
    void *sqlite3_get_auxdata(sqlite3_context*, int);
    void sqlite3_set_auxdata(sqlite3_context*, int, void*, void (*)(void*));

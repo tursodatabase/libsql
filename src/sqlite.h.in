@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.101 2004/06/12 09:25:20 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.102 2004/06/17 19:04:17 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -950,6 +950,16 @@ void *sqlite3_user_data(sqlite3_context*);
 void *sqlite3_get_auxdata(sqlite3_context*, int);
 void sqlite3_set_auxdata(sqlite3_context*, int, void*, void (*)(void*));
 
+
+/*
+** These are special value for the destructor that is passed in as the
+** final argument to routines like sqlite3_result_blob().  If the destructor
+** argument is SQLITE_STATIC, it means that the content pointer is constant
+** and will never change.  It does not need to be destroyed.  The 
+** SQLITE_TRANSIENT value means that the content will likely change in
+** the near future and that SQLite should make its own private copy of
+** the content before returning.
+*/
 #define SQLITE_STATIC      ((void(*)(void *))0)
 #define SQLITE_TRANSIENT   ((void(*)(void *))-1)
 

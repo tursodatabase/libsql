@@ -1,4 +1,4 @@
-set rcsid {$Id: datatype3.tcl,v 1.5 2004/06/10 10:51:53 danielk1977 Exp $}
+set rcsid {$Id: datatype3.tcl,v 1.6 2004/06/17 19:04:17 drh Exp $}
 source common.tcl
 header {Datatypes In SQLite Version 3}
 puts {
@@ -309,8 +309,8 @@ instead of memcmp().
 </p>  
 <p>
 Aside from the default collation sequence BINARY, implemented using
-memcmp(), SQLite features two extra built-in collation sequences,
-NOCASE and REVERSE:
+memcmp(), SQLite features two extra built-in collation sequences 
+intended for testing purposes, NOCASE and REVERSE:
 </p>  
 <UL>
 	<LI><b>BINARY</b> - Compares string data using memcmp(), regardless

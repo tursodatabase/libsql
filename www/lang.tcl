@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.68 2004/05/31 15:06:30 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.69 2004/06/17 19:04:17 drh Exp $}
 source common.tcl
 header {Query Language Understood by SQLite}
 puts {
@@ -129,9 +129,10 @@ temporary tables.  These cannot be detached.  Attached databases
 are removed using the <a href="#detach">DETACH DATABASE</a> 
 statement.</p>
 
-<p>You can read from and write to an attached database, but you cannot 
-alter the schema of an attached database.  You can only CREATE and 
-DROP in the original database.</p>
+<p>You can read from and write to an attached database and you
+can modify the schema of the attached database.  This is a new
+feature of SQLite version 3.0.  In SQLite 2.8, schema changes
+to attached databases were not allows.</p>
 
 <p>You cannot create a new table with the same name as a table in 
 an attached database, but you can attach a database which contains
@@ -147,25 +148,28 @@ of that name.  Any tables of that name attached afterwards require the table
 prefix. If the 'default' table of a given name is detached, then 
 the last table of that name attached becomes the new default.</p>
 
-<p>When there are attached databases, transactions are not atomic. 
-Transactions continue to be atomic within each individual
-database file. But if your machine crashes in the middle
-of a COMMIT where you have updated two or more database
-files, some of those files might get the changes where others
-might not.</p>
+<p>
+Transactions involving multiple attached databases are atomic,
+assuming that the main database is not ":memory:".  If the main
+database is ":memory:" then 
+transactions continue to be atomic within each individual
+database file. But if the host computer crashes in the middle
+of a COMMIT where two or more database files are updated,
+some of those files might get the changes where others
+might not.
+Atomic commit of attached databases is a new feature of SQLite version 3.0.
+In SQLite version 2.8, all commits to attached databases behaved as if
+the main database were ":memory:".
+</p>
 
 <p>There is a compile-time limit of 10 attached database files.</p>
-
-<p>Executing a BEGIN TRANSACTION statement locks all database
-files, so this feature cannot (currently) be used to increase 
-concurrancy.</p>
 }
 
 
 Section {BEGIN TRANSACTION} transaction
 
 Syntax {sql-statement} {
-BEGIN [TRANSACTION [<name>]] [ON CONFLICT <conflict-algorithm>]
+BEGIN [TRANSACTION [<name>]]
 }
 Syntax {sql-statement} {
 END [TRANSACTION [<name>]]
@@ -183,8 +187,7 @@ rollback and atomic commit.  See <a href="#attach">ATTACH</a> for
 an exception when there are attached databases.</p>
 
 <p>The optional transaction name is ignored. SQLite currently 
-doesn't allow nested transactions.  Attempting to start a new 
-transaction inside another is an error.</p>
+does not allow nested transactions.</p>
 
 <p>
 No changes can be made to the database except within a transaction.
@@ -206,14 +209,18 @@ conflict resolution algorithm.
 </p>
 
 <p>
-The optional ON CONFLICT clause at the end of a BEGIN statement
-can be used to changed the default conflict resolution algorithm.
-The normal default is ABORT.  If an alternative is specified by
-the ON CONFLICT clause of a BEGIN, then that alternative is used
-as the default for all commands within the transaction.  The default
-algorithm is overridden by ON CONFLICT clauses on individual
-constraints within the CREATE TABLE or CREATE INDEX statements
-and by the OR clauses on COPY, INSERT, and UPDATE commands.
+The COMMIT command does not actually perform a commit until all
+pending SQL commands finish.  Thus if two or more SELECT statements
+are in the middle of processing and a COMMIT is executed, the commit
+will not actually occur until all SELECT statements finish.
+</p>
+
+<p>
+An attempt to execute COMMIT might result in an SQLITE_BUSY return code.
+This indicates that another thread or process had a read lock on the database
+that prevented the database from being updated.  When COMMIT fails in this
+way, the transaction remains active and the COMMIT can be retried later
+after the reader has had a chance to clear.
 </p>
 }
 
@@ -251,6 +258,11 @@ COPY [ OR <conflict-algorithm> ] [<database-name> .] <table-name> FROM <filename
 }
 
 puts {
+<p>The COPY command is available in SQLite version 2.8 and earlier.
+The COPY command has been removed from SQLite version 3.0 due to
+complications in trying to support it in a mixed UTF-8/16 environment.
+</p>
+
 <p>The COPY command is an extension used to load large amounts of
 data into a table.  It is modeled after a similar command found
 in PostgreSQL.  In fact, the SQLite COPY command is specifically
@@ -290,7 +302,7 @@ CREATE [UNIQUE] INDEX <index-name>
 ON [<database-name> .] <table-name> ( <column-name> [, <column-name>]* )
 [ ON CONFLICT <conflict-algorithm> ]
 } {column-name} {
-<name> [ ASC | DESC ]
+<name> [ COLLATE <collation-name>] [ ASC | DESC ]
 }
 
 puts {
@@ -301,6 +313,12 @@ columns in the table that are used for the index key.
 Each column name can be followed by one of the "ASC" or "DESC" keywords
 to indicate sort order, but the sort order is ignored in the current
 implementation.  Sorting is always done in ascending order.</p>
+
+<p>The COLLATE clause following each column name defines a collating
+sequence used for text entires in that column.  The default collating
+sequence is the collating sequence defined for that column in the
+CREATE TABLE statement.  Or if no collating sequence is otherwise defined,
+the built-in BINARY collating sequence is used.</p>
 
 <p>There are no arbitrary limits on the number of indices that can be
 attached to a single table, nor on the number of columns in an index.</p>
@@ -353,7 +371,8 @@ NOT NULL [ <conflict-clause> ] |
 PRIMARY KEY [<sort-order>] [ <conflict-clause> ] |
 UNIQUE [ <conflict-clause> ] |
 CHECK ( <expr> ) [ <conflict-clause> ] |
-DEFAULT <value>
+DEFAULT <value> |
+COLLATE <collation-name>
 } {constraint} {
 PRIMARY KEY ( <column-list> ) [ <conflict-clause> ] |
 UNIQUE ( <column-list> ) [ <conflict-clause> ] |
@@ -379,6 +398,9 @@ The UNIQUE constraint causes an index to be created on the specified
 columns.  This index must contain unique keys.
 The DEFAULT constraint
 specifies a default value to use when doing an INSERT.
+The COLLATE clause specifies what text collating function to use
+when comparing text entries for the column.  The built-in BINARY
+collating function is used by default.
 </p>
 
 <p>Specifying a PRIMARY KEY normally just creates a UNIQUE index
@@ -1246,14 +1268,6 @@ is returned it is as an integer.</p>
     the <a href="#pragma_default_cache_size"><b>default_cache_size</b></a> 
     pragma to check the cache size permanently.</p></li>
 
-<li><p><b>PRAGMA count_changes = ON; </b>(1)<b>
-       <br>PRAGMA count_changes = OFF;</b> (0)</p>
-    <p>When on, the COUNT_CHANGES pragma causes the callback function to
-    be invoked once for each DELETE, INSERT, or UPDATE operation.  The
-    argument is the number of rows that were changed.</p>
-    <p>This pragma may be removed from future versions of SQLite.
-    Consider using the <b>sqlite_changes()</b> API function instead.</p></li>
-
 <li><p><b>PRAGMA database_list;</b></p>
     <p>For each open database, invoke the callback function once with
     information about that database.  Arguments include the index and 
@@ -1336,29 +1350,11 @@ is returned it is as an integer.</p>
     <a href="#pragma_temp_store"><b>temp_store</b></a> pragma to change the
     temp_store mode for the current session.</p></li>
 
-<a name="pragma_empty_result_callbacks"></a>
-<li><p><b>PRAGMA empty_result_callbacks = ON; </b>(1)<b>
-       <br>PRAGMA empty_result_callbacks = OFF;</b> (0)</p>
-    <p>When on, the EMPTY_RESULT_CALLBACKS pragma causes the callback
-    function to be invoked once for each query that has an empty result
-    set.  The third "<b>argv</b>" parameter to the callback is set to NULL
-    because there is no data to report.  But the second "<b>argc</b>" and
-    fourth "<b>columnNames</b>" parameters are valid and can be used to
-    determine the number and names of the columns that would have been in
-    the result set had the set not been empty.</p></li>
-
 <li><p><b>PRAGMA foreign_key_list(</b><i>table-name</i><b>);</b></p>
     <p>For each foreign key that references a column in the argument
     table, invoke the callback function with information about that
     foreign key. The callback function will be invoked once for each
     column in each foreign key.</p></li>
-
-<li><p><b>PRAGMA full_column_names = ON; </b>(1)<b>
-       <br>PRAGMA full_column_names = OFF;</b> (0)</p>
-    <p>The column names reported in an SQLite callback are normally just
-    the name of the column itself, except for joins when "TABLE.COLUMN"
-    is used.  But when full_column_names is turned on, column names are
-    always reported as "TABLE.COLUMN" even for simple queries.</p></li>
 
 <li><p><b>PRAGMA index_info(</b><i>index-name</i><b>);</b></p>
     <p>For each column that the named index references, invoke the 
@@ -1386,39 +1382,6 @@ is returned it is as an integer.</p>
     SQLite library on and off.  This is used for debugging.
     This only works if the library is compiled without the NDEBUG macro.
     </p></li>
-
-<a name="pragma_show_datatypes"></a>
-<li><p><b>PRAGMA show_datatypes = ON; </b>(1)<b>
-    <br>PRAGMA show_datatypes = OFF;</b> (0)</p>
-    <p>When turned on, the SHOW_DATATYPES pragma causes extra entries containing
-    the names of <a href="datatypes.html">datatypes</a> of columns to be
-    appended to the 4th ("columnNames") argument to <b>sqlite_exec()</b>
-    callbacks.  When
-    turned off, the 4th argument to callbacks contains only the column names.
-    The datatype for table columns is taken from the CREATE TABLE statement
-    that defines the table.  Columns with an unspecified datatype have a
-    datatype of "NUMERIC" and the results of expression have a datatype of
-    either "TEXT" or "NUMERIC" depending on the expression.
-    The following chart illustrates the difference for the query
-    "SELECT 'xyzzy', 5, NULL AS empty ":</p>
-
-    <blockquote><table border=0>
-    <tr><th>show_datatypes=OFF</th><th width=30></th>
-        <th>show_datatypes=ON</th></tr>
-    <tr><td valign="top">
-       azCol[0] = "xyzzy";<br>
-       azCol[1] = "5";<br>
-       azCol[2] = "empty";<br>
-       azCol[3] = 0;
-    </td><td></td><td valign="top">
-       azCol[0] = "xyzzy";<br>
-       azCol[1] = "5";<br>
-       azCol[2] = "empty";<br>
-       azCol[3] = "TEXT";<br>
-       azCol[4] = "NUMERIC";<br>
-       azCol[5] = "TEXT";<br>
-       azCol[6] = 0;
-    </td></table></blockquote></li>
 
 <a name="pragma_synchronous"></a>
 <li><p><b>PRAGMA synchronous;
@@ -1513,7 +1476,7 @@ STAR | <table-name> . STAR | <expr> [ [AS] <string> ]
 } {sort-expr-list} {
 <expr> [<sort-order>] [, <expr> [<sort-order>]]*
 } {sort-order} {
-ASC | DESC
+[ COLLATE <collation-name> ] [ ASC | DESC ]
 } {compound_op} {
 UNION | UNION ALL | INTERSECT | EXCEPT
 }
@@ -1561,8 +1524,9 @@ The argument to ORDER BY is a list of expressions that are used as the
 key for the sort.  The expressions do not have to be part of the
 result for a simple SELECT, but in a compound SELECT each sort
 expression must exactly match one of the result columns.  Each
-sort expression may be optionally followed by ASC or DESC to specify
-the sort order.</p>
+sort expression may be optionally followed by a COLLATE keyword and
+the name of a collating function used for ordering text and/or
+keywords ASC or DESC to specify the sort order.</p>
 
 <p>The LIMIT clause places an upper bound on the number of rows
 returned in the result.  A negative LIMIT indicates no upper bound.
