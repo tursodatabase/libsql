@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.14 2002/03/04 02:26:16 drh Exp $
+** $Id: func.c,v 1.15 2002/04/06 14:10:47 drh Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -194,6 +194,15 @@ static void ifnullFunc(sqlite_func *context, int argc, const char **argv){
 */
 static void randomFunc(sqlite_func *context, int argc, const char **argv){
   sqlite_set_result_int(context, sqliteRandomInteger());
+}
+
+/*
+** Implementation of the last_insert_rowid() SQL function.  The return
+** value is the same as the sqlite_last_insert_rowid() API function.
+*/
+static void last_insert_rowid(sqlite_func *context, int arg, char **argv){
+  sqlite *db = sqlite_user_data(context);
+  sqlite_set_result_int(context, sqlite_last_insert_rowid(db));
 }
 
 /*
@@ -408,6 +417,8 @@ void sqliteRegisterBuildinFunctions(sqlite *db){
     sqlite_create_function(db, aFuncs[i].zName,
            aFuncs[i].nArg, aFuncs[i].xFunc, 0);
   }
+  sqlite_create_function(db, "last_insert_rowid", 0, 
+           last_insert_rowid, db);
   for(i=0; i<sizeof(aAggs)/sizeof(aAggs[0]); i++){
     sqlite_create_aggregate(db, aAggs[i].zName,
            aAggs[i].nArg, aAggs[i].xStep, aAggs[i].xFinalize, 0);

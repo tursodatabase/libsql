@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing built-in functions.
 #
-# $Id: func.test,v 1.9 2002/03/02 17:04:09 drh Exp $
+# $Id: func.test,v 1.10 2002/04/06 14:10:47 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -229,6 +229,12 @@ do_test func-6.1 {
 do_test func-6.2 {
   execsql {SELECT coalesce(upper(a),'nil') FROM t2}
 } {1 nil 345 nil 67890}
+
+# Test the last_insert_rowid() function
+#
+do_test func-7.1 {
+  execsql {SELECT last_insert_rowid()}
+} [db last_insert_rowid]
 
 
 finish_test

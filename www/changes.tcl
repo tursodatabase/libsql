@@ -25,10 +25,11 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
-chng {2002 Apr 03 (2.4.7)} {
+chng {2002 Apr 06 (2.4.7)} {
 <li>Add the ability to put TABLE.* in the column list of a
     SELECT statement.</li>
 <li>Permit SELECT statements without a FROM clause.</li>
+<li>Added the <b>last_insert_rowid()</b> SQL function.</li>
 }
 
 chng {2002 Apr 02 (2.4.6)} {

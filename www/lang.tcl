@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.30 2002/04/06 13:57:44 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.31 2002/04/06 14:10:48 drh Exp $}
 
 puts {<html>
 <head>
@@ -564,6 +564,13 @@ their result across all rows of the result set.</p>
 <td valign="top" align="right">coalesce(<i>X</i>,<i>Y</i>,...)</td>
 <td valign="top">Return a copy of the first non-NULL argument.  If
 all arguments are NULL then NULL is returned.</td>
+</tr>
+
+<tr>
+<td valign="top" align="right">last_insert_rowid()</td>
+<td valign="top">Return the ROWID of the last row insert from this
+connection to the database.  This is the same value that would be returned
+from the <b>sqlite_last_insert_rowid()</b> API function.</td>
 </tr>
 
 <tr>

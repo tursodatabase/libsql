@@ -1,5 +1,5 @@
-C Make\sthe\sFROM\sclause\son\sa\sSELECT\soptional.\s\sIf\somitted,\sthe\sresult\sof\nthe\sSELECT\sis\sa\ssingle\srow\sconsisting\sof\sthe\svalues\sin\sthe\sexpression\slist.\s(CVS\s520)
-D 2002-04-06T13:57:43
+C Added\sthe\slast_insert_rowid()\sSQL\sfunction.\s(CVS\s521)
+D 2002-04-06T14:10:47
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -25,7 +25,7 @@ F src/btree.h 8abeabfe6e0b1a990b64fa457592a6482f6674f3
 F src/build.c d01b81f41481e733e27ab2fa8e1bfcc64f24257d
 F src/delete.c 577da499162291c1855f0b304b211bffcf9da945
 F src/expr.c e7a1e22bc2ebcd789f0f8c0db544cf16ad664054
-F src/func.c 87516e7dc37190c24af77593931a5d09d797520a
+F src/func.c dca9df811298cd0beb3724d40cee348e884352b2
 F src/hash.c cc259475e358baaf299b00a2c7370f2b03dda892
 F src/hash.h dca065dda89d4575f3176e75e9a3dc0f4b4fb8b9
 F src/insert.c 903ff262c90586c99eafd43934517bc3aed5f77e
@@ -64,7 +64,7 @@ F test/conflict.test c794c6c8f6e59918107dbab2d201ae454bb47db8
 F test/copy.test b3cefcb520c64d7e7dfedbab06b4d4c31fa5b99a
 F test/delete.test c904a62129fe102b314a96111a8417f10249e4d8
 F test/expr.test 846795016b5993a7411f772eebe82ab67bd7230a
-F test/func.test 4359344586067e79abf4c710c4737d67ed3cf963
+F test/func.test d34e461f0acb0cf2978a4b3a3e098460f2ea8fbc
 F test/in.test c09312672e3f0709fa02c8e2e9cd8fb4bd6269aa
 F test/index.test c8a471243bbf878974b99baf5badd59407237cf3
 F test/insert.test c36d534a4ab58c2cd452a273e51b2b0dd1ede1f9
@@ -116,7 +116,7 @@ F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 72a0c80e9054cc7025a50928d28d9c75c02c2b8b
 F www/c_interface.tcl 567cda531aac9d68a61ef02e26c6b202bd856db2
-F www/changes.tcl 765719e4e445b1c6b60d1d3cfeed65570cb9d877
+F www/changes.tcl 4083f03195f0ae36411e095a2d18e5fb4a3c40d9
 F www/conflict.tcl 81dd21f9a679e60aae049e9dd8ab53d59570cda2
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
 F www/download.tcl 29aa6679ca29621d10613f60ebbbda18f4b91c49
@@ -124,14 +124,14 @@ F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/faq.tcl fb1e92e2f604546694f83a36d969492f52fb685d
 F www/formatchng.tcl 2ce21ff30663fad6618198fe747ce675df577590
 F www/index.tcl 2a9653ebeeaba3aca3401f476ba0e0e4acb40929
-F www/lang.tcl 52a54be934dcbc6ec314c12bcdd4cf899ca54904
+F www/lang.tcl 75615f1acd8a428d93546ad9edfbf8f78ee1e2df
 F www/mingw.tcl f1c7c0a7f53387dd9bb4f8c7e8571b7561510ebc
 F www/opcode.tcl bdec8ef9f100dbd87bbef8976c54b88e43fd8ccc
 F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 932274187e045ce331177b1a640ed62da4a22d94
-R 3cad40d6183414669ab6e27b1970fbd2
+P 28ce42f7872e2660faa22e66b508db9b1f046af0
+R 0b5a813afe2cf2bdabedc7aeca66c0d3
 U drh
-Z b7a9666e501a84ef150d099ac582d5f8
+Z 679d6245f83771ba2f6bf195e2401218
