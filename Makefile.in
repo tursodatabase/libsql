@@ -552,7 +552,7 @@ install:	sqlite3 libsqlite3.la sqlite3.h
 	$(INSTALL) -d $(DESTDIR)$(prefix)/include
 	$(INSTALL) -m 0644 sqlite3.h $(DESTDIR)$(prefix)/include
 	$(INSTALL) -d $(DESTDIR)$(exec_prefix)/lib/pkgconfig; 
-	$(INSTALL) -m 0644 sqlite.pc $(DESTDIR)$(exec_prefix)/lib/pkgconfig; 
+	$(INSTALL) -m 0644 sqlite3.pc $(DESTDIR)$(exec_prefix)/lib/pkgconfig; 
 
 clean:	
 	rm -f *.lo *.la *.o sqlite3@TARGET_EXEEXT@ libsqlite3.la

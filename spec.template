@@ -55,7 +55,7 @@ rm -fr $RPM_BUILD_ROOT
 
 %files -n %{name}-devel
 %defattr(-, root, root)
-%{_libdir}/pkgconfig/sqlite.pc
+%{_libdir}/pkgconfig/sqlite3.pc
 %{_libdir}/*.a
 %{_libdir}/*.la
 %{_includedir}/*
