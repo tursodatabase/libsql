@@ -36,7 +36,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.235 2003/07/27 17:16:07 drh Exp $
+** $Id: vdbe.c,v 1.236 2003/08/16 12:37:52 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1845,7 +1845,7 @@ case OP_Pull: {
   tz = zStack[from];
   Deephemeralize(p, to);
   for(i=from; i<to; i++){
-    Deephemeralize(p, i);
+    Deephemeralize(p, i+1);
     aStack[i] = aStack[i+1];
     assert( (aStack[i].flags & STK_Ephem)==0 );
     if( aStack[i].flags & (STK_Dyn|STK_Static) ){

@@ -309,4 +309,47 @@ do_test trigger-4.4 {
 
 integrity_check trigger-5.1
 
+# Create a trigger with the same name as a table.  Make sure the
+# trigger works.  Then drop the trigger.  Make sure the table is
+# still there.
+#
+do_test trigger-6.1 {
+  execsql {SELECT type, name FROM sqlite_master}
+} {view v1 table t2}
+do_test trigger-6.2 {
+  execsql {
+    CREATE TRIGGER t2 BEFORE DELETE ON t2 BEGIN
+      SELECT RAISE(ABORT,'deletes are not allows');
+    END;
+    SELECT type, name FROM sqlite_master;
+  }
+} {view v1 table t2 trigger t2}
+do_test trigger-6.3 {
+  catchsql {DELETE FROM t2}
+} {1 {deletes are not allows}}
+do_test trigger-6.4 {
+  execsql {SELECT * FROM t2}
+} {3 4 7 8}
+do_test trigger-6.5 {
+  db close
+  sqlite db test.db
+  execsql {SELECT type, name FROM sqlite_master}
+} {view v1 table t2 trigger t2}
+do_test trigger-6.6 {
+  execsql {
+    DROP TRIGGER t2;
+    SELECT type, name FROM sqlite_master;
+  }
+} {view v1 table t2}
+do_test trigger-6.7 {
+  execsql {SELECT * FROM t2}
+} {3 4 7 8}
+do_test trigger-6.8 {
+  db close
+  sqlite db test.db
+  execsql {SELECT * FROM t2}
+} {3 4 7 8}
+
+integrity_check trigger-7.1    
+
 finish_test
