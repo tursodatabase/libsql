@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.113 2004/08/31 23:41:26 drh Exp $
+** $Id: shell.c,v 1.114 2004/09/24 12:50:03 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -712,7 +712,7 @@ static char zHelp[] =
   ".import FILE TABLE     Import data from FILE into TABLE\n"
   ".indices TABLE         Show names of all indices on TABLE\n"
   ".mode MODE ?TABLE?     Set output mode where MODE is on of:\n"
-  "                         cvs      Comma-separated values\n"
+  "                         csv      Comma-separated values\n"
   "                         column   Left-aligned columns.  (See .width)\n"
   "                         html     HTML <table> code\n"
   "                         insert   SQL insert statements for TABLE\n"
