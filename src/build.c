@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.272 2004/11/06 00:02:48 drh Exp $
+** $Id: build.c,v 1.273 2004/11/07 13:01:50 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2318,13 +2318,14 @@ void sqlite3CreateIndex(
         pName->z);
     }else{
       /* An automatic index created by a PRIMARY KEY or UNIQUE constraint */
-      zStmt = sqlite3MPrintf("");
+      /* zStmt = sqlite3MPrintf(""); */
+      zStmt = 0;
     }
 
     /* Add an entry in sqlite_master for this index
     */
     sqlite3NestedParse(pParse, 
-        "INSERT INTO %Q.%s VALUES('index',%Q,%Q,#0,'%s');",
+        "INSERT INTO %Q.%s VALUES('index',%Q,%Q,#0,%Q);",
         db->aDb[iDb].zName, SCHEMA_TABLE(iDb),
         pIndex->zName,
         pTab->zName,
@@ -2841,10 +2842,10 @@ void sqlite3Reindex(Parse *pParse, Token *pName1, Token *pName2){
   sqlite3 *db = pParse->db;   /* The database connection */
   Token *pObjName;            /* Name of the table or index to be reindexed */
 
-  if( pName1==0 ){
+  if( pName1==0 || pName1->z==0 ){
     reindexDatabases(pParse, 0);
     return;
-  }else if( pName2==0 ){
+  }else if( pName2==0 || pName2->z==0 ){
     pColl = sqlite3FindCollSeq(db, db->enc, pName1->z, pName1->n, 0);
     if( pColl ){
       reindexDatabases(pParse, pColl);

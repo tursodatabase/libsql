@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.
 # This file implements tests for the REINDEX command.
 #
-# $Id: reindex.test,v 1.1 2004/11/05 23:46:15 drh Exp $
+# $Id: reindex.test,v 1.2 2004/11/07 13:01:50 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -62,5 +62,83 @@ do_test reindex-1.9 {
     REINDEX bogus
   }
 } {1 {unable to identify the object to be reindexed}}
+
+# Set up a table for testing that includes several different collating
+# sequences including some that we can modify.
+#
+do_test reindex-2.1 {
+  proc c1 {a b} {
+    return [expr {-[string compare $a $b]}]
+  }
+  proc c2 {a b} {
+    return [expr {-[string compare [string tolower $a] [string tolower $b]]}]
+  }
+  db collate c1 c1
+  db collate c2 c2
+  execsql {
+    CREATE TABLE t2(
+      a TEXT PRIMARY KEY COLLATE c1,
+      b TEXT UNIQUE COLLATE c2,
+      c TEXT COLLATE nocase,
+      d TEST COLLATE binary
+    );
+    INSERT INTO t2 VALUES('abc','abc','abc','abc');
+    INSERT INTO t2 VALUES('ABCD','ABCD','ABCD','ABCD');
+    INSERT INTO t2 VALUES('bcd','bcd','bcd','bcd');
+    INSERT INTO t2 VALUES('BCDE','BCDE','BCDE','BCDE');
+    SELECT a FROM t2 ORDER BY a;
+  }
+} {bcd abc BCDE ABCD}
+do_test reindex-2.2 {
+  execsql {
+    SELECT b FROM t2 ORDER BY b;
+  }
+} {BCDE bcd ABCD abc}
+do_test reindex-2.3 {
+  execsql {
+    SELECT c FROM t2 ORDER BY c;
+  }
+} {abc ABCD bcd BCDE}
+do_test reindex-2.4 {
+  execsql {
+    SELECT d FROM t2 ORDER BY d;
+  }
+} {ABCD BCDE abc bcd}
+
+# Change a collating sequence function.  Verify that REINDEX rebuilds
+# the index.
+#
+do_test reindex-2.5 {
+  proc c1 {a b} {
+    return [string compare $a $b]
+  }
+  execsql {
+    SELECT a FROM t2 ORDER BY a;
+  }
+} {bcd abc BCDE ABCD}
+ifcapable {integrityck} {
+  do_test reindex-2.5.1 {
+    string equal ok [execsql {PRAGMA integrity_check}]
+  } {0}
+}
+do_test reindex-2.6 {
+  execsql {
+    REINDEX c2;
+    SELECT a FROM t2 ORDER BY a;
+  }
+} {bcd abc BCDE ABCD}
+do_test reindex-2.7 {
+  execsql {
+    REINDEX t1;
+    SELECT a FROM t2 ORDER BY a;
+  }
+} {bcd abc BCDE ABCD}
+do_test reindex-2.8 {
+  execsql {
+    REINDEX c1;
+    SELECT a FROM t2 ORDER BY a;
+  }
+} {ABCD BCDE abc bcd}
+integrity_check reindex-2.8.1
 
 finish_test

@@ -1,5 +1,5 @@
-C Auto-vacuum:\sEnsure\spages\sto\sbe\sremoved\sby\sdatabase\struncation\sare\sin\sthe\sjournal\sfile.\sAlso\sfix\san\ssqlite3pager_movepage()\sbug.\s(CVS\s2074)
-D 2004-11-06T12:26:08
+C Reindex\stests\sadded\sand\sbugs\sfixed.\s(CVS\s2075)
+D 2004-11-07T13:01:50
 F Makefile.in c4d2416860f472a1e3393714d0372074197565df
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -31,7 +31,7 @@ F src/attach.c e49d09dad9f5f9fb10b4b0c1be5a70ae4c45e689
 F src/auth.c 3b81f2a42f48a62c2c9c9b0eda31a157c681edea
 F src/btree.c 8ae13efe790fc462ee590ba96e1940f4c943fe19
 F src/btree.h 861e40b759a195ba63819740e484390012cf81ab
-F src/build.c fba59507d36d27effbeba59bdd2a720071b7673a
+F src/build.c f01c2f9b3ad334a301e97ee4f299c36228ead110
 F src/date.c 34bdb0082db7ec2a83ef00063f7b44e61ee19dad
 F src/delete.c f0af21a1ede15524a5edd59fe10ef486283a1ee9
 F src/expr.c be18081d2959a2cc53846d0fbedfec40fbfa1d6e
@@ -123,8 +123,8 @@ F test/fkey1.test 81bb13caaa78f58d7d191d7f535529f7c91d821a
 F test/func.test 830d352574c7f5cd15149a9be58a6dcc2b995c05
 F test/hook.test f8605cde4c77b2c6a4a73723bf6c507796a64dda
 F test/in.test b92a2df9162e1cbd33c6449a29a05e6955b1741a
-F test/index.test 4098cd020180bec286ef1a96bca256e76cc7b654
-F test/insert.test c571223b499961d843ce0ab4709c87fa60ab2425
+F test/index.test 5776a3ebcbe0bdc69e7eeaeb5e95dfba6b17389e
+F test/insert.test 989bc184e2965dea397a41bca4369352661079ab
 F test/insert2.test 614a29d3ed7dd0d8644a059c6d8ce742c63a734a
 F test/interrupt.test 5c336baaf810e5f7a91d2f01e2cafca480885dfe
 F test/intpkey.test b57cf5236fde1bd8cbc1388fa0c91908f6fd9194
@@ -160,7 +160,7 @@ F test/printf.test 92ba4c510b4fc61120ffa4a01820446ed917ae57
 F test/progress.test 5ddba78cb6011fba36093973cfb3ac473b8fb96a x
 F test/quick.test 2dca186ebd5c418a7699944ba3b5e437d765eddd
 F test/quote.test 6d75cf635d93ba2484dc9cb378d88cbae9dc2c62
-F test/reindex.test 1d579cdb942c5f9c26c7f8c94cdc3024cabf2644
+F test/reindex.test 3552c6b944a3fab28cfd3049c04c65cb79419757
 F test/rollback.test 4097328d44510277244ef4fa51b22b2f11d7ef4c
 F test/rowid.test 1ce3f1520d2082b0363e7d9bdef904cb72b9efe8
 F test/select1.test 0e459a8066259445d707cc4f64ea00459441e29f
@@ -253,7 +253,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl fdacb0ba2d39831e8a6240d05a490026ad4c4e4c
-P 89b9026a5371f1c5589f04e3b69171ec1f605b7b
-R 8ad60b55265f20042b59f34c42d3206d
-U danielk1977
-Z 6d567165f557419cc4b6243e52dc95f0
+P 081676e491760a45325e2349b177d6382faab9f5
+R 6630382fc7d25a2e7888b420a0d94622
+U drh
+Z 052f1c7409b37943337cd90fbf34df5d
