@@ -1,9 +1,9 @@
-C Added\s"const"\sto\slots\sof\s"char*"\sparameters\sin\sthe\sAPI.\s(CVS\s298)
-D 2001-11-03T23:57:09
+C Version\s2.0.8\s(CVS\s299)
+D 2001-11-03T23:59:17
 F Makefile.in 6801df952cb1df64aa32e4de85fed24511d28efd
 F Makefile.template 1fdb891f14083ee0b63cf7282f91529634438e7a
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
-F VERSION 46489bc13fe8b494327fecb3c9a05f4db2e284b3
+F VERSION b3711dc07b598efaec968538f5ed3069a5908f2d
 F aclocal.m4 11faa843caa38fd451bc6aeb43e248d1723a269d
 F config.guess f38b1e93d1e0fa6f5a6913e9e7b12774b9232588
 F config.log 6a73d03433669b10a3f0c221198c3f26b9413914
@@ -102,7 +102,7 @@ F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 03b521d252575f93b9c52f7c8b0007011512fcfb
 F www/c_interface.tcl d446234c1d3ed747fcefd30e972a19f2b2fc0e05
-F www/changes.tcl 37ca708eb350dc41fcf3ea0ae8ecc705c0c218bf
+F www/changes.tcl 13c447ca789c2ee8994ad827296c71b1dce628ba
 F www/crosscompile.tcl c99efacb3aefaa550c6e80d91b240f55eb9fd33e
 F www/download.tcl 3e51c9ff1326b0a182846134987301310dff7d60
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
@@ -114,7 +114,7 @@ F www/speed.tcl 212a91d555384e01873160d6a189f1490c791bc2
 F www/sqlite.tcl 6a21242a272e9c0939a04419a51c3d50cae33e3e
 F www/tclsqlite.tcl 13d50723f583888fc80ae1a38247c0ab415066fa
 F www/vdbe.tcl bb7d620995f0a987293e9d4fb6185a3b077e9b44
-P e1370276c2a0d045b29c981ddcb59f737e19a91c
-R fb7f20c8fe87aa63faec6df38adee18f
+P 1c448f1fd2a2e103e7464df896174534d02152ed
+R 20a1ec902a198db024868b1e2643b8b3
 U drh
-Z a5329e1c376ad697c312a452a3c161ed
+Z 27b98b14d8c85600574083a7caa3d361

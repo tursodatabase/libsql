@@ -17,7 +17,9 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
-chng {2001 Oct ?? (2.0.8)} {
+chng {2001 Nov 3 (2.0.8)} {
+<li>Made selected parameters in API functions <b>const</b>. This should
+    be fully backwards compatible.</li>
 <li>Documentation updates</li>
 <li>Simplify the design of the VDBE by restricting the number of sorters
     and lists to 1.
