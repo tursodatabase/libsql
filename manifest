@@ -1,5 +1,5 @@
-C Bump\sthe\sversion\snumber\sand\supdate\sthe\schange\slog.\s\sWe\sare\srushing\sout\nrelease\s2.8.2\sbecause\sof\sthe\sdatabase\scorruption\sproblem\sfixed\sby\nthe\sprevious\scheck-in.\s(CVS\s982)
-D 2003-05-17T17:38:38
+C Version\s2.8.2\s(CVS\s983)
+D 2003-05-17T17:52:34
 F Makefile.in 1ff85c27d4350c74118341024e8a4fb2a04a3a43
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 01398fb78bab7e5c6f439f2b743f26e82118468a
+P e134459d653b03bfacb98eec2c5d91eef7e4ed24
 R 9ef2fffc5f0c5816e46decff70d83cb0
 U drh
-Z 18d2414f422d53fd69af47aebe3deace
+Z 035b9ad097ef44ba8b7f0d2886016b52
