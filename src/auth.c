@@ -14,7 +14,7 @@
 ** systems that do not need this facility may omit it by recompiling
 ** the library with -DSQLITE_OMIT_AUTHORIZATION=1
 **
-** $Id: auth.c,v 1.14 2004/05/10 10:34:34 danielk1977 Exp $
+** $Id: auth.c,v 1.15 2004/06/14 11:35:18 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -173,6 +173,11 @@ int sqlite3AuthCheck(
 ){
   sqlite *db = pParse->db;
   int rc;
+
+  /* Don't do any authorization checks if the database is initialising. */
+  if( db->init.busy ){
+    return SQLITE_OK;
+  }
 
   if( db->xAuth==0 ){
     return SQLITE_OK;

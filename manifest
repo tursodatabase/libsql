@@ -1,5 +1,5 @@
-C Bugfix\sfor\sprevious\scheckin.\s(CVS\s1587)
-D 2004-06-14T09:41:18
+C Don't\sinvoke\sauthorisation\scallback\sduring\sdatabase\sinitialisation.\s(CVS\s1588)
+D 2004-06-14T11:35:18
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -25,7 +25,7 @@ F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
 F sqlite.def fc4f5734786fe4743cfe2aa98eb2da4b089edb5f
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F src/attach.c 93b8ecec4a8d7b4e9f2479e2327d90c9d01765e8
-F src/auth.c 5c2f0bea4729c98c2be3b69d6b466fc51448fe79
+F src/auth.c 204e1e9c45e64315589bc8b62cba5d9de29b6a3c
 F src/btree.c 1bed18993e54483de8ff869142e82c48847e1d50
 F src/btree.h 32f96abef464cf8765b23ca669acfe90d191fcc5
 F src/build.c 916a84fa5f8bfd44dbe14c3d7c923dd07ee7373f
@@ -223,7 +223,7 @@ F www/support.tcl 1801397edd271cc39a2aadd54e701184b5181248
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P cb3cbe00be9a42e974688016a056053cedb55eef
-R 837b917ea55d1682247e8b038a972e40
+P 2737505f28e37627ed6091e356d005624e1f49fa
+R 435424555e597f57c1fb5a99c2aa7338
 U danielk1977
-Z 76731c0455af5162b7baf7a2c3fcabe1
+Z 02907838488a8b54954c599b9995e751
