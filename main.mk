@@ -261,7 +261,7 @@ opcodes.o:	opcodes.c
 	$(TCCX) -c opcodes.c
 
 opcodes.c:	opcodes.h $(TOP)/mkopcodec.awk
-	sort -n +2 opcodes.h | awk -f $(TOP)/mkopcodec.awk >opcodes.c
+	sort -n -b +2 opcodes.h | awk -f $(TOP)/mkopcodec.awk >opcodes.c
 
 opcodes.h:	parse.h $(TOP)/src/vdbe.c $(TOP)/mkopcodeh.awk
 	cat parse.h $(TOP)/src/vdbe.c | awk -f $(TOP)/mkopcodeh.awk >opcodes.h
