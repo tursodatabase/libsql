@@ -11,13 +11,17 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is page cache subsystem.
 #
-# $Id: pager2.test,v 1.4 2004/10/05 02:41:43 drh Exp $
+# $Id: pager2.test,v 1.5 2004/11/22 05:26:28 danielk1977 Exp $
 
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+# Don't run this test file if the pager test interface [pager_open] is not
+# available, or the library was compiled without in-memory database support.
+#
 if {[info commands pager_open]!=""} {
+ifcapable memorydb {
 db close
 
 # Basic sanity check.  Open and close a pager.
@@ -397,7 +401,8 @@ do_test pager2-4.99 {
   pager_close $::p1
 } {}
 
-} ;# end if( not mem: and has pager_open command );
+} ;# ifcapable inmemory
+} ;# end if( has pager_open command );
 
 
 finish_test

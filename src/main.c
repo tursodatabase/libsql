@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.266 2004/11/20 20:18:55 drh Exp $
+** $Id: main.c,v 1.267 2004/11/22 05:26:27 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -842,6 +842,7 @@ int sqlite3BtreeFactory(
 #if TEMP_STORE==0
     /* Do nothing */
 #endif
+#ifndef SQLITE_OMIT_MEMORYDB
 #if TEMP_STORE==1
     if( db->temp_store==2 ) zFilename = ":memory:";
 #endif
@@ -851,6 +852,7 @@ int sqlite3BtreeFactory(
 #if TEMP_STORE==3
     zFilename = ":memory:";
 #endif
+#endif /* SQLITE_OMIT_MEMORYDB */
   }
 
   rc = sqlite3BtreeOpen(zFilename, ppBtree, btree_flags);

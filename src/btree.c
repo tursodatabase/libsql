@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.221 2004/11/20 20:31:12 drh Exp $
+** $Id: btree.c,v 1.222 2004/11/22 05:26:27 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1210,7 +1210,17 @@ int sqlite3BtreeOpen(
     pBt->minEmbedFrac = 32;   /* 12.5% */
     pBt->minLeafFrac = 32;    /* 12.5% */
 #ifndef SQLITE_OMIT_AUTOVACUUM
+    /* If the magic name ":memory:" will create an in-memory database, then
+    ** do not set the auto-vacuum flag, even if SQLITE_DEFAULT_AUTOVACUUM
+    ** is true. On the other hand, if SQLITE_OMIT_MEMORYDB has been defined,
+    ** then ":memory:" is just a regular file-name. Respect the auto-vacuum
+    ** default in this case.
+    */
+#ifndef SQLITE_OMIT_MEMORYDB
     if( zFilename && strcmp(zFilename,":memory:") ){
+#else
+    if( zFilename ){
+#endif
       pBt->autoVacuum = SQLITE_DEFAULT_AUTOVACUUM;
     }
 #endif

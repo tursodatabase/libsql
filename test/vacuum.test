@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the VACUUM statement.
 #
-# $Id: vacuum.test,v 1.29 2004/11/10 15:27:38 danielk1977 Exp $
+# $Id: vacuum.test,v 1.30 2004/11/22 05:26:28 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -228,7 +228,11 @@ ifcapable {bloblit} {
   } {1}
 }
 
-# Check what happens when an in-memory database is vacuumed.
+# Check what happens when an in-memory database is vacuumed. The
+# [file delete] command covers us in case the library was compiled
+# without in-memory database support.
+#
+file delete -force :memory:
 do_test vacuum-7.0 {
   sqlite3 db2 :memory:
   execsql {
