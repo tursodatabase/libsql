@@ -1,29 +1,17 @@
 /*
-** Copyright (c) 1999, 2000 D. Richard Hipp
+** 2001 September 15
 **
-** This program is free software; you can redistribute it and/or
-** modify it under the terms of the GNU General Public
-** License as published by the Free Software Foundation; either
-** version 2 of the License, or (at your option) any later version.
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-** General Public License for more details.
-** 
-** You should have received a copy of the GNU General Public
-** License along with this library; if not, write to the
-** Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-** Boston, MA  02111-1307, USA.
-**
-** Author contact information:
-**   drh@hwaci.com
-**   http://www.hwaci.com/drh/
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** This file contains C code routines that are called by the parser
-** when syntax rules are reduced.  The routines in this file handle
-** the following kinds of syntax:
+** This file contains C code routines that are called by the SQLite parser
+** when syntax rules are reduced.  The routines in this file handle the
+** following kinds of SQL syntax:
 **
 **     CREATE TABLE
 **     DROP TABLE
@@ -32,8 +20,12 @@
 **     creating expressions and ID lists
 **     COPY
 **     VACUUM
+**     BEGIN TRANSACTION
+**     COMMIT
+**     ROLLBACK
+**     PRAGMA
 **
-** $Id: build.c,v 1.35 2001/09/15 00:57:28 drh Exp $
+** $Id: build.c,v 1.36 2001/09/16 00:13:26 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>

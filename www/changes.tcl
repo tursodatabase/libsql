@@ -17,6 +17,17 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2001 Sep 15 (2.0.0)} {
+<li>Initial release of version 2.0.  The idea of renaming the library
+    to "SQLus" was abandoned in favor of keeping the "SQLite" name and
+    bumping the major version number.</li>
+<li>The pager and btree subsystems added back. They are now the only
+    available backend.</li>
+<li>The Dbbe abstraction and the GDBM and memory drivers were removed.</li>
+<li>Copyright on all code was disclaimed.  The library is now in the
+    public domain.</li>
+}
+
 chng {2001 Jul 23 (1.0.32)} {
 <li>Pager and btree subsystems removed.  These will be used in a follow-on
     SQL server library named "SQLus".</li>

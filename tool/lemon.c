@@ -1,29 +1,10 @@
 /*
-** Copyright (c) 1991, 1994, 1997, 1998 D. Richard Hipp
-**
 ** This file contains all sources (including headers) to the LEMON
 ** LALR(1) parser generator.  The sources have been combined into a
 ** single file to make it easy to include LEMON in the source tree
 ** and Makefile of another program.
 **
-** This program is free software; you can redistribute it and/or
-** modify it under the terms of the GNU General Public
-** License as published by the Free Software Foundation; either
-** version 2 of the License, or (at your option) any later version.
-**
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-** General Public License for more details.
-** 
-** You should have received a copy of the GNU General Public
-** License along with this library; if not, write to the
-** Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-** Boston, MA  02111-1307, USA.
-**
-** Author contact information:
-**   drh@acm.org
-**   http://www.hwaci.com/drh/
+** The author of this program disclaims copyright.
 */
 #include <stdio.h>
 #include <varargs.h>
@@ -1198,10 +1179,7 @@ char **argv;
 
   OptInit(argv,options,stderr);
   if( version ){
-     printf("Lemon version 1.0\n"
-       "Copyright 1991-1997 by D. Richard Hipp\n"
-       "Freely distributable under the GNU Public License.\n"
-     );
+     printf("Lemon version 1.0\n");
      exit(0); 
   }
   if( OptNArgs()!=1 ){

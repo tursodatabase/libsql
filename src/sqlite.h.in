@@ -1,30 +1,18 @@
 /*
-** Copyright (c) 1999, 2000 D. Richard Hipp
+** 2001 September 15
 **
-** This program is free software; you can redistribute it and/or
-** modify it under the terms of the GNU General Public
-** License as published by the Free Software Foundation; either
-** version 2 of the License, or (at your option) any later version.
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-** General Public License for more details.
-** 
-** You should have received a copy of the GNU General Public
-** License along with this library; if not, write to the
-** Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-** Boston, MA  02111-1307, USA.
-**
-** Author contact information:
-**   drh@hwaci.com
-**   http://www.hwaci.com/drh/
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** This header file defines the interface that the sqlite library
+** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.16 2001/09/15 13:15:13 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.17 2001/09/16 00:13:27 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -109,9 +97,10 @@ typedef int (*sqlite_callback)(void*,int,char**, char**);
 ** to the callback function as its first parameter.
 **
 ** The 2nd parameter to the callback function is the number of
-** columns in the query result.  The 3rd parameter is an array
-** of string holding the values for each column.  The 4th parameter
-** is an array of strings holding the names of each column.
+** columns in the query result.  The 3rd parameter to the callback
+** is an array of strings holding the values for each column.
+** The 4th parameter to the callback is an array of strings holding
+** the names of each column.
 **
 ** The callback function may be NULL, even for queries.  A NULL
 ** callback is not an error.  It just means that no callback
@@ -120,18 +109,18 @@ typedef int (*sqlite_callback)(void*,int,char**, char**);
 ** If an error occurs while parsing or evaluating the SQL (but
 ** not while executing the callback) then an appropriate error
 ** message is written into memory obtained from malloc() and
-** *errmsg is made to point to that message.  If errmsg==NULL,
-** then no error message is ever written.  The return value is
-** SQLITE_ERROR if an error occurs.  The calling function is
-** responsible for freeing the memory that holds the error
-** message.
+** *errmsg is made to point to that message.  The calling function
+** is responsible for freeing the memory that holds the error
+** message.  If errmsg==NULL, then no error message is ever written.
+**
+** The return value is is SQLITE_OK if there are no errors and
+** some other return code if there is an error.  The particular
+** return value depends on the type of error. 
 **
 ** If the query could not be executed because a database file is
 ** locked or busy, then this function returns SQLITE_BUSY.  (This
 ** behavior can be modified somewhat using the sqlite_busy_handler()
-** and sqlite_busy_timeout() functions below.) If the query could 
-** not be executed because a file is missing or has incorrect 
-** permissions, this function returns SQLITE_ERROR.
+** and sqlite_busy_timeout() functions below.)
 */
 int sqlite_exec(
   sqlite*,                      /* An open database */
@@ -153,7 +142,7 @@ int sqlite_exec(
 #define SQLITE_NOMEM     6    /* A malloc() failed */
 #define SQLITE_READONLY  7    /* Attempt to write a readonly database */
 #define SQLITE_INTERRUPT 8    /* Operation terminated by sqlite_interrupt() */
-#define SQLITE_IOERR     9    /* Disk full or other I/O error */
+#define SQLITE_IOERR     9    /* Some kind of disk I/O error occurred */
 #define SQLITE_CORRUPT   10   /* The database disk image is malformed */
 #define SQLITE_NOTFOUND  11   /* Table or record not found */
 #define SQLITE_FULL      12   /* Insertion failed because database is full */

@@ -1,33 +1,24 @@
 /*
-** Copyright (c) 2001 D. Richard Hipp
+** 2001 September 15
 **
-** This program is free software; you can redistribute it and/or
-** modify it under the terms of the GNU General Public
-** License as published by the Free Software Foundation; either
-** version 2 of the License, or (at your option) any later version.
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-** General Public License for more details.
-** 
-** You should have received a copy of the GNU General Public
-** License along with this library; if not, write to the
-** Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-** Boston, MA  02111-1307, USA.
-**
-** Author contact information:
-**   drh@hwaci.com
-**   http://www.hwaci.com/drh/
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** This is the implementation of the page cache subsystem.
+** This is the implementation of the page cache subsystem or "pager".
 ** 
-** The page cache is used to access a database file.  The pager journals
-** all writes in order to support rollback.  Locking is used to limit
-** access to one or more reader or to one writer.
+** The pager is used to access a database disk file.  It implements
+** atomic commit and rollback through the use of a journal file that
+** is separate from the database file.  The pager also implements file
+** locking to prevent two processes from writing the same database
+** file simultaneously, or one process from reading the database while
+** another is writing.
 **
-** @(#) $Id: pager.c,v 1.19 2001/09/15 00:57:29 drh Exp $
+** @(#) $Id: pager.c,v 1.20 2001/09/16 00:13:27 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -103,7 +94,7 @@ struct PgHdr {
 ** How big to make the hash table used for locating in-memory pages
 ** by page number.  Knuth says this should be a prime number.
 */
-#define N_PG_HASH 907
+#define N_PG_HASH 373
 
 /*
 ** A open page cache is an instance of the following structure.
@@ -684,7 +675,16 @@ int sqlitepager_ref(void *pData){
 }
 
 /*
-** Sync the journal and write all free dirty pages to the database file.
+** Sync the journal and then write all free dirty pages to the database
+** file.
+**
+** Writing all free dirty pages to the database after the sync is a
+** non-obvious optimization.  fsync() is an expensive operation so we
+** want to minimize the number that occur.  So after an fsync() is forced
+** and we are free to write dirty pages back to the database, it is best
+** to go ahead and do as much of that as possible to minimize the chance
+** of having to do another fsync() later on.  Writing dirty free pages
+** in this way make database operations go up to 10 times faster.
 */
 static int syncAllPages(Pager *pPager){
   PgHdr *pPg;
@@ -818,6 +818,19 @@ int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage){
       while( pPg->dirty && 0<cnt-- && pPg->pNextFree ){
         pPg = pPg->pNextFree;
       }
+
+      /* If we could not find a page that has not been used recently
+      ** and which is not dirty, then sync the journal and write all
+      ** dirty free pages into the database file, thus making them
+      ** clean pages and available for recycling.
+      **
+      ** We have to sync the journal before writing a page to the main
+      ** database.  But syncing is a very slow operation.  So after a
+      ** sync, it is best to write everything we can back to the main
+      ** database to minimize the risk of having to sync again in the
+      ** near future.  That is way we write all dirty pages after a
+      ** sync.
+      */
       if( pPg==0 || pPg->dirty ){
         int rc = syncAllPages(pPager);
         if( rc!=0 ){
@@ -828,39 +841,6 @@ int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage){
         pPg = pPager->pFirst;
       }
       assert( pPg->nRef==0 );
-
-
-#if 0
-      /****  Since putting in the call to syncAllPages() above, this code
-      ** is no longer used.  I've kept it here for historical reference
-      ** only.
-      */
-      /* If the page to be recycled is dirty, sync the journal and write 
-      ** the old page into the database. */
-      if( pPg->dirty ){
-        int rc;
-        assert( pPg->inJournal==1 );
-        assert( pPager->state==SQLITE_WRITELOCK );
-        if( pPager->needSync ){
-          rc = fsync(pPager->jfd);
-          if( rc!=0 ){
-            rc = sqlitepager_rollback(pPager);
-            *ppPage = 0;
-            if( rc==SQLITE_OK ) rc = SQLITE_IOERR;
-            return rc;
-          }
-          pPager->needSync = 0;
-        }
-        pager_seek(pPager->fd, (pPg->pgno-1)*SQLITE_PAGE_SIZE);
-        rc = pager_write(pPager->fd, PGHDR_TO_DATA(pPg), SQLITE_PAGE_SIZE);
-        if( rc!=SQLITE_OK ){
-          rc = sqlitepager_rollback(pPager);
-          *ppPage = 0;
-          if( rc==SQLITE_OK ) rc = SQLITE_FULL;
-          return rc;
-        }
-      }
-#endif
       assert( pPg->dirty==0 );
 
       /* Unlink the old page from the free list and the hash table

@@ -1,24 +1,12 @@
 /*
-** Copyright (c) 1999, 2000 D. Richard Hipp
+** 2001 September 15
 **
-** This program is free software; you can redistribute it and/or
-** modify it under the terms of the GNU General Public
-** License as published by the Free Software Foundation; either
-** version 2 of the License, or (at your option) any later version.
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-** General Public License for more details.
-** 
-** You should have received a copy of the GNU General Public
-** License along with this library; if not, write to the
-** Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-** Boston, MA  02111-1307, USA.
-**
-** Author contact information:
-**   drh@hwaci.com
-**   http://www.hwaci.com/drh/
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
 **
 *************************************************************************
 ** The code in this file implements the Virtual Database Engine (VDBE)
@@ -33,15 +21,16 @@
 ** ignore all three operands.
 **
 ** Computation results are stored on a stack.  Each entry on the
-** stack is either an integer or a null-terminated string.  An
-** inplicit conversion from one type to the other occurs as necessary.
+** stack is either an integer, a null-terminated string, a floating point
+** number, or the SQL "NULL" value.  An inplicit conversion from one
+** type to the other occurs as necessary.
 ** 
 ** Most of the code in this file is taken up by the sqliteVdbeExec()
 ** function which does the work of interpreting a VDBE program.
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.69 2001/09/15 14:43:39 drh Exp $
+** $Id: vdbe.c,v 1.70 2001/09/16 00:13:27 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1121,8 +1110,12 @@ case OP_Goto: {
 
 /* Opcode:  Halt * * *
 **
-** Exit immediately.  All open DBs, Lists, Sorts, etc are closed
+** Exit immediately.  All open cursors, Lists, Sorts, etc are closed
 ** automatically.
+**
+** There is an implied Halt instruction inserted at the very end of
+** every program.  So a jump past the last instruction of the program
+** is the same as executing Halt.
 */
 case OP_Halt: {
   pc = p->nOp-1;
@@ -1185,6 +1178,8 @@ case OP_Pop: {
 ** The top of the stack is element 0.  So the
 ** instruction "Dup 0 0 0" will make a copy of the
 ** top of the stack.
+**
+** Also see the Pull instruction.
 */
 case OP_Dup: {
   int i = p->tos - pOp->p1;
@@ -1207,7 +1202,10 @@ case OP_Dup: {
 ** The P1-th element is removed from its current location on 
 ** the stack and pushed back on top of the stack.  The
 ** top of the stack is element 0, so "Pull 0 0 0" is
-** a no-op.
+** a no-op.  "Pull 1 0 0" swaps the top two elements of
+** the stack.
+**
+** See also the Dup instruction.
 */
 case OP_Pull: {
   int from = p->tos - pOp->p1;
@@ -1783,7 +1781,7 @@ case OP_NotNull: {
 ** which hold the offset of the beginning of each column data from the
 ** beginning of the completed record including the header.
 **
-** The OP_Column opcode is used to unpack a record manufactured with
+** The Column opcode is used to unpack a record manufactured with
 ** the opcode.
 */
 case OP_MakeRecord: {
@@ -1836,10 +1834,9 @@ case OP_MakeRecord: {
 /* Opcode: MakeKey P1 P2 *
 **
 ** Convert the top P1 entries of the stack into a single entry suitable
-** for use as the key in an index or a sort.  The top P1 records are
-** converted to strings and merged.  The null-terminator on each string
-** is retained and used as a separator.  The entire string is also
-** null-terminated.
+** for use as the key in an index.  The top P1 records are
+** converted to strings and merged.  The null-terminators 
+** are retained and used as separators.
 ** The lowest entry in the stack is the first field and the top of the
 ** stack becomes the last.
 **
@@ -1956,8 +1953,12 @@ case OP_MakeIdxKey: {
 **
 ** Begin a transaction.  The transaction ends when a Commit or Rollback
 ** opcode is encountered or whenever there is an execution error that causes
-** a script to abort.  
+** a script to abort.  A transaction is not ended by a Halt.
 **
+** A write lock is obtained on the database file when a transaction is
+** started.  No other process can read or write the file while the
+** transaction is underway.  Starting a transaction also creates a
+** rollback journal.
 ** A transaction must be started before any changes can be made to the
 ** database.
 */
@@ -1970,7 +1971,9 @@ case OP_Transaction: {
 **
 ** Cause all modifications to the database that have been made since the
 ** last Transaction to actually take effect.  No additional modifications
-** are allowed until another transaction is started.
+** are allowed until another transaction is started.  The Commit instruction
+** deletes the journal file and releases the write lock on the database.
+** A read lock continues to be held if there are still cursors open.
 */
 case OP_Commit: {
   rc = sqliteBtreeCommit(pBt);
@@ -1988,6 +1991,9 @@ case OP_Commit: {
 ** last Transaction to be undone. The database is restored to its state
 ** before the Transaction opcode was executed.  No additional modifications
 ** are allowed until another transaction is started.
+**
+** This instruction automatically closes all cursors and releases both
+** the read and write locks on the database.
 */
 case OP_Rollback: {
   rc = sqliteBtreeRollback(pBt);
@@ -1997,15 +2003,15 @@ case OP_Rollback: {
 
 /* Opcode: ReadCookie * * *
 **
-** Read the magic cookie from the database file and push it onto the
-** stack.  The magic cookie is an integer that is used like a version
+** Read the schema cookie from the database file and push it onto the
+** stack.  The schema cookie is an integer that is used like a version
 ** number for the database schema.  Everytime the schema changes, the
 ** cookie changes to a new random value.  This opcode is used during
 ** initialization to read the initial cookie value so that subsequent
 ** database accesses can verify that the cookie has not changed.
 **
 ** There must be a read-lock on the database (either a transaction
-** must be started or there must be a prior OP_Open opcode) before
+** must be started or there must be an open cursor) before
 ** executing this instruction.
 */
 case OP_ReadCookie: {
@@ -2020,10 +2026,10 @@ case OP_ReadCookie: {
 
 /* Opcode: SetCookie P1 * *
 **
-** This operation changes the value of the cookie on the database.
+** This operation changes the value of the schema cookie on the database.
 ** The new value is P1.
 **
-** The cookie changes its value whenever the database schema changes.
+** The schema cookie changes its value whenever the database schema changes.
 ** That way, other processes can recognize when the schema has changed
 ** and reread it.
 **
@@ -2041,11 +2047,11 @@ case OP_SetCookie: {
 
 /* Opcode: VerifyCookie P1 * *
 **
-** Check the current value of the database cookie and make sure it is
+** Check the current value of the schema cookie and make sure it is
 ** equal to P1.  If it is not, abort with an SQLITE_SCHEMA error.
 **
 ** The cookie changes its value whenever the database schema changes.
-** This operation is used to detech when that the cookie has changed
+** This operation is used to detect when that the cookie has changed
 ** and that the current process needs to reread the schema.
 **
 ** Either a transaction needs to have been started or an OP_Open needs
@@ -2070,6 +2076,15 @@ case OP_VerifyCookie: {
 ** should be small integers.  It is an error for P1 to be negative.
 **
 ** If P2==0 then take the root page number from the top of the stack.
+**
+** There will be a read lock on the database whenever there is an
+** open cursor.  If the database was unlocked prior to this instruction
+** then a read lock is acquired as part of this instruction.  A read
+** lock allows other processes to read the database but prohibits
+** any other process from modifying the database.  The read lock is
+** released when all cursors are closed.  If this instruction attempts
+** to get a read lock but fails, the script terminates with an
+** SQLITE_BUSY error code.
 **
 ** The P3 value is the name of the table or index being opened.
 ** The P3 value is not actually used by this opcode and may be
@@ -2129,7 +2144,7 @@ case OP_Open: {
 /* Opcode: OpenTemp P1 * *
 **
 ** Open a new cursor that points to a table in a temporary database
-** file.  The temporary file is opened read/write event if the main
+** file.  The temporary file is opened read/write even if the main
 ** database is read-only.  The temporary file is deleted when the
 ** cursor is closed.
 */
@@ -2178,6 +2193,8 @@ case OP_Close: {
 ** cursor P1 so that it points to an entry with a matching key.  If
 ** the table contains no record with a matching key, then the cursor
 ** is left pointing at a nearby record.
+**
+** See also: Found, NotFound, Distinct
 */
 case OP_MoveTo: {
   int i = pOp->p1;
@@ -2204,7 +2221,7 @@ case OP_MoveTo: {
 /* Opcode: Fcnt * * *
 **
 ** Push an integer onto the stack which is the total number of
-** OP_Fetch opcodes that have been executed by this virtual machine.
+** MoveTo opcodes that have been executed by this virtual machine.
 **
 ** This instruction is used to implement the special fcnt() function
 ** in the SQL dialect that SQLite understands.  fcnt() is used for
@@ -2220,30 +2237,36 @@ case OP_Fcnt: {
 
 /* Opcode: Distinct P1 P2 *
 **
-** Use the top of the stack as a key.  If a record with that key
-** does not exist in file P1, then jump to P2.  If the record
+** Use the top of the stack as a key.  If a record with that key does
+** not exist in the table of cursor P1, then jump to P2.  If the record
 ** does already exist, then fall thru.  The cursor is left pointing
 ** at the record if it exists. The key is not popped from the stack.
 **
 ** This operation is similar to NotFound except that this operation
 ** does not pop the key from the stack.
+**
+** See also: Found, NotFound, MoveTo
 */
 /* Opcode: Found P1 P2 *
 **
 ** Use the top of the stack as a key.  If a record with that key
-** does exist in file P1, then jump to P2.  If the record
+** does exist in table of P1, then jump to P2.  If the record
 ** does not exist, then fall thru.  The cursor is left pointing
 ** to the record if it exists.  The key is popped from the stack.
+**
+** See also: Distinct, NotFound, MoveTo
 */
 /* Opcode: NotFound P1 P2 *
 **
 ** Use the top of the stack as a key.  If a record with that key
-** does not exist in file P1, then jump to P2.  If the record
+** does not exist in table of P1, then jump to P2.  If the record
 ** does exist, then fall thru.  The cursor is left pointing to the
 ** record if it exists.  The key is popped from the stack.
 **
 ** The difference between this operation and Distinct is that
 ** Distinct does not pop the key from the stack.
+**
+** See also: Distinct, Found, MoveTo
 */
 case OP_Distinct:
 case OP_NotFound:
@@ -2278,8 +2301,8 @@ case OP_Found: {
 /* Opcode: NewRecno P1 * *
 **
 ** Get a new integer record number used as the key to a table.
-** The record number is not previous used by the database file
-** associated with cursor P1.  The new record number pushed 
+** The record number is not previously used as a key in the database
+** table that cursor P1 points to.  The new record number pushed 
 ** onto the stack.
 */
 case OP_NewRecno: {
@@ -2321,7 +2344,7 @@ case OP_NewRecno: {
 /* Opcode: Put P1 * *
 **
 ** Write an entry into the database file P1.  A new entry is
-** created if it doesn't already exist, or the data for an existing
+** created if it doesn't already exist or the data for an existing
 ** entry is overwritten.  The data is the value on the top of the
 ** stack.  The key is the next value down on the stack.  The stack
 ** is popped twice by this instruction.
@@ -2356,8 +2379,8 @@ case OP_Put: {
 **
 ** The cursor will be left pointing at either the next or the previous
 ** record in the table. If it is left pointing at the next record, then
-** the next OP_Next will be a no-op.  Hence it is OK to delete a record
-** from within an OP_Next loop.
+** the next Next instruction will be a no-op.  Hence it is OK to delete
+** a record from within an Next loop.
 */
 case OP_Delete: {
   int i = pOp->p1;
@@ -2370,7 +2393,7 @@ case OP_Delete: {
 /* Opcode: KeyAsData P1 P2 *
 **
 ** Turn the key-as-data mode for cursor P1 either on (if P2==1) or
-** off (if P2==0).  In key-as-data mode, the OP_Field opcode pulls
+** off (if P2==0).  In key-as-data mode, the Field opcode pulls
 ** data off of the key rather than the data.  This is useful for
 ** processing compound selects.
 */
@@ -2507,9 +2530,12 @@ case OP_Recno: {
 
 /* Opcode: FullKey P1 * *
 **
-** Push a string onto the stack which is the full text key associated
-** with the last Next operation on file P1.  Compare this with the
-** Key operator which pushs an integer key.
+** Extract the complete key from the record that cursor P1 is currently
+** pointing to and push the key onto the stack as a string.
+**
+** Compare this opcode to Recno.  The Recno opcode extracts the first
+** 4 bytes of the key and pushes those bytes onto the stack as an
+** integer.  This instruction pushes the entire key as a string.
 */
 case OP_FullKey: {
   int i = pOp->p1;
@@ -2622,9 +2648,9 @@ case OP_BeginIdx: {
 **
 ** The P1 cursor points to an SQL index for which a BeginIdx operation
 ** has been issued.  This operation retrieves the next record from that
-** cursor and verifies that the key on the record matches the key that
-** was pulled from the stack by the BeginIdx instruction.  If they do
-** match, then the last 4 bytes of the key on the record hold a record
+** cursor and verifies that the key on the record minus the last 4 bytes
+** matches the key that was pulled from the stack by the BeginIdx instruction.
+** If they match, then the last 4 bytes of the key on the record hold a record
 ** number and that record number is extracted and pushed on the stack.
 ** If the keys do not match, there is an immediate jump to instruction P2.
 */
@@ -2707,6 +2733,8 @@ case OP_DeleteIdx: {
 **
 ** Delete an entire database table or index whose root page in the database
 ** file is given by P1.
+**
+** See also: Clear
 */
 case OP_Destroy: {
   sqliteBtreeDropTable(pBt, pOp->p1);
@@ -2716,8 +2744,10 @@ case OP_Destroy: {
 /* Opcode: Clear P1 * *
 **
 ** Delete all contents of the database table or index whose root page
-** in the database file is given by P1.  But, unlike OP_Destroy, do not
+** in the database file is given by P1.  But, unlike Destroy, do not
 ** remove the table or index from the database file.
+**
+** See also: Destroy
 */
 case OP_Clear: {
   sqliteBtreeClearTable(pBt, pOp->p1);
@@ -2735,6 +2765,8 @@ case OP_Clear: {
 ** memory location.  This writing of the page number into a memory location
 ** is used by the SQL parser to record the page number in its internal
 ** data structures.
+**
+** See also: CreateIndex
 */
 case OP_CreateTable: {
   int i = ++p->tos;
@@ -2754,12 +2786,10 @@ case OP_CreateTable: {
   break;
 }
 
-/* Opcode: CreateIndex * * *
+/* Opcode: CreateIndex P1 * *
 **
 ** Allocate a new Index in the main database file.  Push the page number
 ** for the root page of the new table onto the stack.
-**
-** If P1>=0 then open a cursor named P1 on the newly created index.
 **
 ** The root page number is also written to a memory location which has
 ** be set up by the parser.  The difference between CreateTable and
@@ -2767,6 +2797,8 @@ case OP_CreateTable: {
 ** memory location.  This writing of the page number into a memory location
 ** is used by the SQL parser to record the page number in its internal
 ** data structures.
+**
+** See also: CreateTable
 */
 case OP_CreateIndex: {
   int i = ++p->tos;
@@ -2790,6 +2822,8 @@ case OP_CreateIndex: {
 **
 ** Compress, optimize, and tidy up table or index whose root page in the
 ** database file is P1.
+**
+** In the current implementation, this is a no-op.
 */
 case OP_Reorganize: {
   /* This is currently a no-op */
@@ -2799,8 +2833,7 @@ case OP_Reorganize: {
 /* Opcode: ListOpen P1 * *
 **
 ** Open a "List" structure used for temporary storage of integer 
-** table keys.  P1
-** will server as a handle to this list for future
+** record numbers.  P1 will server as a handle to this list for future
 ** interactions.  If another list with the P1 handle is
 ** already opened, the prior list is closed and a new one opened
 ** in its place.
@@ -3004,7 +3037,7 @@ case OP_SortMakeRec: {
 ** in the result.  The whole key is terminated by two \000 characters
 ** in a row.
 **
-** See also the MakeKey opcode.
+** See also the MakeKey and MakeIdxKey opcodes.
 */
 case OP_SortMakeKey: {
   char *zNewKey;
@@ -3217,7 +3250,7 @@ case OP_FileClose: {
 ** a delimiter.  There should be P1 fields.  If the input line contains
 ** more than P1 fields, ignore the excess.  If the input line contains
 ** fewer than P1 fields, assume the remaining fields contain an
-** empty string.
+** empty strings.
 */
 case OP_FileRead: {
   int n, eol, nField, i, c, nDelim;
@@ -3301,7 +3334,7 @@ fileread_jump:
 
 /* Opcode: FileColumn P1 * *
 **
-** Push onto the stack the P1-th field of the most recently read line
+** Push onto the stack the P1-th column of the most recently read line
 ** from the input file.
 */
 case OP_FileColumn: {

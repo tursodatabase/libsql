@@ -1,27 +1,15 @@
 /*
-** Copyright (c) 2001 D. Richard Hipp
+** 2001 September 15
 **
-** This program is free software; you can redistribute it and/or
-** modify it under the terms of the GNU General Public
-** License as published by the Free Software Foundation; either
-** version 2 of the License, or (at your option) any later version.
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-** General Public License for more details.
-** 
-** You should have received a copy of the GNU General Public
-** License along with this library; if not, write to the
-** Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-** Boston, MA  02111-1307, USA.
-**
-** Author contact information:
-**   drh@hwaci.com
-**   http://www.hwaci.com/drh/
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.28 2001/09/15 13:15:13 drh Exp $
+** $Id: btree.c,v 1.29 2001/09/16 00:13:26 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -53,7 +41,7 @@
 ** database page.  If the payload is larger than MX_LOCAL_PAYLOAD bytes
 ** then surplus bytes are stored on overflow pages.  The payload for an
 ** entry and the preceding pointer are combined to form a "Cell".  Each 
-** page has a smaller header which contains the Ptr(N+1) pointer.
+** page has a small header which contains the Ptr(N+1) pointer.
 **
 ** The first page of the file contains a magic string used to verify that
 ** the file really is a valid BTree database, a pointer to a list of unused
@@ -74,7 +62,7 @@
 */
 typedef unsigned int uptr;
 
-/* There are already definedin sqliteInt.h...
+/* There are already defined in sqliteInt.h...
 ** typedef unsigned int u32;
 ** typedef unsigned short int u16;
 ** typedef unsigned char u8;
@@ -122,7 +110,8 @@ static const char zMagicHeader[] =
 ** problem.
 **
 ** The number used was obtained at random and has no special
-** significance.
+** significance other than the fact that it represents a different
+** integer on little-endian and big-endian machines.
 */
 #define MAGIC 0xdae37528
 

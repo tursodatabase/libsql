@@ -1,6 +1,6 @@
-The SQL database used for ACD contains 105 tables and indices implemented
-in GDBM.  The following are statistics on the sizes of keys and data
-within these tables and indices.
+An SQLite (version 1.0) database was used in a large military application
+where the database contained 105 tables and indices.  The following is
+a breakdown on the sizes of keys and data within these tables and indices:
 
 Entries:      967089
 Size:         45896104

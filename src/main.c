@@ -1,24 +1,12 @@
 /*
-** Copyright (c) 1999, 2000 D. Richard Hipp
+** 2001 September 15
 **
-** This program is free software; you can redistribute it and/or
-** modify it under the terms of the GNU General Public
-** License as published by the Free Software Foundation; either
-** version 2 of the License, or (at your option) any later version.
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-** General Public License for more details.
-** 
-** You should have received a copy of the GNU General Public
-** License along with this library; if not, write to the
-** Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-** Boston, MA  02111-1307, USA.
-**
-** Author contact information:
-**   drh@hwaci.com
-**   http://www.hwaci.com/drh/
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
 **
 *************************************************************************
 ** Main file for the SQLite library.  The routines in this file
@@ -26,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.36 2001/09/15 00:57:29 drh Exp $
+** $Id: main.c,v 1.37 2001/09/16 00:13:27 drh Exp $
 */
 #include "sqliteInt.h"
 #if defined(HAVE_USLEEP) && HAVE_USLEEP

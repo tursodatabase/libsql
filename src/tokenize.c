@@ -1,24 +1,12 @@
 /*
-** Copyright (c) 1999, 2000 D. Richard Hipp
+** 2001 September 15
 **
-** This program is free software; you can redistribute it and/or
-** modify it under the terms of the GNU General Public
-** License as published by the Free Software Foundation; either
-** version 2 of the License, or (at your option) any later version.
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-** General Public License for more details.
-** 
-** You should have received a copy of the GNU General Public
-** License along with this library; if not, write to the
-** Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-** Boston, MA  02111-1307, USA.
-**
-** Author contact information:
-**   drh@hwaci.com
-**   http://www.hwaci.com/drh/
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
 **
 *************************************************************************
 ** An tokenizer for SQL
@@ -27,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.21 2001/09/14 18:54:09 drh Exp $
+** $Id: tokenize.c,v 1.22 2001/09/16 00:13:27 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -305,7 +293,10 @@ int sqliteGetToken(const char *z, int *tokenType){
 
 /*
 ** Run the parser on the given SQL string.  The parser structure is
-** passed in.  An SQLITE_ status code.
+** passed in.  An SQLITE_ status code is returned.  If an error occurs
+** and pzErrMsg!=NULL then an error message might be written into 
+** memory obtained from malloc() and *pzErrMsg made to point to that
+** error message.  Or maybe not.
 */
 int sqliteRunParser(Parse *pParse, char *zSql, char **pzErrMsg){
   int nErr = 0;

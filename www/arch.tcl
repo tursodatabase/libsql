@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: arch.tcl,v 1.3 2000/09/29 13:30:55 drh Exp $}
+set rcsid {$Id: arch.tcl,v 1.4 2001/09/16 00:13:29 drh Exp $}
 
 puts {<html>
 <head>
@@ -112,19 +112,24 @@ source file <b>vdbe.c</b>.  The virtual machine also has
 its own header file <b>vdbe.h</b> that defines an interface
 between the virtual machine and the rest of the SQLite library.</p>
 
-<h2>Backend</h2>
+<h2>B-tree Driver</h2>
 
-<p>The last layer in the design of SQLite is the backend.  The
-backend implements an interface between the virtual machine and
-the underlying data file library -- GDBM in this case.  The interface
-is designed to make it easy to substitute a different database
-library, such as the Berkeley DB.  
-The backend abstracts many of the low-level details to help
-reduce the complexity of the virtual machine.</p>
+<p>An SQLite database is maintained on disk using a B-tree implementation
+found in the <b>btree.c</b> source file.  A separate B-tree is used for
+each table and index in the database but all B-trees are stored in the
+same disk file.  Each page of a B-tree is 1024 bytes in size.  The data
+is stored with the key in an area called "payload".  Up to 236 bytes of
+payload can be stored with each B-tree entry.  Any additional payload
+is stored in a chain of overflow pages.</p>
 
-<p>The backend is contained in the single source file <b>dbbe.c</b>.
-The backend also has a header file <b>dbbe.h</b> that defines the
-interface between the backend and the rest of the SQLite library.</p>
+<h2>Page Cache</h2>
+
+<p>The page cache provides the rollback and atomic commit abstraction
+and takes care of reader/writer locking of the database file.  The
+B-tree driver requests particular pages from the page cache and notifies
+the page cache when it wants to modify pages and commit or rollback its
+changes and the page cache handles all the messy details of making sure
+the requests are handled quickly, safely, and efficiently.</p>
 }
 
 puts {

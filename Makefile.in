@@ -211,8 +211,11 @@ testfixture:	$(TOP)/src/tclsqlite.c libsqlite.a $(TESTSRC)
 		$(TESTSRC) $(TOP)/src/tclsqlite.c \
 		libsqlite.a $(LIBTCL)
 
-test:	testfixture sqlite
+fulltest:	testfixture sqlite
 	./testfixture $(TOP)/test/all.test
+
+test:	testfixture sqlite
+	./testfixture $(TOP)/test/quick.test
 
 sqlite.tar.gz:	
 	pwd=`pwd`; cd $(TOP)/..; tar czf $$pwd/sqlite.tar.gz sqlite

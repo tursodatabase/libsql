@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.37 2001/05/21 13:45:10 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.38 2001/09/16 00:13:29 drh Exp $}
 
 puts {<html>
 <head><title>SQLite: An SQL Database Library Built Atop GDBM</title></head>
@@ -17,11 +17,8 @@ puts {</p>}
 
 puts {<h2>Introduction</h2>
 
-<p>SQLite is an SQL database library
-(<a href="c_interface.html">libsqlite.a</a>) that uses
-<a href="http://www.gnu.org/software/gdbm/gdbm.html">GDBM</a>
-as its underlying file storage mechanism.
-Programs that link the SQLite library can have SQL database
+<p>SQLite is a C library that implements an SQL database engine.
+Programs that link with the SQLite library can have SQL database
 access without running a separate RDBMS process.
 The distribution comes with a standalone command-line
 access program (<a href="sqlite.html">sqlite</a>) that can
@@ -32,22 +29,17 @@ an example of how to use the SQLite library.</p>
 <h2>Features</h2>
 
 <p><ul>
-<li>Implements most of SQL92.</li>
-<li>A database is just a directory of GDBM files.</li>
-<li>Unlimited length records.</li>
-<li>Import and export data from 
-<a href="http://www.postgresql.org/">PostgreSQL</a>.</li>
+<li>Implements a large subset of SQL92.</li>
+<li>A complete SQL database (with multiple tables and indices) is
+    stored in a single disk file.</li>
+<li>Atomic commit and rollback protect data integrity.</li>
+<li>Small memory footprint: about 12000 lines of C code.</li>
 <li>Very simple 
 <a href="c_interface.html">C/C++ interface</a> requires the use of only
 three functions and one opaque structure.</li>
-<li>A <a href="tclsqlite.html">Tcl</a> interface is
-included.</li>
-<li>Command-line access program <a href="sqlite.html">sqlite</a> uses
-the <a href="http://www.google.com/search?q=gnu+readline+library">GNU
-Readline library</a></li>
-<li>A Tcl-based test suite provides near 100% code coverage</li>
-<li>Approximately 9500 lines of C code.  No external dependencies other 
-than GDBM.</li>
+<li>A TCL interface to the library is included.</li>
+<li>A TCL-based test suite provides near 100% code coverage.</li>
+<li>Self-contained: no external dependencies.</li>
 <li>Built and tested under Linux, HPUX, and WinNT.</li>
 </ul>
 </p>
@@ -72,10 +64,6 @@ only reached when <tt>malloc()</tt> fails.</p>
   TRUE but <b>'&aelig;'&nbsp;LIKE&nbsp;'&AElig;'</b> returns FALSE.
 </p></li>
 </ul>
-
-<p><b>Important Note:</b>  Serious bugs have been found in versions
-1.0.22 on Unix and 1.0.26 on Windows.  Users of these or earlier
-versions of SQLite should upgrade.</p>
 
 <h2>Documentation</h2>
 

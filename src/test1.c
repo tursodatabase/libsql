@@ -1,31 +1,19 @@
 /*
-** Copyright (c) 2001 D. Richard Hipp
+** 2001 September 15
 **
-** This program is free software; you can redistribute it and/or
-** modify it under the terms of the GNU General Public
-** License as published by the Free Software Foundation; either
-** version 2 of the License, or (at your option) any later version.
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
 **
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-** General Public License for more details.
-** 
-** You should have received a copy of the GNU General Public
-** License along with this library; if not, write to the
-** Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-** Boston, MA  02111-1307, USA.
-**
-** Author contact information:
-**   drh@hwaci.com
-**   http://www.hwaci.com/drh/
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
 **
 *************************************************************************
 ** Code for testing the printf() interface to SQLite.  This code
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.2 2001/04/11 14:28:43 drh Exp $
+** $Id: test1.c,v 1.3 2001/09/16 00:13:27 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
