@@ -1,5 +1,5 @@
-C Correct\shandling\sof\squoted\snames\sin\sCREATE\sINDEX.\s\sTicket\s#869.\s(CVS\s1907)
-D 2004-08-28T14:53:34
+C Fix\sa\ssegfault\sin\sthe\sauthorizer\swhen\sit\sis\sgiven\sa\sSELECT\sstatement\swith\r\nno\sFROM\sclause.\s\sTicket\s#896.\s(CVS\s1953)
+D 2004-09-09T13:54:30
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -22,7 +22,7 @@ F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
 F sqlite.def fc4f5734786fe4743cfe2aa98eb2da4b089edb5f
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F src/attach.c 026702566f941bf2bb158a0aaa86bfeb65910aa6
-F src/auth.c f73ae6f7260e3409e9b164a2bb9efffc38054081
+F src/auth.c 8d678ab13950801e10fd09781a7c1ed3bfeffb7c
 F src/btree.c 08a05b925b348c05d79b9b062b79e50d565678de
 F src/btree.h 41cb3ff6ebc3f6da2d0a074e39ff8c7a2287469f
 F src/btree_rb.c af40501eedd7b673ffd5e02f3a4702c76596d64a
@@ -69,7 +69,7 @@ F src/where.c ce4968e37382808ec76a47385384ee21ad9e979e
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
 F test/attach.test ba8261d38da6b6a7d4f78ec543c548c4418582ef
 F test/attach2.test ce61e6185b3cd891cc0e9a4c868fcc65eb92fc55
-F test/auth.test 5c4d95cdaf539c0c236e20ce1f71a93e7dde9185
+F test/auth.test 3bd865e3069af8aa703158ff69cfc5e57b29033b
 F test/bigfile.test ea904b853ce2d703b16c5ce90e2b54951bc1ae81
 F test/bigrow.test 8ab252dba108f12ad64e337b0f2ff31a807ac578
 F test/bind.test 56a57043b42c4664ca705f6050e56717a8a6699a
@@ -191,7 +191,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 022e3f56ac5a29f8449d98630c673edda372d221
-R 6ef9155f1882b2205a41956e5a077bd3
+P b01d566580b151db0e1c95d124f20ea0bc889250
+R 22bca122a9631c078a0735a63e0339be
 U drh
-Z 79491f8c456d81b2c776bd357c8237aa
+Z 7c0af01bb06b95309ddc32f4b16cec60
