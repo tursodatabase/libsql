@@ -1,5 +1,5 @@
-C Fix\striggers\sto\swork\sin\san\sATTACHed\sdatabase.\s\sTicket\s#295.\s(CVS\s915)
-D 2003-04-17T22:57:53
+C The\sVACUUM\scommand\sis\snow\sfunctioning\s(again).\s\sNeed\sto\sdo\smore\stesting.\s(CVS\s916)
+D 2003-04-18T02:31:04
 F Makefile.in df3a4db41a7450468b5fe934d9dd8f723b631249
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -58,7 +58,7 @@ F src/tokenize.c a88cfb6f698d047e14d5064fa6c4ecb709bf8fa4
 F src/trigger.c 45b67f6c4338245288e4662c6a5b802ae3a66e5d
 F src/update.c 7f1aa8912876a682a692676f8adb215ddffad295
 F src/util.c 13c338a7d0e1e6290ca227edb0d6d7be6a7c7127
-F src/vacuum.c ac65e9578506a0cdf70ece2668e5b22f4895477c
+F src/vacuum.c e24781e38db36d1c9f578b6b3613bf0989ebd63c
 F src/vdbe.c d453e8c95c9fac5a5e067c5c58243b3ae75699fc
 F src/vdbe.h 985c24f312d10f9ef8f9a8b8ea62fcdf68e82f21
 F src/where.c e5733f7d5e9cc4ed3590dc3401f779e7b7bb8127
@@ -162,7 +162,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 98ef6110068e5ed3cd77a14b004f890b79b731f7
-R 8d0229a2d7c6c86f6fe4145a683ab8e2
+P 1e5e00fb73c308378efd034cb291caf338c9fe84
+R 6d712256ba5bd6d3c2dab4df16be375d
 U drh
-Z a65dc41f80624ed136df0a6b0a99456f
+Z 2b3763770265c14f822420062ba64ba6
