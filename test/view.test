@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing VIEW statements.
 #
-# $Id: view.test,v 1.5 2002/05/08 21:30:16 drh Exp $
+# $Id: view.test,v 1.6 2002/06/28 12:18:48 drh Exp $
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
@@ -157,5 +157,49 @@ do_test  view-3.5 {
   }
 } {y 2 y 3 y 5 y 6}
 
+
+do_test view-4.1 {
+  catchsql {
+    DROP VIEW t1;
+  }
+} {1 {use DROP TABLE to delete table t1}}
+do_test view-4.2 {
+  execsql {
+    SELECT 1 FROM t1 LIMIT 1;
+  }
+} 1
+do_test view-4.3 {
+  catchsql {
+    DROP TABLE v1;
+  }
+} {1 {use DROP VIEW to delete view v1}}
+do_test view-4.4 {
+  execsql {
+     SELECT 1 FROM v1 LIMIT 1;
+  }
+} {1}
+do_test view-4.5 {
+  catchsql {
+    CREATE INDEX i1v1 ON v1(xyz);
+  }
+} {1 {views may not be indexed}}
+
+do_test view-5.1 {
+  execsql {
+    CREATE TABLE t2(y,a);
+    INSERT INTO t2 VALUES(22,2);
+    INSERT INTO t2 VALUES(33,3);
+    INSERT INTO t2 VALUES(44,4);
+    INSERT INTO t2 VALUES(55,5);
+    SELECT * FROM t2;
+  }
+} {22 2 33 3 44 4 55 5}
+do_test view-5.2 {
+  execsql {
+    CREATE VIEW v5 AS
+      SELECT t1.x, t2.y FROM t1 JOIN t2 USING(a);
+    SELECT * FROM v5;
+  }
+} {1 22 4 55}
 
 finish_test

@@ -13,7 +13,7 @@
 ** the WHERE clause of SQL statements.  Also found here are subroutines
 ** to generate VDBE code to evaluate expressions.
 **
-** $Id: where.c,v 1.57 2002/06/28 01:02:38 drh Exp $
+** $Id: where.c,v 1.58 2002/06/28 12:18:47 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1033,6 +1033,10 @@ WhereInfo *sqliteWhereBegin(
         if( aExpr[j].p==0 ) continue;
         if( (aExpr[j].prereqAll & loopMask)!=aExpr[j].prereqAll ) continue;
         if( haveKey ){
+          /* Cannot happen.  "haveKey" can only be true if pushKey is true
+          ** an pushKey can only be true for DELETE and UPDATE and there are
+          ** no outer joins with DELETE and UPDATE.
+          */
           haveKey = 0;
           sqliteVdbeAddOp(v, OP_MoveTo, base+idx, 0);
         }

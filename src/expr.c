@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.74 2002/06/26 02:45:04 drh Exp $
+** $Id: expr.c,v 1.75 2002/06/28 12:18:47 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -121,8 +121,10 @@ void sqliteExprDelete(Expr *p){
 */
 void sqliteExprMoveStrings(Expr *p, int offset){
   if( p==0 ) return;
-  if( p->token.z ) p->token.z += offset;
-  if( p->span.z ) p->span.z += offset;
+  if( !p->staticToken ){
+    if( p->token.z ) p->token.z += offset;
+    if( p->span.z ) p->span.z += offset;
+  }
   if( p->pLeft ) sqliteExprMoveStrings(p->pLeft, offset);
   if( p->pRight ) sqliteExprMoveStrings(p->pRight, offset);
   if( p->pList ) sqliteExprListMoveStrings(p->pList, offset);
@@ -166,16 +168,10 @@ Expr *sqliteExprDup(Expr *p){
   if( p==0 ) return 0;
   pNew = sqliteMalloc( sizeof(*p) );
   if( pNew==0 ) return 0;
-  pNew->op = p->op;
-  pNew->dataType = p->dataType;
+  memcpy(pNew, p, sizeof(*pNew));
   pNew->pLeft = sqliteExprDup(p->pLeft);
   pNew->pRight = sqliteExprDup(p->pRight);
   pNew->pList = sqliteExprListDup(p->pList);
-  pNew->iTable = p->iTable;
-  pNew->iColumn = p->iColumn;
-  pNew->iAgg = p->iAgg;
-  pNew->token = p->token;
-  pNew->span = p->span;
   pNew->pSelect = sqliteSelectDup(p->pSelect);
   return pNew;
 }

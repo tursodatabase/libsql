@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.99 2002/06/25 13:16:03 drh Exp $
+** $Id: build.c,v 1.100 2002/06/28 12:18:47 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -898,6 +898,9 @@ int sqliteViewGetColumnNames(Parse *pParse, Table *pTable){
   **
   **     CREATE VIEW one AS SELECT * FROM two;
   **     CREATE VIEW two AS SELECT * FROM one;
+  **
+  ** Actually, this error is caught previously and so the following test
+  ** should always fail.  But we will leave it in place just to be safe.
   */
   if( pTable->nCol<0 ){
     sqliteSetString(&pParse->zErrMsg, "view ", pTable->zName,

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.100 2002/06/26 02:45:04 drh Exp $
+** $Id: select.c,v 1.101 2002/06/28 12:18:47 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -157,13 +157,17 @@ static void addWhereTerm(
   dummy.z = zCol;
   dummy.n = strlen(zCol);
   pE1a = sqliteExpr(TK_ID, 0, 0, &dummy);
+  pE1a->staticToken = 1;
   pE2a = sqliteExpr(TK_ID, 0, 0, &dummy);
+  pE2a->staticToken = 1;
   dummy.z = pTab1->zName;
   dummy.n = strlen(dummy.z);
   pE1b = sqliteExpr(TK_ID, 0, 0, &dummy);
+  pE1b->staticToken = 1;
   dummy.z = pTab2->zName;
   dummy.n = strlen(dummy.z);
   pE2b = sqliteExpr(TK_ID, 0, 0, &dummy);
+  pE2b->staticToken = 1;
   pE1c = sqliteExpr(TK_DOT, pE1b, pE1a, 0);
   pE2c = sqliteExpr(TK_DOT, pE2b, pE2a, 0);
   pE = sqliteExpr(TK_EQ, pE1c, pE2c, 0);
