@@ -1,5 +1,5 @@
-C The\s%W\sdate\sspecifier\sin\sstrftime\sshould\sbe\smeasured\sfrom\sthe\sfirst\sMonday\nof\sthe\syear.\s\sTicket\s#758.\s(CVS\s1805)
-D 2004-07-18T22:22:44
+C Use\sonly\sunsigned\scharacters\sfor\supper()\sand\slower().\s\sTicket\s#708.\s(CVS\s1808)
+D 2004-07-18T23:06:54
 F Makefile.in 77d1219b6563476711a7a962e865979a6f314eb0
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -33,7 +33,7 @@ F src/date.c d42ea73a0b16d5dff9d97e10dc0c05671471b753
 F src/delete.c e81545e546f6bc87d7508a93a09ca70695265af3
 F src/encode.c a876af473d1d636faa3dca51c7571f2e007eea37
 F src/expr.c d8ee92a9c11113a013f7853acb55453a8e0b2e92
-F src/func.c f4a69379de4109d8c07b1d57f7e983de9b2275f6
+F src/func.c b163fb49efec999eb7bf982f7de5b9be388301f3
 F src/hash.c f0a2f22c2a7052d67053b5f4690ea3010bb3fb9f
 F src/hash.h 762d95f1e567664d1eafc1687de755626be962fb
 F src/insert.c d99ffe87e1e1397f4233afcd06841d52d6b17b18
@@ -233,7 +233,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P b6e8b7a13cd9f90e2f7d963d9ddbe591571f3a27
-R 9aba732fdd9d77e41030d43848e7a6a8
+P 50b016b00470e6303ede1173d0447d8239563263
+R 8afd2e7fc7d01a8d834ef2b3f5c94294
 U drh
-Z df904b51619345b20c4c765ab2f0eb6b
+Z 30ec63d91065118f2d6af7616f6fc4ff
