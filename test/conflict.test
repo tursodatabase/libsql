@@ -13,7 +13,7 @@
 # This file implements tests for the conflict resolution extension
 # to SQLite.
 #
-# $Id: conflict.test,v 1.15 2003/01/29 18:46:54 drh Exp $
+# $Id: conflict.test,v 1.16 2003/02/26 13:52:52 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -138,7 +138,7 @@ do_test conflict-3.0 {
   execsql {
     DROP TABLE t1;
     DROP TABLE t2;
-    CREATE TABLE t1(a, b, c INTEGER PRIMARY KEY, UNIQUE(a,b));
+    CREATE TABLE t1(a, b, c INTEGER, PRIMARY KEY(c), UNIQUE(a,b));
     CREATE TABLE t2(x);
     SELECT c FROM t1 ORDER BY c;
   }

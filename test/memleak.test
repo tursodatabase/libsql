@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: memleak.test,v 1.1 2002/08/31 16:52:45 drh Exp $
+# $Id: memleak.test,v 1.2 2003/02/26 13:52:52 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -41,8 +41,14 @@ set EXCLUDE {
   btree2.test
   trans.test
 }
+if {[llength $argv]>0} {
+  set FILELIST $argv
+  set argv {}
+} else {
+  set FILELIST [lsort -dictionary [glob $testdir/*.test]]
+}
 
-foreach testfile [lsort -dictionary [glob $testdir/*.test]] {
+foreach testfile $FILELIST {
   set tail [file tail $testfile]
   if {[lsearch -exact $EXCLUDE $tail]>=0} continue
   set LeakList {}

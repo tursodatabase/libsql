@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc1.test,v 1.20 2003/02/01 13:53:28 drh Exp $
+# $Id: misc1.test,v 1.21 2003/02/26 13:52:52 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -479,5 +479,45 @@ do_test misc1-15.2 {
   # The bug in ticket #238 causes the statement above to fail with
   # the error "table t10 alread exists"
 } {0 {}}
+
+# Test for memory leaks when a CREATE TABLE containing a primary key
+# fails.  Ticket #249.
+#
+do_test misc1-16.1 {
+  catchsql {SELECT name FROM sqlite_master LIMIT 1}
+  catchsql {
+    CREATE TABLE test(a integer, primary key(a));
+  }
+} {0 {}}
+do_test misc1-16.2 {
+  catchsql {
+    CREATE TABLE test(a integer, primary key(a));
+  }
+} {1 {table test already exists}}
+do_test misc1-16.3 {
+  catchsql {
+    CREATE TABLE test2(a text primary key, b text, primary key(a,b));
+  }
+} {1 {table "test2" has more than one primary key}}
+do_test misc1-16.4 {
+  execsql {
+    INSERT INTO test VALUES(1);
+    SELECT rowid, a FROM test;
+  }
+} {1 1}
+do_test misc1-16.5 {
+  execsql {
+    INSERT INTO test VALUES(5);
+    SELECT rowid, a FROM test;
+  }
+} {1 1 5 5}
+do_test misc1-16.6 {
+  execsql {
+    INSERT INTO test VALUES(NULL);
+    SELECT rowid, a FROM test;
+  }
+} {1 1 5 5 6 6}
+
+
 
 finish_test

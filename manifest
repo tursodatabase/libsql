@@ -1,5 +1,5 @@
-C When\sthe\sright\stable\sin\sa\sLEFT\sOUTER\sJOIN\scontains\san\sINTEGER\sPRIMARY\sKEY\nmake\ssure\sthat\skey\sis\sNULL\sif\sthere\sis\sno\srow\sin\sthe\sright\stable\sthat\nmatches\sthe\scurrent\srow\sin\sthe\sleft\stable.\s\sTickets\s#246\sand\s#247.\s(CVS\s873)
-D 2003-02-20T01:48:13
+C Fix\sa\smemory\sleak\sassociated\swith\sPRIMARY\sKEY\sin\sa\sCREATE\sTABLE\sstatement\nthat\sfails.\s\sTicket\s#249.\s(CVS\s1730)
+D 2003-02-26T13:52:51
 F Makefile.in 6606854b1512f185b8e8c779b8d7fc2750463d64
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -21,7 +21,7 @@ F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
 F src/auth.c f37bfc9451b8c1fa52f34adff474560018892729
 F src/btree.c 2a0305ccbe617266ac3524805e0c6ef55a9f9cb7
 F src/btree.h 36a7a26a29382c2b1a519b42bb125880d46d00d4
-F src/build.c 757b1a37436b55b43c8eb41436a23a0ce8cad447
+F src/build.c 02a106e40f0577437284fb78ebdd0a5443dc972c
 F src/delete.c cbd499f3f9297504c42e328af89bef1a2113d04c
 F src/encode.c faf03741efe921755ec371cf4a6984536de00042
 F src/expr.c bd690b3a6174e97a0f16800e78c8aeae749a4e71
@@ -65,7 +65,7 @@ F test/btree2.test e3b81ec33dc2f89b3e6087436dfe605b870c9080
 F test/btree3.test e597fb59be2ac0ea69c62aaa2064e998e528b665
 F test/btree4.test fa955a3d7a8bc91d6084b7f494f9e5d1bdfb15b6
 F test/capi2.test 0c82193ae67978c431e2ffc3259b544dc8fdd138
-F test/conflict.test d7d9dbea9909c1b843f9e89c8318fdb7ca07a5e5
+F test/conflict.test 80cf3780c8686b92db4ce0f60bca46a000537327
 F test/copy.test 73df5ed3112e858e006a8b7ddb4c9bab6a25d0fb
 F test/delete.test 5821a95a66061ae09723a88938f23d10d8a881ad
 F test/expr.test 290e2617b89b5c5e3bf71f19367d285102128be4
@@ -83,9 +83,9 @@ F test/limit.test 9ffb965a0f5bf7152187ef3d8d1249b96e5620bf
 F test/lock.test 388a3a10962d2d571c0c1821cc35bf069ee73473
 F test/main.test c66b564554b770ee7fdbf6a66c0cd90329bc2c85
 F test/malloc.test 7ba32a9ebd3aeed52ae4aaa6d42ca37e444536fd
-F test/memleak.test b4f59aa44488793b00feff2011d77d0f05b22468
+F test/memleak.test a18e6810cae96d2f6f5136920267adbefc8e1e90
 F test/minmax.test 29bc5727c3e4c792d5c4745833dd4b505905819e
-F test/misc1.test 2876987a723b4053db081069007cd6aadf80b62b
+F test/misc1.test 865c907df58195364eaf2e69426e9674bc8d1a8c
 F test/misuse.test a3aa2b18a97e4c409a1fcaff5151a4dd804a0162
 F test/notnull.test 7a08117a71e74b0321aaa937dbeb41a09d6eb1d0
 F test/null.test 5c2b57307e4b6178aae825eb65ddbee01e76b0fd
@@ -155,7 +155,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 6ef91a364b2922f078b7de81816bca3f2ca0fe46
-R 6cd2342e328368bdcfdfb261e7153b9c
+P 6a45fe3bd7e19cf9c20fc6cb65b0269cdd704490
+R dc727e1053fa9644419f9b675fcc2f6a
 U drh
-Z 02cf9dbf86ae6f6970569d7a82f43c8c
+Z 312e9f251ccc372868ea8e5b5518a8b3
