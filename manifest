@@ -1,5 +1,5 @@
-C Fix\sa\smemory\sleak\sthat\soccurs\sif\syou\scall\ssqlite_interrupt()\son\sa\squery\nusing\saggregate\sfunctions\swhere\sthe\saggregate\sfunction\sreturns\sa\sstring\nlonger\sthan\s32\scharacters.\s(CVS\s1248)
-D 2004-02-18T16:57:23
+C Fix\sa\sbug\sin\sthe\sparser\stable\scompression\salgorithm\sof\slemon.\s(CVS\s1249)
+D 2004-02-19T18:41:53
 F Makefile.in cfd75c46b335881999333a9e4b982fa8491f200b
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -147,7 +147,7 @@ F test/version.test 92adee5d98cf6e3eb0d1cf5186952e8114931bf6
 F test/view.test 1ee12c6f8f4791a2c0655120d5562a49400cfe53
 F test/where.test cb3a2ed062ce4b5f08aff2d08027c6a46d68c47b
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
-F tool/lemon.c e37dcb5b8cdb16f4ac98338134bf8d8cd28e399f
+F tool/lemon.c 0bd764091cd818717ee62193015873d73ca87e09
 F tool/lempar.c 0b5e7a58634e0d448929b8e85f7981c2aa708d57
 F tool/memleak.awk b744b6109566206c746d826f6ecdba34662216bc
 F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
@@ -186,7 +186,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 062ecc1368d6bb6d15da31e8d6f5953e8f5628b9
-R 4707d2271ed24781339bd9c9a8a6f215
+P 2c1e74e58a702fd2be954467a12e69a33b252831
+R 5f3caba9f5c70827c1b24157eff71fd5
 U drh
-Z 2d66e4ab4824193ca7a53544a03df80f
+Z 79840b805b40a8de29ae5e58e39914fc

@@ -491,7 +491,7 @@ int acttab_insert(acttab *p){
   ** in the worst case.  The worst case occurs if the transaction set
   ** must be appended to the current action table
   */
-  n = p->mxLookahead - p->mnLookahead + 1;
+  n = p->mxLookahead + 1;
   if( p->nAction + n >= p->nActionAlloc ){
     int oldAlloc = p->nActionAlloc;
     p->nActionAlloc = p->nAction + n + p->nActionAlloc + 20;
@@ -514,7 +514,7 @@ int acttab_insert(acttab *p){
   **
   ** i is the index in p->aAction[] where p->mnLookahead is inserted.
   */
-  for(i=0; i<p->nAction; i++){
+  for(i=0; i<p->nAction+p->mnLookahead; i++){
     if( p->aAction[i].lookahead<0 ){
       for(j=0; j<p->nLookahead; j++){
         k = p->aLookahead[j].lookahead - p->mnLookahead + i;
