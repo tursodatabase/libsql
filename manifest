@@ -1,5 +1,5 @@
-C More\schanges\sfor\sticket\s#1171\safter\sadditional\sanalysis.\s(CVS\s2403)
-D 2005-03-20T22:47:57
+C Do\snot\sattempt\sto\sread\sthe\sjournal\sfile\son\swindows\sbecause\smanditory\slocking\non\swindows\swill\snot\sallow\sit.\s\sTicket\s#1166.\s(CVS\s2404)
+D 2005-03-20T22:54:56
 F Makefile.in 5c00d0037104de2a50ac7647a5f12769795957a3
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -145,7 +145,7 @@ F test/join.test e08471279574487cac0d17fa1ea66aca15c4de7f
 F test/join2.test f2171c265e57ee298a27e57e7051d22962f9f324
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test cc6cafe85e11aacacd0abcd247a46bed251308f8
-F test/journal1.test ffc86f485293ece87005d00c6da1640554af7e22
+F test/journal1.test 36f2d1bb9bf03f790f43fbdb439e44c0657fab19
 F test/lastinsert.test b6a1db3e1ce2d3f0d6afe99d445084f543b6feaa
 F test/laststmtchanges.test 07cbdabc52407c29e40abc25050f2434f044a6b1
 F test/limit.test 270b076f31c5c32f7187de5727e74da4de43e477
@@ -277,7 +277,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P f0a39cee78472b93cce5304fc255285ddea7d2bf
-R 43f1db9a2e69b0f7f7b43aff2c1a6b5f
+P 0471d6b86fd67c22da832beb280b31305c5aa812
+R c2e1c57aacb99b0760384179d479ac8b
 U drh
-Z d771bce0fb6baa30068489aaa968f24c
+Z fcec3f31f07e212ea322d3208c7712fe

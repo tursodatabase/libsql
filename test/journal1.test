@@ -13,11 +13,19 @@
 # This file implements tests to make sure that leftover journals from
 # prior databases do not try to rollback into new databases.
 #
-# $Id: journal1.test,v 1.1 2005/03/15 17:09:30 drh Exp $
+# $Id: journal1.test,v 1.2 2005/03/20 22:54:56 drh Exp $
 
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+# These tests will not work on windows because windows uses
+# manditory file locking which breaks the file copy command.
+#
+if {$tcl_platform(platform)=="windows"} {
+  finish_test
+  return
+}
 
 # Create a smaple database
 #
