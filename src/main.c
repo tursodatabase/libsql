@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.72 2002/05/15 08:30:13 danielk1977 Exp $
+** $Id: main.c,v 1.73 2002/05/15 11:44:14 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -399,7 +399,7 @@ static void clearHashTable(sqlite *db, int preserveTemps){
     assert(pTab);
     if (pTab->isTemp) { 
       sqliteHashInsert(&db->trigHash, pTrigger->name, strlen(pTrigger->name), 
-	  pTrigger);
+          pTrigger);
     } else {
       sqliteDeleteTrigger(pTrigger);
     }
@@ -521,18 +521,19 @@ int sqlite_complete(const char *zSql){
         while( *zSql && *zSql!='\n' ){ zSql++; }
         if( *zSql==0 ) return isComplete;
         break;
-      } 
+      }
       default: {
-        if (seenCreate && !sqliteStrNICmp(zSql, "trigger", 7)) 
-	  while (sqliteStrNICmp(zSql, "end", 3))
-	    if (!*++zSql) return 0;
-
+        if (seenCreate && !sqliteStrNICmp(zSql, "trigger", 7)){
+          while (sqliteStrNICmp(zSql, "end", 3)){
+            if (!*++zSql) return 0;
+          }
+        }
         if (!sqliteStrNICmp(zSql, "create", 6)) {
-	  zSql = zSql + 5;
-	  seenCreate = 1;
-	} else 
-	  seenCreate = 0;
-
+          zSql = zSql + 5;
+          seenCreate = 1;
+        }else{
+          seenCreate = 0;
+        }
         isComplete = 0;
         break;
       }

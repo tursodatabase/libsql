@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.88 2002/05/15 08:30:13 danielk1977 Exp $
+** $Id: build.c,v 1.89 2002/05/15 11:44:14 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -324,26 +324,26 @@ void sqliteRollbackInternalChanges(sqlite *db){
   /* Remove any triggers that haven't been commited yet */
   for(pElem = sqliteHashFirst(&db->trigHash); pElem; 
       pElem = (pElem?sqliteHashNext(pElem):0)) {
-    Trigger * pTrigger = sqliteHashData(pElem);
-    if (!pTrigger->isCommit) {
-      Table * tbl = sqliteFindTable(db, pTrigger->table);
-      if (tbl) {
-	if (tbl->pTrigger == pTrigger) 
-	  tbl->pTrigger = pTrigger->pNext;
-	else {
-	  Trigger * cc = tbl->pTrigger;
-	  while (cc) {
-	    if (cc->pNext == pTrigger) {
-	      cc->pNext = cc->pNext->pNext;
-	      break;
-	    }
-	    cc = cc->pNext;
-	  }
-	  assert(cc);
-	}
+    Trigger *pTrigger = sqliteHashData(pElem);
+    if( !pTrigger->isCommit ){
+      Table *pTbl = sqliteFindTable(db, pTrigger->table);
+      if( pTbl ){
+        if( pTbl->pTrigger == pTrigger ){
+          pTbl->pTrigger = pTrigger->pNext;
+        }else{
+          Trigger *cc = pTbl->pTrigger;
+          while( cc ){
+            if (cc->pNext == pTrigger) {
+              cc->pNext = cc->pNext->pNext;
+              break;
+            }
+            cc = cc->pNext;
+          }
+          assert(cc);
+        }
       }
       sqliteHashInsert(&db->trigHash, pTrigger->name,
-	      1 + strlen(pTrigger->name), 0);
+              1 + strlen(pTrigger->name), 0);
       sqliteDeleteTrigger(pTrigger);
       pElem = sqliteHashFirst(&db->trigHash);
     }
@@ -355,7 +355,7 @@ void sqliteRollbackInternalChanges(sqlite *db){
     Trigger * pTrigger = sqliteHashData(pElem);
     Table * tab = sqliteFindTable(db, pTrigger->table);
     sqliteHashInsert(&db->trigHash, pTrigger->name, 
-	strlen(pTrigger->name) + 1, pTrigger);
+        strlen(pTrigger->name) + 1, pTrigger);
 
     pTrigger->pNext = tab->pTrigger;
     tab->pTrigger = pTrigger;
@@ -2116,8 +2116,8 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
         sqliteVdbeChangeP3(v, -1, pIdx->zName, P3_STATIC);
         sqliteVdbeAddOp(v, OP_Integer, pIdx->onError!=OE_None, 0);
         sqliteVdbeAddOp(v, OP_Callback, 3, 0);
-	++i;
-	pIdx = pIdx->pNext;
+        ++i;
+        pIdx = pIdx->pNext;
       }
     }
   }else

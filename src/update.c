@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.37 2002/05/15 08:30:14 danielk1977 Exp $
+** $Id: update.c,v 1.38 2002/05/15 11:44:15 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -64,17 +64,17 @@ void sqliteUpdate(
     if(zTab != 0) {
       pTab = sqliteFindTable(pParse->db, zTab);
       if (pTab) {
-	row_triggers_exist = 
-	  sqliteTriggersExist(pParse, pTab->pTrigger, 
-	      TK_UPDATE, TK_BEFORE, TK_ROW, pChanges) ||
-	  sqliteTriggersExist(pParse, pTab->pTrigger, 
-	      TK_UPDATE, TK_AFTER, TK_ROW, pChanges);
+        row_triggers_exist = 
+          sqliteTriggersExist(pParse, pTab->pTrigger, 
+              TK_UPDATE, TK_BEFORE, TK_ROW, pChanges) ||
+          sqliteTriggersExist(pParse, pTab->pTrigger, 
+              TK_UPDATE, TK_AFTER, TK_ROW, pChanges);
       }
       sqliteFree(zTab);
       if (row_triggers_exist &&  pTab->pSelect ) {
-	/* Just fire VIEW triggers */
-	sqliteViewTriggers(pParse, pTab, pWhere, onError, pChanges);
-	return;
+        /* Just fire VIEW triggers */
+        sqliteViewTriggers(pParse, pTab, pWhere, onError, pChanges);
+        return;
       }
     }
   }
@@ -213,10 +213,10 @@ void sqliteUpdate(
 
     sqliteVdbeAddOp(v, OP_Integer, 13, 0);
     for (ii = 0; ii < pTab->nCol; ii++) {
-	if (ii == pTab->iPKey) 
-	    sqliteVdbeAddOp(v, OP_Recno, base, 0);
-	else
-	    sqliteVdbeAddOp(v, OP_Column, base, ii);
+        if (ii == pTab->iPKey) 
+            sqliteVdbeAddOp(v, OP_Recno, base, 0);
+        else
+            sqliteVdbeAddOp(v, OP_Column, base, ii);
     }
     sqliteVdbeAddOp(v, OP_MakeRecord, pTab->nCol, 0);
     sqliteVdbeAddOp(v, OP_PutIntKey, oldIdx, 0);
@@ -240,7 +240,7 @@ void sqliteUpdate(
     sqliteVdbeAddOp(v, OP_Rewind, newIdx, 0);
 
     if (sqliteCodeRowTrigger(pParse, TK_UPDATE, pChanges, TK_BEFORE, pTab, 
-	  newIdx, oldIdx, onError)) goto update_cleanup;
+          newIdx, oldIdx, onError)) goto update_cleanup;
   }
 
   /* Rewind the list of records that need to be updated and
@@ -340,13 +340,13 @@ void sqliteUpdate(
   if (row_triggers_exist) {
     for(i=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
       if( openAll || aIdxUsed[i] )
-	sqliteVdbeAddOp(v, OP_Close, base+i+1, 0);
+        sqliteVdbeAddOp(v, OP_Close, base+i+1, 0);
     }
     sqliteVdbeAddOp(v, OP_Close, base, 0);
     pParse->nTab = base;
 
     if (sqliteCodeRowTrigger(pParse, TK_UPDATE, pChanges, TK_AFTER, pTab, 
-	  newIdx, oldIdx, onError)) goto update_cleanup;
+          newIdx, oldIdx, onError)) goto update_cleanup;
   }
 
   /* Repeat the above with the next record to be updated, until
@@ -360,7 +360,7 @@ void sqliteUpdate(
   if (!row_triggers_exist) {
     for(i=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
       if( openAll || aIdxUsed[i] ){
-	sqliteVdbeAddOp(v, OP_Close, base+i+1, 0);
+        sqliteVdbeAddOp(v, OP_Close, base+i+1, 0);
       }
     }
     sqliteVdbeAddOp(v, OP_Close, base, 0);

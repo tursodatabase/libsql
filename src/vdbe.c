@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.142 2002/05/15 08:30:14 danielk1977 Exp $
+** $Id: vdbe.c,v 1.143 2002/05/15 11:44:15 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -4560,7 +4560,7 @@ case OP_PushList: {
   p->keylistStackDepth++;
   assert(p->keylistStackDepth > 0);
   p->keylistStack = sqliteRealloc(p->keylistStack, 
-	  sizeof(Keylist *) * p->keylistStackDepth);
+          sizeof(Keylist *) * p->keylistStackDepth);
   p->keylistStack[p->keylistStackDepth - 1] = p->pList;
   p->pList = 0;
   break;

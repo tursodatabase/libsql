@@ -1,39 +1,38 @@
 /*
- * All copyright on this work is disclaimed by the author.
- *
- */
-
+** All copyright on this work is disclaimed by the author.
+*/
 #include "sqliteInt.h"
+
 /*
- * This is called by the parser when it sees a CREATE TRIGGER statement
- */
-void 
-sqliteCreateTrigger(
-    Parse * pParse, /* The parse context of the CREATE TRIGGER statement */
-    Token * nm,     /* The name of the trigger */
-    int tr_tm,      /* One of TK_BEFORE, TK_AFTER */
-    int op,         /* One of TK_INSERT, TK_UPDATE, TK_DELETE */
-    IdList * cols,  /* column list if this is an UPDATE OF trigger */
-    Token * tbl,    /* The name of the table/view the trigger applies to */
-    int foreach,    /* One of TK_ROW or TK_STATEMENT */
-    Expr * pWhen,   /* WHEN clause */
-    TriggerStep * steps,      /* The triggered program */
-    char const * cc, int len) /* The string data to make persistent */
-{
-  Trigger * nt;
-  Table   * tab;
+** This is called by the parser when it sees a CREATE TRIGGER statement
+*/
+void sqliteCreateTrigger(
+  Parse *pParse,      /* The parse context of the CREATE TRIGGER statement */
+  Token *nm,          /* The name of the trigger */
+  int tr_tm,          /* One of TK_BEFORE, TK_AFTER */
+  int op,             /* One of TK_INSERT, TK_UPDATE, TK_DELETE */
+  IdList *cols,       /* column list if this is an UPDATE OF trigger */
+  Token *tbl,         /* The name of the table/view the trigger applies to */
+  int foreach,        /* One of TK_ROW or TK_STATEMENT */
+  Expr *pWhen,        /* WHEN clause */
+  TriggerStep *steps, /* The triggered program */
+  char const *cc,     /* The string data to make persistent */
+  int len
+){
+  Trigger *nt;
+  Table   *tab;
   int offset;
-  TriggerStep * ss;
+  TriggerStep *ss;
 
   /* Check that: 
-     1. the trigger name does not already exist.
-     2. the table (or view) does exist.
-   */
+  ** 1. the trigger name does not already exist.
+  ** 2. the table (or view) does exist.
+  */
   {
-    char * tmp_str = sqliteStrNDup(nm->z, nm->n);
-    if (sqliteHashFind(&(pParse->db->trigHash), tmp_str, nm->n + 1)) {
+    char *tmp_str = sqliteStrNDup(nm->z, nm->n);
+    if( sqliteHashFind(&(pParse->db->trigHash), tmp_str, nm->n + 1) ){
       sqliteSetNString(&pParse->zErrMsg, "trigger ", -1,
-	  nm->z, nm->n, " already exists", -1, 0);
+          nm->z, nm->n, " already exists", -1, 0);
       sqliteFree(tmp_str);
       pParse->nErr++;
       goto trigger_cleanup;
@@ -41,20 +40,19 @@ sqliteCreateTrigger(
     sqliteFree(tmp_str);
   }
   {
-    char * tmp_str = sqliteStrNDup(tbl->z, tbl->n);
+    char *tmp_str = sqliteStrNDup(tbl->z, tbl->n);
     tab = sqliteFindTable(pParse->db, tmp_str);
     sqliteFree(tmp_str);
-    if (!tab) {
+    if( !tab ){
       sqliteSetNString(&pParse->zErrMsg, "no such table: ", -1,
-	  tbl->z, tbl->n, 0);
+          tbl->z, tbl->n, 0);
       pParse->nErr++;
       goto trigger_cleanup;
     }
   }
 
   /* Build the Trigger object */
-  nt = (Trigger *)sqliteMalloc(sizeof(Trigger));
-
+  nt = (Trigger*)sqliteMalloc(sizeof(Trigger));
   nt->name = sqliteStrNDup(nm->z, nm->n);
   nt->table = sqliteStrNDup(tbl->z, tbl->n);
   nt->op = op;
@@ -81,8 +79,9 @@ sqliteCreateTrigger(
   }
 
   /* if we are not initializing, and this trigger is not on a TEMP table, 
-     build the sqlite_master entry */
-  if (!pParse->initFlag && !tab->isTemp) {
+  ** build the sqlite_master entry
+  */
+  if( !pParse->initFlag && !tab->isTemp ){
 
     /* Make an entry in the sqlite_master table */
     sqliteBeginWriteOperation(pParse);
@@ -247,7 +246,7 @@ void sqliteDropTrigger(Parse *pParse, Token * trigname, int nested)
   trig = sqliteHashFind(&(pParse->db->trigHash), tmp_name, trigname->n + 1); 
   if (!trig) {
     sqliteSetNString(&pParse->zErrMsg, "no such trigger: ", -1,
-	tmp_name, -1, 0);
+        tmp_name, -1, 0);
     sqliteFree(tmp_name);
     return;
   }
@@ -266,20 +265,20 @@ void sqliteDropTrigger(Parse *pParse, Token * trigname, int nested)
     else {
       Trigger * cc = tbl->pTrigger;
       while (cc) {
-	if (cc->pNext == trig) {
-	  cc->pNext = cc->pNext->pNext;
-	  break;
-	}
-	cc = cc->pNext;
+        if (cc->pNext == trig) {
+          cc->pNext = cc->pNext->pNext;
+          break;
+        }
+        cc = cc->pNext;
       }
       assert(cc);
     }
 
     /* 2 */
     sqliteHashInsert(&(pParse->db->trigHash), tmp_name, 
-	trigname->n + 1, NULL);
+        trigname->n + 1, NULL);
     sqliteHashInsert(&(pParse->db->trigDrop), trig->name, 
-	trigname->n + 1, trig);
+        trigname->n + 1, trig);
   }
 
   /* Unless this is a trigger on a TEMP TABLE, generate code to destroy the
@@ -305,7 +304,7 @@ void sqliteDropTrigger(Parse *pParse, Token * trigname, int nested)
       sqliteBeginWriteOperation(pParse);
 
     base = sqliteVdbeAddOpList(pParse->pVdbe, 
-	ArraySize(dropTrigger), dropTrigger);
+        ArraySize(dropTrigger), dropTrigger);
     sqliteVdbeChangeP3(pParse->pVdbe, base+2, tmp_name, 0);
 
     if (!nested)
@@ -329,7 +328,7 @@ static int checkColumnOverLap(IdList * ii, ExprList * ee)
   for (i = 0; i < ii->nId; i++) 
     for (e = 0; e < ee->nExpr; e++) 
       if (!sqliteStrICmp(ii->a[i].zName, ee->a[e].zName))
-	return 1;
+        return 1;
 
   return 0; 
 }
@@ -364,7 +363,7 @@ int sqliteTriggersExist(
   tt = pTrigger;
   while (tt) {
     if (tt->op == op && tt->tr_tm == tr_tm && tt->foreach == foreach &&
-	checkColumnOverLap(tt->pColumns, pChanges)) {
+        checkColumnOverLap(tt->pColumns, pChanges)) {
       TriggerStack * ss;
       ss = pParse->trigStack;
       while (ss && ss->pTrigger != pTrigger) ss = ss->pNext;
@@ -377,70 +376,70 @@ int sqliteTriggersExist(
 }
 
 static int codeTriggerProgram(
-	Parse *pParse,
-	TriggerStep * program,
-	int onError)
+        Parse *pParse,
+        TriggerStep * program,
+        int onError)
 {
     TriggerStep * step = program;
     int orconf;
 
     while (step) {
-	int saveNTab = pParse->nTab;
-	orconf = (onError == OE_Default)?step->orconf:onError;
-	pParse->trigStack->orconf = orconf;
-	switch(step->op) {
-	    case TK_SELECT: {
+        int saveNTab = pParse->nTab;
+        orconf = (onError == OE_Default)?step->orconf:onError;
+        pParse->trigStack->orconf = orconf;
+        switch(step->op) {
+            case TK_SELECT: {
                 int tmp_tbl = pParse->nTab++;
-		sqliteVdbeAddOp(pParse->pVdbe, OP_OpenTemp, tmp_tbl, 0);
-		sqliteVdbeAddOp(pParse->pVdbe, OP_KeyAsData, tmp_tbl, 1);
-		sqliteSelect(pParse, step->pSelect, 
-			SRT_Union, tmp_tbl, 0, 0, 0);
-		sqliteVdbeAddOp(pParse->pVdbe, OP_Close, tmp_tbl, 0);
-		pParse->nTab--;
-		break;
-			    }
-	    case TK_UPDATE: {
+                sqliteVdbeAddOp(pParse->pVdbe, OP_OpenTemp, tmp_tbl, 0);
+                sqliteVdbeAddOp(pParse->pVdbe, OP_KeyAsData, tmp_tbl, 1);
+                sqliteSelect(pParse, step->pSelect, 
+                        SRT_Union, tmp_tbl, 0, 0, 0);
+                sqliteVdbeAddOp(pParse->pVdbe, OP_Close, tmp_tbl, 0);
+                pParse->nTab--;
+                break;
+                            }
+            case TK_UPDATE: {
                 sqliteVdbeAddOp(pParse->pVdbe, OP_PushList, 0, 0);
-		sqliteUpdate(pParse, &step->target, 
-			sqliteExprListDup(step->pExprList), 
-			sqliteExprDup(step->pWhere), orconf);
+                sqliteUpdate(pParse, &step->target, 
+                        sqliteExprListDup(step->pExprList), 
+                        sqliteExprDup(step->pWhere), orconf);
                 sqliteVdbeAddOp(pParse->pVdbe, OP_PopList, 0, 0);
-		break;
-			    }
-	    case TK_INSERT: {
+                break;
+                            }
+            case TK_INSERT: {
                 sqliteInsert(pParse, &step->target, 
-			sqliteExprListDup(step->pExprList), 
-			sqliteSelectDup(step->pSelect), 
-			sqliteIdListDup(step->pIdList), orconf);
-		break;
-			    }
-	    case TK_DELETE: {
-		sqliteVdbeAddOp(pParse->pVdbe, OP_PushList, 0, 0);
+                        sqliteExprListDup(step->pExprList), 
+                        sqliteSelectDup(step->pSelect), 
+                        sqliteIdListDup(step->pIdList), orconf);
+                break;
+                            }
+            case TK_DELETE: {
+                sqliteVdbeAddOp(pParse->pVdbe, OP_PushList, 0, 0);
                 sqliteDeleteFrom(pParse, &step->target, 
-			sqliteExprDup(step->pWhere)
-			);
-		sqliteVdbeAddOp(pParse->pVdbe, OP_PopList, 0, 0);
-		break;
-			    }
-	    default:
-			    assert(0);
-	} 
-	pParse->nTab = saveNTab;
-	step = step->pNext;
+                        sqliteExprDup(step->pWhere)
+                        );
+                sqliteVdbeAddOp(pParse->pVdbe, OP_PopList, 0, 0);
+                break;
+                            }
+            default:
+                            assert(0);
+        } 
+        pParse->nTab = saveNTab;
+        step = step->pNext;
     }
 
     return 0;
 }
 
 int sqliteCodeRowTrigger(
-	Parse * pParse,  /* Parse context */
-	int op,          /* One of TK_UPDATE, TK_INSERT, TK_DELETE */
-	ExprList * changes, /* Changes list for any UPDATE OF triggers */
-	int tr_tm,       /* One of TK_BEFORE, TK_AFTER */
-	Table * tbl,     /* The table to code triggers from */
-	int newTable,    /* The indice of the "new" row to access */
-	int oldTable,    /* The indice of the "old" row to access */
-	int onError)     /* ON CONFLICT policy */
+        Parse * pParse,  /* Parse context */
+        int op,          /* One of TK_UPDATE, TK_INSERT, TK_DELETE */
+        ExprList * changes, /* Changes list for any UPDATE OF triggers */
+        int tr_tm,       /* One of TK_BEFORE, TK_AFTER */
+        Table * tbl,     /* The table to code triggers from */
+        int newTable,    /* The indice of the "new" row to access */
+        int oldTable,    /* The indice of the "old" row to access */
+        int onError)     /* ON CONFLICT policy */
 {
   Trigger * pTrigger;
   TriggerStack * pTriggerStack;
@@ -457,16 +456,16 @@ int sqliteCodeRowTrigger(
 
     /* determine whether we should code this trigger */
     if (pTrigger->op == op && pTrigger->tr_tm == tr_tm && 
-	pTrigger->foreach == TK_ROW) {
+        pTrigger->foreach == TK_ROW) {
       fire_this = 1;
       pTriggerStack = pParse->trigStack;
       while (pTriggerStack) {
-	if (pTriggerStack->pTrigger == pTrigger) fire_this = 0;
-	pTriggerStack = pTriggerStack->pNext;
+        if (pTriggerStack->pTrigger == pTrigger) fire_this = 0;
+        pTriggerStack = pTriggerStack->pNext;
       }
       if (op == TK_UPDATE && pTrigger->pColumns &&
-	  !checkColumnOverLap(pTrigger->pColumns, changes))
-	fire_this = 0;
+          !checkColumnOverLap(pTrigger->pColumns, changes))
+        fire_this = 0;
     }
 
     if (fire_this) {
@@ -490,10 +489,10 @@ int sqliteCodeRowTrigger(
       endTrigger = sqliteVdbeMakeLabel(pParse->pVdbe);
       whenExpr = sqliteExprDup(pTrigger->pWhen);
       if (sqliteExprResolveIds(pParse, 0, &dummyTablist, 0, whenExpr)) {
-	pParse->trigStack = pParse->trigStack->pNext;
-	sqliteFree(pTriggerStack);
-	sqliteExprDelete(whenExpr);
-	return 1;
+        pParse->trigStack = pParse->trigStack->pNext;
+        sqliteFree(pTriggerStack);
+        sqliteExprDelete(whenExpr);
+        return 1;
       }
       sqliteExprIfFalse(pParse, whenExpr, endTrigger);
       sqliteExprDelete(whenExpr);
@@ -582,23 +581,23 @@ void sqliteViewTriggers(Parse *pParse, Table *pTab,
     for(ii=0; ii<pChanges->nExpr; ii++){
       int jj;
       if( sqliteExprResolveIds(pParse, oldIdx, theSelect.pSrc , 0, 
-	    pChanges->a[ii].pExpr) )
-	goto trigger_cleanup;
+            pChanges->a[ii].pExpr) )
+        goto trigger_cleanup;
 
       if( sqliteExprCheck(pParse, pChanges->a[ii].pExpr, 0, 0) )
-	goto trigger_cleanup;
+        goto trigger_cleanup;
 
       for(jj=0; jj<pTab->nCol; jj++){
-	if( sqliteStrICmp(pTab->aCol[jj].zName, pChanges->a[ii].zName)==0 ){
-	  aXRef[jj] = ii;
-	  break;
-	}
+        if( sqliteStrICmp(pTab->aCol[jj].zName, pChanges->a[ii].zName)==0 ){
+          aXRef[jj] = ii;
+          break;
+        }
       }
       if( jj>=pTab->nCol ){
-	sqliteSetString(&pParse->zErrMsg, "no such column: ", 
-	    pChanges->a[ii].zName, 0);
-	pParse->nErr++;
-	goto trigger_cleanup;
+        sqliteSetString(&pParse->zErrMsg, "no such column: ", 
+            pChanges->a[ii].zName, 0);
+        pParse->nErr++;
+        goto trigger_cleanup;
       }
     }
 
@@ -606,23 +605,23 @@ void sqliteViewTriggers(Parse *pParse, Table *pTab,
 
     for (ii = 0; ii < pTab->nCol; ii++)
       if( aXRef[ii] < 0 ) 
-	sqliteVdbeAddOp(v, OP_Column, oldIdx, ii);
+        sqliteVdbeAddOp(v, OP_Column, oldIdx, ii);
       else
-	sqliteExprCode(pParse, pChanges->a[aXRef[ii]].pExpr);
+        sqliteExprCode(pParse, pChanges->a[aXRef[ii]].pExpr);
 
     sqliteVdbeAddOp(v, OP_MakeRecord, pTab->nCol, 0);
     sqliteVdbeAddOp(v, OP_PutIntKey, newIdx, 0);
     sqliteVdbeAddOp(v, OP_Rewind, newIdx, 0);
 
     sqliteCodeRowTrigger(pParse, TK_UPDATE, pChanges, TK_BEFORE, 
-	pTab, newIdx, oldIdx, onError);
+        pTab, newIdx, oldIdx, onError);
     sqliteCodeRowTrigger(pParse, TK_UPDATE, pChanges, TK_AFTER, 
-	pTab, newIdx, oldIdx, onError);
+        pTab, newIdx, oldIdx, onError);
   } else {
     sqliteCodeRowTrigger(pParse, TK_DELETE, 0, TK_BEFORE, pTab, -1, oldIdx, 
-	onError);
+        onError);
     sqliteCodeRowTrigger(pParse, TK_DELETE, 0, TK_AFTER, pTab, -1, oldIdx, 
-	onError);
+        onError);
   }
 
   sqliteVdbeAddOp(v, OP_Next, oldIdx, startOfLoop);
@@ -639,5 +638,3 @@ trigger_cleanup:
   sqliteExprDelete(theSelect.pWhere);
   return;
 }
-
-

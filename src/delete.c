@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle DELETE FROM statements.
 **
-** $Id: delete.c,v 1.31 2002/05/15 08:30:13 danielk1977 Exp $
+** $Id: delete.c,v 1.32 2002/05/15 11:44:14 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -103,17 +103,17 @@ void sqliteDeleteFrom(
     if(zTab != 0) {
       pTab = sqliteFindTable(pParse->db, zTab);
       if (pTab) {
-	row_triggers_exist = 
-	  sqliteTriggersExist(pParse, pTab->pTrigger, 
-	      TK_DELETE, TK_BEFORE, TK_ROW, 0) ||
-	  sqliteTriggersExist(pParse, pTab->pTrigger, 
-	      TK_DELETE, TK_AFTER, TK_ROW, 0);
+        row_triggers_exist = 
+          sqliteTriggersExist(pParse, pTab->pTrigger, 
+              TK_DELETE, TK_BEFORE, TK_ROW, 0) ||
+          sqliteTriggersExist(pParse, pTab->pTrigger, 
+              TK_DELETE, TK_AFTER, TK_ROW, 0);
       }
       sqliteFree(zTab);
       if (row_triggers_exist &&  pTab->pSelect ) {
-	/* Just fire VIEW triggers */
-	sqliteViewTriggers(pParse, pTab, pWhere, OE_Replace, 0);
-	return;
+        /* Just fire VIEW triggers */
+        sqliteViewTriggers(pParse, pTab, pWhere, OE_Replace, 0);
+        return;
       }
     }
   }
@@ -223,10 +223,10 @@ void sqliteDeleteFrom(
 
       sqliteVdbeAddOp(v, OP_Integer, 13, 0);
       for (ii = 0; ii < pTab->nCol; ii++) {
-	if (ii == pTab->iPKey) 
-	  sqliteVdbeAddOp(v, OP_Recno, base, 0);
-	else
-	  sqliteVdbeAddOp(v, OP_Column, base, ii);
+        if (ii == pTab->iPKey) 
+          sqliteVdbeAddOp(v, OP_Recno, base, 0);
+        else
+          sqliteVdbeAddOp(v, OP_Column, base, ii);
       }
       sqliteVdbeAddOp(v, OP_MakeRecord, pTab->nCol, 0);
       sqliteVdbeAddOp(v, OP_PutIntKey, oldIdx, 0);
@@ -234,7 +234,7 @@ void sqliteDeleteFrom(
       sqliteVdbeAddOp(v, OP_Rewind, oldIdx, 0);
 
       sqliteCodeRowTrigger(pParse, TK_DELETE, 0, TK_BEFORE, pTab, -1, 
-	  oldIdx, (pParse->trigStack)?pParse->trigStack->orconf:OE_Default);
+          oldIdx, (pParse->trigStack)?pParse->trigStack->orconf:OE_Default);
     }
 
     pParse->nTab = base + 1;
@@ -251,11 +251,11 @@ void sqliteDeleteFrom(
 
     if (row_triggers_exist) {
       for(i=1, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){
-	sqliteVdbeAddOp(v, OP_Close, base + i, pIdx->tnum);
+        sqliteVdbeAddOp(v, OP_Close, base + i, pIdx->tnum);
       }
       sqliteVdbeAddOp(v, OP_Close, base, 0);
       sqliteCodeRowTrigger(pParse, TK_DELETE, 0, TK_AFTER, pTab, -1, 
-	  oldIdx, (pParse->trigStack)?pParse->trigStack->orconf:OE_Default);
+          oldIdx, (pParse->trigStack)?pParse->trigStack->orconf:OE_Default);
     }
 
     sqliteVdbeAddOp(v, OP_Goto, 0, addr);
@@ -264,7 +264,7 @@ void sqliteDeleteFrom(
 
     if (!row_triggers_exist) {
       for(i=1, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){
-	sqliteVdbeAddOp(v, OP_Close, base + i, pIdx->tnum);
+        sqliteVdbeAddOp(v, OP_Close, base + i, pIdx->tnum);
       }
       sqliteVdbeAddOp(v, OP_Close, base, 0);
       pParse->nTab = base;

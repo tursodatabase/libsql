@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.53 2002/05/15 08:30:13 danielk1977 Exp $
+** $Id: insert.c,v 1.54 2002/05/15 11:44:14 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -76,7 +76,7 @@ void sqliteInsert(
   */
   row_triggers_exist = 
     sqliteTriggersExist(pParse, pTab->pTrigger, TK_INSERT, 
-	TK_BEFORE, TK_ROW, 0) ||
+        TK_BEFORE, TK_ROW, 0) ||
     sqliteTriggersExist(pParse, pTab->pTrigger, TK_INSERT, TK_AFTER, TK_ROW, 0);
   if( pTab->readOnly || (pTab->pSelect && !row_triggers_exist) ){
     sqliteSetString(&pParse->zErrMsg, 
@@ -243,19 +243,19 @@ void sqliteInsert(
     sqliteVdbeAddOp(v, OP_Integer, 13, 0);
     for(i=0; i<pTab->nCol; i++){
       if( pColumn==0 ){
-	j = i;
+        j = i;
       }else{
-	for(j=0; j<pColumn->nId; j++){
-	  if( pColumn->a[j].idx==i ) break;
-	}
+        for(j=0; j<pColumn->nId; j++){
+          if( pColumn->a[j].idx==i ) break;
+        }
       }
       if( pColumn && j>=pColumn->nId ){
-	sqliteVdbeAddOp(v, OP_String, 0, 0);
-	sqliteVdbeChangeP3(v, -1, pTab->aCol[i].zDflt, P3_STATIC);
+        sqliteVdbeAddOp(v, OP_String, 0, 0);
+        sqliteVdbeChangeP3(v, -1, pTab->aCol[i].zDflt, P3_STATIC);
       }else if( srcTab>=0 ){
-	sqliteVdbeAddOp(v, OP_Column, srcTab, j); 
+        sqliteVdbeAddOp(v, OP_Column, srcTab, j); 
       }else{
-	sqliteExprCode(pParse, pList->a[j].pExpr);
+        sqliteExprCode(pParse, pList->a[j].pExpr);
       }
     }
     sqliteVdbeAddOp(v, OP_MakeRecord, pTab->nCol, 0);
@@ -265,7 +265,7 @@ void sqliteInsert(
     /* Fire BEFORE triggers */
     if (
     sqliteCodeRowTrigger(pParse, TK_INSERT, 0, TK_BEFORE, pTab, newIdx, -1, 
-	onError)
+        onError)
        ) goto insert_cleanup;
 
     /* Open the tables and indices for the INSERT */
@@ -275,8 +275,8 @@ void sqliteInsert(
       sqliteVdbeAddOp(v, openOp, base, pTab->tnum);
       sqliteVdbeChangeP3(v, -1, pTab->zName, P3_STATIC);
       for(idx=1, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, idx++){
-	sqliteVdbeAddOp(v, openOp, idx+base, pIdx->tnum);
-	sqliteVdbeChangeP3(v, -1, pIdx->zName, P3_STATIC);
+        sqliteVdbeAddOp(v, openOp, idx+base, pIdx->tnum);
+        sqliteVdbeChangeP3(v, -1, pIdx->zName, P3_STATIC);
       }
       pParse->nTab += idx;
     }
@@ -290,18 +290,18 @@ void sqliteInsert(
   if (!pTab->pSelect) {
     if( keyColumn>=0 ){
       if( srcTab>=0 ){
-	sqliteVdbeAddOp(v, OP_Column, srcTab, keyColumn);
+        sqliteVdbeAddOp(v, OP_Column, srcTab, keyColumn);
       }else{
-	int addr;
-	sqliteExprCode(pParse, pList->a[keyColumn].pExpr);
+        int addr;
+        sqliteExprCode(pParse, pList->a[keyColumn].pExpr);
 
-	/* If the PRIMARY KEY expression is NULL, then use OP_NewRecno
-	 ** to generate a unique primary key value.
-	 */
-	addr = sqliteVdbeAddOp(v, OP_Dup, 0, 1);
-	sqliteVdbeAddOp(v, OP_NotNull, 0, addr+4);
-	sqliteVdbeAddOp(v, OP_Pop, 1, 0);
-	sqliteVdbeAddOp(v, OP_NewRecno, base, 0);
+        /* If the PRIMARY KEY expression is NULL, then use OP_NewRecno
+         ** to generate a unique primary key value.
+         */
+        addr = sqliteVdbeAddOp(v, OP_Dup, 0, 1);
+        sqliteVdbeAddOp(v, OP_NotNull, 0, addr+4);
+        sqliteVdbeAddOp(v, OP_Pop, 1, 0);
+        sqliteVdbeAddOp(v, OP_NewRecno, base, 0);
       }
       sqliteVdbeAddOp(v, OP_MustBeInt, 0, 0);
     }else{
@@ -313,27 +313,27 @@ void sqliteInsert(
      */
     for(i=0; i<pTab->nCol; i++){
       if( i==pTab->iPKey ){
-	/* The value of the INTEGER PRIMARY KEY column is always a NULL.
-	 ** Whenever this column is read, the record number will be substituted
-	 ** in its place.  So will fill this column with a NULL to avoid
-	 ** taking up data space with information that will never be used. */
-	sqliteVdbeAddOp(v, OP_String, 0, 0);
-	continue;
+        /* The value of the INTEGER PRIMARY KEY column is always a NULL.
+         ** Whenever this column is read, the record number will be substituted
+         ** in its place.  So will fill this column with a NULL to avoid
+         ** taking up data space with information that will never be used. */
+        sqliteVdbeAddOp(v, OP_String, 0, 0);
+        continue;
       }
       if( pColumn==0 ){
-	j = i;
+        j = i;
       }else{
-	for(j=0; j<pColumn->nId; j++){
-	  if( pColumn->a[j].idx==i ) break;
-	}
+        for(j=0; j<pColumn->nId; j++){
+          if( pColumn->a[j].idx==i ) break;
+        }
       }
       if( pColumn && j>=pColumn->nId ){
-	sqliteVdbeAddOp(v, OP_String, 0, 0);
-	sqliteVdbeChangeP3(v, -1, pTab->aCol[i].zDflt, P3_STATIC);
+        sqliteVdbeAddOp(v, OP_String, 0, 0);
+        sqliteVdbeChangeP3(v, -1, pTab->aCol[i].zDflt, P3_STATIC);
       }else if( srcTab>=0 ){
-	sqliteVdbeAddOp(v, OP_Column, srcTab, j); 
+        sqliteVdbeAddOp(v, OP_Column, srcTab, j); 
       }else{
-	sqliteExprCode(pParse, pList->a[j].pExpr);
+        sqliteExprCode(pParse, pList->a[j].pExpr);
       }
     }
 
@@ -356,14 +356,14 @@ void sqliteInsert(
     if (!pTab->pSelect) {
       sqliteVdbeAddOp(v, OP_Close, base, 0);
       for(idx=1, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, idx++){
-	sqliteVdbeAddOp(v, OP_Close, idx+base, 0);
+        sqliteVdbeAddOp(v, OP_Close, idx+base, 0);
       }
     }
 
     /* Code AFTER triggers */
     if (
-	sqliteCodeRowTrigger(pParse, TK_INSERT, 0, TK_AFTER, pTab, newIdx, -1, 
-	  onError)
+        sqliteCodeRowTrigger(pParse, TK_INSERT, 0, TK_AFTER, pTab, newIdx, -1, 
+          onError)
        ) goto insert_cleanup;
   }
 

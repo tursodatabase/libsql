@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.60 2002/03/06 22:01:35 drh Exp $
+** $Id: btree.c,v 1.61 2002/05/15 11:44:14 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -2564,7 +2564,7 @@ int sqliteBtreeUpdateMeta(Btree *pBt, int *aMeta){
   }
   pP1 = pBt->page1;
   rc = sqlitepager_write(pP1);
-  if( rc ) return rc;	
+  if( rc ) return rc;   
   memcpy(pP1->aMeta, &aMeta[1], sizeof(pP1->aMeta));
   return SQLITE_OK;
 }
