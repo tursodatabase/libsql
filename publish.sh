@@ -71,8 +71,8 @@ for i in *.c; do
   $CMD
 done
 echo 'EXPORTS' >tclsqlite3.def
-echo 'Tclsqlite_Init' >>tclsqlite3.def
-echo 'Sqlite_Init' >>tclsqlite3.def
+echo 'Tclsqlite3_Init' >>tclsqlite3.def
+echo 'Sqlite3_Init' >>tclsqlite3.def
 i386-mingw32msvc-dllwrap \
      --def tclsqlite3.def -v --export-all \
      --driver-name i386-mingw32msvc-gcc \
@@ -80,7 +80,7 @@ i386-mingw32msvc-dllwrap \
      --as i386-mingw32msvc-as \
      --target i386-mingw32 \
      -dllname tclsqlite3.dll -lmsvcrt *.o $TCLSTUBLIB
-i386-mingw32msvc-strip tclsqlite.dll
+i386-mingw32msvc-strip tclsqlite3.dll
 rm tclsqlite.o
 cat >sqlite3.def <<\END_OF_FILE
 EXPORTS
@@ -153,7 +153,7 @@ sqlite3_value_type
 sqlite3_vmprintf
 END_OF_FILE
 i386-mingw32msvc-dllwrap \
-     --def sqlite.def -v --export-all \
+     --def sqlite3.def -v --export-all \
      --driver-name i386-mingw32msvc-gcc \
      --dlltool-name i386-mingw32msvc-dlltool \
      --as i386-mingw32msvc-as \
