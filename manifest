@@ -1,5 +1,5 @@
-C Do\snot\sassume\sthat\sa\spointer\scan\sfit\sin\sa\slong\sinside\sthe\sprintf()\scode.\nTicket\s#342.\s(CVS\s1013)
-D 2003-06-07T11:29:50
+C Use\ssqliteOsFileExists()\sin\sthe\sdebugging\shook\sin\svdbe.c,\sinstead\sof\saccess().\nTicket\s#341.\s(CVS\s1014)
+D 2003-06-07T11:33:45
 F Makefile.in 98a14dc13a78ca0e12007e974c93aeb098db7f68
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -59,7 +59,7 @@ F src/trigger.c 6ff205aaac4869e402d9902e528e1d22a85de14c
 F src/update.c 24260b4fda00c9726d27699a0561d53c0dccc397
 F src/util.c 566c7780170dd11fb1ad5de3ba81f0dfea7cccf0
 F src/vacuum.c 0820984615786c9ccdaad8032a792309b354a8eb
-F src/vdbe.c 5602825b5f71496963997985de773ad4750eba65
+F src/vdbe.c 828123ca4a28b7b5432ca4dc39e4ad91484ddabf
 F src/vdbe.h 985c24f312d10f9ef8f9a8b8ea62fcdf68e82f21
 F src/where.c 1e645d430cb4b347159c28c6085e9801160f2099
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
@@ -165,7 +165,7 @@ F www/speed.tcl 296cc5632d069b56d3ef5409ca0df90f486c10fb
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 14fdcc7fe8a60a6ba8584903636db8dc37eef26a
-P 787d986d0f391d26eef7a2639594c465f9599f5b
-R e6e651d4a1ca867cdb1d1a1cc51b5f22
+P 5dad7c05e9789e101d5ce75a6f3ea2ffb278b29d
+R 14326af17af8b228ddca6070dcaf4ff4
 U drh
-Z ae9940e2c16a990723b9c10b3754bf84
+Z 266945e115d9e22002a3c382885d3cfd
