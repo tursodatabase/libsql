@@ -1,5 +1,5 @@
-C Bug\sfix:\sallow\sROWID\sas\sa\scolumn\sin\sSELECT\sstatements\swhere\sthe\sFROM\sclause\nincludes\sviews\swhich\sare\sflattened.\s(CVS\s431)
-D 2002-03-14T14:33:31
+C Fix\san\suninitialized\svariable\sin\sAggReset()\s(CVS\s432)
+D 2002-03-18T13:03:55
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -51,7 +51,7 @@ F src/threadtest.c 81f0598e0f031c1bd506af337fdc1b7e8dff263f
 F src/tokenize.c 5015a5d4e65afb8cc6d18083d5f19a008e3842ce
 F src/update.c 7dd714a6a7fa47f849ebb36b6d915974d6c6accb
 F src/util.c b34cd91387bbfdc79319ea451a7d120cef478120
-F src/vdbe.c 51e99d994da8ade61dcc9a2c1e8f7ab7c6b29d33
+F src/vdbe.c 9fbe84ea33dddb08d95f3288d995376d32863fa4
 F src/vdbe.h f9be1f6e9a336c3ff4d14ea7489ee976e07460cc
 F src/where.c 34d91fd5d822c2663caeb023f72d60df316ebf29
 F test/all.test 6aa106eee4d7127afa5cee97c51a783a79694ead
@@ -130,7 +130,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 9f12b8805fd2f9a3422ed2a46190cfc881c87b36
-R eba21a9b7664327f427824ecda232c88
+P a3a360b308e45eaaf19efda80e30f2d420799cf2
+R 11ce79722ecbb3c5830f9c40b95c5527
 U drh
-Z cfacda59addc5682014e59b30781ddb3
+Z ce6b670713e9f35c9ee799a71ee2b1e1
