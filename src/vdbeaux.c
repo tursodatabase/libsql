@@ -1193,7 +1193,9 @@ int sqlite3VdbeHalt(Vdbe *p){
   }
   closeAllCursors(p);
   checkActiveVdbeCnt(db);
-  if( db->autoCommit && db->activeVdbeCnt==1 ){
+  if( p->pc<0 ){
+    /* No commit or rollback needed if the program never started */
+  }else if( db->autoCommit && db->activeVdbeCnt==1 ){
     if( p->rc==SQLITE_OK || p->errorAction==OE_Fail ){
       /* The auto-commit flag is true, there are no other active queries
       ** using this handle and the vdbe program was successful or hit an
@@ -1329,6 +1331,9 @@ int sqlite3VdbeReset(Vdbe *p){
 #endif
   p->magic = VDBE_MAGIC_INIT;
   p->aborted = 0;
+  if( p->rc==SQLITE_SCHEMA ){
+    sqlite3ResetInternalSchema(p->db, 0);
+  }
   return p->rc;
 }
  
@@ -1338,18 +1343,13 @@ int sqlite3VdbeReset(Vdbe *p){
 */
 int sqlite3VdbeFinalize(Vdbe *p){
   int rc = SQLITE_OK;
-  sqlite3 *db = p->db;
 
   if( p->magic==VDBE_MAGIC_RUN || p->magic==VDBE_MAGIC_HALT ){
     rc = sqlite3VdbeReset(p);
   }else if( p->magic!=VDBE_MAGIC_INIT ){
-    /* sqlite3Error(p->db, SQLITE_MISUSE, 0); */
     return SQLITE_MISUSE;
   }
   sqlite3VdbeDelete(p);
-  if( rc==SQLITE_SCHEMA ){
-    sqlite3ResetInternalSchema(db, 0);
-  }
   return rc;
 }
 

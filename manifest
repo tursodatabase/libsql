@@ -1,5 +1,5 @@
-C Test\sscript\schanges:\sBug\sfix\sand\scleanup\son\sioerr\stests.\sAlso,\sdon't\suse\sTCL\s"file\scopy"\scommand\son\swindows.\s(CVS\s2264)
-D 2005-01-22T03:39:39
+C ATTACH\sand\sDETACH\scause\sprepared\sstatements\sto\sexpire.\nsqlite3_finalize()\scan\snow\sbe\scalled\sright\safter\ssqlite3_reset().\s(CVS\s2265)
+D 2005-01-23T13:14:55
 F Makefile.in ffd81f5e926d40b457071b4de8d7c1fa18f39b5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -27,7 +27,7 @@ F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F sqlite3.1 01fdb467ce387a83248857c92f9e801df9e4611c
 F sqlite3.def dbaeb20c153e1d366e8f421b55a573f5dfc00863
 F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
-F src/attach.c cecf5ab42cff34416372a0210b14abb50ed48ef9
+F src/attach.c 4fcdb30304f479aa6ce57d9f583357421e7b3f65
 F src/auth.c 4b15c85335417752cc1045eae18b8186e08c8184
 F src/btree.c e68ae12c8b12ef9d45d58d931c36c184055a3880
 F src/btree.h 74d19cf40ab49fd69abe9e4e12a6c321ad86c497
@@ -79,13 +79,13 @@ F src/vdbe.c a5db9e8c1a7482a865d49ded5947ecbd97bee6f8
 F src/vdbe.h 067ca8d6750ba4f69a50284765e5883dee860181
 F src/vdbeInt.h 24d411de9efc6919a1e580069a597182be269bcf
 F src/vdbeapi.c 7b65522152c36104e1ab83057ce6f7b880755b16
-F src/vdbeaux.c fcadffa683dce3213190411676576823a65656d2
+F src/vdbeaux.c 442782a4f3c1a7c0e4d81a03e65061cefb4746d2
 F src/vdbemem.c 62fe89471b656a922e9879be005abf690509ead3
 F src/where.c f4127cc2633ee0f74790ab7f09f5af832489e44e
 F tclinstaller.tcl 36478c3bbfc5b93ceac42d94e3c736937b808432
 F test/all.test 7f0988442ab811dfa41793b5b550f5828ce316f3
 F test/alter.test 95c57a4f461fa81293e0dccef7f83889aadb169a
-F test/attach.test a16731cdd37ec2a383c1a031d3bcf7d71a2209fe
+F test/attach.test 4f83c2edc418ca2e63c6ac8678f912234732e9a7
 F test/attach2.test eeb987770f4dbe68bd29afdbc2e8cff0142e6eb5
 F test/attach3.test c05c70b933afbde0901dab9da3e66ee842c09f38
 F test/auth.test 559e0816b8100740624ebb0ab7aab05f5c92831c
@@ -271,7 +271,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P df648d50c0696cf7ada2fe5973d285b494891964
-R b0c675a4cb045c75fc37543174b70695
-U danielk1977
-Z 7904849f77948860180c69bbf40c06c8
+P 764b55adb5dff944db36d0d19ce5e7cc758b3a9e
+R c7507b15548a623c4866c7d65ad3bfbb
+U drh
+Z 6fdf86e7727943664905aa7b9eb7cd7f
