@@ -21,7 +21,7 @@
 **   http://www.hwaci.com/drh/
 **
 *************************************************************************
-** $Id: btree.c,v 1.17 2001/06/28 11:50:22 drh Exp $
+** $Id: btree.c,v 1.18 2001/06/30 21:53:53 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -2142,7 +2142,15 @@ int sqliteBtreeUpdateMeta(Btree *pBt, int *aMeta){
   return SQLITE_OK;
 }
 
+/******************************************************************************
+** The complete implementation of the BTree subsystem is above this line.
+** All the code the follows is for testing and troubleshooting the BTree
+** subsystem.  None of the code that follows is used during normal operation.
+** All of the following code is omitted unless the library is compiled with
+** the -DSQLITE_TEST=1 compiler option.
+******************************************************************************/
 #ifdef SQLITE_TEST
+
 /*
 ** Print a disassembly of the given page on standard output.  This routine
 ** is used for debugging and testing only.
@@ -2205,9 +2213,7 @@ int sqliteBtreePageDump(Btree *pBt, int pgno){
   sqlitepager_unref(pPage);
   return SQLITE_OK;
 }
-#endif
 
-#ifdef SQLITE_TEST
 /*
 ** Fill aResult[] with information about the entry and page that the
 ** cursor is pointing to.
@@ -2220,6 +2226,8 @@ int sqliteBtreePageDump(Btree *pBt, int pgno){
 **   aResult[5] =  Number of free blocks on the page
 **   aResult[6] =  Page number of the left child of this entry
 **   aResult[7] =  Page number of the right child for the whole page
+**
+** This routine is used for testing and debugging only.
 */
 int sqliteBtreeCursorDump(BtCursor *pCur, int *aResult){
   int cnt, idx;
@@ -2245,13 +2253,285 @@ int sqliteBtreeCursorDump(BtCursor *pCur, int *aResult){
   aResult[7] = pPage->u.hdr.rightChild;
   return SQLITE_OK;
 }
-#endif
 
-#ifdef SQLITE_TEST
 /*
-** Return the pager associated with a BTree
+** Return the pager associated with a BTree.  This routine is used for
+** testing and debugging only.
 */
 Pager *sqliteBtreePager(Btree *pBt){
   return pBt->pPager;
 }
-#endif
+
+/*
+** This structure is passed around through all the sanity checking routines
+** in order to keep track of some global state information.
+*/
+typedef struct SanityCheck SanityCheck;
+struct SanityCheck {
+  Btree *pBt;    // The tree being checked out
+  Pager *pPager; // The associated pager.  Also accessible by pBt->pPager
+  int nPage;     // Number of pages in the database
+  int *anRef;    // Number of times each page is referenced
+  char *zErrMsg; // An error message.  NULL of no errors seen.
+};
+
+/*
+** Append a message to the error message string.
+*/
+static void checkAppendMsg(SanityCheck *pCheck, char *zMsg1, char *zMsg2){
+  if( pCheck->zErrMsg ){
+    char *zOld = pCheck->zErrMsg;
+    pCheck->zErrMsg = 0;
+    sqliteSetString(&pCheck->zErrMsg, zOld, "\n", zMsg1, zMsg2, 0);
+    sqliteFree(zOld);
+  }else{
+    sqliteSetString(&pCheck->zErrMsg, zMsg1, zMsg2, 0);
+  }
+}
+
+/*
+** Add 1 to the reference count for page iPage.  If this is the second
+** reference to the page, add an error message to pCheck->zErrMsg.
+** Return 1 if there are 2 ore more references to the page and 0 if
+** if this is the first reference to the page.
+**
+** Also check that the page number is in bounds.
+*/
+static int checkRef(SanityCheck *pCheck, int iPage, char *zContext){
+  if( iPage==0 ) return 1;
+  if( iPage>pCheck->nPage ){
+    char zBuf[100];
+    sprintf(zBuf, "invalid page number %d", iPage);
+    checkAppendMsg(pCheck, zContext, zBuf);
+    return 1;
+  }
+  if( pCheck->anRef[iPage]==1 ){
+    char zBuf[100];
+    sprintf(zBuf, "2nd reference to page %d", iPage);
+    checkAppendMsg(pCheck, zContext, zBuf);
+    return 1;
+  }
+  return  (pCheck->anRef[iPage]++)>1;
+}
+
+/*
+** Check the integrity of the freelist or of an overflow page list.
+** Verify that the number of pages on the list is N.
+*/
+static void checkList(SanityCheck *pCheck, int iPage, int N, char *zContext){
+  char zMsg[100];
+  while( N-- ){
+    OverflowPage *pOvfl;
+    if( iPage<1 ){
+      sprintf(zMsg, "%d pages missing from overflow list", N+1);
+      checkAppendMsg(pCheck, zContext, zMsg);
+      break;
+    }
+    if( checkRef(pCheck, iPage, zContext) ) break;
+    if( sqlitepager_get(pCheck->pPager, (Pgno)iPage, (void**)&pOvfl) ){
+      sprintf(zMsg, "failed to get page %d", iPage);
+      checkAppendMsg(pCheck, zContext, zMsg);
+      break;
+    }
+    iPage = (int)pOvfl->iNext;
+    sqlitepager_unref(pOvfl);
+  }
+}
+
+/*
+** Do various sanity checks on a single page of a tree.  Return
+** the tree depth.  Root pages return 0.  Parents of root pages
+** return 1, and so forth.
+** 
+** These checks are done:
+**
+**      1.  Make sure that cells and freeblocks do not overlap
+**          but combine to completely cover the page.
+**      2.  Make sure cell keys are in order.
+**      3.  Make sure no key is less than or equal to zLowerBound.
+**      4.  Make sure no key is greater than or equal to zUpperBound.
+**      5.  Check the integrity of overflow pages.
+**      6.  Recursively call checkTreePage on all children.
+**      7.  Verify that the depth of all children is the same.
+**      8.  Make sure this page is at least 50% full or else it is
+**          the root of the tree.
+*/
+static int checkTreePage(
+  SanityCheck *pCheck,  /* Context for the sanity check */
+  int iPage,            /* Page number of the page to check */
+  MemPage *pParent,     /* Parent page */
+  char *zParentContext, /* Parent context */
+  char *zLowerBound,    /* All keys should be greater than this, if not NULL */
+  char *zUpperBound     /* All keys should be less than this, if not NULL */
+){
+  MemPage *pPage;
+  int i, rc, depth, d2, pgno;
+  char *zKey1, *zKey2;
+  BtCursor cur;
+  char zMsg[100];
+  char zContext[100];
+  char hit[SQLITE_PAGE_SIZE];
+
+  /* Check that the page exists
+  */
+  if( iPage==0 ) return 0;
+  if( checkRef(pCheck, iPage, zParentContext) ) return 0;
+  sprintf(zContext, "On tree page %d: ", iPage);
+  if( (rc = sqlitepager_get(pCheck->pPager, (Pgno)iPage, (void**)&pPage))!=0 ){
+    sprintf(zMsg, "unable to get the page. error code=%d", rc);
+    checkAppendMsg(pCheck, zContext, zMsg);
+    return 0;
+  }
+  if( (rc = initPage(pPage, (Pgno)iPage, pParent))!=0 ){
+    sprintf(zMsg, "initPage() returns error code %d", rc);
+    checkAppendMsg(pCheck, zContext, zMsg);
+    sqlitepager_unref(pPage);
+    return 0;
+  }
+
+  /* Check out all the cells.
+  */
+  depth = 0;
+  zKey1 = zLowerBound ? sqliteStrDup(zLowerBound) : 0;
+  cur.pPage = pPage;
+  cur.pBt = pCheck->pBt;
+  for(i=0; i<pPage->nCell; i++){
+    Cell *pCell = pPage->apCell[i];
+    int sz;
+
+    /* Check payload overflow pages
+    */
+    sz = pCell->h.nKey + pCell->h.nData;
+    sprintf(zContext, "On page %d cell %d: ", iPage, i);
+    if( sz>MX_LOCAL_PAYLOAD ){
+      int nPage = (sz - MX_LOCAL_PAYLOAD + OVERFLOW_SIZE - 1)/OVERFLOW_SIZE;
+      checkList(pCheck, pCell->ovfl, nPage, zContext);
+    }
+
+    /* Check that keys are in the right order
+    */
+    cur.idx = i;
+    zKey2 = sqliteMalloc( pCell->h.nKey+1 );
+    getPayload(&cur, 0, pCell->h.nKey, zKey2);
+    if( zKey1 && strcmp(zKey1,zKey2)>=0 ){
+      checkAppendMsg(pCheck, zContext, "Key is out of order");
+    }
+
+    /* Check sanity of left child page.
+    */
+    pgno = (int)pCell->h.leftChild;
+    d2 = checkTreePage(pCheck, pgno, pPage, zContext, zKey1, zKey2);
+    if( i>0 && d2!=depth ){
+      checkAppendMsg(pCheck, zContext, "Child page depth differs");
+    }
+    depth = d2;
+    sqliteFree(zKey1);
+    zKey1 = zKey2;
+  }
+  pgno = pPage->u.hdr.rightChild;
+  sprintf(zContext, "On page %d at right child: ", iPage);
+  checkTreePage(pCheck, pgno, pPage, zContext, zKey1, zUpperBound);
+  sqliteFree(zKey1);
+ 
+  /* Check for complete coverage of the page
+  */
+  memset(hit, 0, sizeof(hit));
+  memset(hit, 1, sizeof(PageHdr));
+  for(i=pPage->u.hdr.firstCell; i>0 && i<SQLITE_PAGE_SIZE; ){
+    Cell *pCell = (Cell*)&pPage->u.aDisk[i];
+    int j;
+    for(j=i+cellSize(pCell)-1; j>=i; j--) hit[j]++;
+    i = pCell->h.iNext;
+  }
+  for(i=pPage->u.hdr.firstFree; i>0 && i<SQLITE_PAGE_SIZE; ){
+    FreeBlk *pFBlk = (FreeBlk*)&pPage->u.aDisk[i];
+    int j;
+    for(j=i+pFBlk->iSize-1; j>=i; j--) hit[j]++;
+    i = pFBlk->iNext;
+  }
+  for(i=0; i<SQLITE_PAGE_SIZE; i++){
+    if( hit[i]==0 ){
+      sprintf(zMsg, "Unused space at byte %d of page %d", i, iPage);
+      checkAppendMsg(pCheck, zMsg, 0);
+      break;
+    }else if( hit[i]>1 ){
+      sprintf(zMsg, "Multiple uses for byte %d of page %d", i, iPage);
+      checkAppendMsg(pCheck, zMsg, 0);
+      break;
+    }
+  }
+
+  /* Check that free space is kept to a minimum
+  */
+  if( pParent && pPage->nFree>SQLITE_PAGE_SIZE/3 ){
+    sprintf(zMsg, "free space (%d) greater than max (%d)", pPage->nFree,
+       SQLITE_PAGE_SIZE/3);
+    checkAppendMsg(pCheck, zContext, zMsg);
+  }
+
+  sqlitepager_unref(pPage);
+  return depth;
+}
+
+/*
+** This routine does a complete check of the given BTree file.  aRoot[] is
+** an array of pages numbers were each page number is the root page of
+** a table.  nRoot is the number of entries in aRoot.
+**
+** If everything checks out, this routine returns NULL.  If something is
+** amiss, an error message is written into memory obtained from malloc()
+** and a pointer to that error message is returned.  The calling function
+** is responsible for freeing the error message when it is done.
+*/
+char *sqliteBtreeSanityCheck(Btree *pBt, int *aRoot, int nRoot){
+  int i;
+  int nRef;
+  SanityCheck sCheck;
+
+  nRef = *sqlitepager_stats(pBt->pPager);
+  sCheck.pBt = pBt;
+  sCheck.pPager = pBt->pPager;
+  sCheck.nPage = sqlitepager_pagecount(sCheck.pPager);
+  sCheck.anRef = sqliteMalloc( (sCheck.nPage+1)*sizeof(sCheck.anRef[0]) );
+  sCheck.anRef[1] = 1;
+  for(i=2; i<=sCheck.nPage; i++){ sCheck.anRef[i] = 0; }
+  sCheck.zErrMsg = 0;
+
+  /* Check the integrity of the freelist
+  */
+  checkList(&sCheck, pBt->page1->freeList, pBt->page1->nFree,"Main freelist: ");
+
+  /* Check all the tables.
+  */
+  for(i=0; i<nRoot; i++){
+    checkTreePage(&sCheck, aRoot[i], 0, "List of tree roots: ", 0, 0);
+  }
+
+  /* Make sure every page in the file is referenced
+  */
+  for(i=1; i<=sCheck.nPage; i++){
+    if( sCheck.anRef[i]==0 ){
+      char zBuf[100];
+      sprintf(zBuf, "Page %d is never used", i);
+      checkAppendMsg(&sCheck, zBuf, 0);
+    }
+  }
+
+  /* Make sure this analysis did not leave any unref() pages
+  */
+  if( nRef != *sqlitepager_stats(pBt->pPager) ){
+    char zBuf[100];
+    sprintf(zBuf, 
+      "Outstanding page count goes from %d to %d during this analysis",
+      nRef, *sqlitepager_stats(pBt->pPager)
+    );
+    checkAppendMsg(&sCheck, zBuf, 0);
+  }
+
+  /* Clean  up and report errors.
+  */
+  sqliteFree(sCheck.anRef);
+  return sCheck.zErrMsg;
+}
+
+#endif /* SQLITE_TEST */

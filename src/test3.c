@@ -25,7 +25,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test3.c,v 1.4 2001/06/28 01:54:49 drh Exp $
+** $Id: test3.c,v 1.5 2001/06/30 21:53:53 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -414,6 +414,44 @@ static int btree_pager_ref_dump(
 }
 
 /*
+** Usage:   btree_sanity_check ID ROOT ...
+**
+** Look through every page of the given BTree file to verify correct
+** formatting and linkage.  Return a line of text for each problem found.
+** Return an empty string if everything worked.
+*/
+static int btree_sanity_check(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  Btree *pBt;
+  char *zResult;
+  int nRoot;
+  int *aRoot;
+  int i;
+
+  if( argc<3 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+       " ID ROOT ...\"", 0);
+    return TCL_ERROR;
+  }
+  if( Tcl_GetInt(interp, argv[1], (int*)&pBt) ) return TCL_ERROR;
+  nRoot = argc-2;
+  aRoot = malloc( sizeof(int)*(argc-2) );
+  for(i=0; i<argc-2; i++){
+    if( Tcl_GetInt(interp, argv[i+2], &aRoot[i]) ) return TCL_ERROR;
+  }
+  zResult = sqliteBtreeSanityCheck(pBt, aRoot, nRoot);
+  if( zResult ){
+    Tcl_AppendResult(interp, zResult, 0);
+    free(zResult); 
+  }
+  return TCL_OK;
+}
+
+/*
 ** Usage:   btree_cursor ID TABLENUM
 **
 ** Create a new cursor.  Return the ID for the cursor.
@@ -738,6 +776,7 @@ int Sqlitetest3_Init(Tcl_Interp *interp){
   Tcl_CreateCommand(interp, "btree_key", btree_key, 0, 0);
   Tcl_CreateCommand(interp, "btree_data", btree_data, 0, 0);
   Tcl_CreateCommand(interp, "btree_cursor_dump", btree_cursor_dump, 0, 0);
+  Tcl_CreateCommand(interp, "btree_sanity_check", btree_sanity_check, 0, 0);
   Tcl_LinkVar(interp, "pager_refinfo_enable", (char*)&pager_refinfo_enable,
      TCL_LINK_INT);
   return TCL_OK;
