@@ -1,5 +1,5 @@
-C Use\s'sqlite3.pc'\sinstead\sof\s'sqlite.pc'\s(CVS\s1814)
-D 2004-07-19T03:23:12
+C Use\s'sqlite3.pc'\sinstead\sof\s'sqlite.pc'\s(CVS\s1815)
+D 2004-07-19T03:25:00
 F Makefile.in 77d1219b6563476711a7a962e865979a6f314eb0
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -10,8 +10,8 @@ F art/SQLite.gif 1bbb94484963f1382e27e1c5e86dd0c1061eba2b
 F art/SQLiteLogo3.tiff b9e6bf022ae939bc986cddb8ab99583ca1b02cb3
 F config.guess 2103e94b15dc57112d7b9ee152c6fac5288895b4
 F config.sub 9bf686ec001ae7bc53f5b3563c90c62d4c6d48be
-F configure 7e3a941d455da0f6368c0ed13466565bfed88c90 x
-F configure.ac 07492bd19a17109ccb2d59846c6a0dcf41cacfa8
+F configure d3720624693e6b18264e7776f7250dd472659a10 x
+F configure.ac 82b4d26ae0234e87019b5783b67bd5b807eb5820
 F doc/affinity.html bdc7560fa3d2284af59d8fb52041cddbb14578f5
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
@@ -236,7 +236,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 880644097004cba1e215a5697d0553b3b98c9884
-R 8ca1f30cf6ef42c006c54b8cd1399aec
+P 7525a1a9106f492d288676fd8aa00b470db2dc4b
+R 694226ff5e9360bf62a1697093fa39fc
 U dougcurrie
-Z fd713d919f8df3ab40c66579698e9f14
+Z b2ba6f6db45dfc5b54be0ed1e407abfe

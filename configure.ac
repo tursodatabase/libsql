@@ -138,7 +138,7 @@ AC_INIT(src/sqlite.h.in)
 dnl Put the RCS revision string after AC_INIT so that it will also
 dnl show in in configure.
 # The following RCS revision string applies to configure.in
-# $Revision: 1.9 $
+# $Revision: 1.10 $
 
 #########
 # Programs needed
@@ -526,5 +526,5 @@ AC_CHECK_FUNC(usleep, [TARGET_CFLAGS="$TARGET_CFLAGS -DHAVE_USLEEP=1"])
 #
 AC_OUTPUT([
 Makefile
-sqlite.pc
+sqlite3.pc
 ])
