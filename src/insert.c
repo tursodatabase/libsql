@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.135 2005/01/29 08:32:45 danielk1977 Exp $
+** $Id: insert.c,v 1.136 2005/02/08 08:42:28 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -94,6 +94,27 @@ void sqlite3TableAffinityStr(Vdbe *v, Table *pTab){
   sqlite3VdbeChangeP3(v, -1, pTab->zColAff, 0);
 }
 
+/*
+** Return non-zero if SELECT statement p opens the table with rootpage
+** iTab in database iDb.  This is used to see if a statement of the form 
+** "INSERT INTO <iDb, iTab> SELECT ..." can run without using temporary
+** table for the results of the SELECT. 
+**
+** No checking is done for sub-selects that are part of expressions.
+*/
+static int selectReadsTable(Select *p, int iDb, int iTab){
+  int i;
+  struct SrcList_item *pItem;
+  if( p->pSrc==0 ) return 0;
+  for(i=0, pItem=p->pSrc->a; i<p->pSrc->nSrc; i++, pItem++){
+    if( pItem->pSelect ){
+      if( selectReadsTable(p, iDb, iTab) ) return 1;
+    }else{
+      if( pItem->pTab->iDb==iDb && pItem->pTab->tnum==iTab ) return 1;
+    }
+  }
+  return 0;
+}
 
 /*
 ** This routine is call to handle SQL of the following forms:
@@ -182,7 +203,7 @@ void sqlite3Insert(
   sqlite3 *db;          /* The main database structure */
   int keyColumn = -1;   /* Column that is the INTEGER PRIMARY KEY */
   int endOfLoop;        /* Label for the end of the insertion loop */
-  int useTempTable;     /* Store SELECT results in intermediate table */
+  int useTempTable = 0; /* Store SELECT results in intermediate table */
   int srcTab = 0;       /* Data comes from this temporary cursor if >=0 */
   int iSelectLoop = 0;  /* Address of code that implements the SELECT */
   int iCleanup = 0;     /* Address of the cleanup code */
@@ -330,20 +351,8 @@ void sqlite3Insert(
     ** of the tables being read by the SELECT statement.  Also use a 
     ** temp table in the case of row triggers.
     */
-    if( triggers_exist ){
+    if( triggers_exist || selectReadsTable(pSelect, pTab->iDb, pTab->tnum) ){
       useTempTable = 1;
-    }else{
-      int addr = 0;
-      useTempTable = 0;
-      while( useTempTable==0 ){
-        VdbeOp *pOp;
-        addr = sqlite3VdbeFindOp(v, addr, OP_OpenRead, pTab->tnum);
-        if( addr==0 ) break;
-        pOp = sqlite3VdbeGetOp(v, addr-2);
-        if( pOp->opcode==OP_Integer && pOp->p1==pTab->iDb ){
-          useTempTable = 1;
-        }
-      }
     }
 
     if( useTempTable ){
