@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.305 2005/02/01 01:21:55 danielk1977 Exp $
+** $Id: build.c,v 1.306 2005/02/01 02:13:29 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -885,12 +885,16 @@ static char sqlite3AffinityType(const char *zType, int nType){
   while( zIn!=zEnd ){
     h = (h<<8) + sqlite3UpperToLower[*zIn];
     zIn++;
-    if     ( h==0x63686172 ) aff = SQLITE_AFF_TEXT;           /* CHAR */
-    else if( h==0x636C6F62 ) aff = SQLITE_AFF_TEXT;           /* CLOB */
-    else if( h==0x74657874 ) aff = SQLITE_AFF_TEXT;           /* TEXT */
-    else if( h==0x626C6F62 && aff==SQLITE_AFF_NUMERIC ){      /* BLOB */
+    if( h==(('c'<<24)+('h'<<16)+('a'<<8)+'r') ){             /* CHAR */
+      aff = SQLITE_AFF_TEXT; 
+    }else if( h==(('c'<<24)+('l'<<16)+('o'<<8)+'b') ){       /* CLOB */
+      aff = SQLITE_AFF_TEXT;
+    }else if( h==(('t'<<24)+('e'<<16)+('x'<<8)+'t') ){       /* TEXT */
+      aff = SQLITE_AFF_TEXT;
+    }else if( h==(('b'<<24)+('l'<<16)+('o'<<8)+'b')          /* BLOB */
+        && aff==SQLITE_AFF_NUMERIC ){
       aff = SQLITE_AFF_NONE;
-    }else if( (h&0x00FFFFFF)==0x00696E74 ){                   /* INT */
+    }else if( (h&0x00FFFFFF)==(('i'<<16)+('n'<<8)+'t') ){    /* INT */
       aff = SQLITE_AFF_INTEGER; 
       break;
     }
