@@ -1,5 +1,5 @@
-C Get\sthe\snon-callback\sAPI\sworking\swith\sthe\sEXPLAIN\skeyword\sand\sfor\sPRAGMAs.\nTickets\s#258\sand\s#257.\s\sUpdate\sthe\sAPI\sdocumentation\son\sthe\ssqlite_changes()\nroutine\sto\sexplain\show\sit\sworks\swith\sthe\snon-callback\sAPI.\s\sTicket\s#250.\s(CVS\s875)
-D 2003-03-01T19:45:34
+C Add\smore\stests\sto\smake\ssure\sthat\ssqlite_changes()\sworks\swhen\susing\sthe\nnon-callback\sAPI.\s\sTicket\s#250.\s(CVS\s876)
+D 2003-03-01T19:53:16
 F Makefile.in 6606854b1512f185b8e8c779b8d7fc2750463d64
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -64,7 +64,7 @@ F test/btree.test 1e3463c7838e7e71bbf37c9c6e45beee9c8975ba
 F test/btree2.test e3b81ec33dc2f89b3e6087436dfe605b870c9080
 F test/btree3.test e597fb59be2ac0ea69c62aaa2064e998e528b665
 F test/btree4.test fa955a3d7a8bc91d6084b7f494f9e5d1bdfb15b6
-F test/capi2.test b5c7fd0b34ecd03ce16ea15dd08934f7bcb5821a
+F test/capi2.test fb94bed9e236074c5e255cfd25e3e32344e24855
 F test/conflict.test 80cf3780c8686b92db4ce0f60bca46a000537327
 F test/copy.test 73df5ed3112e858e006a8b7ddb4c9bab6a25d0fb
 F test/delete.test 5821a95a66061ae09723a88938f23d10d8a881ad
@@ -155,7 +155,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 8e9dc567996c3301c14a1f055ff2265770cbc3e1
-R 590441fe595414a275b875853b52b052
+P 620e1065e978545dd7bf6fa6fad1e6b93918dbf8
+R 2343001f399d56bd2319f7dd88553a18
 U drh
-Z c88b48546440c39c922d47e5442b91f3
+Z 7b2db2204ce588937f4a5aa689c3451d
