@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.57 2002/05/21 13:02:24 drh Exp $
+** $Id: shell.c,v 1.58 2002/06/25 01:09:12 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -660,8 +660,11 @@ static int do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
     sqlite_exec_printf(db,
       "SELECT name FROM sqlite_master "
       "WHERE type='index' AND tbl_name LIKE '%q' "
-      "ORDER BY name",
-      callback, &data, &zErrMsg, azArg[1]
+      "UNION ALL "
+      "SELECT name FROM sqlite_temp_master "
+      "WHERE type='index' AND tbl_name LIKE '%q' "
+      "ORDER BY 1",
+      callback, &data, &zErrMsg, azArg[1], azArg[1]
     );
     if( zErrMsg ){
       fprintf(stderr,"Error: %s\n", zErrMsg);
@@ -796,18 +799,35 @@ static int do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
         new_colv[0] = "sql";
         new_colv[1] = 0;
         callback(&data, 1, new_argv, new_colv);
+      }else if( sqliteStrICmp(azArg[1],"sqlite_temp_master")==0 ){
+        char *new_argv[2], *new_colv[2];
+        new_argv[0] = "CREATE TEMP TABLE sqlite_temp_master (\n"
+                      "  type text,\n"
+                      "  name text,\n"
+                      "  tbl_name text,\n"
+                      "  rootpage integer,\n"
+                      "  sql text\n"
+                      ")";
+        new_argv[1] = 0;
+        new_colv[0] = "sql";
+        new_colv[1] = 0;
+        callback(&data, 1, new_argv, new_colv);
       }else{
         sqlite_exec_printf(db,
-          "SELECT sql FROM sqlite_master "
+          "SELECT sql FROM "
+          "  (SELECT * FROM sqlite_master UNION ALL"
+          "   SELECT * FROM sqlite_temp_master) "
           "WHERE tbl_name LIKE '%q' AND type!='meta' AND sql NOTNULL "
-          "ORDER BY type DESC, name",
+          "ORDER BY substr(type,2,1), name",
           callback, &data, &zErrMsg, azArg[1]);
       }
     }else{
       sqlite_exec(db,
-         "SELECT sql FROM sqlite_master "
+         "SELECT sql FROM "
+         "  (SELECT * FROM sqlite_master UNION ALL"
+         "   SELECT * FROM sqlite_temp_master) "
          "WHERE type!='meta' AND sql NOTNULL "
-         "ORDER BY tbl_name, type DESC, name",
+         "ORDER BY substr(type,2,1), name",
          callback, &data, &zErrMsg
       );
     }
@@ -846,15 +866,21 @@ static int do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
       rc = sqlite_get_table(db,
         "SELECT name FROM sqlite_master "
         "WHERE type IN ('table','view') "
-        "ORDER BY name",
+        "UNION ALL "
+        "SELECT name FROM sqlite_temp_master "
+        "WHERE type IN ('table','view') "
+        "ORDER BY 1",
         &azResult, &nRow, 0, &zErrMsg
       );
     }else{
       rc = sqlite_get_table_printf(db,
         "SELECT name FROM sqlite_master "
         "WHERE type IN ('table','view') AND name LIKE '%%%q%%' "
-        "ORDER BY name",
-        &azResult, &nRow, 0, &zErrMsg, azArg[1]
+        "UNION ALL "
+        "SELECT name FROM sqlite_temp_master "
+        "WHERE type IN ('table','view') AND name LIKE '%%%q%%' "
+        "ORDER BY 1",
+        &azResult, &nRow, 0, &zErrMsg, azArg[1], azArg[1]
       );
     }
     if( zErrMsg ){

@@ -25,10 +25,28 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.97 2002/06/20 11:36:49 drh Exp $
+** $Id: build.c,v 1.98 2002/06/25 01:09:11 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
+
+/*
+** This routine is called when a new SQL statement is beginning to
+** be parsed.  Check to see if the schema for the database needs
+** to be read from the SQLITE_MASTER and SQLITE_TEMP_MASTER tables.
+** If it does, then read it.
+*/
+void sqliteBeginParse(Parse *pParse, int explainFlag){
+  sqlite *db = pParse->db;
+  pParse->explain = explainFlag;
+  if((db->flags & SQLITE_Initialized)==0 && pParse->initFlag==0 ){
+    int rc = sqliteInit(db, &pParse->zErrMsg);
+    if( rc!=SQLITE_OK ){
+      pParse->rc = rc;
+      pParse->nErr++;
+    }
+  }
+}
 
 /*
 ** This routine is called after a single SQL statement has been
@@ -48,6 +66,7 @@ void sqliteExec(Parse *pParse){
     if( pParse->explain ){
       rc = sqliteVdbeList(pParse->pVdbe, pParse->xCallback, pParse->pArg, 
                           &pParse->zErrMsg);
+      db->next_cookie = db->schema_cookie;
     }else{
       FILE *trace = (db->flags & SQLITE_VdbeTrace)!=0 ? stdout : 0;
       sqliteVdbeTrace(pParse->pVdbe, trace);
@@ -70,7 +89,8 @@ void sqliteExec(Parse *pParse){
 ** of that table.  Return NULL if not found.
 */
 Table *sqliteFindTable(sqlite *db, const char *zName){
-  Table *p = sqliteHashFind(&db->tblHash, zName, strlen(zName)+1);
+  Table *p;
+  p = sqliteHashFind(&db->tblHash, zName, strlen(zName)+1);
   return p;
 }
 
@@ -80,7 +100,8 @@ Table *sqliteFindTable(sqlite *db, const char *zName){
 ** Return NULL if not found.
 */
 Index *sqliteFindIndex(sqlite *db, const char *zName){
-  Index *p = sqliteHashFind(&db->idxHash, zName, strlen(zName)+1);
+  Index *p;
+  p = sqliteHashFind(&db->idxHash, zName, strlen(zName)+1);
   return p;
 }
 
@@ -99,7 +120,6 @@ static void sqliteDeleteIndex(sqlite *db, Index *p){
   if( pOld!=0 && pOld!=p ){
     sqliteHashInsert(&db->idxHash, pOld->zName, strlen(pOld->zName)+1, pOld);
   }
-  sqliteHashInsert(&db->idxDrop, p, 0, 0);
   sqliteFree(p);
 }
 
@@ -122,26 +142,51 @@ void sqliteUnlinkAndDeleteIndex(sqlite *db, Index *pIndex){
 }
 
 /*
-** Move the given index to the pending DROP INDEX queue if it has
-** been committed.  If this index was never committed, then just
-** delete it.
-**
-** Indices on the pending drop queue are deleted when a COMMIT is
-** executed.  If a ROLLBACK occurs, the indices are moved back into
-** the main index hash table.
+** Erase all schema information from the in-memory hash tables of
+** database connection.  This routine is called to reclaim memory
+** before the connection closes.  It is also called during a rollback
+** if there were schema changes during the transaction.
 */
-static void sqlitePendingDropIndex(sqlite *db, Index *p){
-  if( !p->isCommit ){
-    sqliteUnlinkAndDeleteIndex(db, p);
-  }else{
-    Index *pOld;
-    pOld = sqliteHashInsert(&db->idxHash, p->zName, strlen(p->zName)+1, 0);
-    if( pOld!=0 && pOld!=p ){
-      sqliteHashInsert(&db->idxHash, pOld->zName, strlen(pOld->zName)+1, pOld);
-    }
-    sqliteHashInsert(&db->idxDrop, p, 0, p);
-    p->isDropped = 1;
+void sqliteResetInternalSchema(sqlite *db){
+  HashElem *pElem;
+  Hash temp1;
+  Hash temp2;
+
+  temp1 = db->tblHash;
+  temp2 = db->trigHash;
+  sqliteHashInit(&db->trigHash, SQLITE_HASH_STRING, 0);
+  sqliteHashClear(&db->idxHash);
+  for(pElem=sqliteHashFirst(&temp2); pElem; pElem=sqliteHashNext(pElem)){
+    Trigger *pTrigger = sqliteHashData(pElem);
+    sqliteDeleteTrigger(pTrigger);
   }
+  sqliteHashClear(&temp2);
+  sqliteHashInit(&db->tblHash, SQLITE_HASH_STRING, 0);
+  for(pElem=sqliteHashFirst(&temp1); pElem; pElem=sqliteHashNext(pElem)){
+    Table *pTab = sqliteHashData(pElem);
+    sqliteDeleteTable(db, pTab);
+  }
+  sqliteHashClear(&temp1);
+  db->flags &= ~(SQLITE_Initialized|SQLITE_InternChanges);
+}
+
+/*
+** This routine is called whenever a rollback occurs.  If there were
+** schema changes during the transaction, then we have to reset the
+** internal hash tables and reload them from disk.
+*/
+void sqliteRollbackInternalChanges(sqlite *db){
+  if( db->flags & SQLITE_InternChanges ){
+    sqliteResetInternalSchema(db);
+  }
+}
+
+/*
+** This routine is called when a commit occurs.
+*/
+void sqliteCommitInternalChanges(sqlite *db){
+  db->schema_cookie = db->next_cookie;
+  db->flags &= ~SQLITE_InternChanges;
 }
 
 /*
@@ -185,183 +230,7 @@ static void sqliteUnlinkAndDeleteTable(sqlite *db, Table *p){
   assert( db!=0 );
   pOld = sqliteHashInsert(&db->tblHash, p->zName, strlen(p->zName)+1, 0);
   assert( pOld==0 || pOld==p );
-  sqliteHashInsert(&db->tblDrop, p, 0, 0);
   sqliteDeleteTable(db, p);
-}
-
-/*
-** Move the given table to the pending DROP TABLE queue if it has
-** been committed.  If this table was never committed, then just
-** delete it.  Do the same for all its indices.
-**
-** Table on the drop queue are not actually deleted until a COMMIT
-** statement is executed.  If a ROLLBACK occurs instead of a COMMIT,
-** then the tables on the drop queue are moved back into the main
-** hash table.
-*/
-static void sqlitePendingDropTable(sqlite *db, Table *pTbl){
-  if( !pTbl->isCommit ){
-    sqliteUnlinkAndDeleteTable(db, pTbl);
-  }else{
-    Table *pOld;
-    Index *pIndex, *pNext;
-    pOld = sqliteHashInsert(&db->tblHash, pTbl->zName, strlen(pTbl->zName)+1,0);
-    assert( pOld==pTbl );
-    sqliteHashInsert(&db->tblDrop, pTbl, 0, pTbl);
-    for(pIndex = pTbl->pIndex; pIndex; pIndex=pNext){
-      pNext = pIndex->pNext;
-      sqlitePendingDropIndex(db, pIndex);
-    }
-  }
-}
-
-/*
-** Check all Tables and Indexes in the internal hash table and commit
-** any additions or deletions to those hash tables.
-**
-** When executing CREATE TABLE and CREATE INDEX statements, the Table
-** and Index structures are created and added to the hash tables, but
-** the "isCommit" field is not set.  This routine sets those fields.
-** When executing DROP TABLE and DROP INDEX, the table or index structures
-** are moved out of tblHash and idxHash into tblDrop and idxDrop.  This
-** routine deletes the structure in tblDrop and idxDrop.
-**
-** See also: sqliteRollbackInternalChanges()
-*/
-void sqliteCommitInternalChanges(sqlite *db){
-  HashElem *pElem;
-  if( (db->flags & SQLITE_InternChanges)==0 ) return;
-  db->schema_cookie = db->next_cookie;
-  for(pElem=sqliteHashFirst(&db->tblHash); pElem; pElem=sqliteHashNext(pElem)){
-    Table *pTable = sqliteHashData(pElem);
-    pTable->isCommit = 1;
-  }
-  for(pElem=sqliteHashFirst(&db->tblDrop); pElem; pElem=sqliteHashNext(pElem)){
-    Table *pTable = sqliteHashData(pElem);
-    sqliteDeleteTable(db, pTable);
-  }
-  sqliteHashClear(&db->tblDrop);
-  for(pElem=sqliteHashFirst(&db->idxHash); pElem; pElem=sqliteHashNext(pElem)){
-    Index *pIndex = sqliteHashData(pElem);
-    pIndex->isCommit = 1;
-  }
-  while( (pElem=sqliteHashFirst(&db->idxDrop))!=0 ){
-    Index *pIndex = sqliteHashData(pElem);
-    sqliteUnlinkAndDeleteIndex(db, pIndex);
-  }
-  sqliteHashClear(&db->idxDrop);
-
-  /* Set the commit flag on all triggers added this transaction */
-  for(pElem=sqliteHashFirst(&db->trigHash); pElem; pElem=sqliteHashNext(pElem)){
-    Trigger *pTrigger = sqliteHashData(pElem);
-    pTrigger->isCommit = 1;
-  }
-
-  /* Delete the structures for triggers removed this transaction */
-  pElem = sqliteHashFirst(&db->trigDrop);
-  while( pElem ){
-    Trigger *pTrigger = sqliteHashData(pElem);
-    sqliteDeleteTrigger(pTrigger);
-    pElem = sqliteHashNext(pElem);
-  }
-  sqliteHashClear(&db->trigDrop);
-
-  db->flags &= ~SQLITE_InternChanges;
-}
-
-/*
-** This routine runs when one or more CREATE TABLE, CREATE INDEX,
-** DROP TABLE, or DROP INDEX statements gets rolled back.  The
-** additions or deletions of Table and Index structures in the
-** internal hash tables are undone.
-**
-** See also: sqliteCommitInternalChanges()
-*/
-void sqliteRollbackInternalChanges(sqlite *db){
-  Hash toDelete;
-  HashElem *pElem;
-  if( (db->flags & SQLITE_InternChanges)==0 ) return;
-  sqliteHashInit(&toDelete, SQLITE_HASH_POINTER, 0);
-  db->next_cookie = db->schema_cookie;
-  for(pElem=sqliteHashFirst(&db->tblHash); pElem; pElem=sqliteHashNext(pElem)){
-    Table *pTable = sqliteHashData(pElem);
-    if( !pTable->isCommit ){
-      sqliteHashInsert(&toDelete, pTable, 0, pTable);
-    }
-  }
-  for(pElem=sqliteHashFirst(&toDelete); pElem; pElem=sqliteHashNext(pElem)){
-    Table *pTable = sqliteHashData(pElem);
-    sqliteUnlinkAndDeleteTable(db, pTable);
-  }
-  sqliteHashClear(&toDelete);
-  for(pElem=sqliteHashFirst(&db->tblDrop); pElem; pElem=sqliteHashNext(pElem)){
-    Table *pOld, *p = sqliteHashData(pElem);
-    assert( p->isCommit );
-    pOld = sqliteHashInsert(&db->tblHash, p->zName, strlen(p->zName)+1, p);
-    assert( pOld==0 || pOld==p );
-  }
-  sqliteHashClear(&db->tblDrop);
-  for(pElem=sqliteHashFirst(&db->idxHash); pElem; pElem=sqliteHashNext(pElem)){
-    Index *pIndex = sqliteHashData(pElem);
-    if( !pIndex->isCommit ){
-      sqliteHashInsert(&toDelete, pIndex, 0, pIndex);
-    }
-  }
-  for(pElem=sqliteHashFirst(&toDelete); pElem; pElem=sqliteHashNext(pElem)){
-    Index *pIndex = sqliteHashData(pElem);
-    sqliteUnlinkAndDeleteIndex(db, pIndex);
-  }
-  sqliteHashClear(&toDelete);
-  for(pElem=sqliteHashFirst(&db->idxDrop); pElem; pElem=sqliteHashNext(pElem)){
-    Index *pOld, *p = sqliteHashData(pElem);
-    assert( p->isCommit );
-    p->isDropped = 0;
-    pOld = sqliteHashInsert(&db->idxHash, p->zName, strlen(p->zName)+1, p);
-    assert( pOld==0 || pOld==p );
-  }
-  sqliteHashClear(&db->idxDrop);
-
-  /* Remove any triggers that haven't been commited yet */
-  for(pElem = sqliteHashFirst(&db->trigHash); pElem; 
-      pElem = (pElem?sqliteHashNext(pElem):0)){
-    Trigger *pTrigger = sqliteHashData(pElem);
-    if( !pTrigger->isCommit ){
-      Table *pTbl = sqliteFindTable(db, pTrigger->table);
-      if( pTbl ){
-        if( pTbl->pTrigger == pTrigger ){
-          pTbl->pTrigger = pTrigger->pNext;
-        }else{
-          Trigger *cc = pTbl->pTrigger;
-          while( cc ){
-            if( cc->pNext == pTrigger ){
-              cc->pNext = cc->pNext->pNext;
-              break;
-            }
-            cc = cc->pNext;
-          }
-          assert(cc);
-        }
-      }
-      sqliteHashInsert(&db->trigHash, pTrigger->name,
-              1 + strlen(pTrigger->name), 0);
-      sqliteDeleteTrigger(pTrigger);
-      pElem = sqliteHashFirst(&db->trigHash);
-    }
-  }
-
-  /* Any triggers that were dropped - put 'em back in place */
-  for(pElem = sqliteHashFirst(&db->trigDrop); pElem; 
-      pElem = sqliteHashNext(pElem)){
-    Trigger *pTrigger = sqliteHashData(pElem);
-    Table *pTbl = sqliteFindTable(db, pTrigger->table);
-    sqliteHashInsert(&db->trigHash, pTrigger->name, 
-        strlen(pTrigger->name) + 1, pTrigger);
-    pTrigger->pNext = pTbl->pTrigger;
-    pTbl->pTrigger = pTrigger;
-  }
-
-  sqliteHashClear(&db->trigDrop);
-  db->flags &= ~SQLITE_InternChanges;
 }
 
 /*
@@ -377,12 +246,30 @@ char *sqliteTableNameFromToken(Token *pName){
 }
 
 /*
+** Generate code to open the appropriate master table.  The table
+** opened will be SQLITE_MASTER for persistent tables and 
+** SQLITE_TEMP_MASTER for temporary tables.  The table is opened
+** on cursor 0.
+*/
+void sqliteOpenMasterTable(Vdbe *v, int isTemp){
+  if( isTemp ){
+    sqliteVdbeAddOp(v, OP_OpenWrAux, 0, 2);
+    sqliteVdbeChangeP3(v, -1, TEMP_MASTER_NAME, P3_STATIC);
+  }else{
+    sqliteVdbeAddOp(v, OP_OpenWrite, 0, 2);
+    sqliteVdbeChangeP3(v, -1, MASTER_NAME, P3_STATIC);
+  }
+}
+
+/*
 ** Begin constructing a new table representation in memory.  This is
 ** the first of several action routines that get called in response
 ** to a CREATE TABLE statement.  In particular, this routine is called
 ** after seeing tokens "CREATE" and "TABLE" and the table name.  The
 ** pStart token is the CREATE and pName is the table name.  The isTemp
-** flag is true if the "TEMP" or "TEMPORARY" keyword occurs in between
+** flag is true if the table should be stored in the auxiliary database
+** file instead of in the main database file.  This is normally the case
+** when the "TEMP" or "TEMPORARY" keyword occurs in between
 ** CREATE and TABLE.
 **
 ** The new table record is initialized and put in pParse->pNewTable.
@@ -408,7 +295,7 @@ void sqliteStartTable(Parse *pParse, Token *pStart, Token *pName, int isTemp){
   if( isTemp && db->pBeTemp==0 ){
     int rc = sqliteBtreeOpen(0, 0, MAX_PAGES, &db->pBeTemp);
     if( rc!=SQLITE_OK ){
-      sqliteSetNString(&pParse->zErrMsg, "unable to open a temporary database "
+      sqliteSetString(&pParse->zErrMsg, "unable to open a temporary database "
         "file for storing temporary tables", 0);
       pParse->nErr++;
       return;
@@ -482,13 +369,12 @@ void sqliteStartTable(Parse *pParse, Token *pStart, Token *pName, int isTemp){
     if( !isTemp ){
       sqliteVdbeAddOp(v, OP_Integer, db->file_format, 0);
       sqliteVdbeAddOp(v, OP_SetCookie, 0, 1);
-      sqliteVdbeAddOp(v, OP_OpenWrite, 0, 2);
-      sqliteVdbeChangeP3(v, -1, MASTER_NAME, P3_STATIC);
-      sqliteVdbeAddOp(v, OP_NewRecno, 0, 0);
-      sqliteVdbeAddOp(v, OP_Dup, 0, 0);
-      sqliteVdbeAddOp(v, OP_String, 0, 0);
-      sqliteVdbeAddOp(v, OP_PutIntKey, 0, 0);
     }
+    sqliteOpenMasterTable(v, isTemp);
+    sqliteVdbeAddOp(v, OP_NewRecno, 0, 0);
+    sqliteVdbeAddOp(v, OP_Dup, 0, 0);
+    sqliteVdbeAddOp(v, OP_String, 0, 0);
+    sqliteVdbeAddOp(v, OP_PutIntKey, 0, 0);
   }
 }
 
@@ -725,10 +611,12 @@ void sqliteAddCollateType(Parse *pParse, int collType){
 ** and the probability of hitting the same cookie value is only
 ** 1 chance in 2^32.  So we're safe enough.
 */
-void sqliteChangeCookie(sqlite *db){
+void sqliteChangeCookie(sqlite *db, Vdbe *v){
   if( db->next_cookie==db->schema_cookie ){
     db->next_cookie = db->schema_cookie + sqliteRandomByte() + 1;
     db->flags |= SQLITE_InternChanges;
+    sqliteVdbeAddOp(v, OP_Integer, db->next_cookie, 0);
+    sqliteVdbeAddOp(v, OP_SetCookie, 0, 0);
   }
 }
 
@@ -791,11 +679,10 @@ static char *createTableStmt(Table *p){
     zSep2 = ",\n  ";
     zEnd = "\n)";
   }
-  n += 25 + 6*p->nCol;
+  n += 35 + 6*p->nCol;
   zStmt = sqliteMalloc( n );
   if( zStmt==0 ) return 0;
-  assert( !p->isTemp );
-  strcpy(zStmt, "CREATE TABLE ");
+  strcpy(zStmt, p->isTemp ? "CREATE TEMP TABLE " : "CREATE TABLE ");
   k = strlen(zStmt);
   identPut(zStmt, &k, p->zName);
   zStmt[k++] = '(';
@@ -867,10 +754,10 @@ void sqliteEndTable(Parse *pParse, Token *pEnd, Select *pSelect){
   }
 
   /* If the initFlag is 1 it means we are reading the SQL off the
-  ** "sqlite_master" table on the disk.  So do not write to the disk
-  ** again.  Extract the root page number for the table from the 
-  ** pParse->newTnum field.  (The page number should have been put
-  ** there by the sqliteOpenCb routine.)
+  ** "sqlite_master" or "sqlite_temp_master" table on the disk.
+  ** So do not write to the disk again.  Extract the root page number
+  ** for the table from the pParse->newTnum field.  (The page number
+  ** should have been put there by the sqliteOpenCb routine.)
   */
   if( pParse->initFlag ){
     p->tnum = pParse->newTnum;
@@ -880,8 +767,8 @@ void sqliteEndTable(Parse *pParse, Token *pEnd, Select *pSelect){
   ** in the SQLITE_MASTER table of the database.  The record number
   ** for the new table entry should already be on the stack.
   **
-  ** If this is a TEMPORARY table, then just create the table.  Do not
-  ** make an entry in SQLITE_MASTER.
+  ** If this is a TEMPORARY table, write the entry into the auxiliary
+  ** file instead of into the main database file.
   */
   if( !pParse->initFlag ){
     int n;
@@ -898,37 +785,35 @@ void sqliteEndTable(Parse *pParse, Token *pEnd, Select *pSelect){
       sqliteVdbeAddOp(v, OP_Integer, 0, 0);
     }
     p->tnum = 0;
-    if( !p->isTemp ){
-      sqliteVdbeAddOp(v, OP_Pull, 1, 0);
-      sqliteVdbeAddOp(v, OP_String, 0, 0);
-      if( p->pSelect==0 ){
-        sqliteVdbeChangeP3(v, -1, "table", P3_STATIC);
-      }else{
-        sqliteVdbeChangeP3(v, -1, "view", P3_STATIC);
-      }
-      sqliteVdbeAddOp(v, OP_String, 0, 0);
-      sqliteVdbeChangeP3(v, -1, p->zName, P3_STATIC);
-      sqliteVdbeAddOp(v, OP_String, 0, 0);
-      sqliteVdbeChangeP3(v, -1, p->zName, P3_STATIC);
-      sqliteVdbeAddOp(v, OP_Dup, 4, 0);
-      sqliteVdbeAddOp(v, OP_String, 0, 0);
-      if( pSelect ){
-        char *z = createTableStmt(p);
-        n = z ? strlen(z) : 0;
-        sqliteVdbeChangeP3(v, -1, z, n);
-        sqliteFree(z);
-      }else{
-        assert( pEnd!=0 );
-        n = Addr(pEnd->z) - Addr(pParse->sFirstToken.z) + 1;
-        sqliteVdbeChangeP3(v, -1, pParse->sFirstToken.z, n);
-      }
-      sqliteVdbeAddOp(v, OP_MakeRecord, 5, 0);
-      sqliteVdbeAddOp(v, OP_PutIntKey, 0, 0);
-      sqliteChangeCookie(db);
-      sqliteVdbeAddOp(v, OP_Integer, db->next_cookie, 0);
-      sqliteVdbeAddOp(v, OP_SetCookie, 0, 0);
-      sqliteVdbeAddOp(v, OP_Close, 0, 0);
+    sqliteVdbeAddOp(v, OP_Pull, 1, 0);
+    sqliteVdbeAddOp(v, OP_String, 0, 0);
+    if( p->pSelect==0 ){
+      sqliteVdbeChangeP3(v, -1, "table", P3_STATIC);
+    }else{
+      sqliteVdbeChangeP3(v, -1, "view", P3_STATIC);
     }
+    sqliteVdbeAddOp(v, OP_String, 0, 0);
+    sqliteVdbeChangeP3(v, -1, p->zName, P3_STATIC);
+    sqliteVdbeAddOp(v, OP_String, 0, 0);
+    sqliteVdbeChangeP3(v, -1, p->zName, P3_STATIC);
+    sqliteVdbeAddOp(v, OP_Dup, 4, 0);
+    sqliteVdbeAddOp(v, OP_String, 0, 0);
+    if( pSelect ){
+      char *z = createTableStmt(p);
+      n = z ? strlen(z) : 0;
+      sqliteVdbeChangeP3(v, -1, z, n);
+      sqliteFree(z);
+    }else{
+      assert( pEnd!=0 );
+      n = Addr(pEnd->z) - Addr(pParse->sFirstToken.z) + 1;
+      sqliteVdbeChangeP3(v, -1, pParse->sFirstToken.z, n);
+    }
+    sqliteVdbeAddOp(v, OP_MakeRecord, 5, 0);
+    sqliteVdbeAddOp(v, OP_PutIntKey, 0, 0);
+    if( !p->isTemp ){
+      sqliteChangeCookie(db, v);
+    }
+    sqliteVdbeAddOp(v, OP_Close, 0, 0);
     if( pSelect ){
       int op = p->isTemp ? OP_OpenWrAux : OP_OpenWrite;
       sqliteVdbeAddOp(v, op, 1, 0);
@@ -1151,34 +1036,38 @@ void sqliteDropTable(Parse *pParse, Token *pName, int isView){
   v = sqliteGetVdbe(pParse);
   if( v ){
     static VdbeOp dropTable[] = {
-      { OP_OpenWrite,  0, 2,        MASTER_NAME},
-      { OP_Rewind,     0, ADDR(9),  0},
-      { OP_String,     0, 0,        0}, /* 2 */
+      { OP_Rewind,     0, ADDR(8),  0},
+      { OP_String,     0, 0,        0}, /* 1 */
       { OP_MemStore,   1, 1,        0},
-      { OP_MemLoad,    1, 0,        0}, /* 4 */
+      { OP_MemLoad,    1, 0,        0}, /* 3 */
       { OP_Column,     0, 2,        0},
-      { OP_Ne,         0, ADDR(8),  0},
+      { OP_Ne,         0, ADDR(7),  0},
       { OP_Delete,     0, 0,        0},
-      { OP_Next,       0, ADDR(4),  0}, /* 8 */
-      { OP_Integer,    0, 0,        0}, /* 9 */
-      { OP_SetCookie,  0, 0,        0},
-      { OP_Close,      0, 0,        0},
+      { OP_Next,       0, ADDR(3),  0}, /* 7 */
     };
     Index *pIdx;
+    Trigger *pTrigger;
     sqliteBeginWriteOperation(pParse, 0);
+    sqliteOpenMasterTable(v, pTable->isTemp);
     /* Drop all triggers associated with the table being dropped */
-    while( pTable->pTrigger ){
+    pTrigger = pTable->pTrigger;
+    while( pTrigger ){
       Token tt;
       tt.z = pTable->pTrigger->name;
       tt.n = strlen(pTable->pTrigger->name);
       sqliteDropTrigger(pParse, &tt, 1);
+      if( pParse->explain ){
+        pTrigger = pTrigger->pNext;
+      }else{
+        pTrigger = pTable->pTrigger;
+      }
     }
+    base = sqliteVdbeAddOpList(v, ArraySize(dropTable), dropTable);
+    sqliteVdbeChangeP3(v, base+1, pTable->zName, 0);
     if( !pTable->isTemp ){
-      base = sqliteVdbeAddOpList(v, ArraySize(dropTable), dropTable);
-      sqliteVdbeChangeP3(v, base+2, pTable->zName, 0);
-      sqliteChangeCookie(db);
-      sqliteVdbeChangeP1(v, base+9, db->next_cookie);
+      sqliteChangeCookie(db, v);
     }
+    sqliteVdbeAddOp(v, OP_Close, 0, 0);
     if( !isView ){
       sqliteVdbeAddOp(v, OP_Destroy, pTable->tnum, pTable->isTemp);
       for(pIdx=pTable->pIndex; pIdx; pIdx=pIdx->pNext){
@@ -1188,16 +1077,13 @@ void sqliteDropTable(Parse *pParse, Token *pName, int isView){
     sqliteEndWriteOperation(pParse);
   }
 
-  /* Move the table (and all its indices) to the pending DROP queue.
-  ** Or, if the table was never committed, just delete it.  If the table
-  ** has been committed and is placed on the pending DROP queue, then the
-  ** delete will occur when sqliteCommitInternalChanges() executes.
+  /* Delete the in-memory description of the table.
   **
   ** Exception: if the SQL statement began with the EXPLAIN keyword,
   ** then no changes should be made.
   */
   if( !pParse->explain ){
-    sqlitePendingDropTable(db, pTable);
+    sqliteUnlinkAndDeleteTable(db, pTable);
     db->flags |= SQLITE_InternChanges;
   }
   sqliteViewResetAll(db);
@@ -1264,7 +1150,7 @@ void sqliteCreateIndex(
   ** Since its table has been suppressed, we need to also suppress the
   ** index.
   */
-  if( pParse->initFlag && pTab->isTemp ){
+  if( pParse->initFlag && !pParse->isTemp && pTab->isTemp ){
     goto exit_create_index;
   }
 
@@ -1429,40 +1315,33 @@ void sqliteCreateIndex(
     if( v==0 ) goto exit_create_index;
     if( pTable!=0 ){
       sqliteBeginWriteOperation(pParse, 0);
-      if( !isTemp ){
-        sqliteVdbeAddOp(v, OP_OpenWrite, 0, 2);
-        sqliteVdbeChangeP3(v, -1, MASTER_NAME, P3_STATIC);
-      }
+      sqliteOpenMasterTable(v, isTemp);
     }
-    if( !isTemp ){
-      sqliteVdbeAddOp(v, OP_NewRecno, 0, 0);
-      sqliteVdbeAddOp(v, OP_String, 0, 0);
-      sqliteVdbeChangeP3(v, -1, "index", P3_STATIC);
-      sqliteVdbeAddOp(v, OP_String, 0, 0);
-      sqliteVdbeChangeP3(v, -1, pIndex->zName, P3_STATIC);
-      sqliteVdbeAddOp(v, OP_String, 0, 0);
-      sqliteVdbeChangeP3(v, -1, pTab->zName, P3_STATIC);
-    }
+    sqliteVdbeAddOp(v, OP_NewRecno, 0, 0);
+    sqliteVdbeAddOp(v, OP_String, 0, 0);
+    sqliteVdbeChangeP3(v, -1, "index", P3_STATIC);
+    sqliteVdbeAddOp(v, OP_String, 0, 0);
+    sqliteVdbeChangeP3(v, -1, pIndex->zName, P3_STATIC);
+    sqliteVdbeAddOp(v, OP_String, 0, 0);
+    sqliteVdbeChangeP3(v, -1, pTab->zName, P3_STATIC);
     addr = sqliteVdbeAddOp(v, OP_CreateIndex, 0, isTemp);
     sqliteVdbeChangeP3(v, addr, (char*)&pIndex->tnum, P3_POINTER);
     pIndex->tnum = 0;
     if( pTable ){
+      sqliteVdbeAddOp(v, OP_Dup, 0, 0);
       if( isTemp ){
         sqliteVdbeAddOp(v, OP_OpenWrAux, 1, 0);
       }else{
-        sqliteVdbeAddOp(v, OP_Dup, 0, 0);
         sqliteVdbeAddOp(v, OP_OpenWrite, 1, 0);
       }
     }
-    if( !isTemp ){
-      addr = sqliteVdbeAddOp(v, OP_String, 0, 0);
-      if( pStart && pEnd ){
-        n = Addr(pEnd->z) - Addr(pStart->z) + 1;
-        sqliteVdbeChangeP3(v, addr, pStart->z, n);
-      }
-      sqliteVdbeAddOp(v, OP_MakeRecord, 5, 0);
-      sqliteVdbeAddOp(v, OP_PutIntKey, 0, 0);
+    addr = sqliteVdbeAddOp(v, OP_String, 0, 0);
+    if( pStart && pEnd ){
+      n = Addr(pEnd->z) - Addr(pStart->z) + 1;
+      sqliteVdbeChangeP3(v, addr, pStart->z, n);
     }
+    sqliteVdbeAddOp(v, OP_MakeRecord, 5, 0);
+    sqliteVdbeAddOp(v, OP_PutIntKey, 0, 0);
     if( pTable ){
       sqliteVdbeAddOp(v, isTemp ? OP_OpenAux : OP_Open, 2, pTab->tnum);
       sqliteVdbeChangeP3(v, -1, pTab->zName, P3_STATIC);
@@ -1481,11 +1360,9 @@ void sqliteCreateIndex(
     }
     if( pTable!=0 ){
       if( !isTemp ){
-        sqliteChangeCookie(db);
-        sqliteVdbeAddOp(v, OP_Integer, db->next_cookie, 0);
-        sqliteVdbeAddOp(v, OP_SetCookie, 0, 0);
-        sqliteVdbeAddOp(v, OP_Close, 0, 0);
+        sqliteChangeCookie(db, v);
       }
+      sqliteVdbeAddOp(v, OP_Close, 0, 0);
       sqliteEndWriteOperation(pParse);
     }
   }
@@ -1523,42 +1400,35 @@ void sqliteDropIndex(Parse *pParse, Token *pName){
   v = sqliteGetVdbe(pParse);
   if( v ){
     static VdbeOp dropIndex[] = {
-      { OP_OpenWrite,  0, 2,       MASTER_NAME},
-      { OP_Rewind,     0, ADDR(10),0}, 
-      { OP_String,     0, 0,       0}, /* 2 */
+      { OP_Rewind,     0, ADDR(9), 0}, 
+      { OP_String,     0, 0,       0}, /* 1 */
       { OP_MemStore,   1, 1,       0},
-      { OP_MemLoad,    1, 0,       0}, /* 4 */
+      { OP_MemLoad,    1, 0,       0}, /* 3 */
       { OP_Column,     0, 1,       0},
-      { OP_Eq,         0, ADDR(9), 0},
-      { OP_Next,       0, ADDR(4), 0},
-      { OP_Goto,       0, ADDR(10),0},
-      { OP_Delete,     0, 0,       0}, /* 9 */
-      { OP_Integer,    0, 0,       0}, /* 10 */
-      { OP_SetCookie,  0, 0,       0},
-      { OP_Close,      0, 0,       0},
+      { OP_Eq,         0, ADDR(8), 0},
+      { OP_Next,       0, ADDR(3), 0},
+      { OP_Goto,       0, ADDR(9), 0},
+      { OP_Delete,     0, 0,       0}, /* 8 */
     };
     int base;
     Table *pTab = pIndex->pTable;
 
     sqliteBeginWriteOperation(pParse, 0);
+    sqliteOpenMasterTable(v, pTab->isTemp);
+    base = sqliteVdbeAddOpList(v, ArraySize(dropIndex), dropIndex);
+    sqliteVdbeChangeP3(v, base+1, pIndex->zName, 0);
     if( !pTab->isTemp ){
-      base = sqliteVdbeAddOpList(v, ArraySize(dropIndex), dropIndex);
-      sqliteVdbeChangeP3(v, base+2, pIndex->zName, P3_STATIC);
-      sqliteChangeCookie(db);
-      sqliteVdbeChangeP1(v, base+10, db->next_cookie);
+      sqliteChangeCookie(db, v);
     }
+    sqliteVdbeAddOp(v, OP_Close, 0, 0);
     sqliteVdbeAddOp(v, OP_Destroy, pIndex->tnum, pTab->isTemp);
     sqliteEndWriteOperation(pParse);
   }
 
-  /* Move the index onto the pending DROP queue.  Or, if the index was
-  ** never committed, just delete it.  Indices on the pending DROP queue
-  ** get deleted by sqliteCommitInternalChanges() when the user executes
-  ** a COMMIT.  Or if a rollback occurs, the elements of the DROP queue
-  ** are moved back into the main hash table.
+  /* Delete the in-memory description of this index.
   */
   if( !pParse->explain ){
-    sqlitePendingDropIndex(db, pIndex);
+    sqliteUnlinkAndDeleteIndex(db, pIndex);
     db->flags |= SQLITE_InternChanges;
   }
 }

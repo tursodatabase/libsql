@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: sqlite.tcl,v 1.16 2001/11/24 13:23:05 drh Exp $}
+set rcsid {$Id: sqlite.tcl,v 1.17 2002/06/25 01:09:13 drh Exp $}
 
 puts {<html>
 <head>
@@ -115,6 +115,14 @@ the sqlite_master table.  The sqlite_master
 table is updated automatically as you create or drop tables and
 indices from the database.  You can not make manual changes
 to the sqlite_master table.
+</p>
+
+<p>
+The schema for TEMPORARY tables is not stored in the "sqlite_master" table
+since TEMPORARY tables are not visible to applications other than the
+application that created the table.  The schema for TEMPORARY tables
+is stored in another special table named "sqlite_temp_master".  The
+"sqlite_temp_master" table is temporary itself.
 </p>
 
 <h2>Special commands to sqlite</h2>
@@ -335,8 +343,8 @@ puts {
 executing the following query:</p>
 
 <blockquote><pre>
-SELECT name FROM sqlite_master 
-WHERE type='table' 
+SELECT name FROM sqlite_master WHERE type='table' 
+UNION ALL SELECT name FROM sqlite_temp_master WHERE type='table'
 ORDER BY name;
 </pre></blockquote>
 
@@ -376,7 +384,9 @@ puts {
 list mode, then entering the following query:</p>
 
 <blockquote><pre>
-SELECT sql FROM sqlite_master
+SELECT sql FROM 
+   (SELECT * FROM sqlite_master UNION ALL
+    SELECT * FROM sqlite_temp_master)
 WHERE type!='meta'
 ORDER BY tbl_name, type DESC, name
 </pre></blockquote>
@@ -385,7 +395,9 @@ ORDER BY tbl_name, type DESC, name
 want the schema for a single table, the query looks like this:</p>
 
 <blockquote><pre>
-SELECT sql FROM sqlite_master
+SELECT sql FROM
+   (SELECT * FROM sqlite_master UNION ALL
+    SELECT * FROM sqlite_temp_master)
 WHERE tbl_name LIKE '%s' AND type!='meta'
 ORDER BY type DESC, name
 </pre></blockquote>

@@ -1,7 +1,7 @@
 #
 # Run this script to generated a faq.html output file
 #
-set rcsid {$Id: faq.tcl,v 1.10 2002/04/25 00:21:50 drh Exp $}
+set rcsid {$Id: faq.tcl,v 1.11 2002/06/25 01:09:13 drh Exp $}
 
 puts {<html>
 <head>
@@ -276,8 +276,19 @@ ORDER BY name;
   using UPDATE, INSERT, or DELETE.  The table is automatically updated by
   CREATE TABLE, CREATE INDEX, DROP TABLE, and DROP INDEX commands.</p>
 
-  <p>Temporary tables do not appear in the SQLITE_MASTER table.  At this time
-  there is no way to get a listing of temporary tables and indices.</p>
+  <p>Temporary tables do not appear in the SQLITE_MASTER table.  Temporary
+  tables and their indices and triggers occur in another special table
+  named SQLITE_TEMP_MASTER.  SQLITE_TEMP_MASTER works just like SQLITE_MASTER
+  except that it is only visible to the application that created the 
+  temporary tables.  To get a list of all tables, both permanent and
+  temporary, one can use a command similar to the following:
+</blockquote><pre>
+SELECT name FROM 
+   (SELECT * FROM sqlite_master UNION ALL
+    SELECT * FROM sqlite_temp_master)
+WHERE type='table'
+ORDER BY name
+</pre></blockquote>
 }
 
 faq {

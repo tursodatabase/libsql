@@ -70,6 +70,12 @@ void sqliteCreateTrigger(
       pParse->nErr++;
       goto trigger_cleanup;
     }
+    if( sqliteStrICmp(tab->zName, TEMP_MASTER_NAME)==0 ){
+      sqliteSetString(&pParse->zErrMsg, "cannot create trigger on system "
+         "table: " TEMP_MASTER_NAME, 0);
+      pParse->nErr++;
+      goto trigger_cleanup;
+    }
     if( tab->pSelect && tr_tm != TK_INSTEAD ){
       sqliteSetNString(&pParse->zErrMsg, "cannot create ", -1,
 	  (tr_tm == TK_BEFORE)?"BEFORE":"AFTER", -1, " trigger on view: ", -1
@@ -100,7 +106,6 @@ void sqliteCreateTrigger(
   nt->pColumns = pColumns;
   nt->foreach = foreach;
   nt->step_list = pStepList;
-  nt->isCommit = 0;
   offset = (int)(nt->strings - zData);
   sqliteExprMoveStrings(nt->pWhen, offset);
 
@@ -119,20 +124,16 @@ void sqliteCreateTrigger(
   /* if we are not initializing, and this trigger is not on a TEMP table, 
   ** build the sqlite_master entry
   */
-  if( !pParse->initFlag && !tab->isTemp ){
+  if( !pParse->initFlag ){
     static VdbeOp insertTrig[] = {
-      { OP_OpenWrite,  0, 2,  MASTER_NAME},
       { OP_NewRecno,   0, 0,  0          },
       { OP_String,     0, 0,  "trigger"  },
-      { OP_String,     0, 0,  0          },  /* 3: trigger name */
-      { OP_String,     0, 0,  0          },  /* 4: table name */
+      { OP_String,     0, 0,  0          },  /* 2: trigger name */
+      { OP_String,     0, 0,  0          },  /* 3: table name */
       { OP_Integer,    0, 0,  0          },
-      { OP_String,     0, 0,  0          },  /* 6: SQL */
+      { OP_String,     0, 0,  0          },  /* 5: SQL */
       { OP_MakeRecord, 5, 0,  0          },
       { OP_PutIntKey,  0, 0,  0          },
-      { OP_Integer,    0, 0,  0          },  /* 9: Next cookie */
-      { OP_SetCookie,  0, 0,  0          },
-      { OP_Close,      0, 0,  0          },
     };
     int addr;
     Vdbe *v;
@@ -141,12 +142,17 @@ void sqliteCreateTrigger(
     v = sqliteGetVdbe(pParse);
     if( v==0 ) goto trigger_cleanup;
     sqliteBeginWriteOperation(pParse, 0);
+    sqliteOpenMasterTable(v, tab->isTemp);
     addr = sqliteVdbeAddOpList(v, ArraySize(insertTrig), insertTrig);
-    sqliteVdbeChangeP3(v, addr+3, nt->name, 0); 
-    sqliteVdbeChangeP3(v, addr+4, nt->table, 0); 
-    sqliteVdbeChangeP3(v, addr+6, nt->strings, 0);
-    sqliteChangeCookie(pParse->db);
-    sqliteVdbeChangeP1(v, addr+9, pParse->db->next_cookie);
+    sqliteVdbeChangeP3(v, addr, tab->isTemp ? TEMP_MASTER_NAME : MASTER_NAME,
+                       P3_STATIC);
+    sqliteVdbeChangeP3(v, addr+2, nt->name, 0); 
+    sqliteVdbeChangeP3(v, addr+3, nt->table, 0); 
+    sqliteVdbeChangeP3(v, addr+5, nt->strings, 0);
+    if( !tab->isTemp ){
+      sqliteChangeCookie(pParse->db, v);
+    }
+    sqliteVdbeAddOp(v, OP_Close, 0, 0);
     sqliteEndWriteOperation(pParse);
   }
 
@@ -312,11 +318,11 @@ void sqliteDeleteTrigger(Trigger *pTrigger){
  * table. This is so that the trigger can be restored into the database schema
  * if the transaction is rolled back.
  */
-void sqliteDropTrigger(Parse *pParse, Token *pName, int nested)
-{
+void sqliteDropTrigger(Parse *pParse, Token *pName, int nested){
   char *zName;
   Trigger *pTrigger;
   Table   *pTable;
+  Vdbe *v;
 
   zName = sqliteStrNDup(pName->z, pName->n);
 
@@ -330,12 +336,9 @@ void sqliteDropTrigger(Parse *pParse, Token *pName, int nested)
   }
 
   /*
-   * If this is not an "explain", do the following:
-   * 1. Remove the trigger from its associated table structure
-   * 2. Move the trigger from the trigHash hash to trigDrop
+   * If this is not an "explain", then delete the trigger structure.
    */
   if( !pParse->explain ){
-    /* 1 */
     pTable = sqliteFindTable(pParse->db, pTrigger->table);
     assert(pTable);
     if( pTable->pTrigger == pTrigger ){
@@ -351,46 +354,34 @@ void sqliteDropTrigger(Parse *pParse, Token *pName, int nested)
       }
       assert(cc);
     }
-
-    /* 2 */
-    sqliteHashInsert(&(pParse->db->trigHash), zName, 
-        pName->n + 1, NULL);
-    sqliteHashInsert(&(pParse->db->trigDrop), pTrigger->name, 
-        pName->n + 1, pTrigger);
+    sqliteHashInsert(&(pParse->db->trigHash), zName, pName->n + 1, NULL);
+    sqliteDeleteTrigger(pTrigger);
   }
 
-  /* Unless this is a trigger on a TEMP TABLE, generate code to destroy the
-   * database record of the trigger */
-  if( !pTable->isTemp ){
+  /* Generate code to destroy the database record of the trigger.
+  */
+  if( pTable!=0 && !nested && (v = sqliteGetVdbe(pParse))!=0 ){
     int base;
     static VdbeOp dropTrigger[] = {
-      { OP_OpenWrite,  0, 2,        MASTER_NAME},
-      { OP_Rewind,     0, ADDR(9),  0},
-      { OP_String,     0, 0,        0}, /* 2 */
+      { OP_Rewind,     0, ADDR(8),  0},
+      { OP_String,     0, 0,        0}, /* 1 */
       { OP_MemStore,   1, 1,        0},
-      { OP_MemLoad,    1, 0,        0}, /* 4 */
+      { OP_MemLoad,    1, 0,        0}, /* 3 */
       { OP_Column,     0, 1,        0},
-      { OP_Ne,         0, ADDR(8),  0},
+      { OP_Ne,         0, ADDR(7),  0},
       { OP_Delete,     0, 0,        0},
-      { OP_Next,       0, ADDR(4),  0}, /* 8 */
-      { OP_Integer,    0, 0,        0}, /* 9 */
-      { OP_SetCookie,  0, 0,        0},
-      { OP_Close,      0, 0,        0},
+      { OP_Next,       0, ADDR(3),  0}, /* 7 */
     };
 
-    if( !nested ){
-      sqliteBeginWriteOperation(pParse, 0);
+    sqliteBeginWriteOperation(pParse, 0);
+    sqliteOpenMasterTable(v, pTable->isTemp);
+    base = sqliteVdbeAddOpList(v,  ArraySize(dropTrigger), dropTrigger);
+    sqliteVdbeChangeP3(v, base+1, zName, 0);
+    if( !pTable->isTemp ){
+      sqliteChangeCookie(pParse->db, v);
     }
-    base = sqliteVdbeAddOpList(pParse->pVdbe, 
-        ArraySize(dropTrigger), dropTrigger);
-    sqliteVdbeChangeP3(pParse->pVdbe, base+2, zName, 0);
-    if( !nested ){
-      sqliteChangeCookie(pParse->db);
-    }
-    sqliteVdbeChangeP1(pParse->pVdbe, base+9, pParse->db->next_cookie);
-    if( !nested ){
-      sqliteEndWriteOperation(pParse);
-    }
+    sqliteVdbeAddOp(v, OP_Close, 0, 0);
+    sqliteEndWriteOperation(pParse);
   }
 
   sqliteFree(zName);

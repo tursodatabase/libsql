@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.130 2002/06/24 22:01:58 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.131 2002/06/25 01:09:12 drh Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -145,7 +145,8 @@ extern int sqlite_iMallocFail;   /* Fail sqliteMalloc() after this many calls */
 ** is a special table that holds the names and attributes of all
 ** user tables and indices.
 */
-#define MASTER_NAME   "sqlite_master"
+#define MASTER_NAME       "sqlite_master"
+#define TEMP_MASTER_NAME  "sqlite_temp_master"
 
 /*
 ** A convenience macro that returns the number of elements in
@@ -202,8 +203,7 @@ struct sqlite {
   int (*xBusyCallback)(void *,const char*,int);  /* The busy callback */
   Hash tblHash;                 /* All tables indexed by name */
   Hash idxHash;                 /* All (named) indices indexed by name */
-  Hash tblDrop;                 /* Uncommitted DROP TABLEs */
-  Hash idxDrop;                 /* Uncommitted DROP INDEXs */
+  Hash trigHash;                /* All triggers indexed by name */
   Hash aFunc;                   /* All functions that can be in SQL exprs */
   int lastRowid;                /* ROWID of most recent insert */
   int priorNewRowid;            /* Last randomly generated ROWID */
@@ -211,9 +211,6 @@ struct sqlite {
   int magic;                    /* Magic number for detect library misuse */
   int nChange;                  /* Number of rows changed */
   int recursionDepth;           /* Number of nested calls to sqlite_exec() */
-
-  Hash trigHash;                /* All triggers indexed by name */
-  Hash trigDrop;                /* Uncommited dropped triggers */
 };
 
 /*
@@ -325,12 +322,10 @@ struct Table {
   int tnum;        /* Root BTree node for this table (see note above) */
   Select *pSelect; /* NULL for tables.  Points to definition if a view. */
   u8 readOnly;     /* True if this table should not be written by the user */
-  u8 isCommit;     /* True if creation of this table has been committed */
   u8 isTemp;       /* True if stored in db->pBeTemp instead of db->pBe */
   u8 isTransient;  /* True if automatically deleted when VDBE finishes */
   u8 hasPrimKey;   /* True if there exists a primary key */
   u8 keyConf;      /* What to do in case of uniqueness conflict on iPKey */
-
   Trigger *pTrigger; /* List of SQL triggers on this table */
 };
 
@@ -386,8 +381,6 @@ struct Index {
   Table *pTable;   /* The SQL table being indexed */
   int tnum;        /* Page containing root of this index in database file */
   u8 isUnique;     /* OE_Abort, OE_Ignore, OE_Replace, or OE_None */
-  u8 isCommit;     /* True if creation of this index has been committed */
-  u8 isDropped;    /* True if a DROP INDEX has executed on this index */
   u8 onError;      /* OE_Abort, OE_Ignore, OE_Replace, or OE_None */
   Index *pNext;    /* The next index associated with the same table */
 };
@@ -648,10 +641,15 @@ struct Parse {
   Token sLastToken;    /* The last token parsed */
   Table *pNewTable;    /* A table being constructed by CREATE TABLE */
   Vdbe *pVdbe;         /* An engine for executing database bytecode */
-  int colNamesSet;     /* TRUE after OP_ColumnCount has been issued to pVdbe */
-  int explain;         /* True if the EXPLAIN flag is found on the query */
-  int initFlag;        /* True if reparsing CREATE TABLEs */
-  int nameClash;       /* A permanent table name clashes with temp table name */
+  u8 colNamesSet;      /* TRUE after OP_ColumnCount has been issued to pVdbe */
+  u8 explain;          /* True if the EXPLAIN flag is found on the query */
+  u8 initFlag;         /* True if reparsing CREATE TABLEs */
+  u8 nameClash;        /* A permanent table name clashes with temp table name */
+  u8 useAgg;           /* If true, extract field values from the aggregator
+                       ** while generating expressions.  Normally false */
+  u8 schemaVerified;   /* True if an OP_VerifySchema has been coded someplace
+                       ** other than after an OP_Transaction */
+  u8 isTemp;           /* True if parsing temporary tables */
   int newTnum;         /* Table number to use when reparsing CREATE TABLEs */
   int nErr;            /* Number of errors seen */
   int nTab;            /* Number of previously allocated VDBE cursors */
@@ -659,10 +657,6 @@ struct Parse {
   int nSet;            /* Number of sets used so far */
   int nAgg;            /* Number of aggregate expressions */
   AggExpr *aAgg;       /* An array of aggregate expressions */
-  int useAgg;          /* If true, extract field values from the aggregator
-                       ** while generating expressions.  Normally false */
-  int schemaVerified;  /* True if an OP_VerifySchema has been coded someplace
-                       ** other than after an OP_Transaction */
   TriggerStack *trigStack;
 };
 
@@ -711,7 +705,6 @@ struct Trigger {
   TriggerStep *step_list; /* Link list of trigger program steps             */
   char *strings;          /* pointer to allocation of Token strings */
   Trigger *pNext;         /* Next trigger associated with the table */
-  int isCommit;           /* Set to TRUE once the trigger has been committed */
 };
 
 /*
@@ -847,9 +840,13 @@ void sqliteExprDelete(Expr*);
 ExprList *sqliteExprListAppend(ExprList*,Expr*,Token*);
 void sqliteExprListDelete(ExprList*);
 void sqlitePragma(Parse*,Token*,Token*,int);
-void sqliteCommitInternalChanges(sqlite*);
+void sqliteResetInternalSchema(sqlite*);
+int sqliteInit(sqlite*, char**);
+void sqliteBeginParse(Parse*,int);
 void sqliteRollbackInternalChanges(sqlite*);
+void sqliteCommitInternalChanges(sqlite*);
 Table *sqliteResultSetOfSelect(Parse*,char*,Select*);
+void sqliteOpenMasterTable(Vdbe *v, int);
 void sqliteStartTable(Parse*,Token*,Token*,int);
 void sqliteAddColumn(Parse*,Token*);
 void sqliteAddNotNull(Parse*, int);
@@ -929,7 +926,7 @@ void sqliteRegisterBuiltinFunctions(sqlite*);
 int sqliteSafetyOn(sqlite*);
 int sqliteSafetyOff(sqlite*);
 int sqliteSafetyCheck(sqlite*);
-void sqliteChangeCookie(sqlite *);
+void sqliteChangeCookie(sqlite*, Vdbe*);
 void sqliteCreateTrigger(Parse*, Token*, int, int, IdList*, Token*, 
                          int, Expr*, TriggerStep*, char const*,int);
 void sqliteDropTrigger(Parse*, Token*, int);

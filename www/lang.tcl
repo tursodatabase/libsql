@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.40 2002/06/12 22:33:54 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.41 2002/06/25 01:09:13 drh Exp $}
 
 puts {<html>
 <head>
@@ -236,7 +236,9 @@ See the section titled
 
 <p>The exact text
 of each CREATE INDEX statement is stored in the <b>sqlite_master</b>
-table.  Everytime the database is opened, all CREATE INDEX statements
+or <b>sqlite_temp_master</b> table, depending on whether the table
+being indexed is temporary.  Everytime the database is opened,
+all CREATE INDEX statements
 are read from the <b>sqlite_master</b> table and used to regenerate
 SQLite's internal representation of the index layout.</p>
 }
@@ -275,8 +277,8 @@ puts {
 <p>A CREATE TABLE statement is basically the keywords "CREATE TABLE"
 followed by the name of a new table and a parenthesized list of column
 definitions and constraints.  The table name can be either an identifier
-or a string.  The only reserved table name is "<b>sqlite_master</b>" which
-is the name of the table that records the database schema.</p>
+or a string.  Tables names that begin with "<b>sqlite_</b>" are reserved
+for use by the engine.</p>
 
 <p>Each column definition is the name of the column followed by the
 datatype for that column, then one or more optional column constraints.
@@ -343,6 +345,8 @@ SQLite's internal representation of the table layout.
 If the original command was a CREATE TABLE AS then then an equivalent
 CREATE TABLE statement is synthesized and store in <b>sqlite_master</b>
 in place of the original command.
+The text of CREATE TEMPORARY TABLE statements are stored in the
+<b>sqlite_temp_master</b> table.
 </p>
 }
 Section {CREATE TRIGGER} createtrigger

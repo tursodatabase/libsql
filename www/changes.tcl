@@ -25,6 +25,19 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2002 Jun 24 (2.5.2)} {
+<li>Added the new <b>SQLITE_TEMP_MASTER</b> table which records the schema
+    for temporary tables in the same way that <b>SQLITE_MASTER</b> does for
+    persistent tables.</li>
+<li>Added an optimization to UNION ALL</li>
+<li>Fixed a bug in the processing of LEFT OUTER JOIN</li>
+<li>The LIMIT clause now works on subselects</li>
+<li>ORDER BY works on subselects</li>
+<li>There is a new TypeOf() function used to determine if an expression
+    is numeric or text.</li>
+<li>Autoincrement now works for INSERT from a SELECT.</li>
+}
+
 chng {2002 Jun 19 (2.5.1)} {
 <li>The query optimizer now attempts to implement the ORDER BY clause
     using an index.  Sorting is still used if not suitable index is

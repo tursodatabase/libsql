@@ -158,6 +158,6 @@ do_test trig-raise-7.3 {
 
 catchsql { DROP TABLE tbl; } 
 catchsql { DROP TABLE tbl2; } 
-catchsql { DROP VIEW tbl_view; } 
+catchsql { DROP VIEW tbl_view; }
 
-
+finish_test

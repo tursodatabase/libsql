@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.83 2002/06/22 02:33:38 drh Exp $
+** $Id: main.c,v 1.84 2002/06/25 01:09:11 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -30,6 +30,7 @@
 **     argv[1] = table or index name or meta statement type.
 **     argv[2] = root page number for table or index.  NULL for meta.
 **     argv[3] = SQL create statement for the table or index
+**     argv[4] = "1" for temporary files, "0" for main database
 **
 */
 int sqliteInitCallback(void *pDb, int argc, char **argv, char **azColName){
@@ -41,29 +42,8 @@ int sqliteInitCallback(void *pDb, int argc, char **argv, char **azColName){
   ** make sure fields do not contain NULLs. Otherwise we might core
   ** when attempting to initialize from a corrupt database file. */
 
-  assert( argc==4 );
+  assert( argc==5 );
   switch( argv[0][0] ){
-    case 'c': {  /* Recommended pager cache size */
-      int size = atoi(argv[3]);
-      if( size==0 ){ size = MAX_PAGES; }
-      db->cache_size = size;
-      sqliteBtreeSetCacheSize(db->pBe, size);
-      break;
-    }
-    case 'f': {  /* File format */
-      /*
-      ** file_format==1  Version 2.1.0.
-      ** file_format==2  Version 2.2.0.  Integer primary key.
-      ** file_format==3  Version 2.6.0.  Separate text and numeric datatypes.
-      */
-      db->file_format = atoi(argv[3]);
-      break;
-    }
-    case 's': { /* Schema cookie */
-      db->schema_cookie = atoi(argv[3]);
-      db->next_cookie = db->schema_cookie;
-      break;
-    }
     case 'v':
     case 'i':
     case 't': {  /* CREATE TABLE, CREATE INDEX, or CREATE VIEW statements */
@@ -76,6 +56,7 @@ int sqliteInitCallback(void *pDb, int argc, char **argv, char **azColName){
         memset(&sParse, 0, sizeof(sParse));
         sParse.db = db;
         sParse.initFlag = 1;
+        sParse.isTemp = argv[4][0] - '0';
         sParse.newTnum = atoi(argv[2]);
         sqliteRunParser(&sParse, argv[3], 0);
       }else{
@@ -120,15 +101,29 @@ int sqliteInitCallback(void *pDb, int argc, char **argv, char **azColName){
 ** has the sqlite_master table locked) than another attempt
 ** is made the first time the database is accessed.
 */
-static int sqliteInit(sqlite *db, char **pzErrMsg){
-  Vdbe *vdbe;
+int sqliteInit(sqlite *db, char **pzErrMsg){
   int rc;
+  BtCursor *curMain;
+  int size;
+  Table *pTab;
+  char *azArg[6];
+  int meta[SQLITE_N_BTREE_META];
+  Parse sParse;
 
   /*
   ** The master database table has a structure like this
   */
   static char master_schema[] = 
-     "CREATE TABLE " MASTER_NAME " (\n"
+     "CREATE TABLE sqlite_master(\n"
+     "  type text,\n"
+     "  name text,\n"
+     "  tbl_name text,\n"
+     "  rootpage integer,\n"
+     "  sql text\n"
+     ")"
+  ;
+  static char temp_master_schema[] = 
+     "CREATE TEMP TABLE sqlite_temp_master(\n"
      "  type text,\n"
      "  name text,\n"
      "  tbl_name text,\n"
@@ -137,165 +132,117 @@ static int sqliteInit(sqlite *db, char **pzErrMsg){
      ")"
   ;
 
-  /* The following VDBE program is used to initialize the internal
-  ** structure holding the tables and indexes of the database.
-  ** The database contains a special table named "sqlite_master"
-  ** defined as follows:
+  /* The following SQL will read the schema from the master tables.
+  ** The first version works with SQLite file formats 2 or greater.
+  ** The second version is for format 1 files.
   **
-  **    CREATE TABLE sqlite_master (
-  **        type       text,    --  Either "table" or "index" or "meta"
-  **        name       text,    --  Name of table or index
-  **        tbl_name   text,    --  Associated table 
-  **        rootpage   integer, --  The integer page number of root page
-  **        sql        text     --  The CREATE statement for this object
-  **    );
-  **
-  ** The sqlite_master table contains a single entry for each table
-  ** and each index.  The "type" column tells whether the entry is
-  ** a table or index.  The "name" column is the name of the object.
-  ** The "tbl_name" is the name of the associated table.  For tables,
-  ** the tbl_name column is always the same as name.  For indices, the
-  ** tbl_name column contains the name of the table that the index
-  ** indexes.  The "rootpage" column holds the number of the root page
-  ** for the b-tree for the table or index.  Finally, the "sql" column
-  ** contains the complete text of the CREATE TABLE or CREATE INDEX
-  ** statement that originally created the table or index.  If an index
-  ** was created to fulfill a PRIMARY KEY or UNIQUE constraint on a table,
-  ** then the "sql" column is NULL.
-  **
-  ** In format 1, entries in the sqlite_master table are in a random
-  ** order.  Two passes must be made through the table to initialize
-  ** internal data structures.  The first pass reads table definitions
-  ** and the second pass read index definitions.  Having two passes
-  ** insures that indices appear after their tables.
-  **
-  ** In format 2, entries appear in chronological order.  Only a single
-  ** pass needs to be made through the table since everything will be
-  ** in the write order.  VIEWs may only occur in format 2.
-  **
-  ** The following program invokes its callback on the SQL for each
-  ** table then goes back and invokes the callback on the
-  ** SQL for each index.  The callback will invoke the
-  ** parser to build the internal representation of the
-  ** database scheme.
+  ** Beginning with file format 2, the rowid for new table entries
+  ** (including entries in sqlite_master) is an increasing integer.
+  ** So for file format 2 and later, we can play back sqlite_master
+  ** and all the CREATE statements will appear in the right order.
+  ** But with file format 1, table entries were random and so we
+  ** have to make sure the CREATE TABLEs occur before their corresponding
+  ** CREATE INDEXs.  (We don't have to deal with CREATE VIEW or
+  ** CREATE TRIGGER in file format 1 because those constructs did
+  ** not exist then.) 
   */
-  static VdbeOp initProg[] = {
-    /* Send the file format to the callback routine
-    */
-    { OP_Open,       0, 2,  0},
-    { OP_String,     0, 0,  "file-format"},
-    { OP_String,     0, 0,  0},
-    { OP_String,     0, 0,  0},
-    { OP_ReadCookie, 0, 1,  0},
-    { OP_Callback,   4, 0,  0},
+  static char init_script[] = 
+     "SELECT type, name, rootpage, sql, 1 FROM sqlite_temp_master "
+     "UNION ALL "
+     "SELECT type, name, rootpage, sql, 0 FROM sqlite_master";
+  static char older_init_script[] = 
+     "SELECT type, name, rootpage, sql, 1 FROM sqlite_temp_master "
+     "UNION ALL "
+     "SELECT type, name, rootpage, sql, 0 FROM sqlite_master "
+     "WHERE type='table' "
+     "UNION ALL "
+     "SELECT type, name, rootpage, sql, 0 FROM sqlite_master "
+     "WHERE type='index'";
 
-    /* Send the recommended pager cache size to the callback routine
-    */
-    { OP_String,     0, 0,  "cache-size"},
-    { OP_String,     0, 0,  0},
-    { OP_String,     0, 0,  0},
-    { OP_ReadCookie, 0, 2,  0},
-    { OP_Callback,   4, 0,  0},
 
-    /* Send the initial schema cookie to the callback
-    */
-    { OP_String,     0, 0,  "schema_cookie"},
-    { OP_String,     0, 0,  0},
-    { OP_String,     0, 0,  0},
-    { OP_ReadCookie, 0, 0,  0},
-    { OP_Callback,   4, 0,  0},
-
-    /* Check the file format.  If the format number is 2 or more,
-    ** then do a single pass through the SQLITE_MASTER table.  For
-    ** a format number of less than 2, jump forward to a different
-    ** algorithm that makes two passes through the SQLITE_MASTER table,
-    ** once for tables and a second time for indices.
-    */
-    { OP_ReadCookie, 0, 1,  0},
-    { OP_Integer,    2, 0,  0},
-    { OP_Lt,         0, 28, 0},
-
-    /* This is the code for doing a single scan through the SQLITE_MASTER
-    ** table.  This code runs for format 2 and greater.
-    */
-    { OP_Rewind,     0, 26, 0},
-    { OP_Column,     0, 0,  0},           /* 20 */
-    { OP_Column,     0, 1,  0},
-    { OP_Column,     0, 3,  0},
-    { OP_Column,     0, 4,  0},
-    { OP_Callback,   4, 0,  0},
-    { OP_Next,       0, 20, 0},
-    { OP_Close,      0, 0,  0},           /* 26 */
-    { OP_Halt,       0, 0,  0},
-
-    /* This is the code for doing two passes through SQLITE_MASTER.  This
-    ** code runs for file format 1.
-    */
-    { OP_Rewind,     0, 48, 0},           /* 28 */
-    { OP_Column,     0, 0,  0},           /* 29 */
-    { OP_String,     0, 0,  "table"},
-    { OP_Ne,         0, 37, 0},
-    { OP_Column,     0, 0,  0},
-    { OP_Column,     0, 1,  0},
-    { OP_Column,     0, 3,  0},
-    { OP_Column,     0, 4,  0},
-    { OP_Callback,   4, 0,  0},
-    { OP_Next,       0, 29, 0},           /* 37 */
-    { OP_Rewind,     0, 48, 0},           /* 38 */
-    { OP_Column,     0, 0,  0},           /* 39 */
-    { OP_String,     0, 0,  "index"},
-    { OP_Ne,         0, 47, 0},
-    { OP_Column,     0, 0,  0},
-    { OP_Column,     0, 1,  0},
-    { OP_Column,     0, 3,  0},
-    { OP_Column,     0, 4,  0},
-    { OP_Callback,   4, 0,  0},
-    { OP_Next,       0, 39, 0},           /* 47 */
-    { OP_Close,      0, 0,  0},           /* 48 */
-    { OP_Halt,       0, 0,  0},
-  };
-
-  /* Create a virtual machine to run the initialization program.  Run
-  ** the program.  Then delete the virtual machine.
+  /* Construct the schema tables: sqlite_master and sqlite_temp_master
   */
-  vdbe = sqliteVdbeCreate(db);
-  if( vdbe==0 ){
-    sqliteSetString(pzErrMsg, "out of memory", 0);
-    return SQLITE_NOMEM;
+  azArg[0] = "table";
+  azArg[1] = MASTER_NAME;
+  azArg[2] = "2";
+  azArg[3] = master_schema;
+  azArg[4] = "0";
+  azArg[5] = 0;
+  sqliteInitCallback(db, 5, azArg, 0);
+  pTab = sqliteFindTable(db, MASTER_NAME);
+  if( pTab ){
+    pTab->readOnly = 1;
   }
-  sqliteVdbeAddOpList(vdbe, sizeof(initProg)/sizeof(initProg[0]), initProg);
-  rc = sqliteVdbeExec(vdbe, sqliteInitCallback, db, pzErrMsg, 
-                      db->pBusyArg, db->xBusyCallback);
-  sqliteVdbeDelete(vdbe);
-  if( rc==SQLITE_OK && db->nTable==0 ){
+  azArg[1] = TEMP_MASTER_NAME;
+  azArg[3] = temp_master_schema;
+  azArg[4] = "1";
+  sqliteInitCallback(db, 5, azArg, 0);
+  pTab = sqliteFindTable(db, TEMP_MASTER_NAME);
+  if( pTab ){
+    pTab->readOnly = 1;
+  }
+
+  /* Create a cursor to hold the database open
+  */
+  if( db->pBe==0 ) return SQLITE_OK;
+  rc = sqliteBtreeCursor(db->pBe, 2, 0, &curMain);
+  if( rc ) return rc;
+
+  /* Get the database meta information
+  */
+  rc = sqliteBtreeGetMeta(db->pBe, meta);
+  if( rc ){
+    sqliteBtreeCloseCursor(curMain);
+    return rc;
+  }
+  db->schema_cookie = meta[1];
+  db->next_cookie = db->schema_cookie;
+  db->file_format = meta[2];
+  size = meta[3];
+  if( size==0 ){ size = MAX_PAGES; }
+  db->cache_size = size;
+  sqliteBtreeSetCacheSize(db->pBe, size);
+
+  /*
+  **     file_format==1    Version 2.1.0.
+  **     file_format==2    Version 2.2.0. Add support for INTEGER PRIMARY KEY.
+  **     file_format==3    Version 2.6.0. Add support for separate numeric and
+  **                       text datatypes.
+  */
+  if( db->file_format==0 ){
     db->file_format = 2;
-  }
-  if( rc==SQLITE_OK && db->file_format>2 ){
+  }else if( db->file_format>2 ){
+    sqliteBtreeCloseCursor(curMain);
     sqliteSetString(pzErrMsg, "unsupported file format", 0);
     rc = SQLITE_ERROR;
   }
 
-  /* The schema for the SQLITE_MASTER table is not stored in the
-  ** database itself.  We have to invoke the callback one extra
-  ** time to get it to process the SQLITE_MASTER table defintion.
+  /* Read the schema information out of the schema tables
   */
-  if( rc==SQLITE_OK ){
-    Table *pTab;
-    char *azArg[6];
-    azArg[0] = "table";
-    azArg[1] = MASTER_NAME;
-    azArg[2] = "2";
-    azArg[3] = master_schema;
-    azArg[4] = 0;
-    sqliteInitCallback(db, 4, azArg, 0);
-    pTab = sqliteFindTable(db, MASTER_NAME);
-    if( pTab ){
-      pTab->readOnly = 1;
-    }
+  memset(&sParse, 0, sizeof(sParse));
+  sParse.db = db;
+  sParse.pBe = db->pBe;
+  sParse.xCallback = sqliteInitCallback;
+  sParse.pArg = (void*)db;
+  sParse.initFlag = 1;
+  sqliteRunParser(&sParse,
+      db->file_format>=2 ? init_script : older_init_script,
+      pzErrMsg);
+  if( sqlite_malloc_failed ){
+    sqliteSetString(pzErrMsg, "out of memory", 0);
+    sParse.rc = SQLITE_NOMEM;
+    sqliteBtreeRollback(db->pBe);
+    sqliteResetInternalSchema(db);
+  }
+  if( sParse.rc==SQLITE_OK ){
     db->flags |= SQLITE_Initialized;
     sqliteCommitInternalChanges(db);
+  }else{
+    db->flags &= ~SQLITE_Initialized;
+    sqliteResetInternalSchema(db);
   }
-  return rc;
+  sqliteBtreeCloseCursor(curMain);
+  return sParse.rc;
 }
 
 /*
@@ -333,9 +280,6 @@ sqlite *sqlite_open(const char *zFilename, int mode, char **pzErrMsg){
   sqliteHashInit(&db->tblHash, SQLITE_HASH_STRING, 0);
   sqliteHashInit(&db->idxHash, SQLITE_HASH_STRING, 0);
   sqliteHashInit(&db->trigHash, SQLITE_HASH_STRING, 0);
-  sqliteHashInit(&db->trigDrop, SQLITE_HASH_STRING, 0);
-  sqliteHashInit(&db->tblDrop, SQLITE_HASH_POINTER, 0);
-  sqliteHashInit(&db->idxDrop, SQLITE_HASH_POINTER, 0);
   sqliteHashInit(&db->aFunc, SQLITE_HASH_STRING, 1);
   sqliteRegisterBuiltinFunctions(db);
   db->onError = OE_Default;
@@ -378,74 +322,6 @@ no_mem_on_open:
 }
 
 /*
-** Erase all schema information from the schema hash table.  Except
-** tables that are created using CREATE TEMPORARY TABLE are preserved
-** if the preserveTemps flag is true.
-**
-** The database schema is normally read in once when the database
-** is first opened and stored in a hash table in the sqlite structure.
-** This routine erases the stored schema.  This erasure occurs because
-** either the database is being closed or because some other process
-** changed the schema and this process needs to reread it.
-*/
-static void clearHashTable(sqlite *db, int preserveTemps){
-  HashElem *pElem;
-  Hash temp1;
-  Hash temp2;
-
-  /* Make sure there are no uncommited DROPs */
-  assert( sqliteHashFirst(&db->tblDrop)==0 || sqlite_malloc_failed );
-  assert( sqliteHashFirst(&db->idxDrop)==0 || sqlite_malloc_failed );
-  assert( sqliteHashFirst(&db->trigDrop)==0 || sqlite_malloc_failed );
-  temp1 = db->tblHash;
-  temp2 = db->trigHash;
-  sqliteHashInit(&db->trigHash, SQLITE_HASH_STRING, 0);
-  sqliteHashClear(&db->idxHash);
-
-  for(pElem=sqliteHashFirst(&temp2); pElem; pElem=sqliteHashNext(pElem)){
-    Trigger * pTrigger = sqliteHashData(pElem);
-    Table *pTab = sqliteFindTable(db, pTrigger->table);
-    assert(pTab);
-    if( pTab->isTemp && preserveTemps ){ 
-      sqliteHashInsert(&db->trigHash, pTrigger->name, strlen(pTrigger->name), 
-          pTrigger);
-    }else{
-      sqliteDeleteTrigger(pTrigger);
-    }
-  }
-  sqliteHashClear(&temp2);
-
-  sqliteHashInit(&db->tblHash, SQLITE_HASH_STRING, 0);
-
-  for(pElem=sqliteHashFirst(&temp1); pElem; pElem=sqliteHashNext(pElem)){
-    Table *pTab = sqliteHashData(pElem);
-    if( preserveTemps && pTab->isTemp ){
-      Index *pIdx;
-      int nName = strlen(pTab->zName);
-      Table *pOld = sqliteHashInsert(&db->tblHash, pTab->zName, nName+1, pTab);
-      if( pOld!=0 ){
-        assert( pOld==pTab );   /* Malloc failed on the HashInsert */
-        sqliteDeleteTable(db, pOld);
-        continue;
-      }
-      for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-        int n = strlen(pIdx->zName)+1;
-        Index *pOldIdx;
-        pOldIdx = sqliteHashInsert(&db->idxHash, pIdx->zName, n, pIdx);
-        if( pOld ){
-          assert( pOldIdx==pIdx );
-          sqliteUnlinkAndDeleteIndex(db, pOldIdx);
-        }
-      }
-    }else{
-      sqliteDeleteTable(db, pTab);
-    }
-  }
-  sqliteHashClear(&temp1);
-  db->flags &= ~SQLITE_Initialized;
-}
-
-/*
 ** Return the ROWID of the most recent insert
 */
 int sqlite_last_insert_rowid(sqlite *db){
@@ -467,8 +343,7 @@ void sqlite_close(sqlite *db){
   if( sqliteSafetyCheck(db) || sqliteSafetyOn(db) ){ return; }
   db->magic = SQLITE_MAGIC_CLOSED;
   sqliteBtreeClose(db->pBe);
-  sqliteRollbackInternalChanges(db);
-  clearHashTable(db, 0);
+  sqliteResetInternalSchema(db);
   if( db->pBeTemp ){
     sqliteBtreeClose(db->pBeTemp);
   }
@@ -638,11 +513,11 @@ int sqlite_exec(
     sqliteBtreeRollback(db->pBe);
     if( db->pBeTemp ) sqliteBtreeRollback(db->pBeTemp);
     db->flags &= ~SQLITE_InTrans;
-    clearHashTable(db, 0);
+    sqliteResetInternalSchema(db);
   }
   sqliteStrRealloc(pzErrMsg);
   if( sParse.rc==SQLITE_SCHEMA ){
-    clearHashTable(db, 1);
+    sqliteResetInternalSchema(db);
   }
   db->recursionDepth--;
   if( sqliteSafetyOff(db) ) goto exec_misuse;
