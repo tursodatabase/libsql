@@ -20,7 +20,7 @@
 # The special crash-test module with its os_test.c backend only works
 # on Unix.
 #
-# $Id: crash.test,v 1.15 2005/01/15 12:45:51 danielk1977 Exp $
+# $Id: crash.test,v 1.16 2005/01/16 09:06:34 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -67,11 +67,6 @@ proc signature {} {
 proc signature2 {} {
   return [db eval {SELECT count(*), md5sum(a), md5sum(b), md5sum(c) FROM abc2}]
 }
-
-# This variable is set to 1 if the databases being used support auto-vacuum.
-# This is because some of the tests in this file verify file-size, which is
-# slightly larger for auto-vacuum databases.
-set AUTOVACUUM [db eval {pragma auto_vacuum}]
 
 #--------------------------------------------------------------------------
 # Simple crash test:
@@ -350,7 +345,7 @@ do_test crash-5.1 {
 } {}
 do_test crash-5.2 {
   expr [file size test.db] / 1024
-} [expr $AUTOVACUUM ? 11 : 10]
+} [expr [string match [execsql {pragma auto_vacuum}] 1] ? 11 : 10]
 set sig [signature]
 do_test crash-5.3 {
 # The SQL below is used to expose a bug that existed in
@@ -426,10 +421,5 @@ do_test crash-7.1 {
 do_test crash-7.2 {
   signature
 } $sig
-
-# The AUTOVACUUM was changed above.  We have to reset it for
-# other scripts that run as part of "fulltest"
-#
-set AUTOVACUUM $sqlite_options(default_autovacuum)
 
 finish_test

@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.235 2005/01/16 08:00:01 danielk1977 Exp $
+** $Id: btree.c,v 1.236 2005/01/16 09:06:34 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -3726,7 +3726,7 @@ static int balance_nonroot(MemPage *pPage){
   int *szCell;                 /* Local size of all cells in apCell[] */
   u8 *aCopy[NB];               /* Space for holding data of apCopy[] */
   u8 *aSpace;                  /* Space to hold copies of dividers cells */
-#ifndef SQLITE_OMIT_VACUUM
+#ifndef SQLITE_OMIT_AUTOVACUUM
   u8 *aFrom = 0;
 #endif
 
@@ -4227,7 +4227,6 @@ static int balance_shallower(MemPage *pPage){
   int mxCellPerPage;           /* Maximum number of cells per page */
   u8 **apCell;                 /* All cells from pages being balanced */
   int *szCell;                 /* Local size of all cells */
-  int i;
 
   assert( pPage->pParent==0 );
   assert( pPage->nCell==0 );
@@ -4357,6 +4356,7 @@ static int balance_deeper(MemPage *pPage){
   zeroPage(pPage, pChild->aData[0] & ~PTF_LEAF);
   put4byte(&pPage->aData[pPage->hdrOffset+8], pgnoChild);
   TRACE(("BALANCE: copy root %d into %d\n", pPage->pgno, pChild->pgno));
+#ifndef SQLITE_OMIT_AUTOVACUUM
   if( pBt->autoVacuum ){
     int i;
     rc = ptrmapPut(pBt, pChild->pgno, PTRMAP_BTREE, pPage->pgno);
@@ -4368,6 +4368,7 @@ static int balance_deeper(MemPage *pPage){
       }
     }
   }
+#endif
   rc = balance_nonroot(pChild);
   releasePage(pChild);
   return rc;

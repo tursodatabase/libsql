@@ -13,7 +13,7 @@
 # This file implements tests for the SQLITE_MISUSE detection logic.
 # This test file leaks memory and file descriptors.
 #
-# $Id: misuse.test,v 1.8 2004/11/14 21:56:31 drh Exp $
+# $Id: misuse.test,v 1.9 2005/01/16 09:06:34 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -40,6 +40,7 @@ proc catchsql2 {sql} {
 do_test misuse-1.1 {
   db close
   catch {file delete -force test2.db}
+  catch {file delete -force test2.db-journal}
   set ::DB [sqlite3 db test2.db]
   execsql {
     CREATE TABLE t1(a,b);

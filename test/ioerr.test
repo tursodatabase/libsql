@@ -15,12 +15,10 @@
 # The tests in this file use special facilities that are only
 # available in the SQLite test fixture.
 #
-# $Id: ioerr.test,v 1.13 2005/01/14 13:50:13 danielk1977 Exp $
+# $Id: ioerr.test,v 1.14 2005/01/16 09:06:34 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-
-set ::AV [execsql {pragma auto_vacuum}]
 
 # Usage: do_ioerr_test <test number> <options...>
 #
@@ -110,7 +108,7 @@ do_ioerr_test 1 -sqlprep {
   COMMIT;
   SELECT * FROM t1;
   DELETE FROM t1 WHERE a<100;
-} -exclude [expr [execsql {pragma auto_vacuum}] ? 8 : 0]
+} -exclude [expr [string match [execsql {pragma auto_vacuum}] 1] ? 8 : 0]
 
 
 proc cksum {{db db}} {
@@ -228,7 +226,7 @@ do_ioerr_test 5 -sqlprep {
   CREATE TABLE t1(a,b,c);
   CREATE TABLE test2.t2(a,b,c);
   COMMIT;
-} -exclude [expr [execsql {pragma auto_vacuum}] ? 8 : 0]
+} -exclude [expr [string match [execsql {pragma auto_vacuum}] 1] ? 8 : 0]
 
 # Test IO errors when replaying two hot journals from a 2-file 
 # transaction. This test only runs on UNIX.
@@ -284,7 +282,5 @@ do_ioerr_test 14 -tclprep {
 # }
 
 finish_test
-
-
 
 
