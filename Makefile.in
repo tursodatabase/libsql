@@ -57,27 +57,17 @@ READLINE_FLAGS = -DHAVE_READLINE=@TARGET_HAVE_READLINE@ @TARGET_READLINE_INC@
 #
 LIBREADLINE = @TARGET_READLINE_LIBS@
 
-# Should the database engine assume text is coded as UTF-8 or iso8859?
+# Should the database engine be compiled threadsafe
 #
-# ENCODING  = UTF8
-# ENCODING  = ISO8859
-ENCODING = @ENCODING@
+THREADSAFE = -DTHREADSAFE=@THREADSAFE@
 
 # Flags controlling use of the in memory btree implementation
-#
-# SQLITE_OMIT_INMEMORYDB is defined in order to omit the in-memory
-# red/black tree driver in the file btree_rb.c
 #
 # TEMP_STORE is 0 to force temporary tables to be in a file, 1 to
 # default to file, 2 to default to memory, and 3 to force temporary
 # tables to always be in memory.
 #
-INMEMORYDB = @INMEMORYDB@
-INCOREFLAGS = -DTEMP_STORE=@TEMP_STORE@
-
-ifeq (${INMEMORYDB},0)
-INCOREFLAGS += -DSQLITE_OMIT_INMEMORYDB=1
-endif
+TEMP_STORE = -DTEMP_STORE=@TEMP_STORE@
 
 # You should not have to change anything below this line
 ###############################################################################
@@ -285,7 +275,7 @@ legacy.lo:	$(TOP)/src/legacy.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/legacy.c
 
 main.lo:	$(TOP)/src/main.c $(HDR)
-	$(LTCOMPILE) -c $(TOP)/src/main.c
+	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/main.c
 
 pager.lo:	$(TOP)/src/pager.c $(HDR) $(TOP)/src/pager.h
 	$(LTCOMPILE) -c $(TOP)/src/pager.c
@@ -307,13 +297,13 @@ opcodes.h:	$(TOP)/src/vdbe.h
 	  awk '{printf "#define %-30s %3d\n", $$2, ++cnt}' >>opcodes.h
 
 os_mac.lo:	$(TOP)/src/os_mac.c $(HDR)
-	$(LTCOMPILE) -c $(TOP)/src/os_mac.c
+	$(LTCOMPILE) $(THREADSAFE) -c $(TOP)/src/os_mac.c
 
 os_unix.lo:	$(TOP)/src/os_unix.c $(HDR)
-	$(LTCOMPILE) -c $(TOP)/src/os_unix.c
+	$(LTCOMPILE) $(THREADSAFE) -c $(TOP)/src/os_unix.c
 
 os_win.lo:	$(TOP)/src/os_win.c $(HDR)
-	$(LTCOMPILE) -c $(TOP)/src/os_win.c
+	$(LTCOMPILE) $(THREADSAFE) -c $(TOP)/src/os_win.c
 
 parse.lo:	parse.c $(HDR)
 	$(LTCOMPILE) -c parse.c
@@ -338,7 +328,6 @@ select.lo:	$(TOP)/src/select.c $(HDR)
 
 sqlite3.h:	$(TOP)/src/sqlite.h.in 
 	sed -e s/--VERS--/`cat ${TOP}/VERSION`/ \
-            -e s/--ENCODING--/$(ENCODING)/ \
                  $(TOP)/src/sqlite.h.in >sqlite3.h
 
 table.lo:	$(TOP)/src/table.c $(HDR)
@@ -389,6 +378,7 @@ tclsqlite3:	tclsqlite-sh.lo libsqlite3.la
 
 testfixture@TARGET_EXEEXT@:	$(TOP)/src/tclsqlite.c libtclsqlite3.la libsqlite3.la $(TESTSRC)
 	$(LTLINK) $(TCL_FLAGS) -DTCLSH=1 -DSQLITE_TEST=1\
+                $(THREADSAFE) $(TEMP_STORE)\
                 -o testfixture $(TESTSRC) $(TOP)/src/tclsqlite.c \
 		libtclsqlite3.la libsqlite3.la $(LIBTCL)
 

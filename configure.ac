@@ -138,7 +138,7 @@ AC_INIT(src/sqlite.h.in)
 dnl Put the RCS revision string after AC_INIT so that it will also
 dnl show in in configure.
 # The following RCS revision string applies to configure.in
-# $Revision: 1.7 $
+# $Revision: 1.8 $
 
 #########
 # Programs needed
@@ -291,34 +291,19 @@ else
 fi
 
 ##########
-# Are we using UTF-8 or iso8859 encodings?
+# Do we want to support multithreaded use of sqlite
 #
-AC_ARG_ENABLE(utf8, 
-[  --enable-utf8           Use UTF-8 encodings],,enable_utf8=no)
-AC_MSG_CHECKING([character encoding])
-if test "$enable_utf8" = "no"; then
-  ENCODING=ISO8859
-  AC_MSG_RESULT([iso8859])
-else
-  ENCODING=UTF8
-  AC_MSG_RESULT([UTF-8])
-fi
-AC_SUBST(ENCODING)
-
-##########
-# Do we want to support in-ram databases for ATTACH DATABASE and sqlite_open
-#
-AC_ARG_ENABLE(incore-db, 
-[  --enable-incore-db           Support incore database],,enable_incore_db=yes)
-AC_MSG_CHECKING([whether to support incore databases for attach and open])
-if test "$enable_incore_db" = "no"; then
-  INMEMORYDB=0
+AC_ARG_ENABLE(threadsafe, 
+[  --enable-threadsafe           Support threadsafe operation],,enable_threadsafe=no)
+AC_MSG_CHECKING([whether to support threadsafe operation])
+if test "$enable_threadsafe" = "no"; then
+  THREADSAFE=0
   AC_MSG_RESULT([no])
 else
-  INMEMORYDB=1
+  THREADSAFE=1
   AC_MSG_RESULT([yes])
 fi
-AC_SUBST(ALLOWATTACHMEM)
+AC_SUBST(THREADSAFE)
 
 ##########
 # Do we want to support release
@@ -338,32 +323,28 @@ AC_SUBST(ALLOWRELEASE)
 ##########
 # Do we want temporary databases in memory
 #
-AC_ARG_ENABLE(tempdb-in-ram, 
-[  --enable-tempdb-in-ram     Use an in-ram database for temporary tables],,enable_tempdb_in_ram=no)
+AC_ARG_ENABLE(tempstore, 
+[  --enable-tempstore     Use an in-ram database for temporary tables (never,no,yes,always)],,enable_tempstore=yes)
 AC_MSG_CHECKING([whether to use an in-ram database for temporary tables])
-case "$enable_tempdb_in_ram" in
+case "$enable_tempstore" in
   never ) 
     TEMP_STORE=0
     AC_MSG_RESULT([never])
   ;;
   no ) 
-    INMEMORYDB=1
     TEMP_STORE=1
     AC_MSG_RESULT([no])
   ;;
   always ) 
-    INMEMORYDB=1
-    TEMP_STORE=3
+     TEMP_STORE=3
     AC_MSG_RESULT([always])
   ;;
   * ) 
-    INMEMORYDB=1
     TEMP_STORE=2
     AC_MSG_RESULT([yes])
   ;;
 esac
 
-AC_SUBST(INMEMORYDB)
 AC_SUBST(TEMP_STORE)
 
 ###########
@@ -395,12 +376,13 @@ if test "$TARGET_EXEEXT" = ".exe"; then
   OS_UNIX=0
   OS_WIN=1
   tclsubdir=win
+  TARGET_CFLAGS="$TARGET_CFLAGS -DOS_WIN=1"
 else
   OS_UNIX=1
   OS_WIN=0
   tclsubdir=unix
+  TARGET_CFLAGS="$TARGET_CFLAGS -DOS_UNIX=1"
 fi
-TARGET_CFLAGS="$TARGET_CFLAGS -DOS_UNIX=$OS_UNIX -DOS_WIN=$OS_WIN"
 
 AC_SUBST(BUILD_EXEEXT)
 AC_SUBST(OS_UNIX)
