@@ -1,5 +1,5 @@
-C Make\sVACUUM\swork\seven\sif\smultiple\sprocesses\shave\sthe\sdatabase\sopen\sat\sonce.\s(CVS\s933)
-D 2003-04-25T13:22:52
+C Work\saround\sa\sname\scollision\sproblem\son\swindows.\s(CVS\s934)
+D 2003-04-25T13:28:03
 F Makefile.in 004acec253ecdde985c8ecd5b7c9accdb210378f
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -22,7 +22,7 @@ F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F src/attach.c 7ebc7487de43e357a64226f8abef81f2669f2183
 F src/auth.c a4afd27964fb9f661147115790c8ae2ee230ebcc
 F src/btree.c a9e8aa96c2af6a81e442719d0cbc1a71bb9b3e08
-F src/btree.h 6488448db856bb92729b1325b932864c9aa163f5
+F src/btree.h 23c50e00709de16a5dce1fcea9c0429cc955ff0e
 F src/btree_rb.c 8e00e40be264716e1929987878672e55d9e0e76d
 F src/build.c d5a26baeffa5bc49b4b7009a7723c6ab7e1b02d9
 F src/copy.c 44b13fd4d2444fb53bff8a5ecee1c5f6f86a8263
@@ -125,7 +125,7 @@ F test/trigger3.test 870afef7997a5b86bf3ea893ce0c2e85d6356c72
 F test/trigger4.test 9a5c1406344d743020c2753ae8d6dfe6eb75f818
 F test/unique.test 22a46df72a3e0a3fd1a2d39e96fb59f18448dd5f
 F test/update.test 198360dfa14e65354dbcc66d5b98d8070780e42b
-F test/vacuum.test 9262504c37e9d796e3d8d6c1730e878c8fa8787a
+F test/vacuum.test 4d8c8af30338577af03e563bc815d7898ae65258
 F test/version.test 605fd0d7e7d571370c32b12dbf395b58953de246
 F test/view.test d356f445d481c04ffa6036a4c61cb8ba70289f69
 F test/where.test d719129a052280fe245a2ddcbd09bcc0b8c17ce4
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P cb808c14bc14e7bd1cfff134ae5206ace451f2df
-R 304a2370652d1a06037c5b9e50c2e06c
+P caa960289f3d1f5e8f35a94e9e4321996c211ed2
+R 6965193ade608332ec748a76df98b36c
 U drh
-Z a3c697bfebd34cfeb9979168f63ba185
+Z d6cf94162cb85ee388573561bf7c7da3

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the VACUUM statement.
 #
-# $Id: vacuum.test,v 1.9 2003/04/25 13:22:53 drh Exp $
+# $Id: vacuum.test,v 1.10 2003/04/25 13:28:03 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -25,7 +25,7 @@ proc cksum {{db db}} {
     append txt $prag-[$db eval "PRAGMA $prag"]\n
   }
   set cksum [string length $txt]-[md5 $txt]
-  puts $cksum-[file size test.db]
+  # puts $cksum-[file size test.db]
   return $cksum
 }
 

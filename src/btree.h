@@ -13,7 +13,7 @@
 ** subsystem.  See comments in the source code for a detailed description
 ** of what each interface routine does.
 **
-** @(#) $Id: btree.h,v 1.33 2003/04/25 13:22:53 drh Exp $
+** @(#) $Id: btree.h,v 1.34 2003/04/25 13:28:03 drh Exp $
 */
 #ifndef _BTREE_H_
 #define _BTREE_H_
@@ -56,7 +56,7 @@ struct BtOps {
     int (*UpdateMeta)(Btree*, int*);
     char *(*IntegrityCheck)(Btree*, int*, int);
     const char *(*GetFilename)(Btree*);
-    int (*CopyFile)(Btree*,Btree*);
+    int (*Copyfile)(Btree*,Btree*);
 #ifdef SQLITE_TEST
     int (*PageDump)(Btree*, int, int);
     struct Pager *(*Pager)(Btree*);
@@ -141,7 +141,7 @@ int sqliteRBtreeOpen(const char *zFilename, int mode, int nPg, Btree **ppBtree);
 #define sqliteBtreeIntegrityCheck(pBt, aRoot, nRoot)\
                 (btOps(pBt)->IntegrityCheck(pBt, aRoot, nRoot))
 #define sqliteBtreeGetFilename(pBt)       (btOps(pBt)->GetFilename(pBt))
-#define sqliteBtreeCopyFile(pBt1, pBt2)   (btOps(pBt1)->CopyFile(pBt1, pBt2))
+#define sqliteBtreeCopyFile(pBt1, pBt2)   (btOps(pBt1)->Copyfile(pBt1, pBt2))
 
 #ifdef SQLITE_TEST
 #define sqliteBtreePageDump(pBt, pgno, recursive)\
