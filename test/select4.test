@@ -1,0 +1,131 @@
+# Copyright (c) 1999, 2000 D. Richard Hipp
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public
+# License as published by the Free Software Foundation; either
+# version 2 of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public
+# License along with this library; if not, write to the
+# Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+# Boston, MA  02111-1307, USA.
+#
+# Author contact information:
+#   drh@hwaci.com
+#   http://www.hwaci.com/drh/
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing UNION, INTERSECT and EXCEPT operators
+# in SELECT statements.
+#
+# $Id: select4.test,v 1.1 2000/06/08 00:28:52 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# Build some test data
+#
+do_test select4-1.0 {
+  set fd [open data1.txt w]
+  for {set i 1} {$i<32} {incr i} {
+    for {set j 0} {pow(2,$j)<$i} {incr j} {}
+    puts $fd "$i\t$j"
+  }
+  close $fd
+  execsql {
+    CREATE TABLE t1(n int, log int);
+    COPY t1 FROM 'data1.txt'
+  }
+  file delete data1.txt
+  execsql {SELECT DISTINCT log FROM t1 ORDER BY log}
+} {0 1 2 3 4 5}
+
+# Union All operator
+#
+do_test select4-1.1a {
+  lsort [execsql {SELECT DISTINCT log FROM t1}]
+} {0 1 2 3 4 5}
+do_test select4-1.1b {
+  lsort [execsql {SELECT n FROM t1 WHERE log=3}]
+} {5 6 7 8}
+do_test select4-1.1c {
+  execsql {
+    SELECT DISTINCT log FROM t1
+    UNION ALL
+    SELECT n FROM t1 WHERE log=3
+    ORDER BY log;
+  }
+} {0 1 2 3 4 5 5 6 7 8}
+do_test select4-1.2 {
+  execsql {
+    SELECT log FROM t1 WHERE n IN 
+      (SELECT DISTINCT log FROM t1 UNION ALL
+       SELECT n FROM t1 WHERE log=3)
+    ORDER BY log;
+  }
+} {0 1 2 2 3 3 3 3}
+
+# Union operator
+#
+do_test select4-2.1 {
+  execsql {
+    SELECT DISTINCT log FROM t1
+    UNION
+    SELECT n FROM t1 WHERE log=3
+    ORDER BY log;
+  }
+} {0 1 2 3 4 5 6 7 8}
+do_test select4-2.2 {
+  execsql {
+    SELECT log FROM t1 WHERE n IN 
+      (SELECT DISTINCT log FROM t1 UNION
+       SELECT n FROM t1 WHERE log=3)
+    ORDER BY log;
+  }
+} {0 1 2 2 3 3 3 3}
+
+# Except operator
+#
+do_test select4-3.1 {
+  execsql {
+    SELECT DISTINCT log FROM t1
+    EXCEPT
+    SELECT n FROM t1 WHERE log=3
+    ORDER BY log;
+  }
+} {0 1 2 3 4}
+do_test select4-3.2 {
+  execsql {
+    SELECT log FROM t1 WHERE n IN 
+      (SELECT DISTINCT log FROM t1 EXCEPT
+       SELECT n FROM t1 WHERE log=3)
+    ORDER BY log;
+  }
+} {0 1 2 2}
+
+# Intersect operator
+#
+do_test select4-4.1 {
+  execsql {
+    SELECT DISTINCT log FROM t1
+    INTERSECT
+    SELECT n FROM t1 WHERE log=3
+    ORDER BY log;
+  }
+} {5}
+do_test select4-4.2 {
+  execsql {
+    SELECT log FROM t1 WHERE n IN 
+      (SELECT DISTINCT log FROM t1 INTERSECT
+       SELECT n FROM t1 WHERE log=3)
+    ORDER BY log;
+  }
+} {3}
+
+finish_test

@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements.
 **
-** $Id: select.c,v 1.17 2000/06/08 00:19:03 drh Exp $
+** $Id: select.c,v 1.18 2000/06/08 00:28:52 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -509,6 +509,9 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
         int iCont, iBreak;
         assert( p->pEList );
         generateColumnNames(pParse, 0, p->pEList);
+        if( p->pOrderBy ){
+          sqliteVdbeAddOp(v, OP_SortOpen, 0, 0, 0, 0);
+        }
         iBreak = sqliteVdbeMakeLabel(v);
         iCont = sqliteVdbeAddOp(v, OP_Next, unionTab, iBreak, 0, 0);
         rc = selectInnerLoop(pParse, 0, unionTab, p->pEList->nExpr,
@@ -558,6 +561,9 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
       */
       assert( p->pEList );
       generateColumnNames(pParse, 0, p->pEList);
+      if( p->pOrderBy ){
+        sqliteVdbeAddOp(v, OP_SortOpen, 0, 0, 0, 0);
+      }
       iBreak = sqliteVdbeMakeLabel(v);
       iCont = sqliteVdbeAddOp(v, OP_Next, tab1, iBreak, 0, 0);
       sqliteVdbeAddOp(v, OP_Key, tab1, 0, 0, 0);
