@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.198 2004/11/02 14:40:32 danielk1977 Exp $
+** $Id: btree.c,v 1.199 2004/11/02 18:05:09 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1753,9 +1753,11 @@ autovacuum_out:
   /* TODO: A goto autovacuum_out; will fail to call releasePage() on 
   ** outstanding references. Fix.
   */
+#ifndef NDEBUG
   if( nRef!=*sqlite3pager_stats(pPager) ){
     sqlite3pager_refdump(pPager);
   }
+#endif
   assert( nRef==*sqlite3pager_stats(pPager) );
   if( rc!=SQLITE_OK ){
     sqlite3pager_rollback(pPager);
