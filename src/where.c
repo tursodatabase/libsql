@@ -13,7 +13,7 @@
 ** the WHERE clause of SQL statements.  Also found here are subroutines
 ** to generate VDBE code to evaluate expressions.
 **
-** $Id: where.c,v 1.46 2002/05/24 02:04:34 drh Exp $
+** $Id: where.c,v 1.47 2002/05/24 20:31:38 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -455,6 +455,17 @@ WhereInfo *sqliteWhereBegin(
     Index *pIdx;
     WhereLevel *pLevel = &pWInfo->a[i];
 
+    /* If this is the right table of a LEFT OUTER JOIN, allocate and
+    ** initialize a memory cell that record if this table matches any
+    ** row of the left table in the join.
+    */
+    if( i>0 && (pTabList->a[i-1].jointype & JT_LEFT)!=0 ){
+      if( !pParse->nMem ) pParse->nMem++;
+      pLevel->iLeftJoin = pParse->nMem++;
+      sqliteVdbeAddOp(v, OP_String, 0, 0);
+      sqliteVdbeAddOp(v, OP_MemStore, pLevel->iLeftJoin, 1);
+    }
+
     pIdx = pLevel->pIdx;
     if( i<ARRAYSIZE(iDirectEq) && iDirectEq[i]>=0 ){
       /* Case 1:  We can directly reference a single row using an
@@ -788,6 +799,15 @@ WhereInfo *sqliteWhereBegin(
       aExpr[j].p = 0;
     }
     brk = cont;
+
+    /* For a LEFT OUTER JOIN, generate code that will record the fact that
+    ** at least one row of the right table has matched the left table.  
+    */
+    if( pLevel->iLeftJoin ){
+      pLevel->top = sqliteVdbeCurrentAddr(v);
+      sqliteVdbeAddOp(v, OP_Integer, 1, 0);
+      sqliteVdbeAddOp(v, OP_MemStore, pLevel->iLeftJoin, 1);
+    }
   }
   pWInfo->iContinue = cont;
   if( pushKey && !haveKey ){
@@ -814,6 +834,13 @@ void sqliteWhereEnd(WhereInfo *pWInfo){
       sqliteVdbeAddOp(v, pLevel->op, pLevel->p1, pLevel->p2);
     }
     sqliteVdbeResolveLabel(v, pLevel->brk);
+    if( pLevel->iLeftJoin ){
+      int addr;
+      addr = sqliteVdbeAddOp(v, OP_MemLoad, pLevel->iLeftJoin, 0);
+      sqliteVdbeAddOp(v, OP_NotNull, 0, addr+4);
+      sqliteVdbeAddOp(v, OP_NullRow, base+i, 0);
+      sqliteVdbeAddOp(v, OP_Goto, 0, pLevel->top);
+    }
   }
   sqliteVdbeResolveLabel(v, pWInfo->iBreak);
   for(i=0; i<pTabList->nSrc; i++){

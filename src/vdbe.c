@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.147 2002/05/24 02:04:34 drh Exp $
+** $Id: vdbe.c,v 1.148 2002/05/24 20:31:37 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -3452,8 +3452,12 @@ case OP_Next: {
 
   if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
     int res;
-    rc = sqliteBtreeNext(pCrsr, &res);
-    p->aCsr[i].nullRow = res;
+    if( p->aCsr[i].nullRow ){
+      res = 1;
+    }else{
+      rc = sqliteBtreeNext(pCrsr, &res);
+      p->aCsr[i].nullRow = res;
+    }
     if( res==0 ){
       pc = pOp->p2 - 1;
       sqlite_search_count++;

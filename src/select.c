@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.83 2002/05/24 16:14:15 drh Exp $
+** $Id: select.c,v 1.84 2002/05/24 20:31:37 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -106,7 +106,11 @@ int sqliteJoinType(Parse *pParse, Token *pA, Token *pB, Token *pC){
       break;
     }
   }
-  if( (jointype & ~JT_INNER)!=0 ){
+  if(
+     (jointype & (JT_INNER|JT_OUTER))==(JT_INNER|JT_OUTER) ||
+     (jointype & JT_ERROR)!=0 ||
+     (jointype & JT_RIGHT)==JT_RIGHT
+  ){
     static Token dummy = { 0, 0 };
     char *zSp1 = " ", *zSp2 = " ";
     if( pB==0 ){ pB = &dummy; zSp1 = 0; }
@@ -117,6 +121,137 @@ int sqliteJoinType(Parse *pParse, Token *pA, Token *pB, Token *pC){
     jointype = JT_INNER;
   }
   return jointype;
+}
+
+/*
+** Return the index of a column in a table.  Return -1 if the column
+** is not contained in the table.
+*/
+static int columnIndex(Table *pTab, const char *zCol){
+  int i;
+  for(i=0; i<pTab->nCol; i++){
+    if( sqliteStrICmp(pTab->aCol[i].zName, zCol)==0 ) return i;
+  }
+  return -1;
+}
+
+/*
+** Add a term to the WHERE expression in *ppExpr that requires the
+** zCol column to be equal in the two tables pTab1 and pTab2.
+*/
+static void addWhereTerm(
+  const char *zCol,        /* Name of the column */
+  const Table *pTab1,      /* First table */
+  const Table *pTab2,      /* Second table */
+  Expr **ppExpr            /* Add the equality term to this expression */
+){
+  Token dummy;
+  Expr *pE1a, *pE1b, *pE1c;
+  Expr *pE2a, *pE2b, *pE2c;
+  Expr *pE;
+
+  dummy.z = zCol;
+  dummy.n = strlen(zCol);
+  pE1a = sqliteExpr(TK_ID, 0, 0, &dummy);
+  pE2a = sqliteExpr(TK_ID, 0, 0, &dummy);
+  dummy.z = pTab1->zName;
+  dummy.n = strlen(dummy.z);
+  pE1b = sqliteExpr(TK_ID, 0, 0, &dummy);
+  dummy.z = pTab2->zName;
+  dummy.n = strlen(dummy.z);
+  pE2b = sqliteExpr(TK_ID, 0, 0, &dummy);
+  pE1c = sqliteExpr(TK_DOT, pE1b, pE1a, 0);
+  pE2c = sqliteExpr(TK_DOT, pE2b, pE2a, 0);
+  pE = sqliteExpr(TK_EQ, pE1c, pE2c, 0);
+  if( *ppExpr ){
+    *ppExpr = sqliteExpr(TK_AND, *ppExpr, pE, 0);
+  }else{
+    *ppExpr = pE;
+  }
+}
+
+/*
+** This routine processes the join information for a SELECT statement.
+** ON and USING clauses are converted into extra terms of the WHERE clause.
+** NATURAL joins also create extra WHERE clause terms.
+**
+** This routine returns the number of errors encountered.
+*/
+static int sqliteProcessJoin(Parse *pParse, Select *p){
+  SrcList *pSrc;
+  int i, j;
+  pSrc = p->pSrc;
+  for(i=0; i<pSrc->nSrc-1; i++){
+    struct SrcList_item *pTerm = &pSrc->a[i];
+    struct SrcList_item *pOther = &pSrc->a[i+1];
+
+    if( pTerm->pTab==0 || pOther->pTab==0 ) continue;
+
+    /* When the NATURAL keyword is present, add WHERE clause terms for
+    ** every column that the two tables have in common.
+    */
+    if( pTerm->jointype & JT_NATURAL ){
+      Table *pTab;
+      if( pTerm->pOn || pTerm->pUsing ){
+        sqliteSetString(&pParse->zErrMsg, "a NATURAL join may not have "
+           "an ON or USING clause", 0);
+        pParse->nErr++;
+        return 1;
+      }
+      pTab = pTerm->pTab;
+      for(j=0; j<pTab->nCol; j++){
+        if( columnIndex(pOther->pTab, pTab->aCol[j].zName)>=0 ){
+          addWhereTerm(pTab->aCol[j].zName, pTab, pOther->pTab, &p->pWhere);
+        }
+      }
+    }
+
+    /* Disallow both ON and USING clauses in the same join
+    */
+    if( pTerm->pOn && pTerm->pUsing ){
+      sqliteSetString(&pParse->zErrMsg, "cannot have both ON and USING "
+        "clauses in the same join", 0);
+      pParse->nErr++;
+      return 1;
+    }
+
+    /* Add the ON clause to the end of the WHERE clause, connected by
+    ** and AND operator.
+    */
+    if( pTerm->pOn ){
+      if( p->pWhere==0 ){
+        p->pWhere = pTerm->pOn;
+      }else{
+        p->pWhere = sqliteExpr(TK_AND, p->pWhere, pTerm->pOn, 0);
+      }
+      pTerm->pOn = 0;
+    }
+
+    /* Create extra terms on the WHERE clause for each column named
+    ** in the USING clause.  Example: If the two tables to be joined are 
+    ** A and B and the USING clause names X, Y, and Z, then add this
+    ** to the WHERE clause:    A.X=B.X AND A.Y=B.Y AND A.Z=B.Z
+    ** Report an error if any column mentioned in the USING clause is
+    ** not contained in both tables to be joined.
+    */
+    if( pTerm->pUsing ){
+      IdList *pList;
+      int j;
+      assert( i<pSrc->nSrc-1 );
+      pList = pTerm->pUsing;
+      for(j=0; j<pList->nId; j++){
+        if( columnIndex(pTerm->pTab, pList->a[i].zName)<0 ||
+            columnIndex(pOther->pTab, pList->a[i].zName)<0 ){
+          sqliteSetString(&pParse->zErrMsg, "cannot join using column ",
+            pList->a[i].zName, " - column not present in both tables", 0);
+          pParse->nErr++;
+          return 1;
+        }
+        addWhereTerm(pList->a[i].zName, pTerm->pTab, pOther->pTab, &p->pWhere);
+      }
+    }
+  }
+  return 0;
 }
 
 /*
@@ -414,12 +549,15 @@ Table *sqliteResultSetOfSelect(Parse *pParse, char *zTabName, Select *pSelect){
 }
 
 /*
-** For the given SELECT statement, do two things.
+** For the given SELECT statement, do three things.
 **
 **    (1)  Fill in the pTabList->a[].pTab fields in the SrcList that 
 **         defines the set of tables that should be scanned. 
 **
-**    (2)  Scan the list of columns in the result set (pEList) looking
+**    (2)  Add terms to the WHERE clause to accomodate the NATURAL keyword
+**         on joins and the ON and USING clause of joins.
+**
+**    (3)  Scan the list of columns in the result set (pEList) looking
 **         for instances of the "*" operator or the TABLE.* operator.
 **         If found, expand each "*" to be every column in every table
 **         and TABLE.* to be every column in TABLE.
@@ -447,6 +585,12 @@ static int fillInColumnList(Parse *pParse, Select *p){
     if( pTabList->a[i].zName==0 ){
       /* A sub-query in the FROM clause of a SELECT */
       assert( pTabList->a[i].pSelect!=0 );
+      if( pTabList->a[i].zAlias==0 ){
+        char zFakeName[60];
+        sprintf(zFakeName, "sqlite_subquery_%p_",
+           (void*)pTabList->a[i].pSelect);
+        sqliteSetString(&pTabList->a[i].zAlias, zFakeName, 0);
+      }
       pTabList->a[i].pTab = pTab = 
         sqliteResultSetOfSelect(pParse, pTabList->a[i].zAlias,
                                         pTabList->a[i].pSelect);
@@ -472,6 +616,10 @@ static int fillInColumnList(Parse *pParse, Select *p){
       }
     }
   }
+
+  /* Process NATURAL keywords, and ON and USING clauses of joins.
+  */
+  if( sqliteProcessJoin(pParse, p) ) return 1;
 
   /* For every "*" that occurs in the column list, insert the names of
   ** all columns in all tables.  And for every TABLE.* insert the names
@@ -531,10 +679,23 @@ static int fillInColumnList(Parse *pParse, Select *p){
           tableSeen = 1;
           for(j=0; j<pTab->nCol; j++){
             Expr *pExpr, *pLeft, *pRight;
+            char *zName = pTab->aCol[j].zName;
+
+            if( i>0 && (pTabList->a[i-1].jointype & JT_NATURAL)!=0 &&
+                columnIndex(pTabList->a[i-1].pTab, zName)>=0 ){
+              /* In a NATURAL join, omit the join columns from the 
+              ** table on the right */
+              continue;
+            }
+            if( i>0 && sqliteIdListIndex(pTabList->a[i-1].pUsing, zName)>=0 ){
+              /* In a join with a USING clause, omit columns in the
+              ** using clause from the table on the right. */
+              continue;
+            }
             pRight = sqliteExpr(TK_ID, 0, 0, 0);
             if( pRight==0 ) break;
-            pRight->token.z = pTab->aCol[j].zName;
-            pRight->token.n = strlen(pTab->aCol[j].zName);
+            pRight->token.z = zName;
+            pRight->token.n = strlen(zName);
             if( zTabName ){
               pLeft = sqliteExpr(TK_ID, 0, 0, 0);
               if( pLeft==0 ) break;
@@ -1295,6 +1456,7 @@ int sqliteSelect(
   if( fillInColumnList(pParse, p) ){
     goto select_end;
   }
+  pWhere = p->pWhere;
   pEList = p->pEList;
   if( pEList==0 ) goto select_end;
 

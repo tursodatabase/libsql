@@ -388,18 +388,11 @@ void sqliteDropTrigger(Parse *pParse, Token *pName, int nested)
 ** if there is no match.
 */
 static int checkColumnOverLap(IdList *pIdList, ExprList *pEList){
-  int i, e;
-  if( !pIdList )return 1;
-  if( !pEList )return 1;
-
-  for(i = 0; i < pIdList->nId; i++){ 
-    for(e = 0; e < pEList->nExpr; e++){ 
-      if( !sqliteStrICmp(pIdList->a[i].zName, pEList->a[e].zName) ){
-        return 1;
-      }
-    }
+  int e;
+  if( !pIdList || !pEList ) return 1;
+  for(e=0; e<pEList->nExpr; e++){
+    if( sqliteIdListIndex(pIdList, pEList->a[e].zName)>=0 ) return 1;
   }
-
   return 0; 
 }
 

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.114 2002/05/24 16:14:15 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.115 2002/05/24 20:31:37 drh Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -481,6 +481,8 @@ struct WhereLevel {
   int brk;             /* Jump here to break out of the loop */
   int cont;            /* Jump here to continue with the next loop cycle */
   int op, p1, p2;      /* Opcode used to terminate the loop */
+  int iLeftJoin;       /* Memory cell used to implement LEFT OUTER JOIN */
+  int top;             /* First instruction of interior of the loop */
 };
 
 /*
@@ -797,6 +799,7 @@ void sqliteDropTable(Parse*, Token*, int);
 void sqliteDeleteTable(sqlite*, Table*);
 void sqliteInsert(Parse*, Token*, ExprList*, Select*, IdList*, int);
 IdList *sqliteIdListAppend(IdList*, Token*);
+int sqliteIdListIndex(IdList*,const char*);
 SrcList *sqliteSrcListAppend(SrcList*, Token*);
 void sqliteSrcListAddAlias(SrcList*, Token*);
 void sqliteIdListDelete(IdList*);

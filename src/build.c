@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.94 2002/05/24 02:04:33 drh Exp $
+** $Id: build.c,v 1.95 2002/05/24 20:31:37 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1592,6 +1592,19 @@ void sqliteIdListDelete(IdList *pList){
   }
   sqliteFree(pList->a);
   sqliteFree(pList);
+}
+
+/*
+** Return the index in pList of the identifier named zId.  Return -1
+** if not found.
+*/
+int sqliteIdListIndex(IdList *pList, const char *zName){
+  int i;
+  if( pList==0 ) return -1;
+  for(i=0; i<pList->nId; i++){
+    if( sqliteStrICmp(pList->a[i].zName, zName)==0 ) return i;
+  }
+  return -1;
 }
 
 /*
