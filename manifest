@@ -1,5 +1,5 @@
-C Add\sasserts\sto\sbtree.c\sthat\scheck\sfor\sthe\scorrect\ssize\sof\svarious\stypedefs\nand\sstructures.\s\sTicket\s#233.\s(CVS\s845)
-D 2003-01-24T12:14:20
+C Update\sthe\sspeed.html\sdocumentation.\s\sRecent\soptimizations\shave\smade\sthe\nlibrary\smuch\sfaster.\s(CVS\s846)
+D 2003-01-25T14:25:42
 F Makefile.in 6606854b1512f185b8e8c779b8d7fc2750463d64
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -150,11 +150,11 @@ F www/nulls.tcl 29497dac2bc5b437aa7e2e94577dad4d8933ed26
 F www/omitted.tcl 118062f40a203fcb88b8d68ef1d7c0073ac191ec
 F www/opcode.tcl 33c5f2061a05c5d227c72b84c080b3bf74c74f8b
 F www/quickstart.tcl 368d7ef130274307accceb2e21c9fc70bbb0ba65
-F www/speed.tcl 52759968401d81760fc01f9d3ab6242f6d2a7066
+F www/speed.tcl 4d463e2aea41f688ed320a937f93ff885be918c3
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 19221dee5fee4c8800cbae309f009964c8d646a2
-R 5f54a128edf3ccd559b45b128151fef3
+P c7e647d011b086a6e57420850f6bc4f28fcb23ee
+R fb265d63c9802489e93e63983e966b97
 U drh
-Z a3694ca5aa529fbe36a1167d1cb0514e
+Z 9cebef5aee83f0a69d880740ef12b3fa
