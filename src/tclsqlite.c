@@ -23,7 +23,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.6 2000/08/04 13:49:02 drh Exp $
+** $Id: tclsqlite.c,v 1.7 2000/08/04 14:56:25 drh Exp $
 */
 #include "sqlite.h"
 #include <tcl.h>
@@ -301,7 +301,7 @@ static int DbMain(void *cd, Tcl_Interp *interp, int argc, char **argv){
     return TCL_ERROR;
   }
   zErrMsg = 0;
-  p = Tcl_Alloc( sizeof(*p) );
+  p = (SqliteDb*)Tcl_Alloc( sizeof(*p) );
   if( p==0 ){
     Tcl_SetResult(interp, "malloc failed", TCL_STATIC);
     return TCL_ERROR;

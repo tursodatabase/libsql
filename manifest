@@ -1,5 +1,5 @@
-C :-)\s(CVS\s127)
-D 2000-08-04T13:52:31
+C :-)\s(CVS\s128)
+D 2000-08-04T14:56:25
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 670aa9413cb2cdcded23b328a9e255c845c41a1e
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -16,9 +16,10 @@ F src/main.c ba16b81890d962821bb90f0a4de9a29b0e495eb2
 F src/parse.y 5d199034de5d29ebedb42c1c51f34db4df40cbe5
 F src/select.c d382e96c2221d08367cc87976f2b574537c9de97
 F src/shell.c 2fd370838742afa068cfcdd05b667ff89bab25b6
+F src/shell.tcl ca52bb831e03e10480516e5e708c0c452914a219
 F src/sqlite.h 82ae53028e27919250f886ff9d7c4927de81978a
 F src/sqliteInt.h f6d1e139b3bfa4ceff2136684e19d76b53178ec0
-F src/tclsqlite.c 6ced80832c13e70dae5a176da2dff3d5f4801d92
+F src/tclsqlite.c b1ae6abd50d8b0e2470cc49b5e1d03329a68dd75
 F src/tokenize.c 77ff8164a8751994bc9926ce282847f653ac0c16
 F src/update.c 51b9ef7434b15e31096155da920302e9db0d27fc
 F src/util.c b75b33e6bd5d47898bb7ed9fdd0dea4fe7c19b00
@@ -68,7 +69,7 @@ F www/mingw.tcl fc5f4ba9d336b6e8c97347cc6496d6162461ef60
 F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl 7c2ee68063fa59463f55d5bac1ffe3e50d8a817f
 F www/vdbe.tcl bcbfc33bcdd0ebad95eab31286adb9e1bc289520
-P e31be5824813d1690a4ee7bac9e49658a08c52c1
-R a1959e73cecbe5ec9f491607dba0c61e
+P 695fd68eb6291bdcc04af0eec7c7cdd7ff10872b
+R ba994bd9837a407cb6abaac249529cc4
 U drh
-Z a62979c6837973254ca7c80dad5fc80b
+Z 509708daad6c84350903dba5837a203b
