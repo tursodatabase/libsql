@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.37 2001/10/13 02:59:09 drh Exp $
+** @(#) $Id: parse.y,v 1.38 2001/11/06 04:00:18 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -28,6 +28,11 @@
 %include {
 #include "sqliteInt.h"
 #include "parse.h"
+
+/*
+** A structure for holding two integers
+*/
+struct twoint { int a,b; };
 }
 
 // These are extra tokens used by the lexer but never seen by the
@@ -96,6 +101,7 @@ id(A) ::= PRAGMA(X).     {A = X;}
 id(A) ::= CLUSTER(X).    {A = X;}
 id(A) ::= ID(X).         {A = X;}
 id(A) ::= TEMP(X).       {A = X;}
+id(A) ::= OFFSET(X).     {A = X;}
 
 // And "ids" is an identifer-or-string.
 //
@@ -179,8 +185,8 @@ joinop(A) ::= UNION ALL.  {A = TK_ALL;}
 joinop(A) ::= INTERSECT.  {A = TK_INTERSECT;}
 joinop(A) ::= EXCEPT.     {A = TK_EXCEPT;}
 oneselect(A) ::= SELECT distinct(D) selcollist(W) from(X) where_opt(Y)
-                 groupby_opt(P) having_opt(Q) orderby_opt(Z). {
-  A = sqliteSelectNew(W,X,Y,P,Q,Z,D);
+                 groupby_opt(P) having_opt(Q) orderby_opt(Z) limit_opt(L). {
+  A = sqliteSelectNew(W,X,Y,P,Q,Z,D,L.a,L.b);
 }
 
 // The "distinct" nonterminal is true (1) if the DISTINCT keyword is
@@ -258,6 +264,14 @@ groupby_opt(A) ::= GROUP BY exprlist(X).  {A = X;}
 %destructor having_opt {sqliteExprDelete($$);}
 having_opt(A) ::= .                {A = 0;}
 having_opt(A) ::= HAVING expr(X).  {A = X;}
+
+%type limit_opt {struct twoint}
+limit_opt(A) ::= .                  {A.a = -1; A.b = 0;}
+limit_opt(A) ::= LIMIT INTEGER(X).  {A.a = atoi(X.z); A.b = 0;}
+limit_opt(A) ::= LIMIT INTEGER(X) limit_sep INTEGER(Y). 
+                                    {A.a = atoi(X.z); A.b = atoi(Y.z);}
+limit_sep ::= OFFSET.
+limit_sep ::= COMMA.
 
 /////////////////////////// The DELETE statement /////////////////////////////
 //

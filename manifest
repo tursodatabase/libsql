@@ -1,5 +1,5 @@
-C Increase\smaximum\srow\ssize\sto\s1MB.\s(CVS\s300)
-D 2001-11-04T18:32:47
+C Implement\sindices\sthat\soccur\sin\ssort\sorder\sand\sthe\sLIMIT...OFFSET\sclause\nof\sSELECT\sstatements.\s(CVS\s301)
+D 2001-11-06T04:00:18
 F Makefile.in 6801df952cb1df64aa32e4de85fed24511d28efd
 F Makefile.template 1fdb891f14083ee0b63cf7282f91529634438e7a
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -33,24 +33,24 @@ F src/os.c 66b677479eae37e30bdfbe32deb0fe6a2efca983
 F src/os.h bed702c9e3b768bc3cb1b12c90b83d099c1546be
 F src/pager.c 0bd0b4b693edb43c72774e3e749d8667e2ae7094
 F src/pager.h a0d4c5ae271914aa07b62aee0707997d6932b6ca
-F src/parse.y 148e4cd134d3cbd816dcb0df50e49e498faa6ba4
+F src/parse.y 5295f393f41ea89958287e5738e6c12c7cd67482
 F src/printf.c 300a90554345751f26e1fc0c0333b90a66110a1d
 F src/random.c 2a9cc2c9716d14815fd4c2accf89d87a1143e46b
-F src/select.c c34b02eafaa69fde6b4428df7861c3417b3079f9
+F src/select.c 008d79761a6025e4db490c8f732e32631c0c57c3
 F src/shell.c 71597951753b56a97fea1c7a30908f31e635c00c
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 934de9112747ad8d8e7d5fec44876246b24ca5a3
-F src/sqliteInt.h fa9f56b77e0790f0ec329195c2255e2d8e440b0a
+F src/sqliteInt.h fc2f7da1fee1e871b20b375c50c582065d891c7f
 F src/table.c c89698bd5bb4b8d14722d6ee7e9be014c383d24a
 F src/tclsqlite.c 4896e078495bf868742f5394dcf01c5efe5bea02
 F src/test1.c e4b31f62ea71963cbae44338acf477a04fc8fc49
 F src/test2.c e9f99aa5ee73872819259d6612c11e55e1644321
 F src/test3.c 4a0d7b882fdae731dbb759f512ad867122452f96
-F src/tokenize.c 9ede24b17630351d70258bf8fa4f70f5990d45ae
+F src/tokenize.c 830e9ef684334070a26583d94770bb869e2727bf
 F src/update.c 4eeb154a2da8a934d180e2d9e4211ac0a7a4ce8b
-F src/util.c aa4d2de60cb2445239b71c79c3a8c0b7c0d3336a
-F src/vdbe.c a71e73e9a4a63fe2f63546a1a43fce4de5136476
-F src/vdbe.h c29e6fdfa157b3cce18258c05d9d533eb9cd1377
+F src/util.c ac83973ecc647d3d3c58708f148442365abf9b94
+F src/vdbe.c 9f6ff3444a38d9bba27497be56e4ad386b316cbb
+F src/vdbe.h ea71a2c29d43c03283dee30237a01f4726900b29
 F src/where.c 601f096f2a37ca688a775ca36d33534b13b876cb
 F test/all.test 2a51e5395ac7c2c539689b123b9782a05e3837fe
 F test/bigrow.test 9458134d67f81559845f934fdd6802fe19a68ad1
@@ -114,7 +114,7 @@ F www/speed.tcl 212a91d555384e01873160d6a189f1490c791bc2
 F www/sqlite.tcl 6a21242a272e9c0939a04419a51c3d50cae33e3e
 F www/tclsqlite.tcl 13d50723f583888fc80ae1a38247c0ab415066fa
 F www/vdbe.tcl bb7d620995f0a987293e9d4fb6185a3b077e9b44
-P 0fd2874205f1a4b89fc069cb429c1b0c7a0b99c1
-R 810197be2f3f50401607f0c17a5fe11e
+P 7dd58fad398253608f55867cf1c7749eef005657
+R 6b4d638b3f341e525807c77329fb1dc1
 U drh
-Z 863cf3e2c644c7eb0aa13f1cb68860b5
+Z e5f14755e0856f35fd2676a75ffdfa97

@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.92 2001/11/04 18:32:48 drh Exp $
+** $Id: vdbe.c,v 1.93 2001/11/06 04:00:19 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -88,6 +88,13 @@ struct Sorter {
 #define NSORT 30
 
 /*
+** Number of bytes of string storage space available to each stack
+** layer without having to malloc.  NBFS is short for Number of Bytes
+** For Strings.
+*/
+#define NBFS 30
+
+/*
 ** A single level of the stack is an instance of the following
 ** structure.  Except, string values are stored on a separate
 ** list of of pointers to character.  The reason for storing
@@ -99,6 +106,7 @@ struct Stack {
   int n;         /* Number of characters in string value, including '\0' */
   int flags;     /* Some combination of STK_Null, STK_Str, STK_Dyn, etc. */
   double r;      /* Real value */
+  char z[NBFS];  /* Space for short strings */
 };
 typedef struct Stack Stack;
 
@@ -120,6 +128,7 @@ typedef struct Mem Mem;
 #define STK_Int       0x0004   /* Value is an integer */
 #define STK_Real      0x0008   /* Value is a real number */
 #define STK_Dyn       0x0010   /* Need to call sqliteFree() on zStack[*] */
+#define STK_Static    0x0020   /* zStack[] points to a static string */
 
 /*
 ** An Agg structure describes an Aggregator.  Each Agg consists of
@@ -201,6 +210,8 @@ struct Vdbe {
   Set *aSet;          /* An array of sets */
   int nFetch;         /* Number of OP_Fetch instructions executed */
   int nCallback;      /* Number of callbacks invoked so far */
+  int iLimit;         /* Limit on the number of callbacks remaining */
+  int iOffset;        /* Offset before beginning to do callbacks */
 };
 
 /*
@@ -534,22 +545,17 @@ static AggElem *_AggInFocus(Agg *p){
 static int hardStringify(Vdbe *p, int i){
   Stack *pStack = &p->aStack[i];
   char **pzStack = &p->zStack[i];
-  char zBuf[30];
   int fg = pStack->flags;
   if( fg & STK_Real ){
-    sprintf(zBuf,"%.15g",pStack->r);
+    sprintf(pStack->z,"%.15g",pStack->r);
   }else if( fg & STK_Int ){
-    sprintf(zBuf,"%d",pStack->i);
+    sprintf(pStack->z,"%d",pStack->i);
   }else{
-    p->zStack[i] = "";
-    pStack->n = 1;
-    pStack->flags |= STK_Str;
-    return 0;
+    pStack->z[0] = 0;
   }
-  *pzStack = sqliteStrDup(zBuf);
-  if( *pzStack==0 ) return 1;
+  *pzStack = pStack->z;
   pStack->n = strlen(*pzStack)+1;
-  pStack->flags |= STK_Str|STK_Dyn;
+  pStack->flags = STK_Str;
   return 0;
 }
 
@@ -560,7 +566,7 @@ static int hardStringify(Vdbe *p, int i){
 static void hardRelease(Vdbe *p, int i){
   sqliteFree(p->zStack[i]);
   p->zStack[i] = 0;
-  p->aStack[i].flags &= ~(STK_Str|STK_Dyn);
+  p->aStack[i].flags &= ~(STK_Str|STK_Dyn|STK_Static);
 }
 
 /*
@@ -673,6 +679,27 @@ static int hardNeedStack(Vdbe *p, int N){
     }
   }
   return 0;
+}
+
+/*
+** Return TRUE if zNum is a floating-point or integer number.
+*/
+static int isNumber(const char *zNum){
+  if( *zNum=='-' || *zNum=='+' ) zNum++;
+  if( !isdigit(*zNum) ) return 0;
+  while( isdigit(*zNum) ) zNum++;
+  if( *zNum==0 ) return 1;
+  if( *zNum!='.' ) return 0;
+  zNum++;
+  if( !isdigit(*zNum) ) return 0;
+  while( isdigit(*zNum) ) zNum++;
+  if( *zNum==0 ) return 1;
+  if( *zNum!='e' && *zNum!='E' ) return 0;
+  zNum++;
+  if( *zNum=='-' || *zNum=='+' ) zNum++;
+  if( !isdigit(*zNum) ) return 0;
+  while( isdigit(*zNum) ) zNum++;
+  return *zNum==0;
 }
 
 /*
@@ -822,22 +849,22 @@ static char *zOpName[] = { 0,
   "MemStore",          "ListWrite",         "ListRewind",        "ListRead",
   "ListReset",         "SortPut",           "SortMakeRec",       "SortMakeKey",
   "Sort",              "SortNext",          "SortCallback",      "SortReset",
-  "FileOpen",          "FileRead",          "FileColumn",        "FileClose",
-  "AggReset",          "AggFocus",          "AggIncr",           "AggNext",
-  "AggSet",            "AggGet",            "SetInsert",         "SetFound",
-  "SetNotFound",       "SetClear",          "MakeRecord",        "MakeKey",
-  "MakeIdxKey",        "Goto",              "If",                "Halt",
-  "ColumnCount",       "ColumnName",        "Callback",          "NullCallback",
-  "Integer",           "String",            "Null",              "Pop",
-  "Dup",               "Pull",              "Add",               "AddImm",
-  "Subtract",          "Multiply",          "Divide",            "Remainder",
-  "BitAnd",            "BitOr",             "BitNot",            "ShiftLeft",
-  "ShiftRight",        "AbsValue",          "Precision",         "Min",
-  "Max",               "Like",              "Glob",              "Eq",
-  "Ne",                "Lt",                "Le",                "Gt",
-  "Ge",                "IsNull",            "NotNull",           "Negative",
-  "And",               "Or",                "Not",               "Concat",
-  "Noop",              "Strlen",            "Substr",          
+  "FileOpen",          "FileRead",          "FileColumn",        "AggReset",
+  "AggFocus",          "AggIncr",           "AggNext",           "AggSet",
+  "AggGet",            "SetInsert",         "SetFound",          "SetNotFound",
+  "MakeRecord",        "MakeKey",           "MakeIdxKey",        "Goto",
+  "If",                "Halt",              "ColumnCount",       "ColumnName",
+  "Callback",          "NullCallback",      "Integer",           "String",
+  "Pop",               "Dup",               "Pull",              "Add",
+  "AddImm",            "Subtract",          "Multiply",          "Divide",
+  "Remainder",         "BitAnd",            "BitOr",             "BitNot",
+  "ShiftLeft",         "ShiftRight",        "AbsValue",          "Precision",
+  "Min",               "Max",               "Like",              "Glob",
+  "Eq",                "Ne",                "Lt",                "Le",
+  "Gt",                "Ge",                "IsNull",            "NotNull",
+  "Negative",          "And",               "Or",                "Not",
+  "Concat",            "Noop",              "Strlen",            "Substr",
+  "Limit",
 };
 
 /*
@@ -1119,24 +1146,10 @@ case OP_String: {
   }else{
     zStack[i] = z;
     aStack[i].n = strlen(z) + 1;
-    aStack[i].flags = STK_Str;
+    aStack[i].flags = STK_Str | STK_Static;
   }
   break;
 }
-
-#if 0 /* NOT USED */
-/* Opcode: Null * * *
-**
-** Push a NULL value onto the stack.
-*/
-case OP_Null: {
-  int i = ++p->tos;
-  VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
-  zStack[i] = 0;
-  aStack[i].flags = STK_Null;
-  break;
-}
-#endif
 
 /* Opcode: Pop P1 * *
 **
@@ -1162,13 +1175,21 @@ case OP_Dup: {
   int j = ++p->tos;
   VERIFY( if( i<0 ) goto not_enough_stack; )
   VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
-  aStack[j] = aStack[i];
-  if( aStack[i].flags & STK_Dyn ){
-    zStack[j] = sqliteMalloc( aStack[j].n );
-    if( zStack[j]==0 ) goto no_mem;
-    memcpy(zStack[j], zStack[i], aStack[j].n);
-  }else{
-    zStack[j] = zStack[i];
+  memcpy(&aStack[j], &aStack[i], sizeof(aStack[i])-NBFS);
+  if( aStack[j].flags & STK_Str ){
+    if( aStack[j].flags & STK_Static ){
+      zStack[j] = zStack[i];
+      aStack[j].flags = STK_Str | STK_Static;
+    }else if( aStack[i].n<=NBFS ){
+      memcpy(aStack[j].z, zStack[i], aStack[j].n);
+      zStack[j] = aStack[j].z;
+      aStack[j].flags = STK_Str;
+    }else{
+      zStack[j] = sqliteMalloc( aStack[j].n );
+      if( zStack[j]==0 ) goto no_mem;
+      memcpy(zStack[j], zStack[i], aStack[j].n);
+      aStack[j].flags = STK_Str | STK_Dyn;
+    }
   }
   break;
 }
@@ -1194,10 +1215,18 @@ case OP_Pull: {
   tz = zStack[from];
   for(i=from; i<to; i++){
     aStack[i] = aStack[i+1];
-    zStack[i] = zStack[i+1];
+    if( aStack[i].flags & (STK_Dyn|STK_Static) ){
+      zStack[i] = zStack[i+1];
+    }else{
+      zStack[i] = aStack[i].z;
+    }
   }
   aStack[to] = ts;
-  zStack[to] = tz;
+  if( aStack[to].flags & (STK_Dyn|STK_Static) ){
+    zStack[to] = tz;
+  }else{
+    zStack[to] = aStack[to].z;
+  }
   break;
 }
 
@@ -1230,11 +1259,18 @@ case OP_ColumnName: {
   break;
 }
 
-/* Opcode: Callback P1 * *
+/* Opcode: Callback P1 P2 *
 **
 ** Pop P1 values off the stack and form them into an array.  Then
 ** invoke the callback function using the newly formed array as the
 ** 3rd parameter.
+**
+** If the offset counter (set by the OP_Limit opcode) is positive,
+** then decrement the counter and do not invoke the callback.
+** 
+** If the callback is invoked, then after the callback returns
+** decrement the limit counter.  When the limit counter reaches
+** zero, jump to address P2.
 */
 case OP_Callback: {
   int i = p->tos - pOp->p1 + 1;
@@ -1248,10 +1284,20 @@ case OP_Callback: {
   }
   zStack[p->tos+1] = 0;
   if( xCallback!=0 ){
-    if( xCallback(pArg, pOp->p1, &zStack[i], p->azColName)!=0 ){
-      rc = SQLITE_ABORT;
+    if( p->iOffset>0 ){
+      p->iOffset--;
+    }else{
+      if( xCallback(pArg, pOp->p1, &zStack[i], p->azColName)!=0 ){
+        rc = SQLITE_ABORT;
+      }
+      p->nCallback++;
+      if( p->iLimit>0 ){
+        p->iLimit--;
+        if( p->iLimit==0 ){
+          pc = pOp->p2 - 1;
+        }
+      }
     }
-    p->nCallback++;
   }
   PopStack(p, pOp->p1);
   if( sqlite_malloc_failed ) goto no_mem;
@@ -1462,8 +1508,9 @@ case OP_Precision: {
   int tos = p->tos;
   int nos = tos - 1;
   int nDigit;
+  int len;
   double v;
-  char zBuf[100];
+  char *zNew;
 
   VERIFY( if( nos<0 ) goto not_enough_stack; )
   Realify(p, tos);
@@ -1472,12 +1519,20 @@ case OP_Precision: {
   if( nDigit<0 ) nDigit = 0;
   if( nDigit>30 ) nDigit = 30;
   v = aStack[tos].r;
-  sprintf(zBuf, "%.*f", nDigit, v);
+  zNew = sqlite_mprintf("%.*f", nDigit, v);
+  if( zNew==0 ) goto no_mem;
   POPSTACK;
   Release(p, nos);
-  zStack[nos] = sqliteStrDup(zBuf);
-  aStack[nos].n = strlen(zStack[nos]) + 1;
-  aStack[nos].flags = STK_Str | STK_Dyn;
+  aStack[nos].n = len = strlen(zNew) + 1;
+  if( len<=NBFS ){
+    strcpy(aStack[nos].z, zNew);
+    zStack[nos] = aStack[nos].z;
+    aStack[nos].flags = STK_Str;
+    sqliteFree(zNew);
+  }else{
+    zStack[nos] = zNew;
+    aStack[nos].flags = STK_Str | STK_Dyn;
+  }
   break;
 }
 
@@ -1486,70 +1541,50 @@ case OP_Precision: {
 ** Pop the top two elements from the stack then push back the
 ** largest of the two.
 */
-case OP_Max: {
-  int tos = p->tos;
-  int nos = tos - 1;
-  int ft, fn;
-  int copy = 0;
-  VERIFY( if( nos<0 ) goto not_enough_stack; )
-  ft = aStack[tos].flags;
-  fn = aStack[nos].flags;
-  if( fn & STK_Null ){
-    copy = 1;
-  }else if( (ft & fn & STK_Int)==STK_Int ){
-    copy = aStack[nos].i<aStack[tos].i;
-  }else if( ( (ft|fn) & (STK_Int|STK_Real) ) !=0 ){
-    Realify(p, tos);
-    Realify(p, nos);
-    copy = aStack[tos].r>aStack[nos].r;
-  }else{
-    if( Stringify(p, tos) || Stringify(p, nos) ) goto no_mem;
-    copy = sqliteCompare(zStack[tos],zStack[nos])>0;
-  }
-  if( copy ){
-    Release(p, nos);
-    aStack[nos] = aStack[tos];
-    zStack[nos] = zStack[tos];
-    zStack[tos] = 0;
-    aStack[tos].flags = 0;
-  }else{
-    Release(p, tos);
-  }
-  p->tos = nos;
-  break;
-}
-
 /* Opcode: Min * * *
 **
 ** Pop the top two elements from the stack then push back the
 ** smaller of the two. 
 */
-case OP_Min: {
+case OP_Min:
+case OP_Max: {
   int tos = p->tos;
   int nos = tos - 1;
+  int a,b;
   int ft, fn;
   int copy = 0;
   VERIFY( if( nos<0 ) goto not_enough_stack; )
   ft = aStack[tos].flags;
   fn = aStack[nos].flags;
+  if( pOp->opcode==OP_Max ){
+    a = tos;
+    b = nos;
+  }else{
+    a = nos;
+    b = tos;
+  }
   if( fn & STK_Null ){
     copy = 1;
   }else if( ft & STK_Null ){
     copy = 0;
   }else if( (ft & fn & STK_Int)==STK_Int ){
-    copy = aStack[nos].i>aStack[tos].i;
+    copy = aStack[a].i>aStack[b].i;
   }else if( ( (ft|fn) & (STK_Int|STK_Real) ) !=0 ){
     Realify(p, tos);
     Realify(p, nos);
-    copy = aStack[tos].r<aStack[nos].r;
+    copy = aStack[a].r>aStack[b].r;
   }else{
     if( Stringify(p, tos) || Stringify(p, nos) ) goto no_mem;
-    copy = sqliteCompare(zStack[tos],zStack[nos])<0;
+    copy = sqliteCompare(zStack[a],zStack[b])>0;
   }
   if( copy ){
     Release(p, nos);
     aStack[nos] = aStack[tos];
-    zStack[nos] = zStack[tos];
+    if( aStack[nos].flags & (STK_Dyn|STK_Static) ){
+      zStack[nos] = zStack[tos];
+    }else{
+      zStack[nos] = aStack[nos].z;
+    }
     zStack[tos] = 0;
     aStack[tos].flags = 0;
   }else{
@@ -2016,47 +2051,6 @@ case OP_MakeRecord: {
 **
 ** See also: MakeIdxKey, SortMakeKey
 */
-case OP_MakeKey: {
-  char *zNewKey;
-  int nByte;
-  int nField;
-  int i, j;
-
-  nField = pOp->p1;
-  VERIFY( if( p->tos+1<nField ) goto not_enough_stack; )
-  nByte = 0;
-  for(i=p->tos-nField+1; i<=p->tos; i++){
-    if( aStack[i].flags & STK_Null ){
-      nByte++;
-    }else{
-      if( Stringify(p, i) ) goto no_mem;
-      nByte += aStack[i].n;
-    }
-  }
-  if( nByte+sizeof(u32)>MAX_BYTES_PER_ROW ){
-    rc = SQLITE_TOOBIG;
-    goto abort_due_to_error;
-  }
-  zNewKey = sqliteMalloc( nByte );
-  if( zNewKey==0 ) goto no_mem;
-  j = 0;
-  for(i=p->tos-nField+1; i<=p->tos; i++){
-    if( aStack[i].flags & STK_Null ){
-      zNewKey[j++] = 0;
-    }else{
-      memcpy(&zNewKey[j], zStack[i], aStack[i].n);
-      j += aStack[i].n;
-    }
-  }
-  if( pOp->p2==0 ) PopStack(p, nField);
-  VERIFY( NeedStack(p, p->tos+1); )
-  p->tos++;
-  aStack[p->tos].n = nByte;
-  aStack[p->tos].flags = STK_Str|STK_Dyn;
-  zStack[p->tos] = zNewKey;
-  break;
-}
-
 /* Opcode: MakeIdxKey P1 * *
 **
 ** Convert the top P1 entries of the stack into a single entry suitable
@@ -2075,43 +2069,85 @@ case OP_MakeKey: {
 **
 ** See also:  MakeKey, SortMakeKey
 */
-case OP_MakeIdxKey: {
+case OP_MakeIdxKey:
+case OP_MakeKey: {
   char *zNewKey;
   int nByte;
   int nField;
+  int addRowid;
   int i, j;
-  u32 iKey;
 
+  addRowid = pOp->opcode==OP_MakeIdxKey;
   nField = pOp->p1;
-  VERIFY( if( p->tos+1<nField ) goto not_enough_stack; )
-  nByte = sizeof(u32);
+  VERIFY( if( p->tos+1+addRowid<nField ) goto not_enough_stack; )
+  nByte = 0;
   for(i=p->tos-nField+1; i<=p->tos; i++){
-    if( aStack[i].flags & STK_Null ){
-      nByte++;
+    int flags = aStack[i].flags;
+    int len;
+    char *z;
+    if( flags & STK_Null ){
+      nByte += 2;
+    }else if( flags & STK_Real ){
+      z = aStack[i].z;
+      sqliteRealToSortable(aStack[i].r, &z[1]);
+      z[0] = 0;
+      Release(p, i);
+      len = strlen(&z[1]);
+      zStack[i] = 0;
+      aStack[i].flags = STK_Real;
+      aStack[i].n = len+2;
+      nByte += aStack[i].n;
+    }else if( flags & STK_Int ){
+      z = aStack[i].z;
+      aStack[i].r = aStack[i].i;
+      sqliteRealToSortable(aStack[i].r, &z[1]);
+      z[0] = 0;
+      Release(p, i);
+      len = strlen(&z[1]);
+      zStack[i] = 0;
+      aStack[i].flags = STK_Int;
+      aStack[i].n = len+2;
+      nByte += aStack[i].n;
     }else{
-      if( Stringify(p, i) ) goto no_mem;
+      assert( flags & STK_Str );
+      if( isNumber(zStack[i]) ){
+        aStack[i].r = atof(zStack[i]);
+        Release(p, i);
+        z = aStack[i].z;
+        sqliteRealToSortable(aStack[i].r, &z[1]);
+        z[0] = 0;
+        len = strlen(&z[1]);
+        zStack[i] = 0;
+        aStack[i].flags = STK_Real;
+        aStack[i].n = len+2;
+      }
       nByte += aStack[i].n;
     }
   }
-  if( nByte>MAX_BYTES_PER_ROW ){
+  if( nByte+sizeof(u32)>MAX_BYTES_PER_ROW ){
     rc = SQLITE_TOOBIG;
     goto abort_due_to_error;
   }
+  if( addRowid ) nByte += sizeof(u32);
   zNewKey = sqliteMalloc( nByte );
   if( zNewKey==0 ) goto no_mem;
   j = 0;
   for(i=p->tos-nField+1; i<=p->tos; i++){
     if( aStack[i].flags & STK_Null ){
       zNewKey[j++] = 0;
+      zNewKey[j++] = 0;
     }else{
-      memcpy(&zNewKey[j], zStack[i], aStack[i].n);
+      memcpy(&zNewKey[j], zStack[i] ? zStack[i] : aStack[i].z, aStack[i].n);
       j += aStack[i].n;
     }
   }
-  Integerify(p, p->tos-nField);
-  iKey = bigEndian(aStack[p->tos-nField].i);
-  memcpy(&zNewKey[j], &iKey, sizeof(u32));
-  PopStack(p, nField+1);
+  if( addRowid ){
+    u32 iKey;
+    Integerify(p, p->tos-nField);
+    iKey = bigEndian(aStack[p->tos-nField].i);
+    memcpy(&zNewKey[j], &iKey, sizeof(u32));
+  }
+  if( pOp->p2==0 ) PopStack(p, nField+addRowid);
   VERIFY( NeedStack(p, p->tos+1); )
   p->tos++;
   aStack[p->tos].n = nByte;
@@ -2686,7 +2722,7 @@ case OP_KeyAsData: {
 ** data.
 */
 case OP_Column: {
-  int amt, offset, end, nCol, payloadSize;
+  int amt, offset, end, payloadSize;
   int i = pOp->p1;
   int p2 = pOp->p2;
   int tos = p->tos+1;
@@ -2750,6 +2786,11 @@ case OP_Column: {
     */
     if( amt==0 ){
       aStack[tos].flags = STK_Null;
+    }else if( amt<=NBFS ){
+      (*xRead)(pCrsr, offset, amt, aStack[tos].z);
+      aStack[tos].flags = STK_Str;
+      zStack[tos] = aStack[tos].z;
+      aStack[tos].n = amt;
     }else{
       char *z = sqliteMalloc( amt );
       if( z==0 ) goto no_mem;
@@ -2815,10 +2856,15 @@ case OP_FullKey: {
       rc = SQLITE_CORRUPT;
       goto abort_due_to_error;
     }
-    z = sqliteMalloc( amt );
+    if( amt>NBFS ){
+      z = sqliteMalloc( amt );
+      aStack[tos].flags = STK_Str | STK_Dyn;
+    }else{
+      z = aStack[tos].z;
+      aStack[tos].flags = STK_Str;
+    }
     sqliteBtreeKey(pCrsr, 0, amt, z);
     zStack[tos] = z;
-    aStack[tos].flags = STK_Str | STK_Dyn;
     aStack[tos].n = amt;
   }
   break;
@@ -3105,6 +3151,25 @@ case OP_Reorganize: {
   break;
 }
 
+/* Opcode:  Limit P1 P2 *
+**
+** Set a limit and offset on callbacks.  P1 is the limit and P2 is
+** the offset.  If the offset counter is positive, no callbacks are
+** invoked but instead the counter is decremented.  Once the offset
+** counter reaches zero, callbacks are invoked and the limit
+** counter is decremented.  When the limit counter reaches zero,
+** the OP_Callback or OP_SortCallback instruction executes a jump
+** that should end the query.
+**
+** This opcode is used to implement the "LIMIT x OFFSET y" clause
+** of a SELECT statement.
+*/
+case OP_Limit: {
+  p->iLimit = pOp->p1;
+  p->iOffset = pOp->p2;
+  break;
+}
+
 /* Opcode: ListWrite * * *
 **
 ** Write the integer on the top of the stack
@@ -3183,7 +3248,8 @@ case OP_ListReset: {
 /* Opcode: SortPut * * *
 **
 ** The TOS is the key and the NOS is the data.  Pop both from the stack
-** and put them on the sorter.
+** and put them on the sorter.  The key and data should have been
+** made using SortMakeKey and SortMakeRec, respectively.
 */
 case OP_SortPut: {
   int tos = p->tos;
@@ -3195,6 +3261,8 @@ case OP_SortPut: {
   if( pSorter==0 ) goto no_mem;
   pSorter->pNext = p->pSort;
   p->pSort = pSorter;
+  assert( aStack[tos].flags & STK_Dyn );
+  assert( aStack[nos].flags & STK_Dyn );
   pSorter->nKey = aStack[tos].n;
   pSorter->zKey = zStack[tos];
   pSorter->nData = aStack[nos].n;
@@ -3359,19 +3427,37 @@ case OP_SortNext: {
   break;
 }
 
-/* Opcode: SortCallback * P2 *
+/* Opcode: SortCallback P1 P2 *
 **
 ** The top of the stack contains a callback record built using
 ** the SortMakeRec operation with the same P1 value as this
 ** instruction.  Pop this record from the stack and invoke the
 ** callback on it.
+**
+** If the offset counter (set by the OP_Limit opcode) is positive,
+** then decrement the counter and do not invoke the callback.
+** 
+** If the callback is invoked, then after the callback returns
+** decrement the limit counter.  When the limit counter reaches
+** zero, jump to address P2.
 */
 case OP_SortCallback: {
   int i = p->tos;
   VERIFY( if( i<0 ) goto not_enough_stack; )
   if( xCallback!=0 ){
-    if( xCallback(pArg, pOp->p1, (char**)zStack[i], p->azColName) ){
-      rc = SQLITE_ABORT;
+    if( p->iOffset>0 ){
+      p->iOffset--;
+    }else{
+      if( xCallback(pArg, pOp->p1, (char**)zStack[i], p->azColName)!=0 ){
+        rc = SQLITE_ABORT;
+      }
+      p->nCallback++;
+      if( p->iLimit>0 ){
+        p->iLimit--;
+        if( p->iLimit==0 ){
+          pc = pOp->p2 - 1;
+        }
+      }
     }
     p->nCallback++;
   }
@@ -3412,31 +3498,6 @@ case OP_FileOpen: {
   }
   break;
 }
-
-#if 0 /* NOT USED */
-/* Opcode: FileClose * * *
-**
-** Close a file previously opened using FileOpen.  This is a no-op
-** if there is no prior FileOpen call.
-*/
-case OP_FileClose: {
-  if( p->pFile ){
-    if( p->pFile!=stdin ) fclose(p->pFile);
-    p->pFile = 0;
-  }
-  if( p->azField ){
-    sqliteFree(p->azField);
-    p->azField = 0;
-  }
-  p->nField = 0;
-  if( p->zLine ){
-    sqliteFree(p->zLine);
-    p->zLine = 0;
-  }
-  p->nLineAlloc = 0;
-  break;
-}
-#endif
 
 /* Opcode: FileRead P1 P2 P3
 **
@@ -3561,8 +3622,8 @@ case OP_FileColumn: {
 case OP_MemStore: {
   int i = pOp->p1;
   int tos = p->tos;
-  Mem *pMem;
   char *zOld;
+  Mem *pMem;
   VERIFY( if( tos<0 ) goto not_enough_stack; )
   if( i>=p->nMem ){
     int nOld = p->nMem;
@@ -3582,11 +3643,14 @@ case OP_MemStore: {
     zOld = 0;
   }
   pMem->s = aStack[tos];
-  if( pMem->s.flags & STK_Str ){
-    pMem->z = sqliteStrNDup(zStack[tos], pMem->s.n);
-    pMem->s.flags |= STK_Dyn;
+  if( pMem->s.flags & (STK_Static|STK_Dyn) ){
+    pMem->z = zStack[tos];
+  }else{
+    pMem->z = pMem->s.z;
   }
   if( zOld ) sqliteFree(zOld);
+  zStack[tos] = 0;
+  aStack[tos].flags = 0;
   POPSTACK;
   break;
 }
@@ -3604,12 +3668,16 @@ case OP_MemLoad: {
     zStack[tos] = 0;
   }else{
     aStack[tos] = p->aMem[i].s;
-    if( aStack[tos].flags & STK_Str ){
+    if( aStack[tos].flags & STK_Dyn ){
       char *z = sqliteMalloc(aStack[tos].n);
       if( z==0 ) goto no_mem;
       memcpy(z, p->aMem[i].z, aStack[tos].n);
       zStack[tos] = z;
       aStack[tos].flags |= STK_Dyn;
+    }else if( aStack[tos].flags & STK_Static ){
+      zStack[tos] = p->aMem[i].z;
+    }else if( aStack[tos].flags & STK_Str ){
+      zStack[tos] = aStack[tos].z;
     }
   }
   break;
@@ -3712,12 +3780,14 @@ case OP_AggSet: {
       zOld = 0;
     }
     pMem->s = aStack[tos];
-    if( pMem->s.flags & STK_Str ){
-      pMem->z = sqliteMalloc( aStack[tos].n );
-      if( pMem->z ){
-        memcpy(pMem->z, zStack[tos], pMem->s.n);
-      }
-      pMem->s.flags |= STK_Str|STK_Dyn;
+    if( pMem->s.flags & STK_Dyn ){
+      pMem->z = zStack[tos];
+      zStack[tos] = 0;
+      aStack[tos].flags = 0;
+    }else if( pMem->s.flags & STK_Static ){
+      pMem->z = zStack[tos];
+    }else if( pMem->s.flags & STK_Str ){
+      pMem->z = pMem->s.z;
     }
     if( zOld ) sqliteFree(zOld);
   }
@@ -3771,20 +3841,6 @@ case OP_AggNext: {
   }
   break;
 }
-
-#if 0 /* NOT USED */
-/* Opcode: SetClear P1 * *
-**
-** Remove all elements from the P1-th Set.
-*/
-case OP_SetClear: {
-  int i = pOp->p1;
-  if( i>=0 && i<p->nSet ){
-    sqliteHashClear(&p->aSet[i].hash);
-  }
-  break;
-}
-#endif /* NOT USED */
 
 /* Opcode: SetInsert P1 * P3
 **

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.45 2001/11/01 14:41:34 drh Exp $
+** $Id: select.c,v 1.46 2001/11/06 04:00:19 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -27,7 +27,9 @@ Select *sqliteSelectNew(
   ExprList *pGroupBy,   /* the GROUP BY clause */
   Expr *pHaving,        /* the HAVING clause */
   ExprList *pOrderBy,   /* the ORDER BY clause */
-  int isDistinct        /* true if the DISTINCT keyword is present */
+  int isDistinct,       /* true if the DISTINCT keyword is present */
+  int nLimit,           /* LIMIT value.  -1 means not used */
+  int nOffset           /* OFFSET value.  -1 means not used */
 ){
   Select *pNew;
   pNew = sqliteMalloc( sizeof(*pNew) );
@@ -47,6 +49,8 @@ Select *sqliteSelectNew(
     pNew->pOrderBy = pOrderBy;
     pNew->isDistinct = isDistinct;
     pNew->op = TK_SELECT;
+    pNew->nLimit = nLimit;
+    pNew->nOffset = nOffset;
   }
   return pNew;
 }
@@ -203,7 +207,7 @@ static int selectInnerLoop(
   /* If none of the above, send the data to the callback function.
   */
   {
-    sqliteVdbeAddOp(v, OP_Callback, nColumn, 0);
+    sqliteVdbeAddOp(v, OP_Callback, nColumn, iBreak);
   }
   return 0;
 }
@@ -219,7 +223,7 @@ static void generateSortTail(Vdbe *v, int nColumn){
   int addr;
   sqliteVdbeAddOp(v, OP_Sort, 0, 0);
   addr = sqliteVdbeAddOp(v, OP_SortNext, 0, end);
-  sqliteVdbeAddOp(v, OP_SortCallback, nColumn, 0);
+  sqliteVdbeAddOp(v, OP_SortCallback, nColumn, end);
   sqliteVdbeAddOp(v, OP_Goto, 0, addr);
   sqliteVdbeResolveLabel(v, end);
   sqliteVdbeAddOp(v, OP_SortReset, 0, 0);
@@ -853,6 +857,16 @@ int sqliteSelect(
   */
   v = sqliteGetVdbe(pParse);
   if( v==0 ) return 1;
+
+  /* Set the limiter
+  */
+  if( p->nLimit<=0 ){
+    p->nOffset = 0;
+  }else{
+    if( p->nOffset<0 ) p->nOffset = 0;
+    sqliteVdbeAddOp(v, OP_Limit, p->nLimit, p->nOffset);
+  }
+    
 
   /* Identify column names if we will be using in the callback.  This
   ** step is skipped if the output is going to a table or a memory cell.
