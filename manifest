@@ -1,5 +1,5 @@
-C Update\sthe\sdocumentation\sfor\sthe\snew\sjournal\sformat\sto\sbe\sintroduced\sin\nversion\s2.8.0.\s(CVS\s865)
-D 2003-02-13T02:54:03
+C Update\sthe\sdocumentation\sfor\sthe\snew\sjournal\sformat\sto\sbe\sintroduced\sin\nversion\s2.8.0.\s(CVS\s1729)
+D 2003-02-13T02:54:04
 F Makefile.in 6606854b1512f185b8e8c779b8d7fc2750463d64
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -155,7 +155,7 @@ F www/speed.tcl 4d463e2aea41f688ed320a937f93ff885be918c3
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 7c22aa3f817e737cfd943d903856756468e8678b
+P e05a7a552f694158ee449d8682f5c137f1c2f2ac
 R 496fbf0dd37f4b8503d955d31fa52734
 U drh
-Z 1eae5b92d00b5a748205e87d73d3dd5a
+Z bec57f8a48da6d4cfdb9d6259114717b
