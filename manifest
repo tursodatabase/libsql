@@ -1,5 +1,5 @@
-C ATTACH\sand\sDETACH\scause\sprepared\sstatements\sto\sexpire.\nsqlite3_finalize()\scan\snow\sbe\scalled\sright\safter\ssqlite3_reset().\s(CVS\s2265)
-D 2005-01-23T13:14:55
+C Fix\sa\sbug\sin\schange\scounting\sthat\scomes\sup\swhen\ssqlite3_finalize()\sis\ncalled\sright\safter\ssqlite3_reset().\s(CVS\s2266)
+D 2005-01-23T19:04:43
 F Makefile.in ffd81f5e926d40b457071b4de8d7c1fa18f39b5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -79,7 +79,7 @@ F src/vdbe.c a5db9e8c1a7482a865d49ded5947ecbd97bee6f8
 F src/vdbe.h 067ca8d6750ba4f69a50284765e5883dee860181
 F src/vdbeInt.h 24d411de9efc6919a1e580069a597182be269bcf
 F src/vdbeapi.c 7b65522152c36104e1ab83057ce6f7b880755b16
-F src/vdbeaux.c 442782a4f3c1a7c0e4d81a03e65061cefb4746d2
+F src/vdbeaux.c f37d3ddeda48a87384c643ec4f643aee45766ee3
 F src/vdbemem.c 62fe89471b656a922e9879be005abf690509ead3
 F src/where.c f4127cc2633ee0f74790ab7f09f5af832489e44e
 F tclinstaller.tcl 36478c3bbfc5b93ceac42d94e3c736937b808432
@@ -271,7 +271,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P 764b55adb5dff944db36d0d19ce5e7cc758b3a9e
-R c7507b15548a623c4866c7d65ad3bfbb
+P 6c631b86e5e166f650d3f7d53c773aa859391c2b
+R badff4651b06e2e518e6daf9bd21152e
 U drh
-Z 6fdf86e7727943664905aa7b9eb7cd7f
+Z 72696f1bdbc58463d008ce4c60e3e8a1

@@ -1238,7 +1238,7 @@ int sqlite3VdbeHalt(Vdbe *p){
   }
 
   /* If this was an INSERT, UPDATE or DELETE, set the change counter. */
-  if( p->changeCntOn ){
+  if( p->changeCntOn && p->pc>=0 ){
     if( !xFunc || xFunc==sqlite3BtreeCommitStmt ){
       sqlite3VdbeSetChanges(db, p->nChange);
     }else{
