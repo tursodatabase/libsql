@@ -60,7 +60,7 @@ ENCODING = @ENCODING@
 
 # Object files for the SQLite library.
 #
-LIBOBJ = btree.o build.o delete.o expr.o insert.o \
+LIBOBJ = btree.o build.o delete.o expr.o hash.o insert.o \
          main.o os.o pager.o parse.o printf.o random.o select.o table.o \
          tokenize.o update.o util.o vdbe.o where.o tclsqlite.o
 
@@ -72,6 +72,7 @@ SRC = \
   $(TOP)/src/build.c \
   $(TOP)/src/delete.c \
   $(TOP)/src/expr.c \
+  $(TOP)/src/hash.c \
   $(TOP)/src/insert.c \
   $(TOP)/src/main.c \
   $(TOP)/src/os.c \
@@ -185,6 +186,9 @@ delete.o:	$(TOP)/src/delete.c $(HDR)
 
 expr.o:	$(TOP)/src/expr.c $(HDR)
 	$(TCC) -c $(TOP)/src/expr.c
+
+hash.o:	$(TOP)/src/hash.c $(HDR)
+	$(TCC) -c $(TOP)/src/hash.c
 
 insert.o:	$(TOP)/src/insert.c $(HDR)
 	$(TCC) -c $(TOP)/src/insert.c

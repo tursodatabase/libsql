@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.37 2001/09/17 20:25:58 drh Exp $
+** $Id: build.c,v 1.38 2001/09/22 18:12:10 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -135,14 +135,7 @@ void sqliteExprDelete(Expr *p){
 ** of that table.  Return NULL if not found.
 */
 Table *sqliteFindTable(sqlite *db, char *zName){
-  Table *pTable;
-  int h;
-
-  h = sqliteHashNoCase(zName, 0) % N_HASH;
-  for(pTable=db->apTblHash[h]; pTable; pTable=pTable->pHash){
-    if( sqliteStrICmp(pTable->zName, zName)==0 ) return pTable;
-  }
-  return 0;
+  return sqliteHashFind(&db->tblHash, zName, strlen(zName)+1);
 }
 
 /*
@@ -151,14 +144,7 @@ Table *sqliteFindTable(sqlite *db, char *zName){
 ** of that index.  Return NULL if not found.
 */
 Index *sqliteFindIndex(sqlite *db, char *zName){
-  Index *p;
-  int h;
-
-  h = sqliteHashNoCase(zName, 0) % N_HASH;
-  for(p=db->apIdxHash[h]; p; p=p->pHash){
-    if( sqliteStrICmp(p->zName, zName)==0 ) return p;
-  }
-  return 0;
+  return sqliteHashFind(&db->idxHash, zName, strlen(zName)+1);
 }
 
 /*
@@ -170,24 +156,14 @@ Index *sqliteFindIndex(sqlite *db, char *zName){
 ** Unlinking from the Table must be done by the calling function.
 */
 static void sqliteDeleteIndex(sqlite *db, Index *pIndex){
-  int h;
   if( pIndex->zName && db ){
-    h = sqliteHashNoCase(pIndex->zName, 0) % N_HASH;
-    if( db->apIdxHash[h]==pIndex ){
-      db->apIdxHash[h] = pIndex->pHash;
-    }else{
-      Index *p;
-      for(p=db->apIdxHash[h]; p && p->pHash!=pIndex; p=p->pHash){}
-      if( p && p->pHash==pIndex ){
-        p->pHash = pIndex->pHash;
-      }
-    }
+    sqliteHashInsert(&db->idxHash, pIndex->zName, strlen(pIndex->zName)+1, 0);
   }
   sqliteFree(pIndex);
 }
 
 /*
-** Unlink the given  index from its table, then remove
+** Unlink the given index from its table, then remove
 ** the index from the index hash table, and free its memory
 ** structures.
 */
@@ -240,16 +216,7 @@ void sqliteDeleteTable(sqlite *db, Table *pTable){
 */
 static void sqliteUnlinkAndDeleteTable(sqlite *db, Table *pTable){
   if( pTable->zName && db ){
-    int h = sqliteHashNoCase(pTable->zName, 0) % N_HASH;
-    if( db->apTblHash[h]==pTable ){
-      db->apTblHash[h] = pTable->pHash;
-    }else{
-      Table *p;
-      for(p=db->apTblHash[h]; p && p->pHash!=pTable; p=p->pHash){}
-      if( p && p->pHash==pTable ){
-        p->pHash = pTable->pHash;
-      }
-    }
+    sqliteHashInsert(&db->tblHash, pTable->zName, strlen(pTable->zName)+1, 0);
   }
   sqliteDeleteTable(db, pTable);
 }
@@ -269,31 +236,37 @@ static void sqliteUnlinkAndDeleteTable(sqlite *db, Table *pTable){
 ** See also: sqliteRollbackInternalChanges()
 */
 void sqliteCommitInternalChanges(sqlite *db){
-  int i;
+  Hash toDelete;
+  HashElem *pElem;
   if( (db->flags & SQLITE_InternChanges)==0 ) return;
+  sqliteHashInit(&toDelete, SQLITE_HASH_POINTER, 0);
   db->schema_cookie = db->next_cookie;
-  for(i=0; i<N_HASH; i++){
-    Table *pTable, *pNext;
-    for(pTable = db->apTblHash[i]; pTable; pTable=pNext){
-      pNext = pTable->pHash;
-      if( pTable->isDelete ){
-        sqliteUnlinkAndDeleteTable(db, pTable);
-      }else if( pTable->isCommit==0 ){
-        pTable->isCommit = 1;
-      }
+  for(pElem=sqliteHashFirst(&db->tblHash); pElem; pElem=sqliteHashNext(pElem)){
+    Table *pTable = sqliteHashData(pElem);
+    if( pTable->isDelete ){
+      sqliteHashInsert(&toDelete, pTable, 0, pTable);
+    }else{
+      pTable->isCommit = 1;
     }
   }
-  for(i=0; i<N_HASH; i++){
-    Index *pIndex, *pNext;
-    for(pIndex = db->apIdxHash[i]; pIndex; pIndex=pNext){
-      pNext = pIndex->pHash;
-      if( pIndex->isDelete ){
-        sqliteUnlinkAndDeleteIndex(db, pIndex);
-      }else if( pIndex->isCommit==0 ){
-        pIndex->isCommit = 1;
-      }
+  for(pElem=sqliteHashFirst(&toDelete); pElem; pElem=sqliteHashNext(pElem)){
+    Table *pTable = sqliteHashData(pElem);
+    sqliteUnlinkAndDeleteTable(db, pTable);
+  }
+  sqliteHashClear(&toDelete);
+  for(pElem=sqliteHashFirst(&db->idxHash); pElem; pElem=sqliteHashNext(pElem)){
+    Table *pIndex = sqliteHashData(pElem);
+    if( pIndex->isDelete ){
+      sqliteHashInsert(&toDelete, pIndex, 0, pIndex);
+    }else{
+      pIndex->isCommit = 1;
     }
   }
+  for(pElem=sqliteHashFirst(&toDelete); pElem; pElem=sqliteHashNext(pElem)){
+    Index *pIndex = sqliteHashData(pElem);
+    sqliteUnlinkAndDeleteIndex(db, pIndex);
+  }
+  sqliteHashClear(&toDelete);
   db->flags &= ~SQLITE_InternChanges;
 }
 
@@ -306,31 +279,37 @@ void sqliteCommitInternalChanges(sqlite *db){
 ** See also: sqliteCommitInternalChanges()
 */
 void sqliteRollbackInternalChanges(sqlite *db){
-  int i;
+  Hash toDelete;
+  HashElem *pElem;
   if( (db->flags & SQLITE_InternChanges)==0 ) return;
+  sqliteHashInit(&toDelete, SQLITE_HASH_POINTER, 0);
   db->next_cookie = db->schema_cookie;
-  for(i=0; i<N_HASH; i++){
-    Table *pTable, *pNext;
-    for(pTable = db->apTblHash[i]; pTable; pTable=pNext){
-      pNext = pTable->pHash;
-      if( !pTable->isCommit ){
-        sqliteUnlinkAndDeleteTable(db, pTable);
-      }else if( pTable->isDelete ){
-        pTable->isDelete = 0;
-      }
+  for(pElem=sqliteHashFirst(&db->tblHash); pElem; pElem=sqliteHashNext(pElem)){
+    Table *pTable = sqliteHashData(pElem);
+    if( !pTable->isCommit ){
+      sqliteHashInsert(&toDelete, pTable, 0, pTable);
+    }else{
+      pTable->isDelete = 0;
     }
   }
-  for(i=0; i<N_HASH; i++){
-    Index *pIndex, *pNext;
-    for(pIndex = db->apIdxHash[i]; pIndex; pIndex=pNext){
-      pNext = pIndex->pHash;
-      if( !pIndex->isCommit ){
-        sqliteUnlinkAndDeleteIndex(db, pIndex);
-      }else if( pIndex->isDelete ){
-        pIndex->isDelete = 0;
-      }
+  for(pElem=sqliteHashFirst(&toDelete); pElem; pElem=sqliteHashNext(pElem)){
+    Table *pTable = sqliteHashData(pElem);
+    sqliteUnlinkAndDeleteTable(db, pTable);
+  }
+  sqliteHashClear(&toDelete);
+  for(pElem=sqliteHashFirst(&db->idxHash); pElem; pElem=sqliteHashNext(pElem)){
+    Table *pIndex = sqliteHashData(pElem);
+    if( !pIndex->isCommit ){
+      sqliteHashInsert(&toDelete, pIndex, 0, pIndex);
+    }else{
+      pIndex->isDelete = 0;
     }
   }
+  for(pElem=sqliteHashFirst(&toDelete); pElem; pElem=sqliteHashNext(pElem)){
+    Index *pIndex = sqliteHashData(pElem);
+    sqliteUnlinkAndDeleteIndex(db, pIndex);
+  }
+  sqliteHashClear(&toDelete);
   db->flags &= ~SQLITE_InternChanges;
 }
 
@@ -383,7 +362,6 @@ void sqliteStartTable(Parse *pParse, Token *pStart, Token *pName){
   pTable = sqliteMalloc( sizeof(Table) );
   if( pTable==0 ) return;
   pTable->zName = zName;
-  pTable->pHash = 0;
   pTable->nCol = 0;
   pTable->aCol = 0;
   pTable->pIndex = 0;
@@ -484,7 +462,6 @@ static void changeCookie(sqlite *db){
 */
 void sqliteEndTable(Parse *pParse, Token *pEnd){
   Table *p;
-  int h;
   sqlite *db = pParse->db;
 
   if( pEnd==0 || pParse->nErr || sqlite_malloc_failed ) return;
@@ -494,9 +471,7 @@ void sqliteEndTable(Parse *pParse, Token *pEnd){
   /* Add the table to the in-memory representation of the database
   */
   if( pParse->explain==0 ){
-    h = sqliteHashNoCase(p->zName, 0) % N_HASH;
-    p->pHash = db->apTblHash[h];
-    db->apTblHash[h] = p;
+    sqliteHashInsert(&db->tblHash, p->zName, strlen(p->zName)+1, p);
     pParse->pNewTable = 0;
     db->nTable++;
     db->flags |= SQLITE_InternChanges;
@@ -671,7 +646,7 @@ void sqliteCreateIndex(
   Table *pTab;     /* Table to be indexed */
   Index *pIndex;   /* The index to be created */
   char *zName = 0;
-  int i, j, h;
+  int i, j;
   Token nullId;    /* Fake token for an empty ID list */
   sqlite *db = pParse->db;
 
@@ -769,9 +744,8 @@ void sqliteCreateIndex(
   */
   if( pParse->explain==0 ){
     if( pName!=0 ){
-      h = sqliteHashNoCase(pIndex->zName, 0) % N_HASH;
-      pIndex->pHash = db->apIdxHash[h];
-      db->apIdxHash[h] = pIndex;
+      char *zName = pIndex->zName;;
+      sqliteHashInsert(&db->idxHash, zName, strlen(zName)+1, pIndex);
     }
     pIndex->pNext = pTab->pIndex;
     pTab->pIndex = pIndex;
@@ -1168,15 +1142,14 @@ void sqliteVacuum(Parse *pParse, Token *pTableName){
   if( zName ){
     sqliteVdbeAddOp(v, OP_Reorganize, 0, 0, zName, 0);
   }else{
-    int h;
     Table *pTab;
     Index *pIdx;
-    for(h=0; h<N_HASH; h++){
-      for(pTab=db->apTblHash[h]; pTab; pTab=pTab->pHash){
-        sqliteVdbeAddOp(v, OP_Reorganize, 0, 0, pTab->zName, 0);
-        for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-          sqliteVdbeAddOp(v, OP_Reorganize, 0, 0, pIdx->zName, 0);
-        }
+    HashElem *pE;
+    for(pE=sqliteHashFirst(&db->tblHash); pE; pE=sqliteHashNext(pE)){
+      pTab = sqliteHashData(pE);
+      sqliteVdbeAddOp(v, OP_Reorganize, 0, 0, pTab->zName, 0);
+      for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+        sqliteVdbeAddOp(v, OP_Reorganize, 0, 0, pIdx->zName, 0);
       }
     }
   }

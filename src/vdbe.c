@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.72 2001/09/18 22:17:44 drh Exp $
+** $Id: vdbe.c,v 1.73 2001/09/22 18:12:10 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -133,19 +133,15 @@ typedef struct Mem Mem;
 typedef struct Agg Agg;
 typedef struct AggElem AggElem;
 struct Agg {
-  int nMem;              /* Number of values stored in each AggElem */
-  AggElem *pCurrent;     /* The AggElem currently in focus */
-  int nElem;             /* The number of AggElems */
-  int nHash;             /* Number of slots in apHash[] */
-  AggElem **apHash;      /* A hash array for looking up AggElems by zKey */
-  AggElem *pFirst;       /* A list of all AggElems */
+  int nMem;            /* Number of values stored in each AggElem */
+  AggElem *pCurrent;   /* The AggElem currently in focus */
+  HashElem *pSearch;   /* The hash element for pCurrent */
+  Hash hash;           /* Hash table of all aggregate elements */
 };
 struct AggElem {
-  char *zKey;            /* The key to this AggElem */
-  int nKey;              /* Number of bytes in the key, including '\0' at end */
-  AggElem *pHash;        /* Next AggElem with the same hash on zKey */
-  AggElem *pNext;        /* Next AggElem in a list of them all */
-  Mem aMem[1];           /* The values for this AggElem */
+  char *zKey;          /* The key to this AggElem */
+  int nKey;            /* Number of bytes in the key, including '\0' at end */
+  Mem aMem[1];         /* The values for this AggElem */
 };
 
 /*
@@ -155,15 +151,8 @@ struct AggElem {
 **            x.y IN ('hi','hoo','hum')
 */
 typedef struct Set Set;
-typedef struct SetElem SetElem;
 struct Set {
-  SetElem *pAll;         /* All elements of this set */
-  SetElem *apHash[41];   /* A hash array for all elements in this set */
-};
-struct SetElem {
-  SetElem *pHash;        /* Next element with the same hash on zKey */
-  SetElem *pNext;        /* Next element in a list of them all */
-  char zKey[1];          /* Value of this key */
+  Hash hash;             /* A set is just a hash table */
 };
 
 /*
@@ -460,49 +449,22 @@ int sqliteVdbeMakeLabel(Vdbe *p){
 /*
 ** Reset an Agg structure.  Delete all its contents.
 */
-static void AggReset(Agg *p){
+static void AggReset(Agg *pAgg){
   int i;
-  while( p->pFirst ){
-    AggElem *pElem = p->pFirst;
-    p->pFirst = pElem->pNext;
-    for(i=0; i<p->nMem; i++){
+  HashElem *p;
+  for(p = sqliteHashFirst(&pAgg->hash); p; p = sqliteHashNext(p)){
+    AggElem *pElem = sqliteHashData(p);
+    for(i=0; i<pAgg->nMem; i++){
       if( pElem->aMem[i].s.flags & STK_Dyn ){
         sqliteFree(pElem->aMem[i].z);
       }
     }
     sqliteFree(pElem);
   }
-  sqliteFree(p->apHash);
-  memset(p, 0, sizeof(*p));
-}
-
-/*
-** Add the given AggElem to the hash array
-*/
-static void AggEnhash(Agg *p, AggElem *pElem){
-  int h = sqliteHashNoCase(pElem->zKey, pElem->nKey) % p->nHash;
-  pElem->pHash = p->apHash[h];
-  p->apHash[h] = pElem;
-}
-
-/*
-** Change the size of the hash array to the amount given.
-*/
-static void AggRehash(Agg *p, int nHash){
-  int size;
-  AggElem *pElem;
-  if( p->nHash==nHash ) return;
-  size = nHash * sizeof(AggElem*);
-  p->apHash = sqliteRealloc(p->apHash, size );
-  if( p->apHash==0 ){
-    AggReset(p);
-    return;
-  }
-  memset(p->apHash, 0, size);
-  p->nHash = nHash;
-  for(pElem=p->pFirst; pElem; pElem=pElem->pNext){
-    AggEnhash(p, pElem);
-  }
+  sqliteHashClear(&pAgg->hash);
+  pAgg->pCurrent = 0;
+  pAgg->pSearch = 0;
+  pAgg->nMem = 0;
 }
 
 /*
@@ -513,24 +475,17 @@ static void AggRehash(Agg *p, int nHash){
 static int AggInsert(Agg *p, char *zKey, int nKey){
   AggElem *pElem;
   int i;
-  if( p->nHash <= p->nElem*2 ){
-    AggRehash(p, p->nElem*2 + 19);
-  }
-  if( p->nHash==0 ) return 1;
   pElem = sqliteMalloc( sizeof(AggElem) + nKey +
                         (p->nMem-1)*sizeof(pElem->aMem[0]) );
   if( pElem==0 ) return 1;
   pElem->zKey = (char*)&pElem->aMem[p->nMem];
   memcpy(pElem->zKey, zKey, nKey);
   pElem->nKey = nKey;
-  AggEnhash(p, pElem);
-  pElem->pNext = p->pFirst;
-  p->pFirst = pElem;
-  p->nElem++;
-  p->pCurrent = pElem;
+  sqliteHashInsert(&p->hash, pElem->zKey, pElem->nKey, pElem);
   for(i=0; i<p->nMem; i++){
     pElem->aMem[i].s.flags = STK_Null;
   }
+  p->pCurrent = pElem;
   return 0;
 }
 
@@ -539,59 +494,12 @@ static int AggInsert(Agg *p, char *zKey, int nKey){
 */
 #define AggInFocus(P)   ((P).pCurrent ? (P).pCurrent : _AggInFocus(&(P)))
 static AggElem *_AggInFocus(Agg *p){
-  AggElem *pFocus = p->pFirst;
-  if( pFocus ){
-    p->pCurrent = pFocus;
-  }else{
-    AggInsert(p,"",1);
-    pFocus = p->pCurrent = p->pFirst;
-  }
-  return pFocus;
-}
-
-/*
-** Erase all information from a Set
-*/
-static void SetClear(Set *p){
-  SetElem *pElem, *pNext;
-  for(pElem=p->pAll; pElem; pElem=pNext){
-    pNext = pElem->pNext;
-    sqliteFree(pElem);
-  }
-  memset(p, 0, sizeof(*p));
-}
-
-/*
-** Insert a new element into the set
-*/
-static void SetInsert(Set *p, char *zKey){
-  SetElem *pElem;
-  int h = sqliteHashNoCase(zKey, 0) % ArraySize(p->apHash);
-  for(pElem=p->apHash[h]; pElem; pElem=pElem->pHash){
-    if( strcmp(pElem->zKey, zKey)==0 ) return;
-  }
-  pElem = sqliteMalloc( sizeof(*pElem) + strlen(zKey) );
+  HashElem *pElem = sqliteHashFirst(&p->hash);
   if( pElem==0 ){
-    SetClear(p);
-    return;
+    AggInsert(p,"",1);
+    pElem = sqliteHashFirst(&p->hash);
   }
-  strcpy(pElem->zKey, zKey);
-  pElem->pNext = p->pAll;
-  p->pAll = pElem;
-  pElem->pHash = p->apHash[h];
-  p->apHash[h] = pElem;
-}
-
-/*
-** Return TRUE if an element is in the set.  Return FALSE if not.
-*/
-static int SetTest(Set *p, char *zKey){
-  SetElem *pElem;
-  int h = sqliteHashNoCase(zKey, 0) % ArraySize(p->apHash);
-  for(pElem=p->apHash[h]; pElem; pElem=pElem->pHash){
-    if( strcmp(pElem->zKey, zKey)==0 ) return 1;
-  }
-  return 0;
+  return pElem ? sqliteHashData(pElem) : 0;
 }
 
 /*
@@ -827,7 +735,7 @@ static void Cleanup(Vdbe *p){
   p->nLineAlloc = 0;
   AggReset(&p->agg);
   for(i=0; i<p->nSet; i++){
-    SetClear(&p->aSet[i]);
+    sqliteHashClear(&p->aSet[i].hash);
   }
   sqliteFree(p->aSet);
   p->aSet = 0;
@@ -1054,6 +962,11 @@ int sqliteVdbeExec(
   zStack = p->zStack;
   aStack = p->aStack;
   p->tos = -1;
+
+  /* Initialize the aggregrate hash table.
+  */
+  sqliteHashInit(&p->agg.hash, SQLITE_HASH_BINARY, 0);
+  p->agg.pSearch = 0;
 
   rc = SQLITE_OK;
 #ifdef MEMORY_DEBUG
@@ -3472,14 +3385,7 @@ case OP_AggFocus: {
   if( Stringify(p, tos) ) goto no_mem;
   zKey = zStack[tos]; 
   nKey = aStack[tos].n;
-  if( p->agg.nHash<=0 ){
-    pElem = 0;
-  }else{
-    int h = sqliteHashNoCase(zKey, nKey) % p->agg.nHash;
-    for(pElem=p->agg.apHash[h]; pElem; pElem=pElem->pHash){
-      if( pElem->nKey==nKey && memcmp(pElem->zKey, zKey, nKey)==0 ) break;
-    }
-  }
+  pElem = sqliteHashFind(&p->agg.hash, zKey, nKey);
   if( pElem ){
     p->agg.pCurrent = pElem;
     pc = pOp->p2 - 1;
@@ -3587,25 +3493,15 @@ case OP_AggGet: {
 ** in between an AggNext and an AggReset.
 */
 case OP_AggNext: {
-  if( p->agg.nHash ){
-    p->agg.nHash = 0;
-    sqliteFree(p->agg.apHash);
-    p->agg.apHash = 0;
-    p->agg.pCurrent = p->agg.pFirst;
-  }else if( p->agg.pCurrent==p->agg.pFirst && p->agg.pCurrent!=0 ){
-    int i;
-    AggElem *pElem = p->agg.pCurrent;
-    for(i=0; i<p->agg.nMem; i++){
-      if( pElem->aMem[i].s.flags & STK_Dyn ){
-        sqliteFree(pElem->aMem[i].z);
-      }
-    }
-    p->agg.pCurrent = p->agg.pFirst = pElem->pNext;
-    sqliteFree(pElem);
-    p->agg.nElem--;
+  if( p->agg.pSearch==0 ){
+    p->agg.pSearch = sqliteHashFirst(&p->agg.hash);
+  }else{
+    p->agg.pSearch = sqliteHashNext(p->agg.pSearch);
   }
-  if( p->agg.pCurrent==0 ){
-    pc = pOp->p2-1;
+  if( p->agg.pSearch==0 ){
+    pc = pOp->p2 - 1;
+  } else {
+    p->agg.pCurrent = sqliteHashData(p->agg.pSearch);
   }
   break;
 }
@@ -3617,7 +3513,7 @@ case OP_AggNext: {
 case OP_SetClear: {
   int i = pOp->p1;
   if( i>=0 && i<p->nSet ){
-    SetClear(&p->aSet[i]);
+    sqliteHashClear(&p->aSet[i].hash);
   }
   break;
 }
@@ -3631,18 +3527,21 @@ case OP_SetClear: {
 case OP_SetInsert: {
   int i = pOp->p1;
   if( p->nSet<=i ){
+    int k;
     p->aSet = sqliteRealloc(p->aSet, (i+1)*sizeof(p->aSet[0]) );
     if( p->aSet==0 ) goto no_mem;
-    memset(&p->aSet[p->nSet], 0, sizeof(p->aSet[0])*(i+1 - p->nSet));
+    for(k=p->nSet; k<=i; k++){
+      sqliteHashInit(&p->aSet[k].hash, SQLITE_HASH_BINARY, 1);
+    }
     p->nSet = i+1;
   }
   if( pOp->p3 ){
-    SetInsert(&p->aSet[i], pOp->p3);
+    sqliteHashInsert(&p->aSet[i].hash, pOp->p3, strlen(pOp->p3)+1, p);
   }else{
     int tos = p->tos;
     if( tos<0 ) goto not_enough_stack;
     if( Stringify(p, tos) ) goto no_mem;
-    SetInsert(&p->aSet[i], zStack[tos]);
+    sqliteHashInsert(&p->aSet[i].hash, zStack[tos], aStack[tos].n, p);
     POPSTACK;
   }
   if( sqlite_malloc_failed ) goto no_mem;
@@ -3660,7 +3559,8 @@ case OP_SetFound: {
   int tos = p->tos;
   VERIFY( if( tos<0 ) goto not_enough_stack; )
   if( Stringify(p, tos) ) goto no_mem;
-  if( VERIFY( i>=0 && i<p->nSet &&) SetTest(&p->aSet[i], zStack[tos])){
+  if( VERIFY( i>=0 && i<p->nSet &&) 
+       sqliteHashFind(&p->aSet[i].hash, zStack[tos], aStack[tos].n)){
     pc = pOp->p2 - 1;
   }
   POPSTACK;
@@ -3678,7 +3578,8 @@ case OP_SetNotFound: {
   int tos = p->tos;
   VERIFY( if( tos<0 ) goto not_enough_stack; )
   if( Stringify(p, tos) ) goto no_mem;
-  if(VERIFY( i>=0 && i<p->nSet &&) !SetTest(&p->aSet[i], zStack[tos])){
+  if(VERIFY( i>=0 && i<p->nSet &&)
+       sqliteHashFind(&p->aSet[i].hash, zStack[tos], aStack[tos].n)==0 ){
     pc = pOp->p2 - 1;
   }
   POPSTACK;

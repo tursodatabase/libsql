@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.39 2001/09/19 13:22:40 drh Exp $
+** $Id: main.c,v 1.40 2001/09/22 18:12:10 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -249,6 +249,8 @@ sqlite *sqlite_open(const char *zFilename, int mode, char **pzErrMsg){
   db = sqliteMalloc( sizeof(sqlite) );
   if( pzErrMsg ) *pzErrMsg = 0;
   if( db==0 ) goto no_mem_on_open;
+  sqliteHashInit(&db->tblHash, SQLITE_HASH_STRING, 0);
+  sqliteHashInit(&db->idxHash, SQLITE_HASH_STRING, 0);
   
   /* Open the backend database driver */
   rc = sqliteBtreeOpen(zFilename, mode, MAX_PAGES, &db->pBe);
@@ -298,17 +300,16 @@ no_mem_on_open:
 ** changed the schema and this process needs to reread it.
 */
 static void clearHashTable(sqlite *db){
-  int i;
-  for(i=0; i<N_HASH; i++){
-    Table *pNext, *pList = db->apTblHash[i];
-    db->apTblHash[i] = 0;
-    while( pList ){
-      pNext = pList->pHash;
-      pList->pHash = 0;
-      sqliteDeleteTable(db, pList);
-      pList = pNext;
-    }
+  HashElem *pElem;
+  Hash temp1;
+  temp1 = db->tblHash;
+  sqliteHashInit(&db->tblHash, SQLITE_HASH_STRING, 0);
+  sqliteHashClear(&db->idxHash);
+  for(pElem=sqliteHashFirst(&temp1); pElem; pElem=sqliteHashNext(pElem)){
+    Table *pTbl = sqliteHashData(pElem);
+    sqliteDeleteTable(db, pTbl);
   }
+  sqliteHashClear(&temp1);
   db->flags &= ~SQLITE_Initialized;
 }
 

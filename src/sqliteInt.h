@@ -11,9 +11,10 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.52 2001/09/17 20:25:58 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.53 2001/09/22 18:12:10 drh Exp $
 */
 #include "sqlite.h"
+#include "hash.h"
 #include "vdbe.h"
 #include "parse.h"
 #include "btree.h"
@@ -145,8 +146,8 @@ struct sqlite {
   int nTable;                   /* Number of tables in the database */
   void *pBusyArg;               /* 1st Argument to the busy callback */
   int (*xBusyCallback)(void *,const char*,int);  /* The busy callback */
-  Table *apTblHash[N_HASH];     /* All tables of the database */
-  Index *apIdxHash[N_HASH];     /* All indices of the database */
+  Hash tblHash;                 /* All tables indexed by name */
+  Hash idxHash;                 /* All (named) indices indexed by name */
 };
 
 /*
@@ -179,7 +180,6 @@ struct Column {
 */
 struct Table {
   char *zName;     /* Name of the table */
-  Table *pHash;    /* Next table with same hash on zName */
   int nCol;        /* Number of columns in this table */
   Column *aCol;    /* Information about each column */
   Index *pIndex;   /* List of SQL indexes on this table. */
@@ -210,7 +210,6 @@ struct Table {
 */
 struct Index {
   char *zName;     /* Name of this index */
-  Index *pHash;    /* Next index with the same hash on zName */
   int nColumn;     /* Number of columns in the table used by this index */
   int *aiColumn;   /* Which columns are used by this index.  1st is 0 */
   Table *pTable;   /* The SQL table being indexed */
