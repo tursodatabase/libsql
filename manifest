@@ -1,5 +1,5 @@
-C Test\sauto-vacuum\smode\sfor\scrash-proofness.\sAlso\sfix\sa\sbug\srelated\sto\sthe\ssame.\s(CVS\s2077)
-D 2004-11-08T09:26:09
+C Check\sin\sthe\sfile\sautovacuum_crash.test\sthat\sshould\sbe\spart\sof\sthe\sprevious\scheck-in.\s(CVS\s2078)
+D 2004-11-08T09:51:09
 F Makefile.in c4d2416860f472a1e3393714d0372074197565df
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -88,6 +88,7 @@ F test/attach2.test 399128a7b3b209a339a8dbf53ca2ed42eb982d1a
 F test/attach3.test 287af46653e7435b2d1eda10d8115dcc8a6883e2
 F test/auth.test 1cc252d9e7b3bdc1314199cbf3a0d3c5ed026c21
 F test/autovacuum.test e70d46d598aa4146a3069d830ec8002e384bebbc
+F test/autovacuum_crash.test 2dca85cbcc497098e45e8847c86407eb3554f3d4
 F test/bigfile.test d3744a8821ce9abb8697f2826a3e3d22b719e89f
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
 F test/bind.test fa74f98417cd313f28272acff832a8a7d04a0916
@@ -109,7 +110,7 @@ F test/collate5.test 1dd5f0f508c46667f9d4606c7950c414b0bdc0d5
 F test/collate6.test 6c9470d1606ee3e564675b229653e320c49ec638
 F test/conflict.test c5b849b01cfbe0a4f63a90cba6f68e2fe3a75f87
 F test/corrupt.test 0080ddcece23e8ba47c44608c4fb73fd4d1d8ce2
-F test/crash.test 9982d2c1fe45126a96c57d16310caf949d21d818
+F test/crash.test 48b481769dd0ead25b0dfc0150853bfa39a3b65c
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/date.test dda578ec1857837156bd8b32f8e09d81d7d7881c
 F test/delete.test fc29491f6a7ac899ce29f4549a104809e245d9a6
@@ -253,7 +254,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl fdacb0ba2d39831e8a6240d05a490026ad4c4e4c
-P d6335698696c7b651bbc436c5177d87eb57a8934
-R 631fbffc9d3d389ea9443eeeaba04e6a
+P 839ad771a6e781426c0fd624a4d1c91a5fcf8546
+R 37e7a6896bb83fe6ca31bd0c2f87ec77
 U danielk1977
-Z 86fea8841f4dc937802f0e07bab9a3cf
+Z 814a17f9647b04f65674b145dd495a31

@@ -20,7 +20,7 @@
 # The special crash-test module with its os_test.c backend only works
 # on Unix.
 #
-# $Id: crash.test,v 1.10 2004/11/08 09:26:10 danielk1977 Exp $
+# $Id: crash.test,v 1.11 2004/11/08 09:51:09 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -388,5 +388,18 @@ do_test crash-5.5 {
   signature
 } $sig
 
-
+#--------------------------------------------------------------------------
+# The following test cases - crash-6.* - test that a DROP TABLE operation
+# is correctly rolled back in the event of a crash while the database file
+# is being written. This is mainly to test that all pages are written to the
+# journal file before truncation in an auto-vacuum database.
+#
+do_test crash-6.1 {
+  crashsql 1 test.db {
+    DROP TABLE abc;
+  }
+} {1 {child process exited abnormally}}
+do_test crash-6.2 {
+  signature
+} $sig
 
