@@ -1,5 +1,5 @@
-C Remove\sduplicate\ssqlite3_changes()\sdeclaration.\sTicket\s#779.\s(CVS\s1690)
-D 2004-06-25T10:25:11
+C Remove\scrash.test\sfrom\smemleak.test.\s(CVS\s1691)
+D 2004-06-25T10:26:13
 F Makefile.in cb7a9889c38723f72b2506c4236ff30a05ff172b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -131,7 +131,7 @@ F test/lock.test 1dbf1d06b0a7eb36237b4f107cfb3da9726b449e
 F test/main.test e8c4d9ca6d1e5f5e55e6550d31aec488883b2ed9
 F test/malloc.test 082206002cb3162fbbed1c3dd3794a06cee86652
 F test/memdb.test b8a13fa79f006bd087bbcf135ce8eb62056a6027
-F test/memleak.test eb3ca96a2e818788712732a42cc410635a712593
+F test/memleak.test 26571a04575461f39a7cf97a2ee2f7fb2f519ddb
 F test/minmax.test 3f87d1d49f7e9aa9ae80d35c47a1f5b034557899
 F test/misc1.test a8eb48d38f7a64e75314a2946db68d2b77901b7d
 F test/misc2.test 703734f5817215ca54e364833b3bf5ff36fcc21e
@@ -229,7 +229,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P b68b4a4262c2ab60f9a7cc0c206b9db207f86933
-R 154f6b0bea60bc2b9117a79b58e12295
+P 0322c83776f0c17286e9accb3ed3c72b5be6cdab
+R 1c47d184a887eda9e881c1b4a1d940e7
 U danielk1977
-Z f05729835e5346445df4f2313c2ee805
+Z 0b333313f7015cf5a584993469883429
