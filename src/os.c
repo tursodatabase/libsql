@@ -1076,7 +1076,7 @@ int sqliteOsReadLock(OsFile *id){
     lock.l_start = lock.l_len = 0L;
     s = fcntl(id->fd, F_SETLK, &lock);
     if( s!=0 ){
-      rc = (s==EINVAL) ? SQLITE_NOLFS : SQLITE_BUSY;
+      rc = (errno==EINVAL) ? SQLITE_NOLFS : SQLITE_BUSY;
     }else{
       rc = SQLITE_OK;
       id->pLock->cnt = 1;
@@ -1172,7 +1172,7 @@ int sqliteOsWriteLock(OsFile *id){
     lock.l_start = lock.l_len = 0L;
     s = fcntl(id->fd, F_SETLK, &lock);
     if( s!=0 ){
-      rc = (s==EINVAL) ? SQLITE_NOLFS : SQLITE_BUSY;
+      rc = (errno==EINVAL) ? SQLITE_NOLFS : SQLITE_BUSY;
     }else{
       rc = SQLITE_OK;
       id->pLock->cnt = -1;
@@ -1279,7 +1279,7 @@ int sqliteOsUnlock(OsFile *id){
     lock.l_start = lock.l_len = 0L;
     s = fcntl(id->fd, F_SETLK, &lock);
     if( s!=0 ){
-      rc = (s==EINVAL) ? SQLITE_NOLFS : SQLITE_BUSY;
+      rc = (errno==EINVAL) ? SQLITE_NOLFS : SQLITE_BUSY;
     }else{
       rc = SQLITE_OK;
       id->pLock->cnt = 0;

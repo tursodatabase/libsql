@@ -1,5 +1,5 @@
-C Fix\sthe\ssqlite_complete()\sroutine\sso\sthat\sit\srecognizes\s/*...*/\scomments.\nTicket\s#277.\s(CVS\s937)
-D 2003-04-26T02:31:54
+C Do\snot\suse\sthe\sreturn\svalue\sof\sfcntl()\sto\sfind\sthe\sreason\sthat\sit\sfailed.\nUse\serrno\sinstead.\s\sTickets\s#240\sand\s#270.\s(CVS\s938)
+D 2003-04-26T02:40:46
 F Makefile.in 004acec253ecdde985c8ecd5b7c9accdb210378f
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -35,7 +35,7 @@ F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
 F src/insert.c 19882be1edc4b1629b8f3097e2615164f2c9cecb
 F src/main.c 6763d9a5556b7ac04aad3819699331df9172f029
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
-F src/os.c e56853eaea5dab258ab1ccb77b4743b453516e3a
+F src/os.c 94b618c0c0a76210e53857d77c96d2f042dc33b1
 F src/os.h 9e5bbddff123187295e3d00d49af06192cd1cd49
 F src/pager.c 51fdfda63e2d8c01fff8f7fe0c49f2636d5b1321
 F src/pager.h 5da62c83443f26b1792cfd72c96c422f91aadd31
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 67746833fc8de3afff80db413bd63a362bb28218
-R b3e3bfe8164620c4480a4b87336b23e6
+P ef8eb580fc6c40264219c2ae77a9c4f8a5803c8b
+R e86b06a4b413666c1f895712f391807b
 U drh
-Z 0c48e13a3396dc7d9213cbebb3486c16
+Z 8654835c776b49a833197d06e3c9c492
