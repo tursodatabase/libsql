@@ -58,7 +58,7 @@ LIBOBJ = attach.o auth.o btree.o btree_rb.o build.o copy.o delete.o \
          expr.o func.o hash.o insert.o \
          main.o opcodes.o os.o pager.o parse.o pragma.o printf.o random.o \
          select.o table.o tokenize.o trigger.o update.o util.o \
-         vacuum.o vdbe.o where.o tclsqlite.o
+         vacuum.o vdbe.o vdbeaux.o where.o tclsqlite.o
 
 # All of the source code files.
 #
@@ -97,6 +97,8 @@ SRC = \
   $(TOP)/src/vacuum.c \
   $(TOP)/src/vdbe.c \
   $(TOP)/src/vdbe.h \
+  $(TOP)/src/vdbeaux.c \
+  $(TOP)/src/vdbeInt.h \
   $(TOP)/src/where.c
 
 # Source code to the test files.
@@ -121,8 +123,14 @@ HDR = \
    opcodes.h \
    $(TOP)/src/os.h \
    $(TOP)/src/sqliteInt.h  \
-   $(TOP)/src/vdbe.h  \
+   $(TOP)/src/vdbe.h \
    parse.h
+
+# Header files used by the VDBE submodule
+#
+VDBEHDR = \
+   $(HDR) \
+   $(TOP)/src/vdbeInt.h
 
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
@@ -150,10 +158,10 @@ sqlite$(EXE):	$(TOP)/src/shell.c libsqlite.a sqlite.h
 # files are automatically generated.  This target takes care of
 # all that automatic generation.
 #
-target_source:	$(SRC) $(HDR) opcodes.c
+target_source:	$(SRC) $(VDBEHDR) opcodes.c
 	rm -rf tsrc
 	mkdir tsrc
-	cp $(SRC) $(HDR) tsrc
+	cp $(SRC) $(VDBEHDR) tsrc
 	rm tsrc/sqlite.h.in tsrc/parse.y
 	cp parse.c opcodes.c tsrc
 
@@ -239,8 +247,11 @@ util.o:	$(TOP)/src/util.c $(HDR)
 vacuum.o:	$(TOP)/src/vacuum.c $(HDR)
 	$(TCCX) -c $(TOP)/src/vacuum.c
 
-vdbe.o:	$(TOP)/src/vdbe.c $(HDR)
+vdbe.o:	$(TOP)/src/vdbe.c $(VDBEHDR)
 	$(TCCX) -c $(TOP)/src/vdbe.c
+
+vdbeaux.o:	$(TOP)/src/vdbeaux.c $(VDBEHDR)
+	$(TCCX) -c $(TOP)/src/vdbeaux.c
 
 where.o:	$(TOP)/src/where.c $(HDR)
 	$(TCCX) -c $(TOP)/src/where.c
