@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3ref.tcl,v 1.16 2004/11/20 21:02:14 drh Exp $}
+set rcsid {$Id: capi3ref.tcl,v 1.17 2004/12/07 02:14:52 drh Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -59,7 +59,7 @@ api {} {
 api {} {
   void *sqlite3_aggregate_context(sqlite3_context*, int nBytes);
 } {
-  Aggregate functions use the following routine to allocate
+  Aggregate functions use this routine to allocate
   a structure for storing their state.  The first time this routine
   is called for a particular aggregate, a new structure of size nBytes
   is allocated, zeroed, and returned.  On subsequent calls (for the
@@ -89,44 +89,52 @@ api {} {
   #define SQLITE_TRANSIENT   ((void(*)(void *))-1)
 } {
  In the SQL strings input to sqlite3_prepare() and sqlite3_prepare16(),
- one or more literals can be replace by a wildcard "?" or ":AAA" where
- AAA is an alphanumeric identifier.
- The value of these wildcard literals (also called "host parameter names")
- can be set using these routines.
+ one or more literals can be replace by a parameter "?" or ":AAA" or "\$VVV"
+ where AAA is an alphanumeric identifier and VVV is a variable name according
+ to the syntax rules of the TCL programming language.
+ The values of these parameters (also called "host parameter names")
+ can be set using the sqlite3_bind_*() routines.
 
- The first parameter is a pointer to the sqlite3_stmt
- structure returned from sqlite3_prepare().  The second parameter is the
- index of the wildcard.  The first wildcard has an index of 1. 
+ The first argument to the sqlite3_bind_*() routines always is a pointer
+ to the sqlite3_stmt structure returned from sqlite3_prepare().  The second
+ argument is the index of the parameter to be set.  The first parameter has
+ an index of 1. When the same named parameter is used more than once, second
+ and subsequent
+ occurrences have the same index as the first occurrence.  The index for
+ named parameters can be looked up using the
+ sqlite3_bind_parameter_name() API if desired.
 
- The fifth parameter to sqlite3_bind_blob(), sqlite3_bind_text(), and
+ The fifth argument to sqlite3_bind_blob(), sqlite3_bind_text(), and
  sqlite3_bind_text16() is a destructor used to dispose of the BLOB or
  text after SQLite has finished with it.  If the fifth argument is the
  special value SQLITE_STATIC, then the library assumes that the information
  is in static, unmanaged space and does not need to be freed.  If the
  fifth argument has the value SQLITE_TRANSIENT, then SQLite makes its
- own private copy of the data.
+ own private copy of the data before returning.
 
- The sqlite3_bind_*() routine must be called after
+ The sqlite3_bind_*() routines must be called after
  sqlite3_prepare() or sqlite3_reset() and before sqlite3_step().
- Bindings are not reset by the sqlite3_reset() routine.
- Unbound wildcards are interpreted as NULL.
+ Bindings are not cleared by the sqlite3_reset() routine.
+ Unbound parameters are interpreted as NULL.
 }
 
 api {} {
   int sqlite3_bind_parameter_count(sqlite3_stmt*);
 } {
-  Return the number of wildcards in the precompiled statement given as
+  Return the number of parameters in the precompiled statement given as
   the argument.
 }
 
 api {} {
   const char *sqlite3_bind_parameter_name(sqlite3_stmt*, int n);
 } {
-  Return the name of the n-th wildcard in the precompiled statement.
-  Wildcards of the form ":AAA" have a name which is the string ":AAA".
-  Wildcards of the form "?" or "?NNN" have no name.
+  Return the name of the n-th parameter in the precompiled statement.
+  Parameters of the form ":AAA" or "\$VVV" have a name which is the
+  string ":AAA" or "\$VVV".  In other words, the initial ":" or "$"
+  is included as part of the name.
+  Parameters of the form "?" have no name.
 
-  If the value n is out of range or if the n-th wildcard is nameless,
+  If the value n is out of range or if the n-th parameter is nameless,
   then NULL is returned.  The returned string is always in the
   UTF-8 encoding.
 }
@@ -134,9 +142,9 @@ api {} {
 api {} {
   int sqlite3_bind_parameter_index(sqlite3_stmt*, const char *zName);
 } {
-  Return the index of the wildcard with the given name.
+  Return the index of the parameter with the given name.
   The name must match exactly.
-  If there is no wildcard with the given name, return 0.
+  If there is no parameter with the given name, return 0.
   The string zName is always in the UTF-8 encoding.
 }
 
@@ -195,7 +203,7 @@ api {} {
 
  SQLite implements the command "DELETE FROM table" without a WHERE clause
  by dropping and recreating the table.  (This is much faster than going
- through and deleting individual elements form the table.)  Because of
+ through and deleting individual elements from the table.)  Because of
  this optimization, the change count for "DELETE FROM table" will be
  zero regardless of the number of elements that were originally in the
  table. To get an accurate count of the number of rows deleted, use
@@ -254,9 +262,9 @@ int sqlite3_column_type(sqlite3_stmt*, int iCol);
 #define SQLITE_BLOB     4
 #define SQLITE_NULL     5
 } {
- These routines returns information about the information
+ These routines return information about the information
  in a single column of the current result row of a query.  In every
- case the first parameter is a pointer to the SQL statement that is being
+ case the first argument is a pointer to the SQL statement that is being
  executed (the sqlite_stmt* that was returned from sqlite3_prepare()) and
  the second argument is the index of the column for which information 
  should be returned.  iCol is zero-indexed.  The left-most column as an
@@ -319,7 +327,7 @@ api {} {
 const char *sqlite3_column_decltype(sqlite3_stmt *, int i);
 const void *sqlite3_column_decltype16(sqlite3_stmt*,int);
 } {
- The first parameter is a prepared SQL statement. If this statement
+ The first argument is a prepared SQL statement. If this statement
  is a SELECT statement, the Nth column of the returned result set 
  of the SELECT is a table column then the declared type of the table
  column is returned. If the Nth column of the result set is not at table
@@ -347,9 +355,9 @@ api {} {
 const char *sqlite3_column_name(sqlite3_stmt*,int);
 const void *sqlite3_column_name16(sqlite3_stmt*,int);
 } {
- The first parameter is a prepared SQL statement. This function returns
+ The first argument is a prepared SQL statement. This function returns
  the column heading for the Nth column of that statement, where N is the
- second function parameter.  The string returned is UTF-8 for
+ second function argument.  The string returned is UTF-8 for
  sqlite3_column_name() and UTF-16 for sqlite3_column_name16().
 }
 
@@ -376,12 +384,8 @@ int sqlite3_complete16(const void *sql);
 } {
  These functions return true if the given input string comprises
  one or more complete SQL statements.
- The parameter must be a nul-terminated UTF-8 string for sqlite3_complete()
+ The argument must be a nul-terminated UTF-8 string for sqlite3_complete()
  and a nul-terminated UTF-16 string for sqlite3_complete16().
-
- The algorithm is simple.  If the last token other than spaces
- and comments is a semicolon, then return true.  otherwise return
- false.
 } {}
 
 api {} {
@@ -424,7 +428,7 @@ int sqlite3_create_collation16(
  sequence (so that SQLite cannot call it anymore). Each time the user
  supplied function is invoked, it is passed a copy of the void* passed as
  the fourth argument to sqlite3_create_collation() or
- sqlite3_create_collation16() as its first parameter.
+ sqlite3_create_collation16() as its first argument.
 
  The remaining arguments to the user-supplied routine are two strings,
  each represented by a [length, data] pair and encoded in the encoding
@@ -462,7 +466,7 @@ int sqlite3_collation_needed16(
  sqlite3_collation_needed16(). The second argument is the database
  handle. The third argument is one of SQLITE_UTF8, SQLITE_UTF16BE or
  SQLITE_UTF16LE, indicating the most desirable form of the collation
- sequence function required. The fourth parameter is the name of the
+ sequence function required. The fourth argument is the name of the
  required collation sequence.
 
  The collation sequence is returned to SQLite by a collation-needed
@@ -497,9 +501,9 @@ int sqlite3_create_function16(
 #define SQLITE_UTF16LE  4
 #define SQLITE_ANY      5
 } {
- These two functions are used to add user functions or aggregates
- implemented in C to the SQL language interpreted by SQLite. The
- difference only between the two is that the second parameter, the
+ These two functions are used to add SQL functions or aggregates
+ implemented in C. The
+ only difference between these two routines is that the second argument, the
  name of the (scalar) function or aggregate, is encoded in UTF-8 for
  sqlite3_create_function() and UTF-16 for sqlite3_create_function16().
 
@@ -509,11 +513,11 @@ int sqlite3_create_function16(
  be added individually to each database handle with which they will be
  used.
 
- The third parameter is the number of arguments that the function or
- aggregate takes. If this parameter is -1 then the function or
+ The third argument is the number of arguments that the function or
+ aggregate takes. If this argument is -1 then the function or
  aggregate may take any number of arguments.
 
- The fourth parameter, eTextRep, specifies what type of text arguments
+ The fourth argument, eTextRep, specifies what type of text arguments
  this function prefers to receive.  Any function should be able to work
  work with UTF-8, UTF-16le, or UTF-16be.  But some implementations may be
  more efficient with one representation than another.  Users are allowed
@@ -521,21 +525,21 @@ int sqlite3_create_function16(
  depending on the text representation of the arguments.  The the implementation
  which provides the best match is used.  If there is only a single
  implementation which does not care what text representation is used,
- then the fourth parameter should be SQLITE_ANY.
+ then the fourth argument should be SQLITE_ANY.
 
- The fifth parameter is an arbitrary pointer.  The function implementations
+ The fifth argument is an arbitrary pointer.  The function implementations
  can gain access to this pointer using the sqlite_user_data() API.
 
- The sixth, seventh and  eighth, xFunc, xStep and xFinal, are
+ The sixth, seventh and  eighth argumens, xFunc, xStep and xFinal, are
  pointers to user implemented C functions that implement the user
  function or aggregate. A scalar function requires an implementation of
  the xFunc callback only, NULL pointers should be passed as the xStep
- and xFinal parameters. An aggregate function requires an implementation
- of xStep and xFinal, but NULL should be passed for xFunc. To delete an
+ and xFinal arguments. An aggregate function requires an implementation
+ of xStep and xFinal, and NULL should be passed for xFunc. To delete an
  existing user function or aggregate, pass NULL for all three function
- callback. Specifying an inconstant set of callback values, such as an
- xFunc and an xFinal, or an xStep but no xFinal, SQLITE_ERROR is
- returned.
+ callbacks. Specifying an inconstant set of callback values, such as an
+ xFunc and an xFinal, or an xStep but no xFinal, results in an SQLITE_ERROR
+ return.
 }
 
 api {} {
@@ -595,19 +599,19 @@ int sqlite3_exec(
  A function to executes one or more statements of SQL.
 
  If one or more of the SQL statements are queries, then
- the callback function specified by the 3rd parameter is
+ the callback function specified by the 3rd argument is
  invoked once for each row of the query result.  This callback
  should normally return 0.  If the callback returns a non-zero
  value then the query is aborted, all subsequent SQL statements
  are skipped and the sqlite3_exec() function returns the SQLITE_ABORT.
 
- The 4th parameter is an arbitrary pointer that is passed
- to the callback function as its first parameter.
+ The 4th argument is an arbitrary pointer that is passed
+ to the callback function as its first argument.
 
- The 2nd parameter to the callback function is the number of
- columns in the query result.  The 3rd parameter to the callback
+ The 2nd argument to the callback function is the number of
+ columns in the query result.  The 3rd argument to the callback
  is an array of strings holding the values for each column.
- The 4th parameter to the callback is an array of strings holding
+ The 4th argument to the callback is an array of strings holding
  the names of each column.
 
  The callback function may be NULL, even for queries.  A NULL
@@ -731,7 +735,7 @@ long long int sqlite3_last_insert_rowid(sqlite3*);
  Each entry in an SQLite table has a unique integer key.  (The key is
  the value of the INTEGER PRIMARY KEY column if there is such a column,
  otherwise the key is generated at random.  The unique key is always
- available as the ROWID, OID, or _ROWID_ column.)  The following routine
+ available as the ROWID, OID, or _ROWID_ column.)  This routine
  returns the integer key of the most recent insert in the database.
 
  This function is similar to the mysql_insert_id() function from MySQL.
@@ -839,9 +843,9 @@ int sqlite3_prepare16(
  compile, is assumed to be encoded in UTF-8 for the sqlite3_prepare()
  function and UTF-16 for sqlite3_prepare16().
 
- The first parameter "db" is an SQLite database handle. The second
- parameter "zSql" is the statement to be compiled, encoded as either
- UTF-8 or UTF-16 (see above). If the next parameter, "nBytes", is less
+ The first argument "db" is an SQLite database handle. The second
+ argument "zSql" is the statement to be compiled, encoded as either
+ UTF-8 or UTF-16 (see above). If the next argument, "nBytes", is less
  than zero, then zSql is read up to the first nul terminator.  If
  "nBytes" is not less than zero, then it is the length of the string zSql
  in bytes (not characters).
@@ -853,7 +857,9 @@ int sqlite3_prepare16(
  *ppStmt is left pointing to a compiled SQL statement that can be
  executed using sqlite3_step().  Or if there is an error, *ppStmt may be
  set to NULL.  If the input text contained no SQL (if the input is and
- empty string or a comment) then *ppStmt is set to NULL.
+ empty string or a comment) then *ppStmt is set to NULL.  The calling
+ procedure is responsible for deleting this compiled SQL statement
+ using sqlite3_finalize() after it has finished with it.
 
  On success, SQLITE_OK is returned.  Otherwise an error code is returned.
 }
@@ -913,9 +919,9 @@ void sqlite3_result_text16be(sqlite3_context*, const void*, int n, void(*)(void*
 void sqlite3_result_text16le(sqlite3_context*, const void*, int n, void(*)(void*));
 void sqlite3_result_value(sqlite3_context*, sqlite3_value*);
 } {
- User-defined functions invoke the following routines in order to
+ User-defined functions invoke these routines in order to
  set their return value.  The sqlite3_result_value() routine is used
- to return an exact copy of one of the parameters to the function.
+ to return an exact copy of one of the arguments to the function.
 
  The operation of these routines is very similar to the operation of
  sqlite3_bind_blob() and its cousins.  Refer to the documentation there
@@ -964,12 +970,12 @@ int sqlite3_set_authorizer(
  SQL statement should be aborted with an error and SQLITE_IGNORE
  if the column should be treated as a NULL value.
 
- The second parameter to the access authorization function above will
- be one of the values below.  These values signify what kind of operation
- is to be authorized.  The 3rd and 4th parameters to the authorization
- function will be parameters or NULL depending on which of the following
- codes is used as the second parameter.  The 5th parameter is the name
- of the database ("main", "temp", etc.) if applicable.  The 6th parameter
+ The second argument to the access authorization function will be one
+ of the defined constants shown.  These values signify what kind of operation
+ is to be authorized.  The 3rd and 4th arguments to the authorization
+ function will be arguments or NULL depending on which of the following
+ codes is used as the second argument.  The 5th argument is the name
+ of the database ("main", "temp", etc.) if applicable.  The 6th argument
  is the name of the inner-most trigger or view that is responsible for
  the access attempt or NULL if this access attempt is directly from 
  input SQL code.
@@ -999,12 +1005,13 @@ int sqlite3_step(sqlite3_stmt*);
 
  SQLITE_DONE means that the statement has finished executing
  successfully.  sqlite3_step() should not be called again on this virtual
- machine.
+ machine without first calling sqlite3_reset() to reset the virtual
+ machine back to its initial state.
 
  If the SQL statement being executed returns any data, then 
  SQLITE_ROW is returned each time a new row of data is ready
  for processing by the caller. The values may be accessed using
- the sqlite3_column_*() functions described below. sqlite3_step()
+ the sqlite3_column_*() functions. sqlite3_step()
  is called again to retrieve the next row of data.
  
  SQLITE_ERROR means that a run-time error (such as a constraint
@@ -1032,7 +1039,7 @@ void *sqlite3_trace(sqlite3*, void(*xTrace)(void*,const char*), void*);
 api {} {
 void *sqlite3_user_data(sqlite3_context*);
 } {
- The pUserData parameter to the sqlite3_create_function() and
+ The pUserData argument to the sqlite3_create_function() and
  sqlite3_create_function16() routines used to register user functions
  is available to the implementation of the function using this
  call.
@@ -1051,9 +1058,9 @@ const void *sqlite3_value_text16be(sqlite3_value*);
 const void *sqlite3_value_text16le(sqlite3_value*);
 int sqlite3_value_type(sqlite3_value*);
 } {
- This group of routines returns information about parameters to
+ This group of routines returns information about arguments to
  a user-defined function.  Function implementations use these routines
- to access their parameters.  These routines are the same as the
+ to access their arguments.  These routines are the same as the
  sqlite3_column_... routines except that these routines take a single
  sqlite3_value* pointer instead of an sqlite3_stmt* and an integer
  column number.
