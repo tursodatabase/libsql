@@ -36,7 +36,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.179 2002/09/17 03:20:46 drh Exp $
+** $Id: vdbe.c,v 1.180 2002/10/19 20:16:38 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -83,11 +83,13 @@ typedef unsigned char Bool;
 struct Cursor {
   BtCursor *pCursor;    /* The cursor structure of the backend */
   int lastRecno;        /* Last recno from a Next or NextIdx operation */
+  int nextRowid;        /* Next rowid returned by OP_NewRowid */
   Bool recnoIsValid;    /* True if lastRecno is valid */
   Bool keyAsData;       /* The OP_Column command works on key instead of data */
   Bool atFirst;         /* True if pointing to first entry */
   Bool useRandomRowid;  /* Generate new record numbers semi-randomly */
   Bool nullRow;         /* True if pointing to a row with no data */
+  Bool nextRowidValid;  /* True if the nextRowid field is valid */
   Btree *pBt;           /* Separate file holding temporary table */
 };
 typedef struct Cursor Cursor;
@@ -3560,17 +3562,27 @@ case OP_NewRecno: {
     int res, rx, cnt, x;
     cnt = 0;
     if( !pC->useRandomRowid ){
-      rx = sqliteBtreeLast(pC->pCursor, &res);
-      if( res ){
-        v = 1;
+      if( pC->nextRowidValid ){
+        v = pC->nextRowid;
       }else{
-        sqliteBtreeKey(pC->pCursor, 0, sizeof(v), (void*)&v);
-        v = keyToInt(v);
-        if( v==0x7fffffff ){
-          pC->useRandomRowid = 1;
+        rx = sqliteBtreeLast(pC->pCursor, &res);
+        if( res ){
+          v = 1;
         }else{
-          v++;
+          sqliteBtreeKey(pC->pCursor, 0, sizeof(v), (void*)&v);
+          v = keyToInt(v);
+          if( v==0x7fffffff ){
+            pC->useRandomRowid = 1;
+          }else{
+            v++;
+          }
         }
+      }
+      if( v<0x7fffffff ){
+        pC->nextRowidValid = 1;
+        pC->nextRowid = v+1;
+      }else{
+        pC->nextRowidValid = 0;
       }
     }
     if( pC->useRandomRowid ){
@@ -3627,8 +3639,9 @@ case OP_PutStrKey: {
   int tos = p->tos;
   int nos = p->tos-1;
   int i = pOp->p1;
+  Cursor *pC;
   VERIFY( if( nos<0 ) goto not_enough_stack; )
-  if( VERIFY( i>=0 && i<p->nCursor && ) p->aCsr[i].pCursor!=0 ){
+  if( VERIFY( i>=0 && i<p->nCursor && ) (pC = &p->aCsr[i])->pCursor!=0 ){
     char *zKey;
     int nKey, iKey;
     if( pOp->opcode==OP_PutStrKey ){
@@ -3642,10 +3655,13 @@ case OP_PutStrKey: {
       zKey = (char*)&iKey;
       db->lastRowid = aStack[nos].i;
       if( pOp->p2 ) db->nChange++;
+      if( pC->nextRowidValid && aStack[nos].i>=pC->nextRowid ){
+        pC->nextRowidValid = 0;
+      }
     }
-    rc = sqliteBtreeInsert(p->aCsr[i].pCursor, zKey, nKey,
+    rc = sqliteBtreeInsert(pC->pCursor, zKey, nKey,
                         zStack[tos], aStack[tos].n);
-    p->aCsr[i].recnoIsValid = 0;
+    pC->recnoIsValid = 0;
   }
   POPSTACK;
   POPSTACK;
@@ -3666,8 +3682,10 @@ case OP_PutStrKey: {
 */
 case OP_Delete: {
   int i = pOp->p1;
-  if( VERIFY( i>=0 && i<p->nCursor && ) p->aCsr[i].pCursor!=0 ){
-    rc = sqliteBtreeDelete(p->aCsr[i].pCursor);
+  Cursor *pC;
+  if( VERIFY( i>=0 && i<p->nCursor && ) (pC = &p->aCsr[i])->pCursor!=0 ){
+    rc = sqliteBtreeDelete(pC->pCursor);
+    pC->nextRowidValid = 0;
   }
   if( pOp->p2 ) db->nChange++;
   break;

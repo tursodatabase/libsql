@@ -1,5 +1,5 @@
-C Fix\sthe\sURL\sfor\spointing\sto\sMinGW\son\sthe\shomepage.\s(CVS\s762)
-D 2002-10-19T20:13:51
+C Speed\simprovement\sby\savoiding\sa\scall\sto\ssqliteBtreeLast()\swhen\sinserting\sa\nnew\srow\sinto\sa\stable.\s(CVS\s763)
+D 2002-10-19T20:16:38
 F Makefile.in d6c9a85c2a5e696843201d090dcf8bf2f8716f2a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -52,7 +52,7 @@ F src/tokenize.c 62c98842447effe92eba9622bb2f9a2a8a4b97ad
 F src/trigger.c 5ba917fc226b96065108da28186c2efaec53e481
 F src/update.c 881e4c8e7c786545da4fd2d95da19252b2e31137
 F src/util.c cd28b33c6849c9722ab72758b7b86989bc64fa27
-F src/vdbe.c ac4ccc17d965e5754144cfec493093cf4272c126
+F src/vdbe.c 4144effb953f1f25eb451dba85e69f0c34e3b788
 F src/vdbe.h b7584044223104ba7896a7f87b66daebdd6022ba
 F src/where.c 8ff2acfcb9bb15a057512bd6207b259feed57a2c
 F test/all.test efd958d048c70a3247997c482f0b33561f7759f0
@@ -149,7 +149,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P b53ab71d074ada47ce22bd161f6aee24587302af
-R dc777f5c50257e5bd8bd8e95ead8ade9
+P 16aad98aad4d8dd4a8400cdee32004b8c4785d60
+R 1de19ca25a16a11c2dec003aa1ffd1a2
 U drh
-Z 2951b597bc23253105199ba2fa6ecd1d
+Z 58d83640e24d56cfd3739aa320366770
