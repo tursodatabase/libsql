@@ -26,7 +26,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.6 2000/05/30 16:27:04 drh Exp $
+** $Id: util.c,v 1.7 2000/05/31 02:27:49 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -562,4 +562,139 @@ int sqliteSortCompare(const char *a, const char *b){
   }
   if( *a=='-' ) res = -res;
   return res;
+}
+
+/*
+** Compare two strings for equality where the first string can
+** potentially be a "glob" expression.  Return true (1) if they
+** are the same and false (0) if they are different.
+**
+** Globbing rules:
+**
+**      '*'       Matches any sequence of zero or more characters.
+**
+**      '?'       Matches exactly one character.
+**
+**     [...]      Matches one character from the enclosed list of
+**                characters.
+**
+**     [^...]     Matches one character not in the enclosed list.
+**
+** With the [...] and [^...] matching, a ']' character can be included
+** in the list by making it the first character after '[' or '^'.  A
+** range of characters can be specified using '-'.  Example:
+** "[a-z]" matches any single lower-case letter.  To match a '-', make
+** it the last character in the list.
+**
+** This routine is usually quick, but can be N**2 in the worst case.
+**
+** Hints: to match '*' or '?', put them in "[]".  Like this:
+**
+**         abc[*]xyz        Matches "abc*xyz" only
+*/
+int sqliteGlobCompare(const char *zPattern, const char *zString){
+  register char c;
+  int invert;
+  int seen;
+  char c2;
+
+  while( (c = *zPattern)!=0 ){
+    switch( c ){
+      case '*':
+        while( zPattern[1]=='*' ) zPattern++;
+        if( zPattern[1]==0 ) return 1;
+        c = zPattern[1];
+        if( c=='[' || c=='?' ){
+          while( *zString && sqliteGlobCompare(&zPattern[1],zString)==0 ){
+            zString++;
+          }
+          return *zString!=0;
+        }else{
+          while( (c2 = *zString)!=0 ){
+            while( c2 != 0 && c2 != c ){ c2 = *++zString; }
+            if( sqliteGlobCompare(&zPattern[1],zString) ) return 1;
+            zString++;
+          }
+          return 0;
+        }
+      case '?':
+        if( *zString==0 ) return 0;
+        break;
+      case '[':
+        seen = 0;
+        invert = 0;
+        c = *zString;
+        if( c==0 ) return 0;
+        c2 = *++zPattern;
+        if( c2=='^' ){ invert = 1; c2 = *++zPattern; }
+        if( c2==']' ){
+          if( c==']' ) seen = 1;
+          c2 = *++zPattern;
+        }
+        while( (c2 = *zPattern)!=0 && c2!=']' ){
+          if( c2=='-' && zPattern[1]!=']' && zPattern[1]!=0 ){
+            if( c>zPattern[-1] && c<zPattern[1] ) seen = 1;
+          }else if( c==c2 ){
+            seen = 1;
+          }
+          zPattern++;
+        }
+        if( c2==0 || (seen ^ invert)==0 ) return 0;
+        break;
+      default:
+        if( c != *zString ) return 0;
+        break;
+    }
+    zPattern++;
+    zString++;
+  }
+  return *zString==0;
+}
+
+/*
+** Compare two strings for equality using the "LIKE" operator of
+** SQL.  The '%' character matches any sequence of 0 or more
+** characters and '_' matches any single character.  Case is
+** not significant.
+**
+** This routine is just an adaptation of the sqliteGlobCompare()
+** routine above.
+*/
+int 
+sqliteLikeCompare(const unsigned char *zPattern, const unsigned char *zString){
+  register char c;
+  int invert;
+  int seen;
+  char c2;
+
+  while( (c = UpperToLower[*zPattern])!=0 ){
+    switch( c ){
+      case '%':
+        while( zPattern[1]=='%' ) zPattern++;
+        if( zPattern[1]==0 ) return 1;
+        c = UpperToLower[0xff & zPattern[1]];
+        if( c=='_' ){
+          while( *zString && sqliteLikeCompare(&zPattern[1],zString)==0 ){
+            zString++;
+          }
+          return *zString!=0;
+        }else{
+          while( (c2 = UpperToLower[*zString])!=0 ){
+            while( c2 != 0 && c2 != c ){ c2 = UpperToLower[*++zString]; }
+            if( sqliteLikeCompare(&zPattern[1],zString) ) return 1;
+            zString++;
+          }
+          return 0;
+        }
+      case '_':
+        if( *zString==0 ) return 0;
+        break;
+      default:
+        if( c != UpperToLower[*zString] ) return 0;
+        break;
+    }
+    zPattern++;
+    zString++;
+  }
+  return *zString==0;
 }

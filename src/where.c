@@ -25,7 +25,7 @@
 ** the WHERE clause of SQL statements.  Also found here are subroutines
 ** to generate VDBE code to evaluate expressions.
 **
-** $Id: where.c,v 1.3 2000/05/30 20:17:49 drh Exp $
+** $Id: where.c,v 1.4 2000/05/31 02:27:50 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -368,12 +368,14 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
     case TK_SLASH:    op = OP_Divide;   break;
     case TK_AND:      op = OP_And;      break;
     case TK_OR:       op = OP_Or;       break;
-    case TK_LT:       op = OP_Ge;       break;
-    case TK_LE:       op = OP_Gt;       break;
-    case TK_GT:       op = OP_Le;       break;
-    case TK_GE:       op = OP_Lt;       break;
-    case TK_NE:       op = OP_Eq;       break;
-    case TK_EQ:       op = OP_Ne;       break;
+    case TK_LT:       op = OP_Lt;       break;
+    case TK_LE:       op = OP_Le;       break;
+    case TK_GT:       op = OP_Gt;       break;
+    case TK_GE:       op = OP_Ge;       break;
+    case TK_NE:       op = OP_Ne;       break;
+    case TK_EQ:       op = OP_Eq;       break;
+    case TK_LIKE:     op = OP_Like;     break;
+    case TK_GLOB:     op = OP_Glob;     break;
     case TK_ISNULL:   op = OP_IsNull;   break;
     case TK_NOTNULL:  op = OP_NotNull;  break;
     case TK_NOT:      op = OP_Not;      break;
@@ -421,14 +423,16 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
     case TK_GT:
     case TK_GE:
     case TK_NE:
-    case TK_EQ: {
+    case TK_EQ: 
+    case TK_LIKE: 
+    case TK_GLOB: {
       int dest;
-      sqliteVdbeAddOp(v, OP_Integer, 0, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_Integer, 1, 0, 0, 0);
       sqliteExprCode(pParse, pExpr->pLeft);
       sqliteExprCode(pParse, pExpr->pRight);
       dest = sqliteVdbeCurrentAddr(v) + 2;
       sqliteVdbeAddOp(v, op, 0, dest, 0, 0);
-      sqliteVdbeAddOp(v, OP_AddImm, 1, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_AddImm, -1, 0, 0, 0);
       break;
     }
     case TK_NOT:
@@ -466,6 +470,8 @@ void sqliteExprIfTrue(Parse *pParse, Expr *pExpr, int dest){
     case TK_GE:       op = OP_Ge;       break;
     case TK_NE:       op = OP_Ne;       break;
     case TK_EQ:       op = OP_Eq;       break;
+    case TK_LIKE:     op = OP_Like;     break;
+    case TK_GLOB:     op = OP_Glob;     break;
     case TK_ISNULL:   op = OP_IsNull;   break;
     case TK_NOTNULL:  op = OP_NotNull;  break;
     default:  break;
@@ -483,12 +489,18 @@ void sqliteExprIfTrue(Parse *pParse, Expr *pExpr, int dest){
       sqliteExprIfTrue(pParse, pExpr->pRight, dest);
       break;
     }
+    case TK_NOT: {
+      sqliteExprIfFalse(pParse, pExpr->pLeft, dest);
+      break;
+    }
     case TK_LT:
     case TK_LE:
     case TK_GT:
     case TK_GE:
     case TK_NE:
-    case TK_EQ: {
+    case TK_EQ:
+    case TK_LIKE:
+    case TK_GLOB: {
       sqliteExprCode(pParse, pExpr->pLeft);
       sqliteExprCode(pParse, pExpr->pRight);
       sqliteVdbeAddOp(v, op, 0, dest, 0, 0);
@@ -523,6 +535,8 @@ void sqliteExprIfFalse(Parse *pParse, Expr *pExpr, int dest){
     case TK_GE:       op = OP_Lt;       break;
     case TK_NE:       op = OP_Eq;       break;
     case TK_EQ:       op = OP_Ne;       break;
+    case TK_LIKE:     op = OP_Like;     break;
+    case TK_GLOB:     op = OP_Glob;     break;
     case TK_ISNULL:   op = OP_NotNull;  break;
     case TK_NOTNULL:  op = OP_IsNull;   break;
     default:  break;
@@ -540,6 +554,10 @@ void sqliteExprIfFalse(Parse *pParse, Expr *pExpr, int dest){
       sqliteVdbeResolveLabel(v, d2);
       break;
     }
+    case TK_NOT: {
+      sqliteExprIfTrue(pParse, pExpr->pLeft, dest);
+      break;
+    }
     case TK_LT:
     case TK_LE:
     case TK_GT:
@@ -549,6 +567,13 @@ void sqliteExprIfFalse(Parse *pParse, Expr *pExpr, int dest){
       sqliteExprCode(pParse, pExpr->pLeft);
       sqliteExprCode(pParse, pExpr->pRight);
       sqliteVdbeAddOp(v, op, 0, dest, 0, 0);
+      break;
+    }
+    case TK_LIKE:
+    case TK_GLOB: {
+      sqliteExprCode(pParse, pExpr->pLeft);
+      sqliteExprCode(pParse, pExpr->pRight);
+      sqliteVdbeAddOp(v, op, 1, dest, 0, 0);
       break;
     }
     case TK_ISNULL:

@@ -145,6 +145,9 @@ sqlite.html:	$(TOP)/www/sqlite.tcl
 c_interface.html:	$(TOP)/www/c_interface.tcl
 	tclsh $(TOP)/www/c_interface.tcl >c_interface.html
 
+changes.html:	$(TOP)/www/changes.tcl
+	tclsh $(TOP)/www/changes.tcl >changes.html
+
 # Files to be published on the website.
 #
 PUBLISH = \
@@ -152,6 +155,7 @@ PUBLISH = \
   all.tar.gz \
   index.html \
   sqlite.html \
+  changes.html \
   c_interface.html
 
 website:	$(PUBLISH)

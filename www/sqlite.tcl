@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: sqlite.tcl,v 1.3 2000/05/29 18:50:16 drh Exp $}
+set rcsid {$Id: sqlite.tcl,v 1.4 2000/05/31 02:27:50 drh Exp $}
 
 puts {<html>
 <head>
@@ -353,6 +353,18 @@ list mode, then entering the following query:</p>
 SELECT sql FROM sqlite_master
 ORDER BY tbl_name, type DESC, name
 </pre></blockquote>
+
+<p>Of, if you give an argument to ".schema" because you only
+one the schema for a single table, the query looks like this:</p>
+
+<blockquote><pre>
+SELECT sql FROM sqlite_master
+WHERE tbl_name LIKE '%s'
+ORDER BY type DESC, name
+</pre></blockquote>
+
+<p>The <b>%s</b> in the query above is replaced by the argument
+to ".schema", of course.</p>
 
 <h2>Other Dot Commands</h2>
 

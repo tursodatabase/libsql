@@ -30,7 +30,7 @@
 ** relatively simple to convert to a different database such
 ** as NDBM, SDBM, or BerkeleyDB.
 **
-** $Id: dbbe.c,v 1.2 2000/05/30 18:45:24 drh Exp $
+** $Id: dbbe.c,v 1.3 2000/05/31 02:27:49 drh Exp $
 */
 #include "sqliteInt.h"
 #include <gdbm.h>
@@ -197,6 +197,22 @@ void sqliteDbbeDropTable(Dbbe *pBe, const char *zTable){
   zFile = sqliteFileOfTable(pBe, zTable);
   unlink(zFile);
   sqliteFree(zFile);
+}
+
+/*
+** Reorganize a table to reduce search times and disk usage.
+*/
+void sqliteDbbeReorganizeTable(Dbbe *pBe, const char *zTable){
+  char *zFile;            /* Name of the table file */
+  DbbeTable *pTab;
+
+  pTab = sqliteDbbeOpenTable(pBe, zTable, 1);
+  if( pTab && pTab->pFile && pTab->pFile->dbf ){
+    gdbm_reorganize(pTab->pFile->dbf);
+  }
+  if( pTab ){
+    sqliteDbbeCloseTable(pTab);
+  }
 }
 
 /*

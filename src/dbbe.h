@@ -28,7 +28,7 @@
 ** This library was originally designed to support the following
 ** backends: GDBM, NDBM, SDBM, Berkeley DB.
 **
-** $Id: dbbe.h,v 1.1 2000/05/29 14:26:01 drh Exp $
+** $Id: dbbe.h,v 1.2 2000/05/31 02:27:49 drh Exp $
 */
 #ifndef _SQLITE_DBBE_H_
 #define _SQLITE_DBBE_H_
@@ -64,6 +64,9 @@ DbbeTable *sqliteDbbeOpenTable(Dbbe*, const char *zTableName, int writeable);
 
 /* Delete a table from the database */
 void sqliteDbbeDropTable(Dbbe*, const char *zTableName);
+
+/* Reorganize a table to speed access or reduce its disk usage */
+void sqliteDbbeReorganizeTable(Dbbe*, const char *zTableName);
 
 /* Close a table */
 void sqliteDbbeCloseTable(DbbeTable*);

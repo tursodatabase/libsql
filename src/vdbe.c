@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.2 2000/05/30 16:27:04 drh Exp $
+** $Id: vdbe.c,v 1.3 2000/05/31 02:27:50 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -391,23 +391,24 @@ void sqliteVdbeDelete(Vdbe *p){
 ** this array, then copy and paste it into this file, if you want.
 */
 static char *zOpName[] = { 0,
-  "Open",           "Close",          "Destroy",        "Fetch",
-  "New",            "Put",            "Delete",         "Field",
-  "Key",            "Rewind",         "Next",           "ResetIdx",
-  "NextIdx",        "PutIdx",         "DeleteIdx",      "ListOpen",
-  "ListWrite",      "ListRewind",     "ListRead",       "ListClose",
-  "SortOpen",       "SortPut",        "SortMakeRec",    "SortMakeKey",
-  "Sort",           "SortNext",       "SortKey",        "SortCallback",
-  "SortClose",      "FileOpen",       "FileRead",       "FileField",
-  "FileClose",      "MakeRecord",     "MakeKey",        "Goto",
-  "If",             "Halt",           "ColumnCount",    "ColumnName",
-  "Callback",       "Integer",        "String",         "Pop",
-  "Dup",            "Pull",           "Add",            "AddImm",
-  "Subtract",       "Multiply",       "Divide",         "Min",
-  "Max",            "Eq",             "Ne",             "Lt",
-  "Le",             "Gt",             "Ge",             "IsNull",
-  "NotNull",        "Negative",       "And",            "Or",
-  "Not",            "Concat",         "Noop",         
+  "Open",           "Close",          "Fetch",          "New",
+  "Put",            "Delete",         "Field",          "Key",
+  "Rewind",         "Next",           "Destroy",        "Reorganize",
+  "ResetIdx",       "NextIdx",        "PutIdx",         "DeleteIdx",
+  "ListOpen",       "ListWrite",      "ListRewind",     "ListRead",
+  "ListClose",      "SortOpen",       "SortPut",        "SortMakeRec",
+  "SortMakeKey",    "Sort",           "SortNext",       "SortKey",
+  "SortCallback",   "SortClose",      "FileOpen",       "FileRead",
+  "FileField",      "FileClose",      "MakeRecord",     "MakeKey",
+  "Goto",           "If",             "Halt",           "ColumnCount",
+  "ColumnName",     "Callback",       "Integer",        "String",
+  "Pop",            "Dup",            "Pull",           "Add",
+  "AddImm",         "Subtract",       "Multiply",       "Divide",
+  "Min",            "Max",            "Like",           "Glob",
+  "Eq",             "Ne",             "Lt",             "Le",
+  "Gt",             "Ge",             "IsNull",         "NotNull",
+  "Negative",       "And",            "Or",             "Not",
+  "Concat",         "Noop",         
 };
 
 /*
@@ -997,6 +998,67 @@ int sqliteVdbeExec(
         break;
       }
 
+      /* Opcode: Like P1 P2 *
+      **
+      ** Pop the top two elements from the stack.  The top-most is a
+      ** "like" pattern -- the right operand of the SQL "LIKE" operator.
+      ** The lower element is the string to compare against the like
+      ** pattern.  Jump to P2 if the two compare, and fall through without
+      ** jumping if they do not.  The '%' in the top-most element matches
+      ** any sequence of zero or more characters in the lower element.  The
+      ** '_' character in the topmost matches any single character of the
+      ** lower element.  Case is ignored for this comparison.
+      **
+      ** If P1 is not zero, the sense of the test is inverted and we
+      ** have a "NOT LIKE" operator.  The jump is made if the two values
+      ** are different.
+      */
+      case OP_Like: {
+        int tos = p->tos;
+        int nos = tos - 1;
+        int c;
+        if( nos<0 ) goto not_enough_stack;
+        Stringify(p, tos);
+        Stringify(p, nos);
+        c = sqliteLikeCompare(p->zStack[tos], p->zStack[nos]);
+        PopStack(p, 2);
+        if( pOp->p1 ) c = !c;
+        if( c ) pc = pOp->p2-1;
+        break;
+      }
+
+      /* Opcode: Glob P1 P2 *
+      **
+      ** Pop the top two elements from the stack.  The top-most is a
+      ** "glob" pattern.  The lower element is the string to compare 
+      ** against the glob pattern.
+      **
+      ** Jump to P2 if the two compare, and fall through without
+      ** jumping if they do not.  The '*' in the top-most element matches
+      ** any sequence of zero or more characters in the lower element.  The
+      ** '?' character in the topmost matches any single character of the
+      ** lower element.  [...] matches a range of characters.  [^...]
+      ** matches any character not in the range.  Case is significant
+      ** for globs.
+      **
+      ** If P1 is not zero, the sense of the test is inverted and we
+      ** have a "NOT GLOB" operator.  The jump is made if the two values
+      ** are different.
+      */
+      case OP_Glob: {
+        int tos = p->tos;
+        int nos = tos - 1;
+        int c;
+        if( nos<0 ) goto not_enough_stack;
+        Stringify(p, tos);
+        Stringify(p, nos);
+        c = sqliteGlobCompare(p->zStack[tos], p->zStack[nos]);
+        PopStack(p, 2);
+        if( pOp->p1 ) c = !c;
+        if( c ) pc = pOp->p2-1;
+        break;
+      }
+
       /* Opcode: And * * *
       **
       ** Pop two values off the stack.  Take the logical AND of the
@@ -1578,6 +1640,15 @@ int sqliteVdbeExec(
       */
       case OP_Destroy: {
         sqliteDbbeDropTable(p->pBe, pOp->p3);
+        break;
+      }
+
+      /* Opcode: Reorganize * * P3
+      **
+      ** Compress, optimize, and tidy up the GDBM file named by P3.
+      */
+      case OP_Reorganize: {
+        sqliteDbbeReorganizeTable(p->pBe, pOp->p3);
         break;
       }
 
