@@ -75,25 +75,12 @@
 #        files for Tcl.  If the compiler is able to find <tcl.h>
 #        on its own, then this can be blank.
 #
-#    TARGET_GDBM_LIBS
-#
-#        This is the library directives passed to the target linker
-#        that cause the executable to link against GDBM.  This might
-#        be a switch like "-lgdbm" or pathnames of library file
-#        like "../../src/libgdbm.a".
-#
-#    TARGET_GDBM_INC
-#
-#        This variables define the directory that contain header
-#        files for GDBM.  If the compiler is able to find <gdbm.h>
-#        on its own, then this can be blank.
-#
 #    TARGET_READLINE_LIBS
 #
 #        This is the library directives passed to the target linker
-#        that cause the executable to link against GDBM.  This might
-#        be a switch like "-lreadline" or pathnames of library file
-#        like "../../src/libreadline.a".
+#        that cause the executable to link against the readline library.
+#        This might be a switch like "-lreadline" or pathnames of library
+#        file like "../../src/libreadline.a".
 #
 #    TARGET_READLINE_INC
 #
@@ -110,7 +97,7 @@
 #
 #        Additional libraries or other switch that the target linker needs
 #        to build an executable on the target.  Do not include
-#        on this list any libraries in TARGET_TCL_LIBS, TARGET_GDBM_LIBS,
+#        on this list any libraries in TARGET_TCL_LIBS and
 #        TARGET_READLINE_LIBS, etc.
 #
 #    TARGET_EXEEXT
@@ -151,7 +138,7 @@ AC_INIT(src/sqlite.h.in)
 dnl Put the RCS revision string after AC_INIT so that it will also
 dnl show in in configure.
 # The following RCS revision string applies to configure.in
-# $Revision: 1.10 $
+# $Revision: 1.11 $
 
 #########
 # Make sure we are not building in a subdirectory of the source tree.
@@ -435,59 +422,6 @@ if test "$found" = "no"; then
   TARGET_TCL_INC="-DNO_TCL=1"
 fi
 AC_SUBST(TARGET_TCL_INC)
-
-##########
-# Figure out what C libraries are required to compile programs
-# that use GDBM.
-#
-use_gdbm=true
-AC_ARG_ENABLE(gdbm, 
-[  --disable-gdbm          Omit the GDBM drivers],
-  use_gdbm=$enableval, use_gdbm=true
-)
-if test "$use_gdbm" = "no"; then use_gdbm=false; fi
-if test "$use_gdbm" = "yes"; then use_gdbm=true; fi
-if $use_gdbm; then
-  if test "$config_TARGET_GDBM_LIBS" != ""; then
-    TARGET_GDBM_LIBS="$config_TARGET_GDBM_LIBS"
-  else
-    CC=$TARGET_CC
-    LIBS=""
-    AC_SEARCH_LIBS(gdbm_open, gdbm,,,)
-    TARGET_GDBM_LIBS="$LIBS"
-  fi
-fi
-AC_SUBST(TARGET_GDBM_LIBS)
-
-##########
-# Figure out where to get the GDBM header files.
-#
-if $use_gdbm; then
-  AC_MSG_CHECKING([GDBM header files])
-  found=no
-  if test "$config_TARGET_GDBM_INC" != ""; then
-    TARGET_GDBM_INC=$config_TARGET_GDBM_INC
-    found=yes
-  fi
-  if test "$found" = "yes"; then
-    AC_MSG_RESULT($TARGET_GDBM_INC)
-  else
-    AC_MSG_RESULT(not specified: still searching...)
-    AC_CHECK_HEADER(gdbm.h, [found=yes])
-  fi
-  if test "$found" = "no"; then
-    for dir in /usr/local /usr/pkg /usr/contrib; do
-      AC_CHECK_FILE($dir/include/gdbm.h, found=yes)
-      if test "$found" = "yes"; then
-        TARGET_GDBM_INC="-I$dir/include"
-        break
-      fi
-    done
-  fi
-else
-  TARGET_GDBM_INC="-DDISABLE_GDBM"
-fi
-AC_SUBST(TARGET_GDBM_INC)
 
 ##########
 # Figure out what C libraries are required to compile programs

@@ -1,11 +1,11 @@
-C Everything\sis\sworking\son\sLinux.\s\sThis\sis\srelease\s2.0-Alpha-1.\s(CVS\s246)
-D 2001-09-15T00:57:28
+C Release\s2.0-alpha-1\s(CVS\s247)
+D 2001-09-15T00:58:00
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
-F Makefile.in 7ecb2370b5cb34d390af1fcb3118ea6d84a253ca
+F Makefile.in 6f4536369ce59b0ee7941f743c65c2c7f703ad2a
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
-F VERSION 05e17b646a817240c206186f94f8f4c70974d5dc
-F configure d2051345f49f7e48604423da26e086a745c86a47 x
-F configure.in e7465c88bbfb76882f97769c2dd90dbba8eca5db
+F VERSION 5148a9efa1b036cfd2fb64b3d15ff0455211a8e9
+F configure aad857a97ca28a584228869186eb4cd7dbebbb3a x
+F configure.in 0000c0d62beb47cae1d2d81a197c7fe6efd56a45
 F doc/lemon.html 3ddeef6e5dee69a2bb6f5d8e4975b58f2fd8e11c
 F doc/report1.txt 734cbae63b1310cc643fe5e9e3da1ab55a79b99e
 F notes/notes1.txt b7c0812b704a022e88c621146ae50955c923d464
@@ -67,7 +67,7 @@ F test/malloc.test 3daa97f6a9577d8f4c6e468b274333af19ce5861
 F test/pager.test 5b9d0958c85139087d6e53569c447af64bed252e
 F test/printf.test 4c71871e1a75a2dacb673945fc13ddb30168798f
 F test/quote.test 40a3164af8456933a81312803fa8cdb21b205c12
-F test/rowid.test b01e6dec09780c93f55db6cfe7ad097323954f23
+F test/rowid.test 2329d6c7cfb62293bfb219b33542f894d0d6917a
 F test/select1.test 223507655cdb4f9901d83fa7f5c5328e022c211f
 F test/select2.test d47c78fda07a088985b688dde42c96b46165a87f
 F test/select3.test a9234b8424b6c6d71de534f43b91ade9be68e9cc
@@ -83,8 +83,6 @@ F test/trans.test 1727a0ebf0f3fb6714fcdc016cb9655b55dddbaa
 F test/update.test 72c0c93310483b86dc904a992220c5b84c7ce100
 F test/vacuum.test 135b57e0947ed65e92cf7e1eab64bcefd8cf9519
 F test/where.test 755957829c493b1b7ad1ecb27d6c782131a6b3d5
-F tool/gdbmdump.c 529e67c78d920606ba196326ea55b57b75fcc82b
-F tool/gdbmstat.c 56a9033531e5f5a48413f6ec436d5fb0341632c1
 F tool/lemon.c e007bfdbc79a51a4cd7c8a5f81f517cebd121150
 F tool/lempar.c 276d8ab73e2ff99da5333c035ee81c78d829bb90
 F tool/memleak.awk a0a11dd84bf4582acc81c3c61271021ae49b3f15
@@ -107,7 +105,7 @@ F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 06f81c401f79a04f2c5ebfb97e7c176225c0aef2
 F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P 5e3724603e6f52bb74deb1c62e6e8f323d7b64b7
-R f702824af0e6fb733e46f0ad203329d6
+P 14474fa144fe7c5dc63e0990d6cc92d769e6013e
+R e56932550882bb08b5533a7aa309b70c
 U drh
-Z 7366e408d799dcad27172164daf780cc
+Z a235c7cc967e6bb6f207b8f3132939fd

@@ -1,8 +1,19 @@
 #!/usr/make
 #
 # Makefile for SQLITE
+#
+# This makefile is suppose to be configured automatically using the
+# autoconf.  But if that does not work for you, you can configure
+# the makefile manually.  Just set the parameters below to values that
+# work well for your system.
+#
+# If the configure script does not work out-of-the-box, you might
+# be able to get it to work by giving it some hints.  See the comment
+# at the beginning of configure.in for additional information.
+#
 
-# The toplevel directory of the source tree
+# The toplevel directory of the source tree.  This is the directory
+# that contains this "Makefile.in" and the "configure.in" script.
 #
 TOP = @srcdir@
 
@@ -12,7 +23,8 @@ TOP = @srcdir@
 BCC = @BUILD_CC@ @BUILD_CFLAGS@
 
 # C Compile and options for use in building executables that 
-# will run on the target platform.
+# will run on the target platform.  (BCC and TCC are usually the
+# same unless your are cross-compiling.)
 #
 TCC = @TARGET_CC@ @TARGET_CFLAGS@ -I. -I${TOP}/src
 
@@ -20,14 +32,6 @@ TCC = @TARGET_CC@ @TARGET_CFLAGS@ -I. -I${TOP}/src
 #
 AR = @TARGET_AR@
 RANLIB = @TARGET_RANLIB@
-
-# Compiler options needed for programs that use the GDBM library.
-#
-GDBM_FLAGS = @TARGET_GDBM_INC@
-
-# The library that programs using GDBM must link against.
-#
-LIBGDBM = @TARGET_GDBM_LIBS@
 
 # Compiler options needed for programs that use the TCL library.
 #
@@ -44,6 +48,15 @@ READLINE_FLAGS = -DHAVE_READLINE=@TARGET_HAVE_READLINE@ @TARGET_READLINE_INC@
 # The library that programs using readline() must link against.
 #
 LIBREADLINE = @TARGET_READLINE_LIBS@
+
+# Should the database engine assume text is coded as UTF-8 or iso8859?
+#
+# ENCODING  = UTF8
+# ENCODING  = ISO8859
+ENCODING = @ENCODING@
+
+# You should not have to change anything below this line
+###############################################################################
 
 # Object files for the SQLite library.
 #
@@ -107,7 +120,7 @@ libsqlite.a:	$(LIBOBJ)
 
 sqlite:	$(TOP)/src/shell.c libsqlite.a sqlite.h
 	$(TCC) $(READLINE_FLAGS) -o sqlite $(TOP)/src/shell.c \
-		libsqlite.a $(LIBGDBM) $(LIBREADLINE)
+		libsqlite.a $(LIBREADLINE)
 
 # Rules to build the LEMON compiler generator
 #
@@ -125,19 +138,19 @@ HDR = \
    parse.h
 
 btree.o:	$(TOP)/src/btree.c $(HDR) $(TOP)/src/pager.h
-	$(TCC) $(GDBM_FLAGS) -c $(TOP)/src/btree.c
+	$(TCC) -c $(TOP)/src/btree.c
 
 build.o:	$(TOP)/src/build.c $(HDR)
-	$(TCC) $(GDBM_FLAGS) -c $(TOP)/src/build.c
+	$(TCC) -c $(TOP)/src/build.c
 
 main.o:	$(TOP)/src/main.c $(HDR)
-	$(TCC) $(GDBM_FLAGS) -c $(TOP)/src/main.c
+	$(TCC) -c $(TOP)/src/main.c
 
 pager.o:	$(TOP)/src/pager.c $(HDR) $(TOP)/src/pager.h
-	$(TCC) $(GDBM_FLAGS) -c $(TOP)/src/pager.c
+	$(TCC) -c $(TOP)/src/pager.c
 
 parse.o:	parse.c $(HDR)
-	$(TCC) $(GDBM_FLAGS) -c parse.c
+	$(TCC) -c parse.c
 
 parse.h:	parse.c
 
@@ -147,59 +160,56 @@ parse.c:	$(TOP)/src/parse.y lemon
 
 sqlite.h:	$(TOP)/src/sqlite.h.in 
 	sed -e s/--VERS--/`cat ${TOP}/VERSION`/ \
-            -e s/--ENCODING--/@ENCODING@/ \
+            -e s/--ENCODING--/$(ENCODING)/ \
                  $(TOP)/src/sqlite.h.in >sqlite.h
 
 tokenize.o:	$(TOP)/src/tokenize.c $(HDR)
-	$(TCC) $(GDBM_FLAGS) -c $(TOP)/src/tokenize.c
+	$(TCC) -c $(TOP)/src/tokenize.c
 
 util.o:	$(TOP)/src/util.c $(HDR)
-	$(TCC) $(GDBM_FLAGS) -c $(TOP)/src/util.c
+	$(TCC) -c $(TOP)/src/util.c
 
 vdbe.o:	$(TOP)/src/vdbe.c $(HDR)
-	$(TCC) $(GDBM_FLAGS) -c $(TOP)/src/vdbe.c
+	$(TCC) -c $(TOP)/src/vdbe.c
 
 where.o:	$(TOP)/src/where.c $(HDR)
-	$(TCC) $(GDBM_FLAGS) -c $(TOP)/src/where.c
+	$(TCC) -c $(TOP)/src/where.c
 
 delete.o:	$(TOP)/src/delete.c $(HDR)
-	$(TCC) $(GDBM_FLAGS) -c $(TOP)/src/delete.c
+	$(TCC) -c $(TOP)/src/delete.c
 
 expr.o:	$(TOP)/src/expr.c $(HDR)
-	$(TCC) $(GDBM_FLAGS) -c $(TOP)/src/expr.c
+	$(TCC) -c $(TOP)/src/expr.c
 
 insert.o:	$(TOP)/src/insert.c $(HDR)
-	$(TCC) $(GDBM_FLAGS) -c $(TOP)/src/insert.c
+	$(TCC) -c $(TOP)/src/insert.c
 
 random.o:	$(TOP)/src/random.c $(HDR)
-	$(TCC) $(GDBM_FLAGS) -c $(TOP)/src/random.c
+	$(TCC) -c $(TOP)/src/random.c
 
 select.o:	$(TOP)/src/select.c $(HDR)
-	$(TCC) $(GDBM_FLAGS) -c $(TOP)/src/select.c
+	$(TCC) -c $(TOP)/src/select.c
 
 table.o:	$(TOP)/src/table.c $(HDR)
-	$(TCC) $(GDBM_FLAGS) -c $(TOP)/src/table.c
+	$(TCC) -c $(TOP)/src/table.c
 
 update.o:	$(TOP)/src/update.c $(HDR)
-	$(TCC) $(GDBM_FLAGS) -c $(TOP)/src/update.c
+	$(TCC) -c $(TOP)/src/update.c
 
 tclsqlite.o:	$(TOP)/src/tclsqlite.c $(HDR)
-	$(TCC) $(GDBM_FLAGS) $(TCL_FLAGS) -c $(TOP)/src/tclsqlite.c
+	$(TCC) $(TCL_FLAGS) -c $(TOP)/src/tclsqlite.c
 
 printf.o:	$(TOP)/src/printf.c $(HDR)
-	$(TCC) $(GDBM_FLAGS) $(TCL_FLAGS) -c $(TOP)/src/printf.c
-
-gdbmdump:	$(TOP)/tool/gdbmdump.c
-	$(TCC) $(GDBM_FLAGS) -o gdbmdump $(TOP)/tool/gdbmdump.c $(LIBGDBM)
+	$(TCC) $(TCL_FLAGS) -c $(TOP)/src/printf.c
 
 tclsqlite:	$(TOP)/src/tclsqlite.c libsqlite.a
 	$(TCC) $(TCL_FLAGS) -DTCLSH=1 -o tclsqlite \
-		$(TOP)/src/tclsqlite.c libsqlite.a $(LIBGDBM) $(LIBTCL)
+		$(TOP)/src/tclsqlite.c libsqlite.a $(LIBTCL)
 
 testfixture:	$(TOP)/src/tclsqlite.c libsqlite.a $(TESTSRC)
 	$(TCC) $(TCL_FLAGS) -DTCLSH=1 -DSQLITE_TEST=1 -o testfixture \
 		$(TESTSRC) $(TOP)/src/tclsqlite.c \
-		libsqlite.a $(LIBGDBM) $(LIBTCL)
+		libsqlite.a $(LIBTCL)
 
 test:	testfixture sqlite
 	./testfixture $(TOP)/test/all.test
