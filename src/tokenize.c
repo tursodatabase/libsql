@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.50 2002/10/22 23:38:04 drh Exp $
+** $Id: tokenize.c,v 1.51 2002/10/27 19:35:35 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -234,8 +234,13 @@ static int sqliteGetToken(const unsigned char *z, int *tokenType){
       return 1;
     }
     case '(': {
-      *tokenType = TK_LP;
-      return 1;
+      if( z[1]=='+' && z[2]==')' ){
+        *tokenType = TK_ORACLE_OUTER_JOIN;
+        return 3;
+      }else{
+        *tokenType = TK_LP;
+        return 1;
+      }
     }
     case ')': {
       *tokenType = TK_RP;

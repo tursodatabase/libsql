@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.147 2002/10/22 23:38:04 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.148 2002/10/27 19:35:35 drh Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -493,7 +493,7 @@ struct Token {
 struct Expr {
   u8 op;                 /* Operation performed by this node */
   u8 dataType;           /* Either SQLITE_SO_TEXT or SQLITE_SO_NUM */
-  u8 isJoinExpr;         /* Origin is the ON or USING phrase of a join */
+  u16 flags;             /* Various flags.  See below */
   Expr *pLeft, *pRight;  /* Left and right subnodes */
   ExprList *pList;       /* A list of expressions used as function arguments
                          ** or in "<expr> IN (<expr-list)" */
@@ -506,6 +506,21 @@ struct Expr {
   Select *pSelect;       /* When the expression is a sub-select.  Also the
                          ** right side of "<expr> IN (<select>)" */
 };
+
+/*
+** The following are the meanings of bits in the Expr.flags field.
+*/
+#define EP_FromJoin     0x0001  /* Originated in ON or USING clause of a join */
+#define EP_Oracle8Join  0x0002  /* Carries the Oracle8 "(+)" join operator */
+
+/*
+** These macros can be used to test, set, or clear bits in the 
+** Expr.flags field.
+*/
+#define ExprHasProperty(E,P)     (((E)->flags&(P))==(P))
+#define ExprHasAnyProperty(E,P)  (((E)->flags&(P))!=0)
+#define ExprSetProperty(E,P)     (E)->flags|=(P)
+#define ExprClearProperty(E,P)   (E)->flags&=~(P)
 
 /*
 ** A list of expressions.  Each expression may optionally have a

@@ -13,7 +13,7 @@
 ** the WHERE clause of SQL statements.  Also found here are subroutines
 ** to generate VDBE code to evaluate expressions.
 **
-** $Id: where.c,v 1.65 2002/09/30 12:36:26 drh Exp $
+** $Id: where.c,v 1.66 2002/10/27 19:35:35 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -26,6 +26,8 @@ typedef struct ExprInfo ExprInfo;
 struct ExprInfo {
   Expr *p;                /* Pointer to the subexpression */
   u8 indexable;           /* True if this subexprssion is usable by an index */
+  u8 oracle8join;         /* -1 if left side contains "(+)".  +1 if right side
+                          ** contains "(+)".  0 if neither contains "(+)" */
   short int idxLeft;      /* p->pLeft is a column in this table number. -1 if
                           ** p->pLeft is not the column of any table */
   short int idxRight;     /* p->pRight is a column in this table number. -1 if
@@ -1019,7 +1021,9 @@ WhereInfo *sqliteWhereBegin(
     for(j=0; j<nExpr; j++){
       if( aExpr[j].p==0 ) continue;
       if( (aExpr[j].prereqAll & loopMask)!=aExpr[j].prereqAll ) continue;
-      if( pLevel->iLeftJoin && aExpr[j].p->isJoinExpr==0 ) continue;
+      if( pLevel->iLeftJoin && !ExprHasProperty(aExpr[j].p,EP_FromJoin) ){
+        continue;
+      }
       if( haveKey ){
         haveKey = 0;
         sqliteVdbeAddOp(v, OP_MoveTo, base+idx, 0);

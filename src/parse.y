@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.84 2002/10/22 23:38:04 drh Exp $
+** @(#) $Id: parse.y,v 1.85 2002/10/27 19:35:34 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -499,6 +499,7 @@ inscollist(A) ::= nm(Y).                      {A = sqliteIdListAppend(0,&Y);}
 %left STAR SLASH REM.
 %left CONCAT.
 %right UMINUS UPLUS BITNOT.
+%right ORACLE_OUTER_JOIN.
 
 %type expr {Expr*}
 %destructor expr {sqliteExprDelete($$);}
@@ -512,6 +513,8 @@ expr(A) ::= nm(X) DOT nm(Y). {
   Expr *temp2 = sqliteExpr(TK_ID, 0, 0, &Y);
   A = sqliteExpr(TK_DOT, temp1, temp2, 0);
 }
+expr(A) ::= expr(B) ORACLE_OUTER_JOIN. 
+                             {A = B; ExprSetProperty(A,EP_Oracle8Join);}
 expr(A) ::= INTEGER(X).      {A = sqliteExpr(TK_INTEGER, 0, 0, &X);}
 expr(A) ::= FLOAT(X).        {A = sqliteExpr(TK_FLOAT, 0, 0, &X);}
 expr(A) ::= STRING(X).       {A = sqliteExpr(TK_STRING, 0, 0, &X);}
