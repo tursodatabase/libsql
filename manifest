@@ -1,5 +1,5 @@
-C Remove\sthe\ssqlite3_error_string()\sAPI.\s(CVS\s1514)
-D 2004-05-31T23:56:43
+C Remove\sthe\ssqlite3_open_varargs()\sAPI.\s(CVS\s1515)
+D 2004-06-01T00:03:53
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -36,7 +36,7 @@ F src/hash.c 440c2f8cb373ee1b4e13a0988489c7cd95d55b6f
 F src/hash.h 762d95f1e567664d1eafc1687de755626be962fb
 F src/insert.c 4268d9e3959cc845ea243fb4ec7507269404dad9
 F src/legacy.c ad23746f15f67e34577621b1875f639c94839e1f
-F src/main.c 5e9c2c4342a652a5c4de2e7dcf60cea1acf1fb72
+F src/main.c 66c6c35e94f57a7505f7f44b5a9504fb60ca0730
 F src/md5.c 4302e84ae516c616bb079c4e6d038c0addb33481
 F src/os.h ab42f4a7c4c716f26b988e759b6e12085a3bfc67
 F src/os_common.h 744286a27de55c52f1b18921e8d17abbf7fafc0f
@@ -54,7 +54,7 @@ F src/printf.c ef750e8e2398ca7e8b58be991075f08c6a7f0e53
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c 0297717eb7331604687c2e29c147d3a311359df1
 F src/shell.c a9e2ad8f6c1d39b04bad61a0ec655e9a3a360b50
-F src/sqlite.h.in 67ae321428f7de80046a12892d289e4024b4976a
+F src/sqlite.h.in d8222d4a1f76468560b60f2b7f5b592995ebd5cf
 F src/sqliteInt.h 8a3a6dc8ef5141563698a3b7a62fca7158cff1f5
 F src/table.c af14284fa36c8d41f6829e3f2819dce07d3e2de2
 F src/tclsqlite.c ed8663e7703346ace72ca3899dba15dbfc0883d7
@@ -212,7 +212,7 @@ F www/support.tcl 67682848d6ddd283370451dc3da2e56cded9fc9a
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 6ab3af8847a7b0f1508824c9d8e0ec9685219371
-R 430f7ef65e5c91eaa2bde24b0b951b9f
+P af8e2006d808031a040f293c44f3bfbe841b866b
+R d1c59bd3cc6eefb8ae5de00c7e7fe30b
 U danielk1977
-Z cd835fabb1a406eb8762317c7be1255b
+Z 968142c222e9046cd53636930b43cc0c

@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.88 2004/05/31 23:56:43 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.89 2004/06/01 00:03:53 danielk1977 Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -516,23 +516,6 @@ int sqlite3_open16(
   const void *filename,   /* Database filename (UTF-16) */
   sqlite3 **ppDb,         /* OUT: SQLite db handle */
   const char **args       /* Null terminated array of option strings */
-);
-
-/*
-** The following two functions are identical to sqlite3_open() and
-** sqlite3_open16(), except that any option strings are specified as the
-** third and subsequent arguments, instead of as an array.  The final
-** argument to either of the following two functions must be a NULL.
-*/
-int sqlite3_open_vararg(
-  const char *filename,   /* Database filename (UTF-8) */
-  sqlite3 **ppDb,         /* OUT: SQLite db handle */
-  ...                     /* Option strings */
-);
-int sqlite3_open16_vararg(
-  const void *filename,   /* Database filename (UTF-16) */
-  sqlite3 **ppDb,         /* OUT: SQLite db handle */
-  ...                     /* Option strings */
 );
 
 /*
