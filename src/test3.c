@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test3.c,v 1.27 2004/05/07 17:57:50 drh Exp $
+** $Id: test3.c,v 1.28 2004/05/07 23:50:57 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -811,6 +811,32 @@ static int btree_last(
 }
 
 /*
+** Usage:   btree_eof ID
+**
+** Return TRUE if the given cursor is not pointing at a valid entry.
+** Return FALSE if the cursor does point to a valid entry.
+*/
+static int btree_eof(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  const char **argv      /* Text of each argument */
+){
+  BtCursor *pCur;
+  char zBuf[50];
+
+  if( argc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+       " ID\"", 0);
+    return TCL_ERROR;
+  }
+  if( Tcl_GetInt(interp, argv[1], (int*)&pCur) ) return TCL_ERROR;
+  sprintf(zBuf, "%d", sqlite3BtreeEof(pCur));
+  Tcl_AppendResult(interp, zBuf, 0);
+  return SQLITE_OK;
+}
+
+/*
 ** Usage:   btree_keysize ID
 **
 ** Return the number of bytes of key.  
@@ -1022,6 +1048,7 @@ int Sqlitetest3_Init(Tcl_Interp *interp){
      { "btree_insert",             (Tcl_CmdProc*)btree_insert             },
      { "btree_next",               (Tcl_CmdProc*)btree_next               },
      { "btree_prev",               (Tcl_CmdProc*)btree_prev               },
+     { "btree_eof",                (Tcl_CmdProc*)btree_eof                },
      { "btree_keysize",            (Tcl_CmdProc*)btree_keysize            },
      { "btree_key",                (Tcl_CmdProc*)btree_key                },
      { "btree_data",               (Tcl_CmdProc*)btree_data               },
