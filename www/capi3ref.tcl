@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3ref.tcl,v 1.5 2004/06/19 08:18:27 danielk1977 Exp $}
+set rcsid {$Id: capi3ref.tcl,v 1.6 2004/07/21 14:07:58 drh Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -226,7 +226,18 @@ int sqlite3_column_type(sqlite3_stmt*, int iCol);
  index of 0.
 
  If the SQL statement is not currently point to a valid row, or if the
- the colulmn index is out of range, the result is undefined.
+ the column index is out of range, the result is undefined.
+
+ If the result is a BLOB then the sqlite3_column_bytes() routine returns
+ the number of bytes in that BLOB.  No type conversions occur.
+ If the result is a string (or a number since a number can be converted
+ into a string) then sqlite3_column_bytes() converts
+ the value into a UTF-8 string and returns
+ the number of bytes in the resulting string.  The value returned does
+ not include the \\000 terminator at the end of the string.  The
+ sqlite3_column_bytes16() routine converts the value into a UTF-16
+ encoding and returns the number of bytes (not characters) in the
+ resulting string.  The \\u0000 terminator is not included in this count.
 
  These routines attempt to convert the value where appropriate.  For
  example, if the internal representation is FLOAT and a text result
@@ -234,7 +245,8 @@ int sqlite3_column_type(sqlite3_stmt*, int iCol);
  automatically.  The following table details the conversions that
  are applied:
 
- <table broder=1>
+<blockquote>
+<table border="1">
 <tr><th>Internal Type</th><th>Requested Type</th><th>Conversion</th></tr>
 <tr><td> NULL    </td><td> INTEGER</td><td>Result is 0</td></tr>
 <tr><td> NULL </td><td>    FLOAT </td><td> Result is 0.0</td></tr>
@@ -251,8 +263,9 @@ int sqlite3_column_type(sqlite3_stmt*, int iCol);
 <tr><td> TEXT </td><td>    BLOB </td><td>  No change</td></tr>
 <tr><td> BLOB </td><td>    INTEGER</td><td>Convert to TEXT then use atoi()</td></tr>
 <tr><td> BLOB </td><td>    FLOAT </td><td> Convert to TEXT then use atof()</td></tr>
-<tr><td> BLOB </td><td>    TEXT </td><td>  Add a \000 terminator if needed</td></tr>
+<tr><td> BLOB </td><td>    TEXT </td><td>  Add a \\000 terminator if needed</td></tr>
 </table>
+</blockquote>
 }
 
 api {} {
@@ -687,8 +700,8 @@ char *sqlite3_vmprintf(const char*, va_list);
 
  All of the usual printf formatting options apply.  In addition, there
  is a "%q" option.  %q works like %s in that it substitutes a null-terminated
- string from the argument list.  But %q also doubles every '\'' character.
- %q is designed for use inside a string literal.  By doubling each '\''
+ string from the argument list.  But %q also doubles every '\\'' character.
+ %q is designed for use inside a string literal.  By doubling each '\\''
  character it escapes that character and allows it to be inserted into
  the string.
 
@@ -705,7 +718,7 @@ char *sqlite3_vmprintf(const char*, va_list);
        callback1, 0, 0, zText);
   </pre></blockquote>
 
- Because the %q format string is used, the '\'' character in zText
+ Because the %q format string is used, the '\\'' character in zText
  is escaped and the SQL generated is as follows:
 
  <blockquote><pre>
@@ -894,8 +907,8 @@ int sqlite3_set_authorizer(
 } {
  This routine registers a callback with the SQLite library.  The
  callback is invoked (at compile-time, not at run-time) for each
- attempt to access a column of a table in the database.  The callback
- returns SQLITE_OK if access is allowed, SQLITE_DENY if the entire
+ attempt to access a column of a table in the database.  The callback should
+ return SQLITE_OK if access is allowed, SQLITE_DENY if the entire
  SQL statement should be aborted with an error and SQLITE_IGNORE
  if the column should be treated as a NULL value.
 
@@ -910,7 +923,12 @@ int sqlite3_set_authorizer(
  input SQL code.
 
  The return value of the authorization function should be one of the
- constants SQLITE_DENY or SQLITE_IGNORE.
+ constants SQLITE_OK, SQLITE_DENY, or SQLITE_IGNORE.
+
+ The intent of this routine is to allow applications to safely execute
+ user-entered SQL.  An appropriate callback can deny the user-entered
+ SQL access certain operations (ex: anything that changes the database)
+ or to deny access to certain tables or columns within the database.
 }
 
 api {} {
@@ -982,9 +1000,12 @@ int sqlite3_value_type(sqlite3_value*);
  This group of routines returns information about parameters to
  a user-defined function.  Function implementations use these routines
  to access their parameters.  These routines are the same as the
- sqlite3_column_* routines except that these routines take a single
+ sqlite3_column_... routines except that these routines take a single
  sqlite3_value* pointer instead of an sqlite3_stmt* and an integer
  column number.
+
+ See the documentation under sqlite3_column_blob for additional
+ information.
 }
 
 set n 0
