@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.154 2003/01/13 23:27:33 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.155 2003/01/16 16:28:54 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -225,6 +225,10 @@ struct sqlite {
   int magic;                    /* Magic number for detect library misuse */
   int nChange;                  /* Number of rows changed */
   int recursionDepth;           /* Number of nested calls to sqlite_exec() */
+#ifndef SQLITE_OMIT_TRACE
+  void (*xTrace)(void*,const char*);     /* Trace function */
+  void *pTraceArg;                       /* Argument to the trace function */
+#endif
 #ifndef SQLITE_OMIT_AUTHORIZATION
   int (*xAuth)(void*,int,const char*,const char*); /* Access Auth function */
   void *pAuthArg;               /* 1st argument to the access auth function */

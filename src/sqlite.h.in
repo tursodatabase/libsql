@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.38 2003/01/14 02:49:28 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.39 2003/01/16 16:28:54 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -553,6 +553,13 @@ int sqlite_set_authorizer(
 /* #define SQLITE_OK  0   // Allow access (This is actually defined above) */
 #define SQLITE_DENY   1   /* Abort the SQL statement with an error */
 #define SQLITE_IGNORE 2   /* Don't allow access, but don't generate an error */
+
+/*
+** Register a function that is called at every invocation of sqlite_exec().
+** This function can be used (for example) to generate a log file of all
+** SQL executed against a database.
+*/
+void *sqlite_trace(sqlite*, void(*xTrace)(void*,const char*), void*);
 
 /*
 ** Attempt to open the file named in the argument as the auxiliary database
