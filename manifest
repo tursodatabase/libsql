@@ -1,5 +1,5 @@
-C Fix\sdatatype\sreporting\sand\scollating\ssequence\sselection\sso\sthat\sit\sworks\ncorrectly\son\sviews\sand\swith\sthe\sUNION,\sEXCEPT,\sand\sINTERCEPT\soperators.\s(CVS\s839)
-D 2003-01-18T20:11:06
+C Update\sthe\sspeed\scomparison\spage.\s(CVS\s840)
+D 2003-01-18T22:01:07
 F Makefile.in 6606854b1512f185b8e8c779b8d7fc2750463d64
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -143,18 +143,18 @@ F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/faq.tcl 06276ff6c3e369374bb83034cc9d4a7d3a2a34a1
 F www/fileformat.tcl a4b5c2c6e89b7d42d09f97fd4d7bbd39cbf24936
 F www/formatchng.tcl b4449e065d2da38b6563bdf12cf46cfe1d4d765e
-F www/index.tcl 374d30b92a753428baed933623fb9f4259fc5a5c
+F www/index.tcl b5265ca54a5124ec40bffb7c7943e072e074d61a
 F www/lang.tcl 1ea38a9fe867e4fed2220f519f5c0862e7022c53
 F www/mingw.tcl f1c7c0a7f53387dd9bb4f8c7e8571b7561510ebc
 F www/nulls.tcl 29497dac2bc5b437aa7e2e94577dad4d8933ed26
 F www/omitted.tcl 118062f40a203fcb88b8d68ef1d7c0073ac191ec
 F www/opcode.tcl 33c5f2061a05c5d227c72b84c080b3bf74c74f8b
 F www/quickstart.tcl fde79aa2de20074842b60f780800cdeee6a5dec2
-F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
+F www/speed.tcl 52759968401d81760fc01f9d3ab6242f6d2a7066
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 32a8e6e9771d636c0ad3042632d35865bc08585b
-R 04e23a1126d9810e8620977dfdd8daac
+P 71cc292dce59cf8224b205d1cdbff59ad12f1043
+R 843340c3fef7e6ee0ac6b3187554a951
 U drh
-Z d5604eb0c9b6db0f87d9ac88ab2eea6a
+Z 66212ef777c3998af30d067a457e17bb

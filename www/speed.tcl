@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the speed.html file.
 #
-set rcsid {$Id: speed.tcl,v 1.8 2002/08/24 18:24:58 drh Exp $ }
+set rcsid {$Id: speed.tcl,v 1.9 2003/01/18 22:01:07 drh Exp $ }
 
 puts {<html>
 <head>
@@ -19,25 +19,42 @@ puts {
 <h2>Executive Summary</h2>
 
 <p>A series of tests were run to measure the relative performance of
-SQLite 2.7.0, PostgreSQL 7.1.3, and MySQL 3.23.41.
+SQLite 2.7.6, PostgreSQL 7.1.3, and MySQL 3.23.41.
 The following are general
 conclusions drawn from these experiments:
 </p>
 
 <ul>
 <li><p>
-  SQLite 2.7.0 is significantly faster than PostgreSQL 7.1.3
-  for most common operations.
+  SQLite 2.7.6 is significantly faster (sometimes as much as 10 or
+  20 times faster) than PostgreSQL 7.1.3
+  for most common operations.  
 </p></li>
 <li><p>
-  The speed of SQLite 2.7.0 is similar to MySQL 3.23.41.
-  This is true in spite of the
-  fact that SQLite contains full transaction support whereas the
-  version of MySQL tested did not.
+  SQLite 2.7.6 is usually faster than MySQL 3.23.41 (sometimes
+  more than twice as fast) though for some operations such as
+  full table scans, it can be as much as 30% slower.
 </p></li>
+<li><p>
+  SQLite does not execute CREATE INDEX or DROP TABLE as fast as
+  the other databases.  But this as not seen is a problem because
+  those are infrequent operations.
+</p></li>
+</ul>
+
+<p>
+The results presented here come with the following caveats:
+</p>
+
+<ul>
 <li><p>
   These tests did not attempt to measure multi-user performance or
   optimization of complex queries involving multiple joins and subqueries.
+</p></li>
+<li><p>
+  These tests are on a relatively small (approximately 10 megabyte) database.
+  They do not measure how well the database engines scale to larger problems.
+</p></li>
 </ul>
 
 <h2>Test Environment</h2>
@@ -110,10 +127,10 @@ INSERT INTO t1 VALUES(999,24322,'twenty four thousand three hundred twenty two')
 INSERT INTO t1 VALUES(1000,94142,'ninety four thousand one hundred forty two');<br>
 
 </blockquote><table border=0 cellpadding=0 cellspacing=0>
-<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;3.613</td></tr>
-<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;0.086</td></tr>
-<tr><td>SQLite 2.7.0:</td><td align="right">&nbsp;&nbsp;&nbsp;8.672</td></tr>
-<tr><td>SQLite 2.7.0 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;0.286</td></tr>
+<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;3.658</td></tr>
+<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;0.109</td></tr>
+<tr><td>SQLite 2.7.6:</td><td align="right">&nbsp;&nbsp;&nbsp;7.177</td></tr>
+<tr><td>SQLite 2.7.6 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;0.266</td></tr>
 </table>
 
 <p>SQLite must close and reopen the database file, and thus invalidate
@@ -121,6 +138,7 @@ its cache, for each SQL statement.  In spite of this, the asynchronous
 version of SQLite is still nearly as fast as MySQL.  Notice how much slower
 the synchronous version is, however.  This is due to the necessity of
 calling <b>fsync()</b> after each SQL statement.</p>
+
 
 <h2>Test 2: 25000 INSERTs in a transaction</h2>
 <blockquote>
@@ -133,10 +151,10 @@ INSERT INTO t2 VALUES(25000,473330,'four hundred seventy three thousand three hu
 COMMIT;<br>
 
 </blockquote><table border=0 cellpadding=0 cellspacing=0>
-<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;4.430</td></tr>
-<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;2.025</td></tr>
-<tr><td>SQLite 2.7.0:</td><td align="right">&nbsp;&nbsp;&nbsp;0.885</td></tr>
-<tr><td>SQLite 2.7.0 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;0.753</td></tr>
+<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;5.058</td></tr>
+<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;2.271</td></tr>
+<tr><td>SQLite 2.7.6:</td><td align="right">&nbsp;&nbsp;&nbsp;0.912</td></tr>
+<tr><td>SQLite 2.7.6 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;0.798</td></tr>
 </table>
 
 <p>
@@ -148,62 +166,66 @@ this way, SQLite is much faster than either PostgreSQL and MySQL.
 
 <h2>Test 3: 100 SELECTs without an index</h2>
 <blockquote>
+BEGIN;<br>
 SELECT count(*), avg(b) FROM t2 WHERE b>=0 AND b<1000;<br>
 SELECT count(*), avg(b) FROM t2 WHERE b>=100 AND b<1100;<br>
-SELECT count(*), avg(b) FROM t2 WHERE b>=200 AND b<1200;<br>
-<i>... 94 lines omitted</i><br>
-SELECT count(*), avg(b) FROM t2 WHERE b>=9700 AND b<10700;<br>
+<i>... 96 lines omitted</i><br>
 SELECT count(*), avg(b) FROM t2 WHERE b>=9800 AND b<10800;<br>
 SELECT count(*), avg(b) FROM t2 WHERE b>=9900 AND b<10900;<br>
+COMMIT;<br>
 
 </blockquote><table border=0 cellpadding=0 cellspacing=0>
-<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;3.274</td></tr>
-<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;2.624</td></tr>
-<tr><td>SQLite 2.7.0:</td><td align="right">&nbsp;&nbsp;&nbsp;5.585</td></tr>
-<tr><td>SQLite 2.7.0 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;5.443</td></tr>
+<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;3.657</td></tr>
+<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;3.368</td></tr>
+<tr><td>SQLite 2.7.6:</td><td align="right">&nbsp;&nbsp;&nbsp;4.386</td></tr>
+<tr><td>SQLite 2.7.6 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;4.314</td></tr>
 </table>
 
 <p>
 This test does 100 queries on a 25000 entry table without an index,
-thus requiring a full table scan.  SQLite is about half the speed of
-PostgreSQL and MySQL.  This is because SQLite stores all data as strings
-and must therefore call <b>strtod()</b> 5 million times in the
+thus requiring a full table scan.  SQLite is about 20% or 30% slower
+than PostgreSQL and MySQL.  The reason for this is believed to be
+because SQLite stores all data as strings
+and must therefore do 5 million string-to-number conversions in the
 course of evaluating the WHERE clauses.  Both PostgreSQL and MySQL
 store data as binary values where appropriate and can forego
 this conversion effort.
 </p>
 
+
 <h2>Test 4: 100 SELECTs on a string comparison</h2>
 <blockquote>
+BEGIN;<br>
 SELECT count(*), avg(b) FROM t2 WHERE c LIKE '%one%';<br>
 SELECT count(*), avg(b) FROM t2 WHERE c LIKE '%two%';<br>
-SELECT count(*), avg(b) FROM t2 WHERE c LIKE '%three%';<br>
-<i>... 94 lines omitted</i><br>
-SELECT count(*), avg(b) FROM t2 WHERE c LIKE '%ninety eight%';<br>
+<i>... 96 lines omitted</i><br>
 SELECT count(*), avg(b) FROM t2 WHERE c LIKE '%ninety nine%';<br>
 SELECT count(*), avg(b) FROM t2 WHERE c LIKE '%one hundred%';<br>
+COMMIT;<br>
 
 </blockquote><table border=0 cellpadding=0 cellspacing=0>
-<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;14.511</td></tr>
-<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;4.616</td></tr>
-<tr><td>SQLite 2.7.0:</td><td align="right">&nbsp;&nbsp;&nbsp;5.966</td></tr>
-<tr><td>SQLite 2.7.0 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;5.918</td></tr>
+<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;15.967</td></tr>
+<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;5.088</td></tr>
+<tr><td>SQLite 2.7.6:</td><td align="right">&nbsp;&nbsp;&nbsp;5.419</td></tr>
+<tr><td>SQLite 2.7.6 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;5.367</td></tr>
 </table>
 
 <p>
-This set of 100 queries uses string comparisons instead of
-numerical comparisions.  As a result, the speed of SQLite is
-compariable to or better then PostgreSQL and MySQL.
+This test still does 100 full table scans but it uses
+uses string comparisons instead of numerical comparisions.
+SQLite is almost three times faster than PostgreSQL here.  But it is
+still 15% slower than MySQL.  MySQL appears to be very good
+at doing full table scans.
 </p>
 
 <h2>Test 5: Creating an index</h2>
 <blockquote>
 CREATE INDEX i2a ON t2(a);<br>CREATE INDEX i2b ON t2(b);
 </blockquote><table border=0 cellpadding=0 cellspacing=0>
-<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;0.483</td></tr>
-<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;0.304</td></tr>
-<tr><td>SQLite 2.7.0:</td><td align="right">&nbsp;&nbsp;&nbsp;0.779</td></tr>
-<tr><td>SQLite 2.7.0 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;0.637</td></tr>
+<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;0.431</td></tr>
+<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;0.340</td></tr>
+<tr><td>SQLite 2.7.6:</td><td align="right">&nbsp;&nbsp;&nbsp;0.814</td></tr>
+<tr><td>SQLite 2.7.6 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;0.675</td></tr>
 </table>
 
 <p>
@@ -223,15 +245,15 @@ SELECT count(*), avg(b) FROM t2 WHERE b>=499800 AND b<499900;<br>
 SELECT count(*), avg(b) FROM t2 WHERE b>=499900 AND b<500000;<br>
 
 </blockquote><table border=0 cellpadding=0 cellspacing=0>
-<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;4.939</td></tr>
-<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;1.335</td></tr>
-<tr><td>SQLite 2.7.0:</td><td align="right">&nbsp;&nbsp;&nbsp;1.165</td></tr>
-<tr><td>SQLite 2.7.0 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;1.144</td></tr>
+<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;5.369</td></tr>
+<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;1.489</td></tr>
+<tr><td>SQLite 2.7.6:</td><td align="right">&nbsp;&nbsp;&nbsp;1.423</td></tr>
+<tr><td>SQLite 2.7.6 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;1.358</td></tr>
 </table>
 
 <p>
 This test runs a set of 5000 queries that are similar in form to
-those in test 3.  But now instead of being half as fast, SQLite
+those in test 3.  But now instead of being slower, SQLite
 is faster than both PostgreSQL and MySQL.
 </p>
 
@@ -246,15 +268,18 @@ UPDATE t1 SET b=b*2 WHERE a>=9990 AND a<10000;<br>
 COMMIT;<br>
 
 </blockquote><table border=0 cellpadding=0 cellspacing=0>
-<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;1.536</td></tr>
-<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;7.281</td></tr>
-<tr><td>SQLite 2.7.0:</td><td align="right">&nbsp;&nbsp;&nbsp;0.817</td></tr>
-<tr><td>SQLite 2.7.0 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;0.726</td></tr>
+<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;1.740</td></tr>
+<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;8.162</td></tr>
+<tr><td>SQLite 2.7.6:</td><td align="right">&nbsp;&nbsp;&nbsp;0.635</td></tr>
+<tr><td>SQLite 2.7.6 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;0.608</td></tr>
 </table>
 
 <p>
-Here is a case where MySQL is over 10 times slower than SQLite.
-The reason for this is unclear.
+For this particular UPDATE test, MySQL is consistently
+five or ten times
+slower than PostgreSQL and SQLite.  I do not know why.  MySQL is
+normally a very fast engine.  Perhaps this problem has been addressed
+in later versions of MySQL.
 </p>
 
 <h2>Test 8: 25000 UPDATEs with an index</h2>
@@ -268,16 +293,16 @@ UPDATE t2 SET b=423958 WHERE a=25000;<br>
 COMMIT;<br>
 
 </blockquote><table border=0 cellpadding=0 cellspacing=0>
-<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;29.318</td></tr>
-<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;7.514</td></tr>
-<tr><td>SQLite 2.7.0:</td><td align="right">&nbsp;&nbsp;&nbsp;7.681</td></tr>
-<tr><td>SQLite 2.7.0 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;7.852</td></tr>
+<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;32.118</td></tr>
+<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;8.132</td></tr>
+<tr><td>SQLite 2.7.6:</td><td align="right">&nbsp;&nbsp;&nbsp;4.109</td></tr>
+<tr><td>SQLite 2.7.6 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;3.712</td></tr>
 </table>
 
 <p>
-In this case MySQL is slightly faster than SQLite, though not by much.
-The difference is believed to have to do with the fact SQLite 
-handles the integers as strings instead of binary numbers.
+As recently as version 2.7.0, SQLite ran at about the same speed as
+MySQL on this test.  But recent optimizations to SQLite have doubled
+speed of UPDATEs.
 </p>
 
 <h2>Test 9: 25000 text UPDATEs with an index</h2>
@@ -291,72 +316,83 @@ UPDATE t2 SET c='three hundred forty seven thousand three hundred ninety three' 
 COMMIT;<br>
 
 </blockquote><table border=0 cellpadding=0 cellspacing=0>
-<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;50.020</td></tr>
-<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;5.841</td></tr>
-<tr><td>SQLite 2.7.0:</td><td align="right">&nbsp;&nbsp;&nbsp;5.346</td></tr>
-<tr><td>SQLite 2.7.0 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;5.393</td></tr>
+<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;55.309</td></tr>
+<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;6.585</td></tr>
+<tr><td>SQLite 2.7.6:</td><td align="right">&nbsp;&nbsp;&nbsp;2.474</td></tr>
+<tr><td>SQLite 2.7.6 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;1.800</td></tr>
 </table>
 
 <p>
-When updating a text field instead of an integer field,
-SQLite is slightly faster than MySQL.
+Here again, version 2.7.0 of SQLite used to run at about the same speed
+as MySQL.  But now version 2.7.6 is over two times faster than MySQL and
+over twenty times faster than PostgreSQL.
 </p>
 
 <h2>Test 10: INSERTs from a SELECT</h2>
 <blockquote>
-BEGIN;<br>INSERT INTO t1 SELECT * FROM t2;<br>INSERT INTO t2 SELECT * FROM t1;<br>COMMIT;
+BEGIN;<br>INSERT INTO t1 SELECT b,a,c FROM t2;<br>INSERT INTO t2 SELECT b,a,c FROM t1;<br>COMMIT;
 </blockquote><table border=0 cellpadding=0 cellspacing=0>
-<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;57.834</td></tr>
-<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;1.335</td></tr>
-<tr><td>SQLite 2.7.0:</td><td align="right">&nbsp;&nbsp;&nbsp;5.073</td></tr>
-<tr><td>SQLite 2.7.0 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;2.085</td></tr>
+<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;58.956</td></tr>
+<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;1.465</td></tr>
+<tr><td>SQLite 2.7.6:</td><td align="right">&nbsp;&nbsp;&nbsp;2.926</td></tr>
+<tr><td>SQLite 2.7.6 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;1.664</td></tr>
 </table>
 
 <p>
 The poor performance of PostgreSQL in this case appears to be due to its
 synchronous behavior.  The CPU was mostly idle the test run.  Presumably,
 PostgreSQL was spending most of its time waiting on disk I/O to complete.
-</p>
-
-<p>
-SQLite is slower than MySQL because it creates a temporary table to store
-the result of the query, then does an insert from the temporary table.
-A future enhancement that moves data directly from teh query into the
-insert table should double the speed of SQLite.
+I'm not sure why SQLite performs poorly here.  It use to be quicker at this
+test, but the same enhancements that sped up the UPDATE logic seem to have
+slowed down this test.
 </p>
 
 <h2>Test 11: DELETE without an index</h2>
 <blockquote>
 DELETE FROM t2 WHERE c LIKE '%fifty%';
 </blockquote><table border=0 cellpadding=0 cellspacing=0>
-<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;0.733</td></tr>
-<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;0.768</td></tr>
-<tr><td>SQLite 2.7.0:</td><td align="right">&nbsp;&nbsp;&nbsp;5.418</td></tr>
-<tr><td>SQLite 2.7.0 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;0.668</td></tr>
+<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;1.365</td></tr>
+<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;0.849</td></tr>
+<tr><td>SQLite 2.7.6:</td><td align="right">&nbsp;&nbsp;&nbsp;4.005</td></tr>
+<tr><td>SQLite 2.7.6 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;0.631</td></tr>
 </table>
+
+<p>
+The synchronous version of SQLite is the slowest of the group in this test,
+but the asynchronous version is the fastest.  SQLite used about the same
+amount of CPU time in both versions; the difference is the extra time needed
+to write information to the disk surface.
+</p>
 
 <h2>Test 12: DELETE with an index</h2>
 <blockquote>
 DELETE FROM t2 WHERE a>10 AND a<20000;
 </blockquote><table border=0 cellpadding=0 cellspacing=0>
-<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;0.867</td></tr>
-<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;2.068</td></tr>
-<tr><td>SQLite 2.7.0:</td><td align="right">&nbsp;&nbsp;&nbsp;1.453</td></tr>
-<tr><td>SQLite 2.7.0 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;0.745</td></tr>
+<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;1.340</td></tr>
+<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;2.167</td></tr>
+<tr><td>SQLite 2.7.6:</td><td align="right">&nbsp;&nbsp;&nbsp;2.344</td></tr>
+<tr><td>SQLite 2.7.6 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;0.858</td></tr>
 </table>
 
+<p>
+This test is significant because it is one of the few where
+PostgreSQL is faster than MySQL.  The asynchronous SQLite is,
+however, faster then both the other two.
+</p>
+
+</table>
 <h2>Test 13: A big INSERT after a big DELETE</h2>
 <blockquote>
 INSERT INTO t2 SELECT * FROM t1;
 </blockquote><table border=0 cellpadding=0 cellspacing=0>
-<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;66.099</td></tr>
-<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;1.663</td></tr>
-<tr><td>SQLite 2.7.0:</td><td align="right">&nbsp;&nbsp;&nbsp;4.029</td></tr>
-<tr><td>SQLite 2.7.0 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;1.729</td></tr>
+<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;12.672</td></tr>
+<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;1.837</td></tr>
+<tr><td>SQLite 2.7.6:</td><td align="right">&nbsp;&nbsp;&nbsp;3.076</td></tr>
+<tr><td>SQLite 2.7.6 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;1.570</td></tr>
 </table>
 
 <p>
-Earlier versions of SQLite would show decreasing performance after a
+Some older versions of SQLite would show decreasing performance after a
 sequence DELETEs followed by new INSERTs.  As this test shows, the
 problem has now been resolved.
 </p>
@@ -366,32 +402,44 @@ problem has now been resolved.
 BEGIN;<br>
 DELETE FROM t1;<br>
 INSERT INTO t1 VALUES(1,29676,'twenty nine thousand six hundred seventy six');<br>
-<i>... 2997 lines omitted</i><br>
-INSERT INTO t1 VALUES(2999,37835,'thirty seven thousand eight hundred thirty five');<br>
-INSERT INTO t1 VALUES(3000,97817,'ninety seven thousand eight hundred seventeen');<br>
+<i>... 11997 lines omitted</i><br>
+INSERT INTO t1 VALUES(11999,71818,'seventy one thousand eight hundred eighteen');<br>
+INSERT INTO t1 VALUES(12000,58579,'fifty eight thousand five hundred seventy nine');<br>
 COMMIT;<br>
 
 </blockquote><table border=0 cellpadding=0 cellspacing=0>
-<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;1.168</td></tr>
-<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;0.866</td></tr>
-<tr><td>SQLite 2.7.0:</td><td align="right">&nbsp;&nbsp;&nbsp;0.288</td></tr>
-<tr><td>SQLite 2.7.0 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;0.155</td></tr>
+<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;4.165</td></tr>
+<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;1.733</td></tr>
+<tr><td>SQLite 2.7.6:</td><td align="right">&nbsp;&nbsp;&nbsp;0.652</td></tr>
+<tr><td>SQLite 2.7.6 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;0.465</td></tr>
 </table>
+
+<p>
+SQLite is very good at doing INSERTs within a transaction, which probably
+explains why it is so much faster than the other databases at this test.
+</p>
 
 <h2>Test 15: DROP TABLE</h2>
 <blockquote>
 DROP TABLE t1;<br>DROP TABLE t2;
 </blockquote><table border=0 cellpadding=0 cellspacing=0>
-<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;0.100</td></tr>
-<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;0.012</td></tr>
-<tr><td>SQLite 2.7.0:</td><td align="right">&nbsp;&nbsp;&nbsp;0.572</td></tr>
-<tr><td>SQLite 2.7.0 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;0.168</td></tr>
+<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;0.133</td></tr>
+<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;0.014</td></tr>
+<tr><td>SQLite 2.7.6:</td><td align="right">&nbsp;&nbsp;&nbsp;0.873</td></tr>
+<tr><td>SQLite 2.7.6 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;0.224</td></tr>
 </table>
 
 <p>
 SQLite is slower than the other databases when it comes to dropping tables.
-This is not seen as a big problem, however, since DROP TABLE is seldom
-used in speed-critical situations.
+This probably is because when SQLite drops a table, it has to go through and
+erase the records in the database file that deal with that table.  MySQL and
+PostgreSQL, on the other hand, use separate files to represent each table
+so they can drop a table simply by deleting a file, which is much faster.
+</p>
+
+<p>
+On the other hand, dropping tables is not a very common operation 
+so if SQLite takes a little longer, that is not seen as a big problem.
 </p>
 
 }
