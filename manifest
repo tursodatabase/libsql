@@ -1,5 +1,5 @@
-C Change\sthe\sOP_ListXX\sopcodes\sto\suse\s64\sbit\sintegers\s(CVS\s1372)
-D 2004-05-13T12:32:12
+C Changes\sto\smake\sregression\stests\sin\srowid.test\spass.\s(CVS\s1373)
+D 2004-05-13T13:38:52
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -23,7 +23,7 @@ F sqlite.def fc4f5734786fe4743cfe2aa98eb2da4b089edb5f
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F src/attach.c c315c58cb16fd6e913b3bfa6412aedecb4567fa5
 F src/auth.c 5c2f0bea4729c98c2be3b69d6b466fc51448fe79
-F src/btree.c e1b44c72982a799efd6ea62d40da523bf6a49029
+F src/btree.c bda57fe687cfa28905e5daebb0b706187649bd6b
 F src/btree.h 6f51ad0ffebfba71295fcacdbe86007512200050
 F src/btree_rb.c 9d7973e266ee6f9c61ce592f68742ce9cd5b10e5
 F src/build.c f25e4ac9f102efd70188bc09a459c2b461fe2135
@@ -63,7 +63,7 @@ F src/update.c 6ca82fc4a0fb4d7f134e961921c906f6f3c8bc74
 F src/utf.c fc799748d43fe1982d157b871e3e420a19c85d4f
 F src/util.c 778a8cd03ad6e52778602d20a3132c7d2d1b0a0c
 F src/vacuum.c c134702e023db8778e6be59ac0ea7b02315b5476
-F src/vdbe.c 7b81b1d62480d211325ed0eb283e26dd770f81c3
+F src/vdbe.c a6ba83386f8137cb5aff7980a519c1529052849a
 F src/vdbe.h 94457ca73bae972dc61bca33a4dccc2e6e14e2f8
 F src/vdbeInt.h d53f38078ca4727c5f2851bc47ad648645bfab82
 F src/vdbeaux.c 8bf71f7ba91a208c5e0a8bcf5da03889bc858041
@@ -120,7 +120,7 @@ F test/pager2.test 7ff175a28484fd324df9315dfe35f6fb159910ec
 F test/pragma.test 06c4e51998dd68115ef7a60abeeff7accf198f83
 F test/printf.test 46b3d07d59d871d0831b4a657f6dfcafe0574850
 F test/progress.test 701b6115c2613128ececdfe1398a1bd0e1a4cfb3 x
-F test/quick.test cffda9b1cbd67b14053fc6f957ac693c1db7f838
+F test/quick.test b9dc7ad37e96da28f7d0c5e9e154024307ef568b
 F test/quote.test 08f23385c685d3dc7914ec760d492cacea7f6e3d
 F test/rowid.test 863e6e75878cccf03d166fe52023f20e09508683
 F test/select1.test 3bfcccd2eadcddbb07f1f5da6550aee8484ea4fb
@@ -191,7 +191,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P a61eefa081c219704d9e6c4ee20ef9bf01d76b7f
-R ed87f1bc49271eeffc069634a6ae79d0
+P da9b3dce334bde99360db45b4a3d41be519ec2d1
+R b8ea62c9a072cbdad240805f1fb27046
 U danielk1977
-Z a80b8fbaaeb4431247a1a30b8750b9b5
+Z 37e1d6f2ec906eb83a05d292d4e622d2

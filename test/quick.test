@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: quick.test,v 1.9 2004/05/13 11:46:00 danielk1977 Exp $
+# $Id: quick.test,v 1.10 2004/05/13 13:38:52 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -33,7 +33,6 @@ lappend EXCLUDE ioerr.test        ;# seg-faults (?)
 lappend EXCLUDE memdb.test        ;# fails - malformed database
 lappend EXCLUDE misc3.test        ;# seg-faults (?)
 lappend EXCLUDE printf.test       ;# sqlite3_XX vs sqlite_XX problem
-lappend EXCLUDE rowid.test        ;# sql logic error
 lappend EXCLUDE table.test        ;# assert() fails in pager
 lappend EXCLUDE trans.test        ;# assert() fails in pager
 lappend EXCLUDE vacuum.test       ;# seg-fault

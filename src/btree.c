@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.132 2004/05/13 11:34:16 danielk1977 Exp $
+** $Id: btree.c,v 1.133 2004/05/13 13:38:52 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -3284,7 +3284,7 @@ int sqlite3BtreeInsert(
   if( pCur->status ){
     return pCur->status;  /* A rollback destroyed this cursor */
   }
-  if( !pBt->inTrans || nKey+nData==0 ){
+  if( !pBt->inTrans ){
     /* Must start a transaction before doing an insert */
     return pBt->readOnly ? SQLITE_READONLY : SQLITE_ERROR;
   }

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.286 2004/05/13 11:34:16 danielk1977 Exp $
+** $Id: vdbe.c,v 1.287 2004/05/13 13:38:52 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -3227,7 +3227,7 @@ case OP_PutStrKey: {
   if( ((pC = &p->aCsr[i])->pCursor!=0 || pC->pseudoTable) ){
     char *zKey;
     i64 nKey; 
-    int iKey;
+    i64 iKey;
     if( pOp->opcode==OP_PutStrKey ){
       Stringify(pNos);
       nKey = pNos->n;
