@@ -1,5 +1,5 @@
-C Fix\scomparison\sfunctions\sso\sthat\sthey\sare\sconsistent\swith\sthe\sorder\nof\selements\sin\sindices.\s\sFix\sthe\shandling\sof\slarge\sintegers.\s(CVS\s317)
-D 2001-11-24T00:31:46
+C Version\s2.1.3\s(CVS\s458)
+D 2001-11-24T00:45:00
 F Makefile.in 352fed589f09dd94347e0bb391d047118ebd6105
 F Makefile.template b6c3d3ba089e97e3a721e967f3151350f36cb42b
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -117,7 +117,7 @@ F www/speed.tcl 212a91d555384e01873160d6a189f1490c791bc2
 F www/sqlite.tcl 6a21242a272e9c0939a04419a51c3d50cae33e3e
 F www/tclsqlite.tcl 13d50723f583888fc80ae1a38247c0ab415066fa
 F www/vdbe.tcl eb4e1768cffa266cbbb7133488022a7a6cb278d9
-P f14835df32b4a16c840b8827f0c17f0e6d526312
+P fc2aae04578c305304a45ec6b76d3ab216cc7526
 R 4107b50dd67a5b31593969d21ca32f97
 U drh
-Z 70fea61a18707bc0d908d9bbb2153332
+Z e3ec2c565db6eedb5055591c44e9acbb
