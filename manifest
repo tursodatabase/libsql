@@ -1,5 +1,5 @@
-C Increase\sthe\sversion\snumber\sand\supdate\sthe\schange\slog\sprior\sto\sthe\snext\nrelease.\s(CVS\s1158)
-D 2004-01-06T01:27:00
+C Additional\sinteger\soverflow\sboundary\scase\stests.\s(CVS\s1159)
+D 2004-01-06T01:52:34
 F Makefile.in 0515ff9218ad8d5a8f6220f0494b8ef94c67013b
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -106,7 +106,7 @@ F test/memleak.test a18e6810cae96d2f6f5136920267adbefc8e1e90
 F test/minmax.test 6d9b6d6ee34f42e2a58dffece1f76d35f446b3af
 F test/misc1.test 0b98d493b0cf55cb5f53e1f3df8107c166eecb5a
 F test/misc2.test 10c2ce26407d37411b96273e552d5095393732be
-F test/misc3.test 860233be672959b6d7df542adbeb0fc10103857c
+F test/misc3.test 73bdce2b7f82699fb4771e7acfbd37461263f59e
 F test/misuse.test a3aa2b18a97e4c409a1fcaff5151a4dd804a0162
 F test/notnull.test 7a08117a71e74b0321aaa937dbeb41a09d6eb1d0
 F test/null.test c14d0f4739f21e929b8115b72bf0c765b6bb1721
@@ -179,7 +179,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P b8381d9fe99273507e8626638110646801afef06
-R 9c3dd499ef31e5b7bc1f91ca182990f4
+P b99b68d026a0d58338a1d578e15a40dcdcdb47a9
+R 8b39439d9668f97077082784fdb205dc
 U drh
-Z 4ae77a65485f694e65593b5225d3c0ff
+Z 6ec98742aa5a8db9eba259ce7a8fa08b
