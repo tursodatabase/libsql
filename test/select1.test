@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the SELECT statement.
 #
-# $Id: select1.test,v 1.21 2002/02/28 03:14:18 drh Exp $
+# $Id: select1.test,v 1.22 2002/03/02 17:04:09 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -97,10 +97,22 @@ do_test select1-1.13 {
            FROM test1, test2}
 } {1.1 22}
 
-execsql {DROP TABLE test2}
-execsql {DELETE FROM test1}
-execsql {INSERT INTO test1 VALUES(11,22)}
-execsql {INSERT INTO test1 VALUES(33,44)}
+set long {This is a string that is too big to fit inside a NBFS buffer}
+do_test select1-2.0 {
+  execsql "
+    DROP TABLE test2;
+    DELETE FROM test1;
+    INSERT INTO test1 VALUES(11,22);
+    INSERT INTO test1 VALUES(33,44);
+    CREATE TABLE t3(a,b);
+    INSERT INTO t3 VALUES('abc',NULL);
+    INSERT INTO t3 VALUES(NULL,'xyz');
+    INSERT INTO t3 SELECT * FROM test1;
+    CREATE TABLE t4(a,b);
+    INSERT INTO t4 VALUES(NULL,'$long');
+    SELECT * FROM t3;
+  "
+} {abc {} {} xyz 11 22 33 44}
 
 # Error messges from sqliteExprCheck
 #
@@ -124,6 +136,15 @@ do_test select1-2.5 {
   set v [catch {execsql {SELECT COUNT(*)+1 FROM test1}} msg]
   lappend v $msg
 } {0 3}
+do_test select1-2.5.1 {
+  execsql {SELECT count(*),count(a),count(b) FROM t3}
+} {4 3 3}
+do_test select1-2.5.2 {
+  execsql {SELECT count(*),count(a),count(b) FROM t4}
+} {1 0 1}
+do_test select1-2.5.3 {
+  execsql {SELECT count(*),count(a),count(b) FROM t4 WHERE b=5}
+} {0 0 0}
 do_test select1-2.6 {
   set v [catch {execsql {SELECT min(*) FROM test1}} msg]
   lappend v $msg
@@ -136,6 +157,15 @@ do_test select1-2.8 {
   set v [catch {execsql {SELECT MIN(f1,f2) FROM test1}} msg]
   lappend v [lsort $msg]
 } {0 {11 33}}
+do_test select1-2.8.1 {
+  execsql {SELECT coalesce(min(a),'xyzzy') FROM t3}
+} {xyzzy}
+do_test select1-2.8.2 {
+  execsql {SELECT min(coalesce(a,'xyzzy')) FROM t3}
+} {11}
+do_test select1-2.8.3 {
+  execsql {SELECT min(b), min(b) FROM t4}
+} [list $long $long]
 do_test select1-2.9 {
   set v [catch {execsql {SELECT MAX(*) FROM test1}} msg]
   lappend v $msg
@@ -156,6 +186,12 @@ do_test select1-2.13 {
   set v [catch {execsql {SELECT MAX(f1)+1 FROM test1}} msg]
   lappend v $msg
 } {0 34}
+do_test select1-2.13.1 {
+  execsql {SELECT coalesce(max(a),'xyzzy') FROM t3}
+} {abc}
+do_test select1-2.13.1 {
+  execsql {SELECT max(coalesce(a,'xyzzy')) FROM t3}
+} {xyzzy}
 do_test select1-2.14 {
   set v [catch {execsql {SELECT SUM(*) FROM test1}} msg]
   lappend v $msg
@@ -172,6 +208,9 @@ do_test select1-2.17 {
   set v [catch {execsql {SELECT SUM(f1)+1 FROM test1}} msg]
   lappend v $msg
 } {0 45}
+do_test select1-2.17.1 {
+  execsql {SELECT sum(a) FROM t3}
+} {44}
 do_test select1-2.18 {
   set v [catch {execsql {SELECT XYZZY(f1) FROM test1}} msg]
   lappend v $msg

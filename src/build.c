@@ -17,7 +17,7 @@
 **     DROP TABLE
 **     CREATE INDEX
 **     DROP INDEX
-**     creating expressions and ID lists
+**     creating ID lists
 **     COPY
 **     VACUUM
 **     BEGIN TRANSACTION
@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.80 2002/02/27 01:47:12 drh Exp $
+** $Id: build.c,v 1.81 2002/03/02 17:04:08 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -791,7 +791,7 @@ void sqliteEndTable(Parse *pParse, Token *pEnd, Select *pSelect){
       int op = p->isTemp ? OP_OpenWrAux : OP_OpenWrite;
       sqliteVdbeAddOp(v, op, 1, 0);
       pParse->nTab = 2;
-      sqliteSelect(pParse, pSelect, SRT_Table, 1);
+      sqliteSelect(pParse, pSelect, SRT_Table, 1, 0, 0, 0);
     }
     sqliteEndWriteOperation(pParse);
   }

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.45 2002/02/23 02:32:10 drh Exp $
+** $Id: insert.c,v 1.46 2002/03/02 17:04:08 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -84,7 +84,7 @@ void sqliteInsert(
     int rc;
     srcTab = pParse->nTab++;
     sqliteVdbeAddOp(v, OP_OpenTemp, srcTab, 0);
-    rc = sqliteSelect(pParse, pSelect, SRT_Table, srcTab);
+    rc = sqliteSelect(pParse, pSelect, SRT_Table, srcTab, 0,0,0);
     if( rc || pParse->nErr || sqlite_malloc_failed ) goto insert_cleanup;
     assert( pSelect->pEList );
     nColumn = pSelect->pEList->nExpr;
@@ -94,12 +94,9 @@ void sqliteInsert(
     srcTab = -1;
     assert( pList );
     nColumn = pList->nExpr;
-    for(i=0; i<nColumn; i++){
-      sqliteExprResolveInSelect(pParse, pList->a[i].pExpr);
-    }
     dummy.nId = 0;
     for(i=0; i<nColumn; i++){
-      if( sqliteExprResolveIds(pParse, &dummy, 0, pList->a[i].pExpr) ){
+      if( sqliteExprResolveIds(pParse, 0, &dummy, 0, pList->a[i].pExpr) ){
         goto insert_cleanup;
       }
     }
@@ -183,6 +180,7 @@ void sqliteInsert(
     sqliteVdbeAddOp(v, openOp, idx+base, pIdx->tnum);
     sqliteVdbeChangeP3(v, -1, pIdx->zName, P3_STATIC);
   }
+  pParse->nTab += idx;
 
   /* If the data source is a SELECT statement, then we have to create
   ** a loop because there might be multiple rows of data.  If the data

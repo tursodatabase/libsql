@@ -13,7 +13,7 @@
 ** the WHERE clause of SQL statements.  Also found here are subroutines
 ** to generate VDBE code to evaluate expressions.
 **
-** $Id: where.c,v 1.37 2002/02/23 02:32:10 drh Exp $
+** $Id: where.c,v 1.38 2002/03/02 17:04:09 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -76,8 +76,7 @@ static int exprSplit(int nSlot, ExprInfo *aSlot, Expr *pExpr){
 ** the header comment on that routine for additional information.
 **
 ** "base" is the cursor number (the value of the iTable field) that
-** corresponds to the first entry in the table list.  This is the
-** same as pParse->nTab.
+** corresponds to the first entry in the table list. 
 */
 static int exprTableUsage(int base, Expr *p){
   unsigned int mask = 0;
@@ -119,8 +118,7 @@ static int allowedOp(int op){
 ** structure.
 **
 ** "base" is the cursor number (the value of the iTable field) that
-** corresponds to the first entry in the table list.  This is the
-** same as pParse->nTab.
+** corresponds to the first entry in the table list.
 */
 static void exprAnalyze(int base, ExprInfo *pInfo){
   Expr *pExpr = pInfo->p;
@@ -152,6 +150,7 @@ static void exprAnalyze(int base, ExprInfo *pInfo){
 */
 WhereInfo *sqliteWhereBegin(
   Parse *pParse,       /* The parser context */
+  int base,            /* VDBE cursor index for left-most table in pTabList */
   IdList *pTabList,    /* A list of all tables */
   Expr *pWhere,        /* The WHERE clause */
   int pushKey          /* If TRUE, leave the table key on the stack */
@@ -164,8 +163,6 @@ WhereInfo *sqliteWhereBegin(
   int nExpr;           /* Number of subexpressions in the WHERE clause */
   int loopMask;        /* One bit set for each outer loop */
   int haveKey;         /* True if KEY is on the stack */
-  int base;            /* First available index for OP_Open opcodes */
-  int nCur;            /* Next unused cursor number */
   int aDirect[32];     /* If TRUE, then index this table using ROWID */
   int iDirectEq[32];   /* Term of the form ROWID==X for the N-th table */
   int iDirectLt[32];   /* Term of the form ROWID<X or ROWID<=X */
@@ -186,9 +183,8 @@ WhereInfo *sqliteWhereBegin(
   }
   pWInfo->pParse = pParse;
   pWInfo->pTabList = pTabList;
-  base = pWInfo->base = pParse->nTab;
-  nCur = base + pTabList->nId;
-  pParse->nTab += nCur*2;
+  pWInfo->base = base;
+  pWInfo->peakNTab = pWInfo->savedNTab = pParse->nTab;
 
   /* Split the WHERE clause into as many as 32 separate subexpressions
   ** where each subexpression is separated by an AND operator.  Any additional
@@ -388,7 +384,8 @@ WhereInfo *sqliteWhereBegin(
     pWInfo->a[i].score = bestScore;
     loopMask |= 1<<idx;
     if( pBestIdx ){
-      pWInfo->a[i].iCur = nCur++;
+      pWInfo->a[i].iCur = pParse->nTab++;
+      pWInfo->peakNTab = pParse->nTab;
     }
   }
 
@@ -794,7 +791,9 @@ void sqliteWhereEnd(WhereInfo *pWInfo){
       sqliteVdbeAddOp(v, OP_Close, pLevel->iCur, 0);
     }
   }
-  pWInfo->pParse->nTab = base;
+  if( pWInfo->pParse->nTab==pWInfo->peakNTab ){
+    pWInfo->pParse->nTab = pWInfo->savedNTab;
+  }
   sqliteFree(pWInfo);
   return;
 }

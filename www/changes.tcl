@@ -28,6 +28,8 @@ chng {2002 Feb * (2.3.4)} {
 <li>Modifications to the "lemon" parser generator so that the parser tables
     are 4 times smaller.</li>
 <li>Added support for user-defined functions implemented in C.</li>
+<li>Added support for VIEWs.</li>
+<li>Added the subquery flattening optimizer.</li>
 }
 
 chng {2002 Feb 18 (2.3.3)} {

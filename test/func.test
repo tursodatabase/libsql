@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing built-in functions.
 #
-# $Id: func.test,v 1.8 2002/02/28 03:04:48 drh Exp $
+# $Id: func.test,v 1.9 2002/03/02 17:04:09 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -25,6 +25,17 @@ do_test func-0.0 {
   }
   execsql {SELECT t1 FROM tbl1 ORDER BY t1}
 } {free is program software this}
+do_test func-0.1 {
+  execsql {
+     CREATE TABLE t2(a);
+     INSERT INTO t2 VALUES(1);
+     INSERT INTO t2 VALUES(NULL);
+     INSERT INTO t2 VALUES(345);
+     INSERT INTO t2 VALUES(NULL);
+     INSERT INTO t2 VALUES(67890);
+     SELECT * FROM t2;
+  }
+} {1 {} 345 {} 67890}
 
 # Check out the length() function
 #
@@ -43,6 +54,9 @@ do_test func-1.3 {
   execsql {SELECT length(t1), count(*) FROM tbl1 GROUP BY length(t1)
            ORDER BY length(t1)}
 } {2 1 4 2 7 1 8 1}
+do_test func-1.4 {
+  execsql {SELECT length(a) FROM t2}
+} {1 0 3 0 5}
 
 # Check out the substr() function
 #
@@ -73,6 +87,12 @@ do_test func-2.7 {
 do_test func-2.8 {
   execsql {SELECT t1 FROM tbl1 ORDER BY substr(t1,2,20)}
 } {this software free program is}
+do_test func-2.9 {
+  execsql {SELECT substr(a,1,1) FROM t2}
+} {1 {} 3 {} 6}
+do_test func-2.10 {
+  execsql {SELECT substr(a,2,2) FROM t2}
+} {{} {} 45 {} 78}
 
 # Only do the following tests if TCL has UTF-8 capabilities and
 # the UTF-8 encoding is turned on in the SQLite library.
@@ -118,6 +138,13 @@ do_test func-3.9 {
 do_test func-3.10 {
   execsql {SELECT substr(t1,-4,3) FROM tbl1 ORDER BY t1}
 } "ter ain i\u1234h TF-"
+do_test func-3.99 {
+  execsql {DELETE FROM tbl1}
+  foreach word {this program is free software} {
+    execsql "INSERT INTO tbl1 VALUES('$word')"
+  }
+  execsql {SELECT t1 FROM tbl1}
+} {this program is free software}
 
 } ;# End [sqlite -encoding]==UTF-8 and \u1234!=u1234
 
@@ -141,6 +168,12 @@ do_test func-4.3 {
 do_test func-4.4 {
   catchsql {SELECT abs(c) FROM t1 ORDER BY a}
 } {0 {3 12345.67890 5}}
+do_test func-4.4.1 {
+  execsql {SELECT abs(a) FROM t2}
+} {1 {} 345 {} 67890}
+do_test func-4.4.2 {
+  execsql {SELECT abs(t1) FROM tbl1}
+} {this program is free software}
 
 do_test func-4.5 {
   catchsql {SELECT round(a,b,c) FROM t1}
@@ -163,5 +196,39 @@ do_test func-4.10 {
 do_test func-4.11 {
   catchsql {SELECT round() FROM t1 ORDER BY a}
 } {1 {wrong number of arguments to function round()}}
+do_test func-4.12 {
+  execsql {SELECT round(a,2) FROM t2}
+} {1.00 0.00 345.00 0.00 67890.00}
+do_test func-4.13 {
+  execsql {SELECT round(t1,2) FROM tbl1}
+} {0.00 0.00 0.00 0.00 0.00}
+
+# Test the upper() and lower() functions
+#
+do_test func-5.1 {
+  execsql {SELECT upper(t1) FROM tbl1}
+} {THIS PROGRAM IS FREE SOFTWARE}
+do_test func-5.2 {
+  execsql {SELECT lower(upper(t1)) FROM tbl1}
+} {this program is free software}
+do_test func-5.3 {
+  execsql {SELECT upper(a), lower(a) FROM t2}
+} {1 1 {} {} 345 345 {} {} 67890 67890}
+do_test func-5.4 {
+  catchsql {SELECT upper(a,5) FROM t2}
+} {1 {wrong number of arguments to function upper()}}
+do_test func-5.5 {
+  catchsql {SELECT upper(*) FROM t2}
+} {1 {wrong number of arguments to function upper()}}
+
+# Test the coalesce() function
+#
+do_test func-6.1 {
+  execsql {SELECT coalesce(a,'xyz') FROM t2}
+} {1 xyz 345 xyz 67890}
+do_test func-6.2 {
+  execsql {SELECT coalesce(upper(a),'nil') FROM t2}
+} {1 nil 345 nil 67890}
+
 
 finish_test

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle DELETE FROM statements.
 **
-** $Id: delete.c,v 1.27 2002/02/23 02:32:10 drh Exp $
+** $Id: delete.c,v 1.28 2002/03/02 17:04:08 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -102,9 +102,9 @@ void sqliteDeleteFrom(
 
   /* Resolve the column names in all the expressions.
   */
+  base = pParse->nTab++;
   if( pWhere ){
-    sqliteExprResolveInSelect(pParse, pWhere);
-    if( sqliteExprResolveIds(pParse, pTabList, 0, pWhere) ){
+    if( sqliteExprResolveIds(pParse, base, pTabList, 0, pWhere) ){
       goto delete_from_cleanup;
     }
     if( sqliteExprCheck(pParse, pWhere, 0, 0) ){
@@ -135,6 +135,7 @@ void sqliteDeleteFrom(
       int endOfLoop = sqliteVdbeMakeLabel(v);
       int addr;
       openOp = pTab->isTemp ? OP_OpenAux : OP_Open;
+      assert( base==0 );
       sqliteVdbeAddOp(v, openOp, 0, pTab->tnum);
       sqliteVdbeAddOp(v, OP_Rewind, 0, sqliteVdbeCurrentAddr(v)+2);
       addr = sqliteVdbeAddOp(v, OP_AddImm, 1, 0);
@@ -154,7 +155,7 @@ void sqliteDeleteFrom(
   else{
     /* Begin the database scan
     */
-    pWInfo = sqliteWhereBegin(pParse, pTabList, pWhere, 1);
+    pWInfo = sqliteWhereBegin(pParse, base, pTabList, pWhere, 1);
     if( pWInfo==0 ) goto delete_from_cleanup;
 
     /* Remember the key of every item to be deleted.
@@ -172,7 +173,6 @@ void sqliteDeleteFrom(
     ** database scan.  We have to delete items after the scan is complete
     ** because deleting an item can change the scan order.
     */
-    base = pParse->nTab;
     sqliteVdbeAddOp(v, OP_ListRewind, 0, 0);
     openOp = pTab->isTemp ? OP_OpenWrAux : OP_OpenWrite;
     sqliteVdbeAddOp(v, openOp, base, pTab->tnum);

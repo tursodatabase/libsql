@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.34 2002/02/23 02:32:10 drh Exp $
+** $Id: update.c,v 1.35 2002/03/02 17:04:09 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -66,14 +66,9 @@ void sqliteUpdate(
   ** WHERE clause and in the new values.  Also find the column index
   ** for each column to be updated in the pChanges array.
   */
+  base = pParse->nTab++;
   if( pWhere ){
-    sqliteExprResolveInSelect(pParse, pWhere);
-  }
-  for(i=0; i<pChanges->nExpr; i++){
-    sqliteExprResolveInSelect(pParse, pChanges->a[i].pExpr);
-  }
-  if( pWhere ){
-    if( sqliteExprResolveIds(pParse, pTabList, 0, pWhere) ){
+    if( sqliteExprResolveIds(pParse, base, pTabList, 0, pWhere) ){
       goto update_cleanup;
     }
     if( sqliteExprCheck(pParse, pWhere, 0, 0) ){
@@ -82,7 +77,7 @@ void sqliteUpdate(
   }
   chngRecno = 0;
   for(i=0; i<pChanges->nExpr; i++){
-    if( sqliteExprResolveIds(pParse, pTabList, 0, pChanges->a[i].pExpr) ){
+    if( sqliteExprResolveIds(pParse, base, pTabList, 0, pChanges->a[i].pExpr) ){
       goto update_cleanup;
     }
     if( sqliteExprCheck(pParse, pChanges->a[i].pExpr, 0, 0) ){
@@ -150,7 +145,7 @@ void sqliteUpdate(
 
   /* Begin the database scan
   */
-  pWInfo = sqliteWhereBegin(pParse, pTabList, pWhere, 1);
+  pWInfo = sqliteWhereBegin(pParse, base, pTabList, pWhere, 1);
   if( pWInfo==0 ) goto update_cleanup;
 
   /* Remember the index of every item to be updated.
@@ -174,7 +169,6 @@ void sqliteUpdate(
   ** to be deleting some records.
   */
   sqliteVdbeAddOp(v, OP_ListRewind, 0, 0);
-  base = pParse->nTab;
   openOp = pTab->isTemp ? OP_OpenWrAux : OP_OpenWrite;
   sqliteVdbeAddOp(v, openOp, base, pTab->tnum);
   if( onError==OE_Replace ){
@@ -191,7 +185,9 @@ void sqliteUpdate(
   for(i=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
     if( openAll || aIdxUsed[i] ){
       sqliteVdbeAddOp(v, openOp, base+i+1, pIdx->tnum);
+      assert( pParse->nTab==base+i+1 );
     }
+    pParse->nTab++;
   }
 
   /* Loop over every record that needs updating.  We have to load

@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.51 2002/02/28 03:04:48 drh Exp $
+** $Id: expr.c,v 1.52 2002/03/02 17:04:08 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -172,6 +172,9 @@ Expr *sqliteExprDup(Expr *p){
   pNew->pLeft = sqliteExprDup(p->pLeft);
   pNew->pRight = sqliteExprDup(p->pRight);
   pNew->pList = sqliteExprListDup(p->pList);
+  pNew->iTable = p->iTable;
+  pNew->iColumn = p->iColumn;
+  pNew->iAgg = p->iAgg;
   pNew->token = p->token;
   pNew->span = p->span;
   pNew->pSelect = sqliteSelectDup(p->pSelect);
@@ -311,40 +314,6 @@ int sqliteExprIsConstant(Expr *p){
 }
 
 /*
-** Walk the expression tree and process operators of the form:
-**
-**       expr IN (SELECT ...)
-**
-** These operators have to be processed before column names are
-** resolved because each such operator increments pParse->nTab
-** to reserve cursor numbers for its own use.  But pParse->nTab
-** needs to be constant once we begin resolving column names.  For
-** that reason, this procedure needs to be called on every expression
-** before sqliteExprResolveIds() is called on any expression.
-**
-** Actually, the processing of IN-SELECT is only started by this
-** routine.  This routine allocates a cursor number to the IN-SELECT
-** and then moves on.  The code generation is done by 
-** sqliteExprResolveIds() which must be called afterwards.
-*/
-void sqliteExprResolveInSelect(Parse *pParse, Expr *pExpr){
-  if( pExpr==0 ) return;
-  if( pExpr->op==TK_IN && pExpr->pSelect!=0 ){
-    pExpr->iTable = pParse->nTab++;
-  }else{
-    if( pExpr->pLeft ) sqliteExprResolveInSelect(pParse, pExpr->pLeft);
-    if( pExpr->pRight ) sqliteExprResolveInSelect(pParse, pExpr->pRight);
-    if( pExpr->pList ){
-      int i;
-      ExprList *pList = pExpr->pList;
-      for(i=0; i<pList->nExpr; i++){
-        sqliteExprResolveInSelect(pParse, pList->a[i].pExpr);
-      }
-    }
-  }
-}
-
-/*
 ** Return TRUE if the given string is a row-id column name.
 */
 static int sqliteIsRowid(const char *z){
@@ -360,7 +329,7 @@ static int sqliteIsRowid(const char *z){
 ** index to the table in the table list and a column offset.  The 
 ** Expr.opcode for such nodes is changed to TK_COLUMN.  The Expr.iTable
 ** value is changed to the index of the referenced table in pTabList
-** plus the pParse->nTab value.  This value will ultimately become the
+** plus the "base" value.  The base value will ultimately become the
 ** VDBE cursor number for a cursor that is pointing into the referenced
 ** table.  The Expr.iColumn value is changed to the index of the column 
 ** of the referenced table.  The Expr.iColumn value for the special
@@ -387,11 +356,13 @@ static int sqliteIsRowid(const char *z){
 */
 int sqliteExprResolveIds(
   Parse *pParse,     /* The parser context */
+  int base,          /* VDBE cursor number for first entry in pTabList */
   IdList *pTabList,  /* List of tables used to resolve column names */
   ExprList *pEList,  /* List of expressions used to resolve "AS" */
   Expr *pExpr        /* The expression to be analyzed. */
 ){
   if( pExpr==0 || pTabList==0 ) return 0;
+  assert( base+pTabList->nId<=pParse->nTab );
   switch( pExpr->op ){
     /* A lone identifier.  Try and match it as follows:
     **
@@ -418,7 +389,7 @@ int sqliteExprResolveIds(
         for(j=0; j<pTab->nCol; j++){
           if( sqliteStrICmp(pTab->aCol[j].zName, z)==0 ){
             cnt++;
-            pExpr->iTable = i + pParse->nTab;
+            pExpr->iTable = i + base;
             if( j==pTab->iPKey ){
               /* Substitute the record number for the INTEGER PRIMARY KEY */
               pExpr->iColumn = -1;
@@ -444,7 +415,7 @@ int sqliteExprResolveIds(
       }
       if( cnt==0 && sqliteIsRowid(z) ){
         pExpr->iColumn = -1;
-        pExpr->iTable = pParse->nTab;
+        pExpr->iTable = base;
         cnt = 1 + (pTabList->nId>1);
         pExpr->op = TK_COLUMN;
       }
@@ -496,11 +467,11 @@ int sqliteExprResolveIds(
           zTab = pTab->zName;
         }
         if( sqliteStrICmp(zTab, zLeft)!=0 ) continue;
-        if( 0==(cntTab++) ) pExpr->iTable = i + pParse->nTab;
+        if( 0==(cntTab++) ) pExpr->iTable = i + base;
         for(j=0; j<pTab->nCol; j++){
           if( sqliteStrICmp(pTab->aCol[j].zName, zRight)==0 ){
             cnt++;
-            pExpr->iTable = i + pParse->nTab;
+            pExpr->iTable = i + base;
             if( j==pTab->iPKey ){
               /* Substitute the record number for the INTEGER PRIMARY KEY */
               pExpr->iColumn = -1;
@@ -540,7 +511,7 @@ int sqliteExprResolveIds(
     case TK_IN: {
       Vdbe *v = sqliteGetVdbe(pParse);
       if( v==0 ) return 1;
-      if( sqliteExprResolveIds(pParse, pTabList, pEList, pExpr->pLeft) ){
+      if( sqliteExprResolveIds(pParse, base, pTabList, pEList, pExpr->pLeft) ){
         return 1;
       }
       if( pExpr->pSelect ){
@@ -550,8 +521,9 @@ int sqliteExprResolveIds(
         ** table.  The cursor number of the temporary table has already
         ** been put in iTable by sqliteExprResolveInSelect().
         */
+        pExpr->iTable = pParse->nTab++;
         sqliteVdbeAddOp(v, OP_OpenTemp, pExpr->iTable, 1);
-        if( sqliteSelect(pParse, pExpr->pSelect, SRT_Set, pExpr->iTable) );
+        sqliteSelect(pParse, pExpr->pSelect, SRT_Set, pExpr->iTable, 0,0,0);
       }else if( pExpr->pList ){
         /* Case 2:     expr IN (exprlist)
         **
@@ -601,7 +573,7 @@ int sqliteExprResolveIds(
       ** of the memory cell in iColumn.
       */
       pExpr->iColumn = pParse->nMem++;
-      if( sqliteSelect(pParse, pExpr->pSelect, SRT_Mem, pExpr->iColumn) ){
+      if( sqliteSelect(pParse, pExpr->pSelect, SRT_Mem, pExpr->iColumn,0,0,0) ){
         return 1;
       }
       break;
@@ -610,18 +582,19 @@ int sqliteExprResolveIds(
     /* For all else, just recursively walk the tree */
     default: {
       if( pExpr->pLeft
-      && sqliteExprResolveIds(pParse, pTabList, pEList, pExpr->pLeft) ){
+      && sqliteExprResolveIds(pParse, base, pTabList, pEList, pExpr->pLeft) ){
         return 1;
       }
       if( pExpr->pRight 
-      && sqliteExprResolveIds(pParse, pTabList, pEList, pExpr->pRight) ){
+      && sqliteExprResolveIds(pParse, base, pTabList, pEList, pExpr->pRight) ){
         return 1;
       }
       if( pExpr->pList ){
         int i;
         ExprList *pList = pExpr->pList;
         for(i=0; i<pList->nExpr; i++){
-          if( sqliteExprResolveIds(pParse,pTabList,pEList,pList->a[i].pExpr) ){
+          Expr *pArg = pList->a[i].pExpr;
+          if( sqliteExprResolveIds(pParse, base, pTabList, pEList, pArg) ){
             return 1;
           }
         }
