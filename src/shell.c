@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.74 2003/04/29 18:01:28 drh Exp $
+** $Id: shell.c,v 1.75 2003/04/30 11:38:26 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -75,6 +75,7 @@ static char *Argv0;
 */
 static char mainPrompt[20];     /* First line prompt. default: "sqlite> "*/
 static char continuePrompt[20]; /* Continuation prompt. default: "   ...> " */
+
 
 /*
 ** Determines if a string is a number of not.
@@ -183,8 +184,8 @@ struct callback_data {
   struct previous_mode_data explainPrev;
                          /* Holds the mode information just before
                          ** .explain ON */
-  char outfile[FILENAME_MAX];
-                         /* Filename for *out */
+  char outfile[FILENAME_MAX]; /* Filename for *out */
+  const char *zDbFilename;    /* name of the database file */
 };
 
 /*
@@ -499,12 +500,37 @@ static char zHelp[] =
 static void process_input(struct callback_data *p, FILE *in);
 
 /*
+** Make sure the database is open.  If it is not, then open it.  If
+** the database fails to open, print an error message and exit.
+*/
+static void open_db(struct callback_data *p){
+  if( p->db==0 ){
+    char *zErrMsg = 0;
+    p->db = db = sqlite_open(p->zDbFilename, 0666, &zErrMsg);
+    if( db==0 ){
+      p->db = db = sqlite_open(p->zDbFilename, 0444, &zErrMsg);
+      if( db==0 ){
+        if( zErrMsg ){
+          fprintf(stderr,"Unable to open database \"%s\": %s\n", 
+             p->zDbFilename, zErrMsg);
+        }else{
+          fprintf(stderr,"Unable to open database %s\n", p->zDbFilename);
+        }
+        exit(1);
+      }else{
+        fprintf(stderr,"Database \"%s\" opened READ ONLY!\n", p->zDbFilename);
+      }
+    }
+  }
+}
+
+/*
 ** If an input line begins with "." then invoke this routine to
 ** process that line.
 **
 ** Return 1 to exit and 0 to continue.
 */
-static int do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
+static int do_meta_command(char *zLine, struct callback_data *p){
   int i = 1;
   int nArg = 0;
   int n, c;
@@ -536,9 +562,10 @@ static int do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
   c = azArg[0][0];
   if( c=='d' && strncmp(azArg[0], "dump", n)==0 ){
     char *zErrMsg = 0;
+    open_db(p);
     fprintf(p->out, "BEGIN TRANSACTION;\n");
     if( nArg==1 ){
-      sqlite_exec(db,
+      sqlite_exec(p->db,
         "SELECT name, type, sql FROM sqlite_master "
         "WHERE type!='meta' AND sql NOT NULL "
         "ORDER BY substr(type,2,1), name",
@@ -547,7 +574,7 @@ static int do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
     }else{
       int i;
       for(i=1; i<nArg && zErrMsg==0; i++){
-        sqlite_exec_printf(db,
+        sqlite_exec_printf(p->db,
           "SELECT name, type, sql FROM sqlite_master "
           "WHERE tbl_name LIKE '%q' AND type!='meta' AND sql NOT NULL "
           "ORDER BY substr(type,2,1), name",
@@ -648,10 +675,11 @@ static int do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
   if( c=='i' && strncmp(azArg[0], "indices", n)==0 && nArg>1 ){
     struct callback_data data;
     char *zErrMsg = 0;
+    open_db(p);
     memcpy(&data, p, sizeof(data));
     data.showHeader = 0;
     data.mode = MODE_List;
-    sqlite_exec_printf(db,
+    sqlite_exec_printf(p->db,
       "SELECT name FROM sqlite_master "
       "WHERE type='index' AND tbl_name LIKE '%q' "
       "UNION ALL "
@@ -724,7 +752,7 @@ static int do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
   }else
 
   if( c=='q' && strncmp(azArg[0], "quit", n)==0 ){
-    sqlite_close(db);
+    sqlite_close(p->db);
     exit(0);
   }else
 
@@ -741,6 +769,7 @@ static int do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
   if( c=='s' && strncmp(azArg[0], "schema", n)==0 ){
     struct callback_data data;
     char *zErrMsg = 0;
+    open_db(p);
     memcpy(&data, p, sizeof(data));
     data.showHeader = 0;
     data.mode = MODE_Semi;
@@ -773,7 +802,7 @@ static int do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
         new_colv[1] = 0;
         callback(&data, 1, new_argv, new_colv);
       }else{
-        sqlite_exec_printf(db,
+        sqlite_exec_printf(p->db,
           "SELECT sql FROM "
           "  (SELECT * FROM sqlite_master UNION ALL"
           "   SELECT * FROM sqlite_temp_master) "
@@ -782,7 +811,7 @@ static int do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
           callback, &data, &zErrMsg, azArg[1]);
       }
     }else{
-      sqlite_exec(db,
+      sqlite_exec(p->db,
          "SELECT sql FROM "
          "  (SELECT * FROM sqlite_master UNION ALL"
          "   SELECT * FROM sqlite_temp_master) "
@@ -822,8 +851,9 @@ static int do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
     char **azResult;
     int nRow, rc;
     char *zErrMsg;
+    open_db(p);
     if( nArg==1 ){
-      rc = sqlite_get_table(db,
+      rc = sqlite_get_table(p->db,
         "SELECT name FROM sqlite_master "
         "WHERE type IN ('table','view') "
         "UNION ALL "
@@ -833,7 +863,7 @@ static int do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
         &azResult, &nRow, 0, &zErrMsg
       );
     }else{
-      rc = sqlite_get_table_printf(db,
+      rc = sqlite_get_table_printf(p->db,
         "SELECT name FROM sqlite_master "
         "WHERE type IN ('table','view') AND name LIKE '%%%q%%' "
         "UNION ALL "
@@ -871,7 +901,8 @@ static int do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
   }else
 
   if( c=='t' && n>1 && strncmp(azArg[0], "timeout", n)==0 && nArg>=2 ){
-    sqlite_busy_timeout(db, atoi(azArg[1]));
+    open_db(p);
+    sqlite_busy_timeout(p->db, atoi(azArg[1]));
   }else
 
   if( c=='w' && strncmp(azArg[0], "width", n)==0 ){
@@ -958,7 +989,7 @@ static void process_input(struct callback_data *p, FILE *in){
     if( p->echoOn ) printf("%s\n", zLine);
     if( _all_whitespace(zLine) ) continue;
     if( zLine && zLine[0]=='.' && nSql==0 ){
-      int rc = do_meta_command(zLine, db, p);
+      int rc = do_meta_command(zLine, p);
       free(zLine);
       if( rc ) break;
       continue;
@@ -988,7 +1019,8 @@ static void process_input(struct callback_data *p, FILE *in){
     free(zLine);
     if( zSql && _ends_with_semicolon(zSql, nSql) && sqlite_complete(zSql) ){
       p->cnt = 0;
-      rc = sqlite_exec(db, zSql, callback, p, &zErrMsg);
+      open_db(p);
+      rc = sqlite_exec(p->db, zSql, callback, p, &zErrMsg);
       if( rc || zErrMsg ){
         if( in!=0 && !p->echoOn ) printf("%s\n",zSql);
         if( zErrMsg!=0 ){
@@ -1103,6 +1135,8 @@ int main(int argc, char **argv){
   struct callback_data data;
   int origArgc = argc;
   char **origArgv = argv;
+  int i;
+  extern int sqliteOsFileExists(const char*);
 
 #ifdef __MACOS__
   argc = ccommand(&argv);
@@ -1112,11 +1146,44 @@ int main(int argc, char **argv){
 
   Argv0 = argv[0];
   main_init(&data);
-  process_sqliterc(&data,NULL);
 
+  /* Make sure we have a valid signal handler early, before anything
+  ** else is done.
+  */
 #ifdef SIGINT
   signal(SIGINT, interrupt_handler);
 #endif
+
+  /* Locate the name of the database file
+  */
+  for(i=1; i<argc; i++){
+    if( argv[i][0]!='-' ) break;
+    if( strcmp(argv[i],"-separator")==0 || strcmp(argv[i],"-nullvalue")==0 ){
+      i++;
+    }
+  }
+  if( i!=argc-1 && i!=argc-2 ){
+    fprintf(stderr,"Usage: %s ?OPTIONS? FILENAME ?SQL?\n", Argv0);
+    exit(1);
+  }
+  data.zDbFilename = argv[i];
+  data.out = stdout;
+
+  /* Go ahead and open the database file if it already exists.  If the
+  ** file does not exist, delay opening it.  This prevents empty database
+  ** files from being created if a user mistypes the database name argument
+  ** to the sqlite command-line tool.
+  */
+  if( sqliteOsFileExists(data.zDbFilename) ){
+    open_db(&data);
+  }
+
+  /* Process the ~/.sqliterc file, if there is one
+  */
+  process_sqliterc(&data,NULL);
+
+  /* Process command-line options
+  */
   while( argc>=2 && argv[1][0]=='-' ){
     if( argc>=3 && strcmp(argv[1],"-init")==0 ){
       /* If we get a -init to do, we have to pretend that
@@ -1182,31 +1249,16 @@ int main(int argc, char **argv){
       return 1;
     }
   }
-  if( argc!=2 && argc!=3 ){
-    fprintf(stderr,"Usage: %s ?OPTIONS? FILENAME ?SQL?\n", Argv0);
-    exit(1);
-  }
-  data.db = db = sqlite_open(argv[1], 0666, &zErrMsg);
-  if( db==0 ){
-    data.db = db = sqlite_open(argv[1], 0444, &zErrMsg);
-    if( db==0 ){
-      if( zErrMsg ){
-        fprintf(stderr,"Unable to open database \"%s\": %s\n", argv[1],zErrMsg);
-      }else{
-        fprintf(stderr,"Unable to open database %s\n", argv[1]);
-      }
-      exit(1);
-    }else{
-      fprintf(stderr,"Database \"%s\" opened READ ONLY!\n", argv[1]);
-    }
-  }
-  data.out = stdout;
+
   if( argc==3 ){
+    /* Run just the command that follows the database name
+    */
     if( argv[2][0]=='.' ){
-      do_meta_command(argv[2], db, &data);
+      do_meta_command(argv[2], &data);
       exit(0);
     }else{
       int rc;
+      open_db(&data);
       rc = sqlite_exec(db, argv[2], callback, &data, &zErrMsg);
       if( rc!=0 && zErrMsg!=0 ){
         fprintf(stderr,"SQL error: %s\n", zErrMsg);
@@ -1214,6 +1266,8 @@ int main(int argc, char **argv){
       }
     }
   }else{
+    /* Run commands received from standard input
+    */
     if( isatty(fileno(stdout)) && isatty(fileno(stdin)) ){
       char *zHome;
       char *zHistory = 0;
@@ -1237,6 +1291,6 @@ int main(int argc, char **argv){
     }
   }
   set_table_name(&data, 0);
-  sqlite_close(db);
+  if( db ) sqlite_close(db);
   return 0;
 }
