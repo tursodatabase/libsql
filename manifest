@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sthe\s"News"\son\sthe\shomepage.\s(CVS\s1935)
-D 2004-09-02T16:53:12
+C More\stests\sof\ssqlite3_step()\sand\sSQLITE_BUSY\sadded.\s(CVS\s1936)
+D 2004-09-03T00:27:57
 F Makefile.in 65a7c43fcaf9a710d62f120b11b6e435eeb4a450
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -99,7 +99,7 @@ F test/btree6.test a5ede6bfbbb2ec8b27e62813612c0f28e8f3e027
 F test/btree7.test 429b96cfef5b51a7d512cfb4b5b3e453384af293
 F test/capi2.test 53e3f399074d5654f26d55b32ccaca7b5b619933
 F test/capi3.test 9258ca75fc98d89477015dcd70aa3d2757b142b8
-F test/capi3b.test 458044d8c250c129ddfd77c6265a6923bc008b5e
+F test/capi3b.test 5b6a66f9f295f79f443b5d3f33187fa5ef6cf336
 F test/collate1.test f79736d2ebf5492167ee4d1f4ab4c09dda776b03
 F test/collate2.test c1a3b41f761b28853c5696037f92de928f93233b
 F test/collate3.test e60b428e07ec945492ba90ff1c895902ee3a8a50
@@ -248,7 +248,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P c190b95c30981d2a6026e501e21af675ff8a2d13
-R 1638f4635573b53fbd203875f1db6394
+P 45d7158878a9648708d8ed47944707169a7f7f1c
+R 14f7ba7cd5cb5bab38c50df92d09018d
 U drh
-Z 99e486219945bb06af0bd28d189eaa23
+Z 97faa8433bbaa30accc2ea468a82795b

@@ -13,7 +13,7 @@
 # particular the behavior of sqlite3_step() when trying to commit
 # with lock contention.
 #
-# $Id: capi3b.test,v 1.1 2004/09/02 14:57:09 drh Exp $
+# $Id: capi3b.test,v 1.2 2004/09/03 00:27:57 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -85,6 +85,51 @@ do_test capi3b-1.8 {
 do_test capi3b-1.9 {
   execsql {SELECT * FROM t1}
 } {1 2 3}
+
+# Start doing a SELECT with one connection.  This gets a SHARED lock.
+# Then do an INSERT with the other connection.  The INSERT should
+# not be able to complete until the SELECT finishes.
+#
+do_test capi3b-2.1 {
+  set VM1 [sqlite3_prepare $DB {SELECT * FROM t1} -1 TAIL]
+  sqlite3_step $VM1
+} SQLITE_ROW
+do_test capi3b-2.2 {
+  sqlite3_column_text $VM1 0
+} 1
+do_test capi3b-2.3 {
+  set VM2 [sqlite3_prepare $DB2 {INSERT INTO t1 VALUES(4)} -1 TAIL]
+  sqlite3_step $VM2
+} SQLITE_BUSY
+do_test capi3b-2.4 {
+  sqlite3_step $VM1
+} SQLITE_ROW
+do_test capi3b-2.5 {
+  sqlite3_column_text $VM1 0
+} 2
+do_test capi3b-2.6 {
+  sqlite3_step $VM2
+} SQLITE_BUSY
+do_test capi3b-2.7 {
+  sqlite3_step $VM1
+} SQLITE_ROW
+do_test capi3b-2.8 {
+  sqlite3_column_text $VM1 0
+} 3
+do_test capi3b-2.9 {
+  sqlite3_step $VM2
+} SQLITE_BUSY
+do_test capi3b-2.10 {
+  sqlite3_step $VM1
+} SQLITE_DONE
+do_test capi3b-2.11 {
+  sqlite3_step $VM2
+} SQLITE_DONE
+do_test capi3b-2.12 {
+  sqlite3_finalize $VM1
+  sqlite3_finalize $VM2
+  execsql {SELECT * FROM t1}
+} {1 2 3 4}
 
 catch {db2 close}
 finish_test
