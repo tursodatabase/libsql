@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.51 2002/09/30 01:31:22 drh Exp $
+** $Id: util.c,v 1.52 2002/10/20 15:46:23 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -217,7 +217,9 @@ char *sqliteStrNDup_(const char *z, int n, char *zFile, int line){
 ** no memory is available.
 */
 void *sqliteMalloc(int n){
-  void *p = malloc(n);
+  void *p;
+  if( n==0 ) return 0;
+  p = malloc(n);
   if( p==0 ){
     sqlite_malloc_failed++;
     return 0;
