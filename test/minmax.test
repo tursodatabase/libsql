@@ -13,7 +13,7 @@
 # aggregate min() and max() functions and which are handled as
 # as a special case.
 #
-# $Id: minmax.test,v 1.4 2002/05/31 15:51:26 drh Exp $
+# $Id: minmax.test,v 1.5 2003/04/17 12:44:25 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -142,5 +142,36 @@ do_test minmax-4.3 {
     GROUP BY y ORDER BY y;
   }
 } {1 1 1 2 2 3 3 4 5 4 8 9 5 5 6 6 0 1}
+
+# Make sure the min(x) and max(x) optimizations work on empty tables
+# including empty tables with indices. Ticket #296.
+#
+do_test minmax-5.1 {
+  execsql {
+    CREATE TABLE t3(x INTEGER UNIQUE NOT NULL);
+    SELECT coalesce(min(x),999) FROM t3;
+  }
+} {999}
+do_test minmax-5.2 {
+  execsql {
+    SELECT coalesce(min(rowid),999) FROM t3;
+  }
+} {999}
+do_test minmax-5.3 {
+  execsql {
+    SELECT coalesce(max(x),999) FROM t3;
+  }
+} {999}
+do_test minmax-5.4 {
+  execsql {
+    SELECT coalesce(max(rowid),999) FROM t3;
+  }
+} {999}
+do_test minmax-5.5 {
+  execsql {
+    SELECT coalesce(max(rowid),999) FROM t3 WHERE rowid<25;
+  }
+} {999}
+
 
 finish_test

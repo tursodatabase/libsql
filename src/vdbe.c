@@ -36,7 +36,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.217 2003/04/16 21:03:14 drh Exp $
+** $Id: vdbe.c,v 1.218 2003/04/17 12:44:25 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -4505,10 +4505,14 @@ case OP_IdxRecno: {
     int v;
     int sz;
     sqliteBtreeKeySize(pCrsr, &sz);
-    sqliteBtreeKey(pCrsr, sz - sizeof(u32), sizeof(u32), (char*)&v);
-    v = keyToInt(v);
-    aStack[tos].i = v;
-    aStack[tos].flags = STK_Int;
+    if( sz<sizeof(u32) ){
+      aStack[tos].flags = STK_Null;
+    }else{
+      sqliteBtreeKey(pCrsr, sz - sizeof(u32), sizeof(u32), (char*)&v);
+      v = keyToInt(v);
+      aStack[tos].i = v;
+      aStack[tos].flags = STK_Int;
+    }
   }
   break;
 }

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the use of indices in WHERE clases.
 #
-# $Id: where.test,v 1.13 2002/12/04 22:29:29 drh Exp $
+# $Id: where.test,v 1.14 2003/04/17 12:44:25 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -686,6 +686,26 @@ do_test where-8.2 {
     SELECT w FROM t4 WHERE x=4 and y<1000 ORDER BY y DESC limit 3;
   }
 } {nosort}
+
+# Make sure searches with an index work with an empty table.
+#
+do_test where-9.1 {
+  execsql {
+    CREATE TABLE t5(x PRIMARY KEY);
+    SELECT * FROM t5 WHERE x<10;
+  }
+} {}
+do_test where-9.2 {
+  execsql {
+    SELECT * FROM t5 WHERE x<10 ORDER BY x DESC;
+  }
+} {}
+do_test where-9.3 {
+  execsql {
+    SELECT * FROM t5 WHERE x=10;
+  }
+} {}
+
 
 
 finish_test
