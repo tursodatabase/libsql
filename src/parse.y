@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.50 2002/02/18 13:56:37 drh Exp $
+** @(#) $Id: parse.y,v 1.51 2002/02/18 18:30:33 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -68,13 +68,19 @@ cmd ::= ROLLBACK trans_opt.    {sqliteRollbackTransaction(pParse);}
 ///////////////////// The CREATE TABLE statement ////////////////////////////
 //
 cmd ::= create_table create_table_args.
-create_table ::= CREATE(X) temp(T) TABLE ids(Y).
-                                           {sqliteStartTable(pParse,&X,&Y,T);}
+create_table ::= CREATE(X) temp(T) TABLE ids(Y). {
+   sqliteStartTable(pParse,&X,&Y,T);
+}
 %type temp {int}
 temp(A) ::= TEMP.  {A = 1;}
 temp(A) ::= .      {A = 0;}
-create_table_args ::= LP columnlist conslist_opt RP(X).
-                                           {sqliteEndTable(pParse,&X);}
+create_table_args ::= LP columnlist conslist_opt RP(X). {
+  sqliteEndTable(pParse,&X,0);
+}
+create_table_args ::= AS select(S). {
+  sqliteEndTable(pParse,0,S);
+  sqliteSelectDelete(S);
+}
 columnlist ::= columnlist COMMA column.
 columnlist ::= column.
 

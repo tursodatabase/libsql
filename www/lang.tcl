@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.23 2002/02/18 03:21:47 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.24 2002/02/18 18:30:33 drh Exp $}
 
 puts {<html>
 <head>
@@ -245,8 +245,10 @@ CREATE [TEMP | TEMPORARY] TABLE <table-name> (
   <column-def> [, <column-def>]*
   [, <constraint>]*
 )
+} {sql-command} {
+CREATE [TEMP | TEMPORARY] TABLE <table-name> AS <select-statement>
 } {column-def} {
-<name> <type> [<column-constraint>]*
+<name> [<type>] [<column-constraint>]*
 } {type} {
 <typename> |
 <typename> ( <number> ) |
@@ -274,8 +276,8 @@ is the name of the table that records the database schema.</p>
 
 <p>Each column definition is the name of the column followed by the
 datatype for that column, then one or more optional column constraints.
-The datatype for the column is ignored.  All information
-is stored as null-terminated strings.
+The datatype for the column is (usually) ignored and may be omitted.
+All information is stored as null-terminated strings.
 The UNIQUE constraint causes an index to be created on the specified
 columns.  This index must contain unique keys.
 The DEFAULT constraint
@@ -325,11 +327,19 @@ The total amount of data in a single row is limited to about
 1 megabytes.  (This limit can be increased to 16MB by changing
 a single #define in the source code and recompiling.)</p>
 
+<p>The CREATE TABLE AS form defines the table to be
+the result set of a query.  The names of the table columns are
+the names of the columns in the result.</p>
+
 <p>The exact text
 of each CREATE TABLE statement is stored in the <b>sqlite_master</b>
 table.  Everytime the database is opened, all CREATE TABLE statements
 are read from the <b>sqlite_master</b> table and used to regenerate
-SQLite's internal representation of the table layout.</p>
+SQLite's internal representation of the table layout.
+If the original command was a CREATE TABLE AS then then an equivalent
+CREATE TABLE statement is synthesized and store in <b>sqlite_master</b>
+in place of the original command.
+</p>
 }
 
 Section DELETE delete

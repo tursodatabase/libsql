@@ -25,6 +25,7 @@ chng {2002 Feb * (2.3.3)} {
     (by Joel Luscy)</li>
 <li>The VALUES clause of an INSERT can now contain expressions, including
     scalar SELECT clauses.</li>
+<li>Added support for CREATE TABLE AS SELECT</li>
 }
 
 chng {2002 Feb 14 (2.3.2)} {

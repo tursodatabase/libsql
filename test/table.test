@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE TABLE statement.
 #
-# $Id: table.test,v 1.13 2001/09/27 15:11:55 drh Exp $
+# $Id: table.test,v 1.14 2002/02/18 18:30:33 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -301,5 +301,50 @@ do_test table-7.3 {
     SELECT * FROM weird;
   }
 } {desc a asc b explain 9 vacuum 0 delimiters xyz begin hi end y'all}
+
+# Try out the CREATE TABLE AS syntax
+#
+do_test table-8.1 {
+  execsql2 {
+    CREATE TABLE t2 AS SELECT * FROM weird;
+    SELECT * FROM t2;
+  }
+} {desc a asc b explain 9 vacuum 0 delimiters xyz begin hi end y'all}
+do_test table-8.2 {
+  execsql {
+    CREATE TABLE 't3''xyz'(a,b,c);
+    INSERT INTO [t3'xyz] VALUES(1,2,3);
+    SELECT * FROM [t3'xyz];
+  }
+} {1 2 3}
+do_test table-8.3 {
+  execsql2 {
+    CREATE TABLE [t4'abc] AS SELECT count(*), min(a), max(b+c) FROM [t3'xyz];
+    SELECT * FROM [t4'abc];
+  }
+} {count(*) 1 min(a) 1 max(b+c) 5}
+do_test table-8.4 {
+  execsql2 {
+    CREATE TEMPORARY TABLE t5 AS SELECT count(*) AS [y'all] FROM [t3'xyz];
+    SELECT * FROM t5;
+  }
+} {y'all 1}
+do_test table-8.5 {
+  db close
+  sqlite db test.db
+  execsql2 {
+    SELECT * FROM [t4'abc];
+  }
+} {count(*) 1 min(a) 1 max(b+c) 5}
+do_test table-8.6 {
+  execsql2 {
+    SELECT * FROM t2;
+  }
+} {desc a asc b explain 9 vacuum 0 delimiters xyz begin hi end y'all}
+do_test table-8.7 {
+  catchsql {
+    SELECT * FROM t5;
+  }
+} {1 {no such table: t5}}
 
 finish_test

@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.74 2002/02/03 17:37:36 drh Exp $
+** $Id: build.c,v 1.75 2002/02/18 18:30:32 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -651,6 +651,77 @@ static void changeCookie(sqlite *db){
 }
 
 /*
+** Measure the number of characters needed to output the given
+** identifier.  The number returned includes any quotes used
+** but does not include the null terminator.
+*/
+static int identLength(const char *z){
+  int n;
+  for(n=2; *z; n++, z++){
+    if( *z=='\'' ){ n++; }
+  }
+  return n;
+}
+
+/*
+** Write an identifier onto the end of the given string.  Add
+** quote characters as needed.
+*/
+static void identPut(char *z, int *pIdx, char *zIdent){
+  int i, j;
+  i = *pIdx;
+  z[i++] = '\'';
+  for(j=0; zIdent[j]; j++){
+    z[i++] = zIdent[j];
+    if( zIdent[j]=='\'' ) z[i++] = '\'';
+  }
+  z[i++] = '\'';
+  z[i] = 0;
+  *pIdx = i;
+}
+
+/*
+** Generate a CREATE TABLE statement appropriate for the given
+** table.  Memory to hold the text of the statement is obtained
+** from sqliteMalloc() and must be freed by the calling function.
+*/
+static char *createTableStmt(Table *p){
+  int i, k, n;
+  char *zStmt;
+  char *zSep, *zSep2, *zEnd;
+  n = 0;
+  for(i=0; i<p->nCol; i++){
+    n += identLength(p->aCol[i].zName);
+  }
+  n += identLength(p->zName);
+  if( n<40 ){
+    zSep = "";
+    zSep2 = ",";
+    zEnd = ")";
+  }else{
+    zSep = "\n  ";
+    zSep2 = ",\n  ";
+    zEnd = "\n)";
+  }
+  n += 25 + 6*p->nCol;
+  zStmt = sqliteMalloc( n );
+  if( zStmt==0 ) return 0;
+  assert( !p->isTemp );
+  strcpy(zStmt, "CREATE TABLE ");
+  k = strlen(zStmt);
+  identPut(zStmt, &k, p->zName);
+  zStmt[k++] = '(';
+  for(i=0; i<p->nCol; i++){
+    strcpy(&zStmt[k], zSep);
+    k += strlen(&zStmt[k]);
+    zSep = zSep2;
+    identPut(zStmt, &k, p->aCol[i].zName);
+  }
+  strcpy(&zStmt[k], zEnd);
+  return zStmt;
+}
+
+/*
 ** This routine is called to report the final ")" that terminates
 ** a CREATE TABLE statement.
 **
@@ -664,12 +735,17 @@ static void changeCookie(sqlite *db){
 ** connected to the database or because the sqlite_master table has
 ** recently changes, so the entry for this table already exists in
 ** the sqlite_master table.  We do not want to create it again.
+**
+** If the pSelect argument is not NULL, it means that this routine
+** was called to create a table generated from a 
+** "CREATE TABLE ... AS SELECT ..." statement.  The column names of
+** the new table will match the result set of the SELECT.
 */
-void sqliteEndTable(Parse *pParse, Token *pEnd){
+void sqliteEndTable(Parse *pParse, Token *pEnd, Select *pSelect){
   Table *p;
   sqlite *db = pParse->db;
 
-  if( pEnd==0 || pParse->nErr || sqlite_malloc_failed ) return;
+  if( (pEnd==0 && pSelect==0) || pParse->nErr || sqlite_malloc_failed ) return;
   p = pParse->pNewTable;
   if( p==0 ) return;
 
@@ -686,6 +762,19 @@ void sqliteEndTable(Parse *pParse, Token *pEnd){
     pParse->pNewTable = 0;
     db->nTable++;
     db->flags |= SQLITE_InternChanges;
+  }
+
+  /* If the table is generated from a SELECT, then construct the
+  ** list of columns and the text of the table.
+  */
+  if( pSelect ){
+    Table *pSelTab = sqliteResultSetOfSelect(pParse, 0, pSelect);
+    assert( p->aCol==0 );
+    p->nCol = pSelTab->nCol;
+    p->aCol = pSelTab->aCol;
+    pSelTab->nCol = 0;
+    pSelTab->aCol = 0;
+    sqliteDeleteTable(0, pSelTab);
   }
 
   /* If the initFlag is 1 it means we are reading the SQL off the
@@ -710,7 +799,9 @@ void sqliteEndTable(Parse *pParse, Token *pEnd){
 
     v = sqliteGetVdbe(pParse);
     if( v==0 ) return;
-    n = Addr(pEnd->z) - Addr(pParse->sFirstToken.z) + 1;
+    addr = sqliteVdbeAddOp(v, OP_CreateTable, 0, p->isTemp);
+    sqliteVdbeChangeP3(v, addr, (char *)&p->tnum, P3_POINTER);
+    p->tnum = 0;
     if( !p->isTemp ){
       sqliteVdbeAddOp(v, OP_NewRecno, 0, 0);
       sqliteVdbeAddOp(v, OP_String, 0, 0);
@@ -719,18 +810,29 @@ void sqliteEndTable(Parse *pParse, Token *pEnd){
       sqliteVdbeChangeP3(v, -1, p->zName, P3_STATIC);
       sqliteVdbeAddOp(v, OP_String, 0, 0);
       sqliteVdbeChangeP3(v, -1, p->zName, P3_STATIC);
-    }
-    addr = sqliteVdbeAddOp(v, OP_CreateTable, 0, p->isTemp);
-    sqliteVdbeChangeP3(v, addr, (char *)&p->tnum, P3_POINTER);
-    p->tnum = 0;
-    if( !p->isTemp ){
-      addr = sqliteVdbeAddOp(v, OP_String, 0, 0);
-      sqliteVdbeChangeP3(v, addr, pParse->sFirstToken.z, n);
+      sqliteVdbeAddOp(v, OP_Dup, 4, 0);
+      sqliteVdbeAddOp(v, OP_String, 0, 0);
+      if( pSelect ){
+        char *z = createTableStmt(p);
+        n = z ? strlen(z) : 0;
+        sqliteVdbeChangeP3(v, -1, z, n);
+        sqliteFree(z);
+      }else{
+        assert( pEnd!=0 );
+        n = Addr(pEnd->z) - Addr(pParse->sFirstToken.z) + 1;
+        sqliteVdbeChangeP3(v, -1, pParse->sFirstToken.z, n);
+      }
       sqliteVdbeAddOp(v, OP_MakeRecord, 5, 0);
       sqliteVdbeAddOp(v, OP_PutIntKey, 0, 0);
       changeCookie(db);
       sqliteVdbeAddOp(v, OP_SetCookie, db->next_cookie, 0);
       sqliteVdbeAddOp(v, OP_Close, 0, 0);
+    }
+    if( pSelect ){
+      int op = p->isTemp ? OP_OpenWrAux : OP_OpenWrite;
+      sqliteVdbeAddOp(v, op, 1, 0);
+      pParse->nTab = 2;
+      sqliteSelect(pParse, pSelect, SRT_Table, 1);
     }
     sqliteEndWriteOperation(pParse);
   }
