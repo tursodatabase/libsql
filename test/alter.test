@@ -8,7 +8,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing the ALTER TABLE statement.
 #
-# $Id: alter.test,v 1.2 2004/11/12 15:53:37 danielk1977 Exp $
+# $Id: alter.test,v 1.3 2004/11/18 15:44:30 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -217,5 +217,137 @@ do_test alter-2.3 {
   }
 } {1 {there is already another table or index with this name: i3}}
 
+# If this compilation does not include triggers, omit the remainder
+# of this file.
+ifcapable !trigger {
+  finish_test
+  return
+}
 
+# An SQL user-function for triggers to fire, so that we know they
+# are working.
+proc trigfunc {args} {
+  set ::TRIGGER $args
+}
+db func trigfunc trigfunc
+
+do_test alter-3.1.0 {
+  execsql {
+    CREATE TABLE t6(a, b, c);
+    CREATE TRIGGER trig1 AFTER INSERT ON t6 BEGIN
+      SELECT trigfunc('trig1', new.a, new.b, new.c);
+    END;
+  }
+} {}
+do_test alter-3.1.1 {
+  execsql {
+    INSERT INTO t6 VALUES(1, 2, 3);
+  }
+  set ::TRIGGER
+} {trig1 1 2 3}
+do_test alter-3.1.2 {
+  execsql {
+    ALTER TABLE t6 RENAME TO t7;
+    INSERT INTO t7 VALUES(4, 5, 6);
+  }
+  set ::TRIGGER
+} {trig1 4 5 6}
+do_test alter-3.1.3 {
+  execsql {
+    DROP TRIGGER trig1;
+  }
+} {}
+do_test alter-3.1.4 {
+  execsql {
+    CREATE TRIGGER trig2 AFTER INSERT ON main.t7 BEGIN
+      SELECT trigfunc('trig2', new.a, new.b, new.c);
+    END;
+    INSERT INTO t7 VALUES(1, 2, 3);
+  }
+  set ::TRIGGER
+} {trig2 1 2 3}
+do_test alter-3.1.5 {
+  execsql {
+    ALTER TABLE t7 RENAME TO t8;
+    INSERT INTO t8 VALUES(4, 5, 6);
+  }
+  set ::TRIGGER
+} {trig2 4 5 6}
+do_test alter-3.1.6 {
+  execsql {
+    DROP TRIGGER trig2;
+  }
+} {}
+do_test alter-3.1.7 {
+  execsql {
+    CREATE TRIGGER trig3 AFTER INSERT ON main.'t8'BEGIN
+      SELECT trigfunc('trig3', new.a, new.b, new.c);
+    END;
+    INSERT INTO t8 VALUES(1, 2, 3);
+  }
+  set ::TRIGGER
+} {trig3 1 2 3}
+do_test alter-3.1.8 {
+  execsql {
+    ALTER TABLE t8 RENAME TO t9;
+    INSERT INTO t9 VALUES(4, 5, 6);
+  }
+  set ::TRIGGER
+} {trig3 4 5 6}
+
+# Make sure "ON" cannot be used as a database, table or column name without
+# quoting. Otherwise the sqlite_alter_trigger() function might not work.
+file delete -force test3.db
+file delete -force test3.db-journal
+do_test alter-3.2.1 {
+  catchsql {
+    ATTACH 'test3.db' AS ON;
+  }
+} {1 {near "ON": syntax error}}
+do_test alter-3.2.2 {
+  catchsql {
+    ATTACH 'test3.db' AS 'ON';
+  }
+} {0 {}}
+do_test alter-3.2.3 {
+  catchsql {
+    CREATE TABLE ON.t1(a, b, c); 
+  }
+} {1 {near "ON": syntax error}}
+do_test alter-3.2.4 {
+  catchsql {
+    CREATE TABLE 'ON'.t1(a, b, c); 
+  }
+} {0 {}}
+do_test alter-3.2.4 {
+  catchsql {
+    CREATE TABLE 'ON'.ON(a, b, c); 
+  }
+} {1 {near "ON": syntax error}}
+do_test alter-3.2.5 {
+  catchsql {
+    CREATE TABLE 'ON'.'ON'(a, b, c); 
+  }
+} {0 {}}
+do_test alter-3.2.6 {
+  catchsql {
+    CREATE TABLE t10(a, ON, c);
+  }
+} {1 {near "ON": syntax error}}
+do_test alter-3.2.7 {
+  catchsql {
+    CREATE TABLE t10(a, 'ON', c);
+  }
+} {0 {}}
+do_test alter-3.2.8 {
+  catchsql {
+    CREATE TRIGGER trig4 AFTER INSERT ON ON BEGIN SELECT 1; END;
+  }
+} {1 {near "ON": syntax error}}
+do_test alter-3.2.9 {
+  catchsql {
+    CREATE TRIGGER 'on'.trig4 AFTER INSERT ON 'ON' BEGIN SELECT 1; END;
+  }
+} {0 {}}
 finish_test
+

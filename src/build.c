@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.279 2004/11/13 03:48:07 drh Exp $
+** $Id: build.c,v 1.280 2004/11/18 15:44:29 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2976,15 +2976,21 @@ void sqlite3AlterRenameTable(
   /* Modify the sqlite_master table to use the new table name. */
   sqlite3NestedParse(pParse,
       "UPDATE %Q.%s SET "
+#ifdef SQLITE_OMIT_TRIGGER
           "sql = sqlite_alter_table(sql, %Q), "
+#else
+          "sql = CASE "
+            "WHEN type = 'trigger' THEN sqlite_alter_trigger(sql, %Q)"
+            "ELSE sqlite_alter_table(sql, %Q) END, "
+#endif
           "tbl_name = %Q, "
           "name = CASE "
             "WHEN type='table' THEN %Q "
             "WHEN name LIKE 'sqlite_autoindex%%' AND type='index' THEN "
               "'sqlite_autoindex_' || %Q || substr(name, %d+18,10) "
             "ELSE name END "
-      "WHERE tbl_name=%Q AND type IN ('table', 'index');", 
-      db->aDb[iDb].zName, SCHEMA_TABLE(iDb), zName, zName, zName, 
+      "WHERE tbl_name=%Q AND type IN ('table', 'index', 'trigger');", 
+      db->aDb[iDb].zName, SCHEMA_TABLE(iDb), zName, zName, zName, zName, 
       zName, strlen(pTab->zName), pTab->zName
   );
 
@@ -2992,6 +2998,12 @@ void sqlite3AlterRenameTable(
   ** renamed and load the new versions from the database.
   */
   if( pParse->nErr==0 ){
+#ifndef SQLITE_OMIT_TRIGGER
+    Trigger *pTrig;
+    for( pTrig=pTab->pTrigger; pTrig; pTrig=pTrig->pNext ){
+      sqlite3VdbeOp3(v, OP_DropTrigger, iDb, 0, pTrig->name, 0);
+    }
+#endif
     sqlite3VdbeOp3(v, OP_DropTable, iDb, 0, pTab->zName, 0);
     zWhere = sqlite3MPrintf("tbl_name=%Q", zName);
     sqlite3VdbeOp3(v, OP_ParseSchema, iDb, 0, zWhere, P3_DYNAMIC);
