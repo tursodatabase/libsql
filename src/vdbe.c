@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.268.2.1 2004/04/29 16:16:30 drh Exp $
+** $Id: vdbe.c,v 1.268.2.2 2004/05/10 20:27:41 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -62,7 +62,7 @@ int sqlite_search_count = 0;
 /*
 ** When this global variable is positive, it gets decremented once before
 ** each instruction in the VDBE.  When reaches zero, the SQLITE_Interrupt
-** of the db.flags field is set in order to simulate and interrupt.
+** of the db.flags field is set in order to simulate an interrupt.
 **
 ** This facility is used for testing purposes only.  It does not function
 ** in an ordinary build.
@@ -4865,6 +4865,7 @@ default: {
   /* If we reach this point, it means that execution is finished.
   */
 vdbe_halt:
+  CHECK_FOR_INTERRUPT
   if( rc ){
     p->rc = rc;
     rc = SQLITE_ERROR;

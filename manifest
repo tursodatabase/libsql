@@ -1,5 +1,5 @@
-C Fix\sa\smemory\sleak\sin\sDETACH\swhen\susing\sthe\scodec.\s(CVS\s1317)
-D 2004-05-07T01:46:01
+C Improvements\sto\stesting\sof\ssqlite_interrupt.\s\sMore\schecking\sfor\sinterrupt\ninside\sof\sVACUUM.\s(CVS\s1344)
+D 2004-05-10T20:27:41
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -60,8 +60,8 @@ F src/tokenize.c 6676b946fd8825b67ab52140af4fdc57a70bda48
 F src/trigger.c a9927b57c865b6f3df3fb5e40c9824d722660ded
 F src/update.c bd391079138e67d09c9af34528ca4137c29242d1
 F src/util.c 122bc174f6c8c2eb6a9127d9f13c4c74f83b85e4
-F src/vacuum.c a4e8464c9f6d60659c5343e9d62c742463227820
-F src/vdbe.c f006200348ef3feded56bef8714e052da74a885a
+F src/vacuum.c d34374a2d6d5b3d36419a7b87e0a15d2bf31fdd3
+F src/vdbe.c 0853ab9983b7adbba8c012bb8b152d8453bf8a97
 F src/vdbe.h ac987945e4dd6f987bca534c6005899f089fc270
 F src/vdbeInt.h b40ff02ce39fd076e6ff3369e19c1bbfe1986682
 F src/vdbeaux.c e2cdd1ab63604a390612c73e26bdd2ef910e9438
@@ -94,7 +94,7 @@ F test/in.test 0de39b02ceeca90993b096822fb5a884661c5b47
 F test/index.test 9295deefbdb6dedbe01be8905f0c448fe5bd4079
 F test/insert.test a17b7f7017097afb2727aa5b67ceeb7ab0a120a1
 F test/insert2.test c288375a64dad3295044714f0dfed4a193cf067f
-F test/interrupt.test 9142ce4448605127640eda5e283952f75f67ed91
+F test/interrupt.test 0d50985f1aa6c39fe2cca4cf4a272c79ff1648e8
 F test/intpkey.test 9320af48415c594afd4e15f8ef0daa272e05502e
 F test/ioerr.test 5dbaf09f96b56ee01cf3edd762b96eb4ad2c9ca4
 F test/join.test 9ef6aabaac9de51d5fc41e68d1f4355da05a84cd
@@ -188,7 +188,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P c90ed20dc4f95eb06a5259578597593f5968bfb7
-R d8249d1567d218e36b49e8c43150a27b
+P c4bd99b79c66217140781309ed06e1ff3ef4a206
+R c633b9f2c50e2f0204a65c82493f0a7e
 U drh
-Z 024ab278400ed22150e07d78741f9bbc
+Z bb900cf181dd7b4856d93e8f07ef13c0

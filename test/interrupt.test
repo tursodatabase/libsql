@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is the sqlite_interrupt() API.
 #
-# $Id: interrupt.test,v 1.4 2004/02/18 16:57:23 drh Exp $
+# $Id: interrupt.test,v 1.4.2.1 2004/05/10 20:27:42 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -37,12 +37,13 @@ proc cksum {{db db}} {
 # and checks to make sure SQLITE_INTERRUPT is returned.  Eventually,
 # the routine completes successfully.
 #
-proc interrupt_test {testid sql result {initcnt 0}} {
+proc interrupt_test {testid sql result {initcnt 0} {maxcnt 1000000}} {
   set orig_sum [cksum]
   set i $initcnt
-  while 1 {
+  global sqlite_interrupt_count
+  while {$i<$maxcnt} {
     incr i
-    set ::sqlite_interrupt_count $i
+    set sqlite_interrupt_count $i
     do_test $testid.$i.1 [format {
       set ::r [catchsql %s]
       set ::code [db errorcode]
@@ -52,14 +53,14 @@ proc interrupt_test {testid sql result {initcnt 0}} {
       do_test $testid.$i.2 {
         cksum
       } $orig_sum
-    } else {
+    } elseif {$sqlite_interrupt_count>0} {
       do_test $testid.$i.99 {
         set ::r
       } [list 0 $result]
       break
     }
   }
-  set ::sqlite_interrupt_count 0
+  set sqlite_interrupt_count 0
 }
 
 do_test interrupt-1.1 {
@@ -68,7 +69,7 @@ do_test interrupt-1.1 {
     SELECT name FROM sqlite_master;
   }
 } {t1}
-interrupt_test interrupt-1.2 {DROP TABLE t1} {}
+interrupt_test interrupt-1.2 {DROP TABLE t1} {} 1 14
 do_test interrupt-1.3 {
   execsql {
     SELECT name FROM sqlite_master;
@@ -161,5 +162,6 @@ for {set i 1} {$i<$max_count-5} {incr i 1} {
     catchsql $sql
   } {1 interrupted}
 }
+
 
 finish_test
