@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.91 2004/02/25 02:25:37 drh Exp $
+** $Id: shell.c,v 1.92 2004/03/09 13:37:45 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -546,6 +546,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
   */
   while( zLine[i] && nArg<ArraySize(azArg) ){
     while( isspace(zLine[i]) ){ i++; }
+    if( zLine[i]==0 ) break;
     if( zLine[i]=='\'' || zLine[i]=='"' ){
       int delim = zLine[i++];
       azArg[nArg++] = &zLine[i];
