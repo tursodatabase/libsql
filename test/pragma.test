@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.8 2004/02/11 02:18:07 drh Exp $
+# $Id: pragma.test,v 1.9 2004/04/23 17:04:45 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -267,5 +267,151 @@ do_test pragma-3.2 {
   execsql {PRAGMA integrity_check}
 } {{rowid 1 missing from index i2} {wrong # of entries in index i2}}
 }; # endif has-codec
+
+# Test the temp_store and default_temp_store pragmas
+#
+do_test pragma-4.2 {
+  execsql {
+    PRAGMA temp_store='default';
+    PRAGMA temp_store;
+  }
+} {0}
+do_test pragma-4.3 {
+  execsql {
+    PRAGMA temp_store='file';
+    PRAGMA temp_store;
+  }
+} {1}
+do_test pragma-4.4 {
+  execsql {
+    PRAGMA temp_store='memory';
+    PRAGMA temp_store;
+  }
+} {2}
+do_test pragma-4.5 {
+  execsql {
+    PRAGMA default_temp_store='default';
+    PRAGMA default_temp_store;
+  }
+} {0}
+do_test pragma-4.6 {
+  execsql {
+    PRAGMA temp_store;
+  }
+} {2}
+do_test pragma-4.7 {
+  db close
+  sqlite db test.db
+  execsql {
+    PRAGMA temp_store;
+  }
+} {0}
+do_test pragma-4.8 {
+  execsql {
+    PRAGMA default_temp_store;
+  }
+} {0}
+do_test pragma-4.9 {
+  execsql {
+    PRAGMA default_temp_store='file';
+    PRAGMA default_temp_store;
+  }
+} {1}
+do_test pragma-4.10 {
+  execsql {
+    PRAGMA temp_store;
+  }
+} {0}
+do_test pragma-4.11 {
+  db close
+  sqlite db test.db
+  execsql {
+    PRAGMA temp_store;
+  }
+} {1}
+do_test pragma-4.12 {
+  execsql {
+    PRAGMA default_temp_store;
+  }
+} {1}
+do_test pragma-4.13 {
+  execsql {
+    PRAGMA default_temp_store='memory';
+    PRAGMA default_temp_store;
+  }
+} {2}
+do_test pragma-4.14 {
+  execsql {
+    PRAGMA temp_store;
+  }
+} {1}
+do_test pragma-4.15 {
+  db close
+  sqlite db test.db
+  execsql {
+    PRAGMA temp_store;
+  }
+} {2}
+do_test pragma-4.16 {
+  execsql {
+    PRAGMA default_temp_store;
+  }
+} {2}
+do_test pragma-4.17 {
+  execsql {
+    PRAGMA temp_store='file';
+    PRAGMA temp_store
+  }
+} {1}
+do_test pragma-4.18 {
+  execsql {
+    PRAGMA default_temp_store
+  }
+} {2}
+do_test pragma-4.19 {
+  db close
+  sqlite db test.db
+  execsql {
+    PRAGMA temp_store
+  }
+} {2}
+
+# Changing the TEMP_STORE deletes any existing temporary tables
+#
+do_test pragma-4.20 {
+  execsql {SELECT name FROM sqlite_temp_master}
+} {}
+do_test pragma-4.21 {
+  execsql {
+    CREATE TEMP TABLE test1(a,b,c);
+    SELECT name FROM sqlite_temp_master;
+  }
+} {test1}
+do_test pragma-4.22 {
+  execsql {
+    PRAGMA temp_store='file';
+    SELECT name FROM sqlite_temp_master;
+  }
+} {}
+do_test pragma-4.23 {
+  execsql {
+    CREATE TEMP TABLE test1(a,b,c);
+    SELECT name FROM sqlite_temp_master;
+  }
+} {test1}
+do_test pragma-4.24 {
+  execsql {
+    PRAGMA temp_store='memory';
+    SELECT name FROM sqlite_temp_master;
+  }
+} {}
+do_test pragma-4.25 {
+  catchsql {
+    BEGIN;
+    PRAGMA temp_store='default';
+    COMMIT;
+  }
+} {1 {temporary storage cannot be changed from within a transaction}}
+catchsql {COMMIT}
 
 finish_test

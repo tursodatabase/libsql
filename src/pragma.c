@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.18 2004/02/22 20:05:01 drh Exp $
+** $Id: pragma.c,v 1.19 2004/04/23 17:04:45 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -71,8 +71,8 @@ static int getSafetyLevel(char *z){
 ** backed temporary databases, 2 for the Red-Black tree in memory database
 ** and 0 to use the compile-time default.
 */
-static int getTempStore(char *z){
-  if( z[0]>='0' || z[0]<='2' ){
+static int getTempStore(const char *z){
+  if( z[0]>='0' && z[0]<='2' ){
     return z[0] - '0';
   }else if( sqliteStrICmp(z, "file")==0 ){
     return 1;
@@ -81,6 +81,29 @@ static int getTempStore(char *z){
   }else{
     return 0;
   }
+}
+
+/*
+** If the TEMP database is open, close it and mark the database schema
+** as needing reloading.  This must be done when using the TEMP_STORE
+** or DEFAULT_TEMP_STORE pragmas.
+*/
+static int changeTempStorage(Parse *pParse, const char *zStorageType){
+  int ts = getTempStore(zStorageType);
+  sqlite *db = pParse->db;
+  if( db->temp_store==ts ) return SQLITE_OK;
+  if( db->aDb[1].pBt!=0 ){
+    if( db->flags & SQLITE_InTrans ){
+      sqliteErrorMsg(pParse, "temporary storage cannot be changed "
+        "from within a transaction");
+      return SQLITE_ERROR;
+    }
+    sqliteBtreeClose(db->aDb[1].pBt);
+    db->aDb[1].pBt = 0;
+    sqliteResetInternalSchema(db, 0);
+  }
+  db->temp_store = ts;
+  return SQLITE_OK;
 }
 
 /*
@@ -498,12 +521,7 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       sqliteVdbeAddOp(v, OP_Integer, db->temp_store, 0);
       sqliteVdbeAddOpList(v, ArraySize(getTmpDbLoc), getTmpDbLoc);
     }else{
-      if (&db->aDb[1].pBt != 0) {
-	sqliteErrorMsg(pParse, "The temporary database already exists - "
-          "its location cannot now be changed");
-      } else {
-	db->temp_store = getTempStore(zRight);
-      }
+      changeTempStorage(pParse, zRight);
     }
   }else
 
@@ -511,8 +529,9 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
   **   PRAGMA default_temp_store
   **   PRAGMA default_temp_store = "default"|"memory"|"file"
   **
-  ** Return or set the value of the persistent temp_store flag (as
-  ** well as the value currently in force).
+  ** Return or set the value of the persistent temp_store flag.  Any
+  ** change does not take effect until the next time the database is
+  ** opened.
   **
   ** Note that it is possible for the library compile-time options to
   ** override this setting
@@ -525,16 +544,10 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
     if( pRight->z==pLeft->z ){
       sqliteVdbeAddOpList(v, ArraySize(getTmpDbLoc), getTmpDbLoc);
     }else{
-      if (&db->aDb[1].pBt != 0) {
-	sqliteErrorMsg(pParse, "The temporary database already exists - "
-            "its location cannot now be changed");
-      } else {
-	sqliteBeginWriteOperation(pParse, 0, 0);
-	db->temp_store = getTempStore(zRight);
-	sqliteVdbeAddOp(v, OP_Integer, db->temp_store, 0);
-	sqliteVdbeAddOp(v, OP_SetCookie, 0, 5);
-	sqliteEndWriteOperation(pParse);
-      }
+      sqliteBeginWriteOperation(pParse, 0, 0);
+      sqliteVdbeAddOp(v, OP_Integer, getTempStore(zRight), 0);
+      sqliteVdbeAddOp(v, OP_SetCookie, 0, 5);
+      sqliteEndWriteOperation(pParse);
     }
   }else
 

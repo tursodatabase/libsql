@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.66 2004/01/19 05:09:24 jplyon Exp $}
+set rcsid {$Id: lang.tcl,v 1.67 2004/04/23 17:04:45 drh Exp $}
 
 puts {<html>
 <head>
@@ -1323,8 +1323,7 @@ is returned it is as an integer.</p>
     the database.  When temp_store is DEFAULT (0), the compile-time value
     of the symbol TEMP_STORE is used for the temporary database.  
     When temp_store is MEMORY (2), an in-memory database is used.  
-    When temp_store is FILE (1), a temporary database file on disk will be used.  
-    Once the temporary database is in use, its location cannot be changed.  
+    When temp_store is FILE (1), a temporary database file on disk will be used.
     It is possible for the library compile-time symbol TEMP_STORE to override 
     this setting.  The following table summarizes this:</p>
 
@@ -1340,10 +1339,11 @@ is returned it is as an integer.</p>
 <tr><td align="center">3</td><td align="center"><em>any</em></td><td align="center">memory</td></tr>
 </table>
 
-    <p>This pragma changes the temp_store mode persistently.  Once changed,
-    the mode stays set even if the database is closed and reopened.  The
-    <a href="#pragma_temp_store"><b>temp_store</b></a> pragma does the same 
-    thing but only applies the setting to the current session.</p></li>
+    <p>This pragma changes the temp_store mode for whenever the database
+    is opened in the future.  The temp_store mode for the current session
+    is unchanged.  Use the 
+    <a href="#pragma_temp_store"><b>temp_store</b></a> pragma to change the
+    temp_store mode for the current session.</p></li>
 
 <a name="pragma_empty_result_callbacks"></a>
 <li><p><b>PRAGMA empty_result_callbacks = ON; </b>(1)<b>
@@ -1460,6 +1460,10 @@ is returned it is as an integer.</p>
     flag, see the description of the <a href="#pragma_default_temp_store">
     <b>default_temp_store</b></a> pragma.  Note that it is possible for 
     the library compile-time options to override this setting. </p>
+
+    <p>When the temp_store setting is changed, all existing temporary
+    tables, indices, triggers, and viewers are immediately deleted.
+    </p>
     </li>
 
 <a name="pragma_vdbe_trace"></a>

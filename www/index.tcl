@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.81 2004/01/22 23:38:22 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.82 2004/04/23 17:04:45 drh Exp $}
 
 puts {<html>
 <head><title>SQLite: An Embeddable SQL Database Engine</title></head>
@@ -56,7 +56,8 @@ puts {<h2>Features</h2>
 <li>Database files can be freely shared between machines with
     different byte orders.</li>
 <li>Supports databases up to 2 terabytes (2^41 bytes) in size.</li>
-<li>Small memory footprint: less than 25K lines of C code.</li>
+<li>A zero-configuration database engine - no DBA needed.</li>
+<li>Small memory footprint: less than 30K lines of C code.</li>
 <li><a href="speed.html">Two times faster</a> than PostgreSQL and
     MySQL for many common operations.</li>
 <li>Very simple 

@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.113 2004/03/17 23:32:08 drh Exp $
+** $Id: expr.c,v 1.114 2004/04/23 17:04:45 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -155,7 +155,8 @@ ExprList *sqliteExprListDup(ExprList *p){
   if( pNew==0 ) return 0;
   pNew->nExpr = pNew->nAlloc = p->nExpr;
   pNew->a = pItem = sqliteMalloc( p->nExpr*sizeof(p->a[0]) );
-  for(i=0; pItem && i<p->nExpr; i++, pItem++){
+  if( pItem==0 ) return 0;  /* Leaks memory after a malloc failure */
+  for(i=0; i<p->nExpr; i++, pItem++){
     Expr *pNewExpr, *pOldExpr;
     pItem->pExpr = pNewExpr = sqliteExprDup(pOldExpr = p->a[i].pExpr);
     if( pOldExpr->span.z!=0 && pNewExpr ){
@@ -278,6 +279,8 @@ ExprList *sqliteExprListAppend(ExprList *pList, Expr *pExpr, Token *pName){
 void sqliteExprListDelete(ExprList *pList){
   int i;
   if( pList==0 ) return;
+  assert( pList->a!=0 || (pList->nExpr==0 && pList->nAlloc==0) );
+  assert( pList->nExpr<=pList->nAlloc );
   for(i=0; i<pList->nExpr; i++){
     sqliteExprDelete(pList->a[i].pExpr);
     sqliteFree(pList->a[i].zName);

@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.175 2004/02/24 01:04:12 drh Exp $
+** $Id: build.c,v 1.176 2004/04/23 17:04:44 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -484,7 +484,6 @@ void sqliteStartTable(
       if( rc!=SQLITE_OK ){
         sqliteErrorMsg(pParse, "unable to get a write lock on "
           "the temporary database file");
-        pParse->nErr++;
         return;
       }
     }
