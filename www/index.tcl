@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.74 2003/05/17 01:39:40 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.75 2003/07/16 17:10:45 drh Exp $}
 
 puts {<html>
 <head><title>SQLite: An Embeddable SQL Database Engine</title></head>
@@ -165,7 +165,7 @@ puts {<h2>Professional Support and Custom Modifications</h2>}
 puts {
 <p>
 If you would like professional support for SQLite
-or if you want custom modifications to SQLite preformed by the
+or if you want custom modifications to SQLite performed by the
 original author, these services are available for a modest fee.
 For additional information visit
 <a href="http://www.hwaci.com/sw/sqlite/support.html">

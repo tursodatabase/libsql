@@ -1,5 +1,5 @@
-C Make\sLIMIT\s0\sreturn\sno\srows.\s\sLIMIT\s-1\sstill\sreturns\sall\srows.\s\sTicket\s#346.\s(CVS\s1053)
-D 2003-07-16T11:51:36
+C Fix\stypo\son\sthe\shomepage.\s(CVS\s1054)
+D 2003-07-16T17:10:45
 F Makefile.in 9ad23ed4ca97f9670c4496432e3fbd4b3760ebde
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -157,7 +157,7 @@ F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/faq.tcl 88d3b95d9cd8e374772daa3a646c4d107e7f3e9b
 F www/fileformat.tcl ae6ccf3ffddb180a5af173cd6ee102169629762b
 F www/formatchng.tcl ca6cc1cb1bef9bc36f0619049d3c95e749bc6983
-F www/index.tcl a34315cada875af0b098b4c45981da8ab33fe7b6
+F www/index.tcl 30adca2dc9aba782f9188c29165129789df521f0
 F www/lang.tcl 06b825c1e88266866da3a915d0e039249ea2e4e0
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
 F www/nulls.tcl 4ac1c9bbb8a20a76500d18d63b383f51bb7d8be7
@@ -168,7 +168,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P e6a752bfef24f773973c151c6262ff331a9dc57a
-R 829f52d48453c3f975be5c03ffb2dee3
+P a31d0bd90af7cc95f8e36ca8ece21515f872235e
+R 90546d9894c57df9894be2667370a98b
 U drh
-Z bb5153e89cd8d80bdacd0e5c10fcf77d
+Z 20a8f1c0a2ef53d73b389e547d2f2a6c
