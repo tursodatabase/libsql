@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.12 2000/06/02 23:22:40 drh Exp $
+** $Id: vdbe.c,v 1.13 2000/06/04 12:58:38 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -81,6 +81,30 @@ struct Sorter {
 #define NSORT 30
 
 /*
+** A single level of the stack is an instance of the following
+** structure.  Except, string values are stored on a separate
+** list of of pointers to character.  The reason for storing
+** strings separately is so that they can be easily passed
+** to the callback function.
+*/
+struct Stack {
+  int i;         /* Integer value */
+  int n;         /* Number of characters in string value, including '\0' */
+  int flags;     /* Some combination of STK_Null, STK_Str, STK_Dyn, etc. */
+  double r;      /* Real value */      
+};
+typedef struct Stack Stack;
+
+/*
+** Allowed values for Stack.flags
+*/
+#define STK_Null      0x0001   /* Value is NULL */
+#define STK_Str       0x0002   /* Value is a string */
+#define STK_Int       0x0004   /* Value is an integer */
+#define STK_Real      0x0008   /* Value is a real number */
+#define STK_Dyn       0x0010   /* Need to call sqliteFree() on zStack[*] */
+
+/*
 ** An instance of the virtual machine
 */
 struct Vdbe {
@@ -94,7 +118,7 @@ struct Vdbe {
   int *aLabel;        /* Space to hold the labels */
   int tos;            /* Index of top of stack */
   int nStackAlloc;    /* Size of the stack */
-  int *iStack;        /* Integer values of the stack */
+  Stack *aStack;      /* The operand stack, except string values */
   char **zStack;      /* Text or binary values of the stack */
   char **azColName;   /* Becomes the 4th parameter to callbacks */
   int nTable;         /* Number of slots in aTab[] */
@@ -291,6 +315,86 @@ int sqliteVdbeMakeLabel(Vdbe *p){
 }
 
 /*
+** Convert the given stack entity into a string if it isn't one
+** already.  Return non-zero if we run out of memory.
+**
+** NULLs are converted into an empty string.
+*/
+#define Stringify(P,I) \
+   ((P->aStack[I].flags & STK_Str)==0 ? hardStringify(P,I) : 0)
+static int hardStringify(Vdbe *p, int i){
+  char zBuf[30];
+  int fg = p->aStack[i].flags;
+  if( fg & STK_Real ){
+    sprintf(zBuf,"%g",p->aStack[i].r);
+  }else if( fg & STK_Int ){
+    sprintf(zBuf,"%d",p->aStack[i].i);
+  }else{
+    p->zStack[i] = "";
+    p->aStack[i].n = 1;
+    p->aStack[i].flags |= STK_Str;
+    return 0;
+  }
+  p->zStack[i] = 0;
+  sqliteSetString(&p->zStack[i], zBuf, 0);
+  if( p->zStack[i]==0 ) return 1;
+  p->aStack[i].n = strlen(p->zStack[i])+1;
+  p->aStack[i].flags |= STK_Str|STK_Dyn;
+  return 0;
+}
+
+/*
+** Release the memory associated with the given stack level
+*/
+#define Release(P,I)  if((P)->aStack[I].flags&STK_Dyn){ hardRelease(P,I); }
+static void hardRelease(Vdbe *p, int i){
+  sqliteFree(p->zStack[i]);
+  p->zStack[i] = 0;
+  p->aStack[i].flags &= ~(STK_Str|STK_Dyn);
+}
+
+/*
+** Convert the given stack entity into a integer if it isn't one
+** already.
+**
+** Any prior string or real representation is invalidated.  
+** NULLs are converted into 0.
+*/
+#define Integerify(P,I) \
+    if(((P)->aStack[(I)].flags&STK_Int)==0){ hardIntegerify(P,I); }
+static void hardIntegerify(Vdbe *p, int i){
+  if( p->aStack[i].flags & STK_Real ){
+    p->aStack[i].i = p->aStack[i].r;
+    Release(p, i);
+  }else if( p->aStack[i].flags & STK_Str ){
+    p->aStack[i].i = atoi(p->zStack[i]);
+    Release(p, i);
+  }else{
+    p->aStack[i].i = 0;
+  }
+  p->aStack[i].flags = STK_Int;
+}
+
+/*
+** Get a valid Real representation for the given stack element.
+**
+** Any prior string or integer representation is retained.
+** NULLs are converted into 0.0.
+*/
+#define Realify(P,I) \
+    if(((P)->aStack[(I)].flags&STK_Real)==0){ hardRealify(P,I); }
+static void hardRealify(Vdbe *p, int i){
+  if( p->aStack[i].flags & STK_Str ){
+    p->aStack[i].r = atof(p->zStack[i]);
+  }else if( p->aStack[i].flags & STK_Int ){
+    p->aStack[i].r = p->aStack[i].i;
+  }else{
+    p->aStack[i].r = 0.0;
+  }
+  p->aStack[i].flags |= STK_Real;
+}
+
+/*
 ** Pop the stack N times.  Free any memory associated with the
 ** popped stack elements.
 */
@@ -298,9 +402,45 @@ static void PopStack(Vdbe *p, int N){
   if( p->zStack==0 ) return;
   while( p->tos>=0 && N-->0 ){
     int i = p->tos--;
-    sqliteFree(p->zStack[i]);
+    if( p->aStack[i].flags & STK_Dyn ){
+      sqliteFree(p->zStack[i]);
+    }
+    p->aStack[i].flags = 0;
     p->zStack[i] = 0;
   }    
+}
+
+/*
+** Make sure space has been allocated to hold at least N
+** stack elements.  Allocate additional stack space if
+** necessary.
+**
+** Return 0 on success and non-zero if there are memory
+** allocation errors.
+*/
+#define NeedStack(P,N) (((P)->nStackAlloc<=(N)) ? hardNeedStack(P,N) : 0)
+static int hardNeedStack(Vdbe *p, int N){
+  int oldAlloc;
+  int i;
+  if( N>=p->nStackAlloc ){
+    oldAlloc = p->nStackAlloc;
+    p->nStackAlloc = N + 20;
+    p->aStack = sqliteRealloc(p->aStack, p->nStackAlloc*sizeof(p->aStack[0]));
+    p->zStack = sqliteRealloc(p->zStack, p->nStackAlloc*sizeof(char*));
+    if( p->aStack==0 || p->zStack==0 ){
+      sqliteFree(p->aStack);
+      sqliteFree(p->zStack);
+      p->aStack = 0;
+      p->zStack = 0;
+      p->nStackAlloc = 0;
+      return 1;
+    }
+    for(i=oldAlloc; i<p->nStackAlloc; i++){
+      p->zStack[i] = 0;
+      p->aStack[i].flags = 0;
+    }
+  }
+  return 0;
 }
 
 /*
@@ -376,7 +516,7 @@ void sqliteVdbeDelete(Vdbe *p){
   }
   sqliteFree(p->aOp);
   sqliteFree(p->aLabel);
-  sqliteFree(p->iStack);
+  sqliteFree(p->aStack);
   sqliteFree(p->zStack);
   sqliteFree(p);
 }
@@ -402,13 +542,13 @@ static char *zOpName[] = { 0,
   "FileRead",       "FileField",      "FileClose",      "MakeRecord",
   "MakeKey",        "Goto",           "If",             "Halt",
   "ColumnCount",    "ColumnName",     "Callback",       "Integer",
-  "String",         "Pop",            "Dup",            "Pull",
-  "Add",            "AddImm",         "Subtract",       "Multiply",
-  "Divide",         "Min",            "Max",            "Like",
-  "Glob",           "Eq",             "Ne",             "Lt",
-  "Le",             "Gt",             "Ge",             "IsNull",
-  "NotNull",        "Negative",       "And",            "Or",
-  "Not",            "Concat",         "Noop",         
+  "String",         "Null",           "Pop",            "Dup",
+  "Pull",           "Add",            "AddImm",         "Subtract",
+  "Multiply",       "Divide",         "Min",            "Max",
+  "Like",           "Glob",           "Eq",             "Ne",
+  "Lt",             "Le",             "Gt",             "Ge",
+  "IsNull",         "NotNull",        "Negative",       "And",
+  "Or",             "Not",            "Concat",         "Noop",
 };
 
 /*
@@ -459,72 +599,12 @@ int sqliteVdbeList(
     sprintf(zP1,"%d", p->aOp[i].p1);
     sprintf(zP2,"%d", p->aOp[i].p2);
     azField[4] = p->aOp[i].p3;
-    if( azField[4]==0 ) azField[4] = "";
     azField[1] = zOpName[p->aOp[i].opcode];
     if( xCallback(pArg, 5, azField, azColumnNames) ){
       rc = SQLITE_ABORT;
     }
   }
   return rc;
-}
-
-/*
-** Make sure space has been allocated to hold at least N
-** stack elements.  Allocate additional stack space if
-** necessary.
-**
-** Return 0 on success and non-zero if there are memory
-** allocation errors.
-*/
-static int NeedStack(Vdbe *p, int N){
-  int oldAlloc;
-  int i;
-  if( N>=p->nStackAlloc ){
-    oldAlloc = p->nStackAlloc;
-    p->nStackAlloc = N + 20;
-    p->iStack = sqliteRealloc(p->iStack, p->nStackAlloc*sizeof(int));
-    p->zStack = sqliteRealloc(p->zStack, p->nStackAlloc*sizeof(char*));
-    if( p->iStack==0 || p->zStack==0 ){
-      sqliteFree(p->iStack);
-      sqliteFree(p->zStack);
-      p->iStack = 0;
-      p->zStack = 0;
-      p->nStackAlloc = 0;
-      return 1;
-    }
-    for(i=oldAlloc; i<p->nStackAlloc; i++){
-      p->zStack[i] = 0;
-    }
-  }
-  return 0;
-}
-
-/*
-** Convert the given stack entity into a string if it isn't one
-** already.  Return non-zero if we run out of memory.
-*/
-static int Stringify(Vdbe *p, int i){
-  if( p->zStack[i]==0 ){
-    char zBuf[30];
-    sprintf(zBuf,"%d",p->iStack[i]);
-    sqliteSetString(&p->zStack[i], zBuf, 0);
-    if( p->zStack[i]==0 ) return 1;
-    p->iStack[i] = strlen(p->zStack[i])+1;
-  }
-  return 0;
-}
-
-/*
-** Convert the given stack entity into a integer if it isn't one
-** already.
-*/
-static int Integerify(Vdbe *p, int i){
-  if( p->zStack[i]!=0 ){
-    p->iStack[i] = atoi(p->zStack[i]);
-    sqliteFree(p->zStack[i]);
-    p->zStack[i] = 0;
-  }
-  return p->iStack[i];
 }
 
 /*
@@ -629,8 +709,8 @@ int sqliteVdbeExec(
       case OP_Integer: {
         int i = ++p->tos;
         if( NeedStack(p, p->tos) ) goto no_mem;
-        p->iStack[i] = pOp->p1;
-        p->zStack[i] = 0;
+        p->aStack[i].i = pOp->p1;
+        p->aStack[i].flags = STK_Int;
         break;
       }
 
@@ -644,8 +724,22 @@ int sqliteVdbeExec(
         if( NeedStack(p, p->tos) ) goto no_mem;
         z = pOp->p3;
         if( z==0 ) z = "";
-        p->iStack[i] = strlen(z) + 1;
-        sqliteSetString(&p->zStack[i], z, 0);
+        p->zStack[i] = z;
+        p->aStack[i].n = strlen(z) + 1;
+        p->aStack[i].flags = STK_Str;
+        break;
+      }
+
+      /* Opcode: NULL * * *
+      **
+      ** Push a NULL value onto the stack.
+      */
+      case OP_Null: {
+        int i = ++p->tos;
+        char *z;
+        if( NeedStack(p, p->tos) ) goto no_mem;
+        p->zStack[i] = 0;
+        p->aStack[i].flags = STK_Null;
         break;
       }
 
@@ -671,19 +765,20 @@ int sqliteVdbeExec(
         int j = ++p->tos;
         if( i<0 ) goto not_enough_stack;
         if( NeedStack(p, p->tos) ) goto no_mem;
-        p->iStack[j] = p->iStack[i];
-        if( p->zStack[i] ){
-          p->zStack[j] = sqliteMalloc( p->iStack[j] );
-          if( p->zStack[j] ) memcpy(p->zStack[j], p->zStack[i], p->iStack[j]);
+        p->aStack[j] = p->aStack[i];
+        if( p->aStack[i].flags & STK_Dyn ){
+          p->zStack[j] = sqliteMalloc( p->aStack[j].n );
+          if( p->zStack[j]==0 ) goto no_mem;
+          memcpy(p->zStack[j], p->zStack[i], p->aStack[j].n);
         }else{
-          p->zStack[j] = 0;
+          p->zStack[j] = p->zStack[i];
         }
         break;
       }
 
       /* Opcode: Pull P1 * *
       **
-      ** The P1-th element is removed its current location on 
+      ** The P1-th element is removed from its current location on 
       ** the stack and pushed back on top of the stack.  The
       ** top of the stack is element 0, so "Pull 0 0 0" is
       ** a no-op.
@@ -692,16 +787,16 @@ int sqliteVdbeExec(
         int from = p->tos - pOp->p1;
         int to = p->tos;
         int i;
-        int ti;
+        Stack ts;
         char *tz;
         if( from<0 ) goto not_enough_stack;
-        ti = p->iStack[from];
+        ts = p->aStack[from];
         tz = p->zStack[from];
         for(i=from; i<to; i++){
-          p->iStack[i] = p->iStack[i+1];
+          p->aStack[i] = p->aStack[i+1];
           p->zStack[i] = p->zStack[i+1];
         }
-        p->iStack[to] = ti;
+        p->aStack[to] = ts;
         p->zStack[to] = tz;
         break;
       }
@@ -744,7 +839,9 @@ int sqliteVdbeExec(
         if( i<0 ) goto not_enough_stack;
         if( NeedStack(p, p->tos+2) ) goto no_mem;
         for(j=i; j<=p->tos; j++){
-          if( Stringify(p, j) ) goto no_mem;
+          if( (p->aStack[j].flags & STK_Null)==0 ){
+            if( Stringify(p, j) ) goto no_mem;
+          }
         }
         p->zStack[p->tos+1] = 0;
         if( xCallback!=0 ){
@@ -756,25 +853,59 @@ int sqliteVdbeExec(
         break;
       }
 
-      /* Opcode: Concat * * *
+      /* Opcode: Concat P1 P2 P3
       **
-      ** Pop two elements from the stack.  Append the first (what used
-      ** to be the top of stack) to the second (the next on stack) to 
-      ** form a new string.  Push the new string back onto the stack.
+      ** Look at the first P1 elements of the stack.  Append them all 
+      ** together with the lowest element first.  Use P3 as a separator.  
+      ** Put the result on the top of the stack.  The original P1 elements
+      ** are popped from the stack if P2==0 and retained if P2==1.
+      **
+      ** If P3 is NULL, then use no separator.  When P1==1, this routine
+      ** makes a copy of the top stack element into memory obtained
+      ** from sqliteMalloc().
       */
       case OP_Concat: {
-        int tos = p->tos;
-        int nos = tos - 1;
-        char *z;
-        if( nos<0 ) goto not_enough_stack;
-        Stringify(p, tos);
-        Stringify(p, nos);
-        z = 0;
-        sqliteSetString(&z, p->zStack[nos], p->zStack[tos], 0);
-        PopStack(p, 1);
-        sqliteFree(p->zStack[nos]);
-        p->zStack[nos] = z;
-        p->iStack[nos] = strlen(p->zStack[nos])+1;
+        char *zNew;
+        int nByte;
+        int nField;
+        int i, j;
+        char *zSep;
+        int nSep;
+
+        nField = pOp->p1;
+        zSep = pOp->p3;
+        if( zSep==0 ) zSep = "";
+        nSep = strlen(zSep);
+        if( p->tos+1<nField ) goto not_enough_stack;
+        nByte = 1 - nSep;
+        for(i=p->tos-nField+1; i<=p->tos; i++){
+          if( p->aStack[i].flags & STK_Null ){
+            nByte += nSep;
+          }else{
+            if( Stringify(p, i) ) goto no_mem;
+            nByte += p->aStack[i].n - 1 + nSep;
+          }
+        }
+        zNew = sqliteMalloc( nByte );
+        if( zNew==0 ) goto no_mem;
+        j = 0;
+        for(i=p->tos-nField+1; i<=p->tos; i++){
+          if( (p->aStack[i].flags & STK_Null)==0 ){
+            memcpy(&zNew[j], p->zStack[i], p->aStack[i].n-1);
+            j += p->aStack[i].n-1;
+          }
+          if( nSep>0 && i<p->tos ){
+            memcpy(&zNew[j], zSep, nSep);
+            j += nSep;
+          }
+        }
+        zNew[j] = 0;
+        if( pOp->p2==0 ) PopStack(p, nField);
+        NeedStack(p, p->tos+1);
+        p->tos++;
+        p->aStack[p->tos].n = nByte;
+        p->aStack[p->tos].flags = STK_Str|STK_Dyn;
+        p->zStack[p->tos] = zNew;
         break;
       }
 
@@ -818,10 +949,10 @@ int sqliteVdbeExec(
         int tos = p->tos;
         int nos = tos - 1;
         if( nos<0 ) goto not_enough_stack;
-        if( p->zStack[tos]==0 && p->zStack[nos]==0 ){
+        if( (p->aStack[tos].flags & p->aStack[nos].flags & STK_Int)==STK_Int ){
           int a, b;
-          a = p->iStack[tos];
-          b = p->iStack[nos];
+          a = p->aStack[tos].i;
+          b = p->aStack[nos].i;
           switch( pOp->opcode ){
             case OP_Add:         b += a;       break;
             case OP_Subtract:    b -= a;       break;
@@ -836,14 +967,16 @@ int sqliteVdbeExec(
               break;
             }
           }
-          PopStack(p, 1);
-          p->iStack[nos] = b;
+          PopStack(p, 2);
+          p->tos = nos;
+          p->aStack[nos].i = b;
+          p->aStack[nos].flags = STK_Int;
         }else{
           double a, b;
-          Stringify(p, tos);
-          Stringify(p, nos);
-          a = atof(p->zStack[tos]);
-          b = atof(p->zStack[nos]);
+          Realify(p, tos);
+          Realify(p, nos);
+          a = p->aStack[tos].r;
+          b = p->aStack[nos].r;
           switch( pOp->opcode ){
             case OP_Add:         b += a;       break;
             case OP_Subtract:    b -= a;       break;
@@ -858,11 +991,10 @@ int sqliteVdbeExec(
               break;
             }
           }
-          sprintf(zBuf,"%g",b);
           PopStack(p, 1);
-          sqliteSetString(&p->zStack[nos], zBuf, 0);
-          if( p->zStack[nos]==0 ) goto no_mem;
-          p->iStack[nos] = strlen(p->zStack[nos]) + 1;
+          Release(p, nos);
+          p->aStack[nos].r = b;
+          p->aStack[nos].flags = STK_Real;
         }
         break;
       }
@@ -875,22 +1007,34 @@ int sqliteVdbeExec(
       case OP_Max: {
         int tos = p->tos;
         int nos = tos - 1;
+        int ft, fn;
+        int copy = 0;
         if( nos<0 ) goto not_enough_stack;
-        if( p->zStack[tos]==0 && p->zStack[nos]==0 ){
-          if( p->iStack[nos]<p->iStack[tos] ){
-            p->iStack[nos] = p->iStack[tos];
-          }
+        ft = p->aStack[tos].flags;
+        fn = p->aStack[nos].flags;
+        if( fn & STK_Null ){
+          copy = 1;
+        }else if( (ft & fn & STK_Int)==STK_Int ){
+          copy = p->aStack[nos].i<p->aStack[tos].i;
+        }else if( ( (ft|fn) & (STK_Int|STK_Real) ) !=0 ){
+          Realify(p, tos);
+          Realify(p, nos);
+          copy = p->aStack[tos].r>p->aStack[nos].r;
         }else{
           Stringify(p, tos);
           Stringify(p, nos);
-          if( sqliteCompare(p->zStack[nos], p->zStack[tos])<0 ){
-            sqliteFree(p->zStack[nos]);
-            p->zStack[nos] = p->zStack[tos];
-            p->iStack[nos] = p->iStack[tos];
-            p->zStack[tos] = 0;
-          }
+          copy = sqliteCompare(p->zStack[tos],p->zStack[nos])>0;
         }
-        p->tos--;
+        if( copy ){
+          Release(p, nos);
+          p->aStack[nos] = p->aStack[tos];
+          p->zStack[nos] = p->zStack[tos];
+          p->zStack[tos] = 0;
+          p->aStack[tos].flags = 0;
+        }else{
+          Release(p, tos);
+        }
+        p->tos = nos;
         break;
       }
 
@@ -905,28 +1049,37 @@ int sqliteVdbeExec(
       case OP_Min: {
         int tos = p->tos;
         int nos = tos - 1;
+        int ft, fn;
+        int copy = 0;
         if( nos<0 ) goto not_enough_stack;
-        if( p->zStack[tos]==0 && p->zStack[nos]==0 ){
-          if( p->iStack[nos]>p->iStack[tos] ){
-            p->iStack[nos] = p->iStack[tos];
-          }
+        ft = p->aStack[tos].flags;
+        fn = p->aStack[nos].flags;
+        if( pOp->p1 ){
+          copy = 1;
+          pOp->p1 = 0;
+        }else if( fn & STK_Null ){
+          copy = 1;
+        }else if( (ft & fn & STK_Int)==STK_Int ){
+          copy = p->aStack[nos].i>p->aStack[tos].i;
+        }else if( ( (ft|fn) & (STK_Int|STK_Real) ) !=0 ){
+          Realify(p, tos);
+          Realify(p, nos);
+          copy = p->aStack[tos].r<p->aStack[nos].r;
         }else{
           Stringify(p, tos);
           Stringify(p, nos);
-          if( pOp->p1==1 ){
-            sqliteFree(p->zStack[nos]);
-            p->zStack[nos] = p->zStack[tos];
-            p->iStack[nos] = p->iStack[tos];
-            p->zStack[tos] = 0;
-            pOp->p1 = 0;
-          }else if( sqliteCompare(p->zStack[nos], p->zStack[tos])>0 ){
-            sqliteFree(p->zStack[nos]);
-            p->zStack[nos] = p->zStack[tos];
-            p->iStack[nos] = p->iStack[tos];
-            p->zStack[tos] = 0;
-          }
+          copy = sqliteCompare(p->zStack[tos],p->zStack[nos])<0;
         }
-        p->tos--;
+        if( copy ){
+          Release(p, nos);
+          p->aStack[nos] = p->aStack[tos];
+          p->zStack[nos] = p->zStack[tos];
+          p->zStack[tos] = 0;
+          p->aStack[tos].flags = 0;
+        }else{
+          Release(p, tos);
+        }
+        p->tos = nos;
         break;
       }
 
@@ -938,7 +1091,7 @@ int sqliteVdbeExec(
         int tos = p->tos;
         if( tos<0 ) goto not_enough_stack;
         Integerify(p, tos);
-        p->iStack[tos] += pOp->p1;
+        p->aStack[tos].i += pOp->p1;
         break;
       }
 
@@ -986,31 +1139,24 @@ int sqliteVdbeExec(
         int tos = p->tos;
         int nos = tos - 1;
         int c;
+        int ft, fn;
         if( nos<0 ) goto not_enough_stack;
-        if( p->zStack[tos]==0 && p->zStack[nos]==0 ){
-          int a, b;
-          a = p->iStack[tos];
-          b = p->iStack[nos];
-          switch( pOp->opcode ){
-            case OP_Eq:    c = b==a;     break;
-            case OP_Ne:    c = b!=a;     break;
-            case OP_Lt:    c = b<a;      break;
-            case OP_Le:    c = b<=a;     break;
-            case OP_Gt:    c = b>a;      break;
-            default:       c = b>=a;     break;
-          }
+        ft = p->aStack[tos].flags;
+        fn = p->aStack[nos].flags;
+        if( (ft & fn)==STK_Int ){
+          c = p->aStack[nos].i - p->aStack[tos].i;
         }else{
           Stringify(p, tos);
           Stringify(p, nos);
           c = sqliteCompare(p->zStack[nos], p->zStack[tos]);
-          switch( pOp->opcode ){
-            case OP_Eq:    c = c==0;     break;
-            case OP_Ne:    c = c!=0;     break;
-            case OP_Lt:    c = c<0;      break;
-            case OP_Le:    c = c<=0;     break;
-            case OP_Gt:    c = c>0;      break;
-            default:       c = c>=0;     break;
-          }
+        }
+        switch( pOp->opcode ){
+          case OP_Eq:    c = c==0;     break;
+          case OP_Ne:    c = c!=0;     break;
+          case OP_Lt:    c = c<0;      break;
+          case OP_Le:    c = c<=0;     break;
+          case OP_Gt:    c = c>0;      break;
+          default:       c = c>=0;     break;
         }
         PopStack(p, 2);
         if( c ) pc = pOp->p2-1;
@@ -1082,53 +1228,55 @@ int sqliteVdbeExec(
       **
       ** Pop two values off the stack.  Take the logical AND of the
       ** two values and push the resulting boolean value back onto the
-      ** stack.  Integers are considered false if zero and true otherwise.
-      ** Strings are considered false if their length is zero and true
-      ** otherwise.
+      ** stack. 
       */
       /* Opcode: Or * * *
       **
       ** Pop two values off the stack.  Take the logical OR of the
       ** two values and push the resulting boolean value back onto the
-      ** stack.  Integers are considered false if zero and true otherwise.
-      ** Strings are considered false if their length is zero and true
-      ** otherwise.
+      ** stack. 
       */
       case OP_And:
       case OP_Or: {
         int tos = p->tos;
         int nos = tos - 1;
-        int x, y, c;
+        int c;
         if( nos<0 ) goto not_enough_stack;
-        x = p->zStack[nos] ? p->zStack[nos][0] : p->iStack[nos];
-        y = p->zStack[tos] ? p->zStack[tos][0] : p->iStack[tos];
+        Integerify(p, tos);
+        Integerify(p, nos);
         if( pOp->opcode==OP_And ){
-          c = x && y;
+          c = p->aStack[tos].i && p->aStack[nos].i;
         }else{
-          c = x || y;
+          c = p->aStack[tos].i || p->aStack[nos].i;
         }
         PopStack(p, 2);
         p->tos++;
-        p->iStack[nos] = c;
+        p->aStack[nos].i = c;
+        p->aStack[nos].flags = STK_Int;
         break;
       }
 
       /* Opcode: Negative * * *
       **
       ** Treat the top of the stack as a numeric quantity.  Replace it
-      ** with its additive inverse.  If the top of stack is a string,
-      ** then it is converted into a number using atof().
+      ** with its additive inverse.
       */
       case OP_Negative: {
         int tos;
         if( (tos = p->tos)<0 ) goto not_enough_stack;
-        if( p->zStack[tos] ){
-          double r = atof(p->zStack[tos]);
-          sprintf(zBuf, "%g", -r);
-          sqliteSetString(&p->zStack[tos], zBuf, 0);
-          p->iStack[tos] = strlen(zBuf) + 1;
+        if( p->aStack[tos].flags & STK_Real ){
+          Release(p, tos);
+          p->aStack[tos].r = -p->aStack[tos].r;
+          p->aStack[tos].flags = STK_Real;
+        }else if( p->aStack[tos].flags & STK_Int ){
+          Release(p, tos);
+          p->aStack[tos].i = -p->aStack[tos].i;
+          p->aStack[tos].flags = STK_Int;
         }else{
-          p->iStack[tos] = -p->iStack[tos];
+          Realify(p, tos);
+          Release(p, tos);
+          p->aStack[tos].r = -p->aStack[tos].r;
+          p->aStack[tos].flags = STK_Real;
         }
         break;
       }
@@ -1136,16 +1284,15 @@ int sqliteVdbeExec(
       /* Opcode: Not * * *
       **
       ** Treat the top of the stack as a boolean value.  Replace it
-      ** with its complement.  Integers are false if zero and true
-      ** otherwise.  Strings are false if zero-length and true otherwise.
+      ** with its complement.
       */
       case OP_Not: {
-        int c;
+        int tos = p->tos;
         if( p->tos<0 ) goto not_enough_stack;
-        c = p->zStack[p->tos] ? p->zStack[p->tos][0] : p->iStack[p->tos];
-        PopStack(p, 1);
-        p->tos++;
-        p->iStack[p->tos] = !c;
+        Integerify(p, tos);
+        Release(p, tos);
+        p->aStack[tos].i = !p->aStack[tos].i;
+        p->aStack[tos].flags = STK_Int;
         break;
       }
 
@@ -1168,7 +1315,8 @@ int sqliteVdbeExec(
       case OP_If: {
         int c;
         if( p->tos<0 ) goto not_enough_stack;
-        c = p->zStack[p->tos] ? p->zStack[p->tos][0] : p->iStack[p->tos];
+        Integerify(p, p->tos);
+        c = p->aStack[p->tos].i;
         PopStack(p, 1);
         if( c ) pc = pOp->p2-1;
         break;
@@ -1176,14 +1324,14 @@ int sqliteVdbeExec(
 
       /* Opcode: IsNull * P2 *
       **
-      ** Pop a single value from the stack.  If the value popped is the
-      ** empty string, then jump to p2.  Otherwise continue to the next 
+      ** Pop a single value from the stack.  If the value popped is NULL
+      ** then jump to p2.  Otherwise continue to the next 
       ** instruction.
       */
       case OP_IsNull: {
         int c;
         if( p->tos<0 ) goto not_enough_stack;
-        c = p->zStack[p->tos]!=0 && p->zStack[p->tos][0]==0;
+        c = (p->aStack[p->tos].flags & STK_Null)!=0;
         PopStack(p, 1);
         if( c ) pc = pOp->p2-1;
         break;
@@ -1198,7 +1346,7 @@ int sqliteVdbeExec(
       case OP_NotNull: {
         int c;
         if( p->tos<0 ) goto not_enough_stack;
-        c = p->zStack[p->tos]==0 || p->zStack[p->tos][0]!=0;
+        c = (p->aStack[p->tos].flags & STK_Null)==0;
         PopStack(p, 1);
         if( c ) pc = pOp->p2-1;
         break;
@@ -1208,14 +1356,15 @@ int sqliteVdbeExec(
       **
       ** Convert the top P1 entries of the stack into a single entry
       ** suitable for use as a data record in the database.  To do this
-      ** each entry is converted to a string and all the strings are
+      ** all entries (except NULLs) are converted to strings and 
       ** concatenated.  The null-terminators are preserved by the concatation
       ** and serve as a boundry marker between fields.  The lowest entry
       ** on the stack is the first in the concatenation and the top of
       ** the stack is the last.  After all fields are concatenated, an
       ** index header is added.  The index header consists of P1 integers
       ** which hold the offset of the beginning of each field from the
-      ** beginning of the completed record including the header.
+      ** beginning of the completed record including the header.  The
+      ** index for NULL entries is 0.
       */
       case OP_MakeRecord: {
         char *zNewRecord;
@@ -1228,29 +1377,37 @@ int sqliteVdbeExec(
         if( p->tos+1<nField ) goto not_enough_stack;
         nByte = 0;
         for(i=p->tos-nField+1; i<=p->tos; i++){
-          if( Stringify(p, i) ) goto no_mem;
-          nByte += p->iStack[i];
+          if( (p->aStack[i].flags & STK_Null)==0 ){
+            if( Stringify(p, i) ) goto no_mem;
+            nByte += p->aStack[i].n;
+          }
         }
         nByte += sizeof(int)*nField;
         zNewRecord = sqliteMalloc( nByte );
         if( zNewRecord==0 ) goto no_mem;
         j = 0;
         addr = sizeof(int)*nField;
-        for(i=p->tos-nField+1; i<p->tos; i++){
-          memcpy(&zNewRecord[j], (char*)&addr, sizeof(int));
-          addr += p->iStack[i];
+        for(i=p->tos-nField+1; i<=p->tos; i++){
+          if( p->aStack[i].flags & STK_Null ){
+            int zero = 0;
+            memcpy(&zNewRecord[j], (char*)&zero, sizeof(int));
+          }else{
+            memcpy(&zNewRecord[j], (char*)&addr, sizeof(int));
+            addr += p->aStack[i].n;
+          }
           j += sizeof(int);
         }
-        memcpy(&zNewRecord[j], (char*)&addr, sizeof(int));
-        j += sizeof(int);
         for(i=p->tos-nField+1; i<=p->tos; i++){
-          memcpy(&zNewRecord[j], p->zStack[i], p->iStack[i]);
-          j += p->iStack[i];
+          if( (p->aStack[i].flags & STK_Null)==0 ){
+            memcpy(&zNewRecord[j], p->zStack[i], p->aStack[i].n);
+            j += p->aStack[i].n;
+          }
         }
         PopStack(p, nField);
         NeedStack(p, p->tos+1);
         p->tos++;
-        p->iStack[p->tos] = nByte;
+        p->aStack[p->tos].n = nByte;
+        p->aStack[p->tos].flags = STK_Str | STK_Dyn;
         p->zStack[p->tos] = zNewRecord;
         break;
       }
@@ -1281,22 +1438,29 @@ int sqliteVdbeExec(
         if( p->tos+1<nField ) goto not_enough_stack;
         nByte = 0;
         for(i=p->tos-nField+1; i<=p->tos; i++){
-          if( Stringify(p, i) ) goto no_mem;
-          nByte += p->iStack[i]+1;
+          if( p->aStack[i].flags & STK_Null ){
+            nByte++;
+          }else{
+            if( Stringify(p, i) ) goto no_mem;
+            nByte += p->aStack[i].n;
+          }
         }
         zNewKey = sqliteMalloc( nByte );
         if( zNewKey==0 ) goto no_mem;
         j = 0;
         for(i=p->tos-nField+1; i<=p->tos; i++){
-          memcpy(&zNewKey[j], p->zStack[i], p->iStack[i]-1);
-          j += p->iStack[i]-1;
+          if( (p->aStack[i].flags & STK_Null)==0 ){
+            memcpy(&zNewKey[j], p->zStack[i], p->aStack[i].n-1);
+            j += p->aStack[i].n-1;
+          }
           if( i<p->tos ) zNewKey[j++] = '\t';
         }
         zNewKey[j] = 0;
         if( pOp->p2==0 ) PopStack(p, nField);
         NeedStack(p, p->tos+1);
         p->tos++;
-        p->iStack[p->tos] = nByte;
+        p->aStack[p->tos].n = nByte;
+        p->aStack[p->tos].flags = STK_Str|STK_Dyn;
         p->zStack[p->tos] = zNewKey;
         break;
       }
@@ -1311,6 +1475,8 @@ int sqliteVdbeExec(
       ** the VDBE finishes execution.  The P1 values need not be
       ** contiguous but all P1 values should be small integers.  It is
       ** an error for P1 to be negative.
+      **
+      ** If P3 is null or an empty string, a temporary table is opened.
       */
       case OP_Open: {
         int i = pOp->p1;
@@ -1374,11 +1540,12 @@ int sqliteVdbeExec(
         int tos = p->tos;
         if( tos<0 ) goto not_enough_stack;
         if( i>=0 && i<p->nTable && p->aTab[i].pTable ){
-          if( p->zStack[tos]==0 ){
+          if( p->aStack[tos].flags & STK_Int ){
             sqliteDbbeFetch(p->aTab[i].pTable, sizeof(int), 
-                           (char*)&p->iStack[tos]);
+                           (char*)&p->aStack[tos].i);
           }else{
-            sqliteDbbeFetch(p->aTab[i].pTable, p->iStack[tos], 
+            if( Stringify(p, tos) ) goto no_mem;
+            sqliteDbbeFetch(p->aTab[i].pTable, p->aStack[tos].n, 
                            p->zStack[tos]);
           }
         }
@@ -1399,11 +1566,12 @@ int sqliteVdbeExec(
         int alreadyExists = 0;
         if( tos<0 ) goto not_enough_stack;
         if( i>=0 && i<p->nTable && p->aTab[i].pTable ){
-          if( p->zStack[tos]==0 ){
+          if( p->aStack[tos].flags & STK_Int ){
             alreadyExists = sqliteDbbeTest(p->aTab[i].pTable, sizeof(int), 
-                                          (char*)&p->iStack[tos]);
+                                          (char*)&p->aStack[tos].i);
           }else{
-            alreadyExists = sqliteDbbeTest(p->aTab[i].pTable, p->iStack[tos], 
+            if( Stringify(p, tos) ) goto no_mem;
+            alreadyExists = sqliteDbbeTest(p->aTab[i].pTable, p->aStack[tos].n, 
                                            p->zStack[tos]);
           }
         }
@@ -1428,7 +1596,8 @@ int sqliteVdbeExec(
         }
         NeedStack(p, p->tos+1);
         p->tos++;
-        p->iStack[p->tos] = v;
+        p->aStack[p->tos].i = v;
+        p->aStack[p->tos].flags = STK_Int;
         break;
       }
 
@@ -1448,16 +1617,16 @@ int sqliteVdbeExec(
         if( i>=0 && i<p->nTable && p->aTab[i].pTable!=0 ){
           char *zKey;
           int nKey;
-          Stringify(p, tos);
-          if( p->zStack[nos]!=0 ){
-            nKey = p->iStack[nos];
+          if( (p->aStack[nos].flags & STK_Int)==0 ){
+            if( Stringify(p, nos) ) goto no_mem;
+            nKey = p->aStack[nos].n;
             zKey = p->zStack[nos];
           }else{
             nKey = sizeof(int);
-            zKey = (char*)&p->iStack[nos];
+            zKey = (char*)&p->aStack[nos].i;
           }
           sqliteDbbePut(p->aTab[i].pTable, nKey, zKey,
-                        p->iStack[tos], p->zStack[tos]);
+                        p->aStack[tos].n, p->zStack[tos]);
         }
         PopStack(p, 2);
         break;
@@ -1475,12 +1644,13 @@ int sqliteVdbeExec(
         if( i>=0 && i<p->nTable && p->aTab[i].pTable!=0 ){
           char *zKey;
           int nKey;
-          if( p->zStack[tos]!=0 ){
-            nKey = p->iStack[tos];
+          if( (p->aStack[tos].flags & STK_Int)==0 ){
+            if( Stringify(p, tos) ) goto no_mem;
+            nKey = p->aStack[tos].n;
             zKey = p->zStack[tos];
           }else{
             nKey = sizeof(int);
-            zKey = (char*)&p->iStack[tos];
+            zKey = (char*)&p->aStack[tos].n;
           }
           sqliteDbbeDelete(p->aTab[i].pTable, nKey, zKey);
         }
@@ -1492,6 +1662,11 @@ int sqliteVdbeExec(
       **
       ** Push onto the stack the value of the P2-th field from the
       ** most recent Fetch from table P1.
+      ** 
+      ** The value pushed is just a pointer to the data in the cursor.
+      ** The value will go away the next time a record is fetched from P1,
+      ** or when P1 is closed.  Make a copy of the string if it needs
+      ** to persist longer than that.
       */
       case OP_Field: {
         int *pAddr;
@@ -1502,17 +1677,21 @@ int sqliteVdbeExec(
         DbbeTable *pTab;
         char *z;
 
-        if( NeedStack(p, p->tos) ) goto no_mem;
+        if( NeedStack(p, tos) ) goto no_mem;
         if( i>=0 && i<p->nTable && (pTab = p->aTab[i].pTable)!=0 ){
           amt = sqliteDbbeDataLength(pTab);
           if( amt<=sizeof(int)*(p2+1) ){
-            sqliteSetString(&p->zStack[tos], "", 0);
+            p->aStack[tos].flags = STK_Null;
             break;
           }
           pAddr = (int*)sqliteDbbeReadData(pTab, sizeof(int)*p2);
-          z = sqliteDbbeReadData(pTab, *pAddr);
-          sqliteSetString(&p->zStack[tos], z, 0);
-          p->iStack[tos] = strlen(z)+1;
+          if( *pAddr==0 ){
+            p->aStack[tos].flags = STK_Null;
+            break;
+          }
+          p->zStack[tos] = z = sqliteDbbeReadData(pTab, *pAddr);
+          p->aStack[tos].n = strlen(z) + 1;
+          p->aStack[tos].flags = STK_Str;
         }
         break;
       }
@@ -1531,8 +1710,8 @@ int sqliteVdbeExec(
         if( NeedStack(p, p->tos) ) goto no_mem;
         if( i>=0 && i<p->nTable && (pTab = p->aTab[i].pTable)!=0 ){
           char *z = sqliteDbbeReadKey(pTab, 0);
-          memcpy(&p->iStack[tos], z, sizeof(int));
-          p->zStack[tos] = 0;
+          memcpy(&p->aStack[tos].i, z, sizeof(int));
+          p->aStack[tos].flags = STK_Int;
         }
         break;
       }
@@ -1599,7 +1778,8 @@ int sqliteVdbeExec(
           aIdx = (int*)sqliteDbbeReadData(pTab, 0);
           for(j=p->aTab[i].index; j<nIdx; j++){
             if( aIdx[j]!=0 ){
-              p->iStack[tos] = aIdx[j];
+              p->aStack[tos].i = aIdx[j];
+              p->aStack[tos].flags = STK_Int;
               break;
             }
           }
@@ -1630,12 +1810,14 @@ int sqliteVdbeExec(
         if( nos<0 ) goto not_enough_stack;
         if( i>=0 && i<p->nTable && (pTab = p->aTab[i].pTable)!=0 ){
           int r;
-          int newVal = Integerify(p, nos);
-          Stringify(p, tos);
-          r = sqliteDbbeFetch(pTab, p->iStack[tos], p->zStack[tos]);
+          int newVal;
+          Integerify(p, nos);
+          newVal = p->aStack[nos].i;
+          if( Stringify(p, tos) ) goto no_mem;
+          r = sqliteDbbeFetch(pTab, p->aStack[tos].n, p->zStack[tos]);
           if( r==0 ){
             /* Create a new record for this index */
-            sqliteDbbePut(pTab, p->iStack[tos], p->zStack[tos],
+            sqliteDbbePut(pTab, p->aStack[tos].n, p->zStack[tos],
                           sizeof(int), (char*)&newVal);
           }else{
             /* Extend the existing record */
@@ -1646,7 +1828,7 @@ int sqliteVdbeExec(
             if( aIdx==0 ) goto no_mem;
             sqliteDbbeCopyData(pTab, 0, nIdx*sizeof(int), (char*)aIdx);
             aIdx[nIdx] = newVal;
-            sqliteDbbePut(pTab, p->iStack[tos], p->zStack[tos],
+            sqliteDbbePut(pTab, p->aStack[tos].n, p->zStack[tos],
                           sizeof(int)*(nIdx+1), (char*)aIdx);
             sqliteFree(aIdx);
           }
@@ -1675,9 +1857,11 @@ int sqliteVdbeExec(
           int nIdx;
           int j;
           int r;
-          int oldVal = Integerify(p, nos);
-          Stringify(p, tos);
-          r = sqliteDbbeFetch(pTab, p->iStack[tos], p->zStack[tos]);
+          int oldVal;
+          Integerify(p, nos);
+          oldVal = p->aStack[nos].i;
+          if( Stringify(p, tos) ) goto no_mem;
+          r = sqliteDbbeFetch(pTab, p->aStack[tos].n, p->zStack[tos]);
           if( r==0 ) break;
           nIdx = sqliteDbbeDataLength(pTab)/sizeof(int);
           aIdx = (int*)sqliteDbbeReadData(pTab, 0);
@@ -1685,9 +1869,9 @@ int sqliteVdbeExec(
           if( j>=nIdx ) break;
           aIdx[j] = aIdx[nIdx-1];
           if( nIdx==1 ){
-            sqliteDbbeDelete(pTab, p->iStack[tos], p->zStack[tos]);
+            sqliteDbbeDelete(pTab, p->aStack[tos].n, p->zStack[tos]);
           }else{
-            sqliteDbbePut(pTab, p->iStack[tos], p->zStack[tos], 
+            sqliteDbbePut(pTab, p->aStack[tos].n, p->zStack[tos], 
                           sizeof(int)*(nIdx-1), (char*)aIdx);
           }
         }
@@ -1751,7 +1935,9 @@ int sqliteVdbeExec(
         if( i<0 ) goto bad_instruction;
         if( p->tos<0 ) goto not_enough_stack;
         if( i<p->nList && p->apList[i]!=0 ){
-          int val = Integerify(p, p->tos);
+          int val;
+          Integerify(p, p->tos);
+          val = p->aStack[p->tos].i;
           PopStack(p, 1);
           fwrite(&val, sizeof(int), 1, p->apList[i]);
         }
@@ -1785,8 +1971,8 @@ int sqliteVdbeExec(
         if( amt==1 ){
           p->tos++;
           if( NeedStack(p, p->tos) ) goto no_mem;
-          p->iStack[p->tos] = val;
-          p->zStack[p->tos] = 0;
+          p->aStack[p->tos].n = val;
+          p->aStack[p->tos].flags = STK_Int;
         }else{
           pc = pOp->p2 - 1;
         }
@@ -1831,21 +2017,25 @@ int sqliteVdbeExec(
       */
       case OP_SortPut: {
         int i = pOp->p1;
+        int tos = p->tos;
+        int nos = tos - 1;
         Sorter *pSorter;
         if( i<0 || i>=p->nSort ) goto bad_instruction;
-        if( p->tos<1 ) goto not_enough_stack;
-        Stringify(p, p->tos);
-        Stringify(p, p->tos-1);
+        if( tos<1 ) goto not_enough_stack;
+        if( Stringify(p, tos) || Stringify(p, nos) ) goto no_mem;
         pSorter = sqliteMalloc( sizeof(Sorter) );
         if( pSorter==0 ) goto no_mem;
         pSorter->pNext = p->apSort[i];
         p->apSort[i] = pSorter;
-        pSorter->nKey = p->iStack[p->tos];
-        pSorter->zKey = p->zStack[p->tos];
-        pSorter->nData = p->iStack[p->tos-1];
-        pSorter->pData = p->zStack[p->tos-1];
-        p->zStack[p->tos] = p->zStack[p->tos-1] = 0;
-        PopStack(p, 2);
+        pSorter->nKey = p->aStack[tos].n;
+        pSorter->zKey = p->zStack[tos];
+        pSorter->nData = p->aStack[nos].n;
+        pSorter->pData = p->zStack[nos];
+        p->aStack[tos].flags = 0;
+        p->aStack[nos].flags = 0;
+        p->zStack[tos] = 0;
+        p->zStack[nos] = 0;
+        p->tos -= 2;
         break;
       }
 
@@ -1866,23 +2056,30 @@ int sqliteVdbeExec(
         if( p->tos+1<nField ) goto not_enough_stack;
         nByte = 0;
         for(i=p->tos-nField+1; i<=p->tos; i++){
-          if( Stringify(p, i) ) goto no_mem;
-          nByte += p->iStack[i];
+          if( (p->aStack[i].flags & STK_Null)==0 ){
+            if( Stringify(p, i) ) goto no_mem;
+            nByte += p->aStack[i].n;
+          }
         }
         nByte += sizeof(char*)*(nField+1);
         azArg = sqliteMalloc( nByte );
         if( azArg==0 ) goto no_mem;
         z = (char*)&azArg[nField+1];
         for(j=0, i=p->tos-nField+1; i<=p->tos; i++, j++){
-          azArg[j] = z;
-          strcpy(z, p->zStack[i]);
-          z += p->iStack[i];
+          if( p->aStack[i].flags & STK_Null ){
+            azArg[j] = 0;
+          }else{
+            azArg[j] = z;
+            strcpy(z, p->zStack[i]);
+            z += p->aStack[i].n;
+          }
         }
         PopStack(p, nField);
         NeedStack(p, p->tos+1);
         p->tos++;
-        p->iStack[p->tos] = nByte;
+        p->aStack[p->tos].n = nByte;
         p->zStack[p->tos] = (char*)azArg;
+        p->aStack[p->tos].flags = STK_Str|STK_Dyn;
         break;
       }
 
@@ -1910,7 +2107,7 @@ int sqliteVdbeExec(
         nByte = 1;
         for(i=p->tos-nField+1; i<=p->tos; i++){
           if( Stringify(p, i) ) goto no_mem;
-          nByte += p->iStack[i]+2;
+          nByte += p->aStack[i].n+2;
         }
         zNewKey = sqliteMalloc( nByte );
         if( zNewKey==0 ) goto no_mem;
@@ -1918,15 +2115,16 @@ int sqliteVdbeExec(
         k = nField-1;
         for(i=p->tos-nField+1; i<=p->tos; i++){
           zNewKey[j++] = pOp->p3[k--];
-          memcpy(&zNewKey[j], p->zStack[i], p->iStack[i]-1);
-          j += p->iStack[i]-1;
+          memcpy(&zNewKey[j], p->zStack[i], p->aStack[i].n-1);
+          j += p->aStack[i].n-1;
           zNewKey[j++] = 0;
         }
         zNewKey[j] = 0;
         PopStack(p, nField);
         NeedStack(p, p->tos+1);
         p->tos++;
-        p->iStack[p->tos] = nByte;
+        p->aStack[p->tos].n = nByte;
+        p->aStack[p->tos].flags = STK_Str|STK_Dyn;
         p->zStack[p->tos] = zNewKey;
         break;
       }
@@ -1987,7 +2185,8 @@ int sqliteVdbeExec(
           p->tos++;
           NeedStack(p, p->tos);
           p->zStack[p->tos] = pSorter->pData;
-          p->iStack[p->tos] = pSorter->nData;
+          p->aStack[p->tos].n = pSorter->nData;
+          p->aStack[p->tos].flags = STK_Str|STK_Dyn;
           sqliteFree(pSorter->zKey);
           sqliteFree(pSorter);
         }else{
@@ -2009,7 +2208,8 @@ int sqliteVdbeExec(
           p->tos++;
           NeedStack(p, p->tos);
           sqliteSetString(&p->zStack[p->tos], pSorter->zKey, 0);
-          p->iStack[p->tos] = pSorter->nKey;
+          p->aStack[p->tos].n = pSorter->nKey;
+          p->aStack[p->tos].flags = STK_Str|STK_Dyn;
         }
         break;
       }
@@ -2190,8 +2390,9 @@ int sqliteVdbeExec(
         }
         if( z==0 ) z = "";
         p->tos++;
-        p->iStack[p->tos] = strlen(z) + 1;
-        sqliteSetString(&p->zStack[p->tos], z, 0);
+        p->aStack[p->tos].n = strlen(z) + 1;
+        p->zStack[p->tos] = z;
+        p->aStack[p->tos].flags = STK_Str;
         break;
       }
 
@@ -2212,10 +2413,20 @@ int sqliteVdbeExec(
       int i;
       fprintf(p->trace, "Stack:");
       for(i=p->tos; i>=0 && i>p->tos-5; i--){
-        if( p->zStack[i] ){
-          fprintf(p->trace, " [%.11s]", p->zStack[i]);
+        if( p->aStack[i].flags & STK_Null ){
+          fprintf(p->trace, " NULL");
+        }else if( p->aStack[i].flags & STK_Int ){
+          fprintf(p->trace, " i:%d", p->aStack[i].i);
+        }else if( p->aStack[i].flags & STK_Real ){
+          fprintf(p->trace, " r:%g", p->aStack[i].r);
+        }else if( p->aStack[i].flags & STK_Str ){
+          if( p->aStack[i].flags & STK_Dyn ){
+            fprintf(p->trace, " z:[%.11s]", p->zStack[i]);
+          }else{
+            fprintf(p->trace, " s:[%.11s]", p->zStack[i]);
+          }
         }else{
-          fprintf(p->trace, " [%d]", p->iStack[i]);
+          fprintf(p->trace, " ???");
         }
       }
       fprintf(p->trace,"\n");

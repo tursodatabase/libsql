@@ -1,5 +1,5 @@
-C :-)\s(CVS\s48)
-D 2000-06-03T19:28:49
+C rework\sthe\sVDBE\sengine.\s\sNULL\sis\snow\sdistinct\sfrom\s""\s(CVS\s49)
+D 2000-06-04T12:58:37
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 17ba1ccf8d2d40c627796bba8f72952365d6d644
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -10,20 +10,20 @@ F src/build.c 15c4f3844774baa882435223119a18c33810ee94
 F src/dbbe.c ae8b5d2cdb4fa7dd11313059984be9457fa77f63
 F src/dbbe.h a8a46f71238e0f09f3ec08fd9d1c8c7f4cdc49bf
 F src/delete.c e11433c14ed5cc8553cba14296b3baa3c23054bc
-F src/expr.c 6df33b3a42039e1eb1eb556c84a4b190a8eca8ca
-F src/insert.c 62951015437a96d388f43b591437d489719872fb
+F src/expr.c 793c15de4ce2911fa1a74999750bd3c0c9ca513f
+F src/insert.c ddae33b3dea1b4e743092d04240a20def9f88b72
 F src/main.c ed15e0132659ace7f44ea2dbcdd21c232af3dbd5
 F src/parse.y 9ec486608b7b4daaccf4ad9f05eef1a26a008fb8
-F src/select.c 2f4ae48deae2c5c94a89b3bc4fef2fe96c575e9f
-F src/shell.c bd658f9208bc20ce565c3f687836155772ca939a
+F src/select.c 2dff3d237db6588ad657bb13f19dedebc046a4eb
+F src/shell.c d184aeae4b14d469da1fb09f7899c27367a67dc6
 F src/sqlite.h 58da0a8590133777b741f9836beaef3d58f40268
-F src/sqliteInt.h 606a1614000f4e1cf208fe656bfabc5bd2957c7e
-F src/tclsqlite.c 10c00c460246cfba375b768c90b22bfe3c774c8f
+F src/sqliteInt.h da9749098da8c3537175e637179ca456709aee53
+F src/tclsqlite.c 9f358618ae803bedf4fb96da5154fd45023bc1f7
 F src/tokenize.c 15c229fee77325334c6814652e429b0930eba6c1
 F src/update.c 3f05d5082fd2c34f15d1e4a4db17355ad8807a78
-F src/util.c c22846f23b9311ca0e68f076686493bac7b20d5d
-F src/vdbe.c a584da66af8b44b0236bece378c4dc8ef333f814
-F src/vdbe.h ab574c91c6328c5795f68b84074fbcf860eae70e
+F src/util.c a06e8379665b18539cd9400641f3581d925f337e
+F src/vdbe.c 35e1c8fce3e5a5e59f493b1fe9a4f6f6a3205585
+F src/vdbe.h f20a3140905c385237e0891122beccde779c78c7
 F src/where.c bed9a8360cbfbf712bdc397c8e22216a5e5f9800
 F test/all.test 0950c135cab7e60c07bd745ccfad1476211e5bd7
 F test/copy.test 6b218a41dc6469491049b50ee105f76282f2547d
@@ -47,7 +47,7 @@ F www/c_interface.tcl 8867d76ddd416d2fbd41e4cb3de8efa9cef105a5
 F www/changes.tcl 567cc6066d87460bdedff8e5bbc20f41ddaadf77
 F www/index.tcl f8189a7898f6d06307c34047b9d7e00860026e44
 F www/sqlite.tcl 2f933ce18cffd34a0a020a82435ab937137970fd
-P 729d6586b8377d0e6cefa64c8cf3d883e9f0ddc3
-R 31c9e39e649b3b2d917f87f2b14771de
+P f76656416500851069633cc603905befa27cca66
+R dca222cd1ac9b9199dff323c95ec2e9d
 U drh
-Z 40d2fc5da1772ef64d963d97198b5963
+Z 114e443f09135bb7212679d2a361e0f5

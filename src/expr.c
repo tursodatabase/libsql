@@ -23,7 +23,7 @@
 *************************************************************************
 ** This file contains C code routines used for processing expressions
 **
-** $Id: expr.c,v 1.4 2000/06/03 19:19:41 drh Exp $
+** $Id: expr.c,v 1.5 2000/06/04 12:58:37 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -324,7 +324,7 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
       break;
     }
     case TK_NULL: {
-      sqliteVdbeAddOp(v, OP_String, 0, 0, "", 0);
+      sqliteVdbeAddOp(v, OP_Null, 0, 0, 0, 0);
       break;
     }
     case TK_AND:

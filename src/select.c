@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements.
 **
-** $Id: select.c,v 1.5 2000/06/03 18:06:53 drh Exp $
+** $Id: select.c,v 1.6 2000/06/04 12:58:38 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -183,7 +183,7 @@ void sqliteSelect(
       switch( sqliteFuncId(&p->token) ){
         case FN_Min:
         case FN_Max: {
-          sqliteVdbeAddOp(v, OP_String, 0, 0, "", 0);
+          sqliteVdbeAddOp(v, OP_Null, 0, 0, 0, 0);
           break;
         }
         default: {
@@ -251,6 +251,7 @@ void sqliteSelect(
       }
       if( id!=FN_Count && p->pList && p->pList->nExpr>=1 ){
         sqliteExprCode(pParse, p->pList->a[0].pExpr);
+        sqliteVdbeAddOp(v, OP_Concat, 1, 0, 0, 0);
       }
       switch( sqliteFuncId(&p->token) ){
         case FN_Count: op = OP_AddImm; p1 = 1; break;

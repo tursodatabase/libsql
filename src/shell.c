@@ -24,7 +24,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.6 2000/06/02 13:27:59 drh Exp $
+** $Id: shell.c,v 1.7 2000/06/04 12:58:38 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -154,7 +154,7 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
     case MODE_Line: {
       if( p->cnt++>0 ) fprintf(p->out,"\n");
       for(i=0; i<nArg; i++){
-        fprintf(p->out,"%s = %s\n", azCol[i], azArg[i]);
+        fprintf(p->out,"%s = %s\n", azCol[i], azArg[i] ? azArg[i] : 0);
       }
       break;
     }
@@ -188,7 +188,8 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
         }else{
            w = 10;
         }
-        fprintf(p->out,"%-*.*s%s",w,w,azArg[i], i==nArg-1 ? "\n": "  ");
+        fprintf(p->out,"%-*.*s%s",w,w,
+            azArg[i] ? azArg[i] : "", i==nArg-1 ? "\n": "  ");
       }
       break;
     }
@@ -199,7 +200,8 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
         }
       }
       for(i=0; i<nArg; i++){
-        fprintf(p->out,"%s%s",azArg[i], i==nArg-1 ? "\n" : p->separator);
+        fprintf(p->out,"%s%s",azArg[i] ? azArg[i] : "",
+             i==nArg-1 ? "\n" : p->separator);
       }
       break;
     }
@@ -214,7 +216,7 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
       for(i=0; i<nArg; i++){
         fprintf(p->out,"<TR>");
         for(i=0; i<nArg; i++){
-          fprintf(p->out,"<TD>%s</TD>",azArg[i]);
+          fprintf(p->out,"<TD>%s</TD>",azArg[i] ? azArg[i] : "");
         }
         fprintf(p->out,"</TD>\n");
       }

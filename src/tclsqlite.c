@@ -23,7 +23,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.4 2000/06/02 01:17:38 drh Exp $
+** $Id: tclsqlite.c,v 1.5 2000/06/04 12:58:38 drh Exp $
 */
 #include "sqlite.h"
 #include <tcl.h>
@@ -61,11 +61,15 @@ static int DbEvalCallback(
       }
     }
     for(i=0; i<nCol; i++){
-      Tcl_SetVar2(cbData->interp, cbData->zArray, azN[i], azCol[i], 0);
+      char *z = azCol[i];
+      if( z==0 ) z = "";
+      Tcl_SetVar2(cbData->interp, cbData->zArray, azN[i], z, 0);
     }
   }else{
     for(i=0; i<nCol; i++){
-      Tcl_SetVar(cbData->interp, azN[i], azCol[i], 0);
+      char *z = azCol[i];
+      if( z==0 ) z = "";
+      Tcl_SetVar(cbData->interp, azN[i], z, 0);
     }
   }
   cbData->once = 0;
@@ -283,9 +287,9 @@ int TCLSH_MAIN(int argc, char **argv){
           TCL_GLOBAL_ONLY | TCL_LIST_ELEMENT | TCL_APPEND_VALUE);
     }
     if( Tcl_EvalFile(interp, argv[1])!=TCL_OK ){
-      fprintf(stderr,"%s: %s\n", *argv, 
-         Tcl_GetVar(interp, "errorInfo", TCL_GLOBAL_ONLY)
-      );
+      char *zInfo = Tcl_GetVar(interp, "errorInfo", TCL_GLOBAL_ONLY);
+      if( zInfo==0 ) zInfo = interp->result;
+      fprintf(stderr,"%s: %s\n", *argv, zInfo);
       return 1;
     }
   }else{

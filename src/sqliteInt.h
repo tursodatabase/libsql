@@ -23,7 +23,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.11 2000/06/03 18:06:53 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.12 2000/06/04 12:58:38 drh Exp $
 */
 #include "sqlite.h"
 #include "dbbe.h"
@@ -35,7 +35,7 @@
 #include <string.h>
 #include <assert.h>
 
-/* #define MEMORY_DEBUG 2 */
+#define MEMORY_DEBUG 1
 #ifdef MEMORY_DEBUG
 # define sqliteMalloc(X)    sqliteMalloc_(X,__FILE__,__LINE__)
 # define sqliteFree(X)      sqliteFree_(X,__FILE__,__LINE__)
