@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.142 2003/07/16 02:19:38 drh Exp $
+** $Id: select.c,v 1.143 2003/07/16 11:51:36 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2148,8 +2148,14 @@ int sqliteSelect(
   ** p->nLimit<0 then "LIMIT 0" show no rows at all.
   ** "LIMIT -1" always shows all rows.  There is some
   ** contraversy about what the correct behavior should be.
+  **
+  ** Note that up until this point, the nLimit and nOffset hold
+  ** the numeric values of the limit and offset that appeared in
+  ** the original SQL.  After this code, the nLimit and nOffset hold
+  ** the register number of counters used to track the limit and
+  ** offset.
   */
-  if( p->nLimit<=0 ){
+  if( p->nLimit<0 ){
     p->nLimit = -1;
   }else{
     int iMem = pParse->nMem++;

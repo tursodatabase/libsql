@@ -1,5 +1,5 @@
-C Allow\snegative\svalues\sfor\sLIMIT\sand\sOFFSET.\s\sAdd\stests\sfor\snegative\sLIMITs\nand\sOFFSETs.\s\sMake\sthe\sOFFSET\swork\seven\sif\sLIMIT\sis\s0\sor\snegative.\s(CVS\s1052)
-D 2003-07-16T02:19:38
+C Make\sLIMIT\s0\sreturn\sno\srows.\s\sLIMIT\s-1\sstill\sreturns\sall\srows.\s\sTicket\s#346.\s(CVS\s1053)
+D 2003-07-16T11:51:36
 F Makefile.in 9ad23ed4ca97f9670c4496432e3fbd4b3760ebde
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -43,7 +43,7 @@ F src/parse.y 16aed0e3ed05445fa7f6a4209cc054208c7083c0
 F src/pragma.c 3b4f5a800e7a2145bc1930f323232e297d4eb782
 F src/printf.c 12e45d482ac8abcc6f786fc99e5bed7dd9a51af0
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
-F src/select.c 20a38bc2a63cc2676651013421cdb6a796c017af
+F src/select.c 98385a4f8601aad67fc0532570fe48f9833d912e
 F src/shell.c 3ed268908fd69c8fd4b28dbe415075cbf0e3991a
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 54619fa5df4c83b22def66bb3d24808fd03dcbae
@@ -89,7 +89,7 @@ F test/insert2.test c288375a64dad3295044714f0dfed4a193cf067f
 F test/intpkey.test 9320af48415c594afd4e15f8ef0daa272e05502e
 F test/ioerr.test 5dbaf09f96b56ee01cf3edd762b96eb4ad2c9ca4
 F test/join.test 54e770b74fc8cfc7769d5d0bb05657085641b3c4
-F test/limit.test 10991f3f33159a58b42859df3c731cfaf412c76e
+F test/limit.test 87ca391044ae5387cf697f5e3b21acabb03771a3
 F test/lock.test 388a3a10962d2d571c0c1821cc35bf069ee73473
 F test/main.test 6a851b5992c4881a725a3d9647e629199df8de9d
 F test/malloc.test 7ba32a9ebd3aeed52ae4aaa6d42ca37e444536fd
@@ -158,7 +158,7 @@ F www/faq.tcl 88d3b95d9cd8e374772daa3a646c4d107e7f3e9b
 F www/fileformat.tcl ae6ccf3ffddb180a5af173cd6ee102169629762b
 F www/formatchng.tcl ca6cc1cb1bef9bc36f0619049d3c95e749bc6983
 F www/index.tcl a34315cada875af0b098b4c45981da8ab33fe7b6
-F www/lang.tcl 2890eb85809c8fca20c1d81fa30fbdbceecc2a43
+F www/lang.tcl 06b825c1e88266866da3a915d0e039249ea2e4e0
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
 F www/nulls.tcl 4ac1c9bbb8a20a76500d18d63b383f51bb7d8be7
 F www/omitted.tcl fe59eaa9c1459cbf08fa7daa83421bfc814331bb
@@ -168,7 +168,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P 96e3c539586bf86c4fe8de0ac25de6655f704035
-R d3b2a0cf306874e50accca7303d95b51
+P e6a752bfef24f773973c151c6262ff331a9dc57a
+R 829f52d48453c3f975be5c03ffb2dee3
 U drh
-Z 6453ea102fcd7011423a94e154aded18
+Z bb5153e89cd8d80bdacd0e5c10fcf77d

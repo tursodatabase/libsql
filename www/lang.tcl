@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.63 2003/06/15 23:49:39 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.64 2003/07/16 11:51:36 drh Exp $}
 
 puts {<html>
 <head>
@@ -1550,7 +1550,7 @@ sort expression may be optionally followed by ASC or DESC to specify
 the sort order.</p>
 
 <p>The LIMIT clause places an upper bound on the number of rows
-returned in the result.  A LIMIT of 0 indicates no upper bound.
+returned in the result.  A negative LIMIT indicates no upper bound.
 The optional OFFSET following LIMIT specifies how many
 rows to skip at the beginning of the result set.</p>
 
