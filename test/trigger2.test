@@ -193,11 +193,7 @@ foreach tbl_defn {
   } [list 1 0 0 0.0 0.0 5 6 \
           2 0 0 5.0 6.0 5 6 ]
 
-  do_test trigger2-1.$ii.4 {
-    execsql {
-      PRAGMA integrity_check;
-    }
-  } {ok}
+  integrity_check trigger2-1.$ii.4
 }
 catchsql {
   DROP TABLE rlog;
@@ -315,12 +311,7 @@ foreach tr_program {
     do_test trigger2-2.$ii-after "execsql {$statement $query}" $after_data
     execsql "DROP TRIGGER the_trigger;"
 
-    do_test trigger2-2.$ii-integrity {
-      execsql {
-        PRAGMA integrity_check;
-      }
-    } {ok}
-
+    integrity_check trigger2-2.$ii-integrity
   }
 }
 catchsql {
@@ -391,11 +382,7 @@ execsql {
   DROP TABLE tbl;
   DROP TABLE log;
 }
-do_test trigger2-3.3 {
-  execsql {
-    PRAGMA integrity_check;
-  }
-} {ok}
+integrity_check trigger2-3.3
 
 # Simple cascaded trigger
 execsql {
@@ -723,8 +710,6 @@ do_test trigger2-8.6 {
   }
 } {3 103 5 205 4 304 9 109 11 211 10 310}
 
-do_test trigger2-9.9 {
-  execsql {PRAGMA integrity_check}
-} {ok}
+integrity_check trigger2-9.9
 
 finish_test

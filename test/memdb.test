@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is in-memory database backend.
 #
-# $Id: memdb.test,v 1.9 2004/06/19 00:16:31 drh Exp $
+# $Id: memdb.test,v 1.10 2004/11/04 14:47:13 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -111,11 +111,7 @@ for {set i 2} {$i<=$limit} {incr i} {
   set ::pager_old_format 0
 }
 
-do_test memdb-2.1 {
-  execsql {
-    PRAGMA integrity_check
-  }
-} {ok}
+integrity_check memdb-2.1
 
 do_test memdb-3.1 {
   execsql {

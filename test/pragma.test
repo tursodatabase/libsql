@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.20 2004/11/03 16:27:02 drh Exp $
+# $Id: pragma.test,v 1.21 2004/11/04 14:47:13 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -220,7 +220,7 @@ do_test pragma-3.1 {
     SELECT rowid, * from t2;
   }
 } {1 11 2 3 2 22 3 4}
-if {![sqlite3 -has-codec]} {
+if {![sqlite3 -has-codec] && $sqlite_options(integrityck)} {
   do_test pragma-3.2 {
     set rootpage [execsql {SELECT rootpage FROM sqlite_master WHERE name='i2'}]
     set db [btree_open test.db 100 0]
@@ -307,6 +307,7 @@ catchsql {COMMIT;}
 #
 do_test pragma-6.1 {
   set res {}
+  execsql {SELECT * FROM sqlite_temp_master}
   foreach {idx name file} [execsql {pragma database_list}] {
     lappend res $idx $name
   }

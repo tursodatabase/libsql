@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.259 2004/11/04 14:30:05 danielk1977 Exp $
+** $Id: build.c,v 1.260 2004/11/04 14:47:12 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -279,8 +279,7 @@ void sqlite3ResetInternalSchema(sqlite3 *db, int iDb){
     sqlite3HashClear(&pDb->aFKey);
     sqlite3HashClear(&pDb->idxHash);
     for(pElem=sqliteHashFirst(&temp2); pElem; pElem=sqliteHashNext(pElem)){
-      Trigger *pTrigger = sqliteHashData(pElem);
-      sqlite3DeleteTrigger(pTrigger);
+      sqlite3DeleteTrigger((Trigger*)sqliteHashData(pElem));
     }
     sqlite3HashClear(&temp2);
     sqlite3HashInit(&pDb->tblHash, SQLITE_HASH_STRING, 0);
@@ -1591,9 +1590,6 @@ void sqlite3RootPageMoved(Db *pDb, int iFrom, int iTo){
 static void destroyRootPage(Vdbe *v, int iTable, int iDb){
 #ifndef SQLITE_OMIT_AUTOVACUUM
   int base;
-#endif
-  sqlite3VdbeAddOp(v, OP_Destroy, iTable, iDb);
-#ifndef SQLITE_OMIT_AUTOVACUUM
   /* If SQLITE_OMIT_AUTOVACUUM is not defined, then OP_Destroy pushes
   ** an integer onto the stack. If this integer is non-zero, then it is
   ** the root page number of a table moved to location iTable. The 
@@ -1630,7 +1626,10 @@ static void destroyRootPage(Vdbe *v, int iTable, int iDb){
     { OP_MakeRecord, 5, 0,       0},
     { OP_PutIntKey,  0, 0,       0}  /* 16 */
   };
+#endif
 
+  sqlite3VdbeAddOp(v, OP_Destroy, iTable, iDb);
+#ifndef SQLITE_OMIT_AUTOVACUUM
   base = sqlite3VdbeAddOpList(v, ArraySize(updateMaster), updateMaster);
   sqlite3VdbeChangeP1(v, base+13, iTable);
 #endif
@@ -1839,8 +1838,8 @@ void sqlite3CreateForeignKey(
   ExprList *pToCol,    /* Columns in the other table */
   int flags            /* Conflict resolution algorithms. */
 ){
-  FKey *pFKey = 0;
 #ifndef SQLITE_OMIT_FOREIGN_KEY
+  FKey *pFKey = 0;
   Table *p = pParse->pNewTable;
   int nByte;
   int i;

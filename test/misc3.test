@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc3.test,v 1.14 2004/11/04 04:42:28 drh Exp $
+# $Id: misc3.test,v 1.15 2004/11/04 14:47:13 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -106,33 +106,31 @@ do_test misc3-2.9 {
 # Ticket #522.  Make sure integer overflow is handled properly in
 # indices.
 #
-do_test misc3-3.1 {
-  execsql {PRAGMA integrity_check}
-} ok
+integrity_check misc3-3.1
 do_test misc3-3.2 {
   execsql {
     CREATE TABLE t2(a INT UNIQUE);
-    PRAGMA integrity_check;
   }
-} ok
+} {}
+integrity_check misc3-3.2.1
 do_test misc3-3.3 {
   execsql {
     INSERT INTO t2 VALUES(2147483648);
-    PRAGMA integrity_check;
   }
-} ok
+} {}
+integrity_check misc3-3.3.1
 do_test misc3-3.4 {
   execsql {
     INSERT INTO t2 VALUES(-2147483649);
-    PRAGMA integrity_check;
   }
-} ok
+} {}
+integrity_check misc3-3.4.1
 do_test misc3-3.5 {
   execsql {
     INSERT INTO t2 VALUES(+2147483649);
-    PRAGMA integrity_check;
   }
-} ok
+} {}
+integrity_check misc3-3.5.1
 do_test misc3-3.6 {
   execsql {
     INSERT INTO t2 VALUES(+2147483647);

@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach.test,v 1.28 2004/11/04 04:42:28 drh Exp $
+# $Id: attach.test,v 1.29 2004/11/04 14:47:13 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -153,6 +153,7 @@ do_test attach-1.20.1 {
   db_list db
 } {0 main 2 db2 3 db3 4 db4 5 db6 6 db7 7 db8 8 db9 9 db10 10 db11}
 integrity_check attach-1.20.2
+execsql {select * from sqlite_temp_master}
 do_test attach-1.21 {
   catchsql {
     ATTACH 'test.db' as db12;

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is page cache subsystem.
 #
-# $Id: pager3.test,v 1.1 2004/08/18 19:09:44 drh Exp $
+# $Id: pager3.test,v 1.2 2004/11/04 14:47:13 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -59,10 +59,13 @@ do_test pager3-1.1 {
   }
   db close
   sqlite3 db test.db
-  execsql {
-    pragma integrity_check;
+  set r ok
+  ifcapable {integrityck} {
+    set r [execsql {
+      pragma integrity_check;
+    }]
   }
+  set r
 } ok
-
 
 finish_test
