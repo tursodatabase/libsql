@@ -1,5 +1,5 @@
-C Modify\sthe\swindows\slocking\scode\sso\sthat\sit\sworks\scorrectly\sfor\sa\sdatabase\r\nbeing\sshared\sbetween\sWin95/98/ME\sand\sWinNT/2K/XP\ssystems.\s\sTicket\s#310.\s(CVS\s988)
-D 2003-05-29T17:43:08
+C Change\sthe\srow-size\slimit\sback\sto\s1MB.\s\sIt\swas\stemporarily\sraised\sto\s16MB.\nWe'll\sprobably\smove\sit\sto\s16MB\seventually,\sbut\snot\sjust\syet.\s(CVS\s989)
+D 2003-05-29T17:50:55
 F Makefile.in 1ff85c27d4350c74118341024e8a4fb2a04a3a43
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -47,7 +47,7 @@ F src/select.c 15d921308065c9320363af6f43c01d9f09ea7118
 F src/shell.c b63089a91d6584df06eaa2e53ea1150c68ab1e61
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in eec06462cba262c0ee03f38462a18a4bc66dda4e
-F src/sqliteInt.h e5ae70c84c07100561eff4ef88ac7b5f1b4dff1e
+F src/sqliteInt.h db9d8883896fa2be7afe13da8bf9c67b39313a6d
 F src/table.c 4301926464d88d2c2c7cd21c3360aa75bf068b95
 F src/tclsqlite.c 9e25f98f1765afa0716144ef57abda75c88f688d
 F src/test1.c 4596acd9d9f2a49fda0160a8a6dee5bfc7c6c325
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 8b8fa0fff26107912f0bec4e44df207c7885e273
-R b9d0e8972fcc9a231c0902a3a73faac1
+P 8c402db7e0745622d9950e5ca5d4d8e933da436c
+R fbd5748bc942b5aae6db8b32fa7c1886
 U drh
-Z 03fcc024f3cf3df89cb775ce044ef1b0
+Z 9cd0279506dec2db43f72b462a03f9b3
