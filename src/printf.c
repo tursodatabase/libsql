@@ -800,7 +800,7 @@ char *sqlite3_snprintf(int n, char *zBuf, const char *zFormat, ...){
   return z;
 }
 
-#if defined(SQLITE_TEST)
+#if defined(SQLITE_TEST) || defined(SQLITE_DEBUG)
 /*
 ** A version of printf() that understands %lld.  Used for debugging.
 ** The printf() built into some versions of windows does not understand %lld

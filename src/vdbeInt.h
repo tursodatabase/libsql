@@ -121,8 +121,8 @@ struct Mem {
   u8  enc;            /* TEXT_Utf8, TEXT_Utf16le, or TEXT_Utf16be */
   double r;           /* Real value */
   char *z;            /* String or BLOB value */
-  char zShort[NBFS];  /* Space for short strings */
   void (*xDel)(void *);  /* If not null, call this function to delete Mem.z */
+  char zShort[NBFS];  /* Space for short strings */
 };
 typedef struct Mem Mem;
 

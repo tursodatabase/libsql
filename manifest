@@ -1,5 +1,5 @@
-C Make\ssure\sthe\sresult\sof\sa\suser-defined\sfunction\suses\sthe\stext\sencoding\sof\nthe\sdatabase.\s(CVS\s1670)
-D 2004-06-22T17:59:56
+C Be\scareful\sto\sinitialize\sthe\sMem.xDel\sfield\sto\szero\sfor\sstatic\sMems.\s(CVS\s1671)
+D 2004-06-22T22:04:46
 F Makefile.in 0a3d7aaefa50717bd550b0cf568a51072c4c103c
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -54,7 +54,7 @@ F src/pager.c 5fac95a8fef916a4c5915ccc3b8dc72312681880
 F src/pager.h bc58d32a9dee464f7268fb68652c130a4216e438
 F src/parse.y 097438674976355a10cf177bd97326c548820b86
 F src/pragma.c 0750e1c360647dbe0a991f16133b0fe5e42e5039
-F src/printf.c afe30ac12d12afad294b4bceebc07316ed8ee171
+F src/printf.c b6490067bb19e2c9a9e0eb09dbb205d90ca72899
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c f02a65af34231031896e8442161cb5251e191e75
 F src/shell.c 24b641700c9d90f361fcfa4f432c5b4aff704e6d
@@ -70,14 +70,14 @@ F src/test5.c 1b7c275b2929dbd034a567255d2aca339410d1d6
 F src/tokenize.c 900374b6b37f04748bcd48c2d29a41c251542935
 F src/trigger.c 296e888ae931e9774e1761996b2b66db40f7d216
 F src/update.c b66b1896c9da54678ba3eff2bf0b4d291a95986a
-F src/utf.c 3a2596013e4b9582d075ca742de7f067ff7dee95
+F src/utf.c c5ae076b5b9e1a4fac72a48f0005508ab4118d1b
 F src/util.c e31e35d3d76cab7a02045095064897eca49cbce3
 F src/vacuum.c fcb930215a3f6c50087300782555f61ad11dd80c
 F src/vdbe.c a6b9eaaceab862076debbf98c9445089473394d6
 F src/vdbe.h 2d87155e31e84bb00cdc48cc1ce6987a3a484250
-F src/vdbeInt.h 0b8eda5e0a1331d23b38d7888f187119a3491b40
+F src/vdbeInt.h 22ab717b69074fe7a28f64e35a39bd436ad9d150
 F src/vdbeapi.c d3659f3f2982e79c06ab8e338604a39e0ea0d2d3
-F src/vdbeaux.c a7831608f895a4756e937d9a002ef5270ee7a2a0
+F src/vdbeaux.c f28f7fbc56c013f99957ed89318e5467ea629748
 F src/vdbemem.c 9359c53386e070fea9f5403cab0c6f0cfe36496b
 F src/where.c 6507074d8ce3f78e7a4cd33f667f11e62020553e
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
@@ -229,7 +229,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P ac6683e380f6199a980d587b2933c3cb0a4024f2
-R c4ba0af43930c42a3e91240b5e6fce3f
+P d333ac8002feff9423e286369e5ae5a6bfe3be50
+R e2f1edc90c46a1b510c4a05b86010c6f
 U drh
-Z ad60bac31934b5ba795c9a17c77f245b
+Z bc07a1bf130b816565f3c8369d6b9ac8

@@ -1602,6 +1602,7 @@ int sqlite3VdbeSerialGet(
     assert( serial_type>=12 );
     pMem->z = (char *)buf;
     pMem->n = len;
+    pMem->xDel = 0;
     if( serial_type&0x01 ){
       pMem->flags = MEM_Str | MEM_Ephem;
     }else{
