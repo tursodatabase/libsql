@@ -1,9 +1,9 @@
-C Avoid\sexcess\sheap\susage\swhen\scopying\sexpressions.\s\sTicket\s#979.\s(CVS\s2126)
-D 2004-11-20T20:42:10
+C Fix\sthe\svacuum\sbug\sin\sversion\s2.8.\s\sAlso\sprepare\sfor\srelease\s2.8.16.\s(CVS\s2326)
+D 2005-02-14T00:21:39
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
-F VERSION b34b87bf7344715b07b2187ede4bda6c66b76ff0
+F VERSION e100aeefc5ef366c7dbecc865e47faa2047802ca
 F aclocal.m4 7daea4c35e88de30d5a3f6f7a2ab99720e803bbd
 F art/SQLite.eps 9b43cc99cfd2be687d386faea6862ea68d6a72b2
 F art/SQLite.gif 1bbb94484963f1382e27e1c5e86dd0c1061eba2b
@@ -38,7 +38,7 @@ F src/hash.h 3247573ab95b9dd90bcca0307a75d9a16da1ccc7
 F src/insert.c c0485ee2d1b99322894e2d1e0b576fd05ed75616
 F src/main.c 7802ab78b2f2e66750be2192b2c1334c99bc10a5
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
-F src/os.c 8cfb27bd84900d542d2f520375aa407cb3ed6aab
+F src/os.c 989942fc5d209128d1f371f29447914ec98006ef
 F src/os.h 250a3789be609adfee5c5aa20137ce8683276f24
 F src/pager.c b246986e5ba31b15aa3cf91d3b9ec2e608aceb8e
 F src/pager.h 82332878799280145639a48d88cdb4058925e3f6
@@ -60,7 +60,7 @@ F src/tokenize.c 6676b946fd8825b67ab52140af4fdc57a70bda48
 F src/trigger.c a9927b57c865b6f3df3fb5e40c9824d722660ded
 F src/update.c bd391079138e67d09c9af34528ca4137c29242d1
 F src/util.c 48f1e99803e924433477a7ccbdab35663acb621d
-F src/vacuum.c e6e07446bce87a9250eaaa63cffb90c975b045c0
+F src/vacuum.c 9a59796f3d8303e19ea7acfac26f13221ecf9411
 F src/vdbe.c f78a26f5bbd647fac84c26e0a54b85361613a004
 F src/vdbe.h ac987945e4dd6f987bca534c6005899f089fc270
 F src/vdbeInt.h b40ff02ce39fd076e6ff3369e19c1bbfe1986682
@@ -191,7 +191,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 7fa623f24a6c566cb149cfb6515faf489280db97
-R 04dd990619473726fc3d154c3a329593
+P 0f444c032dded0ea4c5bf47516f37cbd44767689
+R 815998f5923df7cdf378ba921e528786
 U drh
-Z 4ba3c781d8e789ac8d708b2c1e226dc7
+Z ad934a75e14adf4c31565d94ad77114b

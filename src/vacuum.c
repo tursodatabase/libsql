@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.13.2.3 2004/11/20 19:01:45 drh Exp $
+** $Id: vacuum.c,v 1.13.2.4 2005/02/14 00:21:39 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -226,14 +226,6 @@ int sqliteRunVacuum(char **pzErrMsg, sqlite *db){
   char *zErrMsg;          /* Error message */
   vacuumStruct sVac;      /* Information passed to callbacks */
 
-  /* These are all of the pragmas that need to be transferred over
-  ** to the new database */
-  static const char *zPragma[] = {
-     "default_synchronous",
-     "default_cache_size",
-     "default_temp_store",
-  };
-
   if( db->flags & SQLITE_InTrans ){
     sqliteSetString(pzErrMsg, "cannot VACUUM from within a transaction", 
        (char*)0);
@@ -283,13 +275,6 @@ int sqliteRunVacuum(char **pzErrMsg, sqlite *db){
   sVac.dbOld = db;
   sVac.dbNew = dbNew;
   sVac.pzErrMsg = pzErrMsg;
-  for(i=0; rc==SQLITE_OK && i<sizeof(zPragma)/sizeof(zPragma[0]); i++){
-    char zBuf[200];
-    assert( strlen(zPragma[i])<100 );
-    sprintf(zBuf, "PRAGMA %s;", zPragma[i]);
-    sVac.zPragma = zPragma[i];
-    rc = sqlite_exec(db, zBuf, vacuumCallback3, &sVac, &zErrMsg);
-  }
   if( rc==SQLITE_OK ){
     rc = sqlite_exec(db, 
       "SELECT type, name, sql FROM sqlite_master "
@@ -300,6 +285,19 @@ int sqliteRunVacuum(char **pzErrMsg, sqlite *db){
       vacuumCallback1, &sVac, &zErrMsg);
   }
   if( rc==SQLITE_OK ){
+    int meta1[SQLITE_N_BTREE_META];
+    int meta2[SQLITE_N_BTREE_META];
+    sqliteBtreeGetMeta(db->aDb[0].pBt, meta1);
+    sqliteBtreeGetMeta(dbNew->aDb[0].pBt, meta2);
+    meta2[1] = meta1[1]+1;
+    meta2[3] = meta1[3];
+    meta2[4] = meta1[4];
+    meta2[6] = meta1[6];
+    rc = sqliteBtreeUpdateMeta(dbNew->aDb[0].pBt, meta2);
+  }
+  if( rc==SQLITE_OK ){
+    int meta[SQLITE_N_BTREE_META];
+    
     rc = sqliteBtreeCopyFile(db->aDb[0].pBt, dbNew->aDb[0].pBt);
     sqlite_exec(db, "COMMIT", 0, 0, 0);
     sqliteResetInternalSchema(db, 0);

@@ -1116,6 +1116,10 @@ int sqliteOsSeek(OsFile *id, off_t offset){
 #endif
 }
 
+#ifdef SQLITE_NOSYNC
+# define fsync(X) 0
+#endif
+
 /*
 ** Make sure all writes to a particular file are committed to disk.
 **
