@@ -1,5 +1,5 @@
-C Don't\srun\sthe\stests\sin\salter3.test\sif\sSQLITE_OMIT_ALTERTABLE\sis\sdefined.\s(CVS\s2395)
-D 2005-03-17T07:00:55
+C Fixed\sa\stypo\sin\salter3.test.\s(CVS\s2396)
+D 2005-03-17T12:33:14
 F Makefile.in 5c00d0037104de2a50ac7647a5f12769795957a3
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -86,7 +86,7 @@ F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
 F test/all.test 7f0988442ab811dfa41793b5b550f5828ce316f3
 F test/alter.test 3a20ce14c3989f7e2e75da50797065c2e56f838b
 F test/alter2.test 60ba0a7057dc71ad630a1cc7c487104346849d50
-F test/alter3.test 08ef4854a4627e45b9e537e7c9047b4146d02356
+F test/alter3.test 244f86314558a56a3e79c17eee6fb497fa60645b
 F test/attach.test e6bda19cc954fd84836fadbd70d80134cb17918a
 F test/attach2.test 6f3a3a3a7f5be40388dd4d805e0e0712718dca9d
 F test/attach3.test c05c70b933afbde0901dab9da3e66ee842c09f38
@@ -277,7 +277,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P 173e26961faec434cd4e4abc1dcb238ab9a942b8
-R a44c37f6f5310cf074cda2cb157b1cf8
-U danielk1977
-Z ca285d31621a13a8dc09e38685bf16ff
+P 800fb3bf06f73af53af57f5b172c85406af374ad
+R ba10e0ea6358a224f231b7ca767b2ccf
+U drh
+Z 8dab2cd1f570ecdb07ff4ba5a2a7d53e
