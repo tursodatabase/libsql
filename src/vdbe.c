@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.152 2002/06/01 21:41:10 drh Exp $
+** $Id: vdbe.c,v 1.153 2002/06/06 23:16:06 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -4864,7 +4864,6 @@ cleanup:
       case OE_Rollback: {
         sqliteBtreeRollback(pBt);
         if( db->pBeTemp ) sqliteBtreeRollback(db->pBeTemp);
-        sqliteRollbackInternalChanges(db);
         db->flags &= ~SQLITE_InTrans;
         db->onError = OE_Default;
         break;
@@ -4873,13 +4872,13 @@ cleanup:
         if( undoTransOnError ){
           sqliteBtreeCommit(pBt);
           if( db->pBeTemp ) sqliteBtreeCommit(db->pBeTemp);
-          sqliteCommitInternalChanges(db);
           db->flags &= ~SQLITE_InTrans;
           db->onError = OE_Default;
         }
         break;
       }
     }
+    sqliteRollbackInternalChanges(db);
   }
   sqliteBtreeCommitCkpt(pBt);
   if( db->pBeTemp ) sqliteBtreeCommitCkpt(db->pBeTemp);

@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.61 2002/05/15 11:44:14 drh Exp $
+** $Id: btree.c,v 1.62 2002/06/06 23:16:05 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -317,6 +317,7 @@ struct Btree {
   PageOne *page1;       /* First page of the database */
   u8 inTrans;           /* True if a transaction is in progress */
   u8 inCkpt;            /* True if there is a checkpoint on the transaction */
+  u8 readOnly;          /* True if the underlying file is readonly */
   Hash locks;           /* Key: root page number.  Data: lock count */
 };
 typedef Btree Bt;
@@ -630,6 +631,7 @@ int sqliteBtreeOpen(
   sqlitepager_set_destructor(pBt->pPager, pageDestructor);
   pBt->pCursor = 0;
   pBt->page1 = 0;
+  pBt->readOnly = sqlitepager_isreadonly(pBt->pPager);
   sqliteHashInit(&pBt->locks, SQLITE_HASH_INT, 0);
   *ppBtree = pBt;
   return SQLITE_OK;
@@ -771,12 +773,13 @@ int sqliteBtreeBeginTrans(Btree *pBt){
       return rc;
     }
   }
-  if( sqlitepager_isreadonly(pBt->pPager) ){
-    return SQLITE_READONLY;
-  }
-  rc = sqlitepager_begin(pBt->page1);
-  if( rc==SQLITE_OK ){
-    rc = newDatabase(pBt);
+  if( pBt->readOnly ){
+    rc = SQLITE_OK;
+  }else{
+    rc = sqlitepager_begin(pBt->page1);
+    if( rc==SQLITE_OK ){
+      rc = newDatabase(pBt);
+    }
   }
   if( rc==SQLITE_OK ){
     pBt->inTrans = 1;
@@ -796,7 +799,7 @@ int sqliteBtreeBeginTrans(Btree *pBt){
 int sqliteBtreeCommit(Btree *pBt){
   int rc;
   if( pBt->inTrans==0 ) return SQLITE_ERROR;
-  rc = sqlitepager_commit(pBt->pPager);
+  rc = pBt->readOnly ? SQLITE_OK : sqlitepager_commit(pBt->pPager);
   pBt->inTrans = 0;
   pBt->inCkpt = 0;
   unlockBtreeIfUnused(pBt);
@@ -824,7 +827,7 @@ int sqliteBtreeRollback(Btree *pBt){
       pCur->pPage = 0;
     }
   }
-  rc = sqlitepager_rollback(pBt->pPager);
+  rc = pBt->readOnly ? SQLITE_OK : sqlitepager_rollback(pBt->pPager);
   unlockBtreeIfUnused(pBt);
   return rc;
 }
@@ -844,7 +847,7 @@ int sqliteBtreeBeginCkpt(Btree *pBt){
   if( !pBt->inTrans || pBt->inCkpt ){
     return SQLITE_ERROR;
   }
-  rc = sqlitepager_ckpt_begin(pBt->pPager);
+  rc = pBt->readOnly ? SQLITE_OK : sqlitepager_ckpt_begin(pBt->pPager);
   pBt->inCkpt = 1;
   return rc;
 }
@@ -856,7 +859,7 @@ int sqliteBtreeBeginCkpt(Btree *pBt){
 */
 int sqliteBtreeCommitCkpt(Btree *pBt){
   int rc;
-  if( pBt->inCkpt ){
+  if( pBt->inCkpt && !pBt->readOnly ){
     rc = sqlitepager_ckpt_commit(pBt->pPager);
   }else{
     rc = SQLITE_OK;
@@ -876,7 +879,7 @@ int sqliteBtreeCommitCkpt(Btree *pBt){
 int sqliteBtreeRollbackCkpt(Btree *pBt){
   int rc;
   BtCursor *pCur;
-  if( pBt->inCkpt==0 ) return SQLITE_OK;
+  if( pBt->inCkpt==0 || pBt->readOnly ) return SQLITE_OK;
   for(pCur=pBt->pCursor; pCur; pCur=pCur->pNext){
     if( pCur->pPage ){
       sqlitepager_unref(pCur->pPage);
@@ -915,6 +918,10 @@ int sqliteBtreeCursor(Btree *pBt, int iTable, int wrFlag, BtCursor **ppCur){
       *ppCur = 0;
       return rc;
     }
+  }
+  if( wrFlag && pBt->readOnly ){
+    *ppCur = 0;
+    return SQLITE_READONLY;
   }
   pCur = sqliteMalloc( sizeof(*pCur) );
   if( pCur==0 ){
@@ -2422,6 +2429,9 @@ int sqliteBtreeCreateTable(Btree *pBt, int *piTable){
   if( !pBt->inTrans ){
     return SQLITE_ERROR;  /* Must start a transaction first */
   }
+  if( pBt->readOnly ){
+    return SQLITE_READONLY;
+  }
   rc = allocatePage(pBt, &pRoot, &pgnoRoot);
   if( rc ) return rc;
   assert( sqlitepager_iswriteable(pRoot) );
@@ -2441,19 +2451,7 @@ int sqliteBtreeCreateTable(Btree *pBt, int *piTable){
 ** BTree indices are restricted to having an arbitrary key and no data.
 */
 int sqliteBtreeCreateIndex(Btree *pBt, int *piIndex){
-  MemPage *pRoot;
-  Pgno pgnoRoot;
-  int rc;
-  if( !pBt->inTrans ){
-    return SQLITE_ERROR;  /* Must start a transaction first */
-  }
-  rc = allocatePage(pBt, &pRoot, &pgnoRoot);
-  if( rc ) return rc;
-  assert( sqlitepager_iswriteable(pRoot) );
-  zeroPage(pRoot);
-  sqlitepager_unref(pRoot);
-  *piIndex = (int)pgnoRoot;
-  return SQLITE_OK;
+  return sqliteBtreeCreateTable(pBt, piIndex);
 }
 
 /*
@@ -2503,6 +2501,9 @@ int sqliteBtreeClearTable(Btree *pBt, int iTable){
   if( !pBt->inTrans ){
     return SQLITE_ERROR;  /* Must start a transaction first */
   }
+  if( pBt->readOnly ){
+    return SQLITE_READONLY;
+  }
   nLock = (ptr)sqliteHashFind(&pBt->locks, 0, iTable);
   if( nLock ){
     return SQLITE_LOCKED;
@@ -2524,6 +2525,9 @@ int sqliteBtreeDropTable(Btree *pBt, int iTable){
   MemPage *pPage;
   if( !pBt->inTrans ){
     return SQLITE_ERROR;  /* Must start a transaction first */
+  }
+  if( pBt->readOnly ){
+    return SQLITE_READONLY;
   }
   rc = sqlitepager_get(pBt->pPager, (Pgno)iTable, (void**)&pPage);
   if( rc ) return rc;
@@ -2561,6 +2565,9 @@ int sqliteBtreeUpdateMeta(Btree *pBt, int *aMeta){
   int rc;
   if( !pBt->inTrans ){
     return SQLITE_ERROR;  /* Must start a transaction first */
+  }
+  if( pBt->readOnly ){
+    return SQLITE_READONLY;
   }
   pP1 = pBt->page1;
   rc = sqlitepager_write(pP1);
