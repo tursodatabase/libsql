@@ -514,3 +514,13 @@ int sqlite3_bind_text16(
   rc = sqlite3VdbeChangeEncoding(pVar, p->db->enc);
   return rc;
 }
+
+/*
+** Return the number of wildcards that can be potentially bound to.
+** This routine is added to support DBD::SQLite.  
+**
+******** EXPERIMENTAL *******
+*/
+int sqlite3_bind_parameter_count(sqlite3_stmt *pStmt){
+  return ((Vdbe*)pStmt)->nVar;
+}

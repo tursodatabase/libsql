@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.107 2004/06/25 10:25:11 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.108 2004/07/15 14:15:02 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -620,6 +620,14 @@ int sqlite3_bind_null(sqlite3_stmt*, int);
 int sqlite3_bind_text(sqlite3_stmt*, int, const char*, int n, void(*)(void*));
 int sqlite3_bind_text16(sqlite3_stmt*, int, const void*, int, void(*)(void*));
 int sqlite3_bind_value(sqlite3_stmt*, int, const sqlite3_value*);
+
+/*
+** Return the number of wildcards in a compiled SQL statement.  This
+** routine was added to support DBD::SQLite.
+**
+**** EXPERIMENTAL *****
+*/
+int sqlite3_bind_parameter_count(sqlite3_stmt*);
 
 /*
 ** Return the number of columns in the result set returned by the compiled
