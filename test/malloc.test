@@ -14,7 +14,7 @@
 # special feature is used to see what happens in the library if a malloc
 # were to really fail due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.14 2005/01/12 07:15:07 danielk1977 Exp $
+# $Id: malloc.test,v 1.15 2005/01/12 09:10:41 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -342,8 +342,12 @@ for {set go 1; set i 1} {$go} {incr i} {
 # when converting UTF-16 text to integers and real numbers is handled
 # correctly. 
 #
-# This doesn't actually return an error to the user. That could be 
-# viewed as a bug.
+# This is done by retrieving a string from the database engine and
+# manipulating it using the sqlite3_column_*** APIs. This doesn't 
+# actually return an error to the user when a malloc() fails.. That 
+# could be viewed as a bug.
+#
+# These tests only run if UTF-16 support is compiled in.
 #
 for {set go 1; set i 1} {$go && $::sqlite_options(utf16)} {incr i} {
   do_test malloc-8.$i {
@@ -381,6 +385,46 @@ for {set go 1; set i 1} {$go && $::sqlite_options(utf16)} {incr i} {
      expr 0
   } {0}
 }
+
+# This block tests that malloc() failures that occur whilst commiting
+# a multi-file transaction are handled correctly.
+#
+for {set go 1; set i 1} {$go} {incr i} {
+  do_test malloc-9.$i {
+     sqlite_malloc_fail 0
+     catch {db close}
+     catch {file delete -force test.db}
+     catch {file delete -force test.db-journal}
+     catch {file delete -force test2.db}
+     catch {file delete -force test2.db-journal}
+
+     sqlite3 db test.db
+     execsql {
+       ATTACH 'test2.db' as test2;
+       CREATE TABLE abc1(a, b, c);
+       CREATE TABLE test2.abc2(a, b, c);
+     }
+
+     sqlite_malloc_fail $i
+     set v [catch {execsql {
+       BEGIN;
+       INSERT INTO abc1 VALUES(1, 2, 3);
+       INSERT INTO abc2 VALUES(1, 2, 3);
+       COMMIT;
+     }} msg]
+     set leftover [lindex [sqlite_malloc_stat] 2]
+     if {$leftover>0} {
+       if {$leftover>1} {puts "\nLeftover: $leftover\nReturn=$v  Message=$msg"}
+       set ::go 0
+       set v {1 1}
+     } else {
+       set v2 [expr {$msg=="" || $msg=="out of memory"}]
+       if {!$v2} {puts "\nError message returned: $msg"}
+       lappend v $v2
+     }
+  } {1 1}
+}
+
 
 # Ensure that no file descriptors were leaked.
 do_test malloc-99.X {

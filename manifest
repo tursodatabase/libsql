@@ -1,5 +1,5 @@
-C Tests\sto\simprove\scoverage\sof\svdbemem.c.\s(CVS\s2200)
-D 2005-01-12T07:15:05
+C Tests\sto\simprove\scoverage\sof\svdbeaux.c.\s(CVS\s2201)
+D 2005-01-12T09:10:40
 F Makefile.in ecf441ac5ca1ccfc8748a8a9537706e69893dfa4
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -76,11 +76,11 @@ F src/update.c 0979397c41ac29c54fe0cc687a356d8629a633af
 F src/utf.c 9bece2c7b94d9002ab1bb900a7658c6f826b0f74
 F src/util.c 4511559caf83e70a036deb5c56f10ddf35a688fb
 F src/vacuum.c 1a9db113a027461daaf44724c71dd1ebbd064203
-F src/vdbe.c b8e619fbaa59be3e537804469d8cedd4a98d3c2e
+F src/vdbe.c a89bb4eefa60226ddfdf8e708ea9352c0a124da3
 F src/vdbe.h 067ca8d6750ba4f69a50284765e5883dee860181
-F src/vdbeInt.h 0f74561e629af86172de7cdf0ecaea014c51696c
+F src/vdbeInt.h f2b5f54d9881bbc89fff02d95f3f825ade68bce2
 F src/vdbeapi.c 0cf3bdc1072616bedc8eec7fc22e3f5a169d33fd
-F src/vdbeaux.c 60c24559b458d4da368694c0d322326b22edffd1
+F src/vdbeaux.c 0675db9f7f801b36e2e71504f5380feeadba56bc
 F src/vdbemem.c 5d9fd8de5d4f5d1f3446c9a90a7b3f8c38557821
 F src/where.c 3a0d08505e298242f6f151f019a05129a4f8704c
 F tclinstaller.tcl 36478c3bbfc5b93ceac42d94e3c736937b808432
@@ -138,7 +138,7 @@ F test/insert.test 56f9c20c9adc8d707490c4ffa5d4daa94826ea03
 F test/insert2.test 0bb50ff999e35a21549d8ee5dc44db8ac24d31a7
 F test/interrupt.test 5b4d8389e6cf2d01b94f87cfd02d9df1073bfb2d
 F test/intpkey.test b57cf5236fde1bd8cbc1388fa0c91908f6fd9194
-F test/ioerr.test 01ac547c4a6fc53fcd9fe7ecc9698ab5d827093a
+F test/ioerr.test 0563e3eace01d94661899a90e5888b7817fb57e0
 F test/join.test ea8c77b9fbc377fe553cdb5ce5f1bd72021dca5d
 F test/join2.test c97e4c5aa65dea462145529e58212a709b4722b8
 F test/join3.test 67dc0d7c8dab3fff25796d0f3c3fd9c999aeded3
@@ -150,7 +150,7 @@ F test/lock.test 32fe28e5030f25f23bcf6beef440675b0d848413
 F test/lock2.test 59c3dd7d9b24d1bf7ec91b2d1541c37e97939d5f
 F test/lock3.test 615111293cf32aa2ed16d01c6611737651c96fb9
 F test/main.test a60a1d234b5f5784097973bd395514ca56003ef1
-F test/malloc.test 79c5e0676a8346884b3197c811f2eac60b0521cc
+F test/malloc.test c3985c0a5a2f28dbfdb68a4e07886f9090feeda1
 F test/memdb.test 532aac7128a3da494cddc4461d76c6e3988f771b
 F test/memleak.test f1fa233f8295dd1d955a00d5e5ee857850f27f29
 F test/minmax.test e7048476940df0af11d0f2cf687572f557cd0b29
@@ -268,7 +268,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl c3b50d3ac31c54be2a1af9b488a89d22f1e6e746
-P 50f1e229652610b386745bb39fed45549cc74aa7
-R bf4878fa2c84d42762e103055cb55fd1
+P 319bb4a9064deb062a888fdc31067619c9b749bb
+R eca04ac646dc0adf8b62dade6edd7859
 U danielk1977
-Z 3c12901d279d54cf5f64fafd62ec59a5
+Z bac0bd5515f392b48e8053527f28ff2a

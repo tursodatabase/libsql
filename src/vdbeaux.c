@@ -103,7 +103,7 @@ int sqlite3VdbeAddOp(Vdbe *p, int op, int p1, int p2){
   pOp->p2 = p2;
   pOp->p3 = 0;
   pOp->p3type = P3_NOTUSED;
-#ifndef NDEBUG
+#ifdef SQLITE_DEBUG
   if( sqlite3_vdbe_addop_trace ) sqlite3VdbePrintOp(0, i, &p->aOp[i]);
 #endif
   return i;
@@ -212,7 +212,7 @@ int sqlite3VdbeAddOpList(Vdbe *p, int nOp, VdbeOpList const *aOp){
       pOut->p2 = p2<0 ? addr + ADDR(p2) : p2;
       pOut->p3 = pIn->p3;
       pOut->p3type = pIn->p3 ? P3_STATIC : P3_NOTUSED;
-#ifndef NDEBUG
+#ifdef SQLITE_DEBUG
       if( sqlite3_vdbe_addop_trace ){
         sqlite3VdbePrintOp(0, i+addr, &p->aOp[i+addr]);
       }
@@ -449,7 +449,7 @@ static char *displayP3(Op *pOp, char *zTemp, int nTemp){
 #endif
 
 
-#if !defined(NDEBUG) || defined(VDBE_PROFILE) || defined(SQLITE_DEBUG)
+#if defined(VDBE_PROFILE) || defined(SQLITE_DEBUG)
 /*
 ** Print a single opcode.  This routine is used for debugging only.
 */
@@ -689,7 +689,7 @@ void sqlite3VdbeSorterReset(Vdbe *p){
 ** Free all resources allociated with AggElem pElem, an element of
 ** aggregate pAgg.
 */
-void freeAggElem(AggElem *pElem, Agg *pAgg){
+static void freeAggElem(AggElem *pElem, Agg *pAgg){
   int i;
   for(i=0; i<pAgg->nMem; i++){
     Mem *pMem = &pElem->aMem[i];
@@ -752,7 +752,7 @@ int sqlite3VdbeAggReset(sqlite3 *db, Agg *pAgg, KeyInfo *pKeyInfo){
     while( res==0 && rc==SQLITE_OK ){
       AggElem *pElem;
       rc = sqlite3BtreeData(pCsr, 0, sizeof(AggElem*), (char *)&pElem);
-      if( res!=SQLITE_OK ){
+      if( rc!=SQLITE_OK ){
         return rc;
       }
       assert( pAgg->apFunc!=0 );
@@ -1058,15 +1058,9 @@ static int vdbeCommit(sqlite3 *db){
     */
     zMainFile = sqlite3BtreeGetDirname(db->aDb[0].pBt);
     rc = sqlite3OsOpenDirectory(zMainFile, &master);
-    if( rc!=SQLITE_OK ){
+    if( rc!=SQLITE_OK || (rc = sqlite3OsSync(&master))!=SQLITE_OK ){
       sqlite3OsClose(&master);
       sqlite3OsDelete(zMaster);
-      sqliteFree(zMaster);
-      return rc;
-    }
-    rc = sqlite3OsSync(&master);
-    if( rc!=SQLITE_OK ){
-      sqlite3OsClose(&master);
       sqliteFree(zMaster);
       return rc;
     }
@@ -1111,8 +1105,6 @@ static int vdbeCommit(sqlite3 *db){
       ** master journal exists now or if it will exist after the operating
       ** system crash that may follow the fsync() failure.
       */
-      assert(0);
-      sqliteFree(zMaster);
       return rc;
     }
 

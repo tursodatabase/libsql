@@ -15,60 +15,98 @@
 # The tests in this file use special facilities that are only
 # available in the SQLite test fixture.
 #
-# $Id: ioerr.test,v 1.10 2005/01/11 13:02:34 danielk1977 Exp $
+# $Id: ioerr.test,v 1.11 2005/01/12 09:10:41 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
 set ::AV [execsql {pragma auto_vacuum}]
 
-set ::go 1
-for {set n 1} {$go} {incr n} {
+# Usage: do_ioerr_test <test number> <options...>
+#
+# The first argument, <test number>, is an integer used to name the
+# tests executed by this proc. Options are as follows:
+#
+#     -tclprep          TCL script to run to prepare test.
+#     -sqlprep          SQL script to run to prepare test.
+#     -tclbody          TCL script to run with IO error simulation.
+#     -sqlbody          TCL script to run with IO error simulation.
+#     -exclude          List of 'N' values not to test.
+#
+proc do_ioerr_test {tn args} {
+  array set ::ioerropts $args
 
-  # If SQLITE_DEFAULT_AUTOVACUUM is set to true, then a simulated IO error
-  # on the 8th IO operation in the SQL script below doesn't report an error.
-  #
-  # This is because the 8th IO call attempts to read page 2 of the database
-  # file when the file on disk is only 1 page. The pager layer detects that
-  # this has happened and suppresses the error returned by the OS layer.
-  #
-  if {$::AV} {
-    if {$n==8} continue
-  } 
+  set ::go 1
+  for {set n 1} {$::go} {incr n} {
+ 
+    if {[info exists ::ioerropts(-exclude)]} {
+      if {[lsearch $::ioerropts(-exclude) $n]!=-1} continue
+    }
 
-  do_test ioerr-1.$n.1 {
-    set ::sqlite_io_error_pending 0
-    db close
-    catch {file delete -force test.db}
-    catch {file delete -force test.db-journal}
-    sqlite3 db test.db
-    execsql {SELECT * FROM sqlite_master}
-  } {}
-  do_test ioerr-1.$n.2 [subst {
-    set ::sqlite_io_error_pending $n
-  }] $n
-  do_test ioerr-1.$n.3 {
-    set r [catch {db eval {
-      CREATE TABLE t1(a,b,c);
-      SELECT * FROM sqlite_master;
-      BEGIN TRANSACTION;
-      INSERT INTO t1 VALUES(1,2,3);
-      INSERT INTO t1 VALUES(4,5,6);
-      ROLLBACK;
-      SELECT * FROM t1;
-      BEGIN TRANSACTION;
-      INSERT INTO t1 VALUES(1,2,3);
-      INSERT INTO t1 VALUES(4,5,6);
-      COMMIT;
-      SELECT * FROM t1;
-      DELETE FROM t1 WHERE a<100;
-    }} msg]
-    # if {$r} {puts $msg}
-    set ::go [expr {$::sqlite_io_error_pending<=0}]
-    expr {$::sqlite_io_error_pending>0 || $r!=0}
-  } {1}
+    do_test ioerr-$tn.$n.1 {
+      set ::sqlite_io_error_pending 0
+      db close
+      catch {file delete -force test.db}
+      catch {file delete -force test.db-journal}
+      catch {file delete -force test2.db}
+      catch {file delete -force test2.db-journal}
+  
+      set ::DB [sqlite3 db test.db]
+  
+      if {[info exists ::ioerropts(-tclprep)]} {
+        eval $::ioerropts(-tclprep)
+      }
+      if {[info exists ::ioerropts(-sqlprep)]} {
+        execsql $::ioerropts(-sqlprep)
+      }
+      expr 0
+    } {0}
+  
+    do_test ioerr-$tn.$n.2 [subst {
+      set ::sqlite_io_error_pending $n
+    }] $n
+  
+    set ::ioerrorbody {}
+    if {[info exists ::ioerropts(-tclbody)]} {
+      append ::ioerrorbody "$::ioerropts(-tclbody)\n"
+    }
+    if {[info exists ::ioerropts(-sqlbody)]} {
+      append ::ioerrorbody "db eval {$::ioerropts(-sqlbody)}"
+    }
+    do_test ioerr-$tn.$n.3 {
+      set r [catch $::ioerrorbody msg]
+      set ::go [expr {$::sqlite_io_error_pending<=0}]
+      expr {$::sqlite_io_error_pending>0 || $r!=0}
+    } {1}
+  }
+  set ::sqlite_io_error_pending 0
 }
-set ::sqlite_io_error_pending 0
+
+# If SQLITE_DEFAULT_AUTOVACUUM is set to true, then a simulated IO error
+# on the 8th IO operation in the SQL script below doesn't report an error.
+#
+# This is because the 8th IO call attempts to read page 2 of the database
+# file when the file on disk is only 1 page. The pager layer detects that
+# this has happened and suppresses the error returned by the OS layer.
+#
+do_ioerr_test 1 -sqlprep {
+  SELECT * FROM sqlite_master;
+} -sqlbody {
+  CREATE TABLE t1(a,b,c);
+  SELECT * FROM sqlite_master;
+  BEGIN TRANSACTION;
+  INSERT INTO t1 VALUES(1,2,3);
+  INSERT INTO t1 VALUES(4,5,6);
+  ROLLBACK;
+  SELECT * FROM t1;
+  BEGIN TRANSACTION;
+  INSERT INTO t1 VALUES(1,2,3);
+  INSERT INTO t1 VALUES(4,5,6);
+  COMMIT;
+  SELECT * FROM t1;
+  DELETE FROM t1 WHERE a<100;
+} -exclude [expr [execsql {pragma auto_vacuum}] ? 8 : 0]
+
 
 proc cksum {{db db}} {
   set txt [$db eval {
@@ -95,6 +133,8 @@ for {set n 1} {$go} {incr n} {
     db close
     catch {file delete -force test.db}
     catch {file delete -force test.db-journal}
+    catch {file delete -force test2.db}
+    catch {file delete -force test2.db-journal}
     sqlite3 db test.db
     execsql {
       BEGIN;
@@ -135,72 +175,51 @@ for {set n 1} {$go} {incr n} {
 }
 set ::sqlite_io_error_pending 0
 
-set ::go 1
-for {set n 1} {$go} {incr n} {
-  do_test ioerr-3.$n.1 {
-    set ::sqlite_io_error_pending 0
-    db close
-    catch {file delete -force test.db}
-    catch {file delete -force test.db-journal}
-    sqlite3 db test.db
-    execsql {
-      PRAGMA cache_size = 10;
-      BEGIN;
-      CREATE TABLE abc(a);
-      INSERT INTO abc VALUES(randstr(1500,1500)); -- Page 4 is overflow
-    }
-    for {set i 0} {$i<150} {incr i} {
-      execsql {
-        INSERT INTO abc VALUES(randstr(100,100)); 
-      }
-    }
-    execsql COMMIT
-  } {}
-  do_test ioerr-3.$n.2 [subst {
-    set ::sqlite_io_error_pending $n
-  }] $n
-  do_test ioerr-3.$n.3 {
-    set r [catch {db eval {
-      CREATE TABLE abc2(a);
-      BEGIN;
-      DELETE FROM abc WHERE length(a)>100;
-      UPDATE abc SET a = randstr(90,90);
-      COMMIT;
-      CREATE TABLE abc3(a);
-    }} msg]
-    set ::go [expr {$::sqlite_io_error_pending<=0}]
-    expr {$::sqlite_io_error_pending>0 || $r!=0}
-  } {1}
-}
-set ::sqlite_io_error_pending 0
 
-set ::go 1
-for {set n 1} {$go} {incr n} {
-  do_test ioerr-4.$n.1 {
-    set ::sqlite_io_error_pending 0
-    db close
-    catch {file delete -force test.db}
-    catch {file delete -force test.db-journal}
-    sqlite3 db test.db
-    set sql "CREATE TABLE abc(a1"
-    for {set i 2} {$i<1300} {incr i} {
-      append sql ", a$i"
+do_ioerr_test 3 -tclprep {
+  execsql {
+    PRAGMA cache_size = 10;
+    BEGIN;
+    CREATE TABLE abc(a);
+    INSERT INTO abc VALUES(randstr(1500,1500)); -- Page 4 is overflow
+  }
+  for {set i 0} {$i<150} {incr i} {
+    execsql {
+      INSERT INTO abc VALUES(randstr(100,100)); 
     }
-    append sql ");"
-    execsql $sql
-    execsql {INSERT INTO abc (a1) VALUES(NULL)}
-  } {}
-  do_test ioerr-4.$n.2 [subst {
-    set ::sqlite_io_error_pending $n
-  }] $n
-  do_test ioerr-4.$n.3 {
-    set r [catch {db eval {
-      SELECT * FROM abc;
-    }} msg]
-    set ::go [expr {$::sqlite_io_error_pending<=0}]
-    expr {$::sqlite_io_error_pending>0 || $r!=0}
-  } {1}
+  }
+  execsql COMMIT
+} -sqlbody {
+  CREATE TABLE abc2(a);
+  BEGIN;
+  DELETE FROM abc WHERE length(a)>100;
+  UPDATE abc SET a = randstr(90,90);
+  COMMIT;
+  CREATE TABLE abc3(a);
 }
-set ::sqlite_io_error_pending 0
+
+# Test IO errors that can occur retrieving a record header that flows over
+# onto an overflow page.
+do_ioerr_test 4 -tclprep {
+  set sql "CREATE TABLE abc(a1"
+  for {set i 2} {$i<1300} {incr i} {
+    append sql ", a$i"
+  }
+  append sql ");"
+  execsql $sql
+  execsql {INSERT INTO abc (a1) VALUES(NULL)}
+} -sqlbody {
+ SELECT * FROM abc;
+}
+
+# Test IO errors that may occur during a multi-file commit.
+do_ioerr_test 5 -sqlprep {
+  ATTACH 'test2.db' AS test2;
+} -sqlbody {
+  BEGIN;
+  CREATE TABLE t1(a,b,c);
+  CREATE TABLE test2.t2(a,b,c);
+  COMMIT;
+}
 
 finish_test

@@ -362,10 +362,12 @@ int sqlite3VdbeAggReset(sqlite3*, Agg *, KeyInfo *);
 void sqlite3VdbeKeylistFree(Keylist*);
 void sqliteVdbePopStack(Vdbe*,int);
 int sqlite3VdbeCursorMoveto(Cursor*);
-#if !defined(NDEBUG) || defined(VDBE_PROFILE)
+#if defined(SQLITE_DEBUG) || defined(VDBE_PROFILE)
 void sqlite3VdbePrintOp(FILE*, int, Op*);
 #endif
+#ifdef SQLITE_DEBUG
 void sqlite3VdbePrintSql(Vdbe*);
+#endif
 int sqlite3VdbeSerialTypeLen(u32);
 u32 sqlite3VdbeSerialType(Mem*);
 int sqlite3VdbeSerialPut(unsigned char*, Mem*);
