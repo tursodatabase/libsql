@@ -1,9 +1,9 @@
-C Fix\san\suninitialized\svariable\sin\sAggReset()\s(CVS\s432)
-D 2002-03-18T13:03:55
+C Version\s2.4.2\s(CVS\s433)
+D 2002-03-19T23:51:12
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
-F VERSION e67cf229360221c7a60bec0dabcd47b3dec5353b
+F VERSION 0ca6986d9c1379523ecd35eec51f54857a8afd48
 F aclocal.m4 11faa843caa38fd451bc6aeb43e248d1723a269d
 F config.guess f38b1e93d1e0fa6f5a6913e9e7b12774b9232588
 F config.log 6a73d03433669b10a3f0c221198c3f26b9413914
@@ -115,7 +115,7 @@ F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 72a0c80e9054cc7025a50928d28d9c75c02c2b8b
 F www/c_interface.tcl 567cda531aac9d68a61ef02e26c6b202bd856db2
-F www/changes.tcl 945dc1f1517eb8391e5304ad87c287241662e1cf
+F www/changes.tcl 77af8c44eda2e227d055d76129d67824eafbc86a
 F www/conflict.tcl 81dd21f9a679e60aae049e9dd8ab53d59570cda2
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
 F www/download.tcl a6d75b8b117cd33dcb090bef7e80d7556d28ebe0
@@ -130,7 +130,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P a3a360b308e45eaaf19efda80e30f2d420799cf2
-R 11ce79722ecbb3c5830f9c40b95c5527
+P 3dcdeae7f620736c1eae52ad78db1efb886ea9c3
+R ea516b678d070786f67b5a99c5da81af
 U drh
-Z ce6b670713e9f35c9ee799a71ee2b1e1
+Z b33dff180258a45dc7cd626b1810f101

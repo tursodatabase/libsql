@@ -17,6 +17,13 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2002 Mar 14 (2.4.2)} {
+<li>Bug fix: Fix an assertion failure that occurred when ROWID was a column
+    in a SELECT statement on a view.</li>
+<li>Bug fix: Fix an uninitialized variable in the VDBE that would could an
+    assert failure.</li>
+}
+
 chng {2002 Mar 13 (2.4.1)} {
 <li>Using an unnamed subquery in a FROM clause would cause a segfault.</li>
 <li>The parser now insists on seeing a semicolon or the end of input before
