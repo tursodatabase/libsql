@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.44 2001/10/06 16:33:04 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.45 2001/10/31 15:44:47 drh Exp $}
 
 puts {<html>
 <head><title>SQLite: An SQL Database Engine In A C Library</title></head>
@@ -107,6 +107,7 @@ the file <b>new.db</b>.
 
 <p>The SQLite source code is 35% comment.  These comments are
 another important source of information. </p>
+
 }
 
 puts {
@@ -121,6 +122,23 @@ Click to subscribe to sqlite</a>
 <h2>Mailing List</h2>
 <p>A mailing list has been set up on yahooGroups for discussion of
 SQLite design issues or for asking questions about SQLite.</p>
+}
+
+puts {<h2>Professional Support and Custom Modifications</h2>}
+
+puts {
+<p>
+If you would like professional support for SQLite
+or if you want custom modifications to SQLite preformed by the
+original author, these services are available for a modest fee.
+For additional information contact:</p>
+
+<blockquote>
+D. Richard Hipp <br />
+Hwaci - Applied Software Research <br />
+704.948.4565 <br />
+<a href="mailto:drh@hwaci.com">drh@hwaci.com</a>
+</blockquote>
 }
 
 puts {<h2>Building From Source</h2>}

@@ -1,5 +1,5 @@
-C Make\slemon\s64-bit\sclean\s(CVS\s294)
-D 2001-10-25T20:37:17
+C More\sdocumentation\supdates\s(CVS\s295)
+D 2001-10-31T15:44:47
 F Makefile.in 6801df952cb1df64aa32e4de85fed24511d28efd
 F Makefile.template 1fdb891f14083ee0b63cf7282f91529634438e7a
 F README 93d2977cc5c6595c448de16bdefc312b9d401533
@@ -101,20 +101,20 @@ F tool/report1.txt 9eae07f26a8fc53889b45fc833a66a33daa22816
 F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 03b521d252575f93b9c52f7c8b0007011512fcfb
-F www/c_interface.tcl 6c5989670e014de44dce6580cbde0eea965dadbb
-F www/changes.tcl fdd4f8b474bce2463b876c1bedb68c20bc3f5b34
+F www/c_interface.tcl d446234c1d3ed747fcefd30e972a19f2b2fc0e05
+F www/changes.tcl 995d934eb54762d766923241a5a2e6023a0f3c6e
 F www/crosscompile.tcl c99efacb3aefaa550c6e80d91b240f55eb9fd33e
 F www/download.tcl 3e51c9ff1326b0a182846134987301310dff7d60
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
-F www/index.tcl 68c815d64b35b2dcc4d4f6845827df71c6869f9f
+F www/index.tcl 7c7df8d73c751897b643018fd21317269f10e023
 F www/lang.tcl 1899ec4fb77cd69de335ebd998253de869f34d8e
 F www/mingw.tcl fc5f4ba9d336b6e8c97347cc6496d6162461ef60
 F www/opcode.tcl 4365ad9798872491dbd7d3071510ebe461785ac3
-F www/speed.tcl ab7d6d3bc898472bd94320a5d3c63de928d4804b
+F www/speed.tcl 212a91d555384e01873160d6a189f1490c791bc2
 F www/sqlite.tcl 6a21242a272e9c0939a04419a51c3d50cae33e3e
 F www/tclsqlite.tcl 13d50723f583888fc80ae1a38247c0ab415066fa
 F www/vdbe.tcl bb7d620995f0a987293e9d4fb6185a3b077e9b44
-P b0442cb9c64682b6f98bf8f26f50bb54bdfd9013
-R 32105803ca01e82d865a4315992e9dcb
+P 475e2fedda2256cc1cfdffa1b12745bc401e552d
+R b2fc4ff3650cbe526a68ea1cf8e3178b
 U drh
-Z 410df64d0289bddfbc85d5b3184781c8
+Z a9512049e53d528acde7056d6370a7e0

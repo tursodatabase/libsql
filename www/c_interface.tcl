@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: c_interface.tcl,v 1.18 2001/10/19 16:44:58 drh Exp $}
+set rcsid {$Id: c_interface.tcl,v 1.19 2001/10/31 15:44:47 drh Exp $}
 
 puts {<html>
 <head>
@@ -227,7 +227,7 @@ that the database is locked.  But the source of the lock is a recursive
 call to <b>sqlite_exec()</b>.  This return can only occur if you attempt
 to invoke sqlite_exec() from within a callback routine of a query
 from a prior invocation of sqlite_exec().  Recursive calls to
-sqlite_exec() are allowed as long as no more they all read-only or do
+sqlite_exec() are allowed as long as they do
 not attempt to write the same table.
 </p></dd>
 <dt>SQLITE_NOMEM</dt>
@@ -445,7 +445,7 @@ result[2] = "host"<br>
 is obtained from malloc().  But the calling function should not try
 to free this information directly.  Instead, pass the complete table
 to <b>sqlite_free_table()</b> when the table is no longer needed.
-It is safe to call <b>sqlite_free_table()</b> will a NULL pointer such
+It is safe to call <b>sqlite_free_table()</b> with a NULL pointer such
 as would be returned if the result set is empty.</p>
 
 <p>The <b>sqlite_get_table()</b> routine returns the same integer
@@ -454,7 +454,7 @@ result code as <b>sqlite_exec()</b>.</p>
 <h2>Interrupting an SQLite operation</h2>
 
 <p>The <b>sqlite_interrupt()</b> function can be called from a
-different thread or from a signal handler to the current database
+different thread or from a signal handler to cause the current database
 operation to exit at its first opportunity.  When this happens,
 the <b>sqlite_exec()</b> routine (or the equivalent) that started
 the database operation will return SQLITE_INTERRUPT.</p>
@@ -512,7 +512,7 @@ was compiled.</p>
 
 <p>The <b>sqlite_busy_handler()</b> procedure can be used to register
 a busy callback with an open SQLite database.  The busy callback will
-be invoked whenever SQLite tries to open a locked that is locked.
+be invoked whenever SQLite tries to open a file that is locked.
 The callback will typically do some other useful work, or perhaps sleep,
 in order to give the lock a chance to clear.  If the callback returns
 non-zero, then SQLite tries again to open the database and the cycle

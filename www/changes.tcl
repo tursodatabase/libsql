@@ -17,6 +17,10 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2001 Oct ?? (2.0.8)} {
+<li>Documentation updates</li>
+}
+
 chng {2001 Oct 21 (2.0.7)} {
 <li>Any UTF-8 character or ISO8859 character can be used as part of
     an identifier.</li>
