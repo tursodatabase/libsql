@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is btree database backend
 #
-# $Id: btree.test,v 1.27 2004/06/17 00:01:21 danielk1977 Exp $
+# $Id: btree.test,v 1.28 2004/06/20 03:06:18 dougcurrie Exp $
 
 
 set testdir [file dirname $argv0]
@@ -519,9 +519,9 @@ do_test btree-6.13 {
 do_test btree-7.1 {
   btree_begin_transaction $::b1
 } {}
-if 0 {
 catch {unset key}
 catch {unset data}
+if 0 {
 do_test btree-7.2 {
   # Each record will be 10 bytes in size.
   #   + 100 bytes of database header

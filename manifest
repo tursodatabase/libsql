@@ -1,5 +1,5 @@
-C Make\ssure\sVdbeFunc\sentries\sare\sinitialized\sbefore\strying\sto\sdestroy\sthem.\nAlso,\sunrelated\scomment\schanges\sin\sbuild.c.\s(CVS\s1643)
-D 2004-06-19T17:33:07
+C fix\sfulltest\serror\sby\srestoring\sunset\s(CVS\s1644)
+D 2004-06-20T03:06:18
 F Makefile.in d69d53c543518c1572ee0a8e8723d7e00bdb2266
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -87,7 +87,7 @@ F test/bigfile.test a1101b46528ad7282fb9b323d25da18672a3bd0a
 F test/bigrow.test 8ab252dba108f12ad64e337b0f2ff31a807ac578
 F test/bind.test 4ccea5041be85914608ba67097a85248c3e3134d
 F test/blob.test 8727a7b46b2073a369cfc9bcb6f54dd366b9d884
-F test/btree.test 77209dd37bb12ae501a0588b4c69bd7079ebdf1a
+F test/btree.test f1dc208d59b1c28f853ba09dd2553fc3382d22b6
 F test/btree2.test aa4a6d05b1ea90b1acaf83ba89039dd302a88635
 F test/btree4.test 3797b4305694c7af6828675b0f4b1424b8ca30e4
 F test/btree5.test 8e5ff32c02e685d36516c6499add9375fe1377f2
@@ -225,7 +225,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl af528563442e3039928f9018327a18157e53a44f
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 01f74b420c3f24918c066172e09cebbb22568faf
-R 078b0d50f5c9020e229ba6d09ba2761f
-U drh
-Z 71efb9400cf1f9d35d1444e4dd44098f
+P fc3b3a8fe86980db4de402bb8e85f8f739fc3883
+R 306731b1d3a316b30d565222feb5ad7f
+U dougcurrie
+Z ad297936c1c1ca71d55b605ccce1a407
