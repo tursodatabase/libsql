@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree_rb.c,v 1.3 2003/04/16 01:28:16 drh Exp $
+** $Id: btree_rb.c,v 1.4 2003/04/18 22:52:39 drh Exp $
 **
 ** This file implements an in-core database using Red-Black balanced
 ** binary trees.
@@ -69,7 +69,7 @@ struct BtRollbackOp {
 #define ROLLBACK_DROP   4 /* Drop a table */
 
 struct Btree {
-  BtOps *pOps;	  /* Function table */
+  BtOps *pOps;    /* Function table */
   int aMetaData[SQLITE_N_BTREE_META];
 
   int next_idx;   /* next available table index */
@@ -89,10 +89,10 @@ struct Btree {
 #define TRANS_INTRANSACTION  1  /* A transaction is in progress */
 #define TRANS_INCHECKPOINT   2  /* A checkpoint is in progress  */
 #define TRANS_ROLLBACK       3  /* We are currently rolling back a checkpoint or
-				 * transaction. */
+                                 * transaction. */
 
 struct BtCursor {
-  BtCursorOps *pOps;	    /* Function table */
+  BtCursorOps *pOps;        /* Function table */
   Btree    *pBtree;
   BtRbTree *pTree;
   int       iTree;          /* Index of pTree in pBtree */
@@ -298,61 +298,61 @@ static void check_redblack_tree(BtRbTree * tree, char ** msg)
   while( pNode ){
     switch( prev_step ){
       case 0:
-	if( pNode->pLeft ){
-	  pNode = pNode->pLeft;
-	}else{ 
-	  prev_step = 1;
-	}
-	break;
+        if( pNode->pLeft ){
+          pNode = pNode->pLeft;
+        }else{ 
+          prev_step = 1;
+        }
+        break;
       case 1:
-	if( pNode->pRight ){
-	  pNode = pNode->pRight;
-	  prev_step = 0;
-	}else{
-	  prev_step = 2;
-	}
-	break;
+        if( pNode->pRight ){
+          pNode = pNode->pRight;
+          prev_step = 0;
+        }else{
+          prev_step = 2;
+        }
+        break;
       case 2:
-	/* Check red-black property (1) */
-	if( !pNode->isBlack &&
-	    ( (pNode->pLeft && !pNode->pLeft->isBlack) ||
-	      (pNode->pRight && !pNode->pRight->isBlack) )
-	  ){
-	  char buf[128];
-	  sprintf(buf, "Red node with red child at %p\n", pNode);
-	  *msg = append_val(*msg, buf);
-	  *msg = append_node(*msg, tree->pHead, 0);
-	  *msg = append_val(*msg, "\n");
-	}
+        /* Check red-black property (1) */
+        if( !pNode->isBlack &&
+            ( (pNode->pLeft && !pNode->pLeft->isBlack) ||
+              (pNode->pRight && !pNode->pRight->isBlack) )
+          ){
+          char buf[128];
+          sprintf(buf, "Red node with red child at %p\n", pNode);
+          *msg = append_val(*msg, buf);
+          *msg = append_node(*msg, tree->pHead, 0);
+          *msg = append_val(*msg, "\n");
+        }
 
-	/* Check red-black property (2) */
-	{ 
-	  int leftHeight = 0;
-	  int rightHeight = 0;
-	  if( pNode->pLeft ){
-	    leftHeight += pNode->pLeft->nBlackHeight;
-	    leftHeight += (pNode->pLeft->isBlack?1:0);
-	  }
-	  if( pNode->pRight ){
-	    rightHeight += pNode->pRight->nBlackHeight;
-	    rightHeight += (pNode->pRight->isBlack?1:0);
-	  }
-	  if( leftHeight != rightHeight ){
-	    char buf[128];
-	    sprintf(buf, "Different black-heights at %p\n", pNode);
-	    *msg = append_val(*msg, buf);
-	    *msg = append_node(*msg, tree->pHead, 0);
-	  *msg = append_val(*msg, "\n");
-	  }
-	  pNode->nBlackHeight = leftHeight;
-	}
+        /* Check red-black property (2) */
+        { 
+          int leftHeight = 0;
+          int rightHeight = 0;
+          if( pNode->pLeft ){
+            leftHeight += pNode->pLeft->nBlackHeight;
+            leftHeight += (pNode->pLeft->isBlack?1:0);
+          }
+          if( pNode->pRight ){
+            rightHeight += pNode->pRight->nBlackHeight;
+            rightHeight += (pNode->pRight->isBlack?1:0);
+          }
+          if( leftHeight != rightHeight ){
+            char buf[128];
+            sprintf(buf, "Different black-heights at %p\n", pNode);
+            *msg = append_val(*msg, buf);
+            *msg = append_node(*msg, tree->pHead, 0);
+            *msg = append_val(*msg, "\n");
+          }
+          pNode->nBlackHeight = leftHeight;
+        }
 
-	if( pNode->pParent ){
-	  if( pNode == pNode->pParent->pLeft ) prev_step = 1;
-	  else prev_step = 2;
-	}
-	pNode = pNode->pParent;
-	break;
+        if( pNode->pParent ){
+          if( pNode == pNode->pParent->pLeft ) prev_step = 1;
+          else prev_step = 2;
+        }
+        pNode = pNode->pParent;
+        break;
       default: assert(0);
     }
   }
@@ -408,47 +408,47 @@ static void do_insert_balancing(BtRbTree *pTree, BtRbNode *pX)
     }else{
 
       if( pX->pParent == pGrandparent->pLeft ){
-	if( pX == pX->pParent->pRight ){
-	  /* If pX is a right-child, do the following transform, essentially
-	   * to change pX into a left-child: 
-	   *       |                  | 
-	   *      G(b)               G(b)
-	   *      /  \               /  \        
-	   *   P(r)   U(b)        X(r)  U(b)
-	   *      \                /
-	   *     X(r)            P(r) <-- new X
-	   *
-	   *     BEFORE             AFTER
-	   */
-	  pX = pX->pParent;
-	  leftRotate(pTree, pX);
-	}
+        if( pX == pX->pParent->pRight ){
+          /* If pX is a right-child, do the following transform, essentially
+           * to change pX into a left-child: 
+           *       |                  | 
+           *      G(b)               G(b)
+           *      /  \               /  \        
+           *   P(r)   U(b)        X(r)  U(b)
+           *      \                /
+           *     X(r)            P(r) <-- new X
+           *
+           *     BEFORE             AFTER
+           */
+          pX = pX->pParent;
+          leftRotate(pTree, pX);
+        }
 
-	/* Do the following transform, which balances the tree :) 
-	 *       |                  | 
-	 *      G(b)               P(b)
-	 *      /  \               /  \        
-	 *   P(r)   U(b)        X(r)  G(r)
-	 *    /                         \
-	 *  X(r)                        U(b)
-	 *
-	 *     BEFORE             AFTER
-	 */
-	assert( pGrandparent == pX->pParent->pParent );
-	pGrandparent->isBlack = 0;
-	pX->pParent->isBlack = 1;
-	rightRotate( pTree, pGrandparent );
+        /* Do the following transform, which balances the tree :) 
+         *       |                  | 
+         *      G(b)               P(b)
+         *      /  \               /  \        
+         *   P(r)   U(b)        X(r)  G(r)
+         *    /                         \
+         *  X(r)                        U(b)
+         *
+         *     BEFORE             AFTER
+         */
+        assert( pGrandparent == pX->pParent->pParent );
+        pGrandparent->isBlack = 0;
+        pX->pParent->isBlack = 1;
+        rightRotate( pTree, pGrandparent );
 
       }else{
-	/* This code is symetric to the illustrated case above. */
-	if( pX == pX->pParent->pLeft ){
-	  pX = pX->pParent;
-	  rightRotate(pTree, pX);
-	}
-	assert( pGrandparent == pX->pParent->pParent );
-	pGrandparent->isBlack = 0;
-	pX->pParent->isBlack = 1;
-	leftRotate( pTree, pGrandparent );
+        /* This code is symetric to the illustrated case above. */
+        if( pX == pX->pParent->pLeft ){
+          pX = pX->pParent;
+          rightRotate(pTree, pX);
+        }
+        assert( pGrandparent == pX->pParent->pParent );
+        pGrandparent->isBlack = 0;
+        pX->pParent->isBlack = 1;
+        leftRotate( pTree, pGrandparent );
       }
     }
   }
@@ -470,7 +470,8 @@ static void do_insert_balancing(BtRbTree *pTree, BtRbNode *pX)
  * properties have been violated, and pX has an "extra black". This function 
  * performs rotations and color-changes to re-balance the tree.
  */
-static void do_delete_balancing(BtRbTree *pTree, BtRbNode *pX, BtRbNode *pParent)
+static 
+void do_delete_balancing(BtRbTree *pTree, BtRbNode *pX, BtRbNode *pParent)
 {
   BtRbNode *pSib; 
 
@@ -479,58 +480,58 @@ static void do_delete_balancing(BtRbTree *pTree, BtRbNode *pX, BtRbNode *pParent
     if( pX == pParent->pLeft ){
       pSib = pParent->pRight;
       if( pSib && !(pSib->isBlack) ){
-	pSib->isBlack = 1;
-	pParent->isBlack = 0;
-	leftRotate(pTree, pParent);
-	pSib = pParent->pRight;
+        pSib->isBlack = 1;
+        pParent->isBlack = 0;
+        leftRotate(pTree, pParent);
+        pSib = pParent->pRight;
       }
       if( !pSib ){
-	pX = pParent;
+        pX = pParent;
       }else if( 
-	  (!pSib->pLeft  || pSib->pLeft->isBlack) &&
-	  (!pSib->pRight || pSib->pRight->isBlack) ) {
-	pSib->isBlack = 0;
-	pX = pParent;
+          (!pSib->pLeft  || pSib->pLeft->isBlack) &&
+          (!pSib->pRight || pSib->pRight->isBlack) ) {
+        pSib->isBlack = 0;
+        pX = pParent;
       }else{
-	if( (!pSib->pRight || pSib->pRight->isBlack) ){
-	  if( pSib->pLeft ) pSib->pLeft->isBlack = 1;
-	  pSib->isBlack = 0;
-	  rightRotate( pTree, pSib );
-	  pSib = pParent->pRight;
-	}
-	pSib->isBlack = pParent->isBlack;
-	pParent->isBlack = 1;
-	if( pSib->pRight ) pSib->pRight->isBlack = 1;
-	leftRotate(pTree, pParent);
-	pX = pTree->pHead;
+        if( (!pSib->pRight || pSib->pRight->isBlack) ){
+          if( pSib->pLeft ) pSib->pLeft->isBlack = 1;
+          pSib->isBlack = 0;
+          rightRotate( pTree, pSib );
+          pSib = pParent->pRight;
+        }
+        pSib->isBlack = pParent->isBlack;
+        pParent->isBlack = 1;
+        if( pSib->pRight ) pSib->pRight->isBlack = 1;
+        leftRotate(pTree, pParent);
+        pX = pTree->pHead;
       }
     }else{
       pSib = pParent->pLeft;
       if( pSib && !(pSib->isBlack) ){
-	pSib->isBlack = 1;
-	pParent->isBlack = 0;
-	rightRotate(pTree, pParent);
-	pSib = pParent->pLeft;
+        pSib->isBlack = 1;
+        pParent->isBlack = 0;
+        rightRotate(pTree, pParent);
+        pSib = pParent->pLeft;
       }
       if( !pSib ){
-	pX = pParent;
+        pX = pParent;
       }else if( 
           (!pSib->pLeft  || pSib->pLeft->isBlack) &&
-	  (!pSib->pRight || pSib->pRight->isBlack) ){
-	pSib->isBlack = 0;
-	pX = pParent;
+          (!pSib->pRight || pSib->pRight->isBlack) ){
+        pSib->isBlack = 0;
+        pX = pParent;
       }else{
-	if( (!pSib->pLeft || pSib->pLeft->isBlack) ){
-	  if( pSib->pRight ) pSib->pRight->isBlack = 1;
-	  pSib->isBlack = 0;
-	  leftRotate( pTree, pSib );
-	  pSib = pParent->pLeft;
-	}
-	pSib->isBlack = pParent->isBlack;
-	pParent->isBlack = 1;
-	if( pSib->pLeft ) pSib->pLeft->isBlack = 1;
-	rightRotate(pTree, pParent);
-	pX = pTree->pHead;
+        if( (!pSib->pLeft || pSib->pLeft->isBlack) ){
+          if( pSib->pRight ) pSib->pRight->isBlack = 1;
+          pSib->isBlack = 0;
+          leftRotate( pTree, pSib );
+          pSib = pParent->pLeft;
+        }
+        pSib->isBlack = pParent->isBlack;
+        pParent->isBlack = 1;
+        if( pSib->pLeft ) pSib->pLeft->isBlack = 1;
+        rightRotate(pTree, pParent);
+        pX = pTree->pHead;
       }
     }
     pParent = pX->pParent;
@@ -573,10 +574,7 @@ int sqliteRBtreeOpen(const char *zFilename, int mode, int nPg, Btree **ppBtree)
   *ppBtree = (Btree *)sqliteMalloc(sizeof(Btree));
   sqliteHashInit(&(*ppBtree)->tblHash, SQLITE_HASH_INT, 0);
 
-  /* Create binary trees for tables 0, 1 and 2. SQLite assumes these
-   * tables always exist. At least I think so? */
-  btreeCreateTable(*ppBtree, 0);
-  btreeCreateTable(*ppBtree, 1);
+  /* Create a binary tree for the SQLITE_MASTER table at location 2 */
   btreeCreateTable(*ppBtree, 2);
   (*ppBtree)->next_idx = 3;
   (*ppBtree)->pOps = &sqliteBtreeOps;
@@ -620,10 +618,9 @@ static int memBtreeDropTable(Btree* tree, int n)
   assert( tree->eTransState != TRANS_NONE );
 
   memBtreeClearTable(tree, n);
-  pTree = sqliteHashFind(&tree->tblHash, 0, n);
+  pTree = sqliteHashInsert(&tree->tblHash, 0, n, 0);
   assert(pTree);
   sqliteFree(pTree);
-  sqliteHashInsert(&tree->tblHash, 0, n, 0);
 
   if( tree->eTransState != TRANS_ROLLBACK ){
     BtRollbackOp *pRollbackOp = sqliteMalloc(sizeof(BtRollbackOp));
@@ -636,7 +633,7 @@ static int memBtreeDropTable(Btree* tree, int n)
 }
 
 static int memBtreeKeyCompare(BtCursor* pCur, const void *pKey, int nKey,
-				 int nIgnore, int *pRes)
+                                 int nIgnore, int *pRes)
 {
   assert(pCur);
 
@@ -647,7 +644,7 @@ static int memBtreeKeyCompare(BtCursor* pCur, const void *pKey, int nKey,
       *pRes = -1;
     }else{
       *pRes = key_compare(pCur->pNode->pKey, pCur->pNode->nKey-nIgnore, 
-	  pKey, nKey);
+          pKey, nKey);
     }
   }
   return SQLITE_OK;
@@ -681,7 +678,7 @@ static int memBtreeCursor(Btree* tree, int iTable, int wrFlag, BtCursor **ppCur)
  * If the key exists already in the tree, just replace the data. 
  */
 static int memBtreeInsert(BtCursor* pCur, const void *pKey, int nKey,
-			     const void *pDataInput, int nData)
+                             const void *pDataInput, int nData)
 {
   void * pData;
   int match;
@@ -715,18 +712,18 @@ static int memBtreeInsert(BtCursor* pCur, const void *pKey, int nKey,
     pNode->pData = pData; 
     if( pCur->pNode ){
       switch( match ){
-	case -1:
-	  assert( !pCur->pNode->pRight );
-	  pNode->pParent = pCur->pNode;
-	  pCur->pNode->pRight = pNode;
-	  break;
-	case 1:
-	  assert( !pCur->pNode->pLeft );
-	  pNode->pParent = pCur->pNode;
-	  pCur->pNode->pLeft = pNode;
-	  break;
-	default:
-	  assert(0);
+        case -1:
+          assert( !pCur->pNode->pRight );
+          pNode->pParent = pCur->pNode;
+          pCur->pNode->pRight = pNode;
+          break;
+        case 1:
+          assert( !pCur->pNode->pLeft );
+          pNode->pParent = pCur->pNode;
+          pCur->pNode->pLeft = pNode;
+          break;
+        default:
+          assert(0);
       }
     }else{
       pCur->pTree->pHead = pNode;
@@ -800,11 +797,11 @@ static int memBtreeMoveto(BtCursor* pCur, const void *pKey, int nKey, int *pRes)
     pTmp = pCur->pNode;
     switch( *pRes ){
       case 1:    /* cursor > key */
-	pCur->pNode = pCur->pNode->pLeft;
-	break;
+        pCur->pNode = pCur->pNode->pLeft;
+        break;
       case -1:   /* cursor < key */
-	pCur->pNode = pCur->pNode->pRight;
-	break;
+        pCur->pNode = pCur->pNode->pRight;
+        break;
     }
   } 
 
@@ -894,8 +891,8 @@ static int memBtreeDelete(BtCursor* pCur)
       pCur->eSkip = SKIP_PREV;
     }
     if( pCur->pBtree->eTransState == TRANS_ROLLBACK ){
-	sqliteFree(pZ->pKey);
-	sqliteFree(pZ->pData);
+        sqliteFree(pZ->pKey);
+        sqliteFree(pZ->pData);
     }
   }
 
@@ -908,7 +905,7 @@ static int memBtreeDelete(BtCursor* pCur)
     if( pZ->pParent ){
       assert( pZ == pZ->pParent->pLeft || pZ == pZ->pParent->pRight );
       ppParentSlot = ((pZ == pZ->pParent->pLeft)
-	  ?&pZ->pParent->pLeft:&pZ->pParent->pRight);
+          ?&pZ->pParent->pLeft:&pZ->pParent->pRight);
       *ppParentSlot = pChild;
     }else{
       pCur->pTree->pHead = pChild;
@@ -951,22 +948,22 @@ static int memBtreeClearTable(Btree* tree, int n)
     else {
       BtRbNode *pTmp = pNode->pParent;
       if( tree->eTransState == TRANS_ROLLBACK ){
-	sqliteFree( pNode->pKey );
-	sqliteFree( pNode->pData );
+        sqliteFree( pNode->pKey );
+        sqliteFree( pNode->pData );
       }else{
-	BtRollbackOp *pRollbackOp = sqliteMalloc(sizeof(BtRollbackOp));
-	pRollbackOp->eOp = ROLLBACK_INSERT;
-	pRollbackOp->iTab = n;
-	pRollbackOp->nKey = pNode->nKey;
-	pRollbackOp->pKey = pNode->pKey;
-	pRollbackOp->nData = pNode->nData;
-	pRollbackOp->pData = pNode->pData;
-	btreeLogRollbackOp(tree, pRollbackOp);
+        BtRollbackOp *pRollbackOp = sqliteMalloc(sizeof(BtRollbackOp));
+        pRollbackOp->eOp = ROLLBACK_INSERT;
+        pRollbackOp->iTab = n;
+        pRollbackOp->nKey = pNode->nKey;
+        pRollbackOp->pKey = pNode->pKey;
+        pRollbackOp->nData = pNode->nData;
+        pRollbackOp->pData = pNode->pData;
+        btreeLogRollbackOp(tree, pRollbackOp);
       }
       sqliteFree( pNode );
       if( pTmp ){
-	if( pTmp->pLeft == pNode ) pTmp->pLeft = 0;
-	else if( pTmp->pRight == pNode ) pTmp->pRight = 0;
+        if( pTmp->pLeft == pNode ) pTmp->pLeft = 0;
+        else if( pTmp->pRight == pNode ) pTmp->pRight = 0;
       }
       pNode = pTmp;
     }
@@ -1016,13 +1013,13 @@ static int memBtreeNext(BtCursor* pCur, int *pRes)
     if( pCur->pNode->pRight ){
       pCur->pNode = pCur->pNode->pRight;
       while( pCur->pNode->pLeft )
-	pCur->pNode = pCur->pNode->pLeft;
+        pCur->pNode = pCur->pNode->pLeft;
     }else{
       BtRbNode * pX = pCur->pNode;
       pCur->pNode = pX->pParent;
       while( pCur->pNode && (pCur->pNode->pRight == pX) ){
-	pX = pCur->pNode;
-	pCur->pNode = pX->pParent;
+        pX = pCur->pNode;
+        pCur->pNode = pX->pParent;
       }
     }
   }
@@ -1043,13 +1040,13 @@ static int memBtreePrevious(BtCursor* pCur, int *pRes)
     if( pCur->pNode->pLeft ){
       pCur->pNode = pCur->pNode->pLeft;
       while( pCur->pNode->pRight )
-	pCur->pNode = pCur->pNode->pRight;
+        pCur->pNode = pCur->pNode->pRight;
     }else{
       BtRbNode * pX = pCur->pNode;
       pCur->pNode = pX->pParent;
       while( pCur->pNode && (pCur->pNode->pLeft == pX) ){
-	pX = pCur->pNode;
-	pCur->pNode = pX->pParent;
+        pX = pCur->pNode;
+        pCur->pNode = pX->pParent;
       }
     }
   }
@@ -1152,11 +1149,11 @@ static char *memBtreeIntegrityCheck(Btree* tree, int* aRoot, int nRoot)
 static int memBtreeClose(Btree* tree)
 {
   HashElem *p;
-  for(p=sqliteHashFirst(&tree->tblHash); p; p=sqliteHashNext(p)){
+  while( (p=sqliteHashFirst(&tree->tblHash))!=0 ){
     tree->eTransState = TRANS_ROLLBACK;
-    memBtreeClearTable(tree, sqliteHashKeysize(p));
-    sqliteFree(sqliteHashData(p));
+    memBtreeDropTable(tree, sqliteHashKeysize(p));
   }
+  sqliteHashClear(&tree->tblHash);
   sqliteFree(tree);
   return SQLITE_OK;
 }
@@ -1220,30 +1217,30 @@ static void execute_rollback_list(Btree *pBtree, BtRollbackOp *pList)
   while( pList ){
     switch( pList->eOp ){
       case ROLLBACK_INSERT:
-	cur.pTree  = sqliteHashFind( &pBtree->tblHash, 0, pList->iTab );
-	assert(cur.pTree);
-	cur.iTree  = pList->iTab;
-	cur.eSkip  = SKIP_NONE;
-	memBtreeInsert( &cur, pList->pKey,
-	    pList->nKey, pList->pData, pList->nData );
-	break;
+        cur.pTree  = sqliteHashFind( &pBtree->tblHash, 0, pList->iTab );
+        assert(cur.pTree);
+        cur.iTree  = pList->iTab;
+        cur.eSkip  = SKIP_NONE;
+        memBtreeInsert( &cur, pList->pKey,
+            pList->nKey, pList->pData, pList->nData );
+        break;
       case ROLLBACK_DELETE:
-	cur.pTree  = sqliteHashFind( &pBtree->tblHash, 0, pList->iTab );
-	assert(cur.pTree);
-	cur.iTree  = pList->iTab;
-	cur.eSkip  = SKIP_NONE;
-	memBtreeMoveto(&cur, pList->pKey, pList->nKey, &res);
-	assert(res == 0);
-	memBtreeDelete( &cur );
-	break;
+        cur.pTree  = sqliteHashFind( &pBtree->tblHash, 0, pList->iTab );
+        assert(cur.pTree);
+        cur.iTree  = pList->iTab;
+        cur.eSkip  = SKIP_NONE;
+        memBtreeMoveto(&cur, pList->pKey, pList->nKey, &res);
+        assert(res == 0);
+        memBtreeDelete( &cur );
+        break;
       case ROLLBACK_CREATE:
-	btreeCreateTable(pBtree, pList->iTab);
-	break;
+        btreeCreateTable(pBtree, pList->iTab);
+        break;
       case ROLLBACK_DROP:
-	memBtreeDropTable(pBtree, pList->iTab);
-	break;
+        memBtreeDropTable(pBtree, pList->iTab);
+        break;
       default:
-	assert(0);
+        assert(0);
     }
     sqliteFree(pList->pKey);
     sqliteFree(pList->pData);
