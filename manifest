@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\squoting\sof\s.dump\soutput.\s\sBy\sRajit\sSingh.\s(CVS\s394)
-D 2002-02-26T23:24:27
+C Comment\schanges\sonly.\s(CVS\s395)
+D 2002-02-26T23:55:31
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -23,8 +23,8 @@ F src/btree.c 495275fe14f3b718cf2f691dce979d4c0e1f8e5d
 F src/btree.h 8abeabfe6e0b1a990b64fa457592a6482f6674f3
 F src/build.c 1da051784be0155ae579d47890db74f0186f9b9f
 F src/delete.c 950d8f9097361419f1963875f9943344b469cf02
-F src/expr.c 5ed59aed47431a540263da2ca79c37a97c23e8fd
-F src/func.c b7c1f4dd183dbca7996641017eb13bd7f820a263
+F src/expr.c ad07b7932a91a2aa3b2e40470c7ae8a974451ed5
+F src/func.c bed0099aaa558f8bfc50d9349bf7da2c99903f47
 F src/hash.c cc259475e358baaf299b00a2c7370f2b03dda892
 F src/hash.h dca065dda89d4575f3176e75e9a3dc0f4b4fb8b9
 F src/insert.c 164d2d5e943268a8ff0594e1947599e04df0ce11
@@ -126,7 +126,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 2198109712ccf988f93db5740a4f248e80fb9f5d
-R dbbea9815a86c12ee897aeb068a88652
+P f2310f36d53e9176be7af620ecdf1e5a1dfd4388
+R d1216182a693349a4fd75460e56473d0
 U drh
-Z ef8303f23d9e0519ec19c95e33ed8b7b
+Z 4fbfc9e2f698b673742701c28533e447

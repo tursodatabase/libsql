@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.2 2002/02/24 17:12:54 drh Exp $
+** $Id: func.c,v 1.3 2002/02/26 23:55:31 drh Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -49,7 +49,7 @@ static void lowerFunc(void *context, int argc, const char **argv){
 
 /*
 ** An instance of the following structure holds the context of a
-** standard deviation computation.
+** variance or standard deviation computation.
 */
 typedef struct StdDevCtx StdDevCtx;
 struct StdDevCtx {
@@ -90,8 +90,9 @@ static void stdDevFinalize(void *stddev, void *context){
 }
 
 /*
-** This file registered all of the above C functions as SQL
-** functions.
+** This function registered all of the above C functions as SQL
+** functions.  This should be the only routine in this file with
+** external linkage.
 */
 void sqliteRegisterBuildinFunctions(sqlite *db){
   sqlite_create_function(db, "upper", 1, upperFunc);

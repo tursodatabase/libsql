@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.44 2002/02/24 03:25:15 drh Exp $
+** $Id: expr.c,v 1.45 2002/02/26 23:55:31 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -111,7 +111,7 @@ void sqliteExprDelete(Expr *p){
 ** the life of the view.)  When that happens we have to make a
 ** persistent copy of the input buffer and translate the Expr.token.z
 ** and Expr.span.z fields to point to the copy rather than the 
-** original input buffer.  The following group of routines to that
+** original input buffer.  The following group of routines handle that
 ** translation.
 **
 ** The "offset" parameter is the distance from the original input buffer
