@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.191 2003/06/03 01:47:11 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.192 2003/06/16 19:18:12 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -1176,9 +1176,9 @@ void sqliteDeferForeignKey(Parse*, int);
   void sqliteAuthContextPop(AuthContext*);
 #else
 # define sqliteAuthRead(a,b,c)
-# define sqliteAuthCheck(a,b,c,d)    SQLITE_OK
+# define sqliteAuthCheck(a,b,c,d,e)    SQLITE_OK
 # define sqliteAuthContextPush(a,b,c)
-# define sqliteAuthContextPop(a)
+# define sqliteAuthContextPop(a)  ((void)(a))
 #endif
 void sqliteAttach(Parse*, Token*, Token*);
 void sqliteDetach(Parse*, Token*);

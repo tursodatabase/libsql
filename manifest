@@ -1,5 +1,5 @@
-C Add\sthe\s%z\sformat\sto\sthe\ssqlite_mprintf()\sand\srelated\sfunctions.\s(CVS\s1028)
-D 2003-06-16T03:08:19
+C Fix\scompiler\serrors\sand\swarnings\swin\sSQLITE_OMIT_AUTHORIZATION\sis\sdefined.\nTicket\s#353.\s(CVS\s1029)
+D 2003-06-16T19:18:12
 F Makefile.in 9ad23ed4ca97f9670c4496432e3fbd4b3760ebde
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -47,7 +47,7 @@ F src/select.c 29c53228a4e66bfcebd797b7539678fcd0e2cf64
 F src/shell.c 3ed268908fd69c8fd4b28dbe415075cbf0e3991a
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 54619fa5df4c83b22def66bb3d24808fd03dcbae
-F src/sqliteInt.h d1d883d9116dadf63ffe1bafe17ba6455b7db59e
+F src/sqliteInt.h 602cb477392db2f2902f571ccd40da62b57ff6da
 F src/table.c 4301926464d88d2c2c7cd21c3360aa75bf068b95
 F src/tclsqlite.c d6860dcd56348b9521726280b72c412d2a33ae97
 F src/test1.c b9cfee0bd97d0ade63a3ce76e910b444fb32dce2
@@ -165,7 +165,7 @@ F www/speed.tcl 296cc5632d069b56d3ef5409ca0df90f486c10fb
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 14fdcc7fe8a60a6ba8584903636db8dc37eef26a
-P dd8943e8583cf7ed3b662570a5607856fd246dac
-R 284605941d0d05dd0b8d73646e11aab9
+P eca1398eaac67d772aff2676a470d9a6d96a93ca
+R 015f150cc6dea5018fc2d07f0c7a83bd
 U drh
-Z 92bf3faa2c4ab75022c55b293d1689d3
+Z ce84144fcdc23848168f756561c10df5
