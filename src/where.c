@@ -13,7 +13,7 @@
 ** the WHERE clause of SQL statements.  Also found here are subroutines
 ** to generate VDBE code to evaluate expressions.
 **
-** $Id: where.c,v 1.61 2002/08/13 23:02:58 drh Exp $
+** $Id: where.c,v 1.62 2002/08/14 03:03:57 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -179,6 +179,10 @@ static Index *findSortingIndex(
     Expr *p;
     if( (pOrderBy->a[i].sortOrder & SQLITE_SO_DIRMASK)!=SQLITE_SO_ASC ){
       /* Indices can only be used for ascending sort order */
+      return 0;
+    }
+    if( (pOrderBy->a[i].sortOrder & SQLITE_SO_TYPEMASK)!=SQLITE_SO_UNK ){
+      /* Do not sort by index if there is a COLLATE clause */
       return 0;
     }
     p = pOrderBy->a[i].pExpr;

@@ -1,5 +1,5 @@
-C Fix\sfor\sticket\s#132:\smake\sthe\sworking\sdirectory\sthe\slast\schoice\sfor\swhere\r\nto\swrite\stemporary\sfiles,\snot\sthe\sfirst\schoice.\s(CVS\s712)
-D 2002-08-14T00:10:44
+C Disable\ssorting\sby\sindices\sif\sthere\sis\sa\sCOLLATE\ssubclause\sin\sthe\nORDER\sBY\sclause.\s(CVS\s713)
+D 2002-08-14T03:03:57
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -54,7 +54,7 @@ F src/update.c f07e6ed2c517c92871e54d3f5886d1cf56121b11
 F src/util.c bdbf0aedcec21ede2248126bbbe734bcc070b7c8
 F src/vdbe.c aad57e622827dc864529f1609a8e94240d4ed92a
 F src/vdbe.h a9292f2b5fcecef924fa255fb74609e9cbc776c2
-F src/where.c 9a6d2783cabead68a2b9e857521b0b841f2c1d55
+F src/where.c 68ac5d2066da7a9a1aac98ecaebe6187d85137ed
 F test/all.test 9a6eb262393f74cb7fb09b17156491a34b941fe3
 F test/bigrow.test 8ab252dba108f12ad64e337b0f2ff31a807ac578
 F test/btree.test bf326f546a666617367a7033fa2c07451bd4f8e1
@@ -110,7 +110,7 @@ F test/update.test 7ffb062d580a972e7870d0f51d5af3ab9bfeae08
 F test/vacuum.test 059871b312eb910bbe49dafde1d01490cc2c6bbe
 F test/version.test c7057526e14c7e3da5718b88e7f566f4182fd5c5
 F test/view.test 3afca084dab44c7a5772d3c6a326adf93ad52050
-F test/where.test 1f87bec674bf85d74ac1cc5b2cd3d89be1e87b1d
+F test/where.test c7aba40ad9178acf9c898e53aac9e447e2d2f2f7
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/lemon.c 459cb2bb3738a1ad5cb0ad8b805587a88a885d95
 F tool/lempar.c 73a991cc3017fb34804250fa901488b5147b3717
@@ -131,7 +131,7 @@ F www/c_interface.tcl fb87b825b9032b9aa941694c5c9c5aee9424467e
 F www/changes.tcl df6f06b1aa97ef285c744bf19ec3efddf707b05f
 F www/conflict.tcl 81dd21f9a679e60aae049e9dd8ab53d59570cda2
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
-F www/datatypes.tcl c18a57dd02ba12bbede52f24ae9325f7fc1bf463
+F www/datatypes.tcl ac58cd17bd96cbf1dc228dfb965f88e3e8d45c6b
 F www/download.tcl 29aa6679ca29621d10613f60ebbbda18f4b91c49
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/faq.tcl e5a752ff431a8408ae24a91ab88ded2dfe699e16
@@ -145,7 +145,7 @@ F www/speed.tcl 7fc83f1b018e1ecc451838449542c3079ed12425
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 4ff0f578eca4a8672cf570923e6c015c3ba6b9f4
-R 3ea2591da8167f93c94c2776f3fbc0b8
+P 26a4e7e7a3eee62c170ce264cb964a92bc7f52c9
+R 215a8fd5d2921ac00a3d290d9e37f326
 U drh
-Z 20aea3fa8ac9897b397b10a04bcc9725
+Z 8f90666769659acaee3140c2279b94e8

@@ -1,7 +1,7 @@
 #
 # Run this script to generated a datatypes.html output file
 #
-set rcsid {$Id: datatypes.tcl,v 1.1 2002/08/14 00:08:13 drh Exp $}
+set rcsid {$Id: datatypes.tcl,v 1.2 2002/08/14 03:03:58 drh Exp $}
 
 puts {<html>
 <head>
@@ -169,7 +169,7 @@ text
 </pre></blockquote>
 
 <p>
-For table columns, the datatype is determined by the datatype declaration
+For table columns, the datatype is determined by the type declaration
 of the CREATE TABLE statement.  The datatype is text if and only if
 the type declaration contains one or more of the following strings:
 </p>
