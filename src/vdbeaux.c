@@ -616,13 +616,14 @@ void sqlite3VdbeMakeReady(
     n = isExplain ? 10 : p->nOp;
     p->aStack = sqliteMalloc(
       n*(sizeof(p->aStack[0]) + 2*sizeof(char*))     /* aStack and zArgv */
-        + p->nVar*(sizeof(char*)+sizeof(int)+1)    /* azVar, anVar, abVar */
+      + p->nVar*sizeof(Mem)                          /* azVar */
     );
     p->zArgv = (char**)&p->aStack[n];
     p->azColName = (char**)&p->zArgv[n];
-    p->azVar = (char**)&p->azColName[n];
-    p->anVar = (int*)&p->azVar[p->nVar];
-    p->abVar = (u8*)&p->anVar[p->nVar];
+    p->azVar = (Mem *)&p->azColName[n];
+    for(n=0; n<p->nVar; n++){
+      p->azVar[n].flags = MEM_Null;
+    }
   }
 
   sqlite3HashInit(&p->agg.hash, SQLITE_HASH_BINARY, 0);
@@ -942,6 +943,140 @@ int sqlite3VdbeFinalize(Vdbe *p, char **pzErrMsg){
 }
 
 /*
+** Unbind the value bound to variable $i in virtual machine p. This is the 
+** the same as binding a NULL value to the column.
+*/
+static int vdbeUnbind(Vdbe *p, int i){
+  Mem *pVar;
+  if( p->magic!=VDBE_MAGIC_RUN || p->pc!=0 ){
+    return SQLITE_MISUSE;
+  }
+  if( i<1 || i>p->nVar ){
+    return SQLITE_RANGE;
+  }
+  i--;
+  pVar = &p->azVar[i];
+  if( pVar->flags&MEM_Dyn ){
+    sqliteFree(pVar->z);
+  }
+  pVar->flags = MEM_Null;
+  return SQLITE_OK;
+}
+
+/*
+** This routine is used to bind text or blob data to an SQL variable (a ?).
+** It may also be used to bind a NULL value, by setting zVal to 0.
+*/
+static int vdbeBindBlob(
+  Vdbe *p,           /* Virtual machine */
+  int i,             /* Var number to bind (numbered from 1 upward) */
+  const char *zVal,  /* Pointer to blob of data */
+  int bytes,         /* Number of bytes to copy */
+  int copy,          /* True to copy the memory, false to copy a pointer */
+  int flags          /* Valid combination of MEM_Blob, MEM_Str, MEM_UtfXX */
+){
+  Mem *pVar;
+
+  vdbeUnbind(p, i);
+  pVar = &p->azVar[i-1];
+
+  if( zVal ){
+    pVar->n = bytes;
+    pVar->flags = flags;
+    if( !copy ){
+      pVar->z = (char *)zVal;
+      pVar->flags |= MEM_Static;
+    }else{
+      if( bytes>NBFS ){
+        pVar->z = (char *)sqliteMalloc(bytes);
+        if( !pVar->z ){
+          return SQLITE_NOMEM;
+        }
+        pVar->flags |= MEM_Dyn;
+      }else{
+        pVar->z = pVar->zShort;
+        pVar->flags |= MEM_Short;
+      }
+      memcpy(pVar->z, zVal, bytes);
+    }
+  }
+
+  return SQLITE_OK;
+}
+
+int sqlite3_bind_int64(sqlite3_stmt *p, int i, long long int iValue){
+  int rc;
+  Vdbe *v = (Vdbe *)p;
+  rc = vdbeUnbind(v, i);
+  if( rc==SQLITE_OK ){
+    Mem *pVar = &v->azVar[i-1];
+    pVar->flags = MEM_Int;
+    pVar->i = iValue;
+  }
+  return SQLITE_OK;
+}
+
+int sqlite3_bind_int32(sqlite3_stmt *p, int i, int iValue){
+  return sqlite3_bind_int64(p, i, (long long int)iValue);
+}
+
+int sqlite3_bind_double(sqlite3_stmt *p, int i, double iValue){
+  int rc;
+  Vdbe *v = (Vdbe *)p;
+  rc = vdbeUnbind(v, i);
+  if( rc==SQLITE_OK ){
+    Mem *pVar = &v->azVar[i-1];
+    pVar->flags = MEM_Real;
+    pVar->r = iValue;
+  }
+  return SQLITE_OK;
+}
+
+int sqlite3_bind_null(sqlite3_stmt* p, int i){
+  return vdbeUnbind((Vdbe *)p, i);
+}
+
+int sqlite3_bind_text( 
+  sqlite3_stmt *p, 
+  int i, 
+  const char *zData, 
+  int nData, 
+  int eCopy
+){
+  if( zData && nData<0 ){
+    nData = strlen(zData)+1;
+  }
+  return vdbeBindBlob((Vdbe *)p, i, zData, nData, eCopy, MEM_Str|MEM_Utf8);
+}
+
+int sqlite3_bind_text16(
+  sqlite3_stmt *p, 
+  int i, 
+  const void *zData, 
+  int nData, 
+  int eCopy
+){
+  if( zData && nData<0 ){
+    char *z = (char *)zData;
+    while( (*z)!=0 && (*(z+1))!=0 ) z+=2;
+    nData = (z - (char *)zData) + 2;
+  }
+ 
+  /* FIX ME - MEM_Utf16le? */
+  return vdbeBindBlob((Vdbe *)p, i, zData, nData, eCopy, MEM_Str|MEM_Utf16le);
+}
+
+int sqlite3_bind_blob(
+  sqlite3_stmt *p, 
+  int i, 
+  const void *zData, 
+  int nData, 
+  int eCopy
+){
+  return vdbeBindBlob((Vdbe *)p, i, zData, nData, eCopy, MEM_Blob);
+}
+
+/*
 ** Set the values of all variables.  Variable $1 in the original SQL will
 ** be the string azValue[0].  $2 will have the value azValue[1].  And
 ** so forth.  If a value is out of range (for example $3 when nValue==2)
@@ -950,35 +1085,8 @@ int sqlite3VdbeFinalize(Vdbe *p, char **pzErrMsg){
 ** This routine overrides any prior call.
 */
 int sqlite3_bind(sqlite_vm *pVm, int i, const char *zVal, int len, int copy){
-  Vdbe *p = (Vdbe*)pVm;
-  if( p->magic!=VDBE_MAGIC_RUN || p->pc!=0 ){
-    return SQLITE_MISUSE;
-  }
-  if( i<1 || i>p->nVar ){
-    return SQLITE_RANGE;
-  }
-  i--;
-  if( p->abVar[i] ){
-    sqliteFree(p->azVar[i]);
-  }
-  if( zVal==0 ){
-    copy = 0;
-    len = 0;
-  }
-  if( len<0 ){
-    len = strlen(zVal)+1;
-  }
-  if( copy ){
-    p->azVar[i] = sqliteMalloc( len );
-    if( p->azVar[i] ) memcpy(p->azVar[i], zVal, len);
-  }else{
-    p->azVar[i] = (char*)zVal;
-  }
-  p->abVar[i] = copy;
-  p->anVar[i] = len;
-  return SQLITE_OK;
+  return sqlite3_bind_text(pVm, i, zVal, len, copy);
 }
-
 
 /*
 ** Delete an entire VDBE.
@@ -1007,7 +1115,9 @@ void sqlite3VdbeDelete(Vdbe *p){
     }
   }
   for(i=0; i<p->nVar; i++){
-    if( p->abVar[i] ) sqliteFree(p->azVar[i]);
+    if( p->azVar[i].flags&MEM_Dyn ){
+      sqliteFree(p->azVar[i].z);
+    }
   }
   sqliteFree(p->aOp);
   sqliteFree(p->aLabel);
