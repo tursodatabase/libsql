@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the VACUUM statement.
 #
-# $Id: vacuum.test,v 1.32 2004/11/22 11:51:14 danielk1977 Exp $
+# $Id: vacuum.test,v 1.33 2005/02/03 01:08:20 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -265,5 +265,41 @@ do_test vacuum-8.1 {
   } db2
 } {}
 db2 close
+
+# Ticket #1095:  Vacuum a table that uses AUTOINCREMENT
+#
+ifcapable {autoinc} {
+  do_test vacuum-9.1 {
+    execsql {
+      DROP TABLE 'abc abc';
+      CREATE TABLE autoinc(a INTEGER PRIMARY KEY AUTOINCREMENT, b);
+      INSERT INTO autoinc(b) VALUES('hi');
+      INSERT INTO autoinc(b) VALUES('there');
+      DELETE FROM autoinc;
+    }
+    set ::cksum [cksum]
+    expr {$::cksum!=""}
+  } {1}
+  do_test vacuum-9.2 {
+    execsql {
+      VACUUM;
+    }
+    cksum
+  } $::cksum
+  do_test vacuum-9.3 {
+    execsql {
+      INSERT INTO autoinc(b) VALUES('one');
+      INSERT INTO autoinc(b) VALUES('two');
+    }
+    set ::cksum [cksum]
+    expr {$::cksum!=""}
+  } {1}
+  do_test vacuum-9.4 {
+    execsql {
+      VACUUM;
+    }
+    cksum
+  } $::cksum
+}
 
 # finish_test

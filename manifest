@@ -1,5 +1,5 @@
-C Fix\sthe\s".dump"\scommand\sin\sthe\sshell\sso\sthat\sit\sworks\swith\sAUTOVACUUM.\nThis\sis\srelated\sto\sticket\s#1095.\s(CVS\s2310)
-D 2005-02-03T00:42:35
+C Get\sAUTOINCREMENT\sand\sVACUUM\sworking\stogether.\s\sTicket\s#1095.\s(CVS\s2311)
+D 2005-02-03T01:08:20
 F Makefile.in ffd81f5e926d40b457071b4de8d7c1fa18f39b5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -74,7 +74,7 @@ F src/trigger.c 038c8e128d4551cd016426cd11bbf5c478816481
 F src/update.c b6f4668c11059f86b71581187d09197fa28ec4be
 F src/utf.c bda5eb85039ef16f2d17004c1e18c96e1ab0a80c
 F src/util.c 1b7b9a127b66743ab6cba8d44597aeb570723c99
-F src/vacuum.c 1a9db113a027461daaf44724c71dd1ebbd064203
+F src/vacuum.c 14d1c346234fc64b326c19ea1ffe8f9e4c73d19a
 F src/vdbe.c 84ccc6be09e13ee5825f32a94b289117cc903ab2
 F src/vdbe.h bb9186484f749a839c6c43953e79a6530253f7cd
 F src/vdbeInt.h e80721cd8ff611789e20743eec43363a9fb5a48e
@@ -206,7 +206,7 @@ F test/types2.test 81dd1897be8ef4b5b73d0006e6076abe40610de3
 F test/unique.test 0e38d4cc7affeef2527720d1dafd1f6870f02f2b
 F test/update.test 7669ca789d62c258b678e8aa7a22a57eac10f2cf
 F test/utf16.test 459c2f5ab80c60092c603630a348c32d6e59c558
-F test/vacuum.test f18eccdee5b538d46298c64d6a060cfbf97bbc23
+F test/vacuum.test 10204524354ff5947e056419fa6b4f4b5067a541
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/view.test 306cc4342eb03c28de1a92c681836189e03e5af9
 F test/where.test ffb790dfda75d977bae7a1f5830351623f76861b
@@ -272,7 +272,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P 4b399ae7791288e5d44f90da530908d9ca77ff4b
-R bbc454e3fb92412b9b1c7b015ba0ed5d
+P 76c4a96c5a2148f253cc5e034567b16317343be7
+R de8ee7d41901d3dcf0913474f34055dd
 U drh
-Z 96d8550dcaa0797bdeea532bef3ca53b
+Z 31d017263f1676c9b05f2efee42d194a

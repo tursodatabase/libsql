@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.36 2005/01/08 12:42:40 danielk1977 Exp $
+** $Id: vacuum.c,v 1.37 2005/02/03 01:08:20 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -179,7 +179,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   */
   rc = execExecSql(db, 
       "SELECT 'CREATE TABLE vacuum_db.' || substr(sql,14,100000000) "
-      "  FROM sqlite_master WHERE type='table'");
+      "  FROM sqlite_master WHERE type='table' AND name!='sqlite_sequence'");
   if( rc!=SQLITE_OK ) goto end_of_vacuum;
   rc = execExecSql(db, 
       "SELECT 'CREATE INDEX vacuum_db.' || substr(sql,14,100000000)"
@@ -203,9 +203,22 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
       "SELECT 'INSERT INTO vacuum_db.' || quote(name) "
       "|| ' SELECT * FROM ' || quote(name) || ';'"
       "FROM sqlite_master "
-      "WHERE type = 'table';"
+      "WHERE type = 'table' AND name!='sqlite_sequence';"
   );
   if( rc!=SQLITE_OK ) goto end_of_vacuum;
+
+  /* Copy over the sequence table
+  */
+  rc = execExecSql(db, 
+      "SELECT 'DELETE FROM vacuum_db.' || quote(name) || ';' "
+      "FROM sqlite_master WHERE name='sqlite_sequence' "
+      "UNION ALL "
+      "SELECT 'INSERT INTO vacuum_db.' || quote(name) "
+      "|| ' SELECT * FROM ' || quote(name) || ';' "
+      "FROM sqlite_master WHERE name=='sqlite_sequence';"
+  );
+  if( rc!=SQLITE_OK ) goto end_of_vacuum;
+
 
   /* Copy the triggers from the main database to the temporary database.
   ** This was deferred before in case the triggers interfered with copying
