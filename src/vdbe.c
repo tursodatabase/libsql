@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.439 2005/01/11 11:08:23 danielk1977 Exp $
+** $Id: vdbe.c,v 1.440 2005/01/11 13:02:34 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -627,11 +627,10 @@ case OP_Halt: {
     sqlite3SetString(&p->zErrMsg, pOp->p3, (char*)0);
   }
   rc = sqlite3VdbeHalt(p);
+  assert( rc==SQLITE_BUSY || rc==SQLITE_OK );
   if( rc==SQLITE_BUSY ){
     p->rc = SQLITE_BUSY;
     return SQLITE_BUSY;
-  }else if( rc!=SQLITE_OK ){
-    p->rc = rc;
   }
   return p->rc ? SQLITE_ERROR : SQLITE_DONE;
 }
@@ -1872,9 +1871,7 @@ case OP_Column: {
 
   /* Get the column information.
   */
-  if( rc!=SQLITE_OK ){
-    goto abort_due_to_error;
-  }
+  assert( rc==SQLITE_OK );
   if( zRec ){
     zData = &zRec[aOffset[p2]];
   }else{
@@ -2048,15 +2045,7 @@ case OP_MakeRecord: {
   if( addRowid ){
     zCsr += sqlite3VdbeSerialPut(zCsr, pRowid);
   }
-
-  /* If zCsr has not been advanced exactly nByte bytes, then one
-  ** of the sqlite3PutVarint() or sqlite3VdbeSerialPut() calls above
-  ** failed. This indicates a corrupted memory cell or code bug.
-  */
-  if( zCsr!=(zNewRecord+nByte) ){
-    rc = SQLITE_INTERNAL;
-    goto abort_due_to_error;
-  }
+  assert( zCsr==(zNewRecord+nByte) );
 
   /* Pop entries off the stack if required. Push the new record on. */
   if( !leaveOnStack ){
@@ -2586,9 +2575,7 @@ case OP_MoveGt: {
     if( oc==OP_MoveGe || oc==OP_MoveGt ){
       if( res<0 ){
         rc = sqlite3BtreeNext(pC->pCursor, &res);
-        if( rc!=SQLITE_OK ){
-          goto abort_due_to_error;
-        }
+        if( rc!=SQLITE_OK ) goto abort_due_to_error;
         pC->recnoIsValid = 0;
       }else{
         res = 0;
@@ -2596,7 +2583,8 @@ case OP_MoveGt: {
     }else{
       assert( oc==OP_MoveLt || oc==OP_MoveLe );
       if( res>=0 ){
-        sqlite3BtreePrevious(pC->pCursor, &res);
+        rc = sqlite3BtreePrevious(pC->pCursor, &res);
+        if( rc!=SQLITE_OK ) goto abort_due_to_error;
         pC->recnoIsValid = 0;
       }else{
         /* res might be negative because the table is empty.  Check to

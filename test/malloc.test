@@ -14,7 +14,7 @@
 # special feature is used to see what happens in the library if a malloc
 # were to really fail due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.12 2005/01/03 01:33:00 drh Exp $
+# $Id: malloc.test,v 1.13 2005/01/11 13:02:34 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -290,6 +290,36 @@ for {set go 1; set i 1} {$go} {incr i} {
      sqlite_malloc_fail $i
      set v [catch {execsql {
        VACUUM;
+     }} msg]
+     set leftover [lindex [sqlite_malloc_stat] 2]
+     if {$leftover>0} {
+       if {$leftover>1} {puts "\nLeftover: $leftover\nReturn=$v  Message=$msg"}
+       set ::go 0
+       set v {1 1}
+     } else {
+       set v2 [expr {$msg=="" || $msg=="out of memory"}]
+       if {!$v2} {puts "\nError message returned: $msg"}
+       lappend v $v2
+     }
+  } {1 1}
+}
+
+for {set go 1; set i 1} {$go} {incr i} {
+  do_test malloc-7.$i {
+     sqlite_malloc_fail 0
+     catch {db close}
+     catch {file delete -force test.db}
+     catch {file delete -force test.db-journal}
+     sqlite3 db test.db
+     execsql {
+       CREATE TABLE t1(a, b);
+       INSERT INTO t1 VALUES(1, 2);
+       INSERT INTO t1 VALUES(3, 4);
+       INSERT INTO t1 VALUES(5, 6);
+     }
+     sqlite_malloc_fail $i
+     set v [catch {execsql {
+       SELECT min(a) FROM t1 GROUP BY b;
      }} msg]
      set leftover [lindex [sqlite_malloc_stat] 2]
      if {$leftover>0} {

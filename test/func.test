@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing built-in functions.
 #
-# $Id: func.test,v 1.29 2004/08/20 18:34:20 drh Exp $
+# $Id: func.test,v 1.30 2005/01/11 13:02:34 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -451,5 +451,11 @@ do_test func-14.2 {
     db function [string repeat X 256] {return "hello"}
   }
 } {1}
+
+do_test func-15.1 {
+  catchsql {
+    select test_error(NULL);
+  }
+} {1 {user function error}}
 
 finish_test

@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.91 2004/11/19 05:14:55 danielk1977 Exp $
+** $Id: func.c,v 1.92 2005/01/11 13:02:34 danielk1977 Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -915,6 +915,21 @@ static void test_auxdata(
 }
 #endif /* SQLITE_TEST */
 
+#ifdef SQLITE_TEST
+/*
+** A function to test error reporting from user functions. This function
+** returns a copy of it's first argument as an error.
+*/
+static void test_error(
+  sqlite3_context *pCtx, 
+  int nArg,
+  sqlite3_value **argv
+){
+  // sqlite3_result_error(pCtx, sqlite3_value_text(argv[0]), 0);
+  sqlite3_result_error(pCtx, 0, 0);
+}
+#endif /* SQLITE_TEST */
+
 /*
 ** An instance of the following structure holds the context of a
 ** sum() or avg() aggregate computation.
@@ -1122,6 +1137,7 @@ void sqlite3RegisterBuiltinFunctions(sqlite3 *db){
     { "test_destructor",       1, 1, SQLITE_UTF8, 0, test_destructor},
     { "test_destructor_count", 0, 0, SQLITE_UTF8, 0, test_destructor_count},
     { "test_auxdata",         -1, 0, SQLITE_UTF8, 0, test_auxdata},
+    { "test_error",            1, 0, SQLITE_UTF8, 0, test_error},
 #endif
   };
   static const struct {
