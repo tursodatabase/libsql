@@ -13,7 +13,7 @@
 # This file tests the various conditions under which an SQLITE_SCHEMA
 # error should be returned.
 #
-# $Id: schema.test,v 1.3 2005/01/25 04:27:55 danielk1977 Exp $
+# $Id: schema.test,v 1.4 2005/01/29 01:54:18 danielk1977 Exp $
 
 #---------------------------------------------------------------------
 # When any of the following types of SQL statements or actions are 
@@ -116,6 +116,9 @@ ifcapable trigger {
 }
 
 do_test schema-4.1 {
+  catchsql {
+    CREATE TABLE abc(a, b, c);
+  }
   set ::STMT [sqlite3_prepare $::DB {SELECT * FROM sqlite_master} -1 TAIL]
   execsql {
     CREATE INDEX abc_index ON abc(a);
@@ -185,22 +188,24 @@ do_test schema-6.4 {
 # Tests 7.* check that prepared statements are invalidated when
 # a collation sequence is deleted (but not when one is added).
 #
-do_test schema-7.1 {
-  set sql {SELECT * FROM abc;}
-  set ::STMT [sqlite3_prepare $::DB $sql -1 TAIL]
-  add_test_collate $::DB 1 1 1
-  sqlite3_step $::STMT
-} {SQLITE_DONE}
-do_test schema-7.2 {
-  sqlite3_reset $::STMT
-} {SQLITE_OK}
-do_test schema-7.3 {
-  add_test_collate $::DB 0 0 0 
-  sqlite3_step $::STMT
-} {SQLITE_ERROR}
-do_test schema-7.4 {
-  sqlite3_finalize $::STMT
-} {SQLITE_SCHEMA}
+ifcapable utf16 {
+  do_test schema-7.1 {
+    set sql {SELECT * FROM abc;}
+    set ::STMT [sqlite3_prepare $::DB $sql -1 TAIL]
+    add_test_collate $::DB 1 1 1
+    sqlite3_step $::STMT
+  } {SQLITE_DONE}
+  do_test schema-7.2 {
+    sqlite3_reset $::STMT
+  } {SQLITE_OK}
+  do_test schema-7.3 {
+    add_test_collate $::DB 0 0 0 
+    sqlite3_step $::STMT
+  } {SQLITE_ERROR}
+  do_test schema-7.4 {
+    sqlite3_finalize $::STMT
+  } {SQLITE_SCHEMA}
+}
 
 #---------------------------------------------------------------------
 # Tests 8.1 and 8.2 check that prepared statements are invalidated when

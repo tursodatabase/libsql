@@ -1,5 +1,5 @@
-C Make\ssure\sthe\s#include\sof\s"sqliteInt.h"\salways\scomes\sfirst\sin\sC\ssource\sfiles.\s(CVS\s2284)
-D 2005-01-28T01:29:08
+C Modification\sto\sschema.test\sso\sthat\sit\sworks\swith\sSQLITE_OMIT_TRIGGER\sand\sSQLITE_OMIT_UTF16\sdefined.\s(CVS\s2285)
+D 2005-01-29T01:54:18
 F Makefile.in ffd81f5e926d40b457071b4de8d7c1fa18f39b5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -174,7 +174,7 @@ F test/reindex.test 38b138abe36bf9a08c791ed44d9f76cd6b97b78b
 F test/rollback.test 94cd981ee3a627d9f6466f69dcf1f7dbfe695d7a
 F test/rowid.test 040a3bef06f970c45f5fcd14b2355f7f4d62f0cf
 F test/safety.test 907b64fee719554a3622853812af3886fddbbb4f
-F test/schema.test 3787768619706fc6f47c53cbe23472e782302e1e
+F test/schema.test 21cbe7dac652f6d7eb058f3dec369bdbf46bbde6
 F test/select1.test ad700a2a1c325a23a7206ad4d189e33917de526f
 F test/select2.test 01b9cbc06e5ed662ce0289aa5f47314d54541e82
 F test/select3.test 9de435aa84fc406708cd8dc1b1d60e7f27cea685
@@ -272,7 +272,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P dc1b8106c4ce0ab378ee26324df4537ffe68a940
-R 0f59dcbabaf209eff6e73098be3a8682
-U drh
-Z 53c0e4d0713e8aee932500cd93118fec
+P 522c094f799220468780acb77731edb715bf5e3c
+R 9002e89543be697066b39cd89912bc24
+U danielk1977
+Z e3ae9b709b41b90ac9746a34ed6aa9ba
