@@ -41,7 +41,7 @@ int sqlite3VdbeChangeEncoding(Mem *pMem, int desiredEnc){
     return SQLITE_OK;
   }
 
-  if( pMem->enc==TEXT_Utf8 || desiredEnc==TEXT_Utf8 ){
+  if( pMem->enc==SQLITE_UTF8 || desiredEnc==SQLITE_UTF8 ){
     /* If the current encoding does not match the desired encoding, then
     ** we will need to do some translation between encodings.
     */
@@ -191,7 +191,7 @@ int sqlite3VdbeMemStringify(Mem *pMem, int enc){
     }
     pMem->n = strlen(z);
     pMem->z = z;
-    pMem->enc = TEXT_Utf8;
+    pMem->enc = SQLITE_UTF8;
     pMem->flags |= MEM_Str | MEM_Short | MEM_Term;
     sqlite3VdbeChangeEncoding(pMem, enc);
   }
@@ -219,7 +219,7 @@ int sqlite3VdbeMemIntegerify(Mem *pMem){
   }else if( flags & MEM_Real ){
     pMem->i = (i64)pMem->r;
   }else if( flags & (MEM_Str|MEM_Blob) ){
-    if( sqlite3VdbeChangeEncoding(pMem, TEXT_Utf8)
+    if( sqlite3VdbeChangeEncoding(pMem, SQLITE_UTF8)
        || sqlite3VdbeMemNulTerminate(pMem) ){
       return SQLITE_NOMEM;
     }
@@ -243,7 +243,7 @@ int sqlite3VdbeMemRealify(Mem *pMem){
   }else if( (pMem->flags & MEM_Int) && pMem->type!=SQLITE_TEXT ){
     pMem->r = pMem->i;
   }else if( pMem->flags & (MEM_Str|MEM_Blob) ){
-    if( sqlite3VdbeChangeEncoding(pMem, TEXT_Utf8)
+    if( sqlite3VdbeChangeEncoding(pMem, SQLITE_UTF8)
        || sqlite3VdbeMemNulTerminate(pMem) ){
       return SQLITE_NOMEM;
     }
@@ -332,7 +332,7 @@ int sqlite3VdbeMemSetStr(
       pMem->flags |= MEM_Blob;
       break;
 
-    case TEXT_Utf8:
+    case SQLITE_UTF8:
       pMem->flags |= MEM_Str;
       if( n<0 ){
         pMem->n = strlen(z);
@@ -340,8 +340,8 @@ int sqlite3VdbeMemSetStr(
       }
       break;
 
-    case TEXT_Utf16le:
-    case TEXT_Utf16be:
+    case SQLITE_UTF16LE:
+    case SQLITE_UTF16BE:
       pMem->flags |= MEM_Str;
       if( n<0 ){
         pMem->n = sqlite3utf16ByteLen(z,-1);
@@ -433,8 +433,8 @@ int sqlite3MemCompare(const Mem *pMem1, const Mem *pMem2, const CollSeq *pColl){
     }
 
     assert( pMem1->enc==pMem2->enc );
-    assert( pMem1->enc==TEXT_Utf8 || 
-            pMem1->enc==TEXT_Utf16le || pMem1->enc==TEXT_Utf16be );
+    assert( pMem1->enc==SQLITE_UTF8 || 
+            pMem1->enc==SQLITE_UTF16LE || pMem1->enc==SQLITE_UTF16BE );
 
     /* FIX ME: This may fail if the collation sequence is deleted after
     ** this vdbe program is compiled. We cannot just use BINARY in this
@@ -554,14 +554,14 @@ void sqlite3VdbeMemSanity(Mem *pMem, u8 db_enc){
     assert( (pMem->flags & MEM_Short)!=0 || pMem->z!=pMem->zShort );
 
     if( (flags & MEM_Str) ){
-      assert( pMem->enc==TEXT_Utf8 || 
-              pMem->enc==TEXT_Utf16le ||
-              pMem->enc==TEXT_Utf16be 
+      assert( pMem->enc==SQLITE_UTF8 || 
+              pMem->enc==SQLITE_UTF16BE ||
+              pMem->enc==SQLITE_UTF16LE 
       );
       /* If the string is UTF-8 encoded and nul terminated, then pMem->n
       ** must be the length of the string.
       */
-      if( pMem->enc==TEXT_Utf8 && (flags & MEM_Term) ){ 
+      if( pMem->enc==SQLITE_UTF8 && (flags & MEM_Term) ){ 
         assert( strlen(pMem->z)==pMem->n );
       }
     }

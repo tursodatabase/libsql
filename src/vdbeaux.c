@@ -579,7 +579,7 @@ int sqlite3VdbeList(
     pMem->z = sqlite3OpcodeNames[pOp->opcode];  /* Opcode */
     pMem->n = strlen(pMem->z);
     pMem->type = SQLITE_TEXT;
-    pMem->enc = TEXT_Utf8;
+    pMem->enc = SQLITE_UTF8;
     pMem++;
 
     pMem->flags = MEM_Int;
@@ -595,7 +595,7 @@ int sqlite3VdbeList(
     pMem->flags = MEM_Short|MEM_Str|MEM_Term;   /* P3 */
     pMem->z = displayP3(pOp, pMem->zShort, sizeof(pMem->zShort));
     pMem->type = SQLITE_TEXT;
-    pMem->enc = TEXT_Utf8;
+    pMem->enc = SQLITE_UTF8;
 
     p->nResColumn = 5;
     p->pTos = pMem;
@@ -1008,9 +1008,9 @@ int sqlite3VdbeSetColName(Vdbe *p, int idx, const char *zName, int N){
 
   pColName = &(p->aColName[idx]);
   if( N==0 ){
-    rc = sqlite3VdbeMemSetStr(pColName, zName, -1, TEXT_Utf8, 1);
+    rc = sqlite3VdbeMemSetStr(pColName, zName, -1, SQLITE_UTF8, 1);
   }else{
-    rc = sqlite3VdbeMemSetStr(pColName, zName, N, TEXT_Utf8, N>0);
+    rc = sqlite3VdbeMemSetStr(pColName, zName, N, SQLITE_UTF8, N>0);
   }
   if( rc==SQLITE_OK && N==P3_DYNAMIC ){
     pColName->flags = (pColName->flags&(~MEM_Static))|MEM_Dyn;

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.365 2004/06/11 13:19:21 danielk1977 Exp $
+** $Id: vdbe.c,v 1.366 2004/06/12 00:42:35 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -702,7 +702,7 @@ case OP_Integer: {
     pTos->flags = MEM_Str|MEM_Static|MEM_Term;
     pTos->z = pOp->p3;
     pTos->n = strlen(pTos->z);
-    pTos->enc = TEXT_Utf8;
+    pTos->enc = SQLITE_UTF8;
     Integerify(pTos, 0);
   }
   break;
@@ -717,7 +717,7 @@ case OP_Real: {
   pTos->flags = MEM_Str|MEM_Static|MEM_Term;
   pTos->z = pOp->p3;
   pTos->n = strlen(pTos->z);
-  pTos->enc = TEXT_Utf8;
+  pTos->enc = SQLITE_UTF8;
   Realify(pTos, 0);
   break;
 }
@@ -730,8 +730,8 @@ case OP_Real: {
 case OP_String8: {
   pOp->opcode = OP_String;
 
-  if( db->enc!=TEXT_Utf8 && pOp->p3 ){
-    if( db->enc==TEXT_Utf16le ){
+  if( db->enc!=SQLITE_UTF8 && pOp->p3 ){
+    if( db->enc==SQLITE_UTF16LE ){
       pOp->p3 = sqlite3utf8to16le(pOp->p3, -1);
     }else{
       pOp->p3 = sqlite3utf8to16be(pOp->p3, -1);
@@ -753,7 +753,7 @@ case OP_String: {
   if( pOp->p3 ){
     pTos->flags = MEM_Str|MEM_Static|MEM_Term;
     pTos->z = pOp->p3;
-    if( db->enc==TEXT_Utf8 ){
+    if( db->enc==SQLITE_UTF8 ){
       pTos->n = strlen(pTos->z);
     }else{
       pTos->n  = sqlite3utf16ByteLen(pTos->z, -1);
@@ -1061,7 +1061,7 @@ case OP_Concat: {
     mSep.z = pOp->p3;
     mSep.n = strlen(mSep.z);
     mSep.flags = MEM_Str|MEM_Static|MEM_Term;
-    mSep.enc = TEXT_Utf8;
+    mSep.enc = SQLITE_UTF8;
     sqlite3VdbeChangeEncoding(&mSep, db->enc);
   }else{
     mSep.flags = MEM_Null;
@@ -1492,16 +1492,16 @@ case OP_MustBeInt: {
     pTos->i = i;
   }else if( pTos->flags & MEM_Str ){
     i64 v;
-    if( sqlite3VdbeChangeEncoding(pTos, TEXT_Utf8)
+    if( sqlite3VdbeChangeEncoding(pTos, SQLITE_UTF8)
        || sqlite3VdbeMemNulTerminate(pTos) ){
       goto no_mem;
     }
     if( !sqlite3atoi64(pTos->z, &v) ){
       double r;
-      if( !sqlite3IsNumber(pTos->z, 0, TEXT_Utf8) ){
+      if( !sqlite3IsNumber(pTos->z, 0, db->enc) ){
         goto mismatch;
       }
-      Realify(pTos, TEXT_Utf8);
+      Realify(pTos, db->enc);
       v = (int)pTos->r;
       r = (double)v;
       if( r!=pTos->r ){
@@ -3929,7 +3929,7 @@ case OP_IntegrityCk: {
     pTos->n = strlen(z);
     pTos->flags = MEM_Str | MEM_Dyn | MEM_Term;
   }
-  pTos->enc = TEXT_Utf8;
+  pTos->enc = SQLITE_UTF8;
   sqlite3VdbeChangeEncoding(pTos, db->enc);
   sqliteFree(aRoot);
   break;

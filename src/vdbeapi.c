@@ -58,10 +58,10 @@ long long int sqlite3_value_int64(sqlite3_value *pVal){
   return pVal->i;
 }
 const unsigned char *sqlite3_value_text(sqlite3_value *pVal){
-  return (const char *)sqlite3ValueText(pVal, TEXT_Utf8);
+  return (const char *)sqlite3ValueText(pVal, SQLITE_UTF8);
 }
 const void *sqlite3_value_text16(sqlite3_value* pVal){
-  return sqlite3ValueText(pVal, TEXT_Utf16);
+  return sqlite3ValueText(pVal, SQLITE_UTF16NATIVE);
 }
 int sqlite3_value_type(sqlite3_value* pVal){
   return pVal->type;
@@ -85,11 +85,11 @@ void sqlite3_result_double(sqlite3_context *pCtx, double rVal){
 }
 void sqlite3_result_error(sqlite3_context *pCtx, const char *z, int n){
   pCtx->isError = 1;
-  sqlite3VdbeMemSetStr(&pCtx->s, z, n, TEXT_Utf8, 1);
+  sqlite3VdbeMemSetStr(&pCtx->s, z, n, SQLITE_UTF8, 1);
 }
 void sqlite3_result_error16(sqlite3_context *pCtx, const void *z, int n){
   pCtx->isError = 1;
-  sqlite3VdbeMemSetStr(&pCtx->s, z, n, TEXT_Utf16, 1);
+  sqlite3VdbeMemSetStr(&pCtx->s, z, n, SQLITE_UTF16NATIVE, 1);
 }
 void sqlite3_result_int(sqlite3_context *pCtx, int iVal){
   sqlite3VdbeMemSetInt64(&pCtx->s, (i64)iVal);
@@ -106,7 +106,7 @@ void sqlite3_result_text(
   int n,
   int eCopy
 ){
-  sqlite3VdbeMemSetStr(&pCtx->s, z, n, TEXT_Utf8, eCopy);
+  sqlite3VdbeMemSetStr(&pCtx->s, z, n, SQLITE_UTF8, eCopy);
 }
 void sqlite3_result_text16(
   sqlite3_context *pCtx, 
@@ -114,7 +114,7 @@ void sqlite3_result_text16(
   int n, 
   int eCopy
 ){
-  sqlite3VdbeMemSetStr(&pCtx->s, z, n, TEXT_Utf16, eCopy);
+  sqlite3VdbeMemSetStr(&pCtx->s, z, n, SQLITE_UTF16NATIVE, eCopy);
 }
 void sqlite3_result_value(sqlite3_context *pCtx, sqlite3_value *pValue){
   sqlite3VdbeMemCopy(&pCtx->s, pValue);
@@ -474,7 +474,7 @@ int sqlite3_bind_text(
     return rc;
   }
   pVar = &p->apVar[i-1];
-  rc = sqlite3VdbeMemSetStr(pVar, zData, nData, TEXT_Utf8, eCopy);
+  rc = sqlite3VdbeMemSetStr(pVar, zData, nData, SQLITE_UTF8, eCopy);
   if( rc ){
     return rc;
   }
@@ -499,7 +499,7 @@ int sqlite3_bind_text16(
   pVar = &p->apVar[i-1];
 
   /* There may or may not be a byte order mark at the start of the UTF-16.
-  ** Either way set 'txt_enc' to the TEXT_Utf16* value indicating the 
+  ** Either way set 'txt_enc' to the SQLITE_UTF16* value indicating the 
   ** actual byte order used by this string. If the string does happen
   ** to contain a BOM, then move zData so that it points to the first
   ** byte after the BOM.
@@ -509,7 +509,7 @@ int sqlite3_bind_text16(
     zData = (void *)(((u8 *)zData) + 2);
     nData -= 2;
   }else{
-    txt_enc = SQLITE_BIGENDIAN?TEXT_Utf16be:TEXT_Utf16le;
+    txt_enc = SQLITE_BIGENDIAN?SQLITE_UTF16BE:SQLITE_UTF16LE;
   }
   rc = sqlite3VdbeMemSetStr(pVar, zData, nData, txt_enc, eCopy);
   if( rc ){

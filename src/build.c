@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.216 2004/06/10 14:01:08 danielk1977 Exp $
+** $Id: build.c,v 1.217 2004/06/12 00:42:35 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -879,11 +879,11 @@ static CollSeq * findCollSeqEntry(
     pColl = sqliteMalloc( 3*sizeof(*pColl) + nName + 1 );
     if( pColl ){
       pColl[0].zName = (char*)&pColl[3];
-      pColl[0].enc = TEXT_Utf8;
+      pColl[0].enc = SQLITE_UTF8;
       pColl[1].zName = (char*)&pColl[3];
-      pColl[1].enc = TEXT_Utf16le;
+      pColl[1].enc = SQLITE_UTF16LE;
       pColl[2].zName = (char*)&pColl[3];
-      pColl[2].enc = TEXT_Utf16be;
+      pColl[2].enc = SQLITE_UTF16BE;
       memcpy(pColl[0].zName, zName, nName);
       pColl[0].zName[nName] = 0;
       sqlite3HashInsert(&db->aCollSeq, pColl[0].zName, nName, pColl);
@@ -909,12 +909,12 @@ CollSeq *sqlite3FindCollSeq(
 ){
   CollSeq *pColl = findCollSeqEntry(db, zName, nName, create);
   if( pColl ) switch( enc ){
-    case TEXT_Utf8:
+    case SQLITE_UTF8:
       break;
-    case TEXT_Utf16le:
+    case SQLITE_UTF16LE:
       pColl = &pColl[1];
       break;
-    case TEXT_Utf16be:
+    case SQLITE_UTF16BE:
       pColl = &pColl[2];
       break;
     default: 
@@ -957,27 +957,27 @@ static int synthCollSeq(Parse *pParse, CollSeq *pColl){
   char *z = pColl->zName;
   int n = strlen(z);
   switch( pParse->db->enc ){
-    case TEXT_Utf16le:
-      pColl2 = sqlite3FindCollSeq(pParse->db, TEXT_Utf16be, z, n, 0);
+    case SQLITE_UTF16LE:
+      pColl2 = sqlite3FindCollSeq(pParse->db, SQLITE_UTF16BE, z, n, 0);
       assert( pColl2 );
       if( pColl2->xCmp ) break;
-      pColl2 = sqlite3FindCollSeq(pParse->db, TEXT_Utf8, z, n, 0);
+      pColl2 = sqlite3FindCollSeq(pParse->db, SQLITE_UTF8, z, n, 0);
       assert( pColl2 );
       break;
 
-    case TEXT_Utf16be:
-      pColl2 = sqlite3FindCollSeq(pParse->db,TEXT_Utf16le, z, n, 0);
+    case SQLITE_UTF16BE:
+      pColl2 = sqlite3FindCollSeq(pParse->db,SQLITE_UTF16LE, z, n, 0);
       assert( pColl2 );
       if( pColl2->xCmp ) break;
-      pColl2 = sqlite3FindCollSeq(pParse->db,TEXT_Utf8, z, n, 0);
+      pColl2 = sqlite3FindCollSeq(pParse->db,SQLITE_UTF8, z, n, 0);
       assert( pColl2 );
       break;
 
-    case TEXT_Utf8:
-      pColl2 = sqlite3FindCollSeq(pParse->db,TEXT_Utf16be, z, n, 0);
+    case SQLITE_UTF8:
+      pColl2 = sqlite3FindCollSeq(pParse->db,SQLITE_UTF16BE, z, n, 0);
       assert( pColl2 );
       if( pColl2->xCmp ) break;
-      pColl2 = sqlite3FindCollSeq(pParse->db,TEXT_Utf16le, z, n, 0);
+      pColl2 = sqlite3FindCollSeq(pParse->db,SQLITE_UTF16LE, z, n, 0);
       assert( pColl2 );
       break;
   }

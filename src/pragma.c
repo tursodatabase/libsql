@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.42 2004/06/10 10:50:25 danielk1977 Exp $
+** $Id: pragma.c,v 1.43 2004/06/12 00:42:35 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -769,14 +769,14 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       char *zName;
       u8 enc;
     } encnames[] = {
-      { "UTF-8", TEXT_Utf8 },
-      { "UTF-16le", TEXT_Utf16le },
-      { "UTF-16be", TEXT_Utf16be },
-      { "UTF-16", TEXT_Utf16 },
-      { "UTF8", TEXT_Utf8 },
-      { "UTF16le", TEXT_Utf16le },
-      { "UTF16be", TEXT_Utf16be },
-      { "UTF16", TEXT_Utf16 },
+      { "UTF-8", SQLITE_UTF8 },
+      { "UTF-16le", SQLITE_UTF16LE },
+      { "UTF-16be", SQLITE_UTF16BE },
+      { "UTF-16", SQLITE_UTF16NATIVE },
+      { "UTF8", SQLITE_UTF8 },
+      { "UTF16le", SQLITE_UTF16LE },
+      { "UTF16be", SQLITE_UTF16BE },
+      { "UTF16", SQLITE_UTF16NATIVE },
       { 0, 0 }
     };
     struct EncName *pEnc;

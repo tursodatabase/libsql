@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.215 2004/06/11 10:51:32 danielk1977 Exp $
+** $Id: main.c,v 1.216 2004/06/12 00:42:35 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -223,14 +223,14 @@ static int sqlite3InitOne(sqlite *db, int iDb, char **pzErrMsg){
   **    meta[1]   File format of schema layer.
   **    meta[2]   Size of the page cache.
   **    meta[3]   Synchronous setting.  1:off, 2:normal, 3:full
-  **    meta[4]   Db text encoding. 1:UTF-8 2:UTF-16 LE 3:UTF-16 BE
+  **    meta[4]   Db text encoding. 1:UTF-8 3:UTF-16 LE 4:UTF-16 BE
   **    meta[5]   Pragma temp_store value.  See comments on BtreeFactory
   **    meta[6]
   **    meta[7]
   **    meta[8]
   **    meta[9]
   **
-  ** Note: The hash defined TEXT_Utf* symbols in sqliteInt.h correspond to
+  ** Note: The hash defined SQLITE_UTF* symbols in sqliteInt.h correspond to
   ** the possible values of meta[4].
   */
   if( rc==SQLITE_OK ){
@@ -1054,7 +1054,7 @@ static int openDatabase(
   db->magic = SQLITE_MAGIC_BUSY;
   db->nDb = 2;
   db->aDb = db->aDbStatic;
-  db->enc = TEXT_Utf8;
+  db->enc = SQLITE_UTF8;
   db->autoCommit = 1;
   /* db->flags |= SQLITE_ShortColNames; */
   sqlite3HashInit(&db->aFunc, SQLITE_HASH_STRING, 0);

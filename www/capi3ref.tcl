@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3ref.tcl,v 1.2 2004/06/11 17:48:04 drh Exp $}
+set rcsid {$Id: capi3ref.tcl,v 1.3 2004/06/12 00:42:36 danielk1977 Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -330,9 +330,9 @@ int sqlite3_create_collation16(
   int(*xCompare)(void*,int,const void*,int,const void*)
 );
 #define SQLITE_UTF8     1
-#define SQLITE_UTF16    2
-#define SQLITE_UTF16BE  3
-#define SQLITE_UTF16LE  4
+#define SQLITE_UTF16BE  2
+#define SQLITE_UTF16LE  3
+#define SQLITE_UTF16    4
 } {
  These two functions are used to add new collation sequences to the
  sqlite3 handle specified as the first argument. 

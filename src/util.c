@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.100 2004/06/09 14:01:53 drh Exp $
+** $Id: util.c,v 1.101 2004/06/12 00:42:35 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -565,8 +565,8 @@ int sqlite3StrNICmp(const char *zLeft, const char *zRight, int N){
 ** Am empty string is considered non-numeric.
 */
 int sqlite3IsNumber(const char *z, int *realnum, u8 enc){
-  int incr = (enc==TEXT_Utf8?1:2);
-  if( enc==TEXT_Utf16be ) z++;
+  int incr = (enc==SQLITE_UTF8?1:2);
+  if( enc==SQLITE_UTF16LE ) z++;
   if( *z=='-' || *z=='+' ) z += incr;
   if( !isdigit(*z) ){
     return 0;
@@ -767,8 +767,8 @@ int sqlite3Compare(const char *atext, const char *btext){
   }else if( btext==0 ){
     return 1;
   }
-  isNumA = sqlite3IsNumber(atext, 0, TEXT_Utf8);
-  isNumB = sqlite3IsNumber(btext, 0, TEXT_Utf8);
+  isNumA = sqlite3IsNumber(atext, 0, SQLITE_UTF8);
+  isNumB = sqlite3IsNumber(btext, 0, SQLITE_UTF8);
   if( isNumA ){
     if( !isNumB ){
       result = -1;
@@ -859,8 +859,8 @@ int sqlite3SortCompare(const char *a, const char *b){
       res = strcmp(&a[1],&b[1]);
       if( res ) break;
     }else{
-      isNumA = sqlite3IsNumber(&a[1], 0, TEXT_Utf8);
-      isNumB = sqlite3IsNumber(&b[1], 0, TEXT_Utf8);
+      isNumA = sqlite3IsNumber(&a[1], 0, SQLITE_UTF8);
+      isNumB = sqlite3IsNumber(&b[1], 0, SQLITE_UTF8);
       if( isNumA ){
         double rA, rB;
         if( !isNumB ){

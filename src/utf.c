@@ -12,7 +12,7 @@
 ** This file contains routines used to translate between UTF-8, 
 ** UTF-16, UTF-16BE, and UTF-16LE.
 **
-** $Id: utf.c,v 1.18 2004/06/06 12:41:50 danielk1977 Exp $
+** $Id: utf.c,v 1.19 2004/06/12 00:42:35 danielk1977 Exp $
 **
 ** Notes on UTF-8:
 **
@@ -100,8 +100,8 @@ static unsigned char UpperToLower[91] = {
 ** reads a single character from the string and returns the codepoint value
 ** of the character read.
 **
-** The value of *pEnc is the string encoding. If *pEnc is TEXT_Utf16le or
-** TEXT_Utf16be, and the first character read is a byte-order-mark, then
+** The value of *pEnc is the string encoding. If *pEnc is SQLITE_UTF16LE or
+** SQLITE_UTF16BE, and the first character read is a byte-order-mark, then
 ** the value of *pEnc is modified if necessary. In this case the next
 ** character is read and it's code-point value returned.
 **
@@ -116,7 +116,7 @@ int sqlite3ReadUniChar(const char *zStr, int *pOffset, u8 *pEnc, int fold){
   int ret = 0;
 
   switch( *pEnc ){
-    case TEXT_Utf8: {
+    case SQLITE_UTF8: {
 
 #if 0
   static const int initVal[] = {
@@ -184,12 +184,12 @@ int sqlite3ReadUniChar(const char *zStr, int *pOffset, u8 *pEnc, int fold){
       break;
     }
 
-    case TEXT_Utf16le:
-    case TEXT_Utf16be: {
+    case SQLITE_UTF16LE:
+    case SQLITE_UTF16BE: {
       u32 code_point;   /* the first code-point in the character */
       u32 code_point2;  /* the second code-point in the character, if any */
     
-      code_point = READ_16(&zStr[*pOffset], (*pEnc==TEXT_Utf16be));
+      code_point = READ_16(&zStr[*pOffset], (*pEnc==SQLITE_UTF16BE));
       *pOffset += 2;
     
       /* If this is a non-surrogate code-point, just cast it to an int and
@@ -211,7 +211,7 @@ int sqlite3ReadUniChar(const char *zStr, int *pOffset, u8 *pEnc, int fold){
       ** is not enough data left or the next code-point is not a trailing
       ** surrogate, return the replacement character.
       */
-      code_point2 = READ_16(&zStr[*pOffset], (*pEnc==TEXT_Utf16be));
+      code_point2 = READ_16(&zStr[*pOffset], (*pEnc==SQLITE_UTF16BE));
       *pOffset += 2;
       if( code_point2<0xDC00 || code_point>0xDFFF ){
         return (int)0xFFFD;
@@ -257,7 +257,7 @@ static int readUtf16Bom(UtfString *pStr, int big_endian){
     u8 bom = sqlite3UtfReadBom(pStr->pZ, 2);
     if( bom ){
       pStr->c += 2;
-      return (bom==TEXT_Utf16le)?0:1;
+      return (bom==SQLITE_UTF16LE)?0:1;
     }
   }
 
@@ -267,8 +267,8 @@ static int readUtf16Bom(UtfString *pStr, int big_endian){
 /*
 ** zData is a UTF-16 encoded string, nData bytes in length. This routine
 ** checks if there is a byte-order mark at the start of zData. If no
-** byte order mark is found 0 is returned. Otherwise TEXT_Utf16be or
-** TEXT_Utf16le is returned, depending on whether The BOM indicates that
+** byte order mark is found 0 is returned. Otherwise SQLITE_UTF16BE or
+** SQLITE_UTF16LE is returned, depending on whether The BOM indicates that
 ** the text is big-endian or little-endian.
 */
 u8 sqlite3UtfReadBom(const void *zData, int nData){
@@ -276,10 +276,10 @@ u8 sqlite3UtfReadBom(const void *zData, int nData){
     u8 b1 = *(u8 *)zData;
     u8 b2 = *(((u8 *)zData) + 1);
     if( b1==0xFE && b2==0xFF ){
-      return TEXT_Utf16be;
+      return SQLITE_UTF16BE;
     }
     if( b1==0xFF && b2==0xFE ){
-      return TEXT_Utf16le;
+      return SQLITE_UTF16LE;
     }
   }
   return 0;
@@ -292,7 +292,7 @@ u8 sqlite3UtfReadBom(const void *zData, int nData){
 ** strings, the unicode replacement character U+FFFD may be returned.
 */
 static u32 readUtf8(UtfString *pStr){
-  u8 enc = TEXT_Utf8;
+  u8 enc = SQLITE_UTF8;
   return sqlite3ReadUniChar(pStr->pZ, &pStr->c, &enc, 0);
 }
 
@@ -687,15 +687,15 @@ int sqlite3utfTranslate(
   void **zOut, int *nOut,        /* Output string */
   u8 enc2                        /* Desired encoding of output */
 ){
-  assert( enc1==TEXT_Utf8 || enc1==TEXT_Utf16le || enc1==TEXT_Utf16be );
-  assert( enc2==TEXT_Utf8 || enc2==TEXT_Utf16le || enc2==TEXT_Utf16be );
+  assert( enc1==SQLITE_UTF8 || enc1==SQLITE_UTF16LE || enc1==SQLITE_UTF16BE );
+  assert( enc2==SQLITE_UTF8 || enc2==SQLITE_UTF16LE || enc2==SQLITE_UTF16BE );
   assert( 
-    (enc1==TEXT_Utf8 && (enc2==TEXT_Utf16le || enc2==TEXT_Utf16be)) ||
-    (enc2==TEXT_Utf8 && (enc1==TEXT_Utf16le || enc1==TEXT_Utf16be))
+    (enc1==SQLITE_UTF8 && (enc2==SQLITE_UTF16LE || enc2==SQLITE_UTF16BE)) ||
+    (enc2==SQLITE_UTF8 && (enc1==SQLITE_UTF16LE || enc1==SQLITE_UTF16BE))
   );
 
-  if( enc1==TEXT_Utf8 ){
-    if( enc2==TEXT_Utf16le ){
+  if( enc1==SQLITE_UTF8 ){
+    if( enc2==SQLITE_UTF16LE ){
       *zOut = sqlite3utf8to16le(zData, nData);
     }else{
       *zOut = sqlite3utf8to16be(zData, nData);
@@ -703,7 +703,7 @@ int sqlite3utfTranslate(
     if( !(*zOut) ) return SQLITE_NOMEM;
     *nOut = sqlite3utf16ByteLen(*zOut, -1);
   }else{
-    *zOut = sqlite3utf16to8(zData, nData, enc1==TEXT_Utf16be);
+    *zOut = sqlite3utf16to8(zData, nData, enc1==SQLITE_UTF16BE);
     if( !(*zOut) ) return SQLITE_NOMEM;
     *nOut = strlen(*zOut);
   }

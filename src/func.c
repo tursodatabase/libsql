@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.66 2004/06/11 10:51:32 danielk1977 Exp $
+** $Id: func.c,v 1.67 2004/06/12 00:42:35 danielk1977 Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -397,7 +397,7 @@ LikePattern *compileLike(sqlite3_value *pPattern, u8 enc){
   int offset = 0;
   const char *zLike;
  
-  if( enc==TEXT_Utf8 ){
+  if( enc==SQLITE_UTF8 ){
     zLike = sqlite3_value_text(pPattern);
     n = sqlite3_value_bytes(pPattern) + 1;
   }else{
@@ -488,11 +488,11 @@ static void likeFunc(
 
   /* If the user-data pointer is NULL, use UTF-8. Otherwise UTF-16. */
   if( sqlite3_user_data(context) ){
-    enc = TEXT_Utf16;
+    enc = SQLITE_UTF16NATIVE;
     zString = (const unsigned char *)sqlite3_value_text16(argv[1]);
     assert(0);
   }else{
-    enc = TEXT_Utf8;
+    enc = SQLITE_UTF8;
     zString = sqlite3_value_text(argv[1]);
   }
 
@@ -509,7 +509,7 @@ static void likeFunc(
   pState = aState;
 
   do {
-    if( enc==TEXT_Utf8 ){
+    if( enc==SQLITE_UTF8 ){
       c = zString[offset++];
       if( c&0x80 ){
         offset--;

@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.139 2004/06/11 10:51:27 danielk1977 Exp $
+** $Id: expr.c,v 1.140 2004/06/12 00:42:35 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1012,7 +1012,7 @@ int sqlite3ExprCheck(Parse *pParse, Expr *pExpr, int allowAgg, int *pIsAgg){
       int nId;                    /* Number of characters in function name */
       const char *zId;            /* The function name. */
       FuncDef *pDef;
-      int iPrefEnc = (pParse->db->enc==TEXT_Utf8)?0:1;
+      int iPrefEnc = (pParse->db->enc==SQLITE_UTF8)?0:1;
 
       getFunctionName(pExpr, &zId, &nId);
       pDef = sqlite3FindFunction(pParse->db, zId, nId, n, iPrefEnc, 0);
@@ -1280,7 +1280,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       const char *zId;
       int p2 = 0;
       int i;
-      int iPrefEnc = (pParse->db->enc==TEXT_Utf8)?0:1;
+      int iPrefEnc = (pParse->db->enc==SQLITE_UTF8)?0:1;
       CollSeq *pColl = 0;
       getFunctionName(pExpr, &zId, &nId);
       pDef = sqlite3FindFunction(pParse->db, zId, nId, nExpr, iPrefEnc, 0);
@@ -1724,7 +1724,7 @@ int sqlite3ExprAnalyzeAggregates(Parse *pParse, Expr *pExpr){
         }
       }
       if( i>=pParse->nAgg ){
-        int iPrefEnc = (pParse->db->enc==TEXT_Utf8)?0:1;
+        int iPrefEnc = (pParse->db->enc==SQLITE_UTF8)?0:1;
         i = appendAggInfo(pParse);
         if( i<0 ) return 1;
         pParse->aAgg[i].isAgg = 1;
