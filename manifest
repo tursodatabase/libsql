@@ -1,6 +1,6 @@
-C Comment\supdates\smost.\s\sAlso\ssome\ssmall\schanges\sto\sthe\sVDBE.\s(CVS\s339)
-D 2002-01-06T17:07:40
-F Makefile.in 352fed589f09dd94347e0bb391d047118ebd6105
+C Makefile\schanges\sfrom\sAndreas\sRottmann\s(CVS\s340)
+D 2002-01-07T19:04:21
+F Makefile.in 4b445b9a47f454ecd05220d803ee1b48a81f45ac
 F Makefile.template c88ffcb9c339e718f434d0c7f045bcd7eea125af
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
 F VERSION 6565c509ed61af074681258bd346dca53ad38128
@@ -11,7 +11,6 @@ F config.status eea88b8fe8b8b82d69b886382061efa9b77131cc
 F config.sub f14b07d544ca26b5d698259045136b783e18fc7f
 F configure 9303d975dbd577fbe61e615045ddc02015b59fb5 x
 F configure.ac 38e2e5594cab99eb3a753b0614fcc36f4ddbbb48
-F configure.in 0000c0d62beb47cae1d2d81a197c7fe6efd56a45
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
@@ -105,7 +104,7 @@ F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 72a0c80e9054cc7025a50928d28d9c75c02c2b8b
 F www/c_interface.tcl 9123810452845783fac8e3184929463d9e70d609
-F www/changes.tcl 3a2c158047b9a899dbaa7ff11979b246f568cb6a
+F www/changes.tcl 9bb023d26ece0f6083816beb29ff03d17eeb7977
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
 F www/download.tcl 1ea61f9d89a2a5a9b2cee36b0d5cf97321bdefe0
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
@@ -119,7 +118,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 880ef67cb4f2797b95bf1368fc4e0d8ca0fda956
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 011be9a9d2632d261489005d97c69b0a0bc5a108
-R 6344d21046bf26426615521a28ec7ddb
+P 9b0be4fcc1cbca69f5fee906f86dfb36a323fe84
+R bf419d8b9df57fd8ac55e43d882f9c8b
 U drh
-Z d9e4a308acd11d4e3b3d3caeececa822
+Z 58d3c56a6be7deba646bdedee2cc6967

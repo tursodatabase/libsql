@@ -121,9 +121,9 @@ last_change:	$(SRC)
 libsqlite.la:	$(LIBOBJ)
 	$(LIBTOOL) $(TCC) -o libsqlite.la $(LIBOBJ) -rpath $(prefix)/lib
 
-libtclsqlite.la:	$(LIBOBJ) tclsqlite.lo
-	$(LIBTOOL) $(TCC) -o libtclsqlite.la $(LIBOBJ) tclsqlite.lo \
-            $(LIBTCL) -rpath $(prefix)/lib
+libtclsqlite.la:	tclsqlite.lo libsqlite.la
+	$(LIBTOOL) $(TCC) -o libtclsqlite.la tclsqlite.lo \
+		libsqlite.la $(LIBTCL) -rpath $(prefix)/lib
 
 sqlite:	$(TOP)/src/shell.c libsqlite.la sqlite.h
 	$(LIBTOOL) $(TCC) $(READLINE_FLAGS) -o sqlite $(TOP)/src/shell.c \
@@ -220,10 +220,10 @@ tclsqlite:	$(TOP)/src/tclsqlite.c libsqlite.la
 	$(LIBTOOL) $(TCC) $(TCL_FLAGS) -DTCLSH=1 -o tclsqlite \
 		$(TOP)/src/tclsqlite.c libsqlite.la $(LIBTCL)
 
-testfixture:	$(TOP)/src/tclsqlite.c libtclsqlite.la $(TESTSRC)
+testfixture:	$(TOP)/src/tclsqlite.c libtclsqlite.la libsqlite.la $(TESTSRC)
 	$(LIBTOOL) $(TCC) $(TCL_FLAGS) -DTCLSH=1 -DSQLITE_TEST=1\
                 -o testfixture $(TESTSRC) $(TOP)/src/tclsqlite.c \
-		libtclsqlite.la $(LIBTCL)
+		libtclsqlite.la libsqlite.la $(LIBTCL)
 
 fulltest:	testfixture sqlite
 	./testfixture $(TOP)/test/all.test
