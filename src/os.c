@@ -1610,5 +1610,17 @@ int sqliteOsCurrentTime(double *prNow){
   *prNow = t/86400.0 + 2440587.5;
   return 0;
 #endif
+#if OS_WIN
+  FILETIME ft;
+  /* FILETIME structure is a 64-bit value representing the number of 
+     100-nanosecond intervals since January 1, 1601 (= JD 2305813.5). 
+  */
+  double now;
+  GetSystemTimeAsFileTime( &ft );
+  now = ((double)ft.dwHighDateTime) * 4294967296.0; 
+  *prNow = (now + ft.dwLowDateTime)/864000000000.0 + 2305813.5;
+#endif
+  return 0;
+
   return 1;
 }
