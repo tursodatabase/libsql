@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the SELECT statement.
 #
-# $Id: select1.test,v 1.38 2005/01/15 01:52:33 drh Exp $
+# $Id: select1.test,v 1.39 2005/01/18 16:02:41 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -438,7 +438,7 @@ do_test select1-6.7 {
   set v [catch {execsql2 {SELECT A.f1, t1 FROM test1 as A, test2 
          ORDER BY f2}} msg]
   lappend v $msg
-} {0 {A.f1 11 t1 abc A.f1 33 t1 abc}}
+} {0 {f1 11 t1 abc f1 33 t1 abc}}
 do_test select1-6.8 {
   set v [catch {execsql2 {SELECT A.f1, f1 FROM test1 as A, test1 as B 
          ORDER BY f2}} msg]
@@ -454,11 +454,16 @@ do_test select1-6.8c {
          ORDER BY f2}} msg]
   lappend v $msg
 } {1 {ambiguous column name: A.f1}}
-do_test select1-6.9 {
+do_test select1-6.9.1 {
+  set v [catch {execsql {SELECT A.f1, B.f1 FROM test1 as A, test1 as B 
+         ORDER BY A.f1, B.f1}} msg]
+  lappend v $msg
+} {0 {11 11 11 33 33 11 33 33}}
+do_test select1-6.9.2 {
   set v [catch {execsql2 {SELECT A.f1, B.f1 FROM test1 as A, test1 as B 
          ORDER BY A.f1, B.f1}} msg]
   lappend v $msg
-} {0 {A.f1 11 B.f1 11 A.f1 11 B.f1 33 A.f1 33 B.f1 11 A.f1 33 B.f1 33}}
+} {0 {f1 11 f1 11 f1 33 f1 33 f1 11 f1 11 f1 33 f1 33}}
 
 ifcapable compound {
 do_test select1-6.10 {
@@ -641,16 +646,16 @@ do_test select1-11.1 {
     SELECT * FROM t3, t4;
   }
 } {1 2 3 4}
-do_test select1-11.2 {
+do_test select1-11.2.1 {
+  execsql {
+    SELECT * FROM t3, t4;
+  }
+} {1 2 3 4}
+do_test select1-11.2.2 {
   execsql2 {
     SELECT * FROM t3, t4;
   }
-} {t3.a 1 t3.b 2 t4.a 3 t4.b 4}
-do_test select1-11.3 {
-  execsql2 {
-    SELECT * FROM t3 AS x, t4 AS y;
-  }
-} {x.a 1 x.b 2 y.a 3 y.b 4}
+} {a 3 b 4 a 3 b 4}
 do_test select1-11.4.1 {
   execsql {
     SELECT t3.*, t4.b FROM t3, t4;
@@ -661,16 +666,16 @@ do_test select1-11.4.2 {
     SELECT "t3".*, t4.b FROM t3, t4;
   }
 } {1 2 4}
-do_test select1-11.5 {
+do_test select1-11.5.1 {
   execsql2 {
     SELECT t3.*, t4.b FROM t3, t4;
   }
-} {t3.a 1 t3.b 2 t4.b 4}
+} {a 1 b 4 b 4}
 do_test select1-11.6 {
   execsql2 {
     SELECT x.*, y.b FROM t3 AS x, t4 AS y;
   }
-} {x.a 1 x.b 2 y.b 4}
+} {a 1 b 4 b 4}
 do_test select1-11.7 {
   execsql {
     SELECT t3.b, t4.* FROM t3, t4;
@@ -680,12 +685,12 @@ do_test select1-11.8 {
   execsql2 {
     SELECT t3.b, t4.* FROM t3, t4;
   }
-} {t3.b 2 t4.a 3 t4.b 4}
+} {b 4 a 3 b 4}
 do_test select1-11.9 {
   execsql2 {
     SELECT x.b, y.* FROM t3 AS x, t4 AS y;
   }
-} {x.b 2 y.a 3 y.b 4}
+} {b 4 a 3 b 4}
 do_test select1-11.10 {
   catchsql {
     SELECT t5.* FROM t3, t4;
@@ -700,27 +705,27 @@ do_test select1-11.12 {
   execsql2 {
     SELECT t3.* FROM t3, (SELECT max(a), max(b) FROM t4)
   }
-} {t3.a 1 t3.b 2}
+} {a 1 b 2}
 do_test select1-11.13 {
   execsql2 {
     SELECT t3.* FROM (SELECT max(a), max(b) FROM t4), t3
   }
-} {t3.a 1 t3.b 2}
+} {a 1 b 2}
 do_test select1-11.14 {
   execsql2 {
     SELECT * FROM t3, (SELECT max(a), max(b) FROM t4) AS 'tx'
   }
-} {t3.a 1 t3.b 2 tx.max(a) 3 tx.max(b) 4}
+} {a 1 b 2 max(a) 3 max(b) 4}
 do_test select1-11.15 {
   execsql2 {
     SELECT y.*, t3.* FROM t3, (SELECT max(a), max(b) FROM t4) AS y
   }
-} {y.max(a) 3 y.max(b) 4 t3.a 1 t3.b 2}
+} {max(a) 3 max(b) 4 a 1 b 2}
 do_test select1-11.16 {
   execsql2 {
     SELECT y.* FROM t3 as y, t4 as z
   }
-} {y.a 1 y.b 2}
+} {a 1 b 2}
 
 # Tests of SELECT statements without a FROM clause.
 #
@@ -785,7 +790,7 @@ do_test select1-12.10 {
       SELECT a,b FROM t3 UNION SELECT a AS 'x', b AS 'y' FROM t4 ORDER BY a,b
     ) AS 'z' ORDER BY x;
   }
-} {z.x 1 z.x 3}
+} {x 1 x 3}
 } ;# ifcapable compound
 
 

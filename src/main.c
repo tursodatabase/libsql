@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.271 2005/01/13 02:14:25 danielk1977 Exp $
+** $Id: main.c,v 1.272 2005/01/18 16:02:40 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1111,7 +1111,7 @@ static int openDatabase(
   db->aDb = db->aDbStatic;
   db->enc = SQLITE_UTF8;
   db->autoCommit = 1;
-  /* db->flags |= SQLITE_ShortColNames; */
+  db->flags |= SQLITE_ShortColNames;
   sqlite3HashInit(&db->aFunc, SQLITE_HASH_STRING, 0);
   sqlite3HashInit(&db->aCollSeq, SQLITE_HASH_STRING, 0);
   for(i=0; i<db->nDb; i++){
