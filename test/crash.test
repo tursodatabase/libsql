@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.
 #
-# $Id: crash.test,v 1.4 2004/06/25 06:23:23 danielk1977 Exp $
+# $Id: crash.test,v 1.5 2004/06/26 09:50:12 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -37,7 +37,6 @@ proc crashsql {crashdelay crashfile sql} {
   set f [open crash.tcl w]
   puts $f "sqlite3_crashparams $crashdelay $cfile"
   puts $f "sqlite3 db test.db"
-  puts $f "db eval {pragma synchronous = full}"
   puts $f "db eval {pragma cache_size = 10}"
   puts $f "db eval {"
   puts $f   "$sql"
@@ -232,14 +231,9 @@ for {set i 1} {$i < $repeats} {incr i} {
 do_test crash-4.0 {
   file delete -force test2.db
   file delete -force test2.db-journal
-  sqlite3 db2 test2.db
-  execsql {
-    pragma default_cache_size = 10;
-    pragma default_synchronous = full;
-  } db2
-  db2 close
   execsql {
     ATTACH 'test2.db' AS aux;
+    PRAGMA aux.default_cache_size = 10;
     CREATE TABLE aux.abc2 AS SELECT 2*a as a, 2*b as b, 2*c as c FROM abc;
   }
   expr [file size test2.db] / 1024

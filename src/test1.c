@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.88 2004/06/25 12:08:47 danielk1977 Exp $
+** $Id: test1.c,v 1.89 2004/06/26 09:50:12 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -27,14 +27,6 @@
 # define PTR_FMT "%p"
 #endif
 
-int sqlite3_exec_printf(
-  sqlite *db,                   /* An open database */
-  const char *sqlFormat,        /* printf-style format string for the SQL */
-  sqlite_callback xCallback,    /* Callback function */
-  void *pArg,                   /* 1st argument to callback function */
-  char **errmsg,                /* Error msg written here */
-  ...                           /* Arguments to the format string. */
-);
 int sqlite3_exec_printf(
   sqlite *db,                   /* An open database */
   const char *sqlFormat,        /* printf-style format string for the SQL */
@@ -399,7 +391,7 @@ static int execFuncCallback(void *pData, int argc, char **argv, char **NotUsed){
 }
 
 /*
-** Implementation of the x_sqlite3_exec() function.  This function takes
+** Implementation of the x_sqlite_exec() function.  This function takes
 ** a single argument and attempts to execute that argument as SQL code.
 ** This is illegal and should set the SQLITE_MISUSE flag on the database.
 **
@@ -429,7 +421,7 @@ static void sqlite3ExecFunc(
 ** Call the sqlite3_create_function API on the given database in order
 ** to create a function named "x_coalesce".  This function does the same thing
 ** as the "coalesce" function.  This function also registers an SQL function
-** named "x_sqlite3_exec" that invokes sqlite3_exec().  Invoking sqlite3_exec()
+** named "x_sqlite_exec" that invokes sqlite3_exec().  Invoking sqlite3_exec()
 ** in this way is illegal recursion and should raise an SQLITE_MISUSE error.
 ** The effect is similar to trying to use the same database connection from
 ** two threads at the same time.
@@ -454,7 +446,7 @@ static int test_create_function(
   if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
   sqlite3_create_function(db, "x_coalesce", -1, SQLITE_UTF8, 0, 
       ifnullFunc, 0, 0);
-  sqlite3_create_function(db, "x_sqlite3_exec", 1, SQLITE_UTF8, db,
+  sqlite3_create_function(db, "x_sqlite_exec", 1, SQLITE_UTF8, db,
       sqlite3ExecFunc, 0, 0);
   return TCL_OK;
 }

@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.234 2004/06/26 06:37:07 danielk1977 Exp $
+** $Id: main.c,v 1.235 2004/06/26 09:50:12 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -459,6 +459,13 @@ int sqlite3_close(sqlite *db){
     return SQLITE_OK;
   }
 
+  if( db->magic!=SQLITE_MAGIC_CLOSED && 
+      db->magic!=SQLITE_MAGIC_OPEN &&
+      db->magic!=SQLITE_MAGIC_BUSY
+  ){
+    return SQLITE_MISUSE;
+  }
+
   /* If there are any outstanding VMs, return SQLITE_BUSY. */
   if( db->pVdbe ){
     sqlite3Error(db, SQLITE_BUSY, 
@@ -837,6 +844,9 @@ const char *sqlite3_errmsg(sqlite3 *db){
     */
     return sqlite3ErrStr(SQLITE_NOMEM);
   }
+  if( db->magic!=SQLITE_MAGIC_OPEN && db->magic!=SQLITE_MAGIC_BUSY ){
+    return sqlite3ErrStr(SQLITE_MISUSE);
+  }
   if( !sqlite3_value_text(db->pErr) ){
     return sqlite3ErrStr(db->errCode);
   }
@@ -858,8 +868,19 @@ const void *sqlite3_errmsg16(sqlite3 *db){
     0, 'o', 0, 'f', 0, ' ', 
     0, 'm', 0, 'e', 0, 'm', 0, 'o', 0, 'r', 0, 'y', 0, 0, 0
   };
+  static char misuseBe [] = {
+    0, 'l', 0, 'i', 0, 'b', 0, 'r', 0, 'a', 0, 'r', 0, 'y', 0, ' ', 
+    0, 'r', 0, 'o', 0, 'u', 0, 't', 0, 'i', 0, 'n', 0, 'e', 0, ' ', 
+    0, 'c', 0, 'a', 0, 'l', 0, 'l', 0, 'e', 0, 'd', 0, ' ', 
+    0, 'o', 0, 'u', 0, 't', 0, ' ', 
+    0, 'o', 0, 'f', 0, ' ', 
+    0, 's', 0, 'e', 0, 'q', 0, 'u', 0, 'e', 0, 'n', 0, 'c', 0, 'e', 0, 0, 0
+  };
 
   if( db && db->pErr ){
+    if( db->magic==SQLITE_MAGIC_ERROR ){
+      return (void *)(&misuseBe[SQLITE_UTF16NATIVE==SQLITE_UTF16LE?1:0]);
+    }
     if( !sqlite3_value_text16(db->pErr) ){
       sqlite3ValueSetStr(db->pErr, -1, sqlite3ErrStr(db->errCode),
           SQLITE_UTF8, SQLITE_STATIC);
@@ -926,8 +947,7 @@ int sqlite3_prepare(
   assert( ppStmt );
   *ppStmt = 0;
   if( sqlite3SafetyOn(db) ){
-    rc = SQLITE_MISUSE;
-    goto prepare_out;
+    return SQLITE_MISUSE;
   }
 
   memset(&sParse, 0, sizeof(sParse));

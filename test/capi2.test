@@ -11,35 +11,11 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi2.test,v 1.16 2004/06/21 07:36:33 danielk1977 Exp $
+# $Id: capi2.test,v 1.17 2004/06/26 09:50:12 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-
-# proc sqlite_step {stmt N VALS COLS} {
-#   upvar $VALS vals
-#   upvar $COLS cols
-#   upvar $N n
-#   set vals [list]
-#   set cols [list]
-# 
-#   set n [sqlite3_column_count $stmt]
-# 
-#   set rc [sqlite3_step $stmt]
-#   for {set i 0} {$i < [sqlite3_column_count $stmt]} {incr i} {
-#     lappend cols [sqlite3_column_name $stmt $i]
-#   }
-#   for {set i 0} {$i < [sqlite3_column_count $stmt]} {incr i} {
-#     lappend cols [sqlite3_column_decltype $stmt $i]
-#   }
-# 
-#   for {set i 0} {$i < [sqlite3_data_count $stmt]} {incr i} {
-#     lappend vals [sqlite3_column_text $stmt $i]
-#   }
-# 
-#   return $rc
-# }
 
 # Return the text values from the current row pointed at by STMT as a list.
 proc get_row_values {STMT} {

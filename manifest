@@ -1,5 +1,5 @@
-C Remove\sthe\s'nMaster'\sargument\sfrom\svarious\spager\sand\sbtree\sfunctions.\s(CVS\s1737)
-D 2004-06-26T08:38:25
+C Minor\sfixes\srelated\sto\sthe\stests\sin\smisuse.test\s(CVS\s1738)
+D 2004-06-26T09:50:12
 F Makefile.in cb7a9889c38723f72b2506c4236ff30a05ff172b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -38,7 +38,7 @@ F src/hash.c 440c2f8cb373ee1b4e13a0988489c7cd95d55b6f
 F src/hash.h 762d95f1e567664d1eafc1687de755626be962fb
 F src/insert.c d99ffe87e1e1397f4233afcd06841d52d6b17b18
 F src/legacy.c ad23746f15f67e34577621b1875f639c94839e1f
-F src/main.c 7a5afce156d14727a49b60ffe6ab21bcae27e6f3
+F src/main.c 7551892fd677fac1ddb1429f70bf53d7e01eeb93
 F src/md5.c 7ae1c39044b95de2f62e066f47bb1deb880a1070
 F src/os.h d1780e0db95cad01f213d48da22ab490eb4fd345
 F src/os_common.h ba1b7306e16e2091718f2c48db0fe6c1d7a31bb8
@@ -62,7 +62,7 @@ F src/sqlite.h.in b70fded2bdfeaddfb06adea3888118b722975136
 F src/sqliteInt.h d1911e120fb20ff9ba4cf0115065ac6569268cec
 F src/table.c af14284fa36c8d41f6829e3f2819dce07d3e2de2
 F src/tclsqlite.c 8d093146332b2f0cbf2a8ebe8597d481619308a3
-F src/test1.c e4e0ae8af8040c848ef35f92e6a22b2245b9b873
+F src/test1.c 0eca68f6e70069aad7ad0fd91fda886926646786
 F src/test2.c dafd8bd314a554bf376c6d3a8c83fd69219f5a40
 F src/test3.c bacc42bf41fa04d6faf7dd104b595b8bafb9aec9
 F src/test4.c a921a69821fd30209589228e64f94e9f715b6fe2
@@ -95,7 +95,7 @@ F test/btree4.test 3797b4305694c7af6828675b0f4b1424b8ca30e4
 F test/btree5.test 8e5ff32c02e685d36516c6499add9375fe1377f2
 F test/btree6.test a5ede6bfbbb2ec8b27e62813612c0f28e8f3e027
 F test/btree7.test 429b96cfef5b51a7d512cfb4b5b3e453384af293
-F test/capi2.test 9ad428f7f228142be1bd9e7d4a906d7d2fa53e6e
+F test/capi2.test fe61f341e953f73c29bacfcbdaf688cd7b0e0d38
 F test/capi3.test 6528034f21c4e8e404032124cb58b14ce934598c
 F test/collate1.test 2ee4fa3a47a652ccf56c5ddf65dcc44d9bad82ef
 F test/collate2.test c1a3b41f761b28853c5696037f92de928f93233b
@@ -104,7 +104,7 @@ F test/collate4.test 0e9fc08ffcf6eddf72e354a15de06688fa86db31
 F test/collate5.test 1dd5f0f508c46667f9d4606c7950c414b0bdc0d5
 F test/collate6.test 2a45768914f04c1447a69d1358bbede376552675
 F test/conflict.test c5b849b01cfbe0a4f63a90cba6f68e2fe3a75f87
-F test/crash.test 14cc6a657532841fa179b6f8d4181ce680cabc4a
+F test/crash.test 062a108997c3f58a72e9add04d48e766468daf04
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/date.test aed5030482ebc02bd8d386c6c86a29f694ab068d
 F test/delete.test 4f0c86e2bebdc822d179c80697b1ceabe6bbcd07
@@ -136,7 +136,7 @@ F test/minmax.test 3f87d1d49f7e9aa9ae80d35c47a1f5b034557899
 F test/misc1.test a8eb48d38f7a64e75314a2946db68d2b77901b7d
 F test/misc2.test 703734f5817215ca54e364833b3bf5ff36fcc21e
 F test/misc3.test eb488314990bfc0959221a1acc465013238bf168
-F test/misuse.test 97456c4fa78be0c3151f41aa05c763b9f6b11f81
+F test/misuse.test 2a64ce711419f2fd12806ed95af930fd4e7bb8f3
 F test/notnull.test 7a08117a71e74b0321aaa937dbeb41a09d6eb1d0
 F test/null.test 64730a1c32955e5cc510b7632fed6b9929a4029a
 F test/pager.test 059cc5c58d3b5a851343dff8c56cf7286425d03a
@@ -229,7 +229,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 76da457b8fc8fe838226da14c31c315cf914a505
-R 98f9db5e6f42c5a7abb1dd3e9055572f
+P 4e20720984e1fd6822ead785d758374d2704b7fb
+R 49b5250eaaec471bbc6b3f93826e25f5
 U danielk1977
-Z 119b2a1a08cb96489bfef6a509f0c0ea
+Z 797c0e00173b158ed66a18d7f85e63d1
