@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.135 2005/02/22 09:47:18 danielk1977 Exp $
+** $Id: where.c,v 1.136 2005/03/16 12:15:21 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -645,7 +645,7 @@ WhereInfo *sqlite3WhereBegin(
   */
   pWInfo = sqliteMalloc( sizeof(WhereInfo) + pTabList->nSrc*sizeof(WhereLevel));
   if( sqlite3_malloc_failed ){
-    /* sqliteFree(pWInfo); // Leak memory when malloc fails */
+    sqliteFree(pWInfo); /* Avoid leaking memory when malloc fails */
     return 0;
   }
   pWInfo->pParse = pParse;

@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: memleak.test,v 1.8 2005/01/17 07:53:44 danielk1977 Exp $
+# $Id: memleak.test,v 1.9 2005/03/16 12:15:22 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -35,7 +35,6 @@ set LeakList {}
 set EXCLUDE {
   all.test
   quick.test
-  malloc.test
   misuse.test
   memleak.test
   btree2.test

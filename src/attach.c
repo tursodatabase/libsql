@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the ATTACH and DETACH commands.
 **
-** $Id: attach.c,v 1.32 2005/03/15 02:04:12 drh Exp $
+** $Id: attach.c,v 1.33 2005/03/16 12:15:21 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -32,7 +32,8 @@ void sqlite3Attach(
 ){
   Db *aNew;
   int rc, i;
-  char *zFile, *zName;
+  char *zFile = 0;
+  char *zName = 0;
   sqlite3 *db;
   Vdbe *v;
 
@@ -55,34 +56,40 @@ void sqlite3Attach(
     return;
   }
 
-  zFile = sqlite3NameFromToken(pFilename);;
-  if( zFile==0 ) return;
+  zFile = sqlite3NameFromToken(pFilename);
+  if( zFile==0 ){
+    goto attach_end;
+  }
 #ifndef SQLITE_OMIT_AUTHORIZATION
   if( sqlite3AuthCheck(pParse, SQLITE_ATTACH, zFile, 0, 0)!=SQLITE_OK ){
-    sqliteFree(zFile);
-    return;
+    goto attach_end;
   }
 #endif /* SQLITE_OMIT_AUTHORIZATION */
 
   zName = sqlite3NameFromToken(pDbname);
-  if( zName==0 ) return;
+  if( zName==0 ){
+    goto attach_end;
+  }
   for(i=0; i<db->nDb; i++){
     char *z = db->aDb[i].zName;
     if( z && sqlite3StrICmp(z, zName)==0 ){
-      sqlite3ErrorMsg(pParse, "database %z is already in use", zName);
+      sqlite3ErrorMsg(pParse, "database %s is already in use", zName);
       pParse->rc = SQLITE_ERROR;
-      sqliteFree(zFile);
-      return;
+      goto attach_end;
     }
   }
 
   if( db->aDb==db->aDbStatic ){
     aNew = sqliteMalloc( sizeof(db->aDb[0])*3 );
-    if( aNew==0 ) return;
+    if( aNew==0 ){
+      goto attach_end;
+    }
     memcpy(aNew, db->aDb, sizeof(db->aDb[0])*2);
   }else{
     aNew = sqliteRealloc(db->aDb, sizeof(db->aDb[0])*(db->nDb+1) );
-    if( aNew==0 ) return;
+    if( aNew==0 ){
+      goto attach_end;
+    } 
   }
   db->aDb = aNew;
   aNew = &db->aDb[db->nDb++];
@@ -92,6 +99,7 @@ void sqlite3Attach(
   sqlite3HashInit(&aNew->trigHash, SQLITE_HASH_STRING, 0);
   sqlite3HashInit(&aNew->aFKey, SQLITE_HASH_STRING, 1);
   aNew->zName = zName;
+  zName = 0;
   aNew->safety_level = 3;
   rc = sqlite3BtreeFactory(db, zFile, 0, MAX_PAGES, &aNew->pBt);
   if( rc ){
@@ -126,7 +134,6 @@ void sqlite3Attach(
     }
   }
 #endif
-  sqliteFree(zFile);
   db->flags &= ~SQLITE_Initialized;
   if( pParse->nErr==0 && rc==SQLITE_OK ){
     rc = sqlite3ReadSchema(pParse);
@@ -144,6 +151,10 @@ void sqlite3Attach(
       pParse->rc = SQLITE_ERROR;
     }
   }
+
+attach_end:
+  sqliteFree(zFile);
+  sqliteFree(zName);
 }
 
 /*

@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.167 2005/03/09 12:26:51 danielk1977 Exp $
+** @(#) $Id: parse.y,v 1.168 2005/03/16 12:15:21 danielk1977 Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -712,18 +712,24 @@ expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
   in_op(A) ::= NOT IN.  {A = 1;}
   expr(A) ::= expr(X) in_op(N) LP exprlist(Y) RP(E). [IN] {
     A = sqlite3Expr(TK_IN, X, 0, 0);
-    if( A ) A->pList = Y;
+    if( A ){
+      A->pList = Y;
+    }else{
+      sqlite3ExprListDelete(Y);
+    }
     if( N ) A = sqlite3Expr(TK_NOT, A, 0, 0);
     sqlite3ExprSpan(A,&X->span,&E);
   }
   expr(A) ::= LP(B) select(X) RP(E). {
     A = sqlite3Expr(TK_SELECT, 0, 0, 0);
     if( A ) A->pSelect = X;
+    if( !A ) sqlite3SelectDelete(X);
     sqlite3ExprSpan(A,&B,&E);
   }
   expr(A) ::= expr(X) in_op(N) LP select(Y) RP(E).  [IN] {
     A = sqlite3Expr(TK_IN, X, 0, 0);
     if( A ) A->pSelect = Y;
+    if( !A ) sqlite3SelectDelete(Y);
     if( N ) A = sqlite3Expr(TK_NOT, A, 0, 0);
     sqlite3ExprSpan(A,&X->span,&E);
   }
@@ -740,6 +746,7 @@ expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
       p->pSelect = Y;
       sqlite3ExprSpan(p,&B,&E);
     }
+    if( !p ) sqlite3SelectDelete(Y);
   }
 %endif // SQLITE_OMIT_SUBQUERY
 

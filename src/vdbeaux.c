@@ -271,7 +271,12 @@ void sqlite3VdbeChangeP2(Vdbe *p, int addr, int val){
 void sqlite3VdbeChangeP3(Vdbe *p, int addr, const char *zP3, int n){
   Op *pOp;
   assert( p->magic==VDBE_MAGIC_INIT );
-  if( p==0 || p->aOp==0 ) return;
+  if( p==0 || p->aOp==0 ){
+    if( n==P3_DYNAMIC || n==P3_KEYINFO_HANDOFF ){
+      sqliteFree(zP3);
+    }
+    return;
+  }
   if( addr<0 || addr>=p->nOp ){
     addr = p->nOp - 1;
     if( addr<0 ) return;

@@ -51,7 +51,7 @@ void sqlite3BeginTrigger(
   Expr *pWhen,        /* WHEN clause */
   int isTemp          /* True if the TEMPORARY keyword is present */
 ){
-  Trigger *pTrigger;
+  Trigger *pTrigger = 0;
   Table *pTab;
   char *zName = 0;        /* Name of the trigger */
   sqlite3 *db = pParse->db;
@@ -161,7 +161,6 @@ void sqlite3BeginTrigger(
   pTrigger->name = zName;
   zName = 0;
   pTrigger->table = sqliteStrDup(pTableName->a[0].zName);
-  if( sqlite3_malloc_failed ) goto trigger_cleanup;
   pTrigger->iDb = iDb;
   pTrigger->iTabDb = pTab->iDb;
   pTrigger->op = op;
@@ -178,6 +177,11 @@ trigger_cleanup:
   sqlite3SrcListDelete(pTableName);
   sqlite3IdListDelete(pColumns);
   sqlite3ExprDelete(pWhen);
+  if( !pParse->pNewTrigger ){
+    sqlite3DeleteTrigger(pTrigger);
+  }else{
+    assert( pParse->pNewTrigger==pTrigger );
+  }
 }
 
 /*
@@ -242,8 +246,13 @@ void sqlite3FinishTrigger(
 
   if( db->init.busy ){
     Table *pTab;
-    sqlite3HashInsert(&db->aDb[pTrig->iDb].trigHash, 
+    Trigger *pDel;
+    pDel = sqlite3HashInsert(&db->aDb[pTrig->iDb].trigHash, 
                      pTrig->name, strlen(pTrig->name)+1, pTrig);
+    if( pDel ){
+      assert( sqlite3_malloc_failed && pDel==pTrig );
+      goto triggerfinish_cleanup;
+    }
     pTab = sqlite3LocateTable(pParse,pTrig->table,db->aDb[pTrig->iTabDb].zName);
     assert( pTab!=0 );
     pTrig->pNext = pTab->pTrigger;
@@ -328,18 +337,23 @@ TriggerStep *sqlite3TriggerInsertStep(
   int orconf          /* The conflict algorithm (OE_Abort, OE_Replace, etc.) */
 ){
   TriggerStep *pTriggerStep = sqliteMalloc(sizeof(TriggerStep));
-  if( pTriggerStep==0 ) return 0;
 
   assert(pEList == 0 || pSelect == 0);
   assert(pEList != 0 || pSelect != 0);
 
-  pTriggerStep->op = TK_INSERT;
-  pTriggerStep->pSelect = pSelect;
-  pTriggerStep->target  = *pTableName;
-  pTriggerStep->pIdList = pColumn;
-  pTriggerStep->pExprList = pEList;
-  pTriggerStep->orconf = orconf;
-  sqlitePersistTriggerStep(pTriggerStep);
+  if( pTriggerStep ){
+    pTriggerStep->op = TK_INSERT;
+    pTriggerStep->pSelect = pSelect;
+    pTriggerStep->target  = *pTableName;
+    pTriggerStep->pIdList = pColumn;
+    pTriggerStep->pExprList = pEList;
+    pTriggerStep->orconf = orconf;
+    sqlitePersistTriggerStep(pTriggerStep);
+  }else{
+    sqlite3IdListDelete(pColumn);
+    sqlite3ExprListDelete(pEList);
+    sqlite3SelectDup(pSelect);
+  }
 
   return pTriggerStep;
 }

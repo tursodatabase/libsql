@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.312 2005/02/19 08:18:06 danielk1977 Exp $
+** $Id: build.c,v 1.313 2005/03/16 12:15:21 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -834,7 +834,10 @@ void sqlite3AddColumn(Parse *pParse, Token *pName){
   if( (p->nCol & 0x7)==0 ){
     Column *aNew;
     aNew = sqliteRealloc( p->aCol, (p->nCol+8)*sizeof(p->aCol[0]));
-    if( aNew==0 ) return;
+    if( aNew==0 ){
+      sqliteFree(z);
+      return;
+    }
     p->aCol = aNew;
   }
   pCol = &p->aCol[p->nCol];
@@ -1095,6 +1098,7 @@ static CollSeq * findCollSeqEntry(
   if( 0==pColl && create ){
     pColl = sqliteMalloc( 3*sizeof(*pColl) + nName + 1 );
     if( pColl ){
+      CollSeq *pDel = 0;
       pColl[0].zName = (char*)&pColl[3];
       pColl[0].enc = SQLITE_UTF8;
       pColl[1].zName = (char*)&pColl[3];
@@ -1103,7 +1107,14 @@ static CollSeq * findCollSeqEntry(
       pColl[2].enc = SQLITE_UTF16BE;
       memcpy(pColl[0].zName, zName, nName);
       pColl[0].zName[nName] = 0;
-      sqlite3HashInsert(&db->aCollSeq, pColl[0].zName, nName, pColl);
+      pDel = sqlite3HashInsert(&db->aCollSeq, pColl[0].zName, nName, pColl);
+
+      /* If a malloc() failure occured in sqlite3HashInsert(), it will 
+      ** return the pColl pointer to be deleted (because it wasn't added
+      ** to the hash table).
+      */
+      assert( !pDel || (sqlite3_malloc_failed && pDel==pColl) );
+      sqliteFree(pDel);
     }
   }
   return pColl;
@@ -2509,9 +2520,13 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName){
   Vdbe *v;
   sqlite3 *db = pParse->db;
 
-  if( pParse->nErr || sqlite3_malloc_failed ) return;
+  if( pParse->nErr || sqlite3_malloc_failed ){
+    goto exit_drop_index;
+  }
   assert( pName->nSrc==1 );
-  if( SQLITE_OK!=sqlite3ReadSchema(pParse) ) return;
+  if( SQLITE_OK!=sqlite3ReadSchema(pParse) ){
+    goto exit_drop_index;
+  }
   pIndex = sqlite3FindIndex(db, pName->a[0].zName, pName->a[0].zDatabase);
   if( pIndex==0 ){
     sqlite3ErrorMsg(pParse, "no such index: %S", pName, 0);
