@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.99 2005/01/18 04:00:44 drh Exp $
+** $Id: tokenize.c,v 1.100 2005/01/31 12:42:29 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -71,7 +71,7 @@ static const char isIdChar[] = {
 ** Return the length of the token that begins at z[0]. 
 ** Store the token type in *tokenType before returning.
 */
-int sqlite3GetToken(const unsigned char *z, int *tokenType){
+static int getToken(const unsigned char *z, int *tokenType){
   int i, c;
   switch( *z ){
     case ' ': case '\t': case '\n': case '\f': case '\r': {
@@ -309,12 +309,15 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
         break;
       }
       for(i=1; IdChar(z[i]); i++){}
-      *tokenType = sqlite3KeywordCode((char*)z, i);
+      *tokenType = keywordCode((char*)z, i);
       return i;
     }
   }
   *tokenType = TK_ILLEGAL;
   return 1;
+}
+int sqlite3GetToken(const unsigned char *z, int *tokenType){
+  return getToken(z, tokenType);
 }
 
 /*
@@ -355,7 +358,7 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
     assert( i>=0 );
     pParse->sLastToken.z = &zSql[i];
     assert( pParse->sLastToken.dyn==0 );
-    pParse->sLastToken.n = sqlite3GetToken((unsigned char*)&zSql[i],&tokenType);
+    pParse->sLastToken.n = getToken((unsigned char*)&zSql[i],&tokenType);
     i += pParse->sLastToken.n;
     switch( tokenType ){
       case TK_SPACE:

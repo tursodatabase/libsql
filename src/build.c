@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.301 2005/01/29 08:32:45 danielk1977 Exp $
+** $Id: build.c,v 1.302 2005/01/31 12:42:29 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -786,6 +786,19 @@ begin_table_error:
 }
 
 /*
+** This macro is used to compare two strings in a case-insensitive manner.
+** It is slightly faster than calling sqlite3StrICmp() directly, but
+** produces larger code.
+**
+** WARNING: This macro is not compatible with the strcmp() family. It
+** returns true if the two strings are equal, otherwise false.
+*/
+#define STRICMP(x, y) (\
+sqlite3UpperToLower[*(unsigned char *)(x)]==   \
+sqlite3UpperToLower[*(unsigned char *)(y)]     \
+&& sqlite3StrICmp((x)+1,(y)+1)==0 )
+
+/*
 ** Add a new column to the table currently being constructed.
 **
 ** The parser calls this routine once for each column declaration
@@ -802,7 +815,7 @@ void sqlite3AddColumn(Parse *pParse, Token *pName){
   z = sqlite3NameFromToken(pName);
   if( z==0 ) return;
   for(i=0; i<p->nCol; i++){
-    if( sqlite3StrICmp(z, p->aCol[i].zName)==0 ){
+    if( STRICMP(z, p->aCol[i].zName) ){
       sqlite3ErrorMsg(pParse, "duplicate column name: %s", z);
       sqliteFree(z);
       return;
@@ -854,19 +867,21 @@ void sqlite3AddColumnType(Parse *pParse, Token *pFirst, Token *pLast){
   Table *p;
   int i, j;
   int n;
-  char *z, **pz;
+  char *z;
+  const unsigned char *zIn;
+
   Column *pCol;
   if( (p = pParse->pNewTable)==0 ) return;
   i = p->nCol-1;
   if( i<0 ) return;
   pCol = &p->aCol[i];
-  pz = &pCol->zType;
-  n = pLast->n + (pLast->z - pFirst->z);
+  zIn = pFirst->z;
+  n = pLast->n + (pLast->z - zIn);
   assert( pCol->zType==0 );
-  z = pCol->zType = sqlite3MPrintf("%.*s", n, pFirst->z);
+  z = pCol->zType = sqliteMallocRaw(n+1);
   if( z==0 ) return;
-  for(i=j=0; z[i]; i++){
-    int c = z[i];
+  for(i=j=0; i<n; i++){
+    int c = zIn[i];
     if( isspace(c) ) continue;
     z[j++] = c;
   }
@@ -1203,7 +1218,7 @@ CollSeq *sqlite3LocateCollSeq(Parse *pParse, const char *zName, int nName){
 ** Scan the column type name zType (length nType) and return the
 ** associated affinity type.
 */
-char sqlite3AffinityType(const char *zType, int nType){
+static char sqlite3AffinityType(const char *zType, int nType){
   int n, i;
   static const struct {
     const char *zSub;  /* Keywords substring to search for */

@@ -409,7 +409,7 @@ int main(int argc, char **argv){
   }
 
   /* Begin generating code */
-  printf("int sqlite3KeywordCode(const char *z, int n){\n");
+  printf("static int keywordCode(const char *z, int n){\n");
 
   printf("  static const char zText[%d] =\n", nChar+1);
   for(i=j=0; i<NKEYWORD; i++){
@@ -498,6 +498,9 @@ int main(int argc, char **argv){
   printf("    }\n");
   printf("  }\n");
   printf("  return TK_ID;\n");
+  printf("}\n");
+  printf("int sqlite3KeywordCode(const char *z, int n){\n");
+  printf("  return keywordCode(z, n);\n");
   printf("}\n");
 
   return 0;

@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.276 2005/01/29 08:32:45 danielk1977 Exp $
+** $Id: main.c,v 1.277 2005/01/31 12:42:29 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -279,7 +279,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   }else{
     char *zSql;
     zSql = sqlite3MPrintf(
-        "SELECT name, rootpage, sql, %s FROM '%q'.%s",
+        "SELECT name, rootpage, sql, '%s' FROM '%q'.%s",
         zDbNum, db->aDb[iDb].zName, zMasterName);
     sqlite3SafetyOff(db);
     rc = sqlite3_exec(db, zSql, sqlite3InitCallback, &initData, 0);
