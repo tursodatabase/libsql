@@ -25,6 +25,22 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2004 March 8 (2.8.13)} {
+<li>Refactor parts of the code in order to make the code footprint
+    smaller.  The code is now also a little bit faster.</li>
+<li>sqlite_exec() is now implemented as a wrapper around sqlite_compile()
+    and sqlite_step().</li>
+<li>The built-in min() and max() functions now honor the difference between
+    NUMERIC and TEXT datatypes.  Formerly, min() and max() always assumed
+    their arguments were of type NUMERIC.</li>
+<li>New HH:MM:SS modifier to the built-in date/time functions.</li>
+<li>Experimental sqlite_last_statement_changes() API added.  Fixed the
+    the last_insert_rowid() function so that it works correctly with
+    triggers.</li>
+<li>Add functions prototypes for the database encryption API.</li>
+<li>Fix several nuisance bugs.</li>
+}
+
 chng {2004 February 8 (2.8.12)} {
 <li>Fix a bug that will might corrupt the rollback journal if a power failure
     or external program halt occurs in the middle of a COMMIT.  The corrupt
