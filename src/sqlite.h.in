@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.71 2004/05/23 13:30:58 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.72 2004/05/24 09:10:11 danielk1977 Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -1342,12 +1342,75 @@ double sqlite3_column_float(sqlite3_stmt*,int);
 
 typedef struct Mem sqlite3_value;
 
+/*
+** Return the type of the sqlite3_value* passed as the first argument. 
+** The type is one of SQLITE3_NULL, SQLITE3_INTEGER, SQLITE3_FLOAT,
+** SQLITE3_TEXT or SQLITE3_BLOB.
+*/
 int sqlite3_value_type(sqlite3_value*);
-int sqlite3_value_bytes(sqlite3_value*);
-int sqlite3_value_bytes16(sqlite3_value*);
+
+/*
+** Return the value of the sqlite3_value* passed as the first argument.
+** The value returned depends on the type of the value, as returned by
+** sqlite3_value_type():
+**
+** SQLITE3_NULL      A Null pointer.
+** SQLITE3_INTEGER   String representation of the integer, UTF-8 encoded.
+** SQLITE3_FLOAT     String representation of the real, UTF-8 encoded.
+** SQLITE3_TEXT      The string UTF-8 encoded.
+** SQLITE3_BLOB      A pointer to the blob of data.
+*/ 
 const unsigned char *sqlite3_value_data(sqlite3_value*);
+
+/*
+** Return the number of bytes in the string or blob returned by a call
+** to sqlite3_value_data() on the same sqlite3_value* object.
+*/
+int sqlite3_value_bytes(sqlite3_value*);
+
+/*
+** Return the value of the sqlite3_value* passed as the first argument.
+** The value returned depends on the type of the value, as returned by
+** sqlite3_value_type():
+**
+** SQLITE3_NULL      A Null pointer.
+** SQLITE3_INTEGER   String representation of the integer, UTF-16 encoded.
+** SQLITE3_FLOAT     String representation of the real, UTF-16 encoded.
+** SQLITE3_TEXT      The string UTF-16 encoded.
+** SQLITE3_BLOB      A pointer to the blob of data.
+*/ 
 const void *sqlite3_value_data16(sqlite3_value*);
+
+/*
+** Return the number of bytes in the string or blob returned by a call
+** to sqlite3_value_data16() on the same sqlite3_value* object.
+*/
+int sqlite3_value_bytes16(sqlite3_value*);
+
+/*
+** Return the value of the sqlite3_value* passed as the first argument.
+** The value returned depends on the type of the value, as returned by
+** sqlite3_value_type():
+**
+** SQLITE3_NULL      0
+** SQLITE3_INTEGER   The integer value.
+** SQLITE3_FLOAT     The integer component of the real (2^63 if too large)
+** SQLITE3_TEXT      Integer conversion of string, or 0
+** SQLITE3_BLOB      0
+*/
 long long int sqlite3_value_int(sqlite3_value*);
+
+/*
+** Return the value of the sqlite3_value* passed as the first argument.
+** The value returned depends on the type of the value, as returned by
+** sqlite3_value_type():
+**
+** SQLITE3_NULL      0.0
+** SQLITE3_INTEGER   The value of the integer. Some rounding may occur.
+** SQLITE3_FLOAT     The value of the float.
+** SQLITE3_TEXT      Real number conversion of string, or 0.0
+** SQLITE3_BLOB      0.0
+*/
 double sqlite3_value_float(sqlite3_value*);
 
 #ifdef __cplusplus

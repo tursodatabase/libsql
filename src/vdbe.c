@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.323 2004/05/24 07:34:48 danielk1977 Exp $
+** $Id: vdbe.c,v 1.324 2004/05/24 09:10:11 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -632,6 +632,48 @@ const void *sqlite3_value_data16(sqlite3_value* pVal){
 
 /*
 ** Return the number of bytes of data that will be returned by the
+** equivalent sqlite3_value_data() call.
+*/
+int sqlite3_value_bytes(sqlite3_value *pVal){
+  if( sqlite3_value_data(pVal) ){
+    return ((Mem *)pVal)->n;
+  }
+  return 0;
+}
+
+/*
+** Return the number of bytes of data that will be returned by the
+** equivalent sqlite3_value_data16() call.
+*/
+int sqlite3_value_bytes(sqlite3_value *pVal){
+  if( sqlite3_value_data16(pVal) ){
+    return ((Mem *)pVal)->n;
+  }
+  return 0;
+}
+
+/*
+** Return the value of the sqlite_value* argument coerced to a 64-bit
+** integer.
+*/
+long long int sqlite3_value_int(sqlite3_value *pVal){
+  Mem *pMem = (Mem *)pVal;
+  Integerify(pMem, flagsToEnc(pMem->flags));
+  return pVal->i;
+}
+
+/*
+** Return the value of the sqlite_value* argument coerced to a 64-bit
+** IEEE float.
+*/
+double sqlite3_value_float(sqlite3_value*){
+  pVal = &pVm->pTos[(1-vals)+i];
+  Realify(pVal, flagsToEnc(pMem->flags));
+  return pVal->r;
+}
+
+/*
+** Return the number of bytes of data that will be returned by the
 ** equivalent sqlite3_column_data() call.
 */
 int sqlite3_column_bytes(sqlite3_stmt *pStmt, int i){
@@ -674,8 +716,7 @@ long long int sqlite3_column_int(sqlite3_stmt *pStmt, int i){
   }
 
   pVal = &pVm->pTos[(1-vals)+i];
-  Integerify(pVal, pVm->db->enc);
-  return pVal->i;
+  return sqlite3_value_int(pVal);
 }
 
 /*
@@ -693,9 +734,7 @@ double sqlite3_column_float(sqlite3_stmt *pStmt, int i){
     return 0;
   }
 
-  pVal = &pVm->pTos[(1-vals)+i];
-  Realify(pVal, pVm->db->enc);
-  return pVal->r;
+  return sqlite3_value_float(pVal);
 }
 
 /*
@@ -711,6 +750,29 @@ const char *sqlite3_column_name(sqlite3_stmt *pStmt, int N){
   }
 
   return p->azColName[N];
+}
+
+/*
+** Return the type of the value stored in the sqlite_value* object.
+*/
+int sqlite3_value_type(sqlite3_value* pVal){
+  int f = ((Mem *)pVal)->flags;
+  if( f&MEM_Null ){
+    return SQLITE3_NULL;
+  }
+  if( f&MEM_Int ){
+    return SQLITE3_INTEGER;
+  }
+  if( f&MEM_Real ){
+    return SQLITE3_FLOAT;
+  }
+  if( f&MEM_Str ){
+    return SQLITE3_TEXT;
+  }
+  if( f&MEM_Blob ){
+    return SQLITE3_BLOB;
+  }
+  assert(0);
 }
 
 /*
