@@ -1,5 +1,5 @@
-C add\sversion\snumbering\s(CVS\s132)
-D 2000-08-17T10:22:34
+C Version\s1.0\s(CVS\s499)
+D 2000-08-17T10:25:00
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 8a4cc1bdcbb870f76d0c769136cf973af07586a4
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -70,7 +70,7 @@ F www/mingw.tcl fc5f4ba9d336b6e8c97347cc6496d6162461ef60
 F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/vdbe.tcl bcbfc33bcdd0ebad95eab31286adb9e1bc289520
-P 897b4bc0e92a2c7534d4fa9453a7f8f863fce67a
+P 5ec2b094781bb3c32b0ef0284aa4dc2b26d9e873
 R 55d9f580b0fd85533f8ccc00b91b305d
 U drh
-Z 59dba504407521b2a684591dbcb8b530
+Z f346b6602fac1a26cb3e2b4625824e0f
