@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.34 2002/05/15 08:30:15 danielk1977 Exp $}
+set rcsid {$Id: lang.tcl,v 1.35 2002/05/15 11:43:16 drh Exp $}
 
 puts {<html>
 <head>
@@ -345,6 +345,118 @@ CREATE TABLE statement is synthesized and store in <b>sqlite_master</b>
 in place of the original command.
 </p>
 }
+Section {CREATE TRIGGER} createtrigger
+
+Syntax {sql-statement} {
+CREATE TRIGGER <trigger-name> [ BEFORE | AFTER ]
+<database-event> ON <table-name>
+<trigger-action>
+}
+
+Syntax {database-event} {
+DELETE | 
+INSERT | 
+UPDATE | 
+UPDATE OF <column-list>
+}
+
+Syntax {trigger-action} {
+[ FOR EACH ROW ] [ WHEN <expression> ] 
+BEGIN 
+  <trigger-step> ; [ <trigger-step> ; ]*
+END
+}
+
+Syntax {trigger-step} {
+<update-statement> | <insert-statement> | 
+<delete-statement> | <select-statement> 
+}
+
+puts {
+<p>The CREATE TRIGGER statement is used to add triggers to the 
+database schema. Triggers are database operations (the <i>trigger-action</i>) 
+that are automatically performed when a specified database event (the
+<i>database-event</i>) occurs.  </p>
+
+<p>A trigger may be specified to fire whenever a DELETE, INSERT or UPDATE of a
+particular database table occurs, or whenever an UPDATE of one or more
+specified columns of a table are updated.</p>
+
+<p>At this time SQLite supports only FOR EACH ROW triggers, not FOR EACH
+STATEMENT triggers. Hence explicitly specifying FOR EACH ROW is optional.  FOR
+EACH ROW implies that the SQL statements specified as <i>trigger-steps</i> 
+may be executed (depending on the WHEN clause) for each database row being
+inserted, updated or deleted by the statement causing the trigger to fire.</p>
+
+<p>Both the WHEN clause and the <i>trigger-steps</i> may access elements of 
+the row being inserted, deleted or updated using references of the form 
+"NEW.<i>column-name</i>" and "OLD.<i>column-name</i>", where
+<i>column-name</i> is the name of a column from the table that the trigger
+is associated with. OLD and NEW references may only be used in triggers on
+<i>trigger-event</i>s for which they are relevant, as follows:</p>
+
+<table border=0 cellpadding=10>
+<tr>
+<td valign="top" align="right" width=120><i>INSERT</i></td>
+<td valign="top">NEW references are valid</td>
+</tr>
+<tr>
+<td valign="top" align="right" width=120><i>UPDATE</i></td>
+<td valign="top">NEW and OLD references are valid</td>
+</tr>
+<tr>
+<td valign="top" align="right" width=120><i>DELETE</i></td>
+<td valign="top">OLD references are valid</td>
+</tr>
+</table>
+</p>
+
+<p>If a WHEN clause is supplied, the SQL statements specified as <i>trigger-steps</i> are only executed for rows for which the WHEN clause is true. If no WHEN clause is supplied, the SQL statements are executed for all rows.</p>
+
+<p>The specified <i>trigger-time</i> determines when the <i>trigger-steps</i>
+will be executed relative to the insertion, modification or removal of the
+associated row.</p>
+
+<p>An ON CONFLICT clause may be specified as part of an UPDATE or INSERT
+<i>trigger-step</i>. However if an ON CONFLICT clause is specified as part of 
+the statement causing the trigger to fire, then this conflict handling
+policy is used instead.</p>
+
+<p>Triggers are automatically dropped when the table that they are 
+associated with is dropped.</p>
+
+<p>Triggers may be created on views, as well as ordinary tables. If one or
+more INSERT, DELETE or UPDATE triggers are defined on a view, then it is not
+an error to execute an INSERT, DELETE or UPDATE statement on the view, 
+respectively. Thereafter, executing an INSERT, DELETE or UPDATE on the view
+causes the associated triggers to fire. The real tables underlying the view
+are not modified (except possibly explicitly, by a trigger program).</p>
+
+<p><b>Example:</b></p>
+
+<p>Assuming that customer records are stored in the "customers" table, and
+that order records are stored in the "orders" table, the following trigger
+ensures that all associated orders are redirected when a customer changes
+his or her address:</p>
+}
+Example {
+CREATE TRIGGER update_customer_address UPDATE OF address ON customers 
+  BEGIN
+    UPDATE orders SET address = new.address WHERE customer_name = old.name;
+  END;
+}
+puts {
+<p>With this trigger installed, executing the statement:</p>
+}
+Example {
+UPDATE customers SET address = '1 Main St.' WHERE name = 'Jack Jones';
+}
+puts {
+<p>causes the following to be automatically executed:</p>
+}
+Example {
+UPDATE orders SET address = '1 Main St.' WHERE customer_name = 'Jack Jones';
+}
 
 Section {CREATE VIEW} {createview}
 
@@ -396,6 +508,15 @@ Section {DROP TABLE} droptable
 
 Syntax {sql-command} {
 DROP TABLE <table-name>
+}
+
+Section {DROP TRIGGER} droptrigger
+Syntax {sql-statement} {
+DROP TRIGGER <trigger-name>
+}
+puts { 
+  <p>Used to drop a trigger from the database schema. Note that triggers
+  are automatically dropped when the associated table is dropped.</p>
 }
 
 puts {
@@ -1089,129 +1210,6 @@ In version 1.0 of SQLite, the VACUUM command would invoke
 Beginning with version 2.0 of SQLite, GDBM is no longer used for
 the database backend and VACUUM has become a no-op.
 </p>
-}
-
-Section {CREATE TRIGGER} createtrigger
-
-Syntax {sql-statement} {
-CREATE TRIGGER <trigger-name> [ BEFORE | AFTER ]
-<database-event>
-<trigger-action>
-}
-
-Syntax {database-event} {
-DELETE | 
-INSERT | 
-UPDATE | 
-UPDATE OF <column-list>
-ON <table-name> 
-}
-
-Syntax {trigger-action} {
-[ FOR EACH ROW ] [ WHEN <expression> ] 
-BEGIN 
-  <trigger-step> ; [ <trigger-step> ; ]*
-END
-}
-
-Syntax {trigger-step} {
-<update-statement> | <insert-statement> | 
-<delete-statement> | <select-statement> 
-}
-
-puts {
-<p>The CREATE TRIGGER statement is used to add triggers to the 
-database schema. Triggers are database operations (the <i>trigger-action</i>) 
-that are automatically performed when a specified database event (the
-<i>database-event</i>) occurs.  </p>
-
-<p>A trigger may be specified to fire whenever a DELETE, INSERT or UPDATE of a
-particular database table occurs, or whenever an UPDATE of one or more
-specified columns of a table are updated.</p>
-
-<p>At this time SQLite supports only FOR EACH ROW triggers, not FOR EACH
-STATEMENT triggers. Hence explicitly specifying FOR EACH ROW is optional.  FOR
-EACH ROW implies that the SQL statements specified as <i>trigger-steps</i> 
-may be executed (depending on the WHEN clause) for each database row being
-inserted, updated or deleted by the statement causing the trigger to fire.</p>
-
-<p>Both the WHEN clause and the <i>trigger-steps</i> may access elements of 
-the row being inserted, deleted or updated using references of the form 
-"NEW.<i>column-name</i>" and "OLD.<i>column-name</i>", where
-<i>column-name</i> is the name of a column from the table that the trigger
-is associated with. OLD and NEW references may only be used in triggers on
-<i>trigger-event</i>s for which they are relevant, as follows:</p>
-
-<table border=0 cellpadding=10>
-<tr>
-<td valign="top" align="right" width=120><i>INSERT</i></td>
-<td valign="top">NEW references are valid</td>
-</tr>
-<tr>
-<td valign="top" align="right" width=120><i>UPDATE</i></td>
-<td valign="top">NEW and OLD references are valid</td>
-</tr>
-<tr>
-<td valign="top" align="right" width=120><i>DELETE</i></td>
-<td valign="top">OLD references are valid</td>
-</tr>
-</table>
-</p>
-
-<p>If a WHEN clause is supplied, the SQL statements specified as <i>trigger-steps</i> are only executed for rows for which the WHEN clause is true. If no WHEN clause is supplied, the SQL statements are executed for all rows.</p>
-
-<p>The specified <i>trigger-time</i> determines when the <i>trigger-steps</i>
-will be executed relative to the insertion, modification or removal of the
-associated row.</p>
-
-<p>An ON CONFLICT clause may be specified as part of an UPDATE or INSERT
-<i>trigger-step</i>. However if an ON CONFLICT clause is specified as part of 
-the statement causing the trigger to fire, then this conflict handling
-policy is used instead.</p>
-
-<p>Triggers are automatically dropped when the table that they are 
-associated with is dropped.</p>
-
-<p>Triggers may be created on views, as well as ordinary tables. If one or
-more INSERT, DELETE or UPDATE triggers are defined on a view, then it is not
-an error to execute an INSERT, DELETE or UPDATE statement on the view, 
-respectively. Thereafter, executing an INSERT, DELETE or UPDATE on the view
-causes the associated triggers to fire. The real tables underlying the view
-are not modified (except possibly explicitly, by a trigger program).</p>
-
-<p><b>Example:</b></p>
-
-<p>Assuming that customer records are stored in the "customers" table, and
-that order records are stored in the "orders" table, the following trigger
-ensures that all associated orders are redirected when a customer changes
-his or her address:</p>
-}
-Example {
-CREATE TRIGGER update_customer_address UPDATE OF address ON customers 
-  BEGIN
-    UPDATE orders SET address = new.address WHERE customer_name = old.name;
-  END;
-}
-puts {
-<p>With this trigger installed, executing the statement:</p>
-}
-Example {
-UPDATE customers SET address = '1 Main St.' WHERE name = 'Jack Jones';
-}
-puts {
-<p>causes the following to be automatically executed:</p>
-}
-Example {
-UPDATE orders SET address = '1 Main St.' WHERE customer_name = 'Jack Jones';
-}
-
-Section {DROP TRIGGER} droptrigger
-Syntax {sql-statement} {
-DROP TRIGGER <trigger-name>
-}
-puts { 
-  <p>Used to drop a trigger from the database schema. Note that triggers
-  are automatically dropped when the associated table is dropped.</p>
 }
 
 
