@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.81 2004/06/22 12:18:32 danielk1977 Exp $
+** $Id: test1.c,v 1.82 2004/06/22 12:46:54 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -998,10 +998,12 @@ static int sqlite3_crashseed(
 #endif
   return TCL_OK;
 
+#ifdef OS_TEST
 bad_args:
   Tcl_AppendResult(interp, "wrong # args: should be \"",
       Tcl_GetStringFromObj(objv[0], 0), "<seed>", 0);
   return TCL_ERROR;
+#endif
 }
 
 
@@ -1027,7 +1029,14 @@ static int test_breakpoint(
   return TCL_OK;         /* Do nothing */
 }
 
-static int test_bind_int32(
+/*
+** Usage:   sqlite3_bind_int  STMT N VALUE
+**
+** Test the sqlite3_bind_int interface.  STMT is a prepared statement.
+** N is the index of a wildcard in the prepared statement.  This command
+** binds a 32-bit integer VALUE to that wildcard.
+*/
+static int test_bind_int(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -1040,7 +1049,7 @@ static int test_bind_int32(
 
   if( objc!=4 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
-        Tcl_GetStringFromObj(objv[0], 0), " <STMT> <param no.> <value>", 0);
+        Tcl_GetStringFromObj(objv[0], 0), " STMT N VALUE", 0);
     return TCL_ERROR;
   }
 
@@ -1056,6 +1065,14 @@ static int test_bind_int32(
   return TCL_OK;
 }
 
+
+/*
+** Usage:   sqlite3_bind_int64  STMT N VALUE
+**
+** Test the sqlite3_bind_int64 interface.  STMT is a prepared statement.
+** N is the index of a wildcard in the prepared statement.  This command
+** binds a 64-bit integer VALUE to that wildcard.
+*/
 static int test_bind_int64(
   void * clientData,
   Tcl_Interp *interp,
@@ -1069,7 +1086,7 @@ static int test_bind_int64(
 
   if( objc!=4 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
-        Tcl_GetStringFromObj(objv[0], 0), " <STMT> <param no.> <value>", 0);
+        Tcl_GetStringFromObj(objv[0], 0), " STMT N VALUE", 0);
     return TCL_ERROR;
   }
 
@@ -1085,6 +1102,14 @@ static int test_bind_int64(
   return TCL_OK;
 }
 
+
+/*
+** Usage:   sqlite3_bind_double  STMT N VALUE
+**
+** Test the sqlite3_bind_double interface.  STMT is a prepared statement.
+** N is the index of a wildcard in the prepared statement.  This command
+** binds a 64-bit integer VALUE to that wildcard.
+*/
 static int test_bind_double(
   void * clientData,
   Tcl_Interp *interp,
@@ -1098,7 +1123,7 @@ static int test_bind_double(
 
   if( objc!=4 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
-        Tcl_GetStringFromObj(objv[0], 0), " <STMT> <param no.> <value>", 0);
+        Tcl_GetStringFromObj(objv[0], 0), " STMT N VALUE", 0);
     return TCL_ERROR;
   }
 
@@ -1114,6 +1139,13 @@ static int test_bind_double(
   return TCL_OK;
 }
 
+/*
+** Usage:   sqlite3_bind_null  STMT N
+**
+** Test the sqlite3_bind_null interface.  STMT is a prepared statement.
+** N is the index of a wildcard in the prepared statement.  This command
+** binds a NULL to the wildcard.
+*/
 static int test_bind_null(
   void * clientData,
   Tcl_Interp *interp,
@@ -1126,7 +1158,7 @@ static int test_bind_null(
 
   if( objc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
-        Tcl_GetStringFromObj(objv[0], 0), " <STMT> <param no.>", 0);
+        Tcl_GetStringFromObj(objv[0], 0), " STMT N", 0);
     return TCL_ERROR;
   }
 
@@ -1141,6 +1173,14 @@ static int test_bind_null(
   return TCL_OK;
 }
 
+/*
+** Usage:   sqlite3_bind_text  STMT N STRING BYTES
+**
+** Test the sqlite3_bind_text interface.  STMT is a prepared statement.
+** N is the index of a wildcard in the prepared statement.  This command
+** binds a UTF-8 string STRING to the wildcard.  The string is BYTES bytes
+** long.
+*/
 static int test_bind_text(
   void * clientData,
   Tcl_Interp *interp,
@@ -1155,8 +1195,7 @@ static int test_bind_text(
 
   if( objc!=5 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
-        Tcl_GetStringFromObj(objv[0], 0), " <STMT> <param no.> <value>"
-        " <bytes>", 0);
+        Tcl_GetStringFromObj(objv[0], 0), " STMT N VALUE BYTES", 0);
     return TCL_ERROR;
   }
 
@@ -1173,6 +1212,14 @@ static int test_bind_text(
   return TCL_OK;
 }
 
+/*
+** Usage:   sqlite3_bind_text16  STMT N STRING BYTES
+**
+** Test the sqlite3_bind_text16 interface.  STMT is a prepared statement.
+** N is the index of a wildcard in the prepared statement.  This command
+** binds a UTF-16 string STRING to the wildcard.  The string is BYTES bytes
+** long.
+*/
 static int test_bind_text16(
   void * clientData,
   Tcl_Interp *interp,
@@ -1187,8 +1234,7 @@ static int test_bind_text16(
 
   if( objc!=5 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
-        Tcl_GetStringFromObj(objv[0], 0), " <STMT> <param no.> <value>"
-        " <bytes>", 0);
+        Tcl_GetStringFromObj(objv[0], 0), " STMT N VALUE BYTES", 0);
     return TCL_ERROR;
   }
 
@@ -1205,6 +1251,13 @@ static int test_bind_text16(
   return TCL_OK;
 }
 
+/*
+** Usage:   sqlite3_bind_blob  STMT N DATA BYTES
+**
+** Test the sqlite3_bind_blob interface.  STMT is a prepared statement.
+** N is the index of a wildcard in the prepared statement.  This command
+** binds a BLOB to the wildcard.  The BLOB is BYTES bytes in size.
+*/
 static int test_bind_blob(
   void * clientData,
   Tcl_Interp *interp,
@@ -1219,8 +1272,7 @@ static int test_bind_blob(
 
   if( objc!=5 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
-        Tcl_GetStringFromObj(objv[0], 0), " <STMT> <param no.> <value>"
-        " <bytes>", 0);
+        Tcl_GetStringFromObj(objv[0], 0), " STMT N DATA BYTES", 0);
     return TCL_ERROR;
   }
 
@@ -1703,7 +1755,7 @@ static int test_data_count(
 ** Usage: sqlite3_column_name STMT column
 */
 static int test_stmt_utf8(
-  void * clientData,
+  void * clientData,        /* Pointer to SQLite API function to be invoke */
   Tcl_Interp *interp,
   int objc,
   Tcl_Obj *CONST objv[]
@@ -1736,7 +1788,7 @@ static int test_stmt_utf8(
 ** Usage: sqlite3_column_name STMT column
 */
 static int test_stmt_utf16(
-  void * clientData,
+  void * clientData,     /* Pointer to SQLite API function to be invoked */
   Tcl_Interp *interp,
   int objc,
   Tcl_Obj *CONST objv[]
@@ -1774,7 +1826,7 @@ static int test_stmt_utf16(
 **
 */
 static int test_stmt_int(
-  void * clientData,
+  void * clientData,    /* Pointer to SQLite API function to be invoked */
   Tcl_Interp *interp,
   int objc,
   Tcl_Obj *CONST objv[]
@@ -1973,9 +2025,9 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      Tcl_ObjCmdProc *xProc;
      void *clientData;
   } aObjCmd[] = {
-     { "sqlite3_bind_int32",            test_bind_int32, 0    },
-     { "sqlite3_bind_int64",            test_bind_int64 , 0   },
-     { "sqlite3_bind_double",           test_bind_double, 0   },
+     { "sqlite3_bind_int",              test_bind_int,      0 },
+     { "sqlite3_bind_int64",            test_bind_int64,    0 },
+     { "sqlite3_bind_double",           test_bind_double,   0 },
      { "sqlite3_bind_null",             test_bind_null     ,0 },
      { "sqlite3_bind_text",             test_bind_text     ,0 },
      { "sqlite3_bind_text16",           test_bind_text16   ,0 },
@@ -2000,15 +2052,15 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_column_blob",           test_column_blob   ,0 },
      { "sqlite3_column_double",         test_column_double ,0 },
      { "sqlite3_column_int64",          test_column_int64  ,0 },
-     { "sqlite3_column_int", test_stmt_int ,sqlite3_column_int },
-     { "sqlite3_column_bytes", test_stmt_int ,sqlite3_column_bytes },
-     { "sqlite3_column_bytes16", test_stmt_int ,sqlite3_column_bytes16 },
-     { "sqlite3_column_text", test_stmt_utf8,       sqlite3_column_text},
-     { "sqlite3_column_decltype", test_stmt_utf8,   sqlite3_column_decltype},
-     { "sqlite3_column_name", test_stmt_utf8,       sqlite3_column_name},
-     { "sqlite3_column_text16", test_stmt_utf16,    sqlite3_column_text16},
-     { "sqlite3_column_decltype16", test_stmt_utf16,sqlite3_column_decltype16},
-     { "sqlite3_column_name16", test_stmt_utf16,    sqlite3_column_name16},
+     { "sqlite3_column_int",        test_stmt_int,   sqlite3_column_int       },
+     { "sqlite3_column_bytes",      test_stmt_int,   sqlite3_column_bytes     },
+     { "sqlite3_column_bytes16",    test_stmt_int,   sqlite3_column_bytes16   },
+     { "sqlite3_column_text",       test_stmt_utf8,  sqlite3_column_text      },
+     { "sqlite3_column_decltype",   test_stmt_utf8,  sqlite3_column_decltype  },
+     { "sqlite3_column_name",       test_stmt_utf8,  sqlite3_column_name      },
+     { "sqlite3_column_text16",     test_stmt_utf16, sqlite3_column_text16    },
+     { "sqlite3_column_decltype16", test_stmt_utf16, sqlite3_column_decltype16},
+     { "sqlite3_column_name16",     test_stmt_utf16, sqlite3_column_name16    },
 
      /* Functions from os.h */
      { "sqlite3OsOpenReadWrite",test_sqlite3OsOpenReadWrite, 0 },

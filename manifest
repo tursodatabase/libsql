@@ -1,5 +1,5 @@
-C Add\sos_tst.c\sto\sthe\sTESTSRC\smacro\sin\smain.mk.\s(CVS\s1658)
-D 2004-06-22T12:30:20
+C Add\scomments\sto\stest1.c.\s(CVS\s1659)
+D 2004-06-22T12:46:54
 F Makefile.in 0a3d7aaefa50717bd550b0cf568a51072c4c103c
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -62,7 +62,7 @@ F src/sqlite.h.in 1f400a561fca3b1df73677d2d97046425d47cae4
 F src/sqliteInt.h dd796b6abc6d50505fe33c54f0143d7000681a41
 F src/table.c af14284fa36c8d41f6829e3f2819dce07d3e2de2
 F src/tclsqlite.c 8d093146332b2f0cbf2a8ebe8597d481619308a3
-F src/test1.c 9a9d9069c1c390c8be81038f77aed976bb58844c
+F src/test1.c cd1284a7e62b2523cfee146a758a3c2416d25657
 F src/test2.c dafd8bd314a554bf376c6d3a8c83fd69219f5a40
 F src/test3.c 7247090d15a5a43823079b6fd8dad1ed3cccdedf
 F src/test4.c a921a69821fd30209589228e64f94e9f715b6fe2
@@ -87,7 +87,7 @@ F test/attach3.test c4cc0b806783ce3d860af6b80c947f93ffb14270
 F test/auth.test a211eab0542ec024b578d771b09242dd9bb1aba3
 F test/bigfile.test a1101b46528ad7282fb9b323d25da18672a3bd0a
 F test/bigrow.test 8ab252dba108f12ad64e337b0f2ff31a807ac578
-F test/bind.test 4ccea5041be85914608ba67097a85248c3e3134d
+F test/bind.test 028f65c44d5addfedaf81eb4c0b69a63d2439241
 F test/blob.test 8727a7b46b2073a369cfc9bcb6f54dd366b9d884
 F test/btree.test f1dc208d59b1c28f853ba09dd2553fc3382d22b6
 F test/btree2.test aa4a6d05b1ea90b1acaf83ba89039dd302a88635
@@ -227,7 +227,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl af528563442e3039928f9018327a18157e53a44f
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P ecdb93d3c92e34f7d85aa2fd703880669397b216
-R 1e01c88734384dabe83d06ec8278258d
+P d0def160e5cf37cde771c2d9b18904a2a1f8c358
+R 8248cc6658aa6d7649f6f797445f6e81
 U drh
-Z 86334b34bd6d33aac7e9e0c5563c0932
+Z e125e35ec1374207bd595447efc0138e
