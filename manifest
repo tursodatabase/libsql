@@ -1,5 +1,5 @@
-C Working\son\sthe\spager\s(CVS\s212)
-D 2001-04-15T02:27:25
+C Version\s1.0.31\s(CVS\s472)
+D 2001-04-15T02:30:00
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in ac01d6145714b0d1c9e99382caf03cf30d6f4c8d
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -101,7 +101,7 @@ F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 06f81c401f79a04f2c5ebfb97e7c176225c0aef2
 F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P f82fa7070ae281804c019e6b05cd767dadaf0827
+P 1f07abe46e2de8c5d9659bd5a78efe4ce23144ae
 R 6b66dff388a84887995d516ce20e212a
 U drh
-Z cd993793033a1da271251878dcd01e6e
+Z 1ee28b0946e3569d6ec390d67bea5d2f
