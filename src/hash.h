@@ -12,7 +12,7 @@
 ** This is the header file for the generic hash-table implemenation
 ** used in SQLite.
 **
-** $Id: hash.h,v 1.6 2004/01/08 02:17:33 drh Exp $
+** $Id: hash.h,v 1.7 2004/05/08 08:23:25 danielk1977 Exp $
 */
 #ifndef _SQLITE_HASH_H_
 #define _SQLITE_HASH_H_
@@ -78,10 +78,10 @@ struct HashElem {
 /*
 ** Access routines.  To delete, insert a NULL pointer.
 */
-void sqliteHashInit(Hash*, int keytype, int copyKey);
-void *sqliteHashInsert(Hash*, const void *pKey, int nKey, void *pData);
-void *sqliteHashFind(const Hash*, const void *pKey, int nKey);
-void sqliteHashClear(Hash*);
+void sqlite3HashInit(Hash*, int keytype, int copyKey);
+void *sqlite3HashInsert(Hash*, const void *pKey, int nKey, void *pData);
+void *sqlite3HashFind(const Hash*, const void *pKey, int nKey);
+void sqlite3HashClear(Hash*);
 
 /*
 ** Macros for looping over all elements of a hash table.  The idiom is
@@ -107,3 +107,6 @@ void sqliteHashClear(Hash*);
 #define sqliteHashCount(H)  ((H)->count)
 
 #endif /* _SQLITE_HASH_H_ */
+
+
+

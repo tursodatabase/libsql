@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.36 2004/02/22 17:49:34 drh Exp $
+** $Id: test1.c,v 1.37 2004/05/08 08:23:39 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -180,7 +180,7 @@ static int test_mprintf_z(
   int i;
 
   for(i=2; i<argc; i++){
-    zResult = sqliteMPrintf("%z%s%s", zResult, argv[1], argv[i]);
+    zResult = sqlite3MPrintf("%z%s%s", zResult, argv[1], argv[i]);
   }
   Tcl_AppendResult(interp, zResult, 0);
   sqliteFree(zResult);
@@ -329,7 +329,7 @@ static void dstrAppend(struct dstr *p, const char *z, int divider){
 }
 
 /*
-** Invoked for each callback from sqliteExecFunc
+** Invoked for each callback from sqlite3ExecFunc
 */
 static int execFuncCallback(void *pData, int argc, char **argv, char **NotUsed){
   struct dstr *p = (struct dstr*)pData;
@@ -355,7 +355,7 @@ static int execFuncCallback(void *pData, int argc, char **argv, char **NotUsed){
 ** This routine simulates the effect of having two threads attempt to
 ** use the same database at the same time.
 */
-static void sqliteExecFunc(sqlite_func *context, int argc, const char **argv){
+static void sqlite3ExecFunc(sqlite_func *context, int argc, const char **argv){
   struct dstr x;
   memset(&x, 0, sizeof(x));
   sqlite_exec((sqlite*)sqlite_user_data(context), argv[0], 
@@ -394,7 +394,7 @@ static int test_create_function(
   }
   if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
   sqlite_create_function(db, "x_coalesce", -1, ifnullFunc, 0);
-  sqlite_create_function(db, "x_sqlite_exec", 1, sqliteExecFunc, db);
+  sqlite_create_function(db, "x_sqlite_exec", 1, sqlite3ExecFunc, db);
   return TCL_OK;
 }
 
@@ -632,15 +632,15 @@ static void testFunc(sqlite_func *context, int argc, const char **argv){
     if( argv[0]==0 ){
       sqlite_set_result_error(context, "first argument to test function "
          "may not be NULL", -1);
-    }else if( sqliteStrICmp(argv[0],"string")==0 ){
+    }else if( sqlite3StrICmp(argv[0],"string")==0 ){
       sqlite_set_result_string(context, argv[1], -1);
     }else if( argv[1]==0 ){
       sqlite_set_result_error(context, "2nd argument may not be NULL if the "
          "first argument is not \"string\"", -1);
-    }else if( sqliteStrICmp(argv[0],"int")==0 ){
+    }else if( sqlite3StrICmp(argv[0],"int")==0 ){
       sqlite_set_result_int(context, atoi(argv[1]));
-    }else if( sqliteStrICmp(argv[0],"double")==0 ){
-      sqlite_set_result_double(context, sqliteAtoF(argv[1], 0));
+    }else if( sqlite3StrICmp(argv[0],"double")==0 ){
+      sqlite_set_result_double(context, sqlite3AtoF(argv[1], 0));
     }else{
       sqlite_set_result_error(context,"first argument should be one of: "
           "string int double", -1);
@@ -1022,3 +1022,6 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
       (char*)&sqlite_static_bind_value, TCL_LINK_STRING);
   return TCL_OK;
 }
+
+
+

@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.60 2004/03/14 22:12:35 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.61 2004/05/08 08:23:33 danielk1977 Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -861,8 +861,66 @@ int sqlite_encode_binary(const unsigned char *in, int n, unsigned char *out);
 */
 int sqlite_decode_binary(const unsigned char *in, unsigned char *out);
 
+#if 0
+
+/*
+** Below this point are the new sqlite3 APIs. At present these are
+** implemented in terms of the sqlite2 API above. This is to get the TCL
+** interface and other testing infrastructure in place for when
+** functionality starts getting added.
+*/
+
+typedef struct sqlite sqlite3;
+
+int sqlite3_open(const char*, sqlite3**, const char**);
+int sqlite3_open16(const void*, sqlite3**, const char**);
+int sqlite3_close(sqlite3*);
+
+const char *sqlite3_errmsg(sqlite3*);
+const void *sqlite3_errmsg16(sqlite3*);
+int sqlite3_errcode(sqlite3*);
+
+typedef struct sqlite3_vm sqlite3_stmt;
+
+int sqlite3_prepare(sqlite3*, const char*, sqlite3_stmt**, const char**);
+int sqlite3_prepare16(sqlite3*, const void*, sqlite3_stmt**, const void**);
+int sqlite3_finalize(sqlite3_stmt*);
+int sqlite3_reset(sqlite3_stmt*);
+
+int sqlite3_bind_int32(sqlite3_stmt*, int iParm, int iValue);
+int sqlite3_bind_int64(sqlite3_stmt*, int iParm, long long int iValue);
+int sqlite3_bind_double(sqlite3_stmt*, int iParm, double iValue);
+int sqlite3_bind_null(sqlite3_stmt*, int iParm);
+int sqlite3_bind_text(sqlite3_stmt*, int i, const char*, int n, int eCopy);
+int sqlite3_bind_text16(sqlite3_stmt*, int i, const void*, int, int eCopy);
+int sqlite3_bind_blob(sqlite3_stmt*, int i, const void*, int n, int eCopy);
+
+int sqlite3_step(sqlite3_stmt*);
+
+#define SQLITE3_INTEGER  1
+#define SQLITE3_FLOAT    2
+#define SQLITE3_TEXT     3
+#define SQLITE3_BLOB     4
+#define SQLITE3_NULL     5
+
+int sqlite3_column_count(sqlite3_stmt*);
+int sqlite3_column_type(sqlite3_stmt*,int);
+const char *sqlite3_column_decltype(sqlite3_stmt*,int);
+const void *sqlite3_column_decltype16(sqlite3_stmt*,int);
+const char *sqlite3_column_name(sqlite3_stmt*,int);
+const void *sqlite3_column_name16(sqlite3_stmt*,int);
+const unsigned char *sqlite3_column_data(sqlite3_stmt*,int);
+const void *sqlite3_column_data16(sqlite3_stmt*,int);
+int sqlite3_column_bytes(sqlite3_stmt*,int);
+long long int sqlite3_column_int(sqlite3_stmt*,int);
+double sqlite3_column_float(sqlite3_stmt*,int);
+
+#endif
+
 #ifdef __cplusplus
 }  /* End of the 'extern "C"' block */
 #endif
+#endif
 
-#endif /* _SQLITE_H_ */
+
+

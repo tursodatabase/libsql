@@ -13,10 +13,15 @@
 ** subsystem.  See comments in the source code for a detailed description
 ** of what each interface routine does.
 **
-** @(#) $Id: btree.h,v 1.39 2004/05/07 23:50:57 drh Exp $
+** @(#) $Id: btree.h,v 1.40 2004/05/08 08:23:23 danielk1977 Exp $
 */
 #ifndef _BTREE_H_
 #define _BTREE_H_
+
+/* TODO: This definition is just included so other modules compile. It
+** needs to be revisited.
+*/
+#define SQLITE_N_BTREE_META 10
 
 /*
 ** Forward declarations of structure
@@ -43,6 +48,9 @@ int sqlite3BtreeBeginStmt(Btree*);
 int sqlite3BtreeCommitStmt(Btree*);
 int sqlite3BtreeRollbackStmt(Btree*);
 int sqlite3BtreeCreateTable(Btree*, int*, int flags);
+
+const char *sqlite3BtreeGetFilename(Btree *);
+int sqlite3BtreeCopyFile(Btree *, Btree *);
 
 /* The flags parameter to sqlite3BtreeCreateTable can be the bitwise OR
 ** of the following flags:
@@ -79,6 +87,7 @@ int sqlite3BtreeKey(BtCursor*, u32 offset, u32 amt, void*);
 void *sqlite3BtreeKeyFetch(BtCursor*);
 int sqlite3BtreeDataSize(BtCursor*, u32 *pSize);
 int sqlite3BtreeData(BtCursor*, u32 offset, u32 amt, void*);
+int sqlite3BtreeKeyCompare(BtCursor *, const void *, int, int, int *);
 
 char *sqlite3BtreeIntegrityCheck(Btree*, int *aRoot, int nRoot);
 struct Pager *sqlite3BtreePager(Btree*);
@@ -91,3 +100,6 @@ int sqlite3BtreePageDump(Btree*, int, int recursive);
 
 
 #endif /* _BTREE_H_ */
+
+
+

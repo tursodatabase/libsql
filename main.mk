@@ -54,14 +54,15 @@ TCCX = $(TCC) $(OPTS) $(THREADSAFE) $(USLEEP) -I. -I$(TOP)/src
 
 # Object files for the SQLite library.
 #
-LIBOBJ = btree.o hash.o os.o pager.o random.o \
-         util.o tclsqlite.o utf.o
+# LIBOBJ = btree.o hash.o os.o pager.o random.o \
+#         util.o tclsqlite.o utf.o
 
-LIBOBJ_ORIG = attach.o auth.o btree.o btree_rb.o build.o copy.o date.o delete.o \
+
+LIBOBJ = attach.o auth.o btree.o build.o copy.o date.o delete.o \
          expr.o func.o hash.o insert.o \
          main.o opcodes.o os.o pager.o parse.o pragma.o printf.o random.o \
          select.o table.o tokenize.o trigger.o update.o util.o \
-         vacuum.o vdbe.o vdbeaux.o where.o tclsqlite.o
+         vacuum.o vdbe.o vdbeaux.o where.o tclsqlite.o utf.o
 
 # All of the source code files.
 #
@@ -120,12 +121,12 @@ SRC_ORIG = \
 # Source code to the test files.
 #
 TESTSRC = \
-  $(TOP)/src/os.c \
-  $(TOP)/src/pager.c \
-  $(TOP)/src/test2.c \
-  $(TOP)/src/test3.c \
-  $(TOP)/src/test5.c \
-  $(TOP)/src/md5.c
+   $(TOP)/src/os.c \
+   $(TOP)/src/pager.c \
+   $(TOP)/src/test2.c \
+   $(TOP)/src/test3.c \
+   $(TOP)/src/test5.c \
+   $(TOP)/src/md5.c
 
 TESTSRC_ORIG = \
   $(TOP)/src/btree.c \
@@ -136,6 +137,7 @@ TESTSRC_ORIG = \
   $(TOP)/src/test2.c \
   $(TOP)/src/test3.c \
   $(TOP)/src/test4.c \
+  $(TOP)/src/test5.c \
   $(TOP)/src/vdbe.c \
   $(TOP)/src/md5.c
 
@@ -178,6 +180,8 @@ sqlite$(EXE):	$(TOP)/src/shell.c libsqlite.a sqlite.h
 	$(TCCX) $(READLINE_FLAGS) -o sqlite$(EXE) $(TOP)/src/shell.c \
 		libsqlite.a $(LIBREADLINE) $(THREADLIB)
 
+objects: $(LIBOBJ_ORIG)
+
 # This target creates a directory named "tsrc" and fills it with
 # copies of all of the C source code and header files needed to
 # build on the target system.  Some of the C source code and header
@@ -217,7 +221,7 @@ opcodes.o:	opcodes.c
 
 opcodes.c:	$(TOP)/src/vdbe.c
 	echo '/* Automatically generated file.  Do not edit */' >opcodes.c
-	echo 'char *sqliteOpcodeNames[] = { "???", ' >>opcodes.c
+	echo 'char *sqlite3OpcodeNames[] = { "???", ' >>opcodes.c
 	grep '^case OP_' $(TOP)/src/vdbe.c | \
 	  sed -e 's/^.*OP_/  "/' -e 's/:.*$$/", /' >>opcodes.c
 	echo '};' >>opcodes.c
@@ -233,9 +237,6 @@ os.o:	$(TOP)/src/os.c $(HDR)
 
 parse.o:	parse.c $(HDR)
 	$(TCCX) -c parse.c
-
-utf.o:	$(TOP)/src/utf.c $(HDR)
-	$(TCCX) -c $(TOP)/src/utf.c
 
 parse.h:	parse.c
 
@@ -269,6 +270,9 @@ tokenize.o:	$(TOP)/src/tokenize.c $(HDR)
 
 trigger.o:	$(TOP)/src/trigger.c $(HDR)
 	$(TCCX) -c $(TOP)/src/trigger.c
+
+utf.o:	$(TOP)/src/utf.c $(HDR)
+	$(TCCX) -c $(TOP)/src/utf.c
 
 util.o:	$(TOP)/src/util.c $(HDR)
 	$(TCCX) -c $(TOP)/src/util.c

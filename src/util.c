@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.75 2004/04/26 14:10:22 drh Exp $
+** $Id: util.c,v 1.76 2004/05/08 08:23:40 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -52,7 +52,7 @@ static int memcnt = 0;
 ** Allocate new memory and set it to zero.  Return NULL if
 ** no memory is available.
 */
-void *sqliteMalloc_(int n, int bZero, char *zFile, int line){
+void *sqlite3Malloc_(int n, int bZero, char *zFile, int line){
   void *p;
   int *pi;
   int i, k;
@@ -95,7 +95,7 @@ void *sqliteMalloc_(int n, int bZero, char *zFile, int line){
 **
 ** This routine is used for testing purposes only.
 */
-void sqliteCheckMemory(void *p, int N){
+void sqlite3CheckMemory(void *p, int N){
   int *pi = p;
   int n, i, k;
   pi -= N_GUARD+1;
@@ -113,7 +113,7 @@ void sqliteCheckMemory(void *p, int N){
 /*
 ** Free memory previously obtained from sqliteMalloc()
 */
-void sqliteFree_(void *p, char *zFile, int line){
+void sqlite3Free_(void *p, char *zFile, int line){
   if( p ){
     int *pi, i, k, n;
     pi = p;
@@ -147,14 +147,14 @@ void sqliteFree_(void *p, char *zFile, int line){
 ** works just like sqliteMalloc().  If n==0, then this routine
 ** works just like sqliteFree().
 */
-void *sqliteRealloc_(void *oldP, int n, char *zFile, int line){
+void *sqlite3Realloc_(void *oldP, int n, char *zFile, int line){
   int *oldPi, *pi, i, k, oldN, oldK;
   void *p;
   if( oldP==0 ){
-    return sqliteMalloc_(n,1,zFile,line);
+    return sqlite3Malloc_(n,1,zFile,line);
   }
   if( n==0 ){
-    sqliteFree_(oldP,zFile,line);
+    sqlite3Free_(oldP,zFile,line);
     return 0;
   }
   oldPi = oldP;
@@ -203,7 +203,7 @@ void *sqliteRealloc_(void *oldP, int n, char *zFile, int line){
 ** the SQLite library.  That way clients can free the string using free()
 ** rather than having to call sqliteFree().
 */
-void sqliteStrRealloc(char **pz){
+void sqlite3StrRealloc(char **pz){
   char *zNew;
   if( pz==0 || *pz==0 ) return;
   zNew = malloc( strlen(*pz) + 1 );
@@ -220,17 +220,17 @@ void sqliteStrRealloc(char **pz){
 /*
 ** Make a copy of a string in memory obtained from sqliteMalloc()
 */
-char *sqliteStrDup_(const char *z, char *zFile, int line){
+char *sqlite3StrDup_(const char *z, char *zFile, int line){
   char *zNew;
   if( z==0 ) return 0;
-  zNew = sqliteMalloc_(strlen(z)+1, 0, zFile, line);
+  zNew = sqlite3Malloc_(strlen(z)+1, 0, zFile, line);
   if( zNew ) strcpy(zNew, z);
   return zNew;
 }
-char *sqliteStrNDup_(const char *z, int n, char *zFile, int line){
+char *sqlite3StrNDup_(const char *z, int n, char *zFile, int line){
   char *zNew;
   if( z==0 ) return 0;
-  zNew = sqliteMalloc_(n+1, 0, zFile, line);
+  zNew = sqlite3Malloc_(n+1, 0, zFile, line);
   if( zNew ){
     memcpy(zNew, z, n);
     zNew[n] = 0;
@@ -330,7 +330,7 @@ char *sqliteStrNDup(const char *z, int n){
 ** point to that string.  The 1st argument must either be NULL or 
 ** point to memory obtained from sqliteMalloc().
 */
-void sqliteSetString(char **pz, const char *zFirst, ...){
+void sqlite3SetString(char **pz, const char *zFirst, ...){
   va_list ap;
   int nByte;
   const char *z;
@@ -364,13 +364,13 @@ void sqliteSetString(char **pz, const char *zFirst, ...){
 }
 
 /*
-** Works like sqliteSetString, but each string is now followed by
+** Works like sqlite3SetString, but each string is now followed by
 ** a length integer which specifies how much of the source string 
 ** to copy (in bytes).  -1 means use the whole string.  The 1st 
 ** argument must either be NULL or point to memory obtained from 
 ** sqliteMalloc().
 */
-void sqliteSetNString(char **pz, ...){
+void sqlite3SetNString(char **pz, ...){
   va_list ap;
   int nByte;
   const char *z;
@@ -405,7 +405,6 @@ void sqliteSetNString(char **pz, ...){
   va_end(ap);
 }
 
-#if 0
 /*
 ** Add an error message to pParse->zErrMsg and increment pParse->nErr.
 ** The following formatting characters are allowed:
@@ -416,15 +415,14 @@ void sqliteSetNString(char **pz, ...){
 **      %T      Insert a token
 **      %S      Insert the first element of a SrcList
 */
-void sqliteErrorMsg(Parse *pParse, const char *zFormat, ...){
+void sqlite3ErrorMsg(Parse *pParse, const char *zFormat, ...){
   va_list ap;
   pParse->nErr++;
   sqliteFree(pParse->zErrMsg);
   va_start(ap, zFormat);
-  pParse->zErrMsg = sqliteVMPrintf(zFormat, ap);
+  pParse->zErrMsg = sqlite3VMPrintf(zFormat, ap);
   va_end(ap);
 }
-#endif
 
 /*
 ** Convert an SQL-style quoted string into a normal string by removing
@@ -436,7 +434,7 @@ void sqliteErrorMsg(Parse *pParse, const char *zFormat, ...){
 ** brackets from around identifers.  For example:  "[a-b-c]" becomes
 ** "a-b-c".
 */
-void sqliteDequote(char *z){
+void sqlite3Dequote(char *z){
   int quote;
   int i, j;
   if( z==0 ) return;
@@ -487,7 +485,7 @@ static unsigned char UpperToLower[] = {
 ** This function computes a hash on the name of a keyword.
 ** Case is not significant.
 */
-int sqliteHashNoCase(const char *z, int n){
+int sqlite3HashNoCase(const char *z, int n){
   int h = 0;
   if( n<=0 ) n = strlen(z);
   while( n > 0  ){
@@ -501,14 +499,14 @@ int sqliteHashNoCase(const char *z, int n){
 ** Some systems have stricmp().  Others have strcasecmp().  Because
 ** there is no consistency, we will define our own.
 */
-int sqliteStrICmp(const char *zLeft, const char *zRight){
+int sqlite3StrICmp(const char *zLeft, const char *zRight){
   register unsigned char *a, *b;
   a = (unsigned char *)zLeft;
   b = (unsigned char *)zRight;
   while( *a!=0 && UpperToLower[*a]==UpperToLower[*b]){ a++; b++; }
   return *a - *b;
 }
-int sqliteStrNICmp(const char *zLeft, const char *zRight, int N){
+int sqlite3StrNICmp(const char *zLeft, const char *zRight, int N){
   register unsigned char *a, *b;
   a = (unsigned char *)zLeft;
   b = (unsigned char *)zRight;
@@ -522,7 +520,7 @@ int sqliteStrNICmp(const char *zLeft, const char *zRight, int N){
 **
 ** Am empty string is considered non-numeric.
 */
-int sqliteIsNumber(const char *z){
+int sqlite3IsNumber(const char *z){
   if( *z=='-' || *z=='+' ) z++;
   if( !isdigit(*z) ){
     return 0;
@@ -555,7 +553,7 @@ int sqliteIsNumber(const char *z){
 ** of "." depending on how locale is set.  But that would cause problems
 ** for SQL.  So this routine always uses "." regardless of locale.
 */
-double sqliteAtoF(const char *z, const char **pzEnd){
+double sqlite3AtoF(const char *z, const char **pzEnd){
   int sign = 1;
   LONGDOUBLE_TYPE v1 = 0.0;
   if( *z=='-' ){
@@ -618,7 +616,7 @@ double sqliteAtoF(const char *z, const char **pzEnd){
 ** 2147483648 will not fit in 32 bits.  So it seems safer to return
 ** false.
 */
-int sqliteFitsIn32Bits(const char *zNum){
+int sqlite3FitsIn32Bits(const char *zNum){
   int i, c;
   if( *zNum=='-' || *zNum=='+' ) zNum++;
   for(i=0; (c=zNum[i])>='0' && c<='9'; i++){}
@@ -638,7 +636,7 @@ int sqliteFitsIn32Bits(const char *zNum){
 ** a number is the smaller.  Non-numeric strings compare in 
 ** lexigraphical order (the same order as strcmp()).
 */
-int sqliteCompare(const char *atext, const char *btext){
+int sqlite3Compare(const char *atext, const char *btext){
   int result;
   int isNumA, isNumB;
   if( atext==0 ){
@@ -646,15 +644,15 @@ int sqliteCompare(const char *atext, const char *btext){
   }else if( btext==0 ){
     return 1;
   }
-  isNumA = sqliteIsNumber(atext);
-  isNumB = sqliteIsNumber(btext);
+  isNumA = sqlite3IsNumber(atext);
+  isNumB = sqlite3IsNumber(btext);
   if( isNumA ){
     if( !isNumB ){
       result = -1;
     }else{
       double rA, rB;
-      rA = sqliteAtoF(atext, 0);
-      rB = sqliteAtoF(btext, 0);
+      rA = sqlite3AtoF(atext, 0);
+      rB = sqlite3AtoF(btext, 0);
       if( rA<rB ){
         result = -1;
       }else if( rA>rB ){
@@ -697,7 +695,7 @@ int sqliteCompare(const char *atext, const char *btext){
 ** For the "+" and "-" sorting, pure numeric strings (strings for which the
 ** isNum() function above returns TRUE) always compare less than strings
 ** that are not pure numerics.  Non-numeric strings compare in memcmp()
-** order.  This is the same sort order as the sqliteCompare() function
+** order.  This is the same sort order as the sqlite3Compare() function
 ** above generates.
 **
 ** The last point is a change from version 2.6.3 to version 2.7.0.  In
@@ -712,7 +710,7 @@ int sqliteCompare(const char *atext, const char *btext){
 ** of expressions and for indices.  This was not the case for version
 ** 2.6.3 and earlier.
 */
-int sqliteSortCompare(const char *a, const char *b){
+int sqlite3SortCompare(const char *a, const char *b){
   int res = 0;
   int isNumA, isNumB;
   int dir = 0;
@@ -738,16 +736,16 @@ int sqliteSortCompare(const char *a, const char *b){
       res = strcmp(&a[1],&b[1]);
       if( res ) break;
     }else{
-      isNumA = sqliteIsNumber(&a[1]);
-      isNumB = sqliteIsNumber(&b[1]);
+      isNumA = sqlite3IsNumber(&a[1]);
+      isNumB = sqlite3IsNumber(&b[1]);
       if( isNumA ){
         double rA, rB;
         if( !isNumB ){
           res = -1;
           break;
         }
-        rA = sqliteAtoF(&a[1], 0);
-        rB = sqliteAtoF(&b[1], 0);
+        rA = sqlite3AtoF(&a[1], 0);
+        rB = sqlite3AtoF(&b[1], 0);
         if( rA<rB ){
           res = -1;
           break;
@@ -773,7 +771,7 @@ int sqliteSortCompare(const char *a, const char *b){
 
 /*
 ** Some powers of 64.  These constants are needed in the
-** sqliteRealToSortable() routine below.
+** sqlite3RealToSortable() routine below.
 */
 #define _64e3  (64.0 * 64.0 * 64.0)
 #define _64e4  (64.0 * 64.0 * 64.0 * 64.0)
@@ -797,7 +795,7 @@ int sqliteSortCompare(const char *a, const char *b){
 ** The calling function should have allocated at least 14 characters
 ** of space for the buffer z[].
 */
-void sqliteRealToSortable(double r, char *z){
+void sqlite3RealToSortable(double r, char *z){
   int neg;
   int exp;
   int cnt = 0;
@@ -942,7 +940,7 @@ static int sqlite_utf8_to_int(const unsigned char *z){
 **         abc[*]xyz        Matches "abc*xyz" only
 */
 int 
-sqliteGlobCompare(const unsigned char *zPattern, const unsigned char *zString){
+sqlite3GlobCompare(const unsigned char *zPattern, const unsigned char *zString){
   register int c;
   int invert;
   int seen;
@@ -960,7 +958,7 @@ sqliteGlobCompare(const unsigned char *zPattern, const unsigned char *zString){
         }
         if( c==0 ) return 1;
         if( c=='[' ){
-          while( *zString && sqliteGlobCompare(&zPattern[1],zString)==0 ){
+          while( *zString && sqlite3GlobCompare(&zPattern[1],zString)==0 ){
             sqliteNextChar(zString);
           }
           return *zString!=0;
@@ -968,7 +966,7 @@ sqliteGlobCompare(const unsigned char *zPattern, const unsigned char *zString){
           while( (c2 = *zString)!=0 ){
             while( c2 != 0 && c2 != c ){ c2 = *++zString; }
             if( c2==0 ) return 0;
-            if( sqliteGlobCompare(&zPattern[1],zString) ) return 1;
+            if( sqlite3GlobCompare(&zPattern[1],zString) ) return 1;
             sqliteNextChar(zString);
           }
           return 0;
@@ -1027,11 +1025,11 @@ sqliteGlobCompare(const unsigned char *zPattern, const unsigned char *zString){
 ** characters and '_' matches any single character.  Case is
 ** not significant.
 **
-** This routine is just an adaptation of the sqliteGlobCompare()
+** This routine is just an adaptation of the sqlite3GlobCompare()
 ** routine above.
 */
 int 
-sqliteLikeCompare(const unsigned char *zPattern, const unsigned char *zString){
+sqlite3LikeCompare(const unsigned char *zPattern, const unsigned char *zString){
   register int c;
   int c2;
 
@@ -1050,7 +1048,7 @@ sqliteLikeCompare(const unsigned char *zPattern, const unsigned char *zString){
         while( (c2=UpperToLower[*zString])!=0 ){
           while( c2 != 0 && c2 != c ){ c2 = UpperToLower[*++zString]; }
           if( c2==0 ) return 0;
-          if( sqliteLikeCompare(&zPattern[1],zString) ) return 1;
+          if( sqlite3LikeCompare(&zPattern[1],zString) ) return 1;
           sqliteNextChar(zString);
         }
         return 0;
@@ -1090,7 +1088,7 @@ sqliteLikeCompare(const unsigned char *zPattern, const unsigned char *zString){
 ** call to sqlite_close(db) and db has been deallocated.  And we do
 ** not want to write into deallocated memory.
 */
-int sqliteSafetyOn(sqlite *db){
+int sqlite3SafetyOn(sqlite *db){
   if( db->magic==SQLITE_MAGIC_OPEN ){
     db->magic = SQLITE_MAGIC_BUSY;
     return 0;
@@ -1107,7 +1105,7 @@ int sqliteSafetyOn(sqlite *db){
 ** Return an error (non-zero) if the magic was not SQLITE_MAGIC_BUSY
 ** when this routine is called.
 */
-int sqliteSafetyOff(sqlite *db){
+int sqlite3SafetyOff(sqlite *db){
   if( db->magic==SQLITE_MAGIC_BUSY ){
     db->magic = SQLITE_MAGIC_OPEN;
     return 0;
@@ -1128,10 +1126,13 @@ int sqliteSafetyOff(sqlite *db){
 ** This routine is used to try to detect when API routines are called
 ** at the wrong time or in the wrong sequence.
 */
-int sqliteSafetyCheck(sqlite *db){
+int sqlite3SafetyCheck(sqlite *db){
   if( db->pVdbe!=0 ){
     db->magic = SQLITE_MAGIC_ERROR;
     return 1;
   }
   return 0;
 }
+
+
+

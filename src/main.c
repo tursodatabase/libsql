@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.164 2004/04/23 17:04:45 drh Exp $
+** $Id: main.c,v 1.165 2004/05/08 08:23:26 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -22,7 +22,7 @@
 
 /*
 ** A pointer to this structure is used to communicate information
-** from sqliteInit into the sqliteInitCallback.
+** from sqlite3Init into the sqlite3InitCallback.
 */
 typedef struct {
   sqlite *db;         /* The database being initialized */
@@ -34,13 +34,13 @@ typedef struct {
 ** that the database is corrupt.
 */
 static void corruptSchema(InitData *pData, const char *zExtra){
-  sqliteSetString(pData->pzErrMsg, "malformed database schema",
+  sqlite3SetString(pData->pzErrMsg, "malformed database schema",
      zExtra!=0 && zExtra[0]!=0 ? " - " : (char*)0, zExtra, (char*)0);
 }
 
 /*
 ** This is the callback routine for the code that initializes the
-** database.  See sqliteInit() below for additional information.
+** database.  See sqlite3Init() below for additional information.
 **
 ** Each callback contains the following information:
 **
@@ -53,7 +53,7 @@ static void corruptSchema(InitData *pData, const char *zExtra){
 **
 */
 static
-int sqliteInitCallback(void *pInit, int argc, char **argv, char **azColName){
+int sqlite3InitCallback(void *pInit, int argc, char **argv, char **azColName){
   InitData *pData = (InitData*)pInit;
   int nErr = 0;
 
@@ -100,7 +100,7 @@ int sqliteInitCallback(void *pInit, int argc, char **argv, char **azColName){
 
         iDb = atoi(argv[4]);
         assert( iDb>=0 && iDb<db->nDb );
-        pIndex = sqliteFindIndex(db, argv[1], db->aDb[iDb].zName);
+        pIndex = sqlite3FindIndex(db, argv[1], db->aDb[iDb].zName);
         if( pIndex==0 || pIndex->tnum!=0 ){
           /* This can occur if there exists an index on a TEMP table which
           ** has the same name as another index on a permanent index.  Since
@@ -143,9 +143,9 @@ int upgrade_3_callback(void *pInit, int argc, char **argv, char **NotUsed){
   Trigger *pTrig;
   char *zErr = 0;
 
-  pTab = sqliteFindTable(pData->db, argv[0], 0);
+  pTab = sqlite3FindTable(pData->db, argv[0], 0);
   assert( pTab!=0 );
-  assert( sqliteStrICmp(pTab->zName, argv[0])==0 );
+  assert( sqlite3StrICmp(pTab->zName, argv[0])==0 );
   if( pTab ){
     pTrig = pTab->pTrigger;
     pTab->pTrigger = 0;  /* Disable all triggers before rebuilding the table */
@@ -166,9 +166,9 @@ int upgrade_3_callback(void *pInit, int argc, char **argv, char **NotUsed){
   ** cause the structure that pTab points to be deleted.  In case that
   ** happened, we need to refetch pTab.
   */
-  pTab = sqliteFindTable(pData->db, argv[0], 0);
+  pTab = sqlite3FindTable(pData->db, argv[0], 0);
   if( pTab ){
-    assert( sqliteStrICmp(pTab->zName, argv[0])==0 );
+    assert( sqlite3StrICmp(pTab->zName, argv[0])==0 );
     pTab->pTrigger = pTrig;  /* Re-enable triggers */
   }
   return rc!=SQLITE_OK;
@@ -184,7 +184,7 @@ int upgrade_3_callback(void *pInit, int argc, char **argv, char **NotUsed){
 ** auxiliary databases.  Return one of the SQLITE_ error codes to
 ** indicate success or failure.
 */
-static int sqliteInitOne(sqlite *db, int iDb, char **pzErrMsg){
+static int sqlite3InitOne(sqlite *db, int iDb, char **pzErrMsg){
   int rc;
   BtCursor *curMain;
   int size;
@@ -248,7 +248,7 @@ static int sqliteInitOne(sqlite *db, int iDb, char **pzErrMsg){
 
   /* Construct the schema tables: sqlite_master and sqlite_temp_master
   */
-  sqliteSafetyOff(db);
+  sqlite3SafetyOff(db);
   azArg[0] = "table";
   azArg[1] = MASTER_NAME;
   azArg[2] = "2";
@@ -258,8 +258,8 @@ static int sqliteInitOne(sqlite *db, int iDb, char **pzErrMsg){
   azArg[5] = 0;
   initData.db = db;
   initData.pzErrMsg = pzErrMsg;
-  sqliteInitCallback(&initData, 5, azArg, 0);
-  pTab = sqliteFindTable(db, MASTER_NAME, "main");
+  sqlite3InitCallback(&initData, 5, azArg, 0);
+  pTab = sqlite3FindTable(db, MASTER_NAME, "main");
   if( pTab ){
     pTab->readOnly = 1;
   }
@@ -267,29 +267,34 @@ static int sqliteInitOne(sqlite *db, int iDb, char **pzErrMsg){
     azArg[1] = TEMP_MASTER_NAME;
     azArg[3] = temp_master_schema;
     azArg[4] = "1";
-    sqliteInitCallback(&initData, 5, azArg, 0);
-    pTab = sqliteFindTable(db, TEMP_MASTER_NAME, "temp");
+    sqlite3InitCallback(&initData, 5, azArg, 0);
+    pTab = sqlite3FindTable(db, TEMP_MASTER_NAME, "temp");
     if( pTab ){
       pTab->readOnly = 1;
     }
   }
-  sqliteSafetyOn(db);
+  sqlite3SafetyOn(db);
 
   /* Create a cursor to hold the database open
   */
   if( db->aDb[iDb].pBt==0 ) return SQLITE_OK;
-  rc = sqliteBtreeCursor(db->aDb[iDb].pBt, 2, 0, &curMain);
+  rc = sqlite3BtreeCursor(db->aDb[iDb].pBt, 2, 0, 0, 0, &curMain);
   if( rc ){
-    sqliteSetString(pzErrMsg, sqlite_error_string(rc), (char*)0);
+    sqlite3SetString(pzErrMsg, sqlite_error_string(rc), (char*)0);
     return rc;
   }
 
   /* Get the database meta information
   */
-  rc = sqliteBtreeGetMeta(db->aDb[iDb].pBt, meta);
+  {
+    int ii;
+    for(ii=0; rc==SQLITE_OK && ii<SQLITE_N_BTREE_META; ii++){
+      rc = sqlite3BtreeGetMeta(db->aDb[iDb].pBt, ii+1, &meta[ii]);
+    }
+  }
   if( rc ){
-    sqliteSetString(pzErrMsg, sqlite_error_string(rc), (char*)0);
-    sqliteBtreeCloseCursor(curMain);
+    sqlite3SetString(pzErrMsg, sqlite_error_string(rc), (char*)0);
+    sqlite3BtreeCloseCursor(curMain);
     return rc;
   }
   db->aDb[iDb].schema_cookie = meta[1];
@@ -316,48 +321,48 @@ static int sqliteInitOne(sqlite *db, int iDb, char **pzErrMsg){
       /* This happens if the database was initially empty */
       db->file_format = 4;
     }else if( db->file_format>4 ){
-      sqliteBtreeCloseCursor(curMain);
-      sqliteSetString(pzErrMsg, "unsupported file format", (char*)0);
+      sqlite3BtreeCloseCursor(curMain);
+      sqlite3SetString(pzErrMsg, "unsupported file format", (char*)0);
       return SQLITE_ERROR;
     }
   }else if( db->file_format!=meta[2] || db->file_format<4 ){
     assert( db->file_format>=4 );
     if( meta[2]==0 ){
-      sqliteSetString(pzErrMsg, "cannot attach empty database: ",
+      sqlite3SetString(pzErrMsg, "cannot attach empty database: ",
          db->aDb[iDb].zName, (char*)0);
     }else{
-      sqliteSetString(pzErrMsg, "incompatible file format in auxiliary "
+      sqlite3SetString(pzErrMsg, "incompatible file format in auxiliary "
          "database: ", db->aDb[iDb].zName, (char*)0);
     }
-    sqliteBtreeClose(db->aDb[iDb].pBt);
+    sqlite3BtreeClose(db->aDb[iDb].pBt);
     db->aDb[iDb].pBt = 0;
     return SQLITE_FORMAT;
   }
-  sqliteBtreeSetCacheSize(db->aDb[iDb].pBt, db->cache_size);
-  sqliteBtreeSetSafetyLevel(db->aDb[iDb].pBt, meta[4]==0 ? 2 : meta[4]);
+  sqlite3BtreeSetCacheSize(db->aDb[iDb].pBt, db->cache_size);
+  sqlite3BtreeSetSafetyLevel(db->aDb[iDb].pBt, meta[4]==0 ? 2 : meta[4]);
 
   /* Read the schema information out of the schema tables
   */
   assert( db->init.busy );
-  sqliteSafetyOff(db);
+  sqlite3SafetyOff(db);
   if( iDb==0 ){
     rc = sqlite_exec(db, 
         db->file_format>=2 ? init_script : older_init_script,
-        sqliteInitCallback, &initData, 0);
+        sqlite3InitCallback, &initData, 0);
   }else{
     char *zSql = 0;
-    sqliteSetString(&zSql, 
+    sqlite3SetString(&zSql, 
        "SELECT type, name, rootpage, sql, ", zDbNum, " FROM \"",
        db->aDb[iDb].zName, "\".sqlite_master", (char*)0);
-    rc = sqlite_exec(db, zSql, sqliteInitCallback, &initData, 0);
+    rc = sqlite_exec(db, zSql, sqlite3InitCallback, &initData, 0);
     sqliteFree(zSql);
   }
-  sqliteSafetyOn(db);
-  sqliteBtreeCloseCursor(curMain);
+  sqlite3SafetyOn(db);
+  sqlite3BtreeCloseCursor(curMain);
   if( sqlite_malloc_failed ){
-    sqliteSetString(pzErrMsg, "out of memory", (char*)0);
+    sqlite3SetString(pzErrMsg, "out of memory", (char*)0);
     rc = SQLITE_NOMEM;
-    sqliteResetInternalSchema(db, 0);
+    sqlite3ResetInternalSchema(db, 0);
   }
   if( rc==SQLITE_OK ){
     DbSetProperty(db, iDb, DB_SchemaLoaded);
@@ -365,7 +370,7 @@ static int sqliteInitOne(sqlite *db, int iDb, char **pzErrMsg){
       DbSetProperty(db, 1, DB_SchemaLoaded);
     }
   }else{
-    sqliteResetInternalSchema(db, iDb);
+    sqlite3ResetInternalSchema(db, iDb);
   }
   return rc;
 }
@@ -383,7 +388,7 @@ static int sqliteInitOne(sqlite *db, int iDb, char **pzErrMsg){
 ** has the sqlite_master table locked) than another attempt
 ** is made the first time the database is accessed.
 */
-int sqliteInit(sqlite *db, char **pzErrMsg){
+int sqlite3Init(sqlite *db, char **pzErrMsg){
   int i, rc;
   
   if( db->init.busy ) return SQLITE_OK;
@@ -393,15 +398,15 @@ int sqliteInit(sqlite *db, char **pzErrMsg){
   for(i=0; rc==SQLITE_OK && i<db->nDb; i++){
     if( DbHasProperty(db, i, DB_SchemaLoaded) ) continue;
     assert( i!=1 );  /* Should have been initialized together with 0 */
-    rc = sqliteInitOne(db, i, pzErrMsg);
+    rc = sqlite3InitOne(db, i, pzErrMsg);
     if( rc ){
-      sqliteResetInternalSchema(db, i);
+      sqlite3ResetInternalSchema(db, i);
     }
   }
   db->init.busy = 0;
   if( rc==SQLITE_OK ){
     db->flags |= SQLITE_Initialized;
-    sqliteCommitInternalChanges(db);
+    sqlite3CommitInternalChanges(db);
   }
 
   /* If the database is in formats 1 or 2, then upgrade it to
@@ -424,13 +429,18 @@ int sqliteInit(sqlite *db, char **pzErrMsg){
       &initData,
       &zErr);
     if( rc==SQLITE_OK ){
-      sqliteBtreeGetMeta(db->aDb[0].pBt, meta);
+      int ii;
+      for(ii=0; rc==SQLITE_OK && ii<SQLITE_N_BTREE_META; ii++){
+        rc = sqlite3BtreeGetMeta(db->aDb[0].pBt, ii+1, &meta[ii]);
+      }
       meta[2] = 4;
-      sqliteBtreeUpdateMeta(db->aDb[0].pBt, meta);
+      for(ii=0; rc==SQLITE_OK && ii<SQLITE_N_BTREE_META; ii++){
+        rc = sqlite3BtreeUpdateMeta(db->aDb[0].pBt, ii+1, meta[ii]);
+      }
       sqlite_exec(db, "COMMIT", 0, 0, 0);
     }
     if( rc!=SQLITE_OK ){
-      sqliteSetString(pzErrMsg, 
+      sqlite3SetString(pzErrMsg, 
         "unable to upgrade database to the version 2.6 format",
         zErr ? ": " : 0, zErr, (char*)0);
     }
@@ -482,43 +492,43 @@ sqlite *sqlite_open(const char *zFilename, int mode, char **pzErrMsg){
   db->nDb = 2;
   db->aDb = db->aDbStatic;
   /* db->flags |= SQLITE_ShortColNames; */
-  sqliteHashInit(&db->aFunc, SQLITE_HASH_STRING, 1);
+  sqlite3HashInit(&db->aFunc, SQLITE_HASH_STRING, 1);
   for(i=0; i<db->nDb; i++){
-    sqliteHashInit(&db->aDb[i].tblHash, SQLITE_HASH_STRING, 0);
-    sqliteHashInit(&db->aDb[i].idxHash, SQLITE_HASH_STRING, 0);
-    sqliteHashInit(&db->aDb[i].trigHash, SQLITE_HASH_STRING, 0);
-    sqliteHashInit(&db->aDb[i].aFKey, SQLITE_HASH_STRING, 1);
+    sqlite3HashInit(&db->aDb[i].tblHash, SQLITE_HASH_STRING, 0);
+    sqlite3HashInit(&db->aDb[i].idxHash, SQLITE_HASH_STRING, 0);
+    sqlite3HashInit(&db->aDb[i].trigHash, SQLITE_HASH_STRING, 0);
+    sqlite3HashInit(&db->aDb[i].aFKey, SQLITE_HASH_STRING, 1);
   }
   
   /* Open the backend database driver */
   if( zFilename[0]==':' && strcmp(zFilename,":memory:")==0 ){
     db->temp_store = 2;
   }
-  rc = sqliteBtreeFactory(db, zFilename, 0, MAX_PAGES, &db->aDb[0].pBt);
+  rc = sqlite3BtreeFactory(db, zFilename, 0, MAX_PAGES, &db->aDb[0].pBt);
   if( rc!=SQLITE_OK ){
     switch( rc ){
       default: {
-        sqliteSetString(pzErrMsg, "unable to open database: ",
+        sqlite3SetString(pzErrMsg, "unable to open database: ",
            zFilename, (char*)0);
       }
     }
     sqliteFree(db);
-    sqliteStrRealloc(pzErrMsg);
+    sqlite3StrRealloc(pzErrMsg);
     return 0;
   }
   db->aDb[0].zName = "main";
   db->aDb[1].zName = "temp";
 
   /* Attempt to read the schema */
-  sqliteRegisterBuiltinFunctions(db);
-  rc = sqliteInit(db, pzErrMsg);
+  sqlite3RegisterBuiltinFunctions(db);
+  rc = sqlite3Init(db, pzErrMsg);
   db->magic = SQLITE_MAGIC_OPEN;
   if( sqlite_malloc_failed ){
     sqlite_close(db);
     goto no_mem_on_open;
   }else if( rc!=SQLITE_OK && rc!=SQLITE_BUSY ){
     sqlite_close(db);
-    sqliteStrRealloc(pzErrMsg);
+    sqlite3StrRealloc(pzErrMsg);
     return 0;
   }else if( pzErrMsg ){
     sqliteFree(*pzErrMsg);
@@ -529,8 +539,8 @@ sqlite *sqlite_open(const char *zFilename, int mode, char **pzErrMsg){
   return db;
 
 no_mem_on_open:
-  sqliteSetString(pzErrMsg, "out of memory", (char*)0);
-  sqliteStrRealloc(pzErrMsg);
+  sqlite3SetString(pzErrMsg, "out of memory", (char*)0);
+  sqlite3StrRealloc(pzErrMsg);
   return 0;
 }
 
@@ -565,7 +575,7 @@ void sqlite_close(sqlite *db){
   HashElem *i;
   int j;
   db->want_to_close = 1;
-  if( sqliteSafetyCheck(db) || sqliteSafetyOn(db) ){
+  if( sqlite3SafetyCheck(db) || sqlite3SafetyOn(db) ){
     /* printf("DID NOT CLOSE\n"); fflush(stdout); */
     return;
   }
@@ -573,11 +583,11 @@ void sqlite_close(sqlite *db){
   for(j=0; j<db->nDb; j++){
     struct Db *pDb = &db->aDb[j];
     if( pDb->pBt ){
-      sqliteBtreeClose(pDb->pBt);
+      sqlite3BtreeClose(pDb->pBt);
       pDb->pBt = 0;
     }
   }
-  sqliteResetInternalSchema(db, 0);
+  sqlite3ResetInternalSchema(db, 0);
   assert( db->nDb<=2 );
   assert( db->aDb==db->aDbStatic );
   for(i=sqliteHashFirst(&db->aFunc); i; i=sqliteHashNext(i)){
@@ -587,23 +597,23 @@ void sqlite_close(sqlite *db){
       sqliteFree(pFunc);
     }
   }
-  sqliteHashClear(&db->aFunc);
+  sqlite3HashClear(&db->aFunc);
   sqliteFree(db);
 }
 
 /*
 ** Rollback all database files.
 */
-void sqliteRollbackAll(sqlite *db){
+void sqlite3RollbackAll(sqlite *db){
   int i;
   for(i=0; i<db->nDb; i++){
     if( db->aDb[i].pBt ){
-      sqliteBtreeRollback(db->aDb[i].pBt);
+      sqlite3BtreeRollback(db->aDb[i].pBt);
       db->aDb[i].inTrans = 0;
     }
   }
-  sqliteResetInternalSchema(db, 0);
-  /* sqliteRollbackInternalChanges(db); */
+  sqlite3ResetInternalSchema(db, 0);
+  /* sqlite3RollbackInternalChanges(db); */
 }
 
 /*
@@ -694,16 +704,16 @@ int sqlite_compile(
   Parse sParse;
 
   if( pzErrMsg ) *pzErrMsg = 0;
-  if( sqliteSafetyOn(db) ) goto exec_misuse;
+  if( sqlite3SafetyOn(db) ) goto exec_misuse;
   if( !db->init.busy ){
     if( (db->flags & SQLITE_Initialized)==0 ){
       int rc, cnt = 1;
-      while( (rc = sqliteInit(db, pzErrMsg))==SQLITE_BUSY
+      while( (rc = sqlite3Init(db, pzErrMsg))==SQLITE_BUSY
          && db->xBusyCallback
          && db->xBusyCallback(db->pBusyArg, "", cnt++)!=0 ){}
       if( rc!=SQLITE_OK ){
-        sqliteStrRealloc(pzErrMsg);
-        sqliteSafetyOff(db);
+        sqlite3StrRealloc(pzErrMsg);
+        sqlite3SafetyOff(db);
         return rc;
       }
       if( pzErrMsg ){
@@ -712,8 +722,8 @@ int sqlite_compile(
       }
     }
     if( db->file_format<3 ){
-      sqliteSafetyOff(db);
-      sqliteSetString(pzErrMsg, "obsolete database file format", (char*)0);
+      sqlite3SafetyOff(db);
+      sqlite3SetString(pzErrMsg, "obsolete database file format", (char*)0);
       return SQLITE_ERROR;
     }
   }
@@ -721,7 +731,7 @@ int sqlite_compile(
   if( db->pVdbe==0 ){ db->nChange = 0; }
   memset(&sParse, 0, sizeof(sParse));
   sParse.db = db;
-  sqliteRunParser(&sParse, zSql, pzErrMsg);
+  sqlite3RunParser(&sParse, zSql, pzErrMsg);
   if( db->xTrace && !db->init.busy ){
     /* Trace only the statment that was compiled.
     ** Make a copy of that part of the SQL string since zSQL is const
@@ -746,31 +756,31 @@ int sqlite_compile(
     }
   }
   if( sqlite_malloc_failed ){
-    sqliteSetString(pzErrMsg, "out of memory", (char*)0);
+    sqlite3SetString(pzErrMsg, "out of memory", (char*)0);
     sParse.rc = SQLITE_NOMEM;
-    sqliteRollbackAll(db);
-    sqliteResetInternalSchema(db, 0);
+    sqlite3RollbackAll(db);
+    sqlite3ResetInternalSchema(db, 0);
     db->flags &= ~SQLITE_InTrans;
   }
   if( sParse.rc==SQLITE_DONE ) sParse.rc = SQLITE_OK;
   if( sParse.rc!=SQLITE_OK && pzErrMsg && *pzErrMsg==0 ){
-    sqliteSetString(pzErrMsg, sqlite_error_string(sParse.rc), (char*)0);
+    sqlite3SetString(pzErrMsg, sqlite_error_string(sParse.rc), (char*)0);
   }
-  sqliteStrRealloc(pzErrMsg);
+  sqlite3StrRealloc(pzErrMsg);
   if( sParse.rc==SQLITE_SCHEMA ){
-    sqliteResetInternalSchema(db, 0);
+    sqlite3ResetInternalSchema(db, 0);
   }
   assert( ppVm );
   *ppVm = (sqlite_vm*)sParse.pVdbe;
   if( pzTail ) *pzTail = sParse.zTail;
-  if( sqliteSafetyOff(db) ) goto exec_misuse;
+  if( sqlite3SafetyOff(db) ) goto exec_misuse;
   return sParse.rc;
 
 exec_misuse:
   if( pzErrMsg ){
     *pzErrMsg = 0;
-    sqliteSetString(pzErrMsg, sqlite_error_string(SQLITE_MISUSE), (char*)0);
-    sqliteStrRealloc(pzErrMsg);
+    sqlite3SetString(pzErrMsg, sqlite_error_string(SQLITE_MISUSE), (char*)0);
+    sqlite3StrRealloc(pzErrMsg);
   }
   return SQLITE_MISUSE;
 }
@@ -791,8 +801,8 @@ int sqlite_finalize(
   sqlite_vm *pVm,            /* The virtual machine to be destroyed */
   char **pzErrMsg            /* OUT: Write error messages here */
 ){
-  int rc = sqliteVdbeFinalize((Vdbe*)pVm, pzErrMsg);
-  sqliteStrRealloc(pzErrMsg);
+  int rc = sqlite3VdbeFinalize((Vdbe*)pVm, pzErrMsg);
+  sqlite3StrRealloc(pzErrMsg);
   return rc;
 }
 
@@ -807,9 +817,9 @@ int sqlite_reset(
   sqlite_vm *pVm,            /* The virtual machine to be destroyed */
   char **pzErrMsg            /* OUT: Write error messages here */
 ){
-  int rc = sqliteVdbeReset((Vdbe*)pVm, pzErrMsg);
-  sqliteVdbeMakeReady((Vdbe*)pVm, -1, 0);
-  sqliteStrRealloc(pzErrMsg);
+  int rc = sqlite3VdbeReset((Vdbe*)pVm, pzErrMsg);
+  sqlite3VdbeMakeReady((Vdbe*)pVm, -1, 0);
+  sqlite3StrRealloc(pzErrMsg);
   return rc;
 }
 
@@ -883,14 +893,14 @@ static int sqliteDefaultBusyCallback(
     delay = timeout - prior;
     if( delay<=0 ) return 0;
   }
-  sqliteOsSleep(delay);
+  sqlite3OsSleep(delay);
   return 1;
 #else
   int timeout = (int)Timeout;
   if( (count+1)*1000 > timeout ){
     return 0;
   }
-  sqliteOsSleep(1000);
+  sqlite3OsSleep(1000);
   return 1;
 #endif
 }
@@ -960,7 +970,7 @@ void sqlite_interrupt(sqlite *db){
 **
 ** Note that we need to call free() not sqliteFree() here, since every
 ** string that is exported from SQLite should have already passed through
-** sqliteStrRealloc().
+** sqlite3StrRealloc().
 */
 void sqlite_freemem(void *p){ free(p); }
 
@@ -995,11 +1005,11 @@ int sqlite_create_function(
 ){
   FuncDef *p;
   int nName;
-  if( db==0 || zName==0 || sqliteSafetyCheck(db) ) return 1;
+  if( db==0 || zName==0 || sqlite3SafetyCheck(db) ) return 1;
   if( nArg<-1 || nArg>127 ) return 1;
   nName = strlen(zName);
   if( nName>255 ) return 1;
-  p = sqliteFindFunction(db, zName, nName, nArg, 1);
+  p = sqlite3FindFunction(db, zName, nName, nArg, 1);
   if( p==0 ) return 1;
   p->xFunc = xFunc;
   p->xStep = 0;
@@ -1017,11 +1027,11 @@ int sqlite_create_aggregate(
 ){
   FuncDef *p;
   int nName;
-  if( db==0 || zName==0 || sqliteSafetyCheck(db) ) return 1;
+  if( db==0 || zName==0 || sqlite3SafetyCheck(db) ) return 1;
   if( nArg<-1 || nArg>127 ) return 1;
   nName = strlen(zName);
   if( nName>255 ) return 1;
-  p = sqliteFindFunction(db, zName, nName, nArg, 1);
+  p = sqlite3FindFunction(db, zName, nName, nArg, 1);
   if( p==0 ) return 1;
   p->xFunc = 0;
   p->xStep = xStep;
@@ -1036,7 +1046,7 @@ int sqlite_create_aggregate(
 ** additional information.
 */
 int sqlite_function_type(sqlite *db, const char *zName, int dataType){
-  FuncDef *p = (FuncDef*)sqliteHashFind(&db->aFunc, zName, strlen(zName));
+  FuncDef *p = (FuncDef*)sqlite3HashFind(&db->aFunc, zName, strlen(zName));
   while( p ){
     p->dataType = dataType; 
     p = p->pNext;
@@ -1102,38 +1112,236 @@ void *sqlite_commit_hook(
 **           2                0              memory
 **           3               any             memory
 */
-int sqliteBtreeFactory(
+int sqlite3BtreeFactory(
   const sqlite *db,	    /* Main database when opening aux otherwise 0 */
   const char *zFilename,    /* Name of the file containing the BTree database */
   int omitJournal,          /* if TRUE then do not journal this file */
   int nCache,               /* How many pages in the page cache */
-  Btree **ppBtree){         /* Pointer to new Btree object written here */
-
+  Btree **ppBtree           /* Pointer to new Btree object written here */
+){
   assert( ppBtree != 0);
-
-#ifndef SQLITE_OMIT_INMEMORYDB
-  if( zFilename==0 ){
-    if (TEMP_STORE == 0) {
-      /* Always use file based temporary DB */
-      return sqliteBtreeOpen(0, omitJournal, nCache, ppBtree);
-    } else if (TEMP_STORE == 1 || TEMP_STORE == 2) {
-      /* Switch depending on compile-time and/or runtime settings. */
-      int location = db->temp_store==0 ? TEMP_STORE : db->temp_store;
-
-      if (location == 1) {
-        return sqliteBtreeOpen(zFilename, omitJournal, nCache, ppBtree);
-      } else {
-        return sqliteRbtreeOpen(0, 0, 0, ppBtree);
-      }
-    } else {
-      /* Always use in-core DB */
-      return sqliteRbtreeOpen(0, 0, 0, ppBtree);
-    }
-  }else if( zFilename[0]==':' && strcmp(zFilename,":memory:")==0 ){
-    return sqliteRbtreeOpen(0, 0, 0, ppBtree);
-  }else
-#endif
-  {
-    return sqliteBtreeOpen(zFilename, omitJournal, nCache, ppBtree);
+  int btree_flags = 0;
+  
+  if( omitJournal ){
+    btree_flags |= BTREE_OMIT_JOURNAL;
   }
+  if( !zFilename ){
+    btree_flags |= BTREE_MEMORY;
+  }
+
+  return sqlite3BtreeOpen(zFilename, ppBtree, nCache, btree_flags);
 }
+
+#if 0
+
+/*
+** sqlite3_open
+**
+*/
+int sqlite3_open(const char *filename, sqlite3 **pDb, const char **options){
+  *pDb = sqlite_open(filename, 0, &errmsg);
+  return (*pDb?SQLITE_OK:SQLITE_ERROR);
+}
+int sqlite3_open16(const void *filename, sqlite3 **pDb, const char **options){
+  int rc;
+  char * filename8;
+
+  filename8 = sqlite3utf16to8(filename, -1);
+  if( !filename8 ){
+    return SQLITE_NOMEM;
+  }
+
+  rc = sqlite3_open(filename8, pDb, options);
+  sqliteFree(filename8);
+
+  return rc;
+}
+
+/*
+** sqlite3_close
+**
+*/
+int sqlite3_close(sqlite3 *db){
+  return sqlite_close(db);
+}
+
+/*
+** sqlite3_errmsg
+**
+** TODO: !
+*/
+const char *sqlite3_errmsg(sqlite3 *db){
+  assert(!"TODO");
+}
+const void *sqlite3_errmsg16(sqlite3 *db){
+  assert(!"TODO");
+}
+
+/*
+** sqlite3_errcode
+**
+** TODO: !
+*/
+int sqlite3_errcode(sqlite3 *db){
+  assert(!"TODO");
+}
+
+struct sqlite_stmt {
+};
+
+/*
+** sqlite3_prepare
+**
+** TODO: error message handling
+*/
+int sqlite3_prepare(
+  sqlite3 *db, 
+  const char *zSql, 
+  sqlite3_stmt **ppStmt, 
+  const char** pzTail
+){
+  int rc;
+  rc = sqlite_compile(db, zSql, pzTail, ppStmt, 0); 
+  return rc;
+}
+int sqlite3_prepare16(
+  sqlite3 *db, 
+  const void *zSql, 
+  sqlite3_stmt **ppStmt, 
+  const void **pzTail
+){
+  int rc;
+  char *sql8;
+
+  sql8 = sqlite3utf16to8(zSql, -1);
+  if( !sql8 ){
+    return SQLITE_NOMEM;
+  }
+
+  /* TODO: Have to set *pzTail to point into the original UTF-16 string
+  ** somehow.
+  */
+  rc = sqlite3_prepare(db, sql8, ppStmt, 0);
+  sqliteFree(filename8);
+
+  return rc;
+}
+
+/*
+** sqlite3_finalize
+*/
+int sqlite3_finalize(sqlite3_stmt *stmt){
+  return sqlite_finalize(stmt, 0);
+}
+
+/*
+** sqlite3_reset
+*/
+int sqlite3_reset(sqlite3_stmt*){
+  return sqlite_reset(stmt, 0);
+}
+
+/*
+** sqlite3_step
+*/
+int sqlite3_step(sqlite3_stmt *pStmt){
+  return sqlite_step(pStmt);
+}
+
+/*
+** sqlite3_bind_text
+*/
+int sqlite3_bind_text(
+  sqlite3_stmt *pStmt, 
+  int i, 
+  const char *zVal, 
+  int n, 
+  int eCopy
+){
+  return sqlite_bind(pStmt, i, zVal, n, eCopy);
+}
+
+int sqlite3_bind_text16(
+  sqlite3_stmt *pStmt, 
+  int i, 
+  void *zVal, 
+  int n, 
+  int eCopy
+){
+  int rc;
+  char * zVal8;
+
+  /* convert the first n bytes of the UTF-16 string to UTF-8 */
+  zVal8 = sqlite3utf16to8(zVal, n);
+  if( !zVal8 ){
+    return SQLITE_NOMEM;
+  }
+
+  /* Pass -1 as the length of the UTF-8 string. It is guaranteed to be
+  ** NULL-terminated by sqlite3utf16to8().
+  */
+  rc = sqlite3_bind_text(pStmt, i, zVal8, -1, eCopy);
+  sqliteFree(filename8);
+
+  return rc;
+}
+
+/*
+** sqlite3_bind_null
+*/
+int sqlite3_bind_null(sqlite3_stmt*, int iParm){
+  return sqlite_bind(pStmt, i, 0, 0, 0);
+}
+
+
+int sqlite3_bind_int32(sqlite3_stmt*, int iParm, int iValue){
+  assert(!"TODO");
+}
+int sqlite3_bind_int64(sqlite3_stmt*, int iParm, long long int iValue){
+  assert(!"TODO");
+}
+int sqlite3_bind_double(sqlite3_stmt*, int iParm, double iValue){
+  assert(!"TODO");
+}
+int sqlite3_bind_blob(sqlite3_stmt*, int i, const void*, int n, int eCopy){
+  assert(!"TODO");
+}
+
+
+int sqlite3_column_count(sqlite3_stmt*){
+}
+
+int sqlite3_column_type(sqlite3_stmt*,int){
+}
+
+const char *sqlite3_column_decltype(sqlite3_stmt*,int){
+}
+
+const void *sqlite3_column_decltype16(sqlite3_stmt*,int){
+}
+
+const char *sqlite3_column_name(sqlite3_stmt*,int){
+}
+
+const void *sqlite3_column_name16(sqlite3_stmt*,int){
+}
+
+const unsigned char *sqlite3_column_data(sqlite3_stmt*,int){
+}
+
+const void *sqlite3_column_data16(sqlite3_stmt*,int){
+}
+
+int sqlite3_column_bytes(sqlite3_stmt*,int){
+}
+
+long long int sqlite3_column_int(sqlite3_stmt*,int){
+}
+
+double sqlite3_column_float(sqlite3_stmt*,int){
+}
+
+#endif
+
+
+

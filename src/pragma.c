@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.19 2004/04/23 17:04:45 drh Exp $
+** $Id: pragma.c,v 1.20 2004/05/08 08:23:31 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -27,7 +27,7 @@ static int getBoolean(const char *z){
     return atoi(z);
   }
   for(i=0; i<sizeof(azTrue)/sizeof(azTrue[0]); i++){
-    if( sqliteStrICmp(z,azTrue[i])==0 ) return 1;
+    if( sqlite3StrICmp(z,azTrue[i])==0 ) return 1;
   }
   return 0;
 }
@@ -38,7 +38,7 @@ static int getBoolean(const char *z){
 ** unrecognized string argument.
 **
 ** Note that the values returned are one less that the values that
-** should be passed into sqliteBtreeSetSafetyLevel().  The is done
+** should be passed into sqlite3BtreeSetSafetyLevel().  The is done
 ** to support legacy SQL code.  The safety level used to be boolean
 ** and older scripts may have used numbers 0 for OFF and 1 for ON.
 */
@@ -61,7 +61,7 @@ static int getSafetyLevel(char *z){
     return atoi(z);
   }
   for(i=0; i<sizeof(aKey)/sizeof(aKey[0]); i++){
-    if( sqliteStrICmp(z,aKey[i].zWord)==0 ) return aKey[i].val;
+    if( sqlite3StrICmp(z,aKey[i].zWord)==0 ) return aKey[i].val;
   }
   return 1;
 }
@@ -74,9 +74,9 @@ static int getSafetyLevel(char *z){
 static int getTempStore(const char *z){
   if( z[0]>='0' && z[0]<='2' ){
     return z[0] - '0';
-  }else if( sqliteStrICmp(z, "file")==0 ){
+  }else if( sqlite3StrICmp(z, "file")==0 ){
     return 1;
-  }else if( sqliteStrICmp(z, "memory")==0 ){
+  }else if( sqlite3StrICmp(z, "memory")==0 ){
     return 2;
   }else{
     return 0;
@@ -94,13 +94,13 @@ static int changeTempStorage(Parse *pParse, const char *zStorageType){
   if( db->temp_store==ts ) return SQLITE_OK;
   if( db->aDb[1].pBt!=0 ){
     if( db->flags & SQLITE_InTrans ){
-      sqliteErrorMsg(pParse, "temporary storage cannot be changed "
+      sqlite3ErrorMsg(pParse, "temporary storage cannot be changed "
         "from within a transaction");
       return SQLITE_ERROR;
     }
-    sqliteBtreeClose(db->aDb[1].pBt);
+    sqlite3BtreeClose(db->aDb[1].pBt);
     db->aDb[1].pBt = 0;
-    sqliteResetInternalSchema(db, 0);
+    sqlite3ResetInternalSchema(db, 0);
   }
   db->temp_store = ts;
   return SQLITE_OK;
@@ -125,13 +125,13 @@ static int flagPragma(Parse *pParse, const char *zLeft, const char *zRight){
   };
   int i;
   for(i=0; i<sizeof(aPragma)/sizeof(aPragma[0]); i++){
-    if( sqliteStrICmp(zLeft, aPragma[i].zName)==0 ){
+    if( sqlite3StrICmp(zLeft, aPragma[i].zName)==0 ){
       sqlite *db = pParse->db;
       Vdbe *v;
-      if( strcmp(zLeft,zRight)==0 && (v = sqliteGetVdbe(pParse))!=0 ){
-        sqliteVdbeOp3(v, OP_ColumnName, 0, 1, aPragma[i].zName, P3_STATIC);
-        sqliteVdbeOp3(v, OP_ColumnName, 1, 0, "boolean", P3_STATIC);
-        sqliteVdbeCode(v, OP_Integer, (db->flags & aPragma[i].mask)!=0, 0,
+      if( strcmp(zLeft,zRight)==0 && (v = sqlite3GetVdbe(pParse))!=0 ){
+        sqlite3VdbeOp3(v, OP_ColumnName, 0, 1, aPragma[i].zName, P3_STATIC);
+        sqlite3VdbeOp3(v, OP_ColumnName, 1, 0, "boolean", P3_STATIC);
+        sqlite3VdbeCode(v, OP_Integer, (db->flags & aPragma[i].mask)!=0, 0,
                           OP_Callback, 1, 0,
                           0);
       }else if( getBoolean(zRight) ){
@@ -156,23 +156,23 @@ static int flagPragma(Parse *pParse, const char *zLeft, const char *zRight){
 ** identifier, or a number.  If minusFlag is true, then the value is
 ** a number that was preceded by a minus sign.
 */
-void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
+void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
   char *zLeft = 0;
   char *zRight = 0;
   sqlite *db = pParse->db;
-  Vdbe *v = sqliteGetVdbe(pParse);
+  Vdbe *v = sqlite3GetVdbe(pParse);
   if( v==0 ) return;
 
   zLeft = sqliteStrNDup(pLeft->z, pLeft->n);
-  sqliteDequote(zLeft);
+  sqlite3Dequote(zLeft);
   if( minusFlag ){
     zRight = 0;
-    sqliteSetNString(&zRight, "-", 1, pRight->z, pRight->n, 0);
+    sqlite3SetNString(&zRight, "-", 1, pRight->z, pRight->n, 0);
   }else{
     zRight = sqliteStrNDup(pRight->z, pRight->n);
-    sqliteDequote(zRight);
+    sqlite3Dequote(zRight);
   }
-  if( sqliteAuthCheck(pParse, SQLITE_PRAGMA, zLeft, zRight, 0) ){
+  if( sqlite3AuthCheck(pParse, SQLITE_PRAGMA, zLeft, zRight, 0) ){
     sqliteFree(zLeft);
     sqliteFree(zRight);
     return;
@@ -194,7 +194,7 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
   ** synchronous setting.  A negative value means synchronous is off
   ** and a positive value means synchronous is on.
   */
-  if( sqliteStrICmp(zLeft,"default_cache_size")==0 ){
+  if( sqlite3StrICmp(zLeft,"default_cache_size")==0 ){
     static VdbeOpList getCacheSize[] = {
       { OP_ReadCookie,  0, 2,        0},
       { OP_AbsValue,    0, 0,        0},
@@ -207,21 +207,21 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
     };
     int addr;
     if( pRight->z==pLeft->z ){
-      addr = sqliteVdbeAddOpList(v, ArraySize(getCacheSize), getCacheSize);
-      sqliteVdbeChangeP1(v, addr+5, MAX_PAGES);
+      addr = sqlite3VdbeAddOpList(v, ArraySize(getCacheSize), getCacheSize);
+      sqlite3VdbeChangeP1(v, addr+5, MAX_PAGES);
     }else{
       int size = atoi(zRight);
       if( size<0 ) size = -size;
-      sqliteBeginWriteOperation(pParse, 0, 0);
-      sqliteVdbeAddOp(v, OP_Integer, size, 0);
-      sqliteVdbeAddOp(v, OP_ReadCookie, 0, 2);
-      addr = sqliteVdbeAddOp(v, OP_Integer, 0, 0);
-      sqliteVdbeAddOp(v, OP_Ge, 0, addr+3);
-      sqliteVdbeAddOp(v, OP_Negative, 0, 0);
-      sqliteVdbeAddOp(v, OP_SetCookie, 0, 2);
-      sqliteEndWriteOperation(pParse);
+      sqlite3BeginWriteOperation(pParse, 0, 0);
+      sqlite3VdbeAddOp(v, OP_Integer, size, 0);
+      sqlite3VdbeAddOp(v, OP_ReadCookie, 0, 2);
+      addr = sqlite3VdbeAddOp(v, OP_Integer, 0, 0);
+      sqlite3VdbeAddOp(v, OP_Ge, 0, addr+3);
+      sqlite3VdbeAddOp(v, OP_Negative, 0, 0);
+      sqlite3VdbeAddOp(v, OP_SetCookie, 0, 2);
+      sqlite3EndWriteOperation(pParse);
       db->cache_size = db->cache_size<0 ? -size : size;
-      sqliteBtreeSetCacheSize(db->aDb[0].pBt, db->cache_size);
+      sqlite3BtreeSetCacheSize(db->aDb[0].pBt, db->cache_size);
     }
   }else
 
@@ -239,7 +239,7 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
   ** to its default value when the database is closed and reopened.
   ** N should be a positive integer.
   */
-  if( sqliteStrICmp(zLeft,"cache_size")==0 ){
+  if( sqlite3StrICmp(zLeft,"cache_size")==0 ){
     static VdbeOpList getCacheSize[] = {
       { OP_ColumnName,  0, 1,        "cache_size"},
       { OP_Callback,    1, 0,        0},
@@ -247,14 +247,14 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
     if( pRight->z==pLeft->z ){
       int size = db->cache_size;;
       if( size<0 ) size = -size;
-      sqliteVdbeAddOp(v, OP_Integer, size, 0);
-      sqliteVdbeAddOpList(v, ArraySize(getCacheSize), getCacheSize);
+      sqlite3VdbeAddOp(v, OP_Integer, size, 0);
+      sqlite3VdbeAddOpList(v, ArraySize(getCacheSize), getCacheSize);
     }else{
       int size = atoi(zRight);
       if( size<0 ) size = -size;
       if( db->cache_size<0 ) size = -size;
       db->cache_size = size;
-      sqliteBtreeSetCacheSize(db->aDb[0].pBt, db->cache_size);
+      sqlite3BtreeSetCacheSize(db->aDb[0].pBt, db->cache_size);
     }
   }else
 
@@ -277,7 +277,7 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
   ** is FULL, extra fsync()s occur to reduce the risk of corruption to near
   ** zero, but with a write performance penalty.  The default mode is NORMAL.
   */
-  if( sqliteStrICmp(zLeft,"default_synchronous")==0 ){
+  if( sqlite3StrICmp(zLeft,"default_synchronous")==0 ){
     static VdbeOpList getSync[] = {
       { OP_ColumnName,  0, 1,        "synchronous"},
       { OP_ReadCookie,  0, 3,        0},
@@ -293,31 +293,31 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       { OP_Callback,    1, 0,        0}
     };
     if( pRight->z==pLeft->z ){
-      int addr = sqliteVdbeAddOpList(v, ArraySize(getSync), getSync);
-      sqliteVdbeChangeP2(v, addr+3, addr+10);
+      int addr = sqlite3VdbeAddOpList(v, ArraySize(getSync), getSync);
+      sqlite3VdbeChangeP2(v, addr+3, addr+10);
     }else{
       int addr;
       int size = db->cache_size;
       if( size<0 ) size = -size;
-      sqliteBeginWriteOperation(pParse, 0, 0);
-      sqliteVdbeAddOp(v, OP_ReadCookie, 0, 2);
-      sqliteVdbeAddOp(v, OP_Dup, 0, 0);
-      addr = sqliteVdbeAddOp(v, OP_Integer, 0, 0);
-      sqliteVdbeAddOp(v, OP_Ne, 0, addr+3);
-      sqliteVdbeAddOp(v, OP_AddImm, MAX_PAGES, 0);
-      sqliteVdbeAddOp(v, OP_AbsValue, 0, 0);
+      sqlite3BeginWriteOperation(pParse, 0, 0);
+      sqlite3VdbeAddOp(v, OP_ReadCookie, 0, 2);
+      sqlite3VdbeAddOp(v, OP_Dup, 0, 0);
+      addr = sqlite3VdbeAddOp(v, OP_Integer, 0, 0);
+      sqlite3VdbeAddOp(v, OP_Ne, 0, addr+3);
+      sqlite3VdbeAddOp(v, OP_AddImm, MAX_PAGES, 0);
+      sqlite3VdbeAddOp(v, OP_AbsValue, 0, 0);
       db->safety_level = getSafetyLevel(zRight)+1;
       if( db->safety_level==1 ){
-        sqliteVdbeAddOp(v, OP_Negative, 0, 0);
+        sqlite3VdbeAddOp(v, OP_Negative, 0, 0);
         size = -size;
       }
-      sqliteVdbeAddOp(v, OP_SetCookie, 0, 2);
-      sqliteVdbeAddOp(v, OP_Integer, db->safety_level, 0);
-      sqliteVdbeAddOp(v, OP_SetCookie, 0, 3);
-      sqliteEndWriteOperation(pParse);
+      sqlite3VdbeAddOp(v, OP_SetCookie, 0, 2);
+      sqlite3VdbeAddOp(v, OP_Integer, db->safety_level, 0);
+      sqlite3VdbeAddOp(v, OP_SetCookie, 0, 3);
+      sqlite3EndWriteOperation(pParse);
       db->cache_size = size;
-      sqliteBtreeSetCacheSize(db->aDb[0].pBt, db->cache_size);
-      sqliteBtreeSetSafetyLevel(db->aDb[0].pBt, db->safety_level);
+      sqlite3BtreeSetCacheSize(db->aDb[0].pBt, db->cache_size);
+      sqlite3BtreeSetSafetyLevel(db->aDb[0].pBt, db->safety_level);
     }
   }else
 
@@ -330,27 +330,27 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
   ** default value will be restored the next time the database is
   ** opened.
   */
-  if( sqliteStrICmp(zLeft,"synchronous")==0 ){
+  if( sqlite3StrICmp(zLeft,"synchronous")==0 ){
     static VdbeOpList getSync[] = {
       { OP_ColumnName,  0, 1,        "synchronous"},
       { OP_Callback,    1, 0,        0},
     };
     if( pRight->z==pLeft->z ){
-      sqliteVdbeAddOp(v, OP_Integer, db->safety_level-1, 0);
-      sqliteVdbeAddOpList(v, ArraySize(getSync), getSync);
+      sqlite3VdbeAddOp(v, OP_Integer, db->safety_level-1, 0);
+      sqlite3VdbeAddOpList(v, ArraySize(getSync), getSync);
     }else{
       int size = db->cache_size;
       if( size<0 ) size = -size;
       db->safety_level = getSafetyLevel(zRight)+1;
       if( db->safety_level==1 ) size = -size;
       db->cache_size = size;
-      sqliteBtreeSetCacheSize(db->aDb[0].pBt, db->cache_size);
-      sqliteBtreeSetSafetyLevel(db->aDb[0].pBt, db->safety_level);
+      sqlite3BtreeSetCacheSize(db->aDb[0].pBt, db->cache_size);
+      sqlite3BtreeSetSafetyLevel(db->aDb[0].pBt, db->safety_level);
     }
   }else
 
 #ifndef NDEBUG
-  if( sqliteStrICmp(zLeft, "trigger_overhead_test")==0 ){
+  if( sqlite3StrICmp(zLeft, "trigger_overhead_test")==0 ){
     if( getBoolean(zRight) ){
       always_code_trigger_setup = 1;
     }else{
@@ -363,9 +363,9 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
     /* The flagPragma() call also generates any necessary code */
   }else
 
-  if( sqliteStrICmp(zLeft, "table_info")==0 ){
+  if( sqlite3StrICmp(zLeft, "table_info")==0 ){
     Table *pTab;
-    pTab = sqliteFindTable(db, zRight, 0);
+    pTab = sqlite3FindTable(db, zRight, 0);
     if( pTab ){
       static VdbeOpList tableInfoPreface[] = {
         { OP_ColumnName,  0, 0,       "cid"},
@@ -376,26 +376,26 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
         { OP_ColumnName,  5, 1,       "pk"},
       };
       int i;
-      sqliteVdbeAddOpList(v, ArraySize(tableInfoPreface), tableInfoPreface);
-      sqliteViewGetColumnNames(pParse, pTab);
+      sqlite3VdbeAddOpList(v, ArraySize(tableInfoPreface), tableInfoPreface);
+      sqlite3ViewGetColumnNames(pParse, pTab);
       for(i=0; i<pTab->nCol; i++){
-        sqliteVdbeAddOp(v, OP_Integer, i, 0);
-        sqliteVdbeOp3(v, OP_String, 0, 0, pTab->aCol[i].zName, 0);
-        sqliteVdbeOp3(v, OP_String, 0, 0,
+        sqlite3VdbeAddOp(v, OP_Integer, i, 0);
+        sqlite3VdbeOp3(v, OP_String, 0, 0, pTab->aCol[i].zName, 0);
+        sqlite3VdbeOp3(v, OP_String, 0, 0,
            pTab->aCol[i].zType ? pTab->aCol[i].zType : "numeric", 0);
-        sqliteVdbeAddOp(v, OP_Integer, pTab->aCol[i].notNull, 0);
-        sqliteVdbeOp3(v, OP_String, 0, 0,
+        sqlite3VdbeAddOp(v, OP_Integer, pTab->aCol[i].notNull, 0);
+        sqlite3VdbeOp3(v, OP_String, 0, 0,
            pTab->aCol[i].zDflt, P3_STATIC);
-        sqliteVdbeAddOp(v, OP_Integer, pTab->aCol[i].isPrimKey, 0);
-        sqliteVdbeAddOp(v, OP_Callback, 6, 0);
+        sqlite3VdbeAddOp(v, OP_Integer, pTab->aCol[i].isPrimKey, 0);
+        sqlite3VdbeAddOp(v, OP_Callback, 6, 0);
       }
     }
   }else
 
-  if( sqliteStrICmp(zLeft, "index_info")==0 ){
+  if( sqlite3StrICmp(zLeft, "index_info")==0 ){
     Index *pIdx;
     Table *pTab;
-    pIdx = sqliteFindIndex(db, zRight, 0);
+    pIdx = sqlite3FindIndex(db, zRight, 0);
     if( pIdx ){
       static VdbeOpList tableInfoPreface[] = {
         { OP_ColumnName,  0, 0,       "seqno"},
@@ -404,24 +404,24 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       };
       int i;
       pTab = pIdx->pTable;
-      sqliteVdbeAddOpList(v, ArraySize(tableInfoPreface), tableInfoPreface);
+      sqlite3VdbeAddOpList(v, ArraySize(tableInfoPreface), tableInfoPreface);
       for(i=0; i<pIdx->nColumn; i++){
         int cnum = pIdx->aiColumn[i];
-        sqliteVdbeAddOp(v, OP_Integer, i, 0);
-        sqliteVdbeAddOp(v, OP_Integer, cnum, 0);
+        sqlite3VdbeAddOp(v, OP_Integer, i, 0);
+        sqlite3VdbeAddOp(v, OP_Integer, cnum, 0);
         assert( pTab->nCol>cnum );
-        sqliteVdbeOp3(v, OP_String, 0, 0, pTab->aCol[cnum].zName, 0);
-        sqliteVdbeAddOp(v, OP_Callback, 3, 0);
+        sqlite3VdbeOp3(v, OP_String, 0, 0, pTab->aCol[cnum].zName, 0);
+        sqlite3VdbeAddOp(v, OP_Callback, 3, 0);
       }
     }
   }else
 
-  if( sqliteStrICmp(zLeft, "index_list")==0 ){
+  if( sqlite3StrICmp(zLeft, "index_list")==0 ){
     Index *pIdx;
     Table *pTab;
-    pTab = sqliteFindTable(db, zRight, 0);
+    pTab = sqlite3FindTable(db, zRight, 0);
     if( pTab ){
-      v = sqliteGetVdbe(pParse);
+      v = sqlite3GetVdbe(pParse);
       pIdx = pTab->pIndex;
     }
     if( pTab && pIdx ){
@@ -432,24 +432,24 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
         { OP_ColumnName,  2, 1,       "unique"},
       };
 
-      sqliteVdbeAddOpList(v, ArraySize(indexListPreface), indexListPreface);
+      sqlite3VdbeAddOpList(v, ArraySize(indexListPreface), indexListPreface);
       while(pIdx){
-        sqliteVdbeAddOp(v, OP_Integer, i, 0);
-        sqliteVdbeOp3(v, OP_String, 0, 0, pIdx->zName, 0);
-        sqliteVdbeAddOp(v, OP_Integer, pIdx->onError!=OE_None, 0);
-        sqliteVdbeAddOp(v, OP_Callback, 3, 0);
+        sqlite3VdbeAddOp(v, OP_Integer, i, 0);
+        sqlite3VdbeOp3(v, OP_String, 0, 0, pIdx->zName, 0);
+        sqlite3VdbeAddOp(v, OP_Integer, pIdx->onError!=OE_None, 0);
+        sqlite3VdbeAddOp(v, OP_Callback, 3, 0);
         ++i;
         pIdx = pIdx->pNext;
       }
     }
   }else
 
-  if( sqliteStrICmp(zLeft, "foreign_key_list")==0 ){
+  if( sqlite3StrICmp(zLeft, "foreign_key_list")==0 ){
     FKey *pFK;
     Table *pTab;
-    pTab = sqliteFindTable(db, zRight, 0);
+    pTab = sqlite3FindTable(db, zRight, 0);
     if( pTab ){
-      v = sqliteGetVdbe(pParse);
+      v = sqlite3GetVdbe(pParse);
       pFK = pTab->pFKey;
     }
     if( pTab && pFK ){
@@ -462,17 +462,17 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
         { OP_ColumnName,  4, 1,       "to"},
       };
 
-      sqliteVdbeAddOpList(v, ArraySize(indexListPreface), indexListPreface);
+      sqlite3VdbeAddOpList(v, ArraySize(indexListPreface), indexListPreface);
       while(pFK){
         int j;
         for(j=0; j<pFK->nCol; j++){
-          sqliteVdbeAddOp(v, OP_Integer, i, 0);
-          sqliteVdbeAddOp(v, OP_Integer, j, 0);
-          sqliteVdbeOp3(v, OP_String, 0, 0, pFK->zTo, 0);
-          sqliteVdbeOp3(v, OP_String, 0, 0,
+          sqlite3VdbeAddOp(v, OP_Integer, i, 0);
+          sqlite3VdbeAddOp(v, OP_Integer, j, 0);
+          sqlite3VdbeOp3(v, OP_String, 0, 0, pFK->zTo, 0);
+          sqlite3VdbeOp3(v, OP_String, 0, 0,
                            pTab->aCol[pFK->aCol[j].iFrom].zName, 0);
-          sqliteVdbeOp3(v, OP_String, 0, 0, pFK->aCol[j].zCol, 0);
-          sqliteVdbeAddOp(v, OP_Callback, 5, 0);
+          sqlite3VdbeOp3(v, OP_String, 0, 0, pFK->aCol[j].zCol, 0);
+          sqlite3VdbeAddOp(v, OP_Callback, 5, 0);
         }
         ++i;
         pFK = pFK->pNextFrom;
@@ -480,7 +480,7 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
     }
   }else
 
-  if( sqliteStrICmp(zLeft, "database_list")==0 ){
+  if( sqlite3StrICmp(zLeft, "database_list")==0 ){
     int i;
     static VdbeOpList indexListPreface[] = {
       { OP_ColumnName,  0, 0,       "seq"},
@@ -488,15 +488,15 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       { OP_ColumnName,  2, 1,       "file"},
     };
 
-    sqliteVdbeAddOpList(v, ArraySize(indexListPreface), indexListPreface);
+    sqlite3VdbeAddOpList(v, ArraySize(indexListPreface), indexListPreface);
     for(i=0; i<db->nDb; i++){
       if( db->aDb[i].pBt==0 ) continue;
       assert( db->aDb[i].zName!=0 );
-      sqliteVdbeAddOp(v, OP_Integer, i, 0);
-      sqliteVdbeOp3(v, OP_String, 0, 0, db->aDb[i].zName, 0);
-      sqliteVdbeOp3(v, OP_String, 0, 0,
-           sqliteBtreeGetFilename(db->aDb[i].pBt), 0);
-      sqliteVdbeAddOp(v, OP_Callback, 3, 0);
+      sqlite3VdbeAddOp(v, OP_Integer, i, 0);
+      sqlite3VdbeOp3(v, OP_String, 0, 0, db->aDb[i].zName, 0);
+      sqlite3VdbeOp3(v, OP_String, 0, 0,
+           sqlite3BtreeGetFilename(db->aDb[i].pBt), 0);
+      sqlite3VdbeAddOp(v, OP_Callback, 3, 0);
     }
   }else
 
@@ -512,14 +512,14 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
   ** Note that it is possible for the library compile-time options to
   ** override this setting
   */
-  if( sqliteStrICmp(zLeft, "temp_store")==0 ){
+  if( sqlite3StrICmp(zLeft, "temp_store")==0 ){
     static VdbeOpList getTmpDbLoc[] = {
       { OP_ColumnName,  0, 1,        "temp_store"},
       { OP_Callback,    1, 0,        0},
     };
     if( pRight->z==pLeft->z ){
-      sqliteVdbeAddOp(v, OP_Integer, db->temp_store, 0);
-      sqliteVdbeAddOpList(v, ArraySize(getTmpDbLoc), getTmpDbLoc);
+      sqlite3VdbeAddOp(v, OP_Integer, db->temp_store, 0);
+      sqlite3VdbeAddOpList(v, ArraySize(getTmpDbLoc), getTmpDbLoc);
     }else{
       changeTempStorage(pParse, zRight);
     }
@@ -536,33 +536,33 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
   ** Note that it is possible for the library compile-time options to
   ** override this setting
   */
-  if( sqliteStrICmp(zLeft, "default_temp_store")==0 ){
+  if( sqlite3StrICmp(zLeft, "default_temp_store")==0 ){
     static VdbeOpList getTmpDbLoc[] = {
       { OP_ColumnName,  0, 1,        "temp_store"},
       { OP_ReadCookie,  0, 5,        0},
       { OP_Callback,    1, 0,        0}};
     if( pRight->z==pLeft->z ){
-      sqliteVdbeAddOpList(v, ArraySize(getTmpDbLoc), getTmpDbLoc);
+      sqlite3VdbeAddOpList(v, ArraySize(getTmpDbLoc), getTmpDbLoc);
     }else{
-      sqliteBeginWriteOperation(pParse, 0, 0);
-      sqliteVdbeAddOp(v, OP_Integer, getTempStore(zRight), 0);
-      sqliteVdbeAddOp(v, OP_SetCookie, 0, 5);
-      sqliteEndWriteOperation(pParse);
+      sqlite3BeginWriteOperation(pParse, 0, 0);
+      sqlite3VdbeAddOp(v, OP_Integer, getTempStore(zRight), 0);
+      sqlite3VdbeAddOp(v, OP_SetCookie, 0, 5);
+      sqlite3EndWriteOperation(pParse);
     }
   }else
 
 #ifndef NDEBUG
-  if( sqliteStrICmp(zLeft, "parser_trace")==0 ){
-    extern void sqliteParserTrace(FILE*, char *);
+  if( sqlite3StrICmp(zLeft, "parser_trace")==0 ){
+    extern void sqlite3ParserTrace(FILE*, char *);
     if( getBoolean(zRight) ){
-      sqliteParserTrace(stdout, "parser: ");
+      sqlite3ParserTrace(stdout, "parser: ");
     }else{
-      sqliteParserTrace(0, 0);
+      sqlite3ParserTrace(0, 0);
     }
   }else
 #endif
 
-  if( sqliteStrICmp(zLeft, "integrity_check")==0 ){
+  if( sqlite3StrICmp(zLeft, "integrity_check")==0 ){
     int i, j, addr;
 
     /* Code that initializes the integrity check program.  Set the
@@ -610,7 +610,7 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
     };
 
     /* Initialize the VDBE program */
-    sqliteVdbeAddOpList(v, ArraySize(initCode), initCode);
+    sqlite3VdbeAddOpList(v, ArraySize(initCode), initCode);
 
     /* Do an integrity check on each database file */
     for(i=0; i<db->nDb; i++){
@@ -618,34 +618,34 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
 
       /* Do an integrity check of the B-Tree
       */
-      addr = sqliteVdbeAddOpList(v, ArraySize(checkDb), checkDb);
-      sqliteVdbeChangeP1(v, addr+1, i);
-      sqliteVdbeChangeP2(v, addr+3, addr+7);
-      sqliteVdbeChangeP2(v, addr+6, addr+4);
-      sqliteVdbeChangeP2(v, addr+7, i);
-      sqliteVdbeChangeP2(v, addr+10, addr+ArraySize(checkDb));
-      sqliteVdbeChangeP3(v, addr+13, db->aDb[i].zName, P3_STATIC);
+      addr = sqlite3VdbeAddOpList(v, ArraySize(checkDb), checkDb);
+      sqlite3VdbeChangeP1(v, addr+1, i);
+      sqlite3VdbeChangeP2(v, addr+3, addr+7);
+      sqlite3VdbeChangeP2(v, addr+6, addr+4);
+      sqlite3VdbeChangeP2(v, addr+7, i);
+      sqlite3VdbeChangeP2(v, addr+10, addr+ArraySize(checkDb));
+      sqlite3VdbeChangeP3(v, addr+13, db->aDb[i].zName, P3_STATIC);
 
       /* Make sure all the indices are constructed correctly.
       */
-      sqliteCodeVerifySchema(pParse, i);
+      sqlite3CodeVerifySchema(pParse, i);
       for(x=sqliteHashFirst(&db->aDb[i].tblHash); x; x=sqliteHashNext(x)){
         Table *pTab = sqliteHashData(x);
         Index *pIdx;
         int loopTop;
 
         if( pTab->pIndex==0 ) continue;
-        sqliteVdbeAddOp(v, OP_Integer, i, 0);
-        sqliteVdbeOp3(v, OP_OpenRead, 1, pTab->tnum, pTab->zName, 0);
+        sqlite3VdbeAddOp(v, OP_Integer, i, 0);
+        sqlite3VdbeOp3(v, OP_OpenRead, 1, pTab->tnum, pTab->zName, 0);
         for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
           if( pIdx->tnum==0 ) continue;
-          sqliteVdbeAddOp(v, OP_Integer, pIdx->iDb, 0);
-          sqliteVdbeOp3(v, OP_OpenRead, j+2, pIdx->tnum, pIdx->zName, 0);
+          sqlite3VdbeAddOp(v, OP_Integer, pIdx->iDb, 0);
+          sqlite3VdbeOp3(v, OP_OpenRead, j+2, pIdx->tnum, pIdx->zName, 0);
         }
-        sqliteVdbeAddOp(v, OP_Integer, 0, 0);
-        sqliteVdbeAddOp(v, OP_MemStore, 1, 1);
-        loopTop = sqliteVdbeAddOp(v, OP_Rewind, 1, 0);
-        sqliteVdbeAddOp(v, OP_MemIncr, 1, 0);
+        sqlite3VdbeAddOp(v, OP_Integer, 0, 0);
+        sqlite3VdbeAddOp(v, OP_MemStore, 1, 1);
+        loopTop = sqlite3VdbeAddOp(v, OP_Rewind, 1, 0);
+        sqlite3VdbeAddOp(v, OP_MemIncr, 1, 0);
         for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
           int k, jmp2;
           static VdbeOpList idxErr[] = {
@@ -657,24 +657,24 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
             { OP_Concat,      4,  0,  0},
             { OP_Callback,    1,  0,  0},
           };
-          sqliteVdbeAddOp(v, OP_Recno, 1, 0);
+          sqlite3VdbeAddOp(v, OP_Recno, 1, 0);
           for(k=0; k<pIdx->nColumn; k++){
             int idx = pIdx->aiColumn[k];
             if( idx==pTab->iPKey ){
-              sqliteVdbeAddOp(v, OP_Recno, 1, 0);
+              sqlite3VdbeAddOp(v, OP_Recno, 1, 0);
             }else{
-              sqliteVdbeAddOp(v, OP_Column, 1, idx);
+              sqlite3VdbeAddOp(v, OP_Column, 1, idx);
             }
           }
-          sqliteVdbeAddOp(v, OP_MakeIdxKey, pIdx->nColumn, 0);
-          if( db->file_format>=4 ) sqliteAddIdxKeyType(v, pIdx);
-          jmp2 = sqliteVdbeAddOp(v, OP_Found, j+2, 0);
-          addr = sqliteVdbeAddOpList(v, ArraySize(idxErr), idxErr);
-          sqliteVdbeChangeP3(v, addr+4, pIdx->zName, P3_STATIC);
-          sqliteVdbeChangeP2(v, jmp2, sqliteVdbeCurrentAddr(v));
+          sqlite3VdbeAddOp(v, OP_MakeIdxKey, pIdx->nColumn, 0);
+          if( db->file_format>=4 ) sqlite3AddIdxKeyType(v, pIdx);
+          jmp2 = sqlite3VdbeAddOp(v, OP_Found, j+2, 0);
+          addr = sqlite3VdbeAddOpList(v, ArraySize(idxErr), idxErr);
+          sqlite3VdbeChangeP3(v, addr+4, pIdx->zName, P3_STATIC);
+          sqlite3VdbeChangeP2(v, jmp2, sqlite3VdbeCurrentAddr(v));
         }
-        sqliteVdbeAddOp(v, OP_Next, 1, loopTop+1);
-        sqliteVdbeChangeP2(v, loopTop, sqliteVdbeCurrentAddr(v));
+        sqlite3VdbeAddOp(v, OP_Next, 1, loopTop+1);
+        sqlite3VdbeChangeP2(v, loopTop, sqlite3VdbeCurrentAddr(v));
         for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
           static VdbeOpList cntIdx[] = {
              { OP_Integer,      0,  0,  0},
@@ -692,21 +692,24 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
              { OP_Callback,     1,  0,  0},
           };
           if( pIdx->tnum==0 ) continue;
-          addr = sqliteVdbeAddOpList(v, ArraySize(cntIdx), cntIdx);
-          sqliteVdbeChangeP1(v, addr+2, j+2);
-          sqliteVdbeChangeP2(v, addr+2, addr+5);
-          sqliteVdbeChangeP1(v, addr+4, j+2);
-          sqliteVdbeChangeP2(v, addr+4, addr+3);
-          sqliteVdbeChangeP2(v, addr+7, addr+ArraySize(cntIdx));
-          sqliteVdbeChangeP3(v, addr+10, pIdx->zName, P3_STATIC);
+          addr = sqlite3VdbeAddOpList(v, ArraySize(cntIdx), cntIdx);
+          sqlite3VdbeChangeP1(v, addr+2, j+2);
+          sqlite3VdbeChangeP2(v, addr+2, addr+5);
+          sqlite3VdbeChangeP1(v, addr+4, j+2);
+          sqlite3VdbeChangeP2(v, addr+4, addr+3);
+          sqlite3VdbeChangeP2(v, addr+7, addr+ArraySize(cntIdx));
+          sqlite3VdbeChangeP3(v, addr+10, pIdx->zName, P3_STATIC);
         }
       } 
     }
-    addr = sqliteVdbeAddOpList(v, ArraySize(endCode), endCode);
-    sqliteVdbeChangeP2(v, addr+2, addr+ArraySize(endCode));
+    addr = sqlite3VdbeAddOpList(v, ArraySize(endCode), endCode);
+    sqlite3VdbeChangeP2(v, addr+2, addr+ArraySize(endCode));
   }else
 
   {}
   sqliteFree(zLeft);
   sqliteFree(zRight);
 }
+
+
+

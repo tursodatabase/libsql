@@ -15,7 +15,7 @@
 ** data in an SQLite database.  The code in this file is not used by any other
 ** part of the SQLite library.
 **
-** $Id: encode.c,v 1.12 2004/03/17 18:44:46 drh Exp $
+** $Id: encode.c,v 1.13 2004/05/08 08:23:24 danielk1977 Exp $
 */
 #include <string.h>
 #include <assert.h>
@@ -252,3 +252,6 @@ int main(int argc, char **argv){
     (nByteOut-nByteIn)*100.0/(double)nByteIn);
 }
 #endif /* ENCODER_TEST */
+
+
+

@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.113 2004/05/08 02:03:23 drh Exp $
+** $Id: btree.c,v 1.114 2004/05/08 08:23:21 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -3413,10 +3413,10 @@ static void checkAppendMsg(IntegrityCk *pCheck, char *zMsg1, char *zMsg2){
   if( pCheck->zErrMsg ){
     char *zOld = pCheck->zErrMsg;
     pCheck->zErrMsg = 0;
-    sqliteSetString(&pCheck->zErrMsg, zOld, "\n", zMsg1, zMsg2, (char*)0);
+    sqlite3SetString(&pCheck->zErrMsg, zOld, "\n", zMsg1, zMsg2, (char*)0);
     sqliteFree(zOld);
   }else{
-    sqliteSetString(&pCheck->zErrMsg, zMsg1, zMsg2, (char*)0);
+    sqlite3SetString(&pCheck->zErrMsg, zMsg1, zMsg2, (char*)0);
   }
 }
 
@@ -3764,3 +3764,40 @@ int sqlite3BtreeCopyFile(Btree *pBtTo, Btree *pBtFrom){
   }
   return rc;  
 }
+
+int sqlite3BtreeKeyCompare(
+  BtCursor *pCur,       /* Pointer to entry to compare against */
+  const void *pKey,     /* Key to compare against entry that pCur points to */
+  int nKey,             /* Number of bytes in pKey */
+  int nIgnore,          /* Ignore this many bytes at the end of pCur */
+  int *pResult          /* Write the result here */
+){
+  void *pCellKey;
+  u64 nCellKey;
+  int rc;
+
+  sqlite3BtreeKeySize(pCur, &nCellKey);
+  nCellKey = nCellKey - nIgnore;
+  if( nCellKey<=0 ){
+    *pResult = 0;
+    return SQLITE_OK;
+  }
+
+  pCellKey = sqlite3BtreeKeyFetch(pCur);
+  if( pCellKey ){
+    *pResult = pCur->xCompare(pCur->pArg, nCellKey, pCellKey, nKey, pKey);
+    return SQLITE_OK;
+  }
+
+  pCellKey = sqliteMalloc( nCellKey );
+  if( pCellKey==0 ) return SQLITE_NOMEM;
+
+  rc = sqlite3BtreeKey(pCur, 0, nCellKey, pCellKey);
+  *pResult = pCur->xCompare(pCur->pArg, nCellKey, pCellKey, nKey, pKey);
+  sqliteFree(pCellKey);
+
+  return rc;
+}
+
+
+

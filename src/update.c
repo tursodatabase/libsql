@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.70 2004/02/22 20:05:02 drh Exp $
+** $Id: update.c,v 1.71 2004/05/08 08:23:40 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -23,7 +23,7 @@
 **          \_______/ \________/     \______/       \________________/
 *            onError   pTabList      pChanges             pWhere
 */
-void sqliteUpdate(
+void sqlite3Update(
   Parse *pParse,         /* The parser context */
   SrcList *pTabList,     /* The table in which we should change things */
   ExprList *pChanges,    /* Things to be changed */
@@ -65,19 +65,19 @@ void sqliteUpdate(
 
   /* Locate the table which we want to update. 
   */
-  pTab = sqliteSrcListLookup(pParse, pTabList);
+  pTab = sqlite3SrcListLookup(pParse, pTabList);
   if( pTab==0 ) goto update_cleanup;
-  before_triggers = sqliteTriggersExist(pParse, pTab->pTrigger, 
+  before_triggers = sqlite3TriggersExist(pParse, pTab->pTrigger, 
             TK_UPDATE, TK_BEFORE, TK_ROW, pChanges);
-  after_triggers = sqliteTriggersExist(pParse, pTab->pTrigger, 
+  after_triggers = sqlite3TriggersExist(pParse, pTab->pTrigger, 
             TK_UPDATE, TK_AFTER, TK_ROW, pChanges);
   row_triggers_exist = before_triggers || after_triggers;
   isView = pTab->pSelect!=0;
-  if( sqliteIsReadOnly(pParse, pTab, before_triggers) ){
+  if( sqlite3IsReadOnly(pParse, pTab, before_triggers) ){
     goto update_cleanup;
   }
   if( isView ){
-    if( sqliteViewGetColumnNames(pParse, pTab) ){
+    if( sqlite3ViewGetColumnNames(pParse, pTab) ){
       goto update_cleanup;
     }
   }
@@ -111,14 +111,14 @@ void sqliteUpdate(
   */
   chngRecno = 0;
   for(i=0; i<pChanges->nExpr; i++){
-    if( sqliteExprResolveIds(pParse, pTabList, 0, pChanges->a[i].pExpr) ){
+    if( sqlite3ExprResolveIds(pParse, pTabList, 0, pChanges->a[i].pExpr) ){
       goto update_cleanup;
     }
-    if( sqliteExprCheck(pParse, pChanges->a[i].pExpr, 0, 0) ){
+    if( sqlite3ExprCheck(pParse, pChanges->a[i].pExpr, 0, 0) ){
       goto update_cleanup;
     }
     for(j=0; j<pTab->nCol; j++){
-      if( sqliteStrICmp(pTab->aCol[j].zName, pChanges->a[i].zName)==0 ){
+      if( sqlite3StrICmp(pTab->aCol[j].zName, pChanges->a[i].zName)==0 ){
         if( j==pTab->iPKey ){
           chngRecno = 1;
           pRecnoExpr = pChanges->a[i].pExpr;
@@ -128,18 +128,18 @@ void sqliteUpdate(
       }
     }
     if( j>=pTab->nCol ){
-      if( sqliteIsRowid(pChanges->a[i].zName) ){
+      if( sqlite3IsRowid(pChanges->a[i].zName) ){
         chngRecno = 1;
         pRecnoExpr = pChanges->a[i].pExpr;
       }else{
-        sqliteErrorMsg(pParse, "no such column: %s", pChanges->a[i].zName);
+        sqlite3ErrorMsg(pParse, "no such column: %s", pChanges->a[i].zName);
         goto update_cleanup;
       }
     }
 #ifndef SQLITE_OMIT_AUTHORIZATION
     {
       int rc;
-      rc = sqliteAuthCheck(pParse, SQLITE_UPDATE, pTab->zName,
+      rc = sqlite3AuthCheck(pParse, SQLITE_UPDATE, pTab->zName,
                            pTab->aCol[j].zName, db->aDb[pTab->iDb].zName);
       if( rc==SQLITE_DENY ){
         goto update_cleanup;
@@ -190,10 +190,10 @@ void sqliteUpdate(
   ** WHERE clause.
   */
   if( pWhere ){
-    if( sqliteExprResolveIds(pParse, pTabList, 0, pWhere) ){
+    if( sqlite3ExprResolveIds(pParse, pTabList, 0, pWhere) ){
       goto update_cleanup;
     }
-    if( sqliteExprCheck(pParse, pWhere, 0, 0) ){
+    if( sqlite3ExprCheck(pParse, pWhere, 0, 0) ){
       goto update_cleanup;
     }
   }
@@ -201,100 +201,100 @@ void sqliteUpdate(
   /* Start the view context
   */
   if( isView ){
-    sqliteAuthContextPush(pParse, &sContext, pTab->zName);
+    sqlite3AuthContextPush(pParse, &sContext, pTab->zName);
   }
 
   /* Begin generating code.
   */
-  v = sqliteGetVdbe(pParse);
+  v = sqlite3GetVdbe(pParse);
   if( v==0 ) goto update_cleanup;
-  sqliteBeginWriteOperation(pParse, 1, pTab->iDb);
+  sqlite3BeginWriteOperation(pParse, 1, pTab->iDb);
 
   /* If we are trying to update a view, construct that view into
   ** a temporary table.
   */
   if( isView ){
     Select *pView;
-    pView = sqliteSelectDup(pTab->pSelect);
-    sqliteSelect(pParse, pView, SRT_TempTable, iCur, 0, 0, 0);
-    sqliteSelectDelete(pView);
+    pView = sqlite3SelectDup(pTab->pSelect);
+    sqlite3Select(pParse, pView, SRT_TempTable, iCur, 0, 0, 0);
+    sqlite3SelectDelete(pView);
   }
 
   /* Begin the database scan
   */
-  pWInfo = sqliteWhereBegin(pParse, pTabList, pWhere, 1, 0);
+  pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, 1, 0);
   if( pWInfo==0 ) goto update_cleanup;
 
   /* Remember the index of every item to be updated.
   */
-  sqliteVdbeAddOp(v, OP_ListWrite, 0, 0);
+  sqlite3VdbeAddOp(v, OP_ListWrite, 0, 0);
 
   /* End the database scan loop.
   */
-  sqliteWhereEnd(pWInfo);
+  sqlite3WhereEnd(pWInfo);
 
   /* Initialize the count of updated rows
   */
   if( db->flags & SQLITE_CountRows && !pParse->trigStack ){
-    sqliteVdbeAddOp(v, OP_Integer, 0, 0);
+    sqlite3VdbeAddOp(v, OP_Integer, 0, 0);
   }
 
   if( row_triggers_exist ){
     /* Create pseudo-tables for NEW and OLD
     */
-    sqliteVdbeAddOp(v, OP_OpenPseudo, oldIdx, 0);
-    sqliteVdbeAddOp(v, OP_OpenPseudo, newIdx, 0);
+    sqlite3VdbeAddOp(v, OP_OpenPseudo, oldIdx, 0);
+    sqlite3VdbeAddOp(v, OP_OpenPseudo, newIdx, 0);
 
     /* The top of the update loop for when there are triggers.
     */
-    sqliteVdbeAddOp(v, OP_ListRewind, 0, 0);
-    addr = sqliteVdbeAddOp(v, OP_ListRead, 0, 0);
-    sqliteVdbeAddOp(v, OP_Dup, 0, 0);
+    sqlite3VdbeAddOp(v, OP_ListRewind, 0, 0);
+    addr = sqlite3VdbeAddOp(v, OP_ListRead, 0, 0);
+    sqlite3VdbeAddOp(v, OP_Dup, 0, 0);
 
     /* Open a cursor and make it point to the record that is
     ** being updated.
     */
-    sqliteVdbeAddOp(v, OP_Dup, 0, 0);
+    sqlite3VdbeAddOp(v, OP_Dup, 0, 0);
     if( !isView ){
-      sqliteVdbeAddOp(v, OP_Integer, pTab->iDb, 0);
-      sqliteVdbeAddOp(v, OP_OpenRead, iCur, pTab->tnum);
+      sqlite3VdbeAddOp(v, OP_Integer, pTab->iDb, 0);
+      sqlite3VdbeAddOp(v, OP_OpenRead, iCur, pTab->tnum);
     }
-    sqliteVdbeAddOp(v, OP_MoveTo, iCur, 0);
+    sqlite3VdbeAddOp(v, OP_MoveTo, iCur, 0);
 
     /* Generate the OLD table
     */
-    sqliteVdbeAddOp(v, OP_Recno, iCur, 0);
-    sqliteVdbeAddOp(v, OP_RowData, iCur, 0);
-    sqliteVdbeAddOp(v, OP_PutIntKey, oldIdx, 0);
+    sqlite3VdbeAddOp(v, OP_Recno, iCur, 0);
+    sqlite3VdbeAddOp(v, OP_RowData, iCur, 0);
+    sqlite3VdbeAddOp(v, OP_PutIntKey, oldIdx, 0);
 
     /* Generate the NEW table
     */
     if( chngRecno ){
-      sqliteExprCode(pParse, pRecnoExpr);
+      sqlite3ExprCode(pParse, pRecnoExpr);
     }else{
-      sqliteVdbeAddOp(v, OP_Recno, iCur, 0);
+      sqlite3VdbeAddOp(v, OP_Recno, iCur, 0);
     }
     for(i=0; i<pTab->nCol; i++){
       if( i==pTab->iPKey ){
-        sqliteVdbeAddOp(v, OP_String, 0, 0);
+        sqlite3VdbeAddOp(v, OP_String, 0, 0);
         continue;
       }
       j = aXRef[i];
       if( j<0 ){
-        sqliteVdbeAddOp(v, OP_Column, iCur, i);
+        sqlite3VdbeAddOp(v, OP_Column, iCur, i);
       }else{
-        sqliteExprCode(pParse, pChanges->a[j].pExpr);
+        sqlite3ExprCode(pParse, pChanges->a[j].pExpr);
       }
     }
-    sqliteVdbeAddOp(v, OP_MakeRecord, pTab->nCol, 0);
-    sqliteVdbeAddOp(v, OP_PutIntKey, newIdx, 0);
+    sqlite3VdbeAddOp(v, OP_MakeRecord, pTab->nCol, 0);
+    sqlite3VdbeAddOp(v, OP_PutIntKey, newIdx, 0);
     if( !isView ){
-      sqliteVdbeAddOp(v, OP_Close, iCur, 0);
+      sqlite3VdbeAddOp(v, OP_Close, iCur, 0);
     }
 
     /* Fire the BEFORE and INSTEAD OF triggers
     */
-    if( sqliteCodeRowTrigger(pParse, TK_UPDATE, pChanges, TK_BEFORE, pTab, 
+    if( sqlite3CodeRowTrigger(pParse, TK_UPDATE, pChanges, TK_BEFORE, pTab, 
           newIdx, oldIdx, onError, addr) ){
       goto update_cleanup;
     }
@@ -307,8 +307,8 @@ void sqliteUpdate(
     ** action, then we need to open all indices because we might need
     ** to be deleting some records.
     */
-    sqliteVdbeAddOp(v, OP_Integer, pTab->iDb, 0);
-    sqliteVdbeAddOp(v, OP_OpenWrite, iCur, pTab->tnum);
+    sqlite3VdbeAddOp(v, OP_Integer, pTab->iDb, 0);
+    sqlite3VdbeAddOp(v, OP_OpenWrite, iCur, pTab->tnum);
     if( onError==OE_Replace ){
       openAll = 1;
     }else{
@@ -322,8 +322,8 @@ void sqliteUpdate(
     }
     for(i=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
       if( openAll || aIdxUsed[i] ){
-        sqliteVdbeAddOp(v, OP_Integer, pIdx->iDb, 0);
-        sqliteVdbeAddOp(v, OP_OpenWrite, iCur+i+1, pIdx->tnum);
+        sqlite3VdbeAddOp(v, OP_Integer, pIdx->iDb, 0);
+        sqlite3VdbeAddOp(v, OP_OpenWrite, iCur+i+1, pIdx->tnum);
         assert( pParse->nTab>iCur+i+1 );
       }
     }
@@ -335,60 +335,60 @@ void sqliteUpdate(
     ** So make the cursor point at the old record.
     */
     if( !row_triggers_exist ){
-      sqliteVdbeAddOp(v, OP_ListRewind, 0, 0);
-      addr = sqliteVdbeAddOp(v, OP_ListRead, 0, 0);
-      sqliteVdbeAddOp(v, OP_Dup, 0, 0);
+      sqlite3VdbeAddOp(v, OP_ListRewind, 0, 0);
+      addr = sqlite3VdbeAddOp(v, OP_ListRead, 0, 0);
+      sqlite3VdbeAddOp(v, OP_Dup, 0, 0);
     }
-    sqliteVdbeAddOp(v, OP_NotExists, iCur, addr);
+    sqlite3VdbeAddOp(v, OP_NotExists, iCur, addr);
 
     /* If the record number will change, push the record number as it
     ** will be after the update. (The old record number is currently
     ** on top of the stack.)
     */
     if( chngRecno ){
-      sqliteExprCode(pParse, pRecnoExpr);
-      sqliteVdbeAddOp(v, OP_MustBeInt, 0, 0);
+      sqlite3ExprCode(pParse, pRecnoExpr);
+      sqlite3VdbeAddOp(v, OP_MustBeInt, 0, 0);
     }
 
     /* Compute new data for this record.  
     */
     for(i=0; i<pTab->nCol; i++){
       if( i==pTab->iPKey ){
-        sqliteVdbeAddOp(v, OP_String, 0, 0);
+        sqlite3VdbeAddOp(v, OP_String, 0, 0);
         continue;
       }
       j = aXRef[i];
       if( j<0 ){
-        sqliteVdbeAddOp(v, OP_Column, iCur, i);
+        sqlite3VdbeAddOp(v, OP_Column, iCur, i);
       }else{
-        sqliteExprCode(pParse, pChanges->a[j].pExpr);
+        sqlite3ExprCode(pParse, pChanges->a[j].pExpr);
       }
     }
 
     /* Do constraint checks
     */
-    sqliteGenerateConstraintChecks(pParse, pTab, iCur, aIdxUsed, chngRecno, 1,
+    sqlite3GenerateConstraintChecks(pParse, pTab, iCur, aIdxUsed, chngRecno, 1,
                                    onError, addr);
 
     /* Delete the old indices for the current record.
     */
-    sqliteGenerateRowIndexDelete(db, v, pTab, iCur, aIdxUsed);
+    sqlite3GenerateRowIndexDelete(db, v, pTab, iCur, aIdxUsed);
 
     /* If changing the record number, delete the old record.
     */
     if( chngRecno ){
-      sqliteVdbeAddOp(v, OP_Delete, iCur, 0);
+      sqlite3VdbeAddOp(v, OP_Delete, iCur, 0);
     }
 
     /* Create the new index entries and the new record.
     */
-    sqliteCompleteInsertion(pParse, pTab, iCur, aIdxUsed, chngRecno, 1, -1);
+    sqlite3CompleteInsertion(pParse, pTab, iCur, aIdxUsed, chngRecno, 1, -1);
   }
 
   /* Increment the row counter 
   */
   if( db->flags & SQLITE_CountRows && !pParse->trigStack){
-    sqliteVdbeAddOp(v, OP_AddImm, 1, 0);
+    sqlite3VdbeAddOp(v, OP_AddImm, 1, 0);
   }
 
   /* If there are triggers, close all the cursors after each iteration
@@ -398,12 +398,12 @@ void sqliteUpdate(
     if( !isView ){
       for(i=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
         if( openAll || aIdxUsed[i] )
-          sqliteVdbeAddOp(v, OP_Close, iCur+i+1, 0);
+          sqlite3VdbeAddOp(v, OP_Close, iCur+i+1, 0);
       }
-      sqliteVdbeAddOp(v, OP_Close, iCur, 0);
+      sqlite3VdbeAddOp(v, OP_Close, iCur, 0);
       pParse->nTab = iCur;
     }
-    if( sqliteCodeRowTrigger(pParse, TK_UPDATE, pChanges, TK_AFTER, pTab, 
+    if( sqlite3CodeRowTrigger(pParse, TK_UPDATE, pChanges, TK_AFTER, pTab, 
           newIdx, oldIdx, onError, addr) ){
       goto update_cleanup;
     }
@@ -412,41 +412,44 @@ void sqliteUpdate(
   /* Repeat the above with the next record to be updated, until
   ** all record selected by the WHERE clause have been updated.
   */
-  sqliteVdbeAddOp(v, OP_Goto, 0, addr);
-  sqliteVdbeChangeP2(v, addr, sqliteVdbeCurrentAddr(v));
-  sqliteVdbeAddOp(v, OP_ListReset, 0, 0);
+  sqlite3VdbeAddOp(v, OP_Goto, 0, addr);
+  sqlite3VdbeChangeP2(v, addr, sqlite3VdbeCurrentAddr(v));
+  sqlite3VdbeAddOp(v, OP_ListReset, 0, 0);
 
   /* Close all tables if there were no FOR EACH ROW triggers */
   if( !row_triggers_exist ){
     for(i=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
       if( openAll || aIdxUsed[i] ){
-        sqliteVdbeAddOp(v, OP_Close, iCur+i+1, 0);
+        sqlite3VdbeAddOp(v, OP_Close, iCur+i+1, 0);
       }
     }
-    sqliteVdbeAddOp(v, OP_Close, iCur, 0);
+    sqlite3VdbeAddOp(v, OP_Close, iCur, 0);
     pParse->nTab = iCur;
   }else{
-    sqliteVdbeAddOp(v, OP_Close, newIdx, 0);
-    sqliteVdbeAddOp(v, OP_Close, oldIdx, 0);
+    sqlite3VdbeAddOp(v, OP_Close, newIdx, 0);
+    sqlite3VdbeAddOp(v, OP_Close, oldIdx, 0);
   }
 
-  sqliteVdbeAddOp(v, OP_SetCounts, 0, 0);
-  sqliteEndWriteOperation(pParse);
+  sqlite3VdbeAddOp(v, OP_SetCounts, 0, 0);
+  sqlite3EndWriteOperation(pParse);
 
   /*
   ** Return the number of rows that were changed.
   */
   if( db->flags & SQLITE_CountRows && !pParse->trigStack ){
-    sqliteVdbeOp3(v, OP_ColumnName, 0, 1, "rows updated", P3_STATIC);
-    sqliteVdbeAddOp(v, OP_Callback, 1, 0);
+    sqlite3VdbeOp3(v, OP_ColumnName, 0, 1, "rows updated", P3_STATIC);
+    sqlite3VdbeAddOp(v, OP_Callback, 1, 0);
   }
 
 update_cleanup:
-  sqliteAuthContextPop(&sContext);
+  sqlite3AuthContextPop(&sContext);
   sqliteFree(apIdx);
   sqliteFree(aXRef);
-  sqliteSrcListDelete(pTabList);
-  sqliteExprListDelete(pChanges);
-  sqliteExprDelete(pWhere);
+  sqlite3SrcListDelete(pTabList);
+  sqlite3ExprListDelete(pChanges);
+  sqlite3ExprDelete(pWhere);
   return;
 }
+
+
+

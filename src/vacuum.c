@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.13 2004/03/10 18:57:32 drh Exp $
+** $Id: vacuum.c,v 1.14 2004/05/08 08:23:40 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -95,7 +95,7 @@ static int execsql(char **pzErrMsg, sqlite *db, const char *zSql){
   /* printf("***** executing *****\n%s\n", zSql); */
   rc = sqlite_exec(db, zSql, 0, 0, &zErrMsg);
   if( zErrMsg ){
-    sqliteSetString(pzErrMsg, zErrMsg, (char*)0);
+    sqlite3SetString(pzErrMsg, zErrMsg, (char*)0);
     sqlite_freemem(zErrMsg);
   }
   return rc;
@@ -155,7 +155,7 @@ static int vacuumCallback1(void *pArg, int argc, char **argv, char **NotUsed){
     p->zTable = argv[1];
     rc = sqlite_exec(p->dbOld, p->s1.z, vacuumCallback2, p, &zErrMsg);
     if( zErrMsg ){
-      sqliteSetString(p->pzErrMsg, zErrMsg, (char*)0);
+      sqlite3SetString(p->pzErrMsg, zErrMsg, (char*)0);
       sqlite_freemem(zErrMsg);
     }
   }
@@ -189,7 +189,7 @@ static void randomName(unsigned char *zBuf){
     "abcdefghijklmnopqrstuvwxyz"
     "0123456789";
   int i;
-  sqliteRandomness(20, zBuf);
+  sqlite3Randomness(20, zBuf);
   for(i=0; i<20; i++){
     zBuf[i] = zChars[ zBuf[i]%(sizeof(zChars)-1) ];
   }
@@ -206,16 +206,16 @@ static void randomName(unsigned char *zBuf){
 ** with 2.0.0, SQLite no longer uses GDBM so this command has
 ** become a no-op.
 */
-void sqliteVacuum(Parse *pParse, Token *pTableName){
-  Vdbe *v = sqliteGetVdbe(pParse);
-  sqliteVdbeAddOp(v, OP_Vacuum, 0, 0);
+void sqlite3Vacuum(Parse *pParse, Token *pTableName){
+  Vdbe *v = sqlite3GetVdbe(pParse);
+  sqlite3VdbeAddOp(v, OP_Vacuum, 0, 0);
   return;
 }
 
 /*
 ** This routine implements the OP_Vacuum opcode of the VDBE.
 */
-int sqliteRunVacuum(char **pzErrMsg, sqlite *db){
+int sqlite3RunVacuum(char **pzErrMsg, sqlite *db){
 #if !defined(SQLITE_OMIT_VACUUM) || SQLITE_OMIT_VACUUM
   const char *zFilename;  /* full pathname of the database file */
   int nFilename;          /* number of characters  in zFilename[] */
@@ -235,7 +235,7 @@ int sqliteRunVacuum(char **pzErrMsg, sqlite *db){
   };
 
   if( db->flags & SQLITE_InTrans ){
-    sqliteSetString(pzErrMsg, "cannot VACUUM from within a transaction", 
+    sqlite3SetString(pzErrMsg, "cannot VACUUM from within a transaction", 
        (char*)0);
     return SQLITE_ERROR;
   }
@@ -244,7 +244,7 @@ int sqliteRunVacuum(char **pzErrMsg, sqlite *db){
   /* Get the full pathname of the database file and create two
   ** temporary filenames in the same directory as the original file.
   */
-  zFilename = sqliteBtreeGetFilename(db->aDb[0].pBt);
+  zFilename = sqlite3BtreeGetFilename(db->aDb[0].pBt);
   if( zFilename==0 ){
     /* This only happens with the in-memory database.  VACUUM is a no-op
     ** there, so just return */
@@ -257,10 +257,10 @@ int sqliteRunVacuum(char **pzErrMsg, sqlite *db){
   for(i=0; i<10; i++){
     zTemp[nFilename] = '-';
     randomName((unsigned char*)&zTemp[nFilename+1]);
-    if( !sqliteOsFileExists(zTemp) ) break;
+    if( !sqlite3OsFileExists(zTemp) ) break;
   }
   if( i>=10 ){
-    sqliteSetString(pzErrMsg, "unable to create a temporary database file "
+    sqlite3SetString(pzErrMsg, "unable to create a temporary database file "
        "in the same directory as the original database", (char*)0);
     goto end_of_vacuum;
   }
@@ -268,7 +268,7 @@ int sqliteRunVacuum(char **pzErrMsg, sqlite *db){
   
   dbNew = sqlite_open(zTemp, 0, &zErrMsg);
   if( dbNew==0 ){
-    sqliteSetString(pzErrMsg, "unable to open a temporary database at ",
+    sqlite3SetString(pzErrMsg, "unable to open a temporary database at ",
        zTemp, " - ", zErrMsg, (char*)0);
     goto end_of_vacuum;
   }
@@ -297,19 +297,19 @@ int sqliteRunVacuum(char **pzErrMsg, sqlite *db){
       vacuumCallback1, &sVac, &zErrMsg);
   }
   if( rc==SQLITE_OK ){
-    rc = sqliteBtreeCopyFile(db->aDb[0].pBt, dbNew->aDb[0].pBt);
+    rc = sqlite3BtreeCopyFile(db->aDb[0].pBt, dbNew->aDb[0].pBt);
     sqlite_exec(db, "COMMIT", 0, 0, 0);
-    sqliteResetInternalSchema(db, 0);
+    sqlite3ResetInternalSchema(db, 0);
   }
 
 end_of_vacuum:
   if( rc && zErrMsg!=0 ){
-    sqliteSetString(pzErrMsg, "unable to vacuum database - ", 
+    sqlite3SetString(pzErrMsg, "unable to vacuum database - ", 
        zErrMsg, (char*)0);
   }
   sqlite_exec(db, "ROLLBACK", 0, 0, 0);
   if( dbNew ) sqlite_close(dbNew);
-  sqliteOsDelete(zTemp);
+  sqlite3OsDelete(zTemp);
   sqliteFree(zTemp);
   sqliteFree(sVac.s1.z);
   sqliteFree(sVac.s2.z);
@@ -318,3 +318,6 @@ end_of_vacuum:
   return sVac.rc;
 #endif
 }
+
+
+

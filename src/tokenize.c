@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.68 2004/02/14 23:59:58 drh Exp $
+** $Id: tokenize.c,v 1.69 2004/05/08 08:23:39 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -152,31 +152,31 @@ static u8 aiHashTable[KEY_HASH_SIZE];
 ** keyword.  If it is a keyword, the token code of that keyword is 
 ** returned.  If the input is not a keyword, TK_ID is returned.
 */
-int sqliteKeywordCode(const char *z, int n){
+int sqlite3KeywordCode(const char *z, int n){
   int h, i;
   Keyword *p;
   static char needInit = 1;
   if( needInit ){
     /* Initialize the keyword hash table */
-    sqliteOsEnterMutex();
+    sqlite3OsEnterMutex();
     if( needInit ){
       int nk;
       nk = sizeof(aKeywordTable)/sizeof(aKeywordTable[0]);
       for(i=0; i<nk; i++){
         aKeywordTable[i].len = strlen(aKeywordTable[i].zName);
-        h = sqliteHashNoCase(aKeywordTable[i].zName, aKeywordTable[i].len);
+        h = sqlite3HashNoCase(aKeywordTable[i].zName, aKeywordTable[i].len);
         h %= KEY_HASH_SIZE;
         aKeywordTable[i].iNext = aiHashTable[h];
         aiHashTable[h] = i+1;
       }
       needInit = 0;
     }
-    sqliteOsLeaveMutex();
+    sqlite3OsLeaveMutex();
   }
-  h = sqliteHashNoCase(z, n) % KEY_HASH_SIZE;
+  h = sqlite3HashNoCase(z, n) % KEY_HASH_SIZE;
   for(i=aiHashTable[h]; i; i=p->iNext){
     p = &aKeywordTable[i-1];
-    if( p->len==n && sqliteStrNICmp(p->zName, z, n)==0 ){
+    if( p->len==n && sqlite3StrNICmp(p->zName, z, n)==0 ){
       return p->tokenType;
     }
   }
@@ -380,7 +380,7 @@ static int sqliteGetToken(const unsigned char *z, int *tokenType){
         break;
       }
       for(i=1; (z[i]&0x80)!=0 || isIdChar[z[i]]; i++){}
-      *tokenType = sqliteKeywordCode((char*)z, i);
+      *tokenType = sqlite3KeywordCode((char*)z, i);
       return i;
     }
   }
@@ -395,23 +395,23 @@ static int sqliteGetToken(const unsigned char *z, int *tokenType){
 ** memory obtained from malloc() and *pzErrMsg made to point to that
 ** error message.  Or maybe not.
 */
-int sqliteRunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
+int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   int nErr = 0;
   int i;
   void *pEngine;
   int tokenType;
   int lastTokenParsed = -1;
   sqlite *db = pParse->db;
-  extern void *sqliteParserAlloc(void*(*)(int));
-  extern void sqliteParserFree(void*, void(*)(void*));
-  extern int sqliteParser(void*, int, Token, Parse*);
+  extern void *sqlite3ParserAlloc(void*(*)(int));
+  extern void sqlite3ParserFree(void*, void(*)(void*));
+  extern int sqlite3Parser(void*, int, Token, Parse*);
 
   db->flags &= ~SQLITE_Interrupt;
   pParse->rc = SQLITE_OK;
   i = 0;
-  pEngine = sqliteParserAlloc((void*(*)(int))malloc);
+  pEngine = sqlite3ParserAlloc((void*(*)(int))malloc);
   if( pEngine==0 ){
-    sqliteSetString(pzErrMsg, "out of memory", (char*)0);
+    sqlite3SetString(pzErrMsg, "out of memory", (char*)0);
     return 1;
   }
   pParse->sLastToken.dyn = 0;
@@ -427,13 +427,13 @@ int sqliteRunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
       case TK_COMMENT: {
         if( (db->flags & SQLITE_Interrupt)!=0 ){
           pParse->rc = SQLITE_INTERRUPT;
-          sqliteSetString(pzErrMsg, "interrupt", (char*)0);
+          sqlite3SetString(pzErrMsg, "interrupt", (char*)0);
           goto abort_parse;
         }
         break;
       }
       case TK_ILLEGAL: {
-        sqliteSetNString(pzErrMsg, "unrecognized token: \"", -1, 
+        sqlite3SetNString(pzErrMsg, "unrecognized token: \"", -1, 
            pParse->sLastToken.z, pParse->sLastToken.n, "\"", 1, 0);
         nErr++;
         goto abort_parse;
@@ -443,7 +443,7 @@ int sqliteRunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
         /* Fall thru into the default case */
       }
       default: {
-        sqliteParser(pEngine, tokenType, pParse->sLastToken, pParse);
+        sqlite3Parser(pEngine, tokenType, pParse->sLastToken, pParse);
         lastTokenParsed = tokenType;
         if( pParse->rc!=SQLITE_OK ){
           goto abort_parse;
@@ -455,14 +455,14 @@ int sqliteRunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
 abort_parse:
   if( zSql[i]==0 && nErr==0 && pParse->rc==SQLITE_OK ){
     if( lastTokenParsed!=TK_SEMI ){
-      sqliteParser(pEngine, TK_SEMI, pParse->sLastToken, pParse);
+      sqlite3Parser(pEngine, TK_SEMI, pParse->sLastToken, pParse);
       pParse->zTail = &zSql[i];
     }
-    sqliteParser(pEngine, 0, pParse->sLastToken, pParse);
+    sqlite3Parser(pEngine, 0, pParse->sLastToken, pParse);
   }
-  sqliteParserFree(pEngine, free);
+  sqlite3ParserFree(pEngine, free);
   if( pParse->rc!=SQLITE_OK && pParse->rc!=SQLITE_DONE && pParse->zErrMsg==0 ){
-    sqliteSetString(&pParse->zErrMsg, sqlite_error_string(pParse->rc),
+    sqlite3SetString(&pParse->zErrMsg, sqlite_error_string(pParse->rc),
                     (char*)0);
   }
   if( pParse->zErrMsg ){
@@ -475,15 +475,15 @@ abort_parse:
     if( !nErr ) nErr++;
   }
   if( pParse->pVdbe && pParse->nErr>0 ){
-    sqliteVdbeDelete(pParse->pVdbe);
+    sqlite3VdbeDelete(pParse->pVdbe);
     pParse->pVdbe = 0;
   }
   if( pParse->pNewTable ){
-    sqliteDeleteTable(pParse->db, pParse->pNewTable);
+    sqlite3DeleteTable(pParse->db, pParse->pNewTable);
     pParse->pNewTable = 0;
   }
   if( pParse->pNewTrigger ){
-    sqliteDeleteTrigger(pParse->pNewTrigger);
+    sqlite3DeleteTrigger(pParse->pNewTrigger);
     pParse->pNewTrigger = 0;
   }
   if( nErr>0 && (pParse->rc==SQLITE_OK || pParse->rc==SQLITE_DONE) ){
@@ -630,7 +630,7 @@ int sqlite_complete(const char *zSql){
           for(nId=1; isIdChar[(u8)zSql[nId]]; nId++){}
           switch( *zSql ){
             case 'c': case 'C': {
-              if( nId==6 && sqliteStrNICmp(zSql, "create", 6)==0 ){
+              if( nId==6 && sqlite3StrNICmp(zSql, "create", 6)==0 ){
                 token = tkCREATE;
               }else{
                 token = tkOTHER;
@@ -638,11 +638,11 @@ int sqlite_complete(const char *zSql){
               break;
             }
             case 't': case 'T': {
-              if( nId==7 && sqliteStrNICmp(zSql, "trigger", 7)==0 ){
+              if( nId==7 && sqlite3StrNICmp(zSql, "trigger", 7)==0 ){
                 token = tkTRIGGER;
-              }else if( nId==4 && sqliteStrNICmp(zSql, "temp", 4)==0 ){
+              }else if( nId==4 && sqlite3StrNICmp(zSql, "temp", 4)==0 ){
                 token = tkTEMP;
-              }else if( nId==9 && sqliteStrNICmp(zSql, "temporary", 9)==0 ){
+              }else if( nId==9 && sqlite3StrNICmp(zSql, "temporary", 9)==0 ){
                 token = tkTEMP;
               }else{
                 token = tkOTHER;
@@ -650,9 +650,9 @@ int sqlite_complete(const char *zSql){
               break;
             }
             case 'e':  case 'E': {
-              if( nId==3 && sqliteStrNICmp(zSql, "end", 3)==0 ){
+              if( nId==3 && sqlite3StrNICmp(zSql, "end", 3)==0 ){
                 token = tkEND;
-              }else if( nId==7 && sqliteStrNICmp(zSql, "explain", 7)==0 ){
+              }else if( nId==7 && sqlite3StrNICmp(zSql, "explain", 7)==0 ){
                 token = tkEXPLAIN;
               }else{
                 token = tkOTHER;
@@ -677,3 +677,6 @@ int sqlite_complete(const char *zSql){
   }
   return state==0;
 }
+
+
+

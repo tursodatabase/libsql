@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test2.c,v 1.17 2004/04/26 14:10:22 drh Exp $
+** $Id: test2.c,v 1.18 2004/05/08 08:23:39 danielk1977 Exp $
 */
 #include "os.h"
 #include "sqliteInt.h"
@@ -499,20 +499,20 @@ static int fake_big_file(
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[1], &n) ) return TCL_ERROR;
-  rc = sqliteOsOpenReadWrite(argv[2], &fd, &readOnly);
+  rc = sqlite3OsOpenReadWrite(argv[2], &fd, &readOnly);
   if( rc ){
     Tcl_AppendResult(interp, "open failed: ", errorName(rc), 0);
     return TCL_ERROR;
   }
   offset = n;
   offset *= 1024*1024;
-  rc = sqliteOsSeek(&fd, offset);
+  rc = sqlite3OsSeek(&fd, offset);
   if( rc ){
     Tcl_AppendResult(interp, "seek failed: ", errorName(rc), 0);
     return TCL_ERROR;
   }
-  rc = sqliteOsWrite(&fd, "Hello, World!", 14);
-  sqliteOsClose(&fd);
+  rc = sqlite3OsWrite(&fd, "Hello, World!", 14);
+  sqlite3OsClose(&fd);
   if( rc ){
     Tcl_AppendResult(interp, "write failed: ", errorName(rc), 0);
     return TCL_ERROR;
@@ -568,3 +568,6 @@ int Sqlitetest2_Init(Tcl_Interp *interp){
   Tcl_SetVar(interp, "SQLITE_USABLE_SIZE", zBuf, TCL_GLOBAL_ONLY); 
   return TCL_OK;
 }
+
+
+

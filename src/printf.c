@@ -346,7 +346,7 @@ static int vxprintf(
     switch( xtype ){
       case etRADIX:
         if( flag_longlong )   longvalue = va_arg(ap,INT64_TYPE);
-        else if( flag_long )  longvalue = va_arg(ap,long ing);
+        else if( flag_long )  longvalue = va_arg(ap,long int);
         else                  longvalue = va_arg(ap,int);
 #if 1
         /* For the format %#x, the value zero is printed "0" not "0x0".
@@ -730,7 +730,7 @@ static void *printf_realloc(void *old, int size){
 ** Print into memory obtained from sqliteMalloc().  Use the internal
 ** %-conversion extensions.
 */
-char *sqliteVMPrintf(const char *zFormat, va_list ap){
+char *sqlite3VMPrintf(const char *zFormat, va_list ap){
   char zBase[1000];
   return base_vprintf(printf_realloc, 1, zBase, sizeof(zBase), zFormat, ap);
 }
@@ -739,7 +739,7 @@ char *sqliteVMPrintf(const char *zFormat, va_list ap){
 ** Print into memory obtained from sqliteMalloc().  Use the internal
 ** %-conversion extensions.
 */
-char *sqliteMPrintf(const char *zFormat, ...){
+char *sqlite3MPrintf(const char *zFormat, ...){
   va_list ap;
   char *z;
   char zBase[1000];
@@ -863,3 +863,6 @@ int sqlite_get_table_vprintf(
   free(zSql);
   return rc;
 }
+
+
+

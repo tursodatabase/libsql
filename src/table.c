@@ -84,7 +84,7 @@ static int sqlite_get_table_cb(void *pArg, int nCol, char **argv, char **colv){
       p->azResult[p->nData++] = z;
     }
   }else if( p->nColumn!=nCol ){
-    sqliteSetString(&p->zErrMsg,
+    sqlite3SetString(&p->zErrMsg,
        "sqlite_get_table() called with two or more incompatible queries",
        (char*)0);
     p->rc = SQLITE_ERROR;
@@ -158,7 +158,7 @@ int sqlite_get_table(
       if( pzErrMsg ){
         free(*pzErrMsg);
         *pzErrMsg = res.zErrMsg;
-        sqliteStrRealloc(pzErrMsg);
+        sqlite3StrRealloc(pzErrMsg);
       }else{
         sqliteFree(res.zErrMsg);
       }
@@ -201,3 +201,6 @@ void sqlite_free_table(
     free(azResult);
   }
 }
+
+
+

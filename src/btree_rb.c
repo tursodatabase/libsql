@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree_rb.c,v 1.24 2004/02/29 00:11:31 drh Exp $
+** $Id: btree_rb.c,v 1.25 2004/05/08 08:23:23 danielk1977 Exp $
 **
 ** This file implements an in-core database using Red-Black balanced
 ** binary trees.
@@ -265,7 +265,7 @@ static char *append_val(char * orig, char const * val){
     z = sqliteStrDup( val );
   } else{
     z = 0;
-    sqliteSetString(&z, orig, val, (char*)0);
+    sqlite3SetString(&z, orig, val, (char*)0);
     sqliteFree( orig );
   }
   return z;
@@ -585,7 +585,7 @@ void do_delete_balancing(BtRbTree *pTree, BtRbNode *pX, BtRbNode *pParent)
 static void btreeCreateTable(Rbtree* pRbtree, int n)
 {
   BtRbTree *pNewTbl = sqliteMalloc(sizeof(BtRbTree));
-  sqliteHashInsert(&pRbtree->tblHash, 0, n, pNewTbl);
+  sqlite3HashInsert(&pRbtree->tblHash, 0, n, pNewTbl);
 }
 
 /*
@@ -618,7 +618,7 @@ int sqliteRbtreeOpen(
   Rbtree **ppRbtree = (Rbtree**)ppBtree;
   *ppRbtree = (Rbtree *)sqliteMalloc(sizeof(Rbtree));
   if( sqlite_malloc_failed ) goto open_no_mem;
-  sqliteHashInit(&(*ppRbtree)->tblHash, SQLITE_HASH_INT, 0);
+  sqlite3HashInit(&(*ppRbtree)->tblHash, SQLITE_HASH_INT, 0);
 
   /* Create a binary tree for the SQLITE_MASTER table at location 2 */
   btreeCreateTable(*ppRbtree, 2);
@@ -671,7 +671,7 @@ static int memRbtreeDropTable(Rbtree* tree, int n)
   assert( tree->eTransState != TRANS_NONE );
 
   memRbtreeClearTable(tree, n);
-  pTree = sqliteHashInsert(&tree->tblHash, 0, n, 0);
+  pTree = sqlite3HashInsert(&tree->tblHash, 0, n, 0);
   assert(pTree);
   assert( pTree->pCursors==0 );
   sqliteFree(pTree);
@@ -721,7 +721,7 @@ static int memRbtreeCursor(
   assert(tree);
   pCur = *ppCur = sqliteMalloc(sizeof(RbtCursor));
   if( sqlite_malloc_failed ) return SQLITE_NOMEM;
-  pCur->pTree  = sqliteHashFind(&tree->tblHash, 0, iTable);
+  pCur->pTree  = sqlite3HashFind(&tree->tblHash, 0, iTable);
   assert( pCur->pTree );
   pCur->pRbtree = tree;
   pCur->iTree  = iTable;
@@ -1028,7 +1028,7 @@ static int memRbtreeClearTable(Rbtree* tree, int n)
   BtRbTree *pTree;
   BtRbNode *pNode;
 
-  pTree = sqliteHashFind(&tree->tblHash, 0, n);
+  pTree = sqlite3HashFind(&tree->tblHash, 0, n);
   assert(pTree);
 
   pNode = pTree->pHead;
@@ -1306,7 +1306,7 @@ static int memRbtreeClose(Rbtree* tree)
     tree->eTransState = TRANS_ROLLBACK;
     memRbtreeDropTable(tree, sqliteHashKeysize(p));
   }
-  sqliteHashClear(&tree->tblHash);
+  sqlite3HashClear(&tree->tblHash);
   sqliteFree(tree);
   return SQLITE_OK;
 }
@@ -1325,7 +1325,7 @@ static void execute_rollback_list(Rbtree *pRbtree, BtRollbackOp *pList)
   while( pList ){
     switch( pList->eOp ){
       case ROLLBACK_INSERT:
-        cur.pTree  = sqliteHashFind( &pRbtree->tblHash, 0, pList->iTab );
+        cur.pTree  = sqlite3HashFind( &pRbtree->tblHash, 0, pList->iTab );
         assert(cur.pTree);
         cur.iTree  = pList->iTab;
         cur.eSkip  = SKIP_NONE;
@@ -1333,7 +1333,7 @@ static void execute_rollback_list(Rbtree *pRbtree, BtRollbackOp *pList)
             pList->nKey, pList->pData, pList->nData );
         break;
       case ROLLBACK_DELETE:
-        cur.pTree  = sqliteHashFind( &pRbtree->tblHash, 0, pList->iTab );
+        cur.pTree  = sqlite3HashFind( &pRbtree->tblHash, 0, pList->iTab );
         assert(cur.pTree);
         cur.iTree  = pList->iTab;
         cur.eSkip  = SKIP_NONE;
@@ -1486,3 +1486,6 @@ static BtCursorOps sqliteRbtreeCursorOps = {
 };
 
 #endif /* SQLITE_OMIT_INMEMORYDB */
+
+
+

@@ -15,7 +15,7 @@
 ** or VDBE.  The VDBE implements an abstract machine that runs a
 ** simple program to access and modify the underlying database.
 **
-** $Id: vdbe.h,v 1.71 2004/02/22 20:05:02 drh Exp $
+** $Id: vdbe.h,v 1.72 2004/05/08 08:23:45 danielk1977 Exp $
 */
 #ifndef _SQLITE_VDBE_H_
 #define _SQLITE_VDBE_H_
@@ -69,7 +69,7 @@ typedef struct VdbeOpList VdbeOpList;
 /*
 ** The following macro converts a relative address in the p2 field
 ** of a VdbeOp structure into a negative number so that 
-** sqliteVdbeAddOpList() knows that the address is relative.  Calling
+** sqlite3VdbeAddOpList() knows that the address is relative.  Calling
 ** the macro again restores the address.
 */
 #define ADDR(X)  (-1-(X))
@@ -84,29 +84,32 @@ typedef struct VdbeOpList VdbeOpList;
 ** Prototypes for the VDBE interface.  See comments on the implementation
 ** for a description of what each of these routines does.
 */
-Vdbe *sqliteVdbeCreate(sqlite*);
-void sqliteVdbeCreateCallback(Vdbe*, int*);
-int sqliteVdbeAddOp(Vdbe*,int,int,int);
-int sqliteVdbeOp3(Vdbe*,int,int,int,const char *zP3,int);
-int sqliteVdbeCode(Vdbe*,...);
-int sqliteVdbeAddOpList(Vdbe*, int nOp, VdbeOpList const *aOp);
-void sqliteVdbeChangeP1(Vdbe*, int addr, int P1);
-void sqliteVdbeChangeP2(Vdbe*, int addr, int P2);
-void sqliteVdbeChangeP3(Vdbe*, int addr, const char *zP1, int N);
-void sqliteVdbeDequoteP3(Vdbe*, int addr);
-int sqliteVdbeFindOp(Vdbe*, int, int);
-VdbeOp *sqliteVdbeGetOp(Vdbe*, int);
-int sqliteVdbeMakeLabel(Vdbe*);
-void sqliteVdbeDelete(Vdbe*);
-void sqliteVdbeMakeReady(Vdbe*,int,int);
-int sqliteVdbeExec(Vdbe*);
-int sqliteVdbeList(Vdbe*);
-int sqliteVdbeFinalize(Vdbe*,char**);
-void sqliteVdbeResolveLabel(Vdbe*, int);
-int sqliteVdbeCurrentAddr(Vdbe*);
-void sqliteVdbeTrace(Vdbe*,FILE*);
-void sqliteVdbeCompressSpace(Vdbe*,int);
-int sqliteVdbeReset(Vdbe*,char **);
+Vdbe *sqlite3VdbeCreate(sqlite*);
+void sqlite3VdbeCreateCallback(Vdbe*, int*);
+int sqlite3VdbeAddOp(Vdbe*,int,int,int);
+int sqlite3VdbeOp3(Vdbe*,int,int,int,const char *zP3,int);
+int sqlite3VdbeCode(Vdbe*,...);
+int sqlite3VdbeAddOpList(Vdbe*, int nOp, VdbeOpList const *aOp);
+void sqlite3VdbeChangeP1(Vdbe*, int addr, int P1);
+void sqlite3VdbeChangeP2(Vdbe*, int addr, int P2);
+void sqlite3VdbeChangeP3(Vdbe*, int addr, const char *zP1, int N);
+void sqlite3VdbeDequoteP3(Vdbe*, int addr);
+int sqlite3VdbeFindOp(Vdbe*, int, int);
+VdbeOp *sqlite3VdbeGetOp(Vdbe*, int);
+int sqlite3VdbeMakeLabel(Vdbe*);
+void sqlite3VdbeDelete(Vdbe*);
+void sqlite3VdbeMakeReady(Vdbe*,int,int);
+int sqlite3VdbeExec(Vdbe*);
+int sqlite3VdbeList(Vdbe*);
+int sqlite3VdbeFinalize(Vdbe*,char**);
+void sqlite3VdbeResolveLabel(Vdbe*, int);
+int sqlite3VdbeCurrentAddr(Vdbe*);
+void sqlite3VdbeTrace(Vdbe*,FILE*);
+void sqlite3VdbeCompressSpace(Vdbe*,int);
+int sqlite3VdbeReset(Vdbe*,char **);
 int sqliteVdbeSetVariables(Vdbe*,int,const char**);
 
 #endif
+
+
+

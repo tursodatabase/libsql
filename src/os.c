@@ -265,7 +265,7 @@ static Hash openHash = { SQLITE_HASH_BINARY, 0, 0, 0, 0, 0 };
 static void releaseLockInfo(struct lockInfo *pLock){
   pLock->nRef--;
   if( pLock->nRef==0 ){
-    sqliteHashInsert(&lockHash, &pLock->key, sizeof(pLock->key), 0);
+    sqlite3HashInsert(&lockHash, &pLock->key, sizeof(pLock->key), 0);
     sqliteFree(pLock);
   }
 }
@@ -276,7 +276,7 @@ static void releaseLockInfo(struct lockInfo *pLock){
 static void releaseOpenCnt(struct openCnt *pOpen){
   pOpen->nRef--;
   if( pOpen->nRef==0 ){
-    sqliteHashInsert(&openHash, &pOpen->key, sizeof(pOpen->key), 0);
+    sqlite3HashInsert(&openHash, &pOpen->key, sizeof(pOpen->key), 0);
     sqliteFree(pOpen->aPending);
     sqliteFree(pOpen);
   }
@@ -309,7 +309,7 @@ int findLockInfo(
   memset(&key2, 0, sizeof(key2));
   key2.dev = statbuf.st_dev;
   key2.ino = statbuf.st_ino;
-  pLock = (struct lockInfo*)sqliteHashFind(&lockHash, &key1, sizeof(key1));
+  pLock = (struct lockInfo*)sqlite3HashFind(&lockHash, &key1, sizeof(key1));
   if( pLock==0 ){
     struct lockInfo *pOld;
     pLock = sqliteMallocRaw( sizeof(*pLock) );
@@ -317,7 +317,7 @@ int findLockInfo(
     pLock->key = key1;
     pLock->nRef = 1;
     pLock->cnt = 0;
-    pOld = sqliteHashInsert(&lockHash, &pLock->key, sizeof(key1), pLock);
+    pOld = sqlite3HashInsert(&lockHash, &pLock->key, sizeof(key1), pLock);
     if( pOld!=0 ){
       assert( pOld==pLock );
       sqliteFree(pLock);
@@ -327,7 +327,7 @@ int findLockInfo(
     pLock->nRef++;
   }
   *ppLock = pLock;
-  pOpen = (struct openCnt*)sqliteHashFind(&openHash, &key2, sizeof(key2));
+  pOpen = (struct openCnt*)sqlite3HashFind(&openHash, &key2, sizeof(key2));
   if( pOpen==0 ){
     struct openCnt *pOld;
     pOpen = sqliteMallocRaw( sizeof(*pOpen) );
@@ -340,7 +340,7 @@ int findLockInfo(
     pOpen->nLock = 0;
     pOpen->nPending = 0;
     pOpen->aPending = 0;
-    pOld = sqliteHashInsert(&openHash, &pOpen->key, sizeof(key2), pOpen);
+    pOld = sqlite3HashInsert(&openHash, &pOpen->key, sizeof(key2), pOpen);
     if( pOld!=0 ){
       assert( pOld==pOpen );
       sqliteFree(pOpen);
@@ -387,7 +387,7 @@ int sqlite_open_file_count = 0;
 /*
 ** Delete the named file
 */
-int sqliteOsDelete(const char *zFilename){
+int sqlite3OsDelete(const char *zFilename){
 #if OS_UNIX
   unlink(zFilename);
 #endif
@@ -403,7 +403,7 @@ int sqliteOsDelete(const char *zFilename){
 /*
 ** Return TRUE if the named file exists.
 */
-int sqliteOsFileExists(const char *zFilename){
+int sqlite3OsFileExists(const char *zFilename){
 #if OS_UNIX
   return access(zFilename, 0)==0;
 #endif
@@ -454,7 +454,7 @@ int sqliteOsFileRename(const char *zOldName, const char *zNewName){
 ** On failure, the function returns SQLITE_CANTOPEN and leaves
 ** *id and *pReadonly unchanged.
 */
-int sqliteOsOpenReadWrite(
+int sqlite3OsOpenReadWrite(
   const char *zFilename,
   OsFile *id,
   int *pReadonly
@@ -472,9 +472,9 @@ int sqliteOsOpenReadWrite(
   }else{
     *pReadonly = 0;
   }
-  sqliteOsEnterMutex();
+  sqlite3OsEnterMutex();
   rc = findLockInfo(id->fd, &id->pLock, &id->pOpen);
-  sqliteOsLeaveMutex();
+  sqlite3OsLeaveMutex();
   if( rc ){
     close(id->fd);
     return SQLITE_NOMEM;
@@ -541,7 +541,7 @@ int sqliteOsOpenReadWrite(
     *pReadonly = 0;
 # else
   __path2fss(zFilename, &fsSpec);
-  if( !sqliteOsFileExists(zFilename) ){
+  if( !sqlite3OsFileExists(zFilename) ){
     if( HCreate(fsSpec.vRefNum, fsSpec.parID, fsSpec.name, 'SQLI', cDocumentFile) != noErr )
       return SQLITE_CANTOPEN;
   }
@@ -581,7 +581,7 @@ int sqliteOsOpenReadWrite(
 **
 ** On failure, return SQLITE_CANTOPEN.
 */
-int sqliteOsOpenExclusive(const char *zFilename, OsFile *id, int delFlag){
+int sqlite3OsOpenExclusive(const char *zFilename, OsFile *id, int delFlag){
 #if OS_UNIX
   int rc;
   if( access(zFilename, 0)==0 ){
@@ -593,9 +593,9 @@ int sqliteOsOpenExclusive(const char *zFilename, OsFile *id, int delFlag){
   if( id->fd<0 ){
     return SQLITE_CANTOPEN;
   }
-  sqliteOsEnterMutex();
+  sqlite3OsEnterMutex();
   rc = findLockInfo(id->fd, &id->pLock, &id->pOpen);
-  sqliteOsLeaveMutex();
+  sqlite3OsLeaveMutex();
   if( rc ){
     close(id->fd);
     unlink(zFilename);
@@ -659,7 +659,7 @@ int sqliteOsOpenExclusive(const char *zFilename, OsFile *id, int delFlag){
   id->locked = 0;
   id->delOnClose = delFlag;
   if (delFlag)
-    id->pathToDel = sqliteOsFullPathname(zFilename);
+    id->pathToDel = sqlite3OsFullPathname(zFilename);
   OpenCounter(+1);
   return SQLITE_OK;
 #endif
@@ -672,7 +672,7 @@ int sqliteOsOpenExclusive(const char *zFilename, OsFile *id, int delFlag){
 **
 ** On failure, return SQLITE_CANTOPEN.
 */
-int sqliteOsOpenReadOnly(const char *zFilename, OsFile *id){
+int sqlite3OsOpenReadOnly(const char *zFilename, OsFile *id){
 #if OS_UNIX
   int rc;
   id->dirfd = -1;
@@ -680,9 +680,9 @@ int sqliteOsOpenReadOnly(const char *zFilename, OsFile *id){
   if( id->fd<0 ){
     return SQLITE_CANTOPEN;
   }
-  sqliteOsEnterMutex();
+  sqlite3OsEnterMutex();
   rc = findLockInfo(id->fd, &id->pLock, &id->pOpen);
-  sqliteOsLeaveMutex();
+  sqlite3OsLeaveMutex();
   if( rc ){
     close(id->fd);
     return SQLITE_NOMEM;
@@ -753,7 +753,7 @@ int sqliteOsOpenReadOnly(const char *zFilename, OsFile *id){
 ** On failure, the function returns SQLITE_CANTOPEN and leaves
 ** *id unchanged.
 */
-int sqliteOsOpenDirectory(
+int sqlite3OsOpenDirectory(
   const char *zDirname,
   OsFile *id
 ){
@@ -777,7 +777,7 @@ int sqliteOsOpenDirectory(
 ** Create a temporary file name in zBuf.  zBuf must be big enough to
 ** hold at least SQLITE_TEMPNAME_SIZE characters.
 */
-int sqliteOsTempFileName(char *zBuf){
+int sqlite3OsTempFileName(char *zBuf){
 #if OS_UNIX
   static const char *azDirs[] = {
      "/var/tmp",
@@ -802,7 +802,7 @@ int sqliteOsTempFileName(char *zBuf){
   do{
     sprintf(zBuf, "%s/"TEMP_FILE_PREFIX, zDir);
     j = strlen(zBuf);
-    sqliteRandomness(15, &zBuf[j]);
+    sqlite3Randomness(15, &zBuf[j]);
     for(i=0; i<15; i++, j++){
       zBuf[j] = (char)zChars[ ((unsigned char)zBuf[j])%(sizeof(zChars)-1) ];
     }
@@ -822,12 +822,12 @@ int sqliteOsTempFileName(char *zBuf){
   for(;;){
     sprintf(zBuf, "%s\\"TEMP_FILE_PREFIX, zTempPath);
     j = strlen(zBuf);
-    sqliteRandomness(15, &zBuf[j]);
+    sqlite3Randomness(15, &zBuf[j]);
     for(i=0; i<15; i++, j++){
       zBuf[j] = (char)zChars[ ((unsigned char)zBuf[j])%(sizeof(zChars)-1) ];
     }
     zBuf[j] = 0;
-    if( !sqliteOsFileExists(zBuf) ) break;
+    if( !sqlite3OsFileExists(zBuf) ) break;
   }
 #endif
 #if OS_MAC
@@ -865,12 +865,12 @@ int sqliteOsTempFileName(char *zBuf){
   for(;;){
     sprintf(zBuf, "%s"TEMP_FILE_PREFIX, zTempPath);
     j = strlen(zBuf);
-    sqliteRandomness(15, &zBuf[j]);
+    sqlite3Randomness(15, &zBuf[j]);
     for(i=0; i<15; i++, j++){
       zBuf[j] = (char)zChars[ ((unsigned char)zBuf[j])%(sizeof(zChars)-1) ];
     }
     zBuf[j] = 0;
-    if( !sqliteOsFileExists(zBuf) ) break;
+    if( !sqlite3OsFileExists(zBuf) ) break;
   }
 #endif
   return SQLITE_OK; 
@@ -879,12 +879,12 @@ int sqliteOsTempFileName(char *zBuf){
 /*
 ** Close a file.
 */
-int sqliteOsClose(OsFile *id){
+int sqlite3OsClose(OsFile *id){
 #if OS_UNIX
-  sqliteOsUnlock(id);
+  sqlite3OsUnlock(id);
   if( id->dirfd>=0 ) close(id->dirfd);
   id->dirfd = -1;
-  sqliteOsEnterMutex();
+  sqlite3OsEnterMutex();
   if( id->pOpen->nLock ){
     /* If there are outstanding locks, do not actually close the file just
     ** yet because that would clear those locks.  Instead, add the file
@@ -907,7 +907,7 @@ int sqliteOsClose(OsFile *id){
   }
   releaseLockInfo(id->pLock);
   releaseOpenCnt(id->pOpen);
-  sqliteOsLeaveMutex();
+  sqlite3OsLeaveMutex();
   TRACE2("CLOSE   %-3d\n", id->fd);
   OpenCounter(-1);
   return SQLITE_OK;
@@ -939,7 +939,7 @@ int sqliteOsClose(OsFile *id){
 ** bytes were read successfully and SQLITE_IOERR if anything goes
 ** wrong.
 */
-int sqliteOsRead(OsFile *id, void *pBuf, int amt){
+int sqlite3OsRead(OsFile *id, void *pBuf, int amt){
 #if OS_UNIX
   int got;
   SimulateIOError(SQLITE_IOERR);
@@ -990,7 +990,7 @@ int sqliteOsRead(OsFile *id, void *pBuf, int amt){
 ** Write data from a buffer into a file.  Return SQLITE_OK on success
 ** or some other error code on failure.
 */
-int sqliteOsWrite(OsFile *id, const void *pBuf, int amt){
+int sqlite3OsWrite(OsFile *id, const void *pBuf, int amt){
 #if OS_UNIX
   int wrote = 0;
   SimulateIOError(SQLITE_IOERR);
@@ -1049,7 +1049,7 @@ int sqliteOsWrite(OsFile *id, const void *pBuf, int amt){
 /*
 ** Move the read/write pointer in a file.
 */
-int sqliteOsSeek(OsFile *id, off_t offset){
+int sqlite3OsSeek(OsFile *id, off_t offset){
   SEEK(offset/1024 + 1);
 #if OS_UNIX
   lseek(id->fd, offset, SEEK_SET);
@@ -1068,11 +1068,11 @@ int sqliteOsSeek(OsFile *id, off_t offset){
 #if OS_MAC
   {
     off_t curSize;
-    if( sqliteOsFileSize(id, &curSize) != SQLITE_OK ){
+    if( sqlite3OsFileSize(id, &curSize) != SQLITE_OK ){
       return SQLITE_IOERR;
     }
     if( offset >= curSize ){
-      if( sqliteOsTruncate(id, offset+1) != SQLITE_OK ){
+      if( sqlite3OsTruncate(id, offset+1) != SQLITE_OK ){
         return SQLITE_IOERR;
       }
     }
@@ -1100,7 +1100,7 @@ int sqliteOsSeek(OsFile *id, off_t offset){
 ** the directory entry for the journal was never created) and the transaction
 ** will not roll back - possibly leading to database corruption.
 */
-int sqliteOsSync(OsFile *id){
+int sqlite3OsSync(OsFile *id){
 #if OS_UNIX
   SimulateIOError(SQLITE_IOERR);
   TRACE2("SYNC    %-3d\n", id->fd);
@@ -1142,7 +1142,7 @@ int sqliteOsSync(OsFile *id){
 /*
 ** Truncate an open file to a specified size
 */
-int sqliteOsTruncate(OsFile *id, off_t nByte){
+int sqlite3OsTruncate(OsFile *id, off_t nByte){
   SimulateIOError(SQLITE_IOERR);
 #if OS_UNIX
   return ftruncate(id->fd, nByte)==0 ? SQLITE_OK : SQLITE_IOERR;
@@ -1171,7 +1171,7 @@ int sqliteOsTruncate(OsFile *id, off_t nByte){
 /*
 ** Determine the current size of a file in bytes
 */
-int sqliteOsFileSize(OsFile *id, off_t *pSize){
+int sqlite3OsFileSize(OsFile *id, off_t *pSize){
 #if OS_UNIX
   struct stat buf;
   SimulateIOError(SQLITE_IOERR);
@@ -1248,11 +1248,11 @@ int isNT(void){
 ** A lock is obtained on the first byte of the lock range before acquiring
 ** either a read lock or a write lock.  This prevents two processes from
 ** attempting to get a lock at a same time.  The semantics of 
-** sqliteOsReadLock() require that if there is already a write lock, that
+** sqlite3OsReadLock() require that if there is already a write lock, that
 ** lock is converted into a read lock atomically.  The lock on the first
 ** byte allows us to drop the old write lock and get the read lock without
 ** another process jumping into the middle and messing us up.  The same
-** argument applies to sqliteOsWriteLock().
+** argument applies to sqlite3OsWriteLock().
 **
 ** On WinNT/2K/XP systems, LockFileEx() and UnlockFileEx() are available,
 ** which means we can use reader/writer locks.  When reader writer locks
@@ -1286,10 +1286,10 @@ int isNT(void){
 ** library was compiled with large file support (LFS) but LFS is not
 ** available on the host, then an SQLITE_NOLFS is returned.
 */
-int sqliteOsReadLock(OsFile *id){
+int sqlite3OsReadLock(OsFile *id){
 #if OS_UNIX
   int rc;
-  sqliteOsEnterMutex();
+  sqlite3OsEnterMutex();
   if( id->pLock->cnt>0 ){
     if( !id->locked ){
       id->pLock->cnt++;
@@ -1317,7 +1317,7 @@ int sqliteOsReadLock(OsFile *id){
   }else{
     rc = SQLITE_BUSY;
   }
-  sqliteOsLeaveMutex();
+  sqlite3OsLeaveMutex();
   return rc;
 #endif
 #if OS_WIN
@@ -1328,7 +1328,7 @@ int sqliteOsReadLock(OsFile *id){
     int lk;
     int res;
     int cnt = 100;
-    sqliteRandomness(sizeof(lk), &lk);
+    sqlite3Randomness(sizeof(lk), &lk);
     lk = (lk & 0x7fffffff)%N_LOCKBYTE + 1;
     while( cnt-->0 && (res = LockFile(id->h, FIRST_LOCKBYTE, 0, 1, 0))==0 ){
       Sleep(1);
@@ -1365,7 +1365,7 @@ int sqliteOsReadLock(OsFile *id){
     OSErr res;
     int cnt = 5;
     ParamBlockRec params;
-    sqliteRandomness(sizeof(lk), &lk);
+    sqlite3Randomness(sizeof(lk), &lk);
     lk = (lk & 0x7fffffff)%N_LOCKBYTE + 1;
     memset(&params, 0, sizeof(params));
     params.ioParam.ioRefNum = id->refNumRF;
@@ -1404,10 +1404,10 @@ int sqliteOsReadLock(OsFile *id){
 ** library was compiled with large file support (LFS) but LFS is not
 ** available on the host, then an SQLITE_NOLFS is returned.
 */
-int sqliteOsWriteLock(OsFile *id){
+int sqlite3OsWriteLock(OsFile *id){
 #if OS_UNIX
   int rc;
-  sqliteOsEnterMutex();
+  sqlite3OsEnterMutex();
   if( id->pLock->cnt==0 || (id->pLock->cnt==1 && id->locked==1) ){
     struct flock lock;
     int s;
@@ -1428,7 +1428,7 @@ int sqliteOsWriteLock(OsFile *id){
   }else{
     rc = SQLITE_BUSY;
   }
-  sqliteOsLeaveMutex();
+  sqlite3OsLeaveMutex();
   return rc;
 #endif
 #if OS_WIN
@@ -1514,11 +1514,11 @@ int sqliteOsWriteLock(OsFile *id){
 ** library was compiled with large file support (LFS) but LFS is not
 ** available on the host, then an SQLITE_NOLFS is returned.
 */
-int sqliteOsUnlock(OsFile *id){
+int sqlite3OsUnlock(OsFile *id){
 #if OS_UNIX
   int rc;
   if( !id->locked ) return SQLITE_OK;
-  sqliteOsEnterMutex();
+  sqlite3OsEnterMutex();
   assert( id->pLock->cnt!=0 );
   if( id->pLock->cnt>1 ){
     id->pLock->cnt--;
@@ -1555,7 +1555,7 @@ int sqliteOsUnlock(OsFile *id){
       pOpen->aPending = 0;
     }
   }
-  sqliteOsLeaveMutex();
+  sqlite3OsLeaveMutex();
   id->locked = 0;
   return rc;
 #endif
@@ -1604,7 +1604,7 @@ int sqliteOsUnlock(OsFile *id){
 ** is written into the buffer zBuf[256].  The calling function must
 ** supply a sufficiently large buffer.
 */
-int sqliteOsRandomSeed(char *zBuf){
+int sqlite3OsRandomSeed(char *zBuf){
   /* We have to initialize zBuf to prevent valgrind from reporting
   ** errors.  The reports issued by valgrind are incorrect - we would
   ** prefer that the randomness be increased by making use of the
@@ -1643,7 +1643,7 @@ int sqliteOsRandomSeed(char *zBuf){
 /*
 ** Sleep for a little while.  Return the amount of time slept.
 */
-int sqliteOsSleep(int ms){
+int sqlite3OsSleep(int ms){
 #if OS_UNIX
 #if defined(HAVE_USLEEP) && HAVE_USLEEP
   usleep(ms*1000);
@@ -1687,7 +1687,7 @@ static int inMutex = 0;
 ** SQLite uses only a single Mutex.  There is not much critical
 ** code and what little there is executes quickly and without blocking.
 */
-void sqliteOsEnterMutex(){
+void sqlite3OsEnterMutex(){
 #ifdef SQLITE_UNIX_THREADS
   pthread_mutex_lock(&mutex);
 #endif
@@ -1720,7 +1720,7 @@ void sqliteOsEnterMutex(){
   assert( !inMutex );
   inMutex = 1;
 }
-void sqliteOsLeaveMutex(){
+void sqlite3OsLeaveMutex(){
   assert( inMutex );
   inMutex = 0;
 #ifdef SQLITE_UNIX_THREADS
@@ -1740,14 +1740,14 @@ void sqliteOsLeaveMutex(){
 ** The calling function is responsible for freeing this space once it
 ** is no longer needed.
 */
-char *sqliteOsFullPathname(const char *zRelative){
+char *sqlite3OsFullPathname(const char *zRelative){
 #if OS_UNIX
   char *zFull = 0;
   if( zRelative[0]=='/' ){
-    sqliteSetString(&zFull, zRelative, (char*)0);
+    sqlite3SetString(&zFull, zRelative, (char*)0);
   }else{
     char zBuf[5000];
-    sqliteSetString(&zFull, getcwd(zBuf, sizeof(zBuf)), "/", zRelative,
+    sqlite3SetString(&zFull, getcwd(zBuf, sizeof(zBuf)), "/", zRelative,
                     (char*)0);
   }
   return zFull;
@@ -1766,14 +1766,14 @@ char *sqliteOsFullPathname(const char *zRelative){
   char *zFull = 0;
   if( zRelative[0]==':' ){
     char zBuf[_MAX_PATH+1];
-    sqliteSetString(&zFull, getcwd(zBuf, sizeof(zBuf)), &(zRelative[1]),
+    sqlite3SetString(&zFull, getcwd(zBuf, sizeof(zBuf)), &(zRelative[1]),
                     (char*)0);
   }else{
     if( strchr(zRelative, ':') ){
-      sqliteSetString(&zFull, zRelative, (char*)0);
+      sqlite3SetString(&zFull, zRelative, (char*)0);
     }else{
     char zBuf[_MAX_PATH+1];
-      sqliteSetString(&zFull, getcwd(zBuf, sizeof(zBuf)), zRelative, (char*)0);
+      sqlite3SetString(&zFull, getcwd(zBuf, sizeof(zBuf)), zRelative, (char*)0);
     }
   }
   return zFull;
@@ -1782,7 +1782,7 @@ char *sqliteOsFullPathname(const char *zRelative){
 
 /*
 ** The following variable, if set to a non-zero value, becomes the result
-** returned from sqliteOsCurrentTime().  This is used for testing.
+** returned from sqlite3OsCurrentTime().  This is used for testing.
 */
 #ifdef SQLITE_TEST
 int sqlite_current_time = 0;
@@ -1793,7 +1793,7 @@ int sqlite_current_time = 0;
 ** current time and date as a Julian Day number into *prNow and
 ** return 0.  Return 1 if the time and date cannot be found.
 */
-int sqliteOsCurrentTime(double *prNow){
+int sqlite3OsCurrentTime(double *prNow){
 #if OS_UNIX
   time_t t;
   time(&t);
@@ -1816,3 +1816,6 @@ int sqliteOsCurrentTime(double *prNow){
 #endif
   return 0;
 }
+
+
+

@@ -12,7 +12,7 @@
 ** This file contains routines used to translate between UTF-8, 
 ** UTF-16, UTF-16BE, and UTF-16LE.
 **
-** $Id: utf.c,v 1.2 2004/05/06 23:37:53 danielk1977 Exp $
+** $Id: utf.c,v 1.3 2004/05/08 08:23:40 danielk1977 Exp $
 **
 ** Notes on UTF-8:
 **
@@ -490,4 +490,7 @@ void sqlite3utf16to16le(void *pData, int N){
 void sqlite3utf16to16be(void *pData, int N){
   utf16to16(pData, N, 1);
 }
+
+
+
 

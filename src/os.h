@@ -161,31 +161,34 @@
 # define SQLITE_MIN_SLEEP_MS 17
 #endif
 
-int sqliteOsDelete(const char*);
-int sqliteOsFileExists(const char*);
+int sqlite3OsDelete(const char*);
+int sqlite3OsFileExists(const char*);
 int sqliteOsFileRename(const char*, const char*);
-int sqliteOsOpenReadWrite(const char*, OsFile*, int*);
-int sqliteOsOpenExclusive(const char*, OsFile*, int);
-int sqliteOsOpenReadOnly(const char*, OsFile*);
-int sqliteOsOpenDirectory(const char*, OsFile*);
-int sqliteOsTempFileName(char*);
-int sqliteOsClose(OsFile*);
-int sqliteOsRead(OsFile*, void*, int amt);
-int sqliteOsWrite(OsFile*, const void*, int amt);
-int sqliteOsSeek(OsFile*, off_t offset);
-int sqliteOsSync(OsFile*);
-int sqliteOsTruncate(OsFile*, off_t size);
-int sqliteOsFileSize(OsFile*, off_t *pSize);
-int sqliteOsReadLock(OsFile*);
-int sqliteOsWriteLock(OsFile*);
-int sqliteOsUnlock(OsFile*);
-int sqliteOsRandomSeed(char*);
-int sqliteOsSleep(int ms);
-int sqliteOsCurrentTime(double*);
-void sqliteOsEnterMutex(void);
-void sqliteOsLeaveMutex(void);
-char *sqliteOsFullPathname(const char*);
+int sqlite3OsOpenReadWrite(const char*, OsFile*, int*);
+int sqlite3OsOpenExclusive(const char*, OsFile*, int);
+int sqlite3OsOpenReadOnly(const char*, OsFile*);
+int sqlite3OsOpenDirectory(const char*, OsFile*);
+int sqlite3OsTempFileName(char*);
+int sqlite3OsClose(OsFile*);
+int sqlite3OsRead(OsFile*, void*, int amt);
+int sqlite3OsWrite(OsFile*, const void*, int amt);
+int sqlite3OsSeek(OsFile*, off_t offset);
+int sqlite3OsSync(OsFile*);
+int sqlite3OsTruncate(OsFile*, off_t size);
+int sqlite3OsFileSize(OsFile*, off_t *pSize);
+int sqlite3OsReadLock(OsFile*);
+int sqlite3OsWriteLock(OsFile*);
+int sqlite3OsUnlock(OsFile*);
+int sqlite3OsRandomSeed(char*);
+int sqlite3OsSleep(int ms);
+int sqlite3OsCurrentTime(double*);
+void sqlite3OsEnterMutex(void);
+void sqlite3OsLeaveMutex(void);
+char *sqlite3OsFullPathname(const char*);
 
 
 
 #endif /* _SQLITE_OS_H_ */
+
+
+

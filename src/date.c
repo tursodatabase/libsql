@@ -13,10 +13,10 @@
 ** functions for SQLite.  
 **
 ** There is only one exported symbol in this file - the function
-** sqliteRegisterDateTimeFunctions() found at the bottom of the file.
+** sqlite3RegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.16 2004/02/29 01:08:18 drh Exp $
+** $Id: date.c,v 1.17 2004/05/08 08:23:24 danielk1977 Exp $
 **
 ** NOTES:
 **
@@ -126,7 +126,7 @@ static int getDigits(const char *zDate, ...){
 */
 static int getValue(const char *z, double *pR){
   const char *zEnd;
-  *pR = sqliteAtoF(z, &zEnd);
+  *pR = sqlite3AtoF(z, &zEnd);
   return zEnd - z;
 }
 
@@ -313,16 +313,16 @@ static int parseDateOrTime(const char *zDate, DateTime *p){
     return 0;
   }else if( parseHhMmSs(zDate, p)==0 ){
     return 0;
-  }else if( sqliteStrICmp(zDate,"now")==0){
+  }else if( sqlite3StrICmp(zDate,"now")==0){
     double r;
-    if( sqliteOsCurrentTime(&r)==0 ){
+    if( sqlite3OsCurrentTime(&r)==0 ){
       p->rJD = r;
       p->validJD = 1;
       return 0;
     }
     return 1;
-  }else if( sqliteIsNumber(zDate) ){
-    p->rJD = sqliteAtoF(zDate, 0);
+  }else if( sqlite3IsNumber(zDate) ){
+    p->rJD = sqlite3AtoF(zDate, 0);
     p->validJD = 1;
     return 0;
   }
@@ -415,7 +415,7 @@ static double localtimeOffset(DateTime *p){
   x.validJD = 0;
   computeJD(&x);
   t = (x.rJD-2440587.5)*86400.0 + 0.5;
-  sqliteOsEnterMutex();
+  sqlite3OsEnterMutex();
   pTm = localtime(&t);
   y.Y = pTm->tm_year + 1900;
   y.M = pTm->tm_mon + 1;
@@ -423,7 +423,7 @@ static double localtimeOffset(DateTime *p){
   y.h = pTm->tm_hour;
   y.m = pTm->tm_min;
   y.s = pTm->tm_sec;
-  sqliteOsLeaveMutex();
+  sqlite3OsLeaveMutex();
   y.validYMD = 1;
   y.validHMS = 1;
   y.validJD = 0;
@@ -846,7 +846,7 @@ static void strftimeFunc(sqlite_func *context, int argc, const char **argv){
 ** functions.  This should be the only routine in this file with
 ** external linkage.
 */
-void sqliteRegisterDateTimeFunctions(sqlite *db){
+void sqlite3RegisterDateTimeFunctions(sqlite *db){
   static struct {
      char *zName;
      int nArg;
@@ -871,3 +871,6 @@ void sqliteRegisterDateTimeFunctions(sqlite *db){
     }
   }
 }
+
+
+

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Code for testing the the SQLite library in a multithreaded environment.
 **
-** $Id: test4.c,v 1.3 2004/04/23 17:04:45 drh Exp $
+** $Id: test4.c,v 1.4 2004/05/08 08:23:39 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -632,3 +632,6 @@ int Sqlitetest4_Init(Tcl_Interp *interp){
 #else
 int Sqlitetest4_Init(Tcl_Interp *interp){ return TCL_OK; }
 #endif /* OS_UNIX */
+
+
+

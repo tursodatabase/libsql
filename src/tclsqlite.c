@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.62 2004/05/07 17:57:50 drh Exp $
+** $Id: tclsqlite.c,v 1.63 2004/05/08 08:23:37 danielk1977 Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -21,7 +21,6 @@
 #include <string.h>
 #include <assert.h>
 
-#if 0
 /*
 ** If TCL uses UTF-8 and SQLite is configured to use iso8859, then we
 ** have to do a translation when going between the two.  Set the 
@@ -1156,7 +1155,6 @@ int Sqlite_SafeInit(Tcl_Interp *interp){
 int Tclsqlite_SafeInit(Tcl_Interp *interp){
   return TCL_OK;
 }
-#endif
 
 #if 0
 /*
@@ -1201,7 +1199,7 @@ int TCLSH_MAIN(int argc, char **argv){
   Tcl_Interp *interp;
   Tcl_FindExecutable(argv[0]);
   interp = Tcl_CreateInterp();
-  /* Sqlite_Init(interp); */
+  Sqlite_Init(interp);
 #ifdef SQLITE_TEST
   {
     extern int Sqlitetest1_Init(Tcl_Interp*);
@@ -1210,10 +1208,10 @@ int TCLSH_MAIN(int argc, char **argv){
     extern int Sqlitetest4_Init(Tcl_Interp*);
     extern int Sqlitetest5_Init(Tcl_Interp*);
     extern int Md5_Init(Tcl_Interp*);
-    /* Sqlitetest1_Init(interp); */
+/*    Sqlitetest1_Init(interp); */
     Sqlitetest2_Init(interp);
     Sqlitetest3_Init(interp);
-    /* Sqlitetest4_Init(interp); */
+/*    Sqlitetest4_Init(interp); */
     Sqlitetest5_Init(interp);
     Md5_Init(interp);
   }
@@ -1240,3 +1238,6 @@ int TCLSH_MAIN(int argc, char **argv){
 #endif /* TCLSH */
 
 #endif /* !defined(NO_TCL) */
+
+
+

@@ -12,7 +12,7 @@
 ** This is the implementation of generic hash-tables
 ** used in SQLite.
 **
-** $Id: hash.c,v 1.11 2004/01/08 02:17:33 drh Exp $
+** $Id: hash.c,v 1.12 2004/05/08 08:23:25 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <assert.h>
@@ -29,7 +29,7 @@
 ** sense for SQLITE_HASH_STRING and SQLITE_HASH_BINARY and is ignored
 ** for other key classes.
 */
-void sqliteHashInit(Hash *new, int keyClass, int copyKey){
+void sqlite3HashInit(Hash *new, int keyClass, int copyKey){
   assert( new!=0 );
   assert( keyClass>=SQLITE_HASH_INT && keyClass<=SQLITE_HASH_BINARY );
   new->keyClass = keyClass;
@@ -45,7 +45,7 @@ void sqliteHashInit(Hash *new, int keyClass, int copyKey){
 ** Call this routine to delete a hash table or to reset a hash table
 ** to the empty state.
 */
-void sqliteHashClear(Hash *pH){
+void sqlite3HashClear(Hash *pH){
   HashElem *elem;         /* For looping over all elements of the table */
 
   assert( pH!=0 );
@@ -94,11 +94,11 @@ static int ptrCompare(const void *pKey1, int n1, const void *pKey2, int n2){
 ** Hash and comparison functions when the mode is SQLITE_HASH_STRING
 */
 static int strHash(const void *pKey, int nKey){
-  return sqliteHashNoCase((const char*)pKey, nKey); 
+  return sqlite3HashNoCase((const char*)pKey, nKey); 
 }
 static int strCompare(const void *pKey1, int n1, const void *pKey2, int n2){
   if( n1!=n2 ) return n2-n1;
-  return sqliteStrNICmp((const char*)pKey1,(const char*)pKey2,n1);
+  return sqlite3StrNICmp((const char*)pKey1,(const char*)pKey2,n1);
 }
 
 /*
@@ -258,7 +258,7 @@ static void removeElementGivenHash(
 ** that matches pKey,nKey.  Return the data for this element if it is
 ** found, or NULL if there is no match.
 */
-void *sqliteHashFind(const Hash *pH, const void *pKey, int nKey){
+void *sqlite3HashFind(const Hash *pH, const void *pKey, int nKey){
   int h;             /* A hash on key */
   HashElem *elem;    /* The element that matches key */
   int (*xHash)(const void*,int);  /* The hash function */
@@ -287,7 +287,7 @@ void *sqliteHashFind(const Hash *pH, const void *pKey, int nKey){
 ** If the "data" parameter to this function is NULL, then the
 ** element corresponding to "key" is removed from the hash table.
 */
-void *sqliteHashInsert(Hash *pH, const void *pKey, int nKey, void *data){
+void *sqlite3HashInsert(Hash *pH, const void *pKey, int nKey, void *data){
   int hraw;             /* Raw hash value of the key */
   int h;                /* the hash of the key modulo hash table size */
   HashElem *elem;       /* Used to loop thru the element list */
@@ -354,3 +354,6 @@ void *sqliteHashInsert(Hash *pH, const void *pKey, int nKey, void *data){
   new_elem->data = data;
   return 0;
 }
+
+
+

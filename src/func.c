@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.43 2004/02/25 22:51:06 rdc Exp $
+** $Id: func.c,v 1.44 2004/05/08 08:23:25 danielk1977 Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -39,7 +39,7 @@ static void minmaxFunc(sqlite_func *context, int argc, const char **argv){
   zBest = argv[0];
   if( zBest==0 ) return;
   if( argv[1][0]=='n' ){
-    xCompare = sqliteCompare;
+    xCompare = sqlite3Compare;
   }else{
     xCompare = strcmp;
   }
@@ -148,7 +148,7 @@ static void roundFunc(sqlite_func *context, int argc, const char **argv){
   n = argc==2 ? atoi(argv[1]) : 0;
   if( n>30 ) n = 30;
   if( n<0 ) n = 0;
-  r = sqliteAtoF(argv[0], 0);
+  r = sqlite3AtoF(argv[0], 0);
   sprintf(zBuf,"%.*f",n,r);
   sqlite_set_result_string(context, zBuf, -1);
 }
@@ -197,7 +197,7 @@ static void ifnullFunc(sqlite_func *context, int argc, const char **argv){
 */
 static void randomFunc(sqlite_func *context, int argc, const char **argv){
   int r;
-  sqliteRandomness(sizeof(r), &r);
+  sqlite3Randomness(sizeof(r), &r);
   sqlite_set_result_int(context, r);
 }
 
@@ -241,7 +241,7 @@ static void last_statement_change_count(sqlite_func *context, int arg,
 static void likeFunc(sqlite_func *context, int arg, const char **argv){
   if( argv[0]==0 || argv[1]==0 ) return;
   sqlite_set_result_int(context, 
-    sqliteLikeCompare((const unsigned char*)argv[0],
+    sqlite3LikeCompare((const unsigned char*)argv[0],
                       (const unsigned char*)argv[1]));
 }
 
@@ -257,7 +257,7 @@ static void likeFunc(sqlite_func *context, int arg, const char **argv){
 static void globFunc(sqlite_func *context, int arg, const char **argv){
   if( argv[0]==0 || argv[1]==0 ) return;
   sqlite_set_result_int(context,
-    sqliteGlobCompare((const unsigned char*)argv[0],
+    sqlite3GlobCompare((const unsigned char*)argv[0],
                       (const unsigned char*)argv[1]));
 }
 
@@ -267,7 +267,7 @@ static void globFunc(sqlite_func *context, int arg, const char **argv){
 ** arguments are equal to each other.
 */
 static void nullifFunc(sqlite_func *context, int argc, const char **argv){
-  if( argv[0]!=0 && sqliteCompare(argv[0],argv[1])!=0 ){
+  if( argv[0]!=0 && sqlite3Compare(argv[0],argv[1])!=0 ){
     sqlite_set_result_string(context, argv[0], -1);
   }
 }
@@ -295,7 +295,7 @@ static void quoteFunc(sqlite_func *context, int argc, const char **argv){
   if( argc<1 ) return;
   if( argv[0]==0 ){
     sqlite_set_result_string(context, "NULL", 4);
-  }else if( sqliteIsNumber(argv[0]) ){
+  }else if( sqlite3IsNumber(argv[0]) ){
     sqlite_set_result_string(context, argv[0], -1);
   }else{
     int i,j,n;
@@ -386,12 +386,12 @@ static void randStr(sqlite_func *context, int argc, const char **argv){
   }
   n = iMin;
   if( iMax>iMin ){
-    sqliteRandomness(sizeof(r), &r);
+    sqlite3Randomness(sizeof(r), &r);
     r &= 0x7fffffff;
     n += r%(iMax + 1 - iMin);
   }
   assert( n<sizeof(zBuf) );
-  sqliteRandomness(n, zBuf);
+  sqlite3Randomness(n, zBuf);
   for(i=0; i<n; i++){
     zBuf[i] = zSrc[zBuf[i]%(sizeof(zSrc)-1)];
   }
@@ -418,7 +418,7 @@ static void sumStep(sqlite_func *context, int argc, const char **argv){
   if( argc<1 ) return;
   p = sqlite_aggregate_context(context, sizeof(*p));
   if( p && argv[0] ){
-    p->sum += sqliteAtoF(argv[0], 0);
+    p->sum += sqlite3AtoF(argv[0], 0);
     p->cnt++;
   }
 }
@@ -456,7 +456,7 @@ static void stdDevStep(sqlite_func *context, int argc, const char **argv){
   if( argc<1 ) return;
   p = sqlite_aggregate_context(context, sizeof(*p));
   if( p && argv[0] ){
-    x = sqliteAtoF(argv[0], 0);
+    x = sqlite3AtoF(argv[0], 0);
     p->sum += x;
     p->sum2 += x*x;
     p->cnt++;
@@ -518,7 +518,7 @@ static void minmaxStep(sqlite_func *context, int argc, const char **argv){
 
   assert( argc==2 );
   if( argv[1][0]=='n' ){
-    xCompare = sqliteCompare;
+    xCompare = sqlite3Compare;
   }else{
     xCompare = strcmp;
   }
@@ -558,7 +558,7 @@ static void minMaxFinalize(sqlite_func *context){
 ** functions.  This should be the only routine in this file with
 ** external linkage.
 */
-void sqliteRegisterBuiltinFunctions(sqlite *db){
+void sqlite3RegisterBuiltinFunctions(sqlite *db){
   static struct {
      char *zName;
      signed char nArg;
@@ -636,11 +636,14 @@ void sqliteRegisterBuiltinFunctions(sqlite *db){
   }
   for(i=0; i<sizeof(azTypeFuncs)/sizeof(azTypeFuncs[0]); i++){
     int n = strlen(azTypeFuncs[i]);
-    FuncDef *p = sqliteHashFind(&db->aFunc, azTypeFuncs[i], n);
+    FuncDef *p = sqlite3HashFind(&db->aFunc, azTypeFuncs[i], n);
     while( p ){
       p->includeTypes = 1;
       p = p->pNext;
     }
   }
-  sqliteRegisterDateTimeFunctions(db);
+  sqlite3RegisterDateTimeFunctions(db);
 }
+
+
+
