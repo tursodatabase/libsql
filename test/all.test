@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: all.test,v 1.20 2004/06/26 19:35:30 drh Exp $
+# $Id: all.test,v 1.21 2004/06/30 08:20:16 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -105,9 +105,13 @@ if {$tcl_platform(platform)=="unix"} {
 }
 
 # Run the malloc tests and the misuse test after memory leak detection.
-# Both tests leak memory.
+# Both tests leak memory. Currently, misuse.test also leaks a handful of
+# file descriptors. This is not considered a problem, but can cause tests
+# in malloc.test to fail. So set the open-file count to zero before running
+# malloc.test to get around this.
 #
 catch {source $testdir/misuse.test}
+set sqlite_open_file_count 0
 catch {source $testdir/malloc.test}
 
 catch {db close}

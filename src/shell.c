@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.105 2004/06/19 09:08:16 danielk1977 Exp $
+** $Id: shell.c,v 1.106 2004/06/30 08:20:16 danielk1977 Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -82,6 +82,26 @@ static char continuePrompt[20]; /* Continuation prompt. default: "   ...> " */
 ** Determines if a string is a number of not.
 */
 extern int sqlite3IsNumber(const char*, int*, unsigned char);
+
+/*
+** A global char* and an SQL function to access its current value 
+** from within an SQL statement. This program used to use the 
+** sqlite_exec_printf() API to substitue a string into an SQL statement.
+** The correct way to do this with sqlite3 is to use the bind API, but
+** since the shell is built around the callback paradigm it would be a lot
+** of work. Instead just use this hack, which is quite harmless.
+*/
+static const char *zShellStatic = 0;
+static void shellstaticFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  assert( 0==argc );
+  assert( zShellStatic );
+  sqlite3_result_text(context, zShellStatic, -1, SQLITE_STATIC);
+}
+
 
 /*
 ** This routine reads a line of text from standard input, stores
@@ -621,6 +641,8 @@ static void open_db(struct callback_data *p){
     sqlite3_open(p->zDbFilename, &p->db);
     db = p->db;
 #endif
+    sqlite3_create_function(db, "shellstatic", 0, SQLITE_UTF8, 0,
+        shellstaticFunc, 0, 0);
     if( SQLITE_OK!=sqlite3_errcode(db) ){
       fprintf(stderr,"Unable to open database \"%s\": %s\n", 
           p->zDbFilename, sqlite3_errmsg(db));
@@ -697,12 +719,14 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     }else{
       int i;
       for(i=1; i<nArg && zErrMsg==0; i++){
-        sqlite3_exec_printf(p->db,
+        zShellStatic = azArg[i];
+        sqlite3_exec(p->db,
           "SELECT name, type, sql FROM sqlite_master "
-          "WHERE tbl_name LIKE '%q' AND type!='meta' AND sql NOT NULL "
+          "WHERE tbl_name LIKE shellstatic() AND type!='meta' AND sql NOT NULL "
           "ORDER BY substr(type,2,1), name",
-          dump_callback, p, &zErrMsg, azArg[i]
+          dump_callback, p, &zErrMsg
         );
+        zShellStatic = 0;
       }
     }
     if( zErrMsg ){
@@ -802,15 +826,17 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     memcpy(&data, p, sizeof(data));
     data.showHeader = 0;
     data.mode = MODE_List;
-    sqlite3_exec_printf(p->db,
+    zShellStatic = azArg[1];
+    sqlite3_exec(p->db,
       "SELECT name FROM sqlite_master "
-      "WHERE type='index' AND tbl_name LIKE '%q' "
+      "WHERE type='index' AND tbl_name LIKE shellstatic() "
       "UNION ALL "
       "SELECT name FROM sqlite_temp_master "
-      "WHERE type='index' AND tbl_name LIKE '%q' "
+      "WHERE type='index' AND tbl_name LIKE shellstatic() "
       "ORDER BY 1",
-      callback, &data, &zErrMsg, azArg[1], azArg[1]
+      callback, &data, &zErrMsg
     );
+    zShellStatic = 0;
     if( zErrMsg ){
       fprintf(stderr,"Error: %s\n", zErrMsg);
       sqlite3_free(zErrMsg);
@@ -940,13 +966,15 @@ static int do_meta_command(char *zLine, struct callback_data *p){
         new_colv[1] = 0;
         callback(&data, 1, new_argv, new_colv);
       }else{
-        sqlite3_exec_printf(p->db,
+        zShellStatic = azArg[1];
+        sqlite3_exec(p->db,
           "SELECT sql FROM "
           "  (SELECT * FROM sqlite_master UNION ALL"
           "   SELECT * FROM sqlite_temp_master) "
-          "WHERE tbl_name LIKE '%q' AND type!='meta' AND sql NOTNULL "
+          "WHERE tbl_name LIKE shellstatic() AND type!='meta' AND sql NOTNULL "
           "ORDER BY substr(type,2,1), name",
-          callback, &data, &zErrMsg, azArg[1]);
+          callback, &data, &zErrMsg);
+        zShellStatic = 0;
       }
     }else{
       sqlite3_exec(p->db,
@@ -1001,15 +1029,17 @@ static int do_meta_command(char *zLine, struct callback_data *p){
         &azResult, &nRow, 0, &zErrMsg
       );
     }else{
-      rc = sqlite3_get_table_printf(p->db,
+      zShellStatic = azArg[1];
+      rc = sqlite3_get_table(p->db,
         "SELECT name FROM sqlite_master "
-        "WHERE type IN ('table','view') AND name LIKE '%%%q%%' "
+        "WHERE type IN ('table','view') AND name LIKE '%'||shellstatic()||'%' "
         "UNION ALL "
         "SELECT name FROM sqlite_temp_master "
-        "WHERE type IN ('table','view') AND name LIKE '%%%q%%' "
+        "WHERE type IN ('table','view') AND name LIKE '%'||shellstatic()||'%' "
         "ORDER BY 1",
-        &azResult, &nRow, 0, &zErrMsg, azArg[1], azArg[1]
+        &azResult, &nRow, 0, &zErrMsg
       );
+      zShellStatic = 0;
     }
     if( zErrMsg ){
       fprintf(stderr,"Error: %s\n", zErrMsg);

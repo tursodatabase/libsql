@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.175 2004/06/30 01:07:02 drh Exp $
+** $Id: btree.c,v 1.176 2004/06/30 08:20:16 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -501,11 +501,13 @@ static void parseCell(
 ** data header and the local payload, but not any overflow page or
 ** the space used by the cell pointer.
 */
+#ifndef NDEBUG
 static int cellSize(MemPage *pPage, int iCell){
   CellInfo info;
   parseCell(pPage, iCell, &info);
   return info.nSize;
 }
+#endif
 static int cellSizePtr(MemPage *pPage, u8 *pCell){
   CellInfo info;
   parseCellPtr(pPage, pCell, &info);
@@ -719,14 +721,13 @@ static int allocateSpace(MemPage *pPage, int nByte){
 ** free blocks into a single big free block.
 */
 static void freeSpace(MemPage *pPage, int start, int size){
-  int end = start + size;  /* End of the segment being freed */
   int addr, pbegin, hdr;
   unsigned char *data = pPage->aData;
 
   assert( pPage->pBt!=0 );
   assert( sqlite3pager_iswriteable(data) );
   assert( start>=pPage->hdrOffset+6+(pPage->leaf?0:4) );
-  assert( end<=pPage->pBt->usableSize );
+  assert( (start + size)<=pPage->pBt->usableSize );
   if( size<4 ) size = 4;
 
   /* Add the space back into the linked list of freeblocks */
