@@ -88,7 +88,9 @@
 # endif
 #else
 # define OS_MAC 0
-# define OS_WIN 0
+# ifndef OS_WIN
+#  define OS_WIN 0
+# endif
 #endif
 
 /*
@@ -115,6 +117,9 @@
 #endif
 
 #if OS_WIN
+# if defined(__CYGWIN__)
+#  define __CYGWIN_USE_BIG_TYPES__
+# endif
 #include <windows.h>
 #include <winbase.h>
   typedef struct OsFile OsFile;
@@ -125,7 +130,9 @@
 # if defined(_MSC_VER) || defined(__BORLANDC__)
     typedef __int64 off_t;
 # else
-    typedef long long off_t;
+#  if !defined(_CYGWIN_TYPES_H)
+     typedef long long off_t;
+#  endif
 # endif
 # define SQLITE_TEMPNAME_SIZE (MAX_PATH+50)
 # define SQLITE_MIN_SLEEP_MS 1
