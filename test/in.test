@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the IN and BETWEEN operator.
 #
-# $Id: in.test,v 1.7 2002/07/01 00:31:36 drh Exp $
+# $Id: in.test,v 1.8 2002/10/30 22:42:59 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -226,5 +226,44 @@ do_test in-6.10 {
     SELECT a FROM ta WHERE a NOT IN (SELECT b FROM tb);
   }
 } {4 6 8 10}
+
+# Tests of IN operator against empty sets.  (Ticket #185)
+#
+do_test in-7.1 {
+  execsql {
+    SELECT a FROM t1 WHERE a IN ();
+  }
+} {}
+do_test in-7.2 {
+  execsql {
+    SELECT a FROM t1 WHERE a IN (5);
+  }
+} {5}
+do_test in-7.3 {
+  execsql {
+    SELECT a FROM t1 WHERE a NOT IN () ORDER BY a;
+  }
+} {5 6 7 8 hello}
+do_test in-7.4 {
+  execsql {
+    SELECT a FROM t1 WHERE a IN (5) AND b IN ();
+  }
+} {}
+do_test in-7.5 {
+  execsql {
+    SELECT a FROM t1 WHERE a IN (5) AND b NOT IN ();
+  }
+} {5}
+do_test in-7.6 {
+  execsql {
+    SELECT a FROM ta WHERE a IN ();
+  }
+} {}
+do_test in-7.7 {
+  execsql {
+    SELECT a FROM ta WHERE a NOT IN ();
+  }
+} {1 2 3 4 6 8 10}
+
 
 finish_test

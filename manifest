@@ -1,5 +1,5 @@
-C Minimal\ssupport\sfor\soracle8\souter\sjoin\ssyntax.\s(CVS\s771)
-D 2002-10-27T19:35:34
+C In\sthe\sVDBE,\scheck\sto\smake\ssure\sa\sset\shas\sbeen\sinitialized\sbefore\susing\sit.\nTicket\s#185.\s(CVS\s772)
+D 2002-10-30T22:42:59
 F Makefile.in d6c9a85c2a5e696843201d090dcf8bf2f8716f2a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -52,7 +52,7 @@ F src/tokenize.c 75e3bb37305b64e118e709752066f494c4f93c30
 F src/trigger.c 5ba917fc226b96065108da28186c2efaec53e481
 F src/update.c 881e4c8e7c786545da4fd2d95da19252b2e31137
 F src/util.c ca7650ef2cc2d50241e48029fca109a3016144ee
-F src/vdbe.c b5d25c18f306cdb1da145dd555b056057920521f
+F src/vdbe.c 921f75ea3fbf2df4480c1ec9f8522843d5839997
 F src/vdbe.h b7584044223104ba7896a7f87b66daebdd6022ba
 F src/where.c 615a0f0bed305bcb27073c69347ea75018e8b58d
 F test/all.test efd958d048c70a3247997c482f0b33561f7759f0
@@ -67,7 +67,7 @@ F test/expr.test dea1cd62684a8bf116426447c948f5e8fb2c84b6
 F test/fkey1.test 33c850201a6ec35f0b370daf4e57f44456f1b35d
 F test/format3.test cbb168d446152fcf1dd85be299ad2d6cd507da4e
 F test/func.test bed7ae7a3482df05db0f5eed2debdf25ac2d07fc
-F test/in.test e59461f1702b7387880bf08a0ce6bb777925d282
+F test/in.test 15428c85d141edda7543bfc3f9a32ce65193717b
 F test/index.test 2a5a1b654f50ca0768fb10ae44b72e6a776b1f18
 F test/insert.test a122afb86911e77c181d912348866a5b1a61eeab
 F test/insert2.test c288375a64dad3295044714f0dfed4a193cf067f
@@ -149,7 +149,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 3b68aa25c451b7c09ece457ac2b70a9a5d93508a
-R f078ec26197d58bed051ed1d4802e2fc
+P 31df3690d0fe4bd4a293cbe8ca9a26c98c3ed3ce
+R eb80ca88edb7341c8e42b523ac2c342a
 U drh
-Z e77ead48c863ebb46d0070eee477e05f
+Z 8e88b9a64c45827fb45a696ea6365971
