@@ -1,5 +1,5 @@
-C Fix\sfor\sbug\s#8:\sCorrectly\shandle\sterms\sof\sa\sWHERE\sclause\sin\sa\sjoin\swhere\sthe\nterm\sdoes\snot\suse\sa\scomparison\soperator.\s(CVS\s515)
-D 2002-04-02T13:26:10
+C Version\s2.4.6\s(CVS\s516)
+D 2002-04-02T13:27:43
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -131,7 +131,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P b18a7b777cf22249c81b74baafa1a74ad5a1836b
+P abb12259a09418eb6e3cf573ea718ac58c91ac7b
 R 1e8462f1dea7fa55f9cf92098e6e2f92
 U drh
-Z eea47fa742ba88e928e7aaf7fc434491
+Z c767d9da34c060a9378c5b233c151832
