@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the sqlite_bind API.
 #
-# $Id: bind.test,v 1.10 2004/05/27 01:53:56 drh Exp $
+# $Id: bind.test,v 1.11 2004/05/27 09:28:44 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -174,7 +174,7 @@ do_test bind-5.3 {
 # UTF-8 text
 do_test bind-6.1 {
   sqlite3_bind_text $VM 1 hellothere 5
-  sqlite3_bind_text $VM 2 "." 2
+  sqlite3_bind_text $VM 2 ".." 1
   sqlite3_bind_text $VM 3 world -1
   sqlite_step $VM N VALUES COLNAMES
   sqlite3_reset $VM

@@ -12,7 +12,7 @@
 ** This file contains routines used to translate between UTF-8, 
 ** UTF-16, UTF-16BE, and UTF-16LE.
 **
-** $Id: utf.c,v 1.11 2004/05/27 01:53:56 drh Exp $
+** $Id: utf.c,v 1.12 2004/05/27 09:28:43 danielk1977 Exp $
 **
 ** Notes on UTF-8:
 **
@@ -598,11 +598,11 @@ int sqlite3utfTranslate(
       *zOut = sqlite3utf8to16be(zData, nData);
     }
     if( !(*zOut) ) return SQLITE_NOMEM;
-    *nOut = sqlite3utf16ByteLen(*zOut, -1)+2;
+    *nOut = sqlite3utf16ByteLen(*zOut, -1);
   }else{
     *zOut = sqlite3utf16to8(zData, nData, enc1==TEXT_Utf16be);
     if( !(*zOut) ) return SQLITE_NOMEM;
-    *nOut = strlen(*zOut)+1;
+    *nOut = strlen(*zOut);
   }
   return SQLITE_OK;
 }

@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.61 2004/05/27 01:49:51 danielk1977 Exp $
+** $Id: test1.c,v 1.62 2004/05/27 09:28:43 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -26,6 +26,32 @@
 #else
 # define PTR_FMT "%p"
 #endif
+
+int sqlite3_exec_printf(
+  sqlite *db,                   /* An open database */
+  const char *sqlFormat,        /* printf-style format string for the SQL */
+  sqlite_callback xCallback,    /* Callback function */
+  void *pArg,                   /* 1st argument to callback function */
+  char **errmsg,                /* Error msg written here */
+  ...                           /* Arguments to the format string. */
+);
+int sqlite3_exec_printf(
+  sqlite *db,                   /* An open database */
+  const char *sqlFormat,        /* printf-style format string for the SQL */
+  sqlite_callback xCallback,    /* Callback function */
+  void *pArg,                   /* 1st argument to callback function */
+  char **errmsg,                /* Error msg written here */
+  ...                           /* Arguments to the format string. */
+);
+int sqlite3_get_table_printf(
+  sqlite *db,            /* An open database */
+  const char *sqlFormat, /* printf-style format string for the SQL */
+  char ***resultp,       /* Result written to a char *[]  that this points to */
+  int *nrow,             /* Number of result rows written here */
+  int *ncol,             /* Number of result columns written here */
+  char **errmsg,         /* Error msg written here */
+  ...                    /* Arguments to the format string */
+);
 
 static const char * errorName(int rc){
   const char *zName = 0;
@@ -265,7 +291,7 @@ static int test_last_rowid(
     return TCL_ERROR;
   }
   if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
-  sprintf(zBuf, "%d", sqlite3_last_insert_rowid(db));
+  sprintf(zBuf, "%lld", sqlite3_last_insert_rowid(db));
   Tcl_AppendResult(interp, zBuf, 0);
   return SQLITE_OK;
 }
@@ -431,7 +457,7 @@ static void countStep(sqlite3_context *context, int argc, sqlite3_value **argv){
 static void countFinalize(sqlite3_context *context){
   CountCtx *p;
   p = sqlite3_aggregate_context(context, sizeof(*p));
-  sqlite3_result_int32(context, p ? p->n : 0);
+  sqlite3_result_int(context, p ? p->n : 0);
 }
 
 /*
@@ -656,7 +682,7 @@ static void testFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
       sqlite3_result_error(context, "2nd argument may not be NULL if the "
          "first argument is not \"string\"", -1);
     }else if( sqlite3StrICmp(zArg0,"int")==0 ){
-      sqlite3_result_int32(context, atoi(zArg1));
+      sqlite3_result_int(context, atoi(zArg1));
     }else if( sqlite3StrICmp(zArg0,"double")==0 ){
       sqlite3_result_double(context, sqlite3AtoF(zArg1, 0));
     }else{
@@ -855,7 +881,7 @@ static int test_bind_int32(
   if( Tcl_GetIntFromObj(interp, objv[2], &idx) ) return TCL_ERROR;
   if( Tcl_GetIntFromObj(interp, objv[3], &value) ) return TCL_ERROR;
 
-  rc = sqlite3_bind_int32(pStmt, idx, value);
+  rc = sqlite3_bind_int(pStmt, idx, value);
   if( rc!=SQLITE_OK ){
     return TCL_ERROR;
   }
@@ -1431,7 +1457,7 @@ static int test_column_blob(
   int col;
 
   int len;
-  void *pBlob;
+  const void *pBlob;
 
   if( objc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", 
@@ -1473,7 +1499,7 @@ static int test_column_double(
   if( Tcl_GetIntFromObj(interp, objv[2], &col) ) return TCL_ERROR;
 
   rVal = sqlite3_column_double(pStmt, col);
-  Tcl_SetObjResult(interp, Tcl_NewDoubleObj(iVal));
+  Tcl_SetObjResult(interp, Tcl_NewDoubleObj(rVal));
   return TCL_OK;
 }
 
@@ -1558,7 +1584,7 @@ static int test_stmt_utf8(
 ){
   sqlite3_stmt *pStmt;
   int col;
-  const char *(xFunc *)(sqlite3_stmt*, int) = clientData;
+  const char *(*xFunc)(sqlite3_stmt*, int) = clientData;
 
   if( objc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", 
@@ -1589,7 +1615,7 @@ static int test_stmt_utf16(
   int col;
   Tcl_Obj *pRet;
   const void *zName16;
-  const void *(xFunc *)(sqlite3_stmt*, int) = clientData;
+  const void *(*xFunc)(sqlite3_stmt*, int) = clientData;
 
   if( objc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", 
@@ -1623,7 +1649,7 @@ static int test_stmt_int(
 ){
   sqlite3_stmt *pStmt;
   int col;
-  int (xFunc *)(sqlite3_stmt*, int) = clientData;
+  int (*xFunc)(sqlite3_stmt*, int) = clientData;
 
   if( objc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", 
@@ -1721,7 +1747,8 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
     Tcl_CreateCommand(interp, aCmd[i].zName, aCmd[i].xProc, 0, 0);
   }
   for(i=0; i<sizeof(aObjCmd)/sizeof(aObjCmd[0]); i++){
-    Tcl_CreateObjCommand(interp, aObjCmd[i].zName, aObjCmd[i].xProc, 0, 0);
+    Tcl_CreateObjCommand(interp, aObjCmd[i].zName, 
+        aObjCmd[i].xProc, aObjCmd[i].clientData, 0);
   }
   Tcl_LinkVar(interp, "sqlite_search_count", 
       (char*)&sqlite3_search_count, TCL_LINK_INT);

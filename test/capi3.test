@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi3.test,v 1.7 2004/05/27 01:49:51 danielk1977 Exp $
+# $Id: capi3.test,v 1.8 2004/05/27 09:28:44 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -152,7 +152,7 @@ do_test capi3-4.3 {
 do_test capi3-4.4 {
   utf8 [sqlite3_errmsg16 $db2]
 } {unable to open database file}
-do_test capi3-4.4 {
+do_test capi3-4.5 {
   sqlite3_close $db2
 } {}
 
@@ -174,14 +174,14 @@ do_test capi3-4.4 {
 # set STMT [sqlite3_prepare "SELECT 1, 2, 2;" -1 DUMMY]
 # check_header test1.1 {1 2 3} {"" "" ""}
 #
-proc check_header {STMT test names decltypes} }
+proc check_header {STMT test names decltypes} {
 
   # Use the return value of sqlite3_column_count() to build
   # a list of column indexes. i.e. If sqlite3_column_count
   # is 3, build the list {0 1 2}.
-  set idxlist [list]
+  set ::idxlist [list]
   set numcols [sqlite3_column_count $STMT]
-  for {set i 0} {$i < $numcols} {incr i} {lappend idxlist $i}
+  for {set i 0} {$i < $numcols} {incr i} {lappend ::idxlist $i}
 
   # Column names in UTF-8
   do_test $test.1 {
@@ -239,9 +239,9 @@ proc check_data {STMT test types ints doubles strings} {
   # Use the return value of sqlite3_column_count() to build
   # a list of column indexes. i.e. If sqlite3_column_count
   # is 3, build the list {0 1 2}.
-  set idxlist [list]
+  set ::idxlist [list]
   set numcols [sqlite3_data_count $STMT]
-  for {set i 0} {$i < $numcols} {incr i} {lappend idxlist $i}
+  for {set i 0} {$i < $numcols} {incr i} {lappend ::idxlist $i}
 
 # types
 do_test $test.1 {
@@ -313,6 +313,7 @@ do_test capi3-5.0 {
     CREATE TABLE t1(a VARINT, b BLOB, c VARCHAR(16));
     INSERT INTO t1 VALUES(1, 2, 3);
     INSERT INTO t1 VALUES('one', 'two', NULL);
+    INSERT INTO t1 VALUES(1.2, 1.3, 1.4);
   }
   set sql "SELECT * FROM t1"
   set STMT [sqlite3_prepare $DB $sql -1 TAIL]
@@ -338,9 +339,16 @@ check_data $STMT capi3-5.7 {TEXT TEXT NULL} {0 0 0} {0 0 0} {one two {}}
 
 do_test capi3-5.8 {
   sqlite3_step $STMT
+} SQLITE_ROW
+
+check_header $STMT capi3-5.9 {a b c} {VARIANT BLOB VARCHAR(16)}
+check_data $STMT capi3-5.10 {REAL REAL TEXT} {1 1 1} {1.2 1.3 1.4} {1.2 1.3 1.4}
+
+do_test capi3-5.11 {
+  sqlite3_step $STMT
 } SQLITE_DONE
 
-do_test capi3-5.9 {
+do_test capi3-5.12 {
   sqlite3_finalize $STMT
 } SQLITE_OK
 

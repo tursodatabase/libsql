@@ -82,7 +82,7 @@ int sqlite3VdbeChangeEncoding(Mem *pMem, int desiredEnc){
 ** Return SQLITE_OK on success or SQLITE_NOMEM if malloc fails.
 */
 int sqlite3VdbeMemDynamicify(Mem *pMem){
-  int n;
+  int n = pMem->n;
   u8 *z;
   if( (pMem->flags & (MEM_Ephem|MEM_Static|MEM_Short))==0 ){
     return SQLITE_OK;
@@ -199,7 +199,8 @@ int sqlite3VdbeMemStringify(Mem *pMem, int enc){
 */
 static void releaseMem(Mem *p){
   if( p->flags & MEM_Dyn ){
-    sqliteFree(p);
+    sqliteFree(p->z);
+    p->z = 0;
   }
 }
 
@@ -235,7 +236,7 @@ int sqlite3VdbeMemIntegerify(Mem *pMem){
 */
 int sqlite3VdbeMemRealify(Mem *pMem){
   if( pMem->flags & MEM_Int ){
-    pMem->r = pMem->r;
+    pMem->r = pMem->i;
     pMem->flags |= MEM_Real;
   }else if( pMem->flags & (MEM_Str|MEM_Blob) ){
     if( sqlite3VdbeChangeEncoding(pMem, TEXT_Utf8)
@@ -444,3 +445,43 @@ int sqlite3MemCompare(const Mem *pMem1, const Mem *pMem2, const CollSeq *pColl){
   }
   return rc;
 }
+
+#ifndef NDEBUG
+/*
+** Perform various checks on the memory cell pMem. An assert() will
+** fail if pMem is internally inconsistent.
+*/
+void sqlite3VdbeMemSanity(Mem *pMem, u8 db_enc){
+  int flags = pMem->flags;
+  assert( flags!=0 );  /* Must define some type */
+  if( pMem->flags & (MEM_Str|MEM_Blob) ){
+    int x = pMem->flags & (MEM_Static|MEM_Dyn|MEM_Ephem|MEM_Short);
+    assert( x!=0 );            /* Strings must define a string subtype */
+    assert( (x & (x-1))==0 );  /* Only one string subtype can be defined */
+    assert( pMem->z!=0 );      /* Strings must have a value */
+    /* Mem.z points to Mem.zShort iff the subtype is MEM_Short */
+    assert( (pMem->flags & MEM_Short)==0 || pMem->z==pMem->zShort );
+    assert( (pMem->flags & MEM_Short)!=0 || pMem->z!=pMem->zShort );
+
+    if( (flags & MEM_Str) ){
+      assert( pMem->enc==TEXT_Utf8 || 
+              pMem->enc==TEXT_Utf16le ||
+              pMem->enc==TEXT_Utf16be 
+      );
+      /* If the string is UTF-8 encoded and nul terminated, then pMem->n
+      ** must be the length of the string.
+      */
+      if( pMem->enc==TEXT_Utf8 && (flags & MEM_Term) ){ 
+        assert( strlen(pMem->z)==pMem->n );
+      }
+    }
+  }else{
+    /* Cannot define a string subtype for non-string objects */
+    assert( (pMem->flags & (MEM_Static|MEM_Dyn|MEM_Ephem|MEM_Short))==0 );
+  }
+  /* MEM_Null excludes all other types */
+  assert( (pMem->flags&(MEM_Str|MEM_Int|MEM_Real|MEM_Blob))==0
+          || (pMem->flags&MEM_Null)==0 );
+}
+#endif
+

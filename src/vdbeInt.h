@@ -364,3 +364,7 @@ int sqlite3VdbeMemDynamicify(Mem*);
 int sqlite3VdbeMemStringify(Mem*, int);
 int sqlite3VdbeMemIntegerify(Mem*);
 int sqlite3VdbeMemRealify(Mem*);
+#ifndef NDEBUG
+void sqlite3VdbeMemSanity(Mem*, u8);
+#endif
+

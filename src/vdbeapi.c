@@ -95,25 +95,6 @@ const void *sqlite3_value_text16(sqlite3_value* pVal){
 }
 int sqlite3_value_type(sqlite3_value* pVal){
   return pVal->type;
-#if 0
-  int f = ((Mem *)pVal)->flags;
-  if( f&MEM_Null ){
-    return SQLITE3_NULL;
-  }
-  if( f&MEM_Int ){
-    return SQLITE3_INTEGER;
-  }
-  if( f&MEM_Real ){
-    return SQLITE3_FLOAT;
-  }
-  if( f&MEM_Str ){
-    return SQLITE3_TEXT;
-  }
-  if( f&MEM_Blob ){
-    return SQLITE3_BLOB;
-  }
-  assert(0);
-#endif
 }
 
 /**************************** sqlite3_result_  *******************************
@@ -286,6 +267,9 @@ static Mem *columnMem(sqlite3_stmt *pStmt, int i){
 ** The following routines are used to access elements of the current row
 ** in the result set.
 */
+const void *sqlite3_column_blob(sqlite3_stmt *pStmt, int i){
+  return sqlite3_value_blob( columnMem(pStmt,i) );
+}
 int sqlite3_column_bytes(sqlite3_stmt *pStmt, int i){
   return sqlite3_value_bytes( columnMem(pStmt,i) );
 }

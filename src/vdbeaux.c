@@ -607,6 +607,28 @@ int sqlite3VdbeList(
 }
 
 /*
+** If pOp is an OP_HexBlob opcode, then transform it to an OP_Blob
+** opcode. 
+*/
+static int translateOp(Op *pOp){
+  if( pOp->opcode==OP_HexBlob ){
+    char *zBlob = sqlite3HexToBlob(pOp->p3);
+    if( !zBlob ){
+      if( sqlite3_malloc_failed ){
+        return SQLITE_NOMEM;
+      }
+      return SQLITE_ERROR;
+    }
+    pOp->p1 = strlen(pOp->p3)/2;
+    if( pOp->p3type==P3_DYNAMIC ){
+      sqliteFree(pOp->p3);
+    }
+    pOp->p3 = zBlob;
+    pOp->p3type = P3_DYNAMIC;
+  }
+}
+
+/*
 ** Prepare a virtual machine for execution.  This involves things such
 ** as allocating stack space and initializing the program counter.
 ** After the VDBE has be prepped, it can be executed by one or more
@@ -677,6 +699,12 @@ void sqlite3VdbeMakeReady(
     }
   }
 #endif
+  {
+    int i;
+    for(i=0; i<p->nOp; i++){
+      translateOp(&p->aOp[i]);
+    }
+  }
 }
 
 
@@ -1270,12 +1298,13 @@ int sqlite3VdbeSerialGet(
   /* String or blob */
   assert( serial_type>=12 );
   len = sqlite3VdbeSerialTypeLen(serial_type);
+  pMem->z = buf;
+  pMem->n = len;
   if( serial_type&0x01 ){
     pMem->flags = MEM_Str | MEM_Ephem;
-    pMem->n = len;
+    pMem->enc = enc;
   }else{
     pMem->flags = MEM_Blob | MEM_Ephem;
-    pMem->n = len;
   }
   sqlite3VdbeMemMakeWriteable(pMem);
   return len;

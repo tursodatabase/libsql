@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.129 2004/05/27 03:12:54 drh Exp $
+** $Id: expr.c,v 1.130 2004/05/27 09:28:42 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -423,6 +423,7 @@ int sqlite3ExprIsConstant(Expr *p){
       return 0;
     case TK_NULL:
     case TK_STRING:
+    case TK_BLOB:
     case TK_INTEGER:
     case TK_FLOAT:
     case TK_VARIABLE:
@@ -1039,6 +1040,7 @@ int sqlite3ExprType(Expr *p){
   while( p ) switch( p->op ){
     case TK_CONCAT:
     case TK_STRING:
+    case TK_BLOB:
       return SQLITE_AFF_TEXT;
 
     case TK_AS:
@@ -1105,6 +1107,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
     case TK_REM:      op = OP_Remainder;  break;
     case TK_FLOAT:    op = OP_Real;       break;
     case TK_STRING:   op = OP_String;     break;
+    case TK_BLOB:     op = OP_HexBlob;    break;
     default: break;
   }
   switch( pExpr->op ){
@@ -1125,6 +1128,11 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
     case TK_FLOAT:
     case TK_STRING: {
       sqlite3VdbeOp3(v, op, 0, 0, pExpr->token.z, pExpr->token.n);
+      sqlite3VdbeDequoteP3(v, -1);
+      break;
+    }
+    case TK_BLOB: {
+      sqlite3VdbeOp3(v, op, 0, 0, pExpr->token.z+1, pExpr->token.n-1);
       sqlite3VdbeDequoteP3(v, -1);
       break;
     }

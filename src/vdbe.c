@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.338 2004/05/27 03:12:55 drh Exp $
+** $Id: vdbe.c,v 1.339 2004/05/27 09:28:43 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -127,6 +127,30 @@ int sqlite3_interrupt_count = 0;
 #define Realify(P,enc) \
     if(((P)->flags&MEM_Real)==0){ sqlite3VdbeMemRealify(P); }
 
+/*
+** Argument pMem points at a memory cell that will be passed to a
+** user-defined function or returned to the user as the result of a query.
+** The second argument, 'db_enc' is the text encoding used by the vdbe for
+** stack variables.  This routine sets the pMem->enc and pMem->type
+** variables used by the sqlite3_value_*() routines.
+*/
+static void StoreTypeInfo(Mem *pMem, u8 db_enc){
+  int flags = pMem->flags;
+  if( flags & MEM_Null ){
+    pMem->type = SQLITE3_NULL;
+  }
+  else if( flags & MEM_Int ){
+    pMem->type = SQLITE3_INTEGER;
+  }
+  else if( flags & MEM_Real ){
+    pMem->type = SQLITE3_FLOAT;
+  }
+  else if( flags & MEM_Str ){
+    pMem->type = SQLITE3_TEXT;
+  }else{
+    pMem->type = SQLITE3_BLOB;
+  }
+}
 
 /*
 ** Insert a new aggregate element and make it the element that
@@ -284,6 +308,7 @@ static void applyAffinity(Mem *pRec, char affinity, u8 enc){
         ** it looks like a number.
         */
         int realnum;
+        sqlite3VdbeMemNulTerminate(pRec);
         if( pRec->flags&MEM_Str && sqlite3IsNumber(pRec->z, &realnum, enc) ){
           if( realnum ){
             Realify(pRec, enc);
@@ -295,7 +320,7 @@ static void applyAffinity(Mem *pRec, char affinity, u8 enc){
 
       if( affinity==SQLITE_AFF_INTEGER ){
         /* For INTEGER affinity, try to convert a real value to an int */
-        if( pRec->flags&MEM_Real ){
+        if( (pRec->flags&MEM_Real) && !(pRec->flags&MEM_Int) ){
           pRec->i = pRec->r;
           if( ((double)pRec->i)==pRec->r ){
             pRec->flags |= MEM_Int;
@@ -762,11 +787,36 @@ case OP_Real: {
 */
 case OP_String: {
   pTos++;
-  pTos->flags = MEM_Str|MEM_Static|MEM_Term;
-  pTos->enc = TEXT_Utf8;
-  pTos->z = pOp->p3;
-  pTos->n = strlen(pTos->z);
-  sqlite3VdbeChangeEncoding(pTos, db->enc);
+  if( pOp->p3 ){
+    pTos->flags = MEM_Str|MEM_Static|MEM_Term;
+    pTos->enc = TEXT_Utf8;
+    pTos->z = pOp->p3;
+    pTos->n = strlen(pTos->z);
+    sqlite3VdbeChangeEncoding(pTos, db->enc);
+  }else{
+    pTos->flags = MEM_Null;
+  }
+  break;
+}
+
+#if 0
+/* Opcode: HexBlob * * P3
+**
+** This opcode does not exist at vdbe execution time.
+*/
+case OP_HexBlob: {
+  break;
+}
+#endif
+
+/* Opcode: Blob P1 * P3
+**
+** P3 points to a blob of data P1 bytes long. Push this
+** value onto the stack.
+*/
+case OP_Blob: {
+  pTos++;
+  sqlite3VdbeMemSetStr(pTos, pOp->p3, pOp->p1, 0, 0);
   break;
 }
 
@@ -985,6 +1035,7 @@ case OP_Callback: {
   for(i=0; i<pOp->p1; i++){
     Mem *pVal = &pTos[0-i];
     sqlite3VdbeMemNulTerminate(pVal);
+    StoreTypeInfo(pVal, db->enc);
   }
 
   p->resOnStack = 1;
@@ -1027,6 +1078,7 @@ case OP_Concat: {
     sqlite3VdbeChangeEncoding(&mSep, db->enc);
   }else{
     mSep.flags = MEM_Null;
+    mSep.n = 0;
   }
 
   /* Loop through the stack elements to see how long the result will be. */
@@ -1073,7 +1125,7 @@ case OP_Concat: {
     }
     zNew[j] = 0;
     zNew[j+1] = 0;
-    assert( j==nByte-1 );
+    assert( j==nByte );
 
     if( pOp->p2==0 ){
       popStack(&pTos, nField);
@@ -1231,6 +1283,7 @@ case OP_Function: {
   pArg = &pTos[1-n];
   for(i=0; i<n; i++, pArg++){
     apVal[i] = pArg;
+    StoreTypeInfo(pArg, db->enc);
   }
 
   ctx.pFunc = (FuncDef*)pOp->p3;
@@ -4107,6 +4160,7 @@ case OP_SortPut: {
   Mem *pNos = &pTos[-1];
   Sorter *pSorter;
   assert( pNos>=p->aStack );
+  Stringify(pNos, db->enc);
   if( Dynamicify(pTos, db->enc) || Dynamicify(pNos, db->enc) ) goto no_mem;
   pSorter = sqliteMallocRaw( sizeof(Sorter) );
   if( pSorter==0 ) goto no_mem;
@@ -4346,7 +4400,10 @@ fileread_jump:
 ** from the input file.
 */
 case OP_FileColumn: {
-#if 0   /* Will be deleting this soon */
+/*
+** FIX ME: This will be deleted, but loads of test case files have
+** to be updated first...
+*/
   int i = pOp->p1;
   char *z;
   assert( i>=0 && i<p->nField );
@@ -4357,13 +4414,14 @@ case OP_FileColumn: {
   }
   pTos++;
   if( z ){
-    pTos->n = strlen(z) + 1;
+    pTos->n = strlen(z);
     pTos->z = z;
     pTos->flags = MEM_Str | MEM_Ephem | MEM_Term;
+    pTos->enc = TEXT_Utf8;
+    sqlite3VdbeChangeEncoding(pTos, db->enc);
   }else{
     pTos->flags = MEM_Null;
   }
-#endif
   break;
 }
 
@@ -4520,7 +4578,8 @@ case OP_AggFunc: {
   assert( apVal || n==0 );
 
   for(i=0; i<n; i++, pRec++){
-      apVal[i] = pRec;
+    apVal[i] = pRec;
+    StoreTypeInfo(pRec, db->enc);
   }
   i = pTos->i;
   assert( i>=0 && i<p->agg.nMem );
@@ -4728,24 +4787,7 @@ default: {
 #ifndef NDEBUG
     /* Sanity checking on the top element of the stack */
     if( pTos>=p->aStack ){
-      assert( pTos->flags!=0 );  /* Must define some type */
-      if( pTos->flags & (MEM_Str|MEM_Blob) ){
-        int x = pTos->flags & (MEM_Static|MEM_Dyn|MEM_Ephem|MEM_Short);
-        assert( x!=0 );            /* Strings must define a string subtype */
-        assert( (x & (x-1))==0 );  /* Only one string subtype can be defined */
-        assert( pTos->z!=0 );      /* Strings must have a value */
-        /* Mem.z points to Mem.zShort iff the subtype is MEM_Short */
-        assert( (pTos->flags & MEM_Short)==0 || pTos->z==pTos->zShort );
-        assert( (pTos->flags & MEM_Short)!=0 || pTos->z!=pTos->zShort );
-        assert( (pTos->flags & MEM_Term)==0 || (pTos->flags & MEM_Str)==0
-                 || db->enc!=TEXT_Utf8 || strlen(pTos->z)==pTos->n );
-      }else{
-        /* Cannot define a string subtype for non-string objects */
-        assert( (pTos->flags & (MEM_Static|MEM_Dyn|MEM_Ephem|MEM_Short))==0 );
-      }
-      /* MEM_Null excludes all other types */
-      assert( (pTos->flags&(MEM_Str|MEM_Int|MEM_Real|MEM_Blob))==0
-              || (pTos->flags&MEM_Null)==0 );
+      sqlite3VdbeMemSanity(pTos, db->enc);
     }
     if( pc<-1 || pc>=p->nOp ){
       sqlite3SetString(&p->zErrMsg, "jump destination out of range", (char*)0);

@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.59 2004/05/27 03:12:55 drh Exp $
+** $Id: func.c,v 1.60 2004/05/27 09:28:42 danielk1977 Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -40,9 +40,10 @@ static void minmaxFunc(
 
   if( argc==0 ) return;
   mask = (int)sqlite3_user_data(context);
+  assert( mask==-1 || mask==0 );
   iBest = 0;
   for(i=1; i<argc; i++){
-    if( (sqlite3MemCompare(argv[iBest], argv[i], 0)^mask)<0 ){
+    if( (sqlite3MemCompare(argv[iBest], argv[i], 0)^mask)>=0 ){
       iBest = i;
     }
   }
@@ -190,7 +191,7 @@ static void upperFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   char *z;
   int i;
   if( argc<1 || SQLITE3_NULL==sqlite3_value_type(argv[0]) ) return;
-  z = sqliteMalloc(sqlite3_value_bytes(argv[0]));
+  z = sqliteMalloc(sqlite3_value_bytes(argv[0])+1);
   if( z==0 ) return;
   strcpy(z, sqlite3_value_text(argv[0]));
   for(i=0; z[i]; i++){
@@ -203,7 +204,7 @@ static void lowerFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   char *z;
   int i;
   if( argc<1 || SQLITE3_NULL==sqlite3_value_type(argv[0]) ) return;
-  z = sqliteMalloc(sqlite3_value_bytes(argv[0]));
+  z = sqliteMalloc(sqlite3_value_bytes(argv[0])+1);
   if( z==0 ) return;
   strcpy(z, sqlite3_value_text(argv[0]));
   for(i=0; z[i]; i++){
@@ -690,12 +691,20 @@ void sqlite3RegisterBuiltinFunctions(sqlite *db){
   int i;
 
   for(i=0; i<sizeof(aFuncs)/sizeof(aFuncs[0]); i++){
-    void *pArg = aFuncs[i].argType==2 ? (void*)(-1) : db;
+    void *pArg = 0;
+    switch( aFuncs[i].argType ){
+      case 1: pArg = db; break;
+      case 2: pArg = (void *)(-1); break;
+    }
     sqlite3_create_function(db, aFuncs[i].zName, aFuncs[i].nArg, 0, 0,
         pArg, aFuncs[i].xFunc, 0, 0);
   }
   for(i=0; i<sizeof(aAggs)/sizeof(aAggs[0]); i++){
-    void *pArg = aAggs[i].argType==2 ? (void*)(-1) : db;
+    void *pArg = 0;
+    switch( aAggs[i].argType ){
+      case 1: pArg = db; break;
+      case 2: pArg = (void *)(-1); break;
+    }
     sqlite3_create_function(db, aAggs[i].zName, aAggs[i].nArg, 0, 0, pArg,
         0, aAggs[i].xStep, aAggs[i].xFinalize);
   }
