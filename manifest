@@ -1,5 +1,5 @@
-C Added\sthe\snew\sFULL\soption\sto\sthe\sSYNCHRONOUS\spragma.\s\sStill\sneed\sto\stest\sit.\s(CVS\s863)
-D 2003-02-12T14:09:43
+C Added\sthe\snew\sFULL\soption\sto\sthe\sSYNCHRONOUS\spragma.\s\sStill\sneed\sto\stest\sit.\s(CVS\s1728)
+D 2003-02-12T14:09:44
 F Makefile.in 6606854b1512f185b8e8c779b8d7fc2750463d64
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -155,7 +155,7 @@ F www/speed.tcl 4d463e2aea41f688ed320a937f93ff885be918c3
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 6c927dd36c19ebb8bb8222b4d18ed67f4fe733e8
+P 792a9e157dd066fcaffd4f5b373010151fb4ca61
 R 4c767e05bbbde68a52aa488a93a1a8fd
 U drh
-Z c4a4b24e4cf8bd7a0ea9e8a1c854d6c7
+Z 628b9de7e355f82d06d514404826a9e9
