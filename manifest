@@ -1,5 +1,5 @@
-C Perpare\sto\sfork\sSQLite2.0\sdevelop\sinto\sa\sseparate\stree\s(CVS\s183)
-D 2001-02-11T16:56:24
+C Perpare\sto\sfork\sSQLite2.0\sdevelop\sinto\sa\sseparate\stree\s(CVS\s184)
+D 2001-02-11T16:58:22
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 7efa81e2985b45ba73db27d55b70cc927f5abfd7
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -22,6 +22,7 @@ F src/ex/dbbebdb1.c 61ed414307f829478614def33de640bbe5b2f770
 F src/ex/dbbemird.c b00aef85656fa0a101dac2c32e12922ad106715a
 F src/ex/pg.c 2bbf6a94f37226d06337868b6bf4d7affc60197f
 F src/ex/pg.h 23a4ac807b0546ec2bb6239ec8bd3e06926572cd
+F src/ex/sizes.tcl f54bad4a2ac567624be59131a6ee42d71b41a3d7
 F src/expr.c 49bc261fdc4f4fb91c74cd668a9a952c00e85931
 F src/insert.c 4bc1cab84f7805d560a1417734a532843e30b762
 F src/main.c 5afe29c425b875acede20f609485866eb5b276f6
@@ -74,12 +75,14 @@ F tool/memleak.awk a0a11dd84bf4582acc81c3c61271021ae49b3f15
 F tool/opNames.awk 2bd9071a138e4e2be13dc98fe066398a61219e1e
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/renumberOps.awk 6d067177ad5f8d711b79577b462da9b3634bd0a9
+F tool/report1.txt 9eae07f26a8fc53889b45fc833a66a33daa22816
 F www/arch.fig 4f246003b7da23bd63b8b0af0618afb4ee3055c8
 F www/arch.png 8dae0766d42ed3de9ed013c1341a5792bcf633e6
 F www/arch.tcl a40380c1fe0080c43e6cc5c20ed70731511b06be
 F www/c_interface.tcl 11be2d5826eb7d6efd629751d3b483c1ed78ba14
 F www/changes.tcl 2bd34627e9dc459f53d7e11630d92660be974b10
 F www/crosscompile.tcl c99efacb3aefaa550c6e80d91b240f55eb9fd33e
+F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/fileformat.tcl cfb7fba80b7275555281ba2f256c00734bcdd1c9
 F www/index.tcl b19418d506f90968deef972bf1b427d98bdf13e0
 F www/lang.tcl 9192e114b19987e630a41e879585b87006eb84a1
@@ -88,7 +91,7 @@ F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 06f81c401f79a04f2c5ebfb97e7c176225c0aef2
 F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P 5128135c7e12f763722981ad39ecb7835db49142
-R ab8718eb81b6e7a57fbb613590282f19
+P 6adb6078871114ba19ab601bb94d43ff9e03e43f
+R 3ed34f8024572f0ced21ee5caed411da
 U drh
-Z 4c71efe3f5c2467e23cd148f67512b61
+Z 56b41e6c371943f084f1d3f2aaab9dea
