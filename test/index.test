@@ -23,7 +23,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE INDEX statement.
 #
-# $Id: index.test,v 1.3 2000/06/03 18:06:53 drh Exp $
+# $Id: index.test,v 1.4 2000/06/08 16:54:40 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -256,5 +256,36 @@ do_test index-9.2 {
   execsql {CREATE INDEX idx1 ON tab1(a)}
   execsql {SELECT name FROM sqlite_master WHERE tbl_name='tab1' ORDER BY name}
 } {idx1 tab1}
+
+# Allow more than one entry with the same key.
+#
+do_test index-10.0 {
+  execsql {
+    CREATE TABLE t1(a int, b int);
+    CREATE INDEX i1 ON t1(a);
+    INSERT INTO t1 VALUES(1,2);
+    INSERT INTO t1 VALUES(2,4);
+    INSERT INTO t1 VALUES(3,8);
+    INSERT INTO t1 VALUES(1,12);
+    SELECT b FROM t1 WHERE a=1 ORDER BY b;
+  }
+} {2 12}
+do_test index-10.1 {
+  execsql {
+    SELECT b FROM t1 WHERE a=2 ORDER BY b;
+  }
+} {4}
+do_test index-10.2 {
+  execsql {
+    DELETE FROM t1 WHERE b=12;
+    SELECT b FROM t1 WHERE a=1 ORDER BY b;
+  }
+} {2}
+do_test index-10.2 {
+  execsql {
+    DELETE FROM t1 WHERE b=2;
+    SELECT b FROM t1 WHERE a=1 ORDER BY b;
+  }
+} {}
 
 finish_test
