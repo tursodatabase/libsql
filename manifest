@@ -1,5 +1,5 @@
-C Make\ssure\sthe\sin-memory\sdatabase\scan\shandle\smalloc\sfailures.\s(CVS\s1169)
-D 2004-01-12T00:21:52
+C Previous\scommit\sof\schanges\sto\sthe\sin-memory\sbackend\swas\snot\squite\sright.\nThis\scheck-in\sshould\ssquare\sthings\saway.\s(CVS\s1170)
+D 2004-01-12T00:38:18
 F Makefile.in 0515ff9218ad8d5a8f6220f0494b8ef94c67013b
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -25,7 +25,7 @@ F src/attach.c 9a3764bbccb1c8b39321630006fbaa0fb8bd1822
 F src/auth.c c59ad0dab501888f8b1fccc25e2f5965d2265116
 F src/btree.c 9ab30f0504ef69ba4cba2f264d8096c5abc2b7b8
 F src/btree.h 9b7c09f1e64274d7bb74a57bbfc63778f67b1048
-F src/btree_rb.c 8099bcf8645ea0acd698c6a6ca46f2f0a0bca5bb
+F src/btree_rb.c 50210dfd2a5f410c8624ef8fde8e82babd376d9f
 F src/build.c a7493c433de5b552f9535d8fa7ed80aaf135491e
 F src/copy.c 9e47975ea96751c658bcf1a0c4f0bb7c6ee61e73
 F src/date.c bb89fdb9c89e367b9a728c58cb96e4823974a2c1
@@ -179,7 +179,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P 34a6b7416c6c9bcdf301f5e7b072a0362a746105
-R ac3afb88f5f267ab631548289577e731
+P ba92af182c6c9c6b2e3816006191eedd424cdf1a
+R 307cb45777333f2e72fe44cddf3ecacb
 U drh
-Z 3b4e454fa5b8ade83f8e931bb2e45a2d
+Z f695ac6fe51efc19af97215d9291a74f

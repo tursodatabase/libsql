@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree_rb.c,v 1.19 2004/01/12 00:21:52 drh Exp $
+** $Id: btree_rb.c,v 1.20 2004/01/12 00:38:18 drh Exp $
 **
 ** This file implements an in-core database using Red-Black balanced
 ** binary trees.
@@ -765,7 +765,7 @@ static int memRbtreeInsert(
   /* Take a copy of the input data now, in case we need it for the 
    * replace case */
   pData = sqliteMallocRaw(nData);
-  if( pData==0 ) return SQLITE_NOMEM;
+  if( sqlite_malloc_failed ) return SQLITE_NOMEM;
   memcpy(pData, pDataInput, nData);
 
   /* Move the cursor to a node near the key to be inserted. If the key already
@@ -785,7 +785,7 @@ static int memRbtreeInsert(
     if( pNode==0 ) return SQLITE_NOMEM;
     pNode->nKey = nKey;
     pNode->pKey = sqliteMallocRaw(nKey);
-    if( pNode->pKey==0 ) return SQLITE_NOMEM;
+    if( sqlite_malloc_failed ) return SQLITE_NOMEM;
     memcpy(pNode->pKey, pKey, nKey);
     pNode->nData = nData;
     pNode->pData = pData; 
@@ -822,7 +822,7 @@ static int memRbtreeInsert(
       pOp->iTab = pCur->iTree;
       pOp->nKey = pNode->nKey;
       pOp->pKey = sqliteMallocRaw( pOp->nKey );
-      if( pOp->pKey==0 ) return SQLITE_NOMEM;
+      if( sqlite_malloc_failed ) return SQLITE_NOMEM;
       memcpy( pOp->pKey, pNode->pKey, pOp->nKey );
       btreeLogRollbackOp(pCur->pRbtree, pOp);
     }
@@ -838,7 +838,7 @@ static int memRbtreeInsert(
       pOp->iTab = pCur->iTree;
       pOp->nKey = pCur->pNode->nKey;
       pOp->pKey = sqliteMallocRaw( pOp->nKey );
-      if( pOp->pKey==0 ) return SQLITE_NOMEM;
+      if( sqlite_malloc_failed ) return SQLITE_NOMEM;
       memcpy( pOp->pKey, pCur->pNode->pKey, pOp->nKey );
       pOp->nData = pCur->pNode->nData;
       pOp->pData = pCur->pNode->pData;
