@@ -96,11 +96,13 @@ static int crashRequired(char const *zPath){
   }else if( strlen(zPath)>n ){
     n = strlen(zPath);
   }
-  r = ( 
-    iCrashDelay>0 &&
-    !strncmp(zPath, zCrashFile, n) &&
-    --iCrashDelay==0
-  )?1:0;
+  r = 0;
+  if( iCrashDelay>0 && strncmp(zPath, zCrashFile, n)==0 ){
+    iCrashDelay--;
+    if( iCrashDelay<=0 ){
+      r = 1;
+    }
+  }
   sqlite3OsLeaveMutex();
   return r;
 }
@@ -157,6 +159,7 @@ static off_t osTell(OsTestFile *pFile){
 static int cacheBlock(OsTestFile *pFile, int blk){
   if( blk>=pFile->nBlk ){
     int n = ((pFile->nBlk * 2) + 100 + blk);
+    /* if( pFile->nBlk==0 ){ printf("DIRTY %s\n", pFile->zName); } */
     pFile->apBlk = (u8 **)sqliteRealloc(pFile->apBlk, n * sizeof(u8*));
     if( !pFile->apBlk ) return SQLITE_NOMEM;
     memset(&pFile->apBlk[pFile->nBlk], 0, (n - pFile->nBlk)*sizeof(u8*));
@@ -283,6 +286,7 @@ static int writeCache(OsTestFile *pFile){
 int sqlite3OsClose(OsFile *id){
   if( !(*id) ) return SQLITE_OK;
   if( (*id)->fd.isOpen ){
+    /* printf("CLOSE %s (%d blocks)\n", (*id)->zName, (*id)->nBlk); */
     writeCache(*id);
     sqlite3RealClose(&(*id)->fd);
   }
@@ -386,7 +390,9 @@ int sqlite3OsWrite(OsFile *id, const void *pBuf, int amt){
 ** real sync() function.
 */
 int sqlite3OsSync(OsFile *id){
-  int rc = writeCache(*id);
+  int rc;
+  /* printf("SYNC %s (%d blocks)\n", (*id)->zName, (*id)->nBlk); */
+  rc = writeCache(*id);
   if( rc!=SQLITE_OK ) return rc;
   rc = sqlite3RealSync(&(*id)->fd);
   return rc;
