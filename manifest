@@ -1,5 +1,5 @@
-C Add\spreliminary\slogic\sfor\sthe\seventual\smove\sto\shaving\sseparate\sTEXT\sand\nNUMTEXT\sdatatypes.\s\sAlso\schange\sthe\sversion\snumber\sto\s2.5.0\sin\spreparation\nfor\san\sinterim\srelease.\s(CVS\s625)
-D 2002-06-17T17:07:19
+C Update\sthe\schange\ssummary\sfor\sversion\s2.5.0\s(CVS\s626)
+D 2002-06-17T17:15:47
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -122,7 +122,7 @@ F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 72a0c80e9054cc7025a50928d28d9c75c02c2b8b
 F www/c_interface.tcl 58cf4d128dcae08d91d0011c6d4d11de323f470f
-F www/changes.tcl d1057bb733c574d9dca73578daf78a3128a61426
+F www/changes.tcl c828c925a15c197f542296d001a07fab705518ab
 F www/conflict.tcl 81dd21f9a679e60aae049e9dd8ab53d59570cda2
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
 F www/download.tcl 29aa6679ca29621d10613f60ebbbda18f4b91c49
@@ -137,7 +137,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P cd74495f995803eeb5c2b900d536deb52e5584eb
-R 31140297d3b7945de97d1fa5c462c380
+P 05783a9db585c1ead42135252dca97d2bc6e2118
+R ec45ebcb2d24be890f6c54c516b827ad
 U drh
-Z 0db839a903dfa0a0a59b04ff4d6071dd
+Z 6c6f0b200f084a6179034268df45abab

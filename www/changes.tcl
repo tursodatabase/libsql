@@ -25,6 +25,20 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2002 Jun 17 (2.5.0)} {
+<li>Added support for row triggers.</li>
+<li>Added SQL-92 compliant handling of NULLs.</li>
+<li>Add support for the full SQL-92 join syntax and LEFT OUTER JOINs.</li>
+<li>Double-quoted strings interpreted as column names not text literals.</li>
+<li>Parse (but do not implement) foreign keys.</li>
+<li>Performance improvemenets in the parser, pager, and WHERE clause code
+    generator.</li>
+<li>Make the LIMIT clause work on subqueries.  (ORDER BY still does not
+    work, though.)</li>
+<li>Added the "%Q" expansion to sqlite_*_printf().</li>
+<li>Bug fixes too numerious to mention (see the change log).</li>
+}
+
 chng {2002 May 09 (2.4.12)} {
 <li>Added logic to detect when the library API routines are called out
     of sequence.</li>
