@@ -138,7 +138,7 @@ int sqlite3_step(sqlite3_stmt *pStmt){
   sqlite *db;
   int rc;
 
-  if( p->magic!=VDBE_MAGIC_RUN ){
+  if( p==0 || p->magic!=VDBE_MAGIC_RUN ){
     return SQLITE_MISUSE;
   }
   if( p->aborted ){
@@ -262,7 +262,7 @@ int sqlite3_aggregate_count(sqlite3_context *p){
 */
 int sqlite3_column_count(sqlite3_stmt *pStmt){
   Vdbe *pVm = (Vdbe *)pStmt;
-  return pVm->nResColumn;
+  return pVm ? pVm->nResColumn : 0;
 }
 
 /*
@@ -271,7 +271,7 @@ int sqlite3_column_count(sqlite3_stmt *pStmt){
 */
 int sqlite3_data_count(sqlite3_stmt *pStmt){
   Vdbe *pVm = (Vdbe *)pStmt;
-  if( !pVm->resOnStack ) return 0;
+  if( pVm==0 || !pVm->resOnStack ) return 0;
   return pVm->nResColumn;
 }
 
@@ -405,7 +405,7 @@ const void *sqlite3_column_decltype16(sqlite3_stmt *pStmt, int N){
 */
 static int vdbeUnbind(Vdbe *p, int i){
   Mem *pVar;
-  if( p->magic!=VDBE_MAGIC_RUN || p->pc>=0 ){
+  if( p==0 || p->magic!=VDBE_MAGIC_RUN || p->pc>=0 ){
     sqlite3Error(p->db, SQLITE_MISUSE, 0);
     return SQLITE_MISUSE;
   }
