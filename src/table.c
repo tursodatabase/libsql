@@ -58,10 +58,7 @@ static int sqlite3_get_table_cb(void *pArg, int nCol, char **argv, char **colv){
     char **azNew;
     p->nAlloc = p->nAlloc*2 + need + 1;
     azNew = realloc( p->azResult, sizeof(char*)*p->nAlloc );
-    if( azNew==0 ){
-      p->rc = SQLITE_NOMEM;
-      return 1;
-    }
+    if( azNew==0 ) goto malloc_failed;
     p->azResult = azNew;
   }
 
@@ -75,10 +72,7 @@ static int sqlite3_get_table_cb(void *pArg, int nCol, char **argv, char **colv){
         z = 0;
       }else{
         z = malloc( strlen(colv[i])+1 );
-        if( z==0 ){
-          p->rc = SQLITE_NOMEM;
-          return 1;
-        }
+        if( z==0 ) goto malloc_failed;
         strcpy(z, colv[i]);
       }
       p->azResult[p->nData++] = z;
@@ -99,10 +93,7 @@ static int sqlite3_get_table_cb(void *pArg, int nCol, char **argv, char **colv){
         z = 0;
       }else{
         z = malloc( strlen(argv[i])+1 );
-        if( z==0 ){
-          p->rc = SQLITE_NOMEM;
-          return 1;
-        }
+        if( z==0 ) goto malloc_failed;
         strcpy(z, argv[i]);
       }
       p->azResult[p->nData++] = z;
@@ -110,6 +101,10 @@ static int sqlite3_get_table_cb(void *pArg, int nCol, char **argv, char **colv){
     p->nRow++;
   }
   return 0;
+
+malloc_failed:
+  p->rc = SQLITE_NOMEM;
+  return 1;
 }
 
 /*
@@ -144,9 +139,7 @@ int sqlite3_get_table(
   res.nAlloc = 20;
   res.rc = SQLITE_OK;
   res.azResult = malloc( sizeof(char*)*res.nAlloc );
-  if( res.azResult==0 ){
-    return SQLITE_NOMEM;
-  }
+  if( res.azResult==0 ) return SQLITE_NOMEM;
   res.azResult[0] = 0;
   rc = sqlite3_exec(db, zSql, sqlite3_get_table_cb, &res, pzErrMsg);
   if( res.azResult ){
@@ -190,7 +183,7 @@ int sqlite3_get_table(
 ** This routine frees the space the sqlite3_get_table() malloced.
 */
 void sqlite3_free_table(
-  char **azResult             /* Result returned from from sqlite3_get_table() */
+  char **azResult            /* Result returned from from sqlite3_get_table() */
 ){
   if( azResult ){
     int i, n;
@@ -201,6 +194,3 @@ void sqlite3_free_table(
     free(azResult);
   }
 }
-
-
-

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the sqlite_*_printf() interface.
 #
-# $Id: printf.test,v 1.10 2004/06/25 01:10:48 drh Exp $
+# $Id: printf.test,v 1.11 2004/06/29 13:04:33 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -36,6 +36,9 @@ foreach v {1 2 5 10 99 100 1000000 999999999 0 -1 -2 -5 -10 -99 -100 -9999999} {
   do_test printf-1.$n.6 [subst {
     sqlite3_mprintf_int {Three integers: (% 6d) (% 6x) (% 6o)} $v $v $v
   }] [format {Three integers: (% 6d) (% 6x) (% 6o)} $v $v $v]
+  do_test printf-1.$n.7 [subst {
+    sqlite3_mprintf_int {Three integers: (%#6d) (%#6x) (%#6o)} $v $v $v
+  }] [format {Three integers: (%#6d) (%#6x) (%#6o)} $v $v $v]
   incr n
 }
 
@@ -61,6 +64,9 @@ foreach {a b} {1 1 5 5 10 10 10 5} {
     do_test printf-2.$m.$n.5 [subst {
       sqlite3_mprintf_double {A double: %d %d %#g} $a $b $x
     }] [format {A double: %d %d %#g} $a $b $x]
+    do_test printf-2.$m.$n.6 [subst {
+      sqlite3_mprintf_double {A double: %d %d %010g} $a $b $x
+    }] [format {A double: %d %d %010g} $a $b $x]
     incr n
   }
   incr m
@@ -141,5 +147,18 @@ do_test printf-8.5 {
 do_test printf-8.6 {
   sqlite3_mprintf_int64 {%llx %llo %lld} -1 -1 -1
 } {ffffffffffffffff 1777777777777777777777 -1}
+
+do_test printf-9.1 {
+  sqlite3_mprintf_int {%*.*c} 4 4 65
+} {AAAA}
+do_test printf-9.2 {
+  sqlite3_mprintf_int {%*.*c} -4 1 66
+} {B   }
+do_test printf-9.3 {
+  sqlite3_mprintf_int {%*.*c} 4 1 67
+} {   C}
+do_test printf-9.4 {
+  sqlite3_mprintf_int {%yhello} 0 0 0
+} {%}
 
 finish_test

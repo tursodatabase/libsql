@@ -1,5 +1,5 @@
-C Improved\stest\scoverage\sof\stclsqlite.c\s(CVS\s1761)
-D 2004-06-29T12:39:08
+C Improved\stest\scoverage\sof\stable.c\sand\sprintf.c.\s(CVS\s1762)
+D 2004-06-29T13:04:33
 F Makefile.in cb7a9889c38723f72b2506c4236ff30a05ff172b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -60,7 +60,7 @@ F src/select.c f02a65af34231031896e8442161cb5251e191e75
 F src/shell.c 24b641700c9d90f361fcfa4f432c5b4aff704e6d
 F src/sqlite.h.in b70fded2bdfeaddfb06adea3888118b722975136
 F src/sqliteInt.h 4f8d44f04cc51cb421bf3c195247353a5be2e98f
-F src/table.c af14284fa36c8d41f6829e3f2819dce07d3e2de2
+F src/table.c 4521c278892f60e4d630788c0ea5cf4db1e75c49
 F src/tclsqlite.c 7648310ff0034213f3e58e7272328ed306507e9f
 F src/test1.c 0eca68f6e70069aad7ad0fd91fda886926646786
 F src/test2.c dafd8bd314a554bf376c6d3a8c83fd69219f5a40
@@ -143,7 +143,7 @@ F test/null.test 64730a1c32955e5cc510b7632fed6b9929a4029a
 F test/pager.test 059cc5c58d3b5a851343dff8c56cf7286425d03a
 F test/pager2.test 55469c7c1c1a54d6b32d7b3cc99001e90101a1ce
 F test/pragma.test 212d810e02a51c0ff9784a19d55e35d23382005d
-F test/printf.test 1eb584b7272d1abdfe117b2ef7cf3376ae8e4e06
+F test/printf.test 5ed2e033a0b47f901764096bf1907915d6e39406
 F test/progress.test 76c722f090b1ccb575e7e4e203a71608c5763beb x
 F test/quick.test 4c0b3eabe2e0e606622d63d7d61ef6efb3ce156b
 F test/quote.test 08f23385c685d3dc7914ec760d492cacea7f6e3d
@@ -232,7 +232,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 7a15391079ae9ce5360fa13e8779c8872885e789
-R 6d1cc0ec8c79803128be2f6b6916c2d6
+P 008e57dcd5e16886ed732fe1e9797a3c00e8c579
+R 094ef9d75f74182971b9bfef31c30613
 U drh
-Z 724b6a206741f085ef273c2e8d104b2e
+Z f73ff388c64168a07cb5da4a2e119b6b
