@@ -36,7 +36,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.189 2003/01/02 14:43:57 drh Exp $
+** $Id: vdbe.c,v 1.190 2003/01/05 21:41:42 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -780,8 +780,7 @@ static AggElem *_AggInFocus(Agg *p){
 **
 ** NULLs are converted into an empty string.
 */
-#define Stringify(P,I) \
-   ((P->aStack[I].flags & STK_Str)==0 ? hardStringify(P,I) : 0)
+#define Stringify(P,I) ((aStack[I].flags & STK_Str)==0 ? hardStringify(P,I) : 0)
 static int hardStringify(Vdbe *p, int i){
   Stack *pStack = &p->aStack[i];
   char **pzStack = &p->zStack[i];
@@ -1404,6 +1403,7 @@ int sqliteVdbeExec(
   int returnDepth = 0;      /* Next unused element in returnStack[] */
 #ifdef VDBE_PROFILE
   unsigned long long start;
+  int origPc;
 #endif
 
 
@@ -1443,6 +1443,7 @@ int sqliteVdbeExec(
   for(pc=0; !sqlite_malloc_failed && rc==SQLITE_OK && pc<p->nOp
              VERIFY(&& pc>=0); pc++){
 #ifdef VDBE_PROFILE
+    origPc = pc;
     start = hwtime();
 #endif
     pOp = &p->aOp[pc];
@@ -5354,8 +5355,15 @@ default: {
     }
 
 #ifdef VDBE_PROFILE
-    pOp->cycles += hwtime() - start;
-    pOp->cnt++;
+    {
+      long long elapse = hwtime() - start;
+      pOp->cycles += elapse;
+      pOp->cnt++;
+#if 0
+        fprintf(stdout, "%10lld ", elapse);
+        vdbePrintOp(stdout, origPc, &p->aOp[origPc]);
+#endif
+    }
 #endif
 
     /* The following code adds nothing to the actual functionality

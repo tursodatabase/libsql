@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.79 2003/01/04 19:44:08 drh Exp $
+** $Id: btree.c,v 1.80 2003/01/05 21:41:41 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1338,13 +1338,15 @@ int sqliteBtreeKeyCompare(
 }
 
 /*
-** Move the cursor down to a new child page.
+** Move the cursor down to a new child page.  The newPgno argument is the
+** page number of the child page in the byte order of the disk image.
 */
 static int moveToChild(BtCursor *pCur, int newPgno){
   int rc;
   MemPage *pNewPage;
   Btree *pBt = pCur->pBt;
 
+  newPgno = SWAB32(pBt, newPgno);
   rc = sqlitepager_get(pBt->pPager, newPgno, (void**)&pNewPage);
   if( rc ) return rc;
   rc = initPage(pBt, pNewPage, newPgno, pCur->pPage);
@@ -1369,16 +1371,18 @@ static int moveToChild(BtCursor *pCur, int newPgno){
 ** right-most child page then pCur->idx is set to one more than
 ** the largest cell index.
 */
-static int moveToParent(BtCursor *pCur){
+static void moveToParent(BtCursor *pCur){
   Pgno oldPgno;
   MemPage *pParent;
+  MemPage *pPage;
   int idxParent;
-  pParent = pCur->pPage->pParent;
-  if( pParent==0 ) return SQLITE_INTERNAL;
-  idxParent = pCur->pPage->idxParent;
-  oldPgno = sqlitepager_pagenumber(pCur->pPage);
+  pPage = pCur->pPage;
+  assert( pPage!=0 );
+  pParent = pPage->pParent;
+  assert( pParent!=0 );
+  idxParent = pPage->idxParent;
   sqlitepager_ref(pParent);
-  sqlitepager_unref(pCur->pPage);
+  sqlitepager_unref(pPage);
   pCur->pPage = pParent;
   assert( pParent->idxShift==0 );
   if( pParent->idxShift==0 ){
@@ -1387,7 +1391,7 @@ static int moveToParent(BtCursor *pCur){
     /* Verify that pCur->idx is the correct index to point back to the child
     ** page we just came from 
     */
-    oldPgno = SWAB32(pCur->pBt, oldPgno);
+    oldPgno = SWAB32(pCur->pBt, sqlitepager_pagenumber(pPage));
     if( pCur->idx<pParent->nCell ){
       assert( pParent->apCell[idxParent]->h.leftChild==oldPgno );
     }else{
@@ -1402,7 +1406,7 @@ static int moveToParent(BtCursor *pCur){
     */
     int i;
     pCur->idx = pParent->nCell;
-    oldPgno = SWAB32(pCur->pBt, oldPgno);
+    oldPgno = SWAB32(pCur->pBt, sqlitepager_pagenumber(pPage));
     for(i=0; i<pParent->nCell; i++){
       if( pParent->apCell[i]->h.leftChild==oldPgno ){
         pCur->idx = i;
@@ -1410,7 +1414,6 @@ static int moveToParent(BtCursor *pCur){
       }
     }
   }
-  return SQLITE_OK;
 }
 
 /*
@@ -1440,7 +1443,7 @@ static int moveToLeftmost(BtCursor *pCur){
   int rc;
 
   while( (pgno = pCur->pPage->apCell[pCur->idx]->h.leftChild)!=0 ){
-    rc = moveToChild(pCur, SWAB32(pCur->pBt, pgno));
+    rc = moveToChild(pCur, pgno);
     if( rc ) return rc;
   }
   return SQLITE_OK;
@@ -1459,7 +1462,7 @@ static int moveToRightmost(BtCursor *pCur){
 
   while( (pgno = pCur->pPage->u.hdr.rightChild)!=0 ){
     pCur->idx = pCur->pPage->nCell;
-    rc = moveToChild(pCur, SWAB32(pCur->pBt, pgno));
+    rc = moveToChild(pCur, pgno);
     if( rc ) return rc;
   }
   pCur->idx = pCur->pPage->nCell - 1;
@@ -1569,7 +1572,7 @@ int sqliteBtreeMoveto(BtCursor *pCur, const void *pKey, int nKey, int *pRes){
       return SQLITE_OK;
     }
     pCur->idx = lwr;
-    rc = moveToChild(pCur, SWAB32(pCur->pBt, chldPg));
+    rc = moveToChild(pCur, chldPg);
     if( rc ) return rc;
   }
   /* NOT REACHED */
@@ -1583,19 +1586,19 @@ int sqliteBtreeMoveto(BtCursor *pCur, const void *pKey, int nKey, int *pRes){
 */
 int sqliteBtreeNext(BtCursor *pCur, int *pRes){
   int rc;
+  MemPage *pPage = pCur->pPage;
   assert( pRes!=0 );
-  /* assert( pCur->pPage!=0 ); */
-  if( pCur->pPage==0 ){
+  if( pPage==0 ){
     *pRes = 1;
     return SQLITE_ABORT;
   }
-  assert( pCur->pPage->isInit );
+  assert( pPage->isInit );
   assert( pCur->eSkip!=SKIP_INVALID );
-  if( pCur->pPage->nCell==0 ){
+  if( pPage->nCell==0 ){
     *pRes = 1;
     return SQLITE_OK;
   }
-  assert( pCur->idx<pCur->pPage->nCell );
+  assert( pCur->idx<pPage->nCell );
   if( pCur->eSkip==SKIP_NEXT ){
     pCur->eSkip = SKIP_NONE;
     *pRes = 0;
@@ -1603,72 +1606,78 @@ int sqliteBtreeNext(BtCursor *pCur, int *pRes){
   }
   pCur->eSkip = SKIP_NONE;
   pCur->idx++;
-  if( pCur->idx>=pCur->pPage->nCell ){
-    if( pCur->pPage->u.hdr.rightChild ){
-      rc = moveToChild(pCur, SWAB32(pCur->pBt, pCur->pPage->u.hdr.rightChild));
+  if( pCur->idx>=pPage->nCell ){
+    if( pPage->u.hdr.rightChild ){
+      rc = moveToChild(pCur, pPage->u.hdr.rightChild);
       if( rc ) return rc;
       rc = moveToLeftmost(pCur);
       *pRes = 0;
       return rc;
     }
     do{
-      if( pCur->pPage->pParent==0 ){
+      if( pPage->pParent==0 ){
         *pRes = 1;
         return SQLITE_OK;
       }
-      rc = moveToParent(pCur);
-    }while( rc==SQLITE_OK && pCur->idx>=pCur->pPage->nCell );
+      moveToParent(pCur);
+      pPage = pCur->pPage;
+    }while( pCur->idx>=pPage->nCell );
     *pRes = 0;
-    return rc;
+    return SQLITE_OK;
+  }
+  *pRes = 0;
+  if( pPage->u.hdr.rightChild==0 ){
+    return SQLITE_OK;
   }
   rc = moveToLeftmost(pCur);
-  *pRes = 0;
   return rc;
 }
 
 /*
 ** Step the cursor to the back to the previous entry in the database.  If
-** successful and pRes!=NULL then set *pRes=0.  If the cursor
+** successful then set *pRes=0.  If the cursor
 ** was already pointing to the first entry in the database before
-** this routine was called, then set *pRes=1 if pRes!=NULL.
+** this routine was called, then set *pRes=1.
 */
 int sqliteBtreePrevious(BtCursor *pCur, int *pRes){
   int rc;
   Pgno pgno;
-  if( pCur->pPage==0 ){
-    if( pRes ) *pRes = 1;
+  MemPage *pPage;
+  pPage = pCur->pPage;
+  if( pPage==0 ){
+    *pRes = 1;
     return SQLITE_ABORT;
   }
-  assert( pCur->pPage->isInit );
+  assert( pPage->isInit );
   assert( pCur->eSkip!=SKIP_INVALID );
-  if( pCur->pPage->nCell==0 ){
-    if( pRes ) *pRes = 1;
+  if( pPage->nCell==0 ){
+    *pRes = 1;
     return SQLITE_OK;
   }
   if( pCur->eSkip==SKIP_PREV ){
     pCur->eSkip = SKIP_NONE;
-    if( pRes ) *pRes = 0;
+    *pRes = 0;
     return SQLITE_OK;
   }
   pCur->eSkip = SKIP_NONE;
   assert( pCur->idx>=0 );
-  if( (pgno = pCur->pPage->apCell[pCur->idx]->h.leftChild)!=0 ){
-    rc = moveToChild(pCur, SWAB32(pCur->pBt, pgno));
+  if( (pgno = pPage->apCell[pCur->idx]->h.leftChild)!=0 ){
+    rc = moveToChild(pCur, pgno);
     if( rc ) return rc;
     rc = moveToRightmost(pCur);
   }else{
     while( pCur->idx==0 ){
-      if( pCur->pPage->pParent==0 ){
+      if( pPage->pParent==0 ){
         if( pRes ) *pRes = 1;
         return SQLITE_OK;
       }
-      rc = moveToParent(pCur);
-      if( rc ) return rc;
+      moveToParent(pCur);
+      pPage = pCur->pPage;
     }
     pCur->idx--;
     rc = SQLITE_OK;
   }
-  if( pRes ) *pRes = 0;
+  *pRes = 0;
   return rc;
 }
 

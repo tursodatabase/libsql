@@ -1,5 +1,5 @@
-C Parameterize\sthe\snumber\sof\sadjacent\spages\sthat\sparticipate\sin\sthe\sbalancing\nalgorithm\sin\sthe\sBTree.\s\sBut\sleave\sthe\ssetting\sat\sthe\scurrent\svalue\sof\s3.\s(CVS\s812)
-D 2003-01-04T19:44:08
+C More\soptimizations.\s(CVS\s813)
+D 2003-01-05T21:41:41
 F Makefile.in 868c17a1ae1c07603d491274cc8f86c04acf2a1e
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -18,7 +18,7 @@ F main.mk 9d13839b9697af332d788fe6e801e68da027cc5c
 F publish.sh e5b83867d14708ed58cec8cba0a4f201e969474d
 F spec.template 238f7db425a78dc1bb7682e56e3834c7270a3f5e
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
-F src/btree.c 65dfa86fc2a9eded02fc011c368d20174fba10d1
+F src/btree.c 131b5903f66e148f0f9af0cedd1c6654932c4e04
 F src/btree.h 17710339f7a8f46e3c7d6d0d4648ef19c584ffda
 F src/build.c 8569ac014609add4b796260d3567a5090b90056d
 F src/delete.c aad9d4051ab46e6f6391ea5f7b8994a7c05bdd15
@@ -52,7 +52,7 @@ F src/tokenize.c 75e3bb37305b64e118e709752066f494c4f93c30
 F src/trigger.c 5ba917fc226b96065108da28186c2efaec53e481
 F src/update.c 881e4c8e7c786545da4fd2d95da19252b2e31137
 F src/util.c e2d108842e02810d3d3242cac0e024b09cdb3c4a
-F src/vdbe.c 572ee028e01d2811dee1ad4d5161ce82e31e88d4
+F src/vdbe.c dfcb470866708946dc67028359c3128876ad2297
 F src/vdbe.h 754eba497cfe0c3e352b9c101ab2f811f10d0a55
 F src/where.c af235636b7bc7f7f42ee1c7162d1958ad0102cab
 F test/all.test 873d30e25a41b3aa48fec5633a7ec1816e107029
@@ -152,7 +152,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 03d20673616cae0dca524fd04557798a98fb7069
-R 131375a6bd5b4a8f3f85a8c7c672f995
+P 6c304024bbd21a1886a57ada795531349aa627d7
+R fea26809e1516d4617eda0cb040e2e8f
 U drh
-Z c7e9682e375704261f3906f005af16af
+Z 448bc2108caef81c9e7977f7eeab8964
