@@ -1,21 +1,20 @@
-C Add\scomments\sand\sprototype\sfor\sexperimental\ssqlite_last_statement_changes()\sAPI\sfunction.\sAlso,\sallow\sfunction\sto\sbe\scalled\sfrom\stcl.\s(CVS\s1273)
-D 2004-02-25T22:51:06
-F Makefile.in cfd75c46b335881999333a9e4b982fa8491f200b
+C Build\ssystem\supdate:\n\n*\sUpdate\sof\sgenerated/libtoolized\sfiles:\sconfig.guess,\sconfig.sub,\n\s\s\sconfigure,\sltmain.sh\n*\sRemoval\sof\slibtool,\swhich\sis\sgenerated\sby\sconfigure\n*\sChanges\sto\sMakefile.in,\sadding\sbetter\ssupport\sfor\snewer\slibtools\s(CVS\s1274)
+D 2004-02-26T19:47:43
+F Makefile.in 3ecfe7f0b31fc33f233a5c1ce210d318b55d0847
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
 F VERSION 8323c161a43094e2340bc1e57b99dacf10176301
 F aclocal.m4 ff32919e75f42b2d4213fe3c6f79dd0fe47f7769
 F art/SQLite.eps 9b43cc99cfd2be687d386faea6862ea68d6a72b2
 F art/SQLite.gif 1bbb94484963f1382e27e1c5e86dd0c1061eba2b
-F config.guess 831db445a8ae31d1f773fce85e14c16c8677417d
-F config.sub 975368989965310238930ecf8e7f06a23061dbb1
-F configure 45658d6d47a1f231bd9f8a4b5c50b6400a292cfb x
+F config.guess 2103e94b15dc57112d7b9ee152c6fac5288895b4
+F config.sub 9bf686ec001ae7bc53f5b3563c90c62d4c6d48be
+F configure 2a71bcba74ccdfbdf29759c1ca00917bc2d6ec67 x
 F configure.ac 684143ce9ee7bafc4291d0e17f2dfdc70514d1d6
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
-F libtool bbbea7d79c23323e4100103836028e4fad0d9242
-F ltmain.sh abfb9387049fff6996afc6e325736597795baf11
+F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
 F main.mk d88d460c46a12ceb33daad7a7a8725e4bc2dbaad
 F publish.sh d413bc45500e6d76db0535e46628fa5c88df1c6f
 F spec.template a38492f1c1dd349fc24cb0565e08afc53045304b
@@ -189,7 +188,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P adbe31adf1ad0ca723203ca3d7dc480324c60d43
-R 3c9515cca68a5695cd3226713e65c42d
-U rdc
-Z e0bb7fa0c538643c4a09a58dfdcb0be7
+P ca99920b0dbf773962b47766d690154fd1276513
+R 2803b7e6c3377cf3c692fbc891df527e
+U a.rottmann
+Z 94bbd9c978f31718dbf302d5eb195df5
