@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the sqlite_*_printf() interface.
 #
-# $Id: printf.test,v 1.9 2004/06/14 23:46:48 danielk1977 Exp $
+# $Id: printf.test,v 1.10 2004/06/25 01:10:48 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -20,22 +20,22 @@ set n 1
 foreach v {1 2 5 10 99 100 1000000 999999999 0 -1 -2 -5 -10 -99 -100 -9999999} {
   do_test printf-1.$n.1 [subst {
     sqlite3_mprintf_int {Three integers: %d %x %o} $v $v $v
-  }] [format {Three integers: %d %lx %lo} $v $v $v]
+  }] [format {Three integers: %d %x %o} $v $v $v]
   do_test printf-1.$n.2 [subst {
     sqlite3_mprintf_int {Three integers: (%6d) (%6x) (%6o)} $v $v $v
-  }] [format {Three integers: (%6d) (%6lx) (%6lo)} $v $v $v]
+  }] [format {Three integers: (%6d) (%6x) (%6o)} $v $v $v]
   do_test printf-1.$n.3 [subst {
     sqlite3_mprintf_int {Three integers: (%-6d) (%-6x) (%-6o)} $v $v $v
-  }] [format {Three integers: (%-6d) (%-6lx) (%-6lo)} $v $v $v]
+  }] [format {Three integers: (%-6d) (%-6x) (%-6o)} $v $v $v]
   do_test printf-1.$n.4 [subst {
     sqlite3_mprintf_int {Three integers: (%+6d) (%+6x) (%+6o)} $v $v $v
-  }] [format {Three integers: (%+6d) (%+6lx) (%+6lo)} $v $v $v]
+  }] [format {Three integers: (%+6d) (%+6x) (%+6o)} $v $v $v]
   do_test printf-1.$n.5 [subst {
     sqlite3_mprintf_int {Three integers: (%06d) (%06x) (%06o)} $v $v $v
-  }] [format {Three integers: (%06d) (%06lx) (%06lo)} $v $v $v]
+  }] [format {Three integers: (%06d) (%06x) (%06o)} $v $v $v]
   do_test printf-1.$n.6 [subst {
     sqlite3_mprintf_int {Three integers: (% 6d) (% 6x) (% 6o)} $v $v $v
-  }] [format {Three integers: (% 6d) (% 6lx) (% 6lo)} $v $v $v]
+  }] [format {Three integers: (% 6d) (% 6x) (% 6o)} $v $v $v]
   incr n
 }
 
@@ -122,5 +122,24 @@ do_test printf-7.2 {
 do_test printf-7.3 {
   sqlite3_mprintf_scaled {A double: %g} 1.0e307 100.0
 } {A double: NaN}
+
+do_test printf-8.1 {
+  sqlite3_mprintf_int {%u %u %u} 0x7fffffff 0x80000000 0xffffffff
+} {2147483647 2147483648 4294967295}
+do_test printf-8.2 {
+  sqlite3_mprintf_int {%lu %lu %lu} 0x7fffffff 0x80000000 0xffffffff
+} {2147483647 2147483648 4294967295}
+do_test printf-8.3 {
+  sqlite3_mprintf_int64 {%llu %llu %llu} 2147483647 2147483648 4294967296
+} {2147483647 2147483648 4294967296}
+do_test printf-8.4 {
+  sqlite3_mprintf_int64 {%lld %lld %lld} 2147483647 2147483648 4294967296
+} {2147483647 2147483648 4294967296}
+do_test printf-8.5 {
+  sqlite3_mprintf_int64 {%llx %llx %llx} 2147483647 2147483648 4294967296
+} {7fffffff 80000000 100000000}
+do_test printf-8.6 {
+  sqlite3_mprintf_int64 {%llx %llo %lld} -1 -1 -1
+} {ffffffffffffffff 1777777777777777777777 -1}
 
 finish_test

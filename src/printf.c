@@ -345,35 +345,27 @@ static int vxprintf(
     */
     switch( xtype ){
       case etRADIX:
-        if( flag_longlong )   longvalue = va_arg(ap,sqlite_int64);
-        else if( flag_long )  longvalue = va_arg(ap,long int);
-        else                  longvalue = va_arg(ap,int);
-#if 1
-        /* For the format %#x, the value zero is printed "0" not "0x0".
-        ** I think this is stupid. */
-        if( longvalue==0 ) flag_alternateform = 0;
-#else
-        /* More sensible: turn off the prefix for octal (to prevent "00"),
-        ** but leave the prefix for hex. */
-        if( longvalue==0 && infop->base==8 ) flag_alternateform = 0;
-#endif
         if( infop->flags & FLAG_SIGNED ){
-          if( flag_longlong ){
-            if( *(i64*)&longvalue<0 ){
-              longvalue = -*(i64*)&longvalue;
-              prefix = '-';
-            }else if( flag_plussign )  prefix = '+';
-            else if( flag_blanksign )  prefix = ' ';
-            else                       prefix = 0;
+          i64 v;
+          if( flag_longlong )   v = va_arg(ap,i64);
+          else if( flag_long )  v = va_arg(ap,long int);
+          else                  v = va_arg(ap,int);
+          if( v<0 ){
+            longvalue = -v;
+            prefix = '-';
           }else{
-            if( *(long*)&longvalue<0 ){
-              longvalue = -*(long*)&longvalue;
-              prefix = '-';
-            }else if( flag_plussign )  prefix = '+';
+            longvalue = v;
+            if( flag_plussign )        prefix = '+';
             else if( flag_blanksign )  prefix = ' ';
             else                       prefix = 0;
           }
-        }else                        prefix = 0;
+        }else{
+          if( flag_longlong )   longvalue = va_arg(ap,u64);
+          else if( flag_long )  longvalue = va_arg(ap,unsigned long int);
+          else                  longvalue = va_arg(ap,unsigned int);
+          prefix = 0;
+        }
+        if( longvalue==0 ) flag_alternateform = 0;
         if( flag_zeropad && precision<width-(prefix!=0) ){
           precision = width-(prefix!=0);
         }
