@@ -32,6 +32,7 @@ TCC = @TARGET_CC@ @TARGET_CFLAGS@ -I. -I${TOP}/src -DNDEBUG
 #
 prefix = @prefix@
 exec_prefix = @exec_prefix@
+libdir = @libdir@
 INSTALL = @INSTALL@
 LIBTOOL = ./libtool
 RELEASE = @ALLOWRELEASE@
@@ -188,12 +189,12 @@ last_change:	$(SRC)
           | awk '{print $$5,$$6}' >last_change
 
 libsqlite3.la:	$(LIBOBJ)
-	$(LTLINK) -o libsqlite3.la $(LIBOBJ) ${RELEASE} -rpath @exec_prefix@/lib \
+	$(LTLINK) -o libsqlite3.la $(LIBOBJ) ${RELEASE} -rpath $(libdir) \
 		-version-info "8:6:8"
 
 libtclsqlite3.la:	tclsqlite.lo libsqlite3.la
 	$(LTLINK) -o libtclsqlite3.la tclsqlite.lo \
-		libsqlite3.la $(LIBTCL) -rpath @exec_prefix@/lib/sqlite \
+		libsqlite3.la $(LIBTCL) -rpath $(libdir)/sqlite \
 		-version-info "8:6:8"
 
 sqlite3@TARGET_EXEEXT@:	$(TOP)/src/shell.c libsqlite3.la sqlite3.h
@@ -543,14 +544,14 @@ doc:	common.tcl $(DOC)
 	mv $(DOC) doc
 
 install:	sqlite3 libsqlite3.la sqlite3.h
-	$(INSTALL) -d $(DESTDIR)$(exec_prefix)/lib
-	$(LTINSTALL) libsqlite3.la $(DESTDIR)$(exec_prefix)/lib
+	$(INSTALL) -d $(DESTDIR)$(libdir)
+	$(LTINSTALL) libsqlite3.la $(DESTDIR)$(libdir)
 	$(INSTALL) -d $(DESTDIR)$(exec_prefix)/bin
 	$(LTINSTALL) sqlite3 $(DESTDIR)$(exec_prefix)/bin
 	$(INSTALL) -d $(DESTDIR)$(prefix)/include
 	$(INSTALL) -m 0644 sqlite3.h $(DESTDIR)$(prefix)/include
-	$(INSTALL) -d $(DESTDIR)$(exec_prefix)/lib/pkgconfig; 
-	$(INSTALL) -m 0644 sqlite3.pc $(DESTDIR)$(exec_prefix)/lib/pkgconfig; 
+	$(INSTALL) -d $(DESTDIR)$(libdir)/pkgconfig; 
+	$(INSTALL) -m 0644 sqlite3.pc $(DESTDIR)$(libdir)/pkgconfig; 
 
 clean:	
 	rm -f *.lo *.la *.o sqlite3@TARGET_EXEEXT@ libsqlite3.la
