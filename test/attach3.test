@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and schema changes to attached databases.
 #
-# $Id: attach3.test,v 1.1 2004/05/28 11:37:29 danielk1977 Exp $
+# $Id: attach3.test,v 1.2 2004/05/28 12:11:21 danielk1977 Exp $
 #
 
 
@@ -35,27 +35,27 @@ execsql {
 db2 close
 
 # Create a table in the auxilary database.
-do_test attach3-1 {
+do_test attach3-1.1 {
   execsql {
     ATTACH 'test2.db' AS aux;
   }
 } {}
-do_test attach3-2 {
+do_test attach3-1.2 {
   execsql {
     CREATE TABLE aux.t3(e, f);
   }
 } {}
-do_test attach3-3 {
+do_test attach3-1.3 {
   execsql {
     SELECT * FROM sqlite_master WHERE name = 't3';
   }
 } {}
-do_test attach3-4 {
+do_test attach3-1.4 {
   execsql {
     SELECT * FROM aux.sqlite_master WHERE name = 't3';
   }
 } {table t3 t3 4 {CREATE TABLE t3(e, f)}}
-do_test attach3-5 {
+do_test attach3-1.5 {
   execsql {
     INSERT INTO t3 VALUES(1, 2);
     SELECT * FROM t3;
@@ -63,7 +63,7 @@ do_test attach3-5 {
 } {1 2}
 
 # Create an index on the auxilary database table.
-do_test attach4-1 {
+do_test attach4-2.1 {
   execsql {
     CREATE INDEX aux.i1 on t3(e);
   }
@@ -71,16 +71,63 @@ do_test attach4-1 {
 execsql {
   pragma vdbe_trace = off;
 }
-do_test attach4-2 {
+do_test attach4-2.2 {
   execsql {
     SELECT * FROM sqlite_master WHERE name = 'i1';
   }
 } {}
-do_test attach4-3 {
+do_test attach4-2.3 {
   execsql {
     SELECT * FROM aux.sqlite_master WHERE name = 'i1';
   }
 } {index i1 t3 5 {CREATE INDEX i1 on t3(e)}}
+
+# Drop the index on the aux database table.
+do_test attach4-3.1 {
+  execsql {
+    DROP INDEX aux.i1;
+    SELECT * FROM aux.sqlite_master WHERE name = 'i1';
+  }
+} {}
+do_test attach4-3.2 {
+  execsql {
+    CREATE INDEX aux.i1 on t3(e);
+    SELECT * FROM aux.sqlite_master WHERE name = 'i1';
+  }
+} {index i1 t3 5 {CREATE INDEX i1 on t3(e)}}
+do_test attach4-3.3 {
+  execsql {
+    DROP INDEX i1;
+    SELECT * FROM aux.sqlite_master WHERE name = 'i1';
+  }
+} {}
+
+# Drop the tables in the auxilary database.
+do_test attach4-4.1 {
+  execsql {
+    DROP TABLE aux.t1;
+    SELECT name FROM aux.sqlite_master;
+  }
+} {t2 t3}
+do_test attach4-4.2 {
+  # This will drop main.t2
+  execsql {
+    DROP TABLE t2;
+    SELECT name FROM aux.sqlite_master;
+  }
+} {t2 t3}
+do_test attach4-4.3 {
+  execsql {
+    DROP TABLE t2;
+    SELECT name FROM aux.sqlite_master;
+  }
+} {t3}
+do_test attach4-4.4 {
+  execsql {
+    DROP TABLE aux.t3;
+    SELECT * FROM aux.sqlite_master;
+  }
+} {}
 
 finish_test
 

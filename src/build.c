@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.194 2004/05/28 11:37:27 danielk1977 Exp $
+** $Id: build.c,v 1.195 2004/05/28 12:11:21 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1328,25 +1328,27 @@ Table *sqlite3TableFromToken(Parse *pParse, Token *pTok){
 ** This routine is called to do the work of a DROP TABLE statement.
 ** pName is the name of the table to be dropped.
 */
-void sqlite3DropTable(Parse *pParse, Token *pName, int isView){
-  Table *pTable;
+void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView){
+  Table *pTab;
   Vdbe *v;
   int base;
   sqlite *db = pParse->db;
   int iDb;
 
-  if( pParse->nErr || sqlite3_malloc_failed ) return;
-  pTable = sqlite3TableFromToken(pParse, pName);
-  if( pTable==0 ) return;
-  iDb = pTable->iDb;
+  if( pParse->nErr || sqlite3_malloc_failed ) goto exit_drop_table;
+  assert( pName->nSrc==1 );
+  pTab = sqlite3LocateTable(pParse, pName->a[0].zName, pName->a[0].zDatabase);
+
+  if( pTab==0 ) goto exit_drop_table;
+  iDb = pTab->iDb;
   assert( iDb>=0 && iDb<db->nDb );
 #ifndef SQLITE_OMIT_AUTHORIZATION
   {
     int code;
-    const char *zTab = SCHEMA_TABLE(pTable->iDb);
-    const char *zDb = db->aDb[pTable->iDb].zName;
+    const char *zTab = SCHEMA_TABLE(pTab->iDb);
+    const char *zDb = db->aDb[pTab->iDb].zName;
     if( sqlite3AuthCheck(pParse, SQLITE_DELETE, zTab, 0, zDb)){
-      return;
+      goto exit_drop_table;
     }
     if( isView ){
       if( iDb==1 ){
@@ -1361,26 +1363,26 @@ void sqlite3DropTable(Parse *pParse, Token *pName, int isView){
         code = SQLITE_DROP_TABLE;
       }
     }
-    if( sqlite3AuthCheck(pParse, code, pTable->zName, 0, zDb) ){
-      return;
+    if( sqlite3AuthCheck(pParse, code, pTab->zName, 0, zDb) ){
+      goto exit_drop_table;
     }
-    if( sqlite3AuthCheck(pParse, SQLITE_DELETE, pTable->zName, 0, zDb) ){
-      return;
+    if( sqlite3AuthCheck(pParse, SQLITE_DELETE, pTab->zName, 0, zDb) ){
+      goto exit_drop_table;
     }
   }
 #endif
-  if( pTable->readOnly ){
-    sqlite3ErrorMsg(pParse, "table %s may not be dropped", pTable->zName);
+  if( pTab->readOnly ){
+    sqlite3ErrorMsg(pParse, "table %s may not be dropped", pTab->zName);
     pParse->nErr++;
-    return;
+    goto exit_drop_table;
   }
-  if( isView && pTable->pSelect==0 ){
-    sqlite3ErrorMsg(pParse, "use DROP TABLE to delete table %s", pTable->zName);
-    return;
+  if( isView && pTab->pSelect==0 ){
+    sqlite3ErrorMsg(pParse, "use DROP TABLE to delete table %s", pTab->zName);
+    goto exit_drop_table;
   }
-  if( !isView && pTable->pSelect ){
-    sqlite3ErrorMsg(pParse, "use DROP VIEW to delete view %s", pTable->zName);
-    return;
+  if( !isView && pTab->pSelect ){
+    sqlite3ErrorMsg(pParse, "use DROP VIEW to delete view %s", pTab->zName);
+    goto exit_drop_table;
   }
 
   /* Generate code to remove the table from the master table
@@ -1402,39 +1404,39 @@ void sqlite3DropTable(Parse *pParse, Token *pName, int isView){
     };
     Index *pIdx;
     Trigger *pTrigger;
-    sqlite3BeginWriteOperation(pParse, 0, pTable->iDb);
+    sqlite3BeginWriteOperation(pParse, 0, pTab->iDb);
 
     /* Drop all triggers associated with the table being dropped */
-    pTrigger = pTable->pTrigger;
+    pTrigger = pTab->pTrigger;
     while( pTrigger ){
-      assert( pTrigger->iDb==pTable->iDb || pTrigger->iDb==1 );
+      assert( pTrigger->iDb==pTab->iDb || pTrigger->iDb==1 );
       sqlite3DropTriggerPtr(pParse, pTrigger, 1);
       if( pParse->explain ){
         pTrigger = pTrigger->pNext;
       }else{
-        pTrigger = pTable->pTrigger;
+        pTrigger = pTab->pTrigger;
       }
     }
 
     /* Drop all SQLITE_MASTER entries that refer to the table */
-    sqlite3OpenMasterTable(v, pTable->iDb);
+    sqlite3OpenMasterTable(v, pTab->iDb);
     base = sqlite3VdbeAddOpList(v, ArraySize(dropTable), dropTable);
-    sqlite3VdbeChangeP3(v, base+1, pTable->zName, 0);
+    sqlite3VdbeChangeP3(v, base+1, pTab->zName, 0);
 
     /* Drop all SQLITE_TEMP_MASTER entries that refer to the table */
-    if( pTable->iDb!=1 ){
+    if( pTab->iDb!=1 ){
       sqlite3OpenMasterTable(v, 1);
       base = sqlite3VdbeAddOpList(v, ArraySize(dropTable), dropTable);
-      sqlite3VdbeChangeP3(v, base+1, pTable->zName, 0);
+      sqlite3VdbeChangeP3(v, base+1, pTab->zName, 0);
     }
 
-    if( pTable->iDb!=1 ){  /* Temp database has no schema cookie */
-      sqlite3ChangeCookie(db, v, pTable->iDb);
+    if( pTab->iDb!=1 ){  /* Temp database has no schema cookie */
+      sqlite3ChangeCookie(db, v, pTab->iDb);
     }
     sqlite3VdbeAddOp(v, OP_Close, 0, 0);
     if( !isView ){
-      sqlite3VdbeAddOp(v, OP_Destroy, pTable->tnum, pTable->iDb);
-      for(pIdx=pTable->pIndex; pIdx; pIdx=pIdx->pNext){
+      sqlite3VdbeAddOp(v, OP_Destroy, pTab->tnum, pTab->iDb);
+      for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
         sqlite3VdbeAddOp(v, OP_Destroy, pIdx->tnum, pIdx->iDb);
       }
     }
@@ -1447,10 +1449,13 @@ void sqlite3DropTable(Parse *pParse, Token *pName, int isView){
   ** then no changes should be made.
   */
   if( !pParse->explain ){
-    sqliteUnlinkAndDeleteTable(db, pTable);
+    sqliteUnlinkAndDeleteTable(db, pTab);
     db->flags |= SQLITE_InternChanges;
   }
   sqliteViewResetAll(db, iDb);
+
+exit_drop_table:
+  sqlite3SrcListDelete(pName);
 }
 
 /*
@@ -1938,11 +1943,13 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName){
       "or PRIMARY KEY constraint cannot be dropped", 0);
     goto exit_drop_index;
   }
+/*
   if( pIndex->iDb>1 ){
     sqlite3ErrorMsg(pParse, "cannot alter schema of attached "
        "databases", 0);
     goto exit_drop_index;
   }
+*/
 #ifndef SQLITE_OMIT_AUTHORIZATION
   {
     int code = SQLITE_DROP_INDEX;
