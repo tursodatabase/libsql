@@ -29,7 +29,7 @@ struct Keyword {
 /*
 ** Define masks used to determine which keywords are allowed
 */
-#ifdef SQLITE_OMIT_ALTER_TABLE
+#ifdef SQLITE_OMIT_ALTERTABLE
 #  define ALTER      0
 #else
 #  define ALTER      1
@@ -190,7 +190,7 @@ static Keyword aKeywordTable[] = {
   { "TEMP",             "TK_TEMP",         ALWAYS                 },
   { "TEMPORARY",        "TK_TEMP",         ALWAYS                 },
   { "THEN",             "TK_THEN",         ALWAYS                 },
-  { "TO",               "TK_TO",           ALWAYS                 },
+  { "TO",               "TK_TO",           ALTER                  },
   { "TRANSACTION",      "TK_TRANSACTION",  ALWAYS                 },
   { "TRIGGER",          "TK_TRIGGER",      TRIGGER                },
   { "UNION",            "TK_UNION",        COMPOUND               },
