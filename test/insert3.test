@@ -11,10 +11,14 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing corner cases of the INSERT statement.
 #
-# $Id: insert3.test,v 1.1 2005/01/14 01:22:01 drh Exp $
+# $Id: insert3.test,v 1.2 2005/01/15 00:36:37 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+# All the tests in this file require trigger support
+#
+ifcapable {trigger} {
 
 # Create a table and a corresponding insert trigger.  Do a self-insert
 # into the table.
@@ -93,5 +97,36 @@ do_test insert3-2.2 {
     SELECT * FROM t2dup;
   }
 } {1 b c -1 987 c -1 b 876}
+
+# Test for proper detection of malformed WHEN clauses on INSERT triggers.
+#
+do_test insert3-3.1 {
+  execsql {
+    CREATE TABLE t3(a,b,c);
+    CREATE TRIGGER t3r1 BEFORE INSERT on t3 WHEN nosuchcol BEGIN
+      SELECT 'illegal WHEN clause';
+    END;
+  }
+} {}
+do_test insert3-3.2 {
+  catchsql {
+    INSERT INTO t3 VALUES(1,2,3)
+  }
+} {1 {no such column: nosuchcol}}
+do_test insert3-3.3 {
+  execsql {
+    CREATE TABLE t4(a,b,c);
+    CREATE TRIGGER t4r1 AFTER INSERT on t4 WHEN nosuchcol BEGIN
+      SELECT 'illegal WHEN clause';
+    END;
+  }
+} {}
+do_test insert3-3.4 {
+  catchsql {
+    INSERT INTO t4 VALUES(1,2,3)
+  }
+} {1 {no such column: nosuchcol}}
+
+} ;# ifcapable {trigger}
 
 finish_test
