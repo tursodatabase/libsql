@@ -1,5 +1,5 @@
-C Documentation\sthat\sshould\shave\sbeen\schecked\sin\salong\swith\scheckin\s(614)\s(CVS\s615)
-D 2002-06-11T22:33:47
+C Fix\sfor\sbug\s#70:\sCorrect\sa\stypo\sin\sthe\sdocumentation.\s(CVS\s616)
+D 2002-06-12T22:33:54
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -130,14 +130,14 @@ F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/faq.tcl 45bdb18b75ac3aa1befec42985fb892413aac0bb
 F www/formatchng.tcl 2ce21ff30663fad6618198fe747ce675df577590
 F www/index.tcl d0c52fbf031d0a3ee6d9d77aa669d5a4b24b6130
-F www/lang.tcl da8057ac23fca9ac1b9207d13382a20c9fee38bb
+F www/lang.tcl cf22bf18dbd6bec3b7d0b00ad998dd1f88193ea2
 F www/mingw.tcl f1c7c0a7f53387dd9bb4f8c7e8571b7561510ebc
 F www/opcode.tcl bdec8ef9f100dbd87bbef8976c54b88e43fd8ccc
 F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P d4a2fb10067203a0d49317db747759872e62927e
-R 3f481a8e1da7d6aed1e1b4e78941a484
-U danielk1977
-Z eb43a663e06c37a5acd0560ae3579a9c
+P 10da13612583caacc6fefe3a1f24187bfae2ebd7
+R 7630ca2b47e9dd98945251969e3cced7
+U drh
+Z 5ea0c33800b40c2ccc0e239b3ee8e3e1

@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.39 2002/06/11 22:33:47 danielk1977 Exp $}
+set rcsid {$Id: lang.tcl,v 1.40 2002/06/12 22:33:54 drh Exp $}
 
 puts {<html>
 <head>
@@ -571,7 +571,7 @@ DROP VIEW <view-name>
 }
 
 puts {
-<p>The DROP VIEW statement consists of the keywords "DROP TABLE" followed
+<p>The DROP VIEW statement consists of the keywords "DROP VIEW" followed
 by the name of the view.  The view named is removed from the database.
 But no actual data is modified.</p>}
 
