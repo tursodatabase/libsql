@@ -398,10 +398,10 @@ int sqliteOsOpenReadOnly(const char *zFilename, OsFile *id){
 int sqliteOsTempFileName(char *zBuf){
 #if OS_UNIX
   static const char *azDirs[] = {
-     ".",
      "/var/tmp",
      "/usr/tmp",
      "/tmp",
+     ".",
   };
   static char zChars[] =
     "abcdefghijklmnopqrstuvwxyz"

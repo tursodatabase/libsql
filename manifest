@@ -1,5 +1,5 @@
-C Update\sdocumentation\sto\sbetter\sexplain\sthe\stypelessness\sof\sSQLite\sand\sto\ndescribe\sthe\sdistinction\sbetween\stext\sand\snumeric\sdata.\s(CVS\s711)
-D 2002-08-14T00:08:13
+C Fix\sfor\sticket\s#132:\smake\sthe\sworking\sdirectory\sthe\slast\schoice\sfor\swhere\r\nto\swrite\stemporary\sfiles,\snot\sthe\sfirst\schoice.\s(CVS\s712)
+D 2002-08-14T00:10:44
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -30,7 +30,7 @@ F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
 F src/insert.c 8aefc998c86a3bd53082e2f8fdd049345fcf3463
 F src/main.c c7e313ef70d7e4339a6d8ba1deb31f7b51a3473d
 F src/md5.c 0ae1f3e2cac92d06fc6246d1b4b8f61a2fe66d3b
-F src/os.c 9665974085ebe1d40d56d1145045b3d64f12cbce
+F src/os.c 35a3d362e13b8d689eb8a70ae0befa2abe00a121
 F src/os.h 4a361fccfbc4e7609b3e1557f604f94c1e96ad10
 F src/pager.c 4b0169e91b34f6ff91e8feb57545c43e4d6eb370
 F src/pager.h 6991c9c2dc5e4c7f2df4d4ba47d1c6458f763a32
@@ -145,7 +145,7 @@ F www/speed.tcl 7fc83f1b018e1ecc451838449542c3079ed12425
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 310ac4fbaf0ed63f98bfacb55259960be03b0c8b
-R 66d58d14066d17fd95f1b8c2d419e072
+P 4ff0f578eca4a8672cf570923e6c015c3ba6b9f4
+R 3ea2591da8167f93c94c2776f3fbc0b8
 U drh
-Z caee8504007932315996b27a5456db2c
+Z 20aea3fa8ac9897b397b10a04bcc9725
