@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.360 2005/01/21 03:12:15 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.361 2005/01/21 21:22:52 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -60,7 +60,11 @@
 ** The maximum number of in-memory pages to use for the main database
 ** table and for temporary tables.
 */
-#define MAX_PAGES   2000
+#ifdef SQLITE_DEFAULT_CACHE_SIZE
+# define MAX_PAGES SQLITE_DEFAULT_CACHE_SIZE
+#else
+# define MAX_PAGES   2000
+#endif
 #define TEMP_PAGES   500
 
 /*

@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the download.html file.
 #
-set rcsid {$Id: download.tcl,v 1.16 2004/11/11 19:32:40 drh Exp $}
+set rcsid {$Id: download.tcl,v 1.17 2005/01/21 21:22:52 drh Exp $}
 source common.tcl
 header {SQLite Download Page}
 
@@ -11,7 +11,7 @@ puts {
 }
 
 proc Product {pattern desc} {
-  regsub VERSION $pattern {([0-9a-z._]+)} p2
+  regsub VERSION $pattern {([0-9][0-9a-z._]+)} p2
   set p2 [string map {* .*} $p2]
   regsub VERSION $pattern {*} p3
   set flist [glob -nocomplain $p3]
