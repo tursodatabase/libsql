@@ -1,4 +1,4 @@
-set rcsid {$Id: support.tcl,v 1.4 2004/07/17 21:56:10 drh Exp $}
+set rcsid {$Id: support.tcl,v 1.5 2004/11/01 16:03:12 drh Exp $}
 source common.tcl
 header {SQLite Support Options}
 puts {
@@ -38,6 +38,25 @@ http://news.gmane.org/gmane.comp.db.sqlite.general</a>
 </blockquote>
 
 </p>
+
+<a name="directemail">
+<h3>Direct E-Mail To The Author</h3>
+
+<p>
+Use the mailing list.
+Please do <b>not</b> send email directly to the author of SQLite
+unless:
+<ul>
+<li>You have or intend to acquire a professional support contract
+as described below, or</li>
+<li>You are working on an open source project.</li>
+</ul>
+You are welcomed to use SQLite in closed source, proprietary, and/or
+commerical projects and to ask questions about such use on the public
+mailing list.  But please do not ask to receive free direct technical
+support.  The software is free; direct technical support is not.
+</p>
+
 
 <h3>Professional Support</h3>
 
