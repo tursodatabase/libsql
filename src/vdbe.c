@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.254 2004/01/31 20:20:30 drh Exp $
+** $Id: vdbe.c,v 1.255 2004/01/31 20:40:42 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -524,14 +524,16 @@ int sqliteVdbeExec(
     ** If the progress callback returns non-zero, exit the virtual machine with
     ** a return code SQLITE_ABORT.
     */
-    if( db->xProgress && (db->nProgressOps==nProgressOps) ){
-      if( db->xProgress(db->pProgressArg)!=0 ){
-        rc = SQLITE_ABORT;
-        continue; /* skip to the next iteration of the for loop */
+    if( db->xProgress ){
+      if( db->nProgressOps==nProgressOps ){
+        if( db->xProgress(db->pProgressArg)!=0 ){
+          rc = SQLITE_ABORT;
+          continue; /* skip to the next iteration of the for loop */
+        }
+        nProgressOps = 0;
       }
-      nProgressOps = 0;
+      nProgressOps++;
     }
-    nProgressOps++;
 #endif
 
     switch( pOp->opcode ){
@@ -4488,8 +4490,10 @@ case OP_AggGet: {
   pTos++;
   pMem = &pFocus->aMem[i];
   *pTos = *pMem;
-  pTos->flags &= ~(MEM_Dyn|MEM_Static|MEM_Short);
-  pTos->flags |= MEM_Ephem;
+  if( pTos->flags & MEM_Str ){
+    pTos->flags &= ~(MEM_Dyn|MEM_Static|MEM_Short);
+    pTos->flags |= MEM_Ephem;
+  }
   break;
 }
 
@@ -4703,6 +4707,24 @@ default: {
     ** the evaluator loop.  So we can leave it out when NDEBUG is defined.
     */
 #ifndef NDEBUG
+    /* Sanity checking on the top element of the stack */
+    if( pTos>=p->aStack ){
+      assert( pTos->flags!=0 );  /* Must define some type */
+      if( pTos->flags & MEM_Str ){
+        int x = pTos->flags & (MEM_Static|MEM_Dyn|MEM_Ephem|MEM_Short);
+        assert( x!=0 );            /* Strings must define a string subtype */
+        assert( (x & (x-1))==0 );  /* Only one string subtype can be defined */
+        assert( pTos->z!=0 );      /* Strings must have a value */
+        /* Mem.z points to Mem.zShort iff the subtype is MEM_Short */
+        assert( (pTos->flags & MEM_Short)==0 || pTos->z==pTos->zShort );
+        assert( (pTos->flags & MEM_Short)!=0 || pTos->z!=pTos->zShort );
+      }else{
+        /* Cannot define a string subtype for non-string objects */
+        assert( (pTos->flags & (MEM_Static|MEM_Dyn|MEM_Ephem|MEM_Short))==0 );
+      }
+      /* MEM_Null excludes all other types */
+      assert( pTos->flags==MEM_Null || (pTos->flags&MEM_Null)==0 );
+    }
     if( pc<-1 || pc>=p->nOp ){
       sqliteSetString(&p->zErrMsg, "jump destination out of range", (char*)0);
       rc = SQLITE_INTERNAL;
