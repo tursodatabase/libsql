@@ -23,7 +23,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.2 2000/05/29 20:41:51 drh Exp $
+** $Id: tclsqlite.c,v 1.3 2000/05/30 13:44:20 drh Exp $
 */
 #include "sqlite.h"
 #include <tcl.h>
@@ -152,6 +152,7 @@ static int DbCmd(void *cd, Tcl_Interp *interp, int argc, char **argv){
     }
     if( argc==5 ){
       cbData.interp = interp;
+      cbData.once = 1;
       cbData.zArray = argv[3];
       cbData.zCode = argv[4];
       zErrMsg = 0;

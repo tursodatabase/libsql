@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** when syntax rules are reduced.
 **
-** $Id: build.c,v 1.5 2000/05/30 03:12:21 drh Exp $
+** $Id: build.c,v 1.6 2000/05/30 13:44:19 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -243,7 +243,7 @@ void sqliteAddColumn(Parse *pParse, Token *pName){
   char **pz;
   if( (p = pParse->pNewTable)==0 ) return;
   if( (p->nCol & 0x7)==0 ){
-    p->azCol = sqliteRealloc( p->azCol, (p->nCol+9)*sizeof(p->azCol[0]));
+    p->azCol = sqliteRealloc( p->azCol, (p->nCol+8)*sizeof(p->azCol[0]));
   }
   if( p->azCol==0 ){
     p->nCol = 0;
@@ -473,7 +473,7 @@ void sqliteCreateIndex(
   /* 
   ** Allocate the index structure. 
   */
-  pIndex = sqliteMalloc( sizeof(Index) + strlen(zName) + 
+  pIndex = sqliteMalloc( sizeof(Index) + strlen(zName) + 1 +
                         sizeof(int)*pList->nId );
   if( pIndex==0 ){
     sqliteSetString(&pParse->zErrMsg, "out of memory", 0);

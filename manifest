@@ -1,22 +1,22 @@
-C :-)\s(CVS\s13)
-D 2000-05-30T03:28:36
+C :-)\s(CVS\s14)
+D 2000-05-30T13:44:19
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 89921c1ee4de75275bfadfbac198396da31704d1
 F README 6b5960603c7f8bf42fc022b4b6436f242f238dbb
 F configure 00a5b5c82147a576fa6e82d7c1b0d55c321d6d2c x
 F configure.in 6ccfd5fc80517f7cfe605a7fc7e0f62d962a233c
 F doc/lemon.html e233a3e97a779c7a87e1bc4528c664a58e49dd47
-F src/build.c 94d1bda19f4129991e4e8bef2278a0398a49b0ec
+F src/build.c bc81ec2f7c3296c1f784f7c94d2d8afea9f787e7
 F src/dbbe.c ab05293e89525041eaab8b4aca10516db3648792
 F src/dbbe.h bedeb3a0985bb584458e7849fb59927e99e751e6
 F src/main.c 25cce7bce0eb3ba10bada7c05f4b38dc6dbbc86f
 F src/parse.y 265c8596598afba0a94b94acd9c866d01603dfe5
 F src/shell.c 125f84ea5f8b725ba474d4702b575d062cc94d92
 F src/sqlite.h 2397c17a8f4ca90c09acab0100dc7e2f8f441b69
-F src/sqliteInt.h 0365970442441b5e9b74e1e828afdeac7b0662be
-F src/tclsqlite.c 30f4317e1fc9119b130f29ee5dac4ab9121de68b
-F src/tokenize.c ab578d90ec6ab117b7ade6e6cfbcb5b0f9cad500
-F src/util.c 321c136fc1a4d5821bad0f990c6374ef0785a118
+F src/sqliteInt.h 562760efc29cf5b37a9029de04a5a8bca156f025
+F src/tclsqlite.c 9efd29f79ded6a900aa3d142169c8bfe03b7affd
+F src/tokenize.c 948b8897ba211b58069d4a4465be23a2c639cf18
+F src/util.c dc1e1814cf69587e6ed58b82dd880ddb2165f3ce
 F src/vdbe.c 80132b6bb9a744d1990a1c16666d54baaff2dbc3
 F src/vdbe.h e721ad308f2e6ca805cebc4dd0a196ce4419d030
 F src/where.c be3973952e9bb5d2bb0bc5523b03f5d1f9e9d6f9
@@ -25,7 +25,7 @@ F test/delete.test 814d53e3b0d2d7069fb17e005d4041454d6585d4
 F test/expr.test 11e00880d2de0f60ff1ba7fdd4e09a0d72a01910
 F test/index.test 8d4f26901a5582daa353fe3c8266cbf4a53af830
 F test/insert.test 161bc67a4189738c559e3569323ceae31f4d49d6
-F test/table.test b1afc2f6d4989f9ce911acbf711ac5d7ae521eb7
+F test/table.test 2d6b3ba1024032d341aec0d3c48272c8407485b4
 F test/tester.tcl 70d25b7ced0a958bc377c72399b3dc6bf6a2d09e
 F test/update.test 69459302ea75cafac1479e60b0e36efb88123c0e
 F tool/gdbmdump.c 529e67c78d920606ba196326ea55b57b75fcc82b
@@ -37,7 +37,7 @@ F tool/renumberOps.awk 6d067177ad5f8d711b79577b462da9b3634bd0a9
 F www/c_interface.tcl f875864edf7974157d1c257ca08de854660882a5
 F www/index.tcl 2466d1b2e26c6f354b0acedee12025309a216799
 F www/sqlite.tcl 947e067bcc347dc767af4c1a6e5a8d47d8404aa3
-P 20f2811fc19f937ed03bdb0e9d87a40c75452b17
-R a5c212fd65bac2f4b07651714ab486bf
+P 191a7f484e0a10839e7e1c8eb6658536643e4756
+R 0c03c3a3c9ac1b3b825b1193112ad5a4
 U drh
-Z 182f1f474f82d5f20dd5789e51b5d83f
+Z df606080358f2355e3007d65ffed4f54

@@ -26,19 +26,109 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.4 2000/05/29 23:48:23 drh Exp $
+** $Id: util.c,v 1.5 2000/05/30 13:44:20 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
 #include <ctype.h>
 
+#ifdef MEMORY_DEBUG
+
+
+/*
+** Allocate new memory and set it to zero.  Return NULL if
+** no memory is available.
+*/
+void *sqliteMalloc_(int n, char *zFile, int line){
+  void *p;
+  int *pi;
+  int k;
+  k = (n+sizeof(int)-1)/sizeof(int);
+  pi = malloc( (3+k)*sizeof(int));
+  if( pi==0 ) return 0;
+  pi[0] = 0xdead1122;
+  pi[1] = n;
+  pi[k+2] = 0xdead3344;
+  p = &pi[2];
+  memset(p, 0, n);
+  printf("malloc %d bytes at 0x%x from %s:%d\n", n, (int)p, zFile, line);
+  return p;
+}
+
+/*
+** Free memory previously obtained from sqliteMalloc()
+*/
+void sqliteFree_(void *p, char *zFile, int line){
+  if( p ){
+    int *pi, k, n;
+    pi = p;
+    pi -= 2;
+    if( pi[0]!=0xdead1122 ){
+      printf("Low-end memory corruption at 0x%x\n", (int)p);
+      return;
+    }
+    n = pi[1];
+    k = (n+sizeof(int)-1)/sizeof(int);
+    if( pi[k+2]!=0xdead3344 ){
+      printf("High-end memory corruption at 0x%x\n", (int)p);
+      return;
+    }
+    memset(pi, 0, (k+3)*sizeof(int));
+    printf("free %d bytes at 0x%x from %s:%d\n", n, (int)p, zFile, line);
+    free(pi);
+  }
+}
+
+/*
+** Resize a prior allocation.  If p==0, then this routine
+** works just like sqliteMalloc().  If n==0, then this routine
+** works just like sqliteFree().
+*/
+void *sqliteRealloc_(void *oldP, int n, char *zFile, int line){
+  int *oldPi, *pi, k, oldN, oldK;
+  void *p;
+  if( oldP==0 ){
+    return sqliteMalloc_(n,zFile,line);
+  }
+  if( n==0 ){
+    sqliteFree_(oldP,zFile,line);
+    return 0;
+  }
+  oldPi = oldP;
+  oldPi -= 2;
+  if( oldPi[0]!=0xdead1122 ){
+    printf("Low-end memory corruption in realloc at 0x%x\n", (int)p);
+    return;
+  }
+  oldN = oldPi[1];
+  oldK = (oldN+sizeof(int)-1)/sizeof(int);
+  if( oldPi[oldK+2]!=0xdead3344 ){
+    printf("High-end memory corruption in realloc at 0x%x\n", (int)p);
+    return;
+  }
+  k = (n + sizeof(int) - 1)/sizeof(int);
+  pi = malloc( (k+3)*sizeof(int) );
+  pi[0] = 0xdead1122;
+  pi[1] = n;
+  pi[k+2] = 0xdead3344;
+  p = &pi[2];
+  memcpy(p, oldP, n>oldN ? oldN : n);
+  if( n>oldN ){
+    memset(&((char*)p)[oldN], 0, n-oldN);
+  }
+  memset(oldPi, 0, (oldK+3)*sizeof(int));
+  free(oldPi);
+  printf("realloc %d->%d bytes at 0x%x->0x%x at %s:%d\n", oldN, n,
+    (int)oldP, (int)p, zFile, line);
+  return p;
+}
+#else  /* !defined(MEMORY_DEBUG) */
 /*
 ** Allocate new memory and set it to zero.  Return NULL if
 ** no memory is available.
 */
 void *sqliteMalloc(int n){
   void *p = malloc(n);
-  /* printf("alloc 0x%x size: %d bytes\n", (int)p, n); */
   if( p==0 ) return 0;
   memset(p, 0, n);
   return p;
@@ -49,7 +139,6 @@ void *sqliteMalloc(int n){
 */
 void sqliteFree(void *p){
   if( p ){
-    /* printf("free 0x%x\n", (int)p); */
     free(p);
   }
 }
@@ -67,9 +156,9 @@ void *sqliteRealloc(void *p, int n){
     sqliteFree(p);
     return 0;
   }
-  /* printf("realloc 0x%x size: %d bytes\n", (int)p, n); */
   return realloc(p, n);
 }
+#endif /* MEMORY_DEBUG */
 
 /*
 ** Create a string from the 2nd and subsequent arguments (up to the
