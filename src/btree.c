@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.151 2004/05/30 19:19:05 drh Exp $
+** $Id: btree.c,v 1.152 2004/05/30 20:46:09 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1735,11 +1735,9 @@ int sqlite3BtreeData(BtCursor *pCur, u32 offset, u32 amt, void *pBuf){
 ** Return a pointer to payload information from the entry that the 
 ** pCur cursor is pointing to.  The pointer is to the beginning of
 ** the key if skipKey==0 and it points to the beginning of data if
-** skipKey==1.
-**
-** At least amt bytes of information must be available on the local
-** page or else this routine returns NULL.  If amt<0 then the entire
-** key/data must be available.
+** skipKey==1.  The number of bytes of available key/data is written
+** into *pAmt.  If *pAmt==0, then the value returned will not be
+** a valid pointer.
 **
 ** This routine is an optimization.  It is common for the entire key
 ** and data to fit on the local page and for there to be no overflow
@@ -1754,7 +1752,7 @@ int sqlite3BtreeData(BtCursor *pCur, u32 offset, u32 amt, void *pBuf){
 */
 static const unsigned char *fetchPayload(
   BtCursor *pCur,      /* Cursor pointing to entry to read from */
-  int amt,             /* Amount requested */
+  int *pAmt,           /* Write the number of available bytes here */
   int skipKey          /* read beginning at data if this is true */
 ){
   unsigned char *aPayload;
@@ -1780,43 +1778,33 @@ static const unsigned char *fetchPayload(
   if( skipKey ){
     aPayload += nKey;
     nLocal = pCur->info.nLocal - nKey;
-    if( amt<0 ) amt = pCur->info.nData;
-    assert( amt<=pCur->info.nData );
   }else{
     nLocal = pCur->info.nLocal;
-    if( amt<0 ) amt = nKey;
-    assert( amt<=nKey );
+    if( nLocal>nKey ){
+      nLocal = nKey;
+    }
   }
-  if( amt>nLocal ){
-    return 0;  /* If any of the data is not local, return nothing */
-  }
+  *pAmt = nLocal;
   return aPayload;
 }
 
 
 /*
-** Return a pointer to the first amt bytes of the key or data
-** for record that cursor pCur is point to if the entire request
-** exists in contiguous memory on the main tree page.  If any
-** any part of the request is on an overflow page, return 0.
-** If pCur is not pointing to a valid entry return 0.
-**
-** If amt<0 then return the entire key or data.
+** For the entry that cursor pCur is point to, return as
+** many bytes of the key or data as are available on the local
+** b-tree page.  Write the number of available bytes into *pAmt.
 **
 ** The pointer returned is ephemeral.  The key/data may move
 ** or be destroyed on the next call to any Btree routine.
 **
 ** These routines is used to get quick access to key and data
 ** in the common case where no overflow pages are used.
-**
-** It is a fatal error to call these routines with amt values that
-** are larger than the key/data size.
 */
-const void *sqlite3BtreeKeyFetch(BtCursor *pCur, int amt){
-  return (const void*)fetchPayload(pCur, amt, 0);
+const void *sqlite3BtreeKeyFetch(BtCursor *pCur, int *pAmt){
+  return (const void*)fetchPayload(pCur, pAmt, 0);
 }
-const void *sqlite3BtreeDataFetch(BtCursor *pCur, int amt){
-  return (const void*)fetchPayload(pCur, amt, 1);
+const void *sqlite3BtreeDataFetch(BtCursor *pCur, int *pAmt){
+  return (const void*)fetchPayload(pCur, pAmt, 1);
 }
 
 
@@ -2077,15 +2065,19 @@ int sqlite3BtreeMoveto(BtCursor *pCur, const void *pKey, i64 nKey, int *pRes){
         }else{
           c = 0;
         }
-      }else if( (pCellKey = sqlite3BtreeKeyFetch(pCur, nCellKey))!=0 ){
-        c = pCur->xCompare(pCur->pArg, nCellKey, pCellKey, nKey, pKey);
       }else{
-        u8 *pCellKey = sqliteMalloc( nCellKey );
-        if( pCellKey==0 ) return SQLITE_NOMEM;
-        rc = sqlite3BtreeKey(pCur, 0, nCellKey, pCellKey);
-        c = pCur->xCompare(pCur->pArg, nCellKey, pCellKey, nKey, pKey);
-        sqliteFree(pCellKey);
-        if( rc ) return rc;
+        int available;
+        pCellKey = fetchPayload(pCur, &available, 0);
+        if( available>=nCellKey ){
+          c = pCur->xCompare(pCur->pArg, nCellKey, pCellKey, nKey, pKey);
+        }else{
+          pCellKey = sqliteMallocRaw( nCellKey );
+          if( pCellKey==0 ) return SQLITE_NOMEM;
+          rc = sqlite3BtreeKey(pCur, 0, nCellKey, pCellKey);
+          c = pCur->xCompare(pCur->pArg, nCellKey, pCellKey, nKey, pKey);
+          sqliteFree(pCellKey);
+          if( rc ) return rc;
+        }
       }
       if( c==0 ){
         if( pPage->leafData && !pPage->leaf ){

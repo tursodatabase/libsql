@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.348 2004/05/30 02:14:18 drh Exp $
+** $Id: vdbe.c,v 1.349 2004/05/30 20:46:09 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1531,9 +1531,10 @@ case OP_Ge: {
   }
 
   affinity = (pOp->p1>>8)&0xFF;
-  if( affinity=='\0' ) affinity = 'n';
-  applyAffinity(pNos, affinity, db->enc);
-  applyAffinity(pTos, affinity, db->enc);
+  if( affinity ){
+    applyAffinity(pNos, affinity, db->enc);
+    applyAffinity(pTos, affinity, db->enc);
+  }
 
   assert( pOp->p3type==P3_COLLSEQ || pOp->p3==0 );
   res = sqlite3MemCompare(pNos, pTos, (CollSeq*)pOp->p3);
@@ -1889,6 +1890,7 @@ case OP_Column: {
     aType = pC->aType;
     aOffset = pC->aOffset;
   }else{
+    int avail;    /* Number of bytes of available data */
     if( pC && pC->aType ){
       aType = pC->aType;
     }else{
@@ -1903,17 +1905,16 @@ case OP_Column: {
     if( zRec ){
       zData = zRec;
     }else{
-      int sz = payloadSize<5 ? payloadSize : 5;
       if( pC->keyAsData ){
-        zData = (char*)sqlite3BtreeKeyFetch(pCrsr, sz);
+        zData = (char*)sqlite3BtreeKeyFetch(pCrsr, &avail);
       }else{
-        zData = (char*)sqlite3BtreeDataFetch(pCrsr, sz);
+        zData = (char*)sqlite3BtreeDataFetch(pCrsr, &avail);
       }
     }
     idx = sqlite3GetVarint32(zData, &szHdr);
 
     /* Get the complete header text */
-    if( !zRec ){
+    if( !zRec && avail<idx ){
       rc = sqlite3VdbeMemFromBtree(pCrsr, 0, szHdr, pC->keyAsData, &sMem);
       if( rc!=SQLITE_OK ){
         goto abort_due_to_error;

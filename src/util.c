@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.94 2004/05/28 16:00:22 drh Exp $
+** $Id: util.c,v 1.95 2004/05/30 20:46:09 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -1233,26 +1233,22 @@ int sqlite3GetVarint(const unsigned char *p, u64 *v){
   u64 x64;
   int n;
   unsigned char c;
-  c = p[0];
-  if( (c & 0x80)==0 ){
+  if( ((c = p[0]) & 0x80)==0 ){
     *v = c;
     return 1;
   }
   x = c & 0x7f;
-  c = p[1];
-  if( (c & 0x80)==0 ){
+  if( ((c = p[1]) & 0x80)==0 ){
     *v = (x<<7) | c;
     return 2;
   }
   x = (x<<7) | (c&0x7f);
-  c = p[2];
-  if( (c & 0x80)==0 ){
+  if( ((c = p[2]) & 0x80)==0 ){
     *v = (x<<7) | c;
     return 3;
   }
   x = (x<<7) | (c&0x7f);
-  c = p[3];
-  if( (c & 0x80)==0 ){
+  if( ((c = p[3]) & 0x80)==0 ){
     *v = (x<<7) | c;
     return 4;
   }
@@ -1275,13 +1271,32 @@ int sqlite3GetVarint(const unsigned char *p, u64 *v){
 ** Return the number of bytes read.  The value is stored in *v.
 */
 int sqlite3GetVarint32(const unsigned char *p, u32 *v){
-  int n = 1;
-  unsigned char c = p[0];
-  u32 x = c & 0x7f;
-  while( (c & 0x80)!=0 && n<9 ){
-    c = p[n++];
-    x = (x<<7) | (c & 0x7f);
+  u32 x;
+  int n;
+  unsigned char c;
+  if( ((c = p[0]) & 0x80)==0 ){
+    *v = c;
+    return 1;
   }
+  x = c & 0x7f;
+  if( ((c = p[1]) & 0x80)==0 ){
+    *v = (x<<7) | c;
+    return 2;
+  }
+  x = (x<<7) | (c&0x7f);
+  if( ((c = p[2]) & 0x80)==0 ){
+    *v = (x<<7) | c;
+    return 3;
+  }
+  x = (x<<7) | (c&0x7f);
+  if( ((c = p[3]) & 0x80)==0 ){
+    *v = (x<<7) | c;
+    return 4;
+  }
+  n = 4;
+  do{
+    x = (x<<7) | ((c = p[n++])&0x7f);
+  }while( (c & 0x80)!=0 && n<9 );
   *v = x;
   return n;
 }

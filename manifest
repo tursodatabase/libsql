@@ -1,5 +1,5 @@
-C Improved\scomments\sand\sspeed\stweaks\sto\sbtree.c.\s(CVS\s1497)
-D 2004-05-30T19:19:05
+C Various\sspeed\senhancements.\s(CVS\s1498)
+D 2004-05-30T20:46:09
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -24,8 +24,8 @@ F sqlite.def fc4f5734786fe4743cfe2aa98eb2da4b089edb5f
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F src/attach.c c315c58cb16fd6e913b3bfa6412aedecb4567fa5
 F src/auth.c 5c2f0bea4729c98c2be3b69d6b466fc51448fe79
-F src/btree.c da44b7801ff3b26eebdf3f71c55f105dc38f9e8a
-F src/btree.h b65140b5ae891f30d2a39e64b9f0343225553545
+F src/btree.c 3b7ddd0dd491c265227a045b9575786c7947cf49
+F src/btree.h 512706898e248fc5ec9237b9b535cffb9b53f9cd
 F src/build.c fd36c4a603e23df35aa7f57772d965e1865e39e0
 F src/date.c 0eb922af5c5f5e2455f8dc2f98023ed3e04a857e
 F src/delete.c 72f8febf6170cda830f509c8f9dffbed3df3596c
@@ -60,21 +60,21 @@ F src/table.c af14284fa36c8d41f6829e3f2819dce07d3e2de2
 F src/tclsqlite.c b314f12760547e4ef090e055f1298f70627450d3
 F src/test1.c 32934478366531503d634968db414df17cb38238
 F src/test2.c 6195a1ca2c8d0d2d93644e86da3289b403486872
-F src/test3.c 5e4a6d596f982f6f47a5f9f75ede9b4a3b739968
+F src/test3.c 32d35d15ac821f597a58353bb7b0141085259a24
 F src/test4.c 34848a9fd31aa65857b20a8bfc03aff77d8c3426
 F src/test5.c 9a1f15133f6955f067c5246e564723b5f23ff221
 F src/tokenize.c 50a87c7414de54a008427c9fed22e4e86efb6844
 F src/trigger.c 258ed8f9583c6b80e5af401cb9cce345c0c689c3
 F src/update.c 259f06e7b22c684b2d3dda54a18185892d6e9573
 F src/utf.c f8604999a54483533ac20a63879074f01b0df384
-F src/util.c 4df9d9b0d930d81ec581bcb68748e7c48bdc8c7d
+F src/util.c 3b647719c0bece41491300b605cff96a7a26f03a
 F src/vacuum.c 82ce1fc8ecc2e1aa284c13fe38446709f9936c63
-F src/vdbe.c 61ac9d19277f63e78f09a62d278218fe936574a4
+F src/vdbe.c a2131f7846fd2dbe1573bb37fc6d683c455c0ea4
 F src/vdbe.h e73f890e0f2a6c42b183d7d6937947930fe4fdeb
 F src/vdbeInt.h c2bcd6e5a6e6a3753e4c5a368629c3a625719bfc
 F src/vdbeapi.c 0c5d64c81871cb4fe5407e639604ee95738b6942
-F src/vdbeaux.c 9a86cafac031ba04588510c1225fde5cacf85a66
-F src/vdbemem.c d5f96663627d54ee8ea47f182c92faa57a015704
+F src/vdbeaux.c ec0cccd9611fa6146a7b70ec23112959e63510ec
+F src/vdbemem.c 627d714c347f6af8092cc48ae1c06fd774a1ad9c
 F src/where.c 444a7c3a8b1eb7bba072e489af628555d21d92a4
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
 F test/attach.test 0dd7cf9bf9bc915bce2da4fb616c4ea9c3da64af
@@ -204,7 +204,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P a90264c0a4c73097fe0ae8933dcebb15b8eaa2bb
-R a1c712ffe17d6f5e6ad47c4f487c8392
+P c86b7c065a798cd108189b96e87d100115862ff2
+R d1973e68e90aa9267e1c93eed75b57c5
 U drh
-Z 95139f1873fb80187eef449249c9e629
+Z 7599afd42e52bbb72c5888c64d1ac6d1

@@ -1229,21 +1229,37 @@ int sqlite3VdbeSerialGet(
   assert( serial_type!=0 );
   if( serial_type<=5 ){
     /* Integer and Real */
-    u64 v = 0;
-    int n;
-
-    if( buf[0]&0x80 ){
-      v = -1;
-    }
-    for(n=0; n<len; n++){
-      v = (v<<8) | buf[n];
-    }
-    if( serial_type==5 ){
-      pMem->flags = MEM_Real;
-      pMem->r = *(double*)&v;
-    }else{
+    if( serial_type<=3 ){
+      /* 32-bit integer type.  This is handled by a special case for
+      ** performance reasons. */
+      int v = buf[0];
+      int n;
+      if( v&0x80 ){
+        v |= -256;
+      }
+      for(n=1; n<len; n++){
+        v = (v<<8) | buf[n];
+      }
       pMem->flags = MEM_Int;
-      pMem->i = *(i64*)&v;
+      pMem->i = v;
+      return n;
+    }else{
+      u64 v = 0;
+      int n;
+
+      if( buf[0]&0x80 ){
+        v = -1;
+      }
+      for(n=0; n<len; n++){
+        v = (v<<8) | buf[n];
+      }
+      if( serial_type==5 ){
+        pMem->flags = MEM_Real;
+        pMem->r = *(double*)&v;
+      }else{
+        pMem->flags = MEM_Int;
+        pMem->i = *(i64*)&v;
+      }
     }
   }else if( serial_type>=12 ){
     /* String or blob */

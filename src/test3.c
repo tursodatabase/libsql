@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test3.c,v 1.38 2004/05/18 15:57:42 drh Exp $
+** $Id: test3.c,v 1.39 2004/05/30 20:46:09 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -986,6 +986,7 @@ static int btree_fetch_key(
 ){
   BtCursor *pCur;
   int n;
+  int amt;
   u64 nKey;
   const char *zBuf;
   char zStatic[1000];
@@ -998,8 +999,8 @@ static int btree_fetch_key(
   if( Tcl_GetInt(interp, argv[1], (int*)&pCur) ) return TCL_ERROR;
   if( Tcl_GetInt(interp, argv[2], &n) ) return TCL_ERROR;
   sqlite3BtreeKeySize(pCur, &nKey);
-  zBuf = sqlite3BtreeKeyFetch(pCur, n);
-  if( zBuf ){
+  zBuf = sqlite3BtreeKeyFetch(pCur, &amt);
+  if( zBuf && amt>=n ){
     assert( nKey<sizeof(zStatic) );
     if( n>0 ) nKey = n;
     memcpy(zStatic, zBuf, (int)nKey); 
@@ -1023,21 +1024,21 @@ static int btree_fetch_data(
 ){
   BtCursor *pCur;
   int n;
+  int amt;
   u32 nData;
   const char *zBuf;
   char zStatic[1000];
 
   if( argc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID AMT
-\"", 0);
+       " ID AMT\"", 0);
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[1], (int*)&pCur) ) return TCL_ERROR;
   if( Tcl_GetInt(interp, argv[2], &n) ) return TCL_ERROR;
   sqlite3BtreeDataSize(pCur, &nData);
-  zBuf = sqlite3BtreeDataFetch(pCur, n);
-  if( zBuf ){
+  zBuf = sqlite3BtreeDataFetch(pCur, &amt);
+  if( zBuf && amt>=n ){
     assert( nData<sizeof(zStatic) );
     if( n>0 ) nData = n;
     memcpy(zStatic, zBuf, (int)nData); 

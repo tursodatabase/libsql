@@ -464,16 +464,17 @@ int sqlite3VdbeMemFromBtree(
   int key,          /* If true, retrieve from the btree key, not data. */
   Mem *pMem         /* OUT: Return data in this Mem structure. */
 ){
-  char *zData;
+  char *zData;      /* Data from the btree layer */
+  int available;    /* Number of bytes available on the local btree page */
 
   if( key ){
-    zData = (char *)sqlite3BtreeKeyFetch(pCur, offset+amt);
+    zData = (char *)sqlite3BtreeKeyFetch(pCur, &available);
   }else{
-    zData = (char *)sqlite3BtreeDataFetch(pCur, offset+amt);
+    zData = (char *)sqlite3BtreeDataFetch(pCur, &available);
   }
 
   pMem->n = amt;
-  if( zData ){
+  if( offset+amt<=available ){
     pMem->z = &zData[offset];
     pMem->flags = MEM_Blob|MEM_Ephem;
   }else{
