@@ -686,15 +686,17 @@ int sqlite3OsCheckWriteLock(OsFile *id){
 **     (3) PENDING_LOCK
 **     (4) EXCLUSIVE_LOCK
 **
-** Locks are are hierarchical.  Getting a lock N implies getting all locks
-** N-1, N-2, N-3, ....  So, for example, getting a PENDING lock
-** implies a SHARED and a RESERVED lock.  This routine adds locks one
-** at a time until the desired lock is acheived.  A locking failure might
-** occur at any point.  When a failure occurs intermediate locks are
-** retained.  For example, if a SHARED lock is held and this routine
-** is called with EXCLUSIVE, it might obtain a RESERVED and PENDING lock
-** but fail to get the EXCLUSIVE lock.  In that case, the file would be
-** left in the PENDING lock state - it does not revert to SHARED.
+** Sometimes when requesting one lock state, additional lock states
+** are inserted in between.  The locking might fail on one of the later
+** transitions leaving the lock state different from what it started but
+** still short of its goal.  The following chart shows the allowed
+** transitions and the inserted intermediate states:
+**
+**    UNLOCKED -> SHARED
+**    SHARED -> RESERVED
+**    SHARED -> (PENDING) -> EXCLUSIVE
+**    RESERVED -> (PENDING) -> EXCLUSIVE
+**    PENDING -> EXCLUSIVE
 **
 ** This routine will only increase a lock.  The sqlite3OsUnlock() routine
 ** erases all locks at once and returns us immediately to locking level 0.
@@ -718,20 +720,15 @@ int sqlite3OsLock(OsFile *id, int locktype){
     return SQLITE_OK;
   }
 
-  /* Make sure locking is sequential.  In other words, make sure we have
-  ** SHARED before trying for RESERVED, and that we have RESERVED before
-  ** trying for PENDING, and that we have PENDING before trying for
-  ** EXCLUSIVE.
+  /* Make sure the locking sequence is correct
   */
-  while( locktype>id->locktype+1 ){
-    rc = sqlite3OsLock(id, id->locktype+1);
-    if( rc!=SQLITE_OK ){
-      return rc;
-    }
-  }
-  assert( locktype==id->locktype+1 );
+  assert( id->locktype!=NO_LOCK || locktype==SHARED_LOCK );
+  assert( locktype!=PENDING_LOCK );
+  assert( locktype!=RESERVED_LOCK || id->locktype==SHARED_LOCK );
 
-  sqlite3OsEnterMutex();  /* Needed because pLock is shared across threads */
+  /* This mutex is needed because id->pLock is shared across threads
+  */
+  sqlite3OsEnterMutex();
 
   /* If some thread using this PID has a lock via a different OsFile*
   ** handle that precludes the requested lock, return BUSY.

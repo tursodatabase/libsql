@@ -368,10 +368,30 @@ static int unlockReadLock(OsFile *id){
 }
 
 /*
-** Acquire a lock of the given type on the specified file.  If an
-** appropriate lock already exists, this routine is a no-op.  Return
-** SQLITE_OK on success and SQLITE_BUSY if another thread is already
-** holding a conflicting lock.
+** Lock the file with the lock specified by parameter locktype - one
+** of the following:
+**
+**     (1) SHARED_LOCK
+**     (2) RESERVED_LOCK
+**     (3) PENDING_LOCK
+**     (4) EXCLUSIVE_LOCK
+**
+** Sometimes when requesting one lock state, additional lock states
+** are inserted in between.  The locking might fail on one of the later
+** transitions leaving the lock state different from what it started but
+** still short of its goal.  The following chart shows the allowed
+** transitions and the inserted intermediate states:
+**
+**    UNLOCKED -> SHARED
+**    SHARED -> RESERVED
+**    SHARED -> (PENDING) -> EXCLUSIVE
+**    RESERVED -> (PENDING) -> EXCLUSIVE
+**    PENDING -> EXCLUSIVE
+**
+** This routine will only increase a lock.  The sqlite3OsUnlock() routine
+** erases all locks at once and returns us immediately to locking level 0.
+** It is not possible to lower the locking level one step at a time.  You
+** must go straight to locking level 0.
 */
 int sqlite3OsLock(OsFile *id, int locktype){
   int rc = SQLITE_OK;    /* Return code from subroutines */
@@ -390,16 +410,22 @@ int sqlite3OsLock(OsFile *id, int locktype){
     return SQLITE_OK;
   }
 
+  /* Make sure the locking sequence is correct
+  */
+  assert( id->locktype!=NO_LOCK || locktype==SHARED_LOCK );
+  assert( locktype!=PENDING_LOCK );
+  assert( locktype!=RESERVED_LOCK || id->locktype==SHARED_LOCK );
+
   /* Lock the PENDING_LOCK byte if we need to acquire a PENDING lock or
   ** a SHARED lock.  If we are acquiring a SHARED lock, the acquisition of
   ** the PENDING_LOCK byte is temporary.
   */
   if( id->locktype==NO_LOCK
-   || (locktype>=PENDING_LOCK && id->locktype<PENDING_LOCK)
+   || (locktype==EXCLUSIVE_LOCK && id->locktype==RESERVED_LOCK)
   ){
-    int cnt = 4;
+    int cnt = 3;
     while( cnt-->0 && (res = LockFile(id->h, PENDING_BYTE, 0, 1, 0))==0 ){
-      /* Try 4 times to get the pending lock.  The pending lock might be
+      /* Try 3 times to get the pending lock.  The pending lock might be
       ** held by another reader process who will release it momentarily.
       */
       TRACE2("could not get a PENDING lock. cnt=%d\n", cnt);
@@ -410,7 +436,8 @@ int sqlite3OsLock(OsFile *id, int locktype){
 
   /* Acquire a shared lock
   */
-  if( locktype>=SHARED_LOCK && id->locktype<SHARED_LOCK && res ){
+  if( locktype==SHARED_LOCK && res ){
+    assert( id->locktype==NO_LOCK );
     if( isNT() ){
       res = getReadLock(id->h, SHARED_FIRST, SHARED_SIZE);
     }else{
@@ -426,7 +453,8 @@ int sqlite3OsLock(OsFile *id, int locktype){
 
   /* Acquire a RESERVED lock
   */
-  if( locktype>=RESERVED_LOCK && id->locktype<RESERVED_LOCK && res ){
+  if( locktype==RESERVED_LOCK && res ){
+    assert( id->locktype==SHARED_LOCK );
     res = LockFile(id->h, RESERVED_BYTE, 0, 1, 0);
     if( res ){
       newLocktype = RESERVED_LOCK;
@@ -435,7 +463,7 @@ int sqlite3OsLock(OsFile *id, int locktype){
 
   /* Acquire a PENDING lock
   */
-  if( locktype>=PENDING_LOCK && res ){
+  if( locktype==EXCLUSIVE_LOCK && res ){
     newLocktype = PENDING_LOCK;
     gotPendingLock = 0;
   }
@@ -443,16 +471,10 @@ int sqlite3OsLock(OsFile *id, int locktype){
   /* Acquire an EXCLUSIVE lock
   */
   if( locktype==EXCLUSIVE_LOCK && res ){
-    if( id->locktype>=SHARED_LOCK ){
-      res = unlockReadLock(id);
-      TRACE2("unreadlock = %d\n", res);
-    }
-    if( res ){
-      res = LockFile(id->h, SHARED_FIRST, 0, SHARED_SIZE, 0);
-    }else{
-      TRACE2("LOCK FAILED due to failure to unlock read %d\n", id->h);
-      res = 0;
-    }
+    assert( id->locktype>=SHARED_LOCK );
+    res = unlockReadLock(id);
+    TRACE2("unreadlock = %d\n", res);
+    res = LockFile(id->h, SHARED_FIRST, 0, SHARED_SIZE, 0);
     if( res ){
       newLocktype = EXCLUSIVE_LOCK;
     }else{
@@ -463,7 +485,7 @@ int sqlite3OsLock(OsFile *id, int locktype){
   /* If we are holding a PENDING lock that ought to be released, then
   ** release it now.
   */
-  if( gotPendingLock && (res==0 || locktype<PENDING_LOCK) ){
+  if( gotPendingLock && locktype==SHARED_LOCK ){
     UnlockFile(id->h, PENDING_BYTE, 0, 1, 0);
   }
 
@@ -515,14 +537,14 @@ int sqlite3OsUnlock(OsFile *id){
   if( type>=EXCLUSIVE_LOCK ){
     UnlockFile(id->h, SHARED_FIRST, 0, SHARED_SIZE, 0);
   }
-  if( type>=PENDING_LOCK ){
-    UnlockFile(id->h, PENDING_BYTE, 0, 1, 0);
-  }
   if( type>=RESERVED_LOCK ){
     UnlockFile(id->h, RESERVED_BYTE, 0, 1, 0);
   }
   if( type>=SHARED_LOCK && type<EXCLUSIVE_LOCK ){
     unlockReadLock(id);
+  }
+  if( type>=PENDING_LOCK ){
+    UnlockFile(id->h, PENDING_BYTE, 0, 1, 0);
   }
   id->locktype = NO_LOCK;
   return SQLITE_OK;
