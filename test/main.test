@@ -23,7 +23,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is exercising the code in main.c.
 #
-# $Id: main.test,v 1.3 2000/06/16 20:51:26 drh Exp $
+# $Id: main.test,v 1.4 2000/12/10 18:23:52 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -46,6 +46,34 @@ do_test main-1.4 {
   db complete {
      -- a comment ;
      ;
+  }
+} {1}
+do_test main-1.5 {
+  db complete {DROP TABLE 'xyz;}
+} {0}
+do_test main-1.6 {
+  db complete {DROP TABLE 'xyz';}
+} {1}
+do_test main-1.7 {
+  db complete {DROP TABLE "xyz;}
+} {0}
+do_test main-1.8 {
+  db complete {DROP TABLE "xyz';}
+} {0}
+do_test main-1.9 {
+  db complete {DROP TABLE "xyz";}
+} {1}
+do_test main-1.10 {
+  db complete {DROP TABLE xyz; hi}
+} {0}
+do_test main-1.11 {
+  db complete {DROP TABLE xyz; }
+} {1}
+do_test main-1.12 {
+  db complete {DROP TABLE xyz; -- hi }
+} {1}
+do_test main-1.13 {
+  db complete {DROP TABLE xyz; -- hi
   }
 } {1}
 

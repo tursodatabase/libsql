@@ -17,6 +17,16 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2000 Dec 10 (1.0.17)} {
+<li>Rewrote <b>sqlite_complete()</b> to make it faster.</li>
+<li>Minor tweaks to other code to make it run a little faster.</li>
+<li>Added new tests for <b>sqlite_complete()</b> and for memory leaks.</li>
+}
+
+chng {2000 Dec 4 (1.0.16)} {
+<li>Documentation updates.  Mostly fixing of typos and spelling errors.</li>
+}
+
 chng {2000 Oct 23 (1.0.15)} {
 <li>Documentation updates</li>
 <li>Some sanity checking code was removed from the inner loop of vdbe.c
@@ -33,7 +43,7 @@ chng {2000 Oct 18 (1.0.13)} {
 <li>Break out the GDBM driver into a separate file in anticipation
     to added new drivers.</li>
 <li>Allow the name of a database to be prefixed by the driver type.
-    For now, the only driver type is "gdbm:".<li>
+    For now, the only driver type is "gdbm:".</li>
 }
 
 chng {2000 Oct 16 (1.0.12)} {

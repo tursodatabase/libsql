@@ -1,9 +1,31 @@
 /*
+** Copyright (c) 2000 D. Richard Hipp
+**
+** This program is free software; you can redistribute it and/or
+** modify it under the terms of the GNU General Public
+** License as published by the Free Software Foundation; either
+** version 2 of the License, or (at your option) any later version.
+**
+** This program is distributed in the hope that it will be useful,
+** but WITHOUT ANY WARRANTY; without even the implied warranty of
+** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+** General Public License for more details.
+** 
+** You should have received a copy of the GNU General Public
+** License along with this library; if not, write to the
+** Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+** Boston, MA  02111-1307, USA.
+**
+** Author contact information:
+**   drh@hwaci.com
+**   http://www.hwaci.com/drh/
+**
+*************************************************************************
 ** This file contains the sqlite_get_table() and sqlite_free_table()
 ** interface routines.  These are just wrappers around the main
 ** interface routine of sqlite_exec().
 **
-** This routines are in a separate files to that they will not be linked
+** These routines are in a separate files so that they will not be linked
 ** if they are not used.
 */
 #include <stdlib.h>

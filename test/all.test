@@ -22,17 +22,17 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: all.test,v 1.4 2000/10/19 14:21:43 drh Exp $
+# $Id: all.test,v 1.5 2000/12/10 18:23:51 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 rename finish_test really_finish_test
-proc finish_test {} {}
+proc finish_test {} {memleak_check}
 
 if {[file exists ./sqlite_test_count]} {
   set COUNT [exec cat ./sqlite_test_count]
 } else {
-  set COUNT 1
+  set COUNT 4
 }
 
 if {[file exists ./sqlite_test_prefixes]} {
@@ -40,6 +40,13 @@ if {[file exists ./sqlite_test_prefixes]} {
 } else {
   set PREFIXES {memory: gdbm:}
 }
+
+# LeakList will hold a list of the number of unfreed mallocs after
+# each round of the test.  This number should be constant.  If it
+# grows, it may mean there is a memory leak in the library.
+#
+set LeakList {}
+
 
 for {set Counter 0} {$Counter<$COUNT} {incr Counter} {
   foreach p $PREFIXES {
@@ -49,6 +56,27 @@ for {set Counter 0} {$Counter<$COUNT} {incr Counter} {
       source $testfile
     }
   }
+  if {[info exists Leak]} {
+    lappend LeakList $Leak
+  }
+}
+
+# Do one last test to look for a memory leak in the library.  This will
+# only work if SQLite is compiled with the -DMEMORY_DEBUG=1 flag.
+#
+if {$LeakList!=""} {
+  puts -nonewline memory-leak-test...
+  incr ::nTest
+  foreach x $LeakList {
+    if {$x!=[lindex $LeakList 0]} {
+       puts " failed!"
+       puts "Expected: all values to be the same"
+       puts "     Got: $LeakList"
+       incr ::nErr
+       break
+    }
+  }
+  puts " Ok"
 }
 
 really_finish_test

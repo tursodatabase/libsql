@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.47 2000/10/23 13:16:33 drh Exp $
+** $Id: vdbe.c,v 1.48 2000/12/10 18:23:51 drh Exp $
 */
 #include "sqliteInt.h"
 #include <unistd.h>
@@ -639,17 +639,16 @@ static void PopStack(Vdbe *p, int N){
     pStack--;
     pzStack--;
   }
-#if 0  /* Older code was a little slower */
-  while( p->tos>=0 && N-->0 ){
-    int i = p->tos--;
-    if( p->aStack[i].flags & STK_Dyn ){
-      sqliteFree(p->zStack[i]);
-    }
-    p->aStack[i].flags = 0;
-    p->zStack[i] = 0;
-  }
-#endif  
 }
+
+/*
+** Here is a macro to handle the common case of popping the stack
+** once.  This macro only works from within the sqliteVdbeExec()
+** function.
+*/
+#define POPSTACK \
+ if( aStack[p->tos].flags & STK_Dyn ) sqliteFree(zStack[p->tos]); \
+ p->tos--;
 
 /*
 ** Make sure space has been allocated to hold at least N
@@ -1303,7 +1302,7 @@ int sqliteVdbeExec(
               break;
             }
           }
-          PopStack(p, 1);
+          POPSTACK;
           Release(p, nos);
           aStack[nos].r = b;
           aStack[nos].flags = STK_Real;
@@ -1631,7 +1630,7 @@ int sqliteVdbeExec(
         VERIFY( if( p->tos<0 ) goto not_enough_stack; )
         Integerify(p, p->tos);
         c = aStack[p->tos].i;
-        PopStack(p, 1);
+        POPSTACK;
         if( c ) pc = pOp->p2-1;
         break;
       }
@@ -1646,7 +1645,7 @@ int sqliteVdbeExec(
         int c;
         VERIFY( if( p->tos<0 ) goto not_enough_stack; )
         c = (aStack[p->tos].flags & STK_Null)!=0;
-        PopStack(p, 1);
+        POPSTACK;
         if( c ) pc = pOp->p2-1;
         break;
       }
@@ -1661,7 +1660,7 @@ int sqliteVdbeExec(
         int c;
         VERIFY( if( p->tos<0 ) goto not_enough_stack; )
         c = (aStack[p->tos].flags & STK_Null)==0;
-        PopStack(p, 1);
+        POPSTACK;
         if( c ) pc = pOp->p2-1;
         break;
       }
@@ -1878,7 +1877,7 @@ int sqliteVdbeExec(
           }
           p->nFetch++;
         }
-        PopStack(p, 1);
+        POPSTACK;
         break;
       }
 
@@ -1949,7 +1948,7 @@ int sqliteVdbeExec(
           if( !alreadyExists ) pc = pOp->p2 - 1;
         }
         if( pOp->opcode!=OP_Distinct ){
-          PopStack(p, 1);
+          POPSTACK;
         }
         break;
       }
@@ -2027,7 +2026,7 @@ int sqliteVdbeExec(
           }
           pBe->Delete(p->aCsr[i].pCursor, nKey, zKey);
         }
-        PopStack(p, 1);
+        POPSTACK;
         break;
       }
 
@@ -2226,7 +2225,7 @@ int sqliteVdbeExec(
           if( j>=k ){
             j = -1;
             pc = pOp->p2 - 1;
-            PopStack(p, 1);
+            POPSTACK;
           }
           p->aCsr[i].index = j+1;
         }
@@ -2413,7 +2412,7 @@ int sqliteVdbeExec(
           int val;
           Integerify(p, p->tos);
           val = aStack[p->tos].i;
-          PopStack(p, 1);
+          POPSTACK;
           fwrite(&val, sizeof(int), 1, p->apList[i]);
         }
         break;
@@ -2705,7 +2704,7 @@ int sqliteVdbeExec(
             rc = SQLITE_ABORT;
           }
         }
-        PopStack(p, 1);
+        POPSTACK;
         break;
       }
 
@@ -2920,7 +2919,7 @@ int sqliteVdbeExec(
           pMem->s.flags |= STK_Dyn;
         }
         if( zOld ) sqliteFree(zOld);
-        PopStack(p, 1);
+        POPSTACK;
         break;
       }
 
@@ -2997,7 +2996,7 @@ int sqliteVdbeExec(
         }else{
           AggInsert(&p->agg, zKey);
         }
-        PopStack(p, 1);
+        POPSTACK;
         break; 
       }
 
@@ -3059,7 +3058,7 @@ int sqliteVdbeExec(
           }
           if( zOld ) sqliteFree(zOld);
         }
-        PopStack(p, 1);
+        POPSTACK;
         break;
       }
 
@@ -3153,7 +3152,7 @@ int sqliteVdbeExec(
           if( tos<0 ) goto not_enough_stack;
           Stringify(p, tos);
           SetInsert(&p->aSet[i], zStack[tos]);
-          PopStack(p, 1);
+          POPSTACK;
         }
         break;
       }
@@ -3172,7 +3171,7 @@ int sqliteVdbeExec(
         if( VERIFY( i>=0 && i<p->nSet &&) SetTest(&p->aSet[i], zStack[tos])){
           pc = pOp->p2 - 1;
         }
-        PopStack(p, 1);
+        POPSTACK;
         break;
       }
 
@@ -3190,7 +3189,7 @@ int sqliteVdbeExec(
         if(VERIFY( i>=0 && i<p->nSet &&) !SetTest(&p->aSet[i], zStack[tos])){
           pc = pOp->p2 - 1;
         }
-        PopStack(p, 1);
+        POPSTACK;
         break;
       }
 
@@ -3205,7 +3204,7 @@ int sqliteVdbeExec(
         VERIFY( if( tos<0 ) goto not_enough_stack; )
         Stringify(p, tos);
         len = aStack[tos].n-1;
-        PopStack(p, 1);
+        POPSTACK;
         p->tos++;
         aStack[tos].i = len;
         aStack[tos].flags = STK_Int;
@@ -3241,7 +3240,7 @@ int sqliteVdbeExec(
           VERIFY( if( p->tos<0 ) goto not_enough_stack; )
           Integerify(p, p->tos);
           cnt = aStack[p->tos].i;
-          PopStack(p, 1);
+          POPSTACK;
         }else{
           cnt = pOp->p2;
         }
@@ -3249,7 +3248,7 @@ int sqliteVdbeExec(
           VERIFY( if( p->tos<0 ) goto not_enough_stack; )
           Integerify(p, p->tos);
           start = aStack[p->tos].i - 1;
-          PopStack(p, 1);
+          POPSTACK;
         }else{
           start = pOp->p1 - 1;
         }
@@ -3274,7 +3273,7 @@ int sqliteVdbeExec(
         if( z==0 ) goto no_mem;
         strncpy(z, &zStack[p->tos][start], cnt);
         z[cnt] = 0;
-        PopStack(p, 1);
+        POPSTACK;
         p->tos++;
         zStack[p->tos] = z;
         aStack[p->tos].n = cnt + 1;

@@ -26,9 +26,9 @@
 ** sqlite and the code that does the actually reading and writing
 ** of information to the disk.
 **
-** This file uses an in-memory hash talbe as the database backend. 
+** This file uses an in-memory hash table as the database backend. 
 **
-** $Id: dbbemem.c,v 1.4 2000/10/19 15:28:41 drh Exp $
+** $Id: dbbemem.c,v 1.5 2000/12/10 18:23:50 drh Exp $
 */
 #include "sqliteInt.h"
 #include <sys/stat.h>

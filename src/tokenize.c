@@ -27,7 +27,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.15 2000/10/22 20:39:59 drh Exp $
+** $Id: tokenize.c,v 1.16 2000/12/10 18:23:51 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -102,7 +102,7 @@ static Keyword aKeywordTable[] = {
 /*
 ** This is the hash table
 */
-#define KEY_HASH_SIZE 37
+#define KEY_HASH_SIZE 69
 static Keyword *apHashTable[KEY_HASH_SIZE];
 
 
