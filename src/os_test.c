@@ -159,6 +159,7 @@ static int cacheBlock(OsTestFile *pFile, int blk){
     int n = ((pFile->nBlk * 2) + 100 + blk);
     pFile->apBlk = (u8 **)sqliteRealloc(pFile->apBlk, n * sizeof(u8*));
     if( !pFile->apBlk ) return SQLITE_NOMEM;
+    memset(&pFile->apBlk[pFile->nBlk], 0, (n - pFile->nBlk)*sizeof(u8*));
     pFile->nBlk = n;
   }
 
