@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.166 2003/03/27 13:50:00 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.167 2003/03/31 00:30:49 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -971,9 +971,9 @@ Expr *sqliteExprFunction(ExprList*, Token*);
 void sqliteExprDelete(Expr*);
 ExprList *sqliteExprListAppend(ExprList*,Expr*,Token*);
 void sqliteExprListDelete(ExprList*);
-void sqlitePragma(Parse*,Token*,Token*,int);
-void sqliteResetInternalSchema(sqlite*);
 int sqliteInit(sqlite*, char**);
+void sqlitePragma(Parse*,Token*,Token*,int);
+void sqliteResetInternalSchema(sqlite*, int);
 void sqliteBeginParse(Parse*,int);
 void sqliteRollbackInternalChanges(sqlite*);
 void sqliteCommitInternalChanges(sqlite*);
@@ -1082,3 +1082,5 @@ void sqliteDeferForeignKey(Parse*, int);
 # define sqliteAuthRead(a,b,c,d)
 # define sqliteAuthCheck(a,b,c,d)    SQLITE_OK
 #endif
+void sqliteAttach(Parse*, Token*, Token*);
+void sqliteDetach(Parse*, Token*);

@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.118 2003/03/30 19:17:02 drh Exp $
+** $Id: main.c,v 1.119 2003/03/31 00:30:48 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -40,7 +40,8 @@ typedef struct {
 **     argv[1] = table or index name or meta statement type.
 **     argv[2] = root page number for table or index.  NULL for meta.
 **     argv[3] = SQL text for a CREATE TABLE or CREATE INDEX statement.
-**     argv[4] = "1" for temporary files, "0" for main database
+**     argv[4] = "1" for temporary files, "0" for main database, "2" or more
+**               for auxiliary database files.
 **
 */
 static
@@ -158,22 +159,19 @@ int upgrade_3_callback(void *pInit, int argc, char **argv, char **NotUsed){
 
 /*
 ** Attempt to read the database schema and initialize internal
-** data structures.  Return one of the SQLITE_ error codes to
+** data structures for a single database file.  The index of the
+** database file is given by iDb.  iDb==0 is used for the main
+** database.  iDb==1 should never be used.  iDb>=2 is used for
+** auxiliary databases.  Return one of the SQLITE_ error codes to
 ** indicate success or failure.
-**
-** After the database is initialized, the SQLITE_Initialized
-** bit is set in the flags field of the sqlite structure.  An
-** attempt is made to initialize the database as soon as it
-** is opened.  If that fails (perhaps because another process
-** has the sqlite_master table locked) than another attempt
-** is made the first time the database is accessed.
 */
-int sqliteInit(sqlite *db, char **pzErrMsg){
+static int sqliteInitOne(sqlite *db, int iDb, char **pzErrMsg){
   int rc;
   BtCursor *curMain;
   int size;
   Table *pTab;
   char *azArg[6];
+  char zDbNum[30];
   int meta[SQLITE_N_BTREE_META];
   Parse sParse;
   InitData initData;
@@ -228,13 +226,16 @@ int sqliteInit(sqlite *db, char **pzErrMsg){
      "WHERE type='index'";
 
 
+  assert( iDb>=0 && iDb!=1 && iDb<db->nDb );
+
   /* Construct the schema tables: sqlite_master and sqlite_temp_master
   */
   azArg[0] = "table";
   azArg[1] = MASTER_NAME;
   azArg[2] = "2";
   azArg[3] = master_schema;
-  azArg[4] = "0";
+  sprintf(zDbNum, "%d", iDb);
+  azArg[4] = zDbNum;
   azArg[5] = 0;
   initData.db = db;
   initData.pzErrMsg = pzErrMsg;
@@ -243,59 +244,68 @@ int sqliteInit(sqlite *db, char **pzErrMsg){
   if( pTab ){
     pTab->readOnly = 1;
   }
-  azArg[1] = TEMP_MASTER_NAME;
-  azArg[3] = temp_master_schema;
-  azArg[4] = "1";
-  sqliteInitCallback(&initData, 5, azArg, 0);
-  pTab = sqliteFindTable(db, TEMP_MASTER_NAME, "temp");
-  if( pTab ){
-    pTab->readOnly = 1;
+  if( iDb==0 ){
+    azArg[1] = TEMP_MASTER_NAME;
+    azArg[3] = temp_master_schema;
+    azArg[4] = "1";
+    sqliteInitCallback(&initData, 5, azArg, 0);
+    pTab = sqliteFindTable(db, TEMP_MASTER_NAME, "temp");
+    if( pTab ){
+      pTab->readOnly = 1;
+    }
   }
 
   /* Create a cursor to hold the database open
   */
-  if( db->aDb[0].pBt==0 ) return SQLITE_OK;
-  rc = sqliteBtreeCursor(db->aDb[0].pBt, 2, 0, &curMain);
+  if( db->aDb[iDb].pBt==0 ) return SQLITE_OK;
+  rc = sqliteBtreeCursor(db->aDb[iDb].pBt, 2, 0, &curMain);
   if( rc ){
     sqliteSetString(pzErrMsg, sqlite_error_string(rc), 0);
-    sqliteResetInternalSchema(db);
     return rc;
   }
 
   /* Get the database meta information
   */
-  rc = sqliteBtreeGetMeta(db->aDb[0].pBt, meta);
+  rc = sqliteBtreeGetMeta(db->aDb[iDb].pBt, meta);
   if( rc ){
     sqliteSetString(pzErrMsg, sqlite_error_string(rc), 0);
-    sqliteResetInternalSchema(db);
     sqliteBtreeCloseCursor(curMain);
     return rc;
   }
-  db->next_cookie = db->aDb[0].schema_cookie = meta[1];
-  db->file_format = meta[2];
-  size = meta[3];
-  if( size==0 ){ size = MAX_PAGES; }
-  db->cache_size = size;
-  sqliteBtreeSetCacheSize(db->aDb[0].pBt, size);
-  db->safety_level = meta[4];
-  if( db->safety_level==0 ) db->safety_level = 2;
-  sqliteBtreeSetSafetyLevel(db->aDb[0].pBt, db->safety_level);
+  db->aDb[iDb].schema_cookie = meta[1];
+  if( iDb==0 ){
+    db->next_cookie = meta[1];
+    db->file_format = meta[2];
+    size = meta[3];
+    if( size==0 ){ size = MAX_PAGES; }
+    db->cache_size = size;
+    db->safety_level = meta[4];
+    if( db->safety_level==0 ) db->safety_level = 2;
 
-  /*
-  **     file_format==1    Version 2.1.0.
-  **     file_format==2    Version 2.2.0. Add support for INTEGER PRIMARY KEY.
-  **     file_format==3    Version 2.6.0. Fix empty-string index bug.
-  **     file_format==4    Version 2.7.0. Add support for separate numeric and
-  **                       text datatypes.
-  */
-  if( db->file_format==0 ){
-    /* This happens if the database was initially empty */
-    db->file_format = 4;
-  }else if( db->file_format>4 ){
-    sqliteBtreeCloseCursor(curMain);
-    sqliteSetString(pzErrMsg, "unsupported file format", 0);
-    return SQLITE_ERROR;
+    /*
+    **  file_format==1    Version 2.1.0.
+    **  file_format==2    Version 2.2.0. Add support for INTEGER PRIMARY KEY.
+    **  file_format==3    Version 2.6.0. Fix empty-string index bug.
+    **  file_format==4    Version 2.7.0. Add support for separate numeric and
+    **                    text datatypes.
+    */
+    if( db->file_format==0 ){
+      /* This happens if the database was initially empty */
+      db->file_format = 4;
+    }else if( db->file_format>4 ){
+      sqliteBtreeCloseCursor(curMain);
+      sqliteSetString(pzErrMsg, "unsupported file format", 0);
+      return SQLITE_ERROR;
+    }
+  }else if( db->file_format<4 || db->file_format!=meta[2] ){
+    sqliteSetString(pzErrMsg, "incompatible file format in auxiliary "
+       "database \"", db->aDb[iDb].zName, "\"", 0);
+    sqliteBtreeClose(db->aDb[iDb].pBt);
+    db->aDb[iDb].pBt = 0;
+    return SQLITE_FORMAT;
   }
+  sqliteBtreeSetCacheSize(db->aDb[iDb].pBt, size);
+  sqliteBtreeSetSafetyLevel(db->aDb[iDb].pBt, meta[4]==0 ? 2 : meta[4]);
 
   /* Read the schema information out of the schema tables
   */
@@ -305,24 +315,62 @@ int sqliteInit(sqlite *db, char **pzErrMsg){
   sParse.pArg = (void*)&initData;
   sParse.initFlag = 1;
   sParse.useCallback = 1;
-  sqliteRunParser(&sParse,
-      db->file_format>=2 ? init_script : older_init_script,
-      pzErrMsg);
+  if( iDb==0 ){
+    sqliteRunParser(&sParse,
+        db->file_format>=2 ? init_script : older_init_script,
+        pzErrMsg);
+  }else{
+    char *zSql = 0;
+    sqliteSetString(&zSql, 
+       "SELECT type, name, rootpage, sql, ", zDbNum, " FROM \"",
+       db->aDb[iDb].zName, "\".sqlite_master", 0);
+    sqliteRunParser(&sParse, zSql, pzErrMsg);
+    sqliteFree(zSql);
+  }
+  sqliteBtreeCloseCursor(curMain);
   if( sqlite_malloc_failed ){
     sqliteSetString(pzErrMsg, "out of memory", 0);
     sParse.rc = SQLITE_NOMEM;
-    sqliteBtreeRollback(db->aDb[0].pBt);
-    sqliteResetInternalSchema(db);
+    sqliteResetInternalSchema(db, 0);
   }
   if( sParse.rc==SQLITE_OK ){
+    db->aDb[iDb].flags |= SQLITE_Initialized;
+  }else{
+    sqliteResetInternalSchema(db, iDb);
+  }
+  return sParse.rc;
+}
+
+/*
+** Initialize all database files - the main database file, the file
+** used to store temporary tables, and any additional database files
+** created using ATTACH statements.  Return a success code.  If an
+** error occurs, write an error message into *pzErrMsg.
+**
+** After the database is initialized, the SQLITE_Initialized
+** bit is set in the flags field of the sqlite structure.  An
+** attempt is made to initialize the database as soon as it
+** is opened.  If that fails (perhaps because another process
+** has the sqlite_master table locked) than another attempt
+** is made the first time the database is accessed.
+*/
+int sqliteInit(sqlite *db, char **pzErrMsg){
+  int i, rc;
+  
+  assert( (db->flags & SQLITE_Initialized)==0 );
+  rc = SQLITE_OK;
+  for(i=0; rc==SQLITE_OK && i<db->nDb; i++){
+    if( db->aDb[i].flags & SQLITE_Initialized ) continue;
+    if( i==1 ) continue;  /* Skip the temp database - initialized with 0 */
+    rc = sqliteInitOne(db, i, pzErrMsg);
+  }
+  if( rc==SQLITE_OK ){
     db->flags |= SQLITE_Initialized;
     sqliteCommitInternalChanges(db);
   }else{
     db->flags &= ~SQLITE_Initialized;
-    sqliteResetInternalSchema(db);
   }
-  sqliteBtreeCloseCursor(curMain);
-  return sParse.rc;
+  return rc;
 }
 
 /*
@@ -476,15 +524,16 @@ void sqlite_close(sqlite *db){
   for(j=0; j<db->nDb; j++){
     if( db->aDb[j].pBt ){
       sqliteBtreeClose(db->aDb[j].pBt);
+      db->aDb[j].pBt = 0;
     }
     if( j>=2 ){
       sqliteFree(db->aDb[j].zName);
+      db->aDb[j].zName = 0;
     }
   }
-  if( db->aDb!=db->aDbStatic ){
-    sqliteFree(db->aDb);
-  }
-  sqliteResetInternalSchema(db);
+  sqliteResetInternalSchema(db, 0);
+  assert( db->nDb<=2 );
+  assert( db->aDb==db->aDbStatic );
   for(i=sqliteHashFirst(&db->aFunc); i; i=sqliteHashNext(i)){
     FuncDef *pFunc, *pNext;
     for(pFunc = (FuncDef*)sqliteHashData(i); pFunc; pFunc=pNext){
@@ -673,7 +722,7 @@ static int sqliteMain(
     sqliteSetString(pzErrMsg, "out of memory", 0);
     sParse.rc = SQLITE_NOMEM;
     sqliteRollbackAll(db);
-    sqliteResetInternalSchema(db);
+    sqliteResetInternalSchema(db, 0);
     db->flags &= ~SQLITE_InTrans;
   }
   if( sParse.rc==SQLITE_DONE ) sParse.rc = SQLITE_OK;
@@ -682,7 +731,7 @@ static int sqliteMain(
   }
   sqliteStrRealloc(pzErrMsg);
   if( sParse.rc==SQLITE_SCHEMA ){
-    sqliteResetInternalSchema(db);
+    sqliteResetInternalSchema(db, 0);
   }
   if( sParse.useCallback==0 ){
     assert( ppVm );

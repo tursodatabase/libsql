@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.136 2003/03/30 00:19:50 drh Exp $
+** $Id: build.c,v 1.137 2003/03/31 00:30:48 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -186,14 +186,20 @@ void sqliteUnlinkAndDeleteIndex(sqlite *db, Index *pIndex){
 ** database connection.  This routine is called to reclaim memory
 ** before the connection closes.  It is also called during a rollback
 ** if there were schema changes during the transaction.
+**
+** If iDb<=0 then reset the internal schema tables for all database
+** files.  If iDb>=2 then reset the internal schema for only the
+** single file indicates.
 */
-void sqliteResetInternalSchema(sqlite *db){
+void sqliteResetInternalSchema(sqlite *db, int iDb){
   HashElem *pElem;
   Hash temp1;
   Hash temp2;
-  int i;
+  int i, j;
 
-  for(i=0; i<db->nDb; i++){
+  assert( iDb>=0 && iDb<db->nDb );
+  db->flags &= ~SQLITE_Initialized;
+  for(i=iDb; i<db->nDb; i++){
     Db *pDb = &db->aDb[i];
     temp1 = pDb->tblHash;
     temp2 = pDb->trigHash;
@@ -211,8 +217,35 @@ void sqliteResetInternalSchema(sqlite *db){
       sqliteDeleteTable(db, pTab);
     }
     sqliteHashClear(&temp1);
+    db->aDb[i].flags &= ~SQLITE_Initialized;
+    if( iDb>0 ) return;
   }
-  db->flags &= ~(SQLITE_Initialized|SQLITE_InternChanges);
+  assert( iDb==0 );
+  db->flags &= ~SQLITE_InternChanges;
+
+  /* If one or more of the auxiliary database files has been closed,
+  ** then remove then from the auxiliary database list.  We take the
+  ** opportunity to do this here since we have just deleted all of the
+  ** schema hash tables and therefore do not have to make any changes
+  ** to any of those tables.
+  */
+  for(i=j=2; i<db->nDb; i++){
+    if( db->aDb[i].pBt==0 ){
+      sqliteFree(db->aDb[i].zName);
+      db->aDb[i].zName = 0;
+      continue;
+    }
+    if( j<i ){
+      db->aDb[j++] = db->aDb[i];
+    }
+  }
+  memset(&db->aDb[j], 0, (db->nDb-j)*sizeof(db->aDb[j]));
+  db->nDb = j;
+  if( db->nDb<=2 && db->aDb!=db->aDbStatic ){
+    memcpy(db->aDbStatic, db->aDb, 2*sizeof(db->aDb[0]));
+    sqliteFree(db->aDb);
+    db->aDb = db->aDbStatic;
+  }
 }
 
 /*
@@ -222,7 +255,7 @@ void sqliteResetInternalSchema(sqlite *db){
 */
 void sqliteRollbackInternalChanges(sqlite *db){
   if( db->flags & SQLITE_InternChanges ){
-    sqliteResetInternalSchema(db);
+    sqliteResetInternalSchema(db, 0);
   }
 }
 
@@ -366,6 +399,7 @@ void sqliteStartTable(
   char *zName;
   sqlite *db = pParse->db;
   Vdbe *v;
+  int iDb;
 
   pParse->sFirstToken = *pStart;
   zName = sqliteTableNameFromToken(pName);
@@ -430,7 +464,8 @@ void sqliteStartTable(
   ** an existing temporary table, that is not an error.
   */
   pTable = sqliteFindTable(db, zName, 0);
-  if( pTable!=0 && (pTable->iDb==isTemp || !pParse->initFlag) ){
+  iDb = isTemp ? 1 : pParse->iDb;
+  if( pTable!=0 && (pTable->iDb==iDb || !pParse->initFlag) ){
     sqliteSetNString(&pParse->zErrMsg, "table ", 0, pName->z, pName->n,
         " already exists", 0, 0);
     sqliteFree(zName);
@@ -455,7 +490,7 @@ void sqliteStartTable(
   pTable->aCol = 0;
   pTable->iPKey = -1;
   pTable->pIndex = 0;
-  pTable->iDb = isTemp ? 1 : pParse->iDb;
+  pTable->iDb = iDb;
   if( pParse->pNewTable ) sqliteDeleteTable(db, pParse->pNewTable);
   pParse->pNewTable = pTable;
 
@@ -1458,7 +1493,7 @@ void sqliteCreateIndex(
     pParse->nErr++;
     goto exit_create_index;
   }
-  if( !isTemp && pTab->iDb>=2 ){
+  if( !isTemp && pTab->iDb>=2 && pParse->initFlag==0 ){
     sqliteSetString(&pParse->zErrMsg, "table ", pTab->zName, 
       " may not have non-temporary indices added", 0);
     pParse->nErr++;
@@ -1472,20 +1507,6 @@ void sqliteCreateIndex(
   if( pTab->iDb==1 ){
     isTemp = 1;
   }
-
-
-#if 0
-  /* If this index is created while re-reading the schema from sqlite_master
-  ** but the table associated with this index is a temporary table, it can
-  ** only mean that the table that this index is really associated with is
-  ** one whose name is hidden behind a temporary table with the same name.
-  ** Since its table has been suppressed, we need to also suppress the
-  ** index.
-  */
-  if( pParse->initFlag && !pParse->isTemp && pTab->iDb ){
-    goto exit_create_index;
-  }
-#endif
 
   /*
   ** Find the name of the index.  Make sure there is not already another
@@ -2151,7 +2172,7 @@ void sqliteCodeVerifySchema(Parse *pParse){
   Vdbe *v = sqliteGetVdbe(pParse);
   for(i=0; i<db->nDb; i++){
     if( i==1 || db->aDb[i].pBt==0 ) continue;
-    sqliteVdbeAddOp(v, OP_VerifyCookie, 0, db->aDb[i].schema_cookie);
+    sqliteVdbeAddOp(v, OP_VerifyCookie, i, db->aDb[i].schema_cookie);
   }
   pParse->schemaVerified = 1;
 }
@@ -2640,4 +2661,102 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
   {}
   sqliteFree(zLeft);
   sqliteFree(zRight);
+}
+
+/*
+** This routine is called by the parser to process an ATTACH statement:
+**
+**     ATTACH DATABASE filename AS dbname
+**
+** The pFilename and pDbname arguments are the tokens that define the
+** filename and dbname in the ATTACH statement.
+*/
+void sqliteAttach(Parse *pParse, Token *pFilename, Token *pDbname){
+  Db *aNew;
+  int rc, i;
+  char *zFile, *zName;
+  sqlite *db;
+
+  if( pParse->explain ) return;
+  db = pParse->db;
+  if( db->aDb==db->aDbStatic ){
+    aNew = sqliteMalloc( sizeof(db->aDb[0])*3 );
+    if( aNew==0 ) return;
+    memcpy(aNew, db->aDb, sizeof(db->aDb[0])*2);
+  }else{
+    aNew = sqliteRealloc(db->aDb, sizeof(db->aDb[0])*(db->nDb+1) );
+    if( aNew==0 ) return;
+  }
+  db->aDb = aNew;
+  aNew = &db->aDb[db->nDb++];
+  memset(aNew, 0, sizeof(*aNew));
+  sqliteHashInit(&aNew->tblHash, SQLITE_HASH_STRING, 0);
+  sqliteHashInit(&aNew->idxHash, SQLITE_HASH_STRING, 0);
+  sqliteHashInit(&aNew->trigHash, SQLITE_HASH_STRING, 0);
+  sqliteHashInit(&aNew->aFKey, SQLITE_HASH_STRING, 1);
+  
+  zName = 0;
+  sqliteSetNString(&zName, pDbname->z, pDbname->n, 0);
+  if( zName==0 ) return;
+  sqliteDequote(zName);
+  for(i=0; i<db->nDb; i++){
+    if( db->aDb[i].zName && sqliteStrICmp(db->aDb[i].zName, zName)==0 ){
+      sqliteSetString(&pParse->zErrMsg, "database \"", zName, 
+         "\" already in use", 0);
+      sqliteFree(zName);
+      pParse->nErr++;
+      return;
+    }
+  }
+  aNew->zName = zName;
+  zFile = 0;
+  sqliteSetNString(&zFile, pFilename->z, pFilename->n, 0);
+  if( zFile==0 ) return;
+  sqliteDequote(zFile);
+  rc = sqliteBtreeOpen(zFile, 0, MAX_PAGES, &aNew->pBt);
+  if( rc ){
+    sqliteSetString(&pParse->zErrMsg, "unable to open database: ", zFile, 0);
+    pParse->nErr++;
+  }
+  sqliteFree(zFile);
+  db->flags &= ~SQLITE_Initialized;
+  if( pParse->nErr ) return;
+  rc = sqliteInit(pParse->db, &pParse->zErrMsg);
+  if( rc ){
+    pParse->nErr++;
+  }
+}
+
+/*
+** This routine is called by the parser to process a DETACH statement:
+**
+**    DETACH DATABASE dbname
+**
+** The pDbname argument is the name of the database in the DETACH statement.
+*/
+void sqliteDetach(Parse *pParse, Token *pDbname){
+  int i;
+  sqlite *db;
+
+  if( pParse->explain ) return;
+  db = pParse->db;
+  for(i=0; i<db->nDb; i++){
+    if( db->aDb[i].pBt==0 || db->aDb[i].zName==0 ) continue;
+    if( strlen(db->aDb[i].zName)!=pDbname->n ) continue;
+    if( sqliteStrNICmp(db->aDb[i].zName, pDbname->z, pDbname->n)==0 ) break;
+  }
+  if( i>=db->nDb ){
+    sqliteSetNString(&pParse->zErrMsg, "no such database: ", -1,
+        pDbname->z, pDbname->n, 0);
+    pParse->nErr++;
+    return;
+  }
+  if( i<2 ){
+    sqliteSetString(&pParse->zErrMsg, "cannot detached \"main\" or \"temp\"",0);
+    pParse->nErr++;
+    return;
+  }
+  sqliteBtreeClose(db->aDb[i].pBt);
+  db->aDb[i].pBt = 0;
+  sqliteResetInternalSchema(db, 0);
 }
