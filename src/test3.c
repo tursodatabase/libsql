@@ -25,7 +25,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test3.c,v 1.2 2001/06/22 19:15:01 drh Exp $
+** $Id: test3.c,v 1.3 2001/06/25 02:11:07 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -610,8 +610,17 @@ static int btree_data(
 /*
 ** Usage:   btree_cursor_dump ID
 **
-** Return two integers which are the page number and cell index for
-** the given cursor.
+** Return eight integers containing information about the entry the
+** cursor is pointing to:
+**
+**   aResult[0] =  The page number
+**   aResult[1] =  The entry number
+**   aResult[2] =  Total number of entries on this page
+**   aResult[3] =  Size of this entry
+**   aResult[4] =  Number of free bytes on this page
+**   aResult[5] =  Number of free blocks on the page
+**   aResult[6] =  Page number of the left child of this entry
+**   aResult[7] =  Page number of the right child for the whole page
 */
 static int btree_cursor_dump(
   void *NotUsed,
@@ -621,8 +630,9 @@ static int btree_cursor_dump(
 ){
   BtCursor *pCur;
   int rc;
-  int aResult[2];
-  char zBuf[50];
+  int i, j;
+  int aResult[8];
+  char zBuf[400];
 
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
@@ -635,8 +645,12 @@ static int btree_cursor_dump(
     Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;
   }
-  sprintf(zBuf,"%d %d",aResult[0], aResult[1]);
-  Tcl_AppendResult(interp, zBuf, 0);
+  j = 0;
+  for(i=0; i<sizeof(aResult)/sizeof(aResult[0]); i++){
+    sprintf(&zBuf[j]," %d", aResult[i]);
+    j += strlen(&zBuf[j]);
+  }
+  Tcl_AppendResult(interp, &zBuf[1], 0);
   return SQLITE_OK;
 }
 

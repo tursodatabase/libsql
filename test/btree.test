@@ -23,7 +23,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is btree database backend
 #
-# $Id: btree.test,v 1.1 2001/06/24 20:39:41 drh Exp $
+# $Id: btree.test,v 1.2 2001/06/25 02:11:07 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -287,9 +287,7 @@ do_test btree-4.4 {
 # Commit and make sure the delete is still there.
 #
 do_test btree-4.5 {
-  btree_close_cursor $::c1
   btree_commit $::b1
-  set ::c1 [btree_cursor $::b1 2]
   btree_move_to $::c1 {}
   set r {}
   while 1 {
@@ -302,13 +300,278 @@ do_test btree-4.5 {
   set r   
 } {five 5.00 four 4.00 six 6.00 three 3.00 two 2.00}
 
+# Completely close the database and reopen it.  Then check
+# the data again.
+#
+do_test btree-4.6 {
+  btree_close_cursor $::c1
+  btree_close $::b1
+  set ::b1 [btree_open test1.bt]
+  set ::c1 [btree_cursor $::b1 2]
+  set r {}
+  while 1 {
+    set key [btree_key $::c1]
+    if {$key==""} break
+    lappend r $key
+    lappend r [btree_data $::c1]
+    btree_next $::c1
+  }
+  set r   
+} {five 5.00 four 4.00 six 6.00 three 3.00 two 2.00}
 
+# Try to read and write meta data
+#
+do_test btree-5.1 {
+  btree_get_meta $::b1
+} {0 0 0 0}
+do_test btree-5.2 {
+  set rc [catch {btree_update_meta $::b1 1 2 3 4} msg]
+  lappend rc $msg
+} {1 SQLITE_ERROR}
+do_test btree-5.3 {
+  btree_begin_transaction $::b1
+  set rc [catch {btree_update_meta $::b1 1 2 3 4} msg]
+  lappend rc $msg
+} {0 {}}
+do_test btree-5.4 {
+  btree_get_meta $::b1
+} {0 2 3 4}
+do_test btree-5.5 {
+  btree_close_cursor $::c1
+  btree_rollback $::b1
+  btree_get_meta $::b1
+} {0 0 0 0}
+do_test btree-5.6 {
+  btree_begin_transaction $::b1
+  btree_update_meta $::b1 999 10 20 30
+  btree_commit $::b1
+  btree_get_meta $::b1
+} {0 10 20 30}
 
+proc select_all {cursor} {
+  set r {}
+  btree_move_to $cursor {}
+  while 1 {
+    set key [btree_key $cursor]
+    if {$key==""} break
+    lappend r $key
+    lappend r [btree_data $cursor]
+    btree_next $cursor
+  }
+  return $r
+}
+
+# Try to create a new table in the database file
+#
+do_test btree-6.1 {
+  set rc [catch {btree_create_table $::b1} msg]
+  lappend rc $msg
+} {1 SQLITE_ERROR}
+do_test btree-6.2 {
+  btree_begin_transaction $::b1
+  set ::t2 [btree_create_table $::b1]
+} {3}
+do_test btree-6.2.1 {
+  set ::c2 [btree_cursor $::b1 $::t2]
+  btree_insert $::c2 ten 10
+  btree_key $::c2
+} {ten}
+do_test btree-6.3 {
+  btree_commit $::b1
+  set ::c1 [btree_cursor $::b1 2]
+  select_all $::c1
+} {five 5.00 four 4.00 six 6.00 three 3.00 two 2.00}
+#btree_page_dump $::b1 3
+do_test btree-6.4 {
+  select_all $::c2
+} {ten 10}
+
+# Drop the new table, then create it again anew.
+#
+do_test btree-6.5 {
+  btree_begin_transaction $::b1
+} {}
+do_test btree-6.6 {
+  btree_close_cursor $::c2
+} {}
+do_test btree-6.7 {
+  btree_drop_table $::b1 $::t2
+} {}
+do_test btree-6.7.1 {
+  lindex [btree_get_meta $::b1] 0
+} {1}
+do_test btree-6.8 {
+  set ::t2 [btree_create_table $::b1]
+} {3}
+do_test btree-6.8.1 {
+  lindex [btree_get_meta $::b1] 0
+} {0}
+do_test btree-6.9 {
+  set ::c2 [btree_cursor $::b1 $::t2]
+  btree_move_to $::c2 {}
+  btree_key $::c2
+} {}
+
+# If we drop table 2 it just clears the table.  Table 2 always exists.
+#
+do_test btree-6.10 {
+  btree_close_cursor $::c1
+  btree_drop_table $::b1 2
+  set ::c1 [btree_cursor $::b1 2]
+  btree_move_to $::c1 {}
+  btree_key $::c1
+} {}
+do_test btree-6.11 {
+  btree_commit $::b1
+  select_all $::c1
+} {}
+do_test btree-6.12 {
+  select_all $::c2
+} {}
+
+# Check to see that pages defragment properly.  To do this test we will
+# 
+#   1.  Fill the first page table 2 with data.
+#   2.  Delete every other entry of table 2. 
+#   3.  Insert a single entry that requires more contiguous
+#       space than is available.
+#
+do_test btree-7.1 {
+  btree_begin_transaction $::b1
+} {}
+do_test btree-7.2 {
+  for {set i 0} {$i<36} {incr i} {
+    set key [format %03d $i]
+    set data "*** $key ***"
+    btree_insert $::c1 $key $data
+  }
+  lrange [btree_cursor_dump $::c1] 4 5
+} {8 1}
+do_test btree-7.3 {
+  btree_move_to $::c1 000
+  while {[btree_key $::c1]!=""} {
+    btree_delete $::c1
+    btree_next $::c1
+    btree_next $::c1
+  }
+  lrange [btree_cursor_dump $::c1] 4 5
+} {512 19}
+#btree_page_dump $::b1 2
+do_test btree-7.4 {
+  btree_insert $::c1 018 {*** 018 ***+++}
+  btree_key $::c1
+} {018}
+do_test btree-7.5 {
+  lrange [btree_cursor_dump $::c1] 4 5
+} {480 1}
+#btree_page_dump $::b1 2
+
+# Delete an entry to make a hole of a known size, then immediately recreate
+# that entry.  This tests the path into allocateSpace where the hole exactly
+# matches the size of the desired space.
+#
+do_test btree-7.6 {
+  btree_move_to $::c1 007
+  btree_delete $::c1
+  btree_move_to $::c1 011
+  btree_delete $::c1
+} {}
+do_test btree-7.7 {
+  lindex [btree_cursor_dump $::c1] 5
+} {3}
+#btree_page_dump $::b1 2
+do_test btree-7.8 {
+  btree_insert $::c1 007 {*** 007 ***}
+  lindex [btree_cursor_dump $::c1] 5
+} {2}
+#btree_page_dump $::b1 2
+
+# Make sure the freeSpace() routine properly coaleses adjacent memory blocks
+#
+do_test btree-7.9 {
+  btree_move_to $::c1 013
+  btree_delete $::c1
+  lrange [btree_cursor_dump $::c1] 4 5
+} {536 2}
+do_test btree-7.10 {
+  btree_move_to $::c1 009
+  btree_delete $::c1
+  lrange [btree_cursor_dump $::c1] 4 5
+} {564 2}
+do_test btree-7.11 {
+  btree_move_to $::c1 018
+  btree_delete $::c1
+  lrange [btree_cursor_dump $::c1] 4 5
+} {596 2}
+do_test btree-7.13 {
+  btree_move_to $::c1 033
+  btree_delete $::c1
+  lrange [btree_cursor_dump $::c1] 4 5
+} {624 3}
+do_test btree-7.14 {
+  btree_move_to $::c1 035
+  btree_delete $::c1
+  lrange [btree_cursor_dump $::c1] 4 5
+} {652 2}
+#btree_page_dump $::b1 2
+
+# Check to see that both key and data on overflow pages work correctly.
+#
+do_test btree-8.1 {
+  set data "*** This is a very long key "
+  while {[string length $data]<256} {append data $data}
+  set ::data $data
+  btree_insert $::c1 020 $data
+} {}
+#btree_page_dump $::b1 2
+do_test btree-8.2 {
+  string length [btree_data $::c1]
+} [string length $::data]
+do_test btree-8.3 {
+  btree_data $::c1
+} $::data
+do_test btree-8.4 {
+  btree_delete $::c1
+} {}
+do_test btree-8.4.1 {
+  lindex [btree_get_meta $::b1] 0
+} [expr {int(([string length $::data]-238+1019)/1020)}]
+do_test btree-8.5 {
+  set data "*** This is an even longer key"
+  while {[string length $data]<2000} {append data $data}
+  set ::data $data
+  btree_insert $::c1 020 $data
+} {}
+do_test btree-8.6 {
+  string length [btree_data $::c1]
+} [string length $::data]
+do_test btree-8.7 {
+  btree_data $::c1
+} $::data
+do_test btree-8.8 {
+  btree_commit $::b1
+  btree_data $::c1
+} $::data
+do_test btree-8.9 {
+  btree_close_cursor $::c1
+  btree_close $::b1
+  set ::b1 [btree_open test1.bt]
+  set ::c1 [btree_cursor $::b1 2]
+  btree_move_to $::c1 020
+  btree_data $::c1
+} $::data
+do_test btree-8.10 {
+  btree_begin_transaction $::b1
+  btree_delete $::c1
+} {}
+do_test btree-8.11 {
+  lindex [btree_get_meta $::b1] 0
+} [expr {int(([string length $::data]-238+1019)/1020)}]
+puts [btree_get_meta $::b1]
 
 do_test btree-99.1 {
   btree_close $::b1
 } {}
-
 
 } ;# end if( not mem: and has pager_open command );
 
