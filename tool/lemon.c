@@ -2876,7 +2876,7 @@ struct symbol *sp;
 struct lemon *lemp;
 int *lineno;
 {
- char *cp;
+ char *cp = 0;
 
  int linecnt = 0;
  if( sp->type==TERMINAL ){
@@ -2890,6 +2890,8 @@ int *lineno;
    cp = lemp->vardest;
    if( cp==0 ) return;
    fprintf(out,"#line %d \"%s\"\n{",lemp->vardestln,lemp->filename);
+ }else{
+   assert( 0 );  /* Cannot happen */
  }
  for(; *cp; cp++){
    if( *cp=='$' && cp[1]=='$' ){
