@@ -991,8 +991,10 @@ int sqlite3VdbeReset(Vdbe *p, char **pzErrMsg){
         needXcommit = 0;
       }
     }
-    rc = xFunc(pBt);
-    if( p->rc==SQLITE_OK ) p->rc = rc;
+    if( pBt ){
+      rc = xFunc(pBt);
+      if( p->rc==SQLITE_OK ) p->rc = rc;
+    }
   }
 
 

@@ -1,5 +1,5 @@
-C Add\sread-transactions\sto\sthe\sbtree\sand\svdbe.\sThe\scompiler\sdoesn't\sinvoke\nthem\syet.\s(CVS\s1502)
-D 2004-05-31T10:01:35
+C Bugfix\sfor\sprevious\scheckin.\s(CVS\s1503)
+D 2004-05-31T10:08:15
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -73,7 +73,7 @@ F src/vdbe.c fdb990a681d39872047fec65fffaedb7225e7420
 F src/vdbe.h e73f890e0f2a6c42b183d7d6937947930fe4fdeb
 F src/vdbeInt.h 51d37798ba7bc5f2f767db0e3dbae31156ae9ff3
 F src/vdbeapi.c d43d36efeaf709bae71b743aaaee430e0b29cd1e
-F src/vdbeaux.c 32ff5754d489b8e7dd4fa53762e6c02d028cb7d9
+F src/vdbeaux.c a6af136bc6928eb6656d0198ae1dfcc313f37c23
 F src/vdbemem.c 627d714c347f6af8092cc48ae1c06fd774a1ad9c
 F src/where.c 444a7c3a8b1eb7bba072e489af628555d21d92a4
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
@@ -204,7 +204,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 9029274b6129140064bd7ac34df7eaba00d28efb
-R e95c108b61d714bdf621bb4346f565fc
+P 6b43633a96c674a5d470578ef80ebf2227da0682
+R afcfd11cc38960c271ce100579be408f
 U danielk1977
-Z 566da064bb78af6ca09baccb5cb6e57b
+Z e1607363421eeb9cb3c20a7c6b83785e
