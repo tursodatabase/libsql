@@ -141,6 +141,28 @@ vers=`cat $srcdir/VERSION`
 rm -f sqlite-$vers.tar.gz
 ln sqlite.tar.gz sqlite-$vers.tar.gz
 
+#
+# Build RPMS (binary) and Source RPM
+#
+
+# this script sets up the home directory so normal users can build rpms
+# by default this would only be allowed by root.  This really only needs
+# done once, but each time shouldn't hurt anything.
+$srcdir/homerpm.sh
+
+# create the spec file from the template
+sed s/SQLITE_VERSION/$vers/g $srcdir/spec.template > $HOME/rpm/SPECS/sqlite.spec
+
+# copy the source tarball to the rpm directory
+cp sqlite-$vers.tar.gz $HOME/rpm/SOURCES/.
+
+# build all the rpms
+rpm -ba $HOME/rpm/SPECS/sqlite.spec >& rpm-$vers.log
+
+# this part I'm not sure about, looks like the rpms may need copied here or
+# linked to?
+
+
 # Build the website
 #
 cp $srcdir/../historical/* .
