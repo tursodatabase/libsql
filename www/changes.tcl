@@ -21,8 +21,11 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
-chng {2005 March 19 (3.2.0)} {
+chng {2005 March 21 (3.2.0)} {
 <li>Added support for ALTER TABLE ADD COLUMN.</li>
+<li>Added support for the "T" separator in ISO-8601 date/time strings.</li>
+<li>Improved support for Cygwin.</li>
+<li>Numerous bug fixes and documentation updates.</li>
 }
 
 chng {2005 March 16 (3.1.6)} {

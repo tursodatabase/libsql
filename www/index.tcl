@@ -61,8 +61,20 @@ proc newsitem {date title text} {
   puts "<hr width=\"50%\">"
 }
 
-newsitem {2005-Mar-19} {Version 3.2.0} {
-  Version 3.2.0 adds support for ALTER TABLE ADD COLUMN.  
+newsitem {2005-Mar-21} {Version 3.2.0} {
+  The primary purpose for version 3.2.0 is to add support for
+  <a href="lang_altertable.html">ALTER TABLE ADD COLUMN</a>.
+  The new ADD COLUMN capability is made
+  possible by AOL developers supporting and embracing great
+  open-source software.  Thanks, AOL!
+
+  Version 3.2.0 also fixes an obscure but serious bug that was discovered
+  just prior to release.  If you have a multi-statement transaction and
+  within that transaction an UPDATE or INSERT statement fails due to a
+  constraint, then you try to rollback the whole transaction, the rollback
+  might not work correctly.  See
+  <a href="http://www.sqlite.org/cvstrac/tktview?tn=1171">Ticket #1171</a>
+  for details.  Upgrading is recommended for all users.
 }
 
 newsitem {2005-Mar-16} {Version 3.1.6} {
@@ -95,4 +107,4 @@ puts {
 <p align="right"><a href="oldnews.html">Old news...</a></p>
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.112 2005/03/19 14:45:50 drh Exp $}
+footer {$Id: index.tcl,v 1.113 2005/03/21 19:48:00 drh Exp $}
