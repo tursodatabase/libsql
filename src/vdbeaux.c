@@ -375,48 +375,48 @@ VdbeOp *sqliteVdbeGetOp(Vdbe *p, int addr){
 */
 char *sqlite_set_result_string(sqlite_func *p, const char *zResult, int n){
   assert( !p->isStep );
-  if( p->s.flags & STK_Dyn ){
-    sqliteFree(p->z);
+  if( p->s.flags & MEM_Dyn ){
+    sqliteFree(p->s.z);
   }
   if( zResult==0 ){
-    p->s.flags = STK_Null;
+    p->s.flags = MEM_Null;
     n = 0;
-    p->z = 0;
+    p->s.z = 0;
     p->s.n = 0;
   }else{
     if( n<0 ) n = strlen(zResult);
     if( n<NBFS-1 ){
-      memcpy(p->s.z, zResult, n);
-      p->s.z[n] = 0;
-      p->s.flags = STK_Str;
-      p->z = p->s.z;
+      memcpy(p->s.zShort, zResult, n);
+      p->s.zShort[n] = 0;
+      p->s.flags = MEM_Str;
+      p->s.z = p->s.zShort;
     }else{
-      p->z = sqliteMallocRaw( n+1 );
-      if( p->z ){
-        memcpy(p->z, zResult, n);
-        p->z[n] = 0;
+      p->s.z = sqliteMallocRaw( n+1 );
+      if( p->s.z ){
+        memcpy(p->s.z, zResult, n);
+        p->s.z[n] = 0;
       }
-      p->s.flags = STK_Str | STK_Dyn;
+      p->s.flags = MEM_Str | MEM_Dyn;
     }
     p->s.n = n+1;
   }
-  return p->z;
+  return p->s.z;
 }
 void sqlite_set_result_int(sqlite_func *p, int iResult){
   assert( !p->isStep );
-  if( p->s.flags & STK_Dyn ){
-    sqliteFree(p->z);
+  if( p->s.flags & MEM_Dyn ){
+    sqliteFree(p->s.z);
   }
   p->s.i = iResult;
-  p->s.flags = STK_Int;
+  p->s.flags = MEM_Int;
 }
 void sqlite_set_result_double(sqlite_func *p, double rResult){
   assert( !p->isStep );
-  if( p->s.flags & STK_Dyn ){
-    sqliteFree(p->z);
+  if( p->s.flags & MEM_Dyn ){
+    sqliteFree(p->s.z);
   }
   p->s.r = rResult;
-  p->s.flags = STK_Real;
+  p->s.flags = MEM_Real;
 }
 void sqlite_set_result_error(sqlite_func *p, const char *zMsg, int n){
   assert( !p->isStep );
@@ -446,7 +446,8 @@ void *sqlite_aggregate_context(sqlite_func *p, int nByte){
   assert( p && p->pFunc && p->pFunc->xStep );
   if( p->pAgg==0 ){
     if( nByte<=NBFS ){
-      p->pAgg = (void*)p->z;
+      p->pAgg = (void*)p->s.z;
+      memset(p->pAgg, 0, nByte);
     }else{
       p->pAgg = sqliteMalloc( nByte );
     }
@@ -508,8 +509,8 @@ int sqliteVdbeList(
   assert( p->popStack==0 );
   assert( p->explain );
   p->azColName = azColumnNames;
-  p->azResColumn = p->zStack;
-  for(i=0; i<5; i++) p->zStack[i] = p->aStack[i].z;
+  p->azResColumn = p->zArgv;
+  for(i=0; i<5; i++) p->zArgv[i] = p->aStack[i].zShort;
   p->rc = SQLITE_OK;
   for(i=p->pc; p->rc==SQLITE_OK && i<p->nOp; i++){
     if( db->flags & SQLITE_Interrupt ){
@@ -522,19 +523,19 @@ int sqliteVdbeList(
       sqliteSetString(&p->zErrMsg, sqlite_error_string(p->rc), (char*)0);
       break;
     }
-    sprintf(p->zStack[0],"%d",i);
-    sprintf(p->zStack[2],"%d", p->aOp[i].p1);
-    sprintf(p->zStack[3],"%d", p->aOp[i].p2);
+    sprintf(p->zArgv[0],"%d",i);
+    sprintf(p->zArgv[2],"%d", p->aOp[i].p1);
+    sprintf(p->zArgv[3],"%d", p->aOp[i].p2);
     if( p->aOp[i].p3type==P3_POINTER ){
-      sprintf(p->aStack[4].z, "ptr(%#x)", (int)p->aOp[i].p3);
-      p->zStack[4] = p->aStack[4].z;
+      sprintf(p->aStack[4].zShort, "ptr(%#x)", (int)p->aOp[i].p3);
+      p->zArgv[4] = p->aStack[4].zShort;
     }else{
-      p->zStack[4] = p->aOp[i].p3;
+      p->zArgv[4] = p->aOp[i].p3;
     }
-    p->zStack[1] = sqliteOpcodeNames[p->aOp[i].opcode];
+    p->zArgv[1] = sqliteOpcodeNames[p->aOp[i].opcode];
     if( p->xCallback==0 ){
       p->pc = i+1;
-      p->azResColumn = p->zStack;
+      p->azResColumn = p->zArgv;
       p->nResColumn = 5;
       return SQLITE_ROW;
     }
@@ -542,7 +543,7 @@ int sqliteVdbeList(
       p->rc = SQLITE_MISUSE;
       break;
     }
-    if( p->xCallback(p->pCbArg, 5, p->zStack, p->azColName) ){
+    if( p->xCallback(p->pCbArg, 5, p->zArgv, p->azColName) ){
       p->rc = SQLITE_ABORT;
     }
     if( sqliteSafetyOn(db) ){
@@ -596,11 +597,11 @@ void sqliteVdbeMakeReady(
     assert( nVar>=0 );
     n = isExplain ? 10 : p->nOp;
     p->aStack = sqliteMalloc(
-    n*(sizeof(p->aStack[0]) + 2*sizeof(char*))   /* aStack and zStack */
+    n*(sizeof(p->aStack[0]) + 2*sizeof(char*))     /* aStack and zArgv */
       + p->nVar*(sizeof(char*)+sizeof(int)+1)      /* azVar, anVar, abVar */
     );
-    p->zStack = (char**)&p->aStack[n];
-    p->azColName = (char**)&p->zStack[n];
+    p->zArgv = (char**)&p->aStack[n];
+    p->azColName = (char**)&p->zArgv[n];
     p->azVar = (char**)&p->azColName[n];
     p->anVar = (int*)&p->azVar[p->nVar];
     p->abVar = (u8*)&p->anVar[p->nVar];
@@ -656,15 +657,12 @@ void sqliteVdbeSorterReset(Vdbe *p){
 */
 void sqliteVdbePopStack(Vdbe *p, int N){
   assert( N>=0 );
-  if( p->zStack==0 ) return;
-  assert( p->aStack || sqlite_malloc_failed );
   if( p->aStack==0 ) return;
   while( N-- > 0 ){
-    if( p->aStack[p->tos].flags & STK_Dyn ){
-      sqliteFree(p->zStack[p->tos]);
+    if( p->aStack[p->tos].flags & MEM_Dyn ){
+      sqliteFree(p->aStack[p->tos].z);
     }
     p->aStack[p->tos].flags = 0;
-    p->zStack[p->tos] = 0;
     p->tos--;
   }
 }
@@ -686,20 +684,19 @@ void sqliteVdbeAggReset(Agg *pAgg){
     assert( pAgg->apFunc!=0 );
     for(i=0; i<pAgg->nMem; i++){
       Mem *pMem = &pElem->aMem[i];
-      if( pAgg->apFunc[i] && (pMem->s.flags & STK_AggCtx)!=0 ){
+      if( pAgg->apFunc[i] && (pMem->flags & MEM_AggCtx)!=0 ){
         sqlite_func ctx;
         ctx.pFunc = pAgg->apFunc[i];
-        ctx.s.flags = STK_Null;
-        ctx.z = 0;
+        ctx.s.flags = MEM_Null;
         ctx.pAgg = pMem->z;
-        ctx.cnt = pMem->s.i;
+        ctx.cnt = pMem->i;
         ctx.isStep = 0;
         ctx.isError = 0;
         (*pAgg->apFunc[i]->xFinalize)(&ctx);
-        if( pMem->z!=0 && pMem->z!=pMem->s.z ){
+        if( pMem->z!=0 && pMem->z!=pMem->zShort ){
           sqliteFree(pMem->z);
         }
-      }else if( pMem->s.flags & STK_Dyn ){
+      }else if( pMem->flags & MEM_Dyn ){
         sqliteFree(pMem->z);
       }
     }
@@ -765,7 +762,7 @@ static void Cleanup(Vdbe *p){
   closeAllCursors(p);
   if( p->aMem ){
     for(i=0; i<p->nMem; i++){
-      if( p->aMem[i].s.flags & STK_Dyn ){
+      if( p->aMem[i].flags & MEM_Dyn ){
         sqliteFree(p->aMem[i].z);
       }
     }

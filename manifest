@@ -1,5 +1,5 @@
-C Make\ssure\smin()\sand\smax()\soptimizations\swork\sfor\ssubqueries.\sTicket\s#587.\s(CVS\s1201)
-D 2004-01-30T02:01:04
+C Rework\sthe\sVDBE\sdata\sstructures\sto\scombine\sstring\srepresentations\sinto\sthe\nsame\sstructure\swith\sinteger\sand\sfloating\spoint.\s\sThis\sopens\sthe\sdoor\sto\nsignificant\soptimizations.\s(CVS\s1202)
+D 2004-01-30T14:49:17
 F Makefile.in 0515ff9218ad8d5a8f6220f0494b8ef94c67013b
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -32,7 +32,7 @@ F src/date.c c6b7e3fa5364d50fe19641882194f3c75364a5af
 F src/delete.c 0778fe05df0a1d62ac27fd1a3dba237c186ff4d1
 F src/encode.c 9e70ea1e4e746f23f18180949e94f1bb1c2220d3
 F src/expr.c 3928893e8a7576484cd2ed5548468ba978d8005a
-F src/func.c fd710743e4026dfebfd48c12d20b1a5c27318fa5
+F src/func.c 5a0face8c3a948c62677243987a18ba2f9ef9c9b
 F src/hash.c 9b56ef3b291e25168f630d5643a4264ec011c70e
 F src/hash.h 3247573ab95b9dd90bcca0307a75d9a16da1ccc7
 F src/insert.c 01f66866f35c986eab4a57373ca689a3255ef2df
@@ -61,10 +61,10 @@ F src/trigger.c ce83e017b407d046e909d05373d7f8ee70f9f7f9
 F src/update.c 24260b4fda00c9726d27699a0561d53c0dccc397
 F src/util.c 64995b5949a5d377629ffd2598747bc771cade1e
 F src/vacuum.c 77485a64a6e4e358170f150fff681c1624a092b0
-F src/vdbe.c 802364c5b1b989ec4592aaffcbf575fa3eb0478b
+F src/vdbe.c fcd5b6f27b3041ef022cf04ecaf63bbdccf88950
 F src/vdbe.h 3957844e46fea71fd030e78f6a3bd2f7e320fb43
-F src/vdbeInt.h eab39bc209b267271bc4afbcf4991d6c229bae9a
-F src/vdbeaux.c dae9f8de7140daebbd621bfccb0982e17c352a9f
+F src/vdbeInt.h 6f12f5b9344cbb0e5cc2277458d84f7b951122bf
+F src/vdbeaux.c 358d955a23d29e268a3b45c428e49292b89dfcf5
 F src/where.c 1302d728bd338c237e6a8282e4e3eadbbdf11e45
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
 F test/attach.test c26848402e7ac829e043e1fa5e0eb87032e5d81d
@@ -182,7 +182,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P eafa714d1f0abe7e4822a6d137c2a7c6179ffab3
-R d39fa065e30e1e0532ab6dc3e864bd94
+P af73fbca839f8cbe39c21f1f9e439fe9b79005c8
+R 498fe1480c9c56c03607a7a6c9f9b96c
 U drh
-Z c358c54959e4dcb73fab284646bd586a
+Z 222ac74ccb7f92ccb269c2c94a8bca52

@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.37 2004/01/19 04:53:25 jplyon Exp $
+** $Id: func.c,v 1.38 2004/01/30 14:49:17 drh Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -495,14 +495,16 @@ static void minStep(sqlite_func *context, int argc, const char **argv){
   if( p==0 || argc<1 || argv[0]==0 ) return;
   if( p->z==0 || sqliteCompare(argv[0],p->z)<0 ){
     int len;
-    if( p->z && p->z!=p->zBuf ){
+    if( !p->zBuf[0] ){
       sqliteFree(p->z);
     }
     len = strlen(argv[0]);
-    if( len < sizeof(p->zBuf) ){
-      p->z = p->zBuf;
+    if( len < sizeof(p->zBuf)-1 ){
+      p->z = &p->zBuf[1];
+      p->zBuf[0] = 1;
     }else{
       p->z = sqliteMalloc( len+1 );
+      p->zBuf[0] = 0;
       if( p->z==0 ) return;
     }
     strcpy(p->z, argv[0]);
@@ -514,14 +516,16 @@ static void maxStep(sqlite_func *context, int argc, const char **argv){
   if( p==0 || argc<1 || argv[0]==0 ) return;
   if( p->z==0 || sqliteCompare(argv[0],p->z)>0 ){
     int len;
-    if( p->z && p->z!=p->zBuf ){
+    if( !p->zBuf[0] ){
       sqliteFree(p->z);
     }
     len = strlen(argv[0]);
-    if( len < sizeof(p->zBuf) ){
-      p->z = p->zBuf;
+    if( len < sizeof(p->zBuf)-1 ){
+      p->z = &p->zBuf[1];
+      p->zBuf[0] = 1;
     }else{
       p->z = sqliteMalloc( len+1 );
+      p->zBuf[0] = 0;
       if( p->z==0 ) return;
     }
     strcpy(p->z, argv[0]);
@@ -533,7 +537,7 @@ static void minMaxFinalize(sqlite_func *context){
   if( p && p->z ){
     sqlite_set_result_string(context, p->z, strlen(p->z));
   }
-  if( p && p->z && p->z!=p->zBuf ){
+  if( p && !p->zBuf[0] ){
     sqliteFree(p->z);
   }
 }
