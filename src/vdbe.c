@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.324 2004/05/24 09:10:11 danielk1977 Exp $
+** $Id: vdbe.c,v 1.325 2004/05/24 09:15:39 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -645,7 +645,7 @@ int sqlite3_value_bytes(sqlite3_value *pVal){
 ** Return the number of bytes of data that will be returned by the
 ** equivalent sqlite3_value_data16() call.
 */
-int sqlite3_value_bytes(sqlite3_value *pVal){
+int sqlite3_value_bytes16(sqlite3_value *pVal){
   if( sqlite3_value_data16(pVal) ){
     return ((Mem *)pVal)->n;
   }
@@ -666,10 +666,10 @@ long long int sqlite3_value_int(sqlite3_value *pVal){
 ** Return the value of the sqlite_value* argument coerced to a 64-bit
 ** IEEE float.
 */
-double sqlite3_value_float(sqlite3_value*){
-  pVal = &pVm->pTos[(1-vals)+i];
-  Realify(pVal, flagsToEnc(pMem->flags));
-  return pVal->r;
+double sqlite3_value_float(sqlite3_value *pVal){
+  Mem *pMem = (Mem *)pVal;
+  Realify(pMem, flagsToEnc(pMem->flags));
+  return pMem->r;
 }
 
 /*
@@ -734,6 +734,7 @@ double sqlite3_column_float(sqlite3_stmt *pStmt, int i){
     return 0;
   }
 
+  pVal = &pVm->pTos[(1-vals)+i];
   return sqlite3_value_float(pVal);
 }
 
