@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.89 2002/05/31 15:51:25 drh Exp $
+** $Id: select.c,v 1.90 2002/06/02 16:09:02 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -790,7 +790,7 @@ static int matchOrderbyToColumn(
   Parse *pParse,          /* A place to leave error messages */
   Select *pSelect,        /* Match to result columns of this SELECT */
   ExprList *pOrderBy,     /* The ORDER BY values to match against columns */
-  int iTable,             /* Insert this this value in iTable */
+  int iTable,             /* Insert this value in iTable */
   int mustComplete        /* If TRUE all ORDER BYs must match */
 ){
   int nErr = 0;
@@ -812,9 +812,21 @@ static int matchOrderbyToColumn(
   pEList = pSelect->pEList;
   for(i=0; i<pOrderBy->nExpr; i++){
     Expr *pE = pOrderBy->a[i].pExpr;
-    int match = 0;
+    int iCol = -1;
     if( pOrderBy->a[i].done ) continue;
-    for(j=0; j<pEList->nExpr; j++){
+    if( sqliteExprIsInteger(pE, &iCol) ){
+      if( iCol<=0 || iCol>pEList->nExpr ){
+        char zBuf[200];
+        sprintf(zBuf,"ORDER BY position %d should be between 1 and %d",
+           iCol, pEList->nExpr);
+        sqliteSetString(&pParse->zErrMsg, zBuf, 0);
+        pParse->nErr++;
+        nErr++;
+        break;
+      }
+      iCol--;
+    }
+    for(j=0; iCol<0 && j<pEList->nExpr; j++){
       if( pEList->a[j].zName && (pE->op==TK_ID || pE->op==TK_STRING) ){
         char *zName, *zLabel;
         zName = pEList->a[j].zName;
@@ -822,22 +834,21 @@ static int matchOrderbyToColumn(
         zLabel = sqliteStrNDup(pE->token.z, pE->token.n);
         sqliteDequote(zLabel);
         if( sqliteStrICmp(zName, zLabel)==0 ){ 
-          match = 1; 
+          iCol = j;
         }
         sqliteFree(zLabel);
       }
-      if( match==0 && sqliteExprCompare(pE, pEList->a[j].pExpr) ){
-        match = 1;
-      }
-      if( match ){
-        pE->op = TK_COLUMN;
-        pE->iColumn = j;
-        pE->iTable = iTable;
-        pOrderBy->a[i].done = 1;
-        break;
+      if( iCol<0 && sqliteExprCompare(pE, pEList->a[j].pExpr) ){
+        iCol = j;
       }
     }
-    if( !match && mustComplete ){
+    if( iCol>=0 ){
+      pE->op = TK_COLUMN;
+      pE->iColumn = iCol;
+      pE->iTable = iTable;
+      pOrderBy->a[i].done = 1;
+    }
+    if( iCol<0 && mustComplete ){
       char zBuf[30];
       sprintf(zBuf,"%d",i+1);
       sqliteSetString(&pParse->zErrMsg, "ORDER BY term number ", zBuf, 
@@ -1520,10 +1531,22 @@ int sqliteSelect(
     for(i=0; i<pOrderBy->nExpr; i++){
       Expr *pE = pOrderBy->a[i].pExpr;
       if( sqliteExprIsConstant(pE) ){
-        sqliteSetString(&pParse->zErrMsg, 
-             "ORDER BY expressions should not be constant", 0);
-        pParse->nErr++;
-        goto select_end;
+        int iCol;
+        if( sqliteExprIsInteger(pE, &iCol)==0 ){
+          sqliteSetString(&pParse->zErrMsg, 
+               "ORDER BY terms must not be non-integer constants", 0);
+          pParse->nErr++;
+          goto select_end;
+        }else if( iCol<=0 || iCol>pEList->nExpr ){
+          char zBuf[2000];
+          sprintf(zBuf,"ORDER BY column number %d out of range - should be "
+             "between 1 and %d", iCol, pEList->nExpr);
+          sqliteSetString(&pParse->zErrMsg, zBuf, 0);
+          pParse->nErr++;
+          goto select_end;
+        }
+        sqliteExprDelete(pE);
+        pE = pOrderBy->a[i].pExpr = sqliteExprDup(pEList->a[iCol-1].pExpr);
       }
       if( sqliteExprResolveIds(pParse, base, pTabList, pEList, pE) ){
         goto select_end;

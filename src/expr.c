@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.66 2002/05/31 15:51:25 drh Exp $
+** $Id: expr.c,v 1.67 2002/06/02 16:09:02 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -331,6 +331,41 @@ int sqliteExprIsConstant(Expr *p){
       }
       return p->pLeft!=0 || p->pRight!=0 || (p->pList && p->pList->nExpr>0);
     }
+  }
+  return 0;
+}
+
+/*
+** If the given expression codes a constant integer, return 1 and put
+** the value of the integer in *pValue.  If the expression is not an
+** integer, return 0 and leave *pValue unchanged.
+*/
+int sqliteExprIsInteger(Expr *p, int *pValue){
+  switch( p->op ){
+    case TK_INTEGER: {
+      *pValue = atoi(p->token.z);
+      return 1;
+    }
+    case TK_STRING: {
+      char *z = p->token.z;
+      int n = p->token.n;
+      if( n>0 && z=='-' ){ z++; n--; }
+      while( n>0 && *z && isdigit(*z) ){ z++; n--; }
+      if( n==0 ){
+        *pValue = atoi(p->token.z);
+        return 1;
+      }
+      break;
+    }
+    case TK_UMINUS: {
+      int v;
+      if( sqliteExprIsInteger(p->pLeft, &v) ){
+        *pValue = -v;
+        return 1;
+      }
+      break;
+    }
+    default: break;
   }
   return 0;
 }

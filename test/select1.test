@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the SELECT statement.
 #
-# $Id: select1.test,v 1.29 2002/05/29 23:22:23 drh Exp $
+# $Id: select1.test,v 1.30 2002/06/02 16:09:03 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -285,7 +285,52 @@ do_test select1-4.5 {
   catchsql {
     SELECT f1 FROM test1 ORDER BY 8.4;
   }
-} {1 {ORDER BY expressions should not be constant}}
+} {1 {ORDER BY terms must not be non-integer constants}}
+do_test select1-4.6 {
+  catchsql {
+    SELECT f1 FROM test1 ORDER BY '8.4';
+  }
+} {1 {ORDER BY terms must not be non-integer constants}}
+do_test select1-4.7 {
+  catchsql {
+    SELECT f1 FROM test1 ORDER BY 'xyz';
+  }
+} {1 {ORDER BY terms must not be non-integer constants}}
+do_test select1-4.8 {
+  execsql {
+    CREATE TABLE t5(a,b);
+    INSERT INTO t5 VALUES(1,10);
+    INSERT INTO t5 VALUES(2,9);
+    SELECT * FROM t5 ORDER BY 1;
+  }
+} {1 10 2 9}
+do_test select1-4.9 {
+  execsql {
+    SELECT * FROM t5 ORDER BY 2;
+  }
+} {2 9 1 10}
+do_test select1-4.10 {
+  catchsql {
+    SELECT * FROM t5 ORDER BY 3;
+  }
+} {1 {ORDER BY column number 3 out of range - should be between 1 and 2}}
+do_test select1-4.11 {
+  execsql {
+    INSERT INTO t5 VALUES(3,10);
+    SELECT * FROM t5 ORDER BY 2, 1 DESC;
+  }
+} {2 9 3 10 1 10}
+do_test select1-4.12 {
+  execsql {
+    SELECT * FROM t5 ORDER BY 1 DESC, b;
+  }
+} {3 10 2 9 1 10}
+do_test select1-4.13 {
+  execsql {
+    SELECT * FROM t5 ORDER BY b DESC, 1;
+  }
+} {1 10 3 10 2 9}
+
 
 # ORDER BY ignored on an aggregate query
 #
