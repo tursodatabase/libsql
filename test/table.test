@@ -23,7 +23,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE TABLE statement.
 #
-# $Id: table.test,v 1.4 2000/05/30 16:27:05 drh Exp $
+# $Id: table.test,v 1.5 2000/06/08 15:10:48 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -113,7 +113,7 @@ do_test table-1.13 {
 # Verify that we cannot make two tables with the same name
 #
 do_test table-2.1 {
-  execsql {CREATE TABLE test2(one text)}
+  execsql {CREATE TABLE TEST2(one text)}
   set v [catch {execsql {CREATE TABLE test2(two text)}} msg]
   lappend v $msg
 } {1 {table test2 already exists}}
@@ -284,5 +284,13 @@ do_test table-5.4 {
   execsql {EXPLAIN DROP TABLE test1}
   execsql {SELECT name FROM sqlite_master}
 } {test1}
+
+# Create a table with a goofy name
+#
+do_test table-6.1 {
+  execsql {CREATE TABLE 'Spaces In This Name!'(x int)}
+  execsql {INSERT INTO 'spaces in this name!' VALUES(1)}
+  set list [glob -nocomplain testdb/spaces*.tbl]
+} {testdb/spaces+in+this+name+.tbl}
 
 finish_test

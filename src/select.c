@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements.
 **
-** $Id: select.c,v 1.22 2000/06/08 13:36:40 drh Exp $
+** $Id: select.c,v 1.23 2000/06/08 15:10:48 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -377,8 +377,8 @@ static int matchOrderbyToColumn(
     int match = 0;
     if( pOrderBy->a[i].done ) continue;
     for(j=0; j<pEList->nExpr; j++){
-      if( pEList->a[i].zName && (pE->op==TK_ID || pE->op==TK_STRING) ){
-        char *zName = pEList->a[i].zName;
+      if( pEList->a[j].zName && (pE->op==TK_ID || pE->op==TK_STRING) ){
+        char *zName = pEList->a[j].zName;
         char *zLabel = sqliteStrNDup(pE->token.z, pE->token.n);
         sqliteDequote(zLabel);
         if( sqliteStrICmp(zName, zLabel)==0 ){ 
@@ -386,7 +386,7 @@ static int matchOrderbyToColumn(
         }
         sqliteFree(zLabel);
       }
-      if( match==0 && sqliteExprCompare(pE, pEList->a[i].pExpr) ){
+      if( match==0 && sqliteExprCompare(pE, pEList->a[j].pExpr) ){
         match = 1;
       }
       if( match ){

@@ -26,7 +26,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.17 2000/06/08 13:36:40 drh Exp $
+** @(#) $Id: parse.y,v 1.18 2000/06/08 15:10:47 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -83,14 +83,14 @@ id(A) ::= STRING(X). {A = X;}
 type ::= typename.
 type ::= typename LP signed RP.
 type ::= typename LP signed COMMA signed RP.
-typename ::= ID.
-typename ::= typename ID.
+typename ::= id.
+typename ::= typename id.
 signed ::= INTEGER.
 signed ::= PLUS INTEGER.
 signed ::= MINUS INTEGER.
 carglist ::= carglist carg.
 carglist ::= .
-carg ::= CONSTRAINT ID ccons.
+carg ::= CONSTRAINT id ccons.
 carg ::= ccons.
 carg ::= DEFAULT STRING(X).          {sqliteAddDefaultValue(pParse,&X,0);}
 carg ::= DEFAULT ID(X).              {sqliteAddDefaultValue(pParse,&X,0);}
@@ -117,7 +117,7 @@ conslist_opt ::= .
 conslist_opt ::= COMMA conslist.
 conslist ::= conslist COMMA tcons.
 conslist ::= tcons.
-tcons ::= CONSTRAINT ID tcons2.
+tcons ::= CONSTRAINT id tcons2.
 tcons ::= tcons2.
 tcons2 ::= PRIMARY KEY LP idxlist(X) RP.  
       {sqliteCreateIndex(pParse,0,0,X,0,0);}
@@ -178,9 +178,7 @@ sclp(A) ::= selcollist(X) COMMA.             {A = X;}
 sclp(A) ::= .                                {A = 0;}
 selcollist(A) ::= STAR.                      {A = 0;}
 selcollist(A) ::= sclp(P) expr(X).           {A = sqliteExprListAppend(P,X,0);}
-selcollist(A) ::= sclp(P) expr(X) as ID(Y).  {A = sqliteExprListAppend(P,X,&Y);}
-selcollist(A) ::= sclp(P) expr(X) as STRING(Y).
-  {A = sqliteExprListAppend(P,X,&Y);}
+selcollist(A) ::= sclp(P) expr(X) as id(Y).  {A = sqliteExprListAppend(P,X,&Y);}
 as ::= .
 as ::= AS.
 
@@ -236,7 +234,7 @@ having_opt(A) ::= .      {A = 0;}
 having_opt(A) ::= HAVING expr(X).  {A = X;}
 
 
-cmd ::= DELETE FROM ID(X) where_opt(Y).
+cmd ::= DELETE FROM id(X) where_opt(Y).
     {sqliteDeleteFrom(pParse, &X, Y);}
 
 %type where_opt {Expr*}
@@ -248,16 +246,16 @@ where_opt(A) ::= WHERE expr(X).       {A = X;}
 %type setlist {ExprList*}
 %destructor setlist {sqliteExprListDelete($$);}
 
-cmd ::= UPDATE ID(X) SET setlist(Y) where_opt(Z).
+cmd ::= UPDATE id(X) SET setlist(Y) where_opt(Z).
     {sqliteUpdate(pParse,&X,Y,Z);}
 
-setlist(A) ::= ID(X) EQ expr(Y) COMMA setlist(Z).
+setlist(A) ::= id(X) EQ expr(Y) COMMA setlist(Z).
     {A = sqliteExprListAppend(Z,Y,&X);}
-setlist(A) ::= ID(X) EQ expr(Y).   {A = sqliteExprListAppend(0,Y,&X);}
+setlist(A) ::= id(X) EQ expr(Y).   {A = sqliteExprListAppend(0,Y,&X);}
 
-cmd ::= INSERT INTO ID(X) fieldlist_opt(F) VALUES LP itemlist(Y) RP.
+cmd ::= INSERT INTO id(X) fieldlist_opt(F) VALUES LP itemlist(Y) RP.
                {sqliteInsert(pParse, &X, Y, 0, F);}
-cmd ::= INSERT INTO ID(X) fieldlist_opt(F) select(S).
+cmd ::= INSERT INTO id(X) fieldlist_opt(F) select(S).
                {sqliteInsert(pParse, &X, 0, S, F);}
 
 
@@ -290,8 +288,8 @@ item(A) ::= NULL.            {A = sqliteExpr(TK_NULL, 0, 0, 0);}
 
 fieldlist_opt(A) ::= .                    {A = 0;}
 fieldlist_opt(A) ::= LP fieldlist(X) RP.  {A = X;}
-fieldlist(A) ::= fieldlist(X) COMMA ID(Y). {A = sqliteIdListAppend(X,&Y);}
-fieldlist(A) ::= ID(Y).                    {A = sqliteIdListAppend(0,&Y);}
+fieldlist(A) ::= fieldlist(X) COMMA id(Y). {A = sqliteIdListAppend(X,&Y);}
+fieldlist(A) ::= id(Y).                    {A = sqliteIdListAppend(0,&Y);}
 
 %left OR.
 %left AND.
@@ -308,7 +306,7 @@ fieldlist(A) ::= ID(Y).                    {A = sqliteIdListAppend(0,&Y);}
 expr(A) ::= LP expr(X) RP.   {A = X;}
 expr(A) ::= ID(X).           {A = sqliteExpr(TK_ID, 0, 0, &X);}
 expr(A) ::= NULL.            {A = sqliteExpr(TK_NULL, 0, 0, 0);}
-expr(A) ::= ID(X) DOT ID(Y). {Expr *temp1 = sqliteExpr(TK_ID, 0, 0, &X);
+expr(A) ::= id(X) DOT id(Y). {Expr *temp1 = sqliteExpr(TK_ID, 0, 0, &X);
                               Expr *temp2 = sqliteExpr(TK_ID, 0, 0, &Y);
                               A = sqliteExpr(TK_DOT, temp1, temp2, 0);}
 expr(A) ::= INTEGER(X).      {A = sqliteExpr(TK_INTEGER, 0, 0, &X);}
@@ -393,7 +391,7 @@ expritem(A) ::= expr(X).                {A = X;}
 expritem(A) ::= .                       {A = 0;}
 
 
-cmd ::= CREATE(S) uniqueflag INDEX ID(X) ON ID(Y) LP idxlist(Z) RP(E).
+cmd ::= CREATE(S) uniqueflag INDEX id(X) ON id(Y) LP idxlist(Z) RP(E).
     {sqliteCreateIndex(pParse, &X, &Y, Z, &S, &E);}
 uniqueflag ::= UNIQUE.
 uniqueflag ::= .
@@ -406,7 +404,7 @@ idxlist(A) ::= idxlist(X) COMMA idxitem(Y).
      {A = sqliteIdListAppend(X,&Y);}
 idxlist(A) ::= idxitem(Y).
      {A = sqliteIdListAppend(0,&Y);}
-idxitem(A) ::= ID(X).           {A = X;}
+idxitem(A) ::= id(X).           {A = X;}
 
 cmd ::= DROP INDEX id(X).       {sqliteDropIndex(pParse, &X);}
 

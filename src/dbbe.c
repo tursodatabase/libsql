@@ -30,7 +30,7 @@
 ** relatively simple to convert to a different database such
 ** as NDBM, SDBM, or BerkeleyDB.
 **
-** $Id: dbbe.c,v 1.12 2000/06/07 14:42:26 drh Exp $
+** $Id: dbbe.c,v 1.13 2000/06/08 15:10:47 drh Exp $
 */
 #include "sqliteInt.h"
 #include <gdbm.h>
@@ -312,7 +312,11 @@ int sqliteDbbeOpenTable(
       return SQLITE_NOMEM;
     }
     if( zFile ){
-      pFile->dbf = gdbm_open(zFile, 0, rw_mask, mode, 0);
+      if( !writeable || pBe->write ){
+        pFile->dbf = gdbm_open(zFile, 0, rw_mask, mode, 0);
+      }else{
+        pFile->dbf = 0;
+      }
     }else{
       int limit;
       struct rc4 *pRc4;
@@ -339,7 +343,9 @@ int sqliteDbbeOpenTable(
     pBe->pOpen = pFile;
     if( pFile->dbf==0 ){
       if( !writeable && access(zFile,0) ){
-        rc = SQLITE_OK;
+        /* Trying to read a non-existant file.  This is OK.  All the
+        ** reads will return empty, which is what we want. */
+        rc = SQLITE_OK;   
       }else if( access(zFile,W_OK|R_OK) ){
         rc = SQLITE_PERM;
       }else{

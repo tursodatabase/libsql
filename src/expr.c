@@ -23,7 +23,7 @@
 *************************************************************************
 ** This file contains C code routines used for processing expressions
 **
-** $Id: expr.c,v 1.13 2000/06/08 13:36:40 drh Exp $
+** $Id: expr.c,v 1.14 2000/06/08 15:10:47 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -400,7 +400,8 @@ int sqliteExprCheck(Parse *pParse, Expr *pExpr, int allowAgg, int *pIsAgg){
       if( is_agg ) pExpr->op = TK_AGG_FUNCTION;
       if( is_agg && pIsAgg ) *pIsAgg = 1;
       for(i=0; nErr==0 && i<n; i++){
-        nErr = sqliteExprCheck(pParse, pExpr->pList->a[i].pExpr, 0, 0);
+        nErr = sqliteExprCheck(pParse, pExpr->pList->a[i].pExpr,
+                               allowAgg && !is_agg, pIsAgg);
       }
     }
     default: {

@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.28 2000/06/08 13:36:41 drh Exp $
+** $Id: vdbe.c,v 1.29 2000/06/08 15:10:48 drh Exp $
 */
 #include "sqliteInt.h"
 #include <unistd.h>
@@ -1711,7 +1711,7 @@ int sqliteVdbeExec(
           }
           case SQLITE_READONLY: {
             sqliteSetString(pzErrMsg,"table ", pOp->p3, 
-               " is already opened for reading", 0);
+               " is readonly", 0);
             break;
           }
           case SQLITE_NOMEM: {
