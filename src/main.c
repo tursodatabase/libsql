@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.104 2002/11/09 00:33:16 drh Exp $
+** $Id: main.c,v 1.105 2002/12/02 04:25:21 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -360,7 +360,7 @@ sqlite *sqlite_open(const char *zFilename, int mode, char **pzErrMsg){
   db->magic = SQLITE_MAGIC_BUSY;
   
   /* Open the backend database driver */
-  rc = sqliteBtreeOpen(zFilename, mode, MAX_PAGES, &db->pBe);
+  rc = sqliteBtreeOpen(zFilename, 0, MAX_PAGES, &db->pBe);
   if( rc!=SQLITE_OK ){
     switch( rc ){
       default: {

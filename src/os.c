@@ -39,7 +39,7 @@
 /*
 ** Macros for performance tracing.  Normally turned off
 */
-#if 1
+#if 0
 static int last_page = 0;
 #define SEEK(X)       last_page=(X)
 #define TRACE1(X)     fprintf(stderr,X)
@@ -261,6 +261,7 @@ int sqliteOsOpenReadWrite(
     return SQLITE_NOMEM;
   }
   id->locked = 0;
+  TRACE3("OPEN    %-3d %s\n", id->fd, zFilename);
   return SQLITE_OK;
 #endif
 #if OS_WIN
@@ -330,6 +331,7 @@ int sqliteOsOpenExclusive(const char *zFilename, OsFile *id, int delFlag){
   if( delFlag ){
     unlink(zFilename);
   }
+  TRACE3("OPEN-EX %-3d %s\n", id->fd, zFilename);
   return SQLITE_OK;
 #endif
 #if OS_WIN
@@ -379,6 +381,7 @@ int sqliteOsOpenReadOnly(const char *zFilename, OsFile *id){
     return SQLITE_NOMEM;
   }
   id->locked = 0;
+  TRACE3("OPEN-RO %-3d %s\n", id->fd, zFilename);
   return SQLITE_OK;
 #endif
 #if OS_WIN
@@ -468,6 +471,7 @@ int sqliteOsClose(OsFile *id){
   sqliteOsEnterMutex();
   releaseLockInfo(id->pLock);
   sqliteOsLeaveMutex();
+  TRACE2("CLOSE   %-3d\n", id->fd);
   return SQLITE_OK;
 #endif
 #if OS_WIN
@@ -485,7 +489,7 @@ int sqliteOsRead(OsFile *id, void *pBuf, int amt){
 #if OS_UNIX
   int got;
   SimulateIOError(SQLITE_IOERR);
-  TRACE2("READ %d\n", last_page);
+  TRACE3("READ    %-3d %d\n", id->fd, last_page);
   got = read(id->fd, pBuf, amt);
   /* if( got<0 ) got = 0; */
   if( got==amt ){
@@ -517,7 +521,7 @@ int sqliteOsWrite(OsFile *id, const void *pBuf, int amt){
 #if OS_UNIX
   int wrote = 0;
   SimulateIOError(SQLITE_IOERR);
-  TRACE2("WRITE %d\n", last_page);
+  TRACE3("WRITE   %-3d %d\n", id->fd, last_page);
   while( amt>0 && (wrote = write(id->fd, pBuf, amt))>0 ){
     amt -= wrote;
     pBuf = &((char*)pBuf)[wrote];
@@ -558,7 +562,7 @@ int sqliteOsSeek(OsFile *id, off_t offset){
     LONG lowerBits = offset & 0xffffffff;
     DWORD rc;
     rc = SetFilePointer(id->h, lowerBits, &upperBits, FILE_BEGIN);
-    TRACE3("SEEK rc=0x%x upper=0x%x\n", rc, upperBits);
+    /* TRACE3("SEEK rc=0x%x upper=0x%x\n", rc, upperBits); */
   }
   return SQLITE_OK;
 #endif
@@ -569,7 +573,7 @@ int sqliteOsSeek(OsFile *id, off_t offset){
 */
 int sqliteOsSync(OsFile *id){
   SimulateIOError(SQLITE_IOERR);
-  TRACE1("SYNC\n");
+  TRACE2("SYNC    %-3d\n", id->fd);
 #if OS_UNIX
   if( fsync(id->fd) ){
     return SQLITE_IOERR;

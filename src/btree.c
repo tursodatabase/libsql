@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.72 2002/09/01 23:20:45 drh Exp $
+** $Id: btree.c,v 1.73 2002/12/02 04:25:20 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -551,7 +551,7 @@ static void freeSpace(Btree *pBt, MemPage *pPage, int start, int size){
 ** pParent==NULL.
 **
 ** Return SQLITE_OK on success.  If we see that the page does
-** not contained a well-formed database page, then return 
+** not contain a well-formed database page, then return 
 ** SQLITE_CORRUPT.  Note that a return of SQLITE_OK does not
 ** guarantee that the page is well-formed.  It only shows that
 ** we failed to detect any corruption.
@@ -658,7 +658,7 @@ static void pageDestructor(void *pData){
 */
 int sqliteBtreeOpen(
   const char *zFilename,    /* Name of the file containing the BTree database */
-  int mode,                 /* Not currently used */
+  int omitJournal,          /* if TRUE then do not journal this file */
   int nCache,               /* How many pages in the page cache */
   Btree **ppBtree           /* Pointer to new Btree object written here */
 ){
@@ -671,7 +671,8 @@ int sqliteBtreeOpen(
     return SQLITE_NOMEM;
   }
   if( nCache<10 ) nCache = 10;
-  rc = sqlitepager_open(&pBt->pPager, zFilename, nCache, EXTRA_SIZE);
+  rc = sqlitepager_open(&pBt->pPager, zFilename, nCache, EXTRA_SIZE,
+                        !omitJournal);
   if( rc!=SQLITE_OK ){
     if( pBt->pPager ) sqlitepager_close(pBt->pPager);
     sqliteFree(pBt);
@@ -699,7 +700,7 @@ int sqliteBtreeClose(Btree *pBt){
 }
 
 /*
-** Change the limit on the number of pages allowed the cache.
+** Change the limit on the number of pages allowed in the cache.
 **
 ** The maximum number of cache pages is set to the absolute
 ** value of mxPage.  If mxPage is negative, the pager will
@@ -1663,6 +1664,7 @@ static int freePage(Btree *pBt, void *pPage, Pgno pgno){
     pgno = sqlitepager_pagenumber(pOvfl);
   }
   assert( pgno>2 );
+  assert( sqlitepager_pagenumber(pOvfl)==pgno );
   pMemPage = (MemPage*)pPage;
   pMemPage->isInit = 0;
   if( pMemPage->pParent ){

@@ -1,5 +1,5 @@
-C Fixed\slarge\sfile\ssupport\sunder\sLinux.\s\sI'm\sunable\sto\stest\sunder\sWindows.\nTicket\s#191.\s(CVS\s790)
-D 2002-12-01T02:00:58
+C Change\sto\sthe\spager\sto\savoid\sopening\sjournal\sfiles\sunnecessarily.\s\sThis\scan\nsometimes\sresults\sin\sa\ssignificant\sspeed\simprovement.\s(CVS\s791)
+D 2002-12-02T04:25:20
 F Makefile.in 868c17a1ae1c07603d491274cc8f86c04acf2a1e
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -18,9 +18,9 @@ F main.mk 9d13839b9697af332d788fe6e801e68da027cc5c
 F publish.sh e5b83867d14708ed58cec8cba0a4f201e969474d
 F spec.template 238f7db425a78dc1bb7682e56e3834c7270a3f5e
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
-F src/btree.c 8024b87635c2adf133f153f1bb595125ec1c7d7b
+F src/btree.c cd46130a7f68e3880a59aa5502b64be37bf31e91
 F src/btree.h 0ca6c2631338df62e4f7894252d9347ae234eda9
-F src/build.c 1559232f6878fd7f2b1c79aede0f7a33ececab07
+F src/build.c ede692549ce5c43a80e2a9954421ccaee116b2df
 F src/delete.c aad9d4051ab46e6f6391ea5f7b8994a7c05bdd15
 F src/encode.c 6c9c87d5b7b2c0101d011ebc283a80abf672a4d1
 F src/expr.c 9427b4d1d04ede1095994b8e042abe2e6fea7443
@@ -28,12 +28,12 @@ F src/func.c 90c583f0b91220f7cd411a2407deaf9327245d63
 F src/hash.c 6a6236b89c8c060c65dabd300a1c8ce7c10edb72
 F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
 F src/insert.c 764300a0bd8074a2174946c0bf8a550bd833397a
-F src/main.c f04f93b8928d6d85976e5137fea146a46de1fd6e
+F src/main.c cee05c2ba23b5e78f9671f319dbd68e2130e0f68
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
-F src/os.c b3160bb723aea31c12787aea70ee9161e8f18b72
+F src/os.c cb829aa53e0af81336876a905ce1064f22749277
 F src/os.h b7b79563fc55c6d58b703c88ade9ab1504c48bba
-F src/pager.c 1ef5be147f7d5923275c0500fbad8f7463a14f9f
-F src/pager.h 6991c9c2dc5e4c7f2df4d4ba47d1c6458f763a32
+F src/pager.c 76a6e5a1d02e3ca5f5b8b22798844436349c2620
+F src/pager.h 540833e8cb826b80ce2e39aa917deee5e12db626
 F src/parse.y 469c9636ff713e63c00234662209f11668671ae9
 F src/printf.c 5c50fc1da75c8f5bf432b1ad17d91d6653acd167
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
@@ -45,14 +45,14 @@ F src/sqliteInt.h 74198ccddb3443514f0218de1f5a6668c3dbbe59
 F src/table.c eed2098c9b577aa17f8abe89313a9c4413f57d63
 F src/tclsqlite.c 9f2c00a92338c51171ded8943bd42d77f7e69e64
 F src/test1.c a46e9f61915b32787c5d5a05a4b92e4dacc437d9
-F src/test2.c e3a2e08729b3727b82590b265288d3bbac3e3740
-F src/test3.c 03d4f962f482599df9027a5814490c441a58cd99
+F src/test2.c 7e501ef1eb5d6b106f1d87f00e943171cdc41624
+F src/test3.c 8303af108b3354d294c44f5b17698f2f697ebf66
 F src/threadtest.c d641a5219e718e18a1a80a50eb9bb549f451f42e
 F src/tokenize.c 75e3bb37305b64e118e709752066f494c4f93c30
 F src/trigger.c 5ba917fc226b96065108da28186c2efaec53e481
 F src/update.c 881e4c8e7c786545da4fd2d95da19252b2e31137
 F src/util.c ca7650ef2cc2d50241e48029fca109a3016144ee
-F src/vdbe.c 7d46f087c1da55ba9be38f70d92a03c52c8a2ccb
+F src/vdbe.c 2c2472a93d0708920384c05d6099b637ab2229ce
 F src/vdbe.h b7584044223104ba7896a7f87b66daebdd6022ba
 F src/where.c 615a0f0bed305bcb27073c69347ea75018e8b58d
 F test/all.test efd958d048c70a3247997c482f0b33561f7759f0
@@ -151,7 +151,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 83b2c27a568cd67cd5162d513766b23ff9fc2227
-R 525c357fc6616ffd36403b1889baba38
+P 9864a1265b5a37c12b0dd8446d81b84c5a3acc43
+R 18e5cbae11f3fb92134940cf13959666
 U drh
-Z 7562882b3aaedd7e2c8b415c77774707
+Z 0253bbaf25ee8c0f348685f72f181f39
