@@ -35,7 +35,6 @@ to develop programs that use the sqlite database library.
 %build
 CFLAGS="%optflags -DNDEBUG=1" CXXFLAGS="%optflags -DNDEBUG=1" ./configure --prefix=%{_prefix}
 
-%make
 make
 make doc
 

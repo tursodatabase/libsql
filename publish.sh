@@ -145,10 +145,16 @@ ln sqlite.tar.gz sqlite-$vers.tar.gz
 # Build RPMS (binary) and Source RPM
 #
 
-# this script sets up the home directory so normal users can build rpms
-# by default this would only be allowed by root.  This really only needs
-# done once, but each time shouldn't hurt anything.
-$srcdir/homerpm.sh
+# Make sure we are properly setup to build RPMs
+#
+echo "%HOME %{expand:%%(cd; pwd)}" > $HOME/.rpmmacros
+echo "%_topdir %{HOME}/rpm" >> $HOME/.rpmmacros
+mkdir $HOME/rpm
+mkdir $HOME/rpm/BUILD
+mkdir $HOME/rpm/SOURCES
+mkdir $HOME/rpm/RPMS
+mkdir $HOME/rpm/SRPMS
+mkdir $HOME/rpm/SPECS
 
 # create the spec file from the template
 sed s/SQLITE_VERSION/$vers/g $srcdir/spec.template > $HOME/rpm/SPECS/sqlite.spec
@@ -159,8 +165,9 @@ cp sqlite-$vers.tar.gz $HOME/rpm/SOURCES/.
 # build all the rpms
 rpm -ba $HOME/rpm/SPECS/sqlite.spec >& rpm-$vers.log
 
-# this part I'm not sure about, looks like the rpms may need copied here or
-# linked to?
+# copy the RPMs into the build directory.
+ln $HOME/rpm/RPMS/i386/sqlite*-$vers*.rpm .
+ln $HOME/rpm/SRPMS/sqlite-$vers*.rpm .
 
 
 # Build the website
@@ -170,3 +177,4 @@ rm -rf doc
 make doc
 ln sqlite.bin.gz sqlite.zip sqlite*.tar.gz tclsqlite.so.gz tclsqlite.zip doc
 ln sqlitedll.zip sqlite.so.gz sqlite_source.zip doc
+ln *.rpm doc

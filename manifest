@@ -1,5 +1,5 @@
-C added\sa\ssection\sto\screate\sa\sspec\sfile\sand\sbuild\sthe\srpm\sfiles\s(CVS\s504)
-D 2002-03-29T01:29:54
+C Combine\sthe\shomerpm.sh\sfile\sin\swith\spublish.sh.\s\sUpdate\sthe\swebsite\sfiles\sto\nrefer\sto\sthe\snew\sRPMs\sthat\sare\snow\sbeing\sbuilt.\s\sFix\sa\ssmall\sproblem\swith\nthe\sspec\sfile.\s(CVS\s505)
+D 2002-03-29T18:16:04
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -13,12 +13,11 @@ F configure 9303d975dbd577fbe61e615045ddc02015b59fb5 x
 F configure.ac 38e2e5594cab99eb3a753b0614fcc36f4ddbbb48
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
-F homerpm.sh d1adb74efdd1c0b04d5c521935c14616dff433f1 x
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F libtool c56e618713c9510a103bda6b95f3ea3900dcacd6
 F ltmain.sh e9ed72eb1d690f447c13945eaf69e28af531eda1
-F publish.sh 5c0d940c8aac42be8911d4161826794560603fce
-F spec.template 80255831b0c3c16c1cc2bb08dd15cb8800a04a64
+F publish.sh 0b9da5898bf5997f30d6f80de4880072db7e5718
+F spec.template 238f7db425a78dc1bb7682e56e3834c7270a3f5e
 F sqlite.1 2e2bb0529ef468ade9e4322bd609d0695fb9ded9
 F src/TODO af7f3cab0228e34149cf98e073aa83d45878e7e6
 F src/btree.c 7dd7ddc66459982dd0cb9800958c1f8d65a32d9f
@@ -117,14 +116,14 @@ F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 72a0c80e9054cc7025a50928d28d9c75c02c2b8b
 F www/c_interface.tcl 567cda531aac9d68a61ef02e26c6b202bd856db2
-F www/changes.tcl 96b42ab657fcdd9cc1dbf3c5e935917c96e71d0a
+F www/changes.tcl 255d65014ca4b67f1d6d7b8151324e4249bf7ca5
 F www/conflict.tcl 81dd21f9a679e60aae049e9dd8ab53d59570cda2
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
-F www/download.tcl a6d75b8b117cd33dcb090bef7e80d7556d28ebe0
+F www/download.tcl 870e87c458d58e0867463e06ea66eec343332d3f
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/faq.tcl fb1e92e2f604546694f83a36d969492f52fb685d
 F www/formatchng.tcl 2ce21ff30663fad6618198fe747ce675df577590
-F www/index.tcl 64d32b1952138a007c1db5753c5b046d4b83dda1
+F www/index.tcl 7d2952a4738a6b913724ab7d02ae73b7085a4860
 F www/lang.tcl e6c277480c4e31877c08509af7a16f6c69bb1046
 F www/mingw.tcl f1c7c0a7f53387dd9bb4f8c7e8571b7561510ebc
 F www/opcode.tcl bdec8ef9f100dbd87bbef8976c54b88e43fd8ccc
@@ -132,7 +131,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 3c25359376814e9c3912246d79528614a3499e5b
-R 0b4fa0ab8c0a36dd8fe21df7be719be5
-U doughenry
-Z d38052f9eb649f56f5dfcf9ea11c6c7c
+P e529143967a6fd4e65dea6a5ff68a7aabc36f787
+R c284576111a1e591595153abeca388b4
+U drh
+Z 73362d0343176b7525b4f3bbee07609d

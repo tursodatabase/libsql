@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the download.html file.
 #
-set rcsid {$Id: download.tcl,v 1.3 2002/01/31 15:54:23 drh Exp $}
+set rcsid {$Id: download.tcl,v 1.4 2002/03/29 18:16:04 drh Exp $}
 
 puts {<html>
 <head><title>SQLite Download Page</title></head>
@@ -20,9 +20,9 @@ proc Product {file desc} {
   if {![file exists $file]} return
   set size [file size $file]
   puts [subst {
-<table cellpadding="20">
+<table cellpadding="15">
 <tr>
-<td width="150" align="right" valign="top">
+<td width="200" align="right" valign="top">
 <a href="$file">$file</a><br>($size bytes)
 </td>
 <td valign="top">[string trim $desc]</td>
@@ -44,6 +44,10 @@ Product tclsqlite.so.gz {
 Product sqlite.so.gz {
   A precompiled shared-library for Linux.  This is the same as
   <b>tclsqlite.so.gz</b> but without the TCL bindings.
+}
+
+foreach name [lsort -dict [glob -nocomplain sqlite-*.i386.rpm]] {
+  Product $name "An RPM for Linux"
 }
 
 puts {<h2>Precompiled Binaries For Windows</h2>}
@@ -70,6 +74,10 @@ Product {sqlite_source.zip} {
   done on these C source code, so you can just hand the files directly to
   your favorite C compiler.  This file is provided as a service to
   MS-Windows users who lack the build support infrastructure of Unix.
+}
+
+foreach name [lsort -dict [glob -nocomplain sqlite-*.src.rpm]] {
+  Product $name "Source RPM"
 }
 
 foreach name [lsort -dict -decreasing [glob -nocomplain sqlite-*.tar.gz]] {
