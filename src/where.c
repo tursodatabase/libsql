@@ -13,7 +13,7 @@
 ** the WHERE clause of SQL statements.  Also found here are subroutines
 ** to generate VDBE code to evaluate expressions.
 **
-** $Id: where.c,v 1.43 2002/05/15 11:44:15 drh Exp $
+** $Id: where.c,v 1.44 2002/05/19 23:43:14 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -216,7 +216,7 @@ WhereInfo *sqliteWhereBegin(
   */
   for(i=0; i<nExpr; i++){
     exprAnalyze(base, &aExpr[i]);
-    if (pParse->trigStack && pParse->trigStack->newIdx >= 0) {
+    if( pParse->trigStack && pParse->trigStack->newIdx >= 0 ){
         aExpr[i].prereqRight = 
             aExpr[i].prereqRight & ~(1 << pParse->trigStack->newIdx - base);
         aExpr[i].prereqLeft = 
@@ -224,7 +224,7 @@ WhereInfo *sqliteWhereBegin(
         aExpr[i].prereqAll = 
             aExpr[i].prereqAll & ~(1 << pParse->trigStack->newIdx - base);
     }
-    if (pParse->trigStack && pParse->trigStack->oldIdx >= 0) {
+    if( pParse->trigStack && pParse->trigStack->oldIdx >= 0 ){
         aExpr[i].prereqRight = 
             aExpr[i].prereqRight & ~(1 << pParse->trigStack->oldIdx - base);
         aExpr[i].prereqLeft = 

@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.59 2002/05/15 08:30:13 danielk1977 Exp $
+** $Id: expr.c,v 1.60 2002/05/19 23:43:14 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -484,28 +484,29 @@ int sqliteExprResolveIds(
 
       /* If we have not already resolved this *.* expression, then maybe 
        * it is a new.* or old.* trigger argument reference */
-      if (cnt == 0 && pParse->trigStack != 0) {
-        TriggerStack * tt = pParse->trigStack;
-        int j;
+      if( cnt == 0 && pParse->trigStack != 0 ){
+        TriggerStack *pTriggerStack = pParse->trigStack;
         int t = 0;
-        if (tt->newIdx != -1 && sqliteStrICmp("new", zLeft) == 0) {
-          pExpr->iTable = tt->newIdx;
+        if( pTriggerStack->newIdx != -1 && sqliteStrICmp("new", zLeft) == 0 ){
+          pExpr->iTable = pTriggerStack->newIdx;
           cntTab++;
           t = 1;
         }
-        if (tt->oldIdx != -1 && sqliteStrICmp("old", zLeft) == 0) {
-          pExpr->iTable = tt->oldIdx;
+        if( pTriggerStack->oldIdx != -1 && sqliteStrICmp("old", zLeft) == 0 ){
+          pExpr->iTable = pTriggerStack->oldIdx;
           cntTab++;
           t = 1;
         }
 
-        if (t) 
-          for(j=0; j<tt->pTab->nCol; j++) {
-            if( sqliteStrICmp(tt->pTab->aCol[j].zName, zRight)==0 ){
+        if( t ){ 
+	  int j;
+          for(j=0; j < pTriggerStack->pTab->nCol; j++) {
+            if( sqliteStrICmp(pTriggerStack->pTab->aCol[j].zName, zRight)==0 ){
               cnt++;
               pExpr->iColumn = j;
             }
           }
+	}
       }
 
       if( cnt==0 && cntTab==1 && sqliteIsRowid(zRight) ){

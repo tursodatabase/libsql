@@ -80,9 +80,11 @@ void sqliteCreateTrigger(
   sqliteExprMoveStrings(nt->pWhen, offset);
 
   ss = nt->step_list;
-  while (ss) {
+  while( ss ){
     sqliteSelectMoveStrings(ss->pSelect, offset);
-    if (ss->target.z) ss->target.z += offset;
+    if( ss->target.z ){
+      ss->target.z += offset;
+    }
     sqliteExprMoveStrings(ss->pWhere, offset);
     sqliteExprListMoveStrings(ss->pExprList, offset);
 
@@ -130,7 +132,7 @@ void sqliteCreateTrigger(
     nt->pNext = tab->pTrigger;
     tab->pTrigger = nt;
     return;
-  } else {
+  }else{
     sqliteFree(nt->strings);
     sqliteFree(nt->name);
     sqliteFree(nt->table);
@@ -146,7 +148,7 @@ trigger_cleanup:
     TriggerStep * nn;
 
     pp = pStepList;
-    while (pp) {
+    while( pp ){
       nn = pp->pNext;
       sqliteExprDelete(pp->pWhere);
       sqliteExprListDelete(pp->pExprList);
@@ -228,7 +230,7 @@ void sqliteDeleteTrigger(Trigger *pTrigger)
   TriggerStep *pTriggerStep;
 
   pTriggerStep = pTrigger->step_list;
-  while (pTriggerStep) {
+  while( pTriggerStep ){
     TriggerStep * pTmp = pTriggerStep;
     pTriggerStep = pTriggerStep->pNext;
 
@@ -287,7 +289,7 @@ void sqliteDropTrigger(Parse *pParse, Token *pName, int nested)
     assert(pTable);
     if( pTable->pTrigger == pTrigger ){
       pTable->pTrigger = pTrigger->pNext;
-    } else {
+    }else{
       Trigger *cc = pTable->pTrigger;
       while( cc ){ 
         if( cc->pNext == pTrigger ){
@@ -346,13 +348,16 @@ void sqliteDropTrigger(Parse *pParse, Token *pName, int nested)
 static int checkColumnOverLap(IdList * pIdList, ExprList * pEList)
 {
   int i, e;
-  if (!pIdList) return 1;
-  if (!pEList) return 1;
+  if( !pIdList )return 1;
+  if( !pEList )return 1;
 
-  for (i = 0; i < pIdList->nId; i++) 
-    for (e = 0; e < pEList->nExpr; e++) 
-      if (!sqliteStrICmp(pIdList->a[i].zName, pEList->a[e].zName))
+  for(i = 0; i < pIdList->nId; i++){ 
+    for(e = 0; e < pEList->nExpr; e++){ 
+      if( !sqliteStrICmp(pIdList->a[i].zName, pEList->a[e].zName) ){
         return 1;
+      }
+    }
+  }
 
   return 0; 
 }
@@ -394,8 +399,10 @@ int sqliteTriggersExist(
 	checkColumnOverLap(pTriggerCursor->pColumns, pChanges) ){
       TriggerStack * ss;
       ss = pParse->trigStack;
-      while (ss && ss->pTrigger != pTrigger) ss = ss->pNext;
-      if (!ss) return 1;
+      while( ss && ss->pTrigger != pTrigger ){
+	ss = ss->pNext;
+      }
+      if( !ss )return 1;
     }
     pTriggerCursor = pTriggerCursor->pNext;
   }
@@ -493,24 +500,27 @@ int sqliteCodeRowTrigger(
   assert(newIdx != -1 || oldIdx != -1);
 
   pTrigger = pTab->pTrigger;
-  while (pTrigger) {
+  while( pTrigger ){
     int fire_this = 0;
 
     /* determine whether we should code this trigger */
-    if (pTrigger->op == op && pTrigger->tr_tm == tr_tm && 
-        pTrigger->foreach == TK_ROW) {
+    if( pTrigger->op == op && pTrigger->tr_tm == tr_tm && 
+        pTrigger->foreach == TK_ROW ){
       fire_this = 1;
       pTriggerStack = pParse->trigStack;
-      while (pTriggerStack) {
-        if (pTriggerStack->pTrigger == pTrigger) fire_this = 0;
+      while( pTriggerStack ){
+        if( pTriggerStack->pTrigger == pTrigger ){
+	  fire_this = 0;
+	}
         pTriggerStack = pTriggerStack->pNext;
       }
-      if (op == TK_UPDATE && pTrigger->pColumns &&
-          !checkColumnOverLap(pTrigger->pColumns, pChanges))
+      if( op == TK_UPDATE && pTrigger->pColumns &&
+          !checkColumnOverLap(pTrigger->pColumns, pChanges) ){
         fire_this = 0;
+      }
     }
 
-    if (fire_this) {
+    if( fire_this ){
       int endTrigger;
       IdList dummyTablist;
       Expr * whenExpr;
@@ -530,7 +540,7 @@ int sqliteCodeRowTrigger(
       /* code the WHEN clause */
       endTrigger = sqliteVdbeMakeLabel(pParse->pVdbe);
       whenExpr = sqliteExprDup(pTrigger->pWhen);
-      if (sqliteExprResolveIds(pParse, 0, &dummyTablist, 0, whenExpr)) {
+      if( sqliteExprResolveIds(pParse, 0, &dummyTablist, 0, whenExpr) ){
         pParse->trigStack = pParse->trigStack->pNext;
         sqliteFree(pTriggerStack);
         sqliteExprDelete(whenExpr);
@@ -636,8 +646,9 @@ void sqliteViewTriggers(
     for(ii=0; ii<pChanges->nExpr; ii++){
       int jj;
       if( sqliteExprResolveIds(pParse, oldIdx, theSelect.pSrc , 0, 
-            pChanges->a[ii].pExpr) )
+            pChanges->a[ii].pExpr) ){
         goto trigger_cleanup;
+      }
 
       if( sqliteExprCheck(pParse, pChanges->a[ii].pExpr, 0, 0) )
         goto trigger_cleanup;
@@ -661,7 +672,7 @@ void sqliteViewTriggers(
     for(ii = 0; ii<pTab->nCol; ii++){
       if( aXRef[ii] < 0 ){ 
         sqliteVdbeAddOp(v, OP_Column, oldIdx, ii);
-      } else {
+      }else{
         sqliteExprCode(pParse, pChanges->a[aXRef[ii]].pExpr);
       }
     }
@@ -674,7 +685,7 @@ void sqliteViewTriggers(
         pTab, newIdx, oldIdx, orconf);
     sqliteCodeRowTrigger(pParse, TK_UPDATE, pChanges, TK_AFTER, 
         pTab, newIdx, oldIdx, orconf);
-  } else {
+  }else{
     sqliteCodeRowTrigger(pParse, TK_DELETE, 0, TK_BEFORE, pTab, -1, oldIdx, 
         orconf);
     sqliteCodeRowTrigger(pParse, TK_DELETE, 0, TK_AFTER, pTab, -1, oldIdx, 

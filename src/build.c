@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.90 2002/05/15 12:45:43 drh Exp $
+** $Id: build.c,v 1.91 2002/05/19 23:43:14 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -259,7 +259,7 @@ void sqliteCommitInternalChanges(sqlite *db){
 
   /* Delete the structures for triggers removed this transaction */
   pElem = sqliteHashFirst(&db->trigDrop);
-  while (pElem) {
+  while( pElem ){
     Trigger *pTrigger = sqliteHashData(pElem);
     sqliteDeleteTrigger(pTrigger);
     pElem = sqliteHashNext(pElem);
@@ -323,7 +323,7 @@ void sqliteRollbackInternalChanges(sqlite *db){
 
   /* Remove any triggers that haven't been commited yet */
   for(pElem = sqliteHashFirst(&db->trigHash); pElem; 
-      pElem = (pElem?sqliteHashNext(pElem):0)) {
+      pElem = (pElem?sqliteHashNext(pElem):0)){
     Trigger *pTrigger = sqliteHashData(pElem);
     if( !pTrigger->isCommit ){
       Table *pTbl = sqliteFindTable(db, pTrigger->table);
@@ -333,7 +333,7 @@ void sqliteRollbackInternalChanges(sqlite *db){
         }else{
           Trigger *cc = pTbl->pTrigger;
           while( cc ){
-            if (cc->pNext == pTrigger) {
+            if( cc->pNext == pTrigger ){
               cc->pNext = cc->pNext->pNext;
               break;
             }
@@ -351,13 +351,13 @@ void sqliteRollbackInternalChanges(sqlite *db){
 
   /* Any triggers that were dropped - put 'em back in place */
   for(pElem = sqliteHashFirst(&db->trigDrop); pElem; 
-      pElem = sqliteHashNext(pElem)) {
-    Trigger * pTrigger = sqliteHashData(pElem);
-    Table * tab = sqliteFindTable(db, pTrigger->table);
+      pElem = sqliteHashNext(pElem)){
+    Trigger *pTrigger = sqliteHashData(pElem);
+    Table *pTbl = sqliteFindTable(db, pTrigger->table);
     sqliteHashInsert(&db->trigHash, pTrigger->name, 
         strlen(pTrigger->name) + 1, pTrigger);
-    pTrigger->pNext = tab->pTrigger;
-    tab->pTrigger = pTrigger;
+    pTrigger->pNext = pTbl->pTrigger;
+    pTbl->pTrigger = pTrigger;
   }
 
   sqliteHashClear(&db->trigDrop);
@@ -1755,7 +1755,7 @@ void sqliteBeginMultiWriteOperation(Parse *pParse){
 */
 void sqliteEndWriteOperation(Parse *pParse){
   Vdbe *v;
-  if (pParse->trigStack) return; /* if this is in a trigger */
+  if( pParse->trigStack ) return; /* if this is in a trigger */
   v = sqliteGetVdbe(pParse);
   if( v==0 ) return;
   if( pParse->db->flags & SQLITE_InTrans ){

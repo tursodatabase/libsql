@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle DELETE FROM statements.
 **
-** $Id: delete.c,v 1.32 2002/05/15 11:44:14 drh Exp $
+** $Id: delete.c,v 1.33 2002/05/19 23:43:14 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -94,15 +94,15 @@ void sqliteDeleteFrom(
   db = pParse->db;
 
   /* Check for the special case of a VIEW with one or more ON DELETE triggers 
-   * defined 
-   */
+  ** defined 
+  */
   {
-    Table * pTab;
-    char * zTab = sqliteTableNameFromToken(pTableName);
+    Table *pTab;
+    char *zTab = sqliteTableNameFromToken(pTableName);
 
-    if(zTab != 0) {
+    if( zTab != 0 ){
       pTab = sqliteFindTable(pParse->db, zTab);
-      if (pTab) {
+      if( pTab ){
         row_triggers_exist = 
           sqliteTriggersExist(pParse, pTab->pTrigger, 
               TK_DELETE, TK_BEFORE, TK_ROW, 0) ||
@@ -110,7 +110,7 @@ void sqliteDeleteFrom(
               TK_DELETE, TK_AFTER, TK_ROW, 0);
       }
       sqliteFree(zTab);
-      if (row_triggers_exist &&  pTab->pSelect ) {
+      if( row_triggers_exist &&  pTab->pSelect ){
         /* Just fire VIEW triggers */
         sqliteViewTriggers(pParse, pTab, pWhere, OE_Replace, 0);
         return;
@@ -129,8 +129,9 @@ void sqliteDeleteFrom(
   pTab = pTabList->a[0].pTab;
   assert( pTab->pSelect==0 );  /* This table is not a view */
 
-  if (row_triggers_exist) 
+  if( row_triggers_exist ){ 
     oldIdx = pParse->nTab++;
+  }
 
   /* Resolve the column names in all the expressions.
   */
@@ -147,11 +148,14 @@ void sqliteDeleteFrom(
   /* Begin generating code.
   */
   v = sqliteGetVdbe(pParse);
-  if( v==0 ) goto delete_from_cleanup;
-  if (row_triggers_exist) 
+  if( v==0 ){
+    goto delete_from_cleanup;
+  }
+  if( row_triggers_exist ){ 
     sqliteBeginMultiWriteOperation(pParse);
-  else 
+  } else {
     sqliteBeginWriteOperation(pParse);
+  }
 
   /* Initialize the counter of the number of rows deleted, if
   ** we are counting rows.
@@ -163,7 +167,7 @@ void sqliteDeleteFrom(
   /* Special case: A DELETE without a WHERE clause deletes everything.
   ** It is easier just to erase the whole table.
   */
-  if( pWhere==0 && !row_triggers_exist){
+  if( pWhere==0 && !row_triggers_exist ){
     if( db->flags & SQLITE_CountRows ){
       /* If counting rows deleted, just count the total number of
       ** entries in the table. */
@@ -211,7 +215,7 @@ void sqliteDeleteFrom(
     sqliteVdbeAddOp(v, OP_ListRewind, 0, 0);
     end = sqliteVdbeMakeLabel(v);
 
-    if (row_triggers_exist) {
+    if( row_triggers_exist ){
       int ii;
       addr = sqliteVdbeAddOp(v, OP_ListRead, 0, end);
       sqliteVdbeAddOp(v, OP_Dup, 0, 0);
@@ -222,11 +226,12 @@ void sqliteDeleteFrom(
       sqliteVdbeAddOp(v, OP_OpenTemp, oldIdx, 0);
 
       sqliteVdbeAddOp(v, OP_Integer, 13, 0);
-      for (ii = 0; ii < pTab->nCol; ii++) {
-        if (ii == pTab->iPKey) 
+      for(ii = 0; ii<pTab->nCol; ii++){
+        if( ii==pTab->iPKey ){ 
           sqliteVdbeAddOp(v, OP_Recno, base, 0);
-        else
+	} else {
           sqliteVdbeAddOp(v, OP_Column, base, ii);
+	}
       }
       sqliteVdbeAddOp(v, OP_MakeRecord, pTab->nCol, 0);
       sqliteVdbeAddOp(v, OP_PutIntKey, oldIdx, 0);
@@ -244,12 +249,13 @@ void sqliteDeleteFrom(
       sqliteVdbeAddOp(v, openOp, pParse->nTab++, pIdx->tnum);
     }
 
-    if (!row_triggers_exist) 
+    if( !row_triggers_exist ){ 
       addr = sqliteVdbeAddOp(v, OP_ListRead, 0, end);
+    }
 
     sqliteGenerateRowDelete(v, pTab, base, pParse->trigStack?0:1);
 
-    if (row_triggers_exist) {
+    if( row_triggers_exist ){
       for(i=1, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){
         sqliteVdbeAddOp(v, OP_Close, base + i, pIdx->tnum);
       }
@@ -262,7 +268,7 @@ void sqliteDeleteFrom(
     sqliteVdbeResolveLabel(v, end);
     sqliteVdbeAddOp(v, OP_ListReset, 0, 0);
 
-    if (!row_triggers_exist) {
+    if( !row_triggers_exist ){
       for(i=1, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){
         sqliteVdbeAddOp(v, OP_Close, base + i, pIdx->tnum);
       }
