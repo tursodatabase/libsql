@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\sDEFERRED,\sIMMEDIATE,\sand\sEXCLUSIVE\stransactions.\s(CVS\s2000)
-D 2004-10-05T02:41:42
+C Use\sthe\sdatabase\sname\ssupplied\sto\stable_info()\sand\srelated\spragmas.\s(CVS\s2001)
+D 2004-10-05T15:42:53
 F Makefile.in 78ddc9fca09ab6e3b75a79ecf8d490e34cd0519c
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -55,7 +55,7 @@ F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c dc0ffab9941393b072e0b1f1f3de54830727cec9
 F src/pager.h 774d1973acbda341827d21b0da0150575d69f7d9
 F src/parse.y e03d7d7f712ad2b5be61e9a024820c0a8ffdf36d
-F src/pragma.c ba7fdd19c1680bb9bfc8bc5230278f6ae6b1c8ff
+F src/pragma.c 4a071a1908aa7fb5930a9d73fd300a6aa2ac07e1
 F src/printf.c 40770e1f553612d13dfc86d236086e69baa62fe1
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c 96b1489111abe9b584be2f2cce26ad6f2d425b4e
@@ -250,7 +250,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P e8e972ba65fc36171f6b685e8a8f67f93452e031
-R d2fc50e21e7b6df513c30d8cad94f529
+P 81ff8107ad63113782cf5a9ba7a512496114ba08
+R ff0efd5a5f898106b48c51aa9ee32ff8
 U drh
-Z d7255f319d142e01096c8a1787a44a2e
+Z 077e72fc4e15bfcfe383832545b7afca
