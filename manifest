@@ -1,5 +1,5 @@
-C Added\sa\s"stddev()"\saggregate\sfunction\sfor\stesting\sthe\snew\suser\saggregate\nfunction\sinterface.\s(CVS\s393)
-D 2002-02-24T17:12:54
+C Fix\sa\sbug\sin\sthe\squoting\sof\s.dump\soutput.\s\sBy\sRajit\sSingh.\s(CVS\s394)
+D 2002-02-26T23:24:27
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -38,7 +38,7 @@ F src/parse.y fc460cda6f475beae963c7f9c737cf13f44f3420
 F src/printf.c 300a90554345751f26e1fc0c0333b90a66110a1d
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c 410e4dfff7d2cfb8712529519b94410e2c7e7930
-F src/shell.c cbf48bf0ca35c4e0d8a7d2a86f7724f52c525cd7
+F src/shell.c 9f8249ca5b8f8aad40becd778c151b58c0d6109e
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in f1421919a4437a377fb712b98835a224482e776e
 F src/sqliteInt.h d20712633cd07c547c5dde24a4d4c43c368334f7
@@ -126,7 +126,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 1e037eb303d8508cb2ea3418e71b03315d895fbd
-R 21d5c48b8dddd8d019c6a58015885a64
+P 2198109712ccf988f93db5740a4f248e80fb9f5d
+R dbbea9815a86c12ee897aeb068a88652
 U drh
-Z d7e9ee595615113d0da5c9ca524c595c
+Z ef8303f23d9e0519ec19c95e33ed8b7b

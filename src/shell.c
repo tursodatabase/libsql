@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.45 2002/02/21 02:25:03 drh Exp $
+** $Id: shell.c,v 1.46 2002/02/26 23:24:27 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -197,10 +197,11 @@ static void output_quoted_string(FILE *out, const char *z){
         fprintf(out,"%.*s''",i,z);
         z += i+1;
       }else{
-        fprintf(out,"%s'",z);
+        fprintf(out,"%s",z);
         break;
       }
     }
+    fprintf(out,"'");
   }
 }
 
