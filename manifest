@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sthat\swas\spreventing\s"PRAGMA\stemp_store=MEMORY"\sfrom\sworking.\s(CVS\s1887)
-D 2004-08-14T18:34:55
+C If\smeta(3)>0\sthen\smake\sthe\sdatabase\sreadonly\sfor\snow.\s\sThis\sallows\sthe\scurrent\ndatabase\sto\sinteract\swith\sfuture\sreleases\sthat\smight\sinclude\sautovacuum.\s(CVS\s1888)
+D 2004-08-14T19:20:10
 F Makefile.in 4a5e570a9e2d35b09c31b3cf01b78cea764ade4b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -27,7 +27,7 @@ F sqlite3.def c139a6b17293d71759a7c301ad76707243ce5d54
 F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
 F src/attach.c 0bd4f11da6999665da30625665a4096ba7898de6
 F src/auth.c 60db23b98bb94c8b0178180faaf49dc116674217
-F src/btree.c cfa5ed01838247be40c113cac528286675940801
+F src/btree.c 14c20dfb320473a1fd4e37d43eba5e2afd606757
 F src/btree.h 94dfec0a1722d33359b23e7e310f2b64ffedf029
 F src/build.c 951a36b246d9f38f2340562bfdd6a96bf7433530
 F src/date.c a164e3a58f61306e82c5626e5fa16f861a9a7084
@@ -39,7 +39,7 @@ F src/hash.c f0a2f22c2a7052d67053b5f4690ea3010bb3fb9f
 F src/hash.h 762d95f1e567664d1eafc1687de755626be962fb
 F src/insert.c bedcba371401395033a1a1c578d8fdc3fec87bec
 F src/legacy.c 2f3617c61bcdcd1d776154a9cfebf99facda8ad8
-F src/main.c 32b91a5799d53586af068b5f95cd851242d681ca
+F src/main.c 34a95ab1b2f6b33dfebb64d4367c34627b1f0a24
 F src/md5.c 7ae1c39044b95de2f62e066f47bb1deb880a1070
 F src/os.h d1780e0db95cad01f213d48da22ab490eb4fd345
 F src/os_common.h cd7eb025fdab7dc91e0e97bf6310f1648205857f
@@ -90,7 +90,7 @@ F test/bigfile.test 62722ac4b420dfbcdceb137b8634e2cf2865fe27
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
 F test/bind.test 94c3df3da774b48c6946c81b1d7f1b1646e0bd46
 F test/blob.test 8727a7b46b2073a369cfc9bcb6f54dd366b9d884
-F test/btree.test 973791eb269ab320c1a2bf0c440adee28ea936d2
+F test/btree.test 97b563e1ab999bf8764b129e8c4b4be0a116a52a
 F test/btree2.test aa4a6d05b1ea90b1acaf83ba89039dd302a88635
 F test/btree4.test 3797b4305694c7af6828675b0f4b1424b8ca30e4
 F test/btree5.test 8e5ff32c02e685d36516c6499add9375fe1377f2
@@ -242,7 +242,7 @@ F www/tclsqlite.tcl 06a86cba4d7fc88e2bcd633b57702d3d16abebb5
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 6b8178de9936e48ed69d1546218b5def6665b459
-R dd5d27280c9e7d8e0c9807625c7d9299
+P bb55894521848b6a9d8b516a3c7eeb3482936d7e
+R d4b24a8ba05379c1060c6d483ca4b2cb
 U drh
-Z 1990a2927b4118ca945a16b473a82826
+Z 660b1c4514e63b0b891d0f5f8d1e26a5

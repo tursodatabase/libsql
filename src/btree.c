@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.181 2004/08/08 19:43:30 drh Exp $
+** $Id: btree.c,v 1.182 2004/08/14 19:20:10 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -3746,6 +3746,11 @@ int sqlite3BtreeGetMeta(Btree *pBt, int idx, u32 *pMeta){
   if( rc ) return rc;
   *pMeta = get4byte(&pP1[36 + idx*4]);
   sqlite3pager_unref(pP1);
+
+  /* The current implementation is unable to handle writes to an autovacuumed
+  ** database.  So make such a database readonly. */
+  if( idx==4 && *pMeta>0 ) pBt->readOnly = 1;
+
   return SQLITE_OK;
 }
 
