@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.68 2004/06/12 09:25:14 danielk1977 Exp $
+** $Id: func.c,v 1.69 2004/06/15 13:36:30 danielk1977 Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -931,6 +931,7 @@ static void minMaxFinalize(sqlite3_context *context){
   if( pRes->flags ){
     sqlite3_result_value(context, pRes);
   }
+  sqlite3VdbeMemRelease(pRes);
 }
 
 /*

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.373 2004/06/15 11:40:09 danielk1977 Exp $
+** $Id: vdbe.c,v 1.374 2004/06/15 13:36:37 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -990,27 +990,6 @@ case OP_Push: {
     pTo->z = pTo->zShort;
   }
   pTos--;
-  break;
-}
-
-
-/* Opcode: ColumnName P1 P2 P3
-**
-** P3 becomes the P1-th column name (first is 0).  An array of pointers
-** to all column names is passed as the 4th parameter to the callback.
-** If P2==1 then this is the last column in the result set and thus the
-** number of columns in the result set will be P1.  There must be at least
-** one OP_ColumnName with a P2==1 before invoking OP_Callback and the
-** number of columns specified in OP_Callback must one more than the P1
-** value of the OP_ColumnName that has P2==1.
-*/
-case OP_ColumnName: {
-  assert(0);
-  assert( pOp->p1>=0 && pOp->p1<p->nOp );
-  p->azColName[pOp->p1] = pOp->p3;
-  p->nCallback = 0;
-  assert( !pOp->p2 || p->nResColumn==(pOp->p1+1) );
-  /* if( pOp->p2 ) p->nResColumn = pOp->p1+1; */
   break;
 }
 

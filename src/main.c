@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.220 2004/06/14 09:35:17 danielk1977 Exp $
+** $Id: main.c,v 1.221 2004/06/15 13:36:31 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1007,6 +1007,7 @@ prepare_out:
   }
   if( zErrMsg ){
     sqlite3Error(db, rc, "%s", zErrMsg);
+    sqliteFree(zErrMsg);
   }else{
     sqlite3Error(db, rc, 0);
   }

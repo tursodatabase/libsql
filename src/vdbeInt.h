@@ -303,8 +303,6 @@ struct Vdbe {
   Mem *pTos;          /* Top entry in the operand stack */
   Mem **apArg;        /* Arguments to currently executing user function */
   Mem *aColName;      /* Column names to return */
-  char **azColName;   /* Becomes the 4th parameter to callbacks */
-  void **azColName16; /* UTF-16 encoded equivalent of azColName */
   int nCursor;        /* Number of slots in apCsr[] */
   Cursor **apCsr;     /* One element of this array for each open cursor */
   Sorter *pSort;      /* A linked list of objects to be sorted */

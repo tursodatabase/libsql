@@ -530,11 +530,6 @@ int sqlite3VdbeList(
   sqlite *db = p->db;
   int i;
   int rc = SQLITE_OK;
-  static char *azColumnNames[] = {
-     "addr", "opcode", "p1",  "p2",  "p3", 
-     "int",  "text",   "int", "int", "text",
-     0
-  };
 
   assert( p->explain );
 
@@ -548,8 +543,6 @@ int sqlite3VdbeList(
       p->aStack[i].flags = 0;
     }
   }
-
-  p->azColName = azColumnNames;
   p->resOnStack = 0;
 
   i = p->pc++;
@@ -638,12 +631,11 @@ void sqlite3VdbeMakeReady(
     assert( nVar>=0 );
     n = isExplain ? 10 : p->nOp;
     p->aStack = sqliteMalloc(
-      n*(sizeof(p->aStack[0])+sizeof(Mem*)+sizeof(char*)) /* aStack, apArg */
+      n*(sizeof(p->aStack[0])+sizeof(Mem*))          /* aStack, apArg */
       + p->nVar*sizeof(Mem)                          /* apVar */
     );
     p->apArg = (Mem **)&p->aStack[n];
-    p->azColName = (char**)&p->apArg[n];
-    p->apVar = (Mem *)&p->azColName[n];
+    p->apVar = (Mem *)&p->apArg[n];
     for(n=0; n<p->nVar; n++){
       p->apVar[n].flags = MEM_Null;
     }
@@ -1382,15 +1374,15 @@ void sqlite3VdbeDelete(Vdbe *p){
   for(i=0; i<p->nVar; i++){
     sqlite3VdbeMemRelease(&p->apVar[i]);
   }
-  if( p->azColName16 ){
-    for(i=0; i<p->nResColumn; i++){
-      if( p->azColName16[i] ) sqliteFree(p->azColName16[i]);
-    }
-    sqliteFree(p->azColName16);
-  }
   sqliteFree(p->aOp);
   sqliteFree(p->aLabel);
   sqliteFree(p->aStack);
+  if( p->aColName ){
+    for(i=0; i<(p->nResColumn)*2; i++){
+      sqlite3VdbeMemRelease(&(p->aColName[i]));
+    }
+    sqliteFree(p->aColName);
+  }
   p->magic = VDBE_MAGIC_DEAD;
   sqliteFree(p);
 }
