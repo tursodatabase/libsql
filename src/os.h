@@ -115,6 +115,7 @@ int sqliteOsRandomSeed(char*);
 int sqliteOsSleep(int ms);
 void sqliteOsEnterMutex(void);
 void sqliteOsLeaveMutex(void);
+char *sqliteOsFullPathname(const char*);
 
 
 

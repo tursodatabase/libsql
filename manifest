@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\sreverse\sscan\slogic\sthat\scomes\sup\swhen\sthe\stable\sbeing\nscanned\sis\sempty.\s\sAdd\sadditional\stests\sfor\sthe\sreverse\sscan.\s(CVS\s797)
-D 2002-12-04T22:29:28
+C Save\sthe\sfull\spathname\sof\sthe\sdatabase\sfile\sso\sthat\sjournalling\sstill\sworks\neven\sif\sthe\suser\schanges\sworking\sdirectories\safter\sopening\sthe\sdatabae.\nTicket\s#200.\s(CVS\s798)
+D 2002-12-07T21:45:14
 F Makefile.in 868c17a1ae1c07603d491274cc8f86c04acf2a1e
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -30,9 +30,9 @@ F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
 F src/insert.c 764300a0bd8074a2174946c0bf8a550bd833397a
 F src/main.c cee05c2ba23b5e78f9671f319dbd68e2130e0f68
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
-F src/os.c cb829aa53e0af81336876a905ce1064f22749277
-F src/os.h b7b79563fc55c6d58b703c88ade9ab1504c48bba
-F src/pager.c 76a6e5a1d02e3ca5f5b8b22798844436349c2620
+F src/os.c 740022806209e44cab0abddfb1fee65c77702e21
+F src/os.h 09fd96b4d733aae2f3b98b2ae9ceea40b8fd780d
+F src/pager.c 0cbbde8bc4a16a6fc6b17fb7a08789391baa3d2d
 F src/pager.h 540833e8cb826b80ce2e39aa917deee5e12db626
 F src/parse.y 469c9636ff713e63c00234662209f11668671ae9
 F src/printf.c 5c50fc1da75c8f5bf432b1ad17d91d6653acd167
@@ -82,7 +82,7 @@ F test/main.test c66b564554b770ee7fdbf6a66c0cd90329bc2c85
 F test/malloc.test 7ba32a9ebd3aeed52ae4aaa6d42ca37e444536fd
 F test/memleak.test b4f59aa44488793b00feff2011d77d0f05b22468
 F test/minmax.test 29bc5727c3e4c792d5c4745833dd4b505905819e
-F test/misc1.test 3c4672069c430d0f21c23385e78ea4e063183aa5
+F test/misc1.test 828ea289e37d396432064ab23d2efc6ce660a0f9
 F test/misuse.test a3aa2b18a97e4c409a1fcaff5151a4dd804a0162
 F test/notnull.test b1f3e42fc475b0b5827b27b2e9b562081995ff30
 F test/null.test 5c2b57307e4b6178aae825eb65ddbee01e76b0fd
@@ -152,7 +152,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P bfb9a2aa939ecffc5dc2c7c23bddd57d357bdf13
-R e8e5bb54da6e21aac3b570ab92f52726
+P 0051c87d5e8d07fae09da2eb7b0d8cbd1bbd3c8e
+R 1755863d930db2fe172862e1ab561a27
 U drh
-Z ef156328459f096ede699892581cbeef
+Z 6749b35c841c31daf6e1b7e300d04efa

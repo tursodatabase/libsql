@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc1.test,v 1.16 2002/10/22 23:38:04 drh Exp $
+# $Id: misc1.test,v 1.17 2002/12/07 21:45:14 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -439,5 +439,25 @@ do_test misc1-13.1 {
      ;
    }
 } {1 2 3 4 5 6 7 8 9 10 11}
+
+# Make sure a database connection still works after changing the
+# working directory.
+#
+do_test misc1-14.1 {
+  file mkdir tempdir
+  cd tempdir
+  execsql {BEGIN}
+  file exists ./test.db-journal
+} {0}
+do_test misc1-14.2 {
+  file exists ../test.db-journal
+} {1}
+do_test misc1-14.3 {
+  cd ..
+  file delete tempdir
+  execsql {COMMIT}
+  file exists ./test.db-journal
+} {0}
+
 
 finish_test

@@ -20,6 +20,7 @@
 #if OS_UNIX
 # include <time.h>
 # include <errno.h>
+# include <unistd.h>
 # ifndef O_LARGEFILE
 #  define O_LARGEFILE 0
 # endif
@@ -968,5 +969,34 @@ void sqliteOsLeaveMutex(){
 #endif
 #ifdef SQLITE_W32_THREADS
   LeaveCriticalSection(&cs);
+#endif
+}
+
+/*
+** Turn a relative pathname into a full pathname.  Return a pointer
+** to the full pathname stored in space obtained from sqliteMalloc().
+** The calling function is responsible for freeing this space once it
+** is no longer needed.
+*/
+char *sqliteOsFullPathname(const char *zRelative){
+#if OS_UNIX
+  char *zFull = 0;
+  if( zRelative[0]=='/' ){
+    sqliteSetString(&zFull, zRelative, 0);
+  }else{
+    char zBuf[5000];
+    sqliteSetString(&zFull, getcwd(zBuf, sizeof(zBuf)), "/", zRelative, 0);
+  }
+  return zFull;
+#endif
+#if OS_WIN
+  char *zNotUsed;
+  char *zFull;
+  int nByte;
+  nByte = GetFullPathName(zRelative, 0, 0, &zNotUsed);
+  zFull = sqliteMalloc( nByte );
+  if( zFull==0 ) return 0;
+  GetFullPathName(zRelative, nByte, zFull, &zNotUsed);
+  return zFull;
 #endif
 }
