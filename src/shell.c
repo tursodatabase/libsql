@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.71 2003/04/24 01:45:04 drh Exp $
+** $Id: shell.c,v 1.72 2003/04/26 02:50:11 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -46,6 +46,10 @@
 # define write_history(X)
 # define stifle_history(X)
 #endif
+
+/* Make sure isatty() has a prototype.
+*/
+extern int isatty();
 
 /*
 ** The following is the open SQLite database.  We make a pointer
@@ -1046,7 +1050,7 @@ static void process_sqliterc(struct callback_data *p, char *sqliterc_override){
     free(home_dir);
   }
   in = fopen(sqliterc,"r");
-  if(in) {
+  if(in && isatty(fileno(stdout))) {
     printf("Loading resources from %s\n",sqliterc);
     process_input(p,in);
     fclose(in);
@@ -1182,7 +1186,6 @@ int main(int argc, char **argv){
       }
     }
   }else{
-    extern int isatty();
     if( isatty(fileno(stdout)) && isatty(fileno(stdin)) ){
       char *zHome;
       char *zHistory = 0;

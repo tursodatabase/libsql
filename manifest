@@ -1,5 +1,5 @@
-C Do\snot\suse\sthe\sreturn\svalue\sof\sfcntl()\sto\sfind\sthe\sreason\sthat\sit\sfailed.\nUse\serrno\sinstead.\s\sTickets\s#240\sand\s#270.\s(CVS\s938)
-D 2003-04-26T02:40:46
+C Only\sprint\sthe\s"Loading\sresources\sfrom..."\sline\swhen\sthe\soutput\sis\sa\sTTY.\nTicket\s#168.\s(CVS\s939)
+D 2003-04-26T02:50:11
 F Makefile.in 004acec253ecdde985c8ecd5b7c9accdb210378f
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -44,7 +44,7 @@ F src/pragma.c 118fe400d71b7fdcc03580d5eab6bb5aa00772a5
 F src/printf.c fc5fdef6e92ad205005263661fe9716f55a49f3e
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c dfc13cb62ba658c4463179713c40ee25a062b2ba
-F src/shell.c e0b3da1f44a2cc72daf41a4559b1c5f0545944a5
+F src/shell.c 137f4a1e3abe9da97c32d07f78fb0d60e4764fe2
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in eec06462cba262c0ee03f38462a18a4bc66dda4e
 F src/sqliteInt.h 0c7474068c37a5aad715810c8190266edcbd4f4c
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P ef8eb580fc6c40264219c2ae77a9c4f8a5803c8b
-R e86b06a4b413666c1f895712f391807b
+P acf9e9802fa6396df5653ca4e72ab4ec2333509d
+R 73d63156ebfdfb609f263f8398d35bd9
 U drh
-Z 8654835c776b49a833197d06e3c9c492
+Z dce4473556dffe669a617d39555a8689
