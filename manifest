@@ -1,5 +1,5 @@
-C Make\ssqlite_encode_binary()\sand\ssqlite_decode_binary()\san\sofficial\spart\sof\nthe\slibrary.\s(CVS\s1295)
-D 2004-03-14T22:12:00
+C Prototypes\sfor\ssqlite_encode_binary()\sand\ssqlite_decode_binary()\sadded\nto\ssqlite.h.\s(CVS\s1296)
+D 2004-03-14T22:12:35
 F Makefile.in 46788b65500865e3fd965f7617d41697da8a11a1
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -48,7 +48,7 @@ F src/printf.c 8c58b7b6d4069eec6ebe2d46bdbc3a89a367bf95
 F src/random.c 775913e0b7fbd6295d21f12a7bd35b46387c44b2
 F src/select.c 3833e2b64cc6d249385ee44e13bf49c9ae5b903d
 F src/shell.c 01fdfff666631cfe7f8047cfe9a8a62e56b37b50
-F src/sqlite.h.in 01a7009223517d151da9780b0bb7b748777015dd
+F src/sqlite.h.in 35bec264dfb4965bbfeb7e75221f8658f210c30d
 F src/sqliteInt.h 235ce244b62bb26cc9ab394fb7a0724dd4e65c83
 F src/table.c d845cb101b5afc1f7fea083c99e3d2fa7998d895
 F src/tclsqlite.c 819d92d305756c4ea57de023c387d2fa8a256aff
@@ -188,7 +188,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P c661cc81b6981c536c107f40525ad9783b11ea82
-R 53b6160aa94d763507d1d66642e02dba
+P 786fe545560ec6c42bb0e344345031f425bf177a
+R d729397c0158d66009dcf358bf1f1b23
 U drh
-Z 751dfdf95f809133e2f24efbf8215847
+Z f444412b61c00a5e3edfa94afd51e12b
