@@ -20,7 +20,7 @@
 # cursor pointing at the first entry past the one that was deleted.
 # This test is designed to verify that behavior.
 #
-# $Id: btree3.test,v 1.1 2001/11/23 00:24:12 drh Exp $
+# $Id: btree3.test,v 1.2 2002/12/04 13:40:27 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -47,7 +47,7 @@ for {set k 2} {$k<=10} {incr k} {
     set jkey [format %02d $j]
     btree_clear_table $::b1 2
     set ::c1 [btree_cursor $::b1 2 1]
-    for {set i 1} {$i<=$k+1} {incr i} {
+    for {set i 1} {$i<=$k} {incr i} {
       set key [format %02d $i]
       do_test btree3-$k.$j.1.$i {
         btree_insert $::c1 $::key $::data
@@ -61,10 +61,18 @@ for {set k 2} {$k<=10} {incr k} {
     do_test btree3-$k.$j.3 {
       btree_delete $::c1
     } {}
-    do_test btree3-$k.$j.4 {
-      btree_next $::c1
-      btree_key $::c1
-    } [format %02d [expr $j+1]]
+    if {$j<$k} {
+      do_test btree3-$k.$j.4 {
+        btree_next $::c1
+        btree_key $::c1
+      } [format %02d [expr $j+1]]
+    }
+    if {$j>1} {
+      do_test btree3-$k.$j.5 {
+        btree_prev $::c1
+        btree_key $::c1
+      } [format %02d [expr $j-1]]
+    }
     btree_close_cursor $::c1
   }
 }

@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test3.c,v 1.21 2002/12/02 04:25:21 drh Exp $
+** $Id: test3.c,v 1.22 2002/12/04 13:40:26 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -660,7 +660,9 @@ static int btree_insert(
 /*
 ** Usage:   btree_next ID
 **
-** Move the cursor to the next entry in the table.
+** Move the cursor to the next entry in the table.  Return 0 on success
+** or 1 if the cursor was already on the last entry in the table or if
+** the table is empty.
 */
 static int btree_next(
   void *NotUsed,
@@ -690,9 +692,44 @@ static int btree_next(
 }
 
 /*
+** Usage:   btree_prev ID
+**
+** Move the cursor to the previous entry in the table.  Return 0 on
+** success and 1 if the cursor was already on the first entry in
+** the table or if the table was empty.
+*/
+static int btree_prev(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  const char **argv      /* Text of each argument */
+){
+  BtCursor *pCur;
+  int rc;
+  int res = 0;
+  char zBuf[100];
+
+  if( argc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+       " ID\"", 0);
+    return TCL_ERROR;
+  }
+  if( Tcl_GetInt(interp, argv[1], (int*)&pCur) ) return TCL_ERROR;
+  rc = sqliteBtreePrevious(pCur, &res);
+  if( rc ){
+    Tcl_AppendResult(interp, errorName(rc), 0);
+    return TCL_ERROR;
+  }
+  sprintf(zBuf,"%d",res);
+  Tcl_AppendResult(interp, zBuf, 0);
+  return SQLITE_OK;
+}
+
+/*
 ** Usage:   btree_first ID
 **
-** Move the cursor to the first entry in the table.
+** Move the cursor to the first entry in the table.  Return 0 if the
+** cursor was left point to something and 1 if the table is empty.
 */
 static int btree_first(
   void *NotUsed,
@@ -712,6 +749,39 @@ static int btree_first(
   }
   if( Tcl_GetInt(interp, argv[1], (int*)&pCur) ) return TCL_ERROR;
   rc = sqliteBtreeFirst(pCur, &res);
+  if( rc ){
+    Tcl_AppendResult(interp, errorName(rc), 0);
+    return TCL_ERROR;
+  }
+  sprintf(zBuf,"%d",res);
+  Tcl_AppendResult(interp, zBuf, 0);
+  return SQLITE_OK;
+}
+
+/*
+** Usage:   btree_last ID
+**
+** Move the cursor to the last entry in the table.  Return 0 if the
+** cursor was left point to something and 1 if the table is empty.
+*/
+static int btree_last(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  const char **argv      /* Text of each argument */
+){
+  BtCursor *pCur;
+  int rc;
+  int res = 0;
+  char zBuf[100];
+
+  if( argc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+       " ID\"", 0);
+    return TCL_ERROR;
+  }
+  if( Tcl_GetInt(interp, argv[1], (int*)&pCur) ) return TCL_ERROR;
+  rc = sqliteBtreeLast(pCur, &res);
   if( rc ){
     Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;
@@ -900,10 +970,12 @@ int Sqlitetest3_Init(Tcl_Interp *interp){
      { "btree_delete",             (Tcl_CmdProc*)btree_delete             },
      { "btree_insert",             (Tcl_CmdProc*)btree_insert             },
      { "btree_next",               (Tcl_CmdProc*)btree_next               },
+     { "btree_prev",               (Tcl_CmdProc*)btree_prev               },
      { "btree_key",                (Tcl_CmdProc*)btree_key                },
      { "btree_data",               (Tcl_CmdProc*)btree_data               },
      { "btree_payload_size",       (Tcl_CmdProc*)btree_payload_size       },
      { "btree_first",              (Tcl_CmdProc*)btree_first              },
+     { "btree_last",               (Tcl_CmdProc*)btree_last               },
      { "btree_cursor_dump",        (Tcl_CmdProc*)btree_cursor_dump        },
      { "btree_integrity_check",    (Tcl_CmdProc*)btree_integrity_check    },
   };

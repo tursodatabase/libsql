@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: all.test,v 1.17 2002/08/24 18:24:57 drh Exp $
+# $Id: all.test,v 1.18 2002/12/04 13:40:27 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -22,6 +22,24 @@ if {[file exists ./sqlite_test_count]} {
 } else {
   set COUNT 4
 }
+
+if {[llength $argv]>0} {
+  foreach {name value} $argv {
+    switch -- $name {
+      -count {
+         set COUNT $value
+      }
+      -quick {
+         set ISQUICK $value
+      }
+      default {
+         puts stderr "Unknown option: $name"
+         exit
+      }
+    }
+  }
+}
+set argv {}
 
 # LeakList will hold a list of the number of unfreed mallocs after
 # each round of the test.  This number should be constant.  If it

@@ -38,7 +38,16 @@ do_test fkey1-1.1 {
     );
   }
 } {}
-
+do_test fkey1-1.2 {
+  execsql {
+    CREATE TABLE t3(
+      a INTEGER REFERENCES t2,
+      b INTEGER REFERENCES t1,
+      FOREIGN KEY (a,b) REFERENCES t2(x,y)
+    );
+  }
+} {}
+   
 
 
 finish_test

@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.73 2002/12/02 04:25:20 drh Exp $
+** $Id: btree.c,v 1.74 2002/12/04 13:40:26 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -361,9 +361,17 @@ struct BtCursor {
   MemPage *pPage;           /* Page that contains the entry */
   int idx;                  /* Index of the entry in pPage->apCell[] */
   u8 wrFlag;                /* True if writable */
-  u8 bSkipNext;             /* sqliteBtreeNext() is no-op if true */
+  u8 eSkip;                 /* Determines if next step operation is a no-op */
   u8 iMatch;                /* compare result from last sqliteBtreeMoveto() */
 };
+
+/*
+** Legal values for BtCursor.eSkip.
+*/
+#define SKIP_NONE     0   /* Always step the cursor */
+#define SKIP_NEXT     1   /* The next sqliteBtreeNext() is a no-op */
+#define SKIP_PREV     2   /* The next sqliteBtreePrevious() is a no-op */
+#define SKIP_INVALID  3   /* Calls to Next() and Previous() are invalid */
 
 /*
 ** Routines for byte swapping.
@@ -1008,6 +1016,7 @@ int sqliteBtreeCursor(Btree *pBt, int iTable, int wrFlag, BtCursor **ppCur){
   pCur->pBt = pBt;
   pCur->wrFlag = wrFlag;
   pCur->idx = 0;
+  pCur->eSkip = SKIP_INVALID;
   pCur->pNext = pBt->pCursor;
   if( pCur->pNext ){
     pCur->pNext->pPrev = pCur;
@@ -1414,6 +1423,25 @@ static int moveToLeftmost(BtCursor *pCur){
   return SQLITE_OK;
 }
 
+/*
+** Move the cursor down to the right-most leaf entry beneath the
+** page to which it is currently pointing.  Notice the difference
+** between moveToLeftmost() and moveToRightmost().  moveToLeftmost()
+** finds the left-most entry beneath the *entry* whereas moveToRightmost()
+** finds the right-most entry beneath the *page*.
+*/
+static int moveToRightmost(BtCursor *pCur){
+  Pgno pgno;
+  int rc;
+
+  while( (pgno = pCur->pPage->u.hdr.rightChild)!=0 ){
+    rc = moveToChild(pCur, SWAB32(pCur->pBt, pgno));
+    if( rc ) return rc;
+  }
+  pCur->idx = pCur->pPage->nCell - 1;
+  return SQLITE_OK;
+}
+
 /* Move the cursor to the first entry in the table.  Return SQLITE_OK
 ** on success.  Set *pRes to 0 if the cursor actually points to something
 ** or set *pRes to 1 if the table is empty.
@@ -1429,7 +1457,7 @@ int sqliteBtreeFirst(BtCursor *pCur, int *pRes){
   }
   *pRes = 0;
   rc = moveToLeftmost(pCur);
-  pCur->bSkipNext = 0;
+  pCur->eSkip = SKIP_NONE;
   return rc;
 }
 
@@ -1439,7 +1467,6 @@ int sqliteBtreeFirst(BtCursor *pCur, int *pRes){
 */
 int sqliteBtreeLast(BtCursor *pCur, int *pRes){
   int rc;
-  Pgno pgno;
   if( pCur->pPage==0 ) return SQLITE_ABORT;
   rc = moveToRoot(pCur);
   if( rc ) return rc;
@@ -1449,12 +1476,8 @@ int sqliteBtreeLast(BtCursor *pCur, int *pRes){
     return SQLITE_OK;
   }
   *pRes = 0;
-  while( (pgno = pCur->pPage->u.hdr.rightChild)!=0 ){
-    rc = moveToChild(pCur, SWAB32(pCur->pBt, pgno));
-    if( rc ) return rc;
-  }
-  pCur->idx = pCur->pPage->nCell-1;
-  pCur->bSkipNext = 0;
+  rc = moveToRightmost(pCur);
+  pCur->eSkip = SKIP_NONE;
   return rc;
 }
 
@@ -1483,7 +1506,7 @@ int sqliteBtreeLast(BtCursor *pCur, int *pRes){
 int sqliteBtreeMoveto(BtCursor *pCur, const void *pKey, int nKey, int *pRes){
   int rc;
   if( pCur->pPage==0 ) return SQLITE_ABORT;
-  pCur->bSkipNext = 0;
+  pCur->eSkip = SKIP_NONE;
   rc = moveToRoot(pCur);
   if( rc ) return rc;
   for(;;){
@@ -1539,11 +1562,18 @@ int sqliteBtreeNext(BtCursor *pCur, int *pRes){
     return SQLITE_ABORT;
   }
   assert( pCur->pPage->isInit );
-  if( pCur->bSkipNext && pCur->idx<pCur->pPage->nCell ){
-    pCur->bSkipNext = 0;
+  assert( pCur->eSkip!=SKIP_INVALID );
+  if( pCur->pPage->nCell==0 ){
+    if( pRes ) *pRes = 1;
+    return SQLITE_OK;
+  }
+  assert( pCur->idx<pCur->pPage->nCell );
+  if( pCur->eSkip==SKIP_NEXT ){
+    pCur->eSkip = SKIP_NONE;
     if( pRes ) *pRes = 0;
     return SQLITE_OK;
   }
+  pCur->eSkip = SKIP_NONE;
   pCur->idx++;
   if( pCur->idx>=pCur->pPage->nCell ){
     if( pCur->pPage->u.hdr.rightChild ){
@@ -1569,6 +1599,52 @@ int sqliteBtreeNext(BtCursor *pCur, int *pRes){
   if( rc ) return rc;
   if( pRes ) *pRes = 0;
   return SQLITE_OK;
+}
+
+/*
+** Step the cursor to the back to the previous entry in the database.  If
+** successful and pRes!=NULL then set *pRes=0.  If the cursor
+** was already pointing to the first entry in the database before
+** this routine was called, then set *pRes=1 if pRes!=NULL.
+*/
+int sqliteBtreePrevious(BtCursor *pCur, int *pRes){
+  int rc;
+  Pgno pgno;
+  if( pCur->pPage==0 ){
+    if( pRes ) *pRes = 1;
+    return SQLITE_ABORT;
+  }
+  assert( pCur->pPage->isInit );
+  assert( pCur->eSkip!=SKIP_INVALID );
+  if( pCur->pPage->nCell==0 ){
+    if( pRes ) *pRes = 1;
+    return SQLITE_OK;
+  }
+  if( pCur->eSkip==SKIP_PREV ){
+    pCur->eSkip = SKIP_NONE;
+    if( pRes ) *pRes = 0;
+    return SQLITE_OK;
+  }
+  pCur->eSkip = SKIP_NONE;
+  assert( pCur->idx>=0 );
+  if( (pgno = pCur->pPage->apCell[pCur->idx]->h.leftChild)!=0 ){
+    rc = moveToChild(pCur, SWAB32(pCur->pBt, pgno));
+    if( rc ) return rc;
+    rc = moveToRightmost(pCur);
+  }else{
+    while( pCur->idx==0 ){
+      if( pCur->pPage->pParent==0 ){
+        if( pRes ) *pRes = 1;
+        return SQLITE_OK;
+      }
+      rc = moveToParent(pCur);
+      if( rc ) return rc;
+    }
+    pCur->idx--;
+    rc = SQLITE_OK;
+  }
+  if( pRes ) *pRes = 0;
+  return rc;
 }
 
 /*
@@ -2485,6 +2561,7 @@ int sqliteBtreeInsert(
   rc = balance(pCur->pBt, pPage, pCur);
   /* sqliteBtreePageDump(pCur->pBt, pCur->pgnoRoot, 1); */
   /* fflush(stdout); */
+  pCur->eSkip = SKIP_INVALID;
   return rc;
 }
 
@@ -2493,10 +2570,14 @@ int sqliteBtreeInsert(
 **
 ** The cursor is left pointing at either the next or the previous
 ** entry.  If the cursor is left pointing to the next entry, then 
-** the pCur->bSkipNext flag is set which forces the next call to 
+** the pCur->eSkip flag is set to SKIP_NEXT which forces the next call to 
 ** sqliteBtreeNext() to be a no-op.  That way, you can always call
 ** sqliteBtreeNext() after a delete and the cursor will be left
-** pointing to the first entry after the deleted entry.
+** pointing to the first entry after the deleted entry.  Similarly,
+** pCur->eSkip is set to SKIP_PREV is the cursor is left pointing to
+** the entry prior to the deleted entry so that a subsequent call to
+** sqliteBtreePrevious() will always leave the cursor pointing at the
+** entry immediately before the one that was deleted.
 */
 int sqliteBtreeDelete(BtCursor *pCur){
   MemPage *pPage = pCur->pPage;
@@ -2553,7 +2634,7 @@ int sqliteBtreeDelete(BtCursor *pCur){
     insertCell(pBt, pPage, pCur->idx, pNext, szNext);
     rc = balance(pBt, pPage, pCur);
     if( rc ) return rc;
-    pCur->bSkipNext = 1;
+    pCur->eSkip = SKIP_NEXT;
     dropCell(pBt, leafCur.pPage, leafCur.idx, szNext);
     rc = balance(pBt, leafCur.pPage, pCur);
     releaseTempCursor(&leafCur);
@@ -2563,12 +2644,12 @@ int sqliteBtreeDelete(BtCursor *pCur){
       pCur->idx = pPage->nCell-1;
       if( pCur->idx<0 ){ 
         pCur->idx = 0;
-        pCur->bSkipNext = 1;
+        pCur->eSkip = SKIP_NEXT;
       }else{
-        pCur->bSkipNext = 0;
+        pCur->eSkip = SKIP_PREV;
       }
     }else{
-      pCur->bSkipNext = 1;
+      pCur->eSkip = SKIP_NEXT;
     }
     rc = balance(pBt, pPage, pCur);
   }
