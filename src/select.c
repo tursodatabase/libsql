@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.55 2002/01/22 14:11:29 drh Exp $
+** $Id: select.c,v 1.56 2002/01/28 15:53:05 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -130,7 +130,7 @@ static int selectInnerLoop(
     sqliteVdbeAddOp(v, OP_Goto, 0, iContinue);
     sqliteVdbeResolveLabel(v, lbl);
     sqliteVdbeAddOp(v, OP_String, 0, 0);
-    sqliteVdbeAddOp(v, OP_Put, distinct, 0);
+    sqliteVdbeAddOp(v, OP_PutStrKey, distinct, 0);
   }
 
   /* If there is an ORDER BY clause, then store the results
@@ -158,7 +158,7 @@ static int selectInnerLoop(
   if( eDest==SRT_Union ){
     sqliteVdbeAddOp(v, OP_MakeRecord, nColumn, 0);
     sqliteVdbeAddOp(v, OP_String, iParm, 0);
-    sqliteVdbeAddOp(v, OP_Put, iParm, 0);
+    sqliteVdbeAddOp(v, OP_PutStrKey, iParm, 0);
   }else 
 
   /* Store the result as data using a unique key.
@@ -167,7 +167,7 @@ static int selectInnerLoop(
     sqliteVdbeAddOp(v, OP_MakeRecord, nColumn, 0);
     sqliteVdbeAddOp(v, OP_NewRecno, iParm, 0);
     sqliteVdbeAddOp(v, OP_Pull, 1, 0);
-    sqliteVdbeAddOp(v, OP_Put, iParm, 0);
+    sqliteVdbeAddOp(v, OP_PutIntKey, iParm, 0);
   }else 
 
   /* Construct a record from the query result, but instead of
@@ -187,7 +187,7 @@ static int selectInnerLoop(
   if( eDest==SRT_Set ){
     assert( nColumn==1 );
     sqliteVdbeAddOp(v, OP_String, 0, 0);
-    sqliteVdbeAddOp(v, OP_Put, iParm, 0);
+    sqliteVdbeAddOp(v, OP_PutStrKey, iParm, 0);
   }else 
 
 

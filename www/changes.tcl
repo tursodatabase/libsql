@@ -17,6 +17,13 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2002 Jan 28 (2.2.5)} {
+<li>Important bug fix: the IN operator was not working if either the
+    left-hand or right-hand side was derived from an INTEGER PRIMARY KEY.</li>
+<li>Do not escape the backslash '\' character in the output of the
+    <b>sqlite</b> command-line access program.</li>
+}
+
 chng {2002 Jan 22 (2.2.4)} {
 <li>The label to the right of an AS in the column list of a SELECT can now
     be used as part of an expression in the WHERE, ORDER BY, GROUP BY, and/or

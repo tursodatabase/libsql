@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.65 2002/01/22 03:13:42 drh Exp $
+** $Id: build.c,v 1.66 2002/01/28 15:53:05 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -730,7 +730,7 @@ void sqliteEndTable(Parse *pParse, Token *pEnd){
       addr = sqliteVdbeAddOp(v, OP_String, 0, 0);
       sqliteVdbeChangeP3(v, addr, pParse->sFirstToken.z, n);
       sqliteVdbeAddOp(v, OP_MakeRecord, 5, 0);
-      sqliteVdbeAddOp(v, OP_Put, 0, 0);
+      sqliteVdbeAddOp(v, OP_PutIntKey, 0, 0);
       changeCookie(db);
       sqliteVdbeAddOp(v, OP_SetCookie, db->next_cookie, 0);
       sqliteVdbeAddOp(v, OP_Close, 0, 0);
@@ -1074,7 +1074,7 @@ void sqliteCreateIndex(
         sqliteVdbeChangeP3(v, addr, pStart->z, n);
       }
       sqliteVdbeAddOp(v, OP_MakeRecord, 5, 0);
-      sqliteVdbeAddOp(v, OP_Put, 0, 0);
+      sqliteVdbeAddOp(v, OP_PutIntKey, 0, 0);
     }
     if( pTable ){
       sqliteVdbeAddOp(v, isTemp ? OP_OpenAux : OP_Open, 2, pTab->tnum);
@@ -1383,7 +1383,7 @@ void sqliteCopy(
       }
     }
     sqliteVdbeAddOp(v, OP_MakeRecord, pTab->nCol, 0);
-    sqliteVdbeAddOp(v, OP_Put, 0, 0);
+    sqliteVdbeAddOp(v, OP_PutIntKey, 0, 0);
     for(i=1, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
       if( pIdx->pNext ){
         sqliteVdbeAddOp(v, OP_Dup, 0, 0);

@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.107 2002/01/16 21:00:27 drh Exp $
+** $Id: vdbe.c,v 1.108 2002/01/28 15:53:05 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -852,31 +852,32 @@ static char *zOpName[] = { 0,
   "Transaction",       "Commit",            "Rollback",          "ReadCookie",
   "SetCookie",         "VerifyCookie",      "Open",              "OpenTemp",
   "OpenWrite",         "OpenAux",           "OpenWrAux",         "Close",
-  "MoveTo",            "NewRecno",          "Put",               "Distinct",
-  "Found",             "NotFound",          "Delete",            "Column",
-  "KeyAsData",         "Recno",             "FullKey",           "Rewind",
-  "Next",              "Destroy",           "Clear",             "CreateIndex",
-  "CreateTable",       "Reorganize",        "IdxPut",            "IdxDelete",
-  "IdxRecno",          "IdxGT",             "IdxGE",             "MemLoad",
-  "MemStore",          "ListWrite",         "ListRewind",        "ListRead",
-  "ListReset",         "SortPut",           "SortMakeRec",       "SortMakeKey",
-  "Sort",              "SortNext",          "SortCallback",      "SortReset",
-  "FileOpen",          "FileRead",          "FileColumn",        "AggReset",
-  "AggFocus",          "AggIncr",           "AggNext",           "AggSet",
-  "AggGet",            "SetInsert",         "SetFound",          "SetNotFound",
-  "MakeRecord",        "MakeKey",           "MakeIdxKey",        "IncrKey",
-  "Goto",              "If",                "Halt",              "ColumnCount",
-  "ColumnName",        "Callback",          "NullCallback",      "Integer",
-  "String",            "Pop",               "Dup",               "Pull",
-  "MustBeInt",         "Add",               "AddImm",            "Subtract",
-  "Multiply",          "Divide",            "Remainder",         "BitAnd",
-  "BitOr",             "BitNot",            "ShiftLeft",         "ShiftRight",
-  "AbsValue",          "Precision",         "Min",               "Max",
-  "Like",              "Glob",              "Eq",                "Ne",
-  "Lt",                "Le",                "Gt",                "Ge",
-  "IsNull",            "NotNull",           "Negative",          "And",
-  "Or",                "Not",               "Concat",            "Noop",
-  "Strlen",            "Substr",            "Limit",           
+  "MoveTo",            "NewRecno",          "PutIntKey",         "PutStrKey",
+  "Distinct",          "Found",             "NotFound",          "NotExists",
+  "Delete",            "Column",            "KeyAsData",         "Recno",
+  "FullKey",           "Rewind",            "Next",              "Destroy",
+  "Clear",             "CreateIndex",       "CreateTable",       "Reorganize",
+  "IdxPut",            "IdxDelete",         "IdxRecno",          "IdxGT",
+  "IdxGE",             "MemLoad",           "MemStore",          "ListWrite",
+  "ListRewind",        "ListRead",          "ListReset",         "SortPut",
+  "SortMakeRec",       "SortMakeKey",       "Sort",              "SortNext",
+  "SortCallback",      "SortReset",         "FileOpen",          "FileRead",
+  "FileColumn",        "AggReset",          "AggFocus",          "AggIncr",
+  "AggNext",           "AggSet",            "AggGet",            "SetInsert",
+  "SetFound",          "SetNotFound",       "MakeRecord",        "MakeKey",
+  "MakeIdxKey",        "IncrKey",           "Goto",              "If",
+  "Halt",              "ColumnCount",       "ColumnName",        "Callback",
+  "NullCallback",      "Integer",           "String",            "Pop",
+  "Dup",               "Pull",              "MustBeInt",         "Add",
+  "AddImm",            "Subtract",          "Multiply",          "Divide",
+  "Remainder",         "BitAnd",            "BitOr",             "BitNot",
+  "ShiftLeft",         "ShiftRight",        "AbsValue",          "Precision",
+  "Min",               "Max",               "Like",              "Glob",
+  "Eq",                "Ne",                "Lt",                "Le",
+  "Gt",                "Ge",                "IsNull",            "NotNull",
+  "Negative",          "And",               "Or",                "Not",
+  "Concat",            "Noop",              "Strlen",            "Substr",
+  "Limit",           
 };
 
 /*
@@ -2645,7 +2646,7 @@ case OP_MoveTo: {
 
 /* Opcode: Distinct P1 P2 *
 **
-** Use the top of the stack as a key.  If a record with that key does
+** Use the top of the stack as a string key.  If a record with that key does
 ** not exist in the table of cursor P1, then jump to P2.  If the record
 ** does already exist, then fall thru.  The cursor is left pointing
 ** at the record if it exists. The key is not popped from the stack.
@@ -2657,7 +2658,7 @@ case OP_MoveTo: {
 */
 /* Opcode: Found P1 P2 *
 **
-** Use the top of the stack as a key.  If a record with that key
+** Use the top of the stack as a string key.  If a record with that key
 ** does exist in table of P1, then jump to P2.  If the record
 ** does not exist, then fall thru.  The cursor is left pointing
 ** to the record if it exists.  The key is popped from the stack.
@@ -2666,7 +2667,7 @@ case OP_MoveTo: {
 */
 /* Opcode: NotFound P1 P2 *
 **
-** Use the top of the stack as a key.  If a record with that key
+** Use the top of the stack as a string key.  If a record with that key
 ** does not exist in table of P1, then jump to P2.  If the record
 ** does exist, then fall thru.  The cursor is left pointing to the
 ** record if it exists.  The key is popped from the stack.
@@ -2674,7 +2675,7 @@ case OP_MoveTo: {
 ** The difference between this operation and Distinct is that
 ** Distinct does not pop the key from the stack.
 **
-** See also: Distinct, Found, MoveTo
+** See also: Distinct, Found, MoveTo, NotExists
 */
 case OP_Distinct:
 case OP_NotFound:
@@ -2686,13 +2687,8 @@ case OP_Found: {
   VERIFY( if( tos<0 ) goto not_enough_stack; )
   if( VERIFY( i>=0 && i<p->nCursor && ) (pC = &p->aCsr[i])->pCursor!=0 ){
     int res, rx;
-    if( aStack[tos].flags & STK_Int ){
-      int iKey = intToKey(aStack[tos].i);
-      rx = sqliteBtreeMoveto(pC->pCursor, (char*)&iKey, sizeof(int), &res);
-    }else{
-      if( Stringify(p, tos) ) goto no_mem;
-      rx = sqliteBtreeMoveto(pC->pCursor, zStack[tos], aStack[tos].n, &res);
-    }
+    if( Stringify(p, tos) ) goto no_mem;
+    rx = sqliteBtreeMoveto(pC->pCursor, zStack[tos], aStack[tos].n, &res);
     alreadyExists = rx==SQLITE_OK && res==0;
   }
   if( pOp->opcode==OP_Found ){
@@ -2703,6 +2699,38 @@ case OP_Found: {
   if( pOp->opcode!=OP_Distinct ){
     POPSTACK;
   }
+  break;
+}
+
+/* Opcode: NotExists P1 P2 *
+**
+** Use the top of the stack as a integer key.  If a record with that key
+** does not exist in table of P1, then jump to P2.  If the record
+** does exist, then fall thru.  The cursor is left pointing to the
+** record if it exists.  The integer key is popped from the stack.
+**
+** The difference between this operation and NotFound is that this
+** operation assumes the key is an integer and NotFound assumes it
+** is a string.
+**
+** See also: Distinct, Found, MoveTo, NotExists
+*/
+case OP_NotExists: {
+  int i = pOp->p1;
+  int tos = p->tos;
+  int alreadyExists = 0;
+  Cursor *pC;
+  VERIFY( if( tos<0 ) goto not_enough_stack; )
+  if( VERIFY( i>=0 && i<p->nCursor && ) (pC = &p->aCsr[i])->pCursor!=0 ){
+    int res, rx, iKey;
+    assert( aStack[tos].flags & STK_Int );
+    iKey = intToKey(aStack[tos].i);
+    rx = sqliteBtreeMoveto(pC->pCursor, (char*)&iKey, sizeof(int), &res);
+    if( rx!=SQLITE_OK || res!=0 ){
+       pc = pOp->p2 - 1;
+    }
+  }
+  POPSTACK;
   break;
 }
 
@@ -2770,18 +2798,30 @@ case OP_NewRecno: {
   break;
 }
 
-/* Opcode: Put P1 P2 *
+/* Opcode: PutIK P1 P2 *
 **
 ** Write an entry into the database file P1.  A new entry is
 ** created if it doesn't already exist or the data for an existing
 ** entry is overwritten.  The data is the value on the top of the
-** stack.  The key is the next value down on the stack.  The stack
-** is popped twice by this instruction.
+** stack.  The key is the next value down on the stack.  The key must
+** be an integer.  The stack is popped twice by this instruction.
 **
 ** If P2==1 then overwriting is prohibited.  If a prior entry with
 ** the same key exists, an SQLITE_CONSTRAINT exception is raised.
 */
-case OP_Put: {
+/* Opcode: PutSK P1 P2 *
+**
+** Write an entry into the database file P1.  A new entry is
+** created if it doesn't already exist or the data for an existing
+** entry is overwritten.  The data is the value on the top of the
+** stack.  The key is the next value down on the stack.  The key must
+** be a string.  The stack is popped twice by this instruction.
+**
+** If P2==1 then overwriting is prohibited.  If a prior entry with
+** the same key exists, an SQLITE_CONSTRAINT exception is raised.
+*/
+case OP_PutIntKey:
+case OP_PutStrKey: {
   int tos = p->tos;
   int nos = p->tos-1;
   int i = pOp->p1;
@@ -2789,11 +2829,12 @@ case OP_Put: {
   if( VERIFY( i>=0 && i<p->nCursor && ) p->aCsr[i].pCursor!=0 ){
     char *zKey;
     int nKey, iKey;
-    if( (aStack[nos].flags & STK_Int)==0 ){
+    if( pOp->opcode==OP_PutStrKey ){
       if( Stringify(p, nos) ) goto no_mem;
       nKey = aStack[nos].n;
       zKey = zStack[nos];
     }else{
+      assert( aStack[nos].flags & STK_Int );
       nKey = sizeof(int);
       iKey = intToKey(aStack[nos].i);
       zKey = (char*)&iKey;
