@@ -1,5 +1,5 @@
-C Added\stests\sfor\sthe\sin-memory\sdatabase\sbackend.\s\sAlso\supdated\ssome\scomments\nin\sother\smodules.\s(CVS\s924)
-D 2003-04-20T17:29:24
+C Add\smore\stests\sfor\sthe\sin-memory\sdatabase.\s(CVS\s925)
+D 2003-04-20T23:45:23
 F Makefile.in 004acec253ecdde985c8ecd5b7c9accdb210378f
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -70,7 +70,9 @@ F test/bigrow.test 8ab252dba108f12ad64e337b0f2ff31a807ac578
 F test/btree.test 1e3463c7838e7e71bbf37c9c6e45beee9c8975ba
 F test/btree2.test e3b81ec33dc2f89b3e6087436dfe605b870c9080
 F test/btree3.test e597fb59be2ac0ea69c62aaa2064e998e528b665
+F test/btree3rb.test 127efcf5cdfcc352054e7db12622b01cdd8b36ac
 F test/btree4.test fa955a3d7a8bc91d6084b7f494f9e5d1bdfb15b6
+F test/btree4rb.test ae6f0438512edcb45cf483471cd6070a765963a9
 F test/capi2.test fb94bed9e236074c5e255cfd25e3e32344e24855
 F test/conflict.test 80cf3780c8686b92db4ce0f60bca46a000537327
 F test/copy.test 73df5ed3112e858e006a8b7ddb4c9bab6a25d0fb
@@ -91,7 +93,7 @@ F test/limit.test 9ffb965a0f5bf7152187ef3d8d1249b96e5620bf
 F test/lock.test 388a3a10962d2d571c0c1821cc35bf069ee73473
 F test/main.test 8108ac48302027bbe4296c30b913adbe6d5d984b
 F test/malloc.test 7ba32a9ebd3aeed52ae4aaa6d42ca37e444536fd
-F test/memdb.test 2ad45c3c3215822c588c0c823137821abd96bded
+F test/memdb.test 4494051bcf72df58d9c631a5bc1260cba2b021cc
 F test/memleak.test a18e6810cae96d2f6f5136920267adbefc8e1e90
 F test/minmax.test b54ac3bc45460a4976b08ef363e05c032418726e
 F test/misc1.test 865c907df58195364eaf2e69426e9674bc8d1a8c
@@ -163,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 921656db9e3df865aea6b1abe1bc40b1acbeeb47
-R 33f3fc945956a6408c6cd1e1bd368307
+P fb89adf4d1325c5ea471759ebfd8df7faa4f9a80
+R 5155025990322dc1039d8bac43cc6a4c
 U drh
-Z 30e6aaf687d966a7606c8c8a04b291ba
+Z 91bd6b460f5c66d00bbb9e74c7457add

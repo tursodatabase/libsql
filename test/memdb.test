@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is in-memory database backend.
 #
-# $Id: memdb.test,v 1.1 2003/04/20 17:29:25 drh Exp $
+# $Id: memdb.test,v 1.2 2003/04/20 23:45:23 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -355,9 +355,27 @@ do_test memdb-6.15 {
   }
 } {}
 
-
-
-
-
+do_test memdb-7.1 {
+  execsql {
+    CREATE TABLE t6(x);
+    INSERT INTO t6 VALUES(1);
+    INSERT INTO t6 SELECT x+1 FROM t6;
+    INSERT INTO t6 SELECT x+2 FROM t6;
+    INSERT INTO t6 SELECT x+4 FROM t6;
+    INSERT INTO t6 SELECT x+8 FROM t6;
+    INSERT INTO t6 SELECT x+16 FROM t6;
+    INSERT INTO t6 SELECT x+32 FROM t6;
+    INSERT INTO t6 SELECT x+64 FROM t6;
+    INSERT INTO t6 SELECT x+128 FROM t6;
+    SELECT count(*) FROM (SELECT DISTINCT x FROM t6);
+  }
+} {256}
+for {set i 1} {$i<=256} {incr i} {
+  do_test memdb-7.2.$i {
+     execsql "DELETE FROM t6 WHERE x=\
+              (SELECT x FROM t6 ORDER BY random() LIMIT 1)"
+     execsql {SELECT count(*) FROM t6}
+  } [expr {256-$i}]
+}
 
 finish_test
