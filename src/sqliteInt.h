@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.316 2004/08/21 17:54:45 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.317 2004/08/31 00:52:37 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1270,7 +1270,6 @@ void sqlite3UnlinkAndDeleteIndex(sqlite*,int,const char*);
 void sqlite3UnlinkAndDeleteTrigger(sqlite*,int,const char*);
 void sqlite3Vacuum(Parse*, Token*);
 int sqlite3RunVacuum(char**, sqlite*);
-int sqlite3GlobCompare(const unsigned char*,const unsigned char*);
 char *sqlite3NameFromToken(Token*);
 int sqlite3ExprCheck(Parse*, Expr*, int, int*);
 int sqlite3ExprCompare(Expr*, Expr*);
@@ -1354,7 +1353,7 @@ int sqlite3GetInt32(const char *, int*);
 int sqlite3FitsIn64Bits(const char *);
 int sqlite3utf16ByteLen(const void *pData, int nChar);
 int sqlite3utf8CharLen(const char *pData, int nByte);
-int sqlite3utf8LikeCompare(const unsigned char*, const unsigned char*);
+int sqlite3ReadUtf8(const unsigned char *);
 int sqlite3PutVarint(unsigned char *, u64);
 int sqlite3GetVarint(const unsigned char *, u64 *);
 int sqlite3GetVarint32(const unsigned char *, u32 *);
@@ -1388,5 +1387,6 @@ void sqlite3ValueSetStr(sqlite3_value*, int, const void *,u8, void(*)(void*));
 void sqlite3ValueFree(sqlite3_value*);
 sqlite3_value *sqlite3ValueNew();
 sqlite3_value *sqlite3GetTransientValue(sqlite *db);
+extern const unsigned char sqlite3UpperToLower[];
 
 #endif

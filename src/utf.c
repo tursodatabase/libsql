@@ -12,7 +12,7 @@
 ** This file contains routines used to translate between UTF-8, 
 ** UTF-16, UTF-16BE, and UTF-16LE.
 **
-** $Id: utf.c,v 1.27 2004/08/08 23:39:19 drh Exp $
+** $Id: utf.c,v 1.28 2004/08/31 00:52:37 drh Exp $
 **
 ** Notes on UTF-8:
 **
@@ -61,27 +61,6 @@
 #include <assert.h>
 #include "sqliteInt.h"
 #include "vdbeInt.h"
-
-/*
-** The following macro, LOWERCASE(x), takes an integer representing a
-** unicode code point. The value returned is the same code point folded to
-** lower case, if applicable. SQLite currently understands the upper/lower
-** case relationship between the 26 characters used in the English
-** language only.
-**
-** This means that characters with umlauts etc. will not be folded
-** correctly (unless they are encoded as composite characters, which would
-** doubtless cause much trouble).
-*/
-#define LOWERCASE(x) (x<91?(int)(UpperToLower[x]):x)
-static unsigned char UpperToLower[91] = {
-      0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17,
-     18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35,
-     36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53,
-     54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 97, 98, 99,100,101,102,103,
-    104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,
-    122,
-};
 
 /*
 ** This table maps from the first byte of a UTF-8 character to the number
@@ -140,6 +119,11 @@ static const int xtra_utf8_bits[4] =  {
     case 1: c = (c<<6) + *(zIn)++;                     \
     c -= xtra_utf8_bits[xtra];                         \
   }                                                    \
+}
+int sqlite3ReadUtf8(const unsigned char *z){
+  int c;
+  READ_UTF8(z, c);
+  return c;
 }
 
 #define SKIP_UTF8(zIn) {                               \
@@ -489,59 +473,6 @@ int sqlite3utf16ByteLen(const void *zIn, int nChar){
     }
   }
   return (z-(char const *)zIn)-((c==0)?2:0);
-}
-
-/*
-** Compare two UTF-8 strings for equality using the "LIKE" operator of
-** SQL.  The '%' character matches any sequence of 0 or more
-** characters and '_' matches any single character.  Case is
-** not significant.
-*/
-int sqlite3utf8LikeCompare(
-  const unsigned char *zPattern, 
-  const unsigned char *zString
-){
-  register int c;
-  int c2;
-
-  while( (c = LOWERCASE(*zPattern))!=0 ){
-    switch( c ){
-      case '%': {
-        while( (c=zPattern[1]) == '%' || c == '_' ){
-          if( c=='_' ){
-            if( *zString==0 ) return 0;
-            SKIP_UTF8(zString);
-          }
-          zPattern++;
-        }
-        if( c==0 ) return 1;
-        c = LOWERCASE(c);
-        while( (c2=LOWERCASE(*zString))!=0 ){
-          while( c2 != 0 && c2 != c ){ 
-            zString++;
-            c2 = LOWERCASE(*zString); 
-          }
-          if( c2==0 ) return 0;
-          if( sqlite3utf8LikeCompare(&zPattern[1],zString) ) return 1;
-          SKIP_UTF8(zString);
-        }
-        return 0;
-      }
-      case '_': {
-        if( *zString==0 ) return 0;
-        SKIP_UTF8(zString);
-        zPattern++;
-        break;
-      }
-      default: {
-        if( c != LOWERCASE(*zString) ) return 0;
-        zPattern++;
-        zString++;
-        break;
-      }
-    }
-  }
-  return *zString==0;
 }
 
 /*

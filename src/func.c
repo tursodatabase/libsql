@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.80 2004/08/08 20:22:18 drh Exp $
+** $Id: func.c,v 1.81 2004/08/31 00:52:37 drh Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -298,250 +298,145 @@ static void total_changes(
   sqlite3_result_int(context, sqlite3_total_changes(db));
 }
 
-#if 0
-
 /*
-** A LIKE pattern compiles to an instance of the following structure. Refer
-** to the comment for compileLike() function for details.
+** A structure defining how to do GLOB-style comparisons.
 */
-struct LikePattern {
-  int nState;
-  struct LikeState {
-    int val;           /* Unicode codepoint or -1 for any char i.e. '_' */
-    int failstate;     /* State to jump to if next char is not val */
-  } aState[1];
+struct compareInfo {
+  u8 matchAll;
+  u8 matchOne;
+  u8 matchSet;
+  u8 noCase;
 };
-typedef struct LikePattern LikePattern;
-
-void deleteLike(void *pLike){
-  sqliteFree(pLike);
-}
-/* #define TRACE_LIKE */
-#if defined(TRACE_LIKE) && !defined(NDEBUG)
-char *dumpLike(LikePattern *pLike){
-  int i;
-  int k = 0;
-  char *zBuf = (char *)sqliteMalloc(pLike->nState*40);
-  
-  k += sprintf(&zBuf[k], "%d states - ", pLike->nState);
-  for(i=0; i<pLike->nState; i++){
-    k += sprintf(&zBuf[k], " %d:(%d, %d)", i, pLike->aState[i].val,
-        pLike->aState[i].failstate);
-  }
-  return zBuf;
-}
-#endif
+static const struct compareInfo globInfo = { '*', '?', '[', 0 };
+static const struct compareInfo likeInfo = { '%', '_',   0, 1 };
 
 /*
-** This function compiles an SQL 'LIKE' pattern into a state machine, 
-** represented by a LikePattern structure.
-**
-** Each state of the state-machine has two attributes, 'val' and
-** 'failstate'. The val attribute is either the value of a unicode 
-** codepoint, or -1, indicating a '_' wildcard (match any single
-** character). The failstate is either the number of another state
-** or -1, indicating jump to 'no match'.
-**
-** To see if a string matches a pattern the pattern is
-** compiled to a state machine that is executed according to the algorithm
-** below. The string is assumed to be terminated by a 'NUL' character
-** (unicode codepoint 0).
-**
-** 1   S = 0
-** 2   DO 
-** 3       C = <Next character from input string>
-** 4       IF( C matches <State S val> )
-** 5           S = S+1
-** 6       ELSE IF( S != <State S failstate> )
-** 7           S = <State S failstate>
-** 8           <Rewind Input string 1 character>
-** 9   WHILE( (C != NUL) AND (S != FAILED) )
-** 10
-** 11  IF( S == <number of states> )
-** 12      RETURN MATCH
-** 13  ELSE
-** 14      RETURN NO-MATCH
-**       
-** In practice there is a small optimization to avoid the <Rewind>
-** operation in line 8 of the description above.
-**
-** For example, the following pattern, 'X%ABabc%_Y' is compiled to
-** the state machine below.
-**
-** State    Val          FailState
-** -------------------------------
-** 0        120 (x)      -1 (NO MATCH)
-** 1        97  (a)      1
-** 2        98  (b)      1
-** 3        97  (a)      1
-** 4        98  (b)      2
-** 5        99  (c)      3
-** 6        -1  (_)      6
-** 7        121 (y)      7
-** 8        0   (NUL)    7
-**
-** The algorithms implemented to compile and execute the state machine were
-** first presented in "Fast pattern matching in strings", Knuth, Morris and
-** Pratt, 1977.
-**       
+** X is a pointer to the first byte of a UTF-8 character.  Increment
+** X so that it points to the next character.  This only works right
+** if X points to a well-formed UTF-8 string.
 */
-LikePattern *compileLike(sqlite3_value *pPattern, u8 enc){
-  LikePattern *pLike;
-  struct LikeState *aState;
-  int pc_state = -1;    /* State number of previous '%' wild card */
-  int n = 0;
-  int c;
+#define sqliteNextChar(X)  while( (0xc0&*++(X))==0x80 ){}
+#define sqliteCharVal(X)   sqlite3ReadUtf8(X)
 
-  int offset = 0;
-  const char *zLike;
- 
-  if( enc==SQLITE_UTF8 ){
-    zLike = sqlite3_value_text(pPattern);
-    n = sqlite3_value_bytes(pPattern) + 1;
-  }else{
-    zLike = sqlite3_value_text16(pPattern);
-    n = sqlite3_value_bytes16(pPattern)/2 + 1;
-  }
-
-  pLike = (LikePattern *)
-      sqliteMalloc(sizeof(LikePattern)+n*sizeof(struct LikeState));
-  aState = pLike->aState;
-
-  n = 0;
-  do {
-    c = sqlite3ReadUniChar(zLike, &offset, &enc, 1);
-    if( c==95 ){        /* A '_' wildcard */
-      aState[n].val = -1;
-      n++;
-    }else if( c==37 ){  /* A '%' wildcard */
-      aState[n].failstate = n;
-      pc_state = n;
-    }else{              /* A regular character */
-      aState[n].val = c;
-
-      assert( pc_state<=n );
-      if( pc_state<0 ){
-        aState[n].failstate = -1;
-      }else if( pc_state==n ){
-        if( c ){
-          aState[n].failstate = pc_state;
-        }else{
-          aState[n].failstate = -2;
-        }
-      }else{
-        int k = pLike->aState[n-1].failstate;
-        while( k>pc_state && aState[k+1].val!=-1 && aState[k+1].val!=c ){
-          k = aState[k].failstate;
-        }
-        if( k!=pc_state && aState[k+1].val==c ){
-          assert( k==pc_state );
-          k++;
-        }
-        aState[n].failstate = k;
-      }
-      n++;
-    }
-  }while( c );
-  pLike->nState = n;
-#if defined(TRACE_LIKE) && !defined(NDEBUG)
-  {
-    char *zCompiled = dumpLike(pLike);
-    printf("Pattern=\"%s\" Compiled=\"%s\"\n", zPattern, zCompiled);
-    sqliteFree(zCompiled);
-  }
-#endif
-  return pLike;
-}
 
 /*
-** Implementation of the like() SQL function.  This function implements
-** the build-in LIKE operator.  The first argument to the function is the
-** pattern and the second argument is the string.  So, the SQL statements:
+** Compare two UTF-8 strings for equality where the first string can
+** potentially be a "glob" expression.  Return true (1) if they
+** are the same and false (0) if they are different.
 **
-**       A LIKE B
+** Globbing rules:
 **
-** is implemented as like(B,A).
+**      '*'       Matches any sequence of zero or more characters.
 **
-** If the pointer retrieved by via a call to sqlite3_user_data() is
-** not NULL, then this function uses UTF-16. Otherwise UTF-8.
+**      '?'       Matches exactly one character.
+**
+**     [...]      Matches one character from the enclosed list of
+**                characters.
+**
+**     [^...]     Matches one character not in the enclosed list.
+**
+** With the [...] and [^...] matching, a ']' character can be included
+** in the list by making it the first character after '[' or '^'.  A
+** range of characters can be specified using '-'.  Example:
+** "[a-z]" matches any single lower-case letter.  To match a '-', make
+** it the last character in the list.
+**
+** This routine is usually quick, but can be N**2 in the worst case.
+**
+** Hints: to match '*' or '?', put them in "[]".  Like this:
+**
+**         abc[*]xyz        Matches "abc*xyz" only
 */
-static void likeFunc(
-  sqlite3_context *context, 
-  int argc, 
-  sqlite3_value **argv
+int patternCompare(
+  const u8 *zPattern,              /* The glob pattern */
+  const u8 *zString,               /* The string to compare against the glob */
+  const struct compareInfo *pInfo  /* Information about how to do the compare */
 ){
   register int c;
-  u8 enc;
-  int offset = 0;
-  const unsigned char *zString;
-  LikePattern *pLike = sqlite3_get_auxdata(context, 0); 
-  struct LikeState *aState;
-  register struct LikeState *pState;
+  int invert;
+  int seen;
+  int c2;
+  u8 matchOne = pInfo->matchOne;
+  u8 matchAll = pInfo->matchAll;
+  u8 matchSet = pInfo->matchSet;
+  u8 noCase = pInfo->noCase; 
 
-  /* If either argument is NULL, the result is NULL */
-  if( sqlite3_value_type(argv[1])==SQLITE_NULL || 
-      sqlite3_value_type(argv[0])==SQLITE_NULL ){
-    return;
-  }
-
-  /* If the user-data pointer is NULL, use UTF-8. Otherwise UTF-16. */
-  if( sqlite3_user_data(context) ){
-    enc = SQLITE_UTF16NATIVE;
-    zString = (const unsigned char *)sqlite3_value_text16(argv[1]);
-    assert(0);
-  }else{
-    enc = SQLITE_UTF8;
-    zString = sqlite3_value_text(argv[1]);
-  }
-
-  /* If the LIKE pattern has not been compiled, compile it now. */
-  if( !pLike ){
-    pLike = compileLike(argv[0], enc);
-    if( !pLike ){
-      sqlite3_result_error(context, "out of memory", -1);
-      return;
-    }
-    sqlite3_set_auxdata(context, 0, pLike, deleteLike);
-  }
-  aState = pLike->aState;
-  pState = aState;
-
-  do {
-    if( enc==SQLITE_UTF8 ){
-      c = zString[offset++];
-      if( c&0x80 ){
-        offset--;
-        c = sqlite3ReadUniChar(zString, &offset, &enc, 1);
+  while( (c = *zPattern)!=0 ){
+    if( c==matchAll ){
+      while( (c=zPattern[1]) == matchAll || c == matchOne ){
+        if( c==matchOne ){
+          if( *zString==0 ) return 0;
+          sqliteNextChar(zString);
+        }
+        zPattern++;
       }
-    }else{
-      c = sqlite3ReadUniChar(zString, &offset, &enc, 1);
-    }
-
-skip_read:
-
-#if defined(TRACE_LIKE) && !defined(NDEBUG)
-    printf("State=%d:(%d, %d) Input=%d\n", 
-        (aState - pState), pState->val, pState->failstate, c);
-#endif
-
-    if( pState->val==-1 || pState->val==c ){
-      pState++;
-    }else{
-      struct LikeState *pFailState = &aState[pState->failstate];
-      if( pState!=pFailState ){
-        pState = pFailState;
-        if( c && pState>=aState ) goto skip_read;
+      if( c==0 ) return 1;
+      if( c==matchSet ){
+        while( *zString && patternCompare(&zPattern[1],zString,pInfo)==0 ){
+          sqliteNextChar(zString);
+        }
+        return *zString!=0;
+      }else{
+        while( (c2 = *zString)!=0 ){
+          if( noCase ){
+            c2 = sqlite3UpperToLower[c2];
+            c = sqlite3UpperToLower[c];
+            while( c2 != 0 && c2 != c ){ c2 = sqlite3UpperToLower[*++zString]; }
+          }else{
+            while( c2 != 0 && c2 != c ){ c2 = *++zString; }
+          }
+          if( c2==0 ) return 0;
+          if( patternCompare(&zPattern[1],zString,pInfo) ) return 1;
+          sqliteNextChar(zString);
+        }
+        return 0;
       }
+    }else if( c==matchOne ){
+      if( *zString==0 ) return 0;
+      sqliteNextChar(zString);
+      zPattern++;
+    }else if( c==matchSet ){
+      int prior_c = 0;
+      seen = 0;
+      invert = 0;
+      c = sqliteCharVal(zString);
+      if( c==0 ) return 0;
+      c2 = *++zPattern;
+      if( c2=='^' ){ invert = 1; c2 = *++zPattern; }
+      if( c2==']' ){
+        if( c==']' ) seen = 1;
+        c2 = *++zPattern;
+      }
+      while( (c2 = sqliteCharVal(zPattern))!=0 && c2!=']' ){
+        if( c2=='-' && zPattern[1]!=']' && zPattern[1]!=0 && prior_c>0 ){
+          zPattern++;
+          c2 = sqliteCharVal(zPattern);
+          if( c>=prior_c && c<=c2 ) seen = 1;
+          prior_c = 0;
+        }else if( c==c2 ){
+          seen = 1;
+          prior_c = c2;
+        }else{
+          prior_c = c2;
+        }
+        sqliteNextChar(zPattern);
+      }
+      if( c2==0 || (seen ^ invert)==0 ) return 0;
+      sqliteNextChar(zString);
+      zPattern++;
+    }else{
+      if( noCase ){
+        if( sqlite3UpperToLower[c] != sqlite3UpperToLower[*zString] ) return 0;
+      }else{
+        if( c != *zString ) return 0;
+      }
+      zPattern++;
+      zString++;
     }
-  }while( c && pState>=aState );
-
-  if( (pState-aState)==pLike->nState || (pState-aState)<-1 ){
-    sqlite3_result_int(context, 1);
-  }else{
-    sqlite3_result_int(context, 0);
   }
+  return *zString==0;
 }
-#endif
+
 
 /*
 ** Implementation of the like() SQL function.  This function implements
@@ -563,7 +458,7 @@ static void likeFunc(
   const unsigned char *zA = sqlite3_value_text(argv[0]);
   const unsigned char *zB = sqlite3_value_text(argv[1]);
   if( zA && zB ){
-    sqlite3_result_int(context, sqlite3utf8LikeCompare(zA, zB));
+    sqlite3_result_int(context, patternCompare(zA, zB, &likeInfo));
   }
 }
 
@@ -580,7 +475,7 @@ static void globFunc(sqlite3_context *context, int arg, sqlite3_value **argv){
   const unsigned char *zA = sqlite3_value_text(argv[0]);
   const unsigned char *zB = sqlite3_value_text(argv[1]);
   if( zA && zB ){
-    sqlite3_result_int(context, sqlite3GlobCompare(zA, zB));
+    sqlite3_result_int(context, patternCompare(zA, zB, &globInfo));
   }
 }
 
@@ -1015,6 +910,7 @@ static void minMaxFinalize(sqlite3_context *context){
   }
   sqlite3VdbeMemRelease(pRes);
 }
+
 
 /*
 ** This function registered all of the above C functions as SQL

@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.113 2004/08/18 02:10:15 drh Exp $
+** $Id: util.c,v 1.114 2004/08/31 00:52:37 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -533,7 +533,7 @@ void sqlite3Dequote(char *z){
 /* An array to map all upper-case characters into their corresponding
 ** lower-case character. 
 */
-static unsigned char UpperToLower[] = {
+const unsigned char sqlite3UpperToLower[] = {
       0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17,
      18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35,
      36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53,
@@ -550,6 +550,7 @@ static unsigned char UpperToLower[] = {
     234,235,236,237,238,239,240,241,242,243,244,245,246,247,248,249,250,251,
     252,253,254,255
 };
+#define UpperToLower sqlite3UpperToLower
 
 /*
 ** This function computes a hash on the name of a keyword.
@@ -762,168 +763,6 @@ int sqlite3FitsIn64Bits(const char *zNum){
   return i<19 || (i==19 && memcmp(zNum,"9223372036854775807",19)<=0);
 }
 
-#if 1  /* We are now always UTF-8 */
-/*
-** X is a pointer to the first byte of a UTF-8 character.  Increment
-** X so that it points to the next character.  This only works right
-** if X points to a well-formed UTF-8 string.
-*/
-#define sqliteNextChar(X)  while( (0xc0&*++(X))==0x80 ){}
-#define sqliteCharVal(X)   sqlite3ReadUtf8(X)
-
-#else /* !defined(SQLITE_UTF8) */
-/*
-** For iso8859 encoding, the next character is just the next byte.
-*/
-#define sqliteNextChar(X)  (++(X));
-#define sqliteCharVal(X)   ((int)*(X))
-
-#endif /* defined(SQLITE_UTF8) */
-
-
-#if 1  /* We are now always UTF-8 */
-/*
-** Convert the UTF-8 character to which z points into a 31-bit
-** UCS character.  This only works right if z points to a well-formed
-** UTF-8 string.
-*/
-int sqlite3ReadUtf8(const unsigned char *z){
-  int c;
-  static const char initVal[] = {
-      0,   1,   2,   3,   4,   5,   6,   7,   8,   9,  10,  11,  12,  13,  14,
-     15,  16,  17,  18,  19,  20,  21,  22,  23,  24,  25,  26,  27,  28,  29,
-     30,  31,  32,  33,  34,  35,  36,  37,  38,  39,  40,  41,  42,  43,  44,
-     45,  46,  47,  48,  49,  50,  51,  52,  53,  54,  55,  56,  57,  58,  59,
-     60,  61,  62,  63,  64,  65,  66,  67,  68,  69,  70,  71,  72,  73,  74,
-     75,  76,  77,  78,  79,  80,  81,  82,  83,  84,  85,  86,  87,  88,  89,
-     90,  91,  92,  93,  94,  95,  96,  97,  98,  99, 100, 101, 102, 103, 104,
-    105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119,
-    120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134,
-    135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149,
-    150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164,
-    165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179,
-    180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191,   0,   1,   2,
-      3,   4,   5,   6,   7,   8,   9,  10,  11,  12,  13,  14,  15,  16,  17,
-     18,  19,  20,  21,  22,  23,  24,  25,  26,  27,  28,  29,  30,  31,   0,
-      1,   2,   3,   4,   5,   6,   7,   8,   9,  10,  11,  12,  13,  14,  15,
-      0,   1,   2,   3,   4,   5,   6,   7,   0,   1,   2,   3,   0,   1, 254,
-    255,
-  };
-  c = initVal[*(z++)];
-  while( (0xc0&*z)==0x80 ){
-    c = (c<<6) | (0x3f&*(z++));
-  }
-  return c;
-}
-#endif
-
-/*
-** Compare two UTF-8 strings for equality where the first string can
-** potentially be a "glob" expression.  Return true (1) if they
-** are the same and false (0) if they are different.
-**
-** Globbing rules:
-**
-**      '*'       Matches any sequence of zero or more characters.
-**
-**      '?'       Matches exactly one character.
-**
-**     [...]      Matches one character from the enclosed list of
-**                characters.
-**
-**     [^...]     Matches one character not in the enclosed list.
-**
-** With the [...] and [^...] matching, a ']' character can be included
-** in the list by making it the first character after '[' or '^'.  A
-** range of characters can be specified using '-'.  Example:
-** "[a-z]" matches any single lower-case letter.  To match a '-', make
-** it the last character in the list.
-**
-** This routine is usually quick, but can be N**2 in the worst case.
-**
-** Hints: to match '*' or '?', put them in "[]".  Like this:
-**
-**         abc[*]xyz        Matches "abc*xyz" only
-*/
-int 
-sqlite3GlobCompare(const unsigned char *zPattern, const unsigned char *zString){
-  register int c;
-  int invert;
-  int seen;
-  int c2;
-
-  while( (c = *zPattern)!=0 ){
-    switch( c ){
-      case '*':
-        while( (c=zPattern[1]) == '*' || c == '?' ){
-          if( c=='?' ){
-            if( *zString==0 ) return 0;
-            sqliteNextChar(zString);
-          }
-          zPattern++;
-        }
-        if( c==0 ) return 1;
-        if( c=='[' ){
-          while( *zString && sqlite3GlobCompare(&zPattern[1],zString)==0 ){
-            sqliteNextChar(zString);
-          }
-          return *zString!=0;
-        }else{
-          while( (c2 = *zString)!=0 ){
-            while( c2 != 0 && c2 != c ){ c2 = *++zString; }
-            if( c2==0 ) return 0;
-            if( sqlite3GlobCompare(&zPattern[1],zString) ) return 1;
-            sqliteNextChar(zString);
-          }
-          return 0;
-        }
-      case '?': {
-        if( *zString==0 ) return 0;
-        sqliteNextChar(zString);
-        zPattern++;
-        break;
-      }
-      case '[': {
-        int prior_c = 0;
-        seen = 0;
-        invert = 0;
-        c = sqliteCharVal(zString);
-        if( c==0 ) return 0;
-        c2 = *++zPattern;
-        if( c2=='^' ){ invert = 1; c2 = *++zPattern; }
-        if( c2==']' ){
-          if( c==']' ) seen = 1;
-          c2 = *++zPattern;
-        }
-        while( (c2 = sqliteCharVal(zPattern))!=0 && c2!=']' ){
-          if( c2=='-' && zPattern[1]!=']' && zPattern[1]!=0 && prior_c>0 ){
-            zPattern++;
-            c2 = sqliteCharVal(zPattern);
-            if( c>=prior_c && c<=c2 ) seen = 1;
-            prior_c = 0;
-          }else if( c==c2 ){
-            seen = 1;
-            prior_c = c2;
-          }else{
-            prior_c = c2;
-          }
-          sqliteNextChar(zPattern);
-        }
-        if( c2==0 || (seen ^ invert)==0 ) return 0;
-        sqliteNextChar(zString);
-        zPattern++;
-        break;
-      }
-      default: {
-        if( c != *zString ) return 0;
-        zPattern++;
-        zString++;
-        break;
-      }
-    }
-  }
-  return *zString==0;
-}
 
 /*
 ** Change the sqlite.magic from SQLITE_MAGIC_OPEN to SQLITE_MAGIC_BUSY.
