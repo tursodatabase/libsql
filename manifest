@@ -1,5 +1,5 @@
-C Implement\sprobabilistic\sreader/writer\slocks\sunder\swindows\sso\sthat\swindows\ncan\shave\smultiple\ssimultaneous\sreaders.\s(CVS\s714)
-D 2002-08-14T12:56:55
+C Fix\sfor\sticket\s#134:\sChange\sthe\slemon.c\ssources\sto\swork\saround\sa\sproblem\swith\nthe\sAIX\sC\scompiler.\s(CVS\s715)
+D 2002-08-14T23:18:57
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -112,7 +112,7 @@ F test/version.test c7057526e14c7e3da5718b88e7f566f4182fd5c5
 F test/view.test 3afca084dab44c7a5772d3c6a326adf93ad52050
 F test/where.test c7aba40ad9178acf9c898e53aac9e447e2d2f2f7
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
-F tool/lemon.c 459cb2bb3738a1ad5cb0ad8b805587a88a885d95
+F tool/lemon.c 022adc2830c2705828f744d2c59798bd462eb465
 F tool/lempar.c 73a991cc3017fb34804250fa901488b5147b3717
 F tool/memleak.awk 296dfbce7a9ca499b95ce04e30334e64a50052e0
 F tool/opNames.awk 5ba1f48aa854ee3b7c3d2b54233665bc3e649ea2
@@ -145,7 +145,7 @@ F www/speed.tcl 7fc83f1b018e1ecc451838449542c3079ed12425
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 2438da791afb53b4f1c7a9ff9705d393c86f3cbd
-R 3364c6051f89755389e8e9106b910ace
+P 2127de3f03537ef2f18120e773f7603e0984ff81
+R 7b9d14f25b49a3a4845ff8b962285057
 U drh
-Z f3b8f86df854c948ca0c5a5c4e19b034
+Z c3b9f5c917c9c33ab25ee4f00b0cc805
