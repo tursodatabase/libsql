@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.114 2005/01/12 12:44:04 danielk1977 Exp $
+** $Id: tclsqlite.c,v 1.115 2005/01/13 23:54:32 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -1412,12 +1412,12 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
 #ifdef SQLITE_TEST
   {
     extern void Md5_Register(sqlite3*);
-#ifdef SQLITE_DEBUG
+#ifdef SQLITE_MEMDEBUG
     int mallocfail = sqlite3_iMallocFail;
     sqlite3_iMallocFail = 0;
 #endif
     Md5_Register(p->db);
-#ifdef SQLITE_DEBUG
+#ifdef SQLITE_MEMDEBUG
     sqlite3_iMallocFail = mallocfail;
 #endif
    }
