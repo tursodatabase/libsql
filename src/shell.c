@@ -24,7 +24,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.12 2000/06/07 02:04:23 drh Exp $
+** $Id: shell.c,v 1.13 2000/06/15 15:57:23 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -122,14 +122,15 @@ static char *one_input_line(const char *zPrior, int isatty){
 ** state and mode information.
 */
 struct callback_data {
-  sqlite *db;        /* The database */
-  int cnt;           /* Number of records displayed so far */
-  FILE *out;         /* Write results here */
-  int mode;          /* An output mode setting */
-  int showHeader;    /* True to show column names in List or Column mode */
-  int escape;        /* Escape this character when in MODE_List */
-  char separator[20];/* Separator character for MODE_List */
-  int colWidth[30];  /* Width of each column when in column mode */
+  sqlite *db;            /* The database */
+  int cnt;               /* Number of records displayed so far */
+  FILE *out;             /* Write results here */
+  int mode;              /* An output mode setting */
+  int showHeader;        /* True to show column names in List or Column mode */
+  int escape;            /* Escape this character when in MODE_List */
+  char zDestTable[250];  /* Name of destination table when MODE_Insert */
+  char separator[20];    /* Separator character for MODE_List */
+  int colWidth[30];      /* Width of each column when in column mode */
 };
 
 /*
@@ -139,11 +140,70 @@ struct callback_data {
 #define MODE_Column   1  /* One record per line in neat columns */
 #define MODE_List     2  /* One record per line with a separator */
 #define MODE_Html     3  /* Generate an XHTML table */
+#define MODE_Insert   4  /* Generate SQL "insert" statements */
 
 /*
 ** Number of elements in an array
 */
 #define ArraySize(X)  (sizeof(X)/sizeof(X[0]))
+
+/*
+** Return TRUE if the string supplied is a number of some kinds.
+*/
+static int is_numeric(const char *z){
+  int seen_digit = 0;
+  if( *z=='-' || *z=='+' ){
+    z++;
+  }
+  while( isdigit(*z) ){ 
+    seen_digit = 1;
+    z++;
+  }
+  if( seen_digit && *z=='.' ){
+    z++;
+    while( isdigit(*z) ){ z++; }
+  }
+  if( seen_digit && (*z=='e' || *z=='E')
+   && (isdigit(z[1]) || ((z[1]=='-' || z[1]=='+') && isdigit(z[2])))
+  ){
+    z+=2;
+    while( isdigit(*z) ){ z++; }
+  }
+  return seen_digit && *z==0;
+}
+
+/*
+** Output the given string as a quoted string using SQL quoting conventions.
+*/
+static void output_quoted_string(FILE *out, const char *z){
+  int i;
+  int nSingle = 0;
+  int nDouble = 0;
+  for(i=0; z[i]; i++){
+    if( z[i]=='\'' ) nSingle++;
+    else if( z[i]=='"' ) nDouble++;
+  }
+  if( nSingle==0 ){
+    fprintf(out,"'%s'",z);
+  }else if( nDouble==0 ){
+    fprintf(out,"\"%s\"",z);
+  }else{
+    fprintf(out,"'");
+    while( *z ){
+      for(i=0; z[i] && z[i]!='\''; i++){}
+      if( i==0 ){
+        fprintf(out,"''");
+        z++;
+      }else if( z[i]=='\'' ){
+        fprintf(out,"%.*s''",i,z);
+        z += i+1;
+      }else{
+        fprintf(out,"%s'",z);
+        break;
+      }
+    }
+  }
+}
 
 /*
 ** This is the callback routine that the SQLite library
@@ -228,14 +288,27 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
         }
         fprintf(p->out,"</TR>\n");
       }
+      fprintf(p->out,"<TR>");
       for(i=0; i<nArg; i++){
-        fprintf(p->out,"<TR>");
-        for(i=0; i<nArg; i++){
-          fprintf(p->out,"<TD>%s</TD>",azArg[i] ? azArg[i] : "");
-        }
-        fprintf(p->out,"</TD>\n");
+        fprintf(p->out,"<TD>%s</TD>",azArg[i] ? azArg[i] : "");
       }
+      fprintf(p->out,"</TD></TR>\n");
       break;
+    }
+    case MODE_Insert: {
+      fprintf(p->out,"INSERT INTO '%s' VALUES(",p->zDestTable);
+      for(i=0; i<nArg; i++){
+        char *zSep = i>0 ? ",": "";
+        if( azArg[i]==0 ){
+          fprintf(p->out,"%sNULL",zSep);
+        }else if( is_numeric(azArg[i]) ){
+          fprintf(p->out,"%s%s",zSep, azArg[i]);
+        }else{
+          if( zSep[0] ) fprintf(p->out,"%s",zSep);
+          output_quoted_string(p->out, azArg[i]);
+        }
+      }
+      fprintf(p->out,");\n");
     }
   }      
   return 0;
@@ -394,7 +467,7 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
     }
   }else
 
-  if( c=='m' && strncmp(azArg[0], "mode", n)==0 && nArg==2 ){
+  if( c=='m' && strncmp(azArg[0], "mode", n)==0 && nArg>=2 ){
     int n2 = strlen(azArg[1]);
     if( strncmp(azArg[1],"line",n2)==0 ){
       p->mode = MODE_Line;
@@ -404,6 +477,13 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
       p->mode = MODE_List;
     }else if( strncmp(azArg[1],"html",n2)==0 ){
       p->mode = MODE_Html;
+    }else if( strncmp(azArg[1],"insert",n2)==0 ){
+      p->mode = MODE_Insert;
+      if( nArg>=3 ){
+        sprintf(p->zDestTable,"%.*s", (int)(sizeof(p->zDestTable)-1), azArg[2]);
+      }else{
+        sprintf(p->zDestTable,"table");
+      }
     }
   }else
 
