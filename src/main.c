@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.157 2004/02/20 14:50:58 drh Exp $
+** $Id: main.c,v 1.158 2004/02/20 22:53:39 rdc Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -543,6 +543,10 @@ int sqlite_last_insert_rowid(sqlite *db){
 */
 int sqlite_changes(sqlite *db){
   return db->nChange;
+}
+
+int sqlite_last_statement_changes(sqlite *db){
+  return db->lsChange;
 }
 
 /*

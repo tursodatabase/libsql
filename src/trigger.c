@@ -746,7 +746,9 @@ int sqliteCodeRowTrigger(
       sqliteExprIfFalse(pParse, whenExpr, endTrigger, 1);
       sqliteExprDelete(whenExpr);
 
+      sqliteVdbeAddOp(pParse->pVdbe, OP_ContextPush, 0, 0);
       codeTriggerProgram(pParse, pTrigger->step_list, orconf); 
+      sqliteVdbeAddOp(pParse->pVdbe, OP_ContextPop, 0, 0);
 
       /* Pop the entry off the trigger stack */
       pParse->trigStack = pParse->trigStack->pNext;

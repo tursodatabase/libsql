@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.91 2004/02/16 03:44:02 drh Exp $
+** $Id: insert.c,v 1.92 2004/02/20 22:53:39 rdc Exp $
 */
 #include "sqliteInt.h"
 
@@ -535,6 +535,7 @@ void sqliteInsert(
     }
   }
 
+  sqliteVdbeAddOp(v, OP_SetCounts, 0, 0);
   sqliteEndWriteOperation(pParse);
 
   /*
@@ -906,7 +907,9 @@ void sqliteCompleteInsertion(
     sqliteVdbeAddOp(v, OP_Dup, 1, 0);
     sqliteVdbeAddOp(v, OP_PutIntKey, newIdx, 0);
   }
-  sqliteVdbeAddOp(v, OP_PutIntKey, base, pParse->trigStack?0:1);
+  sqliteVdbeAddOp(v, OP_PutIntKey, base,
+    (pParse->trigStack?0:OPFLAG_NCHANGE) |
+    (isUpdate?0:OPFLAG_LASTROWID) | OPFLAG_CSCHANGE);
   if( isUpdate && recnoChng ){
     sqliteVdbeAddOp(v, OP_Pop, 1, 0);
   }

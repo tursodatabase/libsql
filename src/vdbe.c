@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.265 2004/02/16 03:44:02 drh Exp $
+** $Id: vdbe.c,v 1.266 2004/02/20 22:53:39 rdc Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2895,9 +2895,12 @@ case OP_NewRecno: {
 ** stack.  The key is the next value down on the stack.  The key must
 ** be an integer.  The stack is popped twice by this instruction.
 **
-** If P2==1 then the row change count is incremented.  If P2==0 the
-** row change count is unmodified.  The rowid is stored for subsequent
-** return by the sqlite_last_insert_rowid() function if P2 is 1.
+** If the OPFLAG_NCHANGE flag of P2 is set, then the row change count is
+** incremented (otherwise not).  If the OPFLAG_CSCHANGE flag is set,
+** then the current statement change count is incremented (otherwise not).
+** If the OPFLAG_LASTROWID flag of P2 is set, then rowid is
+** stored for subsequent return by the sqlite_last_insert_rowid() function
+** (otherwise it's unmodified).
 */
 /* Opcode: PutStrKey P1 * *
 **
@@ -2928,10 +2931,9 @@ case OP_PutStrKey: {
       nKey = sizeof(int);
       iKey = intToKey(pNos->i);
       zKey = (char*)&iKey;
-      if( pOp->p2 ){
-        db->nChange++;
-        db->lastRowid = pNos->i;
-      }
+      if( pOp->p2 & OPFLAG_NCHANGE ) db->nChange++;
+      if( pOp->p2 & OPFLAG_LASTROWID ) db->lastRowid = pNos->i;
+      if( pOp->p2 & OPFLAG_CSCHANGE ) db->csChange++;
       if( pC->nextRowidValid && pTos->i>=pC->nextRowid ){
         pC->nextRowidValid = 0;
       }
@@ -2980,8 +2982,9 @@ case OP_PutStrKey: {
 ** the next Next instruction will be a no-op.  Hence it is OK to delete
 ** a record from within an Next loop.
 **
-** The row change counter is incremented if P2==1 and is unmodified
-** if P2==0.
+** If the OPFLAG_NCHANGE flag of P2 is set, then the row change count is
+** incremented (otherwise not).  If OPFLAG_CSCHANGE flag is set,
+** then the current statement change count is incremented (otherwise not).
 **
 ** If P1 is a pseudo-table, then this instruction is a no-op.
 */
@@ -2995,7 +2998,19 @@ case OP_Delete: {
     rc = sqliteBtreeDelete(pC->pCursor);
     pC->nextRowidValid = 0;
   }
-  if( pOp->p2 ) db->nChange++;
+  if( pOp->p2 & OPFLAG_NCHANGE ) db->nChange++;
+  if( pOp->p2 & OPFLAG_CSCHANGE ) db->csChange++;
+  break;
+}
+
+/* Opcode: SetCounts * * *
+**
+** Called at end of statement.  Updates lsChange (last statement change count)
+** and resets csChange (current statement change count) to 0.
+*/
+case OP_SetCounts: {
+  db->lsChange=db->csChange;
+  db->csChange=0;
   break;
 }
 
@@ -3846,6 +3861,43 @@ case OP_ListPop: {
   if( p->keylistStackDepth == 0 ){
     sqliteFree(p->keylistStack);
     p->keylistStack = 0;
+  }
+  break;
+}
+
+/* Opcode: ContextPush * * * 
+**
+** Save the current Vdbe context such that it can be restored by a ContextPop
+** opcode. The context stores the last insert row id, the last statement change
+** count, and the current statement change count.
+*/
+case OP_ContextPush: {
+  p->contextStackDepth++;
+  assert(p->contextStackDepth > 0);
+  p->contextStack = sqliteRealloc(p->contextStack, 
+          sizeof(Context) * p->contextStackDepth);
+  if( p->contextStack==0 ) goto no_mem;
+  p->contextStack[p->contextStackDepth - 1].lastRowid = p->db->lastRowid;
+  p->contextStack[p->contextStackDepth - 1].lsChange = p->db->lsChange;
+  p->contextStack[p->contextStackDepth - 1].csChange = p->db->csChange;
+  break;
+}
+
+/* Opcode: ContextPop * * * 
+**
+** Restore the Vdbe context to the state it was in when contextPush was last
+** executed. The context stores the last insert row id, the last statement
+** change count, and the current statement change count.
+*/
+case OP_ContextPop: {
+  assert(p->contextStackDepth > 0);
+  p->contextStackDepth--;
+  p->db->lastRowid = p->contextStack[p->contextStackDepth].lastRowid;
+  p->db->lsChange = p->contextStack[p->contextStackDepth].lsChange;
+  p->db->csChange = p->contextStack[p->contextStackDepth].csChange;
+  if( p->contextStackDepth == 0 ){
+    sqliteFree(p->contextStack);
+    p->contextStack = 0;
   }
   break;
 }

@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.39 2004/02/11 09:46:32 drh Exp $
+** $Id: func.c,v 1.40 2004/02/20 22:53:39 rdc Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -207,6 +207,16 @@ static void randomFunc(sqlite_func *context, int argc, const char **argv){
 static void last_insert_rowid(sqlite_func *context, int arg, const char **argv){
   sqlite *db = sqlite_user_data(context);
   sqlite_set_result_int(context, sqlite_last_insert_rowid(db));
+}
+
+static void change_count(sqlite_func *context, int arg, const char **argv){
+  sqlite *db = sqlite_user_data(context);
+  sqlite_set_result_int(context, sqlite_changes(db));
+}
+static void last_statement_change_count(sqlite_func *context, int arg,
+                                        const char **argv){
+  sqlite *db = sqlite_user_data(context);
+  sqlite_set_result_int(context, sqlite_last_statement_changes(db));
 }
 
 /*
@@ -613,6 +623,12 @@ void sqliteRegisterBuiltinFunctions(sqlite *db){
   sqlite_create_function(db, "last_insert_rowid", 0, 
            last_insert_rowid, db);
   sqlite_function_type(db, "last_insert_rowid", SQLITE_NUMERIC);
+  sqlite_create_function(db, "change_count", 0, change_count, db);
+  sqlite_function_type(db, "change_count", SQLITE_NUMERIC);
+  sqlite_create_function(db, "last_statement_change_count", 0, 
+           last_statement_change_count, db);
+  sqlite_function_type(db, "last_statement_change_count", SQLITE_NUMERIC);
+
   for(i=0; i<sizeof(aAggs)/sizeof(aAggs[0]); i++){
     sqlite_create_aggregate(db, aAggs[i].zName,
            aAggs[i].nArg, aAggs[i].xStep, aAggs[i].xFinalize, 0);

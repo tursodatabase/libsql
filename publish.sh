@@ -119,6 +119,9 @@ sqlite_trace
 sqlite_compile
 sqlite_step
 sqlite_finalize
+sqlite_reset
+sqlite_bind
+sqlite_last_statement_changes
 END_OF_FILE
 i386-mingw32msvc-dllwrap \
      --def sqlite.def -v --export-all \
