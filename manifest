@@ -1,9 +1,9 @@
-C Do\snot\sapply\sunary\s'-'\sto\san\sunsigned\s"sizeof"\sresult.\s(CVS\s1663)
-D 2004-06-22T14:40:11
+C Prepare\sfor\sanother\sALPHA\srelease.\s\sVersion\snumber\s3.0.1.\s(CVS\s1664)
+D 2004-06-22T14:41:01
 F Makefile.in 0a3d7aaefa50717bd550b0cf568a51072c4c103c
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
-F VERSION 8c6981d7f982c3e2986fda2f34282264a4db344c
+F VERSION 34009b3459559db331ace9f14f8bb7f94cfbb787
 F aclocal.m4 7daea4c35e88de30d5a3f6f7a2ab99720e803bbd
 F art/SQLite.eps 9b43cc99cfd2be687d386faea6862ea68d6a72b2
 F art/SQLite.gif 1bbb94484963f1382e27e1c5e86dd0c1061eba2b
@@ -228,7 +228,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl af528563442e3039928f9018327a18157e53a44f
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P eef6da38d5b1d84e8a1eb9fe88f0f568717ea323
-R 3f803f6c814edea6b22302bc0ee60607
+P 129c5d5e3af4a7eeeebf5e4cbe9f0da5c123a68b
+R 0829285ee3b3b447f034d706b535cf09
 U drh
-Z fbc181b2836ef01b88a830d42326fb8f
+Z c2b941e294602b9788c419b7d5d0dcce
