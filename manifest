@@ -1,5 +1,5 @@
-C Combine\sthe\shomerpm.sh\sfile\sin\swith\spublish.sh.\s\sUpdate\sthe\swebsite\sfiles\sto\nrefer\sto\sthe\snew\sRPMs\sthat\sare\snow\sbeing\sbuilt.\s\sFix\sa\ssmall\sproblem\swith\nthe\sspec\sfile.\s(CVS\s505)
-D 2002-03-29T18:16:04
+C Describe\sthe\sdifference\sbetween\sthe\sbinary\sRPMs\sin\sthe\sdownload.html\sfile.\s(CVS\s506)
+D 2002-03-30T14:15:52
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -119,7 +119,7 @@ F www/c_interface.tcl 567cda531aac9d68a61ef02e26c6b202bd856db2
 F www/changes.tcl 255d65014ca4b67f1d6d7b8151324e4249bf7ca5
 F www/conflict.tcl 81dd21f9a679e60aae049e9dd8ab53d59570cda2
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
-F www/download.tcl 870e87c458d58e0867463e06ea66eec343332d3f
+F www/download.tcl 29aa6679ca29621d10613f60ebbbda18f4b91c49
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/faq.tcl fb1e92e2f604546694f83a36d969492f52fb685d
 F www/formatchng.tcl 2ce21ff30663fad6618198fe747ce675df577590
@@ -131,7 +131,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P e529143967a6fd4e65dea6a5ff68a7aabc36f787
-R c284576111a1e591595153abeca388b4
+P 57d4c7704794d0a28cbf67be3f90dbf81bf3b05d
+R a7e657944cab421e84233e6c131e8395
 U drh
-Z 73362d0343176b7525b4f3bbee07609d
+Z 61ccaedd9c5efd48bb2825a1aa5ac5d0

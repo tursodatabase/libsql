@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the download.html file.
 #
-set rcsid {$Id: download.tcl,v 1.4 2002/03/29 18:16:04 drh Exp $}
+set rcsid {$Id: download.tcl,v 1.5 2002/03/30 14:15:52 drh Exp $}
 
 puts {<html>
 <head><title>SQLite Download Page</title></head>
@@ -47,7 +47,16 @@ Product sqlite.so.gz {
 }
 
 foreach name [lsort -dict [glob -nocomplain sqlite-*.i386.rpm]] {
-  Product $name "An RPM for Linux"
+  if {[regexp -- -devel- $name]} {
+    Product $name {
+      RPM containing documentation, header files, and static library.
+    }
+  } else {
+    Product $name {
+      RPM containing shared libraries and the <b>sqlite</b> command-line
+      program.
+    }
+  }
 }
 
 puts {<h2>Precompiled Binaries For Windows</h2>}
@@ -77,7 +86,7 @@ Product {sqlite_source.zip} {
 }
 
 foreach name [lsort -dict [glob -nocomplain sqlite-*.src.rpm]] {
-  Product $name "Source RPM"
+  Product $name "RPM containing complete source code"
 }
 
 foreach name [lsort -dict -decreasing [glob -nocomplain sqlite-*.tar.gz]] {
