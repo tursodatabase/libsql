@@ -423,10 +423,6 @@ void sqlite_set_result_error(sqlite_func *p, const char *zMsg, int n){
 /*
 ** Extract the user data from a sqlite_func structure and return a
 ** pointer to it.
-**
-** This routine is defined here in vdbe.c because it depends on knowing
-** the internals of the sqlite_func structure which is only defined in 
-** this source file.
 */
 void *sqlite_user_data(sqlite_func *p){
   assert( p && p->pFunc );

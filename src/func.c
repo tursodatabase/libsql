@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.31 2003/09/06 01:10:47 drh Exp $
+** $Id: func.c,v 1.32 2003/10/10 02:09:57 drh Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -586,13 +586,59 @@ static int getDigits(const char *zDate, int N){
 }
 
 /*
-** Parse times of the form HH:MM:SS or HH:MM.  Store the
-** result (in days) in *prJD.
+** Parse a timezone extension on the end of a datetime stamp.
+** The extension is of the form:
+**
+**        (+/-)HH:MM
+**
+** If the parse is successful, write the number of minutes
+** of change in *pnMin and return 0.  If a parser error occurs,
+** return 0.
+**
+** A missing specifier is not considered an error.
+*/
+static int parseTimezone(const char *zDate, int *pnMin){
+  int sgn = 0;
+  int nHr, nMn;
+  while( isspace(*zDate) ){ zDate++; }
+  *pnMin = 0;
+  if( *zDate=='-' ){
+    sgn = -1;
+  }else if( *zDate=='+' ){
+    sgn = +1;
+  }else{
+    return *zDate!=0;
+  }
+  zDate++;
+  nHr = getDigits(zDate, 2);
+  if( nHr<0 || nHr>14 ) return 1;
+  zDate += 2;
+  if( zDate[0]!=':' ) return 1;
+  zDate++;
+  nMn = getDigits(zDate, 2);
+  if( nMn<0 || nMn>59 ) return 1;
+  zDate += 2;
+  *pnMin = sgn*(nMn + nHr*60);
+  while( isspace(*zDate) ){ *zDate++; }
+  return *zDate!=0;
+}
+
+/*
+** Parse times of the form HH:MM or HH:MM:SS or HH:MM:SS.FFFF.
+** The HH, MM, and SS must each be exactly 2 digits.  The
+** fractional seconds FFFF can be one or more digits.
+**
+** The time string can be followed by an optional timezone specifier
+** of the following form:  (+/-)HH:MM.
+**
+** Whatever the format, the string is converted into a julian
+** day number and stored in *prJD.
 **
 ** Return 1 if there is a parsing error and 0 on success.
 */
 static int parseHhMmSs(const char *zDate, double *prJD){
-  int h, m, s;
+  int h, m, s, tz;
+  double ms = 0.0;
   h = getDigits(zDate, 2);
   if( h<0 || zDate[2]!=':' ) return 1;
   zDate += 3;
@@ -603,11 +649,20 @@ static int parseHhMmSs(const char *zDate, double *prJD){
     s = getDigits(&zDate[1], 2);
     if( s<0 || s>59 ) return 1;
     zDate += 3;
+    if( *zDate=='.' && isdigit(zDate[1]) ){
+      double rScale = 1.0/864000.0;
+      zDate++;
+      while( isdigit(*zDate) ){
+        ms += rScale * (*zDate - '0');
+        rScale *= 0.1;
+        zDate++;
+      }
+    }
   }else{
     s = 0;
   }
-  while( isspace(*zDate) ){ zDate++; }
-  *prJD = (h*3600.0 + m*60.0 + s)/86400.0;
+  if( parseTimezone(zDate, &tz) ) return 1;
+  *prJD = (h*3600.0 + (m+tz)*60.0 + s)/86400.0 + ms;
   return 0;
 }
 
@@ -666,21 +721,30 @@ static int parseYyyyMmDd(const char *zDate, double *prJD){
 **
 ** The following are acceptable forms for the input string:
 **
-**      YYYY-MM-DD
-**      YYYY-MM-DD HH:MM
-**      YYYY-MM-DD HH:MM:SS
-**      HH:MM
-**      HH:MM:SS
+**      YYYY-MM-DD HH:MM:SS.FFF  +/-HH:MM
 **      DDDD.DD 
 **      now
+**
+** In the first form, the +/-HH:MM is always optional.  The fractional
+** seconds extension (the ".FFF") is optional.  The seconds portion
+** (":SS.FFF") is option.  The year and date can be omitted as long
+** as there is a time string.  The time string can be omitted as long
+** as there is a year and date.
+**
+** If the bRelative flag is set and the format is HH:MM or HH:MM:SS then
+** make the result is relative to midnight instead of noon.  In other words,
+** if bRelative is true, "00:00:00" parses to 0.0 but if bRelative is
+** false, "00:00:00" parses to 0.5.
 */
-static int parseDateOrTime(const char *zDate, double *prJD){
+static int parseDateOrTime(const char *zDate, int bRelative, double *prJD){
   int i;
   for(i=0; isdigit(zDate[i]); i++){}
   if( i==4 && zDate[i]=='-' ){
     return parseYyyyMmDd(zDate, prJD);
   }else if( i==2 && zDate[i]==':' ){
-    return parseHhMmSs(zDate, prJD);
+    if( parseHhMmSs(zDate, prJD) ) return 1;
+    if( !bRelative ) *prJD += 2451544.5;
+    return 0;
   }else if( i==0 && sqliteStrICmp(zDate,"now")==0 ){
     return sqliteOsCurrentTime(prJD);
   }else if( sqliteIsNumber(zDate) ){
@@ -697,7 +761,8 @@ typedef struct DateTime DateTime;
 struct DateTime {
   double rJD;    /* The julian day number */
   int Y, M, D;   /* Year, month, and day */
-  int h, m, s;   /* Hour minute and second */
+  int h, m;      /* Hour and minutes */
+  double s;      /* Seconds */
 };
 
 /*
@@ -728,11 +793,14 @@ static void decomposeDate(DateTime *p, int mode){
     p->Y = p->M>2 ? C - 4716 : C - 4715;
   }
   if( mode & 2 ){
-    p->s = (p->rJD + 0.5 - Z)*86400.0;
-    p->h = p->s/3600;
-    p->s -= p->h*3600;
-    p->m = p->s/60;
-    p->s -= p->m*60;
+    int s = (p->rJD + 0.5 - Z)*86400000.0 + 0.5;
+    p->s = 0.001*s;
+    s = p->s;
+    p->s -= s;
+    p->h = s/3600;
+    s -= p->h*3600;
+    p->m = s/60;
+    p->s += s - p->m*60;
   }
 }
 
@@ -754,7 +822,7 @@ static int isDate(int argc, const char **argv, DateTime *p, int mode){
   p->rJD = 0.0;
   for(i=0; i<argc; i++){
     if( argv[i]==0 ) return 0;
-    if( parseDateOrTime(argv[i], &r) ) return 0;
+    if( parseDateOrTime(argv[i], i, &r) ) return 0;
     p->rJD += r;
   }
   decomposeDate(p, mode);
@@ -776,7 +844,8 @@ static void timestampFunc(sqlite_func *context, int argc, const char **argv){
   DateTime x;
   if( isDate(argc, argv, &x, 3) ){
     char zBuf[100];
-    sprintf(zBuf, "%04d-%02d-%02d %02d:%02d:%02d",x.Y, x.M, x.D, x.h, x.m, x.s);
+    sprintf(zBuf, "%04d-%02d-%02d %02d:%02d:%02d",x.Y, x.M, x.D, x.h, x.m,
+           (int)(x.s+0.5));
     sqlite_set_result_string(context, zBuf, -1);
   }
 }
@@ -784,7 +853,7 @@ static void timeFunc(sqlite_func *context, int argc, const char **argv){
   DateTime x;
   if( isDate(argc, argv, &x, 2) ){
     char zBuf[100];
-    sprintf(zBuf, "%02d:%02d:%02d", x.h, x.m, x.s);
+    sprintf(zBuf, "%02d:%02d:%02d", x.h, x.m, (int)(x.s+0.5));
     sqlite_set_result_string(context, zBuf, -1);
   }
 }
@@ -824,7 +893,7 @@ static void dayofmonthFunc(sqlite_func *context, int argc, const char **argv){
 static void secondFunc(sqlite_func *context, int argc, const char **argv){
   DateTime x;
   if( isDate(argc, argv, &x, 2) ){
-    sqlite_set_result_int(context, x.s);
+    sqlite_set_result_double(context, x.s);
   }
 }
 static void minuteFunc(sqlite_func *context, int argc, const char **argv){
@@ -839,6 +908,16 @@ static void hourFunc(sqlite_func *context, int argc, const char **argv){
     sqlite_set_result_int(context, x.h);
   }
 }
+static void unixToJdFunc(sqlite_func *context, int argc, const char **argv){
+  sqlite_set_result_double(context, atof(argv[0])/(24.0*3600.0)+2440587.5);
+}
+static void unixtimeFunc(sqlite_func *context, int argc, const char **argv){
+  DateTime x;
+  if( isDate(argc, argv, &x, 0) ){
+    sqlite_set_result_double(context, (x.rJD-2440587.5)*24.0*3600.0);
+  }
+}
+
 #endif /* !defined(SQLITE_OMIT_DATETIME_FUNCS) */
 /***************************************************************************/
 
@@ -877,6 +956,8 @@ void sqliteRegisterBuiltinFunctions(sqlite *db){
     { "quote",      1, SQLITE_ARGS,    quoteFunc  },
 #ifndef SQLITE_OMIT_DATETIME_FUNCS
     { "julianday", -1, SQLITE_NUMERIC, juliandayFunc   },
+    { "unixtime",  -1, SQLITE_NUMERIC, unixtimeFunc    },
+    { "unix_to_jd", 1, SQLITE_NUMERIC, unixToJdFunc    },
     { "timestamp", -1, SQLITE_TEXT,    timestampFunc   },
     { "time",      -1, SQLITE_TEXT,    timeFunc        },
     { "date",      -1, SQLITE_TEXT,    dateFunc        },
