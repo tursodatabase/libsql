@@ -17,6 +17,11 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2001 Feb 19 (1.0.22)} {
+<li>The previous fix was not quite right.  This one seems to work better.
+    </li>
+}
+
 chng {2001 Feb 19 (1.0.21)} {
 <li>The UPDATE statement was not working when the WHERE clause contained
     some terms that could be satisfied using indices and other terms that

@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.51 2001/01/15 22:51:12 drh Exp $
+** $Id: vdbe.c,v 1.52 2001/02/19 23:23:39 drh Exp $
 */
 #include "sqliteInt.h"
 #include <unistd.h>
@@ -67,6 +67,8 @@ typedef struct VdbeOp Op;
 struct Cursor {
   DbbeCursor *pCursor;  /* The cursor structure of the backend */
   int index;            /* The next index to extract */
+  int lastKey;          /* Last key from a Next or NextIdx operation */
+  int keyIsValid;       /* True if lastKey is valid */
   int keyAsData;        /* The OP_Field command works on key instead of data */
 };
 typedef struct Cursor Cursor;
@@ -789,26 +791,26 @@ static char *zOpName[] = { 0,
   "OpenIdx",        "OpenTbl",        "Close",          "Fetch",
   "Fcnt",           "New",            "Put",            "Distinct",
   "Found",          "NotFound",       "Delete",         "Field",
-  "KeyAsData",      "Key",            "Rewind",         "Next",
-  "Destroy",        "Reorganize",     "ResetIdx",       "NextIdx",
-  "PutIdx",         "DeleteIdx",      "MemLoad",        "MemStore",
-  "ListOpen",       "ListWrite",      "ListRewind",     "ListRead",
-  "ListClose",      "SortOpen",       "SortPut",        "SortMakeRec",
-  "SortMakeKey",    "Sort",           "SortNext",       "SortKey",
-  "SortCallback",   "SortClose",      "FileOpen",       "FileRead",
-  "FileField",      "FileClose",      "AggReset",       "AggFocus",
-  "AggIncr",        "AggNext",        "AggSet",         "AggGet",
-  "SetInsert",      "SetFound",       "SetNotFound",    "SetClear",
-  "MakeRecord",     "MakeKey",        "Goto",           "If",
-  "Halt",           "ColumnCount",    "ColumnName",     "Callback",
-  "Integer",        "String",         "Null",           "Pop",
-  "Dup",            "Pull",           "Add",            "AddImm",
-  "Subtract",       "Multiply",       "Divide",         "Min",
-  "Max",            "Like",           "Glob",           "Eq",
-  "Ne",             "Lt",             "Le",             "Gt",
-  "Ge",             "IsNull",         "NotNull",        "Negative",
-  "And",            "Or",             "Not",            "Concat",
-  "Noop",           "Strlen",         "Substr",       
+  "KeyAsData",      "Key",            "FullKey",        "Rewind",
+  "Next",           "Destroy",        "Reorganize",     "ResetIdx",
+  "NextIdx",        "PutIdx",         "DeleteIdx",      "MemLoad",
+  "MemStore",       "ListOpen",       "ListWrite",      "ListRewind",
+  "ListRead",       "ListClose",      "SortOpen",       "SortPut",
+  "SortMakeRec",    "SortMakeKey",    "Sort",           "SortNext",
+  "SortKey",        "SortCallback",   "SortClose",      "FileOpen",
+  "FileRead",       "FileField",      "FileClose",      "AggReset",
+  "AggFocus",       "AggIncr",        "AggNext",        "AggSet",
+  "AggGet",         "SetInsert",      "SetFound",       "SetNotFound",
+  "SetClear",       "MakeRecord",     "MakeKey",        "Goto",
+  "If",             "Halt",           "ColumnCount",    "ColumnName",
+  "Callback",       "Integer",        "String",         "Null",
+  "Pop",            "Dup",            "Pull",           "Add",
+  "AddImm",         "Subtract",       "Multiply",       "Divide",
+  "Min",            "Max",            "Like",           "Glob",
+  "Eq",             "Ne",             "Lt",             "Le",
+  "Gt",             "Ge",             "IsNull",         "NotNull",
+  "Negative",       "And",            "Or",             "Not",
+  "Concat",         "Noop",           "Strlen",         "Substr",
 };
 
 /*
@@ -1895,10 +1897,13 @@ int sqliteVdbeExec(
           if( aStack[tos].flags & STK_Int ){
             pBex->Fetch(p->aCsr[i].pCursor, sizeof(int), 
                            (char*)&aStack[tos].i);
+            p->aCsr[i].lastKey = aStack[tos].i;
+            p->aCsr[i].keyIsValid = 1;
           }else{
             if( Stringify(p, tos) ) goto no_mem;
             pBex->Fetch(p->aCsr[i].pCursor, aStack[tos].n, 
                            zStack[tos]);
+            p->aCsr[i].keyIsValid = 0;
           }
           p->nFetch++;
         }
@@ -2149,15 +2154,36 @@ int sqliteVdbeExec(
 
         VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
         if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
-          char *z = pBex->ReadKey(pCrsr, 0);
-          if( p->aCsr[i].keyAsData ){
-            zStack[tos] = z;
-            aStack[tos].flags = STK_Str;
-            aStack[tos].n = pBex->KeyLength(pCrsr);
+          int v;
+          if( p->aCsr[i].keyIsValid ){
+            v = p->aCsr[i].lastKey;
           }else{
-            memcpy(&aStack[tos].i, z, sizeof(int));
-            aStack[tos].flags = STK_Int;
+            memcpy(&v, pBex->ReadKey(pCrsr,0), sizeof(int));
           }
+          aStack[tos].i = v;
+          aStack[tos].flags = STK_Int;
+        }
+        break;
+      }
+
+      /* Opcode: FullKey P1 * *
+      **
+      ** Push a string onto the stack which is the full text key associated
+      ** with the last Next operation on file P1.  Compare this with the
+      ** Key operator which pushs an integer key.
+      */
+      case OP_FullKey: {
+        int i = pOp->p1;
+        int tos = ++p->tos;
+        DbbeCursor *pCrsr;
+
+        VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
+        VERIFY( if( !p->aCsr[i].keyAsData ) goto bad_instruction; )
+        if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
+          char *z = pBex->ReadKey(pCrsr, 0);
+          zStack[tos] = z;
+          aStack[tos].flags = STK_Str;
+          aStack[tos].n = pBex->KeyLength(pCrsr);
         }
         break;
       }
@@ -2189,6 +2215,7 @@ int sqliteVdbeExec(
             p->nFetch++;
           }
         }
+        p->aCsr[i].keyIsValid = 0;
         break;
       }
 
@@ -2241,9 +2268,11 @@ int sqliteVdbeExec(
           }else{
             k = nIdx;
           }
+          p->aCsr[i].keyIsValid = 0;
           for(j=p->aCsr[i].index; j<k; j++){
             if( aIdx[j]!=0 ){
-              aStack[tos].i = aIdx[j];
+              aStack[tos].i = p->aCsr[i].lastKey = aIdx[j];
+              p->aCsr[i].keyIsValid = 1;
               aStack[tos].flags = STK_Int;
               break;
             }
