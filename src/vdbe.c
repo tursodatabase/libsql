@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.281 2004/05/11 09:31:32 drh Exp $
+** $Id: vdbe.c,v 1.282 2004/05/11 09:57:35 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2698,6 +2698,11 @@ case OP_OpenWrite: {
         busy = 0;
         break;
       }
+      case SQLITE_EMPTY: {
+        rc = SQLITE_OK;
+        busy = 0;
+        break;
+      }
       default: {
         goto abort_due_to_error;
       }
@@ -3660,20 +3665,20 @@ case OP_Rewind: {
   int i = pOp->p1;
   Cursor *pC;
   BtCursor *pCrsr;
+  int res;
 
   assert( i>=0 && i<p->nCursor );
   pC = &p->aCsr[i];
   if( (pCrsr = pC->pCursor)!=0 ){
-    int res;
     rc = sqlite3BtreeFirst(pCrsr, &res);
     pC->atFirst = res==0;
-    pC->nullRow = res;
     pC->deferredMoveto = 0;
-    if( res && pOp->p2>0 ){
-      pc = pOp->p2 - 1;
-    }
   }else{
-    pC->nullRow = 0;
+    res = 1;
+  }
+  pC->nullRow = res;
+  if( res && pOp->p2>0 ){
+    pc = pOp->p2 - 1;
   }
   break;
 }
