@@ -1,5 +1,5 @@
-C All\sidentifiers\sto\sbe\squoted\sin\ssquare\sbrackets,\sfor\scompatibility\swith\nMS-Access.\s(CVS\s370)
-D 2002-02-14T21:42:51
+C Make\sthe\ssqliteParseInfoReset()\sfunction\slocale\sto\sthe\sselect.c\sfile.\s(CVS\s371)
+D 2002-02-17T00:30:36
 F Makefile.in 9fa4277413bf1d9cf91365f07d4108d7d87ed2af
 F Makefile.template 3372d45f8853afdb70bd30cc6fb50a3cd9069834
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -36,17 +36,17 @@ F src/pager.h b28f004e2f5541dc60cc32db01bf80cf4d056283
 F src/parse.y 734ba1e0dce9882345e65de5a14d9fe02fb757c2
 F src/printf.c 300a90554345751f26e1fc0c0333b90a66110a1d
 F src/random.c f6b36bec5ebd3edb3440224bf5bf811fe4ac9a1b
-F src/select.c 4b4a25c57cc341565dad625c3100c71ce993f85f
+F src/select.c 631fe7c1e06c70e4e78e9536e69f4eb57fdae07b
 F src/shell.c c102dfe388c7618a668c944ff157c49cb48f28e3
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in f57074c84a2c112a5093ba7a9d9636aa9cacc87c
-F src/sqliteInt.h 41459cf6cae299f66c3ab16b20b8e24443c06089
+F src/sqliteInt.h 58d6311edad0d52eae1631c47356b329da24f3af
 F src/table.c c89698bd5bb4b8d14722d6ee7e9be014c383d24a
 F src/tclsqlite.c b9cf346e95291cb4c4f1bf5ac1d77db6b8ad023d
 F src/test1.c 33efd350dca27c52c58c553c04fd3a6a51f13c1f
 F src/test2.c d410dbd8a90faa466c3ab694fa0aa57f5a773aa6
 F src/test3.c d6775f95fd91f5b3cf0e2382a28e5aaeb68f745b
-F src/tokenize.c 0cbf765ef45e66889f02c9045c7917f271d5b70f
+F src/tokenize.c 9e98f94469694a763992860596137e78dbae0cc0
 F src/update.c 95459f94a061860bf8e5716b3426a5ba85c79103
 F src/util.c f31f3d6198a0d1296a16f5a6ceec423a932cbbf6
 F src/vdbe.c 94704a5733db95b78cc902208c5e8e26a784e7f8
@@ -122,7 +122,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 4d067000077ee8f0221a7940232dc658c7f04b49
-R 8725fda7a81499bfdfe493d3c2d9a57a
+P e17a858c9eeb70c62f54c88e6be5897e58d67301
+R b50edb4b34a53c4baa439c4b19149a7d
 U drh
-Z e9271fcc79fa3d5d756f3d84ae819cfa
+Z adc815cb558970a8bb42b33bc644f373

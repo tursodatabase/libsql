@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.58 2002/02/13 23:22:54 drh Exp $
+** $Id: select.c,v 1.59 2002/02/17 00:30:36 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -73,7 +73,7 @@ void sqliteSelectDelete(Select *p){
 /*
 ** Delete the aggregate information from the parse structure.
 */
-void sqliteParseInfoReset(Parse *pParse){
+static void sqliteAggregateInfoReset(Parse *pParse){
   sqliteFree(pParse->aAgg);
   pParse->aAgg = 0;
   pParse->nAgg = 0;
@@ -708,6 +708,7 @@ int sqliteSelect(
   int isDistinct;        /* True if the DISTINCT keyword is present */
   int distinct;          /* Table to use for the distinct set */
   int base;              /* First cursor available for use */
+  int rc = 1;            /* Value to return from this function */
 
   if( sqlite_malloc_failed || pParse->nErr || p==0 ) return 1;
 
@@ -735,18 +736,18 @@ int sqliteSelect(
   ** Do not even attempt to generate any code if we have already seen
   ** errors before this routine starts.
   */
-  if( pParse->nErr>0 ) return 1;
-  sqliteParseInfoReset(pParse);
+  if( pParse->nErr>0 ) goto select_end;
+  sqliteAggregateInfoReset(pParse);
 
   /* Look up every table in the table list and create an appropriate
   ** columnlist in pEList if there isn't one already.  (The parser leaves
   ** a NULL in the p->pEList if the SQL said "SELECT * FROM ...")
   */
   if( fillInColumnList(pParse, p) ){
-    return 1;
+    goto select_end;
   }
   pEList = p->pEList;
-  if( pEList==0 ) return 1;
+  if( pEList==0 ) goto select_end;
 
   /* Allocate a temporary table to use for the DISTINCT set, if
   ** necessary.  This must be done early to allocate the cursor before
@@ -765,7 +766,7 @@ int sqliteSelect(
     sqliteSetString(&pParse->zErrMsg, "only a single result allowed for "
        "a SELECT that is part of an expression", 0);
     pParse->nErr++;
-    return 1;
+    goto select_end;
   }
 
   /* ORDER BY is ignored if we are not sending the result to a callback.
@@ -800,18 +801,18 @@ int sqliteSelect(
   */
   for(i=0; i<pEList->nExpr; i++){
     if( sqliteExprResolveIds(pParse, pTabList, 0, pEList->a[i].pExpr) ){
-      return 1;
+      goto select_end;
     }
     if( sqliteExprCheck(pParse, pEList->a[i].pExpr, 1, &isAgg) ){
-      return 1;
+      goto select_end;
     }
   }
   if( pWhere ){
     if( sqliteExprResolveIds(pParse, pTabList, pEList, pWhere) ){
-      return 1;
+      goto select_end;
     }
     if( sqliteExprCheck(pParse, pWhere, 0, 0) ){
-      return 1;
+      goto select_end;
     }
   }
   if( pOrderBy ){
@@ -821,13 +822,13 @@ int sqliteSelect(
         sqliteSetString(&pParse->zErrMsg, 
              "ORDER BY expressions should not be constant", 0);
         pParse->nErr++;
-        return 1;
+        goto select_end;
       }
       if( sqliteExprResolveIds(pParse, pTabList, pEList, pE) ){
-        return 1;
+        goto select_end;
       }
       if( sqliteExprCheck(pParse, pE, isAgg, 0) ){
-        return 1;
+        goto select_end;
       }
     }
   }
@@ -838,13 +839,13 @@ int sqliteSelect(
         sqliteSetString(&pParse->zErrMsg, 
              "GROUP BY expressions should not be constant", 0);
         pParse->nErr++;
-        return 1;
+        goto select_end;
       }
       if( sqliteExprResolveIds(pParse, pTabList, pEList, pE) ){
-        return 1;
+        goto select_end;
       }
       if( sqliteExprCheck(pParse, pE, isAgg, 0) ){
-        return 1;
+        goto select_end;
       }
     }
   }
@@ -853,13 +854,13 @@ int sqliteSelect(
       sqliteSetString(&pParse->zErrMsg, "a GROUP BY clause is required "
          "before HAVING", 0);
       pParse->nErr++;
-      return 1;
+      goto select_end;
     }
     if( sqliteExprResolveIds(pParse, pTabList, pEList, pHaving) ){
-      return 1;
+      goto select_end;
     }
     if( sqliteExprCheck(pParse, pHaving, isAgg, 0) ){
-      return 1;
+      goto select_end;
     }
   }
 
@@ -869,23 +870,23 @@ int sqliteSelect(
     assert( pParse->nAgg==0 && pParse->iAggCount<0 );
     for(i=0; i<pEList->nExpr; i++){
       if( sqliteExprAnalyzeAggregates(pParse, pEList->a[i].pExpr) ){
-        return 1;
+        goto select_end;
       }
     }
     if( pGroupBy ){
       for(i=0; i<pGroupBy->nExpr; i++){
         if( sqliteExprAnalyzeAggregates(pParse, pGroupBy->a[i].pExpr) ){
-          return 1;
+          goto select_end;
         }
       }
     }
     if( pHaving && sqliteExprAnalyzeAggregates(pParse, pHaving) ){
-      return 1;
+      goto select_end;
     }
     if( pOrderBy ){
       for(i=0; i<pOrderBy->nExpr; i++){
         if( sqliteExprAnalyzeAggregates(pParse, pOrderBy->a[i].pExpr) ){
-          return 1;
+          goto select_end;
         }
       }
     }
@@ -894,7 +895,7 @@ int sqliteSelect(
   /* Begin generating code.
   */
   v = sqliteGetVdbe(pParse);
-  if( v==0 ) return 1;
+  if( v==0 ) goto select_end;
 
   /* Set the limiter
   */
@@ -948,7 +949,7 @@ int sqliteSelect(
     sqliteVdbeAddOp(v, OP_OpenTemp, distinct, 1);
   }
   pWInfo = sqliteWhereBegin(pParse, pTabList, pWhere, 0);
-  if( pWInfo==0 ) return 1;
+  if( pWInfo==0 ) goto select_end;
 
   /* Use the standard inner loop if we are not dealing with
   ** aggregates
@@ -956,7 +957,7 @@ int sqliteSelect(
   if( !isAgg ){
     if( selectInnerLoop(pParse, pEList, 0, 0, pOrderBy, distinct, eDest, iParm,
                     pWInfo->iContinue, pWInfo->iBreak) ){
-       return 1;
+       goto select_end;
     }
   }
 
@@ -1021,7 +1022,7 @@ int sqliteSelect(
     }
     if( selectInnerLoop(pParse, pEList, 0, 0, pOrderBy, distinct, eDest, iParm,
                     startagg, endagg) ){
-      return 1;
+      goto select_end;
     }
     sqliteVdbeAddOp(v, OP_Goto, 0, startagg);
     sqliteVdbeResolveLabel(v, endagg);
@@ -1044,5 +1045,15 @@ int sqliteSelect(
     sqliteVdbeAddOp(v, OP_NullCallback, pEList->nExpr, 0);
   }
 
-  return 0;
+  /* The SELECT was successfully coded.   Set the return code to 0
+  ** to indicate no errors.
+  */
+  rc = 0;
+
+  /* Control jumps to here if an error is encountered above, or upon
+  ** successful coding of the SELECT.
+  */
+select_end:
+  sqliteAggregateInfoReset(pParse);
+  return rc;
 }

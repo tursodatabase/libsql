@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.35 2002/02/14 21:42:51 drh Exp $
+** $Id: tokenize.c,v 1.36 2002/02/17 00:30:36 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -371,7 +371,6 @@ int sqliteRunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   db->flags &= ~SQLITE_Interrupt;
   pParse->rc = SQLITE_OK;
   i = 0;
-  sqliteParseInfoReset(pParse);
   pEngine = sqliteParserAlloc((void*(*)(int))malloc);
   if( pEngine==0 ){
     sqliteSetString(pzErrMsg, "out of memory", 0);
@@ -451,7 +450,6 @@ int sqliteRunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
     sqliteDeleteTable(pParse->db, pParse->pNewTable);
     pParse->pNewTable = 0;
   }
-  sqliteParseInfoReset(pParse);
   if( nErr>0 && pParse->rc==SQLITE_OK ){
     pParse->rc = SQLITE_ERROR;
   }
