@@ -1,5 +1,5 @@
-C Fix\sthe\shandling\sof\sindices\swith\squoted\snames.\s\sTicket\s#695.\s(CVS\s1830)
-D 2004-07-20T00:50:30
+C Handle\squotes\son\stable\snames\sin\sTABLE.*\sterms\sin\sSELECT.\s\sTicket\s#680.\s(CVS\s1834)
+D 2004-07-20T01:45:49
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -46,7 +46,7 @@ F src/parse.y 023720cb8c3bef74e51738bca78335d0dc6d2cfd
 F src/pragma.c f9c157b0591419d2d3407dac90222020d2a6d822
 F src/printf.c 378ec63d9303993eef24814a56a9fc7260aacbea
 F src/random.c 775913e0b7fbd6295d21f12a7bd35b46387c44b2
-F src/select.c 05218c258f15efe3671cc5580277e4166239dd54
+F src/select.c a1c18cab14b49f28ed7629a53fe02adeb13083d2
 F src/shell.c 920af040d3a33ea8919c82cee45b424ad841cee0
 F src/sqlite.h.in 35bec264dfb4965bbfeb7e75221f8658f210c30d
 F src/sqliteInt.h 3e9203f16d12baf3a364fae9d64903d813651abd
@@ -121,7 +121,7 @@ F test/progress.test 701b6115c2613128ececdfe1398a1bd0e1a4cfb3 x
 F test/quick.test 5a6bccf5c02f16841a79fbac7409a02138880c10
 F test/quote.test 08f23385c685d3dc7914ec760d492cacea7f6e3d
 F test/rowid.test 77f7e8c7ca626a15ff91a536595b695cfce7c845
-F test/select1.test ccace97d8f63d3827ec0e2f8fd33328d0d72bf23
+F test/select1.test 1eab1f8aa85b8d4e3474c0769fb81313548929ab
 F test/select2.test aceea74fd895b9d007512f72499db589735bd8e4
 F test/select3.test 445a1a3dde4e2fd32541b311f55da5e2f8079d76
 F test/select4.test e7e9a32fa745246cb99fadbeb63af4843a17925b
@@ -189,7 +189,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 28c01d2ac705923d3210ec2b8906541f42ec6f25
-R 09155773e4d31da180d82dae3717e109
+P 467309975f40bdc1ac0ed1c9c34d187e91217e12
+R b06683a522efc92cf8ccfe4d20bc02a5
 U drh
-Z 0e79cd27d622fc24c255a98039978a0f
+Z 4759a2f5a5b34994f5fc2f5fad5cea05
