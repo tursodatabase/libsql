@@ -27,7 +27,7 @@
 ** Random numbers are used by some of the database backends in order
 ** to generate random integer keys for tables or random filenames.
 **
-** $Id: random.c,v 1.2 2001/01/31 13:28:09 drh Exp $
+** $Id: random.c,v 1.3 2001/09/13 21:53:10 drh Exp $
 */
 #include "sqliteInt.h"
 #include <time.h>
@@ -87,7 +87,7 @@ int sqliteRandomByte(void){
   prng_state.s[prng_state.i] = prng_state.s[prng_state.j];
   prng_state.s[prng_state.j] = t;
   t = prng_state.s[prng_state.i] + prng_state.s[prng_state.j];
-  return t & 0xff;
+  return prng_state.s[t & 0xff];
 }
 
 /*

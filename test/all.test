@@ -22,7 +22,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: all.test,v 1.7 2001/04/12 23:21:59 drh Exp $
+# $Id: all.test,v 1.8 2001/09/13 21:53:10 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -35,12 +35,6 @@ if {[file exists ./sqlite_test_count]} {
   set COUNT 3
 }
 
-if {[file exists ./sqlite_test_prefixes]} {
-  set PREFIXES [exec cat ./sqlite_test_prefixes]
-} else {
-  set PREFIXES {memory: gdbm:}
-}
-
 # LeakList will hold a list of the number of unfreed mallocs after
 # each round of the test.  This number should be constant.  If it
 # grows, it may mean there is a memory leak in the library.
@@ -49,13 +43,10 @@ set LeakList {}
 
 
 for {set Counter 0} {$Counter<$COUNT} {incr Counter} {
-  foreach p $PREFIXES {
-    set dbprefix $p
-    foreach testfile [lsort -dictionary [glob $testdir/*.test]] {
-      if {[file tail $testfile]=="all.test"} continue
-      if {[file tail $testfile]=="malloc.test"} continue
-      source $testfile
-    }
+  foreach testfile [lsort -dictionary [glob $testdir/*.test]] {
+    if {[file tail $testfile]=="all.test"} continue
+    if {[file tail $testfile]=="malloc.test"} continue
+    source $testfile
   }
   if {[info exists Leak]} {
     lappend LeakList $Leak
@@ -81,10 +72,7 @@ if {$LeakList!=""} {
 }
 
 if {[file readable $testdir/malloc.test]} {
-  foreach p $PREFIXES {
-    set dbprefix $p
-    source $testdir/malloc.test
-  }
+  source $testdir/malloc.test
 }
 
 really_finish_test

@@ -21,7 +21,7 @@
 **   http://www.hwaci.com/drh/
 **
 *************************************************************************
-** $Id: btree.c,v 1.23 2001/09/13 14:46:10 drh Exp $
+** $Id: btree.c,v 1.24 2001/09/13 21:53:09 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1685,6 +1685,7 @@ static int balance(Btree *pBt, MemPage *pPage, BtCursor *pCur){
   int nxDiv;                   /* Next divider slot in pParent->apCell[] */
   int rc;                      /* The return code */
   int iCur;                    /* apCell[iCur] is the cell of the cursor */
+  MemPage *pOldCurPage;        /* The cursor originally points to this page */
   int totalSize;               /* Total bytes for all cells */
   int subtotal;                /* Subtotal of bytes in cells on one page */
   int cntNew[4];               /* Index in apCell[] of cell after i-th page */
@@ -1730,6 +1731,11 @@ static int balance(Btree *pBt, MemPage *pPage, BtCursor *pCur){
         rc = initPage(pPage, sqlitepager_pagenumber(pPage), 0);
         assert( rc==SQLITE_OK );
         reparentChildPages(pBt->pPager, pPage);
+        if( pCur && pCur->pPage==pChild ){
+          sqlitepager_unref(pChild);
+          pCur->pPage = pPage;
+          sqlitepager_ref(pPage);
+        }
         freePage(pBt, pChild, pgnoChild);
         sqlitepager_unref(pChild);
       }else{
@@ -1760,8 +1766,8 @@ static int balance(Btree *pBt, MemPage *pPage, BtCursor *pCur){
     pChild->pParent = pPage;
     sqlitepager_ref(pPage);
     pChild->isOverfull = 1;
-    if( pCur ){
-      sqlitepager_unref(pCur->pPage);
+    if( pCur && pCur->pPage==pPage ){
+      sqlitepager_unref(pPage);
       pCur->pPage = pChild;
     }else{
       extraUnref = pChild;
@@ -1796,7 +1802,7 @@ static int balance(Btree *pBt, MemPage *pPage, BtCursor *pCur){
 
   /*
   ** Initialize variables so that it will be safe to jump
-  ** directory to balance_cleanup at any moment.
+  ** directly to balance_cleanup at any moment.
   */
   nOld = nNew = 0;
   sqlitepager_ref(pParent);
@@ -1836,15 +1842,25 @@ static int balance(Btree *pBt, MemPage *pPage, BtCursor *pCur){
   /*
   ** Set iCur to be the index in apCell[] of the cell that the cursor
   ** is pointing to.  We will need this later on in order to keep the
-  ** cursor pointing at the same cell.
+  ** cursor pointing at the same cell.  If pCur points to a page that
+  ** has no involvement with this rebalancing, then set iCur to a large
+  ** number so that the iCur==j tests always fail in the main cell
+  ** distribution loop below.
   */
   if( pCur ){
-    iCur = pCur->idx;
-    for(i=0; i<nDiv && idxDiv[i]<idx; i++){
-      iCur += apOld[i]->nCell + 1;
+    iCur = 0;
+    for(i=0; i<nOld; i++){
+      if( pCur->pPage==apOld[i] ){
+        iCur += pCur->idx;
+        break;
+      }
+      iCur += apOld[i]->nCell;
+      if( i<nOld-1 && pCur->pPage==pParent && pCur->idx==idxDiv[i] ){
+        break;
+      }
+      iCur++;
     }
-    sqlitepager_unref(pCur->pPage);
-    pCur->pPage = 0;
+    pOldCurPage = pCur->pPage;
   }
 
   /*
@@ -1965,8 +1981,9 @@ static int balance(Btree *pBt, MemPage *pPage, BtCursor *pCur){
     pParent->apCell[nxDiv]->h.leftChild = pgnoNew[nNew-1];
   }
   if( pCur ){
-    assert( pCur->pPage!=0 );
+    assert( pOldCurPage!=0 );
     sqlitepager_ref(pCur->pPage);
+    sqlitepager_unref(pOldCurPage);
   }
 
   /*
@@ -1980,7 +1997,7 @@ static int balance(Btree *pBt, MemPage *pPage, BtCursor *pCur){
   /*
   ** balance the parent page.
   */
-  rc = balance(pBt, pParent, 0);
+  rc = balance(pBt, pParent, pCur);
 
   /*
   ** Cleanup before returning.
@@ -2022,7 +2039,7 @@ int sqliteBtreeInsert(
   MemPage *pPage;
   Btree *pBt = pCur->pBt;
 
-  if( !pCur->pBt->inTrans ){
+  if( !pCur->pBt->inTrans || nKey+nData==0 ){
     return SQLITE_ERROR;  /* Must start a transaction first */
   }
   rc = sqliteBtreeMoveto(pCur, pKey, nKey, &loc);
@@ -2107,8 +2124,10 @@ int sqliteBtreeDelete(BtCursor *pCur){
     releaseTempCursor(&leafCur);
   }else{
     dropCell(pPage, pCur->idx, cellSize(pCell));
-    if( pCur->idx>=pPage->nCell && pCur->idx>0 ){
-      pCur->idx--;
+    if( pCur->idx>=pPage->nCell ){
+      pCur->idx = pPage->nCell-1;
+      if( pCur->idx<0 ){ pCur->idx = 0; }
+      pCur->bSkipNext = 0;
     }else{
       pCur->bSkipNext = 1;
     }
@@ -2252,7 +2271,7 @@ int sqliteBtreeUpdateMeta(Btree *pBt, int *aMeta){
 ** All of the following code is omitted unless the library is compiled with
 ** the -DSQLITE_TEST=1 compiler option.
 ******************************************************************************/
-#ifdef SQLITE_TEST
+#if 1
 
 /*
 ** Print a disassembly of the given page on standard output.  This routine

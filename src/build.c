@@ -33,7 +33,7 @@
 **     COPY
 **     VACUUM
 **
-** $Id: build.c,v 1.31 2001/09/13 16:18:54 drh Exp $
+** $Id: build.c,v 1.32 2001/09/13 21:53:10 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -241,6 +241,26 @@ void sqliteDeleteTable(sqlite *db, Table *pTable){
 }
 
 /*
+** Unlink the given table from the hash tables and the delete the
+** table structure and all its indices.
+*/
+static void sqliteUnlinkAndDeleteTable(sqlite *db, Table *pTable){
+  if( pTable->zName && db ){
+    int h = sqliteHashNoCase(pTable->zName, 0) % N_HASH;
+    if( db->apTblHash[h]==pTable ){
+      db->apTblHash[h] = pTable->pHash;
+    }else{
+      Table *p;
+      for(p=db->apTblHash[h]; p && p->pHash!=pTable; p=p->pHash){}
+      if( p && p->pHash==pTable ){
+        p->pHash = pTable->pHash;
+      }
+    }
+  }
+  sqliteDeleteTable(db, pTable);
+}
+
+/*
 ** Check all Tables and Indexes in the internal hash table and commit
 ** any additions or deletions to those hash tables.
 **
@@ -262,7 +282,7 @@ void sqliteCommitInternalChanges(sqlite *db){
     for(pTable = db->apTblHash[i]; pTable; pTable=pNext){
       pNext = pTable->pHash;
       if( pTable->isDelete ){
-        sqliteDeleteTable(db, pTable);
+        sqliteUnlinkAndDeleteTable(db, pTable);
       }else if( pTable->isCommit==0 ){
         pTable->isCommit = 1;
       }
@@ -298,7 +318,7 @@ void sqliteRollbackInternalChanges(sqlite *db){
     for(pTable = db->apTblHash[i]; pTable; pTable=pNext){
       pNext = pTable->pHash;
       if( !pTable->isCommit ){
-        sqliteDeleteTable(db, pTable);
+        sqliteUnlinkAndDeleteTable(db, pTable);
       }else if( pTable->isDelete ){
         pTable->isDelete = 0;
       }
@@ -473,7 +493,7 @@ void sqliteEndTable(Parse *pParse, Token *pEnd){
   */
   if( !pParse->initFlag ){
     static VdbeOp addTable[] = {
-      { OP_Open,        0, 2, 0},
+      { OP_Open,        0, 2, MASTER_NAME},
       { OP_NewRecno,    0, 0, 0},
       { OP_String,      0, 0, "table"     },
       { OP_String,      0, 0, 0},            /* 3 */
@@ -495,6 +515,15 @@ void sqliteEndTable(Parse *pParse, Token *pEnd){
     sqliteVdbeChangeP3(v, base+5, p->zName, 0);
     sqliteVdbeChangeP3(v, base+6, pParse->sFirstToken.z, n);
     sqliteVdbeAddOp(v, OP_Close, 0, 0, 0, 0);
+    if( p->pIndex ){
+      /* If the table has a primary key, create an index in the database
+      ** for that key. */
+      Index *pIndex = p->pIndex;
+      assert( pIndex->pNext==0 );
+      assert( pIndex->tnum==0 );
+      sqliteVdbeAddOp(v, OP_CreateIndex, 0, 0, 0, 0),
+      sqliteVdbeIndexRootAddr(v, &pIndex->tnum);
+    }
     if( (db->flags & SQLITE_InTrans)==0 ){
       sqliteVdbeAddOp(v, OP_Commit, 0, 0, 0, 0);
     }
@@ -528,6 +557,7 @@ void sqliteDropTable(Parse *pParse, Token *pName){
   Table *pTable;
   Vdbe *v;
   int base;
+  sqlite *db = pParse->db;
 
   if( pParse->nErr || sqlite_malloc_failed ) return;
   pTable = sqliteTableFromToken(pParse, pName);
@@ -545,29 +575,29 @@ void sqliteDropTable(Parse *pParse, Token *pName){
   v = sqliteGetVdbe(pParse);
   if( v ){
     static VdbeOp dropTable[] = {
-      { OP_Open,       0, 2,        0},
+      { OP_Open,       0, 2,        MASTER_NAME},
       { OP_Rewind,     0, 0,        0},
       { OP_String,     0, 0,        0}, /* 2 */
-      { OP_Next,       0, ADDR(10), 0}, /* 3 */
+      { OP_Next,       0, ADDR(9),  0}, /* 3 */
       { OP_Dup,        0, 0,        0},
       { OP_Column,     0, 3,        0},
       { OP_Ne,         0, ADDR(3),  0},
-      { OP_Recno,      0, 0,        0},
       { OP_Delete,     0, 0,        0},
       { OP_Goto,       0, ADDR(3),  0},
-      { OP_Destroy,    0, 0,        0}, /* 10 */
+      { OP_Destroy,    0, 0,        0}, /* 9 */
       { OP_Close,      0, 0,        0},
     };
     Index *pIdx;
-    if( (pParse->db->flags & SQLITE_InTrans)==0 ){
+    if( (db->flags & SQLITE_InTrans)==0 ){
       sqliteVdbeAddOp(v, OP_Transaction, 0, 0, 0, 0);
     }
     base = sqliteVdbeAddOpList(v, ArraySize(dropTable), dropTable);
-    sqliteVdbeChangeP1(v, base+10, pTable->tnum);
+    sqliteVdbeChangeP3(v, base+2, pTable->zName, 0);
+    sqliteVdbeChangeP1(v, base+9, pTable->tnum);
     for(pIdx=pTable->pIndex; pIdx; pIdx=pIdx->pNext){
       sqliteVdbeAddOp(v, OP_Destroy, pIdx->tnum, 0, 0, 0);
     }
-    if( (pParse->db->flags & SQLITE_InTrans)==0 ){
+    if( (db->flags & SQLITE_InTrans)==0 ){
       sqliteVdbeAddOp(v, OP_Commit, 0, 0, 0, 0);
     }
   }
@@ -580,7 +610,7 @@ void sqliteDropTable(Parse *pParse, Token *pName){
   */
   if( !pParse->explain ){
     pTable->isDelete = 1;
-    pParse->db->flags |= SQLITE_InternChanges;
+    db->flags |= SQLITE_InternChanges;
   }
 }
 
@@ -720,16 +750,25 @@ void sqliteCreateIndex(
   ** CREATE INDEX statements are read out of the master table.  In
   ** the latter case the index already exists on disk, which is why
   ** we don't want to recreate it.
+  **
+  ** If pTable==0 it means this index is generated as a primary key
+  ** and those does not have a CREATE INDEX statement to add to the
+  ** master table.  Also, since primary keys are created at the same
+  ** time as tables, the table will be empty so there is no need to
+  ** initialize the index.  Hence, skip all the code generation if
+  ** pTable==0.
   */
-  if( pParse->initFlag==0 ){
+  else if( pParse->initFlag==0 && pTable!=0 ){
     static VdbeOp addTable[] = {
-      { OP_Open,        2, 2, 0},
+      { OP_Open,        2, 2, MASTER_NAME},
       { OP_NewRecno,    2, 0, 0},
       { OP_String,      0, 0, "index"},
       { OP_String,      0, 0, 0},  /* 3 */
-      { OP_CreateIndex, 0, 0, 0},
-      { OP_String,      0, 0, 0},  /* 5 */
-      { OP_String,      0, 0, 0},  /* 6 */
+      { OP_CreateIndex, 1, 0, 0},
+      { OP_Dup,         0, 0, 0},
+      { OP_Open,        1, 0, 0},  /* 6 */
+      { OP_String,      0, 0, 0},  /* 7 */
+      { OP_String,      0, 0, 0},  /* 8 */
       { OP_MakeRecord,  5, 0, 0},
       { OP_Put,         2, 0, 0},
       { OP_Close,       2, 0, 0},
@@ -744,17 +783,17 @@ void sqliteCreateIndex(
     if( pTable!=0 && (db->flags & SQLITE_InTrans)==0 ){
       sqliteVdbeAddOp(v, OP_Transaction, 0, 0, 0, 0);
     }
-    sqliteVdbeAddOp(v, OP_Open, 0, pTab->tnum, pTab->zName, 0);
-    sqliteVdbeAddOp(v, OP_Open, 1, pIndex->tnum, pIndex->zName, 0);
     if( pStart && pEnd ){
       int base;
       n = (int)pEnd->z - (int)pStart->z + 1;
       base = sqliteVdbeAddOpList(v, ArraySize(addTable), addTable);
       sqliteVdbeChangeP3(v, base+3, pIndex->zName, 0);
       sqliteVdbeIndexRootAddr(v, &pIndex->tnum);
-      sqliteVdbeChangeP3(v, base+5, pTab->zName, 0);
-      sqliteVdbeChangeP3(v, base+6, pStart->z, n);
+      sqliteVdbeChangeP3(v, base+6, pIndex->zName, 0);
+      sqliteVdbeChangeP3(v, base+7, pTab->zName, 0);
+      sqliteVdbeChangeP3(v, base+8, pStart->z, n);
     }
+    sqliteVdbeAddOp(v, OP_Open, 0, pTab->tnum, pTab->zName, 0);
     lbl1 = sqliteVdbeMakeLabel(v);
     lbl2 = sqliteVdbeMakeLabel(v);
     sqliteVdbeAddOp(v, OP_Rewind, 0, 0, 0, 0);
@@ -812,16 +851,15 @@ void sqliteDropIndex(Parse *pParse, Token *pName){
   v = sqliteGetVdbe(pParse);
   if( v ){
     static VdbeOp dropIndex[] = {
-      { OP_Open,       0, 2,       0},
+      { OP_Open,       0, 2,       MASTER_NAME},
       { OP_Rewind,     0, 0,       0}, 
       { OP_String,     0, 0,       0}, /* 2 */
-      { OP_Next,       0, ADDR(9), 0}, /* 3 */
+      { OP_Next,       0, ADDR(8), 0}, /* 3 */
       { OP_Dup,        0, 0,       0},
       { OP_Column,     0, 1,       0},
       { OP_Ne,         0, ADDR(3), 0},
-      { OP_Recno,      0, 0,       0},
       { OP_Delete,     0, 0,       0},
-      { OP_Destroy,    0, 0,       0}, /* 9 */
+      { OP_Destroy,    0, 0,       0}, /* 8 */
       { OP_Close,      0, 0,       0},
     };
     int base;
@@ -830,7 +868,7 @@ void sqliteDropIndex(Parse *pParse, Token *pName){
       sqliteVdbeAddOp(v, OP_Transaction, 0, 0, 0, 0);
     }
     base = sqliteVdbeAddOpList(v, ArraySize(dropIndex), dropIndex);
-    sqliteVdbeChangeP1(v, base+9, pIndex->tnum);
+    sqliteVdbeChangeP1(v, base+8, pIndex->tnum);
     if( (db->flags & SQLITE_InTrans)==0 ){
       sqliteVdbeAddOp(v, OP_Commit, 0, 0, 0, 0);
     }

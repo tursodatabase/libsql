@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements.
 **
-** $Id: select.c,v 1.34 2001/09/13 16:18:54 drh Exp $
+** $Id: select.c,v 1.35 2001/09/13 21:53:10 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -182,6 +182,7 @@ static int selectInnerLoop(
   */
   if( eDest==SRT_Except ){
     sqliteVdbeAddOp(v, OP_MakeRecord, nColumn, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_MoveTo, iParm, 0, 0, 0);
     sqliteVdbeAddOp(v, OP_Delete, iParm, 0, 0, 0);
   }else 
 

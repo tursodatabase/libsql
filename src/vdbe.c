@@ -41,10 +41,11 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.63 2001/09/13 16:18:54 drh Exp $
+** $Id: vdbe.c,v 1.64 2001/09/13 21:53:10 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
+#include <unistd.h>
 
 /*
 ** SQL is translated into a sequence of instructions to be
@@ -875,26 +876,26 @@ static char *zOpName[] = { 0,
   "NewRecno",          "Put",               "Distinct",          "Found",
   "NotFound",          "Delete",            "Column",            "KeyAsData",
   "Recno",             "FullKey",           "Rewind",            "Next",
-  "Destroy",           "CreateIndex",       "CreateTable",       "Reorganize",
-  "BeginIdx",          "NextIdx",           "PutIdx",            "DeleteIdx",
-  "MemLoad",           "MemStore",          "ListOpen",          "ListWrite",
-  "ListRewind",        "ListRead",          "ListClose",         "SortOpen",
-  "SortPut",           "SortMakeRec",       "SortMakeKey",       "Sort",
-  "SortNext",          "SortKey",           "SortCallback",      "SortClose",
-  "FileOpen",          "FileRead",          "FileColumn",        "FileClose",
-  "AggReset",          "AggFocus",          "AggIncr",           "AggNext",
-  "AggSet",            "AggGet",            "SetInsert",         "SetFound",
-  "SetNotFound",       "SetClear",          "MakeRecord",        "MakeKey",
-  "MakeIdxKey",        "Goto",              "If",                "Halt",
-  "ColumnCount",       "ColumnName",        "Callback",          "Integer",
-  "String",            "Null",              "Pop",               "Dup",
-  "Pull",              "Add",               "AddImm",            "Subtract",
-  "Multiply",          "Divide",            "Min",               "Max",
-  "Like",              "Glob",              "Eq",                "Ne",
-  "Lt",                "Le",                "Gt",                "Ge",
-  "IsNull",            "NotNull",           "Negative",          "And",
-  "Or",                "Not",               "Concat",            "Noop",
-  "Strlen",            "Substr",          
+  "Destroy",           "Clear",             "CreateIndex",       "CreateTable",
+  "Reorganize",        "BeginIdx",          "NextIdx",           "PutIdx",
+  "DeleteIdx",         "MemLoad",           "MemStore",          "ListOpen",
+  "ListWrite",         "ListRewind",        "ListRead",          "ListClose",
+  "SortOpen",          "SortPut",           "SortMakeRec",       "SortMakeKey",
+  "Sort",              "SortNext",          "SortKey",           "SortCallback",
+  "SortClose",         "FileOpen",          "FileRead",          "FileColumn",
+  "FileClose",         "AggReset",          "AggFocus",          "AggIncr",
+  "AggNext",           "AggSet",            "AggGet",            "SetInsert",
+  "SetFound",          "SetNotFound",       "SetClear",          "MakeRecord",
+  "MakeKey",           "MakeIdxKey",        "Goto",              "If",
+  "Halt",              "ColumnCount",       "ColumnName",        "Callback",
+  "Integer",           "String",            "Null",              "Pop",
+  "Dup",               "Pull",              "Add",               "AddImm",
+  "Subtract",          "Multiply",          "Divide",            "Min",
+  "Max",               "Like",              "Glob",              "Eq",
+  "Ne",                "Lt",                "Le",                "Gt",
+  "Ge",                "IsNull",            "NotNull",           "Negative",
+  "And",               "Or",                "Not",               "Concat",
+  "Noop",              "Strlen",            "Substr",          
 };
 
 /*
@@ -1979,6 +1980,8 @@ case OP_Rollback: {
 ** of P1.  The P1 values need not be contiguous but all P1 values
 ** should be small integers.  It is an error for P1 to be negative.
 **
+** If P2==0 then take the root page number from the top of the stack.
+**
 ** The P3 value is the name of the table or index being opened.
 ** The P3 value is not actually used by this opcode and may be
 ** omitted.  But the code generator usually inserts the index or
@@ -1987,6 +1990,19 @@ case OP_Rollback: {
 case OP_Open: {
   int busy = 0;
   int i = pOp->p1;
+  int tos = p->tos;
+  int p2 = pOp->p2;
+  if( p2<=0 ){
+    if( tos<0 ) goto not_enough_stack;
+    Integerify(p, tos);
+    p2 = p->aStack[tos].i;
+    POPSTACK;
+    if( p2<2 ){
+      sqliteSetString(pzErrMsg, "root page number less than 2", 0);
+      rc = SQLITE_INTERNAL;
+      goto cleanup;
+    }
+  }
   VERIFY( if( i<0 ) goto bad_instruction; )
   if( i>=p->nCursor ){
     int j;
@@ -1999,7 +2015,7 @@ case OP_Open: {
   }
   memset(&p->aCsr[i], 0, sizeof(Cursor));
   do{
-    rc = sqliteBtreeCursor(pBt, pOp->p2, &p->aCsr[i].pCursor);
+    rc = sqliteBtreeCursor(pBt, p2, &p->aCsr[i].pCursor);
     switch( rc ){
       case SQLITE_BUSY: {
         if( xBusy==0 || (*xBusy)(pBusyArg, pOp->p3, ++busy)==0 ){
@@ -2240,29 +2256,18 @@ case OP_Put: {
 
 /* Opcode: Delete P1 * *
 **
-** The top of the stack is a key.  Remove this key and its data
-** from database file P1.  Then pop the stack to discard the key.
+** Delete the record at which the P1 cursor is currently pointing.
+**
+** The cursor will be left pointing at either the next or the previous
+** record in the table. If it is left pointing at the next record, then
+** the next OP_Next will be a no-op.  Hence it is OK to delete a record
+** from within an OP_Next loop.
 */
 case OP_Delete: {
-  int tos = p->tos;
   int i = pOp->p1;
-  int res;
-  VERIFY( if( tos<0 ) goto not_enough_stack; )
   if( VERIFY( i>=0 && i<p->nCursor && ) p->aCsr[i].pCursor!=0 ){
-    char *zKey;
-    int nKey;
-    if( aStack[tos].flags & STK_Int ){
-      nKey = sizeof(int);
-      zKey = (char*)&aStack[tos].i;
-    }else{
-      if( Stringify(p, tos) ) goto no_mem;
-      nKey = aStack[tos].n;
-      zKey = zStack[tos];
-    }
-    rc = sqliteBtreeMoveto(p->aCsr[i].pCursor, zKey, nKey, &res);
     rc = sqliteBtreeDelete(p->aCsr[i].pCursor);
   }
-  POPSTACK;
   break;
 }
 
@@ -2303,11 +2308,11 @@ case OP_Column: {
   static const int mxHdr = sizeof(aHdr)/sizeof(aHdr[0]);
   int i = pOp->p1;
   int p2 = pOp->p2;
-  int tos = ++p->tos;
+  int tos = p->tos+1;
   BtCursor *pCrsr;
   char *z;
 
-  VERIFY( if( NeedStack(p, tos) ) goto no_mem; )
+  VERIFY( if( NeedStack(p, tos+1) ) goto no_mem; )
   if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
     int (*xSize)(BtCursor*, int*);
     int (*xRead)(BtCursor*, int, int, char*);
@@ -2371,6 +2376,7 @@ case OP_Column: {
       zStack[tos] = z;
       aStack[tos].n = amt;
     }
+    p->tos = tos;
   }
   break;
 }
@@ -2530,8 +2536,13 @@ case OP_NextIdx: {
   zStack[tos] = 0;
   if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = &p->aCsr[i])->pCursor!=0 ){
     pCur = pCrsr->pCursor;
-    rx = sqliteBtreeNext(pCur, &res);
-    if( rx!=SQLITE_OK ) goto abort_due_to_error;
+    if( pCrsr->atFirst ){
+      pCrsr->atFirst = 0;
+      res = 0;
+    }else{
+      rx = sqliteBtreeNext(pCur, &res);
+      if( rx!=SQLITE_OK ) goto abort_due_to_error;
+    }
     sqliteBtreeKeySize(pCur, &size);
     if( res>0 || size!=pCrsr->nKey+sizeof(int) ||
       sqliteBtreeKey(pCur, 0, pCrsr->nKey, pCrsr->zBuf)!=pCrsr->nKey ||
@@ -2599,6 +2610,17 @@ case OP_Destroy: {
   break;
 }
 
+/* Opcode: Clear P1 * *
+**
+** Delete all contents of the database table or index whose root page
+** in the database file is given by P1.  But, unlike OP_Destroy, do not
+** remove the table or index from the database file.
+*/
+case OP_Clear: {
+  sqliteBtreeClearTable(pBt, pOp->p1);
+  break;
+}
+
 /* Opcode: CreateTable * * *
 **
 ** Allocate a new table in the main database file.  Push the page number
@@ -2633,6 +2655,8 @@ case OP_CreateTable: {
 **
 ** Allocate a new Index in the main database file.  Push the page number
 ** for the root page of the new table onto the stack.
+**
+** If P1>=0 then open a cursor named P1 on the newly created index.
 **
 ** The root page number is also written to a memory location which has
 ** be set up by the parser.  The difference between CreateTable and
@@ -3684,7 +3708,7 @@ default: {
 
 cleanup:
   Cleanup(p);
-  if( p->pTableRoot || p->pIndexRoot ){
+  if( (p->pTableRoot || p->pIndexRoot) && rc==SQLITE_OK ){
     rc = SQLITE_INTERNAL;
     sqliteSetString(pzErrMsg, "table or index root page not set", 0);
   }

@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle DELETE FROM statements.
 **
-** $Id: delete.c,v 1.11 2001/09/13 14:46:10 drh Exp $
+** $Id: delete.c,v 1.12 2001/09/13 21:53:10 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -96,12 +96,12 @@ void sqliteDeleteFrom(
 
 
   /* Special case: A DELETE without a WHERE clause deletes everything.
-  ** It is easier just to deleted the database files directly.
+  ** It is easier just to clear all information the database tables directly.
   */
   if( pWhere==0 ){
-    sqliteVdbeAddOp(v, OP_Destroy, pTab->tnum, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_Clear, pTab->tnum, 0, 0, 0);
     for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-      sqliteVdbeAddOp(v, OP_Destroy, pIdx->tnum, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_Clear, pIdx->tnum, 0, 0, 0);
     }
   }
 
@@ -135,12 +135,11 @@ void sqliteDeleteFrom(
     }
     end = sqliteVdbeMakeLabel(v);
     addr = sqliteVdbeAddOp(v, OP_ListRead, 0, end, 0, 0);
+    sqliteVdbeAddOp(v, OP_MoveTo, base, 0, 0, 0);
     if( pTab->pIndex ){
-      sqliteVdbeAddOp(v, OP_Dup, 0, 0, 0, 0);
-      sqliteVdbeAddOp(v, OP_MoveTo, base, 0, 0, 0);
       for(i=1, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){
         int j;
-        sqliteVdbeAddOp(v, OP_Dup, 0, 0, 0, 0);
+        sqliteVdbeAddOp(v, OP_Recno, base, 0, 0, 0);
         for(j=0; j<pIdx->nColumn; j++){
           sqliteVdbeAddOp(v, OP_Column, base, pIdx->aiColumn[j], 0, 0);
         }

@@ -23,7 +23,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE INDEX statement.
 #
-# $Id: index.test,v 1.10 2001/08/19 18:19:46 drh Exp $
+# $Id: index.test,v 1.11 2001/09/13 21:53:10 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -39,17 +39,15 @@ do_test index-1.1b {
   execsql {SELECT name, sql, tbl_name, type FROM sqlite_master 
            WHERE name='index1'}
 } {index1 {CREATE INDEX index1 ON test1(f1)} test1 index}
-skipif memory:
 do_test index-1.1c {
   db close
-  sqlite db testdb
+  sqlite db test.db
   execsql {SELECT name, sql, tbl_name, type FROM sqlite_master 
            WHERE name='index1'}
 } {index1 {CREATE INDEX index1 ON test1(f1)} test1 index}
-skipif memory:
 do_test index-1.1d {
   db close
-  sqlite db testdb
+  sqlite db test.db
   execsql {SELECT name FROM sqlite_master WHERE type!='meta' ORDER BY name}
 } {index1 test1}
 
@@ -101,18 +99,6 @@ do_test index-3.1 {
            ORDER BY name}
 } $r
 
-# Add a single entry to the table.  Verify that files are created
-# for every index.
-#
-set r {}
-for {set i 1} {$i<100} {incr i} {
-  lappend r testdb/index$i.tbl
-}
-skipif memory:
-do_test index-3.2 {
-  execsql {INSERT INTO test1 VALUES(1,2,3,4,5)}
-  lsort -dictionary [glob testdb/index*.tbl]
-} $r
 
 # Verify that all the indices go away when we drop the table.
 #
@@ -121,9 +107,6 @@ do_test index-3.3 {
   execsql {SELECT name FROM sqlite_master 
            WHERE type='index' AND tbl_name='test1'
            ORDER BY name}
-} {}
-do_test index-3.4 {
-  lsort -dictionary [glob -nocomplain testdb/index*.tbl]
 } {}
 
 # Create a table and insert values into that table.  Then create
@@ -228,10 +211,6 @@ do_test index-7.1 {
   }
   execsql {SELECT count(*) FROM test1}
 } {19}
-skipif memory:
-do_test index-7.1b {
-  lsort -dictionary [glob testdb/test1*.tbl]
-} {testdb/test1.tbl testdb/test1__primary_key.tbl}
 do_test index-7.2 {
   execsql {SELECT f1 FROM test1 WHERE f2=65536}
 } {16}

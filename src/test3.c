@@ -25,7 +25,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test3.c,v 1.9 2001/08/20 00:33:58 drh Exp $
+** $Id: test3.c,v 1.10 2001/09/13 21:53:10 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -715,9 +715,11 @@ static int btree_key(
   sqliteBtreeKeySize(pCur, &n);
   zBuf = malloc( n+1 );
   rc = sqliteBtreeKey(pCur, 0, n, zBuf);
-  if( rc ){
+  if( rc!=n ){
+    char zMsg[100];
     free(zBuf);
-    Tcl_AppendResult(interp, errorName(rc), 0);
+    sprintf(zMsg, "truncated key: got %d of %d bytes", rc, n);
+    Tcl_AppendResult(interp, zMsg, 0);
     return TCL_ERROR;
   }
   zBuf[n] = 0;
@@ -751,9 +753,11 @@ static int btree_data(
   sqliteBtreeDataSize(pCur, &n);
   zBuf = malloc( n+1 );
   rc = sqliteBtreeData(pCur, 0, n, zBuf);
-  if( rc ){
+  if( rc!=n ){
+    char zMsg[100];
     free(zBuf);
-    Tcl_AppendResult(interp, errorName(rc), 0);
+    sprintf(zMsg, "truncated data: got %d of %d bytes", rc, n);
+    Tcl_AppendResult(interp, zMsg, 0);
     return TCL_ERROR;
   }
   zBuf[n] = 0;

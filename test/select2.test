@@ -23,7 +23,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the SELECT statement.
 #
-# $Id: select2.test,v 1.11 2001/08/19 18:19:46 drh Exp $
+# $Id: select2.test,v 1.12 2001/09/13 21:53:10 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -112,7 +112,6 @@ do_test select2-3.2e {
 
 # omit the time-dependent tests
 #
-testif gdbm:
 do_probtest select2-3.2f {
   set t1 [lindex [time {execsql {SELECT f1 FROM tbl2 WHERE 1000=f2}} 1] 0]
   set t2 [lindex [time {execsql {SELECT f1 FROM tbl2 WHERE f2=1000}} 1] 0]

@@ -23,7 +23,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.15 2001/04/11 14:28:43 drh Exp $
+# $Id: tester.tcl,v 1.16 2001/09/13 21:53:10 drh Exp $
 
 # Make sure tclsqlite was compiled correctly.  Abort now with an
 # error message if not.
@@ -54,28 +54,9 @@ if {[sqlite -tcl-uses-utf]} {
 
 # Create a test database
 #
-if {![info exists dbprefix]} {
-  if {[info exists env(SQLITE_PREFIX)]} {
-    set dbprefix $env(SQLITE_PREFIX):
-  } else {
-    set dbprefix "gdbm:"
-  }
-}
-switch $dbprefix {
-  gdbm: {
-   foreach f [glob -nocomplain testdb/*] {
-     catch {file delete -force $f}
-   }
-   if {[catch {file delete -force testdb}]} {
-     exec rm -rf testdb
-   }
-   file mkdir testdb
-  }
-  memory: {
-   # do nothing
-  }
-}
-sqlite db ${dbprefix}testdb
+file delete -force ./test.db
+file delete -force ./test.db-journal
+sqlite db ./test.db
 
 # Abort early if this script has been run before.
 #
@@ -109,14 +90,16 @@ proc do_test {name cmd expected} {
   }
   if {!$go} return
   incr nTest
-  puts -nonewline $::dbprefix$name...
+  puts -nonewline $name...
   flush stdout
   if {[catch {uplevel #0 "$cmd;\n"} result]} {
     puts "\nError: $result"
     incr nErr
+    if {$nErr>10} {puts "*** Giving up..."; exit 1}
   } elseif {[string compare $result $expected]} {
     puts "\nExpected: \[$expected\]\n     Got: \[$result\]"
     incr nErr
+    if {$nErr>10} {puts "*** Giving up..."; exit 1}
   } else {
     puts " Ok"
   }
@@ -144,7 +127,7 @@ proc do_probtest {name cmd expected} {
   }
   if {!$go} return
   incr nTest
-  puts -nonewline $::dbprefix$name...
+  puts -nonewline $name...
   flush stdout
   if {[catch {uplevel #0 "$cmd;\n"} result]} {
     puts "\nError: $result"
@@ -158,29 +141,6 @@ proc do_probtest {name cmd expected} {
   } else {
     puts " Ok"
   }
-}
-
-# Skip a test based on the dbprefix
-#
-proc skipif {args} {
-  foreach a $args {
-    if {$::dbprefix==$a} {
-      set ::skip_test 1
-      return
-    }
-  }
-}
-
-# Run the next test only if the dbprefix is among the listed arguments
-#
-proc testif {args} {
-  foreach a $args {
-    if {$::dbprefix==$a} {
-      set ::skip_test 0
-      return
-    }
-  }
-  set ::skip_test 1
 }
 
 # The procedure uses the special "sqlite_malloc_stat" command
