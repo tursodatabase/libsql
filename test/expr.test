@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing expressions.
 #
-# $Id: expr.test,v 1.22 2002/05/30 02:35:12 drh Exp $
+# $Id: expr.test,v 1.23 2002/05/30 12:27:03 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -354,7 +354,9 @@ test_expr expr-case.10 {i1=3} \
 	{CASE i1 WHEN 1 THEN 'one' WHEN 2 THEN 'two' END} {{}}
 test_expr expr-case.11 {i1=null} \
 	{CASE i1 WHEN 1 THEN 'one' WHEN 2 THEN 'two' ELSE 3 END} {{}}
-test_expr expr-case.12 {i1=7} \
+test_expr expr-case.12 {i1=1} \
+	{CASE i1 WHEN 1 THEN null WHEN 2 THEN 'two' ELSE 3 END} {{}}
+test_expr expr-case.13 {i1=7} \
 	{ CASE WHEN i1 < 5 THEN 'low' 
 	       WHEN i1 < 10 THEN 'medium' 
                WHEN i1 < 15 THEN 'high' ELSE 'error' END} medium

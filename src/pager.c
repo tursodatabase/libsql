@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.45 2002/04/18 01:56:58 drh Exp $
+** @(#) $Id: pager.c,v 1.46 2002/05/30 12:27:03 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -114,6 +114,7 @@ struct Pager {
   int nHit, nMiss, nOvfl;     /* Cache hits, missing, and LRU overflows */
   u8 journalOpen;             /* True if journal file descriptors is valid */
   u8 ckptOpen;                /* True if the checkpoint journal is open */
+  u8 ckptInUse;               /* True we are in a checkpoint */
   u8 noSync;                  /* Do not sync the journal if true */
   u8 state;                   /* SQLITE_UNLOCK, _READLOCK or _WRITELOCK */
   u8 errMask;                 /* One of several kinds of errors */
@@ -243,6 +244,10 @@ static int pager_unwritelock(Pager *pPager){
   PgHdr *pPg;
   if( pPager->state<SQLITE_WRITELOCK ) return SQLITE_OK;
   sqlitepager_ckpt_commit(pPager);
+  if( pPager->ckptOpen ){
+    sqliteOsClose(&pPager->cpfd);
+    pPager->ckptOpen = 0;
+  }
   sqliteOsClose(&pPager->jfd);
   pPager->journalOpen = 0;
   sqliteOsDelete(pPager->zJournal);
@@ -391,7 +396,7 @@ static int pager_ckpt_playback(Pager *pPager){
 
   /* Figure out how many records are in the checkpoint journal.
   */
-  assert( pPager->ckptOpen && pPager->journalOpen );
+  assert( pPager->ckptInUse && pPager->journalOpen );
   sqliteOsSeek(&pPager->cpfd, 0);
   rc = sqliteOsFileSize(&pPager->cpfd, &nRec);
   if( rc!=SQLITE_OK ){
@@ -528,6 +533,7 @@ int sqlitepager_open(
   pPager->fd = fd;
   pPager->journalOpen = 0;
   pPager->ckptOpen = 0;
+  pPager->ckptInUse = 0;
   pPager->nRef = 0;
   pPager->dbSize = -1;
   pPager->ckptSize = 0;
@@ -614,9 +620,11 @@ int sqlitepager_close(Pager *pPager){
   }
   sqliteOsClose(&pPager->fd);
   assert( pPager->journalOpen==0 );
-  if( pPager->tempFile ){
-    /* sqliteOsDelete(pPager->zFilename); */
-  }
+  /* Temp files are automatically deleted by the OS
+  ** if( pPager->tempFile ){
+  **   sqliteOsDelete(pPager->zFilename);
+  ** }
+  */
   sqliteFree(pPager);
   return SQLITE_OK;
 }
@@ -1090,7 +1098,7 @@ int sqlitepager_write(void *pData){
   ** to the journal then we can return right away.
   */
   pPg->dirty = 1;
-  if( pPg->inJournal && (pPg->inCkpt || pPager->ckptOpen==0) ){
+  if( pPg->inJournal && (pPg->inCkpt || pPager->ckptInUse==0) ){
     pPager->dirtyFile = 1;
     return SQLITE_OK;
   }
@@ -1127,7 +1135,7 @@ int sqlitepager_write(void *pData){
     pPager->aInJournal[pPg->pgno/8] |= 1<<(pPg->pgno&7);
     pPager->needSync = !pPager->noSync;
     pPg->inJournal = 1;
-    if( pPager->ckptOpen ){
+    if( pPager->ckptInUse ){
       pPager->aInCkpt[pPg->pgno/8] |= 1<<(pPg->pgno&7);
       pPg->inCkpt = 1;
     }
@@ -1136,7 +1144,7 @@ int sqlitepager_write(void *pData){
   /* If the checkpoint journal is open and the page is not in it,
   ** then write the current page to the checkpoint journal.
   */
-  if( pPager->ckptOpen && !pPg->inCkpt && (int)pPg->pgno<=pPager->ckptSize ){
+  if( pPager->ckptInUse && !pPg->inCkpt && (int)pPg->pgno<=pPager->ckptSize ){
     assert( pPg->inJournal || (int)pPg->pgno>pPager->origDbSize );
     rc = sqliteOsWrite(&pPager->cpfd, &pPg->pgno, sizeof(Pgno));
     if( rc==SQLITE_OK ){
@@ -1206,12 +1214,12 @@ void sqlitepager_dont_rollback(void *pData){
     assert( pPager->aInJournal!=0 );
     pPager->aInJournal[pPg->pgno/8] |= 1<<(pPg->pgno&7);
     pPg->inJournal = 1;
-    if( pPager->ckptOpen ){
+    if( pPager->ckptInUse ){
       pPager->aInCkpt[pPg->pgno/8] |= 1<<(pPg->pgno&7);
       pPg->inCkpt = 1;
     }
   }
-  if( pPager->ckptOpen && !pPg->inCkpt && (int)pPg->pgno<=pPager->ckptSize ){
+  if( pPager->ckptInUse && !pPg->inCkpt && (int)pPg->pgno<=pPager->ckptSize ){
     assert( pPg->inJournal || (int)pPg->pgno>pPager->origDbSize );
     assert( pPager->aInCkpt!=0 );
     pPager->aInCkpt[pPg->pgno/8] |= 1<<(pPg->pgno&7);
@@ -1345,7 +1353,7 @@ int sqlitepager_ckpt_begin(Pager *pPager){
   int rc;
   char zTemp[SQLITE_TEMPNAME_SIZE];
   assert( pPager->journalOpen );
-  assert( !pPager->ckptOpen );
+  assert( !pPager->ckptInUse );
   pPager->aInCkpt = sqliteMalloc( pPager->dbSize/8 + 1 );
   if( pPager->aInCkpt==0 ){
     sqliteOsReadLock(&pPager->fd);
@@ -1354,9 +1362,12 @@ int sqlitepager_ckpt_begin(Pager *pPager){
   rc = sqliteOsFileSize(&pPager->jfd, &pPager->ckptJSize);
   if( rc ) goto ckpt_begin_failed;
   pPager->ckptSize = pPager->dbSize;
-  rc = sqlitepager_opentemp(zTemp, &pPager->cpfd);
-  if( rc ) goto ckpt_begin_failed;
-  pPager->ckptOpen = 1;
+  if( !pPager->ckptOpen ){
+    rc = sqlitepager_opentemp(zTemp, &pPager->cpfd);
+    if( rc ) goto ckpt_begin_failed;
+    pPager->ckptOpen = 1;
+  }
+  pPager->ckptInUse = 1;
   return SQLITE_OK;
  
 ckpt_begin_failed:
@@ -1371,10 +1382,10 @@ ckpt_begin_failed:
 ** Commit a checkpoint.
 */
 int sqlitepager_ckpt_commit(Pager *pPager){
-  if( pPager->ckptOpen ){
+  if( pPager->ckptInUse ){
     PgHdr *pPg;
-    sqliteOsClose(&pPager->cpfd);
-    pPager->ckptOpen = 0;
+    sqliteOsTruncate(&pPager->cpfd, 0);
+    pPager->ckptInUse = 0;
     sqliteFree( pPager->aInCkpt );
     pPager->aInCkpt = 0;
     for(pPg=pPager->pAll; pPg; pPg=pPg->pNextAll){
@@ -1389,7 +1400,7 @@ int sqlitepager_ckpt_commit(Pager *pPager){
 */
 int sqlitepager_ckpt_rollback(Pager *pPager){
   int rc;
-  if( pPager->ckptOpen ){
+  if( pPager->ckptInUse ){
     rc = pager_ckpt_playback(pPager);
     sqlitepager_ckpt_commit(pPager);
   }else{

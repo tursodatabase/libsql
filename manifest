@@ -1,5 +1,5 @@
-C Bug\sfix:\sbad\scode\swas\sgenerated\sfor\swhen\sthe\sfirst\soperand\sof\sa\sCASE\nwas\sNULL.\s(CVS\s598)
-D 2002-05-30T02:35:12
+C Once\sit\sis\sopened,\sleave\sthe\scheckpoint\sjournal\sfile\sopen\sfor\sthe\nduration\sof\sa\stransaction,\srather\sthan\sclosing\sit\sand\sreopening\sit\nfor\seach\sstatement.\s\s(Ticket\s#53)\s(CVS\s599)
+D 2002-05-30T12:27:03
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -32,7 +32,7 @@ F src/main.c 6e53c49a390fabd5fecce9e3b128c61c85208000
 F src/md5.c 0ae1f3e2cac92d06fc6246d1b4b8f61a2fe66d3b
 F src/os.c 9cc40c5384baba4a85e160e67807645ca98ba3cc
 F src/os.h 4a361fccfbc4e7609b3e1557f604f94c1e96ad10
-F src/pager.c ba5740104cc27b342cd43eebfdc44d60f64a3ded
+F src/pager.c 1e41053c949cea1f09d8dafada5fe8f90785e650
 F src/pager.h 6fddfddd3b73aa8abc081b973886320e3c614f0e
 F src/parse.y c681da701bf142967325b8791f22418e2d81552d
 F src/printf.c d8032ee18b860c812eeff596c9bebfdacb7930fd
@@ -63,7 +63,7 @@ F test/btree3.test 9caa9e22491dd8cd8aa36d7ac3b48b089817c895
 F test/conflict.test 5149646703d3930c9111068b5cda7e2e938476e3
 F test/copy.test b3cefcb520c64d7e7dfedbab06b4d4c31fa5b99a
 F test/delete.test c904a62129fe102b314a96111a8417f10249e4d8
-F test/expr.test ff6fceb9958f94ae3ca23dcc47aff7830b8131bc
+F test/expr.test 6a863adedb51b07fec745319aa6a1f939fbe0579
 F test/func.test 628ab513b0d9c54251a63e026a26b7b4347e54ab
 F test/in.test c09312672e3f0709fa02c8e2e9cd8fb4bd6269aa
 F test/index.test c8a471243bbf878974b99baf5badd59407237cf3
@@ -135,7 +135,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 19ae12bef210ae5fe171f10833faa38d640c129f
-R 1129c1b4d523e26221972965ea9f1b0e
+P 4debc8db929fdc201759ba211acdeadc4e30e8af
+R d3c150a342080a50caa6809fc7ad7e65
 U drh
-Z 13527e062fc395d3f1e89758ab03474f
+Z 7c9293e04df21e05a0d63344cf0a4066
