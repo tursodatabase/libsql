@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.84 2004/06/23 10:43:11 danielk1977 Exp $
+** $Id: test1.c,v 1.85 2004/06/23 12:15:55 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -978,6 +978,129 @@ static int test_collate(
   
   return TCL_OK;
 
+bad_args:
+  Tcl_AppendResult(interp, "wrong # args: should be \"",
+      Tcl_GetStringFromObj(objv[0], 0), " <DB> <utf8> <utf16le> <utf16be>", 0);
+  return TCL_ERROR;
+}
+
+/*
+** Usage: add_test_function <db ptr> <utf8> <utf16le> <utf16be>
+**
+** This function is used to test that SQLite selects the correct user
+** function callback when multiple versions (for different text encodings)
+** are available.
+**
+** Calling this routine registers up to three versions of the user function
+** "test_function" with database handle <db>.  If the second argument is
+** true, then a version of test_function is registered for UTF-8, if the
+** third is true, a version is registered for UTF-16le, if the fourth is
+** true, a UTF-16be version is available.  Previous versions of
+** test_function are deleted.
+**
+** The user function is implemented by calling the following TCL script:
+**
+**   "test_function <enc> <arg>"
+**
+** Where <enc> is one of UTF-8, UTF-16LE or UTF16BE, and <arg> is the
+** single argument passed to the SQL function. The value returned by
+** the TCL script is used as the return value of the SQL function. It
+** is passed to SQLite using UTF-16BE for a UTF-8 test_function(), UTF-8
+** for a UTF-16LE test_function(), and UTF-16LE for an implementation that
+** prefers UTF-16BE.
+*/
+static void test_function_utf8(
+  sqlite3_context *pCtx, 
+  int nArg,
+  sqlite3_value **argv
+){
+  Tcl_Interp *interp;
+  Tcl_Obj *pX;
+  sqlite3_value *pVal;
+  interp = (Tcl_Interp *)sqlite3_user_data(pCtx);
+  pX = Tcl_NewStringObj("test_function", -1);
+  Tcl_IncrRefCount(pX);
+  Tcl_ListObjAppendElement(interp, pX, Tcl_NewStringObj("UTF-8", -1));
+  Tcl_ListObjAppendElement(interp, pX, 
+      Tcl_NewStringObj(sqlite3_value_text(argv[0]), -1));
+  Tcl_EvalObjEx(interp, pX, 0);
+  Tcl_DecrRefCount(pX);
+  sqlite3_result_text(pCtx, Tcl_GetStringResult(interp), -1, SQLITE_TRANSIENT);
+  pVal = sqlite3ValueNew();
+  sqlite3ValueSetStr(pVal, -1, Tcl_GetStringResult(interp), 
+      SQLITE_UTF8, SQLITE_STATIC);
+  sqlite3_result_text16be(pCtx, sqlite3_value_text16be(pVal),
+      -1, SQLITE_TRANSIENT);
+  sqlite3ValueFree(pVal);
+}
+static void test_function_utf16le(
+  sqlite3_context *pCtx, 
+  int nArg,
+  sqlite3_value **argv
+){
+  Tcl_Interp *interp;
+  Tcl_Obj *pX;
+  sqlite3_value *pVal;
+  interp = (Tcl_Interp *)sqlite3_user_data(pCtx);
+  pX = Tcl_NewStringObj("test_function", -1);
+  Tcl_IncrRefCount(pX);
+  Tcl_ListObjAppendElement(interp, pX, Tcl_NewStringObj("UTF-16LE", -1));
+  Tcl_ListObjAppendElement(interp, pX, 
+      Tcl_NewStringObj(sqlite3_value_text(argv[0]), -1));
+  Tcl_EvalObjEx(interp, pX, 0);
+  Tcl_DecrRefCount(pX);
+  pVal = sqlite3ValueNew();
+  sqlite3ValueSetStr(pVal, -1, Tcl_GetStringResult(interp), 
+      SQLITE_UTF8, SQLITE_STATIC);
+  sqlite3_result_text(pCtx,sqlite3_value_text(pVal),-1,SQLITE_TRANSIENT);
+  sqlite3ValueFree(pVal);
+}
+static void test_function_utf16be(
+  sqlite3_context *pCtx, 
+  int nArg,
+  sqlite3_value **argv
+){
+  Tcl_Interp *interp;
+  Tcl_Obj *pX;
+  sqlite3_value *pVal;
+  interp = (Tcl_Interp *)sqlite3_user_data(pCtx);
+  pX = Tcl_NewStringObj("test_function", -1);
+  Tcl_IncrRefCount(pX);
+  Tcl_ListObjAppendElement(interp, pX, Tcl_NewStringObj("UTF-16BE", -1));
+  Tcl_ListObjAppendElement(interp, pX, 
+      Tcl_NewStringObj(sqlite3_value_text(argv[0]), -1));
+  Tcl_EvalObjEx(interp, pX, 0);
+  Tcl_DecrRefCount(pX);
+  pVal = sqlite3ValueNew();
+  sqlite3ValueSetStr(pVal, -1, Tcl_GetStringResult(interp), 
+      SQLITE_UTF8, SQLITE_STATIC);
+  sqlite3_result_text16le(pCtx, sqlite3_value_text16le(pVal),
+      -1, SQLITE_TRANSIENT);
+  sqlite3ValueFree(pVal);
+}
+static int test_function(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3 *db;
+  int val;
+
+  if( objc!=5 ) goto bad_args;
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+
+  if( TCL_OK!=Tcl_GetBooleanFromObj(interp, objv[2], &val) ) return TCL_ERROR;
+  sqlite3_create_function(db, "test_function", 1, SQLITE_UTF8, 
+      interp, val?test_function_utf8:0, 0, 0);
+  if( TCL_OK!=Tcl_GetBooleanFromObj(interp, objv[3], &val) ) return TCL_ERROR;
+  sqlite3_create_function(db, "test_function", 1, SQLITE_UTF16LE, 
+      interp, val?test_function_utf16le:0, 0, 0);
+  if( TCL_OK!=Tcl_GetBooleanFromObj(interp, objv[4], &val) ) return TCL_ERROR;
+  sqlite3_create_function(db, "test_function", 1, SQLITE_UTF16BE, 
+      interp, val?test_function_utf16be:0, 0, 0);
+
+  return TCL_OK;
 bad_args:
   Tcl_AppendResult(interp, "wrong # args: should be \"",
       Tcl_GetStringFromObj(objv[0], 0), " <DB> <utf8> <utf16le> <utf16be>", 0);
@@ -2068,6 +2191,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3OsLock",         test_sqlite3OsLock, 0 },
      { "sqlite3OsUnlock",       test_sqlite3OsUnlock, 0 },
      { "add_test_collate",      test_collate, 0         },
+     { "add_test_function",     test_function, 0         },
      { "sqlite3_crashparams",     sqlite3_crashparams, 0         },
 
   };

@@ -13,7 +13,7 @@
 # various suported unicode encodings (UTF-8, UTF-16, UTF-16le and
 # UTF-16be).
 #
-# $Id: enc2.test,v 1.12 2004/06/19 00:16:31 drh Exp $
+# $Id: enc2.test,v 1.13 2004/06/23 12:15:55 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -263,6 +263,103 @@ do_test enc2-5.11 {
 db close
 file delete -force test.db
 
+# The following tests - enc2-5.* - test that SQLite selects the correct
+# collation sequence when more than one is available.
+
+proc test_function {enc arg} {
+  return "$enc $arg"
+}
+
+file delete -force test.db
+set DB [sqlite3 db test.db]
+execsql {pragma encoding = 'UTF-8'}
+do_test enc2-6.0 {
+  execsql {
+    CREATE TABLE t5(a);
+    INSERT INTO t5 VALUES('one');
+  }
+} {}
+do_test enc2-6.1 {
+  add_test_function $DB 1 1 1
+  execsql {
+    SELECT test_function('sqlite')
+  }
+} {{UTF-8 sqlite}}
+
+do_test enc2-6.2 {
+  add_test_function $DB 0 1 0
+  execsql {
+    SELECT test_function('sqlite')
+  }
+} {{UTF-16LE sqlite}}
+do_test enc2-6.3 {
+  add_test_function $DB 0 0 1
+  execsql {
+    SELECT test_function('sqlite')
+  }
+} {{UTF-16BE sqlite}}
+
+file delete -force test.db
+set DB [sqlite3 db test.db]
+execsql {pragma encoding = 'UTF-16LE'}
+do_test enc2-6.3 {
+  execsql {
+    CREATE TABLE t5(a);
+    INSERT INTO t5 VALUES('sqlite');
+  }
+} {}
+do_test enc2-6.4 {
+  add_test_function $DB 1 1 1
+  execsql {
+    SELECT test_function('sqlite')
+  }
+} {{UTF-16LE sqlite}}
+
+do_test enc2-6.5 {
+  add_test_function $DB 0 1 0
+  execsql {
+    SELECT test_function('sqlite')
+  }
+} {{UTF-16LE sqlite}}
+do_test enc2-6.6 {
+  add_test_function $DB 0 0 1
+  execsql {
+    SELECT test_function('sqlite')
+  }
+} {{UTF-16BE sqlite}}
+
+file delete -force test.db
+set DB [sqlite3 db test.db]
+execsql {pragma encoding = 'UTF-16BE'}
+do_test enc2-6.7 {
+  execsql {
+    CREATE TABLE t5(a);
+    INSERT INTO t5 VALUES('sqlite');
+  }
+} {}
+do_test enc2-6.8 {
+  add_test_function $DB 1 1 1
+  execsql {
+    SELECT test_function('sqlite')
+  }
+} {{UTF-16BE sqlite}}
+
+do_test enc2-6.9 {
+  add_test_function $DB 0 1 0
+  execsql {
+    SELECT test_function('sqlite')
+  }
+} {{UTF-16LE sqlite}}
+do_test enc2-6.10 {
+  add_test_function $DB 0 0 1
+  execsql {
+    SELECT test_function('sqlite')
+  }
+} {{UTF-16BE sqlite}}
+
+db close
+file delete -force test.db
+
 # The following tests - enc2-6.* - function as follows:
 #
 # 1: Open an empty database file assuming UTF-16 encoding.
@@ -271,32 +368,32 @@ file delete -force test.db
 # 3: Read the sqlite_master table from the first handle. 
 # 4: Ensure the first handle recognises the database encoding is UTF-8.
 #
-do_test enc2-6.1 {
+do_test enc2-7.1 {
   sqlite3 db test.db
   execsql {
     PRAGMA encoding = 'UTF-16';
     SELECT * FROM sqlite_master;
   }
 } {}
-do_test enc2-6.2 {
+do_test enc2-7.2 {
   set enc [execsql {
     PRAGMA encoding;
   }]
   string range $enc 0 end-2 ;# Chop off the "le" or "be"
 } {UTF-16}
-do_test enc2-6.3 {
+do_test enc2-7.3 {
   sqlite3 db2 test.db
   execsql {
     PRAGMA encoding = 'UTF-8';
     CREATE TABLE abc(a, b, c);
   } db2
 } {}
-do_test enc2-6.4 {
+do_test enc2-7.4 {
   execsql {
     SELECT * FROM sqlite_master;
   }
 } {table abc abc 2 {CREATE TABLE abc(a, b, c)}}
-do_test enc2-6.5 {
+do_test enc2-7.5 {
   execsql {
     PRAGMA encoding;
   }
