@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.102 2003/12/10 03:13:44 drh Exp $
+** $Id: expr.c,v 1.103 2004/01/06 01:13:46 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -328,22 +328,26 @@ int sqliteExprIsConstant(Expr *p){
 }
 
 /*
-** If the given expression codes a constant integer, return 1 and put
-** the value of the integer in *pValue.  If the expression is not an
-** integer, return 0 and leave *pValue unchanged.
+** If the given expression codes a constant integer that is small enough
+** to fit in a 32-bit integer, return 1 and put the value of the integer
+** in *pValue.  If the expression is not an integer or if it is too big
+** to fit in a signed 32-bit integer, return 0 and leave *pValue unchanged.
 */
 int sqliteExprIsInteger(Expr *p, int *pValue){
   switch( p->op ){
     case TK_INTEGER: {
-      *pValue = atoi(p->token.z);
-      return 1;
+      if( sqliteFitsIn32Bits(p->token.z) ){
+        *pValue = atoi(p->token.z);
+        return 1;
+      }
+      break;
     }
     case TK_STRING: {
       const char *z = p->token.z;
       int n = p->token.n;
       if( n>0 && z[0]=='-' ){ z++; n--; }
       while( n>0 && *z && isdigit(*z) ){ z++; n--; }
-      if( n==0 ){
+      if( n==0 && sqliteFitsIn32Bits(p->token.z) ){
         *pValue = atoi(p->token.z);
         return 1;
       }
@@ -970,6 +974,9 @@ int sqliteExprType(Expr *p){
 }
 
 /*
+** Run
+
+/*
 ** Generate code into the current Vdbe to evaluate the given
 ** expression and leave the result on the top of stack.
 */
@@ -1014,16 +1021,10 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
       break;
     }
     case TK_INTEGER: {
-      int iVal = atoi(pExpr->token.z);
-      char zBuf[30];
-      sprintf(zBuf,"%d",iVal);
-      if( strlen(zBuf)!=pExpr->token.n 
-            || strncmp(pExpr->token.z,zBuf,pExpr->token.n)!=0 ){
-        /* If the integer value cannot be represented exactly in 32 bits,
-        ** then code it as a string instead. */
+      if( !sqliteFitsIn32Bits(pExpr->token.z) ){
         sqliteVdbeAddOp(v, OP_String, 0, 0);
       }else{
-        sqliteVdbeAddOp(v, OP_Integer, iVal, 0);
+        sqliteVdbeAddOp(v, OP_Integer, atoi(pExpr->token.z), 0);
       }
       sqliteVdbeChangeP3(v, -1, pExpr->token.z, pExpr->token.n);
       break;
@@ -1090,7 +1091,11 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
     case TK_UPLUS: {
       Expr *pLeft = pExpr->pLeft;
       if( pLeft && pLeft->op==TK_INTEGER ){
-        sqliteVdbeAddOp(v, OP_Integer, atoi(pLeft->token.z), 0);
+        if( sqliteFitsIn32Bits(pLeft->token.z) ){
+          sqliteVdbeAddOp(v, OP_Integer, atoi(pLeft->token.z), 0);
+        }else{
+          sqliteVdbeAddOp(v, OP_String, 0, 0);
+        }
         sqliteVdbeChangeP3(v, -1, pLeft->token.z, pLeft->token.n);
       }else if( pLeft && pLeft->op==TK_FLOAT ){
         sqliteVdbeAddOp(v, OP_String, 0, 0);
@@ -1106,7 +1111,7 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
         Token *p = &pExpr->pLeft->token;
         char *z = sqliteMalloc( p->n + 2 );
         sprintf(z, "-%.*s", p->n, p->z);
-        if( pExpr->pLeft->op==TK_INTEGER ){
+        if( pExpr->pLeft->op==TK_INTEGER && sqliteFitsIn32Bits(z) ){
           sqliteVdbeAddOp(v, OP_Integer, atoi(z), 0);
         }else{
           sqliteVdbeAddOp(v, OP_String, 0, 0);

@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.69 2003/12/23 02:17:35 drh Exp $
+** $Id: util.c,v 1.70 2004/01/06 01:13:47 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -711,6 +711,24 @@ double sqliteAtoF(const char *z){
     }
   }
   return sign<0 ? -v1 : v1;
+}
+
+/*
+** The string zNum represents an integer.  There might be some other
+** information following the integer too, but that part is ignored.
+** If the integer that the prefix of zNum represents will fit in a
+** 32-bit signed integer, return TRUE.  Otherwise return FALSE.
+**
+** This routine returns FALSE for the string -2147483648 even that
+** that number will, in theory fit in a 32-bit integer.  But positive
+** 2147483648 will not fit in 32 bits.  So it seems safer to return
+** false.
+*/
+int sqliteFitsIn32Bits(const char *zNum){
+  int i, c;
+  if( *zNum=='-' || *zNum=='+' ) zNum++;
+  for(i=0; (c=zNum[i])>='0' && c<='9'; i++){}
+  return i<10 || (i==10 && memcmp(zNum,"2147483647",10)<=0);
 }
 
 /* This comparison routine is what we use for comparison operations

@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc3.test,v 1.2 2003/12/23 02:17:35 drh Exp $
+# $Id: misc3.test,v 1.3 2004/01/06 01:13:47 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -98,5 +98,29 @@ do_test misc3-2.9 {
   execsql {SELECT 2.0e-27 * '+0.000005e+132'}
 } 1e+100
 
+# Ticket #522.  Make sure integer overflow is handled properly in
+# indices.
+#
+do_test misc3-3.1 {
+  execsql {PRAGMA integrity_check}
+} ok
+do_test misc3-3.2 {
+  execsql {
+    CREATE TABLE t2(a INT UNIQUE);
+    PRAGMA integrity_check;
+  }
+} ok
+do_test misc3-3.3 {
+  execsql {
+    INSERT INTO t2 VALUES(2147483648);
+    PRAGMA integrity_check;
+  }
+} ok
+do_test misc3-3.4 {
+  execsql {
+    INSERT INTO t2 VALUES(-2147483649);
+    PRAGMA integrity_check;
+  }
+} ok
 
 finish_test
