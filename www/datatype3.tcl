@@ -1,4 +1,4 @@
-set rcsid {$Id: datatype3.tcl,v 1.4 2004/06/09 09:55:20 danielk1977 Exp $}
+set rcsid {$Id: datatype3.tcl,v 1.5 2004/06/10 10:51:53 danielk1977 Exp $}
 source common.tcl
 header {Datatypes In SQLite Version 3}
 puts {
@@ -327,8 +327,7 @@ NOCASE and REVERSE:
 <p>
 Each column of each table has a default collation type. If a collation type
 other than BINARY is required, a COLLATE clause is specified as part of the
-<a href="lang.html#createtable">column definition</a> to define it.used as
-illustrated in the example below to 
+<a href="lang.html#createtable">column definition</a> to define it. 
 </p>  
 
 <p>

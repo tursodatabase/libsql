@@ -12,7 +12,7 @@
 #
 # This file implements tests for temporary tables and indices.
 #
-# $Id: temptable.test,v 1.11 2004/02/14 16:31:04 drh Exp $
+# $Id: temptable.test,v 1.12 2004/06/10 10:51:53 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -237,11 +237,11 @@ do_test temptable-4.10.1 {
     SELECT * FROM t2;
   } db2
 } {0 {1 2}}
-#do_test temptable-4.10.2 {
-#  catchsql {
-#    SELECT name FROM sqlite_master WHERE type='table'
-#  } db2
-#} {1 {database schema has changed}}
+do_test temptable-4.10.2 {
+  catchsql {
+    SELECT name FROM sqlite_master WHERE type='table'
+  } db2
+} {1 {database schema has changed}}
 do_test temptable-4.10.3 {
   catchsql {
     SELECT name FROM sqlite_master WHERE type='table'

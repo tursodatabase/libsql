@@ -12,7 +12,7 @@
 ** This module contains C code that generates VDBE code used to process
 ** the WHERE clause of SQL statements.
 **
-** $Id: where.c,v 1.103 2004/06/09 09:55:20 danielk1977 Exp $
+** $Id: where.c,v 1.104 2004/06/10 10:51:48 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -208,7 +208,7 @@ static void exprAnalyze(ExprMaskSet *pMaskSet, ExprInfo *pInfo){
 ** set to 0 if the ORDER BY clause is all ASC.
 */
 static Index *findSortingIndex(
-  sqlite *db,
+  Parse *pParse,
   Table *pTab,            /* The table to be sorted */
   int base,               /* Cursor number for pTab */
   ExprList *pOrderBy,     /* The ORDER BY clause */
@@ -220,6 +220,7 @@ static Index *findSortingIndex(
   Index *pMatch;
   Index *pIdx;
   int sortOrder;
+  sqlite *db = pParse->db;
 
   assert( pOrderBy!=0 );
   assert( pOrderBy->nExpr>0 );
@@ -248,7 +249,7 @@ static Index *findSortingIndex(
     int nExpr = pOrderBy->nExpr;
     if( pIdx->nColumn < nEqCol || pIdx->nColumn < nExpr ) continue;
     for(i=j=0; i<nEqCol; i++){
-      CollSeq *pColl = sqlite3ExprCollSeq(pOrderBy->a[j].pExpr);
+      CollSeq *pColl = sqlite3ExprCollSeq(pParse, pOrderBy->a[j].pExpr);
       if( !pColl ) pColl = db->pDfltColl;
       if( pPreferredIdx->aiColumn[i]!=pIdx->aiColumn[i] ) break;
       if( pPreferredIdx->keyInfo.aColl[i]!=pIdx->keyInfo.aColl[i] ) break;
@@ -261,7 +262,7 @@ static Index *findSortingIndex(
     }
     if( i<nEqCol ) continue;
     for(i=0; i+j<nExpr; i++){
-      CollSeq *pColl = sqlite3ExprCollSeq(pOrderBy->a[i+j].pExpr);
+      CollSeq *pColl = sqlite3ExprCollSeq(pParse, pOrderBy->a[i+j].pExpr);
       if( !pColl ) pColl = db->pDfltColl;
       if( pOrderBy->a[i+j].pExpr->iColumn!=pIdx->aiColumn[i+nEqCol] ||
           pColl!=pIdx->keyInfo.aColl[i+nEqCol] ) break;
@@ -540,9 +541,9 @@ WhereInfo *sqlite3WhereBegin(
 
       if( pIdx->nColumn>32 ) continue;  /* Ignore indices too many columns */
       for(j=0; j<nExpr; j++){
-        CollSeq *pColl = sqlite3ExprCollSeq(aExpr[j].p->pLeft);
+        CollSeq *pColl = sqlite3ExprCollSeq(pParse, aExpr[j].p->pLeft);
         if( !pColl && aExpr[j].p->pRight ){
-          pColl = sqlite3ExprCollSeq(aExpr[j].p->pRight);
+          pColl = sqlite3ExprCollSeq(pParse, aExpr[j].p->pRight);
         }
         if( !pColl ){
           pColl = pParse->db->pDfltColl;
@@ -676,7 +677,7 @@ WhereInfo *sqlite3WhereBegin(
        pSortIdx = 0;
      }else{
        int nEqCol = (pWInfo->a[0].score+4)/8;
-       pSortIdx = findSortingIndex(pParse->db, pTab, pTabList->a[0].iCursor, 
+       pSortIdx = findSortingIndex(pParse, pTab, pTabList->a[0].iCursor, 
                                    *ppOrderBy, pIdx, nEqCol, &bRev);
      }
      if( pSortIdx && (pIdx==0 || pIdx==pSortIdx) ){

@@ -1,5 +1,5 @@
-C Add\sthe\ssqlite3_collation_needed()\sAPI\sand\sfix\ssome\serror\shandling\scases\ninvolving\sunknown\scollation\ssequences.\s(CVS\s1562)
-D 2004-06-10T10:50:08
+C Add\sthe\ssqlite3_collation_needed()\sAPI\sand\sfix\ssome\serror\shandling\scases\ninvolving\sunknown\scollation\ssequences.\s(CVS\s1563)
+D 2004-06-10T10:51:48
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -76,7 +76,7 @@ F src/vdbeInt.h d41605853332bdbd600d7ecd60e1f54bbaea174e
 F src/vdbeapi.c 4ac95766b0515538037a7aec172ed26142f97cf9
 F src/vdbeaux.c 73764dadcdbf79aa2d948f863eae07b18589e663
 F src/vdbemem.c 5b2fab8b5a830e5204413b808c4a2d8335189f21
-F src/where.c 32578882a245f8ac3303c5cea4664cd51fc73891
+F src/where.c dda77afaa593cd54e5955ec433076de18faf62f6
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
 F test/attach.test aed659e52635662bcd5069599aaca823533edf5a
 F test/attach2.test 01f55202c7984f9835b9195a5bff4b5c5f0316ee
@@ -96,6 +96,7 @@ F test/capi2.test 8fb64e8ab7f78b8254cd4d04bb96822167f731b2
 F test/capi3.test b6fe8a66d2ffe28d4faaaec154a143131e8ff631
 F test/collate1.test 7f1ad4c24ea949b7a7aee387df7839389990a998
 F test/collate2.test 5b92d795048794266ac27f242a411da8ffeaae25
+F test/collate3.test 69ae73af2e32f4180397bdf2e98998d67a0d4a5d
 F test/collate4.test a8f2d58bd6943ed1746639c11b12896ccfe8f646
 F test/conflict.test 45ce1e44ea748944aed233df8c278a9e1c4c87cc
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
@@ -149,8 +150,8 @@ F test/sort.test dbd94673b05054e44ca3f08a80faa1e890ef06d8
 F test/subselect.test f0fea8cf9f386d416d64d152e3c65f9116d0f50f
 F test/table.test 1defd90e8200661a822618b18748b9339a7fef2f
 F test/tableapi.test e0c4cce61e58343caa84dab33fa6823cb35fe1e1
-F test/tclsqlite.test ab5e5c5a00b592c48c38fec8095cde74186c3fc2
-F test/temptable.test a770ba6308d7f7332fce985086b8e06bed6430c2
+F test/tclsqlite.test 2ff5abfd1e133cddcfc61ad5850e3b93f4a7ff40
+F test/temptable.test 6809810546311140f1f4efb4a4fc679b36495f50
 F test/tester.tcl fc10520db0d3ce4ef6a8b5ab91bd102fc3f4280a
 F test/thread1.test 52ab8d963691d5a34a7f998d364371c8c725a253
 F test/threadtest1.c f7f896e62ed46feae1dc411114a48c15a0f82ee2
@@ -197,7 +198,7 @@ F www/conflict.tcl fb8a2ba83746c7fdfd9e52fa7f6aaf5c422b8246
 F www/copyright-release.html 294e011760c439c44951a6bfecd4c81a1ae359e8
 F www/copyright-release.pdf cfca3558fc97095e57c6117d08f1f5b80d95125a
 F www/copyright.tcl 82c9670c7ddb0311912ab7fe24703f33c531066c
-F www/datatype3.tcl 547a852a4c5970e431e7e3c0ae4b1b3ce82c2063
+F www/datatype3.tcl f48b05cafd5e54ae5c05e643169d5217ee51a244
 F www/datatypes.tcl 566004b81c36877397ddbe6e1907aae6065f6b41
 F www/docs.tcl 0dcbf954907bd5dbfb7f1e0220f4e50516e07cd3
 F www/download.tcl 8c84f15695c92cb01486930055fdf5192995f474
@@ -218,7 +219,7 @@ F www/support.tcl 1801397edd271cc39a2aadd54e701184b5181248
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 71e98d0d089576433c4b06dcba1c57063bd366f5
-R 3d4ef809458f49528c446bf513dcad92
+P edf069b9f4044ed2a80962c7722052bf1b80bf45
+R 9cc8eb0d8d516e56f0a005459d5bbc05
 U danielk1977
-Z b84856b016de718871cfb8d15d69b3b5
+Z 33f5dc7ea962340095db9932693801c6
