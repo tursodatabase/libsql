@@ -16,7 +16,7 @@
 ** sqliteRegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.3 2003/12/23 16:22:18 drh Exp $
+** $Id: date.c,v 1.4 2003/12/23 16:34:13 drh Exp $
 **
 ** NOTES:
 **
@@ -620,9 +620,9 @@ static int parseModifier(const char *zMod, DateTime *p){
 static int isDate(int argc, const char **argv, DateTime *p){
   int i;
   if( argc==0 ) return 1;
-  if( parseDateOrTime(argv[0], p) ) return 1;
+  if( argv[0]==0 || parseDateOrTime(argv[0], p) ) return 1;
   for(i=1; i<argc; i++){
-    if( parseModifier(argv[i], p) ) return 1;
+    if( argv[i]==0 || parseModifier(argv[i], p) ) return 1;
   }
   return 0;
 }
@@ -718,7 +718,7 @@ static void strftimeFunc(sqlite_func *context, int argc, const char **argv){
   char *z;
   const char *zFmt = argv[0];
   char zBuf[100];
-  if( isDate(argc-1, argv+1, &x) ) return;
+  if( argv[0]==0 || isDate(argc-1, argv+1, &x) ) return;
   for(i=0, n=1; zFmt[i]; i++, n++){
     if( zFmt[i]=='%' ){
       switch( zFmt[i+1] ){
@@ -834,7 +834,7 @@ void sqliteRegisterDateTimeFunctions(sqlite *db){
 #ifndef SQLITE_OMIT_DATETIME_FUNCS
     { "julianday", -1, SQLITE_NUMERIC, juliandayFunc   },
     { "date",      -1, SQLITE_TEXT,    dateFunc        },
-    { "time",       1, SQLITE_TEXT,    timeFunc        },
+    { "time",      -1, SQLITE_TEXT,    timeFunc        },
     { "datetime",  -1, SQLITE_TEXT,    datetimeFunc    },
     { "strftime",  -1, SQLITE_TEXT,    strftimeFunc    },
 #endif
