@@ -1,5 +1,5 @@
-C Version\s2.4.9\s(CVS\s542)
-D 2002-04-22T00:35:06
+C Fix\sfor\sticket\s#22:\sIn\sthe\scode\sgenerator\sfor\scompound\sSELECT\sstatements,\stake\ncare\snot\sto\sgenerate\scolumn\sname\sheaders\sif\sthe\soutput\sis\san\sintermediate\stable.\nOtherwise\sthe\scolumn\sheaders\sare\snot\sgenerated\scorrectly\sif\sa\scompound\sSELECT\nstatement\sappears\sas\san\sexpression\sin\spart\sof\sthe\sWHERE\sclause.\s(CVS\s543)
+D 2002-04-23T17:10:18
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -38,7 +38,7 @@ F src/pager.h 6fddfddd3b73aa8abc081b973886320e3c614f0e
 F src/parse.y 0ce56f1c751657f01e18a4b4ac1aa4d29525ac20
 F src/printf.c 300a90554345751f26e1fc0c0333b90a66110a1d
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
-F src/select.c 92aef3f69e90dc065d680d88b1f075409e9249bb
+F src/select.c 04860119440c22b7f473bec848127d73af46db39
 F src/shell.c 5acbe59e137d60d8efd975c683dbea74ab626530
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in ffcacf73b5ed1a4939205d29a704a185758fa6a6
@@ -87,7 +87,7 @@ F test/rowid.test 4c55943300cddf73dd0f88d40a268cab14c83274
 F test/select1.test 734b9f45a85b4f8d594390b1ed3cbff0b8c76c84
 F test/select2.test aceea74fd895b9d007512f72499db589735bd8e4
 F test/select3.test 9469c332250a75a0ef1771fb5da62dc04ec77f18
-F test/select4.test 29a2ffb187f3d8b6ca42a0a6b619e9cabe12e228
+F test/select4.test a8f1d97fbd6049211ddd0ed50899e8afb1cb4508
 F test/select5.test c2a6c4a003316ee42cbbd689eebef8fdce0db2ac
 F test/select6.test 5b9b52e84c1f44fd3a4eeb75e78deceb085b78b0
 F test/sort.test 3b996ce7ca385f9cd559944ac0f4027a23aa546b
@@ -131,7 +131,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P a91da82f8ae2b375bf9f5e064f16d6a5770e20b6
-R 472bee23aa57568ebf6afa84b40ded15
+P 0691720a4b94141635734ab0a8c4072cab189a33
+R 5e23c695d2d82aae9921a85b5156d273
 U drh
-Z 4019f966a724267cde26980ddbf6ddea
+Z 57e5aab64c05733c095af92c508e335d
