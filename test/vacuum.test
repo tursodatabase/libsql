@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the VACUUM statement.
 #
-# $Id: vacuum.test,v 1.19 2004/05/29 10:23:20 danielk1977 Exp $
+# $Id: vacuum.test,v 1.20 2004/05/29 10:43:07 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -171,5 +171,33 @@ do_test vacuum-5.2 {
     VACUUM;
   }
 } {0 {}}
+
+# Ensure vacuum works with complicated tables names.
+do_test vacuum-6.1 {
+  execsql {
+    CREATE TABLE "abc abc"(a, b, c);
+    INSERT INTO "abc abc" VALUES(1, 2, 3);
+    VACUUM;
+  }
+} {}
+do_test vacuum-6.2 {
+  execsql {
+    select * from "abc abc";
+  }
+} {1 2 3}
+
+# Also ensure that blobs survive a vacuum.
+do_test vacuum-6.3 {
+  execsql {
+    DELETE FROM "abc abc";
+    INSERT INTO "abc abc" VALUES(X'00112233', NULL, NULL);
+    VACUUM;
+  }
+} {}
+do_test vacuum-6.4 {
+  execsql {
+    select count(*) from "abc abc" WHERE a = X'00112233';
+  }
+} {1}
 
 # finish_test

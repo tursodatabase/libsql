@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.17 2004/05/29 10:23:20 danielk1977 Exp $
+** $Id: vacuum.c,v 1.18 2004/05/29 10:43:07 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -160,8 +160,8 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite *db){
   ** the contents to the temporary database.
   */
   rc = execExecSql(db, 
-      "SELECT 'INSERT INTO vacuum_db.' || name "
-      "|| ' SELECT * FROM ' || name || ';'"
+      "SELECT 'INSERT INTO vacuum_db.' || quote(name) "
+      "|| ' SELECT * FROM ' || quote(name) || ';'"
       "FROM sqlite_master "
       "WHERE type = 'table';"
   );
