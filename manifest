@@ -1,5 +1,5 @@
-C fulltest\sruns\snow,\sbut\sstill\sfinds\sa\smemory\sleak.\s(CVS\s2150)
-D 2004-11-23T22:16:40
+C Fix\sa\smemory\sleak\sin\spager.c.\s(CVS\s2151)
+D 2004-11-24T01:16:43
 F Makefile.in 8291610f5839939a5fbff4dbbf85adb0fe1ac37f
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -53,7 +53,7 @@ F src/os_unix.c 5824b22ba41fe9d514ef9169aac1b5fde73af229
 F src/os_unix.h f3097815e041e82e24d92505e1ff61ba24172d13
 F src/os_win.c 9482dfc92f289b68205bb2c9315757c7e3946bfb
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 2907f0b0c9b6efc99076d5a112cadb3f9153025e
+F src/pager.c 7b4dc9a94228efde924f1d9f4b7751f332da4587
 F src/pager.h 9eba8c53dd91eae7f3f90743b2ee242da02a9862
 F src/parse.y ceba179b9703657180963568f54b0e75f33e36e1
 F src/pragma.c d6406e12c9eac353b3a026b50d41e4fd561afcc2
@@ -261,7 +261,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl fdacb0ba2d39831e8a6240d05a490026ad4c4e4c
-P ba71716ce21ae99b10b2d0b61092497872770ef7
-R 588648047c234f49c11681926b76de4d
+P 5944d51e6c164270301b57e4351add4cb6137be6
+R 2bae729981167d404fdf1f99ff102b64
 U drh
-Z e546cca4e7c3f392b488cc615c2185f9
+Z dee73820d0fb35a1429c8ffae402ed94

@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.178 2004/11/23 09:06:56 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.179 2004/11/24 01:16:43 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1005,6 +1005,7 @@ static int pager_delmaster(const char *zMaster){
         ** so, return without deleting the master journal file.
         */
         OsFile journal;
+        int c;
 
         memset(&journal, 0, sizeof(journal));
         rc = sqlite3OsOpenReadOnly(zJournal, &journal);
@@ -1018,7 +1019,9 @@ static int pager_delmaster(const char *zMaster){
           goto delmaster_out;
         }
 
-        if( zMasterPtr && !strcmp(zMasterPtr, zMaster) ){
+        c = zMasterPtr!=0 && strcmp(zMasterPtr, zMaster)==0;
+        sqliteFree(zMasterPtr);
+        if( c ){
           /* We have a match. Do not delete the master journal file. */
           goto delmaster_out;
         }
