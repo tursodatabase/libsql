@@ -1,6 +1,6 @@
-C Enhance\ssqlite3_bind_parameter_index\sso\sthat\sis\sdoes\snot\ssegfault\sif\nyou\scall\sit\sincorrectly\sby\spassing\sNULL\sin\splace\sof\sthe\sparameter\sname.\nTicket\s#1032.\s(CVS\s2159)
-D 2004-12-09T18:29:14
-F Makefile.in da09f379b80c8cd78d78abaa0f32ca90a124e884
+C Add\sa\s-DUSE_TCL_STUBS\sto\sthe\sstandard\sMakefile.\s\sThis\smight\shelp\swith\nticket\s#1034.\s\sOr\smaybe\snot.\s(CVS\s2160)
+D 2004-12-10T02:08:41
+F Makefile.in 4bf4cfb523915f40441ae607c7e7cdc4f808e833
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
 F VERSION 342b6d5fde93b6d45023e2fee0163dda6464b9d6
@@ -263,7 +263,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl fdacb0ba2d39831e8a6240d05a490026ad4c4e4c
-P 4852186aca3be6ea40069b6831079197e5fa757a
-R 5fd97097019f1cf381f7aeb138d90537
+P bf81aabff1303b66f12d28b730d19b7cbdb2de6a
+R 3519c47761b952307951e0f6a46860bc
 U drh
-Z 833ca72c036e88e0bff95a97e8783ab0
+Z 7f2a18e37605632c50e72da0eeabcab0

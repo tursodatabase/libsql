@@ -30,7 +30,7 @@ TCC = @TARGET_CC@ @TARGET_CFLAGS@ -I. -I${TOP}/src -DNDEBUG
 
 # Compiler options needed for programs that use the TCL library.
 #
-TCC += @TCL_INCLUDE_SPEC@
+TCC += @TCL_INCLUDE_SPEC@ -DUSE_TCL_STUBS
 
 # The library that programs using TCL must link against.
 #
