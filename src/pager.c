@@ -25,9 +25,9 @@
 ** 
 ** The page cache is used to access a database file.  The pager journals
 ** all writes in order to support rollback.  Locking is used to limit
-** access to one or more reader or one writer.
+** access to one or more reader or to one writer.
 **
-** @(#) $Id: pager.c,v 1.13 2001/07/02 17:51:46 drh Exp $
+** @(#) $Id: pager.c,v 1.14 2001/09/13 13:46:57 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -122,6 +122,8 @@ struct Pager {
   int nHit, nMiss, nOvfl;     /* Cache hits, missing, and LRU overflows */
   unsigned char state;        /* SQLITE_UNLOCK, _READLOCK or _WRITELOCK */
   unsigned char errMask;      /* One of several kinds of errors */
+  unsigned char tempFile;     /* zFilename is a temporary file */
+  unsigned char readOnly;     /* True for a read-only database */
   unsigned char *aInJournal;  /* One bit for each page in the database file */
   PgHdr *pFirst, *pLast;      /* List of free pages */
   PgHdr *pAll;                /* List of all pages */
@@ -147,8 +149,8 @@ struct PageRecord {
 };
 
 /*
-** Journal files begin with the following magic string.  This data
-** is completely random.  It is used only as a sanity check.
+** Journal files begin with the following magic string.  The data
+** was obtained from /dev/random.  It is used only as a sanity check.
 */
 static const unsigned char aJournalMagic[] = {
   0xd9, 0xd5, 0x05, 0xf9, 0x20, 0xa1, 0x63, 0xd4,
@@ -163,7 +165,7 @@ static const unsigned char aJournalMagic[] = {
 ** Enable reference count tracking here:
 */
 #if SQLITE_TEST
-int pager_refinfo_enable = 0;
+  int pager_refinfo_enable = 0;
   static void pager_refinfo(PgHdr *p){
     static int cnt = 0;
     if( !pager_refinfo_enable ) return;
@@ -458,8 +460,32 @@ static int pager_playback(Pager *pPager){
 }
 
 /*
+** Locate a directory where we can potentially create a temporary
+** file.
+*/
+static const char *findTempDir(void){
+  static const char *azDirs[] = {
+     ".",
+     "/var/tmp",
+     "/usr/tmp",
+     "/tmp",
+     "/temp",
+     "./temp",
+  };
+  int i;
+  struct stat buf;
+  for(i=0; i<sizeof(azDirs)/sizeof(azDirs[0]); i++){
+    if( stat(azDirs[i], &buf)==0 && S_ISDIR(buf.st_mode)
+         && S_IWUSR(buf.st_mode) ){
+       return azDirs[i];
+    }
+  }
+  return 0;
+}
+
+/*
 ** Create a new page cache and put a pointer to the page cache in *ppPager.
-** The file to be cached need not exist.  The file is not opened until
+** The file to be cached need not exist.  The file is not locked until
 ** the first call to sqlitepager_get() and is only held open until the
 ** last page is released using sqlitepager_unref().
 */
@@ -472,12 +498,33 @@ int sqlitepager_open(
   Pager *pPager;
   int nameLen;
   int fd;
+  int tempFile;
+  int readOnly = 0;
+  char zTemp[300];
 
   *ppPager = 0;
   if( sqlite_malloc_failed ){
     return SQLITE_NOMEM;
   }
-  fd = open(zFilename, O_RDWR|O_CREAT, 0644);
+  if( zFilename ){
+    fd = open(zFilename, O_RDWR|O_CREAT, 0644);
+    if( fd<0 ){
+      fd = open(zFilename, O_RDONLY, 0);
+      readOnly = 1;
+    }
+    tempFile = 0;
+  }else{
+    int cnt = 8;
+    char *zDir = findTempDir();
+    if( zDir==0 ) return SQLITE_CANTOPEN;
+    do{
+      cnt--;
+      sprintf(zTemp,"%s/_sqlite_%u",(unsigned)sqliteRandomInteger());
+      fd = open(zTemp, O_RDWR|O_CREAT|O_EXCL, 0600);
+    }while( cnt>0 && fd<0 );
+    zFilename = zTemp;
+    tempFile = 1;
+  }
   if( fd<0 ){
     return SQLITE_CANTOPEN;
   }
@@ -500,6 +547,8 @@ int sqlitepager_open(
   pPager->mxPage = mxPage>5 ? mxPage : 10;
   pPager->state = SQLITE_UNLOCK;
   pPager->errMask = 0;
+  pPager->tempFile = tempFile;
+  pPager->readOnly = readOnly;
   pPager->pFirst = 0;
   pPager->pLast = 0;
   pPager->nExtra = nExtra;
@@ -510,7 +559,8 @@ int sqlitepager_open(
 
 /*
 ** Set the destructor for this pager.  If not NULL, the destructor is called
-** when the reference count on the page reaches zero.  
+** when the reference count on each page reaches zero.  The destructor can
+** be used to clean up information in the extra segment appended to each page.
 **
 ** The destructor is not called as a result sqlitepager_close().  
 ** Destructors are only called by sqlitepager_unref().
@@ -520,7 +570,8 @@ void sqlitepager_set_destructor(Pager *pPager, void (*xDesc)(void*)){
 }
 
 /*
-** Return the total number of pages in the file opened by pPager.
+** Return the total number of pages in the disk file associated with
+** pPager.
 */
 int sqlitepager_pagecount(Pager *pPager){
   int n;
@@ -572,12 +623,15 @@ int sqlitepager_close(Pager *pPager){
   }
   if( pPager->fd>=0 ) close(pPager->fd);
   assert( pPager->jfd<0 );
+  if( pPager->tempFile ){
+    unlink(pPager->zFilename);
+  }
   sqliteFree(pPager);
   return SQLITE_OK;
 }
 
 /*
-** Return the page number for the given page data
+** Return the page number for the given page data.
 */
 Pgno sqlitepager_pagenumber(void *pData){
   PgHdr *p = DATA_TO_PGHDR(pData);
@@ -621,8 +675,8 @@ int sqlitepager_ref(void *pData){
 /*
 ** Acquire a page.
 **
-** A read lock is obtained for the first page acquired.  The lock
-** is dropped when the last page is released.  
+** A read lock on the disk file is obtained when the first page acquired. 
+** This read lock is dropped when the last page is released.
 **
 ** A _get works for any page number greater than 0.  If the database
 ** file is smaller than the requested page, then no actual disk
@@ -635,7 +689,7 @@ int sqlitepager_ref(void *pData){
 **
 ** See also sqlitepager_lookup().  Both this routine and _lookup() attempt
 ** to find a page in the in-memory cache first.  If the page is not already
-** in cache, this routine goes to disk to read it in whereas _lookup()
+** in memory, this routine goes to disk to read it in whereas _lookup()
 ** just returns 0.  This routine acquires a read-lock the first time it
 ** has to go to disk, and could also playback an old journal if necessary.
 ** Since _lookup() never goes to disk, it never has to deal with locks
@@ -829,8 +883,8 @@ int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage){
 ** See also sqlitepager_get().  The difference between this routine
 ** and sqlitepager_get() is that _get() will go to the disk and read
 ** in the page if the page is not already in cache.  This routine
-** returns NULL if the page is not in cache of if a disk I/O has ever
-** happened.
+** returns NULL if the page is not in cache or if a disk I/O error 
+** has ever happened.
 */
 void *sqlitepager_lookup(Pager *pPager, Pgno pgno){
   PgHdr *pPg;
@@ -924,6 +978,9 @@ int sqlitepager_write(void *pData){
 
   if( pPager->errMask ){ 
     return pager_errcode(pPager);
+  }
+  if( pPager->readOnly ){
+    return SQLITE_PERM;
   }
   pPg->dirty = 1;
   if( pPg->inJournal ){ return SQLITE_OK; }
@@ -1075,6 +1132,14 @@ int sqlitepager_rollback(Pager *pPager){
   pPager->dbSize = -1;
   return rc;
 };
+
+/*
+** Return TRUE if the database file is opened read-only.  Return FALSE
+** if the database is (in theory) writable.
+*/
+int sqlitepager_isreadonly(Pager *pPager){
+  return pPager->readonly;
+}
 
 /*
 ** This routine is used for testing and analysis only.

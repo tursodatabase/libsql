@@ -24,7 +24,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.31 2001/04/11 14:28:42 drh Exp $
+** $Id: shell.c,v 1.32 2001/09/13 13:46:57 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -40,7 +40,7 @@
 # include <readline/readline.h>
 # include <readline/history.h>
 #else
-# define readline getline
+# define readline(p) getline(p,stdin)
 # define add_history(X) 
 #endif
 

@@ -21,7 +21,7 @@
 **   http://www.hwaci.com/drh/
 **
 *************************************************************************
-** $Id: btree.c,v 1.21 2001/08/20 00:33:58 drh Exp $
+** $Id: btree.c,v 1.22 2001/09/13 13:46:56 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -43,8 +43,8 @@
 ** on Ptr(N+1) and its subpages have values greater than Key(N).  And
 ** so forth.
 **
-** Finding a particular key requires reading O(log(M)) pages from the file
-** where M is the number of entries in the tree.
+** Finding a particular key requires reading O(log(M)) pages from the 
+** disk where M is the number of entries in the tree.
 **
 ** In this implementation, a single file can hold one or more separate 
 ** BTrees.  Each BTree is identified by the index of its root page.  The
@@ -112,7 +112,7 @@ static const char zMagicHeader[] =
 #define MAGIC_SIZE (sizeof(zMagicHeader))
 
 /*
-** This is a magic integer also used to the integrety of the database
+** This is a magic integer also used to test the integrity of the database
 ** file.  This integer is used in addition to the string above so that
 ** if the file is written on a little-endian architecture and read
 ** on a big-endian architectures (or vice versa) we can detect the
@@ -726,20 +726,28 @@ int sqliteBtreeBeginTrans(Btree *pBt){
       return rc;
     }
   }
-  rc = sqlitepager_write(pBt->page1);
-  if( rc!=SQLITE_OK ){
-    return rc;
+  if( !sqlitepager_isreadonly(pBt) ){
+    rc = sqlitepager_write(pBt->page1);
+    if( rc!=SQLITE_OK ){
+      return rc;
+    }
+    rc = newDatabase(pBt);
   }
   pBt->inTrans = 1;
-  rc = newDatabase(pBt);
   return rc;
 }
 
 /*
-** Remove the last reference to the database file.  This will
-** remove the read lock.
+** If there are no outstanding cursors and we are not in the middle
+** of a transaction but there is a read lock on the database, then
+** this routine unrefs the first page of the database file which 
+** has the effect of releasing the read lock.
+**
+** If there are any outstanding cursors, this routine is a no-op.
+**
+** If there is a transaction in progress, this routine is a no-op.
 */
-static void unlockBtree(Btree *pBt){
+static void unlockBtreeIfUnused(Btree *pBt){
   if( pBt->inTrans==0 && pBt->pCursor==0 && pBt->page1!=0 ){
     sqlitepager_unref(pBt->page1);
     pBt->page1 = 0;
@@ -749,19 +757,25 @@ static void unlockBtree(Btree *pBt){
 
 /*
 ** Commit the transaction currently in progress.
+**
+** This will release the write lock on the database file.  If there
+** are no active cursors, it also releases the read lock.
 */
 int sqliteBtreeCommit(Btree *pBt){
   int rc;
   if( pBt->inTrans==0 ) return SQLITE_ERROR;
   rc = sqlitepager_commit(pBt->pPager);
   pBt->inTrans = 0;
-  unlockBtree(pBt);
+  unlockBtreeIfUnused(pBt);
   return rc;
 }
 
 /*
 ** Rollback the transaction in progress.  All cursors must be
 ** closed before this routine is called.
+**
+** This will release the write lock on the database file.  If there
+** are no active cursors, it also releases the read lock.
 */
 int sqliteBtreeRollback(Btree *pBt){
   int rc;
@@ -769,7 +783,7 @@ int sqliteBtreeRollback(Btree *pBt){
   if( pBt->inTrans==0 ) return SQLITE_OK;
   pBt->inTrans = 0;
   rc = sqlitepager_rollback(pBt->pPager);
-  unlockBtree(pBt);
+  unlockBtreeIfUnused(pBt);
   return rc;
 }
 
@@ -819,12 +833,12 @@ create_cursor_exception:
     if( pCur->pPage ) sqlitepager_unref(pCur->pPage);
     sqliteFree(pCur);
   }
-  unlockBtree(pBt);
+  unlockBtreeIfUnused(pBt);
   return rc;
 }
 
 /*
-** Close a cursor.  The lock on the database file is released
+** Close a cursor.  The read lock on the database file is released
 ** when the last cursor is closed.
 */
 int sqliteBtreeCloseCursor(BtCursor *pCur){
@@ -838,7 +852,7 @@ int sqliteBtreeCloseCursor(BtCursor *pCur){
     pCur->pNext->pPrev = pCur->pPrev;
   }
   sqlitepager_unref(pCur->pPage);
-  unlockBtree(pBt);
+  unlockBtreeIfUnused(pBt);
   sqliteFree(pCur);
   return SQLITE_OK;
 }
@@ -942,29 +956,34 @@ static int getPayload(BtCursor *pCur, int offset, int amt, char *zBuf){
 }
 
 /*
-** Read part of the key associated with cursor pCur.  A total
+** Read part of the key associated with cursor pCur.  A maximum
 ** of "amt" bytes will be transfered into zBuf[].  The transfer
-** begins at "offset".  If the key does not contain enough data
-** to satisfy the request, no data is fetched and this routine
-** returns SQLITE_ERROR.
+** begins at "offset".  The number of bytes actually read is
+** returned.  The amount returned will be smaller than the
+** amount requested if there are not enough bytes in the key
+** to satisfy the request.
 */
 int sqliteBtreeKey(BtCursor *pCur, int offset, int amt, char *zBuf){
   Cell *pCell;
   MemPage *pPage;
 
-  if( amt<0 ) return SQLITE_ERROR;
-  if( offset<0 ) return SQLITE_ERROR;
-  if( amt==0 ) return SQLITE_OK;
+  if( amt<0 ) return 0;
+  if( offset<0 ) return 0; 
+  if( amt==0 ) return 0;
   pPage = pCur->pPage;
   assert( pPage!=0 );
   if( pCur->idx >= pPage->nCell ){
-    return SQLITE_ERROR;
+    return 0;
   }
   pCell = pPage->apCell[pCur->idx];
   if( amt+offset > pCell->h.nKey ){
-    return SQLITE_ERROR;
+    amt = pCell->h.nKey - offset;
+    if( amt<=0 ){
+      return 0;
+    }
   }
-  return getPayload(pCur, offset, amt, zBuf);
+  getPayload(pCur, offset, amt, zBuf);
+  return amt;
 }
 
 /*
@@ -990,29 +1009,34 @@ int sqliteBtreeDataSize(BtCursor *pCur, int *pSize){
 }
 
 /*
-** Read part of the data associated with cursor pCur.  A total
+** Read part of the data associated with cursor pCur.  A maximum
 ** of "amt" bytes will be transfered into zBuf[].  The transfer
-** begins at "offset".  If the size of the data in the record
-** is insufficent to satisfy this request then no data is read
-** and this routine returns SQLITE_ERROR.
+** begins at "offset".  The number of bytes actually read is
+** returned.  The amount returned will be smaller than the
+** amount requested if there are not enough bytes in the data
+** to satisfy the request.
 */
 int sqliteBtreeData(BtCursor *pCur, int offset, int amt, char *zBuf){
   Cell *pCell;
   MemPage *pPage;
 
-  if( amt<0 ) return SQLITE_ERROR;
-  if( offset<0 ) return SQLITE_ERROR;
-  if( amt==0 ) return SQLITE_OK;
+  if( amt<0 ) return 0;
+  if( offset<0 ) return 0;
+  if( amt==0 ) return 0;
   pPage = pCur->pPage;
   assert( pPage!=0 );
   if( pCur->idx >= pPage->nCell ){
-    return SQLITE_ERROR;
+    return 0;
   }
   pCell = pPage->apCell[pCur->idx];
   if( amt+offset > pCell->h.nData ){
-    return SQLITE_ERROR;
+    amt = pCell->h.nData - offset;
+    if( amt<=0 ){
+      return 0;
+    }
   }
-  return getPayload(pCur, offset + pCell->h.nKey, amt, zBuf);
+  getPayload(pCur, offset + pCell->h.nKey, amt, zBuf);
+  return amt;
 }
 
 /*
@@ -1160,6 +1184,22 @@ static int moveToLeftmost(BtCursor *pCur){
   return SQLITE_OK;
 }
 
+/* Move the cursor to the first entry in the table.  Return SQLITE_OK
+** on success.  Set *pRes to 0 if the cursor actually points to something
+** or set *pRes to 1 if the table is empty and there is no first element.
+*/
+int sqliteBtreeFirst(BtCursor *pCur, int *pRes){
+  int rc;
+  rc = moveToRoot(pCur);
+  if( rc ) return rc;
+  if( pCur->pPage->nCell==0 ){
+    *pRes = 1;
+    return SQLITE_OK;
+  }
+  *pRes = 0;
+  rc = moveToLeftmost(pCur);
+  return rc;
+}
 
 /* Move the cursor so that it points to an entry near pKey.
 ** Return a success code.
@@ -1471,7 +1511,7 @@ static void reparentPage(Pager *pPager, Pgno pgno, MemPage *pNewParent){
 /*
 ** Reparent all children of the given page to be the given page.
 ** In other words, for every child of pPage, invoke reparentPage()
-** to make sure that child knows that pPage is its parent.
+** to make sure that each child knows that pPage is its parent.
 **
 ** This routine gets called after you memcpy() one page into
 ** another.
@@ -1563,7 +1603,7 @@ static void relinkCellList(MemPage *pPage){
 
 /*
 ** Make a copy of the contents of pFrom into pTo.  The pFrom->apCell[]
-** pointers that point intto pFrom->u.aDisk[] must be adjusted to point
+** pointers that point into pFrom->u.aDisk[] must be adjusted to point
 ** into pTo->u.aDisk[] instead.  But some pFrom->apCell[] entries might
 ** not point to pFrom->u.aDisk[].  Those are unchanged.
 */
@@ -1624,8 +1664,9 @@ static void copyPage(MemPage *pTo, MemPage *pFrom){
 ** might become overfull or underfull.  If that happens, then this routine
 ** is called recursively on the parent.
 **
-** If this routine fails for any reason, it means the database may have
-** been left in a corrupted state and should be rolled back.
+** If this routine fails for any reason, it might leave the database
+** in a corrupted state.  So if this routine fails, the database should
+** be rolled back.
 */
 static int balance(Btree *pBt, MemPage *pPage, BtCursor *pCur){
   MemPage *pParent;            /* The parent of pPage */
@@ -2037,7 +2078,7 @@ int sqliteBtreeDelete(BtCursor *pCur){
   clearCell(pCur->pBt, pCell);
   if( pgnoChild ){
     /*
-    ** If the entry we are about to delete is not a leaf so if we do not
+    ** The entry we are about to delete is not a leaf so if we do not
     ** do something we will leave a hole on an internal page.
     ** We have to fill the hole by moving in a cell from a leaf.  The
     ** next Cell after the one to be deleted is guaranteed to exist and
@@ -2603,7 +2644,7 @@ char *sqliteBtreeSanityCheck(Btree *pBt, int *aRoot, int nRoot){
 
   /* Make sure this analysis did not leave any unref() pages
   */
-  unlockBtree(pBt);
+  unlockBtreeIfUnused(pBt);
   if( nRef != *sqlitepager_stats(pBt->pPager) ){
     char zBuf[100];
     sprintf(zBuf, 

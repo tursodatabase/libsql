@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements.
 **
-** $Id: insert.c,v 1.13 2001/04/11 14:28:42 drh Exp $
+** $Id: insert.c,v 1.14 2001/09/13 13:46:56 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -85,6 +85,9 @@ void sqliteInsert(
   */
   v = sqliteGetVdbe(pParse);
   if( v==0 ) goto insert_cleanup;
+  if( (pParse->db->flags & SQLITE_InTrans)==0 ){
+    sqliteVdbeAddOp(v, OP_Transaction, 0, 0, 0, 0);
+  }
 
   /* Figure out how many columns of data are supplied.  If the data
   ** is comming from a SELECT statement, then this step has to generate
@@ -235,7 +238,7 @@ void sqliteInsert(
         sqliteExprCode(pParse, pList->a[j].pExpr);
       }
     }
-    sqliteVdbeAddOp(v, OP_MakeKey, pIdx->nColumn, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_MakeIdxKey, pIdx->nColumn, 0, 0, 0);
     sqliteVdbeAddOp(v, OP_PutIdx, idx+base, 0, 0, 0);
   }
 
@@ -245,6 +248,10 @@ void sqliteInsert(
     sqliteVdbeAddOp(v, OP_Goto, 0, iCont, 0, 0);
     sqliteVdbeAddOp(v, OP_Noop, 0, 0, 0, iBreak);
   }
+  if( (pParse->db->flags & SQLITE_InTrans)==0 ){
+    sqliteVdbeAddOp(v, OP_Commit, 0, 0, 0, 0);
+  }
+
 
 insert_cleanup:
   if( pList ) sqliteExprListDelete(pList);

@@ -23,10 +23,9 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.42 2001/04/28 16:52:42 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.43 2001/09/13 13:46:57 drh Exp $
 */
 #include "sqlite.h"
-#include "dbbe.h"
 #include "vdbe.h"
 #include "parse.h"
 #ifndef DISABLE_GDBM
@@ -136,23 +135,24 @@ typedef struct AggExpr AggExpr;
 ** Each database is an instance of the following structure
 */
 struct sqlite {
-  Dbbe *pBe;                 /* The backend driver */
-  int flags;                 /* Miscellanous flags. See below */
-  int file_format;           /* What file format version is this database? */
-  int nTable;                /* Number of tables in the database */
-  void *pBusyArg;            /* 1st Argument to the busy callback */
+  Btree *pBe;                   /* The B*Tree backend */
+  int flags;                    /* Miscellanous flags. See below */
+  int file_format;              /* What file format version is this database? */
+  int nTable;                   /* Number of tables in the database */
+  void *pBusyArg;               /* 1st Argument to the busy callback */
   int (*xBusyCallback)(void *,const char*,int);  /* The busy callback */
-  Table *apTblHash[N_HASH];  /* All tables of the database */
-  Index *apIdxHash[N_HASH];  /* All indices of the database */
+  Table *apTblHash[N_HASH];     /* All tables of the database */
+  Index *apIdxHash[N_HASH];     /* All indices of the database */
 };
 
 /*
 ** Possible values for the sqlite.flags.
 */
-#define SQLITE_VdbeTrace    0x00000001  /* True to trace VDBE execution */
-#define SQLITE_Initialized  0x00000002  /* True after initialization */
-#define SQLITE_Interrupt    0x00000004  /* Cancel current operation */
-#define SQLITE_InTrans      0x00000008  /* True if in a transaction */
+#define SQLITE_VdbeTrace      0x00000001  /* True to trace VDBE execution */
+#define SQLITE_Initialized    0x00000002  /* True after initialization */
+#define SQLITE_Interrupt      0x00000004  /* Cancel current operation */
+#define SQLITE_InTrans        0x00000008  /* True if in a transaction */
+#define SQLITE_InternChanges  0x00000010  /* Uncommitted Hash table changes */
 
 /*
 ** Current file format version
@@ -178,8 +178,11 @@ struct Table {
   Table *pHash;    /* Next table with same hash on zName */
   int nCol;        /* Number of columns in this table */
   Column *aCol;    /* Information about each column */
-  int readOnly;    /* True if this table should not be written by the user */
   Index *pIndex;   /* List of SQL indexes on this table. */
+  int tnum;        /* Page containing root for this table */
+  int readOnly;    /* True if this table should not be written by the user */
+  int isCommit;    /* True if creation of this table has been committed */
+  int isDelete;    /* True if deletion of this table has not been comitted */    
 };
 
 /*
@@ -208,6 +211,8 @@ struct Index {
   int *aiColumn;   /* Which columns are used by this index.  1st is 0 */
   Table *pTable;   /* The SQL table being indexed */
   int isUnique;    /* True if keys must all be unique */
+  int isCommit;    /* True if creation of this index has been committed */
+  int isDelete;    /* True if deletion of this index has not been comitted */
   Index *pNext;    /* The next index associated with the same table */
 };
 
@@ -342,6 +347,7 @@ struct AggExpr {
 */
 struct Parse {
   sqlite *db;          /* The main database structure */
+  Btree *pBe;          /* The database backend */
   int rc;              /* Return code from execution */
   sqlite_callback xCallback;  /* The callback function */
   void *pArg;          /* First argument to the callback function */
@@ -398,6 +404,8 @@ Expr *sqliteExprFunction(ExprList*, Token*);
 void sqliteExprDelete(Expr*);
 ExprList *sqliteExprListAppend(ExprList*,Expr*,Token*);
 void sqliteExprListDelete(ExprList*);
+void sqliteCommitInternalChanges(sqlite*);
+void sqliteRollbackInternalChanges(sqlite*);
 void sqliteStartTable(Parse*,Token*,Token*);
 void sqliteAddColumn(Parse*,Token*);
 void sqliteAddDefaultValue(Parse*,Token*,int);
@@ -442,3 +450,4 @@ void sqliteBeginTransaction(Parse*);
 void sqliteCommitTransaction(Parse*);
 void sqliteRollbackTransaction(Parse*);
 char *sqlite_mprintf(const char *, ...);
+const char *sqliteErrStr(int);

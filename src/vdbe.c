@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.59 2001/08/19 18:19:46 drh Exp $
+** $Id: vdbe.c,v 1.60 2001/09/13 13:46:57 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -54,6 +54,11 @@
 typedef struct VdbeOp Op;
 
 /*
+** Boolean values
+*/
+typedef unsigned char Bool;
+
+/*
 ** A cursor is a pointer into a database file.  The database file
 ** can represent either an SQL table or an SQL index.  Each file is
 ** a bag of key/data pairs.  The cursor can loop over all key/data
@@ -64,11 +69,15 @@ typedef struct VdbeOp Op;
 ** instance of the following structure.
 */
 struct Cursor {
-  DbbeCursor *pCursor;  /* The cursor structure of the backend */
-  int index;            /* The next index to extract */
-  int lastKey;          /* Last key from a Next or NextIdx operation */
-  int keyIsValid;       /* True if lastKey is valid */
-  int keyAsData;        /* The OP_Field command works on key instead of data */
+  BtCursor *pCursor;    /* The cursor structure of the backend */
+  int lastRecno;        /* Last recno from a Next or NextIdx operation */
+  Bool recnoIsValid;    /* True if lastRecno is valid */
+  Bool keyAsData;       /* The OP_Column command works on key instead of data */
+  Bool atFirst;         /* True if pointing to first entry */
+  Btree *pBt;           /* Separate file holding temporary table */
+  char *zKey;           /* Key used in BeginIdx and NextIdx operators */
+  int nKey;             /* Number of bytes in zKey[] */
+  char *zBuf;           /* Buffer space used to hold a copy of zKey[] */
 };
 typedef struct Cursor Cursor;
 
@@ -214,6 +223,8 @@ struct Vdbe {
   Agg agg;            /* Aggregate information */
   int nSet;           /* Number of sets allocated */
   Set *aSet;          /* An array of sets */
+  int *pTableRoot;    /* Write root page no. for new tables to this addr */
+  int *pIndexRoot;    /* Write root page no. for new indices to this addr */
   int nFetch;         /* Number of OP_Fetch instructions executed */
 };
 
@@ -234,6 +245,24 @@ Vdbe *sqliteVdbeCreate(sqlite *db){
 */
 void sqliteVdbeTrace(Vdbe *p, FILE *trace){
   p->trace = trace;
+}
+
+/*
+** Cause the next OP_CreateTable or OP_CreateIndex instruction that executes
+** to write the page number of the root page for the new table or index it
+** creates into the memory location *pAddr.
+**
+** The pointer to the place to write the page number is cleared after
+** the OP_Create* statement.  If OP_Create* is executed and the pointer
+** is NULL, an error results.  Hence the address can only be used once.
+** If the root address fields are set but OP_Create* operations never
+** execute, that too is an error.
+*/
+void sqliteVdbeTableRootAddr(Vdbe *p, int *pAddr){
+  p->pTableRoot = pAddr;
+}
+void sqliteVdbeIndexRootAddr(Vdbe *p, int *pAddr){
+  p->pIndexRoot = pAddr;
 }
 
 /*
@@ -340,6 +369,18 @@ int sqliteVdbeAddOpList(Vdbe *p, int nOp, VdbeOp const *aOp){
     }
   }
   return addr;
+}
+
+/*
+** Change the value of the P1 operand for a specific instruction.
+** This routine is useful when a large program is loaded from a
+** static array using sqliteVdbeAddOpList but we want to make a
+** few minor changes to the program.
+*/
+void sqliteVdbeChangeP1(Vdbe *p, int addr, int val){
+  if( p && addr>=0 && p->nOp>addr ){
+    p->aOp[addr].p1 = val;
+  }
 }
 
 /*
@@ -720,7 +761,7 @@ static void KeylistFree(Keylist *p){
 /*
 ** Clean up the VM after execution.
 **
-** This routine will automatically close any cursors, list, and/or
+** This routine will automatically close any cursors, lists, and/or
 ** sorters that were left open.
 */
 static void Cleanup(Vdbe *p){
@@ -729,9 +770,18 @@ static void Cleanup(Vdbe *p){
   sqliteFree(p->azColName);
   p->azColName = 0;
   for(i=0; i<p->nCursor; i++){
-    if( p->aCsr[i].pCursor ){
-      p->pBe->x->CloseCursor(p->aCsr[i].pCursor);
-      p->aCsr[i].pCursor = 0;
+    Cursor *pCx = &p->aCsr[i];
+    if( pCx->pCursor ){
+      sqliteBtreeCloseCursor(pCx->pCursor);
+      pCx->pCursor = 0;
+    }
+    if( pCx->zKey ){
+      sqliteFree(pCx->zKey);
+      pCx->zKey = 0;
+    }
+    if( pCx->pBt ){
+      sqliteBtreeClose(pCx->pBt);
+      pCx->pBt = 0;
     }
   }
   sqliteFree(p->aCsr);
@@ -785,6 +835,8 @@ static void Cleanup(Vdbe *p){
   sqliteFree(p->aSet);
   p->aSet = 0;
   p->nSet = 0;
+  p->pTableRoot = 0;
+  p->pIndexRoot = 0;
 }
 
 /*
@@ -818,29 +870,31 @@ void sqliteVdbeDelete(Vdbe *p){
 ** this array, then copy and paste it into this file, if you want.
 */
 static char *zOpName[] = { 0,
-  "OpenIdx",           "OpenTbl",           "Close",             "Fetch",
-  "Fcnt",              "New",               "Put",               "Distinct",
-  "Found",             "NotFound",          "Delete",            "Field",
-  "KeyAsData",         "Key",               "FullKey",           "Rewind",
-  "Next",              "Destroy",           "Reorganize",        "BeginIdx",
-  "NextIdx",           "PutIdx",            "DeleteIdx",         "MemLoad",
-  "MemStore",          "ListOpen",          "ListWrite",         "ListRewind",
-  "ListRead",          "ListClose",         "SortOpen",          "SortPut",
-  "SortMakeRec",       "SortMakeKey",       "Sort",              "SortNext",
-  "SortKey",           "SortCallback",      "SortClose",         "FileOpen",
-  "FileRead",          "FileField",         "FileClose",         "AggReset",
-  "AggFocus",          "AggIncr",           "AggNext",           "AggSet",
-  "AggGet",            "SetInsert",         "SetFound",          "SetNotFound",
-  "SetClear",          "MakeRecord",        "MakeKey",           "Goto",
-  "If",                "Halt",              "ColumnCount",       "ColumnName",
-  "Callback",          "Integer",           "String",            "Null",
-  "Pop",               "Dup",               "Pull",              "Add",
-  "AddImm",            "Subtract",          "Multiply",          "Divide",
-  "Min",               "Max",               "Like",              "Glob",
-  "Eq",                "Ne",                "Lt",                "Le",
-  "Gt",                "Ge",                "IsNull",            "NotNull",
-  "Negative",          "And",               "Or",                "Not",
-  "Concat",            "Noop",              "Strlen",            "Substr",
+  "Transaction",       "Commit",            "Rollback",          "Open",
+  "OpenTemp",          "Close",             "MoveTo",            "Fcnt",
+  "NewRecno",          "Put",               "Distinct",          "Found",
+  "NotFound",          "Delete",            "Column",            "KeyAsData",
+  "Recno",             "FullKey",           "Rewind",            "Next",
+  "Destroy",           "CreateIndex",       "CreateTable",       "Reorganize",
+  "BeginIdx",          "NextIdx",           "PutIdx",            "DeleteIdx",
+  "MemLoad",           "MemStore",          "ListOpen",          "ListWrite",
+  "ListRewind",        "ListRead",          "ListClose",         "SortOpen",
+  "SortPut",           "SortMakeRec",       "SortMakeKey",       "Sort",
+  "SortNext",          "SortKey",           "SortCallback",      "SortClose",
+  "FileOpen",          "FileRead",          "FileField",         "FileClose",
+  "AggReset",          "AggFocus",          "AggIncr",           "AggNext",
+  "AggSet",            "AggGet",            "SetInsert",         "SetFound",
+  "SetNotFound",       "SetClear",          "MakeRecord",        "MakeKey",
+  "Goto",              "If",                "Halt",              "ColumnCount",
+  "ColumnName",        "Callback",          "Integer",           "String",
+  "Null",              "Pop",               "Dup",               "Pull",
+  "Add",               "AddImm",            "Subtract",          "Multiply",
+  "Divide",            "Min",               "Max",               "Like",
+  "Glob",              "Eq",                "Ne",                "Lt",
+  "Le",                "Gt",                "Ge",                "IsNull",
+  "NotNull",           "Negative",          "And",               "Or",
+  "Not",               "Concat",            "Noop",              "Strlen",
+  "Substr",          
 };
 
 /*
@@ -985,11 +1039,11 @@ int sqliteVdbeExec(
   Op *pOp;                   /* Current operation */
   int rc;                    /* Value to return */
   Dbbe *pBe = p->pBe;        /* The backend driver */
-  DbbeMethods *pBex = pBe->x;  /* The backend driver methods */
   sqlite *db = p->db;        /* The database */
-  char **zStack;
-  Stack *aStack;
-  char zBuf[100];            /* Space to sprintf() and integer */
+  int rollbackOnError = 0;   /* If TRUE, rollback if the script fails.
+  char **zStack;             /* Text stack */
+  Stack *aStack;             /* Additional stack information */
+  char zBuf[100];            /* Space to sprintf() an integer */
 
 
   /* No instruction ever pushes more than a single element onto the
@@ -1035,2301 +1089,2505 @@ int sqliteVdbeExec(
 #endif
 
     switch( pOp->opcode ){
-      /* Opcode:  Goto P2 * *
-      **
-      ** An unconditional jump to address P2.
-      ** The next instruction executed will be 
-      ** the one at index P2 from the beginning of
-      ** the program.
-      */
-      case OP_Goto: {
-        pc = pOp->p2 - 1;
-        break;
-      }
 
-      /* Opcode:  Halt * * *
-      **
-      ** Exit immediately.  All open DBs, Lists, Sorts, etc are closed
-      ** automatically.
-      */
-      case OP_Halt: {
-        pc = p->nOp-1;
-        break;
-      }
-
-      /* Opcode: Integer P1 * *
-      **
-      ** The integer value P1 is pushed onto the stack.
-      */
-      case OP_Integer: {
-        int i = ++p->tos;
-        VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
-        aStack[i].i = pOp->p1;
-        aStack[i].flags = STK_Int;
-        break;
-      }
-
-      /* Opcode: String * * P3
-      **
-      ** The string value P3 is pushed onto the stack.
-      */
-      case OP_String: {
-        int i = ++p->tos;
-        char *z;
-        VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
-        z = pOp->p3;
-        if( z==0 ) z = "";
-        zStack[i] = z;
-        aStack[i].n = strlen(z) + 1;
-        aStack[i].flags = STK_Str;
-        break;
-      }
-
-      /* Opcode: Null * * *
-      **
-      ** Push a NULL value onto the stack.
-      */
-      case OP_Null: {
-        int i = ++p->tos;
-        VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
-        zStack[i] = 0;
-        aStack[i].flags = STK_Null;
-        break;
-      }
-
-      /* Opcode: Pop P1 * *
-      **
-      ** P1 elements are popped off of the top of stack and discarded.
-      */
-      case OP_Pop: {
-        PopStack(p, pOp->p1);
-        break;
-      }
-
-      /* Opcode: Dup P1 * *
-      **
-      ** A copy of the P1-th element of the stack 
-      ** is made and pushed onto the top of the stack.
-      ** The top of the stack is element 0.  So the
-      ** instruction "Dup 0 0 0" will make a copy of the
-      ** top of the stack.
-      */
-      case OP_Dup: {
-        int i = p->tos - pOp->p1;
-        int j = ++p->tos;
-        VERIFY( if( i<0 ) goto not_enough_stack; )
-        VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
-        aStack[j] = aStack[i];
-        if( aStack[i].flags & STK_Dyn ){
-          zStack[j] = sqliteMalloc( aStack[j].n );
-          if( zStack[j]==0 ) goto no_mem;
-          memcpy(zStack[j], zStack[i], aStack[j].n);
-        }else{
-          zStack[j] = zStack[i];
-        }
-        break;
-      }
-
-      /* Opcode: Pull P1 * *
-      **
-      ** The P1-th element is removed from its current location on 
-      ** the stack and pushed back on top of the stack.  The
-      ** top of the stack is element 0, so "Pull 0 0 0" is
-      ** a no-op.
-      */
-      case OP_Pull: {
-        int from = p->tos - pOp->p1;
-        int to = p->tos;
-        int i;
-        Stack ts;
-        char *tz;
-        VERIFY( if( from<0 ) goto not_enough_stack; )
-        ts = aStack[from];
-        tz = zStack[from];
-        for(i=from; i<to; i++){
-          aStack[i] = aStack[i+1];
-          zStack[i] = zStack[i+1];
-        }
-        aStack[to] = ts;
-        zStack[to] = tz;
-        break;
-      }
-
-      /* Opcode: ColumnCount P1 * *
-      **
-      ** Specify the number of column values that will appear in the
-      ** array passed as the 4th parameter to the callback.  No checking
-      ** is done.  If this value is wrong, a coredump can result.
-      */
-      case OP_ColumnCount: {
-        p->azColName = sqliteRealloc(p->azColName, (pOp->p1+1)*sizeof(char*));
-        if( p->azColName==0 ) goto no_mem;
-        p->azColName[pOp->p1] = 0;
-        break;
-      }
-
-      /* Opcode: ColumnName P1 * P3
-      **
-      ** P3 becomes the P1-th column name (first is 0).  An array of pointers
-      ** to all column names is passed as the 4th parameter to the callback.
-      ** The ColumnCount opcode must be executed first to allocate space to
-      ** hold the column names.  Failure to do this will likely result in
-      ** a coredump.
-      */
-      case OP_ColumnName: {
-        p->azColName[pOp->p1] = pOp->p3 ? pOp->p3 : "";
-        break;
-      }
-
-      /* Opcode: Callback P1 * *
-      **
-      ** Pop P1 values off the stack and form them into an array.  Then
-      ** invoke the callback function using the newly formed array as the
-      ** 3rd parameter.
-      */
-      case OP_Callback: {
-        int i = p->tos - pOp->p1 + 1;
-        int j;
-        VERIFY( if( i<0 ) goto not_enough_stack; )
-        VERIFY( if( NeedStack(p, p->tos+2) ) goto no_mem; )
-        for(j=i; j<=p->tos; j++){
-          if( (aStack[j].flags & STK_Null)==0 ){
-            if( Stringify(p, j) ) goto no_mem;
-          }
-        }
-        zStack[p->tos+1] = 0;
-        if( xCallback!=0 ){
-          if( xCallback(pArg, pOp->p1, &zStack[i], p->azColName)!=0 ){
-            rc = SQLITE_ABORT;
-          }
-        }
-        PopStack(p, pOp->p1);
-        break;
-      }
-
-      /* Opcode: Concat P1 P2 P3
-      **
-      ** Look at the first P1 elements of the stack.  Append them all 
-      ** together with the lowest element first.  Use P3 as a separator.  
-      ** Put the result on the top of the stack.  The original P1 elements
-      ** are popped from the stack if P2==0 and retained if P2==1.
-      **
-      ** If P3 is NULL, then use no separator.  When P1==1, this routine
-      ** makes a copy of the top stack element into memory obtained
-      ** from sqliteMalloc().
-      */
-      case OP_Concat: {
-        char *zNew;
-        int nByte;
-        int nField;
-        int i, j;
-        char *zSep;
-        int nSep;
-
-        nField = pOp->p1;
-        zSep = pOp->p3;
-        if( zSep==0 ) zSep = "";
-        nSep = strlen(zSep);
-        VERIFY( if( p->tos+1<nField ) goto not_enough_stack; )
-        nByte = 1 - nSep;
-        for(i=p->tos-nField+1; i<=p->tos; i++){
-          if( aStack[i].flags & STK_Null ){
-            nByte += nSep;
-          }else{
-            if( Stringify(p, i) ) goto no_mem;
-            nByte += aStack[i].n - 1 + nSep;
-          }
-        }
-        zNew = sqliteMalloc( nByte );
-        if( zNew==0 ) goto no_mem;
-        j = 0;
-        for(i=p->tos-nField+1; i<=p->tos; i++){
-          if( (aStack[i].flags & STK_Null)==0 ){
-            memcpy(&zNew[j], zStack[i], aStack[i].n-1);
-            j += aStack[i].n-1;
-          }
-          if( nSep>0 && i<p->tos ){
-            memcpy(&zNew[j], zSep, nSep);
-            j += nSep;
-          }
-        }
-        zNew[j] = 0;
-        if( pOp->p2==0 ) PopStack(p, nField);
-        VERIFY( NeedStack(p, p->tos+1); )
-        p->tos++;
-        aStack[p->tos].n = nByte;
-        aStack[p->tos].flags = STK_Str|STK_Dyn;
-        zStack[p->tos] = zNew;
-        break;
-      }
-
-      /* Opcode: Add * * *
-      **
-      ** Pop the top two elements from the stack, add them together,
-      ** and push the result back onto the stack.  If either element
-      ** is a string then it is converted to a double using the atof()
-      ** function before the addition.
-      */
-      /* Opcode: Multiply * * *
-      **
-      ** Pop the top two elements from the stack, multiply them together,
-      ** and push the result back onto the stack.  If either element
-      ** is a string then it is converted to a double using the atof()
-      ** function before the multiplication.
-      */
-      /* Opcode: Subtract * * *
-      **
-      ** Pop the top two elements from the stack, subtract the
-      ** first (what was on top of the stack) from the second (the
-      ** next on stack)
-      ** and push the result back onto the stack.  If either element
-      ** is a string then it is converted to a double using the atof()
-      ** function before the subtraction.
-      */
-      /* Opcode: Divide * * *
-      **
-      ** Pop the top two elements from the stack, divide the
-      ** first (what was on top of the stack) from the second (the
-      ** next on stack)
-      ** and push the result back onto the stack.  If either element
-      ** is a string then it is converted to a double using the atof()
-      ** function before the division.  Division by zero returns NULL.
-      */
-      case OP_Add:
-      case OP_Subtract:
-      case OP_Multiply:
-      case OP_Divide: {
-        int tos = p->tos;
-        int nos = tos - 1;
-        VERIFY( if( nos<0 ) goto not_enough_stack; )
-        if( (aStack[tos].flags & aStack[nos].flags & STK_Int)==STK_Int ){
-          int a, b;
-          a = aStack[tos].i;
-          b = aStack[nos].i;
-          switch( pOp->opcode ){
-            case OP_Add:         b += a;       break;
-            case OP_Subtract:    b -= a;       break;
-            case OP_Multiply:    b *= a;       break;
-            default: {
-              if( a==0 ) goto divide_by_zero;
-              b /= a;
-              break;
-            }
-          }
-          POPSTACK;
-          Release(p, nos);
-          aStack[nos].i = b;
-          aStack[nos].flags = STK_Int;
-        }else{
-          double a, b;
-          Realify(p, tos);
-          Realify(p, nos);
-          a = aStack[tos].r;
-          b = aStack[nos].r;
-          switch( pOp->opcode ){
-            case OP_Add:         b += a;       break;
-            case OP_Subtract:    b -= a;       break;
-            case OP_Multiply:    b *= a;       break;
-            default: {
-              if( a==0.0 ) goto divide_by_zero;
-              b /= a;
-              break;
-            }
-          }
-          POPSTACK;
-          Release(p, nos);
-          aStack[nos].r = b;
-          aStack[nos].flags = STK_Real;
-        }
-        break;
-
-      divide_by_zero:
-        PopStack(p, 2);
-        p->tos = nos;
-        aStack[nos].flags = STK_Null;
-        break;
-      }
-
-      /* Opcode: Max * * *
-      **
-      ** Pop the top two elements from the stack then push back the
-      ** largest of the two.
-      */
-      case OP_Max: {
-        int tos = p->tos;
-        int nos = tos - 1;
-        int ft, fn;
-        int copy = 0;
-        VERIFY( if( nos<0 ) goto not_enough_stack; )
-        ft = aStack[tos].flags;
-        fn = aStack[nos].flags;
-        if( fn & STK_Null ){
-          copy = 1;
-        }else if( (ft & fn & STK_Int)==STK_Int ){
-          copy = aStack[nos].i<aStack[tos].i;
-        }else if( ( (ft|fn) & (STK_Int|STK_Real) ) !=0 ){
-          Realify(p, tos);
-          Realify(p, nos);
-          copy = aStack[tos].r>aStack[nos].r;
-        }else{
-          if( Stringify(p, tos) || Stringify(p, nos) ) goto no_mem;
-          copy = sqliteCompare(zStack[tos],zStack[nos])>0;
-        }
-        if( copy ){
-          Release(p, nos);
-          aStack[nos] = aStack[tos];
-          zStack[nos] = zStack[tos];
-          zStack[tos] = 0;
-          aStack[tos].flags = 0;
-        }else{
-          Release(p, tos);
-        }
-        p->tos = nos;
-        break;
-      }
-
-      /* Opcode: Min * * *
-      **
-      ** Pop the top two elements from the stack then push back the
-      ** smaller of the two. 
-      */
-      case OP_Min: {
-        int tos = p->tos;
-        int nos = tos - 1;
-        int ft, fn;
-        int copy = 0;
-        VERIFY( if( nos<0 ) goto not_enough_stack; )
-        ft = aStack[tos].flags;
-        fn = aStack[nos].flags;
-        if( fn & STK_Null ){
-          copy = 1;
-        }else if( ft & STK_Null ){
-          copy = 0;
-        }else if( (ft & fn & STK_Int)==STK_Int ){
-          copy = aStack[nos].i>aStack[tos].i;
-        }else if( ( (ft|fn) & (STK_Int|STK_Real) ) !=0 ){
-          Realify(p, tos);
-          Realify(p, nos);
-          copy = aStack[tos].r<aStack[nos].r;
-        }else{
-          if( Stringify(p, tos) || Stringify(p, nos) ) goto no_mem;
-          copy = sqliteCompare(zStack[tos],zStack[nos])<0;
-        }
-        if( copy ){
-          Release(p, nos);
-          aStack[nos] = aStack[tos];
-          zStack[nos] = zStack[tos];
-          zStack[tos] = 0;
-          aStack[tos].flags = 0;
-        }else{
-          Release(p, tos);
-        }
-        p->tos = nos;
-        break;
-      }
-
-      /* Opcode: AddImm  P1 * *
-      ** 
-      ** Add the value P1 to whatever is on top of the stack.
-      */
-      case OP_AddImm: {
-        int tos = p->tos;
-        VERIFY( if( tos<0 ) goto not_enough_stack; )
-        Integerify(p, tos);
-        aStack[tos].i += pOp->p1;
-        break;
-      }
-
-      /* Opcode: Eq * P2 *
-      **
-      ** Pop the top two elements from the stack.  If they are equal, then
-      ** jump to instruction P2.  Otherwise, continue to the next instruction.
-      */
-      /* Opcode: Ne * P2 *
-      **
-      ** Pop the top two elements from the stack.  If they are not equal, then
-      ** jump to instruction P2.  Otherwise, continue to the next instruction.
-      */
-      /* Opcode: Lt * P2 *
-      **
-      ** Pop the top two elements from the stack.  If second element (the
-      ** next on stack) is less than the first (the top of stack), then
-      ** jump to instruction P2.  Otherwise, continue to the next instruction.
-      ** In other words, jump if NOS<TOS.
-      */
-      /* Opcode: Le * P2 *
-      **
-      ** Pop the top two elements from the stack.  If second element (the
-      ** next on stack) is less than or equal to the first (the top of stack),
-      ** then jump to instruction P2. In other words, jump if NOS<=TOS.
-      */
-      /* Opcode: Gt * P2 *
-      **
-      ** Pop the top two elements from the stack.  If second element (the
-      ** next on stack) is greater than the first (the top of stack),
-      ** then jump to instruction P2. In other words, jump if NOS>TOS.
-      */
-      /* Opcode: Ge * P2 *
-      **
-      ** Pop the top two elements from the stack.  If second element (the next
-      ** on stack) is greater than or equal to the first (the top of stack),
-      ** then jump to instruction P2. In other words, jump if NOS>=TOS.
-      */
-      case OP_Eq:
-      case OP_Ne:
-      case OP_Lt:
-      case OP_Le:
-      case OP_Gt:
-      case OP_Ge: {
-        int tos = p->tos;
-        int nos = tos - 1;
-        int c;
-        int ft, fn;
-        VERIFY( if( nos<0 ) goto not_enough_stack; )
-        ft = aStack[tos].flags;
-        fn = aStack[nos].flags;
-        if( (ft & fn)==STK_Int ){
-          c = aStack[nos].i - aStack[tos].i;
-        }else{
-          if( Stringify(p, tos) || Stringify(p, nos) ) goto no_mem;
-          c = sqliteCompare(zStack[nos], zStack[tos]);
-        }
-        switch( pOp->opcode ){
-          case OP_Eq:    c = c==0;     break;
-          case OP_Ne:    c = c!=0;     break;
-          case OP_Lt:    c = c<0;      break;
-          case OP_Le:    c = c<=0;     break;
-          case OP_Gt:    c = c>0;      break;
-          default:       c = c>=0;     break;
-        }
-        POPSTACK;
-        POPSTACK;
-        if( c ) pc = pOp->p2-1;
-        break;
-      }
-
-      /* Opcode: Like P1 P2 *
-      **
-      ** Pop the top two elements from the stack.  The top-most is a
-      ** "like" pattern -- the right operand of the SQL "LIKE" operator.
-      ** The lower element is the string to compare against the like
-      ** pattern.  Jump to P2 if the two compare, and fall through without
-      ** jumping if they do not.  The '%' in the top-most element matches
-      ** any sequence of zero or more characters in the lower element.  The
-      ** '_' character in the topmost matches any single character of the
-      ** lower element.  Case is ignored for this comparison.
-      **
-      ** If P1 is not zero, the sense of the test is inverted and we
-      ** have a "NOT LIKE" operator.  The jump is made if the two values
-      ** are different.
-      */
-      case OP_Like: {
-        int tos = p->tos;
-        int nos = tos - 1;
-        int c;
-        VERIFY( if( nos<0 ) goto not_enough_stack; )
-        if( Stringify(p, tos) || Stringify(p, nos) ) goto no_mem;
-        c = sqliteLikeCompare(zStack[tos], zStack[nos]);
-        POPSTACK;
-        POPSTACK;
-        if( pOp->p1 ) c = !c;
-        if( c ) pc = pOp->p2-1;
-        break;
-      }
-
-      /* Opcode: Glob P1 P2 *
-      **
-      ** Pop the top two elements from the stack.  The top-most is a
-      ** "glob" pattern.  The lower element is the string to compare 
-      ** against the glob pattern.
-      **
-      ** Jump to P2 if the two compare, and fall through without
-      ** jumping if they do not.  The '*' in the top-most element matches
-      ** any sequence of zero or more characters in the lower element.  The
-      ** '?' character in the topmost matches any single character of the
-      ** lower element.  [...] matches a range of characters.  [^...]
-      ** matches any character not in the range.  Case is significant
-      ** for globs.
-      **
-      ** If P1 is not zero, the sense of the test is inverted and we
-      ** have a "NOT GLOB" operator.  The jump is made if the two values
-      ** are different.
-      */
-      case OP_Glob: {
-        int tos = p->tos;
-        int nos = tos - 1;
-        int c;
-        VERIFY( if( nos<0 ) goto not_enough_stack; )
-        if( Stringify(p, tos) || Stringify(p, nos) ) goto no_mem;
-        c = sqliteGlobCompare(zStack[tos], zStack[nos]);
-        POPSTACK;
-        POPSTACK;
-        if( pOp->p1 ) c = !c;
-        if( c ) pc = pOp->p2-1;
-        break;
-      }
-
-      /* Opcode: And * * *
-      **
-      ** Pop two values off the stack.  Take the logical AND of the
-      ** two values and push the resulting boolean value back onto the
-      ** stack. 
-      */
-      /* Opcode: Or * * *
-      **
-      ** Pop two values off the stack.  Take the logical OR of the
-      ** two values and push the resulting boolean value back onto the
-      ** stack. 
-      */
-      case OP_And:
-      case OP_Or: {
-        int tos = p->tos;
-        int nos = tos - 1;
-        int c;
-        VERIFY( if( nos<0 ) goto not_enough_stack; )
-        Integerify(p, tos);
-        Integerify(p, nos);
-        if( pOp->opcode==OP_And ){
-          c = aStack[tos].i && aStack[nos].i;
-        }else{
-          c = aStack[tos].i || aStack[nos].i;
-        }
-        POPSTACK;
-        Release(p, nos);     
-        aStack[nos].i = c;
-        aStack[nos].flags = STK_Int;
-        break;
-      }
-
-      /* Opcode: Negative * * *
-      **
-      ** Treat the top of the stack as a numeric quantity.  Replace it
-      ** with its additive inverse.
-      */
-      case OP_Negative: {
-        int tos = p->tos;
-        VERIFY( if( tos<0 ) goto not_enough_stack; )
-        if( aStack[tos].flags & STK_Real ){
-          Release(p, tos);
-          aStack[tos].r = -aStack[tos].r;
-          aStack[tos].flags = STK_Real;
-        }else if( aStack[tos].flags & STK_Int ){
-          Release(p, tos);
-          aStack[tos].i = -aStack[tos].i;
-          aStack[tos].flags = STK_Int;
-        }else{
-          Realify(p, tos);
-          Release(p, tos);
-          aStack[tos].r = -aStack[tos].r;
-          aStack[tos].flags = STK_Real;
-        }
-        break;
-      }
-
-      /* Opcode: Not * * *
-      **
-      ** Interpret the top of the stack as a boolean value.  Replace it
-      ** with its complement.
-      */
-      case OP_Not: {
-        int tos = p->tos;
-        VERIFY( if( p->tos<0 ) goto not_enough_stack; )
-        Integerify(p, tos);
-        Release(p, tos);
-        aStack[tos].i = !aStack[tos].i;
-        aStack[tos].flags = STK_Int;
-        break;
-      }
-
-      /* Opcode: Noop * * *
-      **
-      ** Do nothing.  This instruction is often useful as a jump
-      ** destination.
-      */
-      case OP_Noop: {
-        break;
-      }
-
-      /* Opcode: If * P2 *
-      **
-      ** Pop a single boolean from the stack.  If the boolean popped is
-      ** true, then jump to p2.  Otherwise continue to the next instruction.
-      ** An integer is false if zero and true otherwise.  A string is
-      ** false if it has zero length and true otherwise.
-      */
-      case OP_If: {
-        int c;
-        VERIFY( if( p->tos<0 ) goto not_enough_stack; )
-        Integerify(p, p->tos);
-        c = aStack[p->tos].i;
-        POPSTACK;
-        if( c ) pc = pOp->p2-1;
-        break;
-      }
-
-      /* Opcode: IsNull * P2 *
-      **
-      ** Pop a single value from the stack.  If the value popped is NULL
-      ** then jump to p2.  Otherwise continue to the next 
-      ** instruction.
-      */
-      case OP_IsNull: {
-        int c;
-        VERIFY( if( p->tos<0 ) goto not_enough_stack; )
-        c = (aStack[p->tos].flags & STK_Null)!=0;
-        POPSTACK;
-        if( c ) pc = pOp->p2-1;
-        break;
-      }
-
-      /* Opcode: NotNull * P2 *
-      **
-      ** Pop a single value from the stack.  If the value popped is not an
-      ** empty string, then jump to p2.  Otherwise continue to the next 
-      ** instruction.
-      */
-      case OP_NotNull: {
-        int c;
-        VERIFY( if( p->tos<0 ) goto not_enough_stack; )
-        c = (aStack[p->tos].flags & STK_Null)==0;
-        POPSTACK;
-        if( c ) pc = pOp->p2-1;
-        break;
-      }
-
-      /* Opcode: MakeRecord P1 * *
-      **
-      ** Convert the top P1 entries of the stack into a single entry
-      ** suitable for use as a data record in the database.  To do this
-      ** all entries (except NULLs) are converted to strings and 
-      ** concatenated.  The null-terminators are preserved by the concatation
-      ** and serve as a boundry marker between fields.  The lowest entry
-      ** on the stack is the first in the concatenation and the top of
-      ** the stack is the last.  After all fields are concatenated, an
-      ** index header is added.  The index header consists of P1 integers
-      ** which hold the offset of the beginning of each field from the
-      ** beginning of the completed record including the header.  The
-      ** index for NULL entries is 0.
-      */
-      case OP_MakeRecord: {
-        char *zNewRecord;
-        int nByte;
-        int nField;
-        int i, j;
-        int addr;
-
-        nField = pOp->p1;
-        VERIFY( if( p->tos+1<nField ) goto not_enough_stack; )
-        nByte = 0;
-        for(i=p->tos-nField+1; i<=p->tos; i++){
-          if( (aStack[i].flags & STK_Null)==0 ){
-            if( Stringify(p, i) ) goto no_mem;
-            nByte += aStack[i].n;
-          }
-        }
-        nByte += sizeof(int)*nField;
-        zNewRecord = sqliteMalloc( nByte );
-        if( zNewRecord==0 ) goto no_mem;
-        j = 0;
-        addr = sizeof(int)*nField;
-        for(i=p->tos-nField+1; i<=p->tos; i++){
-          if( aStack[i].flags & STK_Null ){
-            int zero = 0;
-            memcpy(&zNewRecord[j], (char*)&zero, sizeof(int));
-          }else{
-            memcpy(&zNewRecord[j], (char*)&addr, sizeof(int));
-            addr += aStack[i].n;
-          }
-          j += sizeof(int);
-        }
-        for(i=p->tos-nField+1; i<=p->tos; i++){
-          if( (aStack[i].flags & STK_Null)==0 ){
-            memcpy(&zNewRecord[j], zStack[i], aStack[i].n);
-            j += aStack[i].n;
-          }
-        }
-        PopStack(p, nField);
-        VERIFY( NeedStack(p, p->tos+1); )
-        p->tos++;
-        aStack[p->tos].n = nByte;
-        aStack[p->tos].flags = STK_Str | STK_Dyn;
-        zStack[p->tos] = zNewRecord;
-        break;
-      }
-
-      /* Opcode: MakeKey P1 P2 *
-      **
-      ** Convert the top P1 entries of the stack into a single entry suitable
-      ** for use as the key in an index or a sort.  The top P1 records are
-      ** concatenated with a tab character (ASCII 0x09) used as a record
-      ** separator.  The entire concatenation is null-terminated.  The
-      ** lowest entry in the stack is the first field and the top of the
-      ** stack becomes the last.
-      **
-      ** If P2 is not zero, then the original entries remain on the stack
-      ** and the new key is pushed on top.  If P2 is zero, the original
-      ** data is popped off the stack first then the new key is pushed
-      ** back in its place.
-      **
-      ** See also the SortMakeKey opcode.
-      */
-      case OP_MakeKey: {
-        char *zNewKey;
-        int nByte;
-        int nField;
-        int i, j;
-
-        nField = pOp->p1;
-        VERIFY( if( p->tos+1<nField ) goto not_enough_stack; )
-        nByte = 0;
-        for(i=p->tos-nField+1; i<=p->tos; i++){
-          if( aStack[i].flags & STK_Null ){
-            nByte++;
-          }else{
-            if( Stringify(p, i) ) goto no_mem;
-            nByte += aStack[i].n;
-          }
-        }
-        zNewKey = sqliteMalloc( nByte );
-        if( zNewKey==0 ) goto no_mem;
-        j = 0;
-        for(i=p->tos-nField+1; i<=p->tos; i++){
-          if( (aStack[i].flags & STK_Null)==0 ){
-            memcpy(&zNewKey[j], zStack[i], aStack[i].n-1);
-            j += aStack[i].n-1;
-          }
-          if( i<p->tos ) zNewKey[j++] = '\t';
-        }
-        zNewKey[j] = 0;
-        if( pOp->p2==0 ) PopStack(p, nField);
-        VERIFY( NeedStack(p, p->tos+1); )
-        p->tos++;
-        aStack[p->tos].n = nByte;
-        aStack[p->tos].flags = STK_Str|STK_Dyn;
-        zStack[p->tos] = zNewKey;
-        break;
-      }
-
-      /* Opcode: OpenIdx P1 P2 P3
-      **
-      ** Open a new cursor for the database file named P3.  Give the
-      ** cursor an identifier P1.  The P1 values need not be
-      ** contiguous but all P1 values should be small integers.  It is
-      ** an error for P1 to be negative.
-      **
-      ** Open readonly if P2==0 and for reading and writing if P2!=0.
-      ** The file is created if it does not already exist and P2!=0.
-      ** If there is already another cursor opened with identifier P1,
-      ** then the old cursor is closed first.  All cursors are
-      ** automatically closed when the VDBE finishes execution.
-      **
-      ** If P3 is null or an empty string, a temporary database file
-      ** is created.  This temporary database file is automatically 
-      ** deleted when the cursor is closed.
-      **
-      ** The database file opened must be able to map arbitrary length
-      ** keys into arbitrary data.  A similar opcode, OpenTbl, opens
-      ** a database file that maps integer keys into arbitrary length
-      ** data.  This opcode opens database files used as
-      ** SQL indices and OpenTbl opens database files used for SQL
-      ** tables.
-      */
-      /* Opcode: OpenTbl P1 P2 P3
-      **
-      ** This works just like the OpenIdx operation except that the database
-      ** file that is opened is one that will only accept integers as
-      ** keys.  Some database backends are able to operate more efficiently
-      ** if keys are always integers.  So if SQLite knows in advance that
-      ** all keys will be integers, it uses this opcode rather than Open
-      ** in order to give the backend an opportunity to run faster.
-      **
-      ** This opcode opens database files used for storing SQL tables.
-      ** The OpenIdx opcode opens files used for SQL indices.
-      */
-      case OP_OpenIdx: 
-      case OP_OpenTbl: {
-        int busy = 0;
-        int i = pOp->p1;
-        VERIFY( if( i<0 ) goto bad_instruction; )
-        if( i>=p->nCursor ){
-          int j;
-          p->aCsr = sqliteRealloc( p->aCsr, (i+1)*sizeof(Cursor) );
-          if( p->aCsr==0 ){ p->nCursor = 0; goto no_mem; }
-          for(j=p->nCursor; j<=i; j++) p->aCsr[j].pCursor = 0;
-          p->nCursor = i+1;
-        }else if( p->aCsr[i].pCursor ){
-          pBex->CloseCursor(p->aCsr[i].pCursor);
-        }
-        do {
-          rc = pBex->OpenCursor(pBe,pOp->p3, pOp->p2,
-                                pOp->opcode==OP_OpenTbl, &p->aCsr[i].pCursor);
-          switch( rc ){
-            case SQLITE_BUSY: {
-              if( xBusy==0 || (*xBusy)(pBusyArg, pOp->p3, ++busy)==0 ){
-                sqliteSetString(pzErrMsg,"table ", pOp->p3, " is locked", 0);
-                busy = 0;
-              }
-              break;
-            }
-            case SQLITE_PERM: {
-              sqliteSetString(pzErrMsg, pOp->p2 ? "write" : "read",
-                " permission denied for table ", pOp->p3, 0);
-              break;
-            }
-            case SQLITE_READONLY: {
-              sqliteSetString(pzErrMsg,"table ", pOp->p3, 
-                 " is readonly", 0);
-              break;
-            }
-            case SQLITE_NOMEM: {
-              goto no_mem;
-            }
-            case SQLITE_OK: {
-              busy = 0;
-              break;
-            }
-          }
-        }while( busy );
-        p->aCsr[i].index = 0;
-        p->aCsr[i].keyAsData = 0;
-        break;
-      }
-
-      /* Opcode: Close P1 * *
-      **
-      ** Close a cursor previously opened as P1.  If P1 is not
-      ** currently open, this instruction is a no-op.
-      */
-      case OP_Close: {
-        int i = pOp->p1;
-        if( i>=0 && i<p->nCursor && p->aCsr[i].pCursor ){
-          pBex->CloseCursor(p->aCsr[i].pCursor);
-          p->aCsr[i].pCursor = 0;
-        }
-        break;
-      }
-
-      /* Opcode: Fetch P1 * *
-      **
-      ** Pop the top of the stack and use its value as a key to fetch
-      ** a record from cursor P1.  The key/data pair is held
-      ** in the P1 cursor until needed.
-      */
-      case OP_Fetch: {
-        int i = pOp->p1;
-        int tos = p->tos;
-        VERIFY( if( tos<0 ) goto not_enough_stack; )
-        if( i>=0 && i<p->nCursor && p->aCsr[i].pCursor ){
-          if( aStack[tos].flags & STK_Int ){
-            pBex->Fetch(p->aCsr[i].pCursor, sizeof(int), 
-                           (char*)&aStack[tos].i);
-            p->aCsr[i].lastKey = aStack[tos].i;
-            p->aCsr[i].keyIsValid = 1;
-          }else{
-            if( Stringify(p, tos) ) goto no_mem;
-            pBex->Fetch(p->aCsr[i].pCursor, aStack[tos].n, 
-                           zStack[tos]);
-            p->aCsr[i].keyIsValid = 0;
-          }
-          p->nFetch++;
-        }
-        POPSTACK;
-        break;
-      }
-
-      /* Opcode: Fcnt * * *
-      **
-      ** Push an integer onto the stack which is the total number of
-      ** OP_Fetch opcodes that have been executed by this virtual machine.
-      **
-      ** This instruction is used to implement the special fcnt() function
-      ** in the SQL dialect that SQLite understands.  fcnt() is used for
-      ** testing purposes.
-      */
-      case OP_Fcnt: {
-        int i = ++p->tos;
-        VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
-        aStack[i].i = p->nFetch;
-        aStack[i].flags = STK_Int;
-        break;
-      }
-
-      /* Opcode: Distinct P1 P2 *
-      **
-      ** Use the top of the stack as a key.  If a record with that key
-      ** does not exist in file P1, then jump to P2.  If the record
-      ** does already exist, then fall thru.  The record is not retrieved.
-      ** The key is not popped from the stack.
-      **
-      ** This operation is similar to NotFound except that this operation
-      ** does not pop the key from the stack.
-      */
-      /* Opcode: Found P1 P2 *
-      **
-      ** Use the top of the stack as a key.  If a record with that key
-      ** does exist in file P1, then jump to P2.  If the record
-      ** does not exist, then fall thru.  The record is not retrieved.
-      ** The key is popped from the stack.
-      */
-      /* Opcode: NotFound P1 P2 *
-      **
-      ** Use the top of the stack as a key.  If a record with that key
-      ** does not exist in file P1, then jump to P2.  If the record
-      ** does exist, then fall thru.  The record is not retrieved.
-      ** The key is popped from the stack.
-      **
-      ** The difference between this operation and Distinct is that
-      ** Distinct does not pop the key from the stack.
-      */
-      case OP_Distinct:
-      case OP_NotFound:
-      case OP_Found: {
-        int i = pOp->p1;
-        int tos = p->tos;
-        int alreadyExists = 0;
-        VERIFY( if( tos<0 ) goto not_enough_stack; )
-        if( VERIFY( i>=0 && i<p->nCursor && ) p->aCsr[i].pCursor ){
-          if( aStack[tos].flags & STK_Int ){
-            alreadyExists = pBex->Test(p->aCsr[i].pCursor, sizeof(int), 
-                                          (char*)&aStack[tos].i);
-          }else{
-            if( Stringify(p, tos) ) goto no_mem;
-            alreadyExists = pBex->Test(p->aCsr[i].pCursor,aStack[tos].n, 
-                                           zStack[tos]);
-          }
-        }
-        if( pOp->opcode==OP_Found ){
-          if( alreadyExists ) pc = pOp->p2 - 1;
-        }else{
-          if( !alreadyExists ) pc = pOp->p2 - 1;
-        }
-        if( pOp->opcode!=OP_Distinct ){
-          POPSTACK;
-        }
-        break;
-      }
-
-      /* Opcode: New P1 * *
-      **
-      ** Get a new integer key not previous used by the database file
-      ** associated with cursor P1 and push it onto the stack.
-      */
-      case OP_New: {
-        int i = pOp->p1;
-        int v;
-        if( VERIFY( i<0 || i>=p->nCursor || ) p->aCsr[i].pCursor==0 ){
-          v = 0;
-        }else{
-          v = pBex->New(p->aCsr[i].pCursor);
-        }
-        VERIFY( NeedStack(p, p->tos+1); )
-        p->tos++;
-        aStack[p->tos].i = v;
-        aStack[p->tos].flags = STK_Int;
-        break;
-      }
-
-      /* Opcode: Put P1 * *
-      **
-      ** Write an entry into the database file P1.  A new entry is
-      ** created if it doesn't already exist, or the data for an existing
-      ** entry is overwritten.  The data is the value on the top of the
-      ** stack.  The key is the next value down on the stack.  The stack
-      ** is popped twice by this instruction.
-      */
-      case OP_Put: {
-        int tos = p->tos;
-        int nos = p->tos-1;
-        int i = pOp->p1;
-        VERIFY( if( nos<0 ) goto not_enough_stack; )
-        if( VERIFY( i>=0 && i<p->nCursor && ) p->aCsr[i].pCursor!=0 ){
-          char *zKey;
-          int nKey;
-          if( (aStack[nos].flags & STK_Int)==0 ){
-            if( Stringify(p, nos) ) goto no_mem;
-            nKey = aStack[nos].n;
-            zKey = zStack[nos];
-          }else{
-            nKey = sizeof(int);
-            zKey = (char*)&aStack[nos].i;
-          }
-          pBex->Put(p->aCsr[i].pCursor, nKey, zKey,
-                        aStack[tos].n, zStack[tos]);
-        }
-        POPSTACK;
-        POPSTACK;
-        break;
-      }
-
-      /* Opcode: Delete P1 * *
-      **
-      ** The top of the stack is a key.  Remove this key and its data
-      ** from database file P1.  Then pop the stack to discard the key.
-      */
-      case OP_Delete: {
-        int tos = p->tos;
-        int i = pOp->p1;
-        VERIFY( if( tos<0 ) goto not_enough_stack; )
-        if( VERIFY( i>=0 && i<p->nCursor && ) p->aCsr[i].pCursor!=0 ){
-          char *zKey;
-          int nKey;
-          if( aStack[tos].flags & STK_Int ){
-            nKey = sizeof(int);
-            zKey = (char*)&aStack[tos].i;
-          }else{
-            if( Stringify(p, tos) ) goto no_mem;
-            nKey = aStack[tos].n;
-            zKey = zStack[tos];
-          }
-          pBex->Delete(p->aCsr[i].pCursor, nKey, zKey);
-        }
-        POPSTACK;
-        break;
-      }
-
-      /* Opcode: KeyAsData P1 P2 *
-      **
-      ** Turn the key-as-data mode for cursor P1 either on (if P2==1) or
-      ** off (if P2==0).  In key-as-data mode, the OP_Field opcode pulls
-      ** data off of the key rather than the data.  This is useful for
-      ** processing compound selects.
-      */
-      case OP_KeyAsData: {
-        int i = pOp->p1;
-        if( VERIFY( i>=0 && i<p->nCursor && ) p->aCsr[i].pCursor!=0 ){
-          p->aCsr[i].keyAsData = pOp->p2;
-        }
-        break;
-      }
-
-      /* Opcode: Field P1 P2 *
-      **
-      ** Interpret the data in the most recent fetch from cursor P1
-      ** is a structure built using the MakeRecord instruction.
-      ** Push onto the stack the value of the P2-th field of that
-      ** structure.
-      ** 
-      ** The value pushed is just a pointer to the data in the cursor.
-      ** The value will go away the next time a record is fetched from P1,
-      ** or when P1 is closed.  Make a copy of the string (using
-      ** "Concat 1 0 0") if it needs to persist longer than that.
-      **
-      ** If the KeyAsData opcode has previously executed on this cursor,
-      ** then the field might be extracted from the key rather than the
-      ** data.
-      **
-      ** Viewed from a higher level, this instruction retrieves the
-      ** data from a single column in a particular row of an SQL table
-      ** file.  Perhaps the name of this instruction should be
-      ** "Column" instead of "Field"...
-      */
-      case OP_Field: {
-        int *pAddr;
-        int amt;
-        int i = pOp->p1;
-        int p2 = pOp->p2;
-        int tos = ++p->tos;
-        DbbeCursor *pCrsr;
-        char *z;
-
-        VERIFY( if( NeedStack(p, tos) ) goto no_mem; )
-        if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
-          if( p->aCsr[i].keyAsData ){
-            amt = pBex->KeyLength(pCrsr);
-            if( amt<=sizeof(int)*(p2+1) ){
-              aStack[tos].flags = STK_Null;
-              break;
-            }
-            pAddr = (int*)pBex->ReadKey(pCrsr, sizeof(int)*p2);
-            if( *pAddr==0 ){
-              aStack[tos].flags = STK_Null;
-              break;
-            }
-            z = pBex->ReadKey(pCrsr, *pAddr);
-          }else{
-            amt = pBex->DataLength(pCrsr);
-            if( amt<=sizeof(int)*(p2+1) ){
-              aStack[tos].flags = STK_Null;
-              break;
-            }
-            pAddr = (int*)pBex->ReadData(pCrsr, sizeof(int)*p2);
-            if( *pAddr==0 ){
-              aStack[tos].flags = STK_Null;
-              break;
-            }
-            z = pBex->ReadData(pCrsr, *pAddr);
-          }
-          zStack[tos] = z;
-          aStack[tos].n = strlen(z) + 1;
-          aStack[tos].flags = STK_Str;
-        }
-        break;
-      }
-
-      /* Opcode: Key P1 * *
-      **
-      ** Push onto the stack an integer which is the first 4 bytes of the
-      ** the key to the current entry in a sequential scan of the database
-      ** file P1.  The sequential scan should have been started using the 
-      ** Next opcode.
-      */
-      case OP_Key: {
-        int i = pOp->p1;
-        int tos = ++p->tos;
-        DbbeCursor *pCrsr;
-
-        VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
-        if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
-          int v;
-          if( p->aCsr[i].keyIsValid ){
-            v = p->aCsr[i].lastKey;
-          }else{
-            memcpy(&v, pBex->ReadKey(pCrsr,0), sizeof(int));
-          }
-          aStack[tos].i = v;
-          aStack[tos].flags = STK_Int;
-        }
-        break;
-      }
-
-      /* Opcode: FullKey P1 * *
-      **
-      ** Push a string onto the stack which is the full text key associated
-      ** with the last Next operation on file P1.  Compare this with the
-      ** Key operator which pushs an integer key.
-      */
-      case OP_FullKey: {
-        int i = pOp->p1;
-        int tos = ++p->tos;
-        DbbeCursor *pCrsr;
-
-        VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
-        VERIFY( if( !p->aCsr[i].keyAsData ) goto bad_instruction; )
-        if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
-          char *z = pBex->ReadKey(pCrsr, 0);
-          zStack[tos] = z;
-          aStack[tos].flags = STK_Str;
-          aStack[tos].n = pBex->KeyLength(pCrsr);
-        }
-        break;
-      }
-
-      /* Opcode: Rewind P1 * *
-      **
-      ** The next use of the Key or Field or Next instruction for P1 
-      ** will refer to the first entry in the database file.
-      */
-      case OP_Rewind: {
-        int i = pOp->p1;
-        if( VERIFY( i>=0 && i<p->nCursor && ) p->aCsr[i].pCursor!=0 ){
-          pBex->Rewind(p->aCsr[i].pCursor);
-        }
-        break;
-      }
-
-      /* Opcode: Next P1 P2 *
-      **
-      ** Advance P1 to the next key/data pair in the file.  Or, if there are no
-      ** more key/data pairs, rewind P1 and jump to location P2.
-      */
-      case OP_Next: {
-        int i = pOp->p1;
-        if( VERIFY( i>=0 && i<p->nCursor && ) p->aCsr[i].pCursor!=0 ){
-          if( pBex->NextKey(p->aCsr[i].pCursor)==0 ){
-            pc = pOp->p2 - 1;
-          }else{
-            p->nFetch++;
-          }
-        }
-        p->aCsr[i].keyIsValid = 0;
-        break;
-      }
-
-      /* Opcode: BeginIdx P1 * *
-      **
-      ** Begin searching an index for records with the key found on the
-      ** top of the stack.  The stack is popped once.  Subsequent calls
-      ** to NextIdx will push record numbers onto the stack until all
-      ** records with the same key have been returned.
-      */
-      case OP_BeginIdx: {
-        int i = pOp->p1;
-        int tos = p->tos;
-        VERIFY( if( tos<0 ) goto not_enough_stack; )
-        if( i>=0 && i<p->nCursor && p->aCsr[i].pCursor ){
-          if( Stringify(p, tos) ) goto no_mem;
-          pBex->BeginIndex(p->aCsr[i].pCursor, aStack[tos].n, zStack[tos]);
-          p->aCsr[i].keyIsValid = 0;
-        }
-        POPSTACK;
-        break;
-      }
-
-      /* Opcode: NextIdx P1 P2 *
-      **
-      ** The P1 cursor points to an SQL index for which a BeginIdx operation
-      ** has been issued.  This operation retrieves the next record number and
-      ** pushes that record number onto the stack.  Or, if there are no more
-      ** record numbers for the given key, this opcode pushes nothing onto the
-      ** stack but instead jumps to instruction P2.
-      */
-      case OP_NextIdx: {
-        int i = pOp->p1;
-        int tos = ++p->tos;
-        DbbeCursor *pCrsr;
-
-        VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
-        zStack[tos] = 0;
-        if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
-          int recno = pBex->NextIndex(pCrsr);
-          if( recno!=0 ){
-            p->aCsr[i].lastKey = aStack[tos].i = recno;
-            p->aCsr[i].keyIsValid = 1;
-            aStack[tos].flags = STK_Int;
-          }else{
-            pc = pOp->p2 - 1;
-            POPSTACK;
-          }
-        }
-        break;
-      }
-
-      /* Opcode: PutIdx P1 * *
-      **
-      ** The top of the stack hold an SQL index key (probably made using the
-      ** MakeKey instruction) and next on stack holds an integer which
-      ** the record number for an SQL table entry.  This opcode makes an entry
-      ** in the index table P1 that associates the key with the record number.
-      ** But the record number and the key are popped from the stack.
-      */
-      case OP_PutIdx: {
-        int i = pOp->p1;
-        int tos = p->tos;
-        int nos = tos - 1;
-        DbbeCursor *pCrsr;
-        VERIFY( if( nos<0 ) goto not_enough_stack; )
-        if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
-          Integerify(p, nos);
-          if( Stringify(p, tos) ) goto no_mem;
-          pBex->PutIndex(pCrsr, aStack[tos].n, zStack[tos], aStack[nos].i);
-        }
-        POPSTACK;
-        POPSTACK;
-        break;
-      }
-
-      /* Opcode: DeleteIdx P1 * *
-      **
-      ** The top of the stack is a key and next on stack is integer
-      ** which is a record number for an SQL table.  The operation removes
-      ** any entry to the index table P1 that associates the key with the
-      ** record number.
-      */
-      case OP_DeleteIdx: {
-        int i = pOp->p1;
-        int tos = p->tos;
-        int nos = tos - 1;
-        DbbeCursor *pCrsr;
-        VERIFY( if( nos<0 ) goto not_enough_stack; )
-        if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
-          Integerify(p, nos);
-          if( Stringify(p, tos) ) goto no_mem;
-          pBex->DeleteIndex(pCrsr, aStack[tos].n, zStack[tos], aStack[nos].i);
-        }
-        POPSTACK;
-        POPSTACK;
-        break;
-      }
-
-      /* Opcode: Destroy * * P3
-      **
-      ** Drop the disk file whose name is P3.  All key/data pairs in
-      ** the file are deleted and the file itself is removed
-      ** from the disk.
-      */
-      case OP_Destroy: {
-        pBex->DropTable(pBe, pOp->p3);
-        break;
-      }
-
-      /* Opcode: Reorganize * * P3
-      **
-      ** Compress, optimize, and tidy up the GDBM file named by P3.
-      */
-      case OP_Reorganize: {
-        pBex->ReorganizeTable(pBe, pOp->p3);
-        break;
-      }
-
-      /* Opcode: ListOpen P1 * *
-      **
-      ** Open a "List" structure used for temporary storage of integer 
-      ** table keys.  P1
-      ** will server as a handle to this list for future
-      ** interactions.  If another list with the P1 handle is
-      ** already opened, the prior list is closed and a new one opened
-      ** in its place.
-      */
-      case OP_ListOpen: {
-        int i = pOp->p1;
-        VERIFY( if( i<0 ) goto bad_instruction; )
-        if( i>=p->nList ){
-          int j;
-          p->apList = sqliteRealloc( p->apList, (i+1)*sizeof(Keylist*) );
-          if( p->apList==0 ){ p->nList = 0; goto no_mem; }
-          for(j=p->nList; j<=i; j++) p->apList[j] = 0;
-          p->nList = i+1;
-        }else if( p->apList[i] ){
-          KeylistFree(p->apList[i]);
-          p->apList[i] = 0;
-        }
-        break;
-      }
-
-      /* Opcode: ListWrite P1 * *
-      **
-      ** Write the integer on the top of the stack
-      ** into the temporary storage list P1.
-      */
-      case OP_ListWrite: {
-        int i = pOp->p1;
-        Keylist *pKeylist;
-        VERIFY( if( i<0 || i>=p->nList ) goto bad_instruction; )
-        VERIFY( if( p->tos<0 ) goto not_enough_stack; )
-        pKeylist = p->apList[i];
-        if( pKeylist==0 || pKeylist->nUsed>=pKeylist->nKey ){
-          pKeylist = sqliteMalloc( sizeof(Keylist)+999*sizeof(int) );
-          if( pKeylist==0 ) goto no_mem;
-          pKeylist->nKey = 1000;
-          pKeylist->nRead = 0;
-          pKeylist->nUsed = 0;
-          pKeylist->pNext = p->apList[i];
-          p->apList[i] = pKeylist;
-        }
-        Integerify(p, p->tos);
-        pKeylist->aKey[pKeylist->nUsed++] = aStack[p->tos].i;
-        POPSTACK;
-        break;
-      }
-
-      /* Opcode: ListRewind P1 * *
-      **
-      ** Rewind the temporary buffer P1 back to the beginning.
-      */
-      case OP_ListRewind: {
-        int i = pOp->p1;
-        VERIFY( if( i<0 ) goto bad_instruction; )
-        /* This is now a no-op */
-        break;
-      }
-
-      /* Opcode: ListRead P1 P2 *
-      **
-      ** Attempt to read an integer from temporary storage buffer P1
-      ** and push it onto the stack.  If the storage buffer is empty, 
-      ** push nothing but instead jump to P2.
-      */
-      case OP_ListRead: {
-        int i = pOp->p1;
-        Keylist *pKeylist;
-        VERIFY(if( i<0 || i>=p->nList ) goto bad_instruction;)
-        pKeylist = p->apList[i];
-        if( pKeylist!=0 ){
-          VERIFY(
-            if( pKeylist->nRead<0 
-              || pKeylist->nRead>=pKeylist->nUsed
-              || pKeylist->nRead>=pKeylist->nKey ) goto bad_instruction;
-          )
-          p->tos++;
-          if( NeedStack(p, p->tos) ) goto no_mem;
-          aStack[p->tos].i = pKeylist->aKey[pKeylist->nRead++];
-          aStack[p->tos].flags = STK_Int;
-          zStack[p->tos] = 0;
-          if( pKeylist->nRead>=pKeylist->nUsed ){
-            p->apList[i] = pKeylist->pNext;
-            sqliteFree(pKeylist);
-          }
-        }else{
-          pc = pOp->p2 - 1;
-        }
-        break;
-      }
-
-      /* Opcode: ListClose P1 * *
-      **
-      ** Close the temporary storage buffer and discard its contents.
-      */
-      case OP_ListClose: {
-        int i = pOp->p1;
-        VERIFY( if( i<0 ) goto bad_instruction; )
-        VERIFY( if( i>=p->nList ) goto bad_instruction; )
-        KeylistFree(p->apList[i]);
-        p->apList[i] = 0;
-        break;
-      }
-
-      /* Opcode: SortOpen P1 * *
-      **
-      ** Create a new sorter with index P1
-      */
-      case OP_SortOpen: {
-        int i = pOp->p1;
-        VERIFY( if( i<0 ) goto bad_instruction; )
-        if( i>=p->nSort ){
-          int j;
-          p->apSort = sqliteRealloc( p->apSort, (i+1)*sizeof(Sorter*) );
-          if( p->apSort==0 ){ p->nSort = 0; goto no_mem; }
-          for(j=p->nSort; j<=i; j++) p->apSort[j] = 0;
-          p->nSort = i+1;
-        }
-        break;
-      }
-
-      /* Opcode: SortPut P1 * *
-      **
-      ** The TOS is the key and the NOS is the data.  Pop both from the stack
-      ** and put them on the sorter.
-      */
-      case OP_SortPut: {
-        int i = pOp->p1;
-        int tos = p->tos;
-        int nos = tos - 1;
-        Sorter *pSorter;
-        VERIFY( if( i<0 || i>=p->nSort ) goto bad_instruction; )
-        VERIFY( if( tos<1 ) goto not_enough_stack; )
-        if( Stringify(p, tos) || Stringify(p, nos) ) goto no_mem;
-        pSorter = sqliteMalloc( sizeof(Sorter) );
-        if( pSorter==0 ) goto no_mem;
-        pSorter->pNext = p->apSort[i];
-        p->apSort[i] = pSorter;
-        pSorter->nKey = aStack[tos].n;
-        pSorter->zKey = zStack[tos];
-        pSorter->nData = aStack[nos].n;
-        pSorter->pData = zStack[nos];
-        aStack[tos].flags = 0;
-        aStack[nos].flags = 0;
-        zStack[tos] = 0;
-        zStack[nos] = 0;
-        p->tos -= 2;
-        break;
-      }
-
-      /* Opcode: SortMakeRec P1 * *
-      **
-      ** The top P1 elements are the arguments to a callback.  Form these
-      ** elements into a single data entry that can be stored on a sorter
-      ** using SortPut and later fed to a callback using SortCallback.
-      */
-      case OP_SortMakeRec: {
-        char *z;
-        char **azArg;
-        int nByte;
-        int nField;
-        int i, j;
-
-        nField = pOp->p1;
-        VERIFY( if( p->tos+1<nField ) goto not_enough_stack; )
-        nByte = 0;
-        for(i=p->tos-nField+1; i<=p->tos; i++){
-          if( (aStack[i].flags & STK_Null)==0 ){
-            if( Stringify(p, i) ) goto no_mem;
-            nByte += aStack[i].n;
-          }
-        }
-        nByte += sizeof(char*)*(nField+1);
-        azArg = sqliteMalloc( nByte );
-        if( azArg==0 ) goto no_mem;
-        z = (char*)&azArg[nField+1];
-        for(j=0, i=p->tos-nField+1; i<=p->tos; i++, j++){
-          if( aStack[i].flags & STK_Null ){
-            azArg[j] = 0;
-          }else{
-            azArg[j] = z;
-            strcpy(z, zStack[i]);
-            z += aStack[i].n;
-          }
-        }
-        PopStack(p, nField);
-        VERIFY( NeedStack(p, p->tos+1); )
-        p->tos++;
-        aStack[p->tos].n = nByte;
-        zStack[p->tos] = (char*)azArg;
-        aStack[p->tos].flags = STK_Str|STK_Dyn;
-        break;
-      }
-
-      /* Opcode: SortMakeKey P1 * P3
-      **
-      ** Convert the top few entries of the stack into a sort key.  The
-      ** number of stack entries consumed is the number of characters in 
-      ** the string P3.  One character from P3 is prepended to each entry.
-      ** The first character of P3 is prepended to the element lowest in
-      ** the stack and the last character of P3 is appended to the top of
-      ** the stack.  All stack entries are separated by a \000 character
-      ** in the result.  The whole key is terminated by two \000 characters
-      ** in a row.
-      **
-      ** See also the MakeKey opcode.
-      */
-      case OP_SortMakeKey: {
-        char *zNewKey;
-        int nByte;
-        int nField;
-        int i, j, k;
-
-        nField = strlen(pOp->p3);
-        VERIFY( if( p->tos+1<nField ) goto not_enough_stack; )
-        nByte = 1;
-        for(i=p->tos-nField+1; i<=p->tos; i++){
-          if( Stringify(p, i) ) goto no_mem;
-          nByte += aStack[i].n+2;
-        }
-        zNewKey = sqliteMalloc( nByte );
-        if( zNewKey==0 ) goto no_mem;
-        j = 0;
-        k = 0;
-        for(i=p->tos-nField+1; i<=p->tos; i++){
-          zNewKey[j++] = pOp->p3[k++];
-          memcpy(&zNewKey[j], zStack[i], aStack[i].n-1);
-          j += aStack[i].n-1;
-          zNewKey[j++] = 0;
-        }
-        zNewKey[j] = 0;
-        PopStack(p, nField);
-        VERIFY( NeedStack(p, p->tos+1); )
-        p->tos++;
-        aStack[p->tos].n = nByte;
-        aStack[p->tos].flags = STK_Str|STK_Dyn;
-        zStack[p->tos] = zNewKey;
-        break;
-      }
-
-      /* Opcode: Sort P1 * *
-      **
-      ** Sort all elements on the given sorter.  The algorithm is a
-      ** mergesort.
-      */
-      case OP_Sort: {
-        int j;
-        j = pOp->p1;
-        VERIFY( if( j<0 ) goto bad_instruction; )
-        if( j<p->nSort ){
-          int i;
-          Sorter *pElem;
-          Sorter *apSorter[NSORT];
-          for(i=0; i<NSORT; i++){
-            apSorter[i] = 0;
-          }
-          while( p->apSort[j] ){
-            pElem = p->apSort[j];
-            p->apSort[j] = pElem->pNext;
-            pElem->pNext = 0;
-            for(i=0; i<NSORT-1; i++){
-              if( apSorter[i]==0 ){
-                apSorter[i] = pElem;
-                break;
-              }else{
-                pElem = Merge(apSorter[i], pElem);
-                apSorter[i] = 0;
-              }
-            }
-            if( i>=NSORT-1 ){
-              apSorter[NSORT-1] = Merge(apSorter[NSORT-1],pElem);
-            }
-          }
-          pElem = 0;
-          for(i=0; i<NSORT; i++){
-            pElem = Merge(apSorter[i], pElem);
-          }
-          p->apSort[j] = pElem;
-        }
-        break;
-      }
-
-      /* Opcode: SortNext P1 P2 *
-      **
-      ** Push the data for the topmost element in the given sorter onto the
-      ** stack, then remove the element from the sorter.
-      */
-      case OP_SortNext: {
-        int i = pOp->p1;
-        VERIFY( if( i<0 ) goto bad_instruction; )
-        if( VERIFY( i<p->nSort && ) p->apSort[i]!=0 ){
-          Sorter *pSorter = p->apSort[i];
-          p->apSort[i] = pSorter->pNext;
-          p->tos++;
-          VERIFY( NeedStack(p, p->tos); )
-          zStack[p->tos] = pSorter->pData;
-          aStack[p->tos].n = pSorter->nData;
-          aStack[p->tos].flags = STK_Str|STK_Dyn;
-          sqliteFree(pSorter->zKey);
-          sqliteFree(pSorter);
-        }else{
-          pc = pOp->p2 - 1;
-        }
-        break;
-      }
-
-      /* Opcode: SortKey P1 * *
-      **
-      ** Push the key for the topmost element of the sorter onto the stack.
-      ** But don't change the sorter an any other way.
-      */
-      case OP_SortKey: {
-        int i = pOp->p1;
-        VERIFY( if( i<0 ) goto bad_instruction; )
-        if( i<p->nSort && p->apSort[i]!=0 ){
-          Sorter *pSorter = p->apSort[i];
-          p->tos++;
-          VERIFY( NeedStack(p, p->tos); )
-          sqliteSetString(&zStack[p->tos], pSorter->zKey, 0);
-          aStack[p->tos].n = pSorter->nKey;
-          aStack[p->tos].flags = STK_Str|STK_Dyn;
-        }
-        break;
-      }
-
-      /* Opcode: SortCallback P1 P2 *
-      **
-      ** The top of the stack contains a callback record built using
-      ** the SortMakeRec operation with the same P1 value as this
-      ** instruction.  Pop this record from the stack and invoke the
-      ** callback on it.
-      */
-      case OP_SortCallback: {
-        int i = p->tos;
-        VERIFY( if( i<0 ) goto not_enough_stack; )
-        if( xCallback!=0 ){
-          if( xCallback(pArg, pOp->p1, (char**)zStack[i], p->azColName) ){
-            rc = SQLITE_ABORT;
-          }
-        }
-        POPSTACK;
-        break;
-      }
-
-      /* Opcode: SortClose P1 * *
-      **
-      ** Close the given sorter and remove all its elements.
-      */
-      case OP_SortClose: {
-        Sorter *pSorter;
-        int i = pOp->p1;
-        VERIFY( if( i<0 ) goto bad_instruction; )
-        if( i<p->nSort ){
-           while( (pSorter = p->apSort[i])!=0 ){
-             p->apSort[i] = pSorter->pNext;
-             sqliteFree(pSorter->zKey);
-             sqliteFree(pSorter->pData);
-             sqliteFree(pSorter);
-           }
-        }
-        break;
-      }
-
-      /* Opcode: FileOpen * * P3
-      **
-      ** Open the file named by P3 for reading using the FileRead opcode.
-      ** If P3 is "stdin" then open standard input for reading.
-      */
-      case OP_FileOpen: {
-        VERIFY( if( pOp->p3==0 ) goto bad_instruction; )
-        if( p->pFile ){
-          if( p->pFile!=stdin ) fclose(p->pFile);
-          p->pFile = 0;
-        }
-        if( sqliteStrICmp(pOp->p3,"stdin")==0 ){
-          p->pFile = stdin;
-        }else{
-          p->pFile = fopen(pOp->p3, "r");
-        }
-        if( p->pFile==0 ){
-          sqliteSetString(pzErrMsg,"unable to open file: ", pOp->p3, 0);
-          rc = SQLITE_ERROR;
-          goto cleanup;
-        }
-        break;
-      }
-
-      /* Opcode: FileClose * * *
-      **
-      ** Close a file previously opened using FileOpen.  This is a no-op
-      ** if there is no prior FileOpen call.
-      */
-      case OP_FileClose: {
-        if( p->pFile ){
-          if( p->pFile!=stdin ) fclose(p->pFile);
-          p->pFile = 0;
-        }
-        if( p->azField ){
-          sqliteFree(p->azField);
-          p->azField = 0;
-        }
-        p->nField = 0;
-        if( p->zLine ){
-          sqliteFree(p->zLine);
-          p->zLine = 0;
-        }
-        p->nLineAlloc = 0;
-        break;
-      }
-
-      /* Opcode: FileRead P1 P2 P3
-      **
-      ** Read a single line of input from the open file (the file opened using
-      ** FileOpen).  If we reach end-of-file, jump immediately to P2.  If
-      ** we are able to get another line, split the line apart using P3 as
-      ** a delimiter.  There should be P1 fields.  If the input line contains
-      ** more than P1 fields, ignore the excess.  If the input line contains
-      ** fewer than P1 fields, assume the remaining fields contain an
-      ** empty string.
-      */
-      case OP_FileRead: {
-        int n, eol, nField, i, c, nDelim;
-        char *zDelim, *z;
-        if( p->pFile==0 ) goto fileread_jump;
-        nField = pOp->p1;
-        if( nField<=0 ) goto fileread_jump;
-        if( nField!=p->nField || p->azField==0 ){
-          p->azField = sqliteRealloc(p->azField, sizeof(char*)*nField+1);
-          if( p->azField==0 ){
-            p->nField = 0;
-            goto fileread_jump;
-          }
-          p->nField = nField;
-        }
-        n = 0;
-        eol = 0;
-        while( eol==0 ){
-          if( p->zLine==0 || n+200>p->nLineAlloc ){
-            p->nLineAlloc = p->nLineAlloc*2 + 300;
-            p->zLine = sqliteRealloc(p->zLine, p->nLineAlloc);
-            if( p->zLine==0 ){
-              p->nLineAlloc = 0;
-              goto fileread_jump;
-            }
-          }
-          if( fgets(&p->zLine[n], p->nLineAlloc-n, p->pFile)==0 ){
-            eol = 1;
-            p->zLine[n] = 0;
-          }else{
-            while( p->zLine[n] ){ n++; }
-            if( n>0 && p->zLine[n-1]=='\n' ){
-              n--;
-              p->zLine[n] = 0;
-              eol = 1;
-            }
-          }
-        }
-        if( n==0 ) goto fileread_jump;
-        z = p->zLine;
-        if( z[0]=='\\' && z[1]=='.' && z[2]==0 ){
-          goto fileread_jump;
-        }
-        zDelim = pOp->p3;
-        if( zDelim==0 ) zDelim = "\t";
-        c = zDelim[0];
-        nDelim = strlen(zDelim);
-        p->azField[0] = z;
-        for(i=1; *z!=0 && i<=nField; i++){
-          int from, to;
-          from = to = 0;
-          while( z[from] ){
-            if( z[from]=='\\' && z[from+1]!=0 ){
-              z[to++] = z[from+1];
-              from += 2;
-              continue;
-            }
-            if( z[from]==c && strncmp(&z[from],zDelim,nDelim)==0 ) break;
-            z[to++] = z[from++];
-          }
-          if( z[from] ){
-            z[to] = 0;
-            z += from + nDelim;
-            if( i<nField ) p->azField[i] = z;
-          }else{
-            z[to] = 0;
-            z = "";
-          }
-        }
-        while( i<nField ){
-          p->azField[i++] = "";
-        }
-        break;
-
-        /* If we reach end-of-file, or if anything goes wrong, jump here.
-        ** This code will cause a jump to P2 */
-      fileread_jump:
-        pc = pOp->p2 - 1;
-        break;
-      }
-
-      /* Opcode: FileField P1 * *
-      **
-      ** Push onto the stack the P1-th field of the most recently read line
-      ** from the input file.
-      */
-      case OP_FileField: {
-        int i = pOp->p1;
-        char *z;
-        VERIFY( if( NeedStack(p, p->tos+1) ) goto no_mem; )
-        if( VERIFY( i>=0 && i<p->nField && ) p->azField ){
-          z = p->azField[i];
-        }else{
-          z = 0;
-        }
-        if( z==0 ) z = "";
-        p->tos++;
-        aStack[p->tos].n = strlen(z) + 1;
-        zStack[p->tos] = z;
-        aStack[p->tos].flags = STK_Str;
-        break;
-      }
-
-      /* Opcode: MemStore P1 * *
-      **
-      ** Pop a single value of the stack and store that value into memory
-      ** location P1.  P1 should be a small integer since space is allocated
-      ** for all memory locations between 0 and P1 inclusive.
-      */
-      case OP_MemStore: {
-        int i = pOp->p1;
-        int tos = p->tos;
-        Mem *pMem;
-        char *zOld;
-        VERIFY( if( tos<0 ) goto not_enough_stack; )
-        if( i>=p->nMem ){
-          int nOld = p->nMem;
-          p->nMem = i + 5;
-          p->aMem = sqliteRealloc(p->aMem, p->nMem*sizeof(p->aMem[0]));
-          if( p->aMem==0 ) goto no_mem;
-          if( nOld<p->nMem ){
-            memset(&p->aMem[nOld], 0, sizeof(p->aMem[0])*(p->nMem-nOld));
-          }
-        }
-        pMem = &p->aMem[i];
-        if( pMem->s.flags & STK_Dyn ){
-          zOld = pMem->z;
-        }else{
-          zOld = 0;
-        }
-        pMem->s = aStack[tos];
-        if( pMem->s.flags & STK_Str ){
-          pMem->z = sqliteStrNDup(zStack[tos], pMem->s.n);
-          pMem->s.flags |= STK_Dyn;
-        }
-        if( zOld ) sqliteFree(zOld);
-        POPSTACK;
-        break;
-      }
-
-      /* Opcode: MemLoad P1 * *
-      **
-      ** Push a copy of the value in memory location P1 onto the stack.
-      */
-      case OP_MemLoad: {
-        int tos = ++p->tos;
-        int i = pOp->p1;
-        VERIFY( if( NeedStack(p, tos) ) goto no_mem; )
-        if( i<0 || i>=p->nMem ){
-          aStack[tos].flags = STK_Null;
-          zStack[tos] = 0;
-        }else{
-          aStack[tos] = p->aMem[i].s;
-          if( aStack[tos].flags & STK_Str ){
-            char *z = sqliteMalloc(aStack[tos].n);
-            if( z==0 ) goto no_mem;
-            memcpy(z, p->aMem[i].z, aStack[tos].n);
-            zStack[tos] = z;
-            aStack[tos].flags |= STK_Dyn;
-          }
-        }
-        break;
-      }
-
-      /* Opcode: AggReset * P2 *
-      **
-      ** Reset the aggregator so that it no longer contains any data.
-      ** Future aggregator elements will contain P2 values each.
-      */
-      case OP_AggReset: {
-        AggReset(&p->agg);
-        p->agg.nMem = pOp->p2;
-        break;
-      }
-
-      /* Opcode: AggFocus * P2 *
-      **
-      ** Pop the top of the stack and use that as an aggregator key.  If
-      ** an aggregator with that same key already exists, then make the
-      ** aggregator the current aggregator and jump to P2.  If no aggregator
-      ** with the given key exists, create one and make it current but
-      ** do not jump.
-      **
-      ** The order of aggregator opcodes is important.  The order is:
-      ** AggReset AggFocus AggNext.  In other words, you must execute
-      ** AggReset first, then zero or more AggFocus operations, then
-      ** zero or more AggNext operations.  You must not execute an AggFocus
-      ** in between an AggNext and an AggReset.
-      */
-      case OP_AggFocus: {
-        int tos = p->tos;
-        AggElem *pElem;
-        char *zKey;
-        int nKey;
-
-        VERIFY( if( tos<0 ) goto not_enough_stack; )
-        if( Stringify(p, tos) ) goto no_mem;
-        zKey = zStack[tos]; 
-        nKey = aStack[tos].n;
-        if( p->agg.nHash<=0 ){
-          pElem = 0;
-        }else{
-          int h = sqliteHashNoCase(zKey, nKey-1) % p->agg.nHash;
-          for(pElem=p->agg.apHash[h]; pElem; pElem=pElem->pHash){
-            if( strcmp(pElem->zKey, zKey)==0 ) break;
-          }
-        }
-        if( pElem ){
-          p->agg.pCurrent = pElem;
-          pc = pOp->p2 - 1;
-        }else{
-          AggInsert(&p->agg, zKey);
-          if( sqlite_malloc_failed ) goto no_mem;
-        }
-        POPSTACK;
-        break; 
-      }
-
-      /* Opcode: AggIncr P1 P2 *
-      **
-      ** Increase the integer value in the P2-th field of the aggregate
-      ** element current in focus by an amount P1.
-      */
-      case OP_AggIncr: {
-        AggElem *pFocus = AggInFocus(p->agg);
-        int i = pOp->p2;
-        if( pFocus==0 ) goto no_mem;
-        if( i>=0 && i<p->agg.nMem ){
-          Mem *pMem = &pFocus->aMem[i];
-          if( pMem->s.flags!=STK_Int ){
-            if( pMem->s.flags & STK_Int ){
-              /* Do nothing */
-            }else if( pMem->s.flags & STK_Real ){
-              pMem->s.i = pMem->s.r;
-            }else if( pMem->s.flags & STK_Str ){
-              pMem->s.i = atoi(pMem->z);
-            }else{
-              pMem->s.i = 0;
-            }
-            if( pMem->s.flags & STK_Dyn ) sqliteFree(pMem->z);
-            pMem->z = 0;
-            pMem->s.flags = STK_Int;
-          }
-          pMem->s.i += pOp->p1;
-        }
-        break;
-      }
-
-      /* Opcode: AggSet * P2 *
-      **
-      ** Move the top of the stack into the P2-th field of the current
-      ** aggregate.  String values are duplicated into new memory.
-      */
-      case OP_AggSet: {
-        AggElem *pFocus = AggInFocus(p->agg);
-        int i = pOp->p2;
-        int tos = p->tos;
-        VERIFY( if( tos<0 ) goto not_enough_stack; )
-        if( pFocus==0 ) goto no_mem;
-        if( VERIFY( i>=0 && ) i<p->agg.nMem ){
-          Mem *pMem = &pFocus->aMem[i];
-          char *zOld;
-          if( pMem->s.flags & STK_Dyn ){
-            zOld = pMem->z;
-          }else{
-            zOld = 0;
-          }
-          pMem->s = aStack[tos];
-          if( pMem->s.flags & STK_Str ){
-            pMem->z = sqliteMalloc( aStack[tos].n );
-            if( pMem->z==0 ) goto no_mem;
-            memcpy(pMem->z, zStack[tos], pMem->s.n);
-            pMem->s.flags |= STK_Str|STK_Dyn;
-          }
-          if( zOld ) sqliteFree(zOld);
-        }
-        POPSTACK;
-        break;
-      }
-
-      /* Opcode: AggGet * P2 *
-      **
-      ** Push a new entry onto the stack which is a copy of the P2-th field
-      ** of the current aggregate.  Strings are not duplicated so
-      ** string values will be ephemeral.
-      */
-      case OP_AggGet: {
-        AggElem *pFocus = AggInFocus(p->agg);
-        int i = pOp->p2;
-        int tos = ++p->tos;
-        VERIFY( if( NeedStack(p, tos) ) goto no_mem; )
-        if( pFocus==0 ) goto no_mem;
-        if( VERIFY( i>=0 && ) i<p->agg.nMem ){
-          Mem *pMem = &pFocus->aMem[i];
-          aStack[tos] = pMem->s;
-          zStack[tos] = pMem->z;
-          aStack[tos].flags &= ~STK_Dyn;
-        }
-        break;
-      }
-
-      /* Opcode: AggNext * P2 *
-      **
-      ** Make the next aggregate value the current aggregate.  The prior
-      ** aggregate is deleted.  If all aggregate values have been consumed,
-      ** jump to P2.
-      **
-      ** The order of aggregator opcodes is important.  The order is:
-      ** AggReset AggFocus AggNext.  In other words, you must execute
-      ** AggReset first, then zero or more AggFocus operations, then
-      ** zero or more AggNext operations.  You must not execute an AggFocus
-      ** in between an AggNext and an AggReset.
-      */
-      case OP_AggNext: {
-        if( p->agg.nHash ){
-          p->agg.nHash = 0;
-          sqliteFree(p->agg.apHash);
-          p->agg.apHash = 0;
-          p->agg.pCurrent = p->agg.pFirst;
-        }else if( p->agg.pCurrent==p->agg.pFirst && p->agg.pCurrent!=0 ){
-          int i;
-          AggElem *pElem = p->agg.pCurrent;
-          for(i=0; i<p->agg.nMem; i++){
-            if( pElem->aMem[i].s.flags & STK_Dyn ){
-              sqliteFree(pElem->aMem[i].z);
-            }
-          }
-          p->agg.pCurrent = p->agg.pFirst = pElem->pNext;
-          sqliteFree(pElem);
-          p->agg.nElem--;
-        }
-        if( p->agg.pCurrent==0 ){
-          pc = pOp->p2-1;
-        }
-        break;
-      }
-
-      /* Opcode: SetClear P1 * *
-      **
-      ** Remove all elements from the P1-th Set.
-      */
-      case OP_SetClear: {
-        int i = pOp->p1;
-        if( i>=0 && i<p->nSet ){
-          SetClear(&p->aSet[i]);
-        }
-        break;
-      }
-
-      /* Opcode: SetInsert P1 * P3
-      **
-      ** If Set P1 does not exist then create it.  Then insert value
-      ** P3 into that set.  If P3 is NULL, then insert the top of the
-      ** stack into the set.
-      */
-      case OP_SetInsert: {
-        int i = pOp->p1;
-        if( p->nSet<=i ){
-          p->aSet = sqliteRealloc(p->aSet, (i+1)*sizeof(p->aSet[0]) );
-          if( p->aSet==0 ) goto no_mem;
-          memset(&p->aSet[p->nSet], 0, sizeof(p->aSet[0])*(i+1 - p->nSet));
-          p->nSet = i+1;
-        }
-        if( pOp->p3 ){
-          SetInsert(&p->aSet[i], pOp->p3);
-        }else{
-          int tos = p->tos;
-          if( tos<0 ) goto not_enough_stack;
-          if( Stringify(p, tos) ) goto no_mem;
-          SetInsert(&p->aSet[i], zStack[tos]);
-          POPSTACK;
-        }
-        if( sqlite_malloc_failed ) goto no_mem;
-        break;
-      }
-
-      /* Opcode: SetFound P1 P2 *
-      **
-      ** Pop the stack once and compare the value popped off with the
-      ** contents of set P1.  If the element popped exists in set P1,
-      ** then jump to P2.  Otherwise fall through.
-      */
-      case OP_SetFound: {
-        int i = pOp->p1;
-        int tos = p->tos;
-        VERIFY( if( tos<0 ) goto not_enough_stack; )
-        if( Stringify(p, tos) ) goto no_mem;
-        if( VERIFY( i>=0 && i<p->nSet &&) SetTest(&p->aSet[i], zStack[tos])){
-          pc = pOp->p2 - 1;
-        }
-        POPSTACK;
-        break;
-      }
-
-      /* Opcode: SetNotFound P1 P2 *
-      **
-      ** Pop the stack once and compare the value popped off with the
-      ** contents of set P1.  If the element popped does not exists in 
-      ** set P1, then jump to P2.  Otherwise fall through.
-      */
-      case OP_SetNotFound: {
-        int i = pOp->p1;
-        int tos = p->tos;
-        VERIFY( if( tos<0 ) goto not_enough_stack; )
-        if( Stringify(p, tos) ) goto no_mem;
-        if(VERIFY( i>=0 && i<p->nSet &&) !SetTest(&p->aSet[i], zStack[tos])){
-          pc = pOp->p2 - 1;
-        }
-        POPSTACK;
-        break;
-      }
-
-      /* Opcode: Strlen * * *
-      **
-      ** Interpret the top of the stack as a string.  Replace the top of
-      ** stack with an integer which is the length of the string.
-      */
-      case OP_Strlen: {
-        int tos = p->tos;
-        int len;
-        VERIFY( if( tos<0 ) goto not_enough_stack; )
-        if( Stringify(p, tos) ) goto no_mem;
-#ifdef SQLITE_UTF8
-        {
-          char *z = zStack[tos];
-          for(len=0; *z; z++){ if( (0xc0&*z)!=0x80 ) len++; }
-        }
-#else
-        len = aStack[tos].n-1;
-#endif
-        POPSTACK;
-        p->tos++;
-        aStack[tos].i = len;
-        aStack[tos].flags = STK_Int;
-        break;
-      }
-
-      /* Opcode: Substr P1 P2 *
-      **
-      ** This operation pops between 1 and 3 elements from the stack and
-      ** pushes back a single element.  The bottom-most element popped from
-      ** the stack is a string and the element pushed back is also a string.
-      ** The other two elements popped are integers.  The integers are taken
-      ** from the stack only if P1 and/or P2 are 0.  When P1 or P2 are
-      ** not zero, the value of the operand is used rather than the integer
-      ** from the stack.  In the sequel, we will use P1 and P2 to describe
-      ** the two integers, even if those integers are really taken from the
-      ** stack.
-      **
-      ** The string pushed back onto the stack is a substring of the string
-      ** that was popped.  There are P2 characters in the substring.  The
-      ** first character of the substring is the P1-th character of the
-      ** original string where the left-most character is 1 (not 0).  If P1
-      ** is negative, then counting begins at the right instead of at the
-      ** left.
-      */
-      case OP_Substr: {
-        int cnt;
-        int start;
-        int n;
-        char *z;
-
-        if( pOp->p2==0 ){
-          VERIFY( if( p->tos<0 ) goto not_enough_stack; )
-          Integerify(p, p->tos);
-          cnt = aStack[p->tos].i;
-          POPSTACK;
-        }else{
-          cnt = pOp->p2;
-        }
-        if( pOp->p1==0 ){
-          VERIFY( if( p->tos<0 ) goto not_enough_stack; )
-          Integerify(p, p->tos);
-          start = aStack[p->tos].i - 1;
-          POPSTACK;
-        }else{
-          start = pOp->p1 - 1;
-        }
-        VERIFY( if( p->tos<0 ) goto not_enough_stack; )
-        if( Stringify(p, p->tos) ) goto no_mem;
-
-        /* "n" will be the number of characters in the input string.
-        ** For iso8859, the number of characters is the number of bytes.
-        ** Buf for UTF-8, some characters can use multiple bytes and the
-        ** situation is more complex. 
-        */
-#ifdef SQLITE_UTF8
-        z = zStack[p->tos];
-        for(n=0; *z; z++){ if( (0xc0&*z)!=0x80 ) n++; }
-#else
-        n = aStack[p->tos].n - 1;
-#endif
-        if( start<0 ){
-          start += n + 1;
-          if( start<0 ){
-            cnt += start;
-            start = 0;
-          }
-        }
-        if( start>n ){
-          start = n;
-        }
-        if( cnt<0 ) cnt = 0;
-        if( cnt > n ){
-          cnt = n;
-        }
-
-        /* At this point, "start" is the index of the first character to
-        ** extract and "cnt" is the number of characters to extract.  We
-        ** need to convert units on these variable from characters into
-        ** bytes.  For iso8859, the conversion is a no-op, but for UTF-8
-        ** we have to do a little work.
-        */
-#ifdef SQLITE_UTF8
-        {
-          int c_start = start;
-          int c_cnt = cnt;
-          int i;
-          z = zStack[p->tos];
-          for(start=i=0; i<c_start; i++){
-            while( (0xc0&z[++start])==0x80 ){}
-          }
-          for(cnt=i=0; i<c_cnt; i++){
-            while( (0xc0&z[(++cnt)+start])==0x80 ){}
-          }
-        }
-#endif
-        z = sqliteMalloc( cnt+1 );
-        if( z==0 ) goto no_mem;
-        strncpy(z, &zStack[p->tos][start], cnt);
-        z[cnt] = 0;
-        POPSTACK;
-        p->tos++;
-        zStack[p->tos] = z;
-        aStack[p->tos].n = cnt + 1;
-        aStack[p->tos].flags = STK_Str|STK_Dyn;
-        break;
-      }
-
-      /* An other opcode is illegal...
-      */
+/*****************************************************************************
+** What follows is a massive switch statement where each case implements a
+** separate instruction in the virtual machine.  If we follow the usual
+** indentation conventions, each case should be indented by 6 spaces.  But
+** that is a lot of wasted space on the left margin.  So the code within
+** the switch statement will break with convention and be flush-left. Another
+** big comment (similar to this one) will mark the point in the code where
+** we transition back to normal indentation.
+*****************************************************************************/
+
+/* Opcode:  Goto P2 * *
+**
+** An unconditional jump to address P2.
+** The next instruction executed will be 
+** the one at index P2 from the beginning of
+** the program.
+*/
+case OP_Goto: {
+  pc = pOp->p2 - 1;
+  break;
+}
+
+/* Opcode:  Halt * * *
+**
+** Exit immediately.  All open DBs, Lists, Sorts, etc are closed
+** automatically.
+*/
+case OP_Halt: {
+  pc = p->nOp-1;
+  break;
+}
+
+/* Opcode: Integer P1 * *
+**
+** The integer value P1 is pushed onto the stack.
+*/
+case OP_Integer: {
+  int i = ++p->tos;
+  VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
+  aStack[i].i = pOp->p1;
+  aStack[i].flags = STK_Int;
+  break;
+}
+
+/* Opcode: String * * P3
+**
+** The string value P3 is pushed onto the stack.
+*/
+case OP_String: {
+  int i = ++p->tos;
+  char *z;
+  VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
+  z = pOp->p3;
+  if( z==0 ) z = "";
+  zStack[i] = z;
+  aStack[i].n = strlen(z) + 1;
+  aStack[i].flags = STK_Str;
+  break;
+}
+
+/* Opcode: Null * * *
+**
+** Push a NULL value onto the stack.
+*/
+case OP_Null: {
+  int i = ++p->tos;
+  VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
+  zStack[i] = 0;
+  aStack[i].flags = STK_Null;
+  break;
+}
+
+/* Opcode: Pop P1 * *
+**
+** P1 elements are popped off of the top of stack and discarded.
+*/
+case OP_Pop: {
+  PopStack(p, pOp->p1);
+  break;
+}
+
+/* Opcode: Dup P1 * *
+**
+** A copy of the P1-th element of the stack 
+** is made and pushed onto the top of the stack.
+** The top of the stack is element 0.  So the
+** instruction "Dup 0 0 0" will make a copy of the
+** top of the stack.
+*/
+case OP_Dup: {
+  int i = p->tos - pOp->p1;
+  int j = ++p->tos;
+  VERIFY( if( i<0 ) goto not_enough_stack; )
+  VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
+  aStack[j] = aStack[i];
+  if( aStack[i].flags & STK_Dyn ){
+    zStack[j] = sqliteMalloc( aStack[j].n );
+    if( zStack[j]==0 ) goto no_mem;
+    memcpy(zStack[j], zStack[i], aStack[j].n);
+  }else{
+    zStack[j] = zStack[i];
+  }
+  break;
+}
+
+/* Opcode: Pull P1 * *
+**
+** The P1-th element is removed from its current location on 
+** the stack and pushed back on top of the stack.  The
+** top of the stack is element 0, so "Pull 0 0 0" is
+** a no-op.
+*/
+case OP_Pull: {
+  int from = p->tos - pOp->p1;
+  int to = p->tos;
+  int i;
+  Stack ts;
+  char *tz;
+  VERIFY( if( from<0 ) goto not_enough_stack; )
+  ts = aStack[from];
+  tz = zStack[from];
+  for(i=from; i<to; i++){
+    aStack[i] = aStack[i+1];
+    zStack[i] = zStack[i+1];
+  }
+  aStack[to] = ts;
+  zStack[to] = tz;
+  break;
+}
+
+/* Opcode: ColumnCount P1 * *
+**
+** Specify the number of column values that will appear in the
+** array passed as the 4th parameter to the callback.  No checking
+** is done.  If this value is wrong, a coredump can result.
+*/
+case OP_ColumnCount: {
+  p->azColName = sqliteRealloc(p->azColName, (pOp->p1+1)*sizeof(char*));
+  if( p->azColName==0 ) goto no_mem;
+  p->azColName[pOp->p1] = 0;
+  break;
+}
+
+/* Opcode: ColumnName P1 * P3
+**
+** P3 becomes the P1-th column name (first is 0).  An array of pointers
+** to all column names is passed as the 4th parameter to the callback.
+** The ColumnCount opcode must be executed first to allocate space to
+** hold the column names.  Failure to do this will likely result in
+** a coredump.
+*/
+case OP_ColumnName: {
+  p->azColName[pOp->p1] = pOp->p3 ? pOp->p3 : "";
+  break;
+}
+
+/* Opcode: Callback P1 * *
+**
+** Pop P1 values off the stack and form them into an array.  Then
+** invoke the callback function using the newly formed array as the
+** 3rd parameter.
+*/
+case OP_Callback: {
+  int i = p->tos - pOp->p1 + 1;
+  int j;
+  VERIFY( if( i<0 ) goto not_enough_stack; )
+  VERIFY( if( NeedStack(p, p->tos+2) ) goto no_mem; )
+  for(j=i; j<=p->tos; j++){
+    if( (aStack[j].flags & STK_Null)==0 ){
+      if( Stringify(p, j) ) goto no_mem;
+    }
+  }
+  zStack[p->tos+1] = 0;
+  if( xCallback!=0 ){
+    if( xCallback(pArg, pOp->p1, &zStack[i], p->azColName)!=0 ){
+      rc = SQLITE_ABORT;
+    }
+  }
+  PopStack(p, pOp->p1);
+  break;
+}
+
+/* Opcode: Concat P1 P2 P3
+**
+** Look at the first P1 elements of the stack.  Append them all 
+** together with the lowest element first.  Use P3 as a separator.  
+** Put the result on the top of the stack.  The original P1 elements
+** are popped from the stack if P2==0 and retained if P2==1.
+**
+** If P3 is NULL, then use no separator.  When P1==1, this routine
+** makes a copy of the top stack element into memory obtained
+** from sqliteMalloc().
+*/
+case OP_Concat: {
+  char *zNew;
+  int nByte;
+  int nField;
+  int i, j;
+  char *zSep;
+  int nSep;
+
+  nField = pOp->p1;
+  zSep = pOp->p3;
+  if( zSep==0 ) zSep = "";
+  nSep = strlen(zSep);
+  VERIFY( if( p->tos+1<nField ) goto not_enough_stack; )
+  nByte = 1 - nSep;
+  for(i=p->tos-nField+1; i<=p->tos; i++){
+    if( aStack[i].flags & STK_Null ){
+      nByte += nSep;
+    }else{
+      if( Stringify(p, i) ) goto no_mem;
+      nByte += aStack[i].n - 1 + nSep;
+    }
+  }
+  zNew = sqliteMalloc( nByte );
+  if( zNew==0 ) goto no_mem;
+  j = 0;
+  for(i=p->tos-nField+1; i<=p->tos; i++){
+    if( (aStack[i].flags & STK_Null)==0 ){
+      memcpy(&zNew[j], zStack[i], aStack[i].n-1);
+      j += aStack[i].n-1;
+    }
+    if( nSep>0 && i<p->tos ){
+      memcpy(&zNew[j], zSep, nSep);
+      j += nSep;
+    }
+  }
+  zNew[j] = 0;
+  if( pOp->p2==0 ) PopStack(p, nField);
+  VERIFY( NeedStack(p, p->tos+1); )
+  p->tos++;
+  aStack[p->tos].n = nByte;
+  aStack[p->tos].flags = STK_Str|STK_Dyn;
+  zStack[p->tos] = zNew;
+  break;
+}
+
+/* Opcode: Add * * *
+**
+** Pop the top two elements from the stack, add them together,
+** and push the result back onto the stack.  If either element
+** is a string then it is converted to a double using the atof()
+** function before the addition.
+*/
+/* Opcode: Multiply * * *
+**
+** Pop the top two elements from the stack, multiply them together,
+** and push the result back onto the stack.  If either element
+** is a string then it is converted to a double using the atof()
+** function before the multiplication.
+*/
+/* Opcode: Subtract * * *
+**
+** Pop the top two elements from the stack, subtract the
+** first (what was on top of the stack) from the second (the
+** next on stack)
+** and push the result back onto the stack.  If either element
+** is a string then it is converted to a double using the atof()
+** function before the subtraction.
+*/
+/* Opcode: Divide * * *
+**
+** Pop the top two elements from the stack, divide the
+** first (what was on top of the stack) from the second (the
+** next on stack)
+** and push the result back onto the stack.  If either element
+** is a string then it is converted to a double using the atof()
+** function before the division.  Division by zero returns NULL.
+*/
+case OP_Add:
+case OP_Subtract:
+case OP_Multiply:
+case OP_Divide: {
+  int tos = p->tos;
+  int nos = tos - 1;
+  VERIFY( if( nos<0 ) goto not_enough_stack; )
+  if( (aStack[tos].flags & aStack[nos].flags & STK_Int)==STK_Int ){
+    int a, b;
+    a = aStack[tos].i;
+    b = aStack[nos].i;
+    switch( pOp->opcode ){
+      case OP_Add:         b += a;       break;
+      case OP_Subtract:    b -= a;       break;
+      case OP_Multiply:    b *= a;       break;
       default: {
-        sprintf(zBuf,"%d",pOp->opcode);
-        sqliteSetString(pzErrMsg, "unknown opcode ", zBuf, 0);
-        rc = SQLITE_INTERNAL;
+        if( a==0 ) goto divide_by_zero;
+        b /= a;
         break;
       }
+    }
+    POPSTACK;
+    Release(p, nos);
+    aStack[nos].i = b;
+    aStack[nos].flags = STK_Int;
+  }else{
+    double a, b;
+    Realify(p, tos);
+    Realify(p, nos);
+    a = aStack[tos].r;
+    b = aStack[nos].r;
+    switch( pOp->opcode ){
+      case OP_Add:         b += a;       break;
+      case OP_Subtract:    b -= a;       break;
+      case OP_Multiply:    b *= a;       break;
+      default: {
+        if( a==0.0 ) goto divide_by_zero;
+        b /= a;
+        break;
+      }
+    }
+    POPSTACK;
+    Release(p, nos);
+    aStack[nos].r = b;
+    aStack[nos].flags = STK_Real;
+  }
+  break;
+
+divide_by_zero:
+  PopStack(p, 2);
+  p->tos = nos;
+  aStack[nos].flags = STK_Null;
+  break;
+}
+
+/* Opcode: Max * * *
+**
+** Pop the top two elements from the stack then push back the
+** largest of the two.
+*/
+case OP_Max: {
+  int tos = p->tos;
+  int nos = tos - 1;
+  int ft, fn;
+  int copy = 0;
+  VERIFY( if( nos<0 ) goto not_enough_stack; )
+  ft = aStack[tos].flags;
+  fn = aStack[nos].flags;
+  if( fn & STK_Null ){
+    copy = 1;
+  }else if( (ft & fn & STK_Int)==STK_Int ){
+    copy = aStack[nos].i<aStack[tos].i;
+  }else if( ( (ft|fn) & (STK_Int|STK_Real) ) !=0 ){
+    Realify(p, tos);
+    Realify(p, nos);
+    copy = aStack[tos].r>aStack[nos].r;
+  }else{
+    if( Stringify(p, tos) || Stringify(p, nos) ) goto no_mem;
+    copy = sqliteCompare(zStack[tos],zStack[nos])>0;
+  }
+  if( copy ){
+    Release(p, nos);
+    aStack[nos] = aStack[tos];
+    zStack[nos] = zStack[tos];
+    zStack[tos] = 0;
+    aStack[tos].flags = 0;
+  }else{
+    Release(p, tos);
+  }
+  p->tos = nos;
+  break;
+}
+
+/* Opcode: Min * * *
+**
+** Pop the top two elements from the stack then push back the
+** smaller of the two. 
+*/
+case OP_Min: {
+  int tos = p->tos;
+  int nos = tos - 1;
+  int ft, fn;
+  int copy = 0;
+  VERIFY( if( nos<0 ) goto not_enough_stack; )
+  ft = aStack[tos].flags;
+  fn = aStack[nos].flags;
+  if( fn & STK_Null ){
+    copy = 1;
+  }else if( ft & STK_Null ){
+    copy = 0;
+  }else if( (ft & fn & STK_Int)==STK_Int ){
+    copy = aStack[nos].i>aStack[tos].i;
+  }else if( ( (ft|fn) & (STK_Int|STK_Real) ) !=0 ){
+    Realify(p, tos);
+    Realify(p, nos);
+    copy = aStack[tos].r<aStack[nos].r;
+  }else{
+    if( Stringify(p, tos) || Stringify(p, nos) ) goto no_mem;
+    copy = sqliteCompare(zStack[tos],zStack[nos])<0;
+  }
+  if( copy ){
+    Release(p, nos);
+    aStack[nos] = aStack[tos];
+    zStack[nos] = zStack[tos];
+    zStack[tos] = 0;
+    aStack[tos].flags = 0;
+  }else{
+    Release(p, tos);
+  }
+  p->tos = nos;
+  break;
+}
+
+/* Opcode: AddImm  P1 * *
+** 
+** Add the value P1 to whatever is on top of the stack.
+*/
+case OP_AddImm: {
+  int tos = p->tos;
+  VERIFY( if( tos<0 ) goto not_enough_stack; )
+  Integerify(p, tos);
+  aStack[tos].i += pOp->p1;
+  break;
+}
+
+/* Opcode: Eq * P2 *
+**
+** Pop the top two elements from the stack.  If they are equal, then
+** jump to instruction P2.  Otherwise, continue to the next instruction.
+*/
+/* Opcode: Ne * P2 *
+**
+** Pop the top two elements from the stack.  If they are not equal, then
+** jump to instruction P2.  Otherwise, continue to the next instruction.
+*/
+/* Opcode: Lt * P2 *
+**
+** Pop the top two elements from the stack.  If second element (the
+** next on stack) is less than the first (the top of stack), then
+** jump to instruction P2.  Otherwise, continue to the next instruction.
+** In other words, jump if NOS<TOS.
+*/
+/* Opcode: Le * P2 *
+**
+** Pop the top two elements from the stack.  If second element (the
+** next on stack) is less than or equal to the first (the top of stack),
+** then jump to instruction P2. In other words, jump if NOS<=TOS.
+*/
+/* Opcode: Gt * P2 *
+**
+** Pop the top two elements from the stack.  If second element (the
+** next on stack) is greater than the first (the top of stack),
+** then jump to instruction P2. In other words, jump if NOS>TOS.
+*/
+/* Opcode: Ge * P2 *
+**
+** Pop the top two elements from the stack.  If second element (the next
+** on stack) is greater than or equal to the first (the top of stack),
+** then jump to instruction P2. In other words, jump if NOS>=TOS.
+*/
+case OP_Eq:
+case OP_Ne:
+case OP_Lt:
+case OP_Le:
+case OP_Gt:
+case OP_Ge: {
+  int tos = p->tos;
+  int nos = tos - 1;
+  int c;
+  int ft, fn;
+  VERIFY( if( nos<0 ) goto not_enough_stack; )
+  ft = aStack[tos].flags;
+  fn = aStack[nos].flags;
+  if( (ft & fn)==STK_Int ){
+    c = aStack[nos].i - aStack[tos].i;
+  }else{
+    if( Stringify(p, tos) || Stringify(p, nos) ) goto no_mem;
+    c = sqliteCompare(zStack[nos], zStack[tos]);
+  }
+  switch( pOp->opcode ){
+    case OP_Eq:    c = c==0;     break;
+    case OP_Ne:    c = c!=0;     break;
+    case OP_Lt:    c = c<0;      break;
+    case OP_Le:    c = c<=0;     break;
+    case OP_Gt:    c = c>0;      break;
+    default:       c = c>=0;     break;
+  }
+  POPSTACK;
+  POPSTACK;
+  if( c ) pc = pOp->p2-1;
+  break;
+}
+
+/* Opcode: Like P1 P2 *
+**
+** Pop the top two elements from the stack.  The top-most is a
+** "like" pattern -- the right operand of the SQL "LIKE" operator.
+** The lower element is the string to compare against the like
+** pattern.  Jump to P2 if the two compare, and fall through without
+** jumping if they do not.  The '%' in the top-most element matches
+** any sequence of zero or more characters in the lower element.  The
+** '_' character in the topmost matches any single character of the
+** lower element.  Case is ignored for this comparison.
+**
+** If P1 is not zero, the sense of the test is inverted and we
+** have a "NOT LIKE" operator.  The jump is made if the two values
+** are different.
+*/
+case OP_Like: {
+  int tos = p->tos;
+  int nos = tos - 1;
+  int c;
+  VERIFY( if( nos<0 ) goto not_enough_stack; )
+  if( Stringify(p, tos) || Stringify(p, nos) ) goto no_mem;
+  c = sqliteLikeCompare(zStack[tos], zStack[nos]);
+  POPSTACK;
+  POPSTACK;
+  if( pOp->p1 ) c = !c;
+  if( c ) pc = pOp->p2-1;
+  break;
+}
+
+/* Opcode: Glob P1 P2 *
+**
+** Pop the top two elements from the stack.  The top-most is a
+** "glob" pattern.  The lower element is the string to compare 
+** against the glob pattern.
+**
+** Jump to P2 if the two compare, and fall through without
+** jumping if they do not.  The '*' in the top-most element matches
+** any sequence of zero or more characters in the lower element.  The
+** '?' character in the topmost matches any single character of the
+** lower element.  [...] matches a range of characters.  [^...]
+** matches any character not in the range.  Case is significant
+** for globs.
+**
+** If P1 is not zero, the sense of the test is inverted and we
+** have a "NOT GLOB" operator.  The jump is made if the two values
+** are different.
+*/
+case OP_Glob: {
+  int tos = p->tos;
+  int nos = tos - 1;
+  int c;
+  VERIFY( if( nos<0 ) goto not_enough_stack; )
+  if( Stringify(p, tos) || Stringify(p, nos) ) goto no_mem;
+  c = sqliteGlobCompare(zStack[tos], zStack[nos]);
+  POPSTACK;
+  POPSTACK;
+  if( pOp->p1 ) c = !c;
+  if( c ) pc = pOp->p2-1;
+  break;
+}
+
+/* Opcode: And * * *
+**
+** Pop two values off the stack.  Take the logical AND of the
+** two values and push the resulting boolean value back onto the
+** stack. 
+*/
+/* Opcode: Or * * *
+**
+** Pop two values off the stack.  Take the logical OR of the
+** two values and push the resulting boolean value back onto the
+** stack. 
+*/
+case OP_And:
+case OP_Or: {
+  int tos = p->tos;
+  int nos = tos - 1;
+  int c;
+  VERIFY( if( nos<0 ) goto not_enough_stack; )
+  Integerify(p, tos);
+  Integerify(p, nos);
+  if( pOp->opcode==OP_And ){
+    c = aStack[tos].i && aStack[nos].i;
+  }else{
+    c = aStack[tos].i || aStack[nos].i;
+  }
+  POPSTACK;
+  Release(p, nos);     
+  aStack[nos].i = c;
+  aStack[nos].flags = STK_Int;
+  break;
+}
+
+/* Opcode: Negative * * *
+**
+** Treat the top of the stack as a numeric quantity.  Replace it
+** with its additive inverse.
+*/
+case OP_Negative: {
+  int tos = p->tos;
+  VERIFY( if( tos<0 ) goto not_enough_stack; )
+  if( aStack[tos].flags & STK_Real ){
+    Release(p, tos);
+    aStack[tos].r = -aStack[tos].r;
+    aStack[tos].flags = STK_Real;
+  }else if( aStack[tos].flags & STK_Int ){
+    Release(p, tos);
+    aStack[tos].i = -aStack[tos].i;
+    aStack[tos].flags = STK_Int;
+  }else{
+    Realify(p, tos);
+    Release(p, tos);
+    aStack[tos].r = -aStack[tos].r;
+    aStack[tos].flags = STK_Real;
+  }
+  break;
+}
+
+/* Opcode: Not * * *
+**
+** Interpret the top of the stack as a boolean value.  Replace it
+** with its complement.
+*/
+case OP_Not: {
+  int tos = p->tos;
+  VERIFY( if( p->tos<0 ) goto not_enough_stack; )
+  Integerify(p, tos);
+  Release(p, tos);
+  aStack[tos].i = !aStack[tos].i;
+  aStack[tos].flags = STK_Int;
+  break;
+}
+
+/* Opcode: Noop * * *
+**
+** Do nothing.  This instruction is often useful as a jump
+** destination.
+*/
+case OP_Noop: {
+  break;
+}
+
+/* Opcode: If * P2 *
+**
+** Pop a single boolean from the stack.  If the boolean popped is
+** true, then jump to p2.  Otherwise continue to the next instruction.
+** An integer is false if zero and true otherwise.  A string is
+** false if it has zero length and true otherwise.
+*/
+case OP_If: {
+  int c;
+  VERIFY( if( p->tos<0 ) goto not_enough_stack; )
+  Integerify(p, p->tos);
+  c = aStack[p->tos].i;
+  POPSTACK;
+  if( c ) pc = pOp->p2-1;
+  break;
+}
+
+/* Opcode: IsNull * P2 *
+**
+** Pop a single value from the stack.  If the value popped is NULL
+** then jump to p2.  Otherwise continue to the next 
+** instruction.
+*/
+case OP_IsNull: {
+  int c;
+  VERIFY( if( p->tos<0 ) goto not_enough_stack; )
+  c = (aStack[p->tos].flags & STK_Null)!=0;
+  POPSTACK;
+  if( c ) pc = pOp->p2-1;
+  break;
+}
+
+/* Opcode: NotNull * P2 *
+**
+** Pop a single value from the stack.  If the value popped is not an
+** empty string, then jump to p2.  Otherwise continue to the next 
+** instruction.
+*/
+case OP_NotNull: {
+  int c;
+  VERIFY( if( p->tos<0 ) goto not_enough_stack; )
+  c = (aStack[p->tos].flags & STK_Null)==0;
+  POPSTACK;
+  if( c ) pc = pOp->p2-1;
+  break;
+}
+
+/* Opcode: MakeRecord P1 * *
+**
+** Convert the top P1 entries of the stack into a single entry
+** suitable for use as a data record in a database table.  To do this
+** all entries (except NULLs) are converted to strings and 
+** concatenated.  The null-terminators are preserved by the concatation
+** and serve as a boundry marker between columns.  The lowest entry
+** on the stack is the first in the concatenation and the top of
+** the stack is the last.  After all columns are concatenated, an
+** index header is added.  The index header consists of P1 integers
+** which hold the offset of the beginning of each column data from the
+** beginning of the completed record including the header.  Header
+** entries for NULL fields point to where the first byte of the column
+** would have been stored if the column had held any bytes.
+*/
+case OP_MakeRecord: {
+  char *zNewRecord;
+  int nByte;
+  int nField;
+  int i, j;
+  int addr;
+
+  nField = pOp->p1;
+  VERIFY( if( p->tos+1<nField ) goto not_enough_stack; )
+  nByte = 0;
+  for(i=p->tos-nField+1; i<=p->tos; i++){
+    if( (aStack[i].flags & STK_Null)==0 ){
+      if( Stringify(p, i) ) goto no_mem;
+      nByte += aStack[i].n;
+    }
+  }
+  nByte += sizeof(int)*nField;
+  zNewRecord = sqliteMalloc( nByte );
+  if( zNewRecord==0 ) goto no_mem;
+  j = 0;
+  addr = sizeof(int)*nField;
+  for(i=p->tos-nField+1; i<=p->tos; i++){
+    if( (aStack[i].flags & STK_Null)==0 ){
+      addr += aStack[i].n;
+    }
+    memcpy(&zNewRecord[j], (char*)&addr, sizeof(int));
+    j += sizeof(int);
+  }
+  for(i=p->tos-nField+1; i<=p->tos; i++){
+    if( (aStack[i].flags & STK_Null)==0 ){
+      memcpy(&zNewRecord[j], zStack[i], aStack[i].n);
+      j += aStack[i].n;
+    }
+  }
+  PopStack(p, nField);
+  VERIFY( NeedStack(p, p->tos+1); )
+  p->tos++;
+  aStack[p->tos].n = nByte;
+  aStack[p->tos].flags = STK_Str | STK_Dyn;
+  zStack[p->tos] = zNewRecord;
+  break;
+}
+
+/* Opcode: MakeKey P1 P2 *
+**
+** Convert the top P1 entries of the stack into a single entry suitable
+** for use as the key in an index or a sort.  The top P1 records are
+** concatenated with a tab character (ASCII 0x09) used as a record
+** separator.  The entire concatenation is null-terminated.  The
+** lowest entry in the stack is the first field and the top of the
+** stack becomes the last.
+**
+** If P2 is not zero, then the original entries remain on the stack
+** and the new key is pushed on top.  If P2 is zero, the original
+** data is popped off the stack first then the new key is pushed
+** back in its place.
+**
+** See also: MakeIdxKey, SortMakeKey
+*/
+case OP_MakeKey: {
+  char *zNewKey;
+  int nByte;
+  int nField;
+  int i, j;
+
+  nField = pOp->p1;
+  VERIFY( if( p->tos+1<nField ) goto not_enough_stack; )
+  nByte = 0;
+  for(i=p->tos-nField+1; i<=p->tos; i++){
+    if( aStack[i].flags & STK_Null ){
+      nByte++;
+    }else{
+      if( Stringify(p, i) ) goto no_mem;
+      nByte += aStack[i].n;
+    }
+  }
+  zNewKey = sqliteMalloc( nByte );
+  if( zNewKey==0 ) goto no_mem;
+  j = 0;
+  for(i=p->tos-nField+1; i<=p->tos; i++){
+    if( (aStack[i].flags & STK_Null)==0 ){
+      memcpy(&zNewKey[j], zStack[i], aStack[i].n-1);
+      j += aStack[i].n-1;
+    }
+    if( i<p->tos ) zNewKey[j++] = '\t';
+  }
+  zNewKey[j] = 0;
+  if( pOp->p2==0 ) PopStack(p, nField);
+  VERIFY( NeedStack(p, p->tos+1); )
+  p->tos++;
+  aStack[p->tos].n = nByte;
+  aStack[p->tos].flags = STK_Str|STK_Dyn;
+  zStack[p->tos] = zNewKey;
+  break;
+}
+
+/* Opcode: MakeIdxKey P1 * *
+**
+** Convert the top P1 entries of the stack into a single entry suitable
+** for use as the key in an index.  In addition, take one additional integer
+** off of the stack, treat that integer as a four-byte record number, and
+** append the four bytes to the key.  Thus a total of P1+1 entries are
+** popped from the stack for this instruction and a single entry is pushed
+** back.  The first P1 entries that are popped are strings and the last
+** entry (the lowest on the stack) is an integer record number.
+**
+** The converstion of the first P1 string entries occurs just like in
+** MakeKey.  Each entry is separated from the others by a tab (ASCII 0x09).
+** The entire concatenation is null-terminated.  The lowest entry
+** in the stack is the first field and the top of the stack becomes the
+** last.
+**
+** See also:  MakeKey, SortMakeKey
+*/
+case OP_MakeIdxKey: {
+  char *zNewKey;
+  int nByte;
+  int nField;
+  int i, j;
+
+  nField = pOp->p1;
+  VERIFY( if( p->tos+1<nField ) goto not_enough_stack; )
+  nByte = sizeof(int);
+  for(i=p->tos-nField+1; i<=p->tos; i++){
+    if( aStack[i].flags & STK_Null ){
+      nByte++;
+    }else{
+      if( Stringify(p, i) ) goto no_mem;
+      nByte += aStack[i].n;
+    }
+  }
+  zNewKey = sqliteMalloc( nByte );
+  if( zNewKey==0 ) goto no_mem;
+  j = 0;
+  for(i=p->tos-nField+1; i<=p->tos; i++){
+    if( (aStack[i].flags & STK_Null)==0 ){
+      memcpy(&zNewKey[j], zStack[i], aStack[i].n-1);
+      j += aStack[i].n-1;
+    }
+    if( i<p->tos ) zNewKey[j++] = '\t';
+  }
+  zNewKey[j++] = 0;
+  Integerify(p, p->tos-nField);
+  memcpy(&zNewKey[j], aStack[p->tos-nField].i, sizeof(int));
+  PopStack(p, nField+1);
+  VERIFY( NeedStack(p, p->tos+1); )
+  p->tos++;
+  aStack[p->tos].n = nByte;
+  aStack[p->tos].flags = STK_Str|STK_Dyn;
+  zStack[p->tos] = zNewKey;
+  break;
+}
+
+/* Opcode: Transaction * * *
+**
+** Begin a transaction.  The transaction ends when a Commit or Rollback
+** opcode is encountered or whenever there is an execution error that causes
+** a script to abort.  
+**
+** A transaction must be started before any changes can be made to the
+** database.
+*/
+case OP_Transaction: {
+  rc = sqliteBtreeBeginTrans(pBe);
+  break;
+}
+
+/* Opcode: Commit * * *
+**
+** Cause all modifications to the database that have been made since the
+** last Transaction to actually take effect.  No additional modifications
+** are allowed until another transaction is started.
+*/
+case OP_Commit: {
+  rc = sqliteBtreeCommit(pBe);
+  if( rc==SQLITE_OK ){
+    sqliteCommitInternalChanges(db);
+  }else{
+    sqliteRollbackInternalChanges(db);
+  }
+  break;
+}
+
+/* Opcode: Rollback * * *
+**
+** Cause all modifications to the database that have been made since the
+** last Transaction to be undone. The database is restored to its state
+** before the Transaction opcode was executed.  No additional modifications
+** are allowed until another transaction is started.
+*/
+case OP_Rollback: {
+  rc = sqliteBtreeRollback(pBe);
+  sqliteRollbackInternalChanges(db);
+  break;
+}
+
+/* Opcode: Open P1 P2 P3
+**
+** Open a new cursor for the database table whose root page is
+** P2 in the main database file.  Give the new cursor an identifier
+** of P1.  The P1 values need not be contiguous but all P1 values
+** should be small integers.  It is an error for P1 to be negative.
+**
+** The P3 value is the name of the table or index being opened.
+** The P3 value is not actually used by this opcode and may be
+** omitted.  But the code generator usually inserts the index or
+** table name into P3 to make the code easier to read.
+*/
+case OP_Open: {
+  int busy = 0;
+  int i = pOp->p1;
+  VERIFY( if( i<0 ) goto bad_instruction; )
+  if( i>=p->nCursor ){
+    int j;
+    p->aCsr = sqliteRealloc( p->aCsr, (i+1)*sizeof(Cursor) );
+    if( p->aCsr==0 ){ p->nCursor = 0; goto no_mem; }
+    for(j=p->nCursor; j<=i; j++) p->aCsr[j].pCursor = 0;
+    p->nCursor = i+1;
+  }else if( p->aCsr[i].pCursor ){
+    sqliteBtreeCloseCursor(p->aCsr[i].pCursor);
+  }
+  memset(&p->aCsr[i], 0, sizeof(Cursor));
+  do {
+    rc = sqliteBtreeOpenCursor(pBe, pOp->p2, &p->aCsr[i].pCursor);
+    switch( rc ){
+      case SQLITE_BUSY: {
+        if( xBusy==0 || (*xBusy)(pBusyArg, pOp->p3, ++busy)==0 ){
+          sqliteSetString(pzErrMsg, sqliteErrStr(rc), 0);
+          busy = 0;
+        }
+        break;
+      }
+      case SQLITE_OK: {
+        busy = 0;
+        break;
+      }
+      default: {
+        goto abort_due_to_error;
+      }
+    }
+  }while( busy );
+  break;
+}
+
+/* Opcode: OpenTemp P1 * *
+**
+** Open a new cursor that points to a table in a temporary database
+** file.  The temporary file is opened read/write event if the main
+** database is read-only.  The temporary file is deleted when the
+** cursor is closed.
+*/
+case OP_OpenTemp: {
+  int busy = 0;
+  int i = pOp->p1;
+  Cursor *pCx;
+  VERIFY( if( i<0 ) goto bad_instruction; )
+  if( i>=p->nCursor ){
+    int j;
+    p->aCsr = sqliteRealloc( p->aCsr, (i+1)*sizeof(Cursor) );
+    if( p->aCsr==0 ){ p->nCursor = 0; goto no_mem; }
+    for(j=p->nCursor; j<=i; j++) p->aCsr[j].pCursor = 0;
+    p->nCursor = i+1;
+  }else if( p->aCsr[i].pCursor ){
+    sqliteBtreeCloseCursor(p->aCsr[i].pCursor);
+  }
+  pCx = &p->aCsr[i];
+  memset(pCx, 0, sizeof(*pCx));
+  rc = sqliteBtreeOpen(0, 0, 100, &pCx->pBt);
+  if( rc==SQLITE_OK ){
+    rc = sqliteBtreeOpenCursor(pCx->pBt, 2, &pCx->pCursor);
+  }
+  if( rc==SQLITE_OK ){
+    rc = sqliteBtreeBeginTrans(pCx->pBt);
+  }
+  break;
+}
+
+/* Opcode: Close P1 * *
+**
+** Close a cursor previously opened as P1.  If P1 is not
+** currently open, this instruction is a no-op.
+*/
+case OP_Close: {
+  int i = pOp->p1;
+  if( i>=0 && i<p->nCursor && p->aCsr[i].pCursor ){
+    Cursor *pCx = &p->aCsr[i];
+    sqliteBtreeCloseCursor(pCx->pCursor);
+    pCx->pCursor = 0;
+    if( pCx->zKey ){
+      sqliteFree(pCx->zKey);
+      pCx->zKey = 0;
+    }
+    if( pCx->pBt ){
+      sqliteBtreeClose(pCx->pBt);
+      pCx->pBt = 0;
+    }
+  }
+  break;
+}
+
+/* Opcode: MoveTo P1 * *
+**
+** Pop the top of the stack and use its value as a key.  Reposition
+** cursor P1 so that it points to an entry with a matching key.  If
+** the table contains no record with a matching key, then the cursor
+** is left pointing at a nearby record.
+*/
+case OP_MoveTo: {
+  int i = pOp->p1;
+  int tos = p->tos;
+  VERIFY( if( tos<0 ) goto not_enough_stack; )
+  if( i>=0 && i<p->nCursor && p->aCsr[i].pCursor ){
+    int res;
+    if( aStack[tos].flags & STK_Int ){
+      sqliteBtreeMoveTo(p->aCsr[i].pCursor, sizeof(int), 
+                     (char*)&aStack[tos].i, &res);
+      p->aCsr[i].lastRecno = aStack[tos].i;
+      p->aCsr[i].recnoIsValid = 1;
+    }else{
+      if( Stringify(p, tos) ) goto no_mem;
+      pBex->Fetch(p->aCsr[i].pCursor, aStack[tos].n, 
+                     zStack[tos], &res);
+      p->aCsr[i].recnoIsValid = 0;
+    }
+    p->nFetch++;
+  }
+  POPSTACK;
+  break;
+}
+
+/* Opcode: Fcnt * * *
+**
+** Push an integer onto the stack which is the total number of
+** OP_Fetch opcodes that have been executed by this virtual machine.
+**
+** This instruction is used to implement the special fcnt() function
+** in the SQL dialect that SQLite understands.  fcnt() is used for
+** testing purposes.
+*/
+case OP_Fcnt: {
+  int i = ++p->tos;
+  VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
+  aStack[i].i = p->nFetch;
+  aStack[i].flags = STK_Int;
+  break;
+}
+
+/* Opcode: Distinct P1 P2 *
+**
+** Use the top of the stack as a key.  If a record with that key
+** does not exist in file P1, then jump to P2.  If the record
+** does already exist, then fall thru.  The record is not retrieved.
+** The key is not popped from the stack.
+**
+** This operation is similar to NotFound except that this operation
+** does not pop the key from the stack.
+*/
+/* Opcode: Found P1 P2 *
+**
+** Use the top of the stack as a key.  If a record with that key
+** does exist in file P1, then jump to P2.  If the record
+** does not exist, then fall thru.  The record is not retrieved.
+** The key is popped from the stack.
+*/
+/* Opcode: NotFound P1 P2 *
+**
+** Use the top of the stack as a key.  If a record with that key
+** does not exist in file P1, then jump to P2.  If the record
+** does exist, then fall thru.  The record is not retrieved.
+** The key is popped from the stack.
+**
+** The difference between this operation and Distinct is that
+** Distinct does not pop the key from the stack.
+*/
+case OP_Distinct:
+case OP_NotFound:
+case OP_Found: {
+  int i = pOp->p1;
+  int tos = p->tos;
+  int alreadyExists = 0;
+  VERIFY( if( tos<0 ) goto not_enough_stack; )
+  if( VERIFY( i>=0 && i<p->nCursor && ) p->aCsr[i].pCursor ){
+    int res, rx;
+    if( aStack[tos].flags & STK_Int ){
+      rx = sqliteBtreeMoveTo(p->aCsr[i].pCursor, sizeof(int), 
+                                    (char*)&aStack[tos].i, &res);
+    }else{
+      if( Stringify(p, tos) ) goto no_mem;
+      rx = sqliteBtreeMoveTo(p->aCsr[i].pCursor,aStack[tos].n, 
+                                     zStack[tos], &res);
+    }
+    alreadyExists = rx==SQLITE_OK && res==0;
+  }
+  if( pOp->opcode==OP_Found ){
+    if( alreadyExists ) pc = pOp->p2 - 1;
+  }else{
+    if( !alreadyExists ) pc = pOp->p2 - 1;
+  }
+  if( pOp->opcode!=OP_Distinct ){
+    POPSTACK;
+  }
+  break;
+}
+
+/* Opcode: NewRecno P1 * *
+**
+** Get a new integer record number used as the key to a table.
+** The record number is not previous used by the database file
+** associated with cursor P1.  The new record number pushed 
+** onto the stack.
+*/
+case OP_NewRecno: {
+  int i = pOp->p1;
+  int v;
+  if( VERIFY( i<0 || i>=p->nCursor || ) p->aCsr[i].pCursor==0 ){
+    v = 0;
+  }else{
+    int res, rx, cnt;
+    cnt = 0;
+    do{
+      v = sqliteRandomInteger();
+      rx = sqliteBtreeMoveTo(p->aCsr[i].pCursor, sizeof(v), &v, &res);
+      cnt++;
+    }while( cnt<10 && rx==SQLITE_OK && res==0 );
+  }
+  VERIFY( NeedStack(p, p->tos+1); )
+  p->tos++;
+  aStack[p->tos].i = v;
+  aStack[p->tos].flags = STK_Int;
+  break;
+}
+
+/* Opcode: Put P1 * *
+**
+** Write an entry into the database file P1.  A new entry is
+** created if it doesn't already exist, or the data for an existing
+** entry is overwritten.  The data is the value on the top of the
+** stack.  The key is the next value down on the stack.  The stack
+** is popped twice by this instruction.
+*/
+case OP_Put: {
+  int tos = p->tos;
+  int nos = p->tos-1;
+  int i = pOp->p1;
+  VERIFY( if( nos<0 ) goto not_enough_stack; )
+  if( VERIFY( i>=0 && i<p->nCursor && ) p->aCsr[i].pCursor!=0 ){
+    char *zKey;
+    int nKey;
+    if( (aStack[nos].flags & STK_Int)==0 ){
+      if( Stringify(p, nos) ) goto no_mem;
+      nKey = aStack[nos].n;
+      zKey = zStack[nos];
+    }else{
+      nKey = sizeof(int);
+      zKey = (char*)&aStack[nos].i;
+    }
+    rc = sqliteBtreeInsert(p->aCsr[i].pCursor, nKey, zKey,
+                        aStack[tos].n, zStack[tos]);
+    if( rc!=SQLITE_OK ) goto abort_due_to_error;
+  }
+  POPSTACK;
+  POPSTACK;
+  break;
+}
+
+/* Opcode: Delete P1 * *
+**
+** The top of the stack is a key.  Remove this key and its data
+** from database file P1.  Then pop the stack to discard the key.
+*/
+case OP_Delete: {
+  int tos = p->tos;
+  int i = pOp->p1;
+  VERIFY( if( tos<0 ) goto not_enough_stack; )
+  if( VERIFY( i>=0 && i<p->nCursor && ) p->aCsr[i].pCursor!=0 ){
+    char *zKey;
+    int nKey;
+    if( aStack[tos].flags & STK_Int ){
+      nKey = sizeof(int);
+      zKey = (char*)&aStack[tos].i;
+    }else{
+      if( Stringify(p, tos) ) goto no_mem;
+      nKey = aStack[tos].n;
+      zKey = zStack[tos];
+    }
+    rc = sqliteBtreeDelete(p->aCsr[i].pCursor, nKey, zKey);
+    if( rc!=SQLITE_OK ) goto abort_due_to_error;
+  }
+  POPSTACK;
+  break;
+}
+
+/* Opcode: KeyAsData P1 P2 *
+**
+** Turn the key-as-data mode for cursor P1 either on (if P2==1) or
+** off (if P2==0).  In key-as-data mode, the OP_Field opcode pulls
+** data off of the key rather than the data.  This is useful for
+** processing compound selects.
+*/
+case OP_KeyAsData: {
+  int i = pOp->p1;
+  if( VERIFY( i>=0 && i<p->nCursor && ) p->aCsr[i].pCursor!=0 ){
+    p->aCsr[i].keyAsData = pOp->p2;
+  }
+  break;
+}
+
+/* Opcode: Column P1 P2 *
+**
+** Interpret the data in the most recent fetch from cursor P1
+** is a structure built using the MakeRecord instruction.
+** Push onto the stack the value of the P2-th field of that
+** structure.
+** 
+** The value pushed is a pointer to the data stored in the cursor.
+** The value will go away the next time the cursor is modified in
+** any way.  Make a copy of the string (using
+** "Concat 1 0 0") if it needs to persist longer than that.
+**
+** If the KeyAsData opcode has previously executed on this cursor,
+** then the field might be extracted from the key rather than the
+** data.
+*/
+case OP_Column: {
+  int *pAddr;
+  int amt, offset, nCol, payloadSize;
+  int aHdr[10];
+  const int mxHdr = sizeof(aHdr)/sizeof(aHdr[0]);
+  int i = pOp->p1;
+  int p2 = pOp->p2;
+  int tos = ++p->tos;
+  BtCursor *pCrsr;
+  char *z;
+
+  VERIFY( if( NeedStack(p, tos) ) goto no_mem; )
+  if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
+    int (*xSize)(BtCursor*, int*);
+    int (*xRead)(BtCursor*, int, int, void*);
+
+    /* Use different access functions depending on whether the information
+    ** is coming from the key or the data of the record.
+    */
+    if( p->aCsr[i].keyAsData ){
+      xSize = sqliteBtreeKeySize;
+      xRead = sqliteBtreeKey;
+    }else{
+      xSize = sqliteBtreeDataSize;
+      xRead = sqliteBtreeData;
+    }
+
+    /* 
+    ** The code is complicated by efforts to minimize the number
+    ** of invocations of xRead() since that call can be expensive.
+    ** For the common case where P2 is small, xRead() is invoked
+    ** twice.  For larger values of P2, it has to be called
+    ** three times.
+    */
+    (*xSize)(pCrsr, &payloadSize);
+    if( payloadSize < sizeof(int)*(p2+1) ){
+      rc = SQLITE_CORRUPT;
+      goto abort_due_to_error;
+    }
+    if( p2+1<mxHdr ){
+      (*xRead)(pCrsr, 0, sizeof(aHdr[0])*(p2+2), aHdr);
+      nCol = aHdr[0];
+      offset = aHdr[p2];
+      if( p2 == nCol-1 ){
+        amt = payloadSize - offset;
+      }else{
+        amt = aHdr[p2+1] - offset;
+      }
+    }else{
+      sqliteBtreeData(pCrsr, 0, sizeof(int), &nCol);
+      nCol /= sizeof(int);
+      if( p2 == nCol-1 ){
+        (*xRead)(pCrsr, sizeof(int)*p2, sizeof(int), &offset);
+        amt = payloadSize - offset;
+      }else{
+        (*xRead)(pCrsr, sizeof(int)*p2, sizeof(int)*2, aHdr);
+        offset = aHdr[0];
+        amt = aHdr[1] - offset;
+      }
+    }
+    if( payloadSize < nCol || amt<0 || offset<0 ){
+      rc = SQLITE_CORRUPT;
+      goto abort_due_to_error;
+    }
+    if( amt==0 ){
+      aStack[tos].flags = STK_Null;
+    }else{
+      z = sqliteMalloc( amt );
+      if( z==0 ) goto no_mem;
+      (*xRead)(pCrsr, offset, amt, z);
+      aStack[tos].flags = STK_Str | STK_Dyn;
+      zStack[tos] = z;
+      aStack[tos].n = amt;
+    }
+  }
+  break;
+}
+
+/* Opcode: Recno P1 * *
+**
+** Push onto the stack an integer which is the first 4 bytes of the
+** the key to the current entry in a sequential scan of the database
+** file P1.  The sequential scan should have been started using the 
+** Next opcode.
+*/
+case OP_Recno: {
+  int i = pOp->p1;
+  int tos = ++p->tos;
+  BtCursor *pCrsr;
+
+  VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
+  if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
+    int v;
+    if( p->aCsr[i].recnoIsValid ){
+      v = p->aCsr[i].lastRecno;
+    }else{
+      sqliteBtreeKey(pCrsr, 0, sizeof(int), &v);
+    }
+    aStack[tos].i = v;
+    aStack[tos].flags = STK_Int;
+  }
+  break;
+}
+
+/* Opcode: FullKey P1 * *
+**
+** Push a string onto the stack which is the full text key associated
+** with the last Next operation on file P1.  Compare this with the
+** Key operator which pushs an integer key.
+*/
+case OP_FullKey: {
+  int i = pOp->p1;
+  int tos = ++p->tos;
+  BtCursor *pCrsr;
+
+  VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
+  VERIFY( if( !p->aCsr[i].keyAsData ) goto bad_instruction; )
+  if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
+    int amt;
+    char *z;
+
+    sqliteBtreeKeySize(pCrsr, &amt);
+    if( amt<=0 ){
+      rc = SQLITE_CORRUPT;
+      goto abort_due_to_error;
+    }
+    z = sqliteMalloc( amt );
+    sqliteBtreeKey(pCrsr, 0, amt, z);
+    zStack[tos] = z;
+    aStack[tos].flags = STK_Str | STK_Dyn;
+    aStack[tos].n = amt;
+  }
+  break;
+}
+
+/* Opcode: Rewind P1 * *
+**
+** The next use of the Recno or Column or Next instruction for P1 
+** will refer to the first entry in the database file.
+*/
+case OP_Rewind: {
+  int i = pOp->p1;
+  BtCursor *pCrsr;
+
+  if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
+    int res;
+    sqliteBtreeFirst(pCrsr, &res);
+    p->aCsr[i].atFirst = res==0;
+  }
+  break;
+}
+
+/* Opcode: Next P1 P2 *
+**
+** Advance cursor P1 so that it points to the next key/data pair in its
+** table.  Or, if there are no more key/data pairs, jump to location P2.
+*/
+case OP_Next: {
+  int i = pOp->p1;
+  BtCursor *pCrsr;
+
+  if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
+    if( !p->aCsr[i].atFirst ){
+      int res;
+      sqliteBtreeNext(pCrsr, &res);
+      if( res ){
+        pc = pOp->p2 - 1;
+      }else{
+        p->nFetch++;
+      }
+    }
+    p->aCsr[i].atFirst = 0;
+    p->aCsr[i].recnoIsValid = 0;
+  }
+  break;
+}
+
+/* Opcode: BeginIdx P1 * *
+**
+** Begin searching an index for records with the key found on the
+** top of the stack.  The key on the top of the stack should be built
+** using the MakeKey opcode.  Subsequent calls to NextIdx will push
+** record numbers onto the stack until all records with the same key
+** have been returned.
+**
+** Note that the key for this opcode should be built using MakeKey
+** but the key used for PutIdx and DeleteIdx should be built using
+** MakeIdxKey.  The difference is that MakeIdxKey adds a 4-bytes
+** record number to the end of the key in order to specify a particular
+** entry in the index.  MakeKey specifies zero or more entries in the
+** index that all have common values.
+*/
+case OP_BeginIdx: {
+  int i = pOp->p1;
+  int tos = p->tos;
+  int res, rx;
+  Cursor *pCrsr;
+  VERIFY( if( tos<0 ) goto not_enough_stack; )
+  if( i>=0 && i<p->nCursor && (pCrsr = &p->aCsr[i])->pCursor!=0 ){
+    if( Stringify(p, tos) ) goto no_mem;
+    pCrsr->nKey = aStack[tos].n;
+    pCrsr->zKey = sqliteMalloc( 2*(pCrsr->nKey + 1) );
+    if( pCrsr->zKey==0 ) goto no_mem;
+    pCrsr->zBuf = &pCrsr->zKey[pCrsr->nKey+1];
+    strncpy(pCrsr->zKey, zStack[tos], aStack[tos].n);
+    pCrsr->zKey[aStack[tos].n] = 0;
+    rx = sqliteBtreeMoveTo(pCrsr->pCursor, aStack[tos].n, zStack[tos], &res);
+    pCrsr->atFirst = rx==SQLITE_OK && res>0;
+    pCrsr->recnoIsValid = 0;
+  }
+  POPSTACK;
+  break;
+}
+
+/* Opcode: NextIdx P1 P2 *
+**
+** The P1 cursor points to an SQL index for which a BeginIdx operation
+** has been issued.  This operation retrieves the next record number and
+** pushes that record number onto the stack.  Or, if there are no more
+** record numbers for the given key, this opcode pushes nothing onto the
+** stack but instead jumps to instruction P2.
+*/
+case OP_NextIdx: {
+  int i = pOp->p1;
+  int tos = ++p->tos;
+  Cursor *pCrsr;
+  BtCursr *pCur;
+  int rx, res, size;
+
+  VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
+  zStack[tos] = 0;
+  if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = &p->aCsr[i])->pCursor)!=0 ){
+    pCur = pCrsr->pCursor;
+    rx = sqliteBtreeNext(pCur, &res);
+    if( rx!=SQLITE_OK ) goto abort_due_to_error;
+    sqliteBtreeKeySzie(pCur, &size);
+    if( res>0 || size!=pCrsr->nKey+sizeof(int) ||
+      sqliteBtreeKey(pCur, 0, pCrsr->nKey, pCrsr->zBuf)!=pCrsr->nKey ||
+      strncmp(pCrsr->zKey, pCrsr->zBuf, pCrsr->nKey)!=0
+    ){
+      pc = pOp->p2 - 1;
+      POPSTACK;
+    }else{
+      int recno;
+      sqliteBtreeKey(pCur, pCrsr->nKey, sizeof(int), &recno);
+      p->aCsr[i].lastRecno = aStack[tos].i = recno;
+      p->aCsr[i].recnoIsValid = 1;
+      aStack[tos].flags = STK_Int;
+    }
+  }
+  break;
+}
+
+/* Opcode: PutIdx P1 * *
+**
+** The top of the stack hold an SQL index key made using the
+** MakeIdxKey instruction.  This opcode writes that key into the
+** index P1.  Data for the entry is nil.
+*/
+case OP_PutIdx: {
+  int i = pOp->p1;
+  int tos = p->tos;
+  BtCursor *pCrsr;
+  VERIFY( if( tos<0 ) goto not_enough_stack; )
+  if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
+    sqliteBtreePut(pCrsr, aStack[tos].n, zStack[tos], 0, "");
+  }
+  POPSTACK;
+  break;
+}
+
+/* Opcode: DeleteIdx P1 * *
+**
+** The top of the stack is an index key built using the MakeIdxKey opcode.
+** This opcode removes that entry from the index.
+*/
+case OP_DeleteIdx: {
+  int i = pOp->p1;
+  int tos = p->tos;
+  BtCursor *pCrsr;
+  VERIFY( if( tos<0 ) goto not_enough_stack; )
+  if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
+    int rx, res;
+    rx = sqliteBtreeMoveTo(pCrsr, aStack[tos].n, zStack[tos], &res);
+    if( rx==SQLITE_OK && res==0 ){
+      sqliteBtreeDelete(pCrsr);
+    }
+  }
+  POPSTACK;
+  break;
+}
+
+/* Opcode: Destroy P1 * *
+**
+** Delete an entire database table or index whose root page in the database
+** file is given by P1.
+*/
+case OP_Destroy: {
+  sqliteBtreeDropTable(pBe, pOp->p1);
+  break;
+}
+
+/* Opcode: Reorganize P1 * *
+**
+** Compress, optimize, and tidy up table or index whose root page in the
+** database file is P1.
+*/
+case OP_Reorganize: {
+  /* This is currently a no-op */
+  break;
+}
+
+/* Opcode: ListOpen P1 * *
+**
+** Open a "List" structure used for temporary storage of integer 
+** table keys.  P1
+** will server as a handle to this list for future
+** interactions.  If another list with the P1 handle is
+** already opened, the prior list is closed and a new one opened
+** in its place.
+*/
+case OP_ListOpen: {
+  int i = pOp->p1;
+  VERIFY( if( i<0 ) goto bad_instruction; )
+  if( i>=p->nList ){
+    int j;
+    p->apList = sqliteRealloc( p->apList, (i+1)*sizeof(Keylist*) );
+    if( p->apList==0 ){ p->nList = 0; goto no_mem; }
+    for(j=p->nList; j<=i; j++) p->apList[j] = 0;
+    p->nList = i+1;
+  }else if( p->apList[i] ){
+    KeylistFree(p->apList[i]);
+    p->apList[i] = 0;
+  }
+  break;
+}
+
+/* Opcode: ListWrite P1 * *
+**
+** Write the integer on the top of the stack
+** into the temporary storage list P1.
+*/
+case OP_ListWrite: {
+  int i = pOp->p1;
+  Keylist *pKeylist;
+  VERIFY( if( i<0 || i>=p->nList ) goto bad_instruction; )
+  VERIFY( if( p->tos<0 ) goto not_enough_stack; )
+  pKeylist = p->apList[i];
+  if( pKeylist==0 || pKeylist->nUsed>=pKeylist->nKey ){
+    pKeylist = sqliteMalloc( sizeof(Keylist)+999*sizeof(int) );
+    if( pKeylist==0 ) goto no_mem;
+    pKeylist->nKey = 1000;
+    pKeylist->nRead = 0;
+    pKeylist->nUsed = 0;
+    pKeylist->pNext = p->apList[i];
+    p->apList[i] = pKeylist;
+  }
+  Integerify(p, p->tos);
+  pKeylist->aKey[pKeylist->nUsed++] = aStack[p->tos].i;
+  POPSTACK;
+  break;
+}
+
+/* Opcode: ListRewind P1 * *
+**
+** Rewind the temporary buffer P1 back to the beginning.
+*/
+case OP_ListRewind: {
+  int i = pOp->p1;
+  VERIFY( if( i<0 ) goto bad_instruction; )
+  /* This is now a no-op */
+  break;
+}
+
+/* Opcode: ListRead P1 P2 *
+**
+** Attempt to read an integer from temporary storage buffer P1
+** and push it onto the stack.  If the storage buffer is empty, 
+** push nothing but instead jump to P2.
+*/
+case OP_ListRead: {
+  int i = pOp->p1;
+  Keylist *pKeylist;
+  VERIFY(if( i<0 || i>=p->nList ) goto bad_instruction;)
+  pKeylist = p->apList[i];
+  if( pKeylist!=0 ){
+    VERIFY(
+      if( pKeylist->nRead<0 
+        || pKeylist->nRead>=pKeylist->nUsed
+        || pKeylist->nRead>=pKeylist->nKey ) goto bad_instruction;
+    )
+    p->tos++;
+    if( NeedStack(p, p->tos) ) goto no_mem;
+    aStack[p->tos].i = pKeylist->aKey[pKeylist->nRead++];
+    aStack[p->tos].flags = STK_Int;
+    zStack[p->tos] = 0;
+    if( pKeylist->nRead>=pKeylist->nUsed ){
+      p->apList[i] = pKeylist->pNext;
+      sqliteFree(pKeylist);
+    }
+  }else{
+    pc = pOp->p2 - 1;
+  }
+  break;
+}
+
+/* Opcode: ListClose P1 * *
+**
+** Close the temporary storage buffer and discard its contents.
+*/
+case OP_ListClose: {
+  int i = pOp->p1;
+  VERIFY( if( i<0 ) goto bad_instruction; )
+  VERIFY( if( i>=p->nList ) goto bad_instruction; )
+  KeylistFree(p->apList[i]);
+  p->apList[i] = 0;
+  break;
+}
+
+/* Opcode: SortOpen P1 * *
+**
+** Create a new sorter with index P1
+*/
+case OP_SortOpen: {
+  int i = pOp->p1;
+  VERIFY( if( i<0 ) goto bad_instruction; )
+  if( i>=p->nSort ){
+    int j;
+    p->apSort = sqliteRealloc( p->apSort, (i+1)*sizeof(Sorter*) );
+    if( p->apSort==0 ){ p->nSort = 0; goto no_mem; }
+    for(j=p->nSort; j<=i; j++) p->apSort[j] = 0;
+    p->nSort = i+1;
+  }
+  break;
+}
+
+/* Opcode: SortPut P1 * *
+**
+** The TOS is the key and the NOS is the data.  Pop both from the stack
+** and put them on the sorter.
+*/
+case OP_SortPut: {
+  int i = pOp->p1;
+  int tos = p->tos;
+  int nos = tos - 1;
+  Sorter *pSorter;
+  VERIFY( if( i<0 || i>=p->nSort ) goto bad_instruction; )
+  VERIFY( if( tos<1 ) goto not_enough_stack; )
+  if( Stringify(p, tos) || Stringify(p, nos) ) goto no_mem;
+  pSorter = sqliteMalloc( sizeof(Sorter) );
+  if( pSorter==0 ) goto no_mem;
+  pSorter->pNext = p->apSort[i];
+  p->apSort[i] = pSorter;
+  pSorter->nKey = aStack[tos].n;
+  pSorter->zKey = zStack[tos];
+  pSorter->nData = aStack[nos].n;
+  pSorter->pData = zStack[nos];
+  aStack[tos].flags = 0;
+  aStack[nos].flags = 0;
+  zStack[tos] = 0;
+  zStack[nos] = 0;
+  p->tos -= 2;
+  break;
+}
+
+/* Opcode: SortMakeRec P1 * *
+**
+** The top P1 elements are the arguments to a callback.  Form these
+** elements into a single data entry that can be stored on a sorter
+** using SortPut and later fed to a callback using SortCallback.
+*/
+case OP_SortMakeRec: {
+  char *z;
+  char **azArg;
+  int nByte;
+  int nField;
+  int i, j;
+
+  nField = pOp->p1;
+  VERIFY( if( p->tos+1<nField ) goto not_enough_stack; )
+  nByte = 0;
+  for(i=p->tos-nField+1; i<=p->tos; i++){
+    if( (aStack[i].flags & STK_Null)==0 ){
+      if( Stringify(p, i) ) goto no_mem;
+      nByte += aStack[i].n;
+    }
+  }
+  nByte += sizeof(char*)*(nField+1);
+  azArg = sqliteMalloc( nByte );
+  if( azArg==0 ) goto no_mem;
+  z = (char*)&azArg[nField+1];
+  for(j=0, i=p->tos-nField+1; i<=p->tos; i++, j++){
+    if( aStack[i].flags & STK_Null ){
+      azArg[j] = 0;
+    }else{
+      azArg[j] = z;
+      strcpy(z, zStack[i]);
+      z += aStack[i].n;
+    }
+  }
+  PopStack(p, nField);
+  VERIFY( NeedStack(p, p->tos+1); )
+  p->tos++;
+  aStack[p->tos].n = nByte;
+  zStack[p->tos] = (char*)azArg;
+  aStack[p->tos].flags = STK_Str|STK_Dyn;
+  break;
+}
+
+/* Opcode: SortMakeKey P1 * P3
+**
+** Convert the top few entries of the stack into a sort key.  The
+** number of stack entries consumed is the number of characters in 
+** the string P3.  One character from P3 is prepended to each entry.
+** The first character of P3 is prepended to the element lowest in
+** the stack and the last character of P3 is appended to the top of
+** the stack.  All stack entries are separated by a \000 character
+** in the result.  The whole key is terminated by two \000 characters
+** in a row.
+**
+** See also the MakeKey opcode.
+*/
+case OP_SortMakeKey: {
+  char *zNewKey;
+  int nByte;
+  int nField;
+  int i, j, k;
+
+  nField = strlen(pOp->p3);
+  VERIFY( if( p->tos+1<nField ) goto not_enough_stack; )
+  nByte = 1;
+  for(i=p->tos-nField+1; i<=p->tos; i++){
+    if( Stringify(p, i) ) goto no_mem;
+    nByte += aStack[i].n+2;
+  }
+  zNewKey = sqliteMalloc( nByte );
+  if( zNewKey==0 ) goto no_mem;
+  j = 0;
+  k = 0;
+  for(i=p->tos-nField+1; i<=p->tos; i++){
+    zNewKey[j++] = pOp->p3[k++];
+    memcpy(&zNewKey[j], zStack[i], aStack[i].n-1);
+    j += aStack[i].n-1;
+    zNewKey[j++] = 0;
+  }
+  zNewKey[j] = 0;
+  PopStack(p, nField);
+  VERIFY( NeedStack(p, p->tos+1); )
+  p->tos++;
+  aStack[p->tos].n = nByte;
+  aStack[p->tos].flags = STK_Str|STK_Dyn;
+  zStack[p->tos] = zNewKey;
+  break;
+}
+
+/* Opcode: Sort P1 * *
+**
+** Sort all elements on the given sorter.  The algorithm is a
+** mergesort.
+*/
+case OP_Sort: {
+  int j;
+  j = pOp->p1;
+  VERIFY( if( j<0 ) goto bad_instruction; )
+  if( j<p->nSort ){
+    int i;
+    Sorter *pElem;
+    Sorter *apSorter[NSORT];
+    for(i=0; i<NSORT; i++){
+      apSorter[i] = 0;
+    }
+    while( p->apSort[j] ){
+      pElem = p->apSort[j];
+      p->apSort[j] = pElem->pNext;
+      pElem->pNext = 0;
+      for(i=0; i<NSORT-1; i++){
+        if( apSorter[i]==0 ){
+          apSorter[i] = pElem;
+          break;
+        }else{
+          pElem = Merge(apSorter[i], pElem);
+          apSorter[i] = 0;
+        }
+      }
+      if( i>=NSORT-1 ){
+        apSorter[NSORT-1] = Merge(apSorter[NSORT-1],pElem);
+      }
+    }
+    pElem = 0;
+    for(i=0; i<NSORT; i++){
+      pElem = Merge(apSorter[i], pElem);
+    }
+    p->apSort[j] = pElem;
+  }
+  break;
+}
+
+/* Opcode: SortNext P1 P2 *
+**
+** Push the data for the topmost element in the given sorter onto the
+** stack, then remove the element from the sorter.
+*/
+case OP_SortNext: {
+  int i = pOp->p1;
+  VERIFY( if( i<0 ) goto bad_instruction; )
+  if( VERIFY( i<p->nSort && ) p->apSort[i]!=0 ){
+    Sorter *pSorter = p->apSort[i];
+    p->apSort[i] = pSorter->pNext;
+    p->tos++;
+    VERIFY( NeedStack(p, p->tos); )
+    zStack[p->tos] = pSorter->pData;
+    aStack[p->tos].n = pSorter->nData;
+    aStack[p->tos].flags = STK_Str|STK_Dyn;
+    sqliteFree(pSorter->zKey);
+    sqliteFree(pSorter);
+  }else{
+    pc = pOp->p2 - 1;
+  }
+  break;
+}
+
+/* Opcode: SortKey P1 * *
+**
+** Push the key for the topmost element of the sorter onto the stack.
+** But don't change the sorter an any other way.
+*/
+case OP_SortKey: {
+  int i = pOp->p1;
+  VERIFY( if( i<0 ) goto bad_instruction; )
+  if( i<p->nSort && p->apSort[i]!=0 ){
+    Sorter *pSorter = p->apSort[i];
+    p->tos++;
+    VERIFY( NeedStack(p, p->tos); )
+    sqliteSetString(&zStack[p->tos], pSorter->zKey, 0);
+    aStack[p->tos].n = pSorter->nKey;
+    aStack[p->tos].flags = STK_Str|STK_Dyn;
+  }
+  break;
+}
+
+/* Opcode: SortCallback P1 P2 *
+**
+** The top of the stack contains a callback record built using
+** the SortMakeRec operation with the same P1 value as this
+** instruction.  Pop this record from the stack and invoke the
+** callback on it.
+*/
+case OP_SortCallback: {
+  int i = p->tos;
+  VERIFY( if( i<0 ) goto not_enough_stack; )
+  if( xCallback!=0 ){
+    if( xCallback(pArg, pOp->p1, (char**)zStack[i], p->azColName) ){
+      rc = SQLITE_ABORT;
+    }
+  }
+  POPSTACK;
+  break;
+}
+
+/* Opcode: SortClose P1 * *
+**
+** Close the given sorter and remove all its elements.
+*/
+case OP_SortClose: {
+  Sorter *pSorter;
+  int i = pOp->p1;
+  VERIFY( if( i<0 ) goto bad_instruction; )
+  if( i<p->nSort ){
+     while( (pSorter = p->apSort[i])!=0 ){
+       p->apSort[i] = pSorter->pNext;
+       sqliteFree(pSorter->zKey);
+       sqliteFree(pSorter->pData);
+       sqliteFree(pSorter);
+     }
+  }
+  break;
+}
+
+/* Opcode: FileOpen * * P3
+**
+** Open the file named by P3 for reading using the FileRead opcode.
+** If P3 is "stdin" then open standard input for reading.
+*/
+case OP_FileOpen: {
+  VERIFY( if( pOp->p3==0 ) goto bad_instruction; )
+  if( p->pFile ){
+    if( p->pFile!=stdin ) fclose(p->pFile);
+    p->pFile = 0;
+  }
+  if( sqliteStrICmp(pOp->p3,"stdin")==0 ){
+    p->pFile = stdin;
+  }else{
+    p->pFile = fopen(pOp->p3, "r");
+  }
+  if( p->pFile==0 ){
+    sqliteSetString(pzErrMsg,"unable to open file: ", pOp->p3, 0);
+    rc = SQLITE_ERROR;
+    goto cleanup;
+  }
+  break;
+}
+
+/* Opcode: FileClose * * *
+**
+** Close a file previously opened using FileOpen.  This is a no-op
+** if there is no prior FileOpen call.
+*/
+case OP_FileClose: {
+  if( p->pFile ){
+    if( p->pFile!=stdin ) fclose(p->pFile);
+    p->pFile = 0;
+  }
+  if( p->azField ){
+    sqliteFree(p->azField);
+    p->azField = 0;
+  }
+  p->nField = 0;
+  if( p->zLine ){
+    sqliteFree(p->zLine);
+    p->zLine = 0;
+  }
+  p->nLineAlloc = 0;
+  break;
+}
+
+/* Opcode: FileRead P1 P2 P3
+**
+** Read a single line of input from the open file (the file opened using
+** FileOpen).  If we reach end-of-file, jump immediately to P2.  If
+** we are able to get another line, split the line apart using P3 as
+** a delimiter.  There should be P1 fields.  If the input line contains
+** more than P1 fields, ignore the excess.  If the input line contains
+** fewer than P1 fields, assume the remaining fields contain an
+** empty string.
+*/
+case OP_FileRead: {
+  int n, eol, nField, i, c, nDelim;
+  char *zDelim, *z;
+  if( p->pFile==0 ) goto fileread_jump;
+  nField = pOp->p1;
+  if( nField<=0 ) goto fileread_jump;
+  if( nField!=p->nField || p->azField==0 ){
+    p->azField = sqliteRealloc(p->azField, sizeof(char*)*nField+1);
+    if( p->azField==0 ){
+      p->nField = 0;
+      goto fileread_jump;
+    }
+    p->nField = nField;
+  }
+  n = 0;
+  eol = 0;
+  while( eol==0 ){
+    if( p->zLine==0 || n+200>p->nLineAlloc ){
+      p->nLineAlloc = p->nLineAlloc*2 + 300;
+      p->zLine = sqliteRealloc(p->zLine, p->nLineAlloc);
+      if( p->zLine==0 ){
+        p->nLineAlloc = 0;
+        goto fileread_jump;
+      }
+    }
+    if( fgets(&p->zLine[n], p->nLineAlloc-n, p->pFile)==0 ){
+      eol = 1;
+      p->zLine[n] = 0;
+    }else{
+      while( p->zLine[n] ){ n++; }
+      if( n>0 && p->zLine[n-1]=='\n' ){
+        n--;
+        p->zLine[n] = 0;
+        eol = 1;
+      }
+    }
+  }
+  if( n==0 ) goto fileread_jump;
+  z = p->zLine;
+  if( z[0]=='\\' && z[1]=='.' && z[2]==0 ){
+    goto fileread_jump;
+  }
+  zDelim = pOp->p3;
+  if( zDelim==0 ) zDelim = "\t";
+  c = zDelim[0];
+  nDelim = strlen(zDelim);
+  p->azField[0] = z;
+  for(i=1; *z!=0 && i<=nField; i++){
+    int from, to;
+    from = to = 0;
+    while( z[from] ){
+      if( z[from]=='\\' && z[from+1]!=0 ){
+        z[to++] = z[from+1];
+        from += 2;
+        continue;
+      }
+      if( z[from]==c && strncmp(&z[from],zDelim,nDelim)==0 ) break;
+      z[to++] = z[from++];
+    }
+    if( z[from] ){
+      z[to] = 0;
+      z += from + nDelim;
+      if( i<nField ) p->azField[i] = z;
+    }else{
+      z[to] = 0;
+      z = "";
+    }
+  }
+  while( i<nField ){
+    p->azField[i++] = "";
+  }
+  break;
+
+  /* If we reach end-of-file, or if anything goes wrong, jump here.
+  ** This code will cause a jump to P2 */
+fileread_jump:
+  pc = pOp->p2 - 1;
+  break;
+}
+
+/* Opcode: FileField P1 * *
+**
+** Push onto the stack the P1-th field of the most recently read line
+** from the input file.
+*/
+case OP_FileField: {
+  int i = pOp->p1;
+  char *z;
+  VERIFY( if( NeedStack(p, p->tos+1) ) goto no_mem; )
+  if( VERIFY( i>=0 && i<p->nField && ) p->azField ){
+    z = p->azField[i];
+  }else{
+    z = 0;
+  }
+  if( z==0 ) z = "";
+  p->tos++;
+  aStack[p->tos].n = strlen(z) + 1;
+  zStack[p->tos] = z;
+  aStack[p->tos].flags = STK_Str;
+  break;
+}
+
+/* Opcode: MemStore P1 * *
+**
+** Pop a single value of the stack and store that value into memory
+** location P1.  P1 should be a small integer since space is allocated
+** for all memory locations between 0 and P1 inclusive.
+*/
+case OP_MemStore: {
+  int i = pOp->p1;
+  int tos = p->tos;
+  Mem *pMem;
+  char *zOld;
+  VERIFY( if( tos<0 ) goto not_enough_stack; )
+  if( i>=p->nMem ){
+    int nOld = p->nMem;
+    p->nMem = i + 5;
+    p->aMem = sqliteRealloc(p->aMem, p->nMem*sizeof(p->aMem[0]));
+    if( p->aMem==0 ) goto no_mem;
+    if( nOld<p->nMem ){
+      memset(&p->aMem[nOld], 0, sizeof(p->aMem[0])*(p->nMem-nOld));
+    }
+  }
+  pMem = &p->aMem[i];
+  if( pMem->s.flags & STK_Dyn ){
+    zOld = pMem->z;
+  }else{
+    zOld = 0;
+  }
+  pMem->s = aStack[tos];
+  if( pMem->s.flags & STK_Str ){
+    pMem->z = sqliteStrNDup(zStack[tos], pMem->s.n);
+    pMem->s.flags |= STK_Dyn;
+  }
+  if( zOld ) sqliteFree(zOld);
+  POPSTACK;
+  break;
+}
+
+/* Opcode: MemLoad P1 * *
+**
+** Push a copy of the value in memory location P1 onto the stack.
+*/
+case OP_MemLoad: {
+  int tos = ++p->tos;
+  int i = pOp->p1;
+  VERIFY( if( NeedStack(p, tos) ) goto no_mem; )
+  if( i<0 || i>=p->nMem ){
+    aStack[tos].flags = STK_Null;
+    zStack[tos] = 0;
+  }else{
+    aStack[tos] = p->aMem[i].s;
+    if( aStack[tos].flags & STK_Str ){
+      char *z = sqliteMalloc(aStack[tos].n);
+      if( z==0 ) goto no_mem;
+      memcpy(z, p->aMem[i].z, aStack[tos].n);
+      zStack[tos] = z;
+      aStack[tos].flags |= STK_Dyn;
+    }
+  }
+  break;
+}
+
+/* Opcode: AggReset * P2 *
+**
+** Reset the aggregator so that it no longer contains any data.
+** Future aggregator elements will contain P2 values each.
+*/
+case OP_AggReset: {
+  AggReset(&p->agg);
+  p->agg.nMem = pOp->p2;
+  break;
+}
+
+/* Opcode: AggFocus * P2 *
+**
+** Pop the top of the stack and use that as an aggregator key.  If
+** an aggregator with that same key already exists, then make the
+** aggregator the current aggregator and jump to P2.  If no aggregator
+** with the given key exists, create one and make it current but
+** do not jump.
+**
+** The order of aggregator opcodes is important.  The order is:
+** AggReset AggFocus AggNext.  In other words, you must execute
+** AggReset first, then zero or more AggFocus operations, then
+** zero or more AggNext operations.  You must not execute an AggFocus
+** in between an AggNext and an AggReset.
+*/
+case OP_AggFocus: {
+  int tos = p->tos;
+  AggElem *pElem;
+  char *zKey;
+  int nKey;
+
+  VERIFY( if( tos<0 ) goto not_enough_stack; )
+  if( Stringify(p, tos) ) goto no_mem;
+  zKey = zStack[tos]; 
+  nKey = aStack[tos].n;
+  if( p->agg.nHash<=0 ){
+    pElem = 0;
+  }else{
+    int h = sqliteHashNoCase(zKey, nKey-1) % p->agg.nHash;
+    for(pElem=p->agg.apHash[h]; pElem; pElem=pElem->pHash){
+      if( strcmp(pElem->zKey, zKey)==0 ) break;
+    }
+  }
+  if( pElem ){
+    p->agg.pCurrent = pElem;
+    pc = pOp->p2 - 1;
+  }else{
+    AggInsert(&p->agg, zKey);
+    if( sqlite_malloc_failed ) goto no_mem;
+  }
+  POPSTACK;
+  break; 
+}
+
+/* Opcode: AggIncr P1 P2 *
+**
+** Increase the integer value in the P2-th field of the aggregate
+** element current in focus by an amount P1.
+*/
+case OP_AggIncr: {
+  AggElem *pFocus = AggInFocus(p->agg);
+  int i = pOp->p2;
+  if( pFocus==0 ) goto no_mem;
+  if( i>=0 && i<p->agg.nMem ){
+    Mem *pMem = &pFocus->aMem[i];
+    if( pMem->s.flags!=STK_Int ){
+      if( pMem->s.flags & STK_Int ){
+        /* Do nothing */
+      }else if( pMem->s.flags & STK_Real ){
+        pMem->s.i = pMem->s.r;
+      }else if( pMem->s.flags & STK_Str ){
+        pMem->s.i = atoi(pMem->z);
+      }else{
+        pMem->s.i = 0;
+      }
+      if( pMem->s.flags & STK_Dyn ) sqliteFree(pMem->z);
+      pMem->z = 0;
+      pMem->s.flags = STK_Int;
+    }
+    pMem->s.i += pOp->p1;
+  }
+  break;
+}
+
+/* Opcode: AggSet * P2 *
+**
+** Move the top of the stack into the P2-th field of the current
+** aggregate.  String values are duplicated into new memory.
+*/
+case OP_AggSet: {
+  AggElem *pFocus = AggInFocus(p->agg);
+  int i = pOp->p2;
+  int tos = p->tos;
+  VERIFY( if( tos<0 ) goto not_enough_stack; )
+  if( pFocus==0 ) goto no_mem;
+  if( VERIFY( i>=0 && ) i<p->agg.nMem ){
+    Mem *pMem = &pFocus->aMem[i];
+    char *zOld;
+    if( pMem->s.flags & STK_Dyn ){
+      zOld = pMem->z;
+    }else{
+      zOld = 0;
+    }
+    pMem->s = aStack[tos];
+    if( pMem->s.flags & STK_Str ){
+      pMem->z = sqliteMalloc( aStack[tos].n );
+      if( pMem->z==0 ) goto no_mem;
+      memcpy(pMem->z, zStack[tos], pMem->s.n);
+      pMem->s.flags |= STK_Str|STK_Dyn;
+    }
+    if( zOld ) sqliteFree(zOld);
+  }
+  POPSTACK;
+  break;
+}
+
+/* Opcode: AggGet * P2 *
+**
+** Push a new entry onto the stack which is a copy of the P2-th field
+** of the current aggregate.  Strings are not duplicated so
+** string values will be ephemeral.
+*/
+case OP_AggGet: {
+  AggElem *pFocus = AggInFocus(p->agg);
+  int i = pOp->p2;
+  int tos = ++p->tos;
+  VERIFY( if( NeedStack(p, tos) ) goto no_mem; )
+  if( pFocus==0 ) goto no_mem;
+  if( VERIFY( i>=0 && ) i<p->agg.nMem ){
+    Mem *pMem = &pFocus->aMem[i];
+    aStack[tos] = pMem->s;
+    zStack[tos] = pMem->z;
+    aStack[tos].flags &= ~STK_Dyn;
+  }
+  break;
+}
+
+/* Opcode: AggNext * P2 *
+**
+** Make the next aggregate value the current aggregate.  The prior
+** aggregate is deleted.  If all aggregate values have been consumed,
+** jump to P2.
+**
+** The order of aggregator opcodes is important.  The order is:
+** AggReset AggFocus AggNext.  In other words, you must execute
+** AggReset first, then zero or more AggFocus operations, then
+** zero or more AggNext operations.  You must not execute an AggFocus
+** in between an AggNext and an AggReset.
+*/
+case OP_AggNext: {
+  if( p->agg.nHash ){
+    p->agg.nHash = 0;
+    sqliteFree(p->agg.apHash);
+    p->agg.apHash = 0;
+    p->agg.pCurrent = p->agg.pFirst;
+  }else if( p->agg.pCurrent==p->agg.pFirst && p->agg.pCurrent!=0 ){
+    int i;
+    AggElem *pElem = p->agg.pCurrent;
+    for(i=0; i<p->agg.nMem; i++){
+      if( pElem->aMem[i].s.flags & STK_Dyn ){
+        sqliteFree(pElem->aMem[i].z);
+      }
+    }
+    p->agg.pCurrent = p->agg.pFirst = pElem->pNext;
+    sqliteFree(pElem);
+    p->agg.nElem--;
+  }
+  if( p->agg.pCurrent==0 ){
+    pc = pOp->p2-1;
+  }
+  break;
+}
+
+/* Opcode: SetClear P1 * *
+**
+** Remove all elements from the P1-th Set.
+*/
+case OP_SetClear: {
+  int i = pOp->p1;
+  if( i>=0 && i<p->nSet ){
+    SetClear(&p->aSet[i]);
+  }
+  break;
+}
+
+/* Opcode: SetInsert P1 * P3
+**
+** If Set P1 does not exist then create it.  Then insert value
+** P3 into that set.  If P3 is NULL, then insert the top of the
+** stack into the set.
+*/
+case OP_SetInsert: {
+  int i = pOp->p1;
+  if( p->nSet<=i ){
+    p->aSet = sqliteRealloc(p->aSet, (i+1)*sizeof(p->aSet[0]) );
+    if( p->aSet==0 ) goto no_mem;
+    memset(&p->aSet[p->nSet], 0, sizeof(p->aSet[0])*(i+1 - p->nSet));
+    p->nSet = i+1;
+  }
+  if( pOp->p3 ){
+    SetInsert(&p->aSet[i], pOp->p3);
+  }else{
+    int tos = p->tos;
+    if( tos<0 ) goto not_enough_stack;
+    if( Stringify(p, tos) ) goto no_mem;
+    SetInsert(&p->aSet[i], zStack[tos]);
+    POPSTACK;
+  }
+  if( sqlite_malloc_failed ) goto no_mem;
+  break;
+}
+
+/* Opcode: SetFound P1 P2 *
+**
+** Pop the stack once and compare the value popped off with the
+** contents of set P1.  If the element popped exists in set P1,
+** then jump to P2.  Otherwise fall through.
+*/
+case OP_SetFound: {
+  int i = pOp->p1;
+  int tos = p->tos;
+  VERIFY( if( tos<0 ) goto not_enough_stack; )
+  if( Stringify(p, tos) ) goto no_mem;
+  if( VERIFY( i>=0 && i<p->nSet &&) SetTest(&p->aSet[i], zStack[tos])){
+    pc = pOp->p2 - 1;
+  }
+  POPSTACK;
+  break;
+}
+
+/* Opcode: SetNotFound P1 P2 *
+**
+** Pop the stack once and compare the value popped off with the
+** contents of set P1.  If the element popped does not exists in 
+** set P1, then jump to P2.  Otherwise fall through.
+*/
+case OP_SetNotFound: {
+  int i = pOp->p1;
+  int tos = p->tos;
+  VERIFY( if( tos<0 ) goto not_enough_stack; )
+  if( Stringify(p, tos) ) goto no_mem;
+  if(VERIFY( i>=0 && i<p->nSet &&) !SetTest(&p->aSet[i], zStack[tos])){
+    pc = pOp->p2 - 1;
+  }
+  POPSTACK;
+  break;
+}
+
+/* Opcode: Strlen * * *
+**
+** Interpret the top of the stack as a string.  Replace the top of
+** stack with an integer which is the length of the string.
+*/
+case OP_Strlen: {
+  int tos = p->tos;
+  int len;
+  VERIFY( if( tos<0 ) goto not_enough_stack; )
+  if( Stringify(p, tos) ) goto no_mem;
+#ifdef SQLITE_UTF8
+  {
+    char *z = zStack[tos];
+    for(len=0; *z; z++){ if( (0xc0&*z)!=0x80 ) len++; }
+  }
+#else
+  len = aStack[tos].n-1;
+#endif
+  POPSTACK;
+  p->tos++;
+  aStack[tos].i = len;
+  aStack[tos].flags = STK_Int;
+  break;
+}
+
+/* Opcode: Substr P1 P2 *
+**
+** This operation pops between 1 and 3 elements from the stack and
+** pushes back a single element.  The bottom-most element popped from
+** the stack is a string and the element pushed back is also a string.
+** The other two elements popped are integers.  The integers are taken
+** from the stack only if P1 and/or P2 are 0.  When P1 or P2 are
+** not zero, the value of the operand is used rather than the integer
+** from the stack.  In the sequel, we will use P1 and P2 to describe
+** the two integers, even if those integers are really taken from the
+** stack.
+**
+** The string pushed back onto the stack is a substring of the string
+** that was popped.  There are P2 characters in the substring.  The
+** first character of the substring is the P1-th character of the
+** original string where the left-most character is 1 (not 0).  If P1
+** is negative, then counting begins at the right instead of at the
+** left.
+*/
+case OP_Substr: {
+  int cnt;
+  int start;
+  int n;
+  char *z;
+
+  if( pOp->p2==0 ){
+    VERIFY( if( p->tos<0 ) goto not_enough_stack; )
+    Integerify(p, p->tos);
+    cnt = aStack[p->tos].i;
+    POPSTACK;
+  }else{
+    cnt = pOp->p2;
+  }
+  if( pOp->p1==0 ){
+    VERIFY( if( p->tos<0 ) goto not_enough_stack; )
+    Integerify(p, p->tos);
+    start = aStack[p->tos].i - 1;
+    POPSTACK;
+  }else{
+    start = pOp->p1 - 1;
+  }
+  VERIFY( if( p->tos<0 ) goto not_enough_stack; )
+  if( Stringify(p, p->tos) ) goto no_mem;
+
+  /* "n" will be the number of characters in the input string.
+  ** For iso8859, the number of characters is the number of bytes.
+  ** Buf for UTF-8, some characters can use multiple bytes and the
+  ** situation is more complex. 
+  */
+#ifdef SQLITE_UTF8
+  z = zStack[p->tos];
+  for(n=0; *z; z++){ if( (0xc0&*z)!=0x80 ) n++; }
+#else
+  n = aStack[p->tos].n - 1;
+#endif
+  if( start<0 ){
+    start += n + 1;
+    if( start<0 ){
+      cnt += start;
+      start = 0;
+    }
+  }
+  if( start>n ){
+    start = n;
+  }
+  if( cnt<0 ) cnt = 0;
+  if( cnt > n ){
+    cnt = n;
+  }
+
+  /* At this point, "start" is the index of the first character to
+  ** extract and "cnt" is the number of characters to extract.  We
+  ** need to convert units on these variable from characters into
+  ** bytes.  For iso8859, the conversion is a no-op, but for UTF-8
+  ** we have to do a little work.
+  */
+#ifdef SQLITE_UTF8
+  {
+    int c_start = start;
+    int c_cnt = cnt;
+    int i;
+    z = zStack[p->tos];
+    for(start=i=0; i<c_start; i++){
+      while( (0xc0&z[++start])==0x80 ){}
+    }
+    for(cnt=i=0; i<c_cnt; i++){
+      while( (0xc0&z[(++cnt)+start])==0x80 ){}
+    }
+  }
+#endif
+  z = sqliteMalloc( cnt+1 );
+  if( z==0 ) goto no_mem;
+  strncpy(z, &zStack[p->tos][start], cnt);
+  z[cnt] = 0;
+  POPSTACK;
+  p->tos++;
+  zStack[p->tos] = z;
+  aStack[p->tos].n = cnt + 1;
+  aStack[p->tos].flags = STK_Str|STK_Dyn;
+  break;
+}
+
+/* An other opcode is illegal...
+*/
+default: {
+  sprintf(zBuf,"%d",pOp->opcode);
+  sqliteSetString(pzErrMsg, "unknown opcode ", zBuf, 0);
+  rc = SQLITE_INTERNAL;
+  break;
+}
+
+/*****************************************************************************
+** The cases of the switch statement above this line should all be indented
+** by 6 spaces.  But the left-most 6 spaces have been removed to improve the
+** readability.  From this point on down, the normal indentation rules are
+** restored.
+*****************************************************************************/
     }
 
     /* The following code adds nothing to the actual functionality
@@ -3369,15 +3627,27 @@ int sqliteVdbeExec(
 
 cleanup:
   Cleanup(p);
+  if( rc!=SQLITE_OK && (db->flags & SQLITE_InTrans)!=0 ){
+    sqliteBtreeRollback(pBe);
+    sqliteRollbackInternalChanges(db);
+    db->flags &= ~SQLITE_InTrans;
+  }
   return rc;
 
   /* Jump to here if a malloc() fails.  It's hard to get a malloc()
   ** to fail on a modern VM computer, so this code is untested.
   */
 no_mem:
-  Cleanup(p);
   sqliteSetString(pzErrMsg, "out or memory", 0);
-  return 1;
+  rc = SQLITE_NOMEM;
+  goto cleanup;
+
+  /* Jump to here for any other kind of fatal error.  The "rc" variable
+  ** should hold the error number.
+  */
+abort_due_to_err:
+  sqliteSetString(pzErrMsg, sqliteErrStr(rc), 0);
+  goto cleanup;
 
   /* Jump to here if a operator is encountered that requires more stack
   ** operands than are currently available on the stack.

@@ -26,7 +26,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.29 2001/04/28 16:52:42 drh Exp $
+** $Id: main.c,v 1.30 2001/09/13 13:46:56 drh Exp $
 */
 #include "sqliteInt.h"
 #if defined(HAVE_USLEEP) && HAVE_USLEEP
@@ -87,6 +87,7 @@ static int sqliteInit(sqlite *db, char **pzErrMsg){
      "CREATE TABLE " MASTER_NAME " (\n"
      "  type text,\n"
      "  name text,\n"
+     "  tnum integer,\n"
      "  tbl_name text,\n"
      "  sql text\n"
      ")"
@@ -100,6 +101,7 @@ static int sqliteInit(sqlite *db, char **pzErrMsg){
   **    CREATE TABLE sqlite_master (
   **        type       text,    --  Either "table" or "index" or "meta"
   **        name       text,    --  Name of table or index
+  **        tnum       integer, --  The integer page number of root page
   **        tbl_name   text,    --  Associated table 
   **        sql        text     --  The CREATE statement for this object
   **    );
@@ -126,32 +128,33 @@ static int sqliteInit(sqlite *db, char **pzErrMsg){
   ** database scheme.
   */
   static VdbeOp initProg[] = {
-    { OP_OpenTbl,  0, 0,  MASTER_NAME},
+    { OP_Open,     0, 2,  0},
     { OP_Next,     0, 9,  0},           /* 1 */
-    { OP_Field,    0, 0,  0},
+    { OP_Column,   0, 0,  0},
     { OP_String,   0, 0,  "meta"},
     { OP_Ne,       0, 1,  0},
-    { OP_Field,    0, 0,  0},
-    { OP_Field,    0, 3,  0},
+    { OP_Column,   0, 0,  0},
+    { OP_Column,   0, 4,  0},
     { OP_Callback, 2, 0,  0},
     { OP_Goto,     0, 1,  0},
     { OP_Rewind,   0, 0,  0},           /* 9 */
     { OP_Next,     0, 17, 0},           /* 10 */
-    { OP_Field,    0, 0,  0},
+    { OP_Column,   0, 0,  0},
     { OP_String,   0, 0,  "table"},
     { OP_Ne,       0, 10, 0},
-    { OP_Field,    0, 3,  0},
+    { OP_Column,   0, 4,  0},
     { OP_Callback, 1, 0,  0},
     { OP_Goto,     0, 10, 0},
     { OP_Rewind,   0, 0,  0},           /* 17 */
     { OP_Next,     0, 25, 0},           /* 18 */
-    { OP_Field,    0, 0,  0},
+    { OP_Column,   0, 0,  0},
     { OP_String,   0, 0,  "index"},
     { OP_Ne,       0, 18, 0},
-    { OP_Field,    0, 3,  0},
+    { OP_Column,   0, 4,  0},
     { OP_Callback, 1, 0,  0},
     { OP_Goto,     0, 18, 0},
-    { OP_Halt,     0, 0,  0},           /* 25 */
+    { OP_Close,    2, 0,  0},           /* 25 */
+    { OP_Halt,     0, 0,  0},
   };
 
   /* Create a virtual machine to run the initialization program.  Run
@@ -181,6 +184,7 @@ static int sqliteInit(sqlite *db, char **pzErrMsg){
       pTab->readOnly = 1;
     }
     db->flags |= SQLITE_Initialized;
+    sqliteCommitInternalChanges(db);
   }
   return rc;
 }
@@ -219,11 +223,17 @@ sqlite *sqlite_open(const char *zFilename, int mode, char **pzErrMsg){
   if( db==0 ) goto no_mem_on_open;
   
   /* Open the backend database driver */
-  db->pBe = sqliteDbbeOpen(zFilename, (mode&0222)!=0, mode!=0, pzErrMsg);
-  if( db->pBe==0 ){
+  rc = sqliteBtreeOpen(zFilename, mode, 100, &db->pBe);
+  if( rc!=SQLITE_OK ){
+    switch( rc ){
+      default: {
+        if( pzErrMsg ){
+          sqliteSetString(pzErrMsg, "unable to open database: ", zFilename, 0);
+        }
+      }
+    }
     sqliteFree(db);
-    sqliteStrRealloc(pzErrMsg);
-    return 0;
+    return rc;
   }
 
   /* Assume file format 1 unless the database says otherwise */
@@ -253,7 +263,7 @@ no_mem_on_open:
 */
 void sqlite_close(sqlite *db){
   int i;
-  db->pBe->x->Close(db->pBe);
+  sqliteBtreeClose(db->pBe);
   for(i=0; i<N_HASH; i++){
     Table *pNext, *pList = db->apTblHash[i];
     db->apTblHash[i] = 0;
@@ -346,6 +356,7 @@ int sqlite_exec(
   }
   memset(&sParse, 0, sizeof(sParse));
   sParse.db = db;
+  sParse.pBe = db->pBe;
   sParse.xCallback = xCallback;
   sParse.pArg = pArg;
   sqliteRunParser(&sParse, zSql, pzErrMsg);

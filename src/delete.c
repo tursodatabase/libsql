@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle DELETE FROM statements.
 **
-** $Id: delete.c,v 1.9 2001/04/11 14:28:42 drh Exp $
+** $Id: delete.c,v 1.10 2001/09/13 13:46:56 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -90,14 +90,18 @@ void sqliteDeleteFrom(
   */
   v = sqliteGetVdbe(pParse);
   if( v==0 ) goto delete_from_cleanup;
+  if( (pParse->db->flags & SQLITE_InTrans)==0 ){
+    sqliteVdbeAddOp(v, OP_Transaction, 0, 0, 0, 0);
+  }
+
 
   /* Special case: A DELETE without a WHERE clause deletes everything.
   ** It is easier just to deleted the database files directly.
   */
   if( pWhere==0 ){
-    sqliteVdbeAddOp(v, OP_Destroy, 0, 0, pTab->zName, 0);
+    sqliteVdbeAddOp(v, OP_Destroy, pTab->tnum, 0, 0, 0);
     for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-      sqliteVdbeAddOp(v, OP_Destroy, 0, 0, pIdx->zName, 0);
+      sqliteVdbeAddOp(v, OP_Destroy, pIdx->tnum, 0, 0, 0);
     }
   }
 
@@ -125,9 +129,9 @@ void sqliteDeleteFrom(
     */
     base = pParse->nTab;
     sqliteVdbeAddOp(v, OP_ListRewind, 0, 0, 0, 0);
-    sqliteVdbeAddOp(v, OP_OpenTbl, base, 1, pTab->zName, 0);
+    sqliteVdbeAddOp(v, OP_Open, base, pTab->tnum, 0, 0);
     for(i=1, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){
-      sqliteVdbeAddOp(v, OP_OpenIdx, base+i, 1, pIdx->zName, 0);
+      sqliteVdbeAddOp(v, OP_Open, base+i, pIdx->tnum, 0, 0);
     }
     end = sqliteVdbeMakeLabel(v);
     addr = sqliteVdbeAddOp(v, OP_ListRead, 0, end, 0, 0);
@@ -140,7 +144,7 @@ void sqliteDeleteFrom(
         for(j=0; j<pIdx->nColumn; j++){
           sqliteVdbeAddOp(v, OP_Field, base, pIdx->aiColumn[j], 0, 0);
         }
-        sqliteVdbeAddOp(v, OP_MakeKey, pIdx->nColumn, 0, 0, 0);
+        sqliteVdbeAddOp(v, OP_MakeIdxKey, pIdx->nColumn, 0, 0, 0);
         sqliteVdbeAddOp(v, OP_DeleteIdx, base+i, 0, 0, 0);
       }
     }
@@ -148,6 +152,10 @@ void sqliteDeleteFrom(
     sqliteVdbeAddOp(v, OP_Goto, 0, addr, 0, 0);
     sqliteVdbeAddOp(v, OP_ListClose, 0, 0, 0, end);
   }
+  if( (pParse->db->flags & SQLITE_InTrans)==0 ){
+    sqliteVdbeAddOp(v, OP_Commit, 0, 0, 0, 0);
+  }
+
 
 delete_from_cleanup:
   sqliteIdListDelete(pTabList);

@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.11 2001/04/11 14:28:43 drh Exp $
+** $Id: update.c,v 1.12 2001/09/13 13:46:57 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -144,6 +144,9 @@ void sqliteUpdate(
   */
   v = sqliteGetVdbe(pParse);
   if( v==0 ) goto update_cleanup;
+  if( (pParse->db->flags & SQLITE_InTrans)==0 ){
+    sqliteVdbeAddOp(v, OP_Transaction, 0, 0, 0, 0);
+  }
 
   /* Begin the database scan
   */
@@ -164,9 +167,9 @@ void sqliteUpdate(
   */
   sqliteVdbeAddOp(v, OP_ListRewind, 0, 0, 0, 0);
   base = pParse->nTab;
-  sqliteVdbeAddOp(v, OP_OpenTbl, base, 1, pTab->zName, 0);
+  sqliteVdbeAddOp(v, OP_Open, base, pTab->tnum, 0, 0);
   for(i=0; i<nIdx; i++){
-    sqliteVdbeAddOp(v, OP_OpenIdx, base+i+1, 1, apIdx[i]->zName, 0);
+    sqliteVdbeAddOp(v, OP_Open, base+i+1, apIdx[i]->tnum, 0, 0);
   }
 
   /* Loop over every record that needs updating.  We have to load
@@ -177,7 +180,7 @@ void sqliteUpdate(
   end = sqliteVdbeMakeLabel(v);
   addr = sqliteVdbeAddOp(v, OP_ListRead, 0, end, 0, 0);
   sqliteVdbeAddOp(v, OP_Dup, 0, 0, 0, 0);
-  sqliteVdbeAddOp(v, OP_Fetch, base, 0, 0, 0);
+  sqliteVdbeAddOp(v, OP_MoveTo, base, 0, 0, 0);
 
   /* Delete the old indices for the current record.
   */
@@ -185,9 +188,9 @@ void sqliteUpdate(
     sqliteVdbeAddOp(v, OP_Dup, 0, 0, 0, 0);
     pIdx = apIdx[i];
     for(j=0; j<pIdx->nColumn; j++){
-      sqliteVdbeAddOp(v, OP_Field, base, pIdx->aiColumn[j], 0, 0);
+      sqliteVdbeAddOp(v, OP_Column, base, pIdx->aiColumn[j], 0, 0);
     }
-    sqliteVdbeAddOp(v, OP_MakeKey, pIdx->nColumn, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_MakeIdxKey, pIdx->nColumn, 0, 0, 0);
     sqliteVdbeAddOp(v, OP_DeleteIdx, base+i+1, 0, 0, 0);
   }
 
@@ -196,7 +199,7 @@ void sqliteUpdate(
   for(i=0; i<pTab->nCol; i++){
     j = aXRef[i];
     if( j<0 ){
-      sqliteVdbeAddOp(v, OP_Field, base, i, 0, 0);
+      sqliteVdbeAddOp(v, OP_Column, base, i, 0, 0);
     }else{
       sqliteExprCode(pParse, pChanges->a[j].pExpr);
     }
@@ -210,7 +213,7 @@ void sqliteUpdate(
     for(j=0; j<pIdx->nColumn; j++){
       sqliteVdbeAddOp(v, OP_Dup, j+pTab->nCol-pIdx->aiColumn[j], 0, 0, 0);
     }
-    sqliteVdbeAddOp(v, OP_MakeKey, pIdx->nColumn, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_MakeIdxKey, pIdx->nColumn, 0, 0, 0);
     sqliteVdbeAddOp(v, OP_PutIdx, base+i+1, 0, 0, 0);
   }
 
@@ -224,6 +227,9 @@ void sqliteUpdate(
   */
   sqliteVdbeAddOp(v, OP_Goto, 0, addr, 0, 0);
   sqliteVdbeAddOp(v, OP_ListClose, 0, 0, 0, end);
+  if( (pParse->db->flags & SQLITE_InTrans)==0 ){
+    sqliteVdbeAddOp(v, OP_Commit, 0, 0, 0, 0);
+  }
 
 update_cleanup:
   sqliteFree(apIdx);

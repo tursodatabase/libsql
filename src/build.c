@@ -33,7 +33,7 @@
 **     COPY
 **     VACUUM
 **
-** $Id: build.c,v 1.28 2001/04/15 00:37:09 drh Exp $
+** $Id: build.c,v 1.29 2001/09/13 13:46:56 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -192,6 +192,24 @@ static void sqliteDeleteIndex(sqlite *db, Index *pIndex){
 }
 
 /*
+** Unlink the given  index from its table, then remove
+** the index from the index hash table, and free its memory
+** structures.
+*/
+static void sqliteUnlinkAndDeleteIndex(sqlite *db, Index *pIndex){
+  if( pIndex->pTable->pIndex==pIndex ){
+    pIndex->pTable->pIndex = pIndex->pNext;
+  }else{
+    Index *p;
+    for(p=pIndex->pTable->pIndex; p && p->pNext!=pIndex; p=p->pNext){}
+    if( p && p->pNext==pIndex ){
+      p->pNext = pIndex->pNext;
+    }
+  }
+  sqliteDeleteIndex(db, pIndex);
+}
+
+/*
 ** Remove the memory data structures associated with the given
 ** Table.  No changes are made to disk by this routine.
 **
@@ -219,6 +237,84 @@ void sqliteDeleteTable(sqlite *db, Table *pTable){
   sqliteFree(pTable->zName);
   sqliteFree(pTable->aCol);
   sqliteFree(pTable);
+}
+
+/*
+** Check all Tables and Indexes in the internal hash table and commit
+** any additions or deletions to those hash tables.
+**
+** When executing CREATE TABLE and CREATE INDEX statements, the Table
+** and Index structures are created and added to the hash tables, but
+** the "isCommit" field is not set.  This routine sets those fields.
+** When executing DROP TABLE and DROP INDEX, the "isDelete" fields of
+** Table and Index structures is set but the structures are not unlinked
+** from the hash tables nor deallocated.  This routine handles that
+** deallocation. 
+**
+** See also: sqliteRollbackInternalChanges()
+*/
+void sqliteCommitInternalChanges(sqlite *db){
+  int i;
+  if( (db->flags & SQLITE_InternChanges)==0 ) return;
+  for(i=0; i<N_HASH; i++){
+    Table *pTable, *pNext;
+    for(pTable = apTblHash[i]; pTable; pTable=pNext){
+      pNext = pTable->pHash;
+      if( pTable->isDelete ){
+        sqliteDeleteTable(db, pTable);
+      }else if( pTable->isCommit==0 ){
+        pTable->isCommit = 1;
+      }
+    }
+  }
+  for(i=0; i<N_HASH; i++){
+    Index *pIndex, *pNext;
+    for(pIndex = apIdxHash[i]; pIndex; pIndex=pNext){
+      pNext = pIndex->pHash;
+      if( pIndex->isDelete ){
+        sqliteUnlinkAndDeleteIndex(db, pIndex);
+      }else if( pIndex->isCommit==0 ){
+        pIndex->isCommit = 1;
+      }
+    }
+  }
+  db->flags &= ~SQLITE_InternChanges;
+}
+
+/*
+** This routine runs when one or more CREATE TABLE, CREATE INDEX,
+** DROP TABLE, or DROP INDEX statements get rolled back.  The
+** additions or deletions of Table and Index structures in the
+** internal hash tables are undone.
+**
+** See also: sqliteCommitInternalChanges()
+*/
+void sqliteRollbackInternalChanges(sqlite *db){
+  int i;
+  if( (db->flags & SQLITE_InternChanges)==0 ) return;
+  for(i=0; i<N_HASH; i++){
+    Table *pTable, *pNext;
+    for(pTable = apTblHash[i]; pTable; pTable=pNext){
+      pNext = pTable->pHash;
+      if( !pTable->isCommit ){
+        sqliteDeleteTable(db, pTable);
+      }else if( pTable->isDelete ){
+        pTable->isDelete = 0;
+      }
+    }
+  }
+  for(i=0; i<N_HASH; i++){
+    Index *pIndex, *pNext;
+    for(pIndex = apIdxHash[i]; pIndex; pIndex=pNext){
+      pNext = pIndex->pHash;
+      if( !pIndex->isCommit ){
+        sqliteUnlinkAndDeleteIndex(db, pIndex);
+      }else if( pIndex->isDelete ){
+        pIndex->isDelete = 0;
+      }
+    }
+  }
+  db->flags &= ~SQLITE_InternChanges;
 }
 
 /*
@@ -275,6 +371,12 @@ void sqliteStartTable(Parse *pParse, Token *pStart, Token *pName){
   pTable->pIndex = 0;
   if( pParse->pNewTable ) sqliteDeleteTable(pParse->db, pParse->pNewTable);
   pParse->pNewTable = pTable;
+  if( !pParse->initFlag && (pParse->db->flags & SQLITE_InTrans)==0 ){
+    Vdbe *v = sqliteGetVdbe(pParse);
+    if( v ){
+      sqliteVdbeAddOp(v, OP_Transaction, 0, 0, 0, 0);
+    }
+  }
 }
 
 /*
@@ -340,12 +442,10 @@ void sqliteAddDefaultValue(Parse *pParse, Token *pVal, int minusFlag){
 void sqliteEndTable(Parse *pParse, Token *pEnd){
   Table *p;
   int h;
-  int addMeta;       /* True to insert a meta records into the file */
 
   if( pEnd==0 || pParse->nErr || sqlite_malloc_failed ) return;
   p = pParse->pNewTable;
   if( p==0 ) return;
-  addMeta =  pParse->db->nTable==1;
 
   /* Add the table to the in-memory representation of the database
   */
@@ -355,27 +455,20 @@ void sqliteEndTable(Parse *pParse, Token *pEnd){
     pParse->db->apTblHash[h] = p;
     pParse->pNewTable = 0;
     pParse->db->nTable++;
+    db->flags |= SQLITE_InternChanges;
   }
 
   /* If not initializing, then create the table on disk.
   */
   if( !pParse->initFlag ){
     static VdbeOp addTable[] = {
-      { OP_OpenTbl,     0, 1, MASTER_NAME },
-      { OP_New,         0, 0, 0},
+      { OP_Open,        0, 2, 0},
+      { OP_NewRecno,    0, 0, 0},
       { OP_String,      0, 0, "table"     },
       { OP_String,      0, 0, 0},            /* 3 */
-      { OP_String,      0, 0, 0},            /* 4 */
+      { OP_CreateTable, 0, 0, 0},
       { OP_String,      0, 0, 0},            /* 5 */
-      { OP_MakeRecord,  4, 0, 0},
-      { OP_Put,         0, 0, 0},
-    };
-    static VdbeOp addVersion[] = {
-      { OP_New,         0, 0, 0},
-      { OP_String,      0, 0, "meta"            },
-      { OP_String,      0, 0, ""                },
-      { OP_String,      0, 0, ""                },
-      { OP_String,      0, 0, "file format 2"   },
+      { OP_String,      0, 0, 0},            /* 6 */
       { OP_MakeRecord,  4, 0, 0},
       { OP_Put,         0, 0, 0},
     };
@@ -387,12 +480,13 @@ void sqliteEndTable(Parse *pParse, Token *pEnd){
     n = (int)pEnd->z - (int)pParse->sFirstToken.z + 1;
     base = sqliteVdbeAddOpList(v, ArraySize(addTable), addTable);
     sqliteVdbeChangeP3(v, base+3, p->zName, 0);
-    sqliteVdbeChangeP3(v, base+4, p->zName, 0);
-    sqliteVdbeChangeP3(v, base+5, pParse->sFirstToken.z, n);
-    if( addMeta ){
-      sqliteVdbeAddOpList(v, ArraySize(addVersion), addVersion);
-    }
+    sqliteVdbeTableRootAddr(v, &p->tnum);
+    sqliteVdbeChangeP3(v, base+5, p->zName, 0);
+    sqliteVdbeChangeP3(v, base+6, pParse->sFirstToken.z, n);
     sqliteVdbeAddOp(v, OP_Close, 0, 0, 0, 0);
+    if( (pParse->db->flags & SQLITE_InTrans)==0 ){
+      sqliteVdbeAddOp(v, OP_Commit, 0, 0, 0, 0);
+    }
   }
 }
 
@@ -441,50 +535,41 @@ void sqliteDropTable(Parse *pParse, Token *pName){
   v = sqliteGetVdbe(pParse);
   if( v ){
     static VdbeOp dropTable[] = {
-      { OP_OpenTbl,    0, 1,        MASTER_NAME },
-      { OP_ListOpen,   0, 0,        0},
-      { OP_String,     0, 0,        0}, /* 2 */
-      { OP_Next,       0, ADDR(10), 0}, /* 3 */
+      { OP_Open,       0, 2,        0},
+      { OP_String,     0, 0,        0}, /* 1 */
+      { OP_Next,       0, ADDR(9),  0}, /* 2 */
       { OP_Dup,        0, 0,        0},
-      { OP_Field,      0, 2,        0},
-      { OP_Ne,         0, ADDR(3),  0},
-      { OP_Key,        0, 0,        0},
-      { OP_ListWrite,  0, 0,        0},
-      { OP_Goto,       0, ADDR(3),  0},
-      { OP_ListRewind, 0, 0,        0}, /* 10 */
-      { OP_ListRead,   0, ADDR(14), 0}, /* 11 */
+      { OP_Column,     0, 3,        0},
+      { OP_Ne,         0, ADDR(2),  0},
+      { OP_Recno,      0, 0,        0},
       { OP_Delete,     0, 0,        0},
-      { OP_Goto,       0, ADDR(11), 0},
-      { OP_Destroy,    0, 0,        0}, /* 14 */
+      { OP_Goto,       0, ADDR(2),  0},
+      { OP_Destroy,    0, 0,        0}, /* 9 */
       { OP_Close,      0, 0,        0},
     };
     Index *pIdx;
+    if( (pParse->db->flags & SQLITE_InTrans)==0 ){
+      sqliteVdbeAddOp(v, OP_Transaction, 0, 0, 0, 0);
+    }
     base = sqliteVdbeAddOpList(v, ArraySize(dropTable), dropTable);
-    sqliteVdbeChangeP3(v, base+2, pTable->zName, 0);
-    sqliteVdbeChangeP3(v, base+14, pTable->zName, 0);
+    sqliteVdbeChangeP1(v, base+9, pTable->tnum);
     for(pIdx=pTable->pIndex; pIdx; pIdx=pIdx->pNext){
-      sqliteVdbeAddOp(v, OP_Destroy, 0, 0, pIdx->zName, 0);
+      sqliteVdbeAddOp(v, OP_Destroy, pIdx->tnum, 0, 0, 0);
+    }
+    if( (pParse->db->flags & SQLITE_InTrans)==0 ){
+      sqliteVdbeAddOp(v, OP_Commit, 0, 0, 0, 0);
     }
   }
 
-  /* Remove the in-memory table structure and free its memory.
+  /* Mark the in-memory Table structure as being deleted.  The actually
+  ** deletion occurs inside of sqliteCommitInternalChanges().
   **
   ** Exception: if the SQL statement began with the EXPLAIN keyword,
-  ** then no changes are made.
+  ** then no changes should be made.
   */
   if( !pParse->explain ){
-    h = sqliteHashNoCase(pTable->zName, 0) % N_HASH;
-    if( pParse->db->apTblHash[h]==pTable ){
-      pParse->db->apTblHash[h] = pTable->pHash;
-    }else{
-      Table *p;
-      for(p=pParse->db->apTblHash[h]; p && p->pHash!=pTable; p=p->pHash){}
-      if( p && p->pHash==pTable ){
-        p->pHash = pTable->pHash;
-      }
-    }
-    pParse->db->nTable--;
-    sqliteDeleteTable(pParse->db, pTable);
+    pTable->isDelete = 1;
+    db->flags |= SQLITE_InternChanges;
   }
 }
 
@@ -603,6 +688,7 @@ void sqliteCreateIndex(
     pParse->db->apIdxHash[h] = pIndex;
     pIndex->pNext = pTab->pIndex;
     pTab->pIndex = pIndex;
+    db->flags |= SQLITE_InternChanges;
   }
 
   /* If the initFlag is 0 then create the index on disk.  This
@@ -617,13 +703,14 @@ void sqliteCreateIndex(
   */
   if( pParse->initFlag==0 ){
     static VdbeOp addTable[] = {
-      { OP_OpenTbl,     2, 1, MASTER_NAME},
-      { OP_New,         2, 0, 0},
+      { OP_Open,        2, 2, 0},
+      { OP_NewRecno,    2, 0, 0},
       { OP_String,      0, 0, "index"},
       { OP_String,      0, 0, 0},  /* 3 */
-      { OP_String,      0, 0, 0},  /* 4 */
+      { OP_CreateIndex, 0, 0, 0},
       { OP_String,      0, 0, 0},  /* 5 */
-      { OP_MakeRecord,  4, 0, 0},
+      { OP_String,      0, 0, 0},  /* 6 */
+      { OP_MakeRecord,  5, 0, 0},
       { OP_Put,         2, 0, 0},
       { OP_Close,       2, 0, 0},
     };
@@ -634,29 +721,36 @@ void sqliteCreateIndex(
 
     v = sqliteGetVdbe(pParse);
     if( v==0 ) goto exit_create_index;
-    sqliteVdbeAddOp(v, OP_OpenTbl, 0, 0, pTab->zName, 0);
-    sqliteVdbeAddOp(v, OP_OpenIdx, 1, 1, pIndex->zName, 0);
+    if( pTable!=0 && (pParse->db->flags & SQLITE_InTrans)==0 ){
+      sqliteVdbeAddOp(v, OP_Transaction, 0, 0, 0, 0);
+    }
+    sqliteVdbeAddOp(v, OP_Open, 0, pTab->tnum, pTab->zName, 0);
+    sqliteVdbeAddOp(v, OP_Open, 1, pIndex->tnum, pIndex->zName, 0);
     if( pStart && pEnd ){
       int base;
       n = (int)pEnd->z - (int)pStart->z + 1;
       base = sqliteVdbeAddOpList(v, ArraySize(addTable), addTable);
       sqliteVdbeChangeP3(v, base+3, pIndex->zName, 0);
-      sqliteVdbeChangeP3(v, base+4, pTab->zName, 0);
-      sqliteVdbeChangeP3(v, base+5, pStart->z, n);
+      sqliteVdbeIndexRootAddr(v, &pIndex->tnum);
+      sqliteVdbeChangeP3(v, base+5, pTab->zName, 0);
+      sqliteVdbeChangeP3(v, base+6, pStart->z, n);
     }
     lbl1 = sqliteVdbeMakeLabel(v);
     lbl2 = sqliteVdbeMakeLabel(v);
     sqliteVdbeAddOp(v, OP_Next, 0, lbl2, 0, lbl1);
-    sqliteVdbeAddOp(v, OP_Key, 0, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_GetRecno, 0, 0, 0, 0);
     for(i=0; i<pIndex->nColumn; i++){
-      sqliteVdbeAddOp(v, OP_Field, 0, pIndex->aiColumn[i], 0, 0);
+      sqliteVdbeAddOp(v, OP_Column, 0, pIndex->aiColumn[i], 0, 0);
     }
-    sqliteVdbeAddOp(v, OP_MakeKey, pIndex->nColumn, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_MakeIdxKey, pIndex->nColumn, 0, 0, 0);
     sqliteVdbeAddOp(v, OP_PutIdx, 1, 0, 0, 0);
     sqliteVdbeAddOp(v, OP_Goto, 0, lbl1, 0, 0);
     sqliteVdbeAddOp(v, OP_Noop, 0, 0, 0, lbl2);
     sqliteVdbeAddOp(v, OP_Close, 1, 0, 0, 0);
     sqliteVdbeAddOp(v, OP_Close, 0, 0, 0, 0);
+    if( pTable!=0 && (pParse->db->flags & SQLITE_InTrans)==0 ){
+      sqliteVdbeAddOp(v, OP_Commit, 0, 0, 0, 0);
+    }
   }
 
   /* Reclaim memory on an EXPLAIN call.
@@ -696,39 +790,35 @@ void sqliteDropIndex(Parse *pParse, Token *pName){
   v = sqliteGetVdbe(pParse);
   if( v ){
     static VdbeOp dropIndex[] = {
-      { OP_OpenTbl,      0, 1,       MASTER_NAME},
-      { OP_ListOpen,   0, 0,       0},
-      { OP_String,     0, 0,       0}, /* 2 */
-      { OP_Next,       0, ADDR(9), 0}, /* 3 */
+      { OP_Open,       0, 2,       0},
+      { OP_String,     0, 0,       0}, /* 1 */
+      { OP_Next,       0, ADDR(8), 0}, /* 2 */
       { OP_Dup,        0, 0,       0},
-      { OP_Field,      0, 1,       0},
-      { OP_Ne,         0, ADDR(3), 0},
+      { OP_Column,     0, 1,       0},
+      { OP_Ne,         0, ADDR(2), 0},
       { OP_Key,        0, 0,       0},
       { OP_Delete,     0, 0,       0},
-      { OP_Destroy,    0, 0,       0}, /* 9 */
+      { OP_Destroy,    0, 0,       0}, /* 8 */
       { OP_Close,      0, 0,       0},
     };
     int base;
 
+    if( (pParse->db->flags & SQLITE_InTrans)==0 ){
+      sqliteVdbeAddOp(v, OP_Transaction, 0, 0, 0, 0);
+    }
     base = sqliteVdbeAddOpList(v, ArraySize(dropIndex), dropIndex);
-    sqliteVdbeChangeP3(v, base+2, pIndex->zName, 0);
-    sqliteVdbeChangeP3(v, base+9, pIndex->zName, 0);
+    sqliteVdbeChangeP1(v, base+8, pIndex->tnum);
+    if( (pParse->db->flags & SQLITE_InTrans)==0 ){
+      sqliteVdbeAddOp(v, OP_Commit, 0, 0, 0, 0);
+    }
   }
 
-  /* Remove the index structure and free its memory.  Except if the
-  ** EXPLAIN keyword is present, no changes are made.
+  /* Mark the internal Index structure for deletion by the
+  ** sqliteCommitInternalChanges routine.
   */
   if( !pParse->explain ){
-    if( pIndex->pTable->pIndex==pIndex ){
-      pIndex->pTable->pIndex = pIndex->pNext;
-    }else{
-      Index *p;
-      for(p=pIndex->pTable->pIndex; p && p->pNext!=pIndex; p=p->pNext){}
-      if( p && p->pNext==pIndex ){
-        p->pNext = pIndex->pNext;
-      }
-    }
-    sqliteDeleteIndex(pParse->db, pIndex);
+    pIndex->isDelete = 1;
+    db->flags |= SQLITE_InternChanges;
   }
 }
 
@@ -881,12 +971,15 @@ void sqliteCopy(
   }
   v = sqliteGetVdbe(pParse);
   if( v ){
+    if( (pParse->db->flags & SQLITE_InTrans)==0 ){
+      sqliteVdbeAddOp(v, OP_Transaction, 0, 0, 0, 0);
+    }
     addr = sqliteVdbeAddOp(v, OP_FileOpen, 0, 0, 0, 0);
     sqliteVdbeChangeP3(v, addr, pFilename->z, pFilename->n);
     sqliteVdbeDequoteP3(v, addr);
-    sqliteVdbeAddOp(v, OP_OpenTbl, 0, 1, pTab->zName, 0);
+    sqliteVdbeAddOp(v, OP_Open, 0, pTab->tnum, pTab->zName, 0);
     for(i=1, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
-      sqliteVdbeAddOp(v, OP_OpenIdx, i, 1, pIdx->zName, 0);
+      sqliteVdbeAddOp(v, OP_Open, i, pIdx->tnum, pIdx->zName, 0);
     }
     end = sqliteVdbeMakeLabel(v);
     addr = sqliteVdbeAddOp(v, OP_FileRead, pTab->nCol, end, 0, 0);
@@ -896,12 +989,12 @@ void sqliteCopy(
     }else{
       sqliteVdbeChangeP3(v, addr, "\t", 1);
     }
-    sqliteVdbeAddOp(v, OP_New, 0, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_NewRecno, 0, 0, 0, 0);
     if( pTab->pIndex ){
       sqliteVdbeAddOp(v, OP_Dup, 0, 0, 0, 0);
     }
     for(i=0; i<pTab->nCol; i++){
-      sqliteVdbeAddOp(v, OP_FileField, i, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_FileColumn, i, 0, 0, 0);
     }
     sqliteVdbeAddOp(v, OP_MakeRecord, pTab->nCol, 0, 0, 0);
     sqliteVdbeAddOp(v, OP_Put, 0, 0, 0, 0);
@@ -910,13 +1003,16 @@ void sqliteCopy(
         sqliteVdbeAddOp(v, OP_Dup, 0, 0, 0, 0);
       }
       for(j=0; j<pIdx->nColumn; j++){
-        sqliteVdbeAddOp(v, OP_FileField, pIdx->aiColumn[j], 0, 0, 0);
+        sqliteVdbeAddOp(v, OP_FileColumn, pIdx->aiColumn[j], 0, 0, 0);
       }
-      sqliteVdbeAddOp(v, OP_MakeKey, pIdx->nColumn, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_MakeIdxKey, pIdx->nColumn, 0, 0, 0);
       sqliteVdbeAddOp(v, OP_PutIdx, i, 0, 0, 0);
     }
     sqliteVdbeAddOp(v, OP_Goto, 0, addr, 0, 0);
     sqliteVdbeAddOp(v, OP_Noop, 0, 0, 0, end);
+    if( (pParse->db->flags & SQLITE_InTrans)==0 ){
+      sqliteVdbeAddOp(v, OP_Commit, 0, 0, 0, 0);
+    }
   }
   
 copy_cleanup:
@@ -946,6 +1042,9 @@ void sqliteVacuum(Parse *pParse, Token *pTableName){
   }
   v = sqliteGetVdbe(pParse);
   if( v==0 ) goto vacuum_cleanup;
+  if( (pParse->db->flags & SQLITE_InTrans)==0 ){
+    sqliteVdbeAddOp(v, OP_Transaction, 0, 0, 0, 0);
+  }
   if( zName ){
     sqliteVdbeAddOp(v, OP_Reorganize, 0, 0, zName, 0);
   }else{
@@ -961,6 +1060,9 @@ void sqliteVacuum(Parse *pParse, Token *pTableName){
       }
     }
   }
+  if( (pParse->db->flags & SQLITE_InTrans)==0 ){
+    sqliteVdbeAddOp(v, OP_Commit, 0, 0, 0, 0);
+  }
 
 vacuum_cleanup:
   sqliteFree(zName);
@@ -972,20 +1074,17 @@ vacuum_cleanup:
 */
 void sqliteBeginTransaction(Parse *pParse){
   int rc;
-  DbbeMethods *pM;
   sqlite *db;
+  Vdbe *v;
+
   if( pParse==0 || (db=pParse->db)==0 || db->pBe==0 ) return;
   if( pParse->nErr || sqlite_malloc_failed ) return;
   if( db->flags & SQLITE_InTrans ) return;
-  pM = pParse->db->pBe->x;
-  if( pM && pM->BeginTransaction ){
-    rc = (*pM->BeginTransaction)(pParse->db->pBe);
-  }else{
-    rc = SQLITE_OK;
+  v = sqliteGetVdbe(pParse);
+  if( v ){
+    sqliteVdbeAddOp(v, OP_Transaction, 1, 0, 0, 0);
   }
-  if( rc==SQLITE_OK ){
-    db->flags |= SQLITE_InTrans;
-  }
+  db->flags |= SQLITE_InTrans;
 }
 
 /*
@@ -993,20 +1092,17 @@ void sqliteBeginTransaction(Parse *pParse){
 */
 void sqliteCommitTransaction(Parse *pParse){
   int rc;
-  DbbeMethods *pM;
   sqlite *db;
+  Vdbe *v;
+
   if( pParse==0 || (db=pParse->db)==0 || db->pBe==0 ) return;
   if( pParse->nErr || sqlite_malloc_failed ) return;
   if( (db->flags & SQLITE_InTrans)==0 ) return;
-  pM = pParse->db->pBe->x;
-  if( pM && pM->Commit ){
-    rc = (*pM->Commit)(pParse->db->pBe);
-  }else{
-    rc = SQLITE_OK;
+  v = sqliteGetVdbe(pParse);
+  if( v ){
+    sqliteVdbeAddOp(v, OP_Commit, 0, 0, 0, 0);
   }
-  if( rc==SQLITE_OK ){
-    db->flags &= ~SQLITE_InTrans;
-  }
+  db->flags &= ~SQLITE_InTrans;
 }
 
 /*
@@ -1014,18 +1110,15 @@ void sqliteCommitTransaction(Parse *pParse){
 */
 void sqliteRollbackTransaction(Parse *pParse){
   int rc;
-  DbbeMethods *pM;
   sqlite *db;
+  Vdbe *v;
+
   if( pParse==0 || (db=pParse->db)==0 || db->pBe==0 ) return;
   if( pParse->nErr || sqlite_malloc_failed ) return;
   if( (db->flags & SQLITE_InTrans)==0 ) return;
-  pM = pParse->db->pBe->x;
-  if( pM && pM->Rollback ){
-    rc = (*pM->Rollback)(pParse->db->pBe);
-  }else{
-    rc = SQLITE_OK;
+  v = sqliteGetVdbe(pParse);
+  if( v ){
+    sqliteVdbeAddOp(v, OP_Rollback, 0, 0, 0, 0);
   }
-  if( rc==SQLITE_OK ){
-    db->flags &= ~SQLITE_InTrans;
-  }
+  db->flags &= ~SQLITE_InTrans;
 }
