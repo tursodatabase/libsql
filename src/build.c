@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.92 2002/05/21 11:38:11 drh Exp $
+** $Id: build.c,v 1.93 2002/05/22 21:27:03 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -502,8 +502,20 @@ void sqliteStartTable(Parse *pParse, Token *pStart, Token *pName, int isTemp){
 */
 void sqliteAddColumn(Parse *pParse, Token *pName){
   Table *p;
-  char **pz;
+  int i;
+  char *z = 0;
   if( (p = pParse->pNewTable)==0 ) return;
+  sqliteSetNString(&z, pName->z, pName->n, 0);
+  if( z==0 ) return;
+  sqliteDequote(z);
+  for(i=0; i<p->nCol; i++){
+    if( sqliteStrICmp(z, p->aCol[i].zName)==0 ){
+      sqliteSetString(&pParse->zErrMsg, "duplicate column name: ", z, 0);
+      pParse->nErr++;
+      sqliteFree(z);
+      return;
+    }
+  }
   if( (p->nCol & 0x7)==0 ){
     Column *aNew;
     aNew = sqliteRealloc( p->aCol, (p->nCol+8)*sizeof(p->aCol[0]));
@@ -511,9 +523,7 @@ void sqliteAddColumn(Parse *pParse, Token *pName){
     p->aCol = aNew;
   }
   memset(&p->aCol[p->nCol], 0, sizeof(p->aCol[0]));
-  pz = &p->aCol[p->nCol++].zName;
-  sqliteSetNString(pz, pName->z, pName->n, 0);
-  sqliteDequote(*pz);
+  p->aCol[p->nCol++].zName = z;
 }
 
 /*

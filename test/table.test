@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE TABLE statement.
 #
-# $Id: table.test,v 1.15 2002/02/21 12:01:28 drh Exp $
+# $Id: table.test,v 1.16 2002/05/22 21:27:04 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -369,5 +369,14 @@ do_test table-8.8 {
     CREATE TABLE t5 AS SELECT * FROM no_such_table;
   }
 } {1 {no such table: no_such_table}}
+
+# Make sure we cannot have duplicate column names within a table.
+#
+do_test table-9.1 {
+  catchsql {
+    CREATE TABLE t6(a,b,a);
+  }
+} {1 {duplicate column name: a}}
+
 
 finish_test

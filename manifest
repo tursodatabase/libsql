@@ -1,5 +1,5 @@
-C Fix\sfor\sticket\s#47:\sUse\sa\scast\sto\savoid\sa\swarning\sabout\sdiscarding\sa\s"const"\ninside\sof\shash.c.\s(CVS\s577)
-D 2002-05-21T23:44:30
+C Fix\sfor\sticket\s#46:\sReport\san\serror\sif\sa\sCREATE\sTABLE\scontains\stwo\sor\smore\ncolumns\swith\sthe\ssame\sname.\s(CVS\s578)
+D 2002-05-22T21:27:03
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -20,7 +20,7 @@ F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
 F src/TODO af7f3cab0228e34149cf98e073aa83d45878e7e6
 F src/btree.c c01b404b9373ae1c0daf7d1f9211c72ead67638e
 F src/btree.h 8abeabfe6e0b1a990b64fa457592a6482f6674f3
-F src/build.c f5aa02e4553ca2db941d6e7f025a180ddc4cea49
+F src/build.c d88ad651bedecba69510d87d734040730305c528
 F src/delete.c c2eae01b76d5418d4ff1768659dfb199c38f0641
 F src/encode.c 346b12b46148506c32038524b95c4631ab46d760
 F src/expr.c 01e1e395392284a3a480c90bd60b3a0fa99aab38
@@ -93,7 +93,7 @@ F test/select5.test c2a6c4a003316ee42cbbd689eebef8fdce0db2ac
 F test/select6.test efb8d0c07a440441db87db2c4ade6904e1407e85
 F test/sort.test 3b996ce7ca385f9cd559944ac0f4027a23aa546b
 F test/subselect.test 335d3dad8d585726c447dfee8d9c4f7383c76b78
-F test/table.test 17b0b6eafa3faaee5545b7a94e6c1ff73f0880f3
+F test/table.test d9fd161dc9a2dbe0795d836336019ea6d0952ef8
 F test/tableapi.test 3c80421a889e1d106df16e5800fa787f0d2914a6
 F test/tclsqlite.test 79deeffd7cd637ca0f06c5dbbf2f44d272079533
 F test/temptable.test daa83489eea2e9aaeeece09675c28be84c72cb67
@@ -134,7 +134,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 55e7d65496624c8e48673d8747f3123786bfedbc
-R c60459d19b1418931f84fad300373577
+P 0c903461533fabca7815e8cccbd3b712bcd22ddc
+R eaf5d8758292d7cdb287f773e215d706
 U drh
-Z 64d1f209f3e121fdef2277757506d4cb
+Z f48c858d25b915a9feadbebd4ae9d048
