@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.132 2003/03/19 03:14:01 drh Exp $
+** $Id: build.c,v 1.133 2003/03/20 01:16:58 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1805,25 +1805,63 @@ IdList *sqliteIdListAppend(IdList *pList, Token *pToken){
 ** need be.  A new entry is created in the SrcList even if pToken is NULL.
 **
 ** A new SrcList is returned, or NULL if malloc() fails.
+**
+** If pDatabase is not null, it means that the table has an optional
+** database name prefix.  Like this:  "database.table".  The pDatabase
+** points to the table name and the pTable points to the database name.
+** The SrcList.a[].zName field is filled with the table name which might
+** come from pTable (if pDatabase is NULL) or from pDatabase.  
+** SrcList.a[].zDatabase is filled with the database name from pTable,
+** or with NULL if no database is specified.
+**
+** In other words, if call like this:
+**
+**         sqliteSrcListAppend(A,B,0);
+**
+** Then B is a table name and the database name is unspecified.  If called
+** like this:
+**
+**         sqliteSrcListAppend(A,B,C);
+**
+** Then C is the table name and B is the database name.
 */
-SrcList *sqliteSrcListAppend(SrcList *pList, Token *pToken){
+SrcList *sqliteSrcListAppend(SrcList *pList, Token *pTable, Token *pDatabase){
   if( pList==0 ){
-    pList = sqliteMalloc( sizeof(IdList) );
+    pList = sqliteMalloc( sizeof(SrcList) );
     if( pList==0 ) return 0;
   }
-  if( (pList->nSrc & 7)==0 ){
-    struct SrcList_item *a;
-    a = sqliteRealloc(pList->a, (pList->nSrc+8)*sizeof(pList->a[0]) );
-    if( a==0 ){
+  if( (pList->nSrc & 7)==1 ){
+    SrcList *pNew;
+    pNew = sqliteRealloc(pList,
+               sizeof(*pList) + (pList->nSrc+8)*sizeof(pList->a[0]) );
+    if( pNew==0 ){
       sqliteSrcListDelete(pList);
       return 0;
     }
-    pList->a = a;
+    pList = pNew;
   }
   memset(&pList->a[pList->nSrc], 0, sizeof(pList->a[0]));
-  if( pToken ){
+  if( pDatabase && pDatabase->z==0 ){
+    pDatabase = 0;
+  }
+  if( pDatabase && pTable ){
+    Token *pTemp = pDatabase;
+    pDatabase = pTable;
+    pTable = pTemp;
+  }
+  if( pTable ){
     char **pz = &pList->a[pList->nSrc].zName;
-    sqliteSetNString(pz, pToken->z, pToken->n, 0);
+    sqliteSetNString(pz, pTable->z, pTable->n, 0);
+    if( *pz==0 ){
+      sqliteSrcListDelete(pList);
+      return 0;
+    }else{
+      sqliteDequote(*pz);
+    }
+  }
+  if( pDatabase ){
+    char **pz = &pList->a[pList->nSrc].zDatabase;
+    sqliteSetNString(pz, pDatabase->z, pDatabase->n, 0);
     if( *pz==0 ){
       sqliteSrcListDelete(pList);
       return 0;
@@ -1879,6 +1917,7 @@ void sqliteSrcListDelete(SrcList *pList){
   int i;
   if( pList==0 ) return;
   for(i=0; i<pList->nSrc; i++){
+    sqliteFree(pList->a[i].zDatabase);
     sqliteFree(pList->a[i].zName);
     sqliteFree(pList->a[i].zAlias);
     if( pList->a[i].pTab && pList->a[i].pTab->isTransient ){
@@ -1888,7 +1927,6 @@ void sqliteSrcListDelete(SrcList *pList){
     sqliteExprDelete(pList->a[i].pOn);
     sqliteIdListDelete(pList->a[i].pUsing);
   }
-  sqliteFree(pList->a);
   sqliteFree(pList);
 }
 
@@ -2079,7 +2117,7 @@ void sqliteCodeVerifySchema(Parse *pParse){
   sqlite *db = pParse->db;
   Vdbe *v = sqliteGetVdbe(pParse);
   for(i=0; i<db->nDb; i++){
-    if( db->aDb[i].zName==0 || db->aDb[i].pBt==0 ) continue;
+    if( i==1 || db->aDb[i].pBt==0 ) continue;
     sqliteVdbeAddOp(v, OP_VerifyCookie, 0, db->aDb[i].schema_cookie);
   }
   pParse->schemaVerified = 1;

@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.115 2003/03/19 03:14:02 drh Exp $
+** $Id: main.c,v 1.116 2003/03/20 01:16:59 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -377,6 +377,7 @@ sqlite *sqlite_open(const char *zFilename, int mode, char **pzErrMsg){
     return 0;
   }
   db->aDb[0].zName = "main";
+  db->aDb[1].zName = "temp";
 
   /* Attempt to read the schema */
   sqliteRegisterBuiltinFunctions(db);
@@ -468,6 +469,9 @@ void sqlite_close(sqlite *db){
   for(j=0; j<db->nDb; j++){
     if( db->aDb[j].pBt ){
       sqliteBtreeClose(db->aDb[j].pBt);
+    }
+    if( j>=2 ){
+      sqliteFree(db->aDb[j].zName);
     }
   }
   if( db->aDb!=db->aDbStatic ){

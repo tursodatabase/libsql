@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.91 2003/02/20 00:44:52 drh Exp $
+** @(#) $Id: parse.y,v 1.92 2003/03/20 01:16:59 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -126,8 +126,8 @@ id(A) ::= ID(X).         {A = X;}
 // This obviates the need for the "id" nonterminal.
 //
 %fallback ID 
-  ABORT AFTER ASC BEFORE BEGIN CASCADE CLUSTER CONFLICT
-  COPY DEFERRED DELIMITERS DESC EACH END EXPLAIN FAIL FOR
+  ABORT AFTER ASC ATTACH BEFORE BEGIN CASCADE CLUSTER CONFLICT
+  COPY DATABASE DEFERRED DELIMITERS DESC DETACH EACH END EXPLAIN FAIL FOR
   IGNORE IMMEDIATE INITIALLY INSTEAD MATCH KEY
   OF OFFSET PRAGMA RAISE REPLACE RESTRICT ROW STATEMENT
   TEMP TRIGGER VACUUM VIEW.
@@ -353,8 +353,8 @@ stl_prefix(A) ::= seltablist(X) joinop(Y).    {
    if( A && A->nSrc>0 ) A->a[A->nSrc-1].jointype = Y;
 }
 stl_prefix(A) ::= .                           {A = 0;}
-seltablist(A) ::= stl_prefix(X) nm(Y) as(Z) on_opt(N) using_opt(U). {
-  A = sqliteSrcListAppend(X,&Y);
+seltablist(A) ::= stl_prefix(X) nm(Y) dbnm(D) as(Z) on_opt(N) using_opt(U). {
+  A = sqliteSrcListAppend(X,&Y,&D);
   if( Z.n ) sqliteSrcListAddAlias(A,&Z);
   if( N ){
     if( A && A->nSrc>1 ){ A->a[A->nSrc-2].pOn = N; }
@@ -366,7 +366,7 @@ seltablist(A) ::= stl_prefix(X) nm(Y) as(Z) on_opt(N) using_opt(U). {
   }
 }
 seltablist(A) ::= stl_prefix(X) LP select(S) RP as(Z) on_opt(N) using_opt(U). {
-  A = sqliteSrcListAppend(X,0);
+  A = sqliteSrcListAppend(X,0,0);
   A->a[A->nSrc-1].pSelect = S;
   if( Z.n ) sqliteSrcListAddAlias(A,&Z);
   if( N ){
@@ -378,6 +378,10 @@ seltablist(A) ::= stl_prefix(X) LP select(S) RP as(Z) on_opt(N) using_opt(U). {
     else { sqliteIdListDelete(U); }
   }
 }
+
+%type dbnm {Token}
+dbnm(A) ::= .          {A.z=0; A.n=0;}
+dbnm(A) ::= DOT nm(X). {A = X;}
 
 %type joinop {int}
 %type joinop2 {int}
@@ -447,8 +451,9 @@ limit_opt(A) ::= LIMIT INTEGER(X) COMMA INTEGER(Y).
 
 /////////////////////////// The DELETE statement /////////////////////////////
 //
-cmd ::= DELETE FROM nm(X) where_opt(Y).
-    {sqliteDeleteFrom(pParse, &X, Y);}
+cmd ::= DELETE FROM nm(X) dbnm(D) where_opt(Y). {
+   sqliteDeleteFrom(pParse, sqliteSrcListAppend(0,&X,&D), Y);
+}
 
 %type where_opt {Expr*}
 %destructor where_opt {sqliteExprDelete($$);}
@@ -461,8 +466,8 @@ where_opt(A) ::= WHERE expr(X).       {A = X;}
 
 ////////////////////////// The UPDATE command ////////////////////////////////
 //
-cmd ::= UPDATE orconf(R) nm(X) SET setlist(Y) where_opt(Z).
-    {sqliteUpdate(pParse,&X,Y,Z,R);}
+cmd ::= UPDATE orconf(R) nm(X) dbnm(D) SET setlist(Y) where_opt(Z).
+    {sqliteUpdate(pParse,sqliteSrcListAppend(0,&X,&D),Y,Z,R);}
 
 setlist(A) ::= setlist(Z) COMMA nm(X) EQ expr(Y).
     {A = sqliteExprListAppend(Z,Y,&X);}
@@ -470,10 +475,11 @@ setlist(A) ::= nm(X) EQ expr(Y).   {A = sqliteExprListAppend(0,Y,&X);}
 
 ////////////////////////// The INSERT command /////////////////////////////////
 //
-cmd ::= insert_cmd(R) INTO nm(X) inscollist_opt(F) VALUES LP itemlist(Y) RP.
-               {sqliteInsert(pParse, &X, Y, 0, F, R);}
-cmd ::= insert_cmd(R) INTO nm(X) inscollist_opt(F) select(S).
-               {sqliteInsert(pParse, &X, 0, S, F, R);}
+cmd ::= insert_cmd(R) INTO nm(X) dbnm(D) inscollist_opt(F) 
+        VALUES LP itemlist(Y) RP.
+            {sqliteInsert(pParse, sqliteSrcListAppend(0,&X,&D), Y, 0, F, R);}
+cmd ::= insert_cmd(R) INTO nm(X) dbnm(D) inscollist_opt(F) select(S).
+            {sqliteInsert(pParse, sqliteSrcListAppend(0,&X,&D), 0, S, F, R);}
 
 %type insert_cmd {int}
 insert_cmd(A) ::= INSERT orconf(R).   {A = R;}
@@ -825,3 +831,12 @@ expr(A) ::= RAISE(X) LP FAIL COMMA nm(Z) RP(Y).  {
 cmd ::= DROP TRIGGER nm(X). {
     sqliteDropTrigger(pParse,&X,0);
 }
+
+//////////////////////// ATTACH DATABASE file AS name /////////////////////////
+cmd ::= ATTACH database_kw_opt ids AS nm.
+
+database_kw_opt ::= DATABASE.
+database_kw_opt ::= .
+
+//////////////////////// DETACH DATABASE name /////////////////////////////////
+cmd ::= DETACH database_kw_opt nm.

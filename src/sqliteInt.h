@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.163 2003/03/19 03:14:02 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.164 2003/03/20 01:16:59 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -608,6 +608,7 @@ struct IdList {
 struct SrcList {
   int nSrc;        /* Number of tables or subqueries in the FROM clause */
   struct SrcList_item {
+    char *zDatabase;  /* Name of database holding this table */
     char *zName;      /* Name of the table */
     char *zAlias;     /* The "B" part of a "A AS B" phrase.  zName is the "A" */
     Table *pTab;      /* An SQL table corresponding to zName */
@@ -615,7 +616,7 @@ struct SrcList {
     int jointype;     /* Type of join between this table and the next */
     Expr *pOn;        /* The ON clause of a join */
     IdList *pUsing;   /* The USING clause of a join */
-  } *a;            /* One entry for each identifier on the list */
+  } a[1];             /* One entry for each identifier on the list */
 };
 
 /*
@@ -975,10 +976,10 @@ int sqliteViewGetColumnNames(Parse*,Table*);
 void sqliteViewResetAll(sqlite*);
 void sqliteDropTable(Parse*, Token*, int);
 void sqliteDeleteTable(sqlite*, Table*);
-void sqliteInsert(Parse*, Token*, ExprList*, Select*, IdList*, int);
+void sqliteInsert(Parse*, SrcList*, ExprList*, Select*, IdList*, int);
 IdList *sqliteIdListAppend(IdList*, Token*);
 int sqliteIdListIndex(IdList*,const char*);
-SrcList *sqliteSrcListAppend(SrcList*, Token*);
+SrcList *sqliteSrcListAppend(SrcList*, Token*, Token*);
 void sqliteSrcListAddAlias(SrcList*, Token*);
 void sqliteIdListDelete(IdList*);
 void sqliteSrcListDelete(SrcList*);
@@ -992,9 +993,8 @@ Select *sqliteSelectNew(ExprList*,SrcList*,Expr*,ExprList*,Expr*,ExprList*,
 void sqliteSelectDelete(Select*);
 void sqliteSelectUnbind(Select*);
 Table *sqliteTableNameToTable(Parse*, const char*);
-SrcList *sqliteTableTokenToSrcList(Parse*, Token*);
-void sqliteDeleteFrom(Parse*, Token*, Expr*);
-void sqliteUpdate(Parse*, Token*, ExprList*, Expr*, int);
+void sqliteDeleteFrom(Parse*, SrcList*, Expr*);
+void sqliteUpdate(Parse*, SrcList*, ExprList*, Expr*, int);
 WhereInfo *sqliteWhereBegin(Parse*, int, SrcList*, Expr*, int, ExprList**);
 void sqliteWhereEnd(WhereInfo*);
 void sqliteExprCode(Parse*, Expr*);

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.73 2003/03/19 03:14:01 drh Exp $
+** $Id: insert.c,v 1.74 2003/03/20 01:16:59 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -85,14 +85,14 @@
 */
 void sqliteInsert(
   Parse *pParse,        /* Parser context */
-  Token *pTableName,    /* Name of table into which we are inserting */
+  SrcList *pTabList,    /* Name of table into which we are inserting */
   ExprList *pList,      /* List of values to be inserted */
   Select *pSelect,      /* A SELECT statement to use as the data source */
   IdList *pColumn,      /* Column names corresponding to IDLIST. */
   int onError           /* How to handle constraint errors */
 ){
   Table *pTab;          /* The table to insert into */
-  char *zTab = 0;       /* Name of the table into which we are inserting */
+  char *zTab;           /* Name of the table into which we are inserting */
   int i, j, idx;        /* Loop counters */
   Vdbe *v;              /* Generate code into this virtual machine */
   Index *pIdx;          /* For looping over indices of the table */
@@ -117,7 +117,8 @@ void sqliteInsert(
 
   /* Locate the table into which we will be inserting new information.
   */
-  zTab = sqliteTableNameFromToken(pTableName);
+  assert( pTabList->nSrc==1 );
+  zTab = pTabList->a[0].zName;
   if( zTab==0 ) goto insert_cleanup;
   pTab = sqliteFindTable(pParse->db, zTab);
   if( pTab==0 ){
@@ -145,8 +146,6 @@ void sqliteInsert(
     pParse->nErr++;
     goto insert_cleanup;
   }
-  sqliteFree(zTab);
-  zTab = 0;
 
   if( pTab==0 ) goto insert_cleanup;
 
@@ -521,9 +520,9 @@ void sqliteInsert(
   }
 
 insert_cleanup:
+  sqliteSrcListDelete(pTabList);
   if( pList ) sqliteExprListDelete(pList);
   if( pSelect ) sqliteSelectDelete(pSelect);
-  if ( zTab ) sqliteFree(zTab);
   sqliteIdListDelete(pColumn);
 }
 

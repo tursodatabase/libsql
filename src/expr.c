@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.88 2003/01/31 17:16:37 drh Exp $
+** $Id: expr.c,v 1.89 2003/03/20 01:16:59 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -184,12 +184,12 @@ ExprList *sqliteExprListDup(ExprList *p){
 SrcList *sqliteSrcListDup(SrcList *p){
   SrcList *pNew;
   int i;
+  int nByte;
   if( p==0 ) return 0;
-  pNew = sqliteMalloc( sizeof(*pNew) );
+  nByte = sizeof(*p) + (p->nSrc>0 ? sizeof(p->a[0]) * (p->nSrc-1) : 0);
+  pNew = sqliteMalloc( nByte );
   if( pNew==0 ) return 0;
   pNew->nSrc = p->nSrc;
-  pNew->a = sqliteMalloc( p->nSrc*sizeof(p->a[0]) );
-  if( pNew->a==0 && p->nSrc != 0 ) return 0;
   for(i=0; i<p->nSrc; i++){
     pNew->a[i].zName = sqliteStrDup(p->a[i].zName);
     pNew->a[i].zAlias = sqliteStrDup(p->a[i].zAlias);

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle DELETE FROM statements.
 **
-** $Id: delete.c,v 1.46 2003/03/19 03:14:01 drh Exp $
+** $Id: delete.c,v 1.47 2003/03/20 01:16:59 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -42,41 +42,16 @@ Table *sqliteTableNameToTable(Parse *pParse, const char *zTab){
 }
 
 /*
-** Given a table name, check to make sure the table exists, is writable
-** and is not a view.  If everything is OK, construct an SrcList holding
-** the table and return a pointer to the SrcList.  The calling function
-** is responsible for freeing the SrcList when it has finished with it.
-** If there is an error, leave a message on pParse->zErrMsg and return
-** NULL.
-*/
-SrcList *sqliteTableTokenToSrcList(Parse *pParse, Token *pTableName){
-  Table *pTab;
-  SrcList *pTabList;
-
-  pTabList = sqliteSrcListAppend(0, pTableName);
-  if( pTabList==0 ) return 0;
-  assert( pTabList->nSrc==1 );
-  pTab = sqliteTableNameToTable(pParse, pTabList->a[0].zName);
-  if( pTab==0 ){
-    sqliteSrcListDelete(pTabList);
-    return 0;
-  }
-  pTabList->a[0].pTab = pTab;
-  return pTabList;
-}
-
-/*
 ** Process a DELETE FROM statement.
 */
 void sqliteDeleteFrom(
   Parse *pParse,         /* The parser context */
-  Token *pTableName,     /* The table from which we should delete things */
+  SrcList *pTabList,     /* The table from which we should delete things */
   Expr *pWhere           /* The WHERE clause.  May be null */
 ){
   Vdbe *v;               /* The virtual database engine */
   Table *pTab;           /* The table from which records will be deleted */
   char *zTab;            /* Name of the table from which we are deleting */
-  SrcList *pTabList;     /* A fake FROM clause holding just pTab */
   int end, addr;         /* A couple addresses of generated code */
   int i;                 /* Loop counter */
   WhereInfo *pWInfo;     /* Information about the WHERE clause */
@@ -92,11 +67,12 @@ void sqliteDeleteFrom(
     goto delete_from_cleanup;
   }
   db = pParse->db;
+  assert( pTabList->nSrc==1 );
 
   /* Check for the special case of a VIEW with one or more ON DELETE triggers 
   ** defined 
   */
-  zTab = sqliteTableNameFromToken(pTableName);
+  zTab = pTabList->a[0].zName;
   if( zTab != 0 ){
     pTab = sqliteFindTable(pParse->db, zTab);
     if( pTab ){
@@ -106,9 +82,9 @@ void sqliteDeleteFrom(
         sqliteTriggersExist(pParse, pTab->pTrigger, 
             TK_DELETE, TK_AFTER, TK_ROW, 0);
     }
-    sqliteFree(zTab);
     if( row_triggers_exist &&  pTab->pSelect ){
       /* Just fire VIEW triggers */
+      sqliteSrcListDelete(pTabList);
       sqliteViewTriggers(pParse, pTab, pWhere, OE_Replace, 0);
       return;
     }
@@ -119,10 +95,10 @@ void sqliteDeleteFrom(
   ** will be calling are designed to work with multiple tables and expect
   ** an SrcList* parameter instead of just a Table* parameter.
   */
-  pTabList = sqliteTableTokenToSrcList(pParse, pTableName);
-  if( pTabList==0 ) goto delete_from_cleanup;
-  assert( pTabList->nSrc==1 );
-  pTab = pTabList->a[0].pTab;
+  pTab = pTabList->a[0].pTab = sqliteTableNameToTable(pParse, zTab);
+  if( pTab==0 ){
+    goto delete_from_cleanup;
+  }
   assert( pTab->pSelect==0 );  /* This table is not a view */
   if( sqliteAuthCheck(pParse, SQLITE_DELETE, pTab->zName, 0) ){
     goto delete_from_cleanup;

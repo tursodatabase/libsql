@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.55 2003/01/29 14:06:09 drh Exp $
+** $Id: tokenize.c,v 1.56 2003/03/20 01:16:59 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -44,6 +44,7 @@ static Keyword aKeywordTable[] = {
   { "AND",               0, TK_AND,              0 },
   { "AS",                0, TK_AS,               0 },
   { "ASC",               0, TK_ASC,              0 },
+  { "ATTACH",            0, TK_ATTACH,           0 },
   { "BEFORE",            0, TK_BEFORE,           0 },
   { "BEGIN",             0, TK_BEGIN,            0 },
   { "BETWEEN",           0, TK_BETWEEN,          0 },
@@ -59,12 +60,14 @@ static Keyword aKeywordTable[] = {
   { "COPY",              0, TK_COPY,             0 },
   { "CREATE",            0, TK_CREATE,           0 },
   { "CROSS",             0, TK_JOIN_KW,          0 },
+  { "DATABASE",          0, TK_DATABASE,         0 },
   { "DEFAULT",           0, TK_DEFAULT,          0 },
   { "DEFERRED",          0, TK_DEFERRED,         0 },
   { "DEFERRABLE",        0, TK_DEFERRABLE,       0 },
   { "DELETE",            0, TK_DELETE,           0 },
   { "DELIMITERS",        0, TK_DELIMITERS,       0 },
   { "DESC",              0, TK_DESC,             0 },
+  { "DETACH",            0, TK_DETACH,           0 },
   { "DISTINCT",          0, TK_DISTINCT,         0 },
   { "DROP",              0, TK_DROP,             0 },
   { "END",               0, TK_END,              0 },

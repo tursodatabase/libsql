@@ -36,7 +36,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.208 2003/03/19 03:14:02 drh Exp $
+** $Id: vdbe.c,v 1.209 2003/03/20 01:16:59 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1210,7 +1210,6 @@ static void Cleanup(Vdbe *p){
 */
 void sqliteVdbeDelete(Vdbe *p){
   int i;
-  sqlite *db = p->db;
   if( p==0 ) return;
   Cleanup(p);
   if( p->pPrev ){
@@ -1230,13 +1229,6 @@ void sqliteVdbeDelete(Vdbe *p){
   for(i=0; i<p->nOp; i++){
     if( p->aOp[i].p3type==P3_DYNAMIC ){
       sqliteFree(p->aOp[i].p3);
-    }
-  }
-  for(i=2; i<db->nDb; i++){
-    if( db->aDb[i].pBt && db->aDb[i].zName==0 ){
-      sqliteBtreeClose(db->aDb[i].pBt);
-      db->aDb[i].pBt = 0;
-      db->aDb[i].inTrans = 0;
     }
   }
   sqliteFree(p->aOp);
@@ -1505,6 +1497,9 @@ void sqliteVdbeMakeReady(
   int isExplain                  /* True if the EXPLAIN keywords is present */
 ){
   int n;
+#ifdef MEMORY_DEBUG
+  extern int access(const char*,int);
+#endif
 
   assert( p!=0 );
   assert( p->aStack==0 );
@@ -3345,7 +3340,6 @@ case OP_SetCookie: {
 case OP_VerifyCookie: {
   int aMeta[SQLITE_N_BTREE_META];
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
-  assert( db->aDb[pOp->p1].zName!=0 );
   rc = sqliteBtreeGetMeta(db->aDb[pOp->p1].pBt, aMeta);
   if( rc==SQLITE_OK && aMeta[1]!=pOp->p2 ){
     sqliteSetString(&p->zErrMsg, "database schema has changed", 0);

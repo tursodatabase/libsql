@@ -514,24 +514,29 @@ static int codeTriggerProgram(
 	break;
       }
       case TK_UPDATE: {
+        SrcList *pSrc;
+        pSrc = sqliteSrcListAppend(0, &pTriggerStep->target, 0);
         sqliteVdbeAddOp(pParse->pVdbe, OP_ListPush, 0, 0);
-        sqliteUpdate(pParse, &pTriggerStep->target, 
+        sqliteUpdate(pParse, pSrc,
 		sqliteExprListDup(pTriggerStep->pExprList), 
 		sqliteExprDup(pTriggerStep->pWhere), orconf);
         sqliteVdbeAddOp(pParse->pVdbe, OP_ListPop, 0, 0);
         break;
       }
       case TK_INSERT: {
-        sqliteInsert(pParse, &pTriggerStep->target, 
-        sqliteExprListDup(pTriggerStep->pExprList), 
-        sqliteSelectDup(pTriggerStep->pSelect), 
-        sqliteIdListDup(pTriggerStep->pIdList), orconf);
+        SrcList *pSrc;
+        pSrc = sqliteSrcListAppend(0, &pTriggerStep->target, 0);
+        sqliteInsert(pParse, pSrc,
+          sqliteExprListDup(pTriggerStep->pExprList), 
+          sqliteSelectDup(pTriggerStep->pSelect), 
+          sqliteIdListDup(pTriggerStep->pIdList), orconf);
         break;
       }
       case TK_DELETE: {
+        SrcList *pSrc;
         sqliteVdbeAddOp(pParse->pVdbe, OP_ListPush, 0, 0);
-        sqliteDeleteFrom(pParse, &pTriggerStep->target, 
-	    sqliteExprDup(pTriggerStep->pWhere));
+        pSrc = sqliteSrcListAppend(0, &pTriggerStep->target, 0);
+        sqliteDeleteFrom(pParse, pSrc, sqliteExprDup(pTriggerStep->pWhere));
         sqliteVdbeAddOp(pParse->pVdbe, OP_ListPop, 0, 0);
         break;
       }
@@ -611,7 +616,6 @@ int sqliteCodeRowTrigger(
       Expr * whenExpr;
 
       dummyTablist.nSrc = 0;
-      dummyTablist.a = 0;
 
       /* Push an entry on to the trigger stack */
       pTriggerStack->pTrigger = pTrigger;
@@ -682,7 +686,7 @@ void sqliteViewTriggers(
 
   theSelect.isDistinct = 0;
   theSelect.pEList = sqliteExprListAppend(0, sqliteExpr(TK_ALL, 0, 0, 0), 0);
-  theSelect.pSrc   = sqliteSrcListAppend(0, &tblNameToken);
+  theSelect.pSrc   = sqliteSrcListAppend(0, &tblNameToken, 0);
   theSelect.pWhere = pWhere;    pWhere = 0;
   theSelect.pGroupBy = 0;
   theSelect.pHaving = 0;
