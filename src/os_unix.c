@@ -711,23 +711,23 @@ int sqlite3OsLock(OsFile *id, int locktype){
   ** byte'.  If this is successful, a random byte from the 'shared byte
   ** range' is read-locked and the lock on the 'pending byte' released.
   **
-  ** A process may only obtain a RESERVED lock after it has a SHARED lock
-  ** (the sqlite3OsLock() routine will try to obtain this lock
-  ** automatically if it is not already held). A RESERVED lock is
-  ** implemented by grabbing a write-lock on the 'reserved byte'. 
+  ** A process may only obtain a RESERVED lock after it has a SHARED lock.
+  ** A RESERVED lock is implemented by grabbing a write-lock on the
+  ** 'reserved byte'. 
   **
   ** A process may only obtain a PENDING lock after it has obtained a
-  ** SHARED lock (done automatically by sqlite3OsLock()). A PENDING lock is
-  ** implemented by obtaining a write-lock on the 'pending byte'. This
-  ** ensures that no new SHARED locks can be obtained, but existing SHARED
-  ** locks are allowed to persist. A process does not have to obtain a
-  ** RESERVED lock on the way to a PENDING lock. This property is used by
-  ** the algorithm for rolling back a journal file after a crash.
+  ** SHARED lock. A PENDING lock is implemented by obtaining a write-lock
+  ** on the 'pending byte'. This ensures that no new SHARED locks can be
+  ** obtained, but existing SHARED locks are allowed to persist. A process
+  ** does not have to obtain a RESERVED lock on the way to a PENDING lock.
+  ** This property is used by the algorithm for rolling back a journal file
+  ** after a crash.
   **
-  ** An EXCLUSIVE lock is implemented by obtaining a write-lock on the
-  ** entire 'shared byte range'. Since all other locks require a read-lock
-  ** on one of the bytes within this range, this ensures that no other
-  ** locks are held on the database. 
+  ** An EXCLUSIVE lock, obtained after a PENDING lock is held, is
+  ** implemented by obtaining a write-lock on the entire 'shared byte
+  ** range'. Since all other locks require a read-lock on one of the bytes
+  ** within this range, this ensures that no other locks are held on the
+  ** database. 
   **
   ** The reason a single byte cannot be used instead of the 'shared byte
   ** range' is that some versions of windows do not support read-locks. By

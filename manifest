@@ -1,5 +1,5 @@
-C Add\sa\scomment\son\sthe\simplementation\sof\ssqlite3OsLock().\sNo\scode\schanges.\s(CVS\s1688)
-D 2004-06-25T07:21:28
+C A\sfew\smore\scomment\schanges.\sNo\scode\salterations.\s(CVS\s1689)
+D 2004-06-25T08:32:26
 F Makefile.in cb7a9889c38723f72b2506c4236ff30a05ff172b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -40,17 +40,17 @@ F src/insert.c d99ffe87e1e1397f4233afcd06841d52d6b17b18
 F src/legacy.c ad23746f15f67e34577621b1875f639c94839e1f
 F src/main.c 2a4f3fe32ee6357b5b914ab5e2bd0979202570f4
 F src/md5.c 7ae1c39044b95de2f62e066f47bb1deb880a1070
-F src/os.h 2f5ea879b784bc82aac8022a3e8fe00b73c83d67
+F src/os.h d1780e0db95cad01f213d48da22ab490eb4fd345
 F src/os_common.h ba1b7306e16e2091718f2c48db0fe6c1d7a31bb8
 F src/os_mac.c 3d31e26be1411acfb7961033098631b4f3486fdf
 F src/os_mac.h 51d2445f47e182ed32d3bd6937f81070c6fd9bd4
 F src/os_test.c ef353f73a2ad85a239d7a77c4a5df2e1377f3848
 F src/os_test.h 6a26a4978492e4bbdbf385554958418ff02db162
-F src/os_unix.c 63608cd3dd4dd71a91329d35557bb0c0820d18fc
+F src/os_unix.c bd62e20d3abfb96c41fe737715b328d1dbb52bf7
 F src/os_unix.h 00c1f82b526ab2fb7ee5ddd555ea4ed68363c93a
 F src/os_win.c 84549f6cc815237533c5d0eb3697352b03478d96
 F src/os_win.h babd4e912967c6b09088cfe38a45e8005a07ba44
-F src/pager.c 706e810f8cad58b6800a1b7357e6e91c8d2bb52a
+F src/pager.c 65e1b2ed257567016cbc1777378322d9975dd9fd
 F src/pager.h bc58d32a9dee464f7268fb68652c130a4216e438
 F src/parse.y 097438674976355a10cf177bd97326c548820b86
 F src/pragma.c 0750e1c360647dbe0a991f16133b0fe5e42e5039
@@ -229,7 +229,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 197d00d6a6a440848a0b4710157272558868221c
-R 6345095e6a5c3dcc536a7580feb58513
+P 084f3fffbdeb1e2b375817ae1111b867c9d32559
+R 3d04f41857d7d71eac91c498ab85aa4a
 U danielk1977
-Z 2fac742bcbc86b6b2d476d24d96d81ed
+Z 3b801fb007c493686ca074ae1ca89a83
