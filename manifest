@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sthe\sconfigure\sscript\s(CVS\s148)
-D 2000-09-29T15:15:52
+C Fix\sa\sproblem\swith\sthe\sconfigure\sscript\s(CVS\s1703)
+D 2000-09-29T15:15:53
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 39f684ee06a661157793f01cce98d43026fc2c06
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -72,7 +72,7 @@ F www/mingw.tcl fc5f4ba9d336b6e8c97347cc6496d6162461ef60
 F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/vdbe.tcl bcbfc33bcdd0ebad95eab31286adb9e1bc289520
-P e11f7527f9187e8902db84069baad0d3b7e17ad0
+P 2aeb82db3ef6fc13eafa4fcf614e8f1dfd247abf
 R 374764ea3793b387c2fde1f92050f82f
 U drh
-Z 3aff00aa74cc9d683b8bbe857e7c925e
+Z 42aab9ea0ff2eec024d3c6a658fe82fd
