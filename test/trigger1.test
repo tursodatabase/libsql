@@ -102,6 +102,14 @@ do_test trig_cd-1.8 {
   } 
 } {0}
 
+do_test trig_cd-1.9 {
+  catchsql {
+    CREATE TRIGGER tr1 AFTER UPDATE ON sqlite_master BEGIN
+       SELECT * FROM sqlite_master;
+    END;
+  }
+} {1 {cannot create trigger on system table: sqlite_master}}
+
 catchsql {
   DROP TABLE temp_table;
 }
@@ -110,4 +118,3 @@ catchsql {
 }
 
 finish_test
-

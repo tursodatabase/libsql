@@ -541,7 +541,8 @@ execsql {
 }
 
 # 7. Triggers on views
-execsql {
+do_test trig-7.1 {
+  execsql {
   CREATE TABLE ab(a, b);
   CREATE TABLE cd(c, d);
   INSERT INTO ab VALUES (1, 2);
@@ -579,9 +580,10 @@ execsql {
     INSERT INTO tlog VALUES(NULL, 
 	0, 0, 0, 0, new.a, new.b, new.c, new.d);
    END;
-}
+  }
+} {}
 
-do_test trig-7 {
+do_test trig-7.2 {
   execsql {
     UPDATE abcd SET a = 100, b = 5*5 WHERE a = 1;
     DELETE FROM abcd WHERE a = 1;
@@ -594,4 +596,3 @@ do_test trig-7 {
  5 0 0 0 0 10 20 30 40 6 0 0 0 0 10 20 30 40 ]
 
 finish_test
-

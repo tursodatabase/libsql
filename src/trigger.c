@@ -60,6 +60,12 @@ void sqliteCreateTrigger(
       pParse->nErr++;
       goto trigger_cleanup;
     }
+    if( sqliteStrICmp(tab->zName, MASTER_NAME)==0 ){
+      sqliteSetString(&pParse->zErrMsg, "cannot create trigger on system "
+         "table: " MASTER_NAME, 0);
+      pParse->nErr++;
+      goto trigger_cleanup;
+    }
   }
 
   /* Build the Trigger object */
