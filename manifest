@@ -1,5 +1,5 @@
-C Remove\ssome\spointless\sasserts\sfrom\sbtree.c.\s(CVS\s1768)
-D 2004-06-30T01:07:02
+C Some\sextra\stests\sfor\sthe\sOP_MustBeInt\sopcode.\s(CVS\s1769)
+D 2004-06-30T02:29:03
 F Makefile.in cb7a9889c38723f72b2506c4236ff30a05ff172b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -120,7 +120,7 @@ F test/index.test b6941dd532815f278042b85f79b1a6dc16c4d729
 F test/insert.test ebbab63db4ad69395a058514bccb3cdb0a029d48
 F test/insert2.test ea5d4f8dcbc68d8ad85eaa5f03d9812757610f90
 F test/interrupt.test 9142ce4448605127640eda5e283952f75f67ed91
-F test/intpkey.test e6e0d7cca0e64ec09cbf683a4712ed2196073742
+F test/intpkey.test 8b9590b2db07696e73381da4df6c40ef10436d73
 F test/ioerr.test 7d087bfd1a1a53442940e000df936e0df0c5b886
 F test/join.test 9ef6aabaac9de51d5fc41e68d1f4355da05a84cd
 F test/join2.test c97e4c5aa65dea462145529e58212a709b4722b8
@@ -232,7 +232,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 822bee3a4eb88054cc573a7b2d7f15ea2547bc1a
-R 5fe30d03cc7544e77f198951129ec29f
+P 73eec675059f6d2178c6175268e80750378bf07b
+R 62daf07c155b652cd6cf4ae16d676643
 U drh
-Z cb5f7cb7aed6590b86a5beff0c90d405
+Z d7a37b25656f17819dd729b71cc53465

@@ -13,7 +13,7 @@
 # This file implements tests for the special processing associated
 # with INTEGER PRIMARY KEY columns.
 #
-# $Id: intpkey.test,v 1.16 2004/06/12 09:25:30 danielk1977 Exp $
+# $Id: intpkey.test,v 1.17 2004/06/30 02:29:03 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -485,5 +485,32 @@ do_test intpkey-11.1 {
 } {}
 
 integrity_check intpkey-12.1
+
+# Try to use a string that looks like a floating point number as
+# an integer primary key.  This should actually work when the floating
+# point value can be rounded to an integer without loss of data.
+#
+do_test intpkey-13.1 {
+  execsql {
+    SELECT * FROM t1 WHERE a=1;
+  }
+} {}
+do_test intpkey-13.2 {
+  execsql {
+    INSERT INTO t1 VALUES('1.0',2,3);
+    SELECT * FROM t1 WHERE a=1;
+  }
+} {1 2 3}
+do_test intpkey-13.3 {
+  catchsql {
+    INSERT INTO t1 VALUES('1.5',3,4);
+  }
+} {1 {datatype mismatch}}
+do_test intpkey-13.4 {
+  catchsql {
+    INSERT INTO t1 VALUES(x'123456',3,4);
+  }
+} {1 {datatype mismatch}}
+
 
 finish_test
