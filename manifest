@@ -1,5 +1,5 @@
-C Fix\sfor\sbug\s#6:\sCorrectly\shandle\sfunctions\sin\sthe\sWHERE\sclause\sof\sa\sjoin.\s(CVS\s513)
-D 2002-04-02T01:58:58
+C Version\s2.4.5\s(CVS\s514)
+D 2002-04-02T02:00:02
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -131,7 +131,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 734dde765b38d61feaa5520e6481c77022367892
+P bdd8ce584e16fe288a7e8386f897cb36a60e8431
 R fc0491616bb288b6a30cabaf5c86972c
 U drh
-Z 1732047b7e97478437e3cc52f209689b
+Z 00cce635d4791c94263f5a9b1d451c13
