@@ -17,6 +17,10 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2000 Aug 9} {
+<li>Treat carriage returns as white space.</li>
+}
+
 chng {2000 Aug 8} {
 <li>Added pattern matching to the ".table" command in the "sqlite"
 command shell.</li>
