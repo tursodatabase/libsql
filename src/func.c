@@ -16,13 +16,14 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.52 2004/05/24 23:48:26 danielk1977 Exp $
+** $Id: func.c,v 1.53 2004/05/25 01:13:21 danielk1977 Exp $
 */
 #include <ctype.h>
 #include <math.h>
 #include <stdlib.h>
 #include <assert.h>
 #include "sqliteInt.h"
+#include "vdbeInt.h"
 #include "os.h"
 
 /*
@@ -543,46 +544,44 @@ struct MinMaxCtx {
 ** Routines to implement min() and max() aggregate functions.
 */
 static void minmaxStep(sqlite_func *context, int argc, sqlite3_value **argv){
-  MinMaxCtx *p;
-  int (*xCompare)(const char*, const char*);
-  int mask;    /* 0 for min() or 0xffffffff for max() */
-  const char *zArg0 = sqlite3_value_data(argv[0]);
-  const char *zArg1 = sqlite3_value_data(argv[1]);
+  int max = 0;
+  int cmp = 0;
+  Mem *pArg  = (Mem *)argv[0];
+  Mem *pBest = (Mem *)sqlite3_aggregate_context(context, sizeof(*pBest));
 
-  assert( argc==2 );
-  if( zArg1[0]=='n' ){
-    xCompare = sqlite3Compare;
+  if( SQLITE3_NULL==sqlite3_value_type(argv[0]) ) return;
+
+  if( pBest->flags ){
+    max = ((sqlite3_user_data(context)==(void *)-1)?1:0);
+    cmp = sqlite3MemCompare(pBest, pArg, 0);
+    if( (max && cmp<0) || (!max && cmp>0) ){
+      sqlite3MemCopy(pBest, pArg);
+    }
   }else{
-    xCompare = strcmp;
-  }
-  mask = (int)sqlite3_user_data(context);
-  p = sqlite3_aggregate_context(context, sizeof(*p));
-  if( p==0 || argc<1 || zArg0==0 ) return;
-  if( p->z==0 || (xCompare(zArg0,p->z)^mask)<0 ){
-    int len;
-    if( !p->zBuf[0] ){
-      sqliteFree(p->z);
-    }
-    len = strlen(zArg0);
-    if( len < sizeof(p->zBuf)-1 ){
-      p->z = &p->zBuf[1];
-      p->zBuf[0] = 1;
-    }else{
-      p->z = sqliteMalloc( len+1 );
-      p->zBuf[0] = 0;
-      if( p->z==0 ) return;
-    }
-    strcpy(p->z, zArg0);
+    sqlite3MemCopy(pBest, pArg);
   }
 }
 static void minMaxFinalize(sqlite_func *context){
-  MinMaxCtx *p;
-  p = sqlite3_aggregate_context(context, sizeof(*p));
-  if( p && p->z ){
-    sqlite3_set_result_string(context, p->z, strlen(p->z));
-  }
-  if( p && !p->zBuf[0] ){
-    sqliteFree(p->z);
+  sqlite3_value *pRes;
+  pRes = (sqlite3_value *)sqlite3_aggregate_context(context, sizeof(Mem));
+  
+  if( pRes->flags ){
+    switch( sqlite3_value_type(pRes) ){
+      case SQLITE3_INTEGER: 
+        sqlite3_set_result_int(context, sqlite3_value_int(pRes));
+        break;
+      case SQLITE3_FLOAT: 
+        sqlite3_set_result_double(context, sqlite3_value_float(pRes));
+      case SQLITE3_TEXT: 
+      case SQLITE3_BLOB: 
+        sqlite3_set_result_string(context,
+            sqlite3_value_data(pRes),
+            sqlite3_value_bytes(pRes));
+        break;
+      case SQLITE3_NULL: 
+      default:
+        assert(0);
+    }
   }
 }
 

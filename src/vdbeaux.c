@@ -1462,6 +1462,33 @@ int sqlite3MemCompare(const Mem *pMem1, const Mem *pMem2, const CollSeq *pColl){
 }
 
 /*
+** Copy the contents of memory cell pFrom into pTo.
+*/
+int sqlite3MemCopy(Mem *pTo, const Mem *pFrom){
+  if( pTo->flags&MEM_Dyn ){
+    sqliteFree(pTo->z);
+  }
+
+  memcpy(pTo, pFrom, sizeof(*pFrom));
+  if( pTo->flags&MEM_Short ){
+    pTo->z = pTo->zShort;
+  }
+  else if( pTo->flags&(MEM_Ephem|MEM_Dyn) ){
+    pTo->flags = pTo->flags&(~(MEM_Static|MEM_Ephem|MEM_Short|MEM_Dyn));
+    if( pTo->n>NBFS ){
+      pTo->z = sqliteMalloc(pTo->n);
+      if( !pTo->z ) return SQLITE_NOMEM;
+      pTo->flags |= MEM_Dyn;
+    }else{
+      pTo->z = pTo->zShort;
+      pTo->flags |= MEM_Short;
+    }
+    memcpy(pTo->z, pFrom->z, pTo->n);
+  }
+  return SQLITE_OK;
+}
+
+/*
 ** The following is the comparison function for (non-integer)
 ** keys in the btrees.  This function returns negative, zero, or
 ** positive if the first key is less than, equal to, or greater than

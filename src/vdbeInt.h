@@ -361,6 +361,7 @@ int sqlite2BtreeKeyCompare(BtCursor *, const void *, int, int, int *);
 int sqlite3VdbeIdxKeyCompare(Cursor*, int , const unsigned char*, int*);
 int sqlite3VdbeIdxRowid(BtCursor *, i64 *);
 int sqlite3MemCompare(const Mem*, const Mem*, const CollSeq*);
+int sqlite3MemCopy(Mem*, const Mem*);
 int sqlite3VdbeKeyCompare(void*,int,const void*,int, const void*);
 int sqlite3VdbeRowCompare(void*,int,const void*,int, const void*);
 int sqlite3VdbeExec(Vdbe*);
