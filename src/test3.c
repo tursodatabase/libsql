@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test3.c,v 1.37 2004/05/14 16:50:06 drh Exp $
+** $Id: test3.c,v 1.38 2004/05/18 15:57:42 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -1167,7 +1167,7 @@ static int btree_varint_test(
 ){
   u32 start, mult, count, incr;
   u64 in, out;
-  int n1, n2, i;
+  int n1, n2, i, j;
   unsigned char zBuf[100];
   if( argc!=5 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
@@ -1181,21 +1181,31 @@ static int btree_varint_test(
   in = start;
   in *= mult;
   for(i=0; i<count; i++){
+    char zErr[200];
     n1 = sqlite3PutVarint(zBuf, in);
     if( n1>9 || n1<1 ){
-      Tcl_AppendResult(interp, "PutVarint returned value out of range", 0);
+      sprintf(zErr, "PutVarint returned %d - should be between 1 and 9", n1);
+      Tcl_AppendResult(interp, zErr, 0);
       return TCL_ERROR;
     }
     n2 = sqlite3GetVarint(zBuf, &out);
     if( n1!=n2 ){
-      Tcl_AppendResult(interp, \
-         "GetVarint returned value different from PutVarint", 0);
+      sprintf(zErr, "PutVarint returned %d and GetVarint returned %d", n1, n2);
+      Tcl_AppendResult(interp, zErr, 0);
       return TCL_ERROR;
     }
     if( in!=out ){
-      Tcl_AppendResult(interp, \
-         "Value read is different from value written", 0);
+      sprintf(zErr, "Wrote 0x%016llx and got back 0x%016llx", in, out);
+      Tcl_AppendResult(interp, zErr, 0);
       return TCL_ERROR;
+    }
+
+    /* In order to get realistic timings, run getVarint 19 more times.
+    ** This is because getVarint is called about 20 times more often
+    ** than putVarint.
+    */
+    for(j=0; j<19; j++){
+      sqlite3GetVarint(zBuf, &out);
     }
     in += incr;
   }
