@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.131 2005/03/21 04:04:03 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.132 2005/03/31 22:26:20 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1224,7 +1224,7 @@ extern char *sqlite3_temp_directory;
 ** This function is called to recover from a malloc() failure that occured
 ** within the SQLite library. Normally, after a single malloc() fails the 
 ** library refuses to function (all major calls return SQLITE_NOMEM).
-** This function library state so that it can be used again.
+** This function restores the library state so that it can be used again.
 **
 ** All existing statements (sqlite3_stmt pointers) must be finalized or
 ** reset before this call is made. Otherwise, SQLITE_BUSY is returned.

@@ -1,5 +1,5 @@
-C Update\scomments\sand\sdocumentation\sto\sgive\sthe\strue\smaximum\spage\ssize\sas\s32K,\nnot\s64K\sas\swas\spreviously\s(and\serroneously)\sreported.\s\sTicket\s#1194.\s(CVS\s2437)
-D 2005-03-31T21:02:46
+C Add\sa\s"const"\sdeclaration\sto\sa\sconstant.\s\sFix\sa\stypo\sin\sa\scomment.\s(CVS\s2438)
+D 2005-03-31T22:26:20
 F Makefile.in 5c00d0037104de2a50ac7647a5f12769795957a3
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -60,7 +60,7 @@ F src/printf.c 3d20b21cfecadacecac3fb7274e746cb81d3d357
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c a324af36afe5f050a1e070806ad3ededf1d58f50
 F src/shell.c 25b3217d7c64e6497225439d261a253a23efff26
-F src/sqlite.h.in 33e7201f78b3f4aa306d885b69e68fa0f0286368
+F src/sqlite.h.in 1ece9aafba94b8515b276b3de73cbabe0912d42a
 F src/sqliteInt.h 474c20597ee66bb3a666bed0abd76e7be579184a
 F src/table.c 25b3ff2b39b7d87e8d4a5da0713d68dfc06cbee9
 F src/tclsqlite.c 650b9ae64d7d9b40b3c8cd8bf27224139a10028e
@@ -79,7 +79,7 @@ F src/vdbe.c 8fa793422686f801a9379385278fb5c64563dd92
 F src/vdbe.h 7f586cb6d6b57764e5aac1f87107d6a95ddce24c
 F src/vdbeInt.h 97b62807bd001efd82006460ad8a8d72d1c8d36d
 F src/vdbeapi.c 467caa6e6fb9247528b1c7ab9132ae1b4748e8ac
-F src/vdbeaux.c f07ea8a5c3f4b2bb7505f21753ea966d2f04d4d0
+F src/vdbeaux.c 482ae8225ffa6ef050d07f627846cd2956f6a387
 F src/vdbemem.c 4e853ce3151eaf7906150da85a1b3ce1fe5e8da8
 F src/where.c c4b227458e8993decb515ed9a2fe2d4f5f8e3125
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
@@ -278,7 +278,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P 1d04c2ab299430959b8a193d4679cbc4c0be31a4
-R c50ec978eb0ab13d30afac8678728405
+P 58dd436b6572d38ea67960b8d08a0ca4359602f0
+R 4a1a43f7c6ba3d8bcf50f895dad49b29
 U drh
-Z cf6d4f7038aa022ce629a64a04d78749
+Z 17d8ec0c3783e7460fb9e5ae000b4dbf

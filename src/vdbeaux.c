@@ -191,7 +191,7 @@ static int opcodeNoPush(u8 op){
   ** error if someone builds with an awk that uses (for example) 32-bit 
   ** IEEE floats.
   */ 
-  static u32 masks[5] = {
+  static const u32 masks[5] = {
     NOPUSH_MASK_0 + (NOPUSH_MASK_1<<16),
     NOPUSH_MASK_2 + (NOPUSH_MASK_3<<16),
     NOPUSH_MASK_4 + (NOPUSH_MASK_5<<16),
