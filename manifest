@@ -1,20 +1,21 @@
-C Version\s1.0.12\s(CVS\s491)
-D 2000-10-17T01:35:00
+C Break\sout\sDBBE\sdrivers\sinto\sseparate\sfiles.\s(CVS\s157)
+D 2000-10-19T01:49:02
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
-F Makefile.in faecea9b6419cec25030b4818c9b3f7f4163b3c1
+F Makefile.in e52c865acc544f539820b2c3efad5af6e6a0c533
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
-F VERSION 0a8a772d5d713cb4d3d7b6ddedf1335436f90263
+F VERSION 8029dd7a9837bd0f6a598758411f7b68ecc8d433
 F configure 3dc1edb9dcf60215e31ff72b447935ab62211442 x
 F configure.in d892ca33db7e88a055519ce2f36dcb11020e8fff
 F doc/lemon.html e233a3e97a779c7a87e1bc4528c664a58e49dd47
 F src/build.c e2ceba852dc45ca899e68a042b29c3daab011575
-F src/dbbe.c 226daaf8c095ceb4aff48cad188dad90643f9867
-F src/dbbe.h 6337132f904e72ecb28b07390021c241397e4cbf
+F src/dbbe.c 5f8f9aa18a17e728e604dc48bc435111ce7d4f73
+F src/dbbe.h d175a04b35ea75078274e059dcbcbf7c1262d42a
+F src/dbbegdbm.c 4ac7222afff0cf91014803f8791740b6da825a2b
 F src/dbbemem.c eb3d79be7105bd80069815ee499c8e8682876378
 F src/delete.c 4d491eaf61b515516749c7ed68fa3b2ee8a09065
 F src/expr.c e8e350d7baa33bd9ed8701c159eaba5e912e0adb
 F src/insert.c f146f149ad2422a1dc3bfa7a1651a25940f98958
-F src/main.c 4774731549159ba33c031cfaf6e4c78630c80d96
+F src/main.c 6686df1f9e88fb72c3b3fc660d4595382555fb5c
 F src/parse.y 5d199034de5d29ebedb42c1c51f34db4df40cbe5
 F src/printf.c 1efb6b3e7f28a93be57132de3f8f400d2ac1460e
 F src/select.c c1de8ac34131324fa05664b06b0ae1ee9c02905d
@@ -27,7 +28,7 @@ F src/tclsqlite.c 44b08b47612a668caaf7c4ec32133b69d73ff78e
 F src/tokenize.c b0f5c12598105ec924c0733a916485f920168720
 F src/update.c 51b9ef7434b15e31096155da920302e9db0d27fc
 F src/util.c 811e0ad47f842c16555aaf361b26dab7221c1a6c
-F src/vdbe.c 7acc17367da350259107dcb1dac5590e8747b890
+F src/vdbe.c a876c75429903acb9167b741b0513ef0198f6001
 F src/vdbe.h 140cdec3c56f70483e169f8ae657bd90f9fd6e98
 F src/where.c 3dfad2ffd0aa994d5eceac88852f7189c8d1d3c8
 F test/all.test 0950c135cab7e60c07bd745ccfad1476211e5bd7
@@ -65,7 +66,7 @@ F www/arch.fig 4f246003b7da23bd63b8b0af0618afb4ee3055c8
 F www/arch.png 8dae0766d42ed3de9ed013c1341a5792bcf633e6
 F www/arch.tcl a40380c1fe0080c43e6cc5c20ed70731511b06be
 F www/c_interface.tcl 1a0b13d056625e4acb59b67edc360cfd9c92ba90
-F www/changes.tcl 4f3d27bdd02f253e38907c55768871dba3677ddf
+F www/changes.tcl 08e23dd0438b5b5ef3a67dbf57e065186343c9be
 F www/crosscompile.tcl bee79c34f6c3f162ec1c6f5294e79f73651d27ee
 F www/fileformat.tcl cfb7fba80b7275555281ba2f256c00734bcdd1c9
 F www/index.tcl b19418d506f90968deef972bf1b427d98bdf13e0
@@ -75,7 +76,7 @@ F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl ae101d5f7c07dcc59770e2a84aae09025fab2dad
 F www/vdbe.tcl bcbfc33bcdd0ebad95eab31286adb9e1bc289520
-P 17fcd3b01568e95224425b982fb77abd8b12191a
-R 9d72075e97e2decee6bef55f36d23c73
+P 7330218a912ea788b0c83fa7c7350fd6df88b18a
+R f2349cd3f015fde9fcbd6e3d9e05118d
 U drh
-Z dc6f764623dcec0a5a01e239a81f28c8
+Z f79070030a7939f47c5a891f83eee50c

@@ -17,6 +17,13 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2000 Oct 18 (1.0.13)} {
+<li>Break out the GDBM driver into a separate file in anticipation
+    to added new drivers.</li>
+<li>Allow the name of a database to be prefixed by the driver type.
+    For now, the only driver type is "gdbm:".<li>
+}
+
 chng {2000 Oct 16 (1.0.12)} {
 <li>Fixed an off-by-one error that was causing a coredump in 
     the '%q' format directive of the new

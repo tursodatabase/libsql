@@ -28,7 +28,7 @@
 ** This library was originally designed to support the following
 ** backends: GDBM, NDBM, SDBM, Berkeley DB.
 **
-** $Id: dbbe.h,v 1.7 2000/08/17 09:50:00 drh Exp $
+** $Id: dbbe.h,v 1.8 2000/10/19 01:49:02 drh Exp $
 */
 #ifndef _SQLITE_DBBE_H_
 #define _SQLITE_DBBE_H_
@@ -54,90 +54,99 @@
 typedef struct Dbbe Dbbe;
 typedef struct DbbeCursor DbbeCursor;
 
-/*
-** The 18 interface routines.
-*/
 
-/* Open a complete database */
+/*
+** Open a complete database.
+**
+** If the database name begins with "gdbm:" the GDBM driver is used.
+** If the name begins with "memory:" the in-memory driver is used.
+** The default driver is GDBM.
+*/
 Dbbe *sqliteDbbeOpen(const char *zName, int write, int create, char **pzErr);
 
-/* Close the whole database. */
-void sqliteDbbeClose(Dbbe*);
-
-/* Open a cursor into particular file of a previously opened database.
-** Create the file if it doesn't already exist and writeable!=0.  zName
-** is the base name of the file to be opened.  This routine will add
-** an appropriate path and extension to the filename to locate the 
-** actual file.
-**
-** If zName is 0 or "", then a temporary file is created that
-** will be deleted when closed.
+/*
+** This is the structure returned by sqliteDbbeOpen().  It contains pointers
+** to all access routines for the database backend.
 */
-int sqliteDbbeOpenCursor(Dbbe*, const char *zName, int writeable, DbbeCursor**);
+struct Dbbe {
+  /* Close the whole database. */
+  void (*Close)(Dbbe*);
 
-/* Delete a table from the database */
-void sqliteDbbeDropTable(Dbbe*, const char *zTableName);
+  /* Open a cursor into particular file of a previously opened database.
+  ** Create the file if it doesn't already exist and writeable!=0.  zName
+  ** is the base name of the file to be opened.  This routine will add
+  ** an appropriate path and extension to the filename to locate the 
+  ** actual file.
+  **
+  ** If zName is 0 or "", then a temporary file is created that
+  ** will be deleted when closed.
+  */
+  int (*OpenCursor)(Dbbe*, const char *zName, int writeable, DbbeCursor**);
 
-/* Reorganize a table to speed access or reduce its disk usage */
-int sqliteDbbeReorganizeTable(Dbbe*, const char *zTableName);
+  /* Delete a table from the database */
+  void (*DropTable)(Dbbe*, const char *zTableName);
 
-/* Close a cursor */
-void sqliteDbbeCloseCursor(DbbeCursor*);
+  /* Reorganize a table to speed access or reduce its disk usage */
+  int (*ReorganizeTable)(Dbbe*, const char *zTableName);
 
-/* Fetch an entry from a table with the given key.  Return 1 if
-** successful and 0 if no such entry exists.
-*/
-int sqliteDbbeFetch(DbbeCursor*, int nKey, char *pKey);
+  /* Close a cursor */
+  void (*CloseCursor)(DbbeCursor*);
 
-/* Return 1 if the given key is already in the table.  Return 0
-** if it is not.
-*/
-int sqliteDbbeTest(DbbeCursor*, int nKey, char *pKey);
+  /* Fetch an entry from a table with the given key.  Return 1 if
+  ** successful and 0 if no such entry exists.
+  */
+  int (*Fetch)(DbbeCursor*, int nKey, char *pKey);
 
-/* Retrieve the key or data used for the last fetch.  Only size
-** bytes are read beginning with the offset-th byte.  The return
-** value is the actual number of bytes read.
-*/
-int sqliteDbbeCopyKey(DbbeCursor*, int offset, int size, char *zBuf);
-int sqliteDbbeCopyData(DbbeCursor*, int offset, int size, char *zBuf);
+  /* Return 1 if the given key is already in the table.  Return 0
+  ** if it is not.
+  */
+  int (*Test)(DbbeCursor*, int nKey, char *pKey);
 
-/* Retrieve the key or data.  The result is ephemeral.  In other words,
-** the result is stored in a buffer that might be overwritten on the next
-** call to any DBBE routine.  If the results are needed for longer than
-** that, you must make a copy.
-*/
-char *sqliteDbbeReadKey(DbbeCursor*, int offset);
-char *sqliteDbbeReadData(DbbeCursor*, int offset);
+  /* Retrieve the key or data used for the last fetch.  Only size
+  ** bytes are read beginning with the offset-th byte.  The return
+  ** value is the actual number of bytes read.
+  */
+  int (*CopyKey)(DbbeCursor*, int offset, int size, char *zBuf);
+  int (*CopyData)(DbbeCursor*, int offset, int size, char *zBuf);
 
-/* Return the length of the most recently fetched key or data. */
-int sqliteDbbeKeyLength(DbbeCursor*);
-int sqliteDbbeDataLength(DbbeCursor*);
+  /* Retrieve the key or data.  The result is ephemeral.  In other words,
+  ** the result is stored in a buffer that might be overwritten on the next
+  ** call to any DBBE routine.  If the results are needed for longer than
+  ** that, you must make a copy.
+  */
+  char *(*ReadKey)(DbbeCursor*, int offset);
+  char *(*ReadData)(DbbeCursor*, int offset);
 
-/* Retrieve the next entry in the table.  The first key is retrieved
-** the first time this routine is called, or after a call to
-** sqliteDbbeRewind().  The return value is 1 if there is another
-** entry, or 0 if there are no more entries. */
-int sqliteDbbeNextKey(DbbeCursor*);
+  /* Return the length of the most recently fetched key or data. */
+  int (*KeyLength)(DbbeCursor*);
+  int (*DataLength)(DbbeCursor*);
 
-/* Make it so that the next call to sqliteDbbeNextKey() returns
-** the first entry of the table. */
-int sqliteDbbeRewind(DbbeCursor*);
+  /* Retrieve the next entry in the table.  The first key is retrieved
+  ** the first time this routine is called, or after a call to
+  ** Dbbe.Rewind().  The return value is 1 if there is another
+  ** entry, or 0 if there are no more entries. */
+  int (*NextKey)(DbbeCursor*);
 
-/* Get a new integer key for this table. */
-int sqliteDbbeNew(DbbeCursor*);
+  /* Make it so that the next call to Dbbe.NextKey() returns
+  ** the first entry of the table. */
+  int (*Rewind)(DbbeCursor*);
 
-/* Write an entry into a table.  If another entry already exists with
-** the same key, the old entry is discarded first.
-*/
-int sqliteDbbePut(DbbeCursor*, int nKey, char *pKey, int nData, char *pData);
+  /* Get a new integer key for this table. */
+  int (*New)(DbbeCursor*);
 
-/* Remove an entry from the table */
-int sqliteDbbeDelete(DbbeCursor*, int nKey, char *pKey);
+  /* Write an entry into a table.  If another entry already exists with
+  ** the same key, the old entry is discarded first.
+  */
+  int (*Put)(DbbeCursor*, int nKey, char *pKey, int nData, char *pData);
 
-/* Open a file suitable for temporary storage */
-int sqliteDbbeOpenTempFile(Dbbe*, FILE**);
+  /* Remove an entry from the table */
+  int (*Delete)(DbbeCursor*, int nKey, char *pKey);
 
-/* Close a temporary file */
-void sqliteDbbeCloseTempFile(Dbbe *, FILE *);
+  /* Open a file suitable for temporary storage */
+  int (*OpenTempFile)(Dbbe*, FILE**);
+
+  /* Close a temporary file */
+  void (*CloseTempFile)(Dbbe *, FILE *);
+};
 
 #endif /* defined(_SQLITE_DBBE_H_) */
