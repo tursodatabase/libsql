@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.32 2000/06/09 14:14:34 drh Exp $
+** $Id: vdbe.c,v 1.33 2000/06/11 23:50:13 drh Exp $
 */
 #include "sqliteInt.h"
 #include <unistd.h>
@@ -191,6 +191,7 @@ struct Vdbe {
   Agg agg;            /* Aggregate information */
   int nSet;           /* Number of sets allocated */
   Set *aSet;          /* An array of sets */
+  int nFetch;         /* Number of OP_Fetch instructions executed */
 };
 
 /*
@@ -733,28 +734,28 @@ void sqliteVdbeDelete(Vdbe *p){
 ** this array, then copy and paste it into this file, if you want.
 */
 static char *zOpName[] = { 0,
-  "Open",           "Close",          "Fetch",          "New",
-  "Put",            "Distinct",       "Found",          "NotFound",
-  "Delete",         "Field",          "KeyAsData",      "Key",
-  "Rewind",         "Next",           "Destroy",        "Reorganize",
-  "ResetIdx",       "NextIdx",        "PutIdx",         "DeleteIdx",
-  "MemLoad",        "MemStore",       "ListOpen",       "ListWrite",
-  "ListRewind",     "ListRead",       "ListClose",      "SortOpen",
-  "SortPut",        "SortMakeRec",    "SortMakeKey",    "Sort",
-  "SortNext",       "SortKey",        "SortCallback",   "SortClose",
-  "FileOpen",       "FileRead",       "FileField",      "FileClose",
-  "AggReset",       "AggFocus",       "AggIncr",        "AggNext",
-  "AggSet",         "AggGet",         "SetInsert",      "SetFound",
-  "SetNotFound",    "SetClear",       "MakeRecord",     "MakeKey",
-  "Goto",           "If",             "Halt",           "ColumnCount",
-  "ColumnName",     "Callback",       "Integer",        "String",
-  "Null",           "Pop",            "Dup",            "Pull",
-  "Add",            "AddImm",         "Subtract",       "Multiply",
-  "Divide",         "Min",            "Max",            "Like",
-  "Glob",           "Eq",             "Ne",             "Lt",
-  "Le",             "Gt",             "Ge",             "IsNull",
-  "NotNull",        "Negative",       "And",            "Or",
-  "Not",            "Concat",         "Noop",         
+  "Open",           "Close",          "Fetch",          "Fcnt",
+  "New",            "Put",            "Distinct",       "Found",
+  "NotFound",       "Delete",         "Field",          "KeyAsData",
+  "Key",            "Rewind",         "Next",           "Destroy",
+  "Reorganize",     "ResetIdx",       "NextIdx",        "PutIdx",
+  "DeleteIdx",      "MemLoad",        "MemStore",       "ListOpen",
+  "ListWrite",      "ListRewind",     "ListRead",       "ListClose",
+  "SortOpen",       "SortPut",        "SortMakeRec",    "SortMakeKey",
+  "Sort",           "SortNext",       "SortKey",        "SortCallback",
+  "SortClose",      "FileOpen",       "FileRead",       "FileField",
+  "FileClose",      "AggReset",       "AggFocus",       "AggIncr",
+  "AggNext",        "AggSet",         "AggGet",         "SetInsert",
+  "SetFound",       "SetNotFound",    "SetClear",       "MakeRecord",
+  "MakeKey",        "Goto",           "If",             "Halt",
+  "ColumnCount",    "ColumnName",     "Callback",       "Integer",
+  "String",         "Null",           "Pop",            "Dup",
+  "Pull",           "Add",            "AddImm",         "Subtract",
+  "Multiply",       "Divide",         "Min",            "Max",
+  "Like",           "Glob",           "Eq",             "Ne",
+  "Lt",             "Le",             "Gt",             "Ge",
+  "IsNull",         "NotNull",        "Negative",       "And",
+  "Or",             "Not",            "Concat",         "Noop",
 };
 
 /*
@@ -1760,8 +1761,26 @@ int sqliteVdbeExec(
             sqliteDbbeFetch(p->aTab[i].pTable, p->aStack[tos].n, 
                            p->zStack[tos]);
           }
+          p->nFetch++;
         }
         PopStack(p, 1);
+        break;
+      }
+
+      /* Opcode: Fcnt * * *
+      **
+      ** Push an integer onto the stack which is the total number of
+      ** OP_Fetch opcodes that have been executed by this virtual machine.
+      **
+      ** This instruction is used to implement the special fcnt() function
+      ** in the SQL dialect that SQLite understands.  fcnt() is used for
+      ** testing purposes.
+      */
+      case OP_Fcnt: {
+        int i = ++p->tos;
+        if( NeedStack(p, p->tos) ) goto no_mem;
+        p->aStack[i].i = p->nFetch;
+        p->aStack[i].flags = STK_Int;
         break;
       }
 
@@ -2018,6 +2037,8 @@ int sqliteVdbeExec(
         if( i>=0 && i<p->nTable && p->aTab[i].pTable!=0 ){
           if( sqliteDbbeNextKey(p->aTab[i].pTable)==0 ){
             pc = pOp->p2 - 1;
+          }else{
+            p->nFetch++;
           }
         }
         break;

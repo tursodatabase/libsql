@@ -23,7 +23,7 @@
 *************************************************************************
 ** This file contains C code routines used for processing expressions
 **
-** $Id: expr.c,v 1.14 2000/06/08 15:10:47 drh Exp $
+** $Id: expr.c,v 1.15 2000/06/11 23:50:13 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -321,6 +321,7 @@ int sqliteFuncId(Token *pToken){
      { "max",    3, FN_Max   },
      { "sum",    3, FN_Sum   },
      { "avg",    3, FN_Avg   },
+     { "fcnt",   4, FN_Fcnt  },  /* Used for testing only */
   };
   int i;
   for(i=0; i<ArraySize(aFunc); i++){
@@ -377,6 +378,17 @@ int sqliteExprCheck(Parse *pParse, Expr *pExpr, int allowAgg, int *pIsAgg){
           too_many_args = n>1;
           too_few_args = n<1;
           is_agg = 1;
+          break;
+        }
+        /* The "fcnt(*)" function always returns the number of fetch
+        ** operations that have occurred so far while processing the
+        ** SQL statement.  This information can be used by test procedures
+        ** to verify that indices are being used properly to minimize
+        ** searching.  All arguments to fcnt() are ignored.  fcnt() has
+        ** no use (other than testing) that we are aware of.
+        */
+        case FN_Fcnt: {
+          n = 0;
           break;
         }
         default: break;
@@ -555,6 +567,10 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
       int op;
       int i;
       ExprList *pList = pExpr->pList;
+      if( id==FN_Fcnt ){
+        sqliteVdbeAddOp(v, OP_Fcnt, 0, 0, 0, 0);
+        break;
+      }
       op = id==FN_Min ? OP_Min : OP_Max;
       for(i=0; i<pList->nExpr; i++){
         sqliteExprCode(pParse, pList->a[i].pExpr);
