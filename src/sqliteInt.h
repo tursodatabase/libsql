@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.109 2002/05/15 12:45:43 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.110 2002/05/16 00:13:12 danielk1977 Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -561,46 +561,147 @@ struct Parse {
   TriggerStack *trigStack;
 };
 
-struct TriggerStack {
-  Trigger *pTrigger;
-  Table *pTab;         /* Table that triggers are currently being coded as */
-  int newIdx;          /* Index of "new" temp table */
-  int oldIdx;          /* Index of "old" temp table */
-  int orconf;          /* Current orconf policy */
-  TriggerStack *pNext;
-};
-struct TriggerStep {
-  int op;               /* One of TK_DELETE, TK_UPDATE, TK_INSERT, TK_SELECT */
-  int orconf;
-
-  Select *pSelect;     /* Valid for SELECT and sometimes 
-			   INSERT steps (when pExprList == 0) */
-  Token target;         /* Valid for DELETE, UPDATE, INSERT steps */
-  Expr *pWhere;        /* Valid for DELETE, UPDATE steps */
-  ExprList *pExprList; /* Valid for UPDATE statements and sometimes 
-			   INSERT steps (when pSelect == 0)         */
-  IdList *pIdList;      /* Valid for INSERT statements only */
-
-  TriggerStep * pNext;  /* Next in the link-list */
-};
+/*
+ * Each trigger present in the database schema is stored as an instance of
+ * struct Trigger. 
+ *
+ * Pointers to instances of struct Trigger are stored in two ways.
+ * 1. In the "trigHash" hash table (part of the sqlite* that represents the 
+ *    database). This allows Trigger structures to be retrieved by name.
+ * 2. All triggers associated with a single table form a linked list, using the
+ *    pNext member of struct Trigger. A pointer to the first element of the linked
+ *    list is stored as the "pTrigger" member of the associated struct Table.
+ *
+ * The "strings" member of struct Trigger contains a pointer to the memory 
+ * referenced by the various Token structures referenced indirectly by the
+ * "pWhen", "pColumns" and "step_list" members. (ie. the memory allocated for
+ * use in conjunction with the sqliteExprMoveStrings() etc. interface).
+ *
+ * The "step_list" member points to the first element of a linked list containing
+ * the SQL statements specified as the trigger program.
+ *
+ * When a trigger is initially created, the "isCommit" member is set to FALSE.
+ * When a transaction is rolled back, any Trigger structures with "isCommit" set
+ * to FALSE are deleted by the logic in sqliteRollbackInternalChanges(). When
+ * a transaction is commited, the "isCommit" member is set to TRUE for any
+ * Trigger structures for which it is FALSE.
+ *
+ * When a trigger is dropped, using the sqliteDropTrigger() interfaced, it is 
+ * removed from the trigHash hash table and added to the trigDrop hash table. If 
+ * the transaction is rolled back, the trigger is re-added into the trigHash
+ * hash table (and hence the database schema). If the transaction is commited,
+ * then the Trigger structure is deleted permanently.
+ */
 struct Trigger {
   char *name;             /* The name of the trigger                        */
   char *table;            /* The table or view to which the trigger applies */
   int op;                 /* One of TK_DELETE, TK_UPDATE, TK_INSERT         */
-  int tr_tm;              /* One of TK_BEFORE, TK_AFTER, TK_INSTEAD         */
+  int tr_tm;              /* One of TK_BEFORE, TK_AFTER */
   Expr *pWhen;            /* The WHEN clause of the expresion (may be NULL) */
   IdList *pColumns;       /* If this is an UPDATE OF <column-list> trigger,
-                             the column names are stored in this list       */
+                             the <column-list> is stored here */
   int foreach;            /* One of TK_ROW or TK_STATEMENT */
 
   TriggerStep *step_list; /* Link list of trigger program steps             */
   char *strings;          /* pointer to allocation of Token strings */
   Trigger *pNext;         /* Next trigger associated with the table */
-  int isCommit;
+  int isCommit;           /* Set to TRUE once the trigger has been committed */
 };
 
-extern int always_code_trigger_setup;
+/*
+ * An instance of struct TriggerStep is used to store a single SQL statement
+ * that is a part of a trigger-program. 
+ *
+ * Instances of struct TriggerStep are stored in a singly linked list (linked
+ * using the "pNext" member) referenced by the "step_list" member of the 
+ * associated struct Trigger instance. The first element of the linked list is
+ * the first step of the trigger-program.
+ * 
+ * The "op" member indicates whether this is a "DELETE", "INSERT", "UPDATE" or
+ * "SELECT" statement. The meanings of the other members is determined by the 
+ * value of "op" as follows:
+ *
+ * (op == TK_INSERT)
+ * orconf    -> stores the ON CONFLICT algorithm
+ * pSelect   -> If this is an INSERT INTO ... SELECT ... statement, then
+ *              this stores a pointer to the SELECT statement. Otherwise NULL.
+ * target    -> A token holding the name of the table to insert into.
+ * pExprList -> If this is an INSERT INTO ... VALUES ... statement, then
+ *              this stores values to be inserted. Otherwise NULL.
+ * pIdList   -> If this is an INSERT INTO ... (<column-names>) VALUES ... 
+ *              statement, then this stores the column-names to be inserted into.
+ *
+ * (op == TK_DELETE)
+ * target    -> A token holding the name of the table to delete from.
+ * pWhere    -> The WHERE clause of the DELETE statement if one is specified.
+ *              Otherwise NULL.
+ * 
+ * (op == TK_UPDATE)
+ * target    -> A token holding the name of the table to update rows of.
+ * pWhere    -> The WHERE clause of the UPDATE statement if one is specified.
+ *              Otherwise NULL.
+ * pExprList -> A list of the columns to update and the expressions to update
+ *              them to. See sqliteUpdate() documentation of "pChanges" argument.
+ * 
+ */
+struct TriggerStep {
+  int op;              /* One of TK_DELETE, TK_UPDATE, TK_INSERT, TK_SELECT */
+  int orconf;          /* OE_Rollback etc. */
 
+  Select *pSelect;     /* Valid for SELECT and sometimes 
+			  INSERT steps (when pExprList == 0) */
+  Token target;        /* Valid for DELETE, UPDATE, INSERT steps */
+  Expr *pWhere;        /* Valid for DELETE, UPDATE steps */
+  ExprList *pExprList; /* Valid for UPDATE statements and sometimes 
+			   INSERT steps (when pSelect == 0)         */
+  IdList *pIdList;     /* Valid for INSERT statements only */
+
+  TriggerStep * pNext; /* Next in the link-list */
+};
+
+/*
+ * An instance of struct TriggerStack stores information required during code
+ * generation of a single trigger program. While the trigger program is being
+ * coded, its associated TriggerStack instance is pointed to by the
+ * "pTriggerStack" member of the Parse structure.
+ *
+ * The pTab member points to the table that triggers are being coded on. The 
+ * newIdx member contains the index of the vdbe cursor that points at the temp
+ * table that stores the new.* references. If new.* references are not valid
+ * for the trigger being coded (for example an ON DELETE trigger), then newIdx
+ * is set to -1. The oldIdx member is analogous to newIdx, for old.* references.
+ *
+ * The ON CONFLICT policy to be used for the trigger program steps is stored 
+ * as the orconf member. If this is OE_Default, then the ON CONFLICT clause 
+ * specified for individual triggers steps is used.
+ *
+ * struct TriggerStack has a "pNext" member, to allow linked lists to be
+ * constructed. When coding nested triggers (triggers fired by other triggers)
+ * each nested trigger stores its parent trigger's TriggerStack as the "pNext" 
+ * pointer. Once the nested trigger has been coded, the pNext value is restored
+ * to the pTriggerStack member of the Parse stucture and coding of the parent
+ * trigger continues.
+ *
+ * Before a nested trigger is coded, the linked list pointed to by the 
+ * pTriggerStack is scanned to ensure that the trigger is not about to be coded
+ * recursively. If this condition is detected, the nested trigger is not coded.
+ */
+struct TriggerStack {
+  Table *pTab;         /* Table that triggers are currently being coded on */
+  int newIdx;          /* Index of vdbe cursor to "new" temp table */
+  int oldIdx;          /* Index of vdbe cursor to "old" temp table */
+  int orconf;          /* Current orconf policy */
+  Trigger *pTrigger;
+
+  TriggerStack *pNext;
+};
+
+/*
+ * This global flag is set for performance testing of triggers. When it is set
+ * SQLite will perform the overhead of building new and old trigger references 
+ * even when no triggers exist
+ */
+extern int always_code_trigger_setup;
 
 /*
 ** Internal function prototypes

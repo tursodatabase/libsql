@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sthe\sc_interface.html\sdocumentation\sfile.\s(CVS\s568)
-D 2002-05-15T23:26:23
+C Fix\sfor\sticket\s#42:\sAdded\scomments\sto\sstructs\sTrigger,\sTriggerStep\sand\sTriggerStack.\s(CVS\s569)
+D 2002-05-16T00:13:12
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -41,7 +41,7 @@ F src/select.c 1b623a7d826ec7c245bc542b665d61724da2a62d
 F src/shell.c 5acbe59e137d60d8efd975c683dbea74ab626530
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 0038faa6d642de06b91143ee65a131bd831d020b
-F src/sqliteInt.h 26f8cefb76e9393413ac22468c8dd0ed41abf67c
+F src/sqliteInt.h 66bf5c2d48ed35efd5e663501b6c5f830bc87c37
 F src/table.c eed2098c9b577aa17f8abe89313a9c4413f57d63
 F src/tclsqlite.c 9300c9606a38bc0c75d6c0bc8a6197ab979353d1
 F src/test1.c 09d95048b66ce6dcd2bae90f443589043d7d631e
@@ -134,7 +134,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P f45c4b767a6b1451787836060235ff7499dea0de
-R 890b5588a46cb60b323a93043d1e0f01
-U drh
-Z 74a5eab30aba43ca5ee47b7427dcf401
+P 454879fa400f8c67456a483e69342bf48e3a02a4
+R 4ce29c61e08ffa335fbe57344d2ed013
+U danielk1977
+Z 4467b41aebb8cfe3136a58c0b40fd68b
