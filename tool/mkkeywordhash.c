@@ -80,20 +80,25 @@ struct Keyword {
 #else
 #  define REINDEX    1024
 #endif
+#ifdef SQLITE_OMIT_SUBQUERY
+#  define SUBQUERY   0
+#else
+#  define SUBQUERY   2048
+#endif
 #ifdef SQLITE_OMIT_TRIGGER
 #  define TRIGGER    0
 #else
-#  define TRIGGER    2048
+#  define TRIGGER    4096
 #endif
 #ifdef SQLITE_OMIT_VACUUM
 #  define VACUUM     0
 #else
-#  define VACUUM     4096
+#  define VACUUM     8192
 #endif
 #ifdef SQLITE_OMIT_VIEW
 #  define VIEW       0
 #else
-#  define VIEW       8192
+#  define VIEW       16384
 #endif
 
 
@@ -146,6 +151,7 @@ static Keyword aKeywordTable[] = {
   { "ESCAPE",           "TK_ESCAPE",       ALWAYS                 },
   { "EXCEPT",           "TK_EXCEPT",       COMPOUND               },
   { "EXCLUSIVE",        "TK_EXCLUSIVE",    ALWAYS                 },
+  { "EXISTS",           "TK_EXISTS",       SUBQUERY               },
   { "EXPLAIN",          "TK_EXPLAIN",      EXPLAIN                },
   { "FAIL",             "TK_FAIL",         CONFLICT|TRIGGER       },
   { "FETCH",            "TK_FETCH",        CURSOR                 },

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.358 2005/01/20 02:14:31 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.359 2005/01/20 13:36:20 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -832,6 +832,7 @@ struct Expr {
 #define EP_Agg          0x0002  /* Contains one or more aggregate functions */
 #define EP_Resolved     0x0004  /* IDs have been resolved to COLUMNs */
 #define EP_Error        0x0008  /* Expression contains one or more errors */
+#define EP_Not          0x0010  /* Operator preceeded by NOT */
 
 /*
 ** These macros can be used to test, set, or clear bits in the 
@@ -1016,6 +1017,7 @@ struct Select {
 #define SRT_Discard      9  /* Do not save the results anywhere */
 #define SRT_Sorter      10  /* Store results in the sorter */
 #define SRT_Subroutine  11  /* Call a subroutine to handle results */
+#define SRT_Exists      12  /* Put 0 or 1 in a memory cell */
 
 /*
 ** When a SELECT uses aggregate functions (like "count(*)" or "avg(f1)")

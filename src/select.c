@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.230 2005/01/20 13:03:10 danielk1977 Exp $
+** $Id: select.c,v 1.231 2005/01/20 13:36:20 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -504,6 +504,7 @@ static int selectInnerLoop(
     ** store the results in the appropriate memory cell and break out
     ** of the scan loop.
     */
+    case SRT_Exists:
     case SRT_Mem: {
       assert( nColumn==1 );
       if( pOrderBy ){
@@ -617,6 +618,7 @@ static void generateSortTail(
       sqlite3VdbeAddOp(v, OP_PutStrKey, (iParm&0x0000FFFF), 0);
       break;
     }
+    case SRT_Exists:
     case SRT_Mem: {
       assert( nColumn==1 );
       sqlite3VdbeAddOp(v, OP_MemStore, iParm, 1);
@@ -2373,6 +2375,7 @@ int sqlite3Select(
   /* If writing to memory or generating a set
   ** only a single column may be output.
   */
+  assert( eDest!=SRT_Exists || pEList->nExpr==1 );
   if( (eDest==SRT_Mem || eDest==SRT_Set) && pEList->nExpr>1 ){
     sqlite3ErrorMsg(pParse, "only a single result allowed for "
        "a SELECT that is part of an expression");
@@ -2460,6 +2463,7 @@ int sqlite3Select(
 
   /* Generate code for all sub-queries in the FROM clause
   */
+#if !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW)
   for(i=0; i<pTabList->nSrc; i++){
     const char *zSavedAuthContext = 0;
     int needRestoreContext;
@@ -2486,6 +2490,7 @@ int sqlite3Select(
     pHaving = p->pHaving;
     isDistinct = p->isDistinct;
   }
+#endif
 
   /* Check for the special case of a min() or max() function by itself
   ** in the result set.
@@ -2590,10 +2595,10 @@ int sqlite3Select(
     }
   }
 
-  /* Initialize the memory cell to NULL
+  /* Initialize the memory cell to NULL for SRT_Mem or 0 for SRT_Exists
   */
-  if( eDest==SRT_Mem ){
-    sqlite3VdbeAddOp(v, OP_String8, 0, 0);
+  if( eDest==SRT_Mem || eDest==SRT_Exists ){
+    sqlite3VdbeAddOp(v, eDest==SRT_Mem ? OP_String8 : OP_Integer, 0, 0);
     sqlite3VdbeAddOp(v, OP_MemStore, iParm, 1);
   }
 

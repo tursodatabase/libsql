@@ -1,5 +1,5 @@
-C Remove\sa\sfew\smore\slines\sof\scode\swhen\sSQLITE_OMIT_**\smacros\sare\sdefined.\s(CVS\s2244)
-D 2005-01-20T13:03:10
+C Added\sthe\sSQLITE_OMIT_SUBQUERY\scompile-time\soption\sand\sthe\sEXISTS\soperator.\nRegression\stests\sare\scurrently\sfailing\swith\san\sassertion\sfault.\s(CVS\s2245)
+D 2005-01-20T13:36:20
 F Makefile.in ffd81f5e926d40b457071b4de8d7c1fa18f39b5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -36,7 +36,7 @@ F src/cursor.c de73c00aefc4747ad59b5105cf38bbff0667922e
 F src/date.c f3d1f5cd1503dabf426a198f3ebef5afbc122a7f
 F src/delete.c b3accca9c38d9a67dbd724f67b04151a13735ebd
 F src/experimental.c 8cc66b2be6a011055d75ef19ed2584bcfbb585ad
-F src/expr.c 09022cbd4fbdff66fbab0f04d010d413cb06b493
+F src/expr.c 12b37893ab7e3a41d1d9e9a4931eeb3690951d1f
 F src/func.c dc188d862d7276ea897655b248e2cb17022686e3
 F src/hash.c a97721a55440b7bea31ffe471bb2f6b4123cddd5
 F src/hash.h 1b0c445e1c89ff2aaad9b4605ba61375af001e84
@@ -54,14 +54,14 @@ F src/os_win.c 3c0b0a3bc33318cf555a1cd130232ad1b9a5a711
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c 05d23abbcfa3133f716a99589e53883c10551b1f
 F src/pager.h 9eba8c53dd91eae7f3f90743b2ee242da02a9862
-F src/parse.y 276efb30de5d8582bda9b6a98b17aac6875ab3e9
+F src/parse.y 301d07db056f5125806e84994b5f41a8355d28ad
 F src/pragma.c 8ab313986673aa4c45e8693d8aabb9b95ee7b14a
 F src/printf.c 3d20b21cfecadacecac3fb7274e746cb81d3d357
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
-F src/select.c 1686f2503c9c7f9de4d564944584015b71c50ac3
+F src/select.c 8a4a38310c5168d1f6e1759494e57cf838d6d37c
 F src/shell.c 591364a0e9ca4ce53873e21e0294476c0c2b4770
 F src/sqlite.h.in 8249b697d71ef6d7f7f752ba4ca04058e9e8b5ff
-F src/sqliteInt.h c1acfbeb8b84444e5b86dfce19ff42b5854f6478
+F src/sqliteInt.h 9a582fcb8333b5a30706250282d9697654305dbc
 F src/table.c 25b3ff2b39b7d87e8d4a5da0713d68dfc06cbee9
 F src/tclsqlite.c fd27457b228118be96524dae285146c76efe032b
 F src/test1.c 59fc0f0c35cb3bccdf166f36a1a5f9ffb0b951e7
@@ -214,7 +214,7 @@ F tool/lempar.c 1e61d2b6cb9d8affa264a13336bc0c088498caa4
 F tool/memleak.awk 4e7690a51bf3ed757e611273d43fe3f65b510133
 F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
 F tool/memleak3.tcl b8eb053190e95a55dc188896afb972e8108822d6
-F tool/mkkeywordhash.c 408dccad57ed50dc67a9a1ee7fd258e0f0a07bd2
+F tool/mkkeywordhash.c db33613e94e9ed3fb0838e2c3ca4415c5fd7ec0e
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e x
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/report1.txt 9eae07f26a8fc53889b45fc833a66a33daa22816
@@ -270,7 +270,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl c3b50d3ac31c54be2a1af9b488a89d22f1e6e746
-P 5b1a9bf6aa5a5c466b88f649e322e81b8466851f
-R db2528b7bd532f73e60abad289bd81fd
-U danielk1977
-Z b2590dd052208a3aa6c3782df4f94dd4
+P 417bbba93ad7ed5c03d9db6afc12e170155bd152
+R 0a5b2b3342f1338802ba7063dbaea636
+U drh
+Z 9bd559beb0f6f23bafe4d9cc37e5f07d

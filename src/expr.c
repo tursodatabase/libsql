@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.184 2005/01/20 13:03:10 danielk1977 Exp $
+** $Id: expr.c,v 1.185 2005/01/20 13:36:20 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1176,6 +1176,7 @@ struct QueryCoder {
 ** sqlite3ExprCodeSubquery().  See comments on those routines for
 ** additional information.
 */
+#ifndef SQLITE_OMIT_SUBQUERY
 static int codeSubqueryStep(void *pArg, Expr *pExpr){
   QueryCoder *pCoder = (QueryCoder*)pArg;
   Parse *pParse = pCoder->pParse;
@@ -1263,6 +1264,7 @@ static int codeSubqueryStep(void *pArg, Expr *pExpr){
       return 1;
     }
 
+    case TK_EXISTS:
     case TK_SELECT: {
       /* This has to be a scalar SELECT.  Generate code to put the
       ** value of this select in a memory cell and record the number
@@ -1272,6 +1274,8 @@ static int codeSubqueryStep(void *pArg, Expr *pExpr){
       int nRef;
       Vdbe *v;
       int addr;
+      int sop;
+      Select *pSel;
 
       pNC = pCoder->pNC;
       if( pNC ) nRef = pNC->nRef;
@@ -1279,7 +1283,17 @@ static int codeSubqueryStep(void *pArg, Expr *pExpr){
       v = sqlite3GetVdbe(pParse);
       addr = sqlite3VdbeAddOp(v, OP_Goto, 0, 0);
       pExpr->iColumn = pParse->nMem++;
-      sqlite3Select(pParse, pExpr->pSelect, SRT_Mem,pExpr->iColumn,0,0,0,0,pNC);
+      pSel = pExpr->pSelect;
+      if( pExpr->op==TK_SELECT ){
+        sop = SRT_Mem;
+      }else{
+        static const Token one = { "1", 0, 1 };
+        sop = SRT_Exists;
+        sqlite3ExprListDelete(pSel->pEList);
+        pSel->pEList = sqlite3ExprListAppend(0, 
+                          sqlite3Expr(TK_INTEGER, 0, 0, &one), 0);
+      }
+      sqlite3Select(pParse, pSel, sop, pExpr->iColumn, 0, 0, 0, 0, pNC);
       if( pNC && pNC->nRef>nRef ){
         /* Subquery value changes.  Evaluate at each use */
         pExpr->iTable = addr+1;
@@ -1295,6 +1309,7 @@ static int codeSubqueryStep(void *pArg, Expr *pExpr){
   }
   return 0;
 }
+#endif /* SQLITE_OMIT_SUBQUERY */
 
 /*
 ** Generate code to evaluate subqueries and IN operators contained
@@ -1305,10 +1320,12 @@ static int sqlite3ExprCodeSubquery(
   NameContext *pNC,    /* First enclosing namespace.  Often NULL */
   Expr *pExpr          /* Subquery to be coded */
 ){
+#ifndef SQLITE_OMIT_SUBQUERY
   QueryCoder sCoder;
   sCoder.pParse = pParse;
   sCoder.pNC = pNC;
   walkExprTree(pExpr, codeSubqueryStep, &sCoder);
+#endif
   return 0;
 }
 
