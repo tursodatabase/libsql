@@ -1,5 +1,5 @@
-C Report\sthe\scorrect\sauthorization\scontext\sin\sthe\sauthorization\scallback\nwhen\scoding\san\sINSTEAD\sOF\strigger\son\san\supdate\sor\sdelete.\s(CVS\s936)
-D 2003-04-25T17:52:11
+C Fix\sthe\ssqlite_complete()\sroutine\sso\sthat\sit\srecognizes\s/*...*/\scomments.\nTicket\s#277.\s(CVS\s937)
+D 2003-04-26T02:31:54
 F Makefile.in 004acec253ecdde985c8ecd5b7c9accdb210378f
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -33,7 +33,7 @@ F src/func.c 882c3ed5a02be18cd904715c7ec62947a34a3605
 F src/hash.c 4fc39feb7b7711f6495ee9f2159559bedb043e1f
 F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
 F src/insert.c 19882be1edc4b1629b8f3097e2615164f2c9cecb
-F src/main.c 5e4d4d081d82840a743c57269ca3c32640cefc06
+F src/main.c 6763d9a5556b7ac04aad3819699331df9172f029
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
 F src/os.c e56853eaea5dab258ab1ccb77b4743b453516e3a
 F src/os.h 9e5bbddff123187295e3d00d49af06192cd1cd49
@@ -90,7 +90,7 @@ F test/ioerr.test 5dbaf09f96b56ee01cf3edd762b96eb4ad2c9ca4
 F test/join.test c97267c19294bf1fa4e81087edad179828bced88
 F test/limit.test 9ffb965a0f5bf7152187ef3d8d1249b96e5620bf
 F test/lock.test 388a3a10962d2d571c0c1821cc35bf069ee73473
-F test/main.test 8108ac48302027bbe4296c30b913adbe6d5d984b
+F test/main.test a028743affca67670e24c97527d1f4ad4bc2aad3
 F test/malloc.test 7ba32a9ebd3aeed52ae4aaa6d42ca37e444536fd
 F test/memdb.test 4494051bcf72df58d9c631a5bc1260cba2b021cc
 F test/memleak.test a18e6810cae96d2f6f5136920267adbefc8e1e90
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 8d3e879349fc9523c72cb46111e0058b57ce9341
-R fbd9cacc0c39e890456b02e579584ea3
+P 67746833fc8de3afff80db413bd63a362bb28218
+R b3e3bfe8164620c4480a4b87336b23e6
 U drh
-Z d170dde2366e1aeda159869f0f0e19bb
+Z 0c48e13a3396dc7d9213cbebb3486c16
