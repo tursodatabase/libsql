@@ -1,5 +1,5 @@
-C The\sVDBE\saggregate\sfunctions\suse\san\sin-memory\sbtree\sinstead\sof\sa\sdisk-based\nbtree\sfor\simproved\sperformance.\s(CVS\s1579)
-D 2004-06-12T20:42:30
+C More\sspeed\simprovements.\s(CVS\s1580)
+D 2004-06-13T00:54:02
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -26,7 +26,7 @@ F sqlite.def fc4f5734786fe4743cfe2aa98eb2da4b089edb5f
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F src/attach.c 93b8ecec4a8d7b4e9f2479e2327d90c9d01765e8
 F src/auth.c 5c2f0bea4729c98c2be3b69d6b466fc51448fe79
-F src/btree.c 281af87aa117de024f5b6c2728a2339cba9ef584
+F src/btree.c fed8a295ebb11c2ebadb473c04cd3ba55c17e934
 F src/btree.h 589427ac13bb544d298cd99726e2572a6fe4bdaa
 F src/build.c 916a84fa5f8bfd44dbe14c3d7c923dd07ee7373f
 F src/date.c 65b483caeb0e4dd663667d2f927caa058168ebff
@@ -67,7 +67,7 @@ F src/test4.c a921a69821fd30209589228e64f94e9f715b6fe2
 F src/test5.c 13ac1db35b03acbc197ceb245fe862da5ebf2369
 F src/tokenize.c 183c5d7da11affab5d70d903d33409c8c0ce6c5b
 F src/trigger.c 3ff6f24e5273767117126b712eaae24c3d6466aa
-F src/update.c 168b6d523087ca4545b74ec9f3102b1f3c6b1e38
+F src/update.c 6133c876aa126e1771cda165fd992bb0d2f8eb38
 F src/utf.c e16737b3fc4201bf7ce9bd8ced5250596aa31b76
 F src/util.c 90375fa253137562d536ccdd40b297f0fd7413fc
 F src/vacuum.c b921eb778842592e1fb48a9d4cef7e861103878f
@@ -75,7 +75,7 @@ F src/vdbe.c c71e47262d3d3539a20a489a03b9cde15ef3acb7
 F src/vdbe.h 46f74444a213129bc4b5ce40124dd8ed613b0cde
 F src/vdbeInt.h ffc7b8ed911c5bf804796a768fdb6f0568010fa2
 F src/vdbeapi.c ee350b552fc4c1c695b760f914f69e9c5556e829
-F src/vdbeaux.c f5fc39d6437d82f8a178159f079a4c3abacdbbfe
+F src/vdbeaux.c 7b45d4934cddcf0fb79feac13c3399165774d35c
 F src/vdbemem.c 34f59988831ea032b7f526c2c73175f9f4c0f3ad
 F src/where.c dda77afaa593cd54e5955ec433076de18faf62f6
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
@@ -223,7 +223,7 @@ F www/support.tcl 1801397edd271cc39a2aadd54e701184b5181248
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P e42316f5708de6f639b7b54e08d4be73b45367e9
-R 9f1d93376dedf808e4c658f32dc84e20
+P 8029f1e465b900215acdff48c8eefb53c71341a8
+R 138e81a320888ca19cc24892b2fcae4f
 U drh
-Z 2c45278e0a9f61b73b24c4008e2c8da4
+Z cc9b57c631b9118103ce79035012013e

@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.163 2004/06/09 20:03:09 drh Exp $
+** $Id: btree.c,v 1.164 2004/06/13 00:54:02 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1484,7 +1484,7 @@ int sqlite3BtreeCursor(
       return rc;
     }
   }
-  pCur = sqliteMalloc( sizeof(*pCur) );
+  pCur = sqliteMallocRaw( sizeof(*pCur) );
   if( pCur==0 ){
     rc = SQLITE_NOMEM;
     goto create_cursor_exception;
@@ -1492,6 +1492,7 @@ int sqlite3BtreeCursor(
   pCur->pgnoRoot = (Pgno)iTable;
   if( iTable==1 && sqlite3pager_pagecount(pBt->pPager)==0 ){
     rc = SQLITE_EMPTY;
+    pCur->pPage = 0;
     goto create_cursor_exception;
   }
   rc = getAndInitPage(pBt, pCur->pgnoRoot, &pCur->pPage, 0);

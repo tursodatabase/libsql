@@ -304,7 +304,7 @@ void sqlite3VdbeChangeP3(Vdbe *p, int addr, const char *zP3, int n){
     int nField, nByte;
     nField = ((KeyInfo*)zP3)->nField;
     nByte = sizeof(*pKeyInfo) + (nField-1)*sizeof(pKeyInfo->aColl[0]);
-    pKeyInfo = sqliteMalloc( nByte );
+    pKeyInfo = sqliteMallocRaw( nByte );
     pOp->p3 = (char*)pKeyInfo;
     if( pKeyInfo ){
       memcpy(pKeyInfo, zP3, nByte);

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.82 2004/06/10 10:50:45 danielk1977 Exp $
+** $Id: update.c,v 1.83 2004/06/13 00:54:02 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -81,7 +81,7 @@ void sqlite3Update(
       goto update_cleanup;
     }
   }
-  aXRef = sqliteMalloc( sizeof(int) * pTab->nCol );
+  aXRef = sqliteMallocRaw( sizeof(int) * pTab->nCol );
   if( aXRef==0 ) goto update_cleanup;
   for(i=0; i<pTab->nCol; i++) aXRef[i] = -1;
 
@@ -166,7 +166,7 @@ void sqlite3Update(
     if( i<pIdx->nColumn ) nIdx++;
   }
   if( nIdxTotal>0 ){
-    apIdx = sqliteMalloc( sizeof(Index*) * nIdx + nIdxTotal );
+    apIdx = sqliteMallocRaw( sizeof(Index*) * nIdx + nIdxTotal );
     if( apIdx==0 ) goto update_cleanup;
     aIdxUsed = (char*)&apIdx[nIdx];
   }
