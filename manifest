@@ -1,5 +1,5 @@
-C Updates\sto\sthe\sC-language\sAPI\sdocuments\sfor\sversion\s3.0.\s(CVS\s1840)
-D 2004-07-21T14:07:58
+C Update\sthe\sTCL\sAPI\sdocumentation.\s(CVS\s1841)
+D 2004-07-21T14:54:50
 F Makefile.in 4a5e570a9e2d35b09c31b3cf01b78cea764ade4b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -233,11 +233,11 @@ F www/quickstart.tcl 4e97bef825e6a4153c43afb9f97235fc4da278ab
 F www/speed.tcl 19cf0c1bf73c4b534dfafc95b3eacff4825740b4
 F www/sqlite.tcl b51fd15f0531a54874de785a9efba323eecd5975
 F www/support.tcl 96c8324cea27b5ded53ff5c60c127ba2053f688e
-F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
+F www/tclsqlite.tcl 06a86cba4d7fc88e2bcd633b57702d3d16abebb5
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 65c3af74c16c9fe0341b1e7e6d029927503f7404
-R 86f621dbcf22f7ac329aac2fafa03b69
+P 814c58d470922d77cfcc6c4d5d26c1ec4c28ca60
+R 989c0b62d999fe7b2d2fdf46e2127970
 U drh
-Z 622f440ec16a414813d23dde7141b3ba
+Z 09b729a02d4b7660bd6c731be4f9bb7d

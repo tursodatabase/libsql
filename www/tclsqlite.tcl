@@ -1,9 +1,13 @@
 #
 # Run this Tcl script to generate the tclsqlite.html file.
 #
-set rcsid {$Id: tclsqlite.tcl,v 1.9 2004/05/31 15:06:30 drh Exp $}
+set rcsid {$Id: tclsqlite.tcl,v 1.10 2004/07/21 14:54:50 drh Exp $}
 source common.tcl
 header {The Tcl interface to the SQLite library}
+proc METHOD {name text} {
+  puts "<a name=\"$name\">\n<h3>The \"$name\" method</h3>\n"
+  puts $text
+}
 puts {
 <h2>The Tcl interface to the SQLite library</h2>
 
@@ -14,21 +18,22 @@ programming interface.</p>
 <h3>The API</h3>
 
 <p>The interface to the SQLite library consists of single
-tcl command named <b>sqlite</b>.  Because there is only this
+tcl command named <b>sqlite</b> (version 2.8) or <b>sqlite3</b>
+(version 3.0).  Because there is only this
 one interface command, the interface is not placed in a separate
 namespace.</p>
 
-<p>The <b>sqlite</b> command is used as follows:</p>
+<p>The <b>sqlite3</b> command is used as follows:</p>
 
 <blockquote>
-<b>sqlite</b>&nbsp;&nbsp;<i>dbcmd&nbsp;&nbsp;database-name</i>
+<b>sqlite3</b>&nbsp;&nbsp;<i>dbcmd&nbsp;&nbsp;database-name</i>
 </blockquote>
 
 <p>
-The <b>sqlite</b> command opens the database named in the second
+The <b>sqlite3</b> command opens the database named in the second
 argument.  If the database does not already exist, it is
 automatically created.
-The <b>sqlite</b> command also creates a new Tcl
+The <b>sqlite3</b> command also creates a new Tcl
 command to control the database.  The name of the new Tcl command
 is given by the first argument.  This approach is similar to the
 way widgets are created in Tk.
@@ -41,26 +46,44 @@ the database is stored.
 
 <p>
 Once an SQLite database is open, it can be controlled using 
-methods of the <i>dbcmd</i>.  There are currently 7 methods
+methods of the <i>dbcmd</i>.  There are currently 17 methods
 defined:</p>
 
 <p>
 <ul>
-<li> busy
-<li> changes
-<li> close
-<li> complete
-<li> eval
-<li> last_insert_rowid
-<li> onecolumn
-<li> timeout
+}
+foreach m [lsort {
+ authorizer
+ busy
+ changes
+ close
+ collate
+ collation_needed
+ commit_hook
+ complete
+ errorcode
+ eval
+ function
+ last_insert_rowid
+ onecolumn
+ progress
+ timeout
+ total_changes
+ trace
+}] {
+ puts "<li><a href=\"#$m\">$m</a></li>"
+}
+puts {
 </ul>
 </p>
 
-<p>We will explain all of these methods, though not in that order.
-We will be begin with the "close" method.</p>
+<p>The use of each of these methods will be explained in the sequel, though
+not in the order shown above.</p>
 
-<h3>The "close" method</h3>
+}
+
+##############################################################################
+METHOD close {
 
 <p>
 As its name suggests, the "close" method to an SQLite database just
@@ -70,7 +93,7 @@ immediately closing a database:
 </p>
 
 <blockquote>
-<b>sqlite db1 ./testdb<br>
+<b>sqlite3 db1 ./testdb<br>
 db1 close</b>
 </blockquote>
 
@@ -80,12 +103,13 @@ as invoking the "close" method.  So the following code is equivalent
 to the previous:</p>
 
 <blockquote>
-<b>sqlite db1 ./testdb<br>
+<b>sqlite3 db1 ./testdb<br>
 rename db1 {}</b>
 </blockquote>
+}
 
-<h3>The "eval" method</h3>
-
+##############################################################################
+METHOD eval {
 <p>
 The most useful <i>dbcmd</i> method is "eval".  The eval method is used
 to execute SQL on the database.  The syntax of the eval method looks
@@ -93,7 +117,7 @@ like this:</p>
 
 <blockquote>
 <i>dbcmd</i>&nbsp;&nbsp;<b>eval</b>&nbsp;&nbsp;<i>sql</i>
-&nbsp;&nbsp;?<i>array-name&nbsp;&nbsp;script</i>?
+&nbsp;&nbsp;&nbsp;&nbsp;?<i>array-name&nbsp;&nbsp;script</i>?
 </blockquote>
 
 <p>
@@ -102,7 +126,7 @@ given in the second argument.  For example, to create a new table in
 a database, you can do this:</p>
 
 <blockquote>
-<b>sqlite db1 ./testdb<br>
+<b>sqlite3 db1 ./testdb<br>
 db1 eval {CREATE TABLE t1(a int, b text)}</b>
 </blockquote>
 
@@ -128,8 +152,8 @@ set x [db1 eval {SELECT * FROM t1 ORDER BY a}]</b>
 
 <p>You can also process the results of a query one row at a time
 by specifying the name of an array variable and a script following
-the SQL code.  For each row of the query result, the value of each
-column will be inserted into the array variable and the script will
+the SQL code.  For each row of the query result, the values of all
+columns will be inserted into the array variable and the script will
 be executed.  For instance:</p>
 
 <blockquote>
@@ -183,8 +207,10 @@ a=1 b=hello<br>
 a=2 b=goodbye<br>
 a=3 b=howdy!</b>
 </blockquote>
+}
 
-<h3>The "complete" method</h3>
+##############################################################################
+METHOD complete {
 
 <p>
 The "complete" method takes a string of supposed SQL as its only argument.
@@ -193,18 +219,20 @@ there is more to be entered.</p>
 
 <p>The "complete" method is useful when building interactive applications
 in order to know when the user has finished entering a line of SQL code.
-This is really just an interface to the <b>sqlite_complete()</b> C
+This is really just an interface to the <b>sqlite3_complete()</b> C
 function.  Refer to the <a href="c_interface.html">C/C++ interface</a>
 specification for additional information.</p>
+}
 
-<h3>The "timeout" method</h3>
+##############################################################################
+METHOD timeout {
 
 <p>The "timeout" method is used to control how long the SQLite library
 will wait for locks to clear before giving up on a database transaction.
 The default timeout is 0 millisecond.  (In other words, the default behavior
 is not to wait at all.)</p>
 
-<p>The SQlite database allows multiple simultaneous
+<p>The SQLite database allows multiple simultaneous
 readers or a single writer but not both.  If any process is writing to
 the database no other process is allows to read or write.  If any process
 is reading the database other processes are allowed to read but not write.
@@ -223,25 +251,51 @@ number.  For example:</p>
 <p>The argument to the timeout method is the maximum number of milliseconds
 to wait for the lock to clear.  So in the example above, the maximum delay
 would be 2 seconds.</p>
+}
 
-<h3>The "busy" method</h3>
+##############################################################################
+METHOD busy {
 
 <p>The "busy" method, like "timeout", only comes into play when the
 database is locked.  But the "busy" method gives the programmer much more
 control over what action to take.  The "busy" method specifies a callback
 Tcl procedure that is invoked whenever SQLite tries to open a locked
 database.  This callback can do whatever is desired.  Presumably, the
-callback will do some other useful work for a short while then return
+callback will do some other useful work for a short while (such as service
+GUI events) then return
 so that the lock can be tried again.  The callback procedure should
 return "0" if it wants SQLite to try again to open the database and
 should return "1" if it wants SQLite to abandon the current operation.
+}
 
-<h3>The "last_insert_rowid" method</h3>
+##############################################################################
+METHOD last_insert_rowid {
 
 <p>The "last_insert_rowid" method returns an integer which is the ROWID
 of the most recently inserted database row.</p>
+}
 
-<h3>The "onecolumn" method</h3>
+##############################################################################
+METHOD function {
+
+<p>The "function" method registers new SQL functions with the SQLite engine.
+The arguments are the name of the new SQL function and a TCL command that
+implements that function.  Arguments to the function are appended to the
+TCL command before it is invoked.</p>
+
+<p>
+The following example creates a new SQL function named "hex" that converts
+its numeric argument in to a hexadecimal encoded string:
+</p>
+
+<blockquote><b>
+db function hex {format 0x%X}
+</b></blockquote>
+
+}
+
+##############################################################################
+METHOD onecolumn {
 
 <p>The "onecolumn" method works like "eval" in that it evaluates the
 SQL query statement given as its argument.  The difference is that
@@ -251,12 +305,110 @@ first row of the query result.</p>
 <p>This is a convenience method.  It saves the user from having to
 do a "<tt>[lindex&nbsp;...&nbsp;0]</tt>" on the results of an "eval"
 in order to extract a single column result.</p>
+}
 
-<h3>The "changes" method</h3>
+##############################################################################
+METHOD changes {
 
 <p>The "changes" method returns an integer which is the number of rows
 in the database that were inserted, deleted, and/or modified by the most
 recent "eval" method.</p>
-
 }
+
+##############################################################################
+METHOD total_changes {
+
+<p>The "total_changes" method returns an integer which is the number of rows
+in the database that were inserted, deleted, and/or modified since the
+current database connection was first opened.</p>
+}
+
+##############################################################################
+METHOD authorizer {
+
+<p>The "authorizer" method provides access to the sqlite3_set_authorizer
+C/C++ interface.  The argument to authorizer is the name of a procedure that
+is called when SQL statements are being compiled in order to authorize
+certain operations.  The callback procedure takes 5 arguments which describe
+the operation being coded.  If the callback returns the text string
+"SQLITE_OK", then the operation is allowed.  If it returns "SQLITE_IGNORE",
+then the operation is silently disabled.  If the return is "SQLITE_DENY"
+then the compilation fails with an error.
+</p>
+
+<p>If the argument is an empty string then the authorizer is disabled.
+If the argument is omitted, then the current authorizer is returned.</p>
+}
+
+##############################################################################
+METHOD progress {
+
+<p>This method registers a callback that is invoked periodically during
+query processing.  There are two arguments: the number of SQLite virtual
+machine opcodes between invocations, and the TCL command to invoke.
+Setting the progress callback to an empty string disables it.</p>
+
+<p>The progress callback can be used to display the status of a lengthy
+query or to process GUI events during a lengthy query.</p>
+}
+
+
+##############################################################################
+METHOD collate {
+
+<p>This method registers new text collating sequences.  There are
+two arguments: the name of the collating sequence and the name of a
+TCL procedure that implements a comparison function for the collating
+sequence.
+</p>
+
+<p>For example, the following code implements a collating sequence called
+"NOCASE" that sorts in text order without regard to case:
+</p>
+
+<blockquote><b>
+proc nocase_compare {a b} {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;return [string compare [string tolower $a] [string tolower $b]]<br>
+}<br>
+db collate NOCASE nocase_compare<br>
+</b></blockquote>
+}
+
+##############################################################################
+METHOD collation_needed {
+
+<p>This method registers a callback routine that is invoked when the SQLite
+engine needs a particular collating sequence but does not have that
+collating sequence registered.  The callback can register the collating
+sequence.  The callback is invoked with a single parameter which is the
+name of the needed collating sequence.</p>
+}
+
+##############################################################################
+METHOD commit_hook {
+
+<p>This method registers a callback routine that is invoked just before
+SQLite tries to commit changes to a database.  If the callback throws
+an exception or returns a non-zero result, then the transaction rolls back
+rather than commit.</p>
+}
+
+##############################################################################
+METHOD errorcode {
+
+<p>This method returns the numeric error code that resulted from the most
+recent SQLite operation.</p>
+}
+
+##############################################################################
+METHOD trace {
+
+<p>The "trace" method registers a callback that is invoked as each SQL
+statement is compiled.  The text of the SQL is appended as a single string
+to the command before it is invoked.  This can be used (for example) to
+keep a log of all SQL operations that an application performs.
+</p>
+}
+
+
 footer $rcsid
