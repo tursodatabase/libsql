@@ -1,5 +1,5 @@
-C Change\slemon\sto\suse\s<stdarg.h>\sinstead\sof\s<varargs.h>\sbecause\sGCC\sno\slonger\nsupports\svarargs.h.\s\sTickets\s#288\sand\s#280.\s\sIronically,\slemon\soriginally\nused\svarargs.h\sbecause\sstdarg.h\swas\snot\ssupported\sby\sthe\scompiler\sI\swas\nusing\sin\s1989\s(which\swas\sgcc\sif\sI\srecall\scorrectly.)\s(CVS\s905)
-D 2003-04-15T01:49:49
+C Do\snot\srecord\sthe\sinserted\srowid\son\swhen\sdoing\san\sINSERT\swithin\sa\strigger.\nTicket\s#290.\s(CVS\s906)
+D 2003-04-15T14:01:43
 F Makefile.in df3a4db41a7450468b5fe934d9dd8f723b631249
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -58,7 +58,7 @@ F src/trigger.c bd5a5b234b47f28f9f21a46243dcaf1c5b2383a3
 F src/update.c b368369f1fbe6d7f56a53e5ffad3b75dae9e3e1a
 F src/util.c 8953c612a036e30f24c1c1f5a1498176173daa37
 F src/vacuum.c ac65e9578506a0cdf70ece2668e5b22f4895477c
-F src/vdbe.c cf9ef07b1fce5a340d8926a493f9313208f1773f
+F src/vdbe.c 0fa25d177b02523dbdcb48395053ed5cc21829ee
 F src/vdbe.h 985c24f312d10f9ef8f9a8b8ea62fcdf68e82f21
 F src/where.c e5733f7d5e9cc4ed3590dc3401f779e7b7bb8127
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
@@ -101,7 +101,7 @@ F test/pragma.test d45d130f532bfe86ebd5ba74862d88b36ded8998
 F test/printf.test a29b8afa24edb4411adfe473b12ac32c84098fce
 F test/quick.test c527bdb899b12a8cd8ceecce45f72922099f4095
 F test/quote.test 08f23385c685d3dc7914ec760d492cacea7f6e3d
-F test/rowid.test 4c55943300cddf73dd0f88d40a268cab14c83274
+F test/rowid.test 82bd07c959eb56ce14feb85cac591750af714ddf
 F test/select1.test 0d708cec567104653ec9aa49fecf3444a2e7d150
 F test/select2.test aceea74fd895b9d007512f72499db589735bd8e4
 F test/select3.test 445a1a3dde4e2fd32541b311f55da5e2f8079d76
@@ -161,7 +161,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P e76787f877c456abdc8bc88bfefc50eaeed68744
-R 2082ff273f79da67ec128510ffa08236
+P 7902e4778ec86e25ad949ae7a6d55b63ac0e85f3
+R dd4a1ed15ab6eb4c2551ae58dad32820
 U drh
-Z 21cc95134a25d7c9da7271d70e2e3747
+Z 207b6a42d8bab1444378577acd311c3c

@@ -12,7 +12,7 @@
 # focus of this file is testing the magic ROWID column that is
 # found on all tables.
 #
-# $Id: rowid.test,v 1.8 2002/02/19 22:42:06 drh Exp $
+# $Id: rowid.test,v 1.9 2003/04/15 14:01:44 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -352,5 +352,58 @@ do_test rowid-7.8 {
     SELECT * FROM t2;
   }
 } {2 66 3 111}
+
+# Make sure AFTER triggers that do INSERTs do not change the last_insert_rowid.
+# Ticket #290
+#
+do_test rowid-8.1 {
+  execsql {
+    CREATE TABLE t3(a integer primary key);
+    CREATE TABLE t4(x);
+    INSERT INTO t4 VALUES(1);
+    CREATE TRIGGER r3 AFTER INSERT on t3 FOR EACH ROW BEGIN
+      INSERT INTO t4 VALUES(NEW.a+10);
+    END;
+    SELECT * FROM t3;
+  }
+} {}
+do_test rowid-8.2 {
+  execsql {
+    SELECT rowid, * FROM t4;
+  }
+} {1 1}
+do_test rowid-8.3 {
+  execsql {
+    INSERT INTO t3 VALUES(123);
+    SELECT last_insert_rowid();
+  }
+} {123}
+do_test rowid-8.4 {
+  execsql {
+    SELECT * FROM t3;
+  }
+} {123}
+do_test rowid-8.5 {
+  execsql {
+    SELECT rowid, * FROM t4;
+  }
+} {1 1 2 133}
+do_test rowid-8.6 {
+  execsql {
+    INSERT INTO t3 VALUES(NULL);
+    SELECT last_insert_rowid();
+  }
+} {124}
+do_test rowid-8.7 {
+  execsql {
+    SELECT * FROM t3;
+  }
+} {123 124}
+do_test rowid-8.8 {
+  execsql {
+    SELECT rowid, * FROM t4;
+  }
+} {1 1 2 133 3 {}}
+
 
 finish_test
