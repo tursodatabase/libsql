@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc1.test,v 1.15 2002/09/17 03:20:46 drh Exp $
+# $Id: misc1.test,v 1.16 2002/10/22 23:38:04 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -102,6 +102,10 @@ do_test misc1-2.1 {
 do_test misc1-2.2 {
   execsql {SELECT sum(one), two, four FROM agger
            GROUP BY two, four ORDER BY sum(one) desc}
+} {8 two no 6 one yes 4 two yes 3 thr yes}
+do_test misc1-2.3 {
+  execsql {SELECT sum((one)), (two), (four) FROM agger
+           GROUP BY (two), (four) ORDER BY sum(one) desc}
 } {8 two no 6 one yes 4 two yes 3 thr yes}
 
 # Here's a test for a bug found by Joel Lucsy.  The code below

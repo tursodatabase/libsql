@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.113 2002/10/20 15:53:04 drh Exp $
+** $Id: select.c,v 1.114 2002/10/22 23:38:04 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -157,7 +157,6 @@ static void addWhereTerm(
 
   dummy.z = zCol;
   dummy.n = strlen(zCol);
-  dummy.base = 1;
   dummy.dyn = 0;
   pE1a = sqliteExpr(TK_ID, 0, 0, &dummy);
   pE2a = sqliteExpr(TK_ID, 0, 0, &dummy);
@@ -664,9 +663,9 @@ static void generateColumnNames(
         zCol = pTab->aCol[iCol].zName;
         zType = pTab->aCol[iCol].zType;
       }
-      if( p->token.z && p->token.z[0] && !showFullNames ){
+      if( p->span.z && p->span.z[0] && !showFullNames ){
         int addr = sqliteVdbeAddOp(v,OP_ColumnName, i, 0);
-        sqliteVdbeChangeP3(v, -1, p->token.z, p->token.n);
+        sqliteVdbeChangeP3(v, -1, p->span.z, p->span.n);
         sqliteVdbeCompressSpace(v, addr);
       }else if( pTabList->nSrc>1 || showFullNames ){
         char *zName = 0;
@@ -682,13 +681,9 @@ static void generateColumnNames(
         sqliteVdbeAddOp(v, OP_ColumnName, i, 0);
         sqliteVdbeChangeP3(v, -1, zCol, 0);
       }
-    }else if( p->token.z && p->token.z[0] && !showFullNames ){
+    }else if( p->span.z && p->span.z[0] ){
       int addr = sqliteVdbeAddOp(v,OP_ColumnName, i, 0);
-      sqliteVdbeChangeP3(v, -1, p->token.z, p->token.n);
-      sqliteVdbeCompressSpace(v, addr);
-    }else if( p->token.z && p->token.z[0] ){
-      int addr = sqliteVdbeAddOp(v,OP_ColumnName, i, 0);
-      sqliteVdbeChangeP3(v, -1, p->token.z, p->token.n);
+      sqliteVdbeChangeP3(v, -1, p->span.z, p->span.n);
       sqliteVdbeCompressSpace(v, addr);
     }else{
       char zName[30];
@@ -755,8 +750,8 @@ Table *sqliteResultSetOfSelect(Parse *pParse, char *zTabName, Select *pSelect){
     Expr *p;
     if( pEList->a[i].zName ){
       pTab->aCol[i].zName = sqliteStrDup(pEList->a[i].zName);
-    }else if( (p=pEList->a[i].pExpr)->token.z && p->token.z[0] ){
-      sqliteSetNString(&pTab->aCol[i].zName, p->token.z, p->token.n, 0);
+    }else if( (p=pEList->a[i].pExpr)->span.z && p->span.z[0] ){
+      sqliteSetNString(&pTab->aCol[i].zName, p->span.z, p->span.n, 0);
     }else if( p->op==TK_DOT && p->pRight && p->pRight->token.z &&
            p->pRight->token.z[0] ){
       sqliteSetNString(&pTab->aCol[i].zName, 
@@ -922,7 +917,6 @@ static int fillInColumnList(Parse *pParse, Select *p){
             pRight->token.z = zName;
             pRight->token.n = strlen(zName);
             pRight->token.dyn = 0;
-            pRight->token.base = 1;
             if( zTabName && pTabList->nSrc>1 ){
               pLeft = sqliteExpr(TK_ID, 0, 0, 0);
               pExpr = sqliteExpr(TK_DOT, pLeft, pRight, 0);
@@ -930,13 +924,15 @@ static int fillInColumnList(Parse *pParse, Select *p){
               pLeft->token.z = zTabName;
               pLeft->token.n = strlen(zTabName);
               pLeft->token.dyn = 0;
-              pLeft->token.base = 1;
-              sqliteSetString((char**)&pExpr->token.z, zTabName, ".", zName, 0);
-              pExpr->token.n = strlen(pExpr->token.z);
-              pExpr->token.base = 0;
-              pExpr->token.dyn = 1;
+              sqliteSetString((char**)&pExpr->span.z, zTabName, ".", zName, 0);
+              pExpr->span.n = strlen(pExpr->span.z);
+              pExpr->span.dyn = 1;
+              pExpr->token.z = 0;
+              pExpr->token.n = 0;
+              pExpr->token.dyn = 0;
             }else{
               pExpr = pRight;
+              pExpr->span = pExpr->token;
             }
             pNew = sqliteExprListAppend(pNew, pExpr, 0);
           }
@@ -1344,8 +1340,8 @@ static void substExpr(Expr *pExpr, int iTable, ExprList *pEList, int iSub){
     pExpr->iTable = pNew->iTable;
     pExpr->iColumn = pNew->iColumn;
     pExpr->iAgg = pNew->iAgg;
-    pExpr->nFuncName = pNew->nFuncName;
     sqliteTokenCopy(&pExpr->token, &pNew->token);
+    sqliteTokenCopy(&pExpr->span, &pNew->span);
     if( iSub!=iTable ){
       changeTables(pExpr, iSub, iTable);
     }
@@ -1467,10 +1463,9 @@ static int flattenSubquery(
   substExprList(p->pEList, iParent, pSub->pEList, iSub);
   pList = p->pEList;
   for(i=0; i<pList->nExpr; i++){
-    if( pList->a[i].zName==0 ){
-      Expr *pExpr = pList->a[i].pExpr;
-      assert( pExpr->token.z!=0 );
-      pList->a[i].zName = sqliteStrNDup(pExpr->token.z, pExpr->token.n);
+    Expr *pExpr;
+    if( pList->a[i].zName==0 && (pExpr = pList->a[i].pExpr)->span.z!=0 ){
+      pList->a[i].zName = sqliteStrNDup(pExpr->span.z, pExpr->span.n);
     }
   }
   if( isAgg ){
@@ -1593,7 +1588,7 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
   pExpr = p->pEList->a[0].pExpr;
   if( pExpr->op!=TK_AGG_FUNCTION ) return 0;
   if( pExpr->pList==0 || pExpr->pList->nExpr!=1 ) return 0;
-  if( pExpr->nFuncName!=3 ) return 0;
+  if( pExpr->token.n!=3 ) return 0;
   if( sqliteStrNICmp(pExpr->token.z,"min",3)==0 ){
     seekOp = OP_Rewind;
   }else if( sqliteStrNICmp(pExpr->token.z,"max",3)==0 ){

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.146 2002/09/14 13:47:32 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.147 2002/10/22 23:38:04 drh Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -449,18 +449,11 @@ struct Index {
 /*
 ** Each token coming out of the lexer is an instance of
 ** this structure.  Tokens are also used as part of an expression.
-**
-** A "base" token is a real single token such as would come out of the
-** lexer.  There are also compound tokens which are aggregates of one
-** or more base tokens.  Compound tokens are used to name columns in the
-** result set of a SELECT statement.  In the expression "a+b+c", "b"
-** is a base token but "a+b" is a compound token.
 */
 struct Token {
   const char *z;      /* Text of the token.  Not NULL-terminated! */
   unsigned dyn  : 1;  /* True for malloced memory, false for static */
-  unsigned base : 1;  /* True for a base token, false for compounds */
-  unsigned n    : 30; /* Number of characters in this token */
+  unsigned n    : 31; /* Number of characters in this token */
 };
 
 /*
@@ -501,11 +494,11 @@ struct Expr {
   u8 op;                 /* Operation performed by this node */
   u8 dataType;           /* Either SQLITE_SO_TEXT or SQLITE_SO_NUM */
   u8 isJoinExpr;         /* Origin is the ON or USING phrase of a join */
-  u8 nFuncName;          /* Number of characters in a function name */
   Expr *pLeft, *pRight;  /* Left and right subnodes */
   ExprList *pList;       /* A list of expressions used as function arguments
                          ** or in "<expr> IN (<expr-list)" */
   Token token;           /* An operand token */
+  Token span;            /* Complete text of the expression */
   int iTable, iColumn;   /* When op==TK_COLUMN, then this expr node means the
                          ** iColumn-th field of the iTable-th table. */
   int iAgg;              /* When op==TK_COLUMN and pParse->useAgg==TRUE, pull

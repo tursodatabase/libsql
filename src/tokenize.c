@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.49 2002/08/27 14:28:30 drh Exp $
+** $Id: tokenize.c,v 1.50 2002/10/22 23:38:04 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -424,7 +424,6 @@ int sqliteRunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
       break;
     }
     pParse->sLastToken.z = &zSql[i];
-    pParse->sLastToken.base = 1;
     pParse->sLastToken.dyn = 0;
     pParse->sLastToken.n = sqliteGetToken((unsigned char*)&zSql[i], &tokenType);
     i += pParse->sLastToken.n;
