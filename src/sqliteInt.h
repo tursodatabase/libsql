@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.361 2005/01/21 21:22:52 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.362 2005/01/21 21:31:41 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -55,6 +55,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <stddef.h>
 
 /*
 ** The maximum number of in-memory pages to use for the main database
