@@ -13,7 +13,7 @@
 # various suported unicode encodings (UTF-8, UTF-16, UTF-16le and
 # UTF-16be).
 #
-# $Id: enc2.test,v 1.20 2005/01/21 04:25:47 danielk1977 Exp $
+# $Id: enc2.test,v 1.21 2005/02/13 23:34:25 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -125,6 +125,10 @@ do_test $t.8 {
 do_test $t.9 {
   sqlite3_finalize $STMT
 } SQLITE_OK
+
+ifcapable vacuum {
+  execsql VACUUM
+}
 
 do_test $t.10 {
   db eval {PRAGMA encoding}

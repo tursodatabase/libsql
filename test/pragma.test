@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.33 2005/02/09 03:20:37 danielk1977 Exp $
+# $Id: pragma.test,v 1.34 2005/02/13 23:34:25 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -106,7 +106,7 @@ do_test pragma-1.8 {
     PRAGMA synchronous;
   }
 } {123 123 2}
-do_test pragma-1.9 {
+do_test pragma-1.9.1 {
   db close
   set ::DB [sqlite3 db test.db]
   execsql {
@@ -115,6 +115,16 @@ do_test pragma-1.9 {
     PRAGMA synchronous;
   }
 } {123 123 2}
+ifcapable vacuum {
+  do_test pragma-1.9.2 {
+    execsql {
+      VACUUM;
+      PRAGMA cache_size;
+      PRAGMA default_cache_size;
+      PRAGMA synchronous;
+    }
+  } {123 123 2}
+}
 do_test pragma-1.10 {
   execsql {
     PRAGMA synchronous=NORMAL;
@@ -515,16 +525,37 @@ do_test pragma-8.2.2 {
     PRAGMA user_version = 2;
   }
 } {}
-do_test pragma-8.2.3 {
+do_test pragma-8.2.3.1 {
   execsql {
     PRAGMA user_version;
   }
 } {2}
-do_test pragma-8.2.4 {
+do_test pragma-8.2.3.2 {
+  db close
+  sqlite3 db test.db
+  execsql {
+    PRAGMA user_version;
+  }
+} {2}
+do_test pragma-8.2.4.1 {
   execsql {
     PRAGMA schema_version;
   }
 } {108}
+ifcapable vacuum {
+  do_test pragma-8.2.4.2 {
+    execsql {
+      VACUUM;
+      PRAGMA user_version;
+    }
+  } {2}
+  do_test pragma-8.2.4.3 {
+    execsql {
+      PRAGMA schema_version;
+    }
+  } {109}
+}
+db eval {ATTACH 'test2.db' AS aux}
 
 # Check that the user-version in the auxilary database can be manipulated (
 # and that we aren't accidentally manipulating the same in the main db).
@@ -730,5 +761,3 @@ dbX eval {PRAGMA temp_store_directory = ""}
 dbX close
 
 finish_test
-
-

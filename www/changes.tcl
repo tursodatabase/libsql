@@ -21,6 +21,23 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2005 February 14 (3.1.2)} {
+<li>Fix a bug that can lead to database corruption if there are two
+open connections to the same database and one connection does a VACUUM
+and the second makes some change to the database.</li>
+<li>Allow "?" parameters in the LIMIT clause.</li>
+<li>Fix VACUUM so that it works with AUTOINCREMENT.</li>
+<li>Add a numeric version number to the sqlite3.h include file.</li>
+<li>Other minor bug fixes and performance enhancements.</li>
+}
+
+chng {2005 February 1 (3.1.1 BETA)} {
+<li>Automatic caching of prepared statements in the TCL interface</li>
+<li>ATTACH and DETACH as well as some other operations cause existing
+    prepared statements to expire.</li>
+<li>Numerious minor bug fixes</li>
+}
+
 chng {2005 January 21 (3.1.0 ALPHA)} {
 <li>Autovacuum support added</li>
 <li>CURRENT_TIME, CURRENT_DATE, and CURRENT_TIMESTAMP added</li>
