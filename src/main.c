@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.78 2002/06/09 10:14:19 drh Exp $
+** $Id: main.c,v 1.79 2002/06/14 20:54:15 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -352,6 +352,7 @@ sqlite *sqlite_open(const char *zFilename, int mode, char **pzErrMsg){
 
   /* Attempt to read the schema */
   rc = sqliteInit(db, pzErrMsg);
+  db->magic = SQLITE_MAGIC_OPEN;
   if( sqlite_malloc_failed ){
     sqlite_close(db);
     goto no_mem_on_open;
@@ -363,7 +364,6 @@ sqlite *sqlite_open(const char *zFilename, int mode, char **pzErrMsg){
     sqliteFree(*pzErrMsg);
     *pzErrMsg = 0;
   }
-  db->magic = SQLITE_MAGIC_OPEN;
   return db;
 
 no_mem_on_open:
