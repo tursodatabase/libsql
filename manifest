@@ -1,5 +1,5 @@
-C Implement\sthe\sexperimental\ssqlite3_bind_parameter_count()\sAPI\sin\ssupport\nof\sDBD::SQLite.\s\sAlso\sfix\sthe\ssqlite3.def\sexport\slist.\s(CVS\s1797)
-D 2004-07-15T14:15:01
+C Added\stests\sfor\ssqlite3_changes\safter\sa\sDELETE.\s(CVS\s1798)
+D 2004-07-15T20:08:39
 F Makefile.in 77d1219b6563476711a7a962e865979a6f314eb0
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -107,7 +107,7 @@ F test/conflict.test c5b849b01cfbe0a4f63a90cba6f68e2fe3a75f87
 F test/crash.test 3ea432ce624369c04ba1a23a5288115e40f5daa2
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/date.test aed5030482ebc02bd8d386c6c86a29f694ab068d
-F test/delete.test 4f0c86e2bebdc822d179c80697b1ceabe6bbcd07
+F test/delete.test ec0b455f2dcc0e189d96ee438438ba026c4e51d8
 F test/enc.test 2f5463af488d50aef60c6110bec6b21b5efba961
 F test/enc2.test 7a60971a62748be6b607b4b4380eb4c5e151a6ec
 F test/enc3.test 2ae80b11adf5b2c171d2e17214dabd356b9672c1
@@ -233,7 +233,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P f2bb83cfd7e6b7ff853099897a24346a2991bc57
-R 5e600ef03c9d9c5e0707da9897f4611a
+P c44943e6fe0c88830102253591a501dc7d724d2f
+R 6372bb8eea811521fd1d8c72d50b1f51
 U drh
-Z 0b45212062ad5a110f22f98ad4c5a9a5
+Z 3cb2ad30190c7832bdc46e58738a9e26
