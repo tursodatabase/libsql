@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.64 2004/05/27 13:55:27 danielk1977 Exp $
+** $Id: test1.c,v 1.65 2004/05/27 14:23:36 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -672,26 +672,33 @@ static int sqlite_abort(
 static void testFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   while( argc>=2 ){
     const char *zArg0 = sqlite3_value_text(argv[0]);
-    const char *zArg1 = sqlite3_value_text(argv[1]);
-    if( zArg0==0 ){
-      sqlite3_result_error(context, "first argument to test function "
-         "may not be NULL", -1);
-    }else if( sqlite3StrICmp(zArg0,"string")==0 ){
-      sqlite3_result_text(context, zArg1, -1, 1);
-    }else if( zArg1==0 ){
-      sqlite3_result_error(context, "2nd argument may not be NULL if the "
-         "first argument is not \"string\"", -1);
-    }else if( sqlite3StrICmp(zArg0,"int")==0 ){
-      sqlite3_result_int(context, atoi(zArg1));
-    }else if( sqlite3StrICmp(zArg0,"double")==0 ){
-      sqlite3_result_double(context, sqlite3AtoF(zArg1, 0));
+    if( zArg0 ){
+      if( 0==sqlite3StrICmp(zArg0, "int") ){
+        sqlite3_result_int(context, sqlite3_value_int(argv[1]));
+      }else if( sqlite3StrICmp(zArg0,"int64")==0 ){
+        sqlite3_result_int64(context, sqlite3_value_int64(argv[1]));
+      }else if( sqlite3StrICmp(zArg0,"string")==0 ){
+        sqlite3_result_text(context, sqlite3_value_text(argv[1]), -1, 1);
+      }else if( sqlite3StrICmp(zArg0,"double")==0 ){
+        sqlite3_result_double(context, sqlite3_value_double(argv[1]));
+      }else if( sqlite3StrICmp(zArg0,"null")==0 ){
+        sqlite3_result_null(context);
+      }else if( sqlite3StrICmp(zArg0,"value")==0 ){
+        sqlite3_result_value(context, argv[sqlite3_value_int(argv[1])]);
+      }else{
+        goto error_out;
+      }
     }else{
-      sqlite3_result_error(context,"first argument should be one of: "
-          "string int double", -1);
+      goto error_out;
     }
     argc -= 2;
     argv += 2;
   }
+  return;
+
+error_out:
+  sqlite3_result_error(context,"first argument should be one of: "
+      "int int64 string double null value", -1);
 }
 
 /*
