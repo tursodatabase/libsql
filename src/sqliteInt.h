@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.304 2004/06/30 04:02:12 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.305 2004/07/15 13:37:22 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -99,6 +99,9 @@
 #ifndef UINT16_TYPE
 # define UINT16_TYPE unsigned short int
 #endif
+#ifndef INT16_TYPE
+# define INT16_TYPE short int
+#endif
 #ifndef UINT8_TYPE
 # define UINT8_TYPE unsigned char
 #endif
@@ -119,6 +122,7 @@ typedef sqlite_int64 i64;          /* 8-byte signed integer */
 typedef UINT64_TYPE u64;           /* 8-byte unsigned integer */
 typedef UINT32_TYPE u32;           /* 4-byte unsigned integer */
 typedef UINT16_TYPE u16;           /* 2-byte unsigned integer */
+typedef INT16_TYPE i16;            /* 2-byte signed integer */
 typedef UINT8_TYPE u8;             /* 1-byte unsigned integer */
 typedef UINT8_TYPE i8;             /* 1-byte signed integer */
 typedef INTPTR_TYPE ptr;           /* Big enough to hold a pointer */
@@ -830,8 +834,8 @@ struct IdList {
 ** now be identified by a database name, a dot, then the table name: ID.ID.
 */
 struct SrcList {
-  u16 nSrc;        /* Number of tables or subqueries in the FROM clause */
-  u16 nAlloc;      /* Number of entries allocated in a[] below */
+  i16 nSrc;        /* Number of tables or subqueries in the FROM clause */
+  i16 nAlloc;      /* Number of entries allocated in a[] below */
   struct SrcList_item {
     char *zDatabase;  /* Name of database holding this table */
     char *zName;      /* Name of the table */

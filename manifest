@@ -1,5 +1,5 @@
-C Fix\sthe\sreturn\stype\son\ssqliteStrICmp\swhen\sthe\sinput\sstrings\sare\snot\nequal.\s\sTicket\s#804.\s(CVS\s1794)
-D 2004-07-15T13:23:22
+C Make\sSrcList.nSrc\sa\ssigned\squantity\sto\savoid\sproblems\sin\sAIX.\s(CVS\s1796)
+D 2004-07-15T13:37:22
 F Makefile.in 77d1219b6563476711a7a962e865979a6f314eb0
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -59,7 +59,7 @@ F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c f02a65af34231031896e8442161cb5251e191e75
 F src/shell.c ebec5da57ea401f4886eefc790917b939d94d595
 F src/sqlite.h.in b70fded2bdfeaddfb06adea3888118b722975136
-F src/sqliteInt.h 9dcfcc67fc995b9079074d6b9619a1d4335583d0
+F src/sqliteInt.h aeae6793d1db335ec1179ad9f26b0affc0ec658a
 F src/table.c 4521c278892f60e4d630788c0ea5cf4db1e75c49
 F src/tclsqlite.c 62848128011e59291902c6e5c6f910c05956fcbb
 F src/test1.c 470430e194e43abb7d05b993fb360344f3d58834
@@ -233,7 +233,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P cda795a1d5549231b767114febd9980c9c70d4d2
-R 55fe007906fbb723a3aa10c7a5b5aec7
+P 660b89a0fc031e798ce14f25273468e85e038efa
+R 4d115041ead14b1851e96d639a0c98a5
 U drh
-Z 679a0d6cb5fbe99afc15185b01eebe74
+Z f9c34d548d91feacb261d91b1b28841f
