@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: opcode.tcl,v 1.8 2001/11/24 13:23:05 drh Exp $}
+set rcsid {$Id: opcode.tcl,v 1.9 2001/11/24 13:50:53 drh Exp $}
 
 puts {<html>
 <head>
@@ -122,8 +122,8 @@ The sorter is able to accumulate records, sort those records,
 then play the records back in sorted order.  The sorter is used
 to implement the ORDER BY clause of a SELECT statement.</p>
 
-<p>The virtual machine contains a single "Lists".
-The list stores a list of integers.  Lists are used to hold the
+<p>The virtual machine contains a single "List".
+The list stores a list of integers.  The list is used to hold the
 rowids for records of a database table that needs to be modified.
 The WHERE clause of an UPDATE or DELETE statement scans through
 the table and writes the rowid of every record to be modified

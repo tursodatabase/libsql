@@ -1,5 +1,5 @@
-C Typos\sfixed.\s(CVS\s319)
-D 2001-11-24T13:36:30
+C Fix\stypos.\s(CVS\s320)
+D 2001-11-24T13:50:53
 F Makefile.in 352fed589f09dd94347e0bb391d047118ebd6105
 F Makefile.template b6c3d3ba089e97e3a721e967f3151350f36cb42b
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -110,14 +110,14 @@ F www/download.tcl 1ea61f9d89a2a5a9b2cee36b0d5cf97321bdefe0
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/faq.tcl f1fd488bef706934f6e13cc56bc642ae09c72515
 F www/index.tcl 6d6d847dd3e39e9aa7b0c9b8f3144819ff3f9f51
-F www/lang.tcl 87ba01664d4ae7126a4a25bcf04407c8ea5a626b
+F www/lang.tcl 6482d90e40fb5ee004a86cf98f3007312a75444e
 F www/mingw.tcl f1c7c0a7f53387dd9bb4f8c7e8571b7561510ebc
-F www/opcode.tcl 1d60621d3550b9723447bd2dc6875d97290bec5f
+F www/opcode.tcl bdec8ef9f100dbd87bbef8976c54b88e43fd8ccc
 F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 880ef67cb4f2797b95bf1368fc4e0d8ca0fda956
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P f1a5808288e4204aee03531de0b9e6646062bd94
-R 4de7db51acb6aa815308596ae350a438
+P e86a68c5ace984da09d3ce44dae5d501ec0d0eec
+R 71292e19ac500e514794999bf8339d1a
 U drh
-Z 572a5ddf1573f772e8b3d29ccfb91ae8
+Z 219866e6286d486743b9a8447e369653
