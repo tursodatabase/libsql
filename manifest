@@ -1,5 +1,5 @@
-C Update\sthe\sdocumentation\sto\sreflect\sthe\snew\scapabilities\sof\sPRAGMA\nintegrity_check.\s\sRewording\sin\sthe\sVACUUM\sdocumentation.\s(CVS\s1025)
-D 2003-06-15T23:49:39
+C Preserve\sblank\slines\sin\sthe\smiddle\sof\sSQL\sstatements\sin\sthe\sshell.\nTicket\s#352\s(CVS\s1026)
+D 2003-06-16T00:16:41
 F Makefile.in 9ad23ed4ca97f9670c4496432e3fbd4b3760ebde
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -44,7 +44,7 @@ F src/pragma.c 3b4f5a800e7a2145bc1930f323232e297d4eb782
 F src/printf.c 12ab57e638c8201033c96717df7af59e06933314
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c 76b3a5cda76421cfe82d6a96c72308c2518cb2f9
-F src/shell.c b63089a91d6584df06eaa2e53ea1150c68ab1e61
+F src/shell.c 3ed268908fd69c8fd4b28dbe415075cbf0e3991a
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 54619fa5df4c83b22def66bb3d24808fd03dcbae
 F src/sqliteInt.h d1d883d9116dadf63ffe1bafe17ba6455b7db59e
@@ -165,7 +165,7 @@ F www/speed.tcl 296cc5632d069b56d3ef5409ca0df90f486c10fb
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 14fdcc7fe8a60a6ba8584903636db8dc37eef26a
-P c9734c27074d2039a1896a8c6965c08d03711b13
-R 043885dfa9758e2ea548e60c85008260
+P 38461a7acb5281edd7078b1b3f227bb45f281757
+R 46499a749b6ee84c69c37552983b6d8c
 U drh
-Z d48a4138996f6646f8306c8e5dba91bb
+Z b3ef2420e7aa106912624a6b067565c3
