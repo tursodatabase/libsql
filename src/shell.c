@@ -24,7 +24,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.18 2000/07/31 11:57:37 drh Exp $
+** $Id: shell.c,v 1.19 2000/08/02 13:47:42 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -439,13 +439,14 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
     char zSql[1000];
     if( nArg==1 ){
       sprintf(zSql, "SELECT name, type, sql FROM sqlite_master "
+                    "WHERE type!='meta' "
                     "ORDER BY tbl_name, type DESC, name");
       sqlite_exec(db, zSql, dump_callback, p, &zErrMsg);
     }else{
       int i;
       for(i=1; i<nArg && zErrMsg==0; i++){
         sprintf(zSql, "SELECT name, type, sql FROM sqlite_master "
-                      "WHERE tbl_name LIKE '%.800s'"
+                      "WHERE tbl_name LIKE '%.800s' AND type!='meta' "
                       "ORDER BY type DESC, name", azArg[i]);
         sqlite_exec(db, zSql, dump_callback, p, &zErrMsg);
         
@@ -551,11 +552,12 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
     data.mode = MODE_List;
     if( nArg>1 ){
       sprintf(zSql, "SELECT sql FROM sqlite_master "
-                    "WHERE tbl_name LIKE '%.800s'"
+                    "WHERE tbl_name LIKE '%.800s' AND type!='meta'"
                     "ORDER BY type DESC, name",
          azArg[1]);
     }else{
       sprintf(zSql, "SELECT sql FROM sqlite_master "
+         "WHERE type!='meta' "
          "ORDER BY tbl_name, type DESC, name");
     }
     sqlite_exec(db, zSql, callback, &data, &zErrMsg);

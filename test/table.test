@@ -23,7 +23,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE TABLE statement.
 #
-# $Id: table.test,v 1.5 2000/06/08 15:10:48 drh Exp $
+# $Id: table.test,v 1.6 2000/08/02 13:47:43 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -38,7 +38,7 @@ do_test table-1.1 {
     )
   }
   execsql {
-    SELECT sql FROM sqlite_master
+    SELECT sql FROM sqlite_master WHERE type!='meta'
   }
 } {{CREATE TABLE test1 (
       one varchar(10),
@@ -55,7 +55,7 @@ do_test table-1.2 {
 # Verify the other fields of the sqlite_master file.
 #
 do_test table-1.3 {
-  execsql {SELECT name, tbl_name, type FROM sqlite_master}
+  execsql {SELECT name, tbl_name, type FROM sqlite_master WHERE type!='meta'}
 } {test1 test1 table}
 
 # Close and reopen the database.  Verify that everything is
@@ -64,14 +64,14 @@ do_test table-1.3 {
 do_test table-1.4 {
   db close
   sqlite db testdb
-  execsql {SELECT name, tbl_name, type from sqlite_master}
+  execsql {SELECT name, tbl_name, type from sqlite_master WHERE type!='meta'}
 } {test1 test1 table}
 
 # Drop the database and make sure it disappears.
 #
 do_test table-1.5 {
   execsql {DROP TABLE test1}
-  execsql {SELECT * FROM sqlite_master}
+  execsql {SELECT * FROM sqlite_master WHERE type!='meta'}
 } {}
 
 # Verify that the file associated with the database is gone.
@@ -86,26 +86,26 @@ do_test table-1.5 {
 do_test table-1.6 {
   db close
   sqlite db testdb
-  execsql {SELECT name FROM sqlite_master}
+  execsql {SELECT name FROM sqlite_master WHERE type!='meta'}
 } {}
 
 # Repeat the above steps, but this time quote the table name.
 #
 do_test table-1.10 {
   execsql {CREATE TABLE "create" (f1 int)}
-  execsql {SELECT name FROM sqlite_master}
+  execsql {SELECT name FROM sqlite_master WHERE type!='meta'}
 } {create}
 do_test table-1.11 {
   execsql {DROP TABLE "create"}
-  execsql {SELECT name FROM "sqlite_master"}
+  execsql {SELECT name FROM "sqlite_master" WHERE type!='meta'}
 } {}
 do_test table-1.12 {
   execsql {CREATE TABLE test1("f1 ho" int)}
-  execsql {SELECT name as "X" FROM sqlite_master}
+  execsql {SELECT name as "X" FROM sqlite_master WHERE type!='meta'}
 } {test1}
 do_test table-1.13 {
   execsql {DROP TABLE "TEST1"}
-  execsql {SELECT name FROM "sqlite_master"}
+  execsql {SELECT name FROM "sqlite_master" WHERE type!='meta'}
 } {}
 
 
@@ -128,7 +128,7 @@ do_test table-2.1c {
   lappend v $msg
 } {1 {table sqlite_master already exists}}
 do_test table-2.1d {
-  execsql {DROP TABLE test2; SELECT name FROM sqlite_master}
+  execsql {DROP TABLE test2; SELECT name FROM sqlite_master WHERE type!='meta'}
 } {}
 
 # Verify that we cannot make a table with the same name as an index
@@ -150,11 +150,11 @@ do_test table-2.2c {
   lappend v $msg
 } {0 {}}
 do_test table-2.2d {
-  execsql {SELECT name FROM sqlite_master ORDER BY name}
+  execsql {SELECT name FROM sqlite_master WHERE type!='meta' ORDER BY name}
 } {test2 test3}
 do_test table-2.2e {
   execsql {DROP TABLE test2; DROP TABLE test3}
-  execsql {SELECT name FROM sqlite_master ORDER BY name}
+  execsql {SELECT name FROM sqlite_master WHERE type!='meta' ORDER BY name}
 } {}
 
 # Create a table with many field names
@@ -184,7 +184,7 @@ set big_table \
 )}
 do_test table-3.1 {
   execsql $big_table
-  execsql {SELECT sql FROM sqlite_master}
+  execsql {SELECT sql FROM sqlite_master WHERE type!='meta'}
 } \{$big_table\}
 do_test table-3.2 {
   set v [catch {execsql {CREATE TABLE BIG(xyz foo)}} msg]
@@ -206,7 +206,7 @@ do_test table-3.5 {
 } {1 {table Big already exists}}
 do_test table-3.6 {
   execsql {DROP TABLE big}
-  execsql {SELECT name FROM sqlite_master}
+  execsql {SELECT name FROM sqlite_master WHERE type!='meta'}
 } {}
 
 # Try creating large numbers of tables
@@ -224,12 +224,12 @@ do_test table-4.1 {
     append sql "last_field text)"
     execsql $sql
   }
-  execsql {SELECT name FROM sqlite_master ORDER BY name}
+  execsql {SELECT name FROM sqlite_master WHERE type!='meta' ORDER BY name}
 } $r
 do_test table-4.1b {
   db close
   sqlite db testdb
-  execsql {SELECT name FROM sqlite_master ORDER BY name}
+  execsql {SELECT name FROM sqlite_master WHERE type!='meta' ORDER BY name}
 } $r
 
 # Drop the even number tables
@@ -243,7 +243,7 @@ do_test table-4.2 {
     set sql "DROP TABLE TEST$i"
     execsql $sql
   }
-  execsql {SELECT name FROM sqlite_master ORDER BY name}
+  execsql {SELECT name FROM sqlite_master WHERE type!='meta' ORDER BY name}
 } $r
 
 # Drop the odd number tables
@@ -253,7 +253,7 @@ do_test table-4.3 {
     set sql "DROP TABLE test$i"
     execsql $sql
   }
-  execsql {SELECT name FROM sqlite_master ORDER BY name}
+  execsql {SELECT name FROM sqlite_master WHERE type!='meta' ORDER BY name}
 } {}
 
 # Try to drop a table that does not exist
@@ -274,7 +274,7 @@ do_test table-5.2 {
 #
 do_test table-5.3 {
   execsql {EXPLAIN CREATE TABLE test1(f1 int)}
-  execsql {SELECT name FROM sqlite_master}
+  execsql {SELECT name FROM sqlite_master WHERE type!='meta'}
 } {}
 
 # Make sure an EXPLAIN does not really drop an existing table
@@ -282,7 +282,7 @@ do_test table-5.3 {
 do_test table-5.4 {
   execsql {CREATE TABLE test1(f1 int)}
   execsql {EXPLAIN DROP TABLE test1}
-  execsql {SELECT name FROM sqlite_master}
+  execsql {SELECT name FROM sqlite_master WHERE type!='meta'}
 } {test1}
 
 # Create a table with a goofy name

@@ -26,7 +26,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.15 2000/07/31 13:38:26 drh Exp $
+** $Id: main.c,v 1.16 2000/08/02 13:47:42 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -35,12 +35,24 @@
 ** database.  Each callback contains text of a CREATE TABLE or
 ** CREATE INDEX statement that must be parsed to yield the internal
 ** structures that describe the tables.
+**
+** This callback is also called with argc==2 when there is meta
+** information in the sqlite_master file.  The meta information is
+** contained in argv[1].  Typical meta information is the file format
+** version.
 */
 static int sqliteOpenCb(void *pDb, int argc, char **argv, char **azColName){
   sqlite *db = (sqlite*)pDb;
   Parse sParse;
   int nErr;
 
+  if( argc==2 ){
+    if( sscanf(argv[1],"file format %d",&db->file_format)==1 ){
+      return 0;
+    }
+    /* Unknown meta information.  Ignore it. */
+    return 0;
+  }
   if( argc!=1 ) return 0;
   memset(&sParse, 0, sizeof(sParse));
   sParse.db = db;
@@ -83,7 +95,7 @@ static int sqliteInit(sqlite *db, char **pzErrMsg){
   ** defined as follows:
   **
   **    CREATE TABLE sqlite_master (
-  **        type       text,    --  Either "table" or "index"
+  **        type       text,    --  Either "table" or "index" or "meta"
   **        name       text,    --  Name of table or index
   **        tbl_name   text,    --  Associated table 
   **        sql        text     --  The CREATE statement for this object
@@ -99,6 +111,11 @@ static int sqliteInit(sqlite *db, char **pzErrMsg){
   ** the CREATE TABLE or CREATE INDEX statement that originally created
   ** the table or index.
   **
+  ** If the "type" column has the value "meta", then the "sql" column
+  ** contains extra information about the database, such as the
+  ** file format version number.  All meta information must be processed
+  ** before any tables or indices are constructed.
+  **
   ** The following program invokes its callback on the SQL for each
   ** table then goes back and invokes the callback on the
   ** SQL for each index.  The callback will invoke the
@@ -107,22 +124,31 @@ static int sqliteInit(sqlite *db, char **pzErrMsg){
   */
   static VdbeOp initProg[] = {
     { OP_Open,     0, 0,  MASTER_NAME},
-    { OP_Next,     0, 8,  0},           /* 1 */
+    { OP_Next,     0, 9,  0},           /* 1 */
+    { OP_Field,    0, 0,  0},
+    { OP_String,   0, 0,  "meta"},
+    { OP_Ne,       0, 1,  0},
+    { OP_Field,    0, 0,  0},
+    { OP_Field,    0, 3,  0},
+    { OP_Callback, 2, 0,  0},
+    { OP_Goto,     0, 1,  0},
+    { OP_Rewind,   0, 0,  0},           /* 9 */
+    { OP_Next,     0, 17, 0},           /* 10 */
     { OP_Field,    0, 0,  0},
     { OP_String,   0, 0,  "table"},
-    { OP_Ne,       0, 1,  0},
+    { OP_Ne,       0, 10, 0},
     { OP_Field,    0, 3,  0},
     { OP_Callback, 1, 0,  0},
-    { OP_Goto,     0, 1,  0},
-    { OP_Rewind,   0, 0,  0},           /* 8 */
-    { OP_Next,     0, 16, 0},           /* 9 */
+    { OP_Goto,     0, 10, 0},
+    { OP_Rewind,   0, 0,  0},           /* 17 */
+    { OP_Next,     0, 25, 0},           /* 18 */
     { OP_Field,    0, 0,  0},
     { OP_String,   0, 0,  "index"},
-    { OP_Ne,       0, 9,  0},
+    { OP_Ne,       0, 18, 0},
     { OP_Field,    0, 3,  0},
     { OP_Callback, 1, 0,  0},
-    { OP_Goto,     0, 9,  0},
-    { OP_Halt,     0, 0,  0},           /* 16 */
+    { OP_Goto,     0, 18, 0},
+    { OP_Halt,     0, 0,  0},           /* 25 */
   };
 
   /* Create a virtual machine to run the initialization program.  Run
@@ -137,6 +163,10 @@ static int sqliteInit(sqlite *db, char **pzErrMsg){
   rc = sqliteVdbeExec(vdbe, sqliteOpenCb, db, pzErrMsg, 
                       db->pBusyArg, db->xBusyCallback);
   sqliteVdbeDelete(vdbe);
+  if( rc==SQLITE_OK && db->file_format<2 && db->nTable>0 ){
+    sqliteSetString(pzErrMsg, "obsolete file format", 0);
+    rc = SQLITE_ERROR;
+  }
   if( rc==SQLITE_OK ){
     Table *pTab;
     char *azArg[2];
@@ -183,6 +213,9 @@ sqlite *sqlite_open(const char *zFilename, int mode, char **pzErrMsg){
     sqliteFree(db);
     return 0;
   }
+
+  /* Assume file format 1 unless the database says otherwise */
+  db->file_format = 1;
 
   /* Attempt to read the schema */
   rc = sqliteInit(db, pzErrMsg);

@@ -33,7 +33,7 @@
 **     COPY
 **     VACUUM
 **
-** $Id: build.c,v 1.21 2000/07/29 13:06:59 drh Exp $
+** $Id: build.c,v 1.22 2000/08/02 13:47:42 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -319,16 +319,20 @@ void sqliteAddDefaultValue(Parse *pParse, Token *pVal, int minusFlag){
 void sqliteEndTable(Parse *pParse, Token *pEnd){
   Table *p;
   int h;
+  int addVersion;      /* True to insert a "file format" meta record */
 
   if( pParse->nErr ) return;
+  p = pParse->pNewTable;
+  addVersion =  p!=0 && pParse->db->nTable==1;
 
   /* Add the table to the in-memory representation of the database
   */
-  if( (p = pParse->pNewTable)!=0 && pParse->explain==0 ){
+  if( p!=0 && pParse->explain==0 ){
     h = sqliteHashNoCase(p->zName, 0) % N_HASH;
     p->pHash = pParse->db->apTblHash[h];
     pParse->db->apTblHash[h] = p;
     pParse->pNewTable = 0;
+    pParse->db->nTable++;
   }
 
   /* If not initializing, then create the table on disk.
@@ -343,7 +347,15 @@ void sqliteEndTable(Parse *pParse, Token *pEnd){
       { OP_String,      0, 0, 0},            /* 5 */
       { OP_MakeRecord,  4, 0, 0},
       { OP_Put,         0, 0, 0},
-      { OP_Close,       0, 0, 0},
+    };
+    static VdbeOp addVersion[] = {
+      { OP_New,         0, 0, 0},
+      { OP_String,      0, 0, "meta"            },
+      { OP_String,      0, 0, ""                },
+      { OP_String,      0, 0, ""                },
+      { OP_String,      0, 0, "file format 2"   },
+      { OP_MakeRecord,  4, 0, 0},
+      { OP_Put,         0, 0, 0},
     };
     int n, base;
     Vdbe *v;
@@ -355,6 +367,10 @@ void sqliteEndTable(Parse *pParse, Token *pEnd){
     sqliteVdbeChangeP3(v, base+3, p->zName, 0);
     sqliteVdbeChangeP3(v, base+4, p->zName, 0);
     sqliteVdbeChangeP3(v, base+5, pParse->sFirstToken.z, n);
+    if( addVersion ){
+      sqliteVdbeAddOpList(v, ArraySize(addVersion), addVersion);
+    }
+    sqliteVdbeAddOp(v, OP_Close, 0, 0, 0, 0);
   }
 }
 
@@ -440,6 +456,7 @@ void sqliteDropTable(Parse *pParse, Token *pName){
         p->pHash = pTable->pHash;
       }
     }
+    pParse->db->nTable--;
     sqliteDeleteTable(pParse->db, pTable);
   }
 }

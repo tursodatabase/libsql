@@ -23,7 +23,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.28 2000/08/02 12:26:29 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.29 2000/08/02 13:47:42 drh Exp $
 */
 #include "sqlite.h"
 #include "dbbe.h"
@@ -122,6 +122,8 @@ typedef struct AggExpr AggExpr;
 struct sqlite {
   Dbbe *pBe;                 /* The backend driver */
   int flags;                 /* Miscellanous flags */
+  int file_format;           /* What file format version is this database? */
+  int nTable;                /* Number of tables in the database */
   void *pBusyArg;            /* 1st Argument to the busy callback */
   int (*xBusyCallback)(void *,const char*,int);  /* The busy callback */
   Table *apTblHash[N_HASH];  /* All tables of the database */
@@ -133,6 +135,11 @@ struct sqlite {
 */
 #define SQLITE_VdbeTrace    0x00000001
 #define SQLITE_Initialized  0x00000002
+
+/*
+** Current file format version
+*/
+#define SQLITE_FileFormat 2
 
 /*
 ** information about each column of an SQL table is held in an instance
