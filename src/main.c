@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.146 2004/01/15 13:29:32 drh Exp $
+** $Id: main.c,v 1.147 2004/02/10 02:27:04 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -127,6 +127,9 @@ int sqliteInitCallback(void *pInit, int argc, char **argv, char **azColName){
 ** format version 1 or 2 to version 3.  The correct operation of
 ** this routine relys on the fact that no indices are used when
 ** copying a table out to a temporary file.
+**
+** The change from version 2 to version 3 occurred between SQLite
+** version 2.5.6 and 2.6.0 on 2002-July-18.  
 */
 static
 int upgrade_3_callback(void *pInit, int argc, char **argv, char **NotUsed){
@@ -388,7 +391,43 @@ int sqliteInit(sqlite *db, char **pzErrMsg){
   if( rc==SQLITE_OK ){
     db->flags |= SQLITE_Initialized;
     sqliteCommitInternalChanges(db);
-  }else{
+  }
+
+  /* If the database is in formats 1 or 2, then upgrade it to
+  ** version 3.  This will reconstruct all indices.  If the
+  ** upgrade fails for any reason (ex: out of disk space, database
+  ** is read only, interrupt received, etc.) then fail the init.
+  */
+  if( rc==SQLITE_OK && db->file_format<3 ){
+    char *zErr = 0;
+    InitData initData;
+    int meta[SQLITE_N_BTREE_META];
+
+    db->magic = SQLITE_MAGIC_OPEN;
+    initData.db = db;
+    initData.pzErrMsg = &zErr;
+    db->file_format = 3;
+    rc = sqlite_exec(db,
+      "BEGIN; SELECT name FROM sqlite_master WHERE type='table';",
+      upgrade_3_callback,
+      &initData,
+      &zErr);
+    if( rc==SQLITE_OK ){
+      sqliteBtreeGetMeta(db->aDb[0].pBt, meta);
+      meta[2] = 4;
+      sqliteBtreeUpdateMeta(db->aDb[0].pBt, meta);
+      sqlite_exec(db, "COMMIT", 0, 0, 0);
+    }
+    if( rc!=SQLITE_OK ){
+      sqliteSetString(pzErrMsg, 
+        "unable to upgrade database to the version 2.6 format",
+        zErr ? ": " : 0, zErr, (char*)0);
+      sqliteStrRealloc(pzErrMsg);
+    }
+    sqlite_freemem(zErr);
+  }
+
+  if( rc!=SQLITE_OK ){
     db->flags &= ~SQLITE_Initialized;
   }
   return rc;
@@ -473,42 +512,6 @@ sqlite *sqlite_open(const char *zFilename, int mode, char **pzErrMsg){
   }else if( pzErrMsg ){
     sqliteFree(*pzErrMsg);
     *pzErrMsg = 0;
-  }
-
-  /* If the database is in formats 1 or 2, then upgrade it to
-  ** version 3.  This will reconstruct all indices.  If the
-  ** upgrade fails for any reason (ex: out of disk space, database
-  ** is read only, interrupt received, etc.) then refuse to open.
-  */
-  if( rc==SQLITE_OK && db->file_format<3 ){
-    char *zErr = 0;
-    InitData initData;
-    int meta[SQLITE_N_BTREE_META];
-
-    initData.db = db;
-    initData.pzErrMsg = &zErr;
-    db->file_format = 3;
-    rc = sqlite_exec(db,
-      "BEGIN; SELECT name FROM sqlite_master WHERE type='table';",
-      upgrade_3_callback,
-      &initData,
-      &zErr);
-    if( rc==SQLITE_OK ){
-      sqliteBtreeGetMeta(db->aDb[0].pBt, meta);
-      meta[2] = 4;
-      sqliteBtreeUpdateMeta(db->aDb[0].pBt, meta);
-      sqlite_exec(db, "COMMIT", 0, 0, 0);
-    }
-    if( rc!=SQLITE_OK ){
-      sqliteSetString(pzErrMsg, 
-        "unable to upgrade database to the version 2.6 format",
-        zErr ? ": " : 0, zErr, (char*)0);
-      sqlite_freemem(zErr);
-      sqliteStrRealloc(pzErrMsg);
-      sqlite_close(db);
-      return 0;
-    }
-    sqlite_freemem(zErr);
   }
 
   /* Return a pointer to the newly opened database structure */
