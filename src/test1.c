@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.54 2004/05/26 02:04:57 danielk1977 Exp $
+** $Id: test1.c,v 1.55 2004/05/26 06:18:38 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -408,8 +408,9 @@ static int test_create_function(
     return TCL_ERROR;
   }
   if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
-  sqlite3_create_function(db, "x_coalesce", -1, ifnullFunc, 0);
-  sqlite3_create_function(db, "x_sqlite3_exec", 1, sqlite3ExecFunc, db);
+  sqlite3_create_function(db, "x_coalesce", -1, 0, 0, 0, ifnullFunc, 0, 0);
+  sqlite3_create_function(db, "x_sqlite3_exec", 1, 0, 0, db,
+      sqlite3ExecFunc, 0, 0);
   return TCL_OK;
 }
 
@@ -457,8 +458,8 @@ static int test_create_aggregate(
     return TCL_ERROR;
   }
   if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
-  sqlite3_create_aggregate(db, "x_count", 0, countStep, countFinalize, 0);
-  sqlite3_create_aggregate(db, "x_count", 1, countStep, countFinalize, 0);
+  sqlite3_create_function(db, "x_count", 0, 0, 0, 0, 0,countStep,countFinalize);
+  sqlite3_create_function(db, "x_count", 1, 0, 0, 0, 0,countStep,countFinalize);
   return TCL_OK;
 }
 
@@ -686,7 +687,7 @@ static int test_register_func(
     return TCL_ERROR;
   }
   if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
-  rc = sqlite3_create_function(db, argv[2], -1, testFunc, 0);
+  rc = sqlite3_create_function(db, argv[2], -1, 0, 0, 0, testFunc, 0, 0);
   if( rc!=0 ){
     Tcl_AppendResult(interp, sqlite3_error_string(rc), 0);
     return TCL_ERROR;
@@ -1362,7 +1363,7 @@ static int test_step(
   rc = sqlite3_step(pStmt);
 
   if( rc!=SQLITE_DONE && rc!=SQLITE_ROW ) return TCL_ERROR;
-  Tcl_SetResult(interp, errorName(rc), 0);
+  Tcl_SetResult(interp, (char *)errorName(rc), 0);
   return TCL_OK;
 }
 

@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.190 2004/05/26 02:04:57 danielk1977 Exp $
+** $Id: main.c,v 1.191 2004/05/26 06:18:37 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -641,62 +641,65 @@ void sqlite3_freemem(void *p){ free(p); }
 const char *sqlite3_libversion(void){ return sqlite3_version; }
 const char *sqlite3_libencoding(void){ return sqlite3_encoding; }
 
-/*
-** Create new user-defined functions.  The sqlite3_create_function()
-** routine creates a regular function and sqlite3_create_aggregate()
-** creates an aggregate function.
-**
-** Passing a NULL xFunc argument or NULL xStep and xFinalize arguments
-** disables the function.  Calling sqlite3_create_function() with the
-** same name and number of arguments as a prior call to
-** sqlite3_create_aggregate() disables the prior call to
-** sqlite3_create_aggregate(), and vice versa.
-**
-** If nArg is -1 it means that this function will accept any number
-** of arguments, including 0.  The maximum allowed value of nArg is 127.
-*/
 int sqlite3_create_function(
-  sqlite *db,          /* Add the function to this database connection */
-  const char *zName,   /* Name of the function to add */
-  int nArg,            /* Number of arguments */
-  void (*xFunc)(sqlite3_context*,int,sqlite3_value **), /* The implementation */
-  void *pUserData      /* User data */
+  sqlite3 *db,
+  const char *zFunctionName,
+  int nArg,
+  int eTextRep,
+  int iCollateArg,
+  void *pUserData,
+  void (*xFunc)(sqlite3_context*,int,sqlite3_value **),
+  void (*xStep)(sqlite3_context*,int,sqlite3_value **),
+  void (*xFinal)(sqlite3_context*)
 ){
   FuncDef *p;
   int nName;
-  if( db==0 || zName==0 || sqlite3SafetyCheck(db) ) return 1;
-  if( nArg<-1 || nArg>127 ) return 1;
-  nName = strlen(zName);
-  if( nName>255 ) return 1;
-  p = sqlite3FindFunction(db, zName, nName, nArg, 1);
+
+  if( db==0 || zFunctionName==0 || sqlite3SafetyCheck(db) ){
+    return SQLITE_ERROR;
+  }
+  if( (xFunc && (xFinal || xStep)) || (!xFunc && (!xFinal && !xStep)) ){
+    return SQLITE_ERROR;
+  }
+  if( nArg<-1 || nArg>127 ){
+    return SQLITE_ERROR;
+  }
+
+  nName = strlen(zFunctionName);
+  if( nName>255 ){
+    return SQLITE_ERROR;
+  }
+
+  p = sqlite3FindFunction(db, zFunctionName, nName, nArg, 1);
   if( p==0 ) return 1;
   p->xFunc = xFunc;
-  p->xStep = 0;
-  p->xFinalize = 0;
-  p->pUserData = pUserData;
-  return 0;
-}
-int sqlite3_create_aggregate(
-  sqlite *db,          /* Add the function to this database connection */
-  const char *zName,   /* Name of the function to add */
-  int nArg,            /* Number of arguments */
-  void (*xStep)(sqlite3_context*,int,sqlite3_value**), /* The step function */
-  void (*xFinalize)(sqlite3_context*),              /* The finalizer */
-  void *pUserData      /* User data */
-){
-  FuncDef *p;
-  int nName;
-  if( db==0 || zName==0 || sqlite3SafetyCheck(db) ) return 1;
-  if( nArg<-1 || nArg>127 ) return 1;
-  nName = strlen(zName);
-  if( nName>255 ) return 1;
-  p = sqlite3FindFunction(db, zName, nName, nArg, 1);
-  if( p==0 ) return 1;
-  p->xFunc = 0;
   p->xStep = xStep;
-  p->xFinalize = xFinalize;
+  p->xFinalize = xFinal;
   p->pUserData = pUserData;
-  return 0;
+  return SQLITE_OK;
+}
+
+int sqlite3_create_function16(
+  sqlite3 *db,
+  const void *zFunctionName,
+  int nArg,
+  int eTextRep,
+  int iCollateArg,
+  void *pUserData,
+  void (*xFunc)(sqlite3_context*,int,sqlite3_value**),
+  void (*xStep)(sqlite3_context*,int,sqlite3_value**),
+  void (*xFinal)(sqlite3_context*)
+){
+  int rc;
+  char *zFunctionName8;
+  zFunctionName8 = sqlite3utf16to8(zFunctionName, -1, SQLITE3_BIGENDIAN);
+  if( !zFunctionName8 ){
+    return SQLITE_NOMEM;
+  }
+  rc = sqlite3_create_function(db, zFunctionName8, nArg, eTextRep, 
+      iCollateArg, pUserData, xFunc, xStep, xFinal);
+  sqliteFree(zFunctionName8);
+  return rc;
 }
 
 /*

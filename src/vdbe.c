@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.331 2004/05/26 02:04:58 danielk1977 Exp $
+** $Id: vdbe.c,v 1.332 2004/05/26 06:18:38 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -574,7 +574,7 @@ const unsigned char *sqlite3_column_data(sqlite3_stmt *pStmt, int i){
 ** If a translation fails because of a malloc() failure, a NULL pointer
 ** is returned.
 */
-const unsigned char *sqlite3_value_data(sqlite3_value* pVal){
+const unsigned char *sqlite3_value_data(sqlite3_value *pVal){
   if( pVal->flags&MEM_Null ){
     /* For a NULL return a NULL Pointer */
     return 0;

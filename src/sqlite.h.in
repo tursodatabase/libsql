@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.79 2004/05/26 02:04:57 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.80 2004/05/26 06:18:38 danielk1977 Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -57,6 +57,8 @@ extern const char sqlite3_encoding[];
 ** following opaque structure.
 */
 typedef struct sqlite sqlite;
+typedef struct sqlite sqlite3;
+
 
 /*
 ** A function to close the database.
@@ -418,61 +420,6 @@ const char *sqlite3_libversion(void);
 const char *sqlite3_libencoding(void);
 
 /*
-** A pointer to the following structure is used to communicate with
-** the implementations of user-defined functions.
-*/
-typedef struct sqlite3_context sqlite3_context;
-typedef struct Mem sqlite3_value;
-
-
-/*
-** Use the following routines to create new user-defined functions.  See
-** the documentation for details.
-*/
-int sqlite3_create_function(
-  sqlite*,                  /* Database where the new function is registered */
-  const char *zName,        /* Name of the new function */
-  int nArg,                 /* Number of arguments.  -1 means any number */
-  void (*xFunc)(sqlite3_context*,int,sqlite3_value **),  /* C code to implement */
-  void *pUserData           /* Available via the sqlite3_user_data() call */
-);
-int sqlite3_create_aggregate(
-  sqlite*,                  /* Database where the new function is registered */
-  const char *zName,        /* Name of the function */
-  int nArg,                 /* Number of arguments */
-  void (*xStep)(sqlite3_context*,int,sqlite3_value**), /* Called for each row */
-  void (*xFinalize)(sqlite3_context*),       /* Called once to get final result */
-  void *pUserData           /* Available via the sqlite3_user_data() call */
-);
-
-/*
-** Use the following routine to define the datatype returned by a
-** user-defined function.  The second argument can be one of the
-** constants SQLITE_NUMERIC, SQLITE_TEXT, or SQLITE_ARGS or it
-** can be an integer greater than or equal to zero.  When the datatype
-** parameter is non-negative, the type of the result will be the
-** same as the datatype-th argument.  If datatype==SQLITE_NUMERIC
-** then the result is always numeric.  If datatype==SQLITE_TEXT then
-** the result is always text.  If datatype==SQLITE_ARGS then the result
-** is numeric if any argument is numeric and is text otherwise.
-*/
-int sqlite3_function_type(
-  sqlite *db,               /* The database there the function is registered */
-  const char *zName,        /* Name of the function */
-  int datatype              /* The datatype for this function */
-);
-#define SQLITE_NUMERIC     (-1)
-#define SQLITE_TEXT        (-2)
-#define SQLITE_ARGS        (-3)
-
-/*
-** The next routine returns the number of calls to xStep for a particular
-** aggregate function instance.  The current call to xStep counts so this
-** routine always returns at least 1.
-*/
-int sqlite3_aggregate_count(sqlite3_context*);
-
-/*
 ** This routine registers a callback with the SQLite library.  The
 ** callback is invoked (at compile-time, not at run-time) for each
 ** attempt to access a column of a table in the database.  The callback
@@ -647,10 +594,191 @@ int sqlite_encode_binary(const unsigned char *in, int n, unsigned char *out);
 */
 int sqlite_decode_binary(const unsigned char *in, unsigned char *out);
 
+/*
+** Open the sqlite database file "filename", where "filename" is UTF-8
+** encoded. An sqlite3* handle is returned in *ppDb, even if an error 
+** occurs. If the database is opened (or created) successfully, then 
+** SQLITE_OK is returned. Otherwise an error code is returned and the
+** sqlite3_errmsg() function may be used to obtain an English language
+** explanation of the error.
+**
+** If the database file does not exist, then a new database is created
+** using UTF-8 text encoding.
+**
+** Whether or not an error occurs when it is opened, resources associated
+** with the sqlite3* handle should be released by passing it to
+** sqlite3_close() when it is no longer required.
+*/
+int sqlite3_open(
+  const char *filename,   /* Database filename (UTF-8) */
+  sqlite3 **ppDb,         /* OUT: SQLite db handle */
+  const char **args       /* Null terminated array of option strings */
+);
 
-typedef sqlite sqlite3;
+/*
+** Open the sqlite database file "filename", where "filename" is native
+** byte order UTF-16 encoded. An sqlite3* handle is returned in *ppDb, even
+** if an error occurs. If the database is opened (or created) successfully,
+** then SQLITE_OK is returned. Otherwise an error code is returned and the
+** sqlite3_errmsg() function may be used to obtain an English language
+** explanation of the error.
+**
+** If the database file does not exist, then a new database is created
+** using UTF-16 text encoding in the machines native byte order.
+**
+** Whether or not an error occurs when it is opened, resources associated
+** with the sqlite3* handle should be released by passing it to
+** sqlite3_close() when it is no longer required.
+*/
+int sqlite3_open16(
+  const void *filename,   /* Database filename (UTF-16) */
+  sqlite3 **ppDb,         /* OUT: SQLite db handle */
+  const char **args       /* Null terminated array of option strings */
+);
 
+/*
+** Return the error code for the most recent sqlite3_* API call associated
+** with sqlite3 handle 'db'. SQLITE_OK is returned if the most recent 
+** API call was successful.
+**
+** Calls to many sqlite3_* functions set the error code and string returned
+** by sqlite3_errcode(), sqlite3_errmsg() and sqlite3_errmsg16()
+** (overwriting the previous values). Note that calls to sqlite3_errcode(),
+** sqlite3_errmsg() and sqlite3_errmsg16() themselves do not affect the
+** results of future invocations.
+**
+** Assuming no other intervening sqlite3_* API calls are made, the error
+** code returned by this function is associated with the same error as
+** the strings  returned by sqlite3_errmsg() and sqlite3_errmsg16().
+*/
+int sqlite3_errcode(sqlite3 *db);
+
+/*
+** Return a pointer to a UTF-8 encoded string describing in english the
+** error condition for the most recent sqlite3_* API call. The returned
+** string is always terminated by an 0x00 byte.
+**
+** The string "not an error" is returned when the most recent API call was
+** successful.
+*/
+const char *sqlite3_errmsg(sqlite3*);
+
+/*
+** Return a pointer to a UTF-16 native byte order encoded string describing
+** in english the error condition for the most recent sqlite3_* API call.
+** The returned string is always terminated by a pair of 0x00 bytes.
+**
+** The string "not an error" is returned when the most recent API call was
+** successful.
+*/
+const void *sqlite3_errmsg16(sqlite3*);
+
+/*
+** An instance of the following opaque structure is used to represent
+** a compiled SQL statment.
+*/
 typedef struct sqlite3_stmt sqlite3_stmt;
+
+/*
+** To execute an SQL query, it must first be compiled into a byte-code
+** program using one of the following routines. The only difference between
+** them is that the second argument, specifying the SQL statement to
+** compile, is assumed to be encoded in UTF-8 for the sqlite3_prepare()
+** function and UTF-16 for sqlite3_prepare16().
+**
+** The first parameter "db" is an SQLite database handle. The second
+** parameter "zSql" is the statement to be compiled, encoded as either
+** UTF-8 or UTF-16 (see above). If the next parameter, "nBytes", is less
+** than zero, then zSql is read up to the first nul terminator.  If
+** "nBytes" is not less than zero, then it is the length of the string zSql
+** in bytes (not characters).
+**
+** *pzTail is made to point to the first byte past the end of the first
+** SQL statement in zSql.  This routine only compiles the first statement
+** in zSql, so *pzTail is left pointing to what remains uncompiled.
+**
+** *ppStmt is left pointing to a compiled SQL statement that can be
+** executed using sqlite3_step().  Or if there is an error, *ppStmt may be
+** set to NULL.  If the input text contained no SQL (if the input is and
+** empty string or a comment) then *ppStmt is set to NULL.
+**
+** On success, SQLITE_OK is returned.  Otherwise an error code is returned.
+*/
+int sqlite3_prepare(
+  sqlite3 *db,            /* Database handle */
+  const char *zSql,       /* SQL statement, UTF-8 encoded */
+  int nBytes,             /* Length of zSql in bytes. */
+  sqlite3_stmt **ppStmt,  /* OUT: Statement handle */
+  const char **pzTail     /* OUT: Pointer to unused portion of zSql */
+);
+int sqlite3_prepare16(
+  sqlite3 *db,            /* Database handle */
+  const void *zSql,       /* SQL statement, UTF-16 encoded */
+  int nBytes,             /* Length of zSql in bytes. */
+  sqlite3_stmt **ppStmt,  /* OUT: Statement handle */
+  const void **pzTail     /* OUT: Pointer to unused portion of zSql */
+);
+
+/*
+** Return the number of columns in the result set returned by the compiled
+** SQL statement. This routine returns 0 if pStmt is an SQL statement
+** that does not return data (for example an UPDATE).
+*/
+int sqlite3_column_count(sqlite3_stmt *pStmt);
+
+/*
+** The first parameter is a compiled SQL statement. This function returns
+** the column heading for the Nth column of that statement, where N is the
+** second function parameter. The string returned is UTF-8 encoded.
+*/
+const char *sqlite3_column_name(sqlite3_stmt*,int);
+
+/*
+** The first parameter is a compiled SQL statement. This function returns
+** the column heading for the Nth column of that statement, where N is the
+** second function parameter. The string returned is UTF-16 encoded.
+*/
+const void *sqlite3_column_name16(sqlite3_stmt*,int);
+
+/*
+** The first parameter is a compiled SQL statement. If this statement
+** is a SELECT statement, the Nth column of the returned result set 
+** of the SELECT is a table column then the declared type of the table
+** column is returned. If the Nth column of the result set is not at table
+** column, then a NULL pointer is returned. The returned string is always
+** UTF-8 encoded. For example, in the database schema:
+**
+** CREATE TABLE t1(c1 VARIANT);
+**
+** And the following statement compiled:
+**
+** SELECT c1 + 1, 0 FROM t1;
+**
+** Then this routine would return the string "VARIANT" for the second
+** result column (i==1), and a NULL pointer for the first result column
+** (i==0).
+*/
+const char *sqlite3_column_decltype(sqlite3_stmt *, int i);
+
+/*
+** The first parameter is a compiled SQL statement. If this statement
+** is a SELECT statement, the Nth column of the returned result set 
+** of the SELECT is a table column then the declared type of the table
+** column is returned. If the Nth column of the result set is not at table
+** column, then a NULL pointer is returned. The returned string is always
+** UTF-16 encoded. For example, in the database schema:
+**
+** CREATE TABLE t1(c1 VARINT);
+**
+** And the following statement compiled:
+**
+** SELECT c1 + 1, 0 FROM t1;
+**
+** Then this routine would return the string "VARIANT" for the second
+** result column (i==1), and a NULL pointer for the first result column
+** (i==0).
+*/
+const void *sqlite3_column_decltype16(sqlite3_stmt*,int);
 
 /*
 ** This routine is used to bind a 32-bit integer value to a variable
@@ -765,177 +893,6 @@ int sqlite3_bind_text16(sqlite3_stmt*, int i, const void *z, int, int eCopy);
 */
 int sqlite3_bind_blob(sqlite3_stmt*, int i, const void *z, int n, int eCopy);
 
-/*
-** Return the error code for the most recent sqlite3_* API call associated
-** with sqlite3 handle 'db'. SQLITE_OK is returned if the most recent 
-** API call was successful.
-**
-** Calls to many sqlite3_* functions set the error code and string returned
-** by sqlite3_errcode(), sqlite3_errmsg() and sqlite3_errmsg16()
-** (overwriting the previous values). A complete list of functions that set
-** the error code and string returned by these functions follows. Note that
-** calls to sqlite3_errcode(), sqlite3_errmsg() and sqlite3_errmsg16()
-** themselves do not affect the results of future invocations.
-**
-** sqlite3_bind_int32
-** sqlite3_bind_int64
-** sqlite3_bind_double
-** sqlite3_bind_null
-** sqlite3_bind_text
-** sqlite3_bind_text16
-** sqlite3_bind_blob
-** sqlite3_open
-** sqlite3_open16
-** sqlite3_prepare
-** sqlite3_prepare16
-** sqlite3_step
-** sqlite3_finalize
-**
-** Assuming no other intervening sqlite3_* API calls are made, the error
-** code returned by this function is associated with the same error as
-** the strings  returned by sqlite3_errmsg() and sqlite3_errmsg16().
-*/
-int sqlite3_errcode(sqlite3 *db);
-
-/*
-** Return a pointer to a UTF-8 encoded string describing in english the
-** error condition for the most recent sqlite3_* API call. The returned
-** string is always terminated by an 0x00 byte.
-**
-** The string "not an error" is returned when the most recent API call was
-** successful.
-*/
-const char *sqlite3_errmsg(sqlite3*);
-
-/*
-** Return a pointer to a UTF-16 native byte order encoded string describing
-** in english the error condition for the most recent sqlite3_* API call.
-** The returned string is always terminated by a pair of 0x00 bytes.
-**
-** The string "not an error" is returned when the most recent API call was
-** successful.
-*/
-const void *sqlite3_errmsg16(sqlite3*);
-
-/*
-** To execute an SQL query, it must first be compiled into a byte-code
-** program using this routine. The first parameter "db" is an SQLite
-** database handle. The second parameter "zSql" is the statement
-** to be compiled, encoded as UTF-8 text. If the next parameter, "nBytes",
-** is less than zero, then zSql is read up to the first nul terminator.
-** If "nBytes" is not less than zero, then it is the length of the
-** string zSql in bytes (not characters).
-**
-** *pzTail is made to point to the first byte past the end of the first
-** SQL statement in zSql.  This routine only compiles the first statement
-** in zSql, so *pzTail is left pointing to what remains uncompiled.
-**
-** *ppStmt is left pointing to a compiled SQL statement that can be
-** executed using sqlite3_step().  Or if there is an error, *ppStmt may be
-** set to NULL.  If the input text contained no SQL (if the input is and
-** empty string or a comment) then *ppStmt is set to NULL.
-**
-** On success, SQLITE_OK is returned.  Otherwise an error code is returned.
-** 
-*/
-int sqlite3_prepare(
-  sqlite3 *db,            /* Database handle */
-  const char *zSql,       /* SQL statement, UTF-8 encoded */
-  int nBytes,             /* Length of zSql in bytes. */
-  sqlite3_stmt **ppStmt,  /* OUT: Statement handle */
-  const char **pzTail     /* OUT: Pointer to unused portion of zSql */
-);
-
-/*
-** To execute an SQL query, it must first be compiled into a byte-code
-** program using this routine. The first parameter "db" is an SQLite
-** database handle. The second parameter "zSql" is the statement
-** to be compiled, encoded as UTF-16 text. If the next parameter, "nBytes",
-** is less than zero, then zSql is read up to the first pair of successive
-** 0x00 bytes.  If "nBytes" is not less than zero, then it is the length of
-** the string zSql in bytes (not characters).
-**
-** *pzTail is made to point to the first byte past the end of the first
-** SQL statement in zSql.  This routine only compiles the first statement
-** in zSql, so *pzTail is left pointing to what remains uncompiled.
-**
-** *ppStmt is left pointing to a compiled SQL statement that can be
-** executed using sqlite3_step().  Or if there is an error, *ppStmt may be
-** set to NULL.  If the input text contained no SQL (if the input is and
-** empty string or a comment) then *ppStmt is set to NULL.
-**
-** On success, SQLITE_OK is returned.  Otherwise an error code is returned.
-** 
-*/
-int sqlite3_prepare16(
-  sqlite3 *db,            /* Database handle */
-  const void *zSql,       /* SQL statement, UTF-16 encoded */
-  int nBytes,             /* Length of zSql in bytes. */
-  sqlite3_stmt **ppStmt,  /* OUT: Statement handle */
-  const void **pzTail     /* OUT: Pointer to unused portion of zSql */
-);
-
-/*
-** Return the number of columns in the result set returned by the compiled
-** SQL statement. This routine returns 0 if pStmt is an SQL statement
-** that does not return data (for example an UPDATE).
-*/
-int sqlite3_column_count(sqlite3_stmt *pStmt);
-
-/*
-** The first parameter is a compiled SQL statement. This function returns
-** the column heading for the Nth column of that statement, where N is the
-** second function parameter. The string returned is UTF-8 encoded.
-*/
-const char *sqlite3_column_name(sqlite3_stmt*,int);
-
-/*
-** The first parameter is a compiled SQL statement. This function returns
-** the column heading for the Nth column of that statement, where N is the
-** second function parameter. The string returned is UTF-16 encoded.
-*/
-const void *sqlite3_column_name16(sqlite3_stmt*,int);
-
-/*
-** The first parameter is a compiled SQL statement. If this statement
-** is a SELECT statement, the Nth column of the returned result set 
-** of the SELECT is a table column then the declared type of the table
-** column is returned. If the Nth column of the result set is not at table
-** column, then a NULL pointer is returned. The returned string is always
-** UTF-8 encoded. For example, in the database schema:
-**
-** CREATE TABLE t1(c1 VARIANT);
-**
-** And the following statement compiled:
-**
-** SELECT c1 + 1, 0 FROM t1;
-**
-** Then this routine would return the string "VARIANT" for the second
-** result column (i==1), and a NULL pointer for the first result column
-** (i==0).
-*/
-const char *sqlite3_column_decltype(sqlite3_stmt *, int i);
-
-/*
-** The first parameter is a compiled SQL statement. If this statement
-** is a SELECT statement, the Nth column of the returned result set 
-** of the SELECT is a table column then the declared type of the table
-** column is returned. If the Nth column of the result set is not at table
-** column, then a NULL pointer is returned. The returned string is always
-** UTF-16 encoded. For example, in the database schema:
-**
-** CREATE TABLE t1(c1 VARINT);
-**
-** And the following statement compiled:
-**
-** SELECT c1 + 1, 0 FROM t1;
-**
-** Then this routine would return the string "VARIANT" for the second
-** result column (i==1), and a NULL pointer for the first result column
-** (i==0).
-*/
-const void *sqlite3_column_decltype16(sqlite3_stmt*,int);
-
 /* 
 ** After an SQL query has been compiled with a call to either
 ** sqlite3_prepare() or sqlite3_prepare16(), then this function must be
@@ -969,74 +926,6 @@ const void *sqlite3_column_decltype16(sqlite3_stmt*,int);
 ** is being used simulataneously by two or more threads.
 */
 int sqlite3_step(sqlite3_stmt*);
-
-
-/*
-** The sqlite3_finalize() function is called to delete a compiled
-** SQL statement obtained by a previous call to sqlite3_prepare()
-** or sqlite3_prepare16(). If the statement was executed successfully, or
-** not executed at all, then SQLITE_OK is returned. If execution of the
-** statement failed then an error code is returned. 
-**
-** This routine can be called at any point during the execution of the
-** virtual machine.  If the virtual machine has not completed execution
-** when this routine is called, that is like encountering an error or
-** an interrupt.  (See sqlite3_interrupt().)  Incomplete updates may be
-** rolled back and transactions cancelled,  depending on the circumstances,
-** and the result code returned will be SQLITE_ABORT.
-*/
-int sqlite3_finalize(sqlite3_stmt *pStmt);
-
-/*
-** The sqlite3_reset() function is called to reset a compiled SQL
-** statement obtained by a previous call to sqlite3_prepare() or
-** sqlite3_prepare16() back to it's initial state, ready to be re-executed.
-** Any SQL statement variables that had values bound to them using
-** the sqlite3_bind_*() API retain their values.
-*/
-int sqlite3_reset(sqlite3_stmt *pStmt);
-
-/*
-** Open the sqlite database file "filename", where "filename" is UTF-8
-** encoded. An sqlite3* handle is returned in *ppDb, even if an error 
-** occurs. If the database is opened (or created) successfully, then 
-** SQLITE_OK is returned. Otherwise an error code is returned and the
-** sqlite3_errmsg() function may be used to obtain an English language
-** explanation of the error.
-**
-** If the database file does not exist, then a new database is created
-** using UTF-8 text encoding.
-**
-** Whether or not an error occurs when it is opened, resources associated
-** with the sqlite3* handle should be released by passing it to
-** sqlite3_close() when it is no longer required.
-*/
-int sqlite3_open(
-  const char *filename,   /* Database filename (UTF-8) */
-  sqlite3 **ppDb,         /* OUT: SQLite db handle */
-  const char **args       /* Null terminated array of option strings */
-);
-
-/*
-** Open the sqlite database file "filename", where "filename" is native
-** byte order UTF-16 encoded. An sqlite3* handle is returned in *ppDb, even
-** if an error occurs. If the database is opened (or created) successfully,
-** then SQLITE_OK is returned. Otherwise an error code is returned and the
-** sqlite3_errmsg() function may be used to obtain an English language
-** explanation of the error.
-**
-** If the database file does not exist, then a new database is created
-** using UTF-16 text encoding in the machines native byte order.
-**
-** Whether or not an error occurs when it is opened, resources associated
-** with the sqlite3* handle should be released by passing it to
-** sqlite3_close() when it is no longer required.
-*/
-int sqlite3_open16(
-  const void *filename,   /* Database filename (UTF-16) */
-  sqlite3 **ppDb,         /* OUT: SQLite db handle */
-  const char **args       /* Null terminated array of option strings */
-);
 
 /*
 ** Return the number of values in the current row of the result set.
@@ -1151,6 +1040,116 @@ long long int sqlite3_column_int(sqlite3_stmt*,int);
 ** SQLITE3_BLOB      0.0
 */
 double sqlite3_column_float(sqlite3_stmt*,int);
+
+/*
+** The sqlite3_finalize() function is called to delete a compiled
+** SQL statement obtained by a previous call to sqlite3_prepare()
+** or sqlite3_prepare16(). If the statement was executed successfully, or
+** not executed at all, then SQLITE_OK is returned. If execution of the
+** statement failed then an error code is returned. 
+**
+** This routine can be called at any point during the execution of the
+** virtual machine.  If the virtual machine has not completed execution
+** when this routine is called, that is like encountering an error or
+** an interrupt.  (See sqlite3_interrupt().)  Incomplete updates may be
+** rolled back and transactions cancelled,  depending on the circumstances,
+** and the result code returned will be SQLITE_ABORT.
+*/
+int sqlite3_finalize(sqlite3_stmt *pStmt);
+
+/*
+** The sqlite3_reset() function is called to reset a compiled SQL
+** statement obtained by a previous call to sqlite3_prepare() or
+** sqlite3_prepare16() back to it's initial state, ready to be re-executed.
+** Any SQL statement variables that had values bound to them using
+** the sqlite3_bind_*() API retain their values.
+*/
+int sqlite3_reset(sqlite3_stmt *pStmt);
+
+/*
+** Pointers to the following two opaque structures are used to communicate
+** with the implementations of user-defined functions.
+*/
+typedef struct sqlite3_context sqlite3_context;
+typedef struct Mem sqlite3_value;
+
+/*
+** The following two functions are used to add user functions or aggregates
+** implemented in C to the SQL langauge interpreted by SQLite. The
+** difference only between the two is that the second parameter, the
+** name of the (scalar) function or aggregate, is encoded in UTF-8 for
+** sqlite3_create_function() and UTF-16 for sqlite3_create_function16().
+**
+** The first argument is the database handle that the new function or
+** aggregate is to be added to. If a single program uses more than one
+** database handle internally, then user functions or aggregates must 
+** be added individually to each database handle with which they will be
+** used.
+**
+** The third parameter is the number of arguments that the function or
+** aggregate takes. If this parameter is negative, then the function or
+** aggregate may take any number of arguments.
+**
+** The seventh, eighth and ninth parameters, xFunc, xStep and xFinal, are
+** pointers to user implemented C functions that implement the user
+** function or aggregate. A scalar function requires an implementation of
+** the xFunc callback only, NULL pointers should be passed as the xStep
+** and xFinal parameters. An aggregate function requires an implementation
+** of xStep and xFinal, but NULL should be passed for xFunc. To delete an
+** existing user function or aggregate, pass NULL for all three function
+** callback. Specifying an inconstent set of callback values, such as an
+** xFunc and an xFinal, or an xStep but no xFinal, SQLITE_ERROR is
+** returned.
+*/
+int sqlite3_create_function(
+  sqlite3 *,
+  const char *zFunctionName,
+  int nArg,
+  int eTextRep,
+  int iCollateArg,
+  void*,
+  void (*xFunc)(sqlite3_context*,int,sqlite3_value**),
+  void (*xStep)(sqlite3_context*,int,sqlite3_value**),
+  void (*xFinal)(sqlite3_context*)
+);
+int sqlite3_create_function16(
+  sqlite3*,
+  const void *zFunctionName,
+  int nArg,
+  int eTextRep,
+  int iCollateArg,
+  void*,
+  void (*xFunc)(sqlite3_context*,int,sqlite3_value**),
+  void (*xStep)(sqlite3_context*,int,sqlite3_value**),
+  void (*xFinal)(sqlite3_context*)
+);
+
+/*
+** Use the following routine to define the datatype returned by a
+** user-defined function.  The second argument can be one of the
+** constants SQLITE_NUMERIC, SQLITE_TEXT, or SQLITE_ARGS or it
+** can be an integer greater than or equal to zero.  When the datatype
+** parameter is non-negative, the type of the result will be the
+** same as the datatype-th argument.  If datatype==SQLITE_NUMERIC
+** then the result is always numeric.  If datatype==SQLITE_TEXT then
+** the result is always text.  If datatype==SQLITE_ARGS then the result
+** is numeric if any argument is numeric and is text otherwise.
+*/
+int sqlite3_function_type(
+  sqlite *db,               /* The database there the function is registered */
+  const char *zName,        /* Name of the function */
+  int datatype              /* The datatype for this function */
+);
+#define SQLITE_NUMERIC     (-1)
+#define SQLITE_TEXT        (-2)
+#define SQLITE_ARGS        (-3)
+
+/*
+** The next routine returns the number of calls to xStep for a particular
+** aggregate function instance.  The current call to xStep counts so this
+** routine always returns at least 1.
+*/
+int sqlite3_aggregate_count(sqlite3_context*);
 
 
 /*
