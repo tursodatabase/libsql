@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the UPDATE statement.
 #
-# $Id: update.test,v 1.14 2003/08/05 13:13:39 drh Exp $
+# $Id: update.test,v 1.15 2004/02/10 13:41:53 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -497,5 +497,66 @@ do_test update-11.2 {
 } {1 15 2 8}
 
 integrity_check update-12.1
+
+# Ticket 602.  Updates should occur in the same order as the records
+# were discovered in the WHERE clause.
+#
+do_test update-13.1 {
+  execsql {
+    BEGIN;
+    CREATE TABLE t2(a);
+    INSERT INTO t2 VALUES(1);
+    INSERT INTO t2 VALUES(2);
+    INSERT INTO t2 SELECT a+2 FROM t2;
+    INSERT INTO t2 SELECT a+4 FROM t2;
+    INSERT INTO t2 SELECT a+8 FROM t2;
+    INSERT INTO t2 SELECT a+16 FROM t2;
+    INSERT INTO t2 SELECT a+32 FROM t2;
+    INSERT INTO t2 SELECT a+64 FROM t2;
+    INSERT INTO t2 SELECT a+128 FROM t2;
+    INSERT INTO t2 SELECT a+256 FROM t2;
+    INSERT INTO t2 SELECT a+512 FROM t2;
+    INSERT INTO t2 SELECT a+1024 FROM t2;
+    COMMIT;
+    SELECT count(*) FROM t2;
+  }
+} {2048}
+do_test update-13.2 {
+  execsql {
+    SELECT count(*) FROM t2 WHERE a=rowid;
+  }
+} {2048}
+do_test update-13.3 {
+  execsql {
+    UPDATE t2 SET rowid=rowid-1;
+    SELECT count(*) FROM t2 WHERE a=rowid+1;
+  }
+} {2048}
+do_test update-13.3 {
+  execsql {
+    UPDATE t2 SET rowid=rowid+10000;
+    UPDATE t2 SET rowid=rowid-9999;
+    SELECT count(*) FROM t2 WHERE a=rowid;
+  }
+} {2048}
+do_test update-13.4 {
+  execsql {
+    BEGIN;
+    INSERT INTO t2 SELECT a+2048 FROM t2;
+    INSERT INTO t2 SELECT a+4096 FROM t2;
+    INSERT INTO t2 SELECT a+8192 FROM t2;
+    SELECT count(*) FROM t2 WHERE a=rowid;
+    COMMIT;
+  }
+} 16384
+do_test update-13.5 {
+  execsql {
+    UPDATE t2 SET rowid=rowid-1;
+    SELECT count(*) FROM t2 WHERE a=rowid+1;
+  }
+} 16384
+
+integrity_check update-13.6
+
 
 finish_test
