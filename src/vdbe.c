@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.94 2001/11/07 14:22:00 drh Exp $
+** $Id: vdbe.c,v 1.95 2001/11/07 16:48:27 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -64,8 +64,6 @@ struct Cursor {
   Bool keyAsData;       /* The OP_Column command works on key instead of data */
   Bool atFirst;         /* True if pointing to first entry */
   Btree *pBt;           /* Separate file holding temporary table */
-  char *zKey;           /* Key used in BeginIdx and NextIdx operators */
-  int nKey;             /* Number of bytes in zKey[] */
 };
 typedef struct Cursor Cursor;
 
@@ -278,12 +276,47 @@ int sqliteVdbeAddOp(Vdbe *p, int op, int p1, int p2){
 }
 
 /*
+** Create a new symbolic label for an instruction that has yet to be
+** coded.  The symbolic label is really just a negative number.  The
+** label can be used as the P2 value of an operation.  Later, when
+** the label is resolved to a specific address, the VDBE will scan
+** through its operation list and change all values of P2 which match
+** the label into the resolved address.
+**
+** The VDBE knows that a P2 value is a label because labels are
+** always negative and P2 values are suppose to be non-negative.
+** Hence, a negative P2 value is a label that has yet to be resolved.
+*/
+int sqliteVdbeMakeLabel(Vdbe *p){
+  int i;
+  i = p->nLabel++;
+  if( i>=p->nLabelAlloc ){
+    int *aNew;
+    p->nLabelAlloc = p->nLabelAlloc*2 + 10;
+    aNew = sqliteRealloc( p->aLabel, p->nLabelAlloc*sizeof(p->aLabel[0]));
+    if( aNew==0 ){
+      sqliteFree(p->aLabel);
+    }
+    p->aLabel = aNew;
+  }
+  if( p->aLabel==0 ){
+    p->nLabel = 0;
+    p->nLabelAlloc = 0;
+    return 0;
+  }
+  p->aLabel[i] = -1;
+  return -1-i;
+}
+
+/*
 ** Resolve label "x" to be the address of the next instruction to
 ** be inserted.
 */
 void sqliteVdbeResolveLabel(Vdbe *p, int x){
   int j;
   if( x<0 && (-x)<=p->nLabel && p->aOp ){
+    if( p->aLabel[-1-x]==p->nOp ) return;
+    assert( p->aLabel[-1-x]<0 );
     p->aLabel[-1-x] = p->nOp;
     for(j=0; j<p->nOp; j++){
       if( p->aOp[j].p2==x ) p->aOp[j].p2 = p->nOp;
@@ -438,39 +471,6 @@ void sqliteVdbeCompressSpace(Vdbe *p, int addr){
     z[i-1] = 0;
     i--;
   }
-}
-
-/*
-** Create a new symbolic label for an instruction that has yet to be
-** coded.  The symbolic label is really just a negative number.  The
-** label can be used as the P2 value of an operation.  Later, when
-** the label is resolved to a specific address, the VDBE will scan
-** through its operation list and change all values of P2 which match
-** the label into the resolved address.
-**
-** The VDBE knows that a P2 value is a label because labels are
-** always negative and P2 values are suppose to be non-negative.
-** Hence, a negative P2 value is a label that has yet to be resolved.
-*/
-int sqliteVdbeMakeLabel(Vdbe *p){
-  int i;
-  i = p->nLabel++;
-  if( i>=p->nLabelAlloc ){
-    int *aNew;
-    p->nLabelAlloc = p->nLabelAlloc*2 + 10;
-    aNew = sqliteRealloc( p->aLabel, p->nLabelAlloc*sizeof(p->aLabel[0]));
-    if( aNew==0 ){
-      sqliteFree(p->aLabel);
-    }
-    p->aLabel = aNew;
-  }
-  if( p->aLabel==0 ){
-    p->nLabel = 0;
-    p->nLabelAlloc = 0;
-    return 0;
-  }
-  p->aLabel[i] = -1;
-  return -1-i;
 }
 
 /*
@@ -721,9 +721,6 @@ static void cleanupCursor(Cursor *pCx){
   if( pCx->pCursor ){
     sqliteBtreeCloseCursor(pCx->pCursor);
   }
-  if( pCx->zKey ){
-    sqliteFree(pCx->zKey);
-  }
   if( pCx->pBt ){
     sqliteBtreeClose(pCx->pBt);
   }
@@ -843,29 +840,28 @@ static char *zOpName[] = { 0,
   "MoveTo",            "Fcnt",              "NewRecno",          "Put",
   "Distinct",          "Found",             "NotFound",          "Delete",
   "Column",            "KeyAsData",         "Recno",             "FullKey",
-  "Rewind",            "Next",              "NextN",             "Destroy",
-  "Clear",             "CreateIndex",       "CreateTable",       "Reorganize",
-  "BeginIdx",          "NextIdx",           "IdxPut",            "IdxDelete",
-  "IdxRecno",          "IdxGT",             "IdxGE",             "MemLoad",
-  "MemStore",          "ListWrite",         "ListRewind",        "ListRead",
-  "ListReset",         "SortPut",           "SortMakeRec",       "SortMakeKey",
-  "Sort",              "SortNext",          "SortCallback",      "SortReset",
-  "FileOpen",          "FileRead",          "FileColumn",        "AggReset",
-  "AggFocus",          "AggIncr",           "AggNext",           "AggSet",
-  "AggGet",            "SetInsert",         "SetFound",          "SetNotFound",
-  "MakeRecord",        "MakeKey",           "MakeIdxKey",        "IncrKey",
-  "Goto",              "If",                "Halt",              "ColumnCount",
-  "ColumnName",        "Callback",          "NullCallback",      "Integer",
-  "String",            "Pop",               "Dup",               "Pull",
-  "Add",               "AddImm",            "Subtract",          "Multiply",
-  "Divide",            "Remainder",         "BitAnd",            "BitOr",
-  "BitNot",            "ShiftLeft",         "ShiftRight",        "AbsValue",
-  "Precision",         "Min",               "Max",               "Like",
-  "Glob",              "Eq",                "Ne",                "Lt",
-  "Le",                "Gt",                "Ge",                "IsNull",
-  "NotNull",           "Negative",          "And",               "Or",
-  "Not",               "Concat",            "Noop",              "Strlen",
-  "Substr",            "Limit",           
+  "Rewind",            "Next",              "Destroy",           "Clear",
+  "CreateIndex",       "CreateTable",       "Reorganize",        "IdxPut",
+  "IdxDelete",         "IdxRecno",          "IdxGT",             "IdxGE",
+  "MemLoad",           "MemStore",          "ListWrite",         "ListRewind",
+  "ListRead",          "ListReset",         "SortPut",           "SortMakeRec",
+  "SortMakeKey",       "Sort",              "SortNext",          "SortCallback",
+  "SortReset",         "FileOpen",          "FileRead",          "FileColumn",
+  "AggReset",          "AggFocus",          "AggIncr",           "AggNext",
+  "AggSet",            "AggGet",            "SetInsert",         "SetFound",
+  "SetNotFound",       "MakeRecord",        "MakeKey",           "MakeIdxKey",
+  "IncrKey",           "Goto",              "If",                "Halt",
+  "ColumnCount",       "ColumnName",        "Callback",          "NullCallback",
+  "Integer",           "String",            "Pop",               "Dup",
+  "Pull",              "Add",               "AddImm",            "Subtract",
+  "Multiply",          "Divide",            "Remainder",         "BitAnd",
+  "BitOr",             "BitNot",            "ShiftLeft",         "ShiftRight",
+  "AbsValue",          "Precision",         "Min",               "Max",
+  "Like",              "Glob",              "Eq",                "Ne",
+  "Lt",                "Le",                "Gt",                "Ge",
+  "IsNull",            "NotNull",           "Negative",          "And",
+  "Or",                "Not",               "Concat",            "Noop",
+  "Strlen",            "Substr",            "Limit",           
 };
 
 /*
@@ -1043,6 +1039,8 @@ int sqliteVdbeExec(
   zStack = p->zStack;
   aStack = p->aStack;
   p->tos = -1;
+  p->iLimit = 0;
+  p->iOffset = 0;
 
   /* Initialize the aggregrate hash table.
   */
@@ -2929,36 +2927,11 @@ case OP_Rewind: {
 /* Opcode: Next P1 P2 *
 **
 ** Advance cursor P1 so that it points to the next key/data pair in its
-** table.  Or, if there are no more key/data pairs, jump to location P2.
-*/
-case OP_Next: {
-  int i = pOp->p1;
-  BtCursor *pCrsr;
-
-  if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
-    if( !p->aCsr[i].atFirst ){
-      int res;
-      rc = sqliteBtreeNext(pCrsr, &res);
-      if( res ){
-        pc = pOp->p2 - 1;
-      }else{
-        p->nFetch++;
-      }
-    }
-    p->aCsr[i].atFirst = 0;
-    p->aCsr[i].recnoIsValid = 0;
-  }
-  break;
-}
-
-/* Opcode: NextN P1 P2 *
-**
-** Advance cursor P1 so that it points to the next key/data pair in its
 ** table or index.  If there are no more key/value pairs then fall through
 ** to the following instruction.  But if the cursor advance was successful,
 ** jump immediately to P2.
 */
-case OP_NextN: {
+case OP_Next: {
   int i = pOp->p1;
   BtCursor *pCrsr;
 
@@ -2970,92 +2943,6 @@ case OP_NextN: {
       p->nFetch++;
     }
     p->aCsr[i].recnoIsValid = 0;
-  }
-  break;
-}
-
-/* Opcode: BeginIdx P1 * *
-**
-** Begin searching an index for records with the key found on the
-** top of the stack.  The key on the top of the stack should be built
-** using the MakeKey opcode.  Subsequent calls to NextIdx will push
-** record numbers onto the stack until all records with the same key
-** have been returned.
-**
-** Note that the key for this opcode should be built using MakeKey
-** but the key used for PutIdx and DeleteIdx should be built using
-** MakeIdxKey.  The difference is that MakeIdxKey adds a 4-bytes
-** record number to the end of the key in order to specify a particular
-** entry in the index.  MakeKey omits the 4-byte record number.
-** The search that this BeginIdx instruction initiates will span all
-** entries in the index where the MakeKey generated key matches all
-** but the last four bytes of the MakeIdxKey generated key.
-*/
-case OP_BeginIdx: {
-  int i = pOp->p1;
-  int tos = p->tos;
-  int res, rx;
-  Cursor *pCrsr;
-  VERIFY( if( tos<0 ) goto not_enough_stack; )
-  if( i>=0 && i<p->nCursor && (pCrsr = &p->aCsr[i])->pCursor!=0 ){
-    if( Stringify(p, tos) ) goto no_mem;
-    if( pCrsr->zKey ) sqliteFree(pCrsr->zKey);
-    pCrsr->nKey = aStack[tos].n;
-    pCrsr->zKey = sqliteMalloc( pCrsr->nKey+1 );
-    if( pCrsr->zKey==0 ) goto no_mem;
-    memcpy(pCrsr->zKey, zStack[tos], aStack[tos].n);
-    pCrsr->zKey[aStack[tos].n] = 0;
-    rx = sqliteBtreeMoveto(pCrsr->pCursor, zStack[tos], aStack[tos].n, &res);
-    pCrsr->atFirst = rx==SQLITE_OK && res>0;
-    pCrsr->recnoIsValid = 0;
-  }
-  POPSTACK;
-  break;
-}
-
-/* Opcode: NextIdx P1 P2 *
-**
-** The P1 cursor points to an SQL index for which a BeginIdx operation
-** has been issued.  This operation retrieves the next record from that
-** cursor and verifies that the key on the record minus the last 4 bytes
-** matches the key that was pulled from the stack by the BeginIdx instruction.
-** If they match, then the last 4 bytes of the key on the record hold a record
-** number and that record number is extracted and pushed on the stack.
-** If the keys do not match, there is an immediate jump to instruction P2.
-*/
-case OP_NextIdx: {
-  int i = pOp->p1;
-  int tos = ++p->tos;
-  Cursor *pCrsr;
-  BtCursor *pCur;
-  int rx, res, size;
-
-  VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
-  zStack[tos] = 0;
-  if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = &p->aCsr[i])->pCursor!=0 ){
-    pCur = pCrsr->pCursor;
-    if( pCrsr->atFirst ){
-      pCrsr->atFirst = 0;
-      res = 0;
-    }else{
-      rx = sqliteBtreeNext(pCur, &res);
-      if( rx!=SQLITE_OK ) goto abort_due_to_error;
-    }
-    sqliteBtreeKeySize(pCur, &size);
-    if( res>0 || size!=pCrsr->nKey+sizeof(u32) ||
-      sqliteBtreeKeyCompare(pCur, pCrsr->zKey, pCrsr->nKey, 4, &res)!=SQLITE_OK
-      || res!=0
-    ){
-      pc = pOp->p2 - 1;
-      POPSTACK;
-    }else{
-      int recno;
-      sqliteBtreeKey(pCur, pCrsr->nKey, sizeof(u32), (char*)&recno);
-      recno = bigEndian(recno);
-      p->aCsr[i].lastRecno = aStack[tos].i = recno;
-      p->aCsr[i].recnoIsValid = 1;
-      aStack[tos].flags = STK_Int;
-    }
   }
   break;
 }
@@ -3197,6 +3084,7 @@ case OP_IdxGE: {
       pc = pOp->p2 - 1 ;
     }
   }
+  POPSTACK;
   break;
 }
 
@@ -3780,7 +3668,7 @@ case OP_MemStore: {
   if( pMem->s.flags & (STK_Static|STK_Dyn) ){
     if( pOp->p2==0 && (pMem->s.flags & STK_Dyn)!=0 ){
       pMem->z = sqliteMalloc( pMem->s.n );
-      if( pMem->z ) goto no_mem;
+      if( pMem->z==0 ) goto no_mem;
       memcpy(pMem->z, zStack[tos], pMem->s.n);
     }else{
       pMem->z = zStack[tos];

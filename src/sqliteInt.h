@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.67 2001/11/06 04:00:19 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.68 2001/11/07 16:48:27 drh Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -139,6 +139,7 @@ typedef struct Parse Parse;
 typedef struct Token Token;
 typedef struct IdList IdList;
 typedef struct WhereInfo WhereInfo;
+typedef struct WhereLevel WhereLevel;
 typedef struct Select Select;
 typedef struct AggExpr AggExpr;
 
@@ -299,6 +300,21 @@ struct IdList {
 };
 
 /*
+** For each nested loop in a WHERE clause implementation, the WhereInfo
+** structure contains a single instance of this structure.  This structure
+** is intended to be private the the where.c module and should not be
+** access or modified by other modules.
+*/
+struct WhereLevel {
+  int iMem;            /* Memory cell used by this level */
+  Index *pIdx;         /* Index used */
+  int iCur;            /* Cursor number used for this index */
+  int brk;             /* Jump here to break out of the loop */
+  int cont;            /* Jump here to continue with the next loop cycle */
+  int op, p1, p2;      /* Opcode used to terminate the loop */
+};
+
+/*
 ** The WHERE clause processing routine has two halves.  The
 ** first part does the start of the WHERE loop and the second
 ** half does the tail of the WHERE loop.  An instance of
@@ -311,7 +327,8 @@ struct WhereInfo {
   int iContinue;       /* Jump here to continue with next record */
   int iBreak;          /* Jump here to break out of the loop */
   int base;            /* Index of first Open opcode */
-  Index *aIdx[32];     /* Indices used for each table */
+  int nLevel;          /* Number of nested loop */
+  WhereLevel a[1];     /* Information about each nest loop in the WHERE */
 };
 
 /*

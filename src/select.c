@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.48 2001/11/07 14:22:00 drh Exp $
+** $Id: select.c,v 1.49 2001/11/07 16:48:27 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -557,17 +557,19 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
       ** it is that we currently need.
       */      
       if( eDest!=priorOp ){
-        int iCont, iBreak;
+        int iCont, iBreak, iStart;
         assert( p->pEList );
         generateColumnNames(pParse, 0, p->pEList);
-        sqliteVdbeAddOp(v, OP_Rewind, unionTab, 0);
         iBreak = sqliteVdbeMakeLabel(v);
-        iCont = sqliteVdbeAddOp(v, OP_Next, unionTab, iBreak);
+        iCont = sqliteVdbeMakeLabel(v);
+        sqliteVdbeAddOp(v, OP_Rewind, unionTab, iBreak);
+        iStart = sqliteVdbeCurrentAddr(v);
         rc = selectInnerLoop(pParse, 0, unionTab, p->pEList->nExpr,
                              p->pOrderBy, -1, eDest, iParm, 
                              iCont, iBreak);
         if( rc ) return 1;
-        sqliteVdbeAddOp(v, OP_Goto, 0, iCont);
+        sqliteVdbeResolveLabel(v, iCont);
+        sqliteVdbeAddOp(v, OP_Next, unionTab, iStart);
         sqliteVdbeResolveLabel(v, iBreak);
         sqliteVdbeAddOp(v, OP_Close, unionTab, 0);
         if( p->pOrderBy ){
@@ -578,7 +580,7 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
     }
     case TK_INTERSECT: {
       int tab1, tab2;
-      int iCont, iBreak;
+      int iCont, iBreak, iStart;
 
       /* INTERSECT is different from the others since it requires
       ** two temporary tables.  Hence it has its own case.  Begin
@@ -611,16 +613,17 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
       */
       assert( p->pEList );
       generateColumnNames(pParse, 0, p->pEList);
-      sqliteVdbeAddOp(v, OP_Rewind, tab1, 0);
       iBreak = sqliteVdbeMakeLabel(v);
-      iCont = sqliteVdbeAddOp(v, OP_Next, tab1, iBreak);
-      sqliteVdbeAddOp(v, OP_FullKey, tab1, 0);
+      iCont = sqliteVdbeMakeLabel(v);
+      sqliteVdbeAddOp(v, OP_Rewind, tab1, iBreak);
+      iStart = sqliteVdbeAddOp(v, OP_FullKey, tab1, 0);
       sqliteVdbeAddOp(v, OP_NotFound, tab2, iCont);
       rc = selectInnerLoop(pParse, 0, tab1, p->pEList->nExpr,
                              p->pOrderBy, -1, eDest, iParm, 
                              iCont, iBreak);
       if( rc ) return 1;
-      sqliteVdbeAddOp(v, OP_Goto, 0, iCont);
+      sqliteVdbeResolveLabel(v, iCont);
+      sqliteVdbeAddOp(v, OP_Next, tab1, iStart);
       sqliteVdbeResolveLabel(v, iBreak);
       sqliteVdbeAddOp(v, OP_Close, tab2, 0);
       sqliteVdbeAddOp(v, OP_Close, tab1, 0);

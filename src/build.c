@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.54 2001/11/07 14:22:00 drh Exp $
+** $Id: build.c,v 1.55 2001/11/07 16:48:27 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -692,14 +692,14 @@ void sqliteDropTable(Parse *pParse, Token *pName){
   if( v ){
     static VdbeOp dropTable[] = {
       { OP_OpenWrite,  0, 2,        MASTER_NAME},
-      { OP_Rewind,     0, 0,        0},
+      { OP_Rewind,     0, ADDR(9),  0},
       { OP_String,     0, 0,        0}, /* 2 */
-      { OP_Next,       0, ADDR(9),  0}, /* 3 */
-      { OP_Dup,        0, 0,        0},
+      { OP_MemStore,   1, 1,        0},
+      { OP_MemLoad,    1, 0,        0}, /* 4 */
       { OP_Column,     0, 2,        0},
-      { OP_Ne,         0, ADDR(3),  0},
+      { OP_Ne,         0, ADDR(8),  0},
       { OP_Delete,     0, 0,        0},
-      { OP_Goto,       0, ADDR(3),  0},
+      { OP_Next,       0, ADDR(4),  0}, /* 8 */
       { OP_SetCookie,  0, 0,        0}, /* 9 */
       { OP_Close,      0, 0,        0},
     };
@@ -981,20 +981,16 @@ void sqliteCreateIndex(
     if( pTable ){
       sqliteVdbeAddOp(v, isTemp ? OP_OpenAux : OP_Open, 2, pTab->tnum);
       sqliteVdbeChangeP3(v, -1, pTab->zName, P3_STATIC);
-      lbl1 = sqliteVdbeMakeLabel(v);
       lbl2 = sqliteVdbeMakeLabel(v);
-      sqliteVdbeAddOp(v, OP_Rewind, 2, 0);
-      sqliteVdbeResolveLabel(v, lbl1);
-      sqliteVdbeAddOp(v, OP_Next, 2, lbl2);
-      sqliteVdbeAddOp(v, OP_Recno, 2, 0);
+      sqliteVdbeAddOp(v, OP_Rewind, 2, lbl2);
+      lbl1 = sqliteVdbeAddOp(v, OP_Recno, 2, 0);
       for(i=0; i<pIndex->nColumn; i++){
         sqliteVdbeAddOp(v, OP_Column, 2, pIndex->aiColumn[i]);
       }
       sqliteVdbeAddOp(v, OP_MakeIdxKey, pIndex->nColumn, 0);
       sqliteVdbeAddOp(v, OP_IdxPut, 1, pIndex->isUnique);
-      sqliteVdbeAddOp(v, OP_Goto, 0, lbl1);
+      sqliteVdbeAddOp(v, OP_Next, 2, lbl1);
       sqliteVdbeResolveLabel(v, lbl2);
-      sqliteVdbeAddOp(v, OP_Noop, 0, 0);
       sqliteVdbeAddOp(v, OP_Close, 2, 0);
       sqliteVdbeAddOp(v, OP_Close, 1, 0);
     }
@@ -1043,15 +1039,16 @@ void sqliteDropIndex(Parse *pParse, Token *pName){
   if( v ){
     static VdbeOp dropIndex[] = {
       { OP_OpenWrite,  0, 2,       MASTER_NAME},
-      { OP_Rewind,     0, 0,       0}, 
+      { OP_Rewind,     0, ADDR(10),0}, 
       { OP_String,     0, 0,       0}, /* 2 */
-      { OP_Next,       0, ADDR(8), 0}, /* 3 */
-      { OP_Dup,        0, 0,       0},
+      { OP_MemStore,   1, 1,       0},
+      { OP_MemLoad,    1, 0,       0}, /* 4 */
       { OP_Column,     0, 1,       0},
-      { OP_Ne,         0, ADDR(3), 0},
-      { OP_Delete,     0, 0,       0},
-      { OP_Destroy,    0, 0,       0}, /* 8 */
-      { OP_SetCookie,  0, 0,       0}, /* 9 */
+      { OP_Eq,         0, ADDR(9), 0},
+      { OP_Next,       0, ADDR(4), 0},
+      { OP_Goto,       0, ADDR(10),0},
+      { OP_Delete,     0, 0,       0}, /* 9 */
+      { OP_SetCookie,  0, 0,       0}, /* 10 */
       { OP_Close,      0, 0,       0},
     };
     int base;
@@ -1066,7 +1063,7 @@ void sqliteDropIndex(Parse *pParse, Token *pName){
       base = sqliteVdbeAddOpList(v, ArraySize(dropIndex), dropIndex);
       sqliteVdbeChangeP3(v, base+2, pIndex->zName, P3_STATIC);
       changeCookie(db);
-      sqliteVdbeChangeP1(v, base+9, db->next_cookie);
+      sqliteVdbeChangeP1(v, base+10, db->next_cookie);
     }
     sqliteVdbeAddOp(v, OP_Destroy, pIndex->tnum, pTab->isTemp);
     if( (db->flags & SQLITE_InTrans)==0 ){

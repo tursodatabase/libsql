@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.48 2001/11/03 23:57:09 drh Exp $
+** $Id: main.c,v 1.49 2001/11/07 16:48:27 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -157,40 +157,37 @@ static int sqliteInit(sqlite *db, char **pzErrMsg){
   */
   static VdbeOp initProg[] = {
     { OP_Open,     0, 2,  0},
-    { OP_Rewind,   0, 0,  0},
-    { OP_Next,     0, 12, 0},           /* 2 */
-    { OP_Column,   0, 0,  0},
+    { OP_Rewind,   0, 31, 0},
+    { OP_Column,   0, 0,  0},           /* 2 */
     { OP_String,   0, 0,  "meta"},
-    { OP_Ne,       0, 2,  0},
+    { OP_Ne,       0, 10, 0},
     { OP_Column,   0, 0,  0},
     { OP_Column,   0, 1,  0},
     { OP_Column,   0, 3,  0},
     { OP_Column,   0, 4,  0},
     { OP_Callback, 4, 0,  0},
-    { OP_Goto,     0, 2,  0},
-    { OP_Rewind,   0, 0,  0},           /* 12 */
-    { OP_Next,     0, 23, 0},           /* 13 */
-    { OP_Column,   0, 0,  0},
+    { OP_Next,     0, 2,  0},           /* 10 */
+    { OP_Rewind,   0, 31, 0},           /* 11 */
+    { OP_Column,   0, 0,  0},           /* 12 */
     { OP_String,   0, 0,  "table"},
-    { OP_Ne,       0, 13, 0},
+    { OP_Ne,       0, 20, 0},
     { OP_Column,   0, 0,  0},
     { OP_Column,   0, 1,  0},
     { OP_Column,   0, 3,  0},
     { OP_Column,   0, 4,  0},
     { OP_Callback, 4, 0,  0},
-    { OP_Goto,     0, 13, 0},
-    { OP_Rewind,   0, 0,  0},           /* 23 */
-    { OP_Next,     0, 34, 0},           /* 24 */
-    { OP_Column,   0, 0,  0},
+    { OP_Next,     0, 12, 0},           /* 20 */
+    { OP_Rewind,   0, 31, 0},           /* 21 */
+    { OP_Column,   0, 0,  0},           /* 22 */
     { OP_String,   0, 0,  "index"},
-    { OP_Ne,       0, 24, 0},
+    { OP_Ne,       0, 30, 0},
     { OP_Column,   0, 0,  0},
     { OP_Column,   0, 1,  0},
     { OP_Column,   0, 3,  0},
     { OP_Column,   0, 4,  0},
     { OP_Callback, 4, 0,  0},
-    { OP_Goto,     0, 24, 0},
-    { OP_String,   0, 0,  "meta"},      /* 34 */
+    { OP_Next,     0, 22, 0},           /* 30 */
+    { OP_String,   0, 0,  "meta"},      /* 31 */
     { OP_String,   0, 0,  "schema-cookie"},
     { OP_String,   0, 0,  0},
     { OP_ReadCookie,0,0,  0},

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.25 2001/11/07 14:22:00 drh Exp $
+** $Id: insert.c,v 1.26 2001/11/07 16:48:27 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -173,9 +173,9 @@ void sqliteInsert(
     if( db->flags & SQLITE_CountRows ){
       sqliteVdbeAddOp(v, OP_Integer, 0, 0);  /* Initialize the row count */
     }
-    sqliteVdbeAddOp(v, OP_Rewind, srcTab, 0);
     iBreak = sqliteVdbeMakeLabel(v);
-    iCont = sqliteVdbeAddOp(v, OP_Next, srcTab, iBreak);
+    sqliteVdbeAddOp(v, OP_Rewind, srcTab, iBreak);
+    iCont = sqliteVdbeCurrentAddr(v);
   }
 
   /* Create a new entry in the table and fill it with data.
@@ -245,9 +245,13 @@ void sqliteInsert(
   /* The bottom of the loop, if the data source is a SELECT statement
   */
   if( srcTab>=0 ){
-    sqliteVdbeAddOp(v, OP_Goto, 0, iCont);
+    sqliteVdbeAddOp(v, OP_Next, srcTab, iCont);
     sqliteVdbeResolveLabel(v, iBreak);
-    sqliteVdbeAddOp(v, OP_Noop, 0, 0);
+    sqliteVdbeAddOp(v, OP_Close, srcTab, 0);
+  }
+  sqliteVdbeAddOp(v, OP_Close, base, 0);
+  for(idx=1, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, idx++){
+    sqliteVdbeAddOp(v, OP_Close, idx+base, 0);
   }
   if( (db->flags & SQLITE_InTrans)==0 ){
     sqliteVdbeAddOp(v, OP_Commit, 0, 0);
