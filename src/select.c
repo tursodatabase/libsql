@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.116 2002/12/03 02:22:52 drh Exp $
+** $Id: select.c,v 1.117 2002/12/03 02:34:50 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1870,6 +1870,20 @@ int sqliteSelect(
     }
     sqliteOracle8JoinFixup(base, pTabList, pWhere);
   }
+  if( pHaving ){
+    if( pGroupBy==0 ){
+      sqliteSetString(&pParse->zErrMsg, "a GROUP BY clause is required "
+         "before HAVING", 0);
+      pParse->nErr++;
+      goto select_end;
+    }
+    if( sqliteExprResolveIds(pParse, base, pTabList, pEList, pHaving) ){
+      goto select_end;
+    }
+    if( sqliteExprCheck(pParse, pHaving, 1, &isAgg) ){
+      goto select_end;
+    }
+  }
   if( pOrderBy ){
     for(i=0; i<pOrderBy->nExpr; i++){
       Expr *pE = pOrderBy->a[i].pExpr;
@@ -1914,20 +1928,6 @@ int sqliteSelect(
       if( sqliteExprCheck(pParse, pE, isAgg, 0) ){
         goto select_end;
       }
-    }
-  }
-  if( pHaving ){
-    if( pGroupBy==0 ){
-      sqliteSetString(&pParse->zErrMsg, "a GROUP BY clause is required "
-         "before HAVING", 0);
-      pParse->nErr++;
-      goto select_end;
-    }
-    if( sqliteExprResolveIds(pParse, base, pTabList, pEList, pHaving) ){
-      goto select_end;
-    }
-    if( sqliteExprCheck(pParse, pHaving, isAgg, 0) ){
-      goto select_end;
     }
   }
 

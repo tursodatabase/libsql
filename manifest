@@ -1,5 +1,5 @@
-C Honor\sORDER\sBY\sclauses\sin\sVIEWs.\s\sTicket\s#193.\s(CVS\s792)
-D 2002-12-03T02:22:52
+C Allow\san\saggregate\sfunction\sin\sthe\sHAVING\sclause\seven\sif\sno\saggregates\sappear\nin\sthe\sresult\sset.\s\sTicket\s#187.\s(CVS\s793)
+D 2002-12-03T02:34:50
 F Makefile.in 868c17a1ae1c07603d491274cc8f86c04acf2a1e
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -37,7 +37,7 @@ F src/pager.h 540833e8cb826b80ce2e39aa917deee5e12db626
 F src/parse.y 469c9636ff713e63c00234662209f11668671ae9
 F src/printf.c 5c50fc1da75c8f5bf432b1ad17d91d6653acd167
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
-F src/select.c a03c317ff8400752da3b4997e4329949a6f4626c
+F src/select.c cc8640e5d4e3ec1a8de58fde6b2fdd6f846b7263
 F src/shell.c 53185af128613a2bac79d50128f4c17794f0f992
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 98b1574b2362abe02c4a4c73b9dbf99bcd713ab3
@@ -93,7 +93,7 @@ F test/quote.test 08f23385c685d3dc7914ec760d492cacea7f6e3d
 F test/rowid.test 4c55943300cddf73dd0f88d40a268cab14c83274
 F test/select1.test 0d708cec567104653ec9aa49fecf3444a2e7d150
 F test/select2.test aceea74fd895b9d007512f72499db589735bd8e4
-F test/select3.test 3e98cec10e755226cbabdd7073ec37baab9ab148
+F test/select3.test ba35d6611e8bfe526a89355da39dde482d4ecd41
 F test/select4.test 10ba54f24ef6ca7958a7045b001079378db2370c
 F test/select5.test c2a6c4a003316ee42cbbd689eebef8fdce0db2ac
 F test/select6.test efb8d0c07a440441db87db2c4ade6904e1407e85
@@ -151,7 +151,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P fa5c042585c601449ede7319d0c5993cd8ba75a4
-R 3fe16b5077b1d335cf384ebc20ff49d3
+P dbf7893234a6c5d6bb2d931e52080bb05784c0c9
+R a45df3b87d35f9521a7fea74e5aa15cb
 U drh
-Z b7816d8e84826cea34ed2b8aced87dca
+Z 33cf8f63886618c20f4fd92079ef68c2

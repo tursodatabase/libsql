@@ -12,7 +12,7 @@
 # focus of this file is testing aggregate functions and the
 # GROUP BY and HAVING clauses of SELECT statements.
 #
-# $Id: select3.test,v 1.6 2002/08/04 00:52:38 drh Exp $
+# $Id: select3.test,v 1.7 2002/12/03 02:34:50 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -126,6 +126,14 @@ do_test select3-4.4 {
     ORDER BY max(n)
   }
 } {3 4 4 8 5 15}
+do_test select3-4.5 {
+  execsql {
+    SELECT log AS x FROM t1 
+    GROUP BY x
+    HAVING count(*)>=4 
+    ORDER BY max(n)
+  }
+} {3 4 5}
 
 do_test select3-5.1 {
   execsql {
