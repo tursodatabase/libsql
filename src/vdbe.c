@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.408 2004/08/08 23:39:19 drh Exp $
+** $Id: vdbe.c,v 1.409 2004/08/21 17:54:45 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -261,18 +261,8 @@ static Sorter *Merge(Sorter *pLeft, Sorter *pRight, KeyInfo *pKeyInfo){
 */
 static Cursor *allocateCursor(Vdbe *p, int iCur){
   Cursor *pCx;
-  if( iCur>=p->nCursor ){
-    int i;
-    p->apCsr = sqliteRealloc( p->apCsr, (iCur+1)*sizeof(Cursor*) );
-    if( p->apCsr==0 ){
-      p->nCursor = 0;
-      return 0;
-    }
-    for(i=p->nCursor; i<iCur; i++){
-      p->apCsr[i] = 0;
-    }
-    p->nCursor = iCur+1;
-  }else if( p->apCsr[iCur] ){
+  assert( iCur<p->nCursor );
+  if( p->apCsr[iCur] ){
     sqlite3VdbeFreeCursor(p->apCsr[iCur]);
   }
   p->apCsr[iCur] = pCx = sqliteMalloc( sizeof(Cursor) );
@@ -802,8 +792,7 @@ case OP_Variable: {
   assert( j>=0 && j<p->nVar );
 
   pTos++;
-  /* sqlite3VdbeMemCopyStatic(pTos, &p->apVar[j]); */
-  memcpy(pTos, &p->apVar[j], sizeof(*pTos)-NBFS);
+  memcpy(pTos, &p->aVar[j], sizeof(*pTos)-NBFS);
   pTos->xDel = 0;
   if( pTos->flags&(MEM_Str|MEM_Blob) ){
     pTos->flags &= ~(MEM_Dyn|MEM_Ephem|MEM_Short);
@@ -4056,7 +4045,7 @@ case OP_Sort: {
     p->pSort = pElem->pNext;
     pElem->pNext = 0;
     for(i=0; i<NSORT-1; i++){
-    if( apSorter[i]==0 ){
+      if( apSorter[i]==0 ){
         apSorter[i] = pElem;
         break;
       }else{
@@ -4123,49 +4112,24 @@ case OP_MemStore: {
   int i = pOp->p1;
   Mem *pMem;
   assert( pTos>=p->aStack );
-  if( i>=p->nMem ){
-    int nOld = p->nMem;
-    Mem *aMem;
-    p->nMem = i + 5;
-    aMem = sqliteRealloc(p->aMem, p->nMem*sizeof(p->aMem[0]));
-    if( aMem==0 ) goto no_mem;
-    if( aMem!=p->aMem ){
-      int j;
-      for(j=0; j<nOld; j++){
-        if( aMem[j].flags & MEM_Short ){
-          aMem[j].z = aMem[j].zShort;
-        }
-      }
-    }
-    p->aMem = aMem;
-    if( nOld<p->nMem ){
-      memset(&p->aMem[nOld], 0, sizeof(p->aMem[0])*(p->nMem-nOld));
-    }
-  }
+  assert( i<p->nMem );
   Deephemeralize(pTos);
   pMem = &p->aMem[i];
   Release(pMem);
   *pMem = *pTos;
-  if( pMem->flags & MEM_Dyn ){
-    if( pOp->p2 ){
-      pTos->flags = MEM_Null;
-    }else{
-      pMem->z = sqliteMallocRaw( pMem->n+2 );
-      if( pMem->z==0 ) goto no_mem;
-      memcpy(pMem->z, pTos->z, pMem->n);
-      memcpy(&pMem->z[pMem->n], "\000", 2);
-      pMem->flags |= MEM_Term;
-    }
-  }else if( pMem->flags & MEM_Short ){
+  pTos->flags = MEM_Null;
+  if( pMem->flags & MEM_Short ){
     pMem->z = pMem->zShort;
   }
-  if( pOp->p2 ){
-    Release(pTos);
-    pTos--;
-  }
-  break;
-}
+  pTos--;
 
+  /* If P2 is 0 then fall thru to the next opcode, OP_MemLoad, that will
+  ** restore the top of the stack to its original value.
+  */
+  if( pOp->p2 ){
+    break;
+  }
+}
 /* Opcode: MemLoad P1 * *
 **
 ** Push a copy of the value in memory location P1 onto the stack.
@@ -4338,15 +4302,12 @@ case OP_AggFocus: {
   if( res==0 ){
     rc = sqlite3BtreeData(p->agg.pCsr, 0, sizeof(AggElem*),
         (char *)&p->agg.pCurrent);
-    if( rc!=SQLITE_OK ){
-      goto abort_due_to_error;
-    }
     pc = pOp->p2 - 1;
   }else{
     rc = AggInsert(&p->agg, zKey, nKey);
-    if( rc!=SQLITE_OK ){
-      goto abort_due_to_error;
-    }
+  }
+  if( rc!=SQLITE_OK ){
+    goto abort_due_to_error;
   }
   Release(pTos);
   pTos--;
@@ -4371,9 +4332,8 @@ case OP_AggSet: {
   pMem = &pFocus->aMem[i];
   Release(pMem);
   *pMem = *pTos;
-  if( pMem->flags & MEM_Dyn ){
-    pTos->flags = MEM_Null;
-  }else if( pMem->flags & MEM_Short ){
+  pTos->flags = MEM_Null;
+  if( pMem->flags & MEM_Short ){
     pMem->z = pMem->zShort;
   }
   pTos--;
@@ -4422,23 +4382,23 @@ case OP_AggGet: {
 */
 case OP_AggNext: {
   int res;
+  assert( rc==SQLITE_OK );
   CHECK_FOR_INTERRUPT;
   if( p->agg.searching==0 ){
     p->agg.searching = 1;
     if( p->agg.pCsr ){
       rc = sqlite3BtreeFirst(p->agg.pCsr, &res);
-      if( rc!=SQLITE_OK ) goto abort_due_to_error;
     }else{
       res = 0;
     }
   }else{
     if( p->agg.pCsr ){
       rc = sqlite3BtreeNext(p->agg.pCsr, &res);
-      if( rc!=SQLITE_OK ) goto abort_due_to_error;
     }else{
       res = 1;
     }
   }
+  if( rc!=SQLITE_OK ) goto abort_due_to_error;
   if( res!=0 ){
     pc = pOp->p2 - 1;
   }else{
@@ -4453,24 +4413,23 @@ case OP_AggNext: {
     }
     aMem = p->agg.pCurrent->aMem;
     for(i=0; i<p->agg.nMem; i++){
-      int freeCtx;
-      if( p->agg.apFunc[i]==0 ) continue;
-      if( p->agg.apFunc[i]->xFinalize==0 ) continue;
+      FuncDef *pFunc = p->agg.apFunc[i];
+      Mem *pMem = &aMem[i];
+      if( pFunc==0 || pFunc->xFinalize==0 ) continue;
       ctx.s.flags = MEM_Null;
-      ctx.s.z = aMem[i].zShort;
-      ctx.pAgg = (void*)aMem[i].z;
-      ctx.cnt = aMem[i].i;
+      ctx.s.z = pMem->zShort;
+      ctx.pAgg = (void*)pMem->z;
+      ctx.cnt = pMem->i;
       ctx.isStep = 0;
-      ctx.pFunc = p->agg.apFunc[i];
-      (*p->agg.apFunc[i]->xFinalize)(&ctx);
-      aMem[i].z = ctx.pAgg;
-      freeCtx = aMem[i].z && aMem[i].z!=aMem[i].zShort;
-      if( freeCtx ){
-        sqliteFree( aMem[i].z );
+      ctx.pFunc = pFunc;
+      pFunc->xFinalize(&ctx);
+      pMem->z = ctx.pAgg;
+      if( pMem->z && pMem->z!=pMem->zShort ){
+        sqliteFree( pMem->z );
       }
-      aMem[i] = ctx.s;
-      if( aMem[i].flags & MEM_Short ){
-        aMem[i].z = aMem[i].zShort;
+      *pMem = ctx.s;
+      if( pMem->flags & MEM_Short ){
+        pMem->z = pMem->zShort;
       }
     }
   }

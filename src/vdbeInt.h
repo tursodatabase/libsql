@@ -311,15 +311,10 @@ struct Vdbe {
   int nCursor;        /* Number of slots in apCsr[] */
   Cursor **apCsr;     /* One element of this array for each open cursor */
   Sorter *pSort;      /* A linked list of objects to be sorted */
-  FILE *pFile;        /* At most one open file handler */
-  int nField;         /* Number of file fields */
-  char **azField;     /* Data for each file field */
-  int nVar;           /* Number of entries in apVar[] */
-  Mem *apVar;         /* Values for the OP_Variable opcode. */
+  int nVar;           /* Number of entries in aVar[] */
+  Mem *aVar;          /* Values for the OP_Variable opcode. */
   char **azVar;       /* Name of variables */
   int okVar;          /* True if azVar[] has been initialized */
-  char *zLine;            /* A single line from the input file */
-  int nLineAlloc;         /* Number of spaces allocated for zLine */
   int magic;              /* Magic number for sanity checking */
   int nMem;               /* Number of memory locations currently allocated */
   Mem *aMem;              /* The memory locations */

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.114 2004/07/24 17:38:29 drh Exp $
+** $Id: insert.c,v 1.115 2004/08/21 17:54:45 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -333,10 +333,7 @@ void sqlite3Insert(
     nColumn = pList->nExpr;
     dummy.nSrc = 0;
     for(i=0; i<nColumn; i++){
-      if( sqlite3ExprResolveIds(pParse, &dummy, 0, pList->a[i].pExpr) ){
-        goto insert_cleanup;
-      }
-      if( sqlite3ExprCheck(pParse, pList->a[i].pExpr, 0, 0) ){
+      if( sqlite3ExprResolveAndCheck(pParse,&dummy,0,pList->a[i].pExpr,0,0) ){
         goto insert_cleanup;
       }
     }
@@ -420,8 +417,7 @@ void sqlite3Insert(
   /* Open tables and indices if there are no row triggers */
   if( !row_triggers_exist ){
     base = pParse->nTab;
-    idx = sqlite3OpenTableAndIndices(pParse, pTab, base);
-    pParse->nTab += idx;
+    sqlite3OpenTableAndIndices(pParse, pTab, base, OP_OpenWrite);
   }
 
   /* If the data source is a temporary table, then we have to create
@@ -507,8 +503,7 @@ void sqlite3Insert(
   */
   if( row_triggers_exist && !isView ){
     base = pParse->nTab;
-    idx = sqlite3OpenTableAndIndices(pParse, pTab, base);
-    pParse->nTab += idx;
+    sqlite3OpenTableAndIndices(pParse, pTab, base, OP_OpenWrite);
   }
 
   /* Push the record number for the new entry onto the stack.  The
@@ -993,25 +988,29 @@ void sqlite3CompleteInsertion(
 }
 
 /*
-** Generate code that will open write cursors for a table and for all
+** Generate code that will open cursors for a table and for all
 ** indices of that table.  The "base" parameter is the cursor number used
 ** for the table.  Indices are opened on subsequent cursors.
-**
-** Return the total number of cursors opened.  This is always at least
-** 1 (for the main table) plus more for each cursor.
 */
-int sqlite3OpenTableAndIndices(Parse *pParse, Table *pTab, int base){
+void sqlite3OpenTableAndIndices(
+  Parse *pParse,   /* Parsing context */
+  Table *pTab,     /* Table to be opened */
+  int base,        /* Cursor number assigned to the table */
+  int op           /* OP_OpenRead or OP_OpenWrite */
+){
   int i;
   Index *pIdx;
   Vdbe *v = sqlite3GetVdbe(pParse);
   assert( v!=0 );
   sqlite3VdbeAddOp(v, OP_Integer, pTab->iDb, 0);
-  sqlite3VdbeAddOp(v, OP_OpenWrite, base, pTab->tnum);
+  sqlite3VdbeAddOp(v, op, base, pTab->tnum);
   sqlite3VdbeAddOp(v, OP_SetNumColumns, base, pTab->nCol);
   for(i=1, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
     sqlite3VdbeAddOp(v, OP_Integer, pIdx->iDb, 0);
-    sqlite3VdbeOp3(v, OP_OpenWrite, i+base, pIdx->tnum,
+    sqlite3VdbeOp3(v, op, i+base, pIdx->tnum,
                    (char*)&pIdx->keyInfo, P3_KEYINFO);
   }
-  return i;
+  if( pParse->nTab<=base+i ){
+    pParse->nTab = base+i;
+  }
 }

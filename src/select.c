@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.202 2004/07/26 23:32:27 drh Exp $
+** $Id: select.c,v 1.203 2004/08/21 17:54:45 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -83,8 +83,8 @@ int sqlite3JoinType(Parse *pParse, Token *pA, Token *pB, Token *pC){
   Token *p;
   static struct {
     const char *zKeyword;
-    int nChar;
-    int code;
+    u8 nChar;
+    u8 code;
   } keywords[] = {
     { "natural", 7, JT_NATURAL },
     { "left",    4, JT_LEFT|JT_OUTER },
@@ -804,7 +804,7 @@ Table *sqlite3ResultSetOfSelect(Parse *pParse, char *zTabName, Select *pSelect){
   Table *pTab;
   int i, j;
   ExprList *pEList;
-  Column *aCol;
+  Column *aCol, *pCol;
 
   if( fillInColumnList(pParse, pSelect) ){
     return 0;
@@ -818,44 +818,45 @@ Table *sqlite3ResultSetOfSelect(Parse *pParse, char *zTabName, Select *pSelect){
   pTab->nCol = pEList->nExpr;
   assert( pTab->nCol>0 );
   pTab->aCol = aCol = sqliteMalloc( sizeof(pTab->aCol[0])*pTab->nCol );
-  for(i=0; i<pTab->nCol; i++){
+  for(i=0, pCol=aCol; i<pTab->nCol; i++, pCol++){
     Expr *pR;
     char *zType;
     Expr *p = pEList->a[i].pExpr;
+    assert( p->pRight==0 || p->pRight->token.z==0 || p->pRight->token.z[0]!=0 );
     if( pEList->a[i].zName ){
-      aCol[i].zName = sqliteStrDup(pEList->a[i].zName);
+      pCol->zName = sqliteStrDup(pEList->a[i].zName);
     }else if( p->op==TK_DOT 
                && (pR=p->pRight)!=0 && pR->token.z && pR->token.z[0] ){
       int cnt;
-      sqlite3SetNString(&aCol[i].zName, pR->token.z, pR->token.n, 0);
+      sqlite3SetNString(&pCol->zName, pR->token.z, pR->token.n, 0);
       for(j=cnt=0; j<i; j++){
-        if( sqlite3StrICmp(aCol[j].zName, aCol[i].zName)==0 ){
+        if( sqlite3StrICmp(aCol[j].zName, pCol->zName)==0 ){
           int n;
           char zBuf[30];
           sprintf(zBuf,"_%d",++cnt);
           n = strlen(zBuf);
-          sqlite3SetNString(&aCol[i].zName, pR->token.z, pR->token.n, zBuf,n,0);
+          sqlite3SetNString(&pCol->zName, pR->token.z, pR->token.n, zBuf,n,0);
           j = -1;
         }
       }
     }else if( p->span.z && p->span.z[0] ){
-      sqlite3SetNString(&pTab->aCol[i].zName, p->span.z, p->span.n, 0);
+      sqlite3SetNString(&pCol->zName, p->span.z, p->span.n, 0);
     }else{
       char zBuf[30];
       sprintf(zBuf, "column%d", i+1);
-      pTab->aCol[i].zName = sqliteStrDup(zBuf);
+      pCol->zName = sqliteStrDup(zBuf);
     }
-    sqlite3Dequote(aCol[i].zName);
+    sqlite3Dequote(pCol->zName);
 
     zType = sqliteStrDup(columnType(pParse, pSelect->pSrc ,p));
-    pTab->aCol[i].zType = zType;
-    pTab->aCol[i].affinity = SQLITE_AFF_NUMERIC;
+    pCol->zType = zType;
+    pCol->affinity = SQLITE_AFF_NUMERIC;
     if( zType ){
-      pTab->aCol[i].affinity = sqlite3AffinityType(zType, strlen(zType));
+      pCol->affinity = sqlite3AffinityType(zType, strlen(zType));
     }
-    pTab->aCol[i].pColl = sqlite3ExprCollSeq(pParse, p);
-    if( !pTab->aCol[i].pColl ){
-      pTab->aCol[i].pColl = pParse->db->pDfltColl;
+    pCol->pColl = sqlite3ExprCollSeq(pParse, p);
+    if( !pCol->pColl ){
+      pCol->pColl = pParse->db->pDfltColl;
     }
   }
   pTab->iPKey = -1;
@@ -889,6 +890,7 @@ static int fillInColumnList(Parse *pParse, Select *p){
   SrcList *pTabList;
   ExprList *pEList;
   Table *pTab;
+  struct SrcList_item *pFrom;
 
   if( p==0 || p->pSrc==0 ) return 1;
   pTabList = p->pSrc;
@@ -896,23 +898,21 @@ static int fillInColumnList(Parse *pParse, Select *p){
 
   /* Look up every table in the table list.
   */
-  for(i=0; i<pTabList->nSrc; i++){
-    if( pTabList->a[i].pTab ){
+  for(i=0, pFrom=pTabList->a; i<pTabList->nSrc; i++, pFrom++){
+    if( pFrom->pTab ){
       /* This routine has run before!  No need to continue */
       return 0;
     }
-    if( pTabList->a[i].zName==0 ){
+    if( pFrom->zName==0 ){
       /* A sub-query in the FROM clause of a SELECT */
-      assert( pTabList->a[i].pSelect!=0 );
-      if( pTabList->a[i].zAlias==0 ){
+      assert( pFrom->pSelect!=0 );
+      if( pFrom->zAlias==0 ){
         char zFakeName[60];
-        sprintf(zFakeName, "sqlite_subquery_%p_",
-           (void*)pTabList->a[i].pSelect);
-        sqlite3SetString(&pTabList->a[i].zAlias, zFakeName, 0);
+        sprintf(zFakeName, "sqlite_subquery_%p_", (void*)pFrom->pSelect);
+        sqlite3SetString(&pFrom->zAlias, zFakeName, 0);
       }
-      pTabList->a[i].pTab = pTab = 
-        sqlite3ResultSetOfSelect(pParse, pTabList->a[i].zAlias,
-                                        pTabList->a[i].pSelect);
+      pFrom->pTab = pTab = 
+        sqlite3ResultSetOfSelect(pParse, pFrom->zAlias, pFrom->pSelect);
       if( pTab==0 ){
         return 1;
       }
@@ -923,8 +923,8 @@ static int fillInColumnList(Parse *pParse, Select *p){
       pTab->isTransient = 1;
     }else{
       /* An ordinary table or view name in the FROM clause */
-      pTabList->a[i].pTab = pTab = 
-        sqlite3LocateTable(pParse,pTabList->a[i].zName,pTabList->a[i].zDatabase);
+      pFrom->pTab = pTab = 
+        sqlite3LocateTable(pParse,pFrom->zName,pFrom->zDatabase);
       if( pTab==0 ){
         return 1;
       }
@@ -933,13 +933,13 @@ static int fillInColumnList(Parse *pParse, Select *p){
         if( sqlite3ViewGetColumnNames(pParse, pTab) ){
           return 1;
         }
-        /* If pTabList->a[i].pSelect!=0 it means we are dealing with a
+        /* If pFrom->pSelect!=0 it means we are dealing with a
         ** view within a view.  The SELECT structure has already been
         ** copied by the outer view so we can skip the copy step here
         ** in the inner view.
         */
-        if( pTabList->a[i].pSelect==0 ){
-          pTabList->a[i].pSelect = sqlite3SelectDup(pTab->pSelect);
+        if( pFrom->pSelect==0 ){
+          pFrom->pSelect = sqlite3SelectDup(pTab->pSelect);
         }
       }
     }
@@ -994,9 +994,9 @@ static int fillInColumnList(Parse *pParse, Select *p){
         }else{
           zTName = 0;
         }
-        for(i=0; i<pTabList->nSrc; i++){
-          Table *pTab = pTabList->a[i].pTab;
-          char *zTabName = pTabList->a[i].zAlias;
+        for(i=0, pFrom=pTabList->a; i<pTabList->nSrc; i++, pFrom++){
+          Table *pTab = pFrom->pTab;
+          char *zTabName = pFrom->zAlias;
           if( zTabName==0 || zTabName[0]==0 ){ 
             zTabName = pTab->zName;
           }
@@ -1187,21 +1187,6 @@ Vdbe *sqlite3GetVdbe(Parse *pParse){
   }
   return v;
 }
-
-#if 0  /***** This routine needs deleting *****/
-static void multiSelectAffinity(Select *p, char *zAff){
-  int i;
-
-  if( !p ) return;
-  multiSelectAffinity(p->pPrior, zAff);
-
-  for(i=0; i<p->pEList->nExpr; i++){
-    if( zAff[i]=='\0' ){
-      zAff[i] = sqlite3ExprAffinity(p->pEList->a[i].pExpr);
-    }
-  }
-}
-#endif
 
 /*
 ** Compute the iLimit and iOffset fields of the SELECT based on the
@@ -2113,6 +2098,50 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
 }
 
 /*
+** Analyze and ORDER BY or GROUP BY clause in a SELECT statement.  Return
+** the number of errors seen.
+**
+** An ORDER BY or GROUP BY is a list of expressions.  If any expression
+** is an integer constant, then that expression is replaced by the
+** corresponding entry in the result set.
+*/
+static int processOrderGroupBy(
+  Parse *pParse,        /* Parsing context */
+  ExprList *pOrderBy,   /* The ORDER BY or GROUP BY clause to be processed */
+  SrcList *pTabList,    /* The FROM clause */
+  ExprList *pEList,     /* The result set */
+  int isAgg,            /* True if aggregate functions are involved */
+  const char *zType     /* Either "ORDER" or "GROUP", as appropriate */
+){
+  int i;
+  if( pOrderBy==0 ) return 0;
+  for(i=0; i<pOrderBy->nExpr; i++){
+    int iCol;
+    Expr *pE = pOrderBy->a[i].pExpr;
+    if( sqlite3ExprIsInteger(pE, &iCol) && iCol>0 && iCol<=pEList->nExpr ){
+      sqlite3ExprDelete(pE);
+      pE = pOrderBy->a[i].pExpr = sqlite3ExprDup(pEList->a[iCol-1].pExpr);
+    }
+    if( sqlite3ExprResolveAndCheck(pParse, pTabList, pEList, pE, isAgg, 0) ){
+      return 1;
+    }
+    if( sqlite3ExprIsConstant(pE) ){
+      if( sqlite3ExprIsInteger(pE, &iCol)==0 ){
+        sqlite3ErrorMsg(pParse,
+          "%s BY terms must not be non-integer constants", zType);
+        return 1;
+      }else if( iCol<=0 || iCol>pEList->nExpr ){
+        sqlite3ErrorMsg(pParse, 
+           "%s BY column number %d out of range - should be "
+           "between 1 and %d", zType, iCol, pEList->nExpr);
+        return 1;
+      }
+    }
+  }
+  return 0;
+}
+
+/*
 ** Generate code for the given SELECT statement.
 **
 ** The results are distributed in various ways depending on the
@@ -2254,88 +2283,27 @@ int sqlite3Select(
   ** Resolve the column names and do a semantics check on all the expressions.
   */
   for(i=0; i<pEList->nExpr; i++){
-    if( sqlite3ExprResolveIds(pParse, pTabList, 0, pEList->a[i].pExpr) ){
-      goto select_end;
-    }
-    if( sqlite3ExprCheck(pParse, pEList->a[i].pExpr, 1, &isAgg) ){
+    if( sqlite3ExprResolveAndCheck(pParse, pTabList, 0, pEList->a[i].pExpr,
+                                    1, &isAgg) ){
       goto select_end;
     }
   }
-  if( pWhere ){
-    if( sqlite3ExprResolveIds(pParse, pTabList, pEList, pWhere) ){
-      goto select_end;
-    }
-    if( sqlite3ExprCheck(pParse, pWhere, 0, 0) ){
-      goto select_end;
-    }
+  if( sqlite3ExprResolveAndCheck(pParse, pTabList, pEList, pWhere, 0, 0) ){
+    goto select_end;
   }
   if( pHaving ){
     if( pGroupBy==0 ){
       sqlite3ErrorMsg(pParse, "a GROUP BY clause is required before HAVING");
       goto select_end;
     }
-    if( sqlite3ExprResolveIds(pParse, pTabList, pEList, pHaving) ){
-      goto select_end;
-    }
-    if( sqlite3ExprCheck(pParse, pHaving, 1, &isAgg) ){
+    if( sqlite3ExprResolveAndCheck(pParse, pTabList, pEList,pHaving,1,&isAgg) ){
       goto select_end;
     }
   }
-  if( pOrderBy ){
-    for(i=0; i<pOrderBy->nExpr; i++){
-      int iCol;
-      Expr *pE = pOrderBy->a[i].pExpr;
-      if( sqlite3ExprIsInteger(pE, &iCol) && iCol>0 && iCol<=pEList->nExpr ){
-        sqlite3ExprDelete(pE);
-        pE = pOrderBy->a[i].pExpr = sqlite3ExprDup(pEList->a[iCol-1].pExpr);
-      }
-      if( sqlite3ExprResolveIds(pParse, pTabList, pEList, pE) ){
-        goto select_end;
-      }
-      if( sqlite3ExprCheck(pParse, pE, isAgg, 0) ){
-        goto select_end;
-      }
-      if( sqlite3ExprIsConstant(pE) ){
-        if( sqlite3ExprIsInteger(pE, &iCol)==0 ){
-          sqlite3ErrorMsg(pParse,
-             "ORDER BY terms must not be non-integer constants");
-          goto select_end;
-        }else if( iCol<=0 || iCol>pEList->nExpr ){
-          sqlite3ErrorMsg(pParse, 
-             "ORDER BY column number %d out of range - should be "
-             "between 1 and %d", iCol, pEList->nExpr);
-          goto select_end;
-        }
-      }
-    }
-  }
-  if( pGroupBy ){
-    for(i=0; i<pGroupBy->nExpr; i++){
-      int iCol;
-      Expr *pE = pGroupBy->a[i].pExpr;
-      if( sqlite3ExprIsInteger(pE, &iCol) && iCol>0 && iCol<=pEList->nExpr ){
-        sqlite3ExprDelete(pE);
-        pE = pGroupBy->a[i].pExpr = sqlite3ExprDup(pEList->a[iCol-1].pExpr);
-      }
-      if( sqlite3ExprResolveIds(pParse, pTabList, pEList, pE) ){
-        goto select_end;
-      }
-      if( sqlite3ExprCheck(pParse, pE, isAgg, 0) ){
-        goto select_end;
-      }
-      if( sqlite3ExprIsConstant(pE) ){
-        if( sqlite3ExprIsInteger(pE, &iCol)==0 ){
-          sqlite3ErrorMsg(pParse,
-            "GROUP BY terms must not be non-integer constants");
-          goto select_end;
-        }else if( iCol<=0 || iCol>pEList->nExpr ){
-          sqlite3ErrorMsg(pParse,
-             "GROUP BY column number %d out of range - should be "
-             "between 1 and %d", iCol, pEList->nExpr);
-          goto select_end;
-        }
-      }
-    }
+  if( processOrderGroupBy(pParse, pOrderBy, pTabList, pEList, isAgg, "ORDER")
+   || processOrderGroupBy(pParse, pGroupBy, pTabList, pEList, isAgg, "GROUP")
+  ){
+    goto select_end;
   }
 
   /* Begin generating code.

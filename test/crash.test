@@ -20,7 +20,7 @@
 # The special crash-test module with its os_test.c backend only works
 # on Unix.
 #
-# $Id: crash.test,v 1.7 2004/06/28 04:52:31 danielk1977 Exp $
+# $Id: crash.test,v 1.8 2004/08/21 17:54:46 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -167,7 +167,7 @@ do_test crash-2.1 {
   execsql { COMMIT }
   set ::sig [signature]
   execsql { SELECT sum(a), sum(b), sum(c) from abc }
-} {499500 999000 1498500}
+} {499500.0 999000.0 1498500.0}
 do_test crash-2.2 {
   expr [file size test.db] / 1024
 } {19}
@@ -273,6 +273,7 @@ for {set i 1} {$i<$repeats} {incr i} {
   } $sig2
 } 
 set i 0
+set i 55
 while {[incr i]} {
   set sig [signature]
   set sig2 [signature2]

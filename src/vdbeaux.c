@@ -547,6 +547,8 @@ void sqlite3VdbePrintSql(Vdbe *p){
 void sqlite3VdbeMakeReady(
   Vdbe *p,                       /* The VDBE */
   int nVar,                      /* Number of '?' see in the SQL statement */
+  int nMem,                      /* Number of memory cells to allocate */
+  int nCursor,                   /* Number of cursors to allocate */
   int isExplain                  /* True if the EXPLAIN keywords is present */
 ){
   int n;
@@ -568,20 +570,31 @@ void sqlite3VdbeMakeReady(
   ** Allocation all the stack space we will ever need.
   */
   if( p->aStack==0 ){
-    p->nVar = nVar;
     assert( nVar>=0 );
     n = isExplain ? 10 : p->nOp;
     p->aStack = sqliteMalloc(
       n*(sizeof(p->aStack[0])+sizeof(Mem*))          /* aStack, apArg */
-      + p->nVar*sizeof(Mem)                          /* apVar */
-      + p->nVar*sizeof(char*)                        /* apVarName */
+      + nVar*sizeof(Mem)                             /* aVar */
+      + nVar*sizeof(char*)                           /* azVar */
+      + nMem*sizeof(Mem)                             /* aMem */
+      + nCursor*sizeof(Cursor*)                      /* apCsr */
     );
-    p->apArg = (Mem **)&p->aStack[n];
-    p->apVar = (Mem *)&p->apArg[n];
-    p->azVar = (char**)&p->apVar[p->nVar];
-    p->okVar = 0;
-    for(n=0; n<p->nVar; n++){
-      p->apVar[n].flags = MEM_Null;
+    if( !sqlite3_malloc_failed ){
+      p->apArg = (Mem **)&p->aStack[n];
+      p->aVar = (Mem *)&p->apArg[n];
+      p->azVar = (char**)&p->aVar[nVar];
+      p->okVar = 0;
+      p->nVar = nVar;
+      p->aMem = (Mem*)&p->azVar[nVar];
+      p->nMem = nMem;
+      p->apCsr = (Cursor**)&p->aMem[nMem];
+      p->nCursor = nCursor;
+      for(n=0; n<nVar; n++){
+        p->aVar[n].flags = MEM_Null;
+      }
+      for(n=0; n<nMem; n++){
+        p->aMem[n].flags = MEM_Null;
+      }
     }
   }
 
@@ -800,12 +813,11 @@ void sqlite3VdbeFreeCursor(Cursor *pCx){
 */
 static void closeAllCursors(Vdbe *p){
   int i;
+  if( p->apCsr==0 ) return;
   for(i=0; i<p->nCursor; i++){
     sqlite3VdbeFreeCursor(p->apCsr[i]);
+    p->apCsr[i] = 0;
   }
-  sqliteFree(p->apCsr);
-  p->apCsr = 0;
-  p->nCursor = 0;
 }
 
 /*
@@ -826,33 +838,14 @@ static void Cleanup(Vdbe *p){
     p->pTos = pTos;
   }
   closeAllCursors(p);
-  if( p->aMem ){
-    for(i=0; i<p->nMem; i++){
-      sqlite3VdbeMemRelease(&p->aMem[i]);
-    }
+  for(i=0; i<p->nMem; i++){
+    sqlite3VdbeMemRelease(&p->aMem[i]);
   }
-  sqliteFree(p->aMem);
-  p->aMem = 0;
-  p->nMem = 0;
   if( p->pList ){
     sqlite3VdbeKeylistFree(p->pList);
     p->pList = 0;
   }
   sqlite3VdbeSorterReset(p);
-  if( p->pFile ){
-    if( p->pFile!=stdin ) fclose(p->pFile);
-    p->pFile = 0;
-  }
-  if( p->azField ){
-    sqliteFree(p->azField);
-    p->azField = 0;
-  }
-  p->nField = 0;
-  if( p->zLine ){
-    sqliteFree(p->zLine);
-    p->zLine = 0;
-  }
-  p->nLineAlloc = 0;
   sqlite3VdbeAggReset(0, &p->agg, 0);
   if( p->keylistStack ){
     int ii;
@@ -1360,7 +1353,7 @@ void sqlite3VdbeDelete(Vdbe *p){
     }
   }
   for(i=0; i<p->nVar; i++){
-    sqlite3VdbeMemRelease(&p->apVar[i]);
+    sqlite3VdbeMemRelease(&p->aVar[i]);
   }
   sqliteFree(p->aOp);
   sqliteFree(p->aLabel);

@@ -647,8 +647,6 @@ static int codeTriggerProgram(
   int orconf;
 
   while( pTriggerStep ){
-    int saveNTab = pParse->nTab;
- 
     orconf = (orconfin == OE_Default)?pTriggerStep->orconf:orconfin;
     pParse->trigStack->orconf = orconf;
     switch( pTriggerStep->op ){
@@ -696,7 +694,6 @@ static int codeTriggerProgram(
       default:
         assert(0);
     } 
-    pParse->nTab = saveNTab;
     pTriggerStep = pTriggerStep->pNext;
   }
 

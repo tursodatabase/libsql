@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.59 2004/08/08 20:22:18 drh Exp $
+** $Id: pragma.c,v 1.60 2004/08/21 17:54:45 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -538,7 +538,7 @@ void sqlite3Pragma(
       { OP_MemLoad,     0, 0,        0},
       { OP_Integer,     0, 0,        0},
       { OP_Ne,          0, 0,        0},    /* 2 */
-      { OP_String8,      0, 0,        "ok"},
+      { OP_String8,     0, 0,        "ok"},
       { OP_Callback,    1, 0,        0},
     };
 
@@ -589,15 +589,7 @@ void sqlite3Pragma(
         int loopTop;
 
         if( pTab->pIndex==0 ) continue;
-        sqlite3VdbeAddOp(v, OP_Integer, i, 0);
-        sqlite3VdbeAddOp(v, OP_OpenRead, 1, pTab->tnum);
-        sqlite3VdbeAddOp(v, OP_SetNumColumns, 1, pTab->nCol);
-        for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
-          if( pIdx->tnum==0 ) continue;
-          sqlite3VdbeAddOp(v, OP_Integer, pIdx->iDb, 0);
-          sqlite3VdbeOp3(v, OP_OpenRead, j+2, pIdx->tnum, 
-                         (char*)&pIdx->keyInfo, P3_KEYINFO);
-        }
+        sqlite3OpenTableAndIndices(pParse, pTab, 1, OP_OpenRead);
         sqlite3VdbeAddOp(v, OP_Integer, 0, 0);
         sqlite3VdbeAddOp(v, OP_MemStore, 1, 1);
         loopTop = sqlite3VdbeAddOp(v, OP_Rewind, 1, 0);
@@ -606,11 +598,11 @@ void sqlite3Pragma(
           int jmp2;
           static VdbeOpList idxErr[] = {
             { OP_MemIncr,     0,  0,  0},
-            { OP_String8,      0,  0,  "rowid "},
+            { OP_String8,     0,  0,  "rowid "},
             { OP_Recno,       1,  0,  0},
-            { OP_String8,      0,  0,  " missing from index "},
-            { OP_String8,      0,  0,  0},    /* 4 */
-            { OP_Concat8,      4,  0,  0},
+            { OP_String8,     0,  0,  " missing from index "},
+            { OP_String8,     0,  0,  0},    /* 4 */
+            { OP_Concat8,     4,  0,  0},
             { OP_Callback,    1,  0,  0},
           };
           sqlite3GenerateIndexKey(v, pIdx, 1);
@@ -632,9 +624,9 @@ void sqlite3Pragma(
              { OP_MemLoad,      2,  0,  0},
              { OP_Eq,           0,  0,  0},  /* 7 */
              { OP_MemIncr,      0,  0,  0},
-             { OP_String8,       0,  0,  "wrong # of entries in index "},
-             { OP_String8,       0,  0,  0},  /* 10 */
-             { OP_Concat8,       2,  0,  0},
+             { OP_String8,      0,  0,  "wrong # of entries in index "},
+             { OP_String8,      0,  0,  0},  /* 10 */
+             { OP_Concat8,      2,  0,  0},
              { OP_Callback,     1,  0,  0},
           };
           if( pIdx->tnum==0 ) continue;

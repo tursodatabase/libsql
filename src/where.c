@@ -12,7 +12,7 @@
 ** This module contains C code that generates VDBE code used to process
 ** the WHERE clause of SQL statements.
 **
-** $Id: where.c,v 1.111 2004/07/20 18:23:15 drh Exp $
+** $Id: where.c,v 1.112 2004/08/21 17:54:45 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -484,7 +484,6 @@ WhereInfo *sqlite3WhereBegin(
   }
   pWInfo->pParse = pParse;
   pWInfo->pTabList = pTabList;
-  pWInfo->peakNTab = pWInfo->savedNTab = pParse->nTab;
   pWInfo->iBreak = sqlite3VdbeMakeLabel(v);
 
   /* Special case: a WHERE clause that is constant.  Evaluate the
@@ -686,7 +685,6 @@ WhereInfo *sqlite3WhereBegin(
     loopMask |= mask;
     if( pBestIdx ){
       pWInfo->a[i].iCur = pParse->nTab++;
-      pWInfo->peakNTab = pParse->nTab;
     }
   }
 
@@ -721,7 +719,6 @@ WhereInfo *sqlite3WhereBegin(
        if( pIdx==0 ){
          pWInfo->a[0].pIdx = pSortIdx;
          pWInfo->a[0].iCur = pParse->nTab++;
-         pWInfo->peakNTab = pParse->nTab;
        }
        pWInfo->a[0].bRev = bRev;
        *ppOrderBy = 0;
@@ -1210,11 +1207,6 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       sqlite3VdbeAddOp(v, OP_Close, pLevel->iCur, 0);
     }
   }
-#if 0  /* Never reuse a cursor */
-  if( pWInfo->pParse->nTab==pWInfo->peakNTab ){
-    pWInfo->pParse->nTab = pWInfo->savedNTab;
-  }
-#endif
   sqliteFree(pWInfo);
   return;
 }

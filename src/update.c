@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.85 2004/06/21 06:50:29 danielk1977 Exp $
+** $Id: update.c,v 1.86 2004/08/21 17:54:45 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -111,10 +111,8 @@ void sqlite3Update(
   */
   chngRecno = 0;
   for(i=0; i<pChanges->nExpr; i++){
-    if( sqlite3ExprResolveIds(pParse, pTabList, 0, pChanges->a[i].pExpr) ){
-      goto update_cleanup;
-    }
-    if( sqlite3ExprCheck(pParse, pChanges->a[i].pExpr, 0, 0) ){
+    if( sqlite3ExprResolveAndCheck(pParse, pTabList, 0,
+             pChanges->a[i].pExpr, 0, 0) ){
       goto update_cleanup;
     }
     for(j=0; j<pTab->nCol; j++){
@@ -190,13 +188,8 @@ void sqlite3Update(
   /* Resolve the column names in all the expressions in the
   ** WHERE clause.
   */
-  if( pWhere ){
-    if( sqlite3ExprResolveIds(pParse, pTabList, 0, pWhere) ){
-      goto update_cleanup;
-    }
-    if( sqlite3ExprCheck(pParse, pWhere, 0, 0) ){
-      goto update_cleanup;
-    }
+  if( sqlite3ExprResolveAndCheck(pParse, pTabList, 0, pWhere, 0, 0) ){
+    goto update_cleanup;
   }
 
   /* Start the view context
@@ -412,7 +405,6 @@ void sqlite3Update(
           sqlite3VdbeAddOp(v, OP_Close, iCur+i+1, 0);
       }
       sqlite3VdbeAddOp(v, OP_Close, iCur, 0);
-      pParse->nTab = iCur;
     }
     if( sqlite3CodeRowTrigger(pParse, TK_UPDATE, pChanges, TK_AFTER, pTab, 
           newIdx, oldIdx, onError, addr) ){
@@ -435,7 +427,6 @@ void sqlite3Update(
       }
     }
     sqlite3VdbeAddOp(v, OP_Close, iCur, 0);
-    pParse->nTab = iCur;
   }else{
     sqlite3VdbeAddOp(v, OP_Close, newIdx, 0);
     sqlite3VdbeAddOp(v, OP_Close, oldIdx, 0);

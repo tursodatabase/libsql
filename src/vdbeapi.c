@@ -414,7 +414,7 @@ static int vdbeUnbind(Vdbe *p, int i){
     return SQLITE_RANGE;
   }
   i--;
-  pVar = &p->apVar[i];
+  pVar = &p->aVar[i];
   sqlite3VdbeMemRelease(pVar);
   pVar->flags = MEM_Null;
   sqlite3Error(p->db, SQLITE_OK, 0);
@@ -439,7 +439,7 @@ int sqlite3_bind_blob(
   if( rc || zData==0 ){
     return rc;
   }
-  pVar = &p->apVar[i-1];
+  pVar = &p->aVar[i-1];
   rc = sqlite3VdbeMemSetStr(pVar, zData, nData, 0, xDel);
   return rc;
 }
@@ -448,7 +448,7 @@ int sqlite3_bind_double(sqlite3_stmt *pStmt, int i, double rValue){
   Vdbe *p = (Vdbe *)pStmt;
   rc = vdbeUnbind(p, i);
   if( rc==SQLITE_OK ){
-    sqlite3VdbeMemSetDouble(&p->apVar[i-1], rValue);
+    sqlite3VdbeMemSetDouble(&p->aVar[i-1], rValue);
   }
   return rc;
 }
@@ -460,7 +460,7 @@ int sqlite3_bind_int64(sqlite3_stmt *pStmt, int i, sqlite_int64 iValue){
   Vdbe *p = (Vdbe *)pStmt;
   rc = vdbeUnbind(p, i);
   if( rc==SQLITE_OK ){
-    sqlite3VdbeMemSetInt64(&p->apVar[i-1], iValue);
+    sqlite3VdbeMemSetInt64(&p->aVar[i-1], iValue);
   }
   return rc;
 }
@@ -482,7 +482,7 @@ int sqlite3_bind_text(
   if( rc || zData==0 ){
     return rc;
   }
-  pVar = &p->apVar[i-1];
+  pVar = &p->aVar[i-1];
   rc = sqlite3VdbeMemSetStr(pVar, zData, nData, SQLITE_UTF8, xDel);
   if( rc ){
     return rc;
@@ -505,7 +505,7 @@ int sqlite3_bind_text16(
   if( rc || zData==0 ){
     return rc;
   }
-  pVar = &p->apVar[i-1];
+  pVar = &p->aVar[i-1];
 
   rc = sqlite3VdbeMemSetStr(pVar, zData, nData, SQLITE_UTF16NATIVE, xDel);
   if( rc ){

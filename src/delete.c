@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle DELETE FROM statements.
 **
-** $Id: delete.c,v 1.77 2004/06/21 18:14:47 drh Exp $
+** $Id: delete.c,v 1.78 2004/08/21 17:54:45 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -121,13 +121,8 @@ void sqlite3DeleteFrom(
   */
   assert( pTabList->nSrc==1 );
   iCur = pTabList->a[0].iCursor = pParse->nTab++;
-  if( pWhere ){
-    if( sqlite3ExprResolveIds(pParse, pTabList, 0, pWhere) ){
-      goto delete_from_cleanup;
-    }
-    if( sqlite3ExprCheck(pParse, pWhere, 0, 0) ){
-      goto delete_from_cleanup;
-    }
+  if( sqlite3ExprResolveAndCheck(pParse, pTabList, 0, pWhere, 0, 0) ){
+    goto delete_from_cleanup;
   }
 
   /* Start the view context
@@ -262,8 +257,7 @@ void sqlite3DeleteFrom(
       ** before the trigger fires.  If there are no row triggers, the
       ** cursors are opened only once on the outside the loop.
       */
-      pParse->nTab = iCur + 1;
-      sqlite3OpenTableAndIndices(pParse, pTab, iCur);
+      sqlite3OpenTableAndIndices(pParse, pTab, iCur, OP_OpenWrite);
 
       /* This is the beginning of the delete loop when there are no
       ** row triggers */
@@ -301,7 +295,6 @@ void sqlite3DeleteFrom(
         sqlite3VdbeAddOp(v, OP_Close, iCur + i, pIdx->tnum);
       }
       sqlite3VdbeAddOp(v, OP_Close, iCur, 0);
-      pParse->nTab = iCur;
     }
   }
   sqlite3EndWriteOperation(pParse);

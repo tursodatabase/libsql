@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.156 2004/08/20 16:02:39 drh Exp $
+** $Id: expr.c,v 1.157 2004/08/21 17:54:45 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1077,6 +1077,27 @@ int sqlite3ExprCheck(Parse *pParse, Expr *pExpr, int allowAgg, int *pIsAgg){
     }
   }
   return nErr;
+}
+
+/*
+** Call sqlite3ExprResolveIds() followed by sqlite3ExprCheck().
+**
+** This routine is provided as a convenience since it is very common
+** to call ResolveIds() and Check() back to back.
+*/
+int sqlite3ExprResolveAndCheck(
+  Parse *pParse,     /* The parser context */
+  SrcList *pSrcList, /* List of tables used to resolve column names */
+  ExprList *pEList,  /* List of expressions used to resolve "AS" */
+  Expr *pExpr,       /* The expression to be analyzed. */
+  int allowAgg,      /* True to allow aggregate expressions */
+  int *pIsAgg        /* Set to TRUE if aggregates are found */
+){
+  if( pExpr==0 ) return 0;
+  if( sqlite3ExprResolveIds(pParse,pSrcList,pEList,pExpr) ){
+    return 1;
+  }
+  return sqlite3ExprCheck(pParse, pExpr, allowAgg, pIsAgg);
 }
 
 /*
