@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.241 2004/05/20 22:16:30 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.242 2004/05/21 01:29:06 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -487,7 +487,6 @@ struct Column {
 */
 struct CollSeq {
   char *zName;         /* Name of the collating sequence */
-  u8 reverseOrder;     /* Compare in reverse order.  Used by OP_Sort only */
   void *pUser;         /* First argument to xCmp() */
   int (*xCmp)(void*,int,const void*,int,const void*); /* Comparison function */
 };
@@ -647,6 +646,7 @@ struct FKey {
 struct KeyInfo {
   u8 incrKey;         /* Increase 2nd key by epsilon before comparison */
   int nField;         /* Number of entries in aColl[] */
+  u8 *aSortOrder;     /* If defined an aSortOrder[i] is true, sort DESC */
   CollSeq *aColl[1];  /* Collating sequence for each term of the key */
 };
 

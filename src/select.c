@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.171 2004/05/20 22:16:29 drh Exp $
+** $Id: select.c,v 1.172 2004/05/21 01:29:06 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -318,11 +318,14 @@ static void sqliteAggregateInfoReset(Parse *pParse){
 ** be used by the OP_Sort opcode.
 */
 static void pushOntoSorter(Parse *pParse, Vdbe *v, ExprList *pOrderBy){
-  char *zSortOrder;
   int i;
+#if 0
+  char *zSortOrder;
   zSortOrder = sqliteMalloc( pOrderBy->nExpr + 1 );
   if( zSortOrder==0 ) return;
+#endif
   for(i=0; i<pOrderBy->nExpr; i++){
+#if 0
     int order = pOrderBy->a[i].sortOrder;
     int c;
     if( order==SQLITE_SO_ASC ){
@@ -331,10 +334,14 @@ static void pushOntoSorter(Parse *pParse, Vdbe *v, ExprList *pOrderBy){
       c = 'D';
     }
     zSortOrder[i] = c;
+#endif
     sqlite3ExprCode(pParse, pOrderBy->a[i].pExpr);
   }
+#if 0
   zSortOrder[pOrderBy->nExpr] = 0;
   sqlite3VdbeOp3(v, OP_SortMakeKey, pOrderBy->nExpr, 0, zSortOrder, P3_DYNAMIC);
+#endif
+  sqlite3VdbeAddOp(v, OP_MakeKey, pOrderBy->nExpr, 0);
   sqlite3VdbeAddOp(v, OP_SortPut, 0, 0);
 }
 
@@ -541,6 +548,7 @@ static int selectInnerLoop(
 ** routine generates the code needed to do that.
 */
 static void generateSortTail(
+  Parse *pParse,   /* The parsing context */
   Select *p,       /* The SELECT statement */
   Vdbe *v,         /* Generate code into this VDBE */
   int nColumn,     /* Number of columns of data */
@@ -550,8 +558,23 @@ static void generateSortTail(
   int end1 = sqlite3VdbeMakeLabel(v);
   int end2 = sqlite3VdbeMakeLabel(v);
   int addr;
+  KeyInfo *pInfo;
+  ExprList *pOrderBy;
+  int nCol, i;
+  sqlite *db = pParse->db;
+
   if( eDest==SRT_Sorter ) return;
-  sqlite3VdbeAddOp(v, OP_Sort, 0, 0);
+  pOrderBy = p->pOrderBy;
+  nCol = pOrderBy->nExpr;
+  pInfo = sqliteMalloc( sizeof(*pInfo) + nCol*(sizeof(CollSeq*)+1) );
+  if( pInfo==0 ) return;
+  pInfo->aSortOrder = (char*)&pInfo->aColl[nCol];
+  pInfo->nField = nCol;
+  for(i=0; i<nCol; i++){
+    pInfo->aColl[i] = db->pDfltColl;
+    pInfo->aSortOrder[i] = pOrderBy->a[i].sortOrder;
+  }
+  sqlite3VdbeOp3(v, OP_Sort, 0, 0, (char*)pInfo, P3_KEYINFO_HANDOFF);
   addr = sqlite3VdbeAddOp(v, OP_SortNext, 0, end1);
   if( p->iOffset>=0 ){
     sqlite3VdbeAddOp(v, OP_MemIncr, p->iOffset, addr+4);
@@ -1214,8 +1237,7 @@ static void openTempIndex(Parse *pParse, Select *p, int iTab, int keyAsData){
   for(i=0; i<nColumn; i++){
     pKeyInfo->aColl[i] = db->pDfltColl;
   }
-  sqlite3VdbeOp3(v, OP_OpenTemp, iTab, 0, (char*)pKeyInfo, P3_KEYINFO);
-  sqliteFree(pKeyInfo);
+  sqlite3VdbeOp3(v, OP_OpenTemp, iTab, 0, (char*)pKeyInfo, P3_KEYINFO_HANDOFF);
   if( keyAsData ){
     sqlite3VdbeAddOp(v, OP_KeyAsData, iTab, 1);
   }
@@ -1437,7 +1459,7 @@ static int multiSelect(
         sqlite3VdbeResolveLabel(v, iBreak);
         sqlite3VdbeAddOp(v, OP_Close, unionTab, 0);
         if( p->pOrderBy ){
-          generateSortTail(p, v, p->pEList->nExpr, eDest, iParm);
+          generateSortTail(pParse, p, v, p->pEList->nExpr, eDest, iParm);
         }
       }
       break;
@@ -1510,7 +1532,7 @@ static int multiSelect(
       sqlite3VdbeAddOp(v, OP_Close, tab2, 0);
       sqlite3VdbeAddOp(v, OP_Close, tab1, 0);
       if( p->pOrderBy ){
-        generateSortTail(p, v, p->pEList->nExpr, eDest, iParm);
+        generateSortTail(pParse, p, v, p->pEList->nExpr, eDest, iParm);
       }
       break;
     }
@@ -2449,7 +2471,7 @@ int sqlite3Select(
   ** and send them to the callback one by one.
   */
   if( pOrderBy ){
-    generateSortTail(p, v, pEList->nExpr, eDest, iParm);
+    generateSortTail(pParse, p, v, pEList->nExpr, eDest, iParm);
   }
 
   /* If this was a subquery, we have now converted the subquery into a

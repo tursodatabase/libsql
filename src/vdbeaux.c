@@ -312,6 +312,9 @@ void sqlite3VdbeChangeP3(Vdbe *p, int addr, const char *zP3, int n){
     }else{
       pOp->p3type = P3_NOTUSED;
     }
+  }else if( n==P3_KEYINFO_HANDOFF ){
+    pOp->p3 = (char*)zP3;
+    pOp->p3type = P3_KEYINFO;
   }else if( n<0 ){
     pOp->p3 = (char*)zP3;
     pOp->p3type = n;
@@ -564,7 +567,7 @@ static char *displayP3(Op *pOp, char *zTemp, int nTemp){
             break;
           }
           zTemp[i++] = ',';
-          if( pColl->reverseOrder ){
+          if( pKeyInfo->aSortOrder && pKeyInfo->aSortOrder[j] ){
             zTemp[i++] = '-';
           }
           strcpy(&zTemp[i], pColl->zName);
@@ -582,8 +585,7 @@ static char *displayP3(Op *pOp, char *zTemp, int nTemp){
     }
     case P3_COLLSEQ: {
       CollSeq *pColl = (CollSeq*)pOp->p3;
-      sprintf(zTemp, "collseq(%s%.20s)", 
-         pColl->reverseOrder ? "-" : "", pColl->zName);
+      sprintf(zTemp, "collseq(%.20s)", pColl->zName);
       zP3 = zTemp;
       break;
     }
@@ -1531,11 +1533,6 @@ int sqlite3MemCompare(const Mem *pMem1, const Mem *pMem2, const CollSeq *pColl){
   /* Interchange pMem1 and pMem2 if the collating sequence specifies
   ** DESC order.
   */
-  if( pColl && pColl->reverseOrder ){
-    const Mem *pTemp = pMem1;
-    pMem1 = pMem2;
-    pMem2 = pTemp;
-  }
   f1 = pMem1->flags;
   f2 = pMem2->flags;
   combined_flags = f1|f2;
@@ -1632,6 +1629,7 @@ int sqlite3VdbeKeyCompare(
   int offset1 = 0;
   int offset2 = 0;
   int i = 0;
+  int rc = 0;
   const unsigned char *aKey1 = (const unsigned char *)pKey1;
   const unsigned char *aKey2 = (const unsigned char *)pKey2;
   
@@ -1641,7 +1639,6 @@ int sqlite3VdbeKeyCompare(
     Mem mem2;
     u64 serial_type1;
     u64 serial_type2;
-    int rc;
 
     /* Read the serial types for the next element in each key. */
     offset1 += sqlite3GetVarint(&aKey1[offset1], &serial_type1);
@@ -1656,7 +1653,14 @@ int sqlite3VdbeKeyCompare(
       assert( !serial_type1 && !serial_type2 );
       sqlite3GetVarint(&aKey1[offset1], &serial_type1);
       sqlite3GetVarint(&aKey2[offset2], &serial_type2);
-      return ( (i64)serial_type1 - (i64)serial_type2 );
+      if( serial_type1 < serial_type2 ){
+        rc = -1;
+      }else if( serial_type1 > serial_type2 ){
+        rc = +1;
+      }else{
+        rc = 0;
+      }
+      return rc;
     }
 
     assert( i<pKeyInfo->nField );
@@ -1677,7 +1681,7 @@ int sqlite3VdbeKeyCompare(
       sqliteFree(mem2.z);
     }
     if( rc!=0 ){
-      return rc;
+      break;
     }
     i++;
   }
@@ -1686,19 +1690,22 @@ int sqlite3VdbeKeyCompare(
   ** were equal. If the incrKey flag is true, then the second key is
   ** treated as larger.
   */
-  if( pKeyInfo->incrKey ){
-    assert( offset2==nKey2 );
-    return -1;
+  if( rc==0 ){
+    if( pKeyInfo->incrKey ){
+      assert( offset2==nKey2 );
+      rc = -1;
+    }else if( offset1<nKey1 ){
+      rc = 1;
+    }else if( offset2<nKey2 ){
+      rc = -1;
+    }
   }
 
-  if( offset1<nKey1 ){
-    return 1;
-  }
-  if( offset2<nKey2 ){
-    return -1;
+  if( pKeyInfo->aSortOrder && i<pKeyInfo->nField && pKeyInfo->aSortOrder[i] ){
+    rc = -rc;
   }
 
-  return 0;
+  return rc;
 }
 
 /*

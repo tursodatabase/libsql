@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.190 2004/05/20 22:16:29 drh Exp $
+** $Id: build.c,v 1.191 2004/05/21 01:29:06 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -789,7 +789,6 @@ CollSeq *sqlite3ChangeCollatingFunction(
       return 0;
     }
     pColl->zName = (char*)&pColl[1];
-    pColl->reverseOrder = 0;
     memcpy(pColl->zName, zName, nName+1);
     sqlite3HashInsert(&db->aCollSeq, pColl->zName, nName, pColl);
   }

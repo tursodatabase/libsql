@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.309 2004/05/20 22:16:30 drh Exp $
+** $Id: vdbe.c,v 1.310 2004/05/21 01:29:06 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -368,13 +368,15 @@ static void hardRealify(Mem *pStack){
 **
 ** In the case of a tie, left sorts in front of right.
 */
-static Sorter *Merge(Sorter *pLeft, Sorter *pRight){
+static Sorter *Merge(Sorter *pLeft, Sorter *pRight, KeyInfo *pKeyInfo){
   Sorter sHead;
   Sorter *pTail;
   pTail = &sHead;
   pTail->pNext = 0;
   while( pLeft && pRight ){
-    int c = sqlite3SortCompare(pLeft->zKey, pRight->zKey);
+    int c = sqlite3VdbeKeyCompare(pKeyInfo, pLeft->nKey, pLeft->zKey,
+                                  pRight->nKey, pRight->zKey);
+    /* int c = sqlite3SortCompare(pLeft->zKey, pRight->zKey); */
     if( c<=0 ){
       pTail->pNext = pLeft;
       pLeft = pLeft->pNext;
@@ -4294,13 +4296,15 @@ case OP_SortMakeKey: {
   break;
 }
 
-/* Opcode: Sort * * *
+/* Opcode: Sort * * P3
 **
 ** Sort all elements on the sorter.  The algorithm is a
-** mergesort.
+** mergesort.  The P3 argument is a pointer to a KeyInfo structure
+** that describes the keys to be sorted.
 */
 case OP_Sort: {
   int i;
+  KeyInfo *pKeyInfo = (KeyInfo*)pOp->p3;
   Sorter *pElem;
   Sorter *apSorter[NSORT];
   for(i=0; i<NSORT; i++){
@@ -4315,17 +4319,17 @@ case OP_Sort: {
         apSorter[i] = pElem;
         break;
       }else{
-        pElem = Merge(apSorter[i], pElem);
+        pElem = Merge(apSorter[i], pElem, pKeyInfo);
         apSorter[i] = 0;
       }
     }
     if( i>=NSORT-1 ){
-      apSorter[NSORT-1] = Merge(apSorter[NSORT-1],pElem);
+      apSorter[NSORT-1] = Merge(apSorter[NSORT-1],pElem, pKeyInfo);
     }
   }
   pElem = 0;
   for(i=0; i<NSORT; i++){
-    pElem = Merge(apSorter[i], pElem);
+    pElem = Merge(apSorter[i], pElem, pKeyInfo);
   }
   p->pSort = pElem;
   break;
@@ -5070,9 +5074,11 @@ default: {
           }
           zBuf[2] = '[';
           k = 3;
-          for(j=0; j<20 && j<pTos[i].n; j++){
-            int c = pTos[i].z[j];
+          for(j=0; j<15 && j<pTos[i].n; j++){
+            u8 c = pTos[i].z[j];
             if( c==0 && j==pTos[i].n-1 ) break;
+            zBuf[k++] = "0123456789ABCDEF"[c>>4];
+            zBuf[k++] = "0123456789ABCDEF"[c&0xf];
             if( c>=0x20 && c<0x7f ){
               zBuf[k++] = c;
             }else{
