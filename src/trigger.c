@@ -479,11 +479,11 @@ static int codeTriggerProgram(
 	break;
       }
       case TK_UPDATE: {
-        sqliteVdbeAddOp(pParse->pVdbe, OP_PushList, 0, 0);
+        sqliteVdbeAddOp(pParse->pVdbe, OP_ListPush, 0, 0);
         sqliteUpdate(pParse, &pTriggerStep->target, 
         sqliteExprListDup(pTriggerStep->pExprList), 
         sqliteExprDup(pTriggerStep->pWhere), orconf);
-        sqliteVdbeAddOp(pParse->pVdbe, OP_PopList, 0, 0);
+        sqliteVdbeAddOp(pParse->pVdbe, OP_ListPop, 0, 0);
         break;
       }
       case TK_INSERT: {
@@ -494,10 +494,10 @@ static int codeTriggerProgram(
         break;
       }
       case TK_DELETE: {
-        sqliteVdbeAddOp(pParse->pVdbe, OP_PushList, 0, 0);
+        sqliteVdbeAddOp(pParse->pVdbe, OP_ListPush, 0, 0);
         sqliteDeleteFrom(pParse, &pTriggerStep->target, 
 	    sqliteExprDup(pTriggerStep->pWhere));
-        sqliteVdbeAddOp(pParse->pVdbe, OP_PopList, 0, 0);
+        sqliteVdbeAddOp(pParse->pVdbe, OP_ListPop, 0, 0);
         break;
       }
       default:

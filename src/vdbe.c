@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.145 2002/05/23 02:09:04 drh Exp $
+** $Id: vdbe.c,v 1.146 2002/05/23 22:07:03 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -250,7 +250,7 @@ struct Vdbe {
   int iLimit;         /* Limit on the number of callbacks remaining */
   int iOffset;        /* Offset before beginning to do callbacks */
   int keylistStackDepth;  /* The size of the "keylist" stack */
-  Keylist **keylistStack; /* The stack used by opcodes PushList & PopList */
+  Keylist **keylistStack; /* The stack used by opcodes ListPush & ListPop */
 };
 
 /*
@@ -1060,11 +1060,12 @@ static char *zOpName[] = { 0,
   "Clear",             "CreateIndex",       "CreateTable",       "IntegrityCk",
   "IdxPut",            "IdxDelete",         "IdxRecno",          "IdxGT",
   "IdxGE",             "MemLoad",           "MemStore",          "ListWrite",
-  "ListRewind",        "ListRead",          "ListReset",         "SortPut",
-  "SortMakeRec",       "SortMakeKey",       "Sort",              "SortNext",
-  "SortCallback",      "SortReset",         "FileOpen",          "FileRead",
-  "FileColumn",        "AggReset",          "AggFocus",          "AggNext",
-  "AggSet",            "AggGet",            "AggFunc",           "AggInit",
+  "ListRewind",        "ListRead",          "ListReset",         "ListPush",
+  "ListPop",           "SortPut",           "SortMakeRec",       "SortMakeKey",
+  "Sort",              "SortNext",          "SortCallback",      "SortReset",
+  "FileOpen",          "FileRead",          "FileColumn",        "AggReset",
+  "AggFocus",          "AggNext",           "AggSet",            "AggGet",
+  "AggFunc",           "AggInit",           "AggPush",           "AggPop",
   "SetInsert",         "SetFound",          "SetNotFound",       "MakeRecord",
   "MakeKey",           "MakeIdxKey",        "IncrKey",           "Goto",
   "If",                "Halt",              "ColumnCount",       "ColumnName",
@@ -1077,7 +1078,7 @@ static char *zOpName[] = { 0,
   "Le",                "Gt",                "Ge",                "IsNull",
   "NotNull",           "Negative",          "And",               "Or",
   "Not",               "Concat",            "Noop",              "Function",
-  "Limit",             "PushList",          "PopList",           
+  "Limit",           
 };
 
 /*
@@ -3820,6 +3821,39 @@ case OP_ListReset: {
   break;
 }
 
+/* Opcode: ListPush * * * 
+**
+** Save the current Vdbe list such that it can be restored by a PopList 
+** opcode. The list is empty after this is executed.
+*/
+case OP_ListPush: {
+  p->keylistStackDepth++;
+  assert(p->keylistStackDepth > 0);
+  p->keylistStack = sqliteRealloc(p->keylistStack, 
+          sizeof(Keylist *) * p->keylistStackDepth);
+  p->keylistStack[p->keylistStackDepth - 1] = p->pList;
+  p->pList = 0;
+  break;
+}
+
+/* Opcode: ListPop * * * 
+**
+** Restore the Vdbe list to the state it was in when PushList was last
+** executed.
+*/
+case OP_ListPop: {
+  assert(p->keylistStackDepth > 0);
+  p->keylistStackDepth--;
+  KeylistFree(p->pList);
+  p->pList = p->keylistStack[p->keylistStackDepth];
+  p->keylistStack[p->keylistStackDepth] = 0;
+  if( p->keylistStackDepth == 0 ){
+    sqliteFree(p->keylistStack);
+    p->keylistStack = 0;
+  }
+  break;
+}
+
 /* Opcode: SortPut * * *
 **
 ** The TOS is the key and the NOS is the data.  Pop both from the stack
@@ -4551,39 +4585,6 @@ case OP_SetFound: {
     pc = pOp->p2 - 1;
   }
   POPSTACK;
-  break;
-}
-
-/* Opcode: PushList * * * 
-**
-** Save the current Vdbe list such that it can be restored by a PopList 
-** opcode. The list is empty after this is executed.
-*/
-case OP_PushList: {
-  p->keylistStackDepth++;
-  assert(p->keylistStackDepth > 0);
-  p->keylistStack = sqliteRealloc(p->keylistStack, 
-          sizeof(Keylist *) * p->keylistStackDepth);
-  p->keylistStack[p->keylistStackDepth - 1] = p->pList;
-  p->pList = 0;
-  break;
-}
-
-/* Opcode: PopList * * * 
-**
-** Restore the Vdbe list to the state it was in when PushList was last
-** executed.
-*/
-case OP_PopList: {
-  assert(p->keylistStackDepth > 0);
-  p->keylistStackDepth--;
-  KeylistFree(p->pList);
-  p->pList = p->keylistStack[p->keylistStackDepth];
-  p->keylistStack[p->keylistStackDepth] = 0;
-  if( p->keylistStackDepth == 0 ){
-    sqliteFree(p->keylistStack);
-    p->keylistStack = 0;
-  }
   break;
 }
 

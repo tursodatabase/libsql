@@ -1,5 +1,5 @@
-C Fix\sfor\sticket\s#50.\s(CVS\s582)
-D 2002-05-23T13:15:37
+C Change\sthe\snames\sof\sthe\sPushList\sand\sPopList\sopcodes\sto\sListPush\sand\sListPop\nso\sthat\sthey\swill\sappear\stogether\swith\sthe\sother\sList\sopcodes\sin\sthe\ndocumentation.\s(CVS\s583)
+D 2002-05-23T22:07:03
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -49,11 +49,11 @@ F src/test2.c 669cc22781c6461a273416ec1a7414d25c081730
 F src/test3.c 4e52fff8b01f08bd202f7633feda5639b7ba2b5e
 F src/threadtest.c 81f0598e0f031c1bd506af337fdc1b7e8dff263f
 F src/tokenize.c 5892a8eb8f0063718f5bec1a1b24f4c6029eba9b
-F src/trigger.c a5e6694f2cc6f1b3c10b954b9bc904548f3599fc
-F src/update.c 82ada80cdfa489a30e91dba7f29f75a20f61c8a2
+F src/trigger.c a7990d424af58d809501a393f72c12d4b039eb63
+F src/update.c 1f8f7fde797bd607fe0afb4f96a6ad83c9e8ab7b
 F src/util.c 707c30f8c13cddace7c08556ac450c0b786660b3
-F src/vdbe.c 67fbceb6fa2a0ab020b65c007430272a66771ae1
-F src/vdbe.h 126a651ba26f05de075dcc6da5466244a31af6b8
+F src/vdbe.c 6c2eae8a1d03f41aa51e40772aebf581cf62d5b8
+F src/vdbe.h def669b9f2728589aabcb5db756429db02465c9a
 F src/where.c 293985b6cf8391c3dcef9efcac4654884370513a
 F test/all.test e4d3821eeba751829b419cd47814bd20af4286d1
 F test/bigrow.test 8ab252dba108f12ad64e337b0f2ff31a807ac578
@@ -134,7 +134,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 4d27ee411902a197cd72416ca9da9197d3f87f13
-R 42134e515c91a3561726205cb5ceae33
+P 82b74a494ac7c751a13e67dcfa7fffb1b98ec808
+R 3e1a04e4d6e0a4fb68b8a11229bc1cc1
 U drh
-Z 5548f4db8a2e3ece93a6ef0eb59cb03c
+Z 8e8caac647d0d1fcfa3e14c75f0d3c35
