@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.71 2004/01/07 03:04:27 drh Exp $
+** $Id: util.c,v 1.72 2004/01/07 03:41:04 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -252,7 +252,7 @@ char *sqliteStrNDup_(const char *z, int n, char *zFile, int line){
 void *sqliteMalloc(int n){
   void *p;
   if( (p = malloc(n))==0 ){
-    sqlite_malloc_failed++;
+    if( n>0 ) sqlite_malloc_failed++;
   }else{
     memset(p, 0, n);
   }
@@ -266,7 +266,7 @@ void *sqliteMalloc(int n){
 void *sqliteMallocRaw(int n){
   void *p;
   if( (p = malloc(n))==0 ){
-    sqlite_malloc_failed++;
+    if( n>0 ) sqlite_malloc_failed++;
   }
   return p;
 }
