@@ -13,7 +13,7 @@
 # This file implements tests for the conflict resolution extension
 # to SQLite.
 #
-# $Id: conflict.test,v 1.8 2002/02/19 13:39:23 drh Exp $
+# $Id: conflict.test,v 1.9 2002/04/09 03:15:08 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -376,6 +376,56 @@ foreach {i conf1 conf2 cmd t0 t1 t2} {
     list $r0 $r1 $r2
   } [list $t0 $t1 $t2]
 }
+
+# Test to make sure a lot of IGNOREs don't cause a stack overflow
+#
+do_test conflict-7.1 {
+  execsql {
+    DROP TABLE t1;
+    DROP TABLE t2;
+    DROP TABLE t3;
+    CREATE TABLE t1(a unique, b);
+  }
+  for {set i 1} {$i<=50} {incr i} {
+    execsql "INSERT into t1 values($i,[expr {$i+1}]);"
+  }
+  execsql {
+    SELECT count(*), min(a), max(b) FROM t1;
+  }
+} {50 1 51}
+do_test conflict-7.2 {
+  execsql {
+    PRAGMA count_changes=on;
+    UPDATE OR IGNORE t1 SET a=1000;
+  }
+} {1}
+do_test conflict-7.3 {
+  execsql {
+    SELECT b FROM t1 WHERE a=1000;
+  }
+} {2}
+do_test conflict-7.4 {
+  execsql {
+    SELECT count(*) FROM t1;
+  }
+} {50}
+do_test conflict-7.5 {
+  execsql {
+    PRAGMA count_changes=on;
+    UPDATE OR REPLACE t1 SET a=1001;
+  }
+} {50}
+do_test conflict-7.6 {
+  execsql {
+    SELECT b FROM t1 WHERE a=1001;
+  }
+} {51}
+do_test conflict-7.7 {
+  execsql {
+    SELECT count(*) FROM t1;
+  }
+} {1}
+
 
 do_test insert-99.1 {
   set x [execsql {PRAGMA integrity_check}]

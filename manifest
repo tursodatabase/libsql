@@ -1,5 +1,5 @@
-C Add\sa\s-column\soption\sto\sthe\ssqlite\scommand-line\sutility.\nPatch\sfrom\sMatthew\sO.\sPersico.\s(CVS\s522)
-D 2002-04-08T02:42:58
+C Fix\sfor\sbug\s#10:\sPop\sthe\sstack\sby\sthe\sright\samount\son\san\sIGNORE\sso\sthat\sthe\nstack\sdoes\snot\sgrow\swithout\sbound.\s(CVS\s523)
+D 2002-04-09T03:15:07
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -28,7 +28,7 @@ F src/expr.c e7a1e22bc2ebcd789f0f8c0db544cf16ad664054
 F src/func.c dca9df811298cd0beb3724d40cee348e884352b2
 F src/hash.c cc259475e358baaf299b00a2c7370f2b03dda892
 F src/hash.h dca065dda89d4575f3176e75e9a3dc0f4b4fb8b9
-F src/insert.c 903ff262c90586c99eafd43934517bc3aed5f77e
+F src/insert.c bae1964a0923e4716d73639becda6f8040b8889e
 F src/main.c b21019084b93fe685a8a25217d01f6958584ae9b
 F src/md5.c b2b1a34fce66ceca97f4e0dabc20be8be7933c92
 F src/os.c 5ab8b6b4590d0c1ab8e96c67996c170e4462e0fc
@@ -52,7 +52,7 @@ F src/threadtest.c 81f0598e0f031c1bd506af337fdc1b7e8dff263f
 F src/tokenize.c 5624d342601f616157ba266abccc1368a5afee70
 F src/update.c 7dd714a6a7fa47f849ebb36b6d915974d6c6accb
 F src/util.c b34cd91387bbfdc79319ea451a7d120cef478120
-F src/vdbe.c 3cebe9f77cac311a3c537587258946d04a09c58f
+F src/vdbe.c ccc394cf72b5c43b71309fecc35cdf5cd252e154
 F src/vdbe.h f9be1f6e9a336c3ff4d14ea7489ee976e07460cc
 F src/where.c 9d36f6c9fea4af71501770c13089f824cb9b033c
 F test/all.test 6aa106eee4d7127afa5cee97c51a783a79694ead
@@ -60,7 +60,7 @@ F test/bigrow.test 8ab252dba108f12ad64e337b0f2ff31a807ac578
 F test/btree.test bf326f546a666617367a7033fa2c07451bd4f8e1
 F test/btree2.test e3b81ec33dc2f89b3e6087436dfe605b870c9080
 F test/btree3.test 9caa9e22491dd8cd8aa36d7ac3b48b089817c895
-F test/conflict.test c794c6c8f6e59918107dbab2d201ae454bb47db8
+F test/conflict.test cbefdd1acf526d516ee355bcbae3f6ac20dba433
 F test/copy.test b3cefcb520c64d7e7dfedbab06b4d4c31fa5b99a
 F test/delete.test c904a62129fe102b314a96111a8417f10249e4d8
 F test/expr.test 846795016b5993a7411f772eebe82ab67bd7230a
@@ -131,7 +131,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 6aca3f86bc08849e9d806fdd490f98e4daf71025
-R aaa35423730c084fb0e18ed46a6b9e24
+P 760bf568c882d7b28746b1e004309ef08d2ff4c0
+R 6b0c28f4fe8903649bf342fb8427f838
 U drh
-Z ef03ff4a004c157733200eb9aba8b910
+Z 331e7f72889413d22a80eccdf9b3c49a
