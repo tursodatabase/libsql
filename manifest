@@ -1,5 +1,5 @@
-C Avoid\sline\sendings\smunging\sby\sCygwin;\sticket\s#370\s(CVS\s1245)
-D 2004-02-17T18:26:57
+C Add\smore\stests\sof\sthe\ssqlite_interrupt()\slogic\s-\slooking\sfor\sa\sreported\nmemory\sleak.\s\s(Didn't\sfind\sit.)\s(CVS\s1246)
+D 2004-02-18T01:31:54
 F Makefile.in cfd75c46b335881999333a9e4b982fa8491f200b
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -94,7 +94,7 @@ F test/in.test 0de39b02ceeca90993b096822fb5a884661c5b47
 F test/index.test 9295deefbdb6dedbe01be8905f0c448fe5bd4079
 F test/insert.test a17b7f7017097afb2727aa5b67ceeb7ab0a120a1
 F test/insert2.test c288375a64dad3295044714f0dfed4a193cf067f
-F test/interrupt.test 5d4308fc33405abf305d52ddaa571a207768a911
+F test/interrupt.test 46bc6ad9ba9032bee144382ced719d5e010406c2
 F test/intpkey.test 9320af48415c594afd4e15f8ef0daa272e05502e
 F test/ioerr.test 5dbaf09f96b56ee01cf3edd762b96eb4ad2c9ca4
 F test/join.test 9ef6aabaac9de51d5fc41e68d1f4355da05a84cd
@@ -184,7 +184,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P f72134852bf33d13fd2bc6f35251e4b33bc10fac
-R 6808102f97e086b6e1f02b48648d93ff
-U dougcurrie
-Z f03216655eb409dac1d13616a0d1feec
+P 50e67948f89380f2f4b536add0b8179e6db960a5
+R 0fd46cdcb719452c286af1cf356d38ce
+U drh
+Z 8eb9cfa9eaeb9d935dda443dd1d5d0a4
