@@ -27,7 +27,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.14 2000/10/16 22:06:42 drh Exp $
+** $Id: tokenize.c,v 1.15 2000/10/22 20:39:59 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -320,7 +320,9 @@ int sqliteRunParser(Parse *pParse, char *zSql, char **pzErrMsg){
     sqliteSetString(pzErrMsg, "out of memory", 0);
     return 1;
   }
+#ifndef NDEBUG
   sqliteParserTrace(trace, "parser: ");
+#endif
   while( nErr==0 && i>=0 && zSql[i]!=0 ){
     int tokenType;
     

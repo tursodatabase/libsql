@@ -1,5 +1,5 @@
-C fix\san\sHPUX\sbug\s(CVS\s1709)
-D 2000-10-19T15:28:41
+C fix\sa\sdebugging\sissue\s(CVS\s162)
+D 2000-10-22T20:39:59
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 0b1fdafa55e1bf4d3a4f5213544130e66ef32052
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -25,7 +25,7 @@ F src/sqlite.h.in 43c0e1e321e94c20eb20efe593155296cd57728a
 F src/sqliteInt.h 4b49e8c162c2ebf5d7a7ed392953380dbfd3673a
 F src/table.c f08189678c806d8a74a70c156d7c27083760e028
 F src/tclsqlite.c 178adf318eab2ff480c288a87541d4ab1c37d985
-F src/tokenize.c b0f5c12598105ec924c0733a916485f920168720
+F src/tokenize.c 95bf7baa7d829981bed81ca89080d99d2c09d463
 F src/update.c 51b9ef7434b15e31096155da920302e9db0d27fc
 F src/util.c 811e0ad47f842c16555aaf361b26dab7221c1a6c
 F src/vdbe.c 45d40d614a48208b560e6285197cece75dbd61a4
@@ -76,7 +76,7 @@ F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl ae101d5f7c07dcc59770e2a84aae09025fab2dad
 F www/vdbe.tcl bcbfc33bcdd0ebad95eab31286adb9e1bc289520
-P 4788dc32a5c9fc3fcd08cbc43b13671c132f0c3e
-R 2390d7eef92e84e45abcc66c62f47540
+P 9e91b729f0a708b08060979a4998be890b6d268d
+R 31bc5188fe93f51dd094373014866609
 U drh
-Z c8447ca735e27991e337774a5a64ac19
+Z 76e7eb6325e4b7bcee9d8c7288823b0d
