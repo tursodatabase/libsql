@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.180 2004/05/21 10:08:54 danielk1977 Exp $
+** $Id: main.c,v 1.181 2004/05/21 11:39:05 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -391,84 +391,6 @@ static int binaryCollatingFunc(
     rc = nKey1 - nKey2;
   }
   return rc;
-}
-
-/*
-** Open a new SQLite database.  Construct an "sqlite" structure to define
-** the state of this database and return a pointer to that structure.
-**
-** An attempt is made to initialize the in-memory data structures that
-** hold the database schema.  But if this fails (because the schema file
-** is locked) then that step is deferred until the first call to
-** sqlite3_exec().
-*/
-sqlite *sqlite3_open(const char *zFilename, int mode, char **pzErrMsg){
-  sqlite *db;
-  int rc, i;
-
-  /* Allocate the sqlite data structure */
-  db = sqliteMalloc( sizeof(sqlite) );
-  if( pzErrMsg ) *pzErrMsg = 0;
-  if( db==0 ) goto no_mem_on_open;
-  db->onError = OE_Default;
-  db->priorNewRowid = 0;
-  db->magic = SQLITE_MAGIC_BUSY;
-  db->nDb = 2;
-  db->aDb = db->aDbStatic;
-  /* db->flags |= SQLITE_ShortColNames; */
-  sqlite3HashInit(&db->aFunc, SQLITE_HASH_STRING, 1);
-  sqlite3HashInit(&db->aCollSeq, SQLITE_HASH_STRING, 0);
-  for(i=0; i<db->nDb; i++){
-    sqlite3HashInit(&db->aDb[i].tblHash, SQLITE_HASH_STRING, 0);
-    sqlite3HashInit(&db->aDb[i].idxHash, SQLITE_HASH_STRING, 0);
-    sqlite3HashInit(&db->aDb[i].trigHash, SQLITE_HASH_STRING, 0);
-    sqlite3HashInit(&db->aDb[i].aFKey, SQLITE_HASH_STRING, 1);
-  }
-  db->pDfltColl =
-     sqlite3ChangeCollatingFunction(db, "BINARY", 6, 0, binaryCollatingFunc);
-  
-  /* Open the backend database driver */
-  if( zFilename[0]==':' && strcmp(zFilename,":memory:")==0 ){
-    db->temp_store = 2;
-  }
-  rc = sqlite3BtreeFactory(db, zFilename, 0, MAX_PAGES, &db->aDb[0].pBt);
-  if( rc!=SQLITE_OK ){
-    switch( rc ){
-      default: {
-        sqlite3SetString(pzErrMsg, "unable to open database: ",
-           zFilename, (char*)0);
-      }
-    }
-    sqliteFree(db);
-    sqlite3StrRealloc(pzErrMsg);
-    return 0;
-  }
-  db->aDb[0].zName = "main";
-  db->aDb[1].zName = "temp";
-
-  /* Attempt to read the schema */
-  sqlite3RegisterBuiltinFunctions(db);
-  rc = sqlite3Init(db, pzErrMsg);
-  db->magic = SQLITE_MAGIC_OPEN;
-  if( sqlite3_malloc_failed ){
-    sqlite3_close(db);
-    goto no_mem_on_open;
-  }else if( rc!=SQLITE_OK && rc!=SQLITE_BUSY ){
-    sqlite3_close(db);
-    sqlite3StrRealloc(pzErrMsg);
-    return 0;
-  }else if( pzErrMsg ){
-    sqliteFree(*pzErrMsg);
-    *pzErrMsg = 0;
-  }
-
-  /* Return a pointer to the newly opened database structure */
-  return db;
-
-no_mem_on_open:
-  sqlite3SetString(pzErrMsg, "out of memory", (char*)0);
-  sqlite3StrRealloc(pzErrMsg);
-  return 0;
 }
 
 /*
@@ -1330,6 +1252,19 @@ int sqlite3_open_new(
   const char **options
 ){
   return openDatabase(zFilename, ppDb, options, TEXT_Utf8);
+}
+
+sqlite *sqlite3_open(const char *zFilename, int mode, char **pzErrMsg){
+  sqlite3 *db;
+  int rc;
+ 
+  rc = sqlite3_open_new(zFilename, &db, 0);
+  if( rc!=SQLITE_OK && pzErrMsg ){
+    char *err = sqlite3_errmsg(db);
+    *pzErrMsg = malloc(strlen(err)+1);
+    strcpy(*pzErrMsg, err);
+  }
+  return db;
 }
 
 /*
