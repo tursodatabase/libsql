@@ -34,9 +34,8 @@ mv sqlite3-$VERS.bin.gz doc
 # under Linux
 #
 make target_source
-rm sqlite_source.zip
 cd tsrc
-zip ../sqlite_source.zip *
+zip ../doc/sqlite-source-$VERSW.zip *
 rm shell.c
 TCLDIR=/home/drh/tcltk/8.2linux
 TCLSTUBLIB=$TCLDIR/libtclstub8.2g.a

@@ -44,7 +44,7 @@ both libraries at the same time.
 <p>
 The format used by SQLite database files has been completely revised.
 The old version 2.1 format and the new 3.0 format are incompatible with
-one another.  Version 2.8 of SQLite will not read and version 3.0 database
+one another.  Version 2.8 of SQLite will not read a version 3.0 database
 files and version 3.0 of SQLite will not read a version 2.8 database file.
 </p>
 
@@ -59,11 +59,11 @@ sqlite OLD.DB .dump | sqlite3 NEW.DB
 </pre></blockquote>
 
 <p>
-The new database file format uses B+Trees for tables.  In a B+Tree, all
+The new database file format uses B+trees for tables.  In a B+tree, all
 data is stored in the leaves of the tree instead of in both the leaves and
-the intermediate branch nodes.  The use of B+Trees for tables allows for
-better scalability and the storage larger data fields without the use of
-overflow pages.  Traditional B-Trees are still used for indices.</p>
+the intermediate branch nodes.  The use of B+trees for tables allows for
+better scalability and the storage of larger data fields without the use of
+overflow pages.  Traditional B-trees are still used for indices.</p>
 
 <p>
 The new file format also supports variable pages sizes between 512 and
@@ -74,7 +74,7 @@ though this feature has not yet been implemented in practice.
 
 <p>
 The new file format omits unused fields from its disk images.  For example,
-indices use only the key part of a B-Tree record and not the data.  So
+indices use only the key part of a B-tree record and not the data.  So
 for indices, the field that records the length of the data is omitted.
 Integer values such as the length of key and data are stored using
 a variable-length encoding so that only one or two bytes are required to
@@ -87,7 +87,7 @@ These changes taken together result in database files that are typically
 </p>
 
 <p>
-Details of the low-level B-Tree format used in SQLite version 3.0 can
+Details of the low-level B-tree format used in SQLite version 3.0 can
 be found in header comments to the 
 <a href="http://www.sqlite.org/cvstrac/getfile/sqlite/src/btree.c">btree.c</a>
 source file.
@@ -282,4 +282,4 @@ two or more ATTACHed database are now atomic.
 </p>
 
 }
-footer {$Id: version3.tcl,v 1.1 2004/06/17 19:04:17 drh Exp $}
+footer {$Id: version3.tcl,v 1.2 2004/06/18 15:13:48 drh Exp $}
