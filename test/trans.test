@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: trans.test,v 1.18 2003/02/15 23:09:17 drh Exp $
+# $Id: trans.test,v 1.19 2004/03/08 13:26:18 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -789,6 +789,7 @@ set fd [open test.tcl w]
 puts $fd {
   sqlite db test.db
   db eval {
+    PRAGMA default_cache_size=20;
     BEGIN;
     CREATE TABLE t3 AS SELECT * FROM t2;
     DELETE FROM t2;

@@ -12,7 +12,7 @@
 # focus of this file is testing the LIMIT ... OFFSET ... clause
 #  of SELECT statements.
 #
-# $Id: limit.test,v 1.10 2003/07/20 01:16:48 drh Exp $
+# $Id: limit.test,v 1.11 2004/03/08 13:26:18 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -93,7 +93,8 @@ do_test limit-3.1 {
 do_test limit-4.1 {
   execsql {
     BEGIN;
-    CREATE TABLE t3 AS SELECT x FROM t1 ORDER BY x LIMIT 10 OFFSET 1;
+    CREATE TABLE t3(x);
+    INSERT INTO t3 SELECT x FROM t1 ORDER BY x LIMIT 10 OFFSET 1;
     INSERT INTO t3 SELECT x+(SELECT max(x) FROM t3) FROM t3;
     INSERT INTO t3 SELECT x+(SELECT max(x) FROM t3) FROM t3;
     INSERT INTO t3 SELECT x+(SELECT max(x) FROM t3) FROM t3;
