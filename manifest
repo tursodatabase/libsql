@@ -1,5 +1,5 @@
-C added\sshell\scommand\s".databases"\sto\slist\sname\sand\sfile\sof\sopen\sones.\s(CVS\s953)
-D 2003-05-04T07:25:58
+C Added\sshell\scommand\s".databases"\sto\slist\sname\sand\sfile\sof\sopen\sones.\nAdded\sseveral\smissing\sshell\scommands.\s(CVS\s954)
+D 2003-05-04T07:31:10
 F Makefile.in 004acec253ecdde985c8ecd5b7c9accdb210378f
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -162,10 +162,10 @@ F www/omitted.tcl 118062f40a203fcb88b8d68ef1d7c0073ac191ec
 F www/opcode.tcl 33c5f2061a05c5d227c72b84c080b3bf74c74f8b
 F www/quickstart.tcl 4e97bef825e6a4153c43afb9f97235fc4da278ab
 F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
-F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
+F www/sqlite.tcl ffde644361e1d8e2a44a235ff23ad3b43d640df2
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 87e1b6a936972670771cf90670aeb4308ba0a30a
-R 5320898e74f5e804dcf5efe20f5cd8de
+P 741a5a8d3975fb5db18914b7879b12aead59279b
+R dd130a1f7dd3e8a6528c790b087edc44
 U jplyon
-Z 6095dc4d8b2b48d4029c4d0dd1f58135
+Z 8e9e207bfa04e253d2be1e2c73c48742

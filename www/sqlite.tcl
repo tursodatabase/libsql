@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: sqlite.tcl,v 1.18 2002/06/27 13:21:02 drh Exp $}
+set rcsid {$Id: sqlite.tcl,v 1.19 2003/05/04 07:31:10 jplyon Exp $}
 
 puts {<html>
 <head>
@@ -143,19 +143,27 @@ at any time.  For example:
 
 Code {
 sqlite> (((.help)))
-.dump                  Dump database in a text format
+.databases             List names and files of attached databases
+.dump ?TABLE? ...      Dump the database in a text format
+.echo ON|OFF           Turn command echo on or off
 .exit                  Exit this program
-.explain               Set output mode suitable for EXPLAIN
-.header ON|OFF         Turn display of headers on or off
+.explain ON|OFF        Turn output mode suitable for EXPLAIN on or off.
+.header(s) ON|OFF      Turn display of headers on or off
 .help                  Show this message
 .indices TABLE         Show names of all indices on TABLE
-.mode MODE             Set mode to one of "line", "column", "list", or "html"
+.mode MODE             Set mode to one of "line(s)", "column(s)", 
+                       "insert", "list", or "html"
 .mode insert TABLE     Generate SQL insert statements for TABLE
+.nullvalue STRING      Print STRING instead of nothing for NULL data
 .output FILENAME       Send output to FILENAME
 .output stdout         Send output to the screen
+.prompt MAIN CONTINUE  Replace the standard prompts
+.quit                  Exit this program
+.read FILENAME         Execute SQL in FILENAME
 .schema ?TABLE?        Show the CREATE statements
 .separator STRING      Change separator string for "list" mode
-.tables                List names all tables in the database
+.show                  Show the current values for various settings
+.tables ?PATTERN?      List names of tables matching a pattern
 .timeout MS            Try opening locked tables for MS milliseconds
 .width NUM NUM ...     Set column widths for "column" mode
 sqlite> 
@@ -422,6 +430,19 @@ appended and prepended and a LIKE clause is added to the query.
 This allows you to list only those tables that match a particular
 pattern.</p>
 
+<p>The ".databases" command shows a list of all databases open in
+the current connection.  There will always be at least 2.  The first
+one is "main", the original database opened.  The second is "temp",
+the database used for temporary tables. There may be additional 
+databases listed for databases attached using the ATTACH statement.
+The first output column is the name the database is attached with, 
+and the second column is the filename of the external file.</p>}
+
+Code {
+sqlite> (((.databases)))
+}
+
+puts {
 <h2>Converting An Entire Database To An ASCII Text File</h2>
 
 <p>Use the ".dump" command to convert the entire contents of a
