@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.150 2002/12/04 20:01:06 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.151 2003/01/02 14:43:57 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -119,7 +119,8 @@ typedef unsigned INTPTR_TYPE uptr; /* Big enough to hold a pointer */
 ** by an AWK script to determine if there are any leaks.
 */
 #ifdef MEMORY_DEBUG
-# define sqliteMalloc(X)    sqliteMalloc_(X,__FILE__,__LINE__)
+# define sqliteMalloc(X)    sqliteMalloc_(X,1,__FILE__,__LINE__)
+# define sqliteMallocRaw(X) sqliteMalloc_(X,0,__FILE__,__LINE__)
 # define sqliteFree(X)      sqliteFree_(X,__FILE__,__LINE__)
 # define sqliteRealloc(X,Y) sqliteRealloc_(X,Y,__FILE__,__LINE__)
 # define sqliteStrDup(X)    sqliteStrDup_(X,__FILE__,__LINE__)
@@ -893,13 +894,14 @@ int sqliteCompare(const char *, const char *);
 int sqliteSortCompare(const char *, const char *);
 void sqliteRealToSortable(double r, char *);
 #ifdef MEMORY_DEBUG
-  void *sqliteMalloc_(int,char*,int);
+  void *sqliteMalloc_(int,int,char*,int);
   void sqliteFree_(void*,char*,int);
   void *sqliteRealloc_(void*,int,char*,int);
   char *sqliteStrDup_(const char*,char*,int);
   char *sqliteStrNDup_(const char*, int,char*,int);
 #else
   void *sqliteMalloc(int);
+  void *sqliteMallocRaw(int);
   void sqliteFree(void*);
   void *sqliteRealloc(void*,int);
   char *sqliteStrDup(const char*);

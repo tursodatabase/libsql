@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.75 2002/12/04 22:29:28 drh Exp $
+** $Id: btree.c,v 1.76 2003/01/02 14:43:56 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1106,7 +1106,8 @@ int sqliteBtreeKeySize(BtCursor *pCur, int *pSize){
   MemPage *pPage;
 
   pPage = pCur->pPage;
-  if( pPage==0 || pCur->idx >= pPage->nCell ){
+  assert( pPage!=0 );
+  if( pCur->idx >= pPage->nCell ){
     *pSize = 0;
   }else{
     pCell = pPage->apCell[pCur->idx];
@@ -1180,29 +1181,26 @@ static int getPayload(BtCursor *pCur, int offset, int amt, char *zBuf){
 ** Read part of the key associated with cursor pCur.  A maximum
 ** of "amt" bytes will be transfered into zBuf[].  The transfer
 ** begins at "offset".  The number of bytes actually read is
-** returned.  The amount returned will be smaller than the
-** amount requested if there are not enough bytes in the key
-** to satisfy the request.
+** returned. 
+**
+** Change:  It used to be that the amount returned will be smaller
+** than the amount requested if there are not enough bytes in the key
+** to satisfy the request.  But now, it must be the case that there
+** is enough data available to satisfy the request.  If not, an exception
+** is raised.  The change was made in an effort to boost performance
+** by eliminating unneeded tests.
 */
 int sqliteBtreeKey(BtCursor *pCur, int offset, int amt, char *zBuf){
-  Cell *pCell;
   MemPage *pPage;
 
-  if( amt<0 ) return 0;
-  if( offset<0 ) return 0; 
-  if( amt==0 ) return 0;
+  assert( amt>=0 );
+  assert( offset>=0 );
+  assert( pCur->pPage!=0 );
   pPage = pCur->pPage;
-  if( pPage==0 ) return 0;
   if( pCur->idx >= pPage->nCell ){
     return 0;
   }
-  pCell = pPage->apCell[pCur->idx];
-  if( amt+offset > NKEY(pCur->pBt, pCell->h) ){
-    amt = NKEY(pCur->pBt, pCell->h) - offset;
-    if( amt<=0 ){
-      return 0;
-    }
-  }
+  assert( amt+offset <= NKEY(pCur->pBt, pPage->apCell[pCur->idx]->h) );
   getPayload(pCur, offset, amt, zBuf);
   return amt;
 }
@@ -1219,7 +1217,8 @@ int sqliteBtreeDataSize(BtCursor *pCur, int *pSize){
   MemPage *pPage;
 
   pPage = pCur->pPage;
-  if( pPage==0 || pCur->idx >= pPage->nCell ){
+  assert( pPage!=0 );
+  if( pCur->idx >= pPage->nCell ){
     *pSize = 0;
   }else{
     pCell = pPage->apCell[pCur->idx];
@@ -1239,23 +1238,16 @@ int sqliteBtreeDataSize(BtCursor *pCur, int *pSize){
 int sqliteBtreeData(BtCursor *pCur, int offset, int amt, char *zBuf){
   Cell *pCell;
   MemPage *pPage;
-  int nData;
 
-  if( amt<0 ) return 0;
-  if( offset<0 ) return 0;
-  if( amt==0 ) return 0;
+  assert( amt>=0 );
+  assert( offset>=0 );
+  assert( pCur->pPage!=0 );
   pPage = pCur->pPage;
-  if( pPage==0 || pCur->idx >= pPage->nCell ){
+  if( pCur->idx >= pPage->nCell ){
     return 0;
   }
   pCell = pPage->apCell[pCur->idx];
-  nData = NDATA(pCur->pBt, pCell->h);
-  if( amt+offset > nData ){
-    amt = nData - offset;
-    if( amt<=0 ){
-      return 0;
-    }
-  }
+  assert( amt+offset <= NDATA(pCur->pBt, pCell->h) );
   getPayload(pCur, offset + NKEY(pCur->pBt, pCell->h), amt, zBuf);
   return amt;
 }
@@ -1552,26 +1544,28 @@ int sqliteBtreeMoveto(BtCursor *pCur, const void *pKey, int nKey, int *pRes){
 
 /*
 ** Advance the cursor to the next entry in the database.  If
-** successful and pRes!=NULL then set *pRes=0.  If the cursor
+** successful then set *pRes=0.  If the cursor
 ** was already pointing to the last entry in the database before
-** this routine was called, then set *pRes=1 if pRes!=NULL.
+** this routine was called, then set *pRes=1.
 */
 int sqliteBtreeNext(BtCursor *pCur, int *pRes){
   int rc;
+  assert( pRes!=0 );
+  /* assert( pCur->pPage!=0 ); */
   if( pCur->pPage==0 ){
-    if( pRes ) *pRes = 1;
+    *pRes = 1;
     return SQLITE_ABORT;
   }
   assert( pCur->pPage->isInit );
   assert( pCur->eSkip!=SKIP_INVALID );
   if( pCur->pPage->nCell==0 ){
-    if( pRes ) *pRes = 1;
+    *pRes = 1;
     return SQLITE_OK;
   }
   assert( pCur->idx<pCur->pPage->nCell );
   if( pCur->eSkip==SKIP_NEXT ){
     pCur->eSkip = SKIP_NONE;
-    if( pRes ) *pRes = 0;
+    *pRes = 0;
     return SQLITE_OK;
   }
   pCur->eSkip = SKIP_NONE;
@@ -1581,25 +1575,22 @@ int sqliteBtreeNext(BtCursor *pCur, int *pRes){
       rc = moveToChild(pCur, SWAB32(pCur->pBt, pCur->pPage->u.hdr.rightChild));
       if( rc ) return rc;
       rc = moveToLeftmost(pCur);
-      if( rc ) return rc;
-      if( pRes ) *pRes = 0;
-      return SQLITE_OK;
+      *pRes = 0;
+      return rc;
     }
     do{
       if( pCur->pPage->pParent==0 ){
-        if( pRes ) *pRes = 1;
+        *pRes = 1;
         return SQLITE_OK;
       }
       rc = moveToParent(pCur);
-      if( rc ) return rc;
-    }while( pCur->idx>=pCur->pPage->nCell );
-    if( pRes ) *pRes = 0;
-    return SQLITE_OK;
+    }while( rc==SQLITE_OK && pCur->idx>=pCur->pPage->nCell );
+    *pRes = 0;
+    return rc;
   }
   rc = moveToLeftmost(pCur);
-  if( rc ) return rc;
-  if( pRes ) *pRes = 0;
-  return SQLITE_OK;
+  *pRes = 0;
+  return rc;
 }
 
 /*
@@ -2621,8 +2612,9 @@ int sqliteBtreeDelete(BtCursor *pCur){
     BtCursor leafCur;
     Cell *pNext;
     int szNext;
+    int notUsed;
     getTempCursor(pCur, &leafCur);
-    rc = sqliteBtreeNext(&leafCur, 0);
+    rc = sqliteBtreeNext(&leafCur, &notUsed);
     if( rc!=SQLITE_OK ){
       return SQLITE_CORRUPT;
     }
@@ -3157,7 +3149,7 @@ static int checkTreePage(
     /* Check that keys are in the right order
     */
     cur.idx = i;
-    zKey2 = sqliteMalloc( nKey2+1 );
+    zKey2 = sqliteMallocRaw( nKey2+1 );
     getPayload(&cur, 0, nKey2, zKey2);
     if( zKey1 && keyCompare(zKey1, nKey1, zKey2, nKey2)>=0 ){
       checkAppendMsg(pCheck, zContext, "Key is out of order");
@@ -3253,7 +3245,7 @@ char *sqliteBtreeIntegrityCheck(Btree *pBt, int *aRoot, int nRoot){
     unlockBtreeIfUnused(pBt);
     return 0;
   }
-  sCheck.anRef = sqliteMalloc( (sCheck.nPage+1)*sizeof(sCheck.anRef[0]) );
+  sCheck.anRef = sqliteMallocRaw( (sCheck.nPage+1)*sizeof(sCheck.anRef[0]) );
   sCheck.anRef[1] = 1;
   for(i=2; i<=sCheck.nPage; i++){ sCheck.anRef[i] = 0; }
   sCheck.zErrMsg = 0;

@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.117 2002/12/03 02:22:52 drh Exp $
+** $Id: build.c,v 1.118 2003/01/02 14:43:56 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -727,7 +727,7 @@ static char *createTableStmt(Table *p){
     zEnd = "\n)";
   }
   n += 35 + 6*p->nCol;
-  zStmt = sqliteMalloc( n );
+  zStmt = sqliteMallocRaw( n );
   if( zStmt==0 ) return 0;
   strcpy(zStmt, p->isTemp ? "CREATE TEMP TABLE " : "CREATE TABLE ");
   k = strlen(zStmt);
@@ -1164,7 +1164,7 @@ void sqliteAddIdxKeyType(Vdbe *v, Index *pIdx){
   assert( pIdx!=0 && pIdx->pTable!=0 );
   pTab = pIdx->pTable;
   n = pIdx->nColumn;
-  zType = sqliteMalloc( n+1 );
+  zType = sqliteMallocRaw( n+1 );
   if( zType==0 ) return;
   for(i=0; i<n; i++){
     int iCol = pIdx->aiColumn[i];

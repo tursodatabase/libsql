@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.62 2002/12/28 01:06:30 drh Exp $
+** @(#) $Id: pager.c,v 1.63 2003/01/02 14:43:57 drh Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -962,13 +962,14 @@ int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage){
     pPager->nMiss++;
     if( pPager->nPage<pPager->mxPage || pPager->pFirst==0 ){
       /* Create a new page */
-      pPg = sqliteMalloc( sizeof(*pPg) + SQLITE_PAGE_SIZE + pPager->nExtra );
+      pPg = sqliteMallocRaw( sizeof(*pPg) + SQLITE_PAGE_SIZE + pPager->nExtra );
       if( pPg==0 ){
         *ppPage = 0;
         pager_unwritelock(pPager);
         pPager->errMask |= PAGER_ERR_MEM;
         return SQLITE_NOMEM;
       }
+      memset(pPg, 0, sizeof(*pPg));
       pPg->pPager = pPager;
       pPg->pNextAll = pPager->pAll;
       if( pPager->pAll ){

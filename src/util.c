@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.53 2002/12/17 13:05:26 drh Exp $
+** $Id: util.c,v 1.54 2003/01/02 14:43:57 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -48,7 +48,7 @@ static int memcnt = 0;
 ** Allocate new memory and set it to zero.  Return NULL if
 ** no memory is available.
 */
-void *sqliteMalloc_(int n, char *zFile, int line){
+void *sqliteMalloc_(int n, int bZero, char *zFile, int line){
   void *p;
   int *pi;
   int k;
@@ -76,7 +76,7 @@ void *sqliteMalloc_(int n, char *zFile, int line){
   pi[1] = n;
   pi[k+2] = 0xdead3344;
   p = &pi[2];
-  memset(p, 0, n);
+  memset(p, bZero==0, n);
 #if MEMORY_DEBUG>1
   fprintf(stderr,"%06d malloc %d bytes at 0x%x from %s:%d\n",
       ++memcnt, n, (int)p, zFile,line);
@@ -121,7 +121,7 @@ void *sqliteRealloc_(void *oldP, int n, char *zFile, int line){
   int *oldPi, *pi, k, oldN, oldK;
   void *p;
   if( oldP==0 ){
-    return sqliteMalloc_(n,zFile,line);
+    return sqliteMalloc_(n,1,zFile,line);
   }
   if( n==0 ){
     sqliteFree_(oldP,zFile,line);
@@ -153,7 +153,7 @@ void *sqliteRealloc_(void *oldP, int n, char *zFile, int line){
   if( n>oldN ){
     memset(&((char*)p)[oldN], 0, n-oldN);
   }
-  memset(oldPi, 0, (oldK+3)*sizeof(int));
+  memset(oldPi, 0xab, (oldK+3)*sizeof(int));
   free(oldPi);
 #if MEMORY_DEBUG>1
   fprintf(stderr,"%06d realloc %d to %d bytes at 0x%x to 0x%x at %s:%d\n",
@@ -190,14 +190,14 @@ void sqliteStrRealloc(char **pz){
 char *sqliteStrDup_(const char *z, char *zFile, int line){
   char *zNew;
   if( z==0 ) return 0;
-  zNew = sqliteMalloc_(strlen(z)+1, zFile, line);
+  zNew = sqliteMalloc_(strlen(z)+1, 0, zFile, line);
   if( zNew ) strcpy(zNew, z);
   return zNew;
 }
 char *sqliteStrNDup_(const char *z, int n, char *zFile, int line){
   char *zNew;
   if( z==0 ) return 0;
-  zNew = sqliteMalloc_(n+1, zFile, line);
+  zNew = sqliteMalloc_(n+1, 0, zFile, line);
   if( zNew ){
     memcpy(zNew, z, n);
     zNew[n] = 0;
@@ -214,7 +214,7 @@ char *sqliteStrNDup_(const char *z, int n, char *zFile, int line){
 
 /*
 ** Allocate new memory and set it to zero.  Return NULL if
-** no memory is available.
+** no memory is available.  See also sqliteMallocRaw().
 */
 void *sqliteMalloc(int n){
   void *p;
@@ -225,6 +225,21 @@ void *sqliteMalloc(int n){
     return 0;
   }
   memset(p, 0, n);
+  return p;
+}
+
+/*
+** Allocate new memory but do not set it to zero.  Return NULL if
+** no memory is available.  See also sqliteMalloc().
+*/
+void *sqliteMallocRaw(int n){
+  void *p;
+  if( n==0 ) return 0;
+  p = malloc(n);
+  if( p==0 ){
+    sqlite_malloc_failed++;
+    return 0;
+  }
   return p;
 }
 
@@ -264,14 +279,14 @@ void *sqliteRealloc(void *p, int n){
 char *sqliteStrDup(const char *z){
   char *zNew;
   if( z==0 ) return 0;
-  zNew = sqliteMalloc(strlen(z)+1);
+  zNew = sqliteMallocRaw(strlen(z)+1);
   if( zNew ) strcpy(zNew, z);
   return zNew;
 }
 char *sqliteStrNDup(const char *z, int n){
   char *zNew;
   if( z==0 ) return 0;
-  zNew = sqliteMalloc(n+1);
+  zNew = sqliteMallocRaw(n+1);
   if( zNew ){
     memcpy(zNew, z, n);
     zNew[n] = 0;
@@ -300,7 +315,7 @@ void sqliteSetString(char **pz, const char *zFirst, ...){
   }
   va_end(ap);
   sqliteFree(*pz);
-  *pz = zResult = sqliteMalloc( nByte );
+  *pz = zResult = sqliteMallocRaw( nByte );
   if( zResult==0 ){
     return;
   }
@@ -341,7 +356,7 @@ void sqliteSetNString(char **pz, ...){
   }
   va_end(ap);
   sqliteFree(*pz);
-  *pz = zResult = sqliteMalloc( nByte + 1 );
+  *pz = zResult = sqliteMallocRaw( nByte + 1 );
   if( zResult==0 ) return;
   va_start(ap, pz);
   while( (z = va_arg(ap, const char*))!=0 ){

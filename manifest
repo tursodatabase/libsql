@@ -1,5 +1,5 @@
-C If\scompiled\swith\sthe\s-DVDBE_PROFILE=1\soption,\sspecial\scode\sis\sinserted\sthat\nuses\sthe\spentium\sRDTSC\sinstruction\sto\scompute\svery\sprecise\sruntimes\son\sall\nVDBE\sopcodes.\s\s(This\sonly\sworks\son\si586\sprocessors,\sof\scourse.)\s\sThe\sresults\nare\swritten\sinto\sthe\svdbe_profile.out\sfile\sfor\sanalysis.\sHopefully,\sthis\nnew\sfeature\swill\sreveal\shot\sspots\sthat\scan\sbe\soptimized\sto\smake\sthe\sVDBE\srun\nfaster.\s(CVS\s807)
-D 2003-01-01T23:06:21
+C Code\soptimizations\sto\shelp\sthe\slibrary\srun\sfaster.\s(CVS\s808)
+D 2003-01-02T14:43:56
 F Makefile.in 868c17a1ae1c07603d491274cc8f86c04acf2a1e
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -18,21 +18,21 @@ F main.mk 9d13839b9697af332d788fe6e801e68da027cc5c
 F publish.sh e5b83867d14708ed58cec8cba0a4f201e969474d
 F spec.template 238f7db425a78dc1bb7682e56e3834c7270a3f5e
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
-F src/btree.c 215d4b322c98fbff795095fa253d9ea108d4b9de
+F src/btree.c 6a2a9bb701a60df4abe2fb7047b25787c90e1ffd
 F src/btree.h 17710339f7a8f46e3c7d6d0d4648ef19c584ffda
-F src/build.c 415dce8886aabb6d45851caed7014707056d668b
+F src/build.c 8569ac014609add4b796260d3567a5090b90056d
 F src/delete.c aad9d4051ab46e6f6391ea5f7b8994a7c05bdd15
 F src/encode.c 6c9c87d5b7b2c0101d011ebc283a80abf672a4d1
 F src/expr.c 9427b4d1d04ede1095994b8e042abe2e6fea7443
 F src/func.c 90c583f0b91220f7cd411a2407deaf9327245d63
-F src/hash.c 6a6236b89c8c060c65dabd300a1c8ce7c10edb72
+F src/hash.c 4fc39feb7b7711f6495ee9f2159559bedb043e1f
 F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
 F src/insert.c 764300a0bd8074a2174946c0bf8a550bd833397a
 F src/main.c cee05c2ba23b5e78f9671f319dbd68e2130e0f68
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
 F src/os.c 740022806209e44cab0abddfb1fee65c77702e21
 F src/os.h 09fd96b4d733aae2f3b98b2ae9ceea40b8fd780d
-F src/pager.c ebc73e7c314e7d8ff6c5728bb96831aaa9efb2e4
+F src/pager.c 255c5d14ff489071021bf1374654836f2516abb3
 F src/pager.h 540833e8cb826b80ce2e39aa917deee5e12db626
 F src/parse.y 469c9636ff713e63c00234662209f11668671ae9
 F src/printf.c 5c50fc1da75c8f5bf432b1ad17d91d6653acd167
@@ -41,7 +41,7 @@ F src/select.c cc8640e5d4e3ec1a8de58fde6b2fdd6f846b7263
 F src/shell.c 53185af128613a2bac79d50128f4c17794f0f992
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 98b1574b2362abe02c4a4c73b9dbf99bcd713ab3
-F src/sqliteInt.h 4eb6290304c9225752ca9cc4fdda5bc480d14176
+F src/sqliteInt.h 65dfa06bc49ebff83361bfb259ee4c675534808a
 F src/table.c eed2098c9b577aa17f8abe89313a9c4413f57d63
 F src/tclsqlite.c 9f2c00a92338c51171ded8943bd42d77f7e69e64
 F src/test1.c a46e9f61915b32787c5d5a05a4b92e4dacc437d9
@@ -51,8 +51,8 @@ F src/threadtest.c d641a5219e718e18a1a80a50eb9bb549f451f42e
 F src/tokenize.c 75e3bb37305b64e118e709752066f494c4f93c30
 F src/trigger.c 5ba917fc226b96065108da28186c2efaec53e481
 F src/update.c 881e4c8e7c786545da4fd2d95da19252b2e31137
-F src/util.c 8f19c71e45d1a5a3ff2e9a3eef8f36296d87ea43
-F src/vdbe.c 0baebb3f0c624e59bf6710cd9fc15db01c7fc31e
+F src/util.c e2d108842e02810d3d3242cac0e024b09cdb3c4a
+F src/vdbe.c 572ee028e01d2811dee1ad4d5161ce82e31e88d4
 F src/vdbe.h 754eba497cfe0c3e352b9c101ab2f811f10d0a55
 F src/where.c af235636b7bc7f7f42ee1c7162d1958ad0102cab
 F test/all.test 873d30e25a41b3aa48fec5633a7ec1816e107029
@@ -152,7 +152,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P ee95eefe12c48f28412461125c231122e0d4277a
-R c487959d68c24b3808f56b254c4d4b49
+P a1c071ea18766932c90275c704e078134c67be68
+R 007ca29b327fd24b8c788dde75e1f089
 U drh
-Z 2e2dd169d3dae32e223fb4d52d6a727e
+Z 65610790d7e7e89a7d7be7a3a45c0c23

@@ -36,7 +36,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.188 2003/01/01 23:06:21 drh Exp $
+** $Id: vdbe.c,v 1.189 2003/01/02 14:43:57 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -609,7 +609,7 @@ char *sqlite_set_result_string(sqlite_func *p, const char *zResult, int n){
       p->s.flags = STK_Str;
       p->z = p->s.z;
     }else{
-      p->z = sqliteMalloc( n+1 );
+      p->z = sqliteMallocRaw( n+1 );
       if( p->z ){
         memcpy(p->z, zResult, n);
         p->z[n] = 0;
@@ -817,7 +817,7 @@ static int hardDeephem(Vdbe *p, int i){
   char **pzStack = &p->zStack[i];
   char *z;
   assert( (pStack->flags & STK_Ephem)!=0 );
-  z = sqliteMalloc( pStack->n );
+  z = sqliteMallocRaw( pStack->n );
   if( z==0 ) return 1;
   memcpy(z, *pzStack, pStack->n);
   *pzStack = z;
@@ -1662,7 +1662,7 @@ case OP_Dup: {
       zStack[j] = aStack[j].z;
       aStack[j].flags &= ~(STK_Static|STK_Dyn|STK_Ephem);
     }else{
-      zStack[j] = sqliteMalloc( aStack[j].n );
+      zStack[j] = sqliteMallocRaw( aStack[j].n );
       if( zStack[j]==0 ) goto no_mem;
       memcpy(zStack[j], zStack[i], aStack[j].n);
       aStack[j].flags &= ~(STK_Static|STK_Ephem);
@@ -1871,7 +1871,7 @@ case OP_Concat: {
     zStack[p->tos] = 0;
     break;
   }
-  zNew = sqliteMalloc( nByte );
+  zNew = sqliteMallocRaw( nByte );
   if( zNew==0 ) goto no_mem;
   j = 0;
   for(i=p->tos-nField+1; i<=p->tos; i++){
@@ -2782,7 +2782,7 @@ case OP_MakeRecord: {
     rc = SQLITE_TOOBIG;
     goto abort_due_to_error;
   }
-  zNewRecord = sqliteMalloc( nByte );
+  zNewRecord = sqliteMallocRaw( nByte );
   if( zNewRecord==0 ) goto no_mem;
   j = 0;
   addr = idxWidth*(nField+1) + addUnique*sizeof(uniqueCnt);
@@ -2936,7 +2936,7 @@ case OP_MakeKey: {
     goto abort_due_to_error;
   }
   if( addRowid ) nByte += sizeof(u32);
-  zNewKey = sqliteMalloc( nByte );
+  zNewKey = sqliteMallocRaw( nByte );
   if( zNewKey==0 ) goto no_mem;
   j = 0;
   for(i=p->tos-nField+1; i<=p->tos; i++){
@@ -3929,7 +3929,7 @@ case OP_Column: {
       zStack[tos] = aStack[tos].z;
       aStack[tos].n = amt;
     }else{
-      char *z = sqliteMalloc( amt );
+      char *z = sqliteMallocRaw( amt );
       if( z==0 ) goto no_mem;
       aStack[tos].flags = STK_Str | STK_Dyn;
       zStack[tos] = z;
@@ -4001,7 +4001,7 @@ case OP_FullKey: {
       goto abort_due_to_error;
     }
     if( amt>NBFS ){
-      z = sqliteMalloc( amt );
+      z = sqliteMallocRaw( amt );
       aStack[tos].flags = STK_Str | STK_Dyn;
     }else{
       z = aStack[tos].z;
@@ -4095,12 +4095,11 @@ case OP_Rewind: {
 */
 case OP_Prev:
 case OP_Next: {
-  int i = pOp->p1;
   Cursor *pC;
   BtCursor *pCrsr;
 
-  if( VERIFY( i>=0 && i<p->nCursor && ) 
-      (pCrsr = (pC = &p->aCsr[i])->pCursor)!=0 ){
+  if( VERIFY( pOp->p1>=0 && pOp->p1<p->nCursor && ) 
+      (pCrsr = (pC = &p->aCsr[pOp->p1])->pCursor)!=0 ){
     int res;
     if( pC->nullRow ){
       res = 1;
@@ -4406,7 +4405,7 @@ case OP_ListWrite: {
   VERIFY( if( p->tos<0 ) goto not_enough_stack; )
   pKeylist = p->pList;
   if( pKeylist==0 || pKeylist->nUsed>=pKeylist->nKey ){
-    pKeylist = sqliteMalloc( sizeof(Keylist)+999*sizeof(pKeylist->aKey[0]) );
+    pKeylist = sqliteMallocRaw( sizeof(Keylist)+999*sizeof(pKeylist->aKey[0]) );
     if( pKeylist==0 ) goto no_mem;
     pKeylist->nKey = 1000;
     pKeylist->nRead = 0;
@@ -4516,7 +4515,7 @@ case OP_SortPut: {
   Sorter *pSorter;
   VERIFY( if( tos<1 ) goto not_enough_stack; )
   if( Stringify(p, tos) || Stringify(p, nos) ) goto no_mem;
-  pSorter = sqliteMalloc( sizeof(Sorter) );
+  pSorter = sqliteMallocRaw( sizeof(Sorter) );
   if( pSorter==0 ) goto no_mem;
   pSorter->pNext = p->pSort;
   p->pSort = pSorter;
@@ -4560,7 +4559,7 @@ case OP_SortMakeRec: {
     }
   }
   nByte += sizeof(char*)*(nField+1);
-  azArg = sqliteMalloc( nByte );
+  azArg = sqliteMallocRaw( nByte );
   if( azArg==0 ) goto no_mem;
   z = (char*)&azArg[nField+1];
   for(j=0, i=p->tos-nField+1; i<=p->tos; i++, j++){
@@ -4613,7 +4612,7 @@ case OP_SortMakeKey: {
       nByte += aStack[i].n+2;
     }
   }
-  zNewKey = sqliteMalloc( nByte );
+  zNewKey = sqliteMallocRaw( nByte );
   if( zNewKey==0 ) goto no_mem;
   j = 0;
   k = 0;
@@ -4942,7 +4941,7 @@ case OP_MemStore: {
     if( (flags & STK_Static)!=0 || (pOp->p2 && (flags & STK_Dyn)!=0) ){
       pMem->z = zStack[tos];
     }else if( flags & STK_Str ){
-      pMem->z = sqliteMalloc( pMem->s.n );
+      pMem->z = sqliteMallocRaw( pMem->s.n );
       if( pMem->z==0 ) goto no_mem;
       memcpy(pMem->z, zStack[tos], pMem->s.n);
       pMem->s.flags |= STK_Dyn;
