@@ -15,7 +15,7 @@
 # The tests in this file use special facilities that are only
 # available in the SQLite test fixture.
 #
-# $Id: ioerr.test,v 1.15 2005/01/16 11:07:07 danielk1977 Exp $
+# $Id: ioerr.test,v 1.16 2005/01/19 03:47:16 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -256,25 +256,31 @@ if {$tcl_platform(platform)=="unix" && [file exists ./crashtest]} {
 
 # Test handling of IO errors that occur while rolling back hot journal
 # files.
-do_ioerr_test 7 -tclprep {
-  db close
-  sqlite3 db2 test2.db
-  db2 eval {
-    PRAGMA synchronous = 0;
-    CREATE TABLE t1(a, b);
-    INSERT INTO t1 VALUES(1, 2);
-    BEGIN;
-    INSERT INTO t1 VALUES(3, 4);
-  }
-  file copy -force test2.db test.db
-  file copy -force test2.db-journal test.db-journal
-  db2 close
-} -tclbody {
-  sqlite3 db test.db
-  db eval {
-    SELECT * FROM t1;
-  }
-} -exclude 1
+#
+# These tests can't be run on windows because the windows version of 
+# SQLite holds a mandatory exclusive lock on journal files it has open.
+#
+if {$tcl_platform(platform)!="windows"} {
+  do_ioerr_test 7 -tclprep {
+    db close
+    sqlite3 db2 test2.db
+    db2 eval {
+      PRAGMA synchronous = 0;
+      CREATE TABLE t1(a, b);
+      INSERT INTO t1 VALUES(1, 2);
+      BEGIN;
+      INSERT INTO t1 VALUES(3, 4);
+    }
+    file copy -force test2.db test.db
+    file copy -force test2.db-journal test.db-journal
+    db2 close
+  } -tclbody {
+    sqlite3 db test.db
+    db eval {
+      SELECT * FROM t1;
+    }
+  } -exclude 1
+}
 
 # do_ioerr_test 15 -sqlprep {
 #   CREATE TABLE abc(a UNIQUE, b, c);
