@@ -1,5 +1,5 @@
-C Fix\sfor\sticket\s#102:\sHonor\sthe\sORDER\sBY\sclause\sin\ssubqueries.\s(CVS\s677)
-D 2002-07-15T18:55:25
+C Fix\sa\ssyntax\serror\sin\sthe\stclsqlite.c\sfile.\s(CVS\s678)
+D 2002-07-15T20:58:48
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -43,7 +43,7 @@ F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 75c5bbb066d0faf34424b7d1babf8b44d5b31af2
 F src/sqliteInt.h d18d098aa9121d2415a9c0d1d3e09a10dde39385
 F src/table.c eed2098c9b577aa17f8abe89313a9c4413f57d63
-F src/tclsqlite.c ba454c5166252a55cb4db8af4d29d2a18b6e6f3d
+F src/tclsqlite.c c502819c209011659e1bbb428cbac5670cce7f79
 F src/test1.c 456cb080db85056be723e770435d9509afc3a83a
 F src/test2.c 669cc22781c6461a273416ec1a7414d25c081730
 F src/test3.c fda085b4cdd5a2d7f65786ce679036e955f4bfa2
@@ -141,7 +141,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P e1842e04c4f47e1ce79575b5c787a164add5d559
-R d457409fb3b351cb718b6f1622dd2dbe
+P 7e918c8b0df5120e3630811f164defb8c9fedd6d
+R 80d0f442519bb19c84eac71b236ad54c
 U drh
-Z 467681780f54f7e9f5861979bdae4749
+Z a6f748da86333d939a65f771a8458e68

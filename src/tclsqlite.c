@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.38 2002/07/11 12:18:17 drh Exp $
+** $Id: tclsqlite.c,v 1.39 2002/07/15 20:58:48 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -95,7 +95,7 @@ static int DbEvalCallback(
       if( cbData->zArray[0] ){
         Tcl_SetVar2(cbData->interp, cbData->zArray, "*",
              Tcl_DStringValue(&dCol), TCL_LIST_ELEMENT|TCL_APPEND_VALUE);
-        if( azN[nCol]!=0 } {
+        if( azN[nCol]!=0 ){
           Tcl_DString dType;
           Tcl_DStringInit(&dType);
           Tcl_DStringAppend(&dType, "typeof:", -1);
