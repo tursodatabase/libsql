@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.78 2003/01/04 18:53:28 drh Exp $
+** $Id: btree.c,v 1.79 2003/01/04 19:44:08 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -2062,6 +2062,21 @@ static void copyPage(MemPage *pTo, MemPage *pFrom){
 }
 
 /*
+** The following parameters determine how many adjacent pages get involved
+** in a balancing operation.  NN is the number of neighbors on either side
+** of the page that participate in the balancing operation.  NB is the
+** total number of pages that participate, including the target page and
+** NN neighbors on either side.
+**
+** The minimum value of NN is 1 (of course).  Increasing NN above 1
+** (to 2 or 3) gives a modest improvement in SELECT and DELETE performance
+** in exchange for a larger degradation in INSERT and UPDATE performance.
+** The value of NN appears to give the best results overall.
+*/
+#define NN 1             /* Number of neighbors on either side of pPage */
+#define NB (NN*2+1)      /* Total pages involved in the balance */
+
+/*
 ** This routine redistributes Cells on pPage and up to two siblings
 ** of pPage so that all pages have about the same amount of free space.
 ** Usually one sibling on either side of pPage is used in the balancing,
@@ -2103,12 +2118,6 @@ static void copyPage(MemPage *pTo, MemPage *pFrom){
 */
 static int balance(Btree *pBt, MemPage *pPage, BtCursor *pCur){
   MemPage *pParent;            /* The parent of pPage */
-  MemPage *apOld[3];           /* pPage and up to two siblings */
-  Pgno pgnoOld[3];             /* Page numbers for each page in apOld[] */
-  MemPage *apNew[4];           /* pPage and up to 3 siblings after balancing */
-  Pgno pgnoNew[4];             /* Page numbers for each page in apNew[] */
-  int idxDiv[3];               /* Indices of divider cells in pParent */
-  Cell *apDiv[3];              /* Divider cells in pParent */
   int nCell;                   /* Number of cells in apCell[] */
   int nOld;                    /* Number of pages in apOld[] */
   int nNew;                    /* Number of pages in apNew[] */
@@ -2120,13 +2129,19 @@ static int balance(Btree *pBt, MemPage *pPage, BtCursor *pCur){
   int iCur;                    /* apCell[iCur] is the cell of the cursor */
   MemPage *pOldCurPage;        /* The cursor originally points to this page */
   int subtotal;                /* Subtotal of bytes in cells on one page */
-  int cntNew[4];               /* Index in apCell[] of cell after i-th page */
-  int szNew[4];                /* Combined size of cells place on i-th page */
   MemPage *extraUnref = 0;     /* A page that needs to be unref-ed */
-  Cell *apCell[MX_CELL*3+5];   /* All cells from pages being balanceed */
-  int szCell[MX_CELL*3+5];     /* Local size of all cells */
-  Cell aTemp[2];               /* Temporary holding area for apDiv[] */
-  MemPage aOld[3];             /* Temporary copies of pPage and its siblings */
+  MemPage *apOld[NB];          /* pPage and up to two siblings */
+  Pgno pgnoOld[NB];            /* Page numbers for each page in apOld[] */
+  MemPage *apNew[NB+1];        /* pPage and up to NB siblings after balancing */
+  Pgno pgnoNew[NB+1];          /* Page numbers for each page in apNew[] */
+  int idxDiv[NB];              /* Indices of divider cells in pParent */
+  Cell *apDiv[NB];             /* Divider cells in pParent */
+  Cell aTemp[NB];              /* Temporary holding area for apDiv[] */
+  int cntNew[NB+1];            /* Index in apCell[] of cell after i-th page */
+  int szNew[NB+1];             /* Combined size of cells place on i-th page */
+  MemPage aOld[NB];            /* Temporary copies of pPage and its siblings */
+  Cell *apCell[(MX_CELL+2)*NB]; /* All cells from pages being balanced */
+  int szCell[(MX_CELL+2)*NB];  /* Local size of all cells */
 
   /* 
   ** Return without doing any work if pPage is neither overfull nor
@@ -2243,19 +2258,20 @@ static int balance(Btree *pBt, MemPage *pPage, BtCursor *pCur){
 
   /*
   ** Find sibling pages to pPage and the Cells in pParent that divide
-  ** the siblings.  An attempt is made to find one sibling on either
-  ** side of pPage.  Both siblings are taken from one side, however, if
-  ** pPage is either the first or last child of its parent.  If pParent
-  ** has 3 or fewer children then all children of pParent are taken.
+  ** the siblings.  An attempt is made to find NN siblings on either
+  ** side of pPage.  More siblings are taken from one side, however, if
+  ** pPage there are fewer than NN siblings on the other side.  If pParent
+  ** has NB or fewer children then all children of pParent are taken.
   */
-  if( idx==pParent->nCell ){
-    nxDiv = idx - 2;
-  }else{
-    nxDiv = idx - 1;
+  nxDiv = idx - NN;
+  if( nxDiv + NB > pParent->nCell ){
+    nxDiv = pParent->nCell - NB + 1;
   }
-  if( nxDiv<0 ) nxDiv = 0;
+  if( nxDiv<0 ){
+    nxDiv = 0;
+  }
   nDiv = 0;
-  for(i=0, k=nxDiv; i<3; i++, k++){
+  for(i=0, k=nxDiv; i<NB; i++, k++){
     if( k<pParent->nCell ){
       idxDiv[i] = k;
       apDiv[i] = pParent->apCell[k];
@@ -2400,10 +2416,11 @@ static int balance(Btree *pBt, MemPage *pPage, BtCursor *pCur){
   ** from the disk more rapidly.
   **
   ** An O(n^2) insertion sort algorithm is used, but since
-  ** n is never more than 3, that should not be a problem.
+  ** n is never more than NB (a small constant), that should
+  ** not be a problem.
   **
-  ** This one optimization makes the database about 25%
-  ** faster for large insertions and deletions.
+  ** When NB==3, this one optimization makes the database
+  ** about 25% faster for large insertions and deletions.
   */
   for(i=0; i<k-1; i++){
     int minV = pgnoNew[i];
