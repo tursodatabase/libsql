@@ -1,5 +1,5 @@
-C Modifications\sto\sreduce\smemory\sconsumption.\s(CVS\s2422)
-D 2005-03-28T08:44:07
+C Changes\sto\salter3.test\sto\sallow\sit\sto\swork\swith\sa\scodec.\s(CVS\s2423)
+D 2005-03-28T16:50:22
 F Makefile.in 5c00d0037104de2a50ac7647a5f12769795957a3
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -86,7 +86,7 @@ F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
 F test/all.test 7f0988442ab811dfa41793b5b550f5828ce316f3
 F test/alter.test 3a20ce14c3989f7e2e75da50797065c2e56f838b
 F test/alter2.test 60ba0a7057dc71ad630a1cc7c487104346849d50
-F test/alter3.test db854cd5565a007336fbcd901c73e48c6d95bb06
+F test/alter3.test 1e88e71dde15a1c592ca2aba692bf70ff54886f6
 F test/attach.test e6bda19cc954fd84836fadbd70d80134cb17918a
 F test/attach2.test 6f3a3a3a7f5be40388dd4d805e0e0712718dca9d
 F test/attach3.test c05c70b933afbde0901dab9da3e66ee842c09f38
@@ -278,7 +278,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P bcb5d72ef146b1019c72220701d385c7b0b5d0bd
-R bb1ad29712ee81032569962fcc3720e5
-U danielk1977
-Z f1d40042415d09b383776e4b14cf65b8
+P 0fd5ce4eefdc429ce0493f15d0dba9e8a3a0b0e2
+R 94486eac0ff57523aeacdb75de66637f
+U drh
+Z ea0b21b68e5294a06c6ad259cf08dff2

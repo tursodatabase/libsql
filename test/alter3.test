@@ -13,7 +13,7 @@
 # file format change that may be used in the future to implement
 # "ALTER TABLE ... ADD COLUMN".
 #
-# $Id: alter3.test,v 1.4 2005/03/27 01:56:31 danielk1977 Exp $
+# $Id: alter3.test,v 1.5 2005/03/28 16:50:22 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -25,6 +25,15 @@ ifcapable !altertable {
   finish_test
   return
 }
+
+# Determine if there is a codec available on this test.
+#
+if {[catch {sqlite3 -has_codec} r] || $r} {
+  set has_codec 1
+} else {
+  set has_codec 0
+}
+
 
 # Test Organisation:
 # ------------------
@@ -167,9 +176,11 @@ do_test alter3-3.2 {
     SELECT * FROM t1;
   }
 } {1 100 {} 2 300 {}}
-do_test alter3-3.3 {
-  get_file_format
-} {3}
+if {!$has_codec} {
+  do_test alter3-3.3 {
+    get_file_format
+  } {3}
+}
 do_test alter3-3.4 {
   execsql {
     PRAGMA schema_version;
@@ -198,9 +209,11 @@ do_test alter3-4.2 {
     SELECT * FROM t1;
   }
 } {1 100 {hello world} 2 300 {hello world}}
-do_test alter3-4.3 {
-  get_file_format
-} {3}
+if {!$has_codec} {
+  do_test alter3-4.3 {
+    get_file_format
+  } {3}
+}
 do_test alter3-4.4 {
   execsql {
     PRAGMA schema_version;
@@ -241,9 +254,11 @@ do_test alter3-5.4 {
     PRAGMA aux.schema_version;
   }
 } {31}
-do_test alter3-5.5 {
-  list [get_file_format test2.db] [get_file_format]
-} {2 3}
+if {!$has_codec} {
+  do_test alter3-5.5 {
+    list [get_file_format test2.db] [get_file_format]
+  } {2 3}
+}
 do_test alter3-5.6 {
   execsql {
     ALTER TABLE aux.t1 ADD COLUMN d DEFAULT 1000;
@@ -302,38 +317,40 @@ ifcapable trigger {
   } {b 1 2 a 1 2 b 3 4 a 3 4}
 }
 
-ifcapable vacuum {
-  do_test alter3-7.1 {
-    execsql {
-      VACUUM;
-    }
-    get_file_format
-  } {1}
-  do_test alter3-7.2 {
-    execsql {
-      CREATE TABLE abc(a, b, c);
-      ALTER TABLE abc ADD d DEFAULT NULL;
-    }
-    get_file_format
-  } {2}
-  do_test alter3-7.3 {
-    execsql {
-      ALTER TABLE abc ADD e DEFAULT 10;
-    }
-    get_file_format
-  } {3}
-  do_test alter3-7.4 {
-    execsql {
-      ALTER TABLE abc ADD f DEFAULT NULL;
-    }
-    get_file_format
-  } {3}
-  do_test alter3-7.5 {
-    execsql {
-      VACUUM;
-    }
-    get_file_format
-  } {1}
+if {!$has_codec} {
+  ifcapable vacuum {
+    do_test alter3-7.1 {
+      execsql {
+        VACUUM;
+      }
+      get_file_format
+    } {1}
+    do_test alter3-7.2 {
+      execsql {
+        CREATE TABLE abc(a, b, c);
+        ALTER TABLE abc ADD d DEFAULT NULL;
+      }
+      get_file_format
+    } {2}
+    do_test alter3-7.3 {
+      execsql {
+        ALTER TABLE abc ADD e DEFAULT 10;
+      }
+      get_file_format
+    } {3}
+    do_test alter3-7.4 {
+      execsql {
+        ALTER TABLE abc ADD f DEFAULT NULL;
+      }
+      get_file_format
+    } {3}
+    do_test alter3-7.5 {
+      execsql {
+        VACUUM;
+      }
+      get_file_format
+    } {1}
+  }
 }
 
 # Ticket #1183 - Make sure adding columns to large tables does not cause
@@ -361,4 +378,3 @@ do_test alter3-8.2 {
 } [list $::sql]
 
 finish_test
-
