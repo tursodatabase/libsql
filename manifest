@@ -1,5 +1,5 @@
-C Respect\scollation\ssequences\sin\sviews.\sTicket\s#1088.\s(CVS\s2291)
-D 2005-01-30T11:11:44
+C User-contributed\schagnes\sto\stclinstaller\sso\sthat\sit\ssupports\sDESTDIR.\s(CVS\s2292)
+D 2005-01-30T22:10:01
 F Makefile.in ffd81f5e926d40b457071b4de8d7c1fa18f39b5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -82,7 +82,7 @@ F src/vdbeapi.c 467caa6e6fb9247528b1c7ab9132ae1b4748e8ac
 F src/vdbeaux.c 8d8cc8992cb78cab35e034fa81ad0c1a771c39f1
 F src/vdbemem.c 62fe89471b656a922e9879be005abf690509ead3
 F src/where.c 94d847e07b07110c9097fbd3efb630ab8fb19edf
-F tclinstaller.tcl 36478c3bbfc5b93ceac42d94e3c736937b808432
+F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
 F test/all.test 7f0988442ab811dfa41793b5b550f5828ce316f3
 F test/alter.test b146ddd669b45a880d40bfdacd6037666137c3f4
 F test/attach.test 5147d531ca5fc5c2539fd20ce3b07a00420e1fbb
@@ -272,7 +272,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P 356d31e03fe856642c5637f5ea5665947ff681fc
-R 1b4c9f179442697c3fe36efa149f562d
-U danielk1977
-Z 15b81717953dbbae339f907f8905d01e
+P 9843c0dd795ceda3c260986f95b101a0cbc7cf64
+R 9f28a14b2620eeeb6b7389e87630926c
+U drh
+Z 6778e5fa551c19c41b95ae28108056bc

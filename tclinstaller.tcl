@@ -6,7 +6,8 @@
 #
 set VERSION [lindex $argv 0]
 set LIBFILE .libs/libtclsqlite3[info sharedlibextension]
-set LIBDIR [lindex $auto_path 0]
+if { ![info exists env(DESTDIR)] } { set env(DESTDIR) "" }
+set LIBDIR $env(DESTDIR)[lindex $auto_path 0]
 set LIBNAME [file tail $LIBFILE]
 set LIB $LIBDIR/sqlite3/$LIBNAME
 
