@@ -1,5 +1,5 @@
-C Fix\sfor\sticket\s#905.\s(CVS\s1995)
-D 2004-10-01T15:11:13
+C Fix\snaming\sconflict\sbetween\ssqlite.h\sand\ssqlite3.h.\s\sTicket\s#946.\s(CVS\s2008)
+D 2004-10-06T15:52:36
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -48,7 +48,7 @@ F src/printf.c 378ec63d9303993eef24814a56a9fc7260aacbea
 F src/random.c 775913e0b7fbd6295d21f12a7bd35b46387c44b2
 F src/select.c a1c18cab14b49f28ed7629a53fe02adeb13083d2
 F src/shell.c 920af040d3a33ea8919c82cee45b424ad841cee0
-F src/sqlite.h.in 35bec264dfb4965bbfeb7e75221f8658f210c30d
+F src/sqlite.h.in b1414cc6686c77917024d8196efa4531e76cf194
 F src/sqliteInt.h 3e9203f16d12baf3a364fae9d64903d813651abd
 F src/table.c eea34544be947e4939ba9e46391d5da998f90b84
 F src/tclsqlite.c 2daaaa41378fbaf167905363197e1d44464b6eb6
@@ -191,7 +191,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 205d85d77e8f0c9a1d841129601847235052d59f
-R 79411570fb76b0b7df49c73c1cdb7f3d
+P bf90799d889ccc88ed7e3635b041d5f38865d447
+R 731446fc336301ac5314c1821b01b726
 U drh
-Z cc4b046e01ee3e38c16e2284d55425e4
+Z 153fbedcee98e896b4b2315ff1b1bfa6
