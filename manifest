@@ -1,5 +1,5 @@
-C Bug\sfix\sin\sthe\ssqliteOsLock()\sand\ssqliteOsUnlock()\sroutines\sof\sPOSIX.\nVersion\s2.1.5.\s(CVS\s325)
-D 2001-12-06T13:24:15
+C Version\s2.1.5\s(CVS\s456)
+D 2001-12-06T13:30:00
 F Makefile.in 352fed589f09dd94347e0bb391d047118ebd6105
 F Makefile.template 0fbf0ee1fe38183d760170a13e91fffec64e73f5
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -117,7 +117,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 880ef67cb4f2797b95bf1368fc4e0d8ca0fda956
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 121c522e673cc2a2176582981cc5cd8694095337
+P 669454060867593290c1ce8c45bd87d011976289
 R 283460d2e743d411ca396b1d81679e15
 U drh
-Z 827040ba461a0b880deb418dd73e9355
+Z 8fa34c42ea83abd5884352fa7c87327e
