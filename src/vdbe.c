@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.444 2005/01/20 22:48:48 drh Exp $
+** $Id: vdbe.c,v 1.445 2005/01/21 08:13:15 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -680,6 +680,7 @@ case OP_Real: {            /* same as TK_FLOAT */
 ** into an OP_String before it is executed for the first time.
 */
 case OP_String8: {         /* same as TK_STRING */
+#ifndef SQLITE_OMIT_UTF16
   pOp->opcode = OP_String;
 
   if( db->enc!=SQLITE_UTF8 && pOp->p3 ){
@@ -696,6 +697,7 @@ case OP_String8: {         /* same as TK_STRING */
     pOp->p3 = pTos->z;
     break;
   }
+#endif
   /* Otherwise fall through to the next case, OP_String */
 }
   
@@ -757,7 +759,6 @@ case OP_HexBlob: {            /* same as TK_BLOB */
 
   /* Fall through to the next case, OP_Blob. */
 }
-#endif /* SQLITE_OMIT_BLOB_LITERAL */
 
 /* Opcode: Blob P1 * P3
 **
@@ -766,13 +767,14 @@ case OP_HexBlob: {            /* same as TK_BLOB */
 ** by the compiler. Instead, the compiler layer specifies
 ** an OP_HexBlob opcode, with the hex string representation of
 ** the blob as P3. This opcode is transformed to an OP_Blob
-** before execution (within the sqlite3_prepare() function).
+** the first time it is executed.
 */
 case OP_Blob: {
   pTos++;
   sqlite3VdbeMemSetStr(pTos, pOp->p3, pOp->p1, 0, 0);
   break;
 }
+#endif /* SQLITE_OMIT_BLOB_LITERAL */
 
 /* Opcode: Variable P1 * *
 **
@@ -1752,6 +1754,7 @@ case OP_Column: {
       sqlite3BtreeDataSize(pCrsr, &payloadSize);
     }
     nField = pC->nField;
+#ifndef SQLITE_OMIT_TRIGGER
   }else if( pC->pseudoTable ){
     /* The record is the sole entry of a pseudo-table */
     payloadSize = pC->nData;
@@ -1760,6 +1763,7 @@ case OP_Column: {
     assert( payloadSize==0 || zRec!=0 );
     nField = pC->nField;
     pCrsr = 0;
+#endif
   }else{
     zRec = 0;
     payloadSize = 0;
@@ -2448,6 +2452,7 @@ case OP_OpenTemp: {
   break;
 }
 
+#ifndef SQLITE_OMIT_TRIGGER
 /* Opcode: OpenPseudo P1 * *
 **
 ** Open a new cursor that points to a fake table that contains a single
@@ -2469,6 +2474,7 @@ case OP_OpenPseudo: {
   pCx->pIncrKey = &pCx->bogusIncrKey;
   break;
 }
+#endif
 
 /* Opcode: Close P1 * *
 **
@@ -3020,6 +3026,7 @@ case OP_PutStrKey: {
     }else{
       assert( pTos->flags & (MEM_Blob|MEM_Str) );
     }
+#ifndef SQLITE_OMIT_TRIGGER
     if( pC->pseudoTable ){
       /* PutStrKey does not work for pseudo-tables.
       ** The following assert makes sure we are not trying to use
@@ -3041,8 +3048,12 @@ case OP_PutStrKey: {
       }
       pC->nullRow = 0;
     }else{
+#endif
       rc = sqlite3BtreeInsert(pC->pCursor, zKey, nKey, pTos->z, pTos->n);
+#ifndef SQLITE_OMIT_TRIGGER
     }
+#endif
+    
     pC->recnoIsValid = 0;
     pC->deferredMoveto = 0;
     pC->cacheValid = 0;
@@ -3173,10 +3184,12 @@ case OP_RowData: {
     }else{
       sqlite3BtreeData(pCrsr, 0, n, pTos->z);
     }
+#ifndef SQLITE_OMIT_TRIGGER
   }else if( pC->pseudoTable ){
     pTos->n = pC->nData;
     pTos->z = pC->pData;
     pTos->flags = MEM_Blob|MEM_Ephem;
+#endif
   }else{
     pTos->flags = MEM_Null;
   }
@@ -3217,6 +3230,7 @@ case OP_Recno: {
   break;
 }
 
+#ifndef SQLITE_OMIT_COMPOUND_SELECT
 /* Opcode: FullKey P1 * *
 **
 ** Extract the complete key from the record that cursor P1 is currently
@@ -3265,6 +3279,7 @@ case OP_FullKey: {
   }
   break;
 }
+#endif
 
 /* Opcode: NullRow P1 * *
 **
@@ -3937,6 +3952,7 @@ case OP_ListReset: {
   break;
 }
 
+#ifndef SQLITE_OMIT_TRIGGER
 /* Opcode: ContextPush * * * 
 **
 ** Save the current Vdbe context such that it can be restored by a ContextPop
@@ -3977,6 +3993,7 @@ case OP_ContextPop: {
   p->pList = pContext->pList;
   break;
 }
+#endif /* #ifndef SQLITE_OMIT_TRIGGER */
 
 /* Opcode: SortPut * * *
 **

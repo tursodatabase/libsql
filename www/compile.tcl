@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the compile.html file.
 #
-set rcsid {$Id: compile.tcl,v 1.2 2004/11/20 08:17:18 danielk1977 Exp $ }
+set rcsid {$Id: compile.tcl,v 1.3 2005/01/21 08:13:15 danielk1977 Exp $ }
 source common.tcl
 header {Compilation Options For SQLite}
 
@@ -205,6 +205,10 @@ database schema version and user version from the build. Specifically, the
 <a href="pragma.html#pragma_schema_version">schema_version</a> and
 <a href="pragma.html#pragma_user_version">user_version</a>
 pragmas are omitted.
+
+<p><b>SQLITE_OMIT_SUBQUERY</b><br>
+<p>If defined, support for sub-selects and the IN() operator are omitted.
+</p>
 
 <p><b>SQLITE_OMIT_TCL_VARIABLE</b><br>
 <p>If this macro is defined, then the special "$<variable-name>" syntax

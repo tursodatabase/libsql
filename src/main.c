@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.272 2005/01/18 16:02:40 drh Exp $
+** $Id: main.c,v 1.273 2005/01/21 08:13:15 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -713,6 +713,7 @@ int sqlite3_create_function(
     return SQLITE_ERROR;
   }
   
+#ifndef SQLITE_OMIT_UTF16
   /* If SQLITE_UTF16 is specified as the encoding type, transform this
   ** to one of SQLITE_UTF16LE or SQLITE_UTF16BE using the
   ** SQLITE_UTF16NATIVE macro. SQLITE_UTF16 is not used internally.
@@ -732,6 +733,9 @@ int sqlite3_create_function(
     if( rc!=SQLITE_OK ) return rc;
     enc = SQLITE_UTF16BE;
   }
+#else
+  enc = SQLITE_UTF8;
+#endif
 
   p = sqlite3FindFunction(db, zFunctionName, nName, nArg, enc, 1);
   if( p==0 ) return SQLITE_NOMEM;
@@ -741,6 +745,7 @@ int sqlite3_create_function(
   p->pUserData = pUserData;
   return SQLITE_OK;
 }
+#ifndef SQLITE_OMIT_UTF16
 int sqlite3_create_function16(
   sqlite3 *db,
   const void *zFunctionName,
@@ -769,6 +774,7 @@ int sqlite3_create_function16(
       pUserData, xFunc, xStep, xFinal);
   return rc;
 }
+#endif
 
 /*
 ** Register a trace function.  The pArg from the previously registered trace
@@ -1013,6 +1019,7 @@ int sqlite3_prepare(
   if( pzTail ) *pzTail = sParse.zTail;
   rc = sParse.rc;
 
+#ifndef SQLITE_OMIT_EXPLAIN
   if( rc==SQLITE_OK && sParse.pVdbe && sParse.explain ){
     sqlite3VdbeSetNumCols(sParse.pVdbe, 5);
     sqlite3VdbeSetColName(sParse.pVdbe, 0, "addr", P3_STATIC);
@@ -1021,6 +1028,7 @@ int sqlite3_prepare(
     sqlite3VdbeSetColName(sParse.pVdbe, 3, "p2", P3_STATIC);
     sqlite3VdbeSetColName(sParse.pVdbe, 4, "p3", P3_STATIC);
   } 
+#endif
 
 prepare_out:
   if( sqlite3SafetyOff(db) ){

@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.242 2005/01/21 00:22:38 drh Exp $
+** $Id: btree.c,v 1.243 2005/01/21 08:13:14 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1324,10 +1324,12 @@ int sqlite3BtreeSetCacheSize(Btree *pBt, int mxPage){
 ** is a very low but non-zero probability of damage.  Level 3 reduces the
 ** probability of damage to near zero but with a write performance reduction.
 */
+#ifndef SQLITE_OMIT_PAGER_PRAGMAS
 int sqlite3BtreeSetSafetyLevel(Btree *pBt, int level){
   sqlite3pager_set_safety_level(pBt->pPager, level);
   return SQLITE_OK;
 }
+#endif
 
 /*
 ** Change the default pages size and the number of reserved bytes per page.

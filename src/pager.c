@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.184 2005/01/20 11:32:24 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.185 2005/01/21 08:13:15 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1438,11 +1438,13 @@ void sqlite3pager_set_cachesize(Pager *pPager, int mxPage){
 ** Numeric values associated with these states are OFF==1, NORMAL=2,
 ** and FULL=3.
 */
+#ifndef SQLITE_OMIT_PAGER_PRAGMAS
 void sqlite3pager_set_safety_level(Pager *pPager, int level){
   pPager->noSync =  level==1 || pPager->tempFile;
   pPager->fullSync = level==3 && !pPager->tempFile;
   if( pPager->noSync ) pPager->needSync = 0;
 }
+#endif
 
 /*
 ** Open a temporary file.  Write the name of the file into zName
@@ -2847,6 +2849,7 @@ void sqlite3pager_dont_rollback(void *pData){
 }
 
 
+#ifndef SQLITE_OMIT_MEMORYDB
 /*
 ** Clear a PgHistory block
 */
@@ -2856,6 +2859,9 @@ static void clearHistory(PgHistory *pHist){
   pHist->pOrig = 0;
   pHist->pStmt = 0;
 }
+#else
+#define clearHistory(x)
+#endif
 
 /*
 ** Commit all changes to the database and release the write lock.
@@ -3418,7 +3424,7 @@ int sqlite3pager_lockstate(Pager *pPager){
 }
 #endif
 
-#ifdef SQLITE_TEST
+#ifdef SQLITE_DEBUG
 /*
 ** Print a listing of all referenced pages and their ref count.
 */

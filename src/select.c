@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.232 2005/01/20 22:48:48 drh Exp $
+** $Id: select.c,v 1.233 2005/01/21 08:13:15 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -475,6 +475,7 @@ static int selectInnerLoop(
       break;
     }
 
+#ifndef SQLITE_OMIT_SUBQUERY
     /* If we are creating a set for an "expr IN (SELECT ...)" construct,
     ** then there should be a single item on the stack.  Write this
     ** item into the set table with bogus data.
@@ -515,6 +516,7 @@ static int selectInnerLoop(
       }
       break;
     }
+#endif /* #ifndef SQLITE_OMIT_SUBQUERY */
 
     /* Send the data to the callback function.
     */
@@ -543,6 +545,7 @@ static int selectInnerLoop(
       break;
     }
 
+#if !defined(SQLITE_OMIT_TRIGGER) || !defined(SQLITE_OMIT_CURSOR)
     /* Discard the results.  This is used for SELECT statements inside
     ** the body of a TRIGGER.  The purpose of such selects is to call
     ** user-defined functions that have side effects.  We do not care
@@ -553,6 +556,7 @@ static int selectInnerLoop(
       sqlite3VdbeAddOp(v, OP_Pop, nColumn, 0);
       break;
     }
+#endif
   }
   return 0;
 }
@@ -608,6 +612,7 @@ static void generateSortTail(
       sqlite3VdbeAddOp(v, OP_PutIntKey, iParm, 0);
       break;
     }
+#ifndef SQLITE_OMIT_SUBQUERY
     case SRT_Set: {
       assert( nColumn==1 );
       sqlite3VdbeAddOp(v, OP_NotNull, -1, sqlite3VdbeCurrentAddr(v)+3);
@@ -625,6 +630,7 @@ static void generateSortTail(
       sqlite3VdbeAddOp(v, OP_Goto, 0, end1);
       break;
     }
+#endif
     case SRT_Callback:
     case SRT_Subroutine: {
       int i;
@@ -692,11 +698,13 @@ static const char *columnType(Parse *pParse, SrcList *pTabList, Expr *pExpr){
       }
       break;
     }
+#ifndef SQLITE_OMIT_SUBQUERY
     case TK_SELECT: {
       Select *pS = pExpr->pSelect;
       zType = columnType(pParse, pS->pSrc, pS->pEList->a[0].pExpr); 
       break;
     }
+#endif
     default:
       zType = 0;
   }
@@ -803,6 +811,7 @@ static void generateColumnNames(
   generateColumnTypes(pParse, pTabList, pEList);
 }
 
+#ifndef SQLITE_OMIT_COMPOUND_SELECT
 /*
 ** Name of the connection operator, used for error messages.
 */
@@ -816,6 +825,7 @@ static const char *selectOpName(int id){
   }
   return z;
 }
+#endif /* SQLITE_OMIT_COMPOUND_SELECT */
 
 /*
 ** Forward declaration
@@ -958,6 +968,7 @@ static int prepSelectStmt(Parse *pParse, Select *p){
       return 0;
     }
     if( pFrom->zName==0 ){
+#ifndef SQLITE_OMIT_SUBQUERY
       /* A sub-query in the FROM clause of a SELECT */
       assert( pFrom->pSelect!=0 );
       if( pFrom->zAlias==0 ){
@@ -974,6 +985,7 @@ static int prepSelectStmt(Parse *pParse, Select *p){
       ** pTab is not pointing to a persistent table structure that defines
       ** part of the schema. */
       pTab->isTransient = 1;
+#endif
     }else{
       /* An ordinary table or view name in the FROM clause */
       pFrom->pTab = pTab = 
@@ -981,6 +993,7 @@ static int prepSelectStmt(Parse *pParse, Select *p){
       if( pTab==0 ){
         return 1;
       }
+#ifndef SQLITE_OMIT_VIEW
       if( pTab->pSelect ){
         /* We reach here if the named table is a really a view */
         if( sqlite3ViewGetColumnNames(pParse, pTab) ){
@@ -995,6 +1008,7 @@ static int prepSelectStmt(Parse *pParse, Select *p){
           pFrom->pSelect = sqlite3SelectDup(pTab->pSelect);
         }
       }
+#endif
     }
   }
 
@@ -1147,6 +1161,7 @@ void sqlite3SelectUnbind(Select *p){
 }
 #endif
 
+#ifndef SQLITE_OMIT_COMPOUND_SELECT
 /*
 ** This routine associates entries in an ORDER BY expression list with
 ** columns in a result.  For each ORDER BY expression, the opcode of
@@ -1229,6 +1244,7 @@ static int matchOrderbyToColumn(
   }
   return nErr;  
 }
+#endif /* #ifndef SQLITE_OMIT_COMPOUND_SELECT */
 
 /*
 ** Get a VDBE for the given parser context.  Create a new one if necessary.
@@ -2376,11 +2392,13 @@ int sqlite3Select(
   ** only a single column may be output.
   */
   assert( eDest!=SRT_Exists || pEList->nExpr==1 );
+#ifndef SQLITE_OMIT_SUBQUERY
   if( (eDest==SRT_Mem || eDest==SRT_Set) && pEList->nExpr>1 ){
     sqlite3ErrorMsg(pParse, "only a single result allowed for "
        "a SELECT that is part of an expression");
     goto select_end;
   }
+#endif
 
   /* ORDER BY is ignored for some destinations.
   */
@@ -2707,6 +2725,7 @@ int sqlite3Select(
     generateSortTail(pParse, p, v, pEList->nExpr, eDest, iParm);
   }
 
+#ifndef SQLITE_OMIT_SUBQUERY
   /* If this was a subquery, we have now converted the subquery into a
   ** temporary table.  So delete the subquery structure from the parent
   ** to prevent this subquery from being evaluated again and to force the
@@ -2718,6 +2737,7 @@ int sqlite3Select(
     sqlite3SelectDelete(p);
     pParent->pSrc->a[parentTab].pSelect = 0;
   }
+#endif
 
   /* The SELECT was successfully coded.   Set the return code to 0
   ** to indicate no errors.

@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.186 2005/01/20 22:48:48 drh Exp $
+** $Id: expr.c,v 1.187 2005/01/21 08:13:15 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -446,6 +446,15 @@ ExprList *sqlite3ExprListDup(ExprList *p){
   }
   return pNew;
 }
+
+/*
+** If cursors, triggers, views and subqueries are all omitted from
+** the build, then none of the following routines, except for 
+** sqlite3SelectDup(), can be called. sqlite3SelectDup() is sometimes
+** called with a NULL argument.
+*/
+#if !defined(SQLITE_OMIT_CURSOR) || !defined(SQLITE_OMIT_VIEW) \
+ || !defined(SQLITE_OMIT_TRIGGER) || !defined(SQLITE_OMIT_SUBQUERY)
 SrcList *sqlite3SrcListDup(SrcList *p){
   SrcList *pNew;
   int i;
@@ -509,6 +518,12 @@ Select *sqlite3SelectDup(Select *p){
   pNew->pFetch = 0;
   return pNew;
 }
+#else
+Select *sqlite3SelectDup(Select *p){
+  assert( p==0 );
+  return 0;
+}
+#endif
 
 
 /*
@@ -1549,7 +1564,6 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       VdbeComment((v, "# load subquery result"));
       break;
     }
-#endif
     case TK_IN: {
       int addr;
       char affinity;
@@ -1577,6 +1591,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
 
       break;
     }
+#endif
     case TK_BETWEEN: {
       Expr *pLeft = pExpr->pLeft;
       struct ExprList_item *pLItem = pExpr->pList->a;
@@ -1669,6 +1684,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
   }
 }
 
+#ifndef SQLITE_OMIT_TRIGGER
 /*
 ** Generate code that evalutes the given expression and leaves the result
 ** on the stack.  See also sqlite3ExprCode().
@@ -1693,6 +1709,7 @@ void sqlite3ExprCodeAndCache(Parse *pParse, Expr *pExpr){
     pExpr->op = TK_REGISTER;
   }
 }
+#endif
 
 /*
 ** Generate code that pushes the value of every element of the given
