@@ -1,0 +1,133 @@
+.\"                                      Hey, EMACS: -*- nroff -*-
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH SQLITE SECTION "January 2, 2002"
+.\" Please adjust this date whenever revising the manpage.
+.\"
+.\" Some roff macros, for reference:
+.\" .nh        disable hyphenation
+.\" .hy        enable hyphenation
+.\" .ad l      left justify
+.\" .ad b      justify to both left and right margins
+.\" .nf        disable filling
+.\" .fi        enable filling
+.\" .br        insert line break
+.\" .sp <n>    insert n+1 empty lines
+.\" for manpage-specific macros, see man(7)
+.SH NAME
+sqlite \- A command line interface for SQLite
+.SH SYNOPSIS
+.B sqlite
+.RI [ options ] " filename " [ SQL ]
+.SS SUMMARY
+.PP
+sqlite is a terminal-based front-end to the SQLite library. It enables
+you to type in queries interactivly, issue them to SQLite and see the
+results. Alternativly, you can specify SQL code on the commandline. In
+addition it provides a number of meta-commands.
+
+.SH DESCRIPTION
+This manual page documents briefly the
+.B sqlite
+command.
+This manual page was written for the Debian GNU/Linux distribution
+because the original program does not have a manual page.
+.SS GETTING STARTED
+.PP
+To start the sqlite program, just type "sqlite" followed by the name
+the file that holds the SQLite database. If the file does not exist, a
+new one is created automatically. The sqlite program will then prompt
+you to enter SQL. Type in SQL statements (terminated by a semicolon),
+press "Enter" and the SQL will be executed.
+
+For example, to create a new SQLite database named "ex1" with a single
+table named "tbl1", you might do this:
+.sp
+.nf
+$ sqlite ex1
+SQLite version 2.0.0
+Enter ".help" for instructions
+sqlite> create table tbl1(one varchar(10), two smallint);
+sqlite> insert into tbl1 values('hello!',10);
+sqlite> insert into tbl1 values('goodbye', 20);
+sqlite> select * from tbl1;
+hello!|10
+goodbye|20
+sqlite>
+.sp
+.fi
+
+.SS SQLITE META-COMMANDS
+.PP
+Most of the time, sqlite just reads lines of input and passes them on
+to the SQLite library for execution. But if an input line begins with
+a dot ("."), then that line is intercepted and interpreted by the
+sqlite program itself. These "dot commands" are typically used to
+change the output format of queries, or to execute certain prepackaged
+query statements.
+
+For a listing of the available dot commands, you can enter ".help" at
+any time. For example:
+.sp
+.nf
+.cc |
+sqlite> .help
+.dump                  Dump database in a text format
+.exit                  Exit this program
+.explain               Set output mode suitable for EXPLAIN
+.header ON|OFF         Turn display of headers on or off
+.help                  Show this message
+.indices TABLE         Show names of all indices on TABLE
+.mode MODE             Set mode to one of "line", "column", "list", or "html"
+.mode insert TABLE     Generate SQL insert statements for TABLE
+.output FILENAME       Send output to FILENAME
+.output stdout         Send output to the screen
+.schema ?TABLE?        Show the CREATE statements
+.separator STRING      Change separator string for "list" mode
+.tables                List names all tables in the database
+.timeout MS            Try opening locked tables for MS milliseconds
+.width NUM NUM ...     Set column widths for "column" mode
+sqlite>
+|cc .
+.sp
+.fi
+
+.SH OPTIONS
+The program has the following options:
+.TP
+.B \-html
+Set output mode to HTML.
+.TP
+.B \-list
+Set output mode to 'list'.
+.TP
+.B \-line
+Set output mode to 'line'.
+.TP
+.BI \-seperator\  seperator
+Specify which output field seperator for 'list' mode to use. 
+Default is '|'.
+
+.SH OUTPUT MODE
+The SQLite program has different output modes, which define the way
+the output (from queries) is formatted.
+
+In 'list' mode, which is the default, one record per line is output,
+each field seperated by the seperator specified with the
+\fB-seperator\fP option or \fB.seprator\fP command.
+
+In 'line' mode, each column is output on its own line, records are
+seperated by blank lines.
+
+In HTML mode, an XHTML table is generated.
+
+In 'column' mode, one record per line is output, aligned neatly in colums.
+
+.SH SEE ALSO
+http://www.hwaci.com/sw/sqlite/
+.br
+The sqlite-doc package
+.SH AUTHOR
+This manual page was written by Andreas Rottmann <rotty@debian.org>,
+for the Debian GNU/Linux system (but may be used by others).

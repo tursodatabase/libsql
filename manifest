@@ -1,5 +1,5 @@
-C Makefile\schanges\sfrom\sAndreas\sRottmann\s(CVS\s1725)
-D 2002-01-07T19:04:22
+C Added\sa\smanpage\sfrom\sA.\sRottmann.\s(CVS\s341)
+D 2002-01-07T19:58:44
 F Makefile.in 4b445b9a47f454ecd05220d803ee1b48a81f45ac
 F Makefile.template c88ffcb9c339e718f434d0c7f045bcd7eea125af
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -17,6 +17,7 @@ F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F libtool c56e618713c9510a103bda6b95f3ea3900dcacd6
 F ltmain.sh e9ed72eb1d690f447c13945eaf69e28af531eda1
 F publish.sh cb0f8f7bcb65b8360d0f6668a216a9ac9d5da892
+F sqlite.1 2e2bb0529ef468ade9e4322bd609d0695fb9ded9
 F src/TODO af7f3cab0228e34149cf98e073aa83d45878e7e6
 F src/btree.c c796e387da340cb628dc1e41f684fc20253f561e
 F src/btree.h 9ead7f54c270d8a554e59352ca7318fdaf411390
@@ -118,7 +119,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 880ef67cb4f2797b95bf1368fc4e0d8ca0fda956
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P e7004afbf808b6389e67e8a335c610227c76101b
-R bf419d8b9df57fd8ac55e43d882f9c8b
+P 7910bc7885ddbd90400c3c50014bba499e34d53d
+R 4c30dbc37ad8cfa8a80bc76fe7f8ae94
 U drh
-Z c48727dc7a9baf3a6ef017147df1b0c7
+Z 041af271d808d5bcd7b358a0634b5942
