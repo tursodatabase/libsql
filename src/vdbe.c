@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.247 2004/01/07 18:52:57 drh Exp $
+** $Id: vdbe.c,v 1.248 2004/01/07 19:24:48 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1121,7 +1121,9 @@ case OP_Function: {
   ctx.z = 0;
   ctx.isError = 0;
   ctx.isStep = 0;
+  if( sqliteSafetyOff(db) ) goto abort_due_to_misuse;
   (*ctx.pFunc->xFunc)(&ctx, n, (const char**)&zStack[p->tos-n+1]);
+  if( sqliteSafetyOn(db) ) goto abort_due_to_misuse;
   sqliteVdbePopStack(p, n);
   p->tos++;
   aStack[p->tos] = ctx.s;

@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.31 2004/01/06 00:44:25 drh Exp $
+** $Id: test1.c,v 1.32 2004/01/07 19:24:48 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -297,15 +297,71 @@ static void ifnullFunc(sqlite_func *context, int argc, const char **argv){
 }
 
 /*
+** A structure into which to accumulate text.
+*/
+struct dstr {
+  int nAlloc;  /* Space allocated */
+  int nUsed;   /* Space used */
+  char *z;     /* The space */
+};
+
+/*
+** Append text to a dstr
+*/
+static void dstrAppend(struct dstr *p, const char *z, int divider){
+  int n = strlen(z);
+  if( p->nUsed + n + 2 > p->nAlloc ){
+    char *zNew;
+    p->nAlloc = p->nAlloc*2 + n + 200;
+    zNew = sqliteRealloc(p->z, p->nAlloc);
+    if( zNew==0 ){
+      sqliteFree(p->z);
+      memset(p, 0, sizeof(*p));
+      return;
+    }
+    p->z = zNew;
+  }
+  if( divider && p->nUsed>0 ){
+    p->z[p->nUsed++] = divider;
+  }
+  memcpy(&p->z[p->nUsed], z, n+1);
+  p->nUsed += n;
+}
+
+/*
+** Invoked for each callback from sqliteExecFunc
+*/
+static int execFuncCallback(void *pData, int argc, char **argv, char **NotUsed){
+  struct dstr *p = (struct dstr*)pData;
+  int i;
+  for(i=0; i<argc; i++){
+    if( argv[i]==0 ){
+      dstrAppend(p, "NULL", ' ');
+    }else{
+      dstrAppend(p, argv[i], ' ');
+    }
+  }
+  return 0;
+}
+
+/*
 ** Implementation of the x_sqlite_exec() function.  This function takes
 ** a single argument and attempts to execute that argument as SQL code.
 ** This is illegal and should set the SQLITE_MISUSE flag on the database.
+**
+** 2004-Jan-07:  We have changed this to make it legal to call sqlite_exec()
+** from within a function call.  
 ** 
 ** This routine simulates the effect of having two threads attempt to
 ** use the same database at the same time.
 */
 static void sqliteExecFunc(sqlite_func *context, int argc, const char **argv){
-  sqlite_exec((sqlite*)sqlite_user_data(context), argv[0], 0, 0, 0);
+  struct dstr x;
+  memset(&x, 0, sizeof(x));
+  sqlite_exec((sqlite*)sqlite_user_data(context), argv[0], 
+      execFuncCallback, &x, 0);
+  sqlite_set_result_string(context, x.z, x.nUsed);
+  sqliteFree(x.z);
 }
 
 /*
