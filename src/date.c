@@ -16,7 +16,7 @@
 ** sqliteRegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.1 2003/11/01 01:53:54 drh Exp $
+** $Id: date.c,v 1.2 2003/12/23 02:17:35 drh Exp $
 **
 ** NOTES:
 **
@@ -322,7 +322,7 @@ static int parseDateOrTime(const char *zDate, DateTime *p){
     }
     return 1;
   }else if( sqliteIsNumber(zDate) ){
-    p->rJD = atof(zDate);
+    p->rJD = sqliteAtoF(zDate);
     p->validJD = 1;
     return 0;
   }

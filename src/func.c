@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.33 2003/11/01 01:53:54 drh Exp $
+** $Id: func.c,v 1.34 2003/12/23 02:17:35 drh Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -149,7 +149,7 @@ static void roundFunc(sqlite_func *context, int argc, const char **argv){
   n = argc==2 ? atoi(argv[1]) : 0;
   if( n>30 ) n = 30;
   if( n<0 ) n = 0;
-  r = atof(argv[0]);
+  r = sqliteAtoF(argv[0]);
   sprintf(zBuf,"%.*f",n,r);
   sqlite_set_result_string(context, zBuf, -1);
 }
@@ -397,7 +397,7 @@ static void sumStep(sqlite_func *context, int argc, const char **argv){
   if( argc<1 ) return;
   p = sqlite_aggregate_context(context, sizeof(*p));
   if( p && argv[0] ){
-    p->sum += atof(argv[0]);
+    p->sum += sqliteAtoF(argv[0]);
     p->cnt++;
   }
 }
@@ -435,7 +435,7 @@ static void stdDevStep(sqlite_func *context, int argc, const char **argv){
   if( argc<1 ) return;
   p = sqlite_aggregate_context(context, sizeof(*p));
   if( p && argv[0] ){
-    x = atof(argv[0]);
+    x = sqliteAtoF(argv[0]);
     p->sum += x;
     p->sum2 += x*x;
     p->cnt++;

@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.65 2003/12/06 21:43:56 drh Exp $
+** $Id: tokenize.c,v 1.66 2003/12/23 02:17:35 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -155,10 +155,11 @@ static Keyword *apHashTable[KEY_HASH_SIZE];
 int sqliteKeywordCode(const char *z, int n){
   int h;
   Keyword *p;
-  if( aKeywordTable[0].len==0 ){
+  static char needInit = 1;
+  if( needInit ){
     /* Initialize the keyword hash table */
     sqliteOsEnterMutex();
-    if( aKeywordTable[0].len==0 ){
+    if( needInit ){
       int i;
       int n;
       n = sizeof(aKeywordTable)/sizeof(aKeywordTable[0]);
@@ -169,6 +170,7 @@ int sqliteKeywordCode(const char *z, int n){
         aKeywordTable[i].pNext = apHashTable[h];
         apHashTable[h] = &aKeywordTable[i];
       }
+      needInit = 0;
     }
     sqliteOsLeaveMutex();
   }

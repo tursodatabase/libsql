@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc3.test,v 1.1 2003/12/17 23:57:36 drh Exp $
+# $Id: misc3.test,v 1.2 2003/12/23 02:17:35 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -67,5 +67,36 @@ do_test misc3-1.2 {
     PRAGMA integrity_check;
   }
 } ok
+
+# Tests of the sqliteAtoF() function in util.c
+#
+do_test misc3-2.1 {
+  execsql {SELECT 2e-25*0.5e25}
+} 1
+do_test misc3-2.2 {
+  execsql {SELECT 2.0e-25*000000.500000000000000000000000000000e+00025}
+} 1
+do_test misc3-2.3 {
+  execsql {SELECT 000000000002e-0000000025*0.5e25}
+} 1
+do_test misc3-2.4 {
+  execsql {SELECT 2e-25*0.5e250}
+} 1e+225
+do_test misc3-2.5 {
+  execsql {SELECT 2.0e-250*0.5e25}
+} 1e-225
+do_test misc3-2.6 {
+  execsql {SELECT '-2.0e-127' * '-0.5e27'}
+} 1e-100
+do_test misc3-2.7 {
+  execsql {SELECT '+2.0e-127' * '-0.5e27'}
+} -1e-100
+do_test misc3-2.8 {
+  execsql {SELECT 2.0e-27 * '+0.5e+127'}
+} 1e+100
+do_test misc3-2.9 {
+  execsql {SELECT 2.0e-27 * '+0.000005e+132'}
+} 1e+100
+
 
 finish_test

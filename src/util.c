@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.68 2003/10/22 22:15:28 drh Exp $
+** $Id: util.c,v 1.69 2003/12/23 02:17:35 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -650,6 +650,69 @@ int sqliteIsNumber(const char *z){
   return *z==0;
 }
 
+/*
+** The string z[] is an ascii representation of a real number.
+** Convert this string to a double.
+**
+** This routine assumes that z[] really is a valid number.  If it
+** is not, the result is undefined.
+**
+** This routine is used instead of the library atof() function because
+** the library atof() might want to use "," as the decimal point instead
+** of "." depending on how locale is set.  But that would cause problems
+** for SQL.  So this routine always uses "." regardless of locale.
+*/
+double sqliteAtoF(const char *z){
+  int sign = 1;
+  double v1 = 0.0;
+  if( *z=='-' ){
+    sign = -1;
+    z++;
+  }else if( *z=='+' ){
+    z++;
+  }
+  while( isdigit(*z) ){
+    v1 = v1*10.0 + (*z - '0');
+    z++;
+  }
+  if( *z=='.' ){
+    double divisor = 1.0;
+    z++;
+    while( isdigit(*z) ){
+      v1 = v1*10.0 + (*z - '0');
+      divisor *= 10.0;
+      z++;
+    }
+    v1 /= divisor;
+  }
+  if( *z=='e' || *z=='E' ){
+    int esign = 1;
+    int eval = 0;
+    double scale = 1.0;
+    z++;
+    if( *z=='-' ){
+      esign = -1;
+      z++;
+    }else if( *z=='+' ){
+      z++;
+    }
+    while( isdigit(*z) ){
+      eval = eval*10 + *z - '0';
+      z++;
+    }
+    while( eval>=64 ){ scale *= 1.0e+64; eval -= 64; }
+    while( eval>=16 ){ scale *= 1.0e+16; eval -= 16; }
+    while( eval>=4 ){ scale *= 1.0e+4; eval -= 4; }
+    while( eval>=1 ){ scale *= 1.0e+1; eval -= 1; }
+    if( esign<0 ){
+      v1 /= scale;
+    }else{
+      v1 *= scale;
+    }
+  }
+  return sign<0 ? -v1 : v1;
+}
+
 /* This comparison routine is what we use for comparison operations
 ** between numeric values in an SQL expression.  "Numeric" is a little
 ** bit misleading here.  What we mean is that the strings have a
@@ -678,8 +741,8 @@ int sqliteCompare(const char *atext, const char *btext){
       result = -1;
     }else{
       double rA, rB;
-      rA = atof(atext);
-      rB = atof(btext);
+      rA = sqliteAtoF(atext);
+      rB = sqliteAtoF(btext);
       if( rA<rB ){
         result = -1;
       }else if( rA>rB ){
@@ -771,8 +834,8 @@ int sqliteSortCompare(const char *a, const char *b){
           res = -1;
           break;
         }
-        rA = atof(&a[1]);
-        rB = atof(&b[1]);
+        rA = sqliteAtoF(&a[1]);
+        rB = sqliteAtoF(&b[1]);
         if( rA<rB ){
           res = -1;
           break;

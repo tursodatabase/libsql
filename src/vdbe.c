@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.245 2003/12/10 01:31:21 drh Exp $
+** $Id: vdbe.c,v 1.246 2003/12/23 02:17:35 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -187,9 +187,9 @@ static int hardStringify(Vdbe *p, int i){
   Stack *pStack = &p->aStack[i];
   int fg = pStack->flags;
   if( fg & STK_Real ){
-    sprintf(pStack->z,"%.15g",pStack->r);
+    sqlite_snprintf(sizeof(pStack->z),pStack->z,"%.15g",pStack->r);
   }else if( fg & STK_Int ){
-    sprintf(pStack->z,"%d",pStack->i);
+    sqlite_snprintf(sizeof(pStack->z),pStack->z,"%d",pStack->i);
   }else{
     pStack->z[0] = 0;
   }
@@ -321,7 +321,7 @@ static void hardIntegerify(Vdbe *p, int i){
     if(((P)->aStack[(I)].flags&STK_Real)==0){ hardRealify(P,I); }
 static void hardRealify(Vdbe *p, int i){
   if( p->aStack[i].flags & STK_Str ){
-    p->aStack[i].r = atof(p->zStack[i]);
+    p->aStack[i].r = sqliteAtoF(p->zStack[i]);
   }else if( p->aStack[i].flags & STK_Int ){
     p->aStack[i].r = p->aStack[i].i;
   }else{
@@ -2091,7 +2091,7 @@ case OP_MakeKey: {
       if( (flags & (STK_Real|STK_Int))==STK_Int ){
         aStack[i].r = aStack[i].i;
       }else if( (flags & (STK_Real|STK_Int))==0 ){
-        aStack[i].r = atof(zStack[i]);
+        aStack[i].r = sqliteAtoF(zStack[i]);
       }
       Release(p, i);
       z = aStack[i].z;
@@ -4668,7 +4668,7 @@ case OP_Vacuum: {
 /* An other opcode is illegal...
 */
 default: {
-  sprintf(zBuf,"%d",pOp->opcode);
+  sqlite_snprintf(sizeof(zBuf),zBuf,"%d",pOp->opcode);
   sqliteSetString(&p->zErrMsg, "unknown opcode ", zBuf, (char*)0);
   rc = SQLITE_INTERNAL;
   break;
@@ -4809,7 +4809,7 @@ abort_due_to_interrupt:
   ** operands than are currently available on the stack.
   */
 not_enough_stack:
-  sprintf(zBuf,"%d",pc);
+  sqlite_snprintf(sizeof(zBuf),zBuf,"%d",pc);
   sqliteSetString(&p->zErrMsg, "too few operands on stack at ", zBuf, (char*)0);
   rc = SQLITE_INTERNAL;
   goto vdbe_halt;
@@ -4818,7 +4818,7 @@ not_enough_stack:
   */
 VERIFY(
 bad_instruction:
-  sprintf(zBuf,"%d",pc);
+  sqlite_snprintf(sizeof(zBuf),zBuf,"%d",pc);
   sqliteSetString(&p->zErrMsg, "illegal operation at ", zBuf, (char*)0);
   rc = SQLITE_INTERNAL;
   goto vdbe_halt;
