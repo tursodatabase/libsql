@@ -645,7 +645,11 @@ static int codeTriggerProgram(
 ){
   TriggerStep * pTriggerStep = pStepList;
   int orconf;
+  Vdbe *v = pParse->pVdbe;
 
+  assert( pTriggerStep!=0 );
+  assert( v!=0 );
+  sqlite3VdbeAddOp(v, OP_ContextPush, 0, 0);
   while( pTriggerStep ){
     orconf = (orconfin == OE_Default)?pTriggerStep->orconf:orconfin;
     pParse->trigStack->orconf = orconf;
@@ -661,34 +665,30 @@ static int codeTriggerProgram(
       case TK_UPDATE: {
         SrcList *pSrc;
         pSrc = targetSrcList(pParse, pTriggerStep);
-        sqlite3VdbeAddOp(pParse->pVdbe, OP_ResetCount, 0, 0);
-        sqlite3VdbeAddOp(pParse->pVdbe, OP_ListPush, 0, 0);
+        sqlite3VdbeAddOp(v, OP_ResetCount, 0, 0);
         sqlite3Update(pParse, pSrc,
 		sqlite3ExprListDup(pTriggerStep->pExprList), 
 		sqlite3ExprDup(pTriggerStep->pWhere), orconf);
-        sqlite3VdbeAddOp(pParse->pVdbe, OP_ListPop, 0, 0);
-        sqlite3VdbeAddOp(pParse->pVdbe, OP_ResetCount, 1, 0);
+        sqlite3VdbeAddOp(v, OP_ResetCount, 1, 0);
         break;
       }
       case TK_INSERT: {
         SrcList *pSrc;
         pSrc = targetSrcList(pParse, pTriggerStep);
-        sqlite3VdbeAddOp(pParse->pVdbe, OP_ResetCount, 0, 0);
+        sqlite3VdbeAddOp(v, OP_ResetCount, 0, 0);
         sqlite3Insert(pParse, pSrc,
           sqlite3ExprListDup(pTriggerStep->pExprList), 
           sqlite3SelectDup(pTriggerStep->pSelect), 
           sqlite3IdListDup(pTriggerStep->pIdList), orconf);
-        sqlite3VdbeAddOp(pParse->pVdbe, OP_ResetCount, 1, 0);
+        sqlite3VdbeAddOp(v, OP_ResetCount, 1, 0);
         break;
       }
       case TK_DELETE: {
         SrcList *pSrc;
-        sqlite3VdbeAddOp(pParse->pVdbe, OP_ResetCount, 0, 0);
-        sqlite3VdbeAddOp(pParse->pVdbe, OP_ListPush, 0, 0);
+        sqlite3VdbeAddOp(v, OP_ResetCount, 0, 0);
         pSrc = targetSrcList(pParse, pTriggerStep);
         sqlite3DeleteFrom(pParse, pSrc, sqlite3ExprDup(pTriggerStep->pWhere));
-        sqlite3VdbeAddOp(pParse->pVdbe, OP_ListPop, 0, 0);
-        sqlite3VdbeAddOp(pParse->pVdbe, OP_ResetCount, 1, 0);
+        sqlite3VdbeAddOp(v, OP_ResetCount, 1, 0);
         break;
       }
       default:
@@ -696,6 +696,7 @@ static int codeTriggerProgram(
     } 
     pTriggerStep = pTriggerStep->pNext;
   }
+  sqlite3VdbeAddOp(v, OP_ContextPop, 0, 0);
 
   return 0;
 }
@@ -790,9 +791,7 @@ int sqlite3CodeRowTrigger(
       sqlite3ExprIfFalse(pParse, whenExpr, endTrigger, 1);
       sqlite3ExprDelete(whenExpr);
 
-      sqlite3VdbeAddOp(pParse->pVdbe, OP_ContextPush, 0, 0);
       codeTriggerProgram(pParse, pTrigger->step_list, orconf); 
-      sqlite3VdbeAddOp(pParse->pVdbe, OP_ContextPop, 0, 0);
 
       /* Pop the entry off the trigger stack */
       pParse->trigStack = pParse->trigStack->pNext;

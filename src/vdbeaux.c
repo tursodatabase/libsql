@@ -846,19 +846,15 @@ static void Cleanup(Vdbe *p){
     sqlite3VdbeKeylistFree(p->pList);
     p->pList = 0;
   }
+  for(i=0; i<p->contextStackTop; i++){
+    sqlite3VdbeKeylistFree(p->contextStack[i].pList);
+  }
   sqlite3VdbeSorterReset(p);
   sqlite3VdbeAggReset(0, &p->agg, 0);
-  if( p->keylistStack ){
-    int ii;
-    for(ii = 0; ii < p->keylistStackDepth; ii++){
-      sqlite3VdbeKeylistFree(p->keylistStack[ii]);
-    }
-    sqliteFree(p->keylistStack);
-    p->keylistStackDepth = 0;
-    p->keylistStack = 0;
-  }
   sqliteFree(p->contextStack);
   p->contextStack = 0;
+  p->contextStackDepth = 0;
+  p->contextStackTop = 0;
   sqliteFree(p->zErrMsg);
   p->zErrMsg = 0;
 }

@@ -1,5 +1,5 @@
-C Fix\stypo\son\shomepage.\s(CVS\s1971)
-D 2004-09-18T18:51:09
+C Merge\sthe\sListPush\sand\sListPop\sVDBE\sopcodes\sinto\sContextPush\sand\sContextPop.\s(CVS\s1972)
+D 2004-09-19T00:50:21
 F Makefile.in 76f8790c727cdbe2e1bef19c9c72b6e5da9cb9d8
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -33,7 +33,7 @@ F src/btree.h 94dfec0a1722d33359b23e7e310f2b64ffedf029
 F src/build.c c5ecf114af4ebc2963a03142b6bd6f2284ee35fc
 F src/date.c eb8d5fa1a6d5cfc09031c8852d10ff742a94b15b
 F src/delete.c e887f44aae1e33da1643df58abe86cd9cde45ad1
-F src/expr.c 9130794d8c86af2cbf2b8cdc66f2158167fd15b1
+F src/expr.c a6d95632ef9c6ad18fade504baa6d5a7225c9fee
 F src/func.c 1fbc5256639586573fd0e70814d6dcd8bc10afc1
 F src/hash.c a97721a55440b7bea31ffe471bb2f6b4123cddd5
 F src/hash.h 1b0c445e1c89ff2aaad9b4605ba61375af001e84
@@ -69,16 +69,16 @@ F src/test3.c 5b5b0f3d11b097399c1054fff73d8f3711092301
 F src/test4.c 7c6b9fc33dd1f3f93c7f1ee6e5e6d016afa6c1df
 F src/test5.c b001fa7f1b9e2dc5c2331de62fc641b5ab2bd7a1
 F src/tokenize.c 418ef7ba1149603a30dcf0057e04a3ea0e99edbe
-F src/trigger.c 98dd620bebd9f3dadaacf0db3958b916cf1e7b7f
+F src/trigger.c b42ae6ca49e3b935c37b6845fd2aadd2cab78c08
 F src/update.c 0e00300763d2ce0dbd6a0598882a5039580b225e
 F src/utf.c 328890099db492dda5620ee5f924e244c6e57ff7
 F src/util.c f9b661a3b80a1469777771776a59a5f0e2f193fc
 F src/vacuum.c 257de36230cb988842f66eb08dc6c0250b8e05f3
-F src/vdbe.c b19de04c57b4136a8e0203d5e3b76dd82bded1b5
+F src/vdbe.c 0542852785220807feb02b9dee1150ac2e592c8d
 F src/vdbe.h 067ca8d6750ba4f69a50284765e5883dee860181
-F src/vdbeInt.h e09362d6323a725de3c30b0cc381a691e86ed697
+F src/vdbeInt.h 6017100adff362b8dfa37a69e3f1431f084bfa5b
 F src/vdbeapi.c c7208bb89fc4efc605e20328099a540175e2dae6
-F src/vdbeaux.c 0fbc50cf7aed1ea30c89839ad316446b839cc645
+F src/vdbeaux.c f312d91a594240831748a8949fdd446a6b2b3bb1
 F src/vdbemem.c ef9ac7d32acfe4bce5c5b408b1294c8d9e0cdb56
 F src/where.c 12e214870c84546858ddb9f121165a1fbfce6811
 F test/all.test 929bfa932b55e75c96fe2203f7650ba451c1862c
@@ -247,7 +247,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P d82ded9543fdd77f3613bac5e263f658dc3fd236
-R 99f6922d720aa23ffd86176b779c91ec
+P 5d3b3a96bcc459a797bd723025f2d38efcfeb6fa
+R 391c503e9b746bc6f666f540b502155a
 U drh
-Z 8cc29533278c45147fd52457996f6601
+Z c87ee13fbd413eb4f4e5b30f3144edca

@@ -278,13 +278,17 @@ struct Keylist {
 /*
 ** A Context stores the last insert rowid, the last statement change count,
 ** and the current statement change count (i.e. changes since last statement).
+** The current keylist is also stored in the context.
 ** Elements of Context structure type make up the ContextStack, which is
-** updated by the ContextPush and ContextPop opcodes (used by triggers)
+** updated by the ContextPush and ContextPop opcodes (used by triggers).
+** The context is pushed before executing a trigger a popped when the
+** trigger finishes.
 */
 typedef struct Context Context;
 struct Context {
   int lastRowid;    /* Last insert rowid (sqlite3.lastRowid) */
   int nChange;      /* Statement changes (Vdbe.nChanges)     */
+  Keylist *pList;   /* Records that will participate in a DELETE or UPDATE */
 };
 
 /*
@@ -321,8 +325,7 @@ struct Vdbe {
   Agg agg;                /* Aggregate information */
   int nCallback;          /* Number of callbacks invoked so far */
   Keylist *pList;         /* A list of ROWIDs */
-  int keylistStackDepth;  /* The size of the "keylist" stack */
-  Keylist **keylistStack; /* The stack used by opcodes ListPush & ListPop */
+  int contextStackTop;    /* Index of top element in the context stack */
   int contextStackDepth;  /* The size of the "context" stack */
   Context *contextStack;  /* Stack used by opcodes ContextPush & ContextPop*/
   int pc;                 /* The program counter */

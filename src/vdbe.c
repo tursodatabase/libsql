@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.414 2004/09/06 17:24:13 drh Exp $
+** $Id: vdbe.c,v 1.415 2004/09/19 00:50:21 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -3072,7 +3072,7 @@ case OP_Delete: {
 */
 case OP_ResetCount: {
   if( pOp->p1 ){
-    sqlite3VdbeSetChanges(p->db, p->nChange);
+    sqlite3VdbeSetChanges(db, p->nChange);
   }
   p->nChange = 0;
   break;
@@ -3894,43 +3894,6 @@ case OP_ListReset: {
   break;
 }
 
-/* Opcode: ListPush * * * 
-**
-** Save the current Vdbe list such that it can be restored by a ListPop
-** opcode. The list is empty after this is executed.
-*/
-case OP_ListPush: {
-  p->keylistStackDepth++;
-  assert(p->keylistStackDepth > 0);
-
-  /* FIX ME: This should be allocated at compile time. */
-  p->keylistStack = sqliteRealloc(p->keylistStack, 
-          sizeof(Keylist *) * p->keylistStackDepth);
-  if( p->keylistStack==0 ) goto no_mem;
-
-  p->keylistStack[p->keylistStackDepth - 1] = p->pList;
-  p->pList = 0;
-  break;
-}
-
-/* Opcode: ListPop * * * 
-**
-** Restore the Vdbe list to the state it was in when ListPush was last
-** executed.
-*/
-case OP_ListPop: {
-  assert(p->keylistStackDepth > 0);
-  p->keylistStackDepth--;
-  sqlite3VdbeKeylistFree(p->pList);
-  p->pList = p->keylistStack[p->keylistStackDepth];
-  p->keylistStack[p->keylistStackDepth] = 0;
-  if( p->keylistStackDepth == 0 ){
-    sqliteFree(p->keylistStack);
-    p->keylistStack = 0;
-  }
-  break;
-}
-
 /* Opcode: ContextPush * * * 
 **
 ** Save the current Vdbe context such that it can be restored by a ContextPop
@@ -3938,16 +3901,21 @@ case OP_ListPop: {
 ** count, and the current statement change count.
 */
 case OP_ContextPush: {
-  p->contextStackDepth++;
-  assert( p->contextStackDepth>0 );
+  int i = p->contextStackTop++;
+  Context *pContext;
 
+  assert( i>=0 );
   /* FIX ME: This should be allocated as part of the vdbe at compile-time */
-  p->contextStack = sqliteRealloc(p->contextStack, 
-          sizeof(Context) * p->contextStackDepth);
-  if( p->contextStack==0 ) goto no_mem;
-
-  p->contextStack[p->contextStackDepth - 1].lastRowid = p->db->lastRowid;
-  p->contextStack[p->contextStackDepth - 1].nChange = p->nChange;
+  if( i>=p->contextStackDepth ){
+    p->contextStackDepth = i+1;
+    p->contextStack = sqliteRealloc(p->contextStack, sizeof(Context)*(i+1));
+    if( p->contextStack==0 ) goto no_mem;
+  }
+  pContext = &p->contextStack[i];
+  pContext->lastRowid = db->lastRowid;
+  pContext->nChange = p->nChange;
+  pContext->pList = p->pList;
+  p->pList = 0;
   break;
 }
 
@@ -3958,14 +3926,12 @@ case OP_ContextPush: {
 ** change count, and the current statement change count.
 */
 case OP_ContextPop: {
-  assert(p->contextStackDepth > 0);
-  p->contextStackDepth--;
-  p->db->lastRowid = p->contextStack[p->contextStackDepth].lastRowid;
-  p->nChange = p->contextStack[p->contextStackDepth].nChange;
-  if( p->contextStackDepth == 0 ){
-    sqliteFree(p->contextStack);
-    p->contextStack = 0;
-  }
+  Context *pContext = &p->contextStack[--p->contextStackTop];
+  assert( p->contextStackTop>=0 );
+  db->lastRowid = pContext->lastRowid;
+  p->nChange = pContext->nChange;
+  sqlite3VdbeKeylistFree(p->pList);
+  p->pList = pContext->pList;
   break;
 }
 
