@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.104 2004/09/30 13:43:13 drh Exp $
+** $Id: test1.c,v 1.105 2004/10/30 20:23:09 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -2468,6 +2468,69 @@ static int tcl_variable_type(
 }
 
 /*
+** This routine sets entries in the global ::sqlite_options() array variable
+** according to the compile-time configuration of the database.  Test
+** procedures use this to determine when tests should be omitted.
+*/
+static void set_options(Tcl_Interp *interp){
+#ifdef SQLITE_OMIT_AUTHORIZATION
+  Tcl_SetVar2(interp, "sqlite_options", "auth", "0", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "auth", "1", TCL_GLOBAL_ONLY);
+#endif
+#ifdef SQLITE_OMIT_VACUUM
+  Tcl_SetVar2(interp, "sqlite_options", "vacuum", "0", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "vacuum", "1", TCL_GLOBAL_ONLY);
+#endif
+#ifdef SQLITE_OMIT_PROGRESS_CALLBACK
+  Tcl_SetVar2(interp, "sqlite_options", "progress", "0", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "progress", "1", TCL_GLOBAL_ONLY);
+#endif
+#ifdef SQLITE_OMIT_DATETIME_FUNCS
+  Tcl_SetVar2(interp, "sqlite_options", "datetime", "0", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "datatime", "1", TCL_GLOBAL_ONLY);
+#endif
+#if defined(THREADSAFE) && THREADSAFE
+  Tcl_SetVar2(interp, "sqlite_options", "threadsafe", "1", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "threadsafe", "0", TCL_GLOBAL_ONLY);
+#endif
+#ifdef SQLITE_OMIT_COMPOUND_SELECT
+  Tcl_SetVar2(interp, "sqlite_options", "compound", "0", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "compound", "1", TCL_GLOBAL_ONLY);
+#endif
+#ifdef SQLITE_OMIT_TRIGGER
+  Tcl_SetVar2(interp, "sqlite_options", "trigger", "0", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "trigger", "1", TCL_GLOBAL_ONLY);
+#endif
+#ifdef SQLITE_OMIT_VIEW
+  Tcl_SetVar2(interp, "sqlite_options", "view", "0", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "view", "1", TCL_GLOBAL_ONLY);
+#endif
+#ifdef SQLITE_OMIT_INTEGRITY_CHECK
+  Tcl_SetVar2(interp, "sqlite_options", "integrityck", "0", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "integrityck", "1", TCL_GLOBAL_ONLY);
+#endif
+#ifdef SQLITE_OMIT_FOREIGN_KEY
+  Tcl_SetVar2(interp, "sqlite_options", "foreignkey", "0", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "foreignkey", "1", TCL_GLOBAL_ONLY);
+#endif
+#ifdef SQLITE_OMIT_CONFLICT_CLAUSE
+  Tcl_SetVar2(interp, "sqlite_options", "conflict", "0", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "conflict", "1", TCL_GLOBAL_ONLY);
+#endif
+}
+
+/*
 ** Register commands with the TCL interpreter.
 */
 int Sqlitetest1_Init(Tcl_Interp *interp){
@@ -2563,7 +2626,6 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_crashparams",     sqlite3_crashparams, 0     },
      { "sqlite3_test_errstr",     test_errstr, 0             },
      { "tcl_variable_type",       tcl_variable_type, 0       },
-
   };
   int i;
   extern int sqlite3_os_trace;
@@ -2589,5 +2651,6 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
       (char*)&sqlite_static_bind_value, TCL_LINK_STRING);
   Tcl_LinkVar(interp, "sqlite_temp_directory",
       (char*)&sqlite3_temp_directory, TCL_LINK_STRING);
+  set_options(interp);
   return TCL_OK;
 }

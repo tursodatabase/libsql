@@ -277,7 +277,7 @@ parse.h:	parse.c
 
 parse.c:	$(TOP)/src/parse.y lemon
 	cp $(TOP)/src/parse.y .
-	./lemon parse.y
+	./lemon $(OPTS) parse.y
 
 pragma.o:	$(TOP)/src/pragma.c $(HDR)
 	$(TCCX) $(TCL_FLAGS) -c $(TOP)/src/pragma.c

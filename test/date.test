@@ -11,10 +11,18 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing date and time functions.
 #
-# $Id: date.test,v 1.9 2004/08/20 18:34:20 drh Exp $
+# $Id: date.test,v 1.10 2004/10/30 20:23:10 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+# Skip this whole file if date and time functions are omitted
+# at compile-time
+#
+if {!$sqlite_options(datetime)} {
+  finish_test
+  return
+}
 
 proc datetest {tnum expr result} {
   do_test date-$tnum [subst {

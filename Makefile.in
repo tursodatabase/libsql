@@ -308,7 +308,7 @@ parse.h:	parse.c
 
 parse.c:	$(TOP)/src/parse.y lemon@BUILD_EXEEXT@
 	cp $(TOP)/src/parse.y .
-	./lemon parse.y
+	./lemon $(OPTS) parse.y
 
 pragma.lo:	$(TOP)/src/pragma.c $(HDR)
 	$(LTCOMPILE) $(TCL_FLAGS) -c $(TOP)/src/pragma.c

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the VACUUM statement.
 #
-# $Id: vacuum.test,v 1.25 2004/09/02 15:27:42 drh Exp $
+# $Id: vacuum.test,v 1.26 2004/10/30 20:23:10 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -67,9 +67,11 @@ do_test vacuum-1.2 {
   }
   cksum
 } $cksum
-do_test vacuum-1.3 {
-  expr {[file size test.db]<$::size1}
-} {1}
+ifcapable vacuum {
+  do_test vacuum-1.3 {
+    expr {[file size test.db]<$::size1}
+  } {1}
+}
 do_test vacuum-1.4 {
   execsql {
     BEGIN;
@@ -92,18 +94,21 @@ do_test vacuum-1.5 {
   }
   cksum
 } $cksum
-do_test vacuum-1.6 {
-  expr {[file size test.db]<$::size1}
-} {1}
-
-do_test vacuum-2.1 {
-  catchsql {
-    BEGIN;
-    VACUUM;
-    COMMIT;
-  }
-} {1 {cannot VACUUM from within a transaction}}
-catch {db eval COMMIT}
+ifcapable vacuum {
+  do_test vacuum-1.6 {
+    expr {[file size test.db]<$::size1}
+  } {1}
+}
+ifcapable vacuum {
+  do_test vacuum-2.1 {
+    catchsql {
+      BEGIN;
+      VACUUM;
+      COMMIT;
+    }
+  } {1 {cannot VACUUM from within a transaction}}
+  catch {db eval COMMIT}
+}
 do_test vacuum-2.2 {
   sqlite3 db2 test.db
   execsql {

@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.38 2004/08/20 18:34:20 drh Exp $
+# $Id: tester.tcl,v 1.39 2004/10/30 20:23:10 drh Exp $
 
 # Make sure tclsqlite3 was compiled correctly.  Abort now with an
 # error message if not.
@@ -230,7 +230,17 @@ proc forcedelete {filename} {
 # Do an integrity check of the entire database
 #
 proc integrity_check {name} {
-  do_test $name {
-    execsql {PRAGMA integrity_check}
-  } {ok}
+  ifcapable integrityck {
+    do_test $name {
+      execsql {PRAGMA integrity_check}
+    } {ok}
+  }
+}
+
+# Evaluate a boolean expression of capabilities.  If true, execute the
+# code.  Omit the code if false.
+#
+proc ifcapable {expr code} {
+  regsub -all {[a-z]+} $expr {$::sqlite_options(&)} e2
+  if $e2 {uplevel 1 $code}
 }
