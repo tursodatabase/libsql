@@ -1,5 +1,5 @@
-C Support\sfor\sa\sfuture\sALTER\sTABLE\scommand\sto\sadd\scolumns\swith\sdefault\svalues.\s(CVS\s2367)
-D 2005-03-09T12:26:51
+C Fix\sa\sfile\scorruption\sbug\sin\sCREATE\sINDEX\sin\sauto-vacuum\sdatabases.\s(CVS\s2368)
+D 2005-03-09T13:09:44
 F Makefile.in 76443a83549d1539105e12d13bd0054a05ab2214
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -30,7 +30,7 @@ F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
 F src/alter.c 6dab3d91aa4bf5c24e874145a2a547070c8c1883
 F src/attach.c f78f76bc6a8e5e487ca53636e21ccba2484a9a61
 F src/auth.c 18c5a0befe20f3a58a41e3ddd78f372faeeefe1f
-F src/btree.c 2a9c2c8a9f5a2762f0c770bc9c3f69c689d79d81
+F src/btree.c 448cd6280f18ef5723a177c4073319b1c65c86ad
 F src/btree.h 2e2cc923224649337d7217df0dd32b06673ca180
 F src/build.c a8792b2f866c1ccc32f4977f4ff61d787d60ddfb
 F src/date.c f3d1f5cd1503dabf426a198f3ebef5afbc122a7f
@@ -52,7 +52,7 @@ F src/os_unix.c 68d3d32937eee90fe1f50d500d1a4ee826cbe790
 F src/os_unix.h f3097815e041e82e24d92505e1ff61ba24172d13
 F src/os_win.c bddeae1c3299be0fbe47077dd4e98b786a067f71
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 835028769569971c7dbd63d11d3517392f1cdae0
+F src/pager.c b728c90bfa33994006a067a32971cabd0a852916
 F src/pager.h 70d496f372163abb6340f474288c4bb9ea962cf7
 F src/parse.y 0b6135268a7a29db35335d5b71b5a8791e02f91e
 F src/pragma.c 4b20dbc0f4b97f412dc511853d3d0c2e0d4adedc
@@ -91,7 +91,7 @@ F test/attach2.test 6f3a3a3a7f5be40388dd4d805e0e0712718dca9d
 F test/attach3.test c05c70b933afbde0901dab9da3e66ee842c09f38
 F test/auth.test b24d12de3a6ba49237216429f8dc672a8a52b342
 F test/autoinc.test d619da7d5cb9a3d63e6a7925259fc173f7e2080e
-F test/autovacuum.test 8ba29face873300394f9446ded0e4a142d24e7e4
+F test/autovacuum.test cf2719b17659f7a011202ad05905654cedf26023
 F test/autovacuum_crash.test 05a63b8805b20cfba7ace82856ce4ccdda075a31
 F test/autovacuum_ioerr.test 9cf27275ca47b72e188a47c53b61b6d583a01d24
 F test/autovacuum_ioerr2.test 2f8a3fb31f833fd0ca86ad4ad98913c73e807572
@@ -274,7 +274,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P 9b96078763949a2723482328e7b90c939ba8d2d8
-R addb8e4a99b565c64d053b41daed1503
+P 9d5abc1ddf6da37563c12d5a0401b89bb4e51c59
+R 7ebd6c17f19c475f5965e55f2c022589
 U danielk1977
-Z 96056e2906d91fc33a19b0bf81dd2822
+Z 9f3ce05c00f0a22bc7d46eacd8760d1e

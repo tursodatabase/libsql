@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.190 2005/02/15 03:38:06 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.191 2005/03/09 13:09:45 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -3406,8 +3406,10 @@ sync_exit:
 ** meta-data associated with page pData (i.e. data stored in the nExtra bytes
 ** allocated along with the page) is the responsibility of the caller.
 **
-** A transaction must be active when this routine is called, however it is 
-** illegal to call this routine if a statment transaction is active.
+** A transaction must be active when this routine is called. It used to be
+** required that a statement transaction was not active, but this restriction
+** has been removed (CREATE INDEX needs to move a page when a statement
+** transaction is active).
 */
 int sqlite3pager_movepage(Pager *pPager, void *pData, Pgno pgno){
   PgHdr *pPg = DATA_TO_PGHDR(pData);
@@ -3415,7 +3417,6 @@ int sqlite3pager_movepage(Pager *pPager, void *pData, Pgno pgno){
   int h;
   Pgno needSyncPgno = 0;
 
-  assert( !pPager->stmtInUse );
   assert( pPg->nRef>0 );
 
   TRACE5("MOVE %d page %d (needSync=%d) moves to %d\n", 

@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.249 2005/02/26 17:31:27 drh Exp $
+** $Id: btree.c,v 1.250 2005/03/09 13:09:44 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -4699,6 +4699,11 @@ int sqlite3BtreeCreateTable(Btree *pBt, int *piTable, int flags){
       }
       assert( eType!=PTRMAP_ROOTPAGE );
       assert( eType!=PTRMAP_FREEPAGE );
+      rc = sqlite3pager_write(pRoot->aData);
+      if( rc!=SQLITE_OK ){
+        releasePage(pRoot);
+        return rc;
+      }
       rc = relocatePage(pBt, pRoot, eType, iPtrPage, pgnoMove);
       releasePage(pRoot);
       if( rc!=SQLITE_OK ){
