@@ -17,9 +17,16 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
-chng {2001 Nov ?? (2.1.2)} {
+chng {2001 Nov 22 (2.1.2)} {
 <li>Changes to support 64-bit architectures.</li>
 <li>Fix a bug in the locking protocol.</li>
+<li>Fix a bug that could (rarely) cause the database to become 
+    unreadable after a DROP TABLE due to corruption to the SQLITE_MASTER
+    table.</li>
+<li>Change the code so that version 2.1.1 databases that were rendered 
+    unreadable by the above bug can be read by this version of
+    the library even though the SQLITE_MASTER table is (slightly)
+    corrupted.</li>
 }
 
 chng {2001 Nov 13 (2.1.1)} {
@@ -40,7 +47,7 @@ chng {2001 Nov 3 (2.0.8)} {
 <li>Documentation updates</li>
 <li>Simplify the design of the VDBE by restricting the number of sorters
     and lists to 1.
-    In practice, no more than one sorter and one list was every used anyhow.
+    In practice, no more than one sorter and one list was ever used anyhow.
     </li>
 }
 

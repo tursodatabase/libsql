@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.40 2001/11/21 02:21:12 drh Exp $
+** $Id: btree.c,v 1.41 2001/11/23 00:24:12 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1327,7 +1327,7 @@ int sqliteBtreeNext(BtCursor *pCur, int *pRes){
     if( pRes ) *pRes = 1;
     return SQLITE_ABORT;
   }
-  if( pCur->bSkipNext ){
+  if( pCur->bSkipNext && pCur->idx<pCur->pPage->nCell ){
     pCur->bSkipNext = 0;
     if( pRes ) *pRes = 0;
     return SQLITE_OK;
@@ -2194,14 +2194,18 @@ int sqliteBtreeDelete(BtCursor *pCur){
     if( rc ) return rc;
     pCur->bSkipNext = 1;
     dropCell(leafCur.pPage, leafCur.idx, szNext);
-    rc = balance(pCur->pBt, leafCur.pPage, 0);
+    rc = balance(pCur->pBt, leafCur.pPage, pCur);
     releaseTempCursor(&leafCur);
   }else{
     dropCell(pPage, pCur->idx, cellSize(pCell));
     if( pCur->idx>=pPage->nCell ){
       pCur->idx = pPage->nCell-1;
-      if( pCur->idx<0 ){ pCur->idx = 0; }
-      pCur->bSkipNext = 0;
+      if( pCur->idx<0 ){ 
+        pCur->idx = 0;
+        pCur->bSkipNext = 1;
+      }else{
+        pCur->bSkipNext = 0;
+      }
     }else{
       pCur->bSkipNext = 1;
     }

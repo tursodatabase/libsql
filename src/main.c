@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.49 2001/11/07 16:48:27 drh Exp $
+** $Id: main.c,v 1.50 2001/11/23 00:24:12 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -63,7 +63,7 @@ static int sqliteOpenCb(void *pDb, int argc, char **argv, char **azColName){
         sParse.db = db;
         sParse.initFlag = 1;
         sParse.newTnum = atoi(argv[2]);
-        nErr = sqliteRunParser(&sParse, argv[3], 0);
+        sqliteRunParser(&sParse, argv[3], 0);
       }else{
         /* If the SQL column is blank it means this is an index that
         ** was created to be the PRIMARY KEY or to fulfill a UNIQUE
