@@ -84,7 +84,8 @@ SRC = \
 TESTSRC = \
   $(TOP)/src/test1.c \
   $(TOP)/src/test2.c \
-  $(TOP)/src/test3.c
+  $(TOP)/src/test3.c \
+  $(TOP)/src/md5.c
 
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.

@@ -21,7 +21,7 @@
 **   http://www.hwaci.com/drh/
 **
 *************************************************************************
-** $Id: btree.c,v 1.18 2001/06/30 21:53:53 drh Exp $
+** $Id: btree.c,v 1.19 2001/07/01 22:12:01 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1666,6 +1666,8 @@ static int balance(Btree *pBt, MemPage *pPage, BtCursor *pCur){
         reparentChildPages(pBt->pPager, pPage);
         freePage(pBt, pChild, pgnoChild);
         sqlitepager_unref(pChild);
+      }else{
+        relinkCellList(pPage);
       }
       return SQLITE_OK;
     }
@@ -2489,6 +2491,9 @@ char *sqliteBtreeSanityCheck(Btree *pBt, int *aRoot, int nRoot){
   SanityCheck sCheck;
 
   nRef = *sqlitepager_stats(pBt->pPager);
+  if( lockBtree(pBt)!=SQLITE_OK ){
+    return sqliteStrDup("Unable to acquire a read lock on the database");
+  }
   sCheck.pBt = pBt;
   sCheck.pPager = pBt->pPager;
   sCheck.nPage = sqlitepager_pagecount(sCheck.pPager);
@@ -2519,6 +2524,7 @@ char *sqliteBtreeSanityCheck(Btree *pBt, int *aRoot, int nRoot){
 
   /* Make sure this analysis did not leave any unref() pages
   */
+  unlockBtree(pBt);
   if( nRef != *sqlitepager_stats(pBt->pPager) ){
     char zBuf[100];
     sprintf(zBuf, 

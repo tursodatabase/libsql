@@ -25,7 +25,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test3.c,v 1.5 2001/06/30 21:53:53 drh Exp $
+** $Id: test3.c,v 1.6 2001/07/01 22:12:02 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -249,6 +249,35 @@ static int btree_drop_table(
   if( Tcl_GetInt(interp, argv[1], (int*)&pBt) ) return TCL_ERROR;
   if( Tcl_GetInt(interp, argv[2], &iTable) ) return TCL_ERROR;
   rc = sqliteBtreeDropTable(pBt, iTable);
+  if( rc!=SQLITE_OK ){
+    Tcl_AppendResult(interp, errorName(rc), 0);
+    return TCL_ERROR;
+  }
+  return TCL_OK;
+}
+
+/*
+** Usage:   btree_clear_table ID TABLENUM
+**
+** Remove all entries from the given table but keep the table around.
+*/
+static int btree_clear_table(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  Btree *pBt;
+  int iTable;
+  int rc;
+  if( argc!=3 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+       " ID TABLENUM\"", 0);
+    return TCL_ERROR;
+  }
+  if( Tcl_GetInt(interp, argv[1], (int*)&pBt) ) return TCL_ERROR;
+  if( Tcl_GetInt(interp, argv[2], &iTable) ) return TCL_ERROR;
+  rc = sqliteBtreeClearTable(pBt, iTable);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;
@@ -762,6 +791,7 @@ int Sqlitetest3_Init(Tcl_Interp *interp){
   Tcl_CreateCommand(interp, "btree_rollback", btree_rollback, 0, 0);
   Tcl_CreateCommand(interp, "btree_create_table", btree_create_table, 0, 0);
   Tcl_CreateCommand(interp, "btree_drop_table", btree_drop_table, 0, 0);
+  Tcl_CreateCommand(interp, "btree_clear_table", btree_clear_table, 0, 0);
   Tcl_CreateCommand(interp, "btree_get_meta", btree_get_meta, 0, 0);
   Tcl_CreateCommand(interp, "btree_update_meta", btree_update_meta, 0, 0);
   Tcl_CreateCommand(interp, "btree_page_dump", btree_page_dump, 0, 0);
