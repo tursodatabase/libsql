@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the pragma.html file.
 #
-set rcsid {$Id: pragma.tcl,v 1.9 2005/02/18 01:15:23 danielk1977 Exp $}
+set rcsid {$Id: pragma.tcl,v 1.10 2005/02/19 12:32:57 drh Exp $}
 source common.tcl
 header {Pragma statements supported by SQLite}
 
@@ -17,7 +17,7 @@ puts {
 <p>The <a href="#syntax">PRAGMA command</a> is a special command used to 
 modify the operation of the SQLite library or to query the library for 
 internal (non-table) data. The PRAGMA command is issued using the same
-interface as other SQLite commands (e.g. SELECT, INSERT) but is different
+interface as other SQLite commands (e.g. SELECT, INSERT) but is
 different in the following important respects:
 </p>
 <ul>
@@ -441,4 +441,3 @@ puts {
 </ul>
 
 }
-
