@@ -26,7 +26,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.10 2000/06/04 12:58:38 drh Exp $
+** $Id: util.c,v 1.11 2000/06/05 16:01:39 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -102,13 +102,13 @@ void *sqliteRealloc_(void *oldP, int n, char *zFile, int line){
   oldPi -= 2;
   if( oldPi[0]!=0xdead1122 ){
     fprintf(stderr,"Low-end memory corruption in realloc at 0x%x\n", (int)p);
-    return;
+    return 0;
   }
   oldN = oldPi[1];
   oldK = (oldN+sizeof(int)-1)/sizeof(int);
   if( oldPi[oldK+2]!=0xdead3344 ){
     fprintf(stderr,"High-end memory corruption in realloc at 0x%x\n", (int)p);
-    return;
+    return 0;
   }
   k = (n + sizeof(int) - 1)/sizeof(int);
   pi = malloc( (k+3)*sizeof(int) );

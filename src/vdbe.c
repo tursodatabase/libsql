@@ -41,9 +41,10 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.14 2000/06/05 02:07:04 drh Exp $
+** $Id: vdbe.c,v 1.15 2000/06/05 16:01:39 drh Exp $
 */
 #include "sqliteInt.h"
+#include <unistd.h>
 
 /*
 ** SQL is translated into a sequence of instructions to be
@@ -741,7 +742,6 @@ int sqliteVdbeExec(
       */
       case OP_Null: {
         int i = ++p->tos;
-        char *z;
         if( NeedStack(p, p->tos) ) goto no_mem;
         p->zStack[i] = 0;
         p->aStack[i].flags = STK_Null;

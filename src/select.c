@@ -24,28 +24,94 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements.
 **
-** $Id: select.c,v 1.6 2000/06/04 12:58:38 drh Exp $
+** $Id: select.c,v 1.7 2000/06/05 16:01:39 drh Exp $
 */
 #include "sqliteInt.h"
 
 
 /*
-** Process a SELECT statement.
+** Allocate a new Select structure and return a pointer to that
+** structure.
 */
-void sqliteSelect(
+Select *sqliteSelectNew(
+  ExprList *pEList,
+  IdList *pSrc,
+  Expr *pWhere,
+  ExprList *pGroupBy,
+  Expr *pHaving,
+  ExprList *pOrderBy,
+  int isDistinct
+){
+  Select *pNew;
+  pNew = sqliteMalloc( sizeof(*pNew) );
+  if( pNew==0 ) return 0;
+  pNew->pEList = pEList;
+  pNew->pSrc = pSrc;
+  pNew->pWhere = pWhere;
+  pNew->pGroupBy = pGroupBy;
+  pNew->pHaving = pHaving;
+  pNew->pOrderBy = pOrderBy;
+  pNew->isDistinct = isDistinct;
+  return pNew;
+}
+
+/*
+** Delete the given Select structure and all of its substructures.
+*/
+void sqliteSelectDelete(Select *p){
+  sqliteExprListDelete(p->pEList);
+  sqliteIdListDelete(p->pSrc);
+  sqliteExprDelete(p->pWhere);
+  sqliteExprListDelete(p->pGroupBy);
+  sqliteExprDelete(p->pHaving);
+  sqliteExprListDelete(p->pOrderBy);
+  sqliteFree(p);
+}
+
+/*
+** Generate code for the given SELECT statement.
+**
+** If pDest==0 and iMem<0, then the results of the query are sent to
+** the callback function.  If pDest!=0 then the results are written to
+** the single table specified.  If pDest==0 and iMem>=0 then the result
+** should be a single value which is then stored in memory location iMem
+** of the virtual machine.
+**
+** This routine returns the number of errors.  If any errors are
+** encountered, then an appropriate error message is left in
+** pParse->zErrMsg.
+**
+** This routine does NOT free the Select structure passed in.  The
+** calling function needs to do that.
+*/
+int sqliteSelect(
   Parse *pParse,         /* The parser context */
-  ExprList *pEList,      /* List of fields to extract.  NULL means "*" */
-  IdList *pTabList,      /* List of tables to select from */
-  Expr *pWhere,          /* The WHERE clause.  May be NULL */
-  ExprList *pOrderBy,    /* The ORDER BY clause.  May be NULL */
-  int distinct           /* If true, only output distinct results */
+  Select *p,             /* The SELECT statement being coded. */
+  Table *pDest,          /* Write results here, if not NULL */
+  int iMem               /* Save result in this memory location, if >=0 */
 ){
   int i, j;
   WhereInfo *pWInfo;
   Vdbe *v;
   int isAgg = 0;         /* True for select lists like "count(*)" */
+  ExprList *pEList;      /* List of fields to extract.  NULL means "*" */
+  IdList *pTabList;      /* List of tables to select from */
+  Expr *pWhere;          /* The WHERE clause.  May be NULL */
+  ExprList *pOrderBy;    /* The ORDER BY clause.  May be NULL */
+  int distinct;          /* If true, only output distinct results */
 
-  if( pParse->nErr>0 ) goto select_cleanup;
+
+  pEList = p->pEList;
+  pTabList = p->pSrc;
+  pWhere = p->pWhere;
+  pOrderBy = p->pOrderBy;
+  distinct = p->isDistinct;
+
+  /* 
+  ** Do not even attempt to generate any code if we have already seen
+  ** errors before this routine starts.
+  */
+  if( pParse->nErr>0 ) return 0;
 
   /* Look up every table in the table list.
   */
@@ -55,7 +121,7 @@ void sqliteSelect(
       sqliteSetString(&pParse->zErrMsg, "no such table: ", 
          pTabList->a[i].zName, 0);
       pParse->nErr++;
-      goto select_cleanup;
+      return 1;
     }
   }
 
@@ -78,10 +144,10 @@ void sqliteSelect(
   */
   for(i=0; i<pEList->nExpr; i++){
     if( sqliteExprResolveIds(pParse, pTabList, pEList->a[i].pExpr) ){
-      goto select_cleanup;
+      return 1;
     }
     if( sqliteExprCheck(pParse, pEList->a[i].pExpr, 1, &pEList->a[i].isAgg) ){
-      goto select_cleanup;
+      return 1;
     }
   }
   if( pEList->nExpr>0 ){
@@ -91,25 +157,25 @@ void sqliteSelect(
         sqliteSetString(&pParse->zErrMsg, "some selected items are aggregates "
           "and others are not", 0);
         pParse->nErr++;
-        goto select_cleanup;
+        return 1;
       }
     }
   }
   if( pWhere ){
     if( sqliteExprResolveIds(pParse, pTabList, pWhere) ){
-      goto select_cleanup;
+      return 1;
     }
     if( sqliteExprCheck(pParse, pWhere, 0, 0) ){
-      goto select_cleanup;
+      return 1;
     }
   }
   if( pOrderBy ){
     for(i=0; i<pOrderBy->nExpr; i++){
       if( sqliteExprResolveIds(pParse, pTabList, pOrderBy->a[i].pExpr) ){
-        goto select_cleanup;
+        return 1;
       }
       if( sqliteExprCheck(pParse, pOrderBy->a[i].pExpr, 0, 0) ){
-        goto select_cleanup;
+        return 1;
       }
     }
   }
@@ -118,7 +184,6 @@ void sqliteSelect(
   ** since only one row will be returned.
   */
   if( isAgg && pOrderBy ){
-    sqliteExprListDelete(pOrderBy);
     pOrderBy = 0;
   }
 
@@ -134,7 +199,11 @@ void sqliteSelect(
   if( v==0 ){
     v = pParse->pVdbe = sqliteVdbeCreate(pParse->db->pBe);
   }
-  if( v==0 ) goto select_cleanup;
+  if( v==0 ){
+    sqliteSetString(&pParse->zErrMsg, "out of memory", 0);
+    pParse->nErr++;
+    return 1;
+  }
   if( pOrderBy ){
     sqliteVdbeAddOp(v, OP_SortOpen, 0, 0, 0, 0);
   }
@@ -201,7 +270,7 @@ void sqliteSelect(
     sqliteVdbeAddOp(v, OP_Open, distinct, 1, 0, 0);
   }
   pWInfo = sqliteWhereBegin(pParse, pTabList, pWhere, 0);
-  if( pWInfo==0 ) goto select_cleanup;
+  if( pWInfo==0 ) return 1;
 
   /* Pull the requested fields.
   */
@@ -232,7 +301,7 @@ void sqliteSelect(
     char *zSortOrder;
     sqliteVdbeAddOp(v, OP_SortMakeRec, pEList->nExpr, 0, 0, 0);
     zSortOrder = sqliteMalloc( pOrderBy->nExpr + 1 );
-    if( zSortOrder==0 ) goto select_cleanup;
+    if( zSortOrder==0 ) return 1;
     for(i=0; i<pOrderBy->nExpr; i++){
       zSortOrder[i] = pOrderBy->a[i].idx ? '-' : '+';
       sqliteExprCode(pParse, pOrderBy->a[i].pExpr);
@@ -288,14 +357,5 @@ void sqliteSelect(
   if( isAgg ){
     sqliteVdbeAddOp(v, OP_Callback, pEList->nExpr, 0, 0, 0);
   }
-
-  /* Always execute the following code before exiting, in order to
-  ** release resources.
-  */
-select_cleanup:
-  sqliteExprListDelete(pEList);
-  sqliteIdListDelete(pTabList);
-  sqliteExprDelete(pWhere);
-  sqliteExprListDelete(pOrderBy);
-  return;
+  return 0;
 }

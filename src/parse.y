@@ -26,7 +26,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.8 2000/06/03 19:19:41 drh Exp $
+** @(#) $Id: parse.y,v 1.9 2000/06/05 16:01:39 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -132,28 +132,44 @@ cmd ::= DROP TABLE id(X).          {sqliteDropTable(pParse,&X);}
 
 // The select statement
 //
-cmd ::= select.
-select ::= SELECT distinct(D) selcollist(W) from(X) where_opt(Y) orderby_opt(Z).
-     {sqliteSelect(pParse, W, X, Y, Z, D);}
-select ::= SELECT distinct(D) STAR from(X) where_opt(Y) orderby_opt(Z).
-     {sqliteSelect(pParse, 0, X, Y, Z, D);}
+cmd ::= select(X).  {
+  sqliteSelect(pParse, X, 0, 0);
+  sqliteSelectDelete(X);
+}
 
+%type select {Select*}
+%destructor select {sqliteSelectDelete($$);}
+
+select(A) ::= SELECT distinct(D) selcollist(W) from(X) where_opt(Y)
+              orderby_opt(Z). {
+  A = sqliteSelectNew(W,X,Y,0,0,Z,D);
+}
+
+// The "distinct" nonterminal is true (1) if the DISTINCT keyword is
+// present and false (0) if it is not.
+//
 %type distinct {int}
-
 distinct(A) ::= DISTINCT.   {A = 1;}
 distinct(A) ::= .           {A = 0;}
 
+// selcollist is a list of expressions that are to become the return
+// values of the SELECT statement.  In the case of "SELECT * FROM ..."
+// the selcollist value is NULL.  
+//
 %type selcollist {ExprList*}
 %destructor selcollist {sqliteExprListDelete($$);}
 %type sclp {ExprList*}
 %destructor sclp {sqliteExprListDelete($$);}
-
 sclp(A) ::= selcollist(X) COMMA.             {A = X;}
 sclp(A) ::= .                                {A = 0;}
+selcollist(A) ::= STAR.                      {A = 0;}
 selcollist(A) ::= sclp(P) expr(X).           {A = sqliteExprListAppend(P,X,0);}
-selcollist(A) ::= sclp(P) expr(X) AS ID(Y).  {A = sqliteExprListAppend(P,X,&Y);}
-selcollist(A) ::= sclp(P) expr(X) AS STRING(Y).
+selcollist(A) ::= sclp(P) expr(X) as ID(Y).  {A = sqliteExprListAppend(P,X,&Y);}
+selcollist(A) ::= sclp(P) expr(X) as STRING(Y).
   {A = sqliteExprListAppend(P,X,&Y);}
+as ::= .
+as ::= AS.
+
 
 %type seltablist {IdList*}
 %destructor seltablist {sqliteIdListDelete($$);}
@@ -179,16 +195,14 @@ seltablist(A) ::= stl_prefix(X) id(Y) AS id(Z).
 
 orderby_opt(A) ::= .                          {A = 0;}
 orderby_opt(A) ::= ORDER BY sortlist(X).      {A = X;}
-sortlist(A) ::= sortlist(X) COMMA sortitem(Y) sortorder(Z).  
-  {
-    A = sqliteExprListAppend(X,Y,0);
-    A->a[A->nExpr-1].idx = Z;
-  }
-sortlist(A) ::= sortitem(Y) sortorder(Z).
-  {
-    A = sqliteExprListAppend(0,Y,0);
-    A->a[0].idx = Z;
-  }
+sortlist(A) ::= sortlist(X) COMMA sortitem(Y) sortorder(Z). {
+  A = sqliteExprListAppend(X,Y,0);
+  A->a[A->nExpr-1].idx = Z;       /* 0 for ascending order, 1 for decending */
+}
+sortlist(A) ::= sortitem(Y) sortorder(Z). {
+  A = sqliteExprListAppend(0,Y,0);
+  A->a[0].idx = Z;
+}
 sortitem(A) ::= expr(X).   {A = X;}
 
 %type sortorder {int}

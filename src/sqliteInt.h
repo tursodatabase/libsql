@@ -23,7 +23,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.13 2000/06/05 02:07:04 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.14 2000/06/05 16:01:39 drh Exp $
 */
 #include "sqlite.h"
 #include "dbbe.h"
@@ -35,7 +35,7 @@
 #include <string.h>
 #include <assert.h>
 
-/* #define MEMORY_DEBUG 1 */
+#define MEMORY_DEBUG 1
 #ifdef MEMORY_DEBUG
 # define sqliteMalloc(X)    sqliteMalloc_(X,__FILE__,__LINE__)
 # define sqliteFree(X)      sqliteFree_(X,__FILE__,__LINE__)
@@ -87,6 +87,7 @@ typedef struct Parse Parse;
 typedef struct Token Token;
 typedef struct IdList IdList;
 typedef struct WhereInfo WhereInfo;
+typedef struct Select Select;
 
 /*
 ** Each database is an instance of the following structure
@@ -209,6 +210,20 @@ struct WhereInfo {
 };
 
 /*
+** An instance of the following structure contains all information
+** needed to generate code for a single SELECT statement.
+*/
+struct Select {
+  int isDistinct;        /* True if the DISTINCT keyword is present */
+  ExprList *pEList;      /* The fields of the result */
+  IdList *pSrc;          /* The FROM clause */
+  Expr *pWhere;          /* The WHERE clause */
+  ExprList *pGroupBy;    /* The GROUP BY clause */
+  Expr *pHaving;         /* The HAVING clause */
+  ExprList *pOrderBy;    /* The ORDER BY clause */
+};
+
+/*
 ** An SQL parser context
 */
 struct Parse {
@@ -266,7 +281,9 @@ void sqliteIdListAddAlias(IdList*, Token*);
 void sqliteIdListDelete(IdList*);
 void sqliteCreateIndex(Parse*, Token*, Token*, IdList*, Token*, Token*);
 void sqliteDropIndex(Parse*, Token*);
-void sqliteSelect(Parse*, ExprList*, IdList*, Expr*, ExprList*, int);
+int sqliteSelect(Parse*, Select*, Table*, int);
+Select *sqliteSelectNew(ExprList*,IdList*,Expr*,ExprList*,Expr*,ExprList*,int);
+void sqliteSelectDelete(Select*);
 void sqliteDeleteFrom(Parse*, Token*, Expr*);
 void sqliteUpdate(Parse*, Token*, ExprList*, Expr*);
 WhereInfo *sqliteWhereBegin(Parse*, IdList*, Expr*, int);
