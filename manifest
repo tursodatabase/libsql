@@ -1,5 +1,5 @@
-C Fix\sbugs\sdiscovered\sin\s3.1.4.\s\sF_FULLFSYNC\snot\sF_FULLSYNC.\s\sAnd\sa\sbug\sin\n"make\sdoc".\s\sAlso\stypos\sin\sthe\sdocumentation.\s(CVS\s2379)
-D 2005-03-11T17:52:35
+C Updates\sto\sthe\shomepage\sprior\sto\s3.1.5.\s(CVS\s2380)
+D 2005-03-11T17:55:32
 F Makefile.in 5c00d0037104de2a50ac7647a5f12769795957a3
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -256,7 +256,7 @@ F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/faq.tcl 1e348dec52dc0f21f4216fd6918c69c56daa4cfd
 F www/fileformat.tcl 900c95b9633abc3dcfc384d9ddd8eb4876793059
 F www/formatchng.tcl bfbf14dbf5181e771d06da7797767b0200b36d8a
-F www/index.tcl fc30249384e99f8f16d81f0cdce3080208da630d
+F www/index.tcl 273a50b0148c767e5b24f067f215aff706edf571
 F www/lang.tcl 0e5aeb09864b9ae0746d8afaa6377193f1553486
 F www/lockingv3.tcl f59b19d6c8920a931f096699d6faaf61c05db55f
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
@@ -274,7 +274,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P 3d070a9b4d680d952464b53b51e82b95982bbfca
-R 5bb016f13991b9bf4ca0f89c86911f2d
+P 3c57a4571fc8463ce9de1cbe5be45538bf2f0de9
+R a1acbc4155cf8d30de8507bcbe0ac663
 U drh
-Z d835048681c788a857d539c4c65412ce
+Z aea93fb81324cceb9b41ba1d9ae45439

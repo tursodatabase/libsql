@@ -61,16 +61,17 @@ proc newsitem {date title text} {
   puts "<hr width=\"50%\">"
 }
 
-newsitem {2005-Mar-10} {Version 3.1.4 Released} {
+newsitem {2005-Mar-11} {Versions 3.1.4 and 3.1.5 Released} {
   Version 3.1.4 fixes a critical bug that could cause database corruption
   if the autovacuum mode of version 3.1.0 is turned on (it is off by
   default) and a CREATE UNIQUE INDEX is executed within a transaction but
   fails because the indexed columns are not unique.  Anyone using the
   autovacuum feature and unique indices should upgrade.
 
-  Other changes in version 3.1.4 include the ability to disable
-  the F_FULLSYNC ioctl() by setting "PRAGMA synchronous=on" instead
-  of the default "PRAGMA synchronous=full".
+  Version 3.1.5 adds the ability to disable
+  the F_FULLFSYNC ioctl() in OS-X by setting "PRAGMA synchronous=on" instead
+  of the default "PRAGMA synchronous=full".  There was an attempt to add
+  this capability in 3.1.4 but it did not work due to a spelling error.
 }
 
 newsitem {2005-Feb-19} {Version 3.1.3 Released} {
@@ -119,4 +120,4 @@ puts {
 <p align="right"><a href="oldnews.html">Old news...</a></p>
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.109 2005/03/11 04:39:58 drh Exp $}
+footer {$Id: index.tcl,v 1.110 2005/03/11 17:55:32 drh Exp $}
