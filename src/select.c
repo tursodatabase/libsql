@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.74 2002/03/03 18:59:41 drh Exp $
+** $Id: select.c,v 1.75 2002/03/07 02:02:51 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1196,8 +1196,7 @@ int sqliteSelect(
   /* ORDER BY is ignored if we are not sending the result to a callback.
   */
   if( eDest!=SRT_Callback ){
-    sqliteExprListDelete(p->pOrderBy);
-    pOrderBy = p->pOrderBy = 0;
+    pOrderBy = 0;
   }
 
   /* At this point, we should have allocated all the cursors that we
@@ -1291,7 +1290,9 @@ int sqliteSelect(
                  p, i, &isAgg);
     pTabList = p->pSrc;
     pWhere = p->pWhere;
-    pOrderBy = p->pOrderBy;
+    if( eDest==SRT_Callback ){
+      pOrderBy = p->pOrderBy;
+    }
     pGroupBy = p->pGroupBy;
     pHaving = p->pHaving;
     isDistinct = p->isDistinct;
