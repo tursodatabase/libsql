@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach.test,v 1.20 2004/05/31 08:55:34 danielk1977 Exp $
+# $Id: attach.test,v 1.21 2004/05/31 18:21:55 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -570,7 +570,6 @@ do_test attach-6.1 {
     ATTACH DATABASE 'no-such-file' AS nosuch;
   }
 } {0 {}}
-file delete -force no-such-file
 if {$tcl_platform(platform)=="unix"} {
   do_test attach-6.2 {
     sqlite dbx cannot-read
@@ -587,7 +586,9 @@ if {$tcl_platform(platform)=="unix"} {
 for {set i 2} {$i<=15} {incr i} {
   catch {db$i close}
 }
+db close
 file delete -force test2.db
+file delete -force no-such-file
 
 
 finish_test

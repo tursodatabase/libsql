@@ -1,5 +1,5 @@
-C More\swebsite\supdates.\s(CVS\s1507)
-D 2004-05-31T16:04:08
+C Get\sthe\sattach.test\sworking\son\swindows.\s(CVS\s1508)
+D 2004-05-31T18:21:55
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -77,7 +77,7 @@ F src/vdbeaux.c a6af136bc6928eb6656d0198ae1dfcc313f37c23
 F src/vdbemem.c 627d714c347f6af8092cc48ae1c06fd774a1ad9c
 F src/where.c 444a7c3a8b1eb7bba072e489af628555d21d92a4
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
-F test/attach.test cbc9c5286e614171a68da3f0b05ccba313fd4c5d
+F test/attach.test 5f7e21fce56e3055de15a86c58fa3d8ab74f5243
 F test/attach2.test e98aab312722d05fc1837bf103baeebc582c64f8
 F test/attach3.test d384ac2e59f305743f73aec4b3d97b36fa5c6975
 F test/auth.test 95809b8f6a9bec18b94d28cafd03fe27d2f8a9e9
@@ -210,7 +210,7 @@ F www/support.tcl 67682848d6ddd283370451dc3da2e56cded9fc9a
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 2052911b1fd119af9dbd81fdfe80244685f58212
-R 126833d931e9ea9c9d3ba0f1721f7190
+P 460f2361141f14aa709addd41cc011127bac9b6e
+R e79cc292e6bccbc3d8d6727cae1981b6
 U drh
-Z addf48ee1d8e879604296d1a7191e61f
+Z 90fe3d5148e97c78c1b08256539f671c
