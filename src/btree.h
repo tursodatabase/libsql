@@ -13,7 +13,7 @@
 ** subsystem.  See comments in the source code for a detailed description
 ** of what each interface routine does.
 **
-** @(#) $Id: btree.h,v 1.46 2004/05/12 15:15:47 drh Exp $
+** @(#) $Id: btree.h,v 1.47 2004/05/12 19:18:17 drh Exp $
 */
 #ifndef _BTREE_H_
 #define _BTREE_H_
@@ -55,8 +55,9 @@ int sqlite3BtreeCopyFile(Btree *, Btree *);
 /* The flags parameter to sqlite3BtreeCreateTable can be the bitwise OR
 ** of the following flags:
 */
-#define BTREE_INTKEY     1      /* Table has only 64-bit integer keys */
-#define BTREE_ZERODATA   2      /* Table has keys only - no data */
+#define BTREE_INTKEY     1    /* Table has only 64-bit signed integer keys */
+#define BTREE_ZERODATA   2    /* Table has keys only - no data */
+#define BTREE_LEAFDATA   4    /* Data stored in leaves only.  Implies INTKEY */
 
 int sqlite3BtreeDropTable(Btree*, int);
 int sqlite3BtreeClearTable(Btree*, int);
