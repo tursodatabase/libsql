@@ -99,11 +99,11 @@ struct s_options {
   char *arg;
   char *message;
 };
-int    optinit(/* char**,struct s_options*,FILE* */);
-int    optnargs(/* void */);
-char  *optarg(/* int */);
-void   opterr(/* int */);
-void   optprint(/* void */);
+int    OptInit(/* char**,struct s_options*,FILE* */);
+int    OptNArgs(/* void */);
+char  *OptArg(/* int */);
+void   OptErr(/* int */);
+void   OptPrint(/* void */);
 
 /******** From the file "parse.h" *****************************************/
 void Parse(/* struct lemon *lemp */);
@@ -1192,7 +1192,7 @@ char **argv;
   int i;
   struct lemon lem;
 
-  optinit(argv,options,stderr);
+  OptInit(argv,options,stderr);
   if( version ){
      printf("Lemon version 1.0\n"
        "Copyright 1991-1997 by D. Richard Hipp\n"
@@ -1200,7 +1200,7 @@ char **argv;
      );
      exit(0); 
   }
-  if( optnargs()!=1 ){
+  if( OptNArgs()!=1 ){
     fprintf(stderr,"Exactly one filename argument is required.\n");
     exit(1);
   }
@@ -1211,7 +1211,7 @@ char **argv;
   Symbol_init();
   State_init();
   lem.argv0 = argv[0];
-  lem.filename = optarg(0);
+  lem.filename = OptArg(0);
   lem.basisflag = basisflag;
   lem.nconflict = 0;
   lem.name = lem.include = lem.arg = lem.tokentype = lem.start = 0;
@@ -1595,7 +1595,7 @@ FILE *err;
   return errcnt;
 }
 
-int optinit(a,o,err)
+int OptInit(a,o,err)
 char **a;
 struct s_options *o;
 FILE *err;
@@ -1616,13 +1616,13 @@ FILE *err;
   }
   if( errcnt>0 ){
     fprintf(err,"Valid command line options for \"%s\" are:\n",*a);
-    optprint();
+    OptPrint();
     exit(1);
   }
   return 0;
 }
 
-int optnargs(){
+int OptNArgs(){
   int cnt = 0;
   int dashdash = 0;
   int i;
@@ -1635,7 +1635,7 @@ int optnargs(){
   return cnt;
 }
 
-char *optarg(n)
+char *OptArg(n)
 int n;
 {
   int i;
@@ -1643,7 +1643,7 @@ int n;
   return i>=0 ? argv[i] : 0;
 }
 
-void opterr(n)
+void OptErr(n)
 int n;
 {
   int i;
@@ -1651,7 +1651,7 @@ int n;
   if( i>=0 ) errline(i,0,errstream);
 }
 
-void optprint(){
+void OptPrint(){
   int i;
   int max, len;
   max = 0;

@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.10 2000/06/02 15:05:33 drh Exp $
+** $Id: vdbe.c,v 1.11 2000/06/02 23:21:27 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -96,6 +96,7 @@ struct Vdbe {
   int nStackAlloc;    /* Size of the stack */
   int *iStack;        /* Integer values of the stack */
   char **zStack;      /* Text or binary values of the stack */
+  char *aFlags;       /* Flags associated with each stack entry */
   char **azColName;   /* Becomes the 4th parameter to callbacks */
   int nTable;         /* Number of slots in aTab[] */
   VdbeTable *aTab;    /* On element of this array for each open table */

@@ -1,5 +1,5 @@
-C :-)\s(CVS\s43)
-D 2000-06-02T23:04:52
+C :-)\s(CVS\s44)
+D 2000-06-02T23:21:27
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 3d367d6699f6fb987d0041a9d3b4dbf4308c8983
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -22,7 +22,7 @@ F src/tclsqlite.c 10c00c460246cfba375b768c90b22bfe3c774c8f
 F src/tokenize.c 15c229fee77325334c6814652e429b0930eba6c1
 F src/update.c 1f7284e00921352c3ae699fb60f2c2fbf8098212
 F src/util.c c22846f23b9311ca0e68f076686493bac7b20d5d
-F src/vdbe.c 3145ceb0905292965d76c06abecbb24ef96ae7de
+F src/vdbe.c fa1480df9b48481980d9bc06f41e839cbc67ed0e
 F src/vdbe.h ab574c91c6328c5795f68b84074fbcf860eae70e
 F src/where.c bed9a8360cbfbf712bdc397c8e22216a5e5f9800
 F test/all.test 0950c135cab7e60c07bd745ccfad1476211e5bd7
@@ -37,7 +37,7 @@ F test/table.test 85d6f410d127ec508c6640f02d7c40d218414e81
 F test/tester.tcl 44690d463c1dc83a4c76ccde07cc146a988600f6
 F test/update.test 69459302ea75cafac1479e60b0e36efb88123c0e
 F tool/gdbmdump.c 529e67c78d920606ba196326ea55b57b75fcc82b
-F tool/lemon.c f5aa4410571b598ff68aa09ee4023e8c17084c32
+F tool/lemon.c 1f0e96515c12e9e413f5b8fdebc79ddcf18ddc9d
 F tool/lempar.c a1eec94d6eacc12332368660ec65f3b248853833
 F tool/opNames.awk 2bd9071a138e4e2be13dc98fe066398a61219e1e
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
@@ -46,7 +46,7 @@ F www/c_interface.tcl 8867d76ddd416d2fbd41e4cb3de8efa9cef105a5
 F www/changes.tcl 7d6ed774362dea0c9687d4efbafd939c1c48fd81
 F www/index.tcl 0096a3e00b1364fb2c3e06941aa8c31454b6d06a
 F www/sqlite.tcl 2f933ce18cffd34a0a020a82435ab937137970fd
-P 11e3296319843356cf09832577f7dea4b33c78be
-R d2d37914332c95f0bd92b34cac0a39cd
+P 60f45a3ba56059f956cca0c3a6a1ffa82a055a36
+R 91a1b460649c65ea0a217fab34859438
 U drh
-Z 3292fd0cd8c6bb51135d1ced287b722c
+Z d6ed95be971da2c1c00f89ce64a0bce4
