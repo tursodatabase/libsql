@@ -25,11 +25,27 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2002 Apr 20 (2.4.8)} {
+<li>Make sure VIEWs are created after their corresponding TABLEs in the
+    output of the <b>.dump</b> command in the shell.</li>
+<li>Speed improvements: Do not do synchronous updates on TEMP tables.</li>
+<li>Many improvements and enhancements to the shell.</li>
+<li>Make the GLOB and LIKE operators functions that can be overridden
+    by a programmer.  This allows, for example, the LIKE operator to
+    be changed to be case sensitive.</li>
+}
+
 chng {2002 Apr 06 (2.4.7)} {
 <li>Add the ability to put TABLE.* in the column list of a
     SELECT statement.</li>
 <li>Permit SELECT statements without a FROM clause.</li>
 <li>Added the <b>last_insert_rowid()</b> SQL function.</li>
+<li>Do not count rows where the IGNORE conflict resultion occurs in
+    the row count.</li>
+<li>Make sure functions expressions in the VALUES clause of an INSERT
+    are correct.</li>
+<li>Added the <b>sqlite_changes()</b> API function to return the number
+    of row that changed in the most recent operation.</li>
 }
 
 chng {2002 Apr 02 (2.4.6)} {
