@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.174 2004/02/22 20:05:01 drh Exp $
+** $Id: build.c,v 1.175 2004/02/24 01:04:12 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2028,8 +2028,10 @@ void sqliteBeginTransaction(Parse *pParse, int onError){
     return;
   }
   sqliteBeginWriteOperation(pParse, 0, 0);
-  db->flags |= SQLITE_InTrans;
-  db->onError = onError;
+  if( !pParse->explain ){
+    db->flags |= SQLITE_InTrans;
+    db->onError = onError;
+  }
 }
 
 /*
@@ -2045,9 +2047,13 @@ void sqliteCommitTransaction(Parse *pParse){
     sqliteErrorMsg(pParse, "cannot commit - no transaction is active");
     return;
   }
-  db->flags &= ~SQLITE_InTrans;
+  if( !pParse->explain ){
+    db->flags &= ~SQLITE_InTrans;
+  }
   sqliteEndWriteOperation(pParse);
-  db->onError = OE_Default;
+  if( !pParse->explain ){
+    db->onError = OE_Default;
+  }
 }
 
 /*
@@ -2068,8 +2074,10 @@ void sqliteRollbackTransaction(Parse *pParse){
   if( v ){
     sqliteVdbeAddOp(v, OP_Rollback, 0, 0);
   }
-  db->flags &= ~SQLITE_InTrans;
-  db->onError = OE_Default;
+  if( !pParse->explain ){
+    db->flags &= ~SQLITE_InTrans;
+    db->onError = OE_Default;
+  }
 }
 
 /*

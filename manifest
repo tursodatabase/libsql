@@ -1,5 +1,5 @@
-C Use\ssqliteVdbeOp3\sinstead\sof\ssqliteVdbeChangeP3\swhere\sapplicable.\s(CVS\s1266)
-D 2004-02-22T20:05:01
+C Make\ssure\sBEGIN,\sCOMMIT,\sand\sROLLBACK\sare\sreally\sno-ops\swhen\spreceded\nby\sEXPLAIN.\s\sTicket\s#626.\s(CVS\s1267)
+D 2004-02-24T01:04:12
 F Makefile.in cfd75c46b335881999333a9e4b982fa8491f200b
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -27,7 +27,7 @@ F src/auth.c 4fa3b05bd19445d1c474d6751c4a508d6ea0abe1
 F src/btree.c 0a40efb01fa3a431a16d8604f603431d8c9cebfa
 F src/btree.h 41cb3ff6ebc3f6da2d0a074e39ff8c7a2287469f
 F src/btree_rb.c 32b2cb4285c0fbd53b89de021637b63d52257e54
-F src/build.c 85dee2c7d23f618b9c5384091df00cbf64cce527
+F src/build.c c8ab8b467d9a64254b0d4d42083f6313b3a980d1
 F src/copy.c 391ce142f6b1faa093867ecee134f61a5028a9af
 F src/date.c 3025642cee50d5c41aef4a22cbc41aa7e543c922
 F src/delete.c 8e2ff752bf485906effcc64f267cdd7227463567
@@ -111,7 +111,7 @@ F test/memleak.test 4d5d374c8ea1fc5ac634aed58cac1047848ce65e
 F test/minmax.test 6680b8d79b9b6e026a476ebfb91f310f7774568e
 F test/misc1.test 0b98d493b0cf55cb5f53e1f3df8107c166eecb5a
 F test/misc2.test 10c2ce26407d37411b96273e552d5095393732be
-F test/misc3.test 43a93337aa0183e382a5ab26d64848e18bed8276
+F test/misc3.test bd371567b6fec7c1d7fe42a172a551226d271dd2
 F test/misuse.test 1095f26d1aed406c65e1d2eba651c4bb7c38cbff
 F test/notnull.test 7a08117a71e74b0321aaa937dbeb41a09d6eb1d0
 F test/null.test c14d0f4739f21e929b8115b72bf0c765b6bb1721
@@ -189,7 +189,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 9211e14cf81f4de125bad246d8a289786f2854aa
-R 77ff7dbcb5fd6ddb4e286234c013c859
+P 51f1e8f7539596b33bc3365ec8f34041602d049c
+R 5adf6f47c8ab67ce4590cb7b8bc7a924
 U drh
-Z 751f59f1e75cd541f38cd5d5979c86ff
+Z 2a45a4df86052317dd80d2310a220210

@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc3.test,v 1.7 2004/02/09 14:35:28 drh Exp $
+# $Id: misc3.test,v 1.8 2004/02/24 01:04:12 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -210,7 +210,7 @@ do_test misc3-4.3 {
 # Ticket #601:  Putting a left join inside "SELECT * FROM (<join-here>)"
 # gives different results that if the outer "SELECT * FROM ..." is omitted.
 #
-do_test misc4-5.1 {
+do_test misc3-5.1 {
   execsql {
     CREATE TABLE x1 (b, c);
     INSERT INTO x1 VALUES('dog',3);
@@ -236,5 +236,19 @@ do_test misc4-5.2 {
   }
 } {1 one cat 2 two {} 3 three {} 4 four dog}
 
+# Ticket #626:  make sure EXPLAIN prevents BEGIN and COMMIT from working.
+#
+do_test misc3-6.1 {
+  execsql {EXPLAIN BEGIN}
+  catchsql {BEGIN}
+} {0 {}}
+do_test misc3-6.2 {
+  execsql {EXPLAIN COMMIT}
+  catchsql {COMMIT}
+} {0 {}}
+do_test misc3-6.3 {
+  execsql {BEGIN; EXPLAIN ROLLBACK}
+  catchsql {ROLLBACK}
+} {0 {}}
 
 finish_test
