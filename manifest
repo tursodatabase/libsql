@@ -1,4 +1,4 @@
-C :-)\s(CVS\s171)
+C branches:\s\s1.17.2;\n:-)\s(CVS\s172)
 D 2001-01-04T14:20:18
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 0b1fdafa55e1bf4d3a4f5213544130e66ef32052
@@ -76,7 +76,7 @@ F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 06f81c401f79a04f2c5ebfb97e7c176225c0aef2
 F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P bee0c818590ccdbb96e0a4cb2998bc077564b2ae
+P d49e10fb5e29318f1f777664562b68dd054f7535
 R 2eedb8bda15944e62f7849d4e33eb1da
 U drh
-Z 445fe477e7da70b697f187b5bba05eab
+Z f68a0aae3852a9ecfa704288c514babc
