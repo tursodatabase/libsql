@@ -1,5 +1,5 @@
-C Better\sdetection\sand\sreporting\sof\serrors\swhen\sinitializing\sfrom\sthe\nsqlite_master\stable.\s(CVS\s688)
-D 2002-07-19T17:46:39
+C Add\sstatic\sident\sstrings\s(such\sas\spicked\sup\sby\sthe\sRCS\s"ident"\scommand)\ncontaining\sthe\slibrary\sversion\snumber.\s(CVS\s689)
+D 2002-07-19T18:13:36
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -28,7 +28,7 @@ F src/func.c e45cd908b9b723d9b91473d09e12c23f786b3fc2
 F src/hash.c 6a6236b89c8c060c65dabd300a1c8ce7c10edb72
 F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
 F src/insert.c 9bc794863ea2988a7b8667ef010b3c46b26dba38
-F src/main.c ac96008489c086295c2e252f70e725eefd02131c
+F src/main.c 553efc8e20cab91c9968db55370b9a53a87a52e7
 F src/md5.c 0ae1f3e2cac92d06fc6246d1b4b8f61a2fe66d3b
 F src/os.c edb22daad525f49681f41c76683a16c1d39755c7
 F src/os.h 5b9a69875c880d1665ae040cbca1f7b9c82198ab
@@ -142,7 +142,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P cc4f824b155138326f1a62066a99c65d0f32fb8b
-R c16b27894d2d4cede767f11c98c478c7
+P c8a7b725b7cec792d2148455a4cecbce9dfebe80
+R 4b70b10f72657c3aef30cab2e450b1e2
 U drh
-Z c2aea7accc0c02c595db5c858e306720
+Z e6d57a6a86a2d8ecbb750e666c311e5b
