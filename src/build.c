@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.138 2003/03/31 02:12:47 drh Exp $
+** $Id: build.c,v 1.139 2003/03/31 13:36:09 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2670,6 +2670,11 @@ void sqliteAttach(Parse *pParse, Token *pFilename, Token *pDbname){
 
   if( pParse->explain ) return;
   db = pParse->db;
+  if( db->nDb>=MAX_ATTACHED ){
+    sqliteErrorMsg(pParse, "too many attached databases - max %d", 
+       MAX_ATTACHED);
+    return;
+  }
   if( db->aDb==db->aDbStatic ){
     aNew = sqliteMalloc( sizeof(db->aDb[0])*3 );
     if( aNew==0 ) return;

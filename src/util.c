@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.59 2003/03/31 02:12:48 drh Exp $
+** $Id: util.c,v 1.60 2003/03/31 13:36:09 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -413,7 +413,7 @@ void sqliteErrorMsg(Parse *pParse, const char *zFormat, ...){
   nByte = 1 + strlen(zFormat);
   va_start(ap, zFormat);
   for(i=0; zFormat[i]; i++){
-    if( zFormat[i]!='%' && zFormat[i+1] ) continue;
+    if( zFormat[i]!='%' || zFormat[i+1]==0 ) continue;
     i++;
     switch( zFormat[i] ){
       case 'd': {
@@ -456,7 +456,7 @@ void sqliteErrorMsg(Parse *pParse, const char *zFormat, ...){
   pParse->zErrMsg = z;
   va_start(ap, zFormat);
   for(i=j=0; zFormat[i]; i++){
-    if( zFormat[i]!='%' ) continue;
+    if( zFormat[i]!='%' || zFormat[i+1]==0 ) continue;
     if( i>j ){
       memcpy(z, &zFormat[j], i-j);
       z += i-j;

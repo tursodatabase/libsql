@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.168 2003/03/31 02:12:48 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.169 2003/03/31 13:36:09 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -56,6 +56,14 @@
 ** work.
 */
 #define NULL_DISTINCT_FOR_UNIQUE 1
+
+/*
+** The maximum number of attached databases.  This must be at least 2
+** in order to support the main database file (0) and the file used to
+** hold temporary tables (1).  And it must be less than 256 because the
+** an unsigned character is used to stored the database index.
+*/
+#define MAX_ATTACHED 10
 
 /*
 ** Integers of known sizes.  These typedefs might change for architectures
