@@ -12,7 +12,7 @@
 # focus of this file is testing the LIMIT ... OFFSET ... clause
 #  of SELECT statements.
 #
-# $Id: limit.test,v 1.5 2002/08/13 23:02:58 drh Exp $
+# $Id: limit.test,v 1.6 2002/09/08 17:23:45 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -116,5 +116,42 @@ do_test limit-4.3 {
     SELECT x FROM t4 ORDER BY y DESC LIMIT 1 OFFSET 999;
   }
 } {1000}
+
+do_test limit-5.1 {
+  execsql {
+    CREATE TABLE t5(x,y);
+    INSERT INTO t5 SELECT x-y, x+y FROM t1 WHERE x BETWEEN 10 AND 15
+        ORDER BY x LIMIT 2;
+    SELECT * FROM t5 ORDER BY x;
+  }
+} {5 15 6 16}
+do_test limit-5.2 {
+  execsql {
+    DELETE FROM t5;
+    INSERT INTO t5 SELECT x-y, x+y FROM t1 WHERE x BETWEEN 10 AND 15
+        ORDER BY x DESC LIMIT 2;
+    SELECT * FROM t5 ORDER BY x;
+  }
+} {9 19 10 20}
+do_test limit-5.3 {
+  execsql {
+    DELETE FROM t5;
+    INSERT INTO t5 SELECT x-y, x+y FROM t1 WHERE x ORDER BY x DESC LIMIT 31;
+    SELECT * FROM t5 ORDER BY x LIMIT 2;
+  }
+} {-4 6 -3 7}
+do_test limit-5.4 {
+  execsql {
+    SELECT * FROM t5 ORDER BY x DESC, y DESC LIMIT 2;
+  }
+} {21 41 21 39}
+do_test limit-5.5 {
+  execsql {
+    DELETE FROM t5;
+    INSERT INTO t5 SELECT a.x*100+b.x, a.y*100+b.y FROM t1 AS a, t1 AS b
+                   ORDER BY 1, 2 LIMIT 1000;
+    SELECT count(*), sum(x), sum(y), min(x), max(x), min(y), max(y) FROM t5;
+  }
+} {1000 1528204 593161 0 3107 505 1005}
 
 finish_test

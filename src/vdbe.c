@@ -30,7 +30,13 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.176 2002/09/08 00:04:52 drh Exp $
+** Various scripts scan this source file in order to generate HTML
+** documentation, headers files, or other derived files.  The formatting
+** of the code in this file is, therefore, important.  See other comments
+** in this file for details.  If in doubt, do not deviate from existing
+** commenting and indentation practices when changing or adding code.
+**
+** $Id: vdbe.c,v 1.177 2002/09/08 17:23:43 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -47,7 +53,8 @@ extern char *sqliteOpcodeNames[];
 ** The following global variable is incremented every time a cursor
 ** moves, either by the OP_MoveTo or the OP_Next opcode.  The test
 ** procedures use this information to make sure that indices are
-** working correctly.
+** working correctly.  This variable has no function other than to
+** help verify the correct operation of the library.
 */
 int sqlite_search_count = 0;
 
@@ -261,7 +268,7 @@ struct Vdbe {
 };
 
 /*
-** When debugging the code generator in a symbolic debugger, on can
+** When debugging the code generator in a symbolic debugger, one can
 ** set the sqlite_vdbe_addop_trace to 1 and all opcodes will be printed
 ** as they are added to the instruction stream.
 */
@@ -371,7 +378,8 @@ int sqliteVdbeMakeLabel(Vdbe *p){
 
 /*
 ** Resolve label "x" to be the address of the next instruction to
-** be inserted.
+** be inserted.  The parameter "x" must have been obtained from
+** a prior call to sqliteVdbeMakeLabel().
 */
 void sqliteVdbeResolveLabel(Vdbe *p, int x){
   int j;
@@ -566,7 +574,7 @@ int sqliteVdbeFindOp(Vdbe *p, int op, int p2){
 ** The sqlite_set_result_string() routine can be used to return a string
 ** value or to return a NULL.  To return a NULL, pass in NULL for zResult.
 ** A copy is made of the string before this routine returns so it is safe
-** to pass in a ephemeral string.
+** to pass in an ephemeral string.
 **
 ** sqlite_set_result_error() works like sqlite_set_result_string() except
 ** that it signals a fatal error.  The string argument, if any, is the
@@ -577,8 +585,8 @@ int sqliteVdbeFindOp(Vdbe *p, int op, int p2){
 ** value of the user function to an integer or a double.
 **
 ** These routines are defined here in vdbe.c because they depend on knowing
-** the internals of the sqlite_func structure which is only defined in that
-** one source file.
+** the internals of the sqlite_func structure which is only defined in 
+** this source file.
 */
 char *sqlite_set_result_string(sqlite_func *p, const char *zResult, int n){
   assert( !p->isStep );
@@ -636,8 +644,8 @@ void sqlite_set_result_error(sqlite_func *p, const char *zMsg, int n){
 ** pointer to it.
 **
 ** This routine is defined here in vdbe.c because it depends on knowing
-** the internals of the sqlite_func structure which is only defined in that
-** one source file.
+** the internals of the sqlite_func structure which is only defined in 
+** this source file.
 */
 void *sqlite_user_data(sqlite_func *p){
   assert( p && p->pFunc );
@@ -650,8 +658,8 @@ void *sqlite_user_data(sqlite_func *p){
 ** same context that was returned on prior calls.
 **
 ** This routine is defined here in vdbe.c because it depends on knowing
-** the internals of the sqlite_func structure which is only defined in that
-** one source file.
+** the internals of the sqlite_func structure which is only defined in
+** this source file.
 */
 void *sqlite_aggregate_context(sqlite_func *p, int nByte){
   assert( p && p->pFunc && p->pFunc->xStep );
@@ -670,8 +678,8 @@ void *sqlite_aggregate_context(sqlite_func *p, int nByte){
 ** called.
 **
 ** This routine is defined here in vdbe.c because it depends on knowing
-** the internals of the sqlite_func structure which is only defined in that
-** one source file.
+** the internals of the sqlite_func structure which is only defined in
+** this source file.
 */
 int sqlite_aggregate_count(sqlite_func *p){
   assert( p && p->pFunc && p->pFunc->xStep );
@@ -723,7 +731,8 @@ static void AggReset(Agg *pAgg){
 }
 
 /*
-** Insert a new element and make it the current element.  
+** Insert a new aggregate element and make it the element that
+** has focus.
 **
 ** Return 0 on success and 1 if memory is exhausted.
 */
@@ -1391,6 +1400,24 @@ int sqliteVdbeExec(
 ** the switch statement will break with convention and be flush-left. Another
 ** big comment (similar to this one) will mark the point in the code where
 ** we transition back to normal indentation.
+**
+** The formatting of each case is important.  The makefile for SQLite
+** generates two C files "opcodes.h" and "opcodes.c" by scanning this
+** file looking for lines that begin with "case OP_".  The opcodes.h files
+** will be filled with #defines that give unique integer values to each
+** opcode and the opcodes.c file is filled with an array of strings where
+** each string is the symbolic name for the corresponding opcode.
+**
+** Documentation about VDBE opcodes is generated by scanning this file
+** for lines of that contain "Opcode:".  That line and all subsequent
+** comment lines are used in the generation of the opcode.html documentation
+** file.
+**
+** SUMMARY:
+**
+**     Formatting is important to scripts that scan this file.
+**     Do not deviate from the formatting style currently in use.
+**
 *****************************************************************************/
 
 /* Opcode:  Goto * P2 *
@@ -1604,7 +1631,7 @@ case OP_Pull: {
 **
 ** Overwrite the value of the P1-th element down on the
 ** stack (P1==0 is the top of the stack) with the value
-** of the top of the stack.  The pop the top of the stack.
+** of the top of the stack.  Then pop the top of the stack.
 */
 case OP_Push: {
   int from = p->tos;
@@ -3664,6 +3691,12 @@ case OP_KeyAsData: {
 ** If the KeyAsData opcode has previously executed on this cursor,
 ** then the field might be extracted from the key rather than the
 ** data.
+**
+** If P1 is negative, then the record is stored on the stack rather
+** than in a table.  For P1==-1, the top of the stack is used.
+** For P1==-2, the next on the stack is used.  And so forth.  The
+** value pushed is always just a pointer into the record which is
+** stored further down on the stack.  The column value is not copied.
 */
 case OP_Column: {
   int amt, offset, end, payloadSize;
@@ -3671,91 +3704,105 @@ case OP_Column: {
   int p2 = pOp->p2;
   int tos = p->tos+1;
   Cursor *pC;
+  char *zRec;
   BtCursor *pCrsr;
   int idxWidth;
   unsigned char aHdr[10];
-  int (*xRead)(BtCursor*, int, int, char*);
 
   VERIFY( if( NeedStack(p, tos+1) ) goto no_mem; )
-  if( VERIFY( i>=0 && i<p->nCursor && ) (pC = &p->aCsr[i])->pCursor!=0 ){
-
-    /* Use different access functions depending on whether the information
-    ** is coming from the key or the data of the record.
-    */
+  if( i<0 ){
+    VERIFY( if( tos+i<0 ) goto bad_instruction; )
+    VERIFY( if( (aStack[tos+i].flags & STK_Str)==0 ) goto bad_instruction; )
+    zRec = zStack[tos+i];
+    payloadSize = aStack[tos+i].n;
+  }else if( VERIFY( i>=0 && i<p->nCursor && ) (pC = &p->aCsr[i])->pCursor!=0 ){
+    zRec = 0;
     pCrsr = pC->pCursor;
     if( pC->nullRow ){
       payloadSize = 0;
     }else if( pC->keyAsData ){
       sqliteBtreeKeySize(pCrsr, &payloadSize);
-      xRead = sqliteBtreeKey;
     }else{
       sqliteBtreeDataSize(pCrsr, &payloadSize);
-      xRead = sqliteBtreeData;
     }
+  }else{
+    payloadSize = 0;
+  }
 
-    /* Figure out how many bytes in the column data and where the column
-    ** data begins.
-    */
-    if( payloadSize==0 ){
-      aStack[tos].flags = STK_Null;
-      p->tos = tos;
-      break;
-    }else if( payloadSize<256 ){
-      idxWidth = 1;
-    }else if( payloadSize<65536 ){
-      idxWidth = 2;
-    }else{
-      idxWidth = 3;
-    }
+  /* Figure out how many bytes in the column data and where the column
+  ** data begins.
+  */
+  if( payloadSize==0 ){
+    aStack[tos].flags = STK_Null;
+    p->tos = tos;
+    break;
+  }else if( payloadSize<256 ){
+    idxWidth = 1;
+  }else if( payloadSize<65536 ){
+    idxWidth = 2;
+  }else{
+    idxWidth = 3;
+  }
 
-    /* Figure out where the requested column is stored and how big it is.
-    */
-    if( payloadSize < idxWidth*(p2+1) ){
-      rc = SQLITE_CORRUPT;
-      goto abort_due_to_error;
+  /* Figure out where the requested column is stored and how big it is.
+  */
+  if( payloadSize < idxWidth*(p2+1) ){
+    rc = SQLITE_CORRUPT;
+    goto abort_due_to_error;
+  }
+  if( zRec ){
+    memcpy(aHdr, &zRec[idxWidth*p2], idxWidth*2);
+  }else if( pC->keyAsData ){
+    sqliteBtreeKey(pCrsr, idxWidth*p2, idxWidth*2, (char*)aHdr);
+  }else{
+    sqliteBtreeData(pCrsr, idxWidth*p2, idxWidth*2, (char*)aHdr);
+  }
+  offset = aHdr[0];
+  end = aHdr[idxWidth];
+  if( idxWidth>1 ){
+    offset |= aHdr[1]<<8;
+    end |= aHdr[idxWidth+1]<<8;
+    if( idxWidth>2 ){
+      offset |= aHdr[2]<<16;
+      end |= aHdr[idxWidth+2]<<16;
     }
-    (*xRead)(pCrsr, idxWidth*p2, idxWidth*2, (char*)aHdr);
-    offset = aHdr[0];
-    end = aHdr[idxWidth];
-    if( idxWidth>1 ){
-      offset |= aHdr[1]<<8;
-      end |= aHdr[idxWidth+1]<<8;
-      if( idxWidth>2 ){
-        offset |= aHdr[2]<<16;
-        end |= aHdr[idxWidth+2]<<16;
-      }
-    }
-    amt = end - offset;
-    if( amt<0 || offset<0 || end>payloadSize ){
-      rc = SQLITE_CORRUPT;
-      goto abort_due_to_error;
-    }
+  }
+  amt = end - offset;
+  if( amt<0 || offset<0 || end>payloadSize ){
+    rc = SQLITE_CORRUPT;
+    goto abort_due_to_error;
+  }
 
-    /* amt and offset now hold the offset to the start of data and the
-    ** amount of data.  Go get the data and put it on the stack.
-    */
-    if( amt==0 ){
-      aStack[tos].flags = STK_Null;
-    }else if( amt<=NBFS ){
-      (*xRead)(pCrsr, offset, amt, aStack[tos].z);
+  /* amt and offset now hold the offset to the start of data and the
+  ** amount of data.  Go get the data and put it on the stack.
+  */
+  if( amt==0 ){
+    aStack[tos].flags = STK_Null;
+  }else if( zRec ){
+    aStack[tos].flags = STK_Str | STK_Static;
+    aStack[tos].n = amt;
+    zStack[tos] = &zRec[offset];
+  }else{
+    if( amt<=NBFS ){
       aStack[tos].flags = STK_Str;
       zStack[tos] = aStack[tos].z;
       aStack[tos].n = amt;
     }else{
       char *z = sqliteMalloc( amt );
       if( z==0 ) goto no_mem;
-      (*xRead)(pCrsr, offset, amt, z);
       aStack[tos].flags = STK_Str | STK_Dyn;
       zStack[tos] = z;
       aStack[tos].n = amt;
     }
-    p->tos = tos;
+    if( pC->keyAsData ){
+      sqliteBtreeKey(pCrsr, offset, amt, zStack[tos]);
+    }else{
+      sqliteBtreeData(pCrsr, offset, amt, zStack[tos]);
+    }
   }
+  p->tos = tos;
   break;
 }
-
-/* Opcode: Extract * * *
-*/
 
 /* Opcode: Recno P1 * *
 **

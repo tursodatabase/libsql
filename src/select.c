@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.111 2002/08/28 03:00:59 drh Exp $
+** $Id: select.c,v 1.112 2002/09/08 17:23:43 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -524,7 +524,12 @@ static int selectInnerLoop(
     ** is responsible for popping the results off of the stack.
     */
     case SRT_Subroutine: {
-      sqliteVdbeAddOp(v, OP_Gosub, 0, iParm);
+      if( pOrderBy ){
+        sqliteVdbeAddOp(v, OP_MakeRecord, nColumn, 0);
+        pushOntoSorter(pParse, v, pOrderBy);
+      }else{
+        sqliteVdbeAddOp(v, OP_Gosub, 0, iParm);
+      }
       break;
     }
 
@@ -591,6 +596,15 @@ static void generateSortTail(
       assert( nColumn==1 );
       sqliteVdbeAddOp(v, OP_MemStore, iParm, 1);
       sqliteVdbeAddOp(v, OP_Goto, 0, end);
+      break;
+    }
+    case SRT_Subroutine: {
+      int i;
+      for(i=0; i<nColumn; i++){
+        sqliteVdbeAddOp(v, OP_Column, -1-i, i);
+      }
+      sqliteVdbeAddOp(v, OP_Gosub, 0, iParm);
+      sqliteVdbeAddOp(v, OP_Pop, 1, 0);
       break;
     }
     default: {

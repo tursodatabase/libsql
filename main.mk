@@ -141,12 +141,12 @@ sqlite$(EXE):	$(TOP)/src/shell.c libsqlite.a sqlite.h
 # files are automatically generated.  This target takes care of
 # all that automatic generation.
 #
-target_source:	$(SRC) $(HDR) 
+target_source:	$(SRC) $(HDR) opcodes.c
 	rm -rf tsrc
 	mkdir tsrc
 	cp $(SRC) $(HDR) tsrc
 	rm tsrc/sqlite.h.in tsrc/parse.y
-	cp parse.c tsrc
+	cp parse.c opcodes.c tsrc
 
 # Rules to build the LEMON compiler generator
 #
