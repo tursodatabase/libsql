@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3ref.tcl,v 1.19 2005/03/12 18:03:59 drh Exp $}
+set rcsid {$Id: capi3ref.tcl,v 1.20 2005/03/14 02:01:50 drh Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -165,7 +165,7 @@ api {} {
  If the callback returns non-zero, then another attempt is made to open the
  database for reading and the cycle repeats.
 
- That a busy handler is registered does not guarantee that
+ The presence of a busy handler does not guarantee that
  it will be invoked when there is lock contention.
  If SQLite determines that invoking the busy handler could result in
  a deadlock, it will return SQLITE_BUSY instead.

@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.251 2005/03/10 17:06:34 drh Exp $
+** $Id: btree.c,v 1.252 2005/03/14 02:01:50 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -314,6 +314,7 @@ struct Btree {
   int minLocal;         /* Minimum local payload in non-LEAFDATA tables */
   int maxLeaf;          /* Maximum local payload in a LEAFDATA table */
   int minLeaf;          /* Minimum local payload in a LEAFDATA table */
+  BusyHandler *pBusyHandler;   /* Callback for when there is lock contention */
 };
 typedef Btree Bt;
 
@@ -1291,6 +1292,7 @@ int sqlite3BtreeClose(Btree *pBt){
 ** Change the busy handler callback function.
 */
 int sqlite3BtreeSetBusyHandler(Btree *pBt, BusyHandler *pHandler){
+  pBt->pBusyHandler = pHandler;
   sqlite3pager_set_busyhandler(pBt->pPager, pHandler);
   return SQLITE_OK;
 }
@@ -1480,6 +1482,20 @@ page1_init_failed:
 }
 
 /*
+** This routine works like lockBtree() except that it also invokes the
+** busy callback if there is lock contention.
+*/
+static int lockBtreeWithRetry(Btree *pBt){
+  int rc = SQLITE_OK;
+  if( pBt->inTrans==TRANS_NONE ){
+    rc = sqlite3BtreeBeginTrans(pBt, 0);
+    pBt->inTrans = TRANS_NONE;
+  }
+  return rc;
+}
+       
+
+/*
 ** If there are no outstanding cursors and we are not in the middle
 ** of a transaction but there is a read lock on the database, then
 ** this routine unrefs the first page of the database file which 
@@ -1543,7 +1559,7 @@ static int newDatabase(Btree *pBt){
 ** transaction.  If the second argument is 2 or more and exclusive
 ** transaction is started, meaning that no other process is allowed
 ** to access the database.  A preexisting transaction may not be
-** upgrade to exclusive by calling this routine a second time - the
+** upgraded to exclusive by calling this routine a second time - the
 ** exclusivity flag only works for a new transaction.
 **
 ** A write-transaction must be started before attempting any 
@@ -1558,43 +1574,60 @@ static int newDatabase(Btree *pBt){
 **      sqlite3BtreeDelete()
 **      sqlite3BtreeUpdateMeta()
 **
-** If wrflag is true, then nMaster specifies the maximum length of
-** a master journal file name supplied later via sqlite3BtreeSync().
-** This is so that appropriate space can be allocated in the journal file
-** when it is created..
+** If an initial attempt to acquire the lock fails because of lock contention
+** and the database was previously unlocked, then invoke the busy handler
+** if there is one.  But if there was previously a read-lock, do not
+** invoke the busy handler - just return SQLITE_BUSY.  SQLITE_BUSY is 
+** returned when there is already a read-lock in order to avoid a deadlock.
+**
+** Suppose there are two processes A and B.  A has a read lock and B has
+** a reserved lock.  B tries to promote to exclusive but is blocked because
+** of A's read lock.  A tries to promote to reserved but is blocked by B.
+** One or the other of the two processes must give way or there can be
+** no progress.  By returning SQLITE_BUSY and not invoking the busy callback
+** when A already has a read lock, we encourage A to give up and let B
+** proceed.
 */
 int sqlite3BtreeBeginTrans(Btree *pBt, int wrflag){
   int rc = SQLITE_OK;
+  int busy = 0;
+  BusyHandler *pH;
 
   /* If the btree is already in a write-transaction, or it
   ** is already in a read-transaction and a read-transaction
   ** is requested, this is a no-op.
   */
-  if( pBt->inTrans==TRANS_WRITE || 
-      (pBt->inTrans==TRANS_READ && !wrflag) ){
+  if( pBt->inTrans==TRANS_WRITE || (pBt->inTrans==TRANS_READ && !wrflag) ){
     return SQLITE_OK;
   }
+
+  /* Write transactions are not possible on a read-only database */
   if( pBt->readOnly && wrflag ){
     return SQLITE_READONLY;
   }
 
-  if( pBt->pPage1==0 ){
-    rc = lockBtree(pBt);
-  }
-
-  if( rc==SQLITE_OK && wrflag ){
-    rc = sqlite3pager_begin(pBt->pPage1->aData, wrflag>1);
-    if( rc==SQLITE_OK ){
-      rc = newDatabase(pBt);
+  do {
+    if( pBt->pPage1==0 ){
+      rc = lockBtree(pBt);
     }
-  }
-
-  if( rc==SQLITE_OK ){
-    pBt->inTrans = (wrflag?TRANS_WRITE:TRANS_READ);
-    if( wrflag ) pBt->inStmt = 0;
-  }else{
-    unlockBtreeIfUnused(pBt);
-  }
+  
+    if( rc==SQLITE_OK && wrflag ){
+      rc = sqlite3pager_begin(pBt->pPage1->aData, wrflag>1);
+      if( rc==SQLITE_OK ){
+        rc = newDatabase(pBt);
+      }
+    }
+  
+    if( rc==SQLITE_OK ){
+      pBt->inTrans = (wrflag?TRANS_WRITE:TRANS_READ);
+      if( wrflag ) pBt->inStmt = 0;
+    }else{
+      unlockBtreeIfUnused(pBt);
+    }
+  }while( rc==SQLITE_BUSY && pBt->inTrans==TRANS_NONE &&
+      (pH = pBt->pBusyHandler)!=0 && 
+      pH->xFunc && pH->xFunc(pH->pArg, busy++)
+  );
   return rc;
 }
 
@@ -2116,7 +2149,7 @@ int sqlite3BtreeCursor(
     }
   }
   if( pBt->pPage1==0 ){
-    rc = lockBtree(pBt);
+    rc = lockBtreeWithRetry(pBt);
     if( rc!=SQLITE_OK ){
       return rc;
     }
@@ -5531,7 +5564,7 @@ char *sqlite3BtreeIntegrityCheck(Btree *pBt, int *aRoot, int nRoot){
   IntegrityCk sCheck;
 
   nRef = *sqlite3pager_stats(pBt->pPager);
-  if( lockBtree(pBt)!=SQLITE_OK ){
+  if( lockBtreeWithRetry(pBt)!=SQLITE_OK ){
     return sqliteStrDup("Unable to acquire a read lock on the database");
   }
   sCheck.pBt = pBt;

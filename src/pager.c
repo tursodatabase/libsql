@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.192 2005/03/10 14:11:13 drh Exp $
+** @(#) $Id: pager.c,v 1.193 2005/03/14 02:01:50 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1824,12 +1824,12 @@ static int pager_wait_on_lock(Pager *pPager, int locktype){
     rc = SQLITE_OK;
   }else{
     int busy = 1;
+    BusyHandler *pH;
     do {
       rc = sqlite3OsLock(&pPager->fd, locktype);
     }while( rc==SQLITE_BUSY && 
-        pPager->pBusyHandler && 
-        pPager->pBusyHandler->xFunc && 
-        pPager->pBusyHandler->xFunc(pPager->pBusyHandler->pArg, busy++)
+        (pH = pPager->pBusyHandler)!=0 && 
+        pH->xFunc && pH->xFunc(pH->pArg, busy++)
     );
     if( rc==SQLITE_OK ){
       pPager->state = locktype;
@@ -2633,11 +2633,7 @@ int sqlite3pager_begin(void *pData, int exFlag){
       pPager->state = PAGER_EXCLUSIVE;
       pPager->origDbSize = pPager->dbSize;
     }else{
-      if( SQLITE_BUSY_RESERVED_LOCK || exFlag ){
-        rc = pager_wait_on_lock(pPager, RESERVED_LOCK);
-      }else{
-        rc = sqlite3OsLock(&pPager->fd, RESERVED_LOCK);
-      }
+      rc = sqlite3OsLock(&pPager->fd, RESERVED_LOCK);
       if( rc==SQLITE_OK ){
         pPager->state = PAGER_RESERVED;
         if( exFlag ){

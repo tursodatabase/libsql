@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: lock.test,v 1.30 2005/01/12 12:44:04 danielk1977 Exp $
+# $Id: lock.test,v 1.31 2005/03/14 02:01:50 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -169,30 +169,56 @@ do_test lock-2.2 {
 } {0 {9 8}}
 
 # If the other thread (the one that does not hold the transaction with
-# a RESERVED lock) tries to get a RESERVED lock, we do not get a busy callback.
+# a RESERVED lock) tries to get a RESERVED lock, we do get a busy callback
+# as long as we were not orginally holding a READ lock.
 #
-do_test lock-2.3 {
+do_test lock-2.3.1 {
   proc callback {count} {
     set ::callback_value $count
     break
   }
   set ::callback_value {}
   db2 busy callback
+  # db2 does not hold a lock so we should get a busy callback here
+  set r [catch {execsql {UPDATE t1 SET a=b, b=a} db2} msg]
+  lappend r $msg
+  lappend r $::callback_value
+} {1 {database is locked} 0}
+do_test lock-2.3.2 {
+  set ::callback_value {}
+  execsql {BEGIN; SELECT rowid FROM sqlite_master LIMIT 1} db2
+  # This time db2 does hold a read lock.  No busy callback this time.
   set r [catch {execsql {UPDATE t1 SET a=b, b=a} db2} msg]
   lappend r $msg
   lappend r $::callback_value
 } {1 {database is locked} {}}
-do_test lock-2.4 {
+catch {execsql {ROLLBACK} db2}
+do_test lock-2.4.1 {
   proc callback {count} {
     lappend ::callback_value $count
     if {$count>4} break
   }
   set ::callback_value {}
   db2 busy callback
+  # We get a busy callback because db2 is not holding a lock
+  set r [catch {execsql {UPDATE t1 SET a=b, b=a} db2} msg]
+  lappend r $msg
+  lappend r $::callback_value
+} {1 {database is locked} {0 1 2 3 4 5}}
+do_test lock-2.4.2 {
+  proc callback {count} {
+    lappend ::callback_value $count
+    if {$count>4} break
+  }
+  set ::callback_value {}
+  db2 busy callback
+  execsql {BEGIN; SELECT rowid FROM sqlite_master LIMIT 1} db2
+  # No busy callback this time because we are holding a lock
   set r [catch {execsql {UPDATE t1 SET a=b, b=a} db2} msg]
   lappend r $msg
   lappend r $::callback_value
 } {1 {database is locked} {}}
+catch {execsql {ROLLBACK} db2}
 do_test lock-2.5 {
   proc callback {count} {
     lappend ::callback_value $count
@@ -255,7 +281,7 @@ do_test lock-4.3 {
   db2 busy callback
   set rc [catch {db2 eval {UPDATE t1 SET a=0}} msg]
   lappend rc $msg $::callback_value
-} {1 {database is locked} {}}
+} {1 {database is locked} {0 1 2 3 4 5}}
 execsql {ROLLBACK}
 
 # When one thread is writing, other threads cannot read.  Except if the

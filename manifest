@@ -1,5 +1,5 @@
-C Fix\stypo\sin\sdocumentation.\s(CVS\s2384)
-D 2005-03-12T18:03:59
+C Be\smore\saggressive\sabout\susing\sthe\sbusy\shandler.\s\sTicket\s#1159.\s(CVS\s2385)
+D 2005-03-14T02:01:50
 F Makefile.in 5c00d0037104de2a50ac7647a5f12769795957a3
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -30,7 +30,7 @@ F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
 F src/alter.c 6dab3d91aa4bf5c24e874145a2a547070c8c1883
 F src/attach.c f78f76bc6a8e5e487ca53636e21ccba2484a9a61
 F src/auth.c 18c5a0befe20f3a58a41e3ddd78f372faeeefe1f
-F src/btree.c fab5b169d25fef5a274b41edeff3f83eaa70fae2
+F src/btree.c 1d9b2179ccac13970c883da6ae3758cc72978bb0
 F src/btree.h 2e2cc923224649337d7217df0dd32b06673ca180
 F src/build.c a8792b2f866c1ccc32f4977f4ff61d787d60ddfb
 F src/date.c f3d1f5cd1503dabf426a198f3ebef5afbc122a7f
@@ -52,7 +52,7 @@ F src/os_unix.c d4823c6b3dd86e8cbb6a8f9d2fd6c4b3e722f8ee
 F src/os_unix.h 40b2fd1d02cfa45d6c3dea25316fd019cf9fcb0c
 F src/os_win.c bddeae1c3299be0fbe47077dd4e98b786a067f71
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c a789b0ffe7a42fd99f54f8c938fd9a866669e79d
+F src/pager.c 2e795b3d85303b03daa1e18727a6aaa215a50980
 F src/pager.h 70d496f372163abb6340f474288c4bb9ea962cf7
 F src/parse.y 0b6135268a7a29db35335d5b71b5a8791e02f91e
 F src/pragma.c 4b20dbc0f4b97f412dc511853d3d0c2e0d4adedc
@@ -147,7 +147,7 @@ F test/join4.test cc6cafe85e11aacacd0abcd247a46bed251308f8
 F test/lastinsert.test b6a1db3e1ce2d3f0d6afe99d445084f543b6feaa
 F test/laststmtchanges.test 07cbdabc52407c29e40abc25050f2434f044a6b1
 F test/limit.test 270b076f31c5c32f7187de5727e74da4de43e477
-F test/lock.test a19aab9a963273fe61c1058e3d1b648d6a0a2425
+F test/lock.test 0b95ae28471f5123d24008d1c0fead911bf3c4be
 F test/lock2.test 59c3dd7d9b24d1bf7ec91b2d1541c37e97939d5f
 F test/lock3.test 615111293cf32aa2ed16d01c6611737651c96fb9
 F test/main.test febb69416071134dc38b9b1971c0c2e5b0ca3ff8
@@ -239,7 +239,7 @@ F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
 F www/autoinc.tcl b357f5ba954b046ee35392ce0f884a2fcfcdea06
 F www/c_interface.tcl b51b08591554c16a0c3ef718364a508ac25abc7e
 F www/capi3.tcl 7a7cc225fe02eb7ab861a6019b08baa0014409e1
-F www/capi3ref.tcl f395ff43a56ef087407b0e5ba6604f2f8c32cc14
+F www/capi3ref.tcl 59c7da9ef1f24dcb10b247cd3b7452cf76ab36f0
 F www/changes.tcl dbace6eb8ecf10f5e7047d77115feb1742e56610
 F www/common.tcl de758130d54d95d151ea0d17a2ae5b92e1bb01de
 F www/compile.tcl 65b26bdfc964b66c5f0af841718a52f9795ceb05
@@ -274,7 +274,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P 33a0191638a4d6b33422f62487bfb9a0089d3cff
-R 2c190de0bffdef6a18303ed58cf43144
+P 78012246fc1c1fe844d192cfff69a736e388ce7a
+R 12c7fb7c202c4d99608b53151d0373a0
 U drh
-Z d98e1a0c532519fa0eb91c504a344f0c
+Z 9df5123a27f166217f6a13afcd69b178
