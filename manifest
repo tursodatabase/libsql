@@ -1,5 +1,5 @@
-C Update\sthe\spublish.sh\sscript\sso\sthat\sit\sno\slonger\sgenerates\sdocumentation\npages\s(that\sis\shandled\sby\sthe\sversion\s3.0.0\spublish.sh).\s\sAlso\sinsert\nversion\snumbers\sin\sthe\sfilenames\sof\sall\sbuild\sproducts.\s(CVS\s1601)
-D 2004-06-16T01:21:01
+C Backport\sof\s(1628)\sto\sversion\s2.\s(CVS\s1631)
+D 2004-06-19T04:23:25
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -36,7 +36,7 @@ F src/func.c 34fead7a33e82095f6412d3fafd379d47864b3be
 F src/hash.c 9b56ef3b291e25168f630d5643a4264ec011c70e
 F src/hash.h 3247573ab95b9dd90bcca0307a75d9a16da1ccc7
 F src/insert.c c0485ee2d1b99322894e2d1e0b576fd05ed75616
-F src/main.c 94dd355768e2a389e184a069b6880f4bac100307
+F src/main.c 35b6917da56ff1abdfab7fc53d10b815dd4cac16
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
 F src/os.c edcd42ad1cf13e7322f814c50a3e6eb09d3915bb
 F src/os.h 250a3789be609adfee5c5aa20137ce8683276f24
@@ -138,7 +138,7 @@ F test/thread1.test 53f050d5be6932d9430df7756edd379366508ff6
 F test/threadtest1.c f7f896e62ed46feae1dc411114a48c15a0f82ee2
 F test/threadtest2.c d94ca4114fd1504f7e0ae724bcd83d4b40931d86
 F test/trans.test 0cb8256daff1ae0da75321e00125338c6681158d
-F test/trigger1.test 4538c1c7d6bbca5dfe619ea6e1682b07ece95b21
+F test/trigger1.test cf8c8bbdaa254b000242f89e024f9b44cafda093
 F test/trigger2.test 0767ab30cb5a2c8402c8524f3d566b410b6f5263
 F test/trigger3.test a95ccace88291449f5eae7139ec438a42f90654d
 F test/trigger4.test 542afce45774e8f8e1130b96b8675f414d6e4bd8
@@ -188,7 +188,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 24adf9ed5988d6e110a750f75b767fad163689c6
-R bad18b9b4e0f573517fda2790c833ba9
-U drh
-Z 8af7b97de359371eafa7d3ea06076f21
+P f2b8d35825a2137e83419e9aebc9619a9db2ada8
+R 08b10f88d920f85f8c5d79ea0011a791
+U danielk1977
+Z 231032d5f4f2d83a2985bd8df240fe0c

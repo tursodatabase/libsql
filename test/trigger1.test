@@ -412,5 +412,108 @@ do_test trigger-9.2 {
   }
 } {1 2 1 3 99 99 1 3}
 
+execsql {
+  DROP TABLE t2;
+  DROP TABLE t3;
+  DROP TABLE t4;
+}
+
+# Ticket #764. At one stage TEMP triggers would fail to re-install when the
+# schema was reloaded. The following tests ensure that TEMP triggers are
+# correctly re-installed.
+#
+# Also verify that references within trigger programs are resolved at
+# statement compile time, not trigger installation time. This means, for
+# example, that you can drop and re-create tables referenced by triggers. 
+do_test trigger-10.0 {
+  file delete -force test2.db
+  file delete -force test2.db-journal
+  sqlite db2 test2.db
+  execsql {CREATE TABLE t3(a, b, c);} db2
+  db2 close
+  execsql {
+    ATTACH 'test2.db' AS aux;
+  }
+} {}
+do_test trigger-10.1 {
+  execsql {
+    CREATE TABLE t1(a, b, c);
+    CREATE temp TABLE t2(a, b, c);
+    CREATE TABLE insert_log(db, a, b, c);
+  }
+} {}
+do_test trigger-10.2 {
+  execsql {
+    CREATE TEMP TRIGGER trig1 AFTER INSERT ON t1 BEGIN 
+      INSERT INTO insert_log VALUES('main', new.a, new.b, new.c);
+    END;
+    CREATE TEMP TRIGGER trig2 AFTER INSERT ON t2 BEGIN 
+      INSERT INTO insert_log VALUES('temp', new.a, new.b, new.c);
+    END;
+    CREATE TEMP TRIGGER trig3 AFTER INSERT ON t3 BEGIN 
+      INSERT INTO insert_log VALUES('aux', new.a, new.b, new.c);
+    END;
+  }
+} {}
+do_test trigger-10.3 {
+  execsql {
+    INSERT INTO t1 VALUES(1, 2, 3);
+    INSERT INTO t2 VALUES(4, 5, 6);
+    INSERT INTO t3  VALUES(7, 8, 9);
+  }
+} {}
+do_test trigger-10.4 {
+  execsql {
+    SELECT * FROM insert_log;
+  }
+} {main 1 2 3 temp 4 5 6 aux 7 8 9}
+do_test trigger-10.5 {
+  execsql {
+    BEGIN;
+    INSERT INTO t1 VALUES(1, 2, 3);
+    INSERT INTO t2 VALUES(4, 5, 6);
+    INSERT INTO t3  VALUES(7, 8, 9);
+    ROLLBACK;
+  }
+} {}
+do_test trigger-10.6 {
+  execsql {
+    SELECT * FROM insert_log;
+  }
+} {main 1 2 3 temp 4 5 6 aux 7 8 9}
+do_test trigger-10.7 {
+  execsql {
+    DELETE FROM insert_log;
+    INSERT INTO t1 VALUES(11, 12, 13);
+    INSERT INTO t2 VALUES(14, 15, 16);
+    INSERT INTO t3 VALUES(17, 18, 19);
+  }
+} {}
+do_test trigger-10.8 {
+  execsql {
+    SELECT * FROM insert_log;
+  }
+} {main 11 12 13 temp 14 15 16 aux 17 18 19}
+do_test trigger-10.8 {
+# Drop and re-create the insert_log table in a different database. Note
+# that we can change the column names because the trigger programs don't
+# use them explicitly.
+  execsql {
+    DROP TABLE insert_log;
+    CREATE temp TABLE insert_log(db, d, e, f);
+  }
+} {}
+do_test trigger-10.10 {
+  execsql {
+    INSERT INTO t1 VALUES(21, 22, 23);
+    INSERT INTO t2 VALUES(24, 25, 26);
+    INSERT INTO t3  VALUES(27, 28, 29);
+  }
+} {}
+do_test trigger-10.11 {
+  execsql {
+    SELECT * FROM insert_log;
+  }
+} {main 21 22 23 temp 24 25 26 aux 27 28 29}
 
 finish_test
