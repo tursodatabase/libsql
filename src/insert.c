@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.69 2003/01/12 18:02:18 drh Exp $
+** $Id: insert.c,v 1.70 2003/01/12 19:33:53 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -125,6 +125,9 @@ void sqliteInsert(
   if( pTab==0 ){
     sqliteSetString(&pParse->zErrMsg, "no such table: ", zTab, 0);
     pParse->nErr++;
+    goto insert_cleanup;
+  }
+  if( sqliteAuthInsert(pParse, zTab, 0) ){
     goto insert_cleanup;
   }
 

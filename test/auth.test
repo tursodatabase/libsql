@@ -1,0 +1,274 @@
+# 2003 January 12
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this script testing the sqlite_set_authorizer() API.
+#
+# $Id: auth.test,v 1.1 2003/01/12 19:33:54 drh Exp $
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+if {[info command sqlite_set_authorizer]!=""} {
+
+do_test auth-1.1 {
+  db close
+  set ::DB [sqlite db test.db]
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_INSERT_ROW" 
+          && [string compare -nocase $arg1 sqlite_master]==0} {
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  sqlite_set_authorizer $::DB ::auth
+  catchsql {CREATE TABLE t1(a,b,c)}
+} {1 {insertion into table sqlite_master is prohibited}}
+do_test auth-1.2 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_INSERT_ROW" 
+          && [string compare -nocase $arg1 sqlite_master]==0} {
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {CREATE TABLE t1(a,b,c)}
+} {1 {insertion into table sqlite_master is prohibited}}
+do_test auth-1.3 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_INSERT_ROW" 
+          && [string compare -nocase $arg1 sqlite_master]==0} {
+      return SQLITE_OK
+    }
+    return SQLITE_OK
+  }
+  catchsql {CREATE TABLE t1(a,b,c)}
+} {0 {}}
+do_test auth-1.4 {
+  execsql {SELECT name FROM sqlite_master}
+} {t1}
+do_test auth-1.5 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_INSERT_ROW" 
+          && [string compare -nocase $arg1 sqlite_master]==0} {
+      return BOGUS
+    }
+    return SQLITE_OK
+  }
+  catchsql {CREATE TABLE t2(a,b,c)}
+} {1 {illegal return value (1) from the authorization function - should be SQLITE_OK, SQLITE_IGNORE, or SQLITE_DENY}}
+do_test auth-1.6 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_DELETE_ROW" 
+          && [string compare -nocase $arg1 sqlite_master]==0} {
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {DROP TABLE t1}
+} {1 {deletion from table sqlite_master is prohibited}}
+do_test auth-1.7 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_DELETE_ROW" 
+          && [string compare -nocase $arg1 sqlite_master]==0} {
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {DROP TABLE t1}
+} {1 {deletion from table sqlite_master is prohibited}}
+do_test auth-1.8 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_INSERT_ROW" 
+          && [string compare -nocase $arg1 t1]==0} {
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {INSERT INTO t1 VALUES(1,2,3)}
+} {1 {insertion into table t1 is prohibited}}
+do_test auth-1.9 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_INSERT_ROW" 
+          && [string compare -nocase $arg1 t1]==0} {
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {INSERT INTO t1 VALUES(1,2,3)}
+} {0 {}}
+do_test auth-1.10 {
+  execsql {SELECT * FROM t1}
+} {}
+do_test auth-1.11 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_INSERT_ROW" 
+          && [string compare -nocase $arg1 t1]==0} {
+      return SQLITE_OK
+    }
+    return SQLITE_OK
+  }
+  catchsql {INSERT INTO t1 VALUES(1,2,3)}
+} {0 {}}
+do_test auth-1.12 {
+  execsql {SELECT * FROM t1}
+} {1 2 3}
+do_test auth-1.13 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_DELETE_ROW" 
+          && [string compare -nocase $arg1 t1]==0} {
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {DELETE FROM t1 WHERE a=1}
+} {1 {deletion from table t1 is prohibited}}
+do_test auth-1.14 {
+  execsql {SELECT * FROM t1}
+} {1 2 3}
+do_test auth-1.15 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_DELETE_ROW" 
+          && [string compare -nocase $arg1 t1]==0} {
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {DELETE FROM t1 WHERE a=1}
+} {0 {}}
+do_test auth-1.16 {
+  execsql {SELECT * FROM t1}
+} {1 2 3}
+do_test auth-1.17 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_READ_COLUMN" 
+          && [string compare -nocase $arg1 t1]==0
+          && [string compare -nocase $arg2 a]==0} {
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {SELECT * FROM t1}
+} {1 {access to t1.a is prohibited}}
+do_test auth-1.18 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_READ_COLUMN" 
+          && [string compare -nocase $arg1 t1]==0
+          && [string compare -nocase $arg2 a]==0} {
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {SELECT * FROM t1}
+} {0 {{} 2 3}}
+do_test auth-1.19 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_WRITE_COLUMN" 
+          && [string compare -nocase $arg1 t1]==0
+          && [string compare -nocase $arg2 a]==0} {
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {UPDATE t1 SET a=11 WHERE a=1}
+} {1 {changes to t1.a are prohibited}}
+do_test auth-1.20 {
+  execsql {SELECT * FROM t1}
+} {1 2 3}
+do_test auth-1.21 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_WRITE_COLUMN" 
+          && [string compare -nocase $arg1 t1]==0
+          && [string compare -nocase $arg2 a]==0} {
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {UPDATE t1 SET b=12 WHERE a=1}
+} {0 {}}
+do_test auth-1.22 {
+  execsql {SELECT * FROM t1}
+} {1 12 3}
+do_test auth-1.23 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_WRITE_COLUMN" 
+          && [string compare -nocase $arg1 t1]==0
+          && [string compare -nocase $arg2 a]==0} {
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {UPDATE t1 SET a=11, b=22 WHERE a=1}
+} {0 {}}
+do_test auth-1.24 {
+  execsql {SELECT * FROM t1}
+} {1 22 3}
+do_test auth-1.25 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_WRITE_COLUMN" 
+          && [string compare -nocase $arg1 t1]==0
+          && [string compare -nocase $arg2 a]==0} {
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {UPDATE t1 SET a=11, b=33 WHERE a=1}
+} {1 {changes to t1.a are prohibited}}
+do_test auth-1.26 {
+  execsql {SELECT * FROM t1}
+} {1 22 3}
+do_test auth-1.27 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_READ_COLUMN" 
+          && [string compare -nocase $arg1 t1]==0
+          && [string compare -nocase $arg2 a]==0} {
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {UPDATE t1 SET b=33, c=44 WHERE a=1}
+} {1 {access to t1.a is prohibited}}
+do_test auth-1.28 {
+  execsql {SELECT b, c FROM t1}
+} {22 3}
+do_test auth-1.29 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_READ_COLUMN" 
+          && [string compare -nocase $arg1 t1]==0
+          && [string compare -nocase $arg2 a]==0} {
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {UPDATE t1 SET b=33, c=44 WHERE a=1}
+} {0 {}}
+do_test auth-1.30 {
+  execsql {SELECT b, c FROM t1}
+} {22 3}
+do_test auth-1.31 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_READ_COLUMN" 
+          && [string compare -nocase $arg1 t1]==0
+          && [string compare -nocase $arg2 a]==0} {
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {UPDATE t1 SET b=33, c=44 WHERE a IS NULL}
+} {0 {}}
+do_test auth-1.32 {
+  execsql {SELECT b, c FROM t1}
+} {33 44}
+
+  
+} ;# End of the "if( db command exists )"
+
+finish_test

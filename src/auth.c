@@ -14,7 +14,7 @@
 ** systems that do not need this facility may omit it by recompiling
 ** the library with -DSQLITE_OMIT_AUTHORIZATION=1
 **
-** $Id: auth.c,v 1.1 2003/01/12 18:07:49 drh Exp $
+** $Id: auth.c,v 1.2 2003/01/12 19:33:53 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -68,7 +68,7 @@ static void sqliteAuthBadReturnCode(Parse *pParse, int rc){
   char zBuf[20];
   sprintf(zBuf, "(%d)", rc);
   sqliteSetString(&pParse->zErrMsg, "illegal return value ", zBuf,
-    " from the authorization function - should to be SQLITE_OK, "
+    " from the authorization function - should be SQLITE_OK, "
     "SQLITE_IGNORE, or SQLITE_DENY", 0);
   pParse->nErr++;
 }
@@ -133,7 +133,7 @@ int sqliteAuthDelete(Parse *pParse, const char *zName, int forceError){
   }
   rc = db->xAuth(db->pAuthArg, SQLITE_DELETE_ROW, zName, "");
   if( rc==SQLITE_DENY  || (rc==SQLITE_IGNORE && forceError) ){
-    sqliteSetString(&pParse->zErrMsg,"deletion of rows from table ",
+    sqliteSetString(&pParse->zErrMsg,"deletion from table ",
         zName, " is prohibited", 0);
     pParse->nErr++;
   }else if( rc!=SQLITE_OK && rc!=SQLITE_IGNORE ){
@@ -158,7 +158,7 @@ int sqliteAuthInsert(Parse *pParse, const char *zName, int forceError){
   }
   rc = db->xAuth(db->pAuthArg, SQLITE_INSERT_ROW, zName, "");
   if( rc==SQLITE_DENY || (rc==SQLITE_IGNORE && forceError) ){
-    sqliteSetString(&pParse->zErrMsg,"insertion of rows from table ",
+    sqliteSetString(&pParse->zErrMsg,"insertion into table ",
         zName, " is prohibited", 0);
     pParse->nErr++;
   }else if( rc!=SQLITE_OK && rc!=SQLITE_IGNORE ){
