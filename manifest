@@ -1,5 +1,5 @@
-C Experimental\spatch\sto\sbalance()\s(use\s-DSQLITE_BALANCE_QUICK).\s(CVS\s2211)
-D 2005-01-14T13:50:12
+C Add\scomments\sto\sthe\snew\sbalance_quick()\sroutine.\s(CVS\s2212)
+D 2005-01-14T22:55:49
 F Makefile.in 6ce51dde6a8fe82fc12f20dec750572f6a19f56a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -29,7 +29,7 @@ F sqlite3.def dbaeb20c153e1d366e8f421b55a573f5dfc00863
 F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
 F src/attach.c e49d09dad9f5f9fb10b4b0c1be5a70ae4c45e689
 F src/auth.c 3b81f2a42f48a62c2c9c9b0eda31a157c681edea
-F src/btree.c 1a351402dbbf5cc5f8ecf1b338f8da20c073c46e
+F src/btree.c 01027e3c1b9f53f17eec964da2a3e45d253b2b87
 F src/btree.h 74d19cf40ab49fd69abe9e4e12a6c321ad86c497
 F src/build.c af1296e8a21a406b4f4c4f1e1365e075071219f3
 F src/cursor.c f883813759742068890b1f699335872bfa8fdf41
@@ -269,7 +269,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl c3b50d3ac31c54be2a1af9b488a89d22f1e6e746
-P c772f75166d55192132e732e8a0ddda5926f00f2
-R a2176157e002acaa6ba57b3b04bf35d8
-U danielk1977
-Z be978985848951cc4077641a9406e5b8
+P c550d80c25ec88fceb20acabd00c21faa2d552f5
+R 11aa1732839148efceafec181a4aacf2
+U drh
+Z 125f4f4e919590f6f1ede4bc594f0cdf

@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.232 2005/01/14 13:50:12 danielk1977 Exp $
+** $Id: btree.c,v 1.233 2005/01/14 22:55:49 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -3558,6 +3558,23 @@ static void assemblePage(
 /* Forward reference */
 static int balance(MemPage*, int);
 
+/*
+** This version of balance() handles the common special case where
+** a new entry is being inserted on the extreme right-end of the
+** tree, in other words, when the new entry will become the largest
+** entry in the tree.
+**
+** Instead of trying balance the 3 right-most leaf pages, just add
+** a new page to the right-hand side and put the one new entry in
+** that page.  This leaves the right side of the tree somewhat
+** unbalanced.  But odds are that we will be inserting new entries
+** at the end soon afterwards so the nearly empty page will quickly
+** fill up.  On average.
+**
+** pPage is the leaf page which is the right-most page in the tree.
+** pParent is its parent.  pPage must have a single overflow entry
+** which is also the right-most entry on the page.
+*/
 static int balance_quick(MemPage *pPage, MemPage *pParent){
   int rc;
   MemPage *pNew;
@@ -3681,6 +3698,14 @@ static int balance_nonroot(MemPage *pPage){
   TRACE(("BALANCE: begin page %d child of %d\n", pPage->pgno, pParent->pgno));
 
 #ifdef SQLITE_BALANCE_QUICK
+  /*
+  ** A special case:  If a new entry has just been inserted into a
+  ** table (that is, a btree with integer keys and all data at the leaves)
+  ** an the new entry is the right-most entry in the tree (it has the
+  ** largest key) then use the special balance_quick() routine for
+  ** balancing.  balance_quick() is much faster and results in a tighter
+  ** packing of data in the common case.
+  */
   if( pPage->leaf &&
       pPage->intKey &&
       pPage->leafData &&
