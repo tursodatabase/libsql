@@ -1,5 +1,5 @@
-C Fix\sthe\s".import"\scommand\sof\sthe\scommand-line\sshell\sso\sthat\sit\signores\n\\n\sand\s\\r\sat\sthe\send\sof\sa\sline.\s\sTicket\s#939.\s(CVS\s2003)
-D 2004-10-06T14:39:07
+C Size\soptimization\sin\sthe\sparser.\s(CVS\s2004)
+D 2004-10-06T14:39:29
 F Makefile.in 78ddc9fca09ab6e3b75a79ecf8d490e34cd0519c
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -54,7 +54,7 @@ F src/os_win.c 9482dfc92f289b68205bb2c9315757c7e3946bfb
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c dc0ffab9941393b072e0b1f1f3de54830727cec9
 F src/pager.h 774d1973acbda341827d21b0da0150575d69f7d9
-F src/parse.y e03d7d7f712ad2b5be61e9a024820c0a8ffdf36d
+F src/parse.y 329d1bca30000093f664b8b8e981e75ce2b11d3e
 F src/pragma.c 4a071a1908aa7fb5930a9d73fd300a6aa2ac07e1
 F src/printf.c 40770e1f553612d13dfc86d236086e69baa62fe1
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
@@ -250,7 +250,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P f623d6e74fb5f6f70a22c06278b2bb1b4b7f9b85
-R 50bde6f04c39893f91c23c1114101ce8
+P dcbf4817a7a3ce18a2d5ed008346933a36acd543
+R bb6840d2828634b7f251d4000a4ec78a
 U drh
-Z 9d4f078082e7ca6946a15a06c5a6ac0b
+Z 908fa14825ec85f62b3b4f967c9ab77f

@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.142 2004/10/05 02:41:43 drh Exp $
+** @(#) $Id: parse.y,v 1.143 2004/10/06 14:39:29 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -41,6 +41,15 @@
 struct LimitVal {
   int limit;    /* The LIMIT value.  -1 if there is no limit */
   int offset;   /* The OFFSET.  0 if there is none */
+};
+
+/*
+** An instance of this structure is used to store the LIKE,
+** GLOB, NOT LIKE, and NOT GLOB operators.
+*/
+struct LikeOp {
+  int opcode;   /* Either TK_GLOB or TK_LIKE */
+  int not;      /* True if the NOT keyword is present */
 };
 
 /*
@@ -597,20 +606,15 @@ expr(A) ::= expr(X) likeop(OP) expr(Y).  [LIKE]  {
   ExprList *pList = sqlite3ExprListAppend(0, Y, 0);
   pList = sqlite3ExprListAppend(pList, X, 0);
   A = sqlite3ExprFunction(pList, 0);
-  if( A ) A->op = OP;
+  if( A ) A->op = OP.opcode;
+  if( OP.not ) A = sqlite3Expr(TK_NOT, A, 0, 0);
   sqlite3ExprSpan(A, &X->span, &Y->span);
 }
-expr(A) ::= expr(X) NOT likeop(OP) expr(Y). [LIKE] {
-  ExprList *pList = sqlite3ExprListAppend(0, Y, 0);
-  pList = sqlite3ExprListAppend(pList, X, 0);
-  A = sqlite3ExprFunction(pList, 0);
-  if( A ) A->op = OP;
-  A = sqlite3Expr(TK_NOT, A, 0, 0);
-  sqlite3ExprSpan(A,&X->span,&Y->span);
-}
-%type likeop {int}
-likeop(A) ::= LIKE. {A = TK_LIKE;}
-likeop(A) ::= GLOB. {A = TK_GLOB;}
+%type likeop {struct LikeOp}
+likeop(A) ::= LIKE.     {A.opcode = TK_LIKE; A.not = 0;}
+likeop(A) ::= GLOB.     {A.opcode = TK_GLOB; A.not = 0;}
+likeop(A) ::= NOT LIKE. {A.opcode = TK_LIKE; A.not = 1;}
+likeop(A) ::= NOT GLOB. {A.opcode = TK_GLOB; A.not = 1;}
 expr(A) ::= expr(X) PLUS(OP) expr(Y).   {A = sqlite3Expr(@OP, X, Y, 0);}
 expr(A) ::= expr(X) MINUS(OP) expr(Y).  {A = sqlite3Expr(@OP, X, Y, 0);}
 expr(A) ::= expr(X) STAR(OP) expr(Y).   {A = sqlite3Expr(@OP, X, Y, 0);}
@@ -658,54 +662,37 @@ expr(A) ::= LP(B) select(X) RP(E). {
   if( A ) A->pSelect = X;
   sqlite3ExprSpan(A,&B,&E);
 }
-expr(A) ::= expr(W) BETWEEN expr(X) AND expr(Y). {
+%type between_op {int}
+between_op(A) ::= BETWEEN.     {A = 0;}
+between_op(A) ::= NOT BETWEEN. {A = 1;}
+expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
   ExprList *pList = sqlite3ExprListAppend(0, X, 0);
   pList = sqlite3ExprListAppend(pList, Y, 0);
   A = sqlite3Expr(TK_BETWEEN, W, 0, 0);
   if( A ) A->pList = pList;
+  if( N ) A = sqlite3Expr(TK_NOT, A, 0, 0);
   sqlite3ExprSpan(A,&W->span,&Y->span);
 }
-expr(A) ::= expr(W) NOT BETWEEN expr(X) AND expr(Y). {
-  ExprList *pList = sqlite3ExprListAppend(0, X, 0);
-  pList = sqlite3ExprListAppend(pList, Y, 0);
-  A = sqlite3Expr(TK_BETWEEN, W, 0, 0);
-  if( A ) A->pList = pList;
-  A = sqlite3Expr(TK_NOT, A, 0, 0);
-  sqlite3ExprSpan(A,&W->span,&Y->span);
-}
-expr(A) ::= expr(X) IN LP exprlist(Y) RP(E).  {
+%type in_op {int}
+in_op(A) ::= IN.      {A = 0;}
+in_op(A) ::= NOT IN.  {A = 1;}
+expr(A) ::= expr(X) in_op(N) LP exprlist(Y) RP(E). [IN] {
   A = sqlite3Expr(TK_IN, X, 0, 0);
   if( A ) A->pList = Y;
+  if( N ) A = sqlite3Expr(TK_NOT, A, 0, 0);
   sqlite3ExprSpan(A,&X->span,&E);
 }
-expr(A) ::= expr(X) IN LP select(Y) RP(E).  {
+expr(A) ::= expr(X) in_op(N) LP select(Y) RP(E).  [IN] {
   A = sqlite3Expr(TK_IN, X, 0, 0);
   if( A ) A->pSelect = Y;
+  if( N ) A = sqlite3Expr(TK_NOT, A, 0, 0);
   sqlite3ExprSpan(A,&X->span,&E);
 }
-expr(A) ::= expr(X) NOT IN LP exprlist(Y) RP(E).  {
-  A = sqlite3Expr(TK_IN, X, 0, 0);
-  if( A ) A->pList = Y;
-  A = sqlite3Expr(TK_NOT, A, 0, 0);
-  sqlite3ExprSpan(A,&X->span,&E);
-}
-expr(A) ::= expr(X) NOT IN LP select(Y) RP(E).  {
-  A = sqlite3Expr(TK_IN, X, 0, 0);
-  if( A ) A->pSelect = Y;
-  A = sqlite3Expr(TK_NOT, A, 0, 0);
-  sqlite3ExprSpan(A,&X->span,&E);
-}
-expr(A) ::= expr(X) IN nm(Y) dbnm(D). {
+expr(A) ::= expr(X) in_op(N) nm(Y) dbnm(D). [IN] {
   SrcList *pSrc = sqlite3SrcListAppend(0, &Y, &D);
   A = sqlite3Expr(TK_IN, X, 0, 0);
   if( A ) A->pSelect = sqlite3SelectNew(0,pSrc,0,0,0,0,0,-1,0);
-  sqlite3ExprSpan(A,&X->span,D.z?&D:&Y);
-}
-expr(A) ::= expr(X) NOT IN nm(Y) dbnm(D). {
-  SrcList *pSrc = sqlite3SrcListAppend(0, &Y, &D);
-  A = sqlite3Expr(TK_IN, X, 0, 0);
-  if( A ) A->pSelect = sqlite3SelectNew(0,pSrc,0,0,0,0,0,-1,0);
-  A = sqlite3Expr(TK_NOT, A, 0, 0);
+  if( N ) A = sqlite3Expr(TK_NOT, A, 0, 0);
   sqlite3ExprSpan(A,&X->span,D.z?&D:&Y);
 }
 
