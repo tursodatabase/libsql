@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the lang-*.html files.
 #
-set rcsid {$Id: lang.tcl,v 1.87 2005/03/19 14:45:50 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.88 2005/03/21 00:28:24 drh Exp $}
 source common.tcl
 
 if {[llength $argv]>0} {
@@ -1006,14 +1006,6 @@ literal percent symbol, underscore or escape character in the string,
 respectively. The infix LIKE operator is implemented by calling the
 user function <a href="#likeFunc"> like(<i>X</i>,<i>Y</i>)</a>.</p>
 }
-
-puts {
-<p>The LIKE operator does a wildcard comparison.  The operand
-to the right contains the wildcards.}
-puts "A percent symbol [Operator %] in the right operand
-matches any sequence of zero or more characters on the left.
-An underscore [Operator _] on the right
-matches any single character on the left."
 
 puts {
 The LIKE operator is not case sensitive and will match upper case
