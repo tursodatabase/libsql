@@ -12,7 +12,7 @@
 # focus of this file is testing the LIMIT ... OFFSET ... clause
 #  of SELECT statements.
 #
-# $Id: limit.test,v 1.13 2004/05/27 17:22:56 drh Exp $
+# $Id: limit.test,v 1.14 2004/07/19 23:16:39 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -294,5 +294,18 @@ do_test limit-7.12 {
        ORDER BY 1 DESC LIMIT 1 OFFSET 1;
   }
 } {30}
+
+# Tests for limit in conjunction with distinct
+#
+do_test limit-8.1 {
+  execsql {
+    SELECT DISTINCT x/100 FROM t3 LIMIT 5;
+  }
+} {0 1 2 3 4}
+do_test limit-8.2 {
+  execsql {
+    SELECT DISTINCT x/100 FROM t3 LIMIT 5 OFFSET 5;
+  }
+} {5 6 7 8 9}
 
 finish_test
