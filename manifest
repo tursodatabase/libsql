@@ -1,5 +1,5 @@
-C Have\sREINDEX\shandle\smissing\scollation\ssequences\scorrectly.\s(CVS\s2280)
-D 2005-01-27T00:22:03
+C Test\sthat\sit\sis\sok\sto\sexecute\sALTER\sTABLE\simmediately\safter\sopening\sa\sdatabase\sconnection.\s(CVS\s2281)
+D 2005-01-27T00:30:52
 F Makefile.in ffd81f5e926d40b457071b4de8d7c1fa18f39b5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -84,7 +84,7 @@ F src/vdbemem.c 62fe89471b656a922e9879be005abf690509ead3
 F src/where.c f4127cc2633ee0f74790ab7f09f5af832489e44e
 F tclinstaller.tcl 36478c3bbfc5b93ceac42d94e3c736937b808432
 F test/all.test 7f0988442ab811dfa41793b5b550f5828ce316f3
-F test/alter.test 95c57a4f461fa81293e0dccef7f83889aadb169a
+F test/alter.test b146ddd669b45a880d40bfdacd6037666137c3f4
 F test/attach.test 5147d531ca5fc5c2539fd20ce3b07a00420e1fbb
 F test/attach2.test 6f3a3a3a7f5be40388dd4d805e0e0712718dca9d
 F test/attach3.test c05c70b933afbde0901dab9da3e66ee842c09f38
@@ -272,7 +272,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P 2c54aba5ba781f4da1f14ed7a3986b6dc17728d7
-R 27b0ccb0c3d8867cc123414e9dfdc53a
+P 1c1904f44310fa0e327d8f0a77f1cf97599b630a
+R 31f86bcda482ef329881071b35a3c655
 U danielk1977
-Z d33512312c057cff348d67921260de69
+Z adda114cce96c39793e236df20bae53b

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing the ALTER TABLE statement.
 #
-# $Id: alter.test,v 1.8 2004/11/22 19:12:21 drh Exp $
+# $Id: alter.test,v 1.9 2005/01/27 00:30:52 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -491,7 +491,31 @@ do_test alter-4.3 {
     SELECT a FROM tbl2;
   }
 } {12}
+do_test alter-4.4 {
+  execsql {
+    DROP TABLE tbl2;
+  }
+} {}
 
 } ;# ifcapable autoinc
+
+# Test that it is Ok to execute an ALTER TABLE immediately after
+# opening a database.
+do_test alter-5.1 {
+  execsql {
+    CREATE TABLE tbl1(a, b, c);
+    INSERT INTO tbl1 VALUES('x', 'y', 'z');
+  }
+} {}
+do_test alter-5.2 {
+  sqlite3 db2 test.db
+  execsql {
+    ALTER TABLE tbl1 RENAME TO tbl2;
+    SELECT * FROM tbl2;
+  } db2
+} {x y z}
+do_test alter-5.3 {
+  db2 close
+} {}
 
 finish_test
