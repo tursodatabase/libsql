@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.118 2002/02/19 13:39:23 drh Exp $
+** $Id: vdbe.c,v 1.119 2002/02/19 15:00:08 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -866,29 +866,30 @@ static char *zOpName[] = { 0,
   "Close",             "MoveTo",            "NewRecno",          "PutIntKey",
   "PutStrKey",         "Distinct",          "Found",             "NotFound",
   "IsUnique",          "NotExists",         "Delete",            "Column",
-  "KeyAsData",         "Recno",             "FullKey",           "Rewind",
-  "Next",              "Destroy",           "Clear",             "CreateIndex",
-  "CreateTable",       "IntegrityCk",       "IdxPut",            "IdxDelete",
-  "IdxRecno",          "IdxGT",             "IdxGE",             "MemLoad",
-  "MemStore",          "ListWrite",         "ListRewind",        "ListRead",
-  "ListReset",         "SortPut",           "SortMakeRec",       "SortMakeKey",
-  "Sort",              "SortNext",          "SortCallback",      "SortReset",
-  "FileOpen",          "FileRead",          "FileColumn",        "AggReset",
-  "AggFocus",          "AggIncr",           "AggNext",           "AggSet",
-  "AggGet",            "SetInsert",         "SetFound",          "SetNotFound",
-  "MakeRecord",        "MakeKey",           "MakeIdxKey",        "IncrKey",
-  "Goto",              "If",                "Halt",              "ColumnCount",
-  "ColumnName",        "Callback",          "NullCallback",      "Integer",
-  "String",            "Pop",               "Dup",               "Pull",
-  "Push",              "MustBeInt",         "Add",               "AddImm",
-  "Subtract",          "Multiply",          "Divide",            "Remainder",
-  "BitAnd",            "BitOr",             "BitNot",            "ShiftLeft",
-  "ShiftRight",        "AbsValue",          "Precision",         "Min",
-  "Max",               "Like",              "Glob",              "Eq",
-  "Ne",                "Lt",                "Le",                "Gt",
-  "Ge",                "IsNull",            "NotNull",           "Negative",
-  "And",               "Or",                "Not",               "Concat",
-  "Noop",              "Strlen",            "Substr",            "Limit",
+  "KeyAsData",         "Recno",             "FullKey",           "Last",
+  "Rewind",            "Next",              "Destroy",           "Clear",
+  "CreateIndex",       "CreateTable",       "IntegrityCk",       "IdxPut",
+  "IdxDelete",         "IdxRecno",          "IdxGT",             "IdxGE",
+  "MemLoad",           "MemStore",          "ListWrite",         "ListRewind",
+  "ListRead",          "ListReset",         "SortPut",           "SortMakeRec",
+  "SortMakeKey",       "Sort",              "SortNext",          "SortCallback",
+  "SortReset",         "FileOpen",          "FileRead",          "FileColumn",
+  "AggReset",          "AggFocus",          "AggIncr",           "AggNext",
+  "AggSet",            "AggGet",            "SetInsert",         "SetFound",
+  "SetNotFound",       "MakeRecord",        "MakeKey",           "MakeIdxKey",
+  "IncrKey",           "Goto",              "If",                "Halt",
+  "ColumnCount",       "ColumnName",        "Callback",          "NullCallback",
+  "Integer",           "String",            "Pop",               "Dup",
+  "Pull",              "Push",              "MustBeInt",         "Add",
+  "AddImm",            "Subtract",          "Multiply",          "Divide",
+  "Remainder",         "BitAnd",            "BitOr",             "BitNot",
+  "ShiftLeft",         "ShiftRight",        "AbsValue",          "Precision",
+  "Min",               "Max",               "Like",              "Glob",
+  "Eq",                "Ne",                "Lt",                "Le",
+  "Gt",                "Ge",                "IsNull",            "NotNull",
+  "Negative",          "And",               "Or",                "Not",
+  "Concat",            "Noop",              "Strlen",            "Substr",
+  "Limit",           
 };
 
 /*
@@ -3096,7 +3097,11 @@ case OP_Column: {
     /* Figure out how many bytes in the column data and where the column
     ** data begins.
     */
-    if( payloadSize<256 ){
+    if( payloadSize==0 ){
+      aStack[tos].flags = STK_Null;
+      p->tos = tos;
+      break;
+    }else if( payloadSize<256 ){
       idxWidth = 1;
     }else if( payloadSize<65536 ){
       idxWidth = 2;
@@ -3212,6 +3217,29 @@ case OP_FullKey: {
     sqliteBtreeKey(pCrsr, 0, amt, z);
     zStack[tos] = z;
     aStack[tos].n = amt;
+  }
+  break;
+}
+
+/* Opcode: Last P1 P2 *
+**
+** The next use of the Recno or Column or Next instruction for P1 
+** will refer to the last entry in the database table or index.
+** If the table or index is empty and P2>0, then jump immediately to P2.
+** If P2 is 0 or if the table or index is not empty, fall through
+** to the following instruction.
+*/
+case OP_Last: {
+  int i = pOp->p1;
+  BtCursor *pCrsr;
+
+  if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
+    int res;
+    sqliteBtreeLast(pCrsr, &res);
+    p->aCsr[i].atFirst = res==0;
+    if( res && pOp->p2>0 ){
+      pc = pOp->p2 - 1;
+    }
   }
   break;
 }

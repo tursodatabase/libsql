@@ -1,5 +1,5 @@
-C Change\sthe\sname\sof\sthe\ssanity_check\sPRAGMA\sto\s"integrity_check"\sand\smake\nit\savailable\son\sall\scompiles.\s(CVS\s381)
-D 2002-02-19T13:39:21
+C Optimize\ssimple\smin()\sand\smax()\squeries.\s(CVS\s382)
+D 2002-02-19T15:00:07
 F Makefile.in 9fa4277413bf1d9cf91365f07d4108d7d87ed2af
 F Makefile.template 3372d45f8853afdb70bd30cc6fb50a3cd9069834
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -19,8 +19,8 @@ F ltmain.sh e9ed72eb1d690f447c13945eaf69e28af531eda1
 F publish.sh 5b59f4aff037aafa0e4a3b6fa599495dbd73f360
 F sqlite.1 2e2bb0529ef468ade9e4322bd609d0695fb9ded9
 F src/TODO af7f3cab0228e34149cf98e073aa83d45878e7e6
-F src/btree.c 715209d8fff117d2e3024134c5b626f440fb0395
-F src/btree.h 9fd16f33b9f2efe733fecff7ca000d2950a74d9f
+F src/btree.c 8256ea416850fbd2af0ae50779b1a4b604de13c2
+F src/btree.h 8abeabfe6e0b1a990b64fa457592a6482f6674f3
 F src/build.c 088acf87a92b00edda1206ccafac3518660b1b3b
 F src/delete.c f8ad71be53cf18656b6573de65395852fe817f0c
 F src/expr.c 7aff65ea0732b07d36925087ad611019103ad69a
@@ -36,7 +36,7 @@ F src/pager.h b28f004e2f5541dc60cc32db01bf80cf4d056283
 F src/parse.y b82278917959eefd05bd08c90e07a4fa5917ea51
 F src/printf.c 300a90554345751f26e1fc0c0333b90a66110a1d
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
-F src/select.c d2bbaf4cba97b4c40503d0dc47e8b729e7088e0b
+F src/select.c 6dadbd3ba1e86334c9af321b48f6e3df1992f602
 F src/shell.c c102dfe388c7618a668c944ff157c49cb48f28e3
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in f57074c84a2c112a5093ba7a9d9636aa9cacc87c
@@ -50,8 +50,8 @@ F src/threadtest.c 81f0598e0f031c1bd506af337fdc1b7e8dff263f
 F src/tokenize.c 9e98f94469694a763992860596137e78dbae0cc0
 F src/update.c 95459f94a061860bf8e5716b3426a5ba85c79103
 F src/util.c f31f3d6198a0d1296a16f5a6ceec423a932cbbf6
-F src/vdbe.c 3c788341b581c9381ab2ecd4868041ed57ff27ad
-F src/vdbe.h 20a662572485329cb0a6b648bf7c8cb6baec401d
+F src/vdbe.c 2b03a7d39f05321e5570373cb2f3734c3cf86b70
+F src/vdbe.h b4d35e159fbb80a74728b4a96e5b789fffce6f57
 F src/where.c f79bc3179379b46b131a67ab10713779368dceee
 F test/all.test 7a8a8a7a579ed2bb4d8976d55402f21eacd58049
 F test/bigrow.test 8ab252dba108f12ad64e337b0f2ff31a807ac578
@@ -124,7 +124,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 72c5a92aa6e3ae712af152cff8d1dc5b997b538e
-R 50515068ff6057399f03cf57fa91cbb8
+P c6e9048e66c8d8e2d5f6c62aa724eef3e9d9f572
+R 41f437c3e65a91e5a2a52b6609362036
 U drh
-Z 763c5eb79aff590e79bd0703f9429a9c
+Z ee034e966e6d17b9655294654ff0765f

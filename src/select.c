@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.61 2002/02/18 03:21:46 drh Exp $
+** $Id: select.c,v 1.62 2002/02/19 15:00:08 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -711,6 +711,102 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
 }
 
 /*
+** Analyze the SELECT statement passed in as an argument to see if it
+** is a simple min() or max() query.  If it is and this query can be
+** satisfied using a single seek to the beginning or end of an index,
+** then generate the code for this SELECT return 1.  If this is not a 
+** simple min() or max() query, then return 0;
+**
+** A simply min() or max() query looks like this:
+**
+**    SELECT min(a) FROM table;
+**    SELECT max(a) FROM table;
+**
+** The query may have only a single table in its FROM argument.  There
+** can be no GROUP BY or HAVING or WHERE clauses.  The result set must
+** be the min() or max() of a single column of the table.  The column
+** in the min() or max() function must be indexed.
+**
+** The parameters to this routine are the same as for sqliteSelect().
+** See the header comment on that routine for additional information.
+*/
+static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
+  Expr *pExpr;
+  int iCol;
+  Table *pTab;
+  Index *pIdx;
+  int base;
+  Vdbe *v;
+  int openOp;
+  int seekOp;
+  int cont;
+  ExprList eList;
+  struct ExprList_item eListItem;
+
+  /* Check to see if this query is a simple min() or max() query.  Return
+  ** zero if it is  not.
+  */
+  if( p->pGroupBy || p->pHaving || p->pWhere ) return 0;
+  if( p->pSrc->nId!=1 ) return 0;
+  if( p->pEList->nExpr!=1 ) return 0;
+  pExpr = p->pEList->a[0].pExpr;
+  if( pExpr->op!=TK_AGG_FUNCTION ) return 0;
+  if( pExpr->pList==0 || pExpr->pList->nExpr!=1 ) return 0;
+  if( pExpr->iColumn!=FN_Min && pExpr->iColumn!=FN_Max ) return 0;
+  seekOp = pExpr->iColumn==FN_Min ? OP_Rewind : OP_Last;
+  pExpr = pExpr->pList->a[0].pExpr;
+  if( pExpr->op!=TK_COLUMN ) return 0;
+  iCol = pExpr->iColumn;
+  pTab = p->pSrc->a[0].pTab;
+
+  /* If we get to here, it means the query is of the correct form.
+  ** Check to make sure we have an index.
+  */
+  if( iCol<0 ){
+    pIdx = 0;
+  }else{
+    for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+      assert( pIdx->nColumn>=1 );
+      if( pIdx->aiColumn[0]==iCol ) break;
+    }
+    if( pIdx==0 ) return 0;
+  }
+
+  /* Identify column names if we will be using in the callback.  This
+  ** step is skipped if the output is going to a table or a memory cell.
+  */
+  v = sqliteGetVdbe(pParse);
+  if( v==0 ) return 0;
+  if( eDest==SRT_Callback ){
+    generateColumnNames(pParse, p->pSrc, p->pEList);
+  }
+
+  /* Begin generating code
+  */
+  base = pParse->nTab;
+  eList.nExpr = 1;
+  memset(&eListItem, 0, sizeof(eListItem));
+  eList.a = &eListItem;
+  eList.a[0].pExpr = pExpr;
+  openOp = pTab->isTemp ? OP_OpenAux : OP_Open;
+  sqliteVdbeAddOp(v, openOp, base, pTab->tnum);
+  if( pIdx==0 ){
+    sqliteVdbeAddOp(v, seekOp, base, 0);
+  }else{
+    sqliteVdbeAddOp(v, openOp, base+1, pIdx->tnum);
+    sqliteVdbeAddOp(v, seekOp, base+1, 0);
+    sqliteVdbeAddOp(v, OP_IdxRecno, base+1, 0);
+    sqliteVdbeAddOp(v, OP_Close, base+1, 0);
+    sqliteVdbeAddOp(v, OP_MoveTo, base, 0);
+  }
+  cont = sqliteVdbeMakeLabel(v);
+  selectInnerLoop(pParse, &eList, base, 1, 0, -1, eDest, iParm, cont, cont);
+  sqliteVdbeResolveLabel(v, cont);
+  sqliteVdbeAddOp(v, OP_Close, base, 0);
+  return 1;
+}
+
+/*
 ** Generate code for the given SELECT statement.
 **
 ** The results are distributed in various ways depending on the
@@ -909,6 +1005,13 @@ int sqliteSelect(
     if( sqliteExprCheck(pParse, pHaving, isAgg, 0) ){
       goto select_end;
     }
+  }
+
+  /* Check for the special case of a min() or max() function by itself
+  ** in the result set.
+  */
+  if( simpleMinMaxQuery(pParse, p, eDest, iParm) ){
+    goto select_end;
   }
 
   /* Begin generating code.
