@@ -617,7 +617,7 @@ int sqlite3OsRead(OsFile *id, void *pBuf, int amt){
   TIMER_START;
   got = read(id->h, pBuf, amt);
   TIMER_END;
-  TRACE4("READ    %-3d %7d %d\n", id->h, last_page, elapse);
+  TRACE4("READ    %-3d %7d %d\n", id->h, last_page, TIMER_ELAPSED);
   SEEK(0);
   /* if( got<0 ) got = 0; */
   if( got==amt ){
@@ -641,7 +641,7 @@ int sqlite3OsWrite(OsFile *id, const void *pBuf, int amt){
     pBuf = &((char*)pBuf)[wrote];
   }
   TIMER_END;
-  TRACE4("WRITE   %-3d %7d %d\n", id->h, last_page, elapse);
+  TRACE4("WRITE   %-3d %7d %d\n", id->h, last_page, TIMER_ELAPSED);
   SEEK(0);
   if( amt>0 ){
     return SQLITE_FULL;
