@@ -1,5 +1,5 @@
-C Ensure\stables\scannot\sbe\screated/dropped\swhen\sbtree\scursors\sare\sopen.\s(CVS\s2085)
-D 2004-11-10T11:55:11
+C Fix\sexpr.test\sso\sthat\sit\sworks\swhen\sthe\sdate-time\sfunctions\sare\scompiled\sout\sof\sthe\slibrary.\s(CVS\s2086)
+D 2004-11-10T12:34:20
 F Makefile.in c4d2416860f472a1e3393714d0372074197565df
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -119,7 +119,7 @@ F test/diskfull.test e2f6cfd868713ead06dc82b84a4938e868128fc0
 F test/enc.test 2f5463af488d50aef60c6110bec6b21b5efba961
 F test/enc2.test 7a60971a62748be6b607b4b4380eb4c5e151a6ec
 F test/enc3.test a96f4a7c44bac4d63bdc4ff422b8049912083998
-F test/expr.test a1855a3b47c0deab92e7b6a6d419a52782e7a67e
+F test/expr.test 20ddaf66c7ab673c1d0c953889e3466139256f9a
 F test/fkey1.test 81bb13caaa78f58d7d191d7f535529f7c91d821a
 F test/func.test 830d352574c7f5cd15149a9be58a6dcc2b995c05
 F test/hook.test f8605cde4c77b2c6a4a73723bf6c507796a64dda
@@ -255,7 +255,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl fdacb0ba2d39831e8a6240d05a490026ad4c4e4c
-P fe200eaf373998574cc059086bfc93d6c44ec5a3
-R 5c28b72443e2b85deec95ab22d09127a
+P 8e5c2e5df8b824f7efb27e776240f005c6f1f0ff
+R 79385f846a78a317725c294d0ea8c50d
 U danielk1977
-Z 1b8b884c02278a9e78ec1e566c672bd7
+Z 2d9ad69f33fb5bbe6fd95b8434198f61
