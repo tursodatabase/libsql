@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: c_interface.tcl,v 1.13 2000/11/28 20:46:39 drh Exp $}
+set rcsid {$Id: c_interface.tcl,v 1.14 2001/04/05 16:25:53 drh Exp $}
 
 puts {<html>
 <head>
@@ -77,6 +77,8 @@ void sqlite_busy_handler(sqlite*, int (*)(void*,const char*,int), void*);
 void sqlite_busy_timeout(sqlite*, int ms);
 
 const char sqlite_version[];
+
+const char sqlite_encoding[];
 
 int sqlite_exec_printf(
   sqlite*,
@@ -376,6 +378,23 @@ with the same information.  If desired, a program can compare
 the SQLITE_VERSION macro against the <b>sqlite_version</b>
 string constant to verify that the version number of the
 header file and the library match.</p> 
+
+<h2>Library character encoding</h2>
+
+<p>By default, SQLite assumes that all data uses a fixed-size
+8-bit character (iso8859).  But if you give the --enable-utf8 option
+to the configure script, then the library assumes UTF-8 variable
+sized characters.  This makes a difference for the LIKE and GLOB
+operators and the LENGTH() and SUBSTR() functions.  The static
+string <b>sqlite_encoding</b> will be set to either "UTF-8" or
+"iso8859" to indicate how the library was compiled.  In addition,
+the <b>sqlite.h</b> header file will define one of the
+macros <b>SQLITE_UTF8</b> or <b>SQLITE_ISO8859</b>, as appropriate.</p>
+
+<p>Note that the character encoding mechanism used by SQLite cannot
+be changed at run-time.  This is a compile-time option only.  The
+<b>sqlite_encoding</b> character string just tells you how the library
+was compiled.</p>
 
 <h2>Changing the libraries response to locked files</h2>
 

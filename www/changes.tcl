@@ -18,10 +18,13 @@ proc chng {date desc} {
 }
 
 chng {2001 Apr 5 (1.0.29)} {
-<li>The LIKE and GLOB operators now assume both operands are
-    UTF-8 strings if the library is configured with the "--enable-utf8"
-    option.  If not configured for UTF-8 but using a version of TCL
-    that supports UTF-8, then a conversion from UTF-8 to iso8859 and
+<li>The library now assumes data is stored as UTF-8 if the --enable-utf8
+    option is given to configure.  The default behavior is to assume
+    iso8859-x, as it has always done.  This only makes a difference for
+    LIKE and GLOB operators and the LENGTH and SUBSTR functions.</li>
+<li>If the library is not configured for UTF-8 and the Tcl library
+    is one of the newer ones that uses UTF-8 internally,
+    then a conversion from UTF-8 to iso8859 and
     back again is done inside the TCL interface.</li>
 }
 
