@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc1.test,v 1.14 2002/08/18 22:41:22 drh Exp $
+# $Id: misc1.test,v 1.15 2002/09/17 03:20:46 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -398,6 +398,42 @@ do_test misc1-12.13 {
   }
 } {1 2 2 3 4 2}
 
-
+# There was a problem with realloc() in the OP_MemStore operation of
+# the VDBE.  A buffer was being reallocated but some pointers into 
+# the old copy of the buffer were not being moved over to the new copy.
+# The following code tests for the problem.
+#
+do_test misc1-13.1 {
+   execsql {
+     CREATE TABLE t9(x,y);
+     INSERT INTO t9 VALUES('one',1);
+     INSERT INTO t9 VALUES('two',2);
+     INSERT INTO t9 VALUES('three',3);
+     INSERT INTO t9 VALUES('four',4);
+     INSERT INTO t9 VALUES('five',5);
+     INSERT INTO t9 VALUES('six',6);
+     INSERT INTO t9 VALUES('seven',7);
+     INSERT INTO t9 VALUES('eight',8);
+     INSERT INTO t9 VALUES('nine',9);
+     INSERT INTO t9 VALUES('ten',10);
+     INSERT INTO t9 VALUES('eleven',11);
+     SELECT y FROM t9
+     WHERE x=(SELECT x FROM t9 WHERE y=1)
+        OR x=(SELECT x FROM t9 WHERE y=2)
+        OR x=(SELECT x FROM t9 WHERE y=3)
+        OR x=(SELECT x FROM t9 WHERE y=4)
+        OR x=(SELECT x FROM t9 WHERE y=5)
+        OR x=(SELECT x FROM t9 WHERE y=6)
+        OR x=(SELECT x FROM t9 WHERE y=7)
+        OR x=(SELECT x FROM t9 WHERE y=8)
+        OR x=(SELECT x FROM t9 WHERE y=9)
+        OR x=(SELECT x FROM t9 WHERE y=10)
+        OR x=(SELECT x FROM t9 WHERE y=11)
+        OR x=(SELECT x FROM t9 WHERE y=12)
+        OR x=(SELECT x FROM t9 WHERE y=13)
+        OR x=(SELECT x FROM t9 WHERE y=14)
+     ;
+   }
+} {1 2 3 4 5 6 7 8 9 10 11}
 
 finish_test
