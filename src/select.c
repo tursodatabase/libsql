@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.173 2004/05/21 02:14:25 drh Exp $
+** $Id: select.c,v 1.174 2004/05/21 03:01:59 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -486,7 +486,7 @@ static int selectInnerLoop(
     case SRT_Callback:
     case SRT_Sorter: {
       if( pOrderBy ){
-        sqlite3VdbeAddOp(v, OP_SortMakeRec, nColumn, 0);
+        sqlite3VdbeAddOp(v, OP_MakeRecord, nColumn, 0);
         pushOntoSorter(pParse, v, pOrderBy);
       }else{
         assert( eDest==SRT_Callback );
@@ -566,10 +566,6 @@ static void generateSortTail(
     sqlite3VdbeAddOp(v, OP_MemIncr, p->iLimit, end2);
   }
   switch( eDest ){
-    case SRT_Callback: {
-      sqlite3VdbeAddOp(v, OP_SortCallback, nColumn, 0);
-      break;
-    }
     case SRT_Table:
     case SRT_TempTable: {
       sqlite3VdbeAddOp(v, OP_NewRecno, iParm, 0);
@@ -593,6 +589,7 @@ static void generateSortTail(
       sqlite3VdbeAddOp(v, OP_Goto, 0, end1);
       break;
     }
+    case SRT_Callback:
     case SRT_Subroutine: {
       int i;
       sqlite3VdbeAddOp(v, OP_Integer, p->pEList->nExpr, 0);
@@ -600,7 +597,11 @@ static void generateSortTail(
       for(i=0; i<nColumn; i++){
         sqlite3VdbeAddOp(v, OP_Column, -1-i, i);
       }
-      sqlite3VdbeAddOp(v, OP_Gosub, 0, iParm);
+      if( eDest==SRT_Callback ){
+        sqlite3VdbeAddOp(v, OP_Callback, nColumn, 0);
+      }else{
+        sqlite3VdbeAddOp(v, OP_Gosub, 0, iParm);
+      }
       sqlite3VdbeAddOp(v, OP_Pop, 2, 0);
       break;
     }

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.311 2004/05/21 02:14:25 drh Exp $
+** $Id: vdbe.c,v 1.312 2004/05/21 03:01:59 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -4192,51 +4192,6 @@ case OP_SortPut: {
   break;
 }
 
-/* Opcode: SortMakeRec P1 * *
-**
-** The top P1 elements are the arguments to a callback.  Form these
-** elements into a single data entry that can be stored on a sorter
-** using SortPut and later fed to a callback using SortCallback.
-*/
-case OP_SortMakeRec: {
-  char *z;
-  char **azArg;
-  int nByte;
-  int nField;
-  int i;
-  Mem *pRec;
-
-  nField = pOp->p1;
-  pRec = &pTos[1-nField];
-  assert( pRec>=p->aStack );
-  nByte = 0;
-  for(i=0; i<nField; i++, pRec++){
-    if( (pRec->flags & MEM_Null)==0 ){
-      Stringify(pRec);
-      nByte += pRec->n;
-    }
-  }
-  nByte += sizeof(char*)*(nField+1);
-  azArg = sqliteMallocRaw( nByte );
-  if( azArg==0 ) goto no_mem;
-  z = (char*)&azArg[nField+1];
-  for(pRec=&pTos[1-nField], i=0; i<nField; i++, pRec++){
-    if( pRec->flags & MEM_Null ){
-      azArg[i] = 0;
-    }else{
-      azArg[i] = z;
-      memcpy(z, pRec->z, pRec->n);
-      z += pRec->n;
-    }
-  }
-  popStack(&pTos, nField);
-  pTos++;
-  pTos->n = nByte;
-  pTos->z = (char*)azArg;
-  pTos->flags = MEM_Str | MEM_Dyn;
-  break;
-}
-
 /* Opcode: Sort * * P3
 **
 ** Sort all elements on the sorter.  The algorithm is a
@@ -4298,25 +4253,6 @@ case OP_SortNext: {
     pc = pOp->p2 - 1;
   }
   break;
-}
-
-/* Opcode: SortCallback P1 * *
-**
-** The top of the stack contains a callback record built using
-** the SortMakeRec operation with the same P1 value as this
-** instruction.  Pop this record from the stack and invoke the
-** callback on it.
-*/
-case OP_SortCallback: {
-  assert( pTos>=p->aStack );
-  assert( pTos->flags & MEM_Str );
-  p->nCallback++;
-  p->pc = pc+1;
-  p->azResColumn = (char**)pTos->z;
-  assert( p->nResColumn==pOp->p1 );
-  p->popStack = 1;
-  p->pTos = pTos;
-  return SQLITE_ROW;
 }
 
 /* Opcode: SortReset * * *
