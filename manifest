@@ -1,5 +1,5 @@
-C :-)\s(CVS\s216)
-D 2001-05-11T11:02:47
+C :-)\s(CVS\s217)
+D 2001-05-15T00:39:25
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in acef0f0275a5ca8e68bda165f7f05d810a207664
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -12,7 +12,7 @@ F notes/notes1.txt b7c0812b704a022e88c621146ae50955c923d464
 F notes/notes2.txt 49b4d7ba35f183feb1fb098a27272b82f5c76eca
 F notes/notes3.txt cd5e7bd2167d7ef89b1077abdfa68f0af6337744
 F src/TODO 38a68a489e56e9fd4a96263e0ff9404a47368ad4
-F src/btree.c 9b985eede929ce3f1a6ad510ecd04c197ce092f7
+F src/btree.c f6d724fccaf108c4452dba6589e6027ba8f3e88a
 F src/btree.h f21c240d0c95f93e2a128106d04a6c448ed0eb94
 F src/build.c 4f6a2d551c56342cd4a0420654835be3ad179651
 F src/dbbe.c b18259f99d87240cbe751021cf14dd3aa83a48af
@@ -106,7 +106,7 @@ F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 06f81c401f79a04f2c5ebfb97e7c176225c0aef2
 F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P 624ccbca98be33a26c2af72d2d91c78f8a06ae9c
-R dd7612c12a95a523d5ea5cc83b2e1f75
+P c3e521190f02120a34f1e9244fe1ea3a975a6caa
+R d3ffc66c90d6f5774a5954932275df58
 U drh
-Z 7bf915d3af7096b69289ffd2ecea3428
+Z 0f43bc31472b172caca9953860c2e8b6
