@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.376 2004/06/16 10:39:52 danielk1977 Exp $
+** $Id: vdbe.c,v 1.377 2004/06/16 12:02:54 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1934,6 +1934,7 @@ case OP_Column: {
     assert( pCnt>=p->aStack );
     assert( pCnt->flags & MEM_Int );
     nField = pCnt->i;
+    pCrsr = 0;
   }else if( (pC = p->apCsr[p1])->pCursor!=0 ){
     /* The record is stored in a B-Tree */
     sqlite3VdbeCursorMoveto(pC);
@@ -1959,8 +1960,12 @@ case OP_Column: {
     pC->cacheValid = 0;
     assert( payloadSize==0 || zRec!=0 );
     nField = pC->nField;
+    pCrsr = 0;
   }else{
+    zRec = 0;
     payloadSize = 0;
+    pCrsr = 0;
+    nField = 0;
   }
 
   /* If payloadSize is 0, then just push a NULL onto the stack. */
@@ -2200,7 +2205,7 @@ case OP_MakeRecord: {
   unsigned char *zCsr;
   char *zAffinity;
   Mem *pRec;
-  Mem *pRowid;
+  Mem *pRowid = 0;
   int nData = 0;     /* Number of bytes of data space */
   int nHdr = 0;      /* Number of bytes of header space */
   int nByte = 0;     /* Space required for this record */
@@ -3058,7 +3063,7 @@ case OP_NewRecno: {
     ** larger than the previous rowid.  This has been shown experimentally
     ** to double the speed of the COPY operation.
     */
-    int res, rx, cnt;
+    int res, rx=SQLITE_OK, cnt;
     i64 x;
     cnt = 0;
     assert( (sqlite3BtreeFlags(pC->pCursor) & BTREE_INTKEY)!=0 );

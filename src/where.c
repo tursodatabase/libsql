@@ -12,7 +12,7 @@
 ** This module contains C code that generates VDBE code used to process
 ** the WHERE clause of SQL statements.
 **
-** $Id: where.c,v 1.105 2004/06/14 08:26:35 danielk1977 Exp $
+** $Id: where.c,v 1.106 2004/06/16 12:03:10 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -368,7 +368,7 @@ WhereInfo *sqlite3WhereBegin(
   int brk, cont = 0;         /* Addresses used during code generation */
   int nExpr;           /* Number of subexpressions in the WHERE clause */
   int loopMask;        /* One bit set for each outer loop */
-  int haveKey;         /* True if KEY is on the stack */
+  int haveKey = 0;     /* True if KEY is on the stack */
   ExprMaskSet maskSet; /* The expression mask set */
   int iDirectEq[32];   /* Term of the form ROWID==X for the N-th table */
   int iDirectLt[32];   /* Term of the form ROWID<X or ROWID<=X */
@@ -944,7 +944,7 @@ WhereInfo *sqlite3WhereBegin(
       int score = pLevel->score;
       int nEqColumn = score/8;
       int start;
-      int leFlag, geFlag;
+      int leFlag=0, geFlag=0;
       int testOp;
 
       /* Evaluate the equality constraints
