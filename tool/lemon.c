@@ -2923,6 +2923,21 @@ struct lemon *lemp;
   return in;
 }
 
+/* Print a #line directive line to the output file. */
+PRIVATE void tplt_linedir(out,lineno,filename)
+FILE *out;
+int lineno;
+char *filename;
+{
+  fprintf(out,"#line %d \"",lineno);
+  while( *filename ){
+    if( *filename == '\\' ) putc('\\',out);
+    putc(*filename,out);
+    filename++;
+  }
+  fprintf(out,"\"\n");
+}
+
 /* Print a string to the file and keep the linenumber up to date */
 PRIVATE void tplt_print(out,lemp,str,strln,lineno)
 FILE *out;
@@ -2932,13 +2947,15 @@ int strln;
 int *lineno;
 {
   if( str==0 ) return;
-  fprintf(out,"#line %d \"%s\"\n",strln,lemp->filename); (*lineno)++;
+  tplt_linedir(out,strln,lemp->filename);
+  (*lineno)++;
   while( *str ){
     if( *str=='\n' ) (*lineno)++;
     putc(*str,out);
     str++;
   }
-  fprintf(out,"\n#line %d \"%s\"\n",*lineno+2,lemp->outname); (*lineno)+=2;
+  tplt_linedir(out,*lineno+2,lemp->outname); 
+  (*lineno)+=2;
   return;
 }
 
@@ -2958,14 +2975,17 @@ int *lineno;
  if( sp->type==TERMINAL ){
    cp = lemp->tokendest;
    if( cp==0 ) return;
-   fprintf(out,"#line %d \"%s\"\n{",lemp->tokendestln,lemp->filename);
+   tplt_linedir(out,lemp->tokendestln,lemp->filename);
+   fprintf(out,"{");
  }else if( sp->destructor ){
    cp = sp->destructor;
-   fprintf(out,"#line %d \"%s\"\n{",sp->destructorln,lemp->filename);
+   tplt_linedir(out,sp->destructorln,lemp->filename);
+   fprintf(out,"{");
  }else if( lemp->vardest ){
    cp = lemp->vardest;
    if( cp==0 ) return;
-   fprintf(out,"#line %d \"%s\"\n{",lemp->vardestln,lemp->filename);
+   tplt_linedir(out,lemp->vardestln,lemp->filename);
+   fprintf(out,"{");
  }else{
    assert( 0 );  /* Cannot happen */
  }
@@ -2979,7 +2999,8 @@ int *lineno;
    fputc(*cp,out);
  }
  (*lineno) += 3 + linecnt;
- fprintf(out,"}\n#line %d \"%s\"\n",*lineno,lemp->outname);
+ fprintf(out,"}\n");
+ tplt_linedir(out,*lineno,lemp->outname);
  return;
 }
 
@@ -3015,7 +3036,7 @@ PRIVATE char *append_str(char *zText, int n, int p1, int p2){
   static char *z = 0;
   static int alloced = 0;
   static int used = 0;
-  int i, c;
+  int c;
   char zInt[40];
 
   if( zText==0 ){
@@ -3054,9 +3075,9 @@ PRIVATE char *append_str(char *zText, int n, int p1, int p2){
 /*
 ** zCode is a string that is the action associated with a rule.  Expand
 ** the symbols in this string so that the refer to elements of the parser
-** stack.  Return a new string stored in space obtained from malloc.
+** stack.
 */
-PRIVATE char *translate_code(struct lemon *lemp, struct rule *rp){
+PRIVATE void translate_code(struct lemon *lemp, struct rule *rp){
   char *cp, *xp;
   int i;
   char lhsused = 0;    /* True if the LHS element has been used */
@@ -3142,13 +3163,14 @@ int *lineno;
 
  /* Generate code to do the reduce action */
  if( rp->code ){
-   fprintf(out,"#line %d \"%s\"\n{",rp->line,lemp->filename);
-   fprintf(out,"%s",rp->code);
+   tplt_linedir(out,rp->line,lemp->filename);
+   fprintf(out,"{%s",rp->code);
    for(cp=rp->code; *cp; cp++){
      if( *cp=='\n' ) linecnt++;
    } /* End loop */
    (*lineno) += 3 + linecnt;
-   fprintf(out,"}\n#line %d \"%s\"\n",*lineno,lemp->outname);
+   fprintf(out,"}\n");
+   tplt_linedir(out,*lineno,lemp->outname);
  } /* End if( rp->code ) */
 
  return;
