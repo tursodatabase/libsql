@@ -1,5 +1,5 @@
-C Added\stransaction\ssupport\s(CVS\s196)
-D 2001-04-04T11:48:57
+C :-)\s(CVS\s197)
+D 2001-04-04T12:32:09
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in fd8815aa01a7181f60f786158b7737a35413189e
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -87,14 +87,14 @@ F www/changes.tcl 2f8108b1c19f6b1428cd89aeb4da0f446af5a8b6
 F www/crosscompile.tcl c99efacb3aefaa550c6e80d91b240f55eb9fd33e
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/fileformat.tcl cfb7fba80b7275555281ba2f256c00734bcdd1c9
-F www/index.tcl 0ca6421e6e82b17ed0c1779d46463211498f9d12
+F www/index.tcl e45144ed58d2af517e5025d9cd942fbdd334d8f5
 F www/lang.tcl 7fec414487ebee2cbb17c90addf5a026cd10396a
 F www/mingw.tcl fc5f4ba9d336b6e8c97347cc6496d6162461ef60
 F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 06f81c401f79a04f2c5ebfb97e7c176225c0aef2
 F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P 1f0197d504fa2bde15b287ac6c0102cacdb1e482
-R 0c956d20e6dabe568cbda0cb58ce5c9e
+P 35a8feed0d10e780c477f7440fbe80637fcf9906
+R 7fe7e4f7eff15c505b4c1f4711dbba86
 U drh
-Z 9500ff4dc470566bf1bdd893cda52c35
+Z c8bd5683d1f685a3a45bc8f2ce34266c

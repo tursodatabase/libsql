@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.31 2001/02/19 23:28:37 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.32 2001/04/04 12:32:09 drh Exp $}
 
 puts {<html>
 <head><title>SQLite: An SQL Database Library Built Atop GDBM</title></head>
@@ -72,9 +72,7 @@ Among the SQL features that SQLite does not currently implement are:</p>
 
 <p>
 <ul>
-<li>outer joins</li>
 <li>constraints are parsed but are not enforced</li>
-<li>no support for transactions or rollback</li>
 </ul>
 </p>
 
