@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: c_interface.tcl,v 1.37 2003/03/01 19:45:35 drh Exp $}
+set rcsid {$Id: c_interface.tcl,v 1.38 2003/07/08 23:42:25 drh Exp $}
 
 puts {<html>
 <head>
@@ -659,9 +659,20 @@ for the most recent INSERT statement using the
 <h3>3.2 The number of rows that changed</h3>
 
 <p>The <b>sqlite_changes</b> API function returns the number of rows
-that were inserted, deleted, or modified during the most recent
-<b>sqlite_exec</b> call of by <b>sqlite_step</b> calls since the
-most recent <b>sqlite_compile</b>.  The number reported includes any changes
+that have been inserted, deleted, or modified since the database was
+last quiescent.  A "quiescent" database is one in which there are
+no outstanding calls to <b>sqlite_exec</b> and no VMs created by
+<b>sqlite_compile</b> that have not been finalized by <b>sqlite_finalize</b>.
+In common usage, <b>sqlite_changes</b> returns the number
+of rows inserted, deleted, or modified by the most recent <b>sqlite_exec</b>
+call or since the most recent <b>sqlite_compile</b>.  But if you have
+nested calls to <b>sqlite_exec</b> (that is, if the callback routine
+of one <b>sqlite_exec</b> invokes another <b>sqlite_exec</b>) or if
+you invoke <b>sqlite_compile</b> to create a new VM while there is
+still another VM in existance, then
+the meaning of the number returned by <b>sqlite_changes</b> is more
+complex.
+The number reported includes any changes
 that were later undone by a ROLLBACK or ABORT.  But rows that are
 deleted because of a DROP TABLE are <em>not</em> counted.</p>
 
