@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.132 2003/05/31 16:21:12 drh Exp $
+** $Id: main.c,v 1.133 2003/06/02 18:17:33 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -321,7 +321,7 @@ static int sqliteInitOne(sqlite *db, int iDb, char **pzErrMsg){
     db->aDb[iDb].pBt = 0;
     return SQLITE_FORMAT;
   }
-  sqliteBtreeSetCacheSize(db->aDb[iDb].pBt, size);
+  sqliteBtreeSetCacheSize(db->aDb[iDb].pBt, db->cache_size);
   sqliteBtreeSetSafetyLevel(db->aDb[iDb].pBt, meta[4]==0 ? 2 : meta[4]);
 
   /* Read the schema information out of the schema tables

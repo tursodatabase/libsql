@@ -1,5 +1,5 @@
-C Generate\sanchors\sin\sopcode\stable\shtml\sfor\suse\sby\snew\svdbe\stutorial.\s(CVS\s994)
-D 2003-06-02T06:29:31
+C Fix\san\sinitialized\svariable\sin\ssqliteInitOne.\s(CVS\s995)
+D 2003-06-02T18:17:33
 F Makefile.in 1ff85c27d4350c74118341024e8a4fb2a04a3a43
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -33,7 +33,7 @@ F src/func.c 33bbce6acaf9578ac99aa1f689968ccaf2ce43a2
 F src/hash.c 058f077c1f36f266581aa16f907a3903abf64aa3
 F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
 F src/insert.c e34301f41a69cf59c4d75962b2ca5e1af427b5f0
-F src/main.c d299e896377001823e610c0a75d28d1e7adf104e
+F src/main.c 945f9b6855007b28a6c910584d1ca5adff92d821
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
 F src/os.c 080238f03015057879cdf53bc4af9e497f2ba724
 F src/os.h 9e5bbddff123187295e3d00d49af06192cd1cd49
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 1276ddb3074b74e22c579bad6951ea52384c08dd
-R 383f2d8ed344ebdb6abe536074b84581
-U jplyon
-Z d33b503471c19b20907fe973866729a2
+P 3ae36cf158e1878a66ce9302eae4e62f8a88333f
+R cf11d034c1386f71de59882a8268677b
+U drh
+Z 9f04934f87aae134eca4128706bf5285
