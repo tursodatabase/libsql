@@ -25,6 +25,16 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2003 Jan 25 (2.7.6)} {
+<li>Performance improvements.  The library is now much faster.</li>
+<li>Added the <b>sqlite_set_authorizer()</b> API.  Formal documentation has
+    not been written - see the source code comments for instructions on
+    how to use this function.</li>
+<li>Fix a bug in the GLOB operator that was preventing it from working
+    with upper-case letters.</li>
+<li>Various minor bug fixes.</li>
+}
+
 chng {2002 Dec 27 (2.7.5)} {
 <li>Fix an uninitialized variable in pager.c which could (with a probability
     of about 1 in 4 billion) result in a corrupted database.</li>

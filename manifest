@@ -1,9 +1,9 @@
-C Update\sthe\sspeed.html\sdocumentation.\s\sRecent\soptimizations\shave\smade\sthe\nlibrary\smuch\sfaster.\s(CVS\s846)
-D 2003-01-25T14:25:42
+C Preparations\sfor\sthe\srelease\sof\sversion\s2.7.6.\s(CVS\s847)
+D 2003-01-25T14:32:03
 F Makefile.in 6606854b1512f185b8e8c779b8d7fc2750463d64
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
-F VERSION e62321dec1c1ffc06dc20c388bee76fd95a8567b
+F VERSION e19dab5300287e54674b5d57f6343dfe540d7f2c
 F aclocal.m4 11faa843caa38fd451bc6aeb43e248d1723a269d
 F config.guess f38b1e93d1e0fa6f5a6913e9e7b12774b9232588
 F config.sub f14b07d544ca26b5d698259045136b783e18fc7f
@@ -134,7 +134,7 @@ F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 679a0c48817f71bc91d5911ef386e5ef35d4f178
 F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
 F www/c_interface.tcl e76c9fd609326c34cd45cd040b508b0e21908800
-F www/changes.tcl 885da7df21c83167465d212ddf5eb77f84e13e21
+F www/changes.tcl b48068eabfd0ff603d90f75b01bed295f23198e2
 F www/conflict.tcl 81dd21f9a679e60aae049e9dd8ab53d59570cda2
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
 F www/datatypes.tcl 0cb28565580554fa7e03e8fcb303e87ce57757ae
@@ -154,7 +154,7 @@ F www/speed.tcl 4d463e2aea41f688ed320a937f93ff885be918c3
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P c7e647d011b086a6e57420850f6bc4f28fcb23ee
-R fb265d63c9802489e93e63983e966b97
+P ed47d162a072a2f98b633cc14f2be1474288d90b
+R ac275003d5c8579bbef067d7114575c1
 U drh
-Z 9cebef5aee83f0a69d880740ef12b3fa
+Z a9f481ee056716188ea06cbf02c53f2b
