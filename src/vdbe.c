@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.399 2004/06/30 11:41:55 drh Exp $
+** $Id: vdbe.c,v 1.400 2004/06/30 23:04:33 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2954,14 +2954,14 @@ case OP_NewRecno: {
         }else{
           sqlite3BtreeKeySize(pC->pCursor, &v);
           v = keyToInt(v);
-          if( v==0x7fffffffffffffffLL ){
+          if( v==0x7fffffffffffffff ){
             pC->useRandomRowid = 1;
           }else{
             v++;
           }
         }
       }
-      if( v<0x7fffffffffffffffLL ){
+      if( v<0x7fffffffffffffff ){
         pC->nextRowidValid = 1;
         pC->nextRowid = v+1;
       }else{
