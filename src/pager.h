@@ -13,7 +13,7 @@
 ** subsystem.  The page cache subsystem reads and writes a file a page
 ** at a time and provides a journal for rollback.
 **
-** @(#) $Id: pager.h,v 1.23 2003/04/25 13:22:53 drh Exp $
+** @(#) $Id: pager.h,v 1.24 2004/02/09 01:20:37 drh Exp $
 */
 
 /*
@@ -24,7 +24,9 @@
 ** experiments show that a page size of 1024 gives the best speed.
 ** (The speed differences are minimal.)
 */
+#ifndef SQLITE_PAGE_SIZE
 #define SQLITE_PAGE_SIZE 1024
+#endif
 
 /*
 ** Maximum number of pages in one database.  (This is a limitation of
@@ -75,6 +77,7 @@ int *sqlitepager_stats(Pager*);
 void sqlitepager_set_safety_level(Pager*,int);
 const char *sqlitepager_filename(Pager*);
 int sqlitepager_rename(Pager*, const char *zNewName);
+void sqlitepager_set_codec(Pager*,void(*)(void*,void*,int),void*);
 
 #ifdef SQLITE_TEST
 void sqlitepager_refdump(Pager*);

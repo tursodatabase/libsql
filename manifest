@@ -1,5 +1,5 @@
-C Version\s2.8.12\s(CVS\s1213)
-D 2004-02-08T18:10:50
+C Add\san\soptional\scodec\sto\sthe\spager\slayer.\s(CVS\s1214)
+D 2004-02-09T01:20:37
 F Makefile.in cfd75c46b335881999333a9e4b982fa8491f200b
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -40,8 +40,8 @@ F src/main.c 808ea1bda0798f4a714479aee8289d65f04cf29b
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
 F src/os.c 681ec36217bc7c795d55d9a63ff79a8614ddee8c
 F src/os.h 8d02b622153d2df442da1ec37cdd6b1bd9804a25
-F src/pager.c 7258db4fb61fa2df7a1c961f16d23a6fc0055833
-F src/pager.h 5da62c83443f26b1792cfd72c96c422f91aadd31
+F src/pager.c 71d17c231d1bec68190be088a9652d31294ec30f
+F src/pager.h 767867c835ebc29bb8929c50e6036ae8e79d534a
 F src/parse.y 7a121554c0c0c0150a77ab05417b01fa44813ac4
 F src/pragma.c 89d62c31c6f0a43376fe8d20549b87a6d30c467a
 F src/printf.c 84e4ea4ba49cbbf930e95e82295127ad5843ae1f
@@ -183,7 +183,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 93ccd1b1d63b5b914b84b0463f2267bcfaadafa3
-R 7f0b69bb3003a648f1aaf93ee37865e5
+P 1736d415d776aa1cbdd33d987d21365ebf260f11
+R 429365f2137a58eb3bc313df232c3720
 U drh
-Z 3655582f22f2c5822a44942230c47f99
+Z a349ad5865c2d07827b7d95bf499b627
