@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.74 2002/12/04 13:40:26 drh Exp $
+** $Id: btree.c,v 1.75 2002/12/04 22:29:28 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1495,7 +1495,8 @@ int sqliteBtreeLast(BtCursor *pCur, int *pRes){
 ** this value is as follows:
 **
 **     *pRes<0      The cursor is left pointing at an entry that
-**                  is smaller than pKey.
+**                  is smaller than pKey or if the table is empty
+**                  and the cursor is therefore left point to nothing.
 **
 **     *pRes==0     The cursor is left pointing at an entry that
 **                  exactly matches pKey.
@@ -1513,7 +1514,7 @@ int sqliteBtreeMoveto(BtCursor *pCur, const void *pKey, int nKey, int *pRes){
     int lwr, upr;
     Pgno chldPg;
     MemPage *pPage = pCur->pPage;
-    int c = -1;
+    int c = -1;  /* pRes return if table is empty must be -1 */
     lwr = 0;
     upr = pPage->nCell-1;
     while( lwr<=upr ){

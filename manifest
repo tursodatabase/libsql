@@ -1,5 +1,5 @@
-C Fixes\sto\sthe\slogic\sthat\sdecides\sif\sthe\sORDER\sBY\scan\sbe\signored\sdue\sto\sthe\nuse\sof\san\sindex.\s\sTests\supdated.\s(CVS\s796)
-D 2002-12-04T21:50:16
+C Fix\sa\sbug\sin\sthe\sreverse\sscan\slogic\sthat\scomes\sup\swhen\sthe\stable\sbeing\nscanned\sis\sempty.\s\sAdd\sadditional\stests\sfor\sthe\sreverse\sscan.\s(CVS\s797)
+D 2002-12-04T22:29:28
 F Makefile.in 868c17a1ae1c07603d491274cc8f86c04acf2a1e
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -18,7 +18,7 @@ F main.mk 9d13839b9697af332d788fe6e801e68da027cc5c
 F publish.sh e5b83867d14708ed58cec8cba0a4f201e969474d
 F spec.template 238f7db425a78dc1bb7682e56e3834c7270a3f5e
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
-F src/btree.c 2ae69698a620c01b9cb88f447be01ab3e1e3355f
+F src/btree.c 215d4b322c98fbff795095fa253d9ea108d4b9de
 F src/btree.h 17710339f7a8f46e3c7d6d0d4648ef19c584ffda
 F src/build.c 415dce8886aabb6d45851caed7014707056d668b
 F src/delete.c aad9d4051ab46e6f6391ea5f7b8994a7c05bdd15
@@ -52,7 +52,7 @@ F src/tokenize.c 75e3bb37305b64e118e709752066f494c4f93c30
 F src/trigger.c 5ba917fc226b96065108da28186c2efaec53e481
 F src/update.c 881e4c8e7c786545da4fd2d95da19252b2e31137
 F src/util.c ca7650ef2cc2d50241e48029fca109a3016144ee
-F src/vdbe.c 84b224d0ecfb2555a976f074924dd3e6d3d91dfb
+F src/vdbe.c aa6165ae4f2303795e4c5531293576c541363e40
 F src/vdbe.h b7584044223104ba7896a7f87b66daebdd6022ba
 F src/where.c af235636b7bc7f7f42ee1c7162d1958ad0102cab
 F test/all.test 873d30e25a41b3aa48fec5633a7ec1816e107029
@@ -115,7 +115,7 @@ F test/update.test 7ffb062d580a972e7870d0f51d5af3ab9bfeae08
 F test/vacuum.test 059871b312eb910bbe49dafde1d01490cc2c6bbe
 F test/version.test 605fd0d7e7d571370c32b12dbf395b58953de246
 F test/view.test c64fa39ea57f3c2066c854290f032ad13b23b83d
-F test/where.test 9e6e7e0a8bc6eff879bf12a497d6529df7fa9852
+F test/where.test ffaa91611edb8961d887d02492aa13f82782ff66
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/lemon.c 022adc2830c2705828f744d2c59798bd462eb465
 F tool/lempar.c 73a991cc3017fb34804250fa901488b5147b3717
@@ -152,7 +152,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P c7a3487981de0ed5b43ea3ff4d46ab4437068dca
-R ad809775145f9a28c47c1aa04b1e5814
+P bfb9a2aa939ecffc5dc2c7c23bddd57d357bdf13
+R e8e5bb54da6e21aac3b570ab92f52726
 U drh
-Z 2d97197b4281b66cabb81cf1fc140ed8
+Z ef156328459f096ede699892581cbeef

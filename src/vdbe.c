@@ -36,7 +36,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.186 2002/12/04 20:01:06 drh Exp $
+** $Id: vdbe.c,v 1.187 2002/12/04 22:29:29 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -3394,9 +3394,17 @@ case OP_MoveTo: {
       if( res && pOp->p2>0 ){
         pc = pOp->p2 - 1;
       }
-    }else if( oc==OP_MoveLt && res>=0 ){
-      sqliteBtreePrevious(pC->pCursor, &res);
-      pC->recnoIsValid = 0;
+    }else if( oc==OP_MoveLt ){
+      if( res>=0 ){
+        sqliteBtreePrevious(pC->pCursor, &res);
+        pC->recnoIsValid = 0;
+      }else{
+        /* res might be negative because the table is empty.  Check to
+        ** see if this is the case.
+        */
+        int keysize;
+        res = sqliteBtreeKeySize(pC->pCursor,&keysize)!=0 || keysize==0;
+      }
       if( res && pOp->p2>0 ){
         pc = pOp->p2 - 1;
       }

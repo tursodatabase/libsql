@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the use of indices in WHERE clases.
 #
-# $Id: where.test,v 1.12 2002/12/04 21:50:16 drh Exp $
+# $Id: where.test,v 1.13 2002/12/04 22:29:29 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -588,5 +588,104 @@ do_test where-7.14 {
     SELECT w FROM t1 WHERE x=3 AND y>100 AND y<196 ORDER BY y;
   }
 } {10 11 12 nosort}
+do_test where-7.15 {
+  cksort {
+    SELECT w FROM t1 WHERE x=3 AND y<81 ORDER BY y;
+  }
+} {nosort}
+do_test where-7.16 {
+  cksort {
+    SELECT w FROM t1 WHERE x=3 AND y<=81 ORDER BY y;
+  }
+} {8 nosort}
+do_test where-7.17 {
+  cksort {
+    SELECT w FROM t1 WHERE x=3 AND y>256 ORDER BY y;
+  }
+} {nosort}
+do_test where-7.18 {
+  cksort {
+    SELECT w FROM t1 WHERE x=3 AND y>=256 ORDER BY y;
+  }
+} {15 nosort}
+do_test where-7.19 {
+  cksort {
+    SELECT w FROM t1 WHERE x=3 AND y<81 ORDER BY y DESC;
+  }
+} {nosort}
+do_test where-7.20 {
+  cksort {
+    SELECT w FROM t1 WHERE x=3 AND y<=81 ORDER BY y DESC;
+  }
+} {8 nosort}
+do_test where-7.21 {
+  cksort {
+    SELECT w FROM t1 WHERE x=3 AND y>256 ORDER BY y DESC;
+  }
+} {nosort}
+do_test where-7.22 {
+  cksort {
+    SELECT w FROM t1 WHERE x=3 AND y>=256 ORDER BY y DESC;
+  }
+} {15 nosort}
+do_test where-7.23 {
+  cksort {
+    SELECT w FROM t1 WHERE x=0 AND y<4 ORDER BY y;
+  }
+} {nosort}
+do_test where-7.24 {
+  cksort {
+    SELECT w FROM t1 WHERE x=0 AND y<=4 ORDER BY y;
+  }
+} {1 nosort}
+do_test where-7.25 {
+  cksort {
+    SELECT w FROM t1 WHERE x=6 AND y>10201 ORDER BY y;
+  }
+} {nosort}
+do_test where-7.26 {
+  cksort {
+    SELECT w FROM t1 WHERE x=6 AND y>=10201 ORDER BY y;
+  }
+} {100 nosort}
+do_test where-7.27 {
+  cksort {
+    SELECT w FROM t1 WHERE x=0 AND y<4 ORDER BY y DESC;
+  }
+} {nosort}
+do_test where-7.28 {
+  cksort {
+    SELECT w FROM t1 WHERE x=0 AND y<=4 ORDER BY y DESC;
+  }
+} {1 nosort}
+do_test where-7.29 {
+  cksort {
+    SELECT w FROM t1 WHERE x=6 AND y>10201 ORDER BY y DESC;
+  }
+} {nosort}
+do_test where-7.30 {
+  cksort {
+    SELECT w FROM t1 WHERE x=6 AND y>=10201 ORDER BY y DESC;
+  }
+} {100 nosort}
+
+do_test where-8.1 {
+  execsql {
+    CREATE TABLE t4 AS SELECT * FROM t1;
+    CREATE INDEX i4xy ON t4(x,y);
+  }
+  cksort {
+    SELECT w FROM t4 WHERE x=4 and y<1000 ORDER BY y DESC limit 3;
+  }
+} {30 29 28 nosort}
+do_test where-8.2 {
+  execsql {
+    DELETE FROM t4;
+  }
+  cksort {
+    SELECT w FROM t4 WHERE x=4 and y<1000 ORDER BY y DESC limit 3;
+  }
+} {nosort}
+
 
 finish_test
