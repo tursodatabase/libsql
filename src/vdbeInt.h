@@ -80,14 +80,14 @@ struct Cursor {
   i64 iKey;             /* Key for the NEW or OLD pseudo-table row */
   u8 *pIncrKey;         /* Pointer to pKeyInfo->incrKey */
   KeyInfo *pKeyInfo;    /* Info about index keys needed by index cursors */
+  int nField;           /* Number of fields in the header */
 
   /* Cached information about the header for the data record that the
   ** cursor is currently pointing to */
   Bool cacheValid;      /* True if the cache is valid */
-  int nField;           /* Number of fields in the header */
-  int nHeader;          /* Number of bytes in the entire header */
   int payloadSize;      /* Total number of bytes in the record */
-  u64 *aType;           /* Type values for all entries in the record */
+  u32 *aType;           /* Type values for all entries in the record */
+  u32 *aOffset;         /* Cached offsets to the start of each columns data */
 };
 typedef struct Cursor Cursor;
 
@@ -367,4 +367,3 @@ int sqlite3VdbeMemRealify(Mem*);
 #ifndef NDEBUG
 void sqlite3VdbeMemSanity(Mem*, u8);
 #endif
-

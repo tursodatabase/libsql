@@ -1431,44 +1431,37 @@ int sqlite3VdbeRowCompare(
   int nKey2, const void *pKey2
 ){
   KeyInfo *pKeyInfo = (KeyInfo*)userData;
-  int offset1 = 0;
-  int offset2 = 0;
-  int toffset1 = 0;
-  int toffset2 = 0;
-  int i;
-  u8 enc = pKeyInfo->enc;
+  u32 d1, d2;          /* Offset into aKey[] of next data element */
+  u32 idx1, idx2;      /* Offset into aKey[] of next header element */
+  u32 szHdr1, szHdr2;  /* Number of bytes in header */
+  int i = 0;
+  int nField;
+  int rc = 0;
   const unsigned char *aKey1 = (const unsigned char *)pKey1;
   const unsigned char *aKey2 = (const unsigned char *)pKey2;
-
-  assert( pKeyInfo );
-  assert( pKeyInfo->nField>0 );
-
-  for( i=0; i<pKeyInfo->nField; i++ ){
-    u64 dummy;
-    offset1 += sqlite3GetVarint(&aKey1[offset1], &dummy);
-    offset2 += sqlite3GetVarint(&aKey1[offset1], &dummy);
-  }
-
-  for( i=0; i<pKeyInfo->nField; i++ ){
+  
+  idx1 = sqlite3GetVarint32(pKey1, &szHdr1);
+  d1 = szHdr1;
+  idx2 = sqlite3GetVarint32(pKey2, &szHdr2);
+  d2 = szHdr2;
+  nField = pKeyInfo->nField;
+  while( idx1<szHdr1 && idx2<szHdr2 && d1<nKey1 && d2<nKey2 && i<nField ){
     Mem mem1;
     Mem mem2;
-    u64 serial_type1;
-    u64 serial_type2;
-    int rc;
+    u32 serial_type1;
+    u32 serial_type2;
 
     /* Read the serial types for the next element in each key. */
-    toffset1 += sqlite3GetVarint(&aKey1[toffset1], &serial_type1);
-    toffset2 += sqlite3GetVarint(&aKey2[toffset2], &serial_type2);
-
-    assert( serial_type1 && serial_type2 );
+    idx1 += sqlite3GetVarint32(&aKey1[idx1], &serial_type1);
+    idx2 += sqlite3GetVarint32(&aKey2[idx2], &serial_type2);
 
     /* Assert that there is enough space left in each key for the blob of
     ** data to go with the serial type just read. This assert may fail if
     ** the file is corrupted.  Then read the value from each key into mem1
     ** and mem2 respectively.
     */
-    offset1 += sqlite3VdbeSerialGet(&aKey1[offset1], serial_type1, &mem1, enc);
-    offset2 += sqlite3VdbeSerialGet(&aKey2[offset2], serial_type2, &mem2, enc);
+    d1 += sqlite3VdbeSerialGet(&aKey1[d1], serial_type1, &mem1, 0);
+    d2 += sqlite3VdbeSerialGet(&aKey2[d2], serial_type2, &mem2, 0);
 
     rc = sqlite3MemCompare(&mem1, &mem2, pKeyInfo->aColl[i]);
     if( mem1.flags&MEM_Dyn ){
@@ -1478,11 +1471,31 @@ int sqlite3VdbeRowCompare(
       sqliteFree(mem2.z);
     }
     if( rc!=0 ){
-      return rc;
+      break;
+    }
+    i++;
+  }
+
+  /* One of the keys ran out of fields, but all the fields up to that point
+  ** were equal. If the incrKey flag is true, then the second key is
+  ** treated as larger.
+  */
+  if( rc==0 ){
+    if( pKeyInfo->incrKey ){
+      assert( d2==nKey2 );
+      rc = -1;
+    }else if( d1<nKey1 ){
+      rc = 1;
+    }else if( d2<nKey2 ){
+      rc = -1;
     }
   }
 
-  return 0;
+  if( pKeyInfo->aSortOrder && i<pKeyInfo->nField && pKeyInfo->aSortOrder[i] ){
+    rc = -rc;
+  }
+
+  return rc;
 }
   
 
