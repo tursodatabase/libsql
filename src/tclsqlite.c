@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.104 2004/09/06 17:24:13 drh Exp $
+** $Id: tclsqlite.c,v 1.105 2004/09/07 13:20:35 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -72,35 +72,6 @@ struct SqliteDb {
   int rc;               /* Return code of most recent sqlite3_exec() */
   Tcl_Obj *pCollateNeeded;  /* Collation needed script */
 };
-
-/*
-** This is a second alternative callback for database queries.  A the
-** first column of the first row of the result is made the TCL result.
-*/
-static int DbEvalCallback3(
-  void *clientData,      /* An instance of CallbackData */
-  int nCol,              /* Number of columns in the result */
-  char ** azCol,         /* Data for each column */
-  char ** azN            /* Name for each column */
-){
-  Tcl_Interp *interp = (Tcl_Interp*)clientData;
-  Tcl_Obj *pElem;
-  if( azCol==0 ) return 1;
-  if( nCol==0 ) return 1;
-#ifdef UTF_TRANSLATION_NEEDED
-  {
-    Tcl_DString dCol;
-    Tcl_DStringInit(&dCol);
-    Tcl_ExternalToUtfDString(NULL, azCol[0], -1, &dCol);
-    pElem = Tcl_NewStringObj(Tcl_DStringValue(&dCol), -1);
-    Tcl_DStringFree(&dCol);
-  }
-#else
-  pElem = Tcl_NewStringObj(azCol[0], -1);
-#endif
-  Tcl_SetObjResult(interp, pElem);
-  return 1;
-}
 
 /*
 ** TCL calls this procedure when an sqlite3 database command is
@@ -496,48 +467,6 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     break;
   }
 
-  /*    $db progress ?N CALLBACK?
-  ** 
-  ** Invoke the given callback every N virtual machine opcodes while executing
-  ** queries.
-  */
-  case DB_PROGRESS: {
-    if( objc==2 ){
-      if( pDb->zProgress ){
-        Tcl_AppendResult(interp, pDb->zProgress, 0);
-      }
-    }else if( objc==4 ){
-      char *zProgress;
-      int len;
-      int N;
-      if( TCL_OK!=Tcl_GetIntFromObj(interp, objv[2], &N) ){
-	return TCL_ERROR;
-      };
-      if( pDb->zProgress ){
-        Tcl_Free(pDb->zProgress);
-      }
-      zProgress = Tcl_GetStringFromObj(objv[3], &len);
-      if( zProgress && len>0 ){
-        pDb->zProgress = Tcl_Alloc( len + 1 );
-        strcpy(pDb->zProgress, zProgress);
-      }else{
-        pDb->zProgress = 0;
-      }
-#ifndef SQLITE_OMIT_PROGRESS_CALLBACK
-      if( pDb->zProgress ){
-        pDb->interp = interp;
-        sqlite3_progress_handler(pDb->db, N, DbProgressHandler, pDb);
-      }else{
-        sqlite3_progress_handler(pDb->db, 0, 0, 0);
-      }
-#endif
-    }else{
-      Tcl_WrongNumArgs(interp, 2, objv, "N CALLBACK");
-      return TCL_ERROR;
-    }
-    break;
-  }
-
   /*     $db changes
   **
   ** Return the number of rows that were modified, inserted, or deleted by
@@ -685,13 +614,18 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
    
   /*
   **    $db eval $sql ?array? ?{  ...code... }?
+  **    $db onecolumn $sql
   **
   ** The SQL statement in $sql is evaluated.  For each row, the values are
   ** placed in elements of the array named "array" and ...code... is executed.
   ** If "array" and "code" are omitted, then no callback is every invoked.
   ** If "array" is an empty string, then the values are placed in variables
   ** that have the same name as the fields extracted by the query.
+  **
+  ** The onecolumn method is the equivalent of:
+  **     lindex [$db eval $sql] 0
   */
+  case DB_ONECOLUMN:
   case DB_EVAL: {
     char const *zSql;      /* Next SQL statement to execute */
     char const *zLeft;     /* What is left after first stmt in zSql */
@@ -701,13 +635,21 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     Tcl_Obj **apParm;      /* Parameters that need a Tcl_DecrRefCount() */
     int nParm;             /* Number of entries used in apParm[] */
     Tcl_Obj *aParm[10];    /* Static space for apParm[] in the common case */
+    Tcl_Obj *pRet;         /* Value to be returned */
 
-    Tcl_Obj *pRet = Tcl_NewObj();
-    Tcl_IncrRefCount(pRet);
-
-    if( objc<3 || objc>5 ){
-      Tcl_WrongNumArgs(interp, 2, objv, "SQL ?ARRAY-NAME? ?SCRIPT?");
-      return TCL_ERROR;
+    if( choice==DB_ONECOLUMN ){
+      if( objc!=3 ){
+        Tcl_WrongNumArgs(interp, 2, objv, "SQL");
+        return TCL_ERROR;
+      }
+      pRet = 0;
+    }else{
+      if( objc<3 || objc>5 ){
+        Tcl_WrongNumArgs(interp, 2, objv, "SQL ?ARRAY-NAME? ?SCRIPT?");
+        return TCL_ERROR;
+      }
+      pRet = Tcl_NewObj();
+      Tcl_IncrRefCount(pRet);
     }
     if( objc==3 ){
       pArray = pScript = 0;
@@ -784,7 +726,6 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
           }
         }
       }
-   
 
       /* Compute column names */
       nCol = sqlite3_column_count(pStmt);
@@ -848,6 +789,12 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
             }else{
               Tcl_ObjSetVar2(interp, pArray, apColName[i], pVal, 0);
             }
+          }else if( choice==DB_ONECOLUMN ){
+            if( pRet==0 ){
+              pRet = pVal;
+              Tcl_IncrRefCount(pRet);
+            }
+            goto end_step;
           }else{
             Tcl_ListObjAppendElement(interp, pRet, pVal);
           }
@@ -858,6 +805,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
           if( rc!=TCL_ERROR ) rc = TCL_OK;
         }
       }
+    end_step:
 
       /* Free the column name objects */
       if( pScript ){
@@ -892,10 +840,12 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     }
     Tcl_DecrRefCount(objv[2]);
 
-    if( rc==TCL_OK ){
-      Tcl_SetObjResult(interp, pRet);
+    if( pRet ){
+      if( rc==TCL_OK ){
+        Tcl_SetObjResult(interp, pRet);
+      }
+      Tcl_DecrRefCount(pRet);
     }
-    Tcl_DecrRefCount(pRet);
 
     break;
   }
@@ -949,28 +899,47 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   }
 
   /*
-  **     $db onecolumn SQL
-  **
-  ** Return a single column from a single row of the given SQL query.
+  ** The DB_ONECOLUMN method is implemented together with DB_EVAL.
   */
-  case DB_ONECOLUMN: {
-    char *zSql;
-    char *zErrMsg = 0;
-    if( objc!=3 ){
-      Tcl_WrongNumArgs(interp, 2, objv, "SQL");
+
+  /*    $db progress ?N CALLBACK?
+  ** 
+  ** Invoke the given callback every N virtual machine opcodes while executing
+  ** queries.
+  */
+  case DB_PROGRESS: {
+    if( objc==2 ){
+      if( pDb->zProgress ){
+        Tcl_AppendResult(interp, pDb->zProgress, 0);
+      }
+    }else if( objc==4 ){
+      char *zProgress;
+      int len;
+      int N;
+      if( TCL_OK!=Tcl_GetIntFromObj(interp, objv[2], &N) ){
+	return TCL_ERROR;
+      };
+      if( pDb->zProgress ){
+        Tcl_Free(pDb->zProgress);
+      }
+      zProgress = Tcl_GetStringFromObj(objv[3], &len);
+      if( zProgress && len>0 ){
+        pDb->zProgress = Tcl_Alloc( len + 1 );
+        strcpy(pDb->zProgress, zProgress);
+      }else{
+        pDb->zProgress = 0;
+      }
+#ifndef SQLITE_OMIT_PROGRESS_CALLBACK
+      if( pDb->zProgress ){
+        pDb->interp = interp;
+        sqlite3_progress_handler(pDb->db, N, DbProgressHandler, pDb);
+      }else{
+        sqlite3_progress_handler(pDb->db, 0, 0, 0);
+      }
+#endif
+    }else{
+      Tcl_WrongNumArgs(interp, 2, objv, "N CALLBACK");
       return TCL_ERROR;
-    }
-    zSql = Tcl_GetStringFromObj(objv[2], 0);
-    rc = sqlite3_exec(pDb->db, zSql, DbEvalCallback3, interp, &zErrMsg);
-    if( rc==SQLITE_ABORT ){
-      rc = SQLITE_OK;
-    }else if( zErrMsg ){
-      Tcl_SetResult(interp, zErrMsg, TCL_VOLATILE);
-      free(zErrMsg);
-      rc = TCL_ERROR;
-    }else if( rc!=SQLITE_OK ){
-      Tcl_AppendResult(interp, sqlite3ErrStr(rc), 0);
-      rc = TCL_ERROR;
     }
     break;
   }

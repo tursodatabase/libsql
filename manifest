@@ -1,5 +1,5 @@
-C Lemon\sescapes\sbackslashes\sin\sfilenames\sin\s#line\sdirectives\sit\sgenerates.\nTicket\s#892.\s(CVS\s1943)
-D 2004-09-07T11:28:25
+C Fix\sthe\sonecolumn\smethod\sin\sthe\sTCL\sinterface\sso\sthat\sit\sworks\sthe\ssame\nas\sthe\seval\smethod\sin\sall\sways\sexcept\sfor\sreturning\sjust\sthe\sfirst\svalue\nin\sthe\sresult\sset.\s(CVS\s1944)
+D 2004-09-07T13:20:35
 F Makefile.in 65a7c43fcaf9a710d62f120b11b6e435eeb4a450
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -63,7 +63,7 @@ F src/shell.c 4f1a2760ced81c829defb47b0a3b61ffec61b604
 F src/sqlite.h.in 8bdf3fc4c76040f939cb1831eb97babf6a2fa858
 F src/sqliteInt.h 0840e651db8e16f88f2b8a2393ac98dfdbf01df0
 F src/table.c 8168c6e824009f8485bff79fc60ea8fea6829b10
-F src/tclsqlite.c ad6460a22cee18f292614a083cd15db670298213
+F src/tclsqlite.c 9225350a3144b3c0dd07a3cc88d2c219d57e2f0d
 F src/test1.c 0a7ae23d822177ecf3e8b577d026f0c8a39fe5c3
 F src/test2.c f4c2f3928f1998fd8cb75a81e33a60e025ea85d4
 F src/test3.c 94d0a2a90bccd85802488cb42c69ec8afd2e4646
@@ -170,7 +170,7 @@ F test/sort.test 35e9d6bd6930969050606c8feb9c6745469720e3
 F test/subselect.test 50f98723f00e97b1839d36410ee63597ca82d775
 F test/table.test fd9a0f4992230e4ca89cd37ae3191a12750df1d0
 F test/tableapi.test b21ab097e87a5484bb61029e69e1a4e5c5e65ede
-F test/tclsqlite.test d84b91f5e8219bbaf7f960ce649806eb39cc703f
+F test/tclsqlite.test de670beccf910163bf49973a3a96eaa00cdf127e
 F test/temptable.test 63a16e3ad19adf073cfbcdf7624c92ac5236522c
 F test/tester.tcl 1ff1170dd4203d87f572871080cdb64330dade99
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
@@ -248,7 +248,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 23e5bed1c5062f0f639751f89873bf1a277547bd
-R e40cf5a15ff3721d6f9f87371f66f8fc
+P d53047cbbc4e618c7bb5161b6f82876bb113db25
+R 303fc0394eb00108b3dd869bec641bd9
 U drh
-Z 9268fa6b52f2c5d13e0dc61c8a84d6ef
+Z 3769d67a37ed8f4ac0e4d151ebaba45a

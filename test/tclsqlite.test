@@ -15,7 +15,7 @@
 # interface is pretty well tested.  This file contains some addition
 # tests for fringe issues that the main test suite does not cover.
 #
-# $Id: tclsqlite.test,v 1.30 2004/08/20 18:34:20 drh Exp $
+# $Id: tclsqlite.test,v 1.31 2004/09/07 13:20:35 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -170,6 +170,24 @@ do_test tcl-3.4 {
   set rc [catch {db onecolumn {SELECT bogus}} errmsg]
   lappend rc $errmsg
 } {1 {no such column: bogus}}
+do_test tcl-3.5 {
+  set b 50
+  set rc [catch {db one {SELECT * FROM t1 WHERE b>$b}} msg]
+  lappend rc $msg
+} {0 41}
+do_test tcl-3.6 {
+  set b 500
+  set rc [catch {db one {SELECT * FROM t1 WHERE b>$b}} msg]
+  lappend rc $msg
+} {0 {}}
+do_test tcl-3.7 {
+  set b 500
+  set rc [catch {db one {
+    INSERT INTO t1 VALUES(99,510);
+    SELECT * FROM t1 WHERE b>$b
+  }} msg]
+  lappend rc $msg
+} {0 99}
 
 # Turn the busy handler on and off
 #
