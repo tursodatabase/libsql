@@ -1,5 +1,5 @@
-C Fix\scomment\stypo\sin\smkopcodec.awk.\s(CVS\s2247)
-D 2005-01-20T23:23:29
+C Fix\sa\ssegfault\sthat\soccurs\son\sa\scorrupt\sdatabase.\s(CVS\s2248)
+D 2005-01-21T00:22:38
 F Makefile.in ffd81f5e926d40b457071b4de8d7c1fa18f39b5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -29,7 +29,7 @@ F sqlite3.def dbaeb20c153e1d366e8f421b55a573f5dfc00863
 F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
 F src/attach.c cecf5ab42cff34416372a0210b14abb50ed48ef9
 F src/auth.c 3b81f2a42f48a62c2c9c9b0eda31a157c681edea
-F src/btree.c 97101cce85304edbaedafc5f39ab12e2dc78b076
+F src/btree.c 011acf7cedbe591bfe8207ac10050d9024807282
 F src/btree.h 74d19cf40ab49fd69abe9e4e12a6c321ad86c497
 F src/build.c da5ecd9880f2d19d5e77fe48b722577494dd3290
 F src/cursor.c de73c00aefc4747ad59b5105cf38bbff0667922e
@@ -270,7 +270,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P 38401dfbd5e3b50dd4e7a11562a7770347cebdf4
-R 69ecd793b22ffd09e046ce8f7a5059e7
+P 6177148260c5e3e28df6ea1c486ba3642a745a01
+R 2762bf2e811176504fb47e78ea804eef
 U drh
-Z 999c73bc1f14790b0e392ad4e5465264
+Z 97ed2a34cf1783e6f50f5fa286617335
