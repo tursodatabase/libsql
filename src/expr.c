@@ -23,9 +23,34 @@
 *************************************************************************
 ** This file contains C code routines used for processing expressions
 **
-** $Id: expr.c,v 1.6 2000/06/05 18:54:46 drh Exp $
+** $Id: expr.c,v 1.7 2000/06/06 01:50:43 drh Exp $
 */
 #include "sqliteInt.h"
+
+/*
+** Walk an expression tree.  Return 1 if the expression is constant
+** and 0 if it involves variables.
+*/
+static int isConstant(Expr *p){
+  switch( p->op ){
+    case TK_ID:
+    case TK_FIELD:
+    case TK_DOT:
+      return 0;
+    default: {
+      if( p->pLeft && !isConstant(p->pLeft) ) return 0;
+      if( p->pRight && !isConstant(p->pRight) ) return 0;
+      if( p->pList ){
+        int i;
+        for(i=0; i<p->pList->nExpr; i++){
+          if( !isConstant(p->pList->a[i].pExpr) ) return 0;
+        }
+      }
+      break;
+    }
+  }
+  return 1;
+}
 
 /*
 ** This routine walks an expression tree and resolves references to
@@ -36,7 +61,18 @@
 ** value.  The iField value is changed to the index of the field of the 
 ** referenced table.
 **
-** This routine also looks for SELECTs that are part of an expression.
+** We also check for instances of the IN operator.  IN comes in two
+** forms:
+**
+**           expr IN (exprlist)
+** and
+**           expr IN (SELECT ...)
+**
+** The first form is handled by creating a set holding the list
+** of allowed values.  The second form causes the SELECT to generate 
+** a temporary table.
+**
+** This routine also looks for scalar SELECTs that are part of an expression.
 ** If it finds any, it generates code to write the value of that select
 ** into a memory cell.
 **
@@ -137,9 +173,70 @@ int sqliteExprResolveIds(Parse *pParse, IdList *pTabList, Expr *pExpr){
       break;
     }
 
+    case TK_IN: {
+      Vdbe *v = pParse->pVdbe;
+      if( v==0 ){
+        v = pParse->pVdbe = sqliteVdbeCreate(pParse->db->pBe);
+      }
+      if( v==0 ) return 1;
+      if( pExpr->pSelect ){
+        /* Case 1:     expr IN (SELECT ...)
+        **
+        ** Generate code to write the results of the select into a temporary
+        ** table.  The cursor number of the temporary table is stored in 
+        ** iTable.
+        */
+        pExpr->iTable = pParse->nTab++;
+        sqliteVdbeAddOp(v, OP_Open, pExpr->iTable, 0, 0, 0);
+        if( sqliteSelect(pParse, pExpr->pSelect, SRT_Set, pExpr->iTable) );
+      }else if( pExpr->pList ){
+        /* Case 2:     expr IN (exprlist)
+        **
+        ** Create a set to put the exprlist values in.  The Set id is stored
+        ** in iTable.
+        */
+        int i, iSet;
+        for(i=0; i<pExpr->pList->nExpr; i++){
+          Expr *pE2 = pExpr->pList->a[i].pExpr;
+          if( sqliteExprCheck(pParse, pE2, 0, 0) ){
+            return 1;
+          }
+          if( !isConstant(pE2) ){
+            sqliteSetString(&pParse->zErrMsg,
+              "right-hand side of IN operator must be constant", 0);
+            pParse->nErr++;
+            return 1;
+          }
+        }
+        iSet = pExpr->iTable = pParse->nSet++;
+        for(i=0; i<pExpr->pList->nExpr; i++){
+          Expr *pE2 = pExpr->pList->a[i].pExpr;
+          switch( pE2->op ){
+            case TK_FLOAT:
+            case TK_INTEGER:
+            case TK_STRING: {
+              int addr = sqliteVdbeAddOp(v, OP_SetInsert, iSet, 0, 0, 0);
+              sqliteVdbeChangeP3(v, addr, pE2->token.z, pE2->token.n);
+              sqliteVdbeDequoteP3(v, addr);
+              break;
+            }
+            default: {
+              sqliteExprCode(pParse, pE2);
+              sqliteVdbeAddOp(v, OP_SetInsert, iSet, 0, 0, 0);
+              break;
+            }
+          }
+        }
+      }
+    }
+
     case TK_SELECT: {
+      /* This has to be a scalar SELECT.  Generate code to put the
+      ** value of this select in a memory cell and record the number
+      ** of the memory cell in iField.
+      */
       pExpr->iField = pParse->nMem++;
-      if( sqliteSelect(pParse, pExpr->pSelect, -1, pExpr->iField) ){
+      if( sqliteSelect(pParse, pExpr->pSelect, SRT_Mem, pExpr->iField) ){
         return 1;
       }
       break;
@@ -281,6 +378,13 @@ int sqliteExprCheck(Parse *pParse, Expr *pExpr, int allowAgg, int *pIsAgg){
       if( nErr==0 && pExpr->pRight ){
         nErr = sqliteExprCheck(pParse, pExpr->pRight, 0, 0);
       }
+      if( nErr==0 && pExpr->pList ){
+        int n = pExpr->pList->nExpr;
+        int i;
+        for(i=0; nErr==0 && i<n; i++){
+          nErr = sqliteExprCheck(pParse, pExpr->pList->a[i].pExpr, 0, 0);
+        }
+      }
       break;
     }
   }
@@ -402,6 +506,27 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
       sqliteVdbeAddOp(v, OP_MemLoad, pExpr->iField, 0, 0, 0);
       break;
     }
+    case TK_IN: {
+      int addr;
+      sqliteVdbeAddOp(v, OP_Integer, 0, 0, 0, 0);
+      sqliteExprCode(pParse, pExpr->pLeft);
+      addr = sqliteVdbeCurrentAddr(v);
+      if( pExpr->pSelect ){
+        sqliteVdbeAddOp(v, OP_Found, pExpr->iTable, addr+2, 0, 0);
+      }else{
+        sqliteVdbeAddOp(v, OP_SetFound, pExpr->iTable, addr+2, 0, 0);
+      }
+      sqliteVdbeAddOp(v, OP_AddImm, 1, 0, 0, 0);
+      break;
+    }
+    case TK_BETWEEN: {
+      int lbl = sqliteVdbeMakeLabel(v);
+      sqliteVdbeAddOp(v, OP_Integer, 0, 0, 0, 0);
+      sqliteExprIfFalse(pParse, pExpr, lbl);
+      sqliteVdbeAddOp(v, OP_AddImm, 1, 0, 0, 0);
+      sqliteVdbeResolveLabel(v, lbl);
+      break;
+    }
   }
   return;
 }
@@ -461,6 +586,26 @@ void sqliteExprIfTrue(Parse *pParse, Expr *pExpr, int dest){
     case TK_NOTNULL: {
       sqliteExprCode(pParse, pExpr->pLeft);
       sqliteVdbeAddOp(v, op, 0, dest, 0, 0);
+      break;
+    }
+    case TK_IN: {
+      if( pExpr->pSelect ){
+        sqliteVdbeAddOp(v, OP_Found, pExpr->iTable, dest, 0, 0);
+      }else{
+        sqliteVdbeAddOp(v, OP_SetFound, pExpr->iTable, dest, 0, 0);
+      }
+      break;
+    }
+    case TK_BETWEEN: {
+      int lbl = sqliteVdbeMakeLabel(v);
+      sqliteExprCode(pParse, pExpr->pLeft);
+      sqliteVdbeAddOp(v, OP_Dup, 0, 0, 0, 0);
+      sqliteExprCode(pParse, pExpr->pList->a[0].pExpr);
+      sqliteVdbeAddOp(v, OP_Lt, 0, lbl, 0, 0);
+      sqliteExprCode(pParse, pExpr->pList->a[1].pExpr);
+      sqliteVdbeAddOp(v, OP_Le, 0, dest, 0, 0);
+      sqliteVdbeAddOp(v, OP_Integer, 0, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_Pop, 1, 0, 0, lbl);
       break;
     }
     default: {
@@ -531,6 +676,27 @@ void sqliteExprIfFalse(Parse *pParse, Expr *pExpr, int dest){
     case TK_NOTNULL: {
       sqliteExprCode(pParse, pExpr->pLeft);
       sqliteVdbeAddOp(v, op, 0, dest, 0, 0);
+      break;
+    }
+    case TK_IN: {
+      if( pExpr->pSelect ){
+        sqliteVdbeAddOp(v, OP_NotFound, pExpr->iTable, dest, 0, 0);
+      }else{
+        sqliteVdbeAddOp(v, OP_SetNotFound, pExpr->iTable, dest, 0, 0);
+      }
+      break;
+    }
+    case TK_BETWEEN: {
+      int addr;
+      sqliteExprCode(pParse, pExpr->pLeft);
+      sqliteVdbeAddOp(v, OP_Dup, 0, 0, 0, 0);
+      sqliteExprCode(pParse, pExpr->pList->a[0].pExpr);
+      addr = sqliteVdbeCurrentAddr(v);
+      sqliteVdbeAddOp(v, OP_Ge, 0, addr+3, 0, 0);
+      sqliteVdbeAddOp(v, OP_Pop, 1, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_Goto, 0, dest, 0, 0);
+      sqliteExprCode(pParse, pExpr->pList->a[1].pExpr);
+      sqliteVdbeAddOp(v, OP_Gt, 0, dest, 0, 0);
       break;
     }
     default: {

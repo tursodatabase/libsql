@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.17 2000/06/05 21:39:49 drh Exp $
+** $Id: vdbe.c,v 1.18 2000/06/06 01:50:43 drh Exp $
 */
 #include "sqliteInt.h"
 #include <unistd.h>
@@ -107,6 +107,15 @@ struct Mem {
 typedef struct Mem Mem;
 
 /*
+** Allowed values for Stack.flags
+*/
+#define STK_Null      0x0001   /* Value is NULL */
+#define STK_Str       0x0002   /* Value is a string */
+#define STK_Int       0x0004   /* Value is an integer */
+#define STK_Real      0x0008   /* Value is a real number */
+#define STK_Dyn       0x0010   /* Need to call sqliteFree() on zStack[*] */
+
+/*
 ** An Agg structure describes and Aggregator.  Each Agg consists of
 ** zero or more Aggregator elements (AggElem).  Each AggElem contains
 ** a key and one or more values.  The values are used in processing
@@ -131,13 +140,22 @@ struct AggElem {
 };
 
 /*
-** Allowed values for Stack.flags
+** A Set structure is used for quick testing to see if a value
+** is part of a small set.  Sets are used to implement code like
+** this:
+**            x.y IN ('hi','hoo','hum')
 */
-#define STK_Null      0x0001   /* Value is NULL */
-#define STK_Str       0x0002   /* Value is a string */
-#define STK_Int       0x0004   /* Value is an integer */
-#define STK_Real      0x0008   /* Value is a real number */
-#define STK_Dyn       0x0010   /* Need to call sqliteFree() on zStack[*] */
+typedef struct Set Set;
+typedef struct SetElem SetElem;
+struct Set {
+  SetElem *pAll;         /* All elements of this set */
+  SetElem *apHash[41];   /* A hash table for all elements in this set */
+};
+struct SetElem {
+  SetElem *pHash;        /* Next element with the same hash on zKey */
+  SetElem *pNext;        /* Next element in a list of them all */
+  char zKey[1];          /* Value of this key */
+};
 
 /*
 ** An instance of the virtual machine
@@ -170,6 +188,8 @@ struct Vdbe {
   int nMem;           /* Number of memory locations currently allocated */
   Mem *aMem;          /* The memory locations */
   Agg agg;            /* Aggregate information */
+  int nSet;           /* Number of sets allocated */
+  Set *aSet;          /* An array of sets */
 };
 
 /*
@@ -436,6 +456,48 @@ static AggElem *_AggInFocus(Agg *p){
 }
 
 /*
+** Erase all information from a Set
+*/
+static void SetClear(Set *p){
+  SetElem *pElem, *pNext;
+  for(pElem=p->pAll; pElem; pElem=pNext){
+    pNext = pElem->pNext;
+    sqliteFree(pElem);
+  }
+  memset(p, 0, sizeof(*p));
+}
+
+/*
+** Insert a new element into the set
+*/
+static void SetInsert(Set *p, char *zKey){
+  SetElem *pElem;
+  int h = sqliteHashNoCase(zKey, 0) % ArraySize(p->apHash);
+  for(pElem=p->apHash[h]; pElem; pElem=pElem->pHash){
+    if( strcmp(pElem->zKey, zKey)==0 ) return;
+  }
+  pElem = sqliteMalloc( sizeof(pElem) + strlen(zKey) );
+  if( pElem==0 ) return;
+  strcpy(pElem->zKey, zKey);
+  pElem->pNext = p->pAll;
+  p->pAll = pElem;
+  pElem->pHash = p->apHash[h];
+  p->apHash[h] = pElem;
+}
+
+/*
+** Return TRUE if an element is in the set.  Return FALSE if not.
+*/
+static int SetTest(Set *p, char *zKey){
+  SetElem *pElem;
+  int h = sqliteHashNoCase(zKey, 0) % ArraySize(p->apHash);
+  for(pElem=p->apHash[h]; pElem; pElem=pElem->pHash){
+    if( strcmp(pElem->zKey, zKey)==0 ) return 1;
+  }
+  return 0;
+}
+
+/*
 ** Convert the given stack entity into a string if it isn't one
 ** already.  Return non-zero if we run out of memory.
 **
@@ -628,6 +690,12 @@ static void Cleanup(Vdbe *p){
   }
   p->nLineAlloc = 0;
   AggReset(&p->agg);
+  for(i=0; i<p->nSet; i++){
+    SetClear(&p->aSet[i]);
+  }
+  sqliteFree(p->aSet);
+  p->aSet = 0;
+  p->nSet = 0;
 }
 
 /*
@@ -662,25 +730,27 @@ void sqliteVdbeDelete(Vdbe *p){
 */
 static char *zOpName[] = { 0,
   "Open",           "Close",          "Fetch",          "New",
-  "Put",            "Distinct",       "Delete",         "Field",
-  "Key",            "Rewind",         "Next",           "Destroy",
-  "Reorganize",     "ResetIdx",       "NextIdx",        "PutIdx",
-  "DeleteIdx",      "MemLoad",        "MemStore",       "ListOpen",
-  "ListWrite",      "ListRewind",     "ListRead",       "ListClose",
-  "SortOpen",       "SortPut",        "SortMakeRec",    "SortMakeKey",
-  "Sort",           "SortNext",       "SortKey",        "SortCallback",
-  "SortClose",      "FileOpen",       "FileRead",       "FileField",
-  "FileClose",      "AggReset",       "AggFocus",       "AggIncr",
-  "AggNext",        "AggSet",         "AggGet",         "MakeRecord",
-  "MakeKey",        "Goto",           "If",             "Halt",
-  "ColumnCount",    "ColumnName",     "Callback",       "Integer",
-  "String",         "Null",           "Pop",            "Dup",
-  "Pull",           "Add",            "AddImm",         "Subtract",
-  "Multiply",       "Divide",         "Min",            "Max",
-  "Like",           "Glob",           "Eq",             "Ne",
-  "Lt",             "Le",             "Gt",             "Ge",
-  "IsNull",         "NotNull",        "Negative",       "And",
-  "Or",             "Not",            "Concat",         "Noop",
+  "Put",            "Distinct",       "Found",          "NotFound",
+  "Delete",         "Field",          "Key",            "Rewind",
+  "Next",           "Destroy",        "Reorganize",     "ResetIdx",
+  "NextIdx",        "PutIdx",         "DeleteIdx",      "MemLoad",
+  "MemStore",       "ListOpen",       "ListWrite",      "ListRewind",
+  "ListRead",       "ListClose",      "SortOpen",       "SortPut",
+  "SortMakeRec",    "SortMakeKey",    "Sort",           "SortNext",
+  "SortKey",        "SortCallback",   "SortClose",      "FileOpen",
+  "FileRead",       "FileField",      "FileClose",      "AggReset",
+  "AggFocus",       "AggIncr",        "AggNext",        "AggSet",
+  "AggGet",         "SetInsert",      "SetFound",       "SetNotFound",
+  "SetClear",       "MakeRecord",     "MakeKey",        "Goto",
+  "If",             "Halt",           "ColumnCount",    "ColumnName",
+  "Callback",       "Integer",        "String",         "Null",
+  "Pop",            "Dup",            "Pull",           "Add",
+  "AddImm",         "Subtract",       "Multiply",       "Divide",
+  "Min",            "Max",            "Like",           "Glob",
+  "Eq",             "Ne",             "Lt",             "Le",
+  "Gt",             "Ge",             "IsNull",         "NotNull",
+  "Negative",       "And",            "Or",             "Not",
+  "Concat",         "Noop",         
 };
 
 /*
@@ -1696,7 +1766,23 @@ int sqliteVdbeExec(
       ** does already exist, then fall thru.  The record is not retrieved.
       ** The key is not popped from the stack.
       */
-      case OP_Distinct: {
+      /* Opcode: Found P1 P2 *
+      **
+      ** Use the top of the stack as a key.  If a record with that key
+      ** does exist in table P1, then jump to P2.  If the record
+      ** does not exist, then fall thru.  The record is not retrieved.
+      ** The key is popped from the stack.
+      */
+      /* Opcode: NotFound P1 P2 *
+      **
+      ** Use the top of the stack as a key.  If a record with that key
+      ** does exist in table P1, then jump to P2.  If the record
+      ** does not exist, then fall thru.  The record is not retrieved.
+      ** The key is popped from the stack.
+      */
+      case OP_Distinct:
+      case OP_NotFound:
+      case OP_Found: {
         int i = pOp->p1;
         int tos = p->tos;
         int alreadyExists = 0;
@@ -1711,8 +1797,13 @@ int sqliteVdbeExec(
                                            p->zStack[tos]);
           }
         }
-        if( !alreadyExists ){
-          pc = pOp->p2 - 1;
+        if( pOp->opcode==OP_Found ){
+          if( alreadyExists ) pc = pOp->p2 - 1;
+        }else{
+          if( !alreadyExists ) pc = pOp->p2 - 1;
+        }
+        if( pOp->opcode!=OP_Distinct ){
+          PopStack(p, 1);
         }
         break;
       }
@@ -2747,6 +2838,78 @@ int sqliteVdbeExec(
           pc = pOp->p2-1;
         }
         break;
+      }
+
+      /* Opcode: SetClear P1 * *
+      **
+      ** Remove all elements from the given Set.
+      */
+      case OP_SetClear: {
+        int i = pOp->p1;
+        if( i>=0 && i<p->nSet ){
+          SetClear(&p->aSet[i]);
+        }
+        break;
+      }
+
+      /* Opcode: SetInsert P1 * P3
+      **
+      ** If Set p1 does not exist then create it.  Then insert value
+      ** P3 into that set.  If P3 is NULL, then insert the top of the
+      ** stack into the set.
+      */
+      case OP_SetInsert: {
+        int i = pOp->p1;
+        if( p->nSet<=i ){
+          p->aSet = sqliteRealloc(p->aSet, (i+1)*sizeof(p->aSet[0]) );
+          if( p->aSet==0 ) goto no_mem;
+          memset(&p->aSet[p->nSet], 0, sizeof(p->aSet[0])*(i+1 - p->nSet));
+          p->nSet = i+1;
+        }
+        if( pOp->p3 ){
+          SetInsert(&p->aSet[i], pOp->p3);
+        }else{
+          int tos = p->tos;
+          if( tos<0 ) goto not_enough_stack;
+          Stringify(p, tos);
+          SetInsert(&p->aSet[i], p->zStack[tos]);
+          PopStack(p, 1);
+        }
+        break;
+      }
+
+      /* Opcode: SetFound P1 P2 *
+      **
+      ** Pop the stack once and compare the value popped off with the
+      ** contents of set P1.  If the element popped exists in set P1,
+      ** then jump to P2.  Otherwise fall through.
+      */
+      case OP_SetFound: {
+        int i = pOp->p1;
+        int tos = p->tos;
+        if( tos<0 ) goto not_enough_stack;
+        Stringify(p, tos);
+        if( i>=0 && i<p->nSet && SetTest(&p->aSet[i], p->zStack[tos]) ){
+          pc = pOp->p2 - 1;
+        }
+        PopStack(p, 1);
+      }
+
+      /* Opcode: SetNotFound P1 P2 *
+      **
+      ** Pop the stack once and compare the value popped off with the
+      ** contents of set P1.  If the element popped does not exists in 
+      ** set P1, then jump to P2.  Otherwise fall through.
+      */
+      case OP_SetNotFound: {
+        int i = pOp->p1;
+        int tos = p->tos;
+        if( tos<0 ) goto not_enough_stack;
+        Stringify(p, tos);
+        if( i>=0 && i<p->nSet && !SetTest(&p->aSet[i], p->zStack[tos]) ){
+          pc = pOp->p2 - 1;
+        }
+        PopStack(p, 1);
       }
 
       /* An other opcode is illegal...

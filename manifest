@@ -1,5 +1,5 @@
-C added\sAgg\sopcodes\sto\sthe\svdbe\s(CVS\s54)
-D 2000-06-05T21:39:49
+C :-)\s(CVS\s55)
+D 2000-06-06T01:50:43
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 17ba1ccf8d2d40c627796bba8f72952365d6d644
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -10,20 +10,20 @@ F src/build.c 6c9454b2e2b866979527fb41b19ad8bc49c27a20
 F src/dbbe.c ae8b5d2cdb4fa7dd11313059984be9457fa77f63
 F src/dbbe.h a8a46f71238e0f09f3ec08fd9d1c8c7f4cdc49bf
 F src/delete.c e11433c14ed5cc8553cba14296b3baa3c23054bc
-F src/expr.c 7e87558f88e7a52a902d78446843bda25015531e
+F src/expr.c b309517f59017f3a7c0db76a54bc3bc00e8fea38
 F src/insert.c 5e69dd70c3f91cf5ec5090f39fd6cd8e135af9bf
 F src/main.c 93a7ad14bb5a82ad13ad59da23ef674a94b0c3d6
-F src/parse.y 79b403240985c71d3f80abe3943e57482287428f
-F src/select.c ab379f969283819ac81b72d0bf7c7aa3fc9389db
+F src/parse.y 9c459212441d4786bb011945d6a587568368e202
+F src/select.c d90d577aa7687c860f2ce22dacabdbecb600f609
 F src/shell.c 5fa24c0bb678782ffe9070128e3e160674f297eb
 F src/sqlite.h 58da0a8590133777b741f9836beaef3d58f40268
-F src/sqliteInt.h c01eef2760cebee09c8e1710faf2ebd6fc8a16b6
+F src/sqliteInt.h 6f31db9b08bc7aec193c84f6f08b0f6c7ce9f270
 F src/tclsqlite.c 9f358618ae803bedf4fb96da5154fd45023bc1f7
-F src/tokenize.c 15c229fee77325334c6814652e429b0930eba6c1
+F src/tokenize.c f190e16ebb82dd60497796022f1e56e2e0527975
 F src/update.c 3f05d5082fd2c34f15d1e4a4db17355ad8807a78
 F src/util.c 33f9baa01e45394ef0cf85361a0e872987884315
-F src/vdbe.c e14cf771e4f487feb433fc6c0c6bd9536167a953
-F src/vdbe.h 7b3cd6b122b72ce8d2f5ab40069748d32f1d9df0
+F src/vdbe.c 03177425b174d865f2c37b188a9df8a37f4eaff2
+F src/vdbe.h 49e0f9c6742860e224cd81d1278059f5d029dfb6
 F src/where.c 6b840a726b06b5122f112e3bc3c142a230af6251
 F test/all.test 0950c135cab7e60c07bd745ccfad1476211e5bd7
 F test/copy.test 73c3783535db538c8ebd8fffb931376864fc3226
@@ -48,7 +48,7 @@ F www/c_interface.tcl 8867d76ddd416d2fbd41e4cb3de8efa9cef105a5
 F www/changes.tcl 567cc6066d87460bdedff8e5bbc20f41ddaadf77
 F www/index.tcl f8189a7898f6d06307c34047b9d7e00860026e44
 F www/sqlite.tcl 2f933ce18cffd34a0a020a82435ab937137970fd
-P 3dbfa558ef01ac9249a3f40da49bc71cc7b040bc
-R 2c42d01480de541004757564bdb21603
+P e9ed5d2a3639161fb58856275ba9495f21d366bf
+R ad06a10e10e9d51600332d684a457b6e
 U drh
-Z 3c51c450bc15ba9b865ce0cc0b812208
+Z b21141bb852afc7c732c3c3467253d37

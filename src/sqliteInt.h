@@ -23,7 +23,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.15 2000/06/05 18:54:46 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.16 2000/06/06 01:50:43 drh Exp $
 */
 #include "sqlite.h"
 #include "dbbe.h"
@@ -227,6 +227,14 @@ struct Select {
 };
 
 /*
+** The results of a select can be distributed in several ways.
+*/
+#define SRT_Callback     1  /* Invoke a callback with each row of result */
+#define SRT_Mem          2  /* Store result in a memory cell */
+#define SRT_Set          3  /* Store result in a table for use with "IN" */
+#define SRT_Table        4  /* Store result in a regular table */
+
+/*
 ** An SQL parser context
 */
 struct Parse {
@@ -244,6 +252,7 @@ struct Parse {
   int nErr;            /* Number of errors seen */
   int nTab;            /* Number of previously allocated cursors */
   int nMem;            /* Number of memory cells used so far */
+  int nSet;            /* Number of sets used so far */
 };
 
 /*

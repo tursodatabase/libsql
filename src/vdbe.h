@@ -27,7 +27,7 @@
 ** or VDBE.  The VDBE implements an abstract machine that runs a
 ** simple program to access and modify the underlying database.
 **
-** $Id: vdbe.h,v 1.7 2000/06/05 21:39:49 drh Exp $
+** $Id: vdbe.h,v 1.8 2000/06/06 01:50:44 drh Exp $
 */
 #ifndef _SQLITE_VDBE_H_
 #define _SQLITE_VDBE_H_
@@ -77,94 +77,101 @@ typedef struct VdbeOp VdbeOp;
 #define OP_New                 4
 #define OP_Put                 5
 #define OP_Distinct            6
-#define OP_Delete              7
-#define OP_Field               8
-#define OP_Key                 9
-#define OP_Rewind             10
-#define OP_Next               11
+#define OP_Found               7
+#define OP_NotFound            8
+#define OP_Delete              9
+#define OP_Field              10
+#define OP_Key                11
+#define OP_Rewind             12
+#define OP_Next               13
 
-#define OP_Destroy            12
-#define OP_Reorganize         13
+#define OP_Destroy            14
+#define OP_Reorganize         15
 
-#define OP_ResetIdx           14
-#define OP_NextIdx            15
-#define OP_PutIdx             16
-#define OP_DeleteIdx          17
+#define OP_ResetIdx           16
+#define OP_NextIdx            17
+#define OP_PutIdx             18
+#define OP_DeleteIdx          19
 
-#define OP_MemLoad            18
-#define OP_MemStore           19
+#define OP_MemLoad            20
+#define OP_MemStore           21
 
-#define OP_ListOpen           20
-#define OP_ListWrite          21
-#define OP_ListRewind         22
-#define OP_ListRead           23
-#define OP_ListClose          24
+#define OP_ListOpen           22
+#define OP_ListWrite          23
+#define OP_ListRewind         24
+#define OP_ListRead           25
+#define OP_ListClose          26
 
-#define OP_SortOpen           25
-#define OP_SortPut            26
-#define OP_SortMakeRec        27
-#define OP_SortMakeKey        28
-#define OP_Sort               29
-#define OP_SortNext           30
-#define OP_SortKey            31
-#define OP_SortCallback       32
-#define OP_SortClose          33
+#define OP_SortOpen           27
+#define OP_SortPut            28
+#define OP_SortMakeRec        29
+#define OP_SortMakeKey        30
+#define OP_Sort               31
+#define OP_SortNext           32
+#define OP_SortKey            33
+#define OP_SortCallback       34
+#define OP_SortClose          35
 
-#define OP_FileOpen           34
-#define OP_FileRead           35
-#define OP_FileField          36
-#define OP_FileClose          37
+#define OP_FileOpen           36
+#define OP_FileRead           37
+#define OP_FileField          38
+#define OP_FileClose          39
 
-#define OP_AggReset           38
-#define OP_AggFocus           39
-#define OP_AggIncr            40
-#define OP_AggNext            41
-#define OP_AggSet             42
-#define OP_AggGet             43
+#define OP_AggReset           40
+#define OP_AggFocus           41
+#define OP_AggIncr            42
+#define OP_AggNext            43
+#define OP_AggSet             44
+#define OP_AggGet             45
 
-#define OP_MakeRecord         44
-#define OP_MakeKey            45
+#define OP_SetInsert          46
+#define OP_SetFound           47
+#define OP_SetNotFound        48
+#define OP_SetClear           49
 
-#define OP_Goto               46
-#define OP_If                 47
-#define OP_Halt               48
+#define OP_MakeRecord         50
+#define OP_MakeKey            51
 
-#define OP_ColumnCount        49
-#define OP_ColumnName         50
-#define OP_Callback           51
+#define OP_Goto               52
+#define OP_If                 53
+#define OP_Halt               54
 
-#define OP_Integer            52
-#define OP_String             53
-#define OP_Null               54
-#define OP_Pop                55
-#define OP_Dup                56
-#define OP_Pull               57
+#define OP_ColumnCount        55
+#define OP_ColumnName         56
+#define OP_Callback           57
 
-#define OP_Add                58
-#define OP_AddImm             59
-#define OP_Subtract           60
-#define OP_Multiply           61
-#define OP_Divide             62
-#define OP_Min                63
-#define OP_Max                64
-#define OP_Like               65
-#define OP_Glob               66
-#define OP_Eq                 67
-#define OP_Ne                 68
-#define OP_Lt                 69
-#define OP_Le                 70
-#define OP_Gt                 71
-#define OP_Ge                 72
-#define OP_IsNull             73
-#define OP_NotNull            74
-#define OP_Negative           75
-#define OP_And                76
-#define OP_Or                 77
-#define OP_Not                78
-#define OP_Concat             79
-#define OP_Noop               80
+#define OP_Integer            58
+#define OP_String             59
+#define OP_Null               60
+#define OP_Pop                61
+#define OP_Dup                62
+#define OP_Pull               63
 
-#define OP_MAX                80
+#define OP_Add                64
+#define OP_AddImm             65
+#define OP_Subtract           66
+#define OP_Multiply           67
+#define OP_Divide             68
+#define OP_Min                69
+#define OP_Max                70
+#define OP_Like               71
+#define OP_Glob               72
+#define OP_Eq                 73
+#define OP_Ne                 74
+#define OP_Lt                 75
+#define OP_Le                 76
+#define OP_Gt                 77
+#define OP_Ge                 78
+#define OP_IsNull             79
+#define OP_NotNull            80
+#define OP_Negative           81
+#define OP_And                82
+#define OP_Or                 83
+#define OP_Not                84
+#define OP_Concat             85
+#define OP_Noop               86
+
+#define OP_MAX                86
 
 /*
 ** Prototypes for the VDBE interface.  See comments on the implementation

@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements.
 **
-** $Id: select.c,v 1.8 2000/06/05 18:54:46 drh Exp $
+** $Id: select.c,v 1.9 2000/06/06 01:50:43 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -71,12 +71,18 @@ void sqliteSelectDelete(Select *p){
 /*
 ** Generate code for the given SELECT statement.
 **
-** If iDest<0 and iMem<0, then the results of the query are sent to
-** the callback function.  If iDest>=0 then the results are written to
-** an open cursor with the index iDest.  The calling function is
-** responsible for having that cursor open.  If iDest<0 and iMem>=0 
-** then the result should be a single value which is then stored in 
-** memory location iMem of the virtual machine.
+** The results are distributed in various ways depending on the
+** value of eDest and iParm.
+**
+**     eDest Value       Result
+**     ------------    -------------------------------------------
+**     SRT_Callback    Invoke the callback for each row of the result.
+**
+**     SRT_Mem         Store first result in memory cell iParm
+**
+**     SRT_Set         Store results as keys of a table with cursor iParm
+**
+**     SRT_Table       Store results in a regular table with cursor iParm
 **
 ** This routine returns the number of errors.  If any errors are
 ** encountered, then an appropriate error message is left in
@@ -88,8 +94,8 @@ void sqliteSelectDelete(Select *p){
 int sqliteSelect(
   Parse *pParse,         /* The parser context */
   Select *p,             /* The SELECT statement being coded. */
-  int iDest,             /* Write results to this cursor */
-  int iMem               /* Save result in this memory location, if >=0 */
+  int eDest,             /* One of SRT_Callback, SRT_Mem, SRT_Set, SRT_Table */
+  int iParm              /* Save result in this memory location, if >=0 */
 ){
   int i, j;
   WhereInfo *pWInfo;
@@ -150,7 +156,7 @@ int sqliteSelect(
 
   /* If writing to memory, only a single column may be output.
   */
-  if( iMem>=0 && pEList->nExpr>1 ){
+  if( (eDest==SRT_Mem || eDest==SRT_Set) && pEList->nExpr>1 ){
     sqliteSetString(&pParse->zErrMsg, "only a single result allowed for "
        "a SELECT that is part of an expression", 0);
     pParse->nErr++;
@@ -197,24 +203,15 @@ int sqliteSelect(
     }
   }
 
-  /* ORDER BY is ignored if 
-  **
-  **   (1) this is an aggregate query like count(*)
-  **       since only one row will be returned.
-  **
-  **   (2) We are writing the result to another table, since the
-  **       order will get scrambled again after inserting.
-  **
-  **   (3) We are writing to a memory cell, since there is only
-  **       one result.
+  /* ORDER BY is ignored if we are not invoking callbacks.
   */
-  if( isAgg || iDest>=0 || iMem>=0 ){
+  if( isAgg || eDest!=SRT_Callback ){
     pOrderBy = 0;
   }
 
   /* Turn off distinct if this is an aggregate or writing to memory.
   */
-  if( isAgg || iMem>=0 ){
+  if( isAgg || eDest==SRT_Mem ){
     isDistinct = 0;
   }
 
@@ -236,7 +233,7 @@ int sqliteSelect(
   /* Identify column names if we will be using a callback.  This
   ** step is skipped if the output is going to a table or a memory cell.
   */
-  if( iDest<0 && iMem<0 ){
+  if( eDest==SRT_Callback ){
     sqliteVdbeAddOp(v, OP_ColumnCount, pEList->nExpr, 0, 0, 0);
     for(i=0; i<pEList->nExpr; i++){
       Expr *p;
@@ -294,9 +291,9 @@ int sqliteSelect(
 
   /* Initialize the memory cell to NULL
   */
-  if( iMem>=0 ){
+  if( eDest==SRT_Mem ){
     sqliteVdbeAddOp(v, OP_Null, 0, 0, 0, 0);
-    sqliteVdbeAddOp(v, OP_MemStore, iMem, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_MemStore, iParm, 0, 0, 0);
   }
 
   /* Begin the database scan
@@ -365,13 +362,16 @@ int sqliteSelect(
       }
       sqliteVdbeAddOp(v, op, p1, 0, 0, 0);
     }
-  }else if( iDest>=0 ){
+  }else if( eDest==SRT_Table ){
     sqliteVdbeAddOp(v, OP_MakeRecord, pEList->nExpr, 0, 0, 0);
-    sqliteVdbeAddOp(v, OP_New, iDest, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_New, iParm, 0, 0, 0);
     sqliteVdbeAddOp(v, OP_Pull, 1, 0, 0, 0);
-    sqliteVdbeAddOp(v, OP_Put, iDest, 0, 0, 0);
-  }else if( iMem>=0 ){
-    sqliteVdbeAddOp(v, OP_MemStore, iMem, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_Put, iParm, 0, 0, 0);
+  }else if( eDest==SRT_Set ){
+    sqliteVdbeAddOp(v, OP_String, 0, 0, "", 0);
+    sqliteVdbeAddOp(v, OP_Put, iParm, 0, 0, 0);
+  }else if( eDest==SRT_Mem ){
+    sqliteVdbeAddOp(v, OP_MemStore, iParm, 0, 0, 0);
     sqliteVdbeAddOp(v, OP_Goto, 0, pWInfo->iBreak, 0, 0);
   }else{
     sqliteVdbeAddOp(v, OP_Callback, pEList->nExpr, 0, 0, 0);
@@ -398,13 +398,16 @@ int sqliteSelect(
   ** exactly once.
   */
   if( isAgg ){
-    if( iDest>=0 ){
+    if( eDest==SRT_Table ){
       sqliteVdbeAddOp(v, OP_MakeRecord, pEList->nExpr, 0, 0, 0);
-      sqliteVdbeAddOp(v, OP_New, iDest, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_New, iParm, 0, 0, 0);
       sqliteVdbeAddOp(v, OP_Pull, 1, 0, 0, 0);
-      sqliteVdbeAddOp(v, OP_Put, iDest, 0, 0, 0);
-    }else if( iMem>=0 ){
-      sqliteVdbeAddOp(v, OP_MemStore, iMem, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_Put, iParm, 0, 0, 0);
+    }else if( eDest==SRT_Set ){
+      sqliteVdbeAddOp(v, OP_String, 0, 0, "", 0);
+      sqliteVdbeAddOp(v, OP_Put, iParm, 0, 0, 0);
+    }else if( eDest==SRT_Mem ){
+      sqliteVdbeAddOp(v, OP_MemStore, iParm, 0, 0, 0);
     }else{
       sqliteVdbeAddOp(v, OP_Callback, pEList->nExpr, 0, 0, 0);
     }

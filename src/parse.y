@@ -26,7 +26,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.10 2000/06/05 18:54:46 drh Exp $
+** @(#) $Id: parse.y,v 1.11 2000/06/06 01:50:43 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -133,7 +133,7 @@ cmd ::= DROP TABLE id(X).          {sqliteDropTable(pParse,&X);}
 // The select statement
 //
 cmd ::= select(X).  {
-  sqliteSelect(pParse, X, -1, -1);
+  sqliteSelect(pParse, X, SRT_Callback, 0);
   sqliteSelectDelete(X);
 }
 
@@ -150,6 +150,7 @@ select(A) ::= SELECT distinct(D) selcollist(W) from(X) where_opt(Y)
 //
 %type distinct {int}
 distinct(A) ::= DISTINCT.   {A = 1;}
+distinct(A) ::= ALL.        {A = 0;}
 distinct(A) ::= .           {A = 0;}
 
 // selcollist is a list of expressions that are to become the return
@@ -271,7 +272,7 @@ fieldlist(A) ::= ID(Y).                    {A = sqliteIdListAppend(0,&Y);}
 %left OR.
 %left AND.
 %right NOT.
-%left EQ NE ISNULL NOTNULL IS LIKE GLOB.
+%left EQ NE ISNULL NOTNULL IS LIKE GLOB BETWEEN IN.
 %left GT GE LT LE.
 %left PLUS MINUS.
 %left STAR SLASH PERCENT.
@@ -300,8 +301,7 @@ expr(A) ::= expr(X) GE expr(Y).    {A = sqliteExpr(TK_GE, X, Y, 0);}
 expr(A) ::= expr(X) NE expr(Y).    {A = sqliteExpr(TK_NE, X, Y, 0);}
 expr(A) ::= expr(X) EQ expr(Y).    {A = sqliteExpr(TK_EQ, X, Y, 0);}
 expr(A) ::= expr(X) LIKE expr(Y).  {A = sqliteExpr(TK_LIKE, X, Y, 0);}
-expr(A) ::= expr(X) GLOB expr(Y).   {A = sqliteExpr(TK_GLOB,X,Y,0);}
-// expr(A) ::= expr(X) IS expr(Y).    {A = sqliteExpr(TK_EQ, X, Y, 0);}
+expr(A) ::= expr(X) GLOB expr(Y).  {A = sqliteExpr(TK_GLOB,X,Y,0);}
 expr(A) ::= expr(X) PLUS expr(Y).  {A = sqliteExpr(TK_PLUS, X, Y, 0);}
 expr(A) ::= expr(X) MINUS expr(Y). {A = sqliteExpr(TK_MINUS, X, Y, 0);}
 expr(A) ::= expr(X) STAR expr(Y).  {A = sqliteExpr(TK_STAR, X, Y, 0);}
@@ -315,6 +315,22 @@ expr(A) ::= LP select(X) RP. {
   A = sqliteExpr(TK_SELECT, 0, 0, 0);
   A->pSelect = X;
 }
+expr(A) ::= expr(W) BETWEEN expr(X) AND expr(Y). {
+  ExprList *pList = sqliteExprListAppend(0, X, 0);
+  pList = sqliteExprListAppend(pList, Y, 0);
+  A = sqliteExpr(TK_BETWEEN, W, 0, 0);
+  A->pList = pList;
+}
+expr(A) ::= expr(X) IN LP exprlist(Y) RP.  {
+  A = sqliteExpr(TK_IN, X, 0, 0);
+  A->pList = Y;
+}
+expr(A) ::= expr(X) IN LP select(Y) RP.  {
+  A = sqliteExpr(TK_IN, X, 0, 0);
+  A->pSelect = Y;
+}
+
+
 
 %type exprlist {ExprList*}
 %destructor exprlist {sqliteExprListDelete($$);}

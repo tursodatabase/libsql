@@ -27,7 +27,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.5 2000/05/31 20:00:53 drh Exp $
+** $Id: tokenize.c,v 1.6 2000/06/06 01:50:43 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -49,9 +49,11 @@ struct Keyword {
 ** These are the keywords
 */
 static Keyword aKeywordTable[] = {
+  { "ALL",               0, TK_ALL,              0 },
   { "AND",               0, TK_AND,              0 },
   { "AS",                0, TK_AS,               0 },
   { "ASC",               0, TK_ASC,              0 },
+  { "BETWEEN",           0, TK_BETWEEN,          0 },
   { "BY",                0, TK_BY,               0 },
   { "CHECK",             0, TK_CHECK,            0 },
   { "CONSTRAINT",        0, TK_CONSTRAINT,       0 },
@@ -66,6 +68,7 @@ static Keyword aKeywordTable[] = {
   { "EXPLAIN",           0, TK_EXPLAIN,          0 },
   { "FROM",              0, TK_FROM,             0 },
   { "GLOB",              0, TK_GLOB,             0 },
+  { "IN",                0, TK_IN,               0 },
   { "INDEX",             0, TK_INDEX,            0 },
   { "INSERT",            0, TK_INSERT,           0 },
   { "INTO",              0, TK_INTO,             0 },
