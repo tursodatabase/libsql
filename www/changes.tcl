@@ -29,6 +29,8 @@ chng {2002 Aug ?? (2.7.0)} {
 <li>Make a distinction between numeric and text values when sorting.
     Text values sort according to memcmp().  Numeric values sort in
     numeric order.</li>
+<li>Allow multiple simulataneous readers under windows by simulating
+    the reader/writers locks that are missing from Win95/98/ME.</li>
 }
 
 chng {2002 Aug 12 (2.6.3)} {

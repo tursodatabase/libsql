@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.43 2002/08/15 11:48:14 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.44 2002/08/18 19:09:24 drh Exp $}
 
 puts {<html>
 <head>
@@ -17,7 +17,8 @@ puts "<p align=center>
 
 puts {
 <p>The SQLite library understands most of the standard SQL
-language.  But it does omit some features while at the same time
+language.  But it does <a href="omitted.html">omit some features</a>
+while at the same time
 adding a few features of its own.  This document attempts to
 describe percisely what parts of the SQL language SQLite does
 and does not support.</p>
@@ -130,7 +131,7 @@ rollback and atomic commit.</p>
 No changes can be made to the database except within a transaction.
 Any command that changes the database (basically, any SQL command
 other than SELECT) will automatically starts a transaction if
-one is not already in effect.  Automatically stared transactions
+one is not already in effect.  Automatically started transactions
 are committed at the conclusion of the command.
 </p>
 
@@ -222,9 +223,9 @@ attached to a single table, nor on the number of columns in an index.</p>
 
 <p>If the UNIQUE keyword appears between CREATE and INDEX then duplicate
 index entries are not allowed.  Any attempt to insert a duplicate entry
-will result in a rollback and an error message.</p>
+will result in an error.</p>
 
-<p>The optional conflict-clause allows the specification of al alternative
+<p>The optional conflict-clause allows the specification of an alternative
 default constraint conflict resolution algorithm for this index.
 This only makes sense if the UNIQUE keyword is used since otherwise
 there are not constraints on the index.  The default algorithm is
@@ -653,8 +654,7 @@ OR</font>
 For arithmetic operations, integers are treated as integers.
 Strings are first converted to real numbers using <b>atof()</b>.
 For comparison operators, numbers compare as numbers and strings
-compare as strings.  For string comparisons, case is significant
-but is only used to break a tie.
+compare using the <b>strcmp()</b> function.
 Note that there are two variations of the equals and not equals
 operators.  Equals can be either}
 puts "[Operator =] or [Operator ==].
@@ -702,7 +702,7 @@ of a row key in an UPDATE or INSERT statement.
 right-hand operand of the IN operator or as a scalar quantity.
 In both cases, the SELECT should have only a single column in its
 result.  Compound SELECTs (connected with keywords like UNION or
-EXCEPT) are allowed.  Any ORDER BY clause on the select is ignored.
+EXCEPT) are allowed.
 A SELECT in an expression is evaluated once before any other processing
 is performed, so none of the expressions within the select itself can
 refer to quantities in the containing expression.</p>
@@ -989,7 +989,7 @@ PRAGMA <function>(<arg>)
 
 puts {
 <p>The PRAGMA command is used to modify the operation of the SQLite library.
-The pragma command is experimental and specific pragma statements may
+The pragma command is experimental and specific pragma statements may be
 removed or added in future releases of SQLite.  Use this command
 with caution.</p>
 
@@ -1174,7 +1174,7 @@ as a result.  If a result expression is }
 puts "[Operator *] then all columns of all tables are substituted"
 puts {for that one expression.</p>
 
-<p>The query is executed again one or more tables specified after
+<p>The query is executed against one or more tables specified after
 the FROM keyword.  If multiple tables names are separated by commas,
 then the query is against the cross join of the various tables.
 The full SQL-92 join syntax can also be used to specify joins.
@@ -1185,10 +1185,7 @@ single row consisting of the values of the expression list.
 </p>
 
 <p>The WHERE clause can be used to limit the number of rows over
-which the query operates.  In the current implementation,
-indices will only be used to
-optimize the query if WHERE expression contains equality comparisons
-connected by the AND operator.</p>
+which the query operates.</p>
 
 <p>The GROUP BY clauses causes one or more rows of the result to
 be combined into a single row of output.  This is especially useful

@@ -1,7 +1,7 @@
 #
 # Run this script to generated a datatypes.html output file
 #
-set rcsid {$Id: datatypes.tcl,v 1.4 2002/08/15 13:45:17 drh Exp $}
+set rcsid {$Id: datatypes.tcl,v 1.5 2002/08/18 19:09:24 drh Exp $}
 
 puts {<html>
 <head>
@@ -117,13 +117,13 @@ If data is of type <b>text</b> then the comparison is determined by
 the standard C data comparison functions <b>memcmp()</b> or
 <b>strcmp()</b>.  The comparison looks at bytes from two inputs one
 by one and returns the first non-zero difference.
-String are '\000' terminated so shorter
+Strings are '\000' terminated so shorter
 strings sort before longer strings, as you would expect.
 </p>
 
 <p>
-For numeric data, this situation is more complex.  If both strings
-being compared look like well-formed numbers, then they are converted
+For numeric data, this situation is more complex.  If both inputs
+look like well-formed numbers, then they are converted
 into floating point values using <b>atof()</b> and compared numerically.
 If one input is not a well-formed number but the other is, then the
 number is considered to be less than the non-number.  If neither inputs
@@ -214,7 +214,7 @@ they are distinct.</p>
 
 <p>SQLite always converts numbers into double-precision (64-bit) floats
 for comparison purposes.  This means that a long sequence of digits that
-differ only in digits of far to the right will compare equal if they
+differ only in insignificant digits will compare equal if they
 are in a numeric column but will compare unequal if they are in a text
 column.  We have:</p>
 

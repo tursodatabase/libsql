@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the quickstart.html file.
 #
-set rcsid {$Id: quickstart.tcl,v 1.1 2002/08/15 13:45:17 drh Exp $}
+set rcsid {$Id: quickstart.tcl,v 1.2 2002/08/18 19:09:24 drh Exp $}
 
 puts {<html>
 <head><title>SQLite In 5 Minutes Or Less</title></head>
@@ -36,7 +36,12 @@ new database.</p></li>
 <li><p>Below is a simple TCL program that demonstrates how to use
 the TCL interface to SQLite.  The program executes the SQL statements
 given as the second argument on the database defined by the first
-argument.</p>
+argument.  The commands to watch for are the <b>sqlite</b> command
+on line 7 which opens an SQLite database and creates
+a new TCL command named "<b>db</b>" to access that database, the
+invocation of the <b>db</b> command on line 8 to execute
+SQL commands against the database, and the closing of the database connection
+on the last line of the script.</p>
 
 <blockquote><pre>
 #!/usr/bin/tclsh
@@ -45,21 +50,25 @@ if {$argc!=2} {
   exit 1
 }
 load /usr/lib/tclsqlite.so Sqlite
-sqlite db [lindex $argv 0]
-db eval [lindex $argv 1] x {
+<b>sqlite</b> db [lindex $argv 0]
+<b>db</b> eval [lindex $argv 1] x {
   foreach v $x(*) {
     puts "$v = $x($v)"
   }
   puts ""
 }
-db close
+<b>db</b> close
 </pre></blockquote>
 </li>
 
 <li><p>Below is a simple C program that demonstrates how to use
 the C/C++ interface to SQLite.  The name of a database is given by
 the first argument and the second argument is one or more SQL statements
-to execute against the database.</p>
+to execute against the database.  The function calls to pay attention
+to here are the call to <b>sqlite_open()</b> on line 22 which opens
+the database, <b>sqlite_exec()</b> on line 27 that executes SQL
+command against the database, and <b>sqlite_close()</b> on line 31
+that closes the database connection.</p>
 
 <blockquote><pre>
 #include &lt;stdio.h&gt;
@@ -83,16 +92,16 @@ int main(int argc, char **argv){
     fprintf(stderr, "Usage: %s DATABASE SQL-STATEMENT\n", argv[0]);
     exit(1);
   }
-  db = sqlite_open(argv[1], 0, &zErrMsg);
+  db = <b>sqlite_open</b>(argv[1], 0, &zErrMsg);
   if( db==0 ){
     fprintf(stderr, "Can't open database: %s\n", &zErrMsg);
     exit(1);
   }
-  rc = sqlite_exec(db, argv[2], callback, 0, &zErrMsg);
+  rc = <b>sqlite_exec</b>(db, argv[2], callback, 0, &zErrMsg);
   if( rc!=SQLITE_OK ){
     fprintf(stderr, "SQL error: %s\n", zErrMsg);
   }
-  sqlite_close(db);
+  <b>sqlite_close</b>(db);
   return 0;
 }
 </pre></blockquote>

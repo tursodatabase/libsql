@@ -1,5 +1,5 @@
-C Fix\sfor\sticket\s#135:\sRemove\sunused\svariables\sfrom\sthree\sfiles.\s(CVS\s719)
-D 2002-08-15T13:50:49
+C Documentation\supdates.\s(CVS\s720)
+D 2002-08-18T19:09:23
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -14,7 +14,7 @@ F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F libtool c56e618713c9510a103bda6b95f3ea3900dcacd6
 F ltmain.sh e9ed72eb1d690f447c13945eaf69e28af531eda1
-F main.mk 8a44951de2a6791646fe65a11d47f43223d23e86
+F main.mk 6116e91c7f747e9a881f8f94a7ffd17489039ddb
 F publish.sh a7a8d23e6525bd25d4f5ba9b0fc6edc107d94050
 F spec.template 238f7db425a78dc1bb7682e56e3834c7270a3f5e
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
@@ -128,25 +128,26 @@ F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 679a0c48817f71bc91d5911ef386e5ef35d4f178
 F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
 F www/c_interface.tcl 70548ff5f73c6adcdb7aeced929ebb30a99f5807
-F www/changes.tcl df6f06b1aa97ef285c744bf19ec3efddf707b05f
+F www/changes.tcl 7326bd48555132ca7f21a0dec84dacea76eacc65
 F www/conflict.tcl 81dd21f9a679e60aae049e9dd8ab53d59570cda2
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
-F www/datatypes.tcl d528c3e29e1b289f27b44c164feace2541e4f261
+F www/datatypes.tcl 0cb28565580554fa7e03e8fcb303e87ce57757ae
 F www/download.tcl 0932d7f4f0e8b2adbbd22fac73132f86e43ab4a9
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
-F www/faq.tcl 9262ad6f7f25ab253a9771ab1fbd48a1a14f2957
+F www/faq.tcl 291b8921c5f1ccdeafd88d05127e1d2842a750c1
+F www/fileformat.tcl a4b5c2c6e89b7d42d09f97fd4d7bbd39cbf24936
 F www/formatchng.tcl b4449e065d2da38b6563bdf12cf46cfe1d4d765e
-F www/index.tcl 43dc2ae4b6d39d9923ab49adbdf25e6f729acb9d
-F www/lang.tcl a2785964e80627381e953849e227a3ff2a38cb09
+F www/index.tcl 33881038e9664a36e56df3b80ef0828594c8dcd9
+F www/lang.tcl d2be2be0328f5c2fea06add825a1e442a1f8ed55
 F www/mingw.tcl f1c7c0a7f53387dd9bb4f8c7e8571b7561510ebc
 F www/omitted.tcl aa5145a79f5a8919ac41885c30007da9face1d48
 F www/opcode.tcl 33c5f2061a05c5d227c72b84c080b3bf74c74f8b
-F www/quickstart.tcl 247f2ba9009f8114036080e758e7d9d3b884dd32
+F www/quickstart.tcl fde79aa2de20074842b60f780800cdeee6a5dec2
 F www/speed.tcl 7fc83f1b018e1ecc451838449542c3079ed12425
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 9c0400aa7a0244605828fa6450ea1cc723240b16
-R ddf988ebfceb731da194e672ddbf06c6
+P 8cf17f2a24ee9bd5d1ea66484922819626c412dd
+R 2272702716d4156d8e188d7580097427
 U drh
-Z 29d5419af0f9c5edc39a8a40ac6613e3
+Z c4160e0e70fb429cfa81e989b76baa3d
