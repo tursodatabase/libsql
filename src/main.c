@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.96 2002/08/13 20:45:41 drh Exp $
+** $Id: main.c,v 1.97 2002/08/13 23:02:57 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -280,8 +280,8 @@ int sqliteInit(sqlite *db, char **pzErrMsg){
   */
   if( db->file_format==0 ){
     /* This happens if the database was initially empty */
-    db->file_format = 3;
-  }else if( db->file_format>3 ){
+    db->file_format = 4;
+  }else if( db->file_format>4 ){
     sqliteBtreeCloseCursor(curMain);
     sqliteSetString(pzErrMsg, "unsupported file format", 0);
     return SQLITE_ERROR;
@@ -405,7 +405,7 @@ sqlite *sqlite_open(const char *zFilename, int mode, char **pzErrMsg){
       &zErr);
     if( rc==SQLITE_OK ){
       sqliteBtreeGetMeta(db->pBe, meta);
-      meta[2] = 3;
+      meta[2] = 4;
       sqliteBtreeUpdateMeta(db->pBe, meta);
       sqlite_exec(db, "COMMIT", 0, 0, 0);
     }

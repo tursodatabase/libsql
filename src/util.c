@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.47 2002/07/05 21:42:37 drh Exp $
+** $Id: util.c,v 1.48 2002/08/13 23:02:57 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -443,6 +443,7 @@ int sqliteStrNICmp(const char *zLeft, const char *zRight, int N){
   return N<0 ? 0 : *a - *b;
 }
 
+#if 0  /* NOT USED */
 /* 
 ** The sortStrCmp() function below is used to order elements according
 ** to the ORDER BY clause of a SELECT.  The sort order is a little different
@@ -622,6 +623,7 @@ static int sortStrCmp(const char *atext, const char *btext, int useCase){
   }
   return result;
 }
+#endif /* NOT USED */
 
 /*
 ** Return TRUE if z is a pure numeric string.  Return FALSE if the
@@ -651,15 +653,17 @@ static int sqliteIsNumber(const char *z){
 }
 
 /* This comparison routine is what we use for comparison operations
-** in an SQL expression.  (Ex:  name<'Hello' or value<5). 
+** between numeric values in an SQL expression.  "Numeric" is a little
+** bit misleading here.  What we mean is that the strings have a
+** type of "numeric" from the point of view of SQL.  The strings
+** do not necessarily contain numbers.  They could contain text.
 **
-** Numerical strings compare in numerical order.  Numerical strings
-** are always less than non-numeric strings.  Non-numeric strings
-** compare in lexigraphical order (the same order as strcmp()).
-**
-** This is NOT the comparison function used for sorting.  The sort
-** order is a little bit different.  See sqliteSortCompare below
-** for additional information.
+** If the input strings both look like actual numbers then they
+** compare in numerical order.  Numerical strings are always less 
+** than non-numeric strings so if one input string looks like a
+** number and the other does not, then the one that looks like
+** a number is the smaller.  Non-numeric strings compare in 
+** lexigraphical order (the same order as strcmp()).
 */
 int sqliteCompare(const char *atext, const char *btext){
   int result;
@@ -696,16 +700,16 @@ int sqliteCompare(const char *atext, const char *btext){
 
 /*
 ** This routine is used for sorting.  Each key is a list of one or more
-** null-terminated strings.  The list is terminated by two nulls in
-** a row.  For example, the following text is key with three strings:
+** null-terminated elements.  The list is terminated by two nulls in
+** a row.  For example, the following text is a key with three elements
 **
-**            +one\000-two\000+three\000\000
+**            Aone\000Dtwo\000Athree\000\000
 **
-** Both arguments will have the same number of strings.  This routine
+** Both arguments will have the same number of elements.  This routine
 ** returns negative, zero, or positive if the first argument is less
 ** than, equal to, or greater than the first.  (Result is a-b).
 **
-** Each string begins with one of the characters "+", "-", "A", "D".
+** Each element begins with one of the characters "+", "-", "A", "D".
 ** This character determines the sort order and collating sequence:
 **
 **     +      Sort numerically in ascending order
@@ -715,20 +719,21 @@ int sqliteCompare(const char *atext, const char *btext){
 **
 ** For the "+" and "-" sorting, pure numeric strings (strings for which the
 ** isNum() function above returns TRUE) always compare less than strings
-** that are not pure numerics.  Within non-numeric strings, substrings
-** of digits compare in numerical order.  Finally, case is used only
-** to break a tie.
+** that are not pure numerics.  Non-numeric strings compare in memcmp()
+** order.  This is the same sort order as the sqliteCompare() function
+** above generates.
 **
-** Note that the sort order imposed by the rules above is different
+** The last point is a change from version 2.6.3 to version 2.7.0.  In
+** version 2.6.3 and earlier, substrings of digits compare in numerical 
+** and case was used only to break a tie.
+**
+** Elements that begin with 'A' or 'D' compare in memcmp() order regardless
+** of whether or not they look like a number.
+**
+** Note that the sort order imposed by the rules above is the same
 ** from the ordering defined by the "<", "<=", ">", and ">=" operators
-** of expressions.  The operators compare non-numeric strings in
-** lexigraphical order.  This routine does the additional processing
-** to sort substrings of digits into numerical order and to use case
-** only as a tie-breaker.
-**
-** The special rules above apply only to numeric sorting, when the
-** prefix is "+" or "-".  If the prefix is "A" or "D" then plain old
-** "strcmp()" is used for the comparison.
+** of expressions and for indices.  This was not the case for version
+** 2.6.3 and earlier.
 */
 int sqliteSortCompare(const char *a, const char *b){
   int len;
@@ -770,13 +775,8 @@ int sqliteSortCompare(const char *a, const char *b){
         res = +1;
         break;
       }else{
-        res = sortStrCmp(&a[1],&b[1],0);
-        if( res==0 ){
-          res = sortStrCmp(&a[1],&b[1],1);
-        }
-        if( res!=0 ){
-          break;
-        }
+        res = strcmp(&a[1],&b[1]);
+        if( res ) break;
       }
     }
     len = strlen(&a[1]) + 2;

@@ -12,13 +12,13 @@
 # focus of this file is testing the ability of the library to detect
 # past or future file format version numbers and respond appropriately.
 #
-# $Id: version.test,v 1.5 2002/08/11 20:10:49 drh Exp $
+# $Id: version.test,v 1.6 2002/08/13 23:02:59 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
 # Current file format version
-set VX 3
+set VX 4
 
 # Create a new database
 #

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE TABLE statement.
 #
-# $Id: table.test,v 1.18 2002/07/05 21:42:38 drh Exp $
+# $Id: table.test,v 1.19 2002/08/13 23:02:58 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -192,11 +192,11 @@ do_test table-3.6 {
 #
 set r {}
 for {set i 1} {$i<=100} {incr i} {
-  lappend r test$i
+  lappend r [format test%03d $i]
 }
 do_test table-4.1 {
   for {set i 1} {$i<=100} {incr i} {
-    set sql "CREATE TABLE test$i ("
+    set sql "CREATE TABLE [format test%03d $i] ("
     for {set k 1} {$k<$i} {incr k} {
       append sql "field$k text,"
     }
@@ -215,12 +215,12 @@ do_test table-4.1b {
 #
 set r {}
 for {set i 1} {$i<=100} {incr i 2} {
-  lappend r test$i
+  lappend r [format test%03d $i]
 }
 #execsql {--vdbe-trace-on--}
 do_test table-4.2 {
   for {set i 2} {$i<=100} {incr i 2} {
-    set sql "DROP TABLE TEST$i"
+    set sql "DROP TABLE [format TEST%03d $i]"
     execsql $sql
   }
   execsql {SELECT name FROM sqlite_master WHERE type!='meta' ORDER BY name}
@@ -231,7 +231,7 @@ do_test table-4.2 {
 #
 do_test table-4.3 {
   for {set i 1} {$i<=100} {incr i 2} {
-    set sql "DROP TABLE test$i"
+    set sql "DROP TABLE [format test%03d $i]"
     execsql $sql
   }
   execsql {SELECT name FROM sqlite_master WHERE type!='meta' ORDER BY name}
@@ -240,9 +240,9 @@ do_test table-4.3 {
 # Try to drop a table that does not exist
 #
 do_test table-5.1 {
-  set v [catch {execsql {DROP TABLE test9}} msg]
+  set v [catch {execsql {DROP TABLE test009}} msg]
   lappend v $msg
-} {1 {no such table: test9}}
+} {1 {no such table: test009}}
 
 # Try to drop sqlite_master
 #

@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.167 2002/07/31 19:50:27 drh Exp $
+** $Id: vdbe.c,v 1.168 2002/08/13 23:02:57 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2308,12 +2308,12 @@ case OP_StrGe: {
     c = strcmp(zStack[nos], zStack[tos]);
   }
   switch( pOp->opcode ){
-    case OP_Eq:    c = c==0;     break;
-    case OP_Ne:    c = c!=0;     break;
-    case OP_Lt:    c = c<0;      break;
-    case OP_Le:    c = c<=0;     break;
-    case OP_Gt:    c = c>0;      break;
-    default:       c = c>=0;     break;
+    case OP_StrEq:    c = c==0;     break;
+    case OP_StrNe:    c = c!=0;     break;
+    case OP_StrLt:    c = c<0;      break;
+    case OP_StrLe:    c = c<=0;     break;
+    case OP_StrGt:    c = c>0;      break;
+    default:          c = c>=0;     break;
   }
   POPSTACK;
   POPSTACK;

@@ -25,6 +25,12 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2002 Aug ?? (2.7.0)} {
+<li>Make a distinction between numeric and text values when sorting.
+    Text values sort according to memcmp().  Numeric values sort in
+    numeric order.</li>
+}
+
 chng {2002 Aug 12 (2.6.3)} {
 <li>Add the ability to read both little-endian and big-endian databases.
     So database created under SunOS or MacOSX can be read and written

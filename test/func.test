@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing built-in functions.
 #
-# $Id: func.test,v 1.14 2002/07/01 00:31:36 drh Exp $
+# $Id: func.test,v 1.15 2002/08/13 23:02:58 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -107,37 +107,37 @@ do_test func-3.0 {
     execsql "INSERT INTO tbl1 VALUES('$word')"
   }
   execsql {SELECT t1 FROM tbl1 ORDER BY t1}
-} "characters contains hi\u1234ho UTF-8"
+} "UTF-8 characters contains hi\u1234ho"
 do_test func-3.1 {
   execsql {SELECT length(t1) FROM tbl1 ORDER BY t1}
-} {10 8 5 5}
+} {5 10 8 5}
 do_test func-3.2 {
   execsql {SELECT substr(t1,1,2) FROM tbl1 ORDER BY t1}
-} {ch co hi UT}
+} {UT ch co hi}
 do_test func-3.3 {
   execsql {SELECT substr(t1,1,3) FROM tbl1 ORDER BY t1}
-} "cha con hi\u1234 UTF"
+} "UTF cha con hi\u1234"
 do_test func-3.4 {
   execsql {SELECT substr(t1,2,2) FROM tbl1 ORDER BY t1}
-} "ha on i\u1234 TF"
+} "TF ha on i\u1234"
 do_test func-3.5 {
   execsql {SELECT substr(t1,2,3) FROM tbl1 ORDER BY t1}
-} "har ont i\u1234h TF-"
+} "TF- har ont i\u1234h"
 do_test func-3.6 {
   execsql {SELECT substr(t1,3,2) FROM tbl1 ORDER BY t1}
-} "ar nt \u1234h F-"
+} "F- ar nt \u1234h"
 do_test func-3.7 {
   execsql {SELECT substr(t1,4,2) FROM tbl1 ORDER BY t1}
-} "ra ta ho -8"
+} "-8 ra ta ho"
 do_test func-3.8 {
   execsql {SELECT substr(t1,-1,1) FROM tbl1 ORDER BY t1}
-} "s s o 8"
+} "8 s s o"
 do_test func-3.9 {
   execsql {SELECT substr(t1,-3,2) FROM tbl1 ORDER BY t1}
-} "er in \u1234h F-"
+} "F- er in \u1234h"
 do_test func-3.10 {
   execsql {SELECT substr(t1,-4,3) FROM tbl1 ORDER BY t1}
-} "ter ain i\u1234h TF-"
+} "TF- ter ain i\u1234h"
 do_test func-3.99 {
   execsql {DELETE FROM tbl1}
   foreach word {this program is free software} {
