@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.149 2004/11/05 05:10:29 drh Exp $
+** @(#) $Id: parse.y,v 1.150 2004/11/05 23:46:15 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -920,3 +920,9 @@ database_kw_opt ::= .
 cmd ::= DETACH database_kw_opt nm(D). {
   sqlite3Detach(pParse, &D);
 }
+
+////////////////////////// REINDEX collation //////////////////////////////////
+%ifndef SQLITE_OMIT_REINDEX
+cmd ::= REINDEX.                {sqlite3Reindex(pParse, 0, 0);}
+cmd ::= REINDEX nm(X) dbnm(Y).  {sqlite3Reindex(pParse, &X, &Y);}
+%endif

@@ -21,13 +21,8 @@
 **     BEGIN TRANSACTION
 **     COMMIT
 **     ROLLBACK
-**     PRAGMA
 **
-<<<<<<< build.c
-** $Id: build.c,v 1.270 2004/11/05 22:18:49 drh Exp $
-=======
-** $Id: build.c,v 1.270 2004/11/05 22:18:49 drh Exp $
->>>>>>> 1.262
+** $Id: build.c,v 1.271 2004/11/05 23:46:15 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1989,6 +1984,7 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
   int addr1;                     /* Address of top of loop */
   int tnum;                      /* Root page of index */
   Vdbe *v;                       /* Generate code into this virtual machine */
+  int isUnique;                  /* True for a unique index */
 
   v = sqlite3GetVdbe(pParse);
   if( v==0 ) return;
@@ -2007,8 +2003,11 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
   sqlite3VdbeAddOp(v, OP_SetNumColumns, iTab, pTab->nCol);
   addr1 = sqlite3VdbeAddOp(v, OP_Rewind, iTab, 0);
   sqlite3GenerateIndexKey(v, pIndex, iTab);
-  sqlite3VdbeOp3(v, OP_IdxPut, iIdx, pIndex->onError!=OE_None,
-                      "indexed columns are not unique", P3_STATIC);
+  isUnique = pIndex->onError!=OE_None;
+  sqlite3VdbeAddOp(v, OP_IdxPut, iIdx, isUnique);
+  if( isUnique ){
+    sqlite3VdbeChangeP3(v, -1, "indexed columns are not unique", P3_STATIC);
+  }
   sqlite3VdbeAddOp(v, OP_Next, iTab, addr1+1);
   sqlite3VdbeChangeP2(v, addr1, sqlite3VdbeCurrentAddr(v));
   sqlite3VdbeAddOp(v, OP_Close, iTab, 0);
@@ -2760,3 +2759,107 @@ sqlite3_value *sqlite3GetTransientValue(sqlite3 *db){
   }
   return db->pValue;
 }
+
+/*
+** Check to see if pIndex uses the collating sequence pColl.  Return
+** true if it does and false if it does not.
+*/
+#ifndef SQLITE_OMIT_REINDEX
+static int collationMatch(CollSeq *pColl, Index *pIndex){
+  int n = pIndex->keyInfo.nField;
+  CollSeq **pp = pIndex->keyInfo.aColl;
+  while( n-- ){
+    if( *pp==pColl ) return 1;
+    pp++;
+  }
+  return 0;
+}
+#endif
+
+/*
+** Recompute all indices of pTab that use the collating sequence pColl.
+** If pColl==0 then recompute all indices of pTab.
+*/
+#ifndef SQLITE_OMIT_REINDEX
+void reindexTable(Parse *pParse, Table *pTab, CollSeq *pColl){
+  Index *pIndex;              /* An index associated with pTab */
+
+  for(pIndex=pTab->pIndex; pIndex; pIndex=pIndex->pNext){
+    if( pColl==0 || collationMatch(pColl,pIndex) ){
+      sqlite3BeginWriteOperation(pParse, 0, pTab->iDb);
+      sqlite3RefillIndex(pParse, pIndex, -1);
+    }
+  }
+}
+#endif
+
+/*
+** Recompute all indices of all tables in all databases where the
+** indices use the collating sequence pColl.  If pColl==0 then recompute
+** all indices everywhere.
+*/
+#ifndef SQLITE_OMIT_REINDEX
+void reindexDatabases(Parse *pParse, CollSeq *pColl){
+  Db *pDb;                    /* A single database */
+  int iDb;                    /* The database index number */
+  sqlite3 *db = pParse->db;   /* The database connection */
+  HashElem *k;                /* For looping over tables in pDb */
+  Table *pTab;                /* A table in the database */
+
+  for(iDb=0, pDb=db->aDb; iDb<db->nDb; iDb++, pDb++){
+    if( pDb==0 ) continue;
+      for(k=sqliteHashFirst(&pDb->tblHash);  k; k=sqliteHashNext(k)){
+      pTab = (Table*)sqliteHashData(k);
+      reindexTable(pParse, pTab, pColl);
+    }
+  }
+}
+#endif
+
+/*
+** Generate code for a REINDEX command.  If the argument is present it
+** is the name of a collating sequence and all indices that use that
+** collating sequence should be reindexed.  If no argument is present,
+** then rebuild all indices
+*/
+#ifndef SQLITE_OMIT_REINDEX
+void sqlite3Reindex(Parse *pParse, Token *pName1, Token *pName2){
+  CollSeq *pColl;             /* Collating sequence to be reindexed, or NULL */
+  char *z;                    /* Name of a table or index */
+  const char *zDb;            /* Name of the database */
+  Table *pTab;                /* A table in the database */
+  Index *pIndex;              /* An index associated with pTab */
+  int iDb;                    /* The database index number */
+  sqlite3 *db = pParse->db;   /* The database connection */
+  Token *pObjName;            /* Name of the table or index to be reindexed */
+
+  if( pName1==0 ){
+    reindexDatabases(pParse, 0);
+    return;
+  }else if( pName2==0 ){
+    pColl = sqlite3FindCollSeq(db, db->enc, pName1->z, pName1->n, 0);
+    if( pColl ){
+      reindexDatabases(pParse, pColl);
+      return;
+    }
+  }
+  iDb = sqlite3TwoPartName(pParse, pName1, pName2, &pObjName);
+  if( iDb<0 ) return;
+  z = sqlite3NameFromToken(pObjName);
+  zDb = db->aDb[iDb].zName;
+  pTab = sqlite3FindTable(db, z, zDb);
+  if( pTab ){
+    reindexTable(pParse, pTab, 0);
+    sqliteFree(z);
+    return;
+  }
+  pIndex = sqlite3FindIndex(db, z, zDb);
+  sqliteFree(z);
+  if( pIndex ){
+    sqlite3BeginWriteOperation(pParse, 0, iDb);
+    sqlite3RefillIndex(pParse, pIndex, -1);
+    return;
+  }
+  sqlite3ErrorMsg(pParse, "unable to identify the object to be reindexed");
+}
+#endif

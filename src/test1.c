@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.107 2004/11/03 16:27:01 drh Exp $
+** $Id: test1.c,v 1.108 2004/11/05 23:46:15 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -2557,6 +2557,11 @@ static void set_options(Tcl_Interp *interp){
   Tcl_SetVar2(interp, "sqlite_options", "bloblit", "0", TCL_GLOBAL_ONLY);
 #else
   Tcl_SetVar2(interp, "sqlite_options", "bloblit", "1", TCL_GLOBAL_ONLY);
+#endif
+#ifdef SQLITE_OMIT_REINDEX
+  Tcl_SetVar2(interp, "sqlite_options", "reindex", "0", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "reindex", "1", TCL_GLOBAL_ONLY);
 #endif
 }
 
