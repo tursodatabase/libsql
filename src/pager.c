@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.127 2004/06/15 01:40:29 drh Exp $
+** @(#) $Id: pager.c,v 1.128 2004/06/15 11:40:09 danielk1977 Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -1265,7 +1265,7 @@ static void unlinkPage(PgHdr *pPg){
 
 /*
 ** This routine is used to truncate an in-memory database.  Delete
-** every pages whose pgno is larger than pPager->dbSize and is unreferenced.
+** all pages whose pgno is larger than pPager->dbSize and is unreferenced.
 ** Referenced pages larger than pPager->dbSize are zeroed.
 */
 static void memoryTruncate(Pager *pPager){
@@ -1309,7 +1309,10 @@ int sqlite3pager_truncate(Pager *pPager, Pgno nPage){
     memoryTruncate(pPager);
     return SQLITE_OK;
   }
-  syncJournal(pPager, 0);
+  rc = syncJournal(pPager, 0);
+  if( rc!=SQLITE_OK ){
+    return rc;
+  }
   rc = sqlite3OsTruncate(&pPager->fd, SQLITE_PAGE_SIZE*(off_t)nPage);
   if( rc==SQLITE_OK ){
     pPager->dbSize = nPage;
@@ -2434,7 +2437,7 @@ int sqlite3pager_rollback(Pager *pPager){
     PgHdr *p;
     for(p=pPager->pAll; p; p=p->pNextAll){
       PgHistory *pHist;
-      if( !p->dirty ) continue;
+      if( !p->alwaysRollback && !p->dirty ) continue;
       pHist = PGHDR_TO_HIST(p, pPager);
       if( pHist->pOrig ){
         memcpy(PGHDR_TO_DATA(p), pHist->pOrig, pPager->pageSize);
@@ -2447,6 +2450,11 @@ int sqlite3pager_rollback(Pager *pPager){
       p->inJournal = 0;
       p->inStmt = 0;
       p->pPrevStmt = p->pNextStmt = 0;
+
+      if( pPager->xReiniter ){
+        pPager->xReiniter(PGHDR_TO_DATA(p), pPager->pageSize);
+      }
+      
     }
     pPager->pStmt = 0;
     pPager->dbSize = pPager->origDbSize;

@@ -627,7 +627,9 @@ int sqlite3OsSync(OsFile *id){
 int sqlite3OsSyncDirectory(const char *zDirname){
   int fd;
   int r;
+  SimulateIOError(SQLITE_IOERR);
   fd = open(zDirname, O_RDONLY|O_BINARY, 0644);
+  TRACE3("DIRSYNC %-3d (%s)\n", fd, zDirname);
   if( fd<0 ){
     return SQLITE_CANTOPEN; 
   }

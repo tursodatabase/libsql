@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.169 2004/06/15 02:44:19 danielk1977 Exp $
+** $Id: btree.c,v 1.170 2004/06/15 11:40:04 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1514,6 +1514,7 @@ int sqlite3BtreeCursor(
     pCur->pPage = 0;
     goto create_cursor_exception;
   }
+  pCur->pPage = 0;  /* For exit-handler, in case getAndInitPage() fails. */
   rc = getAndInitPage(pBt, pCur->pgnoRoot, &pCur->pPage, 0);
   if( rc!=SQLITE_OK ){
     goto create_cursor_exception;
@@ -4252,11 +4253,9 @@ int sqlite3BtreeCopyFile(Btree *pBtTo, Btree *pBtFrom){
     return SQLITE_ERROR;
   }
   if( pBtTo->pCursor ) return SQLITE_BUSY;
-  memcpy(pBtTo->pPage1->aData, pBtFrom->pPage1->aData, pBtFrom->usableSize);
-  rc = sqlite3pager_overwrite(pBtTo->pPager, 1, pBtFrom->pPage1->aData);
   nToPage = sqlite3pager_pagecount(pBtTo->pPager);
   nPage = sqlite3pager_pagecount(pBtFrom->pPager);
-  for(i=2; rc==SQLITE_OK && i<=nPage; i++){
+  for(i=1; rc==SQLITE_OK && i<=nPage; i++){
     void *pPage;
     rc = sqlite3pager_get(pBtFrom->pPager, i, &pPage);
     if( rc ) break;

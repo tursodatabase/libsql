@@ -96,24 +96,6 @@ struct Cursor {
 typedef struct Cursor Cursor;
 
 /*
-** A sorter builds a list of elements to be sorted.  Each element of
-** the list is an instance of the following structure.
-*/
-typedef struct Sorter Sorter;
-struct Sorter {
-  int nKey;           /* Number of bytes in the key */
-  char *zKey;         /* The key by which we will sort */
-  int nData;          /* Number of bytes in the data */
-  char *pData;        /* The data associated with this key */
-  Sorter *pNext;      /* Next in the list */
-};
-
-/* 
-** Number of buckets used for merge-sort.  
-*/
-#define NSORT 30
-
-/*
 ** Number of bytes of string storage space available to each stack
 ** layer without having to malloc.  NBFS is short for Number of Bytes
 ** For Strings.
@@ -143,6 +125,23 @@ struct Mem {
   void (*xDel)(void *);  /* If not null, call this function to delete Mem.z */
 };
 typedef struct Mem Mem;
+
+/*
+** A sorter builds a list of elements to be sorted.  Each element of
+** the list is an instance of the following structure.
+*/
+typedef struct Sorter Sorter;
+struct Sorter {
+  int nKey;           /* Number of bytes in the key */
+  char *zKey;         /* The key by which we will sort */
+  Mem data;
+  Sorter *pNext;      /* Next in the list */
+};
+
+/* 
+** Number of buckets used for merge-sort.  
+*/
+#define NSORT 30
 
 /* One or more of the following flags are set to indicate the validOK
 ** representations of the value stored in the Mem struct.
@@ -377,6 +376,7 @@ int sqlite3VdbeExec(Vdbe*);
 int sqlite3VdbeList(Vdbe*);
 int sqlite3VdbeChangeEncoding(Mem *, int);
 int sqlite3VdbeMemCopy(Mem*, const Mem*);
+int sqlite3VdbeMemMove(Mem*, Mem*);
 int sqlite3VdbeMemNulTerminate(Mem*);
 int sqlite3VdbeMemSetStr(Mem*, const char*, int, u8, void(*)(void*));
 void sqlite3VdbeMemSetInt64(Mem*, long long int);

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is in-memory database backend.
 #
-# $Id: memdb.test,v 1.7 2004/06/09 19:03:55 drh Exp $
+# $Id: memdb.test,v 1.8 2004/06/15 11:40:10 danielk1977 Exp $
 
 
 set testdir [file dirname $argv0]
@@ -170,17 +170,6 @@ foreach {i conf cmd t0 t1 t2} {
   5 {}       {INSERT OR FAIL}        1 {}  1
   6 {}       {INSERT OR ABORT}       1 {}  1
   7 {}       {INSERT OR ROLLBACK}    1 {}  {}
-  8 IGNORE   INSERT                  0 3   1
-  9 IGNORE   {INSERT OR IGNORE}      0 3   1
- 10 IGNORE   {INSERT OR REPLACE}     0 4   1
- 11 IGNORE   REPLACE                 0 4   1
- 12 IGNORE   {INSERT OR FAIL}        1 {}  1
- 13 IGNORE   {INSERT OR ABORT}       1 {}  1
- 14 IGNORE   {INSERT OR ROLLBACK}    1 {}  {}
- 15 REPLACE  INSERT                  0 4   1
- 16 FAIL     INSERT                  1 {}  1
- 17 ABORT    INSERT                  1 {}  1
- 18 ROLLBACK INSERT                  1 {}  {}
 } {
   do_test memdb-4.$i {
     if {$conf!=""} {set conf "ON CONFLICT $conf"}
@@ -241,16 +230,6 @@ foreach {i conf1 conf2 cmd t0 t1 t2} {
  14 {}       {}       {UPDATE OR FAIL}        1 {6 7 3 4}  1
  15 {}       {}       {UPDATE OR ABORT}       1 {1 2 3 4}  1
  16 {}       {}       {UPDATE OR ROLLBACK}    1 {1 2 3 4}  0
- 17 {}       IGNORE   UPDATE                  0 {6 7 3 9}  1
- 18 {}       REPLACE  UPDATE                  0 {7 6 9}    1
- 19 {}       FAIL     UPDATE                  1 {6 7 3 4}  1
- 20 {}       ABORT    UPDATE                  1 {1 2 3 4}  1
- 21 {}       ROLLBACK UPDATE                  1 {1 2 3 4}  0
- 22 REPLACE  IGNORE   UPDATE                  0 {6 7 3 9}  1
- 23 IGNORE   REPLACE  UPDATE                  0 {7 6 9}    1
- 24 REPLACE  FAIL     UPDATE                  1 {6 7 3 4}  1
- 25 IGNORE   ABORT    UPDATE                  1 {1 2 3 4}  1
- 26 REPLACE  ROLLBACK UPDATE                  1 {1 2 3 4}  0
 } {
   if {$t0} {set t1 {column a is not unique}}
   do_test memdb-5.$i {

@@ -693,7 +693,7 @@ void sqlite3VdbeSorterReset(Vdbe *p){
     Sorter *pSorter = p->pSort;
     p->pSort = pSorter->pNext;
     sqliteFree(pSorter->zKey);
-    sqliteFree(pSorter->pData);
+    sqlite3VdbeMemRelease(&pSorter->data);
     sqliteFree(pSorter);
   }
 }

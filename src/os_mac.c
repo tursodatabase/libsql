@@ -397,6 +397,7 @@ int sqlite3OsSync(OsFile *id){
 ** than UNIX.
 */
 int sqlite3OsSyncDirectory(const char *zDirname){
+  SimulateIOError(SQLITE_IOERR);
   return SQLITE_OK;
 }
 

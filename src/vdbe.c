@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.372 2004/06/14 13:14:59 danielk1977 Exp $
+** $Id: vdbe.c,v 1.373 2004/06/15 11:40:09 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -4144,8 +4144,7 @@ case OP_SortPut: {
   Mem *pNos = &pTos[-1];
   Sorter *pSorter;
   assert( pNos>=p->aStack );
-  Stringify(pNos, db->enc);
-  if( Dynamicify(pTos, db->enc) || Dynamicify(pNos, db->enc) ) goto no_mem;
+  if( Dynamicify(pTos, db->enc) ) goto no_mem;
   pSorter = sqliteMallocRaw( sizeof(Sorter) );
   if( pSorter==0 ) goto no_mem;
   pSorter->pNext = p->pSort;
@@ -4153,9 +4152,10 @@ case OP_SortPut: {
   assert( pTos->flags & MEM_Dyn );
   pSorter->nKey = pTos->n;
   pSorter->zKey = pTos->z;
-  assert( pNos->flags & MEM_Dyn );
-  pSorter->nData = pNos->n;
-  pSorter->pData = pNos->z;
+  pSorter->data.flags = MEM_Null;
+  rc = sqlite3VdbeMemMove(&pSorter->data, pNos);
+  if( rc!=SQLITE_OK ) goto abort_due_to_error;
+  Deephemeralize(&pSorter->data);
   pTos -= 2;
   break;
 }
@@ -4213,11 +4213,9 @@ case OP_SortNext: {
   if( pSorter!=0 ){
     p->pSort = pSorter->pNext;
     pTos++;
-    pTos->z = pSorter->pData;
-    pTos->n = pSorter->nData;
-    pTos->flags = MEM_Blob|MEM_Dyn|MEM_Term;
-    pTos->xDel = 0;
-    pTos->enc = 0;
+    pTos->flags = MEM_Null;
+    rc = sqlite3VdbeMemMove(pTos, &pSorter->data);
+    assert( rc==SQLITE_OK );
     sqliteFree(pSorter->zKey);
     sqliteFree(pSorter);
   }else{

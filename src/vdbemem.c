@@ -312,6 +312,24 @@ int sqlite3VdbeMemCopy(Mem *pTo, const Mem *pFrom){
 }
 
 /*
+** Transfer the contents of pFrom to pTo. Any existing value in pTo is
+** deleted. pFrom contains an SQL NULL when this routine returns.
+*/
+int sqlite3VdbeMemMove(Mem *pTo, Mem *pFrom){
+  int rc = SQLITE_OK;
+  if( !(pFrom->flags&MEM_Dyn && pFrom->xDel) ){
+    memcpy(pTo, pFrom, sizeof(Mem));
+    if( pFrom->flags & MEM_Short ){
+      pTo->z = pTo->zShort;
+    }
+  }else{
+    rc = sqlite3VdbeMemCopy(pTo, pFrom);
+    sqlite3VdbeMemRelease(pFrom);
+  }
+  return SQLITE_OK;
+}
+
+/*
 ** Change the value of a Mem to be a string or a BLOB.
 */
 int sqlite3VdbeMemSetStr(

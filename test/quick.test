@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: quick.test,v 1.22 2004/06/15 02:44:20 danielk1977 Exp $
+# $Id: quick.test,v 1.23 2004/06/15 11:40:10 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -27,10 +27,6 @@ set EXCLUDE {
   misuse.test
   format3.test
 }
-
-lappend EXCLUDE ioerr.test        ;# seg-faults (?)
-lappend EXCLUDE memdb.test        ;# fails - malformed database
-lappend EXCLUDE version.test      ;# This is obsolete.
 
 if {[sqlite -has-codec]} {
   lappend EXCLUDE \
