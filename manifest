@@ -1,5 +1,5 @@
-C Fix\sa\srace\scondition\sin\sthe\slocking\scode\sthat\swould\ssometimes\scause\nSQLITE_PROTOCOL\sor\sSQLITE_CORRUPT\sto\sbe\sreturned\swhen\sSQLITE_BUSY\sshould\nhave\sbeen\sreturned.\s(CVS\s326)
-D 2001-12-14T15:09:56
+C Version\s2.1.6\s(CVS\s455)
+D 2001-12-14T15:15:00
 F Makefile.in 352fed589f09dd94347e0bb391d047118ebd6105
 F Makefile.template 0fbf0ee1fe38183d760170a13e91fffec64e73f5
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -117,7 +117,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 880ef67cb4f2797b95bf1368fc4e0d8ca0fda956
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 8e90ad552fad83568297202848fe7eb2b63db33d
+P b0d218876442187af08161d989e6887b1cb4130c
 R 11fe1b88a51d4db88bdca916a2550755
 U drh
-Z fba78b88b4bbf12a6828c6912be362f4
+Z eda09e748c25cbdab5b2e7dc7f29b710
