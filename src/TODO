@@ -1,0 +1,32 @@
+  *  Finish fleshing out the db.c file.
+      - sqliteDbReadOvfl
+      - sqliteDbSpreadLoad
+      - sqliteDbSplit
+      - sqliteDbNextIndexLevel
+      - fix sqliteDbCursorNext to work right after sqliteDbCursorDelete
+  *  Compile db.c with -Wall and get no errors.
+  *  Make a pass over pg.c and db.c looking for errors.
+      - correct handling of I/O errors, malloc failures, etc.
+      - page leaks  (not calling sqlitePgUnref)
+  *  Write a test interface for db.c.
+  *  Compile and link against the db test interface.
+  *  Generate tests for the db interface.
+  *  Add read/write locks to pg.c
+  *  Add an sqliteDbReorganize() function.
+  *  Integrate db into vdbe.
+  *  Modify code generation to take advantage of the new db interface.
+      - Able to delete without disturbing scan order
+      - Now keeps a count of number of table entries
+         + Special processing for count(*)
+         + Better selection of indices on a select
+      - Transactions
+  *  Modify sqlite_master to store the table number.
+  *  Add a cache in DbCursor to speed up the sqliteDbReadOvfl() routine.
+
+Longer term:
+  *  Document all the changes and release Sqlite 2.0.
+  *  Techniques for optimizing querys by grouping data with similar
+     indices.
+  *  "OPTIMIZE select" statement to automatically create and/or tune
+     indices.
+  *  Parse and use constraints.

@@ -21,7 +21,7 @@
 **   http://www.hwaci.com/drh/
 **
 *************************************************************************
-** $Id: pg.c,v 1.2 2001/01/20 19:52:49 drh Exp $
+** $Id: pg.c,v 1.3 2001/01/21 00:58:08 drh Exp $
 */
 #include <assert.h>
 #include <sys/types.h>
@@ -37,10 +37,6 @@
 #if 1
 # define TRACE(X)  printf X; fflush(stdout);
 #endif  
-
-#ifndef SQLITE_IOERR
-# define SQLITE_IOERR SQLITE_ERROR
-#endif
 
 /*
 ** Hash table sizes

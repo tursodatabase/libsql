@@ -21,7 +21,7 @@
 **   http://www.hwaci.com/drh/
 **
 *************************************************************************
-** $Id: db.c,v 1.1 2001/01/20 19:52:49 drh Exp $
+** $Id: db.c,v 1.2 2001/01/21 00:58:08 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pg.h"
@@ -178,7 +178,7 @@ int sqliteDbAllocPage(Db *pDb, u32 *pPgno, u32 **ppPage){
       return SQLITE_OK;
     }
   }
-  if( (rc = sqlitePgAlloc(pDb->pPgr, &pgno))==SQLITE_OK &&
+  if( (rc = sqlitePgCount(pDb->pPgr, &pgno))==SQLITE_OK &&
       (rc = sqlitePgGet(pDb->pPgr, pgno, (void**)ppPage))==SQLITE_OK ){
     *pPgno = pgno;
     return SQLITE_OK;
@@ -200,6 +200,36 @@ static void sqliteDbFreePage(DB *pDb, u32 pgno, u32 *aPage){
 }
 
 /*
+** Write data into overflow pages.  The first overflow page is
+** provided in the second argument.  If additional pages are
+** needed, they must be allocated.
+*/
+static int sqliteDbWriteOvfl(Db *pDb, u32 *aPage, int nData, const void *pData){
+  while( nData>0 ){
+    int toWrite, rc;
+    u32 *nxPage, nxPgno;
+    if( nData > SQLITE_PAGE_SIZE - 2*sizeof(u32) ){
+      toWrite = SQLITE_PAGE_SIZE - 2*sizeof(u32);
+    }else{
+      toWrite = nData;
+    }
+    memcpy(&aPage[2], pData, toWrite);
+    nData -= toWrite;
+    pData = &((char*)pData)[toWrite];
+    if( nData<=0 ) break;
+    rc = sqliteDbAllocPage(pDb, &nxPgno, &nxPage);
+    if( rc!=SQLITE_OK ) return rc;  /* Be smarter here */
+    aPage[1] = SWB(nxPgno);
+    nxPage[0] = SWB(BLOCK_MAGIC|BLOCK_OVERFLOW);
+    nxPage[1] = 0;
+    sqlitePgTouch(aPage);
+    sqlitePgUnref(aPage);
+    aPage = nxPage;
+  }
+  return SQLITE_OK;
+}
+
+/*
 ** Open a database.
 */
 int sqliteDbOpen(const char *filename, Db **ppDb){
@@ -207,6 +237,7 @@ int sqliteDbOpen(const char *filename, Db **ppDb){
   Pgr *pPgr = 0;
   u32 *aPage1;
   int rc;
+  u32 nPage;
 
   rc = sqlitePgOpen(filename, &pPgr);
   if( rc!=SQLITE_OK ) goto open_err;
@@ -218,8 +249,15 @@ int sqliteDbOpen(const char *filename, Db **ppDb){
   pDb->pPgr = pPgr;
   pDb->pCursor = 0;
   pDb->inTransaction = 0;
+  sqlitePgCount(pDb->pPgr, &nPage);
   rc = sqlitePgGet(pDb->pPgr, 1, &aPage1);
   if( rc!=0 ) goto open_err;
+  if( nPage==0 ){
+    sqlitePgBeginTransaction(pDb->pPgr);
+    aPage1[0] = SWB(BLOCK_MAGIC|BLOCK_CONTENT);
+    sqlitePgTouch(aPage1);
+    sqlitePgCommit(pDb->pPgr);
+  }
   pDb->nContent = SWB(aPage1[3]) + 2;
   pDb->nAlloc = 0;
   rc = sqliteDbExpandContent(pDb, pDb->nContent);
@@ -275,10 +313,14 @@ int sqliteDbBeginTransaction(Db *pDb){
 ** Commit changes to the database
 */ 
 int sqliteDbCommit(Db *pDb){
+  u32 *aPage;
+  int rc;
   if( !pDb->inTransaction ){
     return SQLITE_OK;
   }
-  sqliteDbWriteOvfl(pDb, 1, 0, pDb->nContent*sizeof(u32), pDb->aContent);
+  rc = sqlitePgGet(pDb->pPgr, 1, &aPage);
+  if( rc!=SQLITE_OK ) return rc;
+  sqliteDbWriteOvfl(pDb, aPage, pDb->nContent*sizeof(u32), pDb->aContent);
   rc = sqlitePgCommit(pDb->pPgr);
   if( rc!=SQLITE_OK ) return rc;
   pDb->inTransaction = 0;
@@ -732,7 +774,7 @@ int sqliteDbCursorReadKey(DbCursor *pCur, int amt, int offset, void *buf){
   assert( aPage );
   assert( idx>=2 && idx+4<(SQLITE_PAGE_SIZE/sizeof(u32))
   nKey = SWB(aPage[idx+2]);
-  if( nKey & 0x80000000 ){  ############### -v
+  if( nKey & 0x80000000 ){
     return sqliteDbReadOvfl(pCur->pDb, SWB(aPage[idx+4]), 0, amt, offset, buf);
   }
   if( nKey==4 ){
@@ -979,7 +1021,8 @@ int sqliteDbCursorInsert(
     rc = sqliteDbAllocPage(pCur->pDb, &newPgno, &newPage);
     if( rc!=SQLITE_OK ) goto write_err;
     aPage[i+4] = SWB(newPgno);
-    rc = sqliteDbWriteOvfl(pCur->pDb, newPgno, newPage, nKey, pKey); ########
+    newPage[0] = SWB(BLOCK_MAGIC | BLOCK_OVERFLOW);
+    rc = sqliteDbWriteOvfl(pCur->pDb, newPage, nKey, pKey);
     if( rc!=SQLITE_OK ) goto write_err;
     j = i + 5;
     available -= 1;
@@ -995,7 +1038,8 @@ int sqliteDbCursorInsert(
     rc = sqliteDbAllocPage(pCur->pDb, &newPgno, &newPage);
     if( rc!=SQLITE_OK ) goto write_err;
     aPage[j] = SWB(newPgno);
-    rc = sqliteDbWriteOvfl(pCur->pDb, newPgno, newPage, nData, pData);
+    newPage[0] = SWB(BLOCK_MAGIC | BLOCK_OVERFLOW);
+    rc = sqliteDbWriteOvfl(pCur->pDb, newPage, nData, pData);
     if( rc!=SQLITE_OK ) goto write_err;
     available -= 1;
     j++;
@@ -1022,57 +1066,11 @@ write_err:
 }
 
 /*
-** The cursor is pointing to a particular entry of an index page
-** when this routine is called.  This routine frees everything that
-** is on the page that the index entry points to.
-*/
-static int sqliteDbPruneTree(DbCursor *pCur){
-  int i, idx;
-  u32 *aPage;
-  int from, to, limit, n;
-  int rc;
-
-  i = pCur->nLevel-1;
-  assert( i>=0 && i<MAX_LEVEL );
-  idx = pCur->aLevel[i].idx;
-  aPage = pCur->aLevel[i].aPage;
-  assert( SWB(aPage[0])==BLOCK_MAGIC|BLOCK_INDEX );
-  assert( idx>=3 && idx<SQLITE_PAGE_SIZE/sizeof(u32) );
-  n = SWB(aPage[2]);
-  assert( n>=2 && n<=SQLITE_PAGE_SIZE/2*sizeof(u32)-2 );
-  sqliteDbDropPage(pCur->pDb, SWB(aPage[idx+1]);
-  to = idx;
-  from = idx+2;
-  limit = n*2 + 3;
-  while( from<limit ){
-    aPage[to++] = aPage[from++];
-  }
-  n--;
-  if( n==1 ){
-    u32 oldPgno, *oldPage;
-    oldPgno = SWB(aPage[4]);
-    rc = sqlitePgGet(pCur->pDb->pPgr, oldPgno, &oldPage);
-    if( rc!=SQLITE_OK ){
-      return rc;  /* Do something smarter here */
-    }
-    memcpy(aPage, oldPage, SQLITE_PAGE_SIZE);
-    oldPage[0] = SWB(BLOCK_MAGIC|BLOCK_OVERFLOW);
-    oldPage[1] = 0;
-    sqliteDbDropPage(pCur->pDb, oldPgno);
-    sqlitePgUnref(oldPage);
-  }else{
-    aPage[2] = SWB(n);
-  }
-  sqlitePgTouch(aPage);
-  return SQLITE_OK;
-}
-
-/*
 ** Delete the entry that the cursor points to.
 */
 int sqliteDbCursorDelete(DbCursor *pCur){
   int i, idx;
-  int from, to;
+  int from, to, limit, n;
   int entrySize;
   u32 *aPage;
   if( !pCur->onEntry ) return SQLITE_NOTFOUND;
@@ -1113,5 +1111,37 @@ int sqliteDbCursorDelete(DbCursor *pCur){
   */
   sqliteDbResetCursor(pCur, pCur->nLevel-1);
 
-  return sqliteDbPruneTree(pCur);
+  i = pCur->nLevel-1;
+  assert( i>=0 && i<MAX_LEVEL );
+  idx = pCur->aLevel[i].idx;
+  aPage = pCur->aLevel[i].aPage;
+  assert( SWB(aPage[0])==BLOCK_MAGIC|BLOCK_INDEX );
+  assert( idx>=3 && idx<SQLITE_PAGE_SIZE/sizeof(u32) );
+  n = SWB(aPage[2]);
+  assert( n>=2 && n<=SQLITE_PAGE_SIZE/2*sizeof(u32)-2 );
+  sqliteDbDropPage(pCur->pDb, SWB(aPage[idx+1]);
+  to = idx;
+  from = idx+2;
+  limit = n*2 + 3;
+  while( from<limit ){
+    aPage[to++] = aPage[from++];
+  }
+  n--;
+  if( n==1 ){
+    u32 oldPgno, *oldPage;
+    oldPgno = SWB(aPage[4]);
+    rc = sqlitePgGet(pCur->pDb->pPgr, oldPgno, &oldPage);
+    if( rc!=SQLITE_OK ){
+      return rc;  /* Do something smarter here */
+    }
+    memcpy(aPage, oldPage, SQLITE_PAGE_SIZE);
+    oldPage[0] = SWB(BLOCK_MAGIC|BLOCK_OVERFLOW);
+    oldPage[1] = 0;
+    sqliteDbDropPage(pCur->pDb, oldPgno);
+    sqlitePgUnref(oldPage);
+  }else{
+    aPage[2] = SWB(n);
+  }
+  sqlitePgTouch(aPage);
+  return SQLITE_OK;
 }

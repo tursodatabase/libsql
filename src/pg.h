@@ -21,7 +21,7 @@
 **   http://www.hwaci.com/drh/
 **
 *************************************************************************
-** $Id: pg.h,v 1.2 2001/01/20 19:52:49 drh Exp $
+** $Id: pg.h,v 1.3 2001/01/21 00:58:09 drh Exp $
 */
 
 typedef struct Pgr Pgr;
@@ -36,5 +36,5 @@ int sqlitePgRollback(Pgr*);
 int sqlitePgGet(Pgr*, u32 pgno, void **);
 int sqlitePgUnref(void*);
 int sqlitePgTouch(void*);
-int sqlitePgAlloc(Pgr*, u32*);
+int sqlitePgCount(Pgr*, u32*);
 u32 sqlitePgNum(void*);
