@@ -1,5 +1,5 @@
-C Do\snot\ssort\sterminal\ssymbols\sby\sname.\s\sThe\sterminals\sremain\sin\sthe\ssame\sorder\nthat\sthey\sare\sencountered\sin\sthe\sgrammar\sfile.\s\sThis\sresults\sin\sparse\stables\nthat\sare\s25%\ssmaller.\s(CVS\s1261)
-D 2004-02-22T00:08:05
+C Rearrange\sthe\sgrammar\ssome\sso\sthat\stokens\sthat\sare\sused\stogether\sappear\ntogether\sin\sthe\sgrammar\sfile.\s\sThis\sreduces\sthe\ssize\sof\sthe\sparser\stables\nand\ssome\sof\sthe\sjump\stables\sin\sswitch\sstatements.\s(CVS\s1262)
+D 2004-02-22T16:27:00
 F Makefile.in cfd75c46b335881999333a9e4b982fa8491f200b
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -43,7 +43,7 @@ F src/os.c f5fc4954725b2fcd852979f2746085fe8ca27710
 F src/os.h 250a3789be609adfee5c5aa20137ce8683276f24
 F src/pager.c 29ddad4dd454f0aaa98e2bcd327710ab9f02f833
 F src/pager.h 82332878799280145639a48d88cdb4058925e3f6
-F src/parse.y 226bbdba2dee362d4b1cacc424bd82f7740071ee
+F src/parse.y b990b5841eb7f32c051bce6c0330e575a5dc3e84
 F src/pragma.c a8d43661193ba3114da787f43969d0a34f0ed07c
 F src/printf.c f201a5a316afc474d29d51e07501536e8998194d
 F src/random.c 775913e0b7fbd6295d21f12a7bd35b46387c44b2
@@ -189,7 +189,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 96a6d2d3ff5bd0aaff188ee1c5e2f02cbea435b2
-R 0e6582f9731de84f26f84d0ae9c2aae5
+P f36b122d9767fa9e6dc5bcce04b5606d67cad3d9
+R 376533278e07e4ce9f2dde354b5969cb
 U drh
-Z 8622cd6065d062299240ddf4ac0eb777
+Z b87ef4aa1ac83c5f79b5688ea16271fe

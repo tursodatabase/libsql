@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.110 2004/02/14 23:59:57 drh Exp $
+** @(#) $Id: parse.y,v 1.111 2004/02/22 16:27:00 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -128,6 +128,22 @@ id(A) ::= ID(X).         {A = X;}
   GLOB IGNORE IMMEDIATE INITIALLY INSTEAD LIKE MATCH KEY
   OF OFFSET PRAGMA RAISE REPLACE RESTRICT ROW STATEMENT
   TEMP TRIGGER VACUUM VIEW.
+
+// Define operator precedence early so that this is the first occurance
+// of the operator tokens in the grammer.  Keeping the operators together
+// causes them to be assigned integer values that are close together,
+// which keeps parser tables smaller.
+//
+%left OR.
+%left AND.
+%right NOT.
+%left EQ NE ISNULL NOTNULL IS LIKE GLOB BETWEEN IN.
+%left GT GE LT LE.
+%left BITAND BITOR LSHIFT RSHIFT.
+%left PLUS MINUS.
+%left STAR SLASH REM.
+%left CONCAT.
+%right UMINUS UPLUS BITNOT.
 
 // And "ids" is an identifer-or-string.
 //
@@ -514,16 +530,6 @@ inscollist(A) ::= nm(Y).                      {A = sqliteIdListAppend(0,&Y);}
 
 /////////////////////////// Expression Processing /////////////////////////////
 //
-%left OR.
-%left AND.
-%right NOT.
-%left EQ NE ISNULL NOTNULL IS LIKE GLOB BETWEEN IN.
-%left GT GE LT LE.
-%left BITAND BITOR LSHIFT RSHIFT.
-%left PLUS MINUS.
-%left STAR SLASH REM.
-%left CONCAT.
-%right UMINUS UPLUS BITNOT.
 
 %type expr {Expr*}
 %destructor expr {sqliteExprDelete($$);}
