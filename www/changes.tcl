@@ -17,7 +17,7 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
-chng {2002 Feb * (2.3.3)} {
+chng {2002 Feb 18 (2.3.3)} {
 <li>Allow identifiers to be quoted in square brackets, for compatibility
     with MS-Access.</li>
 <li>Added support for sub-queries in the FROM clause of a SELECT.</li>

@@ -1,5 +1,5 @@
-C Added\sa\sC\swrapper\sprogram\sto\stest\sthreading\sunder\sUnix.\s(CVS\s379)
-D 2002-02-18T22:50:27
+C Final\schanges\sbefore\s2.3.3\s(CVS\s380)
+D 2002-02-19T00:15:12
 F Makefile.in 9fa4277413bf1d9cf91365f07d4108d7d87ed2af
 F Makefile.template 3372d45f8853afdb70bd30cc6fb50a3cd9069834
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -109,7 +109,7 @@ F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 72a0c80e9054cc7025a50928d28d9c75c02c2b8b
 F www/c_interface.tcl 82a026b1681757f13b3f62e035f3a31407c1d353
-F www/changes.tcl 9df7e8208e00cb9e9988f5e239da72d4c46628db
+F www/changes.tcl e6b0f326e81e48ec48440e082424c36fc8fd034e
 F www/conflict.tcl 81dd21f9a679e60aae049e9dd8ab53d59570cda2
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
 F www/download.tcl a6d75b8b117cd33dcb090bef7e80d7556d28ebe0
@@ -124,7 +124,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 553579f936b3a4477c6adfd991adccd06280bfd2
-R 68572ee64467deeafdfca67210cb5aaa
+P 8d5634a4470a8145c0fbd0b843d55371d2f95e81
+R 60f2c032a9501ddf7c5a624261445eae
 U drh
-Z d4976e5cb119f987def7a2de13fb4da7
+Z d5b0e8cf1d5d52395d34785334c130b8
