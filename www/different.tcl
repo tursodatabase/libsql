@@ -1,4 +1,4 @@
-set rcsid {$Id: different.tcl,v 1.4 2005/03/19 03:41:58 drh Exp $}
+set rcsid {$Id: different.tcl,v 1.5 2005/04/01 16:29:12 drh Exp $}
 source common.tcl
 header {Distinctive Features Of SQLite}
 puts {
@@ -91,8 +91,8 @@ feature small {Compact} {
   jar file - 10 times larger than SQLite even after it is compressed!
   Firefox boasts that it's client-side library is only 350KiB.  That's
   50% larger than SQLite and does not even contain the database engine.
-  The Berkeley DB library from Sleepycat is 450KiB and it lacks a schema
-  layer.
+  The Berkeley DB library from Sleepycat is 450KiB and it omits SQL
+  support, providing the programmer with only simple key/value pairs.
 }
 
 feature typing {Manifest typing} {
@@ -109,7 +109,7 @@ feature typing {Manifest typing} {
   values into the declared datatype of the column when it can.)
   <p>
   The SQL language specification calls for static typing.  So some people
-  feel that the use of manifest typing in SQLite is a bug.  But the authors
+  feel that the use of manifest typing is a bug in SQLite.  But the authors
   of SQLite feel very strongly that this is a feature.  The authors argue
   that static typing is a bug in the SQL specification that SQLite has fixed
   in a backwards compatible way.
@@ -117,7 +117,7 @@ feature typing {Manifest typing} {
 
 feature flex {Variable-length records} {
   Most other SQL database engines allocated a fixed amount of disk space
-  for each row in a most tables.  They play special tricks for handling
+  for each row in most tables.  They play special tricks for handling
   BLOBs and CLOBs which can be of wildly varying length.  But for most
   tables, if you declare a column to be a VARCHAR(100) then the database
   engine will allocate

@@ -1,5 +1,5 @@
-C Make\sthe\sORDER\sBY\sclause\sreturn\sequal\selements\sin\sthe\ssame\sorder\sthey\swere\nseen\s(a\sstable\ssort).\s\sIt\swas\sreturning\sthem\sin\sexactly\sthe\sreverse\sorder.\s(CVS\s2439)
-D 2005-04-01T10:47:40
+C Documentation\supdates.\s(CVS\s2440)
+D 2005-04-01T16:29:12
 F Makefile.in 5c00d0037104de2a50ac7647a5f12769795957a3
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -253,7 +253,7 @@ F www/copyright-release.pdf cfca3558fc97095e57c6117d08f1f5b80d95125a
 F www/copyright.tcl 82c9670c7ddb0311912ab7fe24703f33c531066c
 F www/datatype3.tcl 1d14f70ab73075556b95e76a5c13e5b03f7f6c47
 F www/datatypes.tcl 7c786d2e8ff434346764534ec015966d17efce60
-F www/different.tcl f9f573553f4b6854797120b9caba758ae7da240a
+F www/different.tcl d01064946c588db0a0e87563a30aef1b3efb4434
 F www/docs.tcl 6c0b2c567404b15bd46a0cda2dc69615a8e679a8
 F www/download.tcl 3af00c0e8fd915961707cddb4c2260f5cf59f3c1
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
@@ -278,7 +278,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P 67aaa269068ea6b6f784979c09b3deb091928563
-R 63665a3d8858787beef512dcafda04c6
+P e8391491a68018406e30c2a699a4cab9e0de092c
+R 0099f7c3586b4b93ff511d85ac21c75e
 U drh
-Z 8d91bab4e1f6465dcf7b52f8ad24856a
+Z da8ce3a3ad37d1a0e8ba4a6a000261c8
