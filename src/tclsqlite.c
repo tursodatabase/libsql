@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.29 2002/01/16 21:00:27 drh Exp $
+** $Id: tclsqlite.c,v 1.30 2002/03/11 02:06:13 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -531,6 +531,12 @@ static int DbMain(void *cd, Tcl_Interp *interp, int argc, char **argv){
     return TCL_ERROR;
   }
   Tcl_CreateObjCommand(interp, argv[1], DbObjCmd, (char*)p, DbDeleteCmd);
+#ifdef SQLITE_TEST
+  {
+     extern void Md5_Register(sqlite*);
+     Md5_Register(p->db);
+  }
+#endif  
   return TCL_OK;
 }
 

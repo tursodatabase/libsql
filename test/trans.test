@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: trans.test,v 1.10 2002/01/10 14:31:49 drh Exp $
+# $Id: trans.test,v 1.11 2002/03/11 02:06:14 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -664,4 +664,136 @@ do_test trans-6.39 {
   }
 } {1 -2 -3 4 -5 -6}
 
+# Test to make sure rollback restores the database back to its original
+# state.
+#
+do_test trans-7.1 {
+  execsql {BEGIN}
+  for {set i 0} {$i<1000} {incr i} {
+    set r1 [expr {rand()}]
+    set r2 [expr {rand()}]
+    set r3 [expr {rand()}]
+    execsql "INSERT INTO t2 VALUES($r1,$r2,$r3)"
+  }
+  execsql {COMMIT}
+  set ::checksum [execsql {SELECT md5sum(x,y,z) FROM t2}]
+  set ::checksum2 [
+    execsql {SELECT md5sum(type,name,tbl_name,rootpage,sql) FROM sqlite_master}
+  ]
+  execsql {SELECT count(*) FROM t2}
+} {1001}
+do_test trans-7.2 {
+  execsql {SELECT md5sum(x,y,z) FROM t2}
+} $checksum
+do_test trans-7.2.1 {
+  execsql {SELECT md5sum(type,name,tbl_name,rootpage,sql) FROM sqlite_master}
+} $checksum2
+do_test trans-7.3 {
+  execsql {
+    BEGIN;
+    DELETE FROM t2;
+    ROLLBACK;
+    SELECT md5sum(x,y,z) FROM t2;
+  }
+} $checksum
+do_test trans-7.4 {
+  execsql {
+    BEGIN;
+    INSERT INTO t2 SELECT * FROM t2;
+    ROLLBACK;
+    SELECT md5sum(x,y,z) FROM t2;
+  }
+} $checksum
+do_test trans-7.5 {
+  execsql {
+    BEGIN;
+    DELETE FROM t2;
+    ROLLBACK;
+    SELECT md5sum(x,y,z) FROM t2;
+  }
+} $checksum
+do_test trans-7.6 {
+  execsql {
+    BEGIN;
+    INSERT INTO t2 SELECT * FROM t2;
+    ROLLBACK;
+    SELECT md5sum(x,y,z) FROM t2;
+  }
+} $checksum
+do_test trans-7.7 {
+  execsql {
+    BEGIN;
+    CREATE TABLE t3 AS SELECT * FROM t2;
+    INSERT INTO t2 SELECT * FROM t3;
+    ROLLBACK;
+    SELECT md5sum(x,y,z) FROM t2;
+  }
+} $checksum
+do_test trans-7.8 {
+  execsql {SELECT md5sum(type,name,tbl_name,rootpage,sql) FROM sqlite_master}
+} $checksum2
+do_test trans-7.9 {
+  execsql {
+    BEGIN;
+    CREATE TEMP TABLE t3 AS SELECT * FROM t2;
+    INSERT INTO t2 SELECT * FROM t3;
+    ROLLBACK;
+    SELECT md5sum(x,y,z) FROM t2;
+  }
+} $checksum
+do_test trans-7.10 {
+  execsql {SELECT md5sum(type,name,tbl_name,rootpage,sql) FROM sqlite_master}
+} $checksum2
+do_test trans-7.11 {
+  execsql {
+    BEGIN;
+    CREATE TEMP TABLE t3 AS SELECT * FROM t2;
+    INSERT INTO t2 SELECT * FROM t3;
+    DROP INDEX i2x;
+    DROP INDEX i2y;
+    CREATE INDEX i3a ON t3(x);
+    ROLLBACK;
+    SELECT md5sum(x,y,z) FROM t2;
+  }
+} $checksum
+do_test trans-7.12 {
+  execsql {SELECT md5sum(type,name,tbl_name,rootpage,sql) FROM sqlite_master}
+} $checksum2
+do_test trans-7.13 {
+  execsql {
+    BEGIN;
+    DROP TABLE t2;
+    ROLLBACK;
+    SELECT md5sum(x,y,z) FROM t2;
+  }
+} $checksum
+do_test trans-7.14 {
+  execsql {SELECT md5sum(type,name,tbl_name,rootpage,sql) FROM sqlite_master}
+} $checksum2
+
+# Arrange for another process to begin modifying the database but abort
+# and die in the middle of the modification.  Then have this process read
+# the database.  This process should detect the journal file and roll it
+# back.  Verify that this happens correctly.
+#
+set fd [open test.tcl w]
+puts $fd {
+  sqlite db test.db
+  db eval {
+    BEGIN;
+    CREATE TABLE t3 AS SELECT * FROM t2;
+    DELETE FROM t2;
+  }
+  sqlite_abort
+}
+close $fd
+do_test trans-8.1 {
+  catch {exec [info nameofexec] test.tcl}
+  execsql {SELECT md5sum(x,y,z) FROM t2}
+} $checksum
+do_test trans-8.2 {
+  execsql {SELECT md5sum(type,name,tbl_name,rootpage,sql) FROM sqlite_master}
+} $checksum2
+
+   
 finish_test

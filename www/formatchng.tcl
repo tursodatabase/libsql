@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the formatchng.html file.
 #
-set rcsid {$Id: formatchng.tcl,v 1.3 2002/03/04 02:26:17 drh Exp $ }
+set rcsid {$Id: formatchng.tcl,v 1.4 2002/03/11 02:06:14 drh Exp $ }
 
 puts {<html>
 <head>
@@ -93,7 +93,7 @@ occurred since version 1.0.0:
 </tr>
 <tr>
   <td valign="top">2.3.3 to 2.4.0</td>
-  <td valign="top">2002-Mar-?</td>
+  <td valign="top">2002-Mar-10</td>
   <td>Beginning with version 2.4.0, SQLite added support for views. 
   Information about views is stored in the SQLITE_MASTER table.  If an older
   version of SQLite attempts to read a database that contains VIEW information

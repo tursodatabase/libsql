@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.27 2002/03/04 02:26:17 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.28 2002/03/11 02:06:14 drh Exp $}
 
 puts {<html>
 <head>
@@ -817,19 +817,58 @@ with caution.</p>
 <p>The current implementation supports the following pragmas:</p>
 
 <ul>
-<li><p><b>PRAGMA cache_size = </b><i>Number-of-pages</i><b>;</b></p>
-    <p>Change the maximum number of database disk pages that SQLite
-    will hold in memory at once.  Each page uses about 1.5K of RAM.
-    The default cache size is 100.  If you are doing UPDATEs or DELETEs
+<li><p><b>PRAGMA cache_size;
+       <br>PRAGMA cache_size = </b><i>Number-of-pages</i><b>;</b></p>
+    <p>Query or change the maximum number of database disk pages that SQLite
+    will hold in memory at once.  Each page uses about 1.5K of memory.
+    The default cache size is 2000.  If you are doing UPDATEs or DELETEs
     that change many rows of a database and you do not mind if SQLite
     uses more memory, you can increase the cache size for a possible speed
-    improvement.</p></li>
+    improvement.</p>
+    <p>When you change the cache size using the cache_size pragma, the
+    change only endures for the current session.  The cache size reverts
+    to the default value when the database is closed and reopened.  Use
+    the <b>default_cache_size</b> pragma to check the cache size permanently
+    </p></li>
 
 <li><p><b>PRAGMA count_changes = ON;
        <br>PRAGMA count_changes = OFF;</b></p>
     <p>When on, the COUNT_CHANGES pragma causes the callback function to
     be invoked once for each DELETE, INSERT, or UPDATE operation.  The
     argument is the number of rows that were changed.</p>
+
+<li><p><b>PRAGMA default_cache_size;
+       <br>PRAGMA default_cache_size = </b><i>Number-of-pages</i><b>;</b></p>
+    <p>Query or change the maximum number of database disk pages that SQLite
+    will hold in memory at once.  Each page uses about 1.5K of memory.
+    This pragma works like the <b>cache_size</b> pragma with the addition
+    feature that it changes the cache size persistently.  With this pragma,
+    you can set the cache size once and that setting is retained and reused
+    everytime you reopen the database.</p></li>
+
+<li><p><b>PRAGMA default_synchronous;
+       <br>PRAGMA default_synchronous = ON;
+       <br>PRAGMA default_synchronous = OFF;</b></p>
+    <p>Query or change the setting of the "synchronous" flag in
+    the database.  When synchronous is on (the default), the SQLite database
+    engine will pause at critical moments to make sure that data has actually
+    be written to the disk surface.  (In other words, it invokes the
+    equivalent of the <b>fsync()</b> system call.)  In synchronous mode,
+    an SQLite database should be fully recoverable even if the operating
+    system crashes or power is interrupted unexpectedly.  The penalty for
+    this assurance is that some database operations take longer because the
+    engine has to wait on the (relatively slow) disk drive.  The alternative
+    is to turn synchronous off.  With synchronous off, SQLite continues
+    processing as soon as it has handed data off to the operating system.
+    If the application running SQLite crashes, the data will be safe, but
+    the database could (in theory) become corrupted if the operating system
+    crashes or the computer suddenly loses power.  On the other hand, some
+    operations are as much as 50 or more times faster with synchronous off.
+    </p>
+    <p>This pragma changes the synchronous mode persistently.  Once changed,
+    the mode stays as set even if the database is closed and reopened.  The
+    <b>synchronous</b> pragma does the same thing but only applies the setting
+    to the current session.</p>
 
 <li><p><b>PRAGMA empty_result_callbacks = ON;
        <br>PRAGMA empty_result_callbacks = OFF;</b></p>
@@ -872,6 +911,16 @@ with caution.</p>
     If any problems are found, then a single string is returned which is
     a description of all problems.  If everything is in order, "ok" is
     returned.</p>
+
+<li><p><b>PRAGMA synchronous;
+       <br>PRAGMA synchronous = ON;
+       <br>PRAGMA synchronous = OFF;</b></p>
+    <p>Query or change the setting of the "synchronous" flag in
+    the database for the duration of the current database connect.
+    The synchronous flag reverts to its default value when the database
+    is closed and reopened.  For additional information on the synchronous
+    flag, see the description of the <b>default_synchronous</b> pragma.</p>
+    </li>
 
 <li><p><b>PRAGMA table_info(</b><i>table-name</i><b>);</b></p>
     <p>For each column in the named table, invoke the callback function

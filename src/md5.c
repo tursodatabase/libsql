@@ -30,6 +30,7 @@
  */
 #include <tcl.h>
 #include <string.h>
+#include "sqlite.h"
 
 /*
  * If compiled on a machine that doesn't have a 32-bit integer,
@@ -349,4 +350,36 @@ int Md5_Init(Tcl_Interp *interp){
   Tcl_CreateCommand(interp, "md5", md5_cmd, 0, 0);
   Tcl_CreateCommand(interp, "md5file", md5file_cmd, 0, 0);
   return TCL_OK;
+}
+
+/*
+** During testing, the special md5sum() aggregate function is available.
+** inside SQLite.  The following routines implement that function.
+*/
+static void md5step(sqlite_func *context, int argc, const char **argv){
+  MD5Context *p;
+  int i;
+  if( argc<1 ) return;
+  p = sqlite_aggregate_context(context, sizeof(*p));
+  if( p==0 ) return;
+  if( sqlite_aggregate_count(context)==1 ){
+    MD5Init(p);
+  }
+  for(i=0; i<argc; i++){
+    if( argv[i] ){
+      MD5Update(p, (unsigned char*)argv[i], strlen(argv[i]));
+    }
+  }
+}
+static void md5finalize(sqlite_func *context){
+  MD5Context *p;
+  unsigned char digest[16];
+  char zBuf[33];
+  p = sqlite_aggregate_context(context, sizeof(*p));
+  MD5Final(digest,p);
+  DigestToBase16(digest, zBuf);
+  sqlite_set_result_string(context, zBuf, strlen(zBuf));
+}
+void Md5_Register(sqlite *db){
+  sqlite_create_aggregate(db, "md5sum", -1, md5step, md5finalize, 0);
 }

@@ -17,7 +17,7 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
-chng {2002 Mar * (2.4.0)} {
+chng {2002 Mar 10 (2.4.0)} {
 <li>Change the name of the sanity_check PRAGMA to <b>integrity_check</b>
     and make it available in all compiles.</li>
 <li>SELECT min() or max() of an indexed column with no WHERE or GROUP BY
@@ -40,6 +40,8 @@ chng {2002 Mar * (2.4.0)} {
     about 2.5 times faster and large DELETEs about 5 times faster.</li>
 <li>Made the CACHE_SIZE pragma persistent</li>
 <li>Added the SYNCHRONOUS pragma</li>
+<li>Fixed a bug that was causing updates to fail inside of transactions when
+    the database contained a temporary table.</li>
 }
 
 chng {2002 Feb 18 (2.3.3)} {
