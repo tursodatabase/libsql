@@ -477,11 +477,15 @@ clean:
 	rm -rf doc
 	rm -f sqlite.dll sqlite.lib
 
-#make windows dll
+#
+# Windows section; all those funky .dll stuff ;-)
+#
 dll: sqlite.dll
 
+REAL_LIBOBJ = $(LIBOBJ:%.lo=.libs/%.o)
+
 sqlite.dll: $(LIBOBJ) sqlite.def
-	dllwrap --dllname sqlite.dll --def sqlite.def $(LIBOBJ)
+	dllwrap --dllname sqlite.dll --def sqlite.def $(REAL_LIBOBJ)
 	strip sqlite.dll
 
 #target for dll import libraries
