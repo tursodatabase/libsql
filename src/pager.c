@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.107 2004/05/12 13:30:08 drh Exp $
+** @(#) $Id: pager.c,v 1.108 2004/05/14 01:58:13 drh Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -181,14 +181,14 @@ struct Pager {
   u32 cksumInit;              /* Quasi-random value added to every checksum */
   int stmtNRec;               /* Number of records in stmt subjournal */
   int nExtra;                 /* Add this many bytes to each in-memory page */
-  void (*xDestructor)(void*); /* Call this routine when freeing pages */
+  void (*xDestructor)(void*,int); /* Call this routine when freeing pages */
+  int pageSize;               /* Number of bytes in a page */
   int nPage;                  /* Total number of in-memory pages */
   int nRef;                   /* Number of in-memory pages with PgHdr.nRef>0 */
   int mxPage;                 /* Maximum number of pages to hold in cache */
   int nHit, nMiss, nOvfl;     /* Cache hits, missing, and LRU overflows */
   void (*xCodec)(void*,void*,Pgno,int); /* Routine for en/decoding data */
   void *pCodecArg;            /* First argument to xCodec() */
-  int pageSize;               /* Page size in bytes */
   u8 journalOpen;             /* True if journal file descriptors is valid */
   u8 journalStarted;          /* True if header of journal is synced */
   u8 useJournal;              /* Use a rollback journal on this file */
@@ -587,14 +587,16 @@ static int pager_playback_one_page(Pager *pPager, OsFile *jfd, int format){
     ** 1 which is held in use in order to keep the lock on the database
     ** active.
     */
+    void *pData;
     assert( pPg->nRef==0 || pPg->pgno==1 );
-    memcpy(PGHDR_TO_DATA(pPg), pgRec.aData, SQLITE_PAGE_SIZE);
+    pData = PGHDR_TO_DATA(pPg);
+    memcpy(pData, pgRec.aData, pPager->pageSize);
     if( pPager->xDestructor ){
-      pPager->xDestructor(PGHDR_TO_DATA(pPg));
+      pPager->xDestructor(pData, pPager->pageSize);
     }
     pPg->dirty = 0;
     pPg->needSync = 0;
-    CODEC(pPager, PGHDR_TO_DATA(pPg), pPg->pgno, 3);
+    CODEC(pPager, pData, pPg->pgno, 3);
   }
   return rc;
 }
@@ -1034,7 +1036,7 @@ int sqlite3pager_open(
 ** The destructor is not called as a result sqlite3pager_close().  
 ** Destructors are only called by sqlite3pager_unref().
 */
-void sqlite3pager_set_destructor(Pager *pPager, void (*xDesc)(void*)){
+void sqlite3pager_set_destructor(Pager *pPager, void (*xDesc)(void*,int)){
   pPager->xDestructor = xDesc;
 }
 
@@ -1708,7 +1710,7 @@ int sqlite3pager_unref(void *pData){
       pPager->pFirstSynced = pPg;
     }
     if( pPager->xDestructor ){
-      pPager->xDestructor(pData);
+      pPager->xDestructor(pData, pPager->pageSize);
     }
   
     /* When all pages reach the freelist, drop the read lock from

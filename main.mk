@@ -109,7 +109,7 @@ SRC = \
 
 # Source code to the test files.
 #
-TESTSRC = \
+TESTSRC_SUBSET = \
    $(TOP)/src/os.c \
    $(TOP)/src/pager.c \
    $(TOP)/src/test1.c \
@@ -118,7 +118,7 @@ TESTSRC = \
    $(TOP)/src/test5.c \
    $(TOP)/src/md5.c
 
-TESTSRC_ORIG = \
+TESTSRC = \
   $(TOP)/src/btree.c \
   $(TOP)/src/func.c \
   $(TOP)/src/os.c \
