@@ -1,5 +1,5 @@
-C Preparations\sfor\sthe\srelease\sof\sversion\s2.7.6.\s(CVS\s847)
-D 2003-01-25T14:32:03
+C Remove\san\sunused\svariable.\s(CVS\s848)
+D 2003-01-25T14:34:23
 F Makefile.in 6606854b1512f185b8e8c779b8d7fc2750463d64
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -21,7 +21,7 @@ F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
 F src/auth.c 9c2db0bc7707f2d2e227f47e3d557b41d44ade75
 F src/btree.c eb4f430b062500d7533c031097d3ff8824eca3ba
 F src/btree.h 17710339f7a8f46e3c7d6d0d4648ef19c584ffda
-F src/build.c 0454fd02e163865c82106dd52dec4a4caf908ebf
+F src/build.c d6716dae74cccdcb9db6d05f65f7994762aa6d9f
 F src/delete.c cbd499f3f9297504c42e328af89bef1a2113d04c
 F src/encode.c faf03741efe921755ec371cf4a6984536de00042
 F src/expr.c 382839b92cb66a34cfa71cf1d2bc8fb818226c90
@@ -154,7 +154,7 @@ F www/speed.tcl 4d463e2aea41f688ed320a937f93ff885be918c3
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P ed47d162a072a2f98b633cc14f2be1474288d90b
-R ac275003d5c8579bbef067d7114575c1
+P 5143d4814df1dd440a362a90dd3f328c84527565
+R 8d798f4de6f078b0174c54b9f779d4d6
 U drh
-Z a9f481ee056716188ea06cbf02c53f2b
+Z 8afdccf6d8d280981bb3a6b92995d993

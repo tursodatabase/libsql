@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.124 2003/01/18 20:11:07 drh Exp $
+** $Id: build.c,v 1.125 2003/01/25 14:34:23 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -622,7 +622,6 @@ void sqliteAddPrimaryKey(Parse *pParse, IdList *pList, int onError){
 */
 int sqliteCollateType(const char *zType, int nType){
   int i;
-  int sortOrder = SQLITE_SO_NUM;
   for(i=0; i<nType-1; i++){
     switch( zType[i] ){
       case 'b':
