@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the lang-*.html files.
 #
-set rcsid {$Id: lang.tcl,v 1.83 2005/02/14 06:38:41 danielk1977 Exp $}
+set rcsid {$Id: lang.tcl,v 1.84 2005/02/19 12:44:16 drh Exp $}
 source common.tcl
 
 if {[llength $argv]>0} {
@@ -903,7 +903,7 @@ Syntax {expr} {
 <expr> [NOT] IN ( <value-list> ) |
 <expr> [NOT] IN ( <select-statement> ) |
 <expr> [NOT] IN [<database-name> .] <table-name> |
-( <select-statement> ) |
+[EXISTS] ( <select-statement> ) |
 CASE [<expr>] LP WHEN <expr> THEN <expr> RPPLUS [ELSE <expr>] END
 } {like-op} {
 LIKE | NOT LIKE
@@ -1021,13 +1021,20 @@ of a row key in an UPDATE or INSERT statement.
 "SELECT * ..." does not return the row key.</p>
 
 <p>SELECT statements can appear in expressions as either the
-right-hand operand of the IN operator or as a scalar quantity.
-In both cases, the SELECT should have only a single column in its
+right-hand operand of the IN operator, as a scalar quantity, or
+as the operand of an EXISTS operator.
+As a scalar quantity or the operand of an IN operator,
+the SELECT should have only a single column in its
 result.  Compound SELECTs (connected with keywords like UNION or
 EXCEPT) are allowed.
-A SELECT in an expression is evaluated once before any other processing
-is performed, so none of the expressions within the select itself can
-refer to quantities in the containing expression.</p>
+With the EXISTS operator, the columns in the result set of the SELECT are
+ignored and the expression returns TRUE if one or more rows exist
+and FALSE if the result set is empty.
+If no terms in the SELECT expression refer to value in the containing
+query, then the expression is evaluated once prior to any other
+processing and the result is reused as necessary.  If the SELECT expression
+does contain variables from the outer query, then the SELECT is reevaluated
+every time it is needed.</p>
 
 <p>When a SELECT is the right operand of the IN operator, the IN
 operator returns TRUE if the result of the left operand is any of
