@@ -36,7 +36,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.225 2003/06/02 23:14:13 drh Exp $
+** $Id: vdbe.c,v 1.226 2003/06/04 16:24:40 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2287,7 +2287,7 @@ case OP_MustBeInt: {
     /* Do nothing */
   }else if( aStack[tos].flags & STK_Real ){
     int i = aStack[tos].r;
-    double r = i;
+    double r = (double)i;
     if( r!=aStack[tos].r ){
       goto mismatch;
     }

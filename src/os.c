@@ -1003,7 +1003,6 @@ int sqliteOsFileSize(OsFile *id, off_t *pSize){
 int isNT(void){
   static osType = 0;   /* 0=unknown 1=win95 2=winNT */
   if( osType==0 ){
-    int tmpOsType;
     OSVERSIONINFO sInfo;
     sInfo.dwOSVersionInfoSize = sizeof(sInfo);
     GetVersionEx(&sInfo);

@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.83 2003/04/25 15:37:58 drh Exp $
+** @(#) $Id: pager.c,v 1.84 2003/06/04 16:24:40 drh Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -496,7 +496,7 @@ static int pager_playback_one_page(Pager *pPager, OsFile *jfd, int format){
   if( pgRec.pgno==0 ){
     return SQLITE_DONE;
   }
-  if( pgRec.pgno>pPager->dbSize ){
+  if( pgRec.pgno>(unsigned)pPager->dbSize ){
     return SQLITE_OK;
   }
   if( format>=JOURNAL_FORMAT_3 ){
@@ -944,7 +944,7 @@ int sqlitepager_truncate(Pager *pPager, Pgno nPage){
     rc = pager_errcode(pPager);
     return rc;
   }
-  if( nPage>=pPager->dbSize ){
+  if( nPage>=(unsigned)pPager->dbSize ){
     return SQLITE_OK;
   }
   syncAllPages(pPager);

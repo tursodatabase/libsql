@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.93 2003/05/17 17:35:11 drh Exp $
+** $Id: btree.c,v 1.94 2003/06/04 16:24:39 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -2477,7 +2477,7 @@ static int balance(Btree *pBt, MemPage *pPage, BtCursor *pCur){
     int minV = pgnoNew[i];
     int minI = i;
     for(j=i+1; j<k; j++){
-      if( pgnoNew[j]<minV ){
+      if( pgnoNew[j]<(unsigned)minV ){
         minI = j;
         minV = pgnoNew[j];
       }
