@@ -1,7 +1,7 @@
 #
 # Run this script to generated a faq.html output file
 #
-set rcsid {$Id: faq.tcl,v 1.16 2002/08/14 12:56:56 drh Exp $}
+set rcsid {$Id: faq.tcl,v 1.17 2002/08/15 11:48:14 drh Exp $}
 
 puts {<html>
 <head>
@@ -79,6 +79,9 @@ faq {
   <p>An exception to this rule is a column of type INTEGER PRIMARY KEY.
   Such columns must hold an integer.  An attempt to put a non-integer
   value into an INTEGER PRIMARY KEY column will generate an error.</p>
+
+  <p>There is a page on <a href="datatypes.html">datatypes in SQLite</a>
+  that explains this concept further.</p>
 }
 
 faq {
@@ -88,65 +91,78 @@ faq {
   inserted into any column.  You can put arbitrary length strings into
   integer columns, floating point numbers in boolean columns, or dates
   in character columns.  The datatype you assign to a column in the
-  CREATE TABLE command is (mostly) ignored.  Every column is able to hold
+  CREATE TABLE command does not restrict what data can be put into
+  that column.  Every column is able to hold
   an arbitrary length string.  (There is one exception: Columns of
   type INTEGER PRIMARY KEY may only hold an integer.  An error will result
   if you try to put anything other than an integer into an
   INTEGER PRIMARY KEY column.)</p>
 
-  <p>Because SQLite ignores data types, you can omit the data type definition
-  from columns in CREATE TABLE statements.  For example, instead of saying
-<blockquote><pre>
-CREATE TABLE t1(
-  f1 int,
-  f2 varchar(10),
-  f3 boolean
-);
+  <p>The datatype does effect how values are compared, however.  For
+  columns with a numeric type (such as "integer") any string that looks
+  like a number is treated as a number for comparison and sorting purposes.
+  Consider these two command sequences:</p>
+
+  <blockquote><pre>
+CREATE TABLE t1(a INTEGER UNIQUE);        CREATE TABLE t2(b TEXT UNIQUE);
+INSERT INTO t1 VALUES('0');               INSERT INTO t2 VALUES(0);
+INSERT INTO t1 VALUES('0.0');             INSERT INTO t2 VALUES(0.0);
 </pre></blockquote>
-  You can save yourself a lot of typing and formatting by omitting the
-  data type declarations, like this:
-<blockquote><pre>
-CREATE TABLE t1(f1,f2,f3);
-</pre></blockquote>
-  </p>
+
+  <p>In the sequence on the left, the second insert will fail.  In this case,
+  the strings '0' and '0.0' are treated as numbers since they are being 
+  inserted into a numeric column and 0==0.0 which violates the uniqueness
+  constraint.  But the second insert in the right-hand sequence works.  In
+  this case, the constants 0 and 0.0 are treated a strings which means that
+  they are distinct.</p>
+
+  <p>There is a page on <a href="datatypes.html">datatypes in SQLite</a>
+  that explains this concept further.</p>
 }
 
 faq {
   Why does SQLite think that the expression '0'=='00' is TRUE?
 } {
-  <p>This is a consequence of SQLite being typeless.  All data is stored
-  internally as a null-terminated string.  There is no concept of
-  separate data types for strings and numbers.</p>
+  <p>As of version 2.7.0, it doesn't.</p>
 
-  <p>When doing a comparison, SQLite looks at the string on both sides of
-  the comparison operator.  If both strings look like pure numeric
-  values (with no extra punctuation or spacing) then the strings are
-  converted to floating point numbers using <b>atof()</b> and the results
-  are compared.  The results of <b>atof("0")</b> and <b>atof("00")</b>
-  are both 0.0, so those two strings are considered to be equal.</p>
+  <p>But if one of the two values being compared is stored in a column that
+  has a numeric type, the the other value is treated as a number, not a
+  string and the result succeeds.  For example:</p>
 
-  <p>If only one string in a comparison is a pure numeric, then that string
-  is assumed to be less than the other.  Of neither string is a pure numeric,
-  then <b>strcmp()</b> is used for the comparison.</p>
+<blockquote><pre>
+CREATE TABLE t3(a INTEGER, b TEXT);
+INSERT INTO t3 VALUES(0,0);
+SELECT count(*) FROM t3 WHERE a=='00';
+</pre></blockquote>
+
+  <p>The SELECT in the above series of commands returns 1.  The "a" column
+  is numeric so in the WHERE clause the string '00' is converted into a
+  number for comparison against "a".  0==00 so the test is true.  Now
+  consider a different SELECT:</p>
+
+<blockquote><pre>
+SELECT count(*) FROM t3 WHERE b=='00';
+</pre></blockquote>
+
+  <p>In this case the answer is 0.  B is a text column so a text comparison
+  is done against '00'.  '0'!='00' so the WHERE clause returns FALSE and
+  the count is zero.</p>
+
+  <p>There is a page on <a href="datatypes.html">datatypes in SQLite</a>
+  that explains this concept further.</p>
 }
 
 faq {
   Why doesn't SQLite allow me to use '0' and '0.0' as the primary
   key on two different rows of the same table?
 } {
-  <p>Every row much have a unique primary key.
-  But SQLite thinks that <b>'0'</b> and <b>'0.0'</b> are the
+  <p>Your primary key must have a numeric type.  Change the datatype of
+  your primary key to TEXT and it should work.</p>
+
+  <p>Every row must have a unique primary key.  For a column with a
+  numeric type, SQLite thinks that <b>'0'</b> and <b>'0.0'</b> are the
   same value because they compare equal to one another numerically.
   (See the previous question.)  Hence the values are not unique.</p>
-
-  <p>You can work around this issue in two ways:</p>
-  <ol>
-  <li><p>Remove the <b>primary key</b> clause from the CREATE TABLE.</p></li>
-  <li><p>Prepend a space to the beginning of every value you use for
-      the primary key.  The initial
-     space will mean that the entries are not pure numerics and hence
-     will be compared as strings using <b>strcmp()</b>.</p></li>
-  </ol>
 }
         
 faq {

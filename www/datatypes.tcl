@@ -1,7 +1,7 @@
 #
 # Run this script to generated a datatypes.html output file
 #
-set rcsid {$Id: datatypes.tcl,v 1.2 2002/08/14 03:03:58 drh Exp $}
+set rcsid {$Id: datatypes.tcl,v 1.3 2002/08/15 11:48:14 drh Exp $}
 
 puts {<html>
 <head>
@@ -184,10 +184,70 @@ TEXT
 <p>
 The search for these strings in the type declaration is case insensitive,
 of course.  If any of the above strings occur anywhere in the type
-declaration, then the datatype of the column is text.  Otherwise the
-datatype is numeric.  Note in particular that the datatype for columns
+declaration, then the datatype of the column is text.  Notice that
+the type "VARCHAR" contains "CHAR" as a substring so it is considered
+text.</p>
+
+<p>If none of the strings above occur anywhere in the type declaration,
+then the datatype is numeric.  Note in particular that the datatype for columns
 with an empty type declaration is numeric.
 </p>
+
+<h2>5.0 &nbsp; Examples</h2>
+
+<p>
+Consider the following two command sequences:
+</p>
+
+<blockquote><pre>
+CREATE TABLE t1(a INTEGER UNIQUE);        CREATE TABLE t2(b TEXT UNIQUE);
+INSERT INTO t1 VALUES('0');               INSERT INTO t2 VALUES(0);
+INSERT INTO t1 VALUES('0.0');             INSERT INTO t2 VALUES(0.0);
+</pre></blockquote>
+
+<p>In the sequence on the left, the second insert will fail.  In this case,
+the strings '0' and '0.0' are treated as numbers since they are being 
+inserted into a numeric column but 0==0.0 which violates the uniqueness
+constraint.  However, the second insert in the right-hand sequence works.  In
+this case, the constants 0 and 0.0 are treated a strings which means that
+they are distinct.</p>
+
+<p>SQLite always converts numbers into double-precision (64-bit) floats
+for comparison purposes.  This means that a long sequence of digits that
+differ only in digits of far to the right will compare equal if they
+are in a numeric column but will compare unequal if they are in a text
+column.  We have:</p>
+
+<blockquote><pre>
+INSERT INTO t1                            INSERT INTO t2
+   VALUES('12345678901234567890');           VALUES(12345678901234567890);
+INSERT INTO t1                            INSERT INTO t2
+   VALUES('12345678901234567891');           VALUES(12345678901234567891);
+</pre></blockquote>
+
+<p>As before, the second insert on the left will fail because the comparison
+will convert both strings into floating-point number first and the only
+difference in the strings is in the 20-th digit which exceeds the resolution
+of a 64-bit float.  In contrast, the second insert on the right will work
+because in that case, the numbers being inserted are strings and are
+compared using memcmp().</p>
+
+<p>
+Numeric and text types make a difference for the DISTINCT keyword too:
+</p>
+
+<blockquote><pre>
+CREATE TABLE t3(a INTEGER);               CREATE TABLE t4(b TEXT);
+INSERT INTO t3 VALUES('0');               INSERT INTO t4 VALUES(0);
+INSERT INTO t3 VALUES('0.0');             INSERT INTO t4 VALUES(0.0);
+SELECT DISTINCT * FROM t3;                SELECT DISTINCT * FROM t4;
+</pre></blockquote>
+
+<p>
+The SELECT statement on the left returns a single row since '0' and '0.0'
+are treated as numbers and are therefore indistinct.  But the SELECT 
+statement on the right returns two rows since 0 and 0.0 are treated
+a strings which are different.</p>
 }
 
 puts {

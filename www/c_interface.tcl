@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: c_interface.tcl,v 1.33 2002/08/02 10:36:10 drh Exp $}
+set rcsid {$Id: c_interface.tcl,v 1.34 2002/08/15 11:48:14 drh Exp $}
 
 puts {<html>
 <head>
@@ -410,7 +410,7 @@ for the most recent INSERT statement using the
 <p>The <b>sqlite_changes()</b> API function returns the number of rows
 that were inserted, deleted, or modified during the most recent
 <b>sqlite_exec()</b> call.  The number reported includes any changes
-that were later undo by a ROLLBACK or ABORT.  But rows that are
+that were later undone by a ROLLBACK or ABORT.  But rows that are
 deleted because of a DROP TABLE are <em>not</em> counted.</p>
 
 <p>SQLite implements the command "<b>DELETE FROM table</b>" (without
@@ -425,7 +425,7 @@ is necessary, use "<b>DELETE FROM table WHERE 1</b>" instead.</p>
 
 <p>The <b>sqlite_get_table()</b> function is a wrapper around
 <b>sqlite_exec()</b> that collects all the information from successive
-callbacks and write it into memory obtained from malloc().  This
+callbacks and writes it into memory obtained from malloc().  This
 is a convenience function that allows the application to get the
 entire result of a database query with a single function call.</p>
 
@@ -433,7 +433,7 @@ entire result of a database query with a single function call.</p>
 to strings.  There is one element in this array for each column of
 each row in the result.  NULL results are represented by a NULL
 pointer. In addition to the regular data, there is an added row at the 
-beginning of the array that contains the names of each column of the
+beginning of the array that contains the name of each column of the
 result.</p>
 
 <p>As an example, consider the following query:</p>
@@ -619,7 +619,7 @@ additional arguments are attached to the end of the function call.</p>
 functions instead of <b>sprintf()</b>.  First of all, with the
 SQLite printf routines, there is never a danger of overflowing a
 static buffer as there is with <b>sprintf()</b>.  The SQLite
-printf routines automatically allocate (and later free)
+printf routines automatically allocate (and later frees)
 as much memory as is 
 necessary to hold the SQL statements generated.</p>
 
