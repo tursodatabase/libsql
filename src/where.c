@@ -12,7 +12,7 @@
 ** This module contains C code that generates VDBE code used to process
 ** the WHERE clause of SQL statements.
 **
-** $Id: where.c,v 1.96 2004/05/18 01:23:39 danielk1977 Exp $
+** $Id: where.c,v 1.97 2004/05/19 13:13:08 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -684,7 +684,7 @@ WhereInfo *sqlite3WhereBegin(
     sqlite3CodeVerifySchema(pParse, pTab->iDb);
     if( (pIx = pWInfo->a[i].pIdx)!=0 ){
       sqlite3VdbeAddOp(v, OP_Integer, pIx->iDb, 0);
-      sqlite3VdbeOp3(v, OP_OpenRead, pWInfo->a[i].iCur, pIx->tnum, pIx->zName,0);
+      sqlite3VdbeOp3(v, OP_OpenRead, pWInfo->a[i].iCur, pIx->tnum,pIx->zName,0);
     }
   }
 
@@ -749,6 +749,10 @@ WhereInfo *sqlite3WhereBegin(
       int testOp;
       int nColumn = (pLevel->score+4)/8;
       brk = pLevel->brk = sqlite3VdbeMakeLabel(v);
+
+      /* For each column of the index, find the term of the WHERE clause that
+      ** constraints that column.  If the WHERE clause term is X=expr, then
+      ** evaluation expr and leave the result on the stack */
       for(j=0; j<nColumn; j++){
         for(k=0; k<nExpr; k++){
           Expr *pX = aExpr[k].p;
@@ -791,17 +795,34 @@ WhereInfo *sqlite3WhereBegin(
       }
       pLevel->iMem = pParse->nMem++;
       cont = pLevel->cont = sqlite3VdbeMakeLabel(v);
+
+      /* At this point, the top nColumn elements of the stack are the
+      ** values of columns in the index we are using.  Check to see if
+      ** any of these values are NULL.  If they are, they will not match any
+      ** index entries, so skip immediately to the next iteration of the loop */
       sqlite3VdbeAddOp(v, OP_NotNull, -nColumn, sqlite3VdbeCurrentAddr(v)+3);
       sqlite3VdbeAddOp(v, OP_Pop, nColumn, 0);
       sqlite3VdbeAddOp(v, OP_Goto, 0, brk);
+
+      /* Generate an index key from the top nColumn elements of the stack */
       sqlite3VdbeAddOp(v, OP_MakeKey, nColumn, 0);
       sqlite3IndexAffinityStr(v, pIdx);
       sqlite3VdbeAddOp(v, OP_MemStore, pLevel->iMem, 0);
+
+      /* Choose a testOp that will determine when we have moved past the
+      ** last element of the table that matches the index key we just
+      ** created */
       if( nColumn==pIdx->nColumn || pLevel->bRev ){
         testOp = OP_IdxGT;
       }else{
         testOp = OP_IdxGE;
       }
+
+      /* Generate code (1) to move to the first matching element of the table.
+      ** Then generate code (2) that jumps to "brk" after the cursor is past
+      ** the last matching element of the table.  The code (1) is executed
+      ** once to initialize the search, the code (2) is executed before each
+      ** iteration of the scan to see if the scan has finished. */
       if( pLevel->bRev ){
         /* Scan in reverse order */
         sqlite3VdbeAddOp(v, OP_MoveLt, pLevel->iCur, brk);
@@ -1003,7 +1024,7 @@ WhereInfo *sqlite3WhereBegin(
         sqlite3IndexAffinityStr(v, pIdx);
         if( pLevel->bRev ){
           sqlite3VdbeAddOp(v, OP_MoveLt, pLevel->iCur, brk);
-          if( !geFlag ){
+          if( leFlag ){
             sqlite3VdbeChangeP3(v, -1, "+", P3_STATIC);
           }
         }else{
@@ -1202,6 +1223,3 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
   sqliteFree(pWInfo);
   return;
 }
-
-
-

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.302 2004/05/19 11:31:13 drh Exp $
+** $Id: vdbe.c,v 1.303 2004/05/19 13:13:08 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2766,10 +2766,12 @@ case OP_Close: {
 ** If there are no records greater than the key and P2 is not zero,
 ** then an immediate jump to P2 is made.
 **
-** If P3 is not NULL, then the cursor is left pointing at the first
-** record that is greater than the key of which the key is not a prefix.
-** This is the same effect that executing OP_IncrKey on the key value
-** before OP_MoveTo used to have.
+** If P3 is the "+" string (or any other non-NULL string) then the
+** index taken from the top of the stack is temporarily increased by
+** an epsilon prior to the move.  This causes the P1 cursor to move
+** to the first entry which is greater than the index on the top of
+** the stack rather than the first entry that is equal to the top of
+** the stack.
 **
 ** See also: Found, NotFound, Distinct, MoveLt
 */
@@ -2781,10 +2783,12 @@ case OP_Close: {
 ** If there are no records less than than the key and P2
 ** is not zero then an immediate jump to P2 is made.
 **
-** If P3 is not NULL, and keys exist in the index of which the stack key
-** is a prefix, leave the cursor pointing at the largest of these.
-** This is the same effect that executing OP_IncrKey on the key value
-** before OP_MoveLt used to have.
+** If P3 is the "+" string (or any other non-NULL string) then the
+** index taken from the top of the stack is temporarily increased by
+** an epsilon prior to the move.  This causes the P1 cursor to move
+** to the smallest entry that is greater than or equal to the top of
+** the stack rather than the largest entry that is less than the top
+** of the stack.
 **
 ** See also: MoveTo
 */
@@ -3798,30 +3802,42 @@ case OP_IdxRecno: {
   break;
 }
 
-/* Opcode: IdxGT P1 P2 *
+/* Opcode: IdxGT P1 P2 P3
 **
 ** Compare the top of the stack against the key on the index entry that
-** cursor P1 is currently pointing to.  Ignore the last 4 bytes of the
+** cursor P1 is currently pointing to.  Ignore the ROWID of the
 ** index entry.  If the index entry is greater than the top of the stack
 ** then jump to P2.  Otherwise fall through to the next instruction.
 ** In either case, the stack is popped once.
+**
+** If P3 is the "+" string (or any other non-NULL string) then the
+** index taken from the top of the stack is temporarily increased by
+** an epsilon prior to the comparison.
 */
 /* Opcode: IdxGE P1 P2 *
 **
 ** Compare the top of the stack against the key on the index entry that
-** cursor P1 is currently pointing to.  Ignore the last 4 bytes of the
+** cursor P1 is currently pointing to.  Ignore the ROWID of the
 ** index entry.  If the index entry is greater than or equal to 
 ** the top of the stack
 ** then jump to P2.  Otherwise fall through to the next instruction.
 ** In either case, the stack is popped once.
+**
+** If P3 is the "+" string (or any other non-NULL string) then the
+** index taken from the top of the stack is temporarily increased by
+** an epsilon prior to the comparison.
 */
 /* Opcode: IdxLT P1 P2 *
 **
 ** Compare the top of the stack against the key on the index entry that
-** cursor P1 is currently pointing to.  Ignore the last 4 bytes of the
+** cursor P1 is currently pointing to.  Ignore the ROWID of the
 ** index entry.  If the index entry is less than the top of the stack
 ** then jump to P2.  Otherwise fall through to the next instruction.
 ** In either case, the stack is popped once.
+**
+** If P3 is the "+" string (or any other non-NULL string) then the
+** index taken from the top of the stack is temporarily increased by
+** an epsilon prior to the comparison.
 */
 case OP_IdxLT:
 case OP_IdxGT:
@@ -5092,7 +5108,7 @@ default: {
           for(j=0; j<20 && j<pTos[i].n; j++){
             int c = pTos[i].z[j];
             if( c==0 && j==pTos[i].n-1 ) break;
-            if( isprint(c) && !isspace(c) ){
+            if( c>=0x20 && c<0x7f ){
               zBuf[k++] = c;
             }else{
               zBuf[k++] = '.';

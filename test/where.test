@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the use of indices in WHERE clases.
 #
-# $Id: where.test,v 1.17 2003/06/15 23:42:25 drh Exp $
+# $Id: where.test,v 1.18 2004/05/19 13:13:08 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -280,7 +280,7 @@ do_test where-5.1 {
   count {
     SELECT * FROM t1 WHERE rowid IN (1,2,3,1234) order by 1;
   }
-} {1 0 4 2 1 9 3 1 16 0}
+} {1 0 4 2 1 9 3 1 16 3}
 do_test where-5.2 {
   count {
     SELECT * FROM t1 WHERE rowid+0 IN (1,2,3,1234) order by 1;
@@ -290,7 +290,7 @@ do_test where-5.3 {
   count {
     SELECT * FROM t1 WHERE w IN (-1,1,2,3) order by 1;
   }
-} {1 0 4 2 1 9 3 1 16 10}
+} {1 0 4 2 1 9 3 1 16 13}
 do_test where-5.4 {
   count {
     SELECT * FROM t1 WHERE w+0 IN (-1,1,2,3) order by 1;
@@ -302,33 +302,33 @@ do_test where-5.5 {
        (select rowid from t1 where rowid IN (-1,2,4))
     ORDER BY 1;
   }
-} {2 1 9 4 2 25 1}
+} {2 1 9 4 2 25 3}
 do_test where-5.6 {
   count {
     SELECT * FROM t1 WHERE rowid+0 IN 
        (select rowid from t1 where rowid IN (-1,2,4))
     ORDER BY 1;
   }
-} {2 1 9 4 2 25 199}
+} {2 1 9 4 2 25 201}
 do_test where-5.7 {
   count {
     SELECT * FROM t1 WHERE w IN 
        (select rowid from t1 where rowid IN (-1,2,4))
     ORDER BY 1;
   }
-} {2 1 9 4 2 25 7}
+} {2 1 9 4 2 25 9}
 do_test where-5.8 {
   count {
     SELECT * FROM t1 WHERE w+0 IN 
        (select rowid from t1 where rowid IN (-1,2,4))
     ORDER BY 1;
   }
-} {2 1 9 4 2 25 199}
+} {2 1 9 4 2 25 201}
 do_test where-5.9 {
   count {
     SELECT * FROM t1 WHERE x IN (1,7) ORDER BY 1;
   }
-} {2 1 9 3 1 16 6}
+} {2 1 9 3 1 16 7}
 do_test where-5.10 {
   count {
     SELECT * FROM t1 WHERE x+0 IN (1,7) ORDER BY 1;
@@ -348,12 +348,12 @@ do_test where-5.13 {
   count {
     SELECT * FROM t1 WHERE x IN (1,7) AND y NOT IN (6400,8100) ORDER BY 1;
   }
-} {2 1 9 3 1 16 6}
+} {2 1 9 3 1 16 7}
 do_test where-5.14 {
   count {
     SELECT * FROM t1 WHERE x IN (1,7) AND y IN (9,10) ORDER BY 1;
   }
-} {2 1 9 6}
+} {2 1 9 7}
 
 # This procedure executes the SQL.  Then it checks the generated program
 # for the SQL and appends a "nosort" to the result if the program contains the
