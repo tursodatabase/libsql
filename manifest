@@ -1,5 +1,5 @@
-C Version\s2.4.0\s(CVS\s443)
-D 2002-03-11T02:15:00
+C Change\sthe\sway\sthat\slemon\shandles\s%extra_argument.\s(CVS\s427)
+D 2002-03-11T13:55:50
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -102,8 +102,8 @@ F test/update.test 3cf1ca0565f678063c2dfa9a7948d2d66ae1a778
 F test/vacuum.test 059871b312eb910bbe49dafde1d01490cc2c6bbe
 F test/view.test 4a8a9cf59b54409228c7b9b918ed8bf9bade1220
 F test/where.test 032d581c3de4893eba33b569e581c46b941bb02a
-F tool/lemon.c e6b3d8df512bf6a753dab1b0490dd78e13adb033
-F tool/lempar.c 5c7d2b78bf9326ccea50b5835eb1574e6c51ad71
+F tool/lemon.c 77d026f58d7715543786d457cf9432f9103e3f62
+F tool/lempar.c ee508b94607f74d591d60eda5c8014db4e144de5
 F tool/memleak.awk 296dfbce7a9ca499b95ce04e30334e64a50052e0
 F tool/opNames.awk 5ba1f48aa854ee3b7c3d2b54233665bc3e649ea2
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
@@ -130,7 +130,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 9f5b241cb2fc89f66d3762b4b4978b8e114caf53
-R 7b12f4656109e08ea529f581aa14155c
+P d3f66b44e501ac30aededefbec7ebe224cf080ad
+R 5b4206f42a1c3f4e538f039b464efaa5
 U drh
-Z 0b420edf7f2ebf4a6122263ef8cc3798
+Z 6aea2d933cffdbb0d05c974f21cfe84d
