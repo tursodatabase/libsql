@@ -1,5 +1,5 @@
-C Documentation\schanges\sprior\sto\sthe\srelease\sof\sversion\s3.2.0.\s(CVS\s2416)
-D 2005-03-21T19:48:00
+C Version\s3.2.0\s(CVS\s2415)
+D 2005-03-21T19:51:31
 F Makefile.in 5c00d0037104de2a50ac7647a5f12769795957a3
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -278,7 +278,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P 1f9d10d7965c95d1e35f64cf4c3f128adabd41f2
+P cc5a2c8e5d2ddb87f3bce6efaf3e62d7fa00d9ca
 R a23f8956447a21f1677f44f20c9ed426
 U drh
-Z c644c1654c011861cbefd434c603ea9f
+Z d0145a0cb90afda2c5d7bf7edabf994e
