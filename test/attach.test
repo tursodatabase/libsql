@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach.test,v 1.8 2003/06/04 12:31:53 drh Exp $
+# $Id: attach.test,v 1.9 2003/06/04 15:53:02 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -94,10 +94,15 @@ do_test attach-1.11 {
     ATTACH 'test.db' AS db9;
   }
 } {}
-do_test attach-1.11b {
-  execsql {
-    PRAGMA database_list;
+proc db_list {db} {
+  set list {}
+  foreach {idx name file} [execsql {PRAGMA database_list} $db] {
+    lappend list $idx $name
   }
+  return $list
+}
+do_test attach-1.11b {
+  db_list db
 } {0 main 1 temp 2 db2 3 db3 4 db4 5 db5 6 db6 7 db7 8 db8 9 db9}
 do_test attach-1.12 {
   catchsql {
@@ -143,8 +148,8 @@ do_test attach-1.19 {
 do_test attach-1.20 {
   execsql {
     DETACH db5;
-    PRAGMA database_list;
   }
+  db_list db
 } {0 main 1 temp 2 db2 3 db3 4 db4 5 db11 6 db6 7 db7 8 db8 9 db9 10 db10}
 do_test attach-1.21 {
   catchsql {
@@ -195,9 +200,7 @@ do_test attach-1.28 {
   }
 } {0 {}}
 do_test attach-1.29 {
-  execsql {
-    PRAGMA database_list
-  }
+  db_list db
 } {0 main 1 temp}
 
 do_test attach-2.1 {
@@ -243,9 +246,7 @@ do_test attach-2.7 {
   }
 } {table t2 t2 table tx tx trigger r1 t2}
 do_test attach-2.8 {
-  execsql {
-    PRAGMA database_list
-  }
+  db_list db
 } {0 main 1 temp 2 db2}
 do_test attach-2.9 {
   execsql {
@@ -264,9 +265,7 @@ do_test attach-2.11 {
   }
 } {1 {database schema has changed}}
 do_test attach-2.12 {
-  execsql {
-    PRAGMA database_list
-  }
+  db_list db
 } {0 main 1 temp 2 db2}
 do_test attach-2.13 {
   catchsql {

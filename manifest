@@ -1,5 +1,5 @@
-C Change\sthe\s"database_list"\spragma\sto\sreturn\sa\sthird\scolumn\scontaining\sthe\nfilename\sof\sthe\sunderlying\sdatabase\sfile.\s\sAlways\suse\san\sin-memory\sTEMP\ndatabase\swith\san\sin-memory\smain\sdatabase.\s(CVS\s1003)
-D 2003-06-04T15:48:33
+C Adjust\stest\scases\sto\scope\swith\sthe\sextra\scolumn\sreturned\sby\sthe\sdatabase_list\npragma.\s(CVS\s1004)
+D 2003-06-04T15:53:02
 F Makefile.in 1ff85c27d4350c74118341024e8a4fb2a04a3a43
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -63,7 +63,7 @@ F src/vdbe.c 4170cba0a05da0a93dcd674859fc1ce18f3fb0a3
 F src/vdbe.h 985c24f312d10f9ef8f9a8b8ea62fcdf68e82f21
 F src/where.c 1e645d430cb4b347159c28c6085e9801160f2099
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
-F test/attach.test fa2fd071e591e9b2254f69a1224059de525b16ca
+F test/attach.test 71905b5e7a5a712e7ea47d249431740e617ec75e
 F test/auth.test dee78be1f4f920bd6b15c4c947ce4d01bfe2826d
 F test/bigfile.test 1cd8256d4619c39bea48147d344f348823e78678
 F test/bigrow.test 8ab252dba108f12ad64e337b0f2ff31a807ac578
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 433570e3e6caa52b9e480a22529dde6385a3c7d3
-R cb2900943d7c0b51209a7805a653dfeb
+P f39100f5759d0d8b9c71e18d38a148dee4643020
+R e73d3888fde77757fd3cbb21c9a30175
 U drh
-Z 3de7c4883d1691228d569396e6e62416
+Z 4c41b5d59b8d9ed613fa16ca0602fcaf
