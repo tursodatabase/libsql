@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the speed.html file.
 #
-set rcsid {$Id: speed.tcl,v 1.10 2003/01/25 14:25:42 drh Exp $ }
+set rcsid {$Id: speed.tcl,v 1.11 2003/02/16 22:36:03 drh Exp $ }
 
 puts {<html>
 <head>
@@ -27,8 +27,8 @@ conclusions drawn from these experiments:
 <ul>
 <li><p>
   SQLite 2.7.6 is significantly faster (sometimes as much as 10 or
-  20 times faster) than PostgreSQL 7.1.3
-  for most common operations.  
+  20 times faster) than the default PostgreSQL 7.1.3 installation
+  on RedHat 7.3 for most common operations.  
 </p></li>
 <li><p>
   SQLite 2.7.6 is often faster (sometimes
@@ -76,13 +76,25 @@ No effort was made to tune these engines.  Note in particular
 the the default MySQL configuration on RedHat 7.2 does not support
 transactions.  Not having to support transactions gives MySQL a
 big speed advantage, but SQLite is still able to hold its own on most
-tests.  On the other hand, I am told that the default PostgreSQL
-configuration is unnecessarily conservative (it is designed to
+tests.
+</p>
+
+<p>
+I am told that the default PostgreSQL configuration in RedHat 7.3
+is unnecessarily conservative (it is designed to
 work on a machine with 8MB of RAM) and that PostgreSQL could
 be made to run a lot faster with some knowledgable configuration
-tuning.  I have not, however, been able to personally confirm
-these reports.
+tuning.
+Matt Sergeant reports that he has tuned his PostgreSQL installation
+and rerun the tests shown below.  His results show that
+PostgreSQL and MySQL run at about the same speed.  For Matt's
+results, visit
 </p>
+
+<blockquote>
+<a href="http://www.sergeant.org/sqlite_vs_pgsync.html">
+http://www.sergeant.org/sqlite_vs_pgsync.html</a>
+</blockquote>
 
 <p>
 SQLite was tested in the same configuration that it appears

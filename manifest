@@ -1,5 +1,5 @@
-C Added\stest\scode\sto\scheck\sfor\sfile\sdescriptor\sleaks.\s\sAll\sregression\stests\spass\nnow\son\sboth\swin2k\sand\slinux.\s(CVS\s868)
-D 2003-02-16T22:21:32
+C Update\sthe\sspeed\scomparison\sdocumentation\sto\sshow\sthe\simproved\sperformance\nof\sPostgreSQL\safter\sperformance\stuning.\s(CVS\s869)
+D 2003-02-16T22:36:03
 F Makefile.in 6606854b1512f185b8e8c779b8d7fc2750463d64
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -151,11 +151,11 @@ F www/nulls.tcl 29497dac2bc5b437aa7e2e94577dad4d8933ed26
 F www/omitted.tcl 118062f40a203fcb88b8d68ef1d7c0073ac191ec
 F www/opcode.tcl 33c5f2061a05c5d227c72b84c080b3bf74c74f8b
 F www/quickstart.tcl 4e97bef825e6a4153c43afb9f97235fc4da278ab
-F www/speed.tcl 4d463e2aea41f688ed320a937f93ff885be918c3
+F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P d10adc1c5727d76320d5919be55e86d030e9c8bc
-R 64431a6b1a331d6ad8bd869629c988f8
+P 75ba78280f7ab6b6acce5878859312f3223ee898
+R 24a2ec5fee02b8a78fc04a7b84369346
 U drh
-Z 0930ffd5b3a1b2b8d49d4e03a67a30f6
+Z 2e49fb8d065665f41dfa451c67c5a8d9
