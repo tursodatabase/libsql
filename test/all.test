@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: all.test,v 1.24 2005/01/07 10:42:48 danielk1977 Exp $
+# $Id: all.test,v 1.25 2005/01/08 02:35:44 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -50,13 +50,22 @@ set LeakList {}
 set EXCLUDE {
   all.test
   crash.test
+  autovacuum_crash.test
   quick.test
   malloc.test
   misuse.test
   memleak.test
   corrupt.test
 }
-#  btree2.test
+
+# Test files btree2.test and btree4.test don't work if the 
+# SQLITE_DEFAULT_AUTOVACUUM macro is defined to true (because they depend
+# on tables being allocated starting at page 2).
+#
+ifcapable default_autovacuum {
+  lappend EXCLUDE btree2.test
+  lappend EXCLUDE btree4.test
+}
 
 for {set Counter 0} {$Counter<$COUNT && $nErr==0} {incr Counter} {
   if {$Counter%2} {
@@ -104,10 +113,14 @@ if {$LeakList!=""} {
   puts " Ok"
 }
 
-# Run the crashtest only on unix and only once.
+# Run the crashtest only on unix and only once. If the library does not
+# always create auto-vacuum databases, also run autovacuum_crash.test.
 #
 if {$tcl_platform(platform)=="unix"} {
   source $testdir/crash.test
+  ifcapable !default_autovacuum {
+    source $testdir/autovacuum_crash.test
+  }
 }
 
 # Run the malloc tests and the misuse test after memory leak detection.

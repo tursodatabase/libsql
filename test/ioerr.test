@@ -15,13 +15,25 @@
 # The tests in this file use special facilities that are only
 # available in the SQLite test fixture.
 #
-# $Id: ioerr.test,v 1.6 2004/10/01 14:38:03 drh Exp $
+# $Id: ioerr.test,v 1.7 2005/01/08 02:35:44 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
 set ::go 1
 for {set n 1} {$go} {incr n} {
+
+  # If SQLITE_DEFAULT_AUTOVACUUM is set to true, then a simulated IO error
+  # on the 8th IO operation in the SQL script below doesn't report an error.
+  #
+  # This is because the 8th IO call attempts to read page 2 of the database
+  # file when the file on disk is only 1 page. The pager layer detects that
+  # this has happened and suppresses the error returned by the OS layer.
+  #
+  ifcapable default_autovacuum {
+    if {$n==8} continue
+  } 
+
   do_test ioerr-1.$n.1 {
     set ::sqlite_io_error_pending 0
     db close

@@ -20,7 +20,7 @@
 # The special crash-test module with its os_test.c backend only works
 # on Unix.
 #
-# $Id: crash.test,v 1.12 2004/11/23 22:16:40 drh Exp $
+# $Id: crash.test,v 1.13 2005/01/08 02:35:44 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -243,6 +243,10 @@ for {set i 1} {$i < $repeats} {incr i} {
 # crash-4.3.*: Test recovery when crash occurs during sync() of the master
 #              journal file. 
 #
+set filesize 559
+ifcapable default_autovacuum {
+  set filesize 562
+}
 do_test crash-4.0 {
   file delete -force test2.db
   file delete -force test2.db-journal
@@ -252,7 +256,7 @@ do_test crash-4.0 {
     CREATE TABLE aux.abc2 AS SELECT 2*a as a, 2*b as b, 2*c as c FROM abc;
   }
   expr [file size test2.db] / 1024
-} {559}
+} $filesize
 
 for {set i 1} {$i<$repeats} {incr i} {
   set sig [signature]
