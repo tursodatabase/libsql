@@ -208,7 +208,7 @@ sqlite3@TARGET_EXEEXT@:	$(TOP)/src/shell.c libsqlite3.la sqlite3.h
 #
 target_source:	$(SRC) $(VDBEHDR) 
 	rm -rf tsrc
-	mkdir tsrc
+	mkdir -p tsrc
 	cp $(SRC) $(VDBEHDR) tsrc
 	rm tsrc/sqlite.h.in tsrc/parse.y
 	cp parse.c opcodes.c tsrc
@@ -440,7 +440,7 @@ docs.html:	$(TOP)/www/docs.tcl
 	tclsh $(TOP)/www/docs.tcl >docs.html
 
 download.html:	$(TOP)/www/download.tcl
-	mkdir doc
+	mkdir -p doc
 	tclsh $(TOP)/www/download.tcl >download.html
 
 faq.html:	$(TOP)/www/faq.tcl
