@@ -17,7 +17,9 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
-chng {2001 Oct 1 (2.0.1)} {
+chng {2001 Oct 2 (2.0.1)} {
+<li>Remove some C++ style comments from btree.c so that it will compile
+    using compilers other than gcc.</li>
 <li>The ".dump" output from the shell does not work if there are embedded
     newlines anywhere in the data.  This is an old bug that was carried
     forward from version 1.0.  To fix it, the ".dump" output no longer

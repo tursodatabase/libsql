@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.31 2001/09/27 03:22:33 drh Exp $
+** $Id: btree.c,v 1.32 2001/10/02 13:01:49 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -2505,13 +2505,13 @@ Pager *sqliteBtreePager(Btree *pBt){
 */
 typedef struct SanityCheck SanityCheck;
 struct SanityCheck {
-  Btree *pBt;    // The tree being checked out
-  Pager *pPager; // The associated pager.  Also accessible by pBt->pPager
-  int nPage;     // Number of pages in the database
-  int *anRef;    // Number of times each page is referenced
-  int nTreePage; // Number of BTree pages
-  int nByte;     // Number of bytes of data stored on BTree pages
-  char *zErrMsg; // An error message.  NULL of no errors seen.
+  Btree *pBt;    /* The tree being checked out */
+  Pager *pPager; /* The associated pager.  Also accessible by pBt->pPager */
+  int nPage;     /* Number of pages in the database */
+  int *anRef;    /* Number of times each page is referenced */
+  int nTreePage; /* Number of BTree pages */
+  int nByte;     /* Number of bytes of data stored on BTree pages */
+  char *zErrMsg; /* An error message.  NULL of no errors seen. */
 };
 
 /*

@@ -1,5 +1,5 @@
-C The\s.dump\soutput\suses\sINSERT\sinstead\sof\sCOPY\snow.\s\sExpression\ssyntax\nof\sthe\sform\s"expr\sNOT\sNULL"\sis\snow\ssupported.\s(CVS\s276)
-D 2001-10-01T14:29:23
+C Remove\sC++\scomments\sfrom\sbtree.c.\s(CVS\s277)
+D 2001-10-02T13:01:49
 F Makefile.in 98d4627cb364537e4c3a29ee806171f3abf5211a
 F Makefile.template 7179523fdf3d6e7933ec843e2352dcfc9785c700
 F README 93d2977cc5c6595c448de16bdefc312b9d401533
@@ -19,7 +19,7 @@ F libtool c56e618713c9510a103bda6b95f3ea3900dcacd6
 F ltmain.sh e9ed72eb1d690f447c13945eaf69e28af531eda1
 F publish.sh 502b907fa9e0214309406fa5f520b3d3c14f9c1d
 F src/TODO af7f3cab0228e34149cf98e073aa83d45878e7e6
-F src/btree.c a4a88dfef2072cedfdac09f3a51b7d70b017b9b4
+F src/btree.c a001f151a7dd32b7afb328fd6f8e445c57d8a74c
 F src/btree.h 57d653ef5137b91f2a068aaf71a2905468dd2cb7
 F src/build.c 64a7325c1471087ada81588d6ace6d294b28cd1d
 F src/delete.c 81002d889aae874decf507627207c5d1b3599dc2
@@ -100,7 +100,7 @@ F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 03b521d252575f93b9c52f7c8b0007011512fcfb
 F www/c_interface.tcl 8e8d9e66e8467c5751116c3427296bde77f474a6
-F www/changes.tcl d7169a77887928e83f8a0d2c22f6b60c212afd0b
+F www/changes.tcl c02f83b3fb83cc6450000f66c4f751306e0fee14
 F www/crosscompile.tcl c99efacb3aefaa550c6e80d91b240f55eb9fd33e
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/index.tcl 998f61fe69be9f1b04e403c8efb75bca92710e83
@@ -111,7 +111,7 @@ F www/speed.tcl ab7d6d3bc898472bd94320a5d3c63de928d4804b
 F www/sqlite.tcl 6a21242a272e9c0939a04419a51c3d50cae33e3e
 F www/tclsqlite.tcl 13d50723f583888fc80ae1a38247c0ab415066fa
 F www/vdbe.tcl bb7d620995f0a987293e9d4fb6185a3b077e9b44
-P c0a8a1fb4224c63bcbb438cfd2ca0d4e0bb5b824
-R 56826905453f8d467277c7046d36715b
+P 20382325c7c8c6b11bd45b23060d0f7fdb4d8fd1
+R 749797abfff4d2facdf1fb82f0e97dc2
 U drh
-Z a2a4bc82e41106d3d020ca0bfe23edb2
+Z e0231b35d85a81a37d264adbfefb2a81
