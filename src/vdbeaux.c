@@ -1101,6 +1101,31 @@ int sqlite2BtreeKeyCompare(
 }
 
 /*
+** The following three functions:
+**
+** sqlite3VdbeSerialize()
+** sqlite3VdbeSerialLen()
+** sqlite3VdbeDeserialize()
+**
+** encapsulate the code that serializes values for storage in SQLite
+** databases. Each serialized value consists of a variable length integer
+** followed by type specific storage.
+**
+**   initial varint     bytes to follow    type
+**   --------------     ---------------    ---------------
+**      0                     0            NULL
+**      1                     1            signed integer
+**      2                     2            signed integer
+**      3                     4            signed integer
+**      4                     8            signed integer
+**      5                     8            IEEE float
+**     6..12                               reserved for expansion
+**    N>=12 and even       (N-12)/2        BLOB
+**    N>=13 and odd        (N-13)/2        text
+**
+*/
+
+/*
 ** Write the serialized form of the value held by pMem into zBuf. Return
 ** the number of bytes written.
 */
@@ -1108,6 +1133,58 @@ int sqlite3VdbeSerialize(
   const Mem *pMem,      /* Pointer to vdbe value to serialize */
   unsigned char *zBuf   /* Buffer to write to */
 ){
+  if( pMem->flags&MEM_Null ){
+    return sqlite3PutVarint(zBuf, 0);
+  }
+
+  if( pMem->flags&MEM_Real ){
+    assert(!"TODO: float");
+  }
+
+  if( pMem->flags&MEM_Str ){
+    int data_type_len;
+    u64 data_type = (pMem->n*2+31);
+
+    data_type_len = sqlite3PutVarint(zBuf, data_type); 
+    memcpy(&zBuf[data_type_len], pMem->z, pMem->n);
+    return pMem->n + data_type_len;
+  }
+
+  if( pMem->flags& MEM_Int ){
+    u64 absval;
+    int size = 8;
+    int ii;
+
+    if( pMem->i<0 ){
+      absval = pMem->i * -1;
+    }else{
+      absval = pMem->i;
+    }
+    if( absval<=127 ){
+      size = 1;
+      sqlite3PutVarint(zBuf, 1);
+    }else if( absval<=32767 ){
+      size = 2;
+      sqlite3PutVarint(zBuf, 2);
+    }else if( absval<=2147483647 ){
+      size = 4;
+      sqlite3PutVarint(zBuf, 3);
+    }else{
+      size = 8;
+      sqlite3PutVarint(zBuf, 4);
+    }
+
+    for(ii=0; ii<size; ii++){
+      zBuf[ii+1] = (pMem->i >> (8*ii)) & 0xFF;
+    }
+    if( pMem->i<0 ){
+      zBuf[size] = zBuf[size] & 0x80;
+    }
+
+    return size+1;
+  }
+
+  return -1;
 }
 
 /*
@@ -1115,6 +1192,29 @@ int sqlite3VdbeSerialize(
 ** form of the value held by pMem. Return negative if an error occurs.
 */
 int sqlite3VdbeSerialLen(const Mem *pMem){
+  if( pMem->flags&MEM_Null ){
+    return 1; /* Varint 0 is 1 byte */
+  }
+  if( pMem->flags&MEM_Real ){
+    return 9; /* Varing 5 (1 byte) + 8 bytes IEEE float */    
+  }
+  if( pMem->flags&MEM_Str ){
+    return pMem->n + sqlite3VarintLen((pMem->n*2)+13);
+  }
+  if( pMem->flags& MEM_Int ){
+    u64 absval;
+    if( pMem->i<0 ){
+      absval = pMem->i * -1;
+    }else{
+      absval = pMem->i;
+    }
+    if( absval<=127 ) return 2;        /* 1 byte integer */
+    if( absval<=32767 ) return 3;      /* 2 byte integer */
+    if( absval<=2147483647 ) return 5; /* 4 byte integer */
+    return 9;                         /* 8 byte integer */
+  }
+
+  return -1;
 }
 
 /*
@@ -1125,6 +1225,64 @@ int sqlite3VdbeDeserialize(
   Mem *pMem,                   /* structure to write new value to */
   const unsigned char *zBuf    /* Buffer to read from */
 ){
+  u64 data_type;
+  int ret;
+  int len;
+
+  memset(pMem, 0, sizeof(Mem));
+  ret = sqlite3GetVarint(zBuf, &data_type);
+
+  if( data_type==0 ){  /* NULL */
+    pMem->flags = MEM_Null;
+    return ret;
+  }
+
+  /* FIX ME: update for 8-byte integers */
+  if( data_type>0 && data_type<5 ){  /* 1, 2, 4 or 8 byte integer */
+    int ii;
+    int bytes = 1 << (data_type-1);
+
+    pMem->flags = MEM_Int;
+    pMem->i = 0;
+
+    for(ii=0; ii<bytes; ii++){
+      pMem->i = pMem->i<<8 + zBuf[ii+ret];
+    }
+
+    /* If this is a 1, 2 or 4 byte integer, extend the sign-bit if need be. */
+    if( bytes<8 && pMem->i & (1<<(bytes*8-1)) ){
+      pMem->i = pMem->i - (1<<(bytes*8));
+    }
+
+    return ret+bytes;
+  }
+
+  if( data_type==5 ){ /* IEEE float */
+    assert(!"TODO: float");
+  }
+
+  /* Must be text or a blob */
+  assert( data_type>=12 );
+  len = (data_type-12)/2;
+  pMem->flags = MEM_Str;  /* FIX ME: there should be a MEM_Blob or similar */
+
+  /* If the length of the text or blob is greater than NBFS, use space
+  ** dynamically allocated. Otherwise, store the value in Mem::zShort.
+  */
+  if( len>NBFS ){
+    pMem->z = sqliteMalloc( len );
+    if( !pMem->z ){
+      return -1;
+    }
+    pMem->flags |= MEM_Dyn;
+  }else{
+    pMem->z = pMem->zShort;
+    pMem->flags |= MEM_Short;
+  }
+  memcpy(pMem->z, &zBuf[ret], len); 
+  ret += len;
+
+  return ret;
 }
 
 /*
