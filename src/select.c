@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements.
 **
-** $Id: select.c,v 1.12 2000/06/06 18:00:16 drh Exp $
+** $Id: select.c,v 1.13 2000/06/06 21:56:08 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -51,6 +51,7 @@ Select *sqliteSelectNew(
   pNew->pHaving = pHaving;
   pNew->pOrderBy = pOrderBy;
   pNew->isDistinct = isDistinct;
+  pNew->op = TK_SELECT;
   return pNew;
 }
 
@@ -58,12 +59,14 @@ Select *sqliteSelectNew(
 ** Delete the given Select structure and all of its substructures.
 */
 void sqliteSelectDelete(Select *p){
+  if( p==0 ) return;
   sqliteExprListDelete(p->pEList);
   sqliteIdListDelete(p->pSrc);
   sqliteExprDelete(p->pWhere);
   sqliteExprListDelete(p->pGroupBy);
   sqliteExprDelete(p->pHaving);
   sqliteExprListDelete(p->pOrderBy);
+  sqliteSelectDelete(p->pPrior);
   sqliteFree(p);
 }
 
@@ -81,10 +84,16 @@ void sqliteParseInfoReset(Parse *pParse){
 /*
 ** This routine generates the code for the inside of the inner loop
 ** of a SELECT.
+**
+** The pEList is used to determine the values for each column in the
+** result row.  Except  if pEList==NULL, then we just read nField
+** elements from the srcTab table.
 */
 static int selectInnerLoop(
   Parse *pParse,          /* The parser context */
   ExprList *pEList,       /* List of values being extracted */
+  int srcTab,             /* Pull data from this table */
+  int nField,             /* Number of fields in the source table */
   ExprList *pOrderBy,     /* If not NULL, sort results using this key */
   int distinct,           /* If >=0, make sure results are distinct */
   int eDest,              /* How to dispose of the results */
@@ -97,8 +106,15 @@ static int selectInnerLoop(
 
   /* Pull the requested fields.
   */
-  for(i=0; i<pEList->nExpr; i++){
-    sqliteExprCode(pParse, pEList->a[i].pExpr);
+  if( pEList ){
+    for(i=0; i<pEList->nExpr; i++){
+      sqliteExprCode(pParse, pEList->a[i].pExpr);
+    }
+    nField = pEList->nExpr;
+  }else{
+    for(i=0; i<nField; i++){
+      sqliteVdbeAddOp(v, OP_Field, srcTab, i, 0, 0);
+    }
   }
 
   /* If the current result is not distinct, skip the rest
@@ -113,6 +129,7 @@ static int selectInnerLoop(
     sqliteVdbeAddOp(v, OP_String, 0, 0, "", lbl);
     sqliteVdbeAddOp(v, OP_Put, distinct, 0, 0, 0);
   }
+
   /* If there is an ORDER BY clause, then store the results
   ** in a sorter.
   */
@@ -130,12 +147,22 @@ static int selectInnerLoop(
     sqliteVdbeAddOp(v, OP_SortPut, 0, 0, 0, 0);
   }else 
 
-  /* If we are writing to a table, then write the results to the table.
+  /* In this mode, write each query result to the key of the temporary
+  ** table iParm.
   */
-  if( eDest==SRT_Table ){
-    sqliteVdbeAddOp(v, OP_MakeRecord, pEList->nExpr, 0, 0, 0);
-    sqliteVdbeAddOp(v, OP_New, iParm, 0, 0, 0);
-    sqliteVdbeAddOp(v, OP_Pull, 1, 0, 0, 0);
+  if( eDest==SRT_Union ){
+    sqliteVdbeAddOp(v, OP_MakeRecord, nField, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_String, iParm, 0, "", 0);
+    sqliteVdbeAddOp(v, OP_Put, iParm, 0, 0, 0);
+  }else 
+
+  /* Construct a record from the query result, but instead of
+  ** saving that record, use it as a key to delete elements from
+  ** the temporary table iParm.
+  */
+  if( eDest==SRT_Except ){
+    assert( pEList->nExpr==1 );
+    sqliteVdbeAddOp(v, OP_String, 0, 0, "", 0);
     sqliteVdbeAddOp(v, OP_Put, iParm, 0, 0, 0);
   }else 
 
@@ -149,6 +176,7 @@ static int selectInnerLoop(
     sqliteVdbeAddOp(v, OP_Put, iParm, 0, 0, 0);
   }else 
 
+
   /* If this is a scalar select that is part of an expression, then
   ** store the results in the appropriate memory cell and break out
   ** of the scan loop.
@@ -161,7 +189,160 @@ static int selectInnerLoop(
   /* If none of the above, send the data to the callback function.
   */
   {
-    sqliteVdbeAddOp(v, OP_Callback, pEList->nExpr, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_Callback, nField, 0, 0, 0);
+  }
+  return 0;
+}
+
+/*
+** Generate code that will tell the VDBE how many columns there
+** are in the result and the name for each column.  This information
+** is used to provide "argc" and "azCol[]" values in the callback.
+*/
+static void generateColumnNames(Vdbe *v, IdList *pTabList, ExprList *pEList){
+  int i;
+  sqliteVdbeAddOp(v, OP_ColumnCount, pEList->nExpr, 0, 0, 0);
+  for(i=0; i<pEList->nExpr; i++){
+    Expr *p;
+    if( pEList->a[i].zName ){
+      char *zName = pEList->a[i].zName;
+      int addr = sqliteVdbeAddOp(v, OP_ColumnName, i, 0, zName, 0);
+      if( zName[0]=='\'' || zName[0]=='"' ){
+        sqliteVdbeDequoteP3(v, addr);
+      }
+      continue;
+    }
+    p = pEList->a[i].pExpr;
+    if( p->op!=TK_FIELD || pTabList==0 ){
+      char zName[30];
+      sprintf(zName, "field%d", i+1);
+      sqliteVdbeAddOp(v, OP_ColumnName, i, 0, zName, 0);
+    }else{
+      if( pTabList->nId>1 ){
+        char *zName = 0;
+        Table *pTab = pTabList->a[p->iTable].pTab;
+        char *zTab;
+ 
+        zTab = pTabList->a[p->iTable].zAlias;
+        if( zTab==0 ) zTab = pTab->zName;
+        sqliteSetString(&zName, zTab, ".", pTab->aCol[p->iField].zName, 0);
+        sqliteVdbeAddOp(v, OP_ColumnName, i, 0, zName, 0);
+        sqliteFree(zName);
+      }else{
+        Table *pTab = pTabList->a[0].pTab;
+        char *zName = pTab->aCol[p->iField].zName;
+        sqliteVdbeAddOp(v, OP_ColumnName, i, 0, zName, 0);
+      }
+    }
+  }
+}
+
+/*
+** This routine is called to process a query that is really the union
+** or intersection of two or more separate queries.
+*/
+static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
+  int rc;
+  Select *pPrior;
+  Vdbe *v;
+  int i;
+
+  /* Make sure we have a valid query engine.  If not, create a new one.
+  */
+  v = pParse->pVdbe;
+  if( v==0 ){
+    v = pParse->pVdbe = sqliteVdbeCreate(pParse->db->pBe);
+  }
+  if( v==0 ){
+    sqliteSetString(&pParse->zErrMsg, "out of memory", 0);
+    pParse->nErr++;
+    return 1;
+  }
+
+  assert( p->pPrior!=0 );
+  pPrior = p->pPrior;
+  switch( p->op ){
+    case TK_ALL: {
+      rc = sqliteSelect(pParse, pPrior, eDest, iParm);
+      if( rc ) return rc;
+      p->pPrior = 0;
+      rc = sqliteSelect(pParse, p, eDest, iParm);
+      p->pPrior = pPrior;
+      break;
+    }
+    case TK_EXCEPT:
+    case TK_UNION: {
+      int unionTab;
+      int op;
+
+      if( eDest==SRT_Union ){
+        unionTab = iParm;
+      }else{
+        unionTab = pParse->nTab++;          
+        sqliteVdbeAddOp(v, OP_Open, unionTab, 1, 0, 0);
+        sqliteVdbeAddOp(v, OP_KeyAsData, unionTab, 1, 0, 0);
+      }
+      rc = sqliteSelect(pParse, pPrior, SRT_Union, unionTab);
+      if( rc ) return rc;
+      op = p->op==TK_EXCEPT ? SRT_Except : SRT_Union;
+      p->pPrior = 0;
+      rc = sqliteSelect(pParse, p, op, unionTab);
+      p->pPrior = pPrior;
+      if( rc ) return rc;
+      if( eDest!=SRT_Union ){
+        int iCont, iBreak;
+        assert( p->pEList );
+        generateColumnNames(v, 0, p->pEList);
+        iBreak = sqliteVdbeMakeLabel(v);
+        iCont = sqliteVdbeAddOp(v, OP_Next, unionTab, iBreak, 0, 0);
+        rc = selectInnerLoop(pParse, 0, unionTab, p->pEList->nExpr,
+                             0, -1, eDest, iParm, 
+                             iCont, iBreak);
+        if( rc ) return 1;
+        sqliteVdbeAddOp(v, OP_Goto, 0, iCont, 0, 0);
+        sqliteVdbeAddOp(v, OP_Close, unionTab, 0, 0, iBreak);
+      }
+      break;
+    }
+    case TK_INTERSECT: {
+      int tab1, tab2;
+      Select *pPrior;
+      int iCont, iBreak;
+
+      tab1 = pParse->nTab++;
+      tab2 = pParse->nTab++;
+      sqliteVdbeAddOp(v, OP_Open, tab1, 1, 0, 0);
+      sqliteVdbeAddOp(v, OP_KeyAsData, tab1, 1, 0, 0);
+      rc = sqliteSelect(pParse, pPrior, SRT_Union, tab1);
+      if( rc ) return rc;
+      sqliteVdbeAddOp(v, OP_Open, tab2, 1, 0, 0);
+      sqliteVdbeAddOp(v, OP_KeyAsData, tab2, 1, 0, 0);
+      p->pPrior = 0;
+      rc = sqliteSelect(pParse, p, SRT_Union, tab2);
+      p->pPrior = pPrior;
+      if( rc ) return rc;
+      assert( p->pEList );
+      generateColumnNames(v, 0, p->pEList);
+      iBreak = sqliteVdbeMakeLabel(v);
+      iCont = sqliteVdbeAddOp(v, OP_Next, tab1, iBreak, 0, 0);
+      sqliteVdbeAddOp(v, OP_Key, tab1, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_NotFound, tab2, iCont, 0, 0);
+      rc = selectInnerLoop(pParse, 0, tab1, p->pEList->nExpr,
+                             0, -1, eDest, iParm, 
+                             iCont, iBreak);
+      if( rc ) return 1;
+      sqliteVdbeAddOp(v, OP_Goto, 0, iCont, 0, 0);
+      sqliteVdbeAddOp(v, OP_Close, tab2, 0, 0, iBreak);
+      sqliteVdbeAddOp(v, OP_Close, tab1, 0, 0, 0);
+      break;
+    }
+  }
+  assert( p->pEList && pPrior->pEList );
+  if( p->pEList->nExpr!=pPrior->pEList->nExpr ){
+    sqliteSetString(&pParse->zErrMsg, "SELECTs have different numbers "
+       "of columns and therefore cannot be joined", 0);
+    pParse->nErr++;
+    return 1;
   }
   return 0;
 }
@@ -180,7 +361,9 @@ static int selectInnerLoop(
 **
 **     SRT_Set         Store results as keys of a table with cursor iParm
 **
-**     SRT_Table       Store results in a regular table with cursor iParm
+**     SRT_Union       Store results as a key in a temporary table iParm
+**
+**     SRT_Except      Remove results form the temporary talbe iParm.
 **
 ** This routine returns the number of errors.  If any errors are
 ** encountered, then an appropriate error message is left in
@@ -192,7 +375,7 @@ static int selectInnerLoop(
 int sqliteSelect(
   Parse *pParse,         /* The parser context */
   Select *p,             /* The SELECT statement being coded. */
-  int eDest,             /* One of SRT_Callback, SRT_Mem, SRT_Set, SRT_Table */
+  int eDest,             /* One of: SRT_Callback Mem Set Union Except */
   int iParm              /* Save result in this memory location, if >=0 */
 ){
   int i, j;
@@ -208,6 +391,14 @@ int sqliteSelect(
   int isDistinct;        /* True if the DISTINCT keyword is present */
   int distinct;          /* Table to use for the distinct set */
 
+  /* If there is are a sequence of queries, do the earlier ones first.
+  */
+  if( p->pPrior ){
+    return multiSelect(pParse, p, eDest, iParm);
+  }
+
+  /* Make local copies of the parameters for this query.
+  */
   pEList = p->pEList;
   pTabList = p->pSrc;
   pWhere = p->pWhere;
@@ -255,7 +446,7 @@ int sqliteSelect(
         Expr *pExpr = sqliteExpr(TK_FIELD, 0, 0, 0);
         pExpr->iTable = i + pParse->nTab;
         pExpr->iField = j;
-        pEList = sqliteExprListAppend(pEList, pExpr, 0);
+        p->pEList = pEList = sqliteExprListAppend(pEList, pExpr, 0);
       }
     }
   }
@@ -388,40 +579,7 @@ int sqliteSelect(
   ** step is skipped if the output is going to a table or a memory cell.
   */
   if( eDest==SRT_Callback ){
-    sqliteVdbeAddOp(v, OP_ColumnCount, pEList->nExpr, 0, 0, 0);
-    for(i=0; i<pEList->nExpr; i++){
-      Expr *p;
-      if( pEList->a[i].zName ){
-        char *zName = pEList->a[i].zName;
-        int addr = sqliteVdbeAddOp(v, OP_ColumnName, i, 0, zName, 0);
-        if( zName[0]=='\'' || zName[0]=='"' ){
-          sqliteVdbeDequoteP3(v, addr);
-        }
-        continue;
-      }
-      p = pEList->a[i].pExpr;
-      if( p->op!=TK_FIELD ){
-        char zName[30];
-        sprintf(zName, "field%d", i+1);
-        sqliteVdbeAddOp(v, OP_ColumnName, i, 0, zName, 0);
-      }else{
-        if( pTabList->nId>1 ){
-          char *zName = 0;
-          Table *pTab = pTabList->a[p->iTable].pTab;
-          char *zTab;
-  
-          zTab = pTabList->a[p->iTable].zAlias;
-          if( zTab==0 ) zTab = pTab->zName;
-          sqliteSetString(&zName, zTab, ".", pTab->aCol[p->iField].zName, 0);
-          sqliteVdbeAddOp(v, OP_ColumnName, i, 0, zName, 0);
-          sqliteFree(zName);
-        }else{
-          Table *pTab = pTabList->a[0].pTab;
-          char *zName = pTab->aCol[p->iField].zName;
-          sqliteVdbeAddOp(v, OP_ColumnName, i, 0, zName, 0);
-        }
-      }
-    }
+    generateColumnNames(v, pTabList, pEList);
   }
 
   /* Reset the aggregator
@@ -449,7 +607,7 @@ int sqliteSelect(
   ** aggregates
   */
   if( !isAgg ){
-    if( selectInnerLoop(pParse, pEList, pOrderBy, distinct, eDest, iParm,
+    if( selectInnerLoop(pParse, pEList, 0, 0, pOrderBy, distinct, eDest, iParm,
                     pWInfo->iContinue, pWInfo->iBreak) ){
        return 1;
     }
@@ -528,7 +686,7 @@ int sqliteSelect(
     if( pHaving ){
       sqliteExprIfFalse(pParse, pHaving, startagg);
     }
-    if( selectInnerLoop(pParse, pEList, pOrderBy, distinct, eDest, iParm,
+    if( selectInnerLoop(pParse, pEList, 0, 0, pOrderBy, distinct, eDest, iParm,
                     startagg, endagg) ){
       return 1;
     }

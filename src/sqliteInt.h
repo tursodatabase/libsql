@@ -23,7 +23,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.18 2000/06/06 17:27:05 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.19 2000/06/06 21:56:08 drh Exp $
 */
 #include "sqlite.h"
 #include "dbbe.h"
@@ -228,6 +228,8 @@ struct Select {
   ExprList *pGroupBy;    /* The GROUP BY clause */
   Expr *pHaving;         /* The HAVING clause */
   ExprList *pOrderBy;    /* The ORDER BY clause */
+  int op;                /* One of: TK_UNION TK_ALL TK_INTERSECT TK_EXCEPT */
+  Select *pPrior;        /* Prior select to which this one joins */
 };
 
 /*
@@ -235,8 +237,9 @@ struct Select {
 */
 #define SRT_Callback     1  /* Invoke a callback with each row of result */
 #define SRT_Mem          2  /* Store result in a memory cell */
-#define SRT_Set          3  /* Store result in a table for use with "IN" */
-#define SRT_Table        4  /* Store result in a regular table */
+#define SRT_Set          3  /* Store result as unique keys in a table */
+#define SRT_Union        5  /* Store result as keys in a table */
+#define SRT_Except       6  /* Remove result from a UNION table */
 
 /*
 ** When a SELECT uses aggregate functions (like "count(*)" or "avg(f1)")

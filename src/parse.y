@@ -26,7 +26,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.13 2000/06/06 17:27:05 drh Exp $
+** @(#) $Id: parse.y,v 1.14 2000/06/06 21:56:08 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -139,9 +139,22 @@ cmd ::= select(X).  {
 
 %type select {Select*}
 %destructor select {sqliteSelectDelete($$);}
+%type oneselect {Select*}
+%destructor oneselect {sqliteSelectDelete($$);}
 
-select(A) ::= SELECT distinct(D) selcollist(W) from(X) where_opt(Y)
-              groupby_opt(P) having_opt(Q) orderby_opt(Z). {
+select(A) ::= oneselect(X).                      {A = X;}
+select(A) ::= select(X) joinop(Y) oneselect(Z).  {
+    Z->op = Y;
+    Z->pPrior = X;
+    A = Z;
+}
+%type joinop {int}
+joinop(A) ::= UNION.      {A = TK_UNION;}
+joinop(A) ::= UNION ALL.  {A = TK_ALL;}
+joinop(A) ::= INTERSECT.  {A = TK_INTERSECT;}
+joinop(A) ::= EXCEPT.     {A = TK_EXCEPT;}
+oneselect(A) ::= SELECT distinct(D) selcollist(W) from(X) where_opt(Y)
+                 groupby_opt(P) having_opt(Q) orderby_opt(Z). {
   A = sqliteSelectNew(W,X,Y,P,Q,Z,D);
 }
 
@@ -221,6 +234,7 @@ groupby_opt(A) ::= GROUP BY exprlist(X).  {A = X;}
 %destructor having_opt {sqliteExprDelete($$);}
 having_opt(A) ::= .      {A = 0;}
 having_opt(A) ::= HAVING expr(X).  {A = X;}
+
 
 cmd ::= DELETE FROM ID(X) where_opt(Y).
     {sqliteDeleteFrom(pParse, &X, Y);}

@@ -1,5 +1,5 @@
-C :-)\s(CVS\s61)
-D 2000-06-06T19:18:24
+C :-)\s(CVS\s62)
+D 2000-06-06T21:56:08
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 17ba1ccf8d2d40c627796bba8f72952365d6d644
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -13,17 +13,17 @@ F src/delete.c 8c733bb82a1b84126116d03dcdccf433c0856f5d
 F src/expr.c d350fe393e1753aaa733a5d21f0830a23e547400
 F src/insert.c 5e69dd70c3f91cf5ec5090f39fd6cd8e135af9bf
 F src/main.c 93a7ad14bb5a82ad13ad59da23ef674a94b0c3d6
-F src/parse.y 210c888c052f3fde3def6ff1f402e4b4e8ba270d
-F src/select.c 5fd6fbd73f68f0baf1d53a73c4217f7862c37c0e
+F src/parse.y 8b632f4c4ff2f4400f15592ca9d8fda27d97d0c4
+F src/select.c db29a091b6a5a4e90e7a0afb5721910ccaa9e19d
 F src/shell.c 5fa24c0bb678782ffe9070128e3e160674f297eb
 F src/sqlite.h 58da0a8590133777b741f9836beaef3d58f40268
-F src/sqliteInt.h 267f66d4a851e19adb0f9a3050a3acb62fc70cae
+F src/sqliteInt.h 3cca846df0a8b5f811cf4f8021303547cd8f21fd
 F src/tclsqlite.c 9f358618ae803bedf4fb96da5154fd45023bc1f7
-F src/tokenize.c 32f0579d4a7276b8e3bfd353cac034f67976aa82
+F src/tokenize.c 09373590cc3942aa4744eb431ac5b5ce31e7cfea
 F src/update.c 18746f920f989b3d19d96c08263c92584823cd35
 F src/util.c 33f9baa01e45394ef0cf85361a0e872987884315
-F src/vdbe.c 73c93464c40866f11156bc5b0f19baf6ec851e7a
-F src/vdbe.h 49e0f9c6742860e224cd81d1278059f5d029dfb6
+F src/vdbe.c 562b12a9bafc098c114ab5eaec1307d071b89fd3
+F src/vdbe.h 8f79f57c66ce1030f6371ff067b326d627a52c6d
 F src/where.c c9b90e7672f4662a83ef9a27a193020d69fe034c
 F test/all.test 0950c135cab7e60c07bd745ccfad1476211e5bd7
 F test/copy.test 73c3783535db538c8ebd8fffb931376864fc3226
@@ -50,7 +50,7 @@ F www/c_interface.tcl 9ac800854272db5fe439e07b7435b243a5422293
 F www/changes.tcl f5839fe8de7449d994c71a8e48ce8ea736bec7d1
 F www/index.tcl 0c63672bad5188327143ecd0a07c7c0741ff9823
 F www/sqlite.tcl 2f933ce18cffd34a0a020a82435ab937137970fd
-P 4eca3bf64fd96303bee653b7e44fa7bbdfccbdfb
-R 361d483638ebf01832ee4fb64c6b45f1
+P 25984b4d3ce0f94fa98a159d840cc7bd4e8bc1ab
+R 390a7e6fa62aea4b8e4067014add32c4
 U drh
-Z a433e93955d8d7af421e38bc9064d041
+Z 9866a189debd27c7a4ca83d1442824ae

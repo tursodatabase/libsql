@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.22 2000/06/06 19:18:24 drh Exp $
+** $Id: vdbe.c,v 1.23 2000/06/06 21:56:08 drh Exp $
 */
 #include "sqliteInt.h"
 #include <unistd.h>
@@ -60,6 +60,7 @@ typedef struct VdbeOp Op;
 struct VdbeTable {
   DbbeTable *pTable;    /* The table structure of the backend */
   int index;            /* The next index to extract */
+  int keyAsData;        /* The OP_Field command works on key instead of data */
 };
 typedef struct VdbeTable VdbeTable;
 
@@ -735,26 +736,26 @@ void sqliteVdbeDelete(Vdbe *p){
 static char *zOpName[] = { 0,
   "Open",           "Close",          "Fetch",          "New",
   "Put",            "Distinct",       "Found",          "NotFound",
-  "Delete",         "Field",          "Key",            "Rewind",
-  "Next",           "Destroy",        "Reorganize",     "ResetIdx",
-  "NextIdx",        "PutIdx",         "DeleteIdx",      "MemLoad",
-  "MemStore",       "ListOpen",       "ListWrite",      "ListRewind",
-  "ListRead",       "ListClose",      "SortOpen",       "SortPut",
-  "SortMakeRec",    "SortMakeKey",    "Sort",           "SortNext",
-  "SortKey",        "SortCallback",   "SortClose",      "FileOpen",
-  "FileRead",       "FileField",      "FileClose",      "AggReset",
-  "AggFocus",       "AggIncr",        "AggNext",        "AggSet",
-  "AggGet",         "SetInsert",      "SetFound",       "SetNotFound",
-  "SetClear",       "MakeRecord",     "MakeKey",        "Goto",
-  "If",             "Halt",           "ColumnCount",    "ColumnName",
-  "Callback",       "Integer",        "String",         "Null",
-  "Pop",            "Dup",            "Pull",           "Add",
-  "AddImm",         "Subtract",       "Multiply",       "Divide",
-  "Min",            "Max",            "Like",           "Glob",
-  "Eq",             "Ne",             "Lt",             "Le",
-  "Gt",             "Ge",             "IsNull",         "NotNull",
-  "Negative",       "And",            "Or",             "Not",
-  "Concat",         "Noop",         
+  "Delete",         "Field",          "KeyAsData",      "Key",
+  "Rewind",         "Next",           "Destroy",        "Reorganize",
+  "ResetIdx",       "NextIdx",        "PutIdx",         "DeleteIdx",
+  "MemLoad",        "MemStore",       "ListOpen",       "ListWrite",
+  "ListRewind",     "ListRead",       "ListClose",      "SortOpen",
+  "SortPut",        "SortMakeRec",    "SortMakeKey",    "Sort",
+  "SortNext",       "SortKey",        "SortCallback",   "SortClose",
+  "FileOpen",       "FileRead",       "FileField",      "FileClose",
+  "AggReset",       "AggFocus",       "AggIncr",        "AggNext",
+  "AggSet",         "AggGet",         "SetInsert",      "SetFound",
+  "SetNotFound",    "SetClear",       "MakeRecord",     "MakeKey",
+  "Goto",           "If",             "Halt",           "ColumnCount",
+  "ColumnName",     "Callback",       "Integer",        "String",
+  "Null",           "Pop",            "Dup",            "Pull",
+  "Add",            "AddImm",         "Subtract",       "Multiply",
+  "Divide",         "Min",            "Max",            "Like",
+  "Glob",           "Eq",             "Ne",             "Lt",
+  "Le",             "Gt",             "Ge",             "IsNull",
+  "NotNull",        "Negative",       "And",            "Or",
+  "Not",            "Concat",         "Noop",         
 };
 
 /*
@@ -1882,6 +1883,22 @@ int sqliteVdbeExec(
         break;
       }
 
+      /* Opcode: KeyAsData P1 P2 *
+      **
+      ** Turn the key-as-data mode for cursor P1 either on (if P2==1) or
+      ** off (if P2==0).  In key-as-data mode, the OP_Fetch opcode pulls
+      ** data off of the key rather than the data.  This is useful for
+      ** outer joins and stuff...
+      */
+      case OP_KeyAsData: {
+        int i = pOp->p1;
+        VdbeTable *pTab;
+        if( i>=0 && i<p->nTable && p->aTab[i].pTable!=0 ){
+          p->aTab[i].keyAsData = pOp->p2;
+        }
+        break;
+      }
+
       /* Opcode: Field P1 P2 *
       **
       ** Push onto the stack the value of the P2-th field from the
@@ -1903,17 +1920,32 @@ int sqliteVdbeExec(
 
         if( NeedStack(p, tos) ) goto no_mem;
         if( i>=0 && i<p->nTable && (pTab = p->aTab[i].pTable)!=0 ){
-          amt = sqliteDbbeDataLength(pTab);
-          if( amt<=sizeof(int)*(p2+1) ){
-            p->aStack[tos].flags = STK_Null;
-            break;
+          if( p->aTab[i].keyAsData ){
+            amt = sqliteDbbeKeyLength(pTab);
+            if( amt<=sizeof(int)*(p2+1) ){
+              p->aStack[tos].flags = STK_Null;
+              break;
+            }
+            pAddr = (int*)sqliteDbbeReadKey(pTab, sizeof(int)*p2);
+            if( *pAddr==0 ){
+              p->aStack[tos].flags = STK_Null;
+              break;
+            }
+            z = sqliteDbbeReadKey(pTab, *pAddr);
+          }else{
+            amt = sqliteDbbeDataLength(pTab);
+            if( amt<=sizeof(int)*(p2+1) ){
+              p->aStack[tos].flags = STK_Null;
+              break;
+            }
+            pAddr = (int*)sqliteDbbeReadData(pTab, sizeof(int)*p2);
+            if( *pAddr==0 ){
+              p->aStack[tos].flags = STK_Null;
+              break;
+            }
+            z = sqliteDbbeReadData(pTab, *pAddr);
           }
-          pAddr = (int*)sqliteDbbeReadData(pTab, sizeof(int)*p2);
-          if( *pAddr==0 ){
-            p->aStack[tos].flags = STK_Null;
-            break;
-          }
-          p->zStack[tos] = z = sqliteDbbeReadData(pTab, *pAddr);
+          p->zStack[tos] = z;
           p->aStack[tos].n = strlen(z) + 1;
           p->aStack[tos].flags = STK_Str;
         }
