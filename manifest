@@ -1,5 +1,5 @@
-C Another\sattempt\sat\sfixing\sthe\smemory\sallocation\sproblem\sin\ssqliteExprListDup().\s(CVS\s1855)
-D 2004-07-22T17:10:10
+C Fix\sthe\spublish.sh\sscript\sso\sthat\sit\sbuilds\sand\spackages\swindows\sDLLs\ncorrectly.\s(CVS\s1856)
+D 2004-07-22T18:08:34
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -16,7 +16,7 @@ F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
 F main.mk 7dfbd08ac90b15debd84ebd2606f0dbab739a4ab
-F publish.sh f163b9aed9367d39350b62e89e799347fcdd01ca
+F publish.sh bcc939e9fbcf702f9e5fce73c2563b42d04a663c
 F spec.template a38492f1c1dd349fc24cb0565e08afc53045304b
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
 F sqlite.def fc4f5734786fe4743cfe2aa98eb2da4b089edb5f
@@ -191,7 +191,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 09494cab4f53a90e0d84abfec6806b4b2b3e118b
-R 406e2902adc5e6bcbac84152e478f5ba
+P 49c2ad8a754daebfdad230dc84e417e3d728c083
+R b1681d129b888b753215ac51705add9f
 U drh
-Z a33f76e279c61c5bed2b936d112330fd
+Z 7d23fc249da40aff11ce69d05808a359
