@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.141 2004/05/16 16:24:37 drh Exp $
+** $Id: btree.c,v 1.142 2004/05/18 10:06:25 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1404,6 +1404,15 @@ create_cursor_exception:
   }
   unlockBtreeIfUnused(pBt);
   return rc;
+}
+
+void sqlite3BtreeSetCompare(
+  BtCursor *pCur,
+  int(* xCmp)(void*,int,const void*,int,const void*),
+  void *pArg
+){
+  pCur->xCompare = xCmp ? xCmp : dfltCompare;
+  pCur->pArg = pArg;
 }
 
 /*

@@ -189,7 +189,7 @@ void sqlite3FinishTrigger(
       { OP_String,     0, 0,  0          },  /* 3: table name */
       { OP_Integer,    0, 0,  0          },
       { OP_String,     0, 0,  0          },  /* 5: SQL */
-      { OP_MakeRecord, 5, 0,  0          },
+      { OP_MakeRecord, 5, 0,  "tttit"    },
       { OP_PutIntKey,  0, 0,  0          },
     };
     int addr;
@@ -615,7 +615,7 @@ static int codeTriggerProgram(
 	Select * ss = sqlite3SelectDup(pTriggerStep->pSelect);		  
 	assert(ss);
 	assert(ss->pSrc);
-	sqlite3Select(pParse, ss, SRT_Discard, 0, 0, 0, 0);
+	sqlite3Select(pParse, ss, SRT_Discard, 0, 0, 0, 0, 0);
 	sqlite3SelectDelete(ss);
 	break;
       }

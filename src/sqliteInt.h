@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.235 2004/05/17 10:48:58 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.236 2004/05/18 10:06:26 danielk1977 Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -1191,7 +1191,7 @@ void sqlite3CreateIndex(Parse*,Token*,SrcList*,IdList*,int,Token*,Token*);
 void sqlite3DropIndex(Parse*, SrcList*);
 void sqlite3AddKeyType(Vdbe*, ExprList*);
 void sqlite3AddIdxKeyType(Vdbe*, Index*);
-int sqlite3Select(Parse*, Select*, int, int, Select*, int, int*);
+int sqlite3Select(Parse*, Select*, int, int, Select*, int, int*, char *aff);
 Select *sqlite3SelectNew(ExprList*,SrcList*,Expr*,ExprList*,Expr*,ExprList*,
                         int,int,int);
 void sqlite3SelectDelete(Select*);
@@ -1309,3 +1309,4 @@ void sqlite3TableAffinityStr(Vdbe *, Table *);
 char sqlite3CompareAffinity(Expr *pExpr, char aff2);
 char const *sqlite3AffinityString(char affinity);
 int sqlite3IndexAffinityOk(Expr *pExpr, char idx_affinity);
+char sqlite3ExprAffinity(Expr *pExpr);

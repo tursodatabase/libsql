@@ -13,7 +13,7 @@
 ** subsystem.  See comments in the source code for a detailed description
 ** of what each interface routine does.
 **
-** @(#) $Id: btree.h,v 1.47 2004/05/12 19:18:17 drh Exp $
+** @(#) $Id: btree.h,v 1.48 2004/05/18 10:06:25 danielk1977 Exp $
 */
 #ifndef _BTREE_H_
 #define _BTREE_H_
@@ -71,6 +71,12 @@ int sqlite3BtreeCursor(
   int(*)(void*,int,const void*,int,const void*),  /* Key comparison function */
   void*,                               /* First argument to compare function */
   BtCursor **ppCursor                  /* Returned cursor */
+);
+
+void sqlite3BtreeSetCompare(
+  BtCursor *,
+  int(*)(void*,int,const void*,int,const void*),
+  void*
 );
 
 int sqlite3BtreeCloseCursor(BtCursor*);
