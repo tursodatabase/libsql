@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.189 2005/02/15 02:54:15 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.190 2005/02/15 03:38:06 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1137,6 +1137,7 @@ static int pager_reload_cache(Pager *pPager){
 ** indicated.
 */
 static int pager_truncate(Pager *pPager, int nPage){
+  assert( pPager->state>=PAGER_EXCLUSIVE );
   return sqlite3OsTruncate(&pPager->fd, pPager->pageSize*(i64)nPage);
 }
 
@@ -1256,7 +1257,8 @@ static int pager_playback(Pager *pPager){
     /* If this is the first header read from the journal, truncate the
     ** database file back to it's original size.
     */
-    if( pPager->journalOff==JOURNAL_HDR_SZ(pPager) ){
+    if( pPager->state>=PAGER_EXCLUSIVE && 
+        pPager->journalOff==JOURNAL_HDR_SZ(pPager) ){
       assert( pPager->origDbSize==0 || pPager->origDbSize==mxPg );
       rc = pager_truncate(pPager, mxPg);
       if( rc!=SQLITE_OK ){
@@ -1354,10 +1356,11 @@ static int pager_stmt_playback(Pager *pPager){
     hdrOff = szJ;
   }
   
-
   /* Truncate the database back to its original size.
   */
-  rc = pager_truncate(pPager, pPager->stmtSize);
+  if( pPager->state>=PAGER_EXCLUSIVE ){
+    rc = pager_truncate(pPager, pPager->stmtSize);
+  }
   pPager->dbSize = pPager->stmtSize;
 
   /* Figure out how many records are in the statement journal.
@@ -1805,6 +1808,37 @@ static void memoryTruncate(Pager *pPager){
 #endif
 
 /*
+** Try to obtain a lock on a file.  Invoke the busy callback if the lock
+** is currently not available.  Repeate until the busy callback returns
+** false or until the lock succeeds.
+**
+** Return SQLITE_OK on success and an error code if we cannot obtain
+** the lock.
+*/
+static int pager_wait_on_lock(Pager *pPager, int locktype){
+  int rc;
+  assert( PAGER_SHARED==SHARED_LOCK );
+  assert( PAGER_RESERVED==RESERVED_LOCK );
+  assert( PAGER_EXCLUSIVE==EXCLUSIVE_LOCK );
+  if( pPager->state>=locktype ){
+    rc = SQLITE_OK;
+  }else{
+    int busy = 1;
+    do {
+      rc = sqlite3OsLock(&pPager->fd, locktype);
+    }while( rc==SQLITE_BUSY && 
+        pPager->pBusyHandler && 
+        pPager->pBusyHandler->xFunc && 
+        pPager->pBusyHandler->xFunc(pPager->pBusyHandler->pArg, busy++)
+    );
+    if( rc==SQLITE_OK ){
+      pPager->state = locktype;
+    }
+  }
+  return rc;
+}
+
+/*
 ** Truncate the file to the number of pages specified.
 */
 int sqlite3pager_truncate(Pager *pPager, Pgno nPage){
@@ -1826,6 +1860,13 @@ int sqlite3pager_truncate(Pager *pPager, Pgno nPage){
   if( rc!=SQLITE_OK ){
     return rc;
   }
+
+  /* Get an exclusive lock on the database before truncating. */
+  rc = pager_wait_on_lock(pPager, EXCLUSIVE_LOCK);
+  if( rc!=SQLITE_OK ){
+    return rc;
+  }
+
   rc = pager_truncate(pPager, nPage);
   if( rc==SQLITE_OK ){
     pPager->dbSize = nPage;
@@ -2054,37 +2095,6 @@ static int syncJournal(Pager *pPager){
   }
 #endif
 
-  return rc;
-}
-
-/*
-** Try to obtain a lock on a file.  Invoke the busy callback if the lock
-** is currently not available.  Repeate until the busy callback returns
-** false or until the lock succeeds.
-**
-** Return SQLITE_OK on success and an error code if we cannot obtain
-** the lock.
-*/
-static int pager_wait_on_lock(Pager *pPager, int locktype){
-  int rc;
-  assert( PAGER_SHARED==SHARED_LOCK );
-  assert( PAGER_RESERVED==RESERVED_LOCK );
-  assert( PAGER_EXCLUSIVE==EXCLUSIVE_LOCK );
-  if( pPager->state>=locktype ){
-    rc = SQLITE_OK;
-  }else{
-    int busy = 1;
-    do {
-      rc = sqlite3OsLock(&pPager->fd, locktype);
-    }while( rc==SQLITE_BUSY && 
-        pPager->pBusyHandler && 
-        pPager->pBusyHandler->xFunc && 
-        pPager->pBusyHandler->xFunc(pPager->pBusyHandler->pArg, busy++)
-    );
-    if( rc==SQLITE_OK ){
-      pPager->state = locktype;
-    }
-  }
   return rc;
 }
 
@@ -3072,13 +3082,11 @@ int sqlite3pager_rollback(Pager *pPager){
     return pager_errcode(pPager);
   }
   if( pPager->state==PAGER_RESERVED ){
-    int rc2, rc3;
+    int rc2;
     rc = pager_reload_cache(pPager);
-    rc2 = pager_truncate(pPager, pPager->origDbSize);
-    rc3 = pager_unwritelock(pPager);
+    rc2 = pager_unwritelock(pPager);
     if( rc==SQLITE_OK ){
       rc = rc2;
-      if( rc3 ) rc = rc3;
     }
   }else{
     rc = pager_playback(pPager);
