@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach.test,v 1.37 2005/01/24 10:26:00 danielk1977 Exp $
+# $Id: attach.test,v 1.38 2005/03/02 05:18:57 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -674,6 +674,11 @@ if {$tcl_platform(platform)=="unix"} {
     dbx eval {CREATE TABLE t1(a,b,c)}
     dbx close
     file attributes cannot-read -permission 0000
+    if {[file writable cannot-read]} {
+      puts "\n**** Tests do not work when run as root ****"
+      file delete -force cannot-read
+      exit 1
+    }
     catchsql {
       ATTACH DATABASE 'cannot-read' AS noread;
     }
