@@ -61,6 +61,15 @@ proc newsitem {date title text} {
   puts "<hr width=\"50%\">"
 }
 
+newsitem {2004-Nov-09} {SQLite at the 2004 International PHP Conference} {
+  There was a talk on the architecture of SQLite and how to optimize
+  SQLite queries at the 2004 International PHP Conference in Frankfurt,
+  Germany.
+  <a href="http://www.sqlite.org/php2004/page-001.html">
+  Slides</a> from that talk are available.
+}
+
+
 newsitem {2004-Oct-11} {Version 3.0.8} {
   Version 3.0.8 of SQLite contains several code optimizations and minor
   bug fixes and adds support for DEFERRED, IMMEDIATE, and EXCLUSIVE
@@ -74,8 +83,9 @@ Annual Tcl/Tk Conference} {
   11<sup><small>th</small></sup> Tcl/Tk Conference this week in
   New Orleans.  Visit <a href="http://www.tcl.tk/community/tcl2004/">
   http://www.tcl.tk/</a> for details.
+  <a href="http://www.sqlite.org/tclconf2004/page-001.html">
+  Slides</a> from the talk are available.
 }
-
 
 newsitem {2004-Jly-22} {Version 2.8.15} {
   SQLite version 2.8.15 is a maintenance release for the version 2.8
@@ -90,4 +100,4 @@ puts {
 <p align="right"><a href="oldnews.html">Old news...</a></p>
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.102 2004/10/12 02:38:10 drh Exp $}
+footer {$Id: index.tcl,v 1.103 2004/11/11 19:32:40 drh Exp $}
