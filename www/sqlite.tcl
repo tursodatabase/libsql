@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: sqlite.tcl,v 1.6 2000/06/02 13:28:00 drh Exp $}
+set rcsid {$Id: sqlite.tcl,v 1.7 2000/06/08 19:38:36 drh Exp $}
 
 puts {<html>
 <head>
@@ -52,13 +52,13 @@ Code {
 $ (((mkdir ex1)))
 $ (((sqlite ex1)))
 Enter ".help" for instructions
-sql> (((create table tbl1(one varchar(10), two smallint);)))
-sql> (((insert into tbl1 values('hello!',10);)))
-sql> (((insert into tbl1 values('goodbye', 20);)))
-sql> (((select * from tbl1;)))
+sqlite> (((create table tbl1(one varchar(10), two smallint);)))
+sqlite> (((insert into tbl1 values('hello!',10);)))
+sqlite> (((insert into tbl1 values('goodbye', 20);)))
+sqlite> (((select * from tbl1;)))
 hello!|10
 goodbye|20
-sql>
+sqlite>
 }
 
 puts {
@@ -79,12 +79,12 @@ enter SQL commands that span multiple lines.  For example:</p>
 }
 
 Code {
-sql> (((CREATE TABLE tbl2 ()))
-.... (((  f1 varchar(30) primary key,)))
-.... (((  f2 text,)))
-.... (((  f3 real)))
-.... ((();)))
-sql> 
+sqlite> (((CREATE TABLE tbl2 ()))
+   ...> (((  f1 varchar(30) primary key,)))
+   ...> (((  f2 text,)))
+   ...> (((  f3 real)))
+   ...> ((();)))
+sqlite> 
 }
 
 puts {
@@ -108,12 +108,12 @@ in an SQLite database.  For example:</p>
 Code {
 $ (((sqlite ex1)))
 Enter ".help" for instructions
-sql> (((select * from sqlite_master;)))
+sqlite> (((select * from sqlite_master;)))
 type = table
 name = tbl1
 tbl_name = tbl1
 sql = create table tbl1(one varchar(10), two smallint)
-sql>
+sqlite>
 }
 
 puts {
@@ -142,7 +142,8 @@ at any time.  For example:
 </p>}
 
 Code {
-sql> (((.help)))
+sqlite> (((.help)))
+.dump                  Dump database in a text format
 .exit                  Exit this program
 .explain               Set output mode suitable for EXPLAIN
 .header ON|OFF         Turn display of headers on or off
@@ -155,7 +156,7 @@ sql> (((.help)))
 .separator STRING      Change separator string for "list" mode
 .tables                List names all tables in the database
 .width NUM NUM ...     Set column widths for "column" mode
-sql> 
+sqlite> 
 }
 
 puts {
@@ -166,6 +167,35 @@ in four different formats: "line", "column", "list", and "html".
 You can use the ".mode" dot command to switch between these three output
 formats.</p>
 
+puts {
+<p>The default output mode is "list".  In
+list mode, each record of a query result is written on one line of
+output and each field within that record is separated by a specific
+separator string.  The default separator is a pipe symbol ("|").
+List mode is especially useful when you are going to send the output
+of a query to another program (such as AWK) for additional processing.</p>}
+
+Code {
+sqlite> (((.mode list)))
+sqlite> (((select * from tbl1;)))
+hello|10
+goodbye|20
+sqlite>
+}
+
+puts {
+<p>You can use the ".separator" dot command to change the separator
+for list mode.  For example, to change the separator to a comma and
+a space, you could do this:</p>}
+
+Code {
+sqlite> (((.separator ", ")))
+sqlite> (((select * from tbl1;)))
+hello, 10
+goodbye, 20
+sqlite>
+}
+
 <p>In "line" mode, each field in a record of the database
 is shown on a line by itself.  Each line consists of the field
 name, an equal sign and the field data.  Successive records are
@@ -173,20 +203,14 @@ separated by a blank line.  Here is an example of line mode
 output:</p>}
 
 Code {
-sql> (((.mode line)))
-sql> (((select * from tbl1;)))
+sqlite> (((.mode line)))
+sqlite> (((select * from tbl1;)))
 one = hello
 two = 10
 
 one = goodbye
 two = 20
-sql>
-}
-
-puts {
-<p>Line mode used to be the default mode setting.  But after some
-experience using the utility, it was decided that "list" mode made
-a better default and so now the default mode is "list".</p>
+sqlite>
 }
 
 puts {
@@ -194,13 +218,13 @@ puts {
 data aligned in columns.  For example:</p>}
 
 Code {
-sql> (((.mode column)))
-sql> (((select * from tbl1;)))
+sqlite> (((.mode column)))
+sqlite> (((select * from tbl1;)))
 one         two       
 ----------  ----------
 hello       10        
 goodbye     20        
-sql>
+sqlite>
 }
 
 puts {
@@ -209,13 +233,13 @@ Data that is too wide to fit in a column is truncated.  You can
 adjust the column widths using the ".width" command.  Like this:</p>}
 
 Code {
-sql> (((.width 12 6)))
-sql> (((select * from tbl1;)))
+sqlite> (((.width 12 6)))
+sqlite> (((select * from tbl1;)))
 one           two   
 ------------  ------
 hello         10    
 goodbye       20    
-sql>
+sqlite>
 }
 
 puts {
@@ -231,40 +255,11 @@ examples above, the column labels are on.  To turn them off you
 could do this:</p>}
 
 Code {
-sql> (((.header off)))
-sql> (((select * from tbl1;)))
+sqlite> (((.header off)))
+sqlite> (((select * from tbl1;)))
 hello         10    
 goodbye       20    
-sql>
-}
-
-puts {
-<p>The third output mode supported by sqlite is called "list".  In
-list mode, each record of a query result is written on one line of
-output and each field within that record is separated by a specific
-separator string.  The default separator is a pipe symbol ("|").
-List mode is especially useful when you are going to send the output
-of a query to another program (such as AWK) for additional processing.</p>}
-
-Code {
-sql> (((.mode list)))
-sql> (((select * from tbl1;)))
-hello|10
-goodbye|20
-sql>
-}
-
-puts {
-<p>You can use the ".separator" dot command to change the separator
-for list mode.  For example, to change the separator to a comma and
-a space, you could do this:</p>}
-
-Code {
-sql> (((.separator ", ")))
-sql> (((select * from tbl1;)))
-hello, 10
-goodbye, 20
-sql>
+sqlite>
 }
 
 puts {
@@ -286,11 +281,11 @@ query results will be written to that file.  Use ".output stdout" to
 begin writing to standard output again.  For example:</p>}
 
 Code {
-sql> (((.mode list)))
-sql> (((.separator |)))
-sql> (((.output test_file_1.txt)))
-sql> (((select * from tbl1;)))
-sql> (((.exit)))
+sqlite> (((.mode list)))
+sqlite> (((.separator |)))
+sqlite> (((.output test_file_1.txt)))
+sqlite> (((select * from tbl1;)))
+sqlite> (((.exit)))
 $ (((cat test_file_1.txt)))
 hello|10
 goodbye|20
@@ -310,10 +305,10 @@ can enter ".tables".</p>
 }
 
 Code {
-sql> (((.tables)))
+sqlite> (((.tables)))
 tbl1
 tbl2
-sql>
+sqlite>
 }
 
 puts {
@@ -341,20 +336,20 @@ CREATE statement used to make that table and all if its indices.
 We have:</p>}
 
 Code {
-sql> (((.schema)))
+sqlite> (((.schema)))
 create table tbl1(one varchar(10), two smallint)
 CREATE TABLE tbl2 (
   f1 varchar(30) primary key,
   f2 text,
   f3 real
 )
-sql> (((.schema tbl2)))
+sqlite> (((.schema tbl2)))
 CREATE TABLE tbl2 (
   f1 varchar(30) primary key,
   f2 text,
   f3 real
 )
-sql>
+sqlite>
 }
 
 puts {
@@ -378,6 +373,60 @@ ORDER BY type DESC, name
 <p>The <b>%s</b> in the query above is replaced by the argument
 to ".schema", of course.</p>
 
+<h2>Converting An Entire Database To An ASCII Text File</h2>
+
+<p>Use the ".dump" command to convert the entire contents of a
+database into a single ASCII text file.  This file can be converted
+back into a database by piping it back into <b>sqlite</b>.</p>
+
+<p>A good way to make an archival copy of a database is this:</p>
+}
+
+Code {
+$ (((echo '.dump' | sqlite ex1 | gzip -c >ex1.dump.gz)))
+}
+
+puts {
+<p>This generates a file named <b>ex1.dump.gz</b> that contains everything
+you need to reconstruct the database at a later time, or on another
+machine.  To reconstruct the database, just type:</p>
+}
+
+Code {
+$ (((zcat ex1.dump.gz | sqlite ex2)))
+}
+
+puts {
+<p>The text format used is the same as used by
+<a href="http://www.postgresql.org/">PostgreSQL</a>, so you
+can also use the .dump command to export an SQLite database
+into a PostgreSQL database.  Like this:</p>
+}
+
+Code {
+$ (((createdb ex2)))
+$ (((echo '.dump' | sqlite ex1 | psql ex2)))
+}
+
+puts {
+<p>You can almost (but not quite) go the other way and export
+a PostgreSQL database into SQLite using the <b>pg_dump</b> utility.
+Unfortunately, when <b>pg_dump</b> writes the database schema information,
+it uses some SQL syntax that SQLite does not understand.
+So you cannot pipe the output of <b>pg_dump</b> directly 
+into <b>sqlite</b>.
+But if you can recreate the
+schema separately, you can use <b>pg_dump</b> with the <b>-a</b>
+option to list just the data
+of a PostgreSQL database and import that directly into SQLite.</p>
+}
+
+Code {
+$ (((sqlite ex3 <schema.sql)))
+$ (((pg_dump -a ex2 | sqlite ex3)))
+}
+
+puts {
 <h2>Other Dot Commands</h2>
 
 <p>The ".explain" dot command can be used to set the output mode
@@ -390,8 +439,8 @@ instructions that would have been used to execute the SQL command are
 returned like a query result.  For example:</p>}
 
 Code {
-sql> (((.explain)))
-sql> (((explain delete from tbl1 where two<20;)))
+sqlite> (((.explain)))
+sqlite> (((explain delete from tbl1 where two<20;)))
 addr  opcode        p1     p2     p3          
 ----  ------------  -----  -----  -------------------------------------   
 0     ListOpen      0      0                  

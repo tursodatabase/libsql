@@ -1,18 +1,19 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.14 2000/06/06 22:19:02 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.15 2000/06/08 19:38:36 drh Exp $}
 
 puts {<html>
-<head><title>SQLite: An SQL Database Built Atop GDBM</title></head>
+<head><title>SQLite: An SQL Database Engine Built Atop GDBM</title></head>
 <body bgcolor=white>
-<h1 align=center>SQLite: An SQL Database Built Upon 
+<h1 align=center>SQLite: An SQL Database Engine Built Atop
 <a href="http://www.gnu.org/software/gdbm/gdbm.html">GDBM</a></h1>
 <p align=center>}
 puts "This page was last modified on [lrange $rcsid 3 4] GMT<br>"
 puts "The SQLite source code was last modifed on [exec cat last_change] GMT"
 puts {</p>}
 
+if 0 {
 puts {
 <h2>News</h2>
 <p>
@@ -27,56 +28,77 @@ There are currently no known errors in the code.</p>
 <p>If you find bugs or missing features, please submit a comment
 to the <a href="#mailinglist">SQLite mailing list</a>.</p>
 }
+}
 
 puts {<h2>Introduction</h2>
 
-<p>SQLite is an SQL database built atop the 
+<p>SQLite is an SQL database engine built on top of the
 <a href="http://www.gnu.org/software/gdbm/gdbm.html">GDBM library</a>.
-The SQLite distribution includes both a interactive command-line
-access program (<b>sqlite</b>) and a C library (<b>libsqlite.a</b>)
+SQLite includes a standalone command-line
+access program (<a href="sqlite.html">sqlite</a>)
+and a C library (<a href="c_interface.html">libsqlite.a</a>)
 that can be linked
-with a C/C++ program to provide SQL database access without having
-to rely on an external RDBMS.</p>
+with a C/C++ program to provide SQL database access without
+an separate RDBMS.</p>
 
-<p>The C interface to SQLite is very simple, consisting of only
-four functions, a single opaque data structure, and a handful of
-constants that define error return codes.
-See <a href="c_interface.html">c_interface.html</a> for details.
-A Tcl interface
-to SQLite is also available and is included in the source tree.
-Documentation on the Tcl interface is pending.
-Interfaces for perl and python may be supplied in future releases.</p>
+<h2>Features</h2>
 
-<p>The standalone program <b>sqlite</b> can be used
-to interactively create, update and/or query an SQLite database.
-The sources to the sqlite program are part of the source tree and
-can be used as an example of how to interact with the SQLite C
-library.  For more information on the sqlite program,
-see <a href="sqlite.html">sqlite.html</a>.</p>
-
-<p>A history of changes to SQLite is found
-<a href="changes.html">here</a>.</p>
-
-<p>SQLite now implements most of the SQL language.
-The following are the known limitations:</p>
-
-<p>
-<ul>
-<li>Constraints are parsed but are not enforced</li>
-<li>There is no support for transactions or rollback</li>
+<p><ul>
+<li>Implements most of SQL92.</li>
+<li>A database is just a directory of GDBM files.</li>
+<li>Unlimited length records.</li>
+<li>Import and export data from 
+<a href="http://www.postgresql.org/">PostgreSQL</a>.</li>
+<li>Very simple 
+<a href="c_interface.html">C/C++ interface</a> uses only
+four functions and one opaque structure.</li>
+<li>A <a href="http://dev.scriptics.com/">Tcl</a> interface is
+included.</li>
+<li>Command-line access program <a href="sqlite.html">sqlite</a> uses
+the <a href="http://www.google.com/search?q=gnu+readline+library">GNU
+Readline library</a></li>
+<li>A Tcl-based test suite provides near 100% code coverage</li>
+<li>7500+ lines of C code.  No external dependencies other than GDBM.</li>
+<li>Built and tested under Linux (RedHat 6.0).  Should work under any Unix and
+probably also under Windows95/98/NT/2000.</li>
 </ul>
 </p>
 
-<H2>Status</h2>
+<h2>Current Status</h2>
 
-<p>New features are still being added to the SQLite code base.
-Nevertheless, the code appears to be stable and relatively
-bug-free. At least one large database has
-be loaded into SQLite and appears to work.</p>
+<p>A <a href="changes.html">change history</a> is available online.
+There are currently no <em>known</em> bugs or memory leaks
+in the library.  <a href="http://gcc.gnu.org/onlinedocs/gcov_1.html">Gcov</a>
+is used to verify test coverage.  The test suite currently exercises
+all code except for a few areas which are unreachable or which are
+only reached when <tt>malloc()</tt> fails.  The code has been tested
+for memory leaks and is found to be clean.</p>
 
-<p>SQLite has so far been tested only on RedHat 6.0 Linux.  But we
-know of no reason why it will not work on any other Unix platform,
-or on Windows95/98/NT.</p>
+<p>
+Among the SQL features that SQLite does not currently implement are:</p>
+
+<p>
+<ul>
+<li>outer joins</li>
+<li>constraints are parsed but are not enforced</li>
+<li>no support for transactions or rollback</li>
+</ul>
+</p>
+
+<h2>Documentation</h2>
+
+<p>The following documentation is currently available:</p>
+
+<p><ul>
+<li>Information on the <a href="sqlite.html">sqlite</a>
+    command-line utility.</li>
+<li>The <a href="c_interface.html">C/C++ Interface</a>.</li>
+<li>The <a href="fileformat.html">file format</a> used by SQLite databases.</li>
+</ul>
+</p>
+
+<p>The SQLite source code is 35% comment.  These comments are
+another important source of information. </p>
 }
 
 puts {
@@ -104,15 +126,41 @@ build directory, run configure from the build directory and then
 type "make".  For example:</p>
 
 <blockquote><pre>
-$ tar xzf sqlite.tar.gz   ;# Unpacks into directory named "sqlite"
-$ mkdir bld               ;# Create a separate build directory
+$ tar xzf sqlite.tar.gz      <i> Unpacks into directory named "sqlite" </i>
+$ mkdir bld                  <i> Create a separate build directory </i>
 $ cd bld
 $ ../sqlite/configure
-$ make                    ;# Builds "sqlite" and "libsqlite.a"
-$ make test               ;# Optional: run regression tests
+$ make                       <i> Builds "sqlite" and "libsqlite.a" </i>
+$ make test                  <i> Optional: run regression tests </i>
 </pre></blockquote>
 }
 
+puts {<h2>Command-line Usage Example</h2>
+
+<p>Download the source archive and compile the <b>sqlite</b>
+program as described above.  The type:</p>
+
+<blockquote><pre>
+bash$ sqlite ~/newdb              <i>Directory ~/newdb created automatically</i>
+sqlite> create table t1(
+   ...>    a int,
+   ...>    b varchar(20)
+   ...>    c text
+   ...> );                        <i>End each SQL statement with a ';'</i>
+sqlite> insert into t1
+   ...> values(1,'hi','y''all');
+sqlite> select * from t1;
+1|hello|world
+sqlite> .mode columns             <i>Special commands begin with '.'</i>
+sqlite> .header on                <i>Type ".help" for a list of commands</i>
+sqlite> select * from t1;
+a      b       c
+------ ------- -------
+1      hi      y'all
+sqlite> .exit
+base$
+</pre></blockquote>
+}
 puts {<h2>Related Sites</h2>
 
 <ul>
