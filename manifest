@@ -1,6 +1,6 @@
-C Make\suse\sof\s$(libdir)\sin\sthe\sMakefile.in.\s\sTicket\s#904.\s(CVS\s1967)
-D 2004-09-17T21:07:35
-F Makefile.in 7caec4bd363c293f4c788702bab9e4594a6dff50
+C Always\sinclude\s-lpthread\son\slink\slines\seven\sif\sit\sis\snot\sneeded.\s(CVS\s1968)
+D 2004-09-17T21:35:31
+F Makefile.in 76f8790c727cdbe2e1bef19c9c72b6e5da9cb9d8
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
 F VERSION d28cfc2e7714a747851e50cc1a5ee8ab0ded7a78
@@ -247,7 +247,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 02de1cf95e0cf230aeebdb0c4684e486b1424810
-R 5fd45ed04f8acd8e14a46cd20cdb76cc
+P 10b5e5173339cc7f052aace1b4056a057afe3e66
+R 8816ed45991f1ef6103b7b8a111b1d35
 U drh
-Z 81a3747d954a649eef9094d502c1fbe6
+Z b109fb1b1eb544c33f3008b88b47c374
