@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.30 2001/11/10 13:51:09 drh Exp $
+** @(#) $Id: pager.c,v 1.31 2001/11/22 00:01:27 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -300,11 +300,23 @@ static int pager_playback(Pager *pPager){
   unsigned char aMagic[sizeof(aJournalMagic)];
   int rc;
 
-  /* Read the beginning of the journal and truncate the
-  ** database file back to its original size.
+  /* Figure out how many records are in the journal.  Abort early if
+  ** the journal is empty.
   */
   assert( pPager->journalOpen );
   sqliteOsSeek(pPager->jfd, 0);
+  rc = sqliteOsFileSize(pPager->jfd, &nRec);
+  if( rc!=SQLITE_OK ){
+    goto end_playback;
+  }
+  nRec = (nRec - (sizeof(aMagic)+sizeof(Pgno))) / sizeof(PageRecord);
+  if( nRec<=0 ){
+    goto end_playback;
+  }
+
+  /* Read the beginning of the journal and truncate the
+  ** database file back to its original size.
+  */
   rc = sqliteOsRead(pPager->jfd, aMagic, sizeof(aMagic));
   if( rc!=SQLITE_OK || memcmp(aMagic,aJournalMagic,sizeof(aMagic))!=0 ){
     rc = SQLITE_PROTOCOL;
@@ -320,15 +332,6 @@ static int pager_playback(Pager *pPager){
   }
   pPager->dbSize = mxPg;
   
-  /* Begin reading the journal beginning at the end and moving
-  ** toward the beginning.
-  */
-  rc = sqliteOsFileSize(pPager->jfd, &nRec);
-  if( rc!=SQLITE_OK ){
-    goto end_playback;
-  }
-  nRec = (nRec - (sizeof(aMagic)+sizeof(Pgno))) / sizeof(PageRecord);
-
   /* Process segments beginning with the last and working backwards
   ** to the first.
   */

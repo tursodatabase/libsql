@@ -462,8 +462,9 @@ int sqliteOsClose(OsFile id){
 }
 
 /*
-** Read data from a file into a buffer.  Return the number of
-** bytes actually read.
+** Read data from a file into a buffer.  Return SQLITE_OK if all
+** bytes were read successfully and SQLITE_IOERR if anything goes
+** wrong.
 */
 int sqliteOsRead(OsFile id, void *pBuf, int amt){
 #if OS_UNIX

@@ -19,6 +19,7 @@ proc chng {date desc} {
 
 chng {2001 Nov ?? (2.1.2)} {
 <li>Changes to support 64-bit architectures.</li>
+<li>Fix a bug in the locking protocol.</li>
 }
 
 chng {2001 Nov 13 (2.1.1)} {

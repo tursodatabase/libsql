@@ -1,5 +1,5 @@
-C Attempting\sto\sadd\ssupport\sfor\s64-bit\splatforms.\s(CVS\s314)
-D 2001-11-21T02:21:12
+C Fix\sa\sbug\sin\sthe\slocking\sprotocol.\s(CVS\s315)
+D 2001-11-22T00:01:27
 F Makefile.in 6801df952cb1df64aa32e4de85fed24511d28efd
 F Makefile.template 1fdb891f14083ee0b63cf7282f91529634438e7a
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -21,7 +21,7 @@ F publish.sh 33cbe6798969f637698044023c139080e5d772a6
 F src/TODO af7f3cab0228e34149cf98e073aa83d45878e7e6
 F src/btree.c ef8934adc4ee61b4028ade1d6ed7ae1f74090e31
 F src/btree.h 0250a0a577a98cc64ddf1582d50c08b8d2451650
-F src/build.c 161023314950598be0cae9f7ef7e9b0d42c01252
+F src/build.c 2e21d425328e7c8bd6ade235e9eef51bf6fa870f
 F src/delete.c 5d93a21c1388cfb1359bda01c072f25583a2f4f2
 F src/expr.c 53515a7ba787bf4f0b3f73be30eb86aadb6f1b90
 F src/hash.c 6f1a7712ae3aac8351662969aec5693740a2fbf7
@@ -29,9 +29,9 @@ F src/hash.h a5f5b3ce2d086a172c5879b0b06a27a82eac9fac
 F src/insert.c 3526be771a01035198bef28d8f370cbcab94f46d
 F src/main.c 0b0e7244c7af91613111d5b72387e33f8789ed72
 F src/md5.c 52f677bfc590e09f71d07d7e327bd59da738d07c
-F src/os.c d1c5c12bcc52ac28cc4d62f442d84f54a33241bc
+F src/os.c d7dc681438f311cf8211a78d8d87a7cbdccc2f14
 F src/os.h bed702c9e3b768bc3cb1b12c90b83d099c1546be
-F src/pager.c 442ea25d808dd9c0f522cd4317af7dbb50f8ff3f
+F src/pager.c fd9fc86686319a11cb0eebe5ebb4a250e45e7984
 F src/pager.h df1fb8a759ab69112ea88b9f14601a7633d0ccc0
 F src/parse.y 5295f393f41ea89958287e5738e6c12c7cd67482
 F src/printf.c 300a90554345751f26e1fc0c0333b90a66110a1d
@@ -40,7 +40,7 @@ F src/select.c fa1c7144a9ad7ce3f16373b443bc25e764af4be7
 F src/shell.c 18e9f1cac7ec8af763f8fc71dfd81e2edee24008
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 934de9112747ad8d8e7d5fec44876246b24ca5a3
-F src/sqliteInt.h 6f7c6552a6652f101e747c153fc3c1117b12f954
+F src/sqliteInt.h 1d812fd1eed0008d31f7e31293f058bb6dbe3f09
 F src/table.c c89698bd5bb4b8d14722d6ee7e9be014c383d24a
 F src/tclsqlite.c b82e4faeae89fdb7304b3c970979ade299336a1f
 F src/test1.c 41eabe255970ef947263b94145c9b2766bab8675
@@ -103,7 +103,7 @@ F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 03b521d252575f93b9c52f7c8b0007011512fcfb
 F www/c_interface.tcl d446234c1d3ed747fcefd30e972a19f2b2fc0e05
-F www/changes.tcl 5bb35cf96c744aaac092c25e194b35844d59fa48
+F www/changes.tcl c3b863396d8d3966439e631b39b0a845062505db
 F www/crosscompile.tcl c99efacb3aefaa550c6e80d91b240f55eb9fd33e
 F www/download.tcl 3e51c9ff1326b0a182846134987301310dff7d60
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
@@ -115,7 +115,7 @@ F www/speed.tcl 212a91d555384e01873160d6a189f1490c791bc2
 F www/sqlite.tcl 6a21242a272e9c0939a04419a51c3d50cae33e3e
 F www/tclsqlite.tcl 13d50723f583888fc80ae1a38247c0ab415066fa
 F www/vdbe.tcl eb4e1768cffa266cbbb7133488022a7a6cb278d9
-P be228cd13a4dcb7fdf7014910b7c61d502cb9a01
-R b676570eed139d76f427f21092e18ba8
+P 03673adbfe0c8a92d79f86ddf1136736594208ad
+R 6db2507abc73fcd18a105f2aaf8fbb99
 U drh
-Z 75e264691fa9dda3479ccd075ddc9e4a
+Z 5464cc9093ffef5c17cabdd72823cca6
