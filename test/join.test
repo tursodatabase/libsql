@@ -12,7 +12,7 @@
 #
 # This file implements tests for joins, including outer joins.
 #
-# $Id: join.test,v 1.17 2005/01/21 04:25:47 danielk1977 Exp $
+# $Id: join.test,v 1.18 2005/01/21 15:52:33 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -414,9 +414,11 @@ do_test join-9.1 {
 
 ifcapable subquery {
   do_test join-9.1.1 {
-    SELECT * FROM t12 NATURAL LEFT JOIN t13
+    execsql {
+      SELECT * FROM t12 NATURAL LEFT JOIN t13
       EXCEPT
       SELECT * FROM t12 NATURAL LEFT JOIN (SELECT * FROM t13 WHERE b>0);
+    }
   } {}
 }
 ifcapable view {

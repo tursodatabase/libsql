@@ -353,7 +353,7 @@ execsql {
 set when_triggers [list {t1 BEFORE INSERT ON tbl WHEN new.a > 20}]
 ifcapable subquery {
   lappend when_triggers \
-      {t2 BEFORE INSERT ON tbl WHEN (SELECT count(*) FROM tbl) = 0} ]
+      {t2 BEFORE INSERT ON tbl WHEN (SELECT count(*) FROM tbl) = 0}
 }
 
 execsql {

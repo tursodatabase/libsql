@@ -8,6 +8,13 @@
 #include <stdlib.h>
 
 /*
+** Cursor support is off by default.
+*/
+#if !defined(SQLITE_ENABLE_CURSOR) && !defined(SQLITE_OMIT_CURSOR)
+# define SQLITE_OMIT_CURSOR 1
+#endif
+
+/*
 ** All the keywords of the SQL language are stored as in a hash
 ** table composed of instances of the following structure.
 */
