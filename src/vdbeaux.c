@@ -515,7 +515,7 @@ int sqliteVdbeList(
       }else{
         p->rc = SQLITE_INTERRUPT;
       }
-      sqliteSetString(&p->zErrMsg, sqlite_error_string(p->rc), 0);
+      sqliteSetString(&p->zErrMsg, sqlite_error_string(p->rc), (char*)0);
       break;
     }
     sprintf(p->zStack[0],"%d",i);
@@ -819,7 +819,7 @@ int sqliteVdbeReset(Vdbe *p, char **pzErrMsg){
   int i;
 
   if( p->magic!=VDBE_MAGIC_RUN && p->magic!=VDBE_MAGIC_HALT ){
-    sqliteSetString(pzErrMsg, sqlite_error_string(SQLITE_MISUSE), 0);
+    sqliteSetString(pzErrMsg, sqlite_error_string(SQLITE_MISUSE), (char*)0);
     return SQLITE_MISUSE;
   }
   if( p->zErrMsg ){
@@ -903,7 +903,7 @@ int sqliteVdbeFinalize(Vdbe *p, char **pzErrMsg){
   sqlite *db;
 
   if( p->magic!=VDBE_MAGIC_RUN && p->magic!=VDBE_MAGIC_HALT ){
-    sqliteSetString(pzErrMsg, sqlite_error_string(SQLITE_MISUSE), 0);
+    sqliteSetString(pzErrMsg, sqlite_error_string(SQLITE_MISUSE), (char*)0);
     return SQLITE_MISUSE;
   }
   db = p->db;

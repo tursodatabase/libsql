@@ -14,7 +14,7 @@
 ** systems that do not need this facility may omit it by recompiling
 ** the library with -DSQLITE_OMIT_AUTHORIZATION=1
 **
-** $Id: auth.c,v 1.10 2003/05/10 03:36:54 drh Exp $
+** $Id: auth.c,v 1.11 2003/12/06 21:43:56 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -89,7 +89,7 @@ static void sqliteAuthBadReturnCode(Parse *pParse, int rc){
   sprintf(zBuf, "(%d)", rc);
   sqliteSetString(&pParse->zErrMsg, "illegal return value ", zBuf,
     " from the authorization function - should be SQLITE_OK, "
-    "SQLITE_IGNORE, or SQLITE_DENY", 0);
+    "SQLITE_IGNORE, or SQLITE_DENY", (char*)0);
   pParse->nErr++;
   pParse->rc = SQLITE_MISUSE;
 }
@@ -151,10 +151,10 @@ void sqliteAuthRead(
   }else if( rc==SQLITE_DENY ){
     if( db->nDb>2 || pExpr->iDb!=0 ){
       sqliteSetString(&pParse->zErrMsg,"access to ", zDBase, ".",
-          pTab->zName, ".", zCol, " is prohibited", 0);
+          pTab->zName, ".", zCol, " is prohibited", (char*)0);
     }else{
       sqliteSetString(&pParse->zErrMsg,"access to ", pTab->zName, ".",
-                      zCol, " is prohibited", 0);
+                      zCol, " is prohibited", (char*)0);
     }
     pParse->nErr++;
     pParse->rc = SQLITE_AUTH;
@@ -184,7 +184,7 @@ int sqliteAuthCheck(
   }
   rc = db->xAuth(db->pAuthArg, code, zArg1, zArg2, zArg3, pParse->zAuthContext);
   if( rc==SQLITE_DENY ){
-    sqliteSetString(&pParse->zErrMsg, "not authorized", 0);
+    sqliteSetString(&pParse->zErrMsg, "not authorized", (char*)0);
     pParse->rc = SQLITE_AUTH;
     pParse->nErr++;
   }else if( rc!=SQLITE_OK && rc!=SQLITE_IGNORE ){

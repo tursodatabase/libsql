@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.242 2003/10/18 09:37:26 danielk1977 Exp $
+** $Id: vdbe.c,v 1.243 2003/12/06 21:43:56 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -631,7 +631,7 @@ case OP_Goto: {
 */
 case OP_Gosub: {
   if( p->returnDepth>=sizeof(p->returnStack)/sizeof(p->returnStack[0]) ){
-    sqliteSetString(&p->zErrMsg, "return address stack overflow", 0);
+    sqliteSetString(&p->zErrMsg, "return address stack overflow", (char*)0);
     p->rc = SQLITE_INTERNAL;
     return SQLITE_ERROR;
   }
@@ -648,7 +648,7 @@ case OP_Gosub: {
 */
 case OP_Return: {
   if( p->returnDepth<=0 ){
-    sqliteSetString(&p->zErrMsg, "return address stack underflow", 0);
+    sqliteSetString(&p->zErrMsg, "return address stack underflow", (char*)0);
     p->rc = SQLITE_INTERNAL;
     return SQLITE_ERROR;
   }
@@ -680,7 +680,7 @@ case OP_Halt: {
     p->rc = pOp->p1;
     p->errorAction = pOp->p2;
     if( pOp->p3 ){
-      sqliteSetString(&p->zErrMsg, pOp->p3, 0);
+      sqliteSetString(&p->zErrMsg, pOp->p3, (char*)0);
     }
     return SQLITE_ERROR;
   }else{
@@ -1169,7 +1169,7 @@ case OP_Function: {
   }
   if( ctx.isError ){
     sqliteSetString(&p->zErrMsg, 
-       zStack[p->tos] ? zStack[p->tos] : "user function error", 0);
+       zStack[p->tos] ? zStack[p->tos] : "user function error", (char*)0);
     rc = SQLITE_ERROR;
   }
   break;
@@ -2229,7 +2229,7 @@ case OP_Transaction: {
           p->rc = SQLITE_BUSY;
           return SQLITE_BUSY;
         }else if( (*db->xBusyCallback)(db->pBusyArg, "", busy++)==0 ){
-          sqliteSetString(&p->zErrMsg, sqlite_error_string(rc), 0);
+          sqliteSetString(&p->zErrMsg, sqlite_error_string(rc), (char*)0);
           busy = 0;
         }
         break;
@@ -2367,7 +2367,7 @@ case OP_VerifyCookie: {
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
   rc = sqliteBtreeGetMeta(db->aDb[pOp->p1].pBt, aMeta);
   if( rc==SQLITE_OK && aMeta[1]!=pOp->p2 ){
-    sqliteSetString(&p->zErrMsg, "database schema has changed", 0);
+    sqliteSetString(&p->zErrMsg, "database schema has changed", (char*)0);
     rc = SQLITE_SCHEMA;
   }
   break;
@@ -2441,7 +2441,7 @@ case OP_OpenWrite: {
     p2 = p->aStack[tos].i;
     POPSTACK;
     if( p2<2 ){
-      sqliteSetString(&p->zErrMsg, "root page number less than 2", 0);
+      sqliteSetString(&p->zErrMsg, "root page number less than 2", (char*)0);
       rc = SQLITE_INTERNAL;
       break;
     }
@@ -2461,7 +2461,7 @@ case OP_OpenWrite: {
           p->rc = SQLITE_BUSY;
           return SQLITE_BUSY;
         }else if( (*db->xBusyCallback)(db->pBusyArg, pOp->p3, ++busy)==0 ){
-          sqliteSetString(&p->zErrMsg, sqlite_error_string(rc), 0);
+          sqliteSetString(&p->zErrMsg, sqlite_error_string(rc), (char*)0);
           busy = 0;
         }
         break;
@@ -3444,7 +3444,7 @@ case OP_IdxPut: {
         ){
           rc = SQLITE_CONSTRAINT;
           if( pOp->p3 && pOp->p3[0] ){
-            sqliteSetString(&p->zErrMsg, pOp->p3, 0);
+            sqliteSetString(&p->zErrMsg, pOp->p3, (char*)0);
           }
           goto abort_due_to_error;
         }
@@ -4057,7 +4057,7 @@ case OP_FileOpen: {
     p->pFile = fopen(pOp->p3, "r");
   }
   if( p->pFile==0 ){
-    sqliteSetString(&p->zErrMsg,"unable to open file: ", pOp->p3, 0);
+    sqliteSetString(&p->zErrMsg,"unable to open file: ", pOp->p3, (char*)0);
     rc = SQLITE_ERROR;
   }
   break;
@@ -4655,7 +4655,7 @@ case OP_SetNext: {
 */
 default: {
   sprintf(zBuf,"%d",pOp->opcode);
-  sqliteSetString(&p->zErrMsg, "unknown opcode ", zBuf, 0);
+  sqliteSetString(&p->zErrMsg, "unknown opcode ", zBuf, (char*)0);
   rc = SQLITE_INTERNAL;
   break;
 }
@@ -4687,7 +4687,7 @@ default: {
     */
 #ifndef NDEBUG
     if( pc<-1 || pc>=p->nOp ){
-      sqliteSetString(&p->zErrMsg, "jump destination out of range", 0);
+      sqliteSetString(&p->zErrMsg, "jump destination out of range", (char*)0);
       rc = SQLITE_INTERNAL;
     }
     if( p->trace && p->tos>=0 ){
@@ -4758,7 +4758,7 @@ vdbe_halt:
   ** to fail on a modern VM computer, so this code is untested.
   */
 no_mem:
-  sqliteSetString(&p->zErrMsg, "out of memory", 0);
+  sqliteSetString(&p->zErrMsg, "out of memory", (char*)0);
   rc = SQLITE_NOMEM;
   goto vdbe_halt;
 
@@ -4773,7 +4773,7 @@ abort_due_to_misuse:
   */
 abort_due_to_error:
   if( p->zErrMsg==0 ){
-    sqliteSetString(&p->zErrMsg, sqlite_error_string(rc), 0);
+    sqliteSetString(&p->zErrMsg, sqlite_error_string(rc), (char*)0);
   }
   goto vdbe_halt;
 
@@ -4788,7 +4788,7 @@ abort_due_to_interrupt:
   }else{
     rc = SQLITE_INTERRUPT;
   }
-  sqliteSetString(&p->zErrMsg, sqlite_error_string(rc), 0);
+  sqliteSetString(&p->zErrMsg, sqlite_error_string(rc), (char*)0);
   goto vdbe_halt;
 
   /* Jump to here if a operator is encountered that requires more stack
@@ -4796,7 +4796,7 @@ abort_due_to_interrupt:
   */
 not_enough_stack:
   sprintf(zBuf,"%d",pc);
-  sqliteSetString(&p->zErrMsg, "too few operands on stack at ", zBuf, 0);
+  sqliteSetString(&p->zErrMsg, "too few operands on stack at ", zBuf, (char*)0);
   rc = SQLITE_INTERNAL;
   goto vdbe_halt;
 
@@ -4805,7 +4805,7 @@ not_enough_stack:
 VERIFY(
 bad_instruction:
   sprintf(zBuf,"%d",pc);
-  sqliteSetString(&p->zErrMsg, "illegal operation at ", zBuf, 0);
+  sqliteSetString(&p->zErrMsg, "illegal operation at ", zBuf, (char*)0);
   rc = SQLITE_INTERNAL;
   goto vdbe_halt;
 )

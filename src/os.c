@@ -1564,10 +1564,11 @@ char *sqliteOsFullPathname(const char *zRelative){
 #if OS_UNIX
   char *zFull = 0;
   if( zRelative[0]=='/' ){
-    sqliteSetString(&zFull, zRelative, 0);
+    sqliteSetString(&zFull, zRelative, (char*)0);
   }else{
     char zBuf[5000];
-    sqliteSetString(&zFull, getcwd(zBuf, sizeof(zBuf)), "/", zRelative, 0);
+    sqliteSetString(&zFull, getcwd(zBuf, sizeof(zBuf)), "/", zRelative,
+                    (char*)0);
   }
   return zFull;
 #endif
@@ -1585,13 +1586,14 @@ char *sqliteOsFullPathname(const char *zRelative){
   char *zFull = 0;
   if( zRelative[0]==':' ){
     char zBuf[_MAX_PATH+1];
-    sqliteSetString(&zFull, getcwd(zBuf, sizeof(zBuf)), &(zRelative[1]), 0);
+    sqliteSetString(&zFull, getcwd(zBuf, sizeof(zBuf)), &(zRelative[1]),
+                    (char*)0);
   }else{
     if( strchr(zRelative, ':') ){
-      sqliteSetString(&zFull, zRelative, 0);
+      sqliteSetString(&zFull, zRelative, (char*)0);
     }else{
     char zBuf[_MAX_PATH+1];
-      sqliteSetString(&zFull, getcwd(zBuf, sizeof(zBuf)), zRelative, 0);
+      sqliteSetString(&zFull, getcwd(zBuf, sizeof(zBuf)), zRelative, (char*)0);
     }
   }
   return zFull;

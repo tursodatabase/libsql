@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree_rb.c,v 1.17 2003/10/22 22:15:28 drh Exp $
+** $Id: btree_rb.c,v 1.18 2003/12/06 21:43:56 drh Exp $
 **
 ** This file implements an in-core database using Red-Black balanced
 ** binary trees.
@@ -265,7 +265,7 @@ static char *append_val(char * orig, char const * val)
     return sqliteStrDup( val );
   } else{
     char * ret = 0;
-    sqliteSetString(&ret, orig, val, 0);
+    sqliteSetString(&ret, orig, val, (char*)0);
     sqliteFree( orig );
     return ret;
   }

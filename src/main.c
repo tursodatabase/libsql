@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.143 2003/10/18 09:37:26 danielk1977 Exp $
+** $Id: main.c,v 1.144 2003/12/06 21:43:56 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -34,7 +34,7 @@ typedef struct {
 ** that the database is corrupt.
 */
 static void corruptSchema(InitData *pData){
-  sqliteSetString(pData->pzErrMsg, "malformed database schema", 0);
+  sqliteSetString(pData->pzErrMsg, "malformed database schema", (char*)0);
 }
 
 /*
@@ -150,7 +150,7 @@ int upgrade_3_callback(void *pInit, int argc, char **argv, char **NotUsed){
     "DROP TABLE sqlite_x;",
     0, 0, &zErr, argv[0], argv[0], argv[0]);
   if( zErr ){
-    sqliteSetString(pData->pzErrMsg, zErr, 0);
+    sqliteSetString(pData->pzErrMsg, zErr, (char*)0);
     sqlite_freemem(zErr);
   }
 
@@ -272,7 +272,7 @@ static int sqliteInitOne(sqlite *db, int iDb, char **pzErrMsg){
   if( db->aDb[iDb].pBt==0 ) return SQLITE_OK;
   rc = sqliteBtreeCursor(db->aDb[iDb].pBt, 2, 0, &curMain);
   if( rc ){
-    sqliteSetString(pzErrMsg, sqlite_error_string(rc), 0);
+    sqliteSetString(pzErrMsg, sqlite_error_string(rc), (char*)0);
     return rc;
   }
 
@@ -280,7 +280,7 @@ static int sqliteInitOne(sqlite *db, int iDb, char **pzErrMsg){
   */
   rc = sqliteBtreeGetMeta(db->aDb[iDb].pBt, meta);
   if( rc ){
-    sqliteSetString(pzErrMsg, sqlite_error_string(rc), 0);
+    sqliteSetString(pzErrMsg, sqlite_error_string(rc), (char*)0);
     sqliteBtreeCloseCursor(curMain);
     return rc;
   }
@@ -306,17 +306,17 @@ static int sqliteInitOne(sqlite *db, int iDb, char **pzErrMsg){
       db->file_format = 4;
     }else if( db->file_format>4 ){
       sqliteBtreeCloseCursor(curMain);
-      sqliteSetString(pzErrMsg, "unsupported file format", 0);
+      sqliteSetString(pzErrMsg, "unsupported file format", (char*)0);
       return SQLITE_ERROR;
     }
   }else if( db->file_format!=meta[2] || db->file_format<4 ){
     assert( db->file_format>=4 );
     if( meta[2]==0 ){
       sqliteSetString(pzErrMsg, "cannot attach empty database: ",
-         db->aDb[iDb].zName, 0);
+         db->aDb[iDb].zName, (char*)0);
     }else{
       sqliteSetString(pzErrMsg, "incompatible file format in auxiliary "
-         "database: ", db->aDb[iDb].zName, 0);
+         "database: ", db->aDb[iDb].zName, (char*)0);
     }
     sqliteBtreeClose(db->aDb[iDb].pBt);
     db->aDb[iDb].pBt = 0;
@@ -341,13 +341,13 @@ static int sqliteInitOne(sqlite *db, int iDb, char **pzErrMsg){
     char *zSql = 0;
     sqliteSetString(&zSql, 
        "SELECT type, name, rootpage, sql, ", zDbNum, " FROM \"",
-       db->aDb[iDb].zName, "\".sqlite_master", 0);
+       db->aDb[iDb].zName, "\".sqlite_master", (char*)0);
     sqliteRunParser(&sParse, zSql, pzErrMsg);
     sqliteFree(zSql);
   }
   sqliteBtreeCloseCursor(curMain);
   if( sqlite_malloc_failed ){
-    sqliteSetString(pzErrMsg, "out of memory", 0);
+    sqliteSetString(pzErrMsg, "out of memory", (char*)0);
     sParse.rc = SQLITE_NOMEM;
     sqliteResetInternalSchema(db, 0);
   }
@@ -448,7 +448,8 @@ sqlite *sqlite_open(const char *zFilename, int mode, char **pzErrMsg){
   if( rc!=SQLITE_OK ){
     switch( rc ){
       default: {
-        sqliteSetString(pzErrMsg, "unable to open database: ", zFilename, 0);
+        sqliteSetString(pzErrMsg, "unable to open database: ",
+           zFilename, (char*)0);
       }
     }
     sqliteFree(db);
@@ -501,7 +502,7 @@ sqlite *sqlite_open(const char *zFilename, int mode, char **pzErrMsg){
     if( rc!=SQLITE_OK ){
       sqliteSetString(pzErrMsg, 
         "unable to upgrade database to the version 2.6 format",
-        zErr ? ": " : 0, zErr, 0);
+        zErr ? ": " : 0, zErr, (char*)0);
       sqlite_freemem(zErr);
       sqliteStrRealloc(pzErrMsg);
       sqlite_close(db);
@@ -514,7 +515,7 @@ sqlite *sqlite_open(const char *zFilename, int mode, char **pzErrMsg){
   return db;
 
 no_mem_on_open:
-  sqliteSetString(pzErrMsg, "out of memory", 0);
+  sqliteSetString(pzErrMsg, "out of memory", (char*)0);
   sqliteStrRealloc(pzErrMsg);
   return 0;
 }
@@ -617,7 +618,7 @@ static int sqliteMain(
   }
   if( db->file_format<3 ){
     sqliteSafetyOff(db);
-    sqliteSetString(pzErrMsg, "obsolete database file format", 0);
+    sqliteSetString(pzErrMsg, "obsolete database file format", (char*)0);
     return SQLITE_ERROR;
   }
   if( db->pVdbe==0 ){ db->nChange = 0; }
@@ -629,7 +630,7 @@ static int sqliteMain(
   if( db->xTrace ) db->xTrace(db->pTraceArg, zSql);
   sqliteRunParser(&sParse, zSql, pzErrMsg);
   if( sqlite_malloc_failed ){
-    sqliteSetString(pzErrMsg, "out of memory", 0);
+    sqliteSetString(pzErrMsg, "out of memory", (char*)0);
     sParse.rc = SQLITE_NOMEM;
     sqliteRollbackAll(db);
     sqliteResetInternalSchema(db, 0);
@@ -637,7 +638,7 @@ static int sqliteMain(
   }
   if( sParse.rc==SQLITE_DONE ) sParse.rc = SQLITE_OK;
   if( sParse.rc!=SQLITE_OK && pzErrMsg && *pzErrMsg==0 ){
-    sqliteSetString(pzErrMsg, sqlite_error_string(sParse.rc), 0);
+    sqliteSetString(pzErrMsg, sqlite_error_string(sParse.rc), (char*)0);
   }
   sqliteStrRealloc(pzErrMsg);
   if( sParse.rc==SQLITE_SCHEMA ){
@@ -654,7 +655,7 @@ static int sqliteMain(
 exec_misuse:
   if( pzErrMsg ){
     *pzErrMsg = 0;
-    sqliteSetString(pzErrMsg, sqlite_error_string(SQLITE_MISUSE), 0);
+    sqliteSetString(pzErrMsg, sqlite_error_string(SQLITE_MISUSE), (char*)0);
     sqliteStrRealloc(pzErrMsg);
   }
   return SQLITE_MISUSE;

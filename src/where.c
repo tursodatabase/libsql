@@ -12,7 +12,7 @@
 ** This module contains C code that generates VDBE code used to process
 ** the WHERE clause of SQL statements.
 **
-** $Id: where.c,v 1.83 2003/09/27 13:39:39 drh Exp $
+** $Id: where.c,v 1.84 2003/12/06 21:43:56 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -383,7 +383,7 @@ WhereInfo *sqliteWhereBegin(
     char zBuf[50];
     sprintf(zBuf, "%d", (int)ARRAYSIZE(aExpr)-1);
     sqliteSetString(&pParse->zErrMsg, "WHERE clause too complex - no more "
-       "than ", zBuf, " terms allowed", 0);
+       "than ", zBuf, " terms allowed", (char*)0);
     pParse->nErr++;
     return 0;
   }

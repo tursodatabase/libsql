@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.161 2003/11/27 00:48:58 drh Exp $
+** $Id: build.c,v 1.162 2003/12/06 21:43:56 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -494,7 +494,7 @@ void sqliteStartTable(
     int rc = sqliteBtreeFactory(db, 0, 0, MAX_PAGES, &db->aDb[1].pBt);
     if( rc!=SQLITE_OK ){
       sqliteSetString(&pParse->zErrMsg, "unable to open a temporary database "
-        "file for storing temporary tables", 0);
+        "file for storing temporary tables", (char*)0);
       pParse->nErr++;
       return;
     }
@@ -528,7 +528,7 @@ void sqliteStartTable(
   if( (pIdx = sqliteFindIndex(db, zName, 0))!=0 &&
           (pIdx->iDb==0 || !pParse->initFlag) ){
     sqliteSetString(&pParse->zErrMsg, "there is already an index named ", 
-       zName, 0);
+       zName, (char*)0);
     sqliteFree(zName);
     pParse->nErr++;
     return;
@@ -588,7 +588,7 @@ void sqliteAddColumn(Parse *pParse, Token *pName){
   sqliteDequote(z);
   for(i=0; i<p->nCol; i++){
     if( sqliteStrICmp(z, p->aCol[i].zName)==0 ){
-      sqliteSetString(&pParse->zErrMsg, "duplicate column name: ", z, 0);
+      sqliteSetString(&pParse->zErrMsg, "duplicate column name: ", z, (char*)0);
       pParse->nErr++;
       sqliteFree(z);
       return;
@@ -709,7 +709,7 @@ void sqliteAddPrimaryKey(Parse *pParse, IdList *pList, int onError){
   if( pTab==0 ) goto primary_key_exit;
   if( pTab->hasPrimKey ){
     sqliteSetString(&pParse->zErrMsg, "table \"", pTab->zName, 
-        "\" has more than one primary key", 0);
+        "\" has more than one primary key", (char*)0);
     pParse->nErr++;
     goto primary_key_exit;
   }
@@ -1125,7 +1125,7 @@ int sqliteViewGetColumnNames(Parse *pParse, Table *pTable){
   */
   if( pTable->nCol<0 ){
     sqliteSetString(&pParse->zErrMsg, "view ", pTable->zName,
-         " is circularly defined", 0);
+         " is circularly defined", (char*)0);
     pParse->nErr++;
     return 1;
   }
@@ -1269,19 +1269,19 @@ void sqliteDropTable(Parse *pParse, Token *pName, int isView){
 #endif
   if( pTable->readOnly ){
     sqliteSetString(&pParse->zErrMsg, "table ", pTable->zName, 
-       " may not be dropped", 0);
+       " may not be dropped", (char*)0);
     pParse->nErr++;
     return;
   }
   if( isView && pTable->pSelect==0 ){
     sqliteSetString(&pParse->zErrMsg, "use DROP TABLE to delete table ",
-      pTable->zName, 0);
+      pTable->zName, (char*)0);
     pParse->nErr++;
     return;
   }
   if( !isView && pTable->pSelect ){
     sqliteSetString(&pParse->zErrMsg, "use DROP VIEW to delete view ",
-      pTable->zName, 0);
+      pTable->zName, (char*)0);
     pParse->nErr++;
     return;
   }
@@ -1436,7 +1436,7 @@ void sqliteCreateForeignKey(
   }else if( pToCol && pToCol->nId!=pFromCol->nId ){
     sqliteSetString(&pParse->zErrMsg, 
         "number of columns in foreign key does not match the number of "
-        "columns in the referenced table", 0);
+        "columns in the referenced table", (char*)0);
     pParse->nErr++;
     goto fk_end;
   }else{
@@ -1474,7 +1474,7 @@ void sqliteCreateForeignKey(
       }
       if( j>=p->nCol ){
         sqliteSetString(&pParse->zErrMsg, "unknown column \"", 
-          pFromCol->a[i].zName, "\" in foreign key definition", 0);
+          pFromCol->a[i].zName, "\" in foreign key definition", (char*)0);
         pParse->nErr++;
         goto fk_end;
       }
@@ -1571,18 +1571,18 @@ void sqliteCreateIndex(
   if( pTab==0 || pParse->nErr ) goto exit_create_index;
   if( pTab->readOnly ){
     sqliteSetString(&pParse->zErrMsg, "table ", pTab->zName,
-      " may not be indexed", 0);
+      " may not be indexed", (char*)0);
     pParse->nErr++;
     goto exit_create_index;
   }
   if( pTab->iDb>=2 && pParse->initFlag==0 ){
     sqliteSetString(&pParse->zErrMsg, "table ", pTab->zName, 
-      " may not have indices added", 0);
+      " may not have indices added", (char*)0);
     pParse->nErr++;
     goto exit_create_index;
   }
   if( pTab->pSelect ){
-    sqliteSetString(&pParse->zErrMsg, "views may not be indexed", 0);
+    sqliteSetString(&pParse->zErrMsg, "views may not be indexed", (char*)0);
     pParse->nErr++;
     goto exit_create_index;
   }
@@ -1608,13 +1608,13 @@ void sqliteCreateIndex(
     if( zName==0 ) goto exit_create_index;
     if( (pISameName = sqliteFindIndex(db, zName, 0))!=0 ){
       sqliteSetString(&pParse->zErrMsg, "index ", zName, 
-         " already exists", 0);
+         " already exists", (char*)0);
       pParse->nErr++;
       goto exit_create_index;
     }
     if( (pTSameName = sqliteFindTable(db, zName, 0))!=0 ){
       sqliteSetString(&pParse->zErrMsg, "there is already a table named ",
-         zName, 0);
+         zName, (char*)0);
       pParse->nErr++;
       goto exit_create_index;
     }
@@ -1625,7 +1625,7 @@ void sqliteCreateIndex(
     for(pLoop=pTab->pIndex, n=1; pLoop; pLoop=pLoop->pNext, n++){}
     sprintf(zBuf,"%d)",n);
     zName = 0;
-    sqliteSetString(&zName, "(", pTab->zName, " autoindex ", zBuf, 0);
+    sqliteSetString(&zName, "(", pTab->zName, " autoindex ", zBuf, (char*)0);
     if( zName==0 ) goto exit_create_index;
   }else{
     zName = sqliteStrNDup(pName->z, pName->n);
@@ -1685,7 +1685,7 @@ void sqliteCreateIndex(
     }
     if( j>=pTab->nCol ){
       sqliteSetString(&pParse->zErrMsg, "table ", pTab->zName, 
-        " has no column named ", pList->a[i].zName, 0);
+        " has no column named ", pList->a[i].zName, (char*)0);
       pParse->nErr++;
       sqliteFree(pIndex);
       goto exit_create_index;
