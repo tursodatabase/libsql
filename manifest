@@ -1,5 +1,5 @@
-C Fix\sfor\sticket\s#100:\sCorrectly\shandle\sON\sand\sUSING\sclauses\sof\sJOINs\swithin\na\sVIEW.\s(CVS\s679)
-D 2002-07-16T02:05:44
+C Fix\sfor\sticket\s#105:\sFix\sthe\sUPDATE\scommand\sso\sthat\sit\sworks\sproperly\swith\nindexed\stables\swhen\sthere\sis\sa\ssubquery\sin\sthe\sWHERE\sclause.\s\sAdd\stests\nto\sverify\scorrect\soperation.\s(CVS\s680)
+D 2002-07-16T17:22:51
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -50,7 +50,7 @@ F src/test3.c fda085b4cdd5a2d7f65786ce679036e955f4bfa2
 F src/threadtest.c 72bce0a284647314847bbea44616ceb056bfb77f
 F src/tokenize.c b5500e193a82b5b9888fbf947efd90d3b4858178
 F src/trigger.c d88ab4d68d68955c217b38fb6717e090fbbf54a4
-F src/update.c 494479cc4fe34165cb9ea97bccefb405e7b875d2
+F src/update.c ddba82d1b0d1cb34d862d8ad943012f88e2b8495
 F src/util.c 7a99e754c44dd220e881122e30581c08b6d6adef
 F src/vdbe.c 0169270bb73e8dec4174b90dffc7070c4cabe039
 F src/vdbe.h a9292f2b5fcecef924fa255fb74609e9cbc776c2
@@ -105,7 +105,7 @@ F test/trigger1.test bb63749fa8a395a60541100607d86381604b7194
 F test/trigger2.test c12759a0d7ba6488d9d24c96a1352ddee995c1ab
 F test/trigger3.test 7dfe798d7e72c13720394685fe353112e3f31adf
 F test/unique.test 572aa791327c1e8d797932263e9d67f176cfdb44
-F test/update.test a0aa0bf83e6fad8407d0e4ad25ebb09b513f5bf4
+F test/update.test 7ffb062d580a972e7870d0f51d5af3ab9bfeae08
 F test/vacuum.test 059871b312eb910bbe49dafde1d01490cc2c6bbe
 F test/view.test 3afca084dab44c7a5772d3c6a326adf93ad52050
 F test/where.test 1f87bec674bf85d74ac1cc5b2cd3d89be1e87b1d
@@ -141,7 +141,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 47997d7f3ad2dd486a00dc13b7a8c48bb4751e5d
-R 5268df3b683caf62c45fc04db3c4a2fd
+P 93710f7ed7e1baa6acbf4bc32982e046f61ffa44
+R a496b407b95e3e3391653a1442fdf78c
 U drh
-Z 2216eae1017a9d0dde05f2fc78d38393
+Z af2183151817c8e8381633943b4d70fd
