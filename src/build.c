@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.219 2004/06/15 16:51:01 danielk1977 Exp $
+** $Id: build.c,v 1.220 2004/06/17 06:13:34 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2077,14 +2077,22 @@ void sqlite3CreateIndex(
         if( pIdx->keyInfo.aColl[k]!=pIndex->keyInfo.aColl[k] ) break;
       }
       if( k==pIdx->nColumn ){
-        /* FIX ME: It's possible the onError of the old index should be
-        ** adjusted. For example in the statement:
-        **
-        ** CREATE TABLE t (x UNIQUE, UNIQUE(x) ON CONFLICT ROLLBACK);
-        **
-        ** The Index.onError should be upgraded from OE_Abort to
-        ** OE_Rollback when the second UNIQUE is parsed.
-        */
+        if( pIdx->onError!=pIndex->onError ){
+          /* This constraint creates the same index as a previous
+          ** constraint specified somewhere in the CREATE TABLE statement.
+          ** However the ON CONFLICT clauses are different. If both this 
+          ** constraint and the previous equivalent constraint have explicit
+          ** ON CONFLICT clauses this is an error. Otherwise, use the
+          ** explicitly specified behaviour for the index.
+          */
+          if( !(pIdx->onError==OE_Default || pIndex->onError==OE_Default) ){
+            sqlite3ErrorMsg(pParse, 
+                "conflicting ON CONFLICT clauses specified", 0);
+          }
+          if( pIdx->onError==OE_Default ){
+            pIdx->onError = pIndex->onError;
+          }
+        }
         goto exit_create_index;
       }
     }

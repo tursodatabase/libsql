@@ -1,5 +1,5 @@
-C Use\sthe\sfaster\sLIKE\sfunction\sfrom\ssqlite\sv2.\sAdd\sspecial\suser\sfunctions\sto\ntest\sbuilds\sto\stest\sthe\sauxdata\sAPIs.\s(CVS\s1610)
-D 2004-06-17T05:36:44
+C Handle\sconflicting\sON\sCONFLICT\sclauses\sin\stable\sdefinitions.\s(CVS\s1611)
+D 2004-06-17T06:13:34
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -28,7 +28,7 @@ F src/attach.c 93b8ecec4a8d7b4e9f2479e2327d90c9d01765e8
 F src/auth.c 204e1e9c45e64315589bc8b62cba5d9de29b6a3c
 F src/btree.c 0cf8a52a57a7eb13d50719114ee1fa353e89d7d3
 F src/btree.h 32f96abef464cf8765b23ca669acfe90d191fcc5
-F src/build.c 19fc5d0336a3fef973d62b3a1728078a319e4045
+F src/build.c ed0bff93bf8cbcf853f0ddf0a99c8e5fd02d0db0
 F src/date.c 65b483caeb0e4dd663667d2f927caa058168ebff
 F src/delete.c 1e94ef693e45b441f5c828ea0a064ac339008f8e
 F src/encode.c a876af473d1d636faa3dca51c7571f2e007eea37
@@ -112,7 +112,7 @@ F test/fkey1.test d65c824459916249bee501532d6154ddab0b5db7
 F test/func.test 5fb6008f8805f8ff1f41cf269cf675aff8923c04
 F test/hook.test c4102c672d67f8fb60ea459842805abcba69a747
 F test/in.test b92a2df9162e1cbd33c6449a29a05e6955b1741a
-F test/index.test 4d2e73647872b540df4335387cc91faff4365020
+F test/index.test 4bd370c6edff316916a3a9d934ef0c2cabad65b1
 F test/insert.test 6ec324659656f4a86e4abfcf1a1fd2795ba6b603
 F test/insert2.test c288375a64dad3295044714f0dfed4a193cf067f
 F test/interrupt.test 9142ce4448605127640eda5e283952f75f67ed91
@@ -224,7 +224,7 @@ F www/support.tcl 1801397edd271cc39a2aadd54e701184b5181248
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P b1e66ae4640c2cd32d47c043b5c25ea67182098b
-R 79cf4eb54da41f0b0cf0acbcc361a701
+P b9493c5facea4d24a6cbc4f6fa2f75dc2399a11d
+R da2b683145f062d232a7ec22a0664baa
 U danielk1977
-Z ebc17dbd051543173585388ad5a016a2
+Z e775c4725bc272bf6ec66a50b08f1692
