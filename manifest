@@ -1,5 +1,5 @@
-C Fix\sfor\sticket\s91:\sModify\sthe\s"publish.sh"\sscript\sto\suse\sthe\snew\smingw\ncross-compiler\sinstalled\son\sthe\sdevelopment\splatform.\s(CVS\s657)
-D 2002-07-02T11:55:33
+C Fix\sfor\sticket\s#92:\sCorrect\sthe\ssqliteExprCompare()\sfunction\sso\sthat\sis\stakes\ninto\saccount\sthe\siTable\sand\siColumn\sfields\sof\sthe\sExpr\sstructure.\s\sOtherwise,\n"min(a)"\sand\s"min(b)"\swill\scompare\sequal\sto\seach\sother\sin\sviews.\s(CVS\s658)
+D 2002-07-02T13:05:05
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -23,7 +23,7 @@ F src/btree.h 8abeabfe6e0b1a990b64fa457592a6482f6674f3
 F src/build.c 0834185cbe316dda5173de50886ed804b82e3ba6
 F src/delete.c 44c45460b1e03033756e35adc6d569ffbf30b725
 F src/encode.c 346b12b46148506c32038524b95c4631ab46d760
-F src/expr.c ecd8267f70f4099b760c3862527a52cdfb768612
+F src/expr.c 4b25ee5e65f351d40dea8575b998605762556d76
 F src/func.c 5eae8227a8b0d276a64d51a3880a6e86f238fedf
 F src/hash.c 6a6236b89c8c060c65dabd300a1c8ce7c10edb72
 F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
@@ -107,7 +107,7 @@ F test/trigger3.test 7dfe798d7e72c13720394685fe353112e3f31adf
 F test/unique.test 572aa791327c1e8d797932263e9d67f176cfdb44
 F test/update.test a0aa0bf83e6fad8407d0e4ad25ebb09b513f5bf4
 F test/vacuum.test 059871b312eb910bbe49dafde1d01490cc2c6bbe
-F test/view.test d3f178e9ea170c49b4049469f3d5a8eca97dd875
+F test/view.test 28700c1f9a10121242eaad77622f603cf59a548b
 F test/where.test 1f87bec674bf85d74ac1cc5b2cd3d89be1e87b1d
 F tool/lemon.c 459cb2bb3738a1ad5cb0ad8b805587a88a885d95
 F tool/lempar.c 73a991cc3017fb34804250fa901488b5147b3717
@@ -137,7 +137,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P f7159fde6b8692f91fa8a3c928dc219d0f3d8884
-R 3d0d0f4fa9a98d753eaa2c7acc814e2d
+P 3cac283de4939538f09cd11e2cbdc84e9a9602f2
+R dcd0974614e55fffecaf44a18cd6cd53
 U drh
-Z 549a099bb6b0ce21b34627ac400d3d9b
+Z d34a13be1a939e0f9ee685ea0fba9ad6
