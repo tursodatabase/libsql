@@ -654,7 +654,15 @@ void sqlite3VdbeMakeReady(
   sqlite3HashInit(&p->agg.hash, SQLITE_HASH_BINARY, 0);
   p->agg.pSearch = 0;
 #ifdef MEMORY_DEBUG
+  if( sqlite3OsFileExists("vdbe_explain") ){
+    int i;
+    printf("VDBE Program Listing:\n");
+    for(i=0; i<p->nOp; i++){
+      sqlite3VdbePrintOp(stdout, i, &p->aOp[i]);
+    }
+  }
   if( sqlite3OsFileExists("vdbe_trace") ){
+    printf("VDBE Execution Trace:\n");
     p->trace = stdout;
   }
 #endif

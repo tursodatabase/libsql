@@ -710,7 +710,6 @@ int sqlite3CodeRowTrigger(
 ){
   Trigger * pTrigger;
   TriggerStack * pTriggerStack;
-  u64 cookieMask = pParse->cookieMask;
 
   assert(op == TK_UPDATE || op == TK_INSERT || op == TK_DELETE);
   assert(tr_tm == TK_BEFORE || tr_tm == TK_AFTER );
@@ -781,10 +780,5 @@ int sqlite3CodeRowTrigger(
     }
     pTrigger = pTrigger->pNext;
   }
-
-  pParse->cookieMask = cookieMask;
   return 0;
 }
-
-
-

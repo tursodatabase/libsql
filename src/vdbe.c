@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.359 2004/06/06 09:44:05 danielk1977 Exp $
+** $Id: vdbe.c,v 1.360 2004/06/09 00:48:14 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2302,11 +2302,11 @@ case OP_AutoCommit: {
 ** started.  Index 0 is the main database file and index 1 is the
 ** file used for temporary tables.
 **
-** If P2 is non-zero, then a write-transaction is started.  A write lock is
+** If P2 is non-zero, then a write-transaction is started.  A RESERVED lock is
 ** obtained on the database file when a write-transaction is started.  No
-** other process can read or write the file while the transaction is
-** underway.  Starting a transaction also creates a rollback journal.  A
-** transaction must be started before any changes can be made to the
+** other process can start another write transaction while this transaction is
+** underway.  Starting a write transaction also creates a rollback journal. A
+** write transaction must be started before any changes can be made to the
 ** database.
 **
 ** If P2 is zero, then a read-lock is obtained on the database file.

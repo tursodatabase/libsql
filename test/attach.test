@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach.test,v 1.22 2004/06/07 01:52:15 drh Exp $
+# $Id: attach.test,v 1.23 2004/06/09 00:48:15 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -314,7 +314,8 @@ do_test attach-3.3 {
   }
 } {0 {21 x 22 y}}
 
-# Even though main has a transaction, test2.db should not be locked.
+# Even though 'db' has started a transaction, it should not yet have
+# a lock on test2.db so 'db2' should be readable.
 do_test attach-3.4 {
   execsql BEGIN
   catchsql {
@@ -322,7 +323,8 @@ do_test attach-3.4 {
   } db2;
 } {0 {21 x 22 y}}
 
-# Reading from db2 should not lock test2.db
+# Reading from test2.db from db within a transaction should not
+# prevent test2.db from being read by db2.
 do_test attach-3.5 {
   execsql {SELECT * FROM t2}
   catchsql {
@@ -330,7 +332,8 @@ do_test attach-3.5 {
   } db2;
 } {0 {21 x 22 y}}
 
-# Making a change to db2 causes test2.ddb to become locked.
+# Making a change to test2.db through db  causes test2.db to get
+# a reserved lock.  It should still be accessible through db2.
 do_test attach-3.6 {
   execsql {
     UPDATE t2 SET x=x+1 WHERE x=50;
@@ -338,30 +341,42 @@ do_test attach-3.6 {
   catchsql {
     SELECT * FROM t2;
   } db2;
-} {1 {database is locked}}
+} {0 {21 x 22 y}}
 
 do_test attach-3.7 {
   execsql ROLLBACK
   execsql {SELECT * FROM t2} db2
 } {21 x 22 y}
+
+# Start transactions on both db and db2.  Once again, just because
+# we make a change to test2.db using db2, only a RESERVED lock is
+# obtained, so test2.db should still be readable using db.
+#
 do_test attach-3.8 {
   execsql BEGIN
   execsql BEGIN db2
   execsql {UPDATE t2 SET x=0 WHERE 0} db2
   catchsql {SELECT * FROM t2}
-} {1 {database is locked}}
+} {0 {21 x 22 y}}
+
+# It is also still accessible from db2.
 do_test attach-3.9 {
   catchsql {SELECT * FROM t2} db2
 } {0 {21 x 22 y}}
+
 do_test attach-3.10 {
   execsql {SELECT * FROM t1}
 } {1 2 3 4}
+
 do_test attach-3.11 {
   catchsql {UPDATE t1 SET a=a+1}
 } {0 {}}
 do_test attach-3.12 {
   execsql {SELECT * FROM t1}
 } {2 2 4 4}
+
+# db2 has a RESERVED lock on test2.db, so db cannot write to any tables
+# in test2.db.
 do_test attach-3.13 {
   catchsql {UPDATE t2 SET x=x+1 WHERE x=50}
 } {1 {database is locked}}
@@ -370,18 +385,18 @@ do_test attach-3.13 {
 # for a locked database.
 execsql {ROLLBACK}
 
+# db is able to reread its schema because db2 still only holds a
+# reserved lock.
 do_test attach-3.14 {
-  # Unable to reinitialize the schema tables because the aux database
-  # is still locked.
   catchsql {SELECT * FROM t1}
-} {1 {database is locked}}
+} {0 {1 2 3 4}}
 do_test attach-3.15 {
   execsql COMMIT db2
   execsql {SELECT * FROM t1}
 } {1 2 3 4}
 
 #set btree_trace 1
-#puts stderr "###################"; flush stderr
+
 # Ticket #323
 do_test attach-4.1 {
   execsql {DETACH db2}
@@ -442,6 +457,14 @@ do_test attach-4.7 {
     SELECT * FROM main.t4;
   }
 } {main.11}
+
+# This one is tricky.  On the UNION ALL select, we have to make sure
+# the schema for both main and db2 is valid before starting to execute
+# the first query of the UNION ALL.  If we wait to test the validity of
+# the schema for main until after the first query has run, that test will
+# fail and the query will abort but we will have already output some
+# results.  When the query is retried, the results will be repeated.
+#
 do_test attach-4.8 {
   execsql {
     ATTACH DATABASE 'test2.db' AS db2;
@@ -449,6 +472,7 @@ do_test attach-4.8 {
     SELECT * FROM db2.t4 UNION ALL SELECT * FROM main.t4;
   }
 } {db2.6 db2.13 main.11}
+
 do_test attach-4.9 {
   execsql {
     INSERT INTO main.t3 VALUES(15,16);

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.271 2004/06/07 07:52:18 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.272 2004/06/09 00:48:13 drh Exp $
 */
 #include "config.h"
 #include "sqlite3.h"
@@ -58,8 +58,9 @@
 /*
 ** The maximum number of attached databases.  This must be at least 2
 ** in order to support the main database file (0) and the file used to
-** hold temporary tables (1).  And it must be less than 256 because
-** an unsigned character is used to stored the database index.
+** hold temporary tables (1).  And it must be less than 32 because
+** we use a bitmask of databases with a u32 in places (for example
+** the Parse.cookieMask field).
 */
 #define MAX_ATTACHED 10
 
@@ -1005,7 +1006,10 @@ struct Parse {
   const char *zAuthContext; /* The 6th parameter to db->xAuth callbacks */
   Trigger *pNewTrigger;     /* Trigger under construct by a CREATE TRIGGER */
   TriggerStack *trigStack;  /* Trigger actions being coded */
-  u64 cookieMask;      /* Bitmask of schema verified databases */
+  u32 cookieMask;      /* Bitmask of schema verified databases */
+  int cookieValue[MAX_ATTACHED+2];  /* Values of cookies to verify */
+  int cookieGoto;      /* Address of OP_Goto to cookie verifier subroutine */
+  u32 writeMask;       /* Start a write transaction on these databases */
 };
 
 /*
@@ -1202,7 +1206,7 @@ void sqlite3ErrorMsg(Parse*, const char*, ...);
 void sqlite3Dequote(char*);
 int sqlite3KeywordCode(const char*, int);
 int sqlite3RunParser(Parse*, const char*, char **);
-void sqlite3Exec(Parse*);
+void sqlite3FinishCoding(Parse*);
 Expr *sqlite3Expr(int, Expr*, Expr*, Token*);
 void sqlite3ExprSpan(Expr*,Token*,Token*);
 Expr *sqlite3ExprFunction(ExprList*, Token*);

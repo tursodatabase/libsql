@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.209 2004/06/08 00:02:33 danielk1977 Exp $
+** $Id: build.c,v 1.210 2004/06/09 00:48:12 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -58,22 +58,44 @@ void sqlite3BeginParse(Parse *pParse, int explainFlag){
 
 /*
 ** This routine is called after a single SQL statement has been
-** parsed and we want to execute the VDBE code to implement 
-** that statement.  Prior action routines should have already
-** constructed VDBE code to do the work of the SQL statement.
-** This routine just has to execute the VDBE code.
+** parsed and a VDBE program to execute that statement has been
+** prepared.  This routine puts the finishing touches on the
+** VDBE program and resets the pParse structure for the next
+** parse.
 **
 ** Note that if an error occurred, it might be the case that
 ** no VDBE code was generated.
 */
-void sqlite3Exec(Parse *pParse){
-  sqlite *db = pParse->db;
-  Vdbe *v = pParse->pVdbe;
+void sqlite3FinishCoding(Parse *pParse){
+  sqlite *db;
+  Vdbe *v;
 
-  if( v==0 && (v = sqlite3GetVdbe(pParse))!=0 ){
-    sqlite3VdbeAddOp(v, OP_Halt, 0, 0);
-  }
   if( sqlite3_malloc_failed ) return;
+
+  /* Begin by generating some termination code at the end of the
+  ** vdbe program
+  */
+  db = pParse->db;
+  v = sqlite3GetVdbe(pParse);
+  if( v ){
+    sqlite3VdbeAddOp(v, OP_Halt, 0, 0);
+    if( pParse->cookieMask!=0 ){
+      u32 mask;
+      int iDb;
+      sqlite3VdbeChangeP2(v, pParse->cookieGoto, sqlite3VdbeCurrentAddr(v));
+      for(iDb=0, mask=1; iDb<db->nDb; mask<<=1, iDb++){
+        if( (mask & pParse->cookieMask)==0 ) continue;
+        sqlite3VdbeAddOp(v, OP_Transaction, iDb, (mask & pParse->writeMask)!=0);
+        if( iDb!=1 ){
+          sqlite3VdbeAddOp(v, OP_VerifyCookie, iDb, pParse->cookieValue[iDb]);
+        }
+      }
+      sqlite3VdbeAddOp(v, OP_Goto, 0, pParse->cookieGoto+1);
+    }
+  }
+
+  /* Get the VDBE program ready for execution
+  */
   if( v && pParse->nErr==0 ){
     FILE *trace = (db->flags & SQLITE_VdbeTrace)!=0 ? stdout : 0;
     sqlite3VdbeTrace(v, trace);
@@ -88,6 +110,7 @@ void sqlite3Exec(Parse *pParse){
   pParse->nSet = 0;
   pParse->nAgg = 0;
   pParse->nVar = 0;
+  pParse->cookieMask = 0;
 }
 
 /*
@@ -2249,19 +2272,41 @@ void sqlite3RollbackTransaction(Parse *pParse){
 }
 
 /*
-** Generate VDBE code that will verify the schema cookie for all
-** named database files.
+** Generate VDBE code that will verify the schema cookie and start
+** a read-transaction for all named database files.
+**
+** It is important that all schema cookies be verified and all
+** read transactions be started before anything else happens in
+** the VDBE program.  But this routine can be called after much other
+** code has been generated.  So here is what we do:
+**
+** The first time this routine is called, we code an OP_Gosub that
+** will jump to a subroutine at the end of the program.  Then we
+** record every database that needs its schema verified in the
+** pParse->cookieMask field.  Later, after all other code has been
+** generated, the subroutine that does the cookie verifications and
+** starts the transactions will be coded and the OP_Gosub P2 value
+** will be made to point to that subroutine.  The generation of the
+** cookie verification subroutine code happens in sqlite3FinishCoding().
 */
 void sqlite3CodeVerifySchema(Parse *pParse, int iDb){
-  sqlite *db = pParse->db;
-  Vdbe *v = sqlite3GetVdbe(pParse);
-  if( v==0 ) return;
+  sqlite *db;
+  Vdbe *v;
+  int mask;
+
+  v = sqlite3GetVdbe(pParse);
+  if( v==0 ) return;  /* This only happens if there was a prior error */
+  db = pParse->db;
   assert( iDb>=0 && iDb<db->nDb );
-  assert( db->aDb[iDb].pBt!=0 );
-  if( iDb!=1 && (iDb>63 || !(pParse->cookieMask & ((u64)1<<iDb))) ){
-    sqlite3VdbeAddOp(v, OP_Transaction, iDb, 0);
-    sqlite3VdbeAddOp(v, OP_VerifyCookie, iDb, db->aDb[iDb].schema_cookie);
-    pParse->cookieMask |= ((u64)1<<iDb);
+  assert( db->aDb[iDb].pBt!=0 || iDb==1 );
+  assert( iDb<32 );
+  if( pParse->cookieMask==0 ){
+    pParse->cookieGoto = sqlite3VdbeAddOp(v, OP_Goto, 0, 0);
+  }
+  mask = 1<<iDb;
+  if( (pParse->cookieMask & mask)==0 ){
+    pParse->cookieMask |= mask;
+    pParse->cookieValue[iDb] = db->aDb[iDb].schema_cookie;
   }
 }
 
@@ -2287,11 +2332,8 @@ void sqlite3BeginWriteOperation(Parse *pParse, int setStatement, int iDb){
   sqlite *db = pParse->db;
   Vdbe *v = sqlite3GetVdbe(pParse);
   if( v==0 ) return;
-  sqlite3VdbeAddOp(v, OP_Transaction, iDb, 1);
-  if( (iDb>63 || !(pParse->cookieMask & ((u64)1<<iDb))) ){
-    sqlite3VdbeAddOp(v, OP_VerifyCookie, iDb, db->aDb[iDb].schema_cookie);
-    pParse->cookieMask |= ((u64)1<<iDb);
-  }
+  sqlite3CodeVerifySchema(pParse, iDb);
+  pParse->writeMask |= 1<<iDb;
   if( setStatement ){
     sqlite3VdbeAddOp(v, OP_Statement, iDb, 0);
   }

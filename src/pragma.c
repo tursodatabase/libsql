@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.37 2004/06/07 07:52:18 danielk1977 Exp $
+** $Id: pragma.c,v 1.38 2004/06/09 00:48:13 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -598,6 +598,8 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
     for(i=0; i<db->nDb; i++){
       HashElem *x;
       int cnt = 0;
+
+      sqlite3CodeVerifySchema(pParse, i);
 
       /* Do an integrity check of the B-Tree
       */

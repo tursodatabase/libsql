@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.125 2004/05/31 08:55:34 danielk1977 Exp $
+** @(#) $Id: parse.y,v 1.126 2004/06/09 00:48:13 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -69,7 +69,7 @@ cmdlist ::= cmdlist ecmd.
 cmdlist ::= ecmd.
 ecmd ::= explain cmdx SEMI.
 ecmd ::= SEMI.
-cmdx ::= cmd.           { sqlite3Exec(pParse); }
+cmdx ::= cmd.           { sqlite3FinishCoding(pParse); }
 explain ::= EXPLAIN.    { sqlite3BeginParse(pParse, 1); }
 explain ::= .           { sqlite3BeginParse(pParse, 0); }
 
