@@ -576,6 +576,8 @@ void sqlite3VdbeMemSanity(Mem *pMem, u8 db_enc){
     /* Mem.z points to Mem.zShort iff the subtype is MEM_Short */
     assert( (pMem->flags & MEM_Short)==0 || pMem->z==pMem->zShort );
     assert( (pMem->flags & MEM_Short)!=0 || pMem->z!=pMem->zShort );
+    /* No destructor unless there is MEM_Dyn */
+    assert( pMem->xDel==0 || (pMem->flags & MEM_Dyn)!=0 );
 
     if( (flags & MEM_Str) ){
       assert( pMem->enc==SQLITE_UTF8 || 
@@ -592,6 +594,7 @@ void sqlite3VdbeMemSanity(Mem *pMem, u8 db_enc){
   }else{
     /* Cannot define a string subtype for non-string objects */
     assert( (pMem->flags & (MEM_Static|MEM_Dyn|MEM_Ephem|MEM_Short))==0 );
+    assert( pMem->xDel==0 );
   }
   /* MEM_Null excludes all other types */
   assert( (pMem->flags&(MEM_Str|MEM_Int|MEM_Real|MEM_Blob))==0

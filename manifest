@@ -1,5 +1,5 @@
-C Be\scareful\sto\sinitialize\sthe\sMem.xDel\sfield\sto\szero\sfor\sstatic\sMems.\s(CVS\s1671)
-D 2004-06-22T22:04:46
+C Fix\sanother\suninitialized\sMem.xDel\sproblem.\s(CVS\s1672)
+D 2004-06-22T22:54:23
 F Makefile.in 0a3d7aaefa50717bd550b0cf568a51072c4c103c
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -73,12 +73,12 @@ F src/update.c b66b1896c9da54678ba3eff2bf0b4d291a95986a
 F src/utf.c c5ae076b5b9e1a4fac72a48f0005508ab4118d1b
 F src/util.c e31e35d3d76cab7a02045095064897eca49cbce3
 F src/vacuum.c fcb930215a3f6c50087300782555f61ad11dd80c
-F src/vdbe.c a6b9eaaceab862076debbf98c9445089473394d6
+F src/vdbe.c 0d8f2fea386c173997fb8eab555ab999497591fe
 F src/vdbe.h 2d87155e31e84bb00cdc48cc1ce6987a3a484250
 F src/vdbeInt.h 22ab717b69074fe7a28f64e35a39bd436ad9d150
 F src/vdbeapi.c d3659f3f2982e79c06ab8e338604a39e0ea0d2d3
 F src/vdbeaux.c f28f7fbc56c013f99957ed89318e5467ea629748
-F src/vdbemem.c 9359c53386e070fea9f5403cab0c6f0cfe36496b
+F src/vdbemem.c d37e4033f7350e542f715c061bffe23feb51bc9e
 F src/where.c 6507074d8ce3f78e7a4cd33f667f11e62020553e
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
 F test/attach.test 3acdffccbf5f78b07746771b9490758718e28856
@@ -229,7 +229,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P d333ac8002feff9423e286369e5ae5a6bfe3be50
-R e2f1edc90c46a1b510c4a05b86010c6f
+P e17ea666b1eb1df12a1d4d78bda2e025e2aa30bd
+R 4e9bb61466aecc430c6837fcb2b3e202
 U drh
-Z bc07a1bf130b816565f3c8369d6b9ac8
+Z 76bcb96ce9daaf4663984472a800f8fe
