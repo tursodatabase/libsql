@@ -1,5 +1,5 @@
-C Update\sthe\sversion\snumber\sto\s2.7.5.\s(CVS\s805)
-D 2002-12-28T01:10:15
+C Version\s2.7.5\s(CVS\s806)
+D 2002-12-28T01:26:07
 F Makefile.in 868c17a1ae1c07603d491274cc8f86c04acf2a1e
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -152,7 +152,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P f3dc686e0258a9588e1433a89ac46795f76beeae
+P b0864cc9c89a3c2350ac46634ef3c420f97d11c0
 R c140ba28091bbfab511edfabbd2b5376
 U drh
-Z 00ebe42d497973bbbbb73d20896d86cf
+Z 438f9127f8c98ed0533abf3177ee5b63
