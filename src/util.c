@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.120 2004/11/03 13:59:05 drh Exp $
+** $Id: util.c,v 1.121 2004/11/04 04:34:15 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -917,7 +917,7 @@ static int hexToInt(int h){
 }
 #endif /* (!SQLITE_OMIT_BLOB_LITERAL && !SQLITE_HAS_CODEC) || SQLITE_TEST */
 
-#if !defined(SQLITE_OMIT_BLOB_LITERAL) && !defined(SQLITE_HAS_CODEC)
+#if !defined(SQLITE_OMIT_BLOB_LITERAL) || defined(SQLITE_HAS_CODEC)
 /*
 ** Convert a BLOB literal of the form "x'hhhhhh'" into its binary
 ** value.  Return a pointer to its binary value.  Space to hold the
@@ -936,7 +936,7 @@ void *sqlite3HexToBlob(const char *z){
   }
   return zBlob;
 }
-#endif /* !SQLITE_OMIT_BLOB_LITERAL && !SQLITE_HAS_CODEC */
+#endif /* !SQLITE_OMIT_BLOB_LITERAL || SQLITE_HAS_CODEC */
 
 #if defined(SQLITE_TEST)
 /*

@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\stable\sallocation\s(not\sdeallocation)\sin\sauto-vacuum\sdatabases.\s(CVS\s2051)
-D 2004-11-04T02:57:34
+C Fix\sa\s#ifdef\sin\sutil.c.\s\sTicket\s#984.\s(CVS\s2052)
+D 2004-11-04T04:34:15
 F Makefile.in c4d2416860f472a1e3393714d0372074197565df
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -73,7 +73,7 @@ F src/tokenize.c bf9de9689b3bb813d65784bf54472804bf9595e6
 F src/trigger.c f9a0a8d3a87238de1a934eeb7d0b6b1f13e6a55b
 F src/update.c ee15b7ba712c2292802eba2d465f039b5deada39
 F src/utf.c f4f83acd73389090e32d6589d307fc55d794c7ed
-F src/util.c 1126ae62ee772feaa64697e4b67244fbde68228a
+F src/util.c 005fdf2d008f3429d081766ad6098fdd86d8d8e6
 F src/vacuum.c ecb4a2c6f1ac5cc9b394dc64d3bb14ca650c4f60
 F src/vdbe.c a156e1a2f324e5e11d82af3fbbf41df7a174c860
 F src/vdbe.h 067ca8d6750ba4f69a50284765e5883dee860181
@@ -252,7 +252,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl fdacb0ba2d39831e8a6240d05a490026ad4c4e4c
-P b11fc9b3f3a2711f98e7e45724aa1d30081197f3
-R 242e2153cebd7e4c43dc16ab1542d7f2
-U danielk1977
-Z 7eb34cc29f203e9a41d2637315e55a85
+P 571de52376f52999268ba5e0cd05c6c6eff1ebbf
+R 88bc900ed597200e93ade91a1a123d03
+U drh
+Z 7327d11a71a1235a378656ac4c026c33
