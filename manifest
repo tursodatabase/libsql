@@ -1,5 +1,5 @@
-C Return\sSQLITE_BUSY\sif\sthe\sdatabase\sis\slocked\sreading\sthe\sschema\swithin\r\nsqlite_prepare().\sTicket\s#1106.\s(CVS\s2322)
-D 2005-02-09T07:05:46
+C Fix\sa\sproblem\swith\sVACUUM\sthat\scan\slead\sto\sdatabase\scorruption.\s(CVS\s2323)
+D 2005-02-12T00:19:30
 F Makefile.in d928187101fa3d78426cf48ca30e39d0fb714e57
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -73,7 +73,7 @@ F src/trigger.c 038c8e128d4551cd016426cd11bbf5c478816481
 F src/update.c b6f4668c11059f86b71581187d09197fa28ec4be
 F src/utf.c bda5eb85039ef16f2d17004c1e18c96e1ab0a80c
 F src/util.c 1b7b9a127b66743ab6cba8d44597aeb570723c99
-F src/vacuum.c 4dbe45a5c41674a04ac45a7586031583386ab119
+F src/vacuum.c ccb34e92fd662b2d975e3c8d8cfd229c9081cb78
 F src/vdbe.c d9ec62c9f63768b4d4f8513b25aded8faf2de17b
 F src/vdbe.h bb9186484f749a839c6c43953e79a6530253f7cd
 F src/vdbeInt.h e80721cd8ff611789e20743eec43363a9fb5a48e
@@ -204,7 +204,7 @@ F test/types2.test 81dd1897be8ef4b5b73d0006e6076abe40610de3
 F test/unique.test 0e38d4cc7affeef2527720d1dafd1f6870f02f2b
 F test/update.test 7669ca789d62c258b678e8aa7a22a57eac10f2cf
 F test/utf16.test 459c2f5ab80c60092c603630a348c32d6e59c558
-F test/vacuum.test 10204524354ff5947e056419fa6b4f4b5067a541
+F test/vacuum.test 76c4bc4589353d071e81c003a25338d02560474d
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/view.test 306cc4342eb03c28de1a92c681836189e03e5af9
 F test/where.test ffb790dfda75d977bae7a1f5830351623f76861b
@@ -270,7 +270,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P f73a8aa34afd39e0b7df8f22b5c5d2c8d8979a1b
-R f830539fd533897542bbb8d2a19a23a0
-U danielk1977
-Z 0245bb834a1cf0f9358bd0fb2bd64ab5
+P c33c02d6069b90f295698a9f35f4aa99dee5f5e9
+R 8e61ab153be1dc618b065882d6b2d1a5
+U drh
+Z ed61c7e978da07a018272bafaa9d7f6b

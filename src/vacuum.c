@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.38 2005/02/05 12:48:48 danielk1977 Exp $
+** $Id: vacuum.c,v 1.39 2005/02/12 00:19:30 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -244,22 +244,31 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   */
   if( sqlite3BtreeIsInTrans(pTemp) ){
     u32 meta;
+    int i;
+
+    /* This array determines which meta meta values are preserved in the
+    ** vacuum.  Even entries are the meta value number and odd entries
+    ** are an increment to apply to the meta value after the vacuum.
+    ** The increment is used to increase the schema cookie so that other
+    ** connections to the same database will know to reread the schema.
+    */
+    static const unsigned char aCopy[] = {
+       1, 1,    /* Add one to the old schema cookie */
+       3, 0,    /* Preserve the default page cache size */
+       5, 0,    /* Preserve the default text encoding */
+       6, 0,    /* Preserve the user version */
+    };
 
     assert( 0==sqlite3BtreeIsInTrans(pMain) );
     rc = sqlite3BtreeBeginTrans(pMain, 1);
     if( rc!=SQLITE_OK ) goto end_of_vacuum;
 
-    /* Copy Btree meta values 3 and 4. These correspond to SQL layer meta 
-    ** values 2 and 3, the default values of a couple of pragmas.
-    */
-    rc = sqlite3BtreeGetMeta(pMain, 3, &meta);
-    if( rc!=SQLITE_OK ) goto end_of_vacuum;
-    rc = sqlite3BtreeUpdateMeta(pTemp, 3, meta);
-    if( rc!=SQLITE_OK ) goto end_of_vacuum;
-    rc = sqlite3BtreeGetMeta(pMain, 4, &meta);
-    if( rc!=SQLITE_OK ) goto end_of_vacuum;
-    rc = sqlite3BtreeUpdateMeta(pTemp, 4, meta);
-    if( rc!=SQLITE_OK ) goto end_of_vacuum;
+    /* Copy Btree meta values */
+    for(i=0; i<sizeof(aCopy)/sizeof(aCopy[0]); i+=2){
+      rc = sqlite3BtreeGetMeta(pMain, aCopy[i], &meta);
+      if( rc!=SQLITE_OK ) goto end_of_vacuum;
+      rc = sqlite3BtreeUpdateMeta(pTemp, aCopy[i], meta+aCopy[i+1]);
+    }
 
     rc = sqlite3BtreeCopyFile(pMain, pTemp);
     if( rc!=SQLITE_OK ) goto end_of_vacuum;
