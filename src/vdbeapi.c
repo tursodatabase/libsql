@@ -149,6 +149,9 @@ int sqlite3_step(sqlite3_stmt *pStmt){
   if( p->magic!=VDBE_MAGIC_RUN ){
     return SQLITE_MISUSE;
   }
+  if( p->aborted ){
+    return SQLITE_ABORT;
+  }
   db = p->db;
   if( sqlite3SafetyOn(db) ){
     p->rc = SQLITE_MISUSE;

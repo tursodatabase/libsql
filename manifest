@@ -1,5 +1,5 @@
-C Make\ssure\svacuum.test\scloses\sall\sfiles.\s(CVS\s1777)
-D 2004-06-30T10:54:30
+C When\sa\sstatement\scauses\sa\sROLLBACK\sdue\sto\san\sON\sCONFLICT\sclause,\sother\sactive\nVMs\sabort.\s(CVS\s1778)
+D 2004-06-30T11:14:19
 F Makefile.in cb7a9889c38723f72b2506c4236ff30a05ff172b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -75,9 +75,9 @@ F src/util.c b267d0fe10cffa3301fe9fab6592a6808a38bce6
 F src/vacuum.c b8546f4921719458cc537b9e736df52a8256399c
 F src/vdbe.c 4629151c9995b8b6a895c42de8808df1969bdcc7
 F src/vdbe.h 75b241c02431b9c0f16eaa9cdbb34146c6287f52
-F src/vdbeInt.h d83fd7389838453d8392915c21f432014afc99cf
-F src/vdbeapi.c ba3722f45db3d3c3509bf5d24f4f868f4c64449d
-F src/vdbeaux.c f9b1b3d4d2f1c31f6db1ae1536e17e4eb5454205
+F src/vdbeInt.h 7160653a006b6d2c4a00d204112a095bdf842ab6
+F src/vdbeapi.c 7c3c3d818fad427881b65c51999d06bf393ebeaf
+F src/vdbeaux.c f97b4b5e922fe74152e084bcea7b4468156bde50
 F src/vdbemem.c 053f8adcb644bca1c1e4ad08f4016cb7ee6bf1b8
 F src/where.c 6507074d8ce3f78e7a4cd33f667f11e62020553e
 F test/all.test 3b692eb43583b52c99c344b2fa8934512d179016
@@ -147,6 +147,7 @@ F test/printf.test 5ed2e033a0b47f901764096bf1907915d6e39406
 F test/progress.test 76c722f090b1ccb575e7e4e203a71608c5763beb x
 F test/quick.test bbe4abf7f434d71c0de26626c8cbb4858e1bcb18
 F test/quote.test 08f23385c685d3dc7914ec760d492cacea7f6e3d
+F test/rollback.test 4097328d44510277244ef4fa51b22b2f11d7ef4c
 F test/rowid.test b3d059f5c8d8874fa1c31030e0636f67405d20ea
 F test/select1.test 813a270ac7996b31ff228e8109cd2d1e8c3fa255
 F test/select2.test 91a2225926039b0d1687840735c284dbbf89f0bc
@@ -232,7 +233,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 152e9940b919a53fcd0da4091dbf75ab8ef15b38
-R 7c0d14b9c00314801ef156d50cb14232
-U danielk1977
-Z 744e63435b1a53bb66bf937c6227be06
+P 4077f9a30b0c30a8749a596031aa4f7adc3a4891
+R c74b8042375ac1ecced768631e1e7c90
+U drh
+Z bbd3e84a33ffc460275952232aa91883

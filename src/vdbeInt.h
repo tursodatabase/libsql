@@ -342,8 +342,9 @@ struct Vdbe {
   u8 resOnStack;          /* True if there are result values on the stack */
   u8 explain;             /* True if EXPLAIN present on SQL command */
   u8 autoCommitOn;        /* True if autocommit got turned on by this program */
-  int nChange;            /* Number of db changes made since last reset */
   u8 changeCntOn;         /* True to update the change-counter */
+  u8 aborted;             /* True if ROLLBACK in another VM causes an abort */
+  int nChange;            /* Number of db changes made since last reset */
 };
 
 /*

@@ -1090,6 +1090,20 @@ static int vdbeCommit(sqlite *db){
   return rc;
 }
 
+/*
+** Find every active VM other than pVdbe and change its status to
+** aborted.  This happens when on VM causes a rollback.
+*/
+static void abortOtherActiveVdbes(Vdbe *pVdbe){
+  Vdbe *pOther;
+  for(pOther=pVdbe->db->pVdbe; pOther; pOther=pOther->pNext){
+    if( pOther==pVdbe ) continue;
+    if( pOther->magic!=VDBE_MAGIC_RUN || pOther->pc<0 ) continue;
+    closeAllCursors(pOther);
+    pOther->aborted = 1;
+  }
+}
+
 /* 
 ** This routine checks that the sqlite3.activeVdbeCnt count variable
 ** matches the number of vdbe's in the list sqlite3.pVdbe that are
@@ -1183,6 +1197,7 @@ int sqlite3VdbeReset(Vdbe *p){
     }else{
       xFunc = sqlite3BtreeRollback;
       db->autoCommit = 1;
+      abortOtherActiveVdbes(p);
     }
   }
   p->autoCommitOn = 0;
@@ -1245,6 +1260,7 @@ int sqlite3VdbeReset(Vdbe *p){
   }
 #endif
   p->magic = VDBE_MAGIC_INIT;
+  p->aborted = 0;
   return p->rc;
 }
 
