@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.7 2002/03/11 02:06:13 drh Exp $
+** $Id: test1.c,v 1.8 2002/05/10 13:14:07 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -198,6 +198,117 @@ static int sqlite_test_close(
 }
 
 /*
+** Implementation of the x_coalesce() function.
+** Return the first argument non-NULL argument.
+*/
+static void ifnullFunc(sqlite_func *context, int argc, const char **argv){
+  int i;
+  for(i=0; i<argc; i++){
+    if( argv[i] ){
+      sqlite_set_result_string(context, argv[i], -1);
+      break;
+    }
+  }
+}
+
+/*
+** Implementation of the x_sqlite_exec() function.  This function takes
+** a single argument and attempts to execute that argument as SQL code.
+** This is illegal and shut set the SQLITE_MISUSE flag on the database.
+** 
+** This routine simulates the effect of having two threads attempt to
+** use the same database at the same time.
+*/
+static void sqliteExecFunc(sqlite_func *context, int argc, const char **argv){
+  sqlite_exec((sqlite*)sqlite_user_data(context), argv[0], 0, 0, 0);
+}
+
+/*
+** Usage:  sqlite_test_create_function DB
+**
+** Call the sqlite_create_function API on the given database in order
+** to create a function named "x_coalesce".  This function does the same thing
+** as the "coalesce" function.  This function also registers an SQL function
+** named "x_sqlite_exec" that invokes sqlite_exec().  Invoking sqlite_exec()
+** in this way is illegal recursion and should raise an SQLITE_MISUSE error.
+** The effect is similar to trying to use the same database connection from
+** two threads at the same time.
+**
+** The original motivation for this routine was to be able to call the
+** sqlite_create_function function while a query is in progress in order
+** to test the SQLITE_MISUSE detection logic.
+*/
+static int sqlite_test_create_function(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  sqlite *db;
+  extern void Md5_Register(sqlite*);
+  if( argc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+       " FILENAME\"", 0);
+    return TCL_ERROR;
+  }
+  db = (sqlite*)atoi(argv[1]);
+  sqlite_create_function(db, "x_coalesce", -1, ifnullFunc, 0);
+  sqlite_create_function(db, "x_sqlite_exec", 1, sqliteExecFunc, db);
+  return TCL_OK;
+}
+
+/*
+** Routines to implement the x_count() aggregate function.
+*/
+typedef struct CountCtx CountCtx;
+struct CountCtx {
+  int n;
+};
+static void countStep(sqlite_func *context, int argc, const char **argv){
+  CountCtx *p;
+  p = sqlite_aggregate_context(context, sizeof(*p));
+  if( (argc==0 || argv[0]) && p ){
+    p->n++;
+  }
+}   
+static void countFinalize(sqlite_func *context){
+  CountCtx *p;
+  p = sqlite_aggregate_context(context, sizeof(*p));
+  sqlite_set_result_int(context, p ? p->n : 0);
+}
+
+/*
+** Usage:  sqlite_test_create_aggregate DB
+**
+** Call the sqlite_create_function API on the given database in order
+** to create a function named "x_count".  This function does the same thing
+** as the "md5sum" function.
+**
+** The original motivation for this routine was to be able to call the
+** sqlite_create_aggregate function while a query is in progress in order
+** to test the SQLITE_MISUSE detection logic.
+*/
+static int sqlite_test_create_aggregate(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  sqlite *db;
+  if( argc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+       " FILENAME\"", 0);
+    return TCL_ERROR;
+  }
+  db = (sqlite*)atoi(argv[1]);
+  sqlite_create_aggregate(db, "x_count", 0, countStep, countFinalize, 0);
+  sqlite_create_aggregate(db, "x_count", 1, countStep, countFinalize, 0);
+  return TCL_OK;
+}
+
+
+
+/*
 ** Usage:  sqlite_mprintf_int FORMAT INTEGER INTEGER INTEGER
 **
 ** Call mprintf with three integer arguments
@@ -355,6 +466,10 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
   Tcl_CreateCommand(interp, "sqlite_get_table_printf", test_get_table_printf,
       0, 0);
   Tcl_CreateCommand(interp, "sqlite_close", sqlite_test_close, 0, 0);
+  Tcl_CreateCommand(interp, "sqlite_create_function", 
+      sqlite_test_create_function, 0, 0);
+  Tcl_CreateCommand(interp, "sqlite_create_aggregate",
+      sqlite_test_create_aggregate, 0, 0);
   Tcl_LinkVar(interp, "sqlite_search_count", 
       (char*)&sqlite_search_count, TCL_LINK_INT);
 #ifdef MEMORY_DEBUG

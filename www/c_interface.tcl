@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: c_interface.tcl,v 1.27 2002/05/10 05:44:57 drh Exp $}
+set rcsid {$Id: c_interface.tcl,v 1.28 2002/05/10 13:14:08 drh Exp $}
 
 puts {<html>
 <head>
@@ -300,9 +300,7 @@ an INTEGER PRIMARY KEY column is only allowed to store integer data.
 is used incorrectly.  Examples of incorrect usage include calling
 <b>sqlite_exec()</b> after the database has been closed using
 <b>sqlite_close()</b> or calling <b>sqlite_exec()</b> with the same
-database pointer simultaneously from two separate threads.  The
-library makes an effort to detect these sorts of problems, but it
-cannot detect them with 100% accuracy.
+database pointer simultaneously from two separate threads.
 </p></dd>
 </dl>
 </blockquote>

@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: all.test,v 1.13 2002/03/06 22:01:36 drh Exp $
+# $Id: all.test,v 1.14 2002/05/10 13:14:08 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -33,6 +33,7 @@ set EXCLUDE {
   all.test
   quick.test
   malloc.test
+  misuse.test
   btree2.test
 }
 
@@ -71,9 +72,10 @@ if {$LeakList!=""} {
   puts " Ok"
 }
 
-# Run the malloc tests after memory leak detection.  We do leak
-# some if malloc fails.
+# Run the malloc tests and the misuse test after memory leak detection.
+# Both tests leak memory.
 #
+catch {source $testdir/misuse.test}
 catch {source $testdir/malloc.test}
 
 really_finish_test

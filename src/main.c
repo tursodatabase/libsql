@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.70 2002/05/10 05:44:56 drh Exp $
+** $Id: main.c,v 1.71 2002/05/10 13:14:07 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -435,7 +435,7 @@ int sqlite_changes(sqlite *db){
 */
 void sqlite_close(sqlite *db){
   HashElem *i;
-  if( sqliteSafetyOn(db) ){ return; }
+  if( sqliteSafetyCheck(db) || sqliteSafetyOn(db) ){ return; }
   db->magic = SQLITE_MAGIC_CLOSED;
   sqliteBtreeClose(db->pBe);
   clearHashTable(db, 0);
@@ -530,7 +530,7 @@ int sqlite_exec(
   Parse sParse;
 
   if( pzErrMsg ) *pzErrMsg = 0;
-  if( sqliteSafetyOn(db) ){ return SQLITE_MISUSE; }
+  if( sqliteSafetyOn(db) ) goto exec_misuse;
   if( (db->flags & SQLITE_Initialized)==0 ){
     int rc = sqliteInit(db, pzErrMsg);
     if( rc!=SQLITE_OK ){
@@ -560,47 +560,50 @@ int sqlite_exec(
     clearHashTable(db, 1);
   }
   db->recursionDepth--;
-  if( sqliteSafetyOff(db) ){ sParse.rc = SQLITE_MISUSE; }
+  if( sqliteSafetyOff(db) ) goto exec_misuse;
   return sParse.rc;
+
+exec_misuse:
+  if( pzErrMsg ){
+    *pzErrMsg = 0;
+    sqliteSetString(pzErrMsg, sqlite_error_string(SQLITE_MISUSE), 0);
+    sqliteStrRealloc(pzErrMsg);
+  }
+  return SQLITE_MISUSE;
 }
 
 /*
-** Change the magic from SQLITE_MAGIC_OPEN to SQLITE_MAGIC_BUSY.
-** Return an error (non-zero) if the magic was not SQLITE_MAGIC_OPEN
-** when this routine is called.
-**
-** This routine is a attempt to detect if two threads attempt
-** to use the same sqlite* pointer at the same time.  There is a
-** race condition so it is possible that the error is not detected.
-** But usually the problem will be seen.  The result will be an
-** error which can be used to debugging the application that is
-** using SQLite incorrectly.
+** Return a static string that describes the kind of error specified in the
+** argument.
 */
-int sqliteSafetyOn(sqlite *db){
-  if( db->magic==SQLITE_MAGIC_OPEN ){
-    db->magic = SQLITE_MAGIC_BUSY;
-    return 0;
-  }else{
-    db->magic = SQLITE_MAGIC_ERROR;
-    db->flags |= SQLITE_Interrupt;
-    return 1;
+const char *sqlite_error_string(int rc){
+  const char *z;
+  switch( rc ){
+    case SQLITE_OK:         z = "not an error";                          break;
+    case SQLITE_ERROR:      z = "SQL logic error or missing database";   break;
+    case SQLITE_INTERNAL:   z = "internal SQLite implementation flaw";   break;
+    case SQLITE_PERM:       z = "access permission denied";              break;
+    case SQLITE_ABORT:      z = "callback requested query abort";        break;
+    case SQLITE_BUSY:       z = "database is locked";                    break;
+    case SQLITE_LOCKED:     z = "database table is locked";              break;
+    case SQLITE_NOMEM:      z = "out of memory";                         break;
+    case SQLITE_READONLY:   z = "attempt to write a readonly database";  break;
+    case SQLITE_INTERRUPT:  z = "interrupted";                           break;
+    case SQLITE_IOERR:      z = "disk I/O error";                        break;
+    case SQLITE_CORRUPT:    z = "database disk image is malformed";      break;
+    case SQLITE_NOTFOUND:   z = "table or record not found";             break;
+    case SQLITE_FULL:       z = "database is full";                      break;
+    case SQLITE_CANTOPEN:   z = "unable to open database file";          break;
+    case SQLITE_PROTOCOL:   z = "database locking protocol failure";     break;
+    case SQLITE_EMPTY:      z = "table contains no data";                break;
+    case SQLITE_SCHEMA:     z = "database schema has changed";           break;
+    case SQLITE_TOOBIG:     z = "too much data for one table row";       break;
+    case SQLITE_CONSTRAINT: z = "constraint failed";                     break;
+    case SQLITE_MISMATCH:   z = "datatype mismatch";                     break;
+    case SQLITE_MISUSE:     z = "library routine called out of sequence";break;
+    default:                z = "unknown error";                         break;
   }
-}
-
-/*
-** Change the magic from SQLITE_MAGIC_BUSY to SQLITE_MAGIC_OPEN.
-** Return an error (non-zero) if the magic was not SQLITE_MAGIC_BUSY
-** when this routine is called.
-*/
-int sqliteSafetyOff(sqlite *db){
-  if( db->magic==SQLITE_MAGIC_BUSY ){
-    db->magic = SQLITE_MAGIC_OPEN;
-    return 0;
-  }else{
-    db->magic = SQLITE_MAGIC_ERROR;
-    db->flags |= SQLITE_Interrupt;
-    return 1;
-  }
+  return z;
 }
 
 /*
@@ -718,7 +721,7 @@ int sqlite_create_function(
   void *pUserData      /* User data */
 ){
   FuncDef *p;
-  if( db==0 || zName==0 ) return 1;
+  if( db==0 || zName==0 || sqliteSafetyCheck(db) ) return 1;
   p = sqliteFindFunction(db, zName, strlen(zName), nArg, 1);
   if( p==0 ) return 1;
   p->xFunc = xFunc;
@@ -736,7 +739,7 @@ int sqlite_create_aggregate(
   void *pUserData      /* User data */
 ){
   FuncDef *p;
-  if( db==0 || zName==0 ) return 1;
+  if( db==0 || zName==0 || sqliteSafetyCheck(db) ) return 1;
   p = sqliteFindFunction(db, zName, strlen(zName), nArg, 1);
   if( p==0 ) return 1;
   p->xFunc = 0;

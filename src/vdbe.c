@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.140 2002/05/10 05:44:56 drh Exp $
+** $Id: vdbe.c,v 1.141 2002/05/10 13:14:07 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1112,8 +1112,12 @@ int sqliteVdbeList(
   for(i=0; rc==SQLITE_OK && i<p->nOp; i++){
     if( db->flags & SQLITE_Interrupt ){
       db->flags &= ~SQLITE_Interrupt;
-      sqliteSetString(pzErrMsg, "interrupted", 0);
-      rc = SQLITE_INTERRUPT;
+      if( db->magic!=SQLITE_MAGIC_BUSY ){
+        rc = SQLITE_MISUSE;
+      }else{
+        rc = SQLITE_INTERRUPT;
+      }
+      sqliteSetString(pzErrMsg, sqlite_error_string(rc), 0);
       break;
     }
     sprintf(zAddr,"%d",i);
@@ -1299,8 +1303,12 @@ int sqliteVdbeExec(
     */
     if( db->flags & SQLITE_Interrupt ){
       db->flags &= ~SQLITE_Interrupt;
-      rc = SQLITE_INTERRUPT;
-      sqliteSetString(pzErrMsg, "interrupted", 0);
+      if( db->magic!=SQLITE_MAGIC_BUSY ){
+        rc = SQLITE_MISUSE;
+      }else{
+        rc = SQLITE_INTERRUPT;
+      }
+      sqliteSetString(pzErrMsg, sqlite_error_string(rc), 0);
       break;
     }
 

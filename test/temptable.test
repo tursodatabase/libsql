@@ -12,7 +12,7 @@
 #
 # This file implements tests for temporary tables and indices.
 #
-# $Id: temptable.test,v 1.4 2002/01/10 14:31:49 drh Exp $
+# $Id: temptable.test,v 1.5 2002/05/10 13:14:08 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -21,6 +21,7 @@ source $testdir/tester.tcl
 #
 do_test temptable-1.0 {
   sqlite db2 ./test.db
+  set dummy {}
 } {}
 
 # Create a permanent table.

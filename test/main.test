@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is exercising the code in main.c.
 #
-# $Id: main.test,v 1.9 2001/10/13 02:59:09 drh Exp $
+# $Id: main.test,v 1.10 2002/05/10 13:14:08 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -80,7 +80,7 @@ do_test main-2.0 {
   puts $fd hi!
   close $fd
   set v [catch {sqlite db test.db} msg]
-  lappend v $msg
+  if {$v} {lappend v $msg} {lappend v {}}
 } {0 {}}
 
 # Here are some tests for tokenize.c.  

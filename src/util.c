@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.42 2002/05/10 05:44:56 drh Exp $
+** $Id: util.c,v 1.43 2002/05/10 13:14:07 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -1069,35 +1069,57 @@ sqliteLikeCompare(const unsigned char *zPattern, const unsigned char *zString){
 }
 
 /*
-** Return a static string that describes the kind of error specified in the
-** argument.
+** Change the sqlite.magic from SQLITE_MAGIC_OPEN to SQLITE_MAGIC_BUSY.
+** Return an error (non-zero) if the magic was not SQLITE_MAGIC_OPEN
+** when this routine is called.
+**
+** This routine is a attempt to detect if two threads use the
+** same sqlite* pointer at the same time.  There is a race 
+** condition so it is possible that the error is not detected.
+** But usually the problem will be seen.  The result will be an
+** error which can be used to debugging the application that is
+** using SQLite incorrectly.
 */
-const char *sqlite_error_string(int rc){
-  const char *z;
-  switch( rc ){
-    case SQLITE_OK:         z = "not an error";                          break;
-    case SQLITE_ERROR:      z = "SQL logic error or missing database";   break;
-    case SQLITE_INTERNAL:   z = "internal SQLite implementation flaw";   break;
-    case SQLITE_PERM:       z = "access permission denied";              break;
-    case SQLITE_ABORT:      z = "callback requested query abort";        break;
-    case SQLITE_BUSY:       z = "database is locked";                    break;
-    case SQLITE_LOCKED:     z = "database table is locked";              break;
-    case SQLITE_NOMEM:      z = "out of memory";                         break;
-    case SQLITE_READONLY:   z = "attempt to write a readonly database";  break;
-    case SQLITE_INTERRUPT:  z = "interrupted";                           break;
-    case SQLITE_IOERR:      z = "disk I/O error";                        break;
-    case SQLITE_CORRUPT:    z = "database disk image is malformed";      break;
-    case SQLITE_NOTFOUND:   z = "table or record not found";             break;
-    case SQLITE_FULL:       z = "database is full";                      break;
-    case SQLITE_CANTOPEN:   z = "unable to open database file";          break;
-    case SQLITE_PROTOCOL:   z = "database locking protocol failure";     break;
-    case SQLITE_EMPTY:      z = "table contains no data";                break;
-    case SQLITE_SCHEMA:     z = "database schema has changed";           break;
-    case SQLITE_TOOBIG:     z = "too much data for one table row";       break;
-    case SQLITE_CONSTRAINT: z = "constraint failed";                     break;
-    case SQLITE_MISMATCH:   z = "datatype mismatch";                     break;
-    case SQLITE_MISUSE:     z = "SQLite library used incorrectly";       break;
-    default:                z = "unknown error";                         break;
+int sqliteSafetyOn(sqlite *db){
+  if( db->magic==SQLITE_MAGIC_OPEN ){
+    db->magic = SQLITE_MAGIC_BUSY;
+    return 0;
+  }else{
+    db->magic = SQLITE_MAGIC_ERROR;
+    db->flags |= SQLITE_Interrupt;
+    return 1;
   }
-  return z;
+}
+
+/*
+** Change the magic from SQLITE_MAGIC_BUSY to SQLITE_MAGIC_OPEN.
+** Return an error (non-zero) if the magic was not SQLITE_MAGIC_BUSY
+** when this routine is called.
+*/
+int sqliteSafetyOff(sqlite *db){
+  if( db->magic==SQLITE_MAGIC_BUSY ){
+    db->magic = SQLITE_MAGIC_OPEN;
+    return 0;
+  }else{
+    db->magic = SQLITE_MAGIC_ERROR;
+    db->flags |= SQLITE_Interrupt;
+    return 1;
+  }
+}
+
+/*
+** Check to make sure we are not currently executing an sqlite_exec().
+** If we are currently in an sqlite_exec(), return true and set
+** sqlite.magic to SQLITE_MAGIC_ERROR.  This will cause a complete
+** shutdown of the database.
+**
+** This routine is used to try to detect when API routines are called
+** at the wrong time or in the wrong sequence.
+*/
+int sqliteSafetyCheck(sqlite *db){
+  if( db->recursionDepth ){
+    db->magic = SQLITE_MAGIC_ERROR;
+    return 1;
+  }
+  return 0;
 }

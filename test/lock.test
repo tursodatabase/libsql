@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: lock.test,v 1.13 2001/10/09 04:19:47 drh Exp $
+# $Id: lock.test,v 1.14 2002/05/10 13:14:08 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -21,6 +21,7 @@ source $testdir/tester.tcl
 #
 do_test lock-1.0 {
   sqlite db2 ./test.db
+  set dummy {}
 } {}
 do_test lock-1.1 {
   execsql {SELECT name FROM sqlite_master WHERE type='table' ORDER BY name}

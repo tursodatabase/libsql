@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.31 2002/04/12 10:08:59 drh Exp $
+** $Id: tclsqlite.c,v 1.32 2002/05/10 13:14:07 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -552,10 +552,18 @@ static int DbMain(void *cd, Tcl_Interp *interp, int argc, char **argv){
     return TCL_ERROR;
   }
   Tcl_CreateObjCommand(interp, argv[1], DbObjCmd, (char*)p, DbDeleteCmd);
+
+  /* If compiled with SQLITE_TEST turned on, then register the "md5sum"
+  ** SQL function and return an integer which is the memory address of
+  ** the underlying sqlite* pointer.
+  */
 #ifdef SQLITE_TEST
   {
-     extern void Md5_Register(sqlite*);
-     Md5_Register(p->db);
+    char zBuf[40];
+    extern void Md5_Register(sqlite*);
+    Md5_Register(p->db);
+    sprintf(zBuf, "%d", (int)p->db);
+    Tcl_AppendResult(interp, zBuf, 0);
   }
 #endif  
   return TCL_OK;
