@@ -34,7 +34,7 @@
 ** Delete the named file
 */
 int sqlite3OsDelete(const char *zFilename){
-  DeleteFile(zFilename);
+  DeleteFileA(zFilename);
   TRACE2("DELETE \"%s\"\n", zFilename);
   return SQLITE_OK;
 }
@@ -43,7 +43,7 @@ int sqlite3OsDelete(const char *zFilename){
 ** Return TRUE if the named file exists.
 */
 int sqlite3OsFileExists(const char *zFilename){
-  return GetFileAttributes(zFilename) != 0xffffffff;
+  return GetFileAttributesA(zFilename) != 0xffffffff;
 }
 
 /*
@@ -66,7 +66,7 @@ int sqlite3OsOpenReadWrite(
 ){
   HANDLE h;
   assert( !id->isOpen );
-  h = CreateFile(zFilename,
+  h = CreateFileA(zFilename,
      GENERIC_READ | GENERIC_WRITE,
      FILE_SHARE_READ | FILE_SHARE_WRITE,
      NULL,
@@ -75,7 +75,7 @@ int sqlite3OsOpenReadWrite(
      NULL
   );
   if( h==INVALID_HANDLE_VALUE ){
-    h = CreateFile(zFilename,
+    h = CreateFileA(zFilename,
        GENERIC_READ,
        FILE_SHARE_READ,
        NULL,
@@ -124,7 +124,7 @@ int sqlite3OsOpenExclusive(const char *zFilename, OsFile *id, int delFlag){
   }else{
     fileflags = FILE_FLAG_RANDOM_ACCESS;
   }
-  h = CreateFile(zFilename,
+  h = CreateFileA(zFilename,
      GENERIC_READ | GENERIC_WRITE,
      0,
      NULL,
@@ -154,7 +154,7 @@ int sqlite3OsOpenExclusive(const char *zFilename, OsFile *id, int delFlag){
 int sqlite3OsOpenReadOnly(const char *zFilename, OsFile *id){
   HANDLE h;
   assert( !id->isOpen );
-  h = CreateFile(zFilename,
+  h = CreateFileA(zFilename,
      GENERIC_READ,
      0,
      NULL,
@@ -208,7 +208,7 @@ int sqlite3OsTempFileName(char *zBuf){
     "0123456789";
   int i, j;
   char zTempPath[SQLITE_TEMPNAME_SIZE];
-  GetTempPath(SQLITE_TEMPNAME_SIZE-30, zTempPath);
+  GetTempPathA(SQLITE_TEMPNAME_SIZE-30, zTempPath);
   for(i=strlen(zTempPath); i>0 && zTempPath[i-1]=='\\'; i--){}
   zTempPath[i] = 0;
   for(;;){
@@ -667,10 +667,10 @@ char *sqlite3OsFullPathname(const char *zRelative){
   char *zNotUsed;
   char *zFull;
   int nByte;
-  nByte = GetFullPathName(zRelative, 0, 0, &zNotUsed) + 1;
+  nByte = GetFullPathNameA(zRelative, 0, 0, &zNotUsed) + 1;
   zFull = sqliteMalloc( nByte );
   if( zFull==0 ) return 0;
-  GetFullPathName(zRelative, nByte, zFull, &zNotUsed);
+  GetFullPathNameA(zRelative, nByte, zFull, &zNotUsed);
   return zFull;
 }
 

@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\scapi3.tcl.\s(CVS\s1784)
-D 2004-06-30T13:28:33
+C Specify\sASCII\sversions\sof\sWin32\sAPI\sfunctions.\s(CVS\s1785)
+D 2004-06-30T14:29:00
 F Makefile.in f5788bf4daea9b25424df5ccb529ac3438efb2b2
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -48,7 +48,7 @@ F src/os_test.c 6bf10100de2ca199a91fe7ac6474561c8a7166ae
 F src/os_test.h 6a26a4978492e4bbdbf385554958418ff02db162
 F src/os_unix.c 7df6ae05faa5b84164193d3694cb71b66661bbf3
 F src/os_unix.h 00c1f82b526ab2fb7ee5ddd555ea4ed68363c93a
-F src/os_win.c 84549f6cc815237533c5d0eb3697352b03478d96
+F src/os_win.c 54181eb73cb4783c4241feca9eaa490768b39008
 F src/os_win.h babd4e912967c6b09088cfe38a45e8005a07ba44
 F src/pager.c 5f8cdc92ee9efb5a7849dc8b561b53122b700c78
 F src/pager.h 269b6cfc114dba0148203446e41dd19f9647dd53
@@ -233,7 +233,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P e78b0ff30fb630bc9835a7545525eea64924bafc
-R 5a53fa7c23614312cd45bc36b92cf7b4
-U danielk1977
-Z 1ffda58858ec478fc2be1aff401663fe
+P 982389b25d26201116fdfd390aa4b9964b5adf69
+R a445afa4ee22d0970e162e104688d0f4
+U drh
+Z c7a89af0952ba90c542c15f7c9130aa4
