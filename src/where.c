@@ -13,7 +13,7 @@
 ** the WHERE clause of SQL statements.  Also found here are subroutines
 ** to generate VDBE code to evaluate expressions.
 **
-** $Id: where.c,v 1.27 2001/11/09 13:41:10 drh Exp $
+** $Id: where.c,v 1.28 2001/11/12 13:51:43 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -625,6 +625,8 @@ WhereInfo *sqliteWhereBegin(
             break;
           }
         }
+      }else{
+        geFlag = 1;
       }
       brk = pLevel->brk = sqliteVdbeMakeLabel(v);
       cont = pLevel->cont = sqliteVdbeMakeLabel(v);

@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.98 2001/11/12 13:10:53 drh Exp $
+** $Id: vdbe.c,v 1.99 2001/11/12 13:51:43 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -3991,7 +3991,7 @@ case OP_Substr: {
   }else{
     start = pOp->p1;
   }
-  if( start>0 ) start--;
+  if( start ) start--;
   VERIFY( if( p->tos<0 ) goto not_enough_stack; )
   if( Stringify(p, p->tos) ) goto no_mem;
 
