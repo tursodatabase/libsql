@@ -12,7 +12,7 @@
 # focus of this script testing the ability of SQLite to handle database
 # files larger than 4GB.
 #
-# $Id: bigfile.test,v 1.1 2002/12/01 02:00:58 drh Exp $
+# $Id: bigfile.test,v 1.2 2002/12/17 14:13:49 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -43,9 +43,18 @@ do_test bigfile-1.1 {
   }
 } $::MAGIC_SUM
 
+# Try to create a large file - a file that is larger than 2^32 bytes.
+# If this fails, it means that the system being tested does not support
+# large files.  So skip all of the remaining tests in this file.
+#
+db close
+if {[catch {fake_big_file 4096 test.db}]} {
+  puts "**** Unable to create a file larger than 4096 MB. *****"
+  finish_test
+  return
+}
+
 do_test bigfile-1.2 {
-  db close
-  fake_big_file 4096 test.db
   sqlite db test.db
   execsql {
     SELECT md5sum(x) FROM t1;
@@ -77,9 +86,15 @@ do_test bigfile-1.5 {
     SELECT md5sum(x) FROM t2;
   }
 } $::MAGIC_SUM
+
+db close
+if {[catch {fake_big_file 8192 test.db}]} {
+  puts "**** Unable to create a file larger than 8192 MB. *****"
+  finish_test
+  return
+}
+
 do_test bigfile-1.6 {
-  db close
-  fake_big_file 8192 test.db
   sqlite db test.db
   execsql {
     SELECT md5sum(x) FROM t1;
@@ -108,9 +123,15 @@ do_test bigfile-1.10 {
     SELECT md5sum(x) FROM t3;
   }
 } $::MAGIC_SUM
+
+db close
+if {[catch {fake_big_file 16384 test.db}]} {
+  puts "**** Unable to create a file larger than 16384 MB. *****"
+  finish_test
+  return
+}
+
 do_test bigfile-1.11 {
-  db close
-  fake_big_file 16384 test.db
   sqlite db test.db
   execsql {
     SELECT md5sum(x) FROM t1;
