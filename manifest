@@ -1,5 +1,5 @@
-C Version\s1.0.23\s(CVS\s480)
-D 2001-02-20T00:00:00
+C Documentation\supdates\sonly\s(CVS\s189)
+D 2001-02-20T13:06:31
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 7efa81e2985b45ba73db27d55b70cc927f5abfd7
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -85,13 +85,13 @@ F www/crosscompile.tcl c99efacb3aefaa550c6e80d91b240f55eb9fd33e
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/fileformat.tcl cfb7fba80b7275555281ba2f256c00734bcdd1c9
 F www/index.tcl 0ca6421e6e82b17ed0c1779d46463211498f9d12
-F www/lang.tcl 9192e114b19987e630a41e879585b87006eb84a1
+F www/lang.tcl e3905bec9f0d0fd47d9838e991cab7d6f7aff47d
 F www/mingw.tcl fc5f4ba9d336b6e8c97347cc6496d6162461ef60
 F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 06f81c401f79a04f2c5ebfb97e7c176225c0aef2
 F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P 88447d45c8ac316868a8a3e3cbb0b0cdf279d89c
-R c6e68d8e0acc79309e138f6bca7eae27
+P cbfa44c32365a1c9d10c9fcfeebad2fea139aafb
+R 51dbb4fe2655a1b43c87ea8ebca2b24f
 U drh
-Z 4da5d2b3970bc87010da684a5997932a
+Z 14d4e5ae0729dab203dc2cf30932cb57

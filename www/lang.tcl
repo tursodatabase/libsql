@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.5 2000/08/04 13:49:03 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.6 2001/02/20 13:06:31 drh Exp $}
 
 puts {<html>
 <head>
@@ -361,6 +361,30 @@ operand of an IN operator, then the first row of the result of the
 SELECT becomes the value used in the expression.  If the SELECT yields
 more than one result row, all rows after the first are ignored.  If
 the SELECT yeilds no rows, then the value of the SELECT is NULL.</p>
+
+<p>The expression syntax currently supports the following
+functions:</p>
+
+<blockquote><pre>
+<font color="#2c2cf0"><big>count    min       max       sum
+avg      length    substr</big></font>
+</pre></blockquote>
+
+<p>
+The functions <b>count</b>, <b>sum</b>, and <b>avg</b> and the functions
+<b>min</b> and <b>max</b> used with only one argument are all aggregate
+functions.  This means that they are computed across all rows of the result.
+The functions <b>min</b> and <b>max</b>
+with two or more arguments and the 
+functions <b>length</b> and <b>substr</b>
+are non-aggregates.  Non-aggregate functions
+are computed separately for each row of the result.
+</p>
+
+<p>
+The "<b>count(*)</b>" syntax is supported but
+"<b>count(distinct</b> <i>COLUMN-NAME</i><b>)</b>" is not.
+</p>
 }
 
 Section INSERT insert
@@ -492,7 +516,7 @@ puts {
 command found in PostgreSQL.  If VACUUM is invoked with the name of a
 table or index, then the <b>gdbm_reorganize()</b> function is called
 on the corresponding GDBM file.  If VACUUM is invoked with no arguments,
-then <b>gdbm_reorganize()</b> is call on every GDBM file in the database.</p>
+then <b>gdbm_reorganize()</b> is called for every GDBM file in the database.</p>
 
 <p>It is a good idea to run VACUUM after creating large indices,
 especially indices where a single index value refers to many
