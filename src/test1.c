@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.19 2003/01/29 18:46:53 drh Exp $
+** $Id: test1.c,v 1.20 2003/01/29 22:58:26 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -755,9 +755,9 @@ static int test_step(
 ){
   sqlite_vm *vm;
   int rc, i;
-  const char **azValue;
-  const char **azColName;
-  int N;
+  const char **azValue = 0;
+  const char **azColName = 0;
+  int N = 0;
   char *zRc;
   char zBuf[50];
   if( argc!=5 ){
@@ -767,17 +767,17 @@ static int test_step(
   }
   if( getVmPointer(interp, argv[1], &vm) ) return TCL_ERROR;
   rc = sqlite_step(vm, &N, &azValue, &azColName);
-  if( rc==SQLITE_DONE || rc==SQLITE_ROW ){
-    sprintf(zBuf, "%d", N);
-    Tcl_SetVar(interp, argv[2], zBuf, 0);
-    Tcl_SetVar(interp, argv[3], "", 0);
-    if( rc==SQLITE_ROW ){
-      for(i=0; i<N; i++){
-        Tcl_SetVar(interp, argv[3], azValue[i] ? azValue[i] : "",
-            TCL_APPEND_VALUE | TCL_LIST_ELEMENT);
-      }
+  sprintf(zBuf, "%d", N);
+  Tcl_SetVar(interp, argv[2], zBuf, 0);
+  Tcl_SetVar(interp, argv[3], "", 0);
+  if( azValue ){
+    for(i=0; i<N; i++){
+      Tcl_SetVar(interp, argv[3], azValue[i] ? azValue[i] : "",
+          TCL_APPEND_VALUE | TCL_LIST_ELEMENT);
     }
-    Tcl_SetVar(interp, argv[4], "", 0);
+  }
+  Tcl_SetVar(interp, argv[4], "", 0);
+  if( azColName ){
     for(i=0; i<N*2; i++){
       Tcl_SetVar(interp, argv[4], azColName[i] ? azColName[i] : "",
           TCL_APPEND_VALUE | TCL_LIST_ELEMENT);

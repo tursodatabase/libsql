@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.71 2003/01/25 15:43:22 drh Exp $
+** @(#) $Id: pager.c,v 1.72 2003/01/29 22:58:26 drh Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -450,8 +450,19 @@ static int pager_playback_one_page(Pager *pPager, OsFile *jfd){
     rc = sqliteOsWrite(&pPager->fd, pgRec.aData, SQLITE_PAGE_SIZE);
   }
   if( pPg ){
-    memcpy(PGHDR_TO_DATA(pPg), pgRec.aData, SQLITE_PAGE_SIZE);
-    memset(PGHDR_TO_EXTRA(pPg), 0, pPager->nExtra);
+    if( pPg->nRef==0 ||
+        memcmp(PGHDR_TO_DATA(pPg), pgRec.aData, SQLITE_PAGE_SIZE)==0
+    ){
+      /* Do not update the data on this page if the page is in use
+      ** and the page has never been modified.  This avoids resetting
+      ** the "extra" data.  That in turn avoids invalidating BTree cursors
+      ** in trees that have never been modified.  The end result is that
+      ** you can have a SELECT going on in one table and ROLLBACK changes
+      ** to a different table and the SELECT is unaffected by the ROLLBACK.
+      */
+      memcpy(PGHDR_TO_DATA(pPg), pgRec.aData, SQLITE_PAGE_SIZE);
+      memset(PGHDR_TO_EXTRA(pPg), 0, pPager->nExtra);
+    }
     pPg->dirty = 0;
     pPg->needSync = 0;
   }
@@ -545,14 +556,18 @@ end_playback:
   if( rc==SQLITE_OK ){
     PgHdr *pPg;
     for(pPg=pPager->pAll; pPg; pPg=pPg->pNextAll){
+      char zBuf[SQLITE_PAGE_SIZE];
       if( (int)pPg->pgno <= pPager->origDbSize ){
         sqliteOsSeek(&pPager->fd, SQLITE_PAGE_SIZE*(off_t)(pPg->pgno-1));
-        rc = sqliteOsRead(&pPager->fd, PGHDR_TO_DATA(pPg), SQLITE_PAGE_SIZE);
+        rc = sqliteOsRead(&pPager->fd, zBuf, SQLITE_PAGE_SIZE);
         if( rc ) break;
       }else{
-        memset(PGHDR_TO_DATA(pPg), 0, SQLITE_PAGE_SIZE);
+        memset(zBuf, 0, SQLITE_PAGE_SIZE);
       }
-      memset(PGHDR_TO_EXTRA(pPg), 0, pPager->nExtra);
+      if( pPg->nRef==0 || memcmp(zBuf, PGHDR_TO_DATA(pPg), SQLITE_PAGE_SIZE) ){
+        memcpy(PGHDR_TO_DATA(pPg), zBuf, SQLITE_PAGE_SIZE);
+        memset(PGHDR_TO_EXTRA(pPg), 0, pPager->nExtra);
+      }
       pPg->needSync = 0;
       pPg->dirty = 0;
     }

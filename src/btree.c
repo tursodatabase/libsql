@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.81 2003/01/24 12:14:20 drh Exp $
+** $Id: btree.c,v 1.82 2003/01/29 22:58:26 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -900,13 +900,13 @@ int sqliteBtreeRollback(Btree *pBt){
   if( pBt->inTrans==0 ) return SQLITE_OK;
   pBt->inTrans = 0;
   pBt->inCkpt = 0;
+  rc = pBt->readOnly ? SQLITE_OK : sqlitepager_rollback(pBt->pPager);
   for(pCur=pBt->pCursor; pCur; pCur=pCur->pNext){
-    if( pCur->pPage ){
+    if( pCur->pPage && pCur->pPage->isInit==0 ){
       sqlitepager_unref(pCur->pPage);
       pCur->pPage = 0;
     }
   }
-  rc = pBt->readOnly ? SQLITE_OK : sqlitepager_rollback(pBt->pPager);
   unlockBtreeIfUnused(pBt);
   return rc;
 }
@@ -959,13 +959,13 @@ int sqliteBtreeRollbackCkpt(Btree *pBt){
   int rc;
   BtCursor *pCur;
   if( pBt->inCkpt==0 || pBt->readOnly ) return SQLITE_OK;
+  rc = sqlitepager_ckpt_rollback(pBt->pPager);
   for(pCur=pBt->pCursor; pCur; pCur=pCur->pNext){
-    if( pCur->pPage ){
+    if( pCur->pPage && pCur->pPage->isInit==0 ){
       sqlitepager_unref(pCur->pPage);
       pCur->pPage = 0;
     }
   }
-  rc = sqlitepager_ckpt_rollback(pBt->pPager);
   pBt->inCkpt = 0;
   return rc;
 }

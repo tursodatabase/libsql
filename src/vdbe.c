@@ -36,7 +36,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.202 2003/01/29 18:46:53 drh Exp $
+** $Id: vdbe.c,v 1.203 2003/01/29 22:58:26 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -738,8 +738,8 @@ int sqlite_aggregate_count(sqlite_func *p){
 /*
 ** Advance the virtual machine to the next output row.
 **
-** The return vale will be either SQLITE_BUSY, SQLITE_DONE, or
-** SQLITE_ROW.
+** The return vale will be either SQLITE_BUSY, SQLITE_DONE, 
+** SQLITE_ROW, SQLITE_ERROR, or SQLITE_MISUSE.
 **
 ** SQLITE_BUSY means that the virtual machine attempted to open
 ** a locked database and there is no busy callback registered.
@@ -759,9 +759,16 @@ int sqlite_aggregate_count(sqlite_func *p){
 ** The name of the i-th column is (*pazColName)[i] and the datatype
 ** of the i-th column is (*pazColName)[i+*pN].
 **
-** If a run-time error is encountered, SQLITE_DONE is returned.  You
-** can access the error code and error message using the sqlite_finalize()
-** routine. 
+** SQLITE_ERROR means that a run-time error (such as a constraint
+** violation) has occurred.  The details of the error will be returned
+** by the next call to sqlite_finalize().  sqlite_step() should not
+** be called again on the VM.
+**
+** SQLITE_MISUSE means that the this routine was called inappropriately.
+** Perhaps it was called on a virtual machine that had already been
+** finalized or on one that had previously returned SQLITE_ERROR or
+** SQLITE_DONE.  Or it could be the case the the same database connection
+** is being used simulataneously by two or more threads.
 */
 int sqlite_step(
   sqlite_vm *pVm,              /* The virtual machine to execute */
@@ -1588,7 +1595,8 @@ int sqliteVdbeExec(
 
   if( p->magic!=VDBE_MAGIC_RUN ) return SQLITE_MISUSE;
   assert( db->magic==SQLITE_MAGIC_BUSY );
-  assert( p->rc==SQLITE_OK );
+  assert( p->rc==SQLITE_OK || p->rc==SQLITE_BUSY );
+  p->rc = SQLITE_OK;
   assert( p->explain==0 );
   if( sqlite_malloc_failed ) goto no_mem;
   if( p->popStack ){

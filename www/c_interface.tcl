@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: c_interface.tcl,v 1.35 2002/08/24 18:24:57 drh Exp $}
+set rcsid {$Id: c_interface.tcl,v 1.36 2003/01/29 22:58:27 drh Exp $}
 
 puts {<html>
 <head>
@@ -20,7 +20,7 @@ puts {
 a C or C++ program.  This document gives an overview of the C/C++
 programming interface.</p>
 
-<h2>The Core API</h2>
+<h2>1.0 The Core API</h2>
 
 <p>The interface to the SQLite library consists of three core functions,
 one opaque data structure, and some constants used as return values.
@@ -32,26 +32,28 @@ typedef struct sqlite sqlite;
 
 sqlite *sqlite_open(const char *dbname, int mode, char **errmsg);
 
-void sqlite_close(sqlite*);
+void sqlite_close(sqlite *db);
 
 int sqlite_exec(
-  sqlite*,
+  sqlite *db,
   char *sql,
-  int (*)(void*,int,char**,char**),
-  void*,
+  int (*xCallback)(void*,int,char**,char**),
+  void *pArg,
   char **errmsg
 );
 </pre></blockquote>
 
 <p>
 The above is all you really need to know in order to use SQLite
-in your C or C++ programs.  There are other convenience functions
+in your C or C++ programs.  There are other interface functions
 available (and described below) but we will begin by describing
 the core functions shown above.
 </p>
-<h2>Opening a database</h2>
 
-<p>Use the <b>sqlite_open()</b> function to open an existing SQLite
+<a name="sqlite_open">
+<h3>1.1 Opening a database</h3>
+
+<p>Use the <b>sqlite_open</b> function to open an existing SQLite
 database or to create a new SQLite database.  The first argument
 is the database name.  The second argument is intended to signal
 whether the database is going to be used for reading and writing
@@ -74,28 +76,30 @@ additional temporary files may be created during the execution of
 an SQL command in order to store the database rollback journal or
 temporary and intermediate results of a query.</p>
 
-<p>The return value of the <b>sqlite_open()</b> function is a
+<p>The return value of the <b>sqlite_open</b> function is a
 pointer to an opaque <b>sqlite</b> structure.  This pointer will
 be the first argument to all subsequent SQLite function calls that
 deal with the same database.  NULL is returned if the open fails
 for any reason.</p>
 
-<h2>Closing the database</h2>
+<a name="sqlite_close">
+<h3>1.2 Closing the database</h3>
 
-<p>To close an SQLite database, call the <b>sqlite_close()</b>
+<p>To close an SQLite database, call the <b>sqlite_close</b>
 function passing it the sqlite structure pointer that was obtained
 from a prior call to <b>sqlite_open</b>.
 If a transaction is active when the database is closed, the transaction
 is rolled back.</p>
 
-<h2>Executing SQL statements</h2>
+<a name="sqlite_exec">
+<h3>1.3 Executing SQL statements</h3>
 
-<p>The <b>sqlite_exec()</b> function is used to process SQL statements
+<p>The <b>sqlite_exec</b> function is used to process SQL statements
 and queries.  This function requires 5 parameters as follows:</p>
 
 <ol>
 <li><p>A pointer to the sqlite structure obtained from a prior call
-       to <b>sqlite_open()</b>.</p></li>
+       to <b>sqlite_open</b>.</p></li>
 <li><p>A null-terminated string containing the text of one or more
        SQL statements and/or queries to be processed.</p></li>
 <li><p>A pointer to a callback function which is invoked once for each
@@ -121,8 +125,9 @@ int Callback(void *pArg, int argc, char **argv, char **columnNames){
 }
 </pre></blockquote>
 
+<a name="callback_row_data">
 <p>The first argument to the callback is just a copy of the fourth argument
-to <b>sqlite_exec()</b>  This parameter can be used to pass arbitrary
+to <b>sqlite_exec</b>  This parameter can be used to pass arbitrary
 information through to the callback function from client code.
 The second argument is the number of columns in the query result.
 The third argument is an array of pointers to strings where each string
@@ -137,9 +142,17 @@ argv[i][0] == 0
 <blockquote><pre>
 argv[i] == 0
 </pre></blockquote>
-<p>The names of the columns are contained in the fourth argument.</p>
 
-<p>If the EMPTY_RESULT_CALLBACKS pragma is set to ON and the result of
+<p>The names of the columns are contained in first <i>argc</i>
+entries of the fourth argument.
+If the <a href="lang.html#pragma_show_datatypes">SHOW_DATATYPES</a> pragma
+is on (it is off by default) then
+the second <i>argc</i> entries in the 4th argument are the datatypes
+for the corresponding columns.
+</p>
+
+<p>If the <a href="lang.html#pragma_empty_result_callbacks">
+EMPTY_RESULT_CALLBACKS</a> pragma is set to ON and the result of
 a query is an empty set, then the callback is invoked once with the
 third parameter (argv) set to 0.  In other words
 <blockquote><pre>
@@ -152,14 +165,15 @@ columns if there had been a result.
 The default behavior is not to invoke the callback at all if the
 result set is empty.</p>
 
+<a name="callback_returns_nonzero">
 <p>The callback function should normally return 0.  If the callback
 function returns non-zero, the query is immediately aborted and 
-<b>sqlite_exec()</b> will return SQLITE_ABORT.</p>
+<b>sqlite_exec</b> will return SQLITE_ABORT.</p>
 
-<h2>Error Codes</h2>
+<h3>1.4 Error Codes</h3>
 
 <p>
-The <b>sqlite_exec()</b> function normally returns SQLITE_OK.  But
+The <b>sqlite_exec</b> function normally returns SQLITE_OK.  But
 if something goes wrong it can return a different value to indicate
 the type of error.  Here is a complete list of the return codes:
 </p>
@@ -187,6 +201,10 @@ the type of error.  Here is a complete list of the return codes:
 #define SQLITE_CONSTRAINT  19   /* Abort due to contraint violation */
 #define SQLITE_MISMATCH    20   /* Data type mismatch */
 #define SQLITE_MISUSE      21   /* Library used incorrectly */
+#define SQLITE_NOLFS       22   /* Uses OS features not supported on host */
+#define SQLITE_AUTH        23   /* Authorization denied */
+#define SQLITE_ROW         100  /* sqlite_step() has another row ready */
+#define SQLITE_DONE        101  /* sqlite_step() has finished executing */
 </pre></blockquote>
 
 <p>
@@ -202,12 +220,12 @@ The meanings of these various return values are as follows:
 <dd><p>This value indicates that an internal consistency check within
 the SQLite library failed.  This can only happen if there is a bug in
 the SQLite library.  If you ever get an SQLITE_INTERNAL reply from
-an <b>sqlite_exec()</b> call, please report the problem on the SQLite
+an <b>sqlite_exec</b> call, please report the problem on the SQLite
 mailing list.
 </p></dd>
 <dt>SQLITE_ERROR</dt>
 <dd><p>This return value indicates that there was an error in the SQL
-that was passed into the <b>sqlite_exec()</b>.
+that was passed into the <b>sqlite_exec</b>.
 </p></dd>
 <dt>SQLITE_PERM</dt>
 <dd><p>This return value says that the access permissions on the database
@@ -226,21 +244,21 @@ entire database.</p>
 <dt>SQLITE_LOCKED</dt>
 <dd><p>This return code is similar to SQLITE_BUSY in that it indicates
 that the database is locked.  But the source of the lock is a recursive
-call to <b>sqlite_exec()</b>.  This return can only occur if you attempt
-to invoke sqlite_exec() from within a callback routine of a query
-from a prior invocation of sqlite_exec().  Recursive calls to
-sqlite_exec() are allowed as long as they do
+call to <b>sqlite_exec</b>.  This return can only occur if you attempt
+to invoke sqlite_exec from within a callback routine of a query
+from a prior invocation of sqlite_exec.  Recursive calls to
+sqlite_exec are allowed as long as they do
 not attempt to write the same table.
 </p></dd>
 <dt>SQLITE_NOMEM</dt>
-<dd><p>This value is returned if a call to <b>malloc()</b> fails.
+<dd><p>This value is returned if a call to <b>malloc</b> fails.
 </p></dd>
 <dt>SQLITE_READONLY</dt>
 <dd><p>This return code indicates that an attempt was made to write to
 a database file that is opened for reading only.
 </p></dd>
 <dt>SQLITE_INTERRUPT</dt>
-<dd><p>This value is returned if a call to <b>sqlite_interrupt()</b>
+<dd><p>This value is returned if a call to <b>sqlite_interrupt</b>
 interrupts a database operation in progress.
 </p></dd>
 <dt>SQLITE_IOERR</dt>
@@ -298,16 +316,249 @@ an INTEGER PRIMARY KEY column is only allowed to store integer data.
 <dt>SQLITE_MISUSE</dt>
 <dd><p>This error might occur if one or more of the SQLite API routines
 is used incorrectly.  Examples of incorrect usage include calling
-<b>sqlite_exec()</b> after the database has been closed using
-<b>sqlite_close()</b> or calling <b>sqlite_exec()</b> with the same
+<b>sqlite_exec</b> after the database has been closed using
+<b>sqlite_close</b> or 
+calling <b>sqlite_exec</b> with the same
 database pointer simultaneously from two separate threads.
+</p></dd>
+<dt>SQLITE_NOLFS</dt>
+<dd><p>This error means that you have attempts to create or access a file
+database file that is larger that 2GB on a legacy Unix machine that
+lacks large file support.
+</p></dd>
+<dt>SQLITE_AUTH</dt>
+<dd><p>This error indicates that the authorizer callback
+has disallowed the SQL you are attempting to execute.
+</p></dd>
+<dt>SQLITE_ROW</dt>
+<dd><p>This is one of the return codes from the
+<b>sqlite_step</b> routine which is part of the non-callback API.
+It indicates that another row of result data is available.
+</p></dd>
+<dt>SQLITE_DONE</dt>
+<dd><p>This is one of the return codes from the
+<b>sqlite_step</b> routine which is part of the non-callback API.
+It indicates that the SQL statement has been completely executed and
+the <b>sqlite_finalize</b> routine is ready to be called.
 </p></dd>
 </dl>
 </blockquote>
 
-<h2>The Extended API</h2>
+<h2>2.0 Accessing Data Without Using A Callback Function</h2>
 
-<p>Only the three core routines shown above are required to use
+<p>
+The <b>sqlite_exec</b> routine described above used to be the only
+way to retrieve data from an SQLite database.  But many programmers found
+it inconvenient to use a callback function to obtain results.  So beginning
+with SQLite version 2.7.7, a second access interface is available that
+does not use callbacks.
+</p>
+
+<p>
+The new interface uses three separate functions to replace the single
+<b>sqlite_exec</b> function.
+</p>
+
+<blockquote><pre>
+typedef struct sqlite_vm sqlite_vm;
+
+int sqlite_compile(
+  sqlite *db,              /* The open database */
+  const char *zSql,        /* SQL statement to be compiled */
+  const char **pzTail,     /* OUT: uncompiled tail of zSql */
+  sqlite_vm **ppVm,        /* OUT: the virtual machine to execute zSql */
+  char **pzErrmsg          /* OUT: Error message. */
+);
+
+int sqlite_step(
+  sqlite_vm *pVm,          /* The virtual machine to execute */
+  int *pN,                 /* OUT: Number of columns in result */
+  const char ***pazValue,  /* OUT: Column data */
+  const char ***pazColName /* OUT: Column names and datatypes */
+);
+
+int sqlite_finalize(
+  sqlite_vm *pVm,          /* The virtual machine to be finalized */
+  char **pzErrMsg          /* OUT: Error message */
+);
+</pre></blockquote>
+
+<p>
+The strategy is to compile a single SQL statement using
+<b>sqlite_compile</b> then invoke <b>sqlite_step</b> multiple times,
+once for each row of output, and finally call <b>sqlite_finalize</b>
+to clean up after the SQL has finished execution.
+</p>
+
+<h3>2.1 Compiling An SQL Statement Into A Virtual Machine</h3>
+
+<p>
+The <b>sqlite_compile</b> "compiles" a single SQL statement (specified
+by the second parameter) and generates a virtual machine that is able
+to execute that statement.  
+As with must interface routines, the first parameter must be a pointer
+to an sqlite structure that was obtained from a prior call to
+<b>sqlite_open</b>.
+
+<p>
+A pointer to the virtual machine is stored in a pointer which is passed
+in as the 4th parameter.
+Space to hold the virtual machine is dynamically allocated.  To avoid
+a memory leak, the calling function must invoke
+<b>sqlite_finalize</b> on the virtual machine after it has finished
+with it.
+The 4th parameter may be set to NULL if an error is encountered during
+compilation.
+</p>
+
+<p>
+If any errors are encountered during compilation, an error message is
+written into memory obtained from <b>malloc</b> and the 5th parameter
+is made to point to that memory.  If the 5th parameter is NULL, then
+no error message is generated.  If the 5th parameter is not NULL, then
+the calling function should dispose of the memory containing the error
+message by calling <b>sqlite_freemem</b>.
+</p>
+
+<p>
+If the 2nd parameter actually contains two or more statements of SQL,
+only the first statement is compiled.  (This is different from the
+behavior of <b>sqlite_exec</b> which executes all SQL statements
+in its input string.)  The 3rd parameter to <b>sqlite_compile</b>
+is made to point to the first character beyond the end of the first
+statement of SQL in the input.  If the 2nd parameter contains only
+a single SQL statement, then the 3rd parameter will be made to point
+to the '\000' terminator at the end of the 2nd parameter.
+</p>
+
+<p>
+On success, <b>sqlite_compile</b> returns SQLITE_OK.
+Otherwise and error code is returned.
+</p>
+
+<h3>2.2 Step-By-Step Execution Of An SQL Statement</h3>
+
+<p>
+After a virtual machine has been generated using <b>sqlite_compile</b>
+it is executed by one or more calls to <b>sqlite_step</b>.  Each
+invocation of <b>sqlite_step</b>, except the last one,
+returns a single row of the result.
+The number of columns in  the result is stored in the integer that
+the 2nd parameter points to.
+The pointer specified by the 3rd parameter is made to point
+to an array of pointers to column values.
+The pointer in the 4th parameter is made to point to an array
+of pointers to column names and datatypes.
+The 2nd through 4th parameters to <b>sqlite_step</b> convey the
+same information as the 2nd through 4th parameters of the
+<b>callback</b> routine when using
+the <b>sqlite_exec</b> interface.  Except, with <b>sqlite_step</b>
+the column datatype information is always included in the in the
+4th parameter regardless of whether or not the
+<a href="lang.html#pragma_show_datatypes">SHOW_DATATYPES</a> pragma
+is on or off.
+</p>
+
+<p>
+Each invocation of <b>sqlite_step</b> returns an integer code that
+indicates what happened during that step.  This code may be
+SQLITE_BUSY, SQLITE_ROW, SQLITE_DONE, SQLITE_ERROR, or
+SQLITE_MISUSE.
+</p>
+
+<p>
+If the virtual machine is unable to open the database file because
+it is locked by another thread or process, <b>sqlite_step</b>
+will return SQLITE_BUSY.  The calling function should do some other
+activity, or sleep, for a short amount of time to give the lock a
+chance to clear, then invoke <b>sqlite_step</b> again.  This can
+be repeated as many times as desired.
+</p>
+
+<p>
+Whenever another row of result data is available,
+<b>sqlite_step</b> will return SQLITE_ROW.  The row data is
+stored in an array of pointers to strings and the 2nd parameter
+is made to point to this array.
+</p>
+
+<p>
+When all processing is complete, <b>sqlite_step</b> will return
+either SQLITE_DONE or SQLITE_ERROR.  SQLITE_DONE indicates that the
+statement completed successfully and SQLITE_ERROR indicates that there
+was a run-time error.  (The details of the error are obtained from
+<b>sqlite_finalize</b>.)  It is a misuse of the library to attempt
+to call <b>sqlite_step</b> again after it has returned SQLITE_DONE
+or SQLITE_ERROR.
+</p>
+
+<p>
+When <b>sqlite_step</b> returns SQLITE_DONE or SQLITE_ERROR,
+the *pN and *pazColName values are set to the number of columns
+in the result set and to the names of the columns, just as they
+are for an SQLITE_ROW return.  This allows the calling code to
+find the number of result columns and the column names and datatypes
+even if the result set is empty.  The *pazValue parameter is always
+set to NULL when the return codes is SQLITE_DONE or SQLITE_ERROR.
+If the SQL being executed is a statement that does not
+return a result (such as an INSERT or an UPDATE) then *pN will
+be set to zero and *pazColName will be set to NULL.
+</p>
+
+<p>
+If you abuse the library by trying to call <b>sqlite_step</b>
+inappropriately it will attempt return SQLITE_MISUSE.
+This can happen if you call sqlite_step() on the same virtual machine
+at the same
+time from two or more threads or if you call sqlite_step()
+again after it returned SQLITE_DONE or SQLITE_ERROR or if you
+pass in an invalid virtual machine pointer to sqlite_step().
+You should not depend on the SQLITE_MISUSE return code to indicate
+an error.  It is possible that a misuse of the interface will go
+undetected and result in a program crash.  The SQLITE_MISUSE is
+intended as a debugging aid only - to help you detect incorrect
+usage prior to a mishap.  The misuse detection logic is not guaranteed
+to work in every case.
+</p>
+
+<h3>2.3 Deleting A Virtual Machine</h3>
+
+<p>
+Every virtual machine that <b>sqlite_compile</b> creates should
+eventually be handed to <b>sqlite_finalize</b>.  The sqlite_finalize()
+procedure deallocates the memory and other resources that the virtual
+machine uses.  Failure to call sqlite_finalize() will result in 
+resource leaks in your program.
+</p>
+
+<p>
+The <b>sqlite_finalize</b> routine also returns the result code
+that indicates success or failure of the SQL operation that the
+virtual machine carried out.
+The value returned by sqlite_finalize() will be the same as would
+have been returned had the same SQL been executed by <b>sqlite_exec</b>.
+The error message returned will also be the same.
+</p>
+
+<p>
+It is acceptable to call <b>sqlite_finalize</b> on a virtual machine
+before <b>sqlite_step</b> has returned SQLITE_DONE.  Doing so has
+the effect of interrupting the operation in progress.  Partially completed
+changes will be rolled back and the database will be restored to its
+original state (unless an alternative recovery algorithm is selected using
+an ON CONFLICT clause in the SQL being executed.)  The effect is the
+same as if a callback function of <b>sqlite_exec</b> had returned
+non-zero.
+</p>
+
+<p>
+It is also acceptable to call <b>sqlite_finalize</b> on a virtual machine
+that has never been passed to <b>sqlite_step</b> even once.
+</p>
+
+<h2>3.0 The Extended API</h2>
+
+<p>Only the three core routines described in section 1.0 are required to use
 SQLite.  But there are many other functions that provide 
 useful interfaces.  These extended routines are as follows:
 </p>
@@ -389,7 +640,7 @@ void sqlite_freemem(char*);
 <p>All of the above definitions are included in the "sqlite.h"
 header file that comes in the source tree.</p>
 
-<h2>The ROWID of the most recent insert</h2>
+<h3>3.1 The ROWID of the most recent insert</h3>
 
 <p>Every row of an SQLite table has a unique integer key.  If the
 table has a column labeled INTEGER PRIMARY KEY, then that column
@@ -403,33 +654,33 @@ KEY column, or if the table does have an INTEGER PRIMARY KEY but the value
 for that column is not specified in the VALUES clause of the insert, then
 the key is automatically generated.  You can find the value of the key
 for the most recent INSERT statement using the
-<b>sqlite_last_insert_rowid()</b> API function.</p>
+<b>sqlite_last_insert_rowid</b> API function.</p>
 
-<h2>The number of rows that changed</h2>
+<h3>3.2 The number of rows that changed</h3>
 
-<p>The <b>sqlite_changes()</b> API function returns the number of rows
+<p>The <b>sqlite_changes</b> API function returns the number of rows
 that were inserted, deleted, or modified during the most recent
-<b>sqlite_exec()</b> call.  The number reported includes any changes
+<b>sqlite_exec</b> call.  The number reported includes any changes
 that were later undone by a ROLLBACK or ABORT.  But rows that are
 deleted because of a DROP TABLE are <em>not</em> counted.</p>
 
 <p>SQLite implements the command "<b>DELETE FROM table</b>" (without
 a WHERE clause) by dropping the table then recreating it.  
 This is much faster than deleting the elements of the table individually.
-But it also means that the value returned from <b>sqlite_changes()</b>
+But it also means that the value returned from <b>sqlite_changes</b>
 will be zero regardless of the number of elements that were originally
 in the table.  If an accurate count of the number of elements deleted
 is necessary, use "<b>DELETE FROM table WHERE 1</b>" instead.</p>
 
-<h2>Querying without using a callback function</h2>
+<h3>3.3 Querying into memory obtained from malloc()</h3>
 
-<p>The <b>sqlite_get_table()</b> function is a wrapper around
-<b>sqlite_exec()</b> that collects all the information from successive
+<p>The <b>sqlite_get_table</b> function is a wrapper around
+<b>sqlite_exec</b> that collects all the information from successive
 callbacks and writes it into memory obtained from malloc().  This
 is a convenience function that allows the application to get the
 entire result of a database query with a single function call.</p>
 
-<p>The main result from <b>sqlite_get_table()</b> is an array of pointers
+<p>The main result from <b>sqlite_get_table</b> is an array of pointers
 to strings.  There is one element in this array for each column of
 each row in the result.  NULL results are represented by a NULL
 pointer. In addition to the regular data, there is an added row at the 
@@ -444,7 +695,7 @@ SELECT employee_name, login, host FROM users WHERE logic LIKE 'd%';
 
 <p>This query will return the name, login and host computer name
 for every employee whose login begins with the letter "d".  If this
-query is submitted to <b>sqlite_get_table()</b> the result might
+query is submitted to <b>sqlite_get_table</b> the result might
 look like this:</p>
 
 <blockquote>
@@ -465,7 +716,7 @@ result[8] = "zadok"
 the result[] array contains a NULL pointer at that slot.</p>
 
 <p>If the result set of a query is empty, then by default
-<b>sqlite_get_table()</b> will set nrow to 0 and leave its
+<b>sqlite_get_table</b> will set nrow to 0 and leave its
 result parameter is set to NULL.  But if the EMPTY_RESULT_CALLBACKS
 pragma is ON then the result parameter is initialized to the names
 of the columns only.  For example, consider this query which has
@@ -498,47 +749,47 @@ result[1] = "login"<br>
 result[2] = "host"<br>
 </blockquote>
 
-<p>Memory to hold the information returned by <b>sqlite_get_table()</b>
+<p>Memory to hold the information returned by <b>sqlite_get_table</b>
 is obtained from malloc().  But the calling function should not try
 to free this information directly.  Instead, pass the complete table
-to <b>sqlite_free_table()</b> when the table is no longer needed.
-It is safe to call <b>sqlite_free_table()</b> with a NULL pointer such
+to <b>sqlite_free_table</b> when the table is no longer needed.
+It is safe to call <b>sqlite_free_table</b> with a NULL pointer such
 as would be returned if the result set is empty.</p>
 
-<p>The <b>sqlite_get_table()</b> routine returns the same integer
-result code as <b>sqlite_exec()</b>.</p>
+<p>The <b>sqlite_get_table</b> routine returns the same integer
+result code as <b>sqlite_exec</b>.</p>
 
-<h2>Interrupting an SQLite operation</h2>
+<h3>3.4 Interrupting an SQLite operation</h3>
 
-<p>The <b>sqlite_interrupt()</b> function can be called from a
+<p>The <b>sqlite_interrupt</b> function can be called from a
 different thread or from a signal handler to cause the current database
 operation to exit at its first opportunity.  When this happens,
-the <b>sqlite_exec()</b> routine (or the equivalent) that started
+the <b>sqlite_exec</b> routine (or the equivalent) that started
 the database operation will return SQLITE_INTERRUPT.</p>
 
-<h2>Testing for a complete SQL statement</h2>
+<h3>3.5 Testing for a complete SQL statement</h3>
 
 <p>The next interface routine to SQLite is a convenience function used
 to test whether or not a string forms a complete SQL statement.
-If the <b>sqlite_complete()</b> function returns true when its input
+If the <b>sqlite_complete</b> function returns true when its input
 is a string, then the argument forms a complete SQL statement.
 There are no guarantees that the syntax of that statement is correct,
-but we at least know the statement is complete.  If <b>sqlite_complete()</b>
+but we at least know the statement is complete.  If <b>sqlite_complete</b>
 returns false, then more text is required to complete the SQL statement.</p>
 
-<p>For the purpose of the <b>sqlite_complete()</b> function, an SQL
+<p>For the purpose of the <b>sqlite_complete</b> function, an SQL
 statement is complete if it ends in a semicolon.</p>
 
-<p>The <b>sqlite</b> command-line utility uses the <b>sqlite_complete()</b>
-function to know when it needs to call <b>sqlite_exec()</b>.  After each
-line of input is received, <b>sqlite</b> calls <b>sqlite_complete()</b>
-on all input in its buffer.  If <b>sqlite_complete()</b> returns true, 
-then <b>sqlite_exec()</b> is called and the input buffer is reset.  If
-<b>sqlite_complete()</b> returns false, then the prompt is changed to
+<p>The <b>sqlite</b> command-line utility uses the <b>sqlite_complete</b>
+function to know when it needs to call <b>sqlite_exec</b>.  After each
+line of input is received, <b>sqlite</b> calls <b>sqlite_complete</b>
+on all input in its buffer.  If <b>sqlite_complete</b> returns true, 
+then <b>sqlite_exec</b> is called and the input buffer is reset.  If
+<b>sqlite_complete</b> returns false, then the prompt is changed to
 the continuation prompt and another line of text is read and added to
 the input buffer.</p>
 
-<h2>Library version string</h2>
+<h3>3.6 Library version string</h3>
 
 <p>The SQLite library exports the string constant named
 <b>sqlite_version</b> which contains the version number of the
@@ -548,7 +799,7 @@ the SQLITE_VERSION macro against the <b>sqlite_version</b>
 string constant to verify that the version number of the
 header file and the library match.</p> 
 
-<h2>Library character encoding</h2>
+<h3>3.7 Library character encoding</h3>
 
 <p>By default, SQLite assumes that all data uses a fixed-size
 8-bit character (iso8859).  But if you give the --enable-utf8 option
@@ -565,9 +816,9 @@ be changed at run-time.  This is a compile-time option only.  The
 <b>sqlite_encoding</b> character string just tells you how the library
 was compiled.</p>
 
-<h2>Changing the library's response to locked files</h2>
+<h3>3.8 Changing the library's response to locked files</h3>
 
-<p>The <b>sqlite_busy_handler()</b> procedure can be used to register
+<p>The <b>sqlite_busy_handler</b> procedure can be used to register
 a busy callback with an open SQLite database.  The busy callback will
 be invoked whenever SQLite tries to access a database that is locked.
 The callback will typically do some other useful work, or perhaps sleep,
@@ -576,8 +827,8 @@ non-zero, then SQLite tries again to access the database and the cycle
 repeats.  If the callback returns zero, then SQLite aborts the current
 operation and returns SQLITE_BUSY.</p>
 
-<p>The arguments to <b>sqlite_busy_handler()</b> are the opaque
-structure returned from <b>sqlite_open()</b>, a pointer to the busy
+<p>The arguments to <b>sqlite_busy_handler</b> are the opaque
+structure returned from <b>sqlite_open</b>, a pointer to the busy
 callback function, and a generic pointer that will be passed as
 the first argument to the busy callback.  When SQLite invokes the
 busy callback, it sends it three arguments:  the generic pointer
@@ -587,15 +838,15 @@ to access, and the number of times that the library has attempted to
 access the database table or index.</p>
 
 <p>For the common case where we want the busy callback to sleep,
-the SQLite library provides a convenience routine <b>sqlite_busy_timeout()</b>.
-The first argument to <b>sqlite_busy_timeout()</b> is a pointer to
+the SQLite library provides a convenience routine <b>sqlite_busy_timeout</b>.
+The first argument to <b>sqlite_busy_timeout</b> is a pointer to
 an open SQLite database and the second argument is a number of milliseconds.
-After <b>sqlite_busy_timeout()</b> has been executed, the SQLite library
+After <b>sqlite_busy_timeout</b> has been executed, the SQLite library
 will wait for the lock to clear for at least the number of milliseconds 
 specified before it returns SQLITE_BUSY.  Specifying zero milliseconds for
 the timeout restores the default behavior.</p>
 
-<h2>Using the <tt>_printf()</tt> wrapper functions</h2>
+<h3>3.9 Using the <tt>_printf()</tt> wrapper functions</h3>
 
 <p>The four utility functions</p>
 
@@ -608,23 +859,23 @@ the timeout restores the default behavior.</p>
 </ul>
 </p>
 
-<p>implement the same query functionality as <b>sqlite_exec()</b>
-and <b>sqlite_get_table()</b>.  But instead of taking a complete
+<p>implement the same query functionality as <b>sqlite_exec</b>
+and <b>sqlite_get_table</b>.  But instead of taking a complete
 SQL statement as their second argument, the four <b>_printf</b>
 routines take a printf-style format string.  The SQL statement to
 be executed is generated from this format string and from whatever
 additional arguments are attached to the end of the function call.</p>
 
 <p>There are two advantages to using the SQLite printf
-functions instead of <b>sprintf()</b>.  First of all, with the
+functions instead of <b>sprintf</b>.  First of all, with the
 SQLite printf routines, there is never a danger of overflowing a
-static buffer as there is with <b>sprintf()</b>.  The SQLite
+static buffer as there is with <b>sprintf</b>.  The SQLite
 printf routines automatically allocate (and later frees)
 as much memory as is 
 necessary to hold the SQL statements generated.</p>
 
 <p>The second advantage the SQLite printf routines have over
-<b>sprintf()</b> are two new formatting options specifically designed
+<b>sprintf</b> are two new formatting options specifically designed
 to support string literals in SQL.  Within the format string,
 the %q formatting option works very much like %s in that it
 reads a null-terminated string from the argument list and inserts
@@ -717,7 +968,7 @@ by passing it to <b>sqlite_freemem()</b>.
 </p>
 
 <a name="cfunc">
-<h2>Adding New SQL Functions</h2>
+<h2>4.0 Adding New SQL Functions</h2>
 
 <p>Beginning with version 2.4.0, SQLite allows the SQL language to be
 extended with new functions implemented as C code.  The following interface
@@ -800,13 +1051,13 @@ new SQL functions, review the SQLite source code in the file
 <b>func.c</b>.
 </p>
 
-<h2>Multi-Threading And SQLite</h2>
+<h2>5.0 Multi-Threading And SQLite</h2>
 
 <p>
 If SQLite is compiled with the THREADSAFE preprocessor macro set to 1,
 then it is safe to use SQLite from two or more threads of the same process
 at the same time.  But each thread should have its own <b>sqlite*</b>
-pointer returned from <b>sqlite_open()</b>.  It is never safe for two
+pointer returned from <b>sqlite_open</b>.  It is never safe for two
 or more threads to access the same <b>sqlite*</b> pointer at the same time.
 </p>
 
@@ -823,7 +1074,7 @@ Under Unix, an <b>sqlite*</b> pointer should not be carried across a
 should open its own copy of the database after the <b>fork()</b>.
 </p>
 
-<h2>Usage Examples</h2>
+<h2>6.0 Usage Examples</h2>
 
 <p>For examples of how the SQLite C/C++ interface can be used,
 refer to the source code for the <b>sqlite</b> program in the

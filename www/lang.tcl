@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.48 2003/01/26 15:28:18 jplyon Exp $}
+set rcsid {$Id: lang.tcl,v 1.49 2003/01/29 22:58:27 drh Exp $}
 
 puts {<html>
 <head>
@@ -1103,6 +1103,7 @@ with caution.</p>
     <b>synchronous</b> pragma does the same thing but only applies the setting
     to the current session.</p>
 
+<a name="pragma_empty_result_callbacks">
 <li><p><b>PRAGMA empty_result_callbacks = ON;
        <br>PRAGMA empty_result_callbacks = OFF;</b></p>
     <p>When on, the EMPTY_RESULT_CALLBACKS pragma causes the callback
@@ -1145,14 +1146,17 @@ with caution.</p>
     a description of all problems.  If everything is in order, "ok" is
     returned.</p>
 
+<a name="pragma_show_datatypes">
 <li><p><b>PRAGMA show_datatypes = ON;<br>PRAGMA show_datatypes = OFF;</b></p>
     <p>When turned on, the SHOW_DATATYPES pragma causes extra entries containing
     the names of <a href="datatypes.html">datatypes</a> of columns to be
     appended to the 4th ("columnNames") argument to <b>sqlite_exec()</b>
     callbacks.  When
     turned off, the 4th argument to callbacks contains only the column names.
-    SQLite <a href="datatypes.html">datatypes</a> are always either "TEXT"
-    or "NUMERIC".
+    The datatype for table columns is taken from the CREATE TABLE statement
+    that defines the table.  Columns with an unspecified datatype have a
+    datatype of "NUMERIC" and the results of expression have a datatype of
+    either "TEXT" or "NUMERIC" depending on the expression.
     The following chart illustrates the difference for the query
     "SELECT 'xyzzy', 5, NULL AS empty ":</p>
 
