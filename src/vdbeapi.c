@@ -29,18 +29,10 @@ const void *sqlite3_value_blob(sqlite3_value *pVal){
   }
 }
 int sqlite3_value_bytes(sqlite3_value *pVal){
-  Mem *p = (Mem*)pVal;
-  if( (p->flags & MEM_Blob)!=0 || sqlite3_value_text(pVal) ){
-    return p->n;
-  }
-  return 0;
+  return sqlite3ValueBytes(pVal, SQLITE_UTF8);
 }
 int sqlite3_value_bytes16(sqlite3_value *pVal){
-  Mem *p = (Mem*)pVal;
-  if( (p->flags & MEM_Blob)!=0 || sqlite3_value_text16(pVal) ){
-    return ((Mem *)pVal)->n;
-  }
-  return 0;
+  return sqlite3ValueBytes(pVal, SQLITE_UTF16NATIVE);
 }
 double sqlite3_value_double(sqlite3_value *pVal){
   return sqlite3VdbeRealValue((Mem*)pVal);

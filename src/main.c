@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.243 2004/06/30 09:49:24 danielk1977 Exp $
+** $Id: main.c,v 1.244 2004/06/30 11:54:07 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -748,7 +748,7 @@ int sqlite3_create_function(
   }
 
   p = sqlite3FindFunction(db, zFunctionName, nName, nArg, enc, 1);
-  if( p==0 ) return 1;
+  if( p==0 ) return SQLITE_NOMEM;
   p->xFunc = xFunc;
   p->xStep = xStep;
   p->xFinalize = xFinal;
@@ -1180,6 +1180,9 @@ static int openDatabase(
   }
 
 opendb_out:
+  if( sqlite3_errcode(db)==SQLITE_OK && sqlite3_malloc_failed ){
+    sqlite3Error(db, SQLITE_NOMEM, 0);
+  }
   *ppDb = db;
   return sqlite3_errcode(db);
 }
