@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.90 2004/11/18 15:44:29 danielk1977 Exp $
+** $Id: func.c,v 1.91 2004/11/19 05:14:55 danielk1977 Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -552,26 +552,38 @@ static void altertableFunc(
   int argc,
   sqlite3_value **argv
 ){
-  char const *zSql = sqlite3_value_text(argv[0]);
-  char const *zTableName = sqlite3_value_text(argv[1]);
+  unsigned char const *zSql = sqlite3_value_text(argv[0]);
+  unsigned char const *zTableName = sqlite3_value_text(argv[1]);
 
+  int token;
+  Token tname;
   char const *zCsr = zSql;
-  char const *zPrev;
-  char *zRet = 0;
-  int tokenType = 0;
-  int len;
+  int len = 0;
+  char *zRet;
 
-  assert( argc==2 );
+  /* The principle used to locate the table name in the CREATE TABLE 
+  ** statement is that the table name is the first token that is immediatedly
+  ** followed by a left parenthesis - TK_LP.
+  */
   if( zSql ){
-    while( tokenType!=TK_LP ){
-      zPrev = zCsr-len;
-      len = sqlite3GetToken(zCsr, &tokenType);
-      zCsr += len;
-    }
+    do {
+      /* Store the token that zCsr points to in tname. */
+      tname.z = zCsr;
+      tname.n = len;
 
-    zRet = sqlite3MPrintf("%.*s%Q(%s", zPrev-zSql, zSql, zTableName, zCsr);
-    sqlite3_result_text(context, zRet, -1, SQLITE_TRANSIENT);
-    sqliteFree(zRet);
+      /* Advance zCsr to the next token. Store that token type in 'token',
+      ** and it's length in 'len' (to be used next iteration of this loop).
+      */
+      do {
+        zCsr += len;
+        len = sqlite3GetToken(zCsr, &token);
+      } while( token==TK_SPACE );
+      assert( len>0 );
+    } while( token!=TK_LP );
+
+    zRet = sqlite3MPrintf("%.*s%Q%s", tname.z - zSql, zSql, 
+       zTableName, tname.z+tname.n);
+    sqlite3_result_text(context, zRet, -1, sqlite3FreeX);
   }
 }
 #endif
@@ -605,7 +617,6 @@ static void altertriggerFunc(
   ** preceded by either TK_ON or TK_DOT and immediatedly followed by one
   ** of TK_WHEN, TK_BEGIN or TK_FOR.
   */
-  assert( argc==2 );
   if( zSql ){
     do {
       /* Store the token that zCsr points to in tname. */
@@ -641,8 +652,7 @@ static void altertriggerFunc(
     */
     zRet = sqlite3MPrintf("%.*s%Q%s", tname.z - zSql, zSql, 
        zTableName, tname.z+tname.n);
-    sqlite3_result_text(context, zRet, -1, SQLITE_TRANSIENT);
-    sqliteFree(zRet);
+    sqlite3_result_text(context, zRet, -1, sqlite3FreeX);
   }
 }
 #endif   /* !SQLITE_OMIT_TRIGGER */

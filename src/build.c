@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.280 2004/11/18 15:44:29 danielk1977 Exp $
+** $Id: build.c,v 1.281 2004/11/19 05:14:55 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2931,6 +2931,9 @@ void sqlite3AlterRenameTable(
   char *zWhere = 0;         /* Where clause of schema elements to reparse */
   sqlite3 *db = pParse->db; /* Database connection */
   Vdbe *v;
+#ifndef SQLITE_OMIT_TRIGGER
+  char *zTempTrig = 0;      /* Where clause to locate temp triggers */
+#endif
   
   assert( pSrc->nSrc==1 );
 
@@ -2994,6 +2997,39 @@ void sqlite3AlterRenameTable(
       zName, strlen(pTab->zName), pTab->zName
   );
 
+#ifndef SQLITE_OMIT_TRIGGER
+  /* If there are TEMP triggers on this table, modify the sqlite_temp_master
+  ** table. Don't do this if the table being ALTERed is itself located in
+  ** the temp database.
+  */
+  if( iDb!=1 ){
+    Trigger *pTrig;
+    char *tmp = 0;
+    for( pTrig=pTab->pTrigger; pTrig; pTrig=pTrig->pNext ){
+      if( pTrig->iDb==1 ){
+        if( !zTempTrig ){
+          zTempTrig = 
+              sqlite3MPrintf("type = 'trigger' AND name IN(%Q", pTrig->name);
+        }else{
+          tmp = zTempTrig;
+          zTempTrig = sqlite3MPrintf("%s, %Q", zTempTrig, pTrig->name);
+          sqliteFree(tmp);
+        }
+      }
+    }
+    if( zTempTrig ){
+      tmp = zTempTrig;
+      zTempTrig = sqlite3MPrintf("%s)", zTempTrig);
+      sqliteFree(tmp);
+      sqlite3NestedParse(pParse, 
+          "UPDATE sqlite_temp_master SET "
+              "sql = sqlite_alter_trigger(sql, %Q), "
+              "tbl_name = %Q "
+              "WHERE %s;", zName, zName, zTempTrig);
+    }
+  }
+#endif
+
   /* Drop the elements of the in-memory schema that refered to the table
   ** renamed and load the new versions from the database.
   */
@@ -3001,12 +3037,20 @@ void sqlite3AlterRenameTable(
 #ifndef SQLITE_OMIT_TRIGGER
     Trigger *pTrig;
     for( pTrig=pTab->pTrigger; pTrig; pTrig=pTrig->pNext ){
-      sqlite3VdbeOp3(v, OP_DropTrigger, iDb, 0, pTrig->name, 0);
+      assert( pTrig->iDb==iDb || pTrig->iDb==1 );
+      sqlite3VdbeOp3(v, OP_DropTrigger, pTrig->iDb, 0, pTrig->name, 0);
     }
 #endif
     sqlite3VdbeOp3(v, OP_DropTable, iDb, 0, pTab->zName, 0);
     zWhere = sqlite3MPrintf("tbl_name=%Q", zName);
     sqlite3VdbeOp3(v, OP_ParseSchema, iDb, 0, zWhere, P3_DYNAMIC);
+#ifndef SQLITE_OMIT_TRIGGER
+    if( zTempTrig ){
+      sqlite3VdbeOp3(v, OP_ParseSchema, 1, 0, zTempTrig, P3_DYNAMIC);
+    }
+  }else{
+    sqliteFree(zTempTrig);
+#endif
   }
 
   sqliteFree(zName);

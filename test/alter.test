@@ -8,7 +8,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing the ALTER TABLE statement.
 #
-# $Id: alter.test,v 1.3 2004/11/18 15:44:30 danielk1977 Exp $
+# $Id: alter.test,v 1.4 2004/11/19 05:14:56 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -19,6 +19,21 @@ ifcapable !altertable {
   finish_test
   return
 }
+
+#----------------------------------------------------------------------
+# Test organization:
+#
+# alter-1.1.* - alter-1.7.*: Basic tests of ALTER TABLE, including tables
+#     with implicit and explicit indices. These tests came from an earlier
+#     fork of SQLite that also supported ALTER TABLE.
+# alter-1.8.*: Tests for ALTER TABLE when the table resides in an 
+#     attached database.
+# alter-1.9.*: Tests for ALTER TABLE when their is whitespace between the
+#     table name and left parenthesis token. i.e: 
+#     "CREATE TABLE abc       (a, b, c);"
+# alter-2.*: Test error conditions and messages.
+# alter-3.*: Test ALTER TABLE on tables that have TRIGGERs attached to them.
+#
 
 # Create some tables to rename.  Be sure to include some TEMP tables
 # and some tables with odd names.
@@ -196,6 +211,29 @@ do_test alter-1.8.7 {
   }
 } {aux aux aux}
 
+do_test alter-1.9.1 {
+  execsql {
+    CREATE TABLE tbl1   (a, b, c);
+    INSERT INTO tbl1 VALUES(1, 2, 3);
+  }
+} {}
+do_test alter-1.9.2 {
+  execsql {
+    SELECT * FROM tbl1;
+  }
+} {1 2 3}
+do_test alter-1.9.3 {
+  execsql {
+    ALTER TABLE tbl1 RENAME TO tbl2;
+    SELECT * FROM tbl2;
+  }
+} {1 2 3}
+do_test alter-1.9.4 {
+  execsql {
+    DROP TABLE tbl2;
+  }
+} {}
+
 # Test error messages
 #
 do_test alter-2.1 {
@@ -223,6 +261,17 @@ ifcapable !trigger {
   finish_test
   return
 }
+
+#-----------------------------------------------------------------------
+# Tests alter-3.* test ALTER TABLE on tables that have triggers.
+#
+# alter-3.1.*: ALTER TABLE with triggers.
+# alter-3.2.*: Test that the ON keyword cannot be used as a database,
+#     table or column name unquoted. This is done because part of the
+#     ALTER TABLE code (specifically the implementation of SQL function
+#     "sqlite_alter_trigger") will break in this case.
+# alter-3.3.*: ALTER TABLE with TEMP triggers (todo).
+#
 
 # An SQL user-function for triggers to fire, so that we know they
 # are working.
@@ -349,5 +398,58 @@ do_test alter-3.2.9 {
     CREATE TRIGGER 'on'.trig4 AFTER INSERT ON 'ON' BEGIN SELECT 1; END;
   }
 } {0 {}}
-finish_test
+do_test alter-3.2.10 {
+  execsql {
+    DROP TABLE t10;
+  }
+} {}
 
+do_test alter-3.3.1 {
+  execsql {
+    CREATE TABLE tbl1(a, b, c);
+    CREATE TEMP TRIGGER trig1 AFTER INSERT ON tbl1 BEGIN
+      SELECT trigfunc('trig1', new.a, new.b, new.c);
+    END;
+  }
+} {}
+do_test alter-3.3.2 {
+  execsql {
+    INSERT INTO tbl1 VALUES('a', 'b', 'c');
+  }
+  set ::TRIGGER
+} {trig1 a b c}
+do_test alter-3.3.3 {
+  execsql {
+    ALTER TABLE tbl1 RENAME TO tbl2;
+    INSERT INTO tbl2 VALUES('d', 'e', 'f');
+  } 
+  set ::TRIGGER
+} {trig1 d e f}
+do_test alter-3.3.4 {
+  execsql {
+    CREATE TEMP TRIGGER trig2 AFTER UPDATE ON tbl2 BEGIN
+      SELECT trigfunc('trig2', new.a, new.b, new.c);
+    END;
+  } 
+} {}
+do_test alter-3.3.5 {
+  execsql {
+    ALTER TABLE tbl2 RENAME TO tbl3;
+    INSERT INTO tbl3 VALUES('g', 'h', 'i');
+  } 
+  set ::TRIGGER
+} {trig1 g h i}
+do_test alter-3.3.6 {
+  execsql {
+    UPDATE tbl3 SET a = 'G' where a = 'g';
+  } 
+  set ::TRIGGER
+} {trig2 G h i}
+do_test alter-3.3.7 {
+  execsql {
+    DROP TABLE tbl3;
+    SELECT * FROM sqlite_temp_master WHERE type = 'trigger';
+  }
+} {}
+
+finish_test
