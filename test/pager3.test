@@ -1,0 +1,68 @@
+# 2001 September 15
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this script is page cache subsystem.
+#
+# $Id: pager3.test,v 1.1 2004/08/18 19:09:44 drh Exp $
+
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# This test makes sure the database file is truncated back to the correct
+# length on a rollback.
+#
+# After some preliminary setup, a transaction is start at NOTE (1).
+# The create table on the following line allocates an additional page
+# at the end of the database file.  But that page is not written because
+# the database still has a RESERVED lock, not an EXCLUSIVE lock.  The
+# new page is held in memory and the size of the file is unchanged.
+# The insert at NOTE (2) begins adding additional pages.  Then it hits
+# a constraint error and aborts.  The abort causes sqlite3OsTruncate()
+# to be called to restore the file to the same length as it was after
+# the create table.  But the create table results had not yet been
+# written so the file is actually lengthened by this truncate.  Finally,
+# the rollback at NOTE (3) is called to undo all the changes since the
+# begin.  This rollback should truncate the database again.
+# 
+# This test was added because the second truncate at NOTE (3) was not
+# occurring on early versions of SQLite 3.0.
+#
+do_test pager3-1.1 {
+  execsql {
+    create table t1(a unique, b);
+    insert into t1 values(1, 'abcdefghijklmnopqrstuvwxyz');
+    insert into t1 values(2, 'abcdefghijklmnopqrstuvwxyz');
+    update t1 set b=b||a||b;
+    update t1 set b=b||a||b;
+    update t1 set b=b||a||b;
+    update t1 set b=b||a||b;
+    update t1 set b=b||a||b;
+    update t1 set b=b||a||b;
+    create temp table t2 as select * from t1;
+    begin;                  ------- NOTE (1)
+    create table t3(x);
+  }
+  catchsql {
+    insert into t1 select 4-a, b from t2;  ----- NOTE (2)
+  }
+  execsql {
+    rollback;  ------- NOTE (3)
+  }
+  db close
+  sqlite3 db test.db
+  execsql {
+    pragma integrity_check;
+  }
+} ok
+
+
+finish_test

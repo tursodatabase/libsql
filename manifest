@@ -1,5 +1,5 @@
-C Better\sdebug\slogging\sof\sthe\spager.\s(CVS\s1892)
-D 2004-08-18T16:05:19
+C Make\ssure\sthe\sdatabase\sfile\sis\scorrectly\struncated\safter\sa\sROLLBACK\sthat\noccurs\safter\sa\sstatement\sabort.\s(CVS\s1893)
+D 2004-08-18T19:09:44
 F Makefile.in 4a5e570a9e2d35b09c31b3cf01b78cea764ade4b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -51,7 +51,7 @@ F src/os_unix.c 3239a45dbd2f50195bfc97f1ed35cb8fe5a3f60c
 F src/os_unix.h f3097815e041e82e24d92505e1ff61ba24172d13
 F src/os_win.c 54181eb73cb4783c4241feca9eaa490768b39008
 F src/os_win.h babd4e912967c6b09088cfe38a45e8005a07ba44
-F src/pager.c 6f36dae72437a16bd8a40ac2541b6966b5bc9b98
+F src/pager.c f42404ba6858cb3744deca6bb764af6f4ed0275e
 F src/pager.h 67739fe649f33be55dba522ca8a9cc4e42d14f71
 F src/parse.y 589b1a39b23092888adfa9ec1f3ded8a35e8e006
 F src/pragma.c 5cf335adfdac453a2d03ab0c82f93847c43bea81
@@ -147,6 +147,7 @@ F test/notnull.test 7a08117a71e74b0321aaa937dbeb41a09d6eb1d0
 F test/null.test c14d0f4739f21e929b8115b72bf0c765b6bb1721
 F test/pager.test 059cc5c58d3b5a851343dff8c56cf7286425d03a
 F test/pager2.test 55469c7c1c1a54d6b32d7b3cc99001e90101a1ce
+F test/pager3.test 16f546293bb751b8151dc17df613fca938bbec8b
 F test/pragma.test 66a66b7f3b273b93325c9a5794acb418f52fdcbf
 F test/printf.test 5a30fb0d736148fca64cb1b7ed0390be7414e024
 F test/progress.test 76c722f090b1ccb575e7e4e203a71608c5763beb x
@@ -242,7 +243,7 @@ F www/tclsqlite.tcl 06a86cba4d7fc88e2bcd633b57702d3d16abebb5
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 6b2b6b2dbd821070a2781685c4b63a50bc8f5cae
-R 7a82009cfca716de658bd46e436375ca
+P 1cc0323f2597584b3f3239e8948ac3ff3db8da03
+R 2c16cf3adea0061c2a5685694da75e5b
 U drh
-Z 7be61bbeb15fa842d9f627b0bce20f13
+Z 53449f732f05d53766a7cbf7eda7107f

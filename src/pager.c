@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.157 2004/08/18 16:05:19 drh Exp $
+** @(#) $Id: pager.c,v 1.158 2004/08/18 19:09:44 drh Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -1018,6 +1018,14 @@ static int pager_reload_cache(Pager *pPager){
 }
 
 /*
+** Truncate the main file of the given pager to the number of pages
+** indicated.
+*/
+static int pager_truncate(Pager *pPager, int nPage){
+  return sqlite3OsTruncate(&pPager->fd, pPager->pageSize*(off_t)nPage);
+}
+
+/*
 ** Playback the journal and thus restore the database file to
 ** the state it was in before we started making changes.  
 **
@@ -1135,7 +1143,7 @@ static int pager_playback(Pager *pPager){
     */
     if( pPager->journalOff==JOURNAL_HDR_SZ(pPager) ){
       assert( pPager->origDbSize==0 || pPager->origDbSize==mxPg );
-      rc = sqlite3OsTruncate(&pPager->fd, pPager->pageSize*(off_t)mxPg);
+      rc = pager_truncate(pPager, mxPg);
       if( rc!=SQLITE_OK ){
         goto end_playback;
       }
@@ -1235,7 +1243,7 @@ static int pager_stmt_playback(Pager *pPager){
 
   /* Truncate the database back to its original size.
   */
-  rc = sqlite3OsTruncate(&pPager->fd, pPager->pageSize*(off_t)pPager->stmtSize);
+  rc = pager_truncate(pPager, pPager->stmtSize);
   pPager->dbSize = pPager->stmtSize;
 
   /* Figure out how many records are in the statement journal.
@@ -1673,7 +1681,7 @@ int sqlite3pager_truncate(Pager *pPager, Pgno nPage){
   if( rc!=SQLITE_OK ){
     return rc;
   }
-  rc = sqlite3OsTruncate(&pPager->fd, pPager->pageSize*(off_t)nPage);
+  rc = pager_truncate(pPager, nPage);
   if( rc==SQLITE_OK ){
     pPager->dbSize = nPage;
   }
@@ -2860,11 +2868,13 @@ int sqlite3pager_rollback(Pager *pPager){
     return pager_errcode(pPager);
   }
   if( pPager->state==PAGER_RESERVED ){
-    int rc2;
+    int rc2, rc3;
     rc = pager_reload_cache(pPager);
-    rc2 = pager_unwritelock(pPager);
+    rc2 = pager_truncate(pPager, pPager->origDbSize);
+    rc3 = pager_unwritelock(pPager);
     if( rc==SQLITE_OK ){
       rc = rc2;
+      if( rc3 ) rc = rc3;
     }
   }else{
     rc = pager_playback(pPager);
