@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.182 2004/08/14 19:20:10 drh Exp $
+** $Id: btree.c,v 1.183 2004/08/30 16:52:18 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -822,8 +822,10 @@ static int initPage(
   assert( pParent==0 || pParent->pBt==pPage->pBt );
   assert( pPage->pgno==sqlite3pager_pagenumber(pPage->aData) );
   assert( pPage->aData == &((unsigned char*)pPage)[-pPage->pBt->pageSize] );
-  assert( pPage->pParent==0 || pPage->pParent==pParent );
-  assert( pPage->pParent==pParent || !pPage->isInit );
+  if( pPage->pParent!=pParent && (pPage->pParent!=0 || pPage->isInit) ){
+    /* The parent page should never change unless the file is corrupt */
+    return SQLITE_CORRUPT; /* bkpt-CORRUPT */
+  }
   if( pPage->isInit ) return SQLITE_OK;
   if( pPage->pParent==0 && pParent!=0 ){
     pPage->pParent = pParent;
@@ -838,6 +840,14 @@ static int initPage(
   pPage->cellOffset = cellOffset = hdr + 12 - 4*pPage->leaf;
   top = get2byte(&data[hdr+5]);
   pPage->nCell = get2byte(&data[hdr+3]);
+  if( pPage->nCell>MX_CELL ){
+    /* To many cells for a single page.  The page must be corrupt */
+    return SQLITE_CORRUPT; /* bkpt-CORRUPT */
+  }
+  if( pPage->nCell==0 && pParent!=0 && pParent->pgno!=1 ){
+    /* All pages must have at least one cell, except for root pages */
+    return SQLITE_CORRUPT; /* bkpt-CORRUPT */
+  }
 
   /* Compute the total free space on the page */
   pc = get2byte(&data[hdr+1]);
@@ -845,16 +855,28 @@ static int initPage(
   i = 0;
   while( pc>0 ){
     int next, size;
-    if( pc>=usableSize ) return SQLITE_CORRUPT;
-    if( i++>SQLITE_MAX_PAGE_SIZE ) return SQLITE_CORRUPT;
+    if( pc>usableSize-4 ){
+      /* Free block is off the page */
+      return SQLITE_CORRUPT;  /* bkpt-CORRUPT */
+    }
+    if( i++>SQLITE_MAX_PAGE_SIZE/4 ){
+      /* The free block list forms an infinite loop */
+      return SQLITE_CORRUPT;  /* bkpt-CORRUPT */
+    }
     next = get2byte(&data[pc]);
     size = get2byte(&data[pc+2]);
-    if( next>0 && next<=pc+size+3 ) return SQLITE_CORRUPT;
+    if( next>0 && next<=pc+size+3 ){
+      /* Free blocks must be in accending order */
+      return SQLITE_CORRUPT;  /* bkpt-CORRUPT */
+    }
     nFree += size;
     pc = next;
   }
   pPage->nFree = nFree;
-  if( nFree>=usableSize ) return SQLITE_CORRUPT;
+  if( nFree>=usableSize ){
+    /* Free space cannot exceed total page size */
+    return SQLITE_CORRUPT;  /* bkpt-CORRUPT */
+  }
 
   pPage->isInit = 1;
   pageIntegrity(pPage);
@@ -922,6 +944,9 @@ static int getAndInitPage(
   MemPage *pParent     /* Parent of the page */
 ){
   int rc;
+  if( pgno==0 ){
+    return SQLITE_CORRUPT;  /* bkpt-CORRUPT */
+  }
   rc = getPage(pBt, pgno, ppPage);
   if( rc==SQLITE_OK && (*ppPage)->isInit==0 ){
     rc = initPage(*ppPage, pParent);
@@ -1790,7 +1815,7 @@ static int getPayload(
   }
 
   if( amt>0 ){
-    return SQLITE_CORRUPT;
+    return SQLITE_CORRUPT; /* bkpt-CORRUPT */
   }
   return SQLITE_OK;
 }
@@ -1931,7 +1956,7 @@ static int moveToChild(BtCursor *pCur, u32 newPgno){
   pCur->idx = 0;
   pCur->info.nSize = 0;
   if( pNewPage->nCell<1 ){
-    return SQLITE_CORRUPT;
+    return SQLITE_CORRUPT; /* bkpt-CORRUPT */
   }
   return SQLITE_OK;
 }
@@ -2386,6 +2411,9 @@ static int allocatePage(Btree *pBt, MemPage **ppPage, Pgno *pPgno, Pgno nearby){
       memcpy(&pPage1->aData[32], &pTrunk->aData[0], 4);
       *ppPage = pTrunk;
       TRACE(("ALLOCATE: %d trunk - %d free pages left\n", *pPgno, n-1));
+    }else if( k>pBt->usableSize/4 - 8 ){
+      /* Value of k is out of range.  Database corruption */
+      return SQLITE_CORRUPT; /* bkpt-CORRUPT */
     }else{
       /* Extract a leaf from the trunk */
       int closest;
@@ -2404,6 +2432,10 @@ static int allocatePage(Btree *pBt, MemPage **ppPage, Pgno *pPgno, Pgno nearby){
         closest = 0;
       }
       *pPgno = get4byte(&aData[8+closest*4]);
+      if( *pPgno>sqlite3pager_pagecount(pBt->pPager) ){
+        /* Free page off the end of the file */
+        return SQLITE_CORRUPT; /* bkpt-CORRUPT */
+      }
       TRACE(("ALLOCATE: %d was leaf %d of %d on trunk %d: %d more free pages\n",
              *pPgno, closest+1, k, pTrunk->pgno, n-1));
       if( closest<k-1 ){
@@ -2465,7 +2497,7 @@ static int freePage(MemPage *pPage){
     rc = getPage(pBt, get4byte(&pPage1->aData[32]), &pTrunk);
     if( rc ) return rc;
     k = get4byte(&pTrunk->aData[4]);
-    if( k==pBt->usableSize/4 - 8 ){
+    if( k>=pBt->usableSize/4 - 8 ){
       /* The trunk is full.  Turn the page being freed into a new
       ** trunk page with no leaves. */
       rc = sqlite3pager_write(pPage->aData);
@@ -3565,7 +3597,9 @@ int sqlite3BtreeDelete(BtCursor *pCur){
     getTempCursor(pCur, &leafCur);
     rc = sqlite3BtreeNext(&leafCur, &notUsed);
     if( rc!=SQLITE_OK ){
-      if( rc!=SQLITE_NOMEM ) rc = SQLITE_CORRUPT;
+      if( rc!=SQLITE_NOMEM ){
+        rc = SQLITE_CORRUPT;  /* bkpt-CORRUPT */
+      }
       return rc;
     }
     rc = sqlite3pager_write(leafCur.pPage->aData);
@@ -4041,10 +4075,16 @@ static void checkList(
     }
     if( isFreeList ){
       int n = get4byte(&pOvfl[4]);
-      for(i=0; i<n; i++){
-        checkRef(pCheck, get4byte(&pOvfl[8+i*4]), zContext);
+      if( n>=pCheck->pBt->usableSize/4-8 ){
+        sprintf(zMsg, "freelist leaf count too big on page %d", iPage);
+        checkAppendMsg(pCheck, zContext, zMsg);
+        N--;
+      }else{
+        for(i=0; i<n; i++){
+          checkRef(pCheck, get4byte(&pOvfl[8+i*4]), zContext);
+        }
+        N -= n;
       }
-      N -= n;
     }
     iPage = get4byte(pOvfl);
     sqlite3pager_unref(pOvfl);

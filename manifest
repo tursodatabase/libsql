@@ -1,5 +1,5 @@
-C Documentation\supdates\s(CVS\s1921)
-D 2004-08-30T14:58:12
+C Better\sdetection\sand\shandling\sof\scorrupt\sdatabase\sfiles.\s(CVS\s1922)
+D 2004-08-30T16:52:18
 F Makefile.in 65a7c43fcaf9a710d62f120b11b6e435eeb4a450
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -28,7 +28,7 @@ F sqlite3.def cf325d366f167029a971de7333f32b74bfe2e375
 F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
 F src/attach.c 0bd4f11da6999665da30625665a4096ba7898de6
 F src/auth.c 60db23b98bb94c8b0178180faaf49dc116674217
-F src/btree.c 14c20dfb320473a1fd4e37d43eba5e2afd606757
+F src/btree.c 9cf41d26fb175b5d46051ed29c28a6e179094dda
 F src/btree.h 94dfec0a1722d33359b23e7e310f2b64ffedf029
 F src/build.c 7d93b19d03bffd171f7c7873739688cab7e300c5
 F src/date.c edff4aa851eeca8abbc737dc3933a2f0671156ce
@@ -52,7 +52,7 @@ F src/os_unix.c a5625eed7ab071d1715df783f4684945ae538a22
 F src/os_unix.h f3097815e041e82e24d92505e1ff61ba24172d13
 F src/os_win.c 9e2887825b1a32f0ceb1b73b93ffe29a112cd86f
 F src/os_win.h babd4e912967c6b09088cfe38a45e8005a07ba44
-F src/pager.c 6ecf24602f56ac98914685d449f6653903f36fec
+F src/pager.c 616563dc510993ab67baa54fc6a2ddacc05175ca
 F src/pager.h 67739fe649f33be55dba522ca8a9cc4e42d14f71
 F src/parse.y 581a2ce014b843506805b2470c02b7865ad034d5
 F src/pragma.c a7cea75286fcff6666a5412b04478fcf0ecef5c4
@@ -80,7 +80,7 @@ F src/vdbe.h e081c72cd0f7c19d49b1927460aeefcf0fbc85ac
 F src/vdbeInt.h aadadddc8cfad6aa5a5445c849f70d881276fe34
 F src/vdbeapi.c 854732720c2cfc6ff76b28eef6253ac84a5408bc
 F src/vdbeaux.c 022c484dba235d2dcbb1faca0f1943702f4232ed
-F src/vdbemem.c 8971ecc9e56f8b7dbde865906753dbd7812a4f8f
+F src/vdbemem.c ef9ac7d32acfe4bce5c5b408b1294c8d9e0cdb56
 F src/where.c a84eee276cd072158224da6b5f30733df2d56027
 F test/all.test 3b692eb43583b52c99c344b2fa8934512d179016
 F test/attach.test feb2ce54e78688df4c84553416d5aec3b2a0112e
@@ -106,6 +106,7 @@ F test/collate4.test 4a7902b7560686af11d6cace717d876c6937b7ef
 F test/collate5.test 1dd5f0f508c46667f9d4606c7950c414b0bdc0d5
 F test/collate6.test 2a45768914f04c1447a69d1358bbede376552675
 F test/conflict.test c5b849b01cfbe0a4f63a90cba6f68e2fe3a75f87
+F test/corrupt.test 0080ddcece23e8ba47c44608c4fb73fd4d1d8ce2
 F test/crash.test a3f6d27f7cb7f7bd752461db1e14f7c781ecedc3
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/date.test fd3db29bba089578b1b008e3511ea9e74840377a
@@ -152,7 +153,7 @@ F test/pager3.test 16f546293bb751b8151dc17df613fca938bbec8b
 F test/pragma.test 66a66b7f3b273b93325c9a5794acb418f52fdcbf
 F test/printf.test 5a30fb0d736148fca64cb1b7ed0390be7414e024
 F test/progress.test 76c722f090b1ccb575e7e4e203a71608c5763beb x
-F test/quick.test 5bb4afdb204c57329c86fa11f3f0a5296675fd7f
+F test/quick.test 2e9af7203555ea894af654adf0794157434928fb
 F test/quote.test 6d75cf635d93ba2484dc9cb378d88cbae9dc2c62
 F test/rollback.test 4097328d44510277244ef4fa51b22b2f11d7ef4c
 F test/rowid.test b3d059f5c8d8874fa1c31030e0636f67405d20ea
@@ -245,7 +246,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P acfc59186ac7452c0a74dc4ef8df9a1c94fc4f46
-R 075f7776d11844f668c581d38ba0ab40
+P 9322c439c5727f0d65548efdf4de4d7b89b4be66
+R 78b9eb3fdca60240e1b2bb671f0502fe
 U drh
-Z fcffcef9e3415aa6a29c8c8063b208d9
+Z b8b12d29336c5de9dba049e2bc96808c

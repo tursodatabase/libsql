@@ -632,10 +632,14 @@ void sqlite3VdbeMemSanity(Mem *pMem, u8 db_enc){
               pMem->enc==SQLITE_UTF16LE 
       );
       /* If the string is UTF-8 encoded and nul terminated, then pMem->n
-      ** must be the length of the string.
+      ** must be the length of the string.  (Later:)  If the database file
+      ** has been corrupted, '\000' characters might have been inserted
+      ** into the middle of the string.  In that case, the strlen() might
+      ** be less.
       */
       if( pMem->enc==SQLITE_UTF8 && (flags & MEM_Term) ){ 
-        assert( strlen(pMem->z)==pMem->n );
+        assert( strlen(pMem->z)<=pMem->n );
+        assert( pMem->z[pMem->n]==0 );
       }
     }
   }else{

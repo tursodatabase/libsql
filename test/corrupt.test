@@ -1,0 +1,109 @@
+# 2004 August 30
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.
+#
+# This file implements tests to make sure SQLite does not crash or
+# segfault if it sees a corrupt database file.
+#
+# $Id: corrupt.test,v 1.1 2004/08/30 16:52:19 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# Construct a large database for testing.
+#
+do_test corrupt-1.1 {
+  execsql {
+    BEGIN;
+    CREATE TABLE t1(x);
+    INSERT INTO t1 VALUES(randstr(10,100));
+    INSERT INTO t1 VALUES(randstr(10,100));
+    INSERT INTO t1 VALUES(randstr(10,100));
+    INSERT INTO t1 SELECT x || randstr(5,10) FROM t1;
+    INSERT INTO t1 SELECT x || randstr(5,10) FROM t1;
+    INSERT INTO t1 SELECT x || randstr(5,10) FROM t1;
+    INSERT INTO t1 SELECT x || randstr(5,10) FROM t1;
+    INSERT INTO t1 VALUES(randstr(2100,3000));
+    INSERT INTO t1 SELECT x || randstr(5,10) FROM t1;
+    INSERT INTO t1 SELECT x || randstr(5,10) FROM t1;
+    INSERT INTO t1 SELECT x || randstr(5,10) FROM t1;
+    INSERT INTO t1 SELECT x || randstr(5,10) FROM t1;
+    CREATE INDEX t1i1 ON t1(x);
+    CREATE TABLE t2 AS SELECT * FROM t1;
+    DELETE FROM t2 WHERE rowid%5!=0;
+    COMMIT;
+    PRAGMA integrity_check;
+  }
+} {ok}
+
+# Copy a file 
+#
+proc copy_file {from to} {
+  set f [open $from]
+  fconfigure $f -translation binary
+  set t [open $to w]
+  fconfigure $t -translation binary
+  puts -nonewline $t [read $f [file size $from]]
+  close $t
+  close $f
+}
+
+# Setup for the tests.
+copy_file test.db test.bu
+set fsize [file size test.db]
+set junk "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+while {[string length $junk]<256} {append junk $junk}
+set junk [string range $junk 0 255]
+
+
+for {set i [expr {1*256}]} {$i<$fsize-256} {incr i 256} {
+  set tn [expr {$i/256}]
+  db close
+  copy_file test.bu test.db
+  set fd [open test.db r+]
+  fconfigure $fd -translation binary
+  seek $fd $i
+  puts -nonewline $fd $junk
+  close $fd
+  sqlite3 db test.db
+  do_test corrupt-2.$tn.1 {
+    sqlite3 db test.db
+    catchsql {SELECT count(*) FROM sqlite_master}
+    set x {}
+  } {}
+  do_test corrupt-2.$tn.2 {
+    catchsql {SELECT count(*) FROM t1}
+    set x {}
+  } {}
+  do_test corrupt-2.$tn.3 {
+    catchsql {SELECT count(*) FROM t1 WHERE x>'abcdef'}
+    set x {}
+  } {}
+  do_test corrupt-2.$tn.4 {
+    catchsql {SELECT count(*) FROM t2}
+    set x {}
+  } {}
+  do_test corrupt-2.$tn.5 {
+    catchsql {CREATE TABLE t3 AS SELECT * FROM t1}
+    set x {}
+  } {}
+  do_test corrupt-2.$tn.6 {
+    catchsql {DROP TABLE t1}
+    set x {}
+  } {}
+if {$tn==724} btree_breakpoint
+  do_test corrupt-2.$tn.7 {
+    catchsql {PRAGMA integrity_check}
+    set x {}
+  } {}
+}  
+
+finish_test

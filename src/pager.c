@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.160 2004/08/21 19:20:42 drh Exp $
+** @(#) $Id: pager.c,v 1.161 2004/08/30 16:52:18 drh Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -1308,7 +1308,7 @@ static int pager_stmt_playback(Pager *pPager){
 end_stmt_playback:
   if( rc!=SQLITE_OK ){
     pPager->errMask |= PAGER_ERR_CORRUPT;
-    rc = SQLITE_CORRUPT;
+    rc = SQLITE_CORRUPT;  /* bkpt-CORRUPT */
   }else{
     pPager->journalOff = szJ;
     /* pager_reload_cache(pPager); */
@@ -2882,7 +2882,7 @@ int sqlite3pager_rollback(Pager *pPager){
     rc = pager_playback(pPager);
   }
   if( rc!=SQLITE_OK ){
-    rc = SQLITE_CORRUPT;
+    rc = SQLITE_CORRUPT;  /* bkpt-CORRUPT */
     pPager->errMask |= PAGER_ERR_CORRUPT;
   }
   pPager->dbSize = -1;
