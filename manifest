@@ -1,5 +1,5 @@
-C Add\sinfrastructure\sto\ssuport\smultiple\sbtree\simplementations\s(CVS\s894)
-D 2003-04-01T21:16:42
+C Use\sa\sintermediate\stable\swhen\sinserting\sa\sTEMP\stable\sfrom\sa\sSELECT\sthat\nreads\sfrom\sthat\ssame\sTEMP\stable.\s\sTicket\s#275.\s(CVS\s895)
+D 2003-04-03T01:50:44
 F Makefile.in 3c4ba24253e61c954d67adbbb4245e7117c5357e
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -29,7 +29,7 @@ F src/expr.c b8daee83f837b24a22d889200bdd74973ca2d8db
 F src/func.c 882c3ed5a02be18cd904715c7ec62947a34a3605
 F src/hash.c 4fc39feb7b7711f6495ee9f2159559bedb043e1f
 F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
-F src/insert.c dad4d914dc729a94e48de171802c23587a62c34f
+F src/insert.c e2f5e7feecb507d904a7da48874595f440b715aa
 F src/main.c 6d9a38491fdc40c041df64a7399244c364481a09
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
 F src/os.c dfed46091f69cd2d1e601f8a214d41344f2b00b6
@@ -54,8 +54,8 @@ F src/tokenize.c 675b4718d17c69fe7609dc8e85e426ef002be811
 F src/trigger.c bd5a5b234b47f28f9f21a46243dcaf1c5b2383a3
 F src/update.c b368369f1fbe6d7f56a53e5ffad3b75dae9e3e1a
 F src/util.c 8953c612a036e30f24c1c1f5a1498176173daa37
-F src/vdbe.c 7171dbe873760f403b2501e96fd3d1bd852b3ce8
-F src/vdbe.h ed43771f1dc2b994d5c484fdf2eab357c6ef0ee3
+F src/vdbe.c b3b840b555b5238926b7ebb01cd47526a29bb853
+F src/vdbe.h 985c24f312d10f9ef8f9a8b8ea62fcdf68e82f21
 F src/where.c e5733f7d5e9cc4ed3590dc3401f779e7b7bb8127
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
 F test/auth.test 33e8b9680eb0ce521c54096fff1c9ab506c7dfb8
@@ -75,7 +75,7 @@ F test/format3.test 64ab6c4db132b28a645996d413530f7b2a462cc2
 F test/func.test 000515779001ac6899eec4b54e65c6e2501279d4
 F test/in.test 3171a2b3170a8223665c1a4f26be5f3eda36cc4b
 F test/index.test faeb1bcf776e3ff9ba1b4be1eadd1fece708aa7b
-F test/insert.test a122afb86911e77c181d912348866a5b1a61eeab
+F test/insert.test 5697ba098e4d8a6f0151f281b7e39dec9c439e05
 F test/insert2.test c288375a64dad3295044714f0dfed4a193cf067f
 F test/intpkey.test 39f49fd993350f7f3ab255e5cfbf9a09d8f8800e
 F test/ioerr.test 45c8feebe608d7f456fea27ff27a0aaaf0b9c636
@@ -155,7 +155,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 11378c5bf988412f8564cdc0314fc241793b292e
-R cc8e4c3807eb9ac6929fb512790ca871
-U paul
-Z 048b3196e99f227ca8551c2b49ca1411
+P 79b3aed2a74a67cbad631c4e2e4a43469d80c162
+R 6e7a48442426732645524eccf6cea407
+U drh
+Z b83fa935d7c88982a4c85635851f4582

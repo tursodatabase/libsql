@@ -36,7 +36,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.209 2003/03/20 01:16:59 drh Exp $
+** $Id: vdbe.c,v 1.210 2003/04/03 01:50:45 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -603,15 +603,24 @@ void sqliteVdbeCompressSpace(Vdbe *p, int addr){
 
 /*
 ** Search for the current program for the given opcode and P2
-** value.  Return 1 if found and 0 if not found.
+** value.  Return the address plus 1 if found and 0 if not found.
 */
 int sqliteVdbeFindOp(Vdbe *p, int op, int p2){
   int i;
   assert( p->magic==VDBE_MAGIC_INIT );
   for(i=0; i<p->nOp; i++){
-    if( p->aOp[i].opcode==op && p->aOp[i].p2==p2 ) return 1;
+    if( p->aOp[i].opcode==op && p->aOp[i].p2==p2 ) return i+1;
   }
   return 0;
+}
+
+/*
+** Return the opcode for a given address.
+*/
+VdbeOp *sqliteVdbeGetOp(Vdbe *p, int addr){
+  assert( p->magic==VDBE_MAGIC_INIT );
+  assert( addr>=0 && addr<p->nOp );
+  return &p->aOp[addr];
 }
 
 /*

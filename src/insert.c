@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.77 2003/03/31 02:12:47 drh Exp $
+** $Id: insert.c,v 1.78 2003/04/03 01:50:44 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -177,7 +177,6 @@ void sqliteInsert(
     /* Data is coming from a SELECT.  Generate code to implement that SELECT
     */
     int rc, iInitCode;
-    int opCode;
     iInitCode = sqliteVdbeAddOp(v, OP_Goto, 0, 0);
     iSelectLoop = sqliteVdbeCurrentAddr(v);
     iInsertBlock = sqliteVdbeMakeLabel(v);
@@ -191,9 +190,23 @@ void sqliteInsert(
     /* Set useTempTable to TRUE if the result of the SELECT statement
     ** should be written into a temporary table.  Set to FALSE if each
     ** row of the SELECT can be written directly into the result table.
+    **
+    ** A temp table must be used if the table being updated is also one
+    ** of the tables being read by the SELECT statement.  Also use a 
+    ** temp table in the case of row triggers.
     */
-    opCode = pTab->iDb==1 ? OP_OpenTemp : OP_OpenRead;
-    useTempTable = row_triggers_exist || sqliteVdbeFindOp(v,opCode,pTab->tnum);
+    if( row_triggers_exist ){
+      useTempTable = 1;
+    }else{
+      int addr = sqliteVdbeFindOp(v, OP_OpenRead, pTab->tnum);
+      useTempTable = 0;
+      if( addr>0 ){
+        VdbeOp *pOp = sqliteVdbeGetOp(v, addr-2);
+        if( pOp->opcode==OP_Integer && pOp->p1==pTab->iDb ){
+          useTempTable = 1;
+        }
+      }
+    }
 
     if( useTempTable ){
       /* Generate the subroutine that SELECT calls to process each row of

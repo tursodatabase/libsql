@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the INSERT statement.
 #
-# $Id: insert.test,v 1.11 2002/06/25 13:16:04 drh Exp $
+# $Id: insert.test,v 1.12 2003/04/03 01:50:48 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -202,6 +202,56 @@ do_test insert-4.7 {
   }
 } {1 3 99}
 
-# Test
+# Test the ability to insert from a temporary table into itself.
+# Ticket #275.
+#
+do_test insert-5.1 {
+  execsql {
+    CREATE TEMP TABLE t4(x);
+    INSERT INTO t4 VALUES(1);
+    SELECT * FROM t4;
+  }
+} {1}
+do_test insert-5.2 {
+  execsql {
+    INSERT INTO t4 SELECT x+1 FROM t4;
+    SELECT * FROM t4;
+  }
+} {1 2}
+do_test insert-5.3 {
+  # verify that a temporary table is used to copy t4 to t4
+  set x [execsql {
+    EXPLAIN INSERT INTO t4 SELECT x+2 FROM t4;
+  }]
+  expr {[lsearch $x OpenTemp]>0}
+} {1}
+do_test insert-5.4 {
+  # Verify that table "test1" begins on page 3.  This should be the same
+  # page number used by "t4" above.
+  execsql {
+    SELECT rootpage FROM sqlite_master WHERE name='test1';
+  }
+} {3}
+do_test insert-5.5 {
+  # Verify that "t4" begins on page 3.
+  execsql {
+    SELECT rootpage FROM sqlite_temp_master WHERE name='t4';
+  }
+} {3}
+do_test insert-5.6 {
+  # This should not use an intermediate temporary table.
+  execsql {
+    INSERT INTO t4 SELECT one FROM test1 WHERE three=7;
+    SELECT * FROM t4
+  }
+} {1 2 8}
+do_test insert-5.7 {
+  # verify that no temporary table is used to copy test1 to t4
+  set x [execsql {
+    EXPLAIN INSERT INTO t4 SELECT one FROM test1;
+  }]
+  expr {[lsearch $x OpenTemp]>0}
+} {0}
+
 
 finish_test
