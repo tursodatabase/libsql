@@ -13,7 +13,7 @@
 ** the WHERE clause of SQL statements.  Also found here are subroutines
 ** to generate VDBE code to evaluate expressions.
 **
-** $Id: where.c,v 1.54 2002/06/24 12:20:23 drh Exp $
+** $Id: where.c,v 1.55 2002/06/24 22:01:59 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1007,6 +1007,7 @@ WhereInfo *sqliteWhereBegin(
     for(j=0; j<nExpr; j++){
       if( aExpr[j].p==0 ) continue;
       if( (aExpr[j].prereqAll & loopMask)!=aExpr[j].prereqAll ) continue;
+      if( pLevel->iLeftJoin && aExpr[j].p->isJoinExpr==0 ) continue;
       if( haveKey ){
         haveKey = 0;
         sqliteVdbeAddOp(v, OP_MoveTo, base+idx, 0);
@@ -1023,6 +1024,16 @@ WhereInfo *sqliteWhereBegin(
       pLevel->top = sqliteVdbeCurrentAddr(v);
       sqliteVdbeAddOp(v, OP_Integer, 1, 0);
       sqliteVdbeAddOp(v, OP_MemStore, pLevel->iLeftJoin, 1);
+      for(j=0; j<nExpr; j++){
+        if( aExpr[j].p==0 ) continue;
+        if( (aExpr[j].prereqAll & loopMask)!=aExpr[j].prereqAll ) continue;
+        if( haveKey ){
+          haveKey = 0;
+          sqliteVdbeAddOp(v, OP_MoveTo, base+idx, 0);
+        }
+        sqliteExprIfFalse(pParse, aExpr[j].p, cont, 1);
+        aExpr[j].p = 0;
+      }
     }
   }
   pWInfo->iContinue = cont;

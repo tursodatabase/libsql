@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.98 2002/06/24 12:20:23 drh Exp $
+** $Id: select.c,v 1.99 2002/06/24 22:01:58 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -167,11 +167,27 @@ static void addWhereTerm(
   pE1c = sqliteExpr(TK_DOT, pE1b, pE1a, 0);
   pE2c = sqliteExpr(TK_DOT, pE2b, pE2a, 0);
   pE = sqliteExpr(TK_EQ, pE1c, pE2c, 0);
+  pE->isJoinExpr = 1;
   if( *ppExpr ){
     *ppExpr = sqliteExpr(TK_AND, *ppExpr, pE, 0);
   }else{
     *ppExpr = pE;
   }
+}
+
+/*
+** Set the Expr.isJoinExpr flag on all terms of the given expression.
+**
+** The Expr.isJoinExpr flag is used at on terms of an expression to tell
+** the LEFT OUTER JOIN processing logic that this term is part of the
+** join restriction and not a part of the more general WHERE clause.
+*/
+static void setJoinExpr(Expr *p){
+  while( p ){
+    p->isJoinExpr = 1;
+    setJoinExpr(p->pLeft);
+    p = p->pRight;
+  } 
 }
 
 /*
@@ -223,6 +239,7 @@ static int sqliteProcessJoin(Parse *pParse, Select *p){
     ** and AND operator.
     */
     if( pTerm->pOn ){
+      setJoinExpr(pTerm->pOn);
       if( p->pWhere==0 ){
         p->pWhere = pTerm->pOn;
       }else{

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.129 2002/06/22 02:33:39 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.130 2002/06/24 22:01:58 drh Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -436,8 +436,9 @@ struct Token {
 ** operand.
 */
 struct Expr {
-  u16 op;                /* Operation performed by this node */
+  u8 op;                 /* Operation performed by this node */
   u8 dataType;           /* Either SQLITE_SO_TEXT or SQLITE_SO_NUM */
+  u8 isJoinExpr;         /* Origina is the ON or USING phrase of a join */
   Expr *pLeft, *pRight;  /* Left and right subnodes */
   ExprList *pList;       /* A list of expressions used as function arguments
                          ** or in "<expr> IN (<expr-list)" */
