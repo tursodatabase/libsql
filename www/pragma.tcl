@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the pragma.html file.
 #
-set rcsid {$Id: pragma.tcl,v 1.1 2004/11/10 05:48:57 danielk1977 Exp $}
+set rcsid {$Id: pragma.tcl,v 1.2 2004/11/11 05:10:44 danielk1977 Exp $}
 source common.tcl
 header {Pragma statements supported by SQLite}
 
@@ -27,13 +27,15 @@ different in the following important respects:
     engine.
 </ul>
 
-<p>The available pragma's fall into three basic categories:</p>
+<p>The available pragmas fall into four basic categories:</p>
 <ul>
 <li>Pragmas used to <a href="#schema">query the schema</a> of the current 
     database.
 <li>Pragmas used to <a href="#modify">modify the operation</a> of the 
     SQLite library in some manner, or to query for the current mode of 
     operation.
+<li>Pragmas used to <a href="#cookie">query or modify the databases two 
+    cookie values</a>, the schema-cookie and the user-cookie.
 <li>Pragmas used to <a href="#debug">debug the library</a> and verify that
     database files are not corrupted.
 </ul>
@@ -56,7 +58,7 @@ treated as <b>1</b>, and will not generate an error.  When the <i>value</i>
 is returned it is as an integer.</p>
 }
 
-Section {Pragmas used to modify library operation} modify
+Section {Pragmas to modify library operation} modify
 
 puts {
 <ul>
@@ -210,7 +212,7 @@ puts {
 </ul>
 }
 
-Section {Pragma's used to query the database schema} schema
+Section {Pragmas to query the database schema} schema
 
 puts {
 <ul>
@@ -247,7 +249,39 @@ puts {
 </ul>
 }
 
-Section {Pragma's used to debug the library} debug
+Section {Pragmas to query/modify cookie values} cookie
+
+puts {
+
+<ul>
+<li><p><b>PRAGMA [database.]schema_cookie; 
+       <br>PRAGMA [database.]schema_cookie = </b><i>integer </i><b>;
+       <br>PRAGMA [database.]user_cookie;
+       <br>PRAGMA [database.]user_cookie = </b><i>integer </i><b>;</b>
+
+  
+<p>    The pragmas schema_cookie and user_cookie are used to set or get
+       the value of the schema-cookie and user-cookie, respectively. Both
+       the schema-cookie and the user-cookie are 32-bit signed integers
+       stored in the database header.</p>
+  
+<p>    The schema-cookie is usually only manipulated internally by SQLite.  
+       It is incremented by SQLite whenever the database schema is modified 
+       (by creating or dropping a table or index). The schema cookie is 
+       used by SQLite each time a query is executed to ensure that the 
+       internal cache of the schema used when compiling the SQL query matches 
+       the schema of the database against which the compiled query is actually 
+       executed.  Subverting this mechanism by using "PRAGMA schema_cookie" 
+       to modify the schema-cookie is potentially dangerous and may lead 
+       to program crashes or database corruption. Use with caution!</p>
+  
+<p>    The user-cookie is not used internally by SQLite. It may be used by
+       applications for any purpose.</p>
+</li>
+</ul>
+}
+
+Section {Pragmas to debug the library} debug
 
 puts {
 <ul>

@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.75 2004/11/09 12:44:38 danielk1977 Exp $
+** $Id: pragma.c,v 1.76 2004/11/11 05:10:44 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -724,6 +724,65 @@ void sqlite3Pragma(
       }
     }
   }else
+  /*
+  **   PRAGMA [database.]schema_cookie
+  **   PRAGMA [database.]schema_cookie = <integer>
+  **
+  **   PRAGMA [database.]user_cookie
+  **   PRAGMA [database.]user_cookie = <integer>
+  **
+  ** The pragma's schema_cookie and user_cookie are used to set or get
+  ** the value of the schema-cookie and user-cookie, respectively. Both
+  ** the schema-cookie and the user-cookie are 32-bit signed integers
+  ** stored in the database header.
+  **
+  ** The schema-cookie is usually only manipulated internally by SQLite. It
+  ** is incremented by SQLite whenever the database schema is modified (by
+  ** creating or dropping a table or index). The schema cookie is used by
+  ** SQLite each time a query is executed to ensure that the internal cache
+  ** of the schema used when compiling the SQL query matches the schema of
+  ** the database against which the compiled query is actually executed.
+  ** Subverting this mechanism by using "PRAGMA schema_cookie" to modify
+  ** the schema-cookie is potentially dangerous and may lead to program
+  ** crashes or database corruption. Use with caution!
+  **
+  ** The user-cookie is not used internally by SQLite. It may be used by
+  ** applications for any purpose.
+  */
+  if( sqlite3StrICmp(zLeft, "schema_cookie")==0 ||
+      sqlite3StrICmp(zLeft, "user_cookie")==0 ){
+
+    int iCookie;   /* Cookie index. 0 for schema-cookie, 6 for user-cookie. */
+    if( zLeft[0]=='s' || zLeft[0]=='S' ){
+      iCookie = 0;
+    }else{
+      iCookie = 5;
+    }
+
+    if( zRight ){
+      /* Write the specified cookie value */
+      static const VdbeOpList setCookie[] = {
+        { OP_Transaction,    0,  1,  0},    /* 0 */
+        { OP_Integer,        0,  0,  0},    /* 1 */
+        { OP_SetCookie,      0,  0,  0},    /* 2 */
+      };
+      int addr = sqlite3VdbeAddOpList(v, ArraySize(setCookie), setCookie);
+      sqlite3VdbeChangeP1(v, addr, iDb);
+      sqlite3VdbeChangeP1(v, addr+1, atoi(zRight));
+      sqlite3VdbeChangeP1(v, addr+2, iDb);
+      sqlite3VdbeChangeP2(v, addr+2, iCookie);
+    }else{
+      /* Read the specified cookie value */
+      static const VdbeOpList readCookie[] = {
+        { OP_ReadCookie,      0,  0,  0},    /* 0 */
+        { OP_Callback,        1,  0,  0}
+      };
+      int addr = sqlite3VdbeAddOpList(v, ArraySize(readCookie), readCookie);
+      sqlite3VdbeChangeP1(v, addr, iDb);
+      sqlite3VdbeChangeP2(v, addr, iCookie);
+      sqlite3VdbeSetNumCols(v, 1);
+    }
+  }
 
 #if defined(SQLITE_DEBUG) || defined(SQLITE_TEST)
   /*

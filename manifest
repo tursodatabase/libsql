@@ -1,5 +1,5 @@
-C Add\sdocumentation\sfor\sDEFAULT\sCURRENT_TIME\s&\sco.\s(CVS\s2088)
-D 2004-11-11T01:50:30
+C Add\sthe\sschema_cookie\sand\suser_cookie\spragmas.\s(CVS\s2089)
+D 2004-11-11T05:10:44
 F Makefile.in c4d2416860f472a1e3393714d0372074197565df
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -40,7 +40,7 @@ F src/hash.c a97721a55440b7bea31ffe471bb2f6b4123cddd5
 F src/hash.h 1b0c445e1c89ff2aaad9b4605ba61375af001e84
 F src/insert.c 8bd40dc5a8e470cba5b9b14211fa88ea0350d2fa
 F src/legacy.c d58ea507bce885298a2c8c3cbb0f4bff5d47830b
-F src/main.c ba1b26f03af4b7f8be3394748123dd671b9ea147
+F src/main.c c7dc54c62c86cab8b2e2883aef607c179eefa611
 F src/md5.c 7ae1c39044b95de2f62e066f47bb1deb880a1070
 F src/os.h 38258df2db895499b6e2957dbf17f25e0df71667
 F src/os_common.h 0e7f428ba0a6c40a61bc56c4e96f493231301b73
@@ -55,7 +55,7 @@ F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c ee88fcecb081e3635c281bc09d604e934429e2f5
 F src/pager.h 9eba8c53dd91eae7f3f90743b2ee242da02a9862
 F src/parse.y 02e0d88a6d465f6fd5ea79a200a8c23c92a877dc
-F src/pragma.c 44074b93216516b01cafacd85cb10621088693dd
+F src/pragma.c bb1c76dae9911b9312997b353c1e316fa603a0c6
 F src/printf.c 3d20b21cfecadacecac3fb7274e746cb81d3d357
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c 156990c636102bb6b8de85e7ff3396a62568476b
@@ -156,7 +156,7 @@ F test/pager.test 394455707a079804e8a4e431d12edce831a065f0
 F test/pager2.test c7e731ac56a2984a605b032ffd19b9deee820377
 F test/pager3.test 647f696a9cf7409df00a1e0047c2eb55585a1b85
 F test/pagesize.test 6f94b70ed9645dbe6314b627ae765c5dec8036d9
-F test/pragma.test bde1271384bc415af04d9dd736c073cf7ef33177
+F test/pragma.test 1d2ca2b52e08ed5af81f7f02e4490182bfd2f832
 F test/printf.test 92ba4c510b4fc61120ffa4a01820446ed917ae57
 F test/progress.test 5ddba78cb6011fba36093973cfb3ac473b8fb96a x
 F test/quick.test 9e968949a20b5ed5990c03dc45df3781a03c4b1a
@@ -246,7 +246,7 @@ F www/nulls.tcl ec35193f92485b87b90a994a01d0171b58823fcf
 F www/oldnews.tcl 7aa4478e64631859770a5fe4b413919ba6ee8a08
 F www/omitted.tcl 7bd62b6f0f53b60c5360895b16b3af8407bbca03
 F www/opcode.tcl dafa030a5a3cc24a2f9fd4cfbfb7d7323d2151b0
-F www/pragma.tcl f954f5c5eb98b4ba33c09d4fd866600e78b0aacb
+F www/pragma.tcl 5bac2d73a92136fb711d558003648383ec2b139b
 F www/quickstart.tcl 6f6f694b6139be2d967b1492eb9a6bdf7058aa60
 F www/speed.tcl de99c82c4729a10b6733463636f15473c4ec95bc
 F www/sqlite.tcl b51fd15f0531a54874de785a9efba323eecd5975
@@ -255,7 +255,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl fdacb0ba2d39831e8a6240d05a490026ad4c4e4c
-P 0747b55882cf218c03b443e1eadec9eb19889554
-R b894ca6622f94383b4e07995b66df8ff
+P c85f13f8f252faf423f12a3804f1fe2f950da660
+R d714e2a607a79ae47d80cca22b4581aa
 U danielk1977
-Z e7eb67c45eefd163ea64d3015b6203d0
+Z 9c7e9034616e577965e9472de918179e
