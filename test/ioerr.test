@@ -15,7 +15,7 @@
 # The tests in this file use special facilities that are only
 # available in the SQLite test fixture.
 #
-# $Id: ioerr.test,v 1.19 2005/01/29 09:14:05 danielk1977 Exp $
+# $Id: ioerr.test,v 1.20 2005/03/10 12:58:22 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -132,7 +132,8 @@ do_ioerr_test ioerr-5 -sqlprep {
 
 # Test IO errors when replaying two hot journals from a 2-file 
 # transaction. This test only runs on UNIX.
-if {$tcl_platform(platform)=="unix" && [file exists ./crashtest]} {
+if {$tcl_platform(platform)=="unix" && [file exists ./crashtest]
+     && ![catch {sqlite3 -has-codec} r] && !$r} {
   do_ioerr_test ioerr-6 -tclprep {
     execsql {
       ATTACH 'test2.db' as aux;
@@ -185,5 +186,3 @@ if {$tcl_platform(platform)!="windows"} {
 }
 
 finish_test
-
-

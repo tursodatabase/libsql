@@ -1,5 +1,5 @@
-C Disable\sthe\salter2\stests\sif\sthere\sis\sa\scodec\scompiled\sinto\sthe\slibrary.\s(CVS\s2370)
-D 2005-03-10T12:52:47
+C Disable\sthe\suse\sof\s./crashtest\sin\sbuilds\sthat\sinclude\sa\scodec.\s(CVS\s2371)
+D 2005-03-10T12:58:22
 F Makefile.in 76443a83549d1539105e12d13bd0054a05ab2214
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -139,7 +139,7 @@ F test/insert2.test 065f179a21b42f9746b97571b8ad10b092e90913
 F test/insert3.test c67f0240b1c17e71fa2ed8bb6de064928f549f95
 F test/interrupt.test 5b4d8389e6cf2d01b94f87cfd02d9df1073bfb2d
 F test/intpkey.test ce2a5d91120a831fc076fbf98fce132e192bad69
-F test/ioerr.test 7eff0a5cb552a6532ccc5c62bb4911127f2c9562
+F test/ioerr.test b27540c5873d28c0e77f02ce85b15f904d5b03a6
 F test/join.test e08471279574487cac0d17fa1ea66aca15c4de7f
 F test/join2.test f2171c265e57ee298a27e57e7051d22962f9f324
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
@@ -274,7 +274,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P f426c625c4c3de626b5f5f8b5a6343a7ec3b16e9
-R 4d34e3a6fbc8b940b8a716efa5ae8b3b
+P 06a48da67b142e92624cdfd46947bd4ccc6842b7
+R 8d17b42d8bdc15b1a43c1cdc2214004d
 U drh
-Z 05bd61621ca7830d39b52ce16b018ff9
+Z fef84291e48ee74066a31f01ad017fa8
