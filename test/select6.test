@@ -12,7 +12,7 @@
 # focus of this file is testing SELECT statements that contain
 # subqueries in their FROM clause.
 #
-# $Id: select6.test,v 1.3 2002/03/03 02:49:52 drh Exp $
+# $Id: select6.test,v 1.4 2002/03/03 03:03:54 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -263,6 +263,16 @@ do_test select6-4.3 {
     SELECT DISTINCT y FROM (SELECT y FROM t1) WHERE y<5 ORDER BY y
   }
 } {1 2 3 4}
+do_test select6-4.4 {
+  execsql {
+    SELECT avg(y) FROM (SELECT DISTINCT y FROM t1) WHERE y<5 ORDER BY y
+  }
+} {2.5}
+do_test select6-4.5 {
+  execsql {
+    SELECT avg(y) FROM (SELECT DISTINCT y FROM t1 WHERE y<5) ORDER BY y
+  }
+} {2.5}
 
 
 finish_test

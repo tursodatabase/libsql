@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.72 2002/03/03 02:49:51 drh Exp $
+** $Id: select.c,v 1.73 2002/03/03 03:03:53 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -163,7 +163,7 @@ static int selectInnerLoop(
 
   /* Store the result as data using a unique key.
   */
-  if( eDest==SRT_Table ){
+  if( eDest==SRT_Table || eDest==SRT_TempTable ){
     sqliteVdbeAddOp(v, OP_MakeRecord, nColumn, 0);
     sqliteVdbeAddOp(v, OP_NewRecno, iParm, 0);
     sqliteVdbeAddOp(v, OP_Pull, 1, 0);
@@ -1283,8 +1283,7 @@ int sqliteSelect(
   */
   for(i=0; i<pTabList->nId; i++){
     if( pTabList->a[i].pSelect==0 ) continue;
-    sqliteVdbeAddOp(v, OP_OpenTemp, base+i, 0);
-    sqliteSelect(pParse, pTabList->a[i].pSelect, SRT_Table, base+i,
+    sqliteSelect(pParse, pTabList->a[i].pSelect, SRT_TempTable, base+i,
                  p, i, &isAgg);
     pTabList = p->pSrc;
     pWhere = p->pWhere;
@@ -1301,6 +1300,12 @@ int sqliteSelect(
       flattenSubquery(pParent, parentTab, *pParentAgg, isAgg) ){
     if( isAgg ) *pParentAgg = 1;
     return rc;
+  }
+
+  /* If the output is destined for a temporary table, open that table.
+  */
+  if( eDest==SRT_TempTable ){
+    sqliteVdbeAddOp(v, OP_OpenTemp, iParm, 0);
   }
 
   /* Do an analysis of aggregate expressions.

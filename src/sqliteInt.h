@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.98 2002/03/03 02:49:51 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.99 2002/03/03 03:03:53 drh Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -475,6 +475,7 @@ struct Select {
 #define SRT_Union        5  /* Store result as keys in a table */
 #define SRT_Except       6  /* Remove result from a UNION table */
 #define SRT_Table        7  /* Store result as data with a unique key */
+#define SRT_TempTable    8  /* Store result in a trasient table */
 
 /*
 ** When a SELECT uses aggregate functions (like "count(*)" or "avg(f1)")
