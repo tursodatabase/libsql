@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.136 2003/05/02 14:32:13 drh Exp $
+** $Id: select.c,v 1.137 2003/05/02 16:04:17 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1555,7 +1555,7 @@ substExprList(ExprList *pList, int iTable, ExprList *pEList){
 **
 **   (2)  The subquery is not an aggregate or the outer query is not a join.
 **
-**   (3)  The subquery is not a join.
+**   (3)  (No longer a restriction)
 **
 **   (4)  The subquery is not DISTINCT or the outer query is not a join.
 **
@@ -1613,7 +1613,7 @@ static int flattenSubquery(
   if( subqueryIsAgg && pSrc->nSrc>1 ) return 0;
   pSubSrc = pSub->pSrc;
   assert( pSubSrc );
-  if( pSubSrc->nSrc!=1 ) return 0;
+  if( pSubSrc->nSrc==0 ) return 0;
   if( (pSub->isDistinct || pSub->nLimit>=0) &&  (pSrc->nSrc>1 || isAgg) ){
      return 0;
   }
@@ -1623,8 +1623,52 @@ static int flattenSubquery(
   /* If we reach this point, it means flattening is permitted for the
   ** iFrom-th entry of the FROM clause in the outer query.
   */
+
+  /* Move all of the FROM elements of the subquery into the
+  ** the FROM clause of the outer query.  Before doing this, remember
+  ** the cursor number for the original outer query FROM element in
+  ** iParent.  The iParent cursor will never be used.  Subsequent code
+  ** will scan expressions looking for iParent references and replace
+  ** those references with expressions that resolve to the subquery FROM
+  ** elements we are now copying in.
+  */
   iParent = pSrc->a[iFrom].iCursor;
-  pSrc->a[iFrom].iCursor = pSubSrc->a[0].iCursor;
+  {
+    int nSubSrc = pSubSrc->nSrc;
+
+    if( pSrc->a[iFrom].pTab && pSrc->a[iFrom].pTab->isTransient ){
+      sqliteDeleteTable(0, pSrc->a[iFrom].pTab);
+    }
+    sqliteFree(pSrc->a[iFrom].zName);
+    sqliteFree(pSrc->a[iFrom].zAlias);
+    if( nSubSrc>1 ){
+      int extra = nSubSrc - 1;
+      for(i=1; i<nSubSrc; i++){
+        pSrc = sqliteSrcListAppend(pSrc, 0, 0);
+      }
+      p->pSrc = pSrc;
+      for(i=pSrc->nSrc-1; i-extra>=iFrom; i--){
+        pSrc->a[i] = pSrc->a[i-extra];
+      }
+    }
+    for(i=0; i<nSubSrc; i++){
+      pSrc->a[i+iFrom] = pSubSrc->a[i];
+      memset(&pSubSrc->a[i], 0, sizeof(pSubSrc->a[i]));
+    }
+  }
+
+  /* Now begin substituting subquery result set expressions for 
+  ** references to the iParent in the outer query.
+  ** 
+  ** Example:
+  **
+  **   SELECT a+5, b*10 FROM (SELECT x*3 AS a, y+10 AS b FROM t1) WHERE a>b;
+  **   \                     \_____________ subquery __________/          /
+  **    \_____________________ outer query ______________________________/
+  **
+  ** We look at every expression in the outer query and every place we see
+  ** "a" we substitute "x*3" and every place we see "b" we substitute "y+10".
+  */
   substExprList(p->pEList, iParent, pSub->pEList);
   pList = p->pEList;
   for(i=0; i<pList->nExpr; i++){
@@ -1672,8 +1716,15 @@ static int flattenSubquery(
       p->pWhere = sqliteExpr(TK_AND, p->pWhere, pWhere, 0);
     }
   }
+
+  /* The flattened query is distinct if either the inner or the
+  ** outer query is distinct. 
+  */
   p->isDistinct = p->isDistinct || pSub->isDistinct;
 
+  /* Transfer the limit expression from the subquery to the outer
+  ** query.
+  */
   if( pSub->nLimit>=0 ){
     if( p->nLimit<0 ){
       p->nLimit = pSub->nLimit;
@@ -1683,14 +1734,9 @@ static int flattenSubquery(
   }
   p->nOffset += pSub->nOffset;
 
-  if( pSrc->a[iFrom].pTab && pSrc->a[iFrom].pTab->isTransient ){
-    sqliteDeleteTable(0, pSrc->a[iFrom].pTab);
-  }
-  pSrc->a[iFrom].pTab = pSubSrc->a[0].pTab;
-  pSubSrc->a[0].pTab = 0;
-  assert( pSrc->a[iFrom].pSelect==pSub );
-  pSrc->a[iFrom].pSelect = pSubSrc->a[0].pSelect;
-  pSubSrc->a[0].pSelect = 0;
+  /* Finially, delete what is left of the subquery and return
+  ** success.
+  */
   sqliteSelectDelete(pSub);
   return 1;
 }
@@ -2079,19 +2125,24 @@ int sqliteSelect(
   */
   for(i=0; i<pTabList->nSrc; i++){
     const char *zSavedAuthContext;
+    int needRestoreContext;
+
     if( pTabList->a[i].pSelect==0 ) continue;
     if( pTabList->a[i].zName!=0 ){
       zSavedAuthContext = pParse->zAuthContext;
       pParse->zAuthContext = pTabList->a[i].zName;
+      needRestoreContext = 1;
+    }else{
+      needRestoreContext = 0;
     }
     sqliteSelect(pParse, pTabList->a[i].pSelect, SRT_TempTable, 
                  pTabList->a[i].iCursor, p, i, &isAgg);
-    if( pTabList->a[i].zName!=0 ){
+    if( needRestoreContext ){
       pParse->zAuthContext = zSavedAuthContext;
     }
     pTabList = p->pSrc;
     pWhere = p->pWhere;
-    if( eDest==SRT_Callback ){
+    if( eDest!=SRT_Union && eDest!=SRT_Except && eDest!=SRT_Discard ){
       pOrderBy = p->pOrderBy;
     }
     pGroupBy = p->pGroupBy;

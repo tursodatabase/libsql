@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing VIEW statements.
 #
-# $Id: view.test,v 1.14 2003/05/02 14:32:15 drh Exp $
+# $Id: view.test,v 1.15 2003/05/02 16:04:17 drh Exp $
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
@@ -197,10 +197,48 @@ do_test view-5.1 {
 do_test view-5.2 {
   execsql {
     CREATE VIEW v5 AS
-      SELECT t1.x, t2.y FROM t1 JOIN t2 USING(a);
+      SELECT t1.x AS v, t2.y AS w FROM t1 JOIN t2 USING(a);
     SELECT * FROM v5;
   }
 } {1 22 4 55}
+
+# Verify that the view v5 gets flattened.  see sqliteFlattenSubquery().
+# Ticket #272
+do_test view-5.3 {
+  lsearch [execsql {
+    EXPLAIN SELECT * FROM v5;
+  }] OpenTemp
+} {-1}
+do_test view-5.4 {
+  execsql {
+    SELECT * FROM v5 AS a, t2 AS b WHERE a.w=b.y;
+  }
+} {1 22 22 2 4 55 55 5}
+do_test view-5.5 {
+  lsearch [execsql {
+    EXPLAIN SELECT * FROM v5 AS a, t2 AS b WHERE a.w=b.y;
+  }] OpenTemp
+} {-1}
+do_test view-5.6 {
+  execsql {
+    SELECT * FROM t2 AS b, v5 AS a WHERE a.w=b.y;
+  }
+} {22 2 1 22 55 5 4 55}
+do_test view-5.7 {
+  lsearch [execsql {
+    EXPLAIN SELECT * FROM t2 AS b, v5 AS a WHERE a.w=b.y;
+  }] OpenTemp
+} {-1}
+do_test view-5.8 {
+  execsql {
+    SELECT * FROM t1 AS a, v5 AS b, t2 AS c WHERE a.x=b.v AND b.w=c.y;
+  }
+} {1 2 3 4 1 22 22 2 4 5 6 7 4 55 55 5}
+do_test view-5.9 {
+  lsearch [execsql {
+    EXPLAIN SELECT * FROM t1 AS a, v5 AS b, t2 AS c WHERE a.x=b.v AND b.w=c.y;
+  }] OpenTemp
+} {-1}
 
 do_test view-6.1 {
   execsql {

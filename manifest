@@ -1,5 +1,5 @@
-C VDBE\scursors\snumbers\sfor\stables\sin\sa\sjoin\sdo\snot\shave\sto\sbe\sconsecutive.\nThis\sis\sone\sstep\son\sthe\sroad\sto\sfixing\sticket\s#272.\s(CVS\s947)
-D 2003-05-02T14:32:13
+C Enhance\sthe\squery\sflattener\sto\shandle\ssubqueries\sthat\sare\sjoins.\nAll\sregressions\spass\sbut\snew\stests\sneed\sto\sbe\sadded\sbefore\srelease.\nTicket\s#272.\s(CVS\s948)
+D 2003-05-02T16:04:17
 F Makefile.in 004acec253ecdde985c8ecd5b7c9accdb210378f
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -43,7 +43,7 @@ F src/parse.y 39b5240cb78047dc56d6d37c398baed7ba556779
 F src/pragma.c 118fe400d71b7fdcc03580d5eab6bb5aa00772a5
 F src/printf.c fc5fdef6e92ad205005263661fe9716f55a49f3e
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
-F src/select.c 493360f3003719ad61d49863c4f5db0bad9022cb
+F src/select.c 3fe63e3a29df661ba72a67eecd77e8ee82801def
 F src/shell.c 6f59240f69e65a1c4e1d06492eb9238092defc34
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in eec06462cba262c0ee03f38462a18a4bc66dda4e
@@ -127,7 +127,7 @@ F test/unique.test 22a46df72a3e0a3fd1a2d39e96fb59f18448dd5f
 F test/update.test 198360dfa14e65354dbcc66d5b98d8070780e42b
 F test/vacuum.test 4d8c8af30338577af03e563bc815d7898ae65258
 F test/version.test 605fd0d7e7d571370c32b12dbf395b58953de246
-F test/view.test 8b3b0b30674865af2c87acbdf945e369f92012a5
+F test/view.test 408fa464da35cf9c1fd9054c988f7e755a1cb0b6
 F test/where.test d719129a052280fe245a2ddcbd09bcc0b8c17ce4
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/lemon.c 14fedcde9cf70aa6040b89de164cf8f56f92a4b9
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 6d019e0baa3219614a9bc5b550a0f9fe3f7e731a
-R f7e61e2db6268bcec64f93ca941fa9e1
+P be7aed2011b4af868b6a0c370c3d41354ae0cdf4
+R ed36fbd16d08ea65dbe969ae9a7bbf4c
 U drh
-Z affbf408d9fd8c226a5447c7e8084f51
+Z 80e0fdd6a1502d3a16e3bb09c6a28adb
