@@ -1,5 +1,5 @@
-C Trivial\smodifications\sto\sprevent\scompiler\swarnings.\s(CVS\s1608)
-D 2004-06-16T12:02:47
+C Remove\sthe\ssecond\sdefinition\sof\sSQLITE_N_BTREE_META\sfrom\stest3.c.\s(CVS\s1609)
+D 2004-06-17T00:01:21
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -62,7 +62,7 @@ F src/table.c af14284fa36c8d41f6829e3f2819dce07d3e2de2
 F src/tclsqlite.c 6f88be282a3617c6739c043fd13571b5f2fe9922
 F src/test1.c 49c69d360ce09f8ecf56ec5e55fba625703d8b21
 F src/test2.c db0a0c30b59f1639cb8c2572be06439402833cc8
-F src/test3.c beafd0ccf7b9ae784744be1b1e66ffe8f64c25da
+F src/test3.c 7247090d15a5a43823079b6fd8dad1ed3cccdedf
 F src/test4.c a921a69821fd30209589228e64f94e9f715b6fe2
 F src/test5.c 13ac1db35b03acbc197ceb245fe862da5ebf2369
 F src/tokenize.c 183c5d7da11affab5d70d903d33409c8c0ce6c5b
@@ -87,7 +87,7 @@ F test/bigfile.test 5b079dfe7354a6c43b92a3ea5e49e4e5d88c789e
 F test/bigrow.test 8ab252dba108f12ad64e337b0f2ff31a807ac578
 F test/bind.test 4f5a19e84077b61ea797644b4942bb98b17bdd42
 F test/blob.test b6474275536614352d6e1c729f23a18ba1082ae9
-F test/btree.test 018909b1c7ffe1fdcbd07774250a52ea58de3a11
+F test/btree.test 77209dd37bb12ae501a0588b4c69bd7079ebdf1a
 F test/btree2.test aa4a6d05b1ea90b1acaf83ba89039dd302a88635
 F test/btree4.test 3797b4305694c7af6828675b0f4b1424b8ca30e4
 F test/btree5.test 8e5ff32c02e685d36516c6499add9375fe1377f2
@@ -224,7 +224,7 @@ F www/support.tcl 1801397edd271cc39a2aadd54e701184b5181248
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 7974c9a6f5ed86f02176376d99d909c43a4ae455
-R 85df656fc4f4b3a44d71d211647234ae
+P b3d5ad6f7832d46e34e99e4a1cb7e47c88f207a4
+R d93bea5ab3d12a073c52b74c322a8b4e
 U danielk1977
-Z fb4d7815b96c96ab66b53516ec35fdb2
+Z 8afc068f768f5a3187c752516f58beb6
