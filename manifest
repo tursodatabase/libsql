@@ -1,5 +1,5 @@
-C Remove\sextra\sbackslashes\sfrom\send\sof\slines\sin\sthe\sinstall\starget\sof\sthe\nMakefile.\s\sTicket\s#435.\s(CVS\s1083)
-D 2003-08-26T10:38:58
+C Close\sfiles\sbefore\sdeleting\sthem\son\stest\sscripts\sunder\sWin2k.\nTicket\s#434.\s(CVS\s1084)
+D 2003-08-26T11:18:19
 F Makefile.in f7e916ae863393827fa6a4cb292e3398096edcf1
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -127,7 +127,7 @@ F test/trigger3.test a95ccace88291449f5eae7139ec438a42f90654d
 F test/trigger4.test 542afce45774e8f8e1130b96b8675f414d6e4bd8
 F test/unique.test 0e38d4cc7affeef2527720d1dafd1f6870f02f2b
 F test/update.test 2ef5a6655f2966f0aef733a9f4495b3fe8e16809
-F test/vacuum.test 9a5a519b088287f6e20a4e936a59519b4df6a5de
+F test/vacuum.test 92a4f2f3d50841f1b904ec7cf8372fc0657a5367
 F test/version.test 605fd0d7e7d571370c32b12dbf395b58953de246
 F test/view.test 1ee12c6f8f4791a2c0655120d5562a49400cfe53
 F test/where.test cb3a2ed062ce4b5f08aff2d08027c6a46d68c47b
@@ -168,7 +168,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P ad7b017a1277c00b356343b36ade565baf404d6a
-R 58fd1e7045a9bcc02f88ce1b67617bc4
+P 1aa3658ef54fad7f2b7f61d91641472551468cdc
+R e70ec890d37fc97e4fac3e160d7ae3bc
 U drh
-Z 184ab376c622ce6d9c6acacb52d6f585
+Z 17d590e2ec78d9d5f695b403c303ad26
