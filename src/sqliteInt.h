@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.216 2004/02/21 13:31:10 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.217 2004/02/21 19:02:30 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -182,6 +182,7 @@ typedef unsigned INTPTR_TYPE uptr; /* Big enough to hold a pointer */
 # define sqliteStrNDup(X,Y) sqliteStrNDup_(X,Y,__FILE__,__LINE__)
   void sqliteStrRealloc(char**);
 #else
+# define sqliteRealloc_(X,Y) sqliteRealloc(X,Y)
 # define sqliteStrRealloc(X)
 #endif
 
@@ -1111,7 +1112,8 @@ void sqliteRealToSortable(double r, char *);
   char *sqliteStrNDup(const char*, int);
 # define sqliteCheckMemory(a,b)
 #endif
-char *sqliteMPrintf(const char *,...);
+char *sqliteMPrintf(const char*, ...);
+char *sqliteVMPrintf(const char*, va_list);
 void sqliteSetString(char **, const char *, ...);
 void sqliteSetNString(char **, ...);
 void sqliteErrorMsg(Parse*, const char*, ...);
@@ -1256,5 +1258,5 @@ int sqliteFixExpr(DbFixer*, Expr*);
 int sqliteFixExprList(DbFixer*, ExprList*);
 int sqliteFixTriggerStep(DbFixer*, TriggerStep*);
 double sqliteAtoF(const char *z);
-int sqlite_snprintf(int,char*,const char*,...);
+char *sqlite_snprintf(int,char*,const char*,...);
 int sqliteFitsIn32Bits(const char *);

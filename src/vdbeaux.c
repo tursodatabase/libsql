@@ -787,6 +787,8 @@ static void Cleanup(Vdbe *p){
     p->keylistStackDepth = 0;
     p->keylistStack = 0;
   }
+  sqliteFree(p->contextStack);
+  p->contextStack = 0;
   sqliteFree(p->zErrMsg);
   p->zErrMsg = 0;
 }
