@@ -24,9 +24,9 @@
 **     PRAGMA
 **
 <<<<<<< build.c
-** $Id: build.c,v 1.264 2004/11/05 05:10:29 drh Exp $
+** $Id: build.c,v 1.265 2004/11/05 05:20:40 drh Exp $
 =======
-** $Id: build.c,v 1.264 2004/11/05 05:10:29 drh Exp $
+** $Id: build.c,v 1.265 2004/11/05 05:20:40 drh Exp $
 >>>>>>> 1.262
 */
 #include "sqliteInt.h"
@@ -2368,7 +2368,7 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName){
     sqlite3VdbeChangeP3(v, base+1, pIndex->zName, 0);
     sqlite3ChangeCookie(db, v, pIndex->iDb);
     /* sqlite3VdbeAddOp(v, OP_Destroy, pIndex->tnum, pIndex->iDb); */
-    destroyRootPage(v, pIndex->tnum, pIndex->iDb);
+    destroyRootPage(pParse, pIndex->tnum, pIndex->iDb);
     sqlite3VdbeAddOp(v, OP_Close, 0, 0);
     sqlite3VdbeOp3(v, OP_DropIndex, pIndex->iDb, 0, pIndex->zName, 0);
   }

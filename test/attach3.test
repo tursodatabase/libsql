@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and schema changes to attached databases.
 #
-# $Id: attach3.test,v 1.11 2004/11/05 05:10:29 drh Exp $
+# $Id: attach3.test,v 1.12 2004/11/05 05:20:40 drh Exp $
 #
 
 
