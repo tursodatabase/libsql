@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.56 2003/01/14 00:44:09 drh Exp $
+** $Id: util.c,v 1.57 2003/01/29 14:06:09 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -1196,7 +1196,7 @@ int sqliteSafetyOff(sqlite *db){
 ** at the wrong time or in the wrong sequence.
 */
 int sqliteSafetyCheck(sqlite *db){
-  if( db->recursionDepth ){
+  if( db->pVdbe!=0 ){
     db->magic = SQLITE_MAGIC_ERROR;
     return 1;
   }

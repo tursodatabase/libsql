@@ -15,7 +15,7 @@
 ** or VDBE.  The VDBE implements an abstract machine that runs a
 ** simple program to access and modify the underlying database.
 **
-** $Id: vdbe.h,v 1.62 2003/01/28 23:13:13 drh Exp $
+** $Id: vdbe.h,v 1.63 2003/01/29 14:06:10 drh Exp $
 */
 #ifndef _SQLITE_VDBE_H_
 #define _SQLITE_VDBE_H_
@@ -61,13 +61,6 @@ typedef struct VdbeOp VdbeOp;
 ** the macro again restores the address.
 */
 #define ADDR(X)  (-1-(X))
-
-/*
-** The sqliteVdbeExec() routine can return any of the normal SQLite return
-** codes defined in sqlite.h.  But it can also return the following
-** additional values:
-*/
-#define SQLITE_CALLBACK    100    /* sqliteVdbeExec() hit an OP_Callback */
 
 /*
 ** The makefile scans the vdbe.c source file and creates the "opcodes.h"

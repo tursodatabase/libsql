@@ -36,7 +36,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.200 2003/01/28 23:13:12 drh Exp $
+** $Id: vdbe.c,v 1.201 2003/01/29 14:06:09 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -242,6 +242,7 @@ struct Keylist {
 */
 struct Vdbe {
   sqlite *db;         /* The whole database */
+  Vdbe *pPrev,*pNext; /* Linked list of VDBEs with the same Vdbe.db */
   Btree *pBt;         /* Opaque context structure used by DB backend */
   FILE *trace;        /* Write an execution trace here, if not NULL */
   int nOp;            /* Number of instructions in the program */
@@ -316,6 +317,12 @@ Vdbe *sqliteVdbeCreate(sqlite *db){
   if( p==0 ) return 0;
   p->pBt = db->pBe;
   p->db = db;
+  if( db->pVdbe ){
+    db->pVdbe->pPrev = p;
+  }
+  p->pNext = db->pVdbe;
+  p->pPrev = 0;
+  db->pVdbe = p;
   p->magic = VDBE_MAGIC_INIT;
   return p;
 }
@@ -763,9 +770,14 @@ int sqlite_step(
   const char ***pazColName     /* OUT: Column names and datatypes */
 ){
   Vdbe *p = (Vdbe*)pVm;
+  sqlite *db;
   int rc;
 
   if( p->magic!=VDBE_MAGIC_RUN ){
+    return SQLITE_MISUSE;
+  }
+  db = p->db;
+  if( sqliteSafetyOn(db) ){
     return SQLITE_MISUSE;
   }
   if( p->explain ){
@@ -773,7 +785,7 @@ int sqlite_step(
   }else{
     rc = sqliteVdbeExec(p);
   }
-  if( rc!=SQLITE_DONE ){
+  if( rc==SQLITE_DONE || rc==SQLITE_ROW ){
     *pazColName = (const char**)p->azColName;
     *pN = p->nResColumn;
   }else{
@@ -784,6 +796,9 @@ int sqlite_step(
     *pazValue = (const char**)p->azResColumn;
   }else{
     *pazValue = 0;
+  }
+  if( sqliteSafetyOff(db) ){
+    return SQLITE_MISUSE;
   }
   return rc;
 }
@@ -1191,6 +1206,16 @@ void sqliteVdbeDelete(Vdbe *p){
   int i;
   if( p==0 ) return;
   Cleanup(p);
+  if( p->pPrev ){
+    p->pPrev->pNext = p->pNext;
+  }else{
+    assert( p->db->pVdbe==p );
+    p->db->pVdbe = p->pNext;
+  }
+  if( p->pNext ){
+    p->pNext->pPrev = p->pPrev;
+  }
+  p->pPrev = p->pNext = 0;
   if( p->nOpAlloc==0 ){
     p->aOp = 0;
     p->nOp = 0;
@@ -1255,7 +1280,7 @@ int sqliteVdbeList(
       p->pc = i+1;
       p->azResColumn = p->zStack;
       p->nResColumn = 5;
-      return SQLITE_CALLBACK;
+      return SQLITE_ROW;
     }
     if( sqliteSafetyOff(db) ){
       p->rc = SQLITE_MISUSE;
@@ -1453,7 +1478,7 @@ __inline__ unsigned long long int hwtime(void){
 **
 ** The behavior of sqliteVdbeExec() is influenced by the parameters to
 ** this routine.  If xCallback is NULL, then sqliteVdbeExec() will return
-** with SQLITE_CALLBACK whenever there is a row of the result set ready
+** with SQLITE_ROW whenever there is a row of the result set ready
 ** to be delivered.  p->azResColumn will point to the row and 
 ** p->nResColumn gives the number of columns in the row.  If xCallback
 ** is not NULL, then the xCallback() routine is invoked to process each
@@ -1523,7 +1548,7 @@ void sqliteVdbeMakeReady(
 **
 ** Whenever a row or result data is available, this routine will either
 ** invoke the result callback (if there is one) or return with
-** SQLITE_CALLBACK.
+** SQLITE_ROW.
 **
 ** If an attempt is made to open a locked database, then this routine
 ** will either invoke the busy callback (if there is one) or it will
@@ -1887,7 +1912,7 @@ case OP_Callback: {
     p->nResColumn = pOp->p1;
     p->popStack = pOp->p1;
     p->pc = pc + 1;
-    return SQLITE_CALLBACK;
+    return SQLITE_ROW;
   }
   if( sqliteSafetyOff(db) ) goto abort_due_to_misuse; 
   if( p->xCallback(p->pCbArg, pOp->p1, &zStack[i], p->azColName)!=0 ){
@@ -1926,6 +1951,7 @@ case OP_NullCallback: {
     p->nCallback++;
     if( sqlite_malloc_failed ) goto no_mem;
   }
+  p->nResColumn = pOp->p1;
   break;
 }
 
@@ -4843,7 +4869,7 @@ case OP_SortCallback: {
     p->azResColumn = (char**)zStack[i];
     p->nResColumn = pOp->p1;
     p->popStack = 1;
-    return SQLITE_CALLBACK;
+    return SQLITE_ROW;
   }else{
     if( sqliteSafetyOff(db) ) goto abort_due_to_misuse;
     if( p->xCallback(p->pCbArg, pOp->p1, (char**)zStack[i], p->azColName)!=0 ){

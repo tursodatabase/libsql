@@ -1,0 +1,108 @@
+# 2003 January 29
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this script testing the callback-free C/C++ API.
+#
+# $Id: capi2.test,v 1.1 2003/01/29 14:06:10 drh Exp $
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# Check basic functionality
+#
+do_test capi2-1.1 {
+  db close
+  set ::DB [sqlite db test.db]
+  execsql {CREATE TABLE t1(a,b,c)}
+  set ::VM [sqlite_compile $::DB {SELECT name, rowid FROM sqlite_master} tail]
+  set tail
+} {}
+do_test capi2-1.2 {
+  sqlite_step $::VM ::N ::VALUES ::COLNAMES
+} {SQLITE_ROW}
+do_test capi2-1.3 {
+  set ::N
+} {2}
+do_test capi2-1.4 {
+  set ::VALUES
+} {t1 1}
+do_test capi2-1.5 {
+  set ::COLNAMES
+} {name rowid text INTEGER}
+do_test capi2-1.6 {
+  set ::N x
+  set ::VALUES y
+  set ::COLNAMES z
+  sqlite_step $::VM ::N ::VALUES ::COLNAMES
+} {SQLITE_DONE}
+do_test capi2-1.7 {
+  list $::N $::VALUES $::COLNAMES
+} {2 {} {name rowid text INTEGER}}
+do_test capi2-1.8 {
+  set ::N x
+  set ::VALUES y
+  set ::COLNAMES z
+  sqlite_step $::VM ::N ::VALUES ::COLNAMES
+} {SQLITE_MISUSE}
+do_test capi2-1.9 {
+  list $::N $::VALUES $::COLNAMES
+} {x y z}
+do_test capi2-1.10 {
+  sqlite_finalize $::VM
+} {}
+
+# Check to make sure that the "tail" of a multi-statement SQL script
+# is returned by sqlite_compile.
+#
+do_test capi2-2.1 {
+  set ::SQL {
+    SELECT name, rowid FROM sqlite_master;
+    SELECT name, rowid FROM sqlite_temp_master;
+    -- A comment at the end
+  }
+  set ::VM [sqlite_compile $::DB $::SQL ::SQL]
+  set ::SQL
+} {
+    SELECT name, rowid FROM sqlite_temp_master;
+    -- A comment at the end
+  }
+do_test capi2-2.2 {
+  set r [sqlite_step $::VM n val colname]
+  lappend r $n $val $colname
+} {SQLITE_ROW 2 {t1 1} {name rowid text INTEGER}}
+do_test capi2-2.3 {
+  set r [sqlite_step $::VM n val colname]
+  lappend r $n $val $colname
+} {SQLITE_DONE 2 {} {name rowid text INTEGER}}
+do_test capi2-2.4 {
+  sqlite_finalize $::VM
+} {}
+do_test capi2-2.5 {
+  set ::VM [sqlite_compile $::DB $::SQL ::SQL]
+  set ::SQL
+} {
+    -- A comment at the end
+  }
+do_test capi2-2.6 {
+  set r [sqlite_step $::VM n val colname]
+  lappend r $n $val $colname
+} {SQLITE_DONE 2 {} {name rowid text INTEGER}}
+do_test capi2-2.7 {
+  sqlite_finalize $::VM
+} {}
+do_test capi2-2.8 {
+  set ::VM [sqlite_compile $::DB $::SQL ::SQL]
+  list $::SQL $::VM
+} {{} {}}
+
+
+finish_test

@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.54 2003/01/28 23:13:12 drh Exp $
+** $Id: tokenize.c,v 1.55 2003/01/29 14:06:09 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -422,6 +422,7 @@ int sqliteRunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
     return 1;
   }
   pParse->sLastToken.dyn = 0;
+  pParse->zTail = zSql;
   while( sqlite_malloc_failed==0 && zSql[i]!=0 ){
     
     assert( i>=0 );
@@ -445,6 +446,10 @@ int sqliteRunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
         nErr++;
         goto abort_parse;
       }
+      case TK_SEMI: {
+        pParse->zTail = &zSql[i];
+        /* Fall thru into the default case */
+      }
       default: {
         sqliteParser(pEngine, tokenType, pParse->sLastToken, pParse);
         lastTokenParsed = tokenType;
@@ -459,6 +464,7 @@ abort_parse:
   if( zSql[i]==0 && nErr==0 && pParse->rc==SQLITE_OK ){
     if( lastTokenParsed!=TK_SEMI ){
       sqliteParser(pEngine, TK_SEMI, pParse->sLastToken, pParse);
+      pParse->zTail = &zSql[i];
     }
     sqliteParser(pEngine, 0, pParse->sLastToken, pParse);
   }

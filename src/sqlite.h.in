@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.40 2003/01/28 23:13:12 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.41 2003/01/29 14:06:09 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -588,6 +588,8 @@ typedef struct sqlite_vm sqlite_vm;
 **
 ** *ppVm is left pointing to a "virtual machine" that can be used to execute
 ** the compiled statement.  Or if there is an error, *ppVm may be set to NULL.
+** If the input text contained no SQL (if the input is and empty string or
+** a comment) then *ppVm is set to NULL.
 **
 ** If any errors are detected during compilation, an error message is written
 ** into space obtained from malloc() and *pzErrMsg is made to point to that

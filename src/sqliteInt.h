@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.157 2003/01/28 23:13:12 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.158 2003/01/29 14:06:09 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -224,7 +224,7 @@ struct sqlite {
   int onError;                  /* Default conflict algorithm */
   int magic;                    /* Magic number for detect library misuse */
   int nChange;                  /* Number of rows changed */
-  int recursionDepth;           /* Number of nested calls to sqlite_exec() */
+  struct Vdbe *pVdbe;           /* List of active virtual machines */
 #ifndef SQLITE_OMIT_TRACE
   void (*xTrace)(void*,const char*);     /* Trace function */
   void *pTraceArg;                       /* Argument to the trace function */
@@ -737,6 +737,7 @@ struct Parse {
   Token sErrToken;     /* The token at which the error occurred */
   Token sFirstToken;   /* The first token parsed */
   Token sLastToken;    /* The last token parsed */
+  const char *zTail;   /* All SQL text past the last semicolon parsed */
   Table *pNewTable;    /* A table being constructed by CREATE TABLE */
   Vdbe *pVdbe;         /* An engine for executing database bytecode */
   u8 colNamesSet;      /* TRUE after OP_ColumnName has been issued to pVdbe */

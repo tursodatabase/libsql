@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.110 2003/01/28 23:13:12 drh Exp $
+** $Id: main.c,v 1.111 2003/01/29 14:06:08 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -622,8 +622,7 @@ static int sqliteMain(
     sqliteSetString(pzErrMsg, "obsolete database file format", 0);
     return SQLITE_ERROR;
   }
-  if( db->recursionDepth==0 ){ db->nChange = 0; }
-  db->recursionDepth++;
+  if( db->pVdbe==0 ){ db->nChange = 0; }
   memset(&sParse, 0, sizeof(sParse));
   sParse.db = db;
   sParse.pBe = db->pBe;
@@ -642,6 +641,7 @@ static int sqliteMain(
     db->flags &= ~SQLITE_InTrans;
     sqliteResetInternalSchema(db);
   }
+  if( sParse.rc==SQLITE_DONE ) sParse.rc = SQLITE_OK;
   if( sParse.rc!=SQLITE_OK && pzErrMsg && *pzErrMsg==0 ){
     sqliteSetString(pzErrMsg, sqlite_error_string(sParse.rc), 0);
   }
@@ -649,11 +649,10 @@ static int sqliteMain(
   if( sParse.rc==SQLITE_SCHEMA ){
     sqliteResetInternalSchema(db);
   }
-  db->recursionDepth--;
   if( sParse.useCallback==0 ){
     assert( ppVm );
-    *ppVm = sParse.pVdbe;
-    *pzTail = &sParse.sLastToken.z[sParse.sLastToken.n];
+    *ppVm = (sqlite_vm*)sParse.pVdbe;
+    *pzTail = sParse.zTail;
   }
   if( sqliteSafetyOff(db) ) goto exec_misuse;
   return sParse.rc;

@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.17 2003/01/28 23:13:12 drh Exp $
+** $Id: test1.c,v 1.18 2003/01/29 14:06:09 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -733,8 +733,10 @@ static int test_compile(
     sqlite_freemem(zErr);
     return TCL_ERROR;
   }
-  sprintf(zBuf, "%p", vm);
-  Tcl_AppendResult(interp, zBuf, 0);
+  if( vm ){
+    sprintf(zBuf, "%p", vm);
+    Tcl_AppendResult(interp, zBuf, 0);
+  }
   Tcl_SetVar(interp, argv[3], zTail, 0);
   return TCL_OK;
 }
@@ -765,7 +767,7 @@ static int test_step(
   }
   if( getVmPointer(interp, argv[1], &vm) ) return TCL_ERROR;
   rc = sqlite_step(vm, &N, &azValue, &azColName);
-  if( rc==SQLITE_DONE || SQLITE_ROW ){
+  if( rc==SQLITE_DONE || rc==SQLITE_ROW ){
     sprintf(zBuf, "%d", N);
     Tcl_SetVar(interp, argv[2], zBuf, 0);
     Tcl_SetVar(interp, argv[3], "", 0);
@@ -777,15 +779,15 @@ static int test_step(
     }
     Tcl_SetVar(interp, argv[4], "", 0);
     for(i=0; i<N*2; i++){
-      Tcl_SetVar(interp, argv[4], azValue[i] ? azValue[i] : "",
+      Tcl_SetVar(interp, argv[4], azColName[i] ? azColName[i] : "",
           TCL_APPEND_VALUE | TCL_LIST_ELEMENT);
     }
   }
   switch( rc ){
     case SQLITE_DONE:   zRc = "SQLITE_DONE";    break;
-    case SQLITE_BUSY:   zRc = "SQLITE_DONE";    break;
-    case SQLITE_ROW:    zRc = "SQLITE_DONE";    break;
-    case SQLITE_ERROR:  zRc = "SQLITE_DONE";    break;
+    case SQLITE_BUSY:   zRc = "SQLITE_BUSY";    break;
+    case SQLITE_ROW:    zRc = "SQLITE_ROW";     break;
+    case SQLITE_ERROR:  zRc = "SQLITE_ERROR";   break;
     case SQLITE_MISUSE: zRc = "SQLITE_MISUSE";  break;
     default:            zRc = "unknown";        break;
   }
@@ -809,7 +811,7 @@ static int test_finalize(
   char *zErrMsg = 0;
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], 
-       " VM NVAR VALUEVAR COLNAMEVAR", 0);
+       " VM\"", 0);
     return TCL_ERROR;
   }
   if( getVmPointer(interp, argv[1], &vm) ) return TCL_ERROR;
