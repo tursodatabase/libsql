@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.41 2002/06/25 01:09:13 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.42 2002/08/14 00:08:13 drh Exp $}
 
 puts {<html>
 <head>
@@ -282,7 +282,9 @@ for use by the engine.</p>
 
 <p>Each column definition is the name of the column followed by the
 datatype for that column, then one or more optional column constraints.
-The datatype for the column is (usually) ignored and may be omitted.
+SQLite is <a href="datatypes.html">typeless</a>.
+The datatype for the column does not constraint what data may be put
+in that column.
 All information is stored as null-terminated strings.
 The UNIQUE constraint causes an index to be created on the specified
 columns.  This index must contain unique keys.

@@ -299,6 +299,9 @@ download.html:	$(TOP)/www/download.tcl
 omitted.html:	$(TOP)/www/omitted.tcl
 	tclsh $(TOP)/www/omitted.tcl >omitted.html
 
+datatypes.html:	$(TOP)/www/datatypes.tcl
+	tclsh $(TOP)/www/datatypes.tcl >datatypes.html
+
 
 # Files to be published on the website.
 #
@@ -320,7 +323,8 @@ DOC = \
   faq.html \
   formatchng.html \
   conflict.html \
-  omitted.html
+  omitted.html \
+  datatypes.html
 
 doc:	$(DOC)
 	mkdir -p doc
