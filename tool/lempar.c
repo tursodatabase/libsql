@@ -58,55 +58,49 @@
 #define YY_NO_ACTION      (YYNSTATE+YYNRULE+2)
 #define YY_ACCEPT_ACTION  (YYNSTATE+YYNRULE+1)
 #define YY_ERROR_ACTION   (YYNSTATE+YYNRULE)
-/* Next is the action table.  Each entry in this table contains
-**
-**  +  An integer which is the number representing the look-ahead
-**     token
-**
-**  +  An integer indicating what action to take.  Number (N) between
-**     0 and YYNSTATE-1 mean shift the look-ahead and go to state N.
-**     Numbers between YYNSTATE and YYNSTATE+YYNRULE-1 mean reduce by
-**     rule N-YYNSTATE.  Number YYNSTATE+YYNRULE means that a syntax
-**     error has occurred.  Number YYNSTATE+YYNRULE+1 means the parser
-**     accepts its input.
-**
-**  +  A pointer to the next entry with the same hash value.
-**
-** The action table is really a series of hash tables.  Each hash
-** table contains a number of entries which is a power of two.  The
-** "state" table (which follows) contains information about the starting
-** point and size of each hash table.
-*/
-struct yyActionEntry {
-  YYCODETYPE   lookahead;   /* The value of the look-ahead token */
-  YYCODETYPE   next;        /* Next entry + 1. Zero at end of collision chain */
-  YYACTIONTYPE action;      /* Action to take for this look-ahead */
-};
-typedef struct yyActionEntry yyActionEntry;
-static const yyActionEntry yyActionTable[] = {
-%%
-};
 
-/* The state table contains information needed to look up the correct
-** action in the action table, given the current state of the parser.
-** Information needed includes:
+/* Next are that ables used to determine what action to take based on the
+** current state and lookahead token.  These tables are used to implement
+** functions that take a state number and lookahead value and return an
+** action integer.  
 **
-**  +  A pointer to the start of the action hash table in yyActionTable.
+** The action integer is a number N between
+** 0 and YYNSTATE-1 mean shift the look-ahead and go to state N.
+** Numbers between YYNSTATE and YYNSTATE+YYNRULE-1 mean reduce by
+** rule N-YYNSTATE.  Number YYNSTATE+YYNRULE means that a syntax
+** error has occurred.  Number YYNSTATE+YYNRULE+1 means the parser
+** accepts its input.
 **
-**  +  The number of entries in the action hash table.
+** The action table is constructed as a single large hash table with
+** a perfect hash.  Given state S and lookahead X, the action is computed
+** as
 **
-**  +  The default action.  This is the action to take if no entry for
-**     the given look-ahead is found in the action hash table.
+**      yy_action[ yy_shift_ofst[S] + X ]
+**
+** If the index yy_shift_ofst[S]+X is out of range or if the value
+** yy_lookahead[yy_shift_ofst[S]+X] is not equal to X or if yy_shift_ofst[S]
+** is equal to YY_SHIFT_USE_DFLT, it means that the action is not in the table
+** and that yy_default[S] should be used instead.  
+**
+** The formula above is for computing the action when the lookahead is
+** a terminal symbol.  If the lookahead is a non-terminal (as occurs after
+** a reduce action) then the yy_reduce_ofst[] array is used in place of
+** the yy_shift_ofst[] array and YY_REDUCE_USE_DFLT is used in place of
+** YY_SHIFT_USE_DFLT.
+**
+** The following are the tables generated in this section:
+**
+**  yy_action[]        A single table containing all actions.
+**  yy_lookahead[]     A table containing the lookahead for each entry in
+**                     yy_action.  Used to detect hash collisions.
+**  yy_shift_ofst[]    For each state, the offset into yy_action for
+**                     shifting terminals.
+**  yy_reduce_ofst[]   For each state, the offset into yy_action for
+**                     shifting non-terminals after a reduce.
+**  yy_default[]       Default action for each state.
 */
-struct yyStateEntry {
-  const yyActionEntry *hashtbl;  /* Start of the hash table in yyActionTable */
-  YYCODETYPE nEntry;             /* Number of entries in action hash table */
-  YYACTIONTYPE actionDefault;    /* Default action if look-ahead not found */
-};
-typedef struct yyStateEntry yyStateEntry;
-static const yyStateEntry yyStateTable[] = {
 %%
-};
+#define YY_SZ_ACTTAB (sizeof(yy_action)/sizeof(yy_action[0]))
 
 /* The next table maps tokens into fallback tokens.  If a construct
 ** like the following:
@@ -312,32 +306,31 @@ void ParseFree(
 }
 
 /*
-** Find the appropriate action for a parser given the look-ahead token.
+** Find the appropriate action for a parser given the terminal
+** look-ahead token iLookAhead.
 **
 ** If the look-ahead token is YYNOCODE, then check to see if the action is
 ** independent of the look-ahead.  If it is, return the action, otherwise
 ** return YY_NO_ACTION.
 */
-static int yy_find_parser_action(
+static int yy_find_shift_action(
   yyParser *pParser,        /* The parser */
-  int iLookAhead             /* The look-ahead token */
+  int iLookAhead            /* The look-ahead token */
 ){
-  const yyStateEntry *pState;   /* Appropriate entry in the state table */
-  const yyActionEntry *pAction; /* Action appropriate for the look-ahead */
-  int iFallback;                /* Fallback token */
+  int i;
  
   /* if( pParser->yyidx<0 ) return YY_NO_ACTION;  */
-  pState = &yyStateTable[pParser->yytop->stateno];
-  if( pState->nEntry==0 ){
-    return pState->actionDefault;
-  }else if( iLookAhead!=YYNOCODE ){
-    pAction = &pState->hashtbl[iLookAhead % pState->nEntry];
-    while( 1 ){
-      if( pAction->lookahead==iLookAhead ) return pAction->action;
-      if( pAction->next==0 ) break;
-      pAction = &pState->hashtbl[pAction->next-1];
-    }
+  i = yy_shift_ofst[pParser->yytop->stateno];
+  if( i==YY_SHIFT_USE_DFLT ){
+    return yy_default[pParser->yytop->stateno];
+  }
+  if( iLookAhead==YYNOCODE ){
+    return YY_NO_ACTION;
+  }
+  i += iLookAhead;
+  if( i<0 || i>=YY_SZ_ACTTAB || yy_lookahead[i]!=iLookAhead ){
 #ifdef YYFALLBACK
+    int iFallback;            /* Fallback token */
     if( iLookAhead<sizeof(yyFallback)/sizeof(yyFallback[0])
            && (iFallback = yyFallback[iLookAhead])!=0 ){
 #ifndef NDEBUG
@@ -346,13 +339,42 @@ static int yy_find_parser_action(
            yyTracePrompt, yyTokenName[iLookAhead], yyTokenName[iFallback]);
       }
 #endif
-      return yy_find_parser_action(pParser, iFallback);
+      return yy_find_shift_action(pParser, iFallback);
     }
 #endif
-  }else if( pState->hashtbl->lookahead!=YYNOCODE ){
+    return yy_default[pParser->yytop->stateno];
+  }else{
+    return yy_action[i];
+  }
+}
+
+/*
+** Find the appropriate action for a parser given the non-terminal
+** look-ahead token iLookAhead.
+**
+** If the look-ahead token is YYNOCODE, then check to see if the action is
+** independent of the look-ahead.  If it is, return the action, otherwise
+** return YY_NO_ACTION.
+*/
+static int yy_find_reduce_action(
+  yyParser *pParser,        /* The parser */
+  int iLookAhead            /* The look-ahead token */
+){
+  int i;
+ 
+  i = yy_reduce_ofst[pParser->yytop->stateno];
+  if( i==YY_REDUCE_USE_DFLT ){
+    return yy_default[pParser->yytop->stateno];
+  }
+  if( iLookAhead==YYNOCODE ){
     return YY_NO_ACTION;
   }
-  return pState->actionDefault;
+  i += iLookAhead;
+  if( i<0 || i>=YY_SZ_ACTTAB || yy_lookahead[i]!=iLookAhead ){
+    return yy_default[pParser->yytop->stateno];
+  }else{
+    return yy_action[i];
+  }
 }
 
 /*
@@ -447,7 +469,7 @@ static void yy_reduce(
   yysize = yyRuleInfo[yyruleno].nrhs;
   yypParser->yyidx -= yysize;
   yypParser->yytop -= yysize;
-  yyact = yy_find_parser_action(yypParser,yygoto);
+  yyact = yy_find_reduce_action(yypParser,yygoto);
   if( yyact < YYNSTATE ){
     yy_shift(yypParser,yyact,yygoto,&yygotominor);
   }else if( yyact == YYNSTATE + YYNRULE + 1 ){
@@ -559,7 +581,7 @@ void Parse(
 #endif
 
   do{
-    yyact = yy_find_parser_action(yypParser,yymajor);
+    yyact = yy_find_shift_action(yypParser,yymajor);
     if( yyact<YYNSTATE ){
       yy_shift(yypParser,yyact,yymajor,&yyminorunion);
       yypParser->yyerrcnt--;
@@ -612,7 +634,7 @@ void Parse(
          while(
           yypParser->yyidx >= 0 &&
           yypParser->yytop->major != YYERRORSYMBOL &&
-          (yyact = yy_find_parser_action(yypParser,YYERRORSYMBOL)) >= YYNSTATE
+          (yyact = yy_find_shift_action(yypParser,YYERRORSYMBOL)) >= YYNSTATE
         ){
           yy_pop_parser_stack(yypParser);
         }

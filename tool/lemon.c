@@ -10,6 +10,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdlib.h>
 
 extern void qsort();
 extern double strtod();
@@ -215,10 +216,11 @@ struct state {
   struct config *cfp;      /* All configurations in this set */
   int index;               /* Sequencial number for this state */
   struct action *ap;       /* Array of actions for this state */
-  int naction;             /* Number of actions for this state */
-  int tabstart;            /* First index of the action table */
-  int tabdfltact;          /* Default action */
+  int nTknAct, nNtAct;     /* Number of actions on terminals and nonterminals */
+  int iTknOfst, iNtOfst;   /* yy_action[] offset for terminals and nonterms */
+  int iDflt;               /* Default action */
 };
+#define NO_OFFSET (-2147483647)
 
 /* A followset propagation link indicates that the contents of one
 ** configuration followset should be propagated to another whenever
@@ -394,6 +396,160 @@ char *arg;
     new->x.rp = (struct rule *)arg;
   }
 }
+/********************** New code to implement the "acttab" module ***********/
+/*
+** This module implements routines use to construct the yy_action[] table.
+*/
+
+/*
+** The state of the yy_action table under construction is an instance of
+** the following structure
+*/
+typedef struct acttab acttab;
+struct acttab {
+  int nAction;                 /* Number of used slots in aAction[] */
+  int nActionAlloc;            /* Slots allocated for aAction[] */
+  struct {
+    int lookahead;             /* Value of the lookahead token */
+    int action;                /* Action to take on the given lookahead */
+  } *aAction,                  /* The yy_action[] table under construction */
+    *aLookahead;               /* A single new transaction set */
+  int mnLookahead;             /* Minimum aLookahead[].lookahead */
+  int mnAction;                /* Action associated with mnLookahead */
+  int mxLookahead;             /* Maximum aLookahead[].lookahead */
+  int nLookahead;              /* Used slots in aLookahead[] */
+  int nLookaheadAlloc;         /* Slots allocated in aLookahead[] */
+};
+
+/* Return the number of entries in the yy_action table */
+#define acttab_size(X) ((X)->nAction)
+
+/* The value for the N-th entry in yy_action */
+#define acttab_yyaction(X,N)  ((X)->aAction[N].action)
+
+/* The value for the N-th entry in yy_lookahead */
+#define acttab_yylookahead(X,N)  ((X)->aAction[N].lookahead)
+
+/* Free all memory associated with the given acttab */
+void acttab_free(acttab *p){
+  free( p->aAction );
+  free( p->aLookahead );
+  free( p );
+}
+
+/* Allocate a new acttab structure */
+acttab *acttab_alloc(void){
+  acttab *p = malloc( sizeof(*p) );
+  if( p==0 ){
+    fprintf(stderr,"Unable to allocate memory for a new acttab.");
+    exit(1);
+  }
+  memset(p, 0, sizeof(*p));
+  return p;
+}
+
+/* Add a new action to the current transaction set
+*/
+void acttab_action(acttab *p, int lookahead, int action){
+  if( p->nLookahead>=p->nLookaheadAlloc ){
+    p->nLookaheadAlloc += 25;
+    p->aLookahead = realloc( p->aLookahead,
+                             sizeof(p->aLookahead[0])*p->nLookaheadAlloc );
+    if( p->aLookahead==0 ){
+      fprintf(stderr,"malloc failed\n");
+      exit(1);
+    }
+  }
+  if( p->nLookahead==0 ){
+    p->mxLookahead = lookahead;
+    p->mnLookahead = lookahead;
+    p->mnAction = action;
+  }else{
+    if( p->mxLookahead<lookahead ) p->mxLookahead = lookahead;
+    if( p->mnLookahead>lookahead ){
+      p->mnLookahead = lookahead;
+      p->mnAction = action;
+    }
+  }
+  p->aLookahead[p->nLookahead].lookahead = lookahead;
+  p->aLookahead[p->nLookahead].action = action;
+  p->nLookahead++;
+}
+
+/*
+** Add the transaction set built up with prior calls to acttab_action()
+** into the current action table.  Then reset the transaction set back
+** to an empty set in preparation for a new round of acttab_action() calls.
+**
+** Return the offset into the action table of the new transaction.
+*/
+int acttab_insert(acttab *p){
+  int i, j, k, n;
+  assert( p->nLookahead>0 );
+
+  /* Make sure we have enough space to hold the expanded action table
+  ** in the worst case.  The worst case occurs if the transaction set
+  ** must be appended to the current action table
+  */
+  n = p->mxLookahead - p->mnLookahead + 1;
+  if( p->nAction + n >= p->nActionAlloc ){
+    p->nActionAlloc = p->nAction + n + p->nActionAlloc + 20;
+    p->aAction = realloc( p->aAction,
+                          sizeof(p->aAction[0])*p->nActionAlloc);
+    if( p->aAction==0 ){
+      fprintf(stderr,"malloc failed\n");
+      exit(1);
+    }
+    for(i=p->nAction; i<p->nActionAlloc; i++){
+      p->aAction[i].lookahead = -1;
+      p->aAction[i].action = -1;
+    }
+  }
+
+  /* Scan the existing action table looking for an offset where we can
+  ** insert the current transaction set.  Fall out of the loop when that
+  ** offset is found.  In the worst case, we fall out of the loop when
+  ** i reaches p->nAction, which means we append the new transaction set.
+  **
+  ** i is the index in p->aAction[] where p->mnLookahead is inserted.
+  */
+  for(i=0; i<p->nAction; i++){
+    if( p->aAction[i].lookahead<0 ){
+      for(j=0; j<p->nLookahead; j++){
+        k = p->aLookahead[j].lookahead - p->mnLookahead + i;
+        if( k<0 ) break;
+        if( p->aAction[k].lookahead>=0 ) break;
+      }
+      if( j==p->nLookahead ) break;  /* Fits in empty slots */
+    }else if( p->aAction[i].lookahead==p->mnLookahead ){
+      if( p->aAction[i].action!=p->mnAction ) continue;
+      for(j=0; j<p->nLookahead; j++){
+        k = p->aLookahead[j].lookahead - p->mnLookahead + i;
+        if( k<0 || k>=p->nAction ) break;
+        if( p->aLookahead[j].lookahead!=p->aAction[k].lookahead ) break;
+        if( p->aLookahead[j].action!=p->aAction[k].action ) break;
+      }
+      if( j<p->nLookahead ) continue;
+      n = 0;
+      for(j=0; j<p->nAction; j++){
+        if( p->aAction[j].lookahead==j+i-p->mnLookahead ) n++;
+      }
+      if( n==p->nLookahead ) break;  /* Same as a prior transaction set */
+    }
+  }
+  /* Insert transaction set at index i. */
+  for(j=0; j<p->nLookahead; j++){
+    k = p->aLookahead[j].lookahead - p->mnLookahead + i;
+    p->aAction[k] = p->aLookahead[j];
+    if( k>=p->nAction ) p->nAction = k+1;
+  }
+  p->nLookahead = 0;
+
+  /* Return the offset that is added to the lookahead in order to get the
+  ** index into yy_action of the action */
+  return i - p->mnLookahead;
+}
+
 /********************** From the file "assert.c" ****************************/
 /*
 ** A more efficient way of handling assertions.
@@ -1672,17 +1828,17 @@ void OptPrint(){
       case OPT_INT:
       case OPT_FINT:
         fprintf(errstream,"  %s=<integer>%*s  %s\n",op[i].label,
-          max-strlen(op[i].label)-9,"",op[i].message);
+          (int)(max-strlen(op[i].label)-9),"",op[i].message);
         break;
       case OPT_DBL:
       case OPT_FDBL:
         fprintf(errstream,"  %s=<real>%*s  %s\n",op[i].label,
-          max-strlen(op[i].label)-6,"",op[i].message);
+          (int)(max-strlen(op[i].label)-6),"",op[i].message);
         break;
       case OPT_STR:
       case OPT_FSTR:
         fprintf(errstream,"  %s=<string>%*s  %s\n",op[i].label,
-          max-strlen(op[i].label)-8,"",op[i].message);
+          (int)(max-strlen(op[i].label)-8),"",op[i].message);
         break;
     }
   }
@@ -2654,7 +2810,7 @@ struct lemon *lemp;
 
   cp = strrchr(lemp->filename,'.');
   if( cp ){
-    sprintf(buf,"%.*s.lt",(unsigned long)cp-(unsigned long)lemp->filename,lemp->filename);
+    sprintf(buf,"%.*s.lt",(int)(cp-lemp->filename),lemp->filename);
   }else{
     sprintf(buf,"%s.lt",lemp->filename);
   }
@@ -2949,15 +3105,23 @@ int mhflag;                 /* True if generating makeheaders output */
 
 /*
 ** Return the name of a C datatype able to represent values between
-** 0 and N, inclusive.
+** lwr and upr, inclusive.
 */
-static const char *minimum_size_type(int N){
-  if( N<=255 ){
-    return "unsigned char";
-  }else if( N<65535 ){
-    return "unsigned short int";
+static const char *minimum_size_type(int lwr, int upr){
+  if( lwr>=0 ){
+    if( upr<=255 ){
+      return "unsigned char";
+    }else if( upr<65535 ){
+      return "unsigned short int";
+    }else{
+      return "unsigned int";
+    }
+  }else if( lwr>=-127 && upr<=127 ){
+    return "signed char";
+  }else if( lwr>=-32767 && upr<32767 ){
+    return "short";
   }else{
-    return "unsigned int";
+    return "int";
   }
 }
 
@@ -2972,9 +3136,11 @@ int mhflag;     /* Output in makeheaders format if true */
   struct state *stp;
   struct action *ap;
   struct rule *rp;
-  int i, j;
-  int tablecnt;
+  struct acttab *pActtab;
+  int i, j, n;
   char *name;
+  int mnTknOfst, mxTknOfst;
+  int mnNtOfst, mxNtOfst;
 
   in = tplt_open(lemp);
   if( in==0 ) return;
@@ -3012,10 +3178,10 @@ int mhflag;     /* Output in makeheaders format if true */
   /* Generate the defines */
   fprintf(out,"/* \001 */\n");
   fprintf(out,"#define YYCODETYPE %s\n",
-    minimum_size_type(lemp->nsymbol+5)); lineno++;
+    minimum_size_type(0, lemp->nsymbol+5)); lineno++;
   fprintf(out,"#define YYNOCODE %d\n",lemp->nsymbol+1);  lineno++;
   fprintf(out,"#define YYACTIONTYPE %s\n",
-    minimum_size_type(lemp->nstate+lemp->nrule+5));  lineno++;
+    minimum_size_type(0, lemp->nstate+lemp->nrule+5));  lineno++;
   print_stack_union(out,lemp,&lineno,mhflag);
   if( lemp->stacksize ){
     if( atoi(lemp->stacksize)<=0 ){
@@ -3062,111 +3228,161 @@ int mhflag;     /* Output in makeheaders format if true */
   }
   tplt_xfer(lemp->name,in,out,&lineno);
 
-  /* Generate the action table.
+  /* Generate the action table and its associates:
   **
-  ** Each entry in the action table is an element of the following 
-  ** structure:
-  **   struct yyActionEntry {
-  **       YYCODETYPE            lookahead;
-  **       YYCODETYPE            next;
-  **       YYACTIONTYPE          action;
-  **   }
-  **
-  ** The entries are grouped into hash tables, one hash table for each
-  ** parser state.  The hash table has a size which is the number of
-  ** entries in that table.  In case of a collision, the "next" value
-  ** contains one more than the index into the hash table of the next
-  ** entry in the collision chain.  A "next" value of 0 means the end
-  ** of the chain has been reached.
+  **  yy_action[]        A single table containing all actions.
+  **  yy_lookahead[]     A table containing the lookahead for each entry in
+  **                     yy_action.  Used to detect hash collisions.
+  **  yy_shift_ofst[]    For each state, the offset into yy_action for
+  **                     shifting terminals.
+  **  yy_reduce_ofst[]   For each state, the offset into yy_action for
+  **                     shifting non-terminals after a reduce.
+  **  yy_default[]       Default action for each state.
   */
-  tablecnt = 0;
 
-  /* Loop over parser states */
-  for(i=0; i<lemp->nstate; i++){
-    int tablesize;              /* size of the hash table */
-    int j,k;                    /* Loop counter */
-    int collide[2048];          /* The collision chain for the table */
-    struct action *table[2048]; /* Build the hash table here */
-
-    /* Find the number of actions and initialize the hash table */
-    stp = lemp->sorted[i];
-    stp->tabstart = tablecnt;
-    stp->naction = 0;
-    for(ap=stp->ap; ap; ap=ap->next){
-      if( ap->sp->index!=lemp->nsymbol && compute_action(lemp,ap)>=0 ){
-        stp->naction++;
-      }
-    }
-    tablesize = stp->naction;
-    assert( tablesize<= sizeof(table)/sizeof(table[0]) );
-    for(j=0; j<tablesize; j++){
-      table[j] = 0;
-      collide[j] = -1;
-    }
-
-    /* Hash the actions into the hash table */
-    stp->tabdfltact = lemp->nstate + lemp->nrule;
-    for(ap=stp->ap; ap; ap=ap->next){
-      int action = compute_action(lemp,ap);
-      int h;
-      if( ap->sp->index==lemp->nsymbol ){
-        stp->tabdfltact = action;
-      }else if( action>=0 ){
-        h = ap->sp->index % tablesize;
-        ap->collide = table[h];
-        table[h] = ap;
-      }
-    }
-
-    /* Resolve collisions */
-    for(j=k=0; j<tablesize; j++){
-      if( table[j] && table[j]->collide ){
-        while( table[k] ) k++;
-        table[k] = table[j]->collide;
-        collide[j] = k;
-        table[j]->collide = 0;
-        if( k<j ) j = k-1;
-      }
-    }
-
-    /* Print the hash table */
-    if( tablesize>0 ){
-      fprintf(out,"/* State %d */\n",stp->index); lineno++;
-    }
-    for(j=0; j<tablesize; j++){
-      assert( table[j]!=0 );
-      fprintf(out,"  {%4d,%4d,%4d}, /* %2d: ",
-          table[j]->sp->index,
-          collide[j]+1,
-          compute_action(lemp,table[j]),
-          j+1);
-      PrintAction(table[j],out,22);
-      fprintf(out," */\n"); 
-      lineno++;
-    }
-
-    /* Update the table count */
-    tablecnt += tablesize;
-  }
-  tplt_xfer(lemp->name,in,out,&lineno);
-  lemp->tablesize = tablecnt;
-
-  /* Generate the state table
-  **
-  ** Each entry is an element of the following structure:
-  **    struct yyStateEntry {
-  **      struct yyActionEntry *hashtbl;
-  **      YYCODETYPE nEntry;
-  **      YYACTIONTYPE actionDefault;
-  **    }
-  */
+  /* Compute the actions on all states and count them up */
   for(i=0; i<lemp->nstate; i++){
     stp = lemp->sorted[i];
-    fprintf(out,"  { &yyActionTable[%d],%4d,%4d },\n",
-      stp->tabstart,
-      stp->naction,
-      stp->tabdfltact); lineno++;
+    stp->nTknAct = stp->nNtAct = 0;
+    stp->iDflt = lemp->nstate + lemp->nrule;
+    stp->iTknOfst = NO_OFFSET;
+    stp->iNtOfst = NO_OFFSET;
+    for(ap=stp->ap; ap; ap=ap->next){
+      if( compute_action(lemp,ap)>=0 ){
+        if( ap->sp->index<lemp->nterminal ){
+          stp->nTknAct++;
+        }else if( ap->sp->index<lemp->nsymbol ){
+          stp->nNtAct++;
+        }else{
+          stp->iDflt = compute_action(lemp, ap);
+        }
+      }
+    }
   }
+  mxTknOfst = mnTknOfst = 0;
+  mxNtOfst = mnNtOfst = 0;
+
+  /* Compute the action table.  Do this in two passes.  The first
+  ** pass does all entries with two or more actions and the second
+  ** pass does all states with a single action.
+  */
+  pActtab = acttab_alloc();
+  for(j=0; j<=1; j++){
+    for(i=0; i<lemp->nstate; i++){
+      stp = lemp->sorted[i];
+      if( (j==0 && stp->nTknAct>=2) || (j==1 && stp->nTknAct==1) ){
+        for(ap=stp->ap; ap; ap=ap->next){
+          int action;
+          if( ap->sp->index>=lemp->nterminal ) continue;
+          action = compute_action(lemp, ap);
+          if( action<0 ) continue;
+          acttab_action(pActtab, ap->sp->index, action);
+        }
+        stp->iTknOfst = acttab_insert(pActtab);
+        if( stp->iTknOfst<mnTknOfst ) mnTknOfst = stp->iTknOfst;
+        if( stp->iTknOfst>mxTknOfst ) mxTknOfst = stp->iTknOfst;
+      }
+      if( (j==0 && stp->nNtAct>=2) || (j==1 && stp->nNtAct==1) ){
+        for(ap=stp->ap; ap; ap=ap->next){
+          int action;
+          if( ap->sp->index<lemp->nterminal ) continue;
+          if( ap->sp->index==lemp->nsymbol ) continue;
+          action = compute_action(lemp, ap);
+          if( action<0 ) continue;
+          acttab_action(pActtab, ap->sp->index, action);
+        }
+        stp->iNtOfst = acttab_insert(pActtab);
+        if( stp->iNtOfst<mnNtOfst ) mnNtOfst = stp->iNtOfst;
+        if( stp->iNtOfst>mxNtOfst ) mxNtOfst = stp->iNtOfst;
+      }
+    }
+  }
+
+  /* Output the yy_action table */
+  fprintf(out,"static YYACTIONTYPE yy_action[] = {\n"); lineno++;
+  n = acttab_size(pActtab);
+  for(i=j=0; i<n; i++){
+    int action = acttab_yyaction(pActtab, i);
+    if( action<0 ) action = lemp->nsymbol + lemp->nrule + 2;
+    fprintf(out, " %4d,", action);
+    if( j==9 || i==n-1 ){
+      fprintf(out, "\n"); lineno++;
+      j = 0;
+    }else{
+      j++;
+    }
+  }
+  fprintf(out, "};\n"); lineno++;
+
+  /* Output the yy_lookahead table */
+  fprintf(out,"static YYCODETYPE yy_lookahead[] = {\n"); lineno++;
+  for(i=j=0; i<n; i++){
+    int la = acttab_yylookahead(pActtab, i);
+    if( la<0 ) la = lemp->nsymbol;
+    fprintf(out, " %4d,", la);
+    if( j==9 || i==n-1 ){
+      fprintf(out, "\n"); lineno++;
+      j = 0;
+    }else{
+      j++;
+    }
+  }
+  fprintf(out, "};\n"); lineno++;
+
+  /* Output the yy_shift_ofst[] table */
+  fprintf(out, "#define YY_SHIFT_USE_DFLT (%d)\n", mnTknOfst-1); lineno++;
+  fprintf(out, "static %s yy_shift_ofst[] = {\n", 
+          minimum_size_type(mnTknOfst-1, mxTknOfst)); lineno++;
+  n = lemp->nstate;
+  for(i=j=0; i<n; i++){
+    int ofst;
+    stp = lemp->sorted[i];
+    ofst = stp->iTknOfst;
+    if( ofst==NO_OFFSET ) ofst = mnTknOfst - 1;
+    fprintf(out, " %4d,", ofst);
+    if( j==9 || i==n-1 ){
+      fprintf(out, "\n"); lineno++;
+      j = 0;
+    }else{
+      j++;
+    }
+  }
+  fprintf(out, "};\n"); lineno++;
+
+  /* Output the yy_reduce_ofst[] table */
+  fprintf(out, "#define YY_REDUCE_USE_DFLT (%d)\n", mnNtOfst-1); lineno++;
+  fprintf(out, "static %s yy_reduce_ofst[] = {\n", 
+          minimum_size_type(mnNtOfst-1, mxNtOfst)); lineno++;
+  n = lemp->nstate;
+  for(i=j=0; i<n; i++){
+    int ofst;
+    stp = lemp->sorted[i];
+    ofst = stp->iNtOfst;
+    if( ofst==NO_OFFSET ) ofst = mnNtOfst - 1;
+    fprintf(out, " %4d,", ofst);
+    if( j==9 || i==n-1 ){
+      fprintf(out, "\n"); lineno++;
+      j = 0;
+    }else{
+      j++;
+    }
+  }
+  fprintf(out, "};\n"); lineno++;
+
+  /* Output the default action table */
+  fprintf(out, "static YYACTIONTYPE yy_default[] = {\n"); lineno++;
+  n = lemp->nstate;
+  for(i=j=0; i<n; i++){
+    stp = lemp->sorted[i];
+    fprintf(out, " %4d,", stp->iDflt);
+    if( j==9 || i==n-1 ){
+      fprintf(out, "\n"); lineno++;
+      j = 0;
+    }else{
+      j++;
+    }
+  }
+  fprintf(out, "};\n"); lineno++;
   tplt_xfer(lemp->name,in,out,&lineno);
 
   /* Generate the table of fallback tokens.
@@ -3336,7 +3552,6 @@ struct lemon *lemp;
   struct rule *rp, *rp2, *rbest;
   int nbest, n;
   int i;
-  int cnt;
 
   for(i=0; i<lemp->nstate; i++){
     stp = lemp->sorted[i];
