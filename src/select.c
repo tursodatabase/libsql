@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.134 2003/04/24 01:45:04 drh Exp $
+** $Id: select.c,v 1.135 2003/04/29 16:20:46 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -859,7 +859,12 @@ Table *sqliteResultSetOfSelect(Parse *pParse, char *zTabName, Select *pSelect){
 ** For the given SELECT statement, do three things.
 **
 **    (1)  Fill in the pTabList->a[].pTab fields in the SrcList that 
-**         defines the set of tables that should be scanned. 
+**         defines the set of tables that should be scanned.  For views,
+**         fill pTabList->a[].pSelect with a copy of the SELECT statement
+**         that implements the view.  A copy is made of the view's SELECT
+**         statement so that we can freely modify or delete that statement
+**         without worrying about messing up the presistent representation
+**         of the view.
 **
 **    (2)  Add terms to the WHERE clause to accomodate the NATURAL keyword
 **         on joins and the ON and USING clause of joins.
@@ -917,11 +922,18 @@ static int fillInColumnList(Parse *pParse, Select *p){
         return 1;
       }
       if( pTab->pSelect ){
+        /* We reach here if the named table is a really a view */
         if( sqliteViewGetColumnNames(pParse, pTab) ){
           return 1;
         }
-        sqliteSelectDelete(pTabList->a[i].pSelect);
-        pTabList->a[i].pSelect = sqliteSelectDup(pTab->pSelect);
+        /* If pTabList->a[i].pSelect!=0 it means we are dealing with a
+        ** view within a view.  The SELECT structure has already been
+        ** copied by the outer view so we can skip the copy step here
+        ** in the inner view.
+        */
+        if( pTabList->a[i].pSelect==0 ){
+          pTabList->a[i].pSelect = sqliteSelectDup(pTab->pSelect);
+        }
       }
     }
   }
@@ -1632,7 +1644,7 @@ static int flattenSubquery(
   if( p->pOrderBy && pSub->pOrderBy ) return 0;
 
   /* If we reach this point, it means flattening is permitted for the
-  ** i-th entry of the FROM clause in the outer query.
+  ** iFrom-th entry of the FROM clause in the outer query.
   */
   iParent = p->base + iFrom;
   iSub = pSub->base;

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.181 2003/04/25 17:52:11 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.182 2003/04/29 16:20:46 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -669,6 +669,7 @@ struct SrcList {
     Table *pTab;      /* An SQL table corresponding to zName */
     Select *pSelect;  /* A SELECT statement used in place of a table name */
     int jointype;     /* Type of join between this table and the next */
+    int iCursor;      /* The VDBE cursor number used to access this table */
     Expr *pOn;        /* The ON clause of a join */
     IdList *pUsing;   /* The USING clause of a join */
   } a[1];             /* One entry for each identifier on the list */

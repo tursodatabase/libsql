@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.149 2003/04/22 20:30:38 drh Exp $
+** $Id: build.c,v 1.150 2003/04/29 16:20:45 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1976,8 +1976,21 @@ SrcList *sqliteSrcListAppend(SrcList *pList, Token *pTable, Token *pDatabase){
       sqliteDequote(*pz);
     }
   }
+  pList->a[pList->nSrc].iCursor = -1;
   pList->nSrc++;
   return pList;
+}
+
+/*
+** Assign cursors to all tables in a SrcList
+*/
+void sqliteSrcListAssignCursors(Parse *pParse, SrcList *pList){
+  int i;
+  for(i=0; i<pList->nSrc; i++){
+    if( pList->a[i].iCursor<0 ){
+      pList->a[i].iCursor = ++pParse->nTab;
+    }
+  }
 }
 
 /*
