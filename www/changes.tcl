@@ -25,9 +25,16 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
-chng {2002 Nov ?? (2.7.4)} {
+chng {2002 Dec 17 (2.7.4)} {
 <li>Database files can now grow to be up to 2^41 bytes.  The old limit
     was 2^31 bytes.</li>
+<li>The optimizer will now scan tables in the reverse if doing so will
+    satisfy an ORDER BY ... DESC clause.</li>
+<li>The full pathname of the database file is now remembered even if
+    a relative path is passed into sqlite_open().  This allows 
+    the library to continue operating correctly after a chdir().</li>
+<li>Speed improvements in the VDBE.</li>
+<li>Lots of little bug fixes.</li>
 }
 
 chng {2002 Oct 30 (2.7.3)} {
