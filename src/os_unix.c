@@ -588,7 +588,7 @@ int sqlite3OsTempFileName(char *zBuf){
      "/tmp",
      ".",
   };
-  static unsigned char zChars[] =
+  static const unsigned char zChars[] =
     "abcdefghijklmnopqrstuvwxyz"
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     "0123456789";

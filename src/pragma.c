@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.69 2004/10/05 15:42:53 drh Exp $
+** $Id: pragma.c,v 1.70 2004/10/06 15:41:17 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -234,7 +234,7 @@ void sqlite3Pragma(
   ** and a positive value means synchronous is on.
   */
   if( sqlite3StrICmp(zLeft,"default_cache_size")==0 ){
-    static VdbeOpList getCacheSize[] = {
+    static const VdbeOpList getCacheSize[] = {
       { OP_ReadCookie,  0, 2,        0},  /* 0 */
       { OP_AbsValue,    0, 0,        0},
       { OP_Dup,         0, 0,        0},
@@ -527,7 +527,7 @@ void sqlite3Pragma(
     /* Code that initializes the integrity check program.  Set the
     ** error count 0
     */
-    static VdbeOpList initCode[] = {
+    static const VdbeOpList initCode[] = {
       { OP_Integer,     0, 0,        0},
       { OP_MemStore,    0, 1,        0},
     };
@@ -536,7 +536,7 @@ void sqlite3Pragma(
     ** messages have been generated, output OK.  Otherwise output the
     ** error message
     */
-    static VdbeOpList endCode[] = {
+    static const VdbeOpList endCode[] = {
       { OP_MemLoad,     0, 0,        0},
       { OP_Integer,     0, 0,        0},
       { OP_Ne,          0, 0,        0},    /* 2 */
@@ -598,7 +598,7 @@ void sqlite3Pragma(
         sqlite3VdbeAddOp(v, OP_MemIncr, 1, 0);
         for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
           int jmp2;
-          static VdbeOpList idxErr[] = {
+          static const VdbeOpList idxErr[] = {
             { OP_MemIncr,     0,  0,  0},
             { OP_String8,     0,  0,  "rowid "},
             { OP_Recno,       1,  0,  0},
@@ -616,7 +616,7 @@ void sqlite3Pragma(
         sqlite3VdbeAddOp(v, OP_Next, 1, loopTop+1);
         sqlite3VdbeChangeP2(v, loopTop, sqlite3VdbeCurrentAddr(v));
         for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
-          static VdbeOpList cntIdx[] = {
+          static const VdbeOpList cntIdx[] = {
              { OP_Integer,      0,  0,  0},
              { OP_MemStore,     2,  1,  0},
              { OP_Rewind,       0,  0,  0},  /* 2 */
@@ -668,7 +668,7 @@ void sqlite3Pragma(
   ** useful if invoked immediately after the main database i
   */
   if( sqlite3StrICmp(zLeft, "encoding")==0 ){
-    struct EncName {
+    static struct EncName {
       char *zName;
       u8 enc;
     } encnames[] = {
@@ -721,7 +721,7 @@ void sqlite3Pragma(
   ** Report the current state of file logs for all databases
   */
   if( sqlite3StrICmp(zLeft, "lock_status")==0 ){
-    static char *azLockName[] = {
+    static const char *const azLockName[] = {
       "unlocked", "shared", "reserved", "pending", "exclusive"
     };
     int i;

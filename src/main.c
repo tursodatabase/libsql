@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.262 2004/09/30 13:43:13 drh Exp $
+** $Id: main.c,v 1.263 2004/10/06 15:41:17 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -128,7 +128,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   /*
   ** The master database table has a structure like this
   */
-  static char master_schema[] = 
+  static const char master_schema[] = 
      "CREATE TABLE sqlite_master(\n"
      "  type text,\n"
      "  name text,\n"
@@ -137,7 +137,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
      "  sql text\n"
      ")"
   ;
-  static char temp_master_schema[] = 
+  static const char temp_master_schema[] = 
      "CREATE TEMP TABLE sqlite_temp_master(\n"
      "  type text,\n"
      "  name text,\n"
@@ -890,12 +890,12 @@ const void *sqlite3_errmsg16(sqlite3 *db){
   ** zero byte, we can obtain the little-endian string with
   ** &big_endian[1].
   */
-  static char outOfMemBe[] = {
+  static const char outOfMemBe[] = {
     0, 'o', 0, 'u', 0, 't', 0, ' ', 
     0, 'o', 0, 'f', 0, ' ', 
     0, 'm', 0, 'e', 0, 'm', 0, 'o', 0, 'r', 0, 'y', 0, 0, 0
   };
-  static char misuseBe [] = {
+  static const char misuseBe [] = {
     0, 'l', 0, 'i', 0, 'b', 0, 'r', 0, 'a', 0, 'r', 0, 'y', 0, ' ', 
     0, 'r', 0, 'o', 0, 'u', 0, 't', 0, 'i', 0, 'n', 0, 'e', 0, ' ', 
     0, 'c', 0, 'a', 0, 'l', 0, 'l', 0, 'e', 0, 'd', 0, ' ', 

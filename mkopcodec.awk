@@ -11,7 +11,7 @@
 BEGIN {
   print "/* Automatically generated.  Do not edit */"
   print "/* See the mkopcodec.h script for details. */"
-  print "const char *sqlite3OpcodeNames[] = { \"?\","
+  print "const char *const sqlite3OpcodeNames[] = { \"?\","
 }
 /^#define OP_/ {
   sub("OP_","",$2)

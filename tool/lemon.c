@@ -3519,7 +3519,7 @@ int mhflag;     /* Output in makeheaders format if true */
   free(ax);
 
   /* Output the yy_action table */
-  fprintf(out,"static YYACTIONTYPE yy_action[] = {\n"); lineno++;
+  fprintf(out,"static const YYACTIONTYPE yy_action[] = {\n"); lineno++;
   n = acttab_size(pActtab);
   for(i=j=0; i<n; i++){
     int action = acttab_yyaction(pActtab, i);
@@ -3536,7 +3536,7 @@ int mhflag;     /* Output in makeheaders format if true */
   fprintf(out, "};\n"); lineno++;
 
   /* Output the yy_lookahead table */
-  fprintf(out,"static YYCODETYPE yy_lookahead[] = {\n"); lineno++;
+  fprintf(out,"static const YYCODETYPE yy_lookahead[] = {\n"); lineno++;
   for(i=j=0; i<n; i++){
     int la = acttab_yylookahead(pActtab, i);
     if( la<0 ) la = lemp->nsymbol;
@@ -3553,7 +3553,7 @@ int mhflag;     /* Output in makeheaders format if true */
 
   /* Output the yy_shift_ofst[] table */
   fprintf(out, "#define YY_SHIFT_USE_DFLT (%d)\n", mnTknOfst-1); lineno++;
-  fprintf(out, "static %s yy_shift_ofst[] = {\n", 
+  fprintf(out, "static const %s yy_shift_ofst[] = {\n", 
           minimum_size_type(mnTknOfst-1, mxTknOfst)); lineno++;
   n = lemp->nstate;
   for(i=j=0; i<n; i++){
@@ -3574,7 +3574,7 @@ int mhflag;     /* Output in makeheaders format if true */
 
   /* Output the yy_reduce_ofst[] table */
   fprintf(out, "#define YY_REDUCE_USE_DFLT (%d)\n", mnNtOfst-1); lineno++;
-  fprintf(out, "static %s yy_reduce_ofst[] = {\n", 
+  fprintf(out, "static const %s yy_reduce_ofst[] = {\n", 
           minimum_size_type(mnNtOfst-1, mxNtOfst)); lineno++;
   n = lemp->nstate;
   for(i=j=0; i<n; i++){
@@ -3594,7 +3594,7 @@ int mhflag;     /* Output in makeheaders format if true */
   fprintf(out, "};\n"); lineno++;
 
   /* Output the default action table */
-  fprintf(out, "static YYACTIONTYPE yy_default[] = {\n"); lineno++;
+  fprintf(out, "static const YYACTIONTYPE yy_default[] = {\n"); lineno++;
   n = lemp->nstate;
   for(i=j=0; i<n; i++){
     stp = lemp->sorted[i];

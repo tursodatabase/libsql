@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.211 2004/09/25 14:39:19 drh Exp $
+** $Id: select.c,v 1.212 2004/10/06 15:41:17 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -81,7 +81,7 @@ int sqlite3JoinType(Parse *pParse, Token *pA, Token *pB, Token *pC){
   int jointype = 0;
   Token *apAll[3];
   Token *p;
-  static struct {
+  static const struct {
     const char *zKeyword;
     u8 nChar;
     u8 code;

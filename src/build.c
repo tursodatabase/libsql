@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.256 2004/10/05 02:41:42 drh Exp $
+** $Id: build.c,v 1.257 2004/10/06 15:41:16 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1112,7 +1112,7 @@ CollSeq *sqlite3LocateCollSeq(Parse *pParse, const char *zName, int nName){
 */
 char sqlite3AffinityType(const char *zType, int nType){
   int n, i;
-  struct {
+  static const struct {
     const char *zSub;  /* Keywords substring to search for */
     char nSub;         /* length of zSub */
     char affinity;     /* Affinity to return if it matches */
@@ -1612,7 +1612,7 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView){
   */
   v = sqlite3GetVdbe(pParse);
   if( v ){
-    static VdbeOpList dropTable[] = {
+    static const VdbeOpList dropTable[] = {
       { OP_Rewind,     0, ADDR(13), 0},
       { OP_String8,    0, 0,        0}, /* 1 */
       { OP_MemStore,   1, 1,        0},
@@ -2207,7 +2207,7 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName){
   /* Generate code to remove the index and from the master table */
   v = sqlite3GetVdbe(pParse);
   if( v ){
-    static VdbeOpList dropIndex[] = {
+    static const VdbeOpList dropIndex[] = {
       { OP_Rewind,     0, ADDR(9), 0}, 
       { OP_String8,    0, 0,       0}, /* 1 */
       { OP_MemStore,   1, 1,       0},

@@ -211,7 +211,7 @@ void sqlite3FinishTrigger(
   ** build the sqlite_master entry
   */
   if( !db->init.busy ){
-    static VdbeOpList insertTrig[] = {
+    static const VdbeOpList insertTrig[] = {
       { OP_NewRecno,   0, 0,  0          },
       { OP_String8,    0, 0,  "trigger"  },
       { OP_String8,    0, 0,  0          },  /* 2: trigger name */
@@ -487,12 +487,12 @@ void sqlite3DropTriggerPtr(Parse *pParse, Trigger *pTrigger, int nested){
   */
   if( pTable!=0 && (v = sqlite3GetVdbe(pParse))!=0 ){
     int base;
-    static VdbeOpList dropTrigger[] = {
+    static const VdbeOpList dropTrigger[] = {
       { OP_Rewind,     0, ADDR(9),  0},
-      { OP_String8,     0, 0,        0}, /* 1 */
+      { OP_String8,    0, 0,        0}, /* 1 */
       { OP_Column,     0, 1,        0},
       { OP_Ne,         0, ADDR(8),  0},
-      { OP_String8,     0, 0,        "trigger"},
+      { OP_String8,    0, 0,        "trigger"},
       { OP_Column,     0, 0,        0},
       { OP_Ne,         0, ADDR(8),  0},
       { OP_Delete,     0, 0,        0},

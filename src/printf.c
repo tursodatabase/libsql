@@ -107,7 +107,7 @@ typedef struct et_info {   /* Information about each format field */
 */
 static const char aDigits[] = "0123456789ABCDEF0123456789abcdef";
 static const char aPrefix[] = "-x0\000X0";
-static et_info fmtinfo[] = {
+static const et_info fmtinfo[] = {
   {  'd', 10, 1, etRADIX,      0,  0 },
   {  's',  0, 0, etSTRING,     0,  0 },
   {  'z',  0, 2, etDYNSTRING,  0,  0 },
@@ -214,13 +214,14 @@ static int vxprintf(
   etByte flag_longlong;      /* True if the "ll" flag is present */
   UINT64_TYPE longvalue;     /* Value for integer types */
   LONGDOUBLE_TYPE realvalue; /* Value for real types */
-  et_info *infop;            /* Pointer to the appropriate info structure */
+  const et_info *infop;      /* Pointer to the appropriate info structure */
   char buf[etBUFSIZE];       /* Conversion buffer */
   char prefix;               /* Prefix character.  "+" or "-" or " " or '\0'. */
   etByte errorflag = 0;      /* True if an error is encountered */
   etByte xtype;              /* Conversion paradigm */
   char *zExtra;              /* Extra memory used for etTCLESCAPE conversions */
-  static char spaces[] = "                                                  ";
+  static const char spaces[] =
+   "                                                                         ";
 #define etSPACESIZE (sizeof(spaces)-1)
 #ifndef etNOFLOATINGPOINT
   int  exp;                  /* exponent of real numbers */

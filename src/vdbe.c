@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.417 2004/10/05 02:41:43 drh Exp $
+** $Id: vdbe.c,v 1.418 2004/10/06 15:41:17 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -303,7 +303,7 @@ void sqlite3VdbeMemPrettyPrint(Mem *pMem, char *zBuf, int nBuf){
   char *zCsr = zBuf;
   int f = pMem->flags;
 
-  static const char *encnames[] = {"(X)", "(8)", "(16LE)", "(16BE)"};
+  static const char *const encnames[] = {"(X)", "(8)", "(16LE)", "(16BE)"};
 
   if( f&MEM_Blob ){
     int i;
