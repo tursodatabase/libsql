@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.211 2004/06/10 00:29:09 drh Exp $
+** $Id: main.c,v 1.212 2004/06/10 01:30:59 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -930,6 +930,16 @@ int sqlite3_prepare(
       db->xTrace(db->pTraceArg, zSql); 
     }
   }
+
+  /* Print a copy of SQL as it is executed if the SQL_TRACE pragma is turned
+  ** on in debugging mode.
+  */
+#ifdef SQLITE_DEBUG
+  if( (db->flags & SQLITE_SqlTrace)!=0 && sParse.zTail && sParse.zTail!=zSql ){
+    sqlite3DebugPrintf("SQL-trace: %.*s\n", sParse.zTail - zSql, zSql);
+  }
+#endif /* SQLITE_DEBUG */
+
 
   if( sqlite3_malloc_failed ){
     rc = SQLITE_NOMEM;
