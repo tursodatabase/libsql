@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.55 2003/05/07 04:04:17 jplyon Exp $}
+set rcsid {$Id: lang.tcl,v 1.56 2003/05/07 13:37:31 drh Exp $}
 
 puts {<html>
 <head>
@@ -1591,39 +1591,156 @@ case-insensitive.</p>
 
 <p>These keywords can be used as identifiers for SQLite objects without 
 delimiters.</p>
+}
 
-<p> <i>ABORT</i> AFTER ASC <i>ATTACH</i> BEFORE BEGIN DEFERRED CASCADE 
-<i>CLUSTER</i> <i>CONFLICT</i> <i>COPY</i> CROSS <i>DATABASE</i> 
-<i>DELIMITERS</i> DESC <i>DETACH</i> EACH END <i>EXPLAIN</i> <i>FAIL</i> 
-FOR FULL IGNORE IMMEDIATE INITIALLY INNER <i>INSTEAD</i> KEY LEFT MATCH 
-NATURAL OF <i>OFFSET</i> OUTER <i>PRAGMA</i> <i>RAISE</i> <i>REPLACE</i> 
-RESTRICT RIGHT <i>ROW</i> <i>STATEMENT</i> <i>TEMP</i> TEMPORARY TRIGGER 
-<i>VACUUM</i> VIEW </p>
+proc keyword_list {x} {
+  puts "<p>"
+  foreach k $x {
+    if {[string index $k 0]=="*"} {
+      set nonstandard 1
+      set k [string range $k 1 end]
+    } else {
+      set nonstandard 0
+    }
+    if {$nonstandard} {
+      puts "<i>$k</i> &nbsp;&nbsp;"
+    } else {
+      puts "$k &nbsp;&nbsp;"
+    }
+  }
+  puts "</p>\n"
+}
+
+keyword_list {
+  *ABORT
+  AFTER
+  ASC
+  *ATTACH
+  BEFORE
+  BEGIN
+  DEFERRED
+  CASCADE 
+  *CLUSTER 
+  *CONFLICT
+  *COPY
+  CROSS
+  *DATABASE
+  *DELIMITERS
+  DESC
+  *DETACH
+  EACH
+  END
+  *EXPLAIN
+  *FAIL
+  FOR
+  FULL
+  IGNORE
+  IMMEDIATE
+  INITIALLY
+  INNER
+  *INSTEAD
+  KEY
+  LEFT
+  MATCH 
+  NATURAL
+  OF
+  *OFFSET
+  OUTER
+  *PRAGMA
+  *RAISE
+  *REPLACE
+  RESTRICT
+  RIGHT
+  *ROW
+  *STATEMENT
+  *TEMP
+  TEMPORARY
+  TRIGGER 
+  *VACUUM
+  VIEW
+}
+puts {
 
 <h2>Normal keywords</h2>
 
 <p>These keywords can be used as identifiers for SQLite objects, but 
 must be enclosed in brackets or quotes for SQLite to recognize them as 
 an identifier.</p>
+}
 
-<p> ALL AND AS BETWEEN BY CASE CHECK COLLATE COMMIT CONSTRAINT CREATE 
-DEFAULT DEFERRABLE DELETE DISTINCT DROP ELSE EXCEPT FOREIGN FROM 
-<i>GLOB</i> GROUP HAVING IN <i>INDEX</i> INSERT INTERSECT INTO IS 
-<i>ISNULL</i> JOIN LIKE LIMIT NOT <i>NOTNULL</i> NULL ON OR ORDER 
-PRIMARY REFERENCES ROLLBACK SELECT SET TABLE THEN TRANSACTION UNION 
-UNIQUE UPDATE USING VALUES WHEN WHERE </p>
+keyword_list {
+  ALL
+  AND
+  AS
+  BETWEEN
+  BY
+  CASE
+  CHECK
+  COLLATE
+  COMMIT
+  CONSTRAINT
+  CREATE 
+  DEFAULT
+  DEFERRABLE
+  DELETE
+  DISTINCT
+  DROP
+  ELSE
+  EXCEPT
+  FOREIGN
+  FROM 
+  *GLOB
+  GROUP
+  HAVING
+  IN
+  *INDEX
+  INSERT
+  INTERSECT
+  INTO
+  IS 
+  *ISNULL
+  JOIN
+  LIKE
+  LIMIT
+  NOT
+  *NOTNULL
+  NULL
+  ON
+  OR
+  ORDER 
+  PRIMARY
+  REFERENCES
+  ROLLBACK
+  SELECT
+  SET
+  TABLE
+  THEN
+  TRANSACTION
+  UNION 
+  UNIQUE
+  UPDATE
+  USING
+  VALUES
+  WHEN
+  WHERE
+}
 
+puts {
 <h2>Special words</h2>
 
 <p>The following are not keywords in SQLite, but are used as names of 
 system objects.  They can be used as an identifier for a different 
 type of object.</p>
-
-<p> <i>_ROWID_</i> <i>MAIN</i> OID <i>ROWID</i> <i>SQLITE_MASTER</i> 
-<i>SQLITE_TEMP_MASTER</i>
-</p>
 }
 
+keyword_list {
+  *_ROWID_
+  *MAIN
+  OID
+  *ROWID
+  *SQLITE_MASTER
+  *SQLITE_TEMP_MASTER
+}
 
 puts {
 <p><hr /></p>
