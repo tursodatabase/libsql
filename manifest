@@ -1,5 +1,5 @@
-C Initialize\sa\svariable\sto\sprevent\san\sMSVC\scompiler\swarning.\s\sTicket\s#394.\s(CVS\s1051)
-D 2003-07-16T00:54:31
+C Allow\snegative\svalues\sfor\sLIMIT\sand\sOFFSET.\s\sAdd\stests\sfor\snegative\sLIMITs\nand\sOFFSETs.\s\sMake\sthe\sOFFSET\swork\seven\sif\sLIMIT\sis\s0\sor\snegative.\s(CVS\s1052)
+D 2003-07-16T02:19:38
 F Makefile.in 9ad23ed4ca97f9670c4496432e3fbd4b3760ebde
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -39,11 +39,11 @@ F src/os.c 0d5252d60c1b0f21a343b18248d3dfcafb94e621
 F src/os.h 9e5bbddff123187295e3d00d49af06192cd1cd49
 F src/pager.c 9512e789dbd5acaf91e74c4665e03c2734d3da25
 F src/pager.h 5da62c83443f26b1792cfd72c96c422f91aadd31
-F src/parse.y 917250e5d86bdee752355e6617ea2e8ee12438bf
+F src/parse.y 16aed0e3ed05445fa7f6a4209cc054208c7083c0
 F src/pragma.c 3b4f5a800e7a2145bc1930f323232e297d4eb782
 F src/printf.c 12e45d482ac8abcc6f786fc99e5bed7dd9a51af0
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
-F src/select.c 29c53228a4e66bfcebd797b7539678fcd0e2cf64
+F src/select.c 20a38bc2a63cc2676651013421cdb6a796c017af
 F src/shell.c 3ed268908fd69c8fd4b28dbe415075cbf0e3991a
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 54619fa5df4c83b22def66bb3d24808fd03dcbae
@@ -89,7 +89,7 @@ F test/insert2.test c288375a64dad3295044714f0dfed4a193cf067f
 F test/intpkey.test 9320af48415c594afd4e15f8ef0daa272e05502e
 F test/ioerr.test 5dbaf09f96b56ee01cf3edd762b96eb4ad2c9ca4
 F test/join.test 54e770b74fc8cfc7769d5d0bb05657085641b3c4
-F test/limit.test 9ffb965a0f5bf7152187ef3d8d1249b96e5620bf
+F test/limit.test 10991f3f33159a58b42859df3c731cfaf412c76e
 F test/lock.test 388a3a10962d2d571c0c1821cc35bf069ee73473
 F test/main.test 6a851b5992c4881a725a3d9647e629199df8de9d
 F test/malloc.test 7ba32a9ebd3aeed52ae4aaa6d42ca37e444536fd
@@ -168,7 +168,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P 6a07ac3782bc18f907ffcf66d908ddaa82ab9293
-R 60816c1f9d14c21b4d74e100abc8c1fe
+P 96e3c539586bf86c4fe8de0ac25de6655f704035
+R d3b2a0cf306874e50accca7303d95b51
 U drh
-Z da6e7a70e113773ece5e492f9f39d7ac
+Z 6453ea102fcd7011423a94e154aded18

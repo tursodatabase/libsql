@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.98 2003/05/17 19:04:04 drh Exp $
+** @(#) $Id: parse.y,v 1.99 2003/07/16 02:19:38 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -153,9 +153,10 @@ type ::= typename(X) LP signed COMMA signed RP(Y).
 %type typename {Token}
 typename(A) ::= ids(X).           {A = X;}
 typename(A) ::= typename(X) ids.  {A = X;}
-signed ::= INTEGER.
-signed ::= PLUS INTEGER.
-signed ::= MINUS INTEGER.
+%type signed {int}
+signed(A) ::= INTEGER(X).         { A = atoi(X.z); }
+signed(A) ::= PLUS INTEGER(X).    { A = atoi(X.z); }
+signed(A) ::= MINUS INTEGER(X).   { A = -atoi(X.z); }
 carglist ::= carglist carg.
 carglist ::= .
 carg ::= CONSTRAINT nm ccons.
@@ -442,12 +443,12 @@ having_opt(A) ::= .                {A = 0;}
 having_opt(A) ::= HAVING expr(X).  {A = X;}
 
 %type limit_opt {struct LimitVal}
-limit_opt(A) ::= .                  {A.limit = -1; A.offset = 0;}
-limit_opt(A) ::= LIMIT INTEGER(X).  {A.limit = atoi(X.z); A.offset = 0;}
-limit_opt(A) ::= LIMIT INTEGER(X) OFFSET INTEGER(Y). 
-                                    {A.limit = atoi(X.z); A.offset = atoi(Y.z);}
-limit_opt(A) ::= LIMIT INTEGER(X) COMMA INTEGER(Y). 
-                                    {A.limit = atoi(Y.z); A.offset = atoi(X.z);}
+limit_opt(A) ::= .                     {A.limit = -1; A.offset = 0;}
+limit_opt(A) ::= LIMIT signed(X).      {A.limit = X; A.offset = 0;}
+limit_opt(A) ::= LIMIT signed(X) OFFSET signed(Y). 
+                                       {A.limit = X; A.offset = Y;}
+limit_opt(A) ::= LIMIT signed(X) COMMA signed(Y). 
+                                       {A.limit = Y; A.offset = X;}
 
 /////////////////////////// The DELETE statement /////////////////////////////
 //

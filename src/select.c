@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.141 2003/06/16 00:40:35 drh Exp $
+** $Id: select.c,v 1.142 2003/07/16 02:19:38 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -30,7 +30,7 @@ Select *sqliteSelectNew(
   ExprList *pOrderBy,   /* the ORDER BY clause */
   int isDistinct,       /* true if the DISTINCT keyword is present */
   int nLimit,           /* LIMIT value.  -1 means not used */
-  int nOffset           /* OFFSET value.  -1 means not used */
+  int nOffset           /* OFFSET value.  0 means no offset */
 ){
   Select *pNew;
   pNew = sqliteMalloc( sizeof(*pNew) );
@@ -2140,24 +2140,31 @@ int sqliteSelect(
     generateColumnNames(pParse, pTabList, pEList);
   }
 
-  /* Set the limiter
+  /* Set the limiter.
+  **
+  ** The phrase "LIMIT 0" means all rows are shown, not zero rows.
+  ** If the comparison is p->nLimit<=0 then "LIMIT 0" shows
+  ** all rows.  It is the same as no limit. If the comparision is
+  ** p->nLimit<0 then "LIMIT 0" show no rows at all.
+  ** "LIMIT -1" always shows all rows.  There is some
+  ** contraversy about what the correct behavior should be.
   */
   if( p->nLimit<=0 ){
     p->nLimit = -1;
-    p->nOffset = 0;
   }else{
     int iMem = pParse->nMem++;
     sqliteVdbeAddOp(v, OP_Integer, -p->nLimit, 0);
     sqliteVdbeAddOp(v, OP_MemStore, iMem, 1);
     p->nLimit = iMem;
-    if( p->nOffset<=0 ){
-      p->nOffset = 0;
-    }else{
-      iMem = pParse->nMem++;
-      sqliteVdbeAddOp(v, OP_Integer, -p->nOffset, 0);
-      sqliteVdbeAddOp(v, OP_MemStore, iMem, 1);
-      p->nOffset = iMem;
-    }
+  }
+  if( p->nOffset<=0 ){
+    p->nOffset = 0;
+  }else{
+    int iMem = pParse->nMem++;
+    if( iMem==0 ) iMem = pParse->nMem++;
+    sqliteVdbeAddOp(v, OP_Integer, -p->nOffset, 0);
+    sqliteVdbeAddOp(v, OP_MemStore, iMem, 1);
+    p->nOffset = iMem;
   }
 
   /* Generate code for all sub-queries in the FROM clause
