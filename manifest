@@ -1,5 +1,5 @@
-C Add\s-DNDEBUG\sto\sthe\sdefault\smakefile.\s(CVS\s1790)
-D 2004-06-30T23:17:05
+C Version\s3.0.2\s(Beta)\s(CVS\s1791)
+D 2004-06-30T23:59:00
 F Makefile.in 77d1219b6563476711a7a962e865979a6f314eb0
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -233,7 +233,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 2010ed8040a0956f57f4ca594973ad93c0551f64
+P f5ab04dae88c68543a2264a39006a435469bfaa8
 R b83c88b2c6a5ad8fb3e1ff1cd3967b99
 U drh
-Z 1ac34f2ae87928adb6ed417503a79221
+Z 5c960ffe8fba8c21f317b7df5ba732b9
