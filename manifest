@@ -1,5 +1,5 @@
-C Cleaned\sup\skeywords\ssection.\s(CVS\s959)
-D 2003-05-07T03:59:10
+C -\sAdded\sentries\sfor\sPRAGMAs\sdatabase_list,\stemp_store\sand\sdefault_temp_store.\n-\sFixed\smissing\send\stags.\s(CVS\s960)
+D 2003-05-07T04:04:17
 F Makefile.in 004acec253ecdde985c8ecd5b7c9accdb210378f
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -155,7 +155,7 @@ F www/faq.tcl 12d1788d4abcfe1ff3054e17605df2418883bf6f
 F www/fileformat.tcl d9b586416c0d099b82e02e469d532c9372f98f3f
 F www/formatchng.tcl cbaf0f410096c71f86a7537cf9249fa04b9a659c
 F www/index.tcl b155eba45136d19e7aa6ba979d4093180c335cf7
-F www/lang.tcl 46b42bd1b22c6e18c17ebfe3893da57790761b79
+F www/lang.tcl bbd268bb1251c94062896d5bdb4beca19bc0ea1f
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
 F www/nulls.tcl 29497dac2bc5b437aa7e2e94577dad4d8933ed26
 F www/omitted.tcl 118062f40a203fcb88b8d68ef1d7c0073ac191ec
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ffde644361e1d8e2a44a235ff23ad3b43d640df2
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 6d4b6597e560578253960d9876dc8c8657f41fef
-R 7baf27040092074ad3a30cf620346b84
+P bb609f96e00fd62d932601c4aa37bc17baa82257
+R dda10c19cfdf488f535f7dc535754b7d
 U jplyon
-Z cc6c263b53146ffd7c6d10d64ce2f2b8
+Z c9d5bf00e4e436e976c07b135d71d6fc

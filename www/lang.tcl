@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.54 2003/05/07 03:59:10 jplyon Exp $}
+set rcsid {$Id: lang.tcl,v 1.55 2003/05/07 04:04:17 jplyon Exp $}
 
 puts {<html>
 <head>
@@ -1188,6 +1188,7 @@ with caution.</p>
 <p>The current implementation supports the following pragmas:</p>
 
 <ul>
+<a name="pragma_cache_size"></a>
 <li><p><b>PRAGMA cache_size;
        <br>PRAGMA cache_size = </b><i>Number-of-pages</i><b>;</b></p>
     <p>Query or change the maximum number of database disk pages that SQLite
@@ -1199,8 +1200,8 @@ with caution.</p>
     <p>When you change the cache size using the cache_size pragma, the
     change only endures for the current session.  The cache size reverts
     to the default value when the database is closed and reopened.  Use
-    the <b>default_cache_size</b> pragma to check the cache size permanently
-    </p></li>
+    the <a href="#pragma_default_cache_size"><b>default_cache_size</b></a> 
+    pragma to check the cache size permanently.</p></li>
 
 <li><p><b>PRAGMA count_changes = ON;
        <br>PRAGMA count_changes = OFF;</b></p>
@@ -1210,15 +1211,25 @@ with caution.</p>
     <p>This pragma may be removed from future versions of SQLite.
     Consider using the <b>sqlite_changes()</b> API function instead.</p></li>
 
+<li><p><b>PRAGMA database_list;</b></p>
+    <p>For each open database, invoke the callback function once with
+    information about that database.  Arguments include the index and 
+    the name the datbase was attached with.  The first row will be for 
+    the main database.  The second row will be for the database used to 
+    store temporary tables.</p></li>
+
+<a name="pragma_default_cache_size"></a>
 <li><p><b>PRAGMA default_cache_size;
        <br>PRAGMA default_cache_size = </b><i>Number-of-pages</i><b>;</b></p>
     <p>Query or change the maximum number of database disk pages that SQLite
     will hold in memory at once.  Each page uses about 1.5K of memory.
-    This pragma works like the <b>cache_size</b> pragma with the addition
+    This pragma works like the <a href="#pragma_cache_size"><b>cache_size</b></a> 
+    pragma with the additional
     feature that it changes the cache size persistently.  With this pragma,
     you can set the cache size once and that setting is retained and reused
     everytime you reopen the database.</p></li>
 
+<a name="pragma_default_synchronous"></a>
 <li><p><b>PRAGMA default_synchronous;
        <br>PRAGMA default_synchronous = FULL;
        <br>PRAGMA default_synchronous = NORMAL;
@@ -1247,10 +1258,28 @@ with caution.</p>
     </p>
     <p>This pragma changes the synchronous mode persistently.  Once changed,
     the mode stays as set even if the database is closed and reopened.  The
-    <b>synchronous</b> pragma does the same thing but only applies the setting
-    to the current session.</p>
+    <a href="#pragma_synchronous"><b>synchronous</b></a> pragma does the same 
+    thing but only applies the setting to the current session.</p></li>
 
-<a name="pragma_empty_result_callbacks">
+<a name="pragma_default_temp_store"></a>
+<li><p><b>PRAGMA default_temp_store;
+       <br>PRAGMA default_temp_store = DEFAULT;
+       <br>PRAGMA default_temp_store = MEMORY;
+       <br>PRAGMA default_temp_store = FILE;</b></p>
+    <p>Query or change the setting of the "temp_store" flag stored in
+    the database.  When temp_store is DEFAULT, the compile-time default 
+    is used for the temporary database.  When temp_store is MEMORY, an 
+    in-memory database is used.  When temp_store is FILE, a temporary 
+    database file on disk will be used.  Note that it is possible for 
+    the library compile-time options to override this setting.  Once 
+    the temporary database is in use, its location cannot be changed.</p>
+
+    <p>This pragma changes the temp_store mode persistently.  Once changed,
+    the mode stays as set even if the database is closed and reopened.  The
+    <a href="#pragma_temp_store"><b>temp_store</b></a> pragma does the same 
+    thing but only applies the setting to the current session.</p></li>
+
+<a name="pragma_empty_result_callbacks"></a>
 <li><p><b>PRAGMA empty_result_callbacks = ON;
        <br>PRAGMA empty_result_callbacks = OFF;</b></p>
     <p>When on, the EMPTY_RESULT_CALLBACKS pragma causes the callback
@@ -1259,7 +1288,7 @@ with caution.</p>
     because there is no data to report.  But the second "<b>argc</b>" and
     fourth "<b>columnNames</b>" parameters are valid and can be used to
     determine the number and names of the columns that would have been in
-    the result set had the set not been empty.</p>
+    the result set had the set not been empty.</p></li>
 
 <li><p><b>PRAGMA full_column_names = ON;
        <br>PRAGMA full_column_names = OFF;</b></p>
@@ -1272,13 +1301,20 @@ with caution.</p>
     <p>For each column that the named index references, invoke the 
     callback function
     once with information about that column, including the column name,
-    and the column number.</p>
+    and the column number.</p></li>
 
 <li><p><b>PRAGMA index_list(</b><i>table-name</i><b>);</b></p>
     <p>For each index on the named table, invoke the callback function
     once with information about that index.  Arguments include the
     index name and a flag to indicate whether or not the index must be
-    unique.</p>
+    unique.</p></li>
+
+<li><p><b>PRAGMA integrity_check;</b></p>
+    <p>The command does an integrity check of the entire database.  It
+    looks for out-of-order records, missing pages, and malformed records.
+    If any problems are found, then a single string is returned which is
+    a description of all problems.  If everything is in order, "ok" is
+    returned.</p></li>
 
 <li><p><b>PRAGMA parser_trace = ON;<br>PRAGMA parser_trace = OFF;</b></p>
     <p>Turn tracing of the SQL parser inside of the
@@ -1286,14 +1322,7 @@ with caution.</p>
     This only works if the library is compiled without the NDEBUG macro.
     </p></li>
 
-<li><p><b>PRAGMA integrity_check;</b></p>
-    <p>The command does an integrity check of the entire database.  It
-    looks for out-of-order records, missing pages, and malformed records.
-    If any problems are found, then a single string is returned which is
-    a description of all problems.  If everything is in order, "ok" is
-    returned.</p>
-
-<a name="pragma_show_datatypes">
+<a name="pragma_show_datatypes"></a>
 <li><p><b>PRAGMA show_datatypes = ON;<br>PRAGMA show_datatypes = OFF;</b></p>
     <p>When turned on, the SHOW_DATATYPES pragma causes extra entries containing
     the names of <a href="datatypes.html">datatypes</a> of columns to be
@@ -1325,22 +1354,38 @@ with caution.</p>
        azCol[6] = 0;
     </td></table></blockquote></li>
 
+<a name="pragma_synchronous"></a>
 <li><p><b>PRAGMA synchronous;
        <br>PRAGMA synchronous = FULL;
        <br>PRAGMA synchronous = NORMAL;
        <br>PRAGMA synchronous = OFF;</b></p>
-    <p>Query or change the setting of the "synchronous" flag in
-    the database for the duration of the current database connect.
+    <p>Query or change the setting of the "synchronous" flag affecting
+    the database for the duration of the current database connection.
     The synchronous flag reverts to its default value when the database
     is closed and reopened.  For additional information on the synchronous
-    flag, see the description of the <b>default_synchronous</b> pragma.</p>
+    flag, see the description of the <a href="#pragma_default_synchronous">
+    <b>default_synchronous</b></a> pragma.</p>
     </li>
 
 <li><p><b>PRAGMA table_info(</b><i>table-name</i><b>);</b></p>
     <p>For each column in the named table, invoke the callback function
     once with information about that column, including the column name,
     data type, whether or not the column can be NULL, and the default
-    value for the column.</p>
+    value for the column.</p></li>
+
+<a name="pragma_temp_store"></a>
+<li><p><b>PRAGMA temp_store;
+       <br>PRAGMA temp_store = default;
+       <br>PRAGMA temp_store = memory;
+       <br>PRAGMA temp_store = file;</b></p>
+    <p>Query or change the setting of the "temp_store" flag affecting
+    the database for the duration of the current database connection.
+    The temp_store flag reverts to its default value when the database
+    is closed and reopened.  For additional information on the temp_store
+    flag, see the description of the <a href="#pragma_default_temp_store">
+    <b>default_temp_store</b></a> pragma.  Note that it is possible for 
+    the library compile-time options to override this setting. </p>
+    </li>
 
 <li><p><b>PRAGMA vdbe_trace = ON;<br>PRAGMA vdbe_trace = OFF;</b></p>
     <p>Turn tracing of the virtual database engine inside of the
