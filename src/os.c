@@ -271,7 +271,7 @@ int sqliteOsFileExists(const char *zFilename){
 /*
 ** Change the name of an existing file.
 */
-int sqliteOsRename(const char *zOldName, const char *zNewName){
+int sqliteOsFileRename(const char *zOldName, const char *zNewName){
 #if OS_UNIX
   if( link(zOldName, zNewName) ){
     return SQLITE_ERROR;

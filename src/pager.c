@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.79 2003/03/19 03:14:02 drh Exp $
+** @(#) $Id: pager.c,v 1.80 2003/04/06 20:44:45 drh Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -966,6 +966,10 @@ int sqlitepager_close(Pager *pPager){
   ** }
   */
   CLR_PAGER(pPager);
+  if( pPager->zFilename!=(char*)&pPager[1] ){
+    sqliteFree(pPager->zFilename);
+    sqliteFree(pPager->zJournal);
+  }
   sqliteFree(pPager);
   return SQLITE_OK;
 }
@@ -2024,6 +2028,50 @@ int sqlitepager_ckpt_rollback(Pager *pPager){
   }
   pPager->ckptAutoopen = 0;
   return rc;
+}
+
+/*
+** Return the full pathname of the database file.
+*/
+const char *sqlitepager_filename(Pager *pPager){
+  return pPager->zFilename;
+}
+
+/*
+** Rename the database file
+*/
+int sqlitepager_rename(Pager *pPager, const char *zNewName){
+  char *zNew;
+  char *zJournal;
+  int nName;
+  int rc;
+
+  nName = strlen(zNewName);
+  zNew = sqliteMalloc( nName*2 + 30 );
+  if( zNew==0 ){
+    return SQLITE_NOMEM;
+  }
+  memcpy(zNew, zNewName, nName+1);
+  zJournal = &zNew[nName+1];
+  memcpy(zJournal, zNew, nName);
+  strcpy(&zJournal[nName], "-journal");
+  if( pPager->journalOpen ){
+    rc = sqliteOsRename(pPager->zJournal, zJournal);
+    if( rc ){
+      sqliteFree(zNew);
+      return rc;
+    }
+  }
+  rc = sqliteOsRename(pPager->zFilename, zNew);
+  if( rc ){
+    sqliteFree(zNew);
+    return rc;
+  }
+  if( pPager->zFilename!=(char*)&pPager[1] ){
+    sqliteFree(pPager->zFilename);
+  }
+  pPager->zFilename = zNew;
+  return SQLITE_OK;
 }
 
 #ifdef SQLITE_TEST

@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.86 2003/04/01 21:16:42 paul Exp $
+** $Id: btree.c,v 1.87 2003/04/06 20:44:45 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -3495,6 +3495,27 @@ char *sqliteBtreeIntegrityCheck(Btree *pBt, int *aRoot, int nRoot){
   return sCheck.zErrMsg;
 }
 
+/*
+** Return the full pathname of the underlying database file.
+*/
+static const char *sqliteBtreeGetFilename(Btree *pBt){
+  assert( pBt->pPager!=0 );
+  return sqlitepager_filename(pBt->pPager);
+}
+
+/*
+** Change the name of the underlying database file.
+*/
+static int sqliteBtreeChangeFilename(Btree *pBt, const char *zNew){
+  return sqlitepager_rename(pBt->pPager, zNew);
+}
+
+/*
+** The following tables contain pointers to all of the interface
+** routines for this implementation of the B*Tree backend.  To
+** substitute a different implemention of the backend, one has merely
+** to provide pointers to alternative functions in similar tables.
+*/
 static BtOps sqliteBtreeOps = {
     sqliteBtreeClose,
     sqliteBtreeSetCacheSize,
@@ -3513,13 +3534,13 @@ static BtOps sqliteBtreeOps = {
     sqliteBtreeGetMeta,
     sqliteBtreeUpdateMeta,
     sqliteBtreeIntegrityCheck,
-
+    sqliteBtreeGetFilename,
+    sqliteBtreeChangeFilename,
 #ifdef SQLITE_TEST
     sqliteBtreePageDump,
     sqliteBtreePager
 #endif
 };
-
 static BtCursorOps sqliteBtreeCursorOps = {
     sqliteBtreeMoveto,
     sqliteBtreeDelete,
