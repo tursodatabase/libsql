@@ -1,5 +1,5 @@
-C The\snew\sfunction\scode\spasses\sregression\stests.\s(CVS\s403)
-D 2002-02-28T03:04:48
+C Change\sthe\sIFNULL\sand\sNVL\sfunctions\sto\sCOALESCE.\s\sChange\sMIN\sand\sMAX\sso\sthat\nthey\srequire\sat\sleast\sone\sargument.\s(CVS\s404)
+D 2002-02-28T03:14:18
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -24,7 +24,7 @@ F src/btree.h 8abeabfe6e0b1a990b64fa457592a6482f6674f3
 F src/build.c 7ada2426caba70cb1072ba268bedb694b5018065
 F src/delete.c 950d8f9097361419f1963875f9943344b469cf02
 F src/expr.c b70bedaffd27ea24c5c2a197a88b07e82dfa4967
-F src/func.c 14ac2dfa1845a9b12bf71557ae3a179d32902abe
+F src/func.c 7169103d1082c24f0e8a71c66e7ac4062f6acc15
 F src/hash.c cc259475e358baaf299b00a2c7370f2b03dda892
 F src/hash.h dca065dda89d4575f3176e75e9a3dc0f4b4fb8b9
 F src/insert.c 164d2d5e943268a8ff0594e1947599e04df0ce11
@@ -82,7 +82,7 @@ F test/printf.test 3cb415073754cb8ff076f26173143c3cd293a9da
 F test/quick.test 6f023c7a73fc413e6d65b7a1879c79764038dc05
 F test/quote.test 286db944717afa9a9bf829dd85e59185c65d5435
 F test/rowid.test 4c55943300cddf73dd0f88d40a268cab14c83274
-F test/select1.test 72328eb569399e2075a0ce0d84d67df93f27eef2
+F test/select1.test ec4c20514598ae9b52abbd5e17488c8dbcdc74d1
 F test/select2.test ed2c1882857106b85478f54f67000e14966be4c4
 F test/select3.test 9469c332250a75a0ef1771fb5da62dc04ec77f18
 F test/select4.test 29a2ffb187f3d8b6ca42a0a6b619e9cabe12e228
@@ -127,7 +127,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 6af10cc53acc1ffa60de3f0d5880a6b72815404c
-R a8e13733ee5e31e5e4261dfef2a4a7b4
+P b00cf110b1cc671b7200a5ce8b9e704f660763c9
+R 700a29215d4083019c40f619d0c95fb2
 U drh
-Z 2f9159adbbc07ca082acf9822ba9ab2f
+Z b9fbc42617ff7af7970f2ca4a8912d6a

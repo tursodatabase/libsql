@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.9 2002/02/28 03:04:48 drh Exp $
+** $Id: func.c,v 1.10 2002/02/28 03:14:18 drh Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -168,15 +168,18 @@ static void lowerFunc(sqlite_func *context, int argc, const char **argv){
 }
 
 /*
-** Implementation of the IFNULL() and NVL() functions.  (both do the
-** same thing.  They return their first argument if it is not NULL or
-** their second argument if the first is NULL.
+** Implementation of the IFNULL(), NVL(), and COALESCE() functions.  
+** All three do the same thing.  They return the first argument
+** non-NULL argument.
 */
 static void ifnullFunc(sqlite_func *context, int argc, const char **argv){
-  const char *z;
-  assert( argc==2 );
-  z = argv[0] ? argv[0] : argv[1];
-  sqlite_set_result_string(context, z, -1);
+  int i;
+  for(i=0; i<argc; i++){
+    if( argv[i] ){
+      sqlite_set_result_string(context, argv[i], -1);
+      break;
+    }
+  }
 }
 
 /*
@@ -351,17 +354,21 @@ void sqliteRegisterBuildinFunctions(sqlite *db){
      int nArg;
      void (*xFunc)(sqlite_func*,int,const char**);
   } aFuncs[] = {
-    { "min",  -1,  minFunc    },
-    { "max",  -1,  maxFunc    },
-    { "length", 1, lengthFunc },
-    { "substr", 3, substrFunc },
-    { "abs",    1, absFunc    },
-    { "round",  1, roundFunc  },
-    { "round",  2, roundFunc  },
-    { "upper",  1, upperFunc  },
-    { "lower",  1, lowerFunc  },
-    { "ifnull", 2, ifnullFunc },
-    { "nvl",    2, ifnullFunc },
+    { "min",       -1, minFunc    },
+    { "min",        0, 0          },
+    { "max",       -1, maxFunc    },
+    { "max",        0, 0          },
+    { "length",     1, lengthFunc },
+    { "substr",     3, substrFunc },
+    { "abs",        1, absFunc    },
+    { "round",      1, roundFunc  },
+    { "round",      2, roundFunc  },
+    { "upper",      1, upperFunc  },
+    { "lower",      1, lowerFunc  },
+    { "coalesce",  -1, ifnullFunc },
+    { "coalesce",   0, 0          },
+    { "coalesce",   1, 0          },
+
   };
   static struct {
     char *zName;

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the SELECT statement.
 #
-# $Id: select1.test,v 1.20 2002/02/28 03:04:48 drh Exp $
+# $Id: select1.test,v 1.21 2002/02/28 03:14:18 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -127,7 +127,7 @@ do_test select1-2.5 {
 do_test select1-2.6 {
   set v [catch {execsql {SELECT min(*) FROM test1}} msg]
   lappend v $msg
-} {0 {{} {}}}
+} {1 {wrong number of arguments to function min()}}
 do_test select1-2.7 {
   set v [catch {execsql {SELECT Min(f1) FROM test1}} msg]
   lappend v $msg
@@ -139,7 +139,7 @@ do_test select1-2.8 {
 do_test select1-2.9 {
   set v [catch {execsql {SELECT MAX(*) FROM test1}} msg]
   lappend v $msg
-} {0 {{} {}}}
+} {1 {wrong number of arguments to function MAX()}}
 do_test select1-2.10 {
   set v [catch {execsql {SELECT Max(f1) FROM test1}} msg]
   lappend v $msg
