@@ -8,6 +8,19 @@ puts {<html>
 <body bgcolor="white">
 <h1 align="center">Recent Changes To SQLite</h1>
 
+<center>><font color="red"><b>
+*** This page has is no longer maintained. ***
+</b></font></center>
+<blockquote>
+The change log is now generated automatically by the CVS server
+for SQLite.  To see the latest changes, visit:
+<blockquote>
+<a href="http://cvs.hwaci.com:2080/sqlite/timeline">
+http://cvs.hwaci.com:2080/sqlite/timeline
+</a>
+</blockquote>
+</blockquote>
+
 <DL>
 }
 

@@ -1,5 +1,5 @@
-C Update\sthe\schange\slog.\s(CVS\s438)
-D 2002-03-26T03:11:27
+C Update\sthe\sdocumentation\sto\srefer\sthe\sreader\sto\sthe\sCVS\sserver\sfor\sthe\schange\nlog,\sbug\slists,\sor\sthe\slatest\ssources.\s(CVS\s500)
+D 2002-03-27T12:52:48
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -115,14 +115,14 @@ F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 72a0c80e9054cc7025a50928d28d9c75c02c2b8b
 F www/c_interface.tcl 567cda531aac9d68a61ef02e26c6b202bd856db2
-F www/changes.tcl b9769b3fb8bac6a70a5be41356dcf847cb1d1c97
+F www/changes.tcl 96b42ab657fcdd9cc1dbf3c5e935917c96e71d0a
 F www/conflict.tcl 81dd21f9a679e60aae049e9dd8ab53d59570cda2
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
 F www/download.tcl a6d75b8b117cd33dcb090bef7e80d7556d28ebe0
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/faq.tcl fb1e92e2f604546694f83a36d969492f52fb685d
 F www/formatchng.tcl 2ce21ff30663fad6618198fe747ce675df577590
-F www/index.tcl eacd99bcc3132d6e6b74a51422d415cc0bf7bfdf
+F www/index.tcl 64d32b1952138a007c1db5753c5b046d4b83dda1
 F www/lang.tcl d589f9a39c925d81fa9198b9215b4fd56da4192b
 F www/mingw.tcl f1c7c0a7f53387dd9bb4f8c7e8571b7561510ebc
 F www/opcode.tcl bdec8ef9f100dbd87bbef8976c54b88e43fd8ccc
@@ -130,7 +130,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 836b59d057c3fb4087b138c9bfbc03392ddfb89d
-R b029c62118dba399fd0dec9fed0ef690
+P 9637b9aa5d405427ead52438eed8c626feac8658
+R 25a47165cf81cde2d1e8d11b6a1ee5f9
 U drh
-Z c7bf5b5594ad90e26197a233d0590f42
+Z d2404a9e9da29d8df5fa9904a22bc472

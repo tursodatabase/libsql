@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.54 2002/02/18 18:30:33 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.55 2002/03/27 12:52:48 drh Exp $}
 
 puts {<html>
 <head><title>SQLite: An SQL Database Engine In A C Library</title></head>
@@ -61,10 +61,27 @@ three functions and one opaque structure.</li>
 
 puts {<h2>Current Status</h2>
 
-<p>A <a href="changes.html">change history</a> is available online.
-The latest source code is
-<a href="download.html">available for download</a>.
-For a list of recently discovered bugs, refer to the change history.
+<p>A <a href="http://cvs.hwaci.com:2080/sqlite/timeline">change history</a>
+and a list of
+<a href="http://cvs.hwaci.com:2080/sqlite/rptview?rn=2">open bugs</a> are
+both available from the 
+<a href="http://cvs.hwaci.com:2080/sqlite/">CVS server</a>.
+Complete source code and precompiled binaries for the latest release are
+<a href="download.html">available for download</a> on this site.  You
+can also obtain the latest changes by anonymous CVS access:
+<blockquote><pre>
+cvs -d :pserver:anonymous@cvs.hwaci.com:/home/cvs/sqlite login
+cvs -d :pserver:anonymous@cvs.hwaci.com:/home/cvs/sqlite checkout sqlite
+</pre></blockquote>
+When prompted for a password, enter "anonymous".
+</p>
+
+<p>Note that the CVS server is located on a cable modem with a dynamic
+IP address.  The IP address changes every 3 or 4 months.  After an
+IP address change
+occurs it usually takes a day or two for the new DNS information to propagate.
+So if you have trouble accessing the CVS server, it could be because the
+IP address has recently changed.  Try again in a few days.
 </p>
 
 <p>
@@ -89,6 +106,8 @@ for additional information.
     how the library is put together.</li>
 <li>A description of the <a href="opcode.html">virtual machine</a> that
     SQLite uses to access the database.</li>
+<li>A <a href="speed.html">speed comparison</a> between SQLite, PostgreSQL,
+    and MySQL.</li>
 </ul>
 </p>
 
