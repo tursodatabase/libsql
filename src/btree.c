@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.33 2001/10/06 16:33:02 drh Exp $
+** $Id: btree.c,v 1.34 2001/10/15 00:44:35 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -597,8 +597,8 @@ static void pageDestructor(void *pData){
 ** until the first page is loaded.
 **
 ** zFilename is the name of the database file.  If zFilename is NULL
-** a new database with a random name is created.  The database will be
-** destroyed when sqliteBtreeClose() is called.
+** a new database with a random name is created.  This randomly named
+** database file will be deleted when sqliteBtreeClose() is called.
 */
 int sqliteBtreeOpen(
   const char *zFilename,    /* Name of the file containing the BTree database */
@@ -807,6 +807,13 @@ int sqliteBtreeRollback(Btree *pBt){
 ** Create a new cursor for the BTree whose root is on the page
 ** iTable.  The act of acquiring a cursor gets a read lock on 
 ** the database file.
+**
+** If wrFlag==0, then the cursor can only be used for reading.
+** If wrFlag==1, then the cursor can be used for reading or writing.
+** A read/write cursor requires exclusive access to its table.  There
+** cannot be two or more cursors open on the same table is any one of
+** cursors is a read/write cursor.  But there can be two or more
+** read-only cursors open on the same table.
 */
 int sqliteBtreeCursor(Btree *pBt, int iTable, int wrFlag, BtCursor **ppCur){
   int rc;
@@ -1357,6 +1364,7 @@ int sqliteBtreeMoveto(BtCursor *pCur, const void *pKey, int nKey, int *pRes){
 int sqliteBtreeNext(BtCursor *pCur, int *pRes){
   int rc;
   if( pCur->pPage==0 ){
+    if( pRes ) *pRes = 1;
     return SQLITE_ABORT;
   }
   if( pCur->bSkipNext ){

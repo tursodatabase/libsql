@@ -58,6 +58,7 @@ EXE =
 #
 TCC = gcc -O6
 #TCC = gcc -g -O0 -Wall
+#TCC = gcc -g -O0 -Wall -fprofile-arcs -ftest-coverage
 #TCC = /opt/mingw/bin/i386-mingw32-gcc -O6
 #TCC = /opt/ansic/bin/c89 -O +z -Wl,-a,archive
 

@@ -17,6 +17,13 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2001 Oct 14 (2.0.5)} {
+<li>Added the COUNT_CHANGES pragma.</li>
+<li>Changes to the FULL_COLUMN_NAMES pragma to help out the ODBC driver.</li>
+<li>Bug fix: "SELECT count(*)" was returning NULL for empty tables.
+    Now it returns 0.</li>
+}
+
 chng {2001 Oct 13 (2.0.4)} {
 <li>Bug fix: an abscure and relatively harmless bug was causing one of
     the tests to fail when gcc optimizations are turned on.  This release

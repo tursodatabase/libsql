@@ -12,7 +12,7 @@
 # focus of this file is testing aggregate functions and the
 # GROUP BY and HAVING clauses of SELECT statements.
 #
-# $Id: select5.test,v 1.5 2001/09/16 00:13:28 drh Exp $
+# $Id: select5.test,v 1.6 2001/10/15 00:44:36 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -88,12 +88,32 @@ do_test select5-3.1 {
   }
 } {1 1 5 2 1 5 3 1 5}
 
-# Run the AVG() function when the count is zero.
+# Run various aggregate functions when the count is zero.
 #
 do_test select5-4.1 {
   execsql {
     SELECT avg(x) FROM t1 WHERE x>100
   }
-} {}
+} {{}}
+do_test select5-4.2 {
+  execsql {
+    SELECT count(x) FROM t1 WHERE x>100
+  }
+} {0}
+do_test select5-4.3 {
+  execsql {
+    SELECT min(x) FROM t1 WHERE x>100
+  }
+} {{}}
+do_test select5-4.4 {
+  execsql {
+    SELECT max(x) FROM t1 WHERE x>100
+  }
+} {{}}
+do_test select5-4.5 {
+  execsql {
+    SELECT sum(x) FROM t1 WHERE x>100
+  }
+} {0}
 
 finish_test

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle DELETE FROM statements.
 **
-** $Id: delete.c,v 1.17 2001/10/13 01:06:48 drh Exp $
+** $Id: delete.c,v 1.18 2001/10/15 00:44:36 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -33,6 +33,8 @@ void sqliteDeleteFrom(
   Index *pIdx;           /* For looping over indices of the table */
   int base;              /* Index of the first available table cursor */
   sqlite *db;            /* Main database structure */
+  int openOp;            /* Opcode used to open a cursor to the table */
+
 
   if( pParse->nErr || sqlite_malloc_failed ){
     pTabList = 0;
@@ -86,11 +88,31 @@ void sqliteDeleteFrom(
     pParse->schemaVerified = 1;
   }
 
+  /* Initialize the counter of the number of rows deleted, if
+  ** we are counting rows.
+  */
+  if( db->flags & SQLITE_CountRows ){
+    sqliteVdbeAddOp(v, OP_Integer, 0, 0);
+  }
 
   /* Special case: A DELETE without a WHERE clause deletes everything.
   ** It is easier just to erase the whole table.
   */
   if( pWhere==0 ){
+    if( db->flags & SQLITE_CountRows ){
+      /* If counting rows deleted, just count the total number of
+      ** entries in the table. */
+      int endOfLoop = sqliteVdbeMakeLabel(v);
+      int addr;
+      openOp = pTab->isTemp ? OP_OpenAux : OP_Open;
+      sqliteVdbeAddOp(v, openOp, 0, pTab->tnum);
+      sqliteVdbeAddOp(v, OP_Rewind, 0, 0);
+      addr = sqliteVdbeAddOp(v, OP_Next, 0, endOfLoop);
+      sqliteVdbeAddOp(v, OP_AddImm, 1, 0);
+      sqliteVdbeAddOp(v, OP_Goto, 0, addr);
+      sqliteVdbeResolveLabel(v, endOfLoop);
+      sqliteVdbeAddOp(v, OP_Close, 0, 0);
+    }
     sqliteVdbeAddOp(v, OP_Clear, pTab->tnum, pTab->isTemp);
     for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
       sqliteVdbeAddOp(v, OP_Clear, pIdx->tnum, pTab->isTemp);
@@ -101,8 +123,6 @@ void sqliteDeleteFrom(
   ** the table an pick which records to delete.
   */
   else{
-    int openOp;
-
     /* Begin the database scan
     */
     sqliteVdbeAddOp(v, OP_ListOpen, 0, 0);
@@ -112,6 +132,9 @@ void sqliteDeleteFrom(
     /* Remember the key of every item to be deleted.
     */
     sqliteVdbeAddOp(v, OP_ListWrite, 0, 0);
+    if( db->flags & SQLITE_CountRows ){
+      sqliteVdbeAddOp(v, OP_AddImm, 1, 0);
+    }
 
     /* End the database scan loop.
     */
@@ -151,6 +174,15 @@ void sqliteDeleteFrom(
     sqliteVdbeAddOp(v, OP_Commit, 0, 0);
   }
 
+  /*
+  ** Return the number of rows that were deleted.
+  */
+  if( db->flags & SQLITE_CountRows ){
+    sqliteVdbeAddOp(v, OP_ColumnCount, 1, 0);
+    sqliteVdbeAddOp(v, OP_ColumnName, 0, 0);
+    sqliteVdbeChangeP3(v, -1, "rows deleted", P3_STATIC);
+    sqliteVdbeAddOp(v, OP_Callback, 1, 0);
+  }
 
 delete_from_cleanup:
   sqliteIdListDelete(pTabList);

@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.12 2001/10/13 02:59:10 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.13 2001/10/15 00:44:36 drh Exp $}
 
 puts {<html>
 <head>
@@ -631,6 +631,12 @@ with caution.</p>
     uses more memory, you can increase the cache size for a possible speed
     improvement.</p></li>
 
+<li><p><b>PRAGMA count_changes = ON;
+       <br>PRAGMA count_changes = OFF;</b></p>
+    <p>When on, the COUNT_CHANGES pragma causes the callback function to
+    be invoked once for each DELETE, INSERT, or UPDATE operation.  The
+    argument is the number of rows that were changed.</p>
+
 <li><p><b>PRAGMA full_column_names = ON;
        <br>PRAGMA full_column_names = OFF;</b></p>
     <p>The column names reported in an SQLite callback are normally just
@@ -638,12 +644,32 @@ with caution.</p>
     is used.  But when full_column_names is turned on, column names are
     always reported as "TABLE.COLUMN" even for simple queries.</p></li>
 
-<li><p><b>PRAGMA vdbe_trace = ON;<br>PRAGMA vdbe_trace = OFF;</b></p>
-    <p>Turn tracing of the virtual database engine inside of the
-    SQLite library on and off.  This is used for debugging.</p></li>
+<li><p><b>PRAGMA index_info(</b><i>index-name</i><b>);</b></p>
+    <p>For each column that the named index references, invoke the 
+    callback function
+    once with information about that column, including the column name,
+    and the column number.</p>
+
+<li><p><b>PRAGMA index_list(</b><i>table-name</i><b>);</b></p>
+    <p>For each index on the named table, invoke the callback function
+    once with information about that index.  Arguments include the
+    index name and a flag to indicate whether or not the index must be
+    unique.</p>
 
 <li><p><b>PRAGMA parser_trace = ON;<br>PRAGMA parser_trace = OFF;</b></p>
     <p>Turn tracing of the SQL parser inside of the
+    SQLite library on and off.  This is used for debugging.
+    This only works if the library is compiled without the NDEBUG macro.
+    </p></li>
+
+<li><p><b>PRAGMA table_info(</b><i>table-name</i><b>);</b></p>
+    <p>For each column in the named table, invoke the callback function
+    once with information about that column, including the column name,
+    data type, whether or not the column can be NULL, and the default
+    value for the column.</p>
+
+<li><p><b>PRAGMA vdbe_trace = ON;<br>PRAGMA vdbe_trace = OFF;</b></p>
+    <p>Turn tracing of the virtual database engine inside of the
     SQLite library on and off.  This is used for debugging.</p></li>
 </ul>
 

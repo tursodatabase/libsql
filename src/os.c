@@ -68,7 +68,7 @@
 ** To work around the problem, SQLite has to manage file locks internally
 ** on its own.  Whenever a new database is opened, we have to find the
 ** specific inode of the database file (the inode is determined by the
-** st_dev and st_ino fields of the stat structure the stat() fills in)
+** st_dev and st_ino fields of the stat structure that fstat() fills in)
 ** and check for locks already existing on that inode.  When locks are
 ** created or removed, we have to look at our own internal record of the
 ** locks to see if another thread has previously set a lock on that same

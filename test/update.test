@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the UPDATE statement.
 #
-# $Id: update.test,v 1.6 2001/09/16 00:13:28 drh Exp $
+# $Id: update.test,v 1.7 2001/10/15 00:44:36 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -61,25 +61,37 @@ do_test update-3.4 {
 #
 do_test update-3.5 {
   execsql {UPDATE test1 SET f2=f2*3}
+} {}
+do_test update-3.6 {
   execsql {SELECT * FROM test1 ORDER BY f1}
 } {1 6 2 12 3 24 4 48 5 96 6 192 7 384 8 768 9 1536 10 3072}
-do_test update-3.6 {
+do_test update-3.7 {
+  execsql {PRAGMA count_changes=on}
   execsql {UPDATE test1 SET f2=f2/3 WHERE f1<=5}
+} {5}
+do_test update-3.8 {
   execsql {SELECT * FROM test1 ORDER BY f1}
 } {1 2 2 4 3 8 4 16 5 32 6 192 7 384 8 768 9 1536 10 3072}
-do_test update-3.7 {
+do_test update-3.9 {
   execsql {UPDATE test1 SET f2=f2/3 WHERE f1>5}
+} {5}
+do_test update-3.10 {
   execsql {SELECT * FROM test1 ORDER BY f1}
 } {1 2 2 4 3 8 4 16 5 32 6 64 7 128 8 256 9 512 10 1024}
 
 # Swap the values of f1 and f2 for all elements
 #
-do_test update-3.8 {
+do_test update-3.11 {
   execsql {UPDATE test1 SET F2=f1, F1=f2}
+} {10}
+do_test update-3.12 {
   execsql {SELECT * FROM test1 ORDER BY F1}
 } {2 1 4 2 8 3 16 4 32 5 64 6 128 7 256 8 512 9 1024 10}
-do_test update-3.9 {
+do_test update-3.13 {
+  execsql {PRAGMA count_changes=off}
   execsql {UPDATE test1 SET F2=f1, F1=f2}
+} {}
+do_test update-3.14 {
   execsql {SELECT * FROM test1 ORDER BY F1}
 } {1 2 2 4 3 8 4 16 5 32 6 64 7 128 8 256 9 512 10 1024}
 
@@ -117,8 +129,16 @@ do_test update-4.5 {
   execsql {SELECT * FROM test1 ORDER BY f1,f2}
 } {6 64 8 88 8 128 8 256 8 888 9 512 10 1024 78 128 777 128}
 do_test update-4.6 {
-  execsql {UPDATE test1 SET f1=f1-1 WHERE f1<=100 and f2==128}
-  execsql {SELECT * FROM test1 ORDER BY f1,f2}
+  execsql {
+    PRAGMA count_changes=on;
+    UPDATE test1 SET f1=f1-1 WHERE f1<=100 and f2==128;
+  }
+} {2}
+do_test update-4.7 {
+  execsql {
+    PRAGMA count_changes=off;
+    SELECT * FROM test1 ORDER BY f1,f2
+  }
 } {6 64 7 128 8 88 8 256 8 888 9 512 10 1024 77 128 777 128}
 
 # Repeat the previous sequence of tests with an index.
@@ -154,34 +174,44 @@ do_test update-5.4.3 {
 } {8 88 8 128 8 256 8 888}
 do_test update-5.5 {
   execsql {UPDATE test1 SET f1=f1-1 WHERE f1>100 and f2==128}
+} {}
+do_test update-5.5.1 {
   execsql {SELECT * FROM test1 ORDER BY f1,f2}
 } {6 64 8 88 8 128 8 256 8 888 9 512 10 1024 78 128 777 128}
-do_test update-5.5.1 {
+do_test update-5.5.2 {
   execsql {SELECT * FROM test1 WHERE f1==78 ORDER BY f1,f2}
 } {78 128}
-do_test update-5.5.2 {
+do_test update-5.5.3 {
   execsql {SELECT * FROM test1 WHERE f1==778 ORDER BY f1,f2}
 } {}
-do_test update-5.5.3 {
+do_test update-5.5.4 {
   execsql {SELECT * FROM test1 WHERE f1==777 ORDER BY f1,f2}
 } {777 128}
-do_test update-5.5.4 {
+do_test update-5.5.5 {
   execsql {SELECT * FROM test1 WHERE f1==8 ORDER BY f1,f2}
 } {8 88 8 128 8 256 8 888}
 do_test update-5.6 {
-  execsql {UPDATE test1 SET f1=f1-1 WHERE f1<=100 and f2==128}
-  execsql {SELECT * FROM test1 ORDER BY f1,f2}
-} {6 64 7 128 8 88 8 256 8 888 9 512 10 1024 77 128 777 128}
+  execsql {
+    PRAGMA count_changes=on;
+    UPDATE test1 SET f1=f1-1 WHERE f1<=100 and f2==128;
+  }
+} {2}
 do_test update-5.6.1 {
+  execsql {
+    PRAGMA count_changes=off;
+    SELECT * FROM test1 ORDER BY f1,f2
+  }
+} {6 64 7 128 8 88 8 256 8 888 9 512 10 1024 77 128 777 128}
+do_test update-5.6.2 {
   execsql {SELECT * FROM test1 WHERE f1==77 ORDER BY f1,f2}
 } {77 128}
-do_test update-5.6.2 {
+do_test update-5.6.3 {
   execsql {SELECT * FROM test1 WHERE f1==778 ORDER BY f1,f2}
 } {}
-do_test update-5.6.3 {
+do_test update-5.6.4 {
   execsql {SELECT * FROM test1 WHERE f1==777 ORDER BY f1,f2}
 } {777 128}
-do_test update-5.6.4 {
+do_test update-5.6.5 {
   execsql {SELECT * FROM test1 WHERE f1==8 ORDER BY f1,f2}
 } {8 88 8 256 8 888}
 
