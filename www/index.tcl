@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.47 2001/11/12 12:43:22 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.48 2001/11/24 00:31:47 drh Exp $}
 
 puts {<html>
 <head><title>SQLite: An SQL Database Engine In A C Library</title></head>
@@ -105,6 +105,7 @@ newer versions of SQLite.
 <p>The following documentation is currently available:</p>
 
 <p><ul>
+<li><a href="faq.html">Frequently Asked Questions</a> are available online.</li>
 <li>Information on the <a href="sqlite.html">sqlite</a>
     command-line utility.</li>
 <li>The <a href="lang.html">SQL Language</a> subset understood by SQLite.</li>

@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.32 2001/11/21 02:21:12 drh Exp $
+** $Id: util.c,v 1.33 2001/11/24 00:31:46 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -426,13 +426,18 @@ int sqliteStrNICmp(const char *zLeft, const char *zRight, int N){
   return N<0 ? 0 : *a - *b;
 }
 
-/* Notes on string comparisions.
+/* 
+** The sortStrCmp() function below is used to order elements according
+** to the ORDER BY clause of a SELECT.  The sort order is a little different
+** from what one might expect.  This note attempts to describe what is
+** going on.
 **
 ** We want the main string comparision function used for sorting to
 ** sort both numbers and alphanumeric words into the correct sequence.
 ** The same routine should do both without prior knowledge of which
 ** type of text the input represents.  It should even work for strings
-** which are a mixture of text and numbers.
+** which are a mixture of text and numbers.  (It does not work for
+** numeric substrings in exponential notation, however.)
 **
 ** To accomplish this, we keep track of a state number while scanning
 ** the two strings.  The states are as follows:
@@ -525,9 +530,10 @@ static const unsigned char stateMachine[] = {
 };
 
 /* This routine does a comparison of two strings.  Case is used only
-** if useCase!=0.  Numbers compare in numerical order.
+** if useCase!=0.  Numeric substrings compare in numerical order for the
+** most part but this routine does not understand exponential notation.
 */
-static int privateStrCmp(const char *atext, const char *btext, int useCase){
+static int sortStrCmp(const char *atext, const char *btext, int useCase){
   register unsigned char *a, *b, *map, ca, cb;
   int result;
   register int cclass = 0;
@@ -599,129 +605,69 @@ static int privateStrCmp(const char *atext, const char *btext, int useCase){
 }
 
 /*
-** Do a comparison of pure numerics.  If either string is not a pure
-** numeric, then return 0.  Otherwise return 1 and set *pResult to be
-** negative, zero or positive if the first string are numerially less than
-** equal to, or greater than the second.
+** Return TRUE if z is a pure numeric string.  Return FALSE if the
+** string contains any character which is not part of a number.
+**
+** Am empty string is considered numeric.
 */
-static int privateCompareNum(const char *a, const char *b, int *pResult){
-  char *endPtr;
-  double rA, rB;
-  int isNumA, isNumB;
-  if( isdigit(*a) || ((*a=='-' || *a=='+') && isdigit(a[1])) ){
-    rA = strtod(a, &endPtr);
-    isNumA = *endPtr==0;
-  }else{
-    isNumA = 0;
+static int isNum(const char *z){
+  if( *z=='-' || *z=='+' ) z++;
+  if( !isdigit(*z) ){
+    return *z==0;
   }
-  if( isdigit(*b) || ((*b=='-' || *b=='+') && isdigit(b[1])) ){
-    rB = strtod(b, &endPtr);
-    isNumB = *endPtr==0;
-  }else{
-    isNumB = 0;
+  z++;
+  while( isdigit(*z) ){ z++; }
+  if( *z=='.' ){
+    z++;
+    if( !isdigit(*z) ) return 0;
+    while( isdigit(*z) ){ z++; }
+    if( *z=='e' || *z=='E' ){
+      z++;
+      if( *z=='+' || *z=='-' ) z++;
+      if( !isdigit(*z) ) return 0;
+      while( isdigit(*z) ){ z++; }
+    }
   }
-  if( isNumB==0 && isNumA==0 ) return 0;
-  if( isNumA!=isNumB ){
-    *pResult =  isNumA - isNumB;
-  }else if( rA<rB ){
-    *pResult = -1;
-  }else if( rA>rB ){
-    *pResult = 1;
-  }else{
-    *pResult = 0;
-  }
-  return 1;
+  return *z==0;
 }
 
 /* This comparison routine is what we use for comparison operations
-** in an SQL expression.  (Ex:  name<'Hello' or value<5).  Compare two
-** strings.  Use case only as a tie-breaker.  Numbers compare in
-** numerical order.
+** in an SQL expression.  (Ex:  name<'Hello' or value<5). 
+**
+** Numerical strings compare in numerical order.  Numerical strings
+** are always less than non-numeric strings.  Non-numeric strings
+** compare in lexigraphical order (the same order as strcmp()).
+**
+** This is NOT the comparison function used for sorting.  The sort
+** order is a little bit different.  See sqliteSortCompare below
+** for additional information.
 */
 int sqliteCompare(const char *atext, const char *btext){
   int result;
-  if( !privateCompareNum(atext, btext, &result) || result==0 ){
-    result = privateStrCmp(atext, btext, 0);
-    if( result==0 ) result = privateStrCmp(atext, btext, 1);
-  }
-  return result;
-}
-
-/*
-** If you compile just this one file with the -DTEST_COMPARE=1 option,
-** it generates a program to test the comparisons routines.  
-*/
-#ifdef TEST_COMPARE
-#include <stdlib.h>
-#include <stdio.h>
-int sortCmp(const char **a, const char **b){
-  return sqliteCompare(*a, *b);
-}
-int main(int argc, char **argv){
-  int i, j, k, n, cnt;
-  static char *azStr[] = {
-     "abc", "aBc", "abcd", "aBcd", 
-     "123", "124", "1234", "-123", "-124", "-1234", "+124",
-     "123.45", "123.456", "123.46", "-123.45", "-123.46", "-123.456", 
-     "x9", "x10", "x-9", "x-10", "X9", "X10",
-     "1.234e+02", "+123", "1.23E2", "1.2345e+2", "-1.2345e2", "+w"
-  };
-  n = sizeof(azStr)/sizeof(azStr[0]);
-  qsort(azStr, n, sizeof(azStr[0]), sortCmp);
-  for(i=0; i<n; i++){
-    printf("%s\n", azStr[i]);
-  }
-  printf("Sanity1...");
-  fflush(stdout);
-  cnt = 0;
-  for(i=0; i<n-1; i++){
-    char *a = azStr[i];
-    for(j=i+1; j<n; j++){
-      char *b = azStr[j];
-      if( sqliteCompare(a,b) != -sqliteCompare(b,a) ){
-        printf("Failed!  \"%s\" vs \"%s\"\n", a, b);
-        i = j = n;
-      }
-      cnt++;
-    }
-  }
-  if( i<n ){
-    printf(" OK (%d)\n", cnt);
-  }
-  printf("Sanity2...");
-  fflush(stdout);
-  cnt = 0;
-  for(i=0; i<n; i++){
-    char *a = azStr[i];
-    for(j=0; j<n; j++){
-      char *b = azStr[j];
-      for(k=0; k<n; k++){
-        char *c = azStr[k];
-        int x1, x2, x3, success;
-        x1 = sqliteCompare(a,b);
-        x2 = sqliteCompare(b,c);
-        x3 = sqliteCompare(a,c);
-        if( x1==0 ){
-          success = x2==x3;
-        }else if( x1<0 ){
-          success = (x2<=0 && x3<=0) || x2>0;
-        }else{
-          success = (x2>=0 && x3>=0) || x2<0;
-        }
-        if( !success ){
-          printf("Failed!  \"%s\" vs \"%s\" vs \"%s\"\n", a, b, c);
-          i = j = k = n+1;
-        }
-        cnt++;
+  int isNumA = isNum(atext);
+  int isNumB = isNum(btext);
+  if( isNumA ){
+    if( !isNumB ){
+      result = -1;
+    }else{
+      double rA, rB;
+      rA = atof(atext);
+      rB = atof(btext);
+      if( rA<rB ){
+        result = -1;
+      }else if( rA>rB ){
+        result = +1;
+      }else{
+        result = 0;
       }
     }
+  }else if( isNumB ){
+    result = +1;
+  }else {
+    result = strcmp(atext, btext);
   }
-  if( i<n+1 ){
-    printf(" OK (%d)\n", cnt);
-  }
-  return 0;
+  return result; 
 }
-#endif
 
 /*
 ** This routine is used for sorting.  Each key is a list of one or more
@@ -737,26 +683,67 @@ int main(int argc, char **argv){
 ** Every string begins with either a "+" or "-" character.  If the
 ** character is "-" then the return value is negated.  This is done
 ** to implement a sort in descending order.
+**
+** For sorting purposes, pur numeric strings (strings for which the
+** isNum() function above returns TRUE) always compare less than strings
+** that are not pure numerics.  Within non-numeric strings, substrings
+** of digits compare in numerical order.  Finally, case is used only
+** to break a tie.
+**
+** Note that the sort order imposed by the rules above is different
+** from the ordering defined by the "<", "<=", ">", and ">=" operators
+** of expressions.  The operators compare non-numeric strings in
+** lexigraphical order.  This routine does the additional processing
+** to sort substrings of digits into numerical order and to use case
+** only as a tie-breaker.
 */
 int sqliteSortCompare(const char *a, const char *b){
   int len;
   int res = 0;
+  int isNumA, isNumB;
 
   while( res==0 && *a && *b ){
-    res = sqliteCompare(&a[1], &b[1]);
-    if( res==0 ){
-      len = strlen(a) + 1;
-      a += len;
-      b += len;
+    isNumA = isNum(&a[1]);
+    isNumB = isNum(&b[1]);
+    if( isNumA ){
+      double rA, rB;
+      if( !isNumB ){
+        res = -1;
+        break;
+      }
+      rA = atof(&a[1]);
+      rB = atof(&b[1]);
+      if( rA<rB ){
+        res = -1;
+        break;
+      }
+      if( rA>rB ){
+        res = +1;
+        break;
+      }
+    }else if( isNumB ){
+      res = +1;
+      break;
+    }else{
+      res = sortStrCmp(&a[1],&b[1],0);
+      if( res==0 ){
+        res = sortStrCmp(&a[1],&b[1],1);
+      }
+      if( res!=0 ){
+        break;
+      }
     }
+    len = strlen(&a[1]) + 2;
+    a += len;
+    b += len;
   }
   if( *a=='-' ) res = -res;
   return res;
 }
 
 /*
-** Some powers of 64.  These numbers and their recipricals should
-** all have exact representations in the floating point format.
+** Some powers of 64.  These constants are needed in the
+** sqliteRealToSortable() routine below.
 */
 #define _64e3  (64.0 * 64.0 * 64.0)
 #define _64e4  (64.0 * 64.0 * 64.0 * 64.0)

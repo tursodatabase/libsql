@@ -329,6 +329,9 @@ tclsqlite.html:	$(TOP)/www/tclsqlite.tcl
 speed.html:	$(TOP)/www/speed.tcl
 	tclsh $(TOP)/www/speed.tcl >speed.html
 
+faq.html:	$(TOP)/www/faq.tcl
+	tclsh $(TOP)/www/faq.tcl >faq.html
+
 download.html:	$(TOP)/www/download.tcl
 	tclsh $(TOP)/www/download.tcl >download.html
 
@@ -349,7 +352,8 @@ DOC = \
   mingw.html \
   tclsqlite.html \
   download.html \
-  speed.html
+  speed.html \
+  faq.html
 
 doc:	$(DOC)
 	mkdir -p doc

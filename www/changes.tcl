@@ -17,6 +17,14 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2001 Nov 23 (2.1.3)} {
+<li>Fix the behavior of comparison operators 
+    (ex: "<b>&lt</b>", "<b>==</b>", etc.)
+    so that they are consistent with the order of entries in an index.</li>
+<li>Correct handling of integers in SQL expressions that are larger than
+    what can be represented by the machine integer.</li>
+}
+
 chng {2001 Nov 22 (2.1.2)} {
 <li>Changes to support 64-bit architectures.</li>
 <li>Fix a bug in the locking protocol.</li>

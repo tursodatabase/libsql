@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing expressions.
 #
-# $Id: expr.test,v 1.16 2001/10/13 02:59:09 drh Exp $
+# $Id: expr.test,v 1.17 2001/11/24 00:31:47 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -73,6 +73,15 @@ test_expr expr-1.43 {i1=1, i2=2} {i1&i2} {0}
 test_expr expr-1.44 {i1=1} {~i1} {-2}
 test_expr expr-1.45 {i1=1, i2=3} {i1<<i2} {8}
 test_expr expr-1.46 {i1=32, i2=3} {i1>>i2} {4}
+test_expr expr-1.47 {i1=9999999999, i2=8888888888} {i1<i2} 0
+test_expr expr-1.48 {i1=9999999999, i2=8888888888} {i1=i2} 0
+test_expr expr-1.49 {i1=9999999999, i2=8888888888} {i1>i2} 1
+test_expr expr-1.50 {i1=99999999999, i2=99999999998} {i1<i2} 0
+test_expr expr-1.51 {i1=99999999999, i2=99999999998} {i1=i2} 0
+test_expr expr-1.52 {i1=99999999999, i2=99999999998} {i1>i2} 1
+test_expr expr-1.53 {i1=099999999999, i2=99999999999} {i1<i2} 0
+test_expr expr-1.54 {i1=099999999999, i2=99999999999} {i1=i2} 1
+test_expr expr-1.55 {i1=099999999999, i2=99999999999} {i1>i2} 0
 
 test_expr expr-2.1 {r1=1.23, r2=2.34} {r1+r2} 3.57
 test_expr expr-2.2 {r1=1.23, r2=2.34} {r1-r2} -1.11
@@ -123,9 +132,11 @@ test_expr expr-3.22 {t1='abc', t2='xyz'} {t1!=t2} 1
 test_expr expr-3.23 {t1='xyz', t2='abc'} {t1!=t2} 1
 test_expr expr-3.24 {t1='abc', t2='abc'} {t1!=t2} 0
 test_expr expr-3.25 {t1=NULL, t2='hi'} {t1 isnull} 1
+test_expr expr-3.25b {t1=NULL, t2='hi'} {t1 is null} 1
 test_expr expr-3.26 {t1=NULL, t2='hi'} {t2 isnull} 0
 test_expr expr-3.27 {t1=NULL, t2='hi'} {t1 notnull} 0
 test_expr expr-3.28 {t1=NULL, t2='hi'} {t2 notnull} 1
+test_expr expr-3.28b {t1=NULL, t2='hi'} {t2 is not null} 1
 test_expr expr-3.29 {t1='xyz', t2='abc'} {t1||t2} {xyzabc}
 test_expr expr-3.30 {t1=NULL, t2='abc'} {t1||t2} {abc}
 test_expr expr-3.31 {t1='xyz', t2=NULL} {t1||t2} {xyz}
@@ -133,8 +144,14 @@ test_expr expr-3.32 {t1='xyz', t2='abc'} {t1||' hi '||t2} {{xyz hi abc}}
 
 test_expr expr-4.1 {t1='abc', t2='Abc'} {t1<t2} 0
 test_expr expr-4.2 {t1='abc', t2='Abc'} {t1>t2} 1
-test_expr expr-4.3 {t1='abc', t2='Bbc'} {t1<t2} 1
-test_expr expr-4.4 {t1='abc', t2='Bbc'} {t1>t2} 0
+test_expr expr-4.3 {t1='abc', t2='Bbc'} {t1<t2} 0
+test_expr expr-4.4 {t1='abc', t2='Bbc'} {t1>t2} 1
+test_expr expr-4.5 {t1='0', t2='0.0'} {t1==t2} 1
+test_expr expr-4.6 {t1='0.000', t2='0.0'} {t1==t2} 1
+test_expr expr-4.7 {t1=' 0.000', t2=' 0.0'} {t1==t2} 0
+test_expr expr-4.8 {t1='0.0', t2='abc'} {t1<t2} 1
+test_expr expr-4.9 {t1='0.0', t2='abc'} {t1==t2} 0
+test_expr expr-4.10 {t1='0.0', t2='abc'} {t1>t2} 0
 
 test_expr expr-5.1 {t1='abc', t2='xyz'} {t1 LIKE t2} 0
 test_expr expr-5.2 {t1='abc', t2='ABC'} {t1 LIKE t2} 1
