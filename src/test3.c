@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test3.c,v 1.23 2003/04/13 18:26:52 paul Exp $
+** $Id: test3.c,v 1.24 2004/05/04 17:27:28 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -49,7 +49,7 @@ static char *errorName(int rc){
 }
 
 /*
-** Usage:   btree_open FILENAME
+** Usage:   btree_open FILENAME NCACHE FLAGS
 **
 ** Open a new database
 */
@@ -60,14 +60,16 @@ static int btree_open(
   const char **argv      /* Text of each argument */
 ){
   Btree *pBt;
-  int rc;
+  int rc, nCache, flags;
   char zBuf[100];
-  if( argc!=2 ){
+  if( argc!=4 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " FILENAME\"", 0);
+       " FILENAME NCACHE FLAGS\"", 0);
     return TCL_ERROR;
   }
-  rc = sqliteBtreeFactory(0, argv[1], 0, 1000, &pBt);
+  if( Tcl_GetInt(interp, argv[2], &nCache) ) return TCL_ERROR;
+  if( Tcl_GetInt(interp, argv[3], &flags) ) return TCL_ERROR;
+  rc = sqlite3BtreeOpen(argv[1], &pBt, nCache, flags);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;
@@ -99,7 +101,7 @@ static int btree_close(
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[1], (int*)&pBt) ) return TCL_ERROR;
-  rc = sqliteBtreeClose(pBt);
+  rc = sqlite3BtreeClose(pBt);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;
@@ -126,7 +128,7 @@ static int btree_begin_transaction(
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[1], (int*)&pBt) ) return TCL_ERROR;
-  rc = sqliteBtreeBeginTrans(pBt);
+  rc = sqlite3BtreeBeginTrans(pBt);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;
@@ -153,7 +155,7 @@ static int btree_rollback(
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[1], (int*)&pBt) ) return TCL_ERROR;
-  rc = sqliteBtreeRollback(pBt);
+  rc = sqlite3BtreeRollback(pBt);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;
@@ -180,7 +182,7 @@ static int btree_commit(
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[1], (int*)&pBt) ) return TCL_ERROR;
-  rc = sqliteBtreeCommit(pBt);
+  rc = sqlite3BtreeCommit(pBt);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;
@@ -189,7 +191,7 @@ static int btree_commit(
 }
 
 /*
-** Usage:   btree_create_table ID
+** Usage:   btree_create_table ID FLAGS
 **
 ** Create a new table in the database
 */
@@ -200,15 +202,16 @@ static int btree_create_table(
   const char **argv      /* Text of each argument */
 ){
   Btree *pBt;
-  int rc, iTable;
+  int rc, iTable, flags;
   char zBuf[30];
-  if( argc!=2 ){
+  if( argc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID\"", 0);
+       " ID FLAGS\"", 0);
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[1], (int*)&pBt) ) return TCL_ERROR;
-  rc = sqliteBtreeCreateTable(pBt, &iTable);
+  if( Tcl_GetInt(interp, argv[2], &flags) ) return TCL_ERROR;
+  rc = sqlite3BtreeCreateTable(pBt, &iTable, flags);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;
@@ -239,7 +242,7 @@ static int btree_drop_table(
   }
   if( Tcl_GetInt(interp, argv[1], (int*)&pBt) ) return TCL_ERROR;
   if( Tcl_GetInt(interp, argv[2], &iTable) ) return TCL_ERROR;
-  rc = sqliteBtreeDropTable(pBt, iTable);
+  rc = sqlite3BtreeDropTable(pBt, iTable);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;
@@ -268,13 +271,15 @@ static int btree_clear_table(
   }
   if( Tcl_GetInt(interp, argv[1], (int*)&pBt) ) return TCL_ERROR;
   if( Tcl_GetInt(interp, argv[2], &iTable) ) return TCL_ERROR;
-  rc = sqliteBtreeClearTable(pBt, iTable);
+  rc = sqlite3BtreeClearTable(pBt, iTable);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;
   }
   return TCL_OK;
 }
+
+#define SQLITE_N_BTREE_META 16
 
 /*
 ** Usage:   btree_get_meta ID
@@ -290,21 +295,21 @@ static int btree_get_meta(
   Btree *pBt;
   int rc;
   int i;
-  int aMeta[SQLITE_N_BTREE_META];
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
        " ID\"", 0);
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[1], (int*)&pBt) ) return TCL_ERROR;
-  rc = sqliteBtreeGetMeta(pBt, aMeta);
-  if( rc!=SQLITE_OK ){
-    Tcl_AppendResult(interp, errorName(rc), 0);
-    return TCL_ERROR;
-  }
   for(i=0; i<SQLITE_N_BTREE_META; i++){
     char zBuf[30];
-    sprintf(zBuf,"%d",aMeta[i]);
+    unsigned int v;
+    rc = sqlite3BtreeGetMeta(pBt, i, &v);
+    if( rc!=SQLITE_OK ){
+      Tcl_AppendResult(interp, errorName(rc), 0);
+      return TCL_ERROR;
+    }
+    sprintf(zBuf,"%d",v);
     Tcl_AppendElement(interp, zBuf);
   }
   return TCL_OK;
@@ -324,7 +329,7 @@ static int btree_update_meta(
   Btree *pBt;
   int rc;
   int i;
-  int aMeta[SQLITE_N_BTREE_META];
+  int aMeta[SQLITE_N_BTREE_META-1];
 
   if( argc!=2+SQLITE_N_BTREE_META ){
     char zBuf[30];
@@ -334,13 +339,15 @@ static int btree_update_meta(
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[1], (int*)&pBt) ) return TCL_ERROR;
-  for(i=0; i<SQLITE_N_BTREE_META; i++){
+  for(i=0; i<SQLITE_N_BTREE_META-1; i++){
     if( Tcl_GetInt(interp, argv[i+2], &aMeta[i]) ) return TCL_ERROR;
   }
-  rc = sqliteBtreeUpdateMeta(pBt, aMeta);
-  if( rc!=SQLITE_OK ){
-    Tcl_AppendResult(interp, errorName(rc), 0);
-    return TCL_ERROR;
+  for(i=0; i<SQLITE_N_BTREE_META-1; i++){
+    rc = sqlite3BtreeUpdateMeta(pBt, i+1, aMeta[i]);
+    if( rc!=SQLITE_OK ){
+      Tcl_AppendResult(interp, errorName(rc), 0);
+      return TCL_ERROR;
+    }
   }
   return TCL_OK;
 }
@@ -367,7 +374,7 @@ static int btree_page_dump(
   }
   if( Tcl_GetInt(interp, argv[1], (int*)&pBt) ) return TCL_ERROR;
   if( Tcl_GetInt(interp, argv[2], &iPage) ) return TCL_ERROR;
-  rc = sqliteBtreePageDump(pBt, iPage, 0);
+  rc = sqlite3BtreePageDump(pBt, iPage, 0);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;
@@ -397,7 +404,7 @@ static int btree_tree_dump(
   }
   if( Tcl_GetInt(interp, argv[1], (int*)&pBt) ) return TCL_ERROR;
   if( Tcl_GetInt(interp, argv[2], &iPage) ) return TCL_ERROR;
-  rc = sqliteBtreePageDump(pBt, iPage, 1);
+  rc = sqlite3BtreePageDump(pBt, iPage, 1);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;
@@ -426,7 +433,7 @@ static int btree_pager_stats(
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[1], (int*)&pBt) ) return TCL_ERROR;
-  a = sqlitepager_stats(sqliteBtreePager(pBt));
+  a = sqlitepager_stats(sqlite3BtreePager(pBt));
   for(i=0; i<9; i++){
     static char *zName[] = {
       "ref", "page", "max", "size", "state", "err",
@@ -459,7 +466,7 @@ static int btree_pager_ref_dump(
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[1], (int*)&pBt) ) return TCL_ERROR;
-  sqlitepager_refdump(sqliteBtreePager(pBt));
+  sqlitepager_refdump(sqlite3BtreePager(pBt));
   return TCL_OK;
 }
 
@@ -493,7 +500,7 @@ static int btree_integrity_check(
   for(i=0; i<argc-2; i++){
     if( Tcl_GetInt(interp, argv[i+2], &aRoot[i]) ) return TCL_ERROR;
   }
-  zResult = sqliteBtreeIntegrityCheck(pBt, aRoot, nRoot);
+  zResult = sqlite3BtreeIntegrityCheck(pBt, aRoot, nRoot);
   if( zResult ){
     Tcl_AppendResult(interp, zResult, 0);
     sqliteFree(zResult); 
@@ -527,7 +534,7 @@ static int btree_cursor(
   if( Tcl_GetInt(interp, argv[1], (int*)&pBt) ) return TCL_ERROR;
   if( Tcl_GetInt(interp, argv[2], &iTable) ) return TCL_ERROR;
   if( Tcl_GetBoolean(interp, argv[3], &wrFlag) ) return TCL_ERROR;
-  rc = sqliteBtreeCursor(pBt, iTable, wrFlag, &pCur);
+  rc = sqlite3BtreeCursor(pBt, iTable, wrFlag, &pCur);
   if( rc ){
     Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;
@@ -557,7 +564,7 @@ static int btree_close_cursor(
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[1], (int*)&pCur) ) return TCL_ERROR;
-  rc = sqliteBtreeCloseCursor(pCur);
+  rc = sqlite3BtreeCloseCursor(pCur);
   if( rc ){
     Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;
@@ -587,7 +594,7 @@ static int btree_move_to(
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[1], (int*)&pCur) ) return TCL_ERROR;
-  rc = sqliteBtreeMoveto(pCur, argv[2], strlen(argv[2]), &res);  
+  rc = sqlite3BtreeMoveto(pCur, argv[2], strlen(argv[2]), &res);  
   if( rc ){
     Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;

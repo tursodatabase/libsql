@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.108 2004/05/03 19:49:33 drh Exp $
+** $Id: btree.c,v 1.109 2004/05/04 17:27:28 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -266,15 +266,15 @@ struct BtCursor {
   int idx;                  /* Index of the entry in pPage->aCell[] */
   u8 wrFlag;                /* True if writable */
   u8 eSkip;                 /* Determines if next step operation is a no-op */
-  u8 iMatch;                /* compare result from last sqliteBtreeMoveto() */
+  u8 iMatch;                /* compare result from last sqlite3BtreeMoveto() */
 };
 
 /*
 ** Legal values for BtCursor.eSkip.
 */
 #define SKIP_NONE     0   /* Always step the cursor */
-#define SKIP_NEXT     1   /* The next sqliteBtreeNext() is a no-op */
-#define SKIP_PREV     2   /* The next sqliteBtreePrevious() is a no-op */
+#define SKIP_NEXT     1   /* The next sqlite3BtreeNext() is a no-op */
+#define SKIP_PREV     2   /* The next sqlite3BtreePrevious() is a no-op */
 #define SKIP_INVALID  3   /* Calls to Next() and Previous() are invalid */
 
 /*
@@ -393,11 +393,11 @@ static void defragmentPage(MemPage *pPage){
   int start, hdr, size;
   int leftover;
   unsigned char *oldPage;
-  unsigned char newPage[SQLITE_PAGE_SIZE];
+  unsigned char newPage[MX_PAGE_SIZE];
 
   assert( sqlitepager_iswriteable(pPage->aData) );
   assert( pPage->pBt!=0 );
-  assert( pPage->pageSize <= SQLITE_PAGE_SIZE );
+  assert( pPage->pageSize <= MX_PAGE_SIZE );
   oldPage = pPage->aData;
   hdr = pPage->hdrOffset;
   addr = 3+hdr;
@@ -829,9 +829,9 @@ static void pageDestructor(void *pData){
 **
 ** zFilename is the name of the database file.  If zFilename is NULL
 ** a new database with a random name is created.  This randomly named
-** database file will be deleted when sqliteBtreeClose() is called.
+** database file will be deleted when sqlite3BtreeClose() is called.
 */
-int sqliteBtreeOpen(
+int sqlite3BtreeOpen(
   const char *zFilename,  /* Name of the file containing the BTree database */
   Btree **ppBtree,        /* Pointer to new Btree object written here */
   int nCache,             /* Number of cache pages */
@@ -905,7 +905,7 @@ int sqlite3BtreeClose(Btree *pBt){
 ** Synchronous is on by default so database corruption is not
 ** normally a worry.
 */
-int sqilte3BtreeSetCacheSize(Btree *pBt, int mxPage){
+int sqlite3BtreeSetCacheSize(Btree *pBt, int mxPage){
   sqlitepager_set_cachesize(pBt->pPager, mxPage);
   return SQLITE_OK;
 }
@@ -1010,13 +1010,13 @@ static int newDatabase(Btree *pBt){
 ** to the database.  None of the following routines will work
 ** unless a transaction is started first:
 **
-**      sqliteBtreeCreateTable()
-**      sqliteBtreeCreateIndex()
-**      sqliteBtreeClearTable()
-**      sqliteBtreeDropTable()
-**      sqliteBtreeInsert()
-**      sqliteBtreeDelete()
-**      sqliteBtreeUpdateMeta()
+**      sqlite3BtreeCreateTable()
+**      sqlite3BtreeCreateIndex()
+**      sqlite3BtreeClearTable()
+**      sqlite3BtreeDropTable()
+**      sqlite3BtreeInsert()
+**      sqlite3BtreeDelete()
+**      sqlite3BtreeUpdateMeta()
 */
 int sqlite3BtreeBeginTrans(Btree *pBt){
   int rc;
@@ -1188,7 +1188,7 @@ static int dfltCompare(
 ** entries being inserted or deleted during the scan.  Cursors should
 ** be opened with wrFlag==0 only if this read-lock property is needed.
 ** That is to say, cursors should be opened with wrFlag==0 only if they
-** intend to use the sqliteBtreeNext() system call.  All other cursors
+** intend to use the sqlite3BtreeNext() system call.  All other cursors
 ** should be opened with wrFlag==1 even if they never really intend
 ** to write.
 ** 
@@ -2953,7 +2953,7 @@ int sqlite3BtreeInsert(
   }
   insertCell(pPage, pCur->idx, &newCell, szNew);
   rc = balance(pPage);
-  /* sqliteBtreePageDump(pCur->pBt, pCur->pgnoRoot, 1); */
+  /* sqlite3BtreePageDump(pCur->pBt, pCur->pgnoRoot, 1); */
   /* fflush(stdout); */
   moveToRoot(pCur);
   pCur->eSkip = SKIP_INVALID;
@@ -3161,28 +3161,31 @@ int sqlite3BtreeDropTable(Btree *pBt, int iTable){
 
 
 /*
-** Read the meta-information out of a database file.
+** Read the meta-information out of a database file.  Meta[0]
+** is the number of free pages currently in the database.  Meta[1]
+** through meta[15] are available for use by higher layers.
 */
 int sqlite3BtreeGetMeta(Btree *pBt, int idx, u32 *pMeta){
   int rc;
   int i;
   unsigned char *pP1;
 
-  assert( idx>=0 && idx<15 );
+  assert( idx>=0 && idx<=15 );
   rc = sqlitepager_get(pBt->pPager, 1, (void**)&pP1);
   if( rc ) return rc;
-  *pMeta = get4byte(&pP1[40 + idx*4]);
+  *pMeta = get4byte(&pP1[36 + idx*4]);
   sqlitepager_unref(pP1);
   return SQLITE_OK;
 }
 
 /*
-** Write meta-information back into the database.
+** Write meta-information back into the database.  Meta[0] is
+** read-only and may not be written.
 */
 int sqlite3BtreeUpdateMeta(Btree *pBt, int idx, u32 iMeta){
   unsigned char *pP1;
   int rc, i;
-  assert( idx>=0 && idx<15 );
+  assert( idx>=1 && idx<=15 );
   if( !pBt->inTrans ){
     return pBt->readOnly ? SQLITE_READONLY : SQLITE_ERROR;
   }
@@ -3190,7 +3193,7 @@ int sqlite3BtreeUpdateMeta(Btree *pBt, int idx, u32 iMeta){
   if( rc ) return rc;
   rc = sqlitepager_write(pP1);
   if( rc ) return rc;
-  put4byte(&pP1[40 + idx*4], iMeta);
+  put4byte(&pP1[36 + idx*4], iMeta);
   return SQLITE_OK;
 }
 
@@ -3205,7 +3208,7 @@ int sqlite3BtreeUpdateMeta(Btree *pBt, int idx, u32 iMeta){
 ** is used for debugging and testing only.
 */
 #ifdef SQLITE_TEST
-static int fileBtreePageDump(Btree *pBt, int pgno, int recursive){
+int sqlite3BtreePageDump(Btree *pBt, int pgno, int recursive){
   int rc;
   MemPage *pPage;
   int i, j;
