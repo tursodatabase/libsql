@@ -13,6 +13,7 @@ proc header {txt} {
 <ul>
 <li><a href="http://www.sqlite.org/cvstrac/tktnew">bugs</a></li>
 <li><a href="changes.html">changes</a></li>
+<li><a href="contrib">contrib</a></li>
 <li><a href="download.html#cvs">cvs&nbsp;repository</a></li>
 <li><a href="docs.html">documentation</a></li>
 </ul>
@@ -24,11 +25,13 @@ proc header {txt} {
 <li><a href="faq.html">faq</a></li>
 <li><a href="index.html">home</a></li>
 <li><a href="support.html">mailing&nbsp;list</a></li>
+<li><a href="index.html">news</a></li>
 </ul>
 </td>
 <td width="10"></td>
 <td valign="bottom">
 <ul>
+<li><a href="quickstart.html">quick&nbsp;start</a></li>
 <li><a href="support.html">support</a></li>
 <li><a href="lang.html">syntax</a></li>
 <li><a href="http://www.sqlite.org/cvstrac/timeline">timeline</a></li>
