@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.207 2004/11/05 03:56:01 drh Exp $
+** $Id: btree.c,v 1.208 2004/11/05 12:27:02 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1682,7 +1682,7 @@ static int relocatePage(
 }
 
 /* Forward declaration required by autoVacuumCommit(). */
-static int allocatePage(Btree *, MemPage **, Pgno *, Pgno);
+static int allocatePage(Btree *, MemPage **, Pgno *, Pgno, u8);
 
 /*
 ** This routine is called prior to sqlite3pager_commit when a transaction
@@ -1694,7 +1694,6 @@ static int autoVacuumCommit(Btree *pBt){
   int nPtrMap;      /* Number of pointer-map pages deallocated */
   Pgno origSize;  /* Pages in the database file */
   Pgno finSize;   /* Pages in the database file after truncation */
-  int i;            /* Counter variable */
   int rc;           /* Return code */
   u8 eType;
   int pgsz = pBt->pageSize;  /* Page size for this database */
@@ -1722,26 +1721,7 @@ static int autoVacuumCommit(Btree *pBt){
   origSize = sqlite3pager_pagecount(pPager);
   nPtrMap = (nFreeList-origSize+PTRMAP_PAGENO(pgsz, origSize)+pgsz/5)/(pgsz/5);
   finSize = origSize - nFreeList - nPtrMap;
-
   TRACE(("AUTOVACUUM: Begin (db size %d->%d)\n", origSize, finSize));
-
-#if 0
-  /* Note: This is temporary code for use during development of auto-vacuum. 
-  **
-  ** Inspect the pointer map to make sure there are no root pages with a
-  ** page number greater than finSize. If so, the auto-vacuum cannot
-  ** proceed. This limitation will be fixed when root pages are automatically
-  ** allocated at the start of the database file.
-  */
-  for( i=finSize+1; i<=origSize; i++ ){
-    rc = ptrmapGet(pBt, i, &eType, 0);
-    if( rc!=SQLITE_OK ) goto autovacuum_out;
-    if( eType==PTRMAP_ROOTPAGE ){
-      TRACE(("AUTOVACUUM: Cannot proceed due to root-page on page %d\n", i));
-      return SQLITE_OK;
-    }
-  }
-#endif
 
   /* Variable 'finSize' will be the size of the file in pages after
   ** the auto-vacuum has completed (the current file size minus the number
@@ -1755,7 +1735,7 @@ static int autoVacuumCommit(Btree *pBt){
     assert( eType!=PTRMAP_ROOTPAGE );
 
     /* If iDbPage is a free or pointer map page, do not swap it.
-    ** Instead, make sure the page is in the journal file.
+    ** TODO: Instead, make sure the page is in the journal file.
     */
     if( eType==PTRMAP_FREEPAGE || PTRMAP_ISPAGE(pgsz, iDbPage) ){
       continue;
@@ -1772,7 +1752,7 @@ static int autoVacuumCommit(Btree *pBt){
         releasePage(pFreeMemPage);
         pFreeMemPage = 0;
       }
-      rc = allocatePage(pBt, &pFreeMemPage, &iFreePage, 0);
+      rc = allocatePage(pBt, &pFreeMemPage, &iFreePage, 0, 0);
       if( rc!=SQLITE_OK ) goto autovacuum_out;
       assert( iFreePage<=origSize );
     }while( iFreePage>finSize );
@@ -2842,8 +2822,18 @@ int sqlite3BtreePrevious(BtCursor *pCur, int *pRes){
 ** locate a page close to the page number "nearby".  This can be used in an
 ** attempt to keep related pages close to each other in the database file,
 ** which in turn can make database access faster.
+**
+** If the "exact" parameter is not 0, and the page-number nearby exists 
+** anywhere on the free-list, then it is guarenteed to be returned. This
+** is only used by auto-vacuum databases when allocating a new table.
 */
-static int allocatePage(Btree *pBt, MemPage **ppPage, Pgno *pPgno, Pgno nearby){
+static int allocatePage(
+  Btree *pBt, 
+  MemPage **ppPage, 
+  Pgno *pPgno, 
+  Pgno nearby,
+  u8 exact
+){
   MemPage *pPage1;
   int rc;
   int n;     /* Number of pages on the freelist */
@@ -2853,63 +2843,169 @@ static int allocatePage(Btree *pBt, MemPage **ppPage, Pgno *pPgno, Pgno nearby){
   n = get4byte(&pPage1->aData[36]);
   if( n>0 ){
     /* There are pages on the freelist.  Reuse one of those pages. */
-    MemPage *pTrunk;
+    MemPage *pTrunk = 0;
+    Pgno iTrunk;
+    MemPage *pPrevTrunk = 0;
+    u8 searchList = 0; /* If the free-list must be searched for 'nearby' */
+    
+    /* If the 'exact' parameter was true and a query of the pointer-map
+    ** shows that the page 'nearby' is somewhere on the free-list, then
+    ** the entire-list will be searched for that page.
+    */
+#ifndef SQLITE_OMIT_AUTOVACUUM
+    if( exact ){
+      u8 eType;
+      assert( nearby>0 );
+      assert( pBt->autoVacuum );
+      rc = ptrmapGet(pBt, nearby, &eType, 0);
+      if( rc ) return rc;
+      if( eType==PTRMAP_FREEPAGE ){
+        searchList = 1;
+      }
+      *pPgno = nearby;
+    }
+#endif
+
+    /* Decrement the free-list count by 1. Set iTrunk to the index of the
+    ** first free-list trunk page. iPrevTrunk is initially 1.
+    */
     rc = sqlite3pager_write(pPage1->aData);
     if( rc ) return rc;
     put4byte(&pPage1->aData[36], n-1);
-    rc = getPage(pBt, get4byte(&pPage1->aData[32]), &pTrunk);
-    if( rc ) return rc;
-    rc = sqlite3pager_write(pTrunk->aData);
-    if( rc ){
-      releasePage(pTrunk);
-      return rc;
-    }
-    k = get4byte(&pTrunk->aData[4]);
-    if( k==0 ){
-      /* The trunk has no leaves.  So extract the trunk page itself and
-      ** use it as the newly allocated page */
-      *pPgno = get4byte(&pPage1->aData[32]);
-      memcpy(&pPage1->aData[32], &pTrunk->aData[0], 4);
-      *ppPage = pTrunk;
-      TRACE(("ALLOCATE: %d trunk - %d free pages left\n", *pPgno, n-1));
-    }else if( k>pBt->usableSize/4 - 8 ){
-      /* Value of k is out of range.  Database corruption */
-      return SQLITE_CORRUPT; /* bkpt-CORRUPT */
-    }else{
-      /* Extract a leaf from the trunk */
-      int closest;
-      unsigned char *aData = pTrunk->aData;
-      if( nearby>0 ){
-        int i, dist;
-        closest = 0;
-        dist = get4byte(&aData[8]) - nearby;
-        if( dist<0 ) dist = -dist;
-        for(i=1; i<k; i++){
-          int d2 = get4byte(&aData[8+i*4]) - nearby;
-          if( d2<0 ) d2 = -d2;
-          if( d2<dist ) closest = i;
-        }
+
+    /* The code within this loop is run only once if the 'searchList' variable
+    ** is not true. Otherwise, it runs once for each trunk-page on the
+    ** free-list until the page 'nearby' is located.
+    */
+    do {
+      pPrevTrunk = pTrunk;
+      if( pPrevTrunk ){
+        iTrunk = get4byte(&pPrevTrunk->aData[0]);
       }else{
-        closest = 0;
+        iTrunk = get4byte(&pPage1->aData[32]);
       }
-      *pPgno = get4byte(&aData[8+closest*4]);
-      if( *pPgno>sqlite3pager_pagecount(pBt->pPager) ){
-        /* Free page off the end of the file */
+      rc = getPage(pBt, iTrunk, &pTrunk);
+      if( rc ){
+        releasePage(pPrevTrunk);
+        return rc;
+      }
+
+      /* TODO: This should move to after the loop? */
+      rc = sqlite3pager_write(pTrunk->aData);
+      if( rc ){
+        releasePage(pTrunk);
+        releasePage(pPrevTrunk);
+        return rc;
+      }
+
+      k = get4byte(&pTrunk->aData[4]);
+      if( k==0 && !searchList ){
+        /* The trunk has no leaves and the list is not being searched. 
+        ** So extract the trunk page itself and use it as the newly 
+        ** allocated page */
+        assert( pPrevTrunk==0 );
+        *pPgno = iTrunk;
+        memcpy(&pPage1->aData[32], &pTrunk->aData[0], 4);
+        *ppPage = pTrunk;
+        pTrunk = 0;
+        TRACE(("ALLOCATE: %d trunk - %d free pages left\n", *pPgno, n-1));
+      }else if( k>pBt->usableSize/4 - 8 ){
+        /* Value of k is out of range.  Database corruption */
         return SQLITE_CORRUPT; /* bkpt-CORRUPT */
+#ifndef SQLITE_OMIT_AUTOVACUUM
+      }else if( searchList && nearby==iTrunk ){
+        /* The list is being searched and this trunk page is the page
+        ** to allocate, regardless of whether it has leaves.
+        */
+        assert( *pPgno==iTrunk );
+        *ppPage = pTrunk;
+        searchList = 0;
+        if( k==0 ){
+          if( !pPrevTrunk ){
+            memcpy(&pPage1->aData[32], &pTrunk->aData[0], 4);
+          }else{
+            memcpy(&pPrevTrunk->aData[0], &pTrunk->aData[0], 4);
+          }
+        }else{
+          /* The trunk page is required by the caller but it contains 
+          ** pointers to free-list leaves. The first leaf becomes a trunk
+          ** page in this case.
+          */
+          MemPage *pNewTrunk;
+          Pgno iNewTrunk = get4byte(&pTrunk->aData[8]);
+          rc = getPage(pBt, iNewTrunk, &pNewTrunk);
+          if( rc!=SQLITE_OK ){
+            releasePage(pTrunk);
+            releasePage(pPrevTrunk);
+            return rc;
+          }
+          rc = sqlite3pager_write(pNewTrunk->aData);
+          if( rc!=SQLITE_OK ){
+            releasePage(pNewTrunk);
+            releasePage(pTrunk);
+            releasePage(pPrevTrunk);
+            return rc;
+          }
+          memcpy(&pNewTrunk->aData[0], &pTrunk->aData[0], 4);
+          put4byte(&pNewTrunk->aData[4], k-1);
+          memcpy(&pNewTrunk->aData[8], &pTrunk->aData[12], (k-1)*4);
+          if( !pPrevTrunk ){
+            put4byte(&pPage1->aData[32], iNewTrunk);
+          }else{
+            put4byte(&pPrevTrunk->aData[0], iNewTrunk);
+          }
+          releasePage(pNewTrunk);
+        }
+        pTrunk = 0;
+        TRACE(("ALLOCATE: %d trunk - %d free pages left\n", *pPgno, n-1));
+#endif
+      }else{
+        /* Extract a leaf from the trunk */
+        int closest;
+        Pgno iPage;
+        unsigned char *aData = pTrunk->aData;
+        if( nearby>0 ){
+          int i, dist;
+          closest = 0;
+          dist = get4byte(&aData[8]) - nearby;
+          if( dist<0 ) dist = -dist;
+          for(i=1; i<k; i++){
+            int d2 = get4byte(&aData[8+i*4]) - nearby;
+            if( d2<0 ) d2 = -d2;
+            if( d2<dist ){
+              closest = i;
+              dist = d2;
+            }
+          }
+        }else{
+          closest = 0;
+        }
+
+        iPage = get4byte(&aData[8+closest*4]);
+        if( !searchList || iPage==nearby ){
+          *pPgno = iPage;
+          if( *pPgno>sqlite3pager_pagecount(pBt->pPager) ){
+            /* Free page off the end of the file */
+            return SQLITE_CORRUPT; /* bkpt-CORRUPT */
+          }
+          TRACE(("ALLOCATE: %d was leaf %d of %d on trunk %d"
+                 ": %d more free pages\n",
+                 *pPgno, closest+1, k, pTrunk->pgno, n-1));
+          if( closest<k-1 ){
+            memcpy(&aData[8+closest*4], &aData[4+k*4], 4);
+          }
+          put4byte(&aData[4], k-1);
+          rc = getPage(pBt, *pPgno, ppPage);
+          if( rc==SQLITE_OK ){
+            sqlite3pager_dont_rollback((*ppPage)->aData);
+            rc = sqlite3pager_write((*ppPage)->aData);
+          }
+          searchList = 0;
+        }
       }
-      TRACE(("ALLOCATE: %d was leaf %d of %d on trunk %d: %d more free pages\n",
-             *pPgno, closest+1, k, pTrunk->pgno, n-1));
-      if( closest<k-1 ){
-        memcpy(&aData[8+closest*4], &aData[4+k*4], 4);
-      }
-      put4byte(&aData[4], k-1);
-      rc = getPage(pBt, *pPgno, ppPage);
-      releasePage(pTrunk);
-      if( rc==SQLITE_OK ){
-        sqlite3pager_dont_rollback((*ppPage)->aData);
-        rc = sqlite3pager_write((*ppPage)->aData);
-      }
-    }
+      releasePage(pPrevTrunk);
+    }while( searchList );
+    releasePage(pTrunk);
   }else{
     /* There are no pages on the freelist, so create a new page at the
     ** end of the file */
@@ -2958,13 +3054,10 @@ static int freePage(MemPage *pPage){
 
 #ifndef SQLITE_OMIT_AUTOVACUUM
   /* If the database supports auto-vacuum, write an entry in the pointer-map
-  ** to indicate that the page is free. Also make sure the page is in
-  ** the journal file.
+  ** to indicate that the page is free.
   */
   if( pBt->autoVacuum ){
     rc = ptrmapPut(pBt, pPage->pgno, PTRMAP_FREEPAGE, 0);
-    if( rc ) return rc;
-    rc = sqlite3pager_write(pPage->aData);
     if( rc ) return rc;
   }
 #endif
@@ -3102,7 +3195,7 @@ static int fillInCell(
 #ifndef SQLITE_OMIT_AUTOVACUUM
       Pgno pgnoPtrmap = pgnoOvfl; /* Overflow page pointer-map entry page */
 #endif
-      rc = allocatePage(pBt, &pOvfl, &pgnoOvfl, pgnoOvfl);
+      rc = allocatePage(pBt, &pOvfl, &pgnoOvfl, pgnoOvfl, 0);
 #ifndef SQLITE_OMIT_AUTOVACUUM
       /* If the database supports auto-vacuum, and the second or subsequent
       ** overflow page is being allocated, add an entry to the pointer-map
@@ -3710,7 +3803,7 @@ static int balance_nonroot(MemPage *pPage){
       apOld[i] = 0;
       sqlite3pager_write(pNew->aData);
     }else{
-      rc = allocatePage(pBt, &pNew, &pgnoNew[i], pgnoNew[i-1]);
+      rc = allocatePage(pBt, &pNew, &pgnoNew[i], pgnoNew[i-1], 0);
       if( rc ) goto balance_cleanup;
       apNew[i] = pNew;
     }
@@ -3972,7 +4065,7 @@ static int balance_deeper(MemPage *pPage){
   assert( pPage->pParent==0 );
   assert( pPage->nOverflow>0 );
   pBt = pPage->pBt;
-  rc = allocatePage(pBt, &pChild, &pgnoChild, pPage->pgno);
+  rc = allocatePage(pBt, &pChild, &pgnoChild, pPage->pgno, 0);
   if( rc ) return rc;
   assert( sqlite3pager_iswriteable(pChild->aData) );
   usableSize = pBt->usableSize;
@@ -4241,25 +4334,12 @@ int sqlite3BtreeCreateTable(Btree *pBt, int *piTable, int flags){
     return SQLITE_READONLY;
   }
 #ifdef SQLITE_OMIT_AUTOVACUUM
-  rc = allocatePage(pBt, &pRoot, &pgnoRoot, 1);
+  rc = allocatePage(pBt, &pRoot, &pgnoRoot, 1, 0);
   if( rc ) return rc;
 #else
   if( pBt->autoVacuum ){
     Pgno pgnoMove;      /* Move a page here to make room for the root-page */
     MemPage *pPageMove; /* The page to move to. */
-
-    /* Run the auto-vacuum code to ensure the free-list is empty. This is
-    ** not really necessary, but it avoids complications in dealing with
-    ** a free-list in the code below.
-    ** TODO: This may need to be revisited.
-    ** TODO2: Actually this is no-good. running the auto-vacuum routine
-    **        involves truncating the database, which means the journal-file
-    **        must be synced(). No-good.
-    */
-/*
-    rc = autoVacuumCommit(pBt);
-    if( rc!=SQLITE_OK ) return rc;
-*/
 
     /* Read the value of meta[3] from the database to determine where the
     ** root page of the new table should go. meta[3] is the largest root-page
@@ -4279,7 +4359,7 @@ int sqlite3BtreeCreateTable(Btree *pBt, int *piTable, int flags){
     ** be moved to the allocated page (unless the allocated page happens
     ** to reside at pgnoRoot).
     */
-    rc = allocatePage(pBt, &pPageMove, &pgnoMove, 1);
+    rc = allocatePage(pBt, &pPageMove, &pgnoMove, pgnoRoot, 1);
     if( rc!=SQLITE_OK ){
       return rc;
     }
@@ -4329,7 +4409,7 @@ int sqlite3BtreeCreateTable(Btree *pBt, int *piTable, int flags){
       return rc;
     }
   }else{
-    rc = allocatePage(pBt, &pRoot, &pgnoRoot, 1);
+    rc = allocatePage(pBt, &pRoot, &pgnoRoot, 1, 0);
     if( rc ) return rc;
   }
 #endif

@@ -1,5 +1,5 @@
-C Don't\scode\san\sOP_Statement\swithin\ssqlite3NestedParse().\sAlso\sa\scorrection\nto\sthe\sUPDATE\sstatement\sused\swithin\sdestroyRootPage().\s(CVS\s2064)
-D 2004-11-05T09:19:28
+C Fix\sallocation\sof\stables\sin\san\sauto-vacuum\sdatabase\swhen\sthe\srequired\sroot-page\sis\son\sthe\sfree-list.\s(CVS\s2065)
+D 2004-11-05T12:27:02
 F Makefile.in c4d2416860f472a1e3393714d0372074197565df
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -29,7 +29,7 @@ F sqlite3.def dbaeb20c153e1d366e8f421b55a573f5dfc00863
 F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
 F src/attach.c e49d09dad9f5f9fb10b4b0c1be5a70ae4c45e689
 F src/auth.c 3b81f2a42f48a62c2c9c9b0eda31a157c681edea
-F src/btree.c f97b5a3919147fe36f776d08c80212ba3ea883aa
+F src/btree.c 659bb0c16b7b2429ff93a2260a051576ccde0a0b
 F src/btree.h 3166388fa58c5594d8064d38b43440d79da38fb6
 F src/build.c dc8b9ab836f2323d9b313c2d703b00b2e9441382
 F src/date.c 34bdb0082db7ec2a83ef00063f7b44e61ee19dad
@@ -87,7 +87,7 @@ F test/attach.test e305dd59a375e37c658c6d401f19f8a95880bf9a
 F test/attach2.test 399128a7b3b209a339a8dbf53ca2ed42eb982d1a
 F test/attach3.test 287af46653e7435b2d1eda10d8115dcc8a6883e2
 F test/auth.test 1cc252d9e7b3bdc1314199cbf3a0d3c5ed026c21
-F test/autovacuum.test a5b11269daac313bea6694b04473fdd0e16e439a
+F test/autovacuum.test b2ba86ec6ab2734232f299769be0c7c0c41939a1
 F test/bigfile.test d3744a8821ce9abb8697f2826a3e3d22b719e89f
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
 F test/bind.test fa74f98417cd313f28272acff832a8a7d04a0916
@@ -252,7 +252,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl fdacb0ba2d39831e8a6240d05a490026ad4c4e4c
-P 296a298c484aac981e7e490a0cb4159717fc4ea4
-R cb8380605519101724d006bec5a8cc07
+P fdcc31f0c6106dacfed6612b173fe4be3c02546a
+R 07fa558cc5210292e3d2899ca22b721c
 U danielk1977
-Z 36305ac9fc261446032e2140c068e8dd
+Z e28ed5c0b538966881c79d2d34296784

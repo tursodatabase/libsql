@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the SELECT statement.
 #
-# $Id: autovacuum.test,v 1.6 2004/11/04 14:30:06 danielk1977 Exp $
+# $Id: autovacuum.test,v 1.7 2004/11/05 12:27:03 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -79,6 +79,7 @@ foreach delete_order $delete_orders {
     }
   } {ok}
 
+# set btree_trace 1
   foreach delete $delete_order {
     # Delete one set of rows from the table.
     do_test autovacuum-1.$tn.($delete).1 {
@@ -112,37 +113,141 @@ foreach delete_order $delete_orders {
   } {4}
 }
 
-# Tests autovacuum-2.* test that root pages are allocated correctly at
-# the start of the file.
-do_test autovacuum-2.1 {
-  for {set i 0} {$i<5} {incr i} {
-    execsql "
-      INSERT INTO av1 VALUES('[make_str abc 1000]')
-    "
+# Tests cases autovacuum-2.* test that root pages are allocated 
+# and deallocated correctly at the start of the file. Operation is roughly as
+# follows:
+#
+# autovacuum-2.1.*: Drop the tables that currently exist in the database.
+# autovacuum-2.2.*: Create some tables. Ensure that data pages can be
+#                   moved correctly to make space for new root-pages.
+# autovacuum-2.3.*: Drop one of the tables just created (not the last one),
+#                   and check that one of the other tables is moved to
+#                   the free root-page location.
+# autovacuum-2.4.*: Check that a table can be created correctly when the
+#                   root-page it requires is on the free-list.
+#
+do_test autovacuum-2.1.1 {
+  execsql {
+    DROP TABLE av1;
   }
-  file_pages 
-} {14}
+} {}
+do_test autovacuum-2.1.2 {
+  file_pages
+} {1}
 
-for {set i 5} {$i < 15} {incr i} {
-  set tablename "av$i"
-  
-  do_test autovacuum-2.$i.2 {
-    execsql "
-      CREATE TABLE $tablename (a);
-      SELECT rootpage FROM sqlite_master WHERE name = '$tablename';
-    "
-  } $i
+# Create a table and put some data in it.
+do_test autovacuum-2.2.1 {
+  execsql {
+    CREATE TABLE av1(x);
+    SELECT rootpage FROM sqlite_master ORDER BY rootpage;
+  }
+} {3}
+do_test autovacuum-2.2.2 {
+  execsql "
+    INSERT INTO av1 VALUES('[make_str abc 3000]');
+    INSERT INTO av1 VALUES('[make_str def 3000]');
+    INSERT INTO av1 VALUES('[make_str ghi 3000]');
+    INSERT INTO av1 VALUES('[make_str jkl 3000]');
+  "
+  set ::av1_data [db eval {select * from av1}]
+  file_pages
+} {15}
 
-  do_test autovacuum-2.$i.3 {
-    file_pages 
-  } [expr $i+10]
+# Create another table. Check it is located immediately after the first.
+# This test case moves the second page in an over-flow chain.
+do_test autovacuum-2.2.3 {
+  execsql {
+    CREATE TABLE av2(x);
+    SELECT rootpage FROM sqlite_master ORDER BY rootpage;
+  }
+} {3 4}
+do_test autovacuum-2.2.4 {
+  file_pages
+} {16}
 
-  do_test autovacuum-2.$i.4 {
-    execsql {
-      pragma integrity_check
-    }
-  } {ok}
-}
+# Create another table. Check it is located immediately after the second.
+# This test case moves the first page in an over-flow chain.
+do_test autovacuum-2.2.5 {
+  execsql {
+    CREATE TABLE av3(x);
+    SELECT rootpage FROM sqlite_master ORDER BY rootpage;
+  }
+} {3 4 5}
+do_test autovacuum-2.2.6 {
+  file_pages
+} {17}
+
+# Create another table. Check it is located immediately after the second.
+# This test case moves a btree leaf page.
+do_test autovacuum-2.2.7 {
+  execsql {
+    CREATE TABLE av4(x);
+    SELECT rootpage FROM sqlite_master ORDER BY rootpage;
+  }
+} {3 4 5 6}
+do_test autovacuum-2.2.8 {
+  file_pages
+} {18}
+do_test autovacuum-2.2.9 {
+  execsql {
+    select * from av1
+  }
+} $av1_data
+
+do_test autovacuum-2.3.1 {
+  execsql {
+    INSERT INTO av2 SELECT 'av1' || x FROM av1;
+    INSERT INTO av3 SELECT 'av2' || x FROM av1;
+    INSERT INTO av4 SELECT 'av3' || x FROM av1;
+  }
+  set ::av2_data [execsql {select x from av2}]
+  set ::av3_data [execsql {select x from av3}]
+  set ::av4_data [execsql {select x from av4}]
+  file_pages
+} {54}
+do_test autovacuum-2.3.2 {
+  execsql {
+    DROP TABLE av2;
+    SELECT rootpage FROM sqlite_master ORDER BY rootpage;
+  }
+} {3 4 5}
+do_test autovacuum-2.3.3 {
+  file_pages
+} {41}
+do_test autovacuum-2.3.4 {
+  execsql {
+    SELECT x FROM av3;
+  }
+} $::av3_data
+do_test autovacuum-2.3.5 {
+  execsql {
+    SELECT x FROM av4;
+  }
+} $::av4_data
+
+# Drop all the tables in the file. This puts all pages except the first 2
+# (the sqlite_master root-page and the first pointer map page) on the 
+# free-list.
+do_test autovacuum-2.4.1 {
+  execsql {
+    DROP TABLE av1;
+    DROP TABLE av3;
+    BEGIN;
+    DROP TABLE av4;
+  }
+  file_pages
+} {15}
+do_test autovacuum-2.4.2 {
+  for {set i 3} {$i<=10} {incr i} {
+    execsql "CREATE TABLE av$i (x)"
+  }
+  file_pages
+} {15}
+do_test autovacuum-2.4.3 {
+  execsql {
+    SELECT rootpage FROM sqlite_master ORDER by rootpage
+  }
+} {3 4 5 6 7 8 9 10}
 
 finish_test
 
