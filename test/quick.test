@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: quick.test,v 1.14 2004/05/19 20:41:04 drh Exp $
+# $Id: quick.test,v 1.15 2004/05/19 21:09:32 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -31,9 +31,7 @@ set EXCLUDE {
 lappend EXCLUDE interrupt.test    ;# assert() fails in btree
 lappend EXCLUDE ioerr.test        ;# seg-faults (?)
 lappend EXCLUDE memdb.test        ;# fails - malformed database
-lappend EXCLUDE misc3.test        ;# seg-faults (?)
-lappend EXCLUDE table.test        ;# assert() fails in pager
-lappend EXCLUDE trans.test        ;# assert() fails in pager
+lappend EXCLUDE misc3.test        ;# seg-faults (due to VACUUM?)
 lappend EXCLUDE vacuum.test       ;# seg-fault
 
 lappend EXCLUDE printf.test       ;# sqlite3_XX vs sqlite_XX problem
