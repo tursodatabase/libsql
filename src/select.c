@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.226 2005/01/18 16:02:40 drh Exp $
+** $Id: select.c,v 1.227 2005/01/18 17:20:10 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -829,32 +829,50 @@ Table *sqlite3ResultSetOfSelect(Parse *pParse, char *zTabName, Select *pSelect){
   assert( pTab->nCol>0 );
   pTab->aCol = aCol = sqliteMalloc( sizeof(pTab->aCol[0])*pTab->nCol );
   for(i=0, pCol=aCol; i<pTab->nCol; i++, pCol++){
-    Expr *pR;
+    Expr *p, *pR;
     char *zType;
     char *zName;
-    Expr *p = pEList->a[i].pExpr;
+    char *zBasename;
+    int cnt;
+    
+    /* Get an appropriate name for the column
+    */
+    p = pEList->a[i].pExpr;
     assert( p->pRight==0 || p->pRight->token.z==0 || p->pRight->token.z[0]!=0 );
     if( (zName = pEList->a[i].zName)!=0 ){
+      /* If the column contains an "AS <name>" phrase, use <name> as the name */
       zName = sqliteStrDup(zName);
     }else if( p->op==TK_DOT 
-               && (pR=p->pRight)!=0 && pR->token.z && pR->token.z[0] ){
-      int cnt;
+              && (pR=p->pRight)!=0 && pR->token.z && pR->token.z[0] ){
+      /* For columns of the from A.B use B as the name */
       zName = sqlite3MPrintf("%T", &pR->token);
-      for(j=cnt=0; j<i; j++){
-        if( sqlite3StrICmp(aCol[j].zName, zName)==0 ){
-          sqliteFree(zName);
-          zName = sqlite3MPrintf("%T_%d", &pR->token, ++cnt);
-          j = -1;
-        }
-      }
     }else if( p->span.z && p->span.z[0] ){
+      /* Use the original text of the column expression as its name */
       zName = sqlite3MPrintf("%T", &p->span);
     }else{
+      /* If all else fails, make up a name */
       zName = sqlite3MPrintf("column%d", i+1);
     }
     sqlite3Dequote(zName);
+
+    /* Make sure the column name is unique.  If the name is not unique,
+    ** append a integer to the name so that it becomes unique.
+    */
+    zBasename = zName;
+    for(j=cnt=0; j<i; j++){
+      if( sqlite3StrICmp(aCol[j].zName, zName)==0 ){
+        zName = sqlite3MPrintf("%s:%d", zBasename, ++cnt);
+        j = -1;
+      }
+    }
+    if( zBasename!=zName ){
+      sqliteFree(zBasename);
+    }
     pCol->zName = zName;
 
+    /* Get the typename, type affinity, and collating sequence for the
+    ** column.
+    */
     zType = sqliteStrDup(columnType(pParse, pSelect->pSrc ,p));
     pCol->zType = zType;
     pCol->affinity = SQLITE_AFF_NUMERIC;
@@ -1059,7 +1077,7 @@ static int prepSelectStmt(Parse *pParse, Select *p){
               pExpr = pRight;
               pExpr->span = pExpr->token;
             }
-            pNew = sqlite3ExprListAppend(pNew, pExpr, 0);
+            pNew = sqlite3ExprListAppend(pNew, pExpr, &pRight->token);
           }
         }
         if( !tableSeen ){
