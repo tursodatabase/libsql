@@ -1039,6 +1039,11 @@ int sqlite3OsUnlock(OsFile *id, int locktype){
   assert( pLock->cnt!=0 );
   if( id->locktype>SHARED_LOCK ){
     assert( pLock->locktype==id->locktype );
+    lock.l_type = F_RDLCK;
+    lock.l_whence = SEEK_SET;
+    lock.l_start = SHARED_FIRST;
+    lock.l_len = SHARED_SIZE;
+    fcntl(id->h, F_SETLK, &lock);
     lock.l_type = F_UNLCK;
     lock.l_whence = SEEK_SET;
     lock.l_start = PENDING_BYTE;
