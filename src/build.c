@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.243 2004/07/24 17:38:29 drh Exp $
+** $Id: build.c,v 1.244 2004/07/26 00:31:09 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1408,17 +1408,17 @@ void sqlite3EndTable(Parse *pParse, Token *pEnd, Select *pSelect){
   */
   if( db->init.busy && pParse->nErr==0 ){
     Table *pOld;
-    FKey *pFKey;
-    pOld = sqlite3HashInsert(&db->aDb[p->iDb].tblHash, 
-                            p->zName, strlen(p->zName)+1, p);
+    FKey *pFKey; 
+    Db *pDb = &db->aDb[p->iDb];
+    pOld = sqlite3HashInsert(&pDb->tblHash, p->zName, strlen(p->zName)+1, p);
     if( pOld ){
       assert( p==pOld );  /* Malloc must have failed inside HashInsert() */
       return;
     }
     for(pFKey=p->pFKey; pFKey; pFKey=pFKey->pNextFrom){
       int nTo = strlen(pFKey->zTo) + 1;
-      pFKey->pNextTo = sqlite3HashFind(&db->aDb[p->iDb].aFKey, pFKey->zTo, nTo);
-      sqlite3HashInsert(&db->aDb[p->iDb].aFKey, pFKey->zTo, nTo, pFKey);
+      pFKey->pNextTo = sqlite3HashFind(&pDb->aFKey, pFKey->zTo, nTo);
+      sqlite3HashInsert(&pDb->aFKey, pFKey->zTo, nTo, pFKey);
     }
     pParse->pNewTable = 0;
     db->nTable++;
@@ -2403,17 +2403,18 @@ int sqlite3IdListIndex(IdList *pList, const char *zName){
 */
 void sqlite3SrcListDelete(SrcList *pList){
   int i;
+  struct SrcList_item *pItem;
   if( pList==0 ) return;
-  for(i=0; i<pList->nSrc; i++){
-    sqliteFree(pList->a[i].zDatabase);
-    sqliteFree(pList->a[i].zName);
-    sqliteFree(pList->a[i].zAlias);
-    if( pList->a[i].pTab && pList->a[i].pTab->isTransient ){
-      sqlite3DeleteTable(0, pList->a[i].pTab);
+  for(pItem=pList->a, i=0; i<pList->nSrc; i++, pItem++){
+    sqliteFree(pItem->zDatabase);
+    sqliteFree(pItem->zName);
+    sqliteFree(pItem->zAlias);
+    if( pItem->pTab && pItem->pTab->isTransient ){
+      sqlite3DeleteTable(0, pItem->pTab);
     }
-    sqlite3SelectDelete(pList->a[i].pSelect);
-    sqlite3ExprDelete(pList->a[i].pOn);
-    sqlite3IdListDelete(pList->a[i].pUsing);
+    sqlite3SelectDelete(pItem->pSelect);
+    sqlite3ExprDelete(pItem->pOn);
+    sqlite3IdListDelete(pItem->pUsing);
   }
   sqliteFree(pList);
 }

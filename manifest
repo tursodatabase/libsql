@@ -1,5 +1,5 @@
-C Prepared\sstatements\snow\swork\swith\sCREATE\sand\sDROP.\s\sAll\stests\spass.\nNo\smemory\sleaks.\s(CVS\s1866)
-D 2004-07-24T17:38:29
+C Various\ssize\soptimizations.\s(CVS\s1867)
+D 2004-07-26T00:31:09
 F Makefile.in 4a5e570a9e2d35b09c31b3cf01b78cea764ade4b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -29,11 +29,11 @@ F src/attach.c 784456629b3d7e50e4691f496700658fd1f16441
 F src/auth.c 60db23b98bb94c8b0178180faaf49dc116674217
 F src/btree.c edf4ece708350dec7f28ebd4620c6d33afe6993a
 F src/btree.h 94dfec0a1722d33359b23e7e310f2b64ffedf029
-F src/build.c 7d2981666b6d0c530766dbf1284aabc328e1ec71
+F src/build.c d1a2d7a99bb07a1ea4a019fcef6786546cb09f73
 F src/date.c e1bb384a7856c18dce9cadb0afbe6934ba5ddb00
 F src/delete.c e81545e546f6bc87d7508a93a09ca70695265af3
 F src/encode.c a876af473d1d636faa3dca51c7571f2e007eea37
-F src/expr.c a4e8ac69c872f86bc207364be0e32d0638f61e90
+F src/expr.c 0b8c89324d979895e6b0f31a6d7bf60edfee13ac
 F src/func.c b163fb49efec999eb7bf982f7de5b9be388301f3
 F src/hash.c f0a2f22c2a7052d67053b5f4690ea3010bb3fb9f
 F src/hash.h 762d95f1e567664d1eafc1687de755626be962fb
@@ -240,7 +240,7 @@ F www/tclsqlite.tcl 06a86cba4d7fc88e2bcd633b57702d3d16abebb5
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 6db3f122aad25b5226670ce682b7263d55c0d301
-R 987e7be0c6defafac7646ce8c68bde8c
+P ebdb661e0eefe123c422d3c1c371e325bb6cf673
+R b582908bbe936abff9e10f0211707e80
 U drh
-Z 4bf2f79f0d58a1ba844cc564cece29c1
+Z 252f8c5e2aa916f947cdd3f9490bfe4a
