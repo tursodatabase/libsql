@@ -1,5 +1,5 @@
-C Critical\sbugs\sfixed\sin\sbtree.c.\s\sIncompatible\sfile\sformat\schange.\s\sUnrelated\ncomment\sfix\sin\sselect.c\s(CVS\s1530)
-D 2004-06-05T00:01:45
+C Ensure\sblob\svalues\ssurvive\sthe\s".dump"\scommand\sof\sthe\sshell.\s(CVS\s1531)
+D 2004-06-05T08:04:36
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -16,7 +16,7 @@ F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
-F main.mk b717f9861a3acdd3a4e81fc59731a393bf6a0c6e
+F main.mk 126f1ca2190fa19cc9944f54943cf3431891c330
 F mkdll.sh 68d34a961a1fdfa15ef27fc4f4740be583112124
 F publish.sh 2e579b7474d57b6debcead93c73a49eb8cb81718
 F spec.template a38492f1c1dd349fc24cb0565e08afc53045304b
@@ -45,7 +45,7 @@ F src/os_mac.c b823874690615ace0dd520d3ad1fe8bfd864b7e0
 F src/os_mac.h 51d2445f47e182ed32d3bd6937f81070c6fd9bd4
 F src/os_unix.c a4feb70b23fa5272f53cd2c74588484b54294800
 F src/os_unix.h 7999f2246c6347707e98f7078871ea8ca605df3f
-F src/os_win.c 92b51a38437b98d8aa3ac05b57c71e1d1092e5be
+F src/os_win.c 0f895f0491a983740c08af8e5d1986f3bc4629a4
 F src/os_win.h 5d41af24caaef6c13a2d8e2399caa1c57d45c84d
 F src/pager.c 944f6b071279887574081281f27bb2af88b42905
 F src/pager.h 0c7b5ac45c69e690c45d160d03bdc8fbd2d4657b
@@ -54,7 +54,7 @@ F src/pragma.c 1b58d852b84b36a8b84e2245dd29b63c377414ec
 F src/printf.c ef750e8e2398ca7e8b58be991075f08c6a7f0e53
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c 02d711160100ef3a730060f7cfb5bc85fde06d72
-F src/shell.c a9e2ad8f6c1d39b04bad61a0ec655e9a3a360b50
+F src/shell.c 79af86d39b2149c7f16219fcbe636e7c2da9df8e
 F src/sqlite.h.in 8236db65bc6d8f5f47dc5a5e86c4a9bce42f2adf
 F src/sqliteInt.h 99f2b4ff4ed28123890a0c71359fec3d2c5901c9
 F src/table.c af14284fa36c8d41f6829e3f2819dce07d3e2de2
@@ -215,7 +215,7 @@ F www/support.tcl 1801397edd271cc39a2aadd54e701184b5181248
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P d2f69e5ef2f261a00bb8427a4e2a1638ecfd17a9
-R eb52d3018295ee3de4004fb563723044
-U drh
-Z ceec225131100608a50f7e5d2660779f
+P cb1ffabf86996ab20dfffcb5f133fa9a9b56bbe2
+R ea7bd988d55c4ea96c95b0dedf76ecab
+U danielk1977
+Z 4e22795b8cf7e800bcb3f1d60cd6c40a

@@ -12,11 +12,12 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.101 2004/05/31 23:56:43 danielk1977 Exp $
+** $Id: shell.c,v 1.102 2004/06/05 08:04:44 danielk1977 Exp $
 */
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <assert.h>
 #include "sqlite3.h"
 #include <ctype.h>
 
@@ -444,6 +445,125 @@ static void set_table_name(struct callback_data *p, const char *zName){
   z[n] = 0;
 }
 
+/* zIn is either a pointer to a NULL-terminated string in memory obtained
+** from malloc(), or a NULL pointer. The string pointed to by zAppend is
+** added to zIn, and the result returned in memory obtained from malloc().
+** zIn, if it was not NULL, is freed.
+**
+** If the third argument, quote, is not '\0', then it is used as a 
+** quote character for zAppend.
+*/
+static char * appendText(char *zIn, char const *zAppend, char quote){
+  int len;
+  int i;
+  int nAppend = strlen(zAppend);
+  int nIn = (zIn?strlen(zIn):0);
+
+  len = nAppend+nIn+1;
+  if( quote ){
+    len += 2;
+    for(i=0; i<nAppend; i++){
+      if( zAppend[i]==quote ) len++;
+    }
+  }
+
+  zIn = (char *)realloc(zIn, len);
+  if( !zIn ){
+    return 0;
+  }
+
+  if( quote ){
+    char *zCsr = &zIn[nIn];
+    *zCsr++ = quote;
+    for(i=0; i<nAppend; i++){
+      *zCsr++ = zAppend[i];
+      if( zAppend[i]==quote ) *zCsr++ = quote;
+    }
+    *zCsr++ = quote;
+    *zCsr++ = '\0';
+    assert( (zCsr-zIn)==len );
+  }else{
+    memcpy(&zIn[nIn], zAppend, nAppend);
+    zIn[len-1] = '\0';
+  }
+
+  return zIn;
+}
+
+/* This function implements the SQL scalar function dump_literal()used by
+ * the '.dump' built-in. It takes one argument and returns the fully quoted
+** literal version of the argument depending on the type.
+**
+** Type          Example
+** -----------------------
+** NULL          "NULL"
+** INTEGER       "0"
+** REAL          "0.0"
+** TEXT          "'abc'"
+** BLOB          "X'89AB'"
+**
+*/
+static void dump_literalFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  static const char hexdigits[] = { 
+      '0', '1', '2', '3', '4', '5', '6', '7',
+      '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' 
+  };
+  assert( argc==1 );
+
+  switch( sqlite3_value_type(argv[0]) ){
+    case SQLITE_NULL:
+      sqlite3_result_text(context, "NULL", -1, 0);
+      break;
+    case SQLITE_INTEGER:
+      sqlite3_result_text(context, sqlite3_value_text(argv[0]), -1, 1);
+      break;
+    case SQLITE_FLOAT: {
+      char zBuf[40];
+      sprintf(zBuf, "%.15g", sqlite3_value_double(argv[0]));
+      sqlite3_result_text(context, zBuf, -1, 1);
+      break;
+    }
+    case SQLITE_TEXT: {
+      char *zText;
+      zText = appendText(0, sqlite3_value_text(argv[0]), '\'');
+      if( !zText ){
+        sqlite3_result_error(context, "out of memory", -1);
+      }else{
+        sqlite3_result_text(context, zText, -1, 1);
+        free(zText);
+      }
+      break;
+    }
+    case SQLITE_BLOB: {
+      char *zText = 0;
+      int nBlob = sqlite3_value_bytes(argv[0]);
+      char const *zBlob = sqlite3_value_blob(argv[0]);
+
+      zText = (char *)malloc((2*nBlob)+4); 
+      if( !zText ){
+        sqlite3_result_error(context, "out of memory", -1);
+      }else{
+        int i;
+        for(i=0; i<nBlob; i++){
+          zText[(i*2)+2] = hexdigits[(zBlob[i]>>4)&0x0F];
+          zText[(i*2)+3] = hexdigits[(zBlob[i])&0x0F];
+        }
+        zText[(nBlob*2)+2] = '\'';
+        zText[(nBlob*2)+3] = '\0';
+        zText[0] = 'X';
+        zText[1] = '\'';
+        sqlite3_result_text(context, zText, -1, 1);
+        free(zText);
+      }
+      break;
+    }
+  }
+}
+
 /*
 ** This is a different callback routine used for dumping the database.
 ** Each row received by this callback consists of a table name,
@@ -451,21 +571,78 @@ static void set_table_name(struct callback_data *p, const char *zName){
 ** This routine should print text sufficient to recreate the table.
 */
 static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
+  int rc;
+  const char *zTable;
+  const char *zType;
+  const char *zSql;
   struct callback_data *p = (struct callback_data *)pArg;
+
   if( nArg!=3 ) return 1;
-  fprintf(p->out, "%s;\n", azArg[2]);
-  if( strcmp(azArg[1],"table")==0 ){
-    struct callback_data d2;
-    d2 = *p;
-    d2.mode = MODE_Insert;
-    d2.zDestTable = 0;
-    set_table_name(&d2, azArg[0]);
-    sqlite3_exec_printf(p->db,
-       "SELECT * FROM '%q'",
-       callback, &d2, 0, azArg[0]
-    );
-    set_table_name(&d2, 0);
+  zTable = azArg[0];
+  zType = azArg[1];
+  zSql = azArg[2];
+  
+  fprintf(p->out, "%s;\n", zSql);
+
+  if( strcmp(zType, "table")==0 ){
+    sqlite3_stmt *pTableInfo = 0;
+    sqlite3_stmt *pSelect = 0;
+    char *zSelect = 0;
+    char *zTableInfo = 0;
+    char *zTmp = 0;
+   
+    zTableInfo = appendText(zTableInfo, "PRAGMA table_info(", 0);
+    zTableInfo = appendText(zTableInfo, zTable, '"');
+    zTableInfo = appendText(zTableInfo, ");", 0);
+
+    rc = sqlite3_prepare(p->db, zTableInfo, -1, &pTableInfo, 0);
+    if( zTableInfo ) free(zTableInfo);
+    if( rc!=SQLITE_OK || !pTableInfo ){
+      return 1;
+    }
+
+    zSelect = appendText(zSelect, "SELECT 'INSERT INTO ' || ", 0);
+    zTmp = appendText(zTmp, zTable, '"');
+    if( zTmp ){
+      zSelect = appendText(zSelect, zTmp, '\'');
+    }
+    zSelect = appendText(zSelect, " || ' VALUES(' || ", 0);
+    rc = sqlite3_step(pTableInfo);
+    while( rc==SQLITE_ROW ){
+      zSelect = appendText(zSelect, "dump_literal(", 0);
+      zSelect = appendText(zSelect, sqlite3_column_text(pTableInfo, 1), '"');
+      rc = sqlite3_step(pTableInfo);
+      if( rc==SQLITE_ROW ){
+        zSelect = appendText(zSelect, ") || ', ' || ", 0);
+      }else{
+        zSelect = appendText(zSelect, ") ", 0);
+      }
+    }
+    rc = sqlite3_finalize(pTableInfo);
+    if( rc!=SQLITE_OK ){
+      if( zSelect ) free(zSelect);
+      return 1;
+    }
+    zSelect = appendText(zSelect, "|| ')' FROM  ", 0);
+    zSelect = appendText(zSelect, zTable, '"');
+
+    rc = sqlite3_prepare(p->db, zSelect, -1, &pSelect, 0);
+    if( zSelect ) free(zSelect);
+    if( rc!=SQLITE_OK || !pSelect ){
+      return 1;
+    }
+
+    rc = sqlite3_step(pSelect);
+    while( rc==SQLITE_ROW ){
+      fprintf(p->out, "%s;\n", sqlite3_column_text(pSelect, 0));
+      rc = sqlite3_step(pSelect);
+    }
+    rc = sqlite3_finalize(pSelect);
+    if( rc!=SQLITE_OK ){
+      return 1;
+    }
   }
+
   return 0;
 }
 
@@ -523,6 +700,9 @@ static void open_db(struct callback_data *p){
           p->zDbFilename, sqlite3_errmsg(db));
       exit(1);
     }
+
+    /* Add the 'dump_literal' SQL function used by .dump */
+    sqlite3_create_function(db,"dump_literal",1,0,0,0,dump_literalFunc,0,0);
   }
 }
 
@@ -1063,7 +1243,7 @@ static void process_input(struct callback_data *p, FILE *in){
           sqlite3_free(zErrMsg);
           zErrMsg = 0;
         }else{
-          printf("SQL error: %s\n", sqlite3ErrStr(rc));
+          printf("SQL error: %s\n", sqlite3_errmsg(p->db));
         }
       }
       free(zSql);

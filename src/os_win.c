@@ -370,6 +370,14 @@ int isNT(void){
 #define N_LOCKBYTE       10239
 #define FIRST_LOCKBYTE   (0xffffffff - N_LOCKBYTE)
 
+int sqlite3OsLock(OsFile *id, int locktype){
+  return SQLITE_OK;
+}
+
+int sqlite3OsCheckWriteLock(OsFile *id){
+  return 0;
+}
+
 /*
 ** Change the status of the lock on the file "id" to be a readlock.
 ** If the file was write locked, then this reduces the lock to a read.

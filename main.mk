@@ -60,7 +60,7 @@ LIBOBJ = attach.o auth.o btree.o build.o date.o delete.o \
          pager.o parse.o pragma.o printf.o random.o \
          select.o table.o tokenize.o trigger.o update.o util.o vacuum.o \
          vdbe.o vdbeapi.o vdbeaux.o vdbemem.o \
-         where.o tclsqlite.o utf.o legacy.o
+         where.o utf.o legacy.o
 
 # All of the source code files.
 #
