@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.21 2000/06/06 17:27:06 drh Exp $
+** $Id: vdbe.c,v 1.22 2000/06/06 19:18:24 drh Exp $
 */
 #include "sqliteInt.h"
 #include <unistd.h>
@@ -2820,7 +2820,7 @@ int sqliteVdbeExec(
           sqliteFree(p->agg.apHash);
           p->agg.apHash = 0;
           p->agg.pCurrent = p->agg.pFirst;
-        }else if( p->agg.pCurrent==p->agg.pFirst ){
+        }else if( p->agg.pCurrent==p->agg.pFirst && p->agg.pCurrent!=0 ){
           int i;
           AggElem *pElem = p->agg.pCurrent;
           for(i=0; i<p->agg.nMem; i++){
