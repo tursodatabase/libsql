@@ -34,6 +34,8 @@
 # Assign numbers to all opcodes and output the result.
 END {
   cnt = 0
+  print "/* Automatically generated.  Do not edit */"
+  print "/* See the mkopcodeh.awk script for details */"
   for(name in op){
     if( op[name]<0 ){
       cnt++

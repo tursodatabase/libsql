@@ -255,16 +255,11 @@ pager.o:	$(TOP)/src/pager.c $(HDR) $(TOP)/src/pager.h
 opcodes.o:	opcodes.c
 	$(TCCX) -c opcodes.c
 
-opcodes.c:	opcodes.h
-	echo '/* Automatically generated file.  Do not edit */' >opcodes.c
-	echo 'char *sqlite3OpcodeNames[] = { "???", ' >>opcodes.c
-	grep OP_ opcodes.h | sort -n +2 | \
-	  sed -e 's/^.*OP_/  "/' -e 's/ [ 0-9]*$$/", /' >>opcodes.c
-	echo '};' >>opcodes.c
+opcodes.c:	opcodes.h $(TOP)/mkopcodec.awk
+	sort -n +2 opcodes.h | awk -f $(TOP)/mkopcodec.awk >opcodes.c
 
 opcodes.h:	parse.h $(TOP)/src/vdbe.c $(TOP)/mkopcodeh.awk
-	echo '/* Automatically generated file.  Do not edit */' >opcodes.h
-	cat parse.h $(TOP)/src/vdbe.c | awk -f $(TOP)/mkopcodeh.awk >>opcodes.h
+	cat parse.h $(TOP)/src/vdbe.c | awk -f $(TOP)/mkopcodeh.awk >opcodes.h
 
 os_mac.o:	$(TOP)/src/os_mac.c $(HDR)
 	$(TCCX) -c $(TOP)/src/os_mac.c

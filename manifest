@@ -1,6 +1,6 @@
-C Size\soptimization\sin\sthe\sparser.\s(CVS\s2004)
-D 2004-10-06T14:39:29
-F Makefile.in 78ddc9fca09ab6e3b75a79ecf8d490e34cd0519c
+C Move\ssome\swork\sout\sof\sthe\smakefiles\sand\sinto\sawk\sscripts\sin\sseparate\sfiles.\nTicket\s#940.\s(CVS\s2005)
+D 2004-10-06T15:03:57
+F Makefile.in 52c1cc106cad9148d4b7cb387b458e82dc86b339
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
 F VERSION 0aeddfe96f008f6cbe2c7167a782f3133e118d8d
@@ -17,9 +17,10 @@ F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
-F main.mk cabfd4a3e786840e8924689b04751a8c48dc4a42
+F main.mk bf65bb9f839aa8777796c9846816be590a7cd4b0
 F mkdll.sh 468d4f41d3ea98221371df4825cfbffbaac4d7e4
-F mkopcodeh.awk a80e53c2f41cd89b1355c2e3d9389e3f6f8e017d
+F mkopcodec.awk d9620352d5990ef671d4338cf6b21c98704c4a3b
+F mkopcodeh.awk 0e4d553956adecb750b7311d7a443cf203379b92
 F mkso.sh 7b67da1d63070875ba948e749aee9ef50ce36e3d
 F publish.sh 72bde067dda3fc2d33e92f20253b924e3b97da30
 F spec.template b2f6c4e488cbc3b993a57deba22cbc36203c4da3
@@ -250,7 +251,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P dcbf4817a7a3ce18a2d5ed008346933a36acd543
-R bb6840d2828634b7f251d4000a4ec78a
+P 8e2ae2449882f70fe4e77c100193c053d7669ae6
+R fe02750a1c7687399dff07e7e1f48b3a
 U drh
-Z 908fa14825ec85f62b3b4f967c9ab77f
+Z 93f242f1b58f7a18d2bf8d0d42656954
