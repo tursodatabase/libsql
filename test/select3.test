@@ -12,7 +12,7 @@
 # focus of this file is testing aggregate functions and the
 # GROUP BY and HAVING clauses of SELECT statements.
 #
-# $Id: select3.test,v 1.7 2002/12/03 02:34:50 drh Exp $
+# $Id: select3.test,v 1.8 2003/01/31 17:16:37 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -86,9 +86,34 @@ do_test select3-2.8 {
 } {11 15 9 8 7 4 5 2 3 1 1 1}
 do_test select3-2.9 {
   catchsql {
-    SELECT log, count(*) FROM t1 GROUP BY 8 ORDER BY log;
+    SELECT log, count(*) FROM t1 GROUP BY 'x' ORDER BY log;
   }
-} {1 {GROUP BY expressions should not be constant}}
+} {1 {GROUP BY terms must not be non-integer constants}}
+do_test select3-2.10 {
+  catchsql {
+    SELECT log, count(*) FROM t1 GROUP BY 0 ORDER BY log;
+  }
+} {1 {GROUP BY column number 0 out of range - should be between 1 and 2}}
+do_test select3-2.11 {
+  catchsql {
+    SELECT log, count(*) FROM t1 GROUP BY 3 ORDER BY log;
+  }
+} {1 {GROUP BY column number 3 out of range - should be between 1 and 2}}
+do_test select3-2.12 {
+  catchsql {
+    SELECT log, count(*) FROM t1 GROUP BY 1 ORDER BY log;
+  }
+} {0 {0 1 1 1 2 2 3 4 4 8 5 15}}
+#do_test select3-2.13 {
+#  catchsql {
+#    SELECT log, count(*) FROM t1 GROUP BY 2 ORDER BY log;
+#  }
+#} {0 {0 1 1 1 2 2 3 4 4 8 5 15}}
+#do_test select3-2.14 {
+#  catchsql {
+#    SELECT log, count(*) FROM t1 GROUP BY count(*) ORDER BY log;
+#  }
+#} {0 {0 1 1 1 2 2 3 4 4 8 5 15}}
 
 # Cannot have a HAVING without a GROUP BY
 #

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.124 2003/01/29 14:06:09 drh Exp $
+** $Id: select.c,v 1.125 2003/01/31 17:16:37 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2034,9 +2034,19 @@ int sqliteSelect(
   }
   if( pOrderBy ){
     for(i=0; i<pOrderBy->nExpr; i++){
+      int iCol;
       Expr *pE = pOrderBy->a[i].pExpr;
+      if( sqliteExprIsInteger(pE, &iCol) && iCol>0 && iCol<=pEList->nExpr ){
+        sqliteExprDelete(pE);
+        pE = pOrderBy->a[i].pExpr = sqliteExprDup(pEList->a[iCol-1].pExpr);
+      }
+      if( sqliteExprResolveIds(pParse, base, pTabList, pEList, pE) ){
+        goto select_end;
+      }
+      if( sqliteExprCheck(pParse, pE, isAgg, 0) ){
+        goto select_end;
+      }
       if( sqliteExprIsConstant(pE) ){
-        int iCol;
         if( sqliteExprIsInteger(pE, &iCol)==0 ){
           sqliteSetString(&pParse->zErrMsg, 
                "ORDER BY terms must not be non-integer constants", 0);
@@ -2050,31 +2060,37 @@ int sqliteSelect(
           pParse->nErr++;
           goto select_end;
         }
-        sqliteExprDelete(pE);
-        pE = pOrderBy->a[i].pExpr = sqliteExprDup(pEList->a[iCol-1].pExpr);
-      }
-      if( sqliteExprResolveIds(pParse, base, pTabList, pEList, pE) ){
-        goto select_end;
-      }
-      if( sqliteExprCheck(pParse, pE, isAgg, 0) ){
-        goto select_end;
       }
     }
   }
   if( pGroupBy ){
     for(i=0; i<pGroupBy->nExpr; i++){
+      int iCol;
       Expr *pE = pGroupBy->a[i].pExpr;
-      if( sqliteExprIsConstant(pE) ){
-        sqliteSetString(&pParse->zErrMsg, 
-             "GROUP BY expressions should not be constant", 0);
-        pParse->nErr++;
-        goto select_end;
+      if( sqliteExprIsInteger(pE, &iCol) && iCol>0 && iCol<=pEList->nExpr ){
+        sqliteExprDelete(pE);
+        pE = pGroupBy->a[i].pExpr = sqliteExprDup(pEList->a[iCol-1].pExpr);
       }
       if( sqliteExprResolveIds(pParse, base, pTabList, pEList, pE) ){
         goto select_end;
       }
       if( sqliteExprCheck(pParse, pE, isAgg, 0) ){
         goto select_end;
+      }
+      if( sqliteExprIsConstant(pE) ){
+        if( sqliteExprIsInteger(pE, &iCol)==0 ){
+          sqliteSetString(&pParse->zErrMsg, 
+               "GROUP BY terms must not be non-integer constants", 0);
+          pParse->nErr++;
+          goto select_end;
+        }else if( iCol<=0 || iCol>pEList->nExpr ){
+          char zBuf[2000];
+          sprintf(zBuf,"GROUP BY column number %d out of range - should be "
+             "between 1 and %d", iCol, pEList->nExpr);
+          sqliteSetString(&pParse->zErrMsg, zBuf, 0);
+          pParse->nErr++;
+          goto select_end;
+        }
       }
     }
   }
