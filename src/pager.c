@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.78 2003/02/16 19:13:37 drh Exp $
+** @(#) $Id: pager.c,v 1.79 2003/03/19 03:14:02 drh Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -1720,6 +1720,25 @@ int sqlitepager_write(void *pData){
 int sqlitepager_iswriteable(void *pData){
   PgHdr *pPg = DATA_TO_PGHDR(pData);
   return pPg->dirty;
+}
+
+/*
+** Replace the content of a single page with the information in the third
+** argument.
+*/
+int sqlitepager_overwrite(Pager *pPager, Pgno pgno, void *pData){
+  void *pPage;
+  int rc;
+
+  rc = sqlitepager_get(pPager, pgno, &pPage);
+  if( rc==SQLITE_OK ){
+    rc = sqlitepager_write(pPage);
+    if( rc==SQLITE_OK ){
+      memcpy(pPage, pData, SQLITE_PAGE_SIZE);
+    }
+    sqlitepager_unref(pPage);
+  }
+  return rc;
 }
 
 /*

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle DELETE FROM statements.
 **
-** $Id: delete.c,v 1.45 2003/01/13 23:27:33 drh Exp $
+** $Id: delete.c,v 1.46 2003/03/19 03:14:01 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -83,7 +83,6 @@ void sqliteDeleteFrom(
   Index *pIdx;           /* For looping over indices of the table */
   int base;              /* Index of the first available table cursor */
   sqlite *db;            /* Main database structure */
-  int openOp;            /* Opcode used to open a cursor to the table */
 
   int row_triggers_exist = 0;
   int oldIdx = -1;
@@ -173,8 +172,8 @@ void sqliteDeleteFrom(
       ** entries in the table. */
       int endOfLoop = sqliteVdbeMakeLabel(v);
       int addr;
-      openOp = pTab->isTemp ? OP_OpenAux : OP_Open;
-      sqliteVdbeAddOp(v, openOp, base, pTab->tnum);
+      sqliteVdbeAddOp(v, OP_Integer, pTab->isTemp, 0);
+      sqliteVdbeAddOp(v, OP_OpenRead, base, pTab->tnum);
       sqliteVdbeAddOp(v, OP_Rewind, base, sqliteVdbeCurrentAddr(v)+2);
       addr = sqliteVdbeAddOp(v, OP_AddImm, 1, 0);
       sqliteVdbeAddOp(v, OP_Next, base, addr);
@@ -220,9 +219,8 @@ void sqliteDeleteFrom(
     if( row_triggers_exist ){
       addr = sqliteVdbeAddOp(v, OP_ListRead, 0, end);
       sqliteVdbeAddOp(v, OP_Dup, 0, 0);
-
-      openOp = pTab->isTemp ? OP_OpenAux : OP_Open;
-      sqliteVdbeAddOp(v, openOp, base, pTab->tnum);
+      sqliteVdbeAddOp(v, OP_Integer, pTab->isTemp, 0);
+      sqliteVdbeAddOp(v, OP_OpenRead, base, pTab->tnum);
       sqliteVdbeAddOp(v, OP_MoveTo, base, 0);
       sqliteVdbeAddOp(v, OP_OpenTemp, oldIdx, 0);
 
@@ -251,10 +249,11 @@ void sqliteDeleteFrom(
     ** cursors are opened only once on the outside the loop.
     */
     pParse->nTab = base + 1;
-    openOp = pTab->isTemp ? OP_OpenWrAux : OP_OpenWrite;
-    sqliteVdbeAddOp(v, openOp, base, pTab->tnum);
+    sqliteVdbeAddOp(v, OP_Integer, pTab->isTemp, 0);
+    sqliteVdbeAddOp(v, OP_OpenWrite, base, pTab->tnum);
     for(i=1, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){
-      sqliteVdbeAddOp(v, openOp, pParse->nTab++, pIdx->tnum);
+      sqliteVdbeAddOp(v, OP_Integer, pTab->isTemp, 0);
+      sqliteVdbeAddOp(v, OP_OpenWrite, pParse->nTab++, pIdx->tnum);
     }
 
     /* This is the beginning of the delete loop when there are no

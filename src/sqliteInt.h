@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.162 2003/02/16 22:21:32 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.163 2003/03/19 03:14:02 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -187,6 +187,21 @@ typedef struct Trigger Trigger;
 typedef struct TriggerStep TriggerStep;
 typedef struct TriggerStack TriggerStack;
 typedef struct FKey FKey;
+typedef struct Db Db;
+
+/*
+** Each database file to be accessed by the system is an instance
+** of the following structure.  There are normally two of these structures
+** in the sqlite.aDb[] array.  aDb[0] is the main database file and
+** aDb[1] is the database file used to hold temporary tables.  But
+** additional databases may be attached to the engine.
+*/
+struct Db {
+  char *zName;         /* Name of this database */
+  Btree *pBt;          /* The B*Tree structure for this database file */
+  int schema_cookie;   /* Database schema version number for this file */
+  u8 inTrans;          /* True if a transaction is underway for this backend */
+};
 
 /*
 ** Each database is an instance of the following structure.
@@ -204,14 +219,14 @@ typedef struct FKey FKey;
 **                       text datatypes.
 */
 struct sqlite {
-  Btree *pBe;                   /* The B*Tree backend */
-  Btree *pBeTemp;               /* Backend for session temporary tables */
+  int nDb;                      /* Number of backends currently in use */
+  Db *aDb;                      /* All backends */
+  Db aDbStatic[2];              /* Static space for the 2 default backends */
   int flags;                    /* Miscellanous flags. See below */
   u8 file_format;               /* What file format version is this database? */
   u8 safety_level;              /* How aggressive at synching data to disk */
   u8 want_to_close;             /* Close after all VDBEs are deallocated */
-  int schema_cookie;            /* Magic number that changes with the schema */
-  int next_cookie;              /* Value of schema_cookie after commit */
+  int next_cookie;              /* Next value of aDb[0].schema_cookie */
   int cache_size;               /* Number of pages to use in the cache */
   int nTable;                   /* Number of tables in the database */
   void *pBusyArg;               /* 1st Argument to the busy callback */
@@ -348,7 +363,7 @@ struct Table {
   int tnum;        /* Root BTree node for this table (see note above) */
   Select *pSelect; /* NULL for tables.  Points to definition if a view. */
   u8 readOnly;     /* True if this table should not be written by the user */
-  u8 isTemp;       /* True if stored in db->pBeTemp instead of db->pBe */
+  u8 isTemp;       /* Index into sqlite.aDb[] of the backend for this table */
   u8 isTransient;  /* True if automatically deleted when VDBE finishes */
   u8 hasPrimKey;   /* True if there exists a primary key */
   u8 keyConf;      /* What to do in case of uniqueness conflict on iPKey */
@@ -731,7 +746,6 @@ struct AggExpr {
 */
 struct Parse {
   sqlite *db;          /* The main database structure */
-  Btree *pBe;          /* The database backend */
   int rc;              /* Return code from execution */
   sqlite_callback xCallback;  /* The callback function */
   void *pArg;          /* First argument to the callback function */
@@ -1003,6 +1017,8 @@ int sqliteExprAnalyzeAggregates(Parse*, Expr*);
 Vdbe *sqliteGetVdbe(Parse*);
 int sqliteRandomByte(void);
 int sqliteRandomInteger(void);
+void sqliteRollbackAll(sqlite*);
+void sqliteCodeVerifySchema(Parse*);
 void sqliteBeginTransaction(Parse*, int);
 void sqliteCommitTransaction(Parse*);
 void sqliteRollbackTransaction(Parse*);

@@ -147,6 +147,7 @@
 
 int sqliteOsDelete(const char*);
 int sqliteOsFileExists(const char*);
+int sqliteOsFileRename(const char*, const char*);
 int sqliteOsOpenReadWrite(const char*, OsFile*, int*);
 int sqliteOsOpenExclusive(const char*, OsFile*, int);
 int sqliteOsOpenReadOnly(const char*, OsFile*);

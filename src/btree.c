@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.83 2003/02/12 14:09:43 drh Exp $
+** $Id: btree.c,v 1.84 2003/03/19 03:14:01 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -2873,6 +2873,105 @@ int sqliteBtreeDropTable(Btree *pBt, int iTable){
   sqlitepager_unref(pPage);
   return rc;  
 }
+
+#if 0 /* UNTESTED */
+/*
+** Copy all cell data from one database file into another.
+** pages back the freelist.
+*/
+static int copyCell(Btree *pBtFrom, BTree *pBtTo, Cell *pCell){
+  Pager *pFromPager = pBtFrom->pPager;
+  OverflowPage *pOvfl;
+  Pgno ovfl, nextOvfl;
+  Pgno *pPrev;
+  int rc = SQLITE_OK;
+  MemPage *pNew, *pPrevPg;
+  Pgno new;
+
+  if( NKEY(pBtTo, pCell->h) + NDATA(pBtTo, pCell->h) <= MX_LOCAL_PAYLOAD ){
+    return SQLITE_OK;
+  }
+  pPrev = &pCell->ovfl;
+  pPrevPg = 0;
+  ovfl = SWAB32(pBtTo, pCell->ovfl);
+  while( ovfl && rc==SQLITE_OK ){
+    rc = sqlitepager_get(pFromPager, ovfl, (void**)&pOvfl);
+    if( rc ) return rc;
+    nextOvfl = SWAB32(pBtFrom, pOvfl->iNext);
+    rc = allocatePage(pBtTo, &pNew, &new, 0);
+    if( rc==SQLITE_OK ){
+      rc = sqlitepager_write(pNew);
+      if( rc==SQLITE_OK ){
+        memcpy(pNew, pOvfl, SQLITE_PAGE_SIZE);
+        *pPrev = SWAB32(pBtTo, new);
+        if( pPrevPg ){
+          sqlitepager_unref(pPrevPg);
+        }
+        pPrev = &pOvfl->iNext;
+        pPrevPg = pNew;
+      }
+    }
+    sqlitepager_unref(pOvfl);
+    ovfl = nextOvfl;
+  }
+  if( pPrevPg ){
+    sqlitepager_unref(pPrevPg);
+  }
+  return rc;
+}
+#endif
+
+
+#if 0 /* UNTESTED */
+/*
+** Copy a page of data from one database over to another.
+*/
+static int copyDatabasePage(
+  Btree *pBtFrom,
+  Pgno pgnoFrom,
+  Btree *pBtTo,
+  Pgno *pTo
+){
+  MemPage *pPageFrom, *pPage;
+  Pgno to;
+  int rc;
+  Cell *pCell;
+  int idx;
+
+  rc = sqlitepager_get(pBtFrom->pPager, pgno, (void**)&pPageFrom);
+  if( rc ) return rc;
+  rc = allocatePage(pBt, &pPage, pTo, 0);
+  if( rc==SQLITE_OK ){
+    rc = sqlitepager_write(pPage);
+  }
+  if( rc==SQLITE_OK ){
+    memcpy(pPage, pPageFrom, SQLITE_PAGE_SIZE);
+    idx = SWAB16(pBt, pPage->u.hdr.firstCell);
+    while( idx>0 ){
+      pCell = (Cell*)&pPage->u.aDisk[idx];
+      idx = SWAB16(pBt, pCell->h.iNext);
+      if( pCell->h.leftChild ){
+        Pgno newChld;
+        rc = copyDatabasePage(pBtFrom, SWAB32(pBtFrom, pCell->h.leftChild),
+                              pBtTo, &newChld);
+        if( rc ) return rc;
+        pCell->h.leftChild = SWAB32(pBtFrom, newChld);
+      }
+      rc = copyCell(pBtFrom, pBtTo, pCell);
+      if( rc ) return rc;
+    }
+    if( pPage->u.hdr.rightChild ){
+      Pgno newChld;
+      rc = copyDatabasePage(pBtFrom, SWAB32(pBtFrom, pPage->u.hdr.rightChild), 
+                            pBtTo, &newChld);
+      if( rc ) return rc;
+      pPage->u.hdr.rightChild = SWAB32(pBtTo, newChild);
+    }
+  }
+  sqlitepager_unref(pPage);
+  return rc;
+}
+#endif
 
 /*
 ** Read the meta-information out of a database file.

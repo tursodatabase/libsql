@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.72 2003/01/29 18:46:52 drh Exp $
+** $Id: insert.c,v 1.73 2003/03/19 03:14:01 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -100,7 +100,6 @@ void sqliteInsert(
   int base;             /* First available cursor */
   int iCont, iBreak;    /* Beginning and end of the loop over srcTab */
   sqlite *db;           /* The main database structure */
-  int openOp;           /* Opcode used to open cursors */
   int keyColumn = -1;   /* Column that is the INTEGER PRIMARY KEY */
   int endOfLoop;        /* Label for the end of the insertion loop */
   int useTempTable;     /* Store SELECT results in intermediate table */
@@ -198,7 +197,7 @@ void sqliteInsert(
     ** should be written into a temporary table.  Set to FALSE if each
     ** row of the SELECT can be written directly into the result table.
     */
-    opCode = pTab->isTemp ? OP_OpenTemp : OP_Open;
+    opCode = pTab->isTemp ? OP_OpenTemp : OP_OpenRead;
     useTempTable = row_triggers_exist || sqliteVdbeFindOp(v,opCode,pTab->tnum);
 
     if( useTempTable ){
@@ -329,11 +328,12 @@ void sqliteInsert(
   /* Open tables and indices if there are no row triggers */
   if( !row_triggers_exist ){
     base = pParse->nTab;
-    openOp = pTab->isTemp ? OP_OpenWrAux : OP_OpenWrite;
-    sqliteVdbeAddOp(v, openOp, base, pTab->tnum);
+    sqliteVdbeAddOp(v, OP_Integer, pTab->isTemp, 0);
+    sqliteVdbeAddOp(v, OP_OpenWrite, base, pTab->tnum);
     sqliteVdbeChangeP3(v, -1, pTab->zName, P3_STATIC);
     for(idx=1, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, idx++){
-      sqliteVdbeAddOp(v, openOp, idx+base, pIdx->tnum);
+      sqliteVdbeAddOp(v, OP_Integer, pTab->isTemp, 0);
+      sqliteVdbeAddOp(v, OP_OpenWrite, idx+base, pIdx->tnum);
       sqliteVdbeChangeP3(v, -1, pIdx->zName, P3_STATIC);
     }
     pParse->nTab += idx;
@@ -390,11 +390,12 @@ void sqliteInsert(
     /* Open the tables and indices for the INSERT */
     if( !pTab->pSelect ){
       base = pParse->nTab;
-      openOp = pTab->isTemp ? OP_OpenWrAux : OP_OpenWrite;
-      sqliteVdbeAddOp(v, openOp, base, pTab->tnum);
+      sqliteVdbeAddOp(v, OP_Integer, pTab->isTemp, 0);
+      sqliteVdbeAddOp(v, OP_OpenWrite, base, pTab->tnum);
       sqliteVdbeChangeP3(v, -1, pTab->zName, P3_STATIC);
       for(idx=1, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, idx++){
-        sqliteVdbeAddOp(v, openOp, idx+base, pIdx->tnum);
+        sqliteVdbeAddOp(v, OP_Integer, pTab->isTemp, 0);
+        sqliteVdbeAddOp(v, OP_OpenWrite, idx+base, pIdx->tnum);
         sqliteVdbeChangeP3(v, -1, pIdx->zName, P3_STATIC);
       }
       pParse->nTab += idx;

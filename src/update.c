@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.53 2003/01/13 23:27:33 drh Exp $
+** $Id: update.c,v 1.54 2003/03/19 03:14:02 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -42,7 +42,6 @@ void sqliteUpdate(
   int *aXRef = 0;        /* aXRef[i] is the index in pChanges->a[] of the
                          ** an expression for the i-th column of the table.
                          ** aXRef[i]==-1 if the i-th column is not changed. */
-  int openOp;            /* Opcode used to open tables */
   int chngRecno;         /* True if the record number is being changed */
   Expr *pRecnoExpr;      /* Expression defining the new record number */
   int openAll;           /* True if all indices need to be opened */
@@ -232,7 +231,8 @@ void sqliteUpdate(
     sqliteVdbeAddOp(v, OP_Dup, 0, 0);
 
     sqliteVdbeAddOp(v, OP_Dup, 0, 0);
-    sqliteVdbeAddOp(v, (pTab->isTemp?OP_OpenAux:OP_Open), base, pTab->tnum);
+    sqliteVdbeAddOp(v, OP_Integer, pTab->isTemp, 0);
+    sqliteVdbeAddOp(v, OP_OpenRead, base, pTab->tnum);
     sqliteVdbeAddOp(v, OP_MoveTo, base, 0);
 
     sqliteVdbeAddOp(v, OP_Integer, 13, 0);
@@ -277,8 +277,8 @@ void sqliteUpdate(
   ** action, then we need to open all indices because we might need
   ** to be deleting some records.
   */
-  openOp = pTab->isTemp ? OP_OpenWrAux : OP_OpenWrite;
-  sqliteVdbeAddOp(v, openOp, base, pTab->tnum);
+  sqliteVdbeAddOp(v, OP_Integer, pTab->isTemp, 0);
+  sqliteVdbeAddOp(v, OP_OpenWrite, base, pTab->tnum);
   if( onError==OE_Replace ){
     openAll = 1;
   }else{
@@ -292,7 +292,8 @@ void sqliteUpdate(
   }
   for(i=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
     if( openAll || aIdxUsed[i] ){
-      sqliteVdbeAddOp(v, openOp, base+i+1, pIdx->tnum);
+      sqliteVdbeAddOp(v, OP_Integer, pTab->isTemp, 0);
+      sqliteVdbeAddOp(v, OP_OpenWrite, base+i+1, pIdx->tnum);
       assert( pParse->nTab>base+i+1 );
     }
   }

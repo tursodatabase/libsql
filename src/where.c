@@ -13,7 +13,7 @@
 ** the WHERE clause of SQL statements.  Also found here are subroutines
 ** to generate VDBE code to evaluate expressions.
 **
-** $Id: where.c,v 1.72 2003/01/31 17:21:50 drh Exp $
+** $Id: where.c,v 1.73 2003/03/19 03:14:03 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -636,21 +636,21 @@ WhereInfo *sqliteWhereBegin(
   /* Open all tables in the pTabList and all indices used by those tables.
   */
   for(i=0; i<pTabList->nSrc; i++){
-    int openOp;
     Table *pTab;
 
     pTab = pTabList->a[i].pTab;
     if( pTab->isTransient || pTab->pSelect ) continue;
-    openOp = pTab->isTemp ? OP_OpenAux : OP_Open;
-    sqliteVdbeAddOp(v, openOp, base+i, pTab->tnum);
+    sqliteVdbeAddOp(v, OP_Integer, pTab->isTemp, 0);
+    sqliteVdbeAddOp(v, OP_OpenRead, base+i, pTab->tnum);
     sqliteVdbeChangeP3(v, -1, pTab->zName, P3_STATIC);
     if( i==0 && !pParse->schemaVerified &&
           (pParse->db->flags & SQLITE_InTrans)==0 ){
-      sqliteVdbeAddOp(v, OP_VerifyCookie, pParse->db->schema_cookie, 0);
-      pParse->schemaVerified = 1;
+      sqliteCodeVerifySchema(pParse);
     }
     if( pWInfo->a[i].pIdx!=0 ){
-      sqliteVdbeAddOp(v, openOp, pWInfo->a[i].iCur, pWInfo->a[i].pIdx->tnum);
+      sqliteVdbeAddOp(v, OP_Integer, pTab->isTemp, 0);
+      sqliteVdbeAddOp(v, OP_OpenRead,
+                      pWInfo->a[i].iCur, pWInfo->a[i].pIdx->tnum);
       sqliteVdbeChangeP3(v, -1, pWInfo->a[i].pIdx->zName, P3_STATIC);
     }
   }

@@ -269,6 +269,30 @@ int sqliteOsFileExists(const char *zFilename){
 
 
 /*
+** Change the name of an existing file.
+*/
+int sqliteOsRename(const char *zOldName, const char *zNewName){
+#if OS_UNIX
+  if( link(zOldName, zNewName) ){
+    return SQLITE_ERROR;
+  }
+  unlink(zOldName);
+  return SQLITE_OK;
+#endif
+#if OS_WIN
+  if( !MoveFile(zOldName, zNewName) ){
+    return SQLITE_ERROR;
+  }
+  return SQLITE_OK;
+#endif
+#if OS_MAC
+  /**** FIX ME ***/
+  return SQLITE_ERROR;
+#endif
+}
+
+
+/*
 ** Attempt to open a file for both reading and writing.  If that
 ** fails, try opening it read-only.  If the file does not exist,
 ** try to create it.

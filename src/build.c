@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.131 2003/03/01 19:45:34 drh Exp $
+** $Id: build.c,v 1.132 2003/03/19 03:14:01 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -85,7 +85,7 @@ void sqliteExec(Parse *pParse){
     if( pParse->useCallback ){
       if( pParse->explain ){
         rc = sqliteVdbeList(v);
-        db->next_cookie = db->schema_cookie;
+        db->next_cookie = db->aDb[0].schema_cookie;
       }else{
         sqliteVdbeExec(v);
       }
@@ -211,7 +211,7 @@ void sqliteRollbackInternalChanges(sqlite *db){
 ** This routine is called when a commit occurs.
 */
 void sqliteCommitInternalChanges(sqlite *db){
-  db->schema_cookie = db->next_cookie;
+  db->aDb[0].schema_cookie = db->next_cookie;
   db->flags &= ~SQLITE_InternChanges;
 }
 
@@ -310,13 +310,8 @@ char *sqliteTableNameFromToken(Token *pName){
 ** on cursor 0.
 */
 void sqliteOpenMasterTable(Vdbe *v, int isTemp){
-  if( isTemp ){
-    sqliteVdbeAddOp(v, OP_OpenWrAux, 0, 2);
-    sqliteVdbeChangeP3(v, -1, TEMP_MASTER_NAME, P3_STATIC);
-  }else{
-    sqliteVdbeAddOp(v, OP_OpenWrite, 0, 2);
-    sqliteVdbeChangeP3(v, -1, MASTER_NAME, P3_STATIC);
-  }
+  sqliteVdbeAddOp(v, OP_Integer, isTemp, 0);
+  sqliteVdbeAddOp(v, OP_OpenWrite, 0, 2);
 }
 
 /*
@@ -383,8 +378,8 @@ void sqliteStartTable(
   /* Before trying to create a temporary table, make sure the Btree for
   ** holding temporary tables is open.
   */
-  if( isTemp && db->pBeTemp==0 ){
-    int rc = sqliteBtreeOpen(0, 0, MAX_PAGES, &db->pBeTemp);
+  if( isTemp && db->aDb[1].pBt==0 ){
+    int rc = sqliteBtreeOpen(0, 0, MAX_PAGES, &db->aDb[1].pBt);
     if( rc!=SQLITE_OK ){
       sqliteSetString(&pParse->zErrMsg, "unable to open a temporary database "
         "file for storing temporary tables", 0);
@@ -392,7 +387,7 @@ void sqliteStartTable(
       return;
     }
     if( db->flags & SQLITE_InTrans ){
-      rc = sqliteBtreeBeginTrans(db->pBeTemp);
+      rc = sqliteBtreeBeginTrans(db->aDb[1].pBt);
       if( rc!=SQLITE_OK ){
         sqliteSetNString(&pParse->zErrMsg, "unable to get a write lock on "
           "the temporary database file", 0);
@@ -713,8 +708,8 @@ void sqliteAddCollateType(Parse *pParse, int collType){
 ** 1 chance in 2^32.  So we're safe enough.
 */
 void sqliteChangeCookie(sqlite *db, Vdbe *v){
-  if( db->next_cookie==db->schema_cookie ){
-    db->next_cookie = db->schema_cookie + sqliteRandomByte() + 1;
+  if( db->next_cookie==db->aDb[0].schema_cookie ){
+    db->next_cookie = db->aDb[0].schema_cookie + sqliteRandomByte() + 1;
     db->flags |= SQLITE_InternChanges;
     sqliteVdbeAddOp(v, OP_Integer, db->next_cookie, 0);
     sqliteVdbeAddOp(v, OP_SetCookie, 0, 0);
@@ -901,8 +896,8 @@ void sqliteEndTable(Parse *pParse, Token *pEnd, Select *pSelect){
     }
     sqliteVdbeAddOp(v, OP_Close, 0, 0);
     if( pSelect ){
-      int op = p->isTemp ? OP_OpenWrAux : OP_OpenWrite;
-      sqliteVdbeAddOp(v, op, 1, 0);
+      sqliteVdbeAddOp(v, OP_Integer, p->isTemp, 0);
+      sqliteVdbeAddOp(v, OP_OpenWrite, 1, 0);
       pParse->nTab = 2;
       sqliteSelect(pParse, pSelect, SRT_Table, 1, 0, 0, 0);
     }
@@ -1647,11 +1642,8 @@ void sqliteCreateIndex(
     pIndex->tnum = 0;
     if( pTable ){
       sqliteVdbeAddOp(v, OP_Dup, 0, 0);
-      if( isTemp ){
-        sqliteVdbeAddOp(v, OP_OpenWrAux, 1, 0);
-      }else{
-        sqliteVdbeAddOp(v, OP_OpenWrite, 1, 0);
-      }
+      sqliteVdbeAddOp(v, OP_Integer, isTemp, 0);
+      sqliteVdbeAddOp(v, OP_OpenWrite, 1, 0);
     }
     addr = sqliteVdbeAddOp(v, OP_String, 0, 0);
     if( pStart && pEnd ){
@@ -1661,7 +1653,8 @@ void sqliteCreateIndex(
     sqliteVdbeAddOp(v, OP_MakeRecord, 5, 0);
     sqliteVdbeAddOp(v, OP_PutIntKey, 0, 0);
     if( pTable ){
-      sqliteVdbeAddOp(v, isTemp ? OP_OpenAux : OP_Open, 2, pTab->tnum);
+      sqliteVdbeAddOp(v, OP_Integer, isTemp, 0);
+      sqliteVdbeAddOp(v, OP_OpenRead, 2, pTab->tnum);
       sqliteVdbeChangeP3(v, -1, pTab->zName, P3_STATIC);
       lbl2 = sqliteVdbeMakeLabel(v);
       sqliteVdbeAddOp(v, OP_Rewind, 2, lbl2);
@@ -1940,16 +1933,16 @@ void sqliteCopy(
   }
   v = sqliteGetVdbe(pParse);
   if( v ){
-    int openOp;
     sqliteBeginWriteOperation(pParse, 1, pTab->isTemp);
     addr = sqliteVdbeAddOp(v, OP_FileOpen, 0, 0);
     sqliteVdbeChangeP3(v, addr, pFilename->z, pFilename->n);
     sqliteVdbeDequoteP3(v, addr);
-    openOp = pTab->isTemp ? OP_OpenWrAux : OP_OpenWrite;
-    sqliteVdbeAddOp(v, openOp, 0, pTab->tnum);
+    sqliteVdbeAddOp(v, OP_Integer, pTab->isTemp, 0);
+    sqliteVdbeAddOp(v, OP_OpenWrite, 0, pTab->tnum);
     sqliteVdbeChangeP3(v, -1, pTab->zName, P3_STATIC);
     for(i=1, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
-      sqliteVdbeAddOp(v, openOp, i, pIdx->tnum);
+      sqliteVdbeAddOp(v, OP_Integer, pTab->isTemp, 0);
+      sqliteVdbeAddOp(v, OP_OpenWrite, i, pIdx->tnum);
       sqliteVdbeChangeP3(v, -1, pIdx->zName, P3_STATIC);
     }
     if( db->flags & SQLITE_CountRows ){
@@ -2019,7 +2012,7 @@ void sqliteVacuum(Parse *pParse, Token *pTableName){
 void sqliteBeginTransaction(Parse *pParse, int onError){
   sqlite *db;
 
-  if( pParse==0 || (db=pParse->db)==0 || db->pBe==0 ) return;
+  if( pParse==0 || (db=pParse->db)==0 || db->aDb[0].pBt==0 ) return;
   if( pParse->nErr || sqlite_malloc_failed ) return;
   if( sqliteAuthCheck(pParse, SQLITE_TRANSACTION, "BEGIN", 0) ) return;
   if( db->flags & SQLITE_InTrans ){
@@ -2039,7 +2032,7 @@ void sqliteBeginTransaction(Parse *pParse, int onError){
 void sqliteCommitTransaction(Parse *pParse){
   sqlite *db;
 
-  if( pParse==0 || (db=pParse->db)==0 || db->pBe==0 ) return;
+  if( pParse==0 || (db=pParse->db)==0 || db->aDb[0].pBt==0 ) return;
   if( pParse->nErr || sqlite_malloc_failed ) return;
   if( sqliteAuthCheck(pParse, SQLITE_TRANSACTION, "COMMIT", 0) ) return;
   if( (db->flags & SQLITE_InTrans)==0 ){
@@ -2060,7 +2053,7 @@ void sqliteRollbackTransaction(Parse *pParse){
   sqlite *db;
   Vdbe *v;
 
-  if( pParse==0 || (db=pParse->db)==0 || db->pBe==0 ) return;
+  if( pParse==0 || (db=pParse->db)==0 || db->aDb[0].pBt==0 ) return;
   if( pParse->nErr || sqlite_malloc_failed ) return;
   if( sqliteAuthCheck(pParse, SQLITE_TRANSACTION, "ROLLBACK", 0) ) return;
   if( (db->flags & SQLITE_InTrans)==0 ){
@@ -2075,6 +2068,21 @@ void sqliteRollbackTransaction(Parse *pParse){
   }
   db->flags &= ~SQLITE_InTrans;
   db->onError = OE_Default;
+}
+
+/*
+** Generate VDBE code that will verify the schema cookie for all
+** named database files.
+*/
+void sqliteCodeVerifySchema(Parse *pParse){
+  int i;
+  sqlite *db = pParse->db;
+  Vdbe *v = sqliteGetVdbe(pParse);
+  for(i=0; i<db->nDb; i++){
+    if( db->aDb[i].zName==0 || db->aDb[i].pBt==0 ) continue;
+    sqliteVdbeAddOp(v, OP_VerifyCookie, 0, db->aDb[i].schema_cookie);
+  }
+  pParse->schemaVerified = 1;
 }
 
 /*
@@ -2101,13 +2109,14 @@ void sqliteBeginWriteOperation(Parse *pParse, int setCheckpoint, int tempOnly){
   if( v==0 ) return;
   if( pParse->trigStack ) return; /* if this is in a trigger */
   if( (pParse->db->flags & SQLITE_InTrans)==0 ){
-    sqliteVdbeAddOp(v, OP_Transaction, tempOnly, 0);
+    sqliteVdbeAddOp(v, OP_Transaction, 1, 0);
     if( !tempOnly ){
-      sqliteVdbeAddOp(v, OP_VerifyCookie, pParse->db->schema_cookie, 0);
-      pParse->schemaVerified = 1;
+      sqliteVdbeAddOp(v, OP_Transaction, 0, 0);
+      sqliteCodeVerifySchema(pParse);
     }
   }else if( setCheckpoint ){
     sqliteVdbeAddOp(v, OP_Checkpoint, 0, 0);
+    sqliteVdbeAddOp(v, OP_Checkpoint, 1, 0);
   }
 }
 
@@ -2254,7 +2263,7 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       sqliteVdbeAddOp(v, OP_SetCookie, 0, 2);
       sqliteEndWriteOperation(pParse);
       db->cache_size = db->cache_size<0 ? -size : size;
-      sqliteBtreeSetCacheSize(db->pBe, db->cache_size);
+      sqliteBtreeSetCacheSize(db->aDb[0].pBt, db->cache_size);
     }
   }else
 
@@ -2287,7 +2296,7 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       if( size<0 ) size = -size;
       if( db->cache_size<0 ) size = -size;
       db->cache_size = size;
-      sqliteBtreeSetCacheSize(db->pBe, db->cache_size);
+      sqliteBtreeSetCacheSize(db->aDb[0].pBt, db->cache_size);
     }
   }else
 
@@ -2349,8 +2358,8 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       sqliteVdbeAddOp(v, OP_SetCookie, 0, 3);
       sqliteEndWriteOperation(pParse);
       db->cache_size = size;
-      sqliteBtreeSetCacheSize(db->pBe, db->cache_size);
-      sqliteBtreeSetSafetyLevel(db->pBe, db->safety_level);
+      sqliteBtreeSetCacheSize(db->aDb[0].pBt, db->cache_size);
+      sqliteBtreeSetSafetyLevel(db->aDb[0].pBt, db->safety_level);
     }
   }else
 
@@ -2377,8 +2386,8 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       db->safety_level = getSafetyLevel(zRight)+1;
       if( db->safety_level==1 ) size = -size;
       db->cache_size = size;
-      sqliteBtreeSetCacheSize(db->pBe, db->cache_size);
-      sqliteBtreeSetSafetyLevel(db->pBe, db->safety_level);
+      sqliteBtreeSetCacheSize(db->aDb[0].pBt, db->cache_size);
+      sqliteBtreeSetSafetyLevel(db->aDb[0].pBt, db->safety_level);
     }
   }else
 
@@ -2535,21 +2544,23 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
   if( sqliteStrICmp(zLeft, "integrity_check")==0 ){
     static VdbeOp checkDb[] = {
       { OP_SetInsert,   0, 0,        "2"},
-      { OP_Open,        0, 2,        0},
-      { OP_Rewind,      0, 6,        0},
-      { OP_Column,      0, 3,        0},    /* 3 */
+      { OP_Integer,     0, 0,        0},   
+      { OP_OpenRead,    0, 2,        0},
+      { OP_Rewind,      0, 7,        0},
+      { OP_Column,      0, 3,        0},    /* 4 */
       { OP_SetInsert,   0, 0,        0},
-      { OP_Next,        0, 3,        0},
-      { OP_IntegrityCk, 0, 0,        0},    /* 6 */
+      { OP_Next,        0, 4,        0},
+      { OP_IntegrityCk, 0, 0,        0},    /* 7 */
       { OP_ColumnName,  0, 0,        "integrity_check"},
       { OP_Callback,    1, 0,        0},
       { OP_SetInsert,   1, 0,        "2"},
-      { OP_OpenAux,     1, 2,        0},
-      { OP_Rewind,      1, 15,       0},
-      { OP_Column,      1, 3,        0},    /* 12 */
+      { OP_Integer,     1, 0,        0},
+      { OP_OpenRead,    1, 2,        0},
+      { OP_Rewind,      1, 17,       0},
+      { OP_Column,      1, 3,        0},    /* 14 */
       { OP_SetInsert,   1, 0,        0},
-      { OP_Next,        1, 12,       0},
-      { OP_IntegrityCk, 1, 1,        0},    /* 15 */
+      { OP_Next,        1, 14,       0},
+      { OP_IntegrityCk, 1, 1,        0},    /* 17 */
       { OP_Callback,    1, 0,        0},
     };
     sqliteVdbeAddOpList(v, ArraySize(checkDb), checkDb);

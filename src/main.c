@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.114 2003/02/16 22:21:32 drh Exp $
+** $Id: main.c,v 1.115 2003/03/19 03:14:02 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -249,8 +249,8 @@ int sqliteInit(sqlite *db, char **pzErrMsg){
 
   /* Create a cursor to hold the database open
   */
-  if( db->pBe==0 ) return SQLITE_OK;
-  rc = sqliteBtreeCursor(db->pBe, 2, 0, &curMain);
+  if( db->aDb[0].pBt==0 ) return SQLITE_OK;
+  rc = sqliteBtreeCursor(db->aDb[0].pBt, 2, 0, &curMain);
   if( rc ){
     sqliteSetString(pzErrMsg, sqlite_error_string(rc), 0);
     sqliteResetInternalSchema(db);
@@ -259,23 +259,22 @@ int sqliteInit(sqlite *db, char **pzErrMsg){
 
   /* Get the database meta information
   */
-  rc = sqliteBtreeGetMeta(db->pBe, meta);
+  rc = sqliteBtreeGetMeta(db->aDb[0].pBt, meta);
   if( rc ){
     sqliteSetString(pzErrMsg, sqlite_error_string(rc), 0);
     sqliteResetInternalSchema(db);
     sqliteBtreeCloseCursor(curMain);
     return rc;
   }
-  db->schema_cookie = meta[1];
-  db->next_cookie = db->schema_cookie;
+  db->next_cookie = db->aDb[0].schema_cookie = meta[1];
   db->file_format = meta[2];
   size = meta[3];
   if( size==0 ){ size = MAX_PAGES; }
   db->cache_size = size;
-  sqliteBtreeSetCacheSize(db->pBe, size);
+  sqliteBtreeSetCacheSize(db->aDb[0].pBt, size);
   db->safety_level = meta[4];
   if( db->safety_level==0 ) db->safety_level = 2;
-  sqliteBtreeSetSafetyLevel(db->pBe, db->safety_level);
+  sqliteBtreeSetSafetyLevel(db->aDb[0].pBt, db->safety_level);
 
   /*
   **     file_format==1    Version 2.1.0.
@@ -297,7 +296,6 @@ int sqliteInit(sqlite *db, char **pzErrMsg){
   */
   memset(&sParse, 0, sizeof(sParse));
   sParse.db = db;
-  sParse.pBe = db->pBe;
   sParse.xCallback = sqliteInitCallback;
   sParse.pArg = (void*)&initData;
   sParse.initFlag = 1;
@@ -308,7 +306,7 @@ int sqliteInit(sqlite *db, char **pzErrMsg){
   if( sqlite_malloc_failed ){
     sqliteSetString(pzErrMsg, "out of memory", 0);
     sParse.rc = SQLITE_NOMEM;
-    sqliteBtreeRollback(db->pBe);
+    sqliteBtreeRollback(db->aDb[0].pBt);
     sqliteResetInternalSchema(db);
   }
   if( sParse.rc==SQLITE_OK ){
@@ -363,9 +361,11 @@ sqlite *sqlite_open(const char *zFilename, int mode, char **pzErrMsg){
   db->onError = OE_Default;
   db->priorNewRowid = 0;
   db->magic = SQLITE_MAGIC_BUSY;
+  db->nDb = 2;
+  db->aDb = db->aDbStatic;
   
   /* Open the backend database driver */
-  rc = sqliteBtreeOpen(zFilename, 0, MAX_PAGES, &db->pBe);
+  rc = sqliteBtreeOpen(zFilename, 0, MAX_PAGES, &db->aDb[0].pBt);
   if( rc!=SQLITE_OK ){
     switch( rc ){
       default: {
@@ -376,6 +376,7 @@ sqlite *sqlite_open(const char *zFilename, int mode, char **pzErrMsg){
     sqliteStrRealloc(pzErrMsg);
     return 0;
   }
+  db->aDb[0].zName = "main";
 
   /* Attempt to read the schema */
   sqliteRegisterBuiltinFunctions(db);
@@ -412,9 +413,9 @@ sqlite *sqlite_open(const char *zFilename, int mode, char **pzErrMsg){
       &initData,
       &zErr);
     if( rc==SQLITE_OK ){
-      sqliteBtreeGetMeta(db->pBe, meta);
+      sqliteBtreeGetMeta(db->aDb[0].pBt, meta);
       meta[2] = 4;
-      sqliteBtreeUpdateMeta(db->pBe, meta);
+      sqliteBtreeUpdateMeta(db->aDb[0].pBt, meta);
       sqlite_exec(db, "COMMIT", 0, 0, 0);
     }
     if( rc!=SQLITE_OK ){
@@ -457,17 +458,22 @@ int sqlite_changes(sqlite *db){
 */
 void sqlite_close(sqlite *db){
   HashElem *i;
+  int j;
   db->want_to_close = 1;
   if( sqliteSafetyCheck(db) || sqliteSafetyOn(db) ){
     /* printf("DID NOT CLOSE\n"); fflush(stdout); */
     return;
   }
   db->magic = SQLITE_MAGIC_CLOSED;
-  sqliteBtreeClose(db->pBe);
-  sqliteResetInternalSchema(db);
-  if( db->pBeTemp ){
-    sqliteBtreeClose(db->pBeTemp);
+  for(j=0; j<db->nDb; j++){
+    if( db->aDb[j].pBt ){
+      sqliteBtreeClose(db->aDb[j].pBt);
+    }
   }
+  if( db->aDb!=db->aDbStatic ){
+    sqliteFree(db->aDb);
+  }
+  sqliteResetInternalSchema(db);
   for(i=sqliteHashFirst(&db->aFunc); i; i=sqliteHashNext(i)){
     FuncDef *pFunc, *pNext;
     for(pFunc = (FuncDef*)sqliteHashData(i); pFunc; pFunc=pNext){
@@ -593,6 +599,20 @@ int sqlite_complete(const char *zSql){
 }
 
 /*
+** Rollback all database files.
+*/
+void sqliteRollbackAll(sqlite *db){
+  int i;
+  for(i=0; i<db->nDb; i++){
+    if( db->aDb[i].pBt ){
+      sqliteBtreeRollback(db->aDb[i].pBt);
+      db->aDb[i].inTrans = 0;
+    }
+  }
+  sqliteRollbackInternalChanges(db);
+}
+
+/*
 ** This routine does the work of either sqlite_exec() or sqlite_compile().
 ** It works like sqlite_exec() if pVm==NULL and it works like sqlite_compile()
 ** otherwise.
@@ -632,7 +652,6 @@ static int sqliteMain(
   if( db->pVdbe==0 ){ db->nChange = 0; }
   memset(&sParse, 0, sizeof(sParse));
   sParse.db = db;
-  sParse.pBe = db->pBe;
   sParse.xCallback = xCallback;
   sParse.pArg = pArg;
   sParse.useCallback = ppVm==0;
@@ -643,10 +662,9 @@ static int sqliteMain(
   if( sqlite_malloc_failed ){
     sqliteSetString(pzErrMsg, "out of memory", 0);
     sParse.rc = SQLITE_NOMEM;
-    sqliteBtreeRollback(db->pBe);
-    if( db->pBeTemp ) sqliteBtreeRollback(db->pBeTemp);
-    db->flags &= ~SQLITE_InTrans;
+    sqliteRollbackAll(db);
     sqliteResetInternalSchema(db);
+    db->flags &= ~SQLITE_InTrans;
   }
   if( sParse.rc==SQLITE_DONE ) sParse.rc = SQLITE_OK;
   if( sParse.rc!=SQLITE_OK && pzErrMsg && *pzErrMsg==0 ){
@@ -965,10 +983,10 @@ int sqlite_open_aux_file(sqlite *db, const char *zName, char **pzErrMsg){
   if( zName && zName[0]==0 ) zName = 0;
   if( sqliteSafetyOn(db) ) goto openaux_misuse;
   sqliteResetInternalSchema(db);
-  if( db->pBeTemp!=0 ){
-    sqliteBtreeClose(db->pBeTemp);
+  if( db->aDb[1].pBt!=0 ){
+    sqliteBtreeClose(db->aDb[1].pBt);
   }
-  rc = sqliteBtreeOpen(zName, 0, MAX_PAGES, &db->pBeTemp);
+  rc = sqliteBtreeOpen(zName, 0, MAX_PAGES, &db->aDb[1].pBt);
   if( rc ){
     if( zName==0 ) zName = "a temporary file";
     sqliteSetString(pzErrMsg, "unable to open ", zName, 

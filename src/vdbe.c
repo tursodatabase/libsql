@@ -36,7 +36,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.207 2003/03/07 19:50:07 drh Exp $
+** $Id: vdbe.c,v 1.208 2003/03/19 03:14:02 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -243,7 +243,6 @@ struct Keylist {
 struct Vdbe {
   sqlite *db;         /* The whole database */
   Vdbe *pPrev,*pNext; /* Linked list of VDBEs with the same Vdbe.db */
-  Btree *pBt;         /* Opaque context structure used by DB backend */
   FILE *trace;        /* Write an execution trace here, if not NULL */
   int nOp;            /* Number of instructions in the program */
   int nOpAlloc;       /* Number of slots allocated for aOp[] */
@@ -315,7 +314,6 @@ Vdbe *sqliteVdbeCreate(sqlite *db){
   Vdbe *p;
   p = sqliteMalloc( sizeof(Vdbe) );
   if( p==0 ) return 0;
-  p->pBt = db->pBe;
   p->db = db;
   if( db->pVdbe ){
     db->pVdbe->pPrev = p;
@@ -1212,6 +1210,7 @@ static void Cleanup(Vdbe *p){
 */
 void sqliteVdbeDelete(Vdbe *p){
   int i;
+  sqlite *db = p->db;
   if( p==0 ) return;
   Cleanup(p);
   if( p->pPrev ){
@@ -1231,6 +1230,13 @@ void sqliteVdbeDelete(Vdbe *p){
   for(i=0; i<p->nOp; i++){
     if( p->aOp[i].p3type==P3_DYNAMIC ){
       sqliteFree(p->aOp[i].p3);
+    }
+  }
+  for(i=2; i<db->nDb; i++){
+    if( db->aDb[i].pBt && db->aDb[i].zName==0 ){
+      sqliteBtreeClose(db->aDb[i].pBt);
+      db->aDb[i].pBt = 0;
+      db->aDb[i].inTrans = 0;
     }
   }
   sqliteFree(p->aOp);
@@ -1584,7 +1590,6 @@ int sqliteVdbeExec(
   int pc;                    /* The program counter */
   Op *pOp;                   /* Current operation */
   int rc = SQLITE_OK;        /* Value to return */
-  Btree *pBt = p->pBt;       /* The backend driver */
   sqlite *db = p->db;        /* The database */
   char **zStack = p->zStack; /* Text stack */
   Stack *aStack = p->aStack; /* Additional stack information */
@@ -1894,6 +1899,7 @@ case OP_Push: {
 ** to all column names is passed as the 4th parameter to the callback.
 */
 case OP_ColumnName: {
+  assert( pOp->p1>=0 && pOp->p1<p->nOp );
   p->azColName[pOp->p1] = pOp->p3;
   p->nCallback = 0;
   break;
@@ -3154,17 +3160,21 @@ case OP_IncrKey: {
   break;
 }
 
-/* Opcode: Checkpoint * * *
+/* Opcode: Checkpoint P1 * *
 **
 ** Begin a checkpoint.  A checkpoint is the beginning of a operation that
 ** is part of a larger transaction but which might need to be rolled back
 ** itself without effecting the containing transaction.  A checkpoint will
 ** be automatically committed or rollback when the VDBE halts.
+**
+** The checkpoint is begun on the database file with index P1.  The main
+** database file has an index of 0 and the file used for temporary tables
+** has an index of 1.
 */
 case OP_Checkpoint: {
-  rc = sqliteBtreeBeginCkpt(pBt);
-  if( rc==SQLITE_OK && db->pBeTemp ){
-     rc = sqliteBtreeBeginCkpt(db->pBeTemp);
+  int i = pOp->p1;
+  if( i>=0 && i<db->nDb && db->aDb[i].pBt ){
+    rc = sqliteBtreeBeginCkpt(db->aDb[i].pBt);
   }
   break;
 }
@@ -3175,10 +3185,9 @@ case OP_Checkpoint: {
 ** opcode is encountered.  Depending on the ON CONFLICT setting, the
 ** transaction might also be rolled back if an error is encountered.
 **
-** If P1 is true, then the transaction is started on the temporary
-** tables of the database only.  The main database file is not write
-** locked and other processes can continue to read the main database
-** file.
+** P1 is the index of the database file on which the transaction is
+** started.  Index 0 is the main database file and index 1 is the
+** file used for temporary tables.
 **
 ** A write lock is obtained on the database file when a transaction is
 ** started.  No other process can read or write the file while the
@@ -3188,15 +3197,9 @@ case OP_Checkpoint: {
 */
 case OP_Transaction: {
   int busy = 1;
-  if( db->pBeTemp && !p->inTempTrans ){
-    rc = sqliteBtreeBeginTrans(db->pBeTemp);
-    if( rc!=SQLITE_OK ){
-      goto abort_due_to_error;
-    }
-    p->inTempTrans = 1;
-  }
-  while( pOp->p1==0 && busy ){
-    rc = sqliteBtreeBeginTrans(pBt);
+  int i = pOp->p1;
+  while( i>=0 && i<db->nDb && db->aDb[i].pBt!=0 && busy ){
+    rc = sqliteBtreeBeginTrans(db->aDb[i].pBt);
     switch( rc ){
       case SQLITE_BUSY: {
         if( db->xBusyCallback==0 ){
@@ -3224,6 +3227,7 @@ case OP_Transaction: {
       }
     }
   }
+  db->aDb[i].inTrans = 1;
   p->undoTransOnError = 1;
   break;
 }
@@ -3237,53 +3241,48 @@ case OP_Transaction: {
 ** A read lock continues to be held if there are still cursors open.
 */
 case OP_Commit: {
-  if( db->pBeTemp==0 || (rc = sqliteBtreeCommit(db->pBeTemp))==SQLITE_OK ){
-    rc = p->inTempTrans ? SQLITE_OK : sqliteBtreeCommit(pBt);
+  int i;
+  assert( rc==SQLITE_OK );
+  for(i=0; rc==SQLITE_OK && i<db->nDb; i++){
+    if( db->aDb[i].inTrans ){
+      rc = sqliteBtreeCommit(db->aDb[i].pBt);
+      db->aDb[i].inTrans = 0;
+    }
   }
   if( rc==SQLITE_OK ){
     sqliteCommitInternalChanges(db);
   }else{
-    if( db->pBeTemp ) sqliteBtreeRollback(db->pBeTemp);
-    sqliteBtreeRollback(pBt);
-    sqliteRollbackInternalChanges(db);
+    sqliteRollbackAll(db);
   }
-  p->inTempTrans = 0;
   break;
 }
 
-/* Opcode: Rollback * * *
+/* Opcode: Rollback P1 * *
 **
 ** Cause all modifications to the database that have been made since the
 ** last Transaction to be undone. The database is restored to its state
 ** before the Transaction opcode was executed.  No additional modifications
 ** are allowed until another transaction is started.
 **
+** P1 is the index of the database file that is committed.  An index of 0
+** is used for the main database and an index of 1 is used for the file used
+** to hold temporary tables.
+**
 ** This instruction automatically closes all cursors and releases both
-** the read and write locks on the database.
+** the read and write locks on the indicated database.
 */
 case OP_Rollback: {
-  if( db->pBeTemp ){
-    sqliteBtreeRollback(db->pBeTemp);
-  }
-  rc = sqliteBtreeRollback(pBt);
-  sqliteRollbackInternalChanges(db);
+  sqliteRollbackAll(db);
   break;
 }
 
-/* Opcode: ReadCookie * P2 *
+/* Opcode: ReadCookie P1 P2 *
 **
-** When P2==0, 
-** read the schema cookie from the database file and push it onto the
-** stack.  The schema cookie is an integer that is used like a version
-** number for the database schema.  Everytime the schema changes, the
-** cookie changes to a new random value.  This opcode is used during
-** initialization to read the initial cookie value so that subsequent
-** database accesses can verify that the cookie has not changed.
-**
-** If P2>0, then read global database parameter number P2.  There is
-** a small fixed number of global database parameters.  P2==1 is the
-** database version number.  P2==2 is the recommended pager cache size.
-** Other parameters are currently unused.
+** Read cookie number P2 from database P1 and push it onto the stack.
+** P2==0 is the schema version.  P2==1 is the database format.
+** P2==2 is the recommended pager cache size, and so forth.  P1==0 is
+** the main database file and P1==1 is the database file used to store
+** temporary tables.
 **
 ** There must be a read-lock on the database (either a transaction
 ** must be started or there must be an open cursor) before
@@ -3293,36 +3292,35 @@ case OP_ReadCookie: {
   int i = ++p->tos;
   int aMeta[SQLITE_N_BTREE_META];
   assert( pOp->p2<SQLITE_N_BTREE_META );
-  rc = sqliteBtreeGetMeta(pBt, aMeta);
+  assert( pOp->p1>=0 && pOp->p1<db->nDb );
+  assert( db->aDb[pOp->p1].pBt!=0 );
+  rc = sqliteBtreeGetMeta(db->aDb[pOp->p1].pBt, aMeta);
   aStack[i].i = aMeta[1+pOp->p2];
   aStack[i].flags = STK_Int;
   break;
 }
 
-/* Opcode: SetCookie * P2 *
+/* Opcode: SetCookie P1 P2 *
 **
-** When P2==0,
-** this operation changes the value of the schema cookie on the database.
-** The new value is top of the stack.
-** When P2>0, the value of global database parameter
-** number P2 is changed.  See ReadCookie for more information about
-** global database parametes.
-**
-** The schema cookie changes its value whenever the database schema changes.
-** That way, other processes can recognize when the schema has changed
-** and reread it.
+** Write the top of the stack into cookie number P2 of database P1.
+** P2==0 is the schema version.  P2==1 is the database format.
+** P2==2 is the recommended pager cache size, and so forth.  P1==0 is
+** the main database file and P1==1 is the database file used to store
+** temporary tables.
 **
 ** A transaction must be started before executing this opcode.
 */
 case OP_SetCookie: {
   int aMeta[SQLITE_N_BTREE_META];
   assert( pOp->p2<SQLITE_N_BTREE_META );
+  assert( pOp->p1>=0 && pOp->p1<db->nDb );
+  assert( db->aDb[pOp->p1].pBt!=0 );
   VERIFY( if( p->tos<0 ) goto not_enough_stack; )
   Integerify(p, p->tos)
-  rc = sqliteBtreeGetMeta(pBt, aMeta);
+  rc = sqliteBtreeGetMeta(db->aDb[pOp->p1].pBt, aMeta);
   if( rc==SQLITE_OK ){
     aMeta[1+pOp->p2] = aStack[p->tos].i;
-    rc = sqliteBtreeUpdateMeta(pBt, aMeta);
+    rc = sqliteBtreeUpdateMeta(db->aDb[pOp->p1].pBt, aMeta);
   }
   POPSTACK;
   break;
@@ -3330,10 +3328,11 @@ case OP_SetCookie: {
 
 /* Opcode: VerifyCookie P1 P2 *
 **
-** Check the value of global database parameter number P2 and make
-** sure it is equal to P1.  P2==0 is the schema cookie.  P1==1 is
-** the database version.  If the values do not match, abort with
-** an SQLITE_SCHEMA error.
+** Check the value of global database parameter number 0 (the
+** schema version) and make sure it is equal to P2.  
+** P1 is the database number which is 0 for the main database file
+** and 1 for the file holding temporary tables and some higher number
+** for auxiliary databases.
 **
 ** The cookie changes its value whenever the database schema changes.
 ** This operation is used to detect when that the cookie has changed
@@ -3345,23 +3344,27 @@ case OP_SetCookie: {
 */
 case OP_VerifyCookie: {
   int aMeta[SQLITE_N_BTREE_META];
-  assert( pOp->p2<SQLITE_N_BTREE_META );
-  rc = sqliteBtreeGetMeta(pBt, aMeta);
-  if( rc==SQLITE_OK && aMeta[1+pOp->p2]!=pOp->p1 ){
+  assert( pOp->p1>=0 && pOp->p1<db->nDb );
+  assert( db->aDb[pOp->p1].zName!=0 );
+  rc = sqliteBtreeGetMeta(db->aDb[pOp->p1].pBt, aMeta);
+  if( rc==SQLITE_OK && aMeta[1]!=pOp->p2 ){
     sqliteSetString(&p->zErrMsg, "database schema has changed", 0);
     rc = SQLITE_SCHEMA;
   }
   break;
 }
 
-/* Opcode: Open P1 P2 P3
+/* Opcode: OpenRead P1 P2 P3
 **
 ** Open a read-only cursor for the database table whose root page is
-** P2 in the main database file.  Give the new cursor an identifier
-** of P1.  The P1 values need not be contiguous but all P1 values
-** should be small integers.  It is an error for P1 to be negative.
+** P2 in a database file.  The database file is determined by an 
+** integer from the top of the stack.  0 means the main database and
+** 1 means the database used for temporary tables.  Give the new 
+** cursor an identifier of P1.  The P1 values need not be contiguous
+** but all P1 values should be small integers.  It is an error for
+** P1 to be negative.
 **
-** If P2==0 then take the root page number from the top of the stack.
+** If P2==0 then take the root page number from the next of the stack.
 **
 ** There will be a read lock on the database whenever there is an
 ** open cursor.  If the database was unlocked prior to this instruction
@@ -3377,52 +3380,39 @@ case OP_VerifyCookie: {
 ** omitted.  But the code generator usually inserts the index or
 ** table name into P3 to make the code easier to read.
 **
-** See also OpenAux and OpenWrite.
-*/
-/* Opcode: OpenAux P1 P2 P3
-**
-** Open a read-only cursor in the auxiliary table set.  This opcode
-** works exactly like OP_Open except that it opens the cursor on the
-** auxiliary table set (the file used to store tables created using
-** CREATE TEMPORARY TABLE) instead of in the main database file.
-** See OP_Open for additional information.
+** See also OpenWrite.
 */
 /* Opcode: OpenWrite P1 P2 P3
 **
 ** Open a read/write cursor named P1 on the table or index whose root
 ** page is P2.  If P2==0 then take the root page number from the stack.
 **
-** This instruction works just like Open except that it opens the cursor
+** This instruction works just like OpenRead except that it opens the cursor
 ** in read/write mode.  For a given table, there can be one or more read-only
 ** cursors or a single read/write cursor but not both.
 **
-** See also OpWrAux.
+** See also OpenRead.
 */
-/* Opcode: OpenWrAux P1 P2 P3
-**
-** Open a read/write cursor in the auxiliary table set.  This opcode works
-** just like OpenWrite except that the auxiliary table set (the file used
-** to store tables created using CREATE TEMPORARY TABLE) is used in place
-** of the main database file.
-*/
-case OP_OpenAux:
-case OP_OpenWrAux:
-case OP_OpenWrite:
-case OP_Open: {
+case OP_OpenRead:
+case OP_OpenWrite: {
   int busy = 0;
   int i = pOp->p1;
   int tos = p->tos;
   int p2 = pOp->p2;
   int wrFlag;
   Btree *pX;
-  switch( pOp->opcode ){
-    case OP_Open:        wrFlag = 0;  pX = pBt;          break;
-    case OP_OpenWrite:   wrFlag = 1;  pX = pBt;          break;
-    case OP_OpenAux:     wrFlag = 0;  pX = db->pBeTemp;  break;
-    case OP_OpenWrAux:   wrFlag = 1;  pX = db->pBeTemp;  break;
-  }
+  int iDb;
+  
+  VERIFY( if( tos<0 ) goto not_enough_stack; );
+  Integerify(p, tos);
+  iDb = p->aStack[tos].i;
+  tos--;
+  VERIFY( if( iDb<0 || iDb>=db->nDb ) goto bad_instruction; );
+  VERIFY( if( db->aDb[iDb].pBt==0 ) goto bad_instruction; );
+  pX = db->aDb[iDb].pBt;
+  wrFlag = pOp->opcode==OP_OpenWrite;
   if( p2<=0 ){
-    if( tos<0 ) goto not_enough_stack;
+    VERIFY( if( tos<0 ) goto not_enough_stack; );
     Integerify(p, tos);
     p2 = p->aStack[tos].i;
     POPSTACK;
@@ -3464,6 +3454,7 @@ case OP_Open: {
   if( p2<=0 ){
     POPSTACK;
   }
+  POPSTACK;
   break;
 }
 
@@ -4448,7 +4439,7 @@ case OP_IdxGE: {
 ** See also: Clear
 */
 case OP_Destroy: {
-  sqliteBtreeDropTable(pOp->p2 ? db->pBeTemp : pBt, pOp->p1);
+  sqliteBtreeDropTable(db->aDb[pOp->p2].pBt, pOp->p1);
   break;
 }
 
@@ -4465,7 +4456,7 @@ case OP_Destroy: {
 ** See also: Destroy
 */
 case OP_Clear: {
-  sqliteBtreeClearTable(pOp->p2 ? db->pBeTemp : pBt, pOp->p1);
+  sqliteBtreeClearTable(db->aDb[pOp->p2].pBt, pOp->p1);
   break;
 }
 
@@ -4499,10 +4490,12 @@ case OP_CreateTable: {
   int i = ++p->tos;
   int pgno;
   assert( pOp->p3!=0 && pOp->p3type==P3_POINTER );
+  assert( pOp->p2>=0 && pOp->p2<db->nDb );
+  assert( db->aDb[pOp->p2].pBt!=0 );
   if( pOp->opcode==OP_CreateTable ){
-    rc = sqliteBtreeCreateTable(pOp->p2 ? db->pBeTemp : pBt, &pgno);
+    rc = sqliteBtreeCreateTable(db->aDb[pOp->p2].pBt, &pgno);
   }else{
-    rc = sqliteBtreeCreateIndex(pOp->p2 ? db->pBeTemp : pBt, &pgno);
+    rc = sqliteBtreeCreateIndex(db->aDb[pOp->p2].pBt, &pgno);
   }
   if( rc==SQLITE_OK ){
     aStack[i].i = pgno;
@@ -4546,7 +4539,7 @@ case OP_IntegrityCk: {
     toInt((char*)sqliteHashKey(i), &aRoot[j]);
   }
   aRoot[j] = 0;
-  z = sqliteBtreeIntegrityCheck(pOp->p2 ? db->pBeTemp : pBt, aRoot, nRoot);
+  z = sqliteBtreeIntegrityCheck(db->aDb[pOp->p2].pBt, aRoot, nRoot);
   if( z==0 || z[0]==0 ){
     if( z ) sqliteFree(z);
     zStack[tos] = "ok";
@@ -5671,8 +5664,7 @@ bad_instruction:
 */
 int sqliteVdbeFinalize(Vdbe *p, char **pzErrMsg){
   sqlite *db = p->db;
-  Btree *pBt = p->pBt;
-  int rc;
+  int i, rc;
 
   if( p->magic!=VDBE_MAGIC_RUN && p->magic!=VDBE_MAGIC_HALT ){
     sqliteSetString(pzErrMsg, sqlite_error_string(SQLITE_MISUSE), 0);
@@ -5691,23 +5683,24 @@ int sqliteVdbeFinalize(Vdbe *p, char **pzErrMsg){
     switch( p->errorAction ){
       case OE_Abort: {
         if( !p->undoTransOnError ){
-          sqliteBtreeRollbackCkpt(pBt);
-          if( db->pBeTemp ) sqliteBtreeRollbackCkpt(db->pBeTemp);
+          for(i=0; i<db->nDb; i++){
+            if( db->aDb[i].pBt ){
+              sqliteBtreeRollbackCkpt(db->aDb[i].pBt);
+            }
+          }
           break;
         }
         /* Fall through to ROLLBACK */
       }
       case OE_Rollback: {
-        sqliteBtreeRollback(pBt);
-        if( db->pBeTemp ) sqliteBtreeRollback(db->pBeTemp);
+        sqliteRollbackAll(db);
         db->flags &= ~SQLITE_InTrans;
         db->onError = OE_Default;
         break;
       }
       default: {
         if( p->undoTransOnError ){
-          sqliteBtreeCommit(pBt);
-          if( db->pBeTemp ) sqliteBtreeCommit(db->pBeTemp);
+          sqliteRollbackAll(db);
           db->flags &= ~SQLITE_InTrans;
           db->onError = OE_Default;
         }
@@ -5716,8 +5709,11 @@ int sqliteVdbeFinalize(Vdbe *p, char **pzErrMsg){
     }
     sqliteRollbackInternalChanges(db);
   }
-  sqliteBtreeCommitCkpt(pBt);
-  if( db->pBeTemp ) sqliteBtreeCommitCkpt(db->pBeTemp);
+  for(i=0; i<db->nDb; i++){
+    if( db->aDb[i].pBt ){
+      sqliteBtreeCommitCkpt(db->aDb[i].pBt);
+    }
+  }
   assert( p->tos<p->pc || sqlite_malloc_failed==1 );
 #ifdef VDBE_PROFILE
   {
