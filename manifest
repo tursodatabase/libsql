@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sDROP\sTABLE\sthat\scould\scause\sSQLITE_MASTER\stable\scorruption.\nThe\sroot\sproblem\swas\sthat\sthe\ssequence\sof\sBTree\soperations\s(Delete,\sNext)\nwould\snot\salways\sleave\sthe\scursor\spointing\sat\sthe\sfirst\sentry\safter\sthe\nentry\sthat\swas\sdeleted.\s\sA\sconsequence\sof\sthis\serror\swas\sthat\sa\sDROP\sTABLE\non\sa\stable\swith\sindices\swould\snot\salways\sremove\severy\sindex\sassociated\nwith\sthat\stable\sfrom\sthe\sSQLITE_MASTER\stable.\s\sSubsequent\sattempts\sto\nopen\sthe\sdatabase\swill\sfail\swhen\sthe\sindex\sfor\sthe\smissing\stable\swas\nparsed.\s\sChanges\shave\salso\sbeen\smade\sto\signore\sextra\sindices\sin\sthe\nSQLITE_MASTER\stable\sso\sthat\sa\sdatabase\spreviously\scorrupted\sby\sthis\sbug\nis\sonce\sagain\sreadable.\s(CVS\s316)
-D 2001-11-23T00:24:12
+C Version\s2.1.2\s(CVS\s459)
+D 2001-11-23T00:30:00
 F Makefile.in 6801df952cb1df64aa32e4de85fed24511d28efd
 F Makefile.template 1fdb891f14083ee0b63cf7282f91529634438e7a
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -116,7 +116,7 @@ F www/speed.tcl 212a91d555384e01873160d6a189f1490c791bc2
 F www/sqlite.tcl 6a21242a272e9c0939a04419a51c3d50cae33e3e
 F www/tclsqlite.tcl 13d50723f583888fc80ae1a38247c0ab415066fa
 F www/vdbe.tcl eb4e1768cffa266cbbb7133488022a7a6cb278d9
-P a9db1c12c5a4d5741de0e5eb5aa87c647a5646b8
+P 8a984667113564f2bac7412165b6ff8b7e3e8f70
 R c4b924c66bb520eb6ed8e5503bdf1605
 U drh
-Z ef51c9b0a8111962938d6717ff48b7e2
+Z 1a9449aaa1a79f5e52fef176b1356165
