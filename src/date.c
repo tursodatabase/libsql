@@ -16,7 +16,7 @@
 ** sqliteRegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.2 2003/12/23 02:17:35 drh Exp $
+** $Id: date.c,v 1.3 2003/12/23 16:22:18 drh Exp $
 **
 ** NOTES:
 **
@@ -51,6 +51,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <time.h>
 #include "sqliteInt.h"
 #include "os.h"
 
@@ -368,6 +369,52 @@ static void computeHMS(DateTime *p){
 }
 
 /*
+** Compute the difference (in days) between localtime and UTC (a.k.a. GMT)
+** for the time value p where p is in UTC.
+*/
+static double localtimeOffset(DateTime *p){
+  DateTime x, y;
+  time_t t;
+  struct tm *pTm;
+  computeYMD(p);
+  computeHMS(p);
+  x = *p;
+  if( x.Y<1971 || x.Y>=2038 ){
+    x.Y = 2000;
+    x.M = 1;
+    x.D = 1;
+    x.h = 0;
+    x.m = 0;
+    x.s = 0.0;
+  } else {
+    int s = x.s + 0.5;
+    x.s = s;
+  }
+  x.tz = 0;
+  x.validJD = 0;
+  computeJD(&x);
+  t = (x.rJD-2440587.5)*86400.0 + 0.5;
+  sqliteOsEnterMutex();
+  pTm = localtime(&t);
+  y.Y = pTm->tm_year + 1900;
+  y.M = pTm->tm_mon + 1;
+  y.D = pTm->tm_mday;
+  y.h = pTm->tm_hour;
+  y.m = pTm->tm_min;
+  y.s = pTm->tm_sec;
+  sqliteOsLeaveMutex();
+  y.validYMD = 1;
+  y.validHMS = 1;
+  y.validJD = 0;
+  y.validTZ = 0;
+  computeJD(&y);
+  /* printf("x=%d-%02d-%02d %02d:%02d:%02d\n",x.Y,x.M,x.D,x.h,x.m,(int)x.s); */
+  /* printf("y=%d-%02d-%02d %02d:%02d:%02d\n",y.Y,y.M,y.D,y.h,y.m,(int)y.s); */
+  /* printf("diff=%.17g\n", y.rJD - x.rJD); */
+  return y.rJD - x.rJD;
+}
+
+/*
 ** Process a modifier to a date-time stamp.  The modifiers are
 ** as follows:
 **
@@ -383,6 +430,8 @@ static void computeHMS(DateTime *p){
 **     start of day
 **     weekday N
 **     unixepoch
+**     localtime
+**     utc
 **
 ** Return 0 on success and 1 if there is any kind of error.
 */
@@ -396,6 +445,22 @@ static int parseModifier(const char *zMod, DateTime *p){
   }
   z[n] = 0;
   switch( z[0] ){
+    case 'l': {
+      /*    localtime
+      **
+      ** Assuming the current time value is UTC (a.k.a. GMT), shift it to
+      ** show local time.
+      */
+      if( strcmp(z, "localtime")==0 ){
+        computeJD(p);
+        p->rJD += localtimeOffset(p);
+        p->validYMD = 0;
+        p->validHMS = 0;
+        p->validTZ = 0;
+        rc = 0;
+      }
+      break;
+    }
     case 'u': {
       /*
       **    unixepoch
@@ -405,6 +470,19 @@ static int parseModifier(const char *zMod, DateTime *p){
       */
       if( strcmp(z, "unixepoch")==0 && p->validJD ){
         p->rJD = p->rJD/86400.0 + 2440587.5;
+        p->validYMD = 0;
+        p->validHMS = 0;
+        p->validTZ = 0;
+        rc = 0;
+      }else if( strcmp(z, "utc")==0 ){
+        double c1;
+        computeJD(p);
+        c1 = localtimeOffset(p);
+        p->rJD -= c1;
+        p->validYMD = 0;
+        p->validHMS = 0;
+        p->validTZ = 0;
+        p->rJD += c1 - localtimeOffset(p);
         p->validYMD = 0;
         p->validHMS = 0;
         p->validTZ = 0;

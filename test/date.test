@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing date and time functions.
 #
-# $Id: date.test,v 1.1 2003/11/01 01:53:54 drh Exp $
+# $Id: date.test,v 1.2 2003/12/23 16:22:18 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -119,5 +119,37 @@ datetest 5.1 {datetime('1994-04-16 14:00:00 -05:00')} {1994-04-16 09:00:00}
 datetest 5.2 {datetime('1994-04-16 14:00:00 +05:15')} {1994-04-16 19:15:00}
 datetest 5.3 {datetime('1994-04-16 05:00:00 -08:30')} {1994-04-15 20:30:00}
 datetest 5.4 {datetime('1994-04-16 14:00:00 +11:55')} {1994-04-17 01:55:00}
+
+# localtime->utc and utc->localtime conversions.  These tests only work
+# if the localtime is in the US Eastern Time (the time in Charlotte, NC
+# and in New York.)
+#
+if {[clock format 0 -format %Z]=="EST"} {
+  datetest 6.1 {datetime('2000-10-29 05:59:00','localtime')}\
+      {2000-10-29 01:59:00}
+  datetest 6.2 {datetime('2000-10-29 06:00:00','localtime')}\
+      {2000-10-29 01:00:00}
+  datetest 6.3 {datetime('2000-04-02 06:59:00','localtime')}\
+      {2000-04-02 01:59:00}
+  datetest 6.4 {datetime('2000-04-02 07:00:00','localtime')}\
+      {2000-04-02 03:00:00}
+  datetest 6.5 {datetime('2000-10-29 01:59:00','utc')} {2000-10-29 05:59:00}
+  datetest 6.6 {datetime('2000-10-29 02:00:00','utc')} {2000-10-29 07:00:00}
+  datetest 6.7 {datetime('2000-04-02 01:59:00','utc')} {2000-04-02 06:59:00}
+  datetest 6.8 {datetime('2000-04-02 02:00:00','utc')} {2000-04-02 06:00:00}
+
+  datetest 6.10 {datetime('2000-01-01 12:00:00','localtime')} \
+      {2000-01-01 07:00:00}
+  datetest 6.11 {datetime('1969-01-01 12:00:00','localtime')} \
+      {1969-01-01 07:00:00}
+  datetest 6.12 {datetime('2039-01-01 12:00:00','localtime')} \
+      {2039-01-01 07:00:00}
+  datetest 6.13 {datetime('2000-07-01 12:00:00','localtime')} \
+      {2000-07-01 08:00:00}
+  datetest 6.14 {datetime('1969-07-01 12:00:00','localtime')} \
+      {1969-07-01 07:00:00}
+  datetest 6.15 {datetime('2039-07-01 12:00:00','localtime')} \
+      {2039-07-01 07:00:00}
+}
 
 finish_test

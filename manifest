@@ -1,5 +1,5 @@
-C Test\sfunctions\stolerate\san\s"0x"\sbefore\sa\spointer\svalue.\s\sTicket\s#452.\s(CVS\s1145)
-D 2003-12-23T03:06:23
+C Add\slocaltime<-->UTC\sconversions\sto\sthe\sdate\sfunctions.\s(CVS\s1146)
+D 2003-12-23T16:22:18
 F Makefile.in 0515ff9218ad8d5a8f6220f0494b8ef94c67013b
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -28,7 +28,7 @@ F src/btree.h 9b7c09f1e64274d7bb74a57bbfc63778f67b1048
 F src/btree_rb.c e4084b6a12270674b0cd7034655f55e6a2639c78
 F src/build.c a7493c433de5b552f9535d8fa7ed80aaf135491e
 F src/copy.c 9e47975ea96751c658bcf1a0c4f0bb7c6ee61e73
-F src/date.c ec36ce6f044fbc6c837c5bc52e71cdba0ea2746e
+F src/date.c 1e3318d8450088f235442ca1cddd2601c0c32d1a
 F src/delete.c 0f81e6799c089487615d38e042a2de4d2d6192bc
 F src/encode.c 25ea901a9cefb3d93774afa4a06b57cb58acf544
 F src/expr.c a14401a54e5923f3e52b6d04a83813d150f43f33
@@ -84,7 +84,7 @@ F test/btree4rb.test ae6f0438512edcb45cf483471cd6070a765963a9
 F test/capi2.test ec96e0e235d87b53cbaef3d8e3e0f8ccf32c71ca
 F test/conflict.test 0911bb2f079046914a6e9c3341b36658c4e2103e
 F test/copy.test 88dabd4e811b17644b726aa81d404e73b7635c84
-F test/date.test 17619ff81d5b813092915927c50923e265e85bd8
+F test/date.test 510cf3dbc0bc090fc28b2ae1bc290dcd920f5414
 F test/delete.test 92256384f1801760180ded129f7427884cf28886
 F test/expr.test c4cc292d601019c2f2ce95093caaa5d10284b105
 F test/fkey1.test d65c824459916249bee501532d6154ddab0b5db7
@@ -179,7 +179,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P 4d9edbc50f7dee64edbadad2e2dc4f93d8248b3b
-R e78cc5676ccc4eae1ef13e1cbefdf7e8
+P c6c5e07b65ae1c30117f0276a1002d5036697cf1
+R bb5987106040b561c6e78128774239d9
 U drh
-Z 2c02f4b435e2dadedef60f34ed1da32e
+Z cdbbb6875dbb4ed10b1b0f72076527c5
