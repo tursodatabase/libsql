@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.7 2001/04/04 11:48:58 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.8 2001/05/21 13:45:10 drh Exp $}
 
 puts {<html>
 <head>
@@ -384,10 +384,16 @@ to the right contains the wildcards.}
 puts "A percent symbol [Operator %] in the right operand
 matches any sequence of zero or more characters on the left.
 An underscore [Operator _] on the right
-matches any single character on the left.  The LIKE operator is
+matches any single character on the left."
+puts {The LIKE operator is
 not case sensitive and will match upper case characters on one
-side against lower case characters on the other.</p>"
-puts {
+side against lower case characters on the other.
+(A bug: SQLite only understands upper/lower case for 7-bit Latin
+characters.  Hence the LIKE operator is case sensitive for
+8-bit iso8859 characters or UTF-8 characters.  For example,
+the expression <b>'a'&nbsp;LIKE&nbsp;'A'</b> is TRUE but
+<b>'&aelig;'&nbsp;LIKE&nbsp;'&AElig;'</b> is FALSE.)
+</p>
 
 <p>The GLOB operator is similar to LIKE but uses the Unix
 file globbing syntax for its wildcards.  Also, GLOB is case
@@ -398,7 +404,7 @@ the NOT keyword to invert the sense of the test.</p>
 statement or one of the following special identifiers: "<b>ROWID</b>",
 "<b>OID</b>", or "<b>_ROWID_</b>".
 These special identifiers all describe the
-unique random integer key (the "row key") associated every every 
+unique random integer key (the "row key") associated with every 
 row of every table.
 The special identifiers only refer to the row key if the CREATE TABLE
 statement does not define a real column with the same name.  Row keys

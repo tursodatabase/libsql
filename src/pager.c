@@ -25,9 +25,9 @@
 ** 
 ** The page cache is used to access a database file.  The pager journals
 ** all writes in order to support rollback.  Locking is used to limit
-** access to one or more reader or on writer.
+** access to one or more reader or one writer.
 **
-** @(#) $Id: pager.c,v 1.5 2001/04/28 16:52:42 drh Exp $
+** @(#) $Id: pager.c,v 1.6 2001/05/21 13:45:10 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -56,13 +56,16 @@
 **                       threads can be reading or writing while one
 **                       process is writing.
 **
-** The page cache comes up in PCS_UNLOCK.  The first time a
-** sqlite_page_get() occurs, the state transitions to PCS_READLOCK.
+** The page cache comes up in SQLITE_UNLOCK.  The first time a
+** sqlite_page_get() occurs, the state transitions to SQLITE_READLOCK.
 ** After all pages have been released using sqlite_page_unref(),
-** the state transitions back to PCS_UNLOCK.  The first time
+** the state transitions back to SQLITE_UNLOCK.  The first time
 ** that sqlite_page_write() is called, the state transitions to
-** PCS_WRITELOCK.  The sqlite_page_rollback() and sqlite_page_commit()
-** functions transition the state back to PCS_READLOCK.
+** SQLITE_WRITELOCK.  (Note that sqlite_page_write() can only be
+** called on an outstanding page which means that the pager must
+** be in SQLITE_READLOCK before it transitions to SQLITE_WRITELOCK.)
+** The sqlite_page_rollback() and sqlite_page_commit() functions 
+** transition the state from SQLITE_WRITELOCK back to SQLITE_READLOCK.
 */
 #define SQLITE_UNLOCK      0
 #define SQLITE_READLOCK    1
@@ -96,7 +99,7 @@ struct PgHdr {
 
 /*
 ** How big to make the hash table used for locating in-memory pages
-** by page number.
+** by page number.  Knuth says this should be a prime number.
 */
 #define N_PG_HASH 101
 
@@ -336,8 +339,9 @@ static int pager_unwritelock(Pager *pPager){
 ** file-type string for sanity checking.  Then there is a single
 ** Pgno number which is the number of pages in the database before
 ** changes were made.  The database is truncated to this size.
-** Next come zero or more page records which each page record
-** consists of a Pgno, SQLITE_PAGE_SIZE bytes of data.  
+** Next come zero or more page records where each page record
+** consists of a Pgno and SQLITE_PAGE_SIZE bytes of data.  See
+** the PageRecord structure for details.
 **
 ** For playback, the pages have to be read from the journal in
 ** reverse order and put back into the original database file.
@@ -568,6 +572,12 @@ static void sqlitepager_ref(PgHdr *pPg){
 ** A read lock is obtained for the first page acquired.  The lock
 ** is dropped when the last page is released.  
 **
+** A _get works for any page number greater than 0.  If the database
+** file is smaller than the requested page, then no actual disk
+** read occurs and the memory image of the page is initialized to
+** all zeros.  The extra data appended to a page is always initialized
+** to zeros the first time a page is loaded into memory.
+**
 ** The acquisition might fail for several reasons.  In all cases,
 ** an appropriate error code is returned and *ppPage is set to NULL.
 **
@@ -727,8 +737,13 @@ int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage){
       assert( pPg->pNextHash->pPrevHash==0 );
       pPg->pNextHash->pPrevHash = pPg;
     }
-    pager_seek(pPager->fd, (pgno-1)*SQLITE_PAGE_SIZE);
-    pager_read(pPager->fd, PGHDR_TO_DATA(pPg), SQLITE_PAGE_SIZE);
+    if( pPager->dbSize<0 ) sqlitepager_pagecount(pPager);
+    if( pPager->dbSize<pgno ){
+      memset(PGHDR_TO_DATA(pPg), 0, SQLITE_PAGE_SIZE);
+    }else{
+      pager_seek(pPager->fd, (pgno-1)*SQLITE_PAGE_SIZE);
+      pager_read(pPager->fd, PGHDR_TO_DATA(pPg), SQLITE_PAGE_SIZE);
+    }
     if( pPager->nExtra>0 ){
       memset(PGHDR_TO_EXTRA(pPg), 0, pPager->nExtra);
     }
@@ -749,8 +764,8 @@ int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage){
 ** See also sqlitepager_get().  The difference between this routine
 ** and sqlitepager_get() is that _get() will go to the disk and read
 ** in the page if the page is not already in cache.  This routine
-** returns NULL if the page is not in cache and no disk I/O ever
-** occurs.
+** returns NULL if the page is not in cache of if a disk I/O has ever
+** happened.
 */
 void *sqlitepager_lookup(Pager *pPager, Pgno pgno){
   PgHdr *pPg;
@@ -824,7 +839,7 @@ int sqlitepager_unref(void *pData){
 ** The first time this routine is called, the pager creates a new
 ** journal and acquires a write lock on the database.  If the write
 ** lock could not be acquired, this routine returns SQLITE_BUSY.  The
-** calling routine must check for that routine and be careful not to
+** calling routine must check for that return value and be careful not to
 ** change any page data until this routine returns SQLITE_OK.
 **
 ** If the journal file could not be written because the disk is full,
@@ -889,6 +904,9 @@ int sqlitepager_write(void *pData){
     }
   }
   pPg->inJournal = 1;
+  if( pPager->dbSize<pPg->pgno ){
+    pPager->dbSize = pPg->pgno;
+  }
   return rc;
 }
 

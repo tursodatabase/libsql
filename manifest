@@ -1,5 +1,5 @@
-C :-)\s(CVS\s217)
-D 2001-05-15T00:39:25
+C :-)\s(CVS\s218)
+D 2001-05-21T13:45:10
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in acef0f0275a5ca8e68bda165f7f05d810a207664
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -12,7 +12,7 @@ F notes/notes1.txt b7c0812b704a022e88c621146ae50955c923d464
 F notes/notes2.txt 49b4d7ba35f183feb1fb098a27272b82f5c76eca
 F notes/notes3.txt cd5e7bd2167d7ef89b1077abdfa68f0af6337744
 F src/TODO 38a68a489e56e9fd4a96263e0ff9404a47368ad4
-F src/btree.c f6d724fccaf108c4452dba6589e6027ba8f3e88a
+F src/btree.c bc1525234a8b169cae6f903f9cfacbcf971be942
 F src/btree.h f21c240d0c95f93e2a128106d04a6c448ed0eb94
 F src/build.c 4f6a2d551c56342cd4a0420654835be3ad179651
 F src/dbbe.c b18259f99d87240cbe751021cf14dd3aa83a48af
@@ -31,7 +31,7 @@ F src/ex/sizes.tcl f54bad4a2ac567624be59131a6ee42d71b41a3d7
 F src/expr.c c4c24c3af1eba094a816522eb0e085bed518ee16
 F src/insert.c aa528e20a787af85432a61daaea6df394bd251d7
 F src/main.c 0a13c7a2beb8ce36aee43daf8c95989b200727a7
-F src/pager.c 4081e3e9765c272554e22d1dcec0647ac71ea706
+F src/pager.c e45946aaf080aed251653f21667d62c89e539a97
 F src/pager.h ed12ac3ddebd3afe61a0ed4bf530e7846d578e46
 F src/parse.y 8fc096948994a7ffbf61ba13129cc589f794a9cb
 F src/printf.c b1e22a47be8cdf707815647239991e08e8cb69f9
@@ -64,7 +64,7 @@ F test/insert2.test 732405e30331635af8d159fccabe835eea5cd0c6
 F test/lock.test bca7d53de73138b1f670a2fbdb1f481ff7eaa45a
 F test/main.test da635f9e078cd21ddf074e727381a715064489ff
 F test/malloc.test 3daa97f6a9577d8f4c6e468b274333af19ce5861
-F test/pager.test 3416a155c2dc3b1b3c07d4bb0192cbb15b76a90c
+F test/pager.test c1eb25faa0938f803d1e6eb5201e5e976ea88256
 F test/printf.test 4c71871e1a75a2dacb673945fc13ddb30168798f
 F test/rowid.test 128453599def7435e988216f7fe89c7450b8a9a3
 F test/select1.test 223507655cdb4f9901d83fa7f5c5328e022c211f
@@ -99,14 +99,14 @@ F www/changes.tcl 822b425cc50cb8e21563dd1aa0e4b79cf780f3dc
 F www/crosscompile.tcl c99efacb3aefaa550c6e80d91b240f55eb9fd33e
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/fileformat.tcl cfb7fba80b7275555281ba2f256c00734bcdd1c9
-F www/index.tcl 553a41c4157fe411465aefe391bec5687027e73f
-F www/lang.tcl 7fec414487ebee2cbb17c90addf5a026cd10396a
+F www/index.tcl 199abaf346d5fed6cf5b462a327faae39fb117b9
+F www/lang.tcl 0969ba9f13b3555e54ccdb8ec462dee2de0bf223
 F www/mingw.tcl fc5f4ba9d336b6e8c97347cc6496d6162461ef60
 F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 06f81c401f79a04f2c5ebfb97e7c176225c0aef2
 F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P c3e521190f02120a34f1e9244fe1ea3a975a6caa
-R d3ffc66c90d6f5774a5954932275df58
+P ee6760fb62e81af95796c0fcf1e65e5dc0701194
+R 6bf7ed657f22039e86c99aa04cca003e
 U drh
-Z 0f43bc31472b172caca9953860c2e8b6
+Z 4c32ca5182d7191fa6afdab861fed35d

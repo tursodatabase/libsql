@@ -21,7 +21,7 @@
 **   http://www.hwaci.com/drh/
 **
 *************************************************************************
-** $Id: btree.c,v 1.5 2001/05/15 00:39:25 drh Exp $
+** $Id: btree.c,v 1.6 2001/05/21 13:45:10 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -39,8 +39,8 @@
 ** database entry.  If the entry contains more data than this, the
 ** extra goes onto overflow pages.
 */
-#define MX_LOCAL_PAYLOAD ((SQLITE_PAGE_SIZE-sizeof(PageHdr)-4*sizeof(Cell))/4)
-
+#define MX_LOCAL_PAYLOAD \
+  ((SQLITE_PAGE_SIZE-sizeof(PageHdr)-4*(sizeof(Cell)+sizeof(Pgno)))/4)
 
 /*
 ** The in-memory image of a disk page has the auxiliary information appended
@@ -54,9 +54,9 @@
 */
 #define OVERFLOW_SIZE (SQLITE_PAGE_SIZE-sizeof(Pgno))
 
-
 /*
 ** Primitive data types.  u32 must be 4 bytes and u16 must be 2 bytes.
+** Change these typedefs when porting to new architectures.
 */
 typedef unsigned int u32;
 typedef unsigned short int u16;
@@ -74,9 +74,11 @@ typedef struct OverflowPage OverflowPage;
 /*
 ** All structures on a database page are aligned to 4-byte boundries.
 ** This routine rounds up a number of bytes to the next multiple of 4.
+**
+** This might need to change for computer architectures that require
+** and 8-byte alignment boundry for structures.
 */
 #define ROUNDUP(X)  ((X+3) & ~3)
-
 
 /*
 ** The first pages of the database file contains some additional
@@ -92,7 +94,6 @@ struct Page1Header {
 #define MAGIC_1  0x7264dc61
 #define MAGIC_2  0x54e55d9e
 
-
 /*
 ** Each database page has a header as follows:
 **
@@ -102,17 +103,30 @@ struct Page1Header {
 **      first_free            Index of first free block
 **
 ** MemPage.pStart always points to the rightmost_pgno.  First_free is
-** 0 if there is no free space on this page.  Otherwise it points to
-** an area like this:
+** 0 if there is no free space on this page.  Otherwise, first_free is
+** the index in MemPage.aPage[] of a FreeBlk structure that describes
+** the first block of free space.  All free space is defined by a linked
+** list of FreeBlk structures.
 **
-**      nByte                 Number of free bytes in this block
-**      next_free             Next free block or 0 if this is the end
+** Data is stored in a linked list of Cell structures.  First_cell is
+** the index into MemPage.aPage[] of the first cell on the page.  The
+** Cells are kept in sorted order.
 */
 struct PageHdr {
   Pgno pgno;      /* Child page that comes after all cells on this page */
   u16 firstCell;  /* Index in MemPage.aPage[] of the first cell */
   u16 firstFree;  /* Index in MemPage.aPage[] of the first free block */
 };
+
+/*
+** Data on a database page is stored as a linked list of Cell structures.
+** Both the key and the data are stored in aData[].  The key always comes
+** first.  The aData[] field grows as necessary to hold the key and data,
+** up to a maximum of MX_LOCAL_PAYLOAD bytes.  If the size of the key and
+** data combined exceeds MX_LOCAL_PAYLOAD bytes, then the 4 bytes beginning
+** at Cell.aData[MX_LOCAL_PAYLOAD] are the page number of the first overflow
+** page.
+*/
 struct Cell {
   Pgno pgno;      /* Child page that comes before this cell */
   u16 nKey;       /* Number of bytes in the key */
@@ -120,10 +134,28 @@ struct Cell {
   u32 nData;      /* Number of bytes of data */
   char aData[4];  /* Key and data */
 };
+
+/*
+** Free space on a page is remembered using a linked list of the FreeBlk
+** structures.  Space on a database page is allocated in increments of
+** at least 4 bytes and is always aligned to a 4-byte boundry.
+*/
 struct FreeBlk {
   u16 iSize;      /* Number of u32-sized slots in the block of free space */
   u16 iNext;      /* Index in MemPage.aPage[] of the next free block */
 };
+
+/*
+** When the key and data for a single entry in the BTree will not fit in
+** the MX_LOACAL_PAYLOAD bytes of space available on the database page,
+** then all extra data is written to a linked list of overflow pages.
+** Each overflow page is an instance of the following structure.
+**
+** Unused pages in the database are also represented by instances of
+** the OverflowPage structure.  The Page1Header.freeList field is the
+** page number of the first page in a linked list of unused database
+** pages.
+*/
 struct OverflowPage {
   Pgno next;
   char aData[SQLITE_PAGE_SIZE-sizeof(Pgno)];
@@ -132,22 +164,29 @@ struct OverflowPage {
 /*
 ** For every page in the database file, an instance of the following structure
 ** is stored in memory.  The aPage[] array contains the data obtained from
-** the disk.  The rest is auxiliary data that held in memory only.
+** the disk.  The rest is auxiliary data that held in memory only.  The
+** auxiliary data is only valid for regular database pages - the auxiliary
+** data is meaningless for overflow pages and pages on the freelist.
+**
+** Of particular interest in the auxiliary data is the aCell[] entry.  Each
+** aCell[] entry is a pointer to a Cell structure in aPage[].  The cells
+** put in this array so that they can be accessed in constant time, rather
+** than in linear time which would be needed if we walked the linked list.
 */
 struct MemPage {
   char aPage[SQLITE_PAGE_SIZE];  /* Page data stored on disk */
-  unsigned char isInit;          /* True if sequel is initialized */
+  unsigned char isInit;          /* True if auxiliary data is initialized */
   unsigned char validUp;         /* True if MemPage.up is valid */
   unsigned char validLeft;       /* True if MemPage.left is valid */
   unsigned char validRight;      /* True if MemPage.right is valid */
-  Pgno up;                     /* The parent page.  0 means this is the root */
-  Pgno left;                   /* Left sibling page.  0==none */
-  Pgno right;                  /* Right sibling page.  0==none */
-  int idxStart;                /* Index in aPage[] of real data */
-  PageHdr *pStart;             /* Points to aPage[idxStart] */
-  int nFree;                   /* Number of free bytes in aPage[] */
-  int nCell;                   /* Number of entries on this page */
-  u32 *aCell[MX_CELL];         /* All entires in sorted order */
+  Pgno up;                       /* The parent page. 0 means this is the root */
+  Pgno left;                     /* Left sibling page.  0==none */
+  Pgno right;                    /* Right sibling page.  0==none */
+  int idxStart;                  /* Index in aPage[] of real data */
+  PageHdr *pStart;               /* Points to aPage[idxStart] */
+  int nFree;                     /* Number of free bytes in aPage[] */
+  int nCell;                     /* Number of entries on this page */
+  Cell *aCell[MX_CELL];          /* All data entires in sorted order */
 }
 
 /*
@@ -155,9 +194,9 @@ struct MemPage {
 */
 struct Btree {
   Pager *pPager;        /* The page cache */
-  BtCursor *pCursor;    /* All open cursors */
+  BtCursor *pCursor;    /* A list of all open cursors */
   MemPage *page1;       /* First page of the database */
-  int inTrans;          /* True if a transaction is current */
+  int inTrans;          /* True if a transaction is in progress */
 };
 typedef Btree Bt;
 
@@ -213,7 +252,8 @@ static void defragmentPage(MemPage *pPage){
 ** nByte bytes in size.  (Actually, all allocations are rounded
 ** up to the next even multiple of 4.)  Return the index into
 ** pPage->aPage[] of the first byte of the new allocation.
-** Or return 0 if there is not enough space.
+** Or return 0 if there is not enough free space on the page to
+** satisfy the allocation request.
 **
 ** This routine will call defragmentPage if necessary to consolidate
 ** free space.  
@@ -249,7 +289,10 @@ static int allocSpace(MemPage *pPage, int nByte){
 /*
 ** Return a section of the MemPage.aPage[] to the freelist.
 ** The first byte of the new free block is pPage->aPage[start]
-** and there are a told of size bytes to be freed.
+** and the size of the block is "size".
+**
+** Most of the effort here is involved in coalesing adjacent
+** free blocks into a single big free block.
 */
 static void freeSpace(MemPage *pPage, int start, int size){
   int end = start + size;
@@ -307,6 +350,7 @@ static int initPage(MemPage *pPage, Pgno pgnoThis, Pgno pgnoParent){
   idx = pPage->pStart->firstCell;
   while( idx!=0 ){
     if( idx>SQLITE_PAGE_SIZE-sizeof(Cell) ) goto page_format_error;
+    if( idx<pPage->idxStart + sizeof(PageHeader) ) goto page_format_error;
     pCell = (Cell*)&pPage->aPage[idx];
     pPage->aCell[pPage->nCell++] = pCell;
     idx = pCell->iNext;
@@ -315,6 +359,7 @@ static int initPage(MemPage *pPage, Pgno pgnoThis, Pgno pgnoParent){
   idx = pPage->pStart->firstFree;
   while( idx!=0 ){
     if( idx>SQLITE_PAGE_SIZE-sizeof(FreeBlk) ) goto page_format_error;
+    if( idx<pPage->idxStart + sizeof(PageHeader) ) goto page_format_error;
     pFBlk = (FreeBlk*)&pPage->aPage[idx];
     pPage->nFree += pFBlk->iSize;
     if( pFBlk->iNext <= idx ) goto page_format_error;
@@ -327,7 +372,11 @@ page_format_error:
 }
 
 /*
-** Open a new database
+** Open a new database.
+**
+** Actually, this routine just sets up the internal data structures
+** for accessing the database.  We do not actually open the database
+** file until the first page is loaded.
 */
 int sqliteBtreeOpen(const char *zFilename, int mode, Btree **ppBtree){
   Btree *pBt;
@@ -363,6 +412,41 @@ int sqliteBtreeClose(Btree *pBt){
 }
 
 /*
+** Get a reference to page1 of the database file.  This will
+** also acquire a readlock on that file.
+**
+** SQLITE_OK is returned on success.  If the file is not a
+** well-formed database file, then SQLITE_CORRUPT is returned.
+** SQLITE_BUSY is returned if the database is locked.  SQLITE_NOMEM
+** is returned if we run out of memory.  SQLITE_PROTOCOL is returned
+** if there is a locking protocol violation.
+*/
+static int lockBtree(Btree *pBt){
+  int rc;
+  if( pBt->page1 ) return SQLITE_OK;
+  rc = sqlitepager_get(pBt->pPager, 1, &pBt->page1);
+  if( rc!=SQLITE_OK ) return rc;
+  rc = initPage(pBt->page1, 1, 0);
+  if( rc!=SQLITE_OK ) goto lock_failed;
+
+  /* Do some checking to help insure the file we opened really is
+  ** a valid database file. 
+  */
+  if( sqlitepager_pagecount(pBt->pPager)>0 ){
+    Page1Header *pP1 = (Page1Header*)pBt->page1;
+    if( pP1->magic1!=MAGIC_1 || pP1->magic2!=MAGIC_2 ){
+      rc = SQLITE_CORRUPT;
+      goto lock_failed;
+    }
+  }
+  return rc;
+
+lock_failed:
+  sqlitepager_unref(pBt->page1);
+  pBt->page1 = 0;
+}
+
+/*
 ** Start a new transaction
 */
 int sqliteBtreeBeginTrans(Btree *pBt){
@@ -376,25 +460,6 @@ int sqliteBtreeBeginTrans(Btree *pBt){
   if( rc==SQLITE_OK ){
     pBt->inTrans = 1;
   }
-  return rc;
-}
-
-/*
-** Get a reference to page1 of the database file.  This will
-** also acquire a readlock on that file.
-*/
-static int lockBtree(Btree *pBt){
-  int rc;
-  if( pBt->page1 ) return SQLITE_OK;
-  rc = sqlitepager_get(pBt->pPager, 1, &pBt->page1);
-  if( rc!=SQLITE_OK ) return rc;
-  rc = initPage(pBt->page1, 1, 0);
-  if( rc!=SQLITE_OK ){
-    sqlitepager_unref(pBt->page1);
-    pBt->page1 = 0;
-    return rc;
-  }
-  /* Sanity checking on the database file format */
   return rc;
 }
 

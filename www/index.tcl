@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.36 2001/04/05 16:49:44 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.37 2001/05/21 13:45:10 drh Exp $}
 
 puts {<html>
 <head><title>SQLite: An SQL Database Library Built Atop GDBM</title></head>
@@ -69,7 +69,7 @@ only reached when <tt>malloc()</tt> fails.</p>
   But it only ignores case for 7-bit Latin characters.
   The case of 8-bit iso8859 characters or UTF-8 characters is
   signification.  Hence, <b>'a'&nbsp;LIKE&nbsp;'A'</b> returns
-  TRUE but <b>'&aelig;'&nbsp;LIKE&nbsp;'&AElig;'</b>" returns FALSE.
+  TRUE but <b>'&aelig;'&nbsp;LIKE&nbsp;'&AElig;'</b> returns FALSE.
 </p></li>
 </ul>
 
@@ -147,7 +147,7 @@ found <a href="crosscompile.html">here</a>.
 puts {<h2>Command-line Usage Example</h2>
 
 <p>Download the source archive and compile the <b>sqlite</b>
-program as described above.  The type:</p>
+program as described above.  Then type:</p>
 
 <blockquote><pre>
 bash$ sqlite ~/newdb              <i>Directory ~/newdb created automatically</i>
