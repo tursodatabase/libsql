@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements.
 **
-** $Id: select.c,v 1.18 2000/06/08 00:28:52 drh Exp $
+** $Id: select.c,v 1.19 2000/06/08 01:55:30 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -366,18 +366,20 @@ static int matchOrderbyToColumn(
     return 1;
   }
   if( pSelect->pPrior ){
-    matchOrderbyToColumn(pParse, pSelect->pPrior, pOrderBy, iTable, 0);
+    if( matchOrderbyToColumn(pParse, pSelect->pPrior, pOrderBy, iTable, 0) ){
+      return 1;
+    }
   }
   pEList = pSelect->pEList;
   for(i=0; i<pOrderBy->nExpr; i++){
     Expr *pE = pOrderBy->a[i].pExpr;
+    int match = 0;
     if( pOrderBy->a[i].done ) continue;
     for(j=0; j<pEList->nExpr; j++){
-      int match = 0;
       if( pEList->a[i].zName && (pE->op==TK_ID || pE->op==TK_STRING) ){
         char *zName = pEList->a[i].zName;
         char *zLabel = 0;
-        sqliteSetString(&zLabel, pE->token.z, pE->token.n, 0);
+        sqliteSetNString(&zLabel, pE->token.z, pE->token.n, 0);
         sqliteDequote(zLabel);
         if( sqliteStrICmp(zName, zLabel)==0 ){ 
           match = 1; 
@@ -394,7 +396,7 @@ static int matchOrderbyToColumn(
         break;
       }
     }
-    if( mustComplete ){
+    if( !match && mustComplete ){
       char zBuf[30];
       sprintf(zBuf,"%d",i+1);
       sqliteSetString(&pParse->zErrMsg, "ORDER BY term number ", zBuf, 
