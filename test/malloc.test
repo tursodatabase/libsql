@@ -14,7 +14,7 @@
 # special feature is used to see what happens in the library if a malloc
 # were to really fail due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.13 2005/01/11 13:02:34 danielk1977 Exp $
+# $Id: malloc.test,v 1.14 2005/01/12 07:15:07 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -316,10 +316,13 @@ for {set go 1; set i 1} {$go} {incr i} {
        INSERT INTO t1 VALUES(1, 2);
        INSERT INTO t1 VALUES(3, 4);
        INSERT INTO t1 VALUES(5, 6);
+       INSERT INTO t1 VALUES(7, randstr(1200,1200));
      }
      sqlite_malloc_fail $i
      set v [catch {execsql {
-       SELECT min(a) FROM t1 GROUP BY b;
+       SELECT min(a) FROM t1 WHERE a<6 GROUP BY b;
+       SELECT a FROM t1 WHERE a<6 ORDER BY a;
+       SELECT b FROM t1 WHERE a>6;
      }} msg]
      set leftover [lindex [sqlite_malloc_stat] 2]
      if {$leftover>0} {
@@ -334,8 +337,53 @@ for {set go 1; set i 1} {$go} {incr i} {
   } {1 1}
 }
 
+# This block is designed to test that some malloc failures that may
+# occur in vdbeapi.c. Specifically, if a malloc failure that occurs
+# when converting UTF-16 text to integers and real numbers is handled
+# correctly. 
+#
+# This doesn't actually return an error to the user. That could be 
+# viewed as a bug.
+#
+for {set go 1; set i 1} {$go && $::sqlite_options(utf16)} {incr i} {
+  do_test malloc-8.$i {
+     sqlite_malloc_fail 0
+     catch {db close}
+     catch {file delete -force test.db}
+     catch {file delete -force test.db-journal}
+
+     set ::DB [sqlite3 db test.db]
+     set sql "SELECT '[string repeat abc 20]', '[string repeat def 20]', ?"
+     set ::STMT [sqlite3_prepare $::DB $sql -1 X]
+     sqlite3_step $::STMT
+
+     if { $::tcl_platform(byteOrder)=="littleEndian" } {
+       set ::bomstr "\xFF\xFE"
+     } else {
+       set ::bomstr "\xFE\xFF"
+     }
+     append ::bomstr [encoding convertto unicode "123456789_123456789_12345678"]
+
+     sqlite_malloc_fail $i
+     catch {
+       sqlite3_column_text16 $::STMT 0
+       sqlite3_column_int $::STMT 0
+       sqlite3_column_text16 $::STMT 1
+       sqlite3_column_double $::STMT 1
+       sqlite3_reset $::STMT
+       sqlite3_bind_text16 $::STMT 1 $::bomstr 60
+       
+     } msg
+     sqlite3_finalize $::STMT
+     if {[lindex [sqlite_malloc_stat] 2]>0} {
+       set ::go 0
+     }
+     expr 0
+  } {0}
+}
+
 # Ensure that no file descriptors were leaked.
-do_test malloc-6.X {
+do_test malloc-99.X {
   catch {db close}
   set sqlite_open_file_count
 } {0}

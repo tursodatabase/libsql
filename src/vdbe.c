@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.440 2005/01/11 13:02:34 danielk1977 Exp $
+** $Id: vdbe.c,v 1.441 2005/01/12 07:15:06 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -303,7 +303,7 @@ static void applyAffinity(Mem *pRec, char affinity, u8 enc){
   }
 }
 
-#ifndef NDEBUG
+#ifdef SQLITE_DEBUG
 /*
 ** Write a nice string representation of the contents of cell pMem
 ** into buffer zBuf, length nBuf.
@@ -4519,6 +4519,8 @@ default: {
       sqlite3SetString(&p->zErrMsg, "jump destination out of range", (char*)0);
       rc = SQLITE_INTERNAL;
     }
+#ifdef SQLITE_DEBUG
+    /* Code for tracing the vdbe stack. */
     if( p->trace && pTos>=p->aStack ){
       int i;
       fprintf(p->trace, "Stack:");
@@ -4541,7 +4543,8 @@ default: {
       if( rc!=0 ) fprintf(p->trace," rc=%d",rc);
       fprintf(p->trace,"\n");
     }
-#endif
+#endif  /* SQLITE_DEBUG */
+#endif  /* NDEBUG */
   }  /* The end of the for(;;) loop the loops through opcodes */
 
   /* If we reach this point, it means that execution is finished.

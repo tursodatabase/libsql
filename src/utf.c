@@ -12,7 +12,7 @@
 ** This file contains routines used to translate between UTF-8, 
 ** UTF-16, UTF-16BE, and UTF-16LE.
 **
-** $Id: utf.c,v 1.30 2004/11/14 21:56:30 drh Exp $
+** $Id: utf.c,v 1.31 2005/01/12 07:15:06 danielk1977 Exp $
 **
 ** Notes on UTF-8:
 **
@@ -252,7 +252,7 @@ int sqlite3VdbeMemTranslate(Mem *pMem, u8 desiredEnc){
   assert( pMem->enc!=0 );
   assert( pMem->n>=0 );
 
-#ifdef TRANSLATE_TRACE
+#if defined(TRANSLATE_TRACE) && defined(SQLITE_DEBUG)
   {
     char zBuf[100];
     sqlite3VdbeMemPrettyPrint(pMem, zBuf, 100);
@@ -368,7 +368,7 @@ int sqlite3VdbeMemTranslate(Mem *pMem, u8 desiredEnc){
   pMem->z = zOut;
 
 translate_out:
-#ifdef TRANSLATE_TRACE
+#if defined(TRANSLATE_TRACE) && defined(SQLITE_DEBUG)
   {
     char zBuf[100];
     sqlite3VdbeMemPrettyPrint(pMem, zBuf, 100);

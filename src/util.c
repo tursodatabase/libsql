@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.124 2005/01/11 15:28:33 drh Exp $
+** $Id: util.c,v 1.125 2005/01/12 07:15:06 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -44,10 +44,10 @@ void print_stack_trace(){
 int sqlite3_malloc_failed = 0;
 
 /*
-** If SQLITE_DEBUG is defined, then use versions of malloc() and
+** If SQLITE_TEST is defined, then use versions of malloc() and
 ** free() that track memory usage and check for buffer overruns.
 */
-#ifdef SQLITE_DEBUG
+#ifdef SQLITE_TEST
 
 /*
 ** For keeping track of the number of mallocs and frees.   This
@@ -251,7 +251,7 @@ void sqlite3FreeX(void *p){
 ** The following versions of malloc() and free() are for use in a
 ** normal build.
 */
-#if !defined(SQLITE_DEBUG)
+#if !defined(SQLITE_TEST)
 
 /*
 ** Allocate new memory and set it to zero.  Return NULL if
@@ -329,7 +329,7 @@ char *sqlite3StrNDup(const char *z, int n){
   }
   return zNew;
 }
-#endif /* !defined(SQLITE_DEBUG) */
+#endif /* !defined(SQLITE_TEST) */
 
 /*
 ** Create a string from the 2nd and subsequent arguments (up to the
