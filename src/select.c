@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements.
 **
-** $Id: select.c,v 1.3 2000/05/31 20:00:52 drh Exp $
+** $Id: select.c,v 1.4 2000/06/02 01:51:20 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -198,7 +198,7 @@ void sqliteSelect(
   */
   if( distinct ){
     distinct = pTabList->nId*2+1;
-    sqliteVdbeAddOp(v, OP_Open, distinct, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_Open, distinct, 1, 0, 0);
   }
   pWInfo = sqliteWhereBegin(pParse, pTabList, pWhere, 0);
   if( pWInfo==0 ) goto select_cleanup;

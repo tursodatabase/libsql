@@ -26,7 +26,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.4 2000/06/02 01:36:16 drh Exp $
+** $Id: main.c,v 1.5 2000/06/02 01:51:20 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -100,7 +100,7 @@ static int sqliteInit(sqlite *db, char **pzErrMsg){
   ** database scheme.
   */
   static VdbeOp initProg[] = {
-    { OP_Open,     0, 1,  MASTER_NAME},
+    { OP_Open,     0, 0,  MASTER_NAME},
     { OP_Next,     0, 8,  0},           /* 1 */
     { OP_Field,    0, 0,  0},
     { OP_String,   0, 0,  "table"},

@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.8 2000/06/02 01:36:16 drh Exp $
+** $Id: vdbe.c,v 1.9 2000/06/02 01:51:20 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1326,6 +1326,11 @@ int sqliteVdbeExec(
         switch( rc ){
           case SQLITE_BUSY: {
             sqliteSetString(pzErrMsg,"table ", pOp->p3, " is locked", 0);
+            break;
+          }
+          case SQLITE_PERM: {
+            sqliteSetString(pzErrMsg, pOp->p2 ? "write" : "read",
+              " permission denied for table ", pOp->p3, 0);
             break;
           }
           case SQLITE_READONLY: {
