@@ -66,7 +66,7 @@ int sqlite3VdbeChangeEncoding(Mem *pMem, int desiredEnc){
     int i;
     u8 *pFrom, *pTo;
     sqlite3VdbeMemMakeWriteable(pMem);
-    for(i=0, pFrom=pMem->z, pTo=&pMem->z[1]; i<pMem->n; i+=2, pFrom++, pTo++){
+    for(i=0, pFrom=pMem->z, pTo=&pMem->z[1]; i<pMem->n; i+=2, pFrom+=2,pTo+=2){
       u8 temp = *pFrom;
       *pFrom = *pTo;
       *pTo = temp;
@@ -179,7 +179,7 @@ int sqlite3VdbeMemStringify(Mem *pMem, int enc){
     ** FIX ME: It would be better if sqlite3_snprintf() could do UTF-16.
     */
     u8 *z = pMem->zShort;
-    if( fg & MEM_Real ){
+    if( fg & MEM_Real || (pMem->type==SQLITE3_FLOAT) ){
       sqlite3_snprintf(NBFS, z, "%.15g", pMem->r);
     }else{
       assert( fg & MEM_Int );
@@ -223,9 +223,7 @@ int sqlite3VdbeMemIntegerify(Mem *pMem){
   }else{
     pMem->i = 0;
   }
-  releaseMem(pMem);
-  pMem->flags = MEM_Int;
-  pMem->type = SQLITE3_INTEGER;
+  pMem->flags |= MEM_Int;
   return SQLITE_OK;
 }
 
@@ -235,9 +233,10 @@ int sqlite3VdbeMemIntegerify(Mem *pMem){
 ** converted into 0.0.
 */
 int sqlite3VdbeMemRealify(Mem *pMem){
-  if( pMem->flags & MEM_Int ){
+  if( pMem->flags & MEM_Real ){
+    /* Do nothing */
+  }else if( (pMem->flags & MEM_Int) && pMem->type!=SQLITE3_TEXT ){
     pMem->r = pMem->i;
-    pMem->flags |= MEM_Real;
   }else if( pMem->flags & (MEM_Str|MEM_Blob) ){
     if( sqlite3VdbeChangeEncoding(pMem, TEXT_Utf8)
        || sqlite3VdbeMemNulTerminate(pMem) ){
@@ -245,14 +244,10 @@ int sqlite3VdbeMemRealify(Mem *pMem){
     }
     assert( pMem->z );
     pMem->r = sqlite3AtoF(pMem->z, 0);
-    releaseMem(pMem);
-    pMem->flags = MEM_Real;
-    pMem->type = SQLITE3_FLOAT;
   }else{
     pMem->r = 0.0;
-    pMem->flags = MEM_Real;
-    pMem->type = SQLITE3_FLOAT;
   }
+  pMem->flags |= MEM_Real;
   return SQLITE_OK;
 }
 

@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.62 2004/05/27 09:28:43 danielk1977 Exp $
+** $Id: test1.c,v 1.63 2004/05/27 10:31:10 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -1585,6 +1585,7 @@ static int test_stmt_utf8(
   sqlite3_stmt *pStmt;
   int col;
   const char *(*xFunc)(sqlite3_stmt*, int) = clientData;
+  const char *zRet;
 
   if( objc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", 
@@ -1594,7 +1595,10 @@ static int test_stmt_utf8(
 
   if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
   if( Tcl_GetIntFromObj(interp, objv[2], &col) ) return TCL_ERROR;
-  Tcl_SetResult(interp, (char *)xFunc(pStmt, col), 0);
+  zRet = xFunc(pStmt, col);
+  if( zRet ){
+    Tcl_SetResult(interp, (char *)zRet, 0);
+  }
   return TCL_OK;
 }
 
@@ -1627,8 +1631,10 @@ static int test_stmt_utf16(
   if( Tcl_GetIntFromObj(interp, objv[2], &col) ) return TCL_ERROR;
 
   zName16 = xFunc(pStmt, col);
-  pRet = Tcl_NewByteArrayObj(zName16, sqlite3utf16ByteLen(zName16, -1)+2);
-  Tcl_SetObjResult(interp, pRet);
+  if( zName16 ){
+    pRet = Tcl_NewByteArrayObj(zName16, sqlite3utf16ByteLen(zName16, -1)+2);
+    Tcl_SetObjResult(interp, pRet);
+  }
 
   return TCL_OK;
 }

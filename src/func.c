@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.60 2004/05/27 09:28:42 danielk1977 Exp $
+** $Id: func.c,v 1.61 2004/05/27 10:30:53 danielk1977 Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -42,7 +42,9 @@ static void minmaxFunc(
   mask = (int)sqlite3_user_data(context);
   assert( mask==-1 || mask==0 );
   iBest = 0;
+  if( sqlite3_value_type(argv[0])==SQLITE3_NULL ) return;
   for(i=1; i<argc; i++){
+    if( sqlite3_value_type(argv[i])==SQLITE3_NULL ) return;
     if( (sqlite3MemCompare(argv[iBest], argv[i], 0)^mask)>=0 ){
       iBest = i;
     }
@@ -107,7 +109,9 @@ static void absFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   assert( argc==1 );
   switch( sqlite3_value_type(argv[0]) ){
     case SQLITE3_INTEGER: {
-      sqlite3_result_int64(context, -sqlite3_value_int64(argv[0]));
+      i64 iVal = sqlite3_value_int64(argv[0]);
+      if( iVal<0 ) iVal = iVal * -1;
+      sqlite3_result_int64(context, iVal);
       break;
     }
     case SQLITE3_NULL: {
@@ -115,7 +119,9 @@ static void absFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
       break;
     }
     default: {
-      sqlite3_result_double(context, -sqlite3_value_double(argv[0]));
+      double rVal = sqlite3_value_double(argv[0]);
+      if( rVal<0 ) rVal = rVal * -1.0;
+      sqlite3_result_double(context, rVal);
       break;
     }
   }
