@@ -1,5 +1,5 @@
-C Fix\san\suninitialized\svariable\sbug\sin\snullif().\s\sTicket\s#898.\s(CVS\s1957)
-D 2004-09-13T13:13:19
+C The\sTCL\sinterface\sresponds\scorrectly\sto\s"break",\s"continue",\sand\s"return"\ninside\sof\sthe\sscript\sof\san\seval\sstatement.\s(CVS\s1958)
+D 2004-09-13T13:16:32
 F Makefile.in 7f481bb8cdb032491df611526e6f4eb6af79691d
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -63,7 +63,7 @@ F src/shell.c 4f1a2760ced81c829defb47b0a3b61ffec61b604
 F src/sqlite.h.in e29a526593b806f148017ed8bada760ada84cf2f
 F src/sqliteInt.h c63aad21da12f12193cfa46a820c51cc837f5048
 F src/table.c 8168c6e824009f8485bff79fc60ea8fea6829b10
-F src/tclsqlite.c 9225350a3144b3c0dd07a3cc88d2c219d57e2f0d
+F src/tclsqlite.c 0302e3f42f015d132d1291f3388c06e86c24a008
 F src/test1.c 1305825c29575ee55a1c8b98a191669fd78b6287
 F src/test2.c 0f3e0ad7b675a6f3323211ab4ea95490855654c3
 F src/test3.c 1df9ea27467e50666e574ebe22d434288beb3050
@@ -248,7 +248,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P b5b2e3db09831fe808f9f2692a836eef716df1c5
-R 992ce50ef6a903331a42eb50a0f32e09
+P ee335b501cf45727929aac12c0b74547dd54729e
+R ecb736557a3f73e3cac4e72650b0e555
 U drh
-Z a98b1f7a0cbcaa0996885af9189fff88
+Z 9a080417236581205e2b636a7a8ab66c

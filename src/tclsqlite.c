@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.105 2004/09/07 13:20:35 drh Exp $
+** $Id: tclsqlite.c,v 1.106 2004/09/13 13:16:32 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -664,7 +664,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
 
     Tcl_IncrRefCount(objv[2]);
     zSql = Tcl_GetStringFromObj(objv[2], 0);
-    while( zSql[0] ){
+    while( rc==TCL_OK && zSql[0] ){
       int i;      /* Loop counter */
       int nVar;   /* Number of wildcards in the SQL */
       int nCol;   /* Number of columns in the result set */
@@ -752,7 +752,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
 
       /* Execute the SQL
       */
-      while( pStmt && SQLITE_ROW==sqlite3_step(pStmt) ){
+      while( rc==TCL_OK && pStmt && SQLITE_ROW==sqlite3_step(pStmt) ){
         for(i=0; i<nCol; i++){
           Tcl_Obj *pVal;
           
@@ -794,7 +794,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
               pRet = pVal;
               Tcl_IncrRefCount(pRet);
             }
-            goto end_step;
+            rc = TCL_BREAK;
           }else{
             Tcl_ListObjAppendElement(interp, pRet, pVal);
           }
@@ -802,10 +802,14 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   
         if( pScript ){
           rc = Tcl_EvalObjEx(interp, pScript, 0);
-          if( rc!=TCL_ERROR ) rc = TCL_OK;
+          if( rc==TCL_CONTINUE ){
+            rc = TCL_OK;
+          }
         }
       }
-    end_step:
+      if( rc==TCL_BREAK ){
+        rc = TCL_OK;
+      }
 
       /* Free the column name objects */
       if( pScript ){
@@ -846,7 +850,6 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       }
       Tcl_DecrRefCount(pRet);
     }
-
     break;
   }
 
