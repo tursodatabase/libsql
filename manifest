@@ -1,5 +1,5 @@
-C When\sdoing\sa\s".dump"\scommand\sin\sthe\scommand-line\sshell,\smake\ssure\sVIEWs\nare\screated\safter\sTABLEs.\s(CVS\s529)
-D 2002-04-13T23:42:24
+C Fix\sfor\sticket\s#19:\sDo\snot\scall\ssqliteOsSync()\sif\sthe\sonly\schanges\swere\nchanges\sto\sTEMP\stables.\s(CVS\s530)
+D 2002-04-18T01:56:58
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -33,7 +33,7 @@ F src/main.c df43fe585d2bfb925c837b6822783c0ee3dd6e1c
 F src/md5.c b2b1a34fce66ceca97f4e0dabc20be8be7933c92
 F src/os.c 5ab8b6b4590d0c1ab8e96c67996c170e4462e0fc
 F src/os.h 4a361fccfbc4e7609b3e1557f604f94c1e96ad10
-F src/pager.c f136f5ba82c896d500a10b6a2e5caea62abf716b
+F src/pager.c ba5740104cc27b342cd43eebfdc44d60f64a3ded
 F src/pager.h 6fddfddd3b73aa8abc081b973886320e3c614f0e
 F src/parse.y 9a8a2311dd95101bb02b3991042e619eea49729a
 F src/printf.c 300a90554345751f26e1fc0c0333b90a66110a1d
@@ -131,7 +131,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 977abbaebe5433c66516d0376a1c229e45b5ab1f
-R 1d18e0543c9a9e3b6f1f1a88dc469706
+P 7edd13468e24d79939f0fa1e58f3b686422ca826
+R d6ef54d3be3cb5d13a1592b37489d27e
 U drh
-Z c041d10ac3286386a2e3e11a69a41456
+Z aa513408483afd37049a6b0b765b2614

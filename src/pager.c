@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.44 2002/03/06 22:01:36 drh Exp $
+** @(#) $Id: pager.c,v 1.45 2002/04/18 01:56:58 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -120,6 +120,7 @@ struct Pager {
   u8 tempFile;                /* zFilename is a temporary file */
   u8 readOnly;                /* True for a read-only database */
   u8 needSync;                /* True if an fsync() is needed on the journal */
+  u8 dirtyFile;               /* True if database file has changed in any way */
   u8 *aInJournal;             /* One bit for each page in the database file */
   u8 *aInCkpt;                /* One bit for each page in the database */
   PgHdr *pFirst, *pLast;      /* List of free pages */
@@ -444,7 +445,7 @@ end_ckpt_playback:
 */
 void sqlitepager_set_cachesize(Pager *pPager, int mxPage){
   if( mxPage>=0 ){
-    pPager->noSync = 0;
+    pPager->noSync = pPager->tempFile;
   }else{
     pPager->noSync = 1;
     mxPage = -mxPage;
@@ -538,6 +539,7 @@ int sqlitepager_open(
   pPager->tempFile = tempFile;
   pPager->readOnly = readOnly;
   pPager->needSync = 0;
+  pPager->noSync = pPager->tempFile;
   pPager->pFirst = 0;
   pPager->pLast = 0;
   pPager->nExtra = nExtra;
@@ -1036,7 +1038,8 @@ int sqlitepager_begin(void *pData){
       return SQLITE_CANTOPEN;
     }
     pPager->journalOpen = 1;
-    pPager->needSync = !pPager->noSync;
+    pPager->needSync = 0;
+    pPager->dirtyFile = 0;
     pPager->state = SQLITE_WRITELOCK;
     sqlitepager_pagecount(pPager);
     pPager->origDbSize = pPager->dbSize;
@@ -1088,6 +1091,7 @@ int sqlitepager_write(void *pData){
   */
   pPg->dirty = 1;
   if( pPg->inJournal && (pPg->inCkpt || pPager->ckptOpen==0) ){
+    pPager->dirtyFile = 1;
     return SQLITE_OK;
   }
 
@@ -1100,6 +1104,7 @@ int sqlitepager_write(void *pData){
   */
   assert( pPager->state!=SQLITE_UNLOCK );
   rc = sqlitepager_begin(pData);
+  pPager->dirtyFile = 1;
   if( rc!=SQLITE_OK ) return rc;
   assert( pPager->state==SQLITE_WRITELOCK );
   assert( pPager->journalOpen );
@@ -1238,6 +1243,13 @@ int sqlitepager_commit(Pager *pPager){
     return SQLITE_ERROR;
   }
   assert( pPager->journalOpen );
+  if( pPager->dirtyFile==0 ){
+    /* Exit early (without doing the time-consuming sqliteOsSync() calls)
+    ** if there have been no changes to the database file. */
+    rc = pager_unwritelock(pPager);
+    pPager->dbSize = -1;
+    return rc;
+  }
   if( pPager->needSync && sqliteOsSync(&pPager->jfd)!=SQLITE_OK ){
     goto commit_abort;
   }
