@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: trans.test,v 1.12 2002/06/25 13:16:04 drh Exp $
+# $Id: trans.test,v 1.13 2002/07/07 16:52:47 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -805,5 +805,86 @@ do_test trans-8.2 {
 } $checksum2
 integrity_check trans-8.3
 
+# In the following sequence of tests, compute the MD5 sum of the content
+# of a table, make lots of modifications to that table, then do a rollback.
+# Verify that after the rollback, the MD5 checksum is unchanged.
+#
+do_test trans-9.1 {
+  execsql {
+    PRAGMA cache_size=10;
+    BEGIN;
+    CREATE TABLE t3(x TEXT);
+    INSERT INTO t3 VALUES(randstr(10,400));
+    INSERT INTO t3 VALUES(randstr(10,400));
+    INSERT INTO t3 SELECT randstr(10,400) FROM t3;
+    INSERT INTO t3 SELECT randstr(10,400) FROM t3;
+    INSERT INTO t3 SELECT randstr(10,400) FROM t3;
+    INSERT INTO t3 SELECT randstr(10,400) FROM t3;
+    INSERT INTO t3 SELECT randstr(10,400) FROM t3;
+    INSERT INTO t3 SELECT randstr(10,400) FROM t3;
+    INSERT INTO t3 SELECT randstr(10,400) FROM t3;
+    INSERT INTO t3 SELECT randstr(10,400) FROM t3;
+    INSERT INTO t3 SELECT randstr(10,400) FROM t3;
+    COMMIT;
+    SELECT count(*) FROM t3;
+  }
+} {1024}
+
+# The following procedure computes a "signature" for table "t3".  If
+# T3 changes in any way, the signature should change.  
+#
+# This is used to test ROLLBACK.  We gather a signature for t3, then
+# make lots of changes to t3, then rollback and take another signature.
+# The two signatures should be the same.
+#
+proc signature {} {
+  return [db eval {SELECT count(*), md5sum(x) FROM t3}]
+}
+
+# Repeat the following group of tests 20 times for quick testing and
+# 40 times for full testing.  Each iteration of the test makes table
+# t3 a little larger, and thus takes a little longer, so doing 40 tests
+# is more than 2.0 times slower than doing 20 tests.  Considerably more.
+#
+if {[info exists ISQUICK]} {
+  set limit 20
+} else {
+  set limit 40
+}
+
+# Do rollbacks.  Make sure the signature does not change.
+#
+for {set i 2} {$i<=$limit} {incr i} {
+  set ::sig [signature]
+  set cnt [lindex $::sig 0]
+  do_test trans-9.$i.1-$cnt {
+     execsql {
+       BEGIN;
+       DELETE FROM t3 WHERE random()%10!=0;
+       INSERT INTO t3 SELECT randstr(10,10)||x FROM t3;
+       INSERT INTO t3 SELECT randstr(10,10)||x FROM t3;
+       ROLLBACK;
+     }
+     signature
+  } $sig
+  do_test trans-9.$i.2-$cnt {
+     execsql {
+       BEGIN;
+       DELETE FROM t3 WHERE random()%10!=0;
+       INSERT INTO t3 SELECT randstr(10,10)||x FROM t3;
+       DELETE FROM t3 WHERE random()%10!=0;
+       INSERT INTO t3 SELECT randstr(10,10)||x FROM t3;
+       ROLLBACK;
+     }
+     signature
+  } $sig
+  if {$i<$limit} {
+    do_test trans-9.$i.9-$cnt {
+       execsql {
+         INSERT INTO t3 SELECT randstr(10,400) FROM t3 WHERE random()%10==0;
+       }
+    } {}
+  }
+}
    
 finish_test

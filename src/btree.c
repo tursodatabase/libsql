@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.64 2002/07/06 16:32:15 drh Exp $
+** $Id: btree.c,v 1.65 2002/07/07 16:52:47 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1569,6 +1569,12 @@ static int freePage(Btree *pBt, void *pPage, Pgno pgno){
     pgno = sqlitepager_pagenumber(pOvfl);
   }
   assert( pgno>2 );
+  pMemPage = (MemPage*)pPage;
+  pMemPage->isInit = 0;
+  if( pMemPage->pParent ){
+    sqlitepager_unref(pMemPage->pParent);
+    pMemPage->pParent = 0;
+  }
   rc = sqlitepager_write(pPage1);
   if( rc ){
     return rc;
@@ -1606,12 +1612,6 @@ static int freePage(Btree *pBt, void *pPage, Pgno pgno){
   pOvfl->iNext = pPage1->freeList;
   pPage1->freeList = pgno;
   memset(pOvfl->aPayload, 0, OVERFLOW_SIZE);
-  pMemPage = (MemPage*)pPage;
-  pMemPage->isInit = 0;
-  if( pMemPage->pParent ){
-    sqlitepager_unref(pMemPage->pParent);
-    pMemPage->pParent = 0;
-  }
   if( needUnref ) rc = sqlitepager_unref(pOvfl);
   return rc;
 }

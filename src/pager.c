@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.48 2002/07/06 16:28:48 drh Exp $
+** @(#) $Id: pager.c,v 1.49 2002/07/07 16:52:47 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -74,10 +74,10 @@ struct PgHdr {
   int nRef;                      /* Number of users of this page */
   PgHdr *pNextFree, *pPrevFree;  /* Freelist of pages where nRef==0 */
   PgHdr *pNextAll, *pPrevAll;    /* A list of all pages */
-  char inJournal;                /* TRUE if has been written to journal */
-  char inCkpt;                   /* TRUE if written to the checkpoint journal */
-  char dirty;                    /* TRUE if we need to write back changes */
-  char alwaysRollback;           /* Ignore dont_rollback() calls if true */
+  u8 inJournal;                  /* TRUE if has been written to journal */
+  u8 inCkpt;                     /* TRUE if written to the checkpoint journal */
+  u8 dirty;                      /* TRUE if we need to write back changes */
+  u8 alwaysRollback;             /* Disable dont_rollback() for this page */
   /* SQLITE_PAGE_SIZE bytes of page data follow this header */
   /* Pager.nExtra bytes of local data follow the page data */
 };
@@ -123,6 +123,7 @@ struct Pager {
   u8 readOnly;                /* True for a read-only database */
   u8 needSync;                /* True if an fsync() is needed on the journal */
   u8 dirtyFile;               /* True if database file has changed in any way */
+  u8 alwaysRollback;          /* Disable dont_rollback() for all pages */
   u8 *aInJournal;             /* One bit for each page in the database file */
   u8 *aInCkpt;                /* One bit for each page in the database */
   PgHdr *pFirst, *pLast;      /* List of free pages */
@@ -861,6 +862,18 @@ int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage){
       assert( pPg->nRef==0 );
       assert( pPg->dirty==0 );
 
+      /* If the page we are recyclying is marked as alwaysRollback, then
+      ** set the global alwaysRollback flag, thus disabling the
+      ** sqlite_dont_rollback() optimization for the rest of this transaction.
+      ** It is necessary to do this because the page marked alwaysRollback
+      ** might be reloaded at a later time but at that point we won't remember
+      ** that is was marked alwaysRollback.  This means that all pages must
+      ** be marked as alwaysRollback from here on out.
+      */
+      if( pPg->alwaysRollback ){
+        pPager->alwaysRollback = 1;
+      }
+
       /* Unlink the old page from the free list and the hash table
       */
       if( pPg->pPrevFree ){
@@ -1056,6 +1069,7 @@ int sqlitepager_begin(void *pData){
     pPager->journalOpen = 1;
     pPager->needSync = 0;
     pPager->dirtyFile = 0;
+    pPager->alwaysRollback = 0;
     pPager->state = SQLITE_WRITELOCK;
     sqlitepager_pagecount(pPager);
     pPager->origDbSize = pPager->dbSize;
@@ -1242,7 +1256,7 @@ void sqlitepager_dont_rollback(void *pData){
   Pager *pPager = pPg->pPager;
 
   if( pPager->state!=SQLITE_WRITELOCK || pPager->journalOpen==0 ) return;
-  if( pPg->alwaysRollback ) return;
+  if( pPg->alwaysRollback || pPager->alwaysRollback ) return;
   if( !pPg->inJournal && (int)pPg->pgno <= pPager->origDbSize ){
     assert( pPager->aInJournal!=0 );
     pPager->aInJournal[pPg->pgno/8] |= 1<<(pPg->pgno&7);

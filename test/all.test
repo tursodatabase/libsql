@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: all.test,v 1.14 2002/05/10 13:14:08 drh Exp $
+# $Id: all.test,v 1.15 2002/07/07 16:52:47 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -34,8 +34,8 @@ set EXCLUDE {
   quick.test
   malloc.test
   misuse.test
-  btree2.test
 }
+#  btree2.test
 
 for {set Counter 0} {$Counter<$COUNT && $nErr==0} {incr Counter} {
   if {$Counter%2} {

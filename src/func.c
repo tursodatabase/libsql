@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.21 2002/06/20 11:36:49 drh Exp $
+** $Id: func.c,v 1.22 2002/07/07 16:52:47 drh Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -247,6 +247,49 @@ static void nullifFunc(sqlite_func *context, int argc, const char **argv){
   }
 }
 
+#ifdef SQLITE_TEST
+/*
+** This function generates a string of random characters.  Used for
+** generating test data.
+*/
+static void randStr(sqlite_func *context, int argc, const char **argv){
+  static const char zSrc[] = 
+     "abcdefghijklmnopqrstuvwxyz"
+     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+     "0123456789"
+     ".-!,:*^+=_|?/<> ";
+  int iMin, iMax, n, r, i;
+  char zBuf[1000];
+  if( argc>=1 ){
+    iMin = atoi(argv[0]);
+    if( iMin<0 ) iMin = 0;
+    if( iMin>=sizeof(zBuf) ) iMin = sizeof(zBuf)-1;
+  }else{
+    iMin = 1;
+  }
+  if( argc>=2 ){
+    iMax = atoi(argv[1]);
+    if( iMax<iMin ) iMax = iMin;
+    if( iMax>=sizeof(zBuf) ) iMax = sizeof(zBuf);
+  }else{
+    iMax = 50;
+  }
+  n = iMin;
+  if( iMax>iMin ){
+    r = sqliteRandomInteger();
+    if( r<0 ) r = -r;
+    n += r%(iMax + 1 - iMin);
+  }
+  r = 0;
+  for(i=0; i<n; i++){
+    r = (r + sqliteRandomByte())% (sizeof(zSrc)-1);
+    zBuf[i] = zSrc[r];
+  }
+  zBuf[n] = 0;
+  sqlite_set_result_string(context, zBuf, n);
+}
+#endif
+
 /*
 ** An instance of the following structure holds the context of a
 ** sum() or avg() aggregate computation.
@@ -438,6 +481,9 @@ void sqliteRegisterBuiltinFunctions(sqlite *db){
     { "like",       2, SQLITE_NUMERIC, likeFunc   },
     { "glob",       2, SQLITE_NUMERIC, globFunc   },
     { "nullif",     2, SQLITE_ARGS,    nullifFunc },
+#ifdef SQLITE_TEST
+    { "randstr",    2, SQLITE_TEXT,    randStr    },
+#endif
   };
   static struct {
     char *zName;

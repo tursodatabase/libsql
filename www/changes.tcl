@@ -25,6 +25,12 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2002 Jly 7 (2.5.6)} {
+<li>Fix more problems with rollback.  Enhance the test suite to exercise
+    the rollback logic extensively in order to prevent any future problems.
+    </li>
+}
+
 chng {2002 Jly 6 (2.5.5)} {
 <li>Fix a bug which could cause database corruption during a rollback.
     This bugs was introduced in version 2.4.0 by the freelist

@@ -717,13 +717,19 @@ int sqliteOsUnlock(OsFile *id){
 */
 int sqliteOsRandomSeed(char *zBuf){
   static int once = 1;
-#if OS_UNIX
+#ifdef SQLITE_TEST
+  /* When testing, always use the same random number sequence.
+  ** This makes the tests repeatable.
+  */
+  memset(zBuf, 0, 256);
+#endif
+#if OS_UNIX && !defined(SQLITE_TEST)
   int pid;
   time((time_t*)zBuf);
   pid = getpid();
   memcpy(&zBuf[sizeof(time_t)], &pid, sizeof(pid));
 #endif
-#if OS_WIN
+#if OS_WIN && !defined(SQLITE_TEST)
   GetSystemTime((LPSYSTEMTIME)zBuf);
 #endif
   if( once ){
