@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.63 2002/02/19 22:42:05 drh Exp $
+** $Id: select.c,v 1.64 2002/02/21 12:01:27 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -760,7 +760,10 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
   pTab = p->pSrc->a[0].pTab;
 
   /* If we get to here, it means the query is of the correct form.
-  ** Check to make sure we have an index.
+  ** Check to make sure we have an index and make pIdx point to the
+  ** appropriate index.  If the min() or max() is on an INTEGER PRIMARY
+  ** key column, no index is necessary so set pIdx to NULL.  If no
+  ** usable index is found, return 0.
   */
   if( iCol<0 ){
     pIdx = 0;
@@ -772,7 +775,7 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
     if( pIdx==0 ) return 0;
   }
 
-  /* Identify column names if we will be using in the callback.  This
+  /* Identify column names if we will be using the callback.  This
   ** step is skipped if the output is going to a table or a memory cell.
   */
   v = sqliteGetVdbe(pParse);
@@ -781,7 +784,10 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
     generateColumnNames(pParse, p->pSrc, p->pEList);
   }
 
-  /* Begin generating code
+  /* Generating code to find the min or the max.  Basically all we have
+  ** to do is find the first or the last entry in the chosen index.  If
+  ** the min() or max() is on the INTEGER PRIMARY KEY, then find the first
+  ** or last entry in the main table.
   */
   if( !pParse->schemaVerified && (pParse->db->flags & SQLITE_InTrans)==0 ){
     sqliteVdbeAddOp(v, OP_VerifyCookie, pParse->db->schema_cookie, 0);

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE TABLE statement.
 #
-# $Id: table.test,v 1.14 2002/02/18 18:30:33 drh Exp $
+# $Id: table.test,v 1.15 2002/02/21 12:01:28 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -282,8 +282,8 @@ do_test table-7.1 {
       desc text,
       asc text,
       explain int,
-      vacuum boolean,
-      delimiters varchar(10),
+      [14_vac] boolean,
+      fuzzy_dog_12 varchar(10),
       begin blob,
       end clob
     )
@@ -300,7 +300,7 @@ do_test table-7.3 {
   execsql2 {
     SELECT * FROM weird;
   }
-} {desc a asc b explain 9 vacuum 0 delimiters xyz begin hi end y'all}
+} {desc a asc b explain 9 14_vac 0 fuzzy_dog_12 xyz begin hi end y'all}
 
 # Try out the CREATE TABLE AS syntax
 #
@@ -309,7 +309,20 @@ do_test table-8.1 {
     CREATE TABLE t2 AS SELECT * FROM weird;
     SELECT * FROM t2;
   }
-} {desc a asc b explain 9 vacuum 0 delimiters xyz begin hi end y'all}
+} {desc a asc b explain 9 14_vac 0 fuzzy_dog_12 xyz begin hi end y'all}
+do_test table-8.1.1 {
+  execsql {
+    SELECT sql FROM sqlite_master WHERE name='t2';
+  }
+} {{CREATE TABLE t2(
+  'desc',
+  'asc',
+  'explain',
+  '14_vac',
+  fuzzy_dog_12,
+  'begin',
+  'end'
+)}}
 do_test table-8.2 {
   execsql {
     CREATE TABLE 't3''xyz'(a,b,c);
@@ -319,10 +332,15 @@ do_test table-8.2 {
 } {1 2 3}
 do_test table-8.3 {
   execsql2 {
-    CREATE TABLE [t4'abc] AS SELECT count(*), min(a), max(b+c) FROM [t3'xyz];
+    CREATE TABLE [t4'abc] AS SELECT count(*) as cnt, max(b+c) FROM [t3'xyz];
     SELECT * FROM [t4'abc];
   }
-} {count(*) 1 min(a) 1 max(b+c) 5}
+} {cnt 1 max(b+c) 5}
+do_test table-8.3.1 {
+  execsql {
+    SELECT sql FROM sqlite_master WHERE name='t4''abc'
+  }
+} {{CREATE TABLE 't4''abc'(cnt,'max(b+c)')}}
 do_test table-8.4 {
   execsql2 {
     CREATE TEMPORARY TABLE t5 AS SELECT count(*) AS [y'all] FROM [t3'xyz];
@@ -335,16 +353,21 @@ do_test table-8.5 {
   execsql2 {
     SELECT * FROM [t4'abc];
   }
-} {count(*) 1 min(a) 1 max(b+c) 5}
+} {cnt 1 max(b+c) 5}
 do_test table-8.6 {
   execsql2 {
     SELECT * FROM t2;
   }
-} {desc a asc b explain 9 vacuum 0 delimiters xyz begin hi end y'all}
+} {desc a asc b explain 9 14_vac 0 fuzzy_dog_12 xyz begin hi end y'all}
 do_test table-8.7 {
   catchsql {
     SELECT * FROM t5;
   }
 } {1 {no such table: t5}}
+do_test table-8.8 {
+  catchsql {
+    CREATE TABLE t5 AS SELECT * FROM no_such_table;
+  }
+} {1 {no such table: no_such_table}}
 
 finish_test

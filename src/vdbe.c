@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.120 2002/02/19 22:42:05 drh Exp $
+** $Id: vdbe.c,v 1.121 2002/02/21 12:01:27 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -72,6 +72,7 @@ struct Cursor {
   Bool keyAsData;       /* The OP_Column command works on key instead of data */
   Bool atFirst;         /* True if pointing to first entry */
   Bool useRandomRowid;  /* Generate new record numbers semi-randomly */
+  Bool nullRow;         /* True if pointing to a row with no data */
   Btree *pBt;           /* Separate file holding temporary table */
 };
 typedef struct Cursor Cursor;
@@ -867,30 +868,30 @@ static char *zOpName[] = { 0,
   "Close",             "MoveTo",            "NewRecno",          "PutIntKey",
   "PutStrKey",         "Distinct",          "Found",             "NotFound",
   "IsUnique",          "NotExists",         "Delete",            "Column",
-  "KeyAsData",         "Recno",             "FullKey",           "Last",
-  "Rewind",            "Next",              "Destroy",           "Clear",
-  "CreateIndex",       "CreateTable",       "IntegrityCk",       "IdxPut",
-  "IdxDelete",         "IdxRecno",          "IdxGT",             "IdxGE",
-  "MemLoad",           "MemStore",          "ListWrite",         "ListRewind",
-  "ListRead",          "ListReset",         "SortPut",           "SortMakeRec",
-  "SortMakeKey",       "Sort",              "SortNext",          "SortCallback",
-  "SortReset",         "FileOpen",          "FileRead",          "FileColumn",
-  "AggReset",          "AggFocus",          "AggIncr",           "AggNext",
-  "AggSet",            "AggGet",            "SetInsert",         "SetFound",
-  "SetNotFound",       "MakeRecord",        "MakeKey",           "MakeIdxKey",
-  "IncrKey",           "Goto",              "If",                "Halt",
-  "ColumnCount",       "ColumnName",        "Callback",          "NullCallback",
-  "Integer",           "String",            "Pop",               "Dup",
-  "Pull",              "Push",              "MustBeInt",         "Add",
-  "AddImm",            "Subtract",          "Multiply",          "Divide",
-  "Remainder",         "BitAnd",            "BitOr",             "BitNot",
-  "ShiftLeft",         "ShiftRight",        "AbsValue",          "Precision",
-  "Min",               "Max",               "Like",              "Glob",
-  "Eq",                "Ne",                "Lt",                "Le",
-  "Gt",                "Ge",                "IsNull",            "NotNull",
-  "Negative",          "And",               "Or",                "Not",
-  "Concat",            "Noop",              "Strlen",            "Substr",
-  "Limit",           
+  "KeyAsData",         "Recno",             "FullKey",           "NullRow",
+  "Last",              "Rewind",            "Next",              "Destroy",
+  "Clear",             "CreateIndex",       "CreateTable",       "IntegrityCk",
+  "IdxPut",            "IdxDelete",         "IdxRecno",          "IdxGT",
+  "IdxGE",             "MemLoad",           "MemStore",          "ListWrite",
+  "ListRewind",        "ListRead",          "ListReset",         "SortPut",
+  "SortMakeRec",       "SortMakeKey",       "Sort",              "SortNext",
+  "SortCallback",      "SortReset",         "FileOpen",          "FileRead",
+  "FileColumn",        "AggReset",          "AggFocus",          "AggIncr",
+  "AggNext",           "AggSet",            "AggGet",            "SetInsert",
+  "SetFound",          "SetNotFound",       "MakeRecord",        "MakeKey",
+  "MakeIdxKey",        "IncrKey",           "Goto",              "If",
+  "Halt",              "ColumnCount",       "ColumnName",        "Callback",
+  "NullCallback",      "Integer",           "String",            "Pop",
+  "Dup",               "Pull",              "Push",              "MustBeInt",
+  "Add",               "AddImm",            "Subtract",          "Multiply",
+  "Divide",            "Remainder",         "BitAnd",            "BitOr",
+  "BitNot",            "ShiftLeft",         "ShiftRight",        "AbsValue",
+  "Precision",         "Min",               "Max",               "Like",
+  "Glob",              "Eq",                "Ne",                "Lt",
+  "Le",                "Gt",                "Ge",                "IsNull",
+  "NotNull",           "Negative",          "And",               "Or",
+  "Not",               "Concat",            "Noop",              "Strlen",
+  "Substr",            "Limit",           
 };
 
 /*
@@ -2591,6 +2592,7 @@ case OP_Open: {
   }
   cleanupCursor(&p->aCsr[i]);
   memset(&p->aCsr[i], 0, sizeof(Cursor));
+  p->aCsr[i].nullRow = 1;
   do{
     rc = sqliteBtreeCursor(pX, p2, wrFlag, &p->aCsr[i].pCursor);
     switch( rc ){
@@ -2648,6 +2650,7 @@ case OP_OpenTemp: {
   pCx = &p->aCsr[i];
   cleanupCursor(pCx);
   memset(pCx, 0, sizeof(*pCx));
+  pCx->nullRow = 1;
   rc = sqliteBtreeOpen(0, 0, TEMP_PAGES, &pCx->pBt);
   if( rc==SQLITE_OK ){
     rc = sqliteBtreeBeginTrans(pCx->pBt);
@@ -2708,6 +2711,7 @@ case OP_MoveTo: {
       sqliteBtreeMoveto(pC->pCursor, zStack[tos], aStack[tos].n, &res);
       pC->recnoIsValid = 0;
     }
+    pC->nullRow = 0;
     sqlite_search_count++;
     if( res<0 ){
       sqliteBtreeNext(pC->pCursor, &res);
@@ -2892,8 +2896,12 @@ case OP_NotExists: {
     assert( aStack[tos].flags & STK_Int );
     iKey = intToKey(aStack[tos].i);
     rx = sqliteBtreeMoveto(pCrsr, (char*)&iKey, sizeof(int), &res);
+    p->aCsr[i].lastRecno = aStack[tos].i;
+    p->aCsr[i].recnoIsValid = res==0;
+    p->aCsr[i].nullRow = 0;
     if( rx!=SQLITE_OK || res!=0 ){
-       pc = pOp->p2 - 1;
+      pc = pOp->p2 - 1;
+      p->aCsr[i].recnoIsValid = 0;
     }
   }
   POPSTACK;
@@ -2982,6 +2990,7 @@ case OP_NewRecno: {
         goto abort_due_to_error;
       }
     }
+    pC->recnoIsValid = 0;
   }
   VERIFY( NeedStack(p, p->tos+1); )
   p->tos++;
@@ -3044,6 +3053,7 @@ case OP_PutStrKey: {
     }
     rc = sqliteBtreeInsert(p->aCsr[i].pCursor, zKey, nKey,
                         zStack[tos], aStack[tos].n);
+    p->aCsr[i].recnoIsValid = 0;
   }
   POPSTACK;
   POPSTACK;
@@ -3113,7 +3123,9 @@ case OP_Column: {
     ** is coming from the key or the data of the record.
     */
     pCrsr = pC->pCursor;
-    if( pC->keyAsData ){
+    if( pC->nullRow ){
+      payloadSize = 0;
+    }else if( pC->keyAsData ){
       sqliteBtreeKeySize(pCrsr, &payloadSize);
       xRead = sqliteBtreeKey;
     }else{
@@ -3199,6 +3211,9 @@ case OP_Recno: {
     int v;
     if( p->aCsr[i].recnoIsValid ){
       v = p->aCsr[i].lastRecno;
+    }else if( p->aCsr[i].nullRow ){
+      aStack[tos].flags = STK_Null;
+      break;
     }else{
       sqliteBtreeKey(pCrsr, 0, sizeof(u32), (char*)&v);
       v = keyToInt(v);
@@ -3248,6 +3263,22 @@ case OP_FullKey: {
   break;
 }
 
+/* Opcode: NullRow P1 * *
+**
+** Move the cursor P1 to a null row.  Any OP_Column operations
+** that occur while the cursor is on the null row will always push 
+** a NULL onto the stack.
+*/
+case OP_NullRow: {
+  int i = pOp->p1;
+  BtCursor *pCrsr;
+
+  if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
+    p->aCsr[i].nullRow = 1;
+  }
+  break;
+}
+
 /* Opcode: Last P1 P2 *
 **
 ** The next use of the Recno or Column or Next instruction for P1 
@@ -3263,7 +3294,7 @@ case OP_Last: {
   if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
     int res;
     sqliteBtreeLast(pCrsr, &res);
-    p->aCsr[i].atFirst = res==0;
+    p->aCsr[i].nullRow = res;
     if( res && pOp->p2>0 ){
       pc = pOp->p2 - 1;
     }
@@ -3287,6 +3318,7 @@ case OP_Rewind: {
     int res;
     sqliteBtreeFirst(pCrsr, &res);
     p->aCsr[i].atFirst = res==0;
+    p->aCsr[i].nullRow = res;
     if( res && pOp->p2>0 ){
       pc = pOp->p2 - 1;
     }
@@ -3308,6 +3340,7 @@ case OP_Next: {
   if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
     int res;
     rc = sqliteBtreeNext(pCrsr, &res);
+    p->aCsr[i].nullRow = res;
     if( res==0 ){
       pc = pOp->p2 - 1;
       sqlite_search_count++;

@@ -23,6 +23,8 @@ chng {2002 Feb * (2.3.4)} {
 <li>SELECT min() or max() of an indexed column with no WHERE or GROUP BY
     clause is handled as a special case which avoids a complete table scan.</li>
 <li>Automatically generated ROWIDs are now sequential.</li>
+<li>Do not allow dot-commands of the command-line shell to occur in the
+    middle of a real SQL command.</li>
 }
 
 chng {2002 Feb 18 (2.3.3)} {

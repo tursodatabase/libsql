@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.88 2002/02/19 22:42:05 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.89 2002/02/21 12:01:27 drh Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -29,11 +29,6 @@
 */
 #define MAX_PAGES   100
 #define TEMP_PAGES   25
-
-/*
-** File format version number
-*/
-#define FILE_FORMAT 1
 
 /*
 ** Integers of known sizes.  These typedefs might change for architectures
@@ -555,6 +550,7 @@ void sqliteRealToSortable(double r, char *);
 void sqliteSetString(char **, const char *, ...);
 void sqliteSetNString(char **, ...);
 void sqliteDequote(char*);
+int sqliteKeywordCode(const char*, int);
 int sqliteRunParser(Parse*, const char*, char **);
 void sqliteExec(Parse*);
 Expr *sqliteExpr(int, Expr*, Expr*, Token*);

@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.36 2002/02/17 00:30:36 drh Exp $
+** $Id: tokenize.c,v 1.37 2002/02/21 12:01:27 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -116,7 +116,7 @@ static Keyword *apHashTable[KEY_HASH_SIZE];
 ** keyword.  If it is a keyword, the token code of that keyword is 
 ** returned.  If the input is not a keyword, TK_ID is returned.
 */
-static int sqliteKeywordCode(const char *z, int n){
+int sqliteKeywordCode(const char *z, int n){
   int h;
   Keyword *p;
   if( aKeywordTable[0].len==0 ){

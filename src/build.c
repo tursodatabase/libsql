@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.77 2002/02/19 13:39:22 drh Exp $
+** $Id: build.c,v 1.78 2002/02/21 12:01:27 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -473,12 +473,25 @@ void sqliteStartTable(Parse *pParse, Token *pStart, Token *pName, int isTemp){
   pTable->isTemp = isTemp;
   if( pParse->pNewTable ) sqliteDeleteTable(db, pParse->pNewTable);
   pParse->pNewTable = pTable;
+
+  /* Begin generating the code that will insert the table record into
+  ** the SQLITE_MASTER table.  Note in particular that we must go ahead
+  ** and allocate the record number for the table entry now.  Before any
+  ** PRIMARY KEY or UNIQUE keywords are parsed.  Those keywords will cause
+  ** indices to be created and the table record must come before the 
+  ** indices.  Hence, the record number for the table must be allocated
+  ** now.
+  */
   if( !pParse->initFlag && (v = sqliteGetVdbe(pParse))!=0 ){
     sqliteBeginWriteOperation(pParse);
     if( !isTemp ){
       sqliteVdbeAddOp(v, OP_SetCookie, db->file_format, 1);
       sqliteVdbeAddOp(v, OP_OpenWrite, 0, 2);
       sqliteVdbeChangeP3(v, -1, MASTER_NAME, P3_STATIC);
+      sqliteVdbeAddOp(v, OP_NewRecno, 0, 0);
+      sqliteVdbeAddOp(v, OP_Dup, 0, 0);
+      sqliteVdbeAddOp(v, OP_String, 0, 0);
+      sqliteVdbeAddOp(v, OP_PutIntKey, 0, 0);
     }
   }
 }
@@ -657,10 +670,11 @@ static void changeCookie(sqlite *db){
 */
 static int identLength(const char *z){
   int n;
-  for(n=2; *z; n++, z++){
-    if( *z=='\'' ){ n++; }
+  int needQuote = 0;
+  for(n=0; *z; n++, z++){
+    if( *z=='\'' ){ n++; needQuote=1; }
   }
-  return n;
+  return n + needQuote*2;
 }
 
 /*
@@ -668,14 +682,19 @@ static int identLength(const char *z){
 ** quote characters as needed.
 */
 static void identPut(char *z, int *pIdx, char *zIdent){
-  int i, j;
+  int i, j, needQuote;
   i = *pIdx;
-  z[i++] = '\'';
+  for(j=0; zIdent[j]; j++){
+    if( !isalnum(zIdent[j]) && zIdent[j]!='_' ) break;
+  }
+  needQuote =  zIdent[j]!=0 || isdigit(zIdent[0])
+                  || sqliteKeywordCode(zIdent, j)!=TK_ID;
+  if( needQuote ) z[i++] = '\'';
   for(j=0; zIdent[j]; j++){
     z[i++] = zIdent[j];
     if( zIdent[j]=='\'' ) z[i++] = '\'';
   }
-  z[i++] = '\'';
+  if( needQuote ) z[i++] = '\'';
   z[i] = 0;
   *pIdx = i;
 }
@@ -769,6 +788,7 @@ void sqliteEndTable(Parse *pParse, Token *pEnd, Select *pSelect){
   */
   if( pSelect ){
     Table *pSelTab = sqliteResultSetOfSelect(pParse, 0, pSelect);
+    if( pSelTab==0 ) return;
     assert( p->aCol==0 );
     p->nCol = pSelTab->nCol;
     p->aCol = pSelTab->aCol;
@@ -788,7 +808,8 @@ void sqliteEndTable(Parse *pParse, Token *pEnd, Select *pSelect){
   }
 
   /* If not initializing, then create a record for the new table
-  ** in the SQLITE_MASTER table of the database.
+  ** in the SQLITE_MASTER table of the database.  The record number
+  ** for the new table entry should already be on the stack.
   **
   ** If this is a TEMPORARY table, then just create the table.  Do not
   ** make an entry in SQLITE_MASTER.
@@ -803,7 +824,7 @@ void sqliteEndTable(Parse *pParse, Token *pEnd, Select *pSelect){
     sqliteVdbeChangeP3(v, addr, (char *)&p->tnum, P3_POINTER);
     p->tnum = 0;
     if( !p->isTemp ){
-      sqliteVdbeAddOp(v, OP_NewRecno, 0, 0);
+      sqliteVdbeAddOp(v, OP_Pull, 1, 0);
       sqliteVdbeAddOp(v, OP_String, 0, 0);
       sqliteVdbeChangeP3(v, -1, "table", P3_STATIC);
       sqliteVdbeAddOp(v, OP_String, 0, 0);
