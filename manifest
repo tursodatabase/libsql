@@ -1,5 +1,5 @@
-C Added\stests\sfor\sthe\snew\sIN\soperator\soptimizer\sand\sfixed\sa\sbug\sthat\sthe\nnew\stests\sfound.\s\sThis\scompletes\sthe\simplementation\sof\senhancement\s#63.\s(CVS\s612)
-D 2002-06-09T01:55:20
+C Fix\sthe\sspelling\sof\ssqliteRegisterBuiltinFunctions().\s(CVS\s613)
+D 2002-06-09T10:14:19
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -24,11 +24,11 @@ F src/build.c 36e42718a7a94f554ea39508993378482f5335c7
 F src/delete.c a2b098cbbf518e6b641847e26de85827793bc523
 F src/encode.c 346b12b46148506c32038524b95c4631ab46d760
 F src/expr.c cd2e3311c84533fad19336d3bbfdc3be3400d377
-F src/func.c 061a520a122da7e4f9dcac15697bb996aac7d5df
+F src/func.c b8d0fd3011f53ea0e46b6bab857612eb36b5d1ea
 F src/hash.c 6a6236b89c8c060c65dabd300a1c8ce7c10edb72
 F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
 F src/insert.c 4b0bd94296fea46ef1b2ed8bfd05e12a38ce2c90
-F src/main.c 6e53c49a390fabd5fecce9e3b128c61c85208000
+F src/main.c 3a4e53122c0b0d0a5719b73fa9ec642761291ba1
 F src/md5.c 0ae1f3e2cac92d06fc6246d1b4b8f61a2fe66d3b
 F src/os.c 9cc40c5384baba4a85e160e67807645ca98ba3cc
 F src/os.h 4a361fccfbc4e7609b3e1557f604f94c1e96ad10
@@ -41,7 +41,7 @@ F src/select.c 1d5cb1ae0bb3376bedfde7ae22e6e927e4d0b5e2
 F src/shell.c 1d22fe870ee852cfb975fd000dbe3973713d0a15
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 0038faa6d642de06b91143ee65a131bd831d020b
-F src/sqliteInt.h 09f3e26d0368284965efef7d1a9999b0eba801d3
+F src/sqliteInt.h 470056bd21902e15f5ac459f09f64a717657332b
 F src/table.c eed2098c9b577aa17f8abe89313a9c4413f57d63
 F src/tclsqlite.c 9300c9606a38bc0c75d6c0bc8a6197ab979353d1
 F src/test1.c 09d95048b66ce6dcd2bae90f443589043d7d631e
@@ -136,7 +136,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P ad9624798edbd6d0c4652fed3d74fe87498844ff
-R 7131726bbe7f69ab24aea1be14cd5f47
+P 2a710e18176c486525f0abb06644a511a2cd1d7a
+R e2c1bfb01c44cc3c89a1b280cee79956
 U drh
-Z 566256d2d9ffc189bf51044ba8051993
+Z bd401167cac426bd14d74027f33bb932

@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.19 2002/05/31 15:51:25 drh Exp $
+** $Id: func.c,v 1.20 2002/06/09 10:14:19 drh Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -412,7 +412,7 @@ static void minMaxFinalize(sqlite_func *context){
 ** functions.  This should be the only routine in this file with
 ** external linkage.
 */
-void sqliteRegisterBuildinFunctions(sqlite *db){
+void sqliteRegisterBuiltinFunctions(sqlite *db){
   static struct {
      char *zName;
      int nArg;

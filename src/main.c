@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.77 2002/05/23 13:15:37 drh Exp $
+** $Id: main.c,v 1.78 2002/06/09 10:14:19 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -332,7 +332,7 @@ sqlite *sqlite_open(const char *zFilename, int mode, char **pzErrMsg){
   sqliteHashInit(&db->tblDrop, SQLITE_HASH_POINTER, 0);
   sqliteHashInit(&db->idxDrop, SQLITE_HASH_POINTER, 0);
   sqliteHashInit(&db->aFunc, SQLITE_HASH_STRING, 1);
-  sqliteRegisterBuildinFunctions(db);
+  sqliteRegisterBuiltinFunctions(db);
   db->onError = OE_Default;
   db->priorNewRowid = 0;
   db->magic = SQLITE_MAGIC_BUSY;
