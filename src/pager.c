@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.73 2003/02/11 14:55:41 drh Exp $
+** @(#) $Id: pager.c,v 1.74 2003/02/12 02:10:15 drh Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -612,12 +612,14 @@ static int pager_playback(Pager *pPager){
       nRec = (szJ - JOURNAL_HDR_SZ(3))/JOURNAL_PG_SZ(3);
     }
   }else{
-    nRec = (szJ - (sizeof(aMagic)+sizeof(Pgno))) / sizeof(PageRecord);
+    nRec = (szJ - JOURNAL_HDR_SZ(2))/JOURNAL_PG_SZ(2);
+    assert( nRec*JOURNAL_PG_SZ(2)+JOURNAL_HDR_SZ(2)==szJ );
   }
   rc = read32bits(format, &pPager->jfd, &mxPg);
   if( rc!=SQLITE_OK ){
     goto end_playback;
   }
+  assert( pPager->origDbSize==0 || pPager->origDbSize==mxPg );
   rc = sqliteOsTruncate(&pPager->fd, SQLITE_PAGE_SIZE*(off_t)mxPg);
   if( rc!=SQLITE_OK ){
     goto end_playback;
@@ -630,7 +632,6 @@ static int pager_playback(Pager *pPager){
     rc = pager_playback_one_page(pPager, &pPager->jfd, format);
     if( rc!=SQLITE_OK ){
       if( rc==SQLITE_DONE ){
-fprintf(stderr,"Playback complete after %d of %d records\n", i, nRec);
         rc = SQLITE_OK;
       }
       break;
@@ -1026,7 +1027,6 @@ static int syncAllPages(Pager *pPager){
   */
   if( pPager->needSync ){
     if( !pPager->tempFile ){
-      off_t szJ;
       assert( pPager->journalOpen );
       assert( !pPager->noSync );
 #ifndef NDEBUG
@@ -1039,16 +1039,19 @@ static int syncAllPages(Pager *pPager){
         assert( pPager->nRec*pgSz+hdrSz==pPager->syncJSize );
       }
 #endif
-      if( pPager->fullSync ){
-        TRACE1("SYNC\n");
-        rc = sqliteOsSync(&pPager->jfd);
-        if( rc!=0 ) return rc;
+      if( journal_format>=3 ){
+        off_t szJ;
+        if( pPager->fullSync ){
+          TRACE1("SYNC\n");
+          rc = sqliteOsSync(&pPager->jfd);
+          if( rc!=0 ) return rc;
+        }
+        sqliteOsSeek(&pPager->jfd, sizeof(aJournalMagic1));
+        write32bits(&pPager->jfd, pPager->nRec);
+        szJ = JOURNAL_HDR_SZ(journal_format) +
+                 pPager->nRec*JOURNAL_PG_SZ(journal_format);
+        sqliteOsSeek(&pPager->jfd, szJ);
       }
-      sqliteOsSeek(&pPager->jfd, sizeof(aJournalMagic1));
-      write32bits(&pPager->jfd, pPager->nRec);
-      szJ = JOURNAL_HDR_SZ(journal_format) +
-               pPager->nRec*JOURNAL_PG_SZ(journal_format);
-      sqliteOsSeek(&pPager->jfd, szJ);
       TRACE1("SYNC\n");
       rc = sqliteOsSync(&pPager->jfd);
       if( rc!=0 ) return rc;

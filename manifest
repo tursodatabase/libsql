@@ -1,5 +1,5 @@
-C Modify\sthe\sjournal\sformat\sto\sbe\smore\srobust\sagainst\sgarbage\sthat\smight\sappear\nin\sthe\sfile\safter\sa\spower\sfailure.\s\sThe\schanges\sare\smostly\sworking\sbut\smore\ntesting\sis\sstill\srequired.\s\sThis\scheck-in\sis\sto\scheckpoint\sthe\schanges\sso\sfar.\s(CVS\s861)
-D 2003-02-11T14:55:41
+C Fix\sa\sbug\sin\sthe\slegacy\sjournal\sformat\swriting\slogic.\s(CVS\s862)
+D 2003-02-12T02:10:15
 F Makefile.in 6606854b1512f185b8e8c779b8d7fc2750463d64
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -33,7 +33,7 @@ F src/main.c 764a72e6a4f021ae1d3db7e82dab625075f4fedb
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
 F src/os.c ed27e178e0c4b71f2807da81b8851f0fadc50778
 F src/os.h afa3e096213bad86845f8bdca81a9e917505e401
-F src/pager.c 4adf3cc6d031504e2941791f5838138d4fad2803
+F src/pager.c 1748a01ed18d7507c4c4dd54985c4aa613583a52
 F src/pager.h ce264d558c8ec289f5a9c50ca4ad499e3522a67e
 F src/parse.y cdaed5009423d851708848bd279147c268e6022e
 F src/printf.c f8fd911a8738f9b2eb07aca2870473d34707055d
@@ -155,7 +155,7 @@ F www/speed.tcl 4d463e2aea41f688ed320a937f93ff885be918c3
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P e21afb82b53eade9ee267a97c58db0606f0c0a41
-R 4995a0d231005397acc1e0444b8f7298
+P 8ec5632536eea31197a3b1fd6abc57881a0cf1d7
+R b30735c88387ed3f8675a36136884368
 U drh
-Z 334d201676289fffaf14b926d96d12b8
+Z b9a60900a465cbc97d661e720b92ed2b
