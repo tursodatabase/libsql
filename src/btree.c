@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.41 2001/11/23 00:24:12 drh Exp $
+** $Id: btree.c,v 1.42 2001/12/05 00:21:20 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -677,6 +677,24 @@ page1_init_failed:
 }
 
 /*
+** If there are no outstanding cursors and we are not in the middle
+** of a transaction but there is a read lock on the database, then
+** this routine unrefs the first page of the database file which 
+** has the effect of releasing the read lock.
+**
+** If there are any outstanding cursors, this routine is a no-op.
+**
+** If there is a transaction in progress, this routine is a no-op.
+*/
+static void unlockBtreeIfUnused(Btree *pBt){
+  if( pBt->inTrans==0 && pBt->pCursor==0 && pBt->page1!=0 ){
+    sqlitepager_unref(pBt->page1);
+    pBt->page1 = 0;
+    pBt->inTrans = 0;
+  }
+}
+
+/*
 ** Create a new database by initializing the first two pages of the
 ** file.
 */
@@ -725,33 +743,19 @@ int sqliteBtreeBeginTrans(Btree *pBt){
       return rc;
     }
   }
-  if( !sqlitepager_isreadonly(pBt->pPager) ){
-    rc = sqlitepager_write(pBt->page1);
-    if( rc!=SQLITE_OK ){
-      return rc;
-    }
+  if( sqlitepager_isreadonly(pBt->pPager) ){
+    return SQLITE_READONLY;
+  }
+  rc = sqlitepager_write(pBt->page1);
+  if( rc==SQLITE_OK ){
     rc = newDatabase(pBt);
   }
-  pBt->inTrans = 1;
-  return rc;
-}
-
-/*
-** If there are no outstanding cursors and we are not in the middle
-** of a transaction but there is a read lock on the database, then
-** this routine unrefs the first page of the database file which 
-** has the effect of releasing the read lock.
-**
-** If there are any outstanding cursors, this routine is a no-op.
-**
-** If there is a transaction in progress, this routine is a no-op.
-*/
-static void unlockBtreeIfUnused(Btree *pBt){
-  if( pBt->inTrans==0 && pBt->pCursor==0 && pBt->page1!=0 ){
-    sqlitepager_unref(pBt->page1);
-    pBt->page1 = 0;
-    pBt->inTrans = 0;
+  if( rc==SQLITE_OK ){
+    pBt->inTrans = 1;
+  }else{
+    unlockBtreeIfUnused(pBt);
   }
+  return rc;
 }
 
 /*

@@ -1,7 +1,7 @@
 #
 # Run this script to generated a faq.html output file
 #
-set rcsid {$Id: faq.tcl,v 1.2 2001/11/24 13:23:05 drh Exp $}
+set rcsid {$Id: faq.tcl,v 1.3 2001/12/05 00:21:21 drh Exp $}
 
 puts {<html>
 <head>
@@ -93,14 +93,13 @@ faq {
 }
 
 faq {
-  The second INSERT in the following sequence of commands returns with 
-  constraint error.
+  Why does the second INSERT in the following sequence of commands throw
+  a constraint exception?
   <blockquote>
      CREATE TABLE t(s varchar(10) primary key);<br>
      INSERT INTO t VALUES('0');<br>
      INSERT INTO t VALUES('0.0');<br>
   </blockquote>
-  Why is this?
 } {
   <p>Because column <b>s</b> is a primary key, all values of <b>s</b> must
   be unique.  But SQLite thinks that <b>'0'</b> and <b>'0.0'</b> are the
@@ -124,7 +123,7 @@ faq {
   My linux box is not able to read an SQLite database that was created
   on my SparcStation.
 } {
-  <p>The x86 processor on your windows box is little-endian (meaning that
+  <p>The x86 processor on your linux box is little-endian (meaning that
   the least signification byte of integers comes first) but the Sparc is
   big-endian (the most significant bytes comes first).  SQLite databases
   created on a little-endian architecture cannot be used on a big-endian
@@ -234,6 +233,30 @@ ORDER BY name;
   there is no way to get a listing of temporary tables and indices.</p>
 }
 
+faq {
+  Is there any known size limits to SQLite databases.
+} {
+  <p>Internally, SQLite can handle databases up to 2^40 bytes (1 terabyte)
+  in size.  But the backend interface to POSIX and Win32 limits files to
+  2^31 (2 gigabytes).</p>
+
+  <p>SQLite arbitrarily limits the amount of data in one row to 1 megabyte.
+  There is a single #define in the source code that can be changed to raise
+  this limit as high as 16 megabytes if desired.</p>
+
+  <p>There is a theoretical limit of about 2^32 (4 billion) rows
+  in a single table, but there
+  is no way to test this limit without exceeding the maximum file size, so
+  it is not really an issue.  There is also a theoretical limit of about 2^32
+  tables and indices, but again it is not really possible to reach this
+  limit due to the file size constraint.</p>
+
+  <p>The name and "CREATE TABLE" statement for a table must fit entirely
+  within a 1-megabyte row of the SQLITE_MASTER table.  Other than this,
+  there are no constraints on the length of the name of a table, or on the
+  number of columns, etc.  Indices are similarly unconstrained.</p>
+}
+
 # End of questions and answers.
 #############
 
@@ -242,15 +265,16 @@ for {set i 1} {$i<$cnt} {incr i} {
   puts "  <DT><A HREF=\"#q$i\">($i)</A></DT>"
   puts "  <DD>[lindex $faq($i) 0]</DD>"
 }
-puts {</DL><HR />}
+puts {</DL>}
 
 for {set i 1} {$i<$cnt} {incr i} {
-  puts "<A NAME=\"q$i\">"
+  puts "<A NAME=\"q$i\"><HR />"
   puts "<P><B>($i) [lindex $faq($i) 0]</B></P>\n"
-  puts "<BLOCKQUOTE>[lindex $faq($i) 1]</BLOCKQUOTE>\n"
+  puts "<BLOCKQUOTE>[lindex $faq($i) 1]</BLOCKQUOTE></LI>\n"
 }
 
 puts {
+</OL>
 <p><hr /></p>
 <p><a href="index.html"><img src="/goback.jpg" border=0 />
 Back to the SQLite Home Page</a>

@@ -59,8 +59,8 @@ int sqliteOsLock(OsFile, int wrlock);
 int sqliteOsUnlock(OsFile);
 int sqliteOsRandomSeed(char*);
 int sqliteOsSleep(int ms);
-void sqliteOsEnterMutex();
-void sqliteOsLeaveMutex();
+void sqliteOsEnterMutex(void);
+void sqliteOsLeaveMutex(void);
 
 
 

@@ -17,9 +17,14 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
-chng {2001 Nov ?? (2.1.4)} {
+chng {2001 Dec 4 (2.1.4)} {
+<li>Sometime <b>sqlite_exec()</b> would return SQLITE_PROTOCOL when it
+    should have returned SQLITE_BUSY.</li>
+<li>The fix to the previous bug uncovered a deadlock which was also
+    fixed.</li>
 <li>Add the ability to put a single .command in the second argument
     of the sqlite shell</li>
+<li>Updates to the FAQ</li>
 }
 
 chng {2001 Nov 23 (2.1.3)} {
