@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.66 2003/02/05 14:06:20 drh Exp $
+** $Id: shell.c,v 1.67 2003/03/30 19:17:03 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -495,7 +495,6 @@ static char zHelp[] =
   "                       \"insert\", \"list\", or \"html\"\n"
   ".mode insert TABLE     Generate SQL insert statements for TABLE\n"
   ".nullvalue STRING      Print STRING instead of nothing for NULL data\n"
-  ".openaux FILENAME      Use FILENAME to hold TEMP tables\n"
   ".output FILENAME       Send output to FILENAME\n"
   ".output stdout         Send output to the screen\n"
   ".prompt MAIN CONTINUE  Replace the standard prompts\n"
@@ -708,15 +707,6 @@ static int do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
 
   if( c=='n' && strncmp(azArg[0], "nullvalue", n)==0 && nArg==2 ) {
     sprintf(p->nullvalue, "%.*s", (int)ArraySize(p->nullvalue)-1, azArg[1]);
-  }else
-
-  if( c=='o' && strncmp(azArg[0], "openaux", n)==0 ){
-    char *zErrMsg = 0;
-    sqlite_open_aux_file(db, nArg>=2 ? azArg[1] : 0, &zErrMsg);
-    if( zErrMsg ){
-      fprintf(stderr,"Error: %s\n", zErrMsg);
-      free(zErrMsg);
-    }
   }else
 
   if( c=='o' && strncmp(azArg[0], "output", n)==0 && nArg==2 ){

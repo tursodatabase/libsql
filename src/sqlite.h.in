@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.41 2003/01/29 14:06:09 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.42 2003/03/30 19:17:03 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -674,16 +674,6 @@ int sqlite_step(
 ** and the result code returned will be SQLITE_ABORT.
 */
 int sqlite_finalize(sqlite_vm*, char **pzErrMsg);
-
-/*
-** Attempt to open the file named in the argument as the auxiliary database
-** file.  The auxiliary database file is used to store TEMP tables.  But
-** by using this API, it is possible to trick SQLite into opening two
-** separate databases and acting on them as if they were one.
-**
-****** THIS IS AN EXPERIMENTAL API AND IS SUBJECT TO CHANGE. ******
-*/
-int sqlite_open_aux_file(sqlite *db, const char *zName, char **pzErrMsg);
 
 #ifdef __cplusplus
 }  /* End of the 'extern "C"' block */

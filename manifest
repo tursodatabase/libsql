@@ -1,5 +1,5 @@
-C Remove\sthe\sobsolete\sdocumentation\son\show\sto\scrosscompile\sversion\s1.0\sof\nSQLite.\s(CVS\s888)
-D 2003-03-30T18:58:58
+C Remove\sthe\sexperimental\ssqlite_open_aux_file()\sAPI.\s\sIt\swill\ssoon\sbe\sreplaced\nby\sATTACH\sand\sDETACH\sSQL\scommands.\s(CVS\s889)
+D 2003-03-30T19:17:02
 F Makefile.in 3c4ba24253e61c954d67adbbb4245e7117c5357e
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -30,7 +30,7 @@ F src/func.c 882c3ed5a02be18cd904715c7ec62947a34a3605
 F src/hash.c 4fc39feb7b7711f6495ee9f2159559bedb043e1f
 F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
 F src/insert.c 95e7ab3fb51909351273a6c6f8aa831201130ce7
-F src/main.c e0d9a86541f0644be5c875c6d8f5062c325c653d
+F src/main.c df729d604e3055b8081e3d4348983dfd30d2835d
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
 F src/os.c dfed46091f69cd2d1e601f8a214d41344f2b00b6
 F src/os.h aa52f0c9da321ff6134d19f2ca959e18e33615d0
@@ -40,12 +40,12 @@ F src/parse.y 243cfc277d0e5ce87086c015e717dec98d6648a7
 F src/printf.c fc5fdef6e92ad205005263661fe9716f55a49f3e
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c afdc06d4606d14ab5793ef480206def6b02a2f19
-F src/shell.c 0d260a007e0668fc7dda2b0c89bd597ef2966ec6
+F src/shell.c c13ff46e905a59eb1c7dbea7c1850f8f115e6395
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
-F src/sqlite.h.in 6f648803f2ffb9beb35cb1cfa42b323d55519171
+F src/sqlite.h.in 91f94c73514477ffef54aaa452f7fcb62fc59d1e
 F src/sqliteInt.h 5335f694cba9f07538cf8207aab11d48e0b9a2f8
 F src/table.c eed2098c9b577aa17f8abe89313a9c4413f57d63
-F src/tclsqlite.c 8167d40fd34036701e07492d07a6f9e5c4015241
+F src/tclsqlite.c 4cb0ffa863123ae037db359849a231ff5cebfed4
 F src/test1.c 7ad4e6308dde0bf5a0f0775ce20cb2ec37a328f8
 F src/test2.c 5014337d8576b731cce5b5a14bec4f0daf432700
 F src/test3.c c12ea7f1c3fbbd58904e81e6cb10ad424e6fc728
@@ -106,7 +106,7 @@ F test/sort.test 61a729023ae4ac3be9b225dc0be026fb43fec4e6
 F test/subselect.test f0fea8cf9f386d416d64d152e3c65f9116d0f50f
 F test/table.test 371a1fc1c470982b2f68f9732f903a5d96f949c4
 F test/tableapi.test 3c80421a889e1d106df16e5800fa787f0d2914a6
-F test/tclsqlite.test f650195b8124aca24bee175393a1ed2e5a544a38
+F test/tclsqlite.test 4a69bd223eb18f8cdc58a9ca193881121fa7a8d2
 F test/temptable.test 6feff1960c707e924d5462356c5303943dac4a8e
 F test/tester.tcl d7a5835edaf118539241145d8188f0822b673488
 F test/trans.test 75e7a171b5d2d94ee56766459113e2ad0e5f809d
@@ -155,7 +155,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 66c80ae232a78ecb010280ab1aa684cb78b0662f
-R 208f37d602235a28fca3e23d11ba2cbf
+P ac0622bf5fca9c8907319a20158e991efdaa6402
+R 359232b433a24865017ceb4c15ffe33b
 U drh
-Z 125b0a7be77e859c6623ad865623b75e
+Z 34c4d8547949ea6d733267131feeb146

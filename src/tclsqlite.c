@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.44 2003/01/31 17:21:50 drh Exp $
+** $Id: tclsqlite.c,v 1.45 2003/03/30 19:17:03 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -330,14 +330,13 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   static const char *DB_strs[] = {
     "busy",               "changes",           "close",
     "complete",           "errorcode",         "eval",
-    "function",           "last_insert_rowid", "open_aux_file",
-    "timeout",            0                    
+    "function",           "last_insert_rowid", "timeout",
+    0                    
   };
   enum DB_enum {
     DB_BUSY,              DB_CHANGES,          DB_CLOSE,
     DB_COMPLETE,          DB_ERRORCODE,        DB_EVAL,
-    DB_FUNCTION,          DB_LAST_INSERT_ROWID,DB_OPEN_AUX_FILE,
-    DB_TIMEOUT,          
+    DB_FUNCTION,          DB_LAST_INSERT_ROWID,DB_TIMEOUT,          
   };
 
   if( objc<2 ){
@@ -566,35 +565,6 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     rowid = sqlite_last_insert_rowid(pDb->db);
     pResult = Tcl_GetObjResult(interp);
     Tcl_SetIntObj(pResult, rowid);
-    break;
-  }
-
-  /*
-  **     $db open_aux_file  FILENAME
-  **
-  ** Begin using FILENAME as the database file used to store temporary
-  ** tables.
-  */
-  case DB_OPEN_AUX_FILE: {
-    const char *zFilename;
-    char *zErrMsg = 0;
-    int rc;
-    if( objc!=3 ){
-      Tcl_WrongNumArgs(interp, 2, objv, "FILENAME");
-      return TCL_ERROR;
-    }
-    zFilename = Tcl_GetStringFromObj(objv[2], 0);
-    rc = sqlite_open_aux_file(pDb->db, zFilename, &zErrMsg);
-    pDb->rc = rc;
-    if( rc!=0 ){
-      if( zErrMsg ){
-        Tcl_AppendResult(interp, zErrMsg, 0);
-        free(zErrMsg);
-      }else{
-        Tcl_AppendResult(interp, sqlite_error_string(rc), 0);
-      }
-      return TCL_ERROR;
-    }
     break;
   }
 
