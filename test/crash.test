@@ -10,13 +10,13 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.
 #
-# $Id: crash.test,v 1.3 2004/06/23 10:43:15 danielk1977 Exp $
+# $Id: crash.test,v 1.4 2004/06/25 06:23:23 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
 set repeats 100
-# set repeats 5
+# set repeats 10
 
 # This proc execs a seperate process that crashes midway through executing
 # the SQL script $sql on database test.db.
@@ -37,14 +37,15 @@ proc crashsql {crashdelay crashfile sql} {
   set f [open crash.tcl w]
   puts $f "sqlite3_crashparams $crashdelay $cfile"
   puts $f "sqlite3 db test.db"
-  puts $f "db eval {pragma full_synchronous = 1}"
+  puts $f "db eval {pragma synchronous = full}"
+  puts $f "db eval {pragma cache_size = 10}"
   puts $f "db eval {"
   puts $f   "$sql"
   puts $f "}"
   close $f
 
   set r [catch {
-    exec [file join . crashtest] crash.tcl
+    exec [file join . crashtest] crash.tcl >@stdout
   } msg]
   lappend r $msg
 }
@@ -58,11 +59,6 @@ proc signature2 {} {
   return [db eval {SELECT count(*), md5sum(a), md5sum(b), md5sum(c) FROM abc2}]
 }
 
-# Use a small pager-cache for these tests.
-do_test crash-0.1 {
-  execsql { pragma default_cache_size = 10 }
-} {}
-
 #--------------------------------------------------------------------------
 # Simple crash test:
 #
@@ -73,11 +69,14 @@ do_test crash-0.1 {
 # crash-1.4: Run a 'DELETE FROM abc WHERE a = 1' that crashes during
 #            the first database-sync.
 # crash-1.5: Ensure the database is in the same state as after crash-1.1.
+# crash-1.6: Run a 'DELETE FROM abc WHERE a = 1' that crashes during
+#            the second journal-sync.
+# crash-1.7: Ensure the database is in the same state as after crash-1.1.
 #
-# Tests 1.6 through 1.9 are the same as 1.2 through 1.5, except the crash
-# is requested on the second sync of each file. This doesn't happen in
-# such a small test case, so these tests are just to verify that the
-# test infrastructure operates as expected.
+# Tests 1.8 through 1.11 test for crashes on the third journal sync and
+# second database sync.  Neither of these is required in such a small test
+# case, so these tests are just to verify that the test infrastructure
+# operates as expected.
 #
 do_test crash-1.1 {
   execsql {
@@ -93,9 +92,6 @@ do_test crash-1.2 {
     DELETE FROM abc WHERE a = 1;
   }
 } {1 {child process exited abnormally}}
-
-# exit
-
 do_test crash-1.3 {
   signature
 } $::sig
@@ -111,18 +107,29 @@ do_test crash-1.6 {
   crashsql 2 test.db-journal {
     DELETE FROM abc WHERE a = 1;
   }
-} {0 {}}
+} {1 {child process exited abnormally}}
 do_test crash-1.7 {
   catchsql {
     SELECT * FROM abc;
   }
-} {0 {4 5 6}}
+} {0 {1 2 3 4 5 6}}
+
 do_test crash-1.8 {
+  crashsql 3 test.db-journal {
+    DELETE FROM abc WHERE a = 1;
+  }
+} {0 {}}
+do_test crash-1.9 {
+  catchsql {
+    SELECT * FROM abc;
+  }
+} {0 {4 5 6}}
+do_test crash-1.10 {
   crashsql 2 test.db {
     DELETE FROM abc WHERE a = 4;
   }
 } {0 {}}
-do_test crash-1.9 {
+do_test crash-1.11 {
   catchsql {
     SELECT * FROM abc;
   }
@@ -226,7 +233,10 @@ do_test crash-4.0 {
   file delete -force test2.db
   file delete -force test2.db-journal
   sqlite3 db2 test2.db
-  execsql {pragma default_cache_size = 10} db2
+  execsql {
+    pragma default_cache_size = 10;
+    pragma default_synchronous = full;
+  } db2
   db2 close
   execsql {
     ATTACH 'test2.db' AS aux;
@@ -302,5 +312,4 @@ for {set i 1} {$i < 5} {incr i} {
   } $sig2
 }
 
-finish_test
 

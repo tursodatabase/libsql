@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.138 2004/06/25 02:38:55 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.139 2004/06/25 06:23:23 danielk1977 Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -2046,6 +2046,7 @@ int sqlite3pager_get(Pager *pPager, Pgno pgno, void **ppPage){
 	  ** trashed when the nRec field is updated).
           */
           pPager->nRec = 0;
+          assert( pPager->journalOff > 0 );
           rc = writeJournalHdr(pPager);
           if( rc!=0 ){
             sqlite3pager_rollback(pPager);

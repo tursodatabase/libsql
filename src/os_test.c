@@ -190,7 +190,7 @@ static int cacheBlock(OsTestFile *pFile, int blk){
   return SQLITE_OK;
 }
 
-/* #define TRACE_WRITECACHE  */
+/* #define TRACE_WRITECACHE */
 
 /*
 ** Write the cache of pFile to disk. If crash is non-zero, randomly
@@ -212,7 +212,7 @@ static int writeCache2(OsTestFile *pFile, int crash){
         char random;
         sqlite3Randomness(1, &random);
         if( random & 0x01 ){
-          if( 0 && random & 0x02 ){
+          if( random & 0x02 ){
             trash = 1;
 #ifdef TRACE_WRITECACHE
 printf("Trashing block %d of %s\n", i, pFile->zName); 
@@ -265,7 +265,7 @@ static int writeCache(OsTestFile *pFile){
     if( c ){
       OsTestFile *p;
 #ifdef TRACE_WRITECACHE
-      printf("Crash during sync of %s\n", pFile->zName);
+      printf("\nCrash during sync of %s\n", pFile->zName);
 #endif
       for(p=pAllFiles; p; p=p->pNext){
         writeCache2(p, 1);
