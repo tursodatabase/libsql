@@ -44,6 +44,7 @@ sqlite3_exec
 sqlite3_finalize
 sqlite3_free
 sqlite3_free_table
+sqlite3_get_auxdata
 sqlite3_get_table
 sqlite3_interrupt
 sqlite3_last_insert_rowid
@@ -67,6 +68,7 @@ sqlite3_result_text16be
 sqlite3_result_text16le
 sqlite3_result_value
 sqlite3_set_authorizer
+sqlite3_set_auxdata
 sqlite3_step
 sqlite3_total_changes
 sqlite3_trace
