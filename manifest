@@ -1,5 +1,5 @@
-C Version\s2.8.7\s(CVS\s1124)
-D 2003-12-04T13:47:05
+C Use\ssqlite_freemem()\sinstead\sof\sfree()\sin\sthe\sshell.\s\sWindows\sneeds\sthis.\n(Unix\sdoes\snot\scare.)\s\sTicket\s#444.\s(CVS\s1125)
+D 2003-12-04T20:51:41
 F Makefile.in 5cb273b7d0e945d47ee8b9ad1c2a04ce79927d2d
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -47,7 +47,7 @@ F src/pragma.c cee60f17679210e8acd30d5bdee855716d0c898c
 F src/printf.c 12e45d482ac8abcc6f786fc99e5bed7dd9a51af0
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c d79ac60ba1595ff3c94b12892e87098329776482
-F src/shell.c c2ba26c850874964f5ec1ebf6c43406f28e44c4a
+F src/shell.c 3b067edc098c45caca164bcad1fa79192c3ec5ae
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in e6cfff01fafc8a82ce82cd8c932af421dc9adb54
 F src/sqliteInt.h 882aa33ee2aed7685449b899d917a316b9cc2c44
@@ -176,7 +176,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P 9e79ab6ce06d68fcd7efa207d0ffcd1c51c13d58
-R cc120688e7dc0440e3d7bbe8a30278b7
+P d48b0b018d47470689cc49f3be4cde50db165454
+R 482b73398dc156a154a0223f6aa927cb
 U drh
-Z 027fc0bba25796022eb035ace8db7316
+Z 99ab35e0d01247693362a83e91f5f4e3

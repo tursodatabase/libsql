@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.82 2003/07/18 01:30:59 drh Exp $
+** $Id: shell.c,v 1.83 2003/12/04 20:51:41 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -571,7 +571,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     sqlite_exec(p->db, "PRAGMA database_list; ", callback, &data, &zErrMsg);
     if( zErrMsg ){
       fprintf(stderr,"Error: %s\n", zErrMsg);
-      free(zErrMsg);
+      sqlite_freemem(zErrMsg);
     }
   }else
 
@@ -599,7 +599,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     }
     if( zErrMsg ){
       fprintf(stderr,"Error: %s\n", zErrMsg);
-      free(zErrMsg);
+      sqlite_freemem(zErrMsg);
     }else{
       fprintf(p->out, "COMMIT;\n");
     }
@@ -705,7 +705,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     );
     if( zErrMsg ){
       fprintf(stderr,"Error: %s\n", zErrMsg);
-      free(zErrMsg);
+      sqlite_freemem(zErrMsg);
     }
   }else
 
@@ -837,7 +837,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     }
     if( zErrMsg ){
       fprintf(stderr,"Error: %s\n", zErrMsg);
-      free(zErrMsg);
+      sqlite_freemem(zErrMsg);
     }
   }else
 
@@ -890,7 +890,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     }
     if( zErrMsg ){
       fprintf(stderr,"Error: %s\n", zErrMsg);
-      free(zErrMsg);
+      sqlite_freemem(zErrMsg);
     }
     if( rc==SQLITE_OK ){
       int len, maxlen = 0;
@@ -1040,7 +1040,7 @@ static void process_input(struct callback_data *p, FILE *in){
         if( in!=0 && !p->echoOn ) printf("%s\n",zSql);
         if( zErrMsg!=0 ){
           printf("SQL error: %s\n", zErrMsg);
-          free(zErrMsg);
+          sqlite_freemem(zErrMsg);
           zErrMsg = 0;
         }else{
           printf("SQL error: %s\n", sqlite_error_string(rc));
