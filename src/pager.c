@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.119 2004/06/10 01:30:59 drh Exp $
+** @(#) $Id: pager.c,v 1.120 2004/06/10 02:16:02 danielk1977 Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -29,7 +29,7 @@
 /*
 ** Macros for troubleshooting.  Normally turned off
 */
-#if 1
+#if 0
 static Pager *mainPager = 0;
 #define SET_PAGER(X)  if( mainPager==0 ) mainPager = (X)
 #define CLR_PAGER(X)  if( mainPager==(X) ) mainPager = 0

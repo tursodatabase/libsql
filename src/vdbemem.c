@@ -438,25 +438,35 @@ int sqlite3MemCompare(const Mem *pMem1, const Mem *pMem2, const CollSeq *pColl){
     ** table incorrectly.  We need to return an error to the user in this
     ** case.
     */
-    assert( !pColl || (pColl->xCmp || pColl->xCmp16) );
+    assert( !pColl || pColl->xCmp );
 
     if( pColl ){
-      if( (pMem1->enc==TEXT_Utf8 && pColl->xCmp) || !pColl->xCmp16 ){
-        return pColl->xCmp(
-          pColl->pUser,
-          sqlite3_value_bytes((sqlite3_value *)pMem1),
-          sqlite3_value_text((sqlite3_value *)pMem1),
-          sqlite3_value_bytes((sqlite3_value *)pMem2),
-          sqlite3_value_text((sqlite3_value *)pMem2)
-        );
+      if( pMem1->enc==pColl->enc ){
+        return pColl->xCmp(pColl->pUser,pMem1->n,pMem1->z,pMem2->n,pMem2->z);
       }else{
-        return pColl->xCmp16(
-          pColl->pUser,
-          sqlite3_value_bytes16((sqlite3_value *)pMem1),
-          sqlite3_value_text16((sqlite3_value *)pMem1),
-          sqlite3_value_bytes16((sqlite3_value *)pMem2),
-          sqlite3_value_text16((sqlite3_value *)pMem2)
-        );
+        switch( pColl->enc ){
+          case SQLITE_UTF8:
+            return pColl->xCmp(
+              pColl->pUser,
+              sqlite3_value_bytes((sqlite3_value *)pMem1),
+              sqlite3_value_text((sqlite3_value *)pMem1),
+              sqlite3_value_bytes((sqlite3_value *)pMem2),
+              sqlite3_value_text((sqlite3_value *)pMem2)
+            );
+          case SQLITE_UTF16LE:
+          case SQLITE_UTF16BE:
+            /* FIX ME: Handle non-native UTF-16 properly instead of
+            ** assuming it is always native. */
+            return pColl->xCmp(
+              pColl->pUser,
+              sqlite3_value_bytes16((sqlite3_value *)pMem1),
+              sqlite3_value_text16((sqlite3_value *)pMem1),
+              sqlite3_value_bytes16((sqlite3_value *)pMem2),
+              sqlite3_value_text16((sqlite3_value *)pMem2)
+            );
+          default:
+            assert(!"Cannot happen");
+        }
       }
     }
     /* If a NULL pointer was passed as the collate function, fall through

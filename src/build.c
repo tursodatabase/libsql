@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.213 2004/06/10 00:29:09 drh Exp $
+** $Id: build.c,v 1.214 2004/06/10 02:16:02 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -855,46 +855,147 @@ void sqlite3AddCollateType(Parse *pParse, const char *zType, int nType){
 /*
 ** Locate and return an entry from the db.aCollSeq hash table. If the entry
 ** specified by zName and nName is not found and parameter 'create' is
-** true, then create a new entry.
+** true, then create a new entry. Otherwise return NULL.
 **
-** FIX ME: For now, return NULL if create is not true and the entry is not
-** found. But this needs to change to call the collation factory.
+** Each pointer stored in the sqlite3.aCollSeq hash table contains an
+** array of three CollSeq structures. The first is the collation sequence
+** prefferred for UTF-8, the second UTF-16le, and the third UTF-16be.
 **
-** FIX ME: If we have a UTF-8 version of the collation function, and a
-** UTF-16 version would be better, should the collation factory be called?
-** If so should a flag be set to say that we already requested such a
-** function and couldn't get one?
+** Stored immediately after the three collation sequences is a copy of
+** the collation sequence name. A pointer to this string is stored in
+** each collation sequence structure.
 */
-CollSeq *sqlite3FindCollSeq(
-  sqlite *db, 
-  const char *zName, 
+static CollSeq * findCollSeqEntry(
+  sqlite *db,
+  const char *zName,
   int nName,
   int create
 ){
   CollSeq *pColl;
   if( nName<0 ) nName = strlen(zName);
   pColl = sqlite3HashFind(&db->aCollSeq, zName, nName);
+
   if( 0==pColl && create ){
-    pColl = sqliteMalloc( sizeof(*pColl) + nName + 1 );
+    pColl = sqliteMalloc( 3*sizeof(*pColl) + nName + 1 );
     if( pColl ){
-      pColl->zName = (char*)&pColl[1];
-      memcpy(pColl->zName, zName, nName+1);
-      sqlite3HashInsert(&db->aCollSeq, pColl->zName, nName, pColl);
+      pColl[0].zName = (char*)&pColl[3];
+      pColl[0].enc = TEXT_Utf8;
+      pColl[1].zName = (char*)&pColl[3];
+      pColl[1].enc = TEXT_Utf16le;
+      pColl[2].zName = (char*)&pColl[3];
+      pColl[2].enc = TEXT_Utf16be;
+      memcpy(pColl[0].zName, zName, nName+1);
+      sqlite3HashInsert(&db->aCollSeq, pColl[0].zName, nName, pColl);
     }
   }
   return pColl;
 }
 
+/*
+** Parameter zName points to a UTF-8 encoded string nName bytes long.
+** Return the CollSeq* pointer for the collation sequence named zName
+** for the encoding 'enc' from the database 'db'.
+**
+** If the entry specified is not found and 'create' is true, then create a
+** new entry.  Otherwise return NULL.
+*/
+CollSeq *sqlite3FindCollSeq(
+  sqlite *db,
+  u8 enc,
+  const char *zName,
+  int nName,
+  int create
+){
+  CollSeq *pColl = findCollSeqEntry(db, zName, nName, create);
+  if( pColl ) switch( enc ){
+    case TEXT_Utf8:
+      break;
+    case TEXT_Utf16le:
+      pColl = &pColl[2];
+      break;
+    case TEXT_Utf16be:
+      pColl = &pColl[1];
+      break;
+    default: 
+      assert(!"Cannot happen");
+  }
+  return pColl;
+}
+
+/*
+** This function returns the collation sequence for database native text
+** encoding identified by the string zName, length nName.
+**
+** If the requested collation sequence is not available, or not available
+** in the database native encoding, the collation factory is invoked to
+** request it. If the collation factory does not supply such a sequence,
+** and the sequence is available in another text encoding, then that is
+** returned instead.
+**
+** If no versions of the requested collations sequence are available, or
+** another error occurs, NULL is returned and an error message written into
+** pParse.
+*/
 CollSeq *sqlite3LocateCollSeq(Parse *pParse, const char *zName, int nName){
-  CollSeq *pColl = sqlite3FindCollSeq(pParse->db, zName, nName, 0);
-  if( !pColl ){
+  u8 enc = pParse->db->enc;
+  CollSeq *pColl = sqlite3FindCollSeq(pParse->db, enc, zName, nName, 0);
+  if( !pColl || !pColl->xCmp ){
+    /* No collation sequence of this type for this encoding is registered.
+    ** Call the collation factory to see if it can supply us with one.
+    */
+
+    /* FIX ME: Actually call collation factory, then call
+    ** sqlite3FindCollSeq() again.  */
+    pColl = sqlite3FindCollSeq(pParse->db, enc, zName, nName, 0);
+
+    if( pColl && !pColl->xCmp ){
+      /* The collation factory failed to deliver a function but there are
+      ** other versions of this collation function (for other text
+      ** encodings) available. Use one of these instead. Avoid a 
+      ** UTF-8 <-> UTF-16 conversion if possible.
+      */
+      CollSeq *pColl2 = 0;
+      switch( enc ){
+        case TEXT_Utf16le:
+          pColl2 = sqlite3FindCollSeq(pParse->db,TEXT_Utf16be,zName,nName,0);
+          assert( pColl2 );
+          if( pColl2->xCmp ) break;
+          pColl2 = sqlite3FindCollSeq(pParse->db,TEXT_Utf8,zName,nName,0);
+          assert( pColl2 );
+          break;
+
+        case TEXT_Utf16be:
+          pColl2 = sqlite3FindCollSeq(pParse->db,TEXT_Utf16le,zName,nName,0);
+          assert( pColl2 );
+          if( pColl2->xCmp ) break;
+          pColl2 = sqlite3FindCollSeq(pParse->db,TEXT_Utf8,zName,nName,0);
+          assert( pColl2 );
+          break;
+
+        case TEXT_Utf8:
+          pColl2 = sqlite3FindCollSeq(pParse->db,TEXT_Utf16be,zName,nName,0);
+          assert( pColl2 );
+          if( pColl2->xCmp ) break;
+          pColl2 = sqlite3FindCollSeq(pParse->db,TEXT_Utf16le,zName,nName,0);
+          assert( pColl2 );
+          break;
+      }
+
+      if( pColl2->xCmp ){
+        memcpy(pColl, pColl2, sizeof(CollSeq));
+      }
+    }
+  }
+
+  /* If nothing has been found, write the error message into pParse */
+  if( !pColl || !pColl->xCmp ){
     if( pParse->nErr==0 ){
-      sqlite3SetNString(&pParse->zErrMsg, 
-          "no such collation sequence: ", -1, 
+      sqlite3SetNString(&pParse->zErrMsg, "no such collation sequence: ", -1,
           zName, nName, 0);
     }
     pParse->nErr++;
   }
+
   return pColl;
 }
 

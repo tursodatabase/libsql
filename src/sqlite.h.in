@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.95 2004/06/09 09:55:18 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.96 2004/06/10 02:16:02 danielk1977 Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -963,17 +963,21 @@ void sqlite3_result_text(sqlite3_context*, const char*, int n, int eCopy);
 void sqlite3_result_text16(sqlite3_context*, const void*, int n, int eCopy);
 void sqlite3_result_value(sqlite3_context*, sqlite3_value*);
 
+#define SQLITE_UTF8    1
+#define SQLITE_UTF16LE 2
+#define SQLITE_UTF16BE 3
+
 int sqlite3_create_collation(
   sqlite3*, 
   const char *zName, 
-  int pref16, 
+  int enc, 
   void*,
   int(*xCompare)(void*,int,const void*,int,const void*)
 );
 int sqlite3_create_collation16(
   sqlite3*, 
   const char *zName, 
-  int pref16, 
+  int enc, 
   void*,
   int(*xCompare)(void*,int,const void*,int,const void*)
 );

@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.212 2004/06/10 01:30:59 drh Exp $
+** $Id: main.c,v 1.213 2004/06/10 02:16:02 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -257,6 +257,7 @@ static int sqlite3InitOne(sqlite *db, int iDb, char **pzErrMsg){
     if( iDb==0 ){
       /* If opening the main database, set db->enc. */
       db->enc = (u8)meta[4];
+      db->pDfltColl = sqlite3FindCollSeq(db, db->enc, "BINARY", 6, 0);
     }else{
       /* If opening an attached database, the encoding much match db->enc */
       if( meta[4]!=db->enc ){
@@ -488,6 +489,12 @@ void sqlite3_close(sqlite *db){
       sqliteFree(pFunc);
     }
   }
+
+  for(i=sqliteHashFirst(&db->aFunc); i; i=sqliteHashNext(i)){
+    CollSeq *pColl = (CollSeq *)sqliteHashData(i);
+    /* sqliteFree(pColl); */
+  }
+
   sqlite3HashClear(&db->aFunc);
   sqlite3Error(db, SQLITE_OK, 0); /* Deallocates any cached error strings. */
   sqliteFree(db);
@@ -1058,9 +1065,10 @@ static int openDatabase(
   ** and UTF-16, so add a version for each to avoid any unnecessary
   ** conversions. The only error that can occur here is a malloc() failure.
   */
-  sqlite3_create_collation(db, "BINARY", 0, 0, binaryCollatingFunc);
-  sqlite3_create_collation(db, "BINARY", 1, 0, binaryCollatingFunc);
-  db->pDfltColl = sqlite3FindCollSeq(db, "BINARY", 6, 0);
+  sqlite3_create_collation(db, "BINARY", SQLITE_UTF8, 0,binaryCollatingFunc);
+  sqlite3_create_collation(db, "BINARY", SQLITE_UTF16LE, 0,binaryCollatingFunc);
+  sqlite3_create_collation(db, "BINARY", SQLITE_UTF16BE, 0,binaryCollatingFunc);
+  db->pDfltColl = sqlite3FindCollSeq(db, db->enc, "BINARY", 6, 0);
   if( !db->pDfltColl ){
     rc = db->errCode;
     assert( rc!=SQLITE_OK );
@@ -1069,7 +1077,7 @@ static int openDatabase(
   }
 
   /* Also add a UTF-8 case-insensitive collation sequence. */
-  sqlite3_create_collation(db, "NOCASE", 0, 0, nocaseCollatingFunc);
+  sqlite3_create_collation(db, "NOCASE", SQLITE_UTF8, 0, nocaseCollatingFunc);
 
   /* Open the backend database driver */
   if( zFilename[0]==':' && strcmp(zFilename,":memory:")==0 ){
@@ -1172,36 +1180,40 @@ int sqlite3_reset(sqlite3_stmt *pStmt){
 int sqlite3_create_collation(
   sqlite3* db, 
   const char *zName, 
-  int pref16, 
+  int enc, 
   void* pCtx,
   int(*xCompare)(void*,int,const void*,int,const void*)
 ){
   CollSeq *pColl;
   int rc = SQLITE_OK;
-  pColl = sqlite3FindCollSeq(db, zName, strlen(zName), 1);
+  if( enc!=SQLITE_UTF8 && enc!=SQLITE_UTF16LE && enc!=SQLITE_UTF16BE ){
+    sqlite3Error(db, SQLITE_ERROR, 
+        "Param 3 to sqlite3_create_collation() must be one of "
+        "SQLITE_UTF8, SQLITE_UTF16LE or SQLITE_UTF16BE"
+    );
+    return SQLITE_ERROR;
+  }
+  pColl = sqlite3FindCollSeq(db, (u8)enc, zName, strlen(zName), 1);
   if( 0==pColl ){
    rc = SQLITE_NOMEM;
-  }else if( pref16 ){
-    pColl->xCmp16 = xCompare;
-    pColl->pUser16 = pCtx;
   }else{
     pColl->xCmp = xCompare;
     pColl->pUser = pCtx;
   }
   sqlite3Error(db, rc, 0);
-  return SQLITE_OK;
+  return rc;
 }
 
 int sqlite3_create_collation16(
   sqlite3* db, 
   const char *zName, 
-  int pref16, 
+  int enc, 
   void* pCtx,
   int(*xCompare)(void*,int,const void*,int,const void*)
 ){
   int rc;
   char *zName8 = sqlite3utf16to8(zName, -1, SQLITE_BIGENDIAN);
-  rc = sqlite3_create_collation(db, zName8, pref16, pCtx, xCompare);
+  rc = sqlite3_create_collation(db, zName8, enc, pCtx, xCompare);
   sqliteFree(zName8);
   return rc;
 }

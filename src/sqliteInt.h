@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.278 2004/06/10 01:30:59 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.279 2004/06/10 02:16:02 danielk1977 Exp $
 */
 #include "config.h"
 #include "sqlite3.h"
@@ -512,10 +512,9 @@ struct Column {
 */
 struct CollSeq {
   char *zName;         /* Name of the collating sequence, UTF-8 encoded */
+  u8 enc;              /* Text encoding handled by xCmp() */
   void *pUser;         /* First argument to xCmp() */
-  void *pUser16;       /* First argument to xCmp16() */
   int (*xCmp)(void*,int, const void*, int, const void*);
-  int (*xCmp16)(void*,int, const void*, int, const void*);
 };
 
 /*
@@ -1394,6 +1393,6 @@ int sqlite3TwoPartName(Parse *, Token *, Token *, Token **);
 const char *sqlite3ErrStr(int);
 int sqlite3ReadUniChar(const char *zStr, int *pOffset, u8 *pEnc, int fold);
 int sqlite3ReadSchema(sqlite *db, char **);
-CollSeq *sqlite3FindCollSeq(sqlite *,const char *,int,int);
+CollSeq *sqlite3FindCollSeq(sqlite *,u8 enc, const char *,int,int);
 CollSeq *sqlite3LocateCollSeq(Parse *pParse, const char *zName, int nName);
 CollSeq *sqlite3ExprCollSeq(Expr *pExpr);

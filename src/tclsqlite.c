@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.81 2004/06/09 09:55:19 danielk1977 Exp $
+** $Id: tclsqlite.c,v 1.82 2004/06/10 02:16:02 danielk1977 Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -917,7 +917,8 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     pCollate->pNext = pDb->pCollate;
     pCollate->zScript = (char*)&pCollate[1];
     strcpy(pCollate->zScript, zScript);
-    if( sqlite3_create_collation(pDb->db, zName, 0, pCollate, tclSqlCollate) ){
+    if( sqlite3_create_collation(pDb->db, zName, SQLITE_UTF8, 
+        pCollate, tclSqlCollate) ){
       return TCL_ERROR;
     }
     break;
