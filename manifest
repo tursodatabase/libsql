@@ -1,5 +1,5 @@
-C The\sINSERT\scode\sgenerator\sdoes\sa\sbetter\sjob\sof\sdetecting\sif\sthe\stable\nbeing\swritten\sinto\sis\sused\sin\sthe\sSELECT\son\sthe\sright-hand\sside.\nticket\s#901.\s(CVS\s1961)
-D 2004-09-17T17:23:15
+C Fix\sa\sbug\sin\sthe\stest3.c\smodule\sthat\swas\scausing\sfailures\sin\sbtree5.test.\s(CVS\s1962)
+D 2004-09-17T19:39:24
 F Makefile.in 9cdfc3af2647055085969968ca2394f24c3c6166
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -65,7 +65,7 @@ F src/table.c 8168c6e824009f8485bff79fc60ea8fea6829b10
 F src/tclsqlite.c 0302e3f42f015d132d1291f3388c06e86c24a008
 F src/test1.c 1305825c29575ee55a1c8b98a191669fd78b6287
 F src/test2.c 0f3e0ad7b675a6f3323211ab4ea95490855654c3
-F src/test3.c 1df9ea27467e50666e574ebe22d434288beb3050
+F src/test3.c 5b5b0f3d11b097399c1054fff73d8f3711092301
 F src/test4.c 7c6b9fc33dd1f3f93c7f1ee6e5e6d016afa6c1df
 F src/test5.c b001fa7f1b9e2dc5c2331de62fc641b5ab2bd7a1
 F src/tokenize.c 418ef7ba1149603a30dcf0057e04a3ea0e99edbe
@@ -247,7 +247,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 0cc2f40e6afa157ead45140c4e28a9a33c469b73
-R 4638fdb57c25dfafa54254201f37cbfd
+P 709bb22d6ddbd713029059180aaf77ac483b5bb8
+R dc044bae1d961706b839b683870afbd2
 U drh
-Z 58d52698abacf48a5d5a56e83ebdab52
+Z d2ace6ff4a13f602608f2ad24423bdd0
