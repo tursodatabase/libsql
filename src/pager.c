@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.188 2005/02/06 02:45:42 drh Exp $
+** @(#) $Id: pager.c,v 1.189 2005/02/15 02:54:15 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -168,6 +168,9 @@ struct PgHdr {
   u8 alwaysRollback;             /* Disable dont_rollback() for this page */
   short int nRef;                /* Number of users of this page */
   PgHdr *pDirty;                 /* Dirty pages sorted by PgHdr.pgno */
+#ifdef SQLITE_CHECK_PAGES
+  u32 pageHash;
+#endif
   /* pPager->psAligned bytes of page data follow this header */
   /* Pager.nExtra bytes of local data follow the page data */
 };
@@ -450,6 +453,36 @@ static int pager_errcode(Pager *pPager){
   if( pPager->errMask & PAGER_ERR_CORRUPT ) rc = SQLITE_CORRUPT;
   return rc;
 }
+
+#ifdef SQLITE_CHECK_PAGES
+/*
+** Return a 32-bit hash of the page data for pPage.
+*/
+static u32 pager_pagehash(PgHdr *pPage){
+  u32 hash = 0;
+  int i;
+  unsigned char *pData = (unsigned char *)PGHDR_TO_DATA(pPage);
+  for(i=0; i<pPage->pPager->pageSize; i++){
+    hash = (hash+i)^pData[i];
+  }
+  return hash;
+}
+
+/*
+** The CHECK_PAGE macro takes a PgHdr* as an argument. If SQLITE_CHECK_PAGES
+** is defined, and NDEBUG is not defined, an assert() statement checks
+** that the page is either dirty or still matches the calculated page-hash.
+*/
+#define CHECK_PAGE(x) checkPage(x)
+static void checkPage(PgHdr *pPg){
+  Pager *pPager = pPg->pPager;
+  assert( !pPg->pageHash || pPager->errMask || MEMDB || pPg->dirty || 
+      pPg->pageHash==pager_pagehash(pPg) );
+}
+
+#else
+#define CHECK_PAGE(x)
+#endif
 
 /*
 ** When this is called the journal file for pager pPager must be open.
@@ -841,6 +874,9 @@ static int pager_unwritelock(Pager *pPager){
       pPg->inJournal = 0;
       pPg->dirty = 0;
       pPg->needSync = 0;
+#ifdef SQLITE_CHECK_PAGES
+      pPg->pageHash = pager_pagehash(pPg);
+#endif
     }
     pPager->dirtyCache = 0;
     pPager->nRec = 0;
@@ -958,6 +994,9 @@ static int pager_playback_one_page(Pager *pPager, OsFile *jfd, int useCksum){
     if( pPager->state>=PAGER_EXCLUSIVE ){
       pPg->dirty = 0;
       pPg->needSync = 0;
+#ifdef SQLITE_CHECK_PAGES
+      pPg->pageHash = pager_pagehash(pPg);
+#endif
     }
     CODEC(pPager, pData, pPg->pgno, 3);
   }
@@ -1086,6 +1125,9 @@ static int pager_reload_cache(Pager *pPager){
     }
     pPg->needSync = 0;
     pPg->dirty = 0;
+#ifdef SQLITE_CHECK_PAGES
+    pPg->pageHash = pager_pagehash(pPg);
+#endif
   }
   return rc;
 }
@@ -2101,6 +2143,9 @@ static int pager_write_pagelist(PgHdr *pList){
 #endif
     if( rc ) return rc;
     pList->dirty = 0;
+#ifdef SQLITE_CHECK_PAGES
+    pList->pageHash = pager_pagehash(pList);
+#endif
     pList = pList->pDirty;
   }
   return SQLITE_OK;
@@ -2388,6 +2433,9 @@ int sqlite3pager_get(Pager *pPager, Pgno pgno, void **ppPage){
         pPager->nRead++;
       }
     }
+#ifdef SQLITE_CHECK_PAGES
+    pPg->pageHash = pager_pagehash(pPg);
+#endif
   }else{
     /* The requested page is in the page cache. */
     pPager->nHit++;
@@ -2439,6 +2487,8 @@ int sqlite3pager_unref(void *pData){
   assert( pPg->nRef>0 );
   pPg->nRef--;
   REFINFO(pPg);
+
+  CHECK_PAGE(pPg);
 
   /* When the number of references to a page reach 0, call the
   ** destructor and add the page to the freelist.
@@ -2627,6 +2677,8 @@ int sqlite3pager_write(void *pData){
   }
 
   assert( !pPager->setMaster );
+
+  CHECK_PAGE(pPg);
 
   /* Mark the page as dirty.  If the page has already been written
   ** to the journal then we can return right away.
@@ -2831,6 +2883,9 @@ void sqlite3pager_dont_write(Pager *pPager, Pgno pgno){
     }else{
       TRACE3("DONT_WRITE page %d of %d\n", pgno, PAGERID(pPager));
       pPg->dirty = 0;
+#ifdef SQLITE_CHECK_PAGES
+      pPg->pageHash = pager_pagehash(pPg);
+#endif
     }
   }
 }
