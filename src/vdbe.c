@@ -36,7 +36,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.197 2003/01/12 17:35:00 drh Exp $
+** $Id: vdbe.c,v 1.198 2003/01/16 13:42:43 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -928,7 +928,8 @@ static void hardRealify(Vdbe *p, int i){
 static void PopStack(Vdbe *p, int N){
   assert( N>=0 );
   if( p->zStack==0 ) return;
-  assert( p->aStack );
+  assert( p->aStack || sqlite_malloc_failed );
+  if( p->aStack==0 ) return;
   while( N-- > 0 ){
     if( p->aStack[p->tos].flags & STK_Dyn ){
       sqliteFree(p->zStack[p->tos]);

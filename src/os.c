@@ -1429,4 +1429,3 @@ char *sqliteOsFullPathname(const char *zRelative){
   return zFull;
 #endif
 }
-

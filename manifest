@@ -1,5 +1,5 @@
-C Finish\sout\sthe\stest\ssuite\sfor\sthe\snew\ssqlite_set_authorizer\sAPI.\s(CVS\s834)
-D 2003-01-14T13:48:21
+C Improvements\sto\sthe\spager\sto\shelp\slarge\supdates\sagainst\sa\slarge\sdatabase\srun\nfaster.\s\sAlso\simproved\sthe\stesting\sof\sthe\spager\srollback\salgorithms.\s(CVS\s835)
+D 2003-01-16T13:42:43
 F Makefile.in 6606854b1512f185b8e8c779b8d7fc2750463d64
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -31,9 +31,9 @@ F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
 F src/insert.c db954e955970795819145a3649fd2ad116a58890
 F src/main.c c8f8fdfe4548a8404fab90ff6ad374b217e6b7fa
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
-F src/os.c 28447687e7914306650f72058f62f7162faeef1f
+F src/os.c 3a652608c296cf639ce63bd31d255db862e45685
 F src/os.h afa3e096213bad86845f8bdca81a9e917505e401
-F src/pager.c 5b81639b38eb4250810ed2b31aada9fb040ed86b
+F src/pager.c 081155624cff7bec54590133b69906a23f9b3659
 F src/pager.h 540833e8cb826b80ce2e39aa917deee5e12db626
 F src/parse.y 58655a50817f93ddd0bc3d8949e267729396949c
 F src/printf.c 5c50fc1da75c8f5bf432b1ad17d91d6653acd167
@@ -53,7 +53,7 @@ F src/tokenize.c 7ac1c33e0149647c9eb5959c48992df6906d4809
 F src/trigger.c da142decd2808bc39e801f3bb1f161dbc2bd4005
 F src/update.c f06afa9bf1f777d17702e0f6e33cf44c44bc4f75
 F src/util.c e23f8ffc654923e18f8db2d8e0de97c166fca20f
-F src/vdbe.c e103bd5a154b1790dd344662dceb14566a51a879
+F src/vdbe.c dc0a9c1b815c95b14ffe62765cfd528d974c6c1b
 F src/vdbe.h 754eba497cfe0c3e352b9c101ab2f811f10d0a55
 F src/where.c 5bf7f1e1d756ab3d25a18b24bb42106cb8e14d18
 F test/all.test 873d30e25a41b3aa48fec5633a7ec1816e107029
@@ -110,7 +110,7 @@ F test/tester.tcl 6f603d90881bd835ea27c568a7fecaa57dce91cc
 F test/trans.test 10b53c77e2cc4ad9529c15fdcb390b8d5722ea65
 F test/trigger1.test ec1da76e1a9f618deb96e505f459dcf8a23f2247
 F test/trigger2.test ee346d8c612e7f847c9543058f1b89d094d27ffb
-F test/trigger3.test 2bf76f7367a36242f670026af542d9f60efe3dc6
+F test/trigger3.test 5958cdb44e95842298436cb61d5de5251ec2d28e
 F test/trigger4.test 9a5c1406344d743020c2753ae8d6dfe6eb75f818
 F test/unique.test 572aa791327c1e8d797932263e9d67f176cfdb44
 F test/update.test 7ffb062d580a972e7870d0f51d5af3ab9bfeae08
@@ -154,7 +154,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P ba58979f2ff3ec878a21e7c171fbcd8fa79ace6f
-R d196fd62af24b9896e18def719841a67
+P 701a73918db22fd134a8b959670ba7a4a908c8c5
+R 542f195ac0271d966b46ad74cdefd9a5
 U drh
-Z 0dca7f72990a1e352389dd411ae1fee0
+Z 7a6aa3269b75773568aa62b73bab365a
