@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE TABLE statement.
 #
-# $Id: table.test,v 1.12 2001/09/16 00:13:28 drh Exp $
+# $Id: table.test,v 1.13 2001/09/27 15:11:55 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -163,7 +163,7 @@ set big_table \
 )}
 do_test table-3.1 {
   execsql $big_table
-  execsql {SELECT sql FROM sqlite_master WHERE type!='meta'}
+  execsql {SELECT sql FROM sqlite_master WHERE type=='table'}
 } \{$big_table\}
 do_test table-3.2 {
   set v [catch {execsql {CREATE TABLE BIG(xyz foo)}} msg]

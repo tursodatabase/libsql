@@ -15,7 +15,7 @@
 ** or VDBE.  The VDBE implements an abstract machine that runs a
 ** simple program to access and modify the underlying database.
 **
-** $Id: vdbe.h,v 1.24 2001/09/23 02:35:53 drh Exp $
+** $Id: vdbe.h,v 1.25 2001/09/27 15:11:55 drh Exp $
 */
 #ifndef _SQLITE_VDBE_H_
 #define _SQLITE_VDBE_H_
@@ -38,6 +38,7 @@ struct VdbeOp {
   int p1;             /* First operand */
   int p2;             /* Second parameter (often the jump destination) */
   char *p3;           /* Third parameter */
+  int p3dyn;          /* True if p3 is malloced.  False if it is static */
 };
 typedef struct VdbeOp VdbeOp;
 
@@ -187,12 +188,10 @@ typedef struct VdbeOp VdbeOp;
 */
 Vdbe *sqliteVdbeCreate(sqlite*);
 void sqliteVdbeCreateCallback(Vdbe*, int*);
-void sqliteVdbeTableRootAddr(Vdbe*, int*);
-void sqliteVdbeIndexRootAddr(Vdbe*, int*);
 int sqliteVdbeAddOp(Vdbe*,int,int,int,const char*,int);
 int sqliteVdbeAddOpList(Vdbe*, int nOp, VdbeOp const *aOp);
 void sqliteVdbeChangeP1(Vdbe*, int addr, int P1);
-void sqliteVdbeChangeP3(Vdbe*, int addr, const char *zP1, int N);
+void sqliteVdbeChangeP3(Vdbe*, int addr, char *zP1, int N);
 void sqliteVdbeDequoteP3(Vdbe*, int addr);
 int sqliteVdbeMakeLabel(Vdbe*);
 void sqliteVdbeDelete(Vdbe*);

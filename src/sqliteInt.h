@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.55 2001/09/27 03:22:33 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.56 2001/09/27 15:11:54 drh Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -444,6 +444,7 @@ void sqliteExprCode(Parse*, Expr*);
 void sqliteExprIfTrue(Parse*, Expr*, int);
 void sqliteExprIfFalse(Parse*, Expr*, int);
 Table *sqliteFindTable(sqlite*,char*);
+Index *sqliteFindIndex(sqlite*,char*);
 void sqliteCopy(Parse*, Token*, Token*, Token*);
 void sqliteVacuum(Parse*, Token*);
 int sqliteGlobCompare(const unsigned char*,const unsigned char*);

@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.33 2001/09/16 00:13:27 drh Exp $
+** $Id: shell.c,v 1.34 2001/09/27 15:11:54 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -648,6 +648,7 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
                       "  type text,\n"
                       "  name text,\n"
                       "  tbl_name text,\n"
+                      "  rootpage integer,\n"
                       "  sql text\n"
                       ")";
         new_argv[1] = 0;

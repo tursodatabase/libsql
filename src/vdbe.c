@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.78 2001/09/27 03:22:34 drh Exp $
+** $Id: vdbe.c,v 1.79 2001/09/27 15:11:54 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -202,8 +202,6 @@ struct Vdbe {
   Agg agg;            /* Aggregate information */
   int nSet;           /* Number of sets allocated */
   Set *aSet;          /* An array of sets */
-  int *pTableRoot;    /* Write root page no. for new tables to this addr */
-  int *pIndexRoot;    /* Write root page no. for new indices to this addr */
   int nFetch;         /* Number of OP_Fetch instructions executed */
 };
 
@@ -224,24 +222,6 @@ Vdbe *sqliteVdbeCreate(sqlite *db){
 */
 void sqliteVdbeTrace(Vdbe *p, FILE *trace){
   p->trace = trace;
-}
-
-/*
-** Cause the next OP_CreateTable or OP_CreateIndex instruction that executes
-** to write the page number of the root page for the new table or index it
-** creates into the memory location *pAddr.
-**
-** The pointer to the place to write the page number is cleared after
-** the OP_Create* statement.  If OP_Create* is executed and the pointer
-** is NULL, an error results.  Hence the address can only be used once.
-** If the root address fields are set but OP_Create* operations never
-** execute, that too is an error.
-*/
-void sqliteVdbeTableRootAddr(Vdbe *p, int *pAddr){
-  p->pTableRoot = pAddr;
-}
-void sqliteVdbeIndexRootAddr(Vdbe *p, int *pAddr){
-  p->pIndexRoot = pAddr;
 }
 
 /*
@@ -288,6 +268,7 @@ int sqliteVdbeAddOp(Vdbe *p, int op, int p1, int p2, const char *p3, int lbl){
   p->aOp[i].p2 = p2;
   if( p3 && p3[0] ){
     p->aOp[i].p3 = sqliteStrDup(p3);
+    p->aOp[i].p3dyn = 1;
   }else{
     p->aOp[i].p3 = 0;
   }
@@ -367,10 +348,28 @@ void sqliteVdbeChangeP1(Vdbe *p, int addr, int val){
 ** This routine is useful when a large program is loaded from a
 ** static array using sqliteVdbeAddOpList but we want to make a
 ** few minor changes to the program.
+**
+** If n>=0 then the P3 operand is dynamic, meaning that a copy of
+** the string is made into memory obtained from sqliteMalloc().
+** A value of n==0 means copy bytes of zP3 up to and including the
+** first null byte.  If n>0 then copy n+1 bytes of zP3.
+**
+** If n<0 then zP3 is assumed to be a pointer to a static string.
+** P3 is made to point directly to this string without any copying.
 */
-void sqliteVdbeChangeP3(Vdbe *p, int addr, const char *zP3, int n){
+void sqliteVdbeChangeP3(Vdbe *p, int addr, char *zP3, int n){
   if( p && addr>=0 && p->nOp>addr && zP3 ){
-    sqliteSetNString(&p->aOp[addr].p3, zP3, n, 0);
+    Op *pOp = &p->aOp[addr];
+    if( pOp->p3 && pOp->p3dyn ){
+      sqliteFree(pOp->p3);
+    }
+    if( n<0 ){
+      pOp->p3 = zP3;
+      pOp->p3dyn = 0;
+    }else{
+      sqliteSetNString(&p->aOp[addr].p3, zP3, n, 0);
+      pOp->p3dyn = 1;
+    }
   }
 }
 
@@ -384,10 +383,15 @@ void sqliteVdbeChangeP3(Vdbe *p, int addr, const char *zP3, int n){
 ** resolve to be a single actual quote character within the string.
 */
 void sqliteVdbeDequoteP3(Vdbe *p, int addr){
-  char *z;
+  Op *pOp;
   if( addr<0 || addr>=p->nOp ) return;
-  z = p->aOp[addr].p3;
-  if( z ) sqliteDequote(z);
+  pOp = &p->aOp[addr];
+  if( pOp->p3==0 || pOp->p3[0]==0 ) return;
+  if( !pOp->p3dyn ){
+    pOp->p3 = sqliteStrDup(pOp->p3);
+    pOp->p3dyn = 1;
+  }
+  if( pOp->p3 ) sqliteDequote(pOp->p3);
 }
 
 /*
@@ -398,8 +402,14 @@ void sqliteVdbeDequoteP3(Vdbe *p, int addr){
 void sqliteVdbeCompressSpace(Vdbe *p, int addr){
   char *z;
   int i, j;
+  Op *pOp;
   if( addr<0 || addr>=p->nOp ) return;
-  z = p->aOp[addr].p3;
+  pOp = &p->aOp[addr];
+  if( !pOp->p3dyn ){
+    pOp->p3 = sqliteStrDup(pOp->p3);
+    pOp->p3dyn = 1;
+  }
+  z = pOp->p3;
   if( z==0 ) return;
   i = j = 0;
   while( isspace(z[i]) ){ i++; }
@@ -747,8 +757,6 @@ static void Cleanup(Vdbe *p){
   sqliteFree(p->aSet);
   p->aSet = 0;
   p->nSet = 0;
-  p->pTableRoot = 0;
-  p->pIndexRoot = 0;
 }
 
 /*
@@ -763,7 +771,9 @@ void sqliteVdbeDelete(Vdbe *p){
     p->nOp = 0;
   }
   for(i=0; i<p->nOp; i++){
-    sqliteFree(p->aOp[i].p3);
+    if( p->aOp[i].p3dyn ){
+      sqliteFree(p->aOp[i].p3);
+    }
   }
   sqliteFree(p->aOp);
   sqliteFree(p->aLabel);
@@ -2618,7 +2628,7 @@ case OP_BeginIdx: {
     if( Stringify(p, tos) ) goto no_mem;
     if( pCrsr->zKey ) sqliteFree(pCrsr->zKey);
     pCrsr->nKey = aStack[tos].n;
-    pCrsr->zKey = sqliteMalloc( pCrsr->nKey );
+    pCrsr->zKey = sqliteMalloc( pCrsr->nKey+1 );
     if( pCrsr->zKey==0 ) goto no_mem;
     memcpy(pCrsr->zKey, zStack[tos], aStack[tos].n);
     pCrsr->zKey[aStack[tos].n] = 0;
@@ -2774,17 +2784,15 @@ case OP_Clear: {
   break;
 }
 
-/* Opcode: CreateTable * * *
+/* Opcode: CreateTable * * P3
 **
 ** Allocate a new table in the main database file.  Push the page number
 ** for the root page of the new table onto the stack.
 **
-** The root page number is also written to a memory location which has
-** be set up by the parser.  The difference between CreateTable and
-** CreateIndex is that each writes its root page number into a different
-** memory location.  This writing of the page number into a memory location
-** is used by the SQL parser to record the page number in its internal
-** data structures.
+** The root page number is also written to a memory location that P3
+** points to.  This is the mechanism is used to write the root page
+** number into the parser's internal data structures that describe the
+** new table.
 **
 ** See also: CreateIndex
 */
@@ -2792,31 +2800,26 @@ case OP_CreateTable: {
   int i = ++p->tos;
   int pgno;
   VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
-  if( p->pTableRoot==0 ){
-    rc = SQLITE_INTERNAL;
-    goto abort_due_to_error;
-  }
+  assert( pOp->p3!=0 && pOp->p3dyn==0 );
   rc = sqliteBtreeCreateTable(pBt, &pgno);
   if( rc==SQLITE_OK ){
     aStack[i].i = pgno;
     aStack[i].flags = STK_Int;
-    *p->pTableRoot = pgno;
-    p->pTableRoot = 0;
+    *(u32*)pOp->p3 = pgno;
+    pOp->p3 = 0;
   }
   break;
 }
 
-/* Opcode: CreateIndex P1 * *
+/* Opcode: CreateIndex * * P3
 **
 ** Allocate a new Index in the main database file.  Push the page number
 ** for the root page of the new table onto the stack.
 **
-** The root page number is also written to a memory location which has
-** be set up by the parser.  The difference between CreateTable and
-** CreateIndex is that each writes its root page number into a different
-** memory location.  This writing of the page number into a memory location
-** is used by the SQL parser to record the page number in its internal
-** data structures.
+** The root page number is also written to a memory location that P3
+** points to.  This is the mechanism is used to write the root page
+** number into the parser's internal data structures that describe the
+** new index.
 **
 ** See also: CreateTable
 */
@@ -2824,16 +2827,13 @@ case OP_CreateIndex: {
   int i = ++p->tos;
   int pgno;
   VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
-  if( p->pIndexRoot==0 ){
-    rc = SQLITE_INTERNAL;
-    goto abort_due_to_error;
-  }
+  assert( pOp->p3!=0 && pOp->p3dyn==0 );
   rc = sqliteBtreeCreateTable(pBt, &pgno);
   if( rc==SQLITE_OK ){
     aStack[i].i = pgno;
     aStack[i].flags = STK_Int;
-    *p->pIndexRoot = pgno;
-    p->pIndexRoot = 0;
+    *(u32*)pOp->p3 = pgno;
+    pOp->p3 = 0;
   }
   break;
 }
@@ -3865,10 +3865,6 @@ default: {
 
 cleanup:
   Cleanup(p);
-  if( (p->pTableRoot || p->pIndexRoot) && rc==SQLITE_OK ){
-    rc = SQLITE_INTERNAL;
-    sqliteSetString(pzErrMsg, "table or index root page not set", 0);
-  }
   if( rc!=SQLITE_OK ){
     closeAllCursors(p);
     sqliteBtreeRollback(pBt);

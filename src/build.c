@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.42 2001/09/27 03:22:33 drh Exp $
+** $Id: build.c,v 1.43 2001/09/27 15:11:54 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -343,6 +343,7 @@ void sqliteStartTable(Parse *pParse, Token *pStart, Token *pName){
   Table *pTable;
   char *zName;
   sqlite *db = pParse->db;
+  Vdbe *v;
 
   pParse->sFirstToken = *pStart;
   zName = sqliteTableNameFromToken(pName);
@@ -370,13 +371,13 @@ void sqliteStartTable(Parse *pParse, Token *pStart, Token *pName){
   pTable->pIndex = 0;
   if( pParse->pNewTable ) sqliteDeleteTable(db, pParse->pNewTable);
   pParse->pNewTable = pTable;
-  if( !pParse->initFlag && (db->flags & SQLITE_InTrans)==0 ){
-    Vdbe *v = sqliteGetVdbe(pParse);
-    if( v ){
+  if( !pParse->initFlag && (v = sqliteGetVdbe(pParse))!=0 ){
+    if( (db->flags & SQLITE_InTrans)==0 ){
       sqliteVdbeAddOp(v, OP_Transaction, 0, 0, 0, 0);
       sqliteVdbeAddOp(v, OP_VerifyCookie, db->schema_cookie, 0, 0, 0);
       pParse->schemaVerified = 1;
     }
+    sqliteVdbeAddOp(v, OP_OpenWrite, 0, 2, MASTER_NAME, 0);
   }
 }
 
@@ -491,47 +492,28 @@ void sqliteEndTable(Parse *pParse, Token *pEnd){
   */
   if( pParse->initFlag ){
     p->tnum = pParse->newTnum;
-    if( p->pIndex ){
-      p->pIndex->tnum = pParse->newKnum;
-    }
   }
 
   /* If not initializing, then create a record for the new table
   ** in the SQLITE_MASTER table of the database.
   */
   if( !pParse->initFlag ){
-    int n, base;
+    int n, addr;
     Vdbe *v;
 
     v = sqliteGetVdbe(pParse);
     if( v==0 ) return;
     n = (int)pEnd->z - (int)pParse->sFirstToken.z + 1;
-    sqliteVdbeAddOp(v, OP_OpenWrite, 0, 2, MASTER_NAME, 0);
     sqliteVdbeAddOp(v, OP_NewRecno, 0, 0, 0, 0);
     sqliteVdbeAddOp(v, OP_String, 0, 0, "table", 0);
     sqliteVdbeAddOp(v, OP_String, 0, 0, p->zName, 0);
     sqliteVdbeAddOp(v, OP_String, 0, 0, p->zName, 0);
-    sqliteVdbeAddOp(v, OP_CreateTable, 0, 0, 0, 0);
-    sqliteVdbeTableRootAddr(v, &p->tnum);
-    if( p->pIndex ){
-      /* If the table has a primary key, create an index in the database
-      ** for that key and record the root page of the index in the "knum"
-      ** column of of the SQLITE_MASTER table.
-      */
-      Index *pIndex = p->pIndex;
-      assert( pIndex->pNext==0 );
-      assert( pIndex->tnum==0 );
-      sqliteVdbeAddOp(v, OP_CreateIndex, 0, 0, 0, 0),
-      sqliteVdbeIndexRootAddr(v, &pIndex->tnum);
-    }else{
-      /* If the table does not have a primary key, the "knum" column is 
-      ** fill with a NULL value.
-      */
-      sqliteVdbeAddOp(v, OP_Null, 0, 0, 0, 0);
-    }
-    base = sqliteVdbeAddOp(v, OP_String, 0, 0, 0, 0);
-    sqliteVdbeChangeP3(v, base, pParse->sFirstToken.z, n);
-    sqliteVdbeAddOp(v, OP_MakeRecord, 6, 0, 0, 0);
+    addr = sqliteVdbeAddOp(v, OP_CreateTable, 0, 0, 0, 0);
+    sqliteVdbeChangeP3(v, addr, (char *)&p->tnum, -1);
+    p->tnum = 0;
+    addr = sqliteVdbeAddOp(v, OP_String, 0, 0, 0, 0);
+    sqliteVdbeChangeP3(v, addr, pParse->sFirstToken.z, n);
+    sqliteVdbeAddOp(v, OP_MakeRecord, 5, 0, 0, 0);
     sqliteVdbeAddOp(v, OP_Put, 0, 0, 0, 0);
     changeCookie(db);
     sqliteVdbeAddOp(v, OP_SetCookie, db->next_cookie, 0, 0, 0);
@@ -634,11 +616,13 @@ void sqliteDropTable(Parse *pParse, Token *pName){
 /*
 ** Create a new index for an SQL table.  pIndex is the name of the index 
 ** and pTable is the name of the table that is to be indexed.  Both will 
-** be NULL for a primary key.  In that case, use pParse->pNewTable as the 
-** table to be indexed.
+** be NULL for a primary key or an index that is created to satisfy a
+** UNIQUE constraint.  If pTable and pIndex are NULL, use pParse->pNewTable
+** as the table to be indexed.
 **
 ** pList is a list of columns to be indexed.  pList will be NULL if the
-** most recently added column of the table is labeled as the primary key.
+** most recently added column of the table is the primary key or has
+** the UNIQUE constraint.
 */
 void sqliteCreateIndex(
   Parse *pParse,   /* All information about this parse */
@@ -679,8 +663,8 @@ void sqliteCreateIndex(
   /*
   ** Find the name of the index.  Make sure there is not already another
   ** index or table with the same name.  If pName==0 it means that we are
-  ** dealing with a primary key, which has no name, so this step can be
-  ** skipped.
+  ** dealing with a primary key or UNIQUE constraint.  We have to invent our
+  ** own name.
   */
   if( pName ){
     zName = sqliteTableNameFromToken(pName);
@@ -698,8 +682,13 @@ void sqliteCreateIndex(
       goto exit_create_index;
     }
   }else{
+    char zBuf[30];
+    int n;
+    Index *pLoop;
+    for(pLoop=pTab->pIndex, n=1; pLoop; pLoop=pLoop->pNext, n++){}
+    sprintf(zBuf,"%d)",n);
     zName = 0;
-    sqliteSetString(&zName, pTab->zName, " (primary key)", 0);
+    sqliteSetString(&zName, "(", pTab->zName, " autoindex ", zBuf, 0);
     if( zName==0 ) goto exit_create_index;
   }
 
@@ -746,16 +735,12 @@ void sqliteCreateIndex(
   }
 
   /* Link the new Index structure to its table and to the other
-  ** in-memory database structures.  Note that primary key indices
-  ** do not appear in the index hash table.
+  ** in-memory database structures. 
   */
-  if( pParse->explain==0 ){
-    if( pName!=0 ){
-      char *zName = pIndex->zName;;
-      sqliteHashInsert(&db->idxHash, zName, strlen(zName)+1, pIndex);
-    }
-    pIndex->pNext = pTab->pIndex;
-    pTab->pIndex = pIndex;
+  pIndex->pNext = pTab->pIndex;
+  pTab->pIndex = pIndex;
+  if( !pParse->explain ){
+    sqliteHashInsert(&db->idxHash, pIndex->zName, strlen(zName)+1, pIndex);
     db->flags |= SQLITE_InternChanges;
   }
 
@@ -763,7 +748,7 @@ void sqliteCreateIndex(
   ** "sqlite_master" table on the disk.  So do not write to the disk
   ** again.  Extract the table number from the pParse->newTnum field.
   */
-  if( pParse->initFlag ){
+  if( pParse->initFlag && pTable!=0 ){
     pIndex->tnum = pParse->newTnum;
   }
 
@@ -778,77 +763,73 @@ void sqliteCreateIndex(
   ** we don't want to recreate it.
   **
   ** If pTable==0 it means this index is generated as a primary key
-  ** and those does not have a CREATE INDEX statement to add to the
-  ** master table.  Also, since primary keys are created at the same
-  ** time as tables, the table will be empty so there is no need to
-  ** initialize the index.  Hence, skip all the code generation if
-  ** pTable==0.
+  ** or UNIQUE constraint of a CREATE TABLE statement.  The code generator
+  ** for CREATE TABLE will have already opened cursor 0 for writing to
+  ** the sqlite_master table and will take care of closing that cursor
+  ** for us in the end.  So those steps are skipped when pTable==0
   */
-  else if( pParse->initFlag==0 && pTable!=0 ){
-    static VdbeOp addTable[] = {
-      { OP_OpenWrite,   2, 2, MASTER_NAME},
-      { OP_NewRecno,    2, 0, 0},
-      { OP_String,      0, 0, "index"},
-      { OP_String,      0, 0, 0},  /* 3 */
-      { OP_String,      0, 0, 0},  /* 4 */
-      { OP_CreateIndex, 1, 0, 0},
-      { OP_Dup,         0, 0, 0},
-      { OP_OpenWrite,   1, 0, 0},  /* 7 */
-      { OP_Null,        0, 0, 0},
-      { OP_String,      0, 0, 0},  /* 9 */
-      { OP_MakeRecord,  6, 0, 0},
-      { OP_Put,         2, 0, 0},
-      { OP_SetCookie,   0, 0, 0},  /* 12 */
-      { OP_Close,       2, 0, 0},
-    };
+  else if( pParse->initFlag==0 ){
     int n;
-    Vdbe *v = pParse->pVdbe;
+    Vdbe *v;
     int lbl1, lbl2;
     int i;
+    int addr;
 
     v = sqliteGetVdbe(pParse);
     if( v==0 ) goto exit_create_index;
-    if( pTable!=0 && (db->flags & SQLITE_InTrans)==0 ){
-      sqliteVdbeAddOp(v, OP_Transaction, 0, 0, 0, 0);
-      sqliteVdbeAddOp(v, OP_VerifyCookie, db->schema_cookie, 0, 0, 0);
-      pParse->schemaVerified = 1;
+    if( pTable!=0 ){
+      if( (db->flags & SQLITE_InTrans)==0 ){
+        sqliteVdbeAddOp(v, OP_Transaction, 0, 0, 0, 0);
+        sqliteVdbeAddOp(v, OP_VerifyCookie, db->schema_cookie, 0, 0, 0);
+        pParse->schemaVerified = 1;
+      }
+      sqliteVdbeAddOp(v, OP_OpenWrite, 0, 2, MASTER_NAME, 0);
+    }
+    sqliteVdbeAddOp(v, OP_NewRecno, 0, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_String, 0, 0, "index", 0);
+    sqliteVdbeAddOp(v, OP_String, 0, 0, pIndex->zName, 0);
+    sqliteVdbeAddOp(v, OP_String, 0, 0, pTab->zName, 0);
+    addr = sqliteVdbeAddOp(v, OP_CreateIndex, 0, 0, 0, 0);
+    sqliteVdbeChangeP3(v, addr, (char*)&pIndex->tnum, -1);
+    pIndex->tnum = 0;
+    if( pTable ){
+      sqliteVdbeAddOp(v, OP_Dup, 0, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_OpenWrite, 1, 0, 0, 0);
     }
     if( pStart && pEnd ){
-      int base;
       n = (int)pEnd->z - (int)pStart->z + 1;
-      base = sqliteVdbeAddOpList(v, ArraySize(addTable), addTable);
-      sqliteVdbeChangeP3(v, base+3, pIndex->zName, 0);
-      sqliteVdbeChangeP3(v, base+4, pTab->zName, 0);
-      sqliteVdbeIndexRootAddr(v, &pIndex->tnum);
-      sqliteVdbeChangeP3(v, base+7, pIndex->zName, 0);
-      sqliteVdbeChangeP3(v, base+9, pStart->z, n);
-      changeCookie(db);
-      sqliteVdbeChangeP1(v, base+12, db->next_cookie);
+      addr = sqliteVdbeAddOp(v, OP_String, 0, 0, "", 0);
+      sqliteVdbeChangeP3(v, addr, pStart->z, n);
+    }else{
+      sqliteVdbeAddOp(v, OP_Null, 0, 0, 0, 0);
     }
-    sqliteVdbeAddOp(v, OP_Open, 0, pTab->tnum, pTab->zName, 0);
-    lbl1 = sqliteVdbeMakeLabel(v);
-    lbl2 = sqliteVdbeMakeLabel(v);
-    sqliteVdbeAddOp(v, OP_Rewind, 0, 0, 0, 0);
-    sqliteVdbeAddOp(v, OP_Next, 0, lbl2, 0, lbl1);
-    sqliteVdbeAddOp(v, OP_Recno, 0, 0, 0, 0);
-    for(i=0; i<pIndex->nColumn; i++){
-      sqliteVdbeAddOp(v, OP_Column, 0, pIndex->aiColumn[i], 0, 0);
+    sqliteVdbeAddOp(v, OP_MakeRecord, 5, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_Put, 0, 0, 0, 0);
+    if( pTable ){
+      sqliteVdbeAddOp(v, OP_Open, 2, pTab->tnum, pTab->zName, 0);
+      lbl1 = sqliteVdbeMakeLabel(v);
+      lbl2 = sqliteVdbeMakeLabel(v);
+      sqliteVdbeAddOp(v, OP_Rewind, 2, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_Next, 2, lbl2, 0, lbl1);
+      sqliteVdbeAddOp(v, OP_Recno, 2, 0, 0, 0);
+      for(i=0; i<pIndex->nColumn; i++){
+        sqliteVdbeAddOp(v, OP_Column, 2, pIndex->aiColumn[i], 0, 0);
+      }
+      sqliteVdbeAddOp(v, OP_MakeIdxKey, pIndex->nColumn, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_PutIdx, 1, pIndex->isUnique, 0, 0);
+      sqliteVdbeAddOp(v, OP_Goto, 0, lbl1, 0, 0);
+      sqliteVdbeAddOp(v, OP_Noop, 0, 0, 0, lbl2);
+      sqliteVdbeAddOp(v, OP_Close, 2, 0, 0, 0);
     }
-    sqliteVdbeAddOp(v, OP_MakeIdxKey, pIndex->nColumn, 0, 0, 0);
-    sqliteVdbeAddOp(v, OP_PutIdx, 1, pIndex->isUnique, 0, 0);
-    sqliteVdbeAddOp(v, OP_Goto, 0, lbl1, 0, 0);
-    sqliteVdbeAddOp(v, OP_Noop, 0, 0, 0, lbl2);
     sqliteVdbeAddOp(v, OP_Close, 1, 0, 0, 0);
-    sqliteVdbeAddOp(v, OP_Close, 0, 0, 0, 0);
-    if( pTable!=0 && (db->flags & SQLITE_InTrans)==0 ){
-      sqliteVdbeAddOp(v, OP_Commit, 0, 0, 0, 0);
+    if( pTable!=0 ){
+      changeCookie(db);
+      sqliteVdbeAddOp(v, OP_SetCookie, db->next_cookie, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_Close, 0, 0, 0, 0);
+      if( (db->flags & SQLITE_InTrans)==0 ){
+        sqliteVdbeAddOp(v, OP_Commit, 0, 0, 0, 0);
+      }
     }
-  }
-
-  /* Reclaim memory on an EXPLAIN call.
-  */
-  if( pParse->explain ){
-    sqliteFree(pIndex);
   }
 
   /* Clean up before exiting */
