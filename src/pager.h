@@ -25,9 +25,8 @@
 ** subsystem.  The page cache subsystem reads and writes a file a page
 ** at a time and provides a journal for rollback.
 **
-** @(#) $Id: pager.h,v 1.1 2001/04/03 16:53:22 drh Exp $
+** @(#) $Id: pager.h,v 1.2 2001/04/15 00:37:09 drh Exp $
 */
-#include "sqliteInt.h"
 
 /*
 ** The size of one page
@@ -45,12 +44,14 @@ typedef unsigned int Pgno;
 */
 typedef struct Pager Pager;
 
-int sqlite_pager_open(Pager **ppPager, const char *zFilename);
-int sqlite_pager_close(Pager *pPager);
-int sqlite_pager_get(Pager *pPager, Pgno pgno, void **ppPage);
-int sqlite_pager_unref(void*);
-Pgno sqlite_pager_pagenumber(void*);
-int sqlite_pager_write(void*);
-int sqlite_pager_pagecount(Pager*);
-int sqlite_pager_commit(Pager*);
-int sqlite_pager_rollback(Pager*);
+int sqlitepager_open(Pager **ppPager, const char *zFilename, int nPage);
+int sqlitepager_close(Pager *pPager);
+int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage);
+int sqlitepager_unref(void*);
+Pgno sqlitepager_pagenumber(void*);
+int sqlitepager_write(void*);
+int sqlitepager_pagecount(Pager*);
+int sqlitepager_commit(Pager*);
+int sqlitepager_rollback(Pager*);
+
+int *sqlitepager_stats(Pager*);

@@ -48,8 +48,8 @@ LIBREADLINE = @TARGET_READLINE_LIBS@
 # Object files for the SQLite library.
 #
 LIBOBJ = build.o dbbe.o dbbegdbm.o dbbemem.o delete.o expr.o insert.o \
-         main.o parse.o printf.o random.o select.o table.o tokenize.o \
-         update.o util.o vdbe.o where.o tclsqlite.o
+         main.o pager.o parse.o printf.o random.o select.o table.o \
+         tokenize.o update.o util.o vdbe.o where.o tclsqlite.o
 
 # All of the source code files.
 #
@@ -63,6 +63,7 @@ SRC = \
   $(TOP)/src/expr.c \
   $(TOP)/src/insert.c \
   $(TOP)/src/main.c \
+  $(TOP)/src/pager.c \
   $(TOP)/src/parse.y \
   $(TOP)/src/printf.c \
   $(TOP)/src/random.c \
@@ -78,6 +79,12 @@ SRC = \
   $(TOP)/src/vdbe.c \
   $(TOP)/src/vdbe.h \
   $(TOP)/src/where.c
+
+# Source code to the test files.
+#
+TESTSRC = \
+  $(TOP)/src/test1.c \
+  $(TOP)/src/test2.c
 
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
@@ -182,6 +189,9 @@ tclsqlite.o:	$(TOP)/src/tclsqlite.c $(HDR)
 printf.o:	$(TOP)/src/printf.c $(HDR)
 	$(TCC) $(GDBM_FLAGS) $(TCL_FLAGS) -c $(TOP)/src/printf.c
 
+pager.o:	$(TOP)/src/pager.c $(HDR)
+	$(TCC) $(GDBM_FLAGS) $(TCL_FLAGS) -c $(TOP)/src/pager.c
+
 gdbmdump:	$(TOP)/tool/gdbmdump.c
 	$(TCC) $(GDBM_FLAGS) -o gdbmdump $(TOP)/tool/gdbmdump.c $(LIBGDBM)
 
@@ -189,9 +199,9 @@ tclsqlite:	$(TOP)/src/tclsqlite.c libsqlite.a
 	$(TCC) $(TCL_FLAGS) -DTCLSH=1 -o sqlite_tester \
 		$(TOP)/src/tclsqlite.c libsqlite.a $(LIBGDBM) $(LIBTCL)
 
-sqlite_tester:	$(TOP)/src/tclsqlite.c libsqlite.a $(TOP)/src/test1.c
-	$(TCC) $(TCL_FLAGS) -DTCLSH=1 -DSQLITE_TEST1=1 -o sqlite_tester \
-		$(TOP)/src/test1.c $(TOP)/src/tclsqlite.c \
+sqlite_tester:	$(TOP)/src/tclsqlite.c libsqlite.a $(TESTSRC)
+	$(TCC) $(TCL_FLAGS) -DTCLSH=1 -DSQLITE_TEST=1 -o sqlite_tester \
+		$(TESTSRC) $(TOP)/src/tclsqlite.c \
 		libsqlite.a $(LIBGDBM) $(LIBTCL)
 
 test:	sqlite_tester sqlite

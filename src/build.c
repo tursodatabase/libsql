@@ -33,7 +33,7 @@
 **     COPY
 **     VACUUM
 **
-** $Id: build.c,v 1.27 2001/04/11 14:28:42 drh Exp $
+** $Id: build.c,v 1.28 2001/04/15 00:37:09 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -196,7 +196,7 @@ static void sqliteDeleteIndex(sqlite *db, Index *pIndex){
 ** Table.  No changes are made to disk by this routine.
 **
 ** This routine just deletes the data structure.  It does not unlink
-** the table data structure from the hash table.  But does it destroy
+** the table data structure from the hash table.  But it does destroy
 ** memory structures of the indices associated with the table.
 **
 ** Indices associated with the table are unlinked from the "db"
@@ -236,7 +236,13 @@ char *sqliteTableNameFromToken(Token *pName){
 /*
 ** Begin constructing a new table representation in memory.  This is
 ** the first of several action routines that get called in response
-** to a CREATE TABLE statement.
+** to a CREATE TABLE statement.  In particular, this routine is called
+** after seeing tokens "CREATE" and "TABLE" and the table name.  The
+** pStart token is the CREATE and pName is the table name.
+**
+** The new table is constructed in files of the pParse structure.  As
+** more of the CREATE TABLE statement is parsed, additional action
+** routines are called to build up more of the table.
 */
 void sqliteStartTable(Parse *pParse, Token *pStart, Token *pName){
   Table *pTable;
@@ -273,6 +279,11 @@ void sqliteStartTable(Parse *pParse, Token *pStart, Token *pName){
 
 /*
 ** Add a new column to the table currently being constructed.
+**
+** The parser calls this routine once for each column declaration
+** in a CREATE TABLE statement.  sqliteStartTable() gets called
+** first to get things going.  Then this routine is called for each
+** column.
 */
 void sqliteAddColumn(Parse *pParse, Token *pName){
   Table *p;
@@ -295,6 +306,9 @@ void sqliteAddColumn(Parse *pParse, Token *pName){
 ** The given token is the default value for the last column added to
 ** the table currently under construction.  If "minusFlag" is true, it
 ** means the value token was preceded by a minus sign.
+**
+** This routine is called by the parser while in the middle of
+** parsing a CREATE TABLE statement.
 */
 void sqliteAddDefaultValue(Parse *pParse, Token *pVal, int minusFlag){
   Table *p;
@@ -403,6 +417,7 @@ Table *sqliteTableFromToken(Parse *pParse, Token *pTok){
 
 /*
 ** This routine is called to do the work of a DROP TABLE statement.
+** pName is the name of the table to be dropped.
 */
 void sqliteDropTable(Parse *pParse, Token *pName){
   Table *pTable;
