@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sB+trees.\s(CVS\s1366)
-D 2004-05-12T21:11:27
+C Allocate\smore\soverflow\sdata\sonto\soverflow\spages,\sthus\swasting\sless\sdisk\sspace.\s(CVS\s1367)
+D 2004-05-13T01:12:57
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -23,7 +23,7 @@ F sqlite.def fc4f5734786fe4743cfe2aa98eb2da4b089edb5f
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F src/attach.c c315c58cb16fd6e913b3bfa6412aedecb4567fa5
 F src/auth.c 5c2f0bea4729c98c2be3b69d6b466fc51448fe79
-F src/btree.c 09f5838dd0353b5a7439b677066e1f3a187b2a77
+F src/btree.c 35fd97038d146f4880a0349b2fe7a4f6ce466eea
 F src/btree.h 6f51ad0ffebfba71295fcacdbe86007512200050
 F src/btree_rb.c 9d7973e266ee6f9c61ce592f68742ce9cd5b10e5
 F src/build.c f25e4ac9f102efd70188bc09a459c2b461fe2135
@@ -191,7 +191,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P b8f70d17f06531269caa0a127efb2d25ad0f3e1c
-R f511235dca0d03c381f4bc44142fa7f8
+P 64a75c4cd40f79c7b384bb2972922ff0c10212a4
+R bb0bf681c9aa31fdafb3dd299e62bb5d
 U drh
-Z 005ea33a8639fedd11d1cc2c48596cad
+Z 90888ec7d9d6df77a80907a07724f815

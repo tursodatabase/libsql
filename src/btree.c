@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.130 2004/05/12 21:11:27 drh Exp $
+** $Id: btree.c,v 1.131 2004/05/13 01:12:57 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -61,24 +61,46 @@
 **     16       2     Page size in bytes.  
 **     18       1     File format write version
 **     19       1     File format read version
-**     20       2     Bytes of unused space at the end of each page
-**     22       2     Maximum allowed local payload per entry
-**     24       8     File change counter
+**     20       1     Bytes of unused space at the end of each page
+**     21       1     Max embedded payload fraction
+**     22       1     Min embedded payload fraction
+**     23       1     Min leaf payload fraction
+**     24       4     File change counter
+**     28       4     Reserved for future use
 **     32       4     First freelist page
 **     36       4     Number of freelist pages in the file
 **     40      60     15 4-byte meta values passed to higher layers
 **
 ** All of the integer values are big-endian (most significant byte first).
-** The file change counter is incremented every time the database is changed.
-** This allows other processes to know when the file has changed and thus
-** when they need to flush their cache.
+**
+** The file change counter is incremented every time the database is more
+** than once within the same second.  This counter, together with the
+** modification time of the file, allows other processes to know
+** when the file has changed and thus when they need to flush their
+** cache.
+**
+** The max embedded payload fraction is the amount of the total usable
+** space in a page that can be consumed by a single cell for standard
+** B-tree (non-LEAFDATA) tables.  A value of 255 means 100%.  The default
+** is to limit the maximum cell size so that at least 4 cells will fit
+** on one pages.  Thus the default max embedded payload fraction is 64.
+**
+** If the payload for a cell is larger than the max payload, then extra
+** payload is spilled to overflow pages.  Once an overflow page is allocated,
+** as many bytes as possible are moved into the overflow pages without letting
+** the cell size drop below the min embedded payload fraction.
+**
+** The min leaf payload fraction is like the min embedded payload fraction
+** except that it applies to leaf nodes in a LEAFDATA tree.  The maximum
+** payload fraction for a LEAFDATA tree is always 100% (or 255) and it
+** not specified in the header.
 **
 ** Each btree page begins with a header described below.  Note that the
 ** header for page one begins at byte 100.  For all other btree pages, the
 ** header begins on byte zero.
 **
 **   OFFSET   SIZE     DESCRIPTION
-**      0       1      Flags.  01: leaf, 02: zerodata, 04: intkey,  F8: type
+**      0       1      Flags. 1: intkey, 2: zerodata, 4: leafdata, 8: leaf
 **      1       2      byte offset to the first freeblock
 **      3       2      byte offset to the first cell
 **      5       1      number of fragmented free bytes
@@ -91,14 +113,15 @@
 **
 ** A variable-length integer is 1 to 9 bytes where the lower 7 bits of each 
 ** byte are used.  The integer consists of all bytes that have bit 8 set and
-** the first byte with bit 8 clear.  Unlike fixed-length values, variable-
-** length integers are little-endian.  Examples:
+** the first byte with bit 8 clear.  The most significant byte of the integer
+** appears first.
 **
 **    0x00                      becomes  0x00000000
-**    0x1b                      becomes  0x0000001b
-**    0x9b 0x4a                 becomes  0x00000dca
-**    0x80 0x1b                 becomes  0x0000001b
-**    0xf8 0xac 0xb1 0x91 0x01  becomes  0x12345678
+**    0x7f                      becomes  0x0000007f
+**    0x81 0x00                 becomes  0x00000080
+**    0x82 0x00                 becomes  0x00000100
+**    0x80 0x7f                 becomes  0x0000007f
+**    0x8a 0x91 0xd1 0xac 0x78  becomes  0x12345678
 **    0x81 0x81 0x81 0x81 0x01  becomes  0x10204081
 **
 ** Variable length integers are used for rowids and to hold the number of
@@ -164,16 +187,10 @@
 # define MX_PAGE_SIZE 1024
 #endif
 
-/* Individual entries or "cells" are limited in size so that at least
-** this many cells will fit on one page.  Changing this value will result
-** in an incompatible database.
-*/
-#define MN_CELLS_PER_PAGE 4
-
 /* The following value is the maximum cell size assuming a maximum page
 ** size give above.
 */
-#define MX_CELL_SIZE  ((MX_PAGE_SIZE-10)/MN_CELLS_PER_PAGE)
+#define MX_CELL_SIZE  (MX_PAGE_SIZE-10)
 
 /* The maximum number of cells on a single page of the database.  This
 ** assumes a minimum cell size of 3 bytes.  Such small cells will be
@@ -251,7 +268,13 @@ struct Btree {
   u8 inStmt;            /* True if there is a checkpoint on the transaction */
   u8 readOnly;          /* True if the underlying file is readonly */
   int pageSize;         /* Number of usable bytes on each page */
-  int maxLocal;         /* Maximum local payload */
+  int maxLocal;         /* Maximum local payload in non-LEAFDATA tables */
+  int minLocal;         /* Minimum local payload in non-LEAFDATA tables */
+  int maxLeaf;          /* Maximum local payload in a LEAFDATA table */
+  int minLeaf;          /* Minimum local payload in a LEAFDATA table */
+  u8 maxEmbedFrac;      /* Maximum payload as % of total page size */
+  u8 minEmbedFrac;      /* Minimum payload as % of total page size */
+  u8 minLeafFrac;       /* Minimum leaf payload as % of total page size */
 };
 typedef Btree Bt;
 
@@ -276,6 +299,20 @@ struct BtCursor {
 };
 
 /*
+** An instance of the following structure is used to hold information
+** about a cell.  The parseCell() function fills the structure in.
+*/
+typedef struct CellInfo CellInfo;
+struct CellInfo {
+  i64 nKey;      /* The key for INTKEY tables, or number of bytes in key */
+  u32 nData;     /* Number of bytes of data */
+  int nHeader;   /* Size of the header in bytes */
+  int nLocal;    /* Amount of payload held locally */
+  int iOverflow; /* Offset to overflow page number.  Zero if none */
+  int nSize;     /* Size of the cell */
+};
+
+/*
 ** Read or write a two-, four-, and eight-byte big-endian integer values.
 */
 static u32 get2byte(unsigned char *p){
@@ -283,10 +320,6 @@ static u32 get2byte(unsigned char *p){
 }
 static u32 get4byte(unsigned char *p){
   return (p[0]<<24) | (p[1]<<16) | (p[2]<<8) | p[3];
-}
-static u64 get8byte(unsigned char *p){
-  u64 v = get4byte(p);
-  return (v<<32) | get4byte(&p[4]);
 }
 static void put2byte(unsigned char *p, u32 v){
   p[0] = v>>8;
@@ -298,21 +331,41 @@ static void put4byte(unsigned char *p, u32 v){
   p[2] = v>>8;
   p[3] = v;
 }
+
+#if 0 /* NOT_USED */
+static u64 get8byte(unsigned char *p){
+  u64 v = get4byte(p);
+  return (v<<32) | get4byte(&p[4]);
+}
 static void put8byte(unsigned char *p, u64 v){
   put4byte(&p[4], v>>32);
   put4byte(p, v);
 }
+#endif
 
 /*
 ** Read a variable-length integer.  Store the result in *pResult.
 ** Return the number of bytes in the integer.
 */
 static unsigned int getVarint(unsigned char *p, u64 *pResult){
-  u64 x = p[0] & 0x7f;
+  u64 x = 0;
   int n = 0;
-  while( (p[n++]&0x80)!=0 ){
-    x |= ((u64)(p[n]&0x7f))<<(n*7);
-  }
+  unsigned char c;
+  do{
+    c = p[n++];
+    x = (x<<7) | (c & 0x7f);
+  }while( (c & 0x80)!=0 );
+  *pResult = x;
+  return n;
+}
+static unsigned int getVarint32(unsigned char *p, u32 *pResult){
+  u32 x = 0;
+  int n = 0;
+  unsigned char c;
+  do{
+    c = p[n++];
+    x = (x<<7) | (c & 0x7f);
+  }while( (c & 0x80)!=0 );
   *pResult = x;
   return n;
 }
@@ -322,38 +375,70 @@ static unsigned int getVarint(unsigned char *p, u64 *pResult){
 ** the number of bytes written.
 */
 static unsigned int putVarint(unsigned char *p, u64 v){
-  int i = 0;
+  int i, j, n;
+  u8 buf[10];
+  n = 0;
   do{
-    p[i++] = (v & 0x7f) | 0x80;
+    buf[n++] = (v & 0x7f) | 0x80;
     v >>= 7;
   }while( v!=0 );
-  p[i-1] &= 0x7f;
-  return i;
+  buf[0] &= 0x7f;
+  for(i=0, j=n-1; j>=0; j--, i++){
+    p[i] = buf[j];
+  }
+  return n;
 }
 
 /*
 ** Parse a cell header and fill in the CellInfo structure.
 */
-static void parseCellHeader(
+static void parseCell(
   MemPage *pPage,         /* Page containing the cell */
   unsigned char *pCell,   /* The cell */
-  u64 *pnData,            /* Number of bytes of data in payload */
-  i64 *pnKey,             /* Number of bytes of key, or key value for intKey */
-  int *pnHeader           /* Size of header in bytes.  Offset to payload */
+  CellInfo *pInfo         /* Fill in this structure */
 ){
   int n;
+  int nPayload;
+  Btree *pBt;
+  int minLocal, maxLocal;
   if( pPage->leaf ){
     n = 2;
   }else{
     n = 6;
   }
   if( pPage->hasData ){
-    n += getVarint(&pCell[n], pnData);
+    n += getVarint32(&pCell[n], &pInfo->nData);
   }else{
-    *pnData = 0;
+    pInfo->nData = 0;
   }
-  n += getVarint(&pCell[n], (u64*)pnKey);
-  *pnHeader = n;
+  n += getVarint(&pCell[n], &pInfo->nKey);
+  pInfo->nHeader = n;
+  nPayload = pInfo->nData;
+  if( !pPage->intKey ){
+    nPayload += pInfo->nKey;
+  }
+  pBt = pPage->pBt;
+  if( pPage->leafData ){
+    minLocal = pBt->minLeaf;
+    maxLocal = pBt->pageSize - 23;
+  }else{
+    minLocal = pBt->minLocal;
+    maxLocal = pBt->maxLocal;
+  }
+  if( nPayload<=maxLocal ){
+    pInfo->nLocal = nPayload;
+    pInfo->iOverflow = 0;
+    pInfo->nSize = nPayload + n;
+  }else{
+    int surplus = minLocal + (nPayload - minLocal)%(pBt->pageSize - 4);
+    if( surplus <= maxLocal ){
+      pInfo->nLocal = surplus;
+    }else{
+      pInfo->nLocal = minLocal;
+    }
+    pInfo->iOverflow = pInfo->nLocal + n;
+    pInfo->nSize = pInfo->iOverflow + 4;
+  }
 }
 
 /*
@@ -364,21 +449,10 @@ static void parseCellHeader(
 ** is NOT included in the value returned from this routine.
 */
 static int cellSize(MemPage *pPage, unsigned char *pCell){
-  int n;
-  u64 nData;
-  i64 nKey;
-  int nPayload, maxPayload;
+  CellInfo info;
 
-  parseCellHeader(pPage, pCell, &nData, &nKey, &n);
-  nPayload = (int)nData;
-  if( !pPage->intKey ){
-    nPayload += (int)nKey;
-  }
-  maxPayload = pPage->pBt->maxLocal;
-  if( nPayload>maxPayload ){
-    nPayload = maxPayload + 4;
-  }
-  return n + nPayload;
+  parseCell(pPage, pCell, &info);
+  return info.nSize;
 }
 
 /*
@@ -904,19 +978,29 @@ int sqlite3BtreeOpen(
   pBt->pPage1 = 0;
   pBt->readOnly = sqlite3pager_isreadonly(pBt->pPager);
   pBt->pageSize = SQLITE_PAGE_SIZE;  /* FIX ME - read from header */
+  pBt->maxEmbedFrac = 64;            /* FIX ME - read from header */
+  pBt->minEmbedFrac = 32;            /* FIX ME - read from header */
+  pBt->minLeafFrac = 32;             /* FIX ME - read from header */
 
   /* maxLocal is the maximum amount of payload to store locally for
-  ** a cell.  Make sure it is small enough so that at least MN_CELLS_PER_PAGE
-  ** will fit on one page.  We assume a 10-byte page header.  Besides
-  ** the payload, the cell must store:
+  ** a cell.  Make sure it is small enough so that at least minFanout
+  ** cells can will fit on one page.  We assume a 10-byte page header.
+  ** Besides the payload, the cell must store:
   **     2-byte pointer to next cell
   **     4-byte child pointer
   **     9-byte nKey value
   **     4-byte nData value
   **     4-byte overflow page pointer
+  ** So a cell consists of a header which is as much as 19 bytes long,
+  ** 0 to N bytes of payload, and an optional 4 byte overflow page pointer.
   */
-  pBt->maxLocal = (pBt->pageSize-10)/MN_CELLS_PER_PAGE - 23;
-  assert( pBt->maxLocal + 23 <= MX_CELL_SIZE );
+  assert(pBt->maxEmbedFrac>0 && 255/pBt->maxEmbedFrac>=3 );
+  pBt->maxLocal = (pBt->pageSize-10)*pBt->maxEmbedFrac/255 - 23;
+  pBt->minLocal = (pBt->pageSize-10)*pBt->minEmbedFrac/255 - 23;
+  pBt->maxLeaf = pBt->pageSize - 33;
+  pBt->minLeaf = (pBt->pageSize-10)*pBt->minLeafFrac/255 - 23;
+
+  assert( pBt->maxLeaf + 23 <= MX_CELL_SIZE );
   *ppBtree = pBt;
   return SQLITE_OK;
 }
@@ -1437,7 +1521,6 @@ int sqlite3BtreeKeySize(BtCursor *pCur, i64 *pSize){
 int sqlite3BtreeDataSize(BtCursor *pCur, u32 *pSize){
   MemPage *pPage;
   unsigned char *cell;
-  u64 size;
 
   if( !pCur->isValid ){
     return pCur->status ? pCur->status : SQLITE_INTERNAL;
@@ -1455,9 +1538,7 @@ int sqlite3BtreeDataSize(BtCursor *pCur, u32 *pSize){
     if( !pPage->leaf ){
       cell += 4;  /* Skip the child pointer */
     }
-    getVarint(cell, &size);
-    assert( (size & 0x00000000ffffffff)==size );
-    *pSize = (u32)size;
+    getVarint32(cell, pSize);
   }
   return SQLITE_OK;
 }
@@ -1482,9 +1563,8 @@ static int getPayload(
   int rc;
   MemPage *pPage;
   Btree *pBt;
-  u64 nData;
-  i64 nKey;
-  int maxLocal, ovflSize;
+  int ovflSize;
+  CellInfo info;
 
   assert( pCur!=0 && pCur->pPage!=0 );
   assert( pCur->isValid );
@@ -1493,31 +1573,22 @@ static int getPayload(
   pageIntegrity(pPage);
   assert( pCur->idx>=0 && pCur->idx<pPage->nCell );
   aPayload = pPage->aCell[pCur->idx];
-  aPayload += 2;  /* Skip the next cell index */
-  if( !pPage->leaf ){
-    aPayload += 4;  /* Skip the child pointer */
-  }
-  if( pPage->hasData ){
-    aPayload += getVarint(aPayload, &nData);
-  }else{
-    nData = 0;
-  }
-  aPayload += getVarint(aPayload, (u64*)&nKey);
+  parseCell(pPage, aPayload, &info);
+  aPayload += info.nHeader;
   if( pPage->intKey ){
-    nKey = 0;
+    info.nKey = 0;
   }
   assert( offset>=0 );
   if( skipKey ){
-    offset += nKey;
+    offset += info.nKey;
   }
-  if( offset+amt > nKey+nData ){
+  if( offset+amt > info.nKey+info.nData ){
     return SQLITE_ERROR;
   }
-  maxLocal = pBt->maxLocal;
-  if( offset<maxLocal ){
+  if( offset<info.nLocal ){
     int a = amt;
-    if( a+offset>maxLocal ){
-      a = maxLocal - offset;
+    if( a+offset>info.nLocal ){
+      a = info.nLocal - offset;
     }
     memcpy(pBuf, &aPayload[offset], a);
     if( a==amt ){
@@ -1527,10 +1598,10 @@ static int getPayload(
     pBuf += a;
     amt -= a;
   }else{
-    offset -= maxLocal;
+    offset -= info.nLocal;
   }
   if( amt>0 ){
-    nextPage = get4byte(&aPayload[maxLocal]);
+    nextPage = get4byte(&aPayload[info.nLocal]);
   }
   ovflSize = pBt->pageSize - 4;
   while( amt>0 && nextPage ){
@@ -1629,9 +1700,7 @@ static const unsigned char *fetchPayload(
   unsigned char *aPayload;
   MemPage *pPage;
   Btree *pBt;
-  u64 nData;
-  i64 nKey;
-  int maxLocal;
+  CellInfo info;
 
   assert( pCur!=0 && pCur->pPage!=0 );
   assert( pCur->isValid );
@@ -1640,30 +1709,21 @@ static const unsigned char *fetchPayload(
   pageIntegrity(pPage);
   assert( pCur->idx>=0 && pCur->idx<pPage->nCell );
   aPayload = pPage->aCell[pCur->idx];
-  aPayload += 2;  /* Skip the next cell index */
-  if( !pPage->leaf ){
-    aPayload += 4;  /* Skip the child pointer */
-  }
-  if( pPage->hasData ){
-    aPayload += getVarint(aPayload, &nData);
-  }else{
-    nData = 0;
-  }
-  aPayload += getVarint(aPayload, (u64*)&nKey);
+  parseCell(pPage, aPayload, &info);
+  aPayload += info.nHeader;
   if( pPage->intKey ){
-    nKey = 0;
+    info.nKey = 0;
   }
-  maxLocal = pBt->maxLocal;
   if( skipKey ){
-    aPayload += nKey;
-    maxLocal -= nKey;
-    if( amt<0 ) amt = nData;
-    assert( amt<=nData );
+    aPayload += info.nKey;
+    info.nLocal -= info.nKey;
+    if( amt<0 ) amt = info.nData;
+    assert( amt<=info.nData );
   }else{
-    if( amt<0 ) amt = nKey;
-    assert( amt<=nKey );
+    if( amt<0 ) amt = info.nKey;
+    assert( amt<=info.nKey );
   }
-  if( amt>maxLocal ){
+  if( amt>info.nLocal ){
     return 0;  /* If any of the data is not local, return nothing */
   }
   return aPayload;
@@ -2297,21 +2357,15 @@ static int freePage(MemPage *pPage){
 */
 static int clearCell(MemPage *pPage, unsigned char *pCell){
   Btree *pBt = pPage->pBt;
-  int rc, n, nPayload;
-  u64 nData;
-  i64 nKey;
+  CellInfo info;
   Pgno ovflPgno;
+  int rc;
 
-  parseCellHeader(pPage, pCell, &nData, &nKey, &n);
-  assert( (nData&0x000000007fffffff)==nData );
-  nPayload = (int)nData;
-  if( !pPage->intKey ){
-    nPayload += nKey;
-  }
-  if( nPayload<=pBt->maxLocal ){
+  parseCell(pPage, pCell, &info);
+  if( info.iOverflow==0 ){
     return SQLITE_OK;  /* No overflow pages. Return without doing anything */
   }
-  ovflPgno = get4byte(&pCell[n+pBt->maxLocal]);
+  ovflPgno = get4byte(&pCell[info.iOverflow]);
   while( ovflPgno!=0 ){
     MemPage *pOvfl;
     rc = getPage(pBt, ovflPgno, &pOvfl);
@@ -2354,6 +2408,7 @@ static int fillInCell(
   Btree *pBt = pPage->pBt;
   Pgno pgnoOvfl = 0;
   int nHeader;
+  CellInfo info;
 
   /* Fill in the header. */
   nHeader = 2;
@@ -2362,13 +2417,16 @@ static int fillInCell(
   }
   if( pPage->hasData ){
     nHeader += putVarint(&pCell[nHeader], nData);
-  }
-  nHeader += putVarint(&pCell[nHeader], *(u64*)&nKey);
-  
-  /* Fill in the payload */
-  if( !pPage->hasData ){
+  }else{
     nData = 0;
   }
+  nHeader += putVarint(&pCell[nHeader], *(u64*)&nKey);
+  parseCell(pPage, pCell, &info);
+  assert( info.nHeader==nHeader );
+  assert( info.nKey==nKey );
+  assert( info.nData==nData );
+  
+  /* Fill in the payload */
   nPayload = nData;
   if( pPage->intKey ){
     pSrc = pData;
@@ -2379,14 +2437,10 @@ static int fillInCell(
     pSrc = pKey;
     nSrc = nKey;
   }
-  if( nPayload>pBt->maxLocal ){
-    *pnSize = nHeader + pBt->maxLocal + 4;
-  }else{
-    *pnSize = nHeader + nPayload;
-  }
-  spaceLeft = pBt->maxLocal;
+  *pnSize = info.nSize;
+  spaceLeft = info.nLocal;
   pPayload = &pCell[nHeader];
-  pPrior = &pPayload[pBt->maxLocal];
+  pPrior = &pCell[info.iOverflow];
 
   while( nPayload>0 ){
     if( spaceLeft==0 ){
@@ -3106,13 +3160,11 @@ static int balance(MemPage *pPage){
         memcpy(&pNew->aData[6], pCell+2, 4);
         pTemp = 0;
       }else if( leafData ){
-        i64 nKey;
-        u64 nData;
-        int nHeader;
+        CellInfo info;
         j--;
-        parseCellHeader(pNew, apCell[j], &nData, &nKey, &nHeader);
+        parseCell(pNew, apCell[j], &info);
         pCell = aInsBuf[i];
-        fillInCell(pParent, pCell, 0, nKey, 0, 0, &sz);
+        fillInCell(pParent, pCell, 0, info.nKey, 0, 0, &sz);
         pTemp = 0;
       }else{
         pCell -= 4;
@@ -3577,30 +3629,31 @@ int sqlite3BtreePageDump(Btree *pBt, int pgno, int recursive){
   assert( hdr == (pgno==1 ? 100 : 0) );
   idx = get2byte(&data[hdr+3]);
   while( idx>0 && idx<=pBt->pageSize ){
-    u64 nData;
-    i64 nKey;
-    int nHeader;
+    CellInfo info;
     Pgno child;
     unsigned char *pCell = &data[idx];
-    int sz = cellSize(pPage, pCell);
+    int sz;
+
+    pCell = &data[idx];
+    parseCell(pPage, pCell, &info);
+    sz = info.nSize;
     sprintf(range,"%d..%d", idx, idx+sz-1);
-    parseCellHeader(pPage, pCell, &nData, &nKey, &nHeader);
     if( pPage->leaf ){
       child = 0;
     }else{
       child = get4byte(&pCell[2]);
     }
-    sz = nData;
-    if( !pPage->intKey ) sz += nKey;
+    sz = info.nData;
+    if( !pPage->intKey ) sz += info.nKey;
     if( sz>sizeof(payload)-1 ) sz = sizeof(payload)-1;
-    memcpy(payload, &pCell[nHeader], sz);
+    memcpy(payload, &pCell[info.nHeader], sz);
     for(j=0; j<sz; j++){
       if( payload[j]<0x20 || payload[j]>0x7f ) payload[j] = '.';
     }
     payload[sz] = 0;
     printf(
-      "cell %2d: i=%-10s chld=%-4d nk=%-4lld nd=%-4lld payload=%s\n",
-      i, range, child, nKey, nData, payload
+      "cell %2d: i=%-10s chld=%-4d nk=%-4lld nd=%-4d payload=%s\n",
+      i, range, child, info.nKey, info.nData, payload
     );
     if( pPage->isInit && pPage->aCell[i]!=pCell ){
       printf("**** aCell[%d] does not match on prior entry ****\n", i);
@@ -3792,23 +3845,6 @@ static void checkList(
 }
 
 /*
-** Return negative if zKey1<zKey2.
-** Return zero if zKey1==zKey2.
-** Return positive if zKey1>zKey2.
-*/
-static int keyCompare(
-  const char *zKey1, int nKey1,
-  const char *zKey2, int nKey2
-){
-  int min = nKey1>nKey2 ? nKey2 : nKey1;
-  int c = memcmp(zKey1, zKey2, min);
-  if( c==0 ){
-    c = nKey1 - nKey2;
-  }
-  return c;
-}
-
-/*
 ** Do various sanity checks on a single page of a tree.  Return
 ** the tree depth.  Root pages return 0.  Parents of root pages
 ** return 1, and so forth.
@@ -3840,8 +3876,6 @@ static int checkTreePage(
   int i, rc, depth, d2, pgno, cnt;
   int hdr;
   u8 *data;
-  char *zKey1, *zKey2;
-  int nKey1, nKey2;
   BtCursor cur;
   Btree *pBt;
   int maxLocal, pageSize;
@@ -3852,7 +3886,6 @@ static int checkTreePage(
   /* Check that the page exists
   */
   cur.pBt = pBt = pCheck->pBt;
-  maxLocal = pBt->maxLocal;
   pageSize = pBt->pageSize;
   if( iPage==0 ) return 0;
   if( checkRef(pCheck, iPage, zParentContext) ) return 0;
@@ -3861,6 +3894,7 @@ static int checkTreePage(
     checkAppendMsg(pCheck, zContext, zMsg);
     return 0;
   }
+  maxLocal = pPage->leafData ? pBt->maxLeaf : pBt->maxLocal;
   if( (rc = initPage(pPage, pParent))!=0 ){
     sprintf(zMsg, "initPage() returns error code %d", rc);
     checkAppendMsg(pCheck, zContext, zMsg);
@@ -3873,20 +3907,20 @@ static int checkTreePage(
   depth = 0;
   cur.pPage = pPage;
   for(i=0; i<pPage->nCell; i++){
-    u8 *pCell = pPage->aCell[i];
-    i64 nKey;
-    u64 nData;
-    int sz, nHeader;
+    u8 *pCell;
+    int sz;
+    CellInfo info;
 
     /* Check payload overflow pages
     */
     sprintf(zContext, "On tree page %d cell %d: ", iPage, i);
-    parseCellHeader(pPage, pCell, &nData, &nKey, &nHeader);
-    sz = nData;
-    if( !pPage->intKey ) sz += nKey;
-    if( sz>maxLocal ){
-      int nPage = (sz - maxLocal + pageSize - 5)/(pageSize - 4);
-      checkList(pCheck, 0, get4byte(&pCell[nHeader+maxLocal]),nPage,zContext);
+    pCell = pPage->aCell[i];
+    parseCell(pPage, pCell, &info);
+    sz = info.nData;
+    if( !pPage->intKey ) sz += info.nKey;
+    if( sz>info.nLocal ){
+      int nPage = (sz - info.nLocal + pageSize - 5)/(pageSize - 4);
+      checkList(pCheck, 0, get4byte(&pCell[info.iOverflow]),nPage,zContext);
     }
 
     /* Check sanity of left child page.
