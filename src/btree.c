@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.160 2004/06/07 01:52:14 drh Exp $
+** $Id: btree.c,v 1.161 2004/06/07 16:27:46 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -3712,12 +3712,6 @@ int sqlite3BtreeFlags(BtCursor *pCur){
   MemPage *pPage = pCur->pPage;
   return pPage ? pPage->aData[pPage->hdrOffset] : 0;
 }
-
-/******************************************************************************
-** The complete implementation of the BTree subsystem is above this line.
-** All the code the follows is for testing and troubleshooting the BTree
-** subsystem.  None of the code that follows is used during normal operation.
-******************************************************************************/
 
 /*
 ** Print a disassembly of the given page on standard output.  This routine

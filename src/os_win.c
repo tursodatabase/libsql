@@ -314,47 +314,6 @@ int sqlite3OsFileSize(OsFile *id, off_t *pSize){
 }
 
 /*
-** Windows file locking notes:
-**
-** We cannot use LockFileEx() or UnlockFileEx() on Win95/98/ME because
-** those functions are not available.  So we use only LockFile() and
-** UnlockFile().
-**
-** LockFile() prevents not just writing but also reading by other processes.
-** (This is a design error on the part of Windows, but there is nothing
-** we can do about that.)  So the region used for locking is at the
-** end of the file where it is unlikely to ever interfere with an
-** actual read attempt.
-**
-** A SHARED_LOCK is obtained by locking a single randomly-chosen 
-** byte out of a specific range of bytes. The lock byte is obtained at 
-** random so two separate readers can probably access the file at the 
-** same time, unless they are unlucky and choose the same lock byte.
-** An EXCLUSIVE_LOCK is obtained by locking all bytes in the range.
-** There can only be one writer.  A RESERVED_LOCK is obtained by locking
-** a single byte of the file that is designated as the reserved lock byte.
-** A PENDING_LOCK is obtained by locking a designated byte different from
-** the RESERVED_LOCK byte.
-**
-** On WinNT/2K/XP systems, LockFileEx() and UnlockFileEx() are available,
-** which means we can use reader/writer locks.  When reader/writer locks
-** are used, the lock is placed on the same range of bytes that is used
-** for probabilistic locking in Win95/98/ME.  Hence, the locking scheme
-** will support two or more Win95 readers or two or more WinNT readers.
-** But a single Win95 reader will lock out all WinNT readers and a single
-** WinNT reader will lock out all other Win95 readers.
-**
-** The following #defines specify the range of bytes used for locking.
-** SHARED_SIZE is the number of bytes available in the pool from which
-** a random byte is selected for a shared lock.  The pool of bytes for
-** shared locks begins at SHARED_FIRST.  
-*/
-#define SHARED_SIZE       10238
-#define SHARED_FIRST      (0x3fffffff - (SHARED_SIZE - 1))
-#define RESERVED_BYTE     (SHARED_FIRST - 1)
-#define PENDING_BYTE      (RESERVED_BYTE - 1)
-
-/*
 ** Return true (non-zero) if we are running under WinNT, Win2K or WinXP.
 ** Return false (zero) for Win95, Win98, or WinME.
 **
@@ -531,13 +490,16 @@ int sqlite3OsCheckWriteLock(OsFile *id){
   int rc;
   if( id->locktype>=RESERVED_LOCK ){
     rc = 1;
+    TRACE3("TEST WR-LOCK %d %d (local)\n", id->h, rc);
   }else{
     rc = LockFile(id->h, RESERVED_BYTE, 0, 1, 0);
     if( rc ){
       UnlockFile(id->h, RESERVED_BYTE, 0, 1, 0);
     }
+    rc = !rc;
+    TRACE3("TEST WR-LOCK %d %d (remote)\n", id->h, rc);
   }
-  return 0;
+  return rc;
 }
 
 /*

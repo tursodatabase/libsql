@@ -810,7 +810,8 @@ void sqlite3DebugPrintf(const char *zFormat, ...){
   va_start(ap, zFormat);
   base_vprintf(0, 0, zBuf, sizeof(zBuf), zFormat, ap);
   va_end(ap);
-  fprintf(stderr,"%s", zBuf);
+  fprintf(stdout,"%s", zBuf);
+  fflush(stdout);
 }
 #endif
 

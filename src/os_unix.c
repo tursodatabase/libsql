@@ -174,7 +174,7 @@ struct lockKey {
 */
 struct lockInfo {
   struct lockKey key;  /* The lookup key */
-  int cnt;             /* Number of locks held */
+  int cnt;             /* Number of SHARED locks held */
   int locktype;        /* One of SHARED_LOCK, RESERVED_LOCK etc. */
   int nRef;            /* Number of pointers to this structure */
 };
@@ -644,27 +644,27 @@ int sqlite3OsFileSize(OsFile *id, off_t *pSize){
 /*
 ** This routine checks if there is a RESERVED lock held on the specified
 ** file by this or any other process. If such a lock is held, return
-** non-zero, otherwise zero.
+** non-zero.  If the file is unlocked or holds only SHARED locks, then
+** return zero.
 */
 int sqlite3OsCheckWriteLock(OsFile *id){
   int r = 0;
 
-  sqlite3OsEnterMutex();
+  sqlite3OsEnterMutex(); /* Needed because id->pLock is shared across threads */
 
   /* Check if a thread in this process holds such a lock */
   if( id->pLock->locktype>SHARED_LOCK ){
     r = 1;
   }
 
-  /* Otherwise see if some other process holds it. Just check the whole
-  ** file for write-locks, rather than any specific bytes.
+  /* Otherwise see if some other process holds it.
   */
   if( !r ){
     struct flock lock;
     lock.l_whence = SEEK_SET;
-    lock.l_start = 0;
-    lock.l_len = 0;
-    lock.l_type = F_RDLCK;
+    lock.l_start = RESERVED_BYTE;
+    lock.l_len = 1;
+    lock.l_type = F_WRLCK;
     fcntl(id->fd, F_GETLK, &lock);
     if( lock.l_type!=F_UNLCK ){
       r = 1;
@@ -672,6 +672,7 @@ int sqlite3OsCheckWriteLock(OsFile *id){
   }
   
   sqlite3OsLeaveMutex();
+  TRACE3("TEST WR-LOCK %d %d\n", id->fd, r);
 
   return r;
 }
@@ -680,10 +681,25 @@ int sqlite3OsCheckWriteLock(OsFile *id){
 ** Lock the file with the lock specified by parameter locktype - one
 ** of the following:
 **
-** SHARED_LOCK
-** RESERVED_LOCK
-** PENDING_LOCK
-** EXCLUSIVE_LOCK
+**     (1) SHARED_LOCK
+**     (2) RESERVED_LOCK
+**     (3) PENDING_LOCK
+**     (4) EXCLUSIVE_LOCK
+**
+** Locks are are hierarchical.  Getting a lock N implies getting all locks
+** N-1, N-2, N-3, ....  So, for example, getting a PENDING lock
+** implies a SHARED and a RESERVED lock.  This routine adds locks one
+** at a time until the desired lock is acheived.  A locking failure might
+** occur at any point.  When a failure occurs intermediate locks are
+** retained.  For example, if a SHARED lock is held and this routine
+** is called with EXCLUSIVE, it might obtain a RESERVED and PENDING lock
+** but fail to get the EXCLUSIVE lock.  In that case, the file would be
+** left in the PENDING lock state - it does not revert to SHARED.
+**
+** This routine will only increase a lock.  The sqlite3OsUnlock() routine
+** erases all locks at once and returns us immediately to locking level 0.
+** It is not possible to lower the locking level one step at a time.  You
+** must go straight to locking level 0.
 */
 int sqlite3OsLock(OsFile *id, int locktype){
   int rc = SQLITE_OK;
@@ -691,12 +707,8 @@ int sqlite3OsLock(OsFile *id, int locktype){
   struct flock lock;
   int s;
 
-  /* It is an error to request any kind of lock before a shared lock */
-  if( locktype>SHARED_LOCK && id->locktype==0 ){
-    rc = sqlite3OsLock(id, SHARED_LOCK);
-    if( rc!=SQLITE_OK ) return rc;
-  }
-  assert( locktype==SHARED_LOCK || id->locktype!=0 );
+  TRACE5("LOCK %d %d was %d(%d)\n",
+          id->fd, locktype, id->locktype, pLock->locktype);
 
   /* If there is already a lock of this type or more restrictive on the
   ** OsFile, do nothing. Don't use the end_lock: exit path, as
@@ -706,14 +718,27 @@ int sqlite3OsLock(OsFile *id, int locktype){
     return SQLITE_OK;
   }
 
-  sqlite3OsEnterMutex();
+  /* Make sure locking is sequential.  In other words, make sure we have
+  ** SHARED before trying for RESERVED, and that we have RESERVED before
+  ** trying for PENDING, and that we have PENDING before trying for
+  ** EXCLUSIVE.
+  */
+  while( locktype>id->locktype+1 ){
+    rc = sqlite3OsLock(id, id->locktype+1);
+    if( rc!=SQLITE_OK ){
+      return rc;
+    }
+  }
+  assert( locktype==id->locktype+1 );
+
+  sqlite3OsEnterMutex();  /* Needed because pLock is shared across threads */
 
   /* If some thread using this PID has a lock via a different OsFile*
   ** handle that precludes the requested lock, return BUSY.
   */
   if( (id->locktype!=pLock->locktype && 
-      (pLock->locktype>RESERVED_LOCK || locktype!=SHARED_LOCK)) ||
-      (locktype>RESERVED_LOCK && pLock->cnt>1)
+          (pLock->locktype>=PENDING_LOCK || locktype>SHARED_LOCK))
+   || (locktype==EXCLUSIVE_LOCK && pLock->cnt>1)
   ){
     rc = SQLITE_BUSY;
     goto end_lock;
@@ -744,21 +769,25 @@ int sqlite3OsLock(OsFile *id, int locktype){
     assert( pLock->cnt==0 );
     assert( pLock->locktype==0 );
   
-    /* Grab a read-lock on byte 2. This ensures that no other process
-    ** has a PENDING lock.
+    /* Temporarily grab a PENDING lock.  This prevents new SHARED locks from
+    ** being formed if a PENDING lock is already held.
     */
     lock.l_type = F_RDLCK;
-    lock.l_start = 2;
+    lock.l_start = PENDING_BYTE;
     s = fcntl(id->fd, F_SETLK, &lock);
     if( s ){
       rc = (errno==EINVAL) ? SQLITE_NOLFS : SQLITE_BUSY;
       goto end_lock;
     }
 
-    /* Now get a read-lock on byte 0 and renege on the byte 2 lock. */
-    lock.l_start = 0;
+    /* Now get the read-lock */
+    lock.l_start = SHARED_FIRST;
+    lock.l_len = SHARED_SIZE;
     s = fcntl(id->fd, F_SETLK, &lock);
-    lock.l_start = 2;
+
+    /* Drop the temporary PENDING lock */
+    lock.l_start = PENDING_BYTE;
+    lock.l_len = 1L;
     lock.l_type = F_UNLCK;
     fcntl(id->fd, F_SETLK, &lock);
     if( s ){
@@ -777,13 +806,14 @@ int sqlite3OsLock(OsFile *id, int locktype){
     lock.l_type = F_WRLCK;
     switch( locktype ){
       case RESERVED_LOCK:
-        lock.l_start = 1;
+        lock.l_start = RESERVED_BYTE;
         break;
       case PENDING_LOCK:
-        lock.l_start = 2;
+        lock.l_start = PENDING_BYTE;
         break;
       case EXCLUSIVE_LOCK:
-        lock.l_start = 0;
+        lock.l_start = SHARED_FIRST;
+        lock.l_len = SHARED_SIZE;
         break;
       default:
         assert(0);
@@ -797,11 +827,11 @@ int sqlite3OsLock(OsFile *id, int locktype){
   if( rc==SQLITE_OK ){
     id->locktype = locktype;
     pLock->locktype = locktype;
-    assert( pLock->locktype==RESERVED_LOCK || pLock->cnt==1 );
   }
 
 end_lock:
   sqlite3OsLeaveMutex();
+  TRACE4("LOCK %d %d %s\n", id->fd, locktype, rc==SQLITE_OK ? "ok" : "failed");
   return rc;
 }
 

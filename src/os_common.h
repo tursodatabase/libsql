@@ -23,7 +23,8 @@
 ** Macros for performance tracing.  Normally turned off.  Only works
 ** on i486 hardware.
 */
-#if 0
+int sqlite3_os_trace = 0;
+#if 1
 static int last_page = 0;
 __inline__ unsigned long long int hwtime(void){
   unsigned long long int x;
@@ -37,11 +38,11 @@ static unsigned int elapse;
 #define TIMER_START       g_start=hwtime()
 #define TIMER_END         elapse=hwtime()-g_start
 #define SEEK(X)           last_page=(X)
-#define TRACE1(X)         sqlite3DebugPrintf(X)
-#define TRACE2(X,Y)       sqlite3DebugPrintf(X,Y)
-#define TRACE3(X,Y,Z)     sqlite3DebugPrintf(X,Y,Z)
-#define TRACE4(X,Y,Z,A)   sqlite3DebugPrintf(X,Y,Z,A)
-#define TRACE5(X,Y,Z,A,B) sqlite3DebugPrintf(X,Y,Z,A,B)
+#define TRACE1(X)         if( sqlite3_os_trace ) sqlite3DebugPrintf(X)
+#define TRACE2(X,Y)       if( sqlite3_os_trace ) sqlite3DebugPrintf(X,Y)
+#define TRACE3(X,Y,Z)     if( sqlite3_os_trace ) sqlite3DebugPrintf(X,Y,Z)
+#define TRACE4(X,Y,Z,A)   if( sqlite3_os_trace ) sqlite3DebugPrintf(X,Y,Z,A)
+#define TRACE5(X,Y,Z,A,B) if( sqlite3_os_trace ) sqlite3DebugPrintf(X,Y,Z,A,B)
 #else
 #define TIMER_START
 #define TIMER_END

@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.112 2004/06/04 10:38:31 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.113 2004/06/07 16:27:46 drh Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -1554,20 +1554,16 @@ static int pager_write_pagelist(PgHdr *pList){
   ** database file. If there is already an EXCLUSIVE lock, the following
   ** calls to sqlite3OsLock() are no-ops.
   **
-  ** The upgrade from a RESERVED to PENDING lock cannot return SQLITE_BUSY,
-  ** unless someone is not following the locking protocol. 
+  ** The upgrade from a RESERVED to PENDING might return SQLITE_BUSY on
+  ** windows because the windows locking mechanism acquires a transient
+  ** PENDING lock during its attempts to get a SHARED lock.  So if another
+  ** process were trying to get a SHARED lock at the same time this process
+  ** is upgrading from RESERVED to PENDING, the two could collide.
   **
-  ** The upgrade from PENDING to EXCLUSIVE can return SQLITE_BUSY. It's
-  ** not totally clear that the busy-callback should be invoked here
-  ** though. (?)
+  ** The upgrade from PENDING to EXCLUSIVE can return SQLITE_BUSY if there
+  ** are still active readers that were created before the PENDING lock
+  ** was acquired.
   */
-  rc = sqlite3OsLock(&pPager->fd, PENDING_LOCK);
-  if( rc==SQLITE_BUSY ){
-    return SQLITE_PROTOCOL;
-  }
-  if( rc!=SQLITE_OK ){
-    return rc;
-  }
   do {
     rc = sqlite3OsLock(&pPager->fd, EXCLUSIVE_LOCK);
   }while( rc==SQLITE_BUSY && 

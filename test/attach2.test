@@ -12,14 +12,18 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach2.test,v 1.11 2004/05/31 12:34:54 danielk1977 Exp $
+# $Id: attach2.test,v 1.12 2004/06/07 16:27:47 drh Exp $
 #
-
+set sqlite_os_trace 0
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+
 # Ticket #354
+#
+# Databases test.db and test2.db contain identical schemas.  Make
+# sure we can attach test2.db from test.db.
 #
 do_test attach2-1.1 {
   db eval {
@@ -49,40 +53,37 @@ proc db_list {db} {
 }
 db eval {DETACH t2}
 do_test attach2-2.1 {
-  # lock test2.db then try to attach it.  Should get an error.
+  # lock test2.db then try to attach it.  This is no longer an error because
+  # db2 just RESERVES the database.  It does not obtain a write-lock until
+  # we COMMIT.
   db2 eval {BEGIN}
   db2 eval {UPDATE t1 SET a = 0 WHERE 0}
   catchsql {
     ATTACH 'test2.db' AS t2;
   }
-} {1 {database is locked}}
-do_test attach2-2.2 {
-  # make sure test2.db did not get attached.
-  db_list db
-} {0 main 1 temp}
-do_test attach2-2.3 {
-  # unlock test2.db and try to attach again.  should work this time.
-  db2 eval {COMMIT}
-  catchsql {
-    ATTACH 'test2.db' AS t2;
-  }
 } {0 {}}
-do_test attach2-2.4 {
+do_test attach2-2.2 {
+  # make sure test2.db did get attached.
   db_list db
 } {0 main 1 temp 2 t2}
+db2 eval {COMMIT}
+
 do_test attach2-2.5 {
+  # Make sure we can read test2.db from db
   catchsql {
     SELECT name FROM t2.sqlite_master;
   }
 } {0 {t1 x1}}
 do_test attach2-2.6 {
-  # lock test2.db and try to read from it.  should get an error.
+  # lock test2.db and try to read from it.  This should still work because
+  # the lock is only a RESERVED lock which does not prevent reading.
+  #
   db2 eval BEGIN
   db2 eval {UPDATE t1 SET a = 0 WHERE 0}
   catchsql {
     SELECT name FROM t2.sqlite_master;
   }
-} {1 {database is locked}}
+} {0 {t1 x1}}
 do_test attach2-2.7 {
   # but we can still read from test1.db even though test2.db is locked.
   catchsql {
@@ -125,7 +126,7 @@ do_test attach2-2.12 {
   }
 } {1 {cannot commit - no transaction is active}}
 
-# Ticket #574:  Make sure it works usingi the non-callback API
+# Ticket #574:  Make sure it works using the non-callback API
 #
 do_test attach2-3.1 {
   db close
@@ -146,6 +147,7 @@ db close
 for {set i 2} {$i<=15} {incr i} {
   catch {db$i close}
 }
+set sqlite_os_trace 0
 
 # Tests attach2-4.* test that read-locks work correctly with attached
 # databases.
@@ -157,14 +159,17 @@ do_test attach2-4.1 {
 } {}
 
 do_test attach2-4.2 {
-  # Handle 'db' read-locks the main file
+  # Handle 'db' read-locks test.db
   execsql {BEGIN}
   execsql {SELECT * FROM t1}
 } {}
 do_test attach2-4.3 {
+  # The read lock held by db does not prevent db2 from reading test.db
   execsql {SELECT * FROM t1} db2
 } {}
 do_test attach2-4.4 {
+  # db is only holding a read lock on test.db, so we should not be able
+  # to commit a write to test.db from db2
   set r [catch { 
     execsql {
       INSERT INTO t1 VALUES(1, 2)
@@ -173,40 +178,39 @@ do_test attach2-4.4 {
   list $r $msg
 } {1 {database is locked}}
 do_test attach2-4.5 {
-  # Handle 'db2' write-locks file2
+  # Handle 'db2' reserves file2.
   execsql {BEGIN} db2
   execsql {INSERT INTO file2.t1 VALUES(1, 2)} db2
 } {}
-do_test attach2-4.6 {
-  set r [catch { 
-    execsql {
-      SELECT * FROM file2.t1;
-    } 
-  } msg]
-  list $r $msg
+do_test attach2-4.6.1 {
+  # Reads are allowed against a reserved database.
+  catchsql {
+    SELECT * FROM file2.t1;
+  }
+} {0 {}}
+do_test attach2-4.6.2 {
+  # Writes against a reserved database are not allowed.
+  catchsql {
+    UPDATE file2.t1 SET a=0;
+  }
 } {1 {database is locked}}
 do_test attach2-4.7 {
   # Ensure handle 'db' retains the lock on the main file after
-  # failing to obtain a read-lock on file2.
-  set r [catch { 
-    execsql {
-      INSERT INTO t1 VALUES(1, 2)
-    } db2 
-  } msg]
-  list $r $msg
+  # failing to obtain a write-lock on file2.
+  catchsql {
+    INSERT INTO t1 VALUES(1, 2)
+  } db2 
 } {1 {database is locked}}
 do_test attach2-4.8 {
-  # Read lock the main file with db2. Now both handles have a read lock
+  # Read lock the main file with db2. Now both db and db2 have a read lock
   # on the main file, db2 has a write-lock on file2.
   execsql {SELECT * FROM t1} db2
 } {}
 do_test attach2-4.9 {
   # Try to upgrade the handle 'db' lock.
-  set r [catch { 
-    execsql {
-      INSERT INTO t1 VALUES(1, 2)
-    } 
-  } msg]
+  catchsql {
+    INSERT INTO t1 VALUES(1, 2)
+  }
   list $r $msg
 } {1 {database is locked}}
 do_test attach2-4.10 {
@@ -232,8 +236,3 @@ db2 close
 file delete -force test2.db
 
 finish_test
-
-
-
-
-

@@ -922,15 +922,25 @@ static int vdbeCommit(sqlite *db){
     }
   }
 
-  /* The simple case - if less than two databases have write-transactions
-  ** active, there is no need for the master-journal.
+  /* The simple case - no more than one database file (not counting the TEMP
+  ** database) has a transaction active.   There is no need for the
+  ** master-journal.
   */
-  if( nTrans<2 ){
-    for(i=0; i<db->nDb; i++){ 
+  if( nTrans<=1 ){
+    for(i=0; rc==SQLITE_OK && i<db->nDb; i++){ 
       Btree *pBt = db->aDb[i].pBt;
       if( pBt ){
-        int rc2 = sqlite3BtreeCommit(db->aDb[i].pBt);
-        if( rc==SQLITE_OK ) rc = rc2;
+        rc = sqlite3BtreeSync(pBt, 0);
+      }
+    }
+
+    /* Do the commit only if all databases successfully synced */
+    if( rc==SQLITE_OK ){
+      for(i=0; i<db->nDb; i++){
+        Btree *pBt = db->aDb[i].pBt;
+        if( pBt ){
+          sqlite3BtreeCommit(pBt);
+        }
       }
     }
   }
@@ -1036,7 +1046,7 @@ static int vdbeCommit(sqlite *db){
       }
     }
   }
-  return SQLITE_OK;
+  return rc;
 }
 
 /* 
