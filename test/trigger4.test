@@ -128,6 +128,69 @@ do_test trigger4-3.7 {
   }
 } {7 99}
 
-integrity_check trigger4-4.1
+do_test trigger4-4.1 {
+    db close
+    sqlite3 db trigtest.db
+    catchsql {drop table tbl; drop view vw}
+    execsql {
+	create table tbl(a integer primary key, b integer);
+	create view vw as select * from tbl;
+	create trigger t_del_tbl instead of delete on vw for each row begin
+	  delete from tbl where a = old.a;
+	end;
+	create trigger t_upd_tbl instead of update on vw for each row begin
+	  update tbl set a=new.a, b=new.b where a = old.a;
+	end;
+	create trigger t_ins_tbl instead of insert on vw for each row begin
+	  insert into tbl values (new.a,new.b);
+	end;
+	insert into tbl values(101,1001);
+	insert into tbl values(102,1002);
+	insert into tbl select a+2, b+2 from tbl;
+	insert into tbl select a+4, b+4 from tbl;
+	insert into tbl select a+8, b+8 from tbl;
+	insert into tbl select a+16, b+16 from tbl;
+	insert into tbl select a+32, b+32 from tbl;
+	insert into tbl select a+64, b+64 from tbl;
+	select count(*) from vw;
+    }
+} {128}
+do_test trigger4-4.2 {
+    execsql {select a, b from vw where a<103 or a>226 order by a}
+} {101 1001 102 1002 227 1127 228 1128}
+
+#test delete from view
+do_test trigger4-5.1 {
+    catchsql {delete from vw where a>101 and a<2000}
+} {0 {}}
+do_test trigger4-5.2 {
+    execsql {select * from vw}
+} {101 1001}
+
+#test insert into view
+do_test trigger4-6.1 {
+    catchsql {
+	insert into vw values(102,1002);
+	insert into vw select a+2, b+2 from vw;
+	insert into vw select a+4, b+4 from vw;
+	insert into vw select a+8, b+8 from vw;
+	insert into vw select a+16, b+16 from vw;
+	insert into vw select a+32, b+32 from vw;
+	insert into vw select a+64, b+64 from vw;
+    }
+} {0 {}}
+do_test trigger4-6.2 {
+    execsql {select count(*) from vw}
+} {128}
+
+#test update of view
+do_test trigger4-7.1 {
+    catchsql {update vw set b=b+1000 where a>101 and a<2000}
+} {0 {}}
+do_test trigger4-7.2 {
+    execsql {select a, b from vw where a<=102 or a>=227 order by a}
+} {101 1001 102 2002 227 2127 228 2128}
+
+integrity_check trigger4-99.9
 
 finish_test
