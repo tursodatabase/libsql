@@ -1,5 +1,5 @@
-C Fixed\sstack\sgrowth\sin\sdelete\strigger\son\sviews\s(tkt\s#1169)\s(CVS\s2442)
-D 2005-04-08T16:07:48
+C Fixed\sstack\sgrowth\sin\supdate\strigger\son\sviews\s(tkt\s#1169)\s(CVS\s2443)
+D 2005-04-08T16:08:36
 F Makefile.in 5c00d0037104de2a50ac7647a5f12769795957a3
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -71,7 +71,7 @@ F src/test4.c 7c6b9fc33dd1f3f93c7f1ee6e5e6d016afa6c1df
 F src/test5.c 64f08b2a50ef371a1bd68ff206829e7b1b9997f5
 F src/tokenize.c 103cbaa932c790f540f8eceb63cd3010e117bdff
 F src/trigger.c 1a6d0c7c51b70bdc58d5068be72034071eff23ad
-F src/update.c 42823d00865c9fe4f01b3c62647858726345a28e
+F src/update.c ddfd8afaecc6a700c6a5ec8de85b3433eb0e42d2
 F src/utf.c bda5eb85039ef16f2d17004c1e18c96e1ab0a80c
 F src/util.c 02bc2750336b021b3f10e61538f665c4b0033b5d
 F src/vacuum.c 5cf598003191bd91c17a64742bad8e46241698a8
@@ -278,7 +278,7 @@ F www/tclsqlite.tcl 425be741b8ae664f55cb1ef2371aab0a75109cf9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P 9906ae37b9be684b615a1190cf8798513baa799a
-R 7609cb649d78c69af1ca177c172914b2
+P 1a757ba13292577d01bd7b66811bcfd6748b9f7e
+R 0413b3aff22049b4cbc185a9693dc5d6
 U kwel
-Z 7ab6075e5613a19e936e9a0dbe632efc
+Z 91c151af3d118b738fbe38c98855069a
