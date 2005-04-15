@@ -1605,7 +1605,7 @@ u32 sqlite3VdbeSerialType(Mem *pMem){
   }
   if( flags&MEM_Int ){
     /* Figure out whether to use 1, 2, 4, 6 or 8 bytes. */
-#   define MAX_6BYTE ((((i64)0x00010000)<<32)-1)
+#   define MAX_6BYTE ((((i64)0x00001000)<<32)-1)
     i64 i = pMem->i;
     u64 u = i<0 ? -i : i;
     if( u<=127 ) return 1;
