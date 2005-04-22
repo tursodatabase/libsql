@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.132 2005/03/31 22:26:20 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.133 2005/04/22 02:38:38 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1207,6 +1207,17 @@ int sqlite3_sleep(int);
 ******* THIS IS AN EXPERIMENTAL API AND IS SUBJECT TO CHANGE ******
 */
 int sqlite3_expired(sqlite3_stmt*);
+
+/*
+** Move all bindings from the first prepared statement over to the second.
+** This routine is useful, for example, if the first prepared statement
+** fails with an SQLITE_SCHEMA error.  The same SQL can be prepared into
+** the second prepared statement then all of the bindings transfered over
+** to the second statement before the first statement is finalized.
+**
+******* THIS IS AN EXPERIMENTAL API AND IS SUBJECT TO CHANGE ******
+*/
+int sqlite3_transfer_bindings(sqlite3_stmt*, sqlite3_stmt*);
 
 /*
 ** If the following global variable is made to point to a

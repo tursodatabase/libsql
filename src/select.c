@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.243 2005/03/28 03:39:56 drh Exp $
+** $Id: select.c,v 1.244 2005/04/22 02:38:38 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2760,7 +2760,7 @@ int sqlite3Select(
   /* Begin the database scan
   */
   pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere,
-                             pGroupBy ? 0 : &pOrderBy, p->pFetch);
+                             pGroupBy ? 0 : &pOrderBy);
   if( pWInfo==0 ) goto select_end;
 
   /* Use the standard inner loop if we are not dealing with

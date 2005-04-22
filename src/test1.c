@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.136 2005/03/29 03:11:00 danielk1977 Exp $
+** $Id: test1.c,v 1.137 2005/04/22 02:38:38 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -968,6 +968,30 @@ static int test_expired(
   }
   if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
   Tcl_SetObjResult(interp, Tcl_NewBooleanObj(sqlite3_expired(pStmt)));
+  return TCL_OK;
+}
+
+/*
+** Usage:  sqlite3_transfer_bindings FROMSTMT TOSTMT
+**
+** Transfer all bindings from FROMSTMT over to TOSTMT
+*/
+static int test_transfer_bind(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_stmt *pStmt1, *pStmt2;
+  if( objc!=3 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"",
+        Tcl_GetStringFromObj(objv[0], 0), " FROM-STMT TO-STMT", 0);
+    return TCL_ERROR;
+  }
+  if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt1)) return TCL_ERROR;
+  if( getStmtPointer(interp, Tcl_GetString(objv[2]), &pStmt2)) return TCL_ERROR;
+  Tcl_SetObjResult(interp, 
+     Tcl_NewIntObj(sqlite3_transfer_bindings(pStmt1,pStmt2)));
   return TCL_OK;
 }
 
@@ -2961,6 +2985,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_finalize",              test_finalize      ,0 },
      { "sqlite3_reset",                 test_reset         ,0 },
      { "sqlite3_expired",               test_expired       ,0 },
+     { "sqlite3_transfer_bindings",     test_transfer_bind ,0 },
      { "sqlite3_changes",               test_changes       ,0 },
      { "sqlite3_step",                  test_step          ,0 },
 
