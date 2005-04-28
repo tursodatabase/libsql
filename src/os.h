@@ -23,7 +23,7 @@
 ** N.B. MacOS means Mac Classic (or Carbon). Treat Darwin (OS X) as Unix.
 **      The MacOS build is designed to use CodeWarrior (tested with v8)
 */
-#if !defined(OS_UNIX) && !defined(OS_TEST)
+#if !defined(OS_UNIX) && !defined(OS_TEST) && !defined(OS_MEM)
 # ifndef OS_WIN
 #   if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
 #     define OS_WIN 1
@@ -40,6 +40,9 @@
 #  define OS_WIN 0
 # endif
 #endif
+#ifndef OS_MEM
+# define OS_MEM 0
+#endif
 
 /*
 ** Invoke the appropriate operating-system specific header file.
@@ -52,6 +55,9 @@
 #endif
 #if OS_WIN
 # include "os_win.h"
+#endif
+#if OS_MEM
+# include "os_mem.h"
 #endif
 
 /* If the SET_FULLSYNC macro is not defined above, then make it
