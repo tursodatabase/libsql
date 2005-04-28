@@ -1,5 +1,5 @@
-C Enhancements\sto\sallow\sfor\sextensions.\s(CVS\s2448)
-D 2005-04-28T17:18:48
+C Add\shooks\sfor\sthe\sSSE\sextension.\s(CVS\s2449)
+D 2005-04-28T19:03:37
 F Makefile.in 5c00d0037104de2a50ac7647a5f12769795957a3
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -55,7 +55,7 @@ F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c a48f537db37de0433fd1b527e64d08c1a5bcce19
 F src/pager.h 94bb42704ae861036a3bf3bbbe04dd3f0c6a690d
 F src/parse.y 3e314b3a96b199b0501ed426f2cee3392ffce806
-F src/pragma.c 845c8ab0ab7d09ed2115d3dfc859ba2364b365a7
+F src/pragma.c 93d447670b367e7aec9191ed952fe04f6a052eb5
 F src/printf.c 3d20b21cfecadacecac3fb7274e746cb81d3d357
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c 277cf8893db3d822905097b31dfa209198a4febe
@@ -63,7 +63,7 @@ F src/shell.c 25b3217d7c64e6497225439d261a253a23efff26
 F src/sqlite.h.in 3675e3ada207e09b9d52a0463561325df4ac26b5
 F src/sqliteInt.h 3833e39dc06168d098ab48ccdb99b669f6b12fd2
 F src/table.c 25b3ff2b39b7d87e8d4a5da0713d68dfc06cbee9
-F src/tclsqlite.c 2a8f33a359a932b6be1e6b1608b4919df93ef25d
+F src/tclsqlite.c d56821995513b2d68fa8c4a66ec2fbdfe615d8b7
 F src/test1.c 4ad7ffe5a74fd99d4f73f6fd28ba27f403b3adba
 F src/test2.c 7f0ef466706ac01414e1136b96e5d8a65cb97545
 F src/test3.c 683e1e3819152ffd35da2f201e507228921148d0
@@ -74,7 +74,7 @@ F src/trigger.c 1a6d0c7c51b70bdc58d5068be72034071eff23ad
 F src/update.c 04ea9dd784ccfeaf38a681b3edfe3b1c4edfdda7
 F src/utf.c bda5eb85039ef16f2d17004c1e18c96e1ab0a80c
 F src/util.c 02bc2750336b021b3f10e61538f665c4b0033b5d
-F src/vacuum.c 5cf598003191bd91c17a64742bad8e46241698a8
+F src/vacuum.c 84a3bebac2c79a1463b98ba35fb9fb6aa2374250
 F src/vdbe.c d2574042c44baf6b1016c61e8072dec529ac748a
 F src/vdbe.h 7f586cb6d6b57764e5aac1f87107d6a95ddce24c
 F src/vdbeInt.h 4afaae2f4adcab54ad2a40dabb2e689fba7b1561
@@ -279,7 +279,7 @@ F www/tclsqlite.tcl 425be741b8ae664f55cb1ef2371aab0a75109cf9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P 3cc14b7606681d04eb56003a0996322e3b3bdc73
-R d4db5ec65fb4b9fa5c24d7a09456a92d
+P 6863703abcb2bf31d65792d4de9ae20aba2eadb5
+R b77b663f333cae602abc3d855b901dc7
 U drh
-Z b204788877f4d50dce46756da1d298c3
+Z a5c2a369bbf6d9dce1c373a949ecd04a
