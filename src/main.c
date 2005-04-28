@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.285 2005/03/29 23:34:58 danielk1977 Exp $
+** $Id: main.c,v 1.286 2005/04/28 12:06:06 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -618,17 +618,18 @@ static int sqliteDefaultBusyCallback(
  int count                /* Number of times table has been busy */
 ){
 #if SQLITE_MIN_SLEEP_MS==1
-  static const char delays[] =
-     { 1, 2, 5, 10, 15, 20, 25, 25,  25,  50,  50,  50, 100};
-  static const short int totals[] =
-     { 0, 1, 3,  8, 18, 33, 53, 78, 103, 128, 178, 228, 287};
+  static const u8 delays[] =
+     { 1, 2, 5, 10, 15, 20, 25, 25,  25,  50,  50, 100 };
+  static const u8 totals[] =
+     { 0, 1, 3,  8, 18, 33, 53, 78, 103, 128, 178, 228 };
 # define NDELAY (sizeof(delays)/sizeof(delays[0]))
   ptr timeout = (ptr)Timeout;
   ptr delay, prior;
 
-  if( count <= NDELAY ){
-    delay = delays[count-1];
-    prior = totals[count-1];
+  assert( count>=0 );
+  if( count < NDELAY ){
+    delay = delays[count];
+    prior = totals[count];
   }else{
     delay = delays[NDELAY-1];
     prior = totals[NDELAY-1] + delay*(count-NDELAY-1);
@@ -1157,10 +1158,7 @@ int sqlite3_prepare16(
 /*
 ** This routine does the work of opening a database on behalf of
 ** sqlite3_open() and sqlite3_open16(). The database filename "zFilename"  
-** is UTF-8 encoded. The fourth argument, "def_enc" is one of the TEXT_*
-** macros from sqliteInt.h. If we end up creating a new database file
-** (not opening an existing one), the text encoding of the database
-** will be set to this value.
+** is UTF-8 encoded.
 */
 static int openDatabase(
   const char *zFilename, /* Database filename UTF-8 encoded */
