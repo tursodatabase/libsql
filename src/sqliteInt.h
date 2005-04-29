@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.377 2005/04/28 17:18:49 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.378 2005/04/29 02:10:00 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -715,7 +715,8 @@ struct FKey {
 ** comparison of the two index keys.
 **
 ** If the KeyInfo.incrKey value is true and the comparison would
-** otherwise be equal, then return a result as if the second key larger.
+** otherwise be equal, then return a result as if the second key
+** were larger.
 */
 struct KeyInfo {
   u8 enc;             /* Text encoding - one of the TEXT_Utf* values */
