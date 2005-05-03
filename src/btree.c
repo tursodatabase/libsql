@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.257 2005/05/01 22:52:42 drh Exp $
+** $Id: btree.c,v 1.258 2005/05/03 12:30:34 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -210,6 +210,12 @@
 #include "btree.h"
 #include "os.h"
 #include <assert.h>
+
+/* Round up a number to the next larger multiple of 8.  This is used
+** to force 8-byte alignment on 64-bit architectures.
+*/
+#define ROUND8(x)   ((x+7)&~7)
+
 
 /* The following value is the maximum cell size assuming a maximum page
 ** size give above.
@@ -3896,9 +3902,9 @@ static int balance_nonroot(MemPage *pPage){
   apCell = sqliteMallocRaw( 
        nMaxCells*sizeof(u8*)                           /* apCell */
      + nMaxCells*sizeof(int)                           /* szCell */
-     + sizeof(MemPage)*NB                              /* aCopy */
+     + ROUND8(sizeof(MemPage))*NB                      /* aCopy */
      + pBt->pageSize*(5+NB)                            /* aSpace */
-     + (ISAUTOVACUUM ? nMaxCells : 0)     /* aFrom */
+     + (ISAUTOVACUUM ? nMaxCells : 0)                  /* aFrom */
   );
   if( apCell==0 ){
     rc = SQLITE_NOMEM;
@@ -3906,10 +3912,13 @@ static int balance_nonroot(MemPage *pPage){
   }
   szCell = (int*)&apCell[nMaxCells];
   aCopy[0] = (u8*)&szCell[nMaxCells];
+  assert( ((aCopy[0] - (u8*)apCell) & 7)==0 ); /* 8-byte alignment required */
   for(i=1; i<NB; i++){
-    aCopy[i] = &aCopy[i-1][pBt->pageSize+sizeof(MemPage)];
+    aCopy[i] = &aCopy[i-1][pBt->pageSize+ROUND8(sizeof(MemPage))];
+    assert( ((aCopy[i] - (u8*)apCell) & 7)==0 ); /* 8-byte alignment required */
   }
-  aSpace = &aCopy[NB-1][pBt->pageSize+sizeof(MemPage)];
+  aSpace = &aCopy[NB-1][pBt->pageSize+ROUND8(sizeof(MemPage))];
+  assert( ((aSpace - (u8*)apCell) & 7)==0 ); /* 8-byte alignment required */
 #ifndef SQLITE_OMIT_AUTOVACUUM
   if( pBt->autoVacuum ){
     aFrom = &aSpace[5*pBt->pageSize];
@@ -3924,12 +3933,10 @@ static int balance_nonroot(MemPage *pPage){
   */
   for(i=0; i<nOld; i++){
     MemPage *p = apCopy[i] = (MemPage*)&aCopy[i][pBt->pageSize];
-    assert( (((long long unsigned int)p) & 7)==0 );
     p->aData = &((u8*)p)[-pBt->pageSize];
     memcpy(p->aData, apOld[i]->aData, pBt->pageSize + sizeof(MemPage));
     /* The memcpy() above changes the value of p->aData so we have to
     ** set it again. */
-    assert( (((long long unsigned int)p) & 7)==0 );
     p->aData = &((u8*)p)[-pBt->pageSize];
   }
 

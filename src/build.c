@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.318 2005/03/29 03:10:59 danielk1977 Exp $
+** $Id: build.c,v 1.319 2005/05/03 12:30:34 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -266,9 +266,10 @@ static void sqliteDeleteIndex(sqlite3 *db, Index *p){
 }
 
 /*
-** Unlink the given index from its table, then remove
-** the index from the index hash table and free its memory
-** structures.
+** For the index called zIdxName which is found in the database iDb,
+** unlike that index from its Table then remove the index from
+** the index hash table and free all memory structures associated
+** with the index.
 */
 void sqlite3UnlinkAndDeleteIndex(sqlite3 *db, int iDb, const char *zIdxName){
   Index *pIndex;
@@ -496,7 +497,7 @@ void sqlite3UnlinkAndDeleteTable(sqlite3 *db, int iDb, const char *zTabName){
 ** is obtained from sqliteMalloc() and must be freed by the calling
 ** function.
 **
-** Tokens are really just pointers into the original SQL text and so
+** Tokens are often just pointers into the original SQL text and so
 ** are not \000 terminated and are not persistent.  The returned string
 ** is \000 terminated and is persistent.
 */
