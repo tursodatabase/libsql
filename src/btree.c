@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.258 2005/05/03 12:30:34 drh Exp $
+** $Id: btree.c,v 1.259 2005/05/05 18:14:14 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -3895,6 +3895,10 @@ static int balance_nonroot(MemPage *pPage){
     nOld++;
     nMaxCells += 1+apOld[i]->nCell+apOld[i]->nOverflow;
   }
+
+  /* Make nMaxCells a multiple of 2 in order to preserve 8-byte
+  ** alignment */
+  nMaxCells = (nMaxCells + 1)&~1;
 
   /*
   ** Allocate space for memory structures

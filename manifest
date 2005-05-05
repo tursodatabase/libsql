@@ -1,5 +1,5 @@
-C Fix\sa\sdatatype\sin\strigger6.test\sthat\schanged\sdue\sto\sthe\sprevious\scheck-in.\s(CVS\s2454)
-D 2005-05-05T11:04:50
+C Patch\sto\sfix\san\salignment\sproblem\son\ssparc.\s\sTicket\s#1234.\s(CVS\s2455)
+D 2005-05-05T18:14:14
 F Makefile.in 5c00d0037104de2a50ac7647a5f12769795957a3
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -30,7 +30,7 @@ F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
 F src/alter.c 9570af388bc99471ea6e1258817fbf06e3120030
 F src/attach.c 3615dbe960cbee4aa5ea300b8a213dad36527b0f
 F src/auth.c 18c5a0befe20f3a58a41e3ddd78f372faeeefe1f
-F src/btree.c 238ebc9b5c867cc7def795ef623d98ece9ec5b42
+F src/btree.c 0d62614c54516222e639b30ab1cad37222d2dd70
 F src/btree.h 41a71ce027db9ddee72cb43df2316bbe3a1d92af
 F src/build.c 61a0beac459a495f05622132559926d88757e20c
 F src/date.c 2134ef4388256e8247405178df8a61bd60dc180a
@@ -279,7 +279,7 @@ F www/tclsqlite.tcl 425be741b8ae664f55cb1ef2371aab0a75109cf9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P 99dcba1fb1fdaa2b8bc85046b00c14f6af596e8f
-R 943162d2a51a7676be864656dabdc391
+P c2af7d2c947bcec507087cc3a1e5b21e6322e4cd
+R d8bf84c9dc04bcf63bffca9e2d31f626
 U drh
-Z a8d68ad70021089f8616993d8c1b4a8b
+Z 4f8b49e51cd7ff3933f1c67941737448
