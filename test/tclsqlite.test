@@ -15,7 +15,7 @@
 # interface is pretty well tested.  This file contains some addition
 # tests for fringe issues that the main test suite does not cover.
 #
-# $Id: tclsqlite.test,v 1.39 2005/04/03 23:54:45 danielk1977 Exp $
+# $Id: tclsqlite.test,v 1.40 2005/05/05 10:30:30 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -317,5 +317,21 @@ do_test tcl-8.3 {
   db nullvalue {}
   db eval {SELECT * FROM t1 WHERE b IS NULL}
 } {30 {}}
+
+# Test the return type of user-defined functions
+#
+do_test tcl-9.1 {
+  db function ret_str {return "hi"}
+  execsql {SELECT typeof(ret_str())}
+} {text}
+do_test tcl-9.2 {
+  db function ret_dbl {return [expr {[clock seconds]*0.5}]}
+  execsql {SELECT typeof(ret_dbl())}
+} {real}
+do_test tcl-9.3 {
+  db function ret_int {clock seconds}
+  execsql {SELECT typeof(ret_int())}
+} {integer}
+
 
 finish_test

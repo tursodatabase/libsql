@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.123 2005/04/28 19:03:37 drh Exp $
+** $Id: tclsqlite.c,v 1.124 2005/05/05 10:30:30 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -271,12 +271,33 @@ static void tclSqlFunc(sqlite3_context *context, int argc, sqlite3_value**argv){
       Tcl_DStringAppendElement(&cmd, sqlite3_value_text(argv[i]));
     }
   }
-  rc = Tcl_Eval(p->interp, Tcl_DStringValue(&cmd));
-  if( rc ){
+  rc = Tcl_EvalEx(p->interp, Tcl_DStringValue(&cmd), Tcl_DStringLength(&cmd),
+                  TCL_EVAL_DIRECT);
+  if( rc && rc!=TCL_RETURN ){
     sqlite3_result_error(context, Tcl_GetStringResult(p->interp), -1); 
   }else{
-    sqlite3_result_text(context, Tcl_GetStringResult(p->interp), -1, 
-        SQLITE_TRANSIENT);
+    Tcl_Obj *pVar = Tcl_GetObjResult(p->interp);
+    int n;
+    u8 *data;
+    char *zType = pVar->typePtr ? pVar->typePtr->name : "";
+    char c = zType[0];
+    if( c=='b' && strcmp(zType,"bytearray")==0 ){
+      data = Tcl_GetByteArrayFromObj(pVar, &n);
+      sqlite3_result_blob(context, data, n, SQLITE_TRANSIENT);
+      Tcl_IncrRefCount(pVar);
+    }else if( (c=='b' && strcmp(zType,"boolean")==0) ||
+          (c=='i' && strcmp(zType,"int")==0) ){
+      Tcl_GetIntFromObj(0, pVar, &n);
+      sqlite3_result_int(context, n);
+    }else if( c=='d' && strcmp(zType,"double")==0 ){
+      double r;
+      Tcl_GetDoubleFromObj(0, pVar, &r);
+      sqlite3_result_double(context, r);
+    }else{
+      data = Tcl_GetStringFromObj(pVar, &n);
+      sqlite3_result_text(context, data, n, SQLITE_TRANSIENT);
+      Tcl_IncrRefCount(pVar);
+    }
   }
 }
 

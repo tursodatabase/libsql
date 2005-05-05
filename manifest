@@ -1,5 +1,5 @@
-C Make\ssure\sall\sdata\sstructures\shave\s8-byte\salignment\s-\snecessary\sfor\sthe\nsparc\sarchitecture\sand\shelpful\son\sother\s64-bit\splatforms.\s\sTicket\s#1232.\nAlso\supdate\ssome\scomments\sin\sbuild.c.\s(CVS\s2452)
-D 2005-05-03T12:30:34
+C In\sthe\sTCL\sinterface,\suser-defined\sfunctions\spreserve\sthe\sdatatype\sreturned\nby\sthe\sTcl\sprocedure.\s(CVS\s2453)
+D 2005-05-05T10:30:30
 F Makefile.in 5c00d0037104de2a50ac7647a5f12769795957a3
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -63,7 +63,7 @@ F src/shell.c 25b3217d7c64e6497225439d261a253a23efff26
 F src/sqlite.h.in 3675e3ada207e09b9d52a0463561325df4ac26b5
 F src/sqliteInt.h 7123b9d5632d7eaab90cf595c83c89521ea1c3b6
 F src/table.c 25b3ff2b39b7d87e8d4a5da0713d68dfc06cbee9
-F src/tclsqlite.c d56821995513b2d68fa8c4a66ec2fbdfe615d8b7
+F src/tclsqlite.c ebdf626f28b2025ac9dac5bce7a206d059c27690
 F src/test1.c 4ad7ffe5a74fd99d4f73f6fd28ba27f403b3adba
 F src/test2.c 7f0ef466706ac01414e1136b96e5d8a65cb97545
 F src/test3.c 683e1e3819152ffd35da2f201e507228921148d0
@@ -193,7 +193,7 @@ F test/subquery.test 6274cce7617bc7f625490759cbe4f0c0eef24895
 F test/subselect.test 3f3f7a940dc3195c3139f4d530385cb54665d614
 F test/table.test e87fb2211b97c6a3a367fbc116e8572091b53160
 F test/tableapi.test 6a66d58b37d46dc0f2b3c7d4bd2617d209399bd1
-F test/tclsqlite.test 7112be2a9d0d70c8767b9b2c748bf39d407a6aba
+F test/tclsqlite.test 7593733310c1d89f0b63c84fb155104ad948135c
 F test/temptable.test c71eeffe8af807f76eafdc5a39824639a1e301df
 F test/tester.tcl 69c0dc1accaf0ff26bff62b33e13590a4ecba17d
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
@@ -279,7 +279,7 @@ F www/tclsqlite.tcl 425be741b8ae664f55cb1ef2371aab0a75109cf9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P 535523e1be692adc940d256a7b3d23c62a4cc947
-R a72ac68975ae652f87834c74a143990a
+P d9418851cebc1605d8d62aad7987c0d61a905e81
+R cc12eb94118d09818ed72970e80aadcb
 U drh
-Z bc2beeb96490a6d1f455c1c7be0e1755
+Z a8e499380f6d4d0850b3a88c9fa43f3f
