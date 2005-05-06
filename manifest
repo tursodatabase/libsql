@@ -1,5 +1,5 @@
-C Patch\sto\sfix\san\salignment\sproblem\son\ssparc.\s\sTicket\s#1234.\s(CVS\s2455)
-D 2005-05-05T18:14:14
+C Timing\sfix\sin\sthe\sdefault\sbusy\shandler.\s(CVS\s2456)
+D 2005-05-06T22:05:57
 F Makefile.in 5c00d0037104de2a50ac7647a5f12769795957a3
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -42,7 +42,7 @@ F src/hash.c 2b1b13f7400e179631c83a1be0c664608c8f021f
 F src/hash.h 1b0c445e1c89ff2aaad9b4605ba61375af001e84
 F src/insert.c 34c25c33f51a43644a42cc091ac967b070c6b6d5
 F src/legacy.c d58ea507bce885298a2c8c3cbb0f4bff5d47830b
-F src/main.c bab0ea1093176807a12da4038fc9d0e5dfdbddfc
+F src/main.c e083f7c0ce3426b3ad8211d6fbf17313c935057b
 F src/md5.c 7ae1c39044b95de2f62e066f47bb1deb880a1070
 F src/os.h e5438be25cf96858787bf9b60fc7a2420e139ee3
 F src/os_common.h 0e7f428ba0a6c40a61bc56c4e96f493231301b73
@@ -279,7 +279,7 @@ F www/tclsqlite.tcl 425be741b8ae664f55cb1ef2371aab0a75109cf9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P c2af7d2c947bcec507087cc3a1e5b21e6322e4cd
-R d8bf84c9dc04bcf63bffca9e2d31f626
+P 240cce10d4b9d595a267e392ce322472b10f286d
+R 08423cb887a56908a3d1007ecd16eff2
 U drh
-Z 4f8b49e51cd7ff3933f1c67941737448
+Z 7335d0c589f10a3550c6dd481cf668b7

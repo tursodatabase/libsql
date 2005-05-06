@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.286 2005/04/28 12:06:06 drh Exp $
+** $Id: main.c,v 1.287 2005/05/06 22:05:57 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -632,7 +632,7 @@ static int sqliteDefaultBusyCallback(
     prior = totals[count];
   }else{
     delay = delays[NDELAY-1];
-    prior = totals[NDELAY-1] + delay*(count-NDELAY-1);
+    prior = totals[NDELAY-1] + delay*(count-(NDELAY-1));
   }
   if( prior + delay > timeout ){
     delay = timeout - prior;
