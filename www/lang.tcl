@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the lang-*.html files.
 #
-set rcsid {$Id: lang.tcl,v 1.89 2005/03/21 01:24:02 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.90 2005/05/10 16:11:41 drh Exp $}
 source common.tcl
 
 if {[llength $argv]>0} {
@@ -547,9 +547,9 @@ the database is closed.  Any indices created on a temporary table
 are also temporary.  Temporary tables and indices are stored in a
 separate file distinct from the main database file.</p>
 
-<p> If a <database-name> is specified, then the table is created in 
-the named database. It is an error to specify both a <database-name>
-and the TEMP keyword, unless the <database-name> is "temp". If no
+<p> If a &lt;database-name&gt; is specified, then the table is created in 
+the named database. It is an error to specify both a &lt;database-name&gt;
+and the TEMP keyword, unless the &lt;database-name&gt; is "temp". If no
 database name is specified, and the TEMP keyword is not present,
 the table is created in the main database.</p>
 

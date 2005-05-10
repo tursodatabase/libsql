@@ -1,5 +1,5 @@
-C Timing\sfix\sin\sthe\sdefault\sbusy\shandler.\s(CVS\s2456)
-D 2005-05-06T22:05:57
+C Fix\sa\stypo\sin\sthe\sCREATE\sTABLE\sdocumentation.\s(CVS\s2457)
+D 2005-05-10T16:11:41
 F Makefile.in 5c00d0037104de2a50ac7647a5f12769795957a3
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -262,7 +262,7 @@ F www/faq.tcl 1e348dec52dc0f21f4216fd6918c69c56daa4cfd
 F www/fileformat.tcl 900c95b9633abc3dcfc384d9ddd8eb4876793059
 F www/formatchng.tcl 053ddb73646701353a5b1c9ca6274d5900739b45
 F www/index.tcl 9855377c8dd6dd9058a514f81b2adffd863a28c7
-F www/lang.tcl b121bfd638fd3fd6db7450d82cf8c8145f4753df
+F www/lang.tcl 727b4769fbad2727b0f867acaeb8706d554edb35
 F www/lockingv3.tcl f59b19d6c8920a931f096699d6faaf61c05db55f
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
 F www/nulls.tcl ec35193f92485b87b90a994a01d0171b58823fcf
@@ -279,7 +279,7 @@ F www/tclsqlite.tcl 425be741b8ae664f55cb1ef2371aab0a75109cf9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P 240cce10d4b9d595a267e392ce322472b10f286d
-R 08423cb887a56908a3d1007ecd16eff2
+P 76090ed84c73a9b9c7099e2986390ca8967128f4
+R 1f6c8a56f2e45b165d581d53ef8e453a
 U drh
-Z 7335d0c589f10a3550c6dd481cf668b7
+Z e23b6a59b60c665c0a353e5bcdd47eee
