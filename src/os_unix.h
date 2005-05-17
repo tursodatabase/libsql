@@ -91,5 +91,12 @@ struct OsFile {
 # define SQLITE_MIN_SLEEP_MS 1000
 #endif
 
+/*
+** Default permissions when creating a new file
+*/
+#ifndef SQLITE_DEFAULT_FILE_PERMISSIONS
+# define SQLITE_DEFAULT_FILE_PERMISSIONS 0644
+#endif
+
 
 #endif /* _SQLITE_OS_UNIX_H_ */

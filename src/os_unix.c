@@ -432,7 +432,8 @@ int sqlite3OsOpenReadWrite(
   int rc;
   assert( !id->isOpen );
   id->dirfd = -1;
-  id->h = open(zFilename, O_RDWR|O_CREAT|O_LARGEFILE|O_BINARY, 0644);
+  id->h = open(zFilename, O_RDWR|O_CREAT|O_LARGEFILE|O_BINARY,
+                          SQLITE_DEFAULT_FILE_PERMISSIONS);
   if( id->h<0 ){
 #ifdef EISDIR
     if( errno==EISDIR ){
@@ -561,7 +562,7 @@ int sqlite3OsOpenDirectory(
     return SQLITE_CANTOPEN;
   }
   assert( id->dirfd<0 );
-  id->dirfd = open(zDirname, O_RDONLY|O_BINARY, 0644);
+  id->dirfd = open(zDirname, O_RDONLY|O_BINARY, 0);
   if( id->dirfd<0 ){
     return SQLITE_CANTOPEN; 
   }
@@ -784,7 +785,7 @@ int sqlite3OsSyncDirectory(const char *zDirname){
   int fd;
   int r;
   SimulateIOError(SQLITE_IOERR);
-  fd = open(zDirname, O_RDONLY|O_BINARY, 0644);
+  fd = open(zDirname, O_RDONLY|O_BINARY, 0);
   TRACE3("DIRSYNC %-3d (%s)\n", fd, zDirname);
   if( fd<0 ){
     return SQLITE_CANTOPEN; 
