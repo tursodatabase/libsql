@@ -1,5 +1,5 @@
-C Fix\san\sarray\sindex\sthat\sis\sout\sof\sbounds.\s\sTicket\s#1251.\s(CVS\s2462)
-D 2005-05-19T01:26:14
+C Always\suse\sa\smore\sspecific\stype\s(P3_FUNCDEF)\sinstead\sof\sP3_POINTER\sas\sthe\nP3\stype\sof\sa\svdbe\sinstruction.\s(CVS\s2463)
+D 2005-05-19T08:43:00
 F Makefile.in 5c00d0037104de2a50ac7647a5f12769795957a3
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -58,7 +58,7 @@ F src/parse.y 3e314b3a96b199b0501ed426f2cee3392ffce806
 F src/pragma.c 93d447670b367e7aec9191ed952fe04f6a052eb5
 F src/printf.c 3d20b21cfecadacecac3fb7274e746cb81d3d357
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
-F src/select.c 5a96555ea29482d0f1ebefe63831a1f4ded562b9
+F src/select.c 43cc2a76e3e00dabc59da82d0dcdef23cdba43a3
 F src/shell.c 25b3217d7c64e6497225439d261a253a23efff26
 F src/sqlite.h.in 3675e3ada207e09b9d52a0463561325df4ac26b5
 F src/sqliteInt.h 7123b9d5632d7eaab90cf595c83c89521ea1c3b6
@@ -76,10 +76,10 @@ F src/utf.c bda5eb85039ef16f2d17004c1e18c96e1ab0a80c
 F src/util.c ac74ac096cbe61fe0139f041833a47c97a2dec07
 F src/vacuum.c 84a3bebac2c79a1463b98ba35fb9fb6aa2374250
 F src/vdbe.c d2574042c44baf6b1016c61e8072dec529ac748a
-F src/vdbe.h 7f586cb6d6b57764e5aac1f87107d6a95ddce24c
+F src/vdbe.h 75e466d84d362b0c4498978a9d6b1e6bd32ecf3b
 F src/vdbeInt.h 4afaae2f4adcab54ad2a40dabb2e689fba7b1561
 F src/vdbeapi.c 87f363c9c6a32a403d22dda6d594d3548775a0d5
-F src/vdbeaux.c b4d9b9a9d87254a279a88e3f91d0db048071c856
+F src/vdbeaux.c 77dc2e0f8e846269c51342134f3c9720f51707e6
 F src/vdbemem.c 4e853ce3151eaf7906150da85a1b3ce1fe5e8da8
 F src/where.c f02baff03e2a9ed7bdc36b363b8e4024a94de919
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
@@ -279,7 +279,7 @@ F www/tclsqlite.tcl 425be741b8ae664f55cb1ef2371aab0a75109cf9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P bfa55bec3233eed899606c309773f441857605ae
-R 6bd0eeb9bbf9503fb459ead1e3a1f2eb
-U drh
-Z d79050c6ee7e2ea7fc2cb669622669c8
+P bcf87e4d1681d6c2856e716aae0135c2b14989d8
+R 495bc2c4e1d599783a8fcd336e029946
+U danielk1977
+Z a163cd3619f69525a187245865ff6728

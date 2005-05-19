@@ -332,12 +332,17 @@ void sqlite3VdbeChangeP2(Vdbe *p, int addr, int val){
 ** A value of n==0 means copy bytes of zP3 up to and including the
 ** first null byte.  If n>0 then copy n+1 bytes of zP3.
 **
-** If n==P3_STATIC  it means that zP3 is a pointer to a constant static
-** string and we can just copy the pointer.  n==P3_POINTER means zP3 is
-** a pointer to some object other than a string.  n==P3_COLLSEQ and
-** n==P3_KEYINFO mean that zP3 is a pointer to a CollSeq or KeyInfo
-** structure.  A copy is made of KeyInfo structures into memory obtained
-** from sqliteMalloc.
+** If n==P3_KEYINFO it means that zP3 is a pointer to a KeyInfo structure.
+** A copy is made of the KeyInfo structure into memory obtained from
+** sqliteMalloc, to be freed when the Vdbe is finalized.
+** n==P3_KEYINFO_HANDOFF indicates that zP3 points to a KeyInfo structure
+** stored in memory that the caller has obtained from sqliteMalloc. The 
+** caller should not free the allocation, it will be freed when the Vdbe is
+** finalized.
+** 
+** Other values of n (P3_STATIC, P3_COLLSEQ etc.) indicate that zP3 points
+** to a string or structure that is guaranteed to exist for the lifetime of
+** the Vdbe. In these cases we can just copy the pointer.
 **
 ** If addr<0 then change P3 on the most recently inserted instruction.
 */
@@ -463,11 +468,6 @@ static char *displayP3(Op *pOp, char *zTemp, int nTemp){
   char *zP3;
   assert( nTemp>=20 );
   switch( pOp->p3type ){
-    case P3_POINTER: {
-      sprintf(zTemp, "ptr(%#x)", (int)pOp->p3);
-      zP3 = zTemp;
-      break;
-    }
     case P3_KEYINFO: {
       int i, j;
       KeyInfo *pKeyInfo = (KeyInfo*)pOp->p3;
