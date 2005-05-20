@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.202 2005/04/28 17:18:48 drh Exp $
+** @(#) $Id: pager.c,v 1.203 2005/05/20 20:01:56 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -172,7 +172,7 @@ struct PgHdr {
 #ifdef SQLITE_CHECK_PAGES
   u32 pageHash;
 #endif
-  /* pPager->psAligned bytes of page data follow this header */
+  /* pPager->pageSize bytes of page data follow this header */
   /* Pager.nExtra bytes of local data follow the page data */
 };
 
@@ -208,9 +208,9 @@ struct PgHistory {
 */
 #define PGHDR_TO_DATA(P)  ((void*)(&(P)[1]))
 #define DATA_TO_PGHDR(D)  (&((PgHdr*)(D))[-1])
-#define PGHDR_TO_EXTRA(G,P) ((void*)&((char*)(&(G)[1]))[(P)->psAligned])
+#define PGHDR_TO_EXTRA(G,P) ((void*)&((char*)(&(G)[1]))[(P)->pageSize])
 #define PGHDR_TO_HIST(P,PGR)  \
-            ((PgHistory*)&((char*)(&(P)[1]))[(PGR)->psAligned+(PGR)->nExtra])
+            ((PgHistory*)&((char*)(&(P)[1]))[(PGR)->pageSize+(PGR)->nExtra])
 
 /*
 ** How big to make the hash table used for locating in-memory pages
@@ -250,7 +250,6 @@ struct Pager {
   void (*xDestructor)(void*,int); /* Call this routine when freeing pages */
   void (*xReiniter)(void*,int);   /* Call this routine when reloading pages */
   int pageSize;               /* Number of bytes in a page */
-  int psAligned;              /* pageSize rounded up to a multiple of 8 */
   int nPage;                  /* Total number of in-memory pages */
   int nMaxPage;               /* High water mark of nPage */
   int nRef;                   /* Number of in-memory pages with PgHdr.nRef>0 */
@@ -1660,7 +1659,6 @@ int sqlite3pager_open(
   pPager->nRef = 0;
   pPager->dbSize = memDb-1;
   pPager->pageSize = SQLITE_DEFAULT_PAGE_SIZE;
-  pPager->psAligned = FORCE_ALIGNMENT(pPager->pageSize);
   pPager->stmtSize = 0;
   pPager->stmtJSize = 0;
   pPager->nPage = 0;
@@ -1716,14 +1714,16 @@ void sqlite3pager_set_reiniter(Pager *pPager, void (*xReinit)(void*,int)){
 }
 
 /*
-** Set the page size.
-**
-** The page size must only be changed when the cache is empty.
+** Set the page size.  Return the new size.  If the suggest new page
+** size is inappropriate, then an alternative page size is selected
+** and returned.
 */
-void sqlite3pager_set_pagesize(Pager *pPager, int pageSize){
+int sqlite3pager_set_pagesize(Pager *pPager, int pageSize){
   assert( pageSize>=512 && pageSize<=SQLITE_MAX_PAGE_SIZE );
-  pPager->pageSize = pageSize;
-  pPager->psAligned = FORCE_ALIGNMENT(pageSize);
+  if( !pPager->memDb ){
+    pPager->pageSize = pageSize;
+  }
+  return pPager->pageSize;
 }
 
 /*
@@ -2376,7 +2376,7 @@ int sqlite3pager_get(Pager *pPager, Pgno pgno, void **ppPage){
     pPager->nMiss++;
     if( pPager->nPage<pPager->mxPage || pPager->pFirst==0 || MEMDB ){
       /* Create a new page */
-      pPg = sqliteMallocRaw( sizeof(*pPg) + pPager->psAligned
+      pPg = sqliteMallocRaw( sizeof(*pPg) + pPager->pageSize
                               + sizeof(u32) + pPager->nExtra
                               + MEMDB*sizeof(PgHistory) );
       if( pPg==0 ){
