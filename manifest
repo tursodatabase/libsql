@@ -1,5 +1,5 @@
-C Do\snot\sallow\sthe\spagesize\sof\s:memory:\sdatabases\sto\sbe\schanged.\s\sSilently\nignore\sPRAGMA\spage_size=N\srequests\sfor\s:memory:\sdatabases.\nTicket\s#1144\sand\s#1252.\s(CVS\s2466)
-D 2005-05-20T20:01:56
+C Reorder\sstructure\sfields\sto\sreduce\scode\sfootprint.\s\sTicket\s#1253.\s\sNeed\nto\sdo\smore\sof\sthis.\s(CVS\s2467)
+D 2005-05-20T20:11:21
 F Makefile.in 5c00d0037104de2a50ac7647a5f12769795957a3
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -52,7 +52,7 @@ F src/os_unix.c cb8a39901b8eb920372c2e42f7ea9ab40f2e47ae
 F src/os_unix.h 39a393252e69e72b06715c9958df05ddbc4aa971
 F src/os_win.c 2bbbe6fbb010763c3fa79d5e951afca9b138c6b5
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c d16a1499385e630396321e48fdebb8eb9f54f362
+F src/pager.c a17fe8849ff136d1627775043191ed07079624f6
 F src/pager.h 0d9153d6269d60d04af3dd84a0cc0a96253cf4a4
 F src/parse.y 3e314b3a96b199b0501ed426f2cee3392ffce806
 F src/pragma.c 93d447670b367e7aec9191ed952fe04f6a052eb5
@@ -279,7 +279,7 @@ F www/tclsqlite.tcl 425be741b8ae664f55cb1ef2371aab0a75109cf9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P ab7805fb2fb29abc1311e23a93ba03883db7b30e
-R 02045e8d824498610299441d325bab9a
+P f29a1d882623d8ff14f35a302aef63a16388bcb3
+R 7248d3051a23636637f3bf908b92b89d
 U drh
-Z 27e3fe2bf2728abf9eb44db83a10e0ac
+Z aa9912e17fa098ce45047c53645a0e7c

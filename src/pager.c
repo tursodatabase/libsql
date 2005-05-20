@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.203 2005/05/20 20:01:56 drh Exp $
+** @(#) $Id: pager.c,v 1.204 2005/05/20 20:11:21 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -242,22 +242,15 @@ struct Pager {
   int dbSize;                 /* Number of pages in the file */
   int origDbSize;             /* dbSize before the current change */
   int stmtSize;               /* Size of database (in pages) at stmt_begin() */
-  i64 stmtJSize;              /* Size of journal at stmt_begin() */
   int nRec;                   /* Number of pages written to the journal */
   u32 cksumInit;              /* Quasi-random value added to every checksum */
   int stmtNRec;               /* Number of records in stmt subjournal */
   int nExtra;                 /* Add this many bytes to each in-memory page */
-  void (*xDestructor)(void*,int); /* Call this routine when freeing pages */
-  void (*xReiniter)(void*,int);   /* Call this routine when reloading pages */
   int pageSize;               /* Number of bytes in a page */
   int nPage;                  /* Total number of in-memory pages */
   int nMaxPage;               /* High water mark of nPage */
   int nRef;                   /* Number of in-memory pages with PgHdr.nRef>0 */
   int mxPage;                 /* Maximum number of pages to hold in cache */
-  int nHit, nMiss, nOvfl;     /* Cache hits, missing, and LRU overflows */
-  int nRead,nWrite;           /* Database pages read/written */
-  void (*xCodec)(void*,void*,Pgno,int); /* Routine for en/decoding data */
-  void *pCodecArg;            /* First argument to xCodec() */
   u8 journalOpen;             /* True if journal file descriptors is valid */
   u8 journalStarted;          /* True if header of journal is synced */
   u8 useJournal;              /* Use a rollback journal on this file */
@@ -275,9 +268,9 @@ struct Pager {
   u8 dirtyCache;              /* True if cached pages have changed */
   u8 alwaysRollback;          /* Disable dont_rollback() for all pages */
   u8 memDb;                   /* True to inhibit all file I/O */
+  u8 setMaster;               /* True if a m-j name has been written to jrnl */
   u8 *aInJournal;             /* One bit for each page in the database file */
   u8 *aInStmt;                /* One bit for each page in the database */
-  u8 setMaster;               /* True if a m-j name has been written to jrnl */
   BusyHandler *pBusyHandler;  /* Pointer to sqlite.busyHandler */
   PgHdr *pFirst, *pLast;      /* List of free pages */
   PgHdr *pFirstSynced;        /* First free page with PgHdr.needSync==0 */
@@ -287,7 +280,14 @@ struct Pager {
   i64 journalHdr;             /* Byte offset to previous journal header */
   i64 stmtHdrOff;             /* First journal header written this statement */
   i64 stmtCksum;              /* cksumInit when statement was started */
+  i64 stmtJSize;              /* Size of journal at stmt_begin() */
   int sectorSize;             /* Assumed sector size during rollback */
+  int nHit, nMiss, nOvfl;     /* Cache hits, missing, and LRU overflows */
+  int nRead,nWrite;           /* Database pages read/written */
+  void (*xDestructor)(void*,int); /* Call this routine when freeing pages */
+  void (*xReiniter)(void*,int);   /* Call this routine when reloading pages */
+  void (*xCodec)(void*,void*,Pgno,int); /* Routine for en/decoding data */
+  void *pCodecArg;            /* First argument to xCodec() */
   PgHdr *aHash[N_PG_HASH];    /* Hash table to map page number to PgHdr */
 };
 
