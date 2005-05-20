@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.124 2005/05/05 10:30:30 drh Exp $
+** $Id: tclsqlite.c,v 1.125 2005/05/20 09:40:56 danielk1977 Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -273,6 +273,8 @@ static void tclSqlFunc(sqlite3_context *context, int argc, sqlite3_value**argv){
   }
   rc = Tcl_EvalEx(p->interp, Tcl_DStringValue(&cmd), Tcl_DStringLength(&cmd),
                   TCL_EVAL_DIRECT);
+  Tcl_DStringFree(&cmd);
+
   if( rc && rc!=TCL_RETURN ){
     sqlite3_result_error(context, Tcl_GetStringResult(p->interp), -1); 
   }else{
@@ -284,7 +286,6 @@ static void tclSqlFunc(sqlite3_context *context, int argc, sqlite3_value**argv){
     if( c=='b' && strcmp(zType,"bytearray")==0 ){
       data = Tcl_GetByteArrayFromObj(pVar, &n);
       sqlite3_result_blob(context, data, n, SQLITE_TRANSIENT);
-      Tcl_IncrRefCount(pVar);
     }else if( (c=='b' && strcmp(zType,"boolean")==0) ||
           (c=='i' && strcmp(zType,"int")==0) ){
       Tcl_GetIntFromObj(0, pVar, &n);
@@ -296,7 +297,6 @@ static void tclSqlFunc(sqlite3_context *context, int argc, sqlite3_value**argv){
     }else{
       data = Tcl_GetStringFromObj(pVar, &n);
       sqlite3_result_text(context, data, n, SQLITE_TRANSIENT);
-      Tcl_IncrRefCount(pVar);
     }
   }
 }

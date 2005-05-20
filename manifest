@@ -1,5 +1,5 @@
-C Always\suse\sa\smore\sspecific\stype\s(P3_FUNCDEF)\sinstead\sof\sP3_POINTER\sas\sthe\nP3\stype\sof\sa\svdbe\sinstruction.\s(CVS\s2463)
-D 2005-05-19T08:43:00
+C Fix\smemory\sleaks\sin\sTcl\suser\sfunction\sinterface.\s(CVS\s2464)
+D 2005-05-20T09:40:56
 F Makefile.in 5c00d0037104de2a50ac7647a5f12769795957a3
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -63,7 +63,7 @@ F src/shell.c 25b3217d7c64e6497225439d261a253a23efff26
 F src/sqlite.h.in 3675e3ada207e09b9d52a0463561325df4ac26b5
 F src/sqliteInt.h 7123b9d5632d7eaab90cf595c83c89521ea1c3b6
 F src/table.c 25b3ff2b39b7d87e8d4a5da0713d68dfc06cbee9
-F src/tclsqlite.c ebdf626f28b2025ac9dac5bce7a206d059c27690
+F src/tclsqlite.c af0f002d9d6ab4f7f32b9bee5b57665946e76ad9
 F src/test1.c 4ad7ffe5a74fd99d4f73f6fd28ba27f403b3adba
 F src/test2.c 7f0ef466706ac01414e1136b96e5d8a65cb97545
 F src/test3.c 683e1e3819152ffd35da2f201e507228921148d0
@@ -279,7 +279,7 @@ F www/tclsqlite.tcl 425be741b8ae664f55cb1ef2371aab0a75109cf9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P bcf87e4d1681d6c2856e716aae0135c2b14989d8
-R 495bc2c4e1d599783a8fcd336e029946
+P 79a41674be2c0a1990598428d8b1e9d09d3ea389
+R a8f1519668cd9c3de5ed434d7977bd68
 U danielk1977
-Z a163cd3619f69525a187245865ff6728
+Z 26879986c13011337ad31b75ea04a7a9
