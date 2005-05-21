@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.378 2005/04/29 02:10:00 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.379 2005/05/21 02:48:09 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -416,16 +416,13 @@ struct Db {
 struct sqlite3 {
   int nDb;                      /* Number of backends currently in use */
   Db *aDb;                      /* All backends */
-  Db aDbStatic[2];              /* Static space for the 2 default backends */
   int flags;                    /* Miscellanous flags. See below */
+  int errCode;                  /* Most recent error code (SQLITE_*) */
+  u8 enc;                       /* Text encoding for this database. */
+  u8 autoCommit;                /* The auto-commit flag. */
   u8 file_format;               /* What file format version is this database? */
   u8 temp_store;                /* 1: file 2: memory 0: default */
   int nTable;                   /* Number of tables in the database */
-  BusyHandler busyHandler;      /* Busy callback */
-  void *pCommitArg;             /* Argument to xCommitCallback() */   
-  int (*xCommitCallback)(void*);/* Invoked at every commit. */
-  Hash aFunc;                   /* All functions that can be in SQL exprs */
-  Hash aCollSeq;                /* All collating sequences */
   CollSeq *pDfltColl;           /* The default collating sequence (BINARY) */
   i64 lastRowid;                /* ROWID of most recent insert (see above) */
   i64 priorNewRowid;            /* Last randomly generated ROWID */
@@ -441,6 +438,15 @@ struct sqlite3 {
   int activeVdbeCnt;            /* Number of vdbes currently executing */
   void (*xTrace)(void*,const char*);     /* Trace function */
   void *pTraceArg;                       /* Argument to the trace function */
+  void *pCommitArg;             /* Argument to xCommitCallback() */   
+  int (*xCommitCallback)(void*);/* Invoked at every commit. */
+  void(*xCollNeeded)(void*,sqlite3*,int eTextRep,const char*);
+  void(*xCollNeeded16)(void*,sqlite3*,int eTextRep,const void*);
+  void *pCollNeededArg;
+  sqlite3_value *pValue;        /* Value used for transient conversions */
+  sqlite3_value *pErr;          /* Most recent error message */
+  char *zErrMsg;                /* Most recent error message (UTF-8 encoded) */
+  char *zErrMsg16;              /* Most recent error message (UTF-16 encoded) */
 #ifndef SQLITE_OMIT_AUTHORIZATION
   int (*xAuth)(void*,int,const char*,const char*,const char*,const char*);
                                 /* Access authorization function */
@@ -451,19 +457,13 @@ struct sqlite3 {
   void *pProgressArg;           /* Argument to the progress callback */
   int nProgressOps;             /* Number of opcodes for progress callback */
 #endif
-  int errCode;                  /* Most recent error code (SQLITE_*) */
-  u8 enc;                       /* Text encoding for this database. */
-  u8 autoCommit;                /* The auto-commit flag. */
-  void(*xCollNeeded)(void*,sqlite3*,int eTextRep,const char*);
-  void(*xCollNeeded16)(void*,sqlite3*,int eTextRep,const void*);
-  void *pCollNeededArg;
-  sqlite3_value *pValue;        /* Value used for transient conversions */
-  sqlite3_value *pErr;          /* Most recent error message */
-  char *zErrMsg;                /* Most recent error message (UTF-8 encoded) */
-  char *zErrMsg16;              /* Most recent error message (UTF-16 encoded) */
 #ifndef SQLITE_OMIT_GLOBALRECOVER
   sqlite3 *pNext;               /* Linked list of open db handles. */
 #endif
+  Hash aFunc;                   /* All functions that can be in SQL exprs */
+  Hash aCollSeq;                /* All collating sequences */
+  BusyHandler busyHandler;      /* Busy callback */
+  Db aDbStatic[2];              /* Static space for the 2 default backends */
 };
 
 /*
@@ -1111,15 +1111,15 @@ struct Parse {
   u8 nameClash;        /* A permanent table name clashes with temp table name */
   u8 checkSchema;      /* Causes schema cookie check after an error */
   u8 nested;           /* Number of nested calls to the parser/code generator */
+  u8 fillAgg;          /* If true, ignore the Expr.iAgg field. Normally false */
   int nErr;            /* Number of errors seen */
   int nTab;            /* Number of previously allocated VDBE cursors */
   int nMem;            /* Number of memory cells used so far */
   int nSet;            /* Number of sets used so far */
-  u32 cookieMask;      /* Bitmask of schema verified databases */
-  int cookieValue[MAX_ATTACHED+2];  /* Values of cookies to verify */
-  int cookieGoto;      /* Address of OP_Goto to cookie verifier subroutine */
   u32 writeMask;       /* Start a write transaction on these databases */
-  u8 fillAgg;          /* If true, ignore the Expr.iAgg field. Normally false */
+  u32 cookieMask;      /* Bitmask of schema verified databases */
+  int cookieGoto;      /* Address of OP_Goto to cookie verifier subroutine */
+  int cookieValue[MAX_ATTACHED+2];  /* Values of cookies to verify */
 
   /* Above is constant between recursions.  Below is reset before and after
   ** each recursion */
