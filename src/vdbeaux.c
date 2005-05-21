@@ -1688,61 +1688,71 @@ int sqlite3VdbeSerialGet(
   u32 serial_type,              /* Serial type to deserialize */
   Mem *pMem                     /* Memory cell to write value into */
 ){
-  int len;
-
-  if( serial_type==0 ){
-    /* NULL */
-    pMem->flags = MEM_Null;
-    return 0;
-  }
-  len = sqlite3VdbeSerialTypeLen(serial_type);
-  if( serial_type<=7 ){
-    /* Integer and Real */
-    if( serial_type<=4 ){
-      /* 32-bit integer type.  This is handled by a special case for
-      ** performance reasons. */
-      int v = buf[0];
-      int n;
-      if( v&0x80 ){
-        v |= -256;
-      }
-      for(n=1; n<len; n++){
-        v = (v<<8) | buf[n];
-      }
+  switch( serial_type ){
+    case 8:    /* Reserved for future use */
+    case 9:    /* Reserved for future use */
+    case 10:   /* Reserved for future use */
+    case 11:   /* Reserved for future use */
+    case 0: {  /* NULL */
+      pMem->flags = MEM_Null;
+      break;
+    }
+    case 1: { /* 1-byte signed integer */
+      pMem->i = (signed char)buf[0];
       pMem->flags = MEM_Int;
-      pMem->i = v;
-      return n;
-    }else{
-      u64 v = 0;
-      int n;
-
-      if( buf[0]&0x80 ){
-        v = -1;
-      }
-      for(n=0; n<len; n++){
-        v = (v<<8) | buf[n];
-      }
-      if( serial_type==7 ){
-        pMem->flags = MEM_Real;
-        pMem->r = *(double*)&v;
-      }else{
-        pMem->flags = MEM_Int;
-        pMem->i = *(i64*)&v;
-      }
+      return 1;
     }
-  }else{
-    /* String or blob */
-    assert( serial_type>=12 );
-    pMem->z = (char *)buf;
-    pMem->n = len;
-    pMem->xDel = 0;
-    if( serial_type&0x01 ){
-      pMem->flags = MEM_Str | MEM_Ephem;
-    }else{
-      pMem->flags = MEM_Blob | MEM_Ephem;
+    case 2: { /* 2-byte signed integer */
+      pMem->i = (((signed char)buf[0])<<8) | buf[1];
+      pMem->flags = MEM_Int;
+      return 2;
+    }
+    case 3: { /* 3-byte signed integer */
+      pMem->i = (((signed char)buf[0])<<16) | (buf[1]<<8) | buf[2];
+      pMem->flags = MEM_Int;
+      return 3;
+    }
+    case 4: { /* 4-byte signed integer */
+      pMem->i = (buf[0]<<24) | (buf[1]<<16) | (buf[2]<<8) | buf[3];
+      pMem->flags = MEM_Int;
+      return 4;
+    }
+    case 5: { /* 6-byte signed integer */
+      u64 x = (((signed char)buf[0])<<8) | buf[1];
+      u32 y = (buf[2]<<24) | (buf[3]<<16) | (buf[4]<<8) | buf[5];
+      x = (x<<32) | y;
+      pMem->i = *(i64*)&x;
+      pMem->flags = MEM_Int;
+      return 6;
+    }
+    case 6:   /* 6-byte signed integer */
+    case 7: { /* IEEE floating point */
+      u64 x = (buf[0]<<24) | (buf[1]<<16) | (buf[2]<<8) | buf[3];
+      u32 y = (buf[4]<<24) | (buf[5]<<16) | (buf[6]<<8) | buf[7];
+      x = (x<<32) | y;
+      if( serial_type==6 ){
+        pMem->i = *(i64*)&x;
+        pMem->flags = MEM_Int;
+      }else{
+        pMem->r = *(double*)&x;
+        pMem->flags = MEM_Real;
+      }
+      return 8;
+    }
+    default: {
+      int len = (serial_type-12)/2;
+      pMem->z = (char *)buf;
+      pMem->n = len;
+      pMem->xDel = 0;
+      if( serial_type&0x01 ){
+        pMem->flags = MEM_Str | MEM_Ephem;
+      }else{
+        pMem->flags = MEM_Blob | MEM_Ephem;
+      }
+      return len;
     }
   }
-  return len;
+  return 0;
 }
 
 /*
@@ -1796,8 +1806,8 @@ int sqlite3VdbeRecordCompare(
     d2 += sqlite3VdbeSerialGet(&aKey2[d2], serial_type2, &mem2);
 
     rc = sqlite3MemCompare(&mem1, &mem2, i<nField ? pKeyInfo->aColl[i] : 0);
-    sqlite3VdbeMemRelease(&mem1);
-    sqlite3VdbeMemRelease(&mem2);
+    if( mem1.flags & MEM_Dyn ) sqlite3VdbeMemRelease(&mem1);
+    if( mem2.flags & MEM_Dyn ) sqlite3VdbeMemRelease(&mem2);
     if( rc!=0 ){
       break;
     }
