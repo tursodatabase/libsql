@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.133 2005/05/03 12:30:34 drh Exp $
+** $Id: util.c,v 1.134 2005/05/22 20:12:37 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -110,6 +110,13 @@ void *sqlite3Malloc_(int n, int bZero, char *zFile, int line){
       ++memcnt, n, (int)p, zFile,line);
 #endif
   return p;
+}
+
+/*
+** This version of malloc is always a real function, never a macro
+*/
+void *sqlite3MallocX(int n){
+  return sqlite3Malloc_(n, 0, __FILE__, __LINE__);
 }
 
 /*
