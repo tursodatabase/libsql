@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.35 2005/03/29 03:11:00 danielk1977 Exp $
+# $Id: pragma.test,v 1.36 2005/05/22 20:30:39 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -50,12 +50,13 @@ do_test pragma-1.1 {
 } {2000 2000 2}
 do_test pragma-1.2 {
   execsql {
+    PRAGMA synchronous=OFF;
     PRAGMA cache_size=1234;
     PRAGMA cache_size;
     PRAGMA default_cache_size;
     PRAGMA synchronous;
   }
-} {1234 2000 2}
+} {1234 2000 0}
 do_test pragma-1.3 {
   db close
   sqlite3 db test.db

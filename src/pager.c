@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.205 2005/05/21 02:48:09 drh Exp $
+** @(#) $Id: pager.c,v 1.206 2005/05/22 20:30:39 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1495,22 +1495,8 @@ end_stmt_playback:
 
 /*
 ** Change the maximum number of in-memory pages that are allowed.
-**
-** The maximum number is the absolute value of the mxPage parameter.
-** If mxPage is negative, the noSync flag is also set.  noSync bypasses
-** calls to sqlite3OsSync().  The pager runs much faster with noSync on,
-** but if the operating system crashes or there is an abrupt power 
-** failure, the database file might be left in an inconsistent and
-** unrepairable state.  
 */
 void sqlite3pager_set_cachesize(Pager *pPager, int mxPage){
-  if( mxPage>=0 ){
-    pPager->noSync = pPager->tempFile;
-    if( pPager->noSync ) pPager->needSync = 0; 
-  }else{
-    pPager->noSync = 1;
-    mxPage = -mxPage;
-  }
   if( mxPage>10 ){
     pPager->mxPage = mxPage;
   }else{
