@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.92 2005/04/28 19:03:37 drh Exp $
+** $Id: pragma.c,v 1.93 2005/05/22 06:49:57 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -911,8 +911,8 @@ void sqlite3Pragma(
   ** if it does not.
   */
   if( sqlite3StrICmp(zLeft, "create_sqlite_statement_table")==0 ){
-    extern int sqlite3CreateStatementsTable(sqlite3*);
-    sqlite3CreateStatementsTable(db);
+    extern int sqlite3CreateStatementsTable(Parse*);
+    sqlite3CreateStatementsTable(pParse);
   }else
 #endif
 

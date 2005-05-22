@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.319 2005/05/03 12:30:34 drh Exp $
+** $Id: build.c,v 1.320 2005/05/22 06:49:57 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -599,6 +599,7 @@ int sqlite3TwoPartName(
 */
 int sqlite3CheckObjectName(Parse *pParse, const char *zName){
   if( !pParse->db->init.busy && pParse->nested==0 
+          && (pParse->db->flags & SQLITE_WriteSchema)==0
           && 0==sqlite3StrNICmp(zName, "sqlite_", 7) ){
     sqlite3ErrorMsg(pParse, "object name reserved for internal use: %s", zName);
     return SQLITE_ERROR;
