@@ -608,8 +608,13 @@ int sqlite3VdbeMemFromBtree(
     zData[amt] = 0;
     zData[amt+1] = 0;
     if( rc!=SQLITE_OK ){
-      if( amt>NBFS ){
+      if( amt>NBFS-2 ){
+        assert( zData!=pMem->zShort );
+        assert( pMem->flags & MEM_Dyn );
         sqliteFree(zData);
+      } else {
+        assert( zData==pMem->zShort );
+        assert( pMem->flags & MEM_Short );
       }
       return rc;
     }

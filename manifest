@@ -1,5 +1,5 @@
-C Add\shook\sto\sregister\sSSE\suser-functions.\s(CVS\s2471)
-D 2005-05-22T10:44:34
+C Fix\sa\smemory\sleak.\s\sTicket\s#1259.\s(CVS\s2472)
+D 2005-05-22T19:21:52
 F Makefile.in 5c00d0037104de2a50ac7647a5f12769795957a3
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -80,7 +80,7 @@ F src/vdbe.h 75e466d84d362b0c4498978a9d6b1e6bd32ecf3b
 F src/vdbeInt.h 4afaae2f4adcab54ad2a40dabb2e689fba7b1561
 F src/vdbeapi.c c66b88fce58f72eee44ec8c348a2561e031d2417
 F src/vdbeaux.c 78704946502cac6ebf6805ccc9239e4ff0e56fe7
-F src/vdbemem.c 4e853ce3151eaf7906150da85a1b3ce1fe5e8da8
+F src/vdbemem.c 48a64ae95a9edc6e8d940300dad15d70d1670398
 F src/where.c f02baff03e2a9ed7bdc36b363b8e4024a94de919
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
 F test/all.test 7f0988442ab811dfa41793b5b550f5828ce316f3
@@ -279,7 +279,7 @@ F www/tclsqlite.tcl 425be741b8ae664f55cb1ef2371aab0a75109cf9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P afc8ce42b6c321463f6451727d0f85c490c8e9ae
-R 81cf9626f41bab4d4e7bf8328c89ee9d
-U danielk1977
-Z 286ccbf379b852525609a359d6b8d16d
+P 20bd303e8c6f7e69ba82ce1dc3041ea4e02d55cf
+R 2b16f203bf20f4336c2f28ec0b8afc16
+U drh
+Z 3a398f7449d7f6fee62866b5b69f1ae6
