@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.287 2005/05/06 22:05:57 drh Exp $
+** $Id: main.c,v 1.288 2005/05/23 04:51:02 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -546,6 +546,10 @@ int sqlite3_close(sqlite3 *db){
     sqlite3OsLeaveMutex();
   }
 #endif
+
+#ifdef SQLITE_SSE
+  sqlite3_finalize(db->pFetch);
+#endif 
 
   db->magic = SQLITE_MAGIC_ERROR;
   sqliteFree(db);

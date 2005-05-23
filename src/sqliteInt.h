@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.380 2005/05/22 20:12:37 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.381 2005/05/23 04:51:02 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -464,6 +464,9 @@ struct sqlite3 {
   Hash aCollSeq;                /* All collating sequences */
   BusyHandler busyHandler;      /* Busy callback */
   Db aDbStatic[2];              /* Static space for the 2 default backends */
+#ifdef SQLITE_SSE
+  sqlite3_stmt *pFetch;         /* Used by SSE to fetch stored statements */
+#endif
 };
 
 /*

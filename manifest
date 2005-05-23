@@ -1,5 +1,5 @@
-C The\scache_size\spragma\sshould\snot\sreset\sthe\ssynchronous\spragma.\s\sTicket\s#1260.\s(CVS\s2474)
-D 2005-05-22T20:30:39
+C Add\spFetch\svariable\s(used\sby\sSSE)\sto\ssqlite3\sstructure.\s(CVS\s2475)
+D 2005-05-23T04:51:02
 F Makefile.in 5c00d0037104de2a50ac7647a5f12769795957a3
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -42,7 +42,7 @@ F src/hash.c 2b1b13f7400e179631c83a1be0c664608c8f021f
 F src/hash.h 1b0c445e1c89ff2aaad9b4605ba61375af001e84
 F src/insert.c 34c25c33f51a43644a42cc091ac967b070c6b6d5
 F src/legacy.c d58ea507bce885298a2c8c3cbb0f4bff5d47830b
-F src/main.c e083f7c0ce3426b3ad8211d6fbf17313c935057b
+F src/main.c 5d7299e050c1bd4d62b2d996387bd27b1dbf9c00
 F src/md5.c 7ae1c39044b95de2f62e066f47bb1deb880a1070
 F src/os.h e5438be25cf96858787bf9b60fc7a2420e139ee3
 F src/os_common.h 0e7f428ba0a6c40a61bc56c4e96f493231301b73
@@ -61,7 +61,7 @@ F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c 43cc2a76e3e00dabc59da82d0dcdef23cdba43a3
 F src/shell.c 25b3217d7c64e6497225439d261a253a23efff26
 F src/sqlite.h.in 3675e3ada207e09b9d52a0463561325df4ac26b5
-F src/sqliteInt.h b158733d7fd434e587b1d16f1ed0bb704a74601c
+F src/sqliteInt.h bb0bfc7f761c2f0136002a3a5456f11a1c1e3981
 F src/table.c 25b3ff2b39b7d87e8d4a5da0713d68dfc06cbee9
 F src/tclsqlite.c af0f002d9d6ab4f7f32b9bee5b57665946e76ad9
 F src/test1.c 4ad7ffe5a74fd99d4f73f6fd28ba27f403b3adba
@@ -279,7 +279,7 @@ F www/tclsqlite.tcl 425be741b8ae664f55cb1ef2371aab0a75109cf9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P a39c446726099e4915a1ad72c019d3c2cfe065bb
-R a02eb89de3c808a027e63910ec80249c
-U drh
-Z 6e6c338bc9d8194056883c794c6e0cec
+P 2db2b32f269062b006ae5c4a302d116cdab8f9ec
+R b34012627a1af73a718b9fa796417bb8
+U danielk1977
+Z 3b1cdef05a4a8be2cb9ce27d87d92fd2
