@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing correlated subqueries
 #
-# $Id: subquery.test,v 1.8 2005/02/14 06:38:40 danielk1977 Exp $
+# $Id: subquery.test,v 1.9 2005/05/23 15:06:39 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -335,8 +335,46 @@ do_test subquery-4.2.2 {
   execsql {INSERT INTO t3 VALUES((SELECT max(a) FROM t3)+1)}
 } {}
 
+#------------------------------------------------------------------
+# The subquery-5.* tests make sure string literals in double-quotes
+# are handled efficiently.  Double-quote literals are first checked
+# to see if they match any column names.  If there is not column name
+# match then those literals are used a string constants.  When a
+# double-quoted string appears, we want to make sure that the search
+# for a matching column name did not cause an otherwise static subquery
+# to become a dynamic (correlated) subquery.
+#
+do_test subquery-5.1 {
+  proc callcntproc {n} {
+    incr ::callcnt
+    return $n
+  }
+  set callcnt 0
+  db function callcnt callcntproc
+  execsql {
+    CREATE TABLE t4(x,y);
+    INSERT INTO t4 VALUES('one',1);
+    INSERT INTO t4 VALUES('two',2);
+    INSERT INTO t4 VALUES('three',3);
+    INSERT INTO t4 VALUES('four',4);
+    CREATE TABLE t5(a,b);
+    INSERT INTO t5 VALUES(1,11);
+    INSERT INTO t5 VALUES(2,22);
+    INSERT INTO t5 VALUES(3,33);
+    INSERT INTO t5 VALUES(4,44);
+    SELECT b FROM t5 WHERE a IN 
+       (SELECT callcnt(y)+0 FROM t4 WHERE x="two")
+  }
+} {22}
+do_test subquery-5.2 {
+  # This is the key test.  The subquery should have only run once.  If
+  # The double-quoted identifier "two" were causing the subquery to be
+  # processed as a correlated subquery, then it would have run 4 times.
+  set callcnt
+} {1}
+
+
+
 
 
 finish_test
-
-

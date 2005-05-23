@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.198 2005/04/22 02:38:38 drh Exp $
+** $Id: expr.c,v 1.199 2005/05/23 15:06:39 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -790,7 +790,6 @@ static int lookupName(
     SrcList *pSrcList = pNC->pSrcList;
     ExprList *pEList = pNC->pEList;
 
-    pNC->nRef++;
     /* assert( zTab==0 || pEList==0 ); */
     if( pSrcList ){
       for(i=0, pItem=pSrcList->a; i<pSrcList->nSrc; i++, pItem++){
@@ -898,9 +897,9 @@ static int lookupName(
           pExpr->op = TK_AS;
           pExpr->iColumn = j;
           pExpr->pLeft = sqlite3ExprDup(pEList->a[j].pExpr);
-          sqliteFree(zCol);
+          cnt = 1;
           assert( zTab==0 && zDb==0 );
-          return 0;
+          goto lookupname_end_2;
         }
       } 
     }
@@ -919,6 +918,9 @@ static int lookupName(
   ** Z is a string literal if it doesn't match any column names.  In that
   ** case, we need to return right away and not make any changes to
   ** pExpr.
+  **
+  ** Because no reference was made to outer contexts, the pNC->nRef
+  ** fields are not changed in any context.
   */
   if( cnt==0 && zTab==0 && pColumnToken->z[0]=='"' ){
     sqliteFree(zCol);
@@ -965,20 +967,31 @@ lookupname_end:
   */
   sqliteFree(zDb);
   sqliteFree(zTab);
-  sqliteFree(zCol);
   sqlite3ExprDelete(pExpr->pLeft);
   pExpr->pLeft = 0;
   sqlite3ExprDelete(pExpr->pRight);
   pExpr->pRight = 0;
   pExpr->op = TK_COLUMN;
+lookupname_end_2:
+  sqliteFree(zCol);
   if( cnt==1 ){
     assert( pNC!=0 );
     sqlite3AuthRead(pParse, pExpr, pNC->pSrcList);
     if( pMatch && !pMatch->pSelect ){
       pExpr->pTab = pMatch->pTab;
     }
+    /* Increment the nRef value on all name contexts from TopNC up to
+    ** the point where the name matched. */
+    for(;;){
+      assert( pTopNC!=0 );
+      pTopNC->nRef++;
+      if( pTopNC==pNC ) break;
+      pTopNC = pTopNC->pNext;
+    }
+    return 0;
+  } else {
+    return 1;
   }
-  return cnt!=1;
 }
 
 /*
