@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.199 2005/05/23 15:06:39 drh Exp $
+** $Id: expr.c,v 1.200 2005/05/23 17:26:51 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -995,49 +995,6 @@ lookupname_end_2:
 }
 
 /*
-** pExpr is a node that defines a function of some kind.  It might
-** be a syntactic function like "count(x)" or it might be a function
-** that implements an operator, like "a LIKE b".  
-**
-** This routine makes *pzName point to the name of the function and 
-** *pnName hold the number of characters in the function name.
-*/
-static void getFunctionName(Expr *pExpr, const char **pzName, int *pnName){
-  switch( pExpr->op ){
-    case TK_FUNCTION: {
-      *pzName = pExpr->token.z;
-      *pnName = pExpr->token.n;
-      break;
-    }
-    case TK_LIKE: {
-      *pzName = "like";
-      *pnName = 4;
-      break;
-    }
-    case TK_GLOB: {
-      *pzName = "glob";
-      *pnName = 4;
-      break;
-    }
-    case TK_CTIME: {
-      *pzName = "current_time";
-      *pnName = 12;
-      break;
-    }
-    case TK_CDATE: {
-      *pzName = "current_date";
-      *pnName = 12;
-      break;
-    }
-    case TK_CTIMESTAMP: {
-      *pzName = "current_timestamp";
-      *pnName = 17;
-      break;
-    }
-  }
-}
-
-/*
 ** This routine is designed as an xFunc for walkExprTree().
 **
 ** Resolve symbolic names into TK_COLUMN operators for the current
@@ -1111,11 +1068,7 @@ static int nameResolverStep(void *pArg, Expr *pExpr){
 
     /* Resolve function names
     */
-    case TK_CTIME:
-    case TK_CTIMESTAMP:
-    case TK_CDATE:
-    case TK_GLOB:
-    case TK_LIKE:
+    case TK_CONST_FUNC:
     case TK_FUNCTION: {
       ExprList *pList = pExpr->pList;    /* The argument list */
       int n = pList ? pList->nExpr : 0;  /* Number of arguments */
@@ -1128,7 +1081,8 @@ static int nameResolverStep(void *pArg, Expr *pExpr){
       FuncDef *pDef;              /* Information about the function */
       int enc = pParse->db->enc;  /* The database encoding */
 
-      getFunctionName(pExpr, &zId, &nId);
+      zId = pExpr->token.z;
+      nId = pExpr->token.n;
       pDef = sqlite3FindFunction(pParse->db, zId, nId, n, enc, 0);
       if( pDef==0 ){
         pDef = sqlite3FindFunction(pParse->db, zId, nId, -1, enc, 0);
@@ -1544,11 +1498,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       sqlite3VdbeAddOp(v, OP_AggGet, 0, pExpr->iAgg);
       break;
     }
-    case TK_CDATE:
-    case TK_CTIME:
-    case TK_CTIMESTAMP:
-    case TK_GLOB:
-    case TK_LIKE:
+    case TK_CONST_FUNC:
     case TK_FUNCTION: {
       ExprList *pList = pExpr->pList;
       int nExpr = pList ? pList->nExpr : 0;
@@ -1559,7 +1509,8 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       int i;
       u8 enc = pParse->db->enc;
       CollSeq *pColl = 0;
-      getFunctionName(pExpr, &zId, &nId);
+      zId = pExpr->token.z;
+      nId = pExpr->token.n;
       pDef = sqlite3FindFunction(pParse->db, zId, nId, nExpr, enc, 0);
       assert( pDef!=0 );
       nExpr = sqlite3ExprCodeExprList(pParse, pList);

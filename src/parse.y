@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.171 2005/04/22 02:38:38 drh Exp $
+** @(#) $Id: parse.y,v 1.172 2005/05/23 17:26:51 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -48,8 +48,8 @@ struct LimitVal {
 ** GLOB, NOT LIKE, and NOT GLOB operators.
 */
 struct LikeOp {
-  int opcode;   /* Either TK_GLOB or TK_LIKE */
-  int not;      /* True if the NOT keyword is present */
+  Token operator;  /* "like" or "glob" or "regexp" */
+  int not;         /* True if the NOT keyword is present */
 };
 
 /*
@@ -75,7 +75,7 @@ struct AttachKey { int type;  Token key; };
 // add them to the parse.h output file.
 //
 %nonassoc END_OF_FILE ILLEGAL SPACE UNCLOSED_STRING COMMENT FUNCTION
-          COLUMN AGG_FUNCTION.
+          COLUMN AGG_FUNCTION CONST_FUNC.
 
 // Input is a single SQL command
 input ::= cmdlist.
@@ -153,13 +153,13 @@ id(A) ::= ID(X).         {A = X;}
 %fallback ID
   ABORT AFTER ASC ATTACH BEFORE BEGIN CASCADE CONFLICT
   DATABASE DEFERRED DESC DETACH EACH END EXCLUSIVE EXPLAIN FAIL FOR
-  GLOB IGNORE IMMEDIATE INITIALLY INSTEAD LIKE MATCH KEY
+  IGNORE IMMEDIATE INITIALLY INSTEAD LIKE_KW MATCH KEY
   OF OFFSET PRAGMA RAISE REPLACE RESTRICT ROW STATEMENT
   TEMP TRIGGER VACUUM VIEW
 %ifdef SQLITE_OMIT_COMPOUND_SELECT
   EXCEPT INTERSECT UNION
 %endif
-  REINDEX RENAME CDATE CTIME CTIMESTAMP ALTER
+  REINDEX RENAME CTIME_KW ALTER
   .
 
 // Define operator precedence early so that this is the first occurance
@@ -176,7 +176,7 @@ id(A) ::= ID(X).         {A = X;}
 %left OR.
 %left AND.
 %right NOT.
-%left IS LIKE GLOB BETWEEN IN ISNULL NOTNULL NE EQ.
+%left IS LIKE_KW BETWEEN IN ISNULL NOTNULL NE EQ.
 %left GT LE LT GE.
 %right ESCAPE.
 %left BITAND BITOR LSHIFT RSHIFT.
@@ -627,9 +627,12 @@ expr(A) ::= ID(X) LP STAR RP(E). {
   A = sqlite3ExprFunction(0, &X);
   sqlite3ExprSpan(A,&X,&E);
 }
-term(A) ::= CTIME(OP).                  {A = sqlite3Expr(@OP,0,0,0);}
-term(A) ::= CDATE(OP).                  {A = sqlite3Expr(@OP,0,0,0);}
-term(A) ::= CTIMESTAMP(OP).             {A = sqlite3Expr(@OP,0,0,0);}
+term(A) ::= CTIME_KW(OP). {
+  /* The CURRENT_TIME, CURRENT_DATE, and CURRENT_TIMESTAMP values are
+  ** treated as functions that return constants */
+  A = sqlite3ExprFunction(0,&OP);
+  if( A ) A->op = TK_CONST_FUNC;  
+}
 expr(A) ::= expr(X) AND(OP) expr(Y).    {A = sqlite3Expr(@OP, X, Y, 0);}
 expr(A) ::= expr(X) OR(OP) expr(Y).     {A = sqlite3Expr(@OP, X, Y, 0);}
 expr(A) ::= expr(X) LT(OP) expr(Y).     {A = sqlite3Expr(@OP, X, Y, 0);}
@@ -649,21 +652,18 @@ expr(A) ::= expr(X) SLASH(OP) expr(Y).  {A = sqlite3Expr(@OP, X, Y, 0);}
 expr(A) ::= expr(X) REM(OP) expr(Y).    {A = sqlite3Expr(@OP, X, Y, 0);}
 expr(A) ::= expr(X) CONCAT(OP) expr(Y). {A = sqlite3Expr(@OP, X, Y, 0);}
 %type likeop {struct LikeOp}
-likeop(A) ::= LIKE.     {A.opcode = TK_LIKE; A.not = 0;}
-likeop(A) ::= GLOB.     {A.opcode = TK_GLOB; A.not = 0;}
-likeop(A) ::= NOT LIKE. {A.opcode = TK_LIKE; A.not = 1;}
-likeop(A) ::= NOT GLOB. {A.opcode = TK_GLOB; A.not = 1;}
+likeop(A) ::= LIKE_KW(X).     {A.operator = X; A.not = 0;}
+likeop(A) ::= NOT LIKE_KW(X). {A.operator = X; A.not = 1;}
 %type escape {Expr*}
 escape(X) ::= ESCAPE expr(A). [ESCAPE] {X = A;}
 escape(X) ::= .               [ESCAPE] {X = 0;}
-expr(A) ::= expr(X) likeop(OP) expr(Y) escape(E).  [LIKE]  {
+expr(A) ::= expr(X) likeop(OP) expr(Y) escape(E).  [LIKE_KW]  {
   ExprList *pList = sqlite3ExprListAppend(0, Y, 0);
   pList = sqlite3ExprListAppend(pList, X, 0);
   if( E ){
     pList = sqlite3ExprListAppend(pList, E, 0);
   }
-  A = sqlite3ExprFunction(pList, 0);
-  if( A ) A->op = OP.opcode;
+  A = sqlite3ExprFunction(pList, &OP.operator);
   if( OP.not ) A = sqlite3Expr(TK_NOT, A, 0, 0);
   sqlite3ExprSpan(A, &X->span, &Y->span);
 }
