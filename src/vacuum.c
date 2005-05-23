@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.42 2005/05/22 06:49:57 danielk1977 Exp $
+** $Id: vacuum.c,v 1.43 2005/05/23 13:00:58 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -313,6 +313,9 @@ end_of_vacuum:
   if( rc==SQLITE_OK ){
     extern int sqlite3RecompileStatements(sqlite3*);
     rc = sqlite3RecompileStatements(db);
+    if( rc!=SQLITE_OK ){
+      sqlite3SetString(pzErrMsg, sqlite3_errmsg(db), (char *)0);
+    }
   }
 #endif /* SQLITE_SSE */
 

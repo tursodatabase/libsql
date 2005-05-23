@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.134 2005/05/22 20:12:37 drh Exp $
+** $Id: util.c,v 1.135 2005/05/23 13:00:58 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -397,7 +397,7 @@ void sqlite3SetString(char **pz, const char *zFirst, ...){
 ** zFormat and any string tokens that follow it are assumed to be
 ** encoded in UTF-8.
 **
-** To clear the most recent error for slqite handle "db", sqlite3Error
+** To clear the most recent error for sqlite handle "db", sqlite3Error
 ** should be called with err_code set to SQLITE_OK and zFormat set
 ** to NULL.
 */
