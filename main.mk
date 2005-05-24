@@ -136,7 +136,6 @@ TESTSRC = \
 HDR = \
    sqlite3.h  \
    $(TOP)/src/btree.h \
-   config.h \
    $(TOP)/src/hash.h \
    opcodes.h \
    $(TOP)/src/os.h \
@@ -156,7 +155,7 @@ VDBEHDR = \
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
 #
-all:	sqlite3.h config.h libsqlite3.a sqlite3$(EXE)
+all:	sqlite3.h libsqlite3.a sqlite3$(EXE)
 
 # Generate the file "last_change" which contains the date of change
 # of the most recently modified source code file
@@ -211,22 +210,6 @@ btree.o:	$(TOP)/src/btree.c $(HDR) $(TOP)/src/pager.h
 
 build.o:	$(TOP)/src/build.c $(HDR)
 	$(TCCX) -c $(TOP)/src/build.c
-
-# The config.h file will contain a single #define that tells us how
-# many bytes are in a pointer.  This only works if a pointer is the
-# same size on the host as it is on the target.  If you are cross-compiling
-# to a target with a different pointer size, you'll need to manually
-# configure the config.h file.
-#
-config.h:	
-	echo '#include <stdio.h>' >temp.c
-	echo 'int main(){printf(' >>temp.c
-	echo '"#define SQLITE_PTR_SZ %d",sizeof(char*));' >>temp.c
-	echo 'exit(0);}' >>temp.c
-	$(BCC) -o temp temp.c
-	./temp >config.h
-	echo >>config.h
-	rm -f temp.c temp
 
 callback.o:	$(TOP)/src/callback.c $(HDR)
 	$(TCCX) -c $(TOP)/src/callback.c

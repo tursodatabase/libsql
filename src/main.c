@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.289 2005/05/24 12:01:02 danielk1977 Exp $
+** $Id: main.c,v 1.290 2005/05/24 20:19:59 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -631,7 +631,7 @@ const char *sqlite3ErrStr(int rc){
 ** argument.
 */
 static int sqliteDefaultBusyCallback(
- void *Timeout,           /* Maximum amount of time to wait */
+ void *ptr,               /* Database connection */
  int count                /* Number of times table has been busy */
 ){
 #if SQLITE_MIN_SLEEP_MS==1
@@ -640,8 +640,8 @@ static int sqliteDefaultBusyCallback(
   static const u8 totals[] =
      { 0, 1, 3,  8, 18, 33, 53, 78, 103, 128, 178, 228 };
 # define NDELAY (sizeof(delays)/sizeof(delays[0]))
-  ptr timeout = (ptr)Timeout;
-  ptr delay, prior;
+  int timeout = ((sqlite3 *)ptr)->busyTimeout;
+  int delay, prior;
 
   assert( count>=0 );
   if( count < NDELAY ){
@@ -717,7 +717,8 @@ void sqlite3_progress_handler(
 */
 int sqlite3_busy_timeout(sqlite3 *db, int ms){
   if( ms>0 ){
-    sqlite3_busy_handler(db, sqliteDefaultBusyCallback, (void*)(ptr)ms);
+    db->busyTimeout = ms;
+    sqlite3_busy_handler(db, sqliteDefaultBusyCallback, (void*)db);
   }else{
     sqlite3_busy_handler(db, 0, 0);
   }

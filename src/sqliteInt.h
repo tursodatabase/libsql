@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.382 2005/05/24 12:01:02 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.383 2005/05/24 20:19:59 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -39,7 +39,6 @@
 # define _LARGEFILE_SOURCE 1
 #endif
 
-#include "config.h"
 #include "sqlite3.h"
 #include "hash.h"
 #include "parse.h"
@@ -180,20 +179,6 @@
 #ifndef LONGDOUBLE_TYPE
 # define LONGDOUBLE_TYPE long double
 #endif
-#ifndef INTPTR_TYPE
-# if SQLITE_PTR_SZ==4
-#   define INTPTR_TYPE int
-# else
-#   define INTPTR_TYPE sqlite_int64
-# endif
-#endif
-#ifndef UINTPTR_TYPE
-# if SQLITE_PTR_SZ==4
-#   define UINTPTR_TYPE unsigned int
-# else
-#   define UINTPTR_TYPE sqlite_uint64
-# endif
-#endif
 typedef sqlite_int64 i64;          /* 8-byte signed integer */
 typedef UINT64_TYPE u64;           /* 8-byte unsigned integer */
 typedef UINT32_TYPE u32;           /* 4-byte unsigned integer */
@@ -201,8 +186,6 @@ typedef UINT16_TYPE u16;           /* 2-byte unsigned integer */
 typedef INT16_TYPE i16;            /* 2-byte signed integer */
 typedef UINT8_TYPE u8;             /* 1-byte unsigned integer */
 typedef UINT8_TYPE i8;             /* 1-byte signed integer */
-typedef INTPTR_TYPE ptr;           /* Big enough to hold a pointer */
-typedef UINTPTR_TYPE uptr;         /* Big enough to hold a pointer */
 
 /*
 ** Macros to determine whether the machine is big or little endian,
@@ -463,6 +446,7 @@ struct sqlite3 {
   Hash aFunc;                   /* All functions that can be in SQL exprs */
   Hash aCollSeq;                /* All collating sequences */
   BusyHandler busyHandler;      /* Busy callback */
+  int busyTimeout;             /* Busy handler timeout, in msec */
   Db aDbStatic[2];              /* Static space for the 2 default backends */
 #ifdef SQLITE_SSE
   sqlite3_stmt *pFetch;         /* Used by SSE to fetch stored statements */

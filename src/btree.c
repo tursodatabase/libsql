@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.260 2005/05/20 20:01:56 drh Exp $
+** $Id: btree.c,v 1.261 2005/05/24 20:19:58 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1219,8 +1219,6 @@ int sqlite3BtreeOpen(
   assert( sizeof(u32)==4 );
   assert( sizeof(u16)==2 );
   assert( sizeof(Pgno)==4 );
-  assert( sizeof(ptr)==sizeof(char*) );
-  assert( sizeof(uptr)==sizeof(ptr) );
 
   pBt = sqliteMalloc( sizeof(*pBt) );
   if( pBt==0 ){

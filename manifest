@@ -1,6 +1,6 @@
-C Move\sa\sfew\sthings\saround\sto\smake\sbuilding\swithout\sthe\sparser\seasier.\s(CVS\s2479)
-D 2005-05-24T12:01:01
-F Makefile.in d9507f787ff6dbf650138ad5484cf24aa77884d3
+C Remove\sthe\sconfig.h\sfile\sfrom\sthe\sbuild.\s\sTicket\s#1224.\s(CVS\s2480)
+D 2005-05-24T20:19:58
+F Makefile.in b2b2d69640853c3917fedd9296e9003d610d86b1
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
 F VERSION 44187d7938af15a89b7b2dcd0016ffe5ec84961f
@@ -16,7 +16,7 @@ F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
-F main.mk 4002b109f2e3a3d64f4ef24a3e0c5755fc42911e
+F main.mk 4695aa29032a0665c2becf38a29180b38b90e178
 F mkdll.sh 5ec23622515d5bf8969404e80cfb5e220ddf0512
 F mkopcodec.awk bd46ad001c98dfbab07b1713cb8e692fa0e5415d
 F mkopcodeh.awk 7563ad235670e864ead95cf672be3fe081450ae0
@@ -30,20 +30,20 @@ F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
 F src/alter.c 9570af388bc99471ea6e1258817fbf06e3120030
 F src/attach.c 3615dbe960cbee4aa5ea300b8a213dad36527b0f
 F src/auth.c 18c5a0befe20f3a58a41e3ddd78f372faeeefe1f
-F src/btree.c 85ee452bf378f297054aded9ea6eaed846fa4855
+F src/btree.c d2e09ebf755bfd665727133361b22c6a915b12d7
 F src/btree.h 41a71ce027db9ddee72cb43df2316bbe3a1d92af
-F src/build.c 5d3cee156a3e010303db5615e335e7e23d82d5e1
+F src/build.c b7a5d09791cff54dbe9d8ace89217fcbc6cd475d
 F src/callback.c c80e399ec3ef01d9a667f87c79331648a4debb13
 F src/date.c 2134ef4388256e8247405178df8a61bd60dc180a
 F src/delete.c 75b53db21aa1879d3655bbbc208007db31d58a63
 F src/experimental.c 50c1e3b34f752f4ac10c36f287db095c2b61766d
-F src/expr.c 62cfa7d8b3debc85495e61df03930e7fdfc2a80c
+F src/expr.c 54a4c18d34c0f81b0e9b6dff40ce97a8fcd6f2a8
 F src/func.c f208d71f741d47b63277530939f552815af8ce35
 F src/hash.c 2b1b13f7400e179631c83a1be0c664608c8f021f
 F src/hash.h 1b0c445e1c89ff2aaad9b4605ba61375af001e84
 F src/insert.c 34c25c33f51a43644a42cc091ac967b070c6b6d5
 F src/legacy.c d58ea507bce885298a2c8c3cbb0f4bff5d47830b
-F src/main.c e7aae2fbc0b29aa4c3fb7639ca69e9cc32e6855f
+F src/main.c 8de9c03d8388d2ccb3a89bdf0596f2280e21b655
 F src/md5.c 7ae1c39044b95de2f62e066f47bb1deb880a1070
 F src/os.h e5438be25cf96858787bf9b60fc7a2420e139ee3
 F src/os_common.h 0e7f428ba0a6c40a61bc56c4e96f493231301b73
@@ -62,7 +62,7 @@ F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c 43cc2a76e3e00dabc59da82d0dcdef23cdba43a3
 F src/shell.c 25b3217d7c64e6497225439d261a253a23efff26
 F src/sqlite.h.in 3675e3ada207e09b9d52a0463561325df4ac26b5
-F src/sqliteInt.h a1f5cc21e7f615a50be484ff4916af0852a0e1a3
+F src/sqliteInt.h 9eb8fa1c04da427a0a840b0a0359a8b763484c58
 F src/table.c 25b3ff2b39b7d87e8d4a5da0713d68dfc06cbee9
 F src/tclsqlite.c af0f002d9d6ab4f7f32b9bee5b57665946e76ad9
 F src/test1.c 4ad7ffe5a74fd99d4f73f6fd28ba27f403b3adba
@@ -280,7 +280,7 @@ F www/tclsqlite.tcl 425be741b8ae664f55cb1ef2371aab0a75109cf9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P 42a626ace126f730f33ecb6c41ac5679d6766a31
-R bfa075e2f7d191385c3e4fa4220d17e2
-U danielk1977
-Z 75c5f4d08b7ca7a5578ff061978a62fb
+P 5fadb464eb77b4b998d8555f83401769960ea904
+R 559b7971d270b59c0ead6f07efa2b008
+U drh
+Z c2b1f0d897d1329ca3d0de496bb83bf1

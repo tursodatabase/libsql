@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.321 2005/05/24 12:01:02 danielk1977 Exp $
+** $Id: build.c,v 1.322 2005/05/24 20:19:58 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1442,7 +1442,7 @@ void sqlite3EndTable(
     if( pSelect ){
       zStmt = createTableStmt(p);
     }else{
-      n = Addr(pEnd->z) - Addr(pParse->sNameToken.z) + 1;
+      n = pEnd->z - pParse->sNameToken.z + 1;
       zStmt = sqlite3MPrintf("CREATE %s %.*s", zType2, n, pParse->sNameToken.z);
     }
 
@@ -2395,7 +2395,7 @@ void sqlite3CreateIndex(
       /* A named index with an explicit CREATE INDEX statement */
       zStmt = sqlite3MPrintf("CREATE%s INDEX %.*s",
         onError==OE_None ? "" : " UNIQUE",
-        Addr(pEnd->z) - Addr(pName->z) + 1,
+        pEnd->z - pName->z + 1,
         pName->z);
     }else{
       /* An automatic index created by a PRIMARY KEY or UNIQUE constraint */
