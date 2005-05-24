@@ -112,7 +112,7 @@ TCC += -DSQLITE_OMIT_CURSOR
 
 # Object files for the SQLite library.
 #
-LIBOBJ = alter.lo attach.lo auth.lo btree.lo build.lo date.lo \
+LIBOBJ = alter.lo attach.lo auth.lo btree.lo build.lo callback.lo date.lo \
          delete.lo expr.lo func.lo hash.lo insert.lo \
          main.lo opcodes.lo os_unix.lo os_win.lo \
          pager.lo parse.lo pragma.lo printf.lo random.lo \
@@ -129,6 +129,7 @@ SRC = \
   $(TOP)/src/btree.c \
   $(TOP)/src/btree.h \
   $(TOP)/src/build.c \
+  $(TOP)/src/callback.c \
   $(TOP)/src/date.c \
   $(TOP)/src/delete.c \
   $(TOP)/src/expr.c \
@@ -291,6 +292,9 @@ config.h:
 	./temp >config.h
 	echo >>config.h
 	rm -f temp.c temp
+
+callback.lo:	$(TOP)/src/callback.c $(HDR)
+	$(LTCOMPILE) -c $(TOP)/src/callback.c
 
 date.lo:	$(TOP)/src/date.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/date.c

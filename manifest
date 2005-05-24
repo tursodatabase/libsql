@@ -1,6 +1,6 @@
-C The\sREGEXP\soperator\sis\srecognized.\s\sIt\stries\sto\sinvoke\sa\sfunction\snamed\r\nregexp()\swhich\sdoes\snot\sexist\sin\sthe\snative\sbuild.\s\sBut\susers\swho\swant\sto\r\ncan\sadd\san\sappropriate\sregexp()\sfunction\susing\ssqlite3_create_function().\s(CVS\s2478)
-D 2005-05-23T17:26:51
-F Makefile.in 5c00d0037104de2a50ac7647a5f12769795957a3
+C Move\sa\sfew\sthings\saround\sto\smake\sbuilding\swithout\sthe\sparser\seasier.\s(CVS\s2479)
+D 2005-05-24T12:01:01
+F Makefile.in d9507f787ff6dbf650138ad5484cf24aa77884d3
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
 F VERSION 44187d7938af15a89b7b2dcd0016ffe5ec84961f
@@ -16,7 +16,7 @@ F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
-F main.mk 3acc5ae52addd43fd1858fe99fca54a49bca6a56
+F main.mk 4002b109f2e3a3d64f4ef24a3e0c5755fc42911e
 F mkdll.sh 5ec23622515d5bf8969404e80cfb5e220ddf0512
 F mkopcodec.awk bd46ad001c98dfbab07b1713cb8e692fa0e5415d
 F mkopcodeh.awk 7563ad235670e864ead95cf672be3fe081450ae0
@@ -32,17 +32,18 @@ F src/attach.c 3615dbe960cbee4aa5ea300b8a213dad36527b0f
 F src/auth.c 18c5a0befe20f3a58a41e3ddd78f372faeeefe1f
 F src/btree.c 85ee452bf378f297054aded9ea6eaed846fa4855
 F src/btree.h 41a71ce027db9ddee72cb43df2316bbe3a1d92af
-F src/build.c 6770abc63df9f3ed9f44c50411bb63692cb4589f
+F src/build.c 5d3cee156a3e010303db5615e335e7e23d82d5e1
+F src/callback.c c80e399ec3ef01d9a667f87c79331648a4debb13
 F src/date.c 2134ef4388256e8247405178df8a61bd60dc180a
 F src/delete.c 75b53db21aa1879d3655bbbc208007db31d58a63
 F src/experimental.c 50c1e3b34f752f4ac10c36f287db095c2b61766d
-F src/expr.c d0fbb951fd260feb2e2028c5ec078e98daca5bb6
-F src/func.c d09df82e35ef988cd28a3ffd63cd772271b7def9
+F src/expr.c 62cfa7d8b3debc85495e61df03930e7fdfc2a80c
+F src/func.c f208d71f741d47b63277530939f552815af8ce35
 F src/hash.c 2b1b13f7400e179631c83a1be0c664608c8f021f
 F src/hash.h 1b0c445e1c89ff2aaad9b4605ba61375af001e84
 F src/insert.c 34c25c33f51a43644a42cc091ac967b070c6b6d5
 F src/legacy.c d58ea507bce885298a2c8c3cbb0f4bff5d47830b
-F src/main.c 5d7299e050c1bd4d62b2d996387bd27b1dbf9c00
+F src/main.c e7aae2fbc0b29aa4c3fb7639ca69e9cc32e6855f
 F src/md5.c 7ae1c39044b95de2f62e066f47bb1deb880a1070
 F src/os.h e5438be25cf96858787bf9b60fc7a2420e139ee3
 F src/os_common.h 0e7f428ba0a6c40a61bc56c4e96f493231301b73
@@ -61,7 +62,7 @@ F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c 43cc2a76e3e00dabc59da82d0dcdef23cdba43a3
 F src/shell.c 25b3217d7c64e6497225439d261a253a23efff26
 F src/sqlite.h.in 3675e3ada207e09b9d52a0463561325df4ac26b5
-F src/sqliteInt.h bb0bfc7f761c2f0136002a3a5456f11a1c1e3981
+F src/sqliteInt.h a1f5cc21e7f615a50be484ff4916af0852a0e1a3
 F src/table.c 25b3ff2b39b7d87e8d4a5da0713d68dfc06cbee9
 F src/tclsqlite.c af0f002d9d6ab4f7f32b9bee5b57665946e76ad9
 F src/test1.c 4ad7ffe5a74fd99d4f73f6fd28ba27f403b3adba
@@ -74,7 +75,7 @@ F src/trigger.c 1a6d0c7c51b70bdc58d5068be72034071eff23ad
 F src/update.c 04ea9dd784ccfeaf38a681b3edfe3b1c4edfdda7
 F src/utf.c bda5eb85039ef16f2d17004c1e18c96e1ab0a80c
 F src/util.c ae41deda8b026e141a00938fcab8e4431578d6ea
-F src/vacuum.c f14521a8033350ce3dbe11ff9a25674b1d6298df
+F src/vacuum.c f4eb8facbfede77cac4d8c205a76a1a9b9b0d21d
 F src/vdbe.c d2574042c44baf6b1016c61e8072dec529ac748a
 F src/vdbe.h 75e466d84d362b0c4498978a9d6b1e6bd32ecf3b
 F src/vdbeInt.h 4afaae2f4adcab54ad2a40dabb2e689fba7b1561
@@ -279,7 +280,7 @@ F www/tclsqlite.tcl 425be741b8ae664f55cb1ef2371aab0a75109cf9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P ef4059e3afa1a61a9e59df00cdfedc57d8df9fec
-R 8996a199d8872550587b98a7437c931f
-U drh
-Z 797c50f3e25833784eb0ca0d6800d861
+P 42a626ace126f730f33ecb6c41ac5679d6766a31
+R bfa075e2f7d191385c3e4fa4220d17e2
+U danielk1977
+Z 75c5f4d08b7ca7a5578ff061978a62fb

@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.288 2005/05/23 04:51:02 danielk1977 Exp $
+** $Id: main.c,v 1.289 2005/05/24 12:01:02 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -46,6 +46,19 @@ static void corruptSchema(InitData *pData, const char *zExtra){
        zExtra!=0 && zExtra[0]!=0 ? " - " : (char*)0, zExtra, (char*)0);
   }
 }
+
+#ifndef SQLITE_OMIT_UTF16
+/* 
+** Return the transient sqlite3_value object used for encoding conversions
+** during SQL compilation.
+*/
+sqlite3_value *sqlite3GetTransientValue(sqlite3 *db){
+  if( !db->pValue ){
+    db->pValue = sqlite3ValueNew();
+  }
+  return db->pValue;
+}
+#endif
 
 /*
 ** This is the callback routine for the code that initializes the

@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.320 2005/05/22 06:49:57 danielk1977 Exp $
+** $Id: build.c,v 1.321 2005/05/24 12:01:02 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1075,76 +1075,6 @@ void sqlite3AddCollateType(Parse *pParse, const char *zType, int nType){
     assert( pIdx->nColumn==1 );
     if( pIdx->aiColumn[0]==i ) pIdx->keyInfo.aColl[0] = pColl;
   }
-}
-
-/*
-** Locate and return an entry from the db.aCollSeq hash table. If the entry
-** specified by zName and nName is not found and parameter 'create' is
-** true, then create a new entry. Otherwise return NULL.
-**
-** Each pointer stored in the sqlite3.aCollSeq hash table contains an
-** array of three CollSeq structures. The first is the collation sequence
-** prefferred for UTF-8, the second UTF-16le, and the third UTF-16be.
-**
-** Stored immediately after the three collation sequences is a copy of
-** the collation sequence name. A pointer to this string is stored in
-** each collation sequence structure.
-*/
-static CollSeq * findCollSeqEntry(
-  sqlite3 *db,
-  const char *zName,
-  int nName,
-  int create
-){
-  CollSeq *pColl;
-  if( nName<0 ) nName = strlen(zName);
-  pColl = sqlite3HashFind(&db->aCollSeq, zName, nName);
-
-  if( 0==pColl && create ){
-    pColl = sqliteMalloc( 3*sizeof(*pColl) + nName + 1 );
-    if( pColl ){
-      CollSeq *pDel = 0;
-      pColl[0].zName = (char*)&pColl[3];
-      pColl[0].enc = SQLITE_UTF8;
-      pColl[1].zName = (char*)&pColl[3];
-      pColl[1].enc = SQLITE_UTF16LE;
-      pColl[2].zName = (char*)&pColl[3];
-      pColl[2].enc = SQLITE_UTF16BE;
-      memcpy(pColl[0].zName, zName, nName);
-      pColl[0].zName[nName] = 0;
-      pDel = sqlite3HashInsert(&db->aCollSeq, pColl[0].zName, nName, pColl);
-
-      /* If a malloc() failure occured in sqlite3HashInsert(), it will 
-      ** return the pColl pointer to be deleted (because it wasn't added
-      ** to the hash table).
-      */
-      assert( !pDel || (sqlite3_malloc_failed && pDel==pColl) );
-      sqliteFree(pDel);
-    }
-  }
-  return pColl;
-}
-
-/*
-** Parameter zName points to a UTF-8 encoded string nName bytes long.
-** Return the CollSeq* pointer for the collation sequence named zName
-** for the encoding 'enc' from the database 'db'.
-**
-** If the entry specified is not found and 'create' is true, then create a
-** new entry.  Otherwise return NULL.
-*/
-CollSeq *sqlite3FindCollSeq(
-  sqlite3 *db,
-  u8 enc,
-  const char *zName,
-  int nName,
-  int create
-){
-  CollSeq *pColl = findCollSeqEntry(db, zName, nName, create);
-  assert( SQLITE_UTF8==1 && SQLITE_UTF16LE==2 && SQLITE_UTF16BE==3 );
-  assert( enc>=SQLITE_UTF8 && enc<=SQLITE_UTF16BE );
-  if( pColl ) pColl += enc-1;
-  return pColl;
 }
 
 /*
@@ -2910,19 +2840,6 @@ void sqlite3BeginWriteOperation(Parse *pParse, int setStatement, int iDb){
     sqlite3BeginWriteOperation(pParse, setStatement, 1);
   }
 }
-
-#ifndef SQLITE_OMIT_UTF16
-/* 
-** Return the transient sqlite3_value object used for encoding conversions
-** during SQL compilation.
-*/
-sqlite3_value *sqlite3GetTransientValue(sqlite3 *db){
-  if( !db->pValue ){
-    db->pValue = sqlite3ValueNew();
-  }
-  return db->pValue;
-}
-#endif
 
 /*
 ** Check to see if pIndex uses the collating sequence pColl.  Return

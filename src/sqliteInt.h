@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.381 2005/05/23 04:51:02 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.382 2005/05/24 12:01:02 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1577,5 +1577,9 @@ void sqlite3ColumnDefault(Vdbe *, Table *, int);
 void sqlite3AlterFinishAddColumn(Parse *, Token *);
 void sqlite3AlterBeginAddColumn(Parse *, SrcList *);
 const char *sqlite3TestErrorName(int);
+
+#ifdef SQLITE_SSE
+#include "sseInt.h"
+#endif
 
 #endif
