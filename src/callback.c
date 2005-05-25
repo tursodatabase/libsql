@@ -13,10 +13,126 @@
 ** This file contains functions used to access the internal hash tables
 ** of user defined functions and collation sequences.
 **
-** $Id: callback.c,v 1.1 2005/05/24 12:01:02 danielk1977 Exp $
+** $Id: callback.c,v 1.2 2005/05/25 10:45:10 danielk1977 Exp $
 */
 
 #include "sqliteInt.h"
+
+/*
+** Invoke the 'collation needed' callback to request a collation sequence
+** in the database text encoding of name zName, length nName.
+** If the collation sequence
+*/
+static void callCollNeeded(sqlite3 *db, const char *zName, int nName){
+  assert( !db->xCollNeeded || !db->xCollNeeded16 );
+  if( nName<0 ) nName = strlen(zName);
+  if( db->xCollNeeded ){
+    char *zExternal = sqliteStrNDup(zName, nName);
+    if( !zExternal ) return;
+    db->xCollNeeded(db->pCollNeededArg, db, (int)db->enc, zExternal);
+    sqliteFree(zExternal);
+  }
+#ifndef SQLITE_OMIT_UTF16
+  if( db->xCollNeeded16 ){
+    char const *zExternal;
+    sqlite3_value *pTmp = sqlite3GetTransientValue(db);
+    sqlite3ValueSetStr(pTmp, -1, zName, SQLITE_UTF8, SQLITE_STATIC);
+    zExternal = sqlite3ValueText(pTmp, SQLITE_UTF16NATIVE);
+    if( !zExternal ) return;
+    db->xCollNeeded16(db->pCollNeededArg, db, (int)db->enc, zExternal);
+  }
+#endif
+}
+
+/*
+** This routine is called if the collation factory fails to deliver a
+** collation function in the best encoding but there may be other versions
+** of this collation function (for other text encodings) available. Use one
+** of these instead if they exist. Avoid a UTF-8 <-> UTF-16 conversion if
+** possible.
+*/
+static int synthCollSeq(sqlite3 *db, CollSeq *pColl){
+  CollSeq *pColl2;
+  char *z = pColl->zName;
+  int n = strlen(z);
+  int i;
+  static const u8 aEnc[] = { SQLITE_UTF16BE, SQLITE_UTF16LE, SQLITE_UTF8 };
+  for(i=0; i<3; i++){
+    pColl2 = sqlite3FindCollSeq(db, aEnc[i], z, n, 0);
+    if( pColl2->xCmp!=0 ){
+      memcpy(pColl, pColl2, sizeof(CollSeq));
+      return SQLITE_OK;
+    }
+  }
+  return SQLITE_ERROR;
+}
+
+/*
+** This function is responsible for invoking the collation factory callback
+** or substituting a collation sequence of a different encoding when the
+** requested collation sequence is not available in the database native
+** encoding.
+** 
+** If it is not NULL, then pColl must point to the database native encoding 
+** collation sequence with name zName, length nName.
+**
+** The return value is either the collation sequence to be used in database
+** db for collation type name zName, length nName, or NULL, if no collation
+** sequence can be found.
+*/
+CollSeq *sqlite3GetCollSeq(
+  sqlite3* db, 
+  CollSeq *pColl, 
+  const char *zName, 
+  int nName
+){
+  CollSeq *p;
+
+  p = pColl;
+  if( !p ){
+    p = sqlite3FindCollSeq(db, db->enc, zName, nName, 0);
+  }
+  if( !p || !p->xCmp ){
+    /* No collation sequence of this type for this encoding is registered.
+    ** Call the collation factory to see if it can supply us with one.
+    */
+    callCollNeeded(db, zName, nName);
+    p = sqlite3FindCollSeq(db, db->enc, zName, nName, 0);
+  }
+  if( p && !p->xCmp && synthCollSeq(db, p) ){
+    p = 0;
+  }
+  assert( !p || p->xCmp );
+  return p;
+}
+
+/*
+** This routine is called on a collation sequence before it is used to
+** check that it is defined. An undefined collation sequence exists when
+** a database is loaded that contains references to collation sequences
+** that have not been defined by sqlite3_create_collation() etc.
+**
+** If required, this routine calls the 'collation needed' callback to
+** request a definition of the collating sequence. If this doesn't work, 
+** an equivalent collating sequence that uses a text encoding different
+** from the main database is substituted, if one is available.
+*/
+int sqlite3CheckCollSeq(Parse *pParse, CollSeq *pColl){
+  if( pColl ){
+    const char *zName = pColl->zName;
+    CollSeq *p = sqlite3GetCollSeq(pParse->db, pColl, zName, -1);
+    if( !p ){
+      if( pParse->nErr==0 ){
+        sqlite3ErrorMsg(pParse, "no such collation sequence: %s", zName);
+      }
+      pParse->nErr++;
+      return SQLITE_ERROR;
+    }
+  }
+  return SQLITE_OK;
+}
+
+
 
 /*
 ** Locate and return an entry from the db.aCollSeq hash table. If the entry
