@@ -1,6 +1,6 @@
-C Remove\sthe\sconfig.h\sfile\sfrom\sthe\sbuild.\s\sTicket\s#1224.\s(CVS\s2480)
-D 2005-05-24T20:19:58
-F Makefile.in b2b2d69640853c3917fedd9296e9003d610d86b1
+C Split\smain.c\sinto\stwo\sfiles\sto\smake\sbuilding\swithout\sthe\sparser\seasier.\s(CVS\s2481)
+D 2005-05-25T04:11:56
+F Makefile.in 8129e7f261d405db783676f9ca31e0841768c652
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
 F VERSION 44187d7938af15a89b7b2dcd0016ffe5ec84961f
@@ -16,7 +16,7 @@ F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
-F main.mk 4695aa29032a0665c2becf38a29180b38b90e178
+F main.mk 8972f361ff4d9f3e215c4a346c91424620c87fc4
 F mkdll.sh 5ec23622515d5bf8969404e80cfb5e220ddf0512
 F mkopcodec.awk bd46ad001c98dfbab07b1713cb8e692fa0e5415d
 F mkopcodeh.awk 7563ad235670e864ead95cf672be3fe081450ae0
@@ -43,7 +43,7 @@ F src/hash.c 2b1b13f7400e179631c83a1be0c664608c8f021f
 F src/hash.h 1b0c445e1c89ff2aaad9b4605ba61375af001e84
 F src/insert.c 34c25c33f51a43644a42cc091ac967b070c6b6d5
 F src/legacy.c d58ea507bce885298a2c8c3cbb0f4bff5d47830b
-F src/main.c 8de9c03d8388d2ccb3a89bdf0596f2280e21b655
+F src/main.c 8954071c07b29636c57c4cb7b445562210738e29
 F src/md5.c 7ae1c39044b95de2f62e066f47bb1deb880a1070
 F src/os.h e5438be25cf96858787bf9b60fc7a2420e139ee3
 F src/os_common.h 0e7f428ba0a6c40a61bc56c4e96f493231301b73
@@ -57,6 +57,7 @@ F src/pager.c f86d79d37eb4e30d8e2201dbe12497370719320c
 F src/pager.h 0d9153d6269d60d04af3dd84a0cc0a96253cf4a4
 F src/parse.y 72cd7553f05fbc7b63ea9476108d0da6237f2818
 F src/pragma.c 0ed94a1aa982802a9cf2a932c48d99b60683fa53
+F src/prepare.c d53602d2f8e097225ae7c76ec764ae68f759ba47
 F src/printf.c 3d20b21cfecadacecac3fb7274e746cb81d3d357
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c 43cc2a76e3e00dabc59da82d0dcdef23cdba43a3
@@ -280,7 +281,7 @@ F www/tclsqlite.tcl 425be741b8ae664f55cb1ef2371aab0a75109cf9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P 5fadb464eb77b4b998d8555f83401769960ea904
-R 559b7971d270b59c0ead6f07efa2b008
-U drh
-Z c2b1f0d897d1329ca3d0de496bb83bf1
+P 3e64f1ab417f371e9875915303b898c5b45f0807
+R f1df240b45731b7db4ecb585924f1d63
+U danielk1977
+Z 9396e64a640a1eaa13d2b45263343304

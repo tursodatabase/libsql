@@ -57,7 +57,7 @@ TCCX = $(TCC) $(OPTS) $(THREADSAFE) $(USLEEP) -I. -I$(TOP)/src
 LIBOBJ+= alter.o attach.o auth.o btree.o build.o callback.o date.o delete.o \
          expr.o func.o hash.o insert.o \
          main.o opcodes.o os_unix.o os_win.o \
-         pager.o parse.o pragma.o printf.o random.o \
+         pager.o parse.o pragma.o prepare.o printf.o random.o \
          select.o table.o tclsqlite.o tokenize.o trigger.o \
          update.o util.o vacuum.o \
          vdbe.o vdbeapi.o vdbeaux.o vdbemem.o \
@@ -88,6 +88,7 @@ SRC = \
   $(TOP)/src/pager.h \
   $(TOP)/src/parse.y \
   $(TOP)/src/pragma.c \
+  $(TOP)/src/prepare.c \
   $(TOP)/src/printf.c \
   $(TOP)/src/random.c \
   $(TOP)/src/select.c \
@@ -267,6 +268,9 @@ parse.c:	$(TOP)/src/parse.y lemon
 
 pragma.o:	$(TOP)/src/pragma.c $(HDR)
 	$(TCCX) $(TCL_FLAGS) -c $(TOP)/src/pragma.c
+
+prepare.o:	$(TOP)/src/prepare.c $(HDR)
+	$(TCCX) $(TCL_FLAGS) -c $(TOP)/src/prepare.c
 
 printf.o:	$(TOP)/src/printf.c $(HDR)
 	$(TCCX) $(TCL_FLAGS) -c $(TOP)/src/printf.c
