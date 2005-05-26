@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.291 2005/05/25 04:11:56 danielk1977 Exp $
+** $Id: main.c,v 1.292 2005/05/26 12:37:30 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -131,6 +131,10 @@ int sqlite3_close(sqlite3 *db){
     return SQLITE_MISUSE;
   }
 
+#ifdef SQLITE_SSE
+  sqlite3_finalize(db->pFetch);
+#endif 
+
   /* If there are any outstanding VMs, return SQLITE_BUSY. */
   if( db->pVdbe ){
     sqlite3Error(db, SQLITE_BUSY, 
@@ -199,10 +203,6 @@ int sqlite3_close(sqlite3 *db){
     sqlite3OsLeaveMutex();
   }
 #endif
-
-#ifdef SQLITE_SSE
-  sqlite3_finalize(db->pFetch);
-#endif 
 
   db->magic = SQLITE_MAGIC_ERROR;
   sqliteFree(db);

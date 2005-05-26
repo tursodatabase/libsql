@@ -1,5 +1,5 @@
-C Rearrange\scode\sso\sthat\sSSE\scan\sinvoke\sthe\scollation\sfactory.\s(CVS\s2482)
-D 2005-05-25T10:45:10
+C Fix\sminor\sproblems\swith\sthe\sSSE\shooks.\s(CVS\s2483)
+D 2005-05-26T12:37:30
 F Makefile.in 8129e7f261d405db783676f9ca31e0841768c652
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -43,7 +43,7 @@ F src/hash.c 2b1b13f7400e179631c83a1be0c664608c8f021f
 F src/hash.h 1b0c445e1c89ff2aaad9b4605ba61375af001e84
 F src/insert.c 34c25c33f51a43644a42cc091ac967b070c6b6d5
 F src/legacy.c d58ea507bce885298a2c8c3cbb0f4bff5d47830b
-F src/main.c 8954071c07b29636c57c4cb7b445562210738e29
+F src/main.c 9fa85c83f5fc6344dcf412db6034375377b7a494
 F src/md5.c 7ae1c39044b95de2f62e066f47bb1deb880a1070
 F src/os.h e5438be25cf96858787bf9b60fc7a2420e139ee3
 F src/os_common.h 0e7f428ba0a6c40a61bc56c4e96f493231301b73
@@ -81,7 +81,7 @@ F src/vdbe.c d2574042c44baf6b1016c61e8072dec529ac748a
 F src/vdbe.h 75e466d84d362b0c4498978a9d6b1e6bd32ecf3b
 F src/vdbeInt.h 4afaae2f4adcab54ad2a40dabb2e689fba7b1561
 F src/vdbeapi.c c66b88fce58f72eee44ec8c348a2561e031d2417
-F src/vdbeaux.c 78704946502cac6ebf6805ccc9239e4ff0e56fe7
+F src/vdbeaux.c 73b1198632eaa755453902b2ddb11912225a6e9d
 F src/vdbemem.c 48a64ae95a9edc6e8d940300dad15d70d1670398
 F src/where.c f02baff03e2a9ed7bdc36b363b8e4024a94de919
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
@@ -281,7 +281,7 @@ F www/tclsqlite.tcl 425be741b8ae664f55cb1ef2371aab0a75109cf9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P d50915fafbde6859a5c2c3fc5cc9b99553b54e21
-R 787444208f2d5447ef2c5b202731c1af
+P ea061d2ed3b25908fcfcb88e35ba612e5832a217
+R c0886d90d97cd48729bc15e91bbe8ca8
 U danielk1977
-Z 8246f07000cee68270a634faa3b8b200
+Z fde40e8424ae3dba39bd881dabac125c

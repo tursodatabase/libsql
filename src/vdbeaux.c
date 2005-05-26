@@ -353,6 +353,9 @@ void sqlite3VdbeChangeP3(Vdbe *p, int addr, const char *zP3, int n){
     if( n==P3_DYNAMIC || n==P3_KEYINFO_HANDOFF ){
       sqliteFree((void*)zP3);
     }
+    if( n==P3_MEM ){
+      sqlite3ValueFree((sqlite3_value *)zP3);
+    }
     return;
   }
   if( addr<0 || addr>=p->nOp ){
