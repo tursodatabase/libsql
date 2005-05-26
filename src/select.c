@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.247 2005/05/19 08:43:00 danielk1977 Exp $
+** $Id: select.c,v 1.248 2005/05/26 14:41:47 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -2735,7 +2735,14 @@ int sqlite3Select(
     for(i=0; i<pParse->nAgg; i++){
       FuncDef *pFunc;
       if( (pFunc = pParse->aAgg[i].pFunc)!=0 && pFunc->xFinalize!=0 ){
-        sqlite3VdbeOp3(v, OP_AggInit, 0, i, (char*)pFunc, P3_FUNCDEF);
+        int nExpr = 0;
+#ifdef SQLITE_SSE
+        Expr *pAggExpr = pParse->aAgg[i].pExpr;
+        if( pAggExpr && pAggExpr->pList ){
+          nExpr = pAggExpr->pList->nExpr;
+        }
+#endif
+        sqlite3VdbeOp3(v, OP_AggInit, nExpr, i, (char*)pFunc, P3_FUNCDEF);
       }
     }
     if( pGroupBy ){

@@ -1,5 +1,5 @@
-C Fix\sminor\sproblems\swith\sthe\sSSE\shooks.\s(CVS\s2483)
-D 2005-05-26T12:37:30
+C If\sSSE\sis\senabled,\sset\sthe\sP1\sfield\sof\sOP_AggInit\sinstructions\sto\sthe\nnumber\sof\sarguments\sthat\swill\sbe\spassed\sto\sthe\saggregate\sfunction.\s(CVS\s2484)
+D 2005-05-26T14:41:47
 F Makefile.in 8129e7f261d405db783676f9ca31e0841768c652
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -60,7 +60,7 @@ F src/pragma.c 0ed94a1aa982802a9cf2a932c48d99b60683fa53
 F src/prepare.c d53602d2f8e097225ae7c76ec764ae68f759ba47
 F src/printf.c 3d20b21cfecadacecac3fb7274e746cb81d3d357
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
-F src/select.c 43cc2a76e3e00dabc59da82d0dcdef23cdba43a3
+F src/select.c 071a484044efb74fb5d8f79560822cbfc7c906c3
 F src/shell.c 25b3217d7c64e6497225439d261a253a23efff26
 F src/sqlite.h.in 3675e3ada207e09b9d52a0463561325df4ac26b5
 F src/sqliteInt.h 0de60fafa8d9a15b03b4ed2cfbc2372a5b259295
@@ -77,7 +77,7 @@ F src/update.c 04ea9dd784ccfeaf38a681b3edfe3b1c4edfdda7
 F src/utf.c bda5eb85039ef16f2d17004c1e18c96e1ab0a80c
 F src/util.c ae41deda8b026e141a00938fcab8e4431578d6ea
 F src/vacuum.c f4eb8facbfede77cac4d8c205a76a1a9b9b0d21d
-F src/vdbe.c d2574042c44baf6b1016c61e8072dec529ac748a
+F src/vdbe.c 15b12cdaeb5096257143a00f466a00eed6137d2e
 F src/vdbe.h 75e466d84d362b0c4498978a9d6b1e6bd32ecf3b
 F src/vdbeInt.h 4afaae2f4adcab54ad2a40dabb2e689fba7b1561
 F src/vdbeapi.c c66b88fce58f72eee44ec8c348a2561e031d2417
@@ -281,7 +281,7 @@ F www/tclsqlite.tcl 425be741b8ae664f55cb1ef2371aab0a75109cf9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P ea061d2ed3b25908fcfcb88e35ba612e5832a217
-R c0886d90d97cd48729bc15e91bbe8ca8
+P 3516ca29da5f28adc1fd4da42ca5551d154b6320
+R fb8133ee7b3f8d44d4b20f875de709cb
 U danielk1977
-Z fde40e8424ae3dba39bd881dabac125c
+Z 9c5b5b34671c0ef15bbd98e4a6d13703

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.465 2005/04/01 10:47:40 drh Exp $
+** $Id: vdbe.c,v 1.466 2005/05/26 14:41:47 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -4337,11 +4337,16 @@ case OP_AggReset: {        /* no-push */
   break;
 }
 
-/* Opcode: AggInit * P2 P3
+/* Opcode: AggInit P1 P2 P3
 **
 ** Initialize the function parameters for an aggregate function.
 ** The aggregate will operate out of aggregate column P2.
 ** P3 is a pointer to the FuncDef structure for the function.
+**
+** The P1 argument is not used by this opcode. However if the SSE
+** extension is compiled in, P1 is set to the number of arguments that
+** will be passed to the aggregate function, if any. This is used
+** by SSE to select the correct function when (de)serializing statements.
 */
 case OP_AggInit: {        /* no-push */
   int i = pOp->p2;
