@@ -1,5 +1,5 @@
-C Add\sa\s-cleanup\soption\sto\sTcl\stest\sproc\sdo_ioerr_test.\s(CVS\s2485)
-D 2005-05-26T15:20:53
+C Add\san\sexperimental\ssqlite3_get_autocommit()\sAPI\sused\sto\stest\swhether\sor\snot\nchanges\sare\scommitted\sautomatically.\s(CVS\s2486)
+D 2005-05-26T16:23:34
 F Makefile.in 8129e7f261d405db783676f9ca31e0841768c652
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -43,7 +43,7 @@ F src/hash.c 2b1b13f7400e179631c83a1be0c664608c8f021f
 F src/hash.h 1b0c445e1c89ff2aaad9b4605ba61375af001e84
 F src/insert.c 34c25c33f51a43644a42cc091ac967b070c6b6d5
 F src/legacy.c d58ea507bce885298a2c8c3cbb0f4bff5d47830b
-F src/main.c 9fa85c83f5fc6344dcf412db6034375377b7a494
+F src/main.c f61bdb0a1afeb2eff7285f4f3752e1085ecc55ed
 F src/md5.c 7ae1c39044b95de2f62e066f47bb1deb880a1070
 F src/os.h e5438be25cf96858787bf9b60fc7a2420e139ee3
 F src/os_common.h 0e7f428ba0a6c40a61bc56c4e96f493231301b73
@@ -62,11 +62,11 @@ F src/printf.c 3d20b21cfecadacecac3fb7274e746cb81d3d357
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c 071a484044efb74fb5d8f79560822cbfc7c906c3
 F src/shell.c 25b3217d7c64e6497225439d261a253a23efff26
-F src/sqlite.h.in 3675e3ada207e09b9d52a0463561325df4ac26b5
+F src/sqlite.h.in f28f5b018f03a66aaf0bc1ab6985d8605d6b964f
 F src/sqliteInt.h 0de60fafa8d9a15b03b4ed2cfbc2372a5b259295
 F src/table.c 25b3ff2b39b7d87e8d4a5da0713d68dfc06cbee9
 F src/tclsqlite.c af0f002d9d6ab4f7f32b9bee5b57665946e76ad9
-F src/test1.c 4ad7ffe5a74fd99d4f73f6fd28ba27f403b3adba
+F src/test1.c 6a8943111d63b31433be49d9f9f7bee796ef12e1
 F src/test2.c 7f0ef466706ac01414e1136b96e5d8a65cb97545
 F src/test3.c 683e1e3819152ffd35da2f201e507228921148d0
 F src/test4.c 7c6b9fc33dd1f3f93c7f1ee6e5e6d016afa6c1df
@@ -110,7 +110,7 @@ F test/btree5.test 8e5ff32c02e685d36516c6499add9375fe1377f2
 F test/btree6.test a5ede6bfbbb2ec8b27e62813612c0f28e8f3e027
 F test/btree7.test a6d3b842db22af97dd14b989e90a2fd96066b72f
 F test/capi2.test f897209386fb21cfdc9267595e0c667ebaca9164
-F test/capi3.test 7c1c91895239fef05427ceb628a193cb4f61031f
+F test/capi3.test feadced0b3cc4085c328439b7e64ce7963801c5b
 F test/capi3b.test 5b6a66f9f295f79f443b5d3f33187fa5ef6cf336
 F test/collate1.test f79736d2ebf5492167ee4d1f4ab4c09dda776b03
 F test/collate2.test 224a632ba04907c049804b08162efd234aa7871f
@@ -281,7 +281,7 @@ F www/tclsqlite.tcl 425be741b8ae664f55cb1ef2371aab0a75109cf9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P 7f67b9f0f398583651d226fabf2fafd2635d772a
-R c6bfa60e45e3c36269b49426e1b9d927
-U danielk1977
-Z 0110a3d4036ad18c1628df7000ce6af7
+P b0a898c05a2285c87d7da4d47dd697c58a0d4d58
+R 113e24d04585bd6cfafaa3cb61125259
+U drh
+Z f82135b994cfa2d26c1f56d5cdbaf4d2

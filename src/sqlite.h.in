@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.133 2005/04/22 02:38:38 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.134 2005/05/26 16:23:34 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1251,6 +1251,18 @@ extern char *sqlite3_temp_directory;
 ** SQLITE_OMIT_GLOBALRECOVER at compile time.
 */
 int sqlite3_global_recover();
+
+/*
+** Test to see whether or not the database connection is in autocommit
+** mode.  Return TRUE if it is and FALSE if not.  Autocommit mode is on
+** by default.  Autocommit is disabled by a BEGIN statement and reenabled
+** by the next COMMIT or ROLLBACK.
+**
+******* THIS IS AN EXPERIMENTAL API AND IS SUBJECT TO CHANGE ******
+*/
+int sqlite3_get_autocommit(sqlite3*);
+
+
 
 #ifdef __cplusplus
 }  /* End of the 'extern "C"' block */

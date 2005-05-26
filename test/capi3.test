@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi3.test,v 1.31 2005/03/09 12:26:51 danielk1977 Exp $
+# $Id: capi3.test,v 1.32 2005/05/26 16:23:34 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -54,6 +54,9 @@ proc utf8 {str} {
 db close
 set DB [sqlite3 db test.db]
 
+do_test capi3-1.0 {
+  sqlite3_get_autocommit $DB
+} 1
 do_test capi3-1.1 {
   set STMT [sqlite3_prepare $DB {SELECT name FROM sqlite_master} -1 TAIL]
   sqlite3_finalize $STMT
@@ -641,6 +644,9 @@ do_test capi3-11.1 {
     INSERT INTO t1 VALUES(2, 'notatype');
   }
 } {}
+do_test capi3-11.1.1 {
+  sqlite3_get_autocommit $DB
+} 0
 do_test capi3-11.2 {
   set STMT [sqlite3_prepare $DB "SELECT func(b, a) FROM t1" -1 TAIL]
   sqlite3_step $STMT
@@ -650,6 +656,9 @@ do_test capi3-11.3 {
     COMMIT;
   }
 } {1 {cannot commit transaction - SQL statements in progress}}
+do_test capi3-11.3.1 {
+  sqlite3_get_autocommit $DB
+} 0
 do_test capi3-11.4 {
   sqlite3_step $STMT
 } {SQLITE_ERROR}
@@ -661,11 +670,17 @@ do_test capi3-11.6 {
     SELECT * FROM t1;
   }
 } {0 {1 int 2 notatype}}
+do_test capi3-11.6.1 {
+  sqlite3_get_autocommit $DB
+} 0
 do_test capi3-11.7 {
   catchsql {
     COMMIT;
   }
 } {0 {}}
+do_test capi3-11.7.1 {
+  sqlite3_get_autocommit $DB
+} 1
 do_test capi3-11.8 {
   execsql {
     CREATE TABLE t2(a);
@@ -675,15 +690,24 @@ do_test capi3-11.8 {
     INSERT INTO t2 VALUES(3);
   }
 } {}
+do_test capi3-11.8.1 {
+  sqlite3_get_autocommit $DB
+} 0
 do_test capi3-11.9 {
   set STMT [sqlite3_prepare $DB "SELECT a FROM t2" -1 TAIL]
   sqlite3_step $STMT
 } {SQLITE_ROW}
-do_test capi3-11.3 {
+do_test capi3-11.9.1 {
+  sqlite3_get_autocommit $DB
+} 0
+do_test capi3-11.9.2 {
   catchsql {
     ROLLBACK;
   }
 } {1 {cannot rollback transaction - SQL statements in progress}}
+do_test capi3-11.9.3 {
+  sqlite3_get_autocommit $DB
+} 0
 do_test capi3-11.10 {
   sqlite3_step $STMT
 } {SQLITE_ROW}
@@ -701,11 +725,17 @@ do_test capi3-11.14 {
     SELECT a FROM t2;
   }
 } {1 2 3}
+do_test capi3-11.14.1 {
+  sqlite3_get_autocommit $DB
+} 0
 do_test capi3-11.15 {
   catchsql {
     ROLLBACK;
   }
 } {0 {}}
+do_test capi3-11.15.1 {
+  sqlite3_get_autocommit $DB
+} 1
 do_test capi3-11.16 {
   execsql {
     SELECT a FROM t2;

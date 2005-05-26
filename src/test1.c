@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.138 2005/04/28 17:18:49 drh Exp $
+** $Id: test1.c,v 1.139 2005/05/26 16:23:34 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -2695,6 +2695,31 @@ static int delete_collation(
 }
 
 /*
+** Usage: sqlite3_get_autocommit DB
+**
+** Return true if the database DB is currently in auto-commit mode.
+** Return false if not.
+*/
+static int get_autocommit(
+  void * clientData,
+  Tcl_Interp *interp,
+  int argc,
+  char **argv
+){
+  char zBuf[30];
+  sqlite3 *db;
+  if( argc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], 
+        " DB", 0);
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
+  sprintf(zBuf, "%d", sqlite3_get_autocommit(db));
+  Tcl_AppendResult(interp, zBuf, 0);
+  return TCL_OK;
+}
+
+/*
 ** Usage:  tcl_variable_type VARIABLENAME
 **
 ** Return the name of the internal representation for the
@@ -2965,8 +2990,9 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
 #if 0
      { "sqlite3_sleep",                 (Tcl_CmdProc*)test_sleep            },
 #endif
-     { "sqlite_delete_function",       (Tcl_CmdProc*)delete_function        },
-     { "sqlite_delete_collation",      (Tcl_CmdProc*)delete_collation       }
+     { "sqlite_delete_function",        (Tcl_CmdProc*)delete_function       },
+     { "sqlite_delete_collation",       (Tcl_CmdProc*)delete_collation      },
+     { "sqlite3_get_autocommit",        (Tcl_CmdProc*)get_autocommit        },
   };
   static struct {
      char *zName;
