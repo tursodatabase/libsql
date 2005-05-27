@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the DELETE FROM statement.
 #
-# $Id: delete.test,v 1.18 2004/11/04 04:42:28 drh Exp $
+# $Id: delete.test,v 1.19 2005/05/27 09:41:13 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -274,7 +274,7 @@ do_test delete-8.0 {
 db close
 catch {file attributes test.db -permissions 0444}
 catch {file attributes test.db -readonly 1}
-sqlite3 db test.db
+set ::DB [sqlite3 db test.db]
 do_test delete-8.1 {
   catchsql {
     DELETE FROM t3;

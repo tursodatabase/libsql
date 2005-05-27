@@ -1110,6 +1110,7 @@ static int vdbeCommit(sqlite3 *db){
   ** This requires a master journal file to ensure the transaction is
   ** committed atomicly.
   */
+#ifndef SQLITE_OMIT_DISKIO
   else{
     char *zMaster = 0;   /* File-name for the master journal */
     char const *zMainFile = sqlite3BtreeGetFilename(db->aDb[0].pBt);
@@ -1226,6 +1227,7 @@ static int vdbeCommit(sqlite3 *db){
       }
     }
   }
+#endif
 
   return rc;
 }
