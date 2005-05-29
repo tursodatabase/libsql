@@ -12,7 +12,7 @@
 # focus of this file is testing the INSERT statement that takes is
 # result from a SELECT.
 #
-# $Id: insert2.test,v 1.16 2005/03/29 03:11:00 danielk1977 Exp $
+# $Id: insert2.test,v 1.17 2005/05/29 14:23:13 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -259,12 +259,14 @@ do_test insert2-5.1 {
     SELECT * FROM t2;
   }
 } {1 2 1 3}
-do_test insert2-5.2 {
-  execsql {
-    INSERT INTO t2 SELECT (SELECT a FROM t2), 4;
-    SELECT * FROM t2;
-  }
-} {1 2 1 3 1 4}
+ifcapable subquery {
+  do_test insert2-5.2 {
+    execsql {
+      INSERT INTO t2 SELECT (SELECT a FROM t2), 4;
+      SELECT * FROM t2;
+    }
+  } {1 2 1 3 1 4}
+}
 
 finish_test
 
