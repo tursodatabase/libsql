@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.202 2005/05/24 20:19:59 drh Exp $
+** $Id: expr.c,v 1.203 2005/06/06 16:59:24 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -825,6 +825,12 @@ static int lookupName(
             pExpr->iColumn = j==pTab->iPKey ? -1 : j;
             pExpr->affinity = pTab->aCol[j].affinity;
             pExpr->pColl = pTab->aCol[j].pColl;
+            if( pItem->jointype & JT_NATURAL ){
+              /* If this match occurred in the left table of a natural join,
+              ** then skip the right table to avoid a duplicate match */
+              pItem++;
+              i++;
+            }
             break;
           }
         }

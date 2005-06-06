@@ -1,5 +1,5 @@
-C Honor\sthe\sfull_column_names\spragma\son\s*\sresults.\s\sTicket\s#1263.\s(CVS\s2493)
-D 2005-06-06T16:34:33
+C Naming\sthe\sjoin\scolumns\sin\sthe\sresult\sset\sof\sa\snatural\sjoin\sdoes\snot\sresult\nin\san\s"ambiguous\scolumn\sname"\serror.\s\sTicket\s#1217.\s(CVS\s2494)
+D 2005-06-06T16:59:24
 F Makefile.in 8129e7f261d405db783676f9ca31e0841768c652
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -37,7 +37,7 @@ F src/callback.c 0910b611e0c158f107ee3ff86f8a371654971e2b
 F src/date.c 2134ef4388256e8247405178df8a61bd60dc180a
 F src/delete.c 75b53db21aa1879d3655bbbc208007db31d58a63
 F src/experimental.c 50c1e3b34f752f4ac10c36f287db095c2b61766d
-F src/expr.c 54a4c18d34c0f81b0e9b6dff40ce97a8fcd6f2a8
+F src/expr.c 3a8dae4bfa478fcffad1bacfce645e8b9ecaf0a7
 F src/func.c f208d71f741d47b63277530939f552815af8ce35
 F src/hash.c 2b1b13f7400e179631c83a1be0c664608c8f021f
 F src/hash.h 1b0c445e1c89ff2aaad9b4605ba61375af001e84
@@ -144,7 +144,7 @@ F test/insert3.test c67f0240b1c17e71fa2ed8bb6de064928f549f95
 F test/interrupt.test 170f87c2819f0e56c76e0a754949ea103d05009c
 F test/intpkey.test aaee5325eedf48b8f1e01d0d6e3f7c712908179b
 F test/ioerr.test b27540c5873d28c0e77f02ce85b15f904d5b03a6
-F test/join.test e08471279574487cac0d17fa1ea66aca15c4de7f
+F test/join.test 8d17a014c09b55341a3f4de7d3ba357e342b2c7a
 F test/join2.test f2171c265e57ee298a27e57e7051d22962f9f324
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
@@ -281,7 +281,7 @@ F www/tclsqlite.tcl 425be741b8ae664f55cb1ef2371aab0a75109cf9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P 0d46289f02aad526f462a3ceceb1bca1b9f6a543
-R 29792a52460a836b0b452524b5145772
+P 0d57f851ae4f483985710db149c8f541e45cdb86
+R 9469697d6a1c4cc6fbe1741dbc1f5add
 U drh
-Z 4bc021ee60e3eeed253efe0298ce7ec7
+Z 61e967726e8372ccce8b56eb5899004e
