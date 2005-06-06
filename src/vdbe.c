@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.466 2005/05/26 14:41:47 danielk1977 Exp $
+** $Id: vdbe.c,v 1.467 2005/06/06 17:27:19 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1639,7 +1639,11 @@ case OP_IfNot: {            /* no-push */
   if( pTos->flags & MEM_Null ){
     c = pOp->p1;
   }else{
+#ifdef SQLITE_OMIT_FLOATING_POINT
     c = sqlite3VdbeIntValue(pTos);
+#else
+    c = sqlite3VdbeRealValue(pTos)!=0.0;
+#endif
     if( pOp->opcode==OP_IfNot ) c = !c;
   }
   Release(pTos);
