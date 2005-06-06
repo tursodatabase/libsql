@@ -501,7 +501,7 @@ const void *sqlite3_column_origin_name16(sqlite3_stmt *pStmt, int N){
 static int vdbeUnbind(Vdbe *p, int i){
   Mem *pVar;
   if( p==0 || p->magic!=VDBE_MAGIC_RUN || p->pc>=0 ){
-    sqlite3Error(p->db, SQLITE_MISUSE, 0);
+    if( p ) sqlite3Error(p->db, SQLITE_MISUSE, 0);
     return SQLITE_MISUSE;
   }
   if( i<1 || i>p->nVar ){

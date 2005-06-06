@@ -1,5 +1,5 @@
-C Any\snon-zero\svalue\sis\sconsidered\sTRUE\sin\sa\sWHERE\sclause.\s\sTicket\s#1211.\s(CVS\s2496)
-D 2005-06-06T17:27:19
+C Return\sSQLITE_MISUSE\swhen\spassing\sa\sNULL\spointer\sinto\ssqlite3_bind\sroutines.\nTicket\s#1219.\s(CVS\s2497)
+D 2005-06-06T17:54:56
 F Makefile.in 8129e7f261d405db783676f9ca31e0841768c652
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -66,7 +66,7 @@ F src/sqlite.h.in f28f5b018f03a66aaf0bc1ab6985d8605d6b964f
 F src/sqliteInt.h 0aa1d1bd6f34db3955d8615b18b20426cfd15acc
 F src/table.c 25b3ff2b39b7d87e8d4a5da0713d68dfc06cbee9
 F src/tclsqlite.c af0f002d9d6ab4f7f32b9bee5b57665946e76ad9
-F src/test1.c ad04983979a8ee4c05d407bca8575ba1fecca0e3
+F src/test1.c e9c26134a1c5f6de540dc604d70ac851dd5f6493
 F src/test2.c 716c1809dba8e5be6093703e9cada99d627542dc
 F src/test3.c 683e1e3819152ffd35da2f201e507228921148d0
 F src/test4.c 7c6b9fc33dd1f3f93c7f1ee6e5e6d016afa6c1df
@@ -80,7 +80,7 @@ F src/vacuum.c f4eb8facbfede77cac4d8c205a76a1a9b9b0d21d
 F src/vdbe.c e9bf69b2ba382ba23b48f98778f46d3261ae0e2c
 F src/vdbe.h 75e466d84d362b0c4498978a9d6b1e6bd32ecf3b
 F src/vdbeInt.h 4afaae2f4adcab54ad2a40dabb2e689fba7b1561
-F src/vdbeapi.c c66b88fce58f72eee44ec8c348a2561e031d2417
+F src/vdbeapi.c 9a9556b9d7e3a052f58de389caf69449558e7380
 F src/vdbeaux.c 84a1381023e808761d6462871ef9bd46392c5c4f
 F src/vdbemem.c 48a64ae95a9edc6e8d940300dad15d70d1670398
 F src/where.c f02baff03e2a9ed7bdc36b363b8e4024a94de919
@@ -110,7 +110,7 @@ F test/btree5.test 8e5ff32c02e685d36516c6499add9375fe1377f2
 F test/btree6.test a5ede6bfbbb2ec8b27e62813612c0f28e8f3e027
 F test/btree7.test a6d3b842db22af97dd14b989e90a2fd96066b72f
 F test/capi2.test f897209386fb21cfdc9267595e0c667ebaca9164
-F test/capi3.test feadced0b3cc4085c328439b7e64ce7963801c5b
+F test/capi3.test 4d848cc55ad6e5f68cf2712716e9fc1fa55d7635
 F test/capi3b.test 5b6a66f9f295f79f443b5d3f33187fa5ef6cf336
 F test/collate1.test f79736d2ebf5492167ee4d1f4ab4c09dda776b03
 F test/collate2.test 224a632ba04907c049804b08162efd234aa7871f
@@ -281,7 +281,7 @@ F www/tclsqlite.tcl 425be741b8ae664f55cb1ef2371aab0a75109cf9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P 6a51bdeeff8312fa54fa2b1200f823428f35d605
-R 8b6a445b2a4d8771567561d39f6e0c93
+P 0f7af623791d8d2ed35c3978ab12316912d9b6f8
+R 715394bbb98151a036e69d3628c59f03
 U drh
-Z 104f033e128c21dde4a074197c3d9fda
+Z a809cb5efd2b91b9249be96f667899b8

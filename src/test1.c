@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.140 2005/05/27 09:41:13 danielk1977 Exp $
+** $Id: test1.c,v 1.141 2005/06/06 17:54:56 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -63,7 +63,7 @@ const char *sqlite3TestErrorName(int rc){
 ** Convert an sqlite3_stmt* into an sqlite3*.  This depends on the
 ** fact that the sqlite3* is the first field in the Vdbe structure.
 */
-#define StmtToDb(X)   (*(sqlite3**)(X))
+#define StmtToDb(X)   ((X)?*(sqlite3**)(X):0)
 
 /*
 ** Check a return value to make sure it agrees with the results
@@ -1605,6 +1605,7 @@ static int test_bind_text(
   rc = sqlite3_bind_text(pStmt, idx, value, bytes, SQLITE_TRANSIENT);
   if( sqlite3TestErrCode(interp, StmtToDb(pStmt), rc) ) return TCL_ERROR;
   if( rc!=SQLITE_OK ){
+    Tcl_AppendResult(interp, sqlite3TestErrorName(rc), 0);
     return TCL_ERROR;
   }
 

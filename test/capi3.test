@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi3.test,v 1.32 2005/05/26 16:23:34 drh Exp $
+# $Id: capi3.test,v 1.33 2005/06/06 17:54:56 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -852,5 +852,13 @@ if {[llength [info commands sqlite3_sleep]]>0} {
     expr {$ms==80 || $ms==1000}
   } {1}
 }
+
+# Ticket #1219:  Make sure binding APIs can handle a NULL pointer.
+#
+do_test capi3-14.1 {
+  set rc [catch {sqlite3_bind_text 0 1 hello 5} msg]
+  lappend rc $msg
+} {1 SQLITE_MISUSE}
+
 
 finish_test
