@@ -11,7 +11,7 @@
 # This file attempts to check that the library can recover from a malloc()
 # failure when sqlite3_global_recover() is invoked.
 #
-# $Id: malloc2.test,v 1.2 2005/03/29 03:11:00 danielk1977 Exp $
+# $Id: malloc2.test,v 1.3 2005/06/06 14:45:43 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -48,15 +48,13 @@ proc cksum {db} {
       SELECT 'sqlite_master'
     }
   }
-  foreach tbl [$db eval $sql] {
-    set cols [list]
-    $db eval "PRAGMA table_info($tbl)" {
-      lappend cols $name
-    }
-    set sql "SELECT md5sum([join $cols ,]) FROM $tbl"
-    lappend ret [db onecolumn $sql]
+  set tbllist [$db eval $sql]
+  set txt {}
+  foreach tbl $tbllist {
+    append txt [$db eval "SELECT * FROM $tbl"]
   }
-  return $ret
+  # puts txt=$txt
+  return [md5 $txt]
 }
 
 proc do_malloc2_test {tn args} {
@@ -69,7 +67,7 @@ proc do_malloc2_test {tn args} {
     # may or may not be reported.
     sqlite_malloc_fail $::n
     do_test malloc2-$tn.$::n.2 {
-      set res [catchsql $::mallocopts(-sql)]
+      set res [catchsql [string trim $::mallocopts(-sql)]]
       set rc [expr { 
         0==[string compare $res {1 {out of memory}}] ||
         0==[lindex $res 0]
