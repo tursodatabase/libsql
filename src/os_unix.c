@@ -1291,6 +1291,7 @@ char *sqlite3OsFullPathname(const char *zRelative){
     sqlite3SetString(&zFull, zRelative, (char*)0);
   }else{
     char zBuf[5000];
+    zBuf[0] = 0;
     sqlite3SetString(&zFull, getcwd(zBuf, sizeof(zBuf)), "/", zRelative,
                     (char*)0);
   }
