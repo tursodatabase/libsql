@@ -12,7 +12,7 @@
 #
 # This file implements tests for joins, including outer joins.
 #
-# $Id: join.test,v 1.19 2005/06/06 16:59:24 drh Exp $
+# $Id: join.test,v 1.20 2005/06/06 17:11:46 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -81,6 +81,11 @@ do_test join-1.4.4 {
     SELECT * FROM t1 AS x INNER JOIN t2 AS y USING(b,c);
   }
 } {a 1 b 2 c 3 d 4 a 2 b 3 c 4 d 5}
+do_test join-1.4.5 {
+  execsql {
+    SELECT b FROM t1 JOIN t2 USING(b);
+  }
+} {2 3}
 do_test join-1.5 {
   execsql2 {
     SELECT * FROM t1 INNER JOIN t2 USING(b);

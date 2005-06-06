@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.203 2005/06/06 16:59:24 drh Exp $
+** $Id: expr.c,v 1.204 2005/06/06 17:11:46 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -817,6 +817,7 @@ static int lookupName(
         }
         for(j=0, pCol=pTab->aCol; j<pTab->nCol; j++, pCol++){
           if( sqlite3StrICmp(pCol->zName, zCol)==0 ){
+            IdList *pUsing;
             cnt++;
             pExpr->iTable = pItem->iCursor;
             pMatch = pItem;
@@ -830,6 +831,19 @@ static int lookupName(
               ** then skip the right table to avoid a duplicate match */
               pItem++;
               i++;
+            }
+            if( (pUsing = pItem->pUsing)!=0 ){
+              /* If this match occurs on a column that is in the USING clause
+              ** of a join, skip the search of the right table of the join
+              ** to avoid a duplicate match there. */
+              int k;
+              for(k=0; k<pUsing->nId; k++){
+                if( sqlite3StrICmp(pUsing->a[k].zName, zCol)==0 ){
+                  pItem++;
+                  i++;
+                  break;
+                }
+              }
             }
             break;
           }
