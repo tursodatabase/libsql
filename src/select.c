@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.248 2005/05/26 14:41:47 danielk1977 Exp $
+** $Id: select.c,v 1.249 2005/06/06 16:34:33 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1070,6 +1070,10 @@ static int prepSelectStmt(Parse *pParse, Select *p){
     */
     struct ExprList_item *a = pEList->a;
     ExprList *pNew = 0;
+    int flags = pParse->db->flags;
+    int longNames = (flags & SQLITE_FullColNames)!=0 &&
+                      (flags & SQLITE_ShortColNames)==0;
+
     for(k=0; k<pEList->nExpr; k++){
       Expr *pE = a[k].pExpr;
       if( pE->op!=TK_ALL &&
@@ -1122,7 +1126,7 @@ static int prepSelectStmt(Parse *pParse, Select *p){
             pRight = sqlite3Expr(TK_ID, 0, 0, 0);
             if( pRight==0 ) break;
             setToken(&pRight->token, zName);
-            if( zTabName && pTabList->nSrc>1 ){
+            if( zTabName && (longNames || pTabList->nSrc>1) ){
               pLeft = sqlite3Expr(TK_ID, 0, 0, 0);
               pExpr = sqlite3Expr(TK_DOT, pLeft, pRight, 0);
               if( pExpr==0 ) break;
@@ -1136,7 +1140,11 @@ static int prepSelectStmt(Parse *pParse, Select *p){
               pExpr = pRight;
               pExpr->span = pExpr->token;
             }
-            pNew = sqlite3ExprListAppend(pNew, pExpr, &pRight->token);
+            if( longNames ){
+              pNew = sqlite3ExprListAppend(pNew, pExpr, &pExpr->span);
+            }else{
+              pNew = sqlite3ExprListAppend(pNew, pExpr, &pRight->token);
+            }
           }
         }
         if( !tableSeen ){

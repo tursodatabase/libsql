@@ -1,5 +1,5 @@
-C Do\snot\sallow\sparameters\sin\sVIEW\sdefinitions.\s\sTicket\s#1270.\s(CVS\s2492)
-D 2005-06-06T15:32:08
+C Honor\sthe\sfull_column_names\spragma\son\s*\sresults.\s\sTicket\s#1263.\s(CVS\s2493)
+D 2005-06-06T16:34:33
 F Makefile.in 8129e7f261d405db783676f9ca31e0841768c652
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -60,7 +60,7 @@ F src/pragma.c 0ed94a1aa982802a9cf2a932c48d99b60683fa53
 F src/prepare.c d53602d2f8e097225ae7c76ec764ae68f759ba47
 F src/printf.c 3d20b21cfecadacecac3fb7274e746cb81d3d357
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
-F src/select.c 071a484044efb74fb5d8f79560822cbfc7c906c3
+F src/select.c a057b1bb71ca2db3939e35994e16b718a83c93bf
 F src/shell.c 25b3217d7c64e6497225439d261a253a23efff26
 F src/sqlite.h.in f28f5b018f03a66aaf0bc1ab6985d8605d6b964f
 F src/sqliteInt.h 0aa1d1bd6f34db3955d8615b18b20426cfd15acc
@@ -281,7 +281,7 @@ F www/tclsqlite.tcl 425be741b8ae664f55cb1ef2371aab0a75109cf9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P c1691004d6d81b683a4ca5b1723c0de8b9b4e376
-R 160f72ab1cdfc77fb0f6e3997ccf35b8
+P 0d46289f02aad526f462a3ceceb1bca1b9f6a543
+R 29792a52460a836b0b452524b5145772
 U drh
-Z 3ef2bc1a475fc394b6aaef446b604547
+Z 4bc021ee60e3eeed253efe0298ce7ec7
