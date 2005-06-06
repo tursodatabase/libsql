@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.323 2005/05/25 10:45:10 danielk1977 Exp $
+** $Id: build.c,v 1.324 2005/06/06 15:32:08 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1448,6 +1448,11 @@ void sqlite3CreateView(
   DbFixer sFix;
   Token *pName;
 
+  if( pParse->nVar>0 ){
+    sqlite3ErrorMsg(pParse, "parameters are not allowed in views");
+    sqlite3SelectDelete(pSelect);
+    return;
+  }
   sqlite3StartTable(pParse, pBegin, pName1, pName2, isTemp, 1);
   p = pParse->pNewTable;
   if( p==0 || pParse->nErr ){

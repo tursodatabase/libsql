@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing VIEW statements.
 #
-# $Id: view.test,v 1.24 2005/01/30 11:11:44 danielk1977 Exp $
+# $Id: view.test,v 1.25 2005/06/06 15:32:08 drh Exp $
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
@@ -439,5 +439,13 @@ do_test view-11.3 {
     SELECT * FROM v11 WHERE a = 'THIS';
   }
 } {This this THIS}
+
+# Ticket #1270:  Do not allow parameters in view definitions.
+#
+do_test view-12.1 {
+  catchsql {
+    CREATE VIEW v12 AS SELECT a FROM t1 WHERE b=?
+  }
+} {1 {parameters are not allowed in views}}
 
 finish_test
