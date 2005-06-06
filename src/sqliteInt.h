@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.385 2005/06/06 15:06:39 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.386 2005/06/06 21:19:57 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -607,6 +607,7 @@ struct Table {
   u8 hasPrimKey;   /* True if there exists a primary key */
   u8 keyConf;      /* What to do in case of uniqueness conflict on iPKey */
   u8 autoInc;      /* True if the integer primary key is autoincrement */
+  int nRef;          /* Number of pointers to this Table */
   Trigger *pTrigger; /* List of SQL triggers on this table */
   FKey *pFKey;       /* Linked list of all foreign keys in this table */
   char *zColAff;     /* String defining the affinity of each column */

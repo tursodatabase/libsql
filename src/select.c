@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.249 2005/06/06 16:34:33 drh Exp $
+** $Id: select.c,v 1.250 2005/06/06 21:19:57 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -872,6 +872,7 @@ Table *sqlite3ResultSetOfSelect(Parse *pParse, char *zTabName, Select *pSelect){
   if( pTab==0 ){
     return 0;
   }
+  pTab->nRef = 1;
   pTab->zName = zTabName ? sqliteStrDup(zTabName) : 0;
   pEList = pSelect->pEList;
   pTab->nCol = pEList->nExpr;
@@ -1004,6 +1005,7 @@ static int prepSelectStmt(Parse *pParse, Select *p){
         pFrom->zAlias =
           sqlite3MPrintf("sqlite_subquery_%p_", (void*)pFrom->pSelect);
       }
+      assert( pFrom->pTab==0 );
       pFrom->pTab = pTab = 
         sqlite3ResultSetOfSelect(pParse, pFrom->zAlias, pFrom->pSelect);
       if( pTab==0 ){
@@ -1017,11 +1019,13 @@ static int prepSelectStmt(Parse *pParse, Select *p){
 #endif
     }else{
       /* An ordinary table or view name in the FROM clause */
+      assert( pFrom->pTab==0 );
       pFrom->pTab = pTab = 
         sqlite3LocateTable(pParse,pFrom->zName,pFrom->zDatabase);
       if( pTab==0 ){
         return 1;
       }
+      pTab->nRef++;
 #ifndef SQLITE_OMIT_VIEW
       if( pTab->pSelect ){
         /* We reach here if the named table is a really a view */
@@ -1163,40 +1167,6 @@ static int prepSelectStmt(Parse *pParse, Select *p){
   }
   return rc;
 }
-
-/*
-** This routine recursively unlinks the Select.pSrc.a[].pTab pointers
-** in a select structure.  It just sets the pointers to NULL.  This
-** routine is recursive in the sense that if the Select.pSrc.a[].pSelect
-** pointer is not NULL, this routine is called recursively on that pointer.
-**
-** This routine is called on the Select structure that defines a
-** VIEW in order to undo any bindings to tables.  This is necessary
-** because those tables might be DROPed by a subsequent SQL command.
-** If the bindings are not removed, then the Select.pSrc->a[].pTab field
-** will be left pointing to a deallocated Table structure after the
-** DROP and a coredump will occur the next time the VIEW is used.
-*/
-#if 0
-void sqlite3SelectUnbind(Select *p){
-  int i;
-  SrcList *pSrc = p->pSrc;
-  struct SrcList_item *pItem;
-  Table *pTab;
-  if( p==0 ) return;
-  for(i=0, pItem=pSrc->a; i<pSrc->nSrc; i++, pItem++){
-    if( (pTab = pItem->pTab)!=0 ){
-      if( pTab->isTransient ){
-        sqlite3DeleteTable(0, pTab);
-      }
-      pItem->pTab = 0;
-      if( pItem->pSelect ){
-        sqlite3SelectUnbind(pItem->pSelect);
-      }
-    }
-  }
-}
-#endif
 
 #ifndef SQLITE_OMIT_COMPOUND_SELECT
 /*
@@ -2048,11 +2018,8 @@ static int flattenSubquery(
   {
     int nSubSrc = pSubSrc->nSrc;
     int jointype = pSubitem->jointype;
-    Table *pTab = pSubitem->pTab;
 
-    if( pTab && pTab->isTransient ){
-      sqlite3DeleteTable(0, pSubitem->pTab);
-    }
+    sqlite3DeleteTable(0, pSubitem->pTab);
     sqliteFree(pSubitem->zDatabase);
     sqliteFree(pSubitem->zName);
     sqliteFree(pSubitem->zAlias);

@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.324 2005/06/06 15:32:08 drh Exp $
+** $Id: build.c,v 1.325 2005/06/06 21:19:57 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -427,6 +427,13 @@ void sqlite3DeleteTable(sqlite3 *db, Table *pTable){
 
   if( pTable==0 ) return;
 
+  /* Do not delete the table until the reference count reaches zero. */
+  pTable->nRef--;
+  if( pTable->nRef>0 ){
+    return;
+  }
+  assert( pTable->nRef==0 );
+
   /* Delete all indices associated with this table
   */
   for(pIndex = pTable->pIndex; pIndex; pIndex=pNext){
@@ -729,6 +736,7 @@ void sqlite3StartTable(
   pTable->iPKey = -1;
   pTable->pIndex = 0;
   pTable->iDb = iDb;
+  pTable->nRef = 1;
   if( pParse->pNewTable ) sqlite3DeleteTable(db, pParse->pNewTable);
   pParse->pNewTable = pTable;
 
@@ -2585,9 +2593,7 @@ void sqlite3SrcListDelete(SrcList *pList){
     sqliteFree(pItem->zDatabase);
     sqliteFree(pItem->zName);
     sqliteFree(pItem->zAlias);
-    if( pItem->pTab && pItem->pTab->isTransient ){
-      sqlite3DeleteTable(0, pItem->pTab);
-    }
+    sqlite3DeleteTable(0, pItem->pTab);
     sqlite3SelectDelete(pItem->pSelect);
     sqlite3ExprDelete(pItem->pOn);
     sqlite3IdListDelete(pItem->pUsing);
