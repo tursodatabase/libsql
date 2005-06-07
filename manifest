@@ -1,5 +1,5 @@
-C Add\s"#ifndef\sOMIT_DISKIO"\scondition\saround\ssqlite3_opentemp_count\svariable\nin\stest\sinterface\scode.\s(CVS\s2501)
-D 2005-06-07T07:58:49
+C Remove\sSSE\svacuum\shook.\s(CVS\s2502)
+D 2005-06-07T09:21:07
 F Makefile.in 8129e7f261d405db783676f9ca31e0841768c652
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -76,7 +76,7 @@ F src/trigger.c 1a6d0c7c51b70bdc58d5068be72034071eff23ad
 F src/update.c 04ea9dd784ccfeaf38a681b3edfe3b1c4edfdda7
 F src/utf.c bda5eb85039ef16f2d17004c1e18c96e1ab0a80c
 F src/util.c 96008b52604d08b9cc57ed37350149d6ac8a1bf3
-F src/vacuum.c f4eb8facbfede77cac4d8c205a76a1a9b9b0d21d
+F src/vacuum.c 829d9e1a6d7c094b80e0899686670932eafd768c
 F src/vdbe.c e9bf69b2ba382ba23b48f98778f46d3261ae0e2c
 F src/vdbe.h 75e466d84d362b0c4498978a9d6b1e6bd32ecf3b
 F src/vdbeInt.h 4afaae2f4adcab54ad2a40dabb2e689fba7b1561
@@ -281,7 +281,7 @@ F www/tclsqlite.tcl 425be741b8ae664f55cb1ef2371aab0a75109cf9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P 914d6e6549446a6ddf25e5da57d2fe9446750625
-R e2637215c4bdb7a3df41c05cc40ec0df
+P f2ce662e81cea4983f335606ed18a74b97d35609
+R b285850649455952342d34d05db04462
 U danielk1977
-Z 1de5b0a92e694980e470c976bc3e29a6
+Z b8c49df80d5e3a430cde9098091775ab

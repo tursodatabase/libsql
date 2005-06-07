@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.44 2005/05/24 12:01:02 danielk1977 Exp $
+** $Id: vacuum.c,v 1.45 2005/06/07 09:21:07 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -305,18 +305,6 @@ end_of_vacuum:
   if( zSql ) sqliteFree( zSql );
   sqlite3ResetInternalSchema(db, 0);
 #endif
-
-#ifdef SQLITE_SSE
-  /* If the SSE extension is compiled in, recompile all statements
-  ** in the sqlite_statements table after a successful VACUUM
-  */
-  if( rc==SQLITE_OK ){
-    rc = sqlite3RecompileStatements(db);
-    if( rc!=SQLITE_OK ){
-      sqlite3SetString(pzErrMsg, sqlite3_errmsg(db), (char *)0);
-    }
-  }
-#endif /* SQLITE_SSE */
 
   return rc;
 }
