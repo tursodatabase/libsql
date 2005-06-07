@@ -1,5 +1,5 @@
-C Do\snot\sopen\sa\sstatement\sjournal\sunless\sabsolutely\snecessary.\s(CVS\s2499)
-D 2005-06-07T01:43:41
+C Add\stests\sto\smake\ssure\sstatement\sjournals\sare\sonly\sopened\swhen\snecessary.\s(CVS\s2500)
+D 2005-06-07T02:12:30
 F Makefile.in 8129e7f261d405db783676f9ca31e0841768c652
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -53,7 +53,7 @@ F src/os_unix.c 443ca9d19945a08ba1e325f00e13633b3daa5bfa
 F src/os_unix.h 39a393252e69e72b06715c9958df05ddbc4aa971
 F src/os_win.c 2bbbe6fbb010763c3fa79d5e951afca9b138c6b5
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c f86d79d37eb4e30d8e2201dbe12497370719320c
+F src/pager.c 841a2cdddd4275de36cda26ed9dc54ae942660ce
 F src/pager.h 0d9153d6269d60d04af3dd84a0cc0a96253cf4a4
 F src/parse.y 72cd7553f05fbc7b63ea9476108d0da6237f2818
 F src/pragma.c 0ed94a1aa982802a9cf2a932c48d99b60683fa53
@@ -66,7 +66,7 @@ F src/sqlite.h.in f28f5b018f03a66aaf0bc1ab6985d8605d6b964f
 F src/sqliteInt.h 42b464cd380dd81bf7873476fc5974985a506d71
 F src/table.c 25b3ff2b39b7d87e8d4a5da0713d68dfc06cbee9
 F src/tclsqlite.c af0f002d9d6ab4f7f32b9bee5b57665946e76ad9
-F src/test1.c e9c26134a1c5f6de540dc604d70ac851dd5f6493
+F src/test1.c 2ba6be1ffd072792dcdd65f1306ff4e2320aee4e
 F src/test2.c 716c1809dba8e5be6093703e9cada99d627542dc
 F src/test3.c 683e1e3819152ffd35da2f201e507228921148d0
 F src/test4.c 7c6b9fc33dd1f3f93c7f1ee6e5e6d016afa6c1df
@@ -118,7 +118,7 @@ F test/collate3.test 51362bdfb43a72bd2b087d90b2623b0695538e7a
 F test/collate4.test daf498e294dcd596b961d425c3f2dda117e4717e
 F test/collate5.test 5a49cd169e7565e4f92b42695667d6d5db25670d
 F test/collate6.test 6c9470d1606ee3e564675b229653e320c49ec638
-F test/conflict.test 3c4ef047070ce495e15d7d267a7d791d6f4ffef5
+F test/conflict.test 3e7beba8c253095330c6853c00aaf6356e84cc68
 F test/corrupt.test 18c7a995b1af76a8c8600b996257f2c7b7bff083
 F test/corrupt2.test 88342570828f2b8cbbd8369eff3891f5c0bdd5ba
 F test/crash.test f38b980a0508655d08c957a6dd27d66bca776504
@@ -281,7 +281,7 @@ F www/tclsqlite.tcl 425be741b8ae664f55cb1ef2371aab0a75109cf9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P e73d25c7419d580c47925494621df26d2fb9f27e
-R e5d64b9b0612e248c65fc146ea7ea4a7
+P 989573a53b58c1e959ad276119298ba2ea7448e6
+R 27f28696608fee7d814bb075f19fef66
 U drh
-Z e7a36c84aa3464810f6e632e99f01c3c
+Z ebb11158767e3ff2d46645452c3e830b

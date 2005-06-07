@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.206 2005/05/22 20:30:39 drh Exp $
+** @(#) $Id: pager.c,v 1.207 2005/06/07 02:12:30 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1539,8 +1539,15 @@ void sqlite3pager_set_safety_level(Pager *pPager, int level){
 #endif
 
 /*
-** Open a temporary file.  Write the name of the file into zName
-** (zName must be at least SQLITE_TEMPNAME_SIZE bytes long.)  Write
+** The following global variable is incremented whenever the library
+** attempts to open a temporary file.  This information is used for
+** testing and analysis only.  
+*/
+int sqlite3_opentemp_count = 0;
+
+/*
+** Open a temporary file.  Write the name of the file into zFile
+** (zFile must be at least SQLITE_TEMPNAME_SIZE bytes long.)  Write
 ** the file descriptor into *fd.  Return SQLITE_OK on success or some
 ** other error code if we fail.
 **
@@ -1550,6 +1557,7 @@ void sqlite3pager_set_safety_level(Pager *pPager, int level){
 static int sqlite3pager_opentemp(char *zFile, OsFile *fd){
   int cnt = 8;
   int rc;
+  sqlite3_opentemp_count++;  /* Used for testing and analysis only */
   do{
     cnt--;
     sqlite3OsTempFileName(zFile);
