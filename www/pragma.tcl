@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the pragma.html file.
 #
-set rcsid {$Id: pragma.tcl,v 1.14 2005/05/16 02:13:18 danielk1977 Exp $}
+set rcsid {$Id: pragma.tcl,v 1.15 2005/06/07 20:07:24 drh Exp $}
 source common.tcl
 header {Pragma statements supported by SQLite}
 
@@ -160,7 +160,7 @@ puts {
        <br>PRAGMA encoding = "UTF-16";
        <br>PRAGMA encoding = "UTF-16le";
        <br>PRAGMA encoding = "UTF-16be";</b></p>
-    <p>In it's first form, if the main database has already been
+    <p>In first form, if the main database has already been
     created, then this pragma returns the text encoding used by the
     main database, one of "UTF-8", "UTF-16le" (little-endian UTF-16
     encoding) or "UTF-16be" (big-endian UTF-16 encoding).  If the main
@@ -171,7 +171,12 @@ puts {
     the main database has not already been created. In this case the 
     pragma sets the encoding that the main database will be created with if
     it is created by this session. The string "UTF-16" is interpreted
-    as "UTF-16 encoding using native machine byte-ordering".</p>
+    as "UTF-16 encoding using native machine byte-ordering".  If the second
+    and subsequent forms are used after the database file has already
+    been created, they have no effect and are silently ignored.</p>
+
+    <p>Once an encoding has been set for a database, it cannot be changed.</p>
+
     <p>Databases created by the ATTACH command always use the same encoding
     as the main database.</p>
 </li>
