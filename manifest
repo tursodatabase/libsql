@@ -1,5 +1,5 @@
-C Reference\scount\sTable\sstructures\sso\sthat\sthey\sare\snot\sdeallocated\stoo\ssoon.\nTicket\s#1210.\s(CVS\s2498)
-D 2005-06-06T21:19:57
+C Do\snot\sopen\sa\sstatement\sjournal\sunless\sabsolutely\snecessary.\s(CVS\s2499)
+D 2005-06-07T01:43:41
 F Makefile.in 8129e7f261d405db783676f9ca31e0841768c652
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -81,7 +81,7 @@ F src/vdbe.c e9bf69b2ba382ba23b48f98778f46d3261ae0e2c
 F src/vdbe.h 75e466d84d362b0c4498978a9d6b1e6bd32ecf3b
 F src/vdbeInt.h 4afaae2f4adcab54ad2a40dabb2e689fba7b1561
 F src/vdbeapi.c 9a9556b9d7e3a052f58de389caf69449558e7380
-F src/vdbeaux.c 84a1381023e808761d6462871ef9bd46392c5c4f
+F src/vdbeaux.c d078d96e47a391666af10fce2fbabb1ace19a4b0
 F src/vdbemem.c 48a64ae95a9edc6e8d940300dad15d70d1670398
 F src/where.c f02baff03e2a9ed7bdc36b363b8e4024a94de919
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
@@ -281,7 +281,7 @@ F www/tclsqlite.tcl 425be741b8ae664f55cb1ef2371aab0a75109cf9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P 12c32f139bae3cb7ca520451bfc15f9f7d94833d
-R e390bfee5cfa27b3e5512a8098188123
+P e73d25c7419d580c47925494621df26d2fb9f27e
+R e5d64b9b0612e248c65fc146ea7ea4a7
 U drh
-Z c771356a4d5670d2ac2c478ca19855b4
+Z e7a36c84aa3464810f6e632e99f01c3c

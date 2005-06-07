@@ -220,6 +220,12 @@ int sqlite3VdbeOpcodeNoPush(u8 op){
 **
 ** The integer *pMaxStack is set to the maximum number of vdbe stack
 ** entries that static analysis reveals this program might need.
+**
+** This routine also does the following optimization:  It scans for
+** Halt instructions where P1==SQLITE_CONSTRAINT or P2==OE_Abort or for
+** IdxPut instructions where P2!=0.  If no such instruction is
+** found, then every Statement instruction is changed to a Noop.  In
+** this way, we avoid creating the statement journal file unnecessarily.
 */
 static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs, int *pMaxStack){
   int i;
@@ -227,6 +233,8 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs, int *pMaxStack){
   int nMaxStack = p->nOp;
   Op *pOp;
   int *aLabel = p->aLabel;
+  int doesStatementRollback = 0;
+  int hasStatementBegin = 0;
   for(pOp=p->aOp, i=p->nOp-1; i>=0; i--, pOp++){
     u8 opcode = pOp->opcode;
 
@@ -237,6 +245,16 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs, int *pMaxStack){
       if( pOp->p1>nMaxArgs ) nMaxArgs = pOp->p1;
     }else if( opcode==OP_AggFunc ){
       if( pOp->p2>nMaxArgs ) nMaxArgs = pOp->p2;
+    }else if( opcode==OP_Halt ){
+      if( pOp->p1==SQLITE_CONSTRAINT && pOp->p2==OE_Abort ){
+        doesStatementRollback = 1;
+      }
+    }else if( opcode==OP_IdxPut ){
+      if( pOp->p2 ){
+        doesStatementRollback = 1;
+      }
+    }else if( opcode==OP_Statement ){
+      hasStatementBegin = 1;
     }
 
     if( opcodeNoPush(opcode) ){
@@ -252,6 +270,19 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs, int *pMaxStack){
 
   *pMaxFuncArgs = nMaxArgs;
   *pMaxStack = nMaxStack;
+
+  /* If we never rollback a statement transaction, then statement
+  ** transactions are not needed.  So change every OP_Statement
+  ** opcode into an OP_Noop.  This avoid a call to sqlite3OsOpenExclusive()
+  ** which can be expensive on some platforms.
+  */
+  if( hasStatementBegin && !doesStatementRollback ){
+    for(pOp=p->aOp, i=p->nOp-1; i>=0; i--, pOp++){
+      if( pOp->opcode==OP_Statement ){
+        pOp->opcode = OP_Noop;
+      }
+    }
+  }
 }
 
 /*
@@ -689,7 +720,9 @@ void sqlite3VdbeMakeReady(
   /* No instruction ever pushes more than a single element onto the
   ** stack.  And the stack never grows on successive executions of the
   ** same loop.  So the total number of instructions is an upper bound
-  ** on the maximum stack depth required.
+  ** on the maximum stack depth required.  (Added later:)  The
+  ** resolveP2Values() call computes a tighter upper bound on the
+  ** stack size.
   **
   ** Allocation all the stack space we will ever need.
   */
