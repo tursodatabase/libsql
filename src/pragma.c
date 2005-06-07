@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.93 2005/05/22 06:49:57 danielk1977 Exp $
+** $Id: pragma.c,v 1.94 2005/06/07 22:22:51 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -19,7 +19,7 @@
 
 /* Ignore this whole file if pragmas are disabled
 */
-#ifndef SQLITE_OMIT_PRAGMA
+#if !defined(SQLITE_OMIT_PRAGMA) && !defined(SQLITE_OMIT_PARSER)
 
 #if defined(SQLITE_DEBUG) || defined(SQLITE_TEST)
 # include "pager.h"
@@ -930,4 +930,4 @@ pragma_out:
   sqliteFree(zRight);
 }
 
-#endif /* SQLITE_OMIT_PRAGMA */
+#endif /* SQLITE_OMIT_PRAGMA || SQLITE_OMIT_PARSER */
