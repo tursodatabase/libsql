@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.250 2005/06/06 21:19:57 drh Exp $
+** $Id: select.c,v 1.251 2005/06/12 12:01:19 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1690,7 +1690,7 @@ static int multiSelect(
       iCont = sqlite3VdbeMakeLabel(v);
       sqlite3VdbeAddOp(v, OP_Rewind, tab1, iBreak);
       computeLimitRegisters(pParse, p);
-      iStart = sqlite3VdbeAddOp(v, OP_FullKey, tab1, 0);
+      iStart = sqlite3VdbeAddOp(v, OP_RowKey, tab1, 0);
       sqlite3VdbeAddOp(v, OP_NotFound, tab2, iCont);
       rc = selectInnerLoop(pParse, p, p->pEList, tab1, p->pEList->nExpr,
                              p->pOrderBy, -1, eDest, iParm, 

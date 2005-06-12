@@ -1,5 +1,5 @@
-C Changes\sto\ssupport\slinking\swithout\sa\sparser\sand\swithout\sa\sdisk\sI/O\sinterface.\s(CVS\s2504)
-D 2005-06-07T22:22:51
+C Elminiate\sa\sVM\sopcode\sthat\swas\sno\slonger\sneeded.\s(CVS\s2505)
+D 2005-06-12T12:01:19
 F Makefile.in 8129e7f261d405db783676f9ca31e0841768c652
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -60,7 +60,7 @@ F src/pragma.c 344e50166437194c21332ada036671a3ac95652c
 F src/prepare.c d53602d2f8e097225ae7c76ec764ae68f759ba47
 F src/printf.c 3d20b21cfecadacecac3fb7274e746cb81d3d357
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
-F src/select.c ce4b9fd78d57693e756e8e51e9c7aa098c1508bb
+F src/select.c 266416bb8af3827dd925f12646db8d59e2fe02ac
 F src/shell.c 25b3217d7c64e6497225439d261a253a23efff26
 F src/sqlite.h.in f28f5b018f03a66aaf0bc1ab6985d8605d6b964f
 F src/sqliteInt.h 42b464cd380dd81bf7873476fc5974985a506d71
@@ -77,7 +77,7 @@ F src/update.c 04ea9dd784ccfeaf38a681b3edfe3b1c4edfdda7
 F src/utf.c bda5eb85039ef16f2d17004c1e18c96e1ab0a80c
 F src/util.c 96008b52604d08b9cc57ed37350149d6ac8a1bf3
 F src/vacuum.c 829d9e1a6d7c094b80e0899686670932eafd768c
-F src/vdbe.c e9bf69b2ba382ba23b48f98778f46d3261ae0e2c
+F src/vdbe.c 77c53143c329df6a1d5b14cbb3ed61164063c5e4
 F src/vdbe.h 75e466d84d362b0c4498978a9d6b1e6bd32ecf3b
 F src/vdbeInt.h 4afaae2f4adcab54ad2a40dabb2e689fba7b1561
 F src/vdbeapi.c 9a9556b9d7e3a052f58de389caf69449558e7380
@@ -281,7 +281,7 @@ F www/tclsqlite.tcl 425be741b8ae664f55cb1ef2371aab0a75109cf9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P 4704f3a19af73261ec03c0192c74a0416aeba794
-R 85f6631c1bb94d9cca30c0626cafa234
+P 62a7353d4af4886b1561832e8b36e8e788b38834
+R 59f3cd1f9900eff80ed20c2925adf396
 U drh
-Z 3dbbf934a5d9b8a10bcf167378c57366
+Z 09f39e38571ac1460392187d00e1cd29

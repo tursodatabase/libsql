@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.467 2005/06/06 17:27:19 drh Exp $
+** $Id: vdbe.c,v 1.468 2005/06/12 12:01:19 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -3078,6 +3078,7 @@ case OP_PutStrKey: {        /* no-push */
     i64 nKey; 
     i64 iKey;
     if( pOp->opcode==OP_PutStrKey ){
+assert( pNos->flags & MEM_Blob );
       Stringify(pNos, db->enc);
       nKey = pNos->n;
       zKey = pNos->z;
@@ -3252,6 +3253,7 @@ case OP_RowData: {
       sqlite3BtreeKeySize(pCrsr, &n64);
       n = n64;
     }else{
+assert( pC->intKey );
       sqlite3BtreeDataSize(pCrsr, &n);
     }
     pTos->n = n;
@@ -3266,8 +3268,10 @@ case OP_RowData: {
       pTos->z = z;
     }
     if( pC->keyAsData || pOp->opcode==OP_RowKey ){
+assert( !pC->intKey );
       sqlite3BtreeKey(pCrsr, 0, n, pTos->z);
     }else{
+assert( pC->intKey );
       sqlite3BtreeData(pCrsr, 0, n, pTos->z);
     }
 #ifndef SQLITE_OMIT_TRIGGER
@@ -3316,58 +3320,6 @@ case OP_Recno: {
   pTos->flags = MEM_Int;
   break;
 }
-
-#ifndef SQLITE_OMIT_COMPOUND_SELECT
-/* Opcode: FullKey P1 * *
-**
-** Extract the complete key from the record that cursor P1 is currently
-** pointing to and push the key onto the stack as a string.
-**
-** Compare this opcode to Recno.  The Recno opcode extracts the first
-** 4 bytes of the key and pushes those bytes onto the stack as an
-** integer.  This instruction pushes the entire key as a string.
-**
-** This opcode may not be used on a pseudo-table.
-*/
-case OP_FullKey: {
-  int i = pOp->p1;
-  BtCursor *pCrsr;
-  Cursor *pC;
-
-  assert( i>=0 && i<p->nCursor );
-  assert( p->apCsr[i]!=0 );
-  assert( p->apCsr[i]->keyAsData );
-  assert( !p->apCsr[i]->pseudoTable );
-  pTos++;
-  pTos->flags = MEM_Null;
-  if( (pCrsr = (pC = p->apCsr[i])->pCursor)!=0 ){
-    i64 amt;
-    char *z;
-
-    rc = sqlite3VdbeCursorMoveto(pC);
-    if( rc ) goto abort_due_to_error;
-    assert( pC->intKey==0 );
-    sqlite3BtreeKeySize(pCrsr, &amt);
-    if( amt<=0 ){
-      rc = SQLITE_CORRUPT;
-      goto abort_due_to_error;
-    }
-    if( amt>NBFS ){
-      z = sqliteMallocRaw( amt );
-      if( z==0 ) goto no_mem;
-      pTos->flags = MEM_Blob | MEM_Dyn;
-      pTos->xDel = 0;
-    }else{
-      z = pTos->zShort;
-      pTos->flags = MEM_Blob | MEM_Short;
-    }
-    sqlite3BtreeKey(pCrsr, 0, amt, z);
-    pTos->z = z;
-    pTos->n = amt;
-  }
-  break;
-}
-#endif
 
 /* Opcode: NullRow P1 * *
 **
