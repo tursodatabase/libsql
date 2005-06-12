@@ -21,6 +21,16 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2005 June 13 (3.2.2)} {
+<li>Added the sqlite3_db_handle() API</li>
+<li>Added the sqlite3_get_autocomment() API</li>
+<li>Added a REGEXP operator to the parser.  There is no function to back
+up this operator in the standard build but users can add their own using
+sqlite3_create_function()</li>
+<li>Speed improvements and library footprint reductions.</li>
+<li>Many, many minor bug fixes and documentation updates.</li>
+}
+
 chng {2005 March 29 (3.2.1)} {
 <li>Fix a memory allocation error in the new ADD COLUMN comment.</li>
 <li>Documentation updates</li>

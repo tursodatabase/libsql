@@ -61,6 +61,12 @@ proc newsitem {date title text} {
   puts "<hr width=\"50%\">"
 }
 
+newsitem {2005-Jun-13} {Version 3.2.2} {
+  This release includes numerous minor bug fixes, speed improvements,
+  and code size reductions.  There is no reason to upgrade unless you
+  are having problems or unless you just want to.
+}
+
 newsitem {2005-Mar-29} {Version 3.2.1} {
   This release fixes a memory allocation problem in the new
   <a href="lang_altertable.html">ALTER TABLE ADD COLUMN</a>
@@ -113,4 +119,4 @@ puts {
 <p align="right"><a href="oldnews.html">Old news...</a></p>
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.115 2005/03/29 13:19:02 drh Exp $}
+footer {$Id: index.tcl,v 1.116 2005/06/12 22:23:40 drh Exp $}
