@@ -1,5 +1,5 @@
-C Update\sthe\sEXPORT\sdefinitions\slist\sto\sinclude\sthe\slatest\sadditions\sto\sthe\sAPI.\s(CVS\s2510)
-D 2005-06-12T23:16:20
+C Version\s3.2.2\s(CVS\s2511)
+D 2005-06-12T23:17:24
 F Makefile.in 8129e7f261d405db783676f9ca31e0841768c652
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -281,7 +281,7 @@ F www/tclsqlite.tcl 425be741b8ae664f55cb1ef2371aab0a75109cf9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P e9602c4a9d2b62a9b3a86b94f47971c56ee6733e
+P 44e54b132e03d86e52055dc0a2815b653ec179e8
 R 05e6b581f33a453755db8dffc007805d
 U drh
-Z 255009ab86ad9265a46a235f8d9c9af7
+Z d770a9009fff9143a4be07b91acab531
