@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.468 2005/06/12 12:01:19 drh Exp $
+** $Id: vdbe.c,v 1.469 2005/06/12 21:35:53 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -717,7 +717,8 @@ case OP_String8: {         /* same as TK_STRING */
 #ifndef SQLITE_OMIT_UTF16
   pOp->opcode = OP_String;
 
-  if( db->enc!=SQLITE_UTF8 && pOp->p3 ){
+  assert( pOp->p3!=0 );
+  if( db->enc!=SQLITE_UTF8 ){
     pTos++;
     sqlite3VdbeMemSetStr(pTos, pOp->p3, -1, SQLITE_UTF8, SQLITE_STATIC);
     if( SQLITE_OK!=sqlite3VdbeChangeEncoding(pTos, db->enc) ) goto no_mem;
@@ -743,25 +744,33 @@ case OP_String8: {         /* same as TK_STRING */
 */
 case OP_String: {
   pTos++;
-  if( pOp->p3 ){
-    pTos->flags = MEM_Str|MEM_Static|MEM_Term;
-    pTos->z = pOp->p3;
+  assert( pOp->p3!=0 );
+  pTos->flags = MEM_Str|MEM_Static|MEM_Term;
+  pTos->z = pOp->p3;
 #ifndef SQLITE_OMIT_UTF16
-    if( db->enc==SQLITE_UTF8 ){
-      pTos->n = strlen(pTos->z);
-    }else{
-      pTos->n  = sqlite3utf16ByteLen(pTos->z, -1);
-    }
-#else
-    assert( db->enc==SQLITE_UTF8 );
+  if( db->enc==SQLITE_UTF8 ){
     pTos->n = strlen(pTos->z);
-#endif
-    pTos->enc = db->enc;
   }else{
-    pTos->flags = MEM_Null;
+    pTos->n  = sqlite3utf16ByteLen(pTos->z, -1);
   }
+#else
+  assert( db->enc==SQLITE_UTF8 );
+  pTos->n = strlen(pTos->z);
+#endif
+  pTos->enc = db->enc;
   break;
 }
+
+/* Opcode: Null * * *
+**
+** Push a NULL onto the stack.
+*/
+case OP_Null: {
+  pTos++;
+  pTos->flags = MEM_Null;
+  break;
+}
+
 
 #ifndef SQLITE_OMIT_BLOB_LITERAL
 /* Opcode: HexBlob * * P3
@@ -1373,11 +1382,11 @@ case OP_MustBeInt: {            /* no-push */
 ** Pop the top two elements from the stack.  If they are equal, then
 ** jump to instruction P2.  Otherwise, continue to the next instruction.
 **
-** The least significant byte of P1 may be either 0x00 or 0x01. If either
-** operand is NULL (and thus if the result is unknown) then take the jump
-** only if the least significant byte of P1 is 0x01.
+** If the 0x100 bit of P1 is true and either operand is NULL then take the
+** jump.  If the 0x100 bit of P1 is false then fall thru if either operand
+** is NULL.
 **
-** The second least significant byte of P1 must be an affinity character -
+** The least significant byte of P1 (mask 0xff) must be an affinity character -
 ** 'n', 't', 'i' or 'o' - or 0x00. An attempt is made to coerce both values
 ** according to the affinity before the comparison is made. If the byte is
 ** 0x00, then numeric affinity is used.
@@ -1446,7 +1455,7 @@ case OP_Ge: {             /* same as TK_GE, no-push */
   if( flags&MEM_Null ){
     popStack(&pTos, 2);
     if( pOp->p2 ){
-      if( (pOp->p1&0xFF) ) pc = pOp->p2-1;
+      if( pOp->p1 & 0x100 ) pc = pOp->p2-1;
     }else{
       pTos++;
       pTos->flags = MEM_Null;
@@ -1454,7 +1463,7 @@ case OP_Ge: {             /* same as TK_GE, no-push */
     break;
   }
 
-  affinity = (pOp->p1>>8)&0xFF;
+  affinity = pOp->p1 & 0xFF;
   if( affinity ){
     applyAffinity(pNos, affinity, db->enc);
     applyAffinity(pTos, affinity, db->enc);
@@ -1708,10 +1717,6 @@ case OP_SetNumColumns: {       /* no-push */
   assert( p->apCsr[pOp->p1]!=0 );
   pC = p->apCsr[pOp->p1];
   pC->nField = pOp->p2;
-  if( (!pC->keyAsData && pC->zeroData) || (pC->keyAsData && pC->intKey) ){
-    rc = SQLITE_CORRUPT;
-    goto abort_due_to_error;
-  }
   break;
 }
 
@@ -1795,7 +1800,7 @@ case OP_Column: {
     }else if( pC->cacheValid ){
       payloadSize = pC->payloadSize;
       zRec = pC->aRow;
-    }else if( pC->keyAsData ){
+    }else if( pC->isIndex ){
       i64 payloadSize64;
       sqlite3BtreeKeySize(pCrsr, &payloadSize64);
       payloadSize = payloadSize64;
@@ -1850,7 +1855,7 @@ case OP_Column: {
     if( zRec ){
       zData = zRec;
     }else{
-      if( pC->keyAsData ){
+      if( pC->isIndex ){
         zData = (char*)sqlite3BtreeKeyFetch(pCrsr, &avail);
       }else{
         zData = (char*)sqlite3BtreeDataFetch(pCrsr, &avail);
@@ -1876,7 +1881,7 @@ case OP_Column: {
     ** acquire the complete header text.
     */
     if( !zRec && avail<szHdr ){
-      rc = sqlite3VdbeMemFromBtree(pCrsr, 0, szHdr, pC->keyAsData, &sMem);
+      rc = sqlite3VdbeMemFromBtree(pCrsr, 0, szHdr, pC->isIndex, &sMem);
       if( rc!=SQLITE_OK ){
         goto op_column_out;
       }
@@ -1940,7 +1945,7 @@ case OP_Column: {
       zData = &zRec[aOffset[p2]];
     }else{
       len = sqlite3VdbeSerialTypeLen(aType[p2]);
-      rc = sqlite3VdbeMemFromBtree(pCrsr, aOffset[p2], len,pC->keyAsData,&sMem);
+      rc = sqlite3VdbeMemFromBtree(pCrsr, aOffset[p2], len, pC->isIndex,&sMem);
       if( rc!=SQLITE_OK ){
         goto op_column_out;
       }
@@ -2440,11 +2445,12 @@ case OP_OpenWrite: {       /* no-push */
   rc = sqlite3BtreeCursor(pX, p2, wrFlag,
            sqlite3VdbeRecordCompare, pOp->p3,
            &pCur->pCursor);
-  pCur->pKeyInfo = (KeyInfo*)pOp->p3;
-  if( pCur->pKeyInfo ){
+  if( pOp->p3type==P3_KEYINFO ){
+    pCur->pKeyInfo = (KeyInfo*)pOp->p3;
     pCur->pIncrKey = &pCur->pKeyInfo->incrKey;
     pCur->pKeyInfo->enc = p->db->enc;
   }else{
+    pCur->pKeyInfo = 0;
     pCur->pIncrKey = &pCur->bogusIncrKey;
   }
   switch( rc ){
@@ -2456,11 +2462,32 @@ case OP_OpenWrite: {       /* no-push */
     }
     case SQLITE_OK: {
       int flags = sqlite3BtreeFlags(pCur->pCursor);
-      pCur->intKey = (flags & BTREE_INTKEY)!=0;
-      pCur->zeroData = (flags & BTREE_ZERODATA)!=0;
+      /* Sanity checking.  Only the lower four bits of the flags byte should
+      ** be used.  Bit 3 (mask 0x08) is unpreditable.  The lower 3 bits
+      ** (mask 0x07) should be either 5 (intkey+leafdata for tables) or
+      ** 2 (zerodata for indices).  If these conditions are not met it can
+      ** only mean that we are dealing with a corrupt database file
+      */
+      if( (flags & 0xf0)!=0 || ((flags & 0x07)!=5 && (flags & 0x07)!=2) ){
+        rc = SQLITE_CORRUPT;
+        goto abort_due_to_error;
+      }
+      pCur->isTable = (flags & BTREE_INTKEY)!=0;
+      pCur->isIndex = (flags & BTREE_ZERODATA)!=0;
+      /* If P3==0 it means we are expected to open a table.  If P3!=0 then
+      ** we expect to be opening an index.  If this is not what happened,
+      ** then the database is corrupt
+      */
+      if( (pCur->isTable && pOp->p3type==P3_KEYINFO)
+       || (pCur->isIndex && pOp->p3type!=P3_KEYINFO) ){
+        rc = SQLITE_CORRUPT;
+        goto abort_due_to_error;
+      }
       break;
     }
     case SQLITE_EMPTY: {
+      pCur->isTable = pOp->p3type!=P3_KEYINFO;
+      pCur->isIndex = !pCur->isTable;
       rc = SQLITE_OK;
       break;
     }
@@ -2518,12 +2545,14 @@ case OP_OpenTemp: {       /* no-push */
         pCx->pKeyInfo->enc = p->db->enc;
         pCx->pIncrKey = &pCx->pKeyInfo->incrKey;
       }
+      pCx->isTable = 0;
     }else{
       rc = sqlite3BtreeCursor(pCx->pBt, MASTER_ROOT, 1, 0, 0, &pCx->pCursor);
-      pCx->intKey = 1;
+      pCx->isTable = 1;
       pCx->pIncrKey = &pCx->bogusIncrKey;
     }
   }
+  pCx->isIndex = !pCx->isTable;
   break;
 }
 
@@ -2547,6 +2576,8 @@ case OP_OpenPseudo: {       /* no-push */
   pCx->nullRow = 1;
   pCx->pseudoTable = 1;
   pCx->pIncrKey = &pCx->bogusIncrKey;
+  pCx->isTable = 1;
+  pCx->isIndex = 0;
   break;
 }
 #endif
@@ -2621,7 +2652,7 @@ case OP_MoveGt: {       /* no-push */
     oc = pOp->opcode;
     pC->nullRow = 0;
     *pC->pIncrKey = oc==OP_MoveGt || oc==OP_MoveLe;
-    if( pC->intKey ){
+    if( pC->isTable ){
       i64 iKey;
       Integerify(pTos);
       iKey = intToKey(pTos->i);
@@ -2636,15 +2667,15 @@ case OP_MoveGt: {       /* no-push */
       if( rc!=SQLITE_OK ){
         goto abort_due_to_error;
       }
-      pC->lastRecno = pTos->i;
-      pC->recnoIsValid = res==0;
+      pC->lastRowid = pTos->i;
+      pC->rowidIsValid = res==0;
     }else{
       Stringify(pTos, db->enc);
       rc = sqlite3BtreeMoveto(pC->pCursor, pTos->z, pTos->n, &res);
       if( rc!=SQLITE_OK ){
         goto abort_due_to_error;
       }
-      pC->recnoIsValid = 0;
+      pC->rowidIsValid = 0;
     }
     pC->deferredMoveto = 0;
     pC->cacheValid = 0;
@@ -2654,7 +2685,7 @@ case OP_MoveGt: {       /* no-push */
       if( res<0 ){
         rc = sqlite3BtreeNext(pC->pCursor, &res);
         if( rc!=SQLITE_OK ) goto abort_due_to_error;
-        pC->recnoIsValid = 0;
+        pC->rowidIsValid = 0;
       }else{
         res = 0;
       }
@@ -2663,7 +2694,7 @@ case OP_MoveGt: {       /* no-push */
       if( res>=0 ){
         rc = sqlite3BtreePrevious(pC->pCursor, &res);
         if( rc!=SQLITE_OK ) goto abort_due_to_error;
-        pC->recnoIsValid = 0;
+        pC->rowidIsValid = 0;
       }else{
         /* res might be negative because the table is empty.  Check to
         ** see if this is the case.
@@ -2686,31 +2717,46 @@ case OP_MoveGt: {       /* no-push */
 
 /* Opcode: Distinct P1 P2 *
 **
-** Use the top of the stack as a string key.  If a record with that key does
-** not exist in the table of cursor P1, then jump to P2.  If the record
-** does already exist, then fall thru.  The cursor is left pointing
-** at the record if it exists. The key is not popped from the stack.
+** Use the top of the stack as a record created using MakeRecord.  P1 is a
+** cursor on a table that declared as an index.  If that table contains an
+** entry that matches the top of the stack fall thru.  If the top of the stack
+** matches no entry in P1 then jump to P2.
 **
-** This operation is similar to NotFound except that this operation
+** The cursor is left pointing at the matching entry if it exists.  The
+** record on the top of the stack is not popped.
+**
+** This instruction is similar to NotFound except that this operation
 ** does not pop the key from the stack.
+**
+** The instruction is used to implement the DISTINCT operator on SELECT
+** statements.  The P1 table is not a true index but rather a record of
+** all results that have produced so far.  
 **
 ** See also: Found, NotFound, MoveTo, IsUnique, NotExists
 */
 /* Opcode: Found P1 P2 *
 **
-** Use the top of the stack as a string key.  If a record with that key
-** does exist in table of P1, then jump to P2.  If the record
-** does not exist, then fall thru.  The cursor is left pointing
-** to the record if it exists.  The key is popped from the stack.
+** Top of the stack holds a blob constructed by MakeRecord.  P1 is an index.
+** If an entry that matches the top of the stack exists in P1 then
+** jump to P2.  If the top of the stack does not match any entry in P1
+** then fall thru.  The P1 cursor is left pointing at the matching entry
+** if it exists.  The blob is popped off the top of the stack.
+**
+** This instruction is used to implement the IN operator where the
+** left-hand side is a SELECT statement.  P1 is not a true index but
+** is instead a temporary index that holds the results of the SELECT
+** statement.  This instruction just checks to see if the left-hand side
+** of the IN operator (stored on the top of the stack) exists in the
+** result of the SELECT statement.
 **
 ** See also: Distinct, NotFound, MoveTo, IsUnique, NotExists
 */
 /* Opcode: NotFound P1 P2 *
 **
-** Use the top of the stack as a string key.  If a record with that key
-** does not exist in table of P1, then jump to P2.  If the record
-** does exist, then fall thru.  The cursor is left pointing to the
-** record if it exists.  The key is popped from the stack.
+** The top of the stack holds a blob constructed by MakeRecord.  P1 is
+** an index.  If no entry exists in P1 that matches the blob then jump
+** to P1.  If an entry does existing, fall through.  The cursor is left
+** pointing to the entry that matches.  The blob is popped from the stack.
 **
 ** The difference between this operation and Distinct is that
 ** Distinct does not pop the key from the stack.
@@ -2728,7 +2774,7 @@ case OP_Found: {        /* no-push */
   assert( p->apCsr[i]!=0 );
   if( (pC = p->apCsr[i])->pCursor!=0 ){
     int res, rx;
-    assert( pC->intKey==0 );
+    assert( pC->isTable==0 );
     Stringify(pTos, db->enc);
     rx = sqlite3BtreeMoveto(pC->pCursor, pTos->z, pTos->n, &res);
     alreadyExists = rx==SQLITE_OK && res==0;
@@ -2755,8 +2801,8 @@ case OP_Found: {        /* no-push */
 ** stack but it leaves K unchanged.
 **
 ** P1 is an index.  So it has no data and its key consists of a
-** record generated by OP_MakeIdxKey.  This key contains one or more
-** fields followed by a ROWID field.
+** record generated by OP_MakeRecord where the last field is the 
+** rowid of the entry that the index refers to.
 ** 
 ** This instruction asks if there is an entry in P1 where the
 ** fields matches K but the rowid is different from R.
@@ -2857,8 +2903,9 @@ case OP_IsUnique: {        /* no-push */
 ** record if it exists.  The integer key is popped from the stack.
 **
 ** The difference between this operation and NotFound is that this
-** operation assumes the key is an integer and NotFound assumes it
-** is a string.
+** operation assumes the key is an integer and that P1 is a table whereas
+** NotFound assumes key is a blob constructed from MakeRecord and
+** P1 is an index.
 **
 ** See also: Distinct, Found, MoveTo, NotFound, IsUnique
 */
@@ -2873,16 +2920,16 @@ case OP_NotExists: {        /* no-push */
     int res;
     u64 iKey;
     assert( pTos->flags & MEM_Int );
-    assert( p->apCsr[i]->intKey );
+    assert( p->apCsr[i]->isTable );
     iKey = intToKey(pTos->i);
     rc = sqlite3BtreeMoveto(pCrsr, 0, iKey, &res);
-    pC->lastRecno = pTos->i;
-    pC->recnoIsValid = res==0;
+    pC->lastRowid = pTos->i;
+    pC->rowidIsValid = res==0;
     pC->nullRow = 0;
     pC->cacheValid = 0;
     if( res!=0 ){
       pc = pOp->p2 - 1;
-      pC->recnoIsValid = 0;
+      pC->rowidIsValid = 0;
     }
   }
   Release(pTos);
@@ -2890,9 +2937,9 @@ case OP_NotExists: {        /* no-push */
   break;
 }
 
-/* Opcode: NewRecno P1 P2 *
+/* Opcode: NewRowid P1 P2 *
 **
-** Get a new integer record number used as the key to a table.
+** Get a new integer record number (a.k.a "rowid") used as the key to a table.
 ** The record number is not previously used as a key in the database
 ** table that cursor P1 points to.  The new record number is pushed 
 ** onto the stack.
@@ -2904,7 +2951,7 @@ case OP_NotExists: {        /* no-push */
 ** record number.  This P2 mechanism is used to help implement the
 ** AUTOINCREMENT feature.
 */
-case OP_NewRecno: {
+case OP_NewRowid: {
   int i = pOp->p1;
   i64 v = 0;
   Cursor *pC;
@@ -3032,7 +3079,7 @@ case OP_NewRecno: {
         goto abort_due_to_error;
       }
     }
-    pC->recnoIsValid = 0;
+    pC->rowidIsValid = 0;
     pC->deferredMoveto = 0;
     pC->cacheValid = 0;
   }
@@ -3042,7 +3089,7 @@ case OP_NewRecno: {
   break;
 }
 
-/* Opcode: PutIntKey P1 P2 *
+/* Opcode: Insert P1 P2 *
 **
 ** Write an entry into the table of cursor P1.  A new entry is
 ** created if it doesn't already exist or the data for an existing
@@ -3054,19 +3101,11 @@ case OP_NewRecno: {
 ** incremented (otherwise not).  If the OPFLAG_LASTROWID flag of P2 is set,
 ** then rowid is stored for subsequent return by the
 ** sqlite3_last_insert_rowid() function (otherwise it's unmodified).
-*/
-/* Opcode: PutStrKey P1 * *
 **
-** Write an entry into the table of cursor P1.  A new entry is
-** created if it doesn't already exist or the data for an existing
-** entry is overwritten.  The data is the value on the top of the
-** stack.  The key is the next value down on the stack.  The key must
-** be a string.  The stack is popped twice by this instruction.
-**
-** P1 may not be a pseudo-table opened using the OpenPseudo opcode.
+** This instruction only works on tables.  The equivalent instruction
+** for indices is OP_IdxInsert.
 */
-case OP_PutIntKey:          /* no-push */
-case OP_PutStrKey: {        /* no-push */
+case OP_Insert: {         /* no-push */
   Mem *pNos = &pTos[-1];
   int i = pOp->p1;
   Cursor *pC;
@@ -3074,36 +3113,16 @@ case OP_PutStrKey: {        /* no-push */
   assert( i>=0 && i<p->nCursor );
   assert( p->apCsr[i]!=0 );
   if( ((pC = p->apCsr[i])->pCursor!=0 || pC->pseudoTable) ){
-    char *zKey;
-    i64 nKey; 
-    i64 iKey;
-    if( pOp->opcode==OP_PutStrKey ){
-assert( pNos->flags & MEM_Blob );
-      Stringify(pNos, db->enc);
-      nKey = pNos->n;
-      zKey = pNos->z;
-    }else{
-      assert( pNos->flags & MEM_Int );
+    i64 iKey;   /* The integer ROWID or key for the record to be inserted */
 
-      /* If the table is an INTKEY table, set nKey to the value of
-      ** the integer key, and zKey to NULL. Otherwise, set nKey to
-      ** sizeof(i64) and point zKey at iKey. iKey contains the integer
-      ** key in the on-disk byte order.
-      */
-      iKey = intToKey(pNos->i);
-      if( pC->intKey ){
-        nKey = intToKey(pNos->i);
-        zKey = 0;
-      }else{
-        nKey = sizeof(i64);
-        zKey = (char*)&iKey;
-      }
+    assert( pNos->flags & MEM_Int );
+    assert( pC->isTable );
+    iKey = intToKey(pNos->i);
 
-      if( pOp->p2 & OPFLAG_NCHANGE ) p->nChange++;
-      if( pOp->p2 & OPFLAG_LASTROWID ) db->lastRowid = pNos->i;
-      if( pC->nextRowidValid && pTos->i>=pC->nextRowid ){
-        pC->nextRowidValid = 0;
-      }
+    if( pOp->p2 & OPFLAG_NCHANGE ) p->nChange++;
+    if( pOp->p2 & OPFLAG_LASTROWID ) db->lastRowid = pNos->i;
+    if( pC->nextRowidValid && pTos->i>=pC->nextRowid ){
+      pC->nextRowidValid = 0;
     }
     if( pTos->flags & MEM_Null ){
       pTos->z = 0;
@@ -3113,11 +3132,6 @@ assert( pNos->flags & MEM_Blob );
     }
 #ifndef SQLITE_OMIT_TRIGGER
     if( pC->pseudoTable ){
-      /* PutStrKey does not work for pseudo-tables.
-      ** The following assert makes sure we are not trying to use
-      ** PutStrKey on a pseudo-table
-      */
-      assert( pOp->opcode==OP_PutIntKey );
       sqliteFree(pC->pData);
       pC->iKey = iKey;
       pC->nData = pTos->n;
@@ -3134,12 +3148,12 @@ assert( pNos->flags & MEM_Blob );
       pC->nullRow = 0;
     }else{
 #endif
-      rc = sqlite3BtreeInsert(pC->pCursor, zKey, nKey, pTos->z, pTos->n);
+      rc = sqlite3BtreeInsert(pC->pCursor, 0, iKey, pTos->z, pTos->n);
 #ifndef SQLITE_OMIT_TRIGGER
     }
 #endif
     
-    pC->recnoIsValid = 0;
+    pC->rowidIsValid = 0;
     pC->deferredMoveto = 0;
     pC->cacheValid = 0;
   }
@@ -3193,23 +3207,6 @@ case OP_ResetCount: {        /* no-push */
   break;
 }
 
-/* Opcode: KeyAsData P1 P2 *
-**
-** Turn the key-as-data mode for cursor P1 either on (if P2==1) or
-** off (if P2==0).  In key-as-data mode, the OP_Column opcode pulls
-** data off of the key rather than the data.  This is used for
-** processing compound selects.
-*/
-case OP_KeyAsData: {        /* no-push */
-  int i = pOp->p1;
-  Cursor *pC;
-  assert( i>=0 && i<p->nCursor );
-  pC = p->apCsr[i];
-  assert( pC!=0 );
-  pC->keyAsData = pOp->p2;
-  break;
-}
-
 /* Opcode: RowData P1 * *
 **
 ** Push onto the stack the complete row data for cursor P1.
@@ -3234,9 +3231,12 @@ case OP_RowData: {
   Cursor *pC;
   u32 n;
 
+  /* Note that RowKey and RowData are really exactly the same instruction */
   pTos++;
   assert( i>=0 && i<p->nCursor );
   pC = p->apCsr[i];
+  assert( pC->isTable || pOp->opcode==OP_RowKey );
+  assert( pC->isIndex || pOp->opcode==OP_RowData );
   assert( pC!=0 );
   if( pC->nullRow ){
     pTos->flags = MEM_Null;
@@ -3247,13 +3247,12 @@ case OP_RowData: {
     if( pC->nullRow ){
       pTos->flags = MEM_Null;
       break;
-    }else if( pC->keyAsData || pOp->opcode==OP_RowKey ){
+    }else if( pC->isIndex ){
       i64 n64;
-      assert( !pC->intKey );
+      assert( !pC->isTable );
       sqlite3BtreeKeySize(pCrsr, &n64);
       n = n64;
     }else{
-assert( pC->intKey );
       sqlite3BtreeDataSize(pCrsr, &n);
     }
     pTos->n = n;
@@ -3267,11 +3266,9 @@ assert( pC->intKey );
       pTos->xDel = 0;
       pTos->z = z;
     }
-    if( pC->keyAsData || pOp->opcode==OP_RowKey ){
-assert( !pC->intKey );
+    if( pC->isIndex ){
       sqlite3BtreeKey(pCrsr, 0, n, pTos->z);
     }else{
-assert( pC->intKey );
       sqlite3BtreeData(pCrsr, 0, n, pTos->z);
     }
 #ifndef SQLITE_OMIT_TRIGGER
@@ -3286,14 +3283,12 @@ assert( pC->intKey );
   break;
 }
 
-/* Opcode: Recno P1 * *
+/* Opcode: Rowid P1 * *
 **
-** Push onto the stack an integer which is the first 4 bytes of the
-** the key to the current entry in a sequential scan of the database
-** file P1.  The sequential scan should have been started using the 
-** Next opcode.
+** Push onto the stack an integer which is the key of the table entry that
+** P1 is currently point to.
 */
-case OP_Recno: {
+case OP_Rowid: {
   int i = pOp->p1;
   Cursor *pC;
   i64 v;
@@ -3304,8 +3299,8 @@ case OP_Recno: {
   rc = sqlite3VdbeCursorMoveto(pC);
   if( rc ) goto abort_due_to_error;
   pTos++;
-  if( pC->recnoIsValid ){
-    v = pC->lastRecno;
+  if( pC->rowidIsValid ){
+    v = pC->lastRowid;
   }else if( pC->pseudoTable ){
     v = keyToInt(pC->iKey);
   }else if( pC->nullRow || pC->pCursor==0 ){
@@ -3335,13 +3330,13 @@ case OP_NullRow: {        /* no-push */
   pC = p->apCsr[i];
   assert( pC!=0 );
   pC->nullRow = 1;
-  pC->recnoIsValid = 0;
+  pC->rowidIsValid = 0;
   break;
 }
 
 /* Opcode: Last P1 P2 *
 **
-** The next use of the Recno or Column or Next instruction for P1 
+** The next use of the Rowid or Column or Next instruction for P1 
 ** will refer to the last entry in the database table or index.
 ** If the table or index is empty and P2>0, then jump immediately to P2.
 ** If P2 is 0 or if the table or index is not empty, fall through
@@ -3372,7 +3367,7 @@ case OP_Last: {        /* no-push */
 
 /* Opcode: Rewind P1 P2 *
 **
-** The next use of the Recno or Column or Next instruction for P1 
+** The next use of the Rowid or Column or Next instruction for P1 
 ** will refer to the first entry in the database table or index.
 ** If the table or index is empty and P2>0, then jump immediately to P2.
 ** If P2 is 0 or if the table or index is not empty, fall through
@@ -3445,11 +3440,11 @@ case OP_Next: {        /* no-push */
   }else{
     pC->nullRow = 1;
   }
-  pC->recnoIsValid = 0;
+  pC->rowidIsValid = 0;
   break;
 }
 
-/* Opcode: IdxPut P1 P2 P3
+/* Opcode: IdxInsert P1 P2 P3
 **
 ** The top of the stack holds a SQL index key made using the
 ** MakeIdxKey instruction.  This opcode writes that key into the
@@ -3459,8 +3454,11 @@ case OP_Next: {        /* no-push */
 ** the program aborts with a SQLITE_CONSTRAINT error and the database
 ** is rolled back.  If P3 is not null, then it becomes part of the
 ** error message returned with the SQLITE_CONSTRAINT.
+**
+** This instruction only works for indices.  The equivalent instruction
+** for tables is OP_Insert.
 */
-case OP_IdxPut: {        /* no-push */
+case OP_IdxInsert: {        /* no-push */
   int i = pOp->p1;
   Cursor *pC;
   BtCursor *pCrsr;
@@ -3497,7 +3495,7 @@ case OP_IdxPut: {        /* no-push */
         }
       }
     }
-    assert( pC->intKey==0 );
+    assert( pC->isTable==0 );
     rc = sqlite3BtreeInsert(pCrsr, zKey, nKey, "", 0);
     assert( pC->deferredMoveto==0 );
     pC->cacheValid = 0;
@@ -3534,15 +3532,15 @@ case OP_IdxDelete: {        /* no-push */
   break;
 }
 
-/* Opcode: IdxRecno P1 * *
+/* Opcode: IdxRowid P1 * *
 **
-** Push onto the stack an integer which is the varint located at the
-** end of the index key pointed to by cursor P1.  This integer should be
-** the record number of the table entry to which this index entry points.
+** Push onto the stack an integer which is the last entry in the record at
+** the end of the index key pointed to by cursor P1.  This integer should be
+** the rowid of the table entry to which this index entry points.
 **
-** See also: Recno, MakeIdxKey.
+** See also: Rowid, MakeIdxKey.
 */
-case OP_IdxRecno: {
+case OP_IdxRowid: {
   int i = pOp->p1;
   BtCursor *pCrsr;
   Cursor *pC;
@@ -3555,7 +3553,7 @@ case OP_IdxRecno: {
     i64 rowid;
 
     assert( pC->deferredMoveto==0 );
-    assert( pC->intKey==0 );
+    assert( pC->isTable==0 );
     if( pC->nullRow ){
       pTos->flags = MEM_Null;
     }else{
@@ -4060,13 +4058,13 @@ case OP_ContextPop: {        /* no-push */
 }
 #endif /* #ifndef SQLITE_OMIT_TRIGGER */
 
-/* Opcode: SortPut * * *
+/* Opcode: SortInsert * * *
 **
 ** The TOS is the key and the NOS is the data.  Pop both from the stack
 ** and put them on the sorter.  The key and data should have been
 ** made using the MakeRecord opcode.
 */
-case OP_SortPut: {        /* no-push */
+case OP_SortInsert: {        /* no-push */
   Mem *pNos = &pTos[-1];
   Sorter *pSorter;
   assert( pNos>=p->aStack );

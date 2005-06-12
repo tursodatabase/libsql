@@ -215,7 +215,7 @@ void sqlite3FinishTrigger(
   */
   if( !db->init.busy ){
     static const VdbeOpList insertTrig[] = {
-      { OP_NewRecno,   0, 0,  0          },
+      { OP_NewRowid,   0, 0,  0          },
       { OP_String8,    0, 0,  "trigger"  },
       { OP_String8,    0, 0,  0          },  /* 2: trigger name */
       { OP_String8,    0, 0,  0          },  /* 3: table name */
@@ -224,7 +224,7 @@ void sqlite3FinishTrigger(
       { OP_String8,    0, 0,  0          },  /* 6: SQL */
       { OP_Concat,     0, 0,  0          }, 
       { OP_MakeRecord, 5, 0,  "tttit"    },
-      { OP_PutIntKey,  0, 0,  0          },
+      { OP_Insert,     0, 0,  0          },
     };
     int addr;
     Vdbe *v;

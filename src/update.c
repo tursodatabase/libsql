@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.107 2005/04/22 02:38:38 drh Exp $
+** $Id: update.c,v 1.108 2005/06/12 21:35:53 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -80,8 +80,8 @@ void sqlite3Update(
   int *aXRef = 0;        /* aXRef[i] is the index in pChanges->a[] of the
                          ** an expression for the i-th column of the table.
                          ** aXRef[i]==-1 if the i-th column is not changed. */
-  int chngRecno;         /* True if the record number is being changed */
-  Expr *pRecnoExpr = 0;  /* Expression defining the new record number */
+  int chngRowid;         /* True if the record number is being changed */
+  Expr *pRowidExpr = 0;  /* Expression defining the new record number */
   int openAll = 0;       /* True if all indices need to be opened */
   AuthContext sContext;  /* The authorization context */
   NameContext sNC;       /* The name-context to resolve expressions in */
@@ -160,7 +160,7 @@ void sqlite3Update(
   ** column to be updated, make sure we have authorization to change
   ** that column.
   */
-  chngRecno = 0;
+  chngRowid = 0;
   for(i=0; i<pChanges->nExpr; i++){
     if( sqlite3ExprResolveNames(&sNC, pChanges->a[i].pExpr) ){
       goto update_cleanup;
@@ -168,8 +168,8 @@ void sqlite3Update(
     for(j=0; j<pTab->nCol; j++){
       if( sqlite3StrICmp(pTab->aCol[j].zName, pChanges->a[i].zName)==0 ){
         if( j==pTab->iPKey ){
-          chngRecno = 1;
-          pRecnoExpr = pChanges->a[i].pExpr;
+          chngRowid = 1;
+          pRowidExpr = pChanges->a[i].pExpr;
         }
         aXRef[j] = i;
         break;
@@ -177,8 +177,8 @@ void sqlite3Update(
     }
     if( j>=pTab->nCol ){
       if( sqlite3IsRowid(pChanges->a[i].zName) ){
-        chngRecno = 1;
-        pRecnoExpr = pChanges->a[i].pExpr;
+        chngRowid = 1;
+        pRowidExpr = pChanges->a[i].pExpr;
       }else{
         sqlite3ErrorMsg(pParse, "no such column: %s", pChanges->a[i].zName);
         goto update_cleanup;
@@ -204,7 +204,7 @@ void sqlite3Update(
   ** number of the original table entry is changing.
   */
   for(nIdx=nIdxTotal=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, nIdxTotal++){
-    if( chngRecno ){
+    if( chngRowid ){
       i = 0;
     }else {
       for(i=0; i<pIdx->nColumn; i++){
@@ -219,7 +219,7 @@ void sqlite3Update(
     aIdxUsed = (char*)&apIdx[nIdx];
   }
   for(nIdx=j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
-    if( chngRecno ){
+    if( chngRowid ){
       i = 0;
     }else{
       for(i=0; i<pIdx->nColumn; i++){
@@ -272,7 +272,7 @@ void sqlite3Update(
 
   /* Remember the index of every item to be updated.
   */
-  sqlite3VdbeAddOp(v, OP_Recno, iCur, 0);
+  sqlite3VdbeAddOp(v, OP_Rowid, iCur, 0);
   sqlite3VdbeAddOp(v, OP_ListWrite, 0, 0);
 
   /* End the database scan loop.
@@ -310,20 +310,20 @@ void sqlite3Update(
 
     /* Generate the OLD table
     */
-    sqlite3VdbeAddOp(v, OP_Recno, iCur, 0);
+    sqlite3VdbeAddOp(v, OP_Rowid, iCur, 0);
     sqlite3VdbeAddOp(v, OP_RowData, iCur, 0);
-    sqlite3VdbeAddOp(v, OP_PutIntKey, oldIdx, 0);
+    sqlite3VdbeAddOp(v, OP_Insert, oldIdx, 0);
 
     /* Generate the NEW table
     */
-    if( chngRecno ){
-      sqlite3ExprCodeAndCache(pParse, pRecnoExpr);
+    if( chngRowid ){
+      sqlite3ExprCodeAndCache(pParse, pRowidExpr);
     }else{
-      sqlite3VdbeAddOp(v, OP_Recno, iCur, 0);
+      sqlite3VdbeAddOp(v, OP_Rowid, iCur, 0);
     }
     for(i=0; i<pTab->nCol; i++){
       if( i==pTab->iPKey ){
-        sqlite3VdbeAddOp(v, OP_String8, 0, 0);
+        sqlite3VdbeAddOp(v, OP_Null, 0, 0);
         continue;
       }
       j = aXRef[i];
@@ -339,7 +339,7 @@ void sqlite3Update(
       sqlite3TableAffinityStr(v, pTab);
     }
     if( pParse->nErr ) goto update_cleanup;
-    sqlite3VdbeAddOp(v, OP_PutIntKey, newIdx, 0);
+    sqlite3VdbeAddOp(v, OP_Insert, newIdx, 0);
     if( !isView ){
       sqlite3VdbeAddOp(v, OP_Close, iCur, 0);
     }
@@ -399,8 +399,8 @@ void sqlite3Update(
     ** will be after the update. (The old record number is currently
     ** on top of the stack.)
     */
-    if( chngRecno ){
-      sqlite3ExprCode(pParse, pRecnoExpr);
+    if( chngRowid ){
+      sqlite3ExprCode(pParse, pRowidExpr);
       sqlite3VdbeAddOp(v, OP_MustBeInt, 0, 0);
     }
 
@@ -408,7 +408,7 @@ void sqlite3Update(
     */
     for(i=0; i<pTab->nCol; i++){
       if( i==pTab->iPKey ){
-        sqlite3VdbeAddOp(v, OP_String8, 0, 0);
+        sqlite3VdbeAddOp(v, OP_Null, 0, 0);
         continue;
       }
       j = aXRef[i];
@@ -422,7 +422,7 @@ void sqlite3Update(
 
     /* Do constraint checks
     */
-    sqlite3GenerateConstraintChecks(pParse, pTab, iCur, aIdxUsed, chngRecno, 1,
+    sqlite3GenerateConstraintChecks(pParse, pTab, iCur, aIdxUsed, chngRowid, 1,
                                    onError, addr);
 
     /* Delete the old indices for the current record.
@@ -431,13 +431,13 @@ void sqlite3Update(
 
     /* If changing the record number, delete the old record.
     */
-    if( chngRecno ){
+    if( chngRowid ){
       sqlite3VdbeAddOp(v, OP_Delete, iCur, 0);
     }
 
     /* Create the new index entries and the new record.
     */
-    sqlite3CompleteInsertion(pParse, pTab, iCur, aIdxUsed, chngRecno, 1, -1);
+    sqlite3CompleteInsertion(pParse, pTab, iCur, aIdxUsed, chngRowid, 1, -1);
   }
 
   /* Increment the row counter 

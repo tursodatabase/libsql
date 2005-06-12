@@ -223,7 +223,7 @@ int sqlite3VdbeOpcodeNoPush(u8 op){
 **
 ** This routine also does the following optimization:  It scans for
 ** Halt instructions where P1==SQLITE_CONSTRAINT or P2==OE_Abort or for
-** IdxPut instructions where P2!=0.  If no such instruction is
+** IdxInsert instructions where P2!=0.  If no such instruction is
 ** found, then every Statement instruction is changed to a Noop.  In
 ** this way, we avoid creating the statement journal file unnecessarily.
 */
@@ -249,7 +249,7 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs, int *pMaxStack){
       if( pOp->p1==SQLITE_CONSTRAINT && pOp->p2==OE_Abort ){
         doesStatementRollback = 1;
       }
-    }else if( opcode==OP_IdxPut ){
+    }else if( opcode==OP_IdxInsert ){
       if( pOp->p2 ){
         doesStatementRollback = 1;
       }
@@ -1572,8 +1572,8 @@ int sqlite3VdbeCursorMoveto(Cursor *p){
   if( p->deferredMoveto ){
     int res, rc;
     extern int sqlite3_search_count;
-    assert( p->intKey );
-    if( p->intKey ){
+    assert( p->isTable );
+    if( p->isTable ){
       rc = sqlite3BtreeMoveto(p->pCursor, 0, p->movetoTarget, &res);
     }else{
       rc = sqlite3BtreeMoveto(p->pCursor,(char*)&p->movetoTarget,
@@ -1581,8 +1581,8 @@ int sqlite3VdbeCursorMoveto(Cursor *p){
     }
     if( rc ) return rc;
     *p->pIncrKey = 0;
-    p->lastRecno = keyToInt(p->movetoTarget);
-    p->recnoIsValid = res==0;
+    p->lastRowid = keyToInt(p->movetoTarget);
+    p->rowidIsValid = res==0;
     if( res<0 ){
       rc = sqlite3BtreeNext(p->pCursor, &res);
       if( rc ) return rc;

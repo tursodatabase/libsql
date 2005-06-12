@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.251 2005/06/12 12:01:19 drh Exp $
+** $Id: select.c,v 1.252 2005/06/12 21:35:52 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -326,7 +326,7 @@ static void pushOntoSorter(Parse *pParse, Vdbe *v, ExprList *pOrderBy){
     sqlite3ExprCode(pParse, pOrderBy->a[i].pExpr);
   }
   sqlite3VdbeAddOp(v, OP_MakeRecord, pOrderBy->nExpr, 0);
-  sqlite3VdbeAddOp(v, OP_SortPut, 0, 0);
+  sqlite3VdbeAddOp(v, OP_SortInsert, 0, 0);
 }
 
 /*
@@ -422,8 +422,7 @@ static int selectInnerLoop(
     sqlite3VdbeAddOp(v, OP_Pop, pEList->nExpr+1, 0);
     sqlite3VdbeAddOp(v, OP_Goto, 0, iContinue);
     VdbeComment((v, "# skip indistinct records"));
-    sqlite3VdbeAddOp(v, OP_String8, 0, 0);
-    sqlite3VdbeAddOp(v, OP_PutStrKey, distinct, 0);
+    sqlite3VdbeAddOp(v, OP_IdxInsert, distinct, 0);
     if( pOrderBy==0 ){
       codeLimiter(v, p, iContinue, iBreak, nColumn);
     }
@@ -437,8 +436,7 @@ static int selectInnerLoop(
     case SRT_Union: {
       sqlite3VdbeAddOp(v, OP_MakeRecord, nColumn, NULL_ALWAYS_DISTINCT);
       sqlite3VdbeChangeP3(v, -1, aff, P3_STATIC);
-      sqlite3VdbeAddOp(v, OP_String8, 0, 0);
-      sqlite3VdbeAddOp(v, OP_PutStrKey, iParm, 0);
+      sqlite3VdbeAddOp(v, OP_IdxInsert, iParm, 0);
       break;
     }
 
@@ -464,9 +462,9 @@ static int selectInnerLoop(
       if( pOrderBy ){
         pushOntoSorter(pParse, v, pOrderBy);
       }else{
-        sqlite3VdbeAddOp(v, OP_NewRecno, iParm, 0);
+        sqlite3VdbeAddOp(v, OP_NewRowid, iParm, 0);
         sqlite3VdbeAddOp(v, OP_Pull, 1, 0);
-        sqlite3VdbeAddOp(v, OP_PutIntKey, iParm, 0);
+        sqlite3VdbeAddOp(v, OP_Insert, iParm, 0);
       }
       break;
     }
@@ -490,8 +488,7 @@ static int selectInnerLoop(
         char aff = (iParm>>16)&0xFF;
         aff = sqlite3CompareAffinity(pEList->a[0].pExpr, aff);
         sqlite3VdbeOp3(v, OP_MakeRecord, 1, 0, &aff, 1);
-        sqlite3VdbeAddOp(v, OP_String8, 0, 0);
-        sqlite3VdbeAddOp(v, OP_PutStrKey, (iParm&0x0000FFFF), 0);
+        sqlite3VdbeAddOp(v, OP_IdxInsert, (iParm&0x0000FFFF), 0);
       }
       sqlite3VdbeChangeP2(v, addr2, sqlite3VdbeCurrentAddr(v));
       break;
@@ -603,9 +600,9 @@ static void generateSortTail(
   switch( eDest ){
     case SRT_Table:
     case SRT_TempTable: {
-      sqlite3VdbeAddOp(v, OP_NewRecno, iParm, 0);
+      sqlite3VdbeAddOp(v, OP_NewRowid, iParm, 0);
       sqlite3VdbeAddOp(v, OP_Pull, 1, 0);
-      sqlite3VdbeAddOp(v, OP_PutIntKey, iParm, 0);
+      sqlite3VdbeAddOp(v, OP_Insert, iParm, 0);
       break;
     }
 #ifndef SQLITE_OMIT_SUBQUERY
@@ -615,8 +612,7 @@ static void generateSortTail(
       sqlite3VdbeAddOp(v, OP_Pop, 1, 0);
       sqlite3VdbeAddOp(v, OP_Goto, 0, sqlite3VdbeCurrentAddr(v)+3);
       sqlite3VdbeOp3(v, OP_MakeRecord, 1, 0, "n", P3_STATIC);
-      sqlite3VdbeAddOp(v, OP_String8, 0, 0);
-      sqlite3VdbeAddOp(v, OP_PutStrKey, (iParm&0x0000FFFF), 0);
+      sqlite3VdbeAddOp(v, OP_IdxInsert, (iParm&0x0000FFFF), 0);
       break;
     }
     case SRT_Exists:
@@ -1326,11 +1322,9 @@ static void computeLimitRegisters(Parse *pParse, Select *p){
 ** DISTINCT, UNION, INTERSECT and EXCEPT select statements (but not 
 ** UNION ALL).
 **
-** Make the new table a KeyAsData table if keyAsData is true.
-**
 ** The value returned is the address of the OP_OpenTemp instruction.
 */
-static int openTempIndex(Parse *pParse, Select *p, int iTab, int keyAsData){
+static int openTempIndex(Parse *pParse, Select *p, int iTab){
   KeyInfo *pKeyInfo;
   int nColumn;
   sqlite3 *db = pParse->db;
@@ -1354,9 +1348,6 @@ static int openTempIndex(Parse *pParse, Select *p, int iTab, int keyAsData){
   }
   addr = sqlite3VdbeOp3(v, OP_OpenTemp, iTab, 0, 
       (char*)pKeyInfo, P3_KEYINFO_HANDOFF);
-  if( keyAsData ){
-    sqlite3VdbeAddOp(v, OP_KeyAsData, iTab, 1);
-  }
   return addr;
 }
 
@@ -1551,7 +1542,6 @@ static int multiSelect(
           if( rc!=SQLITE_OK ){
             goto multi_select_end;
           }
-          sqlite3VdbeAddOp(v, OP_KeyAsData, unionTab, 1);
         }
 	assert( nAddr<sizeof(aAddr)/sizeof(aAddr[0]) );
         aAddr[nAddr++] = sqlite3VdbeAddOp(v, OP_SetNumColumns, unionTab, 0);
@@ -1643,7 +1633,6 @@ static int multiSelect(
       if( rc!=SQLITE_OK ){
         goto multi_select_end;
       }
-      sqlite3VdbeAddOp(v, OP_KeyAsData, tab1, 1);
       assert( nAddr<sizeof(aAddr)/sizeof(aAddr[0]) );
       aAddr[nAddr++] = sqlite3VdbeAddOp(v, OP_SetNumColumns, tab1, 0);
       assert( p->pEList );
@@ -1662,7 +1651,6 @@ static int multiSelect(
       if( rc!=SQLITE_OK ){
         goto multi_select_end;
       }
-      sqlite3VdbeAddOp(v, OP_KeyAsData, tab2, 1);
       assert( nAddr<sizeof(aAddr)/sizeof(aAddr[0]) );
       aAddr[nAddr++] = sqlite3VdbeAddOp(v, OP_SetNumColumns, tab2, 0);
       p->pPrior = 0;
@@ -2226,12 +2214,12 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
     sqlite3VdbeOp3(v, OP_OpenRead, iIdx, pIdx->tnum,
                    (char*)&pIdx->keyInfo, P3_KEYINFO);
     if( seekOp==OP_Rewind ){
-      sqlite3VdbeAddOp(v, OP_String, 0, 0);
+      sqlite3VdbeAddOp(v, OP_Null, 0, 0);
       sqlite3VdbeAddOp(v, OP_MakeRecord, 1, 0);
       seekOp = OP_MoveGt;
     }
     sqlite3VdbeAddOp(v, seekOp, iIdx, 0);
-    sqlite3VdbeAddOp(v, OP_IdxRecno, iIdx, 0);
+    sqlite3VdbeAddOp(v, OP_IdxRowid, iIdx, 0);
     sqlite3VdbeAddOp(v, OP_Close, iIdx, 0);
     sqlite3VdbeAddOp(v, OP_MoveGe, base, 0);
   }
@@ -2741,7 +2729,7 @@ int sqlite3Select(
   /* Initialize the memory cell to NULL for SRT_Mem or 0 for SRT_Exists
   */
   if( eDest==SRT_Mem || eDest==SRT_Exists ){
-    sqlite3VdbeAddOp(v, eDest==SRT_Mem ? OP_String8 : OP_Integer, 0, 0);
+    sqlite3VdbeAddOp(v, eDest==SRT_Mem ? OP_Null : OP_Integer, 0, 0);
     sqlite3VdbeAddOp(v, OP_MemStore, iParm, 1);
   }
 
@@ -2749,7 +2737,7 @@ int sqlite3Select(
   */
   if( isDistinct ){
     distinct = pParse->nTab++;
-    openTempIndex(pParse, p, distinct, 0);
+    openTempIndex(pParse, p, distinct);
   }else{
     distinct = -1;
   }

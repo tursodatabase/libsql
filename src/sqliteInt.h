@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.386 2005/06/06 21:19:57 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.387 2005/06/12 21:35:52 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1141,7 +1141,7 @@ struct AuthContext {
 };
 
 /*
-** Bitfield flags for P2 value in OP_PutIntKey and OP_Delete
+** Bitfield flags for P2 value in OP_Insert and OP_Delete
 */
 #define OPFLAG_NCHANGE   1    /* Set to update db->nChange */
 #define OPFLAG_LASTROWID 2    /* Set to update db->lastRowid */

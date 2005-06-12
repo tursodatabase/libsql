@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.205 2005/06/06 21:19:57 drh Exp $
+** $Id: expr.c,v 1.206 2005/06/12 21:35:52 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -138,7 +138,7 @@ int sqlite3IndexAffinityOk(Expr *pExpr, char idx_affinity){
 */
 static int binaryCompareP1(Expr *pExpr1, Expr *pExpr2, int jumpIfNull){
   char aff = sqlite3ExprAffinity(pExpr2);
-  return (((int)sqlite3CompareAffinity(pExpr1, aff))<<8)+(jumpIfNull?1:0);
+  return ((int)sqlite3CompareAffinity(pExpr1, aff))+(jumpIfNull?0x100:0);
 }
 
 /*
@@ -1309,8 +1309,7 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
           /* Evaluate the expression and insert it into the temp table */
           sqlite3ExprCode(pParse, pE2);
           sqlite3VdbeOp3(v, OP_MakeRecord, 1, 0, &affinity, 1);
-          sqlite3VdbeAddOp(v, OP_String8, 0, 0);
-          sqlite3VdbeAddOp(v, OP_PutStrKey, pExpr->iTable, 0);
+          sqlite3VdbeAddOp(v, OP_IdxInsert, pExpr->iTable, 0);
         }
       }
       sqlite3VdbeChangeP3(v, addr, (void *)&keyInfo, P3_KEYINFO);
@@ -1382,7 +1381,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
   int op;
   if( v==0 ) return;
   if( pExpr==0 ){
-    sqlite3VdbeAddOp(v, OP_String8, 0, 0);  /* Empty expression evals to NULL */
+    sqlite3VdbeAddOp(v, OP_Null, 0, 0);
     return;
   }
   op = pExpr->op;
@@ -1394,7 +1393,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
         sqlite3VdbeAddOp(v, OP_Column, pExpr->iTable, pExpr->iColumn);
         sqlite3ColumnDefault(v, pExpr->pTab, pExpr->iColumn);
       }else{
-        sqlite3VdbeAddOp(v, OP_Recno, pExpr->iTable, 0);
+        sqlite3VdbeAddOp(v, OP_Rowid, pExpr->iTable, 0);
       }
       break;
     }
@@ -1410,6 +1409,10 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       sqlite3VdbeDequoteP3(v, -1);
       break;
     }
+    case TK_NULL: {
+      sqlite3VdbeAddOp(v, OP_Null, 0, 0);
+      break;
+    }
 #ifndef SQLITE_OMIT_BLOB_LITERAL
     case TK_BLOB: {
       assert( TK_BLOB==OP_HexBlob );
@@ -1418,10 +1421,6 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       break;
     }
 #endif
-    case TK_NULL: {
-      sqlite3VdbeAddOp(v, OP_String8, 0, 0);
-      break;
-    }
     case TK_VARIABLE: {
       sqlite3VdbeAddOp(v, OP_Variable, pExpr->iTable, 0);
       if( pExpr->token.n>1 ){
@@ -1578,7 +1577,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       addr = sqlite3VdbeCurrentAddr(v);
       sqlite3VdbeAddOp(v, OP_NotNull, -1, addr+4);            /* addr + 0 */
       sqlite3VdbeAddOp(v, OP_Pop, 2, 0);
-      sqlite3VdbeAddOp(v, OP_String8, 0, 0);
+      sqlite3VdbeAddOp(v, OP_Null, 0, 0);
       sqlite3VdbeAddOp(v, OP_Goto, 0, addr+7);
       sqlite3VdbeOp3(v, OP_MakeRecord, 1, 0, &affinity, 1);   /* addr + 4 */
       sqlite3VdbeAddOp(v, OP_Found, pExpr->iTable, addr+7);
@@ -1648,7 +1647,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       if( pExpr->pRight ){
         sqlite3ExprCode(pParse, pExpr->pRight);
       }else{
-        sqlite3VdbeAddOp(v, OP_String8, 0, 0);
+        sqlite3VdbeAddOp(v, OP_Null, 0, 0);
       }
       sqlite3VdbeResolveLabel(v, expr_end_label);
       break;

@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.94 2005/06/07 22:22:51 drh Exp $
+** $Id: pragma.c,v 1.95 2005/06/12 21:35:52 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -693,7 +693,7 @@ void sqlite3Pragma(
           static const VdbeOpList idxErr[] = {
             { OP_MemIncr,     0,  0,  0},
             { OP_String8,     0,  0,  "rowid "},
-            { OP_Recno,       1,  0,  0},
+            { OP_Rowid,       1,  0,  0},
             { OP_String8,     0,  0,  " missing from index "},
             { OP_String8,     0,  0,  0},    /* 4 */
             { OP_Concat,      2,  0,  0},

@@ -60,19 +60,18 @@ typedef unsigned char Bool;
 */
 struct Cursor {
   BtCursor *pCursor;    /* The cursor structure of the backend */
-  i64 lastRecno;        /* Last recno from a Next or NextIdx operation */
+  i64 lastRowid;        /* Last rowid from a Next or NextIdx operation */
   i64 nextRowid;        /* Next rowid returned by OP_NewRowid */
   Bool zeroed;          /* True if zeroed out and ready for reuse */
-  Bool recnoIsValid;    /* True if lastRecno is valid */
-  Bool keyAsData;       /* The OP_Column command works on key instead of data */
+  Bool rowidIsValid;    /* True if lastRowid is valid */
   Bool atFirst;         /* True if pointing to first entry */
   Bool useRandomRowid;  /* Generate new record numbers semi-randomly */
   Bool nullRow;         /* True if pointing to a row with no data */
   Bool nextRowidValid;  /* True if the nextRowid field is valid */
   Bool pseudoTable;     /* This is a NEW or OLD pseudo-tables of a trigger */
   Bool deferredMoveto;  /* A call to sqlite3BtreeMoveto() is needed */
-  Bool intKey;          /* True if the table requires integer keys */
-  Bool zeroData;        /* True if table contains keys only - no data */
+  Bool isTable;         /* True if a table requiring integer keys */
+  Bool isIndex;         /* True if an index containing keys only - no data */
   u8 bogusIncrKey;      /* Something for pIncrKey to point to if pKeyInfo==0 */
   i64 movetoTarget;     /* Argument to the deferred sqlite3BtreeMoveto() */
   Btree *pBt;           /* Separate file holding temporary table */

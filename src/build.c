@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.325 2005/06/06 21:19:57 drh Exp $
+** $Id: build.c,v 1.326 2005/06/12 21:35:52 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -791,10 +791,10 @@ void sqlite3StartTable(
       sqlite3VdbeAddOp(v, OP_CreateTable, iDb, 0);
     }
     sqlite3OpenMasterTable(v, iDb);
-    sqlite3VdbeAddOp(v, OP_NewRecno, 0, 0);
+    sqlite3VdbeAddOp(v, OP_NewRowid, 0, 0);
     sqlite3VdbeAddOp(v, OP_Dup, 0, 0);
-    sqlite3VdbeAddOp(v, OP_String8, 0, 0);
-    sqlite3VdbeAddOp(v, OP_PutIntKey, 0, 0);
+    sqlite3VdbeAddOp(v, OP_Null, 0, 0);
+    sqlite3VdbeAddOp(v, OP_Insert, 0, 0);
     sqlite3VdbeAddOp(v, OP_Close, 0, 0);
     sqlite3VdbeAddOp(v, OP_Pull, 1, 0);
   }
@@ -2008,7 +2008,7 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
   addr1 = sqlite3VdbeAddOp(v, OP_Rewind, iTab, 0);
   sqlite3GenerateIndexKey(v, pIndex, iTab);
   isUnique = pIndex->onError!=OE_None;
-  sqlite3VdbeAddOp(v, OP_IdxPut, iIdx, isUnique);
+  sqlite3VdbeAddOp(v, OP_IdxInsert, iIdx, isUnique);
   if( isUnique ){
     sqlite3VdbeChangeP3(v, -1, "indexed columns are not unique", P3_STATIC);
   }
