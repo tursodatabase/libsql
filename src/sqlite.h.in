@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.135 2005/06/12 22:01:43 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.136 2005/06/12 22:12:39 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1193,7 +1193,7 @@ int sqlite3_rekey(
 int sqlite3_sleep(int);
 
 /*
-** Return TRUE (non-zero) of the statement supplied as an argument needs
+** Return TRUE (non-zero) if the statement supplied as an argument needs
 ** to be recompiled.  A statement needs to be recompiled whenever the
 ** execution environment changes in a way that would alter the program
 ** that sqlite3_prepare() generates.  For example, if new functions or
