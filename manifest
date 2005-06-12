@@ -1,5 +1,5 @@
-C Updates\sin\spreparation\sfor\sthe\srelease\sof\sversion\s3.2.2.\s(CVS\s2509)
-D 2005-06-12T22:23:40
+C Update\sthe\sEXPORT\sdefinitions\slist\sto\sinclude\sthe\slatest\sadditions\sto\sthe\sAPI.\s(CVS\s2510)
+D 2005-06-12T23:16:20
 F Makefile.in 8129e7f261d405db783676f9ca31e0841768c652
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -25,7 +25,7 @@ F publish.sh ed0aba4ffdfadb36597d03ce8efdae96efc038cb
 F spec.template b2f6c4e488cbc3b993a57deba22cbc36203c4da3
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
-F sqlite3.def dbaeb20c153e1d366e8f421b55a573f5dfc00863
+F sqlite3.def c413e514217736884254739a105c8c942fdf0c2f
 F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
 F src/alter.c 03041f2464e22532601254f87cb49997fa21dcdf
 F src/attach.c 3615dbe960cbee4aa5ea300b8a213dad36527b0f
@@ -281,7 +281,7 @@ F www/tclsqlite.tcl 425be741b8ae664f55cb1ef2371aab0a75109cf9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P 41049062cdefdc111398589daff464a9a13600aa
-R c4e6226458e91230f075aaadfa3ece78
+P e9602c4a9d2b62a9b3a86b94f47971c56ee6733e
+R 05e6b581f33a453755db8dffc007805d
 U drh
-Z 5907d3946481400df2cf79e762fffdd6
+Z 255009ab86ad9265a46a235f8d9c9af7
