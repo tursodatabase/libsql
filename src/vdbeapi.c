@@ -23,8 +23,6 @@
 ** that sqlite3_prepare() generates.  For example, if new functions or
 ** collating sequences are registered or if an authorizer function is
 ** added or changed.
-**
-***** EXPERIMENTAL ******
 */
 int sqlite3_expired(sqlite3_stmt *pStmt){
   Vdbe *p = (Vdbe*)pStmt;
@@ -670,8 +668,7 @@ int sqlite3_bind_parameter_index(sqlite3_stmt *pStmt, const char *zName){
   return 0;
 }
 
-/* EXPERIMENTAL
-** 
+/*
 ** Transfer all bindings from the first statement over to the second.
 ** If the two statements contain a different number of bindings, then
 ** an SQLITE_ERROR is returned.
@@ -691,4 +688,14 @@ int sqlite3_transfer_bindings(sqlite3_stmt *pFromStmt, sqlite3_stmt *pToStmt){
     rc = sqlite3VdbeMemMove(&pTo->aVar[i], &pFrom->aVar[i]);
   }
   return rc;
+}
+
+/*
+** Return the sqlite3* database handle to which the prepared statement given
+** in the argument belongs.  This is the same database handle that was
+** the first argument to the sqlite3_prepare() that was used to create
+** the statement in the first place.
+*/
+sqlite3 *sqlite3_db_handle(sqlite3_stmt *pStmt){
+  return pStmt ? ((Vdbe*)pStmt)->db : 0;
 }

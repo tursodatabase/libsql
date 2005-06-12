@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.143 2005/06/07 07:58:49 danielk1977 Exp $
+** $Id: test1.c,v 1.144 2005/06/12 22:01:43 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -63,7 +63,7 @@ const char *sqlite3TestErrorName(int rc){
 ** Convert an sqlite3_stmt* into an sqlite3*.  This depends on the
 ** fact that the sqlite3* is the first field in the Vdbe structure.
 */
-#define StmtToDb(X)   ((X)?*(sqlite3**)(X):0)
+#define StmtToDb(X)   sqlite3_db_handle(X)
 
 /*
 ** Check a return value to make sure it agrees with the results

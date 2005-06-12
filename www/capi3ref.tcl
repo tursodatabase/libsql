@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3ref.tcl,v 1.20 2005/03/14 02:01:50 drh Exp $}
+set rcsid {$Id: capi3ref.tcl,v 1.21 2005/06/12 22:01:43 drh Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -103,6 +103,16 @@ api {} {
  occurrences have the same index as the first occurrence.  The index for
  named parameters can be looked up using the
  sqlite3_bind_parameter_name() API if desired.
+
+ The third argument is the value to bind to the parameter.
+
+ In those
+ routines that have a fourth argument, its value is the number of bytes
+ in the parameter.  This is the number of characters for UTF-8 strings
+ and the number of bytes for UTF-16 strings and blobs.  The number
+ of bytes does not include the zero-terminator at the end of strings.
+ If the fourth parameter is negative, the length of the string is
+ computed using strlen().
 
  The fifth argument to sqlite3_bind_blob(), sqlite3_bind_text(), and
  sqlite3_bind_text16() is a destructor used to dispose of the BLOB or
@@ -1085,6 +1095,86 @@ int sqlite3_value_type(sqlite3_value*);
  See the documentation under sqlite3_column_blob for additional
  information.
 }
+
+api {} {
+  int sqlite3_sleep(int);
+} {
+ Sleep for a little while. The second parameter is the number of
+ miliseconds to sleep for. 
+
+ If the operating system does not support sleep requests with 
+ milisecond time resolution, then the time will be rounded up to 
+ the nearest second. The number of miliseconds of sleep actually 
+ requested from the operating system is returned.
+}
+
+api {} {
+  int sqlite3_expired(sqlite3_stmt*);
+} {
+ Return TRUE (non-zero) of the statement supplied as an argument needs
+ to be recompiled.  A statement needs to be recompiled whenever the
+ execution environment changes in a way that would alter the program
+ that sqlite3_prepare() generates.  For example, if new functions or
+ collating sequences are registered or if an authorizer function is
+ added or changed.
+}
+
+api {} {
+  int sqlite3_transfer_bindings(sqlite3_stmt*, sqlite3_stmt*);
+} {
+ Move all bindings from the first prepared statement over to the second.
+ This routine is useful, for example, if the first prepared statement
+ fails with an SQLITE_SCHEMA error.  The same SQL can be prepared into
+ the second prepared statement then all of the bindings transfered over
+ to the second statement before the first statement is finalized.
+}
+
+api {} {
+  int sqlite3_global_recover();
+} {
+ This function is called to recover from a malloc() failure that occured
+ within the SQLite library. Normally, after a single malloc() fails the 
+ library refuses to function (all major calls return SQLITE_NOMEM).
+ This function restores the library state so that it can be used again.
+
+ All existing statements (sqlite3_stmt pointers) must be finalized or
+ reset before this call is made. Otherwise, SQLITE_BUSY is returned.
+ If any in-memory databases are in use, either as a main or TEMP
+ database, SQLITE_ERROR is returned. In either of these cases, the 
+ library is not reset and remains unusable.
+
+ This function is *not* threadsafe. Calling this from within a threaded
+ application when threads other than the caller have used SQLite is
+ dangerous and will almost certainly result in malfunctions.
+
+ This functionality can be omitted from a build by defining the 
+ SQLITE_OMIT_GLOBALRECOVER at compile time.
+}
+
+api {} {
+  int sqlite3_get_autocommit(sqlite3*);
+} {
+ Test to see whether or not the database connection is in autocommit
+ mode.  Return TRUE if it is and FALSE if not.  Autocommit mode is on
+ by default.  Autocommit is disabled by a BEGIN statement and reenabled
+ by the next COMMIT or ROLLBACK.
+}
+
+api {} {
+  int sqlite3_clear_bindings(sqlite3_stmt*);
+} {
+ Set all the parameters in the compiled SQL statement back to NULL.
+}
+
+api {} {
+  int sqlite3_db_handle(sqlite3_stmt*);
+} {
+ Return the sqlite3* database handle to which the prepared statement given
+ in the argument belongs.  This is the same database handle that was
+ the first argument to the sqlite3_prepare() that was used to create
+ the statement in the first place.
+}
+
 
 set n 0
 set i 0
