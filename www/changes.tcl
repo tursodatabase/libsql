@@ -23,7 +23,7 @@ proc chng {date desc} {
 
 chng {2005 June 13 (3.2.2)} {
 <li>Added the sqlite3_db_handle() API</li>
-<li>Added the sqlite3_get_autocomment() API</li>
+<li>Added the sqlite3_get_autocommit() API</li>
 <li>Added a REGEXP operator to the parser.  There is no function to back
 up this operator in the standard build but users can add their own using
 sqlite3_create_function()</li>
