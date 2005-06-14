@@ -25,7 +25,7 @@
 ** set the sqlite3_vdbe_addop_trace to 1 and all opcodes will be printed
 ** as they are added to the instruction stream.
 */
-#ifndef NDEBUG
+#ifdef SQLITE_DEBUG
 int sqlite3_vdbe_addop_trace = 0;
 #endif
 

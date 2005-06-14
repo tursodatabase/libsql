@@ -1,5 +1,5 @@
-C Provide\sthe\sSQLITE_FILE_HEADER\scommand-line\soption\sfor\schanging\sthe\stext\nthat\sappears\sat\sthe\sbeginning\sof\sdatabases.\s(CVS\s2515)
-D 2005-06-14T16:04:06
+C Fix\san\sNDEBUG\sversus\sSQLITE_DEBUG\sconfusion\sissue.\s(CVS\s2516)
+D 2005-06-14T17:47:58
 F Makefile.in 8129e7f261d405db783676f9ca31e0841768c652
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -81,7 +81,7 @@ F src/vdbe.c c2511f392598928254504e3b2c5ec47f4fef2b53
 F src/vdbe.h 75e466d84d362b0c4498978a9d6b1e6bd32ecf3b
 F src/vdbeInt.h 4312faf41630a6c215924b6c7c2f39ebb1af8ffb
 F src/vdbeapi.c 3f858d2236df0d127249a6a166e0e25b5de650ed
-F src/vdbeaux.c c99e32abeba4b7522e3922afff2c32ff4bd17eb5
+F src/vdbeaux.c 38332d91887817a2146f46b58fff2a8a88ed0278
 F src/vdbemem.c 48a64ae95a9edc6e8d940300dad15d70d1670398
 F src/where.c 3a9a2258ab3364655e9ea215ad5ae7bf41813f54
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
@@ -281,7 +281,7 @@ F www/tclsqlite.tcl 425be741b8ae664f55cb1ef2371aab0a75109cf9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P a42cb81d1173532537aed4e71091d4cd3f3a88a0
-R 3034c179d87c7ef731d375237e170820
+P 3d7ee5b92d7e30f90cb7a8b3efd649b36480b61b
+R aeb4bbc68944baf149e09bcc056ddc6f
 U drh
-Z 61021d8b64c85b9238f7e2438ffbd52e
+Z 07b3bf8c07a105e6c637a65b688c004c
