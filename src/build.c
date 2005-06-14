@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.326 2005/06/12 21:35:52 drh Exp $
+** $Id: build.c,v 1.327 2005/06/14 02:12:46 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -745,7 +745,7 @@ void sqlite3StartTable(
   ** so that INSERT can find the table easily.
   */
 #ifndef SQLITE_OMIT_AUTOINCREMENT
-  if( strcmp(zName, "sqlite_sequence")==0 ){
+  if( !pParse->nested && strcmp(zName, "sqlite_sequence")==0 ){
     db->aDb[iDb].pSeqTab = pTable;
   }
 #endif
