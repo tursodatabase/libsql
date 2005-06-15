@@ -373,6 +373,9 @@ arch.html:	$(TOP)/www/arch.tcl
 arch.png:	$(TOP)/www/arch.png
 	cp $(TOP)/www/arch.png .
 
+arch2.gif:	$(TOP)/www/arch2.gif
+	cp $(TOP)/www/arch2.gif .
+
 autoinc.html:	$(TOP)/www/autoinc.tcl
 	tclsh $(TOP)/www/autoinc.tcl >autoinc.html
 
@@ -491,6 +494,7 @@ whentouse.html:	$(TOP)/www/whentouse.tcl
 DOC = \
   arch.html \
   arch.png \
+  arch2.gif \
   autoinc.html \
   c_interface.html \
   capi3.html \
