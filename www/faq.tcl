@@ -1,7 +1,7 @@
 #
 # Run this script to generated a faq.html output file
 #
-set rcsid {$Id: faq.tcl,v 1.28 2005/01/26 10:39:58 danielk1977 Exp $}
+set rcsid {$Id: faq.tcl,v 1.29 2005/06/16 19:48:40 drh Exp $}
 source common.tcl
 header {SQLite Frequently Asked Questions</title>}
 
@@ -52,7 +52,7 @@ INSERT INTO t1 VALUES((SELECT max(a) FROM t1)+1,123);
   earlier.</p>
 
   <p>Beginning with version 2.2.3, there is a new API function named
-  <b>sqlite_last_insert_rowid()</b> which will return the integer key
+  <b>sqlite3_last_insert_rowid()</b> which will return the integer key
   for the most recent insert operation.  See the API documentation for
   details.</p>
 
@@ -217,8 +217,8 @@ faq {
 
   <p>When SQLite tries to access a file that is locked by another
   process, the default behavior is to return SQLITE_BUSY.  You can
-  adjust this behavior from C code using the <b>sqlite_busy_handler()</b> or
-  <b>sqlite_busy_timeout()</b> API functions.  See the API documentation
+  adjust this behavior from C code using the <b>sqlite3_busy_handler()</b> or
+  <b>sqlite3_busy_timeout()</b> API functions.  See the API documentation
   for details.</p>
 
   <p>If two or more processes have the same database open and one
@@ -238,10 +238,16 @@ faq {
   recompile.</p>
 
   <p>"Threadsafe" in the previous paragraph means that two or more threads
-  can run SQLite at the same time on different "<b>sqlite</b>" structures
-  returned from separate calls to <b>sqlite_open()</b>.  It is never safe
-  to use the same <b>sqlite</b> structure pointer simultaneously in two
+  can run SQLite at the same time on different "<b>sqlite3</b>" structures
+  returned from separate calls to <b>sqlite3_open()</b>.  It is never safe
+  to use the same <b>sqlite3</b> structure pointer simultaneously in two
   or more threads.</p>
+
+  <p>An <b>sqlite3</b> structure can only be used in the same thread
+  that called <b>sqlite3_open</b> to create it.  You cannot open a
+  database in one thread then pass the handle off to another thread for
+  it to use.  This is due to limitations (bugs?) in many common threading
+  implementations such as on RedHat9.</p>
 
   <p>Note that if two or more threads have the same database open and one
   thread creates a new table or index, the other threads might
@@ -257,7 +263,7 @@ faq {
 faq {
   How do I list all tables/indices contained in an SQLite database
 } {
-  <p>If you are running the <b>sqlite</b> command-line access program
+  <p>If you are running the <b>sqlite3</b> command-line access program
   you can type "<b>.tables</b>" to get a list of all tables.  Or you
   can type "<b>.schema</b>" to see the complete database schema including
   all tables and indices.  Either of these commands can be followed by
@@ -327,7 +333,7 @@ faq {
 
   <p>The names of tables, indices, view, triggers, and columns can be
   as long as desired.  However, the names of SQL functions (as created
-  by the <a href="c_interface.html#cfunc">sqlite_create_function()</a> API)
+  by the <a href="c_interface.html#cfunc">sqlite3_create_function()</a> API)
   may not exceed 255 characters in length.</p>
 }
 
