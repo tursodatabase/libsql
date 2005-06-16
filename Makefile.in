@@ -52,7 +52,7 @@ LIBREADLINE = @TARGET_READLINE_LIBS@
 
 # Should the database engine be compiled threadsafe
 #
-THREADSAFE = -DTHREADSAFE=@THREADSAFE@
+OPTS += -DTHREADSAFE=@THREADSAFE@
 
 # The pthreads library if needed
 #
@@ -317,10 +317,10 @@ opcodes.h:	parse.h $(TOP)/src/vdbe.c $(TOP)/mkopcodeh.awk
 	cat parse.h $(TOP)/src/vdbe.c | awk -f $(TOP)/mkopcodeh.awk >opcodes.h
 
 os_unix.lo:	$(TOP)/src/os_unix.c $(HDR)
-	$(LTCOMPILE) $(THREADSAFE) -c $(TOP)/src/os_unix.c
+	$(LTCOMPILE) -c $(TOP)/src/os_unix.c
 
 os_win.lo:	$(TOP)/src/os_win.c $(HDR)
-	$(LTCOMPILE) $(THREADSAFE) -c $(TOP)/src/os_win.c
+	$(LTCOMPILE) -c $(TOP)/src/os_win.c
 
 parse.lo:	parse.c $(HDR)
 	$(LTCOMPILE) -c parse.c
@@ -404,8 +404,7 @@ tclsqlite3:	tclsqlite-shell.lo libsqlite3.la
 		 libsqlite3.la $(LIBTCL)
 
 testfixture$(TEXE):	$(TOP)/src/tclsqlite.c libtclsqlite3.la libsqlite3.la $(TESTSRC)
-	$(LTLINK) -DTCLSH=1 -DSQLITE_TEST=1\
-                $(THREADSAFE) $(TEMP_STORE)\
+	$(LTLINK) -DTCLSH=1 -DSQLITE_TEST=1 $(TEMP_STORE)\
                 -o testfixture $(TESTSRC) $(TOP)/src/tclsqlite.c \
 		libtclsqlite3.la $(LIBTCL)
 
@@ -432,8 +431,7 @@ sqlite3_analyzer$(TEXE):	$(TOP)/src/tclsqlite.c libtclsqlite3.la \
 	  -e 's,^,",' \
 	  -e 's,$$,\\n",' \
 	  $(TOP)/tool/spaceanal.tcl >spaceanal_tcl.h
-	$(LTLINK) -DTCLSH=2 -DSQLITE_TEST=1\
-                $(THREADSAFE) $(TEMP_STORE)\
+	$(LTLINK) -DTCLSH=2 -DSQLITE_TEST=1 $(TEMP_STORE)\
                 -o sqlite3_analyzer$(EXE) $(TESTSRC) $(TOP)/src/tclsqlite.c \
 		libtclsqlite3.la $(LIBTCL)
 
