@@ -1,6 +1,6 @@
-C Fix\sto\sthe\s"make\sdoc"\smakefile\starget.\s\sTicket\s#1289.\s(CVS\s2518)
-D 2005-06-15T18:07:39
-F Makefile.in 70a1cc8289fff4fadc6c1f13c1fd7806631013f8
+C Change\sto\sMakefile.in\sto\sfix\sa\sproblem\swith\sthe\sBorland\slinker.\nTicket\s#1291.\s(CVS\s2519)
+D 2005-06-16T16:51:15
+F Makefile.in fade38fa2278b15b497ee3c359f7ed81276ff372
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
 F VERSION 44fad0bf0996660a11bf8187361de03941d9b7b0
@@ -281,7 +281,7 @@ F www/tclsqlite.tcl 425be741b8ae664f55cb1ef2371aab0a75109cf9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P 006dda3119f025d703da4e0215c378206e20cfd0
-R f344feb2503191c2a148acdb47f53fd9
+P 4713b1e1040f2e0645fa593638e392df44b5bfc1
+R 61cc360cf477b658836de7733310c636
 U drh
-Z 3e5f0af87501abc79bd0deaddc2fe1ad
+Z ee38707e8741102b56d07955b262630f
