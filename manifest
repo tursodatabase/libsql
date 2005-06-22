@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\san\sassert\sfound\swhile\sinvestigating\sticket\s#1287\sbut\sotherwise\nunrelated\sto\sthat\sproblem.\s(CVS\s2522)
-D 2005-06-22T02:36:37
+C Allow\sparameters\sto\sbe\sintroduced\sby\scharacters\s':',\s'$'\sand\s'#'.\s\sThis\nis\san\sexperimental\schange.\s(CVS\s2523)
+D 2005-06-22T08:48:06
 F Makefile.in 64a6635ef44a98325e0cffe8d67669920a3dad47
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -37,7 +37,7 @@ F src/callback.c 0910b611e0c158f107ee3ff86f8a371654971e2b
 F src/date.c 2134ef4388256e8247405178df8a61bd60dc180a
 F src/delete.c 4b68127f55971c7fb459146e0b6cf3bd70cfffe9
 F src/experimental.c 50c1e3b34f752f4ac10c36f287db095c2b61766d
-F src/expr.c 6d7058944c5f4b7e4304be3fe63ada91dac221a1
+F src/expr.c 4d6e26da200e0d08233df52fd8d07916d24a6926
 F src/func.c f208d71f741d47b63277530939f552815af8ce35
 F src/hash.c 2b1b13f7400e179631c83a1be0c664608c8f021f
 F src/hash.h 1b0c445e1c89ff2aaad9b4605ba61375af001e84
@@ -71,7 +71,7 @@ F src/test2.c 716c1809dba8e5be6093703e9cada99d627542dc
 F src/test3.c 683e1e3819152ffd35da2f201e507228921148d0
 F src/test4.c 7c6b9fc33dd1f3f93c7f1ee6e5e6d016afa6c1df
 F src/test5.c 64f08b2a50ef371a1bd68ff206829e7b1b9997f5
-F src/tokenize.c d89743f2c0d05d49b5b4d6462432a1f3cc4765f1
+F src/tokenize.c 57ec9926612fb9e325b57a141303573bc20c79bf
 F src/trigger.c f51dec15921629591cb98bf2e350018e268b109a
 F src/update.c e96c7b342cd8903c672162f4cf84d2c737943347
 F src/utf.c bda5eb85039ef16f2d17004c1e18c96e1ab0a80c
@@ -100,7 +100,7 @@ F test/autovacuum_ioerr.test 9cf27275ca47b72e188a47c53b61b6d583a01d24
 F test/autovacuum_ioerr2.test 2f8a3fb31f833fd0ca86ad4ad98913c73e807572
 F test/bigfile.test d3744a8821ce9abb8697f2826a3e3d22b719e89f
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
-F test/bind.test bf1a99cb5471c8ec9958f7af0c8608d824535558
+F test/bind.test 3169339a9fb7aaa8244d0ed8651fe6b6796d809c
 F test/bindxfer.test 856830e9e5552b9882c9d5c6647f90e25bdae4ac
 F test/blob.test fc41fe95bdc10da51f0dee73ce86e75ce1d6eb9d
 F test/btree.test 8aa7424aeec844df990273fe36447e5d7e407261
@@ -281,7 +281,7 @@ F www/tclsqlite.tcl 425be741b8ae664f55cb1ef2371aab0a75109cf9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P 59c95731f70ed9b9e135584f62d0a2b0f1a3bb96
-R 446ed8445a101f560ead4db2a96c0b93
+P 60f752ed1817e6710c13c2ce393c3bf51dae76ad
+R 0728a1fdbaca12bf5f29cdb10e76a914
 U drh
-Z c13f27ef7404ed30108e450cbb1c3c08
+Z 6446212b902f4acbac0e5ce1e2a10f05

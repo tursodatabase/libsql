@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.103 2005/06/06 14:45:43 drh Exp $
+** $Id: tokenize.c,v 1.104 2005/06/22 08:48:06 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -183,11 +183,6 @@ static int getToken(const unsigned char *z, int *tokenType){
       *tokenType = TK_BITNOT;
       return 1;
     }
-    case '#': {
-      for(i=1; isdigit(z[i]) || (i==1 && z[1]=='-'); i++){}
-      *tokenType = TK_REGISTER;
-      return i;
-    }
     case '\'': case '"': {
       int delim = z[0];
       for(i=1; (c=z[i])!=0; i++){
@@ -239,50 +234,47 @@ static int getToken(const unsigned char *z, int *tokenType){
       for(i=1; isdigit(z[i]); i++){}
       return i;
     }
-    case ':': {
-      for(i=1; IdChar(z[i]); i++){}
-      *tokenType = i>1 ? TK_VARIABLE : TK_ILLEGAL;
-      return i;
+    case '#': {
+      for(i=1; isdigit(z[i]); i++){}
+      if( i>1 ){
+        /* Parameters of the form #NNN (where NNN is a number) are used
+        ** internally by sqlite3NestedParse.  */
+        *tokenType = TK_REGISTER;
+        return i;
+      }
+      /* Fall through into the next case if the '#' is not followed by
+      ** a digit. Try to match #AAAA where AAAA is a parameter name. */
     }
 #ifndef SQLITE_OMIT_TCL_VARIABLE
-    case '$': {
+    case '$':
+#endif
+    case ':': {
+      int n = 0;
       *tokenType = TK_VARIABLE;
-      if( z[1]=='{' ){
-        int nBrace = 1;
-        for(i=2; (c=z[i])!=0 && nBrace; i++){
-          if( c=='{' ){
-            nBrace++;
-          }else if( c=='}' ){
-            nBrace--;
-          }
-        }
-        if( c==0 ) *tokenType = TK_ILLEGAL;
-      }else{
-        int n = 0;
-        for(i=1; (c=z[i])!=0; i++){
-          if( isalnum(c) || c=='_' ){
-            n++;
-          }else if( c=='(' && n>0 ){
-            do{
-              i++;
-            }while( (c=z[i])!=0 && !isspace(c) && c!=')' );
-            if( c==')' ){
-              i++;
-            }else{
-              *tokenType = TK_ILLEGAL;
-            }
-            break;
-          }else if( c==':' && z[i+1]==':' ){
+      for(i=1; (c=z[i])!=0; i++){
+        if( IdChar(c) ){
+          n++;
+#ifndef SQLITE_OMIT_TCL_VARIABLE
+        }else if( c=='(' && n>0 ){
+          do{
+            i++;
+          }while( (c=z[i])!=0 && !isspace(c) && c!=')' );
+          if( c==')' ){
             i++;
           }else{
-            break;
+            *tokenType = TK_ILLEGAL;
           }
+          break;
+        }else if( c==':' && z[i+1]==':' ){
+          i++;
+#endif
+        }else{
+          break;
         }
-        if( n==0 ) *tokenType = TK_ILLEGAL;
       }
+      if( n==0 ) *tokenType = TK_ILLEGAL;
       return i;
     }
-#endif
 #ifndef SQLITE_OMIT_BLOB_LITERAL
     case 'x': case 'X': {
       if( (c=z[1])=='\'' || c=='"' ){
