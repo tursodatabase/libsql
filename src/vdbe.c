@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.469 2005/06/12 21:35:53 drh Exp $
+** $Id: vdbe.c,v 1.470 2005/06/22 02:36:37 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1000,7 +1000,7 @@ case OP_Concat: {           /* same as TK_CONCAT */
     pTerm = &pTos[1-nField];
     for(i=j=0; i<nField; i++, pTerm++){
       int n = pTerm->n;
-      assert( pTerm->flags & MEM_Str );
+      assert( pTerm->flags & (MEM_Str|MEM_Blob) );
       memcpy(&zNew[j], pTerm->z, n);
       j += n;
     }
