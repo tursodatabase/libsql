@@ -84,7 +84,7 @@ void sqlite3_result_blob(
   int n, 
   void (*xDel)(void *)
 ){
-  assert( n>0 );
+  assert( n>=0 );
   sqlite3VdbeMemSetStr(&pCtx->s, z, n, 0, xDel);
 }
 void sqlite3_result_double(sqlite3_context *pCtx, double rVal){
