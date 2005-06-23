@@ -1,5 +1,5 @@
-C Add\sbuilt-in\sfunctions\snumeric(),\stext(),\sand\sblob()\sthat\scoerce\stypes.\r\nTicket\s#1287.\s(CVS\s2524)
-D 2005-06-22T10:53:59
+C Make\ssure\sthe\sString8\sopcode\salways\shas\sa\snon-null\sP3\sargument\sin\nthe\sforeign_key_list\spragma.\s\sTicket\s#1297.\s(CVS\s2525)
+D 2005-06-23T03:15:08
 F Makefile.in 64a6635ef44a98325e0cffe8d67669920a3dad47
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -56,7 +56,7 @@ F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c 841a2cdddd4275de36cda26ed9dc54ae942660ce
 F src/pager.h 0d9153d6269d60d04af3dd84a0cc0a96253cf4a4
 F src/parse.y 72cd7553f05fbc7b63ea9476108d0da6237f2818
-F src/pragma.c 5ea2ba0e43f6a83968a936b071b77bd4516d11f0
+F src/pragma.c dea86dad2f0e872b29632ae9fba526e539a4ddd8
 F src/prepare.c d53602d2f8e097225ae7c76ec764ae68f759ba47
 F src/printf.c 3d20b21cfecadacecac3fb7274e746cb81d3d357
 F src/random.c 90adff4e73a3b249eb4f1fc2a6ff9cf78c7233a4
@@ -281,7 +281,7 @@ F www/tclsqlite.tcl 425be741b8ae664f55cb1ef2371aab0a75109cf9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P f3427a139c3bd4faf9134ec6290b3eb829c0a19f
-R 71ae20ec723bd0f4ef99d2a15e3563f6
+P affb0fa2e8c5ff497838ba3c2994cdb1f6f50c68
+R 42d4c8589393348bc0163ea0519a9b65
 U drh
-Z 9f6943b255fa6f70bc55d3e3a0442f66
+Z 3f4d130920cda0cbea18523ee72fbcdb
