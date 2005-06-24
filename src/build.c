@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.327 2005/06/14 02:12:46 drh Exp $
+** $Id: build.c,v 1.328 2005/06/24 03:53:06 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1973,7 +1973,6 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
   int addr1;                     /* Address of top of loop */
   int tnum;                      /* Root page of index */
   Vdbe *v;                       /* Generate code into this virtual machine */
-  int isUnique;                  /* True for a unique index */
 
 #ifndef SQLITE_OMIT_AUTHORIZATION
   if( sqlite3AuthCheck(pParse, SQLITE_REINDEX, pIndex->zName, 0,
@@ -2007,11 +2006,18 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
   sqlite3VdbeAddOp(v, OP_SetNumColumns, iTab, pTab->nCol);
   addr1 = sqlite3VdbeAddOp(v, OP_Rewind, iTab, 0);
   sqlite3GenerateIndexKey(v, pIndex, iTab);
-  isUnique = pIndex->onError!=OE_None;
-  sqlite3VdbeAddOp(v, OP_IdxInsert, iIdx, isUnique);
-  if( isUnique ){
-    sqlite3VdbeChangeP3(v, -1, "indexed columns are not unique", P3_STATIC);
+  if( pIndex->onError!=OE_None ){
+    int curaddr = sqlite3VdbeCurrentAddr(v);
+    int addr2 = curaddr+4;
+    sqlite3VdbeChangeP2(v, curaddr-1, addr2);
+    sqlite3VdbeAddOp(v, OP_Rowid, iTab, 0);
+    sqlite3VdbeAddOp(v, OP_AddImm, 1, 0);
+    sqlite3VdbeAddOp(v, OP_IsUnique, iIdx, addr2);
+    sqlite3VdbeOp3(v, OP_Halt, SQLITE_CONSTRAINT, OE_Abort,
+                    "indexed columns are not unique", P3_STATIC);
+    assert( addr2==sqlite3VdbeCurrentAddr(v) );
   }
+  sqlite3VdbeAddOp(v, OP_IdxInsert, iIdx, 0);
   sqlite3VdbeAddOp(v, OP_Next, iTab, addr1+1);
   sqlite3VdbeChangeP2(v, addr1, sqlite3VdbeCurrentAddr(v));
   sqlite3VdbeAddOp(v, OP_Close, iTab, 0);

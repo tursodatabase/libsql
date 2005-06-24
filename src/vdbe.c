@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.470 2005/06/22 02:36:37 drh Exp $
+** $Id: vdbe.c,v 1.471 2005/06/24 03:53:06 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -633,7 +633,7 @@ case OP_Return: {           /* no-push */
   break;
 }
 
-/* Opcode:  Halt P1 P2 *
+/* Opcode:  Halt P1 P2 P3
 **
 ** Exit immediately.  All open cursors, Lists, Sorts, etc are closed
 ** automatically.
@@ -645,6 +645,8 @@ case OP_Return: {           /* no-push */
 ** if P2==OE_Fail. Do the rollback if P2==OE_Rollback.  If P2==OE_Abort,
 ** then back out all changes that have occurred during this execution of the
 ** VDBE, but do not rollback the transaction. 
+**
+** If P3 is not null then it is an error message string.
 **
 ** There is an implied "Halt 0 0 0" instruction inserted at the very end of
 ** every program.  So a jump past the last instruction of the program
@@ -2000,12 +2002,9 @@ op_column_out:
 ** The original stack entries are popped from the stack if P1>0 but
 ** remain on the stack if P1<0.
 **
-** The P2 argument is divided into two 16-bit words before it is processed.
-** If the hi-word is non-zero, then an extra integer is read from the stack
-** and appended to the record as a varint.  If the low-word of P2 is not
-** zero and one or more of the entries are NULL, then jump to the value of
-** the low-word of P2.  This feature can be used to skip a uniqueness test
-** on indices.
+** If P2 is not zero and one or more of the entries are NULL, then jump
+** to the address given by P2.  This feature can be used to skip a
+** uniqueness test on indices.
 **
 ** P3 may be a string that is P1 characters long.  The nth character of the
 ** string indicates the column affinity that should be used for the nth
@@ -2019,7 +2018,17 @@ op_column_out:
 **    'o' = NONE.
 **
 ** If P3 is NULL then all index fields have the affinity NONE.
+**
+** See also OP_MakeIdxRec
 */
+/* Opcode: MakeRecordI P1 P2 P3
+**
+** This opcode works just OP_MakeRecord except that it reads an extra
+** integer from the stack (thus reading a total of abs(P1+1) entries)
+** and appends that extra integer to the end of the record as a varint.
+** This results in an index key.
+*/
+case OP_MakeIdxRec:
 case OP_MakeRecord: {
   /* Assuming the record contains N fields, the record format looks
   ** like this:
@@ -2057,8 +2066,8 @@ case OP_MakeRecord: {
 
   leaveOnStack = ((pOp->p1<0)?1:0);
   nField = pOp->p1 * (leaveOnStack?-1:1);
-  jumpIfNull = (pOp->p2 & 0x00FFFFFF);
-  addRowid = ((pOp->p2>>24) & 0x0000FFFF)?1:0;
+  jumpIfNull = pOp->p2;
+  addRowid = pOp->opcode==OP_MakeIdxRec;
   zAffinity = pOp->p3;
 
   pData0 = &pTos[1-nField];
@@ -3444,16 +3453,11 @@ case OP_Next: {        /* no-push */
   break;
 }
 
-/* Opcode: IdxInsert P1 P2 P3
+/* Opcode: IdxInsert P1 * *
 **
 ** The top of the stack holds a SQL index key made using the
 ** MakeIdxKey instruction.  This opcode writes that key into the
 ** index P1.  Data for the entry is nil.
-**
-** If P2==1, then the key must be unique.  If the key is not unique,
-** the program aborts with a SQLITE_CONSTRAINT error and the database
-** is rolled back.  If P3 is not null, then it becomes part of the
-** error message returned with the SQLITE_CONSTRAINT.
 **
 ** This instruction only works for indices.  The equivalent instruction
 ** for tables is OP_Insert.
@@ -3466,35 +3470,10 @@ case OP_IdxInsert: {        /* no-push */
   assert( i>=0 && i<p->nCursor );
   assert( p->apCsr[i]!=0 );
   assert( pTos->flags & MEM_Blob );
+  assert( pOp->p2==0 );
   if( (pCrsr = (pC = p->apCsr[i])->pCursor)!=0 ){
     int nKey = pTos->n;
     const char *zKey = pTos->z;
-    if( pOp->p2 ){
-      int res;
-      int len;
-   
-      /* 'len' is the length of the key minus the rowid at the end */
-      len = nKey - sqlite3VdbeIdxRowidLen(nKey, zKey);
-
-      rc = sqlite3BtreeMoveto(pCrsr, zKey, len, &res);
-      if( rc!=SQLITE_OK ) goto abort_due_to_error;
-      while( res!=0 && !sqlite3BtreeEof(pCrsr) ){
-        int c;
-        if( sqlite3VdbeIdxKeyCompare(pC, len, zKey, &c)==SQLITE_OK && c==0 ){
-          rc = SQLITE_CONSTRAINT;
-          if( pOp->p3 && pOp->p3[0] ){
-            sqlite3SetString(&p->zErrMsg, pOp->p3, (char*)0);
-          }
-          goto abort_due_to_error;
-        }
-        if( res<0 ){
-          sqlite3BtreeNext(pCrsr, &res);
-          res = +1;
-        }else{
-          break;
-        }
-      }
-    }
     assert( pC->isTable==0 );
     rc = sqlite3BtreeInsert(pCrsr, zKey, nKey, "", 0);
     assert( pC->deferredMoveto==0 );
