@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.137 2005/06/14 16:04:06 drh Exp $
+** $Id: util.c,v 1.138 2005/06/25 18:42:15 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -565,8 +565,9 @@ int sqlite3IsNumber(const char *z, int *realnum, u8 enc){
 ** of "." depending on how locale is set.  But that would cause problems
 ** for SQL.  So this routine always uses "." regardless of locale.
 */
-double sqlite3AtoF(const char *z, const char **pzEnd){
+int sqlite3AtoF(const char *z, double *pResult){
   int sign = 1;
+  const char *zBegin = z;
   LONGDOUBLE_TYPE v1 = 0.0;
   if( *z=='-' ){
     sign = -1;
@@ -613,8 +614,8 @@ double sqlite3AtoF(const char *z, const char **pzEnd){
       v1 *= scale;
     }
   }
-  if( pzEnd ) *pzEnd = z;
-  return sign<0 ? -v1 : v1;
+  *pResult = sign<0 ? -v1 : v1;
+  return z - zBegin;
 }
 
 /*

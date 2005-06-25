@@ -14,12 +14,23 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.172 2005/05/23 17:26:51 drh Exp $
+** @(#) $Id: parse.y,v 1.173 2005/06/25 18:42:14 drh Exp $
 */
+
+// All token codes are small integers with #defines that begin with "TK_"
 %token_prefix TK_
+
+// The type of the data attached to each token is Token.  This is also the
+// default type for non-terminals.
+//
 %token_type {Token}
 %default_type {Token}
+
+// The generated parser function takes a 4th argument as follows:
 %extra_argument {Parse *pParse}
+
+// This code runs whenever there is a syntax error
+//
 %syntax_error {
   if( pParse->zErrMsg==0 ){
     if( TOKEN.z[0] ){
@@ -29,7 +40,14 @@
     }
   }
 }
+
+// The name of the generated procedure that implements the parser
+// is as follows:
 %name sqlite3Parser
+
+// The following text is included near the beginning of the C source
+// code file that implements the parser.
+//
 %include {
 #include "sqliteInt.h"
 #include "parse.h"
@@ -126,9 +144,10 @@ create_table_args ::= AS select(S). {
 columnlist ::= columnlist COMMA column.
 columnlist ::= column.
 
-// About the only information used for a column is the name of the
-// column.  The type is always just "text".  But the code will accept
-// an elaborate typename.  Perhaps someday we'll do something with it.
+// A "column" is a complete description of a single column in a
+// CREATE TABLE statement.  This includes the column name, its
+// datatype, and other keywords such as PRIMARY KEY, UNIQUE, REFERENCES,
+// NOT NULL and so forth.
 //
 column(A) ::= columnid(X) type carglist. {
   A.z = X.z;
@@ -151,7 +170,7 @@ id(A) ::= ID(X).         {A = X;}
 // This obviates the need for the "id" nonterminal.
 //
 %fallback ID
-  ABORT AFTER ASC ATTACH BEFORE BEGIN CASCADE CONFLICT
+  ABORT AFTER ASC ATTACH BEFORE BEGIN CASCADE CAST CONFLICT
   DATABASE DEFERRED DESC DETACH EACH END EXCLUSIVE EXPLAIN FAIL FOR
   IGNORE IMMEDIATE INITIALLY INSTEAD LIKE_KW MATCH KEY
   OF OFFSET PRAGMA RAISE REPLACE RESTRICT ROW STATEMENT
@@ -198,17 +217,32 @@ nm(A) ::= ID(X).         {A = X;}
 nm(A) ::= STRING(X).     {A = X;}
 nm(A) ::= JOIN_KW(X).    {A = X;}
 
+// A typetoken is really one or more tokens that form a type name such
+// as can be found after the column name in a CREATE TABLE statement.
+// Multiple tokens are concatenated to form the value of the typetoken.
+//
+%type typetoken {Token}
 type ::= .
-type ::= typename(X).                    {sqlite3AddColumnType(pParse,&X,&X);}
-type ::= typename(X) LP signed RP(Y).    {sqlite3AddColumnType(pParse,&X,&Y);}
-type ::= typename(X) LP signed COMMA signed RP(Y).
-                                         {sqlite3AddColumnType(pParse,&X,&Y);}
+type ::= typetoken(X).                   {sqlite3AddColumnType(pParse,&X);}
+typetoken(A) ::= typename(X).   {A = X;}
+typetoken(A) ::= typename(X) LP signed RP(Y). {
+  A.z = X.z;
+  A.n = &Y.z[Y.n] - X.z;
+}
+typetoken(A) ::= typename(X) LP signed COMMA signed RP(Y). {
+  A.z = X.z;
+  A.n = &Y.z[Y.n] - X.z;
+}
 %type typename {Token}
 typename(A) ::= ids(X).             {A = X;}
 typename(A) ::= typename(X) ids(Y). {A.z=X.z; A.n=Y.n+(Y.z-X.z);}
 %type signed {int}
 signed(A) ::= plus_num(X).    { A = atoi(X.z); }
 signed(A) ::= minus_num(X).   { A = -atoi(X.z); }
+
+// "carglist" is a list of additional constraints that come after the
+// column name and column type in a CREATE TABLE statement.
+//
 carglist ::= carglist carg.
 carglist ::= .
 carg ::= CONSTRAINT nm ccons.
@@ -619,6 +653,12 @@ expr(A) ::= VARIABLE(X).     {
   Expr *pExpr = A = sqlite3Expr(TK_VARIABLE, 0, 0, pToken);
   sqlite3ExprAssignVarNumber(pParse, pExpr);
 }
+%ifndef SQLITE_OMIT_CAST
+expr(A) ::= CAST(X) LP expr(E) AS typetoken(T) RP(Y). {
+  A = sqlite3Expr(TK_CAST, E, 0, &T);
+  sqlite3ExprSpan(A,&X,&Y);
+}
+%endif // SQLITE_OMIT_CAST
 expr(A) ::= ID(X) LP exprlist(Y) RP(E). {
   A = sqlite3ExprFunction(Y, &X);
   sqlite3ExprSpan(A,&X,&E);

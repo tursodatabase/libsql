@@ -16,7 +16,7 @@
 ** sqlite3RegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.44 2005/03/21 00:43:44 drh Exp $
+** $Id: date.c,v 1.45 2005/06/25 18:42:14 drh Exp $
 **
 ** NOTES:
 **
@@ -124,11 +124,7 @@ static int getDigits(const char *zDate, ...){
 ** Read text from z[] and convert into a floating point number.  Return
 ** the number of digits converted.
 */
-static int getValue(const char *z, double *pR){
-  const char *zEnd;
-  *pR = sqlite3AtoF(z, &zEnd);
-  return zEnd - z;
-}
+#define getValue sqlite3AtoF
 
 /*
 ** Parse a timezone extension on the end of a date-time.
@@ -320,7 +316,7 @@ static int parseDateOrTime(const char *zDate, DateTime *p){
     p->validJD = 1;
     return 0;
   }else if( sqlite3IsNumber(zDate, 0, SQLITE_UTF8) ){
-    p->rJD = sqlite3AtoF(zDate, 0);
+    getValue(zDate, &p->rJD);
     p->validJD = 1;
     return 0;
   }

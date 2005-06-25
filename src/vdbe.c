@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.471 2005/06/24 03:53:06 drh Exp $
+** $Id: vdbe.c,v 1.472 2005/06/25 18:42:15 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1379,6 +1379,94 @@ case OP_MustBeInt: {            /* no-push */
   break;
 }
 
+#ifndef SQLITE_OMIT_CAST
+/* Opcode: ToInt * * *
+**
+** Force the value on the top of the stack to be an integer.  If
+** The value is currently a real number, drop its fractional part.
+** If the value is text or blob, try to convert it to an integer using the
+** equivalent of atoi() and store 0 if no such conversion is possible.
+**
+** A NULL value is not changed by this routine.  It remains NULL.
+*/
+case OP_ToInt: {                  /* no-push */
+  assert( pTos>=p->aStack );
+  if( pTos->flags & MEM_Null ) break;
+  assert( MEM_Str==(MEM_Blob>>3) );
+  pTos->flags |= (pTos->flags&MEM_Blob)>>3;
+  applyAffinity(pTos, SQLITE_AFF_INTEGER, db->enc);
+  sqlite3VdbeMemIntegerify(pTos);
+  break;
+}
+
+/* Opcode: ToNumeric * * *
+**
+** Force the value on the top of the stack to be numeric (either an
+** integer or a floating-point number.
+** If the value is text or blob, try to convert it to an using the
+** equivalent of atoi() or atof() and store 0 if no such conversion 
+** is possible.
+**
+** A NULL value is not changed by this routine.  It remains NULL.
+*/
+case OP_ToNumeric: {                  /* no-push */
+  assert( pTos>=p->aStack );
+  if( pTos->flags & MEM_Null ) break;
+  assert( MEM_Str==(MEM_Blob>>3) );
+  pTos->flags |= (pTos->flags&MEM_Blob)>>3;
+  applyAffinity(pTos, SQLITE_AFF_NUMERIC, db->enc);
+  if( (pTos->flags & (MEM_Int|MEM_Real))==0 ){
+    sqlite3VdbeMemRealify(pTos);
+  }else{
+    sqlite3VdbeMemRelease(pTos);
+  }
+  assert( (pTos->flags & MEM_Dyn)==0 );
+  pTos->flags &= (MEM_Int|MEM_Real);
+  break;
+}
+
+/* Opcode: ToText * * *
+**
+** Force the value on the top of the stack to be text.
+** If the value is numeric, convert it to an using the
+** equivalent of printf().  Blob values are unchanged and
+** are afterwards simply interpreted as text.
+**
+** A NULL value is not changed by this routine.  It remains NULL.
+*/
+case OP_ToText: {                  /* no-push */
+  assert( pTos>=p->aStack );
+  if( pTos->flags & MEM_Null ) break;
+  assert( MEM_Str==(MEM_Blob>>3) );
+  pTos->flags |= (pTos->flags&MEM_Blob)>>3;
+  applyAffinity(pTos, SQLITE_AFF_TEXT, db->enc);
+  assert( pTos->flags & MEM_Str );
+  pTos->flags &= ~(MEM_Int|MEM_Real|MEM_Blob);
+  break;
+}
+
+/* Opcode: ToBlob * * *
+**
+** Force the value on the top of the stack to be a BLOB.
+** If the value is numeric, convert it to a string first.
+** Strings are simply reinterpreted as blobs with no change
+** to the underlying data.
+**
+** A NULL value is not changed by this routine.  It remains NULL.
+*/
+case OP_ToBlob: {                  /* no-push */
+  assert( pTos>=p->aStack );
+  if( pTos->flags & MEM_Null ) break;
+  if( (pTos->flags & MEM_Blob)==0 ){
+    applyAffinity(pTos, SQLITE_AFF_TEXT, db->enc);
+    assert( pTos->flags & MEM_Str );
+    pTos->flags |= MEM_Blob;
+  }
+  pTos->flags &= ~(MEM_Int|MEM_Real|MEM_Str);
+  break;
+}
+#endif /* SQLITE_OMIT_CAST */
+
 /* Opcode: Eq P1 P2 P3
 **
 ** Pop the top two elements from the stack.  If they are equal, then
@@ -2154,6 +2242,7 @@ case OP_MakeRecord: {
     pTos->flags = MEM_Blob | MEM_Dyn;
     pTos->xDel = 0;
   }
+  pTos->enc = SQLITE_UTF8;  /* In case the blob is ever converted to text */
 
   /* If a NULL was encountered and jumpIfNull is non-zero, take the jump. */
   if( jumpIfNull && containsNull ){
@@ -3289,6 +3378,7 @@ case OP_RowData: {
   }else{
     pTos->flags = MEM_Null;
   }
+  pTos->enc = SQLITE_UTF8;  /* In case the blob is ever cast to text */
   break;
 }
 

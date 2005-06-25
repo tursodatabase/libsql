@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.99 2005/06/22 10:53:59 drh Exp $
+** $Id: func.c,v 1.100 2005/06/25 18:42:14 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -78,92 +78,6 @@ static void typeofFunc(
   sqlite3_result_text(context, z, -1, SQLITE_STATIC);
 }
 
-/*
-** Convert the argument to a numeric type.
-*/
-static void numericFunc(
-  sqlite3_context *context,
-  int argc,
-  sqlite3_value **argv
-){
-  const char *z = 0;
-  switch( sqlite3_value_type(argv[0]) ){
-    case SQLITE_NULL: {
-      sqlite3_result_int(context, 0);
-      break;
-    }
-    case SQLITE_INTEGER:
-    case SQLITE_FLOAT: {
-      sqlite3_result_value(context, argv[0]);
-      break;
-    }
-    case SQLITE_TEXT:
-    case SQLITE_BLOB: {
-      z = sqlite3_value_text(argv[0]);
-      while( *z && *z!='.' ){ z++; }
-      if( *z ){
-        sqlite3_result_double(context, sqlite3_value_double(argv[0]));
-      }else{
-        sqlite3_result_int64(context, sqlite3_value_int64(argv[0]));
-      }
-      break;
-    }
-  }
-}
-
-/*
-** Convert the argument to TEXT
-*/
-static void textFunc(
-  sqlite3_context *context,
-  int argc,
-  sqlite3_value **argv
-){
-  switch( sqlite3_value_type(argv[0]) ){
-    case SQLITE_NULL: {
-      sqlite3_result_text(context, "", 0, SQLITE_STATIC);
-      break;
-    }
-    case SQLITE_BLOB:
-    case SQLITE_INTEGER:
-    case SQLITE_FLOAT: {
-      sqlite3_result_text(context, sqlite3_value_text(argv[0]),
-          sqlite3_value_bytes(argv[0]), SQLITE_TRANSIENT);
-      break;
-    }
-    case SQLITE_TEXT: {
-      sqlite3_result_value(context, argv[0]);
-      break;
-    }
-  }
-}
-
-/*
-** Convert the argument to TEXT
-*/
-static void blobFunc(
-  sqlite3_context *context,
-  int argc,
-  sqlite3_value **argv
-){
-  switch( sqlite3_value_type(argv[0]) ){
-    case SQLITE_NULL: {
-      sqlite3_result_blob(context, "", 0, SQLITE_STATIC);
-      break;
-    }
-    case SQLITE_TEXT:
-    case SQLITE_INTEGER:
-    case SQLITE_FLOAT: {
-      sqlite3_result_blob(context, sqlite3_value_text(argv[0]),
-          sqlite3_value_bytes(argv[0]), SQLITE_TRANSIENT);
-      break;
-    }
-    case SQLITE_BLOB: {
-      sqlite3_result_value(context, argv[0]);
-      break;
-    }
-  }
-}
 
 /*
 ** Implementation of the length() function
@@ -1058,9 +972,6 @@ void sqlite3RegisterBuiltinFunctions(sqlite3 *db){
     { "last_insert_rowid",  0, 1, SQLITE_UTF8,    0, last_insert_rowid },
     { "changes",            0, 1, SQLITE_UTF8,    0, changes    },
     { "total_changes",      0, 1, SQLITE_UTF8,    0, total_changes },
-    { "text",               1, 0, SQLITE_UTF8,    0, textFunc      },
-    { "numeric",            1, 0, SQLITE_UTF8,    0, numericFunc   },
-    { "blob",               1, 0, SQLITE_UTF8,    0, blobFunc      },
 #ifdef SQLITE_SOUNDEX
     { "soundex",            1, 0, SQLITE_UTF8, 0, soundexFunc},
 #endif

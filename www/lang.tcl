@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the lang-*.html files.
 #
-set rcsid {$Id: lang.tcl,v 1.90 2005/05/10 16:11:41 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.91 2005/06/25 18:42:16 drh Exp $}
 source common.tcl
 
 if {[llength $argv]>0} {
@@ -1099,7 +1099,7 @@ all arguments are NULL then NULL is returned.  There must be at least
 <a href="capi3ref.html#sqlite3_create_function">sqlite3_create_function()</a> 
 interface can
 be used to override this function and thereby change the operation
-of the <a href="#glob">GLOB</a> operator.</td>
+of the <a href="#globFunc">GLOB</a> operator.</td>
 </tr>
 
 <tr>

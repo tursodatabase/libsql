@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.207 2005/06/22 08:48:06 drh Exp $
+** $Id: expr.c,v 1.208 2005/06/25 18:42:14 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -34,12 +34,18 @@
 ** SELECT * FROM t1 WHERE (select a from t1);
 */
 char sqlite3ExprAffinity(Expr *pExpr){
-  if( pExpr->op==TK_AS ){
+  int op = pExpr->op;
+  if( op==TK_AS ){
     return sqlite3ExprAffinity(pExpr->pLeft);
   }
-  if( pExpr->op==TK_SELECT ){
+  if( op==TK_SELECT ){
     return sqlite3ExprAffinity(pExpr->pSelect->pEList->a[0].pExpr);
   }
+#ifndef SQLITE_OMIT_CAST
+  if( op==TK_CAST ){
+    return sqlite3AffinityType(&pExpr->token);
+  }
+#endif
   return pExpr->affinity;
 }
 
@@ -51,7 +57,7 @@ CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr){
   CollSeq *pColl = 0;
   if( pExpr ){
     pColl = pExpr->pColl;
-    if( pExpr->op==TK_AS && !pColl ){
+    if( (pExpr->op==TK_AS || pExpr->op==TK_CAST) && !pColl ){
       return sqlite3ExprCollSeq(pParse, pExpr->pLeft);
     }
   }
@@ -1427,6 +1433,22 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       sqlite3VdbeAddOp(v, OP_MemLoad, pExpr->iTable, 0);
       break;
     }
+#ifndef SQLITE_OMIT_CAST
+    case TK_CAST: {
+      /* Expressions of the form:   CAST(pLeft AS token) */
+      int aff, op;
+      sqlite3ExprCode(pParse, pExpr->pLeft);
+      aff = sqlite3AffinityType(&pExpr->token);
+      switch( aff ){
+        case SQLITE_AFF_INTEGER:   op = OP_ToInt;      break;
+        case SQLITE_AFF_NUMERIC:   op = OP_ToNumeric;  break;
+        case SQLITE_AFF_TEXT:      op = OP_ToText;     break;
+        case SQLITE_AFF_NONE:      op = OP_ToBlob;     break;
+      }
+      sqlite3VdbeAddOp(v, op, 0, 0);
+      break;
+    }
+#endif /* SQLITE_OMIT_CAST */
     case TK_LT:
     case TK_LE:
     case TK_GT:

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing built-in functions.
 #
-# $Id: func.test,v 1.35 2005/06/22 10:53:59 drh Exp $
+# $Id: func.test,v 1.36 2005/06/25 18:42:16 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -485,134 +485,6 @@ do_test func-16.1 {
   }
 } {X'616263' NULL}
 
-# Tests for the blob(), text() and numeric() built-ins
-#
-do_test func-17.1 {
-  execsql {SELECT x'616263'}
-} abc
-do_test func-17.2 {
-  execsql {SELECT typeof(x'616263')}
-} blob
-do_test func-17.3 {
-  execsql {SELECT text(x'616263')}
-} abc
-do_test func-17.4 {
-  execsql {SELECT typeof(text(x'616263'))}
-} text
-do_test func-17.5 {
-  execsql {SELECT numeric(x'616263')}
-} 0
-do_test func-17.6 {
-  execsql {SELECT typeof(numeric(x'616263'))}
-} integer
-do_test func-17.7 {
-  execsql {SELECT blob(x'616263')}
-} abc
-do_test func-17.8 {
-  execsql {SELECT typeof(blob(x'616263'))}
-} blob
-do_test func-17.11 {
-  execsql {SELECT null}
-} {{}}
-do_test func-17.12 {
-  execsql {SELECT typeof(NULL)}
-} null
-do_test func-17.13 {
-  execsql {SELECT text(NULL)}
-} {{}}
-do_test func-17.14 {
-  execsql {SELECT typeof(text(NULL))}
-} text
-do_test func-17.15 {
-  execsql {SELECT numeric(NULL)}
-} 0
-do_test func-17.16 {
-  execsql {SELECT typeof(numeric(NULL))}
-} integer
-do_test func-17.17 {
-  execsql {SELECT blob(NULL)}
-} {{}}
-do_test func-17.18 {
-  execsql {SELECT typeof(blob(NULL))}
-} blob
-do_test func-17.21 {
-  execsql {SELECT 123}
-} {123}
-do_test func-17.22 {
-  execsql {SELECT typeof(123)}
-} integer
-do_test func-17.23 {
-  execsql {SELECT text(123)}
-} {123}
-do_test func-17.24 {
-  execsql {SELECT typeof(text(123))}
-} text
-do_test func-17.25 {
-  execsql {SELECT numeric(123)}
-} 123
-do_test func-17.26 {
-  execsql {SELECT typeof(numeric(123))}
-} integer
-do_test func-17.27 {
-  execsql {SELECT blob(123)}
-} {123}
-do_test func-17.28 {
-  execsql {SELECT typeof(blob(123))}
-} blob
-do_test func-17.31 {
-  execsql {SELECT 123.456}
-} {123.456}
-do_test func-17.32 {
-  execsql {SELECT typeof(123.456)}
-} real
-do_test func-17.33 {
-  execsql {SELECT text(123.456)}
-} {123.456}
-do_test func-17.34 {
-  execsql {SELECT typeof(text(123.456))}
-} text
-do_test func-17.35 {
-  execsql {SELECT numeric(123.456)}
-} 123.456
-do_test func-17.36 {
-  execsql {SELECT typeof(numeric(123.456))}
-} real
-do_test func-17.37 {
-  execsql {SELECT blob(123.456)}
-} {123.456}
-do_test func-17.38 {
-  execsql {SELECT typeof(blob(123.456))}
-} blob
-do_test func-17.41 {
-  execsql {SELECT '123abc'}
-} {123abc}
-do_test func-17.42 {
-  execsql {SELECT typeof('123abc')}
-} text
-do_test func-17.43 {
-  execsql {SELECT text('123abc')}
-} {123abc}
-do_test func-17.44 {
-  execsql {SELECT typeof(text('123abc'))}
-} text
-do_test func-17.45 {
-  execsql {SELECT numeric('123abc')}
-} 123
-do_test func-17.46 {
-  execsql {SELECT typeof(numeric('123abc'))}
-} integer
-do_test func-17.47 {
-  execsql {SELECT blob('123abc')}
-} {123abc}
-do_test func-17.48 {
-  execsql {SELECT typeof(blob('123abc'))}
-} blob
-do_test func-17.49 {
-  execsql {SELECT numeric('123.5abc')}
-} 123.5
-do_test func-17.49b {
-  execsql {SELECT typeof(numeric('123.5abc'))}
-} real
 
 
 finish_test

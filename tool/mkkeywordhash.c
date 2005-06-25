@@ -95,6 +95,11 @@ struct Keyword {
 #else
 #  define VIEW       16384
 #endif
+#ifdef SQLITE_OMIT_CAST
+#  define CAST       0
+#else
+#  define CAST       32768
+#endif
 
 
 /*
@@ -117,6 +122,7 @@ static Keyword aKeywordTable[] = {
   { "BY",               "TK_BY",           ALWAYS                 },
   { "CASCADE",          "TK_CASCADE",      FKEY                   },
   { "CASE",             "TK_CASE",         ALWAYS                 },
+  { "CAST",             "TK_CAST",         CAST                   },
   { "CHECK",            "TK_CHECK",        ALWAYS                 },
   { "COLLATE",          "TK_COLLATE",      ALWAYS                 },
   { "COLUMN",           "TK_COLUMNKW",     ALTER                  },

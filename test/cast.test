@@ -1,0 +1,184 @@
+# 2001 September 15
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing the CAST operator.
+#
+# $Id: cast.test,v 1.1 2005/06/25 18:42:16 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# Only run these tests if the build includes the CAST operator
+ifcapable !cast {
+  finish_test
+  return
+}
+
+# Tests for the CAST( AS blob), CAST( AS text) and CAST( AS numeric) built-ins
+#
+do_test cast-1.1 {
+  execsql {SELECT x'616263'}
+} abc
+do_test cast-1.2 {
+  execsql {SELECT typeof(x'616263')}
+} blob
+do_test cast-1.3 {
+  execsql {SELECT CAST(x'616263' AS text)}
+} abc
+do_test cast-1.4 {
+  execsql {SELECT typeof(CAST(x'616263' AS text))}
+} text
+do_test cast-1.5 {
+  execsql {SELECT CAST(x'616263' AS numeric)}
+} 0.0
+do_test cast-1.6 {
+  execsql {SELECT typeof(CAST(x'616263' AS numeric))}
+} real
+do_test cast-1.7 {
+  execsql {SELECT CAST(x'616263' AS blob)}
+} abc
+do_test cast-1.8 {
+  execsql {SELECT typeof(CAST(x'616263' AS blob))}
+} blob
+do_test cast-1.9 {
+  execsql {SELECT CAST(x'616263' AS integer)}
+} 0
+do_test cast-1.10 {
+  execsql {SELECT typeof(CAST(x'616263' AS integer))}
+} integer
+do_test cast-1.11 {
+  execsql {SELECT null}
+} {{}}
+do_test cast-1.12 {
+  execsql {SELECT typeof(NULL)}
+} null
+do_test cast-1.13 {
+  execsql {SELECT CAST(NULL AS text)}
+} {{}}
+do_test cast-1.14 {
+  execsql {SELECT typeof(CAST(NULL AS text))}
+} null
+do_test cast-1.15 {
+  execsql {SELECT CAST(NULL AS numeric)}
+} {{}}
+do_test cast-1.16 {
+  execsql {SELECT typeof(CAST(NULL AS numeric))}
+} null
+do_test cast-1.17 {
+  execsql {SELECT CAST(NULL AS blob)}
+} {{}}
+do_test cast-1.18 {
+  execsql {SELECT typeof(CAST(NULL AS blob))}
+} null
+do_test cast-1.19 {
+  execsql {SELECT CAST(NULL AS integer)}
+} {{}}
+do_test cast-1.20 {
+  execsql {SELECT typeof(CAST(NULL AS integer))}
+} null
+do_test cast-1.21 {
+  execsql {SELECT 123}
+} {123}
+do_test cast-1.22 {
+  execsql {SELECT typeof(123)}
+} integer
+do_test cast-1.23 {
+  execsql {SELECT CAST(123 AS text)}
+} {123}
+do_test cast-1.24 {
+  execsql {SELECT typeof(CAST(123 AS text))}
+} text
+do_test cast-1.25 {
+  execsql {SELECT CAST(123 AS numeric)}
+} 123
+do_test cast-1.26 {
+  execsql {SELECT typeof(CAST(123 AS numeric))}
+} integer
+do_test cast-1.27 {
+  execsql {SELECT CAST(123 AS blob)}
+} {123}
+do_test cast-1.28 {
+  execsql {SELECT typeof(CAST(123 AS blob))}
+} blob
+do_test cast-1.29 {
+  execsql {SELECT CAST(123 AS integer)}
+} {123}
+do_test cast-1.30 {
+  execsql {SELECT typeof(CAST(123 AS integer))}
+} integer
+do_test cast-1.31 {
+  execsql {SELECT 123.456}
+} {123.456}
+do_test cast-1.32 {
+  execsql {SELECT typeof(123.456)}
+} real
+do_test cast-1.33 {
+  execsql {SELECT CAST(123.456 AS text)}
+} {123.456}
+do_test cast-1.34 {
+  execsql {SELECT typeof(CAST(123.456 AS text))}
+} text
+do_test cast-1.35 {
+  execsql {SELECT CAST(123.456 AS numeric)}
+} 123.456
+do_test cast-1.36 {
+  execsql {SELECT typeof(CAST(123.456 AS numeric))}
+} real
+do_test cast-1.37 {
+  execsql {SELECT CAST(123.456 AS blob)}
+} {123.456}
+do_test cast-1.38 {
+  execsql {SELECT typeof(CAST(123.456 AS blob))}
+} blob
+do_test cast-1.39 {
+  execsql {SELECT CAST(123.456 AS integer)}
+} {123}
+do_test cast-1.38 {
+  execsql {SELECT typeof(CAST(123.456 AS integer))}
+} integer
+do_test cast-1.41 {
+  execsql {SELECT '123abc'}
+} {123abc}
+do_test cast-1.42 {
+  execsql {SELECT typeof('123abc')}
+} text
+do_test cast-1.43 {
+  execsql {SELECT CAST('123abc' AS text)}
+} {123abc}
+do_test cast-1.44 {
+  execsql {SELECT typeof(CAST('123abc' AS text))}
+} text
+do_test cast-1.45 {
+  execsql {SELECT CAST('123abc' AS numeric)}
+} 123.0
+do_test cast-1.46 {
+  execsql {SELECT typeof(CAST('123abc' AS numeric))}
+} real
+do_test cast-1.47 {
+  execsql {SELECT CAST('123abc' AS blob)}
+} {123abc}
+do_test cast-1.48 {
+  execsql {SELECT typeof(CAST('123abc' AS blob))}
+} blob
+do_test cast-1.49 {
+  execsql {SELECT CAST('123abc' AS integer)}
+} 123
+do_test cast-1.50 {
+  execsql {SELECT typeof(CAST('123abc' AS integer))}
+} integer
+do_test cast-1.51 {
+  execsql {SELECT CAST('123.5abc' AS numeric)}
+} 123.5
+do_test cast-1.53 {
+  execsql {SELECT CAST('123.5abc' AS integer)}
+} 123
+
+finish_test

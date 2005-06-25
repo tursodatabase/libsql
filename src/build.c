@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.328 2005/06/24 03:53:06 drh Exp $
+** $Id: build.c,v 1.329 2005/06/25 18:42:14 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -902,11 +902,11 @@ void sqlite3AddNotNull(Parse *pParse, int onError){
 ** If none of the substrings in the above table are found,
 ** SQLITE_AFF_NUMERIC is returned.
 */
-static char sqlite3AffinityType(const char *zType, int nType){
+char sqlite3AffinityType(const Token *pType){
   u32 h = 0;
   char aff = SQLITE_AFF_NUMERIC;
-  const unsigned char *zIn = zType;
-  const unsigned char *zEnd = (zIn+nType);
+  const unsigned char *zIn = pType->z;
+  const unsigned char *zEnd = &pType->z[pType->n];
 
   while( zIn!=zEnd ){
     h = (h<<8) + sqlite3UpperToLower[*zIn];
@@ -938,21 +938,17 @@ static char sqlite3AffinityType(const char *zType, int nType){
 ** that contains the typename of the column and store that string
 ** in zType.
 */ 
-void sqlite3AddColumnType(Parse *pParse, Token *pFirst, Token *pLast){
+void sqlite3AddColumnType(Parse *pParse, Token *pType){
   Table *p;
-  int i, j;
-  int n;
-  char *z;
-  const unsigned char *zIn;
-
+  int i;
   Column *pCol;
+
   if( (p = pParse->pNewTable)==0 ) return;
   i = p->nCol-1;
   if( i<0 ) return;
   pCol = &p->aCol[i];
-  zIn = pFirst->z;
-  n = pLast->n + (pLast->z - zIn);
   assert( pCol->zType==0 );
+#if 0
   z = pCol->zType = sqliteMallocRaw(n+1);
   if( z==0 ) return;
   for(i=j=0; i<n; i++){
@@ -961,7 +957,9 @@ void sqlite3AddColumnType(Parse *pParse, Token *pFirst, Token *pLast){
     z[j++] = c;
   }
   z[j] = 0;
-  pCol->affinity = sqlite3AffinityType(z, n);
+#endif
+  pCol->zType = sqlite3NameFromToken(pType);
+  pCol->affinity = sqlite3AffinityType(pType);
 }
 
 /*
