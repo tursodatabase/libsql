@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.125 2005/05/20 09:40:56 danielk1977 Exp $
+** $Id: tclsqlite.c,v 1.126 2005/06/25 19:31:48 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -283,7 +283,9 @@ static void tclSqlFunc(sqlite3_context *context, int argc, sqlite3_value**argv){
     u8 *data;
     char *zType = pVar->typePtr ? pVar->typePtr->name : "";
     char c = zType[0];
-    if( c=='b' && strcmp(zType,"bytearray")==0 ){
+    if( c=='b' && strcmp(zType,"bytearray")==0 && pVar->bytes==0 ){
+      /* Only load a BLOB type if the Tcl variable is a bytearray and
+      ** has no string representation. */
       data = Tcl_GetByteArrayFromObj(pVar, &n);
       sqlite3_result_blob(context, data, n, SQLITE_TRANSIENT);
     }else if( (c=='b' && strcmp(zType,"boolean")==0) ||
@@ -294,6 +296,10 @@ static void tclSqlFunc(sqlite3_context *context, int argc, sqlite3_value**argv){
       double r;
       Tcl_GetDoubleFromObj(0, pVar, &r);
       sqlite3_result_double(context, r);
+    }else if( c=='w' && strcmp(zType,"wideInt")==0 ){
+      Tcl_WideInt v;
+      Tcl_GetWideIntFromObj(0, pVar, &v);
+      sqlite3_result_int64(context, v);
     }else{
       data = Tcl_GetStringFromObj(pVar, &n);
       sqlite3_result_text(context, data, n, SQLITE_TRANSIENT);
@@ -924,7 +930,9 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
             u8 *data;
             char *zType = pVar->typePtr ? pVar->typePtr->name : "";
             char c = zType[0];
-            if( c=='b' && strcmp(zType,"bytearray")==0 ){
+            if( c=='b' && strcmp(zType,"bytearray")==0 && pVar->bytes==0 ){
+              /* Only load a BLOB type if the Tcl variable is a bytearray and
+              ** has no string representation. */
               data = Tcl_GetByteArrayFromObj(pVar, &n);
               sqlite3_bind_blob(pStmt, i, data, n, SQLITE_STATIC);
               Tcl_IncrRefCount(pVar);
@@ -937,6 +945,10 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
               double r;
               Tcl_GetDoubleFromObj(interp, pVar, &r);
               sqlite3_bind_double(pStmt, i, r);
+            }else if( c=='w' && strcmp(zType,"wideInt")==0 ){
+              Tcl_WideInt v;
+              Tcl_GetWideIntFromObj(interp, pVar, &v);
+              sqlite3_bind_int64(pStmt, i, v);
             }else{
               data = Tcl_GetStringFromObj(pVar, &n);
               sqlite3_bind_text(pStmt, i, data, n, SQLITE_STATIC);

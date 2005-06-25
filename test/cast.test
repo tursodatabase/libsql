@@ -1,4 +1,4 @@
-# 2001 September 15
+# 2005 June 25
 #
 # The author disclaims copyright to this source code.  In place of
 # a legal notice, here is a blessing:
@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CAST operator.
 #
-# $Id: cast.test,v 1.1 2005/06/25 18:42:16 drh Exp $
+# $Id: cast.test,v 1.2 2005/06/25 19:31:48 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl

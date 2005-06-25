@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.145 2005/06/25 18:42:14 drh Exp $
+** $Id: test1.c,v 1.146 2005/06/25 19:31:48 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
