@@ -1,5 +1,5 @@
-C The\sTCL\sinterface\sbinds\svariables\sas\sBLOB\sonly\sif\sthey\shave\sa\sbytearray\r\nrepresentation\sbut\sno\stext\srepresentation.\sTicket\s#1287.\s(CVS\s2528)
-D 2005-06-25T19:31:48
+C Documentation\sfixes.\s\sTicket\s#1306.\s(CVS\s2529)
+D 2005-06-25T19:42:38
 F Makefile.in 64a6635ef44a98325e0cffe8d67669920a3dad47
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -266,7 +266,7 @@ F www/faq.tcl 49f31a703f74c71ce66da646aaf18b07a5042672
 F www/fileformat.tcl 900c95b9633abc3dcfc384d9ddd8eb4876793059
 F www/formatchng.tcl 053ddb73646701353a5b1c9ca6274d5900739b45
 F www/index.tcl 9527f4eed69739cf5f81b3d75e0478d1c84d0a8a
-F www/lang.tcl be57d5f23a46b8afa3753b38f65ea22d26499b80
+F www/lang.tcl 0083a59de9081f579964a6c3f701b9af3e29bfb6
 F www/lockingv3.tcl f59b19d6c8920a931f096699d6faaf61c05db55f
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
 F www/nulls.tcl ec35193f92485b87b90a994a01d0171b58823fcf
@@ -283,7 +283,7 @@ F www/tclsqlite.tcl 425be741b8ae664f55cb1ef2371aab0a75109cf9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P 17631785f9ee8ab280c82677eb53886912e085bc
-R 9ec95f28757d0a0d2556cee5684b2d92
+P 8c99dca60aebee0ec5de9ed11350de864bc76584
+R f298a28bc4d82dbd5adfaab265db9284
 U drh
-Z f4f5d0f3cdc7483f729807d727fb5289
+Z e8b0b3df38f0878df8807440d3147bbe

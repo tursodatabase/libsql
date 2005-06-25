@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the lang-*.html files.
 #
-set rcsid {$Id: lang.tcl,v 1.91 2005/06/25 18:42:16 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.92 2005/06/25 19:42:38 drh Exp $}
 source common.tcl
 
 if {[llength $argv]>0} {
@@ -749,8 +749,7 @@ the statement that caused the trigger program to execute and any subsequent
 </p>
 
 <p>Triggers are removed using the <a href="#droptrigger">DROP TRIGGER</a>
-statement.  Non-temporary triggers cannot be added on a table in an 
-attached database.</p>
+statement.</p>
 }
 
 
@@ -782,8 +781,7 @@ the table is created in the main database.</p>
 in SQLite.  However, in many cases you can use a <a href="#createtrigger">
 TRIGGER</a> on the view to accomplish the same thing.  Views are removed 
 with the <a href="#dropview">DROP VIEW</a> 
-command.  Non-temporary views cannot be created on tables in an attached 
-database.</p>
+command.</p>
 }
 
 
@@ -836,9 +834,11 @@ the disk.  The only way to recover the index is to reenter the
 appropriate CREATE INDEX command.</p>
 
 <p>The DROP INDEX statement does not reduce the size of the database 
-file.  Empty space in the database is retained for later INSERTs.  To 
+file in the default mode.
+Empty space in the database is retained for later INSERTs.  To 
 remove free space in the database, use the <a href="#vacuum">VACUUM</a> 
-command.</p>
+command.  If AUTOVACUUM mode is enabled for a database then space
+will be freed automatically by DROP INDEX.</p>
 }
 
 
@@ -853,13 +853,14 @@ puts {
 "#createtable">CREATE TABLE</a> statement.  The name specified is the
 table name.  It is completely removed from the database schema and the 
 disk file.  The table can not be recovered.  All indices associated 
-with the table are also deleted.  Non-temporary tables in an attached 
-database cannot be dropped.</p>
+with the table are also deleted.</p>
 
 <p>The DROP TABLE statement does not reduce the size of the database 
-file.  Empty space in the database is retained for later INSERTs.  To 
+file in the default mode.  Empty space in the database is retained for
+later INSERTs.  To 
 remove free space in the database, use the <a href="#vacuum">VACUUM</a> 
-command.</p>
+command.  If AUTOVACUUM mode is enabled for a database then space
+will be freed automatically by DROP TABLE.</p>
 }
 
 
@@ -871,8 +872,7 @@ puts {
 <p>The DROP TRIGGER statement removes a trigger created by the 
 <a href="#createtrigger">CREATE TRIGGER</a> statement.  The trigger is 
 deleted from the database schema. Note that triggers are automatically 
-dropped when the associated table is dropped.  Non-temporary triggers 
-cannot be dropped on attached tables.</p>
+dropped when the associated table is dropped.</p>
 }
 
 
@@ -886,8 +886,7 @@ puts {
 <p>The DROP VIEW statement removes a view created by the <a href=
 "#createview">CREATE VIEW</a> statement.  The name specified is the 
 view name.  It is removed from the database schema, but no actual data 
-in the underlying base tables is modified.  Non-temporary views in 
-attached databases cannot be dropped.</p>
+in the underlying base tables is modified.</p>
 }
 
 
