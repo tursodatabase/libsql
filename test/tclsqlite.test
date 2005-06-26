@@ -15,7 +15,7 @@
 # interface is pretty well tested.  This file contains some addition
 # tests for fringe issues that the main test suite does not cover.
 #
-# $Id: tclsqlite.test,v 1.40 2005/05/05 10:30:30 drh Exp $
+# $Id: tclsqlite.test,v 1.41 2005/06/26 17:55:34 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -332,6 +332,21 @@ do_test tcl-9.3 {
   db function ret_int {clock seconds}
   execsql {SELECT typeof(ret_int())}
 } {integer}
+
+# Recursive calls to the same user-defined function
+#
+do_test tcl-9.10 {
+  proc userfunc_r1 {n} {
+    if {$n<=0} {return 0}
+    set nm1 [expr {$n-1}]
+    return [expr {[db eval {SELECT r1($nm1)}]+$n}]
+  }
+  db function r1 userfunc_r1
+  execsql {SELECT r1(10)}
+} {55}
+do_test tcl-9.11 {
+  execsql {SELECT r1(100)}
+} {5050}
 
 
 finish_test
