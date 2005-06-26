@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the lang-*.html files.
 #
-set rcsid {$Id: lang.tcl,v 1.92 2005/06/25 19:42:38 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.93 2005/06/26 20:00:46 drh Exp $}
 source common.tcl
 
 if {[llength $argv]>0} {
@@ -915,14 +915,14 @@ Section expression expr
 
 Syntax {expr} {
 <expr> <binary-op> <expr> |
-<expr> <like-op> <expr> [ESCAPE <expr>] |
-<expr> <glob-op> <expr> |
+<expr> [NOT] <like-op> <expr> [ESCAPE <expr>] |
 <unary-op> <expr> |
 ( <expr> ) |
 <column-name> |
 <table-name> . <column-name> |
 <database-name> . <table-name> . <column-name> |
 <literal-value> |
+<parameter> |
 <function-name> ( <expr-list> | STAR ) |
 <expr> ISNULL |
 <expr> NOTNULL |
@@ -931,11 +931,10 @@ Syntax {expr} {
 <expr> [NOT] IN ( <select-statement> ) |
 <expr> [NOT] IN [<database-name> .] <table-name> |
 [EXISTS] ( <select-statement> ) |
-CASE [<expr>] LP WHEN <expr> THEN <expr> RPPLUS [ELSE <expr>] END
+CASE [<expr>] LP WHEN <expr> THEN <expr> RPPLUS [ELSE <expr>] END |
+CAST ( <expr> AS <type> )
 } {like-op} {
-LIKE | NOT LIKE
-} {glob-op} {
-GLOB | NOT GLOB
+LIKE | GLOB | REGEXP
 }
 
 puts {
@@ -964,12 +963,7 @@ OR</font>
 <font color="#2c2cf0"><big>-    +    !    ~</big></font>
 </pre></blockquote>
 
-<p>Any SQLite value can be used as part of an expression.  
-For arithmetic operations, integers are treated as integers.
-Strings are first converted to real numbers using <b>atof()</b>.
-For comparison operators, numbers compare as numbers and strings
-compare using the <b>strcmp()</b> function.
-Note that there are two variations of the equals and not equals
+<p>Note that there are two variations of the equals and not equals
 operators.  Equals can be either}
 puts "[Operator =] or [Operator ==].
 The non-equals operator can be either
@@ -977,8 +971,76 @@ The non-equals operator can be either
 The [Operator ||] operator is \"concatenate\" - it joins together
 the two strings of its operands.
 The operator [Operator %] outputs the remainder of its left 
-operand modulo its right operand.</p>"
+operand modulo its right operand.</p>
+
+<p>The result of any binary operator is a numeric value, except
+for the [Operator ||] concatenation operator which gives a string
+result.</p>"
+
 puts {
+
+<a name="literal_value"></a>
+<p>
+A literal value is an integer number or a floating point number.
+Scientific notation is supported.  The "." character is always used
+as the decimal point even if the locale setting specifies "," for
+this role - the use of "," for the decimal point would result in
+syntactic ambiguity.  A string constant is formed by enclosing the
+string in single quotes (').  A single quote within the string can
+be encoded by putting two single quotes in a row - as in Pascal.
+C-style escapes using the backslash character are not supported because
+they are not standard SQL.
+BLOB literals are string literals containing hexadecimal data and
+preceded by a single "x" or "X" character.  For example:</p>
+
+<blockquote><pre>
+X'53514697465'
+</pre></blockquote>
+
+<p>
+A literal value can also be the token "NULL".
+</p>
+
+<p>
+A parameter specifies a placeholder in the expression for a literal
+value that is filled in at runtime using the
+<a href="capi3ref.html#sqlite3_bind_int">sqlite3_bind</a> API.
+Parameters can take several forms:
+</p
+
+<blockquote>
+<table>
+<tr>
+<td align="right" valign="top"><b>?</b><i>NNN</i></td><td width="20"></td>
+<td>A question mark followed by a number <i>NNN</i> holds a spot for the
+NNN-th parameter.  NNN must be between 1 and 999.</td>
+</tr>
+<tr>
+<td align="right" valign="top"><b>?</b></td><td width="20"></td>
+<td>A question mark that is not followed by a number holds a spot for
+the next unused parameter.</td>
+</tr>
+<tr>
+<td align="right" valign="top"><b>:</b><i>AAAA</i></td><td width="20"></td>
+<td>A colon followed by an identifier name holds a spot for a named
+parameter with the name AAAA.  Named parameters are also numbered.
+The number assigned is the next unused number.  To avoid confusion,
+it is best to avoid mixing named and numbered parameters.</td>
+</tr>
+<tr>
+<td align="right" valign="top"><b>$</b><i>AAAA</i></td><td width="20"></td>
+<td>A dollar-sign followed by an identifier name also holds a spot for a named
+parameter with the name AAAA.  The identifier name in this case can include
+one or more occurances of "::" and a suffix enclosed in "(...)" containing
+any text at all.  This syntax is the form of a variable name in the Tcl
+programming language.</td>
+</tr>
+</table>
+</blockquote>
+
+<p>Parameters that are not assigned values using
+<a href="capi3ref.html#sqlite3_bind_int">sqlite3_bind</a> are treated
+as NULL.</p>
 
 <a name="like"></a>
 <p>The LIKE operator does a pattern matching comparison. The operand
@@ -1013,9 +1075,14 @@ characters on one side against lower case characters on the other.
 characters.  Hence the LIKE operator is case sensitive for 8-bit
 iso8859 characters or UTF-8 characters.  For example, the expression
 <b>'a'&nbsp;LIKE&nbsp;'A'</b> is TRUE but
-<b>'&aelig;'&nbsp;LIKE&nbsp;'&AElig;'</b> is FALSE.).  The infix LIKE
-operator is identical the user function <a href="#likeFunc">
-like(<i>X</i>,<i>Y</i>)</a>.
+<b>'&aelig;'&nbsp;LIKE&nbsp;'&AElig;'</b> is FALSE.).</p>
+
+<p>The infix LIKE
+operator is implemented by calling the user function <a href="#likeFunc">
+like(<i>X</i>,<i>Y</i>)</a>.  If an ESCAPE clause is present, it adds
+a third parameter to the function call. If the functionality of LIKE can be
+overridden by defining an alternative implementation of the
+like() SQL function.</p>
 </p>
 
 <a name="glob"></a>
@@ -1023,8 +1090,17 @@ like(<i>X</i>,<i>Y</i>)</a>.
 file globbing syntax for its wildcards.  Also, GLOB is case
 sensitive, unlike LIKE.  Both GLOB and LIKE may be preceded by
 the NOT keyword to invert the sense of the test.  The infix GLOB 
-operator is identical the user function <a href="#globFunc">
-glob(<i>X</i>,<i>Y</i>)</a>.</p>
+operator is implemented by calling the user function <a href="#globFunc">
+glob(<i>X</i>,<i>Y</i>)</a> and can be modified by overriding
+that function.</p>
+
+<a name="regexp"></a>
+<p>The REGEXP operator is a special syntax for the regexp()
+user function.  No regexp() user function is defined by default
+and so use of the REGEXP operator will normally result in an
+error message.  If a user-defined function named "regexp"
+is defined at run-time, that function will be called in order
+to implement the REGEXP operator.</p>
 
 <p>A column name can be any of the names defined in the CREATE TABLE
 statement or one of the following special identifiers: "<b>ROWID</b>",
@@ -1065,6 +1141,10 @@ operand of an IN operator, then the first row of the result of the
 SELECT becomes the value used in the expression.  If the SELECT yields
 more than one result row, all rows after the first are ignored.  If
 the SELECT yields no rows, then the value of the SELECT is NULL.</p>
+
+<p>A CAST expression changes the datatype of the <expr> into the
+type specified by <type>.  <type> can be any non-empty type name that if valid
+for the type in a column definition of a CREATE TABLE statement.</p>
 
 <p>Both simple and aggregate functions are supported.  A simple
 function can be used in any expression.  Simple functions return
