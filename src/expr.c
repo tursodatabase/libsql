@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.208 2005/06/25 18:42:14 drh Exp $
+** $Id: expr.c,v 1.209 2005/06/30 17:04:21 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -665,11 +665,15 @@ static int walkSelectExpr(Select *p, int (*xFunc)(void *, Expr*), void *pArg){
 */
 static int exprNodeIsConstant(void *pArg, Expr *pExpr){
   switch( pExpr->op ){
+    /* Consider functions to be constant if all their arguments are constant
+    ** and *pArg==2 */
+    case TK_FUNCTION:
+      if( *((int*)pArg)==2 ) return 0;
+      /* Fall through */
     case TK_ID:
     case TK_COLUMN:
     case TK_DOT:
     case TK_AGG_FUNCTION:
-    case TK_FUNCTION:
 #ifndef SQLITE_OMIT_SUBQUERY
     case TK_SELECT:
     case TK_EXISTS:
@@ -683,7 +687,7 @@ static int exprNodeIsConstant(void *pArg, Expr *pExpr){
 
 /*
 ** Walk an expression tree.  Return 1 if the expression is constant
-** and 0 if it involves variables.
+** and 0 if it involves variables or function calls.
 **
 ** For the purposes of this function, a double-quoted string (ex: "abc")
 ** is considered a variable but a single-quoted string (ex: 'abc') is
@@ -693,6 +697,21 @@ int sqlite3ExprIsConstant(Expr *p){
   int isConst = 1;
   walkExprTree(p, exprNodeIsConstant, &isConst);
   return isConst;
+}
+
+/*
+** Walk an expression tree.  Return 1 if the expression is constant
+** or a function call with constant arguments.  Return and 0 if there
+** are any variables.
+**
+** For the purposes of this function, a double-quoted string (ex: "abc")
+** is considered a variable but a single-quoted string (ex: 'abc') is
+** a constant.
+*/
+int sqlite3ExprIsConstantOrFunction(Expr *p){
+  int isConst = 2;
+  walkExprTree(p, exprNodeIsConstant, &isConst);
+  return isConst!=0;
 }
 
 /*

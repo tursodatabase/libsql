@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.173 2005/06/25 18:42:14 drh Exp $
+** @(#) $Id: parse.y,v 1.174 2005/06/30 17:04:21 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -248,6 +248,7 @@ carglist ::= .
 carg ::= CONSTRAINT nm ccons.
 carg ::= ccons.
 carg ::= DEFAULT term(X).            {sqlite3AddDefaultValue(pParse,X);}
+carg ::= DEFAULT LP expr(X) RP.      {sqlite3AddDefaultValue(pParse,X);}
 carg ::= DEFAULT PLUS term(X).       {sqlite3AddDefaultValue(pParse,X);}
 carg ::= DEFAULT MINUS term(X).      {
   Expr *p = sqlite3Expr(TK_UMINUS, X, 0, 0);
