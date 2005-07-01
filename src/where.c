@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.139 2005/06/12 21:35:53 drh Exp $
+** $Id: where.c,v 1.140 2005/07/01 11:38:45 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -725,7 +725,7 @@ WhereInfo *sqlite3WhereBegin(
 
     /* If we found a term that tests ROWID with == or IN, that term
     ** will be used to locate the rows in the database table.  There
-    ** is not need to continue into the code below that looks for
+    ** is no need to continue into the code below that looks for
     ** an index.  We will always use the ROWID over an index.
     */
     if( iDirectEq[i]>=0 ){
@@ -838,7 +838,7 @@ WhereInfo *sqlite3WhereBegin(
         if( (m & eqMask)!=m ) break;
       }
 
-      /* Begin assemblying the score
+      /* Begin assembling the score
       */
       score = nEq*32;   /* Base score is 32 times number of == constraints */
       m = ((Bitmask)1)<<nEq;
