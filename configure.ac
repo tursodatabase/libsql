@@ -116,7 +116,7 @@ AC_INIT(src/sqlite.h.in)
 dnl Put the RCS revision string after AC_INIT so that it will also
 dnl show in in configure.
 # The following RCS revision string applies to configure.in
-# $Revision: 1.16 $
+# $Revision: 1.17 $
 
 #########
 # Programs needed
@@ -138,9 +138,9 @@ AC_SUBST(VERSION)
 RELEASE=`cat $srcdir/VERSION`
 echo "Release set to $RELEASE"
 AC_SUBST(RELEASE)
-VERSION_NUMBER=`cat $srcdir/VERSION  \
+VERSION_NUMBER=[`cat $srcdir/VERSION  \
                            | sed 's/[^0-9]/ /g' \
-                | awk '{printf "%d%03d%03d",$1,$2,$3}'`
+                | awk '{printf "%d%03d%03d",$1,$2,$3}'`]
 echo "Version number set to $VERSION_NUMBER"
 AC_SUBST(VERSION_NUMBER)
 
