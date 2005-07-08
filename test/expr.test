@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing expressions.
 #
-# $Id: expr.test,v 1.43 2005/01/21 11:55:27 danielk1977 Exp $
+# $Id: expr.test,v 1.44 2005/07/08 13:53:22 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -206,7 +206,6 @@ test_expr epxr-3.42 {t1='abc', t2=NULL} {coalesce(t2==t1,99)} 99
 test_expr epxr-3.43 {t1='abc', t2=NULL} {coalesce(t1!=t2,99)} 99
 test_expr epxr-3.44 {t1='abc', t2=NULL} {coalesce(t2!=t1,99)} 99
 
-
 test_expr expr-4.1 {t1='abc', t2='Abc'} {t1<t2} 0
 test_expr expr-4.2 {t1='abc', t2='Abc'} {t1>t2} 1
 test_expr expr-4.3 {t1='abc', t2='Bbc'} {t1<t2} 0
@@ -228,38 +227,64 @@ test_expr expr-4.18 {r1='0.0', r2='abc'} {r1<r2} 1
 test_expr expr-4.19 {r1='0.0', r2='abc'} {r1==r2} 0
 test_expr expr-4.20 {r1='0.0', r2='abc'} {r1>r2} 0
 
+# CSL is true if LIKE is case sensitive and false if not.
+# NCSL is the opposite.  Use these variables as the result
+# on operations where case makes a difference.
+set CSL $sqlite_options(casesensitivelike)
+set NCSL [expr {!$CSL}]
+
 test_expr expr-5.1 {t1='abc', t2='xyz'} {t1 LIKE t2} 0
-test_expr expr-5.2 {t1='abc', t2='ABC'} {t1 LIKE t2} 1
-test_expr expr-5.3 {t1='abc', t2='A_C'} {t1 LIKE t2} 1
+test_expr expr-5.2a {t1='abc', t2='abc'} {t1 LIKE t2} 1
+test_expr expr-5.2b {t1='abc', t2='ABC'} {t1 LIKE t2} $NCSL
+test_expr expr-5.3a {t1='abc', t2='a_c'} {t1 LIKE t2} 1
+test_expr expr-5.3b {t1='abc', t2='A_C'} {t1 LIKE t2} $NCSL
 test_expr expr-5.4 {t1='abc', t2='abc_'} {t1 LIKE t2} 0
-test_expr expr-5.5 {t1='abc', t2='A%C'} {t1 LIKE t2} 1
-test_expr expr-5.5a {t1='abdc', t2='a%c'} {t1 LIKE t2} 1
-test_expr expr-5.5b {t1='ac', t2='A%C'} {t1 LIKE t2} 1
-test_expr expr-5.6 {t1='abxyzzyc', t2='A%C'} {t1 LIKE t2} 1
-test_expr expr-5.7 {t1='abxyzzy', t2='A%C'} {t1 LIKE t2} 0
-test_expr expr-5.8 {t1='abxyzzycx', t2='A%C'} {t1 LIKE t2} 0
-test_expr expr-5.8b {t1='abxyzzycy', t2='A%CX'} {t1 LIKE t2} 0
-test_expr expr-5.9 {t1='abc', t2='A%_C'} {t1 LIKE t2} 1
-test_expr expr-5.9b {t1='ac', t2='A%_C'} {t1 LIKE t2} 0
-test_expr expr-5.10 {t1='abxyzzyc', t2='A%_C'} {t1 LIKE t2} 1
+test_expr expr-5.5a {t1='abc', t2='a%c'} {t1 LIKE t2} 1
+test_expr expr-5.5b {t1='abc', t2='A%C'} {t1 LIKE t2} $NCSL
+test_expr expr-5.5c {t1='abdc', t2='a%c'} {t1 LIKE t2} 1
+test_expr expr-5.5d {t1='ac', t2='a%c'} {t1 LIKE t2} 1
+test_expr expr-5.5e {t1='ac', t2='A%C'} {t1 LIKE t2} $NCSL
+test_expr expr-5.6a {t1='abxyzzyc', t2='a%c'} {t1 LIKE t2} 1
+test_expr expr-5.6b {t1='abxyzzyc', t2='A%C'} {t1 LIKE t2} $NCSL
+test_expr expr-5.7a {t1='abxyzzy', t2='a%c'} {t1 LIKE t2} 0
+test_expr expr-5.7b {t1='abxyzzy', t2='A%C'} {t1 LIKE t2} 0
+test_expr expr-5.8a {t1='abxyzzycx', t2='a%c'} {t1 LIKE t2} 0
+test_expr expr-5.8b {t1='abxyzzycy', t2='a%cx'} {t1 LIKE t2} 0
+test_expr expr-5.8c {t1='abxyzzycx', t2='A%C'} {t1 LIKE t2} 0
+test_expr expr-5.8d {t1='abxyzzycy', t2='A%CX'} {t1 LIKE t2} 0
+test_expr expr-5.9a {t1='abc', t2='a%_c'} {t1 LIKE t2} 1
+test_expr expr-5.9b {t1='ac', t2='a%_c'} {t1 LIKE t2} 0
+test_expr expr-5.9c {t1='abc', t2='A%_C'} {t1 LIKE t2} $NCSL
+test_expr expr-5.9d {t1='ac', t2='A%_C'} {t1 LIKE t2} 0
+test_expr expr-5.10a {t1='abxyzzyc', t2='a%_c'} {t1 LIKE t2} 1
+test_expr expr-5.10b {t1='abxyzzyc', t2='A%_C'} {t1 LIKE t2} $NCSL
 test_expr expr-5.11 {t1='abc', t2='xyz'} {t1 NOT LIKE t2} 1
-test_expr expr-5.12 {t1='abc', t2='ABC'} {t1 NOT LIKE t2} 0
+test_expr expr-5.12a {t1='abc', t2='abc'} {t1 NOT LIKE t2} 0
+test_expr expr-5.12b {t1='abc', t2='ABC'} {t1 NOT LIKE t2} $CSL
 
 # The following tests only work on versions of TCL that support Unicode
 #
 if {"\u1234"!="u1234"} {
-  test_expr expr-5.13 "t1='a\u0080c', t2='A_C'" {t1 LIKE t2} 1
-  test_expr expr-5.14 "t1='a\u07FFc', t2='A_C'" {t1 LIKE t2} 1
-  test_expr expr-5.15 "t1='a\u0800c', t2='A_C'" {t1 LIKE t2} 1
-  test_expr expr-5.16 "t1='a\uFFFFc', t2='A_C'" {t1 LIKE t2} 1
+  test_expr expr-5.13a "t1='a\u0080c', t2='a_c'" {t1 LIKE t2} 1
+  test_expr expr-5.13b "t1='a\u0080c', t2='A_C'" {t1 LIKE t2} $NCSL
+  test_expr expr-5.14a "t1='a\u07FFc', t2='a_c'" {t1 LIKE t2} 1
+  test_expr expr-5.14b "t1='a\u07FFc', t2='A_C'" {t1 LIKE t2} $NCSL
+  test_expr expr-5.15a "t1='a\u0800c', t2='a_c'" {t1 LIKE t2} 1
+  test_expr expr-5.15b "t1='a\u0800c', t2='A_C'" {t1 LIKE t2} $NCSL
+  test_expr expr-5.16a "t1='a\uFFFFc', t2='a_c'" {t1 LIKE t2} 1
+  test_expr expr-5.16b "t1='a\uFFFFc', t2='A_C'" {t1 LIKE t2} $NCSL
   test_expr expr-5.17 "t1='a\u0080', t2='A__'" {t1 LIKE t2} 0
   test_expr expr-5.18 "t1='a\u07FF', t2='A__'" {t1 LIKE t2} 0
   test_expr expr-5.19 "t1='a\u0800', t2='A__'" {t1 LIKE t2} 0
   test_expr expr-5.20 "t1='a\uFFFF', t2='A__'" {t1 LIKE t2} 0
-  test_expr expr-5.21 "t1='ax\uABCD', t2='A_\uABCD'" {t1 LIKE t2} 1
-  test_expr expr-5.22 "t1='ax\u1234', t2='A%\u1234'" {t1 LIKE t2} 1
-  test_expr expr-5.23 "t1='ax\uFEDC', t2='A_%'" {t1 LIKE t2} 1
-  test_expr expr-5.24 "t1='ax\uFEDCy\uFEDC', t2='A%\uFEDC'" {t1 LIKE t2} 1
+  test_expr expr-5.21a "t1='ax\uABCD', t2='a_\uABCD'" {t1 LIKE t2} 1
+  test_expr expr-5.21b "t1='ax\uABCD', t2='A_\uABCD'" {t1 LIKE t2} $NCSL
+  test_expr expr-5.22a "t1='ax\u1234', t2='a%\u1234'" {t1 LIKE t2} 1
+  test_expr expr-5.22b "t1='ax\u1234', t2='A%\u1234'" {t1 LIKE t2} $NCSL
+  test_expr expr-5.23a "t1='ax\uFEDC', t2='a_%'" {t1 LIKE t2} 1
+  test_expr expr-5.23b "t1='ax\uFEDC', t2='A_%'" {t1 LIKE t2} $NCSL
+  test_expr expr-5.24a "t1='ax\uFEDCy\uFEDC', t2='a%\uFEDC'" {t1 LIKE t2} 1
+  test_expr expr-5.24b "t1='ax\uFEDCy\uFEDC', t2='A%\uFEDC'" {t1 LIKE t2} $NCSL
 }
 
 test_expr expr-5.54 {t1='abc', t2=NULL} {t1 LIKE t2} {{}}
@@ -268,42 +293,75 @@ test_expr expr-5.56 {t1='abc', t2=NULL} {t2 LIKE t1} {{}}
 test_expr expr-5.57 {t1='abc', t2=NULL} {t2 NOT LIKE t1} {{}}
 
 # LIKE expressions that use ESCAPE characters.
-test_expr expr-5.58 {t1='abc', t2='A_C'}   {t1 LIKE t2 ESCAPE '7'} 1
-test_expr expr-5.59 {t1='a_c', t2='A7_C'}  {t1 LIKE t2 ESCAPE '7'} 1
-test_expr expr-5.60 {t1='abc', t2='A7_C'}  {t1 LIKE t2 ESCAPE '7'} 0
-test_expr expr-5.61 {t1='a7Xc', t2='A7_C'} {t1 LIKE t2 ESCAPE '7'} 0
-test_expr expr-5.62 {t1='abcde', t2='A%E'} {t1 LIKE t2 ESCAPE '7'} 1
-test_expr expr-5.63 {t1='abcde', t2='A7%E'} {t1 LIKE t2 ESCAPE '7'} 0
-test_expr expr-5.64 {t1='a7cde', t2='A7%E'} {t1 LIKE t2 ESCAPE '7'} 0
-test_expr expr-5.65 {t1='a7cde', t2='A77%E'} {t1 LIKE t2 ESCAPE '7'} 1
-test_expr expr-5.66 {t1='abc7', t2='A%77'} {t1 LIKE t2 ESCAPE '7'} 1
-test_expr expr-5.67 {t1='abc_', t2='A%7_'} {t1 LIKE t2 ESCAPE '7'} 1
-test_expr expr-5.68 {t1='abc7', t2='A%7_'} {t1 LIKE t2 ESCAPE '7'} 0
+test_expr expr-5.58a {t1='abc', t2='a_c'}   {t1 LIKE t2 ESCAPE '7'} 1
+test_expr expr-5.58b {t1='abc', t2='A_C'}   {t1 LIKE t2 ESCAPE '7'} $NCSL
+test_expr expr-5.59a {t1='a_c', t2='a7_c'}  {t1 LIKE t2 ESCAPE '7'} 1
+test_expr expr-5.59b {t1='a_c', t2='A7_C'}  {t1 LIKE t2 ESCAPE '7'} $NCSL
+test_expr expr-5.60a {t1='abc', t2='a7_c'}  {t1 LIKE t2 ESCAPE '7'} 0
+test_expr expr-5.60b {t1='abc', t2='A7_C'}  {t1 LIKE t2 ESCAPE '7'} 0
+test_expr expr-5.61a {t1='a7Xc', t2='a7_c'} {t1 LIKE t2 ESCAPE '7'} 0
+test_expr expr-5.61b {t1='a7Xc', t2='A7_C'} {t1 LIKE t2 ESCAPE '7'} 0
+test_expr expr-5.62a {t1='abcde', t2='a%e'} {t1 LIKE t2 ESCAPE '7'} 1
+test_expr expr-5.62b {t1='abcde', t2='A%E'} {t1 LIKE t2 ESCAPE '7'} $NCSL
+test_expr expr-5.63a {t1='abcde', t2='a7%e'} {t1 LIKE t2 ESCAPE '7'} 0
+test_expr expr-5.63b {t1='abcde', t2='A7%E'} {t1 LIKE t2 ESCAPE '7'} 0
+test_expr expr-5.64a {t1='a7cde', t2='a7%e'} {t1 LIKE t2 ESCAPE '7'} 0
+test_expr expr-5.64b {t1='a7cde', t2='A7%E'} {t1 LIKE t2 ESCAPE '7'} 0
+test_expr expr-5.65a {t1='a7cde', t2='a77%e'} {t1 LIKE t2 ESCAPE '7'} 1
+test_expr expr-5.65b {t1='a7cde', t2='A77%E'} {t1 LIKE t2 ESCAPE '7'} $NCSL
+test_expr expr-5.66a {t1='abc7', t2='a%77'} {t1 LIKE t2 ESCAPE '7'} 1
+test_expr expr-5.66b {t1='abc7', t2='A%77'} {t1 LIKE t2 ESCAPE '7'} $NCSL
+test_expr expr-5.67a {t1='abc_', t2='a%7_'} {t1 LIKE t2 ESCAPE '7'} 1
+test_expr expr-5.67b {t1='abc_', t2='A%7_'} {t1 LIKE t2 ESCAPE '7'} $NCSL
+test_expr expr-5.68a {t1='abc7', t2='a%7_'} {t1 LIKE t2 ESCAPE '7'} 0
+test_expr expr-5.68b {t1='abc7', t2='A%7_'} {t1 LIKE t2 ESCAPE '7'} 0
 
 # These are the same test as the block above, but using a multi-byte 
 # character as the escape character.
 if {"\u1234"!="u1234"} {
-  test_expr expr-5.69 "t1='abc', t2='A_C'" \
+  test_expr expr-5.69a "t1='abc', t2='a_c'" \
       "t1 LIKE t2 ESCAPE '\u1234'" 1
-  test_expr expr-5.70 "t1='a_c', t2='A\u1234_C'" \
+  test_expr expr-5.69b "t1='abc', t2='A_C'" \
+      "t1 LIKE t2 ESCAPE '\u1234'" $NCSL
+  test_expr expr-5.70a "t1='a_c', t2='a\u1234_c'" \
       "t1 LIKE t2 ESCAPE '\u1234'" 1
-  test_expr expr-5.71 "t1='abc', t2='A\u1234_C'" \
+  test_expr expr-5.70b "t1='a_c', t2='A\u1234_C'" \
+      "t1 LIKE t2 ESCAPE '\u1234'" $NCSL
+  test_expr expr-5.71a "t1='abc', t2='a\u1234_c'" \
        "t1 LIKE t2 ESCAPE '\u1234'" 0
-  test_expr expr-5.72 "t1='a\u1234Xc', t2='A\u1234_C'" \
+  test_expr expr-5.71b "t1='abc', t2='A\u1234_C'" \
+       "t1 LIKE t2 ESCAPE '\u1234'" 0
+  test_expr expr-5.72a "t1='a\u1234Xc', t2='a\u1234_c'" \
       "t1 LIKE t2 ESCAPE '\u1234'" 0
-  test_expr expr-5.73 "t1='abcde', t2='A%E'" \
-      "t1 LIKE t2 ESCAPE '\u1234'" 1
-  test_expr expr-5.74 "t1='abcde', t2='A\u1234%E'" \
+  test_expr expr-5.72b "t1='a\u1234Xc', t2='A\u1234_C'" \
       "t1 LIKE t2 ESCAPE '\u1234'" 0
-  test_expr expr-5.75 "t1='a\u1234cde', t2='A\u1234%E'" \
+  test_expr expr-5.73a "t1='abcde', t2='a%e'" \
+      "t1 LIKE t2 ESCAPE '\u1234'" 1
+  test_expr expr-5.73b "t1='abcde', t2='A%E'" \
+      "t1 LIKE t2 ESCAPE '\u1234'" $NCSL
+  test_expr expr-5.74a "t1='abcde', t2='a\u1234%e'" \
       "t1 LIKE t2 ESCAPE '\u1234'" 0
-  test_expr expr-5.76 "t1='a\u1234cde', t2='A\u1234\u1234%E'" \
+  test_expr expr-5.74b "t1='abcde', t2='A\u1234%E'" \
+      "t1 LIKE t2 ESCAPE '\u1234'" 0
+  test_expr expr-5.75a "t1='a\u1234cde', t2='a\u1234%e'" \
+      "t1 LIKE t2 ESCAPE '\u1234'" 0
+  test_expr expr-5.75b "t1='a\u1234cde', t2='A\u1234%E'" \
+      "t1 LIKE t2 ESCAPE '\u1234'" 0
+  test_expr expr-5.76a "t1='a\u1234cde', t2='a\u1234\u1234%e'" \
       "t1 LIKE t2 ESCAPE '\u1234'" 1
-  test_expr expr-5.77 "t1='abc\u1234', t2='A%\u1234\u1234'" \
+  test_expr expr-5.76b "t1='a\u1234cde', t2='A\u1234\u1234%E'" \
+      "t1 LIKE t2 ESCAPE '\u1234'" $NCSL
+  test_expr expr-5.77a "t1='abc\u1234', t2='a%\u1234\u1234'" \
       "t1 LIKE t2 ESCAPE '\u1234'" 1
-  test_expr expr-5.78 "t1='abc_', t2='A%\u1234_'" \
+  test_expr expr-5.77b "t1='abc\u1234', t2='A%\u1234\u1234'" \
+      "t1 LIKE t2 ESCAPE '\u1234'" $NCSL
+  test_expr expr-5.78a "t1='abc_', t2='a%\u1234_'" \
       "t1 LIKE t2 ESCAPE '\u1234'" 1
-  test_expr expr-5.79 "t1='abc\u1234', t2='A%\u1234_'" \
+  test_expr expr-5.78b "t1='abc_', t2='A%\u1234_'" \
+      "t1 LIKE t2 ESCAPE '\u1234'" $NCSL
+  test_expr expr-5.79a "t1='abc\u1234', t2='a%\u1234_'" \
+      "t1 LIKE t2 ESCAPE '\u1234'" 0
+  test_expr expr-5.79b "t1='abc\u1234', t2='A%\u1234_'" \
       "t1 LIKE t2 ESCAPE '\u1234'" 0
 }
 
