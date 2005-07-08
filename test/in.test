@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the IN and BETWEEN operator.
 #
-# $Id: in.test,v 1.13 2005/01/21 03:12:16 danielk1977 Exp $
+# $Id: in.test,v 1.14 2005/07/08 18:25:26 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -81,24 +81,20 @@ do_test in-2.5 {
 } {1 2 103 104 5 6 7 8 9 10}
 
 do_test in-2.6 {
-  set v [catch {execsql {SELECT a FROM t1 WHERE b IN (b+10,20)}} msg]
-  lappend v $msg
-} {1 {right-hand side of IN operator must be constant}}
+  execsql {SELECT a FROM t1 WHERE b IN (b+8,64)}
+} {6}
 do_test in-2.7 {
-  set v [catch {execsql {SELECT a FROM t1 WHERE b IN (max(5,10,b),20)}} msg]
-  lappend v $msg
-} {1 {right-hand side of IN operator must be constant}}
+  execsql {SELECT a FROM t1 WHERE b IN (max(5,10,b),20)}
+} {4 5 6 7 8 9 10}
 do_test in-2.8 {
   execsql {SELECT a FROM t1 WHERE b IN (8*2,64/2) ORDER BY b}
 } {4 5}
 do_test in-2.9 {
-  set v [catch {execsql {SELECT a FROM t1 WHERE b IN (max(5,10),20)}} msg]
-  lappend v $msg
-} {1 {right-hand side of IN operator must be constant}}
+  execsql {SELECT a FROM t1 WHERE b IN (max(5,10),20)}
+} {}
 do_test in-2.10 {
-  set v [catch {execsql {SELECT a FROM t1 WHERE min(0,b IN (a,30))}} msg]
-  lappend v $msg
-} {1 {right-hand side of IN operator must be constant}}
+  execsql {SELECT a FROM t1 WHERE min(0,b IN (a,30))}
+} {}
 do_test in-2.11 {
   set v [catch {execsql {SELECT a FROM t1 WHERE c IN (10,20)}} msg]
   lappend v $msg

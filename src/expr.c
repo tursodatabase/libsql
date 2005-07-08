@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.210 2005/07/08 17:13:47 drh Exp $
+** $Id: expr.c,v 1.211 2005/07/08 18:25:26 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1238,19 +1238,25 @@ struct QueryCoder {
 */
 #ifndef SQLITE_OMIT_SUBQUERY
 void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
-  int label = 0;                         /* Address after sub-select code */
+  int testAddr = 0;                       /* One-time test address */
   Vdbe *v = sqlite3GetVdbe(pParse);
   if( v==0 ) return;
 
-  /* If this is not a variable (correlated) select, then execute
-  ** it only once. Unless this is part of a trigger program. In
-  ** that case re-execute every time (this could be optimized).
+  /* This code must be run in its entirety every time it is encountered
+  ** if any of the following is true:
+  **
+  **    *  The right-hand side is a correlated subquery
+  **    *  The right-hand side is an expression list containing variables
+  **    *  We are inside a trigger
+  **
+  ** If all of the above are false, then we can run this code just once
+  ** save the results, and reuse the same result on subsequent invocations.
   */
   if( !ExprHasAnyProperty(pExpr, EP_VarSelect) && !pParse->trigStack ){
     int mem = pParse->nMem++;
     sqlite3VdbeAddOp(v, OP_MemLoad, mem, 0);
-    label = sqlite3VdbeMakeLabel(v);
-    sqlite3VdbeAddOp(v, OP_If, 0, label);
+    testAddr = sqlite3VdbeAddOp(v, OP_If, 0, 0);
+    assert( testAddr>0 );
     sqlite3VdbeAddOp(v, OP_Integer, 1, 0);
     sqlite3VdbeAddOp(v, OP_MemStore, mem, 1);
   }
@@ -1268,7 +1274,7 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
       affinity = sqlite3ExprAffinity(pExpr->pLeft);
 
       /* Whether this is an 'x IN(SELECT...)' or an 'x IN(<exprlist>)'
-      ** expression it is handled the same way. A temporary table is 
+      ** expression it is handled the same way. A virtual table is 
       ** filled with single-field index keys representing the results
       ** from the SELECT or the <exprlist>.
       **
@@ -1310,20 +1316,30 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
         ** a column, use numeric affinity.
         */
         int i;
+        ExprList *pList = pExpr->pList;
+        struct ExprList_item *pItem;
+
         if( !affinity ){
           affinity = SQLITE_AFF_NUMERIC;
         }
         keyInfo.aColl[0] = pExpr->pLeft->pColl;
 
         /* Loop through each expression in <exprlist>. */
-        for(i=0; i<pExpr->pList->nExpr; i++){
-          Expr *pE2 = pExpr->pList->a[i].pExpr;
+        for(i=pList->nExpr, pItem=pList->a; i>0; i--, pItem++){
+          Expr *pE2 = pItem->pExpr;
 
-          /* Check that the expression is constant and valid. */
-          if( !sqlite3ExprIsConstant(pE2) ){
-            sqlite3ErrorMsg(pParse,
-              "right-hand side of IN operator must be constant");
-            return;
+          /* If the expression is not constant then we will need to
+          ** disable the test that was generated above that makes sure
+          ** this code only executes once.  Because for a non-constant
+          ** expression we need to rerun this code each time.
+          */
+          if( testAddr>=0 && !sqlite3ExprIsConstant(pE2) ){
+            VdbeOp *aOp = sqlite3VdbeGetOp(v, testAddr-1);
+            int i;
+            for(i=0; i<4; i++){
+              aOp[i].opcode = OP_Noop;
+            }
+            testAddr = 0;
           }
 
           /* Evaluate the expression and insert it into the temp table */
@@ -1364,8 +1380,8 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
   if( pExpr->pSelect ){
     sqlite3VdbeAddOp(v, OP_AggContextPop, 0, 0);
   }
-  if( label<0 ){
-    sqlite3VdbeResolveLabel(v, label);
+  if( testAddr ){
+    sqlite3VdbeChangeP2(v, testAddr, sqlite3VdbeCurrentAddr(v));
   }
   return;
 }

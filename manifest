@@ -1,5 +1,5 @@
-C Change\sthe\sname\sof\sthe\sOpenTemp\sopcode\sto\sOpenVirtual\swhich\sis\smore\ndescriptive\sof\swhat\sit\sdoes.\s(CVS\s2541)
-D 2005-07-08T17:13:47
+C Allow\sthe\sIN\soperator\sto\stake\sa\slist\sof\sarbitrary\sexpressions\son\sits\nright-hand\sside.\s\sThe\sexpressions\sno\slonger\sneed\sto\sbe\sconstant.\s\sThe\ncurrent\simplementation\sseems\sto\swork\sbut\sneeds\smore\stesting\sand\soptimization.\s(CVS\s2542)
+D 2005-07-08T18:25:26
 F Makefile.in 3c10cd7bc3ecbd60fe4d5a5c0f59bfa7fb217a66
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -38,7 +38,7 @@ F src/callback.c 0910b611e0c158f107ee3ff86f8a371654971e2b
 F src/date.c 7444b0900a28da77e57e3337a636873cff0ae940
 F src/delete.c 250d436a68fe371b4ab403d1c0f6fdc9a6860c39
 F src/experimental.c 50c1e3b34f752f4ac10c36f287db095c2b61766d
-F src/expr.c daf3515d33467090741d98227577356c108ea33f
+F src/expr.c 94dce12d5228af02fdafc23e56abfeae25f3b694
 F src/func.c e6637354fe3a66dfac063a49109f277cde9ce87d
 F src/hash.c 2b1b13f7400e179631c83a1be0c664608c8f021f
 F src/hash.h 1b0c445e1c89ff2aaad9b4605ba61375af001e84
@@ -137,7 +137,7 @@ F test/expr.test 648f733f9d9aa9db82de59e69d1322b8b52f701a
 F test/fkey1.test 81bb13caaa78f58d7d191d7f535529f7c91d821a
 F test/func.test b062105b45cf8fb5b386ba137180c0f439eea0c9
 F test/hook.test f8605cde4c77b2c6a4a73723bf6c507796a64dda
-F test/in.test ed134f8d477a6280297ced1646de83cccf8f196d
+F test/in.test cead6165aebbe0d451bb2263a307173acfeb6240
 F test/index.test 51e01a0928b4b61228917ddd8c6c0e2466547f6f
 F test/index2.test 9ad98243fd7fe833795a9cc662f371f0eed4ff4f
 F test/index3.test 72bd07b508022db688ec536c460345d24a3912e3
@@ -285,7 +285,7 @@ F www/tclsqlite.tcl 425be741b8ae664f55cb1ef2371aab0a75109cf9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P f4a66ed04dfd8714746b766b4859682ea18e328f
-R 7dbd5cf11e082700c07694668805a635
+P 3bb9ce5f20d0a6bc19df31df9b8e82044c3e6004
+R 1efa9cdd449acebde300ce2385775e19
 U drh
-Z 2074933014582e5567aec0bab96430cb
+Z 5c326e79427e109a129a76bef3edf05e
