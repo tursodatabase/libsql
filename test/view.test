@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing VIEW statements.
 #
-# $Id: view.test,v 1.25 2005/06/06 15:32:08 drh Exp $
+# $Id: view.test,v 1.26 2005/07/08 17:13:47 drh Exp $
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
@@ -219,7 +219,7 @@ ifcapable {explain} {
 do_test view-5.3 {
   lsearch [execsql {
     EXPLAIN SELECT * FROM v5;
-  }] OpenTemp
+  }] OpenVirtual
 } {-1}
 do_test view-5.4 {
   execsql {
@@ -229,7 +229,7 @@ do_test view-5.4 {
 do_test view-5.5 {
   lsearch [execsql {
     EXPLAIN SELECT * FROM v5 AS a, t2 AS b WHERE a.w=b.y;
-  }] OpenTemp
+  }] OpenVirtual
 } {-1}
 do_test view-5.6 {
   execsql {
@@ -239,7 +239,7 @@ do_test view-5.6 {
 do_test view-5.7 {
   lsearch [execsql {
     EXPLAIN SELECT * FROM t2 AS b, v5 AS a WHERE a.w=b.y;
-  }] OpenTemp
+  }] OpenVirtual
 } {-1}
 do_test view-5.8 {
   execsql {
@@ -249,7 +249,7 @@ do_test view-5.8 {
 do_test view-5.9 {
   lsearch [execsql {
     EXPLAIN SELECT * FROM t1 AS a, v5 AS b, t2 AS c WHERE a.x=b.v AND b.w=c.y;
-  }] OpenTemp
+  }] OpenVirtual
 } {-1}
 } ;# endif explain
 

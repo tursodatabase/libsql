@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the INSERT statement.
 #
-# $Id: insert.test,v 1.26 2005/05/29 14:23:13 danielk1977 Exp $
+# $Id: insert.test,v 1.27 2005/07/08 17:13:47 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -247,7 +247,7 @@ ifcapable tempdb {
       set x [execsql {
         EXPLAIN INSERT INTO t4 SELECT x+2 FROM t4;
       }]
-      expr {[lsearch $x OpenTemp]>0}
+      expr {[lsearch $x OpenVirtual]>0}
     } {1}
   }
   

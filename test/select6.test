@@ -12,7 +12,7 @@
 # focus of this file is testing SELECT statements that contain
 # subqueries in their FROM clause.
 #
-# $Id: select6.test,v 1.17 2005/01/29 08:32:46 danielk1977 Exp $
+# $Id: select6.test,v 1.18 2005/07/08 17:13:47 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -381,7 +381,7 @@ ifcapable {!explain} {
 # sqliteFlattenSubquery() routine in select.c is doing its job.
 #
 proc is_flat {sql} {
-  return [expr 0>[lsearch [execsql "EXPLAIN $sql"] OpenTemp]]
+  return [expr 0>[lsearch [execsql "EXPLAIN $sql"] OpenVirtual]]
 }
 
 # Check that the flattener works correctly for deeply nested subqueries

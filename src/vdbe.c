@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.473 2005/07/08 13:08:00 drh Exp $
+** $Id: vdbe.c,v 1.474 2005/07/08 17:13:47 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2596,25 +2596,18 @@ case OP_OpenWrite: {       /* no-push */
   break;
 }
 
-/* Opcode: OpenTemp P1 * P3
+/* Opcode: OpenVirtual P1 * P3
 **
-** Open a new cursor to a transient table.
-** The transient cursor is always opened read/write even if 
-** the main database is read-only.  The transient table is deleted
-** automatically when the cursor is closed.
+** Open a new cursor to a transient or virtual table.
+** The cursor is always opened read/write even if 
+** the main database is read-only.  The transient or virtual
+** table is deleted automatically when the cursor is closed.
 **
 ** The cursor points to a BTree table if P3==0 and to a BTree index
 ** if P3 is not 0.  If P3 is not NULL, it points to a KeyInfo structure
 ** that defines the format of keys in the index.
-**
-** This opcode is used for tables that exist for the duration of a single
-** SQL statement only.  Tables created using CREATE TEMPORARY TABLE
-** are opened using OP_OpenRead or OP_OpenWrite.  "Temporary" in the
-** context of this opcode means for the duration of a single SQL statement
-** whereas "Temporary" in the context of CREATE TABLE means for the duration
-** of the connection to the database.  Same word; different meanings.
 */
-case OP_OpenTemp: {       /* no-push */
+case OP_OpenVirtual: {       /* no-push */
   int i = pOp->p1;
   Cursor *pCx;
   assert( i>=0 );
