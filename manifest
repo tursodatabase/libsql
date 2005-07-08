@@ -1,6 +1,6 @@
-C Fix\sa\squoting\sproblem\sin\sthe\sconfigure\sscript.\s(CVS\s2536)
-D 2005-07-06T13:51:27
-F Makefile.in 64a6635ef44a98325e0cffe8d67669920a3dad47
+C Add\sinfrastructure\sfor\sthe\sANALYZE\scommand.\s\sDoes\snot\syet\sactually\ndo\sanything.\s(CVS\s2537)
+D 2005-07-08T12:13:04
+F Makefile.in bc7bffc4ca6f09f2ffa9c9f5c43fc624fb566970
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
 F VERSION 44fad0bf0996660a11bf8187361de03941d9b7b0
@@ -16,7 +16,7 @@ F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
-F main.mk 36e456f706ab73e8dd4a87d939f62f3dc265b886
+F main.mk 675e435ca670e30513907265cc9cc0c011b40c17
 F mkdll.sh 5ec23622515d5bf8969404e80cfb5e220ddf0512
 F mkopcodec.awk bd46ad001c98dfbab07b1713cb8e692fa0e5415d
 F mkopcodeh.awk 7563ad235670e864ead95cf672be3fe081450ae0
@@ -28,6 +28,7 @@ F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.def c413e514217736884254739a105c8c942fdf0c2f
 F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
 F src/alter.c 03041f2464e22532601254f87cb49997fa21dcdf
+F src/analyze.c 2f770b39f9d77353ac36db1861319e6323772f82
 F src/attach.c 3615dbe960cbee4aa5ea300b8a213dad36527b0f
 F src/auth.c 18c5a0befe20f3a58a41e3ddd78f372faeeefe1f
 F src/btree.c a167f412cf5b269bffba925ac55a1c0a2f749e29
@@ -55,7 +56,7 @@ F src/os_win.c fe7b99cfcfb61d9bf54493ddf5857885a657fb89
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c 841a2cdddd4275de36cda26ed9dc54ae942660ce
 F src/pager.h 0d9153d6269d60d04af3dd84a0cc0a96253cf4a4
-F src/parse.y 6caf6855c13eb4e88cc1ad9596dc5a7ed58e9bb9
+F src/parse.y d57cdd2adc0923762b40314f08683c836a2e0c90
 F src/pragma.c dea86dad2f0e872b29632ae9fba526e539a4ddd8
 F src/prepare.c d53602d2f8e097225ae7c76ec764ae68f759ba47
 F src/printf.c 3d20b21cfecadacecac3fb7274e746cb81d3d357
@@ -63,10 +64,10 @@ F src/random.c 90adff4e73a3b249eb4f1fc2a6ff9cf78c7233a4
 F src/select.c 28b752e58955c7920711fbdbfdcd369a2bd09448
 F src/shell.c 25b3217d7c64e6497225439d261a253a23efff26
 F src/sqlite.h.in e06d5774e9cfa5962376ae988300a9f114a3e3d7
-F src/sqliteInt.h cdd46c945d777fe93b65ae075e972e22e699fa16
+F src/sqliteInt.h a5ad4b51d99ada5e065808670f7cef87264606df
 F src/table.c 25b3ff2b39b7d87e8d4a5da0713d68dfc06cbee9
 F src/tclsqlite.c cccaf6b78c290d824cf8ea089b8b27377e545830
-F src/test1.c b2885afb71c93e49db6a36f101fe38c71e7e3d6c
+F src/test1.c 83ead44dead55033adff61ce69a1e2fc3e72935e
 F src/test2.c 716c1809dba8e5be6093703e9cada99d627542dc
 F src/test3.c 683e1e3819152ffd35da2f201e507228921148d0
 F src/test4.c 7c6b9fc33dd1f3f93c7f1ee6e5e6d016afa6c1df
@@ -227,7 +228,7 @@ F tool/lempar.c f0c30abcae762a7d1eb37cd88b2232ab8dd625fb
 F tool/memleak.awk 4e7690a51bf3ed757e611273d43fe3f65b510133
 F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
 F tool/memleak3.tcl 009da0ea82dc5893edca76cf1a21fb7260e9412e
-F tool/mkkeywordhash.c e4ba5010348303b1dbab41326191e7f37f8a036f
+F tool/mkkeywordhash.c e0b7833fef924e3c75d5e5c28fdcdb879909bdfb
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e x
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/report1.txt 9eae07f26a8fc53889b45fc833a66a33daa22816
@@ -283,7 +284,7 @@ F www/tclsqlite.tcl 425be741b8ae664f55cb1ef2371aab0a75109cf9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P d3b03495a46e79a9d82525a61bad99eef9469ad1
-R 31da939da5f412be3d17d7c92021596c
+P b34647a2ebec6f915f9914034e9370459873215e
+R e47c1bc2e59627b5b8cf84918bbd5426
 U drh
-Z 1e010b424bd6ccd912acc5e4f917dc09
+Z 50fe8e6711c2298fa85b1472b5a9b5e5

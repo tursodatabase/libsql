@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.174 2005/06/30 17:04:21 drh Exp $
+** @(#) $Id: parse.y,v 1.175 2005/07/08 12:13:05 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -170,7 +170,7 @@ id(A) ::= ID(X).         {A = X;}
 // This obviates the need for the "id" nonterminal.
 //
 %fallback ID
-  ABORT AFTER ASC ATTACH BEFORE BEGIN CASCADE CAST CONFLICT
+  ABORT AFTER ANALYZE ASC ATTACH BEFORE BEGIN CASCADE CAST CONFLICT
   DATABASE DEFERRED DESC DETACH EACH END EXCLUSIVE EXPLAIN FAIL FOR
   IGNORE IMMEDIATE INITIALLY INSTEAD LIKE_KW MATCH KEY
   OF OFFSET PRAGMA RAISE REPLACE RESTRICT ROW STATEMENT
@@ -1018,6 +1018,12 @@ cmd ::= DETACH database_kw_opt nm(D). {
 %ifndef SQLITE_OMIT_REINDEX
 cmd ::= REINDEX.                {sqlite3Reindex(pParse, 0, 0);}
 cmd ::= REINDEX nm(X) dbnm(Y).  {sqlite3Reindex(pParse, &X, &Y);}
+%endif
+
+/////////////////////////////////// ANALYZE ///////////////////////////////////
+%ifndef SQLITE_OMIT_ANALYZE
+cmd ::= ANALYZE.                {sqlite3Analyze(pParse, 0, 0);}
+cmd ::= ANALYZE nm(X) dbnm(Y).  {sqlite3Analyze(pParse, &X, &Y);}
 %endif
 
 //////////////////////// ALTER TABLE table ... ////////////////////////////////

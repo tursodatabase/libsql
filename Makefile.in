@@ -112,7 +112,8 @@ TCC += -DSQLITE_OMIT_CURSOR
 
 # Object files for the SQLite library.
 #
-LIBOBJ = alter.lo attach.lo auth.lo btree.lo build.lo callback.lo date.lo \
+LIBOBJ = alter.lo analyze.lo attach.lo auth.lo btree.lo build.lo \
+         callback.lo date.lo \
          delete.lo expr.lo func.lo hash.lo insert.lo \
          main.lo opcodes.lo os_unix.lo os_win.lo \
          pager.lo parse.lo pragma.lo prepare.lo printf.lo random.lo \
@@ -124,6 +125,7 @@ LIBOBJ = alter.lo attach.lo auth.lo btree.lo build.lo callback.lo date.lo \
 #
 SRC = \
   $(TOP)/src/alter.c \
+  $(TOP)/src/analyze.c \
   $(TOP)/src/attach.c \
   $(TOP)/src/auth.c \
   $(TOP)/src/btree.c \
@@ -264,6 +266,9 @@ lemon$(BEXE):	$(TOP)/tool/lemon.c $(TOP)/tool/lempar.c
 #
 alter.lo:	$(TOP)/src/alter.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/alter.c
+
+analyze.lo:	$(TOP)/src/analyze.c $(HDR)
+	$(LTCOMPILE) -c $(TOP)/src/analyze.c
 
 attach.lo:	$(TOP)/src/attach.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/attach.c

@@ -32,73 +32,78 @@ struct Keyword {
 #ifdef SQLITE_OMIT_ALTERTABLE
 #  define ALTER      0
 #else
-#  define ALTER      1
+#  define ALTER      0x00000001
 #endif
-#define ALWAYS     2
+#define ALWAYS       0x00000002
+#ifdef SQLITE_OMIT_ANALYZE
+#  define ANALYZE    0
+#else
+#  define ANALYZE    0x00000004
+#endif
 #ifdef SQLITE_OMIT_ATTACH
 #  define ATTACH     0
 #else
-#  define ATTACH     4
+#  define ATTACH     0x00000008
 #endif
 #ifdef SQLITE_OMIT_AUTOINCREMENT
 #  define AUTOINCR   0
 #else
-#  define AUTOINCR   8
-#endif
-#ifdef SQLITE_OMIT_COMPOUND_SELECT
-#  define COMPOUND   0
-#else
-#  define COMPOUND   16
-#endif
-#ifdef SQLITE_OMIT_CONFLICT_CLAUSE
-#  define CONFLICT   0
-#else
-#  define CONFLICT   32
-#endif
-#ifdef SQLITE_OMIT_EXPLAIN
-#  define EXPLAIN    0
-#else
-#  define EXPLAIN    128
-#endif
-#ifdef SQLITE_OMIT_FOREIGN_KEY
-#  define FKEY       0
-#else
-#  define FKEY       256
-#endif
-#ifdef SQLITE_OMIT_PRAGMA
-#  define PRAGMA     0
-#else
-#  define PRAGMA     512
-#endif
-#ifdef SQLITE_OMIT_REINDEX
-#  define REINDEX    0
-#else
-#  define REINDEX    1024
-#endif
-#ifdef SQLITE_OMIT_SUBQUERY
-#  define SUBQUERY   0
-#else
-#  define SUBQUERY   2048
-#endif
-#ifdef SQLITE_OMIT_TRIGGER
-#  define TRIGGER    0
-#else
-#  define TRIGGER    4096
-#endif
-#ifdef SQLITE_OMIT_VACUUM
-#  define VACUUM     0
-#else
-#  define VACUUM     8192
-#endif
-#ifdef SQLITE_OMIT_VIEW
-#  define VIEW       0
-#else
-#  define VIEW       16384
+#  define AUTOINCR   0x00000010
 #endif
 #ifdef SQLITE_OMIT_CAST
 #  define CAST       0
 #else
-#  define CAST       32768
+#  define CAST       0x00000020
+#endif
+#ifdef SQLITE_OMIT_COMPOUND_SELECT
+#  define COMPOUND   0
+#else
+#  define COMPOUND   0x00000040
+#endif
+#ifdef SQLITE_OMIT_CONFLICT_CLAUSE
+#  define CONFLICT   0
+#else
+#  define CONFLICT   0x00000080
+#endif
+#ifdef SQLITE_OMIT_EXPLAIN
+#  define EXPLAIN    0
+#else
+#  define EXPLAIN    0x00000100
+#endif
+#ifdef SQLITE_OMIT_FOREIGN_KEY
+#  define FKEY       0
+#else
+#  define FKEY       0x00000200
+#endif
+#ifdef SQLITE_OMIT_PRAGMA
+#  define PRAGMA     0
+#else
+#  define PRAGMA     0x00000400
+#endif
+#ifdef SQLITE_OMIT_REINDEX
+#  define REINDEX    0
+#else
+#  define REINDEX    0x00000800
+#endif
+#ifdef SQLITE_OMIT_SUBQUERY
+#  define SUBQUERY   0
+#else
+#  define SUBQUERY   0x00001000
+#endif
+#ifdef SQLITE_OMIT_TRIGGER
+#  define TRIGGER    0
+#else
+#  define TRIGGER    0x00002000
+#endif
+#ifdef SQLITE_OMIT_VACUUM
+#  define VACUUM     0
+#else
+#  define VACUUM     0x00004000
+#endif
+#ifdef SQLITE_OMIT_VIEW
+#  define VIEW       0
+#else
+#  define VIEW       0x00008000
 #endif
 
 
@@ -111,6 +116,7 @@ static Keyword aKeywordTable[] = {
   { "AFTER",            "TK_AFTER",        TRIGGER                },
   { "ALL",              "TK_ALL",          ALWAYS                 },
   { "ALTER",            "TK_ALTER",        ALTER                  },
+  { "ANALYZE",          "TK_ANALYZE",      ANALYZE                },
   { "AND",              "TK_AND",          ALWAYS                 },
   { "AS",               "TK_AS",           ALWAYS                 },
   { "ASC",              "TK_ASC",          ALWAYS                 },
