@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_CASE_SENSITIVE_LIKE\scompile-time\soption.\s(CVS\s2539)
-D 2005-07-08T13:53:22
+C Add\sthe\sEP_OptOnly\sflag\son\sexpressions\sfor\sWHERE\sclause\nterms\sthat\sare\sadded\sby\sthe\soptimizer\sbut\sshould\snot\sbe\scoded.\s(CVS\s2540)
+D 2005-07-08T14:14:23
 F Makefile.in 3c10cd7bc3ecbd60fe4d5a5c0f59bfa7fb217a66
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -64,7 +64,7 @@ F src/random.c 90adff4e73a3b249eb4f1fc2a6ff9cf78c7233a4
 F src/select.c 28b752e58955c7920711fbdbfdcd369a2bd09448
 F src/shell.c 25b3217d7c64e6497225439d261a253a23efff26
 F src/sqlite.h.in e06d5774e9cfa5962376ae988300a9f114a3e3d7
-F src/sqliteInt.h a5ad4b51d99ada5e065808670f7cef87264606df
+F src/sqliteInt.h b7b2f7fc2c24bcfcedd2c0981a685860f16eb90b
 F src/table.c 25b3ff2b39b7d87e8d4a5da0713d68dfc06cbee9
 F src/tclsqlite.c cccaf6b78c290d824cf8ea089b8b27377e545830
 F src/test1.c 83ead44dead55033adff61ce69a1e2fc3e72935e
@@ -85,7 +85,7 @@ F src/vdbeapi.c 7f392f0792d1258c958083d7de9eae7c3530c9a6
 F src/vdbeaux.c 3732a86566a6be4da4c606e9334baf3fd98667af
 F src/vdbefifo.c b8805850afe13b43f1de78d58088cb5d66f88e1e
 F src/vdbemem.c da8e8d6f29dd1323f782f000d7cd120027c9ff03
-F src/where.c 97f356317024597e684b750658f2e8822cb15f10
+F src/where.c e9c0c19052742d74783bdc8dba07ab42609debb7
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
 F test/all.test 7f0988442ab811dfa41793b5b550f5828ce316f3
 F test/alter.test 9d6837a3d946b73df692b7cef2a7644d2e2f6bc6
@@ -285,7 +285,7 @@ F www/tclsqlite.tcl 425be741b8ae664f55cb1ef2371aab0a75109cf9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P 94c120bb782fed53142317d1755e70c858930486
-R b0c32db552222c1fd1e02ca33b3a5bc8
+P b72bff81f9937378417a0af0610d8558279b67a7
+R c4fc77478fdb3a3d8e789b5f5aefe0b7
 U drh
-Z e8701805019a78e6817d706ed8df3c13
+Z bbe2b8533b9721f74ae254c674c04a75

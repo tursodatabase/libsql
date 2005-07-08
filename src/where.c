@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.140 2005/07/01 11:38:45 drh Exp $
+** $Id: where.c,v 1.141 2005/07/08 14:14:23 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1309,12 +1309,13 @@ WhereInfo *sqlite3WhereBegin(
     ** computed using the current set of tables.
     */
     for(pTerm=aExpr, j=0; j<nExpr; j++, pTerm++){
-      if( pTerm->p==0 ) continue;
+      Expr *pE = pTerm->p;
+      if( pE==0 || ExprHasProperty(pE, EP_OptOnly) ) continue;
       if( (pTerm->prereqAll & loopMask)!=pTerm->prereqAll ) continue;
-      if( pLevel->iLeftJoin && !ExprHasProperty(pTerm->p,EP_FromJoin) ){
+      if( pLevel->iLeftJoin && !ExprHasProperty(pE, EP_FromJoin) ){
         continue;
       }
-      sqlite3ExprIfFalse(pParse, pTerm->p, cont, 1);
+      sqlite3ExprIfFalse(pParse, pE, cont, 1);
       pTerm->p = 0;
     }
     brk = cont;
@@ -1328,9 +1329,10 @@ WhereInfo *sqlite3WhereBegin(
       sqlite3VdbeAddOp(v, OP_MemStore, pLevel->iLeftJoin, 1);
       VdbeComment((v, "# record LEFT JOIN hit"));
       for(pTerm=aExpr, j=0; j<nExpr; j++, pTerm++){
-        if( pTerm->p==0 ) continue;
+        Expr *pE = pTerm->p;
+        if( pE==0 || ExprHasProperty(pE, EP_OptOnly) ) continue;
         if( (pTerm->prereqAll & loopMask)!=pTerm->prereqAll ) continue;
-        sqlite3ExprIfFalse(pParse, pTerm->p, cont, 1);
+        sqlite3ExprIfFalse(pParse, pE, cont, 1);
         pTerm->p = 0;
       }
     }

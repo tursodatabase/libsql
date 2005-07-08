@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.390 2005/07/08 12:13:05 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.391 2005/07/08 14:14:23 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -838,12 +838,13 @@ struct Expr {
 /*
 ** The following are the meanings of bits in the Expr.flags field.
 */
-#define EP_FromJoin     0x0001  /* Originated in ON or USING clause of a join */
-#define EP_Agg          0x0002  /* Contains one or more aggregate functions */
-#define EP_Resolved     0x0004  /* IDs have been resolved to COLUMNs */
-#define EP_Error        0x0008  /* Expression contains one or more errors */
-#define EP_Not          0x0010  /* Operator preceeded by NOT */
-#define EP_VarSelect    0x0020  /* pSelect is correlated, not constant */
+#define EP_FromJoin     0x01  /* Originated in ON or USING clause of a join */
+#define EP_Agg          0x02  /* Contains one or more aggregate functions */
+#define EP_Resolved     0x04  /* IDs have been resolved to COLUMNs */
+#define EP_Error        0x08  /* Expression contains one or more errors */
+#define EP_Not          0x10  /* Operator preceeded by NOT */
+#define EP_VarSelect    0x20  /* pSelect is correlated, not constant */
+#define EP_OptOnly      0x40  /* A constraint used by the optimizer only */
 
 /*
 ** These macros can be used to test, set, or clear bits in the 
