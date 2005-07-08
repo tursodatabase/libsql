@@ -952,18 +952,6 @@ int sqlite3VdbeAggReset(sqlite3 *db, Agg *pAgg, KeyInfo *pKeyInfo){
   return SQLITE_OK;
 }
 
-
-/*
-** Delete a keylist
-*/
-void sqlite3VdbeKeylistFree(Keylist *p){
-  while( p ){
-    Keylist *pNext = p->pNext;
-    sqliteFree(p);
-    p = pNext;
-  }
-}
-
 /*
 ** Close a cursor and release all the resources that cursor happens
 ** to hold.
@@ -1010,13 +998,10 @@ static void Cleanup(Vdbe *p){
   }
   closeAllCursors(p);
   releaseMemArray(p->aMem, p->nMem);
-  if( p->pList ){
-    sqlite3VdbeKeylistFree(p->pList);
-    p->pList = 0;
-  }
+  sqlite3VdbeFifoClear(&p->sFifo);
   if( p->contextStack ){
     for(i=0; i<p->contextStackTop; i++){
-      sqlite3VdbeKeylistFree(p->contextStack[i].pList);
+      sqlite3VdbeFifoClear(&p->contextStack[i].sFifo);
     }
     sqliteFree(p->contextStack);
   }

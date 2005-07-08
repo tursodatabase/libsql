@@ -1,6 +1,6 @@
-C Add\sinfrastructure\sfor\sthe\sANALYZE\scommand.\s\sDoes\snot\syet\sactually\ndo\sanything.\s(CVS\s2537)
-D 2005-07-08T12:13:04
-F Makefile.in bc7bffc4ca6f09f2ffa9c9f5c43fc624fb566970
+C Replace\sOP_List\swith\sOP_Fifo.\s\sThis\sis\sthe\sfirst\sstep\stoward\sallowing\nrecursive\sdelete\striggers\sand\slater\sforeign\skeys\swith\scascading\sdeletes.\s(CVS\s2538)
+D 2005-07-08T13:08:00
+F Makefile.in 3c10cd7bc3ecbd60fe4d5a5c0f59bfa7fb217a66
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
 F VERSION 44fad0bf0996660a11bf8187361de03941d9b7b0
@@ -16,7 +16,7 @@ F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
-F main.mk 675e435ca670e30513907265cc9cc0c011b40c17
+F main.mk b2d38013a10e1c6a821e3d117294bf785deecf97
 F mkdll.sh 5ec23622515d5bf8969404e80cfb5e220ddf0512
 F mkopcodec.awk bd46ad001c98dfbab07b1713cb8e692fa0e5415d
 F mkopcodeh.awk 7563ad235670e864ead95cf672be3fe081450ae0
@@ -36,7 +36,7 @@ F src/btree.h 41a71ce027db9ddee72cb43df2316bbe3a1d92af
 F src/build.c 1f40c07a11e0a4eed1cef1ad4e52cf3f9770f220
 F src/callback.c 0910b611e0c158f107ee3ff86f8a371654971e2b
 F src/date.c 7444b0900a28da77e57e3337a636873cff0ae940
-F src/delete.c 9bb19ede439cf325bc6d6f5995b6393fb85b5162
+F src/delete.c 250d436a68fe371b4ab403d1c0f6fdc9a6860c39
 F src/experimental.c 50c1e3b34f752f4ac10c36f287db095c2b61766d
 F src/expr.c fdc8b82babbb266eeded4a314fd2f1d315133797
 F src/func.c cbdf7256400ac7d5f020d131261bb2bd41bb631f
@@ -74,15 +74,16 @@ F src/test4.c 7c6b9fc33dd1f3f93c7f1ee6e5e6d016afa6c1df
 F src/test5.c 64f08b2a50ef371a1bd68ff206829e7b1b9997f5
 F src/tokenize.c 57ec9926612fb9e325b57a141303573bc20c79bf
 F src/trigger.c f51dec15921629591cb98bf2e350018e268b109a
-F src/update.c e96c7b342cd8903c672162f4cf84d2c737943347
+F src/update.c 49a9c618c3ba1ca57038d9ce41f14e958442fe58
 F src/utf.c bda5eb85039ef16f2d17004c1e18c96e1ab0a80c
 F src/util.c 1acbe299cbe51f45176ac1e48ded9bea206c3c23
 F src/vacuum.c 829d9e1a6d7c094b80e0899686670932eafd768c
-F src/vdbe.c 56e892e351eb3ed634c3c239e4ad5c03aecfc2bf
+F src/vdbe.c 87dda3fc214e4828641dd53527777f1b7d37b85f
 F src/vdbe.h 75e466d84d362b0c4498978a9d6b1e6bd32ecf3b
-F src/vdbeInt.h 4312faf41630a6c215924b6c7c2f39ebb1af8ffb
+F src/vdbeInt.h 9be9a6c43d38124bd03cc5cf05715605b1789fd9
 F src/vdbeapi.c 7f392f0792d1258c958083d7de9eae7c3530c9a6
-F src/vdbeaux.c 38332d91887817a2146f46b58fff2a8a88ed0278
+F src/vdbeaux.c 3732a86566a6be4da4c606e9334baf3fd98667af
+F src/vdbefifo.c b8805850afe13b43f1de78d58088cb5d66f88e1e
 F src/vdbemem.c da8e8d6f29dd1323f782f000d7cd120027c9ff03
 F src/where.c 97f356317024597e684b750658f2e8822cb15f10
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
@@ -284,7 +285,7 @@ F www/tclsqlite.tcl 425be741b8ae664f55cb1ef2371aab0a75109cf9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P b34647a2ebec6f915f9914034e9370459873215e
-R e47c1bc2e59627b5b8cf84918bbd5426
+P 05b6ac9a76fd5765c50e81588f8e71c59fe35ce4
+R ad75c3dbc9b87159735faff9e7381646
 U drh
-Z 50fe8e6711c2298fa85b1472b5a9b5e5
+Z 29241e9900ff613d77be112c57ad8310

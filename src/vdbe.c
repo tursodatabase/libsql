@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.472 2005/06/25 18:42:15 drh Exp $
+** $Id: vdbe.c,v 1.473 2005/07/08 13:08:00 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -3975,86 +3975,35 @@ case OP_IntegrityCk: {
 }
 #endif /* SQLITE_OMIT_INTEGRITY_CHECK */
 
-/* Opcode: ListWrite * * *
+/* Opcode: FifoWrite * * *
 **
 ** Write the integer on the top of the stack
-** into the temporary storage list.
+** into the Fifo.
 */
-case OP_ListWrite: {        /* no-push */
-  Keylist *pKeylist;
+case OP_FifoWrite: {        /* no-push */
   assert( pTos>=p->aStack );
-  pKeylist = p->pList;
-  if( pKeylist==0 || pKeylist->nUsed>=pKeylist->nKey ){
-    pKeylist = sqliteMallocRaw( sizeof(Keylist)+999*sizeof(pKeylist->aKey[0]) );
-    if( pKeylist==0 ) goto no_mem;
-    pKeylist->nKey = 1000;
-    pKeylist->nRead = 0;
-    pKeylist->nUsed = 0;
-    pKeylist->pNext = p->pList;
-    p->pList = pKeylist;
-  }
   Integerify(pTos);
-  pKeylist->aKey[pKeylist->nUsed++] = pTos->i;
+  sqlite3VdbeFifoPush(&p->sFifo, pTos->i);
   assert( (pTos->flags & MEM_Dyn)==0 );
   pTos--;
   break;
 }
 
-/* Opcode: ListRewind * * *
+/* Opcode: FifoRead * P2 *
 **
-** Rewind the temporary buffer back to the beginning.
-*/
-case OP_ListRewind: {        /* no-push */
-  /* What this opcode codes, really, is reverse the order of the
-  ** linked list of Keylist structures so that they are read out
-  ** in the same order that they were read in. */
-  Keylist *pRev, *pTop;
-  pRev = 0;
-  while( p->pList ){
-    pTop = p->pList;
-    p->pList = pTop->pNext;
-    pTop->pNext = pRev;
-    pRev = pTop;
-  }
-  p->pList = pRev;
-  break;
-}
-
-/* Opcode: ListRead * P2 *
-**
-** Attempt to read an integer from the temporary storage buffer
-** and push it onto the stack.  If the storage buffer is empty, 
+** Attempt to read a single integer from the Fifo
+** and push it onto the stack.  If the Fifo is empty
 ** push nothing but instead jump to P2.
 */
-case OP_ListRead: {
-  Keylist *pKeylist;
+case OP_FifoRead: {
+  i64 v;
   CHECK_FOR_INTERRUPT;
-  pKeylist = p->pList;
-  if( pKeylist!=0 ){
-    assert( pKeylist->nRead>=0 );
-    assert( pKeylist->nRead<pKeylist->nUsed );
-    assert( pKeylist->nRead<pKeylist->nKey );
-    pTos++;
-    pTos->i = pKeylist->aKey[pKeylist->nRead++];
-    pTos->flags = MEM_Int;
-    if( pKeylist->nRead>=pKeylist->nUsed ){
-      p->pList = pKeylist->pNext;
-      sqliteFree(pKeylist);
-    }
-  }else{
+  if( sqlite3VdbeFifoPop(&p->sFifo, &v)==SQLITE_DONE ){
     pc = pOp->p2 - 1;
-  }
-  break;
-}
-
-/* Opcode: ListReset * * *
-**
-** Reset the temporary storage buffer so that it holds nothing.
-*/
-case OP_ListReset: {        /* no-push */
-  if( p->pList ){
-    sqlite3VdbeKeylistFree(p->pList);
-    p->pList = 0;
+  }else{
+    pTos++;
+    pTos->i = v;
+    pTos->flags = MEM_Int;
   }
   break;
 }
@@ -4105,8 +4054,8 @@ case OP_ContextPush: {        /* no-push */
   pContext = &p->contextStack[i];
   pContext->lastRowid = db->lastRowid;
   pContext->nChange = p->nChange;
-  pContext->pList = p->pList;
-  p->pList = 0;
+  pContext->sFifo = p->sFifo;
+  sqlite3VdbeFifoInit(&p->sFifo);
   break;
 }
 
@@ -4121,8 +4070,8 @@ case OP_ContextPop: {        /* no-push */
   assert( p->contextStackTop>=0 );
   db->lastRowid = pContext->lastRowid;
   p->nChange = pContext->nChange;
-  sqlite3VdbeKeylistFree(p->pList);
-  p->pList = pContext->pList;
+  sqlite3VdbeFifoClear(&p->sFifo);
+  p->sFifo = pContext->sFifo;
   break;
 }
 #endif /* #ifndef SQLITE_OMIT_TRIGGER */
