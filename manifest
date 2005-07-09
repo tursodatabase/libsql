@@ -1,5 +1,5 @@
-C Patch\sto\sMakefile.in\sso\sthat\sit\sworks\swith\sOS\sX.\s\sTicket\s#1292.\s(CVS\s2544)
-D 2005-07-09T02:23:24
+C Use\sthe\sinternal\ssqlite3_snprintf\sfunction\sinstead\sof\ssprintf\sto\savoid\ncross-platform\sincompatibilities.\s\sTicket\s#1316.\s(CVS\s2545)
+D 2005-07-09T02:38:06
 F Makefile.in 22ea9c0fe748f591712d8fe3c6d972c6c173a165
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -39,7 +39,7 @@ F src/date.c 7444b0900a28da77e57e3337a636873cff0ae940
 F src/delete.c 250d436a68fe371b4ab403d1c0f6fdc9a6860c39
 F src/experimental.c 50c1e3b34f752f4ac10c36f287db095c2b61766d
 F src/expr.c 94dce12d5228af02fdafc23e56abfeae25f3b694
-F src/func.c e6637354fe3a66dfac063a49109f277cde9ce87d
+F src/func.c 2be0799df0c05066a29e589485ebee0b3f756a15
 F src/hash.c 2b1b13f7400e179631c83a1be0c664608c8f021f
 F src/hash.h 1b0c445e1c89ff2aaad9b4605ba61375af001e84
 F src/insert.c c4533240451b73ead88098b5d819cb70fa0880bd
@@ -286,7 +286,7 @@ F www/tclsqlite.tcl 425be741b8ae664f55cb1ef2371aab0a75109cf9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P af2a0ba4a38abf208db1ff6f018cf756de2afd5b
-R e83a4a25b62e237fe0dca9d5c355a2d7
+P 0dfabca641371690027634213632c914ad6f2b8b
+R f2bd92771892506e624bc89e5334bf89
 U drh
-Z 85f7f8bce388cdee7c6f4c9ecdc109bf
+Z bcbafaf71e0fe45c5282af2c97082467
