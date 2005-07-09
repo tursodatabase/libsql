@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.392 2005/07/08 17:13:47 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.393 2005/07/09 02:16:03 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -208,6 +208,7 @@ typedef struct BusyHandler BusyHandler;
 struct BusyHandler {
   int (*xFunc)(void *,int);  /* The busy callback */
   void *pArg;                /* First arg to busy callback */
+  int nBusy;                 /* Incremented with each busy call */
 };
 
 /*
@@ -1567,6 +1568,7 @@ const char *sqlite3TestErrorName(int);
 CollSeq *sqlite3GetCollSeq(sqlite3*, CollSeq *, const char *, int);
 char sqlite3AffinityType(const Token*);
 void sqlite3Analyze(Parse*, Token*, Token*);
+int sqlite3InvokeBusyHandler(BusyHandler*);
 
 #ifdef SQLITE_SSE
 #include "sseInt.h"
