@@ -28,6 +28,7 @@ chng {2005 June 13 (3.2.2)} {
 up this operator in the standard build but users can add their own using
 sqlite3_create_function()</li>
 <li>Speed improvements and library footprint reductions.</li>
+<li>Fix byte alignment problems on 64-bit architectures.</li>
 <li>Many, many minor bug fixes and documentation updates.</li>
 }
 

@@ -1,5 +1,5 @@
-C Fix\sa\scomment\serror.\sNo\schanges\sto\scode.\s\sTicket\s#1320.\s(CVS\s2546)
-D 2005-07-09T02:39:40
+C Add\sremark\sin\sthe\schangelog\sthat\smentions\s64-bit\salignment\sfixes\sin\s3.2.2.\s(CVS\s2547)
+D 2005-07-09T23:11:22
 F Makefile.in 22ea9c0fe748f591712d8fe3c6d972c6c173a165
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -252,7 +252,7 @@ F www/autoinc.tcl b357f5ba954b046ee35392ce0f884a2fcfcdea06
 F www/c_interface.tcl b51b08591554c16a0c3ef718364a508ac25abc7e
 F www/capi3.tcl 7a7cc225fe02eb7ab861a6019b08baa0014409e1
 F www/capi3ref.tcl bf2ca74997fff2f460bc721c04165861e241a71a
-F www/changes.tcl 0bc369b91eb740ad0caa59ea9e0b8a640de56a4e
+F www/changes.tcl 8fb8a688e6233d03b354d3f47499f388b887c67c
 F www/common.tcl de758130d54d95d151ea0d17a2ae5b92e1bb01de
 F www/compile.tcl 276546d7eb445add5a867193bbd80f6919a6b084
 F www/conflict.tcl cdd0f4b59b0ba6d61f67e6a38f3ae45853bacb30
@@ -286,7 +286,7 @@ F www/tclsqlite.tcl 425be741b8ae664f55cb1ef2371aab0a75109cf9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P 431999da7bf0079e0d514483b3bfd9f8471cba7d
-R e4d720743c751a933ccdad30f4858bb6
+P e050af70adcdac8f9c9d8cffd1658f7fb2ebd362
+R 662b3e0396bacd3777004bbd43bcb29b
 U drh
-Z a3e0ae2e4608a4b92a340ee98717433c
+Z 5a79737ab58b3791b9922a49f322e864
