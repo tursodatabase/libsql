@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.142 2005/07/08 17:13:47 drh Exp $
+** $Id: where.c,v 1.143 2005/07/15 13:05:21 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -511,6 +511,19 @@ static void codeEqualityTerm(
 */
 #define BMS  (sizeof(Bitmask)*8-1)
 
+#ifdef SQLITE_TEST
+/*
+** The following variable holds a text description of query plan generated
+** by the most recent call to sqlite3WhereBegin().  Each call to WhereBegin
+** overwrites the previous.  This information is used for testing and
+** analysis only.
+*/
+char sqlite3_query_plan[BMS*2*40];  /* Text of the join */
+static int nQPlan = 0;              /* Next free slow in _query_plan[] */
+
+#endif /* SQLITE_TEST */
+
+
 
 /*
 ** Generate the beginning of the loop used for WHERE clause processing.
@@ -951,8 +964,48 @@ WhereInfo *sqlite3WhereBegin(
       sqlite3VdbeAddOp(v, OP_SetNumColumns, iIdxCur, pIx->nColumn+1);
     }
     sqlite3CodeVerifySchema(pParse, pTab->iDb);
+
+#ifdef SQLITE_TEST
+    /* Record in the query plan information about the current table
+    ** and the index used to access it (if any).  If the table itself
+    ** is not used, its name is followed by '*'.  If no index is used
+    ** the index is listed as "{}"
+    */
+    {
+      int n = strlen(pTab->zName);
+      if( n+nQPlan < sizeof(sqlite3_query_plan)-10 ){
+        strcpy(&sqlite3_query_plan[nQPlan], pTab->zName);
+        nQPlan += n;
+        if( (pLevel->score & 1)==0 ){
+          sqlite3_query_plan[nQPlan++] = '*';
+        }
+        sqlite3_query_plan[nQPlan++] = ' ';
+      }
+      if( pIx==0 ){
+        strcpy(&sqlite3_query_plan[nQPlan], " {}");
+        nQPlan += 3;
+      }else{
+        n = strlen(pIx->zName);
+        if( n+nQPlan < sizeof(sqlite3_query_plan)-2 ){
+          strcpy(&sqlite3_query_plan[nQPlan], pIx->zName);
+          nQPlan += n;
+          sqlite3_query_plan[nQPlan++] = ' ';
+        }
+      }
+    }
+#endif
   }
   pWInfo->iTop = sqlite3VdbeCurrentAddr(v);
+
+#ifdef SQLITE_TEST
+  /* Terminate the query plan description
+  */
+  while( nQPlan>0 && sqlite3_query_plan[nQPlan-1]==' ' ){
+    sqlite3_query_plan[--nQPlan] = 0;
+  }
+  sqlite3_query_plan[nQPlan] = 0;
+  nQPlan = 0;
+#endif
 
   /* Generate the code to do the search
   */

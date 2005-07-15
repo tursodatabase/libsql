@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.295 2005/07/09 02:16:03 drh Exp $
+** $Id: main.c,v 1.296 2005/07/15 13:05:21 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -550,11 +550,11 @@ void *sqlite3_commit_hook(
 ** opened and used.  If zFilename is the magic name ":memory:" then
 ** the database is stored in memory (and is thus forgotten as soon as
 ** the connection is closed.)  If zFilename is NULL then the database
-** is for temporary use only and is deleted as soon as the connection
-** is closed.
+** is a "virtual" database for transient use only and is deleted as
+** soon as the connection is closed.
 **
-** A temporary database can be either a disk file (that is automatically
-** deleted when the file is closed) or a set of red-black trees held in memory,
+** A virtual database can be either a disk file (that is automatically
+** deleted when the file is closed) or it an be held entirely in memory,
 ** depending on the values of the TEMP_STORE compile-time macro and the
 ** db->temp_store variable, according to the following chart:
 **
