@@ -1,5 +1,5 @@
-C Add\stest\sinstrumentation\sthat\swill\sbe\sneeded\sduring\sthe\sdevelopment\sof\nforthcoming\soptimizer\senhancements.\s(CVS\s2548)
-D 2005-07-15T13:05:21
+C Fix\sbugs\sin\sthe\snew\squery\splan\sinstrumention\slogic.\s(CVS\s2549)
+D 2005-07-15T23:24:24
 F Makefile.in 22ea9c0fe748f591712d8fe3c6d972c6c173a165
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -67,7 +67,7 @@ F src/sqlite.h.in 838382ed6b48d392366a55e07f49d9d71263e1fe
 F src/sqliteInt.h af65e8fac1fe8f6f78a65551081bafd49f6e0650
 F src/table.c 25b3ff2b39b7d87e8d4a5da0713d68dfc06cbee9
 F src/tclsqlite.c cccaf6b78c290d824cf8ea089b8b27377e545830
-F src/test1.c 889257e281064952943d54fd7c2f86d52e36cbbe
+F src/test1.c 1dea8df4abb846cb3a2ce8a6e13d8b32dbd31b16
 F src/test2.c 716c1809dba8e5be6093703e9cada99d627542dc
 F src/test3.c 683e1e3819152ffd35da2f201e507228921148d0
 F src/test4.c 7c6b9fc33dd1f3f93c7f1ee6e5e6d016afa6c1df
@@ -85,7 +85,7 @@ F src/vdbeapi.c 7f392f0792d1258c958083d7de9eae7c3530c9a6
 F src/vdbeaux.c 3732a86566a6be4da4c606e9334baf3fd98667af
 F src/vdbefifo.c b8805850afe13b43f1de78d58088cb5d66f88e1e
 F src/vdbemem.c da8e8d6f29dd1323f782f000d7cd120027c9ff03
-F src/where.c 878bf7f2e155ce56dec0e1401740e3c4b9ed0c96
+F src/where.c e6b7be981e79988b1586d8bcdebfd7840e6462f7
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
 F test/all.test 7f0988442ab811dfa41793b5b550f5828ce316f3
 F test/alter.test 9d6837a3d946b73df692b7cef2a7644d2e2f6bc6
@@ -223,7 +223,7 @@ F test/vacuum.test 5d4857ae2afc9c20d0edb8acc58bdc8d630126a9
 F test/vacuum2.test 5d77e98c458bcdbeecc6327de5107179ba1aa095
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/view.test 3c79232a2ee45918c62a0cf90411525899404a76
-F test/where.test 9de2426d0b8296b3aa7801cef5f81daf51f8e516
+F test/where.test 2d6e6ebeea7b95c0f0f1b0335a80c13a10592c6b
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/lemon.c c88936c67f6411608db8fa4254d254f509fa40f6
 F tool/lempar.c f0c30abcae762a7d1eb37cd88b2232ab8dd625fb
@@ -286,7 +286,7 @@ F www/tclsqlite.tcl 425be741b8ae664f55cb1ef2371aab0a75109cf9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P ead583cfad7c6ea84c3685d89f40104f4d33bc81
-R 3e8a508676bc28d1b35000f20bc57673
+P dfd5fd77b0764853f847eeee3c1fe047d60fee7e
+R 407e6021e72c837a936d4205fddd2503
 U drh
-Z 8bf5cdb836c3940fc9c9b2f203ba626d
+Z 0ce70505a05c8384502058350e244c6a
