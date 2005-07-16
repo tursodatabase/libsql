@@ -16,9 +16,20 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.144 2005/07/15 23:24:24 drh Exp $
+** $Id: where.c,v 1.145 2005/07/16 13:33:21 drh Exp $
 */
 #include "sqliteInt.h"
+
+/*
+** The number of bits in a Bitmask.  "BMS" means "BitMask Size".
+*/
+#define BMS  (sizeof(Bitmask)*8-1)
+
+/*
+** Determine the number of elements in an array.
+*/
+#define ARRAYSIZE(X)  (sizeof(X)/sizeof(X[0]))
+
 
 /*
 ** The query generator uses an array of instances of this structure to
@@ -27,7 +38,7 @@
 **
 ** The idxLeft and idxRight fields are the VDBE cursor numbers for the
 ** table that contains the column that appears on the left-hand and
-** right-hand side of ExprInfo.p.  If either side of ExprInfo.p is
+** right-hand side of WhereTerm.p.  If either side of WhereTerm.p is
 ** something other than a simple column reference, then idxLeft or
 ** idxRight are -1.  
 **
@@ -47,13 +58,13 @@
 ** would be mapped into integers 0 through 7.
 **
 ** prereqLeft tells us every VDBE cursor that is referenced on the
-** left-hand side of ExprInfo.p.  prereqRight does the same for the
+** left-hand side of WhereTerm.p.  prereqRight does the same for the
 ** right-hand side of the expression.  The following identity always
 ** holds:
 **
 **       prereqAll = prereqLeft | prereqRight
 **
-** The ExprInfo.indexable field is true if the ExprInfo.p expression
+** The WhereTerm.indexable field is true if the WhereTerm.p expression
 ** is of a form that might control an index.  Indexable expressions
 ** look like this:
 **
@@ -62,22 +73,41 @@
 ** Where <column> is a simple column name and <op> is on of the operators
 ** that allowedOp() recognizes.  
 */
-typedef struct ExprInfo ExprInfo;
-struct ExprInfo {
+typedef struct WhereTerm WhereTerm;
+struct WhereTerm {
   Expr *p;                /* Pointer to the subexpression */
+  u16 flags;              /* Bit flags.  See below */
   u8 indexable;           /* True if this subexprssion is usable by an index */
   short int idxLeft;      /* p->pLeft is a column in this table number. -1 if
-                          ** p->pLeft is not the column of any table */
+                          ** p->pLeft is not a column of any table */
   short int idxRight;     /* p->pRight is a column in this table number. -1 if
-                          ** p->pRight is not the column of any table */
+                          ** p->pRight is not a column of any table */
   Bitmask prereqLeft;     /* Bitmask of tables referenced by p->pLeft */
   Bitmask prereqRight;    /* Bitmask of tables referenced by p->pRight */
   Bitmask prereqAll;      /* Bitmask of tables referenced by p */
 };
 
 /*
+** Allowed values of WhereTerm.flags
+*/
+#define TERM_DYNAMIC    0x0001   /* Need to call sqlite3ExprDelete(p) */
+#define TERM_VIRTUAL    0x0002   /* Added by the optimizer.  Do not code */
+
+/*
+** An instance of the following structure holds all information about a
+** WHERE clause.  Mostly this is a container for one or more WhereTerms.
+*/
+typedef struct WhereClause WhereClause;
+struct WhereClause {
+  int nTerm;               /* Number of terms */
+  int nSlot;               /* Number of entries in a[] */
+  WhereTerm *a;            /* Pointer to an array of terms */
+  WhereTerm aStatic[10];   /* Initial static space for the terms */
+};
+
+/*
 ** An instance of the following structure keeps track of a mapping
-** between VDBE cursor numbers and bits of the bitmasks in ExprInfo.
+** between VDBE cursor numbers and bits of the bitmasks in WhereTerm.
 **
 ** The VDBE cursor numbers are small integers contained in 
 ** SrcList_item.iCursor and Expr.iTable fields.  For any given WHERE 
@@ -107,10 +137,53 @@ struct ExprMaskSet {
   int ix[sizeof(Bitmask)*8];    /* Cursor assigned to each bit */
 };
 
+
 /*
-** Determine the number of elements in an array.
+** Initialize a preallocated WhereClause structure.
 */
-#define ARRAYSIZE(X)  (sizeof(X)/sizeof(X[0]))
+static void whereClauseInit(WhereClause *pWC){
+  pWC->nTerm = 0;
+  pWC->nSlot = ARRAYSIZE(pWC->aStatic);
+  pWC->a = pWC->aStatic;
+}
+
+/*
+** Deallocate a WhereClause structure.  The WhereClause structure
+** itself is not freed.  This routine is the inverse of whereClauseInit().
+*/
+static void whereClauseClear(WhereClause *pWC){
+  int i;
+  WhereTerm *a;
+  for(i=pWC->nTerm-1, a=pWC->a; i>=0; i--, a++){
+    if( a->flags & TERM_DYNAMIC ){
+      sqlite3ExprDelete(a->p);
+    }
+  }
+  if( pWC->a!=pWC->aStatic ){
+    sqliteFree(pWC->a);
+  }
+}
+
+/*
+** Add a new entries to the WhereClause structure.  Increase the allocated
+** space as necessary.
+*/
+static void whereClauseInsert(WhereClause *pWC, Expr *p, int flags){
+  WhereTerm *pTerm;
+  if( pWC->nTerm>=pWC->nSlot ){
+    WhereTerm *pOld = pWC->a;
+    pWC->a = sqliteMalloc( sizeof(pWC->a[0])*pWC->nSlot*2 );
+    if( pWC->a==0 ) return;
+    memcpy(pWC->a, pOld, sizeof(pWC->a[0])*pWC->nTerm);
+    if( pOld!=pWC->aStatic ){
+      sqliteFree(pOld);
+    }
+    pWC->nSlot *= 2;
+  }
+  pTerm = &pWC->a[pWC->nTerm++];
+  pTerm->p = p;
+  pTerm->flags = flags;
+}
 
 /*
 ** This routine identifies subexpressions in the WHERE clause where
@@ -129,21 +202,14 @@ struct ExprMaskSet {
 ** subexpressions as it can and puts pointers to those subexpressions
 ** into aSlot[] entries.  The return value is the number of slots filled.
 */
-static int exprSplit(int nSlot, ExprInfo *aSlot, Expr *pExpr){
-  int cnt = 0;
-  if( pExpr==0 || nSlot<1 ) return 0;
-  if( nSlot==1 || pExpr->op!=TK_AND ){
-    aSlot[0].p = pExpr;
-    return 1;
-  }
-  if( pExpr->pLeft->op!=TK_AND ){
-    aSlot[0].p = pExpr->pLeft;
-    cnt = 1 + exprSplit(nSlot-1, &aSlot[1], pExpr->pRight);
+static void whereSplit(WhereClause *pWC, Expr *pExpr){
+  if( pExpr==0 ) return;
+  if( pExpr->op!=TK_AND ){
+    whereClauseInsert(pWC, pExpr, 0);
   }else{
-    cnt = exprSplit(nSlot, aSlot, pExpr->pLeft);
-    cnt += exprSplit(nSlot-cnt, &aSlot[cnt], pExpr->pRight);
+    whereSplit(pWC, pExpr->pLeft);
+    whereSplit(pWC, pExpr->pRight);
   }
-  return cnt;
 }
 
 /*
@@ -257,12 +323,12 @@ static int tableOrder(SrcList *pList, int iCur){
 }
 
 /*
-** The input to this routine is an ExprInfo structure with only the
+** The input to this routine is an WhereTerm structure with only the
 ** "p" field filled in.  The job of this routine is to analyze the
-** subexpression and populate all the other fields of the ExprInfo
+** subexpression and populate all the other fields of the WhereTerm
 ** structure.
 */
-static void exprAnalyze(SrcList *pSrc, ExprMaskSet *pMaskSet, ExprInfo *pInfo){
+static void exprAnalyze(SrcList *pSrc, ExprMaskSet *pMaskSet, WhereTerm *pInfo){
   Expr *pExpr = pInfo->p;
   pInfo->prereqLeft = exprTableUsage(pMaskSet, pExpr->pLeft);
   pInfo->prereqRight = exprTableUsage(pMaskSet, pExpr->pRight);
@@ -481,7 +547,7 @@ static void buildIndexProbe(Vdbe *v, int nColumn, int brk, Index *pIdx){
 */
 static void codeEqualityTerm(
   Parse *pParse,      /* The parsing context */
-  ExprInfo *pTerm,    /* The term of the WHERE clause to be coded */
+  WhereTerm *pTerm,    /* The term of the WHERE clause to be coded */
   int brk,            /* Jump here to abandon the loop */
   WhereLevel *pLevel  /* When level of the FROM clause we are working on */
 ){
@@ -505,11 +571,6 @@ static void codeEqualityTerm(
   }
   disableTerm(pLevel, &pTerm->p);
 }
-
-/*
-** The number of bits in a Bitmask.  "BMS" means "BitMask Size".
-*/
-#define BMS  (sizeof(Bitmask)*8-1)
 
 #ifdef SQLITE_TEST
 /*
@@ -617,14 +678,13 @@ WhereInfo *sqlite3WhereBegin(
   WhereInfo *pWInfo;         /* Will become the return value of this function */
   Vdbe *v = pParse->pVdbe;   /* The virtual database engine */
   int brk, cont = 0;         /* Addresses used during code generation */
-  int nExpr;           /* Number of subexpressions in the WHERE clause */
-  Bitmask loopMask;    /* One bit set for each outer loop */
-  ExprInfo *pTerm;     /* A single term in the WHERE clause; ptr to aExpr[] */
-  ExprMaskSet maskSet; /* The expression mask set */
-  int iDirectEq[BMS];  /* Term of the form ROWID==X for the N-th table */
-  int iDirectLt[BMS];  /* Term of the form ROWID<X or ROWID<=X */
-  int iDirectGt[BMS];  /* Term of the form ROWID>X or ROWID>=X */
-  ExprInfo aExpr[101]; /* The WHERE clause is divided into these terms */
+  Bitmask loopMask;          /* One bit set for each outer loop */
+  WhereTerm *pTerm;          /* A single term in the WHERE clause */
+  ExprMaskSet maskSet;       /* The expression mask set */
+  int iDirectEq[BMS];        /* Term of the form ROWID==X for the N-th table */
+  int iDirectLt[BMS];        /* Term of the form ROWID<X or ROWID<=X */
+  int iDirectGt[BMS];        /* Term of the form ROWID>X or ROWID>=X */
+  WhereClause wc;            /* The WHERE clause is divided into these terms */
   struct SrcList_item *pTabItem;  /* A single entry from pTabList */
   WhereLevel *pLevel;             /* A single level in the pWInfo list */
 
@@ -638,18 +698,13 @@ WhereInfo *sqlite3WhereBegin(
   }
 
   /* Split the WHERE clause into separate subexpressions where each
-  ** subexpression is separated by an AND operator.  If the aExpr[]
+  ** subexpression is separated by an AND operator.  If the wc.a[]
   ** array fills up, the last entry might point to an expression which
   ** contains additional unfactored AND operators.
   */
   initMaskSet(&maskSet);
-  memset(aExpr, 0, sizeof(aExpr));
-  nExpr = exprSplit(ARRAYSIZE(aExpr), aExpr, pWhere);
-  if( nExpr==ARRAYSIZE(aExpr) ){
-    sqlite3ErrorMsg(pParse, "WHERE clause too complex - no more "
-       "than %d terms allowed", (int)ARRAYSIZE(aExpr)-1);
-    return 0;
-  }
+  whereClauseInit(&wc);
+  whereSplit(&wc, pWhere);
     
   /* Allocate and initialize the WhereInfo structure that will become the
   ** return value.
@@ -657,6 +712,7 @@ WhereInfo *sqlite3WhereBegin(
   pWInfo = sqliteMalloc( sizeof(WhereInfo) + pTabList->nSrc*sizeof(WhereLevel));
   if( sqlite3_malloc_failed ){
     sqliteFree(pWInfo); /* Avoid leaking memory when malloc fails */
+    whereClauseClear(&wc);
     return 0;
   }
   pWInfo->pParse = pParse;
@@ -676,7 +732,7 @@ WhereInfo *sqlite3WhereBegin(
   for(i=0; i<pTabList->nSrc; i++){
     createMask(&maskSet, pTabList->a[i].iCursor);
   }
-  for(pTerm=aExpr, i=0; i<nExpr; i++, pTerm++){
+  for(pTerm=wc.a, i=0; i<wc.nTerm; i++, pTerm++){
     exprAnalyze(pTabList, &maskSet, pTerm);
   }
 
@@ -721,7 +777,7 @@ WhereInfo *sqlite3WhereBegin(
     iDirectEq[i] = -1;
     iDirectLt[i] = -1;
     iDirectGt[i] = -1;
-    for(pTerm=aExpr, j=0; j<nExpr; j++, pTerm++){
+    for(pTerm=wc.a, j=0; j<wc.nTerm; j++, pTerm++){
       Expr *pX = pTerm->p;
       if( pTerm->idxLeft==iCur && pX->pLeft->iColumn<0
             && (pTerm->prereqRight & loopMask)==pTerm->prereqRight ){
@@ -792,7 +848,7 @@ WhereInfo *sqlite3WhereBegin(
       if( pIdx->nColumn>sizeof(eqMask)*8 ){
         continue;  /* Ignore indices with too many columns to analyze */
       }
-      for(pTerm=aExpr, j=0; j<nExpr; j++, pTerm++){
+      for(pTerm=wc.a, j=0; j<wc.nTerm; j++, pTerm++){
         Expr *pX = pTerm->p;
         CollSeq *pColl = sqlite3ExprCollSeq(pParse, pX->pLeft);
         if( !pColl && pX->pRight ){
@@ -1051,8 +1107,8 @@ WhereInfo *sqlite3WhereBegin(
       **          we reference multiple rows using a "rowid IN (...)"
       **          construct.
       */
-      assert( k<nExpr );
-      pTerm = &aExpr[k];
+      assert( k<wc.nTerm );
+      pTerm = &wc.a[k];
       assert( pTerm->p!=0 );
       assert( pTerm->idxLeft==iCur );
       assert( omitTable==0 );
@@ -1073,9 +1129,9 @@ WhereInfo *sqlite3WhereBegin(
 
       /* For each column of the index, find the term of the WHERE clause that
       ** constraints that column.  If the WHERE clause term is X=expr, then
-      ** evaluation expr and leave the result on the stack */
+      ** generate code to evaluate expr and leave the result on the stack */
       for(j=0; j<nColumn; j++){
-        for(pTerm=aExpr, k=0; k<nExpr; k++, pTerm++){
+        for(pTerm=wc.a, k=0; k<wc.nTerm; k++, pTerm++){
           Expr *pX = pTerm->p;
           if( pX==0 ) continue;
           if( pTerm->idxLeft==iCur
@@ -1140,8 +1196,8 @@ WhereInfo *sqlite3WhereBegin(
       if( iDirectGt[i]>=0 ){
         Expr *pX;
         k = iDirectGt[i];
-        assert( k<nExpr );
-        pTerm = &aExpr[k];
+        assert( k<wc.nTerm );
+        pTerm = &wc.a[k];
         pX = pTerm->p;
         assert( pX!=0 );
         assert( pTerm->idxLeft==iCur );
@@ -1156,8 +1212,8 @@ WhereInfo *sqlite3WhereBegin(
       if( iDirectLt[i]>=0 ){
         Expr *pX;
         k = iDirectLt[i];
-        assert( k<nExpr );
-        pTerm = &aExpr[k];
+        assert( k<wc.nTerm );
+        pTerm = &wc.a[k];
         pX = pTerm->p;
         assert( pX!=0 );
         assert( pTerm->idxLeft==iCur );
@@ -1223,7 +1279,7 @@ WhereInfo *sqlite3WhereBegin(
       */
       for(j=0; j<nEqColumn; j++){
         int iIdxCol = pIdx->aiColumn[j];
-        for(pTerm=aExpr, k=0; k<nExpr; k++, pTerm++){
+        for(pTerm=wc.a, k=0; k<wc.nTerm; k++, pTerm++){
           Expr *pX = pTerm->p;
           if( pX==0 ) continue;
           if( pTerm->idxLeft==iCur
@@ -1259,7 +1315,7 @@ WhereInfo *sqlite3WhereBegin(
       ** key computed here really ends up being the start key.
       */
       if( (score & 4)!=0 ){
-        for(pTerm=aExpr, k=0; k<nExpr; k++, pTerm++){
+        for(pTerm=wc.a, k=0; k<wc.nTerm; k++, pTerm++){
           Expr *pX = pTerm->p;
           if( pX==0 ) continue;
           if( pTerm->idxLeft==iCur
@@ -1302,7 +1358,7 @@ WhereInfo *sqlite3WhereBegin(
       ** "start" key really ends up being used as the termination key.
       */
       if( (score & 8)!=0 ){
-        for(pTerm=aExpr, k=0; k<nExpr; k++, pTerm++){
+        for(pTerm=wc.a, k=0; k<wc.nTerm; k++, pTerm++){
           Expr *pX = pTerm->p;
           if( pX==0 ) continue;
           if( pTerm->idxLeft==iCur
@@ -1366,7 +1422,7 @@ WhereInfo *sqlite3WhereBegin(
     /* Insert code to test every subexpression that can be completely
     ** computed using the current set of tables.
     */
-    for(pTerm=aExpr, j=0; j<nExpr; j++, pTerm++){
+    for(pTerm=wc.a, j=0; j<wc.nTerm; j++, pTerm++){
       Expr *pE = pTerm->p;
       if( pE==0 || ExprHasProperty(pE, EP_OptOnly) ) continue;
       if( (pTerm->prereqAll & loopMask)!=pTerm->prereqAll ) continue;
@@ -1386,7 +1442,7 @@ WhereInfo *sqlite3WhereBegin(
       sqlite3VdbeAddOp(v, OP_Integer, 1, 0);
       sqlite3VdbeAddOp(v, OP_MemStore, pLevel->iLeftJoin, 1);
       VdbeComment((v, "# record LEFT JOIN hit"));
-      for(pTerm=aExpr, j=0; j<nExpr; j++, pTerm++){
+      for(pTerm=wc.a, j=0; j<wc.nTerm; j++, pTerm++){
         Expr *pE = pTerm->p;
         if( pE==0 || ExprHasProperty(pE, EP_OptOnly) ) continue;
         if( (pTerm->prereqAll & loopMask)!=pTerm->prereqAll ) continue;
@@ -1397,6 +1453,7 @@ WhereInfo *sqlite3WhereBegin(
   }
   pWInfo->iContinue = cont;
   freeMaskSet(&maskSet);
+  whereClauseClear(&wc);
   return pWInfo;
 }
 
