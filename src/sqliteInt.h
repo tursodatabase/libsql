@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.393 2005/07/09 02:16:03 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.394 2005/07/19 17:38:23 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -845,7 +845,6 @@ struct Expr {
 #define EP_Error        0x08  /* Expression contains one or more errors */
 #define EP_Not          0x10  /* Operator preceeded by NOT */
 #define EP_VarSelect    0x20  /* pSelect is correlated, not constant */
-#define EP_OptOnly      0x40  /* A constraint used by the optimizer only */
 
 /*
 ** These macros can be used to test, set, or clear bits in the 
