@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.146 2005/07/19 17:38:23 drh Exp $
+** $Id: where.c,v 1.147 2005/07/19 22:22:13 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -550,6 +550,35 @@ static void buildIndexProbe(Vdbe *v, int nColumn, int brk, Index *pIdx){
   sqlite3VdbeAddOp(v, OP_MakeRecord, nColumn, 0);
   sqlite3IndexAffinityStr(v, pIdx);
 }
+
+/*
+** Search for a term in the WHERE clause that is of the form "X <op> <expr>"
+** where X is a reference to the iColumn of table iCur and <op> is either
+** op1 or op2.  Return a pointer to the term.
+*/
+static WhereTerm *findTerm(
+  WhereClause *pWC,     /* The WHERE clause to be searched */
+  int iCur,             /* Cursor number of LHS */
+  int iColumn,          /* Column number of LHS */
+  Bitmask loopMask,     /* RHS must not overlap with this mask */
+  u8 op1, u8 op2        /* Expression must use either of these opcodes */
+){
+  WhereTerm *pTerm;
+  int k;
+  for(pTerm=pWC->a, k=pWC->nTerm; k; k--, pTerm++){
+    u8 op = pTerm->pExpr->op;
+    if( pTerm->leftCursor==iCur
+       && (pTerm->prereqRight & loopMask)==0
+       && pTerm->leftColumn==iColumn
+       && (op==op1 || op==op2)
+    ){
+      break;
+    }
+  }
+  assert( k>0 );  /* The search is always successful */
+  return pTerm;
+}
+
 
 /*
 ** Generate code for an equality term of the WHERE clause.  An equality
@@ -1139,22 +1168,10 @@ WhereInfo *sqlite3WhereBegin(
       ** constraints that column.  If the WHERE clause term is X=expr, then
       ** generate code to evaluate expr and leave the result on the stack */
       for(j=0; j<nColumn; j++){
-        for(pTerm=wc.a, k=0; k<wc.nTerm; k++, pTerm++){
-          Expr *pX = pTerm->pExpr;
-          assert( pX );
-          if( pTerm->leftCursor==iCur
-             && (pTerm->prereqRight & loopMask)==0
-             && pTerm->leftColumn==pIdx->aiColumn[j]
-             && (pX->op==TK_EQ || pX->op==TK_IN)
-          ){
-            char idxaff = pIdx->pTable->aCol[pTerm->leftColumn].affinity;
-            assert( (pTerm->flags & TERM_CODED)==0 );
-            if( sqlite3IndexAffinityOk(pX, idxaff) ){
-              codeEqualityTerm(pParse, pTerm, brk, pLevel);
-              break;
-            }
-          }
-        }
+        pTerm = findTerm(&wc, iCur, pIdx->aiColumn[j], loopMask, TK_EQ, TK_IN);
+        assert( pTerm!=0 );
+        assert( (pTerm->flags & TERM_CODED)==0 );
+        codeEqualityTerm(pParse, pTerm, brk, pLevel);
       }
       pLevel->iMem = pParse->nMem++;
       cont = pLevel->cont = sqlite3VdbeMakeLabel(v);
@@ -1287,21 +1304,11 @@ WhereInfo *sqlite3WhereBegin(
       /* Evaluate the equality constraints
       */
       for(j=0; j<nEqColumn; j++){
-        int iIdxCol = pIdx->aiColumn[j];
-        for(pTerm=wc.a, k=0; k<wc.nTerm; k++, pTerm++){
-          Expr *pX;
-          if( pTerm->leftCursor==iCur
-             && pTerm->leftColumn==iIdxCol
-             && (pX = pTerm->pExpr)->op==TK_EQ
-             && (pTerm->prereqRight & loopMask)==0
-          ){
-            assert( (pTerm->flags & TERM_CODED)==0 );
-            sqlite3ExprCode(pParse, pX->pRight);
-            disableTerm(pLevel, pTerm);
-            break;
-          }
-        }
-        assert( k<wc.nTerm );
+        pTerm = findTerm(&wc, iCur, pIdx->aiColumn[j], loopMask, TK_EQ, TK_EQ);
+        assert( pTerm!=0 );
+        assert( (pTerm->flags & TERM_CODED)==0 );
+        sqlite3ExprCode(pParse, pTerm->pExpr->pRight);
+        disableTerm(pLevel, pTerm);
       }
 
       /* Duplicate the equality term values because they will all be
@@ -1325,22 +1332,14 @@ WhereInfo *sqlite3WhereBegin(
       ** key computed here really ends up being the start key.
       */
       if( (score & 4)!=0 ){
-        for(pTerm=wc.a, k=0; k<wc.nTerm; k++, pTerm++){
-          Expr *pX = pTerm->pExpr;
-          assert( pX );
-          if( pTerm->leftCursor==iCur
-             && (pX->op==TK_LT || pX->op==TK_LE)
-             && (pTerm->prereqRight & loopMask)==0
-             && pTerm->leftColumn==pIdx->aiColumn[j]
-          ){
-            assert( (pTerm->flags & TERM_CODED)==0 );
-            sqlite3ExprCode(pParse, pX->pRight);
-            leFlag = pX->op==TK_LE;
-            disableTerm(pLevel, pTerm);
-            break;
-          }
-        }
-        assert( k<wc.nTerm );
+        Expr *pX;
+        pTerm = findTerm(&wc, iCur, pIdx->aiColumn[j], loopMask, TK_LT, TK_LE);
+        assert( pTerm!=0 );
+        pX = pTerm->pExpr;
+        assert( (pTerm->flags & TERM_CODED)==0 );
+        sqlite3ExprCode(pParse, pX->pRight);
+        leFlag = pX->op==TK_LE;
+        disableTerm(pLevel, pTerm);
         testOp = OP_IdxGE;
       }else{
         testOp = nEqColumn>0 ? OP_IdxGE : OP_Noop;
@@ -1370,21 +1369,14 @@ WhereInfo *sqlite3WhereBegin(
       ** "start" key really ends up being used as the termination key.
       */
       if( (score & 8)!=0 ){
-        for(pTerm=wc.a, k=0; k<wc.nTerm; k++, pTerm++){
-          Expr *pX = pTerm->pExpr;
-          assert( pX );
-          if( pTerm->leftCursor==iCur
-             && (pX->op==TK_GT || pX->op==TK_GE)
-             && (pTerm->prereqRight & loopMask)==0
-             && pTerm->leftColumn==pIdx->aiColumn[j]
-          ){
-            assert( (pTerm->flags & TERM_CODED)==0 );
-            sqlite3ExprCode(pParse, pX->pRight);
-            geFlag = pX->op==TK_GE;
-            disableTerm(pLevel, pTerm);
-            break;
-          }
-        }
+        Expr *pX;
+        pTerm = findTerm(&wc, iCur, pIdx->aiColumn[j], loopMask, TK_GT, TK_GE);
+        assert( pTerm!=0 );
+        pX = pTerm->pExpr;
+        assert( (pTerm->flags & TERM_CODED)==0 );
+        sqlite3ExprCode(pParse, pX->pRight);
+        geFlag = pX->op==TK_GE;
+        disableTerm(pLevel, pTerm);
       }else{
         geFlag = 1;
       }
