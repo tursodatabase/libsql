@@ -1,5 +1,5 @@
-C More\srefactoring\sin\swhere.c.\s(CVS\s2552)
-D 2005-07-19T22:22:13
+C Extra\smemory\susage\sinstrumentation\sadded.\s(CVS\s2553)
+D 2005-07-20T14:31:53
 F Makefile.in 22ea9c0fe748f591712d8fe3c6d972c6c173a165
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -67,7 +67,7 @@ F src/sqlite.h.in 838382ed6b48d392366a55e07f49d9d71263e1fe
 F src/sqliteInt.h 97d50f5714a5f5a8190b871305e33a96c4638a8a
 F src/table.c 25b3ff2b39b7d87e8d4a5da0713d68dfc06cbee9
 F src/tclsqlite.c cccaf6b78c290d824cf8ea089b8b27377e545830
-F src/test1.c 1dea8df4abb846cb3a2ce8a6e13d8b32dbd31b16
+F src/test1.c 722c1444b5774705eb6eb11163343fc94ffe17f7
 F src/test2.c 716c1809dba8e5be6093703e9cada99d627542dc
 F src/test3.c 683e1e3819152ffd35da2f201e507228921148d0
 F src/test4.c 7c6b9fc33dd1f3f93c7f1ee6e5e6d016afa6c1df
@@ -76,7 +76,7 @@ F src/tokenize.c 57ec9926612fb9e325b57a141303573bc20c79bf
 F src/trigger.c f51dec15921629591cb98bf2e350018e268b109a
 F src/update.c 49a9c618c3ba1ca57038d9ce41f14e958442fe58
 F src/utf.c bda5eb85039ef16f2d17004c1e18c96e1ab0a80c
-F src/util.c 1acbe299cbe51f45176ac1e48ded9bea206c3c23
+F src/util.c 668d31be592753e5b8ea00e69ea8d3eedb29fa22
 F src/vacuum.c 829d9e1a6d7c094b80e0899686670932eafd768c
 F src/vdbe.c 7b41a1979d3421dbbe34a3a48970b4e75fb1d634
 F src/vdbe.h 75e466d84d362b0c4498978a9d6b1e6bd32ecf3b
@@ -286,7 +286,7 @@ F www/tclsqlite.tcl 425be741b8ae664f55cb1ef2371aab0a75109cf9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P 57c6bd3760163c174be4a2ece58f414e82b55938
-R 3cdcdb6928aa7a2c42a275a913941b5a
+P a35bd50af8961133adc66e40c38402e81a02bb56
+R 73dbc3e4bd94a516434db925353f0d59
 U drh
-Z b929286800f2e064fa91faa90163e11f
+Z b94984498572a6b7851afac6f92deee0

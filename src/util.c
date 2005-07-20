@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.140 2005/06/29 17:24:24 drh Exp $
+** $Id: util.c,v 1.141 2005/07/20 14:31:53 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -58,6 +58,8 @@ int sqlite3_malloc_failed = 0;
 */
 int sqlite3_nMalloc;         /* Number of sqliteMalloc() calls */
 int sqlite3_nFree;           /* Number of sqliteFree() calls */
+int sqlite3_memUsed;         /* Total memory obtained from malloc */
+int sqlite3_memMax;          /* Mem usage high-water mark */
 int sqlite3_iMallocFail;     /* Fail sqliteMalloc() after this many calls */
 int sqlite3_iMallocReset = -1; /* When iMallocFail reaches 0, set to this */
 #if SQLITE_MEMDEBUG>1
@@ -92,6 +94,8 @@ void *sqlite3Malloc_(int n, int bZero, char *zFile, int line){
     }
   }
   if( n==0 ) return 0;
+  sqlite3_memUsed += n;
+  if( sqlite3_memMax<sqlite3_memUsed ) sqlite3_memMax = sqlite3_memUsed;
   k = (n+sizeof(int)-1)/sizeof(int);
   pi = malloc( (N_GUARD*2+1+k)*sizeof(int));
   if( pi==0 ){
@@ -157,6 +161,7 @@ void sqlite3Free_(void *p, char *zFile, int line){
       }
     }
     n = pi[N_GUARD];
+    sqlite3_memUsed -= n;
     k = (n+sizeof(int)-1)/sizeof(int);
     for(i=0; i<N_GUARD; i++){
       if( pi[k+N_GUARD+1+i]!=0xdead3344 ){
@@ -195,6 +200,7 @@ void *sqlite3Realloc_(void *oldP, int n, char *zFile, int line){
     return 0;
   }
   oldN = oldPi[N_GUARD];
+  sqlite3_memUsed -= oldN;
   oldK = (oldN+sizeof(int)-1)/sizeof(int);
   for(i=0; i<N_GUARD; i++){
     if( oldPi[oldK+N_GUARD+1+i]!=0xdead3344 ){
@@ -211,6 +217,8 @@ void *sqlite3Realloc_(void *oldP, int n, char *zFile, int line){
   }
   for(i=0; i<N_GUARD; i++) pi[i] = 0xdead1122;
   pi[N_GUARD] = n;
+  sqlite3_memUsed += n;
+  if( sqlite3_memMax<sqlite3_memUsed ) sqlite3_memMax = sqlite3_memUsed;
   for(i=0; i<N_GUARD; i++) pi[k+N_GUARD+1+i] = 0xdead3344;
   p = &pi[N_GUARD+1];
   memcpy(p, oldP, n>oldN ? oldN : n);
