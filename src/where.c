@@ -16,14 +16,14 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.149 2005/07/21 03:48:20 drh Exp $
+** $Id: where.c,v 1.150 2005/07/21 18:23:20 drh Exp $
 */
 #include "sqliteInt.h"
 
 /*
 ** The number of bits in a Bitmask.  "BMS" means "BitMask Size".
 */
-#define BMS  (sizeof(Bitmask)*8-1)
+#define BMS  (sizeof(Bitmask)*8)
 
 /*
 ** Determine the number of elements in an array.
@@ -33,22 +33,6 @@
 /* Forward reference
 */
 typedef struct WhereClause WhereClause;
-
-/*
-** An instance of the following structure holds information about how well
-** a particular index helps in a search.  A list of such structures is
-** attached to each SrcList_item of a SrcList.
-*/
-struct WhereIdx {
-  Index *pIdx;      /* The index under consideration */
-  Bitmask prereq;   /* Prerequesite FROM clause elements for using this index */
-  int nEqTerm;      /* Number of Idx column constrainted by == or IN */
-  int nTerm;        /* Total number of Index Columns used */
-  int flags;        /* Flags.  See below */
-  double rRowEst;   /* Estimated number of rows selected */
-  double rScore;    /* Score of this index */
-  WhereIdx *pNext;  /* Next WhereIdx on the same FROM clause element */
-};
 
 /*
 ** The query generator uses an array of instances of this structure to
@@ -900,6 +884,10 @@ static int nQPlan = 0;              /* Next free slow in _query_plan[] */
 **        end                        |-- by sqlite3WhereEnd()
 **      end                         /
 **
+** Note that the loops might not be nested in the order in which they
+** appear in the FROM clause if a different order is better able to make
+** use of indices.
+**
 ** There are Btree cursors associated with each table.  t1 uses cursor
 ** number pTabList->a[0].iCursor.  t2 uses the cursor pTabList->a[1].iCursor.
 ** And so forth.  This routine generates code to open those VDBE cursors
@@ -972,20 +960,18 @@ WhereInfo *sqlite3WhereBegin(
   WhereClause wc;            /* The WHERE clause is divided into these terms */
   struct SrcList_item *pTabItem;  /* A single entry from pTabList */
   WhereLevel *pLevel;             /* A single level in the pWInfo list */
+  int iFrom;                      /* First unused FROM clause element */
 
-  /* The number of terms in the FROM clause is limited by the number of
+  /* The number of tables in the FROM clause is limited by the number of
   ** bits in a Bitmask 
   */
-  if( pTabList->nSrc>sizeof(Bitmask)*8 ){
-    sqlite3ErrorMsg(pParse, "at most %d tables in a join",
-       sizeof(Bitmask)*8);
+  if( pTabList->nSrc>BMS ){
+    sqlite3ErrorMsg(pParse, "at most %d tables in a join", BMS);
     return 0;
   }
 
   /* Split the WHERE clause into separate subexpressions where each
-  ** subexpression is separated by an AND operator.  If the wc.a[]
-  ** array fills up, the last entry might point to an expression which
-  ** contains additional unfactored AND operators.
+  ** subexpression is separated by an AND operator.
   */
   initMaskSet(&maskSet);
   whereClauseInit(&wc, pParse);
@@ -1012,7 +998,10 @@ WhereInfo *sqlite3WhereBegin(
     pWhere = 0;
   }
 
-  /* Analyze all of the subexpressions.
+  /* Analyze all of the subexpressions.  Note that exprAnalyze() might
+  ** add new virtual terms onto the end of the WHERE clause.  We do not
+  ** want to analyze these virtual terms, so start analyzing at the end
+  ** and work forward so that they added virtual terms are never processed.
   */
   for(i=0; i<pTabList->nSrc; i++){
     createMask(&maskSet, pTabList->a[i].iCursor);
@@ -1021,28 +1010,60 @@ WhereInfo *sqlite3WhereBegin(
     exprAnalyze(pTabList, &maskSet, &wc.a[i]);
   }
 
-  /* Chose the best index to use for each table in the FROM clause
+  /* Chose the best index to use for each table in the FROM clause.
+  **
+  ** This loop fills in the pWInfo->a[].pIdx and pWInfo->a[].flags fields
+  ** with information
+  ** Reorder tables if necessary in order to choose a good ordering.
+  ** However, LEFT JOIN tables cannot be reordered.
   */
   notReady = ~(Bitmask)0;
   pTabItem = pTabList->a;
   pLevel = pWInfo->a;
-  for(i=0; i<pTabList->nSrc; i++, pTabItem++, pLevel++){
-    Index *pBest;
-    int flags;
-    bestIndex(pParse, &wc, pTabItem, notReady,
-              (i==0 && ppOrderBy) ? *ppOrderBy : 0,
-              &pBest, &flags);
-    if( flags & WHERE_ORDERBY ){
+  for(i=iFrom=0, pLevel=pWInfo->a; i<pTabList->nSrc; i++, pLevel++){
+    Index *pIdx;                /* Index for FROM table at pTabItem */
+    int flags;                  /* Flags asssociated with pIdx */
+    double score;               /* The score for pIdx */
+    int j;                      /* For looping over FROM tables */
+    Index *pBest = 0;           /* The best index seen so far */
+    int bestFlags = 0;          /* Flags associated with pBest */
+    double bestScore = -1.0;    /* The score of pBest */
+    int bestJ;                  /* The value of j */
+    Bitmask m;                  /* Bitmask value for j or bestJ */
+
+    for(j=iFrom, pTabItem=&pTabList->a[j]; j<pTabList->nSrc; j++, pTabItem++){
+      m = getMask(&maskSet, pTabItem->iCursor);
+      if( (m & notReady)==0 ){
+        if( j==iFrom ) iFrom++;
+        continue;
+      }
+      score = bestIndex(pParse, &wc, pTabItem, notReady,
+                        (j==0 && ppOrderBy) ? *ppOrderBy : 0,
+                        &pIdx, &flags);
+      if( score>bestScore ){
+        bestScore = score;
+        pBest = pIdx;
+        bestFlags = flags;
+        bestJ = j;
+      }
+      if( (pTabItem->jointype & JT_LEFT)!=0
+         || (j>0 && (pTabItem[-1].jointype & JT_LEFT)!=0)
+      ){
+        break;
+      }
+    }
+    if( bestFlags & WHERE_ORDERBY ){
       *ppOrderBy = 0;
     }
-    pLevel->flags = flags;
+    pLevel->flags = bestFlags;
     pLevel->pIdx = pBest;
     if( pBest ){
       pLevel->iIdxCur = pParse->nTab++;
     }else{
       pLevel->iIdxCur = -1;
     }
-    notReady &= ~getMask(&maskSet, pTabItem->iCursor);
+    notReady &= ~getMask(&maskSet, pTabList->a[bestJ].iCursor);
+    pLevel->iFrom = bestJ;
   }
 
   /* Open all tables in the pTabList and any indices selected for
@@ -1050,11 +1071,12 @@ WhereInfo *sqlite3WhereBegin(
   */
   sqlite3CodeVerifySchema(pParse, -1); /* Insert the cookie verifier Goto */
   pLevel = pWInfo->a;
-  for(i=0, pTabItem=pTabList->a; i<pTabList->nSrc; i++, pTabItem++, pLevel++){
+  for(i=0, pLevel=pWInfo->a; i<pTabList->nSrc; i++, pLevel++){
     Table *pTab;
     Index *pIx;
     int iIdxCur = pLevel->iIdxCur;
 
+    pTabItem = &pTabList->a[pLevel->iFrom];
     pTab = pTabItem->pTab;
     if( pTab->isTransient || pTab->pSelect ) continue;
     if( (pLevel->flags & WHERE_IDX_ONLY)==0 ){
@@ -1063,6 +1085,7 @@ WhereInfo *sqlite3WhereBegin(
     pLevel->iTabCur = pTabItem->iCursor;
     if( (pIx = pLevel->pIdx)!=0 ){
       sqlite3VdbeAddOp(v, OP_Integer, pIx->iDb, 0);
+      VdbeComment((v, "# %s", pIx->zName));
       sqlite3VdbeOp3(v, OP_OpenRead, iIdxCur, pIx->tnum,
                      (char*)&pIx->keyInfo, P3_KEYINFO);
     }
@@ -1070,80 +1093,43 @@ WhereInfo *sqlite3WhereBegin(
       sqlite3VdbeAddOp(v, OP_SetNumColumns, iIdxCur, pIx->nColumn+1);
     }
     sqlite3CodeVerifySchema(pParse, pTab->iDb);
-
-#ifdef SQLITE_TEST
-    /* Record in the query plan information about the current table
-    ** and the index used to access it (if any).  If the table itself
-    ** is not used, its name is just '{}'.  If no index is used
-    ** the index is listed as "{}"
-    */
-    {
-      char *z = pTabItem->zAlias;
-      int n;
-      if( z==0 ) z = pTab->zName;
-      n = strlen(z);
-      if( n+nQPlan < sizeof(sqlite3_query_plan)-10 ){
-        if( pLevel->flags & WHERE_IDX_ONLY ){
-          strcpy(&sqlite3_query_plan[nQPlan], "{}");
-          nQPlan += 2;
-        }else{
-          strcpy(&sqlite3_query_plan[nQPlan], z);
-          nQPlan += n;
-        }
-        sqlite3_query_plan[nQPlan++] = ' ';
-      }
-      if( pIx==0 ){
-        strcpy(&sqlite3_query_plan[nQPlan], " {}");
-        nQPlan += 3;
-      }else{
-        n = strlen(pIx->zName);
-        if( n+nQPlan < sizeof(sqlite3_query_plan)-2 ){
-          strcpy(&sqlite3_query_plan[nQPlan], pIx->zName);
-          nQPlan += n;
-          sqlite3_query_plan[nQPlan++] = ' ';
-        }
-      }
-    }
-#endif
   }
   pWInfo->iTop = sqlite3VdbeCurrentAddr(v);
 
-#ifdef SQLITE_TEST
-  /* Terminate the query plan description
-  */
-  while( nQPlan>0 && sqlite3_query_plan[nQPlan-1]==' ' ){
-    sqlite3_query_plan[--nQPlan] = 0;
-  }
-  sqlite3_query_plan[nQPlan] = 0;
-  nQPlan = 0;
-#endif
-
-  /* Generate the code to do the search
+  /* Generate the code to do the search.  Each iteration of the for
+  ** loop below generates code for a single nested loop of the VM
+  ** program.
   */
   notReady = ~(Bitmask)0;
-  pLevel = pWInfo->a;
-  pTabItem = pTabList->a;
-  for(i=0; i<pTabList->nSrc; i++, pTabItem++, pLevel++){
+  for(i=0, pLevel=pWInfo->a; i<pTabList->nSrc; i++, pLevel++){
     int j;
     int iCur = pTabItem->iCursor;  /* The VDBE cursor for the table */
     Index *pIdx;       /* The index we will be using */
     int iIdxCur;       /* The VDBE cursor for the index */
     int omitTable;     /* True if we use the index only */
+    int bRev;          /* True if we need to scan in reverse order */
 
+    pTabItem = &pTabList->a[pLevel->iFrom];
+    iCur = pTabItem->iCursor;
     pIdx = pLevel->pIdx;
     iIdxCur = pLevel->iIdxCur;
     pLevel->inOp = OP_Noop;
-
-    /* Check to see if it is appropriate to omit the use of the table
-    ** here and use its index instead.
-    */
+    bRev = (pLevel->flags & WHERE_REVERSE)!=0;
     omitTable = (pLevel->flags & WHERE_IDX_ONLY)!=0;
+
+    /* Create labels for the "break" and "continue" instructions
+    ** for the current loop.  Jump to brk to break out of a loop.
+    ** Jump to cont to go immediately to the next iteration of the
+    ** loop.
+    */
+    brk = pLevel->brk = sqlite3VdbeMakeLabel(v);
+    cont = pLevel->cont = sqlite3VdbeMakeLabel(v);
 
     /* If this is the right table of a LEFT OUTER JOIN, allocate and
     ** initialize a memory cell that records if this table matches any
     ** row of the left table of the join.
     */
-    if( i>0 && (pTabList->a[i-1].jointype & JT_LEFT)!=0 ){
+    if( pLevel->iFrom>0 && (pTabItem[-1].jointype & JT_LEFT)!=0 ){
       if( !pParse->nMem ) pParse->nMem++;
       pLevel->iLeftJoin = pParse->nMem++;
       sqlite3VdbeAddOp(v, OP_Null, 0, 0);
@@ -1162,9 +1148,7 @@ WhereInfo *sqlite3WhereBegin(
       assert( pTerm->pExpr!=0 );
       assert( pTerm->leftCursor==iCur );
       assert( omitTable==0 );
-      brk = pLevel->brk = sqlite3VdbeMakeLabel(v);
       codeEqualityTerm(pParse, pTerm, brk, pLevel);
-      cont = pLevel->cont = sqlite3VdbeMakeLabel(v);
       sqlite3VdbeAddOp(v, OP_MustBeInt, 1, brk);
       sqlite3VdbeAddOp(v, OP_NotExists, iCur, brk);
       VdbeComment((v, "pk"));
@@ -1175,7 +1159,6 @@ WhereInfo *sqlite3WhereBegin(
       */
       int start;
       int nColumn;
-      brk = pLevel->brk = sqlite3VdbeMakeLabel(v);
 
       /* For each column of the index, find the term of the WHERE clause that
       ** constraints that column.  If the WHERE clause term is X=expr, then
@@ -1194,7 +1177,6 @@ WhereInfo *sqlite3WhereBegin(
       }
       nColumn = j;
       pLevel->iMem = pParse->nMem++;
-      cont = pLevel->cont = sqlite3VdbeMakeLabel(v);
       buildIndexProbe(v, nColumn, brk, pIdx);
       sqlite3VdbeAddOp(v, OP_MemStore, pLevel->iMem, 0);
 
@@ -1203,7 +1185,7 @@ WhereInfo *sqlite3WhereBegin(
       ** the last matching element of the table.  The code (1) is executed
       ** once to initialize the search, the code (2) is executed before each
       ** iteration of the scan to see if the scan has finished. */
-      if( pLevel->flags & WHERE_REVERSE ){
+      if( bRev ){
         /* Scan in reverse order */
         sqlite3VdbeAddOp(v, OP_MoveLe, iIdxCur, brk);
         start = sqlite3VdbeAddOp(v, OP_MemLoad, pLevel->iMem, 0);
@@ -1230,11 +1212,8 @@ WhereInfo *sqlite3WhereBegin(
       int testOp = OP_Noop;
       int start;
       WhereTerm *pStart, *pEnd;
-      int bRev = (pLevel->flags & WHERE_REVERSE)!=0;
 
       assert( omitTable==0 );
-      brk = pLevel->brk = sqlite3VdbeMakeLabel(v);
-      cont = pLevel->cont = sqlite3VdbeMakeLabel(v);
       if( pLevel->flags & WHERE_BTM_LIMIT ){
         pStart = findTerm(&wc, iCur, -1, notReady, WO_GT|WO_GE, 0);
         assert( pStart!=0 );
@@ -1308,7 +1287,6 @@ WhereInfo *sqlite3WhereBegin(
       int testOp;
       int topLimit = (pLevel->flags & WHERE_TOP_LIMIT)!=0;
       int btmLimit = (pLevel->flags & WHERE_BTM_LIMIT)!=0;
-      int bRev = (pLevel->flags & WHERE_REVERSE)!=0;
 
       /* Evaluate the equality constraints
       */
@@ -1329,11 +1307,6 @@ WhereInfo *sqlite3WhereBegin(
       for(j=0; j<nEqColumn; j++){
         sqlite3VdbeAddOp(v, OP_Dup, nEqColumn-1, 0);
       }
-
-      /* Labels for the beginning and end of the loop
-      */
-      cont = pLevel->cont = sqlite3VdbeMakeLabel(v);
-      brk = pLevel->brk = sqlite3VdbeMakeLabel(v);
 
       /* Generate the termination key.  This is the key value that
       ** will end the search.  There is no termination key if there
@@ -1438,23 +1411,18 @@ WhereInfo *sqlite3WhereBegin(
       /* Case 5:  There is no usable index.  We must do a complete
       **          scan of the entire table.
       */
-      int start;
       int opRewind;
 
       assert( omitTable==0 );
-      brk = pLevel->brk = sqlite3VdbeMakeLabel(v);
-      cont = pLevel->cont = sqlite3VdbeMakeLabel(v);
-      if( pLevel->flags & WHERE_REVERSE ){
+      if( bRev ){
         opRewind = OP_Last;
         pLevel->op = OP_Prev;
       }else{
         opRewind = OP_Rewind;
         pLevel->op = OP_Next;
       }
-      sqlite3VdbeAddOp(v, opRewind, iCur, brk);
-      start = sqlite3VdbeCurrentAddr(v);
       pLevel->p1 = iCur;
-      pLevel->p2 = start;
+      pLevel->p2 = 1 + sqlite3VdbeAddOp(v, opRewind, iCur, brk);
     }
     notReady &= ~getMask(&maskSet, iCur);
 
@@ -1473,7 +1441,6 @@ WhereInfo *sqlite3WhereBegin(
       sqlite3ExprIfFalse(pParse, pE, cont, 1);
       pTerm->flags |= TERM_CODED;
     }
-    brk = cont;
 
     /* For a LEFT OUTER JOIN, generate code that will record the fact that
     ** at least one row of the right table has matched the left table.  
@@ -1503,8 +1470,8 @@ WhereInfo *sqlite3WhereBegin(
   for(i=0; i<pTabList->nSrc; i++){
     char *z;
     int n;
-    pTabItem = &pTabList->a[i];
     pLevel = &pWInfo->a[i];
+    pTabItem = &pTabList->a[pLevel->iFrom];
     z = pTabItem->zAlias;
     if( z==0 ) z = pTabItem->pTab->zName;
     n = strlen(z);
@@ -1540,7 +1507,9 @@ WhereInfo *sqlite3WhereBegin(
   nQPlan = 0;
 #endif /* SQLITE_TEST // Testing and debugging use only */
 
-
+  /* Record the continuation address in the WhereInfo structure.  Then
+  ** clean up and return.
+  */
   pWInfo->iContinue = cont;
   freeMaskSet(&maskSet);
   whereClauseClear(&wc);
@@ -1556,7 +1525,6 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
   int i;
   WhereLevel *pLevel;
   SrcList *pTabList = pWInfo->pTabList;
-  struct SrcList_item *pTabItem;
 
   /* Generate loop termination code.
   */
@@ -1587,11 +1555,10 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
   */
   sqlite3VdbeResolveLabel(v, pWInfo->iBreak);
 
-  /* Close all of the cursors that were opend by sqlite3WhereBegin.
+  /* Close all of the cursors that were opened by sqlite3WhereBegin.
   */
-  pLevel = pWInfo->a;
-  pTabItem = pTabList->a;
-  for(i=0; i<pTabList->nSrc; i++, pTabItem++, pLevel++){
+  for(i=0, pLevel=pWInfo->a; i<pTabList->nSrc; i++, pLevel++){
+    struct SrcList_item *pTabItem = &pTabList->a[pLevel->iFrom];
     Table *pTab = pTabItem->pTab;
     assert( pTab!=0 );
     if( pTab->isTransient || pTab->pSelect ) continue;
@@ -1643,17 +1610,4 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
   */
   sqliteFree(pWInfo);
   return;
-}
-
-
-/*
-** Delete a list of WhereIdx structures.
-*/
-void sqlite3WhereIdxListDelete(WhereIdx *p){
-  WhereIdx *pNext;
-  while( p ){
-    pNext = p->pNext;
-    sqliteFree(p);
-    p = pNext;
-  }
 }

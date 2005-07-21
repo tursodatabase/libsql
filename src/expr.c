@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.212 2005/07/21 03:15:00 drh Exp $
+** $Id: expr.c,v 1.213 2005/07/21 18:23:20 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -489,7 +489,6 @@ SrcList *sqlite3SrcListDup(SrcList *p){
     pNewItem->pSelect = sqlite3SelectDup(pOldItem->pSelect);
     pNewItem->pOn = sqlite3ExprDup(pOldItem->pOn);
     pNewItem->pUsing = sqlite3IdListDup(pOldItem->pUsing);
-    pNewItem->pWIdx = 0;
     pNewItem->colUsed = pOldItem->colUsed;
   }
   return pNew;
@@ -1398,7 +1397,7 @@ static void codeInteger(Vdbe *v, const char *z, int n){
   if( sqlite3GetInt32(z, &i) ){
     sqlite3VdbeAddOp(v, OP_Integer, i, 0);
   }else if( sqlite3FitsIn64Bits(z) ){
-    sqlite3VdbeOp3(v, OP_Integer, 0, 0, z, n);
+    sqlite3VdbeOp3(v, OP_Int64, 0, 0, z, n);
   }else{
     sqlite3VdbeOp3(v, OP_Real, 0, 0, z, n);
   }

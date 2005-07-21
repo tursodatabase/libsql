@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.475 2005/07/09 02:16:03 drh Exp $
+** $Id: vdbe.c,v 1.476 2005/07/21 18:23:20 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -670,28 +670,31 @@ case OP_Halt: {            /* no-push */
   return p->rc ? SQLITE_ERROR : SQLITE_DONE;
 }
 
-/* Opcode: Integer P1 * P3
+/* Opcode: Integer P1 * *
 **
-** The integer value P1 is pushed onto the stack.  If P3 is not zero
-** then it is assumed to be a string representation of the same integer.
-** If P1 is zero and P3 is not zero, then the value is derived from P3.
-**
-** If the value cannot be represented as a 32-bits then its value
-** will be in P3.
+** The 32-bit integer value P1 is pushed onto the stack.
 */
 case OP_Integer: {
   pTos++;
-  if( pOp->p3==0 ){
-    pTos->flags = MEM_Int;
-    pTos->i = pOp->p1;
-  }else{
-    pTos->flags = MEM_Str|MEM_Static|MEM_Term;
-    pTos->z = pOp->p3;
-    pTos->n = strlen(pTos->z);
-    pTos->enc = SQLITE_UTF8;
-    pTos->i = sqlite3VdbeIntValue(pTos);
-    pTos->flags |= MEM_Int;
-  }
+  pTos->flags = MEM_Int;
+  pTos->i = pOp->p1;
+  break;
+}
+
+/* Opcode: Int64 * * P3
+**
+** P3 is a string representation of an integer.  Convert that integer
+** to a 64-bit value and push it onto the stack.
+*/
+case OP_Int64: {
+  pTos++;
+  assert( pOp->p3!=0 );
+  pTos->flags = MEM_Str|MEM_Static|MEM_Term;
+  pTos->z = pOp->p3;
+  pTos->n = strlen(pTos->z);
+  pTos->enc = SQLITE_UTF8;
+  pTos->i = sqlite3VdbeIntValue(pTos);
+  pTos->flags |= MEM_Int;
   break;
 }
 
@@ -1828,6 +1831,13 @@ case OP_SetNumColumns: {       /* no-push */
 ** just a pointer into the record which is stored further down on the
 ** stack.  The column value is not copied. The number of columns in the
 ** record is stored on the stack just above the record itself.
+**
+** If the column contains fewer than P2 fields, then push a NULL.  Or
+** if P3 is of type P3_MEM, then push the P3 value.  The P3 value will
+** be default value for a column that has been added using the ALTER TABLE
+** ADD COLUMN command.  If P3 is an ordinary string, just push a NULL.
+** When P3 is a string it is really just a comment describing the value
+** to be pushed, not a default value.
 */
 case OP_Column: {
   u32 payloadSize;   /* Number of bytes in the record */
@@ -2028,7 +2038,8 @@ case OP_Column: {
   /* Get the column information. If aOffset[p2] is non-zero, then 
   ** deserialize the value from the record. If aOffset[p2] is zero,
   ** then there are not enough fields in the record to satisfy the
-  ** request. The value is NULL in this case.
+  ** request.  In this case, set the value NULL or to P3 if P3 is
+  ** a pointer to a Mem object.
   */
   if( aOffset[p2] ){
     assert( rc==SQLITE_OK );
@@ -2045,7 +2056,7 @@ case OP_Column: {
     sqlite3VdbeSerialGet(zData, aType[p2], pTos);
     pTos->enc = db->enc;
   }else{
-    if( pOp->p3 ){
+    if( pOp->p3type==P3_MEM ){
       sqlite3VdbeMemShallowCopy(pTos, (Mem *)(pOp->p3), MEM_Static);
     }else{
       pTos->flags = MEM_Null;

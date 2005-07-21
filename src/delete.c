@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** in order to generate code for DELETE FROM statements.
 **
-** $Id: delete.c,v 1.108 2005/07/08 13:08:00 drh Exp $
+** $Id: delete.c,v 1.109 2005/07/21 18:23:20 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -65,8 +65,8 @@ void sqlite3OpenTableForReading(
   Table *pTab     /* The table to be opened */
 ){
   sqlite3VdbeAddOp(v, OP_Integer, pTab->iDb, 0);
-  sqlite3VdbeAddOp(v, OP_OpenRead, iCur, pTab->tnum);
   VdbeComment((v, "# %s", pTab->zName));
+  sqlite3VdbeAddOp(v, OP_OpenRead, iCur, pTab->tnum);
   sqlite3VdbeAddOp(v, OP_SetNumColumns, iCur, pTab->nCol);
 }
 

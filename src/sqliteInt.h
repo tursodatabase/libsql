@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.395 2005/07/21 03:15:00 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.396 2005/07/21 18:23:20 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -320,7 +320,6 @@ typedef struct Token Token;
 typedef struct TriggerStack TriggerStack;
 typedef struct TriggerStep TriggerStep;
 typedef struct Trigger Trigger;
-typedef struct WhereIdx WhereIdx;
 typedef struct WhereInfo WhereInfo;
 typedef struct WhereLevel WhereLevel;
 
@@ -929,7 +928,6 @@ struct SrcList {
     i16 iCursor;      /* The VDBE cursor number used to access this table */
     Expr *pOn;        /* The ON clause of a join */
     IdList *pUsing;   /* The USING clause of a join */
-    WhereIdx *pWIdx;  /* List of structures used by the optimizer */
     Bitmask colUsed;  /* Bit N (1<<N) set if column N or pTab is used */
   } a[1];             /* One entry for each identifier on the list */
 };
@@ -951,17 +949,18 @@ struct SrcList {
 ** access or modified by other modules.
 */
 struct WhereLevel {
-  int iMem;            /* Memory cell used by this level */
-  Index *pIdx;         /* Index used.  NULL if no index */
-  int iTabCur;         /* The VDBE cursor used to access the table */
-  int iIdxCur;         /* The VDBE cursor used to acesss pIdx */
-  int brk;             /* Jump here to break out of the loop */
-  int cont;            /* Jump here to continue with the next loop cycle */
-  int op, p1, p2;      /* Opcode used to terminate the loop */
-  int iLeftJoin;       /* Memory cell used to implement LEFT OUTER JOIN */
-  int top;             /* First instruction of interior of the loop */
-  int inOp, inP1, inP2;/* Opcode used to implement an IN operator */
-  int flags;           /* Flags associated with this level */
+  int iFrom;            /* Which entry in the FROM clause */
+  int flags;            /* Flags associated with this level */
+  int iMem;             /* Memory cell used by this level */
+  int iLeftJoin;        /* Memory cell used to implement LEFT OUTER JOIN */
+  Index *pIdx;          /* Index used.  NULL if no index */
+  int iTabCur;          /* The VDBE cursor used to access the table */
+  int iIdxCur;          /* The VDBE cursor used to acesss pIdx */
+  int brk;              /* Jump here to break out of the loop */
+  int cont;             /* Jump here to continue with the next loop cycle */
+  int top;              /* First instruction of interior of the loop */
+  int op, p1, p2;       /* Opcode used to terminate the loop */
+  int inOp, inP1, inP2; /* Opcode used to implement an IN operator */
 };
 
 /*
@@ -1569,7 +1568,6 @@ CollSeq *sqlite3GetCollSeq(sqlite3*, CollSeq *, const char *, int);
 char sqlite3AffinityType(const Token*);
 void sqlite3Analyze(Parse*, Token*, Token*);
 int sqlite3InvokeBusyHandler(BusyHandler*);
-void sqlite3WhereIdxListDelete(WhereIdx*);
 
 #ifdef SQLITE_SSE
 #include "sseInt.h"

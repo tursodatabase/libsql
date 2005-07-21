@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.141 2005/07/08 17:13:47 drh Exp $
+** $Id: insert.c,v 1.142 2005/07/21 18:23:20 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1096,11 +1096,12 @@ void sqlite3OpenTableAndIndices(
   Vdbe *v = sqlite3GetVdbe(pParse);
   assert( v!=0 );
   sqlite3VdbeAddOp(v, OP_Integer, pTab->iDb, 0);
-  sqlite3VdbeAddOp(v, op, base, pTab->tnum);
   VdbeComment((v, "# %s", pTab->zName));
+  sqlite3VdbeAddOp(v, op, base, pTab->tnum);
   sqlite3VdbeAddOp(v, OP_SetNumColumns, base, pTab->nCol);
   for(i=1, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
     sqlite3VdbeAddOp(v, OP_Integer, pIdx->iDb, 0);
+    VdbeComment((v, "# %s", pIdx->zName));
     sqlite3VdbeOp3(v, op, i+base, pIdx->tnum,
                    (char*)&pIdx->keyInfo, P3_KEYINFO);
   }

@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.331 2005/07/21 03:15:00 drh Exp $
+** $Id: build.c,v 1.332 2005/07/21 18:23:20 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1999,9 +1999,7 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
   sqlite3VdbeAddOp(v, OP_Integer, pIndex->iDb, 0);
   sqlite3VdbeOp3(v, OP_OpenWrite, iIdx, tnum,
                     (char*)&pIndex->keyInfo, P3_KEYINFO);
-  sqlite3VdbeAddOp(v, OP_Integer, pTab->iDb, 0);
-  sqlite3VdbeAddOp(v, OP_OpenRead, iTab, pTab->tnum);
-  sqlite3VdbeAddOp(v, OP_SetNumColumns, iTab, pTab->nCol);
+  sqlite3OpenTableForReading(v, iTab, pTab);
   addr1 = sqlite3VdbeAddOp(v, OP_Rewind, iTab, 0);
   sqlite3GenerateIndexKey(v, pIndex, iTab);
   if( pIndex->onError!=OE_None ){
@@ -2601,7 +2599,6 @@ void sqlite3SrcListDelete(SrcList *pList){
     sqlite3SelectDelete(pItem->pSelect);
     sqlite3ExprDelete(pItem->pOn);
     sqlite3IdListDelete(pItem->pUsing);
-    sqlite3WhereIdxListDelete(pItem->pWIdx);
   }
   sqliteFree(pList);
 }
