@@ -1,5 +1,5 @@
-C In\swhere.c,\ssplit\sout\sthe\scode\sthat\sselects\san\sindex\sinto\sa\sseparate\nsubroutine.\s(CVS\s2554)
-D 2005-07-21T03:15:00
+C Add\scomments\sto\stest\scases.\s\sImprovements\sto\sthe\squery\splan\stest\svariable.\s(CVS\s2555)
+D 2005-07-21T03:48:20
 F Makefile.in 22ea9c0fe748f591712d8fe3c6d972c6c173a165
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -85,7 +85,7 @@ F src/vdbeapi.c 7f392f0792d1258c958083d7de9eae7c3530c9a6
 F src/vdbeaux.c 3732a86566a6be4da4c606e9334baf3fd98667af
 F src/vdbefifo.c b8805850afe13b43f1de78d58088cb5d66f88e1e
 F src/vdbemem.c da8e8d6f29dd1323f782f000d7cd120027c9ff03
-F src/where.c bc0473f786f14970bd48415d5dd168cc7c9c72b7
+F src/where.c 9e5bd5f1ab83a2d55c9e84a7e6613602b477e328
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
 F test/all.test 7f0988442ab811dfa41793b5b550f5828ce316f3
 F test/alter.test 9d6837a3d946b73df692b7cef2a7644d2e2f6bc6
@@ -146,7 +146,7 @@ F test/insert.test b0a89e1568fe9890758f8f2b43b68e840e8f1a1a
 F test/insert2.test 792ad079f59c7e14cf9397712725224e2112c838
 F test/insert3.test c67f0240b1c17e71fa2ed8bb6de064928f549f95
 F test/interrupt.test 170f87c2819f0e56c76e0a754949ea103d05009c
-F test/intpkey.test aaee5325eedf48b8f1e01d0d6e3f7c712908179b
+F test/intpkey.test af4fd826c4784ec5c93b444de07adea0254d0d30
 F test/ioerr.test b27540c5873d28c0e77f02ce85b15f904d5b03a6
 F test/join.test db3802739fb695bdfa2e88805e3d64ec5ffbebd1
 F test/join2.test f2171c265e57ee298a27e57e7051d22962f9f324
@@ -195,7 +195,7 @@ F test/select5.test 2d414f712bff8e590091e08f9b7287600731be00
 F test/select6.test 6559d16ad16edb7d6864f7e74a3d204d0af72486
 F test/select7.test 1bf795b948c133a15a2a5e99d3270e652ec58ce6
 F test/sort.test 8aaec2e01bf97691c96fd2f0294e635540bebcda
-F test/subquery.test d8364e0719ca09bf55c2bdadf761774c94c52633
+F test/subquery.test 0df3de0dbb65165b96ebe895550f1549d5439856
 F test/subselect.test 3f3f7a940dc3195c3139f4d530385cb54665d614
 F test/table.test e87fb2211b97c6a3a367fbc116e8572091b53160
 F test/tableapi.test 6a66d58b37d46dc0f2b3c7d4bd2617d209399bd1
@@ -223,7 +223,7 @@ F test/vacuum.test 5d4857ae2afc9c20d0edb8acc58bdc8d630126a9
 F test/vacuum2.test 5d77e98c458bcdbeecc6327de5107179ba1aa095
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/view.test 3c79232a2ee45918c62a0cf90411525899404a76
-F test/where.test 2d6e6ebeea7b95c0f0f1b0335a80c13a10592c6b
+F test/where.test 996cd12c8545aaf28c7eaf06190e9f1c2a2dc74c
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/lemon.c c88936c67f6411608db8fa4254d254f509fa40f6
 F tool/lempar.c f0c30abcae762a7d1eb37cd88b2232ab8dd625fb
@@ -286,7 +286,7 @@ F www/tclsqlite.tcl 425be741b8ae664f55cb1ef2371aab0a75109cf9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P ac669f56c0759a7e3eaa6f0018c8fb9d614e7d69
-R f4b09ad5038d1bd3854fa979c8cbf5db
+P c30cbba9ead1b4d07f225b1e8a65d5d5230ea45d
+R ce3457bbcec9a76540a332d37f4098ee
 U drh
-Z 17d57d5ddd72afd69aa6a395d66fa40e
+Z a55f9e28ea4b33602aa900e8cfaf2b57

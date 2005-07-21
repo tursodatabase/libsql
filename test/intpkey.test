@@ -13,7 +13,7 @@
 # This file implements tests for the special processing associated
 # with INTEGER PRIMARY KEY columns.
 #
-# $Id: intpkey.test,v 1.22 2005/03/31 18:40:05 drh Exp $
+# $Id: intpkey.test,v 1.23 2005/07/21 03:48:20 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -119,11 +119,14 @@ do_test intpkey-1.11 {
 # Make sure SELECT statements are able to use the primary key column
 # as an index.
 #
-do_test intpkey-1.12 {
+do_test intpkey-1.12.1 {
   execsql {
     SELECT * FROM t1 WHERE a==4;
   }
 } {4 one two}
+do_test intpkey-1.12.2 {
+  set sqlite_query_plan
+} {t1 *}
 
 # Try to insert a non-integer value into the primary key field.  This
 # should result in a data type mismatch.

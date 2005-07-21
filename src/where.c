@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.148 2005/07/21 03:15:00 drh Exp $
+** $Id: where.c,v 1.149 2005/07/21 03:48:20 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1492,6 +1492,55 @@ WhereInfo *sqlite3WhereBegin(
       }
     }
   }
+
+#ifdef SQLITE_TEST  /* For testing and debugging use only */
+  /* Record in the query plan information about the current table
+  ** and the index used to access it (if any).  If the table itself
+  ** is not used, its name is just '{}'.  If no index is used
+  ** the index is listed as "{}".  If the primary key is used the
+  ** index name is '*'.
+  */
+  for(i=0; i<pTabList->nSrc; i++){
+    char *z;
+    int n;
+    pTabItem = &pTabList->a[i];
+    pLevel = &pWInfo->a[i];
+    z = pTabItem->zAlias;
+    if( z==0 ) z = pTabItem->pTab->zName;
+    n = strlen(z);
+    if( n+nQPlan < sizeof(sqlite3_query_plan)-10 ){
+      if( pLevel->flags & WHERE_IDX_ONLY ){
+        strcpy(&sqlite3_query_plan[nQPlan], "{}");
+        nQPlan += 2;
+      }else{
+        strcpy(&sqlite3_query_plan[nQPlan], z);
+        nQPlan += n;
+      }
+      sqlite3_query_plan[nQPlan++] = ' ';
+    }
+    if( pLevel->flags & (WHERE_ROWID_EQ|WHERE_ROWID_RANGE) ){
+      strcpy(&sqlite3_query_plan[nQPlan], "* ");
+      nQPlan += 2;
+    }else if( pLevel->pIdx==0 ){
+      strcpy(&sqlite3_query_plan[nQPlan], "{} ");
+      nQPlan += 3;
+    }else{
+      n = strlen(pLevel->pIdx->zName);
+      if( n+nQPlan < sizeof(sqlite3_query_plan)-2 ){
+        strcpy(&sqlite3_query_plan[nQPlan], pLevel->pIdx->zName);
+        nQPlan += n;
+        sqlite3_query_plan[nQPlan++] = ' ';
+      }
+    }
+  }
+  while( nQPlan>0 && sqlite3_query_plan[nQPlan-1]==' ' ){
+    sqlite3_query_plan[--nQPlan] = 0;
+  }
+  sqlite3_query_plan[nQPlan] = 0;
+  nQPlan = 0;
+#endif /* SQLITE_TEST // Testing and debugging use only */
+
+
   pWInfo->iContinue = cont;
   freeMaskSet(&maskSet);
   whereClauseClear(&wc);

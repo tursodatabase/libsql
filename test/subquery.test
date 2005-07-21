@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing correlated subqueries
 #
-# $Id: subquery.test,v 1.10 2005/07/21 03:15:01 drh Exp $
+# $Id: subquery.test,v 1.11 2005/07/21 03:48:20 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -221,18 +221,28 @@ do_test subquery-2.5.1 {
   }
 } {}
 do_test subquery-2.5.2 {
+  # In the expr "x IN (SELECT a FROM t3)" the RHS of the IN operator
+  # has text affinity and the LHS has integer affinity.  The rule is
+  # that we try to convert both sides to an integer before doing the
+  # comparision.  Hence, the integer value 10 in t3 will compare equal
+  # to the string value '10.0' in t4 because the t4 value will be
+  # converted into an integer.
   execsql {
     SELECT * FROM t4 WHERE x IN (SELECT a FROM t3);
   }
 } {10.0}
-do_test subquery-2.5.3 {
+do_test subquery-2.5.3.1 {
+  # The t4i index cannot be used to resolve the "x IN (...)" constraint
+  # because the constraint has integer affinity but t4i has text affinity.
   execsql {
     CREATE INDEX t4i ON t4(x);
-    --pragma vdbe_listing=on; pragma vdbe_trace=on;
     SELECT * FROM t4 WHERE x IN (SELECT a FROM t3);
   }
 } {10.0}
-#exit
+do_test subquery-2.5.3.2 {
+  # Verify that the t4i index was not used in the previous query
+  set ::sqlite_query_plan
+} {t4 {}}
 do_test subquery-2.5.4 {
   execsql {
     DROP TABLE t3;
