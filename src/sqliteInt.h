@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.394 2005/07/19 17:38:23 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.395 2005/07/21 03:15:00 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -298,30 +298,31 @@ extern int sqlite3_iMallocReset; /* Set iMallocFail to this when it reaches 0 */
 /*
 ** Forward references to structures
 */
+typedef struct AggExpr AggExpr;
+typedef struct AuthContext AuthContext;
+typedef struct CollSeq CollSeq;
 typedef struct Column Column;
-typedef struct Table Table;
-typedef struct Index Index;
+typedef struct Db Db;
 typedef struct Expr Expr;
 typedef struct ExprList ExprList;
-typedef struct Parse Parse;
-typedef struct Token Token;
-typedef struct IdList IdList;
-typedef struct SrcList SrcList;
-typedef struct WhereInfo WhereInfo;
-typedef struct WhereLevel WhereLevel;
-typedef struct Select Select;
-typedef struct AggExpr AggExpr;
-typedef struct FuncDef FuncDef;
-typedef struct Trigger Trigger;
-typedef struct TriggerStep TriggerStep;
-typedef struct TriggerStack TriggerStack;
 typedef struct FKey FKey;
-typedef struct Db Db;
-typedef struct AuthContext AuthContext;
+typedef struct FuncDef FuncDef;
+typedef struct IdList IdList;
+typedef struct Index Index;
 typedef struct KeyClass KeyClass;
-typedef struct CollSeq CollSeq;
 typedef struct KeyInfo KeyInfo;
 typedef struct NameContext NameContext;
+typedef struct Parse Parse;
+typedef struct Select Select;
+typedef struct SrcList SrcList;
+typedef struct Table Table;
+typedef struct Token Token;
+typedef struct TriggerStack TriggerStack;
+typedef struct TriggerStep TriggerStep;
+typedef struct Trigger Trigger;
+typedef struct WhereIdx WhereIdx;
+typedef struct WhereInfo WhereInfo;
+typedef struct WhereLevel WhereLevel;
 
 /*
 ** Each database file to be accessed by the system is an instance
@@ -924,10 +925,11 @@ struct SrcList {
     char *zAlias;     /* The "B" part of a "A AS B" phrase.  zName is the "A" */
     Table *pTab;      /* An SQL table corresponding to zName */
     Select *pSelect;  /* A SELECT statement used in place of a table name */
-    int jointype;     /* Type of join between this table and the next */
-    int iCursor;      /* The VDBE cursor number used to access this table */
+    u8 jointype;      /* Type of join between this table and the next */
+    i16 iCursor;      /* The VDBE cursor number used to access this table */
     Expr *pOn;        /* The ON clause of a join */
     IdList *pUsing;   /* The USING clause of a join */
+    WhereIdx *pWIdx;  /* List of structures used by the optimizer */
     Bitmask colUsed;  /* Bit N (1<<N) set if column N or pTab is used */
   } a[1];             /* One entry for each identifier on the list */
 };
@@ -953,14 +955,13 @@ struct WhereLevel {
   Index *pIdx;         /* Index used.  NULL if no index */
   int iTabCur;         /* The VDBE cursor used to access the table */
   int iIdxCur;         /* The VDBE cursor used to acesss pIdx */
-  int score;           /* How well this index scored */
   int brk;             /* Jump here to break out of the loop */
   int cont;            /* Jump here to continue with the next loop cycle */
   int op, p1, p2;      /* Opcode used to terminate the loop */
   int iLeftJoin;       /* Memory cell used to implement LEFT OUTER JOIN */
   int top;             /* First instruction of interior of the loop */
   int inOp, inP1, inP2;/* Opcode used to implement an IN operator */
-  int bRev;            /* Do the scan in the reverse direction */
+  int flags;           /* Flags associated with this level */
 };
 
 /*
@@ -1568,6 +1569,7 @@ CollSeq *sqlite3GetCollSeq(sqlite3*, CollSeq *, const char *, int);
 char sqlite3AffinityType(const Token*);
 void sqlite3Analyze(Parse*, Token*, Token*);
 int sqlite3InvokeBusyHandler(BusyHandler*);
+void sqlite3WhereIdxListDelete(WhereIdx*);
 
 #ifdef SQLITE_SSE
 #include "sseInt.h"

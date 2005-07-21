@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.330 2005/06/30 17:04:21 drh Exp $
+** $Id: build.c,v 1.331 2005/07/21 03:15:00 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2477,6 +2477,32 @@ IdList *sqlite3IdListAppend(IdList *pList, Token *pToken){
 }
 
 /*
+** Delete an IdList.
+*/
+void sqlite3IdListDelete(IdList *pList){
+  int i;
+  if( pList==0 ) return;
+  for(i=0; i<pList->nId; i++){
+    sqliteFree(pList->a[i].zName);
+  }
+  sqliteFree(pList->a);
+  sqliteFree(pList);
+}
+
+/*
+** Return the index in pList of the identifier named zId.  Return -1
+** if not found.
+*/
+int sqlite3IdListIndex(IdList *pList, const char *zName){
+  int i;
+  if( pList==0 ) return -1;
+  for(i=0; i<pList->nId; i++){
+    if( sqlite3StrICmp(pList->a[i].zName, zName)==0 ) return i;
+  }
+  return -1;
+}
+
+/*
 ** Append a new table name to the given SrcList.  Create a new SrcList if
 ** need be.  A new entry is created in the SrcList even if pToken is NULL.
 **
@@ -2561,32 +2587,6 @@ void sqlite3SrcListAddAlias(SrcList *pList, Token *pToken){
 }
 
 /*
-** Delete an IdList.
-*/
-void sqlite3IdListDelete(IdList *pList){
-  int i;
-  if( pList==0 ) return;
-  for(i=0; i<pList->nId; i++){
-    sqliteFree(pList->a[i].zName);
-  }
-  sqliteFree(pList->a);
-  sqliteFree(pList);
-}
-
-/*
-** Return the index in pList of the identifier named zId.  Return -1
-** if not found.
-*/
-int sqlite3IdListIndex(IdList *pList, const char *zName){
-  int i;
-  if( pList==0 ) return -1;
-  for(i=0; i<pList->nId; i++){
-    if( sqlite3StrICmp(pList->a[i].zName, zName)==0 ) return i;
-  }
-  return -1;
-}
-
-/*
 ** Delete an entire SrcList including all its substructure.
 */
 void sqlite3SrcListDelete(SrcList *pList){
@@ -2601,6 +2601,7 @@ void sqlite3SrcListDelete(SrcList *pList){
     sqlite3SelectDelete(pItem->pSelect);
     sqlite3ExprDelete(pItem->pOn);
     sqlite3IdListDelete(pItem->pUsing);
+    sqlite3WhereIdxListDelete(pItem->pWIdx);
   }
   sqliteFree(pList);
 }

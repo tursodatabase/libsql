@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE TABLE statement.
 #
-# $Id: sort.test,v 1.19 2005/02/02 01:10:45 danielk1977 Exp $
+# $Id: sort.test,v 1.20 2005/07/21 03:15:01 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -432,4 +432,3 @@ do_test sort-10.3 {
 } {2 1}
 
 finish_test
-

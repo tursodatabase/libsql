@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing correlated subqueries
 #
-# $Id: subquery.test,v 1.9 2005/05/23 15:06:39 drh Exp $
+# $Id: subquery.test,v 1.10 2005/07/21 03:15:01 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -228,9 +228,11 @@ do_test subquery-2.5.2 {
 do_test subquery-2.5.3 {
   execsql {
     CREATE INDEX t4i ON t4(x);
+    --pragma vdbe_listing=on; pragma vdbe_trace=on;
     SELECT * FROM t4 WHERE x IN (SELECT a FROM t3);
   }
 } {10.0}
+#exit
 do_test subquery-2.5.4 {
   execsql {
     DROP TABLE t3;

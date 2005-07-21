@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.211 2005/07/08 18:25:26 drh Exp $
+** $Id: expr.c,v 1.212 2005/07/21 03:15:00 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -93,6 +93,7 @@ char sqlite3CompareAffinity(Expr *pExpr, char aff2){
     return SQLITE_AFF_NONE;
   }else{
     /* One side is a column, the other is not. Use the columns affinity. */
+    assert( aff1==0 || aff2==0 );
     return (aff1 + aff2);
   }
 }
@@ -488,6 +489,7 @@ SrcList *sqlite3SrcListDup(SrcList *p){
     pNewItem->pSelect = sqlite3SelectDup(pOldItem->pSelect);
     pNewItem->pOn = sqlite3ExprDup(pOldItem->pOn);
     pNewItem->pUsing = sqlite3IdListDup(pOldItem->pUsing);
+    pNewItem->pWIdx = 0;
     pNewItem->colUsed = pOldItem->colUsed;
   }
   return pNew;
