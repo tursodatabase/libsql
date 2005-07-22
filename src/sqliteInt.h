@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.396 2005/07/21 18:23:20 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.397 2005/07/22 00:31:40 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -960,7 +960,8 @@ struct WhereLevel {
   int cont;             /* Jump here to continue with the next loop cycle */
   int top;              /* First instruction of interior of the loop */
   int op, p1, p2;       /* Opcode used to terminate the loop */
-  int inOp, inP1, inP2; /* Opcode used to implement an IN operator */
+  int nIn;              /* Number of IN operators constraining this loop */
+  int *aInLoop;         /* Loop terminators for IN operators */
 };
 
 /*
