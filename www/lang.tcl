@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the lang-*.html files.
 #
-set rcsid {$Id: lang.tcl,v 1.93 2005/06/26 20:00:46 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.94 2005/07/22 23:56:50 drh Exp $}
 source common.tcl
 
 if {[llength $argv]>0} {
@@ -541,9 +541,10 @@ on automatic B-Tree key generation is available
 <a href="autoinc.html">separately</a>.</p>
 
 <p>If the "TEMP" or "TEMPORARY" keyword occurs in between "CREATE"
-and "TABLE" then the table that is created is only visible to the
-process that opened the database and is automatically deleted when
-the database is closed.  Any indices created on a temporary table
+and "TABLE" then the table that is created is only visible
+within that same database connection
+and is automatically deleted when
+the database connection is closed.  Any indices created on a temporary table
 are also temporary.  Temporary tables and indices are stored in a
 separate file distinct from the main database file.</p>
 
