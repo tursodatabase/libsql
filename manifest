@@ -1,5 +1,5 @@
-C Begin\sadding\scode\sto\ssupport\smultiple\sIN\sconstraints\son\sthe\ssame\sindex.\s(CVS\s2557)
-D 2005-07-22T00:31:40
+C Correct\sthe\sdocumentation\sto\sshow\sthat\ssqlite3_column_text()\sreturns\na\sNULL\spointer\s(not\san\sempty\sstring)\swhen\sthe\scolumn\svalue\sis\sNULL.\nThe\ssame\sgoes\sfor\ssqlite3_column_blob().\s\sTicket\s#1334.\s(CVS\s2558)
+D 2005-07-22T22:53:16
 F Makefile.in 22ea9c0fe748f591712d8fe3c6d972c6c173a165
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -251,7 +251,7 @@ F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
 F www/autoinc.tcl b357f5ba954b046ee35392ce0f884a2fcfcdea06
 F www/c_interface.tcl b51b08591554c16a0c3ef718364a508ac25abc7e
 F www/capi3.tcl 7a7cc225fe02eb7ab861a6019b08baa0014409e1
-F www/capi3ref.tcl bf2ca74997fff2f460bc721c04165861e241a71a
+F www/capi3ref.tcl 885f2aa112e2e9b8822753bf2972d5afd0cfeba9
 F www/changes.tcl 8fb8a688e6233d03b354d3f47499f388b887c67c
 F www/common.tcl de758130d54d95d151ea0d17a2ae5b92e1bb01de
 F www/compile.tcl 276546d7eb445add5a867193bbd80f6919a6b084
@@ -286,7 +286,7 @@ F www/tclsqlite.tcl 425be741b8ae664f55cb1ef2371aab0a75109cf9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P e2f822ac82d0a5a59de0b63cce65d4fd6c178ff1
-R 156ee4225ef63d3a2b0a126183a1b6ad
+P 103f8ccb9013689a480766ebffbf570d4aa8bac5
+R c4c1b015b27df10cfaa4a6eb48f50835
 U drh
-Z b87a4baf4ad23e926496089f67763fa0
+Z 3d55d319bdf70ffa0b770d1f9917d757
