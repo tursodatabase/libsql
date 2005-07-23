@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code associated with the ANALYZE command.
 **
-** @(#) $Id: analyze.c,v 1.3 2005/07/23 02:17:03 drh Exp $
+** @(#) $Id: analyze.c,v 1.4 2005/07/23 03:18:40 drh Exp $
 */
 #ifndef SQLITE_OMIT_ANALYZE
 #include "sqliteInt.h"
@@ -205,6 +205,15 @@ static void analyzeOneTable(
 }
 
 /*
+** Generate code that will cause the most recent index analysis to
+** be laoded into internal hash tables where is can be used.
+*/
+static void loadAnalysis(Parse *pParse, int iDb){
+  Vdbe *v = sqlite3GetVdbe(pParse);
+  sqlite3VdbeAddOp(v, OP_LoadAnalysis, iDb, 0);
+}
+
+/*
 ** Generate code that will do an analysis of an entire database
 */
 static void analyzeDatabase(Parse *pParse, int iDb){
@@ -221,6 +230,7 @@ static void analyzeDatabase(Parse *pParse, int iDb){
     Table *pTab = (Table*)sqliteHashData(k);
     analyzeOneTable(pParse, pTab, iStatCur, iMem);
   }
+  loadAnalysis(pParse, iDb);
 }
 
 /*
@@ -237,6 +247,7 @@ static void analyzeTable(Parse *pParse, Table *pTab){
   iStatCur = pParse->nTab++;
   openStatTable(pParse, iDb, iStatCur, pTab->zName);
   analyzeOneTable(pParse, pTab, iStatCur, pParse->nMem);
+  loadAnalysis(pParse, iDb);
 }
 
 /*
@@ -299,6 +310,84 @@ void sqlite3Analyze(Parse *pParse, Token *pName1, Token *pName2){
   }
 }
 
+/*
+** Used to pass information from the analyzer reader through to the
+** callback routine.
+*/
+typedef struct analysisInfo analysisInfo;
+struct analysisInfo {
+  sqlite3 *db;
+  const char *zDatabase;
+};
+
+/*
+** This callback is invoked once for each index when reading the
+** sqlite_stat1 table.  
+**
+**     argv[0] = name of the index
+**     argv[1] = results of analysis - on integer for each column
+*/
+static int analysisLoader(void *pData, int argc, char **argv, char **azNotUsed){
+  analysisInfo *pInfo = (analysisInfo*)pData;
+  Index *pIndex;
+  int i, c;
+  unsigned int v;
+  const char *z;
+
+  assert( argc==2 );
+  if( argv[0]==0 || argv[1]==0 ){
+    return 0;
+  }
+  pIndex = sqlite3FindIndex(pInfo->db, argv[0], pInfo->zDatabase);
+  if( pIndex==0 ){
+    return 0;
+  }
+  z = argv[1];
+  for(i=0; *z && i<pIndex->nColumn; i++){
+    v = 0;
+    while( (c=z[0])>='0' && c<='9' ){
+      v = v*10 + c - '0';
+      z++;
+    }
+    pIndex->aiRowEst[i] = v;
+    if( *z==' ' ) z++;
+  }
+  return 0;
+}
+
+/*
+** Load the content of the sqlite_stat1 table into the index hash tables.
+*/
+void sqlite3AnalysisLoad(sqlite3 *db, int iDb){
+  analysisInfo sInfo;
+  HashElem *i;
+  char *zSql;
+
+  /* Clear any prior statistics */
+  for(i=sqliteHashFirst(&db->aDb[iDb].idxHash); i; i=sqliteHashNext(i)){
+    Index *pIdx = sqliteHashData(i);
+    int j;
+    for(j=pIdx->nColumn-1; j>=0; j--){
+      pIdx->aiRowEst[j] = 100;
+    }
+  }
+
+  /* Check to make sure the sqlite_stat1 table existss */
+  sInfo.db = db;
+  sInfo.zDatabase = db->aDb[iDb].zName;
+  if( sqlite3FindTable(db, "sqlite_stat1", sInfo.zDatabase)==0 ){
+     return;
+  }
+
+
+  /* Load new statistics out of the sqlite_stat1 table */
+  zSql = sqlite3MPrintf("SELECT idx, stat FROM %Q.sqlite_stat1",
+                        sInfo.zDatabase);
+  sqlite3SafetyOff(db);
+  sqlite3_exec(db, zSql, analysisLoader, &sInfo, 0);
+  sqlite3SafetyOn(db);
+  sqliteFree(zSql);
+}
 
 
 #endif /* SQLITE_OMIT_ANALYZE */

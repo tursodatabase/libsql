@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.476 2005/07/21 18:23:20 drh Exp $
+** $Id: vdbe.c,v 1.477 2005/07/23 03:18:40 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -3888,6 +3888,21 @@ case OP_ParseSchema: {        /* no-push */
   sqliteFree(zSql);
   break;  
 }
+
+#ifndef SQLITE_OMIT_ANALYZE
+/* Opcode: LoadAnalysis P1 * *
+**
+** Read the sqlite_stat1 table for database P1 and load the content
+** of that table into the internal index hash table.  This will cause
+** the analysis to be used when preparing all subsequent queries.
+*/
+case OP_LoadAnalysis: {        /* no-push */
+  int iDb = pOp->p1;
+  assert( iDb>=0 && iDb<db->nDb );
+  sqlite3AnalysisLoad(db, iDb);
+  break;  
+}
+#endif /* SQLITE_OMIT_ANALYZE */
 
 /* Opcode: DropTable P1 * P3
 **
