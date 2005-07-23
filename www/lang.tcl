@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the lang-*.html files.
 #
-set rcsid {$Id: lang.tcl,v 1.94 2005/07/22 23:56:50 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.95 2005/07/23 02:17:03 drh Exp $}
 source common.tcl
 
 if {[llength $argv]>0} {
@@ -76,6 +76,7 @@ foreach {section} [lsort -index 0 -dictionary {
   {{DETACH DATABASE} detach}
   {REINDEX reindex}
   {{ALTER TABLE} altertable}
+  {{ANALYZE} analyze}
 }] {
   foreach {s_title s_tag} $section {}
   puts "<li><a href=\"[slink $s_tag]\">$s_title</a></li>"
@@ -185,6 +186,35 @@ on a table with 10 million rows as it does on a table with 1 row.
 <p>After ADD COLUMN has been run on a database, that database will not
 be readable by SQLite version 3.1.3 and earlier until the database
 is <a href="lang_vacuum.html">VACUUM</a>ed.</p>
+}
+
+Section {ANALYZE} analyze
+
+Syntax {sql-statement} {
+  ANALYZE
+}
+Syntax {sql-statement} {
+  ANALYZE <database-name>
+}
+Syntax {sql-statement} {
+  ANALYZE [<database-name> .] <table-name>
+}
+
+puts {
+<p>The ANALYZE command gathers statistics about indices and stores them
+in a special tables in the database where the query optimizer can use
+them to help make better index choices.
+If no arguments are given, all indices in all attached databases are
+analyzed.  If a database name is given as the argument, all indices
+in that one database are analyzed.  If the argument is a table name,
+then only indices associated with that one table are analyzed.</p>
+
+<p>The initial implementation stores all statistics in a single
+table named <b>sqlite_stat1</b>.  Future enhancements may create
+additional tables with the same name pattern except with the "1"
+changed to a different digit.  The <b>sqlite_stat1</b> table cannot
+be DROPped, but it all the content can be DELETEd which as the
+same effect.</p>
 }
 
 Section {ATTACH DATABASE} attach
@@ -1484,8 +1514,7 @@ Syntax {sql-statement} {
 
 puts {
 <p>The REINDEX command is used to delete and recreate indices from scratch.
-This is primarily useful when the definition of a collation sequence has 
-changed.
+This is useful when the definition of a collation sequence has changed.
 </p>
 
 <p>In the first form, all indices in all attached databases that use the

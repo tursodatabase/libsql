@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: auth.test,v 1.27 2005/03/29 03:11:00 danielk1977 Exp $
+# $Id: auth.test,v 1.28 2005/07/23 02:17:03 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -1950,6 +1950,49 @@ ifcapable tempdb {
 }
 
 } ;# ifcapable reindex 
+
+ifcapable analyze {
+  proc auth {code args} {
+    if {$code=="SQLITE_ANALYZE"} {
+      set ::authargs [concat $::authargs $args]
+    }
+    return SQLITE_OK
+  }
+  do_test auth-1.294 {
+    set ::authargs {}
+    execsql {
+      CREATE TABLE t4(a,b,c);
+      CREATE INDEX t4i1 ON t4(a);
+      CREATE INDEX t4i2 ON t4(b,a,c);
+      INSERT INTO t4 VALUES(1,2,3);
+      ANALYZE;
+    }
+    set ::authargs
+  } {t4 {} main {}}
+  do_test auth-1.295 {
+    execsql {
+      SELECT count(*) FROM sqlite_stat1;
+    }
+  } 2
+  proc auth {code args} {
+    if {$code=="SQLITE_ANALYZE"} {
+      set ::authargs [concat $::authargs $args]
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  do_test auth-1.296 {
+    set ::authargs {}
+    catchsql {
+      ANALYZE;
+    }
+  } {1 {not authorized}}
+  do_test auth-1.297 {
+    execsql {
+      SELECT count(*) FROM sqlite_stat1;
+    }
+  } 2
+} ;# ifcapable analyze
 
 do_test auth-2.1 {
   proc auth {code arg1 arg2 arg3 arg4} {

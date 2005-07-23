@@ -1,0 +1,190 @@
+# 2005 July 22
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.
+# This file implements tests for the ANALYZE command.
+#
+# $Id: analyze.test,v 1.1 2005/07/23 02:17:03 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# There is nothing to test if ANALYZE is disable for this build.
+#
+ifcapable {!analyze} {
+  finish_test
+  return
+}
+
+# Basic sanity checks.
+#
+do_test analyze-1.1 {
+  catchsql {
+    ANALYZE no_such_table
+  }
+} {1 {no such table: no_such_table}}
+do_test analyze-1.2 {
+  execsql {
+    SELECT count(*) FROM sqlite_master WHERE name='sqlite_stat1'
+  }
+} {0}
+do_test analyze-1.3 {
+  catchsql {
+    ANALYZE no_such_db.no_such_table
+  }
+} {1 {unknown database no_such_db}}
+do_test analyze-1.4 {
+  execsql {
+    SELECT count(*) FROM sqlite_master WHERE name='sqlite_stat1'
+  }
+} {0}
+do_test analyze-1.5 {
+  catchsql {
+    ANALYZE
+  }
+} {0 {}}
+do_test analyze-1.6 {
+  execsql {
+    SELECT count(*) FROM sqlite_master WHERE name='sqlite_stat1'
+  }
+} {1}
+do_test analyze-1.7 {
+  execsql {
+    SELECT * FROM sqlite_stat1
+  }
+} {}
+do_test analyze-1.8 {
+  catchsql {
+    ANALYZE main
+  }
+} {0 {}}
+do_test analyze-1.9 {
+  execsql {
+    SELECT * FROM sqlite_stat1
+  }
+} {}
+do_test analyze-1.10 {
+  catchsql {
+    CREATE TABLE t1(a,b);
+    ANALYZE main.t1;
+  }
+} {0 {}}
+do_test analyze-1.11 {
+  execsql {
+    SELECT * FROM sqlite_stat1
+  }
+} {}
+do_test analyze-1.12 {
+  catchsql {
+    ANALYZE t1;
+  }
+} {0 {}}
+do_test analyze-1.13 {
+  execsql {
+    SELECT * FROM sqlite_stat1
+  }
+} {}
+
+# Create some indices that can be analyzed.  But do not yet add
+# data.  Without data in the tables, no analysis is done.
+#
+do_test analyze-2.1 {
+  execsql {
+    CREATE INDEX t1i1 ON t1(a);
+    ANALYZE main.t1;
+    SELECT * FROM sqlite_stat1 ORDER BY idx;
+  }
+} {}
+do_test analyze-2.2 {
+  execsql {
+    CREATE INDEX t1i2 ON t1(b);
+    ANALYZE t1;
+    SELECT * FROM sqlite_stat1 ORDER BY idx;
+  }
+} {}
+do_test analyze-2.3 {
+  execsql {
+    CREATE INDEX t1i3 ON t1(a,b);
+    ANALYZE main;
+    SELECT * FROM sqlite_stat1 ORDER BY idx;
+  }
+} {}
+
+# Start adding data to the table.  Verify that the analysis
+# is done correctly.
+#
+do_test analyze-3.1 {
+  execsql {
+    INSERT INTO t1 VALUES(1,2);
+    INSERT INTO t1 VALUES(1,3);
+    ANALYZE main.t1;
+    SELECT idx, stat FROM sqlite_stat1 ORDER BY idx;
+  }
+} {t1i1 2 t1i2 1 t1i3 {2 1}}
+do_test analyze-3.2 {
+  execsql {
+    INSERT INTO t1 VALUES(1,4);
+    INSERT INTO t1 VALUES(1,5);
+    ANALYZE t1;
+    SELECT idx, stat FROM sqlite_stat1 ORDER BY idx;
+  }
+} {t1i1 4 t1i2 1 t1i3 {4 1}}
+do_test analyze-3.3 {
+  execsql {
+    INSERT INTO t1 VALUES(2,5);
+    ANALYZE main;
+    SELECT idx, stat FROM sqlite_stat1 ORDER BY idx;
+  }
+} {t1i1 3 t1i2 2 t1i3 {3 1}}
+do_test analyze-3.4 {
+  execsql {
+    CREATE TABLE t2 AS SELECT * FROM t1;
+    CREATE INDEX t2i1 ON t2(a);
+    CREATE INDEX t2i2 ON t2(b);
+    CREATE INDEX t2i3 ON t2(a,b);
+    ANALYZE;
+    SELECT idx, stat FROM sqlite_stat1 ORDER BY idx;
+  }
+} {t1i1 3 t1i2 2 t1i3 {3 1} t2i1 3 t2i2 2 t2i3 {3 1}}
+do_test analyze-3.5 {
+  execsql {
+    DROP INDEX t2i3;
+    ANALYZE t1;
+    SELECT idx, stat FROM sqlite_stat1 ORDER BY idx;
+  }
+} {t1i1 3 t1i2 2 t1i3 {3 1} t2i1 3 t2i2 2 t2i3 {3 1}}
+do_test analyze-3.6 {
+  execsql {
+    ANALYZE t2;
+    SELECT idx, stat FROM sqlite_stat1 ORDER BY idx;
+  }
+} {t1i1 3 t1i2 2 t1i3 {3 1} t2i1 3 t2i2 2}
+do_test analyze-3.7 {
+  execsql {
+    DROP INDEX t2i2;
+    ANALYZE t2;
+    SELECT idx, stat FROM sqlite_stat1 ORDER BY idx;
+  }
+} {t1i1 3 t1i2 2 t1i3 {3 1}}
+do_test analyze-3.8 {
+  execsql {
+    CREATE TABLE t3 AS SELECT a, b, rowid AS c, 'hi' AS d FROM t1;
+    CREATE INDEX t3i1 ON t3(a);
+    CREATE INDEX t3i2 ON t3(a,b,c,d);
+    CREATE INDEX t3i3 ON t3(d,b,c,a);
+    DROP TABLE t1;
+    DROP TABLE t2;
+    ANALYZE;
+    SELECT idx, stat FROM sqlite_stat1 ORDER BY idx;
+  }
+} {t3i1 3 t3i2 {3 1 1 1} t3i3 {5 2 1 1}}
+
+
+finish_test

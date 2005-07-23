@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code associated with the ANALYZE command.
 **
-** @(#) $Id: analyze.c,v 1.2 2005/07/23 00:41:49 drh Exp $
+** @(#) $Id: analyze.c,v 1.3 2005/07/23 02:17:03 drh Exp $
 */
 #ifndef SQLITE_OMIT_ANALYZE
 #include "sqliteInt.h"
@@ -64,7 +64,7 @@ static void openStatTable(
   /* Open the sqlite_stat1 table for writing.
   */
   sqlite3VdbeAddOp(v, OP_Integer, iDb, 0);
-  sqlite3VdbeAddOp(v, OP_OpenWrite, iStatCur, 0);
+  sqlite3VdbeAddOp(v, OP_OpenWrite, iStatCur, iRootPage);
   sqlite3VdbeAddOp(v, OP_SetNumColumns, iStatCur, 3);
 }
 
@@ -92,6 +92,14 @@ static void analyzeOneTable(
     /* Do no analysis for tables with fewer than 2 indices */
     return;
   }
+
+#ifndef SQLITE_OMIT_AUTHORIZATION
+  if( sqlite3AuthCheck(pParse, SQLITE_ANALYZE, pTab->zName, 0,
+      pParse->db->aDb[pTab->iDb].zName ) ){
+    return;
+  }
+#endif
+
   iIdxCur = pParse->nTab;
   for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
     /* Open a cursor to the index to be analyzed
@@ -130,9 +138,9 @@ static void analyzeOneTable(
 
     /* Do the analysis.
     */
-    sqlite3VdbeAddOp(v, OP_Rewind, iIdxCur, 0);
-    topOfLoop = sqlite3VdbeCurrentAddr(v);
     endOfLoop = sqlite3VdbeMakeLabel(v);
+    sqlite3VdbeAddOp(v, OP_Rewind, iIdxCur, endOfLoop);
+    topOfLoop = sqlite3VdbeCurrentAddr(v);
     sqlite3VdbeAddOp(v, OP_MemIncr, iMem, 0);
     for(i=0; i<nCol; i++){
       sqlite3VdbeAddOp(v, OP_Column, iIdxCur, i);
@@ -263,20 +271,19 @@ void sqlite3Analyze(Parse *pParse, Token *pName1, Token *pName2){
       if( i==1 ) continue;  /* Do not analyze the TEMP database */
       analyzeDatabase(pParse, i);
     }
-  }else if( pName2==0 ){
+  }else if( pName2==0 || pName2->n==0 ){
     /* Form 2:  Analyze the database or table named */
     iDb = sqlite3FindDb(db, pName1);
     if( iDb>=0 ){
       analyzeDatabase(pParse, iDb);
-      return;
+    }else{
+      z = sqlite3NameFromToken(pName1);
+      pTab = sqlite3LocateTable(pParse, z, 0);
+      sqliteFree(z);
+      if( pTab ){
+        analyzeTable(pParse, pTab);
+      }
     }
-    z = sqlite3NameFromToken(pName1);
-    pTab = sqlite3LocateTable(pParse, z, 0);
-    sqliteFree(z);
-    if( pTab ){
-      analyzeTable(pParse, pTab);
-    }
-    return;
   }else{
     /* Form 3: Analyze the fully qualified table name */
     iDb = sqlite3TwoPartName(pParse, pName1, pName2, &pTableName);
