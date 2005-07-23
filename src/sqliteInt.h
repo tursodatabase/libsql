@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.397 2005/07/22 00:31:40 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.398 2005/07/23 00:41:49 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1569,6 +1569,7 @@ CollSeq *sqlite3GetCollSeq(sqlite3*, CollSeq *, const char *, int);
 char sqlite3AffinityType(const Token*);
 void sqlite3Analyze(Parse*, Token*, Token*);
 int sqlite3InvokeBusyHandler(BusyHandler*);
+int sqlite3FindDb(sqlite3*, Token*);
 
 #ifdef SQLITE_SSE
 #include "sseInt.h"

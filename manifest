@@ -1,5 +1,5 @@
-C Clarify\sthe\smeaning\sof\sthe\sTEMP\skeyword\son\sCREATE\sTABLE.\s(CVS\s2559)
-D 2005-07-22T23:56:50
+C First\scode\sfor\sthe\sANALYZE\scommand.\s\sMostly\suntested.\s\sThe\sanalysis\sis\nnot\sloaded\sinto\sthe\ssymbol\stables\sand\sis\snot\sused\sby\sthe\soptimizer.\s(CVS\s2560)
+D 2005-07-23T00:41:49
 F Makefile.in 22ea9c0fe748f591712d8fe3c6d972c6c173a165
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -28,12 +28,12 @@ F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.def c413e514217736884254739a105c8c942fdf0c2f
 F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
 F src/alter.c 03041f2464e22532601254f87cb49997fa21dcdf
-F src/analyze.c 2f770b39f9d77353ac36db1861319e6323772f82
+F src/analyze.c 0eb48929dd1caa21438b067c507b0ee55ce17047
 F src/attach.c 3615dbe960cbee4aa5ea300b8a213dad36527b0f
 F src/auth.c 18c5a0befe20f3a58a41e3ddd78f372faeeefe1f
 F src/btree.c ec55bd70052cdd0958f3a0e79ad58d93561acb20
 F src/btree.h 41a71ce027db9ddee72cb43df2316bbe3a1d92af
-F src/build.c c2b9379e3b51775de01137a68d3a67359e29d3aa
+F src/build.c 50e1197f5f70d544dc85b8483766f6194375d04e
 F src/callback.c 0910b611e0c158f107ee3ff86f8a371654971e2b
 F src/date.c 7444b0900a28da77e57e3337a636873cff0ae940
 F src/delete.c be1fc25c9e109cd8cbab42a43ee696263da7c04b
@@ -64,7 +64,7 @@ F src/random.c 90adff4e73a3b249eb4f1fc2a6ff9cf78c7233a4
 F src/select.c c611471052773b94af771693686bd5bcdbbb0dba
 F src/shell.c 25b3217d7c64e6497225439d261a253a23efff26
 F src/sqlite.h.in 838382ed6b48d392366a55e07f49d9d71263e1fe
-F src/sqliteInt.h 810f2ccd49338944ec53c95182e5a8b56da42fa0
+F src/sqliteInt.h 2925510c0233bb24c550fc5912fcdf0dd3a4421d
 F src/table.c 25b3ff2b39b7d87e8d4a5da0713d68dfc06cbee9
 F src/tclsqlite.c cccaf6b78c290d824cf8ea089b8b27377e545830
 F src/test1.c 722c1444b5774705eb6eb11163343fc94ffe17f7
@@ -286,7 +286,7 @@ F www/tclsqlite.tcl 425be741b8ae664f55cb1ef2371aab0a75109cf9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P fd1e013a14710ed2ecabddedc0d110562cfdbfc2
-R c3a6d2b6548be7b005874f5369987f47
+P 1a573619f558d1d67775d17aabb9d704f82ad1a8
+R a3fdedefcb771a47f367010f865883f0
 U drh
-Z 5560bd6b70c08f20b53ebb18f06f4772
+Z d92cfb5ebecb44f8fc7d777743031b10

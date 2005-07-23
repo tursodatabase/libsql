@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.332 2005/07/21 18:23:20 drh Exp $
+** $Id: build.c,v 1.333 2005/07/23 00:41:49 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -535,7 +535,7 @@ void sqlite3OpenMasterTable(Vdbe *v, int iDb){
 ** index of the named database in db->aDb[], or -1 if the named db 
 ** does not exist.
 */
-static int findDb(sqlite3 *db, Token *pName){
+int sqlite3FindDb(sqlite3 *db, Token *pName){
   int i = -1;    /* Database number */
   int n;         /* Number of characters in the name */
   Db *pDb;       /* A database whose name space is being searched */
@@ -583,7 +583,7 @@ int sqlite3TwoPartName(
   if( pName2 && pName2->n>0 ){
     assert( !db->init.busy );
     *pUnqual = pName2;
-    iDb = findDb(db, pName1);
+    iDb = sqlite3FindDb(db, pName1);
     if( iDb<0 ){
       sqlite3ErrorMsg(pParse, "unknown database %T", pName1);
       pParse->nErr++;
@@ -2813,7 +2813,7 @@ void reindexDatabases(Parse *pParse, CollSeq *pColl){
 
   for(iDb=0, pDb=db->aDb; iDb<db->nDb; iDb++, pDb++){
     if( pDb==0 ) continue;
-      for(k=sqliteHashFirst(&pDb->tblHash);  k; k=sqliteHashNext(k)){
+    for(k=sqliteHashFirst(&pDb->tblHash);  k; k=sqliteHashNext(k)){
       pTab = (Table*)sqliteHashData(k);
       reindexTable(pParse, pTab, pColl);
     }
