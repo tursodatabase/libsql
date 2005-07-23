@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.
 # This file implements tests for the ANALYZE command.
 #
-# $Id: analyze.test,v 1.1 2005/07/23 02:17:03 drh Exp $
+# $Id: analyze.test,v 1.2 2005/07/23 14:52:12 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -127,7 +127,7 @@ do_test analyze-3.1 {
     ANALYZE main.t1;
     SELECT idx, stat FROM sqlite_stat1 ORDER BY idx;
   }
-} {t1i1 2 t1i2 1 t1i3 {2 1}}
+} {t1i1 {2 2} t1i2 {2 1} t1i3 {2 2 1}}
 do_test analyze-3.2 {
   execsql {
     INSERT INTO t1 VALUES(1,4);
@@ -135,14 +135,14 @@ do_test analyze-3.2 {
     ANALYZE t1;
     SELECT idx, stat FROM sqlite_stat1 ORDER BY idx;
   }
-} {t1i1 4 t1i2 1 t1i3 {4 1}}
+} {t1i1 {4 4} t1i2 {4 1} t1i3 {4 4 1}}
 do_test analyze-3.3 {
   execsql {
     INSERT INTO t1 VALUES(2,5);
     ANALYZE main;
     SELECT idx, stat FROM sqlite_stat1 ORDER BY idx;
   }
-} {t1i1 3 t1i2 2 t1i3 {3 1}}
+} {t1i1 {5 3} t1i2 {5 2} t1i3 {5 3 1}}
 do_test analyze-3.4 {
   execsql {
     CREATE TABLE t2 AS SELECT * FROM t1;
@@ -152,27 +152,27 @@ do_test analyze-3.4 {
     ANALYZE;
     SELECT idx, stat FROM sqlite_stat1 ORDER BY idx;
   }
-} {t1i1 3 t1i2 2 t1i3 {3 1} t2i1 3 t2i2 2 t2i3 {3 1}}
+} {t1i1 {5 3} t1i2 {5 2} t1i3 {5 3 1} t2i1 {5 3} t2i2 {5 2} t2i3 {5 3 1}}
 do_test analyze-3.5 {
   execsql {
     DROP INDEX t2i3;
     ANALYZE t1;
     SELECT idx, stat FROM sqlite_stat1 ORDER BY idx;
   }
-} {t1i1 3 t1i2 2 t1i3 {3 1} t2i1 3 t2i2 2 t2i3 {3 1}}
+} {t1i1 {5 3} t1i2 {5 2} t1i3 {5 3 1} t2i1 {5 3} t2i2 {5 2} t2i3 {5 3 1}}
 do_test analyze-3.6 {
   execsql {
     ANALYZE t2;
     SELECT idx, stat FROM sqlite_stat1 ORDER BY idx;
   }
-} {t1i1 3 t1i2 2 t1i3 {3 1} t2i1 3 t2i2 2}
+} {t1i1 {5 3} t1i2 {5 2} t1i3 {5 3 1} t2i1 {5 3} t2i2 {5 2}}
 do_test analyze-3.7 {
   execsql {
     DROP INDEX t2i2;
     ANALYZE t2;
     SELECT idx, stat FROM sqlite_stat1 ORDER BY idx;
   }
-} {t1i1 3 t1i2 2 t1i3 {3 1}}
+} {t1i1 {5 3} t1i2 {5 2} t1i3 {5 3 1}}
 do_test analyze-3.8 {
   execsql {
     CREATE TABLE t3 AS SELECT a, b, rowid AS c, 'hi' AS d FROM t1;
@@ -184,7 +184,7 @@ do_test analyze-3.8 {
     ANALYZE;
     SELECT idx, stat FROM sqlite_stat1 ORDER BY idx;
   }
-} {t3i1 3 t3i2 {3 1 1 1} t3i3 {5 2 1 1}}
+} {t3i1 {5 3} t3i2 {5 3 1 1 1} t3i3 {5 5 2 1 1}}
 
 
 finish_test

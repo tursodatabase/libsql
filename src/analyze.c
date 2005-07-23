@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code associated with the ANALYZE command.
 **
-** @(#) $Id: analyze.c,v 1.4 2005/07/23 03:18:40 drh Exp $
+** @(#) $Id: analyze.c,v 1.5 2005/07/23 14:52:12 drh Exp $
 */
 #ifndef SQLITE_OMIT_ANALYZE
 #include "sqliteInt.h"
@@ -163,10 +163,12 @@ static void analyzeOneTable(
     ** The result is a single row of the sqlite_stmt1 table.  The first
     ** two columns are the names of the table and index.  The third column
     ** is a string composed of a list of integer statistics about the
-    ** index.  There is one integer in the list for each column of the table.
-    ** This integer is a guess of how many rows of the table the index will
-    ** select.  If D is the count of distinct values and K is the total
-    ** number of rows, then the integer is computed as:
+    ** index.  The first integer in the list is the total number of entires
+    ** in the index.  There is one additional integer in the list for each
+    ** column of the table.  This additional integer is a guess of how many
+    ** rows of the table the index will select.  If D is the count of distinct
+    ** values and K is the total number of rows, then the integer is computed
+    ** as:
     **
     **        I = (K+D-1)/D
     **
@@ -179,6 +181,8 @@ static void analyzeOneTable(
     sqlite3VdbeAddOp(v, OP_NewRowid, iStatCur, 0);
     sqlite3VdbeOp3(v, OP_String8, 0, 0, pTab->zName, 0);
     sqlite3VdbeOp3(v, OP_String8, 0, 0, pIdx->zName, 0);
+    sqlite3VdbeAddOp(v, OP_MemLoad, iMem, 0);
+    sqlite3VdbeOp3(v, OP_String8, 0, 0, " ", 0);
     for(i=0; i<nCol; i++){
       sqlite3VdbeAddOp(v, OP_MemLoad, iMem, 0);
       sqlite3VdbeAddOp(v, OP_MemLoad, iMem+i+1, 0);
@@ -187,15 +191,9 @@ static void analyzeOneTable(
       sqlite3VdbeAddOp(v, OP_MemLoad, iMem+i+1, 0);
       sqlite3VdbeAddOp(v, OP_Divide, 0, 0);
       if( i==nCol-1 ){
-        if( i>0 ){
-          sqlite3VdbeAddOp(v, OP_Concat, nCol*2-3, 0);
-        }
+        sqlite3VdbeAddOp(v, OP_Concat, nCol*2-1, 0);
       }else{
-        if( i==0 ){
-          sqlite3VdbeOp3(v, OP_String8, 0, 0, " ", 0);
-        }else{
-          sqlite3VdbeAddOp(v, OP_Dup, 1, 0);
-        }
+        sqlite3VdbeAddOp(v, OP_Dup, 1, 0);
       }
     }
     sqlite3VdbeOp3(v, OP_MakeRecord, 3, 0, "ttt", 0);
@@ -343,7 +341,7 @@ static int analysisLoader(void *pData, int argc, char **argv, char **azNotUsed){
     return 0;
   }
   z = argv[1];
-  for(i=0; *z && i<pIndex->nColumn; i++){
+  for(i=0; *z && i<=pIndex->nColumn; i++){
     v = 0;
     while( (c=z[0])>='0' && c<='9' ){
       v = v*10 + c - '0';
@@ -367,8 +365,8 @@ void sqlite3AnalysisLoad(sqlite3 *db, int iDb){
   for(i=sqliteHashFirst(&db->aDb[iDb].idxHash); i; i=sqliteHashNext(i)){
     Index *pIdx = sqliteHashData(i);
     int j;
-    for(j=pIdx->nColumn-1; j>=0; j--){
-      pIdx->aiRowEst[j] = 100;
+    for(j=0; j<=pIdx->nColumn; j++){
+      pIdx->aiRowEst[j] = j<100 ? 1000*(100-j) : 100;
     }
   }
 

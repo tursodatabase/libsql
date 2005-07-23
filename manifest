@@ -1,5 +1,5 @@
-C The\sresults\sof\sANALYZE\sare\snow\sloaded\sinto\sinternal\sdata\sstructures\swhere\nthey\scan\sbe\sused.\s\sBut\sthey\sare\snot\sactually\sused\syet.\s(CVS\s2562)
-D 2005-07-23T03:18:40
+C Store\sthe\stotal\snumber\sof\srows\sas\spart\sof\sthe\sANALYZE\sstatistics.\s(CVS\s2563)
+D 2005-07-23T14:52:12
 F Makefile.in 22ea9c0fe748f591712d8fe3c6d972c6c173a165
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -28,12 +28,12 @@ F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.def c413e514217736884254739a105c8c942fdf0c2f
 F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
 F src/alter.c 03041f2464e22532601254f87cb49997fa21dcdf
-F src/analyze.c 443c3449af103145873b6f64d5677df87e5edfdd
+F src/analyze.c a0d88c2278f0cabadfd3dfdb464f38cc63b9897c
 F src/attach.c 3615dbe960cbee4aa5ea300b8a213dad36527b0f
 F src/auth.c 18c5a0befe20f3a58a41e3ddd78f372faeeefe1f
 F src/btree.c ec55bd70052cdd0958f3a0e79ad58d93561acb20
 F src/btree.h 41a71ce027db9ddee72cb43df2316bbe3a1d92af
-F src/build.c 6aec7f0cee28f235aa08bcbeba33e4f68851b681
+F src/build.c 59a3ffe94df2c58f223a66644ea7ffd8eba28bc7
 F src/callback.c 0910b611e0c158f107ee3ff86f8a371654971e2b
 F src/date.c 7444b0900a28da77e57e3337a636873cff0ae940
 F src/delete.c be1fc25c9e109cd8cbab42a43ee696263da7c04b
@@ -91,7 +91,7 @@ F test/all.test 7f0988442ab811dfa41793b5b550f5828ce316f3
 F test/alter.test 9d6837a3d946b73df692b7cef2a7644d2e2f6bc6
 F test/alter2.test 60ba0a7057dc71ad630a1cc7c487104346849d50
 F test/alter3.test d4eecd8dbd008d0e66f1c201fa6dc2edca853c38
-F test/analyze.test a34554a015e9fdc478ae1660188feb0de4e43c2e
+F test/analyze.test ac50d2a24118ce5f0f9b50cc563a1a1498a948c4
 F test/attach.test f320e98bcca68d100cab7666a0c9a93ac5f236bd
 F test/attach2.test 3396c012a39ddf7ba6b528d80bd79554168aa115
 F test/attach3.test 63013383adc4380af69779f34f4af19bd49f7cbe
@@ -287,7 +287,7 @@ F www/tclsqlite.tcl 425be741b8ae664f55cb1ef2371aab0a75109cf9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P bd7583a5d63412785a9c5de54d25b509da241605
-R fa0725a452365a6cc3e3b5a32a1f47a7
+P 1996bacfb97180965304e2a6d6784b6ecbbf8575
+R ce8b845e83c2fe78f71fc8660f861c81
 U drh
-Z 614161da507000f7e7ba00462a0c3cc8
+Z fe452359cfb2b9a0187816cb97118aaf
