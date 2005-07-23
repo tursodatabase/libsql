@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code associated with the ANALYZE command.
 **
-** @(#) $Id: analyze.c,v 1.5 2005/07/23 14:52:12 drh Exp $
+** @(#) $Id: analyze.c,v 1.6 2005/07/23 22:59:56 drh Exp $
 */
 #ifndef SQLITE_OMIT_ANALYZE
 #include "sqliteInt.h"
@@ -364,10 +364,7 @@ void sqlite3AnalysisLoad(sqlite3 *db, int iDb){
   /* Clear any prior statistics */
   for(i=sqliteHashFirst(&db->aDb[iDb].idxHash); i; i=sqliteHashNext(i)){
     Index *pIdx = sqliteHashData(i);
-    int j;
-    for(j=0; j<=pIdx->nColumn; j++){
-      pIdx->aiRowEst[j] = j<100 ? 1000*(100-j) : 100;
-    }
+    sqlite3DefaultRowEst(pIdx);
   }
 
   /* Check to make sure the sqlite_stat1 table existss */

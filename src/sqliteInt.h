@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.399 2005/07/23 03:18:40 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.400 2005/07/23 22:59:56 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -952,7 +952,7 @@ struct SrcList {
 struct WhereLevel {
   int iFrom;            /* Which entry in the FROM clause */
   int flags;            /* Flags associated with this level */
-  int iMem;             /* Memory cell used by this level */
+  int iMem;             /* First memory cell used by this level */
   int iLeftJoin;        /* Memory cell used to implement LEFT OUTER JOIN */
   Index *pIdx;          /* Index used.  NULL if no index */
   int iTabCur;          /* The VDBE cursor used to access the table */
@@ -961,6 +961,7 @@ struct WhereLevel {
   int cont;             /* Jump here to continue with the next loop cycle */
   int top;              /* First instruction of interior of the loop */
   int op, p1, p2;       /* Opcode used to terminate the loop */
+  int nEq;              /* Number of == or IN constraints on this loop */
   int nIn;              /* Number of IN operators constraining this loop */
   int *aInLoop;         /* Loop terminators for IN operators */
 };
@@ -1572,6 +1573,7 @@ void sqlite3Analyze(Parse*, Token*, Token*);
 int sqlite3InvokeBusyHandler(BusyHandler*);
 int sqlite3FindDb(sqlite3*, Token*);
 void sqlite3AnalysisLoad(sqlite3*,int iDB);
+void sqlite3DefaultRowEst(Index*);
 
 #ifdef SQLITE_SSE
 #include "sseInt.h"

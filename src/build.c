@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.335 2005/07/23 14:52:12 drh Exp $
+** $Id: build.c,v 1.336 2005/07/23 22:59:56 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2206,7 +2206,6 @@ void sqlite3CreateIndex(
       goto exit_create_index;
     }
     pIndex->aiColumn[i] = j;
-    pIndex->aiRowEst[i] = 100;
     if( pList->a[i].pExpr ){
       assert( pList->a[i].pExpr->pColl );
       pIndex->keyInfo.aColl[i] = pList->a[i].pExpr->pColl;
@@ -2221,6 +2220,7 @@ void sqlite3CreateIndex(
     }
   }
   pIndex->keyInfo.nField = pList->nExpr;
+  sqlite3DefaultRowEst(pIndex);
 
   if( pTab==pParse->pNewTable ){
     /* This routine has been called to create an automatic index as a
@@ -2385,6 +2385,21 @@ exit_create_index:
   sqlite3SrcListDelete(pTblName);
   sqliteFree(zName);
   return;
+}
+
+/*
+** Fill the Index.aiRowEst[] array with default information - information
+** to be used when we have no ANALYZE command to run.
+*/
+void sqlite3DefaultRowEst(Index *pIdx){
+  int i;
+  int n = pIdx->nColumn;
+  int j = 1000000;
+  int f = (1000000-1-100*(pIdx->onError==OE_None))/n;
+  for(i=0; i<=n; i++, j-=f){
+    assert( j>0 );
+    pIdx->aiRowEst[i] = j;
+  }
 }
 
 /*
