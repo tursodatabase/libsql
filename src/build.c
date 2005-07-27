@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.336 2005/07/23 22:59:56 drh Exp $
+** $Id: build.c,v 1.337 2005/07/27 20:41:44 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2390,15 +2390,47 @@ exit_create_index:
 /*
 ** Fill the Index.aiRowEst[] array with default information - information
 ** to be used when we have no ANALYZE command to run.
+**
+** aiRowEst[0] is suppose to contain the number of elements in the index.
+** Since we do not know, guess 1 million.  aiRowEst[1] is an estimate of the
+** number of rows in the table that match any particular value of the
+** first column of the index.  aiRowEst[2] is an estimate of the number
+** of rows that match any particular combiniation of the first 2 columns
+** of the index.  And so forth.  It must always be the case that
+*
+**           aiRowEst[N]<=aiRowEst[N-1]
+**           aiRowEst[N]>=1
+**
+** Apart from that, we have little to go on besides intuition as to
+** how aiRowEst[] should be initialized.  The numbers generated here
+** are based on typical values found in actual indices.
 */
 void sqlite3DefaultRowEst(Index *pIdx){
+  int *a = pIdx->aiRowEst;
   int i;
-  int n = pIdx->nColumn;
-  int j = 1000000;
-  int f = (1000000-1-100*(pIdx->onError==OE_None))/n;
-  for(i=0; i<=n; i++, j-=f){
-    assert( j>0 );
-    pIdx->aiRowEst[i] = j;
+  assert( a!=0 );
+  a[0] = 1000000;
+  switch( pIdx->nColumn ){
+    case 1: {
+      a[1] = 20;
+      break;
+    }
+    case 2: {
+      a[1] = 350;
+      a[2] = 20;
+      break;
+    }
+    default: {
+      a[1] = 1250;
+      a[2] = 350;
+      a[3] = 20;
+      for(i=pIdx->nColumn; i>=4; i--){
+        a[i] = 10;
+      }
+    }
+  }
+  if( pIdx->onError!=OE_None ){
+    a[pIdx->nColumn] = 1;
   }
 }
 

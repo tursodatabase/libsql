@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.152 2005/07/23 22:59:56 drh Exp $
+** $Id: where.c,v 1.153 2005/07/27 20:41:44 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -544,6 +544,14 @@ static int isSortingIndex(
   nTerm = pOrderBy->nExpr;
   assert( nTerm>0 );
 
+  /* A UNIQUE index that is fully specified is always a sorting
+  ** index.
+  */
+  if( pIdx->onError!=OE_None && nEqCol==pIdx->nColumn ){
+    *pbRev = 0;
+    return 1;
+  }
+
   /* Match terms of the ORDER BY clause against columns of
   ** the index.
   */
@@ -620,6 +628,25 @@ static int sortableByRowid(
 }
 
 /*
+** Prepare a crude estimate of the logorithm of the input value.
+** The results need not be exact.  This is only used for estimating
+** the total cost of performing operatings with O(logN) or O(NlogN)
+** complexity.  Because N is just a guess, it is no great tragedy if
+** logN is a little off.
+**
+** We can assume N>=1.0;
+*/
+static double estLog(double N){
+  double logN = 1.0;
+  double x = 10.0;
+  while( N>x ){
+    logN = logN+1.0;
+    x *= 10;
+  }
+  return logN;
+}
+
+/*
 ** Find the best index for accessing a particular table.  Return a pointer
 ** to the index, flags that describe how the index should be used, the
 ** number of equality constraints and the "cost" for this index.
@@ -668,46 +695,64 @@ static double bestIndex(
     *ppIndex = 0;
     bestFlags = WHERE_ROWID_EQ;
     if( pTerm->operator & WO_EQ ){
+      /* Rowid== is always the best pick.  Look no further.  Because only
+      ** a single row is generated, output is always in sorted order */
       *pFlags = WHERE_ROWID_EQ;
       *pnEq = 1;
       if( pOrderBy ) *pFlags |= WHERE_ORDERBY;
       TRACE(("... best is rowid\n"));
       return 0.0;
     }else if( pTerm->operator & WO_LIST ){
+      /* Rowid IN (LIST): cost is NlogN where N is the number of list
+      ** elements.  */
       lowestCost = pTerm->pExpr->pList->nExpr;
+      lowestCost *= estLog(lowestCost);
     }else{
-      lowestCost = 100.0;
+      /* Rowid IN (SELECT): cost is NlogN where N is the number of rows
+      ** in the result of the inner select.  We have no way to estimate
+      ** that value so make a wild guess. */
+      lowestCost = 200.0;
     }
     TRACE(("... rowid IN cost: %g\n", lowestCost));
   }
 
-  /* Check for constraints on a range of rowids or a full table scan.
+  /* Estimate the cost of a table scan.  If we do not know how many
+  ** entries are in the table, use 1 million as a guess.
   */
   pProbe = pSrc->pTab->pIndex;
-  cost = pProbe ? pProbe->aiRowEst[0] : 100000.0;
-  TRACE(("... base cost: %g\n", cost));
+  cost = pProbe ? pProbe->aiRowEst[0] : 1000000.0;
+  TRACE(("... table scan base cost: %g\n", cost));
+  flags = WHERE_ROWID_RANGE;
+
+  /* Check for constraints on a range of rowids in a table scan.
+  */
   pTerm = findTerm(pWC, iCur, -1, notReady, WO_LT|WO_LE|WO_GT|WO_GE, 0);
   if( pTerm ){
-    flags = WHERE_ROWID_RANGE;
     if( findTerm(pWC, iCur, -1, notReady, WO_LT|WO_LE, 0) ){
       flags |= WHERE_TOP_LIMIT;
-      cost *= 0.25;  /* Guess that rowid<EXPR eliminates 75% of the search */
+      cost *= 0.333;  /* Guess that rowid<EXPR eliminates two-thirds or rows */
     }
     if( findTerm(pWC, iCur, -1, notReady, WO_GT|WO_GE, 0) ){
       flags |= WHERE_BTM_LIMIT;
-      cost *= 0.25;  /* Guess that rowid>EXPR eliminates 75% of the search */
+      cost *= 0.333;  /* Guess that rowid>EXPR eliminates two-thirds of rows */
     }
-    TRACE(("... rowid range cost: %g\n", cost));
+    TRACE(("... rowid range reduces cost to %g\n", cost));
   }else{
     flags = 0;
   }
-  if( pOrderBy && sortableByRowid(iCur, pOrderBy, &rev) ){
-    flags |= WHERE_ORDERBY|WHERE_ROWID_RANGE;
-    cost *= 0.5;
-    if( rev ){
-      flags |= WHERE_REVERSE;
+
+  /* If the table scan does not satisfy the ORDER BY clause, increase
+  ** the cost by NlogN to cover the expense of sorting. */
+  if( pOrderBy ){
+    if( sortableByRowid(iCur, pOrderBy, &rev) ){
+      flags |= WHERE_ORDERBY|WHERE_ROWID_RANGE;
+      if( rev ){
+        flags |= WHERE_REVERSE;
+      }
+    }else{
+      cost += cost*estLog(cost);
+      TRACE(("... sorting increases cost to %g\n", cost));
     }
-    TRACE(("... order by reduces cost to %g\n", cost));
   }
   if( cost<lowestCost ){
     lowestCost = cost;
@@ -718,7 +763,7 @@ static double bestIndex(
   */
   for(; pProbe; pProbe=pProbe->pNext){
     int i;                       /* Loop counter */
-    double inMultiplier = 2.0;   /* Includes built-in index lookup penalty */
+    double inMultiplier = 1.0;
 
     TRACE(("... index %s:\n", pProbe->zName));
 
@@ -740,7 +785,7 @@ static double bestIndex(
         }
       }
     }
-    cost = pProbe->aiRowEst[i] * inMultiplier;
+    cost = pProbe->aiRowEst[i] * inMultiplier * estLog(inMultiplier);
     nEq = i;
     TRACE(("...... nEq=%d inMult=%g cost=%g\n", nEq, inMultiplier, cost));
 
@@ -753,30 +798,32 @@ static double bestIndex(
         flags = WHERE_COLUMN_RANGE;
         if( findTerm(pWC, iCur, j, notReady, WO_LT|WO_LE, pProbe) ){
           flags |= WHERE_TOP_LIMIT;
-          cost *= 0.5;
+          cost *= 0.333;
         }
         if( findTerm(pWC, iCur, j, notReady, WO_GT|WO_GE, pProbe) ){
           flags |= WHERE_BTM_LIMIT;
-          cost *= 0.5;
+          cost *= 0.333;
         }
         TRACE(("...... range reduces cost to %g\n", cost));
       }
     }
 
-    /* Reduce the cost substantially if this index can be used to satisfy
-    ** the ORDER BY clause
+    /* Add the additional cost of sorting if that is a factor.
     */
-    if( pOrderBy && (flags & WHERE_COLUMN_IN)==0 &&
+    if( pOrderBy ){
+      if( (flags & WHERE_COLUMN_IN)==0 &&
         isSortingIndex(pParse, pProbe, pSrc->pTab, iCur, pOrderBy, nEq, &rev) ){
-      if( flags==0 ){
-        flags = WHERE_COLUMN_RANGE;
+        if( flags==0 ){
+          flags = WHERE_COLUMN_RANGE;
+        }
+        flags |= WHERE_ORDERBY;
+        if( rev ){
+          flags |= WHERE_REVERSE;
+        }
+      }else{
+        cost += cost*estLog(cost);
+        TRACE(("...... orderby reduces cost to %g\n", cost));
       }
-      flags |= WHERE_ORDERBY;
-      cost *= 0.5;
-      if( rev ){
-        flags |= WHERE_REVERSE;
-      }
-      TRACE(("...... orderby reduces cost to %g\n", cost));
     }
 
     /* Check to see if we can get away with using just the index without
