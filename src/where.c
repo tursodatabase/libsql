@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.154 2005/07/28 16:51:51 drh Exp $
+** $Id: where.c,v 1.155 2005/07/28 20:51:19 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -149,9 +149,7 @@ struct ExprMaskSet {
 ** terms in the where clause.
 */
 #define WO_IN     1
-#define WO_LIST   2
-#define WO_SELECT 4
-#define WO_EQ     8
+#define WO_EQ     2
 #define WO_LT     (WO_EQ<<(TK_LT-TK_EQ))
 #define WO_LE     (WO_EQ<<(TK_LE-TK_EQ))
 #define WO_GT     (WO_EQ<<(TK_GT-TK_EQ))
@@ -470,13 +468,6 @@ static void exprAnalyze(
       pTerm->leftCursor = pLeft->iTable;
       pTerm->leftColumn = pLeft->iColumn;
       pTerm->operator = operatorMask(pExpr->op);
-      if( pTerm->operator==WO_IN ){
-        if( pExpr->pSelect ){
-          pTerm->operator |= WO_SELECT;
-        }else if( pExpr->pList ){
-          pTerm->operator |= WO_LIST;
-        }
-      }
     }
     if( pRight && pRight->op==TK_COLUMN ){
       WhereTerm *pNew;
@@ -649,7 +640,7 @@ static double estLog(double N){
 /*
 ** Find the best index for accessing a particular table.  Return a pointer
 ** to the index, flags that describe how the index should be used, the
-** number of equality constraints and the "cost" for this index.
+** number of equality constraints, and the "cost" for this index.
 **
 ** The lowest cost index wins.  The cost is an estimate of the amount of
 ** CPU and disk I/O need to process the request using the selected index.
@@ -692,6 +683,7 @@ static double bestIndex(
   */
   pTerm = findTerm(pWC, iCur, -1, notReady, WO_EQ|WO_IN, 0);
   if( pTerm ){
+    Expr *pExpr;
     *ppIndex = 0;
     bestFlags = WHERE_ROWID_EQ;
     if( pTerm->operator & WO_EQ ){
@@ -702,10 +694,10 @@ static double bestIndex(
       if( pOrderBy ) *pFlags |= WHERE_ORDERBY;
       TRACE(("... best is rowid\n"));
       return 0.0;
-    }else if( pTerm->operator & WO_LIST ){
+    }else if( (pExpr = pTerm->pExpr)->pList!=0 ){
       /* Rowid IN (LIST): cost is NlogN where N is the number of list
       ** elements.  */
-      lowestCost = pTerm->pExpr->pList->nExpr;
+      lowestCost = pExpr->pList->nExpr;
       lowestCost *= estLog(lowestCost);
     }else{
       /* Rowid IN (SELECT): cost is NlogN where N is the number of rows
@@ -777,11 +769,12 @@ static double bestIndex(
       if( pTerm==0 ) break;
       flags |= WHERE_COLUMN_EQ;
       if( pTerm->operator & WO_IN ){
+        Expr *pExpr = pTerm->pExpr;
         flags |= WHERE_COLUMN_IN;
-        if( pTerm->operator & WO_SELECT ){
+        if( pExpr->pSelect!=0 ){
           inMultiplier *= 100.0;
-        }else if( pTerm->operator & WO_LIST ){
-          inMultiplier *= pTerm->pExpr->pList->nExpr + 1.0;
+        }else if( pExpr->pList!=0 ){
+          inMultiplier *= pExpr->pList->nExpr + 1.0;
         }
       }
     }
@@ -795,7 +788,7 @@ static double bestIndex(
       int j = pProbe->aiColumn[nEq];
       pTerm = findTerm(pWC, iCur, j, notReady, WO_LT|WO_LE|WO_GT|WO_GE, pProbe);
       if( pTerm ){
-        flags = WHERE_COLUMN_RANGE;
+        flags |= WHERE_COLUMN_RANGE;
         if( findTerm(pWC, iCur, j, notReady, WO_LT|WO_LE, pProbe) ){
           flags |= WHERE_TOP_LIMIT;
           cost *= 0.333;
@@ -851,9 +844,7 @@ static double bestIndex(
     if( cost < lowestCost ){
       bestIdx = pProbe;
       lowestCost = cost;
-      if( flags==0 ){
-        flags = WHERE_COLUMN_RANGE;
-      }
+      assert( flags!=0 );
       bestFlags = flags;
       bestNEq = nEq;
     }
@@ -963,6 +954,8 @@ static void codeEqualityTerm(
       aIn[0] = OP_Next;
       aIn[1] = iTab;
       aIn[2] = sqlite3VdbeAddOp(v, OP_Column, iTab, 0);
+    }else{
+      pLevel->nIn = 0;
     }
 #endif
   }
@@ -1370,18 +1363,8 @@ WhereInfo *sqlite3WhereBegin(
       WhereTerm *pStart, *pEnd;
 
       assert( omitTable==0 );
-      if( pLevel->flags & WHERE_BTM_LIMIT ){
-        pStart = findTerm(&wc, iCur, -1, notReady, WO_GT|WO_GE, 0);
-        assert( pStart!=0 );
-      }else{
-        pStart = 0;
-      }
-      if( pLevel->flags & WHERE_TOP_LIMIT ){
-        pEnd = findTerm(&wc, iCur, -1, notReady, WO_LT|WO_LE, 0);
-        assert( pEnd!=0 );
-      }else{
-        pEnd = 0;
-      }
+      pStart = findTerm(&wc, iCur, -1, notReady, WO_GT|WO_GE, 0);
+      pEnd = findTerm(&wc, iCur, -1, notReady, WO_LT|WO_LE, 0);
       if( bRev ){
         pTerm = pStart;
         pStart = pEnd;
@@ -1603,18 +1586,11 @@ WhereInfo *sqlite3WhereBegin(
       /* Case 5:  There is no usable index.  We must do a complete
       **          scan of the entire table.
       */
-      int opRewind;
-
       assert( omitTable==0 );
-      if( bRev ){
-        opRewind = OP_Last;
-        pLevel->op = OP_Prev;
-      }else{
-        opRewind = OP_Rewind;
-        pLevel->op = OP_Next;
-      }
+      assert( bRev==0 );
+      pLevel->op = OP_Next;
       pLevel->p1 = iCur;
-      pLevel->p2 = 1 + sqlite3VdbeAddOp(v, opRewind, iCur, brk);
+      pLevel->p2 = 1 + sqlite3VdbeAddOp(v, OP_Rewind, iCur, brk);
     }
     notReady &= ~getMask(&maskSet, iCur);
 
