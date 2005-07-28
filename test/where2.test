@@ -12,7 +12,7 @@
 # focus of this file is testing the use of indices in WHERE clauses
 # based on recent changes to the optimizer.
 #
-# $Id: where2.test,v 1.1 2005/07/28 20:51:19 drh Exp $
+# $Id: where2.test,v 1.2 2005/07/28 23:12:08 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -200,7 +200,6 @@ do_test where2-5.2 {
     SELECT * FROM t1 WHERE w IN (99) ORDER BY w
   }
 } {99 6 10000 10006 sort t1 i1w}
-
 
 integrity_check {where2-99.0}
 

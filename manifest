@@ -1,5 +1,5 @@
-C Test\scases\sand\stuning\sof\sthe\snew\soptimizer\scode.\s(CVS\s2567)
-D 2005-07-28T20:51:19
+C The\sBETWEEN\soperator\sin\sa\sWHERE\sclause\sis\snow\sable\sto\suse\sindices.\s(CVS\s2568)
+D 2005-07-28T23:12:08
 F Makefile.in 22ea9c0fe748f591712d8fe3c6d972c6c173a165
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -85,7 +85,7 @@ F src/vdbeapi.c 7f392f0792d1258c958083d7de9eae7c3530c9a6
 F src/vdbeaux.c 3732a86566a6be4da4c606e9334baf3fd98667af
 F src/vdbefifo.c b8805850afe13b43f1de78d58088cb5d66f88e1e
 F src/vdbemem.c da8e8d6f29dd1323f782f000d7cd120027c9ff03
-F src/where.c 6c3de6ee253256d58ef07acb0f07458605477cd4
+F src/where.c c37799a796f490695211189608e1d5abeb01eea8
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
 F test/all.test 7f0988442ab811dfa41793b5b550f5828ce316f3
 F test/alter.test 9d6837a3d946b73df692b7cef2a7644d2e2f6bc6
@@ -101,6 +101,7 @@ F test/autovacuum.test cf2719b17659f7a011202ad05905654cedf26023
 F test/autovacuum_crash.test 05a63b8805b20cfba7ace82856ce4ccdda075a31
 F test/autovacuum_ioerr.test 9cf27275ca47b72e188a47c53b61b6d583a01d24
 F test/autovacuum_ioerr2.test 2f8a3fb31f833fd0ca86ad4ad98913c73e807572
+F test/between.test ca092fa28b665ca92172b182c6c360a92f7ca348
 F test/bigfile.test d3744a8821ce9abb8697f2826a3e3d22b719e89f
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
 F test/bind.test 3169339a9fb7aaa8244d0ed8651fe6b6796d809c
@@ -225,7 +226,7 @@ F test/vacuum2.test 5d77e98c458bcdbeecc6327de5107179ba1aa095
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/view.test 3c79232a2ee45918c62a0cf90411525899404a76
 F test/where.test b6ab0f64adc5fbb4259f284b19da6cd9aeadc711
-F test/where2.test 6427619390385bf4fc357b3907b8733012964a92
+F test/where2.test 8696c35cd31b0a298de046f3fb6b684486a8b472
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/lemon.c c88936c67f6411608db8fa4254d254f509fa40f6
 F tool/lempar.c f0c30abcae762a7d1eb37cd88b2232ab8dd625fb
@@ -288,7 +289,7 @@ F www/tclsqlite.tcl 425be741b8ae664f55cb1ef2371aab0a75109cf9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P a21212843359fb9fdbd60799ae50ad3566f4399a
-R b3b6fd7089d32b94d5badcc51bbe97b5
+P 4b02703dec71aa78e5f8d8cab5b950966a4c6abc
+R 5cec6ff48a1212708f6b9493ee851780
 U drh
-Z 603aecf655d7fb47a89068df78f35d0c
+Z 6e3389c38b1260ced7a3d44c47196b06

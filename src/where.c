@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.155 2005/07/28 20:51:19 drh Exp $
+** $Id: where.c,v 1.156 2005/07/28 23:12:08 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -86,6 +86,7 @@ struct WhereTerm {
   i16 leftCursor;         /* Cursor number of X in "X <op> <expr>" */
   i16 leftColumn;         /* Column number of X in "X <op> <expr>" */
   u16 operator;           /* A WO_xx value describing <op> */
+  u8 nPartner;            /* Number of partners that must disable us */
   WhereClause *pWC;       /* The clause this term is part of */
   Bitmask prereqRight;    /* Bitmask of tables used by pRight */
   Bitmask prereqAll;      /* Bitmask of tables referenced by p */
@@ -477,6 +478,7 @@ static void exprAnalyze(
         pNew = whereClauseInsert(pTerm->pWC, pDup, TERM_VIRTUAL|TERM_DYNAMIC);
         if( pNew==0 ) return;
         pNew->iPartner = pTerm->idx;
+        pTerm->nPartner = 1;
       }else{
         pDup = pExpr;
         pNew = pTerm;
@@ -490,6 +492,30 @@ static void exprAnalyze(
       pNew->operator = operatorMask(pDup->op);
     }
   }
+
+  /* If a term is the BETWEEN operator, create two new virtual terms
+  ** that define the range that the BETWEEN implements.
+  */
+  else if( pExpr->op==TK_BETWEEN ){
+    ExprList *pList = pExpr->pList;
+    int i;
+    static const u8 ops[] = {TK_GE, TK_LE};
+    assert( pList!=0 );
+    assert( pList->nExpr==2 );
+    for(i=0; i<2; i++){
+      Expr *pNewExpr;
+      WhereTerm *pNewTerm;
+      pNewExpr = sqlite3Expr(ops[i], sqlite3ExprDup(pExpr->pLeft),
+                             sqlite3ExprDup(pList->a[i].pExpr), 0);
+      pNewTerm = whereClauseInsert(pTerm->pWC, pNewExpr,
+                                   TERM_VIRTUAL|TERM_DYNAMIC);
+      exprAnalyze(pSrc, pMaskSet, pNewTerm);
+      pNewTerm->iPartner = pTerm->idx;
+    }
+    pTerm->nPartner = 2;
+  }
+
+  
 }
 
 
@@ -890,7 +916,10 @@ static void disableTerm(WhereLevel *pLevel, WhereTerm *pTerm){
   ){
     pTerm->flags |= TERM_CODED;
     if( pTerm->iPartner>=0 ){
-      disableTerm(pLevel, &pTerm->pWC->a[pTerm->iPartner]);
+      WhereTerm *pOther = &pTerm->pWC->a[pTerm->iPartner];
+      if( (--pOther->nPartner)<=0 ){
+        disableTerm(pLevel, pOther);
+      }
     }
   }
 }
