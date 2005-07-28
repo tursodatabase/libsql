@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.153 2005/07/27 20:41:44 drh Exp $
+** $Id: where.c,v 1.154 2005/07/28 16:51:51 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -713,7 +713,7 @@ static double bestIndex(
       ** that value so make a wild guess. */
       lowestCost = 200.0;
     }
-    TRACE(("... rowid IN cost: %g\n", lowestCost));
+    TRACE(("... rowid IN cost: %.9g\n", lowestCost));
   }
 
   /* Estimate the cost of a table scan.  If we do not know how many
@@ -721,7 +721,7 @@ static double bestIndex(
   */
   pProbe = pSrc->pTab->pIndex;
   cost = pProbe ? pProbe->aiRowEst[0] : 1000000.0;
-  TRACE(("... table scan base cost: %g\n", cost));
+  TRACE(("... table scan base cost: %.9g\n", cost));
   flags = WHERE_ROWID_RANGE;
 
   /* Check for constraints on a range of rowids in a table scan.
@@ -736,7 +736,7 @@ static double bestIndex(
       flags |= WHERE_BTM_LIMIT;
       cost *= 0.333;  /* Guess that rowid>EXPR eliminates two-thirds of rows */
     }
-    TRACE(("... rowid range reduces cost to %g\n", cost));
+    TRACE(("... rowid range reduces cost to %.9g\n", cost));
   }else{
     flags = 0;
   }
@@ -751,7 +751,7 @@ static double bestIndex(
       }
     }else{
       cost += cost*estLog(cost);
-      TRACE(("... sorting increases cost to %g\n", cost));
+      TRACE(("... sorting increases cost to %.9g\n", cost));
     }
   }
   if( cost<lowestCost ){
@@ -787,7 +787,7 @@ static double bestIndex(
     }
     cost = pProbe->aiRowEst[i] * inMultiplier * estLog(inMultiplier);
     nEq = i;
-    TRACE(("...... nEq=%d inMult=%g cost=%g\n", nEq, inMultiplier, cost));
+    TRACE(("...... nEq=%d inMult=%.9g cost=%.9g\n", nEq, inMultiplier, cost));
 
     /* Look for range constraints
     */
@@ -804,7 +804,7 @@ static double bestIndex(
           flags |= WHERE_BTM_LIMIT;
           cost *= 0.333;
         }
-        TRACE(("...... range reduces cost to %g\n", cost));
+        TRACE(("...... range reduces cost to %.9g\n", cost));
       }
     }
 
@@ -822,7 +822,7 @@ static double bestIndex(
         }
       }else{
         cost += cost*estLog(cost);
-        TRACE(("...... orderby reduces cost to %g\n", cost));
+        TRACE(("...... orderby increases cost to %.9g\n", cost));
       }
     }
 
@@ -842,7 +842,7 @@ static double bestIndex(
       if( m==0 ){
         flags |= WHERE_IDX_ONLY;
         cost *= 0.5;
-        TRACE(("...... idx-only reduces cost to %g\n", cost));
+        TRACE(("...... idx-only reduces cost to %.9g\n", cost));
       }
     }
 
@@ -862,7 +862,7 @@ static double bestIndex(
   /* Report the best result
   */
   *ppIndex = bestIdx;
-  TRACE(("best index is %s, cost=%g, flags=%x, nEq=%d\n",
+  TRACE(("best index is %s, cost=%.9g, flags=%x, nEq=%d\n",
         bestIdx ? bestIdx->zName : "(none)", lowestCost, bestFlags, bestNEq));
   *pFlags = bestFlags;
   *pnEq = bestNEq;

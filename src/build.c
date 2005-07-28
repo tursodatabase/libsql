@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.337 2005/07/27 20:41:44 drh Exp $
+** $Id: build.c,v 1.338 2005/07/28 16:51:51 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2410,24 +2410,8 @@ void sqlite3DefaultRowEst(Index *pIdx){
   int i;
   assert( a!=0 );
   a[0] = 1000000;
-  switch( pIdx->nColumn ){
-    case 1: {
-      a[1] = 20;
-      break;
-    }
-    case 2: {
-      a[1] = 350;
-      a[2] = 20;
-      break;
-    }
-    default: {
-      a[1] = 1250;
-      a[2] = 350;
-      a[3] = 20;
-      for(i=pIdx->nColumn; i>=4; i--){
-        a[i] = 10;
-      }
-    }
+  for(i=pIdx->nColumn; i>=1; i--){
+    a[i] = 10;
   }
   if( pIdx->onError!=OE_None ){
     a[pIdx->nColumn] = 1;

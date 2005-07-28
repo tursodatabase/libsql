@@ -1,5 +1,5 @@
-C More\swork\son\sthe\snew\soptimizer.\s\sFewer\stests\sfail\snow.\s(CVS\s2565)
-D 2005-07-27T20:41:44
+C The\snew\soptimizer\snow\spasses\sall\sregression\stests.\s(CVS\s2566)
+D 2005-07-28T16:51:51
 F Makefile.in 22ea9c0fe748f591712d8fe3c6d972c6c173a165
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -33,7 +33,7 @@ F src/attach.c 3615dbe960cbee4aa5ea300b8a213dad36527b0f
 F src/auth.c 18c5a0befe20f3a58a41e3ddd78f372faeeefe1f
 F src/btree.c ec55bd70052cdd0958f3a0e79ad58d93561acb20
 F src/btree.h 41a71ce027db9ddee72cb43df2316bbe3a1d92af
-F src/build.c 4b6f9e61159733f86cd1589f4c10834ba856d280
+F src/build.c e50f2f4c7b40e097a045a2b4a849ac0eff1a1c49
 F src/callback.c 0910b611e0c158f107ee3ff86f8a371654971e2b
 F src/date.c 7444b0900a28da77e57e3337a636873cff0ae940
 F src/delete.c be1fc25c9e109cd8cbab42a43ee696263da7c04b
@@ -85,7 +85,7 @@ F src/vdbeapi.c 7f392f0792d1258c958083d7de9eae7c3530c9a6
 F src/vdbeaux.c 3732a86566a6be4da4c606e9334baf3fd98667af
 F src/vdbefifo.c b8805850afe13b43f1de78d58088cb5d66f88e1e
 F src/vdbemem.c da8e8d6f29dd1323f782f000d7cd120027c9ff03
-F src/where.c 7757b1731d74364bc56d7da7cb9cfe8c9db1c019
+F src/where.c efed9d45672ea5fc550072272d86e28a2649c256
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
 F test/all.test 7f0988442ab811dfa41793b5b550f5828ce316f3
 F test/alter.test 9d6837a3d946b73df692b7cef2a7644d2e2f6bc6
@@ -224,7 +224,7 @@ F test/vacuum.test 5d4857ae2afc9c20d0edb8acc58bdc8d630126a9
 F test/vacuum2.test 5d77e98c458bcdbeecc6327de5107179ba1aa095
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/view.test 3c79232a2ee45918c62a0cf90411525899404a76
-F test/where.test 996cd12c8545aaf28c7eaf06190e9f1c2a2dc74c
+F test/where.test b6ab0f64adc5fbb4259f284b19da6cd9aeadc711
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/lemon.c c88936c67f6411608db8fa4254d254f509fa40f6
 F tool/lempar.c f0c30abcae762a7d1eb37cd88b2232ab8dd625fb
@@ -287,7 +287,7 @@ F www/tclsqlite.tcl 425be741b8ae664f55cb1ef2371aab0a75109cf9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P 86ce56ccea8297b1fba2b9ee53b5f1a3f228662f
-R 4972a6e268e2ac2613a7a3e2ab4d4526
+P ee3a08e353f563c36e904479393fcb56f96ee975
+R 0f7ba5ada7ced4acb01d1d193cdec9c1
 U drh
-Z 231d7effe54ec2e53a7f03147246d17a
+Z 28da42b8f7133daabbc46de020ba7352
