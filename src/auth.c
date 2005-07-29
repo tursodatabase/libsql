@@ -14,7 +14,7 @@
 ** systems that do not need this facility may omit it by recompiling
 ** the library with -DSQLITE_OMIT_AUTHORIZATION=1
 **
-** $Id: auth.c,v 1.21 2005/01/29 08:32:44 danielk1977 Exp $
+** $Id: auth.c,v 1.22 2005/07/29 15:36:15 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -114,6 +114,7 @@ void sqlite3AuthRead(
   TriggerStack *pStack; /* The stack of current triggers */
 
   if( db->xAuth==0 ) return;
+  if( pExpr->op==TK_AS ) return;
   assert( pExpr->op==TK_COLUMN );
   for(iSrc=0; pTabList && iSrc<pTabList->nSrc; iSrc++){
     if( pExpr->iTable==pTabList->a[iSrc].iCursor ) break;

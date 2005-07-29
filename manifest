@@ -1,5 +1,5 @@
-C Optimizer\snow\sconverts\sOR-connected\sWHERE-clause\sterms\sinto\san\sIN\soperator\sso\nthat\sthey\scan\sbe\sused\swith\sindices.\s\sThere\sare\sknown\sproblems\swith\sthe\nORDER\sBY\soptimization\sin\sthis\sand\sin\sseveral\sprior\scheck-ins.\s\sThis\ncheck-in\sis\snot\srecommended\sfor\sproduction\suse.\s(CVS\s2569)
-D 2005-07-29T15:10:18
+C Fix\sauthentication\sso\sthat\sit\sworks\swith\sAS\saliases.\s\sTicket\s#1338.\s(CVS\s2570)
+D 2005-07-29T15:36:15
 F Makefile.in 22ea9c0fe748f591712d8fe3c6d972c6c173a165
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -30,7 +30,7 @@ F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
 F src/alter.c 03041f2464e22532601254f87cb49997fa21dcdf
 F src/analyze.c 3ab32927f4d3067ead10e4c4f6fb61b2a93479cc
 F src/attach.c 3615dbe960cbee4aa5ea300b8a213dad36527b0f
-F src/auth.c 18c5a0befe20f3a58a41e3ddd78f372faeeefe1f
+F src/auth.c 31e2304bef67f44d635655f44234387ea7d21454
 F src/btree.c ec55bd70052cdd0958f3a0e79ad58d93561acb20
 F src/btree.h 41a71ce027db9ddee72cb43df2316bbe3a1d92af
 F src/build.c e50f2f4c7b40e097a045a2b4a849ac0eff1a1c49
@@ -95,7 +95,7 @@ F test/analyze.test ac50d2a24118ce5f0f9b50cc563a1a1498a948c4
 F test/attach.test f320e98bcca68d100cab7666a0c9a93ac5f236bd
 F test/attach2.test 3396c012a39ddf7ba6b528d80bd79554168aa115
 F test/attach3.test 63013383adc4380af69779f34f4af19bd49f7cbe
-F test/auth.test 6a51c57219e246bdfd4454b3f7bd4136b44ad95c
+F test/auth.test 973ae7274eae32c4453fbbcbd0ec2b80c5b1eeb3
 F test/autoinc.test 2aba7dc87438d221e2f2ea0e3e7d5fb6812edf6d
 F test/autovacuum.test cf2719b17659f7a011202ad05905654cedf26023
 F test/autovacuum_crash.test 05a63b8805b20cfba7ace82856ce4ccdda075a31
@@ -289,7 +289,7 @@ F www/tclsqlite.tcl 425be741b8ae664f55cb1ef2371aab0a75109cf9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P cdf8c9584b945212e065e044df801c207aedb675
-R 5611aa11dab02620cd1e954cb8436ec6
+P d23c8bf81e508722e92ff1b9c8bc98dc026a31f2
+R 89fca4783590df7d7e0576ccf5089241
 U drh
-Z 0d093f02ef16efa0e6b90a80fd1aefbf
+Z 77e1dbb5cac3156585c14519c38ecffb
