@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.156 2005/07/28 23:12:08 drh Exp $
+** $Id: where.c,v 1.157 2005/07/29 15:10:18 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -82,10 +82,10 @@ struct WhereTerm {
   Expr *pExpr;            /* Pointer to the subexpression */
   u16 idx;                /* Index of this term in pWC->a[] */
   i16 iPartner;           /* Disable pWC->a[iPartner] when this term disabled */
-  u16 flags;              /* Bit flags.  See below */
   i16 leftCursor;         /* Cursor number of X in "X <op> <expr>" */
   i16 leftColumn;         /* Column number of X in "X <op> <expr>" */
   u16 operator;           /* A WO_xx value describing <op> */
+  u8 flags;               /* Bit flags.  See below */
   u8 nPartner;            /* Number of partners that must disable us */
   WhereClause *pWC;       /* The clause this term is part of */
   Bitmask prereqRight;    /* Bitmask of tables used by pRight */
@@ -95,9 +95,11 @@ struct WhereTerm {
 /*
 ** Allowed values of WhereTerm.flags
 */
-#define TERM_DYNAMIC    0x0001   /* Need to call sqlite3ExprDelete(pExpr) */
-#define TERM_VIRTUAL    0x0002   /* Added by the optimizer.  Do not code */
-#define TERM_CODED      0x0004   /* This term is already coded */
+#define TERM_DYNAMIC    0x01   /* Need to call sqlite3ExprDelete(pExpr) */
+#define TERM_VIRTUAL    0x02   /* Added by the optimizer.  Do not code */
+#define TERM_CODED      0x04   /* This term is already coded */
+#define TERM_PARTNERED  0x08   /* Has a virtual partner */
+#define TERM_OR_OK      0x10   /* Used during OR-clause processing */
 
 /*
 ** An instance of the following structure holds all information about a
@@ -225,8 +227,9 @@ static WhereTerm *whereClauseInsert(WhereClause *pWC, Expr *p, int flags){
 
 /*
 ** This routine identifies subexpressions in the WHERE clause where
-** each subexpression is separate by the AND operator.  aSlot is 
-** filled with pointers to the subexpressions.  For example:
+** each subexpression is separate by the AND operator or some other
+** operator specified in the op parameter.  The WhereClause structure
+** is filled with pointers to subexpressions.  For example:
 **
 **    WHERE  a=='hello' AND coalesce(b,11)<10 AND (c+12!=d OR c==22)
 **           \________/     \_______________/     \________________/
@@ -239,13 +242,13 @@ static WhereTerm *whereClauseInsert(WhereClause *pWC, Expr *p, int flags){
 ** the WhereClause.a[] array.  This array grows as needed to contain
 ** all terms of the WHERE clause.
 */
-static void whereSplit(WhereClause *pWC, Expr *pExpr){
+static void whereSplit(WhereClause *pWC, Expr *pExpr, int op){
   if( pExpr==0 ) return;
-  if( pExpr->op!=TK_AND ){
+  if( pExpr->op!=op ){
     whereClauseInsert(pWC, pExpr, 0);
   }else{
-    whereSplit(pWC, pExpr->pLeft);
-    whereSplit(pWC, pExpr->pRight);
+    whereSplit(pWC, pExpr->pLeft, op);
+    whereSplit(pWC, pExpr->pRight, op);
   }
 }
 
@@ -433,6 +436,26 @@ static WhereTerm *findTerm(
   return 0;
 }
 
+/* Forward reference */
+static void exprAnalyze(SrcList*, ExprMaskSet*, WhereTerm*);
+
+/*
+** Call exprAnalyze on all terms in a WHERE clause.  
+**
+**
+*/
+static void exprAnalyzeAll(
+  SrcList *pTabList,       /* the FROM clause */
+  ExprMaskSet *pMaskSet,   /* table masks */
+  WhereClause *pWC         /* the WHERE clause to be analyzed */
+){
+  WhereTerm *pTerm;
+  int i;
+  for(i=pWC->nTerm-1, pTerm=pWC->a; i>=0; i--, pTerm++){
+    exprAnalyze(pTabList, pMaskSet, pTerm);
+  }
+}
+
 /*
 ** The input to this routine is an WhereTerm structure with only the
 ** "pExpr" field filled in.  The job of this routine is to analyze the
@@ -479,6 +502,7 @@ static void exprAnalyze(
         if( pNew==0 ) return;
         pNew->iPartner = pTerm->idx;
         pTerm->nPartner = 1;
+        pTerm->flags |= TERM_PARTNERED;
       }else{
         pDup = pExpr;
         pNew = pTerm;
@@ -515,7 +539,63 @@ static void exprAnalyze(
     pTerm->nPartner = 2;
   }
 
-  
+  /* Attempt to convert OR-connected terms into an IN operator so that
+  ** they can make use of indices.
+  */
+  else if( pExpr->op==TK_OR ){
+    int ok;
+    int i, j;
+    int iColumn, iCursor;
+    WhereClause sOr;
+    WhereTerm *pOrTerm;
+
+    assert( (pTerm->flags & TERM_DYNAMIC)==0 );
+    whereClauseInit(&sOr, pTerm->pWC->pParse);
+    whereSplit(&sOr, pExpr, TK_OR);
+    exprAnalyzeAll(pSrc, pMaskSet, &sOr);
+    assert( sOr.nTerm>0 );
+    j = 0;
+    do{
+      iColumn = sOr.a[j].leftColumn;
+      iCursor = sOr.a[j].leftCursor;
+      ok = iCursor>=0;
+      for(i=sOr.nTerm-1, pOrTerm=sOr.a; i>=0 && ok; i--, pOrTerm++){
+        if( pOrTerm->operator!=WO_EQ ){
+          goto or_not_possible;
+        }
+        if( pOrTerm->leftCursor==iCursor && pOrTerm->leftColumn==iColumn ){
+          pOrTerm->flags |= TERM_OR_OK;
+        }else if( (pOrTerm->flags & TERM_PARTNERED)!=0 ||
+                    ((pOrTerm->flags & TERM_VIRTUAL)!=0 &&
+                     (sOr.a[pOrTerm->iPartner].flags & TERM_OR_OK)!=0) ){
+          pOrTerm->flags &= ~TERM_OR_OK;
+        }else{
+          ok = 0;
+        }
+      }
+    }while( !ok && (sOr.a[j++].flags & TERM_PARTNERED)!=0 && j<sOr.nTerm );
+    if( ok ){
+      ExprList *pList = 0;
+      Expr *pNew, *pDup;
+      for(i=sOr.nTerm-1, pOrTerm=sOr.a; i>=0 && ok; i--, pOrTerm++){
+        if( (pOrTerm->flags & TERM_OR_OK)==0 ) continue;
+        pDup = sqlite3ExprDup(pOrTerm->pExpr->pRight);
+        pList = sqlite3ExprListAppend(pList, pDup, 0);
+      }
+      pDup = sqlite3Expr(TK_COLUMN, 0, 0, 0);
+      if( pDup ){
+        pDup->iTable = iCursor;
+        pDup->iColumn = iColumn;
+      }
+      pNew = sqlite3Expr(TK_IN, pDup, 0, 0);
+      if( pNew ) pNew->pList = pList;
+      pTerm->pExpr = pNew;
+      pTerm->flags |= TERM_DYNAMIC;
+      exprAnalyze(pSrc, pMaskSet, pTerm);
+    }
+or_not_possible:
+    whereClauseClear(&sOr);
+  }
 }
 
 
@@ -1196,7 +1276,7 @@ WhereInfo *sqlite3WhereBegin(
   */
   initMaskSet(&maskSet);
   whereClauseInit(&wc, pParse);
-  whereSplit(&wc, pWhere);
+  whereSplit(&wc, pWhere, TK_AND);
     
   /* Allocate and initialize the WhereInfo structure that will become the
   ** return value.
@@ -1225,9 +1305,7 @@ WhereInfo *sqlite3WhereBegin(
   for(i=0; i<pTabList->nSrc; i++){
     createMask(&maskSet, pTabList->a[i].iCursor);
   }
-  for(i=wc.nTerm-1; i>=0; i--){
-    exprAnalyze(pTabList, &maskSet, &wc.a[i]);
-  }
+  exprAnalyzeAll(pTabList, &maskSet, &wc);
 
   /* Chose the best index to use for each table in the FROM clause.
   **

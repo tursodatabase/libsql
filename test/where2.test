@@ -12,7 +12,7 @@
 # focus of this file is testing the use of indices in WHERE clauses
 # based on recent changes to the optimizer.
 #
-# $Id: where2.test,v 1.2 2005/07/28 23:12:08 drh Exp $
+# $Id: where2.test,v 1.3 2005/07/29 15:10:19 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -201,6 +201,45 @@ do_test where2-5.2 {
   }
 } {99 6 10000 10006 sort t1 i1w}
 
-integrity_check {where2-99.0}
+# Verify that OR clauses get translated into IN operators.
+#
+do_test where2-6.1 {
+  queryplan {
+    SELECT * FROM t1 WHERE w=99 OR w=100 ORDER BY +w
+  }
+} {99 6 10000 10006 100 6 10201 10207 sort t1 i1w}
+do_test where2-6.2 {
+  queryplan {
+    SELECT * FROM t1 WHERE w=99 OR w=100 OR 6=w ORDER BY +w
+  }
+} {6 2 49 51 99 6 10000 10006 100 6 10201 10207 sort t1 i1w}
+do_test where2-6.3 {
+  queryplan {
+    SELECT * FROM t1 WHERE w=99 OR w=100 OR 6=+w ORDER BY +w
+  }
+} {6 2 49 51 99 6 10000 10006 100 6 10201 10207 sort t1 {}}
+do_test where2-6.4 {
+  queryplan {
+    SELECT * FROM t1 WHERE w=99 OR +w=100 OR 6=w ORDER BY +w
+  }
+} {6 2 49 51 99 6 10000 10006 100 6 10201 10207 sort t1 {}}
+if 0 {  ##### FIX ME #####
+do_test where2-6.5 {
+  queryplan {
+    SELECT b.* FROM t1 a, t1 b
+     WHERE a.w=1 AND (a.y=b.z OR b.z=10)
+     ORDER BY +b.w
+  }
+} {1 0 4 4 2 1 9 10 sort a i1w b i1zyx}
+do_test where2-6.6 {
+  queryplan {
+    SELECT b.* FROM t1 a, t1 b
+     WHERE a.w=1 AND (b.z=10 OR a.y=b.z OR b.z=10)
+     ORDER BY +b.w
+  }
+} {1 0 4 4 2 1 9 10 sort a i1w b i1zyx}
+}
+
+
 
 finish_test
