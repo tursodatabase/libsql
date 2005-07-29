@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.157 2005/07/29 15:10:18 drh Exp $
+** $Id: where.c,v 1.158 2005/07/29 19:43:58 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -171,6 +171,7 @@ struct ExprMaskSet {
 #define WHERE_IDX_ONLY       0x0800   /* Use index only - omit table */
 #define WHERE_ORDERBY        0x1000   /* Output will appear in correct order */
 #define WHERE_REVERSE        0x2000   /* Scan in reverse order */
+#define WHERE_UNIQUE         0x4000   /* Selects no more than one row */
 
 /*
 ** Initialize a preallocated WhereClause structure.
@@ -641,14 +642,6 @@ static int isSortingIndex(
   nTerm = pOrderBy->nExpr;
   assert( nTerm>0 );
 
-  /* A UNIQUE index that is fully specified is always a sorting
-  ** index.
-  */
-  if( pIdx->onError!=OE_None && nEqCol==pIdx->nColumn ){
-    *pbRev = 0;
-    return 1;
-  }
-
   /* Match terms of the ORDER BY clause against columns of
   ** the index.
   */
@@ -795,9 +788,8 @@ static double bestIndex(
     if( pTerm->operator & WO_EQ ){
       /* Rowid== is always the best pick.  Look no further.  Because only
       ** a single row is generated, output is always in sorted order */
-      *pFlags = WHERE_ROWID_EQ;
+      *pFlags = WHERE_ROWID_EQ | WHERE_UNIQUE;
       *pnEq = 1;
-      if( pOrderBy ) *pFlags |= WHERE_ORDERBY;
       TRACE(("... best is rowid\n"));
       return 0.0;
     }else if( (pExpr = pTerm->pExpr)->pList!=0 ){
@@ -886,6 +878,10 @@ static double bestIndex(
     }
     cost = pProbe->aiRowEst[i] * inMultiplier * estLog(inMultiplier);
     nEq = i;
+    if( pProbe->onError!=OE_None && (flags & WHERE_COLUMN_IN)==0
+         && nEq==pProbe->nColumn ){
+      flags |= WHERE_UNIQUE;
+    }
     TRACE(("...... nEq=%d inMult=%.9g cost=%.9g\n", nEq, inMultiplier, cost));
 
     /* Look for range constraints
@@ -1262,6 +1258,7 @@ WhereInfo *sqlite3WhereBegin(
   struct SrcList_item *pTabItem;  /* A single entry from pTabList */
   WhereLevel *pLevel;             /* A single level in the pWInfo list */
   int iFrom;                      /* First unused FROM clause element */
+  int andFlags;              /* AND-ed combination of all wc.a[].flags */
 
   /* The number of tables in the FROM clause is limited by the number of
   ** bits in a Bitmask 
@@ -1324,6 +1321,7 @@ WhereInfo *sqlite3WhereBegin(
   notReady = ~(Bitmask)0;
   pTabItem = pTabList->a;
   pLevel = pWInfo->a;
+  andFlags = ~0;
   for(i=iFrom=0, pLevel=pWInfo->a; i<pTabList->nSrc; i++, pLevel++){
     Index *pIdx;                /* Index for FROM table at pTabItem */
     int flags;                  /* Flags asssociated with pIdx */
@@ -1359,9 +1357,10 @@ WhereInfo *sqlite3WhereBegin(
         break;
       }
     }
-    if( bestFlags & WHERE_ORDERBY ){
+    if( (bestFlags & WHERE_ORDERBY)!=0 ){
       *ppOrderBy = 0;
     }
+    andFlags &= bestFlags;
     pLevel->flags = bestFlags;
     pLevel->pIdx = pBest;
     pLevel->nEq = bestNEq;
@@ -1374,6 +1373,13 @@ WhereInfo *sqlite3WhereBegin(
     }
     notReady &= ~getMask(&maskSet, pTabList->a[bestJ].iCursor);
     pLevel->iFrom = bestJ;
+  }
+
+  /* If the total query only selects a single row, then the ORDER BY
+  ** clause is irrelevant.
+  */
+  if( (andFlags & WHERE_UNIQUE)!=0 && ppOrderBy ){
+    *ppOrderBy = 0;
   }
 
   /* Open all tables in the pTabList and any indices selected for

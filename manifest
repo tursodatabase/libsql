@@ -1,5 +1,5 @@
-C Fix\sauthentication\sso\sthat\sit\sworks\swith\sAS\saliases.\s\sTicket\s#1338.\s(CVS\s2570)
-D 2005-07-29T15:36:15
+C Fix\sproblems\scaused\sby\sover-agressive\soptimization\sof\sORDER\sBY\sin\sjoins.\nLots\smore\stesting\sneeded.\s(CVS\s2571)
+D 2005-07-29T19:43:58
 F Makefile.in 22ea9c0fe748f591712d8fe3c6d972c6c173a165
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -85,7 +85,7 @@ F src/vdbeapi.c 7f392f0792d1258c958083d7de9eae7c3530c9a6
 F src/vdbeaux.c 3732a86566a6be4da4c606e9334baf3fd98667af
 F src/vdbefifo.c b8805850afe13b43f1de78d58088cb5d66f88e1e
 F src/vdbemem.c da8e8d6f29dd1323f782f000d7cd120027c9ff03
-F src/where.c c65782be9fff4fd95e4e652f815bbcfd36d5656f
+F src/where.c 7f59d0ed3b0b647b24f4cdce4a0623d2303dbbd9
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
 F test/all.test 7f0988442ab811dfa41793b5b550f5828ce316f3
 F test/alter.test 9d6837a3d946b73df692b7cef2a7644d2e2f6bc6
@@ -226,7 +226,7 @@ F test/vacuum2.test 5d77e98c458bcdbeecc6327de5107179ba1aa095
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/view.test 3c79232a2ee45918c62a0cf90411525899404a76
 F test/where.test b6ab0f64adc5fbb4259f284b19da6cd9aeadc711
-F test/where2.test 6e8c3369e315a609b207734f57a49e21ed838c04
+F test/where2.test 3432fc9c24af9120df65a9a4cc8dad3bb9285633
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/lemon.c c88936c67f6411608db8fa4254d254f509fa40f6
 F tool/lempar.c f0c30abcae762a7d1eb37cd88b2232ab8dd625fb
@@ -289,7 +289,7 @@ F www/tclsqlite.tcl 425be741b8ae664f55cb1ef2371aab0a75109cf9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P d23c8bf81e508722e92ff1b9c8bc98dc026a31f2
-R 89fca4783590df7d7e0576ccf5089241
+P cc7ae73ed01f0b89e31dd8de48b913bbd83887b8
+R f7ec03dd4f33cee2f3fa1b70964a7b5e
 U drh
-Z 77e1dbb5cac3156585c14519c38ecffb
+Z d383af4bb27f70288e32f2b965c3944b
