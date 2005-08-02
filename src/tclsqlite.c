@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.128 2005/07/23 02:17:03 drh Exp $
+** $Id: tclsqlite.c,v 1.129 2005/08/02 12:21:09 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -591,8 +591,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     "function",           "last_insert_rowid", "nullvalue",
     "onecolumn",          "progress",          "rekey",
     "timeout",            "total_changes",     "trace",
-    "version",
-    0                    
+    "transaction",        "version",           0
   };
   enum DB_enum {
     DB_AUTHORIZER,        DB_BUSY,             DB_CACHE,
@@ -602,7 +601,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     DB_FUNCTION,          DB_LAST_INSERT_ROWID,DB_NULLVALUE,
     DB_ONECOLUMN,         DB_PROGRESS,         DB_REKEY,
     DB_TIMEOUT,           DB_TOTAL_CHANGES,    DB_TRACE,
-    DB_VERSION
+    DB_TRANSACTION,       DB_VERSION,          
   };
   /* don't leave trailing commas on DB_enum, it confuses the AIX xlc compiler */
 
@@ -1486,6 +1485,63 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       }else{
         sqlite3_trace(pDb->db, 0, 0);
       }
+    }
+    break;
+  }
+
+  /*    $db transaction [-deferred|-immediate|-exclusive] SCRIPT
+  **
+  ** Start a new transaction (if we are not already in the midst of a
+  ** transaction) and execute the TCL script SCRIPT.  After SCRIPT
+  ** completes, either commit the transaction or roll it back if SCRIPT
+  ** throws an exception.  Or if no new transation was started, do nothing.
+  ** pass the exception on up the stack.
+  **
+  ** This command was inspired by Dave Thomas's talk on Ruby at the
+  ** 2005 O'Reilly Open Source Convention (OSCON).
+  */
+  case DB_TRANSACTION: {
+    int inTrans;
+    Tcl_Obj *pScript;
+    const char *zBegin = "BEGIN";
+    if( objc!=3 && objc!=4 ){
+      Tcl_WrongNumArgs(interp, 2, objv, "[TYPE] SCRIPT");
+      return TCL_ERROR;
+    }
+    if( objc==3 ){
+      pScript = objv[2];
+    } else {
+      static const char *TTYPE_strs[] = {
+        "deferred",   "exclusive",  "immediate"
+      };
+      enum TTYPE_enum {
+        TTYPE_DEFERRED, TTYPE_EXCLUSIVE, TTYPE_IMMEDIATE
+      };
+      int ttype;
+      if( Tcl_GetIndexFromObj(interp, objv[2], TTYPE_strs, "transaction_type",
+                              0, &ttype) ){
+        return TCL_ERROR;
+      }
+      switch( (enum TTYPE_enum)ttype ){
+        case TTYPE_DEFERRED:    /* no-op */;                 break;
+        case TTYPE_EXCLUSIVE:   zBegin = "BEGIN EXCLUSIVE";  break;
+        case TTYPE_IMMEDIATE:   zBegin = "BEGIN IMMEDIATE";  break;
+      }
+      pScript = objv[3];
+    }
+    inTrans = !sqlite3_get_autocommit(pDb->db);
+    if( !inTrans ){
+      sqlite3_exec(pDb->db, zBegin, 0, 0, 0);
+    }
+    rc = Tcl_EvalObjEx(interp, pScript, 0);
+    if( !inTrans ){
+      const char *zEnd;
+      if( rc==TCL_ERROR ){
+        zEnd = "ROLLBACK";
+      } else {
+        zEnd = "COMMIT";
+      }
+      sqlite3_exec(pDb->db, zEnd, 0, 0, 0);
     }
     break;
   }
