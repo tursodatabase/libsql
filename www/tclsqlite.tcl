@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the tclsqlite.html file.
 #
-set rcsid {$Id: tclsqlite.tcl,v 1.13 2005/04/03 23:54:45 danielk1977 Exp $}
+set rcsid {$Id: tclsqlite.tcl,v 1.14 2005/08/02 17:38:19 drh Exp $}
 source common.tcl
 header {The Tcl interface to the SQLite library}
 proc METHOD {name text} {
@@ -72,6 +72,7 @@ foreach m [lsort {
  timeout
  total_changes
  trace
+ transaction
 }] {
  puts "<li><a href=\"#$m\">$m</a></li>"
 }
@@ -228,6 +229,44 @@ technique is not only easier to write, it is also much more efficient
 since it avoids making a copy of the content of $bigblob.
 </p>
 
+}
+
+##############################################################################
+METHOD transaction {
+
+<p>
+The "transaction" method is used to execute a TCL script inside an SQLite
+database transaction.  The transaction is committed when the script completes,
+or it rolls back if the script fails.  If the transaction occurs within
+another transaction (even one that is started manually using BEGIN) it
+is a no-op.
+</p>
+
+<p>
+The transaction command can be used to group together several SQLite
+commands in a safe way.  You can always start transactions manually using
+BEGIN, of
+course.  But if an error occurs so that the COMMIT or ROLLBACK are never
+run, then the database will remain locked indefinitely.  Also, BEGIN
+does not nest, so you have to make sure no other transactions are active
+before starting a new one.  The "transaction" method takes care of
+all of these details automatically.
+</p>
+
+<p>
+The syntax looks like this:
+</p>
+
+<blockquote>
+<i>dbcmd</i>&nbsp;&nbsp;<b>transaction</b>&nbsp;&nbsp;<i>?transaction-type?</i>
+&nbsp;&nbsp;<i>SCRIPT,</i>
+</blockquote>
+
+
+<p>
+The <i>transaction-type</i> can be one of <b>deferred</b>,
+<b>exclusive</b> or <b>immediate</b>.  The default is deferred.
+</p>
 }
 
 ##############################################################################
