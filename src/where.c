@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.158 2005/07/29 19:43:58 drh Exp $
+** $Id: where.c,v 1.159 2005/08/02 17:48:22 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -81,12 +81,12 @@ typedef struct WhereTerm WhereTerm;
 struct WhereTerm {
   Expr *pExpr;            /* Pointer to the subexpression */
   u16 idx;                /* Index of this term in pWC->a[] */
-  i16 iPartner;           /* Disable pWC->a[iPartner] when this term disabled */
+  i16 iParent;            /* Disable pWC->a[iParent] when this term disabled */
   i16 leftCursor;         /* Cursor number of X in "X <op> <expr>" */
   i16 leftColumn;         /* Column number of X in "X <op> <expr>" */
   u16 operator;           /* A WO_xx value describing <op> */
   u8 flags;               /* Bit flags.  See below */
-  u8 nPartner;            /* Number of partners that must disable us */
+  u8 nChild;              /* Number of children that must disable us */
   WhereClause *pWC;       /* The clause this term is part of */
   Bitmask prereqRight;    /* Bitmask of tables used by pRight */
   Bitmask prereqAll;      /* Bitmask of tables referenced by p */
@@ -98,7 +98,7 @@ struct WhereTerm {
 #define TERM_DYNAMIC    0x01   /* Need to call sqlite3ExprDelete(pExpr) */
 #define TERM_VIRTUAL    0x02   /* Added by the optimizer.  Do not code */
 #define TERM_CODED      0x04   /* This term is already coded */
-#define TERM_PARTNERED  0x08   /* Has a virtual partner */
+#define TERM_COPIED     0x08   /* Has a child */
 #define TERM_OR_OK      0x10   /* Used during OR-clause processing */
 
 /*
@@ -222,7 +222,7 @@ static WhereTerm *whereClauseInsert(WhereClause *pWC, Expr *p, int flags){
   pTerm->pExpr = p;
   pTerm->flags = flags;
   pTerm->pWC = pWC;
-  pTerm->iPartner = -1;
+  pTerm->iParent = -1;
   return pTerm;
 }
 
@@ -483,7 +483,7 @@ static void exprAnalyze(
   pTerm->prereqRight = exprTableUsage(pMaskSet, pExpr->pRight);
   pTerm->prereqAll = prereqAll = exprTableUsage(pMaskSet, pExpr);
   pTerm->leftCursor = -1;
-  pTerm->iPartner = -1;
+  pTerm->iParent = -1;
   pTerm->operator = 0;
   idxRight = -1;
   if( allowedOp(pExpr->op) && (pTerm->prereqRight & prereqLeft)==0 ){
@@ -501,9 +501,9 @@ static void exprAnalyze(
         pDup = sqlite3ExprDup(pExpr);
         pNew = whereClauseInsert(pTerm->pWC, pDup, TERM_VIRTUAL|TERM_DYNAMIC);
         if( pNew==0 ) return;
-        pNew->iPartner = pTerm->idx;
-        pTerm->nPartner = 1;
-        pTerm->flags |= TERM_PARTNERED;
+        pNew->iParent = pTerm->idx;
+        pTerm->nChild = 1;
+        pTerm->flags |= TERM_COPIED;
       }else{
         pDup = pExpr;
         pNew = pTerm;
@@ -535,9 +535,9 @@ static void exprAnalyze(
       pNewTerm = whereClauseInsert(pTerm->pWC, pNewExpr,
                                    TERM_VIRTUAL|TERM_DYNAMIC);
       exprAnalyze(pSrc, pMaskSet, pNewTerm);
-      pNewTerm->iPartner = pTerm->idx;
+      pNewTerm->iParent = pTerm->idx;
     }
-    pTerm->nPartner = 2;
+    pTerm->nChild = 2;
   }
 
   /* Attempt to convert OR-connected terms into an IN operator so that
@@ -566,15 +566,15 @@ static void exprAnalyze(
         }
         if( pOrTerm->leftCursor==iCursor && pOrTerm->leftColumn==iColumn ){
           pOrTerm->flags |= TERM_OR_OK;
-        }else if( (pOrTerm->flags & TERM_PARTNERED)!=0 ||
+        }else if( (pOrTerm->flags & TERM_COPIED)!=0 ||
                     ((pOrTerm->flags & TERM_VIRTUAL)!=0 &&
-                     (sOr.a[pOrTerm->iPartner].flags & TERM_OR_OK)!=0) ){
+                     (sOr.a[pOrTerm->iParent].flags & TERM_OR_OK)!=0) ){
           pOrTerm->flags &= ~TERM_OR_OK;
         }else{
           ok = 0;
         }
       }
-    }while( !ok && (sOr.a[j++].flags & TERM_PARTNERED)!=0 && j<sOr.nTerm );
+    }while( !ok && (sOr.a[j++].flags & TERM_COPIED)!=0 && j<sOr.nTerm );
     if( ok ){
       ExprList *pList = 0;
       Expr *pNew, *pDup;
@@ -991,9 +991,9 @@ static void disableTerm(WhereLevel *pLevel, WhereTerm *pTerm){
       && (pLevel->iLeftJoin==0 || ExprHasProperty(pTerm->pExpr, EP_FromJoin))
   ){
     pTerm->flags |= TERM_CODED;
-    if( pTerm->iPartner>=0 ){
-      WhereTerm *pOther = &pTerm->pWC->a[pTerm->iPartner];
-      if( (--pOther->nPartner)<=0 ){
+    if( pTerm->iParent>=0 ){
+      WhereTerm *pOther = &pTerm->pWC->a[pTerm->iParent];
+      if( (--pOther->nChild)==0 ){
         disableTerm(pLevel, pOther);
       }
     }
