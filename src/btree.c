@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.263 2005/07/09 02:16:03 drh Exp $
+** $Id: btree.c,v 1.264 2005/08/02 17:13:10 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -3602,17 +3602,19 @@ static void assemblePage(
   data = pPage->aData;
   hdr = pPage->hdrOffset;
   put2byte(&data[hdr+3], nCell);
-  cellbody = allocateSpace(pPage, totalSize);
-  assert( cellbody>0 );
-  assert( pPage->nFree >= 2*nCell );
-  pPage->nFree -= 2*nCell;
-  for(i=0; i<nCell; i++){
-    put2byte(&data[cellptr], cellbody);
-    memcpy(&data[cellbody], apCell[i], aSize[i]);
-    cellptr += 2;
-    cellbody += aSize[i];
+  if( nCell ){
+    cellbody = allocateSpace(pPage, totalSize);
+    assert( cellbody>0 );
+    assert( pPage->nFree >= 2*nCell );
+    pPage->nFree -= 2*nCell;
+    for(i=0; i<nCell; i++){
+      put2byte(&data[cellptr], cellbody);
+      memcpy(&data[cellbody], apCell[i], aSize[i]);
+      cellptr += 2;
+      cellbody += aSize[i];
+    }
+    assert( cellbody==pPage->pBt->usableSize );
   }
-  assert( cellbody==pPage->pBt->usableSize );
   pPage->nCell = nCell;
 }
 
@@ -3816,7 +3818,7 @@ static int balance_nonroot(MemPage *pPage){
   /*
   ** A special case:  If a new entry has just been inserted into a
   ** table (that is, a btree with integer keys and all data at the leaves)
-  ** an the new entry is the right-most entry in the tree (it has the
+  ** and the new entry is the right-most entry in the tree (it has the
   ** largest key) then use the special balance_quick() routine for
   ** balancing.  balance_quick() is much faster and results in a tighter
   ** packing of data in the common case.
@@ -4089,7 +4091,12 @@ static int balance_nonroot(MemPage *pPage){
     szNew[i] = szRight;
     szNew[i-1] = szLeft;
   }
-  assert( cntNew[0]>0 );
+
+  /* Either we found one or more cells (cntnew[0])>0) or we are the
+  ** a virtual root page.  A virtual root page is when the real root
+  ** page is page 1 and we are the only child of that page.
+  */
+  assert( cntNew[0]>0 || (pParent->pgno==1 && pParent->nCell==0) );
 
   /*
   ** Allocate k new pages.  Reuse old pages where possible.
@@ -4178,7 +4185,7 @@ static int balance_nonroot(MemPage *pPage){
     assert( j<nMaxCells );
     assert( pNew->pgno==pgnoNew[i] );
     assemblePage(pNew, cntNew[i]-j, &apCell[j], &szCell[j]);
-    assert( pNew->nCell>0 );
+    assert( pNew->nCell>0 || (nNew==1 && cntNew[0]==0) );
     assert( pNew->nOverflow==0 );
 
 #ifndef SQLITE_OMIT_AUTOVACUUM

@@ -1,0 +1,43 @@
+# 2005 August 2
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this script is btree database backend.
+#
+# $Id: btree8.test,v 1.6 2005/08/02 17:13:12 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# Ticket #1346:  If the table rooted on page 1 contains a single entry
+# and that single entries has to flow out into another page because
+# page 1 is 100-bytes smaller than most other pages, then you delete that
+# one entry, everything should still work.
+#
+do_test btree8-1.1 {
+  execsql {
+CREATE TABLE t1(x
+ ----------------------------------------------------------------------------
+ ----------------------------------------------------------------------------
+ ----------------------------------------------------------------------------
+ ----------------------------------------------------------------------------
+ ----------------------------------------------------------------------------
+ ----------------------------------------------------------------------------
+ ----------------------------------------------------------------------------
+ ----------------------------------------------------------------------------
+ ----------------------------------------------------------------------------
+ ----------------------------------------------------------------------------
+ ----------------------------------------------------------------------------
+ ----------------------------------------------------------------------------
+);
+DROP table t1;
+  }
+} {}
+integrity_check btree8-1.2
