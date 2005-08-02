@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.129 2005/08/02 12:21:09 drh Exp $
+** $Id: tclsqlite.c,v 1.130 2005/08/02 17:15:15 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -1518,7 +1518,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
         TTYPE_DEFERRED, TTYPE_EXCLUSIVE, TTYPE_IMMEDIATE
       };
       int ttype;
-      if( Tcl_GetIndexFromObj(interp, objv[2], TTYPE_strs, "transaction_type",
+      if( Tcl_GetIndexFromObj(interp, objv[2], TTYPE_strs, "transaction type",
                               0, &ttype) ){
         return TCL_ERROR;
       }

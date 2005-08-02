@@ -15,7 +15,7 @@
 # interface is pretty well tested.  This file contains some addition
 # tests for fringe issues that the main test suite does not cover.
 #
-# $Id: tclsqlite.test,v 1.42 2005/08/02 12:21:10 drh Exp $
+# $Id: tclsqlite.test,v 1.43 2005/08/02 17:15:16 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -348,5 +348,91 @@ do_test tcl-9.11 {
   execsql {SELECT r1(100)}
 } {5050}
 
+# Tests for the new transaction method
+#
+do_test tcl-10.1 {
+  db transaction {}
+} {}
+do_test tcl-10.2 {
+  db transaction deferred {}
+} {}
+do_test tcl-10.3 {
+  db transaction immediate {}
+} {}
+do_test tcl-10.4 {
+  db transaction exclusive {}
+} {}
+do_test tcl-10.5 {
+  set rc [catch {db transaction xyzzy {}} msg]
+  lappend rc $msg
+} {1 {bad transaction type "xyzzy": must be deferred, exclusive, or immediate}}
+do_test tcl-10.6 {
+  set rc [catch {db transaction {error test-error}} msg]
+  lappend rc $msg
+} {1 test-error}
+do_test tcl-10.7 {
+  db transaction {
+    db eval {CREATE TABLE t4(x)}
+    db transaction {
+      db eval {INSERT INTO t4 VALUES(1)}
+    }
+  }
+  db eval {SELECT * FROM t4}
+} 1
+do_test tcl-10.8 {
+  catch {
+    db transaction {
+      db eval {INSERT INTO t4 VALUES(2)}
+      db eval {INSERT INTO t4 VALUES(3)}
+      db eval {INSERT INTO t4 VALUES(4)}
+      error test-error
+    }
+  }
+  db eval {SELECT * FROM t4}
+} 1
+do_test tcl-10.9 {
+  db transaction {
+    db eval {INSERT INTO t4 VALUES(2)}
+    catch {
+      db transaction {
+        db eval {INSERT INTO t4 VALUES(3)}
+        db eval {INSERT INTO t4 VALUES(4)}
+        error test-error
+      }
+    }
+  }
+  db eval {SELECT * FROM t4}
+} {1 2 3 4}
+do_test tcl-10.10 {
+  for {set i 0} {$i<1} {incr i} {
+    db transaction {
+      db eval {INSERT INTO t4 VALUES(5)}
+      continue
+    }
+  }
+  db eval {SELECT * FROM t4}
+} {1 2 3 4 5}
+do_test tcl-10.11 {
+  for {set i 0} {$i<10} {incr i} {
+    db transaction {
+      db eval {INSERT INTO t4 VALUES(6)}
+      break
+    }
+  }
+  db eval {SELECT * FROM t4}
+} {1 2 3 4 5 6}
+do_test tcl-10.12 {
+  set rc [catch {
+    for {set i 0} {$i<10} {incr i} {
+      db transaction {
+        db eval {INSERT INTO t4 VALUES(7)}
+        return
+      }
+    }
+  }]
+} {2}
+do_test tcl-10.13 {
+  db eval {SELECT * FROM t4}
+} {1 2 3 4 5 6 7}
 
 finish_test
