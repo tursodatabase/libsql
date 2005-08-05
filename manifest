@@ -1,5 +1,5 @@
-C Comment\sout\sthe\suse\sof\smemory\shigh-water\smarks\swhen\snot\scompiling\swith\nSQLITE_MEMDEBUG.\s(CVS\s2577)
-D 2005-08-02T21:42:17
+C Make\ssure\sthe\s.import\scommand\sstrips\snewlines\soff\sthe\send\sof\sthe\slast\nfield\sin\seach\sline\simported.\s\sTicket\s#1348\s(CVS\s2578)
+D 2005-08-05T18:50:52
 F Makefile.in 22ea9c0fe748f591712d8fe3c6d972c6c173a165
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -62,7 +62,7 @@ F src/prepare.c fa0f6068d9b8ec6d5c419c65d4d8ff747d49c5c6
 F src/printf.c 3d20b21cfecadacecac3fb7274e746cb81d3d357
 F src/random.c 90adff4e73a3b249eb4f1fc2a6ff9cf78c7233a4
 F src/select.c c611471052773b94af771693686bd5bcdbbb0dba
-F src/shell.c 25b3217d7c64e6497225439d261a253a23efff26
+F src/shell.c 86c16f0d534aa51cc82cf9f66903d4eb681580e7
 F src/sqlite.h.in 7ccf2f61de2a0dca515e73708e561362e6c3d1e3
 F src/sqliteInt.h 4cacefaca973cbf8e6a82910c704bf9b4a32fdf1
 F src/table.c 25b3ff2b39b7d87e8d4a5da0713d68dfc06cbee9
@@ -290,7 +290,7 @@ F www/tclsqlite.tcl 3df553505b6efcad08f91e9b975deb2e6c9bb955
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P 868322f7b7176486dfb4b54d99cf6662b79e639d
-R 3a17ea4690ee08d0de2910ea1786f2ae
+P fb7a258fd35fdf81772b9d47711d30a30dfa4564
+R aa586e84242aef17c213a0d95a18fcbb
 U drh
-Z c47aa9f3b3ea81319cc7c139f0e5d891
+Z 1c288893169b54f6b53e238acee707aa

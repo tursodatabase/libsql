@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.122 2005/02/23 12:35:41 drh Exp $
+** $Id: shell.c,v 1.123 2005/08/05 18:50:52 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -1093,6 +1093,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
           }
         }
       }
+      *z = 0;
       if( i+1!=nCol ){
         fprintf(stderr,"%s line %d: expected %d columns of data but found %d\n",
            zFile, lineno, nCol, i+1);
