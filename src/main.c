@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.296 2005/07/15 13:05:21 drh Exp $
+** $Id: main.c,v 1.297 2005/08/11 02:10:19 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -234,7 +234,6 @@ const char *sqlite3ErrStr(int rc){
     case SQLITE_DONE:
     case SQLITE_OK:         z = "not an error";                          break;
     case SQLITE_ERROR:      z = "SQL logic error or missing database";   break;
-    case SQLITE_INTERNAL:   z = "internal SQLite implementation flaw";   break;
     case SQLITE_PERM:       z = "access permission denied";              break;
     case SQLITE_ABORT:      z = "callback requested query abort";        break;
     case SQLITE_BUSY:       z = "database is locked";                    break;
@@ -244,13 +243,11 @@ const char *sqlite3ErrStr(int rc){
     case SQLITE_INTERRUPT:  z = "interrupted";                           break;
     case SQLITE_IOERR:      z = "disk I/O error";                        break;
     case SQLITE_CORRUPT:    z = "database disk image is malformed";      break;
-    case SQLITE_NOTFOUND:   z = "table or record not found";             break;
-    case SQLITE_FULL:       z = "database is full";                      break;
+    case SQLITE_FULL:       z = "database or disk is full";              break;
     case SQLITE_CANTOPEN:   z = "unable to open database file";          break;
     case SQLITE_PROTOCOL:   z = "database locking protocol failure";     break;
     case SQLITE_EMPTY:      z = "table contains no data";                break;
     case SQLITE_SCHEMA:     z = "database schema has changed";           break;
-    case SQLITE_TOOBIG:     z = "too much data for one table row";       break;
     case SQLITE_CONSTRAINT: z = "constraint failed";                     break;
     case SQLITE_MISMATCH:   z = "datatype mismatch";                     break;
     case SQLITE_MISUSE:     z = "library routine called out of sequence";break;

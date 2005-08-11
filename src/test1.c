@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.152 2005/08/02 21:42:17 drh Exp $
+** $Id: test1.c,v 1.153 2005/08/11 02:10:19 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -26,7 +26,6 @@ const char *sqlite3TestErrorName(int rc){
   switch( rc ){
     case SQLITE_OK:         zName = "SQLITE_OK";          break;
     case SQLITE_ERROR:      zName = "SQLITE_ERROR";       break;
-    case SQLITE_INTERNAL:   zName = "SQLITE_INTERNAL";    break;
     case SQLITE_PERM:       zName = "SQLITE_PERM";        break;
     case SQLITE_ABORT:      zName = "SQLITE_ABORT";       break;
     case SQLITE_BUSY:       zName = "SQLITE_BUSY";        break;
@@ -36,13 +35,11 @@ const char *sqlite3TestErrorName(int rc){
     case SQLITE_INTERRUPT:  zName = "SQLITE_INTERRUPT";   break;
     case SQLITE_IOERR:      zName = "SQLITE_IOERR";       break;
     case SQLITE_CORRUPT:    zName = "SQLITE_CORRUPT";     break;
-    case SQLITE_NOTFOUND:   zName = "SQLITE_NOTFOUND";    break;
     case SQLITE_FULL:       zName = "SQLITE_FULL";        break;
     case SQLITE_CANTOPEN:   zName = "SQLITE_CANTOPEN";    break;
     case SQLITE_PROTOCOL:   zName = "SQLITE_PROTOCOL";    break;
     case SQLITE_EMPTY:      zName = "SQLITE_EMPTY";       break;
     case SQLITE_SCHEMA:     zName = "SQLITE_SCHEMA";      break;
-    case SQLITE_TOOBIG:     zName = "SQLITE_TOOBIG";      break;
     case SQLITE_CONSTRAINT: zName = "SQLITE_CONSTRAINT";  break;
     case SQLITE_MISMATCH:   zName = "SQLITE_MISMATCH";    break;
     case SQLITE_MISUSE:     zName = "SQLITE_MISUSE";      break;

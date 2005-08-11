@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing the AUTOINCREMENT features.
 #
-# $Id: autoinc.test,v 1.6 2005/06/14 02:12:46 drh Exp $
+# $Id: autoinc.test,v 1.7 2005/08/11 02:10:19 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -480,7 +480,7 @@ do_test autoinc-6.2 {
   catchsql {
     INSERT INTO t6 VALUES(NULL,1);
   }
-} {1 {database is full}}
+} {1 {database or disk is full}}
 
 # Allow the AUTOINCREMENT keyword inside the parentheses
 # on a separate PRIMARY KEY designation.

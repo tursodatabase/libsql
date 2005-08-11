@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi3.test,v 1.33 2005/06/06 17:54:56 drh Exp $
+# $Id: capi3.test,v 1.34 2005/08/11 02:10:19 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -575,7 +575,6 @@ file delete -force test.db-journal
 set code2english [list \
 SQLITE_OK         {not an error} \
 SQLITE_ERROR      {SQL logic error or missing database} \
-SQLITE_INTERNAL   {internal SQLite implementation flaw} \
 SQLITE_PERM       {access permission denied} \
 SQLITE_ABORT      {callback requested query abort} \
 SQLITE_BUSY       {database is locked} \
@@ -585,13 +584,11 @@ SQLITE_READONLY   {attempt to write a readonly database} \
 SQLITE_INTERRUPT  {interrupted} \
 SQLITE_IOERR      {disk I/O error} \
 SQLITE_CORRUPT    {database disk image is malformed} \
-SQLITE_NOTFOUND   {table or record not found} \
-SQLITE_FULL       {database is full} \
+SQLITE_FULL       {database or disk is full} \
 SQLITE_CANTOPEN   {unable to open database file} \
 SQLITE_PROTOCOL   {database locking protocol failure} \
 SQLITE_EMPTY      {table contains no data} \
 SQLITE_SCHEMA     {database schema has changed} \
-SQLITE_TOOBIG     {too much data for one table row} \
 SQLITE_CONSTRAINT {constraint failed} \
 SQLITE_MISMATCH   {datatype mismatch} \
 SQLITE_MISUSE     {library routine called out of sequence} \
