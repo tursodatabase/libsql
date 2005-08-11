@@ -7,9 +7,11 @@ puts {
 <td width="50%" valign="top">
 <h2>About SQLite</h2>
 <p>
-SQLite is a small C library that implements a 
-self-contained, embeddable,
-zero-configuration SQL database engine.
+SQLite is a small
+C library that implements a self-contained, embeddable,
+zero-configuration,
+<a href="http://osdir.com/Article6677.phtml">award-winning</a>
+SQL database engine.
 Features include:
 </p>
 
@@ -59,6 +61,16 @@ proc newsitem {date title text} {
   regsub -all "\n( *\n)+" $text "</p>\n\n<p>" txt
   puts "<p>$txt</p>"
   puts "<hr width=\"50%\">"
+}
+
+newsitem {2005-Aug-2} {2005 Open Source Award for SQLite} {
+  <table align="right" border="0"><tr><td>
+  <a href="http://osdir.com/Article6677.phtml">
+  <img src="2005osaward.gif"></a>
+  </td></tr></table>
+  SQLite and its primary author D. Richard Hipp have been honored with
+  a <a href="http://osdir.com/Article6677.phtml">2005 Open Source
+  Award</a> from Google and O'Reilly.<br clear="right">
 }
 
 newsitem {2005-Jun-13} {Version 3.2.2} {
@@ -119,4 +131,4 @@ puts {
 <p align="right"><a href="oldnews.html">Old news...</a></p>
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.116 2005/06/12 22:23:40 drh Exp $}
+footer {$Id: index.tcl,v 1.117 2005/08/11 01:25:22 drh Exp $}
