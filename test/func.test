@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing built-in functions.
 #
-# $Id: func.test,v 1.36 2005/06/25 18:42:16 drh Exp $
+# $Id: func.test,v 1.37 2005/08/12 23:20:53 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -484,6 +484,16 @@ do_test func-16.1 {
     SELECT quote(a), quote(b) FROM tbl2;
   }
 } {X'616263' NULL}
+
+# Correctly handle function error messages that include %.  Ticket #1354
+#
+do_test func-17.1 {
+  proc testfunc1 args {error "Error %d with %s percents %p"}
+  db function testfunc1 ::testfunc1
+  catchsql {
+    SELECT testfunc1(1,2,3);
+  }
+} {1 {Error %d with %s percents %p}}
 
 
 
