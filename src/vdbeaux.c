@@ -443,33 +443,6 @@ void sqlite3VdbeComment(Vdbe *p, const char *zFormat, ...){
 #endif
 
 /*
-** If the P3 operand to the specified instruction appears
-** to be a quoted string token, then this procedure removes 
-** the quotes.
-**
-** The quoting operator can be either a grave ascent (ASCII 0x27)
-** or a double quote character (ASCII 0x22).  Two quotes in a row
-** resolve to be a single actual quote character within the string.
-*/
-void sqlite3VdbeDequoteP3(Vdbe *p, int addr){
-  Op *pOp;
-  assert( p->magic==VDBE_MAGIC_INIT );
-  if( p->aOp==0 ) return;
-  if( addr<0 || addr>=p->nOp ){
-    addr = p->nOp - 1;
-    if( addr<0 ) return;
-  }
-  pOp = &p->aOp[addr];
-  if( pOp->p3==0 || pOp->p3[0]==0 ) return;
-  if( pOp->p3type==P3_STATIC ){
-    pOp->p3 = sqliteStrDup(pOp->p3);
-    pOp->p3type = P3_DYNAMIC;
-  }
-  assert( pOp->p3type==P3_DYNAMIC );
-  sqlite3Dequote(pOp->p3);
-}
-
-/*
 ** Search the current program starting at instruction addr for the given
 ** opcode and P2 value.  Return the address plus 1 if found and 0 if not
 ** found.

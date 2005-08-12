@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.159 2005/08/02 17:48:22 drh Exp $
+** $Id: where.c,v 1.160 2005/08/12 22:56:09 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -457,6 +457,69 @@ static void exprAnalyzeAll(
   }
 }
 
+#ifndef SQLITE_OMIT_LIKE_OPTIMIZATION
+/*
+** Check to see if the given expression is a LIKE or GLOB operator that
+** can be optimized using inequality constraints.  Return TRUE if it is
+** so and false if not.
+**
+** In order for the operator to be optimizible, the RHS must be a string
+** literal that does not begin with a wildcard.  
+*/
+static int isLikeOrGlob(
+  Expr *pExpr,      /* Test this expression */
+  int *pnPattern,   /* Number of non-wildcard prefix characters */
+  int *pisComplete  /* True if the only wildcard is % in the last character */
+){
+  const char *z;
+  Expr *pRight, *pLeft;
+  int c, cnt;
+  char wc1, wc2, wc3;
+  if( pExpr->op!=TK_FUNCTION ){
+    return 0;
+  }
+  if( pExpr->pList->nExpr!=2 ){
+    return 0;
+  }
+  if( pExpr->token.n!=4 ){
+    return 0;
+  }
+  z = pExpr->token.z;
+  if( sqlite3StrNICmp(z, "glob", 4)==0 ){
+    wc1 = '*';
+    wc2 = '?';
+    wc3 = '[';
+  }
+#ifdef SQLITE_CASE_SENSITIVE_LIKE
+  else if( sqlite3StrNICmp(z, "like", 4)==0 ){
+    wc1 = '%';
+    wc2 = '_';
+    wc3 = '_';
+  }
+#endif
+  else{
+    return 0;
+  }
+  pRight = pExpr->pList->a[0].pExpr;
+  if( pRight->op!=TK_STRING ){
+    return 0;
+  }
+  pLeft = pExpr->pList->a[1].pExpr;
+  if( pLeft->op!=TK_COLUMN ){
+    return 0;
+  }
+  sqlite3DequoteExpr(pRight);
+  z = pRight->token.z;
+  for(cnt=0; (c=z[cnt])!=0 && c!=wc1 && c!=wc2 && c!=wc3; cnt++){}
+  if( cnt==0 || 255==(u8)z[cnt] ){
+    return 0;
+  }
+  *pisComplete = z[cnt]==wc1 && z[cnt+1]==0;
+  *pnPattern = cnt;
+  return 1;
+}
+#endif /* SQLITE_OMIT_LIKE_OPTIMIZATION */
+
 /*
 ** The input to this routine is an WhereTerm structure with only the
 ** "pExpr" field filled in.  The job of this routine is to analyze the
@@ -478,6 +541,8 @@ static void exprAnalyze(
   Bitmask prereqLeft;
   Bitmask prereqAll;
   int idxRight;
+  int nPattern;
+  int isComplete;
 
   prereqLeft = exprTableUsage(pMaskSet, pExpr->pLeft);
   pTerm->prereqRight = exprTableUsage(pMaskSet, pExpr->pRight);
@@ -518,6 +583,7 @@ static void exprAnalyze(
     }
   }
 
+#ifndef SQLITE_OMIT_BETWEEN_OPTIMIZATION
   /* If a term is the BETWEEN operator, create two new virtual terms
   ** that define the range that the BETWEEN implements.
   */
@@ -539,7 +605,9 @@ static void exprAnalyze(
     }
     pTerm->nChild = 2;
   }
+#endif /* SQLITE_OMIT_BETWEEN_OPTIMIZATION */
 
+#ifndef SQLITE_OMIT_OR_OPTIMIZATION
   /* Attempt to convert OR-connected terms into an IN operator so that
   ** they can make use of indices.
   */
@@ -597,6 +665,44 @@ static void exprAnalyze(
 or_not_possible:
     whereClauseClear(&sOr);
   }
+#endif /* SQLITE_OMIT_OR_OPTIMIZATION */
+
+#ifndef SQLITE_OMIT_LIKE_OPTIMIZATION
+  /* Add constraints to reduce the search space on a LIKE or GLOB
+  ** operator.
+  */
+  if( isLikeOrGlob(pExpr, &nPattern, &isComplete) ){
+    Expr *pLeft, *pRight;
+    Expr *pStr1, *pStr2;
+    Expr *pNewExpr1, *pNewExpr2;
+    WhereTerm *pNewTerm1, *pNewTerm2;
+    pLeft = pExpr->pList->a[1].pExpr;
+    pRight = pExpr->pList->a[0].pExpr;
+    pStr1 = sqlite3Expr(TK_STRING, 0, 0, 0);
+    if( pStr1 ){
+      sqlite3TokenCopy(&pStr1->token, &pRight->token);
+      pStr1->token.n = nPattern;
+    }
+    pStr2 = sqlite3ExprDup(pStr1);
+    if( pStr2 ){
+      assert( pStr2->token.dyn );
+      ++*(u8*)&pStr2->token.z[nPattern-1];
+    }
+    pNewExpr1 = sqlite3Expr(TK_GE, sqlite3ExprDup(pLeft), pStr1, 0);
+    pNewTerm1 = whereClauseInsert(pTerm->pWC, pNewExpr1,
+                                  TERM_VIRTUAL|TERM_DYNAMIC);
+    exprAnalyze(pSrc, pMaskSet, pNewTerm1);
+    pNewExpr2 = sqlite3Expr(TK_LT, sqlite3ExprDup(pLeft), pStr2, 0);
+    pNewTerm2 = whereClauseInsert(pTerm->pWC, pNewExpr2,
+                                 TERM_VIRTUAL|TERM_DYNAMIC);
+    exprAnalyze(pSrc, pMaskSet, pNewTerm2);
+    if( isComplete ){
+      pNewTerm2->iParent = pTerm->idx;
+      pNewTerm1->iParent = pTerm->idx;
+      pTerm->nChild = 2;
+    }
+  }
+#endif /* SQLITE_OMIT_LIKE_OPTIMIZATION */
 }
 
 

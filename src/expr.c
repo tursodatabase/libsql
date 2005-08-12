@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.214 2005/07/29 15:10:18 drh Exp $
+** $Id: expr.c,v 1.215 2005/08/12 22:56:09 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -378,6 +378,25 @@ void sqlite3ExprDelete(Expr *p){
   sqlite3ExprListDelete(p->pList);
   sqlite3SelectDelete(p->pSelect);
   sqliteFree(p);
+}
+
+/*
+** The Expr.token field might be a string literal that is quoted.
+** If so, remove the quotation marks.
+*/
+void sqlite3DequoteExpr(Expr *p){
+  if( ExprHasAnyProperty(p, EP_Dequoted) ){
+    return;
+  }
+  ExprSetProperty(p, EP_Dequoted);
+  if( p->token.dyn==0 ){
+    if( p->op==TK_BLOB ){
+      p->token.n--;
+      p->token.z++;
+    }
+    sqlite3TokenCopy(&p->token, &p->token);
+  }
+  sqlite3Dequote((char*)p->token.z);
 }
 
 
@@ -1442,8 +1461,8 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
     case TK_STRING: {
       assert( TK_FLOAT==OP_Real );
       assert( TK_STRING==OP_String8 );
+      sqlite3DequoteExpr(pExpr);
       sqlite3VdbeOp3(v, op, 0, 0, pExpr->token.z, pExpr->token.n);
-      sqlite3VdbeDequoteP3(v, -1);
       break;
     }
     case TK_NULL: {
@@ -1453,8 +1472,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
 #ifndef SQLITE_OMIT_BLOB_LITERAL
     case TK_BLOB: {
       assert( TK_BLOB==OP_HexBlob );
-      sqlite3VdbeOp3(v, op, 0, 0, pExpr->token.z+1, pExpr->token.n-1);
-      sqlite3VdbeDequoteP3(v, -1);
+      sqlite3VdbeOp3(v, op, 0, 0, pExpr->token.z+2, pExpr->token.n-3);
       break;
     }
 #endif
@@ -1716,9 +1734,10 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
          assert( pExpr->iColumn==OE_Rollback ||
                  pExpr->iColumn == OE_Abort ||
                  pExpr->iColumn == OE_Fail );
+         sqlite3DequoteExpr(pExpr);
          sqlite3VdbeOp3(v, OP_Halt, SQLITE_CONSTRAINT, pExpr->iColumn,
                         pExpr->token.z, pExpr->token.n);
-         sqlite3VdbeDequoteP3(v, -1);
+//         sqlite3VdbeDequoteP3(v, -1);
       } else {
          assert( pExpr->iColumn == OE_Ignore );
          sqlite3VdbeAddOp(v, OP_ContextPop, 0, 0);

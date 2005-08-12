@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.400 2005/07/23 22:59:56 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.401 2005/08/12 22:56:09 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -846,6 +846,7 @@ struct Expr {
 #define EP_Error        0x08  /* Expression contains one or more errors */
 #define EP_Not          0x10  /* Operator preceeded by NOT */
 #define EP_VarSelect    0x20  /* pSelect is correlated, not constant */
+#define EP_Dequoted     0x40  /* True if the string has been dequoted */
 
 /*
 ** These macros can be used to test, set, or clear bits in the 
@@ -1348,6 +1349,7 @@ void *sqlite3TextToPtr(const char*);
 void sqlite3SetString(char **, ...);
 void sqlite3ErrorMsg(Parse*, const char*, ...);
 void sqlite3Dequote(char*);
+void sqlite3DequoteExpr(Expr*);
 int sqlite3KeywordCode(const char*, int);
 int sqlite3RunParser(Parse*, const char*, char **);
 void sqlite3FinishCoding(Parse*);
