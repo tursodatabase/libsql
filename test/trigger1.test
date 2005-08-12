@@ -589,4 +589,9 @@ ifcapable tempdb {
   } {main 21 22 23 temp 24 25 26 aux 27 28 29}
 }
 
+do_test trigger1-11.1 {
+  catchsql {SELECT raise(abort,'message');}
+} {1 {RAISE() may only be used within a trigger-program}}
+
+
 finish_test

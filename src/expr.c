@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.215 2005/08/12 22:56:09 drh Exp $
+** $Id: expr.c,v 1.216 2005/08/12 22:58:53 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -226,11 +226,11 @@ Expr *sqlite3RegisterExpr(Parse *pParse, Token *pToken){
   Vdbe *v = pParse->pVdbe;
   Expr *p;
   int depth;
-  if( v==0 ) return 0;
   if( pParse->nested==0 ){
     sqlite3ErrorMsg(pParse, "near \"%T\": syntax error", pToken);
     return 0;
   }
+  if( v==0 ) return 0;
   p = sqlite3Expr(TK_REGISTER, 0, 0, pToken);
   if( p==0 ){
     return 0;  /* Malloc failed */
