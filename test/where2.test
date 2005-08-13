@@ -12,7 +12,7 @@
 # focus of this file is testing the use of indices in WHERE clauses
 # based on recent changes to the optimizer.
 #
-# $Id: where2.test,v 1.4 2005/07/29 19:43:59 drh Exp $
+# $Id: where2.test,v 1.5 2005/08/13 16:13:06 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -238,6 +238,37 @@ do_test where2-6.6 {
   }
 } {1 0 4 4 2 1 9 10 sort a i1w b i1zyx}
 
-
+# Unique queries (queries that are guaranteed to return only a single
+# row of result) do not call the sorter.  But all tables must give
+# a unique result.  If any one table in the join does not give a unique
+# result then sorting is necessary.
+#
+do_test where2-7.1 {
+  cksort {
+    create table t8(a unique, b, c);
+    insert into t8 values(1,2,3);
+    insert into t8 values(2,3,4);
+    create table t9(x,y);
+    insert into t9 values(2,4);
+    insert into t9 values(2,3);
+    select y from t8, t9 where a=1 order by a, y;
+  }
+} {3 4 sort}
+do_test where2-7.2 {
+  cksort {
+    select * from t8 where a=1 order by b, c
+  }
+} {1 2 3 nosort}
+do_test where2-7.3 {
+  cksort {
+    select * from t8, t9 where a=1 and y=3 order by b, x
+  }
+} {1 2 3 2 3 sort}
+do_test where2-7.4 {
+  cksort {
+    create unique index i9y on t9(y);
+    select * from t8, t9 where a=1 and y=3 order by b, x
+  }
+} {1 2 3 2 3 nosort}
 
 finish_test

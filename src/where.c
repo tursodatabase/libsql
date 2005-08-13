@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.160 2005/08/12 22:56:09 drh Exp $
+** $Id: where.c,v 1.161 2005/08/13 16:13:05 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -719,10 +719,6 @@ or_not_possible:
 ** constraints.  Any of these columns may be missing from the ORDER BY
 ** clause and the match can still be a success.
 **
-** If the index is UNIQUE, then the ORDER BY clause is allowed to have
-** additional terms past the end of the index and the match will still
-** be a success.
-**
 ** All terms of the ORDER BY that match against the index must be either
 ** ASC or DESC.  (Terms of the ORDER BY clause past the end of a UNIQUE
 ** index do not need to satisfy this constraint.)  The *pbRev value is
@@ -791,10 +787,9 @@ static int isSortingIndex(
   }
 
   /* The index can be used for sorting if all terms of the ORDER BY clause
-  ** or covered or if we ran out of index columns and the it is a UNIQUE
-  ** index.
+  ** are covered.
   */
-  if( j>=nTerm || (i>=pIdx->nColumn && pIdx->onError!=OE_None) ){
+  if( j>=nTerm ){
     *pbRev = sortOrder==SQLITE_SO_DESC;
     return 1;
   }
@@ -829,14 +824,12 @@ static int sortableByRowid(
 ** the total cost of performing operatings with O(logN) or O(NlogN)
 ** complexity.  Because N is just a guess, it is no great tragedy if
 ** logN is a little off.
-**
-** We can assume N>=1.0;
 */
 static double estLog(double N){
   double logN = 1.0;
   double x = 10.0;
   while( N>x ){
-    logN = logN+1.0;
+    logN += 1.0;
     x *= 10;
   }
   return logN;
@@ -1013,7 +1006,7 @@ static double bestIndex(
     */
     if( pOrderBy ){
       if( (flags & WHERE_COLUMN_IN)==0 &&
-        isSortingIndex(pParse, pProbe, pSrc->pTab, iCur, pOrderBy, nEq, &rev) ){
+           isSortingIndex(pParse,pProbe,pSrc->pTab,iCur,pOrderBy,nEq,&rev) ){
         if( flags==0 ){
           flags = WHERE_COLUMN_RANGE;
         }
