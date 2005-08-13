@@ -214,6 +214,7 @@ static int vxprintf(
   etByte flag_zeropad;       /* True if field width constant starts with zero */
   etByte flag_long;          /* True if "l" flag is present */
   etByte flag_longlong;      /* True if the "ll" flag is present */
+  etByte done;               /* Loop termination flag */
   UINT64_TYPE longvalue;     /* Value for integer types */
   LONGDOUBLE_TYPE realvalue; /* Value for real types */
   const et_info *infop;      /* Pointer to the appropriate info structure */
@@ -256,17 +257,18 @@ static int vxprintf(
     /* Find out what flags are present */
     flag_leftjustify = flag_plussign = flag_blanksign = 
      flag_alternateform = flag_altform2 = flag_zeropad = 0;
+    done = 0;
     do{
       switch( c ){
-        case '-':   flag_leftjustify = 1;     c = 0;   break;
-        case '+':   flag_plussign = 1;        c = 0;   break;
-        case ' ':   flag_blanksign = 1;       c = 0;   break;
-        case '#':   flag_alternateform = 1;   c = 0;   break;
-        case '!':   flag_altform2 = 1;        c = 0;   break;
-        case '0':   flag_zeropad = 1;         c = 0;   break;
-        default:                                       break;
+        case '-':   flag_leftjustify = 1;     break;
+        case '+':   flag_plussign = 1;        break;
+        case ' ':   flag_blanksign = 1;       break;
+        case '#':   flag_alternateform = 1;   break;
+        case '!':   flag_altform2 = 1;        break;
+        case '0':   flag_zeropad = 1;         break;
+        default:    done = 1;                 break;
       }
-    }while( c==0 && (c=(*++fmt))!=0 );
+    }while( !done && (c=(*++fmt))!=0 );
     /* Get the field width */
     width = 0;
     if( c=='*' ){
@@ -338,6 +340,7 @@ static int vxprintf(
     ** At this point, variables are initialized as follows:
     **
     **   flag_alternateform          TRUE if a '#' is present.
+    **   flag_altform2               TRUE if a '!' is present.
     **   flag_plussign               TRUE if a '+' is present.
     **   flag_leftjustify            TRUE if a '-' is present or if the
     **                               field width was negative.
@@ -425,8 +428,7 @@ static int vxprintf(
           else if( flag_blanksign )    prefix = ' ';
           else                         prefix = 0;
         }
-        if( infop->type==etGENERIC && precision>0 ) precision--;
-        rounder = 0.0;
+        if( xtype==etGENERIC && precision>0 ) precision--;
 #if 0
         /* Rounding works like BSD when the constant 0.4999 is used.  Wierd! */
         for(idx=precision, rounder=0.4999; idx>0; idx--, rounder*=0.1);
@@ -434,7 +436,7 @@ static int vxprintf(
         /* It makes more sense to use 0.5 */
         for(idx=precision, rounder=0.5; idx>0; idx--, rounder*=0.1);
 #endif
-        if( infop->type==etFLOAT ) realvalue += rounder;
+        if( xtype==etFLOAT ) realvalue += rounder;
         /* Normalize realvalue to within 10.0 > realvalue >= 1.0 */
         exp = 0;
         if( realvalue>0.0 ){
@@ -510,8 +512,9 @@ static int vxprintf(
         }
         /* Remove trailing zeros and the "." if no digits follow the "." */
         if( flag_rtz && flag_dp ){
-          while( bufpt>buf && bufpt[-1]=='0' ) *(--bufpt) = 0;
-          if( bufpt>buf && bufpt[-1]=='.' ){
+          while( bufpt[-1]=='0' ) *(--bufpt) = 0;
+          assert( bufpt>buf );
+          if( bufpt[-1]=='.' ){
             if( flag_altform2 ){
               *(bufpt++) = '0';
             }else{
