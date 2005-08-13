@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the sqlite_*_printf() interface.
 #
-# $Id: printf.test,v 1.15 2005/08/13 03:07:47 drh Exp $
+# $Id: printf.test,v 1.16 2005/08/13 12:59:16 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -179,6 +179,31 @@ do_test printf-10.2 {
 do_test printf-10.3 {
   sqlite3_mprintf_double {%d %d %f} 1 1 1e300
 } {1 1 1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000.000000}
+
+# The non-standard '!' flag on a 'g' conversion forces a decimal point
+# and at least one digit on either side of the decimal point.
+#
+do_test printf-11.1 {
+  sqlite3_mprintf_double {%d %d %!g} 1 1 1
+} {1 1 1.0}
+do_test printf-11.2 {
+  sqlite3_mprintf_double {%d %d %!g} 1 1 123
+} {1 1 123.0}
+do_test printf-11.3 {
+  sqlite3_mprintf_double {%d %d %!g} 1 1 12.3
+} {1 1 12.3}
+do_test printf-11.4 {
+  sqlite3_mprintf_double {%d %d %!g} 1 1 0.123
+} {1 1 0.123}
+do_test printf-11.5 {
+  sqlite3_mprintf_double {%d %d %!.15g} 1 1 1
+} {1 1 1.0}
+do_test printf-11.6 {
+  sqlite3_mprintf_double {%d %d %!.15g} 1 1 1e10
+} {1 1 10000000000.0}
+do_test printf-11.7 {
+  sqlite3_mprintf_double {%d %d %!.15g} 1 1 1e300
+} {1 1 1.0e+300}
 
 
 finish_test

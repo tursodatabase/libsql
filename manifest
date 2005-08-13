@@ -1,5 +1,5 @@
-C Make\sthe\sround()\sfunction\swork\scorrectly\son\snumbers\swith\svery\slarge\sexponents.\nTicket\s#1340.\s(CVS\s2585)
-D 2005-08-13T03:07:47
+C Add\sthe\s"!"\sflag\sto\sthe\s"%g"\smprintf\sconversion\sparameter\sto\sforce\sa\ndecimal\spoint.\s\sThis\sprevents\sfloating\spoint\svalues\sfrom\sappearing\sas\nintegers.\s\sUse\sthis\sflag\swhen\sconverting\sfloating\spoint\sto\stext.\nTicket\s#1362.\s(CVS\s2586)
+D 2005-08-13T12:59:15
 F Makefile.in 22ea9c0fe748f591712d8fe3c6d972c6c173a165
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -60,7 +60,7 @@ F src/pager.h 0d9153d6269d60d04af3dd84a0cc0a96253cf4a4
 F src/parse.y d57cdd2adc0923762b40314f08683c836a2e0c90
 F src/pragma.c 59ab7073465a11a531af2796e0385727194accb8
 F src/prepare.c fa0f6068d9b8ec6d5c419c65d4d8ff747d49c5c6
-F src/printf.c a06d3527c677334a97eaaa1573d0c644c987acf6
+F src/printf.c d1fa64c696bc05f50471a960bc68cd9b6e861823
 F src/random.c 90adff4e73a3b249eb4f1fc2a6ff9cf78c7233a4
 F src/select.c c611471052773b94af771693686bd5bcdbbb0dba
 F src/shell.c 86c16f0d534aa51cc82cf9f66903d4eb681580e7
@@ -85,7 +85,7 @@ F src/vdbeInt.h 9be9a6c43d38124bd03cc5cf05715605b1789fd9
 F src/vdbeapi.c dc5b78cabf8d6e33318bd3d4ed25307d2aadce9a
 F src/vdbeaux.c d53139d819b887dac608ac4ae9a501baee3cd311
 F src/vdbefifo.c b8805850afe13b43f1de78d58088cb5d66f88e1e
-F src/vdbemem.c da8e8d6f29dd1323f782f000d7cd120027c9ff03
+F src/vdbemem.c 89154caae3b8d4d0397e1235390fc4ff8aba4233
 F src/where.c ac754c021f716e17337f45ffdc2436c6d5109fd3
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
 F test/all.test 7f0988442ab811dfa41793b5b550f5828ce316f3
@@ -169,7 +169,7 @@ F test/malloc2.test 655b972372d2754a3f6c6ed54d7cfd18fde9bd32
 F test/memdb.test 1860e060be810bf0775bc57408a5b7c4954bcaea
 F test/memleak.test df2b2b96e77f8ba159a332299535b1e5f18e49ac
 F test/minmax.test 9429a06f1f93acf76fcacafd17160a4392e88526
-F test/misc1.test a4fe87c71f756ee36b08a698da46ea9c3b2471e7
+F test/misc1.test be8aa484569fb82766ce14961ba377aed92f3d8b
 F test/misc2.test 5c699af2fede2694736a9f45aea7e2f052686e15
 F test/misc3.test 7bd937e2c62bcc6be71939faf068d506467b1e03
 F test/misc4.test edd3e3adf5b6e3b995b29843565ca58dd602f9a7
@@ -182,7 +182,7 @@ F test/pager2.test 49c0f57c7da0b060f0486b85fdd074025caa694e
 F test/pager3.test 2323bf27fd5bd887b580247e5bce500ceee994b4
 F test/pagesize.test cbc6a312b6f6c0f02619b189985df2a14164b690
 F test/pragma.test 95ea907adf68459e1be6f310c9ae94d1d59c465b
-F test/printf.test 96ae2891aa9e9ad3eba0bd7608ffe536437dd045
+F test/printf.test dc39f7c66db3adfe754b4fc0b97fdd97fa06a9c8
 F test/progress.test 16496001da445e6534afb94562c286708316d82f x
 F test/quick.test a94d12658a2b590c1a5be580bef09bbb04c1266b
 F test/quote.test 6d75cf635d93ba2484dc9cb378d88cbae9dc2c62
@@ -198,7 +198,7 @@ F test/select4.test c239f516aa31f42f2ef7c6d7cd01105f08f934ca
 F test/select5.test 2d414f712bff8e590091e08f9b7287600731be00
 F test/select6.test 6559d16ad16edb7d6864f7e74a3d204d0af72486
 F test/select7.test 1bf795b948c133a15a2a5e99d3270e652ec58ce6
-F test/sort.test 8aaec2e01bf97691c96fd2f0294e635540bebcda
+F test/sort.test 131787aadaa0eca8bc97eaf244bbde2380a4bb77
 F test/subquery.test 0df3de0dbb65165b96ebe895550f1549d5439856
 F test/subselect.test 3f3f7a940dc3195c3139f4d530385cb54665d614
 F test/table.test d0e05ede3f6e5a8b79f8661ddcc4618cf7e69f8a
@@ -291,7 +291,7 @@ F www/tclsqlite.tcl 3df553505b6efcad08f91e9b975deb2e6c9bb955
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P 25cfe9390dda79bb2a7740b3d7380f517a4e8d1b
-R c6274d9ed3a9c273a8983dbfcf799ac8
+P 4f47c3c884e38b810450b6127ab33c7b86e6743c
+R b3c296ac5d6a7b19a3b058edd9a64bc2
 U drh
-Z 745b1dec57cb9cc3d543dad039e1c761
+Z faea32e5bc1b77c04bb69a0132002ae9

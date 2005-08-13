@@ -111,6 +111,7 @@ static const char aPrefix[] = "-x0\000X0";
 static const et_info fmtinfo[] = {
   {  'd', 10, 1, etRADIX,      0,  0 },
   {  's',  0, 4, etSTRING,     0,  0 },
+  {  'g',  0, 1, etGENERIC,    30, 0 },
   {  'z',  0, 6, etDYNSTRING,  0,  0 },
   {  'q',  0, 4, etSQLESCAPE,  0,  0 },
   {  'Q',  0, 4, etSQLESCAPE2, 0,  0 },
@@ -122,7 +123,6 @@ static const et_info fmtinfo[] = {
   {  'f',  0, 1, etFLOAT,      0,  0 },
   {  'e',  0, 1, etEXP,        30, 0 },
   {  'E',  0, 1, etEXP,        14, 0 },
-  {  'g',  0, 1, etGENERIC,    30, 0 },
   {  'G',  0, 1, etGENERIC,    14, 0 },
   {  'i', 10, 1, etRADIX,      0,  0 },
   {  'n',  0, 0, etSIZE,       0,  0 },
@@ -210,6 +210,7 @@ static int vxprintf(
   etByte flag_plussign;      /* True if "+" flag is present */
   etByte flag_blanksign;     /* True if " " flag is present */
   etByte flag_alternateform; /* True if "#" flag is present */
+  etByte flag_altform2;      /* True if "$" flag is present */
   etByte flag_zeropad;       /* True if field width constant starts with zero */
   etByte flag_long;          /* True if "l" flag is present */
   etByte flag_longlong;      /* True if the "ll" flag is present */
@@ -225,7 +226,7 @@ static int vxprintf(
    "                                                                         ";
 #define etSPACESIZE (sizeof(spaces)-1)
 #ifndef etNOFLOATINGPOINT
-  int  exp;                  /* exponent of real numbers */
+  int  exp, e2;              /* exponent of real numbers */
   double rounder;            /* Used for rounding floating point values */
   etByte flag_dp;            /* True if decimal point should be shown */
   etByte flag_rtz;           /* True if trailing zeros should be removed */
@@ -254,13 +255,14 @@ static int vxprintf(
     }
     /* Find out what flags are present */
     flag_leftjustify = flag_plussign = flag_blanksign = 
-     flag_alternateform = flag_zeropad = 0;
+     flag_alternateform = flag_altform2 = flag_zeropad = 0;
     do{
       switch( c ){
         case '-':   flag_leftjustify = 1;     c = 0;   break;
         case '+':   flag_plussign = 1;        c = 0;   break;
         case ' ':   flag_blanksign = 1;       c = 0;   break;
         case '#':   flag_alternateform = 1;   c = 0;   break;
+        case '!':   flag_altform2 = 1;        c = 0;   break;
         case '0':   flag_zeropad = 1;         c = 0;   break;
         default:                                       break;
       }
@@ -436,9 +438,9 @@ static int vxprintf(
         /* Normalize realvalue to within 10.0 > realvalue >= 1.0 */
         exp = 0;
         if( realvalue>0.0 ){
-          while( realvalue>=1e32 && exp<=350 ){ realvalue *= 1e-32; exp+=32; }
-          while( realvalue>=1e8 && exp<=350 ){ realvalue *= 1e-8; exp+=8; }
-          while( realvalue>=10.0 && exp<=350 ){ realvalue *= 0.1; exp++; }
+          while( realvalue>1e32 && exp<=350 ){ realvalue *= 1e-32; exp+=32; }
+          while( realvalue>1e8 && exp<=350 ){ realvalue *= 1e-8; exp+=8; }
+          while( realvalue>10.0 && exp<=350 ){ realvalue *= 0.1; exp++; }
           while( realvalue<1e-8 && exp>=-350 ){ realvalue *= 1e8; exp-=8; }
           while( realvalue<1.0 && exp>=-350 ){ realvalue *= 10.0; exp--; }
           if( exp>350 || exp<-350 ){
@@ -468,51 +470,72 @@ static int vxprintf(
         }else{
           flag_rtz = 0;
         }
-        /*
-        ** The "exp+precision" test causes output to be of type etEXP if
-        ** the precision is too large to fit in buf[].
+        /* If exp+precision causes the output to be too big for etFLOAT, then
+        ** do etEXP instead
         */
+        if( xtype==etFLOAT && exp+precision>=etBUFSIZE-30 ){
+          xtype = etEXP;
+        }
+        if( xtype==etEXP ){
+          e2 = 0;
+        }else{
+          e2 = exp;
+        }
         nsd = 0;
-        if( xtype==etFLOAT && exp+precision<etBUFSIZE-30 ){
-          flag_dp = (precision>0 || flag_alternateform);
-          if( prefix ) *(bufpt++) = prefix;         /* Sign */
-          if( exp<0 )  *(bufpt++) = '0';            /* Digits before "." */
-          else for(; exp>=0; exp--) *(bufpt++) = et_getdigit(&realvalue,&nsd);
-          if( flag_dp ) *(bufpt++) = '.';           /* The decimal point */
-          for(exp++; exp<0 && precision>0; precision--, exp++){
-            *(bufpt++) = '0';
-          }
-          while( (precision--)>0 ) *(bufpt++) = et_getdigit(&realvalue,&nsd);
-          *(bufpt--) = 0;                           /* Null terminate */
-          if( flag_rtz && flag_dp ){     /* Remove trailing zeros and "." */
-            while( bufpt>=buf && *bufpt=='0' ) *(bufpt--) = 0;
-            if( bufpt>=buf && *bufpt=='.' ) *(bufpt--) = 0;
-          }
-          bufpt++;                            /* point to next free slot */
-        }else{    /* etEXP or etGENERIC */
-          flag_dp = (precision>0 || flag_alternateform);
-          if( prefix ) *(bufpt++) = prefix;   /* Sign */
-          *(bufpt++) = et_getdigit(&realvalue,&nsd);  /* First digit */
-          if( flag_dp ) *(bufpt++) = '.';     /* Decimal point */
-          while( (precision--)>0 ) *(bufpt++) = et_getdigit(&realvalue,&nsd);
-          bufpt--;                            /* point to last digit */
-          if( flag_rtz && flag_dp ){          /* Remove tail zeros */
-            while( bufpt>=buf && *bufpt=='0' ) *(bufpt--) = 0;
-            if( bufpt>=buf && *bufpt=='.' ) *(bufpt--) = 0;
-          }
-          bufpt++;                            /* point to next free slot */
-          if( exp || flag_exp ){
-            *(bufpt++) = aDigits[infop->charset];
-            if( exp<0 ){ *(bufpt++) = '-'; exp = -exp; } /* sign of exp */
-            else       { *(bufpt++) = '+'; }
-            if( exp>=100 ){
-              *(bufpt++) = (exp/100)+'0';                /* 100's digit */
-              exp %= 100;
-            }
-            *(bufpt++) = exp/10+'0';                     /* 10's digit */
-            *(bufpt++) = exp%10+'0';                     /* 1's digit */
+        flag_dp = (precision>0) | flag_alternateform | flag_altform2;
+        /* The sign in front of the number */
+        if( prefix ){
+          *(bufpt++) = prefix;
+        }
+        /* Digits prior to the decimal point */
+        if( e2<0 ){
+          *(bufpt++) = '0';
+        }else{
+          for(; e2>=0; e2--){
+            *(bufpt++) = et_getdigit(&realvalue,&nsd);
           }
         }
+        /* The decimal point */
+        if( flag_dp ){
+          *(bufpt++) = '.';
+        }
+        /* "0" digits after the decimal point but before the first
+        ** significant digit of the number */
+        for(e2++; e2<0 && precision>0; precision--, e2++){
+          *(bufpt++) = '0';
+        }
+        /* Significant digits after the decimal point */
+        while( (precision--)>0 ){
+          *(bufpt++) = et_getdigit(&realvalue,&nsd);
+        }
+        /* Remove trailing zeros and the "." if no digits follow the "." */
+        if( flag_rtz && flag_dp ){
+          while( bufpt>buf && bufpt[-1]=='0' ) *(--bufpt) = 0;
+          if( bufpt>buf && bufpt[-1]=='.' ){
+            if( flag_altform2 ){
+              *(bufpt++) = '0';
+            }else{
+              *(--bufpt) = 0;
+            }
+          }
+        }
+        /* Add the "eNNN" suffix */
+        if( flag_exp || (xtype==etEXP && exp) ){
+          *(bufpt++) = aDigits[infop->charset];
+          if( exp<0 ){
+            *(bufpt++) = '-'; exp = -exp;
+          }else{
+            *(bufpt++) = '+';
+          }
+          if( exp>=100 ){
+            *(bufpt++) = (exp/100)+'0';                /* 100's digit */
+            exp %= 100;
+          }
+          *(bufpt++) = exp/10+'0';                     /* 10's digit */
+          *(bufpt++) = exp%10+'0';                     /* 1's digit */
+        }
+        *bufpt = 0;
+
         /* The converted number is in buf[] and zero terminated. Output it.
         ** Note that the number is in the usual order, not reversed as with
         ** integer conversions. */
