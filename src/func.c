@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.102 2005/07/09 02:38:06 drh Exp $
+** $Id: func.c,v 1.103 2005/08/13 03:07:47 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -184,7 +184,7 @@ static void substrFunc(
 static void roundFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   int n = 0;
   double r;
-  char zBuf[100];
+  char zBuf[500];  /* larger than the %f representation of the largest double */
   assert( argc==1 || argc==2 );
   if( argc==2 ){
     if( SQLITE_NULL==sqlite3_value_type(argv[1]) ) return;

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the sqlite_*_printf() interface.
 #
-# $Id: printf.test,v 1.14 2004/09/09 00:35:30 drh Exp $
+# $Id: printf.test,v 1.15 2005/08/13 03:07:47 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -73,7 +73,7 @@ foreach {a b} {1 1 5 5 10 10 10 5} {
   incr m
 }
 
-}
+}  ;# endif not windows
 
 do_test printf-3.1 {
   sqlite3_mprintf_str {A String: (%*.*s)} 10 10 {This is the string}
@@ -173,6 +173,12 @@ do_test printf-10.1 {
 do_test printf-10.2 {
   sqlite3_mprintf_stronly %q {}
 } {}
+
+# Ticket #1340:  Test for loss of precision on large positive exponents
+#
+do_test printf-10.3 {
+  sqlite3_mprintf_double {%d %d %f} 1 1 1e300
+} {1 1 1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000.000000}
 
 
 finish_test
