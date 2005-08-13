@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.96 2005/06/23 03:15:08 drh Exp $
+** $Id: pragma.c,v 1.97 2005/08/13 00:56:27 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -604,7 +604,7 @@ void sqlite3Pragma(
   if( sqlite3StrICmp(zLeft, "parser_trace")==0 ){
     extern void sqlite3ParserTrace(FILE*, char *);
     if( getBoolean(zRight) ){
-      sqlite3ParserTrace(stdout, "parser: ");
+      sqlite3ParserTrace(stderr, "parser: ");
     }else{
       sqlite3ParserTrace(0, 0);
     }
