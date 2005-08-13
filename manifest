@@ -1,5 +1,5 @@
-C Disable\san\soverzealous\soptimization\sthe\somitted\ssorting\son\sa\sjoin\sif\sthe\sfirst\ntable\sgave\sa\sunique\sresult.\s\sThe\ssort\scan\sonly\sbe\somitted\sif\sall\stables\sin\nthe\sjoin\sare\sunique.\s\sTicket\s#1358.\s(CVS\s2589)
-D 2005-08-13T16:13:05
+C Give\sthe\ssame\saccess\spermissions\sto\sjournal\sfiles\sas\sis\sgiven\sto\sdatabases.\s(CVS\s2590)
+D 2005-08-13T17:17:02
 F Makefile.in 22ea9c0fe748f591712d8fe3c6d972c6c173a165
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -51,7 +51,7 @@ F src/os.h c4b34bd4d6fea51a420f337468b907f4edecb161
 F src/os_common.h 0e7f428ba0a6c40a61bc56c4e96f493231301b73
 F src/os_test.c 91e5f22dd89491e5e1554820e715805f43fa4ece
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
-F src/os_unix.c be8f327f9578a6bd1b1550ac3d083c427dfeb0f3
+F src/os_unix.c 535cd82c2fa0b8c4ae9364edeb1ec5342887417e
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c fe7b99cfcfb61d9bf54493ddf5857885a657fb89
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
@@ -291,7 +291,7 @@ F www/tclsqlite.tcl 3df553505b6efcad08f91e9b975deb2e6c9bb955
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P 1054685f15095ef147d9e9a32bd56b0eaaf9fa54
-R d225fbaf33bc549b919b820e573eeddf
+P 4f07661279fb11a06b3ddffeda672f077c0d306a
+R b836f0b3a75836080ea6277724098755
 U drh
-Z ca2afe75bb06779be079d2484ddb7fa4
+Z 529dbcca7dd17d3d06b72e71d043be10

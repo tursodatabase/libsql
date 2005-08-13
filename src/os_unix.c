@@ -568,7 +568,8 @@ int sqlite3OsOpenExclusive(const char *zFilename, OsFile *id, int delFlag){
   SET_THREADID(id);
   id->dirfd = -1;
   id->h = open(zFilename,
-                O_RDWR|O_CREAT|O_EXCL|O_NOFOLLOW|O_LARGEFILE|O_BINARY, 0600);
+                O_RDWR|O_CREAT|O_EXCL|O_NOFOLLOW|O_LARGEFILE|O_BINARY,
+                SQLITE_DEFAULT_FILE_PERMISSIONS);
   if( id->h<0 ){
     return SQLITE_CANTOPEN;
   }
