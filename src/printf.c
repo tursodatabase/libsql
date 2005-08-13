@@ -210,7 +210,7 @@ static int vxprintf(
   etByte flag_plussign;      /* True if "+" flag is present */
   etByte flag_blanksign;     /* True if " " flag is present */
   etByte flag_alternateform; /* True if "#" flag is present */
-  etByte flag_altform2;      /* True if "$" flag is present */
+  etByte flag_altform2;      /* True if "!" flag is present */
   etByte flag_zeropad;       /* True if field width constant starts with zero */
   etByte flag_long;          /* True if "l" flag is present */
   etByte flag_longlong;      /* True if the "ll" flag is present */
