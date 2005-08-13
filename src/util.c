@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.141 2005/07/20 14:31:53 drh Exp $
+** $Id: util.c,v 1.142 2005/08/13 18:15:43 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -470,7 +470,8 @@ void sqlite3Dequote(char *z){
   switch( quote ){
     case '\'':  break;
     case '"':   break;
-    case '[':   quote = ']';  break;
+    case '`':   break;                /* For MySQL compatibility */
+    case '[':   quote = ']';  break;  /* For MS SqlServer compatibility */
     default:    return;
   }
   for(i=1, j=0; z[i]; i++){

@@ -1,5 +1,5 @@
-C Give\sthe\ssame\saccess\spermissions\sto\sjournal\sfiles\sas\sis\sgiven\sto\sdatabases.\s(CVS\s2590)
-D 2005-08-13T17:17:02
+C Provide\sgrave\saccent\squoting\sof\sidentifiers\sfor\sMySQL\scompatibility.\nTicket\s#1337.\s(CVS\s2591)
+D 2005-08-13T18:15:43
 F Makefile.in 22ea9c0fe748f591712d8fe3c6d972c6c173a165
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -73,11 +73,11 @@ F src/test2.c 792f203be69fea88668fa221321194f0a28dfdfa
 F src/test3.c f4e6a16a602091696619a1171bda25c0e3df49f7
 F src/test4.c a8fd681e139e1c61f22a77d07fc3a99cb28fff3f
 F src/test5.c 64f08b2a50ef371a1bd68ff206829e7b1b9997f5
-F src/tokenize.c 57ec9926612fb9e325b57a141303573bc20c79bf
+F src/tokenize.c 0ea99e6d02287d6c46788fd5f97533636667244f
 F src/trigger.c f51dec15921629591cb98bf2e350018e268b109a
 F src/update.c a9d2c5f504212d62da1b094476f1389c0e02f83f
 F src/utf.c bda5eb85039ef16f2d17004c1e18c96e1ab0a80c
-F src/util.c 668d31be592753e5b8ea00e69ea8d3eedb29fa22
+F src/util.c f66b47d937bde79d458a18665b67a98dbba5108f
 F src/vacuum.c 829d9e1a6d7c094b80e0899686670932eafd768c
 F src/vdbe.c 69f33e22c7d0a64b23fbb69e6da95a1bb6869032
 F src/vdbe.h 68e80f65658e7fd85561721f617bdebf8bb84b59
@@ -185,7 +185,7 @@ F test/pragma.test 95ea907adf68459e1be6f310c9ae94d1d59c465b
 F test/printf.test dc39f7c66db3adfe754b4fc0b97fdd97fa06a9c8
 F test/progress.test 16496001da445e6534afb94562c286708316d82f x
 F test/quick.test a94d12658a2b590c1a5be580bef09bbb04c1266b
-F test/quote.test 6d75cf635d93ba2484dc9cb378d88cbae9dc2c62
+F test/quote.test c1ca5e18800455f1c882baf5b0274755a3836549
 F test/reindex.test 38b138abe36bf9a08c791ed44d9f76cd6b97b78b
 F test/rollback.test 94cd981ee3a627d9f6466f69dcf1f7dbfe695d7a
 F test/rowid.test 040a3bef06f970c45f5fcd14b2355f7f4d62f0cf
@@ -291,7 +291,7 @@ F www/tclsqlite.tcl 3df553505b6efcad08f91e9b975deb2e6c9bb955
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P 4f07661279fb11a06b3ddffeda672f077c0d306a
-R b836f0b3a75836080ea6277724098755
+P 7961ec0ccbc99d890689013b9602635941f308a6
+R 8fe3c3a40a20fda764293dad136929fd
 U drh
-Z 529dbcca7dd17d3d06b72e71d043be10
+Z 59ce15d25edf70c7b49901f8f0f074fa
