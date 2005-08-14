@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.253 2005/07/08 17:13:47 drh Exp $
+** $Id: select.c,v 1.254 2005/08/14 20:47:16 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -85,7 +85,7 @@ int sqlite3JoinType(Parse *pParse, Token *pA, Token *pB, Token *pC){
   Token *apAll[3];
   Token *p;
   static const struct {
-    const char *zKeyword;
+    const char zKeyword[8];
     u8 nChar;
     u8 code;
   } keywords[] = {
@@ -155,6 +155,15 @@ static void setToken(Token *p, const char *z){
   p->dyn = 0;
 }
 
+/*
+** Create an expression node for an identifier with the name of zName
+*/
+static Expr *createIdExpr(const char *zName){
+  Token dummy;
+  setToken(&dummy, zName);
+  return sqlite3Expr(TK_ID, 0, 0, &dummy);
+}
+
 
 /*
 ** Add a term to the WHERE expression in *ppExpr that requires the
@@ -168,24 +177,20 @@ static void addWhereTerm(
   const char *zAlias2,     /* Alias for second table.  May be NULL */
   Expr **ppExpr            /* Add the equality term to this expression */
 ){
-  Token dummy;
   Expr *pE1a, *pE1b, *pE1c;
   Expr *pE2a, *pE2b, *pE2c;
   Expr *pE;
 
-  setToken(&dummy, zCol);
-  pE1a = sqlite3Expr(TK_ID, 0, 0, &dummy);
-  pE2a = sqlite3Expr(TK_ID, 0, 0, &dummy);
+  pE1a = createIdExpr(zCol);
+  pE2a = createIdExpr(zCol);
   if( zAlias1==0 ){
     zAlias1 = pTab1->zName;
   }
-  setToken(&dummy, zAlias1);
-  pE1b = sqlite3Expr(TK_ID, 0, 0, &dummy);
+  pE1b = createIdExpr(zAlias1);
   if( zAlias2==0 ){
     zAlias2 = pTab2->zName;
   }
-  setToken(&dummy, zAlias2);
-  pE2b = sqlite3Expr(TK_ID, 0, 0, &dummy);
+  pE2b = createIdExpr(zAlias2);
   pE1c = sqlite3Expr(TK_DOT, pE1b, pE1a, 0);
   pE2c = sqlite3Expr(TK_DOT, pE2b, pE2a, 0);
   pE = sqlite3Expr(TK_EQ, pE1c, pE2c, 0);
@@ -321,10 +326,7 @@ void sqlite3SelectDelete(Select *p){
 ** stack into the sorter.
 */
 static void pushOntoSorter(Parse *pParse, Vdbe *v, ExprList *pOrderBy){
-  int i;
-  for(i=0; i<pOrderBy->nExpr; i++){
-    sqlite3ExprCode(pParse, pOrderBy->a[i].pExpr);
-  }
+  sqlite3ExprCodeExprList(pParse, pOrderBy);
   sqlite3VdbeAddOp(v, OP_MakeRecord, pOrderBy->nExpr, 0);
   sqlite3VdbeAddOp(v, OP_SortInsert, 0, 0);
 }
@@ -402,9 +404,7 @@ static int selectInnerLoop(
     }
   }else{
     nColumn = pEList->nExpr;
-    for(i=0; i<pEList->nExpr; i++){
-      sqlite3ExprCode(pParse, pEList->a[i].pExpr);
-    }
+    sqlite3ExprCodeExprList(pParse, pEList);
   }
 
   /* If the DISTINCT keyword was present on the SELECT statement
@@ -412,14 +412,15 @@ static int selectInnerLoop(
   ** part of the result.
   */
   if( hasDistinct ){
+    int n = pEList->nExpr;
 #if NULL_ALWAYS_DISTINCT
     sqlite3VdbeAddOp(v, OP_IsNull, -pEList->nExpr, sqlite3VdbeCurrentAddr(v)+7);
 #endif
     /* Deliberately leave the affinity string off of the following
     ** OP_MakeRecord */
-    sqlite3VdbeAddOp(v, OP_MakeRecord, pEList->nExpr * -1, 0);
+    sqlite3VdbeAddOp(v, OP_MakeRecord, -n, 0);
     sqlite3VdbeAddOp(v, OP_Distinct, distinct, sqlite3VdbeCurrentAddr(v)+3);
-    sqlite3VdbeAddOp(v, OP_Pop, pEList->nExpr+1, 0);
+    sqlite3VdbeAddOp(v, OP_Pop, n+1, 0);
     sqlite3VdbeAddOp(v, OP_Goto, 0, iContinue);
     VdbeComment((v, "# skip indistinct records"));
     sqlite3VdbeAddOp(v, OP_IdxInsert, distinct, 0);
@@ -511,29 +512,21 @@ static int selectInnerLoop(
     }
 #endif /* #ifndef SQLITE_OMIT_SUBQUERY */
 
-    /* Send the data to the callback function.
+    /* Send the data to the callback function or to a subroutine.  In the
+    ** case of a subroutine, the subroutine itself is responsible for
+    ** popping the data from the stack.
     */
+    case SRT_Subroutine:
     case SRT_Callback:
     case SRT_Sorter: {
       if( pOrderBy ){
         sqlite3VdbeAddOp(v, OP_MakeRecord, nColumn, 0);
         pushOntoSorter(pParse, v, pOrderBy);
-      }else{
-        assert( eDest==SRT_Callback );
-        sqlite3VdbeAddOp(v, OP_Callback, nColumn, 0);
-      }
-      break;
-    }
-
-    /* Invoke a subroutine to handle the results.  The subroutine itself
-    ** is responsible for popping the results off of the stack.
-    */
-    case SRT_Subroutine: {
-      if( pOrderBy ){
-        sqlite3VdbeAddOp(v, OP_MakeRecord, nColumn, 0);
-        pushOntoSorter(pParse, v, pOrderBy);
-      }else{
+      }else if( eDest==SRT_Subroutine ){
         sqlite3VdbeAddOp(v, OP_Gosub, 0, iParm);
+      }else{
+        assert( eDest!=SRT_Sorter );
+        sqlite3VdbeAddOp(v, OP_Callback, nColumn, 0);
       }
       break;
     }
@@ -2766,9 +2759,7 @@ int sqlite3Select(
     int lbl1 = 0;
     pParse->fillAgg = 1;
     if( pGroupBy ){
-      for(i=0; i<pGroupBy->nExpr; i++){
-        sqlite3ExprCode(pParse, pGroupBy->a[i].pExpr);
-      }
+      sqlite3ExprCodeExprList(pParse, pGroupBy);
       /* No affinity string is attached to the following OP_MakeRecord 
       ** because we do not need to do any coercion of datatypes. */
       sqlite3VdbeAddOp(v, OP_MakeRecord, pGroupBy->nExpr, 0);

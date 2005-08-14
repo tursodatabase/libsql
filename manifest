@@ -1,5 +1,5 @@
-C Split\sthe\ssqlite3_complete()\sAPI\sout\sinto\sa\sseparate\ssource\sfile\sso\sthat\nin\sstatic\slinks\swhere\sit\sis\snot\sused\sit\swill\snot\stake\sup\sspace\sin\sthe\nresulting\sbinary.\s(CVS\s2594)
-D 2005-08-14T17:53:21
+C General\scode\scleanup\sresulting\sin\ssmaller\sfootprint.\s(CVS\s2595)
+D 2005-08-14T20:47:16
 F Makefile.in b109ddb46a5550d0732dcd6caca01c123f6d5cdd
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -40,7 +40,7 @@ F src/complete.c 4de937dfdd4c79a501772ab2035b26082f337a79
 F src/date.c 7444b0900a28da77e57e3337a636873cff0ae940
 F src/delete.c be1fc25c9e109cd8cbab42a43ee696263da7c04b
 F src/experimental.c 50c1e3b34f752f4ac10c36f287db095c2b61766d
-F src/expr.c cad7f9197587db4897192cf21a8629b3b102c682
+F src/expr.c 24eda6c0502250f3a4259be94d6962f87cd47d87
 F src/func.c 5b12db87f0bc7d978eaf87c7a348ada5d1934da4
 F src/hash.c 2b1b13f7400e179631c83a1be0c664608c8f021f
 F src/hash.h 1b0c445e1c89ff2aaad9b4605ba61375af001e84
@@ -63,7 +63,7 @@ F src/pragma.c 69413fbdc0c6aaa493a776ea52c1b3e6cf35dfb2
 F src/prepare.c fa0f6068d9b8ec6d5c419c65d4d8ff747d49c5c6
 F src/printf.c 772b15c3395fa60bdbf3aaa03d480ecde38bf192
 F src/random.c 90adff4e73a3b249eb4f1fc2a6ff9cf78c7233a4
-F src/select.c c611471052773b94af771693686bd5bcdbbb0dba
+F src/select.c f441648eb191dcf1e67ae61475ea3b40a0eeb787
 F src/shell.c 86c16f0d534aa51cc82cf9f66903d4eb681580e7
 F src/sqlite.h.in a3b75a6b2e66865fba4ec1b698d00c7d95fe27a2
 F src/sqliteInt.h 40370b51b902b4789ca6d4a016d00fa981803661
@@ -293,7 +293,7 @@ F www/tclsqlite.tcl 3df553505b6efcad08f91e9b975deb2e6c9bb955
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P 94efd7908880c7d99c08ebc9a3437cfbefc42f7e
-R aba4d0123b815fe8fae7c07e56c29e43
+P 62b87751dea56c565bcc2aca88a2edda7dfc2a57
+R 8a2d641a343930304c476f8e7d5941a6
 U drh
-Z a0b138cf78bbb402904383cc3a8c7ee1
+Z 4e9e4effacefcf4b222166a8ff8d216c
