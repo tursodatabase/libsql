@@ -1,0 +1,283 @@
+# 2005 August 13
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing the LIKE and GLOB operators and
+# in particular the optimizations that occur to help those operators
+# run faster.
+#
+# $Id: like.test,v 1.1 2005/08/14 01:20:40 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# Create some sample data to work with.
+#
+do_test like-1.0 {
+  execsql {
+    CREATE TABLE t1(x TEXT);
+  }
+  foreach str {
+    a
+    ab
+    abc
+    abcd
+
+    acd
+    abd
+    bc
+    bcd
+
+    xyz
+    ABC
+    CDE
+    {ABC abc xyz}
+  } {
+    db eval {INSERT INTO t1 VALUES($str)}
+  }
+  execsql {
+    SELECT count(*) FROM t1;
+  }
+} {12}
+
+# Test that both case sensitive and insensitive version of LIKE work.
+#
+do_test like-1.1 {
+  execsql {
+    SELECT x FROM t1 WHERE x LIKE 'abc' ORDER BY 1;
+  }
+} {ABC abc}
+do_test like-1.2 {
+  execsql {
+    SELECT x FROM t1 WHERE x GLOB 'abc' ORDER BY 1;
+  }
+} {abc}
+do_test like-1.3 {
+  execsql {
+    SELECT x FROM t1 WHERE x LIKE 'ABC' ORDER BY 1;
+  }
+} {ABC abc}
+do_test like-1.4 {
+  execsql {
+    SELECT x FROM t1 WHERE x LIKE 'aBc' ORDER BY 1;
+  }
+} {ABC abc}
+do_test like-1.5 {
+  execsql {
+    PRAGMA case_sensitive_like=on;
+    SELECT x FROM t1 WHERE x LIKE 'abc' ORDER BY 1;
+  }
+} {abc}
+do_test like-1.6 {
+  execsql {
+    SELECT x FROM t1 WHERE x GLOB 'abc' ORDER BY 1;
+  }
+} {abc}
+do_test like-1.7 {
+  execsql {
+    SELECT x FROM t1 WHERE x LIKE 'ABC' ORDER BY 1;
+  }
+} {ABC}
+do_test like-1.8 {
+  execsql {
+    SELECT x FROM t1 WHERE x LIKE 'aBc' ORDER BY 1;
+  }
+} {}
+do_test like-1.9 {
+  execsql {
+    PRAGMA case_sensitive_like=off;
+    SELECT x FROM t1 WHERE x LIKE 'abc' ORDER BY 1;
+  }
+} {ABC abc}
+
+# Tests of the REGEXP operator
+#
+do_test like-2.1 {
+  proc test_regexp {a b} {
+    return [regexp $a $b]
+  }
+  db function regexp test_regexp
+  execsql {
+    SELECT x FROM t1 WHERE x REGEXP 'abc' ORDER BY 1;
+  }
+} {{ABC abc xyz} abc abcd}
+do_test like-2.2 {
+  execsql {
+    SELECT x FROM t1 WHERE x REGEXP '^abc' ORDER BY 1;
+  }
+} {abc abcd}
+
+# For the remaining tests, we need to have the like optimizations
+# enabled.
+#
+ifcapable !like_opt {
+  finish_test
+  return
+} 
+
+# This procedure executes the SQL.  Then it appends to the result the
+# "sort" or "nosort" keyword (as in the cksort procedure above) then
+# it appends the ::sqlite_query_plan variable.
+#
+proc queryplan {sql} {
+  set ::sqlite_sort_count 0
+  set data [execsql $sql]
+  if {$::sqlite_sort_count} {set x sort} {set x nosort}
+  lappend data $x
+  return [concat $data $::sqlite_query_plan]
+}
+
+# Perform tests on the like optimization.
+#
+# With no index on t1.x and with case sensitivity turned off, no optimization
+# is performed.
+#
+do_test like-3.1 {
+  set sqlite_like_count 0
+  queryplan {
+    SELECT x FROM t1 WHERE x LIKE 'abc%' ORDER BY 1;
+  }
+} {ABC {ABC abc xyz} abc abcd sort t1 {}}
+do_test like-3.2 {
+  set sqlite_like_count
+} {12}
+
+# With an index on t1.x and case sensitivity on, optimize completely.
+#
+do_test like-3.3 {
+  set sqlite_like_count 0
+  execsql {
+    PRAGMA case_sensitive_like=on;
+    CREATE INDEX i1 ON t1(x);
+  }
+  queryplan {
+    SELECT x FROM t1 WHERE x LIKE 'abc%' ORDER BY 1;
+  }
+} {abc abcd nosort {} i1}
+do_test like-3.4 {
+  set sqlite_like_count
+} 0
+
+# Partial optimization when the pattern does not end in '%'
+#
+do_test like-3.5 {
+  set sqlite_like_count 0
+  queryplan {
+    SELECT x FROM t1 WHERE x LIKE 'a_c' ORDER BY 1;
+  }
+} {abc nosort {} i1}
+do_test like-3.6 {
+  set sqlite_like_count
+} 6
+do_test like-3.7 {
+  set sqlite_like_count 0
+  queryplan {
+    SELECT x FROM t1 WHERE x LIKE 'ab%d' ORDER BY 1;
+  }
+} {abcd abd nosort {} i1}
+do_test like-3.8 {
+  set sqlite_like_count
+} 4
+do_test like-3.9 {
+  set sqlite_like_count 0
+  queryplan {
+    SELECT x FROM t1 WHERE x LIKE 'a_c%' ORDER BY 1;
+  }
+} {abc abcd nosort {} i1}
+do_test like-3.10 {
+  set sqlite_like_count
+} 6
+
+# No optimization when the pattern begins with a wildcard.
+# Note that the index is still used but only for sorting.
+#
+do_test like-3.11 {
+  set sqlite_like_count 0
+  queryplan {
+    SELECT x FROM t1 WHERE x LIKE '%bcd' ORDER BY 1;
+  }
+} {abcd bcd nosort {} i1}
+do_test like-3.12 {
+  set sqlite_like_count
+} 12
+
+# No optimization for case insensitive LIKE
+#
+do_test like-3.13 {
+  set sqlite_like_count 0
+  queryplan {
+    PRAGMA case_sensitive_like=off;
+    SELECT x FROM t1 WHERE x LIKE 'abc%' ORDER BY 1;
+  }
+} {ABC {ABC abc xyz} abc abcd nosort {} i1}
+do_test like-3.14 {
+  set sqlite_like_count
+} 12
+
+# No optimization without an index.
+#
+do_test like-3.15 {
+  set sqlite_like_count 0
+  queryplan {
+    PRAGMA case_sensitive_like=on;
+    DROP INDEX i1;
+    SELECT x FROM t1 WHERE x LIKE 'abc%' ORDER BY 1;
+  }
+} {abc abcd sort t1 {}}
+do_test like-3.16 {
+  set sqlite_like_count
+} 12
+
+# No GLOB optimization without an index.
+#
+do_test like-3.17 {
+  set sqlite_like_count 0
+  queryplan {
+    SELECT x FROM t1 WHERE x GLOB 'abc*' ORDER BY 1;
+  }
+} {abc abcd sort t1 {}}
+do_test like-3.18 {
+  set sqlite_like_count
+} 12
+
+# GLOB is optimized regardless of the case_sensitive_like setting.
+#
+do_test like-3.19 {
+  set sqlite_like_count 0
+  queryplan {
+    CREATE INDEX i1 ON t1(x);
+    SELECT x FROM t1 WHERE x GLOB 'abc*' ORDER BY 1;
+  }
+} {abc abcd nosort {} i1}
+do_test like-3.20 {
+  set sqlite_like_count
+} 0
+do_test like-3.21 {
+  set sqlite_like_count 0
+  queryplan {
+    PRAGMA case_sensitive_like=on;
+    SELECT x FROM t1 WHERE x GLOB 'abc*' ORDER BY 1;
+  }
+} {abc abcd nosort {} i1}
+do_test like-3.22 {
+  set sqlite_like_count
+} 0
+do_test like-3.23 {
+  set sqlite_like_count 0
+  queryplan {
+    PRAGMA case_sensitive_like=off;
+    SELECT x FROM t1 WHERE x GLOB 'a[bc]d' ORDER BY 1;
+  }
+} {abd acd nosort {} i1}
+do_test like-3.24 {
+  set sqlite_like_count
+} 6
+
+finish_test

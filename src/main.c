@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.297 2005/08/11 02:10:19 drh Exp $
+** $Id: main.c,v 1.298 2005/08/14 01:20:39 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -471,6 +471,7 @@ int sqlite3_create_function(
 
   p = sqlite3FindFunction(db, zFunctionName, nName, nArg, enc, 1);
   if( p==0 ) return SQLITE_NOMEM;
+  p->flags = 0;
   p->xFunc = xFunc;
   p->xStep = xStep;
   p->xFinalize = xFinal;

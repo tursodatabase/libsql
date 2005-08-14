@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.97 2005/08/13 00:56:27 drh Exp $
+** $Id: pragma.c,v 1.98 2005/08/14 01:20:39 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -603,13 +603,24 @@ void sqlite3Pragma(
 #ifndef NDEBUG
   if( sqlite3StrICmp(zLeft, "parser_trace")==0 ){
     extern void sqlite3ParserTrace(FILE*, char *);
-    if( getBoolean(zRight) ){
-      sqlite3ParserTrace(stderr, "parser: ");
-    }else{
-      sqlite3ParserTrace(0, 0);
+    if( zRight ){
+      if( getBoolean(zRight) ){
+        sqlite3ParserTrace(stderr, "parser: ");
+      }else{
+        sqlite3ParserTrace(0, 0);
+      }
     }
   }else
 #endif
+
+  /* Reinstall the LIKE and GLOB functions.  The variant of LIKE
+  ** used will be case sensitive or not depending on the RHS.
+  */
+  if( sqlite3StrICmp(zLeft, "case_sensitive_like")==0 ){
+    if( zRight ){
+      sqlite3RegisterLikeFunctions(db, getBoolean(zRight));
+    }
+  }else
 
 #ifndef SQLITE_OMIT_INTEGRITY_CHECK
   if( sqlite3StrICmp(zLeft, "integrity_check")==0 ){

@@ -1,5 +1,5 @@
-C Provide\sgrave\saccent\squoting\sof\sidentifiers\sfor\sMySQL\scompatibility.\nTicket\s#1337.\s(CVS\s2591)
-D 2005-08-13T18:15:43
+C The\scase_sensitive_like\spragma\sadded.\nTest\scases\sadded\sfor\sthe\sLIKE\soptimization.\s(CVS\s2592)
+D 2005-08-14T01:20:38
 F Makefile.in 22ea9c0fe748f591712d8fe3c6d972c6c173a165
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -35,17 +35,17 @@ F src/auth.c 31e2304bef67f44d635655f44234387ea7d21454
 F src/btree.c 667227e4375d8bf6abd748cf6bad7a2004bf5d87
 F src/btree.h 41a71ce027db9ddee72cb43df2316bbe3a1d92af
 F src/build.c bd16c6865a0171e7ce397ea2868f67f81ab5eebf
-F src/callback.c 0910b611e0c158f107ee3ff86f8a371654971e2b
+F src/callback.c 9a1162c8f9dae9fad6d548339669aacb5f6cf76b
 F src/date.c 7444b0900a28da77e57e3337a636873cff0ae940
 F src/delete.c be1fc25c9e109cd8cbab42a43ee696263da7c04b
 F src/experimental.c 50c1e3b34f752f4ac10c36f287db095c2b61766d
 F src/expr.c cad7f9197587db4897192cf21a8629b3b102c682
-F src/func.c a90ea5021616b211cb35bd3df3e9cb81dd56e6b7
+F src/func.c 5b12db87f0bc7d978eaf87c7a348ada5d1934da4
 F src/hash.c 2b1b13f7400e179631c83a1be0c664608c8f021f
 F src/hash.h 1b0c445e1c89ff2aaad9b4605ba61375af001e84
 F src/insert.c 484c73bc1309f283a31baa0e114f3ee980536397
 F src/legacy.c d58ea507bce885298a2c8c3cbb0f4bff5d47830b
-F src/main.c fc984008243a41ae70ebffb4076d09a20d92871d
+F src/main.c dce7e4bf2280e57de1492dec61c7310d14b5e179
 F src/md5.c 7ae1c39044b95de2f62e066f47bb1deb880a1070
 F src/os.h c4b34bd4d6fea51a420f337468b907f4edecb161
 F src/os_common.h 0e7f428ba0a6c40a61bc56c4e96f493231301b73
@@ -58,17 +58,17 @@ F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c ee3bbc4cd590a0266c791b4ed537cbd9a9d03566
 F src/pager.h 0d9153d6269d60d04af3dd84a0cc0a96253cf4a4
 F src/parse.y d57cdd2adc0923762b40314f08683c836a2e0c90
-F src/pragma.c 59ab7073465a11a531af2796e0385727194accb8
+F src/pragma.c 69413fbdc0c6aaa493a776ea52c1b3e6cf35dfb2
 F src/prepare.c fa0f6068d9b8ec6d5c419c65d4d8ff747d49c5c6
 F src/printf.c 772b15c3395fa60bdbf3aaa03d480ecde38bf192
 F src/random.c 90adff4e73a3b249eb4f1fc2a6ff9cf78c7233a4
 F src/select.c c611471052773b94af771693686bd5bcdbbb0dba
 F src/shell.c 86c16f0d534aa51cc82cf9f66903d4eb681580e7
 F src/sqlite.h.in a3b75a6b2e66865fba4ec1b698d00c7d95fe27a2
-F src/sqliteInt.h 67693a8ed955e96e0f87eb4a2c9793125f27f20c
+F src/sqliteInt.h 40370b51b902b4789ca6d4a016d00fa981803661
 F src/table.c 25b3ff2b39b7d87e8d4a5da0713d68dfc06cbee9
 F src/tclsqlite.c 96feead1f1d301efa1d3ac6b89ecea7592ab18f9
-F src/test1.c 8a2b5ccc4be7450d41100778f346cbcf540febdd
+F src/test1.c a2333add4a25e47c268ea83df32cc7adf086d5d9
 F src/test2.c 792f203be69fea88668fa221321194f0a28dfdfa
 F src/test3.c f4e6a16a602091696619a1171bda25c0e3df49f7
 F src/test4.c a8fd681e139e1c61f22a77d07fc3a99cb28fff3f
@@ -83,10 +83,10 @@ F src/vdbe.c 69f33e22c7d0a64b23fbb69e6da95a1bb6869032
 F src/vdbe.h 68e80f65658e7fd85561721f617bdebf8bb84b59
 F src/vdbeInt.h 9be9a6c43d38124bd03cc5cf05715605b1789fd9
 F src/vdbeapi.c dc5b78cabf8d6e33318bd3d4ed25307d2aadce9a
-F src/vdbeaux.c d53139d819b887dac608ac4ae9a501baee3cd311
+F src/vdbeaux.c c7ea38ba42659eeaea091b1cda29989c1e82fa43
 F src/vdbefifo.c b8805850afe13b43f1de78d58088cb5d66f88e1e
 F src/vdbemem.c 89154caae3b8d4d0397e1235390fc4ff8aba4233
-F src/where.c 27d6432ea5fa255008ef80cb1d8e5e58ea8d615f
+F src/where.c de4b36842d64b6d12fc1896407d526bf88b67d22
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
 F test/all.test 7f0988442ab811dfa41793b5b550f5828ce316f3
 F test/alter.test 9d6837a3d946b73df692b7cef2a7644d2e2f6bc6
@@ -159,6 +159,7 @@ F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
 F test/journal1.test 36f2d1bb9bf03f790f43fbdb439e44c0657fab19
 F test/lastinsert.test eaa89c6ee1f13062d87139fd32c1e56753d2fd89
 F test/laststmtchanges.test 19a6d0c11f7a31dc45465b495f7b845a62cbec17
+F test/like.test b94052f73f10504f61cf102774a6048297d35aab
 F test/limit.test 270b076f31c5c32f7187de5727e74da4de43e477
 F test/lock.test 9b7afcb24f53d24da502abb33daaad2cd6d44107
 F test/lock2.test 59c3dd7d9b24d1bf7ec91b2d1541c37e97939d5f
@@ -291,7 +292,7 @@ F www/tclsqlite.tcl 3df553505b6efcad08f91e9b975deb2e6c9bb955
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P 7961ec0ccbc99d890689013b9602635941f308a6
-R 8fe3c3a40a20fda764293dad136929fd
+P 6b7a4e97528a4e179e0bbae69469cb1a3d1f794b
+R 2a56cedc95809568a05ccebaeb474ad2
 U drh
-Z 59ce15d25edf70c7b49901f8f0f074fa
+Z a91f4cb932b10939dc2be2a7a630b49e

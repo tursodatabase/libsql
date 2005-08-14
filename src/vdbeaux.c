@@ -109,6 +109,7 @@ int sqlite3VdbeAddOp(Vdbe *p, int op, int p1, int p2){
   pOp->p2 = p2;
   pOp->p3 = 0;
   pOp->p3type = P3_NOTUSED;
+  p->expired = 0;
 #ifdef SQLITE_DEBUG
   if( sqlite3_vdbe_addop_trace ) sqlite3VdbePrintOp(0, i, &p->aOp[i]);
 #endif

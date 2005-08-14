@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.401 2005/08/12 22:56:09 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.402 2005/08/14 01:20:39 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -496,16 +496,22 @@ struct sqlite3 {
 ** points to a linked list of these structures.
 */
 struct FuncDef {
-  char *zName;         /* SQL name of the function */
-  int nArg;            /* Number of arguments.  -1 means unlimited */
+  i16 nArg;            /* Number of arguments.  -1 means unlimited */
   u8 iPrefEnc;         /* Preferred text encoding (SQLITE_UTF8, 16LE, 16BE) */
+  u8 needCollSeq;      /* True if sqlite3GetFuncCollSeq() might be called */
+  u8 flags;            /* Some combination of SQLITE_FUNC_* */
   void *pUserData;     /* User data parameter */
   FuncDef *pNext;      /* Next function with same name */
   void (*xFunc)(sqlite3_context*,int,sqlite3_value**); /* Regular function */
   void (*xStep)(sqlite3_context*,int,sqlite3_value**); /* Aggregate step */
   void (*xFinalize)(sqlite3_context*);                /* Aggregate finializer */
-  u8 needCollSeq;      /* True if sqlite3GetFuncCollSeq() might be called */
+  char zName[1];       /* SQL name of the function.  MUST BE LAST */
 };
+
+/*
+** Possible values for FuncDef.flags
+*/
+#define SQLITE_FUNC_LIKEOPT  0x01    /* Candidate for the LIKE optimization */
 
 /*
 ** information about each column of an SQL table is held in an instance
@@ -1576,6 +1582,8 @@ int sqlite3InvokeBusyHandler(BusyHandler*);
 int sqlite3FindDb(sqlite3*, Token*);
 void sqlite3AnalysisLoad(sqlite3*,int iDB);
 void sqlite3DefaultRowEst(Index*);
+void sqlite3RegisterLikeFunctions(sqlite3*, int);
+int sqlite3IsLikeFunction(sqlite3*,Expr*,char*);
 
 #ifdef SQLITE_SSE
 #include "sseInt.h"

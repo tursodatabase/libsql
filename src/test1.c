@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.153 2005/08/11 02:10:19 drh Exp $
+** $Id: test1.c,v 1.154 2005/08/14 01:20:39 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -2797,6 +2797,12 @@ static void set_options(Tcl_Interp *interp){
   Tcl_SetVar2(interp,"sqlite_options","default_autovacuum","1",TCL_GLOBAL_ONLY);
 #endif
 
+#ifdef SQLITE_OMIT_BETWEEN_OPTIMIZATION
+  Tcl_SetVar2(interp, "sqlite_options", "between_opt", "0", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "between_opt", "1", TCL_GLOBAL_ONLY);
+#endif
+
 #ifdef SQLITE_OMIT_BLOB_LITERAL
   Tcl_SetVar2(interp, "sqlite_options", "bloblit", "0", TCL_GLOBAL_ONLY);
 #else
@@ -2869,10 +2875,22 @@ static void set_options(Tcl_Interp *interp){
   Tcl_SetVar2(interp, "sqlite_options", "integrityck", "1", TCL_GLOBAL_ONLY);
 #endif
 
+#ifdef SQLITE_OMIT_LIKE_OPTIMIZATION
+  Tcl_SetVar2(interp, "sqlite_options", "like_opt", "0", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "like_opt", "1", TCL_GLOBAL_ONLY);
+#endif
+
 #ifdef SQLITE_OMIT_MEMORYDB
   Tcl_SetVar2(interp, "sqlite_options", "memorydb", "0", TCL_GLOBAL_ONLY);
 #else
   Tcl_SetVar2(interp, "sqlite_options", "memorydb", "1", TCL_GLOBAL_ONLY);
+#endif
+
+#ifdef SQLITE_OMIT_OR_OPTIMIZATION
+  Tcl_SetVar2(interp, "sqlite_options", "or_opt", "0", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "or_opt", "1", TCL_GLOBAL_ONLY);
 #endif
 
 #ifdef SQLITE_OMIT_PAGER_PRAGMAS
@@ -3094,6 +3112,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
   extern int sqlite3_memUsed;
   extern int sqlite3_memMax;
   extern char sqlite3_query_plan[];
+  extern int sqlite3_like_count;
   static char *query_plan = sqlite3_query_plan;
 
   for(i=0; i<sizeof(aCmd)/sizeof(aCmd[0]); i++){
@@ -3107,6 +3126,8 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
       (char*)&sqlite3_search_count, TCL_LINK_INT);
   Tcl_LinkVar(interp, "sqlite_sort_count", 
       (char*)&sqlite3_sort_count, TCL_LINK_INT);
+  Tcl_LinkVar(interp, "sqlite_like_count", 
+      (char*)&sqlite3_like_count, TCL_LINK_INT);
   Tcl_LinkVar(interp, "sqlite_interrupt_count", 
       (char*)&sqlite3_interrupt_count, TCL_LINK_INT);
   Tcl_LinkVar(interp, "sqlite_open_file_count", 

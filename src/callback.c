@@ -13,7 +13,7 @@
 ** This file contains functions used to access the internal hash tables
 ** of user defined functions and collation sequences.
 **
-** $Id: callback.c,v 1.2 2005/05/25 10:45:10 danielk1977 Exp $
+** $Id: callback.c,v 1.3 2005/08/14 01:20:38 drh Exp $
 */
 
 #include "sqliteInt.h"
@@ -147,7 +147,7 @@ int sqlite3CheckCollSeq(Parse *pParse, CollSeq *pColl){
 ** the collation sequence name. A pointer to this string is stored in
 ** each collation sequence structure.
 */
-static CollSeq * findCollSeqEntry(
+static CollSeq *findCollSeqEntry(
   sqlite3 *db,
   const char *zName,
   int nName,
@@ -286,10 +286,9 @@ FuncDef *sqlite3FindFunction(
   ** new entry to the hash table and return it.
   */
   if( createFlag && bestmatch<6 && 
-      (pBest = sqliteMalloc(sizeof(*pBest)+nName+1)) ){
+      (pBest = sqliteMalloc(sizeof(*pBest)+nName)) ){
     pBest->nArg = nArg;
     pBest->pNext = pFirst;
-    pBest->zName = (char*)&pBest[1];
     pBest->iPrefEnc = enc;
     memcpy(pBest->zName, zName, nName);
     pBest->zName[nName] = 0;

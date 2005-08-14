@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.161 2005/08/13 16:13:05 drh Exp $
+** $Id: where.c,v 1.162 2005/08/14 01:20:39 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -467,54 +467,35 @@ static void exprAnalyzeAll(
 ** literal that does not begin with a wildcard.  
 */
 static int isLikeOrGlob(
+  sqlite3 *db,      /* The database */
   Expr *pExpr,      /* Test this expression */
   int *pnPattern,   /* Number of non-wildcard prefix characters */
   int *pisComplete  /* True if the only wildcard is % in the last character */
 ){
   const char *z;
   Expr *pRight, *pLeft;
+  ExprList *pList;
   int c, cnt;
-  char wc1, wc2, wc3;
-  if( pExpr->op!=TK_FUNCTION ){
+  char wc[3];
+  if( !sqlite3IsLikeFunction(db, pExpr, wc) ){
     return 0;
   }
-  if( pExpr->pList->nExpr!=2 ){
-    return 0;
-  }
-  if( pExpr->token.n!=4 ){
-    return 0;
-  }
-  z = pExpr->token.z;
-  if( sqlite3StrNICmp(z, "glob", 4)==0 ){
-    wc1 = '*';
-    wc2 = '?';
-    wc3 = '[';
-  }
-#ifdef SQLITE_CASE_SENSITIVE_LIKE
-  else if( sqlite3StrNICmp(z, "like", 4)==0 ){
-    wc1 = '%';
-    wc2 = '_';
-    wc3 = '_';
-  }
-#endif
-  else{
-    return 0;
-  }
-  pRight = pExpr->pList->a[0].pExpr;
+  pList = pExpr->pList;
+  pRight = pList->a[0].pExpr;
   if( pRight->op!=TK_STRING ){
     return 0;
   }
-  pLeft = pExpr->pList->a[1].pExpr;
+  pLeft = pList->a[1].pExpr;
   if( pLeft->op!=TK_COLUMN ){
     return 0;
   }
   sqlite3DequoteExpr(pRight);
   z = pRight->token.z;
-  for(cnt=0; (c=z[cnt])!=0 && c!=wc1 && c!=wc2 && c!=wc3; cnt++){}
+  for(cnt=0; (c=z[cnt])!=0 && c!=wc[0] && c!=wc[1] && c!=wc[2]; cnt++){}
   if( cnt==0 || 255==(u8)z[cnt] ){
     return 0;
   }
-  *pisComplete = z[cnt]==wc1 && z[cnt+1]==0;
+  *pisComplete = z[cnt]==wc[0] && z[cnt+1]==0;
   *pnPattern = cnt;
   return 1;
 }
@@ -671,7 +652,7 @@ or_not_possible:
   /* Add constraints to reduce the search space on a LIKE or GLOB
   ** operator.
   */
-  if( isLikeOrGlob(pExpr, &nPattern, &isComplete) ){
+  if( isLikeOrGlob(pTerm->pWC->pParse->db, pExpr, &nPattern, &isComplete) ){
     Expr *pLeft, *pRight;
     Expr *pStr1, *pStr2;
     Expr *pNewExpr1, *pNewExpr2;
