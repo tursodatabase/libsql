@@ -55,7 +55,7 @@ TCCX = $(TCC) $(OPTS) $(THREADSAFE) $(USLEEP) -I. -I$(TOP)/src
 # Object files for the SQLite library.
 #
 LIBOBJ+= alter.o analyze.o attach.o auth.o btree.o build.o \
-         callback.o date.o delete.o \
+         callback.o complete.o date.o delete.o \
          expr.o func.o hash.o insert.o \
          main.o opcodes.o os_unix.o os_win.o \
          pager.o parse.o pragma.o prepare.o printf.o random.o \
@@ -75,6 +75,7 @@ SRC = \
   $(TOP)/src/btree.h \
   $(TOP)/src/build.c \
   $(TOP)/src/callback.c \
+  $(TOP)/src/complete.c \
   $(TOP)/src/date.c \
   $(TOP)/src/delete.c \
   $(TOP)/src/expr.c \
@@ -221,6 +222,9 @@ build.o:	$(TOP)/src/build.c $(HDR)
 
 callback.o:	$(TOP)/src/callback.c $(HDR)
 	$(TCCX) -c $(TOP)/src/callback.c
+
+complete.o:	$(TOP)/src/complete.c $(HDR)
+	$(TCCX) -c $(TOP)/src/complete.c
 
 date.o:	$(TOP)/src/date.c $(HDR)
 	$(TCCX) -c $(TOP)/src/date.c

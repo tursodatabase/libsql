@@ -113,7 +113,7 @@ TCC += -DSQLITE_OMIT_CURSOR
 # Object files for the SQLite library.
 #
 LIBOBJ = alter.lo analyze.lo attach.lo auth.lo btree.lo build.lo \
-         callback.lo date.lo \
+         callback.lo complete.lo date.lo \
          delete.lo expr.lo func.lo hash.lo insert.lo \
          main.lo opcodes.lo os_unix.lo os_win.lo \
          pager.lo parse.lo pragma.lo prepare.lo printf.lo random.lo \
@@ -133,6 +133,7 @@ SRC = \
   $(TOP)/src/btree.h \
   $(TOP)/src/build.c \
   $(TOP)/src/callback.c \
+  $(TOP)/src/complete.c \
   $(TOP)/src/date.c \
   $(TOP)/src/delete.c \
   $(TOP)/src/expr.c \
@@ -191,7 +192,8 @@ TESTSRC = \
   $(TOP)/src/utf.c \
   $(TOP)/src/util.c \
   $(TOP)/src/vdbe.c \
-  $(TOP)/src/md5.c
+  $(TOP)/src/md5.c \
+  $(TOP)/src/where.c
 
 # In LIBOBJ but not TESTSRC
 COMMONOBJ = $(foreach obj,$(LIBOBJ),\
@@ -290,6 +292,9 @@ build.lo:	$(TOP)/src/build.c $(HDR)
 
 callback.lo:	$(TOP)/src/callback.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/callback.c
+
+complete.lo:	$(TOP)/src/complete.c $(HDR)
+	$(LTCOMPILE) -c $(TOP)/src/complete.c
 
 date.lo:	$(TOP)/src/date.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/date.c
