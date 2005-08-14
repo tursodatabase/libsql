@@ -1,5 +1,5 @@
-C The\scase_sensitive_like\spragma\sadded.\nTest\scases\sadded\sfor\sthe\sLIKE\soptimization.\s(CVS\s2592)
-D 2005-08-14T01:20:38
+C Declare\slocal-use\sfunctions\sas\sstatic.\s\sTicket\s#1363.\s(CVS\s2593)
+D 2005-08-14T01:34:20
 F Makefile.in 22ea9c0fe748f591712d8fe3c6d972c6c173a165
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -34,7 +34,7 @@ F src/attach.c 3615dbe960cbee4aa5ea300b8a213dad36527b0f
 F src/auth.c 31e2304bef67f44d635655f44234387ea7d21454
 F src/btree.c 667227e4375d8bf6abd748cf6bad7a2004bf5d87
 F src/btree.h 41a71ce027db9ddee72cb43df2316bbe3a1d92af
-F src/build.c bd16c6865a0171e7ce397ea2868f67f81ab5eebf
+F src/build.c 6481b728788829e57d2ad6f765cb2dc82ced9d8e
 F src/callback.c 9a1162c8f9dae9fad6d548339669aacb5f6cf76b
 F src/date.c 7444b0900a28da77e57e3337a636873cff0ae940
 F src/delete.c be1fc25c9e109cd8cbab42a43ee696263da7c04b
@@ -292,7 +292,7 @@ F www/tclsqlite.tcl 3df553505b6efcad08f91e9b975deb2e6c9bb955
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P 6b7a4e97528a4e179e0bbae69469cb1a3d1f794b
-R 2a56cedc95809568a05ccebaeb474ad2
+P 72ee21c05e618b6f46f5460f8c85779c72fe32d7
+R 4337f23131442ef9ab5ac25e2814be9d
 U drh
-Z a91f4cb932b10939dc2be2a7a630b49e
+Z 5158574a3d9ddf275c7c4209c09a5c0c

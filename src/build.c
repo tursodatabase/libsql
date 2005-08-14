@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.339 2005/08/13 00:56:27 drh Exp $
+** $Id: build.c,v 1.340 2005/08/14 01:34:20 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2820,7 +2820,7 @@ static int collationMatch(CollSeq *pColl, Index *pIndex){
 ** If pColl==0 then recompute all indices of pTab.
 */
 #ifndef SQLITE_OMIT_REINDEX
-void reindexTable(Parse *pParse, Table *pTab, CollSeq *pColl){
+static void reindexTable(Parse *pParse, Table *pTab, CollSeq *pColl){
   Index *pIndex;              /* An index associated with pTab */
 
   for(pIndex=pTab->pIndex; pIndex; pIndex=pIndex->pNext){
@@ -2838,7 +2838,7 @@ void reindexTable(Parse *pParse, Table *pTab, CollSeq *pColl){
 ** all indices everywhere.
 */
 #ifndef SQLITE_OMIT_REINDEX
-void reindexDatabases(Parse *pParse, CollSeq *pColl){
+static void reindexDatabases(Parse *pParse, CollSeq *pColl){
   Db *pDb;                    /* A single database */
   int iDb;                    /* The database index number */
   sqlite3 *db = pParse->db;   /* The database connection */
