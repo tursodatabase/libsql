@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.130 2005/08/02 17:15:15 drh Exp $
+** $Id: tclsqlite.c,v 1.131 2005/08/16 11:11:35 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -1512,7 +1512,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       pScript = objv[2];
     } else {
       static const char *TTYPE_strs[] = {
-        "deferred",   "exclusive",  "immediate"
+        "deferred",   "exclusive",  "immediate", 0
       };
       enum TTYPE_enum {
         TTYPE_DEFERRED, TTYPE_EXCLUSIVE, TTYPE_IMMEDIATE

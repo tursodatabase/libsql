@@ -1,5 +1,5 @@
-C General\scode\scleanup\sresulting\sin\ssmaller\sfootprint.\s(CVS\s2595)
-D 2005-08-14T20:47:16
+C Null-terminate\sthe\sstrings\sarray\spassed\sto\sTcl_GetIndexFromObj.\s\sBug\nreported\son\sthe\smailing\slist.\s(CVS\s2596)
+D 2005-08-16T11:11:35
 F Makefile.in b109ddb46a5550d0732dcd6caca01c123f6d5cdd
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -68,7 +68,7 @@ F src/shell.c 86c16f0d534aa51cc82cf9f66903d4eb681580e7
 F src/sqlite.h.in a3b75a6b2e66865fba4ec1b698d00c7d95fe27a2
 F src/sqliteInt.h 40370b51b902b4789ca6d4a016d00fa981803661
 F src/table.c 25b3ff2b39b7d87e8d4a5da0713d68dfc06cbee9
-F src/tclsqlite.c 96feead1f1d301efa1d3ac6b89ecea7592ab18f9
+F src/tclsqlite.c e86b5483de6cb1ec1154cc5b76e3427d4b214961
 F src/test1.c a2333add4a25e47c268ea83df32cc7adf086d5d9
 F src/test2.c 792f203be69fea88668fa221321194f0a28dfdfa
 F src/test3.c f4e6a16a602091696619a1171bda25c0e3df49f7
@@ -293,7 +293,7 @@ F www/tclsqlite.tcl 3df553505b6efcad08f91e9b975deb2e6c9bb955
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P 62b87751dea56c565bcc2aca88a2edda7dfc2a57
-R 8a2d641a343930304c476f8e7d5941a6
+P 98338abf9e8cfbf8efa81cff0e40ea37e34fd9b2
+R ddcc61cc6e5eb18da4cb9da7131dfa97
 U drh
-Z 4e9e4effacefcf4b222166a8ff8d216c
+Z 806d3e0a09135a9c326a6a5972f3ea8d
