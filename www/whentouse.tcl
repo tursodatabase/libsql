@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the goals.html file.
 #
-set rcsid {$Id: whentouse.tcl,v 1.5 2005/03/19 03:41:58 drh Exp $}
+set rcsid {$Id: whentouse.tcl,v 1.6 2005/08/16 14:44:49 drh Exp $}
 source common.tcl
 header {Appropriate Uses For SQLite}
 
@@ -47,7 +47,7 @@ this:  Use SQLite in situations where simplicity of administration,
 implementation, and maintenance are more important than the countless
 complex features that enterprise database engines provide.
 As it turns out, situations where simplicity is the better choice
-are more common that many people realize.
+are more common than many people realize.
 </p>
 
 <h2>Situations Where SQLite Works Well</h2>
