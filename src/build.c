@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.340 2005/08/14 01:34:20 drh Exp $
+** $Id: build.c,v 1.341 2005/08/18 18:15:06 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -948,16 +948,6 @@ void sqlite3AddColumnType(Parse *pParse, Token *pType){
   if( i<0 ) return;
   pCol = &p->aCol[i];
   assert( pCol->zType==0 );
-#if 0
-  z = pCol->zType = sqliteMallocRaw(n+1);
-  if( z==0 ) return;
-  for(i=j=0; i<n; i++){
-    int c = zIn[i];
-    if( isspace(c) ) continue;
-    z[j++] = c;
-  }
-  z[j] = 0;
-#endif
   pCol->zType = sqlite3NameFromToken(pType);
   pCol->affinity = sqlite3AffinityType(pType);
 }
@@ -1316,13 +1306,11 @@ void sqlite3EndTable(
     */
     if( p->pSelect==0 ){
       /* A regular table */
-      /* sqlite3VdbeAddOp(v, OP_CreateTable, p->iDb, 0); */
       zType = "table";
       zType2 = "TABLE";
 #ifndef SQLITE_OMIT_VIEW
     }else{
       /* A view */
-    /*  sqlite3VdbeAddOp(v, OP_Integer, 0, 0); */
       zType = "view";
       zType2 = "VIEW";
 #endif
@@ -2390,7 +2378,7 @@ exit_create_index:
 
 /*
 ** Fill the Index.aiRowEst[] array with default information - information
-** to be used when we have no ANALYZE command to run.
+** to be used when we have not run the ANALYZE command.
 **
 ** aiRowEst[0] is suppose to contain the number of elements in the index.
 ** Since we do not know, guess 1 million.  aiRowEst[1] is an estimate of the

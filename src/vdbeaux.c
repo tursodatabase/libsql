@@ -1722,7 +1722,7 @@ int sqlite3VdbeSerialGet(
       pMem->flags = MEM_Int;
       return 6;
     }
-    case 6:   /* 6-byte signed integer */
+    case 6:   /* 8-byte signed integer */
     case 7: { /* IEEE floating point */
       u64 x = (buf[0]<<24) | (buf[1]<<16) | (buf[2]<<8) | buf[3];
       u32 y = (buf[4]<<24) | (buf[5]<<16) | (buf[6]<<8) | buf[7];
