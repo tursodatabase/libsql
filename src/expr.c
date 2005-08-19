@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.217 2005/08/14 20:47:16 drh Exp $
+** $Id: expr.c,v 1.218 2005/08/19 03:03:52 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -390,10 +390,6 @@ void sqlite3DequoteExpr(Expr *p){
   }
   ExprSetProperty(p, EP_Dequoted);
   if( p->token.dyn==0 ){
-    if( p->op==TK_BLOB ){
-      p->token.n--;
-      p->token.z++;
-    }
     sqlite3TokenCopy(&p->token, &p->token);
   }
   sqlite3Dequote((char*)p->token.z);

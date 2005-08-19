@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc1.test,v 1.36 2005/08/13 12:59:16 drh Exp $
+# $Id: misc1.test,v 1.37 2005/08/19 03:03:52 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -493,11 +493,21 @@ do_test misc1-14.3 {
 # A failed create table should not leave the table in the internal
 # data structures.  Ticket #238.
 #
-do_test misc1-15.1 {
+do_test misc1-15.1.1 {
   catchsql {
     CREATE TABLE t10 AS SELECT c1;
   }
 } {1 {no such column: c1}}
+do_test misc1-15.1.2 {
+  catchsql {
+    CREATE TABLE t10 AS SELECT t9.c1;
+  }
+} {1 {no such column: t9.c1}}
+do_test misc1-15.1.3 {
+  catchsql {
+    CREATE TABLE t10 AS SELECT main.t9.c1;
+  }
+} {1 {no such column: main.t9.c1}}
 do_test misc1-15.2 {
   catchsql {
     CREATE TABLE t10 AS SELECT 1;

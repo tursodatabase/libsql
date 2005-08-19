@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing expressions.
 #
-# $Id: expr.test,v 1.44 2005/07/08 13:53:22 drh Exp $
+# $Id: expr.test,v 1.45 2005/08/19 03:03:52 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -618,5 +618,15 @@ do_test expr-10.1 {
 do_test expr-10.2 {
   catchsql {SELECT 'abc' LIKE 'abc' ESCAPE 'ab'}
 } {1 {ESCAPE expression must be a single character}}
+
+# If we specify an integer constant that is bigger than the largest
+# possible integer, code the integer as a real number.
+#
+do_test expr-11.1 {
+  execsql {SELECT typeof(9223372036854775807)}
+} {integer}
+do_test expr-11.2 {
+  execsql {SELECT typeof(9223372036854775808)}
+} {real}
 
 finish_test
