@@ -1,0 +1,44 @@
+# 2005 August 18
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing corner cases of the DEFAULT syntax
+# on table definitions.
+#
+# $Id: default.test,v 1.1 2005/08/19 01:07:16 drh Exp $
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+ifcapable bloblit {
+  do_test default-1.1 {
+    execsql {
+      CREATE TABLE t1(
+        a INTEGER,
+        b BLOB DEFAULT x'6869'
+      );
+      INSERT INTO t1(a) VALUES(1);
+      SELECT * from t1;
+    }
+  } {1 hi}
+}
+do_test default-1.2 {
+  execsql {
+    CREATE TABLE t2(
+      x INTEGER,
+      y INTEGER DEFAULT NULL
+    );
+    INSERT INTO t2(x) VALUES(1);
+    SELECT * FROM t2;
+  }
+} {1 {}}
+
+finish_test

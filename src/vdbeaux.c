@@ -444,20 +444,6 @@ void sqlite3VdbeComment(Vdbe *p, const char *zFormat, ...){
 #endif
 
 /*
-** Search the current program starting at instruction addr for the given
-** opcode and P2 value.  Return the address plus 1 if found and 0 if not
-** found.
-*/
-int sqlite3VdbeFindOp(Vdbe *p, int addr, int op, int p2){
-  int i;
-  assert( p->magic==VDBE_MAGIC_INIT );
-  for(i=addr; i<p->nOp; i++){
-    if( p->aOp[i].opcode==op && p->aOp[i].p2==p2 ) return i+1;
-  }
-  return 0;
-}
-
-/*
 ** Return the opcode for a given address.
 */
 VdbeOp *sqlite3VdbeGetOp(Vdbe *p, int addr){

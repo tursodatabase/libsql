@@ -14,7 +14,7 @@
 # special feature is used to see what happens in the library if a malloc
 # were to really fail due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.22 2005/01/22 03:39:39 danielk1977 Exp $
+# $Id: malloc.test,v 1.23 2005/08/19 01:07:16 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -131,7 +131,7 @@ do_test malloc-1.X {
 } {0}
 
 do_malloc_test 2 -sqlbody {
-  CREATE TABLE t1(a int, b int, c int);
+  CREATE TABLE t1(a int, b int default 'abc', c int default 1);
   CREATE INDEX i1 ON t1(a,b);
   INSERT INTO t1 VALUES(1,1,'99 abcdefghijklmnopqrstuvwxyz');
   INSERT INTO t1 VALUES(2,4,'98 abcdefghijklmnopqrstuvwxyz');
