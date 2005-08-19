@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.2 2005/07/23 03:18:40 drh Exp $
+** $Id: prepare.c,v 1.3 2005/08/19 00:14:42 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -375,7 +375,7 @@ int sqlite3ReadSchema(Parse *pParse){
       rc = sqlite3Init(db, &pParse->zErrMsg);
     }
   }
-  assert( rc!=SQLITE_OK || (db->flags & SQLITE_Initialized)||db->init.busy );
+  assert( rc!=SQLITE_OK || (db->flags & SQLITE_Initialized) || db->init.busy );
   if( rc!=SQLITE_OK ){
     pParse->rc = rc;
     pParse->nErr++;

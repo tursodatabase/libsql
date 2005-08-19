@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.
 # This file implements tests for the ANALYZE command.
 #
-# $Id: analyze.test,v 1.2 2005/07/23 14:52:12 drh Exp $
+# $Id: analyze.test,v 1.3 2005/08/19 00:14:43 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -185,6 +185,67 @@ do_test analyze-3.8 {
     SELECT idx, stat FROM sqlite_stat1 ORDER BY idx;
   }
 } {t3i1 {5 3} t3i2 {5 3 1 1 1} t3i3 {5 5 2 1 1}}
+
+# Try corrupting the sqlite_stat1 table and make sure the
+# database is still able to function.
+#
+do_test analyze-4.0 {
+  sqlite3 db2 test.db
+  db2 eval {
+    CREATE TABLE t4(x,y,z);
+    CREATE INDEX t4i1 ON t4(x);
+    CREATE INDEX t4i2 ON t4(y);
+    INSERT INTO t4 SELECT a,b,c FROM t3;
+  }
+  db2 close
+  db close
+  sqlite3 db test.db
+  execsql {
+    ANALYZE;
+    SELECT idx, stat FROM sqlite_stat1 ORDER BY idx;
+  }
+} {t3i1 {5 3} t3i2 {5 3 1 1 1} t3i3 {5 5 2 1 1} t4i1 {5 3} t4i2 {5 2}}
+do_test analyze-4.1 {
+  execsql {
+    PRAGMA writable_schema=on;
+    INSERT INTO sqlite_stat1 VALUES(null,null,null);
+    PRAGMA writable_schema=off;
+  }
+  db close
+  sqlite3 db test.db
+  execsql {
+    SELECT * FROM t4 WHERE x=1234;
+  }
+} {}
+do_test analyze-4.2 {
+  execsql {
+    PRAGMA writable_schema=on;
+    DELETE FROM sqlite_stat1;
+    INSERT INTO sqlite_stat1 VALUES('t4','t4i1','nonsense');
+    INSERT INTO sqlite_stat1 VALUES('t4','t4i2','120897349817238741092873198273409187234918720394817209384710928374109827172901827349871928741910');
+    PRAGMA writable_schema=off;
+  }
+  db close
+  sqlite3 db test.db
+  execsql {
+    SELECT * FROM t4 WHERE x=1234;
+  }
+} {}
+
+# This test corrupts the database file so it must be the last test
+# in the series.
+#
+do_test analyze-99.1 {
+  execsql {
+    PRAGMA writable_schema=on;
+    UPDATE sqlite_master SET sql='nonsense';
+  }
+  db close
+  sqlite3 db test.db
+  catchsql {
+    ANALYZE
+  }
+} {1 {malformed database schema - near "nonsense": syntax error}}
 
 
 finish_test

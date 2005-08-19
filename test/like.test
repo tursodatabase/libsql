@@ -13,7 +13,7 @@
 # in particular the optimizations that occur to help those operators
 # run faster.
 #
-# $Id: like.test,v 1.1 2005/08/14 01:20:40 drh Exp $
+# $Id: like.test,v 1.2 2005/08/19 00:14:43 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -279,5 +279,38 @@ do_test like-3.23 {
 do_test like-3.24 {
   set sqlite_like_count
 } 6
+
+# No optimization if the LHS of the LIKE is not a column name or
+# if the RHS is not a string.
+#
+do_test like-4.1 {
+  execsql {PRAGMA case_sensitive_like=on}
+  set sqlite_like_count 0
+  queryplan {
+    SELECT x FROM t1 WHERE x LIKE 'abc%' ORDER BY 1
+  }
+} {abc abcd nosort {} i1}
+do_test like-4.2 {
+  set sqlite_like_count
+} 0
+do_test like-4.3 {
+  set sqlite_like_count 0
+  queryplan {
+    SELECT x FROM t1 WHERE +x LIKE 'abc%' ORDER BY 1
+  }
+} {abc abcd nosort {} i1}
+do_test like-4.4 {
+  set sqlite_like_count
+} 12
+do_test like-4.5 {
+  set sqlite_like_count 0
+  queryplan {
+    SELECT x FROM t1 WHERE x LIKE ('ab' || 'c%') ORDER BY 1
+  }
+} {abc abcd nosort {} i1}
+do_test like-4.6 {
+  set sqlite_like_count
+} 12
+
 
 finish_test

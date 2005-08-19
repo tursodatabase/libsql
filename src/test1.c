@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.154 2005/08/14 01:20:39 drh Exp $
+** $Id: test1.c,v 1.155 2005/08/19 00:14:42 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -3113,6 +3113,9 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
   extern int sqlite3_memMax;
   extern char sqlite3_query_plan[];
   extern int sqlite3_like_count;
+#ifdef SQLITE_DEBUG
+  extern int sqlite3_vdbe_addop_trace;
+#endif
   static char *query_plan = sqlite3_query_plan;
 
   for(i=0; i<sizeof(aCmd)/sizeof(aCmd[0]); i++){
@@ -3138,6 +3141,10 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
       (char*)&sqlite3_os_trace, TCL_LINK_INT);
   Tcl_LinkVar(interp, "sqlite_where_trace",
       (char*)&sqlite3_where_trace, TCL_LINK_INT);
+#ifdef SQLITE_DEBUG
+  Tcl_LinkVar(interp, "sqlite_addop_trace",
+      (char*)&sqlite3_vdbe_addop_trace, TCL_LINK_INT);
+#endif
 #ifdef SQLITE_MEMDEBUG
   Tcl_LinkVar(interp, "sqlite_memused",
       (char*)&sqlite3_memUsed, TCL_LINK_INT | TCL_LINK_READ_ONLY);
