@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.163 2005/08/19 00:14:42 drh Exp $
+** $Id: where.c,v 1.164 2005/08/19 19:14:13 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -525,6 +525,7 @@ static void exprAnalyze(
   int nPattern;
   int isComplete;
 
+  if( sqlite3_malloc_failed ) return;
   prereqLeft = exprTableUsage(pMaskSet, pExpr->pLeft);
   pTerm->prereqRight = exprTableUsage(pMaskSet, pExpr->pRight);
   pTerm->prereqAll = prereqAll = exprTableUsage(pMaskSet, pExpr);
@@ -1383,6 +1384,9 @@ WhereInfo *sqlite3WhereBegin(
     createMask(&maskSet, pTabList->a[i].iCursor);
   }
   exprAnalyzeAll(pTabList, &maskSet, &wc);
+  if( sqlite3_malloc_failed ){
+    goto whereBeginNoMem;
+  }
 
   /* Chose the best index to use for each table in the FROM clause.
   **
