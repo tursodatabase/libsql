@@ -419,7 +419,7 @@ static int vxprintf(
         realvalue = va_arg(ap,double);
 #ifndef etNOFLOATINGPOINT
         if( precision<0 ) precision = 6;         /* Set default precision */
-        if( precision>etBUFSIZE-10 ) precision = etBUFSIZE-10;
+        if( precision>etBUFSIZE/2-10 ) precision = etBUFSIZE/2-10;
         if( realvalue<0.0 ){
           realvalue = -realvalue;
           prefix = '-';
@@ -471,12 +471,6 @@ static int vxprintf(
           }
         }else{
           flag_rtz = 0;
-        }
-        /* If exp+precision causes the output to be too big for etFLOAT, then
-        ** do etEXP instead
-        */
-        if( xtype==etFLOAT && exp+precision>=etBUFSIZE-30 ){
-          xtype = etEXP;
         }
         if( xtype==etEXP ){
           e2 = 0;
@@ -591,36 +585,35 @@ static int vxprintf(
         if( precision>=0 && precision<length ) length = precision;
         break;
       case etSQLESCAPE:
-      case etSQLESCAPE2:
-        {
-          int i, j, n, c, isnull;
-          int needQuote;
-          char *arg = va_arg(ap,char*);
-          isnull = arg==0;
-          if( isnull ) arg = (xtype==etSQLESCAPE2 ? "NULL" : "(NULL)");
-          for(i=n=0; (c=arg[i])!=0; i++){
-            if( c=='\'' )  n++;
-          }
-          needQuote = !isnull && xtype==etSQLESCAPE2;
-          n += i + 1 + needQuote*2;
-          if( n>etBUFSIZE ){
-            bufpt = zExtra = sqliteMalloc( n );
-            if( bufpt==0 ) return -1;
-          }else{
-            bufpt = buf;
-          }
-          j = 0;
-          if( needQuote ) bufpt[j++] = '\'';
-          for(i=0; (c=arg[i])!=0; i++){
-            bufpt[j++] = c;
-            if( c=='\'' ) bufpt[j++] = c;
-          }
-          if( needQuote ) bufpt[j++] = '\'';
-          bufpt[j] = 0;
-          length = j;
-          if( precision>=0 && precision<length ) length = precision;
+      case etSQLESCAPE2: {
+        int i, j, n, c, isnull;
+        int needQuote;
+        char *arg = va_arg(ap,char*);
+        isnull = arg==0;
+        if( isnull ) arg = (xtype==etSQLESCAPE2 ? "NULL" : "(NULL)");
+        for(i=n=0; (c=arg[i])!=0; i++){
+          if( c=='\'' )  n++;
         }
+        needQuote = !isnull && xtype==etSQLESCAPE2;
+        n += i + 1 + needQuote*2;
+        if( n>etBUFSIZE ){
+          bufpt = zExtra = sqliteMalloc( n );
+          if( bufpt==0 ) return -1;
+        }else{
+          bufpt = buf;
+        }
+        j = 0;
+        if( needQuote ) bufpt[j++] = '\'';
+        for(i=0; (c=arg[i])!=0; i++){
+          bufpt[j++] = c;
+          if( c=='\'' ) bufpt[j++] = c;
+        }
+        if( needQuote ) bufpt[j++] = '\'';
+        bufpt[j] = 0;
+        length = j;
+        if( precision>=0 && precision<length ) length = precision;
         break;
+      }
       case etTOKEN: {
         Token *pToken = va_arg(ap, Token*);
         if( pToken && pToken->z ){

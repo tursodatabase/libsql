@@ -558,7 +558,7 @@ install:	sqlite3 libsqlite3.a sqlite3.h
 	mv sqlite3.h /usr/include
 
 clean:	
-	rm -f *.o sqlite3 libsqlite3.a sqlite3.h opcodes.*
+	rm -f *.o sqlite3 libsqlite3.a sqlite3.h opcodes.* crashtest
 	rm -f lemon lempar.c parse.* sqlite*.tar.gz mkkeywordhash keywordhash.h
 	rm -f $(PUBLISH)
 	rm -f *.da *.bb *.bbg gmon.out
