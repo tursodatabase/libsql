@@ -15,10 +15,11 @@
 # The tests in this file use special facilities that are only
 # available in the SQLite test fixture.
 #
-# $Id: ioerr.test,v 1.20 2005/03/10 12:58:22 drh Exp $
+# $Id: ioerr.test,v 1.21 2005/08/20 13:47:42 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
 
 # If SQLITE_DEFAULT_AUTOVACUUM is set to true, then a simulated IO error
 # on the 8th IO operation in the SQL script below doesn't report an error.
@@ -183,6 +184,21 @@ if {$tcl_platform(platform)!="windows"} {
       SELECT * FROM t1;
     }
   } -exclude 1
+}
+
+# For test coverage:  Cause an I/O failure while trying to read a
+# short field (one that fits into a Mem buffer without mallocing
+# for space).
+#
+do_ioerr_test ioerr-8 -tclprep {
+  execsql {
+    CREATE TABLE t1(a,b,c);
+    INSERT INTO t1 VALUES(randstr(200,200), randstr(1000,1000), 2);
+  }
+  db close
+  sqlite3 db test.db
+} -sqlbody {
+  SELECT c FROM t1;
 }
 
 finish_test

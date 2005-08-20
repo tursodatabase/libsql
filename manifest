@@ -1,5 +1,5 @@
-C Increased\stest\scoverage.\s\sSome\smalloc\stests\snow\sfail\sthough\sthis\sis\sbelieved\nto\sbe\san\sinstrumentation\sproblem\snot\sa\sreal\serror.\s(CVS\s2604)
-D 2005-08-20T03:03:04
+C More\stest\scoverage\simprovements.\s(CVS\s2605)
+D 2005-08-20T13:47:42
 F Makefile.in b109ddb46a5550d0732dcd6caca01c123f6d5cdd
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -86,7 +86,7 @@ F src/vdbeInt.h 9be9a6c43d38124bd03cc5cf05715605b1789fd9
 F src/vdbeapi.c dc5b78cabf8d6e33318bd3d4ed25307d2aadce9a
 F src/vdbeaux.c 874624698fad54a59c6a0bcccea9d5aaa8655ab6
 F src/vdbefifo.c b8805850afe13b43f1de78d58088cb5d66f88e1e
-F src/vdbemem.c 89154caae3b8d4d0397e1235390fc4ff8aba4233
+F src/vdbemem.c 4732fd4d1a75dc38549493d7f9a81d02bf7c59b5
 F src/where.c 8392d521f901f83f95bf32e52255a0efe98677af
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
 F test/all.test 7f0988442ab811dfa41793b5b550f5828ce316f3
@@ -155,7 +155,7 @@ F test/insert2.test 792ad079f59c7e14cf9397712725224e2112c838
 F test/insert3.test c67f0240b1c17e71fa2ed8bb6de064928f549f95
 F test/interrupt.test 170f87c2819f0e56c76e0a754949ea103d05009c
 F test/intpkey.test af4fd826c4784ec5c93b444de07adea0254d0d30
-F test/ioerr.test b27540c5873d28c0e77f02ce85b15f904d5b03a6
+F test/ioerr.test c3f71a60be73404bc5ae344e171b505d9af49320
 F test/join.test db3802739fb695bdfa2e88805e3d64ec5ffbebd1
 F test/join2.test f2171c265e57ee298a27e57e7051d22962f9f324
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
@@ -297,7 +297,7 @@ F www/tclsqlite.tcl 3df553505b6efcad08f91e9b975deb2e6c9bb955
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P b550d04d43a92f33a01438ae03df14678db3cdee
-R 67d7b59d35705cacc80cadb289e8be20
+P f786f37a5e31f42aaf81b3ad4a734f12855da69e
+R 8a15af26b28b220d34fe78d4c401858c
 U drh
-Z 534f3c24965d5feaf73a5d09d58f869d
+Z 75ad334b79c984175a505eccf09879ca

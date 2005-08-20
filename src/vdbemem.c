@@ -669,9 +669,9 @@ void sqlite3VdbeMemSanity(Mem *pMem, u8 db_enc){
   /* MEM_Null excludes all other types */
   assert( (pMem->flags&(MEM_Str|MEM_Int|MEM_Real|MEM_Blob))==0
           || (pMem->flags&MEM_Null)==0 );
-  if( (pMem->flags & (MEM_Int|MEM_Real))==(MEM_Int|MEM_Real) ){
-    assert( pMem->r==pMem->i );
-  }
+  /* If the MEM is both real and integer, the values are equal */
+  assert( (pMem->flags & (MEM_Int|MEM_Real))!=(MEM_Int|MEM_Real) 
+          || pMem->r==pMem->i );
 }
 #endif
 
