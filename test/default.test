@@ -12,7 +12,7 @@
 # focus of this file is testing corner cases of the DEFAULT syntax
 # on table definitions.
 #
-# $Id: default.test,v 1.1 2005/08/19 01:07:16 drh Exp $
+# $Id: default.test,v 1.2 2005/08/20 03:03:04 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -40,5 +40,13 @@ do_test default-1.2 {
     SELECT * FROM t2;
   }
 } {1 {}}
+do_test default-1.3 {
+  catchsql {
+    CREATE TABLE t3(
+      x INTEGER,
+      y INTEGER DEFAULT (max(x,5))
+    )
+  }
+} {1 {default value of column [y] is not constant}}
 
 finish_test

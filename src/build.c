@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.341 2005/08/18 18:15:06 drh Exp $
+** $Id: build.c,v 1.342 2005/08/20 03:03:04 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -200,9 +200,6 @@ Table *sqlite3LocateTable(Parse *pParse, const char *zName, const char *zDbase){
   if( p==0 ){
     if( zDbase ){
       sqlite3ErrorMsg(pParse, "no such table: %s.%s", zDbase, zName);
-    }else if( sqlite3FindTable(pParse->db, zName, 0)!=0 ){
-      sqlite3ErrorMsg(pParse, "table \"%s\" is not in database \"%s\"",
-         zName, zDbase);
     }else{
       sqlite3ErrorMsg(pParse, "no such table: %s", zName);
     }
@@ -258,10 +255,7 @@ static void sqliteDeleteIndex(sqlite3 *db, Index *p){
   assert( db!=0 && p->zName!=0 );
   pOld = sqlite3HashInsert(&db->aDb[p->iDb].idxHash, p->zName,
                           strlen(p->zName)+1, 0);
-  if( pOld!=0 && pOld!=p ){
-    sqlite3HashInsert(&db->aDb[p->iDb].idxHash, pOld->zName,
-                     strlen(pOld->zName)+1, pOld);
-  }
+  assert( pOld==0 || pOld==p );
   freeIndex(p);
 }
 
@@ -1522,10 +1516,13 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
   ** Actually, this error is caught previously and so the following test
   ** should always fail.  But we will leave it in place just to be safe.
   */
+#if 0
   if( pTable->nCol<0 ){
     sqlite3ErrorMsg(pParse, "view %s is circularly defined", pTable->zName);
     return 1;
   }
+#endif
+  assert( pTable->nCol>=0 );
 
   /* If we get this far, it means we need to compute the table names.
   ** Note that the call to sqlite3ResultSetOfSelect() will expand any
@@ -2070,7 +2067,9 @@ void sqlite3CreateIndex(
     if( sqlite3FixInit(&sFix, pParse, iDb, "index", pName) &&
         sqlite3FixSrcList(&sFix, pTblName)
     ){
-      goto exit_create_index;
+      /* Because the parser constructs pTblName from a single identifier,
+      ** sqlite3FixSrcList can never fail. */
+      assert(0);
     }
     pTab = sqlite3LocateTable(pParse, pTblName->a[0].zName, 
         pTblName->a[0].zDatabase);

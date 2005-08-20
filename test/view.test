@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing VIEW statements.
 #
-# $Id: view.test,v 1.26 2005/07/08 17:13:47 drh Exp $
+# $Id: view.test,v 1.27 2005/08/20 03:03:04 drh Exp $
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
@@ -447,5 +447,14 @@ do_test view-12.1 {
     CREATE VIEW v12 AS SELECT a FROM t1 WHERE b=?
   }
 } {1 {parameters are not allowed in views}}
+
+do_test view-13.1 {
+  file delete -force test2.db
+  catchsql {
+    ATTACH 'test2.db' AS two;
+    CREATE TABLE two.t2(x,y);
+    CREATE VIEW v13 AS SELECT y FROM two.t2;
+  }
+} {1 {view v13 cannot reference objects in database two}}
 
 finish_test

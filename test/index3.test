@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE INDEX statement.
 #
-# $Id: index3.test,v 1.1 2005/02/14 20:48:19 drh Exp $
+# $Id: index3.test,v 1.2 2005/08/20 03:03:04 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -39,5 +39,20 @@ do_test index3-1.3 {
   catchsql COMMIT;
 } {0 {}}
 integrity_check index3-1.4
+
+# This test corrupts the database file so it must be the last test
+# in the series.
+#
+do_test index3-99.1 {
+  execsql {
+    PRAGMA writable_schema=on;
+    UPDATE sqlite_master SET sql='nonsense';
+  }
+  db close
+  sqlite3 db test.db
+  catchsql {
+    DROP INDEX i1;
+  }
+} {1 {malformed database schema - near "nonsense": syntax error}}
 
 finish_test

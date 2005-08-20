@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.142 2005/08/13 18:15:43 drh Exp $
+** $Id: util.c,v 1.143 2005/08/20 03:03:04 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -74,13 +74,10 @@ static int memcnt = 0;
 #define N_GUARD 2
 
 /*
-** Allocate new memory and set it to zero.  Return NULL if
-** no memory is available.
+** Check for a simulated memory allocation failure.  Return true if
+** the failure should be simulated.  Return false to proceed as normal.
 */
-void *sqlite3Malloc_(int n, int bZero, char *zFile, int line){
-  void *p;
-  int *pi;
-  int i, k;
+static int simulatedMallocFailure(int n, char *zFile, int line){
   if( sqlite3_iMallocFail>=0 ){
     sqlite3_iMallocFail--;
     if( sqlite3_iMallocFail==0 ){
@@ -90,10 +87,26 @@ void *sqlite3Malloc_(int n, int bZero, char *zFile, int line){
               n, zFile,line);
 #endif
       sqlite3_iMallocFail = sqlite3_iMallocReset;
-      return 0;
+      return 1;
     }
   }
-  if( n==0 ) return 0;
+  return 0;
+}
+
+/*
+** Allocate new memory and set it to zero.  Return NULL if
+** no memory is available.
+*/
+void *sqlite3Malloc_(int n, int bZero, char *zFile, int line){
+  void *p;
+  int *pi;
+  int i, k;
+  if( n==0 ){
+    return 0;
+  }
+  if( simulatedMallocFailure(n, zFile, line) ){
+    return 0;
+  }
   sqlite3_memUsed += n;
   if( sqlite3_memMax<sqlite3_memUsed ) sqlite3_memMax = sqlite3_memUsed;
   k = (n+sizeof(int)-1)/sizeof(int);
@@ -191,6 +204,9 @@ void *sqlite3Realloc_(void *oldP, int n, char *zFile, int line){
   }
   if( n==0 ){
     sqlite3Free_(oldP,zFile,line);
+    return 0;
+  }
+  if( simulatedMallocFailure(n, zFile, line) ){
     return 0;
   }
   oldPi = oldP;
