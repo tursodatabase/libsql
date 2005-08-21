@@ -213,7 +213,7 @@ int sqlite3_step(sqlite3_stmt *pStmt){
     rc = SQLITE_MISUSE;
   }
 
-  sqlite3Error(p->db, rc, "%s", p->zErrMsg);
+  sqlite3Error(p->db, rc, p->zErrMsg ? "%s" : 0, p->zErrMsg);
   return rc;
 }
 
