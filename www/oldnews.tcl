@@ -9,6 +9,31 @@ proc newsitem {date title text} {
   puts "<hr width=\"50%\">"
 }
 
+newsitem {2005-Mar-16} {Version 3.1.6} {
+  Version 3.1.6 fixes a critical bug that can cause database corruption
+  when inserting rows into tables with around 125 columns. This bug was
+  introduced in version 3.0.0.  See
+  <a href="http://www.sqlite.org/cvstrac/tktview?tn=1163">Ticket #1163</a>
+  for additional information.
+}
+
+newsitem {2005-Mar-11} {Versions 3.1.4 and 3.1.5 Released} {
+  Version 3.1.4 fixes a critical bug that could cause database corruption
+  if the autovacuum mode of version 3.1.0 is turned on (it is off by
+  default) and a CREATE UNIQUE INDEX is executed within a transaction but
+  fails because the indexed columns are not unique.  Anyone using the
+  autovacuum feature and unique indices should upgrade.
+
+  Version 3.1.5 adds the ability to disable
+  the F_FULLFSYNC ioctl() in OS-X by setting "PRAGMA synchronous=on" instead
+  of the default "PRAGMA synchronous=full".  There was an attempt to add
+  this capability in 3.1.4 but it did not work due to a spelling error.
+}
+
+newsitem {2005-Feb-19} {Version 3.1.3 Released} {
+  Version 3.1.3 cleans up some minor issues discovered in version 3.1.2.
+}
+  
 newsitem {2005-Feb-15} {Versions 2.8.16 and 3.1.2 Released} {
   A critical bug in the VACUUM command that can lead to database
   corruption has been fixed in both the 2.x branch and the main
@@ -196,4 +221,4 @@ newsitem {2004-Apr-23} {Work Begins On SQLite Version 3} {
   Plans are to continue to support SQLite version 2.8 with
   bug fixes.  But all new development will occur in version 3.0.
 }
-footer {$Id: oldnews.tcl,v 1.11 2005/03/17 03:33:17 drh Exp $}
+footer {$Id: oldnews.tcl,v 1.12 2005/08/21 18:40:21 drh Exp $}

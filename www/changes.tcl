@@ -17,8 +17,42 @@ http://www.sqlite.org/cvstrac/timeline</a>.
 
 
 proc chng {date desc} {
+  if {[regexp {\(([0-9.]+)\)} $date all vers]} {
+    set label [string map {. _} $vers]
+    puts "<A NAME=\"version_$label\">"
+  }
   puts "<DT><B>$date</B></DT>"
   puts "<DD><P><UL>$desc</UL></P></DD>"
+}
+
+chng {2005 August 21 (3.2.3)} {
+<li>Added support for the CAST operator</li>
+<li>Tcl interface allows BLOB values to be transferred to user-defined
+functions</li>
+<li>Added the "transaction" method to the Tcl interface</li>
+<li>Allow the DEFAULT value of a column to call functions that have constant
+operands</li>
+<li>Added the ANALYZE command for gathering statistics on indices and
+using those statistics when picking an index in the optimizer</li>
+<li>Remove the limit (formerly 100) on the number of terms in the
+WHERE clause</li>
+<li>The right-hand side of the IN operator can now be a list of expressions
+instead of just a list of constants</li>
+<li>Rework the optimizer so that it is able to make better use of indices</li>
+<li>The order of tables in a join is adjusted automatically to make
+better use of indices</li>
+<li>The IN operator is now a candidate for optimization even if the left-hand
+side is not the left-most term of the index.  Multiple IN operators can be
+used with the same index.</li>
+<li>WHERE clause expressions using BETWEEN and OR are now candidates
+for optimization</li>
+<li>Added the "case_sensitive_like" pragma and the SQLITE_CASE_SENSITIVE_LIKE
+compile-time option to set its default value to "on".</li>
+<li>Use indices to help with GLOB expressions and LIKE expressions too
+when the case_sensitive_like pragma is enabled</li>
+<li>Added support for grave-accent quoting for compatibility with MySQL</li>
+<li>Improved test coverage</li>
+<li>Dozens of minor bug fixes</li>
 }
 
 chng {2005 June 13 (3.2.2)} {
