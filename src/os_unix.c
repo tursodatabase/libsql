@@ -1278,13 +1278,13 @@ int sqlite3OsClose(OsFile *id){
     */
     int *aNew;
     struct openCnt *pOpen = id->pOpen;
-    pOpen->nPending++;
-    aNew = sqliteRealloc( pOpen->aPending, pOpen->nPending*sizeof(int) );
+    aNew = sqliteRealloc( pOpen->aPending, (pOpen->nPending+1)*sizeof(int) );
     if( aNew==0 ){
       /* If a malloc fails, just leak the file descriptor */
     }else{
       pOpen->aPending = aNew;
-      pOpen->aPending[pOpen->nPending-1] = id->h;
+      pOpen->aPending[pOpen->nPending] = id->h;
+      pOpen->nPending++;
     }
   }else{
     /* There are no outstanding locks so we can close the file immediately */
