@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc5.test,v 1.3 2005/06/06 21:19:58 drh Exp $
+# $Id: misc5.test,v 1.4 2005/08/21 16:54:25 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -471,6 +471,22 @@ do_test misc5-3.1 {
     ORDER BY LOWER(artist) ASC;
   }
 } {two}
+
+# Ticket #1370.  Do not overwrite small files (less than 1024 bytes)
+# when trying to open them as a database.
+#
+do_test misc5-4.1 {
+  db close
+  file delete -force test.db
+  set fd [open test.db w]
+  puts $fd "This is not really a database"
+  close $fd
+  sqlite3 db test.db
+  catchsql {
+    CREATE TABLE t1(a,b,c);
+  }
+} {1 {file is encrypted or is not a database}}
+
 
 
 finish_test
