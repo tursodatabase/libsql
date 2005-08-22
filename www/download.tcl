@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the download.html file.
 #
-set rcsid {$Id: download.tcl,v 1.18 2005/02/15 13:07:39 drh Exp $}
+set rcsid {$Id: download.tcl,v 1.19 2005/08/22 02:10:46 drh Exp $}
 source common.tcl
 header {SQLite Download Page}
 
@@ -96,6 +96,11 @@ Product sqlite*_analyzer-VERSION.zip {
 
 Heading {Source Code}
 
+Product {sqlite-VERSION.tar.gz} {
+  A tarball of the complete source tree for SQLite version VERSION
+  including all of the documentation.
+}
+
 Product {sqlite-source-VERSION.zip} {
   This ZIP archive contains pure C source code for the SQLite library.
   Unlike the tarballs below, all of the preprocessing and automatic
@@ -105,14 +110,24 @@ Product {sqlite-source-VERSION.zip} {
   MS-Windows users who lack the build support infrastructure of Unix.
 }
 
+Product {sqlite-VERSION-tea.tar.gz} {
+  A tarball of proprocessed source code together with a 
+  Tcl Extension Architecture (TEA) compatible configure script and
+  makefile.
+}
+
 Product {sqlite-VERSION.src.rpm} {
   An RPM containing complete source code for SQLite version VERSION
 }
 
-Product {sqlite-VERSION.tar.gz} {
-  A tarball of the complete source tree for SQLite version VERSION
-  including all of the documentation.
+Heading {Cross-Platform Binaries}
+
+Product {sqlite-VERSION.kit} {
+  A <a href="http://www.equi4.com/starkit.html">starkit</a> containing
+  precompiled SQLite binaries and Tcl bindings for Linux-x86, Windows,
+  and Mac OS-X.
 }
+
 
 puts {
 </table>
