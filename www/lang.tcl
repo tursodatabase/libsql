@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the lang-*.html files.
 #
-set rcsid {$Id: lang.tcl,v 1.95 2005/07/23 02:17:03 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.96 2005/08/23 11:00:39 drh Exp $}
 source common.tcl
 
 if {[llength $argv]>0} {
@@ -798,7 +798,7 @@ of another SELECT in place of a table name.
 </p>
 
 <p>If the "TEMP" or "TEMPORARY" keyword occurs in between "CREATE"
-and "TABLE" then the table that is created is only visible to the
+and "VIEW" then the view that is created is only visible to the
 process that opened the database and is automatically deleted when
 the database is closed.</p>
 
@@ -1174,7 +1174,8 @@ more than one result row, all rows after the first are ignored.  If
 the SELECT yields no rows, then the value of the SELECT is NULL.</p>
 
 <p>A CAST expression changes the datatype of the <expr> into the
-type specified by <type>.  <type> can be any non-empty type name that if valid
+type specified by &lt;type&gt;. 
+&lt;type&gt; can be any non-empty type name that if valid
 for the type in a column definition of a CREATE TABLE statement.</p>
 
 <p>Both simple and aggregate functions are supported.  A simple
