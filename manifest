@@ -1,5 +1,5 @@
-C Handle\sempty\sblob\sconstants\scorrectly.\s\sTicket\s#1373.\s(CVS\s2615)
-D 2005-08-23T11:17:59
+C Allow\sfloating\spoint\sliterals\sto\sbeing\sor\send\swith\sa\sdecimal\spoint.\nTicket\s#1371.\s(CVS\s2616)
+D 2005-08-23T11:31:26
 F Makefile.in b109ddb46a5550d0732dcd6caca01c123f6d5cdd
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -74,7 +74,7 @@ F src/test2.c 792f203be69fea88668fa221321194f0a28dfdfa
 F src/test3.c f4e6a16a602091696619a1171bda25c0e3df49f7
 F src/test4.c a8fd681e139e1c61f22a77d07fc3a99cb28fff3f
 F src/test5.c 64f08b2a50ef371a1bd68ff206829e7b1b9997f5
-F src/tokenize.c aa02aa217d8afa3effafca112cd7f18b4c2c3b71
+F src/tokenize.c e1faf5637f3f4f90933785a0ecf64595f3ac3530
 F src/trigger.c f51dec15921629591cb98bf2e350018e268b109a
 F src/update.c a9d2c5f504212d62da1b094476f1389c0e02f83f
 F src/utf.c bda5eb85039ef16f2d17004c1e18c96e1ab0a80c
@@ -178,7 +178,7 @@ F test/misc1.test 4ca69ca2e2ef33c7a0b0fc8b324111e37a522d29
 F test/misc2.test 5c699af2fede2694736a9f45aea7e2f052686e15
 F test/misc3.test 7bd937e2c62bcc6be71939faf068d506467b1e03
 F test/misc4.test edd3e3adf5b6e3b995b29843565ca58dd602f9a7
-F test/misc5.test 0e9f4fd1afd2229437199b58bd4a63527689d304
+F test/misc5.test 24bd03404039ec727028ac9cf7fd9066fd209ec9
 F test/misuse.test 1c7fee3c4c0cb4008717ecccf5c72281fac0008e
 F test/notnull.test 7a08117a71e74b0321aaa937dbeb41a09d6eb1d0
 F test/null.test 69c62daf1630bf54c87bbc7ef2e22012e58d6da8
@@ -297,7 +297,7 @@ F www/tclsqlite.tcl 3df553505b6efcad08f91e9b975deb2e6c9bb955
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 55f4b14e1958ff3d2b0c99749f0c01192bafbf37
-R aa94c420a70111c68e8dee1be50969ca
+P 5cada745ac9bf18a65d21705a398b2bb8bd1aaa2
+R 23e7da0d5916b11561047a69d2280244
 U drh
-Z 8dc1a1ae050818acecf332fc12e5d107
+Z 133248954b96d2da66ef949953aea49b

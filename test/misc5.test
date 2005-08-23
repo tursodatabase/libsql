@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc5.test,v 1.4 2005/08/21 16:54:25 drh Exp $
+# $Id: misc5.test,v 1.5 2005/08/23 11:31:26 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -487,6 +487,20 @@ do_test misc5-4.1 {
   }
 } {1 {file is encrypted or is not a database}}
 
+# Ticket #1371.  Allow floating point numbers of the form .N  or N.
+#
+do_test misc5-5.1 {
+  execsql {SELECT .1 }
+} 0.1
+do_test misc5-5.2 {
+  execsql {SELECT 2. }
+} 2.0
+do_test misc5-5.3 {
+  execsql {SELECT 3.e0 }
+} 3.0
+do_test misc5-5.4 {
+  execsql {SELECT .4e+1}
+} 4.0
 
 
 finish_test
