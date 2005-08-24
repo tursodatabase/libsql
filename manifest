@@ -1,5 +1,5 @@
-C Increase\sthe\sversion\snumber\sand\supdate\sthe\schange\slog\sprior\sto\srelease.\s(CVS\s2618)
-D 2005-08-24T11:07:19
+C Version\s3.2.4\s(CVS\s2619)
+D 2005-08-24T11:14:47
 F Makefile.in b109ddb46a5550d0732dcd6caca01c123f6d5cdd
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -297,7 +297,7 @@ F www/tclsqlite.tcl 3df553505b6efcad08f91e9b975deb2e6c9bb955
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 9f9a257123274779150cbc290b9f86a09b3b2c03
+P 139a28d231875e72538fd6842168c458441ad1d0
 R 2f6c9b894551e0a3c64b6097033bd8f9
 U drh
-Z 677b6a31e4eb16fbc04fa87bbeb8d4f2
+Z fbfbdff77016e0ef0591035e80b41a64
