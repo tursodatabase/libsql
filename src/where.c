@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.164 2005/08/19 19:14:13 drh Exp $
+** $Id: where.c,v 1.165 2005/08/24 03:52:19 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -80,7 +80,6 @@ typedef struct WhereClause WhereClause;
 typedef struct WhereTerm WhereTerm;
 struct WhereTerm {
   Expr *pExpr;            /* Pointer to the subexpression */
-  u16 idx;                /* Index of this term in pWC->a[] */
   i16 iParent;            /* Disable pWC->a[iParent] when this term disabled */
   i16 leftCursor;         /* Cursor number of X in "X <op> <expr>" */
   i16 leftColumn;         /* Column number of X in "X <op> <expr>" */
@@ -203,9 +202,15 @@ static void whereClauseClear(WhereClause *pWC){
 /*
 ** Add a new entries to the WhereClause structure.  Increase the allocated
 ** space as necessary.
+**
+** WARNING:  This routine might reallocate the space used to store
+** WhereTerms.  All pointers to WhereTerms should be invalided after
+** calling this routine.  Such pointers may be reinitialized by referencing
+** the pWC->a[] array.
 */
-static WhereTerm *whereClauseInsert(WhereClause *pWC, Expr *p, int flags){
+static int whereClauseInsert(WhereClause *pWC, Expr *p, int flags){
   WhereTerm *pTerm;
+  int idx;
   if( pWC->nTerm>=pWC->nSlot ){
     WhereTerm *pOld = pWC->a;
     pWC->a = sqliteMalloc( sizeof(pWC->a[0])*pWC->nSlot*2 );
@@ -216,14 +221,13 @@ static WhereTerm *whereClauseInsert(WhereClause *pWC, Expr *p, int flags){
     }
     pWC->nSlot *= 2;
   }
-  pTerm = &pWC->a[pWC->nTerm];
-  pTerm->idx = pWC->nTerm;
+  pTerm = &pWC->a[idx = pWC->nTerm];
   pWC->nTerm++;
   pTerm->pExpr = p;
   pTerm->flags = flags;
   pTerm->pWC = pWC;
   pTerm->iParent = -1;
-  return pTerm;
+  return idx;
 }
 
 /*
@@ -438,7 +442,7 @@ static WhereTerm *findTerm(
 }
 
 /* Forward reference */
-static void exprAnalyze(SrcList*, ExprMaskSet*, WhereTerm*);
+static void exprAnalyze(SrcList*, ExprMaskSet*, WhereClause*, int);
 
 /*
 ** Call exprAnalyze on all terms in a WHERE clause.  
@@ -450,10 +454,9 @@ static void exprAnalyzeAll(
   ExprMaskSet *pMaskSet,   /* table masks */
   WhereClause *pWC         /* the WHERE clause to be analyzed */
 ){
-  WhereTerm *pTerm;
   int i;
-  for(i=pWC->nTerm-1, pTerm=pWC->a; i>=0; i--, pTerm++){
-    exprAnalyze(pTabList, pMaskSet, pTerm);
+  for(i=pWC->nTerm-1; i>=0; i--){
+    exprAnalyze(pTabList, pMaskSet, pWC, i);
   }
 }
 
@@ -516,8 +519,10 @@ static int isLikeOrGlob(
 static void exprAnalyze(
   SrcList *pSrc,            /* the FROM clause */
   ExprMaskSet *pMaskSet,    /* table masks */
-  WhereTerm *pTerm          /* the WHERE clause term to be analyzed */
+  WhereClause *pWC,         /* the WHERE clause */
+  int idxTerm               /* Index of the term to be analyzed */
 ){
+  WhereTerm *pTerm = &pWC->a[idxTerm];
   Expr *pExpr = pTerm->pExpr;
   Bitmask prereqLeft;
   Bitmask prereqAll;
@@ -545,10 +550,13 @@ static void exprAnalyze(
       WhereTerm *pNew;
       Expr *pDup;
       if( pTerm->leftCursor>=0 ){
+        int idxNew;
         pDup = sqlite3ExprDup(pExpr);
-        pNew = whereClauseInsert(pTerm->pWC, pDup, TERM_VIRTUAL|TERM_DYNAMIC);
-        if( pNew==0 ) return;
-        pNew->iParent = pTerm->idx;
+        idxNew = whereClauseInsert(pWC, pDup, TERM_VIRTUAL|TERM_DYNAMIC);
+        if( idxNew==0 ) return;
+        pNew = &pWC->a[idxNew];
+        pNew->iParent = idxTerm;
+        pTerm = &pWC->a[idxTerm];
         pTerm->nChild = 1;
         pTerm->flags |= TERM_COPIED;
       }else{
@@ -577,13 +585,13 @@ static void exprAnalyze(
     assert( pList->nExpr==2 );
     for(i=0; i<2; i++){
       Expr *pNewExpr;
-      WhereTerm *pNewTerm;
+      int idxNew;
       pNewExpr = sqlite3Expr(ops[i], sqlite3ExprDup(pExpr->pLeft),
                              sqlite3ExprDup(pList->a[i].pExpr), 0);
-      pNewTerm = whereClauseInsert(pTerm->pWC, pNewExpr,
-                                   TERM_VIRTUAL|TERM_DYNAMIC);
-      exprAnalyze(pSrc, pMaskSet, pNewTerm);
-      pNewTerm->iParent = pTerm->idx;
+      idxNew = whereClauseInsert(pWC, pNewExpr, TERM_VIRTUAL|TERM_DYNAMIC);
+      exprAnalyze(pSrc, pMaskSet, pWC, idxNew);
+      pTerm = &pWC->a[idxTerm];
+      pWC->a[idxNew].iParent = idxTerm;
     }
     pTerm->nChild = 2;
   }
@@ -601,7 +609,7 @@ static void exprAnalyze(
     WhereTerm *pOrTerm;
 
     assert( (pTerm->flags & TERM_DYNAMIC)==0 );
-    whereClauseInit(&sOr, pTerm->pWC->pParse);
+    whereClauseInit(&sOr, pWC->pParse);
     whereSplit(&sOr, pExpr, TK_OR);
     exprAnalyzeAll(pSrc, pMaskSet, &sOr);
     assert( sOr.nTerm>0 );
@@ -642,7 +650,8 @@ static void exprAnalyze(
       if( pNew ) pNew->pList = pList;
       pTerm->pExpr = pNew;
       pTerm->flags |= TERM_DYNAMIC;
-      exprAnalyze(pSrc, pMaskSet, pTerm);
+      exprAnalyze(pSrc, pMaskSet, pWC, idxTerm);
+      pTerm = &pWC->a[idxTerm];
     }
 or_not_possible:
     whereClauseClear(&sOr);
@@ -653,11 +662,12 @@ or_not_possible:
   /* Add constraints to reduce the search space on a LIKE or GLOB
   ** operator.
   */
-  if( isLikeOrGlob(pTerm->pWC->pParse->db, pExpr, &nPattern, &isComplete) ){
+  if( isLikeOrGlob(pWC->pParse->db, pExpr, &nPattern, &isComplete) ){
     Expr *pLeft, *pRight;
     Expr *pStr1, *pStr2;
     Expr *pNewExpr1, *pNewExpr2;
-    WhereTerm *pNewTerm1, *pNewTerm2;
+    int idxNew1, idxNew2;
+
     pLeft = pExpr->pList->a[1].pExpr;
     pRight = pExpr->pList->a[0].pExpr;
     pStr1 = sqlite3Expr(TK_STRING, 0, 0, 0);
@@ -671,16 +681,15 @@ or_not_possible:
       ++*(u8*)&pStr2->token.z[nPattern-1];
     }
     pNewExpr1 = sqlite3Expr(TK_GE, sqlite3ExprDup(pLeft), pStr1, 0);
-    pNewTerm1 = whereClauseInsert(pTerm->pWC, pNewExpr1,
-                                  TERM_VIRTUAL|TERM_DYNAMIC);
-    exprAnalyze(pSrc, pMaskSet, pNewTerm1);
+    idxNew1 = whereClauseInsert(pWC, pNewExpr1, TERM_VIRTUAL|TERM_DYNAMIC);
+    exprAnalyze(pSrc, pMaskSet, pWC, idxNew1);
     pNewExpr2 = sqlite3Expr(TK_LT, sqlite3ExprDup(pLeft), pStr2, 0);
-    pNewTerm2 = whereClauseInsert(pTerm->pWC, pNewExpr2,
-                                 TERM_VIRTUAL|TERM_DYNAMIC);
-    exprAnalyze(pSrc, pMaskSet, pNewTerm2);
+    idxNew2 = whereClauseInsert(pWC, pNewExpr2, TERM_VIRTUAL|TERM_DYNAMIC);
+    exprAnalyze(pSrc, pMaskSet, pWC, idxNew2);
+    pTerm = &pWC->a[idxTerm];
     if( isComplete ){
-      pNewTerm2->iParent = pTerm->idx;
-      pNewTerm1->iParent = pTerm->idx;
+      pWC->a[idxNew1].iParent = idxTerm;
+      pWC->a[idxNew2].iParent = idxTerm;
       pTerm->nChild = 2;
     }
   }

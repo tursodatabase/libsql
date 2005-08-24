@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the use of indices in WHERE clases.
 #
-# $Id: where.test,v 1.32 2005/07/28 16:51:51 drh Exp $
+# $Id: where.test,v 1.33 2005/08/24 03:52:19 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -230,6 +230,7 @@ do_test where-1.41 {
 # Do the same kind of thing except use a join as the data source.
 #
 do_test where-2.1 {
+btree_breakpoint
   count {
     SELECT w, p FROM t2, t1
     WHERE x=q AND y=s AND r=8977
@@ -867,6 +868,41 @@ do_test where-10.4 {
     SELECT count(*) FROM t1 WHERE tclvar('v1');
   }
 } {50}
+
+# Ticket #1376.  The query below was causing a segfault.
+# The problem was the age-old error of calling realloc() on an
+# array while there are still pointers to individual elements of
+# that array.
+#
+do_test where-11.1 {
+btree_breakpoint
+  execsql {
+   CREATE TABLE t99(Dte INT, X INT);
+   DELETE FROM t99 WHERE (Dte = 2451337) OR (Dte = 2451339) OR
+     (Dte BETWEEN 2451345 AND 2451347) OR (Dte = 2451351) OR 
+     (Dte BETWEEN 2451355 AND 2451356) OR (Dte = 2451358) OR
+     (Dte = 2451362) OR (Dte = 2451365) OR (Dte = 2451367) OR
+     (Dte BETWEEN 2451372 AND 2451376) OR (Dte BETWEEN 2451382 AND 2451384) OR
+     (Dte = 2451387) OR (Dte BETWEEN 2451389 AND 2451391) OR 
+     (Dte BETWEEN 2451393 AND 2451395) OR (Dte = 2451400) OR 
+     (Dte = 2451402) OR (Dte = 2451404) OR (Dte BETWEEN 2451416 AND 2451418) OR 
+     (Dte = 2451422) OR (Dte = 2451426) OR (Dte BETWEEN 2451445 AND 2451446) OR
+     (Dte = 2451456) OR (Dte = 2451458) OR (Dte BETWEEN 2451465 AND 2451467) OR
+     (Dte BETWEEN 2451469 AND 2451471) OR (Dte = 2451474) OR
+     (Dte BETWEEN 2451477 AND 2451501) OR (Dte BETWEEN 2451503 AND 2451509) OR
+     (Dte BETWEEN 2451511 AND 2451514) OR (Dte BETWEEN 2451518 AND 2451521) OR
+     (Dte BETWEEN 2451523 AND 2451531) OR (Dte BETWEEN 2451533 AND 2451537) OR
+     (Dte BETWEEN 2451539 AND 2451544) OR (Dte BETWEEN 2451546 AND 2451551) OR
+     (Dte BETWEEN 2451553 AND 2451555) OR (Dte = 2451557) OR
+     (Dte BETWEEN 2451559 AND 2451561) OR (Dte = 2451563) OR
+     (Dte BETWEEN 2451565 AND 2451566) OR (Dte BETWEEN 2451569 AND 2451571) OR 
+     (Dte = 2451573) OR (Dte = 2451575) OR (Dte = 2451577) OR (Dte = 2451581) OR
+     (Dte BETWEEN 2451583 AND 2451586) OR (Dte BETWEEN 2451588 AND 2451592) OR 
+     (Dte BETWEEN 2451596 AND 2451598) OR (Dte = 2451600) OR
+     (Dte BETWEEN 2451602 AND 2451603) OR (Dte = 2451606) OR (Dte = 2451611);
+  }
+} {}
+
 
 integrity_check {where-99.0}
 
