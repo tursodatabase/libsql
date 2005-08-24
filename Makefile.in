@@ -52,7 +52,7 @@ LIBREADLINE = @TARGET_READLINE_LIBS@
 
 # Should the database engine be compiled threadsafe
 #
-OPTS += -DTHREADSAFE=@THREADSAFE@
+TCC += -DTHREADSAFE=@THREADSAFE@
 
 # The pthreads library if needed
 #
@@ -423,14 +423,14 @@ tclsqlite3:	tclsqlite-shell.lo libsqlite3.la
 		 libsqlite3.la $(LIBTCL)
 
 testfixture$(TEXE):	$(TOP)/src/tclsqlite.c $(TESTSRC) $(COMMONOBJ)
-	$(LTLINK) -DTCLSH=1 -DSQLITE_TEST=1 $(THREADSAFE) $(TEMP_STORE)\
+	$(LTLINK) -DTCLSH=1 -DSQLITE_TEST=1 $(TEMP_STORE) \
 	-o testfixture \
-	$(TESTSRC) $(TOP)/src/tclsqlite.c $(COMMONOBJ) $(LIBTCL)
+	$(TESTSRC) $(TOP)/src/tclsqlite.c $(COMMONOBJ) $(LIBTCL) $(LIBPTHREAD)
 
 crashtest$(TEXE): $(TOP)/src/tclsqlite.c $(TOP)/src/os_test.c $(TESTSRC) $(COMMONOBJ)
 	$(LTLINK) -DOS_TEST=1 -DTCLSH=1 -DSQLITE_TEST=1 \
 	-o crashtest $(TOP)/src/os_test.c \
-	$(TESTSRC) $(TOP)/src/tclsqlite.c $(COMMONOBJ) $(LIBTCL)
+	$(TESTSRC) $(TOP)/src/tclsqlite.c $(COMMONOBJ) $(LIBTCL) $(LIBPTHREAD)
 
 
 
