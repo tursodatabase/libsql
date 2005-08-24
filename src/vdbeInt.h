@@ -265,9 +265,9 @@ struct Set {
 */
 typedef struct FifoPage FifoPage;
 struct FifoPage {
-  u16 nSlot;         /* Number of entries aSlot[] */
-  u16 iWrite;        /* Push the next value into this entry in aSlot[] */
-  i16 iRead;         /* Read the next value from this entry in aSlot[] */
+  int nSlot;         /* Number of entries aSlot[] */
+  int iWrite;        /* Push the next value into this entry in aSlot[] */
+  int iRead;         /* Read the next value from this entry in aSlot[] */
   FifoPage *pNext;   /* Next page in the fifo */
   i64 aSlot[1];      /* One or more slots for rowid values */
 };
