@@ -25,6 +25,13 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2005 August 24 (3.2.4)} {
+<li>Fix a bug introduced in the previous release
+that can cause a segfault while generating code
+for complex WHERE clauses.</li>
+<li>Allow floating point literals to begin or end with a decimal point.</li>
+}
+
 chng {2005 August 21 (3.2.3)} {
 <li>Added support for the CAST operator</li>
 <li>Tcl interface allows BLOB values to be transferred to user-defined
