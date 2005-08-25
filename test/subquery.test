@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing correlated subqueries
 #
-# $Id: subquery.test,v 1.11 2005/07/21 03:48:20 drh Exp $
+# $Id: subquery.test,v 1.12 2005/08/25 12:45:04 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -382,6 +382,29 @@ do_test subquery-5.2 {
   # This is the key test.  The subquery should have only run once.  If
   # The double-quoted identifier "two" were causing the subquery to be
   # processed as a correlated subquery, then it would have run 4 times.
+  set callcnt
+} {1}
+
+
+# Ticket #1380.  Make sure correlated subqueries on an IN clause work
+# correctly when the left-hand side of the IN operator is constant.
+#
+do_test subquery-6.1 {
+  set callcnt 0
+  execsql {
+    SELECT x FROM t4 WHERE 1 IN (SELECT callcnt(count(*)) FROM t5 WHERE a=y)
+  }
+} {one two three four}
+do_test subquery-6.2 {
+  set callcnt
+} {4}
+do_test subquery-6.3 {
+  set callcnt 0
+  execsql {
+    SELECT x FROM t4 WHERE 1 IN (SELECT callcnt(count(*)) FROM t5 WHERE a=1)
+  }
+} {one two three four}
+do_test subquery-6.4 {
   set callcnt
 } {1}
 
