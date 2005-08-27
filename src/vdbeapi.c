@@ -230,10 +230,6 @@ void *sqlite3_user_data(sqlite3_context *p){
 ** Allocate or return the aggregate context for a user function.  A new
 ** context is allocated on the first call.  Subsequent calls return the
 ** same context that was returned on prior calls.
-**
-** This routine is defined here in vdbe.c because it depends on knowing
-** the internals of the sqlite3_context structure which is only defined in
-** this source file.
 */
 void *sqlite3_aggregate_context(sqlite3_context *p, int nByte){
   assert( p && p->pFunc && p->pFunc->xStep );

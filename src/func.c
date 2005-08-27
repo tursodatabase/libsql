@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.104 2005/08/14 01:20:38 drh Exp $
+** $Id: func.c,v 1.105 2005/08/27 13:16:33 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -881,16 +881,6 @@ static void countFinalize(sqlite3_context *context){
   p = sqlite3_aggregate_context(context, sizeof(*p));
   sqlite3_result_int(context, p ? p->n : 0);
 }
-
-/*
-** This function tracks state information for the min() and max()
-** aggregate functions.
-*/
-typedef struct MinMaxCtx MinMaxCtx;
-struct MinMaxCtx {
-  char *z;         /* The best so far */
-  char zBuf[28];   /* Space that can be used for storage */
-};
 
 /*
 ** Routines to implement min() and max() aggregate functions.
