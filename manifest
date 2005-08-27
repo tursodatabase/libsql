@@ -1,5 +1,5 @@
-C When\sthe\sleft-hand\sside\sof\san\sIN\soperator\sis\sconstant\sand\sthe\sright-hand\nside\sis\sa\sSELECT,\srecognize\sthat\sthe\sIN\soperator\sis\snot\sconstant.\nTicket\s#1380.\s(CVS\s2624)
-D 2005-08-25T12:45:04
+C Widen\sthe\sopcode\scolumn\sof\sexplain\soutput\sin\sthe\sshell.\s(CVS\s2625)
+D 2005-08-27T01:50:54
 F Makefile.in 87717916c787099d5a9a64f7a2acc188b4bbcadd
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -64,7 +64,7 @@ F src/prepare.c 86f0d8e744b8d956eff6bc40e29049efee017610
 F src/printf.c cea584c5888688c650d856563aadc4296b5afac7
 F src/random.c 90adff4e73a3b249eb4f1fc2a6ff9cf78c7233a4
 F src/select.c f441648eb191dcf1e67ae61475ea3b40a0eeb787
-F src/shell.c 86c16f0d534aa51cc82cf9f66903d4eb681580e7
+F src/shell.c 7fb744da457b0d11e0af7f6a2f6b000fc09fe588
 F src/sqlite.h.in a3b75a6b2e66865fba4ec1b698d00c7d95fe27a2
 F src/sqliteInt.h e5fb91af1d607f3bc84bfb7da8534fd3298a38b0
 F src/table.c 25b3ff2b39b7d87e8d4a5da0713d68dfc06cbee9
@@ -298,7 +298,7 @@ F www/tclsqlite.tcl 3df553505b6efcad08f91e9b975deb2e6c9bb955
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 76ec0b3d3a6cc82965e4f993375780b954c53dd1
-R 52db1856673c57f1c9eec51f995f0a47
+P fc9e04609b6968fc5039a6f9f808aac681f4fc41
+R 5ac7de5aa63d911385908b28b345c00b
 U drh
-Z 2cab6797642524cf30db4c5e3889225c
+Z 1528f9fa0f2ffa2b725ac3031fce29f6
