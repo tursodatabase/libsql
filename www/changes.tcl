@@ -25,7 +25,7 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
-chng {2005 August 25 (3.2.5)} {
+chng {2005 August 27 (3.2.5)} {
 <li>Fix a bug effecting DELETE and UPDATE statements that changed
 more than 40960 rows.</li>
 <li>Change the makefile so that it no longer requires GNUmake extensions</li>
