@@ -67,8 +67,8 @@ proc newsitem {date title text} {
 }
 
 newsitem {2005-Aug-27} {Version 3.2.5} {
-  This release fixes a bug that causes DELETEs and UPDATEs to fail if
-  they attempt to changes more than 40960 rows.
+  This release fixes a few more lingering bugs in the new code.
+  We expect that this release will be stable and ready for production use.
 }
 
 newsitem {2005-Aug-24} {Version 3.2.4} {
@@ -95,4 +95,4 @@ puts {
 <p align="right"><a href="oldnews.html">Old news...</a></p>
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.121 2005/08/27 17:19:33 drh Exp $}
+footer {$Id: index.tcl,v 1.122 2005/08/27 17:22:12 drh Exp $}
