@@ -1,5 +1,5 @@
-C Fix\scomment\sin\svdbeapi.c.\s\sRemove\sunused\sstructure\sdefinition\sfrom\sfunc.c.\s(CVS\s2629)
-D 2005-08-27T13:16:33
+C Disable\ssynchronous\swrites\sto\sthe\smaster\sjournal\swhen\sPRAGMA\ssynchronous=OFF\nfor\sall\sdatabase\sfiles.\s\sTicket\s#1375.\s(CVS\s2630)
+D 2005-08-27T16:36:49
 F Makefile.in 12784cdce5ffc8dfb707300c34e4f1eb3b8a14f1
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -32,8 +32,8 @@ F src/alter.c 26d755f2143719dd3f5b8aaf6cbe3c7f95332528
 F src/analyze.c 3ab32927f4d3067ead10e4c4f6fb61b2a93479cc
 F src/attach.c 4b21689700a72ae281fa85dbaff06b2a62bd49ee
 F src/auth.c 31e2304bef67f44d635655f44234387ea7d21454
-F src/btree.c 667227e4375d8bf6abd748cf6bad7a2004bf5d87
-F src/btree.h 41a71ce027db9ddee72cb43df2316bbe3a1d92af
+F src/btree.c 5b3bc015c49a41c025cfdf8ad36051f3007e2cb0
+F src/btree.h 1ed561263ca0e335bc3e81d761c9d5ff8c22f61e
 F src/build.c 55e7e915a538bb25b1b7448cfb9189cccba554b2
 F src/callback.c 9a1162c8f9dae9fad6d548339669aacb5f6cf76b
 F src/complete.c 4de937dfdd4c79a501772ab2035b26082f337a79
@@ -56,8 +56,8 @@ F src/os_unix.c 7fae44e25c6137340b786b83ecb29db6ba525a64
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c fe7b99cfcfb61d9bf54493ddf5857885a657fb89
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 4c6c6a553d6d23ff6a3a50df5fe53f730f3e387f
-F src/pager.h 0d9153d6269d60d04af3dd84a0cc0a96253cf4a4
+F src/pager.c cd9896287a8fd33cc267bd0c2b69c421a4808169
+F src/pager.h 17b13225abd93c1e9f470060f40a21b9edb5a164
 F src/parse.y d57cdd2adc0923762b40314f08683c836a2e0c90
 F src/pragma.c 69413fbdc0c6aaa493a776ea52c1b3e6cf35dfb2
 F src/prepare.c 86f0d8e744b8d956eff6bc40e29049efee017610
@@ -84,7 +84,7 @@ F src/vdbe.c 69f33e22c7d0a64b23fbb69e6da95a1bb6869032
 F src/vdbe.h 3b29a9af6c7a64ed692bef1fc5f61338f40d2f67
 F src/vdbeInt.h 89a7fa5dc35477bd30ea27b0bf38e9e5c2903812
 F src/vdbeapi.c f1adebb5e3fe4724ed0e1a82c4a61809d7e15e9e
-F src/vdbeaux.c 874624698fad54a59c6a0bcccea9d5aaa8655ab6
+F src/vdbeaux.c ae051fd18bd2fc642910fbc95d6763d730936511
 F src/vdbefifo.c 9efb94c8c3f4c979ebd0028219483f88e57584f5
 F src/vdbemem.c 4732fd4d1a75dc38549493d7f9a81d02bf7c59b5
 F src/where.c 485041aa51fb33f43b346e018f7c01422847f364
@@ -207,6 +207,7 @@ F test/select7.test 1bf795b948c133a15a2a5e99d3270e652ec58ce6
 F test/sort.test 3b871d6e032f0a6c84d9f3d2d4b226e8fda97de0
 F test/subquery.test ed4ecba1afacb586c86fad1cdb92756a48a90302
 F test/subselect.test 3f3f7a940dc3195c3139f4d530385cb54665d614
+F test/sync.test d769caaec48456119316775e35e0fdee2fa852d7
 F test/table.test d0e05ede3f6e5a8b79f8661ddcc4618cf7e69f8a
 F test/tableapi.test 6a66d58b37d46dc0f2b3c7d4bd2617d209399bd1
 F test/tclsqlite.test a8d9afe680c466881a40252a86ef0fca457ab08c
@@ -298,7 +299,7 @@ F www/tclsqlite.tcl 3df553505b6efcad08f91e9b975deb2e6c9bb955
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P ecb9604457d5ab6bcd81b582cc4dd85a8f371b86
-R bbe29a50d2da25ad59c230f05a2f2f4d
+P 51a381345db45967567dd0a18905d352bf1081e0
+R 4f5f18e550ba91f695166764c512671e
 U drh
-Z 787ff796a6044c29e432aa2a25d2214c
+Z d452b4201f127e09042815840df7485c

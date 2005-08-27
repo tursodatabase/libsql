@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.264 2005/08/02 17:13:10 drh Exp $
+** $Id: btree.c,v 1.265 2005/08/27 16:36:49 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1344,6 +1344,15 @@ int sqlite3BtreeSetSafetyLevel(Btree *pBt, int level){
   return SQLITE_OK;
 }
 #endif
+
+/*
+** Return TRUE if the given btree is set to safety level 1.  In other
+** words, return TRUE if no sync() occurs on the disk files.
+*/
+int sqlite3BtreeSyncDisabled(Btree *pBt){
+  assert( pBt && pBt->pPager );
+  return sqlite3pager_nosync(pBt->pPager);
+}
 
 #if !defined(SQLITE_OMIT_PAGER_PRAGMAS) || !defined(SQLITE_OMIT_VACUUM)
 /*

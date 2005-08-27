@@ -1090,6 +1090,7 @@ static int vdbeCommit(sqlite3 *db){
   */
 #ifndef SQLITE_OMIT_DISKIO
   else{
+    int needSync = 0;
     char *zMaster = 0;   /* File-name for the master journal */
     char const *zMainFile = sqlite3BtreeGetFilename(db->aDb[0].pBt);
     OsFile master;
@@ -1125,6 +1126,9 @@ static int vdbeCommit(sqlite3 *db){
       if( pBt && sqlite3BtreeIsInTrans(pBt) ){
         char const *zFile = sqlite3BtreeGetJournalname(pBt);
         if( zFile[0]==0 ) continue;  /* Ignore :memory: databases */
+        if( !needSync && !sqlite3BtreeSyncDisabled(pBt) ){
+          needSync = 1;
+        }
         rc = sqlite3OsWrite(&master, zFile, strlen(zFile)+1);
         if( rc!=SQLITE_OK ){
           sqlite3OsClose(&master);
@@ -1141,7 +1145,7 @@ static int vdbeCommit(sqlite3 *db){
     */
     zMainFile = sqlite3BtreeGetDirname(db->aDb[0].pBt);
     rc = sqlite3OsOpenDirectory(zMainFile, &master);
-    if( rc!=SQLITE_OK || (rc = sqlite3OsSync(&master))!=SQLITE_OK ){
+    if( rc!=SQLITE_OK || (needSync && (rc=sqlite3OsSync(&master))!=SQLITE_OK) ){
       sqlite3OsClose(&master);
       sqlite3OsDelete(zMaster);
       sqliteFree(zMaster);
