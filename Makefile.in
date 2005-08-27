@@ -195,10 +195,6 @@ TESTSRC = \
   $(TOP)/src/md5.c \
   $(TOP)/src/where.c
 
-# In LIBOBJ but not TESTSRC
-COMMONOBJ = $(foreach obj,$(LIBOBJ),\
-	$(if $(findstring $(patsubst %.lo,%.c,$(obj)),$(TESTSRC)),,$(obj)))
-
 # Header files used by all library source files.
 #
 HDR = \
@@ -422,15 +418,16 @@ tclsqlite3:	tclsqlite-shell.lo libsqlite3.la
 	$(LTLINK) -o tclsqlite3 tclsqlite-shell.lo \
 		 libsqlite3.la $(LIBTCL)
 
-testfixture$(TEXE):	$(TOP)/src/tclsqlite.c $(TESTSRC) $(COMMONOBJ)
+testfixture$(TEXE):	$(TOP)/src/tclsqlite.c libsqlite3.la $(TESTSRC)
 	$(LTLINK) -DTCLSH=1 -DSQLITE_TEST=1 $(TEMP_STORE) \
-	-o testfixture \
-	$(TESTSRC) $(TOP)/src/tclsqlite.c $(COMMONOBJ) $(LIBTCL) $(LIBPTHREAD)
+		-o testfixture $(TESTSRC) $(TOP)/src/tclsqlite.c \
+		libsqlite3.la $(LIBTCL)
 
-crashtest$(TEXE): $(TOP)/src/tclsqlite.c $(TOP)/src/os_test.c $(TESTSRC) $(COMMONOBJ)
+crashtest$(TEXE):	$(TOP)/src/tclsqlite.c libsqlite3.la $(TESTSRC) $(TOP)/src/os_test.c
 	$(LTLINK) -DOS_TEST=1 -DTCLSH=1 -DSQLITE_TEST=1 \
-	-o crashtest $(TOP)/src/os_test.c \
-	$(TESTSRC) $(TOP)/src/tclsqlite.c $(COMMONOBJ) $(LIBTCL) $(LIBPTHREAD)
+		-o crashtest \
+		$(TESTSRC) $(TOP)/src/os_test.c $(TOP)/src/tclsqlite.c \
+		libsqlite3.la $(LIBTCL)
 
 
 

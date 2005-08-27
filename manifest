@@ -1,6 +1,6 @@
-C Do\snot\schange\sfields\sof\sstale\ssqlite3\shandles.\s\sTicket\s#1384.\s(CVS\s2626)
-D 2005-08-27T01:51:44
-F Makefile.in 87717916c787099d5a9a64f7a2acc188b4bbcadd
+C Remove\sGNUmake\sextensions\sfrom\sthe\smakefile.\sTicket\s#1390.\s(CVS\s2627)
+D 2005-08-27T09:07:14
+F Makefile.in 12784cdce5ffc8dfb707300c34e4f1eb3b8a14f1
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
 F VERSION ecc511d6f3cf01f5fdcb1707f9aee0cbb41ea35d
@@ -298,7 +298,7 @@ F www/tclsqlite.tcl 3df553505b6efcad08f91e9b975deb2e6c9bb955
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P dd3b00aa0bf3b847b0b2f20f6df60d4e3a2d81df
-R 0caa6188908a061a0b5bcc31c4f3d956
+P 7e05b7ca0ce72b1c6125196f4b21bbb676bc488c
+R ea73122ca7d383deb1910f3880db01aa
 U drh
-Z 40d0cacfc441f741b442a273e16b3c7d
+Z ab43b86c10e12a2b5943be7ff2651f30
