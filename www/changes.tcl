@@ -25,6 +25,17 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2005 August 25 (3.2.5)} {
+<li>Fix a bug effecting DELETE and UPDATE statements that changed
+more than 40960 rows.</li>
+<li>Change the makefile so that it no longer requires GNUmake extensions</li>
+<li>Fix the --enable-threadsafe option on the configure script</li>
+<li>Fix a code generator bug that occurs when the left-hand side of an IN
+operator is constant and the right-hand side is a SELECT statement</li>
+<li>The PRAGMA synchronous=off statement now disables syncing of the
+master journal file in addition to the normal rollback journals</li>
+}
+
 chng {2005 August 24 (3.2.4)} {
 <li>Fix a bug introduced in the previous release
 that can cause a segfault while generating code

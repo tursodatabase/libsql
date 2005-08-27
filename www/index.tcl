@@ -7,10 +7,13 @@ puts {
 <td width="50%" valign="top">
 <h2>About SQLite</h2>
 <p>
+  <table align="right" border="0"><tr><td>
+  <a href="http://osdir.com/Article6677.phtml">
+  <img src="2005osaward.gif"></a>
+  </td></tr></table>
 SQLite is a small
 C library that implements a self-contained, embeddable,
-zero-configuration,
-<a href="http://osdir.com/Article6677.phtml">award-winning</a>
+zero-configuration
 SQL database engine.
 Features include:
 </p>
@@ -63,6 +66,11 @@ proc newsitem {date title text} {
   puts "<hr width=\"50%\">"
 }
 
+newsitem {2005-Aug-28} {Version 3.2.5} {
+  This release fixes a bug that causes DELETEs and UPDATEs to fail if
+  they attempt to changes more than 40960 rows.
+}
+
 newsitem {2005-Aug-24} {Version 3.2.4} {
   This release fixes a bug in the new optimizer that can lead to segfaults
   when parsing very complex WHERE clauses.
@@ -77,41 +85,9 @@ newsitem {2005-Aug-21} {Version 3.2.3} {
 }
 
 newsitem {2005-Aug-2} {2005 Open Source Award for SQLite} {
-  <table align="right" border="0"><tr><td>
-  <a href="http://osdir.com/Article6677.phtml">
-  <img src="2005osaward.gif"></a>
-  </td></tr></table>
   SQLite and its primary author D. Richard Hipp have been honored with
   a <a href="http://osdir.com/Article6677.phtml">2005 Open Source
   Award</a> from Google and O'Reilly.<br clear="right">
-}
-
-newsitem {2005-Jun-13} {Version 3.2.2} {
-  This release includes numerous minor bug fixes, speed improvements,
-  and code size reductions.  There is no reason to upgrade unless you
-  are having problems or unless you just want to.
-}
-
-newsitem {2005-Mar-29} {Version 3.2.1} {
-  This release fixes a memory allocation problem in the new
-  <a href="lang_altertable.html">ALTER TABLE ADD COLUMN</a>
-  command.
-}
-
-newsitem {2005-Mar-21} {Version 3.2.0} {
-  The primary purpose for version 3.2.0 is to add support for
-  <a href="lang_altertable.html">ALTER TABLE ADD COLUMN</a>.
-  The new ADD COLUMN capability is made
-  possible by AOL developers supporting and embracing great
-  open-source software.  Thanks, AOL!
-
-  Version 3.2.0 also fixes an obscure but serious bug that was discovered
-  just prior to release.  If you have a multi-statement transaction and
-  within that transaction an UPDATE or INSERT statement fails due to a
-  constraint, then you try to rollback the whole transaction, the rollback
-  might not work correctly.  See
-  <a href="http://www.sqlite.org/cvstrac/tktview?tn=1171">Ticket #1171</a>
-  for details.  Upgrading is recommended for all users.
 }
 
 
@@ -119,4 +95,4 @@ puts {
 <p align="right"><a href="oldnews.html">Old news...</a></p>
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.119 2005/08/24 11:07:19 drh Exp $}
+footer {$Id: index.tcl,v 1.120 2005/08/27 17:06:16 drh Exp $}

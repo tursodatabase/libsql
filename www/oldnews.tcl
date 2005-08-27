@@ -9,6 +9,34 @@ proc newsitem {date title text} {
   puts "<hr width=\"50%\">"
 }
 
+newsitem {2005-Jun-13} {Version 3.2.2} {
+  This release includes numerous minor bug fixes, speed improvements,
+  and code size reductions.  There is no reason to upgrade unless you
+  are having problems or unless you just want to.
+}
+
+newsitem {2005-Mar-29} {Version 3.2.1} {
+  This release fixes a memory allocation problem in the new
+  <a href="lang_altertable.html">ALTER TABLE ADD COLUMN</a>
+  command.
+}
+
+newsitem {2005-Mar-21} {Version 3.2.0} {
+  The primary purpose for version 3.2.0 is to add support for
+  <a href="lang_altertable.html">ALTER TABLE ADD COLUMN</a>.
+  The new ADD COLUMN capability is made
+  possible by AOL developers supporting and embracing great
+  open-source software.  Thanks, AOL!
+
+  Version 3.2.0 also fixes an obscure but serious bug that was discovered
+  just prior to release.  If you have a multi-statement transaction and
+  within that transaction an UPDATE or INSERT statement fails due to a
+  constraint, then you try to rollback the whole transaction, the rollback
+  might not work correctly.  See
+  <a href="http://www.sqlite.org/cvstrac/tktview?tn=1171">Ticket #1171</a>
+  for details.  Upgrading is recommended for all users.
+}
+
 newsitem {2005-Mar-16} {Version 3.1.6} {
   Version 3.1.6 fixes a critical bug that can cause database corruption
   when inserting rows into tables with around 125 columns. This bug was
@@ -221,4 +249,4 @@ newsitem {2004-Apr-23} {Work Begins On SQLite Version 3} {
   Plans are to continue to support SQLite version 2.8 with
   bug fixes.  But all new development will occur in version 3.0.
 }
-footer {$Id: oldnews.tcl,v 1.12 2005/08/21 18:40:21 drh Exp $}
+footer {$Id: oldnews.tcl,v 1.13 2005/08/27 17:06:16 drh Exp $}
