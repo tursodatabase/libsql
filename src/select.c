@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.254 2005/08/14 20:47:16 drh Exp $
+** $Id: select.c,v 1.255 2005/08/28 01:34:22 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -484,6 +484,10 @@ static int selectInnerLoop(
       sqlite3VdbeAddOp(v, OP_Pop, 1, 0);
       addr2 = sqlite3VdbeAddOp(v, OP_Goto, 0, 0);
       if( pOrderBy ){
+        /* At first glance you would think we could optimize out the
+        ** ORDER BY in this case since the order of entries in the set
+        ** does not matter.  But there might be a LIMIT clause, in which
+        ** case the order does matter */
         pushOntoSorter(pParse, v, pOrderBy);
       }else{
         char aff = (iParm>>16)&0xFF;
