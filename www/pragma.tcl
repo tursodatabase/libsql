@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the pragma.html file.
 #
-set rcsid {$Id: pragma.tcl,v 1.15 2005/06/07 20:07:24 drh Exp $}
+set rcsid {$Id: pragma.tcl,v 1.16 2005/08/28 17:00:26 drh Exp $}
 source common.tcl
 header {Pragma statements supported by SQLite}
 
@@ -107,6 +107,16 @@ puts {
     to the default value when the database is closed and reopened.  Use
     the <a href="#pragma_default_cache_size"><b>default_cache_size</b></a> 
     pragma to check the cache size permanently.</p></li>
+
+<a name="pragma_case_sensitive_like"></a>
+<li><p><b>PRAGMA case_sensitive_like;
+       <br>PRAGMA case_sensitive_like = </b><i>0 | 1</i><b>;</b></p>
+    <p>The default behavior of the LIKE operator is to ignore case
+    for latin1 characters. Hence, by default <b>'a' LIKE 'A'</b> is
+    true.  The case_sensitive_like pragma can be turned on to change
+    this behavior.  When case_sensitive_like is enabled,
+    <b>'a' LIKE 'A'</b> is false but <b>'a' LIKE 'a'</b> is still true.</p>
+    </li>
 
 <a name="pragma_count_changes"></a>
 <li><p><b>PRAGMA count_changes;

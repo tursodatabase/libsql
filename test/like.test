@@ -13,7 +13,7 @@
 # in particular the optimizations that occur to help those operators
 # run faster.
 #
-# $Id: like.test,v 1.2 2005/08/19 00:14:43 drh Exp $
+# $Id: like.test,v 1.3 2005/08/28 17:00:26 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -309,6 +309,59 @@ do_test like-4.5 {
   }
 } {abc abcd nosort {} i1}
 do_test like-4.6 {
+  set sqlite_like_count
+} 12
+
+# Collating sequences on the index disable the LIKE optimization.
+# Or if the NOCASE collating sequence is used, the LIKE optimization
+# is enabled when case_sensitive_like is OFF.
+#
+do_test like-5.1 {
+  execsql {PRAGMA case_sensitive_like=off}
+  set sqlite_like_count 0
+  queryplan {
+    SELECT x FROM t1 WHERE x LIKE 'abc%' ORDER BY 1
+  }
+} {ABC {ABC abc xyz} abc abcd nosort {} i1}
+do_test like-5.2 {
+  set sqlite_like_count
+} 12
+do_test like-5.3 {
+  execsql {
+    CREATE TABLE t2(x COLLATE NOCASE);
+    INSERT INTO t2 SELECT * FROM t1;
+    CREATE INDEX i2 ON t2(x COLLATE NOCASE);
+  }
+  set sqlite_like_count 0
+  queryplan {
+    SELECT x FROM t2 WHERE x LIKE 'abc%' ORDER BY 1
+  }
+} {abc ABC {ABC abc xyz} abcd nosort {} i2}
+do_test like-5.4 {
+  set sqlite_like_count
+} 0
+do_test like-5.5 {
+  execsql {
+    PRAGMA case_sensitive_like=on;
+  }
+  set sqlite_like_count 0
+  queryplan {
+    SELECT x FROM t2 WHERE x LIKE 'abc%' ORDER BY 1
+  }
+} {abc abcd nosort {} i2}
+do_test like-5.6 {
+  set sqlite_like_count
+} 12
+do_test like-5.7 {
+  execsql {
+    PRAGMA case_sensitive_like=off;
+  }
+  set sqlite_like_count 0
+  queryplan {
+    SELECT x FROM t2 WHERE x GLOB 'abc*' ORDER BY 1
+  }
+} {abc abcd nosort {} i2}
+do_test like-5.8 {
   set sqlite_like_count
 } 12
 

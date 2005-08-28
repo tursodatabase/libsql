@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.403 2005/08/19 00:14:42 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.404 2005/08/28 17:00:23 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -511,7 +511,8 @@ struct FuncDef {
 /*
 ** Possible values for FuncDef.flags
 */
-#define SQLITE_FUNC_LIKEOPT  0x01    /* Candidate for the LIKE optimization */
+#define SQLITE_FUNC_LIKE   0x01  /* Candidate for the LIKE optimization */
+#define SQLITE_FUNC_CASE   0x02  /* Case-sensitive LIKE-type function */
 
 /*
 ** information about each column of an SQL table is held in an instance
@@ -551,9 +552,18 @@ struct Column {
 struct CollSeq {
   char *zName;         /* Name of the collating sequence, UTF-8 encoded */
   u8 enc;              /* Text encoding handled by xCmp() */
+  u8 type;             /* One of the SQLITE_COLL_... values below */
   void *pUser;         /* First argument to xCmp() */
   int (*xCmp)(void*,int, const void*, int, const void*);
 };
+
+/*
+** Allowed values of CollSeq flags:
+*/
+#define SQLITE_COLL_BINARY  1  /* The default memcmp() collating sequence */
+#define SQLITE_COLL_NOCASE  2  /* The built-in NOCASE collating sequence */
+#define SQLITE_COLL_REVERSE 3  /* The built-in REVERSE collating sequence */
+#define SQLITE_COLL_USER    0  /* Any other user-defined collating sequence */
 
 /*
 ** A sort order can be either ASC or DESC.
@@ -1583,7 +1593,7 @@ int sqlite3FindDb(sqlite3*, Token*);
 void sqlite3AnalysisLoad(sqlite3*,int iDB);
 void sqlite3DefaultRowEst(Index*);
 void sqlite3RegisterLikeFunctions(sqlite3*, int);
-int sqlite3IsLikeFunction(sqlite3*,Expr*,char*);
+int sqlite3IsLikeFunction(sqlite3*,Expr*,int*,char*);
 
 #ifdef SQLITE_SSE
 #include "sseInt.h"

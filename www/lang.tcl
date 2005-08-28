@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the lang-*.html files.
 #
-set rcsid {$Id: lang.tcl,v 1.97 2005/08/23 11:03:03 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.98 2005/08/28 17:00:26 drh Exp $}
 source common.tcl
 
 if {[llength $argv]>0} {
@@ -213,7 +213,8 @@ then only indices associated with that one table are analyzed.</p>
 table named <b>sqlite_stat1</b>.  Future enhancements may create
 additional tables with the same name pattern except with the "1"
 changed to a different digit.  The <b>sqlite_stat1</b> table cannot
-be DROPped, but it all the content can be DELETEd which as the
+be <a href="#droptable">DROP</a>ped,
+but it all the content can be <a href="#delete">DELETE</a>d which has the
 same effect.</p>
 }
 

@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.105 2005/08/27 13:16:33 drh Exp $
+** $Id: func.c,v 1.106 2005/08/28 17:00:23 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1041,11 +1041,11 @@ void sqlite3RegisterBuiltinFunctions(sqlite3 *db){
 /*
 ** Set the LIKEOPT flag on the 2-argument function with the given name.
 */
-static void setLikeOptFlag(sqlite3 *db, const char *zName){
+static void setLikeOptFlag(sqlite3 *db, const char *zName, int flagVal){
   FuncDef *pDef;
   pDef = sqlite3FindFunction(db, zName, strlen(zName), 2, SQLITE_UTF8, 0);
   if( pDef ){
-    pDef->flags = SQLITE_FUNC_LIKEOPT;
+    pDef->flags = flagVal;
   }
 }
 
@@ -1065,10 +1065,9 @@ void sqlite3RegisterLikeFunctions(sqlite3 *db, int caseSensitive){
   sqlite3_create_function(db, "like", 3, SQLITE_UTF8, pInfo, likeFunc, 0, 0);
   sqlite3_create_function(db, "glob", 2, SQLITE_UTF8, 
       (struct compareInfo*)&globInfo, likeFunc, 0,0);
-  setLikeOptFlag(db, "glob");
-  if( caseSensitive ){
-    setLikeOptFlag(db, "like");
-  }
+  setLikeOptFlag(db, "glob", SQLITE_FUNC_LIKE | SQLITE_FUNC_CASE);
+  setLikeOptFlag(db, "like", 
+      caseSensitive ? (SQLITE_FUNC_LIKE | SQLITE_FUNC_CASE) : SQLITE_FUNC_LIKE);
 }
 
 /*
@@ -1078,7 +1077,7 @@ void sqlite3RegisterLikeFunctions(sqlite3 *db, int caseSensitive){
 ** return TRUE.  If the function is not a LIKE-style function then
 ** return FALSE.
 */
-int sqlite3IsLikeFunction(sqlite3 *db, Expr *pExpr, char *aWc){
+int sqlite3IsLikeFunction(sqlite3 *db, Expr *pExpr, int *pIsNocase, char *aWc){
   FuncDef *pDef;
   if( pExpr->op!=TK_FUNCTION ){
     return 0;
@@ -1088,7 +1087,7 @@ int sqlite3IsLikeFunction(sqlite3 *db, Expr *pExpr, char *aWc){
   }
   pDef = sqlite3FindFunction(db, pExpr->token.z, pExpr->token.n, 2,
                              SQLITE_UTF8, 0);
-  if( pDef==0 || (pDef->flags & SQLITE_FUNC_LIKEOPT)==0 ){
+  if( pDef==0 || (pDef->flags & SQLITE_FUNC_LIKE)==0 ){
     return 0;
   }
 
@@ -1100,6 +1099,6 @@ int sqlite3IsLikeFunction(sqlite3 *db, Expr *pExpr, char *aWc){
   assert( (char*)&likeInfoAlt == (char*)&likeInfoAlt.matchAll );
   assert( &((char*)&likeInfoAlt)[1] == (char*)&likeInfoAlt.matchOne );
   assert( &((char*)&likeInfoAlt)[2] == (char*)&likeInfoAlt.matchSet );
-
+  *pIsNocase = (pDef->flags & SQLITE_FUNC_CASE)==0;
   return 1;
 }

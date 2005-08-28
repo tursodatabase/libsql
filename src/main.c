@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.298 2005/08/14 01:20:39 drh Exp $
+** $Id: main.c,v 1.299 2005/08/28 17:00:23 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -694,6 +694,7 @@ static int openDatabase(
 ){
   sqlite3 *db;
   int rc, i;
+  CollSeq *pColl;
 
   /* Allocate the sqlite data structure */
   db = sqliteMalloc( sizeof(sqlite3) );
@@ -729,6 +730,13 @@ static int openDatabase(
 
   /* Also add a UTF-8 case-insensitive collation sequence. */
   sqlite3_create_collation(db, "NOCASE", SQLITE_UTF8, 0, nocaseCollatingFunc);
+
+  /* Set flags on the built-in collating sequences */
+  db->pDfltColl->type = SQLITE_COLL_BINARY;
+  pColl = sqlite3FindCollSeq(db, SQLITE_UTF8, "NOCASE", 6, 0);
+  if( pColl ){
+    pColl->type = SQLITE_COLL_NOCASE;
+  }
 
   /* Open the backend database driver */
   rc = sqlite3BtreeFactory(db, zFilename, 0, MAX_PAGES, &db->aDb[0].pBt);
@@ -901,7 +909,7 @@ int sqlite3_create_collation(
 
   pColl = sqlite3FindCollSeq(db, (u8)enc, zName, strlen(zName), 1);
   if( 0==pColl ){
-   rc = SQLITE_NOMEM;
+    rc = SQLITE_NOMEM;
   }else{
     pColl->xCmp = xCompare;
     pColl->pUser = pCtx;
