@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.166 2005/08/28 17:00:25 drh Exp $
+** $Id: where.c,v 1.167 2005/08/29 16:40:53 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -736,10 +736,10 @@ static int isSortingIndex(
   int nEqCol,             /* Number of index columns with == constraints */
   int *pbRev              /* Set to 1 if ORDER BY is DESC */
 ){
-  int i, j;                    /* Loop counters */
-  int sortOrder;               /* Which direction we are sorting */
-  int nTerm;                   /* Number of ORDER BY terms */
-  struct ExprList_item *pTerm; /* A term of the ORDER BY clause */
+  int i, j;                       /* Loop counters */
+  int sortOrder = SQLITE_SO_ASC;  /* Which direction we are sorting */
+  int nTerm;                      /* Number of ORDER BY terms */
+  struct ExprList_item *pTerm;    /* A term of the ORDER BY clause */
   sqlite3 *db = pParse->db;
 
   assert( pOrderBy!=0 );
