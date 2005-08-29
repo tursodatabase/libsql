@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.139 2005/08/11 02:10:19 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.140 2005/08/29 23:00:04 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -464,11 +464,18 @@ int sqlite3_set_authorizer(
 #define SQLITE_IGNORE 2   /* Don't allow access, but don't generate an error */
 
 /*
-** Register a function that is called at every invocation of sqlite3_exec()
-** or sqlite3_prepare().  This function can be used (for example) to generate
-** a log file of all SQL executed against a database.
+** Register a function for tracing SQL command evaluation.  The function
+** registered by sqlite3_trace() is invoked at the first sqlite3_step()
+** for the evaluation of an SQL statement.  The function registered by
+** sqlite3_profile() runs at the end of each SQL statement and includes
+** information on how long that statement ran.
+**
+** The sqlite3_profile() API is currently considered experimental and
+** is subject to change.
 */
 void *sqlite3_trace(sqlite3*, void(*xTrace)(void*,const char*), void*);
+void *sqlite3_profile(sqlite3*,
+   void(*xProfile)(void*,const char*,sqlite_uint64), void*);
 
 /*
 ** This routine configures a callback function - the progress callback - that

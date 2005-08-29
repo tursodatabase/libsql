@@ -12,10 +12,15 @@
 #
 # This file implements tests for the "sqlite3_trace()" API.
 #
-# $Id: trace.test,v 1.4 2004/09/17 20:46:55 drh Exp $
+# $Id: trace.test,v 1.5 2005/08/29 23:00:05 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+ifcapable !trace {
+  finish_test
+  return
+}
 
 set ::stmtlist {}
 do_test trace-1.1 {
@@ -77,5 +82,67 @@ do_test trace-2.5 {
 } {SELECT * FROM t1}
 catch {sqlite3_finalize $STMT}
 
+# Similar tests, but this time for profiling.
+# 
+do_test trace-3.1 {
+  set rc [catch {db profile 1 2 3} msg]
+  lappend rc $msg
+} {1 {wrong # args: should be "db profile ?CALLBACK?"}}
+set ::stmtlist {}
+proc profile_proc {cmd tm} {
+  lappend ::stmtlist [string trim $cmd]
+}
+do_test trace-3.2 {
+  db trace {}
+  db profile profile_proc
+  db profile
+} {profile_proc}
+do_test trace-3.3 {
+  execsql {
+    CREATE TABLE t2(a,b);
+    INSERT INTO t2 VALUES(1,2);
+    SELECT * FROM t2;
+  }
+} {1 2}
+do_test trace-3.4 {
+  set ::stmtlist
+} {{CREATE TABLE t2(a,b);} {INSERT INTO t2 VALUES(1,2);} {SELECT * FROM t2;}}
+do_test trace-3.5 {
+  db profile {}
+  db profile
+} {}
+
+# If we prepare a statement and execute it multiple times, the profile
+# happens on each execution.
+#
+db close
+set DB [sqlite3 db test.db]
+do_test trace-4.1 {
+  set STMT [sqlite3_prepare $DB {INSERT INTO t2 VALUES(2,3)} -1 TAIL]
+  db trace trace_proc
+  proc profile_proc {sql tm} {
+    global TRACE_OUT
+    set TRACE_OUT $sql
+  }
+  set TRACE_OUT {}
+  sqlite3_step $STMT
+  set TRACE_OUT
+} {INSERT INTO t2 VALUES(2,3)}
+do_test trace-4.2 {
+  set TRACE_OUT {}
+  sqlite3_reset $STMT
+  set TRACE_OUT 
+} {}
+do_test trace-4.3 {
+  sqlite3_step $STMT
+  set TRACE_OUT
+} {INSERT INTO t2 VALUES(2,3)}
+do_test trace-4.4 {
+  execsql {SELECT * FROM t1}
+} {1 2 2 3 2 3}
+do_test trace-4.5 {
+  set TRACE_OUT
+} {SELECT * FROM t1}
+catch {sqlite3_finalize $STMT}
 
 finish_test

@@ -15,6 +15,7 @@
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
+#include "os.h"
 
 /*
 ** Return TRUE (non-zero) of the statement supplied as an argument needs
@@ -173,9 +174,10 @@ int sqlite3_step(sqlite3_stmt *pStmt){
     return SQLITE_MISUSE;
   }
   if( p->pc<0 ){
+#ifndef SQLITE_OMIT_TRACE
     /* Invoke the trace callback if there is one
     */
-    if( (db = p->db)->xTrace && !db->init.busy ){
+    if( db->xTrace && !db->init.busy ){
       assert( p->nOp>0 );
       assert( p->aOp[p->nOp-1].opcode==OP_Noop );
       assert( p->aOp[p->nOp-1].p3!=0 );
@@ -187,6 +189,12 @@ int sqlite3_step(sqlite3_stmt *pStmt){
         return SQLITE_MISUSE;
       }
     }
+    if( db->xProfile && !db->init.busy ){
+      double rNow;
+      sqlite3OsCurrentTime(&rNow);
+      p->startTime = (rNow - (int)rNow)*3600.0*24.0*1000000000.0;
+    }
+#endif
 
     /* Print a copy of SQL as it is executed if the SQL_TRACE pragma is turned
     ** on in debugging mode.
@@ -212,6 +220,23 @@ int sqlite3_step(sqlite3_stmt *pStmt){
   if( sqlite3SafetyOff(db) ){
     rc = SQLITE_MISUSE;
   }
+
+#ifndef SQLITE_OMIT_TRACE
+  /* Invoke the profile callback if there is one
+  */
+  if( rc!=SQLITE_ROW && db->xProfile && !db->init.busy ){
+    double rNow;
+    u64 elapseTime;
+
+    sqlite3OsCurrentTime(&rNow);
+    elapseTime = (rNow - (int)rNow)*3600.0*24.0*1000000000.0 - p->startTime;
+    assert( p->nOp>0 );
+    assert( p->aOp[p->nOp-1].opcode==OP_Noop );
+    assert( p->aOp[p->nOp-1].p3!=0 );
+    assert( p->aOp[p->nOp-1].p3type==P3_DYNAMIC );
+    db->xProfile(db->pProfileArg, p->aOp[p->nOp-1].p3, elapseTime);
+  }
+#endif
 
   sqlite3Error(p->db, rc, p->zErrMsg ? "%s" : 0, p->zErrMsg);
   return rc;

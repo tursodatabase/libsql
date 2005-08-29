@@ -18,6 +18,7 @@
 
 
 #include <time.h>
+#include <sys/time.h>
 #include <errno.h>
 #include <unistd.h>
 
@@ -1420,9 +1421,16 @@ int sqlite3_current_time = 0;
 ** return 0.  Return 1 if the time and date cannot be found.
 */
 int sqlite3OsCurrentTime(double *prNow){
+#ifdef NO_GETTOD
   time_t t;
   time(&t);
   *prNow = t/86400.0 + 2440587.5;
+#else
+  struct timeval sNow;
+  struct timezone sTz;  /* Not used */
+  gettimeofday(&sNow, &sTz);
+  *prNow = 2440587.5 + sNow.tv_sec/86400.0 + sNow.tv_usec/86400000000.0;
+#endif
 #ifdef SQLITE_TEST
   if( sqlite3_current_time ){
     *prNow = sqlite3_current_time/86400.0 + 2440587.5;

@@ -358,6 +358,7 @@ struct Vdbe {
   u8 aborted;             /* True if ROLLBACK in another VM causes an abort */
   u8 expired;             /* True if the VM needs to be recompiled */
   int nChange;            /* Number of db changes made since last reset */
+  u64 startTime;          /* Time when query started - used for profiling */
 };
 
 /*

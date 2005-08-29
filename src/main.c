@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.299 2005/08/28 17:00:23 drh Exp $
+** $Id: main.c,v 1.300 2005/08/29 23:00:04 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -509,13 +509,14 @@ int sqlite3_create_function16(
 }
 #endif
 
+#ifndef SQLITE_OMIT_TRACE
 /*
 ** Register a trace function.  The pArg from the previously registered trace
 ** is returned.  
 **
 ** A NULL trace function means that no tracing is executes.  A non-NULL
 ** trace is a pointer to a function that is invoked at the start of each
-** sqlite3_exec().
+** SQL statement.
 */
 void *sqlite3_trace(sqlite3 *db, void (*xTrace)(void*,const char*), void *pArg){
   void *pOld = db->pTraceArg;
@@ -523,6 +524,25 @@ void *sqlite3_trace(sqlite3 *db, void (*xTrace)(void*,const char*), void *pArg){
   db->pTraceArg = pArg;
   return pOld;
 }
+/*
+** Register a profile function.  The pArg from the previously registered 
+** profile function is returned.  
+**
+** A NULL profile function means that no profiling is executes.  A non-NULL
+** profile is a pointer to a function that is invoked at the conclusion of
+** each SQL statement that is run.
+*/
+void *sqlite3_profile(
+  sqlite3 *db,
+  void (*xProfile)(void*,const char*,sqlite_uint64),
+  void *pArg
+){
+  void *pOld = db->pProfileArg;
+  db->xProfile = xProfile;
+  db->pProfileArg = pArg;
+  return pOld;
+}
+#endif /* SQLITE_OMIT_TRACE */
 
 /*** EXPERIMENTAL ***
 **
