@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.124 2005/08/27 01:50:54 drh Exp $
+** $Id: shell.c,v 1.125 2005/08/29 23:06:24 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -1697,6 +1697,13 @@ int main(int argc, char **argv){
     zFirstCmd = argv[i++];
   }
   data.out = stdout;
+
+#ifdef SQLITE_OMIT_MEMORYDB
+  if( data.zDbFilename==0 ){
+    fprintf(stderr,"%s: no database filename specified\n", argv[0]);
+    exit(1);
+  }
+#endif
 
   /* Go ahead and open the database file if it already exists.  If the
   ** file does not exist, delay opening it.  This prevents empty database
