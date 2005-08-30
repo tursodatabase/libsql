@@ -1,5 +1,5 @@
-C Make\sthe\sshell\saware\sof\sSQLITE_OMIT_MEMORYDB.\s\sTicket\s#1395.\s(CVS\s2640)
-D 2005-08-29T23:06:24
+C Update\sthe\shome\spage\sto\sbrag\sabout\s150KiB\scode\sfootprint\swhen\soptional\nfeatures\sare\somitted.\s(CVS\s2641)
+D 2005-08-30T00:10:45
 F Makefile.in 12784cdce5ffc8dfb707300c34e4f1eb3b8a14f1
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -281,7 +281,7 @@ F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/faq.tcl 49f31a703f74c71ce66da646aaf18b07a5042672
 F www/fileformat.tcl 900c95b9633abc3dcfc384d9ddd8eb4876793059
 F www/formatchng.tcl 053ddb73646701353a5b1c9ca6274d5900739b45
-F www/index.tcl b5eb631c918006cf3ea9b7347d084cc017b1f32a
+F www/index.tcl 853525c11fb519dac801bcbbe0488c447e526e7b
 F www/lang.tcl 422b21b899f6d84dd3fdd2d4b204061b6912efd2
 F www/lockingv3.tcl f59b19d6c8920a931f096699d6faaf61c05db55f
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
@@ -299,7 +299,7 @@ F www/tclsqlite.tcl 3df553505b6efcad08f91e9b975deb2e6c9bb955
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P ed2ca0873fa89d6cfd123541d5d1c6b92c72b6ab
-R 41099399cd49b9960dee1069a4863a31
+P 71a71cef5b3c97744322ceceb48ac3055512c987
+R 9f0bd6ab83c95af2ee3f859814217549
 U drh
-Z 615ba8ef5a759c76ee392a7c5fb87948
+Z a72776bd54cae672bcaa8ae9f32804c5
