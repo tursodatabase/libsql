@@ -384,12 +384,6 @@ sqlite3_analyzer$(EXE):	$(TOP)/src/tclsqlite.c libsqlite3.a $(TESTSRC) \
 arch.html:	$(TOP)/www/arch.tcl
 	tclsh $(TOP)/www/arch.tcl >arch.html
 
-arch.png:	$(TOP)/www/arch.png
-	cp $(TOP)/www/arch.png .
-
-arch2.gif:	$(TOP)/www/arch2.gif
-	cp $(TOP)/www/arch2.gif .
-
 autoinc.html:	$(TOP)/www/autoinc.tcl
 	tclsh $(TOP)/www/autoinc.tcl >autoinc.html
 
@@ -460,6 +454,12 @@ pragma.html:	$(TOP)/www/pragma.tcl
 lockingv3.html:	$(TOP)/www/lockingv3.tcl
 	tclsh $(TOP)/www/lockingv3.tcl >lockingv3.html
 
+mingw.html:	$(TOP)/www/mingw.tcl
+	tclsh $(TOP)/www/mingw.tcl >mingw.html
+
+nulls.html:	$(TOP)/www/nulls.tcl
+	tclsh $(TOP)/www/nulls.tcl >nulls.html
+
 oldnews.html:	$(TOP)/www/oldnews.tcl
 	tclsh $(TOP)/www/oldnews.tcl >oldnews.html
 
@@ -469,20 +469,14 @@ omitted.html:	$(TOP)/www/omitted.tcl
 opcode.html:	$(TOP)/www/opcode.tcl $(TOP)/src/vdbe.c
 	tclsh $(TOP)/www/opcode.tcl $(TOP)/src/vdbe.c >opcode.html
 
-mingw.html:	$(TOP)/www/mingw.tcl
-	tclsh $(TOP)/www/mingw.tcl >mingw.html
-
-nulls.html:	$(TOP)/www/nulls.tcl
-	tclsh $(TOP)/www/nulls.tcl >nulls.html
+optimizer.html:	$(TOP)/www/optimizer.tcl
+	tclsh $(TOP)/www/optimizer.tcl >optimizer.html
 
 quickstart.html:	$(TOP)/www/quickstart.tcl
 	tclsh $(TOP)/www/quickstart.tcl >quickstart.html
 
 speed.html:	$(TOP)/www/speed.tcl
 	tclsh $(TOP)/www/speed.tcl >speed.html
-
-sqlite.gif:	$(TOP)/art/SQLite.gif
-	cp $(TOP)/art/SQLite.gif sqlite.gif
 
 sqlite.html:	$(TOP)/www/sqlite.tcl
 	tclsh $(TOP)/www/sqlite.tcl >sqlite.html
@@ -507,8 +501,6 @@ whentouse.html:	$(TOP)/www/whentouse.tcl
 #
 DOC = \
   arch.html \
-  arch.png \
-  arch2.gif \
   autoinc.html \
   c_interface.html \
   capi3.html \
@@ -535,10 +527,10 @@ DOC = \
   oldnews.html \
   omitted.html \
   opcode.html \
+  optimizer.html \
   pragma.html \
   quickstart.html \
   speed.html \
-  sqlite.gif \
   sqlite.html \
   support.html \
   tclsqlite.html \
@@ -549,6 +541,7 @@ DOC = \
 doc:	common.tcl $(DOC)
 	mkdir -p doc
 	mv $(DOC) doc
+	cp $(TOP)/www/*.gif $(TOP)/art/*.gif doc
 
 # Standard install and cleanup targets
 #
