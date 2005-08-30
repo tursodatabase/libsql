@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.125 2005/08/29 23:06:24 drh Exp $
+** $Id: shell.c,v 1.126 2005/08/30 20:12:02 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -313,7 +313,7 @@ static void output_c_string(FILE *out, const char *z){
       fputc('\\', out);
       fputc('r', out);
     }else if( !isprint(c) ){
-      fprintf(out, "\\%03o", c);
+      fprintf(out, "\\%03o", c&0xff);
     }else{
       fputc(c, out);
     }
