@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.156 2005/08/29 23:00:05 drh Exp $
+** $Id: test1.c,v 1.157 2005/08/30 19:30:59 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -661,7 +661,7 @@ static int sqlite3_mprintf_str(
 }
 
 /*
-** Usage:  sqlite3_mprintf_str FORMAT INTEGER INTEGER DOUBLE
+** Usage:  sqlite3_mprintf_double FORMAT INTEGER INTEGER DOUBLE
 **
 ** Call mprintf with two integer arguments and one double argument
 */
@@ -676,7 +676,7 @@ static int sqlite3_mprintf_double(
   char *z;
   if( argc!=5 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " FORMAT INT INT STRING\"", 0);
+       " FORMAT INT INT DOUBLE\"", 0);
     return TCL_ERROR;
   }
   for(i=2; i<4; i++){
@@ -690,7 +690,7 @@ static int sqlite3_mprintf_double(
 }
 
 /*
-** Usage:  sqlite3_mprintf_str FORMAT DOUBLE DOUBLE
+** Usage:  sqlite3_mprintf_scaled FORMAT DOUBLE DOUBLE
 **
 ** Call mprintf with a single double argument which is the product of the
 ** two arguments given above.  This is used to generate overflow and underflow
@@ -739,6 +739,40 @@ static int sqlite3_mprintf_stronly(
     return TCL_ERROR;
   }
   z = sqlite3_mprintf(argv[1], argv[2]);
+  Tcl_AppendResult(interp, z, 0);
+  sqlite3_free(z);
+  return TCL_OK;
+}
+
+/*
+** Usage:  sqlite3_mprintf_hexdouble FORMAT HEX
+**
+** Call mprintf with a single double argument which is derived from the
+** hexadecimal encoding of an IEEE double.
+*/
+static int sqlite3_mprintf_hexdouble(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  char *z;
+  double r;
+  unsigned  x1, x2;
+  long long unsigned d;
+  if( argc!=3 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+       " FORMAT STRING\"", 0);
+    return TCL_ERROR;
+  }
+  if( sscanf(argv[2], "%08x%08x", &x2, &x1)!=2 ){
+    Tcl_AppendResult(interp, "2nd argument should be 16-characters of hex", 0);
+    return TCL_ERROR;
+  }
+  d = x2;
+  d = (d<<32) + x1;
+  memcpy(&r, &d, sizeof(r));
+  z = sqlite3_mprintf(argv[1], r);
   Tcl_AppendResult(interp, z, 0);
   sqlite3_free(z);
   return TCL_OK;
@@ -3010,6 +3044,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_mprintf_stronly",       (Tcl_CmdProc*)sqlite3_mprintf_stronly},
      { "sqlite3_mprintf_double",        (Tcl_CmdProc*)sqlite3_mprintf_double },
      { "sqlite3_mprintf_scaled",        (Tcl_CmdProc*)sqlite3_mprintf_scaled },
+     { "sqlite3_mprintf_hexdouble",   (Tcl_CmdProc*)sqlite3_mprintf_hexdouble},
      { "sqlite3_mprintf_z_test",        (Tcl_CmdProc*)test_mprintf_z        },
      { "sqlite3_last_insert_rowid",     (Tcl_CmdProc*)test_last_rowid       },
      { "sqlite3_exec_printf",           (Tcl_CmdProc*)test_exec_printf      },

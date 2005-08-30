@@ -440,9 +440,9 @@ static int vxprintf(
         /* Normalize realvalue to within 10.0 > realvalue >= 1.0 */
         exp = 0;
         if( realvalue>0.0 ){
-          while( realvalue>1e32 && exp<=350 ){ realvalue *= 1e-32; exp+=32; }
-          while( realvalue>1e8 && exp<=350 ){ realvalue *= 1e-8; exp+=8; }
-          while( realvalue>10.0 && exp<=350 ){ realvalue *= 0.1; exp++; }
+          while( realvalue>=1e32 && exp<=350 ){ realvalue *= 1e-32; exp+=32; }
+          while( realvalue>=1e8 && exp<=350 ){ realvalue *= 1e-8; exp+=8; }
+          while( realvalue>=10.0 && exp<=350 ){ realvalue *= 0.1; exp++; }
           while( realvalue<1e-8 && exp>=-350 ){ realvalue *= 1e8; exp-=8; }
           while( realvalue<1.0 && exp>=-350 ){ realvalue *= 10.0; exp--; }
           if( exp>350 || exp<-350 ){
