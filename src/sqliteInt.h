@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.405 2005/08/29 23:00:04 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.406 2005/08/30 00:54:03 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -892,6 +892,7 @@ struct ExprList {
     u8 sortOrder;          /* 1 for DESC or 0 for ASC */
     u8 isAgg;              /* True if this is an aggregate like count(*) */
     u8 done;               /* A flag to indicate when processing is finished */
+    u8 orderByDup[2];      /* Corresponding term in OrderBy/GroupBy clause */
   } *a;                  /* One entry for each expression */
 };
 
@@ -1452,6 +1453,7 @@ int sqlite3ExprCompare(Expr*, Expr*);
 int sqliteFuncId(Token*);
 int sqlite3ExprResolveNames(NameContext *, Expr *);
 int sqlite3ExprAnalyzeAggregates(NameContext*, Expr*);
+int sqlite3ExprAnalyzeAggList(NameContext*,ExprList*);
 Vdbe *sqlite3GetVdbe(Parse*);
 void sqlite3Randomness(int, void*);
 void sqlite3RollbackAll(sqlite3*);

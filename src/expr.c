@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.221 2005/08/25 12:45:04 drh Exp $
+** $Id: expr.c,v 1.222 2005/08/30 00:54:02 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2071,28 +2071,30 @@ static int appendAggInfo(Parse *pParse){
 */
 static int analyzeAggregate(void *pArg, Expr *pExpr){
   int i;
-  AggExpr *aAgg;
+  AggExpr *pAgg;
   NameContext *pNC = (NameContext *)pArg;
   Parse *pParse = pNC->pParse;
   SrcList *pSrcList = pNC->pSrcList;
+  Expr *pAggExpr;
 
   switch( pExpr->op ){
     case TK_COLUMN: {
       for(i=0; pSrcList && i<pSrcList->nSrc; i++){
         if( pExpr->iTable==pSrcList->a[i].iCursor ){
-          aAgg = pParse->aAgg;
-          for(i=0; i<pParse->nAgg; i++){
-            if( aAgg[i].isAgg ) continue;
-            if( aAgg[i].pExpr->iTable==pExpr->iTable
-             && aAgg[i].pExpr->iColumn==pExpr->iColumn ){
+          pAgg = pParse->aAgg;
+          for(i=0; i<pParse->nAgg; i++, pAgg++){
+            if( pAgg->isAgg ) continue;
+            if( (pAggExpr = pAgg->pExpr)->iTable==pExpr->iTable
+             && pAggExpr->iColumn==pExpr->iColumn ){
               break;
             }
           }
           if( i>=pParse->nAgg ){
             i = appendAggInfo(pParse);
             if( i<0 ) return 1;
-            pParse->aAgg[i].isAgg = 0;
-            pParse->aAgg[i].pExpr = pExpr;
+            pAgg = &pParse->aAgg[i];
+            pAgg->isAgg = 0;
+            pAgg->pExpr = pExpr;
           }
           pExpr->iAgg = i;
           pExpr->iAggCtx = pNC->nDepth;
@@ -2103,10 +2105,10 @@ static int analyzeAggregate(void *pArg, Expr *pExpr){
     }
     case TK_AGG_FUNCTION: {
       if( pNC->nDepth==0 ){
-        aAgg = pParse->aAgg;
-        for(i=0; i<pParse->nAgg; i++){
-          if( !aAgg[i].isAgg ) continue;
-          if( sqlite3ExprCompare(aAgg[i].pExpr, pExpr) ){
+        pAgg = pParse->aAgg;
+        for(i=0; i<pParse->nAgg; i++, pAgg++){
+          if( !pAgg->isAgg ) continue;
+          if( sqlite3ExprCompare(pAgg->pExpr, pExpr) ){
             break;
           }
         }
@@ -2114,9 +2116,10 @@ static int analyzeAggregate(void *pArg, Expr *pExpr){
           u8 enc = pParse->db->enc;
           i = appendAggInfo(pParse);
           if( i<0 ) return 1;
-          pParse->aAgg[i].isAgg = 1;
-          pParse->aAgg[i].pExpr = pExpr;
-          pParse->aAgg[i].pFunc = sqlite3FindFunction(pParse->db,
+          pAgg = &pParse->aAgg[i];
+          pAgg->isAgg = 1;
+          pAgg->pExpr = pExpr;
+          pAgg->pFunc = sqlite3FindFunction(pParse->db,
                pExpr->token.z, pExpr->token.n,
                pExpr->pList ? pExpr->pList->nExpr : 0, enc, 0);
         }
@@ -2148,4 +2151,22 @@ int sqlite3ExprAnalyzeAggregates(NameContext *pNC, Expr *pExpr){
   int nErr = pNC->pParse->nErr;
   walkExprTree(pExpr, analyzeAggregate, pNC);
   return pNC->pParse->nErr - nErr;
+}
+
+/*
+** Call sqlite3ExprAnalyzeAggregates() for every expression in an
+** expression list.  Return the number of errors.
+**
+** If an error is found, the analysis is cut short.
+*/
+int sqlite3ExprAnalyzeAggList(NameContext *pNC, ExprList *pList){
+  struct ExprList_item *pItem;
+  int i;
+  int nErr = 0;
+  if( pList ){
+    for(pItem=pList->a, i=0; nErr==0 && i<pList->nExpr; i++, pItem++){
+      nErr += sqlite3ExprAnalyzeAggregates(pNC, pItem->pExpr);
+    }
+  }
+  return nErr;
 }
