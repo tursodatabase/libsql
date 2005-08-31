@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.256 2005/08/30 00:54:03 drh Exp $
+** $Id: select.c,v 1.257 2005/08/31 18:20:00 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -552,6 +552,42 @@ static int selectInnerLoop(
 }
 
 /*
+** Given an expression list, generate a KeyInfo structure that records
+** the collating sequence for each expression in that expression list.
+**
+** Space to hold the KeyInfo structure is obtain from malloc.  The calling
+** function is responsible for seeing that this structure is eventually
+** freed.  Add the KeyInfo structure to the P3 field of an opcode using
+** P3_KEYINFO_HANDOFF is the usual way of dealing with this.
+*/
+static KeyInfo *keyInfoFromExprList(Parse *pParse, ExprList *pList){
+  sqlite3 *db = pParse->db;
+  int nExpr;
+  KeyInfo *pInfo;
+  struct ExprList_item *pItem;
+  int i;
+
+  nExpr = pList->nExpr;
+  pInfo = sqliteMalloc( sizeof(*pInfo) + nExpr*(sizeof(CollSeq*)+1) );
+  if( pInfo ){
+    pInfo->aSortOrder = (char*)&pInfo->aColl[nExpr];
+    pInfo->nField = nExpr;
+    pInfo->enc = db->enc;
+    for(i=0, pItem=pList->a; i<nExpr; i++, pItem++){
+      CollSeq *pColl;
+      pColl = sqlite3ExprCollSeq(pParse, pItem->pExpr);
+      if( !pColl ){
+        pColl = db->pDfltColl;
+      }
+      pInfo->aColl[i] = pColl;
+      pInfo->aSortOrder[i] = pItem->sortOrder;
+    }
+  }
+  return pInfo;
+}
+
+
+/*
 ** If the inner loop was generated using a non-null pOrderBy argument,
 ** then the results were placed in a sorter.  After the loop is terminated
 ** we need to run the sorter and output the results.  The following
@@ -569,28 +605,10 @@ static void generateSortTail(
   int end2 = sqlite3VdbeMakeLabel(v);
   int addr;
   KeyInfo *pInfo;
-  ExprList *pOrderBy;
-  int nCol, i;
-  sqlite3 *db = pParse->db;
 
   if( eDest==SRT_Sorter ) return;
-  pOrderBy = p->pOrderBy;
-  nCol = pOrderBy->nExpr;
-  pInfo = sqliteMalloc( sizeof(*pInfo) + nCol*(sizeof(CollSeq*)+1) );
+  pInfo = keyInfoFromExprList(pParse, p->pOrderBy);
   if( pInfo==0 ) return;
-  pInfo->aSortOrder = (char*)&pInfo->aColl[nCol];
-  pInfo->nField = nCol;
-  for(i=0; i<nCol; i++){
-    /* If a collation sequence was specified explicity, then it
-    ** is stored in pOrderBy->a[i].zName. Otherwise, use the default
-    ** collation type for the expression.
-    */
-    pInfo->aColl[i] = sqlite3ExprCollSeq(pParse, pOrderBy->a[i].pExpr);
-    if( !pInfo->aColl[i] ){
-      pInfo->aColl[i] = db->pDfltColl;
-    }
-    pInfo->aSortOrder[i] = pOrderBy->a[i].sortOrder;
-  }
   sqlite3VdbeOp3(v, OP_Sort, 0, 0, (char*)pInfo, P3_KEYINFO_HANDOFF);
   addr = sqlite3VdbeAddOp(v, OP_SortNext, 0, end1);
   codeLimiter(v, p, addr, end2, 1);
@@ -1323,28 +1341,16 @@ static void computeLimitRegisters(Parse *pParse, Select *p){
 */
 static int openVirtualIndex(Parse *pParse, Select *p, int iTab){
   KeyInfo *pKeyInfo;
-  int nColumn;
-  sqlite3 *db = pParse->db;
-  int i;
   Vdbe *v = pParse->pVdbe;
   int addr;
 
   if( prepSelectStmt(pParse, p) ){
     return 0;
   }
-  nColumn = p->pEList->nExpr;
-  pKeyInfo = sqliteMalloc( sizeof(*pKeyInfo)+nColumn*sizeof(CollSeq*) );
+  pKeyInfo = keyInfoFromExprList(pParse, p->pEList);
   if( pKeyInfo==0 ) return 0;
-  pKeyInfo->enc = db->enc;
-  pKeyInfo->nField = nColumn;
-  for(i=0; i<nColumn; i++){
-    pKeyInfo->aColl[i] = sqlite3ExprCollSeq(pParse, p->pEList->a[i].pExpr);
-    if( !pKeyInfo->aColl[i] ){
-      pKeyInfo->aColl[i] = db->pDfltColl;
-    }
-  }
   addr = sqlite3VdbeOp3(v, OP_OpenVirtual, iTab, 0, 
-      (char*)pKeyInfo, P3_KEYINFO_HANDOFF);
+                        (char*)pKeyInfo, P3_KEYINFO_HANDOFF);
   return addr;
 }
 
@@ -2696,18 +2702,9 @@ int sqlite3Select(
       }
     }
     if( pGroupBy ){
-      int sz = sizeof(KeyInfo) + pGroupBy->nExpr*sizeof(CollSeq*);
-      KeyInfo *pKey = (KeyInfo *)sqliteMalloc(sz);
+      KeyInfo *pKey = keyInfoFromExprList(pParse, pGroupBy);
       if( 0==pKey ){
         goto select_end;
-      }
-      pKey->enc = pParse->db->enc;
-      pKey->nField = pGroupBy->nExpr;
-      for(i=0; i<pGroupBy->nExpr; i++){
-        pKey->aColl[i] = sqlite3ExprCollSeq(pParse, pGroupBy->a[i].pExpr);
-        if( !pKey->aColl[i] ){
-          pKey->aColl[i] = pParse->db->pDfltColl;
-        }
       }
       sqlite3VdbeChangeP3(v, addr, (char *)pKey, P3_KEYINFO_HANDOFF);
     }
@@ -2720,7 +2717,7 @@ int sqlite3Select(
     sqlite3VdbeAddOp(v, OP_MemStore, iParm, 1);
   }
 
-  /* Open a temporary table to use for the distinct set.
+  /* Open a virtual index to use for the distinct set.
   */
   if( isDistinct ){
     distinct = pParse->nTab++;
