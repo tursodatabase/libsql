@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the goals.html file.
 #
-set rcsid {$Id: optoverview.tcl,v 1.1 2005/08/31 01:50:00 drh Exp $}
+set rcsid {$Id: optoverview.tcl,v 1.2 2005/08/31 03:13:12 drh Exp $}
 source common.tcl
 header {The SQLite Query Optimizer Overview}
 
@@ -58,7 +58,7 @@ HEADING 0 {The SQLite Query Optimizer Overview}
 
 PARAGRAPH {
   This document provides a terse overview of how the query optimizer
-  for SQLite works.  This is not a tutoral.  Some prior knowledge of how
+  for SQLite works.  This is not a tutorial.  Some prior knowledge of how
   database engines operate is likely needed in order to fully understand
   this text.
 }
@@ -411,7 +411,7 @@ PARAGRAPH {
   If, however, all columns that were to be fetched from the table are
   already available in the index itself, SQLite will use the values
   contained in the index and will never look up the original table
-  row.  This saves a binary search for each table and can make many
+  row.  This saves one binary search for each row and can make many
   queries run twice as fast.
 }
 
@@ -441,11 +441,48 @@ PARAGRAPH {
   To overcome this problem, SQLite attempts to flatten subqueries in
   the FROM clause of a SELECT.
   This involves inserting the FROM clause of the subquery into the
-  FROM clause of the outer query and rewriting certain expressions in
-  the outer query.
-  There is a long list of conditions that must be met in order for
-  query flattening to occur.  These conditions are fully documented in
-  source code comments in the select.c source file.
+  FROM clause of the outer query and rewriting expressions in
+  the outer query that refer to the result set of the subquery.
+  For example:
+}
+CODE {
+  SELECT a FROM (SELECT x+y AS a FROM t1 WHERE z<100) WHERE a>5
+}
+PARAGRAPH {
+  Would be rewritten using query flattening as:
+}
+CODE {
+  SELECT x+y AS a FROM t1 WHERE z<100 AND a>5
+}
+PARAGRAPH {
+  There is a long list of conditions that must all be met in order for
+  query flattening to occur.
+}
+PARAGRAPH {
+  <ol>
+  <li> The subquery and the outer query do not both use aggregates.</li>
+  <li> The subquery is not an aggregate or the outer query is not a join. </li>
+  <li> The subquery is not the right operand of a left outer join, or
+          the subquery is not itself a join. </li>
+  <li>  The subquery is not DISTINCT or the outer query is not a join. </li>
+  <li>  The subquery is not DISTINCT or the outer query does not use
+          aggregates. </li>
+  <li>  The subquery does not use aggregates or the outer query is not
+          DISTINCT. </li>
+  <li>  The subquery has a FROM clause. </li>
+  <li>  The subquery does not use LIMIT or the outer query is not a join. </li>
+  <li>  The subquery does not use LIMIT or the outer query does not use
+         aggregates. </li>
+  <li>  The subquery does not use aggregates or the outer query does not
+         use LIMIT. </li>
+  <li>  The subquery and the outer query do not both have ORDER BY clauses.</li>
+  <li>  The subquery is not the right term of a LEFT OUTER JOIN or the
+         subquery has no WHERE clause.  </li>
+  </ol>
+}
+PARAGRAPH {
+  The proof that query flattening may safely occur if all of the the
+  above conditions are met is left as an exercise to the reader.
 }
 PARAGRAPH {
   Query flattening is an important optimization when views are used as
@@ -455,7 +492,7 @@ PARAGRAPH {
 HEADING 1 {The MIN/MAX optimization} minmax
 
 PARAGRAPH {
-  Queries of the following forms will be optimized to run in logorithmic
+  Queries of the following forms will be optimized to run in logarithmic
   time assuming appropriate indices exist:
 }
 CODE {
@@ -465,5 +502,7 @@ CODE {
 PARAGRAPH {
   In order for these optimizations to occur, they must appear in exactly
   the form shown above - changing only the name of the table and column.
+  It is not permissible to add a WHERE clause or do any arithmetic on the
+  result.  The result set must contain a single column.
   And the column in the MIN or MAX function must be an indexed column.
 }

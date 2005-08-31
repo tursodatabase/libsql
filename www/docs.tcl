@@ -1,7 +1,7 @@
 # This script generates the "docs.html" page that describes various
 # sources of documentation available for SQLite.
 #
-set rcsid {$Id: docs.tcl,v 1.11 2005/03/19 14:45:50 drh Exp $}
+set rcsid {$Id: docs.tcl,v 1.12 2005/08/31 03:13:12 drh Exp $}
 source common.tcl
 header {SQLite Documentation}
 puts {
@@ -38,15 +38,16 @@ doc {SQL Syntax} {lang.html} {
   This document describes the SQL language that is understood by
   SQLite.  
 }
+doc {Version 3 C/C++ API<br>Reference} {capi3ref.html} {
+  This document describes each API function separately.
+}
+doc {Tcl API} {tclsqlite.html} {
+  A description of the TCL interface bindings for SQLite.
+}
 
 doc {Pragma commands} {pragma.html} {
   This document describes SQLite performance tuning options and other 
   special purpose database commands.
-}
-
-doc {Version 2 C/C++ API} {c_interface.html} {
-  A description of the C/C++ interface bindings for SQLite through version 
-  2.8
 }
 doc {SQLite Version 3} {version3.html} {
   A summary of of the changes between SQLite version 2.8 and SQLite version 3.0.
@@ -55,23 +56,6 @@ doc {Version 3 C/C++ API} {capi3.html} {
   A description of the C/C++ interface bindings for SQLite version 3.0.0
   and following.
 }
-doc {Version 3 C/C++ API<br>Reference} {capi3ref.html} {
-  This document describes each API function separately.
-}
-
-doc {Tcl API} {tclsqlite.html} {
-  A description of the TCL interface bindings for SQLite.
-}
-
-doc {Locking And Concurrency<br>In SQLite Version 3} {lockingv3.html} {
-  A description of how the new locking code in version 3 increases
-  concurrancy and decreases the problem of writer starvation.
-}
-
-doc {Version 2 DataTypes } {datatypes.html} {
-  A description of how SQLite version 2 handles SQL datatypes.
-  Short summary:  Everything is a string.
-}
 doc {Version 3 DataTypes } {datatype3.html} {
   SQLite version 3 introduces the concept of manifest typing, where the
   type of a value is associated with the value itself, not the column that
@@ -79,9 +63,16 @@ doc {Version 3 DataTypes } {datatype3.html} {
   This page describes data typing for SQLite version 3 in further detail.
 }
 
-doc {Release History} {changes.html} {
-  A chronology of SQLite releases going back to version 1.0.0
+doc {Locking And Concurrency<br>In SQLite Version 3} {lockingv3.html} {
+  A description of how the new locking code in version 3 increases
+  concurrancy and decreases the problem of writer starvation.
 }
+
+doc {Overview Of The Optimizer} {optoverview.html} {
+  A quick overview of the various query optimizations that are
+  attempted by the SQLite code generator.
+}
+
 
 doc {Null Handling} {nulls.html} {
   Different SQL database engines handle NULLs in different ways.  The
@@ -97,6 +88,22 @@ doc {Copyright} {copyright.html} {
 doc {Unsupported SQL} {omitted.html} {
   This page describes features of SQL that SQLite does not support.
 }
+
+doc {Version 2 C/C++ API} {c_interface.html} {
+  A description of the C/C++ interface bindings for SQLite through version 
+  2.8
+}
+
+
+doc {Version 2 DataTypes } {datatypes.html} {
+  A description of how SQLite version 2 handles SQL datatypes.
+  Short summary:  Everything is a string.
+}
+
+doc {Release History} {changes.html} {
+  A chronology of SQLite releases going back to version 1.0.0
+}
+
 
 doc {Speed Comparison} {speed.html} {
   The speed of version 2.7.6 of SQLite is compared against PostgreSQL and

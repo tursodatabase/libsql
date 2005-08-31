@@ -1,5 +1,5 @@
-C Update\sthe\sFAQ\sto\sinclude\san\sentry\sabout\sbinary\sversus\sdecimal\snumbers.\s(CVS\s2648)
-D 2005-08-31T02:46:21
+C Refinements\sto\sthe\soptimizer\soverview\sand\sintegration\sinto\sthe\swebsite.\s(CVS\s2649)
+D 2005-08-31T03:13:12
 F Makefile.in 12784cdce5ffc8dfb707300c34e4f1eb3b8a14f1
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -276,7 +276,7 @@ F www/datatype3.tcl 1d14f70ab73075556b95e76a5c13e5b03f7f6c47
 F www/datatypes.tcl 7c786d2e8ff434346764534ec015966d17efce60
 F www/different.tcl d01064946c588db0a0e87563a30aef1b3efb4434
 F www/direct1b.gif 32b48b764244817b6b591898dc52a04299a7b8a7
-F www/docs.tcl 6c0b2c567404b15bd46a0cda2dc69615a8e679a8
+F www/docs.tcl 8fec3341bb9b0d0b09a0d4e33055825cdd69642c
 F www/download.tcl ceaa742d5b8137bce31e9dcc4e44494b38211490
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/faq.tcl cdeb014235ac8030da593bde14a53240d4daa613
@@ -295,7 +295,7 @@ F www/omitted.tcl f1e57977299c3ed54fbae55e4b5ea6a64de39e19
 F www/opcode.tcl 5bd68059416b223515a680d410a9f7cb6736485f
 F www/optimizer.tcl d6812a10269bd0d7c488987aac0ad5036cace9dc
 F www/optimizing.tcl f0b2538988d1bbad16cbfe63ec6e8f48c9eb04e5
-F www/optoverview.tcl e16344994a91318965d573ecc9ef2848153d5bf0
+F www/optoverview.tcl b282361a505bddf85c43217095a66f47dbf6c788
 F www/pragma.tcl 44f7b665ca598ad24724f35991653638a36a6e3f
 F www/quickstart.tcl 6f6f694b6139be2d967b1492eb9a6bdf7058aa60
 F www/speed.tcl 656ed5be8cc9d536353e1a96927b925634a62933
@@ -306,7 +306,7 @@ F www/tclsqlite.tcl 3df553505b6efcad08f91e9b975deb2e6c9bb955
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 4c8d0a4c26e44088ffb9f21aa7641a5ebd0058be
-R 8c9dcafaf8c56c90363aaddb93c3711c
+P 0bbe73fccfe52700c2ae1122388764e81a78bc22
+R 116e86a3585b21a6c570826363946445
 U drh
-Z e855546ae219fc0150427c3e7e1f6fde
+Z 913c62cd31e3948a6b55fd91fd72e91a
