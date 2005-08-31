@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.343 2005/08/29 23:00:04 drh Exp $
+** $Id: build.c,v 1.344 2005/08/31 13:13:31 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2173,7 +2173,7 @@ void sqlite3CreateIndex(
                         (sizeof(int)*2 + sizeof(CollSeq*))*pList->nExpr );
   if( sqlite3_malloc_failed ) goto exit_create_index;
   pIndex->aiColumn = (int*)&pIndex->keyInfo.aColl[pList->nExpr];
-  pIndex->aiRowEst = &pIndex->aiColumn[pList->nExpr];
+  pIndex->aiRowEst = (unsigned*)&pIndex->aiColumn[pList->nExpr];
   pIndex->zName = (char*)&pIndex->aiRowEst[pList->nExpr+1];
   strcpy(pIndex->zName, zName);
   pIndex->pTable = pTab;
@@ -2396,7 +2396,7 @@ exit_create_index:
 ** are based on typical values found in actual indices.
 */
 void sqlite3DefaultRowEst(Index *pIdx){
-  int *a = pIdx->aiRowEst;
+  unsigned *a = pIdx->aiRowEst;
   int i;
   assert( a!=0 );
   a[0] = 1000000;
