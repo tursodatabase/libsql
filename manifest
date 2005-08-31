@@ -1,5 +1,5 @@
-C Adjust\sthe\smakefile\sfor\snew\soptimizer\sdocumentation.\s(CVS\s2646)
-D 2005-08-30T22:44:30
+C Adding\sthe\sfirst\scut\sof\sthe\soptimizer\soverview\sdocument.\s(CVS\s2647)
+D 2005-08-31T01:49:59
 F Makefile.in 12784cdce5ffc8dfb707300c34e4f1eb3b8a14f1
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -17,7 +17,7 @@ F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
-F main.mk 940fb3d09568be099eaa183ed372650723d0d05b
+F main.mk 72176d7299c2fd6ca2850623195a6984f75380a6
 F mkdll.sh 5ec23622515d5bf8969404e80cfb5e220ddf0512
 F mkopcodec.awk bd46ad001c98dfbab07b1713cb8e692fa0e5415d
 F mkopcodeh.awk 7563ad235670e864ead95cf672be3fe081450ae0
@@ -295,6 +295,7 @@ F www/omitted.tcl f1e57977299c3ed54fbae55e4b5ea6a64de39e19
 F www/opcode.tcl 5bd68059416b223515a680d410a9f7cb6736485f
 F www/optimizer.tcl d6812a10269bd0d7c488987aac0ad5036cace9dc
 F www/optimizing.tcl f0b2538988d1bbad16cbfe63ec6e8f48c9eb04e5
+F www/optoverview.tcl e16344994a91318965d573ecc9ef2848153d5bf0
 F www/pragma.tcl 44f7b665ca598ad24724f35991653638a36a6e3f
 F www/quickstart.tcl 6f6f694b6139be2d967b1492eb9a6bdf7058aa60
 F www/speed.tcl 656ed5be8cc9d536353e1a96927b925634a62933
@@ -305,7 +306,7 @@ F www/tclsqlite.tcl 3df553505b6efcad08f91e9b975deb2e6c9bb955
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 5cebd7ba3ccbdd0f4c8fe77091992f52d3a4b24c
-R c4def8daacbbc5823b9d6194ef76988e
+P 14668c85b87f7c9b83efd592ddc693522c764969
+R 3e38efd9bc5b22f2b9f7cfdf76added5
 U drh
-Z e3c05aeda8ce259a105b8164e4009189
+Z f4986d89db2306d81b4b595a9239ef43

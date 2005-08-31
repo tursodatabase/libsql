@@ -472,6 +472,9 @@ opcode.html:	$(TOP)/www/opcode.tcl $(TOP)/src/vdbe.c
 optimizer.html:	$(TOP)/www/optimizer.tcl
 	tclsh $(TOP)/www/optimizer.tcl >optimizer.html
 
+optoverview.html:	$(TOP)/www/optoverview.tcl
+	tclsh $(TOP)/www/optoverview.tcl >optoverview.html
+
 quickstart.html:	$(TOP)/www/quickstart.tcl
 	tclsh $(TOP)/www/quickstart.tcl >quickstart.html
 
@@ -528,6 +531,7 @@ DOC = \
   omitted.html \
   opcode.html \
   optimizer.html \
+  optoverview.html \
   pragma.html \
   quickstart.html \
   speed.html \
