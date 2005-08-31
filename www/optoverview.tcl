@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the goals.html file.
 #
-set rcsid {$Id: optoverview.tcl,v 1.2 2005/08/31 03:13:12 drh Exp $}
+set rcsid {$Id: optoverview.tcl,v 1.3 2005/08/31 13:48:35 drh Exp $}
 source common.tcl
 header {The SQLite Query Optimizer Overview}
 
@@ -58,9 +58,9 @@ HEADING 0 {The SQLite Query Optimizer Overview}
 
 PARAGRAPH {
   This document provides a terse overview of how the query optimizer
-  for SQLite works.  This is not a tutorial.  Some prior knowledge of how
-  database engines operate is likely needed in order to fully understand
-  this text.
+  for SQLite works.  This is not a tutorial.  The reader is likely to
+  need some prior knowledge of how database engines operate 
+  in order to fully understand this text.
 }
 
 HEADING 1 {WHERE clause analysis} where_clause
@@ -68,10 +68,10 @@ HEADING 1 {WHERE clause analysis} where_clause
 PARAGRAPH {
   The WHERE clause on a query is broken up into "terms" where each term
   is separated from the others by an AND operator.
-  Parentheses are ignored when dividing the WHERE clause into terms.
 }
 PARAGRAPH {
-  All terms of the WHERE clause are analyzed.
+  All terms of the WHERE clause are analyzed to see if they can be
+  satisfied using indices.
   Terms that cannot be satisfied through the use of indices become
   tests that are evaluated against each row of the relevant input
   tables.  No tests are done for terms that are completely satisfied by
@@ -81,7 +81,7 @@ PARAGRAPH {
 }
 
 PARAGRAPH {
-  Sometimes the analysis of a term will cause new "virtual" terms to
+  The analysis of a term might cause new "virtual" terms to
   be added to the WHERE clause.  Virtual terms can be used with
   indices to restrict a search.  But virtual terms never generate code
   that is tested against input rows.
@@ -122,8 +122,7 @@ PARAGRAPH {
 }
 PARAGRAPH {
   It is not necessary for every column of an index to appear in a
-  WHERE clause term in order for that index to be used.  In fact, there
-  are sometimes advantages if this is not the case.
+  WHERE clause term in order for that index to be used. 
   But there can not be gaps in the columns of the index that are used.
   Thus for the example index above, if there is no WHERE clause term
   that constraints column c, then terms that constraint columns a and b can
@@ -131,7 +130,7 @@ PARAGRAPH {
   Similarly, no index column will be used (for indexing purposes)
   that is to the right of a 
   column that is constrained only by inequalities.
-  Thus for the index above and WHERE clause like this:
+  For the index above and WHERE clause like this:
 }
 CODE {
   ... WHERE a=5 AND b IN (1,2,3) AND c>12 AND d='hello'
@@ -237,7 +236,7 @@ PARAGRAPH {
   evaluate to false.  Note that case insensitivity only applies to
   latin1 characters - basically the upper and lower case letters of English
   in the lower 127 byte codes of ASCII.  International character sets
-  are always case sensitive in SQLite unless a user-supplied collating
+  are case sensitive in SQLite unless a user-supplied collating
   sequence is used.  But if you employ a user-supplied collating sequence,
   the LIKE optimization describe here will never be taken.
 }
@@ -389,7 +388,8 @@ PARAGRAPH {
   Terms of the WHERE clause can be manually disqualified for use with
   indices by prepending a unary *+* operator to the column name.  The
   unary *+* is a no-op and will not slow down the evaluation of the test
-  in any way.  But it will prevent that term from constraining an index.
+  specified by the term.
+  But it will prevent the term from constraining an index.
   So, in the example above, if the query were rewritten as:
 }
 CODE {
@@ -422,9 +422,9 @@ PARAGRAPH {
   query when possible.
   When faced with the choice of using an index to satisfy WHERE clause
   constraints or satisfying an ORDER BY clause, SQLite does the same
-  work analysis that it normally does when choosing between two indices
-  and selects that one that it believes will result in the fastest answer.
-  Usually this means satisfying the WHERE clause constraint.
+  work analysis described in section 6.0
+  and chooses the index that it believes will result in the fastest answer.
+
 }
 
 HEADING 1 {Subquery flattening} flattening
@@ -504,5 +504,5 @@ PARAGRAPH {
   the form shown above - changing only the name of the table and column.
   It is not permissible to add a WHERE clause or do any arithmetic on the
   result.  The result set must contain a single column.
-  And the column in the MIN or MAX function must be an indexed column.
+  The column in the MIN or MAX function must be an indexed column.
 }
