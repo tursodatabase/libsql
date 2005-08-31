@@ -1,7 +1,7 @@
 #
 # Run this script to generated a faq.html output file
 #
-set rcsid {$Id: faq.tcl,v 1.29 2005/06/16 19:48:40 drh Exp $}
+set rcsid {$Id: faq.tcl,v 1.30 2005/08/31 02:46:21 drh Exp $}
 source common.tcl
 header {SQLite Frequently Asked Questions</title>}
 
@@ -482,6 +482,25 @@ faq {What is an SQLITE_SCHEMA error, and why am I getting one?} {
     } while( rc==SQLITE_SCHEMA );
     
   </pre></blockquote>
+}
+
+faq {Why does ROUND(9.95,1)  return 9.9 instead of 10.0?
+     Shouldn't 9.95 round up?} {
+  <p>SQLite uses binary arithmetic and in binary, there is no
+  way to write 9.95 in a finite number of bits.  The closest to
+  you can get to 9.95 in a 64-bit IEEE float (which is what
+  SQLite uses) is 9.949999999999999289457264239899814128875732421875.
+  So when you type "9.95", SQLite really understands the number to be
+  the much longer value shown above.  And that value rounds down.</p>
+
+  <p>This kind of problem comes up all the time when dealing with
+  floating point binary numbers.  The general rule to remember is
+  that most fractional numbers that have a finite representation in decimal
+  do not have a finite representation in binary.  And so they are
+  approximated using the closest binary number available.  That
+  approximation is usually very close, but it will be slightly off
+  and in some cases can cause your results to be a little different
+  from what you might expect.</p>
 }
 
 # End of questions and answers.
