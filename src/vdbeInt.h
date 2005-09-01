@@ -81,6 +81,7 @@ struct Cursor {
   u8 *pIncrKey;         /* Pointer to pKeyInfo->incrKey */
   KeyInfo *pKeyInfo;    /* Info about index keys needed by index cursors */
   int nField;           /* Number of fields in the header */
+  i64 seqCount;         /* Sequence counter */
 
   /* Cached information about the header for the data record that the
   ** cursor is currently pointing to.  Only valid if cacheValid is true.

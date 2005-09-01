@@ -405,6 +405,11 @@ void sqlite3VdbeChangeP3(Vdbe *p, int addr, const char *zP3, int n){
   }else if( n==P3_KEYINFO ){
     KeyInfo *pKeyInfo;
     int nField, nByte;
+
+    /* KeyInfo structures that include an KeyInfo.aSortOrder are always
+    ** sent in using P3_KEYINFO_HANDOFF.  The KeyInfo.aSortOrder array
+    ** is not duplicated when P3_KEYINFO is used. */
+    /* assert( pKeyInfo->aSortOrder==0 ); */
     nField = ((KeyInfo*)zP3)->nField;
     nByte = sizeof(*pKeyInfo) + (nField-1)*sizeof(pKeyInfo->aColl[0]);
     pKeyInfo = sqliteMallocRaw( nByte );

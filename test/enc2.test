@@ -13,7 +13,7 @@
 # various suported unicode encodings (UTF-8, UTF-16, UTF-16le and
 # UTF-16be).
 #
-# $Id: enc2.test,v 1.22 2005/02/26 17:31:28 drh Exp $
+# $Id: enc2.test,v 1.23 2005/09/01 12:16:29 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -185,6 +185,7 @@ proc test_collate {enc lhs rhs} {
   set l [lsearch -exact $::values $lhs]
   set r [lsearch -exact $::values $rhs]
   set res [expr $l - $r]
+  # puts "enc=$enc lhs=$lhs/$l rhs=$rhs/$r res=$res"
   return $res
 }
 

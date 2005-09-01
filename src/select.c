@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.258 2005/09/01 03:07:44 drh Exp $
+** $Id: select.c,v 1.259 2005/09/01 12:16:29 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -330,8 +330,9 @@ void sqlite3SelectDelete(Select *p){
 */
 static void pushOntoSorter(Parse *pParse, Vdbe *v, ExprList *pOrderBy){
   sqlite3ExprCodeExprList(pParse, pOrderBy);
-  sqlite3VdbeAddOp(v, OP_Pull, pOrderBy->nExpr, 0);
-  sqlite3VdbeAddOp(v, OP_MakeRecord, pOrderBy->nExpr + 1, 0);
+  sqlite3VdbeAddOp(v, OP_Sequence, pOrderBy->iTab, 0);
+  sqlite3VdbeAddOp(v, OP_Pull, pOrderBy->nExpr + 1, 0);
+  sqlite3VdbeAddOp(v, OP_MakeRecord, pOrderBy->nExpr + 2, 0);
   sqlite3VdbeAddOp(v, OP_IdxInsert, pOrderBy->iTab, 0);
 }
 
@@ -621,7 +622,7 @@ static void generateSortTail(
   iTab = pOrderBy->iTab;
   addr = 1 + sqlite3VdbeAddOp(v, OP_Sort, iTab, brk);
   codeLimiter(v, p, cont, brk, 0);
-  sqlite3VdbeAddOp(v, OP_Column, iTab, pOrderBy->nExpr);
+  sqlite3VdbeAddOp(v, OP_Column, iTab, pOrderBy->nExpr + 1);
   switch( eDest ){
     case SRT_Table:
     case SRT_TempTable: {
@@ -1337,7 +1338,7 @@ static void computeLimitRegisters(Parse *pParse, Select *p){
 /*
 ** Allocate a virtual index to use for sorting.
 */
-static createSortingIndex(Parse *pParse, Select *p, ExprList *pOrderBy){
+static void createSortingIndex(Parse *pParse, Select *p, ExprList *pOrderBy){
   if( pOrderBy ){
     int addr;
     assert( pOrderBy->iTab==0 );
@@ -1698,7 +1699,7 @@ static int multiSelect(
     CollSeq **aCopy;
 
     assert( p->pRightmost==p );
-    pKeyInfo = sqliteMalloc(sizeof(*pKeyInfo)+nCol*2*sizeof(CollSeq*));
+    pKeyInfo = sqliteMalloc(sizeof(*pKeyInfo)+nCol*2*sizeof(CollSeq*) + nCol);
     if( !pKeyInfo ){
       rc = SQLITE_NOMEM;
       goto multi_select_end;
@@ -1732,11 +1733,13 @@ static int multiSelect(
       struct ExprList_item *pOTerm = pOrderBy->a;
       int nExpr = pOrderBy->nExpr;
       int addr;
+      u8 *pSortOrder;
 
       aCopy = (CollSeq**)&pKeyInfo[1];
+      pSortOrder = pKeyInfo->aSortOrder = (u8*)&aCopy[nExpr];
       memcpy(aCopy, pKeyInfo->aColl, nCol*sizeof(CollSeq*));
       apColl = pKeyInfo->aColl;
-      for(i=0; i<pOrderBy->nExpr; i++, pOTerm++, apColl++){
+      for(i=0; i<pOrderBy->nExpr; i++, pOTerm++, apColl++, pSortOrder++){
         Expr *pExpr = pOTerm->pExpr;
         char *zName = pOTerm->zName;
         assert( pExpr->op==TK_COLUMN && pExpr->iColumn<nCol );
@@ -1745,12 +1748,14 @@ static int multiSelect(
         }else{
           *apColl = aCopy[pExpr->iColumn];
         }
+        *pSortOrder = pOTerm->sortOrder;
       }
       assert( p->pRightmost==p );
       assert( p->addrOpenVirt[2]>=0 );
       addr = p->addrOpenVirt[2];
-      sqlite3VdbeChangeP2(v, addr, p->pEList->nExpr+1);
-      sqlite3VdbeChangeP3(v, addr, (char*)pKeyInfo, P3_KEYINFO);
+      sqlite3VdbeChangeP2(v, addr, p->pEList->nExpr+2);
+      sqlite3VdbeChangeP3(v, addr, (char*)pKeyInfo, P3_KEYINFO_HANDOFF);
+      pKeyInfo = 0;
       generateSortTail(pParse, p, v, p->pEList->nExpr, eDest, iParm);
     }
 
@@ -2633,7 +2638,7 @@ int sqlite3Select(
     }
     pKeyInfo = keyInfoFromExprList(pParse, pOrderBy);
     pOrderBy->iTab = pParse->nTab++;
-    addr = sqlite3VdbeOp3(v, OP_OpenVirtual, pOrderBy->iTab, pOrderBy->nExpr+1, 
+    addr = sqlite3VdbeOp3(v, OP_OpenVirtual, pOrderBy->iTab, pOrderBy->nExpr+2, 
                         (char*)pKeyInfo, P3_KEYINFO_HANDOFF);
     p->addrOpenVirt[2] = addr;
   }
