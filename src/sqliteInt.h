@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.406 2005/08/30 00:54:03 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.407 2005/09/01 03:07:44 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -886,13 +886,13 @@ struct Expr {
 struct ExprList {
   int nExpr;             /* Number of expressions on the list */
   int nAlloc;            /* Number of entries allocated below */
+  int iTab;              /* VDBE Cursor associated with this ExprList */
   struct ExprList_item {
     Expr *pExpr;           /* The list of expressions */
     char *zName;           /* Token associated with this expression */
     u8 sortOrder;          /* 1 for DESC or 0 for ASC */
     u8 isAgg;              /* True if this is an aggregate like count(*) */
     u8 done;               /* A flag to indicate when processing is finished */
-    u8 orderByDup[2];      /* Corresponding term in OrderBy/GroupBy clause */
   } *a;                  /* One entry for each expression */
 };
 
@@ -1045,23 +1045,35 @@ struct NameContext {
 ** limit and nOffset to the value of the offset (or 0 if there is not
 ** offset).  But later on, nLimit and nOffset become the memory locations
 ** in the VDBE that record the limit and offset counters.
+**
+** addrOpenVirt[] entries contain the address of OP_OpenVirtual opcodes.
+** These addresses must be stored so that we can go back and fill in
+** the P3_KEYINFO and P2 parameters later.  Neither the KeyInfo nor
+** the number of columns in P2 can be computed at the same time
+** as the OP_OpenVirtual instruction is coded because not
+** enough information about the compound query is known at that point.
+** The KeyInfo for addrOpenVirt[0] and [1] contains collating sequences
+** for the result set.  The KeyInfo for addrOpenVirt[2] contains collating
+** sequences for the ORDER BY clause.
 */
 struct Select {
   ExprList *pEList;      /* The fields of the result */
   u8 op;                 /* One of: TK_UNION TK_ALL TK_INTERSECT TK_EXCEPT */
   u8 isDistinct;         /* True if the DISTINCT keyword is present */
+  u8 isResolved;         /* True once sqlite3SelectResolve() has run. */
+  u8 isAgg;              /* True if this is an aggregate query */
+  u8 usesVirt;           /* True if uses an OpenVirtual opcode */
   SrcList *pSrc;         /* The FROM clause */
   Expr *pWhere;          /* The WHERE clause */
   ExprList *pGroupBy;    /* The GROUP BY clause */
   Expr *pHaving;         /* The HAVING clause */
   ExprList *pOrderBy;    /* The ORDER BY clause */
   Select *pPrior;        /* Prior select in a compound select statement */
+  Select *pRightmost;    /* Right-most select in a compound select statement */
   Expr *pLimit;          /* LIMIT expression. NULL means not used. */
   Expr *pOffset;         /* OFFSET expression. NULL means not used. */
   int iLimit, iOffset;   /* Memory registers holding LIMIT & OFFSET counters */
-  IdList **ppOpenVirtual;/* OP_OpenVirtual addresses used by multi-selects */
-  u8 isResolved;         /* True once sqlite3SelectResolve() has run. */
-  u8 isAgg;              /* True if this is an aggregate query */
+  int addrOpenVirt[3];   /* OP_OpenVirtual opcodes related to this select */
 };
 
 /*

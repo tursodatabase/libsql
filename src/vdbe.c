@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.478 2005/07/28 20:51:19 drh Exp $
+** $Id: vdbe.c,v 1.479 2005/09/01 03:07:44 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -203,39 +203,6 @@ static void popStack(Mem **ppTos, int N){
     pTos--;
   }
   *ppTos = pTos;
-}
-
-/*
-** The parameters are pointers to the head of two sorted lists
-** of Sorter structures.  Merge these two lists together and return
-** a single sorted list.  This routine forms the core of the merge-sort
-** algorithm.
-**
-** In the case of a tie, left sorts in front of right.
-*/
-static Sorter *Merge(Sorter *pLeft, Sorter *pRight, KeyInfo *pKeyInfo){
-  Sorter sHead;
-  Sorter *pTail;
-  pTail = &sHead;
-  pTail->pNext = 0;
-  while( pLeft && pRight ){
-    int c = sqlite3VdbeRecordCompare(pKeyInfo, pLeft->nKey, pLeft->zKey,
-                                     pRight->nKey, pRight->zKey);
-    if( c<=0 ){
-      pTail->pNext = pLeft;
-      pLeft = pLeft->pNext;
-    }else{
-      pTail->pNext = pRight;
-      pRight = pRight->pNext;
-    }
-    pTail = pTail->pNext;
-  }
-  if( pLeft ){
-    pTail->pNext = pLeft;
-  }else if( pRight ){
-    pTail->pNext = pRight;
-  }
-  return sHead.pNext;
 }
 
 /*
@@ -635,7 +602,7 @@ case OP_Return: {           /* no-push */
 
 /* Opcode:  Halt P1 P2 P3
 **
-** Exit immediately.  All open cursors, Lists, Sorts, etc are closed
+** Exit immediately.  All open cursors, Fifos, etc are closed
 ** automatically.
 **
 ** P1 is the result code returned by sqlite3_exec(), sqlite3_reset(),
@@ -2603,13 +2570,14 @@ case OP_OpenWrite: {       /* no-push */
   break;
 }
 
-/* Opcode: OpenVirtual P1 * P3
+/* Opcode: OpenVirtual P1 P2 P3
 **
-** Open a new cursor to a transient or virtual table.
+** Open a new cursor P1 to a transient or virtual table.
 ** The cursor is always opened read/write even if 
 ** the main database is read-only.  The transient or virtual
 ** table is deleted automatically when the cursor is closed.
 **
+** P2 is the number of columns in the virtual table.
 ** The cursor points to a BTree table if P3==0 and to a BTree index
 ** if P3 is not 0.  If P3 is not NULL, it points to a KeyInfo structure
 ** that defines the format of keys in the index.
@@ -2650,6 +2618,7 @@ case OP_OpenVirtual: {       /* no-push */
       pCx->pIncrKey = &pCx->bogusIncrKey;
     }
   }
+  pCx->nField = pOp->p2;
   pCx->isIndex = !pCx->isTable;
   break;
 }
@@ -3464,6 +3433,23 @@ case OP_Last: {        /* no-push */
   break;
 }
 
+
+/* Opcode: Sort P1 P2 *
+**
+** This opcode does exactly the same thing as OP_Rewind except that
+** it increments an undocumented global variable used for testing.
+**
+** Sorting is accomplished by writing records into a sorting index,
+** then rewinding that index and playing it back from beginning to
+** end.  We use the OP_Sort opcode instead of OP_Rewind to do the
+** rewinding so that the global variable will be incremented and
+** regression tests can determine whether or not the optimizer is
+** correctly optimizing out sorts.
+*/
+case OP_Sort: {        /* no-push */
+  sqlite3_sort_count++;
+  /* Fall through into OP_Rewind */
+}
 /* Opcode: Rewind P1 P2 *
 **
 ** The next use of the Rowid or Column or Next instruction for P1 
@@ -4090,108 +4076,6 @@ case OP_ContextPop: {        /* no-push */
   break;
 }
 #endif /* #ifndef SQLITE_OMIT_TRIGGER */
-
-/* Opcode: SortInsert * * *
-**
-** The TOS is the key and the NOS is the data.  Pop both from the stack
-** and put them on the sorter.  The key and data should have been
-** made using the MakeRecord opcode.
-*/
-case OP_SortInsert: {        /* no-push */
-  Mem *pNos = &pTos[-1];
-  Sorter *pSorter;
-  assert( pNos>=p->aStack );
-  if( Dynamicify(pTos, db->enc) ) goto no_mem;
-  pSorter = sqliteMallocRaw( sizeof(Sorter) );
-  if( pSorter==0 ) goto no_mem;
-  pSorter->pNext = 0;
-  if( p->pSortTail ){
-    p->pSortTail->pNext = pSorter;
-  }else{
-    p->pSort = pSorter;
-  }
-  p->pSortTail = pSorter;
-  assert( pTos->flags & MEM_Dyn );
-  pSorter->nKey = pTos->n;
-  pSorter->zKey = pTos->z;
-  pSorter->data.flags = MEM_Null;
-  rc = sqlite3VdbeMemMove(&pSorter->data, pNos);
-  pTos -= 2;
-  break;
-}
-
-/* Opcode: Sort * * P3
-**
-** Sort all elements on the sorter.  The algorithm is a
-** mergesort.  The P3 argument is a pointer to a KeyInfo structure
-** that describes the keys to be sorted.
-*/
-case OP_Sort: {        /* no-push */
-  int i;
-  KeyInfo *pKeyInfo = (KeyInfo*)pOp->p3;
-  Sorter *pElem;
-  Sorter *apSorter[NSORT];
-  sqlite3_sort_count++;
-  pKeyInfo->enc = p->db->enc;
-  for(i=0; i<NSORT; i++){
-    apSorter[i] = 0;
-  }
-  while( p->pSort ){
-    pElem = p->pSort;
-    p->pSort = pElem->pNext;
-    pElem->pNext = 0;
-    for(i=0; i<NSORT-1; i++){
-      if( apSorter[i]==0 ){
-        apSorter[i] = pElem;
-        break;
-      }else{
-        pElem = Merge(apSorter[i], pElem, pKeyInfo);
-        apSorter[i] = 0;
-      }
-    }
-    if( i>=NSORT-1 ){
-      apSorter[NSORT-1] = Merge(apSorter[NSORT-1],pElem, pKeyInfo);
-    }
-  }
-  pElem = 0;
-  for(i=0; i<NSORT; i++){
-    pElem = Merge(apSorter[i], pElem, pKeyInfo);
-  }
-  p->pSort = pElem;
-  break;
-}
-
-/* Opcode: SortNext * P2 *
-**
-** Push the data for the topmost element in the sorter onto the
-** stack, then remove the element from the sorter.  If the sorter
-** is empty, push nothing on the stack and instead jump immediately 
-** to instruction P2.
-*/
-case OP_SortNext: {
-  Sorter *pSorter = p->pSort;
-  CHECK_FOR_INTERRUPT;
-  if( pSorter!=0 ){
-    p->pSort = pSorter->pNext;
-    pTos++;
-    pTos->flags = MEM_Null;
-    rc = sqlite3VdbeMemMove(pTos, &pSorter->data);
-    sqliteFree(pSorter->zKey);
-    sqliteFree(pSorter);
-  }else{
-    pc = pOp->p2 - 1;
-  }
-  break;
-}
-
-/* Opcode: SortReset * * *
-**
-** Remove any elements that remain on the sorter.
-*/
-case OP_SortReset: {        /* no-push */
-  sqlite3VdbeSorterReset(p);
-  break;
-}
 
 /* Opcode: MemStore P1 P2 *
 **

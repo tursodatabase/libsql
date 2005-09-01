@@ -763,21 +763,6 @@ void sqlite3VdbeMakeReady(
 #endif
 }
 
-
-/*
-** Remove any elements that remain on the sorter for the VDBE given.
-*/
-void sqlite3VdbeSorterReset(Vdbe *p){
-  while( p->pSort ){
-    Sorter *pSorter = p->pSort;
-    p->pSort = pSorter->pNext;
-    sqliteFree(pSorter->zKey);
-    sqlite3VdbeMemRelease(&pSorter->data);
-    sqliteFree(pSorter);
-  }
-  p->pSortTail = 0;
-}
-
 /*
 ** Free all resources allociated with AggElem pElem, an element of
 ** aggregate pAgg.
@@ -965,7 +950,6 @@ static void Cleanup(Vdbe *p){
     }
     sqliteFree(p->contextStack);
   }
-  sqlite3VdbeSorterReset(p);
   for(i=0; i<p->nAgg; i++){
     sqlite3VdbeAggReset(0, &p->apAgg[i], 0);
   }

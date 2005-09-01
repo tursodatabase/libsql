@@ -1,5 +1,5 @@
-C {quote:\sKeyInfo}\sgeneration\smoved\sto\sa\scommon\ssubroutine.\s(CVS\s2652)
-D 2005-08-31T18:20:00
+C Sorting\sis\snow\sdone\susing\sa\ssorting\sindex\srather\sthan\sloading\sthe\sentire\nresult\sset\sinto\smemory\sand\sdoing\sa\smerge\ssort.\s\sThe\sold\smerge\ssort\stechnique\nwas\sa\scarry-over\sfrom\sSQLite\sversion\s1.\s\sThe\snew\smethod\suses\sa\sbounded\samount\nof\smemory\sand\sscales\sto\smuch\slarger\sresult\ssets.\s\sThere\sare\sstill\serrors:\nsome\s39\sregression\stests\sfail.\s(CVS\s2653)
+D 2005-09-01T03:07:44
 F Makefile.in 12784cdce5ffc8dfb707300c34e4f1eb3b8a14f1
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -40,7 +40,7 @@ F src/complete.c 4de937dfdd4c79a501772ab2035b26082f337a79
 F src/date.c 7444b0900a28da77e57e3337a636873cff0ae940
 F src/delete.c be1fc25c9e109cd8cbab42a43ee696263da7c04b
 F src/experimental.c 50c1e3b34f752f4ac10c36f287db095c2b61766d
-F src/expr.c aef4a3901a5bea6625b9613be9d9ddaccd575bc4
+F src/expr.c e9d0401bed1fa61cce356c2da4b53dae769c4fc3
 F src/func.c 9da04a6241309a612cf610715944c6a2aaf0f297
 F src/hash.c 2b1b13f7400e179631c83a1be0c664608c8f021f
 F src/hash.h 1b0c445e1c89ff2aaad9b4605ba61375af001e84
@@ -63,10 +63,10 @@ F src/pragma.c 69413fbdc0c6aaa493a776ea52c1b3e6cf35dfb2
 F src/prepare.c 86f0d8e744b8d956eff6bc40e29049efee017610
 F src/printf.c d2678b06cfa07be9b14c330a42310f62340e34ce
 F src/random.c 90adff4e73a3b249eb4f1fc2a6ff9cf78c7233a4
-F src/select.c cf566f995358f728288f0be481f12d20305117c0
+F src/select.c a0b10feee29d4e86731c6e381e0ff0ecf9d5eac8
 F src/shell.c b21daba017b8feef2fdc65ecde57f70209494217
 F src/sqlite.h.in d6561d51025d08de4f455607f3f9f9aa76e855d5
-F src/sqliteInt.h 207b63f9782d7faf1f19e694e8052e60841fb377
+F src/sqliteInt.h 845ff6f8019f80baafb1bdbb8ef80fcd04d9d0f9
 F src/table.c 25b3ff2b39b7d87e8d4a5da0713d68dfc06cbee9
 F src/tclsqlite.c ac94682f9e601dd373912c46414a5a842db2089a
 F src/test1.c 97425910c6adf87b5dc867ae7704f0430441663c
@@ -80,11 +80,11 @@ F src/update.c a9d2c5f504212d62da1b094476f1389c0e02f83f
 F src/utf.c bda5eb85039ef16f2d17004c1e18c96e1ab0a80c
 F src/util.c 5650f6fe5ee30e0678985ad7b94da91e3f85752b
 F src/vacuum.c 829d9e1a6d7c094b80e0899686670932eafd768c
-F src/vdbe.c 69f33e22c7d0a64b23fbb69e6da95a1bb6869032
+F src/vdbe.c 70e2dd078b0dfa15b70c0b9d31e7127da7408f15
 F src/vdbe.h 3b29a9af6c7a64ed692bef1fc5f61338f40d2f67
-F src/vdbeInt.h e5f2855b0f0b120d870e0459816061b88b603774
+F src/vdbeInt.h c9dcaec8b411384da8b01c362cc856b6560b04f1
 F src/vdbeapi.c f0d36ff0f06bb5315efac5645b62e99db2c175b8
-F src/vdbeaux.c 192e0dbeaaa0bfa652b0c2579c19894e5e5626fc
+F src/vdbeaux.c 68d5d0881ded9867db1521fa2c0ae5ac8007a9d5
 F src/vdbefifo.c 9efb94c8c3f4c979ebd0028219483f88e57584f5
 F src/vdbemem.c 4732fd4d1a75dc38549493d7f9a81d02bf7c59b5
 F src/where.c bbb973cbbd862b6b872faac39716a3fe13adfb44
@@ -129,7 +129,7 @@ F test/collate3.test 51362bdfb43a72bd2b087d90b2623b0695538e7a
 F test/collate4.test daf498e294dcd596b961d425c3f2dda117e4717e
 F test/collate5.test 5a49cd169e7565e4f92b42695667d6d5db25670d
 F test/collate6.test 6c9470d1606ee3e564675b229653e320c49ec638
-F test/conflict.test 3e7beba8c253095330c6853c00aaf6356e84cc68
+F test/conflict.test 774e10709f5e9a9a7352dc929b856929ec805e58
 F test/corrupt.test 18c7a995b1af76a8c8600b996257f2c7b7bff083
 F test/corrupt2.test 88342570828f2b8cbbd8369eff3891f5c0bdd5ba
 F test/crash.test f38b980a0508655d08c957a6dd27d66bca776504
@@ -306,7 +306,7 @@ F www/tclsqlite.tcl 3df553505b6efcad08f91e9b975deb2e6c9bb955
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P b1dceef0508ffe20ab2ff8fa5e5b5a44f4f224aa
-R 22b6fa7b5f0b031707b250894ea2c1df
+P a25801df06e218e70570a6b9eae71603d590fe3a
+R 7dae09495a78580995d7ecb2f7ce6601
 U drh
-Z 24532867563e79fa05da569ea322e240
+Z 29fbd68d397ac0605a1223b60872d370

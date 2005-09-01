@@ -125,23 +125,6 @@ struct Mem {
 };
 typedef struct Mem Mem;
 
-/*
-** A sorter builds a list of elements to be sorted.  Each element of
-** the list is an instance of the following structure.
-*/
-typedef struct Sorter Sorter;
-struct Sorter {
-  int nKey;           /* Number of bytes in the key */
-  char *zKey;         /* The key by which we will sort */
-  Mem data;
-  Sorter *pNext;      /* Next in the list */
-};
-
-/* 
-** Number of buckets used for merge-sort.  
-*/
-#define NSORT 30
-
 /* One or more of the following flags are set to indicate the validOK
 ** representations of the value stored in the Mem struct.
 **
@@ -324,8 +307,6 @@ struct Vdbe {
   Mem *aColName;      /* Column names to return */
   int nCursor;        /* Number of slots in apCsr[] */
   Cursor **apCsr;     /* One element of this array for each open cursor */
-  Sorter *pSort;      /* A linked list of objects to be sorted */
-  Sorter *pSortTail;  /* Last element on the pSort list */
   int nVar;           /* Number of entries in aVar[] */
   Mem *aVar;          /* Values for the OP_Variable opcode. */
   char **azVar;       /* Name of variables */
@@ -373,7 +354,6 @@ struct Vdbe {
 ** Function prototypes
 */
 void sqlite3VdbeFreeCursor(Cursor*);
-void sqlite3VdbeSorterReset(Vdbe*);
 int sqlite3VdbeAggReset(sqlite3*, Agg *, KeyInfo *);
 void sqliteVdbePopStack(Vdbe*,int);
 int sqlite3VdbeCursorMoveto(Cursor*);
