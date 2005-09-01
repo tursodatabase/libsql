@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE TABLE statement.
 #
-# $Id: sort.test,v 1.22 2005/08/13 16:13:06 drh Exp $
+# $Id: sort.test,v 1.23 2005/09/01 17:47:52 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -446,5 +446,22 @@ do_test sort-11.1 {
     select y from t8, t9 where a=1 order by a, y;
   }
 } {3 4}
+
+# Trouble reported on the mailing list.  Check for overly aggressive
+# (which is to say, incorrect) optimization of order-by with a rowid
+# in a join.
+#
+do_test sort-12.1 {
+  execsql {
+    create table a (id integer primary key);
+    create table b (id integer primary key, aId integer, text);
+    insert into a values (1);
+    insert into b values (2, 1, 'xxx');
+    insert into b values (1, 1, 'zzz');
+    insert into b values (3, 1, 'yyy');
+    select a.id, b.id, b.text from a join b on (a.id = b.aId)
+      order by a.id, b.text;
+  }
+} {1 2 xxx 1 3 yyy 1 1 zzz}
 
 finish_test

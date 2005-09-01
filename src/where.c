@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.167 2005/08/29 16:40:53 drh Exp $
+** $Id: where.c,v 1.168 2005/09/01 17:47:51 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -813,7 +813,8 @@ static int sortableByRowid(
   assert( pOrderBy!=0 );
   assert( pOrderBy->nExpr>0 );
   p = pOrderBy->a[0].pExpr;
-  if( p->op==TK_COLUMN && p->iTable==base && p->iColumn==-1 ){
+  if( pOrderBy->nExpr==1 && p->op==TK_COLUMN && p->iTable==base
+          && p->iColumn==-1 ){
     *pbRev = pOrderBy->a[0].sortOrder;
     return 1;
   }
