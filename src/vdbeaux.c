@@ -1703,6 +1703,8 @@ int sqlite3VdbeSerialGet(
     }
     case 6:   /* 8-byte signed integer */
     case 7: { /* IEEE floating point */
+      u64 x;
+      u32 y;
 #ifndef NDEBUG
       /* Verify that integers and floating point values use the same
       ** byte order.  The byte order differs on some (broken) architectures.
@@ -1711,8 +1713,8 @@ int sqlite3VdbeSerialGet(
       assert( 1.0==*(double*)&t1 );
 #endif
 
-      u64 x = (buf[0]<<24) | (buf[1]<<16) | (buf[2]<<8) | buf[3];
-      u32 y = (buf[4]<<24) | (buf[5]<<16) | (buf[6]<<8) | buf[7];
+      x = (buf[0]<<24) | (buf[1]<<16) | (buf[2]<<8) | buf[3];
+      y = (buf[4]<<24) | (buf[5]<<16) | (buf[6]<<8) | buf[7];
       x = (x<<32) | y;
       if( serial_type==6 ){
         pMem->i = *(i64*)&x;

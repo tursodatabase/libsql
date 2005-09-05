@@ -88,7 +88,7 @@ static WCHAR *utf8ToUnicode(const char *zFilename){
     return 0;
   }
   nByte = MultiByteToWideChar(CP_UTF8, 0, zFilename, -1, NULL, 0)*sizeof(WCHAR);
-  zWideFilename = sqliteMalloc( nByte );
+  zWideFilename = sqliteMalloc( nByte*sizeof(zWideFilename[0]) );
   if( zWideFilename==0 ){
     return 0;
   }
@@ -387,7 +387,7 @@ int sqlite3OsTempFileName(char *zBuf){
     GetTempPathW(SQLITE_TEMPNAME_SIZE-30, zWidePath);
     zMulti = unicodeToUtf8(zWidePath);
     if( zMulti ){
-      memcpy(zTempPath, zMulti, SQLITE_TEMPNAME_SIZE-30);
+      strncpy(zTempPath, zMulti, SQLITE_TEMPNAME_SIZE-30);
       zTempPath[SQLITE_TEMPNAME_SIZE-30] = 0;
       sqliteFree(zMulti);
     }
