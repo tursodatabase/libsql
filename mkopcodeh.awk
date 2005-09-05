@@ -33,8 +33,8 @@
 # Scan for "case OP_aaaa:" lines in the vdbe.c file
 /^case OP_/ {
   name = $2
-  gsub(/:/,"",name)
-  gsub("\r","",name)
+  sub(/:/,"",name)
+  sub("\r","",name)
   op[name] = -1
   for(i=3; i<NF; i++){
     if($i=="same" && $(i+1)=="as"){
