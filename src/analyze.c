@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code associated with the ANALYZE command.
 **
-** @(#) $Id: analyze.c,v 1.6 2005/07/23 22:59:56 drh Exp $
+** @(#) $Id: analyze.c,v 1.7 2005/09/06 10:26:47 drh Exp $
 */
 #ifndef SQLITE_OMIT_ANALYZE
 #include "sqliteInt.h"
@@ -333,7 +333,7 @@ static int analysisLoader(void *pData, int argc, char **argv, char **azNotUsed){
   const char *z;
 
   assert( argc==2 );
-  if( argv[0]==0 || argv[1]==0 ){
+  if( argv==0 || argv[0]==0 || argv[1]==0 ){
     return 0;
   }
   pIndex = sqlite3FindIndex(pInfo->db, argv[0], pInfo->zDatabase);
