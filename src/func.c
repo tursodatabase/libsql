@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.106 2005/08/28 17:00:23 drh Exp $
+** $Id: func.c,v 1.107 2005/09/06 20:36:49 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -835,12 +835,12 @@ static void sumStep(sqlite3_context *context, int argc, sqlite3_value **argv){
 }
 static void sumFinalize(sqlite3_context *context){
   SumCtx *p;
-  p = sqlite3_aggregate_context(context, sizeof(*p));
+  p = sqlite3_aggregate_context(context, 0);
   sqlite3_result_double(context, p ? p->sum : 0.0);
 }
 static void avgFinalize(sqlite3_context *context){
   SumCtx *p;
-  p = sqlite3_aggregate_context(context, sizeof(*p));
+  p = sqlite3_aggregate_context(context, 0);
   if( p && p->cnt>0 ){
     sqlite3_result_double(context, p->sum/(double)p->cnt);
   }
@@ -878,7 +878,7 @@ static void countStep(sqlite3_context *context, int argc, sqlite3_value **argv){
 }   
 static void countFinalize(sqlite3_context *context){
   CountCtx *p;
-  p = sqlite3_aggregate_context(context, sizeof(*p));
+  p = sqlite3_aggregate_context(context, 0);
   sqlite3_result_int(context, p ? p->n : 0);
 }
 
@@ -916,11 +916,13 @@ static void minmaxStep(sqlite3_context *context, int argc, sqlite3_value **argv)
 }
 static void minMaxFinalize(sqlite3_context *context){
   sqlite3_value *pRes;
-  pRes = (sqlite3_value *)sqlite3_aggregate_context(context, sizeof(Mem));
-  if( pRes->flags ){
-    sqlite3_result_value(context, pRes);
+  pRes = (sqlite3_value *)sqlite3_aggregate_context(context, 0);
+  if( pRes ){
+    if( pRes->flags ){
+      sqlite3_result_value(context, pRes);
+    }
+    sqlite3VdbeMemRelease(pRes);
   }
-  sqlite3VdbeMemRelease(pRes);
 }
 
 

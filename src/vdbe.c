@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.480 2005/09/01 12:16:29 drh Exp $
+** $Id: vdbe.c,v 1.481 2005/09/06 20:36:49 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -4278,10 +4278,8 @@ case OP_AggFunc: {        /* no-push */
   i = pTos->i;
   assert( i>=0 && i<p->pAgg->nMem );
   ctx.pFunc = (FuncDef*)pOp->p3;
-  pMem = &p->pAgg->pCurrent->aMem[i];
-  ctx.s.z = pMem->zShort;  /* Space used for small aggregate contexts */
-  ctx.pAgg = pMem->z;
-  ctx.cnt = ++pMem->i;
+  ctx.pMem = pMem = &p->pAgg->pCurrent->aMem[i];
+  pMem->n++;
   ctx.isError = 0;
   ctx.pColl = 0;
   if( ctx.pFunc->needCollSeq ){
@@ -4291,8 +4289,6 @@ case OP_AggFunc: {        /* no-push */
     ctx.pColl = (CollSeq *)pOp[-1].p3;
   }
   (ctx.pFunc->xStep)(&ctx, n, apVal);
-  pMem->z = ctx.pAgg;
-  pMem->flags = MEM_AggCtx;
   popStack(&pTos, n+1);
   if( ctx.isError ){
     rc = SQLITE_ERROR;
@@ -4436,7 +4432,6 @@ case OP_AggNext: {        /* no-push */
     pc = pOp->p2 - 1;
   }else{
     int i;
-    sqlite3_context ctx;
     Mem *aMem;
 
     if( p->pAgg->pCsr ){
@@ -4448,21 +4443,7 @@ case OP_AggNext: {        /* no-push */
     for(i=0; i<p->pAgg->nMem; i++){
       FuncDef *pFunc = p->pAgg->apFunc[i];
       Mem *pMem = &aMem[i];
-      if( pFunc==0 || pFunc->xFinalize==0 ) continue;
-      ctx.s.flags = MEM_Null;
-      ctx.s.z = pMem->zShort;
-      ctx.pAgg = (void*)pMem->z;
-      ctx.cnt = pMem->i;
-      ctx.pFunc = pFunc;
-      pFunc->xFinalize(&ctx);
-      pMem->z = ctx.pAgg;
-      if( pMem->z && pMem->z!=pMem->zShort ){
-        sqliteFree( pMem->z );
-      }
-      *pMem = ctx.s;
-      if( pMem->flags & MEM_Short ){
-        pMem->z = pMem->zShort;
-      }
+      sqlite3VdbeMemFinalize(pMem, pFunc);
     }
   }
   break;

@@ -776,22 +776,11 @@ static void freeAggElem(AggElem *pElem, Agg *pAgg){
   int i;
   for(i=0; i<pAgg->nMem; i++){
     Mem *pMem = &pElem->aMem[i];
-    if( pAgg->apFunc && pAgg->apFunc[i] && (pMem->flags & MEM_AggCtx)!=0 ){
-      sqlite3_context ctx;
-      ctx.pFunc = pAgg->apFunc[i];
-      ctx.s.flags = MEM_Null;
-      ctx.pAgg = pMem->z;
-      ctx.cnt = pMem->i;
-      ctx.isError = 0;
-      (*ctx.pFunc->xFinalize)(&ctx);
-      pMem->z = ctx.pAgg;
-      if( pMem->z!=0 && pMem->z!=pMem->zShort ){
-        sqliteFree(pMem->z);
-      }
-      sqlite3VdbeMemRelease(&ctx.s);
-    }else{
-      sqlite3VdbeMemRelease(pMem);
+    if( pAgg->apFunc && pAgg->apFunc[i] && (pMem->flags & MEM_Agg)!=0 ){
+      sqlite3VdbeMemFinalize(pMem, pAgg->apFunc[i]);
     }
+    sqlite3VdbeMemRelease(pMem);
+
   }
   sqliteFree(pElem);
 }

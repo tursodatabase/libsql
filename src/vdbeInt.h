@@ -114,13 +114,13 @@ typedef struct Cursor Cursor;
 ** SQLITE_BLOB.
 */
 struct Mem {
-  i64 i;              /* Integer value */
+  i64 i;              /* Integer value. Or FuncDef* when flags==MEM_Agg */
+  double r;           /* Real value */
+  char *z;            /* String or BLOB value */
   int n;              /* Number of characters in string value, including '\0' */
   u16 flags;          /* Some combination of MEM_Null, MEM_Str, MEM_Dyn, etc. */
   u8  type;           /* One of MEM_Null, MEM_Str, etc. */
   u8  enc;            /* TEXT_Utf8, TEXT_Utf16le, or TEXT_Utf16be */
-  double r;           /* Real value */
-  char *z;            /* String or BLOB value */
   void (*xDel)(void *);  /* If not null, call this function to delete Mem.z */
   char zShort[NBFS];  /* Space for short strings */
 };
@@ -157,12 +157,7 @@ typedef struct Mem Mem;
 #define MEM_Static    0x0080   /* Mem.z points to a static string */
 #define MEM_Ephem     0x0100   /* Mem.z points to an ephemeral string */
 #define MEM_Short     0x0200   /* Mem.z points to Mem.zShort */
-
-/* The following MEM_ value appears only in AggElem.aMem.s.flag fields.
-** It indicates that the corresponding AggElem.aMem.z points to a
-** aggregate function context that needs to be finalized.
-*/
-#define MEM_AggCtx    0x0400  /* Mem.z points to an agg function context */
+#define MEM_Agg       0x0400   /* Mem.z points to an agg function context */
 
 
 /* A VdbeFunc is just a FuncDef (defined in sqliteInt.h) that contains
@@ -194,17 +189,16 @@ typedef struct VdbeFunc VdbeFunc;
 ** But this file is the only place where the internal details of this
 ** structure are known.
 **
-** This structure is defined inside of vdbe.c because it uses substructures
+** This structure is defined inside of vdbeInt.h because it uses substructures
 ** (Mem) which are only defined there.
 */
 struct sqlite3_context {
-  FuncDef *pFunc;   /* Pointer to function information.  MUST BE FIRST */
+  FuncDef *pFunc;       /* Pointer to function information.  MUST BE FIRST */
   VdbeFunc *pVdbeFunc;  /* Auxilary data, if created. */
-  Mem s;            /* The return value is stored here */
-  void *pAgg;       /* Aggregate context */
-  u8 isError;       /* Set to true for an error */
-  int cnt;          /* Number of times that the step function has been called */
-  CollSeq *pColl;
+  Mem s;                /* The return value is stored here */
+  Mem *pMem;            /* Memory cell used to store aggregate context */
+  u8 isError;           /* Set to true for an error */
+  CollSeq *pColl;       /* Collating sequence */
 };
 
 /*
@@ -397,6 +391,7 @@ double sqlite3VdbeRealValue(Mem*);
 int sqlite3VdbeMemRealify(Mem*);
 int sqlite3VdbeMemFromBtree(BtCursor*,int,int,int,Mem*);
 void sqlite3VdbeMemRelease(Mem *p);
+void sqlite3VdbeMemFinalize(Mem*, FuncDef*);
 #ifndef NDEBUG
 void sqlite3VdbeMemSanity(Mem*, u8);
 int sqlite3VdbeOpcodeNoPush(u8);
