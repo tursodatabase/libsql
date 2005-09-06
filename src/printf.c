@@ -163,7 +163,15 @@ static int et_getdigit(LONGDOUBLE_TYPE *val, int *cnt){
 }
 #endif
 
-#define etBUFSIZE 1000  /* Size of the output buffer */
+/*
+** On machines with a small stack size, you can redefine the
+** SQLITE_PRINT_BUF_SIZE to be less than 350.  But beware - for
+** smaller values some %f conversions may go into an infinite loop.
+*/
+#ifndef SQLITE_PRINT_BUF_SIZE
+# define SQLITE_PRINT_BUF_SIZE 350
+#endif
+#define etBUFSIZE SQLITE_PRINT_BUF_SIZE  /* Size of the output buffer */
 
 /*
 ** The root program.  All variations call this core.
@@ -774,7 +782,7 @@ static void *printf_realloc(void *old, int size){
 ** %-conversion extensions.
 */
 char *sqlite3VMPrintf(const char *zFormat, va_list ap){
-  char zBase[1000];
+  char zBase[SQLITE_PRINT_BUF_SIZE];
   return base_vprintf(printf_realloc, 1, zBase, sizeof(zBase), zFormat, ap);
 }
 
@@ -785,7 +793,7 @@ char *sqlite3VMPrintf(const char *zFormat, va_list ap){
 char *sqlite3MPrintf(const char *zFormat, ...){
   va_list ap;
   char *z;
-  char zBase[1000];
+  char zBase[SQLITE_PRINT_BUF_SIZE];
   va_start(ap, zFormat);
   z = base_vprintf(printf_realloc, 1, zBase, sizeof(zBase), zFormat, ap);
   va_end(ap);

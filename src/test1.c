@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.159 2005/09/05 19:08:29 drh Exp $
+** $Id: test1.c,v 1.160 2005/09/06 21:40:45 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -2657,27 +2657,51 @@ static int test_interrupt(
   return TCL_OK;
 }
 
+static u8 *sqlite3_stack_baseline = 0;
+
 /*
-** Usage:  sqlite3_sleep ms 
-**
-** Sleep for the specified number of ms.
+** Fill the stack with a known bitpattern.
 */
-#if 0
-static int test_sleep(
+static void prepStack(void){
+  int i;
+  u32 bigBuf[65536];
+  for(i=0; i<sizeof(bigBuf); i++) bigBuf[i] = 0xdeadbeef;
+  sqlite3_stack_baseline = (u8*)&bigBuf[65536];
+}
+
+/*
+** Get the current stack depth.  Used for debugging only.
+*/
+u64 sqlite3StackDepth(void){
+  u8 x;
+  return (u64)(sqlite3_stack_baseline - &x);
+}
+
+/*
+** Usage:  sqlite3_stack_used DB SQL
+**
+** Try to measure the amount of stack space used by a call to sqlite3_exec
+*/
+static int test_stack_used(
   void * clientData,
   Tcl_Interp *interp,
   int argc,
   char **argv
 ){
   sqlite3 *db;
-  if( argc!=2 ){
-    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " ms", 0);
+  int i;
+  if( argc!=3 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], 
+        " DB SQL", 0);
     return TCL_ERROR;
   }
-  Tcl_SetObjResult(interp, Tcl_NewIntObj(sqlite3_sleep(atoi(argv[1]))));
+  if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
+  prepStack();
+  sqlite3_exec(db, argv[2], 0, 0, 0);
+  for(i=65535; i>=0 && ((u32*)sqlite3_stack_baseline)[-i]==0xdeadbeef; i--){}
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(i*4));
   return TCL_OK;
 }
-#endif
 
 /*
 ** Usage: sqlite_delete_function DB function-name
@@ -3073,6 +3097,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite_delete_function",        (Tcl_CmdProc*)delete_function       },
      { "sqlite_delete_collation",       (Tcl_CmdProc*)delete_collation      },
      { "sqlite3_get_autocommit",        (Tcl_CmdProc*)get_autocommit        },
+     { "sqlite3_stack_used",            (Tcl_CmdProc*)test_stack_used       },
   };
   static struct {
      char *zName;

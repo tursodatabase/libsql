@@ -1311,10 +1311,14 @@ char *sqlite3OsFullPathname(const char *zRelative){
   if( zRelative[0]=='/' ){
     sqlite3SetString(&zFull, zRelative, (char*)0);
   }else{
-    char zBuf[5000];
+    char *zBuf = sqliteMalloc(5000);
+    if( zBuf==0 ){
+      return 0;
+    }
     zBuf[0] = 0;
-    sqlite3SetString(&zFull, getcwd(zBuf, sizeof(zBuf)), "/", zRelative,
+    sqlite3SetString(&zFull, getcwd(zBuf, 5000), "/", zRelative,
                     (char*)0);
+    sqliteFree(zBuf);
   }
   return zFull;
 }

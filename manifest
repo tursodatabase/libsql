@@ -1,5 +1,5 @@
-C Cleanup\sthe\sprocessing\sof\sMEM_Agg\selements.\s(CVS\s2660)
-D 2005-09-06T20:36:49
+C Changes\sto\sreduce\sthe\samount\sof\sstack\sspace\srequired.\s(CVS\s2661)
+D 2005-09-06T21:40:45
 F Makefile.in 12784cdce5ffc8dfb707300c34e4f1eb3b8a14f1
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -52,7 +52,7 @@ F src/os.h c4b34bd4d6fea51a420f337468b907f4edecb161
 F src/os_common.h 0e7f428ba0a6c40a61bc56c4e96f493231301b73
 F src/os_test.c 91e5f22dd89491e5e1554820e715805f43fa4ece
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
-F src/os_unix.c b4c4592589113db088662ef7570967ec36022b5d
+F src/os_unix.c cbdac6b207295ebc528e00ca9f0d48084c8f8b8b
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c 4aad6cd49a2a546f945491a9e6a0b7d061cf47c5
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
@@ -61,7 +61,7 @@ F src/pager.h 17b13225abd93c1e9f470060f40a21b9edb5a164
 F src/parse.y d57cdd2adc0923762b40314f08683c836a2e0c90
 F src/pragma.c 69413fbdc0c6aaa493a776ea52c1b3e6cf35dfb2
 F src/prepare.c 86f0d8e744b8d956eff6bc40e29049efee017610
-F src/printf.c d2678b06cfa07be9b14c330a42310f62340e34ce
+F src/printf.c c01e9ad473d79463fb1f483b1eca5c3cbed2a4e5
 F src/random.c 90adff4e73a3b249eb4f1fc2a6ff9cf78c7233a4
 F src/select.c 79bd7f97345ee4291e7f4d469307b185eb2cba8f
 F src/shell.c b21daba017b8feef2fdc65ecde57f70209494217
@@ -69,7 +69,7 @@ F src/sqlite.h.in d6561d51025d08de4f455607f3f9f9aa76e855d5
 F src/sqliteInt.h 845ff6f8019f80baafb1bdbb8ef80fcd04d9d0f9
 F src/table.c 25b3ff2b39b7d87e8d4a5da0713d68dfc06cbee9
 F src/tclsqlite.c ac94682f9e601dd373912c46414a5a842db2089a
-F src/test1.c 006fafaa3456d20db37951b94c9d9becac64568e
+F src/test1.c b569b60e35f0e3ea20e5ebfaf6e522a01c08d481
 F src/test2.c 792f203be69fea88668fa221321194f0a28dfdfa
 F src/test3.c f4e6a16a602091696619a1171bda25c0e3df49f7
 F src/test4.c a8fd681e139e1c61f22a77d07fc3a99cb28fff3f
@@ -188,7 +188,7 @@ F test/pager2.test 49c0f57c7da0b060f0486b85fdd074025caa694e
 F test/pager3.test 2323bf27fd5bd887b580247e5bce500ceee994b4
 F test/pagesize.test cbc6a312b6f6c0f02619b189985df2a14164b690
 F test/pragma.test 95ea907adf68459e1be6f310c9ae94d1d59c465b
-F test/printf.test f527c840b75734d6560fb9d7ae635d14637b05a7
+F test/printf.test 9e10c74e16bf889f8495ddb3d6f5f891e75ff1b7
 F test/progress.test 16496001da445e6534afb94562c286708316d82f x
 F test/quick.test a94d12658a2b590c1a5be580bef09bbb04c1266b
 F test/quote.test c1ca5e18800455f1c882baf5b0274755a3836549
@@ -306,7 +306,7 @@ F www/tclsqlite.tcl 3df553505b6efcad08f91e9b975deb2e6c9bb955
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P bfdaef1224d741deefe211e1e607bac4c80f2d89
-R 93135a9d31c9998d4b9c71aa574ff69f
+P 7ecf3654aa9a275a4cf0c3ec5f63a8c1e0a11fc9
+R a30f5538e6a4b7f1c84ee615fff6a374
 U drh
-Z 6dd7706565f409f6810f70b1066b3664
+Z 6a9878dbd0fbab628ba267b019a75820
