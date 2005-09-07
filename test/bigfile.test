@@ -12,7 +12,7 @@
 # focus of this script testing the ability of SQLite to handle database
 # files larger than 4GB.
 #
-# $Id: bigfile.test,v 1.7 2004/10/30 20:23:09 drh Exp $
+# $Id: bigfile.test,v 1.8 2005/09/07 23:05:22 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -173,6 +173,11 @@ do_test bigfile-1.15 {
 do_test bigfile-1.16 {
   execsql {
     SELECT md5sum(x) FROM t3;
+  }
+} $::MAGIC_SUM
+do_test bigfile-1.17 {
+  execsql {
+    SELECT md5sum(x) FROM t4;
   }
 } $::MAGIC_SUM
 

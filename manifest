@@ -1,5 +1,5 @@
-C More\sbug\sfixes.\s\sBut\sthere\sare\sstill\stests\sthat\sfail.\s(CVS\s2664)
-D 2005-09-07T22:48:16
+C More\sbug\sfixes.\s\sAll\sof\sthe\s"quick"\stests\spass.\s\sThe\sfull\stest\ssuite\sstill\nshows\sproblems.\s(CVS\s2665)
+D 2005-09-07T23:05:22
 F Makefile.in 12784cdce5ffc8dfb707300c34e4f1eb3b8a14f1
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -80,7 +80,7 @@ F src/update.c a9d2c5f504212d62da1b094476f1389c0e02f83f
 F src/utf.c bda5eb85039ef16f2d17004c1e18c96e1ab0a80c
 F src/util.c 5650f6fe5ee30e0678985ad7b94da91e3f85752b
 F src/vacuum.c 829d9e1a6d7c094b80e0899686670932eafd768c
-F src/vdbe.c 71b0c1e63d83af04c38c71015b40716375879d7e
+F src/vdbe.c 1caa73395943e20c61cde11deedf05cb37847f87
 F src/vdbe.h c8e105979fc7aaf5b8004e9621904e3bd096dfa2
 F src/vdbeInt.h 3dd2a29c7b0a55404c35f93caae81fb42f4cb70a
 F src/vdbeapi.c 352f088f8e30385acfad7deee09edc4c73422129
@@ -106,7 +106,7 @@ F test/autovacuum_crash.test 05a63b8805b20cfba7ace82856ce4ccdda075a31
 F test/autovacuum_ioerr.test 9cf27275ca47b72e188a47c53b61b6d583a01d24
 F test/autovacuum_ioerr2.test 2f8a3fb31f833fd0ca86ad4ad98913c73e807572
 F test/between.test ca092fa28b665ca92172b182c6c360a92f7ca348
-F test/bigfile.test d3744a8821ce9abb8697f2826a3e3d22b719e89f
+F test/bigfile.test f768fb6078604cefb73dba0690f0115cc60e6305
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
 F test/bind.test 3169339a9fb7aaa8244d0ed8651fe6b6796d809c
 F test/bindxfer.test 856830e9e5552b9882c9d5c6647f90e25bdae4ac
@@ -306,7 +306,7 @@ F www/tclsqlite.tcl 3df553505b6efcad08f91e9b975deb2e6c9bb955
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P c3ac58592f5e6305640868cdf42c129f1a25255d
-R 6c256278770a26042f2e6a36de48258d
+P 7e85a162d0ecf0acdbffcacc62b60d97fe123881
+R 923d357135fb2babd8d32ca5b7a07c70
 U drh
-Z 0657ca6eb3310d093b7ef2bd702d44bc
+Z 70fc5ed7ff9adbf9e06aa3031cdb281a
