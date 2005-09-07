@@ -259,14 +259,19 @@ void *sqlite3_user_data(sqlite3_context *p){
 void *sqlite3_aggregate_context(sqlite3_context *p, int nByte){
   assert( p && p->pFunc && p->pFunc->xStep );
   Mem *pMem = p->pMem;
-  if( (pMem->flags & MEM_Agg)==0 && nByte>0 ){
-    pMem->flags = MEM_Agg;
-    *(FuncDef**)&pMem->i = p->pFunc;
-    if( nByte<=NBFS ){
-      pMem->z = pMem->zShort;
-      memset(pMem->z, 0, nByte);
+  if( (pMem->flags & MEM_Agg)==0 ){
+    if( nByte==0 ){
+      assert( pMem->flags==MEM_Null );
+      pMem->z = 0;
     }else{
-      pMem->z = sqliteMalloc( nByte );
+      pMem->flags = MEM_Agg;
+      *(FuncDef**)&pMem->i = p->pFunc;
+      if( nByte<=NBFS ){
+        pMem->z = pMem->zShort;
+        memset(pMem->z, 0, nByte);
+      }else{
+        pMem->z = sqliteMalloc( nByte );
+      }
     }
   }
   return (void*)pMem->z;

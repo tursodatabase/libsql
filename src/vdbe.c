@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.482 2005/09/07 21:22:47 drh Exp $
+** $Id: vdbe.c,v 1.483 2005/09/07 22:09:48 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -4186,16 +4186,24 @@ case OP_AggStep: {        /* no-push */
   break;
 }
 
-/* Opcode: AggFinal P1 * *
+/* Opcode: AggFinal P1 P2 P3
 **
 ** Execute the finalizer function for an aggregate.  P1 is
 ** the memory location that is the accumulator for the aggregate.
+**
+** P2 is the number of arguments that the step function takes and
+** P3 is a pointer to the FuncDef for this function.  The P2
+** argument is not used by this opcode.  It is only there to disambiguate
+** functions that can take varying numbers of arguments.  The
+** P3 argument is only needed for the degenerate case where
+** the step function was not previously called.
 */
 case OP_AggFinal: {        /* no-push */
   Mem *pMem;
   assert( pOp->p1>=0 && pOp->p1<p->nMem );
   pMem = &p->aMem[pOp->p1];
-  sqlite3VdbeMemFinalize(pMem);
+  assert( (pMem->flags & ~(MEM_Null|MEM_Agg))==0 );
+  sqlite3VdbeMemFinalize(pMem, (FuncDef*)pOp->p3);
   break;
 }
 

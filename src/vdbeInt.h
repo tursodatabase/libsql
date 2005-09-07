@@ -363,7 +363,7 @@ double sqlite3VdbeRealValue(Mem*);
 int sqlite3VdbeMemRealify(Mem*);
 int sqlite3VdbeMemFromBtree(BtCursor*,int,int,int,Mem*);
 void sqlite3VdbeMemRelease(Mem *p);
-void sqlite3VdbeMemFinalize(Mem*);
+void sqlite3VdbeMemFinalize(Mem*, FuncDef*);
 #ifndef NDEBUG
 void sqlite3VdbeMemSanity(Mem*, u8);
 int sqlite3VdbeOpcodeNoPush(u8);

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.261 2005/09/07 21:22:47 drh Exp $
+** $Id: select.c,v 1.262 2005/09/07 22:09:48 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2431,7 +2431,9 @@ static void finalizeAggFunctions(Parse *pParse, AggInfo *pAggInfo){
   int i;
   struct AggInfo_func *pF;
   for(i=0, pF=pAggInfo->aFunc; i<pAggInfo->nFunc; i++, pF++){
-    sqlite3VdbeAddOp(v, OP_AggFinal, pF->iMem, 0);
+    ExprList *pList = pF->pExpr->pList;
+    sqlite3VdbeOp3(v, OP_AggFinal, pF->iMem, pList ? pList->nExpr : 0,
+                      (void*)pF->pFunc, P3_FUNCDEF);
   }
 }
 
