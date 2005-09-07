@@ -12,7 +12,7 @@
 # focus of this file is testing aggregate functions and the
 # GROUP BY and HAVING clauses of SELECT statements.
 #
-# $Id: select5.test,v 1.10 2005/08/19 03:03:52 drh Exp $
+# $Id: select5.test,v 1.11 2005/09/07 22:48:16 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -154,6 +154,6 @@ do_test select5-5.5 {
   execsql {
     SELECT a, b FROM t2 GROUP BY a;
   } 
-} {1 2 6 4}
+} {1 4 6 4}
 
 finish_test

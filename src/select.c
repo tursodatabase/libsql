@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.262 2005/09/07 22:09:48 drh Exp $
+** $Id: select.c,v 1.263 2005/09/07 22:48:16 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2446,7 +2446,6 @@ static void updateAccumulator(Parse *pParse, AggInfo *pAggInfo){
   int i;
   struct AggInfo_func *pF;
   struct AggInfo_col *pC;
-  Expr fauxExpr;
 
   pAggInfo->directMode = 1;
   for(i=0, pF=pAggInfo->aFunc; i<pAggInfo->nFunc; i++, pF++){
@@ -2472,12 +2471,8 @@ static void updateAccumulator(Parse *pParse, AggInfo *pAggInfo){
     }
     sqlite3VdbeOp3(v, OP_AggStep, pF->iMem, nArg, (void*)pF->pFunc, P3_FUNCDEF);
   }
-  memset(&fauxExpr, 0, sizeof(fauxExpr));
-  fauxExpr.op = TK_AGG_COLUMN;
-  fauxExpr.pAggInfo = pAggInfo;
   for(i=0, pC=pAggInfo->aCol; i<pAggInfo->nAccumulator; i++, pC++){
-    fauxExpr.iAgg = i;
-    sqlite3ExprCode(pParse, &fauxExpr);
+    sqlite3ExprCode(pParse, pC->pExpr);
     sqlite3VdbeAddOp(v, OP_MemStore, pC->iMem, 1);
   }
   pAggInfo->directMode = 0;
@@ -2990,6 +2985,9 @@ int sqlite3Select(
       sqlite3WhereEnd(pWInfo);
       finalizeAggFunctions(pParse, &sAggInfo);
       pOrderBy = 0;
+      if( pHaving ){
+        sqlite3ExprIfFalse(pParse, pHaving, addrEnd, 1);
+      }
       selectInnerLoop(pParse, p, p->pEList, 0, 0, 0, -1, 
                       eDest, iParm, addrEnd, addrEnd, aff);
     }

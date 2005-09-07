@@ -14,7 +14,7 @@
 # SELECT statements that use user-defined collation sequences. Also
 # GROUP BY clauses that use user-defined collation sequences.
 #
-# $Id: collate5.test,v 1.4 2005/04/01 10:47:40 drh Exp $
+# $Id: collate5.test,v 1.5 2005/09/07 22:48:16 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -252,15 +252,15 @@ do_test collate5-4.0 {
   }
 } {}
 do_test collate5-4.1 {
-  execsql {
+  string tolower [execsql {
     SELECT a, count(*) FROM collate5t1 GROUP BY a;
-  }
+  }]
 } {a 2 b 2}
 do_test collate5-4.2 {
   execsql {
-    SELECT a, b, count(*) FROM collate5t1 GROUP BY a, b;
+    SELECT a, b, count(*) FROM collate5t1 GROUP BY a, b ORDER BY a, b;
   }
-} {a 1 2 b 2 1 B 3 1}
+} {A 1.0 2 b 2 1 B 3 1}
 do_test collate5-4.3 {
   execsql {
     DROP TABLE collate5t1;

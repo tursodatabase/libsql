@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc4.test,v 1.17 2005/09/07 21:22:47 drh Exp $
+# $Id: misc4.test,v 1.18 2005/09/07 22:48:16 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -99,7 +99,7 @@ do_test misc4-3.1 {
        UNION SELECT ID, max(Value) FROM Table2 GROUP BY 1
     ORDER BY 1, 2;
   }
-} {{} {} 1 x 1 z}
+} {1 x 1 z}
 } ;# ifcapable compound
 
 # Ticket #1047.  Make sure column types are preserved in subqueries.

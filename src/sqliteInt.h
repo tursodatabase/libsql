@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.408 2005/09/07 21:22:47 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.409 2005/09/07 22:48:16 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -814,6 +814,7 @@ struct AggInfo {
     int iColumn;             /* Column number within the source table */
     int iSorterColumn;       /* Column number in the sorting index */
     int iMem;                /* Memory location that acts as accumulator */
+    Expr *pExpr;             /* The original expression */
   } *aCol;
   int nColumn;            /* Number of used entries in aCol[] */
   int nColumnAlloc;       /* Number of slots allocated for aCol[] */

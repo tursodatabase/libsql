@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.225 2005/09/07 21:22:46 drh Exp $
+** $Id: expr.c,v 1.226 2005/09/07 22:48:16 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2131,6 +2131,7 @@ static int analyzeAggregate(void *pArg, Expr *pExpr){
               pCol->iColumn = pExpr->iColumn;
               pCol->iMem = pParse->nMem++;
               pCol->iSorterColumn = -1;
+              pCol->pExpr = pExpr;
               if( pAggInfo->pGroupBy ){
                 int j, n;
                 ExprList *pGB = pAggInfo->pGroupBy;
