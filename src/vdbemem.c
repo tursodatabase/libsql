@@ -192,20 +192,23 @@ int sqlite3VdbeMemStringify(Mem *pMem, int enc){
 ** This routine calls the finalize method for that function.  The
 ** result of the aggregate is stored back into pMem.
 */
-void sqlite3VdbeMemFinalize(Mem *pMem, FuncDef *pFunc){
-  if( pFunc && pFunc->xFinalize ){
-    sqlite3_context ctx;
-    ctx.s.flags = MEM_Null;
-    ctx.s.z = pMem->zShort;
-    ctx.pMem = pMem;
-    ctx.pFunc = pFunc;
-    pFunc->xFinalize(&ctx);
-    if( pMem->z && pMem->z!=pMem->zShort ){
-      sqliteFree( pMem->z );
-    }
-    *pMem = ctx.s;
-    if( pMem->flags & MEM_Short ){
-      pMem->z = pMem->zShort;
+void sqlite3VdbeMemFinalize(Mem *pMem){
+  if( pMem->flags & MEM_Agg ){
+    FuncDef *pFunc = *(FuncDef**)&pMem->i;
+    if( pFunc && pFunc->xFinalize ){
+      sqlite3_context ctx;
+      ctx.s.flags = MEM_Null;
+      ctx.s.z = pMem->zShort;
+      ctx.pMem = pMem;
+      ctx.pFunc = pFunc;
+      pFunc->xFinalize(&ctx);
+      if( pMem->z && pMem->z!=pMem->zShort ){
+        sqliteFree( pMem->z );
+      }
+      *pMem = ctx.s;
+      if( pMem->flags & MEM_Short ){
+        pMem->z = pMem->zShort;
+      }
     }
   }
 }
@@ -219,7 +222,7 @@ void sqlite3VdbeMemRelease(Mem *p){
   if( p->flags & (MEM_Dyn|MEM_Agg) ){
     if( p->xDel ){
       if( p->flags & MEM_Agg ){
-        sqlite3VdbeMemFinalize(p, (FuncDef*)&p->i);
+        sqlite3VdbeMemFinalize(p);
         assert( (p->flags & MEM_Agg)==0 );
         sqlite3VdbeMemRelease(p);
       }else{

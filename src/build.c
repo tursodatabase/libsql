@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.344 2005/08/31 13:13:31 drh Exp $
+** $Id: build.c,v 1.345 2005/09/07 21:22:46 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -103,7 +103,7 @@ void sqlite3FinishCoding(Parse *pParse){
     FILE *trace = (db->flags & SQLITE_VdbeTrace)!=0 ? stdout : 0;
     sqlite3VdbeTrace(v, trace);
     sqlite3VdbeMakeReady(v, pParse->nVar, pParse->nMem+3,
-                         pParse->nTab+3, pParse->nMaxDepth+1, pParse->explain);
+                         pParse->nTab+3, pParse->explain);
     pParse->rc = SQLITE_DONE;
     pParse->colNamesSet = 0;
   }else if( pParse->rc==SQLITE_OK ){
@@ -2470,30 +2470,63 @@ exit_drop_index:
 }
 
 /*
+** ppArray points into a structure where there is an array pointer
+** followed by two integers. The first integer is the
+** number of elements in the structure array.  The second integer
+** is the number of allocated slots in the array.
+**
+** In other words, the structure looks something like this:
+**
+**        struct Example1 {
+**          struct subElem *aEntry;
+**          int nEntry;
+**          int nAlloc;
+**        }
+**
+** The pnEntry parameter points to the equivalent of Example1.nEntry.
+**
+** This routine allocates a new slot in the array, zeros it out,
+** and returns its index.  If malloc fails a negative number is returned.
+**
+** szEntry is the sizeof of a single array entry.  initSize is the 
+** number of array entries allocated on the initial allocation.
+*/
+int sqlite3ArrayAllocate(void **ppArray, int szEntry, int initSize){
+  char *p;
+  int *an = (int*)&ppArray[1];
+  if( an[0]>=an[1] ){
+    void *pNew;
+    an[1] = an[1]*2 + initSize;
+    pNew = sqliteRealloc(*ppArray, an[1]*szEntry);
+    if( pNew==0 ){
+      return -1;
+    }
+    *ppArray = pNew;
+  }
+  p = *ppArray;
+  memset(&p[an[0]*szEntry], 0, szEntry);
+  return an[0]++;
+}
+
+/*
 ** Append a new element to the given IdList.  Create a new IdList if
 ** need be.
 **
 ** A new IdList is returned, or NULL if malloc() fails.
 */
 IdList *sqlite3IdListAppend(IdList *pList, Token *pToken){
+  int i;
   if( pList==0 ){
     pList = sqliteMalloc( sizeof(IdList) );
     if( pList==0 ) return 0;
     pList->nAlloc = 0;
   }
-  if( pList->nId>=pList->nAlloc ){
-    struct IdList_item *a;
-    pList->nAlloc = pList->nAlloc*2 + 5;
-    a = sqliteRealloc(pList->a, pList->nAlloc*sizeof(pList->a[0]) );
-    if( a==0 ){
-      sqlite3IdListDelete(pList);
-      return 0;
-    }
-    pList->a = a;
+  i = sqlite3ArrayAllocate((void**)&pList->a, sizeof(pList->a[0]), 5);
+  if( i<0 ){
+    sqlite3IdListDelete(pList);
+    return 0;
   }
-  memset(&pList->a[pList->nId], 0, sizeof(pList->a[0]));
-  pList->a[pList->nId].zName = sqlite3NameFromToken(pToken);
-  pList->nId++;
+  pList->a[i].zName = sqlite3NameFromToken(pToken);
   return pList;
 }
 

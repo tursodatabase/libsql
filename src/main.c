@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.300 2005/08/29 23:00:04 drh Exp $
+** $Id: main.c,v 1.301 2005/09/07 21:22:46 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -875,7 +875,7 @@ int sqlite3_reset(sqlite3_stmt *pStmt){
     rc = SQLITE_OK;
   }else{
     rc = sqlite3VdbeReset((Vdbe*)pStmt);
-    sqlite3VdbeMakeReady((Vdbe*)pStmt, -1, 0, 0, 0, 0);
+    sqlite3VdbeMakeReady((Vdbe*)pStmt, -1, 0, 0, 0);
   }
   return rc;
 }

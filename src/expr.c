@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.224 2005/09/05 20:06:49 drh Exp $
+** $Id: expr.c,v 1.225 2005/09/07 21:22:46 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -695,6 +695,7 @@ static int exprNodeIsConstant(void *pArg, Expr *pExpr){
     case TK_COLUMN:
     case TK_DOT:
     case TK_AGG_FUNCTION:
+    case TK_AGG_COLUMN:
 #ifndef SQLITE_OMIT_SUBQUERY
     case TK_SELECT:
     case TK_EXISTS:
@@ -1230,10 +1231,18 @@ int sqlite3ExprResolveNames(
   NameContext *pNC,       /* Namespace to resolve expressions in. */
   Expr *pExpr             /* The expression to be analyzed. */
 ){
+  int savedHasAgg;
   if( pExpr==0 ) return 0;
+  savedHasAgg = pNC->hasAgg;
+  pNC->hasAgg = 0;
   walkExprTree(pExpr, nameResolverStep, pNC);
   if( pNC->nErr>0 ){
     ExprSetProperty(pExpr, EP_Error);
+  }
+  if( pNC->hasAgg ){
+    ExprSetProperty(pExpr, EP_Agg);
+  }else if( savedHasAgg ){
+    pNC->hasAgg = 1;
   }
   return ExprHasProperty(pExpr, EP_Error);
 }
@@ -1285,10 +1294,6 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
     assert( testAddr>0 );
     sqlite3VdbeAddOp(v, OP_Integer, 1, 0);
     sqlite3VdbeAddOp(v, OP_MemStore, mem, 1);
-  }
-
-  if( pExpr->pSelect ){
-    sqlite3VdbeAddOp(v, OP_AggContextPush, 0, 0);
   }
 
   switch( pExpr->op ){
@@ -1403,9 +1408,6 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
     }
   }
 
-  if( pExpr->pSelect ){
-    sqlite3VdbeAddOp(v, OP_AggContextPop, 0, 0);
-  }
   if( testAddr ){
     sqlite3VdbeChangeP2(v, testAddr, sqlite3VdbeCurrentAddr(v));
   }
@@ -1448,10 +1450,21 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
   }
   op = pExpr->op;
   switch( op ){
+    case TK_AGG_COLUMN: {
+      AggInfo *pAggInfo = pExpr->pAggInfo;
+      struct AggInfo_col *pCol = &pAggInfo->aCol[pExpr->iAgg];
+      if( !pAggInfo->directMode ){
+        sqlite3VdbeAddOp(v, OP_MemLoad, pCol->iMem, 0);
+        break;
+      }else if( pAggInfo->useSortingIdx ){
+        sqlite3VdbeAddOp(v, OP_Column, pAggInfo->sortingIdx,
+                              pCol->iSorterColumn);
+        break;
+      }
+      /* Otherwise, fall thru into the TK_COLUMN case */
+    }
     case TK_COLUMN: {
-      if( !pParse->fillAgg && pExpr->iAgg>=0 ){
-        sqlite3VdbeAddOp(v, OP_AggGet, pExpr->iAggCtx, pExpr->iAgg);
-      }else if( pExpr->iColumn>=0 ){
+      if( pExpr->iColumn>=0 ){
         sqlite3VdbeAddOp(v, OP_Column, pExpr->iTable, pExpr->iColumn);
         sqlite3ColumnDefault(v, pExpr->pTab, pExpr->iColumn);
       }else{
@@ -1600,7 +1613,8 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       break;
     }
     case TK_AGG_FUNCTION: {
-      sqlite3VdbeAddOp(v, OP_AggGet, 0, pExpr->iAgg);
+      AggInfo *pInfo = pExpr->pAggInfo;
+      sqlite3VdbeAddOp(v, OP_MemLoad, pInfo->aFunc[pExpr->iAgg].iMem, 0);
       break;
     }
     case TK_CONST_FUNC:
@@ -1610,7 +1624,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       FuncDef *pDef;
       int nId;
       const char *zId;
-      int p2 = 0;
+      int constMask = 0;
       int i;
       u8 enc = pParse->db->enc;
       CollSeq *pColl = 0;
@@ -1621,7 +1635,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       nExpr = sqlite3ExprCodeExprList(pParse, pList);
       for(i=0; i<nExpr && i<32; i++){
         if( sqlite3ExprIsConstant(pList->a[i].pExpr) ){
-          p2 |= (1<<i);
+          constMask |= (1<<i);
         }
         if( pDef->needCollSeq && !pColl ){
           pColl = sqlite3ExprCollSeq(pParse, pList->a[i].pExpr);
@@ -1631,7 +1645,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
         if( !pColl ) pColl = pParse->db->pDfltColl; 
         sqlite3VdbeOp3(v, OP_CollSeq, 0, 0, (char *)pColl, P3_COLLSEQ);
       }
-      sqlite3VdbeOp3(v, OP_Function, nExpr, p2, (char*)pDef, P3_FUNCDEF);
+      sqlite3VdbeOp3(v, OP_Function, constMask, nExpr, (char*)pDef, P3_FUNCDEF);
       break;
     }
 #ifndef SQLITE_OMIT_SUBQUERY
@@ -2047,23 +2061,32 @@ int sqlite3ExprCompare(Expr *pA, Expr *pB){
   return 1;
 }
 
+
 /*
-** Add a new element to the pParse->aAgg[] array and return its index.
-** The new element is initialized to zero.  The calling function is
-** expected to fill it in.
+** Add a new element to the pAggInfo->aCol[] array.  Return the index of
+** the new element.  Return a negative number if malloc fails.
 */
-static int appendAggInfo(Parse *pParse){
-  if( (pParse->nAgg & 0x7)==0 ){
-    int amt = pParse->nAgg + 8;
-    AggExpr *aAgg = sqliteRealloc(pParse->aAgg, amt*sizeof(pParse->aAgg[0]));
-    if( aAgg==0 ){
-      return -1;
-    }
-    pParse->aAgg = aAgg;
+static int addAggInfoColumn(AggInfo *pInfo){
+  int i;
+  i = sqlite3ArrayAllocate((void**)&pInfo->aCol, sizeof(pInfo->aCol[0]), 3);
+  if( i<0 ){
+    return -1;
   }
-  memset(&pParse->aAgg[pParse->nAgg], 0, sizeof(pParse->aAgg[0]));
-  return pParse->nAgg++;
-}
+  return i;
+}    
+
+/*
+** Add a new element to the pAggInfo->aFunc[] array.  Return the index of
+** the new element.  Return a negative number if malloc fails.
+*/
+static int addAggInfoFunc(AggInfo *pInfo){
+  int i;
+  i = sqlite3ArrayAllocate((void**)&pInfo->aFunc, sizeof(pInfo->aFunc[0]), 2);
+  if( i<0 ){
+    return -1;
+  }
+  return i;
+}    
 
 /*
 ** This is an xFunc for walkExprTree() used to implement 
@@ -2074,63 +2097,112 @@ static int appendAggInfo(Parse *pParse){
 */
 static int analyzeAggregate(void *pArg, Expr *pExpr){
   int i;
-  AggExpr *pAgg;
   NameContext *pNC = (NameContext *)pArg;
   Parse *pParse = pNC->pParse;
   SrcList *pSrcList = pNC->pSrcList;
+  AggInfo *pAggInfo = pNC->pAggInfo;
+  
 
   switch( pExpr->op ){
     case TK_COLUMN: {
-      for(i=0; pSrcList && i<pSrcList->nSrc; i++){
-        if( pExpr->iTable==pSrcList->a[i].iCursor ){
-          pAgg = pParse->aAgg;
-          for(i=0; i<pParse->nAgg; i++, pAgg++){
-            Expr *pE;
-            if( pAgg->isAgg ) continue;
-            pE = pAgg->pExpr;
-            if( pE->iTable==pExpr->iTable && pE->iColumn==pExpr->iColumn ){
-              break;
+      /* Check to see if the column is in one of the tables in the FROM
+      ** clause of the aggregate query */
+      if( pSrcList ){
+        struct SrcList_item *pItem = pSrcList->a;
+        for(i=0; i<pSrcList->nSrc; i++, pItem++){
+          struct AggInfo_col *pCol;
+          if( pExpr->iTable==pItem->iCursor ){
+            /* If we reach this point, it means that pExpr refers to a table
+            ** that is in the FROM clause of the aggregate query.  
+            **
+            ** Make an entry for the column in pAggInfo->aCol[] if there
+            ** is not an entry there already.
+            */
+            pCol = pAggInfo->aCol;
+            for(i=0; i<pAggInfo->nColumn; i++, pCol++){
+              if( pCol->iTable==pExpr->iTable &&
+                  pCol->iColumn==pExpr->iColumn ){
+                break;
+              }
             }
-          }
-          if( i>=pParse->nAgg ){
-            i = appendAggInfo(pParse);
-            if( i<0 ) return 1;
-            pAgg = &pParse->aAgg[i];
-            pAgg->isAgg = 0;
-            pAgg->pExpr = pExpr;
-          }
-          pExpr->iAgg = i;
-          pExpr->iAggCtx = pNC->nDepth;
-          return 1;
-        }
+            if( i>=pAggInfo->nColumn && (i = addAggInfoColumn(pAggInfo))>=0 ){
+              pCol = &pAggInfo->aCol[i];
+              pCol->iTable = pExpr->iTable;
+              pCol->iColumn = pExpr->iColumn;
+              pCol->iMem = pParse->nMem++;
+              pCol->iSorterColumn = -1;
+              if( pAggInfo->pGroupBy ){
+                int j, n;
+                ExprList *pGB = pAggInfo->pGroupBy;
+                struct ExprList_item *pTerm = pGB->a;
+                n = pGB->nExpr;
+                for(j=0; j<n; j++, pTerm++){
+                  Expr *pE = pTerm->pExpr;
+                  if( pE->op==TK_COLUMN && pE->iTable==pExpr->iTable &&
+                      pE->iColumn==pExpr->iColumn ){
+                    pCol->iSorterColumn = j;
+                    break;
+                  }
+                }
+              }
+              if( pCol->iSorterColumn<0 ){
+                pCol->iSorterColumn = pAggInfo->nSortingColumn++;
+              }
+            }
+            /* There is now an entry for pExpr in pAggInfo->aCol[] (either
+            ** because it was there before or because we just created it).
+            ** Convert the pExpr to be a TK_AGG_COLUMN referring to that
+            ** pAggInfo->aCol[] entry.
+            */
+            pExpr->pAggInfo = pAggInfo;
+            pExpr->op = TK_AGG_COLUMN;
+            pExpr->iAgg = i;
+            break;
+          } /* endif pExpr->iTable==pItem->iCursor */
+        } /* end loop over pSrcList */
       }
       return 1;
     }
     case TK_AGG_FUNCTION: {
+      /* The pNC->nDepth==0 test causes aggregate functions in subqueries
+      ** to be ignored */
       if( pNC->nDepth==0 ){
-        pAgg = pParse->aAgg;
-        for(i=0; i<pParse->nAgg; i++, pAgg++){
-          if( !pAgg->isAgg ) continue;
-          if( sqlite3ExprCompare(pAgg->pExpr, pExpr) ){
+        /* Check to see if pExpr is a duplicate of another aggregate 
+        ** function that is already in the pAggInfo structure
+        */
+        struct AggInfo_func *pItem = pAggInfo->aFunc;
+        for(i=0; i<pAggInfo->nFunc; i++, pItem++){
+          if( sqlite3ExprCompare(pItem->pExpr, pExpr) ){
             break;
           }
         }
-        if( i>=pParse->nAgg ){
+        if( i>=pAggInfo->nFunc ){
+          /* pExpr is original.  Make a new entry in pAggInfo->aFunc[]
+          */
           u8 enc = pParse->db->enc;
-          i = appendAggInfo(pParse);
-          if( i<0 ) return 1;
-          pAgg = &pParse->aAgg[i];
-          pAgg->isAgg = 1;
-          pAgg->pExpr = pExpr;
-          pAgg->pFunc = sqlite3FindFunction(pParse->db,
-               pExpr->token.z, pExpr->token.n,
-               pExpr->pList ? pExpr->pList->nExpr : 0, enc, 0);
+          i = addAggInfoFunc(pAggInfo);
+          if( i>=0 ){
+            pItem = &pAggInfo->aFunc[i];
+            pItem->pExpr = pExpr;
+            pItem->iMem = pParse->nMem++;
+            pItem->pFunc = sqlite3FindFunction(pParse->db,
+                   pExpr->token.z, pExpr->token.n,
+                   pExpr->pList ? pExpr->pList->nExpr : 0, enc, 0);
+          }
         }
+        /* Make pExpr point to the appropriate pAggInfo->aFunc[] entry
+        */
         pExpr->iAgg = i;
+        pExpr->pAggInfo = pAggInfo;
         return 1;
       }
     }
   }
+
+  /* Recursively walk subqueries looking for TK_COLUMN nodes that need
+  ** to be changed to TK_AGG_COLUMN.  But increment nDepth so that
+  ** TK_AGG_FUNCTION nodes in subqueries will be unchanged.
+  */
   if( pExpr->pSelect ){
     pNC->nDepth++;
     walkSelectExpr(pExpr->pSelect, analyzeAggregate, pNC);

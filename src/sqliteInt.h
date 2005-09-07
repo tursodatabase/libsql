@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.407 2005/09/01 03:07:44 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.408 2005/09/07 21:22:47 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -298,7 +298,7 @@ extern int sqlite3_iMallocReset; /* Set iMallocFail to this when it reaches 0 */
 /*
 ** Forward references to structures
 */
-typedef struct AggExpr AggExpr;
+typedef struct AggInfo AggInfo;
 typedef struct AuthContext AuthContext;
 typedef struct CollSeq CollSeq;
 typedef struct Column Column;
@@ -789,6 +789,47 @@ struct Token {
 };
 
 /*
+** An instance of this structure contains information needed to generate
+** code for a SELECT that contains aggregate functions.
+**
+** If Expr.op==TK_AGG_COLUMN or TK_AGG_FUNCTION then Expr.pAggInfo is a
+** pointer to this structure.  The Expr.iColumn field is the index in
+** AggInfo.aCol[] or AggInfo.aFunc[] of information needed to generate
+** code for that node.
+**
+** AggInfo.pGroupBy and AggInfo.aFunc.pExpr point to fields within the
+** original Select structure that describes the SELECT statement.  These
+** fields do not need to be freed when deallocating the AggInfo structure.
+*/
+struct AggInfo {
+  u8 directMode;          /* Direct rendering mode means take data directly
+                          ** from source tables rather than from accumulators */
+  u8 useSortingIdx;       /* In direct mode, reference the sorting index rather
+                          ** than the source table */
+  int sortingIdx;         /* Cursor number of the sorting index */
+  ExprList *pGroupBy;     /* The group by clause */
+  int nSortingColumn;     /* Number of columns in the sorting index */
+  struct AggInfo_col {    /* For each column used in source tables */
+    int iTable;              /* Cursor number of the source table */
+    int iColumn;             /* Column number within the source table */
+    int iSorterColumn;       /* Column number in the sorting index */
+    int iMem;                /* Memory location that acts as accumulator */
+  } *aCol;
+  int nColumn;            /* Number of used entries in aCol[] */
+  int nColumnAlloc;       /* Number of slots allocated for aCol[] */
+  int nAccumulator;       /* Number of columns that show through to the output.
+                          ** Additional columns are used only as parameters to
+                          ** aggregate functions */
+  struct AggInfo_func {   /* For each aggregate function */
+    Expr *pExpr;             /* Expression encoding the function */
+    FuncDef *pFunc;          /* The aggregate function implementation */
+    int iMem;                /* Memory location that acts as accumulator */
+  } *aFunc;
+  int nFunc;              /* Number of entries in aFunc[] */
+  int nFuncAlloc;         /* Number of slots allocated for aFunc[] */
+};
+
+/*
 ** Each node of an expression in the parse tree is an instance
 ** of this structure.
 **
@@ -847,9 +888,8 @@ struct Expr {
   Token span;            /* Complete text of the expression */
   int iTable, iColumn;   /* When op==TK_COLUMN, then this expr node means the
                          ** iColumn-th field of the iTable-th table. */
-  int iAgg;              /* When op==TK_COLUMN and pParse->fillAgg==FALSE, pull
-                         ** result from the iAgg-th element of the aggregator */
-  int iAggCtx;           /* The value to pass as P1 of OP_AggGet. */
+  AggInfo *pAggInfo;     /* Used by TK_AGG_COLUMN and TK_AGG_FUNCTION */
+  int iAgg;              /* Which entry in pAggInfo->aCol[] or ->aFunc[] */
   Select *pSelect;       /* When the expression is a sub-select.  Also the
                          ** right side of "<expr> IN (<select>)" */
   Table *pTab;           /* Table for OP_Column expressions. */
@@ -912,12 +952,12 @@ struct ExprList {
 ** If "a" is the k-th column of table "t", then IdList.a[0].idx==k.
 */
 struct IdList {
-  int nId;         /* Number of identifiers on the list */
-  int nAlloc;      /* Number of entries allocated for a[] below */
   struct IdList_item {
     char *zName;      /* Name of the identifier */
     int idx;          /* Index in some Table.aCol[] of a column named zName */
   } *a;
+  int nId;         /* Number of identifiers on the list */
+  int nAlloc;      /* Number of entries allocated for a[] below */
 };
 
 /*
@@ -1031,8 +1071,9 @@ struct NameContext {
   int nRef;            /* Number of names resolved by this context */
   int nErr;            /* Number of errors encountered while resolving names */
   u8 allowAgg;         /* Aggregate functions allowed here */
-  u8 hasAgg;
+  u8 hasAgg;           /* True if aggregates are seen */
   int nDepth;          /* Depth of subquery recursion. 1 for no recursion */
+  AggInfo *pAggInfo;   /* Information about aggregates at this level */
   NameContext *pNext;  /* Next outer name context.  NULL for outermost */
 };
 
@@ -1079,42 +1120,21 @@ struct Select {
 /*
 ** The results of a select can be distributed in several ways.
 */
-#define SRT_Callback     1  /* Invoke a callback with each row of result */
-#define SRT_Mem          2  /* Store result in a memory cell */
-#define SRT_Set          3  /* Store result as unique keys in a table */
-#define SRT_Union        5  /* Store result as keys in a table */
-#define SRT_Except       6  /* Remove result from a UNION table */
-#define SRT_Table        7  /* Store result as data with a unique key */
-#define SRT_TempTable    8  /* Store result in a trasient table */
-#define SRT_Discard      9  /* Do not save the results anywhere */
-#define SRT_Sorter      10  /* Store results in the sorter */
-#define SRT_Subroutine  11  /* Call a subroutine to handle results */
-#define SRT_Exists      12  /* Put 0 or 1 in a memory cell */
+#define SRT_Union        1  /* Store result as keys in an index */
+#define SRT_Except       2  /* Remove result from a UNION index */
+#define SRT_Discard      3  /* Do not save the results anywhere */
 
-/*
-** When a SELECT uses aggregate functions (like "count(*)" or "avg(f1)")
-** we have to do some additional analysis of expressions.  An instance
-** of the following structure holds information about a single subexpression
-** somewhere in the SELECT statement.  An array of these structures holds
-** all the information we need to generate code for aggregate
-** expressions.
-**
-** Note that when analyzing a SELECT containing aggregates, both
-** non-aggregate field variables and aggregate functions are stored
-** in the AggExpr array of the Parser structure.
-**
-** The pExpr field points to an expression that is part of either the
-** field list, the GROUP BY clause, the HAVING clause or the ORDER BY
-** clause.  The expression will be freed when those clauses are cleaned
-** up.  Do not try to delete the expression attached to AggExpr.pExpr.
-**
-** If AggExpr.pExpr==0, that means the expression is "count(*)".
-*/
-struct AggExpr {
-  int isAgg;        /* if TRUE contains an aggregate function */
-  Expr *pExpr;      /* The expression */
-  FuncDef *pFunc;   /* Information about the aggregate function */
-};
+/* The ORDER BY clause is ignored for all of the above */
+#define IgnorableOrderby(X) (X<=SRT_Discard)
+
+#define SRT_Callback     4  /* Invoke a callback with each row of result */
+#define SRT_Mem          5  /* Store result in a memory cell */
+#define SRT_Set          6  /* Store non-null results as keys in an index */
+#define SRT_Table        7  /* Store result as data and add automatic rowid */
+#define SRT_TempTable    8  /* Store result in a trasient table */
+#define SRT_Sorter       9  /* Store results in the sorter NOT USED */
+#define SRT_Subroutine  10  /* Call a subroutine to handle results */
+#define SRT_Exists      11  /* Put 0 or 1 in a memory cell */
 
 /*
 ** An SQL parser context.  A copy of this structure is passed through
@@ -1135,7 +1155,6 @@ struct Parse {
   u8 nameClash;        /* A permanent table name clashes with temp table name */
   u8 checkSchema;      /* Causes schema cookie check after an error */
   u8 nested;           /* Number of nested calls to the parser/code generator */
-  u8 fillAgg;          /* If true, ignore the Expr.iAgg field. Normally false */
   int nErr;            /* Number of errors seen */
   int nTab;            /* Number of previously allocated VDBE cursors */
   int nMem;            /* Number of memory cells used so far */
@@ -1162,9 +1181,6 @@ struct Parse {
   Trigger *pNewTrigger;     /* Trigger under construct by a CREATE TRIGGER */
   TriggerStack *trigStack;  /* Trigger actions being coded */
   const char *zAuthContext; /* The 6th parameter to db->xAuth callbacks */
-  int nAgg;            /* Number of aggregate expressions */
-  AggExpr *aAgg;       /* An array of aggregate expressions */
-  int nMaxDepth;       /* Maximum depth of subquery recursion */
 };
 
 /*
@@ -1421,6 +1437,7 @@ void sqlite3EndTable(Parse*,Token*,Token*,Select*);
 void sqlite3DropTable(Parse*, SrcList*, int);
 void sqlite3DeleteTable(sqlite3*, Table*);
 void sqlite3Insert(Parse*, SrcList*, ExprList*, Select*, IdList*, int);
+int sqlite3ArrayAllocate(void**,int,int);
 IdList *sqlite3IdListAppend(IdList*, Token*);
 int sqlite3IdListIndex(IdList*,const char*);
 SrcList *sqlite3SrcListAppend(SrcList*, Token*, Token*);

@@ -202,30 +202,6 @@ struct sqlite3_context {
 };
 
 /*
-** An Agg structure describes an Aggregator.  Each Agg consists of
-** zero or more Aggregator elements (AggElem).  Each AggElem contains
-** a key and one or more values.  The values are used in processing
-** aggregate functions in a SELECT.  The key is used to implement
-** the GROUP BY clause of a select.
-*/
-typedef struct Agg Agg;
-typedef struct AggElem AggElem;
-struct Agg {
-  int nMem;            /* Number of values stored in each AggElem */
-  AggElem *pCurrent;   /* The AggElem currently in focus */
-  FuncDef **apFunc;    /* Information about aggregate functions */
-  Btree *pBtree;       /* The tmp. btree used to group elements, if required. */
-  BtCursor *pCsr;      /* Read/write cursor to the table in pBtree */
-  int nTab;            /* Root page of the table in pBtree */
-  u8 searching;        /* True between the first AggNext and AggReset */
-};
-struct AggElem {
-  char *zKey;          /* The key to this AggElem */
-  int nKey;            /* Number of bytes in the key, including '\0' at end */
-  Mem aMem[1];         /* The values for this AggElem */
-};
-
-/*
 ** A Set structure is used for quick testing to see if a value
 ** is part of a small set.  Sets are used to implement code like
 ** this:
@@ -309,9 +285,6 @@ struct Vdbe {
   int magic;              /* Magic number for sanity checking */
   int nMem;               /* Number of memory locations currently allocated */
   Mem *aMem;              /* The memory locations */
-  int nAgg;               /* Number of elements in apAgg */
-  Agg *apAgg;             /* Array of aggregate contexts */
-  Agg *pAgg;              /* Current aggregate context */
   int nCallback;          /* Number of callbacks invoked so far */
   Fifo sFifo;             /* A list of ROWIDs */
   int contextStackTop;    /* Index of top element in the context stack */
@@ -349,7 +322,6 @@ struct Vdbe {
 ** Function prototypes
 */
 void sqlite3VdbeFreeCursor(Cursor*);
-int sqlite3VdbeAggReset(sqlite3*, Agg *, KeyInfo *);
 void sqliteVdbePopStack(Vdbe*,int);
 int sqlite3VdbeCursorMoveto(Cursor*);
 #if defined(SQLITE_DEBUG) || defined(VDBE_PROFILE)
@@ -391,7 +363,7 @@ double sqlite3VdbeRealValue(Mem*);
 int sqlite3VdbeMemRealify(Mem*);
 int sqlite3VdbeMemFromBtree(BtCursor*,int,int,int,Mem*);
 void sqlite3VdbeMemRelease(Mem *p);
-void sqlite3VdbeMemFinalize(Mem*, FuncDef*);
+void sqlite3VdbeMemFinalize(Mem*);
 #ifndef NDEBUG
 void sqlite3VdbeMemSanity(Mem*, u8);
 int sqlite3VdbeOpcodeNoPush(u8);

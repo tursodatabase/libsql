@@ -215,8 +215,8 @@ int sqlite3VdbeOpcodeNoPush(u8 op){
 **
 ** This routine is called once after all opcodes have been inserted.
 **
-** Variable *pMaxFuncArgs is set to the maximum value of any P1 argument 
-** to an OP_Function or P2 to an OP_AggFunc opcode. This is used by 
+** Variable *pMaxFuncArgs is set to the maximum value of any P2 argument 
+** to an OP_Function or OP_AggStep opcode. This is used by 
 ** sqlite3VdbeMakeReady() to size the Vdbe.apArg[] array.
 **
 ** The integer *pMaxStack is set to the maximum number of vdbe stack
@@ -239,12 +239,7 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs, int *pMaxStack){
   for(pOp=p->aOp, i=p->nOp-1; i>=0; i--, pOp++){
     u8 opcode = pOp->opcode;
 
-    /* Todo: Maybe OP_AggFunc should change to use P1 in the same
-     * way as OP_Function. 
-     */
-    if( opcode==OP_Function ){
-      if( pOp->p1>nMaxArgs ) nMaxArgs = pOp->p1;
-    }else if( opcode==OP_AggFunc ){
+    if( opcode==OP_Function || opcode==OP_AggStep ){
       if( pOp->p2>nMaxArgs ) nMaxArgs = pOp->p2;
     }else if( opcode==OP_Halt ){
       if( pOp->p1==SQLITE_CONSTRAINT && pOp->p2==OE_Abort ){
@@ -663,7 +658,6 @@ void sqlite3VdbeMakeReady(
   int nVar,                      /* Number of '?' see in the SQL statement */
   int nMem,                      /* Number of memory cells to allocate */
   int nCursor,                   /* Number of cursors to allocate */
-  int nAgg,                      /* Number of aggregate contexts required */
   int isExplain                  /* True if the EXPLAIN keywords is present */
 ){
   int n;
@@ -706,7 +700,6 @@ void sqlite3VdbeMakeReady(
       + nVar*sizeof(char*)             /* azVar */
       + nMem*sizeof(Mem)               /* aMem */
       + nCursor*sizeof(Cursor*)        /* apCsr */
-      + nAgg*sizeof(Agg)               /* Aggregate contexts */
     );
     if( !sqlite3_malloc_failed ){
       p->aMem = &p->aStack[nStack];
@@ -717,17 +710,12 @@ void sqlite3VdbeMakeReady(
       p->apArg = (Mem**)&p->aVar[nVar];
       p->azVar = (char**)&p->apArg[nArg];
       p->apCsr = (Cursor**)&p->azVar[nVar];
-      if( nAgg>0 ){
-        p->nAgg = nAgg;
-        p->apAgg = (Agg*)&p->apCsr[nCursor];
-      }
       p->nCursor = nCursor;
       for(n=0; n<nVar; n++){
         p->aVar[n].flags = MEM_Null;
       }
     }
   }
-  p->pAgg = p->apAgg;
   for(n=0; n<p->nMem; n++){
     p->aMem[n].flags = MEM_Null;
   }
@@ -766,129 +754,6 @@ void sqlite3VdbeMakeReady(
     }
   }
 #endif
-}
-
-/*
-** Free all resources allociated with AggElem pElem, an element of
-** aggregate pAgg.
-*/
-static void freeAggElem(AggElem *pElem, Agg *pAgg){
-  int i;
-  for(i=0; i<pAgg->nMem; i++){
-    Mem *pMem = &pElem->aMem[i];
-    if( pAgg->apFunc && pAgg->apFunc[i] && (pMem->flags & MEM_Agg)!=0 ){
-      sqlite3VdbeMemFinalize(pMem, pAgg->apFunc[i]);
-    }
-    sqlite3VdbeMemRelease(pMem);
-
-  }
-  sqliteFree(pElem);
-}
-
-/*
-** Reset an Agg structure.  Delete all its contents.
-**
-** For installable aggregate functions, if the step function has been
-** called, make sure the finalizer function has also been called.  The
-** finalizer might need to free memory that was allocated as part of its
-** private context.  If the finalizer has not been called yet, call it
-** now.
-**
-** If db is NULL, then this is being called from sqliteVdbeReset(). In
-** this case clean up all references to the temp-table used for
-** aggregates (if it was ever opened).
-**
-** If db is not NULL, then this is being called from with an OP_AggReset
-** opcode. Open the temp-table, if it has not already been opened and
-** delete the contents of the table used for aggregate information, ready
-** for the next round of aggregate processing.
-*/
-int sqlite3VdbeAggReset(sqlite3 *db, Agg *pAgg, KeyInfo *pKeyInfo){
-  int rc = 0;
-  BtCursor *pCsr;
-
-  if( !pAgg ) return SQLITE_OK;
-  pCsr = pAgg->pCsr;
-  assert( (pCsr && pAgg->nTab>0) || (!pCsr && pAgg->nTab==0)
-         || sqlite3_malloc_failed );
-
-  /* If pCsr is not NULL, then the table used for aggregate information
-  ** is open. Loop through it and free the AggElem* structure pointed at
-  ** by each entry. If the finalizer has not been called for an AggElem,
-  ** do that too. Finally, clear the btree table itself.
-  */
-  if( pCsr ){
-    int res;
-    assert( pAgg->pBtree );
-    assert( pAgg->nTab>0 );
-
-    rc=sqlite3BtreeFirst(pCsr, &res);
-    while( res==0 && rc==SQLITE_OK ){
-      AggElem *pElem;
-      rc = sqlite3BtreeData(pCsr, 0, sizeof(AggElem*), (char *)&pElem);
-      if( rc!=SQLITE_OK ){
-        return rc;
-      }
-      assert( pAgg->apFunc!=0 );
-      freeAggElem(pElem, pAgg);
-      rc=sqlite3BtreeNext(pCsr, &res);
-    }
-    if( rc!=SQLITE_OK ){
-      return rc;
-    }
-
-    sqlite3BtreeCloseCursor(pCsr);
-    sqlite3BtreeClearTable(pAgg->pBtree, pAgg->nTab);
-  }else{ 
-    /* The cursor may not be open because the aggregator was never used,
-    ** or it could be that it was used but there was no GROUP BY clause.
-    */
-    if( pAgg->pCurrent ){
-      freeAggElem(pAgg->pCurrent, pAgg);
-    }
-  }
-
-  /* If db is not NULL and we have not yet and we have not yet opened
-  ** the temporary btree then do so and create the table to store aggregate
-  ** information.
-  **
-  ** If db is NULL, then close the temporary btree if it is open.
-  */
-  if( db ){
-    if( !pAgg->pBtree ){
-      assert( pAgg->nTab==0 );
-#ifndef SQLITE_OMIT_MEMORYDB
-      rc = sqlite3BtreeFactory(db, ":memory:", 0, TEMP_PAGES, &pAgg->pBtree);
-#else
-      rc = sqlite3BtreeFactory(db, 0, 0, TEMP_PAGES, &pAgg->pBtree);
-#endif
-      if( rc!=SQLITE_OK ) return rc;
-      sqlite3BtreeBeginTrans(pAgg->pBtree, 1);
-      rc = sqlite3BtreeCreateTable(pAgg->pBtree, &pAgg->nTab, 0);
-      if( rc!=SQLITE_OK ) return rc;
-    }
-    assert( pAgg->nTab!=0 );
-
-    rc = sqlite3BtreeCursor(pAgg->pBtree, pAgg->nTab, 1,
-        sqlite3VdbeRecordCompare, pKeyInfo, &pAgg->pCsr);
-    if( rc!=SQLITE_OK ) return rc;
-  }else{
-    if( pAgg->pBtree ){
-      sqlite3BtreeClose(pAgg->pBtree);
-      pAgg->pBtree = 0;
-      pAgg->nTab = 0;
-    }
-    pAgg->pCsr = 0;
-  }
-
-  if( pAgg->apFunc ){ 
-    sqliteFree(pAgg->apFunc);
-    pAgg->apFunc = 0;
-  }
-  pAgg->pCurrent = 0;
-  pAgg->nMem = 0;
-  pAgg->searching = 0;
-  return SQLITE_OK;
 }
 
 /*
@@ -943,9 +808,6 @@ static void Cleanup(Vdbe *p){
       sqlite3VdbeFifoClear(&p->contextStack[i].sFifo);
     }
     sqliteFree(p->contextStack);
-  }
-  for(i=0; i<p->nAgg; i++){
-    sqlite3VdbeAggReset(0, &p->apAgg[i], 0);
   }
   p->contextStack = 0;
   p->contextStackDepth = 0;

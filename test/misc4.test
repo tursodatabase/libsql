@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc4.test,v 1.16 2005/03/29 03:11:00 danielk1977 Exp $
+# $Id: misc4.test,v 1.17 2005/09/07 21:22:47 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -96,7 +96,7 @@ do_test misc4-3.1 {
     INSERT INTO Table2 VALUES(1, 'z');
     INSERT INTO Table2 VALUES (1, 'a');
     SELECT ID, Value FROM Table1
-       UNION SELECT ID, max(Value) FROM Table2 GROUP BY 1,2
+       UNION SELECT ID, max(Value) FROM Table2 GROUP BY 1
     ORDER BY 1, 2;
   }
 } {{} {} 1 x 1 z}
@@ -177,4 +177,3 @@ do_test misc4-6.2 {
 } {1}
 
 finish_test
-

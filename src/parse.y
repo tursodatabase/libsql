@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.175 2005/07/08 12:13:05 drh Exp $
+** @(#) $Id: parse.y,v 1.176 2005/09/07 21:22:46 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -93,7 +93,7 @@ struct AttachKey { int type;  Token key; };
 // add them to the parse.h output file.
 //
 %nonassoc END_OF_FILE ILLEGAL SPACE UNCLOSED_STRING COMMENT FUNCTION
-          COLUMN AGG_FUNCTION CONST_FUNC.
+          COLUMN AGG_FUNCTION AGG_COLUMN CONST_FUNC.
 
 // Input is a single SQL command
 input ::= cmdlist.
