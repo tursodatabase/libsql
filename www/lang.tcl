@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the lang-*.html files.
 #
-set rcsid {$Id: lang.tcl,v 1.98 2005/08/28 17:00:26 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.99 2005/09/08 20:37:44 drh Exp $}
 source common.tcl
 
 if {[llength $argv]>0} {
@@ -1360,7 +1360,8 @@ API.</p>
 <table border=0 cellpadding=10>
 <tr>
 <td valign="top" align="right" width=120>avg(<i>X</i>)</td>
-<td valign="top">Return the average value of all <i>X</i> within a group.</td>
+<td valign="top">Return the average value of all non-NULL <i>X</i> within a
+group.  Non-numeric values are interpreted as 0.</td>
 </tr>
 
 <tr>
@@ -1385,7 +1386,15 @@ if all values in the group are NULL.</td>
 
 <tr>
 <td valign="top" align="right">sum(<i>X</i>)</td>
-<td valign="top">Return the numeric sum of all values in the group.</td>
+<td valign="top">Return the numeric sum of all numeric values in the group.
+   If there are no input rows or all values are NULL, then NULL is returned.
+   NULL is not a helpful result in that case (the correct answer should be
+   zero) but it is what the SQL standard requires and how 
+   most other SQL database engines operate so SQLite does it that way
+   in order to be compatible. 
+   You will probably want to use
+   "<b>coalesce(sum(</b>X<b>),0)</b>" instead of just "<b>sum(</b>X<b>)</b>"
+   to work around this design problem in the SQL language.</td>
 </tr>
 </table>
 }

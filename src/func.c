@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.109 2005/09/08 19:45:58 drh Exp $
+** $Id: func.c,v 1.110 2005/09/08 20:37:43 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -842,12 +842,12 @@ static void sumStep(sqlite3_context *context, int argc, sqlite3_value **argv){
 static void sumFinalize(sqlite3_context *context){
   SumCtx *p;
   p = sqlite3_aggregate_context(context, 0);
-  if( p==0 ){
-    sqlite3_result_int(context, 0);
-  }else if( p->seenFloat ){
-    sqlite3_result_double(context, p->sum);
-  }else if( p->cnt>0 ){
-    sqlite3_result_int64(context, (i64)p->sum);
+  if( p && p->cnt>0 ){
+    if( p->seenFloat ){
+      sqlite3_result_double(context, p->sum);
+    }else{
+      sqlite3_result_int64(context, (i64)p->sum);
+    }
   }
 }
 static void avgFinalize(sqlite3_context *context){
