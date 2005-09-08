@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.108 2005/09/08 10:37:01 drh Exp $
+** $Id: func.c,v 1.109 2005/09/08 19:45:58 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -819,7 +819,7 @@ typedef struct SumCtx SumCtx;
 struct SumCtx {
   double sum;     /* Sum of terms */
   int cnt;        /* Number of elements summed */
-  int isFloat;    /* True if there has been any floating point value */
+  u8 seenFloat;   /* True if there has been any floating point value */
 };
 
 /*
@@ -828,13 +828,15 @@ struct SumCtx {
 static void sumStep(sqlite3_context *context, int argc, sqlite3_value **argv){
   SumCtx *p;
   int type;
-  if( argc<1 ) return;
+  assert( argc==1 );
   p = sqlite3_aggregate_context(context, sizeof(*p));
   type = sqlite3_value_type(argv[0]);
   if( p && type!=SQLITE_NULL ){
     p->sum += sqlite3_value_double(argv[0]);
     p->cnt++;
-    if( type==SQLITE_FLOAT ) p->isFloat = 1;
+    if( type==SQLITE_FLOAT ){
+      p->seenFloat = 1;
+    }
   }
 }
 static void sumFinalize(sqlite3_context *context){
@@ -842,9 +844,9 @@ static void sumFinalize(sqlite3_context *context){
   p = sqlite3_aggregate_context(context, 0);
   if( p==0 ){
     sqlite3_result_int(context, 0);
-  }else if( p->isFloat ){
+  }else if( p->seenFloat ){
     sqlite3_result_double(context, p->sum);
-  }else{
+  }else if( p->cnt>0 ){
     sqlite3_result_int64(context, (i64)p->sum);
   }
 }

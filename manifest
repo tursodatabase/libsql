@@ -1,5 +1,5 @@
-C Remove\sa\sC++ism\sthat\ssnuck\sin\son\sone\sof\sthe\sreason\schanges.\s(CVS\s2676)
-D 2005-09-08T19:01:06
+C A\sSUM()\sof\sall\sNULLs\sreturns\sNULL.\s\sA\sSUM()\sof\snothing\sreturn\s0.\nA\sSUM()\sof\sa\smixture\sof\sNULLs\sand\snumbers\sreturns\sthe\ssum\sof\sthe\nnumbers.\s\sTicket\s#1413.\s(CVS\s2677)
+D 2005-09-08T19:45:58
 F Makefile.in 12784cdce5ffc8dfb707300c34e4f1eb3b8a14f1
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -41,7 +41,7 @@ F src/date.c 7444b0900a28da77e57e3337a636873cff0ae940
 F src/delete.c 16a0e19460b14d219f39ff5c7a9eef808aa1969c
 F src/experimental.c 50c1e3b34f752f4ac10c36f287db095c2b61766d
 F src/expr.c 38f1e135aa80dfc62e253c1e22dd6e194efd2d61
-F src/func.c c1027f4fcb4aaf7118e2b8ed7bbc33c709f2128e
+F src/func.c ebf56befdbecb6570f3fbf42e6e414baf5e2049a
 F src/hash.c 2b1b13f7400e179631c83a1be0c664608c8f021f
 F src/hash.h 1b0c445e1c89ff2aaad9b4605ba61375af001e84
 F src/insert.c 484c73bc1309f283a31baa0e114f3ee980536397
@@ -145,7 +145,7 @@ F test/enc2.test 76c13b8c00beaf95b15c152e95dab51292eb1f0d
 F test/enc3.test f6a5f0b7b7f3a88f030d3143729b87cd5c86d837
 F test/expr.test 71b8cba7fe5c228147c93e530e098144565aaa46
 F test/fkey1.test 153004438d51e6769fb1ce165f6313972d6263ce
-F test/func.test 89206eb4ec8bb2ba1853706470cc2b84147a8c78
+F test/func.test e1f9489e76a1add3ffeecd02038edca130ba759b
 F test/hook.test f8605cde4c77b2c6a4a73723bf6c507796a64dda
 F test/in.test cead6165aebbe0d451bb2263a307173acfeb6240
 F test/index.test 51e01a0928b4b61228917ddd8c6c0e2466547f6f
@@ -174,7 +174,7 @@ F test/malloc.test 666c77a878ce50f5c22b9211ed43e889cabb63a6
 F test/malloc2.test 655b972372d2754a3f6c6ed54d7cfd18fde9bd32
 F test/memdb.test 1860e060be810bf0775bc57408a5b7c4954bcaea
 F test/memleak.test df2b2b96e77f8ba159a332299535b1e5f18e49ac
-F test/minmax.test 1d6f6cd00b0818423c52e71a5d684445b03e20d2
+F test/minmax.test cad887abca5504396718e2cd5729ca40758743e8
 F test/misc1.test c991617666991e11513e46cb646fd2e45ae68599
 F test/misc2.test 5c699af2fede2694736a9f45aea7e2f052686e15
 F test/misc3.test 7bd937e2c62bcc6be71939faf068d506467b1e03
@@ -306,7 +306,7 @@ F www/tclsqlite.tcl 3df553505b6efcad08f91e9b975deb2e6c9bb955
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P cdfe372a958fb446485913e860d52b87fffd34e4
-R 90ad4b515120e3af2e9b022d1054c0bf
+P 48f6a331efea419fe948cd366f9c60ae41edddfd
+R 37364513cd59bb3038c4f5a7cd9fbfba
 U drh
-Z b72ca3f8146ea206fe3fcf97bfef6a79
+Z 7b39a84184f0dd170c44b611c8879606
