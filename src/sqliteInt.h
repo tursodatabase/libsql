@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.411 2005/09/08 02:00:26 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.412 2005/09/08 14:17:20 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1600,7 +1600,7 @@ const void *sqlite3ValueText(sqlite3_value*, u8);
 int sqlite3ValueBytes(sqlite3_value*, u8);
 void sqlite3ValueSetStr(sqlite3_value*, int, const void *,u8, void(*)(void*));
 void sqlite3ValueFree(sqlite3_value*);
-sqlite3_value *sqlite3ValueNew();
+sqlite3_value *sqlite3ValueNew(void);
 sqlite3_value *sqlite3GetTransientValue(sqlite3*db);
 int sqlite3ValueFromExpr(Expr *, u8, u8, sqlite3_value **);
 void sqlite3ValueApplyAffinity(sqlite3_value *, u8, u8);

@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.168 2005/09/01 17:47:51 drh Exp $
+** $Id: where.c,v 1.169 2005/09/08 14:17:20 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -537,7 +537,6 @@ static void exprAnalyze(
   Expr *pExpr = pTerm->pExpr;
   Bitmask prereqLeft;
   Bitmask prereqAll;
-  int idxRight;
   int nPattern;
   int isComplete;
 
@@ -548,7 +547,6 @@ static void exprAnalyze(
   pTerm->leftCursor = -1;
   pTerm->iParent = -1;
   pTerm->operator = 0;
-  idxRight = -1;
   if( allowedOp(pExpr->op) && (pTerm->prereqRight & prereqLeft)==0 ){
     Expr *pLeft = pExpr->pLeft;
     Expr *pRight = pExpr->pRight;

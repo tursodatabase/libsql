@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.346 2005/09/08 00:13:27 drh Exp $
+** $Id: build.c,v 1.347 2005/09/08 14:17:20 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -132,7 +132,6 @@ void sqlite3FinishCoding(Parse *pParse){
 void sqlite3NestedParse(Parse *pParse, const char *zFormat, ...){
   va_list ap;
   char *zSql;
-  int rc;
 # define SAVE_SZ  (sizeof(Parse) - offsetof(Parse,nVar))
   char saveBuf[SAVE_SZ];
 
@@ -147,7 +146,7 @@ void sqlite3NestedParse(Parse *pParse, const char *zFormat, ...){
   pParse->nested++;
   memcpy(saveBuf, &pParse->nVar, SAVE_SZ);
   memset(&pParse->nVar, 0, SAVE_SZ);
-  rc = sqlite3RunParser(pParse, zSql, 0);
+  sqlite3RunParser(pParse, zSql, 0);
   sqliteFree(zSql);
   memcpy(&pParse->nVar, saveBuf, SAVE_SZ);
   pParse->nested--;
@@ -636,7 +635,6 @@ void sqlite3StartTable(
   int isView       /* True if this is a VIEW */
 ){
   Table *pTable;
-  Index *pIdx;
   char *zName = 0; /* The name of the new table */
   sqlite3 *db = pParse->db;
   Vdbe *v;
@@ -715,8 +713,7 @@ void sqlite3StartTable(
     sqlite3ErrorMsg(pParse, "table %T already exists", pName);
     goto begin_table_error;
   }
-  if( (pIdx = sqlite3FindIndex(db, zName, 0))!=0 && 
-      ( iDb==0 || !db->init.busy) ){
+  if( sqlite3FindIndex(db, zName, 0)!=0 && (iDb==0 || !db->init.busy) ){
     sqlite3ErrorMsg(pParse, "there is already an index named %s", zName);
     goto begin_table_error;
   }
@@ -2116,14 +2113,12 @@ void sqlite3CreateIndex(
       goto exit_create_index;
     }
     if( !db->init.busy ){
-      Index *pISameName;    /* Another index with the same name */
-      Table *pTSameName;    /* A table with same name as the index */
       if( SQLITE_OK!=sqlite3ReadSchema(pParse) ) goto exit_create_index;
-      if( (pISameName = sqlite3FindIndex(db, zName, db->aDb[iDb].zName))!=0 ){
+      if( sqlite3FindIndex(db, zName, db->aDb[iDb].zName)!=0 ){
         sqlite3ErrorMsg(pParse, "index %s already exists", zName);
         goto exit_create_index;
       }
-      if( (pTSameName = sqlite3FindTable(db, zName, 0))!=0 ){
+      if( sqlite3FindTable(db, zName, 0)!=0 ){
         sqlite3ErrorMsg(pParse, "there is already a table named %s", zName);
         goto exit_create_index;
       }
