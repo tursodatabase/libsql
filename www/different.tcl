@@ -1,4 +1,4 @@
-set rcsid {$Id: different.tcl,v 1.5 2005/04/01 16:29:12 drh Exp $}
+set rcsid {$Id: different.tcl,v 1.6 2005/09/08 11:04:57 drh Exp $}
 source common.tcl
 header {Distinctive Features Of SQLite}
 puts {
@@ -212,8 +212,8 @@ feature extensions {SQL language extensions} {
   <a href="lang_detach.html">DETACH</a> commands that allow multiple
   independent databases to be used together in the same query.
   And SQLite defines APIs that allows the user to add new
-  <a href="capi3ref.html#sqlite3_create_function>SQL functions</a>
-  and <a href="capi3ref.html#sqlite3_create_collation>collating sequences</a>.
+  <a href="capi3ref.html#sqlite3_create_function">SQL functions</a>
+  and <a href="capi3ref.html#sqlite3_create_collation">collating sequences</a>.
 }
 
 
