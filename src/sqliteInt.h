@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.409 2005/09/07 22:48:16 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.410 2005/09/08 01:58:43 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -927,7 +927,7 @@ struct Expr {
 struct ExprList {
   int nExpr;             /* Number of expressions on the list */
   int nAlloc;            /* Number of entries allocated below */
-  int iTab;              /* VDBE Cursor associated with this ExprList */
+  int iECursor;          /* VDBE Cursor associated with this ExprList */
   struct ExprList_item {
     Expr *pExpr;           /* The list of expressions */
     char *zName;           /* Token associated with this expression */
@@ -1132,10 +1132,9 @@ struct Select {
 #define SRT_Mem          5  /* Store result in a memory cell */
 #define SRT_Set          6  /* Store non-null results as keys in an index */
 #define SRT_Table        7  /* Store result as data and add automatic rowid */
-#define SRT_TempTable    8  /* Store result in a trasient table */
-#define SRT_Sorter       9  /* Store results in the sorter NOT USED */
-#define SRT_Subroutine  10  /* Call a subroutine to handle results */
-#define SRT_Exists      11  /* Put 0 or 1 in a memory cell */
+#define SRT_VirtualTab   8  /* Create virtual table and store results there */
+#define SRT_Subroutine   9  /* Call a subroutine to handle results */
+#define SRT_Exists      10  /* Put 0 or 1 in a memory cell */
 
 /*
 ** An SQL parser context.  A copy of this structure is passed through

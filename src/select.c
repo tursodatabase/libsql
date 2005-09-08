@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.264 2005/09/08 00:13:28 drh Exp $
+** $Id: select.c,v 1.265 2005/09/08 01:58:43 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -330,10 +330,10 @@ void sqlite3SelectDelete(Select *p){
 */
 static void pushOntoSorter(Parse *pParse, Vdbe *v, ExprList *pOrderBy){
   sqlite3ExprCodeExprList(pParse, pOrderBy);
-  sqlite3VdbeAddOp(v, OP_Sequence, pOrderBy->iTab, 0);
+  sqlite3VdbeAddOp(v, OP_Sequence, pOrderBy->iECursor, 0);
   sqlite3VdbeAddOp(v, OP_Pull, pOrderBy->nExpr + 1, 0);
   sqlite3VdbeAddOp(v, OP_MakeRecord, pOrderBy->nExpr + 2, 0);
-  sqlite3VdbeAddOp(v, OP_IdxInsert, pOrderBy->iTab, 0);
+  sqlite3VdbeAddOp(v, OP_IdxInsert, pOrderBy->iECursor, 0);
 }
 
 /*
@@ -465,7 +465,7 @@ static int selectInnerLoop(
     /* Store the result as data using a unique key.
     */
     case SRT_Table:
-    case SRT_TempTable: {
+    case SRT_VirtualTab: {
       sqlite3VdbeAddOp(v, OP_MakeRecord, nColumn, 0);
       if( pOrderBy ){
         pushOntoSorter(pParse, v, pOrderBy);
@@ -528,15 +528,13 @@ static int selectInnerLoop(
     ** popping the data from the stack.
     */
     case SRT_Subroutine:
-    case SRT_Callback:
-    case SRT_Sorter: {
+    case SRT_Callback: {
       if( pOrderBy ){
         sqlite3VdbeAddOp(v, OP_MakeRecord, nColumn, 0);
         pushOntoSorter(pParse, v, pOrderBy);
       }else if( eDest==SRT_Subroutine ){
         sqlite3VdbeAddOp(v, OP_Gosub, 0, iParm);
       }else{
-        assert( eDest!=SRT_Sorter );
         sqlite3VdbeAddOp(v, OP_Callback, nColumn, 0);
       }
       break;
@@ -620,14 +618,13 @@ static void generateSortTail(
   int iTab;
   ExprList *pOrderBy = p->pOrderBy;
 
-  if( eDest==SRT_Sorter ) return;
-  iTab = pOrderBy->iTab;
+  iTab = pOrderBy->iECursor;
   addr = 1 + sqlite3VdbeAddOp(v, OP_Sort, iTab, brk);
   codeLimiter(v, p, cont, brk, 0);
   sqlite3VdbeAddOp(v, OP_Column, iTab, pOrderBy->nExpr + 1);
   switch( eDest ){
     case SRT_Table:
-    case SRT_TempTable: {
+    case SRT_VirtualTab: {
       sqlite3VdbeAddOp(v, OP_NewRowid, iParm, 0);
       sqlite3VdbeAddOp(v, OP_Pull, 1, 0);
       sqlite3VdbeAddOp(v, OP_Insert, iParm, 0);
@@ -1343,10 +1340,10 @@ static void computeLimitRegisters(Parse *pParse, Select *p){
 static void createSortingIndex(Parse *pParse, Select *p, ExprList *pOrderBy){
   if( pOrderBy ){
     int addr;
-    assert( pOrderBy->iTab==0 );
-    pOrderBy->iTab = pParse->nTab++;
+    assert( pOrderBy->iECursor==0 );
+    pOrderBy->iECursor = pParse->nTab++;
     addr = sqlite3VdbeAddOp(pParse->pVdbe, OP_OpenVirtual,
-                            pOrderBy->iTab, pOrderBy->nExpr+1);
+                            pOrderBy->iECursor, pOrderBy->nExpr+1);
     assert( p->addrOpenVirt[2] == -1 );
     p->addrOpenVirt[2] = addr;
   }
@@ -1468,7 +1465,7 @@ static int multiSelect(
 
   /* Create the destination temporary table if necessary
   */
-  if( eDest==SRT_TempTable ){
+  if( eDest==SRT_VirtualTab ){
     assert( p->pEList );
     assert( nSetP2<sizeof(aSetP2)/sizeof(aSetP2[0]) );
     aSetP2[nSetP2++] = sqlite3VdbeAddOp(v, OP_OpenVirtual, iParm, 0);
@@ -2182,7 +2179,7 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
 
   /* If the output is destined for a temporary table, open that table.
   */
-  if( eDest==SRT_TempTable ){
+  if( eDest==SRT_VirtualTab ){
     sqlite3VdbeAddOp(v, OP_OpenVirtual, iParm, 1);
   }
 
@@ -2554,6 +2551,7 @@ int sqlite3Select(
   int isDistinct;        /* True if the DISTINCT keyword is present */
   int distinct;          /* Table to use for the distinct set */
   int rc = 1;            /* Value to return from this function */
+  int addrSortIndex;     /* Address of an OP_OpenVirtual instruction */
   AggInfo sAggInfo;      /* Information used by aggregate queries */
 
   if( sqlite3_malloc_failed || pParse->nErr || p==0 ) return 1;
@@ -2646,7 +2644,7 @@ int sqlite3Select(
     }else{
       needRestoreContext = 0;
     }
-    sqlite3Select(pParse, pItem->pSelect, SRT_TempTable, 
+    sqlite3Select(pParse, pItem->pSelect, SRT_VirtualTab, 
                  pItem->iCursor, p, i, &isAgg, 0);
     if( needRestoreContext ){
       pParse->zAuthContext = zSavedAuthContext;
@@ -2682,12 +2680,17 @@ int sqlite3Select(
 #endif
 
   /* If there is an ORDER BY clause, resolve any collation sequences
-  ** names that have been explicitly specified.
+  ** names that have been explicitly specified and create a sorting index.
+  **
+  ** This sorting index might end up being unused if the data can be 
+  ** extracted in pre-sorted order.  If that is the case, then the
+  ** OP_OpenVirtual instruction will be changed to an OP_Noop once
+  ** we figure out that the sorting index is not needed.  The addrSortIndex
+  ** variable is used to facilitate that change.
   */
   if( pOrderBy ){
     struct ExprList_item *pTerm;
     KeyInfo *pKeyInfo;
-    int addr;
     for(i=0, pTerm=pOrderBy->a; i<pOrderBy->nExpr; i++, pTerm++){
       if( pTerm->zName ){
         pTerm->pExpr->pColl = sqlite3LocateCollSeq(pParse, pTerm->zName, -1);
@@ -2697,10 +2700,12 @@ int sqlite3Select(
       goto select_end;
     }
     pKeyInfo = keyInfoFromExprList(pParse, pOrderBy);
-    pOrderBy->iTab = pParse->nTab++;
-    addr = sqlite3VdbeOp3(v, OP_OpenVirtual, pOrderBy->iTab, pOrderBy->nExpr+2, 
+    pOrderBy->iECursor = pParse->nTab++;
+    p->addrOpenVirt[2] = addrSortIndex =
+       sqlite3VdbeOp3(v, OP_OpenVirtual, pOrderBy->iECursor, pOrderBy->nExpr+2, 
                         (char*)pKeyInfo, P3_KEYINFO_HANDOFF);
-    p->addrOpenVirt[2] = addr;
+  }else{
+    addrSortIndex = -1;
   }
 
   /* Set the limiter.
@@ -2709,7 +2714,7 @@ int sqlite3Select(
 
   /* If the output is destined for a temporary table, open that table.
   */
-  if( eDest==SRT_TempTable ){
+  if( eDest==SRT_VirtualTab ){
     sqlite3VdbeAddOp(v, OP_OpenVirtual, iParm, pEList->nExpr);
   }
 
@@ -2740,6 +2745,15 @@ int sqlite3Select(
     */
     pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, &pOrderBy);
     if( pWInfo==0 ) goto select_end;
+
+    /* If sorting index that was created by a prior OP_OpenVirtual 
+    ** instruction ended up not being needed, then change the OP_OpenVirtual
+    ** into an OP_Noop.
+    */
+    if( addrSortIndex>=0 && pOrderBy==0 ){
+      uncreateSortingIndex(pParse, addrSortIndex);
+      p->addrOpenVirt[2] = -1;
+    }
 
     /* Use the standard inner loop
     */
@@ -2785,6 +2799,7 @@ int sqlite3Select(
     sNC.pSrcList = pTabList;
     sNC.pAggInfo = &sAggInfo;
     sAggInfo.nSortingColumn = pGroupBy ? pGroupBy->nExpr+1 : 0;
+    sAggInfo.pGroupBy = pGroupBy;
     if( sqlite3ExprAnalyzeAggList(&sNC, pEList) ){
       goto select_end;
     }

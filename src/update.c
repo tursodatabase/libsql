@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.110 2005/07/21 18:23:20 drh Exp $
+** $Id: update.c,v 1.111 2005/09/08 01:58:43 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -259,13 +259,13 @@ void sqlite3Update(
   if( pParse->nested==0 ) sqlite3VdbeCountChanges(v);
   sqlite3BeginWriteOperation(pParse, 1, pTab->iDb);
 
-  /* If we are trying to update a view, construct that view into
-  ** a temporary table.
+  /* If we are trying to update a view, realize that view into
+  ** a ephemeral table.
   */
   if( isView ){
     Select *pView;
     pView = sqlite3SelectDup(pTab->pSelect);
-    sqlite3Select(pParse, pView, SRT_TempTable, iCur, 0, 0, 0, 0);
+    sqlite3Select(pParse, pView, SRT_VirtualTab, iCur, 0, 0, 0, 0);
     sqlite3SelectDelete(pView);
   }
 

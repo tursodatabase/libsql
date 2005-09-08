@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is page cache subsystem.
 #
-# $Id: collate3.test,v 1.10 2005/01/29 08:32:46 danielk1977 Exp $
+# $Id: collate3.test,v 1.11 2005/09/08 01:58:43 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -152,6 +152,7 @@ ifcapable compound {
     }
   } {0 {}}
   do_test collate3-2.13 {
+btree_breakpoint
     catchsql {
       SELECT 10 UNION ALL SELECT 20 ORDER BY 1 COLLATE string_compare;
     }

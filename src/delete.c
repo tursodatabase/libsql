@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** in order to generate code for DELETE FROM statements.
 **
-** $Id: delete.c,v 1.109 2005/07/21 18:23:20 drh Exp $
+** $Id: delete.c,v 1.110 2005/09/08 01:58:43 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -178,12 +178,12 @@ void sqlite3DeleteFrom(
   if( pParse->nested==0 ) sqlite3VdbeCountChanges(v);
   sqlite3BeginWriteOperation(pParse, triggers_exist, pTab->iDb);
 
-  /* If we are trying to delete from a view, construct that view into
-  ** a temporary table.
+  /* If we are trying to delete from a view, realize that view into
+  ** a ephemeral table.
   */
   if( isView ){
     Select *pView = sqlite3SelectDup(pTab->pSelect);
-    sqlite3Select(pParse, pView, SRT_TempTable, iCur, 0, 0, 0, 0);
+    sqlite3Select(pParse, pView, SRT_VirtualTab, iCur, 0, 0, 0, 0);
     sqlite3SelectDelete(pView);
   }
 
