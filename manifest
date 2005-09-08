@@ -1,5 +1,5 @@
-C The\sSUM()\saggregate\sfunction\sreturns\san\sinteger\sresult\sif\sall\sinputs\sare\nintegers.\s\sAny\ssingle\snon-integer\sinput\scauses\sthe\sresult\sto\sbe\sa\sfloating\npoint\svalue.\s(CVS\s2669)
-D 2005-09-08T10:37:01
+C Fix\sa\scomment\sin\ssqlite.h.\s\sTicket\s#1321.\s(CVS\s2670)
+D 2005-09-08T10:58:52
 F Makefile.in 12784cdce5ffc8dfb707300c34e4f1eb3b8a14f1
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -65,7 +65,7 @@ F src/printf.c c01e9ad473d79463fb1f483b1eca5c3cbed2a4e5
 F src/random.c 90adff4e73a3b249eb4f1fc2a6ff9cf78c7233a4
 F src/select.c 7e52f53ccf116456f1f5eebb5493973eda43c89a
 F src/shell.c b21daba017b8feef2fdc65ecde57f70209494217
-F src/sqlite.h.in d6561d51025d08de4f455607f3f9f9aa76e855d5
+F src/sqlite.h.in 461b2535550cf77aedfd44385da11ef7d63e57a2
 F src/sqliteInt.h 0688a83d0a6d8a483666f742bceebe56a6f4d1bc
 F src/table.c 25b3ff2b39b7d87e8d4a5da0713d68dfc06cbee9
 F src/tclsqlite.c ac94682f9e601dd373912c46414a5a842db2089a
@@ -306,7 +306,7 @@ F www/tclsqlite.tcl 3df553505b6efcad08f91e9b975deb2e6c9bb955
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P cc2a61650ea0d4b2ef67e144424327362999526d
-R 120f4a2c403c8caf23b54a6f849beb64
+P 21adf4bd99e732650a1e8e9a1cc954126983a654
+R 1b2c45fe52bc4bea506808403b359830
 U drh
-Z c87b2b0ad2e3bb024d1d63e6eeb11e3b
+Z 77d413f88178ed3fa9ab51dd46624a7d
