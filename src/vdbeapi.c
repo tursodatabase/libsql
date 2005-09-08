@@ -257,8 +257,8 @@ void *sqlite3_user_data(sqlite3_context *p){
 ** same context that was returned on prior calls.
 */
 void *sqlite3_aggregate_context(sqlite3_context *p, int nByte){
-  assert( p && p->pFunc && p->pFunc->xStep );
   Mem *pMem = p->pMem;
+  assert( p && p->pFunc && p->pFunc->xStep );
   if( (pMem->flags & MEM_Agg)==0 ){
     if( nByte==0 ){
       assert( pMem->flags==MEM_Null );
