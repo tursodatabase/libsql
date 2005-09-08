@@ -1,5 +1,5 @@
-C More\sbug\sfixes.\s\sAll\sof\sthe\s"quick"\stests\spass.\s\sThe\sfull\stest\ssuite\sstill\nshows\sproblems.\s(CVS\s2665)
-D 2005-09-07T23:05:22
+C All\sregression\stests\snow\spass.\s\sBut\sI\sam\ssure\sthere\smust\sstill\sbe\sproblems.\nNew\stests\sneed\sto\sbe\sadded.\s(CVS\s2666)
+D 2005-09-08T00:13:27
 F Makefile.in 12784cdce5ffc8dfb707300c34e4f1eb3b8a14f1
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -34,7 +34,7 @@ F src/attach.c 4b21689700a72ae281fa85dbaff06b2a62bd49ee
 F src/auth.c 31e2304bef67f44d635655f44234387ea7d21454
 F src/btree.c 5b3bc015c49a41c025cfdf8ad36051f3007e2cb0
 F src/btree.h 1ed561263ca0e335bc3e81d761c9d5ff8c22f61e
-F src/build.c d9f3c0e65ada1087da21b524f6ef685e4d1a1725
+F src/build.c fcedb4baf328f7846c0c686d46d5c4d0d0842423
 F src/callback.c 9a1162c8f9dae9fad6d548339669aacb5f6cf76b
 F src/complete.c 4de937dfdd4c79a501772ab2035b26082f337a79
 F src/date.c 7444b0900a28da77e57e3337a636873cff0ae940
@@ -63,7 +63,7 @@ F src/pragma.c 69413fbdc0c6aaa493a776ea52c1b3e6cf35dfb2
 F src/prepare.c 86f0d8e744b8d956eff6bc40e29049efee017610
 F src/printf.c c01e9ad473d79463fb1f483b1eca5c3cbed2a4e5
 F src/random.c 90adff4e73a3b249eb4f1fc2a6ff9cf78c7233a4
-F src/select.c 4549cbef5d8bb98004374de533b6e45c5d73da6c
+F src/select.c 5f4a9396fc3b4f1d24224a4842737e708b13fb61
 F src/shell.c b21daba017b8feef2fdc65ecde57f70209494217
 F src/sqlite.h.in d6561d51025d08de4f455607f3f9f9aa76e855d5
 F src/sqliteInt.h b7d841739ce478a299e46db5ebcb510e833a36c5
@@ -83,7 +83,7 @@ F src/vacuum.c 829d9e1a6d7c094b80e0899686670932eafd768c
 F src/vdbe.c 1caa73395943e20c61cde11deedf05cb37847f87
 F src/vdbe.h c8e105979fc7aaf5b8004e9621904e3bd096dfa2
 F src/vdbeInt.h 3dd2a29c7b0a55404c35f93caae81fb42f4cb70a
-F src/vdbeapi.c 352f088f8e30385acfad7deee09edc4c73422129
+F src/vdbeapi.c 6df708808458df837100521be72e728a581b5206
 F src/vdbeaux.c 11db0de973c850bb5d92c67af1c8f3c189f08741
 F src/vdbefifo.c 9efb94c8c3f4c979ebd0028219483f88e57584f5
 F src/vdbemem.c e1da6b772e8a05e95ede8eb6f2f6d0ef4f2e1034
@@ -170,7 +170,7 @@ F test/lock.test 9b7afcb24f53d24da502abb33daaad2cd6d44107
 F test/lock2.test 59c3dd7d9b24d1bf7ec91b2d1541c37e97939d5f
 F test/lock3.test 615111293cf32aa2ed16d01c6611737651c96fb9
 F test/main.test 249f139ef2f75710db1b49bb79e8b27767eacae1
-F test/malloc.test 06d8dd2ed854693fc4e63b3e7dfd0fd8981cd628
+F test/malloc.test 666c77a878ce50f5c22b9211ed43e889cabb63a6
 F test/malloc2.test 655b972372d2754a3f6c6ed54d7cfd18fde9bd32
 F test/memdb.test 1860e060be810bf0775bc57408a5b7c4954bcaea
 F test/memleak.test df2b2b96e77f8ba159a332299535b1e5f18e49ac
@@ -306,7 +306,7 @@ F www/tclsqlite.tcl 3df553505b6efcad08f91e9b975deb2e6c9bb955
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 7e85a162d0ecf0acdbffcacc62b60d97fe123881
-R 923d357135fb2babd8d32ca5b7a07c70
+P a1b6d910cdbb53f12366402d9585dce2aad3ba3d
+R 798c4d51d5a5c7cc59df64f56a2ed72b
 U drh
-Z 70fc5ed7ff9adbf9e06aa3031cdb281a
+Z 7290bc3839b076b3e9d2d69315c82577

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.263 2005/09/07 22:48:16 drh Exp $
+** $Id: select.c,v 1.264 2005/09/08 00:13:28 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2800,6 +2800,7 @@ int sqlite3Select(
         goto select_end;
       }
     }
+    if( sqlite3_malloc_failed ) goto select_end;
 
     /* Processing for aggregates with GROUP BY is very different and
     ** much more complex tha aggregates without a GROUP BY.
@@ -2873,6 +2874,7 @@ int sqlite3Select(
       */
       sqlite3VdbeResolveLabel(v, addrInitializeLoop);
       pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, &pGroupBy);
+      if( pWInfo==0 ) goto select_end;
       if( pGroupBy==0 ){
         /* The optimizer is able to deliver rows in group by order so
         ** we do not have to sort.  The OP_OpenVirtual table will be
@@ -2981,6 +2983,7 @@ int sqlite3Select(
       */
       resetAccumulator(pParse, &sAggInfo);
       pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, 0);
+      if( pWInfo==0 ) goto select_end;
       updateAccumulator(pParse, &sAggInfo);
       sqlite3WhereEnd(pWInfo);
       finalizeAggFunctions(pParse, &sAggInfo);

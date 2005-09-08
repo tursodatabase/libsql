@@ -14,7 +14,7 @@
 # special feature is used to see what happens in the library if a malloc
 # were to really fail due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.23 2005/08/19 01:07:16 drh Exp $
+# $Id: malloc.test,v 1.24 2005/09/08 00:13:28 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -56,7 +56,6 @@ proc do_malloc_test {tn args} {
 
   set ::go 1
   for {set ::n 1} {$::go} {incr ::n} {
-
     do_test malloc-$tn.$::n {
 
       sqlite_malloc_fail 0
