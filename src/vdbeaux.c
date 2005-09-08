@@ -985,7 +985,8 @@ static int vdbeCommit(sqlite3 *db){
     */
     zMainFile = sqlite3BtreeGetDirname(db->aDb[0].pBt);
     rc = sqlite3OsOpenDirectory(zMainFile, &master);
-    if( rc!=SQLITE_OK || (needSync && (rc=sqlite3OsSync(&master))!=SQLITE_OK) ){
+    if( rc!=SQLITE_OK ||
+          (needSync && (rc=sqlite3OsSync(&master,0))!=SQLITE_OK) ){
       sqlite3OsClose(&master);
       sqlite3OsDelete(zMaster);
       sqliteFree(zMaster);

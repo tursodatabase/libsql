@@ -797,7 +797,7 @@ int sqlite3_fullsync_count = 0;
 ** enabled, however, since with SQLITE_NO_SYNC enabled, an OS crash
 ** or power failure will likely corrupt the database file.
 */
-static int full_fsync(int fd, int fullSync){
+static int full_fsync(int fd, int fullSync, int dataOnly){
   int rc;
 
   /* Record the number of times that we do a normal fsync() and 
@@ -826,7 +826,11 @@ static int full_fsync(int fd, int fullSync){
   if( rc ) rc = fsync(fd);
 
 #else
-  rc = fsync(fd);
+  if( dataOnly ){
+    rc = fdatasync(fd);
+  }else{
+    rc = fsync(fd);
+  }
 #endif /* defined(F_FULLFSYNC) */
 #endif /* defined(SQLITE_NO_SYNC) */
 
@@ -836,6 +840,10 @@ static int full_fsync(int fd, int fullSync){
 /*
 ** Make sure all writes to a particular file are committed to disk.
 **
+** If dataOnly==0 then both the file itself and its metadata (file
+** size, access time, etc) are synced.  If dataOnly!=0 then only the
+** file data is synced.
+**
 ** Under Unix, also make sure that the directory entry for the file
 ** has been created by fsync-ing the directory that contains the file.
 ** If we do not do this and we encounter a power failure, the directory
@@ -844,16 +852,16 @@ static int full_fsync(int fd, int fullSync){
 ** the directory entry for the journal was never created) and the transaction
 ** will not roll back - possibly leading to database corruption.
 */
-int sqlite3OsSync(OsFile *id){
+int sqlite3OsSync(OsFile *id, int dataOnly){
   assert( id->isOpen );
   SimulateIOError(SQLITE_IOERR);
   TRACE2("SYNC    %-3d\n", id->h);
-  if( full_fsync(id->h, id->fullSync) ){
+  if( full_fsync(id->h, id->fullSync, dataOnly) ){
     return SQLITE_IOERR;
   }
   if( id->dirfd>=0 ){
     TRACE2("DIRSYNC %-3d\n", id->dirfd);
-    full_fsync(id->dirfd, id->fullSync);
+    full_fsync(id->dirfd, id->fullSync, 0);
     close(id->dirfd);  /* Only need to sync once, so close the directory */
     id->dirfd = -1;    /* when we are done. */
   }

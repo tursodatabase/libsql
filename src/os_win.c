@@ -482,7 +482,7 @@ int sqlite3OsSeek(OsFile *id, i64 offset){
 /*
 ** Make sure all writes to a particular file are committed to disk.
 */
-int sqlite3OsSync(OsFile *id){
+int sqlite3OsSync(OsFile *id, int dataOnly){
   assert( id->isOpen );
   TRACE3("SYNC %d lock=%d\n", id->h, id->locktype);
   if( FlushFileBuffers(id->h) ){

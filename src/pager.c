@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.210 2005/08/27 16:36:49 drh Exp $
+** @(#) $Id: pager.c,v 1.211 2005/09/08 12:38:42 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -2121,7 +2121,7 @@ static int syncJournal(Pager *pPager){
         */
         if( pPager->fullSync ){
           TRACE2("SYNC journal of %d\n", PAGERID(pPager));
-          rc = sqlite3OsSync(&pPager->jfd);
+          rc = sqlite3OsSync(&pPager->jfd, 0);
           if( rc!=0 ) return rc;
         }
         sqlite3OsSeek(&pPager->jfd, pPager->journalHdr + sizeof(aJournalMagic));
@@ -2131,7 +2131,7 @@ static int syncJournal(Pager *pPager){
         sqlite3OsSeek(&pPager->jfd, pPager->journalOff);
       }
       TRACE2("SYNC journal of %d\n", PAGERID(pPager));
-      rc = sqlite3OsSync(&pPager->jfd);
+      rc = sqlite3OsSync(&pPager->jfd, pPager->fullSync);
       if( rc!=0 ) return rc;
       pPager->journalStarted = 1;
     }
@@ -3472,7 +3472,7 @@ int sqlite3pager_sync(Pager *pPager, const char *zMaster, Pgno nTrunc){
 
     /* Sync the database file. */
     if( !pPager->noSync ){
-      rc = sqlite3OsSync(&pPager->fd);
+      rc = sqlite3OsSync(&pPager->fd, 0);
     }
 
     pPager->state = PAGER_SYNCED;

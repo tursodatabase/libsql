@@ -181,7 +181,7 @@ int sqlite3OsClose(OsFile*);
 int sqlite3OsRead(OsFile*, void*, int amt);
 int sqlite3OsWrite(OsFile*, const void*, int amt);
 int sqlite3OsSeek(OsFile*, i64 offset);
-int sqlite3OsSync(OsFile*);
+int sqlite3OsSync(OsFile*, int);
 int sqlite3OsTruncate(OsFile*, i64 size);
 int sqlite3OsFileSize(OsFile*, i64 *pSize);
 char *sqlite3OsFullPathname(const char*);
