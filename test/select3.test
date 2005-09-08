@@ -12,7 +12,7 @@
 # focus of this file is testing aggregate functions and the
 # GROUP BY and HAVING clauses of SELECT statements.
 #
-# $Id: select3.test,v 1.13 2005/04/01 10:47:40 drh Exp $
+# $Id: select3.test,v 1.14 2005/09/08 10:37:01 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -44,7 +44,7 @@ do_test select3-1.2 {
     SELECT min(n),min(log),max(n),max(log),sum(n),sum(log),avg(n),avg(log)
     FROM t1
   }
-} {1 0 31 5 496.0 124.0 16.0 4.0}
+} {1 0 31 5 496 124 16.0 4.0}
 do_test select3-1.3 {
   execsql {SELECT max(n)/avg(n), max(log)/avg(log) FROM t1}
 } {1.9375 1.25}

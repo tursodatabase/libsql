@@ -12,7 +12,7 @@
 # focus of this file is testing the LIMIT ... OFFSET ... clause
 #  of SELECT statements.
 #
-# $Id: limit.test,v 1.24 2005/02/05 12:48:49 danielk1977 Exp $
+# $Id: limit.test,v 1.25 2005/09/08 10:37:01 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -184,7 +184,7 @@ do_test limit-5.5 {
                    ORDER BY 1, 2 LIMIT 1000;
     SELECT count(*), sum(x), sum(y), min(x), max(x), min(y), max(y) FROM t5;
   }
-} {1000 1528204.0 593161.0 0 3107 505 1005}
+} {1000 1528204 593161 0 3107 505 1005}
 
 # There is some contraversy about whether LIMIT 0 should be the same as
 # no limit at all or if LIMIT 0 should result in zero output rows.

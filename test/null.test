@@ -100,7 +100,7 @@ do_test null-3.1 {
     select count(*), count(b), count(c), sum(b), sum(c), 
            avg(b), avg(c), min(b), max(b) from t1;
   }
-} {7 4 6 2.0 3.0 0.5 0.5 0 1}
+} {7 4 6 2 3 0.5 0.5 0 1}
 
 # Check to see how WHERE clauses handle NULL values.  A NULL value
 # is the same as UNKNOWN.  The WHERE clause should only select those

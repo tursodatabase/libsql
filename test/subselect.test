@@ -12,7 +12,7 @@
 # focus of this file is testing SELECT statements that are part of
 # expressions.
 #
-# $Id: subselect.test,v 1.12 2005/01/21 03:12:16 danielk1977 Exp $
+# $Id: subselect.test,v 1.13 2005/09/08 10:37:01 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -132,12 +132,12 @@ do_test subselect-3.2 {
   execsql {
     SELECT sum(x) FROM (SELECT x FROM t3 ORDER BY x LIMIT 2);
   }
-} {3.0}
+} {3}
 do_test subselect-3.3 {
   execsql {
     SELECT sum(x) FROM (SELECT x FROM t3 ORDER BY x DESC LIMIT 2);
   }
-} {11.0}
+} {11}
 do_test subselect-3.4 {
   execsql {
     SELECT (SELECT x FROM t3 ORDER BY x);

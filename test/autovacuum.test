@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the SELECT statement.
 #
-# $Id: autovacuum.test,v 1.17 2005/03/09 13:09:45 danielk1977 Exp $
+# $Id: autovacuum.test,v 1.18 2005/09/08 10:37:01 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -504,7 +504,7 @@ do_test autovacuum-4.1 {
   execsql {
     SELECT sum(a) FROM av1;
   }
-} {5049.0}
+} {5049}
 do_test autovacuum-4.2 {
   catchsql {
     CREATE UNIQUE INDEX av1_i ON av1(a);
@@ -514,7 +514,7 @@ do_test autovacuum-4.3 {
   execsql {
     SELECT sum(a) FROM av1;
   }
-} {5049.0}
+} {5049}
 do_test autovacuum-4.4 {
   execsql {
     COMMIT;

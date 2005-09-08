@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing built-in functions.
 #
-# $Id: func.test,v 1.37 2005/08/12 23:20:53 drh Exp $
+# $Id: func.test,v 1.38 2005/09/08 10:37:01 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -254,7 +254,7 @@ do_test func-8.1 {
   execsql {
     SELECT sum(a), count(a), round(avg(a),2), min(a), max(a), count(*) FROM t2;
   }
-} {68236.0 3 22745.33 1 67890 5}
+} {68236 3 22745.33 1 67890 5}
 do_test func-8.2 {
   execsql {
     SELECT max('z+'||a||'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOP') FROM t2;
@@ -495,6 +495,23 @@ do_test func-17.1 {
   }
 } {1 {Error %d with %s percents %p}}
 
+# The SUM function should return integer results when all inputs are integer.
+#
+do_test func-18.1 {
+  execsql {
+    CREATE TABLE t5(x);
+    INSERT INTO t5 VALUES(1);
+    INSERT INTO t5 VALUES(-99);
+    INSERT INTO t5 VALUES(10000);
+    SELECT sum(x) FROM t5;
+  }
+} {9902}
+do_test func-18.2 {
+  execsql {
+    INSERT INTO t5 VALUES(0.0);
+    SELECT sum(x) FROM t5;
+  }
+} {9902.0}
 
 
 finish_test

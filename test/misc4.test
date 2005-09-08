@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc4.test,v 1.19 2005/09/08 01:58:43 drh Exp $
+# $Id: misc4.test,v 1.20 2005/09/08 10:37:01 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -128,7 +128,7 @@ ifcapable subquery {
         from a, (select key,sum(period) from b group by key) as x
         where a.key=x.key;
     }
-  } {01 data01 01 3.0 +1 data+1 +1 7.0}
+  } {01 data01 01 3 +1 data+1 +1 7}
 
   # This test case tests the same property as misc4-4.1, but it is
   # a bit smaller which makes it easier to work with while debugging.
