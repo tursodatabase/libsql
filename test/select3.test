@@ -12,7 +12,7 @@
 # focus of this file is testing aggregate functions and the
 # GROUP BY and HAVING clauses of SELECT statements.
 #
-# $Id: select3.test,v 1.14 2005/09/08 10:37:01 drh Exp $
+# $Id: select3.test,v 1.15 2005/09/08 12:57:28 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -220,6 +220,20 @@ do_test select3-6.8 {
   }
 } {5 17 4 9 3 5 2 3 1 2 0 1}
 
+# Sometimes an aggregate query can return no rows at all.
+#
+do_test select3-7.1 {
+  execsql {
+    CREATE TABLE t2(a,b);
+    INSERT INTO t2 VALUES(1,2);
+    SELECT a, sum(b) FROM t2 WHERE b=5 GROUP BY a;
+  }
+} {}
+do_test select3-7.2 {
+  execsql {
+    SELECT a, sum(b) FROM t2 WHERE b=5;
+  }
+} {{} 0}
 
 
 finish_test
