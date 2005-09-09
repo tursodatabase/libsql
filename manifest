@@ -1,5 +1,5 @@
-C Infrastructure\sfor\sthe\sDISTINCT\skeyword\sin\saggregate\sfunctions.\s\sBut\sit\sdoes\nnot\swork\syet.\s\sIf\syou\stry\sto\suse\sit\syou\sget\san\serror\smessage.\s(CVS\s2680)
-D 2005-09-09T01:33:19
+C Detect\serrors\sreturned\sby\sSetFilePointer\son\swindows.\s(CVS\s2681)
+D 2005-09-09T10:17:34
 F Makefile.in 12784cdce5ffc8dfb707300c34e4f1eb3b8a14f1
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -54,7 +54,7 @@ F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
 F src/os_unix.c c86cf43b7ca9200e6fb7bc202ad2cc7da2f69367
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
-F src/os_win.c 5771f4b7d20b03b26ae332404cc58c088ef1b010
+F src/os_win.c ed03a35b2894f9b99840415f941a9f8594dea756
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c 2b48db1cc6073a6d2577100866db6ae039d20940
 F src/pager.h 17b13225abd93c1e9f470060f40a21b9edb5a164
@@ -306,7 +306,7 @@ F www/tclsqlite.tcl 3df553505b6efcad08f91e9b975deb2e6c9bb955
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 461e3a0a27ff083b0bae10c9880e3b41bb85ee31
-R e9d330cbdb5258f307f8eacbc6e8d07f
+P 4d62e36fe3819c2a1412737c2ec8a91ddc5e1777
+R a118739b2cc7f4f314d0c747eb3290dc
 U drh
-Z f4c62c7887509e5c752378d8e7e6ab95
+Z 7d3ec291209ecfbcf4f12c6286527d3d

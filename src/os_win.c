@@ -479,6 +479,9 @@ int sqlite3OsSeek(OsFile *id, i64 offset){
   SEEK(offset/1024 + 1);
   rc = SetFilePointer(id->h, lowerBits, &upperBits, FILE_BEGIN);
   TRACE3("SEEK %d %lld\n", id->h, offset);
+  if( rc==INVALID_SET_FILE_POINTER && GetLastError()!=NO_ERROR ){
+    return SQLITE_FULL;
+  }
   return SQLITE_OK;
 }
 
