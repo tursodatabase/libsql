@@ -473,6 +473,9 @@ int sqlite3OsSeek(OsFile *id, i64 offset){
   LONG lowerBits = offset & 0xffffffff;
   DWORD rc;
   assert( id->isOpen );
+#ifdef SQLITE_TEST
+  if( offset ) SimulateDiskfullError
+#endif
   SEEK(offset/1024 + 1);
   rc = SetFilePointer(id->h, lowerBits, &upperBits, FILE_BEGIN);
   TRACE3("SEEK %d %lld\n", id->h, offset);

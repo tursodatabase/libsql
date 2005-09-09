@@ -772,6 +772,9 @@ int sqlite3OsWrite(OsFile *id, const void *pBuf, int amt){
 int sqlite3OsSeek(OsFile *id, i64 offset){
   assert( id->isOpen );
   SEEK(offset/1024 + 1);
+#ifdef SQLITE_TEST
+  if( offset ) SimulateDiskfullError
+#endif
   lseek(id->h, offset, SEEK_SET);
   return SQLITE_OK;
 }
