@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.226 2005/09/07 22:48:16 drh Exp $
+** $Id: expr.c,v 1.227 2005/09/09 01:33:19 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2038,6 +2038,7 @@ int sqlite3ExprCompare(Expr *pA, Expr *pB){
     return 0;
   }
   if( pA->op!=pB->op ) return 0;
+  if( (pA->flags & EP_Distinct)!=(pB->flags & EP_Distinct) ) return 0;
   if( !sqlite3ExprCompare(pA->pLeft, pB->pLeft) ) return 0;
   if( !sqlite3ExprCompare(pA->pRight, pB->pRight) ) return 0;
   if( pA->pList ){
@@ -2189,6 +2190,11 @@ static int analyzeAggregate(void *pArg, Expr *pExpr){
             pItem->pFunc = sqlite3FindFunction(pParse->db,
                    pExpr->token.z, pExpr->token.n,
                    pExpr->pList ? pExpr->pList->nExpr : 0, enc, 0);
+            if( pExpr->flags & EP_Distinct ){
+              pItem->iDistinct = pParse->nTab++;
+            }else{
+              pItem->iDistinct = -1;
+            }
           }
         }
         /* Make pExpr point to the appropriate pAggInfo->aFunc[] entry

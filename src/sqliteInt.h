@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.412 2005/09/08 14:17:20 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.413 2005/09/09 01:33:19 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -825,6 +825,7 @@ struct AggInfo {
     Expr *pExpr;             /* Expression encoding the function */
     FuncDef *pFunc;          /* The aggregate function implementation */
     int iMem;                /* Memory location that acts as accumulator */
+    int iDistinct;           /* Virtual table used to enforce DISTINCT */
   } *aFunc;
   int nFunc;              /* Number of entries in aFunc[] */
   int nFuncAlloc;         /* Number of slots allocated for aFunc[] */
@@ -903,7 +904,7 @@ struct Expr {
 #define EP_Agg          0x02  /* Contains one or more aggregate functions */
 #define EP_Resolved     0x04  /* IDs have been resolved to COLUMNs */
 #define EP_Error        0x08  /* Expression contains one or more errors */
-#define EP_Not          0x10  /* Operator preceeded by NOT */
+#define EP_Distinct     0x10  /* Aggregate function with DISTINCT keyword */
 #define EP_VarSelect    0x20  /* pSelect is correlated, not constant */
 #define EP_Dequoted     0x40  /* True if the string has been dequoted */
 

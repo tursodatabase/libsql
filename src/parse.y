@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.176 2005/09/07 21:22:46 drh Exp $
+** @(#) $Id: parse.y,v 1.177 2005/09/09 01:33:19 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -660,9 +660,14 @@ expr(A) ::= CAST(X) LP expr(E) AS typetoken(T) RP(Y). {
   sqlite3ExprSpan(A,&X,&Y);
 }
 %endif // SQLITE_OMIT_CAST
-expr(A) ::= ID(X) LP exprlist(Y) RP(E). {
+expr(A) ::= ID(X) LP distinct(D) exprlist(Y) RP(E). {
   A = sqlite3ExprFunction(Y, &X);
   sqlite3ExprSpan(A,&X,&E);
+  if( D ){
+    sqlite3ErrorMsg(pParse, "DISTINCT in an aggregate function "
+        "is not currently supported");
+    A->flags |= EP_Distinct;
+  }
 }
 expr(A) ::= ID(X) LP STAR RP(E). {
   A = sqlite3ExprFunction(0, &X);
