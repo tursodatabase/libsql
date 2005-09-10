@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.347 2005/09/08 14:17:20 drh Exp $
+** $Id: build.c,v 1.348 2005/09/10 15:35:07 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -940,7 +940,7 @@ void sqlite3AddColumnType(Parse *pParse, Token *pType){
   i = p->nCol-1;
   if( i<0 ) return;
   pCol = &p->aCol[i];
-  assert( pCol->zType==0 );
+  sqliteFree(pCol->zType);
   pCol->zType = sqlite3NameFromToken(pType);
   pCol->affinity = sqlite3AffinityType(pType);
 }
