@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.
 # This file implements tests for the ANALYZE command.
 #
-# $Id: analyze.test,v 1.4 2005/09/06 10:26:47 drh Exp $
+# $Id: analyze.test,v 1.5 2005/09/10 22:40:54 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -178,7 +178,7 @@ do_test analyze-3.7 {
     ANALYZE t2;
     SELECT idx, stat FROM sqlite_stat1 ORDER BY idx;
   }
-} {t1i1 {5 3} t1i2 {5 2} t1i3 {5 3 1}}
+} {t1i1 {5 3} t1i2 {5 2} t1i3 {5 3 1} t2i1 {5 3}}
 do_test analyze-3.8 {
   execsql {
     CREATE TABLE t3 AS SELECT a, b, rowid AS c, 'hi' AS d FROM t1;

@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code associated with the ANALYZE command.
 **
-** @(#) $Id: analyze.c,v 1.7 2005/09/06 10:26:47 drh Exp $
+** @(#) $Id: analyze.c,v 1.8 2005/09/10 22:40:54 drh Exp $
 */
 #ifndef SQLITE_OMIT_ANALYZE
 #include "sqliteInt.h"
@@ -88,8 +88,8 @@ static void analyzeOneTable(
   int addr;        /* The address of an instruction */
 
   v = sqlite3GetVdbe(pParse);
-  if( pTab==0 || pTab->pIndex==0 || pTab->pIndex->pNext==0 ){
-    /* Do no analysis for tables with fewer than 2 indices */
+  if( pTab==0 || pTab->pIndex==0 ){
+    /* Do no analysis for tables that have no indices */
     return;
   }
 

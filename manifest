@@ -1,5 +1,5 @@
-C Add\sthe\sexperimental\sEXPLAIN\sQUERY\sPLAN\sdiagnostic\scapability.\s(CVS\s2685)
-D 2005-09-10T16:46:13
+C The\sshell\sdoes\snot\soutput\sthe\ssqlite_stat1\stable\son\s.dump\sor\s.schema.\nThe\sANALYZE\scommand\snow\sgathers\sstatistics\son\stables\sthat\shave\sonly\na\ssingle\sindex\sbecause\sthis\ssometimes\shelps\swhen\sreordering\stables\nin\sa\sjoin.\s(CVS\s2686)
+D 2005-09-10T22:40:54
 F Makefile.in 12784cdce5ffc8dfb707300c34e4f1eb3b8a14f1
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -29,7 +29,7 @@ F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.def c413e514217736884254739a105c8c942fdf0c2f
 F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
 F src/alter.c 26d755f2143719dd3f5b8aaf6cbe3c7f95332528
-F src/analyze.c 29c1344053f0e26e3320449483c7157e09d2a77f
+F src/analyze.c 43a2d91242bdd71b6c299378f6b11e896ee5e43d
 F src/attach.c 4b21689700a72ae281fa85dbaff06b2a62bd49ee
 F src/auth.c 31e2304bef67f44d635655f44234387ea7d21454
 F src/btree.c a1ee183067f20eb5ba33ca45ed47acbc7214fe44
@@ -64,7 +64,7 @@ F src/prepare.c fc098db25d2a121affb08686cf04833fd50452d4
 F src/printf.c c01e9ad473d79463fb1f483b1eca5c3cbed2a4e5
 F src/random.c 90adff4e73a3b249eb4f1fc2a6ff9cf78c7233a4
 F src/select.c a255ca7eddd14c68d966b6323234dd94fcc7a31f
-F src/shell.c b21daba017b8feef2fdc65ecde57f70209494217
+F src/shell.c bf574fc9d8d28d39fcb862820a1578931310fdf1
 F src/sqlite.h.in 461b2535550cf77aedfd44385da11ef7d63e57a2
 F src/sqliteInt.h 0d38d50ebe15a16a1253c9a6f9ce4ad188e097fe
 F src/table.c 25b3ff2b39b7d87e8d4a5da0713d68dfc06cbee9
@@ -94,7 +94,7 @@ F test/alter.test 9d6837a3d946b73df692b7cef2a7644d2e2f6bc6
 F test/alter2.test 60ba0a7057dc71ad630a1cc7c487104346849d50
 F test/alter3.test d4eecd8dbd008d0e66f1c201fa6dc2edca853c38
 F test/altermalloc.test 6e1f404ec021eb2ba6582e3c77b0a35cf206b7af
-F test/analyze.test 8c54b1fb18cab02775324827992d706507979c50
+F test/analyze.test 2f55535aa335785db1a2f97d3f3831c16c09f8b0
 F test/attach.test f320e98bcca68d100cab7666a0c9a93ac5f236bd
 F test/attach2.test 3396c012a39ddf7ba6b528d80bd79554168aa115
 F test/attach3.test 63013383adc4380af69779f34f4af19bd49f7cbe
@@ -306,7 +306,7 @@ F www/tclsqlite.tcl 3df553505b6efcad08f91e9b975deb2e6c9bb955
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P f43427742b1c086f2621c900f4ede1a34a8b44ee
-R ab598fe85832474fa8020d661437e050
+P 986efb7b12643800805ad4b1f1e90e30fcf6d38a
+R 5a4264e3d05bbb86c25811d810ca46ee
 U drh
-Z 6732d617323055d4bde842448e4c98ca
+Z 685a0075e29420a1544272a50eb547bc
