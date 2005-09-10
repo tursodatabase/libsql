@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.485 2005/09/08 14:17:20 drh Exp $
+** $Id: vdbe.c,v 1.486 2005/09/10 16:46:13 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1645,6 +1645,13 @@ case OP_BitNot: {             /* same as TK_BITNOT, no-push */
 ** Do nothing.  This instruction is often useful as a jump
 ** destination.
 */
+/*
+** The magic Explain opcode are only inserted when explain==2 (which
+** is to say when the EXPLAIN QUERY PLAN syntax is used.)
+** This opcode records information from the optimizer.  It is the
+** the same as a no-op.  This opcodesnever appears in a real VM program.
+*/
+case OP_Explain:
 case OP_Noop: {            /* no-push */
   break;
 }

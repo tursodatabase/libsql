@@ -577,8 +577,9 @@ int sqlite3VdbeList(
   }
   p->resOnStack = 0;
 
-
-  i = p->pc++;
+  do{
+    i = p->pc++;
+  }while( i<p->nOp && p->explain==2 && p->aOp[i].opcode!=OP_Explain );
   if( i>=p->nOp ){
     p->rc = SQLITE_OK;
     rc = SQLITE_DONE;
@@ -617,7 +618,7 @@ int sqlite3VdbeList(
     pMem->type = SQLITE_TEXT;
     pMem->enc = SQLITE_UTF8;
 
-    p->nResColumn = 5;
+    p->nResColumn = 5 - 2*(p->explain-1);
     p->pTos = pMem;
     p->rc = SQLITE_OK;
     p->resOnStack = 1;
