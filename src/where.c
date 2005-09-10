@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.169 2005/09/08 14:17:20 drh Exp $
+** $Id: where.c,v 1.170 2005/09/10 15:28:09 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1425,6 +1425,7 @@ WhereInfo *sqlite3WhereBegin(
   pTabItem = pTabList->a;
   pLevel = pWInfo->a;
   andFlags = ~0;
+  TRACE(("*** Optimizer Start ***\n"));
   for(i=iFrom=0, pLevel=pWInfo->a; i<pTabList->nSrc; i++, pLevel++){
     Index *pIdx;                /* Index for FROM table at pTabItem */
     int flags;                  /* Flags asssociated with pIdx */
@@ -1454,12 +1455,14 @@ WhereInfo *sqlite3WhereBegin(
         bestNEq = nEq;
         bestJ = j;
       }
-      if( (pTabItem->jointype & JT_LEFT)!=0
-         || (j>0 && (pTabItem[-1].jointype & JT_LEFT)!=0)
+      if( (pTabItem->jointype & (JT_LEFT|JT_CROSS))!=0
+         || (j>0 && (pTabItem[-1].jointype & (JT_LEFT|JT_CROSS))!=0)
       ){
         break;
       }
     }
+    TRACE(("*** Optimizer choose table %d for loop %d\n", bestJ,
+           pLevel-pWInfo->a));
     if( (bestFlags & WHERE_ORDERBY)!=0 ){
       *ppOrderBy = 0;
     }
@@ -1477,6 +1480,7 @@ WhereInfo *sqlite3WhereBegin(
     notReady &= ~getMask(&maskSet, pTabList->a[bestJ].iCursor);
     pLevel->iFrom = bestJ;
   }
+  TRACE(("*** Optimizer Finished ***\n"));
 
   /* If the total query only selects a single row, then the ORDER BY
   ** clause is irrelevant.

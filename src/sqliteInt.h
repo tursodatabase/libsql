@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.413 2005/09/09 01:33:19 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.414 2005/09/10 15:28:09 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -999,11 +999,12 @@ struct SrcList {
 ** Permitted values of the SrcList.a.jointype field
 */
 #define JT_INNER     0x0001    /* Any kind of inner or cross join */
-#define JT_NATURAL   0x0002    /* True for a "natural" join */
-#define JT_LEFT      0x0004    /* Left outer join */
-#define JT_RIGHT     0x0008    /* Right outer join */
-#define JT_OUTER     0x0010    /* The "OUTER" keyword is present */
-#define JT_ERROR     0x0020    /* unknown or unsupported join type */
+#define JT_CROSS     0x0002    /* Explicit use of the CROSS keyword */
+#define JT_NATURAL   0x0004    /* True for a "natural" join */
+#define JT_LEFT      0x0008    /* Left outer join */
+#define JT_RIGHT     0x0010    /* Right outer join */
+#define JT_OUTER     0x0020    /* The "OUTER" keyword is present */
+#define JT_ERROR     0x0040    /* unknown or unsupported join type */
 
 /*
 ** For each nested loop in a WHERE clause implementation, the WhereInfo
