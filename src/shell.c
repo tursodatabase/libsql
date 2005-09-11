@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.127 2005/09/10 22:40:54 drh Exp $
+** $Id: shell.c,v 1.128 2005/09/11 02:03:04 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -656,10 +656,14 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
   zType = azArg[1];
   zSql = azArg[2];
   
-  if( strcmp(zTable,"sqlite_sequence")!=0 ){
-    fprintf(p->out, "%s;\n", zSql);
-  }else{
+  if( strcmp(zTable, "sqlite_sequence")==0 ){
     fprintf(p->out, "DELETE FROM sqlite_sequence;\n");
+  }else if( strcmp(zTable, "sqlite_stat1")==0 ){
+    fprintf(p->out, "ANALYZE sqlite_master;\n");
+  }else if( strncmp(zTable, "sqlite_", 7)==0 ){
+    return 0;
+  }else{
+    fprintf(p->out, "%s;\n", zSql);
   }
 
   if( strcmp(zType, "table")==0 ){
@@ -905,12 +909,11 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     if( nArg==1 ){
       run_schema_dump_query(p, 
         "SELECT name, type, sql FROM sqlite_master "
-        "WHERE sql NOT NULL AND type=='table' AND name NOT LIKE 'sqlite_%'", 0
+        "WHERE sql NOT NULL AND type=='table'", 0
       );
       run_schema_dump_query(p, 
         "SELECT name, type, sql FROM sqlite_master "
-        "WHERE sql NOT NULL AND type!='table' AND type!='meta' "
-        "AND name NOT LIKE 'sqlite_%'", 0
+        "WHERE sql NOT NULL AND type!='table' AND type!='meta'", 0
       );
     }else{
       int i;
