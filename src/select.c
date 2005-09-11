@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.267 2005/09/10 15:28:09 drh Exp $
+** $Id: select.c,v 1.268 2005/09/11 11:56:28 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -365,6 +365,34 @@ static void codeLimiter(
 }
 
 /*
+** Add code that will check to make sure the top N elements of the
+** stack are distinct.  iTab is a sorting index that holds previously
+** seen combinations of the N values.  A new entry is made in iTab
+** if the current N values are new.
+**
+** A jump to addrRepeat is made and the K values are popped from the
+** stack if the top N elements are not distinct.
+*/
+static void codeDistinct(
+  Vdbe *v,           /* Generate code into this VM */
+  int iTab,          /* A sorting index used to test for distinctness */
+  int addrRepeat,    /* Jump to here if not distinct */
+  int N,             /* The top N elements of the stack must be distinct */
+  int K              /* Pop K elements from the stack if indistinct */
+){
+#if NULL_ALWAYS_DISTINCT
+  sqlite3VdbeAddOp(v, OP_IsNull, -N, sqlite3VdbeCurrentAddr(v)+6);
+#endif
+  sqlite3VdbeAddOp(v, OP_MakeRecord, -N, 0);
+  sqlite3VdbeAddOp(v, OP_Distinct, iTab, sqlite3VdbeCurrentAddr(v)+3);
+  sqlite3VdbeAddOp(v, OP_Pop, K, 0);
+  sqlite3VdbeAddOp(v, OP_Goto, 0, addrRepeat);
+  VdbeComment((v, "# skip indistinct records"));
+  sqlite3VdbeAddOp(v, OP_IdxInsert, iTab, 0);
+}
+
+
+/*
 ** This routine generates the code for the inside of the inner loop
 ** of a SELECT.
 **
@@ -419,17 +447,7 @@ static int selectInnerLoop(
   */
   if( hasDistinct ){
     int n = pEList->nExpr;
-#if NULL_ALWAYS_DISTINCT
-    sqlite3VdbeAddOp(v, OP_IsNull, -pEList->nExpr, sqlite3VdbeCurrentAddr(v)+7);
-#endif
-    /* Deliberately leave the affinity string off of the following
-    ** OP_MakeRecord */
-    sqlite3VdbeAddOp(v, OP_MakeRecord, -n, 0);
-    sqlite3VdbeAddOp(v, OP_Distinct, distinct, sqlite3VdbeCurrentAddr(v)+3);
-    sqlite3VdbeAddOp(v, OP_Pop, n+1, 0);
-    sqlite3VdbeAddOp(v, OP_Goto, 0, iContinue);
-    VdbeComment((v, "# skip indistinct records"));
-    sqlite3VdbeAddOp(v, OP_IdxInsert, distinct, 0);
+    codeDistinct(v, distinct, iContinue, n, n+1);
     if( pOrderBy==0 ){
       codeLimiter(v, p, iContinue, iBreak, nColumn);
     }
@@ -2407,6 +2425,7 @@ static void resetAccumulator(Parse *pParse, AggInfo *pAggInfo){
   Vdbe *v = pParse->pVdbe;
   int i;
   int addr;
+  struct AggInfo_func *pFunc;
   if( pAggInfo->nFunc+pAggInfo->nColumn==0 ){
     return;
   }
@@ -2414,8 +2433,20 @@ static void resetAccumulator(Parse *pParse, AggInfo *pAggInfo){
   for(i=0; i<pAggInfo->nColumn; i++){
     addr = sqlite3VdbeAddOp(v, OP_MemStore, pAggInfo->aCol[i].iMem, 0);
   }
-  for(i=0; i<pAggInfo->nFunc; i++){
-    addr = sqlite3VdbeAddOp(v, OP_MemStore, pAggInfo->aFunc[i].iMem, 0);
+  for(pFunc=pAggInfo->aFunc, i=0; i<pAggInfo->nFunc; i++, pFunc++){
+    addr = sqlite3VdbeAddOp(v, OP_MemStore, pFunc->iMem, 0);
+    if( pFunc->iDistinct>=0 ){
+      Expr *pE = pFunc->pExpr;
+      if( pE->pList==0 || pE->pList->nExpr!=1 ){
+        sqlite3ErrorMsg(pParse, "DISTINCT in aggregate must be followed "
+           "by an expression");
+        pFunc->iDistinct = -1;
+      }else{
+        KeyInfo *pKeyInfo = keyInfoFromExprList(pParse, pE->pList);
+        sqlite3VdbeOp3(v, OP_OpenVirtual, pFunc->iDistinct, 0, 
+                          (char*)pKeyInfo, P3_KEYINFO_HANDOFF);
+      }
+    }
   }
   sqlite3VdbeChangeP2(v, addr, 1);
 }
@@ -2448,12 +2479,18 @@ static void updateAccumulator(Parse *pParse, AggInfo *pAggInfo){
   pAggInfo->directMode = 1;
   for(i=0, pF=pAggInfo->aFunc; i<pAggInfo->nFunc; i++, pF++){
     int nArg;
+    int addrNext = 0;
     ExprList *pList = pF->pExpr->pList;
     if( pList ){
       nArg = pList->nExpr;
       sqlite3ExprCodeExprList(pParse, pList);
     }else{
       nArg = 0;
+    }
+    if( pF->iDistinct>=0 ){
+      addrNext = sqlite3VdbeMakeLabel(v);
+      assert( nArg==1 );
+      codeDistinct(v, pF->iDistinct, addrNext, 1, 1);
     }
     if( pF->pFunc->needCollSeq ){
       CollSeq *pColl = 0;
@@ -2468,6 +2505,9 @@ static void updateAccumulator(Parse *pParse, AggInfo *pAggInfo){
       sqlite3VdbeOp3(v, OP_CollSeq, 0, 0, (char *)pColl, P3_COLLSEQ);
     }
     sqlite3VdbeOp3(v, OP_AggStep, pF->iMem, nArg, (void*)pF->pFunc, P3_FUNCDEF);
+    if( addrNext ){
+      sqlite3VdbeResolveLabel(v, addrNext);
+    }
   }
   for(i=0, pC=pAggInfo->aCol; i<pAggInfo->nAccumulator; i++, pC++){
     sqlite3ExprCode(pParse, pC->pExpr);

@@ -1,7 +1,7 @@
 #
 # Run this script to generated a omitted.html output file
 #
-set rcsid {$Id: omitted.tcl,v 1.8 2005/03/19 01:41:22 drh Exp $}
+set rcsid {$Id: omitted.tcl,v 1.9 2005/09/11 11:56:28 drh Exp $}
 source common.tcl
 header {SQL Features That SQLite Does Not Implement}
 puts {
@@ -54,11 +54,6 @@ feature {Complete ALTER TABLE support} {
 
 feature {Nested transactions} {
   The current implementation only allows a single active transaction.
-}
-
-feature {The COUNT(DISTINCT X) function} {
-  You can accomplish the same thing using a subquery, like this:<br />
-  &nbsp;&nbsp;SELECT count(x) FROM (SELECT DISTINCT x FROM tbl);
 }
 
 feature {RIGHT and FULL OUTER JOIN} {

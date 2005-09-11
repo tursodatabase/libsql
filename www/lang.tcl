@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the lang-*.html files.
 #
-set rcsid {$Id: lang.tcl,v 1.99 2005/09/08 20:37:44 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.100 2005/09/11 11:56:28 drh Exp $}
 source common.tcl
 
 if {[llength $argv]>0} {
@@ -1352,10 +1352,19 @@ UTF-8 strings.</td>
 </table>
 
 <p>
-The following aggregate functions are available by default.  Additional
+The aggregate functions shown below are available by default.  Additional
 aggregate functions written in C may be added using the 
 <a href="capi3ref.html#sqlite3_create_function">sqlite3_create_function()</a>
 API.</p>
+
+<p>
+In any aggregate function that takes a single argument, that argument
+can be preceeded by the keyword DISTINCT.  In such cases, duplicate
+elements are filtered before being passed into the aggregate function.
+For example, the function "count(distinct X)" will return the number
+of distinct values of column X instead of the total number of non-null
+values in column X.
+</p>
 
 <table border=0 cellpadding=10>
 <tr>
