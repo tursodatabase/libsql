@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.268 2005/09/11 11:56:28 drh Exp $
+** $Id: select.c,v 1.269 2005/09/12 23:03:17 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2490,7 +2490,7 @@ static void updateAccumulator(Parse *pParse, AggInfo *pAggInfo){
     if( pF->iDistinct>=0 ){
       addrNext = sqlite3VdbeMakeLabel(v);
       assert( nArg==1 );
-      codeDistinct(v, pF->iDistinct, addrNext, 1, 1);
+      codeDistinct(v, pF->iDistinct, addrNext, 1, 2);
     }
     if( pF->pFunc->needCollSeq ){
       CollSeq *pColl = 0;
