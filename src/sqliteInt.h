@@ -11,14 +11,14 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.415 2005/09/13 00:00:01 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.416 2005/09/13 00:02:17 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
 
 /*
 ** Many people are failing to set -DNDEBUG=1 when compiling SQLite.
-** Setting NDEBUG makes the code smaller and run slower.  So the following
+** Setting NDEBUG makes the code smaller and run faster.  So the following
 ** lines are added to automatically set NDEBUG unless the -DSQLITE_DEBUG=1
 ** option is set.  Thus NDEBUG becomes an opt-in rather than an opt-out
 ** feature.
