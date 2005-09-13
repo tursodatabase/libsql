@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the tclsqlite.html file.
 #
-set rcsid {$Id: tclsqlite.tcl,v 1.14 2005/08/02 17:38:19 drh Exp $}
+set rcsid {$Id: tclsqlite.tcl,v 1.15 2005/09/13 07:00:06 drh Exp $}
 source common.tcl
 header {The Tcl interface to the SQLite library}
 proc METHOD {name text} {
@@ -41,13 +41,19 @@ way widgets are created in Tk.
 
 <p>
 The name of the database is just the name of a disk file in which
-the database is stored.
+the database is stored.  If the name of the database is an empty
+string or the special name ":memory:" then a new database is created
+in memory.
 </p>
 
 <p>
 Once an SQLite database is open, it can be controlled using 
-methods of the <i>dbcmd</i>.  There are currently 19 methods
+methods of the <i>dbcmd</i>.  There are currently 21 methods
 defined:</p>
+
+<p>The <b>sqlite3</b> also accepts an optional third argument called
+the "mode".  This argument is a legacy from SQLite version 2 and is
+currently ignored.</p>
 
 <p>
 <ul>
@@ -55,6 +61,7 @@ defined:</p>
 foreach m [lsort {
  authorizer
  busy
+ cache
  changes
  close
  collate
@@ -83,32 +90,6 @@ puts {
 <p>The use of each of these methods will be explained in the sequel, though
 not in the order shown above.</p>
 
-}
-
-##############################################################################
-METHOD close {
-
-<p>
-As its name suggests, the "close" method to an SQLite database just
-closes the database.  This has the side-effect of deleting the
-<i>dbcmd</i> Tcl command.  Here is an example of opening and then
-immediately closing a database:
-</p>
-
-<blockquote>
-<b>sqlite3 db1 ./testdb<br>
-db1 close</b>
-</blockquote>
-
-<p>
-If you delete the <i>dbcmd</i> directly, that has the same effect
-as invoking the "close" method.  So the following code is equivalent
-to the previous:</p>
-
-<blockquote>
-<b>sqlite3 db1 ./testdb<br>
-rename db1 {}</b>
-</blockquote>
 }
 
 ##############################################################################
@@ -232,6 +213,32 @@ since it avoids making a copy of the content of $bigblob.
 }
 
 ##############################################################################
+METHOD close {
+
+<p>
+As its name suggests, the "close" method to an SQLite database just
+closes the database.  This has the side-effect of deleting the
+<i>dbcmd</i> Tcl command.  Here is an example of opening and then
+immediately closing a database:
+</p>
+
+<blockquote>
+<b>sqlite3 db1 ./testdb<br>
+db1 close</b>
+</blockquote>
+
+<p>
+If you delete the <i>dbcmd</i> directly, that has the same effect
+as invoking the "close" method.  So the following code is equivalent
+to the previous:</p>
+
+<blockquote>
+<b>sqlite3 db1 ./testdb<br>
+rename db1 {}</b>
+</blockquote>
+}
+
+##############################################################################
 METHOD transaction {
 
 <p>
@@ -270,6 +277,38 @@ The <i>transaction-type</i> can be one of <b>deferred</b>,
 }
 
 ##############################################################################
+METHOD cache {
+
+<p>
+The "eval" method described <a href="#eval">above</a> keeps a cache of
+<a href="capi3ref.html#sqlite3_prepare">prepared statements</a>
+for recently evaluated SQL commands.  
+The "cache" method is used to control this cache.
+The first form of this command is:</p>
+
+<blockquote>
+<i>dbcmd</i>&nbsp;&nbsp;<b>cache size</b>&nbsp;&nbsp;<i>N</i>
+</blockquote>
+
+<p>This sets the maximum number of statements that can be cached.
+The upper limit is 100.  The default is 10.  If you set the cache size
+to 0, no caching is done.</p>
+
+<p>The second form of the command is this:</p>
+
+
+<blockquote>
+<i>dbcmd</i>&nbsp;&nbsp;<b>cache flush</b>
+</blockquote>
+
+<p>The cache-flush method 
+<a href="capi3ref.html#sqlite3_finalize">finalizes</a>
+all prepared statements currently
+in the cache.</p>
+
+}
+
+##############################################################################
 METHOD complete {
 
 <p>
@@ -279,9 +318,9 @@ there is more to be entered.</p>
 
 <p>The "complete" method is useful when building interactive applications
 in order to know when the user has finished entering a line of SQL code.
-This is really just an interface to the <b>sqlite3_complete()</b> C
-function.  Refer to the <a href="c_interface.html">C/C++ interface</a>
-specification for additional information.</p>
+This is really just an interface to the 
+<a href="capi3ref.html#sqlite3_complete"><b>sqlite3_complete()</b></a> C
+function.
 }
 
 ##############################################################################
@@ -426,7 +465,8 @@ representation for NULL values is an empty string.</p>
 ##############################################################################
 METHOD onecolumn {
 
-<p>The "onecolumn" method works like "eval" in that it evaluates the
+<p>The "onecolumn" method works like 
+"<a href="#eval">eval</a>" in that it evaluates the
 SQL query statement given as its argument.  The difference is that
 "onecolumn" returns a single element which is the first column of the
 first row of the query result.</p>
@@ -455,7 +495,8 @@ current database connection was first opened.</p>
 ##############################################################################
 METHOD authorizer {
 
-<p>The "authorizer" method provides access to the sqlite3_set_authorizer
+<p>The "authorizer" method provides access to the 
+<a href="capi3ref.html#sqlite3_set_authorizer">sqlite3_set_authorizer</a>
 C/C++ interface.  The argument to authorizer is the name of a procedure that
 is called when SQL statements are being compiled in order to authorize
 certain operations.  The callback procedure takes 5 arguments which describe
