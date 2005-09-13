@@ -1,5 +1,5 @@
-C Updates\sto\sthe\sdocumentation\son\sthe\sTCL\sbindings.\s(CVS\s2692)
-D 2005-09-13T07:00:06
+C Correct\sthe\ssense\sof\sa\stest\sfor\sSQLITE_DEBUG\son\sthe\sresent\sNDEBUG\schange.\nTicket\s#1425\s(CVS\s2693)
+D 2005-09-13T16:12:47
 F Makefile.in 12784cdce5ffc8dfb707300c34e4f1eb3b8a14f1
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -66,7 +66,7 @@ F src/random.c 90adff4e73a3b249eb4f1fc2a6ff9cf78c7233a4
 F src/select.c 9ef1dddd436e1ea86a6bf64ae0ed71bf4a0b894f
 F src/shell.c 3596c1e559b82663057940d19ba533ad421c7dd3
 F src/sqlite.h.in 461b2535550cf77aedfd44385da11ef7d63e57a2
-F src/sqliteInt.h 8f3a33d8428d97eeb58ed8c5b3d06f50709d4cd4
+F src/sqliteInt.h ae781b257c3a7f47ac774aa8e72d4f396b027e0c
 F src/table.c 25b3ff2b39b7d87e8d4a5da0713d68dfc06cbee9
 F src/tclsqlite.c ac94682f9e601dd373912c46414a5a842db2089a
 F src/test1.c b569b60e35f0e3ea20e5ebfaf6e522a01c08d481
@@ -307,7 +307,7 @@ F www/tclsqlite.tcl ddcf912ea48695603c8ed7efb29f0812ef8d1b49
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 49c952807dabd80bfeb46caf55856aaab988226c
-R f4b62448ad898dcbe88a2a2c62a4eed4
+P 94aa2d32459e1cee2df21fcc7df76c73dab903cd
+R 847d1273ee05952d5cd25826886387bb
 U drh
-Z fae3e7ef8ecd16d6b2c3c92286508790
+Z 852539335962d6c2e1850d0f96a4e184
