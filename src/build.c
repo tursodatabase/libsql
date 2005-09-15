@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.348 2005/09/10 15:35:07 drh Exp $
+** $Id: build.c,v 1.349 2005/09/15 21:24:52 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1015,7 +1015,9 @@ void sqlite3AddPrimaryKey(
           break;
         }
       }
-      if( iCol<pTab->nCol ) pTab->aCol[iCol].isPrimKey = 1;
+      if( iCol<pTab->nCol ){
+        pTab->aCol[iCol].isPrimKey = i<255 ? i+1 : 255;
+      }
     }
     if( pList->nExpr>1 ) iCol = -1;
   }

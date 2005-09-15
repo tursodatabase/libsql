@@ -1,5 +1,5 @@
-C Correct\sthe\ssense\sof\sa\stest\sfor\sSQLITE_DEBUG\son\sthe\sresent\sNDEBUG\schange.\nTicket\s#1425\s(CVS\s2693)
-D 2005-09-13T16:12:47
+C The\stable_info\spragma\snow\sgives\sthe\sorder\sof\scolumns\sin\sthe\sprimary\skey.\s(CVS\s2694)
+D 2005-09-15T21:24:52
 F Makefile.in 12784cdce5ffc8dfb707300c34e4f1eb3b8a14f1
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -34,7 +34,7 @@ F src/attach.c 4b21689700a72ae281fa85dbaff06b2a62bd49ee
 F src/auth.c 31e2304bef67f44d635655f44234387ea7d21454
 F src/btree.c a1ee183067f20eb5ba33ca45ed47acbc7214fe44
 F src/btree.h 1ed561263ca0e335bc3e81d761c9d5ff8c22f61e
-F src/build.c db063dc322fb18227833c7c41152aac314ef347c
+F src/build.c 62a286c8b1f4084a5e5abb0e3bd5434444c08de6
 F src/callback.c 9a1162c8f9dae9fad6d548339669aacb5f6cf76b
 F src/complete.c 4de937dfdd4c79a501772ab2035b26082f337a79
 F src/date.c 7444b0900a28da77e57e3337a636873cff0ae940
@@ -307,7 +307,7 @@ F www/tclsqlite.tcl ddcf912ea48695603c8ed7efb29f0812ef8d1b49
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 94aa2d32459e1cee2df21fcc7df76c73dab903cd
-R 847d1273ee05952d5cd25826886387bb
+P 81fdffdff6fd107c361b1ee69649455143bf3921
+R 5d6fa84265a140f10ff04dd28f842703
 U drh
-Z 852539335962d6c2e1850d0f96a4e184
+Z edb36e317a14972b7208ac1e96f014f6
