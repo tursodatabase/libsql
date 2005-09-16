@@ -25,6 +25,20 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2005 September 16 (3.2.6)} {
+<li>LIKE optiization now works for columns with COLLATE NOCASE</li>
+<li>ORDER BY and GROUP BY now use bounded memory</li>
+<li>Added support for COUNT(DISTINCT expr)</li>
+<li>Change the way SUM() handles NULL values in order to comply with
+    the SQL standard</li>
+<li>Use fdatasync() instead of fsync() where possible in order to speed
+    up commits slightly</li>
+<li>Use of the CROSS keyword in a join turns off the table reordering
+    optimization</li>
+<li>Added the experimental and undocumented EXPLAIN QUERY PLAN capability</li>
+<li>Use the unicode API in windows</li>
+}
+
 chng {2005 August 27 (3.2.5)} {
 <li>Fix a bug effecting DELETE and UPDATE statements that changed
 more than 40960 rows.</li>

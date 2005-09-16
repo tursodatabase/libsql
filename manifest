@@ -1,9 +1,9 @@
-C Undo\scheck-in\s(2694).\s(CVS\s2697)
-D 2005-09-16T02:48:02
+C Documentation\schanges\sin\spreparation\sfor\sthe\srelease\sof\s3.2.6.\s(CVS\s2698)
+D 2005-09-16T02:55:14
 F Makefile.in 12784cdce5ffc8dfb707300c34e4f1eb3b8a14f1
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
-F VERSION fa4c8c617dc18af3e81868e75735108e8e204938
+F VERSION 22603432911b0496f708ee79d4b1177c5263be32
 F aclocal.m4 7daea4c35e88de30d5a3f6f7a2ab99720e803bbd
 F art/2005osaward.gif 0d1851b2a7c1c9d0ccce545f3e14bca42d7fd248
 F art/SQLite.eps 9b43cc99cfd2be687d386faea6862ea68d6a72b2
@@ -266,7 +266,7 @@ F www/autoinc.tcl b357f5ba954b046ee35392ce0f884a2fcfcdea06
 F www/c_interface.tcl b51b08591554c16a0c3ef718364a508ac25abc7e
 F www/capi3.tcl 7a7cc225fe02eb7ab861a6019b08baa0014409e1
 F www/capi3ref.tcl 885f2aa112e2e9b8822753bf2972d5afd0cfeba9
-F www/changes.tcl 07c9d73e4f8b9901b0a3e23273a8ad64a0138576
+F www/changes.tcl 114762bba4c8b7d91d64384c6003c93c43d6ef26
 F www/common.tcl de758130d54d95d151ea0d17a2ae5b92e1bb01de
 F www/compile.tcl 276546d7eb445add5a867193bbd80f6919a6b084
 F www/conflict.tcl cdd0f4b59b0ba6d61f67e6a38f3ae45853bacb30
@@ -285,7 +285,7 @@ F www/fileformat.tcl 900c95b9633abc3dcfc384d9ddd8eb4876793059
 F www/formatchng.tcl 053ddb73646701353a5b1c9ca6274d5900739b45
 F www/fullscanb.gif f7c94cb227f060511f8909e10f570157263e9a25
 F www/index-ex1-x-b.gif f9b1d85c3fa2435cf38b15970c7e3aa1edae23a3
-F www/index.tcl 853525c11fb519dac801bcbbe0488c447e526e7b
+F www/index.tcl 453aed3c917b0f2bdd45153a81cb87db1a29ff5f
 F www/indirect1b1.gif adfca361d2df59e34f9c5cac52a670c2bfc303a1
 F www/lang.tcl b04a87ce05cdbd8d356d6b760a9a0b6f6fce927e
 F www/lockingv3.tcl f59b19d6c8920a931f096699d6faaf61c05db55f
@@ -307,7 +307,7 @@ F www/tclsqlite.tcl ddcf912ea48695603c8ed7efb29f0812ef8d1b49
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 4686d649756a0aa301ade901ac49c89a976c5402
-R f76a0ca59ea02257d83a41f08aab1ddd
+P 6017b1962517eb206183042bbb718925d9819063
+R 4df1cc59dde685a8213cfe530f8669ae
 U drh
-Z 9513b9ae9fcc28a79e9a6f733a8edc5c
+Z 71dca7c577320c1b910b1be05beabb55
