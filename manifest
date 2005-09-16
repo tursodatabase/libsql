@@ -1,5 +1,5 @@
-C Prevent\sthe\ssqlite3_pagecount()\sfunction\sfrom\sever\sreturning\sthe\spending-byte\npage.\s(CVS\s2702)
-D 2005-09-16T10:18:46
+C Do\snot\sjournal\sthe\sfile\slocking\spage\swhen\sdoing\sa\sdatabase\scopy\sas\npart\sof\sa\sVACUUM.\s\sTicket\s#1432.\s(CVS\s2703)
+D 2005-09-16T11:32:18
 F Makefile.in 12784cdce5ffc8dfb707300c34e4f1eb3b8a14f1
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -32,7 +32,7 @@ F src/alter.c 26d755f2143719dd3f5b8aaf6cbe3c7f95332528
 F src/analyze.c 43a2d91242bdd71b6c299378f6b11e896ee5e43d
 F src/attach.c 4b21689700a72ae281fa85dbaff06b2a62bd49ee
 F src/auth.c 31e2304bef67f44d635655f44234387ea7d21454
-F src/btree.c b2dedc955bc1778f5e6b23ae4c26625fc24f15d0
+F src/btree.c a83b30bf0a533d1d56476678bbb79c58d2132838
 F src/btree.h 1ed561263ca0e335bc3e81d761c9d5ff8c22f61e
 F src/build.c 74653e045581bfbadb8b35a0cb38a62f4a2c850e
 F src/callback.c 9a1162c8f9dae9fad6d548339669aacb5f6cf76b
@@ -307,7 +307,7 @@ F www/tclsqlite.tcl ddcf912ea48695603c8ed7efb29f0812ef8d1b49
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P bedf702f539636fa3b65fd0d6797b087481b4613
-R 0124fbe01caee72dcc427f2bd19a3f5b
-U danielk1977
-Z afd4b7335827c48ee6ad68f26d27acfa
+P 35a8893537ae5faed6ee49270ac9c01a6010993f
+R 4f6752612df08a912c75d90f62aa8a80
+U drh
+Z 5f588c09ac24589f63c729ebd13fcd32

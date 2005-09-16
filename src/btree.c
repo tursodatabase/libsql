@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.267 2005/09/16 09:52:29 danielk1977 Exp $
+** $Id: btree.c,v 1.268 2005/09/16 11:32:18 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -5739,7 +5739,7 @@ const char *sqlite3BtreeGetJournalname(Btree *pBt){
 */
 int sqlite3BtreeCopyFile(Btree *pBtTo, Btree *pBtFrom){
   int rc = SQLITE_OK;
-  Pgno i, nPage, nToPage;
+  Pgno i, nPage, nToPage, iSkip;
 
   if( pBtTo->inTrans!=TRANS_WRITE || pBtFrom->inTrans!=TRANS_WRITE ){
     return SQLITE_ERROR;
@@ -5747,8 +5747,10 @@ int sqlite3BtreeCopyFile(Btree *pBtTo, Btree *pBtFrom){
   if( pBtTo->pCursor ) return SQLITE_BUSY;
   nToPage = sqlite3pager_pagecount(pBtTo->pPager);
   nPage = sqlite3pager_pagecount(pBtFrom->pPager);
+  iSkip = PENDING_BYTE_PAGE(pBtTo);
   for(i=1; rc==SQLITE_OK && i<=nPage; i++){
     void *pPage;
+    if( i==iSkip ) continue;
     rc = sqlite3pager_get(pBtFrom->pPager, i, &pPage);
     if( rc ) break;
     rc = sqlite3pager_overwrite(pBtTo->pPager, i, pPage);
