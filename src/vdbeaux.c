@@ -68,9 +68,11 @@ static void resizeOpArray(Vdbe *p, int N){
     p->aOp = sqliteRealloc(p->aOp, N*sizeof(Op));
   }else if( p->nOpAlloc<N ){
     int oldSize = p->nOpAlloc;
+    VdbeOp *pNew;
     p->nOpAlloc = N+100;
-    p->aOp = sqliteRealloc(p->aOp, p->nOpAlloc*sizeof(Op));
-    if( p->aOp ){
+    pNew = sqliteRealloc(p->aOp, p->nOpAlloc*sizeof(Op));
+    if( pNew ){
+      p->aOp = pNew;
       memset(&p->aOp[oldSize], 0, (p->nOpAlloc-oldSize)*sizeof(Op));
     }
   }
@@ -348,6 +350,27 @@ void sqlite3VdbeChangeP2(Vdbe *p, int addr, int val){
   }
 }
 
+
+/*
+** Delete a P3 value if necessary.
+*/
+static void freeP3(int p3type, void *p3){
+  if( p3 ){
+    if( p3type==P3_DYNAMIC || p3type==P3_KEYINFO ){
+      sqliteFree(p3);
+    }
+    if( p3type==P3_VDBEFUNC ){
+      VdbeFunc *pVdbeFunc = (VdbeFunc *)p3;
+      sqlite3VdbeDeleteAuxData(pVdbeFunc, 0);
+      sqliteFree(pVdbeFunc);
+    }
+    if( p3type==P3_MEM ){
+      sqlite3ValueFree((sqlite3_value*)p3);
+    }
+  }
+}
+
+
 /*
 ** Change the value of the P3 operand for a specific instruction.
 ** This routine is useful when a large program is loaded from a
@@ -377,12 +400,7 @@ void sqlite3VdbeChangeP3(Vdbe *p, int addr, const char *zP3, int n){
   Op *pOp;
   assert( p->magic==VDBE_MAGIC_INIT );
   if( p==0 || p->aOp==0 ){
-    if( n==P3_DYNAMIC || n==P3_KEYINFO_HANDOFF ){
-      sqliteFree((void*)zP3);
-    }
-    if( n==P3_MEM ){
-      sqlite3ValueFree((sqlite3_value *)zP3);
-    }
+    freeP3(n, (void*)*(char**)&zP3);
     return;
   }
   if( addr<0 || addr>=p->nOp ){
@@ -390,10 +408,8 @@ void sqlite3VdbeChangeP3(Vdbe *p, int addr, const char *zP3, int n){
     if( addr<0 ) return;
   }
   pOp = &p->aOp[addr];
-  if( pOp->p3 && pOp->p3type==P3_DYNAMIC ){
-    sqliteFree(pOp->p3);
-    pOp->p3 = 0;
-  }
+  freeP3(pOp->p3type, pOp->p3);
+  pOp->p3 = 0;
   if( zP3==0 ){
     pOp->p3 = 0;
     pOp->p3type = P3_NOTUSED;
@@ -1331,17 +1347,7 @@ void sqlite3VdbeDelete(Vdbe *p){
   if( p->aOp ){
     for(i=0; i<p->nOp; i++){
       Op *pOp = &p->aOp[i];
-      if( pOp->p3type==P3_DYNAMIC || pOp->p3type==P3_KEYINFO ){
-        sqliteFree(pOp->p3);
-      }
-      if( pOp->p3type==P3_VDBEFUNC ){
-        VdbeFunc *pVdbeFunc = (VdbeFunc *)pOp->p3;
-        sqlite3VdbeDeleteAuxData(pVdbeFunc, 0);
-        sqliteFree(pVdbeFunc);
-      }
-      if( pOp->p3type==P3_MEM ){
-        sqlite3ValueFree((sqlite3_value*)pOp->p3);
-      }
+      freeP3(pOp->p3type, pOp->p3);
     }
     sqliteFree(p->aOp);
   }
