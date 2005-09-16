@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.179 2005/09/11 11:56:28 drh Exp $
+** @(#) $Id: parse.y,v 1.180 2005/09/16 02:38:10 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -756,7 +756,11 @@ expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
   ExprList *pList = sqlite3ExprListAppend(0, X, 0);
   pList = sqlite3ExprListAppend(pList, Y, 0);
   A = sqlite3Expr(TK_BETWEEN, W, 0, 0);
-  if( A ) A->pList = pList;
+  if( A ){
+    A->pList = pList;
+  }else{
+    sqlite3ExprListDelete(pList);
+  } 
   if( N ) A = sqlite3Expr(TK_NOT, A, 0, 0);
   sqlite3ExprSpan(A,&W->span,&Y->span);
 }
@@ -776,21 +780,31 @@ expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
   }
   expr(A) ::= LP(B) select(X) RP(E). {
     A = sqlite3Expr(TK_SELECT, 0, 0, 0);
-    if( A ) A->pSelect = X;
-    if( !A ) sqlite3SelectDelete(X);
+    if( A ){
+      A->pSelect = X;
+    }else{
+      sqlite3SelectDelete(X);
+    }
     sqlite3ExprSpan(A,&B,&E);
   }
   expr(A) ::= expr(X) in_op(N) LP select(Y) RP(E).  [IN] {
     A = sqlite3Expr(TK_IN, X, 0, 0);
-    if( A ) A->pSelect = Y;
-    if( !A ) sqlite3SelectDelete(Y);
+    if( A ){
+      A->pSelect = Y;
+    }else{
+      sqlite3SelectDelete(Y);
+    }
     if( N ) A = sqlite3Expr(TK_NOT, A, 0, 0);
     sqlite3ExprSpan(A,&X->span,&E);
   }
   expr(A) ::= expr(X) in_op(N) nm(Y) dbnm(Z). [IN] {
     SrcList *pSrc = sqlite3SrcListAppend(0,&Y,&Z);
     A = sqlite3Expr(TK_IN, X, 0, 0);
-    if( A ) A->pSelect = sqlite3SelectNew(0,pSrc,0,0,0,0,0,0,0);
+    if( A ){
+      A->pSelect = sqlite3SelectNew(0,pSrc,0,0,0,0,0,0,0);
+    }else{
+      sqlite3SrcListDelete(pSrc);
+    }
     if( N ) A = sqlite3Expr(TK_NOT, A, 0, 0);
     sqlite3ExprSpan(A,&X->span,Z.z?&Z:&Y);
   }
@@ -799,15 +813,20 @@ expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
     if( p ){
       p->pSelect = Y;
       sqlite3ExprSpan(p,&B,&E);
+    }else{
+      sqlite3SelectDelete(Y);
     }
-    if( !p ) sqlite3SelectDelete(Y);
   }
 %endif // SQLITE_OMIT_SUBQUERY
 
 /* CASE expressions */
 expr(A) ::= CASE(C) case_operand(X) case_exprlist(Y) case_else(Z) END(E). {
   A = sqlite3Expr(TK_CASE, X, Z, 0);
-  if( A ) A->pList = Y;
+  if( A ){
+    A->pList = Y;
+  }else{
+    sqlite3ExprListDelete(Y);
+  }
   sqlite3ExprSpan(A, &C, &E);
 }
 %type case_exprlist {ExprList*}

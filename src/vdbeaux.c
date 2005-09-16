@@ -62,18 +62,18 @@ void sqlite3VdbeTrace(Vdbe *p, FILE *trace){
 ** elements.
 */
 static void resizeOpArray(Vdbe *p, int N){
-  if( p->magic==VDBE_MAGIC_RUN ){
-    assert( N==p->nOp );
-    p->nOpAlloc = N;
-    p->aOp = sqliteRealloc(p->aOp, N*sizeof(Op));
-  }else if( p->nOpAlloc<N ){
-    int oldSize = p->nOpAlloc;
+  int runMode = p->magic==VDBE_MAGIC_RUN;
+  if( runMode || p->nOpAlloc<N ){
     VdbeOp *pNew;
-    p->nOpAlloc = N+100;
-    pNew = sqliteRealloc(p->aOp, p->nOpAlloc*sizeof(Op));
+    int nNew = N + 100*(!runMode);
+    int oldSize = p->nOpAlloc;
+    pNew = sqliteRealloc(p->aOp, nNew*sizeof(Op));
     if( pNew ){
+      p->nOpAlloc = nNew;
       p->aOp = pNew;
-      memset(&p->aOp[oldSize], 0, (p->nOpAlloc-oldSize)*sizeof(Op));
+      if( nNew>oldSize ){
+        memset(&p->aOp[oldSize], 0, (nNew-oldSize)*sizeof(Op));
+      }
     }
   }
 }
@@ -102,7 +102,7 @@ int sqlite3VdbeAddOp(Vdbe *p, int op, int p1, int p2){
   p->nOp++;
   assert( p->magic==VDBE_MAGIC_INIT );
   resizeOpArray(p, i+1);
-  if( p->aOp==0 ){
+  if( sqlite3_malloc_failed ){
     return 0;
   }
   pOp = &p->aOp[i];
@@ -147,7 +147,8 @@ int sqlite3VdbeMakeLabel(Vdbe *p){
   assert( p->magic==VDBE_MAGIC_INIT );
   if( i>=p->nLabelAlloc ){
     p->nLabelAlloc = p->nLabelAlloc*2 + 10;
-    p->aLabel = sqliteRealloc( p->aLabel, p->nLabelAlloc*sizeof(p->aLabel[0]));
+    sqlite3ReallocOrFree((void**)&p->aLabel,
+                          p->nLabelAlloc*sizeof(p->aLabel[0]));
   }
   if( p->aLabel ){
     p->aLabel[i] = -1;
@@ -299,7 +300,7 @@ int sqlite3VdbeAddOpList(Vdbe *p, int nOp, VdbeOpList const *aOp){
   int addr;
   assert( p->magic==VDBE_MAGIC_INIT );
   resizeOpArray(p, p->nOp + nOp);
-  if( p->aOp==0 ){
+  if( sqlite3_malloc_failed ){
     return 0;
   }
   addr = p->nOp;

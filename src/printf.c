@@ -726,7 +726,11 @@ static void mout(void *arg, const char *zNewText, int nNewChar){
           memcpy(pM->zText, pM->zBase, pM->nChar);
         }
       }else{
-        pM->zText = pM->xRealloc(pM->zText, pM->nAlloc);
+        char *zNew;
+        zNew = pM->xRealloc(pM->zText, pM->nAlloc);
+        if( zNew ){
+          pM->zText = zNew;
+        }
       }
     }
   }
@@ -764,7 +768,10 @@ static char *base_vprintf(
         memcpy(sM.zText, sM.zBase, sM.nChar+1);
       }
     }else if( sM.nAlloc>sM.nChar+10 ){
-      sM.zText = xRealloc(sM.zText, sM.nChar+1);
+      char *zNew = xRealloc(sM.zText, sM.nChar+1);
+      if( zNew ){
+        sM.zText = zNew;
+      }
     }
   }
   return sM.zText;

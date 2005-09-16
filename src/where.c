@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.171 2005/09/10 16:46:13 drh Exp $
+** $Id: where.c,v 1.172 2005/09/16 02:38:11 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -656,7 +656,11 @@ static void exprAnalyze(
         pDup->iColumn = iColumn;
       }
       pNew = sqlite3Expr(TK_IN, pDup, 0, 0);
-      if( pNew ) pNew->pList = pList;
+      if( pNew ){
+        pNew->pList = pList;
+      }else{
+        sqlite3ExprListDelete(pList);
+      }
       pTerm->pExpr = pNew;
       pTerm->flags |= TERM_DYNAMIC;
       exprAnalyze(pSrc, pMaskSet, pWC, idxTerm);
@@ -1152,8 +1156,9 @@ static void codeEqualityTerm(
     sqlite3VdbeAddOp(v, OP_Rewind, iTab, brk);
     VdbeComment((v, "# %.*s", pX->span.n, pX->span.z));
     pLevel->nIn++;
-    pLevel->aInLoop = aIn = sqliteRealloc(pLevel->aInLoop,
+    sqlite3ReallocOrFree((void**)&pLevel->aInLoop,
                                  sizeof(pLevel->aInLoop[0])*3*pLevel->nIn);
+    aIn = pLevel->aInLoop;
     if( aIn ){
       aIn += pLevel->nIn*3 - 3;
       aIn[0] = OP_Next;
