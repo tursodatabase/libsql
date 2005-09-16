@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.212 2005/09/09 01:32:06 drh Exp $
+** @(#) $Id: pager.c,v 1.213 2005/09/16 10:18:46 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1752,28 +1752,34 @@ void sqlite3pager_read_fileheader(Pager *pPager, int N, unsigned char *pDest){
 
 /*
 ** Return the total number of pages in the disk file associated with
-** pPager.
+** pPager. 
+**
+** If the PENDING_BYTE lies on the page directly after the end of the
+** file, then consider this page part of the file too. For example, if
+** PENDING_BYTE is byte 4096 (the first byte of page 5) and the size of the
+** file is 4096 bytes, 5 is returned instead of 4.
 */
 int sqlite3pager_pagecount(Pager *pPager){
   i64 n;
   assert( pPager!=0 );
   if( pPager->dbSize>=0 ){
-    return pPager->dbSize;
+    n = pPager->dbSize;
+  } else {
+    if( sqlite3OsFileSize(&pPager->fd, &n)!=SQLITE_OK ){
+      pPager->errMask |= PAGER_ERR_DISK;
+      return 0;
+    }
+    if( n>0 && n<pPager->pageSize ){
+      n = 1;
+    }else{
+      n /= pPager->pageSize;
+    }
+    if( pPager->state!=PAGER_UNLOCK ){
+      pPager->dbSize = n;
+    }
   }
-  if( sqlite3OsFileSize(&pPager->fd, &n)!=SQLITE_OK ){
-    pPager->errMask |= PAGER_ERR_DISK;
-    return 0;
-  }
-  if( n>0 && n<pPager->pageSize ){
-    n = 1;
-  }else{
-    n /= pPager->pageSize;
-  }
-  if( !MEMDB && n==PENDING_BYTE/pPager->pageSize ){
+  if( n==(PENDING_BYTE/pPager->pageSize) ){
     n++;
-  }
-  if( pPager->state!=PAGER_UNLOCK ){
-    pPager->dbSize = n;
   }
   return n;
 }
