@@ -161,8 +161,14 @@
 ** 1GB boundary.
 **
 */
+#ifndef SQLITE_TEST
 #define PENDING_BYTE      0x40000000  /* First byte past the 1GB boundary */
-/* #define PENDING_BYTE     0x5400   // Page 22 - for testing */
+#else
+/* Defined in test2.c (pager tests) */
+extern unsigned int sqlite3_pending_byte;
+#define PENDING_BYTE sqlite3_pending_byte
+#endif
+
 #define RESERVED_BYTE     (PENDING_BYTE+1)
 #define SHARED_FIRST      (PENDING_BYTE+2)
 #define SHARED_SIZE       510
