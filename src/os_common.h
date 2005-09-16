@@ -28,6 +28,14 @@
 #endif
 
 
+/*
+ * When testing, this global variable stores the location of the
+ * pending-byte in the database file.
+ */
+#ifdef SQLITE_TEST
+unsigned int sqlite3_pending_byte = 0x0010000;
+#endif
+
 int sqlite3_os_trace = 0;
 #ifdef SQLITE_DEBUG
 static int last_page = 0;
