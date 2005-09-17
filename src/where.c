@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.172 2005/09/16 02:38:11 drh Exp $
+** $Id: where.c,v 1.173 2005/09/17 13:07:13 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -303,7 +303,8 @@ static void createMask(ExprMaskSet *pMaskSet, int iCursor){
 ** translate the cursor numbers into bitmask values and OR all
 ** the bitmasks together.
 */
-static Bitmask exprListTableUsage(ExprMaskSet *, ExprList *);
+static Bitmask exprListTableUsage(ExprMaskSet*, ExprList*);
+static Bitmask exprSelectTableUsage(ExprMaskSet*, Select*);
 static Bitmask exprTableUsage(ExprMaskSet *pMaskSet, Expr *p){
   Bitmask mask = 0;
   if( p==0 ) return 0;
@@ -314,14 +315,7 @@ static Bitmask exprTableUsage(ExprMaskSet *pMaskSet, Expr *p){
   mask = exprTableUsage(pMaskSet, p->pRight);
   mask |= exprTableUsage(pMaskSet, p->pLeft);
   mask |= exprListTableUsage(pMaskSet, p->pList);
-  if( p->pSelect ){
-    Select *pS = p->pSelect;
-    mask |= exprListTableUsage(pMaskSet, pS->pEList);
-    mask |= exprListTableUsage(pMaskSet, pS->pGroupBy);
-    mask |= exprListTableUsage(pMaskSet, pS->pOrderBy);
-    mask |= exprTableUsage(pMaskSet, pS->pWhere);
-    mask |= exprTableUsage(pMaskSet, pS->pHaving);
-  }
+  mask |= exprSelectTableUsage(pMaskSet, p->pSelect);
   return mask;
 }
 static Bitmask exprListTableUsage(ExprMaskSet *pMaskSet, ExprList *pList){
@@ -331,6 +325,19 @@ static Bitmask exprListTableUsage(ExprMaskSet *pMaskSet, ExprList *pList){
     for(i=0; i<pList->nExpr; i++){
       mask |= exprTableUsage(pMaskSet, pList->a[i].pExpr);
     }
+  }
+  return mask;
+}
+static Bitmask exprSelectTableUsage(ExprMaskSet *pMaskSet, Select *pS){
+  Bitmask mask;
+  if( pS==0 ){
+    mask = 0;
+  }else{
+    mask = exprListTableUsage(pMaskSet, pS->pEList);
+    mask |= exprListTableUsage(pMaskSet, pS->pGroupBy);
+    mask |= exprListTableUsage(pMaskSet, pS->pOrderBy);
+    mask |= exprTableUsage(pMaskSet, pS->pWhere);
+    mask |= exprTableUsage(pMaskSet, pS->pHaving);
   }
   return mask;
 }
@@ -542,7 +549,13 @@ static void exprAnalyze(
 
   if( sqlite3_malloc_failed ) return;
   prereqLeft = exprTableUsage(pMaskSet, pExpr->pLeft);
-  pTerm->prereqRight = exprTableUsage(pMaskSet, pExpr->pRight);
+  if( pExpr->op==TK_IN ){
+    assert( pExpr->pRight==0 );
+    pTerm->prereqRight = exprListTableUsage(pMaskSet, pExpr->pList)
+                          | exprSelectTableUsage(pMaskSet, pExpr->pSelect);
+  }else{
+    pTerm->prereqRight = exprTableUsage(pMaskSet, pExpr->pRight);
+  }
   pTerm->prereqAll = prereqAll = exprTableUsage(pMaskSet, pExpr);
   pTerm->leftCursor = -1;
   pTerm->iParent = -1;
@@ -550,6 +563,7 @@ static void exprAnalyze(
   if( allowedOp(pExpr->op) && (pTerm->prereqRight & prereqLeft)==0 ){
     Expr *pLeft = pExpr->pLeft;
     Expr *pRight = pExpr->pRight;
+    assert( prereqAll == (pTerm->prereqRight | prereqLeft) ); /* ticket 1433 */
     if( pLeft->op==TK_COLUMN ){
       pTerm->leftCursor = pLeft->iTable;
       pTerm->leftColumn = pLeft->iColumn;
@@ -608,7 +622,13 @@ static void exprAnalyze(
 
 #ifndef SQLITE_OMIT_OR_OPTIMIZATION
   /* Attempt to convert OR-connected terms into an IN operator so that
-  ** they can make use of indices.
+  ** they can make use of indices.  Example:
+  **
+  **      x = expr1  OR  expr2 = x  OR  x = expr3
+  **
+  ** is converted into
+  **
+  **      x IN (expr1,expr2,expr3)
   */
   else if( pExpr->op==TK_OR ){
     int ok;

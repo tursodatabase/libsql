@@ -1,5 +1,5 @@
-C Updates\sto\sthe\sFAQ.\s(CVS\s2705)
-D 2005-09-17T02:34:05
+C Make\ssure\sdependencies\son\sthe\sright-hand\sside\sof\sIN\soperators\sare\schecked\ncorrectly.\s\sTicket\s#1433.\s(CVS\s2706)
+D 2005-09-17T13:07:13
 F Makefile.in 12784cdce5ffc8dfb707300c34e4f1eb3b8a14f1
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -87,7 +87,7 @@ F src/vdbeapi.c 85bbe1d0243a89655433d60711b4bd71979b59cd
 F src/vdbeaux.c e3a815a88bbf68f17880f5bc077e1c35d14b9409
 F src/vdbefifo.c 9efb94c8c3f4c979ebd0028219483f88e57584f5
 F src/vdbemem.c fea0744936008831daa17cdc75056c3ca1469690
-F src/where.c 53a54c1434be9afa45db3558d9ae09450acea273
+F src/where.c a595744df3ce50c5d875bae06798054bbef1d7f9
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
 F test/all.test 7f0988442ab811dfa41793b5b550f5828ce316f3
 F test/alter.test 9d6837a3d946b73df692b7cef2a7644d2e2f6bc6
@@ -217,6 +217,7 @@ F test/tester.tcl 98ecdc5723b3b2be5a8a5c3a7f38fa53031466ee
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
 F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
 F test/threadtest2.c 97a830d53c24c42290501fdfba4a6e5bdd34748b
+F test/tkt1443.test c056bfdabb6c3144bca6f70ce52d32d25101c3b4
 F test/trace.test 9fd28695c463b90c2d32c387a432e01eb26e8ccf
 F test/trans.test 10506dc30305cfb8c4098359f7f6f64786f69c5e
 F test/trigger1.test 152aed5a1fa90709fe171f2ca501a6b7f7901479
@@ -307,7 +308,7 @@ F www/tclsqlite.tcl ddcf912ea48695603c8ed7efb29f0812ef8d1b49
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 5b6dc12b7d25d999be5d282cd0b06e02e2bda765
-R 4c6f66bbc06ea3f6edd3c1720650c250
+P 0eaf430d9538ece1a3d1300db91f269577a5e028
+R 56daf0fd324c3c63c9831d6786cf42e7
 U drh
-Z db383a7aa31dfbfb4a753232e7f9eb89
+Z 3c070837de28d59d54c656780119322f
