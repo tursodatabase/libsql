@@ -1,4 +1,4 @@
-set rcsid {$Id: datatype3.tcl,v 1.10 2004/11/19 11:59:24 danielk1977 Exp $}
+set rcsid {$Id: datatype3.tcl,v 1.11 2005/09/17 02:34:05 drh Exp $}
 source common.tcl
 header {Datatypes In SQLite Version 3}
 puts {
@@ -56,6 +56,7 @@ User-defined functions may return values with any storage class. It
 is not generally possible to determine the storage class of the
 result of an expression at compile time.</P>
 
+<a name="affinity">
 <h3>2. Column Affinity</h3>
 
 <p>

@@ -1,7 +1,7 @@
 #
 # Run this script to generated a faq.html output file
 #
-set rcsid {$Id: faq.tcl,v 1.30 2005/08/31 02:46:21 drh Exp $}
+set rcsid {$Id: faq.tcl,v 1.31 2005/09/17 02:34:05 drh Exp $}
 source common.tcl
 header {SQLite Frequently Asked Questions</title>}
 
@@ -21,11 +21,13 @@ faq {
   autoincrement.</p>
 
   <p>Here is the long answer:
-  Beginning with version SQLite 2.3.4, If you declare a column of
-  a table to be INTEGER PRIMARY KEY, then whenever you insert a NULL
+  If you declare a column of a table to be INTEGER PRIMARY KEY, then
+  whenever you insert a NULL
   into that column of the table, the NULL is automatically converted
   into an integer which is one greater than the largest value of that
   column over all other rows in the table, or 1 if the table is empty.
+  (If the largest possible integer key, 9223372036854775807, then an
+  unused key value is chosen at random.)
   For example, suppose you have a table like this:
 <blockquote><pre>
 CREATE TABLE t1(
@@ -41,41 +43,28 @@ INSERT INTO t1 VALUES(NULL,123);
 <blockquote><pre>
 INSERT INTO t1 VALUES((SELECT max(a) FROM t1)+1,123);
 </pre></blockquote>
-  <p>For SQLite version 2.2.0 through 2.3.3, if you insert a NULL into
-  an INTEGER PRIMARY KEY column, the NULL will be changed to a unique
-  integer, but it will a semi-random integer.  Unique keys generated this
-  way will not be sequential.  For SQLite version 2.3.4 and beyond, the
-  unique keys will be sequential until the largest key reaches a value
-  of 2147483647.  That is the largest 32-bit signed integer and cannot
-  be incremented, so subsequent insert attempts will revert to the
-  semi-random key generation algorithm of SQLite version 2.3.3 and
-  earlier.</p>
 
-  <p>Beginning with version 2.2.3, there is a new API function named
-  <b>sqlite3_last_insert_rowid()</b> which will return the integer key
-  for the most recent insert operation.  See the API documentation for
-  details.</p>
+  <p>There is a new API function named
+  <a href="capi3ref.html#sqlite3_last_insert_rowid">
+  sqlite3_last_insert_rowid()</a> which will return the integer key
+  for the most recent insert operation.</p>
 
-  <p>SQLite version 3.0 expands the size of the rowid to 64 bits.</p>
+  <p>Note that the integer key is one greater than the largest
+  key that was in the table just prior to the insert.  The new key
+  will be unique over all keys currently in the table, but it might
+  overlap with keys that have been previously deleted from the
+  table.  To create keys that are unique over the lifetime of the
+  table, add the AUTOINCREMENT keyword to the INTEGER PRIMARY KEY
+  declaration.  Then the key chosen will be one more than than the
+  largest key that has ever existed in that table.  If the largest
+  possible key has previously existed in that table, then the INSERT
+  will fail with an SQLITE_FULL error code.</p>
 }
 
 faq {
   What datatypes does SQLite support?
 } {
-  <p>SQLite ignores
-  the datatype information that follows the column name in CREATE TABLE.
-  You can put any type of data you want
-  into any column, without regard to the declared datatype of that column.
-  </p>
-
-  <p>An exception to this rule is a column of type INTEGER PRIMARY KEY.
-  Such columns must hold an integer.  An attempt to put a non-integer
-  value into an INTEGER PRIMARY KEY column will generate an error.</p>
-
-  <p>There is a page on <a href="datatypes.html">datatypes in SQLite
-  version 2.8</a>
-  and another for <a href="datatype3.html">version 3.0</a>
-  that explains this concept further.</p>
+  <p>See <a href="datatype3.html">http://www.sqlite.org/datatype3.html</a>.</p>
 }
 
 faq {
@@ -89,66 +78,27 @@ faq {
   CREATE TABLE command does not restrict what data can be put into
   that column.  Every column is able to hold
   an arbitrary length string.  (There is one exception: Columns of
-  type INTEGER PRIMARY KEY may only hold an integer.  An error will result
+  type INTEGER PRIMARY KEY may only hold a 64-bit signed integer.
+  An error will result
   if you try to put anything other than an integer into an
   INTEGER PRIMARY KEY column.)</p>
 
-  <p>The datatype does effect how values are compared, however.  For
-  columns with a numeric type (such as "integer") any string that looks
-  like a number is treated as a number for comparison and sorting purposes.
-  Consider these two command sequences:</p>
-
-  <blockquote><pre>
-CREATE TABLE t1(a INTEGER UNIQUE);        CREATE TABLE t2(b TEXT UNIQUE);
-INSERT INTO t1 VALUES('0');               INSERT INTO t2 VALUES(0);
-INSERT INTO t1 VALUES('0.0');             INSERT INTO t2 VALUES(0.0);
-</pre></blockquote>
-
-  <p>In the sequence on the left, the second insert will fail.  In this case,
-  the strings '0' and '0.0' are treated as numbers since they are being 
-  inserted into a numeric column and 0==0.0 which violates the uniqueness
-  constraint.  But the second insert in the right-hand sequence works.  In
-  this case, the constants 0 and 0.0 are treated a strings which means that
-  they are distinct.</p>
-
-  <p>There is a page on <a href="datatypes.html">datatypes in SQLite
-  version 2.8</a>
-  and another for <a href="datatype3.html">version 3.0</a>
-  that explains this concept further.</p>
+  <p>But SQLite does use the declared type of a column as a hint
+  that you prefer values in that format.  So, for example, if a
+  column is of type INTEGER and you try to insert a string into
+  that column, SQLite will attempt to convert the string into an
+  integer.  If it can, it inserts the integer instead.  If not,
+  it inserts the string.  This feature is sometimes
+  call <a href="datatype3.html#affinity">type or column affinity</a>.
+  </p>
 }
 
 faq {
   Why does SQLite think that the expression '0'=='00' is TRUE?
 } {
-  <p>As of version 2.7.0, it doesn't.</p>
-
-  <p>But if one of the two values being compared is stored in a column that
-  has a numeric type, the the other value is treated as a number, not a
-  string and the result succeeds.  For example:</p>
-
-<blockquote><pre>
-CREATE TABLE t3(a INTEGER, b TEXT);
-INSERT INTO t3 VALUES(0,0);
-SELECT count(*) FROM t3 WHERE a=='00';
-</pre></blockquote>
-
-  <p>The SELECT in the above series of commands returns 1.  The "a" column
-  is numeric so in the WHERE clause the string '00' is converted into a
-  number for comparison against "a".  0==00 so the test is true.  Now
-  consider a different SELECT:</p>
-
-<blockquote><pre>
-SELECT count(*) FROM t3 WHERE b=='00';
-</pre></blockquote>
-
-  <p>In this case the answer is 0.  B is a text column so a text comparison
-  is done against '00'.  '0'!='00' so the WHERE clause returns FALSE and
-  the count is zero.</p>
-
-  <p>There is a page on <a href="datatypes.html">datatypes in SQLite
-  version 2.8</a>
-  and another for <a href="datatype3.html">version 3.0</a>
-  that explains this concept further.</p>
+  <p>As of version 2.7.0, it doesn't.  See the document on
+  <a href="datatype3.html">datatypes in SQLite version 3</a>
+  for details.</p>
 }
 
 faq {
@@ -186,19 +136,14 @@ faq {
   <p>Multiple processes can have the same database open at the same
   time.  Multiple processes can be doing a SELECT
   at the same time.  But only one process can be making changes to
-  the database at once.</p>
+  the database at an given moement in time, however.</p>
 
-  <p>Win95/98/ME lacks support for reader/writer locks in the operating
-  system.  Prior to version 2.7.0, this meant that under windows you
-  could only have a single process reading the database at one time.
-  This problem was resolved in version 2.7.0 by implementing a user-space
-  probabilistic reader/writer locking strategy in the windows interface
-  code file.  Windows
-  now works like Unix in allowing multiple simultaneous readers.</p>
-
-  <p>The locking mechanism used to control simultaneous access might
+  <p>SQLite uses reader/writer locks to control access to the database.
+  (Under Win95/98/ME which lacks support for reader/writer locks, a
+  probabilistic simulation is used instead.)
+  But use caution: this locking mechanism might
   not work correctly if the database file is kept on an NFS filesystem.
-  This is because file locking is broken on some NFS implementations.
+  This is because fcntl() file locking is broken on many NFS implementations.
   You should avoid putting SQLite database files on NFS if multiple
   processes might try to access the file at the same time.  On Windows,
   Microsoft's documentation says that locking may not work under FAT
@@ -208,24 +153,32 @@ faq {
   say is true, sharing an SQLite database between two or more Windows
   machines might cause unexpected problems.</p>
 
-  <p>Locking in SQLite is very course-grained.  SQLite locks the
-  entire database.  Big database servers (PostgreSQL, Oracle, etc.)
-  generally have finer grained locking, such as locking on a single
-  table or a single row within a table.  If you have a massively
-  parallel database application, you should consider using a big database
-  server instead of SQLite.</p>
+  <p>We are aware of no other <i>embedded</i> SQL database engine that
+  supports as much concurrancy as SQLite.  SQLite allows multiple processes
+  to have the database file open at once, and for multiple processes to
+  read the database at once.  When any process wants to write, it must
+  lock the entire database file for the duration of its update.  But that
+  normally only takes a few milliseconds.  Other processes just wait on
+  the writer to finish then continue about their business.  Other embedded
+  SQL database engines typically only allow a single process to connect to
+  the database at once.</p>
+
+  <p>However, client/server database engines (such as PostgreSQL, MySQL,
+  or Oracle) usually support a higher level of concurrency and allow
+  multiple processes to be writing to the same database at the same time.
+  This is possible in a client/server database because there is always a
+  single well-controlled server process available to coordinate access.
+  If your application has a need for a lot of concurrency, then you should
+  consider using a client/server database.  But experience suggests that
+  most applications need much less concurrency than their designers imagine.
+  </p>
 
   <p>When SQLite tries to access a file that is locked by another
   process, the default behavior is to return SQLITE_BUSY.  You can
-  adjust this behavior from C code using the <b>sqlite3_busy_handler()</b> or
-  <b>sqlite3_busy_timeout()</b> API functions.  See the API documentation
-  for details.</p>
-
-  <p>If two or more processes have the same database open and one
-  process creates a new table or index, the other processes might
-  not be able to see the new table right away.  You might have to
-  get the other processes to close and reopen their connection to
-  the database before they will be able to see the new table.</p>
+  adjust this behavior from C code using the 
+  <a href="capi3ref#sqlite3_busy_handler">sqlite3_busy_handler()</a> or
+  <a href="capi3ref#sqlite3_busy_timeout">sqlite3_busy_timeout()</a>
+  API functions.</p>
 }
 
 faq {
@@ -239,21 +192,20 @@ faq {
 
   <p>"Threadsafe" in the previous paragraph means that two or more threads
   can run SQLite at the same time on different "<b>sqlite3</b>" structures
-  returned from separate calls to <b>sqlite3_open()</b>.  It is never safe
-  to use the same <b>sqlite3</b> structure pointer simultaneously in two
+  returned from separate calls to 
+  <a href="capi3ref#sqlite3_open">sqlite3_open()</a>.  It is never safe
+  to use the same <b>sqlite3</b> structure pointer in two
   or more threads.</p>
 
   <p>An <b>sqlite3</b> structure can only be used in the same thread
-  that called <b>sqlite3_open</b> to create it.  You cannot open a
+  that called <a href="capi3ref#sqlite3_open">sqlite3_open</a> to create it.
+  You cannot open a
   database in one thread then pass the handle off to another thread for
   it to use.  This is due to limitations (bugs?) in many common threading
-  implementations such as on RedHat9.</p>
-
-  <p>Note that if two or more threads have the same database open and one
-  thread creates a new table or index, the other threads might
-  not be able to see the new table right away.  You might have to
-  get the other threads to close and reopen their connection to
-  the database before they will be able to see the new table.</p>
+  implementations such as on RedHat9.  There may be ways to work around
+  these limitations, but they are complex and exceedingly difficult to
+  test for correctness.  For that reason, SQLite currently takes the safe
+  approach and disallows the sharing of handles among threads.</p>
 
   <p>Under UNIX, you should not carry an open SQLite database across
   a fork() system call into the child process.  Problems will result
@@ -321,52 +273,64 @@ ORDER BY name
 faq {
   Are there any known size limits to SQLite databases?
 } {
-  <p>As of version 2.7.4, 
-  SQLite can handle databases up to 2<sup>41</sup> bytes (2 terabytes)
-  in size on both Windows and Unix.  Older version of SQLite
-  were limited to databases of 2<sup>31</sup> bytes (2 gigabytes).</p>
+  <p>A database is limited in size to 2 tibibytes (2<sup>41</sup> bytes).
+  That is a theoretical limitation.  In practice, you should try to keep
+  your SQLite databases below 100 gigabytes to avoid performance problems.
+  If you need to store 100 gigabytes or more in a database, consider using
+  an enterprise database engine which is designed for that purpose.</p>
 
-  <p>SQLite version 2.8 limits the amount of data in one row to 
-  1 megabyte.  SQLite version 3.0 has no limit on the amount of
-  data that can be stored in a single row.
+  <p>The theoretical limit on the number of rows in a table is
+  2<sup>64</sup>-1, though obviously you will run into the file size
+  limitation prior to reaching the row limit.  A single row can hold
+  up to 2<sup>30</sup> bytes of data in the current implementation.  The
+  underlying file format supports row sizes up to about 2<sup>62</sup> bytes.
+  </p>
+
+  <p>There are probably limits on the number of tables or indices or
+  the number of columns in a table or index, but nobody is sure what
+  those limits are.  In practice, SQLite must read and parse the original
+  SQL of all table and index declarations everytime a new database file
+  is opened, so for the best performance of
+  <a href="capi3ref.html#sqlite3_open">sqlite3_open()</a> it is best
+  to keep down the number of declared tables.   Likewise, though there
+  is no limit on the number of columns in a table, more than a few hundred
+  seems extreme.  Only the first 31 columns of a table are candidates for
+  certain optimizations.  You can put as many columns in an index as you like
+  but indexes with more than 30 columns will not be used to optimize queries.
   </p>
 
   <p>The names of tables, indices, view, triggers, and columns can be
   as long as desired.  However, the names of SQL functions (as created
-  by the <a href="c_interface.html#cfunc">sqlite3_create_function()</a> API)
-  may not exceed 255 characters in length.</p>
+  by the 
+  <a href="capi3ref.html#sqlite3_create_function">sqlite3_create_function()</a>
+  API) may not exceed 255 characters in length.</p>
 }
 
 faq {
   What is the maximum size of a VARCHAR in SQLite?
 } {
-  <p>SQLite does not enforce datatype constraints.
-  A VARCHAR column can hold as much data as you care to put in it.</p>
+  <p>SQLite does not enforce the length of a VARCHAR.  You can declare
+  a VARCHAR(10) and SQLite will be happy to let you put 500 characters
+  in it.  And it will keep all 500 characters intact - it never truncates.
+  </p>
 }
 
 faq {
   Does SQLite support a BLOB type?
 } {
-  <p>SQLite version 3.0 lets you puts BLOB data into any column, even
+  <p>SQLite versions 3.0 and leter let you puts BLOB data into any column, even
   columns that are declared to hold some other type.</p>
-
-  <p>SQLite version 2.8 will store any text data without embedded
-  '\000' characters.  If you need to store BLOB data in SQLite version
-  2.8 you'll want to encode that data first.
-  There is a source file named 
-  "<b>src/encode.c</b>" in the SQLite version 2.8 distribution that contains
-  implementations of functions named "<b>sqlite_encode_binary()</b>
-  and <b>sqlite_decode_binary()</b> that can be used for converting
-  binary data to ASCII and back again, if you like.</p>
-
- 
 }
 
 faq {
   How do I add or delete columns from an existing table in SQLite.
 } {
-  <p>SQLite does yes not support the "ALTER TABLE" SQL command.  If you
-  what to change the structure of a table, you have to recreate the
+  <p>SQLite has limited 
+  <a href="lang_altertable.html">ALTER TABLE</a> support that you can
+  use to add a column to the end of a table or to change the name of
+  a table.  
+  If you what make more complex changes the structure of a table,
+  you will have to recreate the
   table.  You can save existing data to a temporary table, drop the
   old table, create the new table, then copy the data back in from
   the temporary table.</p>
@@ -398,7 +362,8 @@ faq {
   neither is it returned to the operating system.</p>
 
   <p>If you delete a lot of data and want to shrink the database file,
-  run the VACUUM command (version 2.8.1 and later).  VACUUM will reconstruct
+  run the <a href="lang_vacuum.html">VACUUM</a> command.
+  VACUUM will reconstruct
   the database from scratch.  This will leave the database with an empty
   free-list and a file that is minimal in size.  Note, however, that the
   VACUUM can take some time to run (around a half second per megabyte
@@ -414,7 +379,8 @@ faq {
 faq {
   Can I use SQLite in my commercial product without paying royalties?
 } {
-  <p>Yes.  SQLite is in the public domain.  No claim of ownership is made
+  <p>Yes.  SQLite is in the 
+  <a href="copyright.html">public domain</a>.  No claim of ownership is made
   to any part of the code.  You can do anything you want with it.</p>
 }
 
@@ -433,12 +399,18 @@ faq {
 }
 
 faq {What is an SQLITE_SCHEMA error, and why am I getting one?} {
-  <p>In version 3 of SQLite, an SQLITE_SCHEMA error is returned when a 
+  <p>An SQLITE_SCHEMA error is returned when a 
   prepared SQL statement is no longer valid and cannot be executed.
   When this occurs, the statement must be recompiled from SQL using 
-  the sqlite3_prepare() API. In SQLite 3, an SQLITE_SCHEMA error can
-  only occur when using the sqlite3_prepare()/sqlite3_step()/sqlite3_finalize()
-  API to execute SQL, not when using the sqlite3_exec(). This was not
+  the 
+  <a href="capi3ref.html#sqlite3_prepare">sqlite3_prepare()</a> API.
+  In SQLite version 3, an SQLITE_SCHEMA error can
+  only occur when using the 
+  <a href="capi3ref.html#sqlite3_prepare">sqlite3_prepare()</a>/<a
+  href="capi3ref.html#sqlite3_step">sqlite3_step()</a>/<a
+  href="capi3ref.html#sqlite3_finalize">sqlite3_finalize()</a>
+  API to execute SQL, not when using the
+  <a href="capi3ref.html#sqlite3_exec">sqlite3_exec()</a>. This was not
   the case in version 2.</p>
 
   <p>The most common reason for a prepared statement to become invalid
@@ -446,7 +418,8 @@ faq {What is an SQLITE_SCHEMA error, and why am I getting one?} {
   prepared (possibly by another process).  The other reasons this can 
   happen are:</p> 
   <ul>
-  <li>A database was DETACHed.
+  <li>A database was <a href="lang_detach.html">DETACH</a>ed.
+  <li>The database was <a href="lang_vacuum.html">VACUUM</a>ed
   <li>A user-function definition was deleted or changed.
   <li>A collation sequence definition was deleted or changed.
   <li>The authorization function was changed.
@@ -455,7 +428,10 @@ faq {What is an SQLITE_SCHEMA error, and why am I getting one?} {
   <p>In all cases, the solution is to recompile the statement from SQL
   and attempt to execute it again. Because a prepared statement can be
   invalidated by another process changing the database schema, all code
-  that uses the sqlite3_prepare()/sqlite3_step()/sqlite3_finalize()
+  that uses the
+  <a href="capi3ref.html#sqlite3_prepare">sqlite3_prepare()</a>/<a
+  href="capi3ref.html#sqlite3_step">sqlite3_step()</a>/<a
+  href="capi3ref.html#sqlite3_finalize">sqlite3_finalize()</a>
   API should be prepared to handle SQLITE_SCHEMA errors. An example
   of one approach to this follows:</p>
 
@@ -496,7 +472,9 @@ faq {Why does ROUND(9.95,1)  return 9.9 instead of 10.0?
   <p>This kind of problem comes up all the time when dealing with
   floating point binary numbers.  The general rule to remember is
   that most fractional numbers that have a finite representation in decimal
-  do not have a finite representation in binary.  And so they are
+  (a.k.a "base-10")
+  do not have a finite representation in binary (a.k.a "base-2").
+  And so they are
   approximated using the closest binary number available.  That
   approximation is usually very close, but it will be slightly off
   and in some cases can cause your results to be a little different
