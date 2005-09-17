@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\slock2\stest\sscript\sintroduced\sby\scheck-in\s(2709)\s(CVS\s2711)
-D 2005-09-17T16:48:19
+C Fix\sthe\scrash.test\sscript\sto\saccomodate\srecent\schanges.\s(CVS\s2712)
+D 2005-09-17T17:05:19
 F Makefile.in 12784cdce5ffc8dfb707300c34e4f1eb3b8a14f1
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -132,7 +132,7 @@ F test/collate6.test 6c9470d1606ee3e564675b229653e320c49ec638
 F test/conflict.test 774e10709f5e9a9a7352dc929b856929ec805e58
 F test/corrupt.test 18c7a995b1af76a8c8600b996257f2c7b7bff083
 F test/corrupt2.test 88342570828f2b8cbbd8369eff3891f5c0bdd5ba
-F test/crash.test b75460ec0ae465aa27be12d684353315755c4811
+F test/crash.test 131259005bb5dbe776eba8de99408a493c69c06c
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/date.test 30ca15e608a45d868fd419c901795382efe27020
 F test/default.test 252298e42a680146b1dd64f563b95bdf088d94fb
@@ -309,7 +309,7 @@ F www/tclsqlite.tcl ddcf912ea48695603c8ed7efb29f0812ef8d1b49
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 1a737b457c59286d7d5c3a98391dec17dbc82d09
-R ceec55249cc6ee35c580fa80f50815ec
+P c3bf17436bc1e264b4dbe255876a990a5a2b8b0c
+R d3e1eb1d7df7ceac8fbbdfcdff50095f
 U drh
-Z 77e06a1f995c3f32745811f70cb7de75
+Z 21fd3b22e21e3f9446ccb64539193918

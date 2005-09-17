@@ -20,7 +20,7 @@
 # The special crash-test module with its os_test.c backend only works
 # on Unix.
 #
-# $Id: crash.test,v 1.18 2005/09/08 12:37:29 drh Exp $
+# $Id: crash.test,v 1.19 2005/09/17 17:05:19 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -46,6 +46,7 @@ proc crashsql {crashdelay crashfile sql} {
 
   set f [open crash.tcl w]
   puts $f "sqlite3_crashparams $crashdelay $cfile"
+  puts $f "set sqlite_pending_byte $::sqlite_pending_byte"
   puts $f {sqlite3 db test.db}
 
   # This block sets the cache size of the main database to 10
