@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the download.html file.
 #
-set rcsid {$Id: download.tcl,v 1.21 2005/09/17 19:14:40 drh Exp $}
+set rcsid {$Id: download.tcl,v 1.22 2005/09/17 19:28:46 drh Exp $}
 source common.tcl
 header {SQLite Download Page}
 
@@ -19,9 +19,17 @@ proc Product {pattern desc} {
     if {![regexp ^$p2\$ $file all version]} continue
     regsub -all _ $version . version
     set size [file size $file]
+    set units bytes
+    if {$size>1024*1024} {
+      set size [format %.2f [expr {$size/(1024.0*1024.0)}]]
+      set units MiB
+    } elseif {$size>1024} {
+      set size [format %.2f [expr {$size/(1024.0)}]]
+      set units KiB
+    }
     puts "<tr><td width=\"10\"></td>"
     puts "<td valign=\"top\" align=\"right\">"
-    puts "<a href=\"$file\">$file</a><br>($size bytes)</td>"
+    puts "<a href=\"$file\">$file</a><br>($size $units)</td>"
     puts "<td width=\"5\"></td>"
     regsub -all VERSION $desc $version d2
     puts "<td valign=\"top\">[string trim $d2]</td></tr>"
