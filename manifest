@@ -1,5 +1,5 @@
-C Changes\sto\smake\scorruption\serrors\seasier\sto\strack\sdown.\s(CVS\s2709)
-D 2005-09-17T15:20:27
+C Fix\sa\sproblem\swith\sthe\slock_status\spragma\sand\sthe\sUTF-16\sencoding.\s(CVS\s2710)
+D 2005-09-17T16:36:56
 F Makefile.in 12784cdce5ffc8dfb707300c34e4f1eb3b8a14f1
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -59,7 +59,7 @@ F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c adbb27f13ac75cd5bc29a3d84803e0cab1edfa88
 F src/pager.h 17b13225abd93c1e9f470060f40a21b9edb5a164
 F src/parse.y 5602d5cb894dda2932bf50b7e88782a4440ae3ae
-F src/pragma.c 69413fbdc0c6aaa493a776ea52c1b3e6cf35dfb2
+F src/pragma.c 6d773e25e8af13ef0820531ad2793417f8a8959d
 F src/prepare.c fc098db25d2a121affb08686cf04833fd50452d4
 F src/printf.c bd421c1ad5e01013c89af63c60eab02852ccd15e
 F src/random.c 90adff4e73a3b249eb4f1fc2a6ff9cf78c7233a4
@@ -168,7 +168,7 @@ F test/laststmtchanges.test 19a6d0c11f7a31dc45465b495f7b845a62cbec17
 F test/like.test 145382e6a1f3d2edf266ca7d0236ab1b7c0ba66f
 F test/limit.test 39f084f4e5f11e0b984cb517b56867cbf88df156
 F test/lock.test 9b7afcb24f53d24da502abb33daaad2cd6d44107
-F test/lock2.test 59c3dd7d9b24d1bf7ec91b2d1541c37e97939d5f
+F test/lock2.test f85d4c010a19c9512748d12214dace0d03d9cc02
 F test/lock3.test 615111293cf32aa2ed16d01c6611737651c96fb9
 F test/main.test 249f139ef2f75710db1b49bb79e8b27767eacae1
 F test/malloc.test 666c77a878ce50f5c22b9211ed43e889cabb63a6
@@ -309,7 +309,7 @@ F www/tclsqlite.tcl ddcf912ea48695603c8ed7efb29f0812ef8d1b49
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 0e23c28b25aced292cb068bc9a202cb627ba38ec
-R d840a4aee99798668c3447332ee407db
+P c07330000b9427a77f412918078beffa18de2c36
+R 37239c67bbf9979f60437117045ad31b
 U drh
-Z 45298cf04a67874db88d26d3bf9dc754
+Z ac0bef7e8b3036ffa8e4106e6d4d10c5
