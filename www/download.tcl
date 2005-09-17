@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the download.html file.
 #
-set rcsid {$Id: download.tcl,v 1.20 2005/08/27 13:11:21 drh Exp $}
+set rcsid {$Id: download.tcl,v 1.21 2005/09/17 19:14:40 drh Exp $}
 source common.tcl
 header {SQLite Download Page}
 
@@ -43,7 +43,7 @@ Product sqlite3-VERSION.bin.gz {
 
 Product sqlite-VERSION.bin.gz {
   A command-line program for accessing and modifing
-  2 SQLite databases.
+  SQLite databases.
   See <a href="sqlite.html">the documentation</a> for additional information.
 }
 
