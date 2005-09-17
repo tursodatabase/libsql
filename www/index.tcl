@@ -66,7 +66,13 @@ proc newsitem {date title text} {
   puts "<hr width=\"50%\">"
 }
 
-newsitem {2005-Sep-16} {Version 3.2.6} {
+newsitem {2005-Sep-16} {Version 3.2.6 - Critical Bug Fix} {
+  This version fixes a bug that can result in database
+  corruption if a VACUUM of a 1 gibibyte or larger database fails
+  (perhaps do to running out of disk space or an unexpected power loss)
+  and is later rolled back.
+  <p>
+  Also in this release:
   The ORDER BY and GROUP BY processing was rewritten to use less memory.
   Support for COUNT(DISTINCT) was added.  The LIKE operator can now be
   used by the optimizer on columns with COLLATE NOCASE.
@@ -101,4 +107,4 @@ puts {
 <p align="right"><a href="oldnews.html">Old news...</a></p>
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.124 2005/09/16 02:55:15 drh Exp $}
+footer {$Id: index.tcl,v 1.125 2005/09/17 15:17:40 drh Exp $}

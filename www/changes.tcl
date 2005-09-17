@@ -25,7 +25,10 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
-chng {2005 September 16 (3.2.6)} {
+chng {2005 September 17 (3.2.6)} {
+<li>Fix a bug that can cause database corruption if a VACUUM (or
+    autovacuum) fails and is rolled back on a database that is
+    larger than 1GiB</li>
 <li>LIKE optiization now works for columns with COLLATE NOCASE</li>
 <li>ORDER BY and GROUP BY now use bounded memory</li>
 <li>Added support for COUNT(DISTINCT expr)</li>
