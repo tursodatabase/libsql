@@ -357,16 +357,23 @@ void sqlite3VdbeChangeP2(Vdbe *p, int addr, int val){
 */
 static void freeP3(int p3type, void *p3){
   if( p3 ){
-    if( p3type==P3_DYNAMIC || p3type==P3_KEYINFO ){
-      sqliteFree(p3);
-    }
-    if( p3type==P3_VDBEFUNC ){
-      VdbeFunc *pVdbeFunc = (VdbeFunc *)p3;
-      sqlite3VdbeDeleteAuxData(pVdbeFunc, 0);
-      sqliteFree(pVdbeFunc);
-    }
-    if( p3type==P3_MEM ){
-      sqlite3ValueFree((sqlite3_value*)p3);
+    switch( p3type ){
+      case P3_DYNAMIC:
+      case P3_KEYINFO:
+      case P3_KEYINFO_HANDOFF: {
+        sqliteFree(p3);
+        break;
+      }
+      case P3_VDBEFUNC: {
+        VdbeFunc *pVdbeFunc = (VdbeFunc *)p3;
+        sqlite3VdbeDeleteAuxData(pVdbeFunc, 0);
+        sqliteFree(pVdbeFunc);
+        break;
+      }
+      case P3_MEM: {
+        sqlite3ValueFree((sqlite3_value*)p3);
+        break;
+      }
     }
   }
 }
