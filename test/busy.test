@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file test the busy handler
 #
-# $Id: busy.test,v 1.1 2005/07/09 02:16:03 drh Exp $
+# $Id: busy.test,v 1.2 2005/09/17 18:02:37 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -29,6 +29,7 @@ proc busy x {
   if {$x>2} {return 1}
   return 0
 }
+set busyargs {}
 do_test busy-1.2 {
   db busy busy
   db2 eval {begin exclusive}

@@ -1,5 +1,5 @@
-C Fix\sa\smemory\sleak\sthat\soccurs\safter\smalloc\sfails.\s(CVS\s2713)
-D 2005-09-17T17:58:22
+C Fix\sup\sthe\sbusy\stest\sso\sthat\sit\scan\sbe\srun\smultiple\stimes\sin\sa\srow\swithout\ngiving\sfalse\serrors\son\s2nd\sand\ssubsequent\sruns.\s(CVS\s2714)
+D 2005-09-17T18:02:37
 F Makefile.in 12784cdce5ffc8dfb707300c34e4f1eb3b8a14f1
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -118,7 +118,7 @@ F test/btree5.test 8e5ff32c02e685d36516c6499add9375fe1377f2
 F test/btree6.test a5ede6bfbbb2ec8b27e62813612c0f28e8f3e027
 F test/btree7.test a6d3b842db22af97dd14b989e90a2fd96066b72f
 F test/btree8.test fadc112bcbd6a0c622d34c813fc8a648eacf8804
-F test/busy.test e355bee7d32aae35ccb3786f7a6470b73559d0f9
+F test/busy.test 0271c854738e23ad76e10d4096a698e5af29d211
 F test/capi2.test f897209386fb21cfdc9267595e0c667ebaca9164
 F test/capi3.test fc8e573467049add3bfaf81f53827e8ff153cf8f
 F test/capi3b.test 5b6a66f9f295f79f443b5d3f33187fa5ef6cf336
@@ -309,7 +309,7 @@ F www/tclsqlite.tcl ddcf912ea48695603c8ed7efb29f0812ef8d1b49
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P d594608ff37bbf1d6866adb337aa2fbcd517eada
-R c67b9e4d248af499dfd433c361712ddb
+P 85b931bf72dac88187e4531053a06abe25d6f462
+R e06416bf38179a505a1d5058330009b8
 U drh
-Z 01b5ac88e3a5db9c8fdd344f074b13da
+Z b7dc68036682ab77fc8c822d0f10a916
