@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.145 2005/09/16 02:38:11 drh Exp $
+** $Id: util.c,v 1.146 2005/09/17 18:34:11 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -373,11 +373,10 @@ char *sqlite3StrNDup(const char *z, int n){
 */
 void sqlite3ReallocOrFree(void **ppBuf, int newSize){
   void *pNew = sqliteRealloc(*ppBuf, newSize);
-  if( pNew ){
-    *ppBuf = pNew;
-  }else{
+  if( pNew==0 ){
     sqliteFree(*ppBuf);
   }
+  *ppBuf = pNew;
 }
 
 /*
