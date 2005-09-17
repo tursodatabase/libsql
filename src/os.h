@@ -164,7 +164,6 @@
 #ifndef SQLITE_TEST
 #define PENDING_BYTE      0x40000000  /* First byte past the 1GB boundary */
 #else
-/* Defined in test2.c (pager tests) */
 extern unsigned int sqlite3_pending_byte;
 #define PENDING_BYTE sqlite3_pending_byte
 #endif

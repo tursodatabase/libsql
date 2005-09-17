@@ -1712,7 +1712,7 @@ int sqlite3VdbeIdxRowid(BtCursor *pCur, i64 *rowid){
 
   sqlite3BtreeKeySize(pCur, &nCellKey);
   if( nCellKey<=0 ){
-    return SQLITE_CORRUPT;
+    return SQLITE_CORRUPT_BKPT;
   }
   rc = sqlite3VdbeMemFromBtree(pCur, 0, nCellKey, 1, &m);
   if( rc ){

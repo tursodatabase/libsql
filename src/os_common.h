@@ -33,7 +33,7 @@
  * pending-byte in the database file.
  */
 #ifdef SQLITE_TEST
-unsigned int sqlite3_pending_byte = 0x0010000;
+unsigned int sqlite3_pending_byte = 0x40000000;
 #endif
 
 int sqlite3_os_trace = 0;

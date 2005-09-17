@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.301 2005/09/07 21:22:46 drh Exp $
+** $Id: main.c,v 1.302 2005/09/17 15:20:27 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1047,3 +1047,14 @@ recover_out:
 int sqlite3_get_autocommit(sqlite3 *db){
   return db->autoCommit;
 }
+
+#ifdef SQLITE_DEBUG
+/*
+** The following routine is subtituted for constant SQLITE_CORRUPT in
+** debugging builds.  This provides a way to set a breakpoint for when
+** corruption is first detected.
+*/
+int sqlite3Corrupt(void){
+  return SQLITE_CORRUPT;
+}
+#endif

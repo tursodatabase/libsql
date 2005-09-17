@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.214 2005/09/16 17:16:53 drh Exp $
+** @(#) $Id: pager.c,v 1.215 2005/09/17 15:20:27 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1491,7 +1491,7 @@ static int pager_stmt_playback(Pager *pPager){
 end_stmt_playback:
   if( rc!=SQLITE_OK ){
     pPager->errMask |= PAGER_ERR_CORRUPT;
-    rc = SQLITE_CORRUPT;  /* bkpt-CORRUPT */
+    rc = SQLITE_CORRUPT;
   }else{
     pPager->journalOff = szJ;
     /* pager_reload_cache(pPager); */
@@ -2308,7 +2308,7 @@ int sqlite3pager_get(Pager *pPager, Pgno pgno, void **ppPage){
   ** number greater than this, or zero, is requested.
   */
   if( pgno>PAGER_MAX_PGNO || pgno==0 || pgno==PAGER_MJ_PGNO(pPager) ){
-    return SQLITE_CORRUPT;
+    return SQLITE_CORRUPT_BKPT;
   }
 
   /* Make sure we have not hit any critical errors.
@@ -3193,7 +3193,7 @@ int sqlite3pager_rollback(Pager *pPager){
     rc = pager_playback(pPager);
   }
   if( rc!=SQLITE_OK ){
-    rc = SQLITE_CORRUPT;  /* bkpt-CORRUPT */
+    rc = SQLITE_CORRUPT_BKPT;
     pPager->errMask |= PAGER_ERR_CORRUPT;
   }
   pPager->dbSize = -1;

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.418 2005/09/16 02:38:11 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.419 2005/09/17 15:20:27 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1372,6 +1372,19 @@ typedef struct {
  * even when no triggers exist
  */
 extern int sqlite3_always_code_trigger_setup;
+
+/*
+** The SQLITE_CORRUPT_BKPT macro can be either a constant (for production
+** builds) or a function call (for debugging).  If it is a function call,
+** it allows the operator to set a breakpoint at the spot where database
+** corruption is first detected.
+*/
+#ifdef SQLITE_DEBUG
+  extern int sqlite3Corrupt(void);
+# define SQLITE_CORRUPT_BKPT sqlite3Corrupt()
+#else
+# define SQLITE_CORRUPT_BKPT SQLITE_CORRUPT
+#endif
 
 /*
 ** Internal function prototypes

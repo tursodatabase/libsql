@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.49 2005/05/26 15:20:53 danielk1977 Exp $
+# $Id: tester.tcl,v 1.50 2005/09/17 15:20:28 drh Exp $
 
 # Make sure tclsqlite3 was compiled correctly.  Abort now with an
 # error message if not.
@@ -41,6 +41,7 @@ if {[sqlite3 -tcl-uses-utf]} {
 }
 
 set tcl_precision 15
+set sqlite_pending_byte 0x0010000
 
 # Use the pager codec if it is available
 #

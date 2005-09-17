@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.487 2005/09/16 02:38:11 drh Exp $
+** $Id: vdbe.c,v 1.488 2005/09/17 15:20:28 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1962,7 +1962,7 @@ case OP_Column: {
     ** we are dealing with a malformed record.
     */
     if( idx!=szHdr || offset!=payloadSize ){
-      rc = SQLITE_CORRUPT;
+      rc = SQLITE_CORRUPT_BKPT;
       goto op_column_out;
     }
 
@@ -2516,7 +2516,7 @@ case OP_OpenWrite: {       /* no-push */
       ** only mean that we are dealing with a corrupt database file
       */
       if( (flags & 0xf0)!=0 || ((flags & 0x07)!=5 && (flags & 0x07)!=2) ){
-        rc = SQLITE_CORRUPT;
+        rc = SQLITE_CORRUPT_BKPT;
         goto abort_due_to_error;
       }
       pCur->isTable = (flags & BTREE_INTKEY)!=0;
@@ -2527,7 +2527,7 @@ case OP_OpenWrite: {       /* no-push */
       */
       if( (pCur->isTable && pOp->p3type==P3_KEYINFO)
        || (pCur->isIndex && pOp->p3type!=P3_KEYINFO) ){
-        rc = SQLITE_CORRUPT;
+        rc = SQLITE_CORRUPT_BKPT;
         goto abort_due_to_error;
       }
       break;
@@ -3056,7 +3056,7 @@ case OP_NewRowid: {
     cnt = 0;
     if( (sqlite3BtreeFlags(pC->pCursor)&(BTREE_INTKEY|BTREE_ZERODATA)) !=
           BTREE_INTKEY ){
-      rc = SQLITE_CORRUPT;
+      rc = SQLITE_CORRUPT_BKPT;
       goto abort_due_to_error;
     }
     assert( (sqlite3BtreeFlags(pC->pCursor) & BTREE_INTKEY)!=0 );
