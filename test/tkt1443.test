@@ -28,7 +28,13 @@
 # parts of the system all at once, that it seemed like a good one to
 # include in the test suite. 
 #
-# $Id: tkt1443.test,v 1.1 2005/09/17 13:07:13 drh Exp $
+# NOTE:  Yes, in spite of the name of this file (tkt1443.test) this
+# test is for ticket #1433 not #1443.  I mistyped the name when I was
+# creating the file and I had already checked in the file by the wrong
+# name be the time I noticed the error.  With CVS it is a really hassle
+# to change filenames, so I'll just leave it as is.  No harm done.
+#
+# $Id: tkt1443.test,v 1.2 2005/09/17 13:29:24 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -36,7 +42,7 @@ source $testdir/tester.tcl
 
 # Construct the sample database.
 #
-do_test tkt1433-1.0 {
+do_test tkt1443-1.0 {
   sqlite3 db :memory:
   execsql {
     CREATE TABLE Items(

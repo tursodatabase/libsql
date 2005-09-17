@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.173 2005/09/17 13:07:13 drh Exp $
+** $Id: where.c,v 1.174 2005/09/17 13:29:24 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1471,7 +1471,7 @@ WhereInfo *sqlite3WhereBegin(
         continue;
       }
       cost = bestIndex(pParse, &wc, pTabItem, notReady,
-                       (j==0 && ppOrderBy) ? *ppOrderBy : 0,
+                       (i==0 && ppOrderBy) ? *ppOrderBy : 0,
                        &pIdx, &flags, &nEq);
       if( cost<lowestCost ){
         lowestCost = cost;
