@@ -1,0 +1,62 @@
+# 2005 September 19
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.
+#
+# This file implements tests for left outer joins containing ON
+# clauses that restrict the scope of the left term of the join.
+#
+# $Id: join5.test,v 1.1 2005/09/19 21:05:50 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+
+do_test join5-1.1 {
+  execsql {
+    BEGIN;
+    CREATE TABLE t1(a integer primary key, b integer, c integer);
+    CREATE TABLE t2(x integer primary key, y);
+    CREATE TABLE t3(p integer primary key, q);
+    INSERT INTO t3 VALUES(11,'t3-11');
+    INSERT INTO t3 VALUES(12,'t3-12');
+    INSERT INTO t2 VALUES(11,'t2-11');
+    INSERT INTO t2 VALUES(12,'t2-12');
+    INSERT INTO t1 VALUES(1, 5, 0);
+    INSERT INTO t1 VALUES(2, 11, 2);
+    INSERT INTO t1 VALUES(3, 12, 1);
+    COMMIT;
+  }
+} {}
+do_test join5-1.2 {
+  execsql {
+    select * from t1 left join t2 on t1.b=t2.x and t1.c=1
+  }
+} {1 5 0 {} {} 2 11 2 {} {} 3 12 1 12 t2-12}
+do_test join5-1.3 {
+  execsql {
+    select * from t1 left join t2 on t1.b=t2.x where t1.c=1
+  }
+} {3 12 1 12 t2-12}
+do_test join5-1.4 {
+  execsql {
+    select * from t1 left join t2 on t1.b=t2.x and t1.c=1
+                     left join t3 on t1.b=t3.p and t1.c=2
+  }
+} {1 5 0 {} {} {} {} 2 11 2 {} {} 11 t3-11 3 12 1 12 t2-12 {} {}}
+do_test join5-1.5 {
+  execsql {
+    select * from t1 left join t2 on t1.b=t2.x and t1.c=1
+                     left join t3 on t1.b=t3.p where t1.c=2
+  }
+} {2 11 2 {} {} 11 t3-11}
+
+
+finish_test

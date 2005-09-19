@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.271 2005/09/19 17:35:53 drh Exp $
+** $Id: select.c,v 1.272 2005/09/19 21:05:49 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -179,6 +179,7 @@ static void addWhereTerm(
   const char *zAlias1,     /* Alias for first table.  May be NULL */
   const Table *pTab2,      /* Second table */
   const char *zAlias2,     /* Alias for second table.  May be NULL */
+  int iRightJoinTable,     /* VDBE cursor for the right table */
   Expr **ppExpr            /* Add the equality term to this expression */
 ){
   Expr *pE1a, *pE1b, *pE1c;
@@ -199,11 +200,14 @@ static void addWhereTerm(
   pE2c = sqlite3Expr(TK_DOT, pE2b, pE2a, 0);
   pE = sqlite3Expr(TK_EQ, pE1c, pE2c, 0);
   ExprSetProperty(pE, EP_FromJoin);
+  pE->iRightJoinTable = iRightJoinTable;
   *ppExpr = sqlite3ExprAnd(*ppExpr, pE);
 }
 
 /*
 ** Set the EP_FromJoin property on all terms of the given expression.
+** And set the Expr.iRightJoinTable to iTable for every term in the
+** expression.
 **
 ** The EP_FromJoin property is used on terms of an expression to tell
 ** the LEFT OUTER JOIN processing logic that this term is part of the
@@ -211,11 +215,26 @@ static void addWhereTerm(
 ** of the more general WHERE clause.  These terms are moved over to the
 ** WHERE clause during join processing but we need to remember that they
 ** originated in the ON or USING clause.
+**
+** The Expr.iRightJoinTable tells the WHERE clause processing that the
+** expression depends on table iRightJoinTable even if that table is not
+** explicitly mentioned in the expression.  That information is needed
+** for cases like this:
+**
+**    SELECT * FROM t1 LEFT JOIN t2 ON t1.a=t2.b AND t1.x=5
+**
+** The where clause needs to defer the handling of the t1.x=5
+** term until after the t2 loop of the join.  In that way, a
+** NULL t2 row will be inserted whenever t1.x!=5.  If we do not
+** defer the handling of t1.x=5, it will be processed immediately
+** after the t1 loop and rows with t1.x!=5 will never appear in
+** the output, which is incorrect.
 */
-static void setJoinExpr(Expr *p){
+static void setJoinExpr(Expr *p, int iTable){
   while( p ){
     ExprSetProperty(p, EP_FromJoin);
-    setJoinExpr(p->pLeft);
+    p->iRightJoinTable = iTable;
+    setJoinExpr(p->pLeft, iTable);
     p = p->pRight;
   } 
 }
@@ -262,7 +281,9 @@ static int sqliteProcessJoin(Parse *pParse, Select *p){
         char *zName = pLeftTab->aCol[j].zName;
         if( columnIndex(pRightTab, zName)>=0 ){
           addWhereTerm(zName, pLeftTab, pLeft->zAlias, 
-                              pRightTab, pRight->zAlias, &p->pWhere);
+                              pRightTab, pRight->zAlias,
+                              pRight->iCursor, &p->pWhere);
+          
         }
       }
     }
@@ -279,7 +300,7 @@ static int sqliteProcessJoin(Parse *pParse, Select *p){
     ** an AND operator.
     */
     if( pLeft->pOn ){
-      setJoinExpr(pLeft->pOn);
+      setJoinExpr(pLeft->pOn, pRight->iCursor);
       p->pWhere = sqlite3ExprAnd(p->pWhere, pLeft->pOn);
       pLeft->pOn = 0;
     }
@@ -301,7 +322,8 @@ static int sqliteProcessJoin(Parse *pParse, Select *p){
           return 1;
         }
         addWhereTerm(zName, pLeftTab, pLeft->zAlias, 
-                            pRightTab, pRight->zAlias, &p->pWhere);
+                            pRightTab, pRight->zAlias,
+                            pRight->iCursor, &p->pWhere);
       }
     }
   }

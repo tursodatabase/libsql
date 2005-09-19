@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.176 2005/09/19 13:15:23 drh Exp $
+** $Id: where.c,v 1.177 2005/09/19 21:05:49 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -556,14 +556,17 @@ static void exprAnalyze(
   }else{
     pTerm->prereqRight = exprTableUsage(pMaskSet, pExpr->pRight);
   }
-  pTerm->prereqAll = prereqAll = exprTableUsage(pMaskSet, pExpr);
+  prereqAll = exprTableUsage(pMaskSet, pExpr);
+  if( ExprHasProperty(pExpr, EP_FromJoin) ){
+    prereqAll |= getMask(pMaskSet, pExpr->iRightJoinTable);
+  }
+  pTerm->prereqAll = prereqAll;
   pTerm->leftCursor = -1;
   pTerm->iParent = -1;
   pTerm->operator = 0;
   if( allowedOp(pExpr->op) && (pTerm->prereqRight & prereqLeft)==0 ){
     Expr *pLeft = pExpr->pLeft;
     Expr *pRight = pExpr->pRight;
-    assert( prereqAll == (pTerm->prereqRight | prereqLeft) ); /* ticket 1433 */
     if( pLeft->op==TK_COLUMN ){
       pTerm->leftCursor = pLeft->iTable;
       pTerm->leftColumn = pLeft->iColumn;
