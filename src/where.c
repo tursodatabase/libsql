@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.175 2005/09/19 12:37:28 drh Exp $
+** $Id: where.c,v 1.176 2005/09/19 13:15:23 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1264,7 +1264,7 @@ static void codeAllEqualityTerms(
   }
 }
 
-#if defined(SQLITE_TEST) || defined(SQLITE_DEBUG)
+#if defined(SQLITE_TEST)
 /*
 ** The following variable holds a text description of query plan generated
 ** by the most recent call to sqlite3WhereBegin().  Each call to WhereBegin
