@@ -1,5 +1,5 @@
-C Change\ssome\sdebugging\s#defines\sin\sorder\sto\sget\sSSE\sworking\sagain\safter\nrecent\supgrades.\s(CVS\s2719)
-D 2005-09-19T12:37:28
+C Work\saround\slimitations\sof\sMSVC++\s6.\s\sTickets\s#1429,\s#1437,\sand\s#1440.\s(CVS\s2720)
+D 2005-09-19T12:53:19
 F Makefile.in 12784cdce5ffc8dfb707300c34e4f1eb3b8a14f1
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -54,7 +54,7 @@ F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
 F src/os_unix.c c86cf43b7ca9200e6fb7bc202ad2cc7da2f69367
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
-F src/os_win.c ed03a35b2894f9b99840415f941a9f8594dea756
+F src/os_win.c fbccc85e7011174068c27d54256746321a1f0059
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c adbb27f13ac75cd5bc29a3d84803e0cab1edfa88
 F src/pager.h 17b13225abd93c1e9f470060f40a21b9edb5a164
@@ -82,7 +82,7 @@ F src/util.c 55caaffbb2716f9928ab452d20f3e9cbbeab872d
 F src/vacuum.c 829d9e1a6d7c094b80e0899686670932eafd768c
 F src/vdbe.c de007d59f036fcd1b89a7d4172aa0d028e8689eb
 F src/vdbe.h c8e105979fc7aaf5b8004e9621904e3bd096dfa2
-F src/vdbeInt.h 3dd2a29c7b0a55404c35f93caae81fb42f4cb70a
+F src/vdbeInt.h 7bedbb9553a10e86b53f75d99e197f3f00a732bf
 F src/vdbeapi.c 85bbe1d0243a89655433d60711b4bd71979b59cd
 F src/vdbeaux.c 57a6ced8417bdc6f06c391d9c560ecbbed644ef3
 F src/vdbefifo.c 9efb94c8c3f4c979ebd0028219483f88e57584f5
@@ -309,7 +309,7 @@ F www/tclsqlite.tcl ddcf912ea48695603c8ed7efb29f0812ef8d1b49
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P e985f02d20d50b0451bfd35a7343e0386336dd71
-R d12af548fed89b4a734aabfc84ed6d57
+P 86eb7d8363559c94bfcd7e48ff6270025ecacb7b
+R 15fcd6b3781cf3f7264e2518cef646b9
 U drh
-Z 42aa55fc0ffa448898335fa048bb4038
+Z 03ff42266003329b3962c81a45454f89

@@ -466,6 +466,13 @@ int sqlite3OsWrite(OsFile *id, const void *pBuf, int amt){
 }
 
 /*
+** Some microsoft compilers lack this definition.
+*/
+#ifndef INVALID_SET_FILE_POINTER
+# define INVALID_SET_FILE_POINTER ((DWORD)-1)
+#endif
+
+/*
 ** Move the read/write pointer in a file.
 */
 int sqlite3OsSeek(OsFile *id, i64 offset){
