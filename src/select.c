@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.269 2005/09/12 23:03:17 drh Exp $
+** $Id: select.c,v 1.270 2005/09/19 15:37:07 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1786,6 +1786,7 @@ static int multiSelect(
       assert( p->addrOpenVirt[2]>=0 );
       addr = p->addrOpenVirt[2];
       sqlite3VdbeChangeP2(v, addr, p->pEList->nExpr+2);
+      pKeyInfo->nField = pOrderBy->nExpr;
       sqlite3VdbeChangeP3(v, addr, (char*)pKeyInfo, P3_KEYINFO_HANDOFF);
       pKeyInfo = 0;
       generateSortTail(pParse, p, v, p->pEList->nExpr, eDest, iParm);

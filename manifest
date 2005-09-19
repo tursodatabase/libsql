@@ -1,5 +1,5 @@
-C The\ssqlite3_query_plan\sdebugging\svariable\snow\sonly\sappears\swith\sSQLITE_TEST=1.\s(CVS\s2721)
-D 2005-09-19T13:15:23
+C Fix\suninitialized\svalue\son\sa\sUNION\sALL\sselect\swith\san\sORDER\sBY\sclause.\s(CVS\s2722)
+D 2005-09-19T15:37:07
 F Makefile.in 12784cdce5ffc8dfb707300c34e4f1eb3b8a14f1
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -63,7 +63,7 @@ F src/pragma.c 6d773e25e8af13ef0820531ad2793417f8a8959d
 F src/prepare.c fc098db25d2a121affb08686cf04833fd50452d4
 F src/printf.c bd421c1ad5e01013c89af63c60eab02852ccd15e
 F src/random.c 90adff4e73a3b249eb4f1fc2a6ff9cf78c7233a4
-F src/select.c 9ef1dddd436e1ea86a6bf64ae0ed71bf4a0b894f
+F src/select.c 2d6a485a3fcb342e132ca1542556c1afaad56686
 F src/shell.c 3596c1e559b82663057940d19ba533ad421c7dd3
 F src/sqlite.h.in 461b2535550cf77aedfd44385da11ef7d63e57a2
 F src/sqliteInt.h cc5874662b2b3236e2d70a23429561b9f469c423
@@ -309,7 +309,7 @@ F www/tclsqlite.tcl ddcf912ea48695603c8ed7efb29f0812ef8d1b49
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P b2d1803c25b0b823c9cbe27989bacb730b18b45b
-R 5e74f6a85297c7ad6c94b75749d66e16
+P 41e226d2ff5c0021fd07388da13f6d750fac508b
+R 8bfb93d2bda540419ac9c07075b31e02
 U drh
-Z 1554e437ada1f4b93fe0cb919fe0dc5d
+Z fdd630cee04ef4f9384ba8eea195e4c7
