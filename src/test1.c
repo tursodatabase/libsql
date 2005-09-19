@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.160 2005/09/06 21:40:45 drh Exp $
+** $Id: test1.c,v 1.161 2005/09/19 12:37:28 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -3187,8 +3187,8 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
 #endif
 #ifdef SQLITE_DEBUG
   extern int sqlite3_vdbe_addop_trace;
-#endif
   static char *query_plan = sqlite3_query_plan;
+#endif
 
   for(i=0; i<sizeof(aCmd)/sizeof(aCmd[0]); i++){
     Tcl_CreateCommand(interp, aCmd[i].zName, aCmd[i].xProc, 0, 0);
@@ -3211,8 +3211,6 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
       (char*)&sqlite3_current_time, TCL_LINK_INT);
   Tcl_LinkVar(interp, "sqlite_os_trace",
       (char*)&sqlite3_os_trace, TCL_LINK_INT);
-  Tcl_LinkVar(interp, "sqlite_where_trace",
-      (char*)&sqlite3_where_trace, TCL_LINK_INT);
 #if OS_WIN
   Tcl_LinkVar(interp, "sqlite_os_type",
       (char*)&sqlite3_os_type, TCL_LINK_INT);
@@ -3220,6 +3218,10 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
 #ifdef SQLITE_DEBUG
   Tcl_LinkVar(interp, "sqlite_addop_trace",
       (char*)&sqlite3_vdbe_addop_trace, TCL_LINK_INT);
+  Tcl_LinkVar(interp, "sqlite_query_plan",
+      (char*)&query_plan, TCL_LINK_STRING|TCL_LINK_READ_ONLY);
+  Tcl_LinkVar(interp, "sqlite_where_trace",
+      (char*)&sqlite3_where_trace, TCL_LINK_INT);
 #endif
 #ifdef SQLITE_MEMDEBUG
   Tcl_LinkVar(interp, "sqlite_memused",
@@ -3227,8 +3229,6 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
   Tcl_LinkVar(interp, "sqlite_memmax",
       (char*)&sqlite3_memMax, TCL_LINK_INT | TCL_LINK_READ_ONLY);
 #endif
-  Tcl_LinkVar(interp, "sqlite_query_plan",
-      (char*)&query_plan, TCL_LINK_STRING|TCL_LINK_READ_ONLY);
 #ifndef SQLITE_OMIT_DISKIO
   Tcl_LinkVar(interp, "sqlite_opentemp_count",
       (char*)&sqlite3_opentemp_count, TCL_LINK_INT);
