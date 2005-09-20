@@ -351,6 +351,13 @@ void sqlite3VdbeChangeP2(Vdbe *p, int addr, int val){
   }
 }
 
+/*
+** Change teh P2 operand of instruction addr so that it points to
+** the address of the next instruction to be coded.
+*/
+void sqlite3VdbeJumpHere(Vdbe *p, int addr){
+  sqlite3VdbeChangeP2(p, addr, p->nOp);
+}
 
 /*
 ** Delete a P3 value if necessary.

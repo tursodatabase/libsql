@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code associated with the ANALYZE command.
 **
-** @(#) $Id: analyze.c,v 1.8 2005/09/10 22:40:54 drh Exp $
+** @(#) $Id: analyze.c,v 1.9 2005/09/20 17:42:23 drh Exp $
 */
 #ifndef SQLITE_OMIT_ANALYZE
 #include "sqliteInt.h"
@@ -127,13 +127,11 @@ static void analyzeOneTable(
     ** Cells iMem through iMem+nCol are initialized to 0.  The others
     ** are initialized to NULL.
     */
-    sqlite3VdbeAddOp(v, OP_Integer, 0, 0);
     for(i=0; i<=nCol; i++){
-      sqlite3VdbeAddOp(v, OP_MemStore, iMem+i, i==nCol);
+      sqlite3VdbeAddOp(v, OP_MemInt, 0, iMem+i);
     }
-    sqlite3VdbeAddOp(v, OP_Null, 0, 0);
     for(i=0; i<nCol; i++){
-      sqlite3VdbeAddOp(v, OP_MemStore, iMem+nCol+i+1, i==nCol-1);
+      sqlite3VdbeAddOp(v, OP_MemNull, iMem+nCol+i+1, 0);
     }
 
     /* Do the analysis.
@@ -198,7 +196,7 @@ static void analyzeOneTable(
     }
     sqlite3VdbeOp3(v, OP_MakeRecord, 3, 0, "ttt", 0);
     sqlite3VdbeAddOp(v, OP_Insert, iStatCur, 0);
-    sqlite3VdbeChangeP2(v, addr, sqlite3VdbeCurrentAddr(v));
+    sqlite3VdbeJumpHere(v, addr);
   }
 }
 

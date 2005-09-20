@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.111 2005/09/08 01:58:43 drh Exp $
+** $Id: update.c,v 1.112 2005/09/20 17:42:23 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -469,7 +469,7 @@ void sqlite3Update(
   ** all record selected by the WHERE clause have been updated.
   */
   sqlite3VdbeAddOp(v, OP_Goto, 0, addr);
-  sqlite3VdbeChangeP2(v, addr, sqlite3VdbeCurrentAddr(v));
+  sqlite3VdbeJumpHere(v, addr);
 
   /* Close all tables if there were no FOR EACH ROW triggers */
   if( !triggers_exist ){

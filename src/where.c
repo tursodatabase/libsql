@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.178 2005/09/20 08:47:20 drh Exp $
+** $Id: where.c,v 1.179 2005/09/20 17:42:23 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1597,8 +1597,7 @@ WhereInfo *sqlite3WhereBegin(
     if( pLevel->iFrom>0 && (pTabItem[-1].jointype & JT_LEFT)!=0 ){
       if( !pParse->nMem ) pParse->nMem++;
       pLevel->iLeftJoin = pParse->nMem++;
-      sqlite3VdbeAddOp(v, OP_Null, 0, 0);
-      sqlite3VdbeAddOp(v, OP_MemStore, pLevel->iLeftJoin, 1);
+      sqlite3VdbeAddOp(v, OP_MemInt, 0, pLevel->iLeftJoin);
       VdbeComment((v, "# init LEFT JOIN no-match flag"));
     }
 
@@ -1878,8 +1877,7 @@ WhereInfo *sqlite3WhereBegin(
     */
     if( pLevel->iLeftJoin ){
       pLevel->top = sqlite3VdbeCurrentAddr(v);
-      sqlite3VdbeAddOp(v, OP_Integer, 1, 0);
-      sqlite3VdbeAddOp(v, OP_MemStore, pLevel->iLeftJoin, 1);
+      sqlite3VdbeAddOp(v, OP_MemInt, 1, pLevel->iLeftJoin);
       VdbeComment((v, "# record LEFT JOIN hit"));
       for(pTerm=wc.a, j=0; j<wc.nTerm; j++, pTerm++){
         if( pTerm->flags & (TERM_VIRTUAL|TERM_CODED) ) continue;
@@ -1981,13 +1979,13 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     }
     if( pLevel->iLeftJoin ){
       int addr;
-      addr = sqlite3VdbeAddOp(v, OP_MemLoad, pLevel->iLeftJoin, 0);
-      sqlite3VdbeAddOp(v, OP_NotNull, 1, addr+4 + (pLevel->iIdxCur>=0));
+      addr = sqlite3VdbeAddOp(v, OP_IfMemPos, pLevel->iLeftJoin, 0);
       sqlite3VdbeAddOp(v, OP_NullRow, pTabList->a[i].iCursor, 0);
       if( pLevel->iIdxCur>=0 ){
         sqlite3VdbeAddOp(v, OP_NullRow, pLevel->iIdxCur, 0);
       }
       sqlite3VdbeAddOp(v, OP_Goto, 0, pLevel->top);
+      sqlite3VdbeJumpHere(v, addr);
     }
   }
 

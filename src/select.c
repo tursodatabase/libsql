@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.274 2005/09/20 13:55:18 drh Exp $
+** $Id: select.c,v 1.275 2005/09/20 17:42:23 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -543,7 +543,7 @@ static int selectInnerLoop(
         sqlite3VdbeOp3(v, OP_MakeRecord, 1, 0, &aff, 1);
         sqlite3VdbeAddOp(v, OP_IdxInsert, (iParm&0x0000FFFF), 0);
       }
-      sqlite3VdbeChangeP2(v, addr2, sqlite3VdbeCurrentAddr(v));
+      sqlite3VdbeJumpHere(v, addr2);
       break;
     }
 
@@ -2448,17 +2448,15 @@ int sqlite3SelectResolve(
 static void resetAccumulator(Parse *pParse, AggInfo *pAggInfo){
   Vdbe *v = pParse->pVdbe;
   int i;
-  int addr;
   struct AggInfo_func *pFunc;
   if( pAggInfo->nFunc+pAggInfo->nColumn==0 ){
     return;
   }
-  sqlite3VdbeAddOp(v, OP_Null, 0, 0);
   for(i=0; i<pAggInfo->nColumn; i++){
-    addr = sqlite3VdbeAddOp(v, OP_MemStore, pAggInfo->aCol[i].iMem, 0);
+    sqlite3VdbeAddOp(v, OP_MemNull, pAggInfo->aCol[i].iMem, 0);
   }
   for(pFunc=pAggInfo->aFunc, i=0; i<pAggInfo->nFunc; i++, pFunc++){
-    addr = sqlite3VdbeAddOp(v, OP_MemStore, pFunc->iMem, 0);
+    sqlite3VdbeAddOp(v, OP_MemNull, pFunc->iMem, 0);
     if( pFunc->iDistinct>=0 ){
       Expr *pE = pFunc->pExpr;
       if( pE->pList==0 || pE->pList->nExpr!=1 ){
@@ -2472,7 +2470,6 @@ static void resetAccumulator(Parse *pParse, AggInfo *pAggInfo){
       }
     }
   }
-  sqlite3VdbeChangeP2(v, addr, 1);
 }
 
 /*
@@ -2786,9 +2783,10 @@ int sqlite3Select(
 
   /* Initialize the memory cell to NULL for SRT_Mem or 0 for SRT_Exists
   */
-  if( eDest==SRT_Mem || eDest==SRT_Exists ){
-    sqlite3VdbeAddOp(v, eDest==SRT_Mem ? OP_Null : OP_Integer, 0, 0);
-    sqlite3VdbeAddOp(v, OP_MemStore, iParm, 1);
+  if( eDest==SRT_Mem ){
+    sqlite3VdbeAddOp(v, OP_MemNull, iParm, 0);
+  }else if( eDest==SRT_Exists ){
+    sqlite3VdbeAddOp(v, OP_MemInt, 0, iParm);
   }
 
   /* Open a virtual index to use for the distinct set.
@@ -2916,11 +2914,9 @@ int sqlite3Select(
       pParse->nMem += pGroupBy->nExpr;
       iBMem = pParse->nMem;
       pParse->nMem += pGroupBy->nExpr;
-      sqlite3VdbeAddOp(v, OP_Integer, 0, 0);
-      sqlite3VdbeAddOp(v, OP_MemStore, iAbortFlag, 0);
-      sqlite3VdbeAddOp(v, OP_MemStore, iUseFlag, 1);
-      sqlite3VdbeAddOp(v, OP_Null, 0, 0);
-      sqlite3VdbeAddOp(v, OP_MemStore, iAMem, 1);
+      sqlite3VdbeAddOp(v, OP_MemInt, 0, iAbortFlag);
+      sqlite3VdbeAddOp(v, OP_MemInt, 0, iUseFlag);
+      sqlite3VdbeAddOp(v, OP_MemNull, iAMem, 0);
       sqlite3VdbeAddOp(v, OP_Goto, 0, addrInitializeLoop);
 
       /* Generate a subroutine that outputs a single row of the result
@@ -3036,8 +3032,7 @@ int sqlite3Select(
       */
       sqlite3VdbeResolveLabel(v, addrGroupByChange);
       for(j=0; j<pGroupBy->nExpr; j++){
-        sqlite3VdbeAddOp(v, OP_MemLoad, iBMem+j, 0);
-        sqlite3VdbeAddOp(v, OP_MemStore, iAMem+j, 1);
+        sqlite3VdbeAddOp(v, OP_MemMove, iAMem+j, iBMem+j);
       }
       sqlite3VdbeAddOp(v, OP_Gosub, 0, addrOutputRow);
       sqlite3VdbeAddOp(v, OP_IfMemPos, iAbortFlag, addrEnd);

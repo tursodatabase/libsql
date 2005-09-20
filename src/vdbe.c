@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.490 2005/09/20 13:55:18 drh Exp $
+** $Id: vdbe.c,v 1.491 2005/09/20 17:42:23 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -4174,6 +4174,39 @@ case OP_IfMemPos: {        /* no-push */
   if( pMem->i>0 ){
      pc = pOp->p2 - 1;
   }
+  break;
+}
+
+/* Opcode: MemNull P1 * *
+**
+** Store a NULL in memory cell P1
+*/
+case OP_MemNull: {
+  assert( pOp->p1>=0 && pOp->p1<p->nMem );
+  sqlite3VdbeMemSetNull(&p->aMem[pOp->p1]);
+  break;
+}
+
+/* Opcode: MemInt P1 P2 *
+**
+** Store the integer value P1 in memory cell P2.
+*/
+case OP_MemInt: {
+  assert( pOp->p2>=0 && pOp->p2<p->nMem );
+  sqlite3VdbeMemSetInt64(&p->aMem[pOp->p2], pOp->p1);
+  break;
+}
+
+/* Opcode: MemMove P1 P2 *
+**
+** Move the content of memory cell P2 over to memory cell P1.
+** Any prior content of P1 is erased.  Memory cell P2 is left
+** containing a NULL.
+*/
+case OP_MemMove: {
+  assert( pOp->p1>=0 && pOp->p1<p->nMem );
+  assert( pOp->p2>=0 && pOp->p2<p->nMem );
+  rc = sqlite3VdbeMemMove(&p->aMem[pOp->p1], &p->aMem[pOp->p2]);
   break;
 }
 

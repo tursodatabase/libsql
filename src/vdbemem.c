@@ -317,6 +317,7 @@ void sqlite3VdbeMemSetNull(Mem *pMem){
   sqlite3VdbeMemRelease(pMem);
   pMem->flags = MEM_Null;
   pMem->type = SQLITE_NULL;
+  pMem->n = 0;
 }
 
 /*
