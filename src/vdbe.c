@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.489 2005/09/20 13:12:00 drh Exp $
+** $Id: vdbe.c,v 1.490 2005/09/20 13:55:18 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1412,8 +1412,14 @@ case OP_ToBlob: {                  /* no-push */
 **
 ** If the 0x100 bit of P1 is true and either operand is NULL then take the
 ** jump.  If the 0x100 bit of P1 is clear then fall thru if either operand
-** is NULL.  If the 0x200 bit of P1 is set and both operands are NULL, then
-** return true or take the jump - treat NULL values as just another number.
+** is NULL.
+**
+** If the 0x200 bit of P1 is set and either operand is NULL then
+** both operands are converted to integers prior to comparison.
+** NULL operands are converted to zero and non-NULL operands are
+** converted to 1.  Thus, for example, with 0x200 set,  NULL==NULL is true
+** whereas it would normally be NULL.  Similarly,  NULL==123 is false when
+** 0x200 is set but is NULL when the 0x200 bit of P1 is clear.
 **
 ** The least significant byte of P1 (mask 0xff) must be an affinity character -
 ** 'n', 't', 'i' or 'o' - or 0x00. An attempt is made to coerce both values
@@ -1482,16 +1488,23 @@ case OP_Ge: {             /* same as TK_GE, no-push */
   ** the stack.
   */
   if( flags&MEM_Null ){
-    if( (pOp->p1 & 0x200)!=0 && (pTos->flags & pNos->flags & MEM_Null)!=0 ){
-      /* If the 0x200 bit of P1 is set and *both* operands are NULL, then
-      ** pretend that both operands are integer 0.  This will cause the the
-      ** various comparison operators to threat NULL just like any other value.
+    if( (pOp->p1 & 0x200)!=0 ){
+      /* The 0x200 bit of P1 means, roughly "do not treat NULL as the
+      ** magic SQL value it normally is - treat it as if it were another
+      ** integer".
+      **
+      ** With 0x200 set, if either operand is NULL then both operands
+      ** are converted to integers prior to being passed down into the
+      ** normal comparison logic below.  NULL operands are converted to
+      ** zero and non-NULL operands are converted to 1.  Thus, for example,
+      ** with 0x200 set,  NULL==NULL is true whereas it would normally
+      ** be NULL.  Similarly,  NULL!=123 is true.
       */
-      pTos->flags = pNos->flags = MEM_Int;
-      pTos->i = pNos->i = 0;
+      sqlite3VdbeMemSetInt64(pTos, (pTos->flags & MEM_Null)==0);
+      sqlite3VdbeMemSetInt64(pNos, (pNos->flags & MEM_Null)==0);
     }else{
-      /* If the 0x200 bit of P1 is clear or only one of the operands is NULL,
-      ** then the result is always NULL.  The jump is taken if the 0x100 bit
+      /* If the 0x200 bit of P1 is clear and either operand is NULL then
+      ** the result is always NULL.  The jump is taken if the 0x100 bit
       ** of P1 is set.
       */
       popStack(&pTos, 2);
