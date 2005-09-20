@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the goals.html file.
 #
-set rcsid {$Id: optoverview.tcl,v 1.3 2005/08/31 13:48:35 drh Exp $}
+set rcsid {$Id: optoverview.tcl,v 1.4 2005/09/20 01:36:30 drh Exp $}
 source common.tcl
 header {The SQLite Query Optimizer Overview}
 
@@ -25,8 +25,8 @@ proc IMAGE {name {caption {}}} {
   puts "</center>"
 }
 proc PARAGRAPH {text} {
-  regsub -all "/(\[^\n/\]+)/" $text {<i>\1</i>} t2
-  regsub -all "\\*(\[^\n*\]+)\\*" $t2 {<tt><b><big>\1</big></b></tt>} t3
+  # regsub -all "/(\[a-zA-Z0-9\]+)/" $text {<i>\1</i>} t2
+  regsub -all "\\*(\[^\n*\]+)\\*" $text {<tt><b><big>\1</big></b></tt>} t3
   puts "<p>$t3</p>\n"
 }
 set level(0) 0
@@ -165,7 +165,7 @@ PARAGRAPH {
   virtual terms themselves never causes tests to be performed on
   input rows.
   Thus if the BETWEEN term is not used as an index constraint and
-  instead must be used to test input rows, the /expr1/ expression is
+  instead must be used to test input rows, the <i>expr1</i> expression is
   only evaluated once.
 }
 
@@ -187,7 +187,7 @@ SYNTAX {
 PARAGRAPH {
   The rewritten term then might go on to constraint an index using the
   normal rules for *IN* operators.
-  Note that /column/ must be the same column in every OR-connected subterm,
+  Note that <i>column</i> must be the same column in every OR-connected subterm,
   although the column can occur on either the left or the right side of
   the *=* operator.
 }
@@ -271,12 +271,12 @@ PARAGRAPH {
 }
 PARAGRAPH {
   Suppose the initial sequence of non-wildcard characters on the right-hand
-  side of the LIKE or GLOB operator is /x/.  We are using a single 
+  side of the LIKE or GLOB operator is <i>x</i>.  We are using a single 
   character to denote this non-wildcard prefix but the reader should
   understand that the prefix can consist of more than 1 character.
-  Let /y/ the smallest string that is the same length as /x/ but which
-  compares greater than /x/.  For example, if /x/ is *hello* then
-  /y/ would be *hellp*.
+  Let <i>y</i> the smallest string that is the same length as /x/ but which
+  compares greater than <i>x</i>.  For example, if <i>x</i> is *hello* then
+  <i>y</i> would be *hellp*.
   The LIKE and GLOB optimizations consist of adding two virtual terms
   like this:
 }
@@ -288,8 +288,8 @@ PARAGRAPH {
   tested against each input row even if the virtual terms are used to
   constrain an index.  This is because we do not know what additional
   constraints may be imposed by characters to the right
-  of the /x/ prefix.  However, if there is only a single global wildcard
-  to the right of /x/, then the original LIKE or GLOB test is disabled.
+  of the <i>x</i> prefix.  However, if there is only a single global wildcard
+  to the right of <i>x</i>, then the original LIKE or GLOB test is disabled.
   In other words, if the pattern is like this:
 }
 SYNTAX {
@@ -334,6 +334,14 @@ PARAGRAPH {
   with SQLite, there is no advantage to use the newer SQL92 join syntax
   over the older SQL89 comma-join syntax.  They both end up accomplishing
   exactly the same thing.
+}
+PARAGRAPH {
+  Join reordering is automatic and usually works well enough that
+  programmer do not have to think about it.  But occasionally some
+  hints from the programmer are needed.  For a description of when
+  hints might be necessary and how to provide those hints, see the
+  <a href="http://www.sqlite.org/cvstrac/wiki?p=QueryPlans">QueryPlans</a>
+  page in the Wiki.
 }
 
 HEADING 1 {Choosing between multiple indices} multi_index

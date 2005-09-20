@@ -1,5 +1,5 @@
-C ON-clause\sterms\sin\sa\sLEFT\sJOIN\sthat\srestrict\sonly\sthe\sleft\stable,\sshould\snot\nreally\srestrict\sthe\sleft\stable\sbut\sinstead\srows\sthat\sfail\sto\smeet\sthe\scondition\nto\sbe\sjoined\swith\sNULL\srows\sfrom\sthe\sright\stable.\s(CVS\s2725)
-D 2005-09-19T21:05:49
+C Documentation\supdates.\s(CVS\s2726)
+D 2005-09-20T01:36:30
 F Makefile.in 12784cdce5ffc8dfb707300c34e4f1eb3b8a14f1
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -300,7 +300,7 @@ F www/omitted.tcl 658ebdc83781ac419dc8a08b3f6cf93929023470
 F www/opcode.tcl 5bd68059416b223515a680d410a9f7cb6736485f
 F www/optimizer.tcl d6812a10269bd0d7c488987aac0ad5036cace9dc
 F www/optimizing.tcl f0b2538988d1bbad16cbfe63ec6e8f48c9eb04e5
-F www/optoverview.tcl 5ff8a1c38722fa9f5cb3e1b8010f6b91c5a45693
+F www/optoverview.tcl 28b6f114a33bfd91bbe3440611ceed6090587211
 F www/pragma.tcl 44f7b665ca598ad24724f35991653638a36a6e3f
 F www/quickstart.tcl 6f6f694b6139be2d967b1492eb9a6bdf7058aa60
 F www/speed.tcl 656ed5be8cc9d536353e1a96927b925634a62933
@@ -311,7 +311,7 @@ F www/tclsqlite.tcl ddcf912ea48695603c8ed7efb29f0812ef8d1b49
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P b32e9ec2480f9da2c2ea705ed3c88ca77b77cf2a
-R 30beedb46fba1ce2f76a3f1396f53cb5
+P ea10f9785e3c5248dafcc297f3a2c5465b6e0dba
+R 6ad171a801eb8b84ac88c34ad2f04d27
 U drh
-Z a986dad9151bb581e7854782adc6d5e8
+Z 23a34f97623654d558cd9b041aa96deb
