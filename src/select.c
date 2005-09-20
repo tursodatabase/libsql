@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.272 2005/09/19 21:05:49 drh Exp $
+** $Id: select.c,v 1.273 2005/09/20 13:12:00 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2852,6 +2852,7 @@ int sqlite3Select(
     int addrProcessRow;     /* Code to process a single input row */
     int addrEnd;            /* End of all processing */
     int addrSortingIdx;     /* The OP_OpenVirtual for the sorting index */
+    int addrReset;          /* Subroutine for resetting the accumulator */
 
     addrEnd = sqlite3VdbeMakeLabel(v);
 
@@ -2947,12 +2948,19 @@ int sqlite3Select(
       }
       sqlite3VdbeAddOp(v, OP_Return, 0, 0);
 
+      /* Generate a subroutine that will reset the group-by accumulator
+      */
+      addrReset = sqlite3VdbeCurrentAddr(v);
+      resetAccumulator(pParse, &sAggInfo);
+      sqlite3VdbeAddOp(v, OP_Return, 0, 0);
+
       /* Begin a loop that will extract all source rows in GROUP BY order.
       ** This might involve two separate loops with an OP_Sort in between, or
       ** it might be a single loop that uses an index to extract information
       ** in the right order to begin with.
       */
       sqlite3VdbeResolveLabel(v, addrInitializeLoop);
+      sqlite3VdbeAddOp(v, OP_Gosub, 0, addrReset);
       pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, &pGroupBy);
       if( pWInfo==0 ) goto select_end;
       if( pGroupBy==0 ){
@@ -3010,9 +3018,9 @@ int sqlite3Select(
         }
         sqlite3VdbeAddOp(v, OP_MemLoad, iAMem+j, 0);
         if( j==0 ){
-          sqlite3VdbeAddOp(v, OP_Eq, 0, addrProcessRow);
+          sqlite3VdbeAddOp(v, OP_Eq, 0x200, addrProcessRow);
         }else{
-          sqlite3VdbeAddOp(v, OP_Ne, 0x100, addrGroupByChange);
+          sqlite3VdbeAddOp(v, OP_Ne, 0x300, addrGroupByChange);
         }
         sqlite3VdbeChangeP3(v, -1, (void*)pKeyInfo->aColl[j], P3_COLLSEQ);
       }
@@ -3033,7 +3041,7 @@ int sqlite3Select(
       }
       sqlite3VdbeAddOp(v, OP_Gosub, 0, addrOutputRow);
       sqlite3VdbeAddOp(v, OP_IfMemPos, iAbortFlag, addrEnd);
-      resetAccumulator(pParse, &sAggInfo);
+      sqlite3VdbeAddOp(v, OP_Gosub, 0, addrReset);
 
       /* Update the aggregate accumulators based on the content of
       ** the current row

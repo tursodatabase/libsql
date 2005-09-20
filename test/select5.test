@@ -12,7 +12,7 @@
 # focus of this file is testing aggregate functions and the
 # GROUP BY and HAVING clauses of SELECT statements.
 #
-# $Id: select5.test,v 1.13 2005/09/08 20:37:44 drh Exp $
+# $Id: select5.test,v 1.14 2005/09/20 13:12:00 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -156,4 +156,17 @@ do_test select5-5.5 {
   } 
 } {1 4 6 4}
 
+# NULL compare equal to each other for the purposes of processing
+# the GROUP BY clause.
+#
+do_test select5-6.1 {
+  execsql {
+    CREATE TABLE t3(x,y);
+    INSERT INTO t3 VALUES(1,NULL);
+    INSERT INTO t3 VALUES(2,NULL);
+    INSERT INTO t3 VALUES(3,4);
+    SELECT count(x), y FROM t3 GROUP BY y ORDER BY 1
+  }
+} {1 4 2 {}}
+  
 finish_test

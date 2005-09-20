@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.488 2005/09/17 15:20:28 drh Exp $
+** $Id: vdbe.c,v 1.489 2005/09/20 13:12:00 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1411,8 +1411,9 @@ case OP_ToBlob: {                  /* no-push */
 ** jump to instruction P2.  Otherwise, continue to the next instruction.
 **
 ** If the 0x100 bit of P1 is true and either operand is NULL then take the
-** jump.  If the 0x100 bit of P1 is false then fall thru if either operand
-** is NULL.
+** jump.  If the 0x100 bit of P1 is clear then fall thru if either operand
+** is NULL.  If the 0x200 bit of P1 is set and both operands are NULL, then
+** return true or take the jump - treat NULL values as just another number.
 **
 ** The least significant byte of P1 (mask 0xff) must be an affinity character -
 ** 'n', 't', 'i' or 'o' - or 0x00. An attempt is made to coerce both values
@@ -1481,14 +1482,29 @@ case OP_Ge: {             /* same as TK_GE, no-push */
   ** the stack.
   */
   if( flags&MEM_Null ){
-    popStack(&pTos, 2);
-    if( pOp->p2 ){
-      if( pOp->p1 & 0x100 ) pc = pOp->p2-1;
+    if( (pOp->p1 & 0x200)!=0 && (pTos->flags & pNos->flags & MEM_Null)!=0 ){
+      /* If the 0x200 bit of P1 is set and *both* operands are NULL, then
+      ** pretend that both operands are integer 0.  This will cause the the
+      ** various comparison operators to threat NULL just like any other value.
+      */
+      pTos->flags = pNos->flags = MEM_Int;
+      pTos->i = pNos->i = 0;
     }else{
-      pTos++;
-      pTos->flags = MEM_Null;
+      /* If the 0x200 bit of P1 is clear or only one of the operands is NULL,
+      ** then the result is always NULL.  The jump is taken if the 0x100 bit
+      ** of P1 is set.
+      */
+      popStack(&pTos, 2);
+      if( pOp->p2 ){
+        if( pOp->p1 & 0x100 ){
+          pc = pOp->p2-1;
+        }
+      }else{
+        pTos++;
+        pTos->flags = MEM_Null;
+      }
+      break;
     }
-    break;
   }
 
   affinity = pOp->p1 & 0xFF;
