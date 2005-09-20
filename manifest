@@ -1,5 +1,5 @@
-C Code\scleanup\sand\ssimplification.\s\sThree\snew\sMem\sopcodes\sadded.\nThe\ssqlite3VdbeJumpHere\sfunction\sadded.\s(CVS\s2730)
-D 2005-09-20T17:42:23
+C Add\sVM\scode\scomments\son\sthe\sgroup-by\sprocessing.\s\sExtra\sgroup-by\stest\scase.\s(CVS\s2731)
+D 2005-09-20T18:13:24
 F Makefile.in 12784cdce5ffc8dfb707300c34e4f1eb3b8a14f1
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -63,7 +63,7 @@ F src/pragma.c 126149668aa7086e86cfa3e32c8523513c19dd63
 F src/prepare.c fc098db25d2a121affb08686cf04833fd50452d4
 F src/printf.c bd421c1ad5e01013c89af63c60eab02852ccd15e
 F src/random.c 90adff4e73a3b249eb4f1fc2a6ff9cf78c7233a4
-F src/select.c 240f456bc85e60e21b9d16a4b1ac09d6266b340f
+F src/select.c 034c7f7447b8711f85bef578a437ea12ca7cac53
 F src/shell.c 3596c1e559b82663057940d19ba533ad421c7dd3
 F src/sqlite.h.in 461b2535550cf77aedfd44385da11ef7d63e57a2
 F src/sqliteInt.h 53daa72541b4336c5e89773cf39717ed695bd523
@@ -203,7 +203,7 @@ F test/select1.test 480233d4f5a81d7d59a55e40d05084d97e57ecdf
 F test/select2.test f3c2678c3a9f3cf08ec4988a3845bda64be6d9e3
 F test/select3.test 576df1a5cc5e01dadae9176384e2d506315afdcf
 F test/select4.test c239f516aa31f42f2ef7c6d7cd01105f08f934ca
-F test/select5.test 93323dd60ea8dfe2c5fee86644279dee5ad5ea23
+F test/select5.test 07a90ab3c7e3f0a241a9cdea1d997b2c8a89ff0b
 F test/select6.test 21b72c56e7cbcefd063fdf9bc6c89342aedabccf
 F test/select7.test 1bf795b948c133a15a2a5e99d3270e652ec58ce6
 F test/sort.test 0c33a8ae1c238377ad197387c3872175f40d3843
@@ -311,7 +311,7 @@ F www/tclsqlite.tcl ddcf912ea48695603c8ed7efb29f0812ef8d1b49
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P f22d0f64a0b9100e16746fb800efa508d286e40e
-R 3effef3e7ca21a06e1bfa94b9c1adaf9
+P 2471957feee57538e5e1e50a704a337f0927d10e
+R fbbb91149671f932014d08503073584b
 U drh
-Z 30993b6d59068461f41957a47370eeb7
+Z 29eed70ee2810d17c2933c512e93e023

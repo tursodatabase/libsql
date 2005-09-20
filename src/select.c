@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.275 2005/09/20 17:42:23 drh Exp $
+** $Id: select.c,v 1.276 2005/09/20 18:13:24 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2915,8 +2915,9 @@ int sqlite3Select(
       iBMem = pParse->nMem;
       pParse->nMem += pGroupBy->nExpr;
       sqlite3VdbeAddOp(v, OP_MemInt, 0, iAbortFlag);
+      VdbeComment((v, "# clear abort flag"));
       sqlite3VdbeAddOp(v, OP_MemInt, 0, iUseFlag);
-      sqlite3VdbeAddOp(v, OP_MemNull, iAMem, 0);
+      VdbeComment((v, "# indicate accumulator empty"));
       sqlite3VdbeAddOp(v, OP_Goto, 0, addrInitializeLoop);
 
       /* Generate a subroutine that outputs a single row of the result
@@ -2927,10 +2928,12 @@ int sqlite3Select(
       ** order to signal the caller to abort.
       */
       addrSetAbort = sqlite3VdbeCurrentAddr(v);
-      sqlite3VdbeAddOp(v, OP_MemIncr, iAbortFlag, 0);
+      sqlite3VdbeAddOp(v, OP_MemInt, 1, iAbortFlag);
+      VdbeComment((v, "# set abort flag"));
       sqlite3VdbeAddOp(v, OP_Return, 0, 0);
       addrOutputRow = sqlite3VdbeCurrentAddr(v);
       sqlite3VdbeAddOp(v, OP_IfMemPos, iUseFlag, addrOutputRow+2);
+      VdbeComment((v, "# Groupby result generator entry point"));
       sqlite3VdbeAddOp(v, OP_Return, 0, 0);
       finalizeAggFunctions(pParse, &sAggInfo);
       if( pHaving ){
@@ -2943,6 +2946,7 @@ int sqlite3Select(
         goto select_end;
       }
       sqlite3VdbeAddOp(v, OP_Return, 0, 0);
+      VdbeComment((v, "# end groupby result generator"));
 
       /* Generate a subroutine that will reset the group-by accumulator
       */
@@ -2990,6 +2994,7 @@ int sqlite3Select(
         sqlite3VdbeAddOp(v, OP_IdxInsert, sAggInfo.sortingIdx, 0);
         sqlite3WhereEnd(pWInfo);
         sqlite3VdbeAddOp(v, OP_Sort, sAggInfo.sortingIdx, addrEnd);
+        VdbeComment((v, "# GROUP BY sort"));
         sAggInfo.useSortingIdx = 1;
       }
 
@@ -3035,15 +3040,19 @@ int sqlite3Select(
         sqlite3VdbeAddOp(v, OP_MemMove, iAMem+j, iBMem+j);
       }
       sqlite3VdbeAddOp(v, OP_Gosub, 0, addrOutputRow);
+      VdbeComment((v, "# output one row"));
       sqlite3VdbeAddOp(v, OP_IfMemPos, iAbortFlag, addrEnd);
+      VdbeComment((v, "# check abort flag"));
       sqlite3VdbeAddOp(v, OP_Gosub, 0, addrReset);
+      VdbeComment((v, "# reset accumulator"));
 
       /* Update the aggregate accumulators based on the content of
       ** the current row
       */
       sqlite3VdbeResolveLabel(v, addrProcessRow);
       updateAccumulator(pParse, &sAggInfo);
-      sqlite3VdbeAddOp(v, OP_MemIncr, iUseFlag, 0);
+      sqlite3VdbeAddOp(v, OP_MemInt, 1, iUseFlag);
+      VdbeComment((v, "# indicate data in accumulator"));
 
       /* End of the loop
       */
@@ -3057,6 +3066,7 @@ int sqlite3Select(
       /* Output the final row of result
       */
       sqlite3VdbeAddOp(v, OP_Gosub, 0, addrOutputRow);
+      VdbeComment((v, "# output final row"));
       
     } /* endif pGroupBy */
     else {
