@@ -1,5 +1,5 @@
-C Documentation\supdates.\s(CVS\s2726)
-D 2005-09-20T01:36:30
+C Update\scomments\sin\swhere.c.\s\sNo\scode\schanges.\s(CVS\s2727)
+D 2005-09-20T08:47:20
 F Makefile.in 12784cdce5ffc8dfb707300c34e4f1eb3b8a14f1
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -87,7 +87,7 @@ F src/vdbeapi.c 85bbe1d0243a89655433d60711b4bd71979b59cd
 F src/vdbeaux.c 57a6ced8417bdc6f06c391d9c560ecbbed644ef3
 F src/vdbefifo.c 9efb94c8c3f4c979ebd0028219483f88e57584f5
 F src/vdbemem.c fea0744936008831daa17cdc75056c3ca1469690
-F src/where.c 2b7b4dd112a027021d9c53e25d221761d572a925
+F src/where.c 363b4fb0aee9fe69367ceaab0974dafa4e4ab900
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
 F test/all.test 7f0988442ab811dfa41793b5b550f5828ce316f3
 F test/alter.test 9d6837a3d946b73df692b7cef2a7644d2e2f6bc6
@@ -311,7 +311,7 @@ F www/tclsqlite.tcl ddcf912ea48695603c8ed7efb29f0812ef8d1b49
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P ea10f9785e3c5248dafcc297f3a2c5465b6e0dba
-R 6ad171a801eb8b84ac88c34ad2f04d27
+P 6ec8883c366532948e619830ff7d9f63b79fc08b
+R 83e2318d245416067a9bf94d66214656
 U drh
-Z 23a34f97623654d558cd9b041aa96deb
+Z 7b8f65438258711df695628d2834385c

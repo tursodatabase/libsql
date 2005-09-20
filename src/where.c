@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.177 2005/09/19 21:05:49 drh Exp $
+** $Id: where.c,v 1.178 2005/09/20 08:47:20 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -232,7 +232,7 @@ static int whereClauseInsert(WhereClause *pWC, Expr *p, int flags){
 
 /*
 ** This routine identifies subexpressions in the WHERE clause where
-** each subexpression is separate by the AND operator or some other
+** each subexpression is separated by the AND operator or some other
 ** operator specified in the op parameter.  The WhereClause structure
 ** is filled with pointers to subexpressions.  For example:
 **
@@ -281,7 +281,7 @@ static Bitmask getMask(ExprMaskSet *pMaskSet, int iCursor){
 **
 ** There is one cursor per table in the FROM clause.  The number of
 ** tables in the FROM clause is limited by a test early in the
-** sqlite3WhereBegin() routien.  So we know that the pMaskSet->ix[]
+** sqlite3WhereBegin() routine.  So we know that the pMaskSet->ix[]
 ** array will never overflow.
 */
 static void createMask(ExprMaskSet *pMaskSet, int iCursor){
@@ -532,7 +532,7 @@ static int isLikeOrGlob(
 ** to the standard form of "X <op> <expr>".  If the expression is of
 ** the form "X <op> Y" where both X and Y are columns, then the original
 ** expression is unchanged and a new virtual expression of the form
-** "Y <op> X" is added to the WHERE clause.  
+** "Y <op> X" is added to the WHERE clause and analyzed separately.
 */
 static void exprAnalyze(
   SrcList *pSrc,            /* the FROM clause */
@@ -847,7 +847,7 @@ static int sortableByRowid(
 }
 
 /*
-** Prepare a crude estimate of the logorithm of the input value.
+** Prepare a crude estimate of the logarithm of the input value.
 ** The results need not be exact.  This is only used for estimating
 ** the total cost of performing operatings with O(logN) or O(NlogN)
 ** complexity.  Because N is just a guess, it is no great tragedy if
@@ -1106,11 +1106,12 @@ static double bestIndex(
 ** of a LEFT OUTER JOIN.  In (1), the term is not disabled.
 **
 ** Disabling a term causes that term to not be tested in the inner loop
-** of the join.  Disabling is an optimization.  We would get the correct
-** results if nothing were ever disabled, but joins might run a little
-** slower.  The trick is to disable as much as we can without disabling
-** too much.  If we disabled in (1), we'd get the wrong answer.
-** See ticket #813.
+** of the join.  Disabling is an optimization.  When terms are satisfied
+** by indices, we disable them to prevent redundant tests in the inner
+** loop.  We would get the correct results if nothing were ever disabled,
+** but joins might run a little slower.  The trick is to disable as much
+** as we can without disabling too much.  If we disabled in (1), we'd get
+** the wrong answer.  See ticket #813.
 */
 static void disableTerm(WhereLevel *pLevel, WhereTerm *pTerm){
   if( pTerm
@@ -1425,7 +1426,7 @@ WhereInfo *sqlite3WhereBegin(
   /* Analyze all of the subexpressions.  Note that exprAnalyze() might
   ** add new virtual terms onto the end of the WHERE clause.  We do not
   ** want to analyze these virtual terms, so start analyzing at the end
-  ** and work forward so that they added virtual terms are never processed.
+  ** and work forward so that the added virtual terms are never processed.
   */
   for(i=0; i<pTabList->nSrc; i++){
     createMask(&maskSet, pTabList->a[i].iCursor);
