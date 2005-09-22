@@ -1,5 +1,5 @@
-C Add\sVM\scode\scomments\son\sthe\sgroup-by\sprocessing.\s\sExtra\sgroup-by\stest\scase.\s(CVS\s2731)
-D 2005-09-20T18:13:24
+C Optionally\scall\sfdatasync()\sinstead\sof\sfsync()\sonly\sif\s_POSIX_SYNCHRONIZED_IO\nis\spositive,\swhich\sshould\sonly\sbe\sthe\scase\son\soperating\ssystems\sthat\nactually\ssupport\sfdatasync().\s(CVS\s2732)
+D 2005-09-22T15:45:04
 F Makefile.in 12784cdce5ffc8dfb707300c34e4f1eb3b8a14f1
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -52,7 +52,7 @@ F src/os.h c51f2747f7bd1840447e2c7d26db749604626814
 F src/os_common.h 1ff88c7e7e6bd3e5f85443106c91cc26a4f8600b
 F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
-F src/os_unix.c c86cf43b7ca9200e6fb7bc202ad2cc7da2f69367
+F src/os_unix.c 407dd07818d13807c396acf3f7570af81cbb666c
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c fbccc85e7011174068c27d54256746321a1f0059
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
@@ -311,7 +311,7 @@ F www/tclsqlite.tcl ddcf912ea48695603c8ed7efb29f0812ef8d1b49
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 2471957feee57538e5e1e50a704a337f0927d10e
-R fbbb91149671f932014d08503073584b
+P 655e75ac7d96b05c118226c5b70443da2df319ec
+R 2d83512349de407392933524d825eeb1
 U drh
-Z 29eed70ee2810d17c2933c512e93e023
+Z 6d420d21634964a14d9838e414ad05c3

@@ -828,10 +828,13 @@ static int full_fsync(int fd, int fullSync, int dataOnly){
   /* If the FULLSYNC failed, try to do a normal fsync() */
   if( rc ) rc = fsync(fd);
 
-#else
+#else /* if !defined(F_FULLSYNC) */
+#if  defined(_POSIX_SYNCHRONIZED_IO) && _POSIX_SYNCHRONIZED_IO>0
   if( dataOnly ){
     rc = fdatasync(fd);
-  }else{
+  }else
+#endif /* _POSIX_SYNCHRONIZED_IO > 0 */
+  {
     rc = fsync(fd);
   }
 #endif /* defined(F_FULLFSYNC) */
