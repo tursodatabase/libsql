@@ -25,6 +25,18 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2005 September 24 (3.2.7)} {
+<li>GROUP BY now considers NULLs to be equal again, as it should
+</li>
+<li>Now compiles on Solaris and OpenBSD and other Unix variants
+that lack the fdatasync() function</li>
+<li>Now compiles on MSVC++6 again</li>
+<li>Fix uninitialized variables causing malfunctions for various obscure
+queries</li>
+<li>Correctly compute a LEFT OUTER JOINs that is constrained on the
+left table only</li>
+}
+
 chng {2005 September 17 (3.2.6)} {
 <li>Fix a bug that can cause database corruption if a VACUUM (or
     autovacuum) fails and is rolled back on a database that is

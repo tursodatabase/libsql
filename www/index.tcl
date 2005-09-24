@@ -66,6 +66,11 @@ proc newsitem {date title text} {
   puts "<hr width=\"50%\">"
 }
 
+newsitem {2005-Sep-24} {Version 3.2.7} {
+  This version fixes several minor and obscure bugs.
+  Upgrade only if you are having problems.
+}
+
 newsitem {2005-Sep-16} {Version 3.2.6 - Critical Bug Fix} {
   This version fixes a bug that can result in database
   corruption if a VACUUM of a 1 gibibyte or larger database fails
@@ -107,4 +112,4 @@ puts {
 <p align="right"><a href="oldnews.html">Old news...</a></p>
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.125 2005/09/17 15:17:40 drh Exp $}
+footer {$Id: index.tcl,v 1.126 2005/09/24 15:11:00 drh Exp $}
