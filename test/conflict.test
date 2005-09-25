@@ -13,7 +13,7 @@
 # This file implements tests for the conflict resolution extension
 # to SQLite.
 #
-# $Id: conflict.test,v 1.25 2005/09/01 03:07:45 drh Exp $
+# $Id: conflict.test,v 1.26 2005/09/25 01:13:09 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -302,6 +302,7 @@ foreach {i conf1 cmd t0 t1 t2 t3} {
     db close
     sqlite3 db test.db 
     if {$conf1!=""} {set conf1 "ON CONFLICT $conf1"}
+    execsql {pragma temp_store=file}
     set ::sqlite_opentemp_count 0
     set r0 [catch {execsql [subst {
       DROP TABLE t1;
