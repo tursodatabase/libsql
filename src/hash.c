@@ -12,7 +12,7 @@
 ** This is the implementation of generic hash-tables
 ** used in SQLite.
 **
-** $Id: hash.c,v 1.16 2005/01/31 12:56:44 danielk1977 Exp $
+** $Id: hash.c,v 1.17 2005/10/03 15:11:09 drh Exp $
 */
 #include "sqliteInt.h"
 #include <assert.h>
@@ -294,6 +294,11 @@ static void removeElementGivenHash(
   }
   sqliteFree( elem );
   pH->count--;
+  if( pH->count<=0 ){
+    assert( pH->first==0 );
+    assert( pH->count==0 );
+    sqlite3HashClear(pH);
+  }
 }
 
 /* Attempt to locate an element of the hash table pH with a key

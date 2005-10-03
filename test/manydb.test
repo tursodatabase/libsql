@@ -1,0 +1,74 @@
+# 2005 October 3
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.
+#
+# This file implements tests the ability of the library to open
+# many different databases at the same time without leaking memory.
+#
+# $Id: manydb.test,v 1.1 2005/10/03 15:11:09 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+set N 300
+
+# Create a bunch of random database names
+#
+unset -nocomplain dbname
+unset -nocomplain used
+for {set i 0} {$i<$N} {incr i} {
+  while 1 {
+    set name test-[format %08x [expr {int(rand()*0x7fffffff)}]].db
+    if {[info exists used($name)]} continue
+    set dbname($i) $name
+    set used($name) $i
+    break
+  }
+}
+
+# Create a bunch of databases
+#
+for {set i 0} {$i<$N} {incr i} {
+  do_test manydb-1.$i {
+    sqlite3 db$i $dbname($i)
+    execsql {
+       CREATE TABLE t1(a,b);
+       BEGIN;
+       INSERT INTO t1 VALUES(1,2);
+    } db$i
+  } {}
+}
+
+# Finish the transactions
+#
+for {set i 0} {$i<$N} {incr i} {
+  do_test manydb-2.$i {
+    execsql {
+       COMMIT;
+       SELECT * FROM t1;
+    } db$i
+  } {1 2}
+}
+
+
+# Close the databases and erase the files.
+#
+for {set i 0} {$i<$N} {incr i} {
+  do_test manydb-3.$i {
+    db$i close
+    file delete -force $dbname($i)
+  } {}
+}
+
+
+
+
+finish_test
