@@ -20,6 +20,8 @@
 #include <string.h>
 #include "sqliteInt.h"
 
+#ifndef SQLITE_OMIT_GET_TABLE
+
 /*
 ** This structure is used to pass data from sqlite3_get_table() through
 ** to the callback function is uses to build the result.
@@ -193,3 +195,5 @@ void sqlite3_free_table(
     free(azResult);
   }
 }
+
+#endif SQLITE_OMIT_GET_TABLE
