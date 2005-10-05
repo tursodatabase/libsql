@@ -1496,7 +1496,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 # The following RCS revision string applies to configure.in
-# $Revision: 1.32 $
+# $Revision: 1.33 $
 
 #########
 # Programs needed
@@ -20435,14 +20435,8 @@ fi
 echo "$as_me:$LINENO: result: $ac_cv_func_fdatasync" >&5
 echo "${ECHO_T}$ac_cv_func_fdatasync" >&6
 if test $ac_cv_func_fdatasync = yes; then
-  :
-else
-  cat >>confdefs.h <<\_ACEOF
-#define fdatasync fsync
-_ACEOF
-
+  TARGET_CFLAGS="$TARGET_CFLAGS -DHAVE_FDATASYNC=1"
 fi
-
 
 
 #########

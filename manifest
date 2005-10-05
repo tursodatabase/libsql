@@ -1,7 +1,7 @@
-C Add\sthe\sSQLITE_OMIT_GET_TABLE\scompile-time\sflag.\s(CVS\s2740)
-D 2005-10-05T02:13:41
+C Another\sattempt\sto\sget\sfdatasync\sto\sbe\signored\son\snon-conforming\sposix\ssystems.\nNow\sa\ssystem\shas\sto\sopt-in\sfor\sfdatasync\sinstead\sof\sopt-out.\nTicket\s#1467.\s(CVS\s2741)
+D 2005-10-05T10:29:36
 F Makefile.in 12784cdce5ffc8dfb707300c34e4f1eb3b8a14f1
-F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
+F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
 F VERSION b818cce180263e590a00ad4509a713892c3eecea
 F aclocal.m4 7daea4c35e88de30d5a3f6f7a2ab99720e803bbd
@@ -11,8 +11,8 @@ F art/SQLite.gif 1bbb94484963f1382e27e1c5e86dd0c1061eba2b
 F art/SQLiteLogo3.tiff b9e6bf022ae939bc986cddb8ab99583ca1b02cb3
 F config.guess 2103e94b15dc57112d7b9ee152c6fac5288895b4
 F config.sub 9bf686ec001ae7bc53f5b3563c90c62d4c6d48be
-F configure b03b598fb77785964f40a8095e41cf0ea36f5ccd x
-F configure.ac e326bf833811b30229c996a0086c4ce563be7caa
+F configure 91136fc4891444dc6312f3af90217fcce3d89d75 x
+F configure.ac ab85efcbdbbf3389908fc6294b82f233e8f85165
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
@@ -53,7 +53,7 @@ F src/os.h c51f2747f7bd1840447e2c7d26db749604626814
 F src/os_common.h 1ff88c7e7e6bd3e5f85443106c91cc26a4f8600b
 F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
-F src/os_unix.c 407dd07818d13807c396acf3f7570af81cbb666c
+F src/os_unix.c 23d6c04d08dbf712447e490c1451e3acd2d4ea2a
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c fbccc85e7011174068c27d54256746321a1f0059
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
@@ -314,7 +314,7 @@ F www/tclsqlite.tcl ddcf912ea48695603c8ed7efb29f0812ef8d1b49
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 385a08afefaf552db221ae8bd30ecc7e7c07ee5b
-R 2ecda0d10d1a481ae25122b53decdec9
+P 6d4bc8f83b228b3804fffcb17ac57e1f754fa9cd
+R 2a81a5e046bb12e6c133d1e450e99468
 U drh
-Z 95a343ba23b58fd399ed48f71453c638
+Z 6df1f50e225442ff181a6694bcabfb37

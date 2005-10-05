@@ -788,6 +788,14 @@ int sqlite3_sync_count = 0;
 int sqlite3_fullsync_count = 0;
 #endif
 
+/*
+** Use the fdatasync() API only if the HAVE_FDATASYNC macro is defined.
+** Otherwise use fsync() in its place.
+*/
+#ifndef HAVE_FDATASYNC
+# define fdatasync fsync
+#endif
+
 
 /*
 ** The fsync() system call does not work as advertised on many
@@ -829,12 +837,9 @@ static int full_fsync(int fd, int fullSync, int dataOnly){
   if( rc ) rc = fsync(fd);
 
 #else /* if !defined(F_FULLSYNC) */
-#if  defined(_POSIX_SYNCHRONIZED_IO) && _POSIX_SYNCHRONIZED_IO>0
   if( dataOnly ){
     rc = fdatasync(fd);
-  }else
-#endif /* _POSIX_SYNCHRONIZED_IO > 0 */
-  {
+  }else{
     rc = fsync(fd);
   }
 #endif /* defined(F_FULLFSYNC) */

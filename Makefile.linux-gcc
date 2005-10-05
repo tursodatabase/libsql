@@ -53,6 +53,7 @@ THREADLIB =
 #OPTS = -DSQLITE_DEBUG=1
 #OPTS = 
 OPTS = -DNDEBUG=1
+OPTS += -DHAVE_FDATASYNC=1
 
 #### The suffix to add to executable files.  ".exe" for windows.
 #    Nothing for unix.
