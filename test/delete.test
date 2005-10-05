@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the DELETE FROM statement.
 #
-# $Id: delete.test,v 1.19 2005/05/27 09:41:13 danielk1977 Exp $
+# $Id: delete.test,v 1.20 2005/10/05 11:35:09 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -49,6 +49,9 @@ do_test delete-3.1.3 {
 do_test delete-3.1.4 {
   execsql {CREATE INDEX index1 ON table1(f1)}
   execsql {PRAGMA count_changes=on}
+  ifcapable explain {
+    execsql {EXPLAIN DELETE FROM table1 WHERE f1=3}
+  }
   execsql {DELETE FROM 'table1' WHERE f1=3}
 } {0}
 do_test delete-3.1.5 {

@@ -12,7 +12,7 @@
 # focus of this file is testing the INSERT statement that takes is
 # result from a SELECT.
 #
-# $Id: insert2.test,v 1.17 2005/05/29 14:23:13 danielk1977 Exp $
+# $Id: insert2.test,v 1.18 2005/10/05 11:35:09 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -34,6 +34,13 @@ do_test insert2-1.1.1 {
   execsql {
     CREATE TABLE t1(log int, cnt int);
     PRAGMA count_changes=on;
+  }
+  ifcapable explain {
+    execsql {
+      EXPLAIN INSERT INTO t1 SELECT log, count(*) FROM d1 GROUP BY log;
+    }
+  }
+  execsql {
     INSERT INTO t1 SELECT log, count(*) FROM d1 GROUP BY log;
   }
 } {6}
@@ -269,4 +276,3 @@ ifcapable subquery {
 }
 
 finish_test
-

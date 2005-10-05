@@ -857,9 +857,10 @@ static void Cleanup(Vdbe *p){
 void sqlite3VdbeSetNumCols(Vdbe *p, int nResColumn){
   Mem *pColName;
   int n;
-  assert( 0==p->nResColumn );
-  p->nResColumn = nResColumn;
+  releaseMemArray(p->aColName, p->nResColumn*2);
+  sqliteFree(p->aColName);
   n = nResColumn*2;
+  p->nResColumn = nResColumn;
   p->aColName = pColName = (Mem*)sqliteMalloc( sizeof(Mem)*n );
   if( p->aColName==0 ) return;
   while( n-- > 0 ){
