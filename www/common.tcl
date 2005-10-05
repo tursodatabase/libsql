@@ -7,7 +7,8 @@ proc header {txt} {
   puts \
 {<body bgcolor="white" link="#50695f" vlink="#508896">
 <table width="100%" border="0">
-<tr><td valign="top"><img src="sqlite.gif"></td>
+<tr><td valign="top">
+<a href="index.html"><img src="sqlite.gif" border="none"></a></td>
 <td width="100%"></td>
 <td valign="bottom">
 <ul>
@@ -85,4 +86,3 @@ proc Syntax {args} {
   }
   puts {</table>}
 }
-
