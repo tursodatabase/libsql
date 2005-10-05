@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.132 2005/08/29 23:00:04 drh Exp $
+** $Id: tclsqlite.c,v 1.133 2005/10/05 10:40:15 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -22,6 +22,16 @@
 #include <string.h>
 #include <assert.h>
 #include <ctype.h>
+
+/*
+ * Windows needs to know which symbols to export.  Unix does not.
+ * BUILD_sqlite should be undefined for Unix.
+ */
+
+#ifdef BUILD_sqlite
+#undef TCL_STORAGE_CLASS
+#define TCL_STORAGE_CLASS DLLEXPORT
+#endif /* BUILD_sqlite */
 
 #define NUM_PREPARED_STMTS 10
 #define MAX_PREPARED_STMTS 100
@@ -1955,6 +1965,15 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
 #endif
 
 /*
+** Make sure we have a PACKAGE_VERSION macro defined.  This will be
+** defined automatically by the TEA makefile.  But other makefiles
+** do not define it.
+*/
+#ifndef PACKAGE_VERSION
+# define PACKAGE_VERSION SQLITE_VERSION
+#endif
+
+/*
 ** Initialize this module.
 **
 ** This Tcl module contains only a single new Tcl command named "sqlite".
@@ -1963,23 +1982,23 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
 ** used to open a new SQLite database.  See the DbMain() routine above
 ** for additional information.
 */
-int Sqlite3_Init(Tcl_Interp *interp){
+EXTERN int Sqlite3_Init(Tcl_Interp *interp){
   Tcl_InitStubs(interp, "8.4", 0);
   Tcl_CreateObjCommand(interp, "sqlite3", (Tcl_ObjCmdProc*)DbMain, 0, 0);
-  Tcl_PkgProvide(interp, "sqlite3", "3.0");
+  Tcl_PkgProvide(interp, "sqlite3", PACKAGE_VERSION);
   Tcl_CreateObjCommand(interp, "sqlite", (Tcl_ObjCmdProc*)DbMain, 0, 0);
-  Tcl_PkgProvide(interp, "sqlite", "3.0");
+  Tcl_PkgProvide(interp, "sqlite", PACKAGE_VERSION);
   return TCL_OK;
 }
-int Tclsqlite3_Init(Tcl_Interp *interp){ return Sqlite3_Init(interp); }
-int Sqlite3_SafeInit(Tcl_Interp *interp){ return TCL_OK; }
-int Tclsqlite3_SafeInit(Tcl_Interp *interp){ return TCL_OK; }
+EXTERN int Tclsqlite3_Init(Tcl_Interp *interp){ return Sqlite3_Init(interp); }
+EXTERN int Sqlite3_SafeInit(Tcl_Interp *interp){ return TCL_OK; }
+EXTERN int Tclsqlite3_SafeInit(Tcl_Interp *interp){ return TCL_OK; }
 
 #ifndef SQLITE_3_SUFFIX_ONLY
-int Sqlite_Init(Tcl_Interp *interp){ return Sqlite3_Init(interp); }
-int Tclsqlite_Init(Tcl_Interp *interp){ return Sqlite3_Init(interp); }
-int Sqlite_SafeInit(Tcl_Interp *interp){ return TCL_OK; }
-int Tclsqlite_SafeInit(Tcl_Interp *interp){ return TCL_OK; }
+EXTERN int Sqlite_Init(Tcl_Interp *interp){ return Sqlite3_Init(interp); }
+EXTERN int Tclsqlite_Init(Tcl_Interp *interp){ return Sqlite3_Init(interp); }
+EXTERN int Sqlite_SafeInit(Tcl_Interp *interp){ return TCL_OK; }
+EXTERN int Tclsqlite_SafeInit(Tcl_Interp *interp){ return TCL_OK; }
 #endif
 
 #ifdef TCLSH
