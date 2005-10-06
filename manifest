@@ -1,5 +1,5 @@
-C Make\sthe\sSQLite\slogo\son\sthe\swebsite\sa\shyperlink\sto\sthe\shome\spage.\nTicket\s#1471.\s(CVS\s2745)
-D 2005-10-05T22:31:49
+C Check-in\s(2744)\sas\sincomplete\sand\sbroke\spragma\sintegrity_check.\s\sThis\ncompletes\sthe\schange\sand\sfixes\sthe\sproblem.\s(CVS\s2746)
+D 2005-10-06T13:59:27
 F Makefile.in 12784cdce5ffc8dfb707300c34e4f1eb3b8a14f1
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -60,7 +60,7 @@ F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c adbb27f13ac75cd5bc29a3d84803e0cab1edfa88
 F src/pager.h e7b41ce8e7b5f629d456708b7ad9a8c8ede37140
 F src/parse.y 5602d5cb894dda2932bf50b7e88782a4440ae3ae
-F src/pragma.c 278c8fe2e2e1a0a6843841135648b7b9ad7cbd51
+F src/pragma.c 9ec219dc4ee2d4e78f4ec5c9d1422089758af13f
 F src/prepare.c fc098db25d2a121affb08686cf04833fd50452d4
 F src/printf.c bd421c1ad5e01013c89af63c60eab02852ccd15e
 F src/random.c 90adff4e73a3b249eb4f1fc2a6ff9cf78c7233a4
@@ -314,7 +314,7 @@ F www/tclsqlite.tcl ddcf912ea48695603c8ed7efb29f0812ef8d1b49
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P efec04dedfff8b92527b42e59cc32b4f69031021
-R bdee690aea4712c0e5f617fe36c9d09a
+P 9709f0f6bcb2a1ed07e678b73cb518488b8ff333
+R 4e003316fcdb49418371e800e7deae56
 U drh
-Z 6e4cd638aab5cbc8ae4423fd2e35f132
+Z 348c11fe0babe3db160a693e1bb13ff7
