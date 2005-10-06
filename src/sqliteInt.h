@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.421 2005/09/19 21:05:49 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.422 2005/10/06 16:53:15 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1149,7 +1149,7 @@ struct Select {
 #define SRT_Table        7  /* Store result as data with an automatic rowid */
 #define SRT_VirtualTab   8  /* Create virtual table and store like SRT_Table */
 #define SRT_Subroutine   9  /* Call a subroutine to handle results */
-#define SRT_Exists      10  /* Put 0 or 1 in a memory cell */
+#define SRT_Exists      10  /* Store 1 if the result is not empty */
 
 /*
 ** An SQL parser context.  A copy of this structure is passed through

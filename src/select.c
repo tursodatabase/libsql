@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.276 2005/09/20 18:13:24 drh Exp $
+** $Id: select.c,v 1.277 2005/10/06 16:53:15 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -360,13 +360,12 @@ static void pushOntoSorter(Parse *pParse, Vdbe *v, ExprList *pOrderBy){
 }
 
 /*
-** Add code to implement the OFFSET and LIMIT
+** Add code to implement the OFFSET
 */
-static void codeLimiter(
+static void codeOffset(
   Vdbe *v,          /* Generate code into this VM */
   Select *p,        /* The SELECT statement being coded */
   int iContinue,    /* Jump here to skip the current record */
-  int iBreak,       /* Jump here to end the loop */
   int nPop          /* Number of times to pop stack when jumping */
 ){
   if( p->iOffset>=0 && iContinue!=0 ){
@@ -379,10 +378,6 @@ static void codeLimiter(
     }
     sqlite3VdbeAddOp(v, OP_Goto, 0, iContinue);
     VdbeComment((v, "# skip OFFSET records"));
-  }
-  if( p->iLimit>=0 && iBreak!=0 ){
-    sqlite3VdbeAddOp(v, OP_MemIncr, p->iLimit, iBreak);
-    VdbeComment((v, "# exit when LIMIT reached"));
   }
 }
 
@@ -449,7 +444,7 @@ static int selectInnerLoop(
   */
   hasDistinct = distinct>=0 && pEList && pEList->nExpr>0;
   if( pOrderBy==0 && !hasDistinct ){
-    codeLimiter(v, p, iContinue, iBreak, 0);
+    codeOffset(v, p, iContinue, 0);
   }
 
   /* Pull the requested columns.
@@ -471,7 +466,7 @@ static int selectInnerLoop(
     int n = pEList->nExpr;
     codeDistinct(v, distinct, iContinue, n, n+1);
     if( pOrderBy==0 ){
-      codeLimiter(v, p, iContinue, iBreak, nColumn);
+      codeOffset(v, p, iContinue, nColumn);
     }
   }
 
@@ -547,18 +542,26 @@ static int selectInnerLoop(
       break;
     }
 
+    /* If any row exists in the result set, record that fact and abort.
+    */
+    case SRT_Exists: {
+      sqlite3VdbeAddOp(v, OP_MemInt, 1, iParm);
+      sqlite3VdbeAddOp(v, OP_Pop, nColumn, 0);
+      /* The LIMIT clause will terminate the loop for us */
+      break;
+    }
+
     /* If this is a scalar select that is part of an expression, then
     ** store the results in the appropriate memory cell and break out
     ** of the scan loop.
     */
-    case SRT_Exists:
     case SRT_Mem: {
       assert( nColumn==1 );
       if( pOrderBy ){
         pushOntoSorter(pParse, v, pOrderBy);
       }else{
         sqlite3VdbeAddOp(v, OP_MemStore, iParm, 1);
-        sqlite3VdbeAddOp(v, OP_Goto, 0, iBreak);
+        /* The LIMIT clause will jump out of the loop for us */
       }
       break;
     }
@@ -593,6 +596,13 @@ static int selectInnerLoop(
       break;
     }
 #endif
+  }
+
+  /* Jump to the end of the loop if the LIMIT is reached.
+  */
+  if( p->iLimit>=0 && pOrderBy==0 ){
+    sqlite3VdbeAddOp(v, OP_MemIncr, p->iLimit, 0);
+    sqlite3VdbeAddOp(v, OP_IfMemZero, p->iLimit, iBreak);
   }
   return 0;
 }
@@ -661,7 +671,7 @@ static void generateSortTail(
 
   iTab = pOrderBy->iECursor;
   addr = 1 + sqlite3VdbeAddOp(v, OP_Sort, iTab, brk);
-  codeLimiter(v, p, cont, brk, 0);
+  codeOffset(v, p, cont, 0);
   sqlite3VdbeAddOp(v, OP_Column, iTab, pOrderBy->nExpr + 1);
   switch( eDest ){
     case SRT_Table:
@@ -681,11 +691,10 @@ static void generateSortTail(
       sqlite3VdbeAddOp(v, OP_IdxInsert, (iParm&0x0000FFFF), 0);
       break;
     }
-    case SRT_Exists:
     case SRT_Mem: {
       assert( nColumn==1 );
       sqlite3VdbeAddOp(v, OP_MemStore, iParm, 1);
-      sqlite3VdbeAddOp(v, OP_Goto, 0, brk);
+      /* The LIMIT clause will terminate the loop for us */
       break;
     }
 #endif
@@ -710,6 +719,16 @@ static void generateSortTail(
       break;
     }
   }
+
+  /* Jump to the end of the loop when the LIMIT is reached
+  */
+  if( p->iLimit>=0 ){
+    sqlite3VdbeAddOp(v, OP_MemIncr, p->iLimit, 0);
+    sqlite3VdbeAddOp(v, OP_IfMemZero, p->iLimit, brk);
+  }
+
+  /* The bottom of the loop
+  */
   sqlite3VdbeResolveLabel(v, cont);
   sqlite3VdbeAddOp(v, OP_Next, iTab, addr);
   sqlite3VdbeResolveLabel(v, brk);
@@ -1328,7 +1347,7 @@ Vdbe *sqlite3GetVdbe(Parse *pParse){
 
 /*
 ** Compute the iLimit and iOffset fields of the SELECT based on the
-** pLimit and pOffset expressions.  nLimit and nOffset hold the expressions
+** pLimit and pOffset expressions.  pLimit and pOffset hold the expressions
 ** that appear in the original SQL statement after the LIMIT and OFFSET
 ** keywords.  Or NULL if those keywords are omitted. iLimit and iOffset 
 ** are the integer memory register numbers for counters used to compute 
@@ -1336,15 +1355,15 @@ Vdbe *sqlite3GetVdbe(Parse *pParse){
 ** iLimit and iOffset are negative.
 **
 ** This routine changes the values if iLimit and iOffset only if
-** a limit or offset is defined by nLimit and nOffset.  iLimit and
+** a limit or offset is defined by pLimit and pOffset.  iLimit and
 ** iOffset should have been preset to appropriate default values
 ** (usually but not always -1) prior to calling this routine.
-** Only if nLimit>=0 or nOffset>0 do the limit registers get
+** Only if pLimit!=0 or pOffset!=0 do the limit registers get
 ** redefined.  The UNION ALL operator uses this property to force
 ** the reuse of the same limit and offset registers across multiple
 ** SELECT statements.
 */
-static void computeLimitRegisters(Parse *pParse, Select *p){
+static void computeLimitRegisters(Parse *pParse, Select *p, int iBreak){
   /* 
   ** "LIMIT -1" always shows all rows.  There is some
   ** contraversy about what the correct behavior should be.
@@ -1360,6 +1379,7 @@ static void computeLimitRegisters(Parse *pParse, Select *p){
     sqlite3VdbeAddOp(v, OP_Negative, 0, 0);
     sqlite3VdbeAddOp(v, OP_MemStore, iMem, 1);
     VdbeComment((v, "# LIMIT counter"));
+    sqlite3VdbeAddOp(v, OP_IfMemZero, iMem, iBreak);
     p->iLimit = iMem;
   }
   if( p->pOffset ){
@@ -1519,6 +1539,7 @@ static int multiSelect(
   switch( p->op ){
     case TK_ALL: {
       if( pOrderBy==0 ){
+        int addr = 0;
         assert( !pPrior->pLimit );
         pPrior->pLimit = p->pLimit;
         pPrior->pOffset = p->pOffset;
@@ -1531,10 +1552,17 @@ static int multiSelect(
         p->iOffset = pPrior->iOffset;
         p->pLimit = 0;
         p->pOffset = 0;
+        if( p->iLimit>=0 ){
+          addr = sqlite3VdbeAddOp(v, OP_IfMemZero, p->iLimit, 0);
+          VdbeComment((v, "# Jump ahead if LIMIT reached"));
+        }
         rc = sqlite3Select(pParse, p, eDest, iParm, 0, 0, 0, aff);
         p->pPrior = pPrior;
         if( rc ){
           goto multi_select_end;
+        }
+        if( addr ){
+          sqlite3VdbeJumpHere(v, addr);
         }
         break;
       }
@@ -1622,8 +1650,8 @@ static int multiSelect(
         }
         iBreak = sqlite3VdbeMakeLabel(v);
         iCont = sqlite3VdbeMakeLabel(v);
+        computeLimitRegisters(pParse, p, iBreak);
         sqlite3VdbeAddOp(v, OP_Rewind, unionTab, iBreak);
-        computeLimitRegisters(pParse, p);
         iStart = sqlite3VdbeCurrentAddr(v);
         rc = selectInnerLoop(pParse, p, p->pEList, unionTab, p->pEList->nExpr,
                              pOrderBy, -1, eDest, iParm, 
@@ -1698,8 +1726,8 @@ static int multiSelect(
       }
       iBreak = sqlite3VdbeMakeLabel(v);
       iCont = sqlite3VdbeMakeLabel(v);
+      computeLimitRegisters(pParse, p, iBreak);
       sqlite3VdbeAddOp(v, OP_Rewind, tab1, iBreak);
-      computeLimitRegisters(pParse, p);
       iStart = sqlite3VdbeAddOp(v, OP_RowKey, tab1, 0);
       sqlite3VdbeAddOp(v, OP_NotFound, tab2, iCont);
       rc = selectInnerLoop(pParse, p, p->pEList, tab1, p->pEList->nExpr,
@@ -2166,10 +2194,10 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
   int base;
   Vdbe *v;
   int seekOp;
-  int cont;
   ExprList *pEList, *pList, eList;
   struct ExprList_item eListItem;
   SrcList *pSrc;
+  int brk;
 
   /* Check to see if this query is a simple min() or max() query.  Return
   ** zero if it is  not.
@@ -2233,11 +2261,11 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
   */
   sqlite3CodeVerifySchema(pParse, pTab->iDb);
   base = pSrc->a[0].iCursor;
-  computeLimitRegisters(pParse, p);
+  brk = sqlite3VdbeMakeLabel(v);
+  computeLimitRegisters(pParse, p, brk);
   if( pSrc->a[0].pSelect==0 ){
     sqlite3OpenTableForReading(v, base, pTab);
   }
-  cont = sqlite3VdbeMakeLabel(v);
   if( pIdx==0 ){
     sqlite3VdbeAddOp(v, seekOp, base, 0);
   }else{
@@ -2266,8 +2294,8 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
   memset(&eListItem, 0, sizeof(eListItem));
   eList.a = &eListItem;
   eList.a[0].pExpr = pExpr;
-  selectInnerLoop(pParse, p, &eList, 0, 0, 0, -1, eDest, iParm, cont, cont, 0);
-  sqlite3VdbeResolveLabel(v, cont);
+  selectInnerLoop(pParse, p, &eList, 0, 0, 0, -1, eDest, iParm, brk, brk, 0);
+  sqlite3VdbeResolveLabel(v, brk);
   sqlite3VdbeAddOp(v, OP_Close, base, 0);
   
   return 1;
@@ -2615,6 +2643,7 @@ int sqlite3Select(
   int rc = 1;            /* Value to return from this function */
   int addrSortIndex;     /* Address of an OP_OpenVirtual instruction */
   AggInfo sAggInfo;      /* Information used by aggregate queries */
+  int iEnd;              /* Address of the end of the query */
 
   if( sqlite3_malloc_failed || pParse->nErr || p==0 ) return 1;
   if( sqlite3AuthCheck(pParse, SQLITE_SELECT, 0, 0, 0) ) return 1;
@@ -2663,7 +2692,6 @@ int sqlite3Select(
   /* If writing to memory or generating a set
   ** only a single column may be output.
   */
-  assert( eDest!=SRT_Exists || pEList->nExpr==1 );
 #ifndef SQLITE_OMIT_SUBQUERY
   if( (eDest==SRT_Mem || eDest==SRT_Set) && pEList->nExpr>1 ){
     sqlite3ErrorMsg(pParse, "only a single result allowed for "
@@ -2772,21 +2800,13 @@ int sqlite3Select(
 
   /* Set the limiter.
   */
-  computeLimitRegisters(pParse, p);
+  iEnd = sqlite3VdbeMakeLabel(v);
+  computeLimitRegisters(pParse, p, iEnd);
 
   /* If the output is destined for a temporary table, open that table.
   */
   if( eDest==SRT_VirtualTab ){
     sqlite3VdbeAddOp(v, OP_OpenVirtual, iParm, pEList->nExpr);
-  }
-
-
-  /* Initialize the memory cell to NULL for SRT_Mem or 0 for SRT_Exists
-  */
-  if( eDest==SRT_Mem ){
-    sqlite3VdbeAddOp(v, OP_MemNull, iParm, 0);
-  }else if( eDest==SRT_Exists ){
-    sqlite3VdbeAddOp(v, OP_MemInt, 0, iParm);
   }
 
   /* Open a virtual index to use for the distinct set.
@@ -3111,6 +3131,10 @@ int sqlite3Select(
     pParent->pSrc->a[parentTab].pSelect = 0;
   }
 #endif
+
+  /* Jump here to skip this query
+  */
+  sqlite3VdbeResolveLabel(v, iEnd);
 
   /* The SELECT was successfully coded.   Set the return code to 0
   ** to indicate no errors.

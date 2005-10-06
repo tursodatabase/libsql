@@ -196,4 +196,4 @@ void sqlite3_free_table(
   }
 }
 
-#endif SQLITE_OMIT_GET_TABLE
+#endif /* SQLITE_OMIT_GET_TABLE */

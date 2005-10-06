@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.491 2005/09/20 17:42:23 drh Exp $
+** $Id: vdbe.c,v 1.492 2005/10/06 16:53:16 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -4141,7 +4141,7 @@ case OP_MemMax: {        /* no-push */
 /* Opcode: MemIncr P1 P2 *
 **
 ** Increment the integer valued memory cell P1 by 1.  If P2 is not zero
-** and the result after the increment is exactly 1, then jump
+** and the result after the increment is exactly 0, then jump
 ** to P2.
 **
 ** This instruction throws an error if the memory cell is not initially
@@ -4154,7 +4154,7 @@ case OP_MemIncr: {        /* no-push */
   pMem = &p->aMem[i];
   assert( pMem->flags==MEM_Int );
   pMem->i++;
-  if( pOp->p2>0 && pMem->i==1 ){
+  if( pOp->p2>0 && pMem->i==0 ){
      pc = pOp->p2 - 1;
   }
   break;
@@ -4162,16 +4162,31 @@ case OP_MemIncr: {        /* no-push */
 
 /* Opcode: IfMemPos P1 P2 *
 **
-** If the value of memory cell P1 is 1 or greater, jump to P2. This
-** opcode assumes that memory cell P1 holds an integer value.
+** If the value of memory cell P1 is 1 or greater, jump to P2.  If
+** the memory cell holds an integer of 0 or less or if it holds something
+** that is not an integer, then fall thru.
 */
 case OP_IfMemPos: {        /* no-push */
   int i = pOp->p1;
   Mem *pMem;
   assert( i>=0 && i<p->nMem );
   pMem = &p->aMem[i];
-  assert( pMem->flags==MEM_Int );
-  if( pMem->i>0 ){
+  if( pMem->flags==MEM_Int && pMem->i>0 ){
+     pc = pOp->p2 - 1;
+  }
+  break;
+}
+
+/* Opcode: IfMemZero P1 P2 *
+**
+** If the value of memory cell P1 is exactly 0, jump to P2.
+*/
+case OP_IfMemZero: {        /* no-push */
+  int i = pOp->p1;
+  Mem *pMem;
+  assert( i>=0 && i<p->nMem );
+  pMem = &p->aMem[i];
+  if( pMem->flags==MEM_Int && pMem->i==0 ){
      pc = pOp->p2 - 1;
   }
   break;

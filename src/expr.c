@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.230 2005/09/23 21:11:54 drh Exp $
+** $Id: expr.c,v 1.231 2005/10/06 16:53:15 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1390,21 +1390,25 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
       ** value of this select in a memory cell and record the number
       ** of the memory cell in iColumn.
       */
-      int sop;
+      static const Token one = { "1", 0, 1 };
       Select *pSel;
+      int iMem;
+      int sop;
 
-      pExpr->iColumn = pParse->nMem++;
+      pExpr->iColumn = iMem = pParse->nMem++;
       pSel = pExpr->pSelect;
       if( pExpr->op==TK_SELECT ){
         sop = SRT_Mem;
+        sqlite3VdbeAddOp(v, OP_MemNull, iMem, 0);
+        VdbeComment((v, "# Init subquery result"));
       }else{
-        static const Token one = { "1", 0, 1 };
         sop = SRT_Exists;
-        sqlite3ExprListDelete(pSel->pEList);
-        pSel->pEList = sqlite3ExprListAppend(0, 
-                          sqlite3Expr(TK_INTEGER, 0, 0, &one), 0);
+        sqlite3VdbeAddOp(v, OP_MemInt, 0, iMem);
+        VdbeComment((v, "# Init EXISTS result"));
       }
-      sqlite3Select(pParse, pSel, sop, pExpr->iColumn, 0, 0, 0, 0);
+      sqlite3ExprDelete(pSel->pLimit);
+      pSel->pLimit = sqlite3Expr(TK_INTEGER, 0, 0, &one);
+      sqlite3Select(pParse, pSel, sop, iMem, 0, 0, 0, 0);
       break;
     }
   }
