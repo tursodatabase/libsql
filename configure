@@ -1496,7 +1496,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 # The following RCS revision string applies to configure.in
-# $Revision: 1.33 $
+# $Revision: 1.34 $
 
 #########
 # Programs needed
@@ -19530,7 +19530,7 @@ if test "${enable_tempstore+set}" = set; then
   enableval="$enable_tempstore"
 
 else
-  enable_tempstore=yes
+  enable_tempstore=no
 fi;
 echo "$as_me:$LINENO: checking whether to use an in-ram database for temporary tables" >&5
 echo $ECHO_N "checking whether to use an in-ram database for temporary tables... $ECHO_C" >&6
@@ -19550,8 +19550,13 @@ echo "${ECHO_T}no" >&6
     echo "$as_me:$LINENO: result: always" >&5
 echo "${ECHO_T}always" >&6
   ;;
+  yes )
+     TEMP_STORE=3
+    echo "$as_me:$LINENO: result: always" >&5
+echo "${ECHO_T}always" >&6
+  ;;
   * )
-    TEMP_STORE=2
+    TEMP_STORE=1
     echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
   ;;

@@ -116,7 +116,7 @@ AC_INIT(src/sqlite.h.in)
 dnl Put the RCS revision string after AC_INIT so that it will also
 dnl show in in configure.
 # The following RCS revision string applies to configure.in
-# $Revision: 1.19 $
+# $Revision: 1.20 $
 
 #########
 # Programs needed
@@ -318,7 +318,7 @@ AC_SUBST(ALLOWRELEASE)
 # Do we want temporary databases in memory
 #
 AC_ARG_ENABLE(tempstore, 
-[  --enable-tempstore     Use an in-ram database for temporary tables (never,no,yes,always)],,enable_tempstore=yes)
+[  --enable-tempstore     Use an in-ram database for temporary tables (never,no,yes,always)],,enable_tempstore=no)
 AC_MSG_CHECKING([whether to use an in-ram database for temporary tables])
 case "$enable_tempstore" in
   never ) 
@@ -333,8 +333,12 @@ case "$enable_tempstore" in
      TEMP_STORE=3
     AC_MSG_RESULT([always])
   ;;
+  yes ) 
+     TEMP_STORE=3
+    AC_MSG_RESULT([always])
+  ;;
   * ) 
-    TEMP_STORE=2
+    TEMP_STORE=1
     AC_MSG_RESULT([yes])
   ;;
 esac
