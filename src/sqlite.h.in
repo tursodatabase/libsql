@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.141 2005/09/08 10:58:52 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.142 2005/10/13 02:09:50 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -86,6 +86,13 @@ typedef struct sqlite3 sqlite3;
   typedef unsigned long long int sqlite_uint64;
 #endif
 
+/*
+** If compiling for a processor that lacks floating point support,
+** substitute integer for floating-point
+*/
+#ifdef SQLITE_OMIT_FLOATING_POINT
+# define double sqlite_int64
+#endif
 
 /*
 ** A function to close the database.
@@ -1268,6 +1275,14 @@ int sqlite3_get_autocommit(sqlite3*);
 ** the statement in the first place.
 */
 sqlite3 *sqlite3_db_handle(sqlite3_stmt*);
+
+/*
+** Undo the hack that converts floating point types to integer for
+** builds on processors without floating point support.
+*/
+#ifdef SQLITE_OMIT_FLOATING_POINT
+# undef double
+#endif
 
 #ifdef __cplusplus
 }  /* End of the 'extern "C"' block */

@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.179 2005/09/20 17:42:23 drh Exp $
+** $Id: where.c,v 1.180 2005/10/13 02:09:50 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -38,6 +38,16 @@ int sqlite3_where_trace = 0;
 # define TRACE(X)  if(sqlite3_where_trace) sqlite3DebugPrintf X
 #else
 # define TRACE(X)
+#endif
+
+/*
+** A large value which is the maximum cost of using an index.
+** By default this is a large floating point value.  When compiling
+** SQLite for a processor that lacks floating point support, simply
+** redefine this constant to a large integer.
+*/
+#ifndef SQLITE_BIG_DBL
+# define SQLITE_BIG_DBL (1.0e+99)
 #endif
 
 /* Forward reference
@@ -854,10 +864,10 @@ static int sortableByRowid(
 ** logN is a little off.
 */
 static double estLog(double N){
-  double logN = 1.0;
-  double x = 10.0;
+  double logN = 1;
+  double x = 10;
   while( N>x ){
-    logN += 1.0;
+    logN += 1;
     x *= 10;
   }
   return logN;
@@ -893,7 +903,7 @@ static double bestIndex(
 ){
   WhereTerm *pTerm;
   Index *bestIdx = 0;         /* Index that gives the lowest cost */
-  double lowestCost = 1.0e99; /* The cost of using bestIdx */
+  double lowestCost;          /* The cost of using bestIdx */
   int bestFlags = 0;          /* Flags associated with bestIdx */
   int bestNEq = 0;            /* Best value for nEq */
   int iCur = pSrc->iCursor;   /* The cursor of the table to be accessed */
@@ -904,6 +914,7 @@ static double bestIndex(
   double cost;                /* Cost of using pProbe */
 
   TRACE(("bestIndex: tbl=%s notReady=%x\n", pSrc->pTab->zName, notReady));
+  lowestCost = SQLITE_BIG_DBL;
 
   /* Check for a rowid=EXPR or rowid IN (...) constraints
   */
@@ -928,7 +939,7 @@ static double bestIndex(
       /* Rowid IN (SELECT): cost is NlogN where N is the number of rows
       ** in the result of the inner select.  We have no way to estimate
       ** that value so make a wild guess. */
-      lowestCost = 200.0;
+      lowestCost = 200;
     }
     TRACE(("... rowid IN cost: %.9g\n", lowestCost));
   }
@@ -937,7 +948,7 @@ static double bestIndex(
   ** entries are in the table, use 1 million as a guess.
   */
   pProbe = pSrc->pTab->pIndex;
-  cost = pProbe ? pProbe->aiRowEst[0] : 1000000.0;
+  cost = pProbe ? pProbe->aiRowEst[0] : 1000000;
   TRACE(("... table scan base cost: %.9g\n", cost));
   flags = WHERE_ROWID_RANGE;
 
@@ -947,11 +958,11 @@ static double bestIndex(
   if( pTerm ){
     if( findTerm(pWC, iCur, -1, notReady, WO_LT|WO_LE, 0) ){
       flags |= WHERE_TOP_LIMIT;
-      cost *= 0.333;  /* Guess that rowid<EXPR eliminates two-thirds or rows */
+      cost /= 3;  /* Guess that rowid<EXPR eliminates two-thirds or rows */
     }
     if( findTerm(pWC, iCur, -1, notReady, WO_GT|WO_GE, 0) ){
       flags |= WHERE_BTM_LIMIT;
-      cost *= 0.333;  /* Guess that rowid>EXPR eliminates two-thirds of rows */
+      cost /= 3;  /* Guess that rowid>EXPR eliminates two-thirds of rows */
     }
     TRACE(("... rowid range reduces cost to %.9g\n", cost));
   }else{
@@ -980,7 +991,7 @@ static double bestIndex(
   */
   for(; pProbe; pProbe=pProbe->pNext){
     int i;                       /* Loop counter */
-    double inMultiplier = 1.0;
+    double inMultiplier = 1;
 
     TRACE(("... index %s:\n", pProbe->zName));
 
@@ -997,9 +1008,9 @@ static double bestIndex(
         Expr *pExpr = pTerm->pExpr;
         flags |= WHERE_COLUMN_IN;
         if( pExpr->pSelect!=0 ){
-          inMultiplier *= 100.0;
+          inMultiplier *= 100;
         }else if( pExpr->pList!=0 ){
-          inMultiplier *= pExpr->pList->nExpr + 1.0;
+          inMultiplier *= pExpr->pList->nExpr + 1;
         }
       }
     }
@@ -1020,11 +1031,11 @@ static double bestIndex(
         flags |= WHERE_COLUMN_RANGE;
         if( findTerm(pWC, iCur, j, notReady, WO_LT|WO_LE, pProbe) ){
           flags |= WHERE_TOP_LIMIT;
-          cost *= 0.333;
+          cost /= 3;
         }
         if( findTerm(pWC, iCur, j, notReady, WO_GT|WO_GE, pProbe) ){
           flags |= WHERE_BTM_LIMIT;
-          cost *= 0.333;
+          cost /= 3;
         }
         TRACE(("...... range reduces cost to %.9g\n", cost));
       }
@@ -1063,7 +1074,7 @@ static double bestIndex(
       }
       if( m==0 ){
         flags |= WHERE_IDX_ONLY;
-        cost *= 0.5;
+        cost /= 2;
         TRACE(("...... idx-only reduces cost to %.9g\n", cost));
       }
     }
@@ -1464,10 +1475,11 @@ WhereInfo *sqlite3WhereBegin(
     Index *pBest = 0;           /* The best index seen so far */
     int bestFlags = 0;          /* Flags associated with pBest */
     int bestNEq = 0;            /* nEq associated with pBest */
-    double lowestCost = 1.0e99; /* Cost of the pBest */
+    double lowestCost;          /* Cost of the pBest */
     int bestJ;                  /* The value of j */
     Bitmask m;                  /* Bitmask value for j or bestJ */
 
+    lowestCost = SQLITE_BIG_DBL;
     for(j=iFrom, pTabItem=&pTabList->a[j]; j<pTabList->nSrc; j++, pTabItem++){
       m = getMask(&maskSet, pTabItem->iCursor);
       if( (m & notReady)==0 ){

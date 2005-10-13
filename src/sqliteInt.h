@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.422 2005/10/06 16:53:15 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.423 2005/10/13 02:09:50 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -58,6 +58,18 @@
 #include <string.h>
 #include <assert.h>
 #include <stddef.h>
+
+/*
+** If compiling for a processor that lacks floating point support,
+** substitute integer for floating-point
+*/
+#ifdef SQLITE_OMIT_FLOATING_POINT
+# define double sqlite_int64
+# define LONGDOUBLE_TYPE sqlite_int64
+# define SQLITE_BIG_DBL (0x7fffffffffffffff)
+# define SQLITE_OMIT_DATETIME_FUNCS 1
+# define SQLITE_OMIT_TRACE 1
+#endif
 
 /*
 ** The maximum number of in-memory pages to use for the main database
@@ -127,20 +139,6 @@
 ** The maximum value of a ?nnn wildcard that the parser will accept.
 */
 #define SQLITE_MAX_VARIABLE_NUMBER 999
-
-/*
-** When building SQLite for embedded systems where memory is scarce,
-** you can define one or more of the following macros to omit extra
-** features of the library and thus keep the size of the library to
-** a minimum.
-*/
-/* #define SQLITE_OMIT_AUTHORIZATION  1 */
-/* #define SQLITE_OMIT_MEMORYDB     1 */
-/* #define SQLITE_OMIT_VACUUM         1 */
-/* #define SQLITE_OMIT_DATETIME_FUNCS 1 */
-/* #define SQLITE_OMIT_PROGRESS_CALLBACK 1 */
-/* #define SQLITE_OMIT_AUTOVACUUM */
-/* #define SQLITE_OMIT_ALTERTABLE */
 
 /*
 ** Provide a default value for TEMP_STORE in case it is not specified

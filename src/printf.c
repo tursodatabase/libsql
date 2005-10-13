@@ -120,10 +120,12 @@ static const et_info fmtinfo[] = {
   {  'u', 10, 0, etRADIX,      0,  0 },
   {  'x', 16, 0, etRADIX,      16, 1 },
   {  'X', 16, 0, etRADIX,      0,  4 },
+#ifndef SQLITE_OMIT_FLOATING_POINT
   {  'f',  0, 1, etFLOAT,      0,  0 },
   {  'e',  0, 1, etEXP,        30, 0 },
   {  'E',  0, 1, etEXP,        14, 0 },
   {  'G',  0, 1, etGENERIC,    14, 0 },
+#endif
   {  'i', 10, 1, etRADIX,      0,  0 },
   {  'n',  0, 0, etSIZE,       0,  0 },
   {  '%',  0, 0, etPERCENT,    0,  0 },
@@ -134,10 +136,10 @@ static const et_info fmtinfo[] = {
 #define etNINFO  (sizeof(fmtinfo)/sizeof(fmtinfo[0]))
 
 /*
-** If NOFLOATINGPOINT is defined, then none of the floating point
+** If SQLITE_OMIT_FLOATING_POINT is defined, then none of the floating point
 ** conversions will work.
 */
-#ifndef etNOFLOATINGPOINT
+#ifndef SQLITE_OMIT_FLOATING_POINT
 /*
 ** "*val" is a double such that 0.1 <= *val < 10.0
 ** Return the ascii code for the leading digit of *val, then
@@ -161,7 +163,7 @@ static int et_getdigit(LONGDOUBLE_TYPE *val, int *cnt){
   *val = (*val - d)*10.0;
   return digit;
 }
-#endif
+#endif /* SQLITE_OMIT_FLOATING_POINT */
 
 /*
 ** On machines with a small stack size, you can redefine the
@@ -234,7 +236,7 @@ static int vxprintf(
   static const char spaces[] =
    "                                                                         ";
 #define etSPACESIZE (sizeof(spaces)-1)
-#ifndef etNOFLOATINGPOINT
+#ifndef SQLITE_OMIT_FLOATING_POINT
   int  exp, e2;              /* exponent of real numbers */
   double rounder;            /* Used for rounding floating point values */
   etByte flag_dp;            /* True if decimal point should be shown */
@@ -425,7 +427,7 @@ static int vxprintf(
       case etEXP:
       case etGENERIC:
         realvalue = va_arg(ap,double);
-#ifndef etNOFLOATINGPOINT
+#ifndef SQLITE_OMIT_FLOATING_POINT
         if( precision<0 ) precision = 6;         /* Set default precision */
         if( precision>etBUFSIZE/2-10 ) precision = etBUFSIZE/2-10;
         if( realvalue<0.0 ){
