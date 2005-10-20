@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.147 2005/10/13 02:09:50 drh Exp $
+** $Id: util.c,v 1.148 2005/10/20 07:28:19 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -440,7 +440,7 @@ void sqlite3SetString(char **pz, ...){
 ** to NULL.
 */
 void sqlite3Error(sqlite3 *db, int err_code, const char *zFormat, ...){
-  if( db && (db->pErr || (db->pErr = sqlite3ValueNew())) ){
+  if( db && (db->pErr || (db->pErr = sqlite3ValueNew()))!=0 ){
     db->errCode = err_code;
     if( zFormat ){
       char *z;

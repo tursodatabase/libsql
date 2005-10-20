@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.269 2005/09/17 15:20:27 drh Exp $
+** $Id: btree.c,v 1.270 2005/10/20 07:28:18 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -3796,7 +3796,6 @@ static int balance_nonroot(MemPage *pPage){
   MemPage *apCopy[NB];         /* Private copies of apOld[] pages */
   MemPage *apNew[NB+2];        /* pPage and up to NB siblings after balancing */
   Pgno pgnoNew[NB+2];          /* Page numbers for each page in apNew[] */
-  int idxDiv[NB];              /* Indices of divider cells in pParent */
   u8 *apDiv[NB];               /* Divider cells in pParent */
   int cntNew[NB+2];            /* Index in aCell[] of cell after i-th page */
   int szNew[NB+2];             /* Combined size of cells place on i-th page */
@@ -3888,7 +3887,6 @@ static int balance_nonroot(MemPage *pPage){
   nDiv = 0;
   for(i=0, k=nxDiv; i<NB; i++, k++){
     if( k<pParent->nCell ){
-      idxDiv[i] = k;
       apDiv[i] = findCell(pParent, k);
       nDiv++;
       assert( !pParent->leaf );
@@ -5474,7 +5472,6 @@ static int checkTreePage(
   int hdr, cellStart;
   int nCell;
   u8 *data;
-  BtCursor cur;
   Btree *pBt;
   int usableSize;
   char zContext[100];
@@ -5484,7 +5481,7 @@ static int checkTreePage(
 
   /* Check that the page exists
   */
-  cur.pBt = pBt = pCheck->pBt;
+  pBt = pCheck->pBt;
   usableSize = pBt->usableSize;
   if( iPage==0 ) return 0;
   if( checkRef(pCheck, iPage, zParentContext) ) return 0;
@@ -5502,7 +5499,6 @@ static int checkTreePage(
   /* Check out all the cells.
   */
   depth = 0;
-  cur.pPage = pPage;
   for(i=0; i<pPage->nCell; i++){
     u8 *pCell;
     int sz;

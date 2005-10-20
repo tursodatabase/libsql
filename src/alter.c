@@ -12,7 +12,7 @@
 ** This file contains C code routines that used to generate VDBE code
 ** that implements the ALTER TABLE command.
 **
-** $Id: alter.c,v 1.8 2005/08/19 19:14:13 drh Exp $
+** $Id: alter.c,v 1.9 2005/10/20 07:28:18 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -233,7 +233,7 @@ static void reloadTableSchema(Parse *pParse, Table *pTab, const char *zName){
   /* Now, if the table is not stored in the temp database, reload any temp 
   ** triggers. Don't use IN(...) in case SQLITE_OMIT_SUBQUERY is defined. 
   */
-  if( (zWhere=whereTempTriggers(pParse, pTab)) ){
+  if( (zWhere=whereTempTriggers(pParse, pTab))!=0 ){
     sqlite3VdbeOp3(v, OP_ParseSchema, 1, 0, zWhere, P3_DYNAMIC);
   }
 #endif
@@ -349,7 +349,7 @@ void sqlite3AlterRenameTable(
   ** table. Don't do this if the table being ALTERed is itself located in
   ** the temp database.
   */
-  if( (zWhere=whereTempTriggers(pParse, pTab)) ){
+  if( (zWhere=whereTempTriggers(pParse, pTab))!=0 ){
     sqlite3NestedParse(pParse, 
         "UPDATE sqlite_temp_master SET "
             "sql = sqlite_rename_trigger(sql, %Q), "
@@ -462,7 +462,7 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
   ** format to 2. If the default value of the new column is not NULL,
   ** the file format becomes 3.
   */
-  if( (v=sqlite3GetVdbe(pParse)) ){
+  if( (v=sqlite3GetVdbe(pParse))!=0 ){
     int f = (pDflt?3:2);
 
     /* Only set the file format to $f if it is currently less than $f. */

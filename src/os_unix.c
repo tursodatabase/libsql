@@ -202,7 +202,7 @@ struct lockKey {
   dev_t dev;       /* Device number */
   ino_t ino;       /* Inode number */
 #ifdef SQLITE_UNIX_THREADS
-  pthread_t tid;   /* Thread ID or zero if threads cannot override each other */
+  pthread_t tid;   /* Thread ID or zero if threads can override each other */
 #endif
 };
 

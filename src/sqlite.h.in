@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.142 2005/10/13 02:09:50 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.143 2005/10/20 07:28:19 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1258,7 +1258,7 @@ extern char *sqlite3_temp_directory;
 ** This functionality can be omitted from a build by defining the 
 ** SQLITE_OMIT_GLOBALRECOVER at compile time.
 */
-int sqlite3_global_recover();
+int sqlite3_global_recover(void);
 
 /*
 ** Test to see whether or not the database connection is in autocommit

@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.302 2005/09/17 15:20:27 drh Exp $
+** $Id: main.c,v 1.303 2005/10/20 07:28:18 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -741,7 +741,7 @@ static int openDatabase(
   */
   if( sqlite3_create_collation(db, "BINARY", SQLITE_UTF8, 0,binCollFunc) ||
       sqlite3_create_collation(db, "BINARY", SQLITE_UTF16, 0,binCollFunc) ||
-      !(db->pDfltColl = sqlite3FindCollSeq(db, db->enc, "BINARY", 6, 0)) ){
+      (db->pDfltColl = sqlite3FindCollSeq(db, db->enc, "BINARY", 6, 0))==0 ){
     rc = db->errCode;
     assert( rc!=SQLITE_OK );
     db->magic = SQLITE_MAGIC_CLOSED;
@@ -1020,7 +1020,7 @@ int sqlite3_global_recover(){
       sqlite3ExpirePreparedStatements(db);
       for(i=0; i<db->nDb; i++){
         Btree *pBt = db->aDb[i].pBt;
-        if( pBt && (rc=sqlite3BtreeReset(pBt)) ){
+        if( pBt && (rc=sqlite3BtreeReset(pBt))!=0 ){
           goto recover_out;
         }
       } 
