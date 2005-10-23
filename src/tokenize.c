@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.107 2005/08/23 11:31:26 drh Exp $
+** $Id: tokenize.c,v 1.108 2005/10/23 11:29:40 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -196,9 +196,13 @@ static int getToken(const unsigned char *z, int *tokenType){
           }
         }
       }
-      if( c ) i++;
-      *tokenType = TK_STRING;
-      return i;
+      if( c ){
+        *tokenType = TK_STRING;
+        return i+1;
+      }else{
+        *tokenType = TK_ILLEGAL;
+        return i;
+      }
     }
     case '.': {
 #ifndef SQLITE_OMIT_FLOATING_POINT

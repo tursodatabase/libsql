@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is exercising the code in main.c.
 #
-# $Id: main.test,v 1.21 2005/08/12 22:58:53 drh Exp $
+# $Id: main.test,v 1.22 2005/10/23 11:29:40 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -276,6 +276,12 @@ do_test main-3.2 {
   set v [catch {execsql {SELECT * from T1 where @x}} msg]
   lappend v $msg
 } {1 {unrecognized token: "@"}}
+do_test main-3.2.2 {
+  catchsql {select 'abc}
+} {1 {unrecognized token: "'abc"}}
+do_test main-3.2.3 {
+  catchsql {select "abc}
+} {1 {unrecognized token: ""abc"}}
 
 do_test main-3.3 {
   catch {db close}

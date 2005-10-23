@@ -1,5 +1,5 @@
-C Changes\sto\sprevent\svarious\scompiler\swarnings.\s(CVS\s2750)
-D 2005-10-20T07:28:18
+C Report\san\serror\sif\sthe\sinput\sSQL\scontains\san\sunterminated\sstring.\nTicket\s#1497.\s(CVS\s2751)
+D 2005-10-23T11:29:40
 F Makefile.in 12784cdce5ffc8dfb707300c34e4f1eb3b8a14f1
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -75,7 +75,7 @@ F src/test2.c 4196848c845626e7df894470f27329e80bfe92aa
 F src/test3.c f4e6a16a602091696619a1171bda25c0e3df49f7
 F src/test4.c a8fd681e139e1c61f22a77d07fc3a99cb28fff3f
 F src/test5.c 64f08b2a50ef371a1bd68ff206829e7b1b9997f5
-F src/tokenize.c e1faf5637f3f4f90933785a0ecf64595f3ac3530
+F src/tokenize.c bdb79702217af49eba44c2a3b4f5fc7bd9ed2917
 F src/trigger.c f51dec15921629591cb98bf2e350018e268b109a
 F src/update.c ac506fb7400158f826ec6c3a0dbe65e7ed3928d5
 F src/utf.c bda5eb85039ef16f2d17004c1e18c96e1ab0a80c
@@ -172,7 +172,7 @@ F test/limit.test 39f084f4e5f11e0b984cb517b56867cbf88df156
 F test/lock.test 9b7afcb24f53d24da502abb33daaad2cd6d44107
 F test/lock2.test d83ba79d3c4fffdb5b926c7d8ca7a36c34288a55
 F test/lock3.test 615111293cf32aa2ed16d01c6611737651c96fb9
-F test/main.test 249f139ef2f75710db1b49bb79e8b27767eacae1
+F test/main.test 6e44c86e9efaa913659e189713a339cb5d84bb12
 F test/malloc.test 666c77a878ce50f5c22b9211ed43e889cabb63a6
 F test/malloc2.test 655b972372d2754a3f6c6ed54d7cfd18fde9bd32
 F test/manydb.test 18bc28e481d8e742a767858a8149bc96056aad46
@@ -230,7 +230,7 @@ F test/trans.test 10506dc30305cfb8c4098359f7f6f64786f69c5e
 F test/trigger1.test 152aed5a1fa90709fe171f2ca501a6b7f7901479
 F test/trigger2.test dea71f4b05e22896e72527278bc8ef71b7475bf2
 F test/trigger3.test 9102fd3933db294dc654b5aee9edfe9e94f2b9e2
-F test/trigger4.test 9615207f3746b1f3965113007869e45a895d2497
+F test/trigger4.test 4bed3705c9df4aaf7a7b164a2d573410d05ca025
 F test/trigger5.test 619391a3e9fc194081d22cefd830d811e7badf83
 F test/trigger6.test 0e411654f122552da6590f0b4e6f781048a4a9b9
 F test/trigger7.test 0afa870be2ce1b132cdb85b17a4a4ef45aa8cece
@@ -315,7 +315,7 @@ F www/tclsqlite.tcl ddcf912ea48695603c8ed7efb29f0812ef8d1b49
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P a0bdb584680ce6400d9e8c57db9d91197cc7b776
-R 40487867c272173d14c55dbe54659f26
+P e261b8b09a529a3e67dc27c3b83b660bcb32e195
+R da2542abcece6fe892c1523e2b100875
 U drh
-Z 62b590d490d04c1d0b2fecf0198039da
+Z e912748a7c659d42e56e6d163324056e
