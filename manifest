@@ -1,5 +1,5 @@
-C Report\san\serror\sif\sthe\sinput\sSQL\scontains\san\sunterminated\sstring.\nTicket\s#1497.\s(CVS\s2751)
-D 2005-10-23T11:29:40
+C Fix\sthe\sshift\soperators\sso\sthat\sthey\swork\swith\s64-bit\squantities.\s(CVS\s2752)
+D 2005-10-29T15:48:31
 F Makefile.in 12784cdce5ffc8dfb707300c34e4f1eb3b8a14f1
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -81,7 +81,7 @@ F src/update.c ac506fb7400158f826ec6c3a0dbe65e7ed3928d5
 F src/utf.c bda5eb85039ef16f2d17004c1e18c96e1ab0a80c
 F src/util.c 48fecbbef4391d102a23096d32f0d74173428406
 F src/vacuum.c 829d9e1a6d7c094b80e0899686670932eafd768c
-F src/vdbe.c 2a660920b059d66571d5965e9c9114faca1831af
+F src/vdbe.c 12cbad0abf1ad091e936fe269ba2d1a319f756b8
 F src/vdbe.h 8729a4ee16ff9aeab2af9667df3cf300ff978e13
 F src/vdbeInt.h 7bedbb9553a10e86b53f75d99e197f3f00a732bf
 F src/vdbeapi.c 85bbe1d0243a89655433d60711b4bd71979b59cd
@@ -145,7 +145,7 @@ F test/distinctagg.test 2b89d1c5220d966a30ba4b40430338669301188b
 F test/enc.test 7a03417a1051fe8bc6c7641cf4c8c3f7e0066d52
 F test/enc2.test 76c13b8c00beaf95b15c152e95dab51292eb1f0d
 F test/enc3.test f6a5f0b7b7f3a88f030d3143729b87cd5c86d837
-F test/expr.test 71b8cba7fe5c228147c93e530e098144565aaa46
+F test/expr.test 9698d7bbe4ded9ba66836a4fd50f3f4bf1c0c152
 F test/fkey1.test 153004438d51e6769fb1ce165f6313972d6263ce
 F test/func.test 431f8e07a30aadf2a2a0c8c32f918a497bc4331d
 F test/hook.test f8605cde4c77b2c6a4a73723bf6c507796a64dda
@@ -315,7 +315,7 @@ F www/tclsqlite.tcl ddcf912ea48695603c8ed7efb29f0812ef8d1b49
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P e261b8b09a529a3e67dc27c3b83b660bcb32e195
-R da2542abcece6fe892c1523e2b100875
+P c9c476dd836c49255eabc6cce83064974c079ce3
+R dec9ff08495d988e05cdebca8c7d5cc0
 U drh
-Z e912748a7c659d42e56e6d163324056e
+Z 7195dd21fd04b843659e4b75633e96d2

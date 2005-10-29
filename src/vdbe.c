@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.493 2005/10/20 07:28:19 drh Exp $
+** $Id: vdbe.c,v 1.494 2005/10/29 15:48:31 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1214,7 +1214,7 @@ case OP_BitOr:                  /* same as TK_BITOR, no-push */
 case OP_ShiftLeft:              /* same as TK_LSHIFT, no-push */
 case OP_ShiftRight: {           /* same as TK_RSHIFT, no-push */
   Mem *pNos = &pTos[-1];
-  int a, b;
+  i64 a, b;
 
   assert( pNos>=p->aStack );
   if( (pTos->flags | pNos->flags) & MEM_Null ){
