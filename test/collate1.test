@@ -12,7 +12,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is page cache subsystem.
 #
-# $Id: collate1.test,v 1.3 2004/08/20 18:34:20 drh Exp $
+# $Id: collate1.test,v 1.4 2005/11/01 15:48:25 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -214,7 +214,7 @@ do_test collate1-4.3 {
   execsql {
     SELECT c2+0 FROM collate1t1 ORDER BY 1;
   }
-} {{} 1.0 12.0 101.0}
+} {{} 1 12 101}
 do_test collate1-4.4 {
   execsql {
     SELECT c1||'' FROM collate1t1 ORDER BY 1;

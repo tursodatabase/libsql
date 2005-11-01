@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc1.test,v 1.38 2005/09/08 10:37:01 drh Exp $
+# $Id: misc1.test,v 1.39 2005/11/01 15:48:25 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -316,13 +316,13 @@ do_test misc1-10.7 {
 } {0 {}}
 do_test misc1-10.8 {
   execsql {SELECT x1 FROM manycol WHERE x0=100}
-} {102.0}
+} {102}
 do_test misc1-10.9 {
   catchsql "UPDATE manycol SET x1=x1+1 $::where AND rowid>0"
 } {0 {}}
 do_test misc1-10.10 {
   execsql {SELECT x1 FROM manycol WHERE x0=100}
-} {103.0}
+} {103}
 
 # Make sure the initialization works even if a database is opened while
 # another process has the database locked.
@@ -408,7 +408,7 @@ do_test misc1-12.9 {
 #  catchsql {
 #    SELECT * FROM t6 ORDER BY a COLLATE unknown;
 #  }
-#} {0 {0 0.0 y 0}}
+#} {0 {0 0 y 0}}
 do_test misc1-12.11 {
   execsql {
     CREATE TABLE t8(x TEXT COLLATE numeric, y INTEGER COLLATE text, z);
@@ -572,7 +572,7 @@ do_test misc1-17.1 {
     COMMIT;
     SELECT TestString FROM RealTable ORDER BY 1;
   }
-} {2.0 3.0}
+} {2 3}
 }
 
 finish_test

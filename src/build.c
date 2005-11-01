@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.351 2005/09/20 17:42:23 drh Exp $
+** $Id: build.c,v 1.352 2005/11/01 15:48:24 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -882,7 +882,7 @@ void sqlite3AddNotNull(Parse *pParse, int onError){
 ** found, the corresponding affinity is returned. If zType contains
 ** more than one of the substrings, entries toward the top of 
 ** the table take priority. For example, if zType is 'BLOBINT', 
-** SQLITE_AFF_INTEGER is returned.
+** SQLITE_AFF_NUMERIC is returned.
 **
 ** Substring     | Affinity
 ** --------------------------------
@@ -894,8 +894,12 @@ void sqlite3AddNotNull(Parse *pParse, int onError){
 **
 ** If none of the substrings in the above table are found,
 ** SQLITE_AFF_NUMERIC is returned.
+**
+** The SQLITE_AFF_INTEGER type is only returned if useIntType is true.
+** If useIntType is false, then SQLITE_AFF_INTEGER is reported back
+** as SQLITE_AFF_NUMERIC
 */
-char sqlite3AffinityType(const Token *pType){
+char sqlite3AffinityType(const Token *pType, int useIntType){
   u32 h = 0;
   char aff = SQLITE_AFF_NUMERIC;
   const unsigned char *zIn = pType->z;
@@ -914,7 +918,7 @@ char sqlite3AffinityType(const Token *pType){
         && aff==SQLITE_AFF_NUMERIC ){
       aff = SQLITE_AFF_NONE;
     }else if( (h&0x00FFFFFF)==(('i'<<16)+('n'<<8)+'t') ){    /* INT */
-      aff = SQLITE_AFF_INTEGER; 
+      aff = useIntType ? SQLITE_AFF_INTEGER : SQLITE_AFF_NUMERIC; 
       break;
     }
   }
@@ -942,7 +946,7 @@ void sqlite3AddColumnType(Parse *pParse, Token *pType){
   pCol = &p->aCol[i];
   sqliteFree(pCol->zType);
   pCol->zType = sqlite3NameFromToken(pType);
-  pCol->affinity = sqlite3AffinityType(pType);
+  pCol->affinity = sqlite3AffinityType(pType, 0);
 }
 
 /*

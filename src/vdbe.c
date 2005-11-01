@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.494 2005/10/29 15:48:31 drh Exp $
+** $Id: vdbe.c,v 1.495 2005/11/01 15:48:24 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -194,8 +194,6 @@ static Cursor *allocateCursor(Vdbe *p, int iCur){
 ** SQLITE_AFF_NUMERIC
 ** SQLITE_AFF_TEXT
 ** SQLITE_AFF_NONE
-** SQLITE_AFF_INTEGER
-**
 */
 static void applyAffinity(Mem *pRec, char affinity, u8 enc){
   if( affinity==SQLITE_AFF_NONE ){
@@ -224,16 +222,8 @@ static void applyAffinity(Mem *pRec, char affinity, u8 enc){
           Integerify(pRec);
         }
       }
-    }
-
-    if( affinity==SQLITE_AFF_INTEGER ){
-      /* For INTEGER affinity, try to convert a real value to an int */
-      if( (pRec->flags&MEM_Real) && !(pRec->flags&MEM_Int) ){
-        pRec->i = pRec->r;
-        if( ((double)pRec->i)==pRec->r ){
-          pRec->flags |= MEM_Int;
-        }
-      }
+    }else if( pRec->flags & MEM_Real ){
+      sqlite3VdbeIntegerAffinity(pRec);
     }
   }
 }
@@ -645,6 +635,7 @@ case OP_Real: {            /* same as TK_FLOAT, */
   pTos->r = sqlite3VdbeRealValue(pTos);
   pTos->flags |= MEM_Real;
   sqlite3VdbeChangeEncoding(pTos, db->enc);
+  sqlite3VdbeIntegerAffinity(pTos);
   break;
 }
 
@@ -1030,6 +1021,7 @@ case OP_Remainder: {           /* same as TK_REM, no-push */
       case OP_Multiply:    b *= a;       break;
       case OP_Divide: {
         if( a==0 ) goto divide_by_zero;
+        if( b%a!=0 ) goto floating_point_divide;
         b /= a;
         break;
       }
@@ -1046,6 +1038,7 @@ case OP_Remainder: {           /* same as TK_REM, no-push */
     pTos->flags = MEM_Int;
   }else{
     double a, b;
+    floating_point_divide:
     a = sqlite3VdbeRealValue(pTos);
     b = sqlite3VdbeRealValue(pNos);
     switch( pOp->opcode ){
@@ -1070,6 +1063,7 @@ case OP_Remainder: {           /* same as TK_REM, no-push */
     Release(pTos);
     pTos->r = b;
     pTos->flags = MEM_Real;
+    sqlite3VdbeIntegerAffinity(pTos);
   }
   break;
 
@@ -1267,7 +1261,7 @@ case OP_AddImm: {            /* no-push */
 case OP_ForceInt: {            /* no-push */
   i64 v;
   assert( pTos>=p->aStack );
-  applyAffinity(pTos, SQLITE_AFF_INTEGER, db->enc);
+  applyAffinity(pTos, SQLITE_AFF_NUMERIC, db->enc);
   if( (pTos->flags & (MEM_Int|MEM_Real))==0 ){
     Release(pTos);
     pTos--;
@@ -1301,7 +1295,7 @@ case OP_ForceInt: {            /* no-push */
 */
 case OP_MustBeInt: {            /* no-push */
   assert( pTos>=p->aStack );
-  applyAffinity(pTos, SQLITE_AFF_INTEGER, db->enc);
+  applyAffinity(pTos, SQLITE_AFF_NUMERIC, db->enc);
   if( (pTos->flags & MEM_Int)==0 ){
     if( pOp->p2==0 ){
       rc = SQLITE_MISMATCH;
@@ -1317,7 +1311,6 @@ case OP_MustBeInt: {            /* no-push */
   break;
 }
 
-#ifndef SQLITE_OMIT_CAST
 /* Opcode: ToInt * * *
 **
 ** Force the value on the top of the stack to be an integer.  If
@@ -1332,11 +1325,12 @@ case OP_ToInt: {                  /* no-push */
   if( pTos->flags & MEM_Null ) break;
   assert( MEM_Str==(MEM_Blob>>3) );
   pTos->flags |= (pTos->flags&MEM_Blob)>>3;
-  applyAffinity(pTos, SQLITE_AFF_INTEGER, db->enc);
+  applyAffinity(pTos, SQLITE_AFF_NUMERIC, db->enc);
   sqlite3VdbeMemIntegerify(pTos);
   break;
 }
 
+#ifndef SQLITE_OMIT_CAST
 /* Opcode: ToNumeric * * *
 **
 ** Force the value on the top of the stack to be numeric (either an
@@ -1422,7 +1416,7 @@ case OP_ToBlob: {                  /* no-push */
 ** 0x200 is set but is NULL when the 0x200 bit of P1 is clear.
 **
 ** The least significant byte of P1 (mask 0xff) must be an affinity character -
-** 'n', 't', 'i' or 'o' - or 0x00. An attempt is made to coerce both values
+** 'n', 't', or 'o' - or 0x00. An attempt is made to coerce both values
 ** according to the affinity before the comparison is made. If the byte is
 ** 0x00, then numeric affinity is used.
 **
@@ -1614,11 +1608,13 @@ case OP_Negative:              /* same as TK_UMINUS, no-push */
 case OP_AbsValue: {
   assert( pTos>=p->aStack );
   if( pTos->flags & MEM_Real ){
+    neg_abs_real_case:
     Release(pTos);
     if( pOp->opcode==OP_Negative || pTos->r<0.0 ){
       pTos->r = -pTos->r;
     }
     pTos->flags = MEM_Real;
+    sqlite3VdbeIntegerAffinity(pTos);
   }else if( pTos->flags & MEM_Int ){
     Release(pTos);
     if( pOp->opcode==OP_Negative || pTos->i<0 ){
@@ -1629,10 +1625,7 @@ case OP_AbsValue: {
     /* Do nothing */
   }else{
     Realify(pTos);
-    if( pOp->opcode==OP_Negative || pTos->r<0.0 ){
-      pTos->r = -pTos->r;
-    }
-    pTos->flags = MEM_Real;
+    goto neg_abs_real_case;
   }
   break;
 }
@@ -2083,7 +2076,6 @@ op_column_out:
 **
 ** The mapping from character to affinity is as follows:
 **    'n' = NUMERIC.
-**    'i' = INTEGER.
 **    't' = TEXT.
 **    'o' = NONE.
 **

@@ -12,7 +12,7 @@
 # focus of this file is testing SELECT statements that contain
 # subqueries in their FROM clause.
 #
-# $Id: select6.test,v 1.19 2005/09/07 22:48:16 drh Exp $
+# $Id: select6.test,v 1.20 2005/11/01 15:48:25 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -186,7 +186,7 @@ do_test select6-3.5 {
   execsql {
     SELECT x,y,x+y FROM (SELECT avg(a) as 'x', avg(b) as 'y' FROM t2 WHERE a=4)
   }
-} {4.0 3.0 7.0}
+} {4.0 3.0 7}
 do_test select6-3.6 {
   execsql {
     SELECT a,b,a+b FROM (SELECT avg(x) as 'a', avg(y) as 'b' FROM t1)
@@ -217,14 +217,14 @@ do_test select6-3.10 {
     SELECT a,b,a+b FROM (SELECT avg(x) as 'a', y as 'b' FROM t1 GROUP BY b)
     ORDER BY a
   }
-} {1.0 1 2.0 2.5 2 4.5 5.5 3 8.5 11.5 4 15.5 18.0 5 23.0}
+} {1.0 1 2 2.5 2 4.5 5.5 3 8.5 11.5 4 15.5 18.0 5 23}
 do_test select6-3.11 {
   execsql {
     SELECT a,b,a+b FROM 
        (SELECT avg(x) as 'a', y as 'b' FROM t1 GROUP BY b)
     WHERE b<4 ORDER BY a
   }
-} {1.0 1 2.0 2.5 2 4.5 5.5 3 8.5}
+} {1.0 1 2 2.5 2 4.5 5.5 3 8.5}
 do_test select6-3.12 {
   execsql {
     SELECT a,b,a+b FROM 
@@ -238,7 +238,7 @@ do_test select6-3.13 {
        (SELECT avg(x) as 'a', y as 'b' FROM t1 GROUP BY b HAVING a>1)
     ORDER BY a
   }
-} {2.5 2 4.5 5.5 3 8.5 11.5 4 15.5 18.0 5 23.0}
+} {2.5 2 4.5 5.5 3 8.5 11.5 4 15.5 18.0 5 23}
 do_test select6-3.14 {
   execsql {
     SELECT [count(*)],y FROM (SELECT count(*), y FROM t1 GROUP BY y)

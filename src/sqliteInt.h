@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.423 2005/10/13 02:09:50 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.424 2005/11/01 15:48:24 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -585,8 +585,8 @@ struct CollSeq {
 /*
 ** Column affinity types.
 */
-#define SQLITE_AFF_INTEGER  'i'
 #define SQLITE_AFF_NUMERIC  'n'
+#define SQLITE_AFF_INTEGER  'i'  /* Used for CAST operators only */
 #define SQLITE_AFF_TEXT     't'
 #define SQLITE_AFF_NONE     'o'
 
@@ -1646,7 +1646,7 @@ void sqlite3AlterFinishAddColumn(Parse *, Token *);
 void sqlite3AlterBeginAddColumn(Parse *, SrcList *);
 const char *sqlite3TestErrorName(int);
 CollSeq *sqlite3GetCollSeq(sqlite3*, CollSeq *, const char *, int);
-char sqlite3AffinityType(const Token*);
+char sqlite3AffinityType(const Token*, int);
 void sqlite3Analyze(Parse*, Token*, Token*);
 int sqlite3InvokeBusyHandler(BusyHandler*);
 int sqlite3FindDb(sqlite3*, Token*);

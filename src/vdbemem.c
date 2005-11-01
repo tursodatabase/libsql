@@ -173,11 +173,11 @@ int sqlite3VdbeMemStringify(Mem *pMem, int enc){
   ** 
   ** FIX ME: It would be better if sqlite3_snprintf() could do UTF-16.
   */
-  if( fg & MEM_Real ){
-    sqlite3_snprintf(NBFS, z, "%!.15g", pMem->r);
-  }else{
-    assert( fg & MEM_Int );
+  if( fg & MEM_Int ){
     sqlite3_snprintf(NBFS, z, "%lld", pMem->i);
+  }else{
+    assert( fg & MEM_Real );
+    sqlite3_snprintf(NBFS, z, "%!.15g", pMem->r);
   }
   pMem->n = strlen(z);
   pMem->z = z;
@@ -300,13 +300,27 @@ double sqlite3VdbeRealValue(Mem *pMem){
 }
 
 /*
-** Convert pMem so that it is of type MEM_Real.  Invalidate any
-** prior representations.
+** The MEM structure is already a MEM_Real.  Try to also make it a
+** MEM_Int if we can.
+*/
+void sqlite3VdbeIntegerAffinity(Mem *pMem){
+  assert( pMem->flags & MEM_Real );
+  pMem->i = pMem->r;
+  if( ((double)pMem->i)==pMem->r ){
+    pMem->flags |= MEM_Int;
+  }
+}
+
+
+/*
+** Convert pMem so that it is of type MEM_Real and also MEM_Int if
+** possible.  Invalidate any prior representations.
 */
 int sqlite3VdbeMemRealify(Mem *pMem){
   pMem->r = sqlite3VdbeRealValue(pMem);
   sqlite3VdbeMemRelease(pMem);
   pMem->flags = MEM_Real;
+  sqlite3VdbeIntegerAffinity(pMem);
   return SQLITE_OK;
 }
 

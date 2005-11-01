@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.143 2005/09/20 17:42:23 drh Exp $
+** $Id: insert.c,v 1.144 2005/11/01 15:48:24 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -24,7 +24,6 @@
 **  Character      Column affinity
 **  ------------------------------
 **  'n'            NUMERIC
-**  'i'            INTEGER
 **  't'            TEXT
 **  'o'            NONE
 */
@@ -62,7 +61,6 @@ void sqlite3IndexAffinityStr(Vdbe *v, Index *pIdx){
 **  Character      Column affinity
 **  ------------------------------
 **  'n'            NUMERIC
-**  'i'            INTEGER
 **  't'            TEXT
 **  'o'            NONE
 */

@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.231 2005/10/06 16:53:15 drh Exp $
+** $Id: expr.c,v 1.232 2005/11/01 15:48:24 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -43,7 +43,7 @@ char sqlite3ExprAffinity(Expr *pExpr){
   }
 #ifndef SQLITE_OMIT_CAST
   if( op==TK_CAST ){
-    return sqlite3AffinityType(&pExpr->token);
+    return sqlite3AffinityType(&pExpr->token, 0);
   }
 #endif
   return pExpr->affinity;
@@ -75,12 +75,10 @@ CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr){
 char sqlite3CompareAffinity(Expr *pExpr, char aff2){
   char aff1 = sqlite3ExprAffinity(pExpr);
   if( aff1 && aff2 ){
-    /* Both sides of the comparison are columns. If one has numeric or
-    ** integer affinity, use that. Otherwise use no affinity.
+    /* Both sides of the comparison are columns. If one has numeric
+    ** affinity, use that. Otherwise use no affinity.
     */
-    if( aff1==SQLITE_AFF_INTEGER || aff2==SQLITE_AFF_INTEGER ){
-      return SQLITE_AFF_INTEGER;
-    }else if( aff1==SQLITE_AFF_NUMERIC || aff2==SQLITE_AFF_NUMERIC ){
+    if( aff1==SQLITE_AFF_NUMERIC || aff2==SQLITE_AFF_NUMERIC ){
       return SQLITE_AFF_NUMERIC;
     }else{
       return SQLITE_AFF_NONE;
@@ -89,7 +87,6 @@ char sqlite3CompareAffinity(Expr *pExpr, char aff2){
     /* Neither side of the comparison is a column.  Compare the
     ** results directly.
     */
-    /* return SQLITE_AFF_NUMERIC;  // Ticket #805 */
     return SQLITE_AFF_NONE;
   }else{
     /* One side is a column, the other is not. Use the columns affinity. */
@@ -129,11 +126,7 @@ static char comparisonAffinity(Expr *pExpr){
 */
 int sqlite3IndexAffinityOk(Expr *pExpr, char idx_affinity){
   char aff = comparisonAffinity(pExpr);
-  return 
-    (aff==SQLITE_AFF_NONE) ||
-    (aff==SQLITE_AFF_NUMERIC && idx_affinity==SQLITE_AFF_INTEGER) ||
-    (aff==SQLITE_AFF_INTEGER && idx_affinity==SQLITE_AFF_NUMERIC) ||
-    (aff==idx_affinity);
+  return (aff==SQLITE_AFF_NONE) || (aff==idx_affinity);
 }
 
 /*
@@ -944,7 +937,7 @@ static int lookupName(
     if( cnt==0 && cntTab==1 && sqlite3IsRowid(zCol) ){
       cnt = 1;
       pExpr->iColumn = -1;
-      pExpr->affinity = SQLITE_AFF_INTEGER;
+      pExpr->affinity = SQLITE_AFF_NUMERIC;
     }
 
     /*
@@ -1524,7 +1517,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       /* Expressions of the form:   CAST(pLeft AS token) */
       int aff, op;
       sqlite3ExprCode(pParse, pExpr->pLeft);
-      aff = sqlite3AffinityType(&pExpr->token);
+      aff = sqlite3AffinityType(&pExpr->token, 1);
       switch( aff ){
         case SQLITE_AFF_INTEGER:   op = OP_ToInt;      break;
         case SQLITE_AFF_NUMERIC:   op = OP_ToNumeric;  break;

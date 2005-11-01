@@ -12,7 +12,7 @@
 # focus of this file is the ability to specify table and column names
 # as quoted strings.
 #
-# $Id: quote.test,v 1.5 2005/08/13 18:15:43 drh Exp $
+# $Id: quote.test,v 1.6 2005/11/01 15:48:25 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -46,7 +46,7 @@ do_test quote-1.3.1 {
   catchsql {
     SELECT '!pqr', '#xyz'+5 FROM '@abc'
   }
-} {0 {!pqr 5.0}}
+} {0 {!pqr 5}}
 do_test quote-1.3.2 {
   catchsql {
     SELECT "!pqr", "#xyz"+5 FROM '@abc'

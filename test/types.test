@@ -12,7 +12,7 @@
 # it tests that the different storage classes (integer, real, text etc.)
 # all work correctly.
 #
-# $Id: types.test,v 1.14 2004/11/14 21:56:31 drh Exp $
+# $Id: types.test,v 1.15 2005/11/01 15:48:25 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -56,11 +56,13 @@ do_test types-1.1.0 {
 # literal were inserted into a column with affinity INTEGER, NUMERIC, TEXT
 # or NONE, respectively.
 set values {
-  { 5.0    integer real    text real    }
+  { 5.0    integer integer text integer }
+  { 5.1    real    real    text real    }
   { 5      integer integer text integer }
-  { '5.0'  integer real    text text    }
-  { '-5.0' integer real    text text    }
-  { '-5.0' integer real    text text    }
+  { '5.0'  integer integer text text    }
+  { '5.1'  real    real    text text    }
+  { '-5.0' integer integer text text    }
+  { '-5.0' integer integer text text    }
   { '5'    integer integer text text    }
   { 'abc'  text    text    text text    }
   { NULL   null    null    null null    }
@@ -221,13 +223,13 @@ do_test types-2.2.2 {
   execsql {
     SELECT a FROM t2;
   }
-} {0.0 12345.678 -12345.678}
+} {0 12345.678 -12345.678}
 
 # Check that all the record sizes are as we expected.
 do_test types-2.2.3 {
   set root [db eval {select rootpage from sqlite_master where name = 't2'}]
   record_sizes $root
-} {10 10 10}
+} {3 10 10}
 
 # Insert a NULL. This should be a two byte record.
 do_test types-2.3.1 {

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE INDEX statement.
 #
-# $Id: index.test,v 1.37 2005/01/21 03:12:16 danielk1977 Exp $
+# $Id: index.test,v 1.38 2005/11/01 15:48:25 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -372,38 +372,38 @@ do_test index-12.1 {
     INSERT INTO t4 VALUES('00000',7);
     SELECT a FROM t4 ORDER BY b;
   }
-} {0.0 0.0 abc -1.0 1.0 0 0}
+} {0 0 abc -1 1 0 0}
 do_test index-12.2 {
   execsql {
     SELECT a FROM t4 WHERE a==0 ORDER BY b
   }
-} {0.0 0.0 0 0}
+} {0 0 0 0}
 do_test index-12.3 {
   execsql {
     SELECT a FROM t4 WHERE a<0.5 ORDER BY b
   }
-} {0.0 0.0 -1.0 0 0}
+} {0 0 -1 0 0}
 do_test index-12.4 {
   execsql {
     SELECT a FROM t4 WHERE a>-0.5 ORDER BY b
   }
-} {0.0 0.0 abc 1.0 0 0}
+} {0 0 abc 1 0 0}
 do_test index-12.5 {
   execsql {
     CREATE INDEX t4i1 ON t4(a);
     SELECT a FROM t4 WHERE a==0 ORDER BY b
   }
-} {0.0 0.0 0 0}
+} {0 0 0 0}
 do_test index-12.6 {
   execsql {
     SELECT a FROM t4 WHERE a<0.5 ORDER BY b
   }
-} {0.0 0.0 -1.0 0 0}
+} {0 0 -1 0 0}
 do_test index-12.7 {
   execsql {
     SELECT a FROM t4 WHERE a>-0.5 ORDER BY b
   }
-} {0.0 0.0 abc 1.0 0 0}
+} {0 0 abc 1 0 0}
 integrity_check index-12.8
 
 # Make sure we cannot drop an automatically created index.
