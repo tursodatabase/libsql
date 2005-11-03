@@ -1,5 +1,5 @@
-C First\scut\sat\ssupporting\sCHECK\sconstraints.\s\sEverything\sappears\sto\swork,\nbut\smuch\smore\stesting\sis\sneeded\sas\swell\sas\sdocumentation.\s(CVS\s2754)
-D 2005-11-03T00:41:17
+C CHECK\sconstraints\sthat\sevaluate\sto\sNULL\spass.\s(CVS\s2755)
+D 2005-11-03T01:22:31
 F Makefile.in 12784cdce5ffc8dfb707300c34e4f1eb3b8a14f1
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -45,7 +45,7 @@ F src/expr.c e74e9c265c3572f71ab9d8f795cb656469209bb6
 F src/func.c 7d81dccd9c440c6c4e761056333e629192814af0
 F src/hash.c 8747cf51d12de46512880dfcf1b68b4e24072863
 F src/hash.h 1b0c445e1c89ff2aaad9b4605ba61375af001e84
-F src/insert.c b814e8d73b725cf34ff9328573ea052226c290bd
+F src/insert.c c8f12b468f311f55ecfadda2fe08799bf2633a18
 F src/legacy.c d58ea507bce885298a2c8c3cbb0f4bff5d47830b
 F src/main.c 97bb830cdbd378d1f87469618471f52d9d263d09
 F src/md5.c 7ae1c39044b95de2f62e066f47bb1deb880a1070
@@ -124,7 +124,7 @@ F test/capi2.test f897209386fb21cfdc9267595e0c667ebaca9164
 F test/capi3.test fc8e573467049add3bfaf81f53827e8ff153cf8f
 F test/capi3b.test 5b6a66f9f295f79f443b5d3f33187fa5ef6cf336
 F test/cast.test 2543165ced4249c89ce5f0352222df503a98b9e5
-F test/check.test 073a4b542793e4acb7bcfa2abb838586a3462625
+F test/check.test d7f0850650b7c0adda71cbc99eba4407475a9424
 F test/collate1.test add9454cef160677bb8b34148b8f277ce7f9f1c4
 F test/collate2.test 224a632ba04907c049804b08162efd234aa7871f
 F test/collate3.test 947a77f5b8227e037a7094d0e338a5504f155cc4
@@ -316,7 +316,7 @@ F www/tclsqlite.tcl ddcf912ea48695603c8ed7efb29f0812ef8d1b49
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P e0d6f61c7de2c03b8fd17ef37cf1a0add36ee618
-R 1ff7e911d1dc61bef39e78e87be5de02
+P 2313d912baeca0fd516d524f16708953de483729
+R d64542a6a946813b7fd22cace2c7e954
 U drh
-Z c4af40f7e2f1f1ea9a28a66e94a942b3
+Z 1f3c50f7b443762a810db649999a6322

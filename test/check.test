@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing CHECK constraints
 #
-# $Id: check.test,v 1.1 2005/11/03 00:41:18 drh Exp $
+# $Id: check.test,v 1.2 2005/11/03 01:22:31 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -60,24 +60,25 @@ do_test check-1.7 {
   catchsql {
     INSERT INTO t1 VALUES(NULL,6);
   }
-} {1 {constraint failed}}
+} {0 {}}
 do_test check-1.8 {
   execsql {
     SELECT * FROM t1;
   }  
-} {3 4}
+} {3 4 {} 6}
 do_test check-1.9 {
   catchsql {
     INSERT INTO t1 VALUES(2,NULL);
   }
-} {1 {constraint failed}}
+} {0 {}}
 do_test check-1.10 {
   execsql {
     SELECT * FROM t1;
   }  
-} {3 4}
+} {3 4 {} 6 2 {}}
 do_test check-1.11 {
   execsql {
+    DELETE FROM t1 WHERE x IS NULL OR x!=3;
     UPDATE t1 SET x=2 WHERE x==3;
     SELECT * FROM t1;
   }
