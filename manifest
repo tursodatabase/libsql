@@ -1,5 +1,5 @@
-C Disallow\ssubqueries\sin\sCHECK\sconstraints.\s(CVS\s2756)
-D 2005-11-03T02:03:13
+C Add\sthe\signore_check_constraints\spragma.\s\sVACUUM\sworks\seven\son\sa\sdatabase\nthat\scontains\stable\sentries\sthat\sviolate\scheck\sconstraints.\s(CVS\s2757)
+D 2005-11-03T02:15:03
 F Makefile.in 12784cdce5ffc8dfb707300c34e4f1eb3b8a14f1
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -45,7 +45,7 @@ F src/expr.c 14466b227096263213d7748174c2bd8cb722cc3c
 F src/func.c 7d81dccd9c440c6c4e761056333e629192814af0
 F src/hash.c 8747cf51d12de46512880dfcf1b68b4e24072863
 F src/hash.h 1b0c445e1c89ff2aaad9b4605ba61375af001e84
-F src/insert.c c8f12b468f311f55ecfadda2fe08799bf2633a18
+F src/insert.c e04b27e076ed093606db82400a3769a3a3b00a61
 F src/legacy.c d58ea507bce885298a2c8c3cbb0f4bff5d47830b
 F src/main.c 97bb830cdbd378d1f87469618471f52d9d263d09
 F src/md5.c 7ae1c39044b95de2f62e066f47bb1deb880a1070
@@ -60,14 +60,14 @@ F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c adbb27f13ac75cd5bc29a3d84803e0cab1edfa88
 F src/pager.h e7b41ce8e7b5f629d456708b7ad9a8c8ede37140
 F src/parse.y 1d5afb972ed5ef3ec8712a2b5953b48f086091da
-F src/pragma.c 9ec219dc4ee2d4e78f4ec5c9d1422089758af13f
+F src/pragma.c b40189967155a522433b8470f363192a927ba22c
 F src/prepare.c fc098db25d2a121affb08686cf04833fd50452d4
 F src/printf.c 3ea3a17d25d7ac498efc18007c70371a42c968f8
 F src/random.c 90adff4e73a3b249eb4f1fc2a6ff9cf78c7233a4
 F src/select.c be02f123e8651bee22beb07d89dcfa75bcc2e291
 F src/shell.c 3596c1e559b82663057940d19ba533ad421c7dd3
 F src/sqlite.h.in 8e648e1f386e4509f2f96c09ded7c07b0df0c9a2
-F src/sqliteInt.h c6685ddb841f9b5585758642b6ae32a7428c7936
+F src/sqliteInt.h e546554bdd4e3c903dd033bb1e2476193c2d4f37
 F src/table.c e03b60eaabaeb54a00d7e931566d77302dfc19b0
 F src/tclsqlite.c 4f274fae3d4a1863451a553dd8e5015747a5d91d
 F src/test1.c 77506b6b88125c26f00a11bf3ff5c8dc824e837e
@@ -80,7 +80,7 @@ F src/trigger.c f51dec15921629591cb98bf2e350018e268b109a
 F src/update.c ac506fb7400158f826ec6c3a0dbe65e7ed3928d5
 F src/utf.c bda5eb85039ef16f2d17004c1e18c96e1ab0a80c
 F src/util.c 48fecbbef4391d102a23096d32f0d74173428406
-F src/vacuum.c 829d9e1a6d7c094b80e0899686670932eafd768c
+F src/vacuum.c 2ed18a4e9c894de7239bc1c68fe455fcb39571c6
 F src/vdbe.c e83de8a017fe5c495fcef3093dbdca30fa6b1ea4
 F src/vdbe.h 8729a4ee16ff9aeab2af9667df3cf300ff978e13
 F src/vdbeInt.h 6eba0b967dc4fc4d5dea6e3bcc66e70a44981cc9
@@ -124,7 +124,7 @@ F test/capi2.test f897209386fb21cfdc9267595e0c667ebaca9164
 F test/capi3.test fc8e573467049add3bfaf81f53827e8ff153cf8f
 F test/capi3b.test 5b6a66f9f295f79f443b5d3f33187fa5ef6cf336
 F test/cast.test 2543165ced4249c89ce5f0352222df503a98b9e5
-F test/check.test c591a20fcb082ae7362299c00b4fb85536f62f1b
+F test/check.test 6d9891a9c23664187cec285b2766bc545d9cc712
 F test/collate1.test add9454cef160677bb8b34148b8f277ce7f9f1c4
 F test/collate2.test 224a632ba04907c049804b08162efd234aa7871f
 F test/collate3.test 947a77f5b8227e037a7094d0e338a5504f155cc4
@@ -316,7 +316,7 @@ F www/tclsqlite.tcl ddcf912ea48695603c8ed7efb29f0812ef8d1b49
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 55b314a22c69fbe129b024e953f3230b67eaaa87
-R 8803f664e97429fe76d644ff77ce2e9b
+P db27afc4cdc5b51c1fa0e83dbd6d4a4a69c5b642
+R 845f2cc4e249401789db166e879f4183
 U drh
-Z a81fd0388a861af771476f6fd322db14
+Z bd889ec2abfde5bf334bd2278ed2468d

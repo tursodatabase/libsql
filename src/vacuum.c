@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.45 2005/06/07 09:21:07 danielk1977 Exp $
+** $Id: vacuum.c,v 1.46 2005/11/03 02:15:04 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -100,11 +100,11 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   Btree *pMain;           /* The database being vacuumed */
   Btree *pTemp;
   char *zSql = 0;
-  int writeschema_flag;   /* Saved value of the write-schema flag */
+  int saved_flags;       /* Saved value of the db->flags */
 
   /* Save the current value of the write-schema flag before setting it. */
-  writeschema_flag = db->flags&SQLITE_WriteSchema;
-  db->flags |= SQLITE_WriteSchema;
+  saved_flags = db->flags;
+  db->flags |= SQLITE_WriteSchema | SQLITE_IgnoreChecks;
 
   if( !db->autoCommit ){
     sqlite3SetString(pzErrMsg, "cannot VACUUM from within a transaction", 
@@ -281,9 +281,8 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   }
 
 end_of_vacuum:
-  /* Restore the original value of the write-schema flag. */
-  db->flags &= ~SQLITE_WriteSchema;
-  db->flags |= writeschema_flag;
+  /* Restore the original value of db->flags */
+  db->flags = saved_flags;
 
   /* Currently there is an SQL level transaction open on the vacuum
   ** database. No locks are held on any other files (since the main file

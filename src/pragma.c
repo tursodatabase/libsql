@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.102 2005/10/06 13:59:27 drh Exp $
+** $Id: pragma.c,v 1.103 2005/11/03 02:15:03 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -151,6 +151,9 @@ static int flagPragma(Parse *pParse, const char *zLeft, const char *zRight){
     { "short_column_names",       SQLITE_ShortColNames },
     { "count_changes",            SQLITE_CountRows     },
     { "empty_result_callbacks",   SQLITE_NullCallback  },
+#ifndef SQLITE_OMIT_CHECK
+    { "ignore_check_constraints", SQLITE_IgnoreChecks  },
+#endif
     /* The following is VERY experimental */
     { "writable_schema",          SQLITE_WriteSchema   },
     { "omit_readlock",            SQLITE_NoReadlock    },
