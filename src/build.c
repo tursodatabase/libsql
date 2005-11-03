@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.353 2005/11/03 00:41:17 drh Exp $
+** $Id: build.c,v 1.354 2005/11/03 02:03:13 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1307,6 +1307,7 @@ void sqlite3EndTable(
     sSrc.a[0].iCursor = -1;
     sNC.pParse = pParse;
     sNC.pSrcList = &sSrc;
+    sNC.isCheck = 1;
     if( sqlite3ExprResolveNames(&sNC, p->pCheck) ){
       return;
     }

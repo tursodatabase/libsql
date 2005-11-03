@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.233 2005/11/03 00:41:17 drh Exp $
+** $Id: expr.c,v 1.234 2005/11/03 02:03:13 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1188,6 +1188,11 @@ static int nameResolverStep(void *pArg, Expr *pExpr){
 #endif
     case TK_IN: {
       if( pExpr->pSelect ){
+#ifndef SQLITE_OMIT_CHECK
+        if( pNC->isCheck ){
+          sqlite3ErrorMsg(pParse,"subqueries prohibited in CHECK constraints");
+        }
+#endif
         int nRef = pNC->nRef;
         sqlite3SelectResolve(pParse, pExpr->pSelect, pNC);
         assert( pNC->nRef>=nRef );

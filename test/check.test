@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing CHECK constraints
 #
-# $Id: check.test,v 1.2 2005/11/03 01:22:31 drh Exp $
+# $Id: check.test,v 1.3 2005/11/03 02:03:13 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -150,5 +150,111 @@ do_test check-2.6 {
     INSERT INTO t2 VALUES(NULL, NULL, 3.14159);
   }
 } {1 {constraint failed}}
+
+do_test check-3.1 {
+  catchsql {
+    CREATE TABLE t3(
+      x, y, z,
+      CHECK( x<(SELECT min(x) FROM t1) )
+    );
+  }
+} {1 {subqueries prohibited in CHECK constraints}}
+do_test check-3.2 {
+  execsql {
+    SELECT name FROM sqlite_master ORDER BY name
+  }
+} {t1 t2}
+do_test check-3.3 {
+  catchsql {
+    CREATE TABLE t3(
+      x, y, z,
+      CHECK( q<x )
+    );
+  }
+} {1 {no such column: q}}
+do_test check-3.4 {
+  execsql {
+    SELECT name FROM sqlite_master ORDER BY name
+  }
+} {t1 t2}
+do_test check-3.5 {
+  catchsql {
+    CREATE TABLE t3(
+      x, y, z,
+      CHECK( t2.x<x )
+    );
+  }
+} {1 {no such column: t2.x}}
+do_test check-3.6 {
+  execsql {
+    SELECT name FROM sqlite_master ORDER BY name
+  }
+} {t1 t2}
+do_test check-3.7 {
+  catchsql {
+    CREATE TABLE t3(
+      x, y, z,
+      CHECK( t3.x<25 )
+    );
+  }
+} {0 {}}
+do_test check-3.8 {
+  execsql {
+    INSERT INTO t3 VALUES(1,2,3);
+    SELECT * FROM t3;
+  }
+} {1 2 3}
+do_test check-3.9 {
+  catchsql {
+    INSERT INTO t3 VALUES(111,222,333);
+  }
+} {1 {constraint failed}}
+
+do_test check-4.1 {
+  execsql {
+    CREATE TABLE t4(x, y,
+      CHECK (
+           x+y==11
+        OR x*y==12
+        OR x/y BETWEEN 5 AND 8
+        OR -x==y+10
+      )
+    );
+  }
+} {}
+do_test check-4.2 {
+  execsql {
+    INSERT INTO t4 VALUES(1,10);
+    SELECT * FROM t4
+  }
+} {1 10}
+do_test check-4.3 {
+  execsql {
+    UPDATE t4 SET x=4, y=3;
+    SELECT * FROM t4
+  }
+} {4 3}
+do_test check-4.3 {
+  execsql {
+    UPDATE t4 SET x=12, y=2;
+    SELECT * FROM t4
+  }
+} {12 2}
+do_test check-4.4 {
+  execsql {
+    UPDATE t4 SET x=12, y=-22;
+    SELECT * FROM t4
+  }
+} {12 -22}
+do_test check-4.5 {
+  catchsql {
+    UPDATE t4 SET x=0, y=1;
+  }
+} {1 {constraint failed}}
+do_test check-4.6 {
+  execsql {
+    SELECT * FROM t4;
+  }
+} {12 -22}
 
 finish_test

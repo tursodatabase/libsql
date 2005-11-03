@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.425 2005/11/03 00:41:17 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.426 2005/11/03 02:03:13 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1088,6 +1088,7 @@ struct NameContext {
   int nErr;            /* Number of errors encountered while resolving names */
   u8 allowAgg;         /* Aggregate functions allowed here */
   u8 hasAgg;           /* True if aggregates are seen */
+  u8 isCheck;          /* True if resolving names in a CHECK constraint */
   int nDepth;          /* Depth of subquery recursion. 1 for no recursion */
   AggInfo *pAggInfo;   /* Information about aggregates at this level */
   NameContext *pNext;  /* Next outer name context.  NULL for outermost */

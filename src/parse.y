@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.181 2005/11/03 00:41:17 drh Exp $
+** @(#) $Id: parse.y,v 1.182 2005/11/03 02:03:13 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -268,7 +268,7 @@ ccons ::= NOT NULL onconf(R).               {sqlite3AddNotNull(pParse, R);}
 ccons ::= PRIMARY KEY sortorder onconf(R) autoinc(I).
                                      {sqlite3AddPrimaryKey(pParse,0,R,I);}
 ccons ::= UNIQUE onconf(R).          {sqlite3CreateIndex(pParse,0,0,0,0,R,0,0);}
-ccons ::= CHECK LP expr(X) RP.       {sqlite3AddCheckConstraint(pParse, X);}
+ccons ::= CHECK LP expr(X) RP.       {sqlite3AddCheckConstraint(pParse,X);}
 ccons ::= REFERENCES nm(T) idxlist_opt(TA) refargs(R).
                                 {sqlite3CreateForeignKey(pParse,0,&T,TA,R);}
 ccons ::= defer_subclause(D).   {sqlite3DeferForeignKey(pParse,D);}
@@ -318,7 +318,7 @@ tcons ::= PRIMARY KEY LP idxlist(X) autoinc(I) RP onconf(R).
                                          {sqlite3AddPrimaryKey(pParse,X,R,I);}
 tcons ::= UNIQUE LP idxlist(X) RP onconf(R).
                                        {sqlite3CreateIndex(pParse,0,0,0,X,R,0,0);}
-tcons ::= CHECK expr onconf.
+tcons ::= CHECK LP expr(E) RP onconf. {sqlite3AddCheckConstraint(pParse,E);}
 tcons ::= FOREIGN KEY LP idxlist(FA) RP
           REFERENCES nm(T) idxlist_opt(TA) refargs(R) defer_subclause_opt(D). {
     sqlite3CreateForeignKey(pParse, FA, &T, TA, R);
