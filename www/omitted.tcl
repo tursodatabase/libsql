@@ -1,7 +1,7 @@
 #
 # Run this script to generated a omitted.html output file
 #
-set rcsid {$Id: omitted.tcl,v 1.9 2005/09/11 11:56:28 drh Exp $}
+set rcsid {$Id: omitted.tcl,v 1.10 2005/11/03 00:41:18 drh Exp $}
 source common.tcl
 header {SQL Features That SQLite Does Not Implement}
 puts {
@@ -26,11 +26,6 @@ proc feature {name desc} {
   puts "<tr><td valign=\"top\"><b><nobr>$name</nobr></b></td>"
   puts "<td width=\"10\">&nbsp;</th>"
   puts "<td valign=\"top\">$desc</td></tr>"
-}
-
-feature {CHECK constraints} {
-  CHECK constraints are parsed but they are not enforced.
-  NOT NULL and UNIQUE constraints are enforced, however.
 }
 
 feature {FOREIGN KEY constraints} {

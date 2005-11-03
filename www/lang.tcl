@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the lang-*.html files.
 #
-set rcsid {$Id: lang.tcl,v 1.100 2005/09/11 11:56:28 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.101 2005/11/03 00:41:18 drh Exp $}
 source common.tcl
 
 if {[llength $argv]>0} {
@@ -511,13 +511,13 @@ CREATE [TEMP | TEMPORARY] TABLE [<database-name>.] <table-name> AS <select-state
 NOT NULL [ <conflict-clause> ] |
 PRIMARY KEY [<sort-order>] [ <conflict-clause> ] [AUTOINCREMENT] |
 UNIQUE [ <conflict-clause> ] |
-CHECK ( <expr> ) [ <conflict-clause> ] |
+CHECK ( <expr> ) |
 DEFAULT <value> |
 COLLATE <collation-name>
 } {constraint} {
 PRIMARY KEY ( <column-list> ) [ <conflict-clause> ] |
 UNIQUE ( <column-list> ) [ <conflict-clause> ] |
-CHECK ( <expr> ) [ <conflict-clause> ]
+CHECK ( <expr> )
 } {conflict-clause} {
 ON CONFLICT <conflict-algorithm>
 }
@@ -596,10 +596,8 @@ default algorithm specified in the CREATE TABLE statement.
 See the section titled
 <a href="#conflict">ON CONFLICT</a> for additional information.</p>
 
-<p>CHECK constraints are ignored in the current implementation.
-Support for CHECK constraints may be added in the future.  As of
-version 2.3.0, NOT NULL, PRIMARY KEY, and UNIQUE constraints all
-work.</p>
+<p>CHECK constraints are supported as of version 3.3.0.  Prior
+to version 3.3.0, CHECK constraints were parsed but not enforced.</p>
 
 <p>There are no arbitrary limits on the number
 of columns or on the number of constraints in a table.

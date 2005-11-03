@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.352 2005/11/01 15:48:24 drh Exp $
+** $Id: build.c,v 1.353 2005/11/03 00:41:17 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -456,6 +456,9 @@ void sqlite3DeleteTable(sqlite3 *db, Table *pTable){
   sqliteFree(pTable->zName);
   sqliteFree(pTable->zColAff);
   sqlite3SelectDelete(pTable->pSelect);
+#ifndef SQLITE_OMIT_CHECK
+  sqlite3ExprDelete(pTable->pCheck);
+#endif
   sqliteFree(pTable);
 }
 
@@ -1048,6 +1051,25 @@ primary_key_exit:
 }
 
 /*
+** Add a new CHECK constraint to the table currently under construction.
+*/
+void sqlite3AddCheckConstraint(
+  Parse *pParse,    /* Parsing context */
+  Expr *pCheckExpr  /* The check expression */
+){
+#ifndef SQLITE_OMIT_CHECK
+  Table *pTab = pParse->pNewTable;
+  if( pTab ){
+    /* The CHECK expression must be duplicated so that tokens refer
+    ** to malloced space and not the (ephemeral) text of the CREATE TABLE
+    ** statement */
+    pTab->pCheck = sqlite3ExprAnd(pTab->pCheck, sqlite3ExprDup(pCheckExpr));
+  }
+#endif
+  sqlite3ExprDelete(pCheckExpr);
+}
+
+/*
 ** Set the collation function of the most recently parsed table column
 ** to the CollSeq given.
 */
@@ -1269,6 +1291,27 @@ void sqlite3EndTable(
   if( p==0 ) return;
 
   assert( !db->init.busy || !pSelect );
+
+#ifndef SQLITE_OMIT_CHECK
+  /* Resolve names in all CHECK constraint expressions.
+  */
+  if( p->pCheck ){
+    SrcList sSrc;                   /* Fake SrcList for pParse->pNewTable */
+    NameContext sNC;                /* Name context for pParse->pNewTable */
+
+    memset(&sNC, 0, sizeof(sNC));
+    memset(&sSrc, 0, sizeof(sSrc));
+    sSrc.nSrc = 1;
+    sSrc.a[0].zName = p->zName;
+    sSrc.a[0].pTab = p;
+    sSrc.a[0].iCursor = -1;
+    sNC.pParse = pParse;
+    sNC.pSrcList = &sSrc;
+    if( sqlite3ExprResolveNames(&sNC, p->pCheck) ){
+      return;
+    }
+  }
+#endif /* !defined(SQLITE_OMIT_CHECK) */
 
   /* If the db->init.busy is 1 it means we are reading the SQL off the
   ** "sqlite_master" or "sqlite_temp_master" table on the disk.
