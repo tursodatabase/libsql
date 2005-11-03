@@ -254,7 +254,7 @@ i64 sqlite3VdbeIntValue(Mem *pMem){
     i64 value;
     if( sqlite3VdbeChangeEncoding(pMem, SQLITE_UTF8)
        || sqlite3VdbeMemNulTerminate(pMem) ){
-      return SQLITE_NOMEM;
+      return 0;
     }
     assert( pMem->z );
     sqlite3atoi64(pMem->z, &value);
@@ -289,7 +289,7 @@ double sqlite3VdbeRealValue(Mem *pMem){
     double val = 0.0;
     if( sqlite3VdbeChangeEncoding(pMem, SQLITE_UTF8)
        || sqlite3VdbeMemNulTerminate(pMem) ){
-      return SQLITE_NOMEM;
+      return 0.0;
     }
     assert( pMem->z );
     sqlite3AtoF(pMem->z, &val);
