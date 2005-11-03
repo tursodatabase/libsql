@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.234 2005/11/03 02:03:13 drh Exp $
+** $Id: expr.c,v 1.235 2005/11/03 12:33:28 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1200,7 +1200,16 @@ static int nameResolverStep(void *pArg, Expr *pExpr){
           ExprSetProperty(pExpr, EP_VarSelect);
         }
       }
+      break;
     }
+#ifndef SQLITE_OMIT_CHECK
+    case TK_VARIABLE: {
+      if( pNC->isCheck ){
+        sqlite3ErrorMsg(pParse,"parameters prohibited in CHECK constraints");
+      }
+      break;
+    }
+#endif
   }
   return 0;
 }

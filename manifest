@@ -1,5 +1,5 @@
-C Add\sthe\signore_check_constraints\spragma.\s\sVACUUM\sworks\seven\son\sa\sdatabase\nthat\scontains\stable\sentries\sthat\sviolate\scheck\sconstraints.\s(CVS\s2757)
-D 2005-11-03T02:15:03
+C Prohibit\sparameters\sin\sCHECK\sconstraint\sexpressions.\s(CVS\s2758)
+D 2005-11-03T12:33:28
 F Makefile.in 12784cdce5ffc8dfb707300c34e4f1eb3b8a14f1
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -41,7 +41,7 @@ F src/complete.c 4de937dfdd4c79a501772ab2035b26082f337a79
 F src/date.c 7444b0900a28da77e57e3337a636873cff0ae940
 F src/delete.c 29dac493f4d83b05f91233b116827c133bcdab72
 F src/experimental.c 50c1e3b34f752f4ac10c36f287db095c2b61766d
-F src/expr.c 14466b227096263213d7748174c2bd8cb722cc3c
+F src/expr.c a1ca13387073839c8be909d734927344b23d0387
 F src/func.c 7d81dccd9c440c6c4e761056333e629192814af0
 F src/hash.c 8747cf51d12de46512880dfcf1b68b4e24072863
 F src/hash.h 1b0c445e1c89ff2aaad9b4605ba61375af001e84
@@ -124,7 +124,7 @@ F test/capi2.test f897209386fb21cfdc9267595e0c667ebaca9164
 F test/capi3.test fc8e573467049add3bfaf81f53827e8ff153cf8f
 F test/capi3b.test 5b6a66f9f295f79f443b5d3f33187fa5ef6cf336
 F test/cast.test 2543165ced4249c89ce5f0352222df503a98b9e5
-F test/check.test 6d9891a9c23664187cec285b2766bc545d9cc712
+F test/check.test 65fa90003deedad4be5500c6d86dd65812f61bdd
 F test/collate1.test add9454cef160677bb8b34148b8f277ce7f9f1c4
 F test/collate2.test 224a632ba04907c049804b08162efd234aa7871f
 F test/collate3.test 947a77f5b8227e037a7094d0e338a5504f155cc4
@@ -316,7 +316,7 @@ F www/tclsqlite.tcl ddcf912ea48695603c8ed7efb29f0812ef8d1b49
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P db27afc4cdc5b51c1fa0e83dbd6d4a4a69c5b642
-R 845f2cc4e249401789db166e879f4183
+P be83bfee0211396a0038ffb125897199bea9a73f
+R 4d17f4acde875d29ca58ee461243d0d2
 U drh
-Z bd889ec2abfde5bf334bd2278ed2468d
+Z c247ae4a6dfe28117dcdf756befb48cf
