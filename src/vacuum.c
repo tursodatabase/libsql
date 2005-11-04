@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.46 2005/11/03 02:15:04 drh Exp $
+** $Id: vacuum.c,v 1.47 2005/11/04 22:03:30 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -100,6 +100,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   Btree *pMain;           /* The database being vacuumed */
   Btree *pTemp;
   char *zSql = 0;
+  int rc2;  
   int saved_flags;       /* Saved value of the db->flags */
 
   /* Save the current value of the write-schema flag before setting it. */
@@ -176,7 +177,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
 #endif
 
   /* Begin a transaction */
-  rc = execSql(db, "BEGIN;");
+  rc = execSql(db, "BEGIN EXCLUSIVE;");
   if( rc!=SQLITE_OK ) goto end_of_vacuum;
 
   /* Query the schema of the main database. Create a mirror schema
@@ -247,7 +248,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   ** opened for writing. This way, the SQL transaction used to create the
   ** temporary database never needs to be committed.
   */
-  if( sqlite3BtreeIsInTrans(pTemp) ){
+  if( rc==SQLITE_OK ){
     u32 meta;
     int i;
 
@@ -264,18 +265,20 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
        6, 0,    /* Preserve the user version */
     };
 
-    assert( 0==sqlite3BtreeIsInTrans(pMain) );
-    rc = sqlite3BtreeBeginTrans(pMain, 1);
-    if( rc!=SQLITE_OK ) goto end_of_vacuum;
+    assert( 1==sqlite3BtreeIsInTrans(pTemp) );
+    assert( 1==sqlite3BtreeIsInTrans(pMain) );
 
     /* Copy Btree meta values */
     for(i=0; i<sizeof(aCopy)/sizeof(aCopy[0]); i+=2){
       rc = sqlite3BtreeGetMeta(pMain, aCopy[i], &meta);
       if( rc!=SQLITE_OK ) goto end_of_vacuum;
       rc = sqlite3BtreeUpdateMeta(pTemp, aCopy[i], meta+aCopy[i+1]);
+      if( rc!=SQLITE_OK ) goto end_of_vacuum;
     }
 
     rc = sqlite3BtreeCopyFile(pMain, pTemp);
+    if( rc!=SQLITE_OK ) goto end_of_vacuum;
+    rc = sqlite3BtreeCommit(pTemp);
     if( rc!=SQLITE_OK ) goto end_of_vacuum;
     rc = sqlite3BtreeCommit(pMain);
   }
@@ -292,16 +295,15 @@ end_of_vacuum:
   ** is closed by the DETACH.
   */
   db->autoCommit = 1;
+  rc2 = execSql(db, "DETACH vacuum_db;");
   if( rc==SQLITE_OK ){
-    rc = execSql(db, "DETACH vacuum_db;");
-  }else{
-    execSql(db, "DETACH vacuum_db;");
+    rc = rc2;
   }
   if( zTemp ){
     sqlite3OsDelete(zTemp);
     sqliteFree(zTemp);
   }
-  if( zSql ) sqliteFree( zSql );
+  sqliteFree( zSql );
   sqlite3ResetInternalSchema(db, 0);
 #endif
 

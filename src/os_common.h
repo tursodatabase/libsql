@@ -88,6 +88,7 @@ static unsigned int elapse;
 ** is used for testing the I/O recovery logic.
 */
 #ifdef SQLITE_TEST
+int sqlite3_io_error_hit = 0;
 int sqlite3_io_error_pending = 0;
 int sqlite3_diskfull_pending = 0;
 int sqlite3_diskfull = 0;
@@ -95,7 +96,7 @@ int sqlite3_diskfull = 0;
    if( sqlite3_io_error_pending ) \
      if( sqlite3_io_error_pending-- == 1 ){ local_ioerr(); return A; }
 static void local_ioerr(){
-  sqlite3_io_error_pending = 0;  /* Really just a place to set a breakpoint */
+  sqlite3_io_error_hit = 1;  /* Really just a place to set a breakpoint */
 }
 #define SimulateDiskfullError \
    if( sqlite3_diskfull_pending ){ \

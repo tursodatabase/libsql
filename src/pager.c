@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.215 2005/09/17 15:20:27 drh Exp $
+** @(#) $Id: pager.c,v 1.216 2005/11/04 22:03:30 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1739,6 +1739,34 @@ int sqlite3pager_set_pagesize(Pager *pPager, int pageSize){
 }
 
 /*
+** The following set of routines are used to disable the simulated
+** I/O error mechanism.  These routines are used to avoid simulated
+** errors in places where we do not care about errors.
+**
+** Unless -DSQLITE_TEST=1 is used, these routines are all no-ops
+** and generate no code.
+*/
+#ifdef SQLITE_TEST
+extern int sqlite3_io_error_pending;
+extern int sqlite3_io_error_hit;
+static int saved_cnt;
+void clear_simulated_io_error(){
+  sqlite3_io_error_hit = 0;
+}
+void disable_simulated_io_errors(void){
+  saved_cnt = sqlite3_io_error_pending;
+  sqlite3_io_error_pending = -1;
+}
+void enable_simulated_io_errors(void){
+  sqlite3_io_error_pending = saved_cnt;
+}
+#else
+# define clear_simulated_io_error(X)
+# define disable_simulated_io_errors(X)
+# define enable_simulated_io_errors(X)
+#endif
+
+/*
 ** Read the first N bytes from the beginning of the file into memory
 ** that pDest points to.  No error checking is done.
 */
@@ -1747,6 +1775,7 @@ void sqlite3pager_read_fileheader(Pager *pPager, int N, unsigned char *pDest){
   if( MEMDB==0 ){
     sqlite3OsSeek(&pPager->fd, 0);
     sqlite3OsRead(&pPager->fd, pDest, N);
+    clear_simulated_io_error();
   }
 }
 
@@ -1961,15 +1990,9 @@ int sqlite3pager_close(Pager *pPager){
       ** operation. So disable IO error simulation so that testing
       ** works more easily.
       */
-#if defined(SQLITE_TEST) && (defined(OS_UNIX) || defined(OS_WIN))
-      extern int sqlite3_io_error_pending;
-      int ioerr_cnt = sqlite3_io_error_pending;
-      sqlite3_io_error_pending = -1;
-#endif
+      disable_simulated_io_errors();
       sqlite3pager_rollback(pPager);
-#if defined(SQLITE_TEST) && (defined(OS_UNIX) || defined(OS_WIN))
-      sqlite3_io_error_pending = ioerr_cnt;
-#endif
+      enable_simulated_io_errors();
       if( !MEMDB ){
         sqlite3OsUnlock(&pPager->fd, NO_LOCK);
       }
@@ -2535,6 +2558,7 @@ int sqlite3pager_get(Pager *pPager, Pgno pgno, void **ppPage){
           sqlite3pager_unref(PGHDR_TO_DATA(pPg));
           return rc;
         }else{
+          clear_simulated_io_error();
           memset(PGHDR_TO_DATA(pPg), 0, pPager->pageSize);
         }
       }else{
