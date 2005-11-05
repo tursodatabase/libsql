@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.216 2005/11/04 22:03:30 drh Exp $
+** @(#) $Id: pager.c,v 1.217 2005/11/05 15:11:23 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1761,9 +1761,9 @@ void enable_simulated_io_errors(void){
   sqlite3_io_error_pending = saved_cnt;
 }
 #else
-# define clear_simulated_io_error(X)
-# define disable_simulated_io_errors(X)
-# define enable_simulated_io_errors(X)
+# define clear_simulated_io_error()
+# define disable_simulated_io_errors()
+# define enable_simulated_io_errors()
 #endif
 
 /*
