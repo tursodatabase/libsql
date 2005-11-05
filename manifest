@@ -1,5 +1,5 @@
-C VACUUM\sworks\seven\son\san\sempty\sdatabase.\s\sTicket\s#1512.\s(CVS\s2760)
-D 2005-11-04T22:03:30
+C Improved\stable\scompression\sin\slemon\sreduces\sthe\soverall\slibrary\ssize\nby\sabout\s1.5KiB.\s(CVS\s2761)
+D 2005-11-05T15:04:00
 F Makefile.in 12784cdce5ffc8dfb707300c34e4f1eb3b8a14f1
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -249,8 +249,8 @@ F test/view.test ce0f0ad39fa4a3572acffcf1e634850ee151aae0
 F test/where.test 752728413eab42e5854690d84c7319cdf7edc515
 F test/where2.test 503e2e2b6abe14c5c10222e72d08ef84c1bf1ffb
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
-F tool/lemon.c c88936c67f6411608db8fa4254d254f509fa40f6
-F tool/lempar.c f0c30abcae762a7d1eb37cd88b2232ab8dd625fb
+F tool/lemon.c 0cedabac11734ec2a40286552de4af01cc859f6e
+F tool/lempar.c 424df14a48736bb961ed47acf30c26d66ed85a62
 F tool/memleak.awk 4e7690a51bf3ed757e611273d43fe3f65b510133
 F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
 F tool/memleak3.tcl 009da0ea82dc5893edca76cf1a21fb7260e9412e
@@ -317,7 +317,7 @@ F www/tclsqlite.tcl ddcf912ea48695603c8ed7efb29f0812ef8d1b49
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 7780f5e9d504926f11bd0662c03c88c76fb1d416
-R 1a3d1b527330224886b9cff041619a5d
+P 1b6bf4188e8ebf55cf1972b7081f6d31bf525555
+R 0643dda995921861878ddcf931a00061
 U drh
-Z f1e5a520d02502b659fb8d9e06e8fb3d
+Z 1e38b5f3f01e11660fc6060d64bb658c

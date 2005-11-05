@@ -94,6 +94,7 @@ void ReportOutput(/* struct lemon * */);
 void ReportTable(/* struct lemon * */);
 void ReportHeader(/* struct lemon * */);
 void CompressTables(/* struct lemon * */);
+void ResortStates(/* struct lemon * */);
 
 /********** From the file "set.h" ****************************************/
 void  SetSize(/* int N */);             /* All sets will be of size N */
@@ -206,7 +207,7 @@ struct action {
 struct state {
   struct config *bp;       /* The basis configurations for this state */
   struct config *cfp;      /* All configurations in this set */
-  int index;               /* Sequencial number for this state */
+  int statenum;            /* Sequencial number for this state */
   struct action *ap;       /* Array of actions for this state */
   int nTknAct, nNtAct;     /* Number of actions on terminals and nonterminals */
   int iTknOfst, iNtOfst;   /* yy_action[] offset for terminals and nonterms */
@@ -751,7 +752,7 @@ struct lemon *lemp;
     MemoryCheck(stp);
     stp->bp = bp;                /* Remember the configuration basis */
     stp->cfp = cfp;              /* Remember the configuration closure */
-    stp->index = lemp->nstate++; /* Every state gets a sequence number */
+    stp->statenum = lemp->nstate++; /* Every state gets a sequence number */
     stp->ap = 0;                 /* No actions, yet. */
     State_insert(stp,stp->bp);   /* Add to the state table */
     buildshifts(lemp,stp);       /* Recursively compute successor states */
@@ -1444,6 +1445,10 @@ char **argv;
 
     /* Compress the action tables */
     if( compress==0 ) CompressTables(&lem);
+
+    /* Reorder and renumber the states so that states with fewer choices
+    ** occur at the end. */
+    ResortStates(&lem);
 
     /* Generate a report of the parser generated.  (the "y.output" file) */
     if( !quiet ) ReportOutput(&lem);
@@ -2697,7 +2702,7 @@ struct plink *plp;
 char *tag;
 {
   while( plp ){
-    fprintf(out,"%12s%s (state %2d) ","",tag,plp->cfp->stp->index);
+    fprintf(out,"%12s%s (state %2d) ","",tag,plp->cfp->stp->statenum);
     ConfigPrint(out,plp->cfp);
     fprintf(out,"\n");
     plp = plp->next;
@@ -2712,7 +2717,7 @@ int PrintAction(struct action *ap, FILE *fp, int indent){
   int result = 1;
   switch( ap->type ){
     case SHIFT:
-      fprintf(fp,"%*s shift  %d",indent,ap->sp->name,ap->x.stp->index);
+      fprintf(fp,"%*s shift  %d",indent,ap->sp->name,ap->x.stp->statenum);
       break;
     case REDUCE:
       fprintf(fp,"%*s reduce %d",indent,ap->sp->name,ap->x.rp->index);
@@ -2751,7 +2756,7 @@ struct lemon *lemp;
   fprintf(fp," \b");
   for(i=0; i<lemp->nstate; i++){
     stp = lemp->sorted[i];
-    fprintf(fp,"State %d:\n",stp->index);
+    fprintf(fp,"State %d:\n",stp->statenum);
     if( lemp->basisflag ) cfp=stp->bp;
     else                  cfp=stp->cfp;
     while( cfp ){
@@ -2837,7 +2842,7 @@ struct action *ap;
 {
   int act;
   switch( ap->type ){
-    case SHIFT:  act = ap->x.stp->index;               break;
+    case SHIFT:  act = ap->x.stp->statenum;            break;
     case REDUCE: act = ap->x.rp->index + lemp->nstate; break;
     case ERROR:  act = lemp->nstate + lemp->nrule;     break;
     case ACCEPT: act = lemp->nstate + lemp->nrule + 1; break;
@@ -3457,21 +3462,6 @@ int mhflag;     /* Output in makeheaders format if true */
   }
   for(i=0; i<lemp->nstate; i++){
     stp = lemp->sorted[i];
-    stp->nTknAct = stp->nNtAct = 0;
-    stp->iDflt = lemp->nstate + lemp->nrule;
-    stp->iTknOfst = NO_OFFSET;
-    stp->iNtOfst = NO_OFFSET;
-    for(ap=stp->ap; ap; ap=ap->next){
-      if( compute_action(lemp,ap)>=0 ){
-        if( ap->sp->index<lemp->nterminal ){
-          stp->nTknAct++;
-        }else if( ap->sp->index<lemp->nsymbol ){
-          stp->nNtAct++;
-        }else{
-          stp->iDflt = compute_action(lemp, ap);
-        }
-      }
-    }
     ax[i*2].stp = stp;
     ax[i*2].isTkn = 1;
     ax[i*2].nAction = stp->nTknAct;
@@ -3552,9 +3542,11 @@ int mhflag;     /* Output in makeheaders format if true */
 
   /* Output the yy_shift_ofst[] table */
   fprintf(out, "#define YY_SHIFT_USE_DFLT (%d)\n", mnTknOfst-1); lineno++;
+  n = lemp->nstate;
+  while( n>0 && lemp->sorted[n-1]->iTknOfst==NO_OFFSET ) n--;
+  fprintf(out, "#define YY_SHIFT_MAX %d\n", n-1); lineno++;
   fprintf(out, "static const %s yy_shift_ofst[] = {\n", 
           minimum_size_type(mnTknOfst-1, mxTknOfst)); lineno++;
-  n = lemp->nstate;
   for(i=j=0; i<n; i++){
     int ofst;
     stp = lemp->sorted[i];
@@ -3573,9 +3565,11 @@ int mhflag;     /* Output in makeheaders format if true */
 
   /* Output the yy_reduce_ofst[] table */
   fprintf(out, "#define YY_REDUCE_USE_DFLT (%d)\n", mnNtOfst-1); lineno++;
+  n = lemp->nstate;
+  while( n>0 && lemp->sorted[n-1]->iNtOfst==NO_OFFSET ) n--;
+  fprintf(out, "#define YY_REDUCE_MAX %d\n", n-1); lineno++;
   fprintf(out, "static const %s yy_reduce_ofst[] = {\n", 
           minimum_size_type(mnNtOfst-1, mxNtOfst)); lineno++;
-  n = lemp->nstate;
   for(i=j=0; i<n; i++){
     int ofst;
     stp = lemp->sorted[i];
@@ -3789,7 +3783,7 @@ struct lemon *lemp;
 ** of defaults.
 **
 ** In this version, we take the most frequent REDUCE action and make
-** it the default.  Only default a reduce if there are more than one.
+** it the default.
 */
 void CompressTables(lemp)
 struct lemon *lemp;
@@ -3823,8 +3817,8 @@ struct lemon *lemp;
     }
  
     /* Do not make a default if the number of rules to default
-    ** is not at least 2 */
-    if( nbest<2 ) continue;
+    ** is not at least 1 */
+    if( nbest<1 ) continue;
 
 
     /* Combine matching REDUCE actions into a single default */
@@ -3839,6 +3833,63 @@ struct lemon *lemp;
     stp->ap = Action_sort(stp->ap);
   }
 }
+
+
+/*
+** Compare two states for sorting purposes.  The smaller state is the
+** one with the most non-terminal actions.  If they have the same number
+** of non-terminal actions, then the smaller is the one with the most
+** token actions.
+*/
+static int stateResortCompare(const void *a, const void *b){
+  const struct state *pA = *(const struct state**)a;
+  const struct state *pB = *(const struct state**)b;
+  int n;
+
+  n = pB->nNtAct - pA->nNtAct;
+  if( n==0 ){
+    n = pB->nTknAct - pA->nTknAct;
+  }
+  return n;
+}
+
+
+/*
+** Renumber and resort states so that states with fewer choices
+** occur at the end.  Except, keep state 0 as the first state.
+*/
+void ResortStates(lemp)
+struct lemon *lemp;
+{
+  int i;
+  struct state *stp;
+  struct action *ap;
+
+  for(i=0; i<lemp->nstate; i++){
+    stp = lemp->sorted[i];
+    stp->nTknAct = stp->nNtAct = 0;
+    stp->iDflt = lemp->nstate + lemp->nrule;
+    stp->iTknOfst = NO_OFFSET;
+    stp->iNtOfst = NO_OFFSET;
+    for(ap=stp->ap; ap; ap=ap->next){
+      if( compute_action(lemp,ap)>=0 ){
+        if( ap->sp->index<lemp->nterminal ){
+          stp->nTknAct++;
+        }else if( ap->sp->index<lemp->nsymbol ){
+          stp->nNtAct++;
+        }else{
+          stp->iDflt = compute_action(lemp, ap);
+        }
+      }
+    }
+  }
+  qsort(&lemp->sorted[1], lemp->nstate-1, sizeof(lemp->sorted[0]),
+        stateResortCompare);
+  for(i=0; i<lemp->nstate; i++){
+    lemp->sorted[i]->statenum = i;
+  }
+}
+
 
 /***************** From the file "set.c" ************************************/
 /*
