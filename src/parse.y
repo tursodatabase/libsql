@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.182 2005/11/03 02:03:13 drh Exp $
+** @(#) $Id: parse.y,v 1.183 2005/11/06 04:06:59 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -179,7 +179,7 @@ id(A) ::= ID(X).         {A = X;}
 %ifdef SQLITE_OMIT_COMPOUND_SELECT
   EXCEPT INTERSECT UNION
 %endif
-  REINDEX RENAME CTIME_KW ALTER
+  REINDEX RENAME CTIME_KW
   .
 
 // Define operator precedence early so that this is the first occurance
@@ -208,8 +208,7 @@ id(A) ::= ID(X).         {A = X;}
 // And "ids" is an identifer-or-string.
 //
 %type ids {Token}
-ids(A) ::= ID(X).        {A = X;}
-ids(A) ::= STRING(X).    {A = X;}
+ids(A) ::= ID|STRING(X).   {A = X;}
 
 // The name of a column or table can be any of the following:
 //
@@ -381,10 +380,9 @@ select(A) ::= select(X) multiselect_op(Y) oneselect(Z).  {
   A = Z;
 }
 %type multiselect_op {int}
-multiselect_op(A) ::= UNION(OP).      {A = @OP;}
-multiselect_op(A) ::= UNION ALL.      {A = TK_ALL;}
-multiselect_op(A) ::= INTERSECT(OP).  {A = @OP;}
-multiselect_op(A) ::= EXCEPT(OP).     {A = @OP;}
+multiselect_op(A) ::= UNION(OP).             {A = @OP;}
+multiselect_op(A) ::= UNION ALL.             {A = TK_ALL;}
+multiselect_op(A) ::= EXCEPT|INTERSECT(OP).  {A = @OP;}
 %endif // SQLITE_OMIT_COMPOUND_SELECT
 oneselect(A) ::= SELECT distinct(D) selcollist(W) from(X) where_opt(Y)
                  groupby_opt(P) having_opt(Q) orderby_opt(Z) limit_opt(L). {
@@ -501,8 +499,7 @@ fullname(A) ::= nm(X) dbnm(Y).  {A = sqlite3SrcListAppend(0,&X,&Y);}
 
 %type joinop {int}
 %type joinop2 {int}
-joinop(X) ::= COMMA.                   { X = JT_INNER; }
-joinop(X) ::= JOIN.                    { X = JT_INNER; }
+joinop(X) ::= COMMA|JOIN.              { X = JT_INNER; }
 joinop(X) ::= JOIN_KW(A) JOIN.         { X = sqlite3JoinType(pParse,&A,0,0); }
 joinop(X) ::= JOIN_KW(A) nm(B) JOIN.   { X = sqlite3JoinType(pParse,&A,&B,0); }
 joinop(X) ::= JOIN_KW(A) nm(B) nm(C) JOIN.
@@ -645,10 +642,8 @@ expr(A) ::= nm(X) DOT nm(Y) DOT nm(Z). {
   Expr *temp4 = sqlite3Expr(TK_DOT, temp2, temp3, 0);
   A = sqlite3Expr(TK_DOT, temp1, temp4, 0);
 }
-term(A) ::= INTEGER(X).      {A = sqlite3Expr(@X, 0, 0, &X);}
-term(A) ::= FLOAT(X).        {A = sqlite3Expr(@X, 0, 0, &X);}
+term(A) ::= INTEGER|FLOAT|BLOB(X).      {A = sqlite3Expr(@X, 0, 0, &X);}
 term(A) ::= STRING(X).       {A = sqlite3Expr(@X, 0, 0, &X);}
-term(A) ::= BLOB(X).         {A = sqlite3Expr(@X, 0, 0, &X);}
 expr(A) ::= REGISTER(X).     {A = sqlite3RegisterExpr(pParse, &X);}
 expr(A) ::= VARIABLE(X).     {
   Token *pToken = &X;
@@ -678,24 +673,15 @@ term(A) ::= CTIME_KW(OP). {
   A = sqlite3ExprFunction(0,&OP);
   if( A ) A->op = TK_CONST_FUNC;  
 }
-expr(A) ::= expr(X) AND(OP) expr(Y).    {A = sqlite3Expr(@OP, X, Y, 0);}
-expr(A) ::= expr(X) OR(OP) expr(Y).     {A = sqlite3Expr(@OP, X, Y, 0);}
-expr(A) ::= expr(X) LT(OP) expr(Y).     {A = sqlite3Expr(@OP, X, Y, 0);}
-expr(A) ::= expr(X) GT(OP) expr(Y).     {A = sqlite3Expr(@OP, X, Y, 0);}
-expr(A) ::= expr(X) LE(OP) expr(Y).     {A = sqlite3Expr(@OP, X, Y, 0);}
-expr(A) ::= expr(X) GE(OP) expr(Y).     {A = sqlite3Expr(@OP, X, Y, 0);}
-expr(A) ::= expr(X) NE(OP) expr(Y).     {A = sqlite3Expr(@OP, X, Y, 0);}
-expr(A) ::= expr(X) EQ(OP) expr(Y).     {A = sqlite3Expr(@OP, X, Y, 0);}
-expr(A) ::= expr(X) BITAND(OP) expr(Y). {A = sqlite3Expr(@OP, X, Y, 0);}
-expr(A) ::= expr(X) BITOR(OP) expr(Y).  {A = sqlite3Expr(@OP, X, Y, 0);}
-expr(A) ::= expr(X) LSHIFT(OP) expr(Y). {A = sqlite3Expr(@OP, X, Y, 0);}
-expr(A) ::= expr(X) RSHIFT(OP) expr(Y). {A = sqlite3Expr(@OP, X, Y, 0);}
-expr(A) ::= expr(X) PLUS(OP) expr(Y).   {A = sqlite3Expr(@OP, X, Y, 0);}
-expr(A) ::= expr(X) MINUS(OP) expr(Y).  {A = sqlite3Expr(@OP, X, Y, 0);}
-expr(A) ::= expr(X) STAR(OP) expr(Y).   {A = sqlite3Expr(@OP, X, Y, 0);}
-expr(A) ::= expr(X) SLASH(OP) expr(Y).  {A = sqlite3Expr(@OP, X, Y, 0);}
-expr(A) ::= expr(X) REM(OP) expr(Y).    {A = sqlite3Expr(@OP, X, Y, 0);}
-expr(A) ::= expr(X) CONCAT(OP) expr(Y). {A = sqlite3Expr(@OP, X, Y, 0);}
+expr(A) ::= expr(X) AND(OP) expr(Y).            {A = sqlite3Expr(@OP, X, Y, 0);}
+expr(A) ::= expr(X) OR(OP) expr(Y).             {A = sqlite3Expr(@OP, X, Y, 0);}
+expr(A) ::= expr(X) LT|GT|GE|LE(OP) expr(Y).    {A = sqlite3Expr(@OP, X, Y, 0);}
+expr(A) ::= expr(X) EQ|NE(OP) expr(Y).          {A = sqlite3Expr(@OP, X, Y, 0);}
+expr(A) ::= expr(X) BITAND|BITOR|LSHIFT|RSHIFT(OP) expr(Y).
+                                                {A = sqlite3Expr(@OP, X, Y, 0);}
+expr(A) ::= expr(X) PLUS|MINUS(OP) expr(Y).     {A = sqlite3Expr(@OP, X, Y, 0);}
+expr(A) ::= expr(X) STAR|SLASH|REM(OP) expr(Y). {A = sqlite3Expr(@OP, X, Y, 0);}
+expr(A) ::= expr(X) CONCAT(OP) expr(Y).         {A = sqlite3Expr(@OP, X, Y, 0);}
 %type likeop {struct LikeOp}
 likeop(A) ::= LIKE_KW(X).     {A.operator = X; A.not = 0;}
 likeop(A) ::= NOT LIKE_KW(X). {A.operator = X; A.not = 1;}
@@ -713,16 +699,12 @@ expr(A) ::= expr(X) likeop(OP) expr(Y) escape(E).  [LIKE_KW]  {
   sqlite3ExprSpan(A, &X->span, &Y->span);
 }
 
-expr(A) ::= expr(X) ISNULL(E). {
-  A = sqlite3Expr(TK_ISNULL, X, 0, 0);
+expr(A) ::= expr(X) ISNULL|NOTNULL(E). {
+  A = sqlite3Expr(@E, X, 0, 0);
   sqlite3ExprSpan(A,&X->span,&E);
 }
 expr(A) ::= expr(X) IS NULL(E). {
   A = sqlite3Expr(TK_ISNULL, X, 0, 0);
-  sqlite3ExprSpan(A,&X->span,&E);
-}
-expr(A) ::= expr(X) NOTNULL(E). {
-  A = sqlite3Expr(TK_NOTNULL, X, 0, 0);
   sqlite3ExprSpan(A,&X->span,&E);
 }
 expr(A) ::= expr(X) NOT NULL(E). {
@@ -733,11 +715,7 @@ expr(A) ::= expr(X) IS NOT NULL(E). {
   A = sqlite3Expr(TK_NOTNULL, X, 0, 0);
   sqlite3ExprSpan(A,&X->span,&E);
 }
-expr(A) ::= NOT(B) expr(X). {
-  A = sqlite3Expr(@B, X, 0, 0);
-  sqlite3ExprSpan(A,&B,&X->span);
-}
-expr(A) ::= BITNOT(B) expr(X). {
+expr(A) ::= NOT|BITNOT(B) expr(X). {
   A = sqlite3Expr(@B, X, 0, 0);
   sqlite3ExprSpan(A,&B,&X->span);
 }
@@ -920,8 +898,7 @@ cmd ::= PRAGMA nm(X) dbnm(Z).             {sqlite3Pragma(pParse,&X,&Z,0,0);}
 %endif // SQLITE_OMIT_PRAGMA
 plus_num(A) ::= plus_opt number(X).   {A = X;}
 minus_num(A) ::= MINUS number(X).     {A = X;}
-number(A) ::= INTEGER(X).             {A = X;}
-number(A) ::= FLOAT(X).               {A = X;}
+number(A) ::= INTEGER|FLOAT(X).       {A = X;}
 plus_opt ::= PLUS.
 plus_opt ::= .
 
@@ -951,8 +928,7 @@ trigger_time(A) ::= .            { A = TK_BEFORE; }
 
 %type trigger_event {struct TrigEvent}
 %destructor trigger_event {sqlite3IdListDelete($$.b);}
-trigger_event(A) ::= DELETE(OP).              {A.a = @OP; A.b = 0;}
-trigger_event(A) ::= INSERT(OP).              {A.a = @OP; A.b = 0;}
+trigger_event(A) ::= DELETE|INSERT(OP).       {A.a = @OP; A.b = 0;}
 trigger_event(A) ::= UPDATE(OP).              {A.a = @OP; A.b = 0;}
 trigger_event(A) ::= UPDATE OF inscollist(X). {A.a = TK_UPDATE; A.b = X;}
 

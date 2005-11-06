@@ -120,7 +120,8 @@ struct symbol {
   int index;               /* Index number for this symbol */
   enum {
     TERMINAL,
-    NONTERMINAL
+    NONTERMINAL,
+    MULTITERMINAL
   } type;                  /* Symbols are all either TERMINALS or NTs */
   struct rule *rule;       /* Linked list of rules of this (if an NT) */
   struct symbol *fallback; /* fallback token in case this token doesn't parse */
@@ -141,6 +142,9 @@ struct symbol {
   int dtnum;               /* The data type number.  In the parser, the value
                            ** stack is a union.  The .yy%d element of this
                            ** union is the correct data type for this object */
+  /* The following fields are used by MULTITERMINALs only */
+  int nsubsym;             /* Number of constituent symbols in the MULTI */
+  struct symbol **subsym;  /* Array of constituent symbols */
 };
 
 /* Each production rule in the grammar is stored in the following
@@ -585,11 +589,18 @@ struct lemon *xp;
   struct rule *rp;
   for(rp=xp->rule; rp; rp=rp->next){
     if( rp->precsym==0 ){
-      int i;
-      for(i=0; i<rp->nrhs; i++){
-        if( rp->rhs[i]->prec>=0 ){
+      int i, j;
+      for(i=0; i<rp->nrhs && rp->precsym==0; i++){
+        struct symbol *sp = rp->rhs[i];
+        if( sp->type==MULTITERMINAL ){
+          for(j=0; j<sp->nsubsym; j++){
+            if( sp->subsym[j]->prec>=0 ){
+              rp->precsym = sp->subsym[j];
+              break;
+            }
+          }
+        }else if( sp->prec>=0 ){
           rp->precsym = rp->rhs[i];
-          break;
 	}
       }
     }
@@ -605,7 +616,7 @@ struct lemon *xp;
 void FindFirstSets(lemp)
 struct lemon *lemp;
 {
-  int i;
+  int i, j;
   struct rule *rp;
   int progress;
 
@@ -622,7 +633,8 @@ struct lemon *lemp;
     for(rp=lemp->rule; rp; rp=rp->next){
       if( rp->lhs->lambda ) continue;
       for(i=0; i<rp->nrhs; i++){
-         if( rp->rhs[i]->lambda==B_FALSE ) break;
+         struct symbol *sp = rp->rhs[i];
+         if( sp->type!=TERMINAL || sp->lambda==B_FALSE ) break;
       }
       if( i==rp->nrhs ){
         rp->lhs->lambda = B_TRUE;
@@ -641,6 +653,11 @@ struct lemon *lemp;
         s2 = rp->rhs[i];
         if( s2->type==TERMINAL ){
           progress += SetAdd(s1->firstset,s2->index);
+          break;
+        }else if( s2->type==MULTITERMINAL ){
+          for(j=0; j<s2->nsubsym; j++){
+            progress += SetAdd(s1->firstset,s2->subsym[j]->index);
+          }
           break;
 	}else if( s1==s2 ){
           if( s1->lambda==B_FALSE ) break;
@@ -688,7 +705,7 @@ symbol instead.",lemp->start,lemp->rule->lhs->name);
   for(rp=lemp->rule; rp; rp=rp->next){
     int i;
     for(i=0; i<rp->nrhs; i++){
-      if( rp->rhs[i]==sp ){
+      if( rp->rhs[i]==sp ){   /* FIX ME:  Deal with multiterminals */
         ErrorMsg(lemp->filename,0,
 "The start symbol \"%s\" occurs on the \
 right-hand side of a rule. This will result in a parser which \
@@ -760,6 +777,24 @@ struct lemon *lemp;
   return stp;
 }
 
+/*
+** Return true if two symbols are the same.
+*/
+int same_symbol(a,b)
+struct symbol *a;
+struct symbol *b;
+{
+  int i;
+  if( a==b ) return 1;
+  if( a->type!=MULTITERMINAL ) return 0;
+  if( b->type!=MULTITERMINAL ) return 0;
+  if( a->nsubsym!=b->nsubsym ) return 0;
+  for(i=0; i<a->nsubsym; i++){
+    if( a->subsym[i]!=b->subsym[i] ) return 0;
+  }
+  return 1;
+}
+
 /* Construct all successor states to the given state.  A "successor"
 ** state is any state which can be reached by a shift action.
 */
@@ -792,7 +827,7 @@ struct state *stp;     /* The state from which successors are computed */
       if( bcfp->status==COMPLETE ) continue;    /* Already used */
       if( bcfp->dot>=bcfp->rp->nrhs ) continue; /* Can't shift this one */
       bsp = bcfp->rp->rhs[bcfp->dot];           /* Get symbol after dot */
-      if( bsp!=sp ) continue;                   /* Must be same as for "cfp" */
+      if( !same_symbol(bsp,sp) ) continue;      /* Must be same as for "cfp" */
       bcfp->status = COMPLETE;                  /* Mark this config as used */
       new = Configlist_addbasis(bcfp->rp,bcfp->dot+1);
       Plink_add(&new->bplp,bcfp);
@@ -804,7 +839,14 @@ struct state *stp;     /* The state from which successors are computed */
 
     /* The state "newstp" is reached from the state "stp" by a shift action
     ** on the symbol "sp" */
-    Action_add(&stp->ap,SHIFT,sp,(char *)newstp);
+    if( sp->type==MULTITERMINAL ){
+      int i;
+      for(i=0; i<sp->nsubsym; i++){
+        Action_add(&stp->ap,SHIFT,sp->subsym[i],(char*)newstp);
+      }
+    }else{
+      Action_add(&stp->ap,SHIFT,sp,(char *)newstp);
+    }
   }
 }
 
@@ -1166,6 +1208,12 @@ struct lemon *lemp;
           xsp = rp->rhs[i];
           if( xsp->type==TERMINAL ){
             SetAdd(newcfp->fws,xsp->index);
+            break;
+          }else if( xsp->type==MULTITERMINAL ){
+            int k;
+            for(k=0; k<xsp->nsubsym; k++){
+              SetAdd(newcfp->fws, xsp->subsym[k]->index);
+            }
             break;
 	  }else{
             SetUnion(newcfp->fws,xsp->firstset);
@@ -2091,7 +2139,7 @@ to follow the previous rule.");
       }else if( isalpha(x[0]) ){
         if( psp->nrhs>=MAXRHS ){
           ErrorMsg(psp->filename,psp->tokenlineno,
-            "Too many symbol on RHS or rule beginning at \"%s\".",
+            "Too many symbols on RHS or rule beginning at \"%s\".",
             x);
           psp->errorcnt++;
           psp->state = RESYNC_AFTER_RULE_ERROR;
@@ -2100,6 +2148,27 @@ to follow the previous rule.");
           psp->alias[psp->nrhs] = 0;
           psp->nrhs++;
 	}
+      }else if( (x[0]=='|' || x[0]=='/') && psp->nrhs>0 ){
+        struct symbol *msp = psp->rhs[psp->nrhs-1];
+        if( msp->type!=MULTITERMINAL ){
+          struct symbol *origsp = msp;
+          msp = malloc(sizeof(*msp));
+          memset(msp, 0, sizeof(*msp));
+          msp->type = MULTITERMINAL;
+          msp->nsubsym = 1;
+          msp->subsym = malloc(sizeof(struct symbol*));
+          msp->subsym[0] = origsp;
+          msp->name = origsp->name;
+          psp->rhs[psp->nrhs-1] = msp;
+        }
+        msp->nsubsym++;
+        msp->subsym = realloc(msp->subsym, sizeof(struct symbol*)*msp->nsubsym);
+        msp->subsym[msp->nsubsym-1] = Symbol_new(&x[1]);
+        if( islower(x[1]) || islower(msp->subsym[0]->name[0]) ){
+          ErrorMsg(psp->filename,psp->tokenlineno,
+            "Cannot form a compound containing a non-terminal");
+          psp->errorcnt++;
+        }
       }else if( x[0]=='(' && psp->nrhs>0 ){
         psp->state = RHS_ALIAS_1;
       }else{
@@ -2487,6 +2556,10 @@ struct lemon *gp;
     }else if( c==':' && cp[1]==':' && cp[2]=='=' ){ /* The operator "::=" */
       cp += 3;
       nextcp = cp;
+    }else if( (c=='/' || c=='|') && isalpha(cp[1]) ){
+      cp += 2;
+      while( (c = *cp)!=0 && (isalnum(c) || c=='_') ) cp++;
+      nextcp = cp;
     }else{                          /* All other (one character) operators */
       cp++;
       nextcp = cp;
@@ -2646,15 +2719,21 @@ struct lemon *lemp;
   }
   for(rp=lemp->rule; rp; rp=rp->next){
     printf("%s",rp->lhs->name);
-/*    if( rp->lhsalias ) printf("(%s)",rp->lhsalias); */
+    /*    if( rp->lhsalias ) printf("(%s)",rp->lhsalias); */
     printf(" ::=");
     for(i=0; i<rp->nrhs; i++){
-      printf(" %s",rp->rhs[i]->name);
-/*      if( rp->rhsalias[i] ) printf("(%s)",rp->rhsalias[i]); */
+      sp = rp->rhs[i];
+      printf(" %s", sp->name);
+      if( sp->type==MULTITERMINAL ){
+        for(j=1; j<sp->nsubsym; j++){
+          printf("|%s", sp->subsym[j]->name);
+        }
+      }
+      /* if( rp->rhsalias[i] ) printf("(%s)",rp->rhsalias[i]); */
     }
     printf(".");
     if( rp->precsym ) printf(" [%s]",rp->precsym->name);
-/*    if( rp->code ) printf("\n    %s",rp->code); */
+    /* if( rp->code ) printf("\n    %s",rp->code); */
     printf("\n");
   }
 }
@@ -2664,18 +2743,25 @@ FILE *fp;
 struct config *cfp;
 {
   struct rule *rp;
-  int i;
+  struct symbol *sp;
+  int i, j;
   rp = cfp->rp;
   fprintf(fp,"%s ::=",rp->lhs->name);
   for(i=0; i<=rp->nrhs; i++){
     if( i==cfp->dot ) fprintf(fp," *");
     if( i==rp->nrhs ) break;
-    fprintf(fp," %s",rp->rhs[i]->name);
+    sp = rp->rhs[i];
+    fprintf(fp," %s", sp->name);
+    if( sp->type==MULTITERMINAL ){
+      for(j=1; j<sp->nsubsym; j++){
+        fprintf(fp,"|%s",sp->subsym[j]->name);
+      }
+    }
   }
 }
 
 /* #define TEST */
-#ifdef TEST
+#if 0
 /* Print a set */
 PRIVATE void SetPrint(out,set,lemp)
 FILE *out;
@@ -2769,7 +2855,7 @@ struct lemon *lemp;
       }
       ConfigPrint(fp,cfp);
       fprintf(fp,"\n");
-#ifdef TEST
+#if 0
       SetPrint(fp,cfp->fws,lemp);
       PlinkPrint(fp,cfp->fplp,"To  ");
       PlinkPrint(fp,cfp->bplp,"From");
@@ -3113,8 +3199,14 @@ PRIVATE void translate_code(struct lemon *lemp, struct rule *rp){
               ** the token number of X, not the value of X */
               append_str("yymsp[%d].major",-1,i-rp->nrhs+1,0);
             }else{
-              append_str("yymsp[%d].minor.yy%d",0,
-                         i-rp->nrhs+1,rp->rhs[i]->dtnum);
+              struct symbol *sp = rp->rhs[i];
+              int dtnum;
+              if( sp->type==MULTITERMINAL ){
+                dtnum = sp->subsym[0]->dtnum;
+              }else{
+                dtnum = sp->dtnum;
+              }
+              append_str("yymsp[%d].minor.yy%d",0,i-rp->nrhs+1, dtnum);
             }
             cp = xp;
             used[i] = 1;
@@ -3636,7 +3728,16 @@ int mhflag;     /* Output in makeheaders format if true */
   for(i=0, rp=lemp->rule; rp; rp=rp->next, i++){
     assert( rp->index==i );
     fprintf(out," /* %3d */ \"%s ::=", i, rp->lhs->name);
-    for(j=0; j<rp->nrhs; j++) fprintf(out," %s",rp->rhs[j]->name);
+    for(j=0; j<rp->nrhs; j++){
+      struct symbol *sp = rp->rhs[j];
+      fprintf(out," %s", sp->name);
+      if( sp->type==MULTITERMINAL ){
+        int k;
+        for(k=1; k<sp->nsubsym; k++){
+          fprintf(out,"|%s",sp->subsym[k]->name);
+        }
+      }
+    }
     fprintf(out,"\",\n"); lineno++;
   }
   tplt_xfer(lemp->name,in,out,&lineno);

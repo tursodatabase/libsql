@@ -1,5 +1,5 @@
-C Work\saround\sa\sbug\sin\sMSVC++.\s\sTicket\s#1513.\s(CVS\s2763)
-D 2005-11-05T15:11:23
+C About\s0.5KiB\sof\sadditional\scompression\sin\sthe\sparser\stables.\s(CVS\s2764)
+D 2005-11-06T04:06:59
 F Makefile.in 12784cdce5ffc8dfb707300c34e4f1eb3b8a14f1
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -59,7 +59,7 @@ F src/os_win.c fbccc85e7011174068c27d54256746321a1f0059
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c ca23cdff9e67a8e826e4796c60f06db6aab69b72
 F src/pager.h e7b41ce8e7b5f629d456708b7ad9a8c8ede37140
-F src/parse.y 1d5afb972ed5ef3ec8712a2b5953b48f086091da
+F src/parse.y 6322f4b2ef60b041232215663535bc83c4dcf8b7
 F src/pragma.c b40189967155a522433b8470f363192a927ba22c
 F src/prepare.c fc098db25d2a121affb08686cf04833fd50452d4
 F src/printf.c 3ea3a17d25d7ac498efc18007c70371a42c968f8
@@ -249,7 +249,7 @@ F test/view.test ce0f0ad39fa4a3572acffcf1e634850ee151aae0
 F test/where.test 752728413eab42e5854690d84c7319cdf7edc515
 F test/where2.test 503e2e2b6abe14c5c10222e72d08ef84c1bf1ffb
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
-F tool/lemon.c 0cedabac11734ec2a40286552de4af01cc859f6e
+F tool/lemon.c 26d271a753ef87fe1e6194f53c594ab5e6783d85
 F tool/lempar.c 424df14a48736bb961ed47acf30c26d66ed85a62
 F tool/memleak.awk 4e7690a51bf3ed757e611273d43fe3f65b510133
 F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
@@ -317,7 +317,7 @@ F www/tclsqlite.tcl ddcf912ea48695603c8ed7efb29f0812ef8d1b49
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P e66289b52f56c8242aa264a9365c834cd820e988
-R 9199262fb53b49fec9604daa08dac2c4
+P 6331860e7754be6e0d2a484d66427947c0781dd6
+R 89df35f460d2e4c3a14757990021ac40
 U drh
-Z b5fb95f8a7e272d62cd13eee39061a7a
+Z dd438883ac1053c2a2f713e5ad3d2f5b
