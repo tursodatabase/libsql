@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the lang-*.html files.
 #
-set rcsid {$Id: lang.tcl,v 1.101 2005/11/03 00:41:18 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.102 2005/11/14 11:51:46 drh Exp $}
 source common.tcl
 
 if {[llength $argv]>0} {
@@ -1669,7 +1669,7 @@ a single big table.  The difference is that in UNION all result rows
 are distinct where in UNION ALL there may be duplicates.
 The INTERSECT operator takes the intersection of the results of the
 left and right SELECTs.  EXCEPT takes the result of left SELECT after
-removing the results of the right SELECT.  When three are more SELECTs
+removing the results of the right SELECT.  When three or more SELECTs
 are connected into a compound, they group from left to right.</p>
 }
 
