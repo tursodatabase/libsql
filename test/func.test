@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing built-in functions.
 #
-# $Id: func.test,v 1.41 2005/11/01 15:48:25 drh Exp $
+# $Id: func.test,v 1.42 2005/11/14 22:29:06 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -511,7 +511,7 @@ do_test func-18.2 {
     INSERT INTO t5 VALUES(0.0);
     SELECT sum(x) FROM t5;
   }
-} {9902}
+} {9902.0}
 
 # The sum of nothing is NULL.  But the sum of all NULLs is NULL.
 #

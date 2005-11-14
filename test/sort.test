@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE TABLE statement.
 #
-# $Id: sort.test,v 1.24 2005/11/01 15:48:25 drh Exp $
+# $Id: sort.test,v 1.25 2005/11/14 22:29:06 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -62,10 +62,10 @@ do_test sort-1.4 {
 } {2 3 6 7 1 4 5 8}
 do_test sort-1.5 {
   execsql {SELECT flt FROM t1 ORDER BY flt}
-} {-11 -1.6 -0.0013442 0.123 2.15 3.141592653 123 4221}
+} {-11.0 -1.6 -0.0013442 0.123 2.15 3.141592653 123.0 4221.0}
 do_test sort-1.6 {
   execsql {SELECT flt FROM t1 ORDER BY flt DESC}
-} {4221 123 3.141592653 2.15 0.123 -0.0013442 -1.6 -11}
+} {4221.0 123.0 3.141592653 2.15 0.123 -0.0013442 -1.6 -11.0}
 do_test sort-1.7 {
   execsql {SELECT roman FROM t1 ORDER BY roman}
 } {I II III IV V VI VII VIII}
@@ -106,27 +106,27 @@ do_test sort-2.1.1 {
     UPDATE t1 SET v='x-2b' where v=='x-0.123';
     SELECT v FROM t1 ORDER BY v;
   }
-} {x-123 x-2.15 x-2b x-3.141592653 x-4221 x0.0013442 x1.6 x11}
+} {x-123.0 x-2.15 x-2b x-3.141592653 x-4221.0 x0.0013442 x1.6 x11.0}
 do_test sort-2.1.2 {
   execsql {
     SELECT v FROM t1 ORDER BY substr(v,2,999);
   }
-} {x-123 x-2.15 x-2b x-3.141592653 x-4221 x0.0013442 x1.6 x11}
+} {x-123.0 x-2.15 x-2b x-3.141592653 x-4221.0 x0.0013442 x1.6 x11.0}
 do_test sort-2.1.3 {
   execsql {
     SELECT v FROM t1 ORDER BY substr(v,2,999)+0.0;
   }
-} {x-4221 x-123 x-3.141592653 x-2.15 x-2b x0.0013442 x1.6 x11}
+} {x-4221.0 x-123.0 x-3.141592653 x-2.15 x-2b x0.0013442 x1.6 x11.0}
 do_test sort-2.1.4 {
   execsql {
     SELECT v FROM t1 ORDER BY substr(v,2,999) DESC;
   }
-} {x11 x1.6 x0.0013442 x-4221 x-3.141592653 x-2b x-2.15 x-123}
+} {x11.0 x1.6 x0.0013442 x-4221.0 x-3.141592653 x-2b x-2.15 x-123.0}
 do_test sort-2.1.5 {
   execsql {
     SELECT v FROM t1 ORDER BY substr(v,2,999)+0.0 DESC;
   }
-} {x11 x1.6 x0.0013442 x-2b x-2.15 x-3.141592653 x-123 x-4221}
+} {x11.0 x1.6 x0.0013442 x-2b x-2.15 x-3.141592653 x-123.0 x-4221.0}
 
 # This is a bug fix for 2.2.4.
 # Strings are normally mapped to upper-case for a caseless comparison.
@@ -196,17 +196,17 @@ do_test sort-4.6 {
   execsql {
     SELECT v FROM t1 ORDER BY 1;
   }
-} {x-123 x-2.15 x-2b x-3.141592653 x-4.0e9 x-4221 x0.0013442 x01234567890123456789 x1.6 x11 x2.7 x5.0e10}
+} {x-123.0 x-2.15 x-2b x-3.141592653 x-4.0e9 x-4221.0 x0.0013442 x01234567890123456789 x1.6 x11.0 x2.7 x5.0e10}
 do_test sort-4.7 {
   execsql {
     SELECT v FROM t1 ORDER BY 1 DESC;
   }
-} {x5.0e10 x2.7 x11 x1.6 x01234567890123456789 x0.0013442 x-4221 x-4.0e9 x-3.141592653 x-2b x-2.15 x-123}
+} {x5.0e10 x2.7 x11.0 x1.6 x01234567890123456789 x0.0013442 x-4221.0 x-4.0e9 x-3.141592653 x-2b x-2.15 x-123.0}
 do_test sort-4.8 {
   execsql {
     SELECT substr(v,2,99) FROM t1 ORDER BY 1;
   }
-} {-123 -2.15 -2b -3.141592653 -4.0e9 -4221 0.0013442 01234567890123456789 1.6 11 2.7 5.0e10}
+} {-123.0 -2.15 -2b -3.141592653 -4.0e9 -4221.0 0.0013442 01234567890123456789 1.6 11.0 2.7 5.0e10}
 #do_test sort-4.9 {
 #  execsql {
 #    SELECT substr(v,2,99)+0.0 FROM t1 ORDER BY 1;
@@ -362,7 +362,7 @@ do_test sort-8.1 {
     INSERT INTO t5 VALUES(100.0,'A2');
     SELECT * FROM t5 ORDER BY a, b;
   }
-} {100 A1 100 A2}
+} {100.0 A1 100.0 A2}
 
 
 ifcapable {bloblit} {

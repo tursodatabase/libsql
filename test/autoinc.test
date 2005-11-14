@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing the AUTOINCREMENT features.
 #
-# $Id: autoinc.test,v 1.7 2005/08/11 02:10:19 drh Exp $
+# $Id: autoinc.test,v 1.8 2005/11/14 22:29:06 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -494,7 +494,7 @@ do_test autoinc-7.1 {
     INSERT INTO t7(y) VALUES(345);
     SELECT * FROM t7;
   }
-} {3 345}
+} {3 345.0}
 
 # Test that if the AUTOINCREMENT is applied to a non integer primary key
 # the error message is sensible.

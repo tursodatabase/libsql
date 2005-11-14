@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.278 2005/11/03 00:41:17 drh Exp $
+** $Id: select.c,v 1.279 2005/11/14 22:29:05 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -687,7 +687,7 @@ static void generateSortTail(
       sqlite3VdbeAddOp(v, OP_NotNull, -1, sqlite3VdbeCurrentAddr(v)+3);
       sqlite3VdbeAddOp(v, OP_Pop, 1, 0);
       sqlite3VdbeAddOp(v, OP_Goto, 0, sqlite3VdbeCurrentAddr(v)+3);
-      sqlite3VdbeOp3(v, OP_MakeRecord, 1, 0, "n", P3_STATIC);
+      sqlite3VdbeOp3(v, OP_MakeRecord, 1, 0, "c", P3_STATIC);
       sqlite3VdbeAddOp(v, OP_IdxInsert, (iParm&0x0000FFFF), 0);
       break;
     }

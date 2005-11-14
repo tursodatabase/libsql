@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.354 2005/11/03 02:03:13 drh Exp $
+** $Id: build.c,v 1.355 2005/11/14 22:29:05 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -885,7 +885,7 @@ void sqlite3AddNotNull(Parse *pParse, int onError){
 ** found, the corresponding affinity is returned. If zType contains
 ** more than one of the substrings, entries toward the top of 
 ** the table take priority. For example, if zType is 'BLOBINT', 
-** SQLITE_AFF_NUMERIC is returned.
+** SQLITE_AFF_INTEGER is returned.
 **
 ** Substring     | Affinity
 ** --------------------------------
@@ -894,15 +894,14 @@ void sqlite3AddNotNull(Parse *pParse, int onError){
 ** 'CLOB'        | SQLITE_AFF_TEXT
 ** 'TEXT'        | SQLITE_AFF_TEXT
 ** 'BLOB'        | SQLITE_AFF_NONE
+** 'REAL'        | SQLITE_AFF_REAL
+** 'FLOA'        | SQLITE_AFF_REAL
+** 'DOUB'        | SQLITE_AFF_REAL
 **
 ** If none of the substrings in the above table are found,
 ** SQLITE_AFF_NUMERIC is returned.
-**
-** The SQLITE_AFF_INTEGER type is only returned if useIntType is true.
-** If useIntType is false, then SQLITE_AFF_INTEGER is reported back
-** as SQLITE_AFF_NUMERIC
 */
-char sqlite3AffinityType(const Token *pType, int useIntType){
+char sqlite3AffinityType(const Token *pType){
   u32 h = 0;
   char aff = SQLITE_AFF_NUMERIC;
   const unsigned char *zIn = pType->z;
@@ -918,10 +917,21 @@ char sqlite3AffinityType(const Token *pType, int useIntType){
     }else if( h==(('t'<<24)+('e'<<16)+('x'<<8)+'t') ){       /* TEXT */
       aff = SQLITE_AFF_TEXT;
     }else if( h==(('b'<<24)+('l'<<16)+('o'<<8)+'b')          /* BLOB */
-        && aff==SQLITE_AFF_NUMERIC ){
+        && (aff==SQLITE_AFF_NUMERIC || aff==SQLITE_AFF_REAL) ){
       aff = SQLITE_AFF_NONE;
+#ifndef SQLITE_OMIT_FLOATING_POINT
+    }else if( h==(('r'<<24)+('e'<<16)+('a'<<8)+'l')          /* REAL */
+        && aff==SQLITE_AFF_NUMERIC ){
+      aff = SQLITE_AFF_REAL;
+    }else if( h==(('f'<<24)+('l'<<16)+('o'<<8)+'a')          /* FLOA */
+        && aff==SQLITE_AFF_NUMERIC ){
+      aff = SQLITE_AFF_REAL;
+    }else if( h==(('d'<<24)+('o'<<16)+('u'<<8)+'b')          /* DOUB */
+        && aff==SQLITE_AFF_NUMERIC ){
+      aff = SQLITE_AFF_REAL;
+#endif
     }else if( (h&0x00FFFFFF)==(('i'<<16)+('n'<<8)+'t') ){    /* INT */
-      aff = useIntType ? SQLITE_AFF_INTEGER : SQLITE_AFF_NUMERIC; 
+      aff = SQLITE_AFF_INTEGER;
       break;
     }
   }
@@ -949,7 +959,7 @@ void sqlite3AddColumnType(Parse *pParse, Token *pType){
   pCol = &p->aCol[i];
   sqliteFree(pCol->zType);
   pCol->zType = sqlite3NameFromToken(pType);
-  pCol->affinity = sqlite3AffinityType(pType, 0);
+  pCol->affinity = sqlite3AffinityType(pType);
 }
 
 /*

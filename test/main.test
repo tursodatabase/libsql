@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is exercising the code in main.c.
 #
-# $Id: main.test,v 1.23 2005/11/01 15:48:25 drh Exp $
+# $Id: main.test,v 1.24 2005/11/14 22:29:06 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -302,7 +302,7 @@ do_test main-3.3 {
     insert into T1 values(5.0E+03);
     select x*10 from T1 order by x*5;
   }
-} {-0.51 -0.5 0.05 0.5 5 500 500 500 5000 50000}
+} {-0.51 -0.5 0.05 0.5 5.0 500.0 500.0 500.0 5000.0 50000.0}
 do_test main-3.4 {
   set v [catch {execsql {create bogus}} msg]
   lappend v $msg

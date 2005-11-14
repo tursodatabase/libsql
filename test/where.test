@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the use of indices in WHERE clases.
 #
-# $Id: where.test,v 1.37 2005/10/06 16:53:17 drh Exp $
+# $Id: where.test,v 1.38 2005/11/14 22:29:06 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -230,7 +230,6 @@ do_test where-1.41 {
 # Do the same kind of thing except use a join as the data source.
 #
 do_test where-2.1 {
-btree_breakpoint
   count {
     SELECT w, p FROM t2, t1
     WHERE x=q AND y=s AND r=8977

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.427 2005/11/03 02:15:03 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.428 2005/11/14 22:29:05 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -585,12 +585,25 @@ struct CollSeq {
 
 /*
 ** Column affinity types.
+**
+** These used to have mnemonic name like 'i' for SQLITE_AFF_INTEGER and
+** 't' for SQLITE_AFF_TEXT.  But we can save a little space and improve
+** the speed a little by number the values consecutively.  
+**
+** But rather than start with 0 or 1, we begin with 'a'.  That way,
+** when multiple affinity types are concatenated into a string and
+** used as the P3 operand, they will be more readable.
+**
+** Note also that the numeric types are grouped together so that testing
+** for a numeric type is a single comparison.
 */
-#define SQLITE_AFF_NUMERIC  'n'
-#define SQLITE_AFF_INTEGER  'i'  /* Used for CAST operators only */
-#define SQLITE_AFF_TEXT     't'
-#define SQLITE_AFF_NONE     'o'
+#define SQLITE_AFF_TEXT     'a'
+#define SQLITE_AFF_NONE     'b'
+#define SQLITE_AFF_NUMERIC  'c'
+#define SQLITE_AFF_INTEGER  'd'
+#define SQLITE_AFF_REAL     'e'
 
+#define sqlite3IsNumericAffinity(X)  ((X)>=SQLITE_AFF_NUMERIC)
 
 /*
 ** Each SQL table is represented in memory by an instance of the
@@ -1653,7 +1666,7 @@ void sqlite3AlterFinishAddColumn(Parse *, Token *);
 void sqlite3AlterBeginAddColumn(Parse *, SrcList *);
 const char *sqlite3TestErrorName(int);
 CollSeq *sqlite3GetCollSeq(sqlite3*, CollSeq *, const char *, int);
-char sqlite3AffinityType(const Token*, int);
+char sqlite3AffinityType(const Token*);
 void sqlite3Analyze(Parse*, Token*, Token*);
 int sqlite3InvokeBusyHandler(BusyHandler*);
 int sqlite3FindDb(sqlite3*, Token*);

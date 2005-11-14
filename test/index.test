@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE INDEX statement.
 #
-# $Id: index.test,v 1.38 2005/11/01 15:48:25 drh Exp $
+# $Id: index.test,v 1.39 2005/11/14 22:29:06 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -419,7 +419,7 @@ do_test index-13.1 {
    INSERT INTO t5 VALUES(1,2,3);
    SELECT * FROM t5;
   }
-} {1 2 3}
+} {1 2.0 3}
 do_test index-13.2 {
   set ::idxlist [execsql {
     SELECT name FROM sqlite_master WHERE type="index" AND tbl_name="t5";
@@ -438,7 +438,7 @@ do_test index-13.4 {
     INSERT INTO t5 VALUES('a','b','c');
     SELECT * FROM t5;
   }
-} {1 2 3 a b c}
+} {1 2.0 3 a b c}
 integrity_check index-13.5
 
 # Check the sort order of data in an index.

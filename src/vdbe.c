@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.495 2005/11/01 15:48:24 drh Exp $
+** $Id: vdbe.c,v 1.496 2005/11/14 22:29:05 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -118,23 +118,6 @@ int sqlite3_sort_count = 0;
        && sqlite3VdbeMemMakeWriteable(P) ){ goto no_mem;}
 
 /*
-** Convert the given stack entity into a integer if it isn't one
-** already.
-**
-** Any prior string or real representation is invalidated.  
-** NULLs are converted into 0.
-*/
-#define Integerify(P) sqlite3VdbeMemIntegerify(P)
-
-/*
-** Convert P so that it has type MEM_Real.
-**
-** Any prior string or integer representation is invalidated.
-** NULLs are converted into 0.0.
-*/
-#define Realify(P) sqlite3VdbeMemRealify(P)
-
-/*
 ** Argument pMem points at a memory cell that will be passed to a
 ** user-defined function or returned to the user as the result of a query.
 ** The second argument, 'db_enc' is the text encoding used by the vdbe for
@@ -188,17 +171,25 @@ static Cursor *allocateCursor(Vdbe *p, int iCur){
 }
 
 /*
-** Apply any conversion required by the supplied column affinity to
-** memory cell pRec. affinity may be one of:
+** Processing is determine by the affinity parameter:
 **
-** SQLITE_AFF_NUMERIC
-** SQLITE_AFF_TEXT
-** SQLITE_AFF_NONE
+** SQLITE_AFF_INTEGER:
+** SQLITE_AFF_REAL:
+** SQLITE_AFF_NUMERIC:
+**    Try to convert pRec to an integer representation or a 
+**    floating-point representation if an integer representation
+**    is not possible.  Note that the integer representation is
+**    always preferred, even if the affinity is REAL, because
+**    an integer representation is more space efficient on disk.
+**
+** SQLITE_AFF_TEXT:
+**    Convert pRec to a text representation.
+**
+** SQLITE_AFF_NONE:
+**    No-op.  pRec is unchanged.
 */
 static void applyAffinity(Mem *pRec, char affinity, u8 enc){
-  if( affinity==SQLITE_AFF_NONE ){
-    /* do nothing */
-  }else if( affinity==SQLITE_AFF_TEXT ){
+  if( affinity==SQLITE_AFF_TEXT ){
     /* Only attempt the conversion to TEXT if there is an integer or real
     ** representation (blob and NULL do not get converted) but no string
     ** representation.
@@ -207,7 +198,9 @@ static void applyAffinity(Mem *pRec, char affinity, u8 enc){
       sqlite3VdbeMemStringify(pRec, enc);
     }
     pRec->flags &= ~(MEM_Real|MEM_Int);
-  }else{
+  }else if( affinity!=SQLITE_AFF_NONE ){
+    assert( affinity==SQLITE_AFF_INTEGER || affinity==SQLITE_AFF_REAL
+             || affinity==SQLITE_AFF_NUMERIC );
     if( 0==(pRec->flags&(MEM_Real|MEM_Int)) ){
       /* pRec does not have a valid integer or real representation. 
       ** Attempt a conversion if pRec has a string representation and
@@ -215,11 +208,14 @@ static void applyAffinity(Mem *pRec, char affinity, u8 enc){
       */
       int realnum;
       sqlite3VdbeMemNulTerminate(pRec);
-      if( pRec->flags&MEM_Str && sqlite3IsNumber(pRec->z, &realnum, enc) ){
-        if( realnum ){
-          Realify(pRec);
+      if( (pRec->flags&MEM_Str) && sqlite3IsNumber(pRec->z, &realnum, enc) ){
+        i64 value;
+        if( !realnum && sqlite3atoi64(pRec->z, &value) ){
+          sqlite3VdbeMemRelease(pRec);
+          pRec->i = value;
+          pRec->flags = MEM_Int;
         }else{
-          Integerify(pRec);
+          sqlite3VdbeMemNumerify(pRec);
         }
       }
     }else if( pRec->flags & MEM_Real ){
@@ -635,7 +631,6 @@ case OP_Real: {            /* same as TK_FLOAT, */
   pTos->r = sqlite3VdbeRealValue(pTos);
   pTos->flags |= MEM_Real;
   sqlite3VdbeChangeEncoding(pTos, db->enc);
-  sqlite3VdbeIntegerAffinity(pTos);
   break;
 }
 
@@ -1005,8 +1000,10 @@ case OP_Multiply:              /* same as TK_STAR, no-push */
 case OP_Divide:                /* same as TK_SLASH, no-push */
 case OP_Remainder: {           /* same as TK_REM, no-push */
   Mem *pNos = &pTos[-1];
+  int flags;
   assert( pNos>=p->aStack );
-  if( ((pTos->flags | pNos->flags) & MEM_Null)!=0 ){
+  flags = pTos->flags | pNos->flags;
+  if( (flags & MEM_Null)!=0 ){
     Release(pTos);
     pTos--;
     Release(pTos);
@@ -1021,7 +1018,6 @@ case OP_Remainder: {           /* same as TK_REM, no-push */
       case OP_Multiply:    b *= a;       break;
       case OP_Divide: {
         if( a==0 ) goto divide_by_zero;
-        if( b%a!=0 ) goto floating_point_divide;
         b /= a;
         break;
       }
@@ -1038,7 +1034,6 @@ case OP_Remainder: {           /* same as TK_REM, no-push */
     pTos->flags = MEM_Int;
   }else{
     double a, b;
-    floating_point_divide:
     a = sqlite3VdbeRealValue(pTos);
     b = sqlite3VdbeRealValue(pNos);
     switch( pOp->opcode ){
@@ -1063,7 +1058,9 @@ case OP_Remainder: {           /* same as TK_REM, no-push */
     Release(pTos);
     pTos->r = b;
     pTos->flags = MEM_Real;
-    sqlite3VdbeIntegerAffinity(pTos);
+    if( (flags & MEM_Real)==0 ){
+      sqlite3VdbeIntegerAffinity(pTos);
+    }
   }
   break;
 
@@ -1243,7 +1240,7 @@ case OP_ShiftRight: {           /* same as TK_RSHIFT, no-push */
 */
 case OP_AddImm: {            /* no-push */
   assert( pTos>=p->aStack );
-  Integerify(pTos);
+  sqlite3VdbeMemIntegerify(pTos);
   pTos->i += pOp->p1;
   break;
 }
@@ -1271,7 +1268,8 @@ case OP_ForceInt: {            /* no-push */
   if( pTos->flags & MEM_Int ){
     v = pTos->i + (pOp->p1!=0);
   }else{
-    Realify(pTos);
+    /* FIX ME:  should this not be assert( pTos->flags & MEM_Real ) ??? */
+    sqlite3VdbeMemRealify(pTos);
     v = (int)pTos->r;
     if( pTos->r>(double)v ) v++;
     if( pOp->p1 && pTos->r==(double)v ) v++;
@@ -1311,52 +1309,24 @@ case OP_MustBeInt: {            /* no-push */
   break;
 }
 
-/* Opcode: ToInt * * *
+/* Opcode: RealAffinity * * *
 **
-** Force the value on the top of the stack to be an integer.  If
-** The value is currently a real number, drop its fractional part.
-** If the value is text or blob, try to convert it to an integer using the
-** equivalent of atoi() and store 0 if no such conversion is possible.
+** If the top of the stack is an integer, convert it to a real value.
 **
-** A NULL value is not changed by this routine.  It remains NULL.
+** This opcode is used when extracting information from a column that
+** has REAL affinity.  Such column values may still be stored as
+** integers, for space efficiency, but after extraction we want them
+** to have only a real value.
 */
-case OP_ToInt: {                  /* no-push */
+case OP_RealAffinity: {                  /* no-push */
   assert( pTos>=p->aStack );
-  if( pTos->flags & MEM_Null ) break;
-  assert( MEM_Str==(MEM_Blob>>3) );
-  pTos->flags |= (pTos->flags&MEM_Blob)>>3;
-  applyAffinity(pTos, SQLITE_AFF_NUMERIC, db->enc);
-  sqlite3VdbeMemIntegerify(pTos);
+  if( pTos->flags & MEM_Int ){
+    sqlite3VdbeMemRealify(pTos);
+  }
   break;
 }
 
 #ifndef SQLITE_OMIT_CAST
-/* Opcode: ToNumeric * * *
-**
-** Force the value on the top of the stack to be numeric (either an
-** integer or a floating-point number.
-** If the value is text or blob, try to convert it to an using the
-** equivalent of atoi() or atof() and store 0 if no such conversion 
-** is possible.
-**
-** A NULL value is not changed by this routine.  It remains NULL.
-*/
-case OP_ToNumeric: {                  /* no-push */
-  assert( pTos>=p->aStack );
-  if( pTos->flags & MEM_Null ) break;
-  assert( MEM_Str==(MEM_Blob>>3) );
-  pTos->flags |= (pTos->flags&MEM_Blob)>>3;
-  applyAffinity(pTos, SQLITE_AFF_NUMERIC, db->enc);
-  if( (pTos->flags & (MEM_Int|MEM_Real))==0 ){
-    sqlite3VdbeMemRealify(pTos);
-  }else{
-    sqlite3VdbeMemRelease(pTos);
-  }
-  assert( (pTos->flags & MEM_Dyn)==0 );
-  pTos->flags &= (MEM_Int|MEM_Real);
-  break;
-}
-
 /* Opcode: ToText * * *
 **
 ** Force the value on the top of the stack to be text.
@@ -1366,7 +1336,7 @@ case OP_ToNumeric: {                  /* no-push */
 **
 ** A NULL value is not changed by this routine.  It remains NULL.
 */
-case OP_ToText: {                  /* no-push */
+case OP_ToText: {                  /* same as TK_TO_TEXT, no-push */
   assert( pTos>=p->aStack );
   if( pTos->flags & MEM_Null ) break;
   assert( MEM_Str==(MEM_Blob>>3) );
@@ -1386,7 +1356,7 @@ case OP_ToText: {                  /* no-push */
 **
 ** A NULL value is not changed by this routine.  It remains NULL.
 */
-case OP_ToBlob: {                  /* no-push */
+case OP_ToBlob: {                  /* same as TK_TO_BLOB, no-push */
   assert( pTos>=p->aStack );
   if( pTos->flags & MEM_Null ) break;
   if( (pTos->flags & MEM_Blob)==0 ){
@@ -1395,6 +1365,60 @@ case OP_ToBlob: {                  /* no-push */
     pTos->flags |= MEM_Blob;
   }
   pTos->flags &= ~(MEM_Int|MEM_Real|MEM_Str);
+  break;
+}
+
+/* Opcode: ToNumeric * * *
+**
+** Force the value on the top of the stack to be numeric (either an
+** integer or a floating-point number.)
+** If the value is text or blob, try to convert it to an using the
+** equivalent of atoi() or atof() and store 0 if no such conversion 
+** is possible.
+**
+** A NULL value is not changed by this routine.  It remains NULL.
+*/
+case OP_ToNumeric: {                  /* same as TK_TO_NUMERIC, no-push */
+  assert( pTos>=p->aStack );
+  if( (pTos->flags & MEM_Null)==0 ){
+    sqlite3VdbeMemNumerify(pTos);
+  }
+  break;
+}
+#endif /* SQLITE_OMIT_CAST */
+
+/* Opcode: ToInt * * *
+**
+** Force the value on the top of the stack to be an integer.  If
+** The value is currently a real number, drop its fractional part.
+** If the value is text or blob, try to convert it to an integer using the
+** equivalent of atoi() and store 0 if no such conversion is possible.
+**
+** A NULL value is not changed by this routine.  It remains NULL.
+*/
+case OP_ToInt: {                  /* same as TK_TO_INT, no-push */
+  assert( pTos>=p->aStack );
+  if( (pTos->flags & MEM_Null)==0 ){
+    sqlite3VdbeMemIntegerify(pTos);
+  }
+  break;
+}
+
+#ifndef SQLITE_OMIT_CAST
+/* Opcode: ToReal * * *
+**
+** Force the value on the top of the stack to be a floating point number.
+** If The value is currently an integer, convert it.
+** If the value is text or blob, try to convert it to an integer using the
+** equivalent of atoi() and store 0 if no such conversion is possible.
+**
+** A NULL value is not changed by this routine.  It remains NULL.
+*/
+case OP_ToReal: {                  /* same as TK_TO_REAL, no-push */
+  assert( pTos>=p->aStack );
+  if( (pTos->flags & MEM_Null)==0 ){
+    sqlite3VdbeMemRealify(pTos);
+  }
   break;
 }
 #endif /* SQLITE_OMIT_CAST */
@@ -1416,7 +1440,8 @@ case OP_ToBlob: {                  /* no-push */
 ** 0x200 is set but is NULL when the 0x200 bit of P1 is clear.
 **
 ** The least significant byte of P1 (mask 0xff) must be an affinity character -
-** 'n', 't', or 'o' - or 0x00. An attempt is made to coerce both values
+** SQLITE_AFF_TEXT, SQLITE_AFF_INTEGER, and so forth. An attempt is made 
+** to coerce both values
 ** according to the affinity before the comparison is made. If the byte is
 ** 0x00, then numeric affinity is used.
 **
@@ -1565,13 +1590,13 @@ case OP_Or: {             /* same as TK_OR, no-push */
   if( pTos->flags & MEM_Null ){
     v1 = 2;
   }else{
-    Integerify(pTos);
+    sqlite3VdbeMemIntegerify(pTos);
     v1 = pTos->i==0;
   }
   if( pNos->flags & MEM_Null ){
     v2 = 2;
   }else{
-    Integerify(pNos);
+    sqlite3VdbeMemIntegerify(pNos);
     v2 = pNos->i==0;
   }
   if( pOp->opcode==OP_And ){
@@ -1614,7 +1639,6 @@ case OP_AbsValue: {
       pTos->r = -pTos->r;
     }
     pTos->flags = MEM_Real;
-    sqlite3VdbeIntegerAffinity(pTos);
   }else if( pTos->flags & MEM_Int ){
     Release(pTos);
     if( pOp->opcode==OP_Negative || pTos->i<0 ){
@@ -1624,7 +1648,7 @@ case OP_AbsValue: {
   }else if( pTos->flags & MEM_Null ){
     /* Do nothing */
   }else{
-    Realify(pTos);
+    sqlite3VdbeMemNumerify(pTos);
     goto neg_abs_real_case;
   }
   break;
@@ -1639,7 +1663,7 @@ case OP_AbsValue: {
 case OP_Not: {                /* same as TK_NOT, no-push */
   assert( pTos>=p->aStack );
   if( pTos->flags & MEM_Null ) break;  /* Do nothing to NULLs */
-  Integerify(pTos);
+  sqlite3VdbeMemIntegerify(pTos);
   assert( (pTos->flags & MEM_Dyn)==0 );
   pTos->i = !pTos->i;
   pTos->flags = MEM_Int;
@@ -1655,7 +1679,7 @@ case OP_Not: {                /* same as TK_NOT, no-push */
 case OP_BitNot: {             /* same as TK_BITNOT, no-push */
   assert( pTos>=p->aStack );
   if( pTos->flags & MEM_Null ) break;  /* Do nothing to NULLs */
-  Integerify(pTos);
+  sqlite3VdbeMemIntegerify(pTos);
   assert( (pTos->flags & MEM_Dyn)==0 );
   pTos->i = ~pTos->i;
   pTos->flags = MEM_Int;
@@ -2074,10 +2098,8 @@ op_column_out:
 ** field of the index key (i.e. the first character of P3 corresponds to the
 ** lowest element on the stack).
 **
-** The mapping from character to affinity is as follows:
-**    'n' = NUMERIC.
-**    't' = TEXT.
-**    'o' = NONE.
+** The mapping from character to affinity is given by the SQLITE_AFF_
+** macros defined in sqliteInt.h.
 **
 ** If P3 is NULL then all index fields have the affinity NONE.
 **
@@ -2158,7 +2180,7 @@ case OP_MakeRecord: {
   if( addRowid ){
     pRowid = &pTos[0-nField];
     assert( pRowid>=p->aStack );
-    Integerify(pRowid);
+    sqlite3VdbeMemIntegerify(pRowid);
     serial_type = sqlite3VdbeSerialType(pRowid);
     nData += sqlite3VdbeSerialTypeLen(serial_type);
     nHdr += sqlite3VarintLen(serial_type);
@@ -2388,7 +2410,7 @@ case OP_SetCookie: {       /* no-push */
   pDb = &db->aDb[pOp->p1];
   assert( pDb->pBt!=0 );
   assert( pTos>=p->aStack );
-  Integerify(pTos);
+  sqlite3VdbeMemIntegerify(pTos);
   /* See note about index shifting on OP_ReadCookie */
   rc = sqlite3BtreeUpdateMeta(pDb->pBt, 1+pOp->p2, (int)pTos->i);
   if( pOp->p2==0 ){
@@ -2487,7 +2509,7 @@ case OP_OpenWrite: {       /* no-push */
   Cursor *pCur;
   
   assert( pTos>=p->aStack );
-  Integerify(pTos);
+  sqlite3VdbeMemIntegerify(pTos);
   iDb = pTos->i;
   assert( (pTos->flags & MEM_Dyn)==0 );
   pTos--;
@@ -2497,7 +2519,7 @@ case OP_OpenWrite: {       /* no-push */
   wrFlag = pOp->opcode==OP_OpenWrite;
   if( p2<=0 ){
     assert( pTos>=p->aStack );
-    Integerify(pTos);
+    sqlite3VdbeMemIntegerify(pTos);
     p2 = pTos->i;
     assert( (pTos->flags & MEM_Dyn)==0 );
     pTos--;
@@ -2717,7 +2739,7 @@ case OP_MoveGt: {       /* no-push */
     *pC->pIncrKey = oc==OP_MoveGt || oc==OP_MoveLe;
     if( pC->isTable ){
       i64 iKey;
-      Integerify(pTos);
+      sqlite3VdbeMemIntegerify(pTos);
       iKey = intToKey(pTos->i);
       if( pOp->p2==0 && pOp->opcode==OP_MoveGe ){
         pC->movetoTarget = iKey;
@@ -2887,7 +2909,7 @@ case OP_IsUnique: {        /* no-push */
   /* Pop the value R off the top of the stack
   */
   assert( pNos>=p->aStack );
-  Integerify(pTos);
+  sqlite3VdbeMemIntegerify(pTos);
   R = pTos->i;
   assert( (pTos->flags & MEM_Dyn)==0 );
   pTos--;
@@ -3116,7 +3138,7 @@ case OP_NewRowid: {
         Mem *pMem;
         assert( pOp->p2>0 && pOp->p2<p->nMem );  /* P2 is a valid memory cell */
         pMem = &p->aMem[pOp->p2];
-        Integerify(pMem);
+        sqlite3VdbeMemIntegerify(pMem);
         assert( (pMem->flags & MEM_Int)!=0 );  /* mem(P2) holds an integer */
         if( pMem->i==MAX_ROWID || pC->useRandomRowid ){
           rc = SQLITE_FULL;
@@ -3997,7 +4019,7 @@ case OP_IntegrityCk: {
 */
 case OP_FifoWrite: {        /* no-push */
   assert( pTos>=p->aStack );
-  Integerify(pTos);
+  sqlite3VdbeMemIntegerify(pTos);
   sqlite3VdbeFifoPush(&p->sFifo, pTos->i);
   assert( (pTos->flags & MEM_Dyn)==0 );
   pTos--;
@@ -4121,8 +4143,8 @@ case OP_MemMax: {        /* no-push */
   assert( pTos>=p->aStack );
   assert( i>=0 && i<p->nMem );
   pMem = &p->aMem[i];
-  Integerify(pMem);
-  Integerify(pTos);
+  sqlite3VdbeMemIntegerify(pMem);
+  sqlite3VdbeMemIntegerify(pTos);
   if( pMem->i<pTos->i){
     pMem->i = pTos->i;
   }

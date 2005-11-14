@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.236 2005/11/05 15:07:56 drh Exp $
+** $Id: expr.c,v 1.237 2005/11/14 22:29:05 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -43,7 +43,7 @@ char sqlite3ExprAffinity(Expr *pExpr){
   }
 #ifndef SQLITE_OMIT_CAST
   if( op==TK_CAST ){
-    return sqlite3AffinityType(&pExpr->token, 0);
+    return sqlite3AffinityType(&pExpr->token);
   }
 #endif
   return pExpr->affinity;
@@ -78,7 +78,7 @@ char sqlite3CompareAffinity(Expr *pExpr, char aff2){
     /* Both sides of the comparison are columns. If one has numeric
     ** affinity, use that. Otherwise use no affinity.
     */
-    if( aff1==SQLITE_AFF_NUMERIC || aff2==SQLITE_AFF_NUMERIC ){
+    if( sqlite3IsNumericAffinity(aff1) || sqlite3IsNumericAffinity(aff2) ){
       return SQLITE_AFF_NUMERIC;
     }else{
       return SQLITE_AFF_NONE;
@@ -126,7 +126,14 @@ static char comparisonAffinity(Expr *pExpr){
 */
 int sqlite3IndexAffinityOk(Expr *pExpr, char idx_affinity){
   char aff = comparisonAffinity(pExpr);
-  return (aff==SQLITE_AFF_NONE) || (aff==idx_affinity);
+  switch( aff ){
+    case SQLITE_AFF_NONE:
+      return 1;
+    case SQLITE_AFF_TEXT:
+      return idx_affinity==SQLITE_AFF_TEXT;
+    default:
+      return sqlite3IsNumericAffinity(idx_affinity);
+  }
 }
 
 /*
@@ -936,7 +943,7 @@ static int lookupName(
     if( cnt==0 && cntTab==1 && sqlite3IsRowid(zCol) ){
       cnt = 1;
       pExpr->iColumn = -1;
-      pExpr->affinity = SQLITE_AFF_NUMERIC;
+      pExpr->affinity = SQLITE_AFF_INTEGER;
     }
 
     /*
@@ -1482,8 +1489,15 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
         assert( pParse->ckOffset>0 );
         sqlite3VdbeAddOp(v, OP_Dup, pParse->ckOffset-pExpr->iColumn-1, 1);
       }else if( pExpr->iColumn>=0 ){
-        sqlite3VdbeAddOp(v, OP_Column, pExpr->iTable, pExpr->iColumn);
-        sqlite3ColumnDefault(v, pExpr->pTab, pExpr->iColumn);
+        Table *pTab = pExpr->pTab;
+        int iCol = pExpr->iColumn;
+        sqlite3VdbeAddOp(v, OP_Column, pExpr->iTable, iCol);
+        sqlite3ColumnDefault(v, pTab, iCol);
+#ifndef SQLITE_OMIT_FLOATING_POINT
+        if( pTab && pTab->aCol[iCol].affinity==SQLITE_AFF_REAL ){
+          sqlite3VdbeAddOp(v, OP_RealAffinity, 0, 0);
+        }
+#endif
       }else{
         sqlite3VdbeAddOp(v, OP_Rowid, pExpr->iTable, 0);
       }
@@ -1536,13 +1550,13 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       /* Expressions of the form:   CAST(pLeft AS token) */
       int aff, op;
       sqlite3ExprCode(pParse, pExpr->pLeft);
-      aff = sqlite3AffinityType(&pExpr->token, 1);
-      switch( aff ){
-        case SQLITE_AFF_INTEGER:   op = OP_ToInt;      break;
-        case SQLITE_AFF_NUMERIC:   op = OP_ToNumeric;  break;
-        case SQLITE_AFF_TEXT:      op = OP_ToText;     break;
-        case SQLITE_AFF_NONE:      op = OP_ToBlob;     break;
-      }
+      aff = sqlite3AffinityType(&pExpr->token);
+      op = aff - SQLITE_AFF_TEXT + OP_ToText;
+      assert( op==OP_ToText    || aff!=SQLITE_AFF_TEXT    );
+      assert( op==OP_ToBlob    || aff!=SQLITE_AFF_NONE    );
+      assert( op==OP_ToNumeric || aff!=SQLITE_AFF_NUMERIC );
+      assert( op==OP_ToInt     || aff!=SQLITE_AFF_INTEGER );
+      assert( op==OP_ToReal    || aff!=SQLITE_AFF_REAL    );
       sqlite3VdbeAddOp(v, op, 0, 0);
       stackChng = 0;
       break;

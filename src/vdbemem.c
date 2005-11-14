@@ -265,16 +265,6 @@ i64 sqlite3VdbeIntValue(Mem *pMem){
 }
 
 /*
-** Convert pMem to type integer.  Invalidate any prior representations.
-*/
-int sqlite3VdbeMemIntegerify(Mem *pMem){
-  pMem->i = sqlite3VdbeIntValue(pMem);
-  sqlite3VdbeMemRelease(pMem);
-  pMem->flags = MEM_Int;
-  return SQLITE_OK;
-}
-
-/*
 ** Return the best representation of pMem that we can get into a
 ** double.  If pMem is already a double or an integer, return its
 ** value.  If it is a string or blob, try to convert it to a double.
@@ -311,15 +301,33 @@ void sqlite3VdbeIntegerAffinity(Mem *pMem){
   }
 }
 
+/*
+** Convert pMem to type integer.  Invalidate any prior representations.
+*/
+int sqlite3VdbeMemIntegerify(Mem *pMem){
+  pMem->i = sqlite3VdbeIntValue(pMem);
+  sqlite3VdbeMemRelease(pMem);
+  pMem->flags = MEM_Int;
+  return SQLITE_OK;
+}
 
 /*
-** Convert pMem so that it is of type MEM_Real and also MEM_Int if
-** possible.  Invalidate any prior representations.
+** Convert pMem so that it is of type MEM_Real.
+** Invalidate any prior representations.
 */
 int sqlite3VdbeMemRealify(Mem *pMem){
   pMem->r = sqlite3VdbeRealValue(pMem);
   sqlite3VdbeMemRelease(pMem);
   pMem->flags = MEM_Real;
+  return SQLITE_OK;
+}
+
+/*
+** Convert pMem so that it has types MEM_Real or MEM_Int or both.
+** Invalidate any prior representations.
+*/
+int sqlite3VdbeMemNumerify(Mem *pMem){
+  sqlite3VdbeMemRealify(pMem);
   sqlite3VdbeIntegerAffinity(pMem);
   return SQLITE_OK;
 }
