@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.237 2005/11/14 22:29:05 drh Exp $
+** $Id: expr.c,v 1.238 2005/11/16 12:53:15 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1650,7 +1650,12 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
     }
     case TK_AGG_FUNCTION: {
       AggInfo *pInfo = pExpr->pAggInfo;
-      sqlite3VdbeAddOp(v, OP_MemLoad, pInfo->aFunc[pExpr->iAgg].iMem, 0);
+      if( pInfo==0 ){
+        sqlite3ErrorMsg(pParse, "misuse of aggregate: %T",
+            &pExpr->span);
+      }else{
+        sqlite3VdbeAddOp(v, OP_MemLoad, pInfo->aFunc[pExpr->iAgg].iMem, 0);
+      }
       break;
     }
     case TK_CONST_FUNC:
