@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.497 2005/11/15 02:14:01 drh Exp $
+** $Id: vdbe.c,v 1.498 2005/11/16 04:34:32 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -638,14 +638,16 @@ case OP_Real: {            /* same as TK_FLOAT, */
 
 /* Opcode: String8 * * P3
 **
-** P3 points to a nul terminated UTF-8 string. This opcode is transformed
+** P3 points to a nul terminated UTF-8 string that is P1 character long
+** (not counting the nul terminator). This opcode is transformed
 ** into an OP_String before it is executed for the first time.
 */
 case OP_String8: {         /* same as TK_STRING */
-#ifndef SQLITE_OMIT_UTF16
-  pOp->opcode = OP_String;
-
   assert( pOp->p3!=0 );
+  pOp->opcode = OP_String;
+  pOp->p1 = strlen(pOp->p3);
+
+#ifndef SQLITE_OMIT_UTF16
   if( db->enc!=SQLITE_UTF8 ){
     pTos++;
     sqlite3VdbeMemSetStr(pTos, pOp->p3, -1, SQLITE_UTF8, SQLITE_STATIC);
@@ -658,33 +660,23 @@ case OP_String8: {         /* same as TK_STRING */
     }
     pOp->p3type = P3_DYNAMIC;
     pOp->p3 = pTos->z;
+    pOp->p1 *= 2;
     break;
   }
 #endif
   /* Otherwise fall through to the next case, OP_String */
 }
   
-/* Opcode: String * * P3
+/* Opcode: String P1 * P3
 **
-** The string value P3 is pushed onto the stack.  If P3==0 then a
-** NULL is pushed onto the stack. P3 is assumed to be a nul terminated
-** string encoded with the database native encoding.
+** The string value P3 of length P1 is pushed onto the stack.
 */
 case OP_String: {
   pTos++;
   assert( pOp->p3!=0 );
   pTos->flags = MEM_Str|MEM_Static|MEM_Term;
   pTos->z = pOp->p3;
-#ifndef SQLITE_OMIT_UTF16
-  if( db->enc==SQLITE_UTF8 ){
-    pTos->n = strlen(pTos->z);
-  }else{
-    pTos->n  = sqlite3utf16ByteLen(pTos->z, -1);
-  }
-#else
-  assert( db->enc==SQLITE_UTF8 );
-  pTos->n = strlen(pTos->z);
-#endif
+  pTos->n = pOp->p1;
   pTos->enc = db->enc;
   break;
 }
