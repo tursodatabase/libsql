@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.279 2005/11/14 22:29:05 drh Exp $
+** $Id: select.c,v 1.280 2005/11/16 13:47:51 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1814,15 +1814,15 @@ static int multiSelect(
 
     if( pOrderBy ){
       struct ExprList_item *pOTerm = pOrderBy->a;
-      int nExpr = pOrderBy->nExpr;
+      int nOrderByExpr = pOrderBy->nExpr;
       int addr;
       u8 *pSortOrder;
 
       aCopy = (CollSeq**)&pKeyInfo[1];
-      pSortOrder = pKeyInfo->aSortOrder = (u8*)&aCopy[nExpr];
+      pSortOrder = pKeyInfo->aSortOrder = (u8*)&aCopy[nCol];
       memcpy(aCopy, pKeyInfo->aColl, nCol*sizeof(CollSeq*));
       apColl = pKeyInfo->aColl;
-      for(i=0; i<pOrderBy->nExpr; i++, pOTerm++, apColl++, pSortOrder++){
+      for(i=0; i<nOrderByExpr; i++, pOTerm++, apColl++, pSortOrder++){
         Expr *pExpr = pOTerm->pExpr;
         char *zName = pOTerm->zName;
         assert( pExpr->op==TK_COLUMN && pExpr->iColumn<nCol );
@@ -1837,7 +1837,7 @@ static int multiSelect(
       assert( p->addrOpenVirt[2]>=0 );
       addr = p->addrOpenVirt[2];
       sqlite3VdbeChangeP2(v, addr, p->pEList->nExpr+2);
-      pKeyInfo->nField = pOrderBy->nExpr;
+      pKeyInfo->nField = nOrderByExpr;
       sqlite3VdbeChangeP3(v, addr, (char*)pKeyInfo, P3_KEYINFO_HANDOFF);
       pKeyInfo = 0;
       generateSortTail(pParse, p, v, p->pEList->nExpr, eDest, iParm);
