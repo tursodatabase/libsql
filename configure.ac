@@ -116,7 +116,7 @@ AC_INIT(src/sqlite.h.in)
 dnl Put the RCS revision string after AC_INIT so that it will also
 dnl show in in configure.
 # The following RCS revision string applies to configure.in
-# $Revision: 1.20 $
+# $Revision: 1.21 $
 
 #########
 # Programs needed
@@ -298,6 +298,23 @@ else
   TARGET_THREAD_LIB=""
 fi
 AC_SUBST(TARGET_THREAD_LIB)
+
+##########
+# Do we want to allow a connection created in one thread to be used
+# in another thread.  This does not work on many Linux systems (ex: RedHat 9)
+# due to bugs in the threading implementations.  This is thus off by default.
+#
+AC_ARG_ENABLE(cross-thread-connections, 
+[  --enable-cross-thread-connections   Allow connection sharing across threads],,enable_xthreadconnect=no)
+AC_MSG_CHECKING([whether to allow connections to be shared across threads])
+if test "$enable_xthreadconnect" = "no"; then
+  XTHREADCONNECT=''
+  AC_MSG_RESULT([no])
+else
+  XTHREADCONNECT='-DSQLITE_ALLOW_XTHREAD_CONNECT=1'
+  AC_MSG_RESULT([yes])
+fi
+AC_SUBST(XTHREADCONNECT)
 
 ##########
 # Do we want to support release

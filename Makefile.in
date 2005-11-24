@@ -32,7 +32,7 @@ TCC = @TARGET_CC@ @TARGET_CFLAGS@ -I. -I${TOP}/src
 # Omitting the define will cause extra debugging code to be inserted and
 # includes extra comments when "EXPLAIN stmt" is used.
 #
-TCC += @TARGET_DEBUG@
+TCC += @TARGET_DEBUG@ @XTHREADCONNECT@
 
 # Compiler options needed for programs that use the TCL library.
 #
@@ -106,7 +106,7 @@ LTINSTALL = $(LIBTOOL) --mode=install $(INSTALL)
 
 # You should not have to change anything below this line
 ###############################################################################
-
+OPTS = 
 OPTS += -DSQLITE_OMIT_CURSOR          # Cursors do not work at this time
 TCC += -DSQLITE_OMIT_CURSOR
 

@@ -81,7 +81,7 @@
 ** to another.  This logic makes sure a user does not try to do that
 ** by mistake.
 */
-#ifdef SQLITE_UNIX_THREADS
+#if defined(SQLITE_UNIX_THREADS) && !defined(SQLITE_ALLOW_XTHREAD_CONNECTIONS)
 # define SET_THREADID(X)   X->tid = pthread_self()
 # define CHECK_THREADID(X) (!pthread_equal(X->tid, pthread_self()))
 #else
