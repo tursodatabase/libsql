@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the goals.html file.
 #
-set rcsid {$Id: optoverview.tcl,v 1.4 2005/09/20 01:36:30 drh Exp $}
+set rcsid {$Id: optoverview.tcl,v 1.5 2005/11/24 13:15:34 drh Exp $}
 source common.tcl
 header {The SQLite Query Optimizer Overview}
 
@@ -88,7 +88,7 @@ PARAGRAPH {
 }
 
 PARAGRAPH {
-  In order be used by an index, a term must be of one of the following
+  To be usable by an index a term must be of one of the following
   forms:
 }
 SYNTAX {

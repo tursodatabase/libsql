@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.148 2005/11/14 22:29:05 drh Exp $
+** $Id: insert.c,v 1.149 2005/11/24 13:15:33 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -23,9 +23,11 @@
 **
 **  Character      Column affinity
 **  ------------------------------
-**  'n'            NUMERIC
-**  't'            TEXT
-**  'o'            NONE
+**  'a'            TEXT
+**  'b'            NONE
+**  'c'            NUMERIC
+**  'd'            INTEGER
+**  'e'            REAL
 */
 void sqlite3IndexAffinityStr(Vdbe *v, Index *pIdx){
   if( !pIdx->zColAff ){
@@ -60,9 +62,11 @@ void sqlite3IndexAffinityStr(Vdbe *v, Index *pIdx){
 **
 **  Character      Column affinity
 **  ------------------------------
-**  'n'            NUMERIC
-**  't'            TEXT
-**  'o'            NONE
+**  'a'            TEXT
+**  'b'            NONE
+**  'c'            NUMERIC
+**  'd'            INTEGER
+**  'e'            REAL
 */
 void sqlite3TableAffinityStr(Vdbe *v, Table *pTab){
   /* The first time a column affinity string for a particular table
@@ -360,7 +364,6 @@ void sqlite3Insert(
       srcTab = pParse->nTab++;
       sqlite3VdbeResolveLabel(v, iInsertBlock);
       sqlite3VdbeAddOp(v, OP_MakeRecord, nColumn, 0);
-      sqlite3TableAffinityStr(v, pTab);
       sqlite3VdbeAddOp(v, OP_NewRowid, srcTab, 0);
       sqlite3VdbeAddOp(v, OP_Pull, 1, 0);
       sqlite3VdbeAddOp(v, OP_Insert, srcTab, 0);
