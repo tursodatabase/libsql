@@ -16,9 +16,9 @@
 ** These routines are in a separate files so that they will not be linked
 ** if they are not used.
 */
+#include "sqliteInt.h"
 #include <stdlib.h>
 #include <string.h>
-#include "sqliteInt.h"
 
 #ifndef SQLITE_OMIT_GET_TABLE
 
