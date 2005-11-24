@@ -202,6 +202,7 @@ static int opcodeNoPush(u8 op){
     NOPUSH_MASK_6 + (NOPUSH_MASK_7<<16),
     NOPUSH_MASK_8 + (NOPUSH_MASK_9<<16)
   };
+  assert( op>=0 && op<32*5 );
   return (masks[op>>5] & (1<<(op&0x1F)));
 }
 

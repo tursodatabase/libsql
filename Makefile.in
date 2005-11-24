@@ -339,9 +339,11 @@ parse.lo:	parse.c $(HDR)
 
 parse.h:	parse.c
 
-parse.c:	$(TOP)/src/parse.y lemon$(BEXE)
+parse.c:	$(TOP)/src/parse.y lemon$(BEXE) $(TOP)/addopcodes.awk
 	cp $(TOP)/src/parse.y .
 	./lemon $(OPTS) parse.y
+	mv parse.h parse.h.temp
+	awk -f $(TOP)/addopcodes.awk parse.h.temp >parse.h
 
 pragma.lo:	$(TOP)/src/pragma.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/pragma.c

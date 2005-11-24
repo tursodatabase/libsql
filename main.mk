@@ -273,9 +273,11 @@ parse.o:	parse.c $(HDR)
 
 parse.h:	parse.c
 
-parse.c:	$(TOP)/src/parse.y lemon
+parse.c:	$(TOP)/src/parse.y lemon $(TOP)/addopcodes.awk
 	cp $(TOP)/src/parse.y .
 	./lemon $(OPTS) parse.y
+	mv parse.h parse.h.temp
+	awk -f $(TOP)/addopcodes.awk parse.h.temp >parse.h
 
 pragma.o:	$(TOP)/src/pragma.c $(HDR)
 	$(TCCX) $(TCL_FLAGS) -c $(TOP)/src/pragma.c

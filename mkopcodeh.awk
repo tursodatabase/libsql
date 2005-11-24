@@ -23,6 +23,20 @@
 # code generator run (infinitesimally) faster and more importantly it makes
 # the total library smaller.
 #
+# This script also scans for lines of the form:
+#
+#       case OP_aaaa:       /* no-push */
+#
+# When the no-push comment is found on an opcode, it means that that
+# opcode does not leave a result on the stack.  But identifying which
+# opcodes leave results on the stack it is possible to determine a
+# much smaller upper bound on the size of the stack.  This allows
+# a smaller stack to be allocated, which is important to embedded
+# systems with limited memory space.  This script generates a series
+# of "NOPUSH_MASK" defines that contain bitmaps of opcodes that leave
+# results on the stack.  The NOPUSH_MASK defines are used in vdbeaux.c
+# to help determine the maximum stack size.
+#
 
 
 # Remember the TK_ values from the parse.h file
