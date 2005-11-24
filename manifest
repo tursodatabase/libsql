@@ -1,5 +1,5 @@
-C Fix\sa\scomment\sin\sbtree.c.\s\sNo\scode\schanges.\s(CVS\s2774)
-D 2005-11-24T14:24:28
+C Comment\schanges.\s\sNo\schanges\sto\scode.\s(CVS\s2775)
+D 2005-11-24T14:34:36
 F Makefile.in 12784cdce5ffc8dfb707300c34e4f1eb3b8a14f1
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -33,7 +33,7 @@ F src/alter.c 149e871e1ad6648da9b72e69feb1bd1407bf5226
 F src/analyze.c ea42005eed52c382fcc7ef66969e7f1858597633
 F src/attach.c 4b21689700a72ae281fa85dbaff06b2a62bd49ee
 F src/auth.c 31e2304bef67f44d635655f44234387ea7d21454
-F src/btree.c e742aacc7ccc62e31d8725c91f2ed5e32f188faf
+F src/btree.c aa88194f460becf8fff6196996d6e38f1b37286e
 F src/btree.h 1ed561263ca0e335bc3e81d761c9d5ff8c22f61e
 F src/build.c 8c93ae10563e8b92d3d7ea532a606424be3cb4f7
 F src/callback.c 90ab4f235a2603c4cb8e6a2497091a71fb732bfa
@@ -81,7 +81,7 @@ F src/update.c fec7665138ccf2a2133f11dcd24c1134c6b33526
 F src/utf.c bda5eb85039ef16f2d17004c1e18c96e1ab0a80c
 F src/util.c 48fecbbef4391d102a23096d32f0d74173428406
 F src/vacuum.c baae8681282c7a03900043043dc7ce07d43b5a1e
-F src/vdbe.c 3b73d37dc1eec230385a58534573f0aa21fd4285
+F src/vdbe.c f90a0fff5dac2ae11f880fb54e78132640199c44
 F src/vdbe.h 8729a4ee16ff9aeab2af9667df3cf300ff978e13
 F src/vdbeInt.h 7824d7be3b659ad177c8f151d9612b45b1805878
 F src/vdbeapi.c 85bbe1d0243a89655433d60711b4bd71979b59cd
@@ -320,7 +320,7 @@ F www/tclsqlite.tcl ddcf912ea48695603c8ed7efb29f0812ef8d1b49
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P a2e55a3828d74d78b0b76f956a537a0d906f3191
-R 64b00ba284788c985658db51e3a3c3b4
+P 0d8bd133a7530fb56ecb742472865f5a72a0ea5e
+R 06e316110dea962e3b3f65ea961ede69
 U drh
-Z 3176a9c572095a5021fc91a62543e245
+Z cd4222744b819f869ca54e34e06e5d1f

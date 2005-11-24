@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.498 2005/11/16 04:34:32 drh Exp $
+** $Id: vdbe.c,v 1.499 2005/11/24 14:34:36 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1324,7 +1324,7 @@ case OP_RealAffinity: {                  /* no-push */
 /* Opcode: ToText * * *
 **
 ** Force the value on the top of the stack to be text.
-** If the value is numeric, convert it to an using the
+** If the value is numeric, convert it to a string using the
 ** equivalent of printf().  Blob values are unchanged and
 ** are afterwards simply interpreted as text.
 **
