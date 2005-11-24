@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.270 2005/10/20 07:28:18 drh Exp $
+** $Id: btree.c,v 1.271 2005/11/24 14:24:28 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -792,8 +792,9 @@ static void _pageIntegrity(MemPage *pPage){
 
 /*
 ** Defragment the page given.  All Cells are moved to the
-** beginning of the page and all free space is collected 
-** into one big FreeBlk at the end of the page.
+** end of the page and all free space is collected into one
+** big FreeBlk that occurs in between the header and cell
+** index and the cell data.
 */
 static int defragmentPage(MemPage *pPage){
   int i;                     /* Loop counter */
