@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.164 2005/11/25 09:01:24 danielk1977 Exp $
+** $Id: test1.c,v 1.165 2005/11/25 10:38:22 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -2821,6 +2821,12 @@ static void set_options(Tcl_Interp *interp){
   Tcl_SetVar2(interp, "sqlite_options","casesensitivelike","1",TCL_GLOBAL_ONLY);
 #else
   Tcl_SetVar2(interp, "sqlite_options","casesensitivelike","0",TCL_GLOBAL_ONLY);
+#endif
+
+#ifdef SQLITE_DISABLE_DIRSYNC
+  Tcl_SetVar2(interp, "sqlite_options", "dirsync", "0", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "dirsync", "1", TCL_GLOBAL_ONLY);
 #endif
 
 #ifdef SQLITE_DISABLE_LFS

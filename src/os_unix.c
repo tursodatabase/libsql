@@ -872,9 +872,11 @@ int sqlite3OsSync(OsFile *id, int dataOnly){
   }
   if( id->dirfd>=0 ){
     TRACE2("DIRSYNC %-3d\n", id->dirfd);
+#ifndef SQLITE_DISABLE_DIRSYNC
     if( full_fsync(id->dirfd, id->fullSync, 0) ){
         return SQLITE_IOERR;
     }
+#endif
     close(id->dirfd);  /* Only need to sync once, so close the directory */
     id->dirfd = -1;    /* when we are done. */
   }
@@ -890,6 +892,9 @@ int sqlite3OsSync(OsFile *id, int dataOnly){
 ** The F_FULLFSYNC option is not needed here.
 */
 int sqlite3OsSyncDirectory(const char *zDirname){
+#ifdef SQLITE_DISABLE_DIRSYNC
+  return SQLITE_OK;
+#else
   int fd;
   int r;
   SimulateIOError(SQLITE_IOERR);
@@ -901,6 +906,7 @@ int sqlite3OsSyncDirectory(const char *zDirname){
   r = fsync(fd);
   close(fd);
   return ((r==0)?SQLITE_OK:SQLITE_IOERR);
+#endif
 }
 
 /*
