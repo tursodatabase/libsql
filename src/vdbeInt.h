@@ -250,7 +250,7 @@ struct Fifo {
 */
 typedef struct Context Context;
 struct Context {
-  int lastRowid;    /* Last insert rowid (sqlite3.lastRowid) */
+  i64 lastRowid;    /* Last insert rowid (sqlite3.lastRowid) */
   int nChange;      /* Statement changes (Vdbe.nChanges)     */
   Fifo sFifo;       /* Records that will participate in a DELETE or UPDATE */
 };
