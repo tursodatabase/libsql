@@ -12,11 +12,17 @@
 # focus of this script testing the ability of SQLite to handle database
 # files larger than 4GB.
 #
-# $Id: bigfile.test,v 1.8 2005/09/07 23:05:22 drh Exp $
+# $Id: bigfile.test,v 1.9 2005/11/25 09:01:24 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+# If SQLITE_DISABLE_LFS is defined, omit this file.
+ifcapable !lfs {
+  finish_test
+  return
+}
 
 # These tests only work for Tcl version 8.4 and later.  Prior to 8.4,
 # Tcl was unable to handle large files.

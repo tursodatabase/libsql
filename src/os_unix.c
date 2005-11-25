@@ -51,7 +51,7 @@
 ** The DJGPP compiler environment looks mostly like Unix, but it
 ** lacks the fcntl() system call.  So redefine fcntl() to be something
 ** that always succeeds.  This means that locking does not occur under
-** DJGPP.  But its DOS - what did you expect?
+** DJGPP.  But it's DOS - what did you expect?
 */
 #ifdef __DJGPP__
 # define fcntl(A,B,C) 0
