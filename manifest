@@ -1,5 +1,5 @@
-C Preserve\s64-bit\slast\sinsert\srowids\sacross\striggers.\s(CVS\s2779)
-D 2005-11-25T02:43:51
+C Check\sthe\sreturn\scode\sof\sfull_fsync()\swhen\sused\sto\ssync\sa\sdirectory\sfd.\s(CVS\s2780)
+D 2005-11-25T08:47:57
 F Makefile.in 7bed51530f32af7fe1945261c388d80998b39a12
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -54,7 +54,7 @@ F src/os.h c51f2747f7bd1840447e2c7d26db749604626814
 F src/os_common.h d74a11728ad2444b6b695b94c28c06881f049e49
 F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
-F src/os_unix.c 6878d8aeaa5ddd0c8e8c92b4c36b09c2080fc892
+F src/os_unix.c 0a75314cdd881e138a5da4d450102cf9ce9c1786
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c fbccc85e7011174068c27d54256746321a1f0059
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
@@ -321,7 +321,7 @@ F www/tclsqlite.tcl ddcf912ea48695603c8ed7efb29f0812ef8d1b49
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 84aa4d58001ed943295f21f429c58c3c99b771d8
-R 70d5788f0bbefc851ca5be71e587e730
-U drh
-Z 95428906cd2e78e3ce76462c301ac152
+P 4dd7cfaa587fd5f76a0b60db0f02d5f57f801564
+R dcb430a1ff23dd4c2334919a70d35887
+U danielk1977
+Z d513d006c2d7b8a589698409e9f38d6f

@@ -872,7 +872,9 @@ int sqlite3OsSync(OsFile *id, int dataOnly){
   }
   if( id->dirfd>=0 ){
     TRACE2("DIRSYNC %-3d\n", id->dirfd);
-    full_fsync(id->dirfd, id->fullSync, 0);
+    if( full_fsync(id->dirfd, id->fullSync, 0) ){
+        return SQLITE_IOERR;
+    }
     close(id->dirfd);  /* Only need to sync once, so close the directory */
     id->dirfd = -1;    /* when we are done. */
   }
