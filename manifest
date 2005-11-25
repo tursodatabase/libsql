@@ -1,5 +1,5 @@
-C Add\sthe\scompilation\soption\sSQLITE_DISABLE_DIRSYNC\s(CVS\s2783)
-D 2005-11-25T10:38:22
+C Ensure\sa\slow\ssystem\slimit\son\sthe\snumber\sof\sopen\sfiles\sdoes\snot\scause\smanydb.test\sto\sfail.\s(CVS\s2784)
+D 2005-11-25T10:55:58
 F Makefile.in 7bed51530f32af7fe1945261c388d80998b39a12
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -177,7 +177,7 @@ F test/lock3.test 615111293cf32aa2ed16d01c6611737651c96fb9
 F test/main.test b12f01d49a5c805a33fa6c0ef168691f63056e79
 F test/malloc.test 666c77a878ce50f5c22b9211ed43e889cabb63a6
 F test/malloc2.test 655b972372d2754a3f6c6ed54d7cfd18fde9bd32
-F test/manydb.test 18bc28e481d8e742a767858a8149bc96056aad46
+F test/manydb.test d81debbf5871242e3b5df1d3bb5e14c50431b6f8
 F test/memdb.test 1860e060be810bf0775bc57408a5b7c4954bcaea
 F test/memleak.test df2b2b96e77f8ba159a332299535b1e5f18e49ac
 F test/minmax.test cad887abca5504396718e2cd5729ca40758743e8
@@ -321,7 +321,7 @@ F www/tclsqlite.tcl ddcf912ea48695603c8ed7efb29f0812ef8d1b49
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P f1298bb103aad46c737741d89d33c4c2904aec68
-R efc3e024b52f9af7ccb6b746b407bfb0
+P f9f5ecbb79f03ba8e7d6a036a562252319e82abc
+R ccf6548dbbfa01c325708c34e3a65ec7
 U danielk1977
-Z a2ca547850d0fef3d8a36f221d37dffb
+Z 66667bbf44f1416dcd406944ed2382c1

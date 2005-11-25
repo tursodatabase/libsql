@@ -13,12 +13,28 @@
 # This file implements tests the ability of the library to open
 # many different databases at the same time without leaking memory.
 #
-# $Id: manydb.test,v 1.1 2005/10/03 15:11:09 drh Exp $
+# $Id: manydb.test,v 1.2 2005/11/25 10:55:58 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
 set N 300
+
+# First test how many file descriptors are available for use. To open a
+# database for writing SQLite requires 3 file descriptors (the database, the
+# journal and the directory).
+catch {
+  for {set i 0} {$i<($N * 3)} {incr i} {
+    lappend filehandles [open testfile.1 w]
+  }
+}
+foreach fd $filehandles {
+  close $fd
+}
+catch {
+  file delete -force testfile.1
+}
+set N [expr $i / 3]
 
 # Create a bunch of random database names
 #
