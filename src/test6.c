@@ -429,6 +429,14 @@ static int crashOpenReadOnly(const char *zFilename, OsFile *id){
 }
 
 /*
+** Make a copy of an OsFile object
+*/
+static void crashCopyOsFile(OsFile *pDest, OsFile *pSrc){
+  *pDest = *pSrc;
+  ((OsTestFile*)(pDest->pAux))->pBase = pDest;
+}
+
+/*
 ** tclcmd:   sqlite_crashparams DELAY CRASHFILE
 **
 ** This procedure implements a TCL command that enables crash testing
@@ -464,6 +472,7 @@ static int crashParamsObjCmd(
   sqlite3Io.xOpenReadWrite = crashOpenReadWrite;
   sqlite3Io.xOpenExclusive = crashOpenExclusive;
   sqlite3Io.xOpenReadOnly = crashOpenReadOnly;
+  sqlite3Io.xCopyOsFile = crashCopyOsFile;
   return TCL_OK;
 }
 

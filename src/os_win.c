@@ -830,6 +830,14 @@ static char *winFullPathname(const char *zRelative){
 }
 
 /*
+** Make a copy of an OsFile object.
+*/
+static void winCopyOsFile(OsFile *pDest, OsFile *pSrc){
+  *pDest = *pSrc;
+}
+
+
+/*
 ** This is the structure that defines all of the I/O routines.
 */
 struct sqlite3IoVtbl sqlite3Io = {
@@ -853,6 +861,7 @@ struct sqlite3IoVtbl sqlite3Io = {
   winLock,
   winUnlock,
   winCheckReservedLock,
+  winCopyOsFile,
 };
 
 #endif /* SQLITE_OMIT_DISKIO */

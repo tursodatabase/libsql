@@ -197,6 +197,7 @@ extern struct sqlite3IoVtbl {
   int (*xLock)(OsFile*, int);
   int (*xUnlock)(OsFile*, int);
   int (*xCheckReservedLock)(OsFile *id);
+  void (*xCopyOsFile)(OsFile *pDest, OsFile *pSrc);
 } sqlite3Io;
 
 /* The interface for file I/O is above.  Other miscellaneous functions

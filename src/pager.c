@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.218 2005/11/26 00:25:03 drh Exp $
+** @(#) $Id: pager.c,v 1.219 2005/11/26 03:43:23 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1659,7 +1659,7 @@ int sqlite3pager_open(
   strcpy(pPager->zJournal, zFullPathname);
   sqliteFree(zFullPathname);
   strcpy(&pPager->zJournal[nameLen], "-journal");
-  pPager->fd = fd;
+  sqlite3Io.xCopyOsFile(&pPager->fd,&fd);
   pPager->journalOpen = 0;
   pPager->useJournal = useJournal && !memDb;
   pPager->noReadlock = noReadlock && readOnly;

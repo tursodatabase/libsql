@@ -1350,6 +1350,12 @@ static char *unixFullPathname(const char *zRelative){
   return zFull;
 }
 
+/*
+** Make a copy of an OsFile object.
+*/
+static void unixCopyOsFile(OsFile *pDest, OsFile *pSrc){
+  *pDest = *pSrc;
+}
 
 /*
 ** This is the structure that defines all of the I/O routines.
@@ -1375,6 +1381,7 @@ struct sqlite3IoVtbl sqlite3Io = {
   unixLock,
   unixUnlock,
   unixCheckReservedLock,
+  unixCopyOsFile,
 };
 
 
