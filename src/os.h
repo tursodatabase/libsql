@@ -23,7 +23,7 @@
 ** N.B. MacOS means Mac Classic (or Carbon). Treat Darwin (OS X) as Unix.
 **      The MacOS build is designed to use CodeWarrior (tested with v8)
 */
-#if !defined(OS_UNIX) && !defined(OS_TEST) && !defined(OS_OTHER)
+#if !defined(OS_UNIX) && !defined(OS_ALT)
 # define OS_OTHER 0
 # ifndef OS_WIN
 #   if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
@@ -45,8 +45,8 @@
 /*
 ** Invoke the appropriate operating-system specific header file.
 */
-#if OS_TEST
-# include "os_test.h"
+#if OS_ALT
+# include "os_alt.h"
 #endif
 #if OS_UNIX
 # include "os_unix.h"

@@ -1,5 +1,5 @@
-C Add\san\sOS\smethod\sfor\smaking\scopies\sof\sfile\sdescriptors.\s\sThis\sfixes\sthe\ncrash\stests.\s(CVS\s2786)
-D 2005-11-26T03:43:23
+C Remove\ssome\svestiges\sof\sthe\sold\sOS_TEST\sdriver.\s(CVS\s2787)
+D 2005-11-26T03:51:19
 F Makefile.in 28a2772cd9e03ba758c2a052813092cdb9da73bf
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -50,7 +50,7 @@ F src/insert.c da031c3ed8e1675fac891990095d277c2ba6e205
 F src/legacy.c d58ea507bce885298a2c8c3cbb0f4bff5d47830b
 F src/main.c 97bb830cdbd378d1f87469618471f52d9d263d09
 F src/md5.c 7ae1c39044b95de2f62e066f47bb1deb880a1070
-F src/os.h 101564686bffe1825f7c66a712acb52e3ff3530d
+F src/os.h 70da8a43e03190a981d02bdc7cef1eb9ad1db4ad
 F src/os_common.h d74a11728ad2444b6b695b94c28c06881f049e49
 F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
@@ -58,7 +58,7 @@ F src/os_unix.c 09f174975fe054ed73117ee17c5650f55773fbe3
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c a3762efcc6eebbf8a38d25ff80e0e510ec7afead
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 8231fb8d947d5c524763de34174380684bb801d1
+F src/pager.c 309d473c01b5e2b355fc3c8adce2a36df16c43a3
 F src/pager.h e7b41ce8e7b5f629d456708b7ad9a8c8ede37140
 F src/parse.y e4d57c2fd5cc02f19822ec41f6dc2bfc9bc85609
 F src/pragma.c e278b3f722379ab9d630a1569ac05f586f01f4db
@@ -322,7 +322,7 @@ F www/tclsqlite.tcl ddcf912ea48695603c8ed7efb29f0812ef8d1b49
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 1f69aec285dd8e26bd739d5e44bb50fe03a9682a
-R 4253512b789e7bb7309536d870bf771b
+P 57a674fc71512f11393b8eb595961ec9465ba4e1
+R ecb19a3d611238047de996f8008f2591
 U drh
-Z 5555b9dd495cd99105a3717d675a6704
+Z 7a1835ca619ef377195f89e0fda27e67

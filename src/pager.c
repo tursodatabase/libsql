@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.219 2005/11/26 03:43:23 drh Exp $
+** @(#) $Id: pager.c,v 1.220 2005/11/26 03:51:19 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -46,21 +46,14 @@
 
 /*
 ** The following two macros are used within the TRACEX() macros above
-** to print out file-descriptors. They are required so that tracing
-** can be turned on when using both the regular os_unix.c and os_test.c
-** backends.
+** to print out file-descriptors. 
 **
 ** PAGERID() takes a pointer to a Pager struct as it's argument. The
 ** associated file-descriptor is returned. FILEHANDLEID() takes an OsFile
 ** struct as it's argument.
 */
-#ifdef OS_TEST
-#define PAGERID(p) (p->fd->fd.h)
-#define FILEHANDLEID(fd) (fd->fd.h)
-#else
 #define PAGERID(p) (p->fd.h)
 #define FILEHANDLEID(fd) (fd.h)
-#endif
 
 /*
 ** The page cache as a whole is always in one of the following
