@@ -126,7 +126,7 @@ static char *unicodeToUtf8(const WCHAR *zWideFilename){
 /*
 ** Delete the named file
 */
-int sqlite3OsDelete(const char *zFilename){
+static int winDelete(const char *zFilename){
   WCHAR *zWide = utf8ToUnicode(zFilename);
   if( zWide ){
     DeleteFileW(zWide);
@@ -141,7 +141,7 @@ int sqlite3OsDelete(const char *zFilename){
 /*
 ** Return TRUE if the named file exists.
 */
-int sqlite3OsFileExists(const char *zFilename){
+static int winFileExists(const char *zFilename){
   int exists = 0;
   WCHAR *zWide = utf8ToUnicode(zFilename);
   if( zWide ){
@@ -166,7 +166,7 @@ int sqlite3OsFileExists(const char *zFilename){
 ** On failure, the function returns SQLITE_CANTOPEN and leaves
 ** *id and *pReadonly unchanged.
 */
-int sqlite3OsOpenReadWrite(
+static int winOpenReadWrite(
   const char *zFilename,
   OsFile *id,
   int *pReadonly
@@ -251,7 +251,7 @@ int sqlite3OsOpenReadWrite(
 **
 ** On failure, return SQLITE_CANTOPEN.
 */
-int sqlite3OsOpenExclusive(const char *zFilename, OsFile *id, int delFlag){
+static int winOpenExclusive(const char *zFilename, OsFile *id, int delFlag){
   HANDLE h;
   int fileflags;
   WCHAR *zWide = utf8ToUnicode(zFilename);
@@ -301,7 +301,7 @@ int sqlite3OsOpenExclusive(const char *zFilename, OsFile *id, int delFlag){
 **
 ** On failure, return SQLITE_CANTOPEN.
 */
-int sqlite3OsOpenReadOnly(const char *zFilename, OsFile *id){
+static int winOpenReadOnly(const char *zFilename, OsFile *id){
   HANDLE h;
   WCHAR *zWide = utf8ToUnicode(zFilename);
   assert( !id->isOpen );
@@ -353,7 +353,7 @@ int sqlite3OsOpenReadOnly(const char *zFilename, OsFile *id){
 ** On failure, the function returns SQLITE_CANTOPEN and leaves
 ** *id unchanged.
 */
-int sqlite3OsOpenDirectory(
+static int winOpenDirectory(
   const char *zDirname,
   OsFile *id
 ){
@@ -371,7 +371,7 @@ char *sqlite3_temp_directory = 0;
 ** Create a temporary file name in zBuf.  zBuf must be big enough to
 ** hold at least SQLITE_TEMPNAME_SIZE characters.
 */
-int sqlite3OsTempFileName(char *zBuf){
+static int winTempFileName(char *zBuf){
   static char zChars[] =
     "abcdefghijklmnopqrstuvwxyz"
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -404,7 +404,7 @@ int sqlite3OsTempFileName(char *zBuf){
       zBuf[j] = (char)zChars[ ((unsigned char)zBuf[j])%(sizeof(zChars)-1) ];
     }
     zBuf[j] = 0;
-    if( !sqlite3OsFileExists(zBuf) ) break;
+    if( !sqlite3Io.xFileExists(zBuf) ) break;
   }
   TRACE2("TEMP FILENAME: %s\n", zBuf);
   return SQLITE_OK; 
@@ -413,7 +413,7 @@ int sqlite3OsTempFileName(char *zBuf){
 /*
 ** Close a file.
 */
-int sqlite3OsClose(OsFile *id){
+static int winClose(OsFile *id){
   if( id->isOpen ){
     TRACE2("CLOSE %d\n", id->h);
     CloseHandle(id->h);
@@ -428,7 +428,7 @@ int sqlite3OsClose(OsFile *id){
 ** bytes were read successfully and SQLITE_IOERR if anything goes
 ** wrong.
 */
-int sqlite3OsRead(OsFile *id, void *pBuf, int amt){
+static int winRead(OsFile *id, void *pBuf, int amt){
   DWORD got;
   assert( id->isOpen );
   SimulateIOError(SQLITE_IOERR);
@@ -447,7 +447,7 @@ int sqlite3OsRead(OsFile *id, void *pBuf, int amt){
 ** Write data from a buffer into a file.  Return SQLITE_OK on success
 ** or some other error code on failure.
 */
-int sqlite3OsWrite(OsFile *id, const void *pBuf, int amt){
+static int winWrite(OsFile *id, const void *pBuf, int amt){
   int rc = 0;
   DWORD wrote;
   assert( id->isOpen );
@@ -475,7 +475,7 @@ int sqlite3OsWrite(OsFile *id, const void *pBuf, int amt){
 /*
 ** Move the read/write pointer in a file.
 */
-int sqlite3OsSeek(OsFile *id, i64 offset){
+static int winSeek(OsFile *id, i64 offset){
   LONG upperBits = offset>>32;
   LONG lowerBits = offset & 0xffffffff;
   DWORD rc;
@@ -495,7 +495,7 @@ int sqlite3OsSeek(OsFile *id, i64 offset){
 /*
 ** Make sure all writes to a particular file are committed to disk.
 */
-int sqlite3OsSync(OsFile *id, int dataOnly){
+static int winSync(OsFile *id, int dataOnly){
   assert( id->isOpen );
   TRACE3("SYNC %d lock=%d\n", id->h, id->locktype);
   if( FlushFileBuffers(id->h) ){
@@ -509,7 +509,7 @@ int sqlite3OsSync(OsFile *id, int dataOnly){
 ** Sync the directory zDirname. This is a no-op on operating systems other
 ** than UNIX.
 */
-int sqlite3OsSyncDirectory(const char *zDirname){
+static int winSyncDirectory(const char *zDirname){
   SimulateIOError(SQLITE_IOERR);
   return SQLITE_OK;
 }
@@ -517,7 +517,7 @@ int sqlite3OsSyncDirectory(const char *zDirname){
 /*
 ** Truncate an open file to a specified size
 */
-int sqlite3OsTruncate(OsFile *id, i64 nByte){
+static int winTruncate(OsFile *id, i64 nByte){
   LONG upperBits = nByte>>32;
   assert( id->isOpen );
   TRACE3("TRUNCATE %d %lld\n", id->h, nByte);
@@ -530,7 +530,7 @@ int sqlite3OsTruncate(OsFile *id, i64 nByte){
 /*
 ** Determine the current size of a file in bytes
 */
-int sqlite3OsFileSize(OsFile *id, i64 *pSize){
+static int winFileSize(OsFile *id, i64 *pSize){
   DWORD upperBits, lowerBits;
   assert( id->isOpen );
   SimulateIOError(SQLITE_IOERR);
@@ -579,7 +579,7 @@ static int unlockReadLock(OsFile *id){
 ** Check that a given pathname is a directory and is writable 
 **
 */
-int sqlite3OsIsDirWritable(char *zDirname){
+static int winIsDirWritable(char *zDirname){
   int fileAttr;
   WCHAR *zWide;
   if( zDirname==0 ) return 0;
@@ -620,12 +620,12 @@ int sqlite3OsIsDirWritable(char *zDirname){
 **    RESERVED -> (PENDING) -> EXCLUSIVE
 **    PENDING -> EXCLUSIVE
 **
-** This routine will only increase a lock.  The sqlite3OsUnlock() routine
+** This routine will only increase a lock.  The winUnlock() routine
 ** erases all locks at once and returns us immediately to locking level 0.
 ** It is not possible to lower the locking level one step at a time.  You
 ** must go straight to locking level 0.
 */
-int sqlite3OsLock(OsFile *id, int locktype){
+static int winLock(OsFile *id, int locktype){
   int rc = SQLITE_OK;    /* Return code from subroutines */
   int res = 1;           /* Result of a windows lock call */
   int newLocktype;       /* Set id->locktype to this value before exiting */
@@ -735,7 +735,7 @@ int sqlite3OsLock(OsFile *id, int locktype){
 ** file by this or any other process. If such a lock is held, return
 ** non-zero, otherwise zero.
 */
-int sqlite3OsCheckReservedLock(OsFile *id){
+static int winCheckReservedLock(OsFile *id){
   int rc;
   assert( id->isOpen );
   if( id->locktype>=RESERVED_LOCK ){
@@ -763,7 +763,7 @@ int sqlite3OsCheckReservedLock(OsFile *id){
 ** is NO_LOCK.  If the second argument is SHARED_LOCK then this routine
 ** might return SQLITE_IOERR;
 */
-int sqlite3OsUnlock(OsFile *id, int locktype){
+static int winUnlock(OsFile *id, int locktype){
   int type;
   int rc = SQLITE_OK;
   assert( id->isOpen );
@@ -798,7 +798,7 @@ int sqlite3OsUnlock(OsFile *id, int locktype){
 ** The calling function is responsible for freeing this space once it
 ** is no longer needed.
 */
-char *sqlite3OsFullPathname(const char *zRelative){
+static char *winFullPathname(const char *zRelative){
   char *zNotUsed;
   char *zFull;
   WCHAR *zWide;
@@ -828,6 +828,32 @@ char *sqlite3OsFullPathname(const char *zRelative){
 #endif
   return zFull;
 }
+
+/*
+** This is the structure that defines all of the I/O routines.
+*/
+struct sqlite3IoVtbl sqlite3Io = {
+  winDelete,
+  winFileExists,
+  winOpenReadWrite,
+  winOpenExclusive,
+  winOpenReadOnly,
+  winOpenDirectory,
+  winSyncDirectory,
+  winTempFileName,
+  winIsDirWritable,
+  winClose,
+  winRead,
+  winWrite,
+  winSeek,
+  winSync,
+  winTruncate,
+  winFileSize,
+  winFullPathname,
+  winLock,
+  winUnlock,
+  winCheckReservedLock,
+};
 
 #endif /* SQLITE_OMIT_DISKIO */
 /***************************************************************************

@@ -481,7 +481,7 @@ static int findLockInfo(
 /*
 ** Delete the named file
 */
-int sqlite3OsDelete(const char *zFilename){
+static int unixDelete(const char *zFilename){
   unlink(zFilename);
   return SQLITE_OK;
 }
@@ -489,7 +489,7 @@ int sqlite3OsDelete(const char *zFilename){
 /*
 ** Return TRUE if the named file exists.
 */
-int sqlite3OsFileExists(const char *zFilename){
+static int unixFileExists(const char *zFilename){
   return access(zFilename, 0)==0;
 }
 
@@ -506,7 +506,7 @@ int sqlite3OsFileExists(const char *zFilename){
 ** On failure, the function returns SQLITE_CANTOPEN and leaves
 ** *id and *pReadonly unchanged.
 */
-int sqlite3OsOpenReadWrite(
+static int unixOpenReadWrite(
   const char *zFilename,
   OsFile *id,
   int *pReadonly
@@ -560,7 +560,7 @@ int sqlite3OsOpenReadWrite(
 **
 ** On failure, return SQLITE_CANTOPEN.
 */
-int sqlite3OsOpenExclusive(const char *zFilename, OsFile *id, int delFlag){
+static int unixOpenExclusive(const char *zFilename, OsFile *id, int delFlag){
   int rc;
   assert( !id->isOpen );
   if( access(zFilename, 0)==0 ){
@@ -599,7 +599,7 @@ int sqlite3OsOpenExclusive(const char *zFilename, OsFile *id, int delFlag){
 **
 ** On failure, return SQLITE_CANTOPEN.
 */
-int sqlite3OsOpenReadOnly(const char *zFilename, OsFile *id){
+static int unixOpenReadOnly(const char *zFilename, OsFile *id){
   int rc;
   assert( !id->isOpen );
   SET_THREADID(id);
@@ -638,7 +638,7 @@ int sqlite3OsOpenReadOnly(const char *zFilename, OsFile *id){
 ** On failure, the function returns SQLITE_CANTOPEN and leaves
 ** *id unchanged.
 */
-int sqlite3OsOpenDirectory(
+static int unixOpenDirectory(
   const char *zDirname,
   OsFile *id
 ){
@@ -668,7 +668,7 @@ char *sqlite3_temp_directory = 0;
 ** Create a temporary file name in zBuf.  zBuf must be big enough to
 ** hold at least SQLITE_TEMPNAME_SIZE characters.
 */
-int sqlite3OsTempFileName(char *zBuf){
+static int unixTempFileName(char *zBuf){
   static const char *azDirs[] = {
      0,
      "/var/tmp",
@@ -704,28 +704,28 @@ int sqlite3OsTempFileName(char *zBuf){
   return SQLITE_OK; 
 }
 
-#ifndef SQLITE_OMIT_PAGER_PRAGMAS
 /*
 ** Check that a given pathname is a directory and is writable 
 **
 */
-int sqlite3OsIsDirWritable(char *zBuf){
+static int unixIsDirWritable(char *zBuf){
+#ifndef SQLITE_OMIT_PAGER_PRAGMAS
   struct stat buf;
   if( zBuf==0 ) return 0;
   if( zBuf[0]==0 ) return 0;
   if( stat(zBuf, &buf) ) return 0;
   if( !S_ISDIR(buf.st_mode) ) return 0;
   if( access(zBuf, 07) ) return 0;
+#endif /* SQLITE_OMIT_PAGER_PRAGMAS */
   return 1;
 }
-#endif /* SQLITE_OMIT_PAGER_PRAGMAS */
 
 /*
 ** Read data from a file into a buffer.  Return SQLITE_OK if all
 ** bytes were read successfully and SQLITE_IOERR if anything goes
 ** wrong.
 */
-int sqlite3OsRead(OsFile *id, void *pBuf, int amt){
+static int unixRead(OsFile *id, void *pBuf, int amt){
   int got;
   assert( id->isOpen );
   SimulateIOError(SQLITE_IOERR);
@@ -746,7 +746,7 @@ int sqlite3OsRead(OsFile *id, void *pBuf, int amt){
 ** Write data from a buffer into a file.  Return SQLITE_OK on success
 ** or some other error code on failure.
 */
-int sqlite3OsWrite(OsFile *id, const void *pBuf, int amt){
+static int unixWrite(OsFile *id, const void *pBuf, int amt){
   int wrote = 0;
   assert( id->isOpen );
   assert( amt>0 );
@@ -769,7 +769,7 @@ int sqlite3OsWrite(OsFile *id, const void *pBuf, int amt){
 /*
 ** Move the read/write pointer in a file.
 */
-int sqlite3OsSeek(OsFile *id, i64 offset){
+static int unixSeek(OsFile *id, i64 offset){
   assert( id->isOpen );
   SEEK(offset/1024 + 1);
 #ifdef SQLITE_TEST
@@ -863,7 +863,7 @@ static int full_fsync(int fd, int fullSync, int dataOnly){
 ** the directory entry for the journal was never created) and the transaction
 ** will not roll back - possibly leading to database corruption.
 */
-int sqlite3OsSync(OsFile *id, int dataOnly){
+static int unixSync(OsFile *id, int dataOnly){
   assert( id->isOpen );
   SimulateIOError(SQLITE_IOERR);
   TRACE2("SYNC    %-3d\n", id->h);
@@ -891,7 +891,7 @@ int sqlite3OsSync(OsFile *id, int dataOnly){
 ** before making changes to individual journals on a multi-database commit.
 ** The F_FULLFSYNC option is not needed here.
 */
-int sqlite3OsSyncDirectory(const char *zDirname){
+static int unixSyncDirectory(const char *zDirname){
 #ifdef SQLITE_DISABLE_DIRSYNC
   return SQLITE_OK;
 #else
@@ -912,7 +912,7 @@ int sqlite3OsSyncDirectory(const char *zDirname){
 /*
 ** Truncate an open file to a specified size
 */
-int sqlite3OsTruncate(OsFile *id, i64 nByte){
+static int unixTruncate(OsFile *id, i64 nByte){
   assert( id->isOpen );
   SimulateIOError(SQLITE_IOERR);
   return ftruncate(id->h, nByte)==0 ? SQLITE_OK : SQLITE_IOERR;
@@ -921,7 +921,7 @@ int sqlite3OsTruncate(OsFile *id, i64 nByte){
 /*
 ** Determine the current size of a file in bytes
 */
-int sqlite3OsFileSize(OsFile *id, i64 *pSize){
+static int unixFileSize(OsFile *id, i64 *pSize){
   struct stat buf;
   assert( id->isOpen );
   SimulateIOError(SQLITE_IOERR);
@@ -938,7 +938,7 @@ int sqlite3OsFileSize(OsFile *id, i64 *pSize){
 ** non-zero.  If the file is unlocked or holds only SHARED locks, then
 ** return zero.
 */
-int sqlite3OsCheckReservedLock(OsFile *id){
+static int unixCheckReservedLock(OsFile *id){
   int r = 0;
 
   assert( id->isOpen );
@@ -1012,7 +1012,7 @@ static const char * locktypeName(int locktype){
 ** This routine will only increase a lock.  Use the sqlite3OsUnlock()
 ** routine to lower a locking level.
 */
-int sqlite3OsLock(OsFile *id, int locktype){
+static int unixLock(OsFile *id, int locktype){
   /* The following describes the implementation of the various locks and
   ** lock transitions in terms of the POSIX advisory shared and exclusive
   ** lock primitives (called read-locks and write-locks below, to avoid
@@ -1208,7 +1208,7 @@ end_lock:
 ** is NO_LOCK.  If the second argument is SHARED_LOCK, this routine
 ** might return SQLITE_IOERR instead of SQLITE_OK.
 */
-int sqlite3OsUnlock(OsFile *id, int locktype){
+static int unixUnlock(OsFile *id, int locktype){
   struct lockInfo *pLock;
   struct flock lock;
   int rc = SQLITE_OK;
@@ -1291,10 +1291,10 @@ int sqlite3OsUnlock(OsFile *id, int locktype){
 /*
 ** Close a file.
 */
-int sqlite3OsClose(OsFile *id){
+static int unixClose(OsFile *id){
   if( !id->isOpen ) return SQLITE_OK;
   if( CHECK_THREADID(id) ) return SQLITE_MISUSE;
-  sqlite3OsUnlock(id, NO_LOCK);
+  sqlite3Io.xUnlock(id, NO_LOCK);
   if( id->dirfd>=0 ) close(id->dirfd);
   id->dirfd = -1;
   sqlite3OsEnterMutex();
@@ -1333,7 +1333,7 @@ int sqlite3OsClose(OsFile *id){
 ** The calling function is responsible for freeing this space once it
 ** is no longer needed.
 */
-char *sqlite3OsFullPathname(const char *zRelative){
+static char *unixFullPathname(const char *zRelative){
   char *zFull = 0;
   if( zRelative[0]=='/' ){
     sqlite3SetString(&zFull, zRelative, (char*)0);
@@ -1349,6 +1349,33 @@ char *sqlite3OsFullPathname(const char *zRelative){
   }
   return zFull;
 }
+
+
+/*
+** This is the structure that defines all of the I/O routines.
+*/
+struct sqlite3IoVtbl sqlite3Io = {
+  unixDelete,
+  unixFileExists,
+  unixOpenReadWrite,
+  unixOpenExclusive,
+  unixOpenReadOnly,
+  unixOpenDirectory,
+  unixSyncDirectory,
+  unixTempFileName,
+  unixIsDirWritable,
+  unixClose,
+  unixRead,
+  unixWrite,
+  unixSeek,
+  unixSync,
+  unixTruncate,
+  unixFileSize,
+  unixFullPathname,
+  unixLock,
+  unixUnlock,
+  unixCheckReservedLock,
+};
 
 
 #endif /* SQLITE_OMIT_DISKIO */

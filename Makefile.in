@@ -189,6 +189,7 @@ TESTSRC = \
   $(TOP)/src/test3.c \
   $(TOP)/src/test4.c \
   $(TOP)/src/test5.c \
+  $(TOP)/src/test6.c \
   $(TOP)/src/utf.c \
   $(TOP)/src/util.c \
   $(TOP)/src/vdbe.c \
@@ -425,15 +426,8 @@ testfixture$(TEXE):	$(TOP)/src/tclsqlite.c libsqlite3.la $(TESTSRC)
 		-o testfixture $(TESTSRC) $(TOP)/src/tclsqlite.c \
 		libsqlite3.la $(LIBTCL)
 
-crashtest$(TEXE):	$(TOP)/src/tclsqlite.c libsqlite3.la $(TESTSRC) $(TOP)/src/os_test.c
-	$(LTLINK) -DOS_TEST=1 -DTCLSH=1 -DSQLITE_TEST=1 \
-		-o crashtest \
-		$(TESTSRC) $(TOP)/src/os_test.c $(TOP)/src/tclsqlite.c \
-		libsqlite3.la $(LIBTCL)
 
-
-
-fulltest:	testfixture$(TEXE) sqlite3$(TEXE) crashtest$(TEXE)
+fulltest:	testfixture$(TEXE) sqlite3$(TEXE)
 	./testfixture $(TOP)/test/all.test
 
 test:	testfixture$(TEXE) sqlite3$(TEXE)

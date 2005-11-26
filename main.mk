@@ -131,6 +131,7 @@ TESTSRC = \
   $(TOP)/src/test3.c \
   $(TOP)/src/test4.c \
   $(TOP)/src/test5.c \
+  $(TOP)/src/test6.c \
   $(TOP)/src/utf.c \
   $(TOP)/src/util.c \
   $(TOP)/src/vdbe.c \
@@ -356,13 +357,7 @@ testfixture$(EXE):	$(TOP)/src/tclsqlite.c libsqlite3.a $(TESTSRC)
 		$(TESTSRC) $(TOP)/src/tclsqlite.c \
 		libsqlite3.a $(LIBTCL) $(THREADLIB)
 
-crashtest:	$(TOP)/src/tclsqlite.c libsqlite3.a $(TESTSRC) $(TOP)/src/os_test.c
-	$(TCCX) $(TCL_FLAGS) -DOS_TEST=1 -DTCLSH=1 -DSQLITE_TEST=1 \
-		-o crashtest \
-		$(TESTSRC) $(TOP)/src/os_test.c $(TOP)/src/tclsqlite.c \
-		libsqlite3.a $(LIBTCL) $(THREADLIB)
-
-fulltest:	testfixture$(EXE) sqlite3$(EXE) crashtest
+fulltest:	testfixture$(EXE) sqlite3$(EXE)
 	./testfixture$(EXE) $(TOP)/test/all.test
 
 test:	testfixture$(EXE) sqlite3$(EXE)
@@ -557,7 +552,7 @@ install:	sqlite3 libsqlite3.a sqlite3.h
 	mv sqlite3.h /usr/include
 
 clean:	
-	rm -f *.o sqlite3 libsqlite3.a sqlite3.h opcodes.* crashtest
+	rm -f *.o sqlite3 libsqlite3.a sqlite3.h opcodes.*
 	rm -f lemon lempar.c parse.* sqlite*.tar.gz mkkeywordhash keywordhash.h
 	rm -f $(PUBLISH)
 	rm -f *.da *.bb *.bbg gmon.out

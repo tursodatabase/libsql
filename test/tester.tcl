@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.51 2005/11/04 22:03:30 drh Exp $
+# $Id: tester.tcl,v 1.52 2005/11/26 00:25:04 drh Exp $
 
 # Make sure tclsqlite3 was compiled correctly.  Abort now with an
 # error message if not.
@@ -281,7 +281,7 @@ proc crashsql {crashdelay crashfile sql} {
   close $f
 
   set r [catch {
-    exec [file join . crashtest] crash.tcl >@stdout
+    exec [info nameofexec] crash.tcl >@stdout
   } msg]
   lappend r $msg
 }

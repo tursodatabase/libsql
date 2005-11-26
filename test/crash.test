@@ -12,15 +12,12 @@
 #
 # The focus of this file is testing the ability of the database to
 # uses its rollback journal to recover intact (no database corruption)
-# from a power failure during the middle of a COMMIT.  The special test
-# module "crashtest" compiled with the special "os_test.c" backend is used.
-# The os_test.c simulates the kind of file corruption that can occur
-# when writes are happening at the moment of power loss.
-# 
-# The special crash-test module with its os_test.c backend only works
-# on Unix.
+# from a power failure during the middle of a COMMIT.  The OS interface
+# modules are overloaded in a separate instance of testfixture using
+# the modified I/O routines found in test6.c.  These routines allow us
+# to simulate the kind of file damage that occurs after a power failure.
 #
-# $Id: crash.test,v 1.19 2005/09/17 17:05:19 drh Exp $
+# $Id: crash.test,v 1.20 2005/11/26 00:25:04 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -62,7 +59,7 @@ proc crashsql {crashdelay crashfile sql} {
   close $f
 
   set r [catch {
-    exec [file join . crashtest] crash.tcl >@stdout
+    exec [info nameofexec] crash.tcl >@stdout
   } msg]
   lappend r $msg
 }

@@ -172,28 +172,32 @@ extern unsigned int sqlite3_pending_byte;
 #define SHARED_FIRST      (PENDING_BYTE+2)
 #define SHARED_SIZE       510
 
-
-int sqlite3OsDelete(const char*);
-int sqlite3OsFileExists(const char*);
-int sqlite3OsOpenReadWrite(const char*, OsFile*, int*);
-int sqlite3OsOpenExclusive(const char*, OsFile*, int);
-int sqlite3OsOpenReadOnly(const char*, OsFile*);
-int sqlite3OsOpenDirectory(const char*, OsFile*);
-int sqlite3OsSyncDirectory(const char*);
-int sqlite3OsTempFileName(char*);
-int sqlite3OsIsDirWritable(char*);
-int sqlite3OsClose(OsFile*);
-int sqlite3OsRead(OsFile*, void*, int amt);
-int sqlite3OsWrite(OsFile*, const void*, int amt);
-int sqlite3OsSeek(OsFile*, i64 offset);
-int sqlite3OsSync(OsFile*, int);
-int sqlite3OsTruncate(OsFile*, i64 size);
-int sqlite3OsFileSize(OsFile*, i64 *pSize);
-char *sqlite3OsFullPathname(const char*);
-int sqlite3OsLock(OsFile*, int);
-int sqlite3OsUnlock(OsFile*, int);
-int sqlite3OsCheckReservedLock(OsFile *id);
-
+/*
+** A single global instance of the following structure holds pointers to the
+** various disk I/O routines.
+*/
+extern struct sqlite3IoVtbl {
+  int (*xDelete)(const char*);
+  int (*xFileExists)(const char*);
+  int (*xOpenReadWrite)(const char*, OsFile*, int*);
+  int (*xOpenExclusive)(const char*, OsFile*, int);
+  int (*xOpenReadOnly)(const char*, OsFile*);
+  int (*xOpenDirectory)(const char*, OsFile*);
+  int (*xSyncDirectory)(const char*);
+  int (*xTempFileName)(char*);
+  int (*xIsDirWritable)(char*);
+  int (*xClose)(OsFile*);
+  int (*xRead)(OsFile*, void*, int amt);
+  int (*xWrite)(OsFile*, const void*, int amt);
+  int (*xSeek)(OsFile*, i64 offset);
+  int (*xSync)(OsFile*, int);
+  int (*xTruncate)(OsFile*, i64 size);
+  int (*xFileSize)(OsFile*, i64 *pSize);
+  char *(*xFullPathname)(const char*);
+  int (*xLock)(OsFile*, int);
+  int (*xUnlock)(OsFile*, int);
+  int (*xCheckReservedLock)(OsFile *id);
+} sqlite3Io;
 
 /* The interface for file I/O is above.  Other miscellaneous functions
 ** are below */
@@ -203,5 +207,6 @@ int sqlite3OsSleep(int ms);
 int sqlite3OsCurrentTime(double*);
 void sqlite3OsEnterMutex(void);
 void sqlite3OsLeaveMutex(void);
+
 
 #endif /* _SQLITE_OS_H_ */
