@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.184 2005/11/26 14:08:08 drh Exp $
+** $Id: where.c,v 1.185 2005/11/26 14:24:41 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -700,15 +700,17 @@ static void exprAnalyze(
       }
       pNew = sqlite3Expr(TK_IN, pDup, 0, 0);
       if( pNew ){
+        int idxNew;
         transferJoinMarkings(pNew, pExpr);
         pNew->pList = pList;
+        idxNew = whereClauseInsert(pWC, pNew, TERM_VIRTUAL|TERM_DYNAMIC);
+        exprAnalyze(pSrc, pMaskSet, pWC, idxNew);
+        pTerm = &pWC->a[idxTerm];
+        pWC->a[idxNew].iParent = idxTerm;
+        pTerm->nChild = 1;
       }else{
         sqlite3ExprListDelete(pList);
       }
-      pTerm->pExpr = pNew;
-      pTerm->flags |= TERM_DYNAMIC;
-      exprAnalyze(pSrc, pMaskSet, pWC, idxTerm);
-      pTerm = &pWC->a[idxTerm];
     }
 or_not_possible:
     whereClauseClear(&sOr);
