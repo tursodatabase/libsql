@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.183 2005/11/21 12:48:24 drh Exp $
+** $Id: where.c,v 1.184 2005/11/26 14:08:08 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -533,6 +533,16 @@ static int isLikeOrGlob(
 #endif /* SQLITE_OMIT_LIKE_OPTIMIZATION */
 
 /*
+** If the pBase expression originated in the ON or USING clause of
+** a join, then transfer the appropriate markings over to derived.
+*/
+static void transferJoinMarkings(Expr *pDerived, Expr *pBase){
+  pDerived->flags |= pBase->flags & EP_FromJoin;
+  pDerived->iRightJoinTable = pBase->iRightJoinTable;
+}
+
+
+/*
 ** The input to this routine is an WhereTerm structure with only the
 ** "pExpr" field filled in.  The job of this routine is to analyze the
 ** subexpression and populate all the other fields of the WhereTerm
@@ -690,6 +700,7 @@ static void exprAnalyze(
       }
       pNew = sqlite3Expr(TK_IN, pDup, 0, 0);
       if( pNew ){
+        transferJoinMarkings(pNew, pExpr);
         pNew->pList = pList;
       }else{
         sqlite3ExprListDelete(pList);
