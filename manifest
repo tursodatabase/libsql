@@ -1,5 +1,5 @@
-C Disable\sthe\sOR-clause\soptimization\sif\sit\sdoes\snot\sresult\sin\san\sindex\sbeing\nused\sthat\swould\snot\shave\sbeen\sused\sotherwise.\s\sIn\sother\swords,\sdo\snot\nconvert\sOR\sclauses\sinto\san\sIN\sstatement\sif\sit\sdoes\snot\shelp\sthe\soptimizer.\s(CVS\s2789)
-D 2005-11-26T14:24:41
+C Replace\sa\scall\sto\ssprintf()\swith\ssqlite3MPrintf()\ssince\son\ssome\sembedded\nplatforms,\ssprintf()\sis\sbusted.\s\sNeed\sto\sgo\sthrough\sand\sdo\ssimilar\sreplacements\nelsewhere\sin\sthe\scode.\s(CVS\s2790)
+D 2005-11-28T12:36:36
 F Makefile.in 28a2772cd9e03ba758c2a052813092cdb9da73bf
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -42,7 +42,7 @@ F src/complete.c 4de937dfdd4c79a501772ab2035b26082f337a79
 F src/date.c 7444b0900a28da77e57e3337a636873cff0ae940
 F src/delete.c 29dac493f4d83b05f91233b116827c133bcdab72
 F src/experimental.c 50c1e3b34f752f4ac10c36f287db095c2b61766d
-F src/expr.c 3b1a24aab6a17e7cc62d904eba802beccc3e925f
+F src/expr.c b18a7dc6ebff2351abf35ff914465e2341038d34
 F src/func.c 7d81dccd9c440c6c4e761056333e629192814af0
 F src/hash.c 8747cf51d12de46512880dfcf1b68b4e24072863
 F src/hash.h 1b0c445e1c89ff2aaad9b4605ba61375af001e84
@@ -323,7 +323,7 @@ F www/tclsqlite.tcl ddcf912ea48695603c8ed7efb29f0812ef8d1b49
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P cbbeb9de0019a0b81318158711590078fcb7e98a
-R 067bd3867a5225e7924889dcec0a8fc0
+P 7e7cfce0f8ed2a6e04747736a2c68484f447cdfb
+R 34f591d26adade3953279102265da94b
 U drh
-Z a4ac09e883a7ba726f3dc764bd2b73b6
+Z a721118f67e524e11c01a78c05611f0f
