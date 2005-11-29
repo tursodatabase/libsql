@@ -18,6 +18,7 @@
 #include "sqliteInt.h"
 #include "os.h"
 #include "tcl.h"
+#if 0
 
 /*
 ** A copy of the original sqlite3Io structure
@@ -25,16 +26,16 @@
 static struct sqlite3IoVtbl origIo;
 
 /*
-** The pAux part of OsFile points to this structure.
+** The OsFile structure for the crash-test backend.  The pBase field
+** points to an OsFile structure for the native backend.
 */
-typedef struct OsTestFile OsTestFile;
-struct OsTestFile {
+struct OsFile {
   u8 **apBlk;         /* Array of blocks that have been written to. */
   int nBlk;           /* Size of apBlock. */
   int nMaxWrite;      /* Largest offset written to. */
   char *zName;        /* File name */
   OsFile *pBase;      /* Base class */
-  OsTestFile *pNext;  /* Next in a list of them all */
+  OsFile *pNext;      /* Next in a list of them all */
 };
 
 /*
@@ -102,9 +103,8 @@ static OsTestFile *pAllFiles = 0;
 /*
 ** Initialise the os_test.c specific fields of pFile.
 */
-static void initFile(OsFile *id, char const *zName){
-  OsTestFile *pFile = sqliteMalloc(sizeof(OsTestFile) + strlen(zName)+1);
-  id->pAux = pFile;
+static void initFile(OsFile **pId, char const *zName){
+  OsFile *pFile = *pId = sqliteMalloc(sizeof(OsFile) + strlen(zName)+1);
   pFile->nMaxWrite = 0; 
   pFile->nBlk = 0; 
   pFile->apBlk = 0; 
@@ -120,11 +120,11 @@ static void initFile(OsFile *id, char const *zName){
 ** and unlink the structure from the pAllFiles list.
 */
 static void closeFile(OsFile *id){
-  OsTestFile *pFile = (OsTestFile*)id->pAux;
+  OsFile *pFile = id;
   if( pFile==pAllFiles ){
     pAllFiles = pFile->pNext;
   }else{
-    OsTestFile *p;
+    OsFile *p;
     for(p=pAllFiles; p->pNext!=pFile; p=p->pNext ){
       assert( p );
     }
@@ -137,14 +137,14 @@ static void closeFile(OsFile *id){
 ** Return the current seek offset from the start of the file. This
 ** is unix-only code.
 */
-static i64 osTell(OsTestFile *pFile){
+static i64 osTell(OsFile *pFile){
   return lseek(pFile->pBase->h, 0, SEEK_CUR);
 }
 
 /*
 ** Load block 'blk' into the cache of pFile.
 */
-static int cacheBlock(OsTestFile *pFile, int blk){
+static int cacheBlock(OsFile *pFile, int blk){
   if( blk>=pFile->nBlk ){
     int n = ((pFile->nBlk * 2) + 100 + blk);
     /* if( pFile->nBlk==0 ){ printf("DIRTY %s\n", pFile->zName); } */
@@ -184,7 +184,7 @@ static int cacheBlock(OsTestFile *pFile, int blk){
 ** Write the cache of pFile to disk. If crash is non-zero, randomly
 ** skip blocks when writing. The cache is deleted before returning.
 */
-static int writeCache2(OsTestFile *pFile, int crash){
+static int writeCache2(OsFile *pFile, int crash){
   int i;
   int nMax = pFile->nMaxWrite;
   i64 offset;
@@ -249,7 +249,7 @@ printf("Writing block %d of %s\n", i, pFile->zName);
 /*
 ** Write the cache to disk.
 */
-static int writeCache(OsTestFile *pFile){
+static int writeCache(OsFile *pFile){
   if( pFile->apBlk ){
     int c = crashRequired(pFile->zName);
     if( c ){
@@ -275,8 +275,8 @@ static int crashClose(OsFile *id){
   if( id->pAux ) return SQLITE_OK;
   if( id->isOpen ){
     /* printf("CLOSE %s (%d blocks)\n", (*id)->zName, (*id)->nBlk); */
-    writeCache((OsTestFile*)id->pAux);
-    origIo.xClose(id);
+    writeCache(id);
+    origIo.xClose(&id->pBase);
   }
   closeFile(id);
   return SQLITE_OK;
@@ -472,15 +472,18 @@ static int crashParamsObjCmd(
   sqlite3Io.xOpenReadWrite = crashOpenReadWrite;
   sqlite3Io.xOpenExclusive = crashOpenExclusive;
   sqlite3Io.xOpenReadOnly = crashOpenReadOnly;
-  sqlite3Io.xCopyOsFile = crashCopyOsFile;
+  sqlite3Io.xSet
   return TCL_OK;
 }
 
+#endif
 /*
 ** This procedure registers the TCL procedures defined in this file.
 */
 int Sqlitetest6_Init(Tcl_Interp *interp){
+#if 0
   Tcl_CreateObjCommand(interp, "sqlite3_crashparams", crashParamsObjCmd, 0, 0);
+#endif
   return TCL_OK;
 }
 

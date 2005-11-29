@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.166 2005/11/26 00:25:03 drh Exp $
+** $Id: test1.c,v 1.167 2005/11/29 03:13:22 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -2429,7 +2429,7 @@ static int test_sqlite3OsOpenReadWrite(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-  OsFile * pFile;
+  OsFile *pFile;
   int rc;
   int dummy;
   char zBuf[100];
@@ -2440,10 +2440,8 @@ static int test_sqlite3OsOpenReadWrite(
     return TCL_ERROR;
   }
 
-  pFile = sqliteMalloc(sizeof(OsFile));
-  rc = sqlite3Io.xOpenReadWrite(Tcl_GetString(objv[1]), pFile, &dummy);
+  rc = sqlite3Io.xOpenReadWrite(Tcl_GetString(objv[1]), &pFile, &dummy);
   if( rc!=SQLITE_OK ){
-    sqliteFree(pFile);
     Tcl_SetResult(interp, (char *)errorName(rc), TCL_STATIC);
     return TCL_ERROR;
   }
@@ -2461,7 +2459,7 @@ static int test_sqlite3OsClose(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-  OsFile * pFile;
+  OsFile *pFile;
   int rc;
 
   if( objc!=2 ){
@@ -2473,12 +2471,11 @@ static int test_sqlite3OsClose(
   if( getFilePointer(interp, Tcl_GetString(objv[1]), &pFile) ){
     return TCL_ERROR;
   }
-  rc = sqlite3Io.xClose(pFile);
+  rc = sqlite3Io.xClose(&pFile);
   if( rc!=SQLITE_OK ){
     Tcl_SetResult(interp, (char *)errorName(rc), TCL_STATIC);
     return TCL_ERROR;
   }
-  sqliteFree(pFile);
   return TCL_OK;
 }
 

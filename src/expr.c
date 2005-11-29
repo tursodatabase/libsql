@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.239 2005/11/28 12:36:36 drh Exp $
+** $Id: expr.c,v 1.240 2005/11/29 03:13:22 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1274,17 +1274,16 @@ struct QueryCoder {
 
 
 /*
-** Generate code for subqueries and IN operators.
+** Generate code for scalar subqueries used as an expression
+** and IN operators.  Examples:
 **
-** IN operators comes in two forms:
+**     (SELECT a FROM b)          -- subquery
+**     EXISTS (SELECT a FROM b)   -- EXISTS subquery
+**     x IN (4,5,11)              -- IN operator with list on right-hand side
+**     x IN (SELECT a FROM b)     -- IN operator with subquery on the right
 **
-**           expr IN (exprlist)
-** and
-**           expr IN (SELECT ...)
-**
-** The first form is handled by creating a set holding the list
-** of allowed values.  The second form causes the SELECT to generate 
-** a temporary table.
+** The pExpr parameter describes the expression that contains the IN
+** operator or subquery.
 */
 #ifndef SQLITE_OMIT_SUBQUERY
 void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){

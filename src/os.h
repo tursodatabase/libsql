@@ -43,24 +43,17 @@
 #endif
 
 /*
-** Invoke the appropriate operating-system specific header file.
+** The OsFile object describes an open disk file in an OS-dependent way.
 */
-#if OS_ALT
-# include "os_alt.h"
-#endif
-#if OS_UNIX
-# include "os_unix.h"
-#endif
-#if OS_WIN
-# include "os_win.h"
-#endif
+typedef struct OsFile OsFile;
 
-/* os_other.c and os_other.h are not delivered with SQLite.  These files
-** are place-holders that can be filled in by third-party developers to
-** implement backends to their on proprietary operating systems.
+/*
+** Define the maximum size of a temporary filename
 */
-#if OS_OTHER
-# include "os_other.h"
+#if OS_WIN
+# define SQLITE_TEMPNAME_SIZE (MAX_PATH+50)
+#else
+# define SQLITE_TEMPNAME_SIZE 200
 #endif
 
 /* If the SET_FULLSYNC macro is not defined above, then make it
@@ -179,14 +172,14 @@ extern unsigned int sqlite3_pending_byte;
 extern struct sqlite3IoVtbl {
   int (*xDelete)(const char*);
   int (*xFileExists)(const char*);
-  int (*xOpenReadWrite)(const char*, OsFile*, int*);
-  int (*xOpenExclusive)(const char*, OsFile*, int);
-  int (*xOpenReadOnly)(const char*, OsFile*);
+  int (*xOpenReadWrite)(const char*, OsFile**, int*);
+  int (*xOpenExclusive)(const char*, OsFile**, int);
+  int (*xOpenReadOnly)(const char*, OsFile**);
   int (*xOpenDirectory)(const char*, OsFile*);
   int (*xSyncDirectory)(const char*);
   int (*xTempFileName)(char*);
   int (*xIsDirWritable)(char*);
-  int (*xClose)(OsFile*);
+  int (*xClose)(OsFile**);
   int (*xRead)(OsFile*, void*, int amt);
   int (*xWrite)(OsFile*, const void*, int amt);
   int (*xSeek)(OsFile*, i64 offset);
@@ -197,7 +190,9 @@ extern struct sqlite3IoVtbl {
   int (*xLock)(OsFile*, int);
   int (*xUnlock)(OsFile*, int);
   int (*xCheckReservedLock)(OsFile *id);
-  void (*xCopyOsFile)(OsFile *pDest, OsFile *pSrc);
+  void (*xSetFullSync)(OsFile *id, int setting);
+  int (*xFileHandle)(OsFile *id);
+  int (*xLockState)(OsFile *id);
 } sqlite3Io;
 
 /* The interface for file I/O is above.  Other miscellaneous functions

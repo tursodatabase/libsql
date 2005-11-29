@@ -202,7 +202,7 @@ static int opcodeNoPush(u8 op){
     NOPUSH_MASK_6 + (NOPUSH_MASK_7<<16),
     NOPUSH_MASK_8 + (NOPUSH_MASK_9<<16)
   };
-  assert( op>=0 && op<32*5 );
+  assert( op<32*5 );
   return (masks[op>>5] & (1<<(op&0x1F)));
 }
 
@@ -967,7 +967,7 @@ static int vdbeCommit(sqlite3 *db){
     int needSync = 0;
     char *zMaster = 0;   /* File-name for the master journal */
     char const *zMainFile = sqlite3BtreeGetFilename(db->aDb[0].pBt);
-    OsFile master;
+    OsFile *master = 0;
 
     /* Select a master journal file name */
     do {
@@ -981,7 +981,6 @@ static int vdbeCommit(sqlite3 *db){
     }while( sqlite3Io.xFileExists(zMaster) );
 
     /* Open the master journal. */
-    memset(&master, 0, sizeof(master));
     rc = sqlite3Io.xOpenExclusive(zMaster, &master, 0);
     if( rc!=SQLITE_OK ){
       sqliteFree(zMaster);
@@ -1003,7 +1002,7 @@ static int vdbeCommit(sqlite3 *db){
         if( !needSync && !sqlite3BtreeSyncDisabled(pBt) ){
           needSync = 1;
         }
-        rc = sqlite3Io.xWrite(&master, zFile, strlen(zFile)+1);
+        rc = sqlite3Io.xWrite(master, zFile, strlen(zFile)+1);
         if( rc!=SQLITE_OK ){
           sqlite3Io.xClose(&master);
           sqlite3Io.xDelete(zMaster);
@@ -1018,9 +1017,9 @@ static int vdbeCommit(sqlite3 *db){
     ** the master journal file is store in so that it gets synced too.
     */
     zMainFile = sqlite3BtreeGetDirname(db->aDb[0].pBt);
-    rc = sqlite3Io.xOpenDirectory(zMainFile, &master);
+    rc = sqlite3Io.xOpenDirectory(zMainFile, master);
     if( rc!=SQLITE_OK ||
-          (needSync && (rc=sqlite3Io.xSync(&master,0))!=SQLITE_OK) ){
+          (needSync && (rc=sqlite3Io.xSync(master,0))!=SQLITE_OK) ){
       sqlite3Io.xClose(&master);
       sqlite3Io.xDelete(zMaster);
       sqliteFree(zMaster);

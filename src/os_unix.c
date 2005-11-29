@@ -15,12 +15,82 @@
 #include "sqliteInt.h"
 #include "os.h"
 #if OS_UNIX              /* This file is used on unix only */
+/*
+** These #defines should enable >2GB file support on Posix if the
+** underlying operating system supports it.  If the OS lacks
+** large file support, or if the OS is windows, these should be no-ops.
+**
+** Large file support can be disabled using the -DSQLITE_DISABLE_LFS switch
+** on the compiler command line.  This is necessary if you are compiling
+** on a recent machine (ex: RedHat 7.2) but you want your code to work
+** on an older machine (ex: RedHat 6.0).  If you compile on RedHat 7.2
+** without this option, LFS is enable.  But LFS does not exist in the kernel
+** in RedHat 6.0, so the code won't work.  Hence, for maximum binary
+** portability you should omit LFS.
+**
+** Similar is true for MacOS.  LFS is only supported on MacOS 9 and later.
+*/
+#ifndef SQLITE_DISABLE_LFS
+# define _LARGE_FILE       1
+# ifndef _FILE_OFFSET_BITS
+#   define _FILE_OFFSET_BITS 64
+# endif
+# define _LARGEFILE_SOURCE 1
+#endif
 
-
+/*
+** standard include files.
+*/
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include <time.h>
 #include <sys/time.h>
 #include <errno.h>
-#include <unistd.h>
+
+/*
+** Macros used to determine whether or not to use threads.  The
+** SQLITE_UNIX_THREADS macro is defined if we are synchronizing for
+** Posix threads and SQLITE_W32_THREADS is defined if we are
+** synchronizing using Win32 threads.
+*/
+#if defined(THREADSAFE) && THREADSAFE
+# include <pthread.h>
+# define SQLITE_UNIX_THREADS 1
+#endif
+
+/*
+** Default permissions when creating a new file
+*/
+#ifndef SQLITE_DEFAULT_FILE_PERMISSIONS
+# define SQLITE_DEFAULT_FILE_PERMISSIONS 0644
+#endif
+
+
+
+/*
+** The OsFile structure is a operating-system dependent representation
+** of an open file handle.  It is defined differently for each architecture.
+**
+** This is the definition for Unix.
+**
+** OsFile.locktype takes one of the values SHARED_LOCK, RESERVED_LOCK,
+** PENDING_LOCK or EXCLUSIVE_LOCK.
+*/
+struct OsFile {
+  struct openCnt *pOpen;    /* Info about all open fd's on this inode */
+  struct lockInfo *pLock;   /* Info about locks on this inode */
+  int h;                    /* The file descriptor */
+  unsigned char locktype;   /* The type of lock held on this fd */
+  unsigned char isOpen;     /* True if needs to be closed */
+  unsigned char fullSync;   /* Use F_FULLSYNC if available */
+  int dirfd;                /* File descriptor for the directory */
+#ifdef SQLITE_UNIX_THREADS
+  pthread_t tid;            /* The thread authorized to use this OsFile */
+#endif
+};
+
 
 /*
 ** Do not include any of the File I/O interface procedures if the
@@ -82,8 +152,8 @@
 ** by mistake.
 */
 #if defined(SQLITE_UNIX_THREADS) && !defined(SQLITE_ALLOW_XTHREAD_CONNECTIONS)
-# define SET_THREADID(X)   X->tid = pthread_self()
-# define CHECK_THREADID(X) (!pthread_equal(X->tid, pthread_self()))
+# define SET_THREADID(X)   (X)->tid = pthread_self()
+# define CHECK_THREADID(X) (!pthread_equal((X)->tid, pthread_self()))
 #else
 # define SET_THREADID(X)
 # define CHECK_THREADID(X) 0
@@ -494,6 +564,22 @@ static int unixFileExists(const char *zFilename){
 }
 
 /*
+** Allocate memory for an OsFile.  Initialize the new OsFile
+** to the value given in pInit and return a pointer to the new
+** OsFile.  If we run out of memory, close the file and return NULL.
+*/
+static OsFile *allocateOsFile(OsFile *pInit){
+  OsFile *pNew;
+  pNew = sqliteMalloc( sizeof(OsFile) );
+  if( pNew==0 ){
+    close(pInit->h);
+  }else{
+    *pNew = *pInit;
+  }
+  return pNew;
+}
+
+/*
 ** Attempt to open a file for both reading and writing.  If that
 ** fails, try opening it read-only.  If the file does not exist,
 ** try to create it.
@@ -508,23 +594,25 @@ static int unixFileExists(const char *zFilename){
 */
 static int unixOpenReadWrite(
   const char *zFilename,
-  OsFile *id,
+  OsFile **pId,
   int *pReadonly
 ){
   int rc;
-  assert( !id->isOpen );
-  id->dirfd = -1;
-  SET_THREADID(id);
-  id->h = open(zFilename, O_RDWR|O_CREAT|O_LARGEFILE|O_BINARY,
+  OsFile f;
+
+  assert( 0==*pId );
+  f.dirfd = -1;
+  SET_THREADID(&f);
+  f.h = open(zFilename, O_RDWR|O_CREAT|O_LARGEFILE|O_BINARY,
                           SQLITE_DEFAULT_FILE_PERMISSIONS);
-  if( id->h<0 ){
+  if( f.h<0 ){
 #ifdef EISDIR
     if( errno==EISDIR ){
       return SQLITE_CANTOPEN;
     }
 #endif
-    id->h = open(zFilename, O_RDONLY|O_LARGEFILE|O_BINARY);
-    if( id->h<0 ){
+    f.h = open(zFilename, O_RDONLY|O_LARGEFILE|O_BINARY);
+    if( f.h<0 ){
       return SQLITE_CANTOPEN; 
     }
     *pReadonly = 1;
@@ -532,17 +620,21 @@ static int unixOpenReadWrite(
     *pReadonly = 0;
   }
   sqlite3OsEnterMutex();
-  rc = findLockInfo(id->h, &id->pLock, &id->pOpen);
+  rc = findLockInfo(f.h, &f.pLock, &f.pOpen);
   sqlite3OsLeaveMutex();
   if( rc ){
-    close(id->h);
+    close(f.h);
     return SQLITE_NOMEM;
   }
-  id->locktype = 0;
-  id->isOpen = 1;
-  TRACE3("OPEN    %-3d %s\n", id->h, zFilename);
-  OpenCounter(+1);
-  return SQLITE_OK;
+  f.locktype = 0;
+  TRACE3("OPEN    %-3d %s\n", f.h, zFilename);
+  *pId = allocateOsFile(&f);
+  if( *pId==0 ){
+    return SQLITE_NOMEM;
+  }else{
+    OpenCounter(+1);
+    return SQLITE_OK;
+  }
 }
 
 
@@ -560,36 +652,42 @@ static int unixOpenReadWrite(
 **
 ** On failure, return SQLITE_CANTOPEN.
 */
-static int unixOpenExclusive(const char *zFilename, OsFile *id, int delFlag){
+static int unixOpenExclusive(const char *zFilename, OsFile **pId, int delFlag){
   int rc;
-  assert( !id->isOpen );
+  OsFile f;
+
+  assert( 0==*pId );
   if( access(zFilename, 0)==0 ){
     return SQLITE_CANTOPEN;
   }
-  SET_THREADID(id);
-  id->dirfd = -1;
-  id->h = open(zFilename,
+  SET_THREADID(&f);
+  f.dirfd = -1;
+  f.h = open(zFilename,
                 O_RDWR|O_CREAT|O_EXCL|O_NOFOLLOW|O_LARGEFILE|O_BINARY,
                 SQLITE_DEFAULT_FILE_PERMISSIONS);
-  if( id->h<0 ){
+  if( f.h<0 ){
     return SQLITE_CANTOPEN;
   }
   sqlite3OsEnterMutex();
-  rc = findLockInfo(id->h, &id->pLock, &id->pOpen);
+  rc = findLockInfo(f.h, &f.pLock, &f.pOpen);
   sqlite3OsLeaveMutex();
   if( rc ){
-    close(id->h);
+    close(f.h);
     unlink(zFilename);
     return SQLITE_NOMEM;
   }
-  id->locktype = 0;
-  id->isOpen = 1;
+  f.locktype = 0;
   if( delFlag ){
     unlink(zFilename);
   }
-  TRACE3("OPEN-EX %-3d %s\n", id->h, zFilename);
-  OpenCounter(+1);
-  return SQLITE_OK;
+  TRACE3("OPEN-EX %-3d %s\n", f.h, zFilename);
+  *pId = allocateOsFile(&f);
+  if( *pId==0 ){
+    return SQLITE_NOMEM;
+  }else{
+    OpenCounter(+1);
+    return SQLITE_OK;
+  }
 }
 
 /*
@@ -599,27 +697,33 @@ static int unixOpenExclusive(const char *zFilename, OsFile *id, int delFlag){
 **
 ** On failure, return SQLITE_CANTOPEN.
 */
-static int unixOpenReadOnly(const char *zFilename, OsFile *id){
+static int unixOpenReadOnly(const char *zFilename, OsFile **pId){
   int rc;
-  assert( !id->isOpen );
-  SET_THREADID(id);
-  id->dirfd = -1;
-  id->h = open(zFilename, O_RDONLY|O_LARGEFILE|O_BINARY);
-  if( id->h<0 ){
+  OsFile f;
+
+  assert( 0==*pId );
+  SET_THREADID(&f);
+  f.dirfd = -1;
+  f.h = open(zFilename, O_RDONLY|O_LARGEFILE|O_BINARY);
+  if( f.h<0 ){
     return SQLITE_CANTOPEN;
   }
   sqlite3OsEnterMutex();
-  rc = findLockInfo(id->h, &id->pLock, &id->pOpen);
+  rc = findLockInfo(f.h, &f.pLock, &f.pOpen);
   sqlite3OsLeaveMutex();
   if( rc ){
-    close(id->h);
+    close(f.h);
     return SQLITE_NOMEM;
   }
-  id->locktype = 0;
-  id->isOpen = 1;
-  TRACE3("OPEN-RO %-3d %s\n", id->h, zFilename);
-  OpenCounter(+1);
-  return SQLITE_OK;
+  f.locktype = 0;
+  TRACE3("OPEN-RO %-3d %s\n", f.h, zFilename);
+  *pId = allocateOsFile(&f);
+  if( *pId==0 ){
+    return SQLITE_NOMEM;
+  }else{
+    OpenCounter(+1);
+    return SQLITE_OK;
+  }
 }
 
 /*
@@ -631,7 +735,7 @@ static int unixOpenReadOnly(const char *zFilename, OsFile *id){
 ** This routine is only meaningful for Unix.  It is a no-op under
 ** windows since windows does not support hard links.
 **
-** On success, a handle for a previously open file is at *id is
+** On success, a handle for a previously open file at *id is
 ** updated with the new directory file descriptor and SQLITE_OK is
 ** returned.
 **
@@ -642,7 +746,7 @@ static int unixOpenDirectory(
   const char *zDirname,
   OsFile *id
 ){
-  if( !id->isOpen ){
+  if( id==0 ){
     /* Do not open the directory if the corresponding file is not already
     ** open. */
     return SQLITE_CANTOPEN;
@@ -727,7 +831,7 @@ static int unixIsDirWritable(char *zBuf){
 */
 static int unixRead(OsFile *id, void *pBuf, int amt){
   int got;
-  assert( id->isOpen );
+  assert( id );
   SimulateIOError(SQLITE_IOERR);
   TIMER_START;
   got = read(id->h, pBuf, amt);
@@ -748,7 +852,7 @@ static int unixRead(OsFile *id, void *pBuf, int amt){
 */
 static int unixWrite(OsFile *id, const void *pBuf, int amt){
   int wrote = 0;
-  assert( id->isOpen );
+  assert( id );
   assert( amt>0 );
   SimulateIOError(SQLITE_IOERR);
   SimulateDiskfullError;
@@ -770,7 +874,7 @@ static int unixWrite(OsFile *id, const void *pBuf, int amt){
 ** Move the read/write pointer in a file.
 */
 static int unixSeek(OsFile *id, i64 offset){
-  assert( id->isOpen );
+  assert( id );
   SEEK(offset/1024 + 1);
 #ifdef SQLITE_TEST
   if( offset ) SimulateDiskfullError
@@ -864,7 +968,7 @@ static int full_fsync(int fd, int fullSync, int dataOnly){
 ** will not roll back - possibly leading to database corruption.
 */
 static int unixSync(OsFile *id, int dataOnly){
-  assert( id->isOpen );
+  assert( id );
   SimulateIOError(SQLITE_IOERR);
   TRACE2("SYNC    %-3d\n", id->h);
   if( full_fsync(id->h, id->fullSync, dataOnly) ){
@@ -913,7 +1017,7 @@ static int unixSyncDirectory(const char *zDirname){
 ** Truncate an open file to a specified size
 */
 static int unixTruncate(OsFile *id, i64 nByte){
-  assert( id->isOpen );
+  assert( id );
   SimulateIOError(SQLITE_IOERR);
   return ftruncate(id->h, nByte)==0 ? SQLITE_OK : SQLITE_IOERR;
 }
@@ -923,7 +1027,7 @@ static int unixTruncate(OsFile *id, i64 nByte){
 */
 static int unixFileSize(OsFile *id, i64 *pSize){
   struct stat buf;
-  assert( id->isOpen );
+  assert( id );
   SimulateIOError(SQLITE_IOERR);
   if( fstat(id->h, &buf)!=0 ){
     return SQLITE_IOERR;
@@ -941,7 +1045,7 @@ static int unixFileSize(OsFile *id, i64 *pSize){
 static int unixCheckReservedLock(OsFile *id){
   int r = 0;
 
-  assert( id->isOpen );
+  assert( id );
   if( CHECK_THREADID(id) ) return SQLITE_MISUSE;
   sqlite3OsEnterMutex(); /* Needed because id->pLock is shared across threads */
 
@@ -1056,7 +1160,7 @@ static int unixLock(OsFile *id, int locktype){
   struct flock lock;
   int s;
 
-  assert( id->isOpen );
+  assert( id );
   TRACE7("LOCK    %d %s was %s(%s,%d) pid=%d\n", id->h, locktypeName(locktype), 
       locktypeName(id->locktype), locktypeName(pLock->locktype), pLock->cnt
       ,getpid() );
@@ -1213,7 +1317,7 @@ static int unixUnlock(OsFile *id, int locktype){
   struct flock lock;
   int rc = SQLITE_OK;
 
-  assert( id->isOpen );
+  assert( id );
   TRACE7("UNLOCK  %d %d was %d(%d,%d) pid=%d\n", id->h, locktype, id->locktype, 
       id->pLock->locktype, id->pLock->cnt, getpid());
   if( CHECK_THREADID(id) ) return SQLITE_MISUSE;
@@ -1291,8 +1395,9 @@ static int unixUnlock(OsFile *id, int locktype){
 /*
 ** Close a file.
 */
-static int unixClose(OsFile *id){
-  if( !id->isOpen ) return SQLITE_OK;
+static int unixClose(OsFile **pId){
+  OsFile *id = *pId;
+  if( !id ) return SQLITE_OK;
   if( CHECK_THREADID(id) ) return SQLITE_MISUSE;
   sqlite3Io.xUnlock(id, NO_LOCK);
   if( id->dirfd>=0 ) close(id->dirfd);
@@ -1324,6 +1429,8 @@ static int unixClose(OsFile *id){
   id->isOpen = 0;
   TRACE2("CLOSE   %-3d\n", id->h);
   OpenCounter(-1);
+  sqliteFree(id);
+  *pId = 0;
   return SQLITE_OK;
 }
 
@@ -1351,10 +1458,25 @@ static char *unixFullPathname(const char *zRelative){
 }
 
 /*
-** Make a copy of an OsFile object.
+** Change the value of the fullsync flag in the given file descriptor.
 */
-static void unixCopyOsFile(OsFile *pDest, OsFile *pSrc){
-  *pDest = *pSrc;
+static void unixSetFullSync(OsFile *id, int v){
+  id->fullSync = v;
+}
+
+/*
+** Return the underlying file handle for an OsFile
+*/
+static int unixFileHandle(OsFile *id){
+  return id->h;
+}
+
+/*
+** Return an integer that indices the type of lock currently held
+** by this handle.  (Used for testing and analysis only.)
+*/
+static int unixLockState(OsFile *id){
+  return id->locktype;
 }
 
 /*
@@ -1381,7 +1503,9 @@ struct sqlite3IoVtbl sqlite3Io = {
   unixLock,
   unixUnlock,
   unixCheckReservedLock,
-  unixCopyOsFile,
+  unixSetFullSync,
+  unixFileHandle,
+  unixLockState,
 };
 
 
