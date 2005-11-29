@@ -1399,7 +1399,7 @@ static int unixClose(OsFile **pId){
   OsFile *id = *pId;
   if( !id ) return SQLITE_OK;
   if( CHECK_THREADID(id) ) return SQLITE_MISUSE;
-  sqlite3Io.xUnlock(id, NO_LOCK);
+  unixUnlock(id, NO_LOCK);
   if( id->dirfd>=0 ) close(id->dirfd);
   id->dirfd = -1;
   sqlite3OsEnterMutex();
