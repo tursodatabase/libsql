@@ -16,7 +16,6 @@
 #include "os.h"
 #if OS_WIN               /* This file is used for windows only */
 
-#include <windows.h>
 #include <winbase.h>
 
 #ifdef __CYGWIN__

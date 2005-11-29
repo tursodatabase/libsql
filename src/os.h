@@ -51,6 +51,7 @@ typedef struct OsFile OsFile;
 ** Define the maximum size of a temporary filename
 */
 #if OS_WIN
+# include <windows.h>
 # define SQLITE_TEMPNAME_SIZE (MAX_PATH+50)
 #else
 # define SQLITE_TEMPNAME_SIZE 200
