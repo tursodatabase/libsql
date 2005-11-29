@@ -1,5 +1,5 @@
-C Make\sthe\sOsFile\sstructure\sopaque\swith\sits\sinternal\sstructure\sknown\sonly\sto\nthe\sappropriate\sos_*.c\simplementation.\s\sOmit\sthe\sos_unix.h\sand\sos_win.h\ninclude\sfiles.\s\sThe\scrash\stests\sare\sbroken\sby\sthis\spatch.\s(CVS\s2791)
-D 2005-11-29T03:13:21
+C The\scrash\stests\snow\scompile,\sat\sleast.\s\sBut\sthey\sget\swrong\sresults.\s\sThe\nproblem\sis\sfundamental\sand\ssuggests\sI\sneed\sto\scompletely\srethink\show\sthe\nnew\sOS\sbackend\sshould\swork.\s(CVS\s2792)
+D 2005-11-29T18:37:16
 F Makefile.in eac4c98a32a0eae9d6bb2779ac74bbb5441758d3
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -76,7 +76,7 @@ F src/test2.c 02d639d515ddf99a3bbc00f640d8544ecb925a9b
 F src/test3.c f4e6a16a602091696619a1171bda25c0e3df49f7
 F src/test4.c a8fd681e139e1c61f22a77d07fc3a99cb28fff3f
 F src/test5.c 64f08b2a50ef371a1bd68ff206829e7b1b9997f5
-F src/test6.c 0543cf075a0cfcc2f83a0810cb2a93d57a7eb602
+F src/test6.c 951effde62e2032a3d6702a33ba2c2c2f993f412
 F src/tokenize.c bdb79702217af49eba44c2a3b4f5fc7bd9ed2917
 F src/trigger.c aea0283a3ef729a3e9c8dc5dc1a11c9fcc0a12a7
 F src/update.c fec7665138ccf2a2133f11dcd24c1134c6b33526
@@ -323,7 +323,7 @@ F www/tclsqlite.tcl ddcf912ea48695603c8ed7efb29f0812ef8d1b49
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 1b4f2d89bbe833359cefcea580783fd92aa7b8ab
-R 167d41b6779a94a69e79f7db1fd9daa9
+P 058f31753871b16b40fe4048e3adcee411e0f87d
+R f03dc6c82442298d495305724980efdb
 U drh
-Z 717f7b44d42f5a1bd0daf8e23da32026
+Z cd7ffca575734c25d3ac042458e8a016

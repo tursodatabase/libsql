@@ -18,7 +18,6 @@
 #include "sqliteInt.h"
 #include "os.h"
 #include "tcl.h"
-#if 0
 
 /*
 ** A copy of the original sqlite3Io structure
@@ -32,6 +31,7 @@ static struct sqlite3IoVtbl origIo;
 struct OsFile {
   u8 **apBlk;         /* Array of blocks that have been written to. */
   int nBlk;           /* Size of apBlock. */
+  i64 offset;         /* Next character to be read from the file */
   int nMaxWrite;      /* Largest offset written to. */
   char *zName;        /* File name */
   OsFile *pBase;      /* Base class */
@@ -98,29 +98,30 @@ static int crashRequired(char const *zPath){
 /*
 ** A list of all open files.
 */
-static OsTestFile *pAllFiles = 0;
+static OsFile *pAllFiles = 0;
 
 /*
 ** Initialise the os_test.c specific fields of pFile.
 */
-static void initFile(OsFile **pId, char const *zName){
+static void initFile(OsFile **pId, char const *zName, OsFile *pBase){
   OsFile *pFile = *pId = sqliteMalloc(sizeof(OsFile) + strlen(zName)+1);
   pFile->nMaxWrite = 0; 
+  pFile->offset = 0;
   pFile->nBlk = 0; 
   pFile->apBlk = 0; 
   pFile->zName = (char *)(&pFile[1]);
   strcpy(pFile->zName, zName);
-  pFile->pBase = id;
+  pFile->pBase = pBase;
   pFile->pNext = pAllFiles;
   pAllFiles = pFile;
 }
 
 /*
-** Undo the work done by initFile. Delete the OsTestFile structure
+** Undo the work done by initFile. Delete the OsFile structure
 ** and unlink the structure from the pAllFiles list.
 */
-static void closeFile(OsFile *id){
-  OsFile *pFile = id;
+static void closeFile(OsFile **pId){
+  OsFile *pFile = *pId;
   if( pFile==pAllFiles ){
     pAllFiles = pFile->pNext;
   }else{
@@ -130,21 +131,14 @@ static void closeFile(OsFile *id){
     }
     p->pNext = pFile->pNext;
   }
-  sqliteFree(pFile);
+  sqliteFree(*pId);
+  *pId = 0;
 }
 
 /*
-** Return the current seek offset from the start of the file. This
-** is unix-only code.
+** Read block 'blk' off of the real disk file and into the cache of pFile.
 */
-static i64 osTell(OsFile *pFile){
-  return lseek(pFile->pBase->h, 0, SEEK_CUR);
-}
-
-/*
-** Load block 'blk' into the cache of pFile.
-*/
-static int cacheBlock(OsFile *pFile, int blk){
+static int readBlockIntoCache(OsFile *pFile, int blk){
   if( blk>=pFile->nBlk ){
     int n = ((pFile->nBlk * 2) + 100 + blk);
     /* if( pFile->nBlk==0 ){ printf("DIRTY %s\n", pFile->zName); } */
@@ -187,10 +181,8 @@ static int cacheBlock(OsFile *pFile, int blk){
 static int writeCache2(OsFile *pFile, int crash){
   int i;
   int nMax = pFile->nMaxWrite;
-  i64 offset;
   int rc = SQLITE_OK;
 
-  offset = osTell(pFile);
   for(i=0; i<pFile->nBlk; i++){
     u8 *p = pFile->apBlk[i];
     if( p ){
@@ -239,10 +231,6 @@ printf("Writing block %d of %s\n", i, pFile->zName);
   pFile->nBlk = 0;
   pFile->apBlk = 0;
   pFile->nMaxWrite = 0;
-
-  if( rc==SQLITE_OK ){
-    rc = origIo.xSeek(pFile->pBase, offset);
-  }
   return rc;
 }
 
@@ -253,7 +241,7 @@ static int writeCache(OsFile *pFile){
   if( pFile->apBlk ){
     int c = crashRequired(pFile->zName);
     if( c ){
-      OsTestFile *p;
+      OsFile *p;
 #ifdef TRACE_WRITECACHE
       printf("\nCrash during sync of %s\n", pFile->zName);
 #endif
@@ -271,14 +259,19 @@ static int writeCache(OsFile *pFile){
 /*
 ** Close the file.
 */
-static int crashClose(OsFile *id){
-  if( id->pAux ) return SQLITE_OK;
-  if( id->isOpen ){
-    /* printf("CLOSE %s (%d blocks)\n", (*id)->zName, (*id)->nBlk); */
-    writeCache(id);
-    origIo.xClose(&id->pBase);
+static int crashClose(OsFile **pId){
+  OsFile *pFile = *pId;
+  if( pFile ){
+    /* printf("CLOSE %s (%d blocks)\n", pFile->zName, pFile->nBlk); */
+    writeCache(pFile);
+    origIo.xClose(&pFile->pBase);
   }
-  closeFile(id);
+  closeFile(pId);
+  return SQLITE_OK;
+}
+
+static int crashSeek(OsFile *id, i64 offset){
+  id->offset = offset;
   return SQLITE_OK;
 }
 
@@ -289,9 +282,9 @@ static int crashRead(OsFile *id, void *pBuf, int amt){
   int i;
   u8 *zCsr;
   int rc = SQLITE_OK;
-  OsTestFile *pFile = (OsTestFile*)id->pAux;
+  OsFile *pFile = id;
 
-  offset = osTell(pFile);
+  offset = pFile->offset;
   end = offset+amt;
   blk = (offset/BLOCKSIZE);
 
@@ -313,9 +306,9 @@ static int crashRead(OsFile *id, void *pBuf, int amt){
       u8 *pBlk = pFile->apBlk[i];
       memcpy(zCsr, &pBlk[off], len);
     }else{
-      rc = origIo.xSeek(id, BLOCK_OFFSET(i) + off);
+      rc = origIo.xSeek(id->pBase, BLOCK_OFFSET(i) + off);
       if( rc!=SQLITE_OK ) return rc;
-      rc = origIo.xRead(id, zCsr, len);
+      rc = origIo.xRead(id->pBase, zCsr, len);
       if( rc!=SQLITE_OK ) return rc;
     }
 
@@ -323,7 +316,7 @@ static int crashRead(OsFile *id, void *pBuf, int amt){
   }
   assert( zCsr==&((u8 *)pBuf)[amt] );
 
-  rc = origIo.xSeek(id, end);
+  id->offset = end;
   return rc;
 }
 
@@ -334,9 +327,8 @@ static int crashWrite(OsFile *id, const void *pBuf, int amt){
   int i;
   const u8 *zCsr;
   int rc = SQLITE_OK;
-  OsTestFile *pFile =  (OsTestFile*)id->pAux;
 
-  offset = osTell(pFile);
+  offset = id->offset;
   end = offset+amt;
   blk = (offset/BLOCKSIZE);
 
@@ -347,11 +339,11 @@ static int crashWrite(OsFile *id, const void *pBuf, int amt){
     int len = 0;
 
     /* Make sure the block is in the cache */
-    rc = cacheBlock(pFile, i);
+    rc = readBlockIntoCache(id, i);
     if( rc!=SQLITE_OK ) return rc;
 
     /* Write into the cache */
-    pBlk = pFile->apBlk[i];
+    pBlk = id->apBlk[i];
     assert( pBlk );
 
     if( BLOCK_OFFSET(i) < offset ){
@@ -364,12 +356,11 @@ static int crashWrite(OsFile *id, const void *pBuf, int amt){
     memcpy(&pBlk[off], zCsr, len);
     zCsr += len;
   }
-  if( pFile->nMaxWrite<end ){
-    pFile->nMaxWrite = end;
+  if( id->nMaxWrite<end ){
+    id->nMaxWrite = end;
   }
   assert( zCsr==&((u8 *)pBuf)[amt] );
-
-  rc = origIo.xSeek(id, end);
+  id->offset = end;
   return rc;
 }
 
@@ -380,9 +371,8 @@ static int crashWrite(OsFile *id, const void *pBuf, int amt){
 static int crashSync(OsFile *id, int dataOnly){
   int rc;
   /* printf("SYNC %s (%d blocks)\n", (*id)->zName, (*id)->nBlk); */
-  rc = writeCache((OsTestFile*)id->pAux);
-  if( rc!=SQLITE_OK ) return rc;
-  rc = origIo.xSync(id, dataOnly);
+  rc = writeCache(id);
+  /* if( rc!=SQLITE_OK ) return rc; rc = origIo.xSync(id->pBase, dataOnly); */
   return rc;
 }
 
@@ -392,9 +382,8 @@ static int crashSync(OsFile *id, int dataOnly){
 ** is written to disk.
 */
 static int crashTruncate(OsFile *id, i64 nByte){
-  OsTestFile *pFile = (OsTestFile*)id->pAux;
-  pFile->nMaxWrite = nByte;
-  return origIo.xTruncate(id, nByte);
+  id->nMaxWrite = nByte;
+  return origIo.xTruncate(id->pBase, nByte);
 }
 
 /*
@@ -402,10 +391,9 @@ static int crashTruncate(OsFile *id, i64 nByte){
 ** the file, then return this size instead of the on-disk size.
 */
 static int crashFileSize(OsFile *id, i64 *pSize){
-  int rc = origIo.xFileSize(id, pSize);
-  OsTestFile *pFile = (OsTestFile*)id->pAux;
-  if( rc==SQLITE_OK && pSize && *pSize<pFile->nMaxWrite ){
-    *pSize = pFile->nMaxWrite;
+  int rc = origIo.xFileSize(id->pBase, pSize);
+  if( rc==SQLITE_OK && pSize && *pSize<id->nMaxWrite ){
+    *pSize = id->nMaxWrite;
   }
   return rc;
 }
@@ -415,25 +403,66 @@ static int crashFileSize(OsFile *id, i64 *pSize){
 ** initialise the os_test.c specific fields and then call the corresponding
 ** os_unix.c function to really open the file.
 */
-static int crashOpenReadWrite(const char *zFilename, OsFile *id, int *pRdonly){
-  initFile(id, zFilename);
-  return origIo.xOpenReadWrite(zFilename, id, pRdonly);
+static int crashOpenReadWrite(const char *zFilename, OsFile **pId,int *pRdonly){
+  OsFile *pBase = 0;
+  int rc = origIo.xOpenReadWrite(zFilename, &pBase, pRdonly);
+  if( !rc ){
+    initFile(pId, zFilename, pBase);
+  }
+  return rc;
 }
-static int crashOpenExclusive(const char *zFilename, OsFile *id, int delFlag){
-  initFile(id, zFilename);
-  return origIo.xOpenExclusive(zFilename, id, delFlag);
+static int crashOpenExclusive(const char *zFilename, OsFile **pId, int delFlag){
+  OsFile *pBase = 0;
+  int rc = origIo.xOpenExclusive(zFilename, &pBase, delFlag);
+  if( !rc ){
+    initFile(pId, zFilename, pBase);
+  }
+  return rc;
 }
-static int crashOpenReadOnly(const char *zFilename, OsFile *id){
-  initFile(id, zFilename);
-  return origIo.xOpenReadOnly(zFilename, id);
+static int crashOpenReadOnly(const char *zFilename, OsFile **pId){
+  OsFile *pBase = 0;
+  int rc = origIo.xOpenReadOnly(zFilename, &pBase);
+  if( !rc ){
+    initFile(pId, zFilename, pBase);
+  }
+  return rc;
 }
 
 /*
-** Make a copy of an OsFile object
+** OpenDirectory and SyncDirectory are no-ops
 */
-static void crashCopyOsFile(OsFile *pDest, OsFile *pSrc){
-  *pDest = *pSrc;
-  ((OsTestFile*)(pDest->pAux))->pBase = pDest;
+static int crashOpenDir(const char *zName, OsFile *id){
+  return SQLITE_OK;
+}
+static int crashSyncDir(const char *zName){
+  return SQLITE_OK;
+}
+
+/*
+** Locking primitives are passed through into the underlying
+** file descriptor.
+*/
+int crashLock(OsFile *id, int lockType){
+  return origIo.xLock(id->pBase, lockType);
+}
+int crashUnlock(OsFile *id, int lockType){
+  return origIo.xUnlock(id->pBase, lockType);
+}
+int crashCheckReservedLock(OsFile *id){
+  return origIo.xCheckReservedLock(id->pBase);
+}
+void crashSetFullSync(OsFile *id, int setting){
+  return;  /* This is a no-op */
+}
+int crashLockState(OsFile *id){
+  return origIo.xLockState(id->pBase);
+}
+
+/*
+** Return the underlying file handle.
+*/
+int crashFileHandle(OsFile *id){
+  return origIo.xFileHandle(id->pBase);
 }
 
 /*
@@ -463,27 +492,37 @@ static int crashParamsObjCmd(
   }
   setCrashParams(delay, zFile);
   origIo = sqlite3Io;
-  sqlite3Io.xRead = crashRead;
-  sqlite3Io.xWrite = crashWrite;
-  sqlite3Io.xClose = crashClose;
-  sqlite3Io.xSync = crashSync;
-  sqlite3Io.xTruncate = crashTruncate;
-  sqlite3Io.xFileSize = crashFileSize;
+  /* xDelete unchanged */
+  /* xFileExists unchanged */
   sqlite3Io.xOpenReadWrite = crashOpenReadWrite;
   sqlite3Io.xOpenExclusive = crashOpenExclusive;
   sqlite3Io.xOpenReadOnly = crashOpenReadOnly;
-  sqlite3Io.xSet
+  sqlite3Io.xOpenDirectory = crashOpenDir;
+  sqlite3Io.xSyncDirectory = crashSyncDir;
+  /* xTempFileName unchanged */
+  /* xIsDirWritable unchanged */
+  sqlite3Io.xClose = crashClose;
+  sqlite3Io.xRead = crashRead;
+  sqlite3Io.xWrite = crashWrite;
+  sqlite3Io.xSeek = crashSeek;
+  sqlite3Io.xSync = crashSync;
+  sqlite3Io.xTruncate = crashTruncate;
+  sqlite3Io.xFileSize = crashFileSize;
+  /* xFullPathname unchanged */
+  sqlite3Io.xLock = crashLock;
+  sqlite3Io.xUnlock = crashUnlock;
+  sqlite3Io.xCheckReservedLock = crashCheckReservedLock;
+  sqlite3Io.xSetFullSync = crashSetFullSync;
+  sqlite3Io.xFileHandle = crashFileHandle;
+  sqlite3Io.xLockState = crashLockState;
   return TCL_OK;
 }
 
-#endif
 /*
 ** This procedure registers the TCL procedures defined in this file.
 */
 int Sqlitetest6_Init(Tcl_Interp *interp){
-#if 0
   Tcl_CreateObjCommand(interp, "sqlite3_crashparams", crashParamsObjCmd, 0, 0);
-#endif
   return TCL_OK;
 }
 
