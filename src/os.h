@@ -42,10 +42,43 @@
 # endif
 #endif
 
+
 /*
-** The OsFile object describes an open disk file in an OS-dependent way.
+** Forward declarations
 */
 typedef struct OsFile OsFile;
+typedef struct IoMethod IoMethod;
+
+/*
+** An instance of the following structure contains pointers to all
+** methods on an OsFile object.
+*/
+struct IoMethod {
+  int (*xClose)(OsFile**);
+  int (*xOpenDirectory)(OsFile*, const char*);
+  int (*xRead)(OsFile*, void*, int amt);
+  int (*xWrite)(OsFile*, const void*, int amt);
+  int (*xSeek)(OsFile*, i64 offset);
+  int (*xTruncate)(OsFile*, i64 size);
+  int (*xSync)(OsFile*, int);
+  void (*xSetFullSync)(OsFile *id, int setting);
+  int (*xFileHandle)(OsFile *id);
+  int (*xFileSize)(OsFile*, i64 *pSize);
+  int (*xLock)(OsFile*, int);
+  int (*xUnlock)(OsFile*, int);
+  int (*xLockState)(OsFile *id);
+  int (*xCheckReservedLock)(OsFile *id);
+};
+
+/*
+** The OsFile object describes an open disk file in an OS-dependent way.
+** The version of OsFile defined here is a generic versions.  Each Os
+** implementation defines its own subclass of this structure that contains
+** additional information needed to handle file I/O.
+*/
+struct OsFile {
+  IoMethod const *pMethod;
+};
 
 /*
 ** Define the maximum size of a temporary filename
@@ -168,42 +201,44 @@ extern unsigned int sqlite3_pending_byte;
 
 /*
 ** A single global instance of the following structure holds pointers to the
-** various disk I/O routines.
+** various system-specific interface routines.
 */
-extern struct sqlite3IoVtbl {
-  int (*xDelete)(const char*);
-  int (*xFileExists)(const char*);
+extern struct sqlite3OsVtbl {
   int (*xOpenReadWrite)(const char*, OsFile**, int*);
   int (*xOpenExclusive)(const char*, OsFile**, int);
   int (*xOpenReadOnly)(const char*, OsFile**);
-  int (*xOpenDirectory)(const char*, OsFile*);
+
+  int (*xDelete)(const char*);
+  int (*xFileExists)(const char*);
+  char *(*xFullPathname)(const char*);
+  int (*xIsDirWritable)(char*);
   int (*xSyncDirectory)(const char*);
   int (*xTempFileName)(char*);
-  int (*xIsDirWritable)(char*);
-  int (*xClose)(OsFile**);
-  int (*xRead)(OsFile*, void*, int amt);
-  int (*xWrite)(OsFile*, const void*, int amt);
-  int (*xSeek)(OsFile*, i64 offset);
-  int (*xSync)(OsFile*, int);
-  int (*xTruncate)(OsFile*, i64 size);
-  int (*xFileSize)(OsFile*, i64 *pSize);
-  char *(*xFullPathname)(const char*);
-  int (*xLock)(OsFile*, int);
-  int (*xUnlock)(OsFile*, int);
-  int (*xCheckReservedLock)(OsFile *id);
-  void (*xSetFullSync)(OsFile *id, int setting);
-  int (*xFileHandle)(OsFile *id);
-  int (*xLockState)(OsFile *id);
-} sqlite3Io;
 
-/* The interface for file I/O is above.  Other miscellaneous functions
-** are below */
+  int  (*xRandomSeed)(char*);
+  int  (*xSleep)(int ms);
+  int  (*xCurrentTime)(double*);
+  void (*xEnterMutex)(void);
+  void (*xLeaveMutex)(void);
+} sqlite3Os;
 
-int sqlite3OsRandomSeed(char*);
-int sqlite3OsSleep(int ms);
-int sqlite3OsCurrentTime(double*);
-void sqlite3OsEnterMutex(void);
-void sqlite3OsLeaveMutex(void);
+/*
+** Prototypes for routines found in os.c
+*/
+int sqlite3OsClose(OsFile**);
+int sqlite3OsOpenDirectory(OsFile*, const char*);
+int sqlite3OsRead(OsFile*, void*, int amt);
+int sqlite3OsWrite(OsFile*, const void*, int amt);
+int sqlite3OsSeek(OsFile*, i64 offset);
+int sqlite3OsTruncate(OsFile*, i64 size);
+int sqlite3OsSync(OsFile*, int);
+void sqlite3OsSetFullSync(OsFile *id, int setting);
+int sqlite3OsFileHandle(OsFile *id);
+int sqlite3OsFileSize(OsFile*, i64 *pSize);
+int sqlite3OsLock(OsFile*, int);
+int sqlite3OsUnlock(OsFile*, int);
+int sqlite3OsLockState(OsFile *id);
+int sqlite3OsCheckReservedLock(OsFile *id);
 
 
 #endif /* _SQLITE_OS_H_ */

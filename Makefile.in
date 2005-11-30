@@ -115,7 +115,7 @@ TCC += -DSQLITE_OMIT_CURSOR
 LIBOBJ = alter.lo analyze.lo attach.lo auth.lo btree.lo build.lo \
          callback.lo complete.lo date.lo \
          delete.lo expr.lo func.lo hash.lo insert.lo \
-         main.lo opcodes.lo os_unix.lo os_win.lo \
+         main.lo opcodes.lo os.lo os_unix.lo os_win.lo \
          pager.lo parse.lo pragma.lo prepare.lo printf.lo random.lo \
          select.lo table.lo tokenize.lo trigger.lo update.lo \
          util.lo vacuum.lo \
@@ -143,6 +143,7 @@ SRC = \
   $(TOP)/src/insert.c \
   $(TOP)/src/legacy.c \
   $(TOP)/src/main.c \
+  $(TOP)/src/os.c \
   $(TOP)/src/os_unix.c \
   $(TOP)/src/os_win.c \
   $(TOP)/src/pager.c \
@@ -326,6 +327,9 @@ opcodes.c:	opcodes.h $(TOP)/mkopcodec.awk
 
 opcodes.h:	parse.h $(TOP)/src/vdbe.c $(TOP)/mkopcodeh.awk
 	cat parse.h $(TOP)/src/vdbe.c | awk -f $(TOP)/mkopcodeh.awk >opcodes.h
+
+os.lo:	$(TOP)/src/os.c $(HDR)
+	$(LTCOMPILE) -c $(TOP)/src/os.c
 
 os_unix.lo:	$(TOP)/src/os_unix.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/os_unix.c

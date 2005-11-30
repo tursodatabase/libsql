@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.167 2005/11/29 03:13:22 drh Exp $
+** $Id: test1.c,v 1.168 2005/11/30 03:20:32 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -2440,7 +2440,7 @@ static int test_sqlite3OsOpenReadWrite(
     return TCL_ERROR;
   }
 
-  rc = sqlite3Io.xOpenReadWrite(Tcl_GetString(objv[1]), &pFile, &dummy);
+  rc = sqlite3Os.xOpenReadWrite(Tcl_GetString(objv[1]), &pFile, &dummy);
   if( rc!=SQLITE_OK ){
     Tcl_SetResult(interp, (char *)errorName(rc), TCL_STATIC);
     return TCL_ERROR;
@@ -2471,7 +2471,7 @@ static int test_sqlite3OsClose(
   if( getFilePointer(interp, Tcl_GetString(objv[1]), &pFile) ){
     return TCL_ERROR;
   }
-  rc = sqlite3Io.xClose(&pFile);
+  rc = sqlite3OsClose(&pFile);
   if( rc!=SQLITE_OK ){
     Tcl_SetResult(interp, (char *)errorName(rc), TCL_STATIC);
     return TCL_ERROR;
@@ -2503,16 +2503,16 @@ static int test_sqlite3OsLock(
   }
 
   if( 0==strcmp("SHARED", Tcl_GetString(objv[2])) ){
-    rc = sqlite3Io.xLock(pFile, SHARED_LOCK);
+    rc = sqlite3OsLock(pFile, SHARED_LOCK);
   }
   else if( 0==strcmp("RESERVED", Tcl_GetString(objv[2])) ){
-    rc = sqlite3Io.xLock(pFile, RESERVED_LOCK);
+    rc = sqlite3OsLock(pFile, RESERVED_LOCK);
   }
   else if( 0==strcmp("PENDING", Tcl_GetString(objv[2])) ){
-    rc = sqlite3Io.xLock(pFile, PENDING_LOCK);
+    rc = sqlite3OsLock(pFile, PENDING_LOCK);
   }
   else if( 0==strcmp("EXCLUSIVE", Tcl_GetString(objv[2])) ){
-    rc = sqlite3Io.xLock(pFile, EXCLUSIVE_LOCK);
+    rc = sqlite3OsLock(pFile, EXCLUSIVE_LOCK);
   }else{
     Tcl_AppendResult(interp, "wrong # args: should be \"", 
         Tcl_GetString(objv[0]), 
@@ -2548,7 +2548,7 @@ static int test_sqlite3OsUnlock(
   if( getFilePointer(interp, Tcl_GetString(objv[1]), &pFile) ){
     return TCL_ERROR;
   }
-  rc = sqlite3Io.xUnlock(pFile, NO_LOCK);
+  rc = sqlite3OsUnlock(pFile, NO_LOCK);
   if( rc!=SQLITE_OK ){
     Tcl_SetResult(interp, (char *)errorName(rc), TCL_STATIC);
     return TCL_ERROR;
@@ -2568,7 +2568,7 @@ static int test_sqlite3OsTempFileName(
   char zFile[SQLITE_TEMPNAME_SIZE];
   int rc;
 
-  rc = sqlite3Io.xTempFileName(zFile);
+  rc = sqlite3Os.xTempFileName(zFile);
   if( rc!=SQLITE_OK ){
     Tcl_SetResult(interp, (char *)errorName(rc), TCL_STATIC);
     return TCL_ERROR;

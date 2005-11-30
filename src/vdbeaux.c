@@ -273,7 +273,7 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs, int *pMaxStack){
 
   /* If we never rollback a statement transaction, then statement
   ** transactions are not needed.  So change every OP_Statement
-  ** opcode into an OP_Noop.  This avoid a call to sqlite3Io.xOpenExclusive()
+  ** opcode into an OP_Noop.  This avoid a call to sqlite3Os.xOpenExclusive()
   ** which can be expensive on some platforms.
   */
   if( hasStatementBegin && !doesStatementRollback ){
@@ -755,7 +755,7 @@ void sqlite3VdbeMakeReady(
 
 #ifdef SQLITE_DEBUG
   if( (p->db->flags & SQLITE_VdbeListing)!=0
-    || sqlite3Io.xFileExists("vdbe_explain")
+    || sqlite3Os.xFileExists("vdbe_explain")
   ){
     int i;
     printf("VDBE Program Listing:\n");
@@ -764,7 +764,7 @@ void sqlite3VdbeMakeReady(
       sqlite3VdbePrintOp(stdout, i, &p->aOp[i]);
     }
   }
-  if( sqlite3Io.xFileExists("vdbe_trace") ){
+  if( sqlite3Os.xFileExists("vdbe_trace") ){
     p->trace = stdout;
   }
 #endif
@@ -978,10 +978,10 @@ static int vdbeCommit(sqlite3 *db){
       if( !zMaster ){
         return SQLITE_NOMEM;
       }
-    }while( sqlite3Io.xFileExists(zMaster) );
+    }while( sqlite3Os.xFileExists(zMaster) );
 
     /* Open the master journal. */
-    rc = sqlite3Io.xOpenExclusive(zMaster, &master, 0);
+    rc = sqlite3Os.xOpenExclusive(zMaster, &master, 0);
     if( rc!=SQLITE_OK ){
       sqliteFree(zMaster);
       return rc;
@@ -1002,10 +1002,10 @@ static int vdbeCommit(sqlite3 *db){
         if( !needSync && !sqlite3BtreeSyncDisabled(pBt) ){
           needSync = 1;
         }
-        rc = sqlite3Io.xWrite(master, zFile, strlen(zFile)+1);
+        rc = sqlite3OsWrite(master, zFile, strlen(zFile)+1);
         if( rc!=SQLITE_OK ){
-          sqlite3Io.xClose(&master);
-          sqlite3Io.xDelete(zMaster);
+          sqlite3OsClose(&master);
+          sqlite3Os.xDelete(zMaster);
           sqliteFree(zMaster);
           return rc;
         }
@@ -1017,11 +1017,11 @@ static int vdbeCommit(sqlite3 *db){
     ** the master journal file is store in so that it gets synced too.
     */
     zMainFile = sqlite3BtreeGetDirname(db->aDb[0].pBt);
-    rc = sqlite3Io.xOpenDirectory(zMainFile, master);
+    rc = sqlite3OsOpenDirectory(master, zMainFile);
     if( rc!=SQLITE_OK ||
-          (needSync && (rc=sqlite3Io.xSync(master,0))!=SQLITE_OK) ){
-      sqlite3Io.xClose(&master);
-      sqlite3Io.xDelete(zMaster);
+          (needSync && (rc=sqlite3OsSync(master,0))!=SQLITE_OK) ){
+      sqlite3OsClose(&master);
+      sqlite3Os.xDelete(zMaster);
       sqliteFree(zMaster);
       return rc;
     }
@@ -1041,23 +1041,23 @@ static int vdbeCommit(sqlite3 *db){
       if( pBt && sqlite3BtreeIsInTrans(pBt) ){
         rc = sqlite3BtreeSync(pBt, zMaster);
         if( rc!=SQLITE_OK ){
-          sqlite3Io.xClose(&master);
+          sqlite3OsClose(&master);
           sqliteFree(zMaster);
           return rc;
         }
       }
     }
-    sqlite3Io.xClose(&master);
+    sqlite3OsClose(&master);
 
     /* Delete the master journal file. This commits the transaction. After
     ** doing this the directory is synced again before any individual
     ** transaction files are deleted.
     */
-    rc = sqlite3Io.xDelete(zMaster);
+    rc = sqlite3Os.xDelete(zMaster);
     assert( rc==SQLITE_OK );
     sqliteFree(zMaster);
     zMaster = 0;
-    rc = sqlite3Io.xSyncDirectory(zMainFile);
+    rc = sqlite3Os.xSyncDirectory(zMainFile);
     if( rc!=SQLITE_OK ){
       /* This is not good. The master journal file has been deleted, but
       ** the directory sync failed. There is no completely safe course of

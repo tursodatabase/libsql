@@ -16,7 +16,7 @@
 ** sqlite3RegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.45 2005/06/25 18:42:14 drh Exp $
+** $Id: date.c,v 1.46 2005/11/30 03:20:31 drh Exp $
 **
 ** NOTES:
 **
@@ -311,7 +311,7 @@ static int parseDateOrTime(const char *zDate, DateTime *p){
     return 0;
   }else if( sqlite3StrICmp(zDate,"now")==0){
     double r;
-    sqlite3OsCurrentTime(&r);
+    sqlite3Os.xCurrentTime(&r);
     p->rJD = r;
     p->validJD = 1;
     return 0;
@@ -409,7 +409,7 @@ static double localtimeOffset(DateTime *p){
   x.validJD = 0;
   computeJD(&x);
   t = (x.rJD-2440587.5)*86400.0 + 0.5;
-  sqlite3OsEnterMutex();
+  sqlite3Os.xEnterMutex();
   pTm = localtime(&t);
   y.Y = pTm->tm_year + 1900;
   y.M = pTm->tm_mon + 1;
@@ -417,7 +417,7 @@ static double localtimeOffset(DateTime *p){
   y.h = pTm->tm_hour;
   y.m = pTm->tm_min;
   y.s = pTm->tm_sec;
-  sqlite3OsLeaveMutex();
+  sqlite3Os.xLeaveMutex();
   y.validYMD = 1;
   y.validHMS = 1;
   y.validJD = 0;
@@ -942,9 +942,9 @@ static void currentTimeFunc(
   }
 #endif
 
-  sqlite3OsEnterMutex();
+  sqlite3Os.xEnterMutex();
   strftime(zBuf, 20, zFormat, gmtime(&t));
-  sqlite3OsLeaveMutex();
+  sqlite3Os.xLeaveMutex();
 
   sqlite3_result_text(context, zBuf, -1, SQLITE_TRANSIENT);
 }

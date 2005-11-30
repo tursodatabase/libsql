@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.303 2005/10/20 07:28:18 drh Exp $
+** $Id: main.c,v 1.304 2005/11/30 03:20:31 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -189,7 +189,7 @@ int sqlite3_close(sqlite3 *db){
 #ifndef SQLITE_OMIT_GLOBALRECOVER
   {
     sqlite3 *pPrev;
-    sqlite3OsEnterMutex();
+    sqlite3Os.xEnterMutex();
     pPrev = pDbList;
     while( pPrev && pPrev->pNext!=db ){
       pPrev = pPrev->pNext;
@@ -200,7 +200,7 @@ int sqlite3_close(sqlite3 *db){
       assert( pDbList==db );
       pDbList = db->pNext;
     }
-    sqlite3OsLeaveMutex();
+    sqlite3Os.xLeaveMutex();
   }
 #endif
 
@@ -292,14 +292,14 @@ static int sqliteDefaultBusyCallback(
     delay = timeout - prior;
     if( delay<=0 ) return 0;
   }
-  sqlite3OsSleep(delay);
+  sqlite3Os.xSleep(delay);
   return 1;
 #else
   int timeout = ((sqlite3 *)ptr)->busyTimeout;
   if( (count+1)*1000 > timeout ){
     return 0;
   }
-  sqlite3OsSleep(1000);
+  sqlite3Os.xSleep(1000);
   return 1;
 #endif
 }
@@ -792,10 +792,10 @@ opendb_out:
   *ppDb = db;
 #ifndef SQLITE_OMIT_GLOBALRECOVER
   if( db ){
-    sqlite3OsEnterMutex();
+    sqlite3Os.xEnterMutex();
     db->pNext = pDbList;
     pDbList = db;
-    sqlite3OsLeaveMutex();
+    sqlite3Os.xLeaveMutex();
   }
 #endif
   return sqlite3_errcode(db);

@@ -35,17 +35,16 @@
 #include "os_common.h"
 
 /*
-** The OsFile structure is a operating-system independing representation
-** of an open file handle.  It is defined differently for each architecture.
-**
-** This is the definition for Win32.
+** The winFile structure is a subclass of OsFile specific to the win32
+** portability layer.
 */
-struct OsFile {
+typedef struct winFile winFile;
+struct winFile {
+  IoMethod const *pMethod;/* Must be first */
   HANDLE h;               /* Handle for accessing the file */
   unsigned char locktype; /* Type of lock currently held on this file */
   short sharedLockByte;   /* Randomly chosen byte used as a shared lock */
 };
-
 
 
 /*
@@ -167,22 +166,8 @@ static int winFileExists(const char *zFilename){
   return exists;
 }
 
-
-/*
-** Allocate memory for an OsFile.  Initialize the new OsFile
-** to the value given in pInit and return a pointer to the new
-** OsFile.  If we run out of memory, close the file and return NULL.
-*/
-static OsFile *allocateOsFile(OsFile *pInit){
-  OsFile *pNew;
-  pNew = sqliteMalloc( sizeof(OsFile) );
-  if( pNew==0 ){
-    CloseHandle(pInit->h);
-  }else{
-    *pNew = *pInit;
-  }
-  return pNew;
-}
+/* Forward declaration */
+int allocateWinFile(winFile *pInit, OsFile **pId);
 
 /*
 ** Attempt to open a file for both reading and writing.  If that
@@ -202,7 +187,7 @@ static int winOpenReadWrite(
   OsFile **pId,
   int *pReadonly
 ){
-  OsFile f;
+  winFile f;
   HANDLE h;
   WCHAR *zWide = utf8ToUnicode(zFilename);
   assert( *pId==0 );
@@ -263,13 +248,7 @@ static int winOpenReadWrite(
   f.locktype = NO_LOCK;
   f.sharedLockByte = 0;
   TRACE3("OPEN R/W %d \"%s\"\n", h, zFilename);
-  *pId = allocateOsFile(&f);
-  if( *pId==0 ){
-    return SQLITE_NOMEM;
-  }else{
-    OpenCounter(+1);
-    return SQLITE_OK;
-  }
+  return allocateWinFile(&f, pId);
 }
 
 
@@ -288,7 +267,7 @@ static int winOpenReadWrite(
 ** On failure, return SQLITE_CANTOPEN.
 */
 static int winOpenExclusive(const char *zFilename, OsFile **pId, int delFlag){
-  OsFile f;
+  winFile f;
   HANDLE h;
   int fileflags;
   WCHAR *zWide = utf8ToUnicode(zFilename);
@@ -326,13 +305,7 @@ static int winOpenExclusive(const char *zFilename, OsFile **pId, int delFlag){
   f.locktype = NO_LOCK;
   f.sharedLockByte = 0;
   TRACE3("OPEN EX %d \"%s\"\n", h, zFilename);
-  *pId = allocateOsFile(&f);
-  if( *pId==0 ){
-    return SQLITE_NOMEM;
-  }else{
-    OpenCounter(+1);
-    return SQLITE_OK;
-  }
+  return allocateWinFile(&f, pId);
 }
 
 /*
@@ -343,7 +316,7 @@ static int winOpenExclusive(const char *zFilename, OsFile **pId, int delFlag){
 ** On failure, return SQLITE_CANTOPEN.
 */
 static int winOpenReadOnly(const char *zFilename, OsFile **pId){
-  OsFile f;
+  winFile f;
   HANDLE h;
   WCHAR *zWide = utf8ToUnicode(zFilename);
   assert( *pId==0 );
@@ -374,13 +347,7 @@ static int winOpenReadOnly(const char *zFilename, OsFile **pId){
   f.locktype = NO_LOCK;
   f.sharedLockByte = 0;
   TRACE3("OPEN RO %d \"%s\"\n", h, zFilename);
-  *pId = allocateOsFile(&f);
-  if( *pId==0 ){
-    return SQLITE_NOMEM;
-  }else{
-    OpenCounter(+1);
-    return SQLITE_OK;
-  }
+  return allocateWinFile(&f, pId);
 }
 
 /*
@@ -400,8 +367,8 @@ static int winOpenReadOnly(const char *zFilename, OsFile **pId){
 ** *id unchanged.
 */
 static int winOpenDirectory(
-  const char *zDirname,
-  OsFile *id
+  OsFile *id,
+  const char *zDirname
 ){
   return SQLITE_OK;
 }
@@ -450,7 +417,7 @@ static int winTempFileName(char *zBuf){
       zBuf[j] = (char)zChars[ ((unsigned char)zBuf[j])%(sizeof(zChars)-1) ];
     }
     zBuf[j] = 0;
-    if( !sqlite3Io.xFileExists(zBuf) ) break;
+    if( !sqlite3Os.xFileExists(zBuf) ) break;
   }
   TRACE2("TEMP FILENAME: %s\n", zBuf);
   return SQLITE_OK; 
@@ -460,11 +427,12 @@ static int winTempFileName(char *zBuf){
 ** Close a file.
 */
 static int winClose(OsFile **pId){
-  if( *pId ){
-    TRACE2("CLOSE %d\n", (*pId)->h);
-    CloseHandle((*pId)->h);
+  winFile *pFile;
+  if( pId && (pFile = (winFile*)*pId)!=0 ){
+    TRACE2("CLOSE %d\n", pFile->h);
+    CloseHandle(pFile->h);
     OpenCounter(-1);
-    sqliteFree(*pId);
+    sqliteFree(pFile);
     *pId = 0;
   }
   return SQLITE_OK;
@@ -479,8 +447,8 @@ static int winRead(OsFile *id, void *pBuf, int amt){
   DWORD got;
   assert( id!=0 );
   SimulateIOError(SQLITE_IOERR);
-  TRACE3("READ %d lock=%d\n", id->h, id->locktype);
-  if( !ReadFile(id->h, pBuf, amt, &got, 0) ){
+  TRACE3("READ %d lock=%d\n", ((winFile*)id)->h, ((winFile*)id)->locktype);
+  if( !ReadFile(((winFile*)id)->h, pBuf, amt, &got, 0) ){
     got = 0;
   }
   if( got==(DWORD)amt ){
@@ -500,9 +468,10 @@ static int winWrite(OsFile *id, const void *pBuf, int amt){
   assert( id!=0 );
   SimulateIOError(SQLITE_IOERR);
   SimulateDiskfullError;
-  TRACE3("WRITE %d lock=%d\n", id->h, id->locktype);
+  TRACE3("WRITE %d lock=%d\n", ((winFile*)id)->h, ((winFile*)id)->locktype);
   assert( amt>0 );
-  while( amt>0 && (rc = WriteFile(id->h, pBuf, amt, &wrote, 0))!=0 && wrote>0 ){
+  while( amt>0 && (rc = WriteFile(((winFile*)id)->h, pBuf, amt, &wrote, 0))!=0
+         && wrote>0 ){
     amt -= wrote;
     pBuf = &((char*)pBuf)[wrote];
   }
@@ -531,8 +500,8 @@ static int winSeek(OsFile *id, i64 offset){
   if( offset ) SimulateDiskfullError
 #endif
   SEEK(offset/1024 + 1);
-  rc = SetFilePointer(id->h, lowerBits, &upperBits, FILE_BEGIN);
-  TRACE3("SEEK %d %lld\n", id->h, offset);
+  rc = SetFilePointer(((winFile*)id)->h, lowerBits, &upperBits, FILE_BEGIN);
+  TRACE3("SEEK %d %lld\n", ((winFile*)id)->h, offset);
   if( rc==INVALID_SET_FILE_POINTER && GetLastError()!=NO_ERROR ){
     return SQLITE_FULL;
   }
@@ -544,8 +513,8 @@ static int winSeek(OsFile *id, i64 offset){
 */
 static int winSync(OsFile *id, int dataOnly){
   assert( id!=0 );
-  TRACE3("SYNC %d lock=%d\n", id->h, id->locktype);
-  if( FlushFileBuffers(id->h) ){
+  TRACE3("SYNC %d lock=%d\n", ((winFile*)id)->h, ((winFile*)id)->locktype);
+  if( FlushFileBuffers(((winFile*)id)->h) ){
     return SQLITE_OK;
   }else{
     return SQLITE_IOERR;
@@ -567,10 +536,10 @@ static int winSyncDirectory(const char *zDirname){
 static int winTruncate(OsFile *id, i64 nByte){
   LONG upperBits = nByte>>32;
   assert( id!=0 );
-  TRACE3("TRUNCATE %d %lld\n", id->h, nByte);
+  TRACE3("TRUNCATE %d %lld\n", ((winFile*)id)->h, nByte);
   SimulateIOError(SQLITE_IOERR);
-  SetFilePointer(id->h, nByte, &upperBits, FILE_BEGIN);
-  SetEndOfFile(id->h);
+  SetFilePointer(((winFile*)id)->h, nByte, &upperBits, FILE_BEGIN);
+  SetEndOfFile(((winFile*)id)->h);
   return SQLITE_OK;
 }
 
@@ -581,7 +550,7 @@ static int winFileSize(OsFile *id, i64 *pSize){
   DWORD upperBits, lowerBits;
   assert( id!=0 );
   SimulateIOError(SQLITE_IOERR);
-  lowerBits = GetFileSize(id->h, &upperBits);
+  lowerBits = GetFileSize(((winFile*)id)->h, &upperBits);
   *pSize = (((i64)upperBits)<<32) + lowerBits;
   return SQLITE_OK;
 }
@@ -591,7 +560,7 @@ static int winFileSize(OsFile *id, i64 *pSize){
 ** Different API routines are called depending on whether or not this
 ** is Win95 or WinNT.
 */
-static int getReadLock(OsFile *id){
+static int getReadLock(winFile *id){
   int res;
   if( isNT() ){
     OVERLAPPED ovlp;
@@ -611,12 +580,12 @@ static int getReadLock(OsFile *id){
 /*
 ** Undo a readlock
 */
-static int unlockReadLock(OsFile *id){
+static int unlockReadLock(winFile *pFile){
   int res;
   if( isNT() ){
-    res = UnlockFile(id->h, SHARED_FIRST, 0, SHARED_SIZE, 0);
+    res = UnlockFile(pFile->h, SHARED_FIRST, 0, SHARED_SIZE, 0);
   }else{
-    res = UnlockFile(id->h, SHARED_FIRST + id->sharedLockByte, 0, 1, 0);
+    res = UnlockFile(pFile->h, SHARED_FIRST + pFile->sharedLockByte, 0, 1, 0);
   }
   return res;
 }
@@ -677,35 +646,36 @@ static int winLock(OsFile *id, int locktype){
   int res = 1;           /* Result of a windows lock call */
   int newLocktype;       /* Set id->locktype to this value before exiting */
   int gotPendingLock = 0;/* True if we acquired a PENDING lock this time */
+  winFile *pFile = (winFile*)id;
 
-  assert( id!=0 );
+  assert( pFile!=0 );
   TRACE5("LOCK %d %d was %d(%d)\n",
-          id->h, locktype, id->locktype, id->sharedLockByte);
+          pFile->h, locktype, pFile->locktype, pFile->sharedLockByte);
 
   /* If there is already a lock of this type or more restrictive on the
   ** OsFile, do nothing. Don't use the end_lock: exit path, as
   ** sqlite3OsEnterMutex() hasn't been called yet.
   */
-  if( id->locktype>=locktype ){
+  if( pFile->locktype>=locktype ){
     return SQLITE_OK;
   }
 
   /* Make sure the locking sequence is correct
   */
-  assert( id->locktype!=NO_LOCK || locktype==SHARED_LOCK );
+  assert( pFile->locktype!=NO_LOCK || locktype==SHARED_LOCK );
   assert( locktype!=PENDING_LOCK );
-  assert( locktype!=RESERVED_LOCK || id->locktype==SHARED_LOCK );
+  assert( locktype!=RESERVED_LOCK || pFile->locktype==SHARED_LOCK );
 
   /* Lock the PENDING_LOCK byte if we need to acquire a PENDING lock or
   ** a SHARED lock.  If we are acquiring a SHARED lock, the acquisition of
   ** the PENDING_LOCK byte is temporary.
   */
-  newLocktype = id->locktype;
-  if( id->locktype==NO_LOCK
-   || (locktype==EXCLUSIVE_LOCK && id->locktype==RESERVED_LOCK)
+  newLocktype = pFile->locktype;
+  if( pFile->locktype==NO_LOCK
+   || (locktype==EXCLUSIVE_LOCK && pFile->locktype==RESERVED_LOCK)
   ){
     int cnt = 3;
-    while( cnt-->0 && (res = LockFile(id->h, PENDING_BYTE, 0, 1, 0))==0 ){
+    while( cnt-->0 && (res = LockFile(pFile->h, PENDING_BYTE, 0, 1, 0))==0 ){
       /* Try 3 times to get the pending lock.  The pending lock might be
       ** held by another reader process who will release it momentarily.
       */
@@ -718,8 +688,8 @@ static int winLock(OsFile *id, int locktype){
   /* Acquire a shared lock
   */
   if( locktype==SHARED_LOCK && res ){
-    assert( id->locktype==NO_LOCK );
-    res = getReadLock(id);
+    assert( pFile->locktype==NO_LOCK );
+    res = getReadLock(pFile);
     if( res ){
       newLocktype = SHARED_LOCK;
     }
@@ -728,8 +698,8 @@ static int winLock(OsFile *id, int locktype){
   /* Acquire a RESERVED lock
   */
   if( locktype==RESERVED_LOCK && res ){
-    assert( id->locktype==SHARED_LOCK );
-    res = LockFile(id->h, RESERVED_BYTE, 0, 1, 0);
+    assert( pFile->locktype==SHARED_LOCK );
+    res = LockFile(pFile->h, RESERVED_BYTE, 0, 1, 0);
     if( res ){
       newLocktype = RESERVED_LOCK;
     }
@@ -745,10 +715,10 @@ static int winLock(OsFile *id, int locktype){
   /* Acquire an EXCLUSIVE lock
   */
   if( locktype==EXCLUSIVE_LOCK && res ){
-    assert( id->locktype>=SHARED_LOCK );
-    res = unlockReadLock(id);
+    assert( pFile->locktype>=SHARED_LOCK );
+    res = unlockReadLock(pFile);
     TRACE2("unreadlock = %d\n", res);
-    res = LockFile(id->h, SHARED_FIRST, 0, SHARED_SIZE, 0);
+    res = LockFile(pFile->h, SHARED_FIRST, 0, SHARED_SIZE, 0);
     if( res ){
       newLocktype = EXCLUSIVE_LOCK;
     }else{
@@ -760,7 +730,7 @@ static int winLock(OsFile *id, int locktype){
   ** release it now.
   */
   if( gotPendingLock && locktype==SHARED_LOCK ){
-    UnlockFile(id->h, PENDING_BYTE, 0, 1, 0);
+    UnlockFile(pFile->h, PENDING_BYTE, 0, 1, 0);
   }
 
   /* Update the state of the lock has held in the file descriptor then
@@ -769,11 +739,11 @@ static int winLock(OsFile *id, int locktype){
   if( res ){
     rc = SQLITE_OK;
   }else{
-    TRACE4("LOCK FAILED %d trying for %d but got %d\n", id->h,
+    TRACE4("LOCK FAILED %d trying for %d but got %d\n", pFile->h,
            locktype, newLocktype);
     rc = SQLITE_BUSY;
   }
-  id->locktype = newLocktype;
+  pFile->locktype = newLocktype;
   return rc;
 }
 
@@ -784,17 +754,18 @@ static int winLock(OsFile *id, int locktype){
 */
 static int winCheckReservedLock(OsFile *id){
   int rc;
-  assert( id!=0 );
-  if( id->locktype>=RESERVED_LOCK ){
+  winFile *pFile = (winFile*)id;
+  assert( pFile!=0 );
+  if( pFile->locktype>=RESERVED_LOCK ){
     rc = 1;
-    TRACE3("TEST WR-LOCK %d %d (local)\n", id->h, rc);
+    TRACE3("TEST WR-LOCK %d %d (local)\n", pFile->h, rc);
   }else{
-    rc = LockFile(id->h, RESERVED_BYTE, 0, 1, 0);
+    rc = LockFile(pFile->h, RESERVED_BYTE, 0, 1, 0);
     if( rc ){
-      UnlockFile(id->h, RESERVED_BYTE, 0, 1, 0);
+      UnlockFile(pFile->h, RESERVED_BYTE, 0, 1, 0);
     }
     rc = !rc;
-    TRACE3("TEST WR-LOCK %d %d (remote)\n", id->h, rc);
+    TRACE3("TEST WR-LOCK %d %d (remote)\n", pFile->h, rc);
   }
   return rc;
 }
@@ -813,29 +784,30 @@ static int winCheckReservedLock(OsFile *id){
 static int winUnlock(OsFile *id, int locktype){
   int type;
   int rc = SQLITE_OK;
-  assert( id!=0 );
+  winFile *pFile = (winFile*)id;
+  assert( pFile!=0 );
   assert( locktype<=SHARED_LOCK );
-  TRACE5("UNLOCK %d to %d was %d(%d)\n", id->h, locktype,
-          id->locktype, id->sharedLockByte);
-  type = id->locktype;
+  TRACE5("UNLOCK %d to %d was %d(%d)\n", pFile->h, locktype,
+          pFile->locktype, pFile->sharedLockByte);
+  type = pFile->locktype;
   if( type>=EXCLUSIVE_LOCK ){
-    UnlockFile(id->h, SHARED_FIRST, 0, SHARED_SIZE, 0);
-    if( locktype==SHARED_LOCK && !getReadLock(id) ){
+    UnlockFile(pFile->h, SHARED_FIRST, 0, SHARED_SIZE, 0);
+    if( locktype==SHARED_LOCK && !getReadLock(pFile) ){
       /* This should never happen.  We should always be able to
       ** reacquire the read lock */
       rc = SQLITE_IOERR;
     }
   }
   if( type>=RESERVED_LOCK ){
-    UnlockFile(id->h, RESERVED_BYTE, 0, 1, 0);
+    UnlockFile(pFile->h, RESERVED_BYTE, 0, 1, 0);
   }
   if( locktype==NO_LOCK && type>=SHARED_LOCK ){
-    unlockReadLock(id);
+    unlockReadLock(pFile);
   }
   if( type>=PENDING_LOCK ){
-    UnlockFile(id->h, PENDING_BYTE, 0, 1, 0);
+    UnlockFile(pFile->h, PENDING_BYTE, 0, 1, 0);
   }
-  id->locktype = locktype;
+  pFile->locktype = locktype;
   return rc;
 }
 
@@ -887,7 +859,7 @@ static void winSetFullSync(OsFile *id, int v){
 ** Return the underlying file handle for an OsFile
 */
 static int winFileHandle(OsFile *id){
-  return (int)id->h;
+  return (int)((winFile*)id)->h;
 }
 
 /*
@@ -895,38 +867,50 @@ static int winFileHandle(OsFile *id){
 ** by this handle.  (Used for testing and analysis only.)
 */
 static int winLockState(OsFile *id){
-  return id->locktype;
+  return ((winFile*)id)->locktype;
 }
 
-
 /*
-** This is the structure that defines all of the I/O routines.
+** This vector defines all the methods that can operate on an OsFile
+** for win32.
 */
-struct sqlite3IoVtbl sqlite3Io = {
-  winDelete,
-  winFileExists,
-  winOpenReadWrite,
-  winOpenExclusive,
-  winOpenReadOnly,
-  winOpenDirectory,
-  winSyncDirectory,
-  winTempFileName,
-  winIsDirWritable,
+static const IoMethod sqlite3WinIoMethod = {
   winClose,
+  winOpenDirectory,
   winRead,
   winWrite,
   winSeek,
-  winSync,
   winTruncate,
-  winFileSize,
-  winFullPathname,
-  winLock,
-  winUnlock,
-  winCheckReservedLock,
+  winSync,
   winSetFullSync,
   winFileHandle,
+  winFileSize,
+  winLock,
+  winUnlock,
   winLockState,
+  winCheckReservedLock,
 };
+
+/*
+** Allocate memory for an OsFile.  Initialize the new OsFile
+** to the value given in pInit and return a pointer to the new
+** OsFile.  If we run out of memory, close the file and return NULL.
+*/
+int allocateWinFile(winFile *pInit, OsFile **pId){
+  winFile *pNew;
+  pNew = sqliteMalloc( sizeof(*pNew) );
+  if( pNew==0 ){
+    CloseHandle(pInit->h);
+    *pId = 0;
+    return SQLITE_NOMEM;
+  }else{
+    *pNew = *pInit;
+    pNew->pMethod = &sqlite3WinIoMethod;
+    *pId = pNew;
+    return SQLITE_OK;
+  }
+}
+
 
 #endif /* SQLITE_OMIT_DISKIO */
 /***************************************************************************
@@ -939,7 +923,7 @@ struct sqlite3IoVtbl sqlite3Io = {
 ** is written into the buffer zBuf[256].  The calling function must
 ** supply a sufficiently large buffer.
 */
-int sqlite3OsRandomSeed(char *zBuf){
+static int winRandomSeed(char *zBuf){
   /* We have to initialize zBuf to prevent valgrind from reporting
   ** errors.  The reports issued by valgrind are incorrect - we would
   ** prefer that the randomness be increased by making use of the
@@ -960,7 +944,7 @@ int sqlite3OsRandomSeed(char *zBuf){
 /*
 ** Sleep for a little while.  Return the amount of time slept.
 */
-int sqlite3OsSleep(int ms){
+static int winSleep(int ms){
   Sleep(ms);
   return ms;
 }
@@ -981,7 +965,7 @@ static int inMutex = 0;
 ** SQLite uses only a single Mutex.  There is not much critical
 ** code and what little there is executes quickly and without blocking.
 */
-void sqlite3OsEnterMutex(){
+static void winEnterMutex(){
 #ifdef SQLITE_W32_THREADS
   static int isInit = 0;
   while( !isInit ){
@@ -998,7 +982,7 @@ void sqlite3OsEnterMutex(){
   assert( !inMutex );
   inMutex = 1;
 }
-void sqlite3OsLeaveMutex(){
+static void winLeaveMutex(){
   assert( inMutex );
   inMutex = 0;
 #ifdef SQLITE_W32_THREADS
@@ -1019,7 +1003,7 @@ int sqlite3_current_time = 0;
 ** current time and date as a Julian Day number into *prNow and
 ** return 0.  Return 1 if the time and date cannot be found.
 */
-int sqlite3OsCurrentTime(double *prNow){
+static int winCurrentTime(double *prNow){
   FILETIME ft;
   /* FILETIME structure is a 64-bit value representing the number of 
      100-nanosecond intervals since January 1, 1601 (= JD 2305813.5). 
@@ -1035,5 +1019,34 @@ int sqlite3OsCurrentTime(double *prNow){
 #endif
   return 0;
 }
+
+/* Macro used to comment out routines that do not exists when there is
+** no disk I/O
+*/
+#ifdef SQLITE_OMIT_DISKIO
+# define IF_DISKIO(X)  0
+#else
+# define IF_DISKIO(X)  X
+#endif
+
+/*
+** This is the structure that defines all of the I/O routines.
+*/
+struct sqlite3OsVtbl sqlite3Os = {
+  IF_DISKIO( winOpenReadWrite ),
+  IF_DISKIO( winOpenExclusive ),
+  IF_DISKIO( winOpenReadOnly ),
+  IF_DISKIO( winDelete ),
+  IF_DISKIO( winFileExists ),
+  IF_DISKIO( winFullPathname ),
+  IF_DISKIO( winIsDirWritable ),
+  IF_DISKIO( winSyncDirectory ),
+  IF_DISKIO( winTempFileName ),
+  winRandomSeed,
+  winSleep,
+  winCurrentTime,
+  winEnterMutex,
+  winLeaveMutex,
+};
 
 #endif /* OS_WIN */

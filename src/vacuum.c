@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.48 2005/11/26 00:25:04 drh Exp $
+** $Id: vacuum.c,v 1.49 2005/11/30 03:20:32 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -146,7 +146,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   do {
     zTemp[nFilename] = '-';
     randomName((unsigned char*)&zTemp[nFilename+1]);
-  } while( sqlite3Io.xFileExists(zTemp) );
+  } while( sqlite3Os.xFileExists(zTemp) );
 
   /* Attach the temporary database as 'vacuum_db'. The synchronous pragma
   ** can be set to 'off' for this file, as it is not recovered if a crash
@@ -300,7 +300,7 @@ end_of_vacuum:
     rc = rc2;
   }
   if( zTemp ){
-    sqlite3Io.xDelete(zTemp);
+    sqlite3Os.xDelete(zTemp);
     sqliteFree(zTemp);
   }
   sqliteFree( zSql );
