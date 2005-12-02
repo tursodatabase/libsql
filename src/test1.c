@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.168 2005/11/30 03:20:32 drh Exp $
+** $Id: test1.c,v 1.169 2005/12/02 02:44:06 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -1064,7 +1064,8 @@ static char *sqlite_static_bind_value = 0;
 ** ignored and the value is set to NULL.  If FLAGS=="static" then
 ** the value is set to the value of a static variable named
 ** "sqlite_static_bind_value".  If FLAGS=="normal" then a copy
-** of the VALUE is made.
+** of the VALUE is made.  If FLAGS=="blob10" then a VALUE is ignored
+** an a 10-byte blob "abc\000xyz\000pq" is inserted.
 */
 static int test_bind(
   void *NotUsed,
@@ -1088,6 +1089,8 @@ static int test_bind(
     rc = sqlite3_bind_text(pStmt, idx, sqlite_static_bind_value, -1, 0);
   }else if( strcmp(argv[4],"normal")==0 ){
     rc = sqlite3_bind_text(pStmt, idx, argv[3], -1, SQLITE_TRANSIENT);
+  }else if( strcmp(argv[4],"blob10")==0 ){
+    rc = sqlite3_bind_text(pStmt, idx, "abc\000xyz\000pq", 10, SQLITE_STATIC);
   }else{
     Tcl_AppendResult(interp, "4th argument should be "
         "\"null\" or \"static\" or \"normal\"", 0);

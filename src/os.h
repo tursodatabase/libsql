@@ -72,9 +72,11 @@ struct IoMethod {
 
 /*
 ** The OsFile object describes an open disk file in an OS-dependent way.
-** The version of OsFile defined here is a generic versions.  Each Os
+** The version of OsFile defined here is a generic version.  Each OS
 ** implementation defines its own subclass of this structure that contains
-** additional information needed to handle file I/O.
+** additional information needed to handle file I/O.  But the pMethod
+** entry (pointing to the virtual function table) always occurs first
+** so that we can always find the appropriate methods.
 */
 struct OsFile {
   IoMethod const *pMethod;
