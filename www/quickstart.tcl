@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the quickstart.html file.
 #
-set rcsid {$Id: quickstart.tcl,v 1.6 2004/10/19 01:31:20 drh Exp $}
+set rcsid {$Id: quickstart.tcl,v 1.7 2005/12/02 01:57:43 drh Exp $}
 source common.tcl
 header {SQLite In 5 Minutes Or Less}
 puts {
@@ -24,6 +24,7 @@ create a new database named "test.db".  (You can use a different name if
 you like.)</p></li>
 <li><p>Enter SQL commands at the prompt to create and populate the
 new database.</p></li>
+<li><p>Additional documentation is available <a href="sqlite.html">here</a></li>
 </ul>
 
 <h2>Write Programs That Use SQLite</h2>
@@ -105,4 +106,4 @@ int main(int argc, char **argv){
 </li>
 </ul>
 }
-footer {$Id: quickstart.tcl,v 1.6 2004/10/19 01:31:20 drh Exp $}
+footer {$Id: quickstart.tcl,v 1.7 2005/12/02 01:57:43 drh Exp $}

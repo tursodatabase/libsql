@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3ref.tcl,v 1.24 2005/07/22 22:53:16 drh Exp $}
+set rcsid {$Id: capi3ref.tcl,v 1.25 2005/12/02 01:57:43 drh Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -126,6 +126,12 @@ api {} {
  sqlite3_prepare() or sqlite3_reset() and before sqlite3_step().
  Bindings are not cleared by the sqlite3_reset() routine.
  Unbound parameters are interpreted as NULL.
+
+ These routines return SQLITE_OK on success or an error code if
+ anything goes wrong.  SQLITE_RANGE is returned if the parameter
+ index is out of range.  SQLITE_NOMEM is returned if malloc fails.
+ SQLITE_MISUSE is returned if these routines are called on a virtual
+ machine that is the wrong state or which has already been finalized.
 }
 
 api {} {

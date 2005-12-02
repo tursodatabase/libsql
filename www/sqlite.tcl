@@ -1,11 +1,11 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: sqlite.tcl,v 1.22 2004/05/31 15:06:30 drh Exp $}
+set rcsid {$Id: sqlite.tcl,v 1.23 2005/12/02 01:57:43 drh Exp $}
 source common.tcl
-header {sqlite: A program of interacting with SQLite databases}
+header {sqlite: A command-line access program for SQLite databases}
 puts {
-<h2>sqlite: A command-line program to administer SQLite databases</h2>
+<h2>sqlite: A command-line access program for SQLite databases</h2>
 
 <p>The SQLite library includes a simple command-line utility named
 <b>sqlite</b> that allows the user to manually enter and execute SQL
