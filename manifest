@@ -1,5 +1,5 @@
-C Add\sa\stest\sto\sverify\sthat\sbinding\stext\swith\sembedded\s'\\000'\sworks.\s\sAlso\ncomment\schanges\sin\sos.h.\s(CVS\s2797)
-D 2005-12-02T02:44:06
+C Make\ssure\ssqlite3_result_text\scan\shandle\stext\sstrings\swith\sembedded\s'\\000'\ncharacters.\s(CVS\s2798)
+D 2005-12-05T13:20:02
 F Makefile.in e3c6b3a38d734d41574c04f2fc90d18de2b87102
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -72,7 +72,7 @@ F src/sqlite.h.in 8e648e1f386e4509f2f96c09ded7c07b0df0c9a2
 F src/sqliteInt.h 4148c9778e350014c2e27b332d7a2ef7278fe62e
 F src/table.c 486dcfce532685b53b5a2b5da8bba0ded6fb2316
 F src/tclsqlite.c a497c3adfd2c85da6a934331ec0041e47884fbcb
-F src/test1.c 99b7c919ef00f57537554333329e4fdea513b001
+F src/test1.c 3d1803af3232fbe29c1902735a7eadd5b4598ffe
 F src/test2.c 36390cdfc70c08e5ee0b466d0654a117f398bbff
 F src/test3.c f4e6a16a602091696619a1171bda25c0e3df49f7
 F src/test4.c a8fd681e139e1c61f22a77d07fc3a99cb28fff3f
@@ -112,7 +112,7 @@ F test/autovacuum_ioerr2.test 2f8a3fb31f833fd0ca86ad4ad98913c73e807572
 F test/between.test ca092fa28b665ca92172b182c6c360a92f7ca348
 F test/bigfile.test ebc9ce9216e08bead63734ab816d0f27858f3b80
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
-F test/bind.test 4c68b9f37a98b274f365dae19ea6c16c76c2c1c5
+F test/bind.test 9e80953462a56f8b7f1f840c9fba74f2f1d0db93
 F test/bindxfer.test 856830e9e5552b9882c9d5c6647f90e25bdae4ac
 F test/blob.test 0b4ee6fef7a50685b88d921e2992606999510881
 F test/btree.test 8aa7424aeec844df990273fe36447e5d7e407261
@@ -324,7 +324,7 @@ F www/tclsqlite.tcl ddcf912ea48695603c8ed7efb29f0812ef8d1b49
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 2ffb90c39d0b60de9a692326ca3f2595c1fc97d0
-R 002caed86b62b1fca9bd7852b43785e4
+P 31251a9098662ccf08af5bd5bc3afb282a149701
+R 02fa89cde40cfdcddb84bc6e58a6188e
 U drh
-Z 4dfc99bb0a2a6963cbe2162482887434
+Z e43f95486f7920c5ac1fc2dee1e01108
