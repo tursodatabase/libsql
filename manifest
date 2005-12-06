@@ -1,5 +1,5 @@
-C Report\serrors\sout\sof\ssqlite3_open16().\s(CVS\s2802)
-D 2005-12-06T13:19:08
+C Modify\sATTACH\sand\sDETACH\sto\sexecute\sat\sruntime\sinstead\sof\scompile\stime.\s(CVS\s2803)
+D 2005-12-06T17:19:11
 F Makefile.in e3c6b3a38d734d41574c04f2fc90d18de2b87102
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -32,7 +32,7 @@ F sqlite3.def c413e514217736884254739a105c8c942fdf0c2f
 F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
 F src/alter.c 7ed4b794c2e3a8ad8c1effe50202eaef42cedc23
 F src/analyze.c ea42005eed52c382fcc7ef66969e7f1858597633
-F src/attach.c 8c3e09452be967e005a016299a110ed8ee33606a
+F src/attach.c 39e678033d0be197dea4e9d5eeac2b2df51d6c9f
 F src/auth.c 31e2304bef67f44d635655f44234387ea7d21454
 F src/btree.c aa88194f460becf8fff6196996d6e38f1b37286e
 F src/btree.h 1ed561263ca0e335bc3e81d761c9d5ff8c22f61e
@@ -43,7 +43,7 @@ F src/date.c 8bc8d084a17d19c44d9cbf357b5f656db6706ce1
 F src/delete.c 6010a081edda9871895260def092e852f0bb60a0
 F src/experimental.c 50c1e3b34f752f4ac10c36f287db095c2b61766d
 F src/expr.c 540ed7eb44b79e5603c3656466bf1d7381abcfc7
-F src/func.c 7d81dccd9c440c6c4e761056333e629192814af0
+F src/func.c f5171a1bd0bc3eae91d37bd42724784570b203cd
 F src/hash.c 8747cf51d12de46512880dfcf1b68b4e24072863
 F src/hash.h 1b0c445e1c89ff2aaad9b4605ba61375af001e84
 F src/insert.c 5393479164f317ea0aeec954c6500cafa097ef33
@@ -61,7 +61,7 @@ F src/os_win.c d962ac2dd0e482847e42b846d46cd044f97d1c32
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c 893cb2106261a4f77d84c1fa0d10a083e889b23b
 F src/pager.h e7b41ce8e7b5f629d456708b7ad9a8c8ede37140
-F src/parse.y e4d57c2fd5cc02f19822ec41f6dc2bfc9bc85609
+F src/parse.y 87080d89439925de19f16189310d3dbc7f9ab3f6
 F src/pragma.c 2793699ab0d73fa730fa8c1c7521e9436604f024
 F src/prepare.c e93967011379051316728d316755f533a9bb438c
 F src/printf.c 3ea3a17d25d7ac498efc18007c70371a42c968f8
@@ -69,7 +69,7 @@ F src/random.c ff5e9a8cad790e2a51cd4d2e7737dc8540e09d1d
 F src/select.c 0e4d3627fec4a445b45f6cb471f68aab9c97a8b3
 F src/shell.c 3596c1e559b82663057940d19ba533ad421c7dd3
 F src/sqlite.h.in 8e648e1f386e4509f2f96c09ded7c07b0df0c9a2
-F src/sqliteInt.h 71dc0f753e9a646d9c9b3b6b5bb9d2fcc2dad9e5
+F src/sqliteInt.h bbc310a83a32476aa960055a166af4a0ef503a79
 F src/table.c 486dcfce532685b53b5a2b5da8bba0ded6fb2316
 F src/tclsqlite.c a497c3adfd2c85da6a934331ec0041e47884fbcb
 F src/test1.c 0b4bf8ab9afb37f34a83c46f81de54adf519b23d
@@ -100,7 +100,7 @@ F test/alter3.test d4eecd8dbd008d0e66f1c201fa6dc2edca853c38
 F test/altermalloc.test 6e1f404ec021eb2ba6582e3c77b0a35cf206b7af
 F test/analyze.test 2f55535aa335785db1a2f97d3f3831c16c09f8b0
 F test/attach.test dae07fa1554b618b9cc4c7bc349b3bc1a532180e
-F test/attach2.test 3396c012a39ddf7ba6b528d80bd79554168aa115
+F test/attach2.test 4c31484096fd24b7b98487f9c6d04d9f3f156c6c
 F test/attach3.test 63013383adc4380af69779f34f4af19bd49f7cbe
 F test/attachmalloc.test cdb26c42850f04698377ccec05f5fa89d987837c
 F test/auth.test 973ae7274eae32c4453fbbcbd0ec2b80c5b1eeb3
@@ -325,7 +325,7 @@ F www/tclsqlite.tcl ddcf912ea48695603c8ed7efb29f0812ef8d1b49
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 0b82f9623cf25b1cb02f70628c992903a6e8ca1c
-R ad7e2ffd6d5056830e431f0a65615391
-U drh
-Z 553bce70d7b9b8480be2fd03ddd473e4
+P f5b58163d4520fa3e7137e8445a8ef19aae3e799
+R 5b292cae1efee3561e8e46d85db25e2a
+U danielk1977
+Z adc67f11e55d6ddbfd0953632e9d61d6

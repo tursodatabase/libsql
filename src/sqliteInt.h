@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.429 2005/12/06 12:52:59 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.430 2005/12/06 17:19:11 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1603,8 +1603,8 @@ void sqlite3DeferForeignKey(Parse*, int);
 # define sqlite3AuthContextPush(a,b,c)
 # define sqlite3AuthContextPop(a)  ((void)(a))
 #endif
-void sqlite3Attach(Parse*, Token*, Token*, int, Token*);
-void sqlite3Detach(Parse*, Token*);
+void sqlite3Attach(Parse*, Expr*, Expr*, Expr*);
+void sqlite3Detach(Parse*, Expr*);
 int sqlite3BtreeFactory(const sqlite3 *db, const char *zFilename,
                        int omitJournal, int nCache, Btree **ppBtree);
 int sqlite3FixInit(DbFixer*, Parse*, int, const char*, const Token*);
@@ -1678,6 +1678,7 @@ void sqlite3RegisterLikeFunctions(sqlite3*, int);
 int sqlite3IsLikeFunction(sqlite3*,Expr*,int*,char*);
 SqliteTsd *sqlite3Tsd();
 void sqlite3ClearMallocFailed();
+void sqlite3AttachFunctions(sqlite3 *);
 
 #ifdef SQLITE_SSE
 #include "sseInt.h"

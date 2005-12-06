@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.111 2005/10/13 02:09:50 drh Exp $
+** $Id: func.c,v 1.112 2005/12/06 17:19:11 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1025,6 +1025,7 @@ void sqlite3RegisterBuiltinFunctions(sqlite3 *db){
 #ifndef SQLITE_OMIT_ALTERTABLE
   sqlite3AlterFunctions(db);
 #endif
+  sqlite3AttachFunctions(db);
   for(i=0; i<sizeof(aAggs)/sizeof(aAggs[0]); i++){
     void *pArg = 0;
     switch( aAggs[i].argType ){
