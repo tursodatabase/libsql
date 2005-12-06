@@ -1,5 +1,5 @@
-C Add\stest\sfile\sfor\snew\smalloc()\sfailure\shandling.\s(CVS\s2801)
-D 2005-12-06T12:57:59
+C Report\serrors\sout\sof\ssqlite3_open16().\s(CVS\s2802)
+D 2005-12-06T13:19:08
 F Makefile.in e3c6b3a38d734d41574c04f2fc90d18de2b87102
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -48,7 +48,7 @@ F src/hash.c 8747cf51d12de46512880dfcf1b68b4e24072863
 F src/hash.h 1b0c445e1c89ff2aaad9b4605ba61375af001e84
 F src/insert.c 5393479164f317ea0aeec954c6500cafa097ef33
 F src/legacy.c 7b88d20efc8e6c208f262d97aee9c8e2cf02bc91
-F src/main.c 2babbdbc5f0ad8a4dc9152b27ba3436b55572a2d
+F src/main.c 8da1f263376c33c5d5911a6de789e30a596381d3
 F src/md5.c 7ae1c39044b95de2f62e066f47bb1deb880a1070
 F src/os.c bdd3a2fd089777e7ad18b57c896f1141d5a0c1fd
 F src/os.h d5ae3f4c1c7731437b6cddec279b7c06f761c44e
@@ -325,7 +325,7 @@ F www/tclsqlite.tcl ddcf912ea48695603c8ed7efb29f0812ef8d1b49
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P e1606658f1b4530e3001db4779b5669c8d13c853
-R c0b4731d8bcaf131c3e1be6b27745b27
-U danielk1977
-Z 122b6303e6a13505a3a7b36ef59dc965
+P 0b82f9623cf25b1cb02f70628c992903a6e8ca1c
+R ad7e2ffd6d5056830e431f0a65615391
+U drh
+Z 553bce70d7b9b8480be2fd03ddd473e4

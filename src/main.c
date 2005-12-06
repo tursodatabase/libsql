@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.305 2005/12/06 12:52:59 danielk1977 Exp $
+** $Id: main.c,v 1.306 2005/12/06 13:19:08 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -830,7 +830,7 @@ int sqlite3_open16(
   if( zFilename8 ){
     rc = openDatabase(zFilename8, ppDb);
     if( rc==SQLITE_OK && *ppDb ){
-      sqlite3_exec(*ppDb, "PRAGMA encoding = 'UTF-16'", 0, 0, 0);
+      rc = sqlite3_exec(*ppDb, "PRAGMA encoding = 'UTF-16'", 0, 0, 0);
     }
   }
   if( pVal ){
