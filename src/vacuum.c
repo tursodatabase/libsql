@@ -14,9 +14,10 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.50 2005/12/06 12:53:01 danielk1977 Exp $
+** $Id: vacuum.c,v 1.51 2005/12/06 17:48:32 danielk1977 Exp $
 */
 #include "sqliteInt.h"
+#include "vdbeInt.h"
 #include "os.h"
 
 #ifndef SQLITE_OMIT_VACUUM
@@ -102,6 +103,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   char *zSql = 0;
   int rc2;  
   int saved_flags;       /* Saved value of the db->flags */
+  sqlite3_stmt *pDetach = 0;
 
   /* Save the current value of the write-schema flag before setting it. */
   saved_flags = db->flags;
@@ -147,6 +149,15 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
     zTemp[nFilename] = '-';
     randomName((unsigned char*)&zTemp[nFilename+1]);
   } while( sqlite3Os.xFileExists(zTemp) );
+
+  /* Before we even attach it, compile a DETACH statement for vacuum_db. This
+  ** way, if malloc() fails we can detach the database without needing to
+  ** dynamically allocate memory.
+  */ 
+  rc = sqlite3_prepare(db, "DETACH vacuum_db", -1, &pDetach, 0);
+  if( rc!=SQLITE_OK ){
+    goto end_of_vacuum;
+  }
 
   /* Attach the temporary database as 'vacuum_db'. The synchronous pragma
   ** can be set to 'off' for this file, as it is not recovered if a crash
@@ -287,14 +298,6 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   }
 
 end_of_vacuum:
-  /* If one of the execSql() calls above returned SQLITE_NOMEM, then the
-  ** mallocFailed flag will be clear (because execSql() calls sqlite3_exec()).
-  ** Fix this so the flag and return code match.
-  */
-  if( rc==SQLITE_NOMEM ){
-    sqlite3Tsd()->mallocFailed = 1;
-  }
-
   /* Restore the original value of db->flags */
   db->flags = saved_flags;
 
@@ -307,18 +310,23 @@ end_of_vacuum:
   */
   db->autoCommit = 1;
 
-  /* TODO: We need to detach vacuum_db (if it is attached) even if malloc()
-  ** failed. Right now trying to do so will cause an assert() to fail in **
-  **_prepare() (because it should be impossible to call _prepare() with the **
-  ** mallocFailed flag set). So really, we need to be able to detach a database
-  ** without calling malloc(). Which seems plausible.
-  */
-  if( !sqlite3Tsd()->mallocFailed ){
-    rc2 = execSql(db, "DETACH vacuum_db;");
+  if( pDetach ){
+    ((Vdbe *)pDetach)->expired = 0;
+    sqlite3_step(pDetach);
+    rc2 = sqlite3_finalize(pDetach);
     if( rc==SQLITE_OK ){
       rc = rc2;
     }
   }
+
+  /* If one of the execSql() calls above returned SQLITE_NOMEM, then the
+  ** mallocFailed flag will be clear (because execSql() calls sqlite3_exec()).
+  ** Fix this so the flag and return code match.
+  */
+  if( rc==SQLITE_NOMEM ){
+    sqlite3Tsd()->mallocFailed = 1;
+  }
+
   if( zTemp ){
     sqlite3Os.xDelete(zTemp);
     sqliteFree(zTemp);
