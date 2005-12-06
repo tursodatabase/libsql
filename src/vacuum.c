@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.49 2005/11/30 03:20:32 drh Exp $
+** $Id: vacuum.c,v 1.50 2005/12/06 12:53:01 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -170,7 +170,10 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   sqlite3BtreeSetPageSize(pTemp, sqlite3BtreeGetPageSize(pMain),
      sqlite3BtreeGetReserve(pMain));
   assert( sqlite3BtreeGetPageSize(pTemp)==sqlite3BtreeGetPageSize(pMain) );
-  execSql(db, "PRAGMA vacuum_db.synchronous=OFF");
+  rc = execSql(db, "PRAGMA vacuum_db.synchronous=OFF");
+  if( rc!=SQLITE_OK ){
+    goto end_of_vacuum;
+  }
 
 #ifndef SQLITE_OMIT_AUTOVACUUM
   sqlite3BtreeSetAutoVacuum(pTemp, sqlite3BtreeGetAutoVacuum(pMain));
@@ -284,6 +287,14 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   }
 
 end_of_vacuum:
+  /* If one of the execSql() calls above returned SQLITE_NOMEM, then the
+  ** mallocFailed flag will be clear (because execSql() calls sqlite3_exec()).
+  ** Fix this so the flag and return code match.
+  */
+  if( rc==SQLITE_NOMEM ){
+    sqlite3Tsd()->mallocFailed = 1;
+  }
+
   /* Restore the original value of db->flags */
   db->flags = saved_flags;
 
@@ -295,9 +306,18 @@ end_of_vacuum:
   ** is closed by the DETACH.
   */
   db->autoCommit = 1;
-  rc2 = execSql(db, "DETACH vacuum_db;");
-  if( rc==SQLITE_OK ){
-    rc = rc2;
+
+  /* TODO: We need to detach vacuum_db (if it is attached) even if malloc()
+  ** failed. Right now trying to do so will cause an assert() to fail in **
+  **_prepare() (because it should be impossible to call _prepare() with the **
+  ** mallocFailed flag set). So really, we need to be able to detach a database
+  ** without calling malloc(). Which seems plausible.
+  */
+  if( !sqlite3Tsd()->mallocFailed ){
+    rc2 = execSql(db, "DETACH vacuum_db;");
+    if( rc==SQLITE_OK ){
+      rc = rc2;
+    }
   }
   if( zTemp ){
     sqlite3Os.xDelete(zTemp);

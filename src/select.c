@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.280 2005/11/16 13:47:51 drh Exp $
+** $Id: select.c,v 1.281 2005/12/06 12:52:59 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -155,7 +155,7 @@ static int columnIndex(Table *pTab, const char *zCol){
 */
 static void setToken(Token *p, const char *z){
   p->z = z;
-  p->n = strlen(z);
+  p->n = z ? strlen(z) : 0;
   p->dyn = 0;
 }
 
@@ -856,7 +856,7 @@ static void generateColumnNames(
 #endif
 
   assert( v!=0 );
-  if( pParse->colNamesSet || v==0 || sqlite3_malloc_failed ) return;
+  if( pParse->colNamesSet || v==0 || sqlite3Tsd()->mallocFailed ) return;
   pParse->colNamesSet = 1;
   fullNames = (db->flags & SQLITE_FullColNames)!=0;
   shortNames = (db->flags & SQLITE_ShortColNames)!=0;
@@ -984,7 +984,7 @@ Table *sqlite3ResultSetOfSelect(Parse *pParse, char *zTabName, Select *pSelect){
       zName = sqlite3MPrintf("column%d", i+1);
     }
     sqlite3Dequote(zName);
-    if( sqlite3_malloc_failed ){
+    if( sqlite3Tsd()->mallocFailed ){
       sqliteFree(zName);
       sqlite3DeleteTable(0, pTab);
       return 0;
@@ -1056,7 +1056,7 @@ static int prepSelectStmt(Parse *pParse, Select *p){
   Table *pTab;
   struct SrcList_item *pFrom;
 
-  if( p==0 || p->pSrc==0 || sqlite3_malloc_failed ) return 1;
+  if( p==0 || p->pSrc==0 || sqlite3Tsd()->mallocFailed ) return 1;
   pTabList = p->pSrc;
   pEList = p->pEList;
 
@@ -1164,7 +1164,11 @@ static int prepSelectStmt(Parse *pParse, Select *p){
         /* This particular expression does not need to be expanded.
         */
         pNew = sqlite3ExprListAppend(pNew, a[k].pExpr, 0);
-        pNew->a[pNew->nExpr-1].zName = a[k].zName;
+        if( pNew ){
+          pNew->a[pNew->nExpr-1].zName = a[k].zName;
+        }else{
+          rc = 1;
+        }
         a[k].pExpr = 0;
         a[k].zName = 0;
       }else{
@@ -2639,7 +2643,7 @@ int sqlite3Select(
   AggInfo sAggInfo;      /* Information used by aggregate queries */
   int iEnd;              /* Address of the end of the query */
 
-  if( sqlite3_malloc_failed || pParse->nErr || p==0 ) return 1;
+  if( sqlite3Tsd()->mallocFailed || pParse->nErr || p==0 ) return 1;
   if( sqlite3AuthCheck(pParse, SQLITE_SELECT, 0, 0, 0) ) return 1;
   memset(&sAggInfo, 0, sizeof(sAggInfo));
 
@@ -2893,7 +2897,7 @@ int sqlite3Select(
         goto select_end;
       }
     }
-    if( sqlite3_malloc_failed ) goto select_end;
+    if( sqlite3Tsd()->mallocFailed ) goto select_end;
 
     /* Processing for aggregates with GROUP BY is very different and
     ** much more complex tha aggregates without a GROUP BY.

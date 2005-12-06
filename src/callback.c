@@ -13,7 +13,7 @@
 ** This file contains functions used to access the internal hash tables
 ** of user defined functions and collation sequences.
 **
-** $Id: callback.c,v 1.4 2005/10/20 07:28:18 drh Exp $
+** $Id: callback.c,v 1.5 2005/12/06 12:52:59 danielk1977 Exp $
 */
 
 #include "sqliteInt.h"
@@ -175,7 +175,7 @@ static CollSeq *findCollSeqEntry(
       ** return the pColl pointer to be deleted (because it wasn't added
       ** to the hash table).
       */
-      assert( !pDel || (sqlite3_malloc_failed && pDel==pColl) );
+      assert( !pDel || (sqlite3Tsd()->mallocFailed && pDel==pColl) );
       sqliteFree(pDel);
     }
   }

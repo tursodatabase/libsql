@@ -13,7 +13,7 @@
 # This file tests the various conditions under which an SQLITE_SCHEMA
 # error should be returned.
 #
-# $Id: schema.test,v 1.4 2005/01/29 01:54:18 danielk1977 Exp $
+# $Id: schema.test,v 1.5 2005/12/06 12:53:01 danielk1977 Exp $
 
 #---------------------------------------------------------------------
 # When any of the following types of SQL statements or actions are 
@@ -29,8 +29,6 @@
 # Deleting a collation sequence.......................schema-7.*
 # Setting or changing the authorization function......schema-8.*
 #
-# Note: Test cases schema-6.* are missing right now.
-#
 # Test cases schema-9.* and schema-10.* test some specific bugs
 # that came up during development.
 #
@@ -38,7 +36,6 @@
 # change a collation sequence or user-function while SQL statements
 # are executing. Adding new collations or functions is allowed.
 #
-# Note: Test cases schema-11.* are also missing right now.
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl

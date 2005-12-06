@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.148 2005/10/20 07:28:19 drh Exp $
+** $Id: util.c,v 1.149 2005/12/06 12:53:01 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -37,11 +37,13 @@ void print_stack_trace(){
 #define print_stack_trace()
 #endif
 
+#if 0
 /*
 ** If malloc() ever fails, this global variable gets set to 1.
 ** This causes the library to abort and never again function.
 */
-int sqlite3_malloc_failed = 0;
+int sqlite3Tsd()->mallocFailed = 0;
+#endif
 
 /*
 ** If SQLITE_MEMDEBUG is defined, then use versions of malloc() and
@@ -81,7 +83,7 @@ static int simulatedMallocFailure(int n, char *zFile, int line){
   if( sqlite3_iMallocFail>=0 ){
     sqlite3_iMallocFail--;
     if( sqlite3_iMallocFail==0 ){
-      sqlite3_malloc_failed++;
+      sqlite3Tsd()->mallocFailed++;
 #if SQLITE_MEMDEBUG>1
       fprintf(stderr,"**** failed to allocate %d bytes at %s:%d\n",
               n, zFile,line);
@@ -101,6 +103,19 @@ void *sqlite3Malloc_(int n, int bZero, char *zFile, int line){
   void *p;
   int *pi;
   int i, k;
+
+  /* Any malloc() calls between a malloc() failure and clearing the
+  ** mallocFailed flag (done before returning control to the user)
+  ** automatically fail. Although this restriction may have to be relaxed in
+  ** the future, for now it makes the system easier to test.
+  **
+  ** TODO: This will eventually be done as part of the same wrapper that may
+  ** call sqlite3_release_memory(). Above the sqlite3OsMalloc() level.
+  */
+  if( sqlite3Tsd()->mallocFailed ){
+    return 0;
+  }
+
   if( n==0 ){
     return 0;
   }
@@ -112,7 +127,7 @@ void *sqlite3Malloc_(int n, int bZero, char *zFile, int line){
   k = (n+sizeof(int)-1)/sizeof(int);
   pi = malloc( (N_GUARD*2+1+k)*sizeof(int));
   if( pi==0 ){
-    if( n>0 ) sqlite3_malloc_failed++;
+    if( n>0 ) sqlite3Tsd()->mallocFailed++;
     return 0;
   }
   sqlite3_nMalloc++;
@@ -228,7 +243,7 @@ void *sqlite3Realloc_(void *oldP, int n, char *zFile, int line){
   k = (n + sizeof(int) - 1)/sizeof(int);
   pi = malloc( (k+N_GUARD*2+1)*sizeof(int) );
   if( pi==0 ){
-    if( n>0 ) sqlite3_malloc_failed++;
+    if( n>0 ) sqlite3Tsd()->mallocFailed++;
     return 0;
   }
   for(i=0; i<N_GUARD; i++) pi[i] = 0xdead1122;
@@ -294,7 +309,7 @@ void *sqlite3Malloc(int n){
   void *p;
   if( n==0 ) return 0;
   if( (p = malloc(n))==0 ){
-    if( n>0 ) sqlite3_malloc_failed++;
+    if( n>0 ) sqlite3Tsd()->mallocFailed++;
   }else{
     memset(p, 0, n);
   }
@@ -309,7 +324,7 @@ void *sqlite3MallocRaw(int n){
   void *p;
   if( n==0 ) return 0;
   if( (p = malloc(n))==0 ){
-    if( n>0 ) sqlite3_malloc_failed++;
+    if( n>0 ) sqlite3Tsd()->mallocFailed++;
   }
   return p;
 }
@@ -339,7 +354,7 @@ void *sqlite3Realloc(void *p, int n){
   }
   p2 = realloc(p, n);
   if( p2==0 ){
-    if( n>0 ) sqlite3_malloc_failed++;
+    if( n>0 ) sqlite3Tsd()->mallocFailed++;
   }
   return p2;
 }
@@ -1007,3 +1022,18 @@ void *sqlite3TextToPtr(const char *z){
   return p;
 }
 #endif
+
+/*
+** Return a pointer to the SqliteTsd associated with the calling thread.
+*/
+static SqliteTsd tsd = { 0 };
+SqliteTsd *sqlite3Tsd(){
+  return &tsd;
+}
+
+void sqlite3ClearMallocFailed(){
+  sqlite3Tsd()->mallocFailed = 0;
+}
+
+
+

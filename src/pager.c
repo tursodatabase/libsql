@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.222 2005/11/30 03:20:31 drh Exp $
+** @(#) $Id: pager.c,v 1.223 2005/12/06 12:52:59 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1598,7 +1598,7 @@ int sqlite3pager_open(
 
   *ppPager = 0;
   memset(&fd, 0, sizeof(fd));
-  if( sqlite3_malloc_failed ){
+  if( sqlite3Tsd()->mallocFailed ){
     return SQLITE_NOMEM;
   }
   if( zFilename && zFilename[0] ){
@@ -2413,7 +2413,7 @@ int sqlite3pager_get(Pager *pPager, Pgno pgno, void **ppPage){
                               + sizeof(u32) + pPager->nExtra
                               + MEMDB*sizeof(PgHistory) );
       if( pPg==0 ){
-        pPager->errMask |= PAGER_ERR_MEM;
+        // pPager->errMask |= PAGER_ERR_MEM;
         return SQLITE_NOMEM;
       }
       memset(pPg, 0, sizeof(*pPg));
@@ -2692,7 +2692,7 @@ static int pager_open_journal(Pager *pPager){
   if( pPager->stmtAutoopen && rc==SQLITE_OK ){
     rc = sqlite3pager_stmt_begin(pPager);
   }
-  if( rc!=SQLITE_OK ){
+  if( rc!=SQLITE_OK && rc!=SQLITE_NOMEM ){
     rc = pager_unwritelock(pPager);
     if( rc==SQLITE_OK ){
       rc = SQLITE_FULL;
@@ -2703,8 +2703,17 @@ static int pager_open_journal(Pager *pPager){
 failed_to_open_journal:
   sqliteFree(pPager->aInJournal);
   pPager->aInJournal = 0;
-  sqlite3OsUnlock(pPager->fd, NO_LOCK);
-  pPager->state = PAGER_UNLOCK;
+  if( rc==SQLITE_NOMEM ){
+    /* If this was a malloc() failure, then we will not be closing the pager
+    ** file. So delete any journal file we may have just created. Otherwise,
+    ** the system will get confused, we have a read-lock on the file and a
+    ** mysterious journal has appeared in the filesystem.
+    */
+    sqlite3Os.xDelete(pPager->zJournal);
+  }else{
+    sqlite3OsUnlock(pPager->fd, NO_LOCK);
+    pPager->state = PAGER_UNLOCK;
+  }
   return rc;
 }
 
@@ -3270,7 +3279,7 @@ int sqlite3pager_stmt_begin(Pager *pPager){
   assert( pPager->journalOpen );
   pPager->aInStmt = sqliteMalloc( pPager->dbSize/8 + 1 );
   if( pPager->aInStmt==0 ){
-    sqlite3OsLock(pPager->fd, SHARED_LOCK);
+    /* sqlite3OsLock(pPager->fd, SHARED_LOCK); */
     return SQLITE_NOMEM;
   }
 #ifndef NDEBUG

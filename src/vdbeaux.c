@@ -102,7 +102,7 @@ int sqlite3VdbeAddOp(Vdbe *p, int op, int p1, int p2){
   p->nOp++;
   assert( p->magic==VDBE_MAGIC_INIT );
   resizeOpArray(p, i+1);
-  if( sqlite3_malloc_failed ){
+  if( sqlite3Tsd()->mallocFailed ){
     return 0;
   }
   pOp = &p->aOp[i];
@@ -301,7 +301,7 @@ int sqlite3VdbeAddOpList(Vdbe *p, int nOp, VdbeOpList const *aOp){
   int addr;
   assert( p->magic==VDBE_MAGIC_INIT );
   resizeOpArray(p, p->nOp + nOp);
-  if( sqlite3_malloc_failed ){
+  if( sqlite3Tsd()->mallocFailed ){
     return 0;
   }
   addr = p->nOp;
@@ -416,7 +416,9 @@ void sqlite3VdbeChangeP3(Vdbe *p, int addr, const char *zP3, int n){
   Op *pOp;
   assert( p->magic==VDBE_MAGIC_INIT );
   if( p==0 || p->aOp==0 ){
-    freeP3(n, (void*)*(char**)&zP3);
+    if (n != P3_KEYINFO) {
+      freeP3(n, (void*)*(char**)&zP3);
+    }
     return;
   }
   if( addr<0 || addr>=p->nOp ){
@@ -734,7 +736,7 @@ void sqlite3VdbeMakeReady(
       + nMem*sizeof(Mem)               /* aMem */
       + nCursor*sizeof(Cursor*)        /* apCsr */
     );
-    if( !sqlite3_malloc_failed ){
+    if( !sqlite3Tsd()->mallocFailed ){
       p->aMem = &p->aStack[nStack];
       p->nMem = nMem;
       p->aVar = &p->aMem[nMem];
@@ -884,7 +886,7 @@ int sqlite3VdbeSetColName(Vdbe *p, int idx, const char *zName, int N){
   int rc;
   Mem *pColName;
   assert( idx<(2*p->nResColumn) );
-  if( sqlite3_malloc_failed ) return SQLITE_NOMEM;
+  if( sqlite3Tsd()->mallocFailed ) return SQLITE_NOMEM;
   assert( p->aColName!=0 );
   pColName = &(p->aColName[idx]);
   if( N==P3_DYNAMIC || N==P3_STATIC ){
@@ -1148,6 +1150,10 @@ int sqlite3VdbeHalt(Vdbe *p){
   int i;
   int (*xFunc)(Btree *pBt) = 0;  /* Function to call on each btree backend */
 
+  if( sqlite3Tsd()->mallocFailed ){
+    p->rc = SQLITE_NOMEM;
+  }
+
   if( p->magic!=VDBE_MAGIC_RUN ){
     /* Already halted.  Nothing to do. */
     assert( p->magic==VDBE_MAGIC_HALT );
@@ -1158,7 +1164,8 @@ int sqlite3VdbeHalt(Vdbe *p){
   if( p->pc<0 ){
     /* No commit or rollback needed if the program never started */
   }else if( db->autoCommit && db->activeVdbeCnt==1 ){
-    if( p->rc==SQLITE_OK || p->errorAction==OE_Fail ){
+
+    if( p->rc==SQLITE_OK || (p->errorAction==OE_Fail && p->rc!=SQLITE_NOMEM)){
       /* The auto-commit flag is true, there are no other active queries
       ** using this handle and the vdbe program was successful or hit an
       ** 'OR FAIL' constraint. This means a commit is required.
@@ -1169,11 +1176,50 @@ int sqlite3VdbeHalt(Vdbe *p){
       }else if( rc!=SQLITE_OK ){
         p->rc = rc;
         xFunc = sqlite3BtreeRollback;
+      }else{
+        sqlite3CommitInternalChanges(db);
       }
     }else{
       xFunc = sqlite3BtreeRollback;
     }
   }else{
+
+    if( p->rc==SQLITE_NOMEM ){
+      /* This loop does static analysis of the query to see which of the
+      ** following three categories it falls into:
+      **
+      **     Read-only
+      **     Query with statement journal          -> rollback statement
+      **     Query without statement journal       -> rollback transaction
+      **
+      ** We could do something more elegant than this static analysis (i.e.
+      ** store the type of query as part of the compliation phase), but 
+      ** handling malloc() failure is a fairly obscure edge case so this is
+      ** probably easier.
+      **
+      ** Todo: This means we always override the p->errorAction value for a
+      ** malloc() failure. Is there any other choice here though?
+      */
+      int isReadOnly = 1;
+      int isStatement = 0;
+      assert(p->aOp || p->nOp==0);
+      for(i=0; i<p->nOp; i++){ 
+        switch( p->aOp[i].opcode ){
+          case OP_Transaction:
+            isReadOnly = 0;
+            break;
+          case OP_Statement:
+            isStatement = 1;
+            break;
+        }
+      }
+      if( (isReadOnly||isStatement) && p->errorAction!=OE_Rollback ){
+        p->errorAction = OE_Abort;
+      }else{ 
+        p->errorAction = OE_Rollback;
+      }
+    }
+
     if( p->rc==SQLITE_OK || p->errorAction==OE_Fail ){
       xFunc = sqlite3BtreeCommitStmt;
     }else if( p->errorAction==OE_Abort ){
@@ -1210,10 +1256,11 @@ int sqlite3VdbeHalt(Vdbe *p){
   }
 
   /* Rollback or commit any schema changes that occurred. */
-  if( p->rc!=SQLITE_OK ){
-    sqlite3RollbackInternalChanges(db);
-  }else if( db->flags & SQLITE_InternChanges ){
-    sqlite3CommitInternalChanges(db);
+  if( p->rc!=SQLITE_OK && db->flags&SQLITE_InternChanges ){
+    sqlite3ResetInternalSchema(db, 0);
+    if( xFunc!=sqlite3BtreeRollback ){
+      db->flags = (db->flags | SQLITE_InternChanges);
+    }
   }
 
   /* We have successfully halted and closed the VM.  Record this fact. */
@@ -1278,7 +1325,7 @@ int sqlite3VdbeReset(Vdbe *p){
 
   /* Save profiling information from this VDBE run.
   */
-  assert( p->pTos<&p->aStack[p->pc<0?0:p->pc] || sqlite3_malloc_failed==1 );
+  assert( p->pTos<&p->aStack[p->pc<0?0:p->pc] || !p->aStack );
 #ifdef VDBE_PROFILE
   {
     FILE *out = fopen("vdbe_profile.out", "a");

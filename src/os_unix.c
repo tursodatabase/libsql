@@ -689,6 +689,7 @@ static int unixOpenReadOnly(const char *zFilename, OsFile **pId){
   }
   f.locktype = 0;
   TRACE3("OPEN-RO %-3d %s\n", f.h, zFilename);
+
   return allocateUnixFile(&f, pId);
 }
 

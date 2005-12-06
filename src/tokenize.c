@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.108 2005/10/23 11:29:40 drh Exp $
+** $Id: tokenize.c,v 1.109 2005/12/06 12:53:00 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -348,7 +348,6 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   i = 0;
   pEngine = sqlite3ParserAlloc((void*(*)(int))sqlite3MallocX);
   if( pEngine==0 ){
-    sqlite3SetString(pzErrMsg, "out of memory", (char*)0);
     return SQLITE_NOMEM;
   }
   assert( pParse->sLastToken.dyn==0 );
@@ -359,7 +358,7 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   assert( pParse->nVarExprAlloc==0 );
   assert( pParse->apVarExpr==0 );
   pParse->zTail = pParse->zSql = zSql;
-  while( sqlite3_malloc_failed==0 && zSql[i]!=0 ){
+  while( sqlite3Tsd()->mallocFailed==0 && zSql[i]!=0 ){
     assert( i>=0 );
     pParse->sLastToken.z = &zSql[i];
     assert( pParse->sLastToken.dyn==0 );
@@ -407,12 +406,11 @@ abort_parse:
     sqlite3Parser(pEngine, 0, pParse->sLastToken, pParse);
   }
   sqlite3ParserFree(pEngine, sqlite3FreeX);
-  if( sqlite3_malloc_failed ){
+  if( sqlite3Tsd()->mallocFailed ){
     pParse->rc = SQLITE_NOMEM;
   }
   if( pParse->rc!=SQLITE_OK && pParse->rc!=SQLITE_DONE && pParse->zErrMsg==0 ){
-    sqlite3SetString(&pParse->zErrMsg, sqlite3ErrStr(pParse->rc),
-                    (char*)0);
+    sqlite3SetString(&pParse->zErrMsg, sqlite3ErrStr(pParse->rc), (char*)0);
   }
   if( pParse->zErrMsg ){
     if( pzErrMsg && *pzErrMsg==0 ){

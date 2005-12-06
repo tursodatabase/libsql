@@ -14,7 +14,7 @@
 # special feature is used to see what happens in the library if a malloc
 # were to really fail due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.24 2005/09/08 00:13:28 drh Exp $
+# $Id: malloc.test,v 1.25 2005/12/06 12:53:01 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -22,7 +22,7 @@ source $testdir/tester.tcl
 # Only run these tests if memory debugging is turned on.
 #
 if {[info command sqlite_malloc_stat]==""} {
-   puts "Skipping malloc tests: not compiled with -DSQLITE_DEBUG..."
+   puts "Skipping malloc tests: not compiled with -DSQLITE_MEMDEBUG..."
    finish_test
    return
 }
@@ -52,12 +52,16 @@ if {[info command sqlite_malloc_stat]==""} {
 # successfully, the loop ends.
 #
 proc do_malloc_test {tn args} {
+  array unset ::mallocopts 
   array set ::mallocopts $args
 
   set ::go 1
-  for {set ::n 1} {$::go} {incr ::n} {
+  for {set ::n 1} {$::go && $::n < 50000} {incr ::n} {
     do_test malloc-$tn.$::n {
 
+      # Remove all traces of database files test.db and test2.db from the files
+      # system. Then open (empty database) "test.db" with the handle [db].
+      # 
       sqlite_malloc_fail 0
       catch {db close}
       catch {file delete -force test.db}
@@ -66,6 +70,8 @@ proc do_malloc_test {tn args} {
       catch {file delete -force test2.db-journal}
       set ::DB [sqlite3 db test.db]
 
+      # Execute any -tclprep and -sqlprep scripts.
+      #
       if {[info exists ::mallocopts(-tclprep)]} {
         eval $::mallocopts(-tclprep)
       }
@@ -73,6 +79,9 @@ proc do_malloc_test {tn args} {
         execsql $::mallocopts(-sqlprep)
       }
 
+      # Now set the ${::n}th malloc() to fail and execute the -tclbody and
+      # -sqlbody scripts.
+      #
       sqlite_malloc_fail $::n
       set ::mallocbody {}
       if {[info exists ::mallocopts(-tclbody)]} {
@@ -81,7 +90,6 @@ proc do_malloc_test {tn args} {
       if {[info exists ::mallocopts(-sqlbody)]} {
         append ::mallocbody "db eval {$::mallocopts(-sqlbody)}"
       }
-
       set v [catch $::mallocbody msg]
 
       set leftover [lindex [sqlite_malloc_stat] 2]

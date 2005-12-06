@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.355 2005/11/14 22:29:05 drh Exp $
+** $Id: build.c,v 1.356 2005/12/06 12:52:59 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -50,7 +50,7 @@ void sqlite3FinishCoding(Parse *pParse){
   sqlite3 *db;
   Vdbe *v;
 
-  if( sqlite3_malloc_failed ) return;
+  if( sqlite3Tsd()->mallocFailed ) return;
   if( pParse->nested ) return;
   if( !pParse->pVdbe ){
     if( pParse->rc==SQLITE_OK && pParse->nErr ){
@@ -1296,7 +1296,9 @@ void sqlite3EndTable(
   Table *p;
   sqlite3 *db = pParse->db;
 
-  if( (pEnd==0 && pSelect==0) || pParse->nErr || sqlite3_malloc_failed ) return;
+  if( (pEnd==0 && pSelect==0) || pParse->nErr || sqlite3Tsd()->mallocFailed ) {
+    return;
+  }
   p = pParse->pNewTable;
   if( p==0 ) return;
 
@@ -1522,6 +1524,9 @@ void sqlite3CreateView(
   */
   p->pSelect = sqlite3SelectDup(pSelect);
   sqlite3SelectDelete(pSelect);
+  if( sqlite3Tsd()->mallocFailed ){
+    return;
+  }
   if( !pParse->db->init.busy ){
     sqlite3ViewGetColumnNames(pParse, p);
   }
@@ -1592,24 +1597,28 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
   */
   assert( pTable->pSelect );
   pSel = sqlite3SelectDup(pTable->pSelect);
-  n = pParse->nTab;
-  sqlite3SrcListAssignCursors(pParse, pSel->pSrc);
-  pTable->nCol = -1;
-  pSelTab = sqlite3ResultSetOfSelect(pParse, 0, pSel);
-  pParse->nTab = n;
-  if( pSelTab ){
-    assert( pTable->aCol==0 );
-    pTable->nCol = pSelTab->nCol;
-    pTable->aCol = pSelTab->aCol;
-    pSelTab->nCol = 0;
-    pSelTab->aCol = 0;
-    sqlite3DeleteTable(0, pSelTab);
-    DbSetProperty(pParse->db, pTable->iDb, DB_UnresetViews);
-  }else{
-    pTable->nCol = 0;
+  if( pSel ){
+    n = pParse->nTab;
+    sqlite3SrcListAssignCursors(pParse, pSel->pSrc);
+    pTable->nCol = -1;
+    pSelTab = sqlite3ResultSetOfSelect(pParse, 0, pSel);
+    pParse->nTab = n;
+    if( pSelTab ){
+      assert( pTable->aCol==0 );
+      pTable->nCol = pSelTab->nCol;
+      pTable->aCol = pSelTab->aCol;
+      pSelTab->nCol = 0;
+      pSelTab->aCol = 0;
+      sqlite3DeleteTable(0, pSelTab);
+      DbSetProperty(pParse->db, pTable->iDb, DB_UnresetViews);
+    }else{
+      pTable->nCol = 0;
+      nErr++;
+    }
+    sqlite3SelectDelete(pSel);
+  } else {
     nErr++;
   }
-  sqlite3SelectDelete(pSel);
   return nErr;  
 }
 #endif /* SQLITE_OMIT_VIEW */
@@ -1749,7 +1758,7 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView){
   sqlite3 *db = pParse->db;
   int iDb;
 
-  if( pParse->nErr || sqlite3_malloc_failed ) goto exit_drop_table;
+  if( pParse->nErr || sqlite3Tsd()->mallocFailed ) goto exit_drop_table;
   assert( pName->nSrc==1 );
   pTab = sqlite3LocateTable(pParse, pName->a[0].zName, pName->a[0].zDatabase);
 
@@ -2098,7 +2107,7 @@ void sqlite3CreateIndex(
   int iDb;          /* Index of the database that is being written */
   Token *pName = 0; /* Unqualified name of the index to create */
 
-  if( pParse->nErr || sqlite3_malloc_failed ) goto exit_create_index;
+  if( pParse->nErr || sqlite3Tsd()->mallocFailed ) goto exit_create_index;
 
   /*
   ** Find the table that is to be indexed.  Return early if not found.
@@ -2226,7 +2235,7 @@ void sqlite3CreateIndex(
   */
   pIndex = sqliteMalloc( sizeof(Index) + strlen(zName) + 1 + sizeof(int) +
                         (sizeof(int)*2 + sizeof(CollSeq*))*pList->nExpr );
-  if( sqlite3_malloc_failed ) goto exit_create_index;
+  if( sqlite3Tsd()->mallocFailed ) goto exit_create_index;
   pIndex->aiColumn = (int*)&pIndex->keyInfo.aColl[pList->nExpr];
   pIndex->aiRowEst = (unsigned*)&pIndex->aiColumn[pList->nExpr];
   pIndex->zName = (char*)&pIndex->aiRowEst[pList->nExpr+1];
@@ -2472,7 +2481,7 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName){
   Vdbe *v;
   sqlite3 *db = pParse->db;
 
-  if( pParse->nErr || sqlite3_malloc_failed ){
+  if( pParse->nErr || sqlite3Tsd()->mallocFailed ){
     goto exit_drop_index;
   }
   assert( pName->nSrc==1 );
@@ -2679,11 +2688,14 @@ SrcList *sqlite3SrcListAppend(SrcList *pList, Token *pTable, Token *pDatabase){
 void sqlite3SrcListAssignCursors(Parse *pParse, SrcList *pList){
   int i;
   struct SrcList_item *pItem;
-  for(i=0, pItem=pList->a; i<pList->nSrc; i++, pItem++){
-    if( pItem->iCursor>=0 ) break;
-    pItem->iCursor = pParse->nTab++;
-    if( pItem->pSelect ){
-      sqlite3SrcListAssignCursors(pParse, pItem->pSelect->pSrc);
+  assert(pList || sqlite3Tsd()->mallocFailed);
+  if( pList ){
+    for(i=0, pItem=pList->a; i<pList->nSrc; i++, pItem++){
+      if( pItem->iCursor>=0 ) break;
+      pItem->iCursor = pParse->nTab++;
+      if( pItem->pSelect ){
+        sqlite3SrcListAssignCursors(pParse, pItem->pSelect->pSrc);
+      }
     }
   }
 }
@@ -2725,7 +2737,7 @@ void sqlite3BeginTransaction(Parse *pParse, int type){
   int i;
 
   if( pParse==0 || (db=pParse->db)==0 || db->aDb[0].pBt==0 ) return;
-  if( pParse->nErr || sqlite3_malloc_failed ) return;
+  if( pParse->nErr || sqlite3Tsd()->mallocFailed ) return;
   if( sqlite3AuthCheck(pParse, SQLITE_TRANSACTION, "BEGIN", 0, 0) ) return;
 
   v = sqlite3GetVdbe(pParse);
@@ -2746,7 +2758,7 @@ void sqlite3CommitTransaction(Parse *pParse){
   Vdbe *v;
 
   if( pParse==0 || (db=pParse->db)==0 || db->aDb[0].pBt==0 ) return;
-  if( pParse->nErr || sqlite3_malloc_failed ) return;
+  if( pParse->nErr || sqlite3Tsd()->mallocFailed ) return;
   if( sqlite3AuthCheck(pParse, SQLITE_TRANSACTION, "COMMIT", 0, 0) ) return;
 
   v = sqlite3GetVdbe(pParse);
@@ -2763,7 +2775,7 @@ void sqlite3RollbackTransaction(Parse *pParse){
   Vdbe *v;
 
   if( pParse==0 || (db=pParse->db)==0 || db->aDb[0].pBt==0 ) return;
-  if( pParse->nErr || sqlite3_malloc_failed ) return;
+  if( pParse->nErr || sqlite3Tsd()->mallocFailed ) return;
   if( sqlite3AuthCheck(pParse, SQLITE_TRANSACTION, "ROLLBACK", 0, 0) ) return;
 
   v = sqlite3GetVdbe(pParse);

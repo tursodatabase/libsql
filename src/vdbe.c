@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.501 2005/11/30 03:20:32 drh Exp $
+** $Id: vdbe.c,v 1.502 2005/12/06 12:53:01 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -394,7 +394,7 @@ int sqlite3VdbeExec(
   p->rc = SQLITE_OK;
   assert( p->explain==0 );
   pTos = p->pTos;
-  if( sqlite3_malloc_failed ) goto no_mem;
+  if( sqlite3Tsd()->mallocFailed ) goto no_mem;
   if( p->popStack ){
     popStack(&pTos, p->popStack);
     p->popStack = 0;
@@ -405,7 +405,7 @@ int sqlite3VdbeExec(
   for(pc=p->pc; rc==SQLITE_OK; pc++){
     assert( pc>=0 && pc<p->nOp );
     assert( pTos<=&p->aStack[pc] );
-    if( sqlite3_malloc_failed ) goto no_mem;
+    if( sqlite3Tsd()->mallocFailed ) goto no_mem;
 #ifdef VDBE_PROFILE
     origPc = pc;
     start = hwtime();
@@ -1135,7 +1135,7 @@ case OP_Function: {
   if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
   (*ctx.pFunc->xFunc)(&ctx, n, apVal);
   if( sqlite3SafetyOn(db) ) goto abort_due_to_misuse;
-  if( sqlite3_malloc_failed ) goto no_mem;
+  if( sqlite3Tsd()->mallocFailed ) goto no_mem;
   popStack(&pTos, n);
 
   /* If any auxilary data functions have been called by this user function,
@@ -3113,7 +3113,10 @@ case OP_NewRowid: {
       if( pC->nextRowidValid ){
         v = pC->nextRowid;
       }else{
-        rx = sqlite3BtreeLast(pC->pCursor, &res);
+        rc = sqlite3BtreeLast(pC->pCursor, &res);
+        if( rc!=SQLITE_OK ){
+          goto abort_due_to_error;
+        }
         if( res ){
           v = 1;
         }else{
@@ -3893,9 +3896,14 @@ case OP_ParseSchema: {        /* no-push */
   sqlite3SafetyOff(db);
   assert( db->init.busy==0 );
   db->init.busy = 1;
+  assert(0==sqlite3Tsd()->mallocFailed);
   rc = sqlite3_exec(db, zSql, sqlite3InitCallback, &initData, 0);
   db->init.busy = 0;
   sqlite3SafetyOn(db);
+  if( rc==SQLITE_NOMEM ){
+    sqlite3Tsd()->mallocFailed = 1;
+    goto no_mem;
+  }
   sqliteFree(zSql);
   break;  
 }
@@ -4433,7 +4441,7 @@ abort_due_to_misuse:
   */
 abort_due_to_error:
   if( p->zErrMsg==0 ){
-    if( sqlite3_malloc_failed ) rc = SQLITE_NOMEM;
+    if( sqlite3Tsd()->mallocFailed ) rc = SQLITE_NOMEM;
     sqlite3SetString(&p->zErrMsg, sqlite3ErrStr(rc), (char*)0);
   }
   goto vdbe_halt;

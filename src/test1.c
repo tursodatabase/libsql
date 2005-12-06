@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.170 2005/12/05 13:20:02 drh Exp $
+** $Id: test1.c,v 1.171 2005/12/06 12:53:00 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -787,7 +787,7 @@ static int sqlite3_mprintf_hexdouble(
 ** first failure will continue to fail on every call.  If REPEAT-INTERVAL is
 ** 2 then every other malloc will fail.  And so forth.
 **
-** Turn off this mechanism and reset the sqlite3_malloc_failed variable is N==0.
+** Turn off this mechanism and reset the sqlite3Tsd()->mallocFailed variable is N==0.
 */
 #ifdef SQLITE_MEMDEBUG
 static int sqlite_malloc_fail(
@@ -810,7 +810,7 @@ static int sqlite_malloc_fail(
   }
   sqlite3_iMallocFail = n;
   sqlite3_iMallocReset = rep;
-  sqlite3_malloc_failed = 0;
+  sqlite3Tsd()->mallocFailed = 0;
   return TCL_OK;
 }
 #endif
@@ -952,7 +952,7 @@ static int test_finalize(
 /*
 ** Usage:  sqlite3_reset  STMT 
 **
-** Finalize a statement handle.
+** Reset a statement handle.
 */
 static int test_reset(
   void * clientData,
@@ -972,12 +972,15 @@ static int test_reset(
   if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
 
   rc = sqlite3_reset(pStmt);
-  if( pStmt && 
-      sqlite3TestErrCode(interp, StmtToDb(pStmt), rc) ) return TCL_ERROR;
+  if( pStmt && sqlite3TestErrCode(interp, StmtToDb(pStmt), rc) ){
+    return TCL_ERROR;
+  }
   Tcl_SetResult(interp, (char *)errorName(rc), TCL_STATIC);
+/*
   if( rc ){
     return TCL_ERROR;
   }
+*/
   return TCL_OK;
 }
 

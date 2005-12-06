@@ -11,7 +11,7 @@
 # This file attempts to check that the library can recover from a malloc()
 # failure when sqlite3_global_recover() is invoked.
 #
-# $Id: malloc2.test,v 1.3 2005/06/06 14:45:43 drh Exp $
+# $Id: malloc2.test,v 1.4 2005/12/06 12:53:01 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -87,21 +87,30 @@ proc do_malloc2_test {tn args} {
 
     # Nothing should work now, because the allocator should refuse to
     # allocate any memory.
+    #
+    # Update: SQLite now automatically recovers from a malloc() failure.
+    # So the statement in the test below would work. 
+if 0 {
     do_test malloc2-$tn.$::n.3 {
       catchsql {SELECT 'nothing should work'}
     } {1 {out of memory}}
+}
 
     # Recover from the malloc failure.
+    #
+    # Update: The new malloc() failure handling means that a transaction may
+    # still be active even if a malloc() has failed. But when these tests were
+    # written this was not the case. So do a manual ROLLBACK here so that the
+    # tests pass.
     do_test malloc2-$tn.$::n.4 {
-      if 0 {
-        db close
-        sqlite_malloc_fail -1
-        set ::DB [sqlite3 db test.db]
-        set dummy SQLITE_OK
-      } else {
-        sqlite3_global_recover
+      sqlite3_global_recover
+      catch {
+        execsql {
+          ROLLBACK;
+        }
       }
-    } {SQLITE_OK}
+      expr 0
+    } {0}
 
     # Checksum the database.
     do_test malloc2-$tn.$::n.5 {
@@ -264,79 +273,87 @@ do_test malloc2-5 {
 ########################################################################
 # Check that if a statement is active sqlite3_global_recover doesn't reset
 # the sqlite3_malloc_failed variable.
-do_test malloc2-6.1 {
-  set ::STMT [sqlite3_prepare $::DB {SELECT * FROM def} -1 DUMMY]
-  sqlite3_step $::STMT
-} {SQLITE_ROW}
-do_test malloc2-6.2 {
-  sqlite3 db1 test.db
-  sqlite_malloc_fail 100
-  catchsql {
-    SELECT * FROM def;
-  } db1
-} {1 {out of memory}}
-do_test malloc2-6.3 {
-  sqlite3_global_recover
-} {SQLITE_BUSY}
-do_test malloc2-6.4 {
-  catchsql {
-    SELECT 'hello';
-  }
-} {1 {out of memory}}
-do_test malloc2-6.5 {
-  sqlite3_reset $::STMT
-} {SQLITE_OK}
-do_test malloc2-6.6 {
-  sqlite3_global_recover
-} {SQLITE_OK}
-do_test malloc2-6.7 {
-  catchsql {
-    SELECT 'hello';
-  }
-} {0 hello}
-do_test malloc2-6.8 {
-  sqlite3_step $::STMT
-} {SQLITE_ERROR}
-do_test malloc2-6.9 {
-  sqlite3_finalize $::STMT
-} {SQLITE_SCHEMA}
-do_test malloc2-6.10 {
-  db1 close
-} {}
+#
+# Update: There is now no sqlite3_malloc_failed variable, so these tests 
+# are not run.
+#
+# do_test malloc2-6.1 {
+#   set ::STMT [sqlite3_prepare $::DB {SELECT * FROM def} -1 DUMMY]
+#   sqlite3_step $::STMT
+# } {SQLITE_ROW}
+# do_test malloc2-6.2 {
+#   sqlite3 db1 test.db
+#   sqlite_malloc_fail 100
+#   catchsql {
+#     SELECT * FROM def;
+#   } db1
+# } {1 {out of memory}}
+# do_test malloc2-6.3 {
+#   sqlite3_global_recover
+# } {SQLITE_BUSY}
+# do_test malloc2-6.4 {
+#   catchsql {
+#     SELECT 'hello';
+#   }
+# } {1 {out of memory}}
+# do_test malloc2-6.5 {
+#   sqlite3_reset $::STMT
+# } {SQLITE_OK}
+# do_test malloc2-6.6 {
+#   sqlite3_global_recover
+# } {SQLITE_OK}
+# do_test malloc2-6.7 {
+#   catchsql {
+#     SELECT 'hello';
+#   }
+# } {0 hello}
+# do_test malloc2-6.8 {
+#   sqlite3_step $::STMT
+# } {SQLITE_ERROR}
+# do_test malloc2-6.9 {
+#   sqlite3_finalize $::STMT
+# } {SQLITE_SCHEMA}
+# do_test malloc2-6.10 {
+#   db1 close
+# } {}
 
 ########################################################################
 # Check that if an in-memory database is being used it is not possible
 # to recover from a malloc() failure.
-ifcapable memorydb {
-  do_test malloc2-7.1 {
-    sqlite3 db1 :memory:
-    list
-  } {}
-  do_test malloc2-7.2 {
-    sqlite_malloc_fail 100
-    catchsql {
-      SELECT * FROM def;
-    } 
-  } {1 {out of memory}}
-  do_test malloc2-7.3 {
-    sqlite3_global_recover
-  } {SQLITE_ERROR}
-  do_test malloc2-7.4 {
-    catchsql {
-      SELECT 'hello';
-    }
-  } {1 {out of memory}}
-  do_test malloc2-7.5 {
-    db1 close
-  } {}
-  do_test malloc2-7.6 {
-    sqlite3_global_recover
-  } {SQLITE_OK}
-  do_test malloc2-7.7 {
-    catchsql {
-      SELECT 'hello';
-    }
-  } {0 hello}
-}
+#
+# Update: An in-memory database can now survive a malloc() failure, so these
+# tests are not run.
+#
+# ifcapable memorydb {
+#   do_test malloc2-7.1 {
+#     sqlite3 db1 :memory:
+#     list
+#   } {}
+#   do_test malloc2-7.2 {
+#     sqlite_malloc_fail 100
+#     catchsql {
+#       SELECT * FROM def;
+#     } 
+#   } {1 {out of memory}}
+#   do_test malloc2-7.3 {
+#     sqlite3_global_recover
+#   } {SQLITE_ERROR}
+#   do_test malloc2-7.4 {
+#     catchsql {
+#       SELECT 'hello';
+#     }
+#   } {1 {out of memory}}
+#   do_test malloc2-7.5 {
+#     db1 close
+#   } {}
+#   do_test malloc2-7.6 {
+#     sqlite3_global_recover
+#   } {SQLITE_OK}
+#   do_test malloc2-7.7 {
+#     catchsql {
+#       SELECT 'hello';
+#     }
+#   } {0 hello}
+# }
 
 finish_test

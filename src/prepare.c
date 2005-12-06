@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.4 2005/09/10 16:46:13 drh Exp $
+** $Id: prepare.c,v 1.5 2005/12/06 12:52:59 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -24,7 +24,7 @@
 ** that the database is corrupt.
 */
 static void corruptSchema(InitData *pData, const char *zExtra){
-  if( !sqlite3_malloc_failed ){
+  if( !sqlite3Tsd()->mallocFailed ){
     sqlite3SetString(pData->pzErrMsg, "malformed database schema",
        zExtra!=0 && zExtra[0]!=0 ? " - " : (char*)0, zExtra, (char*)0);
   }
@@ -71,7 +71,11 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **azColName){
     rc = sqlite3_exec(db, argv[2], 0, 0, &zErr);
     db->init.iDb = 0;
     if( SQLITE_OK!=rc ){
-      corruptSchema(pData, zErr);
+      if( rc==SQLITE_NOMEM ){
+          sqlite3Tsd()->mallocFailed = 1;
+      }else{
+          corruptSchema(pData, zErr);
+      }
       sqlite3_free(zErr);
       return rc;
     }
@@ -301,7 +305,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
 #endif
     sqlite3BtreeCloseCursor(curMain);
   }
-  if( sqlite3_malloc_failed ){
+  if( sqlite3Tsd()->mallocFailed ){
     sqlite3SetString(pzErrMsg, "out of memory", (char*)0);
     rc = SQLITE_NOMEM;
     sqlite3ResetInternalSchema(db, 0);
@@ -425,9 +429,7 @@ int sqlite3_prepare(
   char *zErrMsg = 0;
   int rc = SQLITE_OK;
 
-  if( sqlite3_malloc_failed ){
-    return SQLITE_NOMEM;
-  }
+  assert(!sqlite3Tsd()->mallocFailed);
 
   assert( ppStmt );
   *ppStmt = 0;
@@ -439,12 +441,14 @@ int sqlite3_prepare(
   sParse.db = db;
   sqlite3RunParser(&sParse, zSql, &zErrMsg);
 
-  if( sqlite3_malloc_failed ){
-    rc = SQLITE_NOMEM;
+  if( sqlite3Tsd()->mallocFailed ){
+    sParse.rc = SQLITE_NOMEM;
+#if 0
+    sqlite3RollbackInternalChanges(db);
     sqlite3RollbackAll(db);
-    sqlite3ResetInternalSchema(db, 0);
     db->flags &= ~SQLITE_InTrans;
-    goto prepare_out;
+    db->autoCommit = 1;
+#endif
   }
   if( sParse.rc==SQLITE_DONE ) sParse.rc = SQLITE_OK;
   if( sParse.rc!=SQLITE_OK && sParse.checkSchema && !schemaIsValid(db) ){
@@ -490,6 +494,16 @@ prepare_out:
   }else{
     sqlite3Error(db, rc, 0);
   }
+
+  /* We must check for malloc failure last of all, in case malloc() failed
+  ** inside of the sqlite3Error() call above or something.
+  */
+  if( sqlite3Tsd()->mallocFailed ){
+    rc = SQLITE_NOMEM;
+    sqlite3Error(db, rc, 0);
+  }
+
+  sqlite3ClearMallocFailed();
   return rc;
 }
 

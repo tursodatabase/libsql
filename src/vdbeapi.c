@@ -156,6 +156,8 @@ int sqlite3_step(sqlite3_stmt *pStmt){
   sqlite3 *db;
   int rc;
 
+  assert(!sqlite3Tsd()->mallocFailed);
+
   if( p==0 || p->magic!=VDBE_MAGIC_RUN ){
     return SQLITE_MISUSE;
   }
@@ -239,6 +241,7 @@ int sqlite3_step(sqlite3_stmt *pStmt){
 #endif
 
   sqlite3Error(p->db, rc, p->zErrMsg ? "%s" : 0, p->zErrMsg);
+  sqlite3ClearMallocFailed();
   return rc;
 }
 
