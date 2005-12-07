@@ -58,7 +58,7 @@ sqlite_int64 sqlite3_value_int64(sqlite3_value *pVal){
   return sqlite3VdbeIntValue((Mem*)pVal);
 }
 const unsigned char *sqlite3_value_text(sqlite3_value *pVal){
-  return (const char *)sqlite3ValueText(pVal, SQLITE_UTF8);
+  return (const unsigned char *)sqlite3ValueText(pVal, SQLITE_UTF8);
 }
 #ifndef SQLITE_OMIT_UTF16
 const void *sqlite3_value_text16(sqlite3_value* pVal){
@@ -439,6 +439,7 @@ static const void *columnName(
   const void *(*xFunc)(Mem*),
   int useType
 ){
+  const void *ret;
   Vdbe *p = (Vdbe *)pStmt;
   int n = sqlite3_column_count(pStmt);
 
@@ -446,7 +447,13 @@ static const void *columnName(
     return 0;
   }
   N += useType*n;
-  return xFunc(&p->aColName[N]);
+  ret = xFunc(&p->aColName[N]);
+
+  /* A malloc may have failed inside of the xFunc() call. If this is the case,
+  ** clear the mallocFailed flag and return NULL.
+  */
+  sqlite3ClearMallocFailed();
+  return ret;
 }
 
 

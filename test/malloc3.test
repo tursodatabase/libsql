@@ -9,7 +9,11 @@
 #
 #***********************************************************************
 #
-# $Id: malloc3.test,v 1.2 2005/12/06 17:48:32 danielk1977 Exp $
+# This file contains tests to ensure that the library handles malloc() failures
+# correctly. The emphasis of these tests are the _prepare(), _step() and
+# _finalize() calls.
+#
+# $Id: malloc3.test,v 1.3 2005/12/07 06:27:45 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -453,7 +457,7 @@ TEST 29 {
   } {a b c a b c 1 2 3 1 2 3}
 }
 
-# Test a simple multi-file transaction
+# Test a simple multi-file transaction 
 #
 file delete -force test2.db
 SQL {ATTACH 'test2.db' AS aux;}

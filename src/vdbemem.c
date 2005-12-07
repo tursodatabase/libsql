@@ -41,11 +41,21 @@ int sqlite3VdbeChangeEncoding(Mem *pMem, int desiredEnc){
 #ifdef SQLITE_OMIT_UTF16
   return SQLITE_ERROR;
 #else
+
+  /* MemTranslate() may return SQLITE_OK or SQLITE_NOMEM. If NOMEM is returned,
+  ** then the encoding of the value may not have changed.
+  */
   rc = sqlite3VdbeMemTranslate(pMem, desiredEnc);
+  assert(rc==SQLITE_OK    || rc==SQLITE_NOMEM);
+  assert(rc==SQLITE_OK    || pMem->enc!=desiredEnc);
+  assert(rc==SQLITE_NOMEM || pMem->enc==desiredEnc);
+
   if( rc==SQLITE_NOMEM ){
+/*
     sqlite3VdbeMemRelease(pMem);
     pMem->flags = MEM_Null;
     pMem->z = 0;
+*/
   }
   return rc;
 #endif
@@ -746,7 +756,8 @@ const void *sqlite3ValueText(sqlite3_value* pVal, u8 enc){
   }else if( !(pVal->flags&MEM_Blob) ){
     sqlite3VdbeMemStringify(pVal, enc);
   }
-  return (const void *)(pVal->z);
+  assert(pVal->enc==enc || sqlite3Tsd()->mallocFailed);
+  return (const void *)(pVal->enc==enc ? (pVal->z) : 0);
 }
 
 /*
