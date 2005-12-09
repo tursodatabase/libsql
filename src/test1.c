@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.173 2005/12/09 14:39:04 danielk1977 Exp $
+** $Id: test1.c,v 1.174 2005/12/09 20:21:59 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -373,7 +373,7 @@ static void ifnullFunc(sqlite3_context *context, int argc, sqlite3_value **argv)
   int i;
   for(i=0; i<argc; i++){
     if( SQLITE_NULL!=sqlite3_value_type(argv[i]) ){
-      sqlite3_result_text(context, sqlite3_value_text(argv[i]),
+      sqlite3_result_text(context, (char*)sqlite3_value_text(argv[i]),
           sqlite3_value_bytes(argv[i]), SQLITE_TRANSIENT);
       break;
     }
@@ -447,7 +447,7 @@ static void sqlite3ExecFunc(
   struct dstr x;
   memset(&x, 0, sizeof(x));
   sqlite3_exec((sqlite3*)sqlite3_user_data(context),
-      sqlite3_value_text(argv[0]),
+      (char*)sqlite3_value_text(argv[0]),
       execFuncCallback, &x, 0);
   sqlite3_result_text(context, x.z, x.nUsed, SQLITE_TRANSIENT);
   sqliteFree(x.z);
@@ -866,14 +866,14 @@ static int sqlite_abort(
 */
 static void testFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   while( argc>=2 ){
-    const char *zArg0 = sqlite3_value_text(argv[0]);
+    const char *zArg0 = (char*)sqlite3_value_text(argv[0]);
     if( zArg0 ){
       if( 0==sqlite3StrICmp(zArg0, "int") ){
         sqlite3_result_int(context, sqlite3_value_int(argv[1]));
       }else if( sqlite3StrICmp(zArg0,"int64")==0 ){
         sqlite3_result_int64(context, sqlite3_value_int64(argv[1]));
       }else if( sqlite3StrICmp(zArg0,"string")==0 ){
-        sqlite3_result_text(context, sqlite3_value_text(argv[1]), -1,
+        sqlite3_result_text(context, (char*)sqlite3_value_text(argv[1]), -1,
             SQLITE_TRANSIENT);
       }else if( sqlite3StrICmp(zArg0,"double")==0 ){
         sqlite3_result_double(context, sqlite3_value_double(argv[1]));
@@ -1181,10 +1181,12 @@ static int test_collate_func(
   pVal = sqlite3ValueNew();
   sqlite3ValueSetStr(pVal, nA, zA, encin, SQLITE_STATIC);
   n = sqlite3_value_bytes(pVal);
-  Tcl_ListObjAppendElement(i,pX,Tcl_NewStringObj(sqlite3_value_text(pVal),n));
+  Tcl_ListObjAppendElement(i,pX,
+      Tcl_NewStringObj((char*)sqlite3_value_text(pVal),n));
   sqlite3ValueSetStr(pVal, nB, zB, encin, SQLITE_STATIC);
   n = sqlite3_value_bytes(pVal);
-  Tcl_ListObjAppendElement(i,pX,Tcl_NewStringObj(sqlite3_value_text(pVal),n));
+  Tcl_ListObjAppendElement(i,pX,
+      Tcl_NewStringObj((char*)sqlite3_value_text(pVal),n));
   sqlite3ValueFree(pVal);
 
   Tcl_EvalObjEx(i, pX, 0);
@@ -1305,7 +1307,7 @@ static void test_function_utf8(
   Tcl_IncrRefCount(pX);
   Tcl_ListObjAppendElement(interp, pX, Tcl_NewStringObj("UTF-8", -1));
   Tcl_ListObjAppendElement(interp, pX, 
-      Tcl_NewStringObj(sqlite3_value_text(argv[0]), -1));
+      Tcl_NewStringObj((char*)sqlite3_value_text(argv[0]), -1));
   Tcl_EvalObjEx(interp, pX, 0);
   Tcl_DecrRefCount(pX);
   sqlite3_result_text(pCtx, Tcl_GetStringResult(interp), -1, SQLITE_TRANSIENT);
@@ -1329,13 +1331,13 @@ static void test_function_utf16le(
   Tcl_IncrRefCount(pX);
   Tcl_ListObjAppendElement(interp, pX, Tcl_NewStringObj("UTF-16LE", -1));
   Tcl_ListObjAppendElement(interp, pX, 
-      Tcl_NewStringObj(sqlite3_value_text(argv[0]), -1));
+      Tcl_NewStringObj((char*)sqlite3_value_text(argv[0]), -1));
   Tcl_EvalObjEx(interp, pX, 0);
   Tcl_DecrRefCount(pX);
   pVal = sqlite3ValueNew();
   sqlite3ValueSetStr(pVal, -1, Tcl_GetStringResult(interp), 
       SQLITE_UTF8, SQLITE_STATIC);
-  sqlite3_result_text(pCtx,sqlite3_value_text(pVal),-1,SQLITE_TRANSIENT);
+  sqlite3_result_text(pCtx,(char*)sqlite3_value_text(pVal),-1,SQLITE_TRANSIENT);
   sqlite3ValueFree(pVal);
 }
 static void test_function_utf16be(
@@ -1351,7 +1353,7 @@ static void test_function_utf16be(
   Tcl_IncrRefCount(pX);
   Tcl_ListObjAppendElement(interp, pX, Tcl_NewStringObj("UTF-16BE", -1));
   Tcl_ListObjAppendElement(interp, pX, 
-      Tcl_NewStringObj(sqlite3_value_text(argv[0]), -1));
+      Tcl_NewStringObj((char*)sqlite3_value_text(argv[0]), -1));
   Tcl_EvalObjEx(interp, pX, 0);
   Tcl_DecrRefCount(pX);
   pVal = sqlite3ValueNew();
@@ -1667,7 +1669,7 @@ static int test_bind_text16(
 
   if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
   if( Tcl_GetIntFromObj(interp, objv[2], &idx) ) return TCL_ERROR;
-  value = Tcl_GetByteArrayFromObj(objv[3], 0);
+  value = (char*)Tcl_GetByteArrayFromObj(objv[3], 0);
   if( Tcl_GetIntFromObj(interp, objv[4], &bytes) ) return TCL_ERROR;
 
   rc = sqlite3_bind_text16(pStmt, idx, (void *)value, bytes, SQLITE_TRANSIENT);
@@ -2092,7 +2094,7 @@ static int test_complete16(
     return TCL_ERROR;
   }
 
-  zBuf = Tcl_GetByteArrayFromObj(objv[1], 0);
+  zBuf = (char*)Tcl_GetByteArrayFromObj(objv[1], 0);
   Tcl_SetObjResult(interp, Tcl_NewIntObj(sqlite3_complete16(zBuf)));
 #endif /* SQLITE_OMIT_COMPLETE && SQLITE_OMIT_UTF16 */
   return TCL_OK;
