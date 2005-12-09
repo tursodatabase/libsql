@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.53 2005/12/09 14:25:12 danielk1977 Exp $
+# $Id: tester.tcl,v 1.54 2005/12/09 14:39:05 danielk1977 Exp $
 
 # Make sure tclsqlite3 was compiled correctly.  Abort now with an
 # error message if not.
@@ -145,7 +145,9 @@ proc finalize_testing {} {
   catch {db2 close}
   catch {db3 close}
 
-pp_check_for_leaks
+  catch {
+    pp_check_for_leaks
+  }
 
   puts "$nErr errors out of $nTest tests"
   puts "Failures on these tests: $::failList"

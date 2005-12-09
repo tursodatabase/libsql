@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.431 2005/12/09 14:25:08 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.432 2005/12/09 14:39:04 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -245,16 +245,23 @@ extern int sqlite3_iMallocReset; /* Set iMallocFail to this when it reaches 0 */
 #define ENTER_MALLOC (\
   sqlite3Tsd()->zFile = __FILE__, sqlite3Tsd()->iLine = __LINE__ \
 )
-#else
-#define ENTER_MALLOC 0
-#endif
-
-#define sqliteFree(x)          sqlite3FreeX(x)
 #define sqliteMalloc(x)        (ENTER_MALLOC, sqlite3Malloc(x))
 #define sqliteMallocRaw(x)     (ENTER_MALLOC, sqlite3MallocRaw(x))
 #define sqliteRealloc(x,y)     (ENTER_MALLOC, sqlite3Realloc(x,y))
 #define sqliteStrDup(x)        (ENTER_MALLOC, sqlite3StrDup(x))
 #define sqliteStrNDup(x,y)     (ENTER_MALLOC, sqlite3StrNDup(x,y))
+
+#else
+
+#define sqliteMalloc(x)        sqlite3Malloc(x)
+#define sqliteMallocRaw(x)     sqlite3MallocRaw(x)
+#define sqliteRealloc(x,y)     sqlite3Realloc(x,y)
+#define sqliteStrDup(x)        sqlite3StrDup(x)
+#define sqliteStrNDup(x,y)     sqlite3StrNDup(x,y)
+
+#endif
+
+#define sqliteFree(x)     sqlite3FreeX(x)
 
 /*
 ** An instance of this structure is allocated for each thread that uses SQLite.
