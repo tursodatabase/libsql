@@ -199,7 +199,7 @@ void sqlite3FinishTrigger(
 
   pTrig = pParse->pNewTrigger;
   pParse->pNewTrigger = 0;
-  if( pParse->nErr || pTrig==0 ) goto triggerfinish_cleanup;
+  if( pParse->nErr || !pTrig ) goto triggerfinish_cleanup;
   pTrig->step_list = pStepList;
   while( pStepList ){
     pStepList->pTrig = pTrig;
@@ -312,7 +312,10 @@ static void sqlitePersistTriggerStep(TriggerStep *p){
 */
 TriggerStep *sqlite3TriggerSelectStep(Select *pSelect){
   TriggerStep *pTriggerStep = sqliteMalloc(sizeof(TriggerStep));
-  if( pTriggerStep==0 ) return 0;
+  if( pTriggerStep==0 ) {
+    sqlite3SelectDelete(pSelect);
+    return 0;
+  }
 
   pTriggerStep->op = TK_SELECT;
   pTriggerStep->pSelect = pSelect;

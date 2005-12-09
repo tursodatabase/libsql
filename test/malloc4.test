@@ -12,10 +12,14 @@
 # This file contains tests to ensure that the library handles malloc() failures
 # correctly. The emphasis in this file is on sqlite3_column_XXX() APIs.
 #
-# $Id: malloc4.test,v 1.1 2005/12/07 06:27:45 danielk1977 Exp $
+# $Id: malloc4.test,v 1.2 2005/12/09 14:25:12 danielk1977 Exp $
 
 #---------------------------------------------------------------------------
 # NOTES ON EXPECTED BEHAVIOUR
+#
+# [193] When a memory allocation failure occurs during sqlite3_column_name(),
+#       sqlite3_column_name16(), sqlite3_column_decltype(), or
+#       sqlite3_column_decltype16() the function shall return NULL.
 #
 #---------------------------------------------------------------------------
 
@@ -28,7 +32,6 @@ if {[info command sqlite_malloc_stat]==""} {
    finish_test
    return
 }
-
 
 proc do_stmt_test {id sql} {
   set ::sql $sql
@@ -48,6 +51,18 @@ proc do_stmt_test {id sql} {
     # Test malloc failure in the _name(), _name16(), decltype() and
     # decltype16() APIs. Calls that occur after the malloc() failure should
     # return NULL. No error is raised though.
+    #
+    # ${testid}.2.1 - Call _name()
+    # ${testid}.2.2 - Call _name16()
+    # ${testid}.2.3 - Call _name()
+    # ${testid}.2.4 - Check that the return values of the above three calls are
+    #                 consistent with each other and with the simulated
+    #                 malloc() failures.
+    #
+    # Because the code that implements the _decltype() and _decltype16() APIs
+    # is the same as the _name() and _name16() implementations, we don't worry
+    # about explicitly testing them.
+    #
     do_test ${testid}.2.1 {
       set mf1 [expr [lindex [sqlite_malloc_stat] 2] <= 0]
       set ::name8  [sqlite3_column_name $::STMT 0]
@@ -78,27 +93,83 @@ proc do_stmt_test {id sql} {
       }
     } {1}
 
-    if {$::mallocFailed == 0} {
+    # Step the statement so that we can call _text() and _text16().  Before
+    # running sqlite3_step(), make sure that malloc() is not about to fail.
+    # Memory allocation failures that occur within sqlite3_step() are tested
+    # elsewhere.
+    set mf [lindex [sqlite_malloc_stat] 2]
+    sqlite_malloc_fail 0
+    do_test ${testid}.3 {
+      sqlite3_step $::STMT
+    } {SQLITE_ROW}
+    sqlite_malloc_fail $mf
+
+    # Test for malloc() failures within _text() and _text16().
+    #
+    do_test ${testid}.4.1 {
+      set ::text8 [sqlite3_column_text $::STMT 0]
+      set mf [expr [lindex [sqlite_malloc_stat] 2] <= 0 && !$::mallocFailed]
+      expr {$mf==0 || $::text8 == ""}
+    } {1}
+    do_test ${testid}.4.2 {
+      set ::text16 [sqlite3_column_text16 $::STMT 0]
+      set ::text16 [encoding convertfrom unicode $::text16]
+      set ::text16 [string range $::text16 0 end-1]
+      set mf [expr [lindex [sqlite_malloc_stat] 2] <= 0 && !$::mallocFailed]
+      expr {$mf==0 || $::text16 == ""}
+    } {1}
+    do_test ${testid}.4.3 {
+      set ::text8_2 [sqlite3_column_text $::STMT 0]
+      set mf [expr [lindex [sqlite_malloc_stat] 2] <= 0 && !$::mallocFailed]
+      expr {$mf==0 || $::text8_2 == "" || ($::text16 == "" && $::text8 != "")}
+    } {1}
+
+    # Test for malloc() failures within _int(), _int64() and _real(). The only
+    # way this can occur is if the string has to be translated from UTF-16 to
+    # UTF-8 before being converted to a numeric value.
+    do_test ${testid}.4.4.1 {
+      set mf [lindex [sqlite_malloc_stat] 2]
+      sqlite_malloc_fail 0
+      sqlite3_column_text16 $::STMT 0
+      sqlite_malloc_fail $mf
+      sqlite3_column_int $::STMT 0
+    } {0}
+    do_test ${testid}.4.5 {
+      set mf [lindex [sqlite_malloc_stat] 2]
+      sqlite_malloc_fail 0
+      sqlite3_column_text16 $::STMT 0
+      sqlite_malloc_fail $mf
+      sqlite3_column_int64 $::STMT 0
+    } {0}
+
+    do_test ${testid}.4.6 {
+      set mf [lindex [sqlite_malloc_stat] 2]
+      sqlite_malloc_fail 0
+      sqlite3_column_text16 $::STMT 0
+      sqlite_malloc_fail $mf
+      sqlite3_column_double $::STMT 0
+    } {0.0}
+
+    set mallocFailedAfterStep [expr \
+      [lindex [sqlite_malloc_stat] 2] <= 0 && !$::mallocFailed
+    ]
+
+    sqlite_malloc_fail 0
+    # Test that if a malloc() failed the next call to sqlite3_step() returns
+    # SQLITE_ERROR. If malloc() did not fail, it should return SQLITE_DONE.
+    #
+    do_test ${testid}.5 {
+      sqlite3_step $::STMT
+    } [expr {$mallocFailedAfterStep ? "SQLITE_ERROR" : "SQLITE_DONE"}]
+
+    do_test ${testid}.6 {
+      sqlite3_finalize $::STMT
+    } [expr {$mallocFailedAfterStep ? "SQLITE_NOMEM" : "SQLITE_OK"}]
+
+    if {$::mallocFailed == 0 && $mallocFailedAfterStep == 0} {
       sqlite_malloc_fail 0
       set go 0
     }
-
-if 0 {
-    # Test that if a malloc() failed the next call to sqlite3_step() returns
-    # SQLITE_ERROR. If malloc() did not fail, it should return SQLITE_ROW.
-    #
-    # Before running sqlite3_step(), make sure that malloc() is not about to
-    # fail. Memory allocation failures that occur within sqlite3_step() are
-    # tested elsewhere.
-    do_test ${testid}.3 {
-      set rc [sqlite3_step $::STMT]
-      list [expr $rc=="SQLITE_ERROR"] [expr $rc=="SQLITE_ROW"]
-    } [list $mallocFailed [expr !$mallocFailed]]
-}
-
-    do_test ${testid}.4 {
-      sqlite3_finalize $::STMT
-    } {SQLITE_OK}
   }
 }
 
@@ -106,7 +177,11 @@ execsql {
   CREATE TABLE tbl(
     the_first_reasonably_long_column_name that_also_has_quite_a_lengthy_type
   );
+  INSERT INTO tbl VALUES(
+    'An extra long string. Far too long to be stored in NBFS bytes.'
+  );
 }
+
 do_stmt_test 1 "SELECT * FROM tbl"
 
 sqlite_malloc_fail 0

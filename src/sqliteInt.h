@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.430 2005/12/06 17:19:11 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.431 2005/12/09 14:25:08 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -233,46 +233,45 @@ struct BusyHandler {
 */
 #define Addr(X)  ((uptr)X)
 
-/*
-** If memory allocation problems are found, recompile with
-**
-**      -DSQLITE_DEBUG=1
-**
-** to enable some sanity checking on malloc() and free().  To
-** check for memory leaks, recompile with
-**
-**      -DSQLITE_DEBUG=2
-**
-** and a line of text will be written to standard error for
-** each malloc() and free().  This output can be analyzed
-** by an AWK script to determine if there are any leaks.
-*/
 #ifdef SQLITE_MEMDEBUG
-# define sqliteMalloc(X)    sqlite3Malloc_(X,1,__FILE__,__LINE__)
-# define sqliteMallocRaw(X) sqlite3Malloc_(X,0,__FILE__,__LINE__)
-# define sqliteFree(X)      sqlite3Free_(X,__FILE__,__LINE__)
-# define sqliteRealloc(X,Y) sqlite3Realloc_(X,Y,__FILE__,__LINE__)
-# define sqliteStrDup(X)    sqlite3StrDup_(X,__FILE__,__LINE__)
-# define sqliteStrNDup(X,Y) sqlite3StrNDup_(X,Y,__FILE__,__LINE__)
-#else
-# define sqliteFree          sqlite3FreeX
-# define sqliteMalloc        sqlite3Malloc
-# define sqliteMallocRaw     sqlite3MallocRaw
-# define sqliteRealloc       sqlite3Realloc
-# define sqliteStrDup        sqlite3StrDup
-# define sqliteStrNDup       sqlite3StrNDup
-#endif
-
 /*
 ** The following global variables are used for testing and debugging
 ** only.  They only work if SQLITE_DEBUG is defined.
 */
-#ifdef SQLITE_MEMDEBUG
 extern int sqlite3_nMalloc;      /* Number of sqliteMalloc() calls */
 extern int sqlite3_nFree;        /* Number of sqliteFree() calls */
 extern int sqlite3_iMallocFail;  /* Fail sqliteMalloc() after this many calls */
 extern int sqlite3_iMallocReset; /* Set iMallocFail to this when it reaches 0 */
+#define ENTER_MALLOC (\
+  sqlite3Tsd()->zFile = __FILE__, sqlite3Tsd()->iLine = __LINE__ \
+)
+#else
+#define ENTER_MALLOC 0
 #endif
+
+#define sqliteFree(x)          sqlite3FreeX(x)
+#define sqliteMalloc(x)        (ENTER_MALLOC, sqlite3Malloc(x))
+#define sqliteMallocRaw(x)     (ENTER_MALLOC, sqlite3MallocRaw(x))
+#define sqliteRealloc(x,y)     (ENTER_MALLOC, sqlite3Realloc(x,y))
+#define sqliteStrDup(x)        (ENTER_MALLOC, sqlite3StrDup(x))
+#define sqliteStrNDup(x,y)     (ENTER_MALLOC, sqlite3StrNDup(x,y))
+
+/*
+** An instance of this structure is allocated for each thread that uses SQLite.
+*/
+typedef struct SqliteTsd SqliteTsd;
+struct SqliteTsd {
+  int mallocFailed;               /* True after a malloc() has failed */
+#ifndef NDEBUG
+  int mallocAllowed;              /* assert() in sqlite3Malloc() if not set */
+#endif
+#ifdef SQLITE_MEMDEBUG
+  int isFail;              /* True if all malloc() calls should fail */
+  const char *zFile;       /* Filename to associate debugging info with */
+  int iLine;               /* Line number to associate debugging info with */
+  void *pFirst;            /* Pointer to linked list of allocations */
+#endif
+};
 
 /*
 ** Name of the master database table.  The master database table
@@ -1380,14 +1379,6 @@ typedef struct {
 } InitData;
 
 /*
-** An instance of this structure is allocated for each thread that uses SQLite.
-*/
-typedef struct SqliteTsd SqliteTsd;
-struct SqliteTsd {
-  int mallocFailed;               /* True after a malloc() has failed */
-};
-
-/*
  * This global flag is set for performance testing of triggers. When it is set
  * SQLite will perform the overhead of building new and old trigger references 
  * even when no triggers exist
@@ -1417,26 +1408,18 @@ int sqlite3IsNumber(const char*, int*, u8);
 int sqlite3Compare(const char *, const char *);
 int sqlite3SortCompare(const char *, const char *);
 void sqlite3RealToSortable(double r, char *);
-#ifdef SQLITE_MEMDEBUG
-  void *sqlite3Malloc_(int,int,char*,int);
-  void sqlite3Free_(void*,char*,int);
-  void *sqlite3Realloc_(void*,int,char*,int);
-  char *sqlite3StrDup_(const char*,char*,int);
-  char *sqlite3StrNDup_(const char*, int,char*,int);
-  void sqlite3CheckMemory(void*,int);
-#else
-  void *sqlite3Malloc(int);
-  void *sqlite3MallocRaw(int);
-  void sqlite3Free(void*);
-  void *sqlite3Realloc(void*,int);
-  char *sqlite3StrDup(const char*);
-  char *sqlite3StrNDup(const char*, int);
+
+void *sqlite3Malloc(int);
+void *sqlite3MallocRaw(int);
+void sqlite3Free(void*);
+void *sqlite3Realloc(void*,int);
+char *sqlite3StrDup(const char*);
+char *sqlite3StrNDup(const char*, int);
 # define sqlite3CheckMemory(a,b)
-# define sqlite3MallocX sqlite3Malloc
-#endif
 void sqlite3ReallocOrFree(void**,int);
 void sqlite3FreeX(void*);
 void *sqlite3MallocX(int);
+
 char *sqlite3MPrintf(const char*, ...);
 char *sqlite3VMPrintf(const char*, va_list);
 void sqlite3DebugPrintf(const char*, ...);
@@ -1677,8 +1660,16 @@ void sqlite3DefaultRowEst(Index*);
 void sqlite3RegisterLikeFunctions(sqlite3*, int);
 int sqlite3IsLikeFunction(sqlite3*,Expr*,int*,char*);
 SqliteTsd *sqlite3Tsd();
-void sqlite3ClearMallocFailed();
 void sqlite3AttachFunctions(sqlite3 *);
+
+void sqlite3MallocClearFailed();
+#ifdef NDEBUG
+  #define sqlite3MallocDisallow()
+  #define sqlite3MallocAllow()
+#else
+  void sqlite3MallocDisallow();
+  void sqlite3MallocAllow();
+#endif
 
 #ifdef SQLITE_SSE
 #include "sseInt.h"

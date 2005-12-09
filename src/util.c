@@ -14,42 +14,175 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.149 2005/12/06 12:53:01 danielk1977 Exp $
+** $Id: util.c,v 1.150 2005/12/09 14:25:09 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
 #include <ctype.h>
 
-#if SQLITE_MEMDEBUG>2 && defined(__GLIBC__)
-#include <execinfo.h>
-void print_stack_trace(){
-  void *bt[30];
-  int i;
-  int n = backtrace(bt, 30);
+/*
+** MALLOC WRAPPER ARCHITECTURE
+**
+** The sqlite code accesses dynamic memory allocation/deallocation by invoking
+** the following four APIs (which may be implemented as macros).
+**
+**     sqlite3Malloc()
+**     sqlite3MallocRaw()
+**     sqlite3Realloc()
+**     sqlite3ReallocOrFree()
+**     sqlite3Free()
+**
+** The function sqlite3FreeX performs the same task as sqlite3Free and is
+** guaranteed to be a real function.
+**
+** The above APIs are implemented in terms of the functions provided at the Os
+** level (not in this file). The Os level interface is never accessed directly
+** by code outside of this file.
+**
+**     sqlite3OsMalloc()
+**     sqlite3OsRealloc()
+**     sqlite3OsFree()
+**     sqlite3OsAllocationSize()
+**
+** Functions sqlite3MallocRaw() and sqlite3Realloc() may invoke 
+** sqlite3_release_memory() if a call to sqlite3OsMalloc() or
+** sqlite3OsRealloc() fails. Function sqlite3Malloc() usually invokes
+** sqlite3MallocRaw().
+**
+** MALLOC TEST WRAPPER ARCHITECTURE
+**
+** The test wrapper provides extra test facilities to ensure the library 
+** does not leak memory and handles the failure of the underlying (Os level)
+** allocation system correctly. It is only present if the library is 
+** compiled with the SQLITE_MEMDEBUG macro set.
+**
+**     * Guardposts to detect overwrites.
+**     * Ability to cause a specific Malloc() or Realloc() to fail.
+**     * Audit outstanding memory allocations (i.e check for leaks).
+*/
 
-  fprintf(stderr, "STACK: ");
-  for(i=0; i<n;i++){
-    fprintf(stderr, "%p ", bt[i]);
+/*
+** sqlite3OsMalloc
+** sqlite3OsRealloc
+** sqlite3OsOsFree
+** sqlite3OsAllocationSize
+**
+** Implementation of the os level dynamic memory allocation interface in terms
+** of the standard malloc(), realloc() and free() found in many operating
+** systems. No rocket science here.
+*/
+void *sqlite3OsMalloc(int n){
+  char *p = (char *)malloc(n+8);
+  assert(n>0);
+  assert(sizeof(int)<=8);
+  if( p ){
+    *(int *)p = n;
   }
-  fprintf(stderr, "\n");
+  return (void *)(p + 8);
 }
-#else
-#define print_stack_trace()
-#endif
+void *sqlite3OsRealloc(void *p, int n){
+  char *p2 = ((char *)p - 8);
+  assert(n>0);
+  p2 = realloc(p2, n+8);
+  if( p2 ){
+    *(int *)p2 = n;
+  }
+  return (void *)((char *)p2 + 8);
+}
+void sqlite3OsFree(void *p){
+  assert(p);
+  free((void *)((char *)p - 8));
+}
+int sqlite3OsAllocationSize(void *p){
+  return *(int *)((char *)p - 8);
+}
 
-#if 0
 /*
-** If malloc() ever fails, this global variable gets set to 1.
-** This causes the library to abort and never again function.
+** TODO!
 */
-int sqlite3Tsd()->mallocFailed = 0;
-#endif
+#define sqlite3_release_memory(x) 0
 
-/*
-** If SQLITE_MEMDEBUG is defined, then use versions of malloc() and
-** free() that track memory usage and check for buffer overruns.
-*/
 #ifdef SQLITE_MEMDEBUG
+/*--------------------------------------------------------------------------
+** Begin code for memory allocation system test layer.
+**
+** Memory debugging is turned on by defining the SQLITE_MEMDEBUG macro.
+*/
+
+/* Figure out whether or not to store backtrace() information for each malloc.
+** The backtrace() function is only used if SQLITE_MEMDEBUG is set to 2 or 
+** greater and glibc is in use. If we don't want to use backtrace(), then just
+** define it as an empty macro and set the amount of space reserved to 0.
+*/
+#if defined(__GLIBC__) && SQLITE_MEMDEBUG>1
+  extern int backtrace(void **, int);
+  #define TESTALLOC_STACKSIZE 128
+  #define TESTALLOC_STACKFRAMES ((TESTALLOC_STACKSIZE-8)/sizeof(void*))
+#else
+  #define backtrace(x, y) 0
+  #define TESTALLOC_STACKSIZE 0
+  #define TESTALLOC_STACKFRAMES 0
+#endif
+
+/*
+** Number of 32-bit guard words.  This should probably be a multiple of
+** 2 since on 64-bit machines we want the value returned by sqliteMalloc()
+** to be 8-byte aligned.
+*/
+#define TESTALLOC_NGUARD 2
+
+/*
+** Size reserved for storing file-name along with each malloc()ed blob.
+*/
+#define TESTALLOC_FILESIZE 64
+
+/*
+** Size reserved for storing the user string.
+*/
+#define TESTALLOC_USERSIZE 64
+const char *sqlite3_malloc_id = 0;
+
+/*
+** Blocks used by the test layer have the following format:
+**
+**        <sizeof(void *) pNext pointer>
+**        <sizeof(void *) pPrev pointer>
+**        <TESTALLOC_NGUARD 32-bit guard words>
+**            <The application level allocation>
+**        <TESTALLOC_NGUARD 32-bit guard words>
+**        <32-bit line number>
+**        <TESTALLOC_FILESIZE bytes containing null-terminated file name>
+**        <TESTALLOC_STACKSIZE bytes of backtrace() output>
+*/ 
+
+#define TESTALLOC_OFFSET_GUARD1(p)    (sizeof(void *) * 2)
+#define TESTALLOC_OFFSET_DATA(p) ( \
+  TESTALLOC_OFFSET_GUARD1(p) + sizeof(u32) * TESTALLOC_NGUARD \
+)
+#define TESTALLOC_OFFSET_GUARD2(p) ( \
+  TESTALLOC_OFFSET_DATA(p) + sqlite3OsAllocationSize(p) - TESTALLOC_OVERHEAD \
+)
+#define TESTALLOC_OFFSET_LINENUMBER(p) ( \
+  TESTALLOC_OFFSET_GUARD2(p) + sizeof(u32) * TESTALLOC_NGUARD \
+)
+#define TESTALLOC_OFFSET_FILENAME(p) ( \
+  TESTALLOC_OFFSET_LINENUMBER(p) + sizeof(u32) \
+)
+#define TESTALLOC_OFFSET_USER(p) ( \
+  TESTALLOC_OFFSET_FILENAME(p) + TESTALLOC_FILESIZE \
+)
+#define TESTALLOC_OFFSET_STACK(p) ( \
+  TESTALLOC_OFFSET_USER(p) + TESTALLOC_USERSIZE + 8 - \
+  (TESTALLOC_OFFSET_USER(p) % 8) \
+)
+
+#define TESTALLOC_OVERHEAD ( \
+  sizeof(void *)*2 +                   /* pPrev and pNext pointers */   \
+  TESTALLOC_NGUARD*sizeof(u32)*2 +              /* Guard words */       \
+  sizeof(u32) + TESTALLOC_FILESIZE +   /* File and line number */       \
+  TESTALLOC_USERSIZE +                 /* User string */                \
+  TESTALLOC_STACKSIZE                  /* backtrace() stack */          \
+)
 
 /*
 ** For keeping track of the number of mallocs and frees.   This
@@ -60,35 +193,25 @@ int sqlite3Tsd()->mallocFailed = 0;
 */
 int sqlite3_nMalloc;         /* Number of sqliteMalloc() calls */
 int sqlite3_nFree;           /* Number of sqliteFree() calls */
-int sqlite3_memUsed;         /* Total memory obtained from malloc */
-int sqlite3_memMax;          /* Mem usage high-water mark */
+int sqlite3_memUsed;         /* TODO Total memory obtained from malloc */
+int sqlite3_memMax;          /* TODO Mem usage high-water mark */
 int sqlite3_iMallocFail;     /* Fail sqliteMalloc() after this many calls */
 int sqlite3_iMallocReset = -1; /* When iMallocFail reaches 0, set to this */
-#if SQLITE_MEMDEBUG>1
-static int memcnt = 0;
-#endif
-
-/*
-** Number of 32-bit guard words.  This should probably be a multiple of
-** 2 since on 64-bit machines we want the value returned by sqliteMalloc()
-** to be 8-byte aligned.
-*/
-#define N_GUARD 2
 
 /*
 ** Check for a simulated memory allocation failure.  Return true if
 ** the failure should be simulated.  Return false to proceed as normal.
 */
-static int simulatedMallocFailure(int n, char *zFile, int line){
+static int failMalloc(){
+  SqliteTsd *pTsd = sqlite3Tsd();
+  if( pTsd->isFail ){
+    return 1;
+  }
   if( sqlite3_iMallocFail>=0 ){
     sqlite3_iMallocFail--;
     if( sqlite3_iMallocFail==0 ){
-      sqlite3Tsd()->mallocFailed++;
-#if SQLITE_MEMDEBUG>1
-      fprintf(stderr,"**** failed to allocate %d bytes at %s:%d\n",
-              n, zFile,line);
-#endif
       sqlite3_iMallocFail = sqlite3_iMallocReset;
+      pTsd->isFail = 1;
       return 1;
     }
   }
@@ -96,302 +219,367 @@ static int simulatedMallocFailure(int n, char *zFile, int line){
 }
 
 /*
-** Allocate new memory and set it to zero.  Return NULL if
-** no memory is available.
+** The argument is a pointer returned by sqlite3OsMalloc() or Realloc().
+** assert() that the first and last (TESTALLOC_NGUARD*4) bytes are set to the
+** values set by the applyGuards() function.
 */
-void *sqlite3Malloc_(int n, int bZero, char *zFile, int line){
-  void *p;
-  int *pi;
-  int i, k;
+static void checkGuards(u32 *p)
+{
+  int i;
+  char *zAlloc = (char *)p;
+  char *z;
 
-  /* Any malloc() calls between a malloc() failure and clearing the
-  ** mallocFailed flag (done before returning control to the user)
-  ** automatically fail. Although this restriction may have to be relaxed in
-  ** the future, for now it makes the system easier to test.
-  **
-  ** TODO: This will eventually be done as part of the same wrapper that may
-  ** call sqlite3_release_memory(). Above the sqlite3OsMalloc() level.
-  */
-  if( sqlite3Tsd()->mallocFailed ){
-    return 0;
+  /* First set of guard words */
+  z = &zAlloc[TESTALLOC_OFFSET_GUARD1(p)];
+  for(i=0; i<TESTALLOC_NGUARD; i++){
+    assert(((u32 *)z)[i]==0xdead1122);
   }
 
-  if( n==0 ){
-    return 0;
+  /* Second set of guard words */
+  z = &zAlloc[TESTALLOC_OFFSET_GUARD2(p)];
+  for(i=0; i<TESTALLOC_NGUARD; i++){
+    u32 guard = 0;
+    memcpy(&guard, &z[i*sizeof(u32)], sizeof(u32));
+    assert(guard==0xdead3344);
   }
-  if( simulatedMallocFailure(n, zFile, line) ){
-    return 0;
-  }
-  sqlite3_memUsed += n;
-  if( sqlite3_memMax<sqlite3_memUsed ) sqlite3_memMax = sqlite3_memUsed;
-  k = (n+sizeof(int)-1)/sizeof(int);
-  pi = malloc( (N_GUARD*2+1+k)*sizeof(int));
-  if( pi==0 ){
-    if( n>0 ) sqlite3Tsd()->mallocFailed++;
-    return 0;
-  }
-  sqlite3_nMalloc++;
-  for(i=0; i<N_GUARD; i++) pi[i] = 0xdead1122;
-  pi[N_GUARD] = n;
-  for(i=0; i<N_GUARD; i++) pi[k+1+N_GUARD+i] = 0xdead3344;
-  p = &pi[N_GUARD+1];
-  memset(p, bZero==0, n);
-#if SQLITE_MEMDEBUG>1
-  print_stack_trace();
-  fprintf(stderr,"%06d malloc %d bytes at 0x%x from %s:%d\n",
-      ++memcnt, n, (int)p, zFile,line);
-#endif
-  return p;
 }
 
 /*
-** This version of malloc is always a real function, never a macro
+** The argument is a pointer returned by sqlite3OsMalloc() or Realloc(). The
+** first and last (TESTALLOC_NGUARD*4) bytes are set to known values for use as 
+** guard-posts.
 */
-void *sqlite3MallocX(int n){
-  return sqlite3Malloc_(n, 0, __FILE__, __LINE__);
+static void applyGuards(u32 *p)
+{
+  int i;
+  char *z;
+  char *zAlloc = (char *)p;
+
+  /* First set of guard words */
+  z = &zAlloc[TESTALLOC_OFFSET_GUARD1(p)];
+  for(i=0; i<TESTALLOC_NGUARD; i++){
+    ((u32 *)z)[i] = 0xdead1122;
+  }
+
+  /* Second set of guard words */
+  z = &zAlloc[TESTALLOC_OFFSET_GUARD2(p)];
+  for(i=0; i<TESTALLOC_NGUARD; i++){
+    static const int guard = 0xdead3344;
+    memcpy(&z[i*sizeof(u32)], &guard, sizeof(u32));
+  }
+
+  /* Line number */
+  z = &((char *)z)[TESTALLOC_NGUARD*sizeof(u32)];             /* Guard words */
+  z = &zAlloc[TESTALLOC_OFFSET_LINENUMBER(p)];
+  memcpy(z, &sqlite3Tsd()->iLine, sizeof(u32));
+
+  /* File name */
+  z = &zAlloc[TESTALLOC_OFFSET_FILENAME(p)];
+  strncpy(z, sqlite3Tsd()->zFile, TESTALLOC_FILESIZE);
+  z[TESTALLOC_FILESIZE - 1] = '\0';
+
+  /* User string */
+  z = &zAlloc[TESTALLOC_OFFSET_USER(p)];
+  z[0] = 0;
+  if( sqlite3_malloc_id ){
+    strncpy(z, sqlite3_malloc_id, TESTALLOC_USERSIZE);
+    z[TESTALLOC_USERSIZE-1] = 0;
+  }
+
+  /* backtrace() stack */
+  z = &zAlloc[TESTALLOC_OFFSET_STACK(p)];
+  backtrace((void **)z, TESTALLOC_STACKFRAMES);
+
+  /* Sanity check to make sure checkGuards() is working */
+  checkGuards(p);
+}
+
+static void *getOsPointer(void *p)
+{
+  char *z = (char *)p;
+  return (void *)(&z[-1 * TESTALLOC_OFFSET_DATA(p)]);
 }
 
 /*
-** Check to see if the given pointer was obtained from sqliteMalloc()
-** and is able to hold at least N bytes.  Raise an exception if this
-** is not the case.
+** The argument points to an Os level allocation. Link it into the threads list
+** of allocations.
+*/
+static void linkAlloc(void *p){
+  SqliteTsd *pTsd = sqlite3Tsd();
+  void **pp = (void **)p;
+  pp[0] = 0;
+  pp[1] = pTsd->pFirst;
+  if( pTsd->pFirst ){
+    ((void **)pTsd->pFirst)[0] = p;
+  }
+  pTsd->pFirst = p;
+}
+
+/*
+** The argument points to an Os level allocation. Unlinke it from the threads
+** list of allocations.
+*/
+static void unlinkAlloc(void *p)
+{
+  SqliteTsd *pTsd = sqlite3Tsd();
+  void **pp = (void **)p;
+  if( p==pTsd->pFirst ){
+    assert(!pp[0]);
+    assert(!pp[1] || ((void **)(pp[1]))[0]==p);
+    pTsd->pFirst = pp[1];
+    if( pTsd->pFirst ){
+      ((void **)pTsd->pFirst)[0] = 0;
+    }
+  }else{
+    void **pprev = pp[0];
+    void **pnext = pp[1];
+    assert(pprev);
+    assert(pprev[1]==p);
+    pprev[1] = (void *)pnext;
+    if( pnext ){
+      assert(pnext[0]==p);
+      pnext[0] = (void *)pprev;
+    }
+  }
+}
+
+/*
+** Pointer p is a pointer to an OS level allocation that has just been
+** realloc()ed. Set the list pointers that point to this entry to it's new
+** location.
+*/
+static void relinkAlloc(void *p)
+{
+  void **pp = (void **)p;
+  if( pp[0] ){
+    ((void **)(pp[0]))[1] = p;
+  }else{
+    SqliteTsd *pTsd = sqlite3Tsd();
+    pTsd->pFirst = p;
+  }
+  if( pp[1] ){
+    ((void **)(pp[1]))[0] = p;
+  }
+}
+
+/*
+** This function sets the result of the Tcl interpreter passed as an argument
+** to a list containing an entry for each currently outstanding call made to
+** sqliteMalloc and friends by the current thread.
 **
-** This routine is used for testing purposes only.
+** Todo: We could have a version of this function that outputs to stdout, 
+** to debug memory leaks when Tcl is not available.
 */
-void sqlite3CheckMemory(void *p, int N){
-  int *pi = p;
-  int n, i, k;
-  pi -= N_GUARD+1;
-  for(i=0; i<N_GUARD; i++){
-    assert( pi[i]==0xdead1122 );
-  }
-  n = pi[N_GUARD];
-  assert( N>=0 && N<n );
-  k = (n+sizeof(int)-1)/sizeof(int);
-  for(i=0; i<N_GUARD; i++){
-    assert( pi[k+N_GUARD+1+i]==0xdead3344 );
-  }
-}
-
-/*
-** Free memory previously obtained from sqliteMalloc()
-*/
-void sqlite3Free_(void *p, char *zFile, int line){
-  if( p ){
-    int *pi, i, k, n;
-    pi = p;
-    pi -= N_GUARD+1;
-    sqlite3_nFree++;
-    for(i=0; i<N_GUARD; i++){
-      if( pi[i]!=0xdead1122 ){
-        fprintf(stderr,"Low-end memory corruption at 0x%x\n", (int)p);
-        return;
-      }
-    }
-    n = pi[N_GUARD];
-    sqlite3_memUsed -= n;
-    k = (n+sizeof(int)-1)/sizeof(int);
-    for(i=0; i<N_GUARD; i++){
-      if( pi[k+N_GUARD+1+i]!=0xdead3344 ){
-        fprintf(stderr,"High-end memory corruption at 0x%x\n", (int)p);
-        return;
-      }
-    }
-    memset(pi, 0xff, (k+N_GUARD*2+1)*sizeof(int));
-#if SQLITE_MEMDEBUG>1
-    fprintf(stderr,"%06d free %d bytes at 0x%x from %s:%d\n",
-         ++memcnt, n, (int)p, zFile,line);
-#endif
-    free(pi);
-  }
-}
-
-/*
-** Resize a prior allocation.  If p==0, then this routine
-** works just like sqliteMalloc().  If n==0, then this routine
-** works just like sqliteFree().
-*/
-void *sqlite3Realloc_(void *oldP, int n, char *zFile, int line){
-  int *oldPi, *pi, i, k, oldN, oldK;
+#ifdef TCLSH
+#include <tcl.h>
+int sqlite3OutstandingMallocs(Tcl_Interp *interp){
   void *p;
-  if( oldP==0 ){
-    return sqlite3Malloc_(n,1,zFile,line);
+  SqliteTsd *pTsd = sqlite3Tsd();
+  Tcl_Obj *pRes = Tcl_NewObj();
+  Tcl_IncrRefCount(pRes);
+
+  for(p=pTsd->pFirst; p; p=((void **)p)[1]){
+    Tcl_Obj *pEntry = Tcl_NewObj();
+    Tcl_Obj *pStack = Tcl_NewObj();
+    char *z;
+    u32 iLine;
+    int nBytes = sqlite3OsAllocationSize(p) - TESTALLOC_OVERHEAD;
+    char *zAlloc = (char *)p;
+    int i;
+
+    Tcl_ListObjAppendElement(0, pEntry, Tcl_NewIntObj(nBytes));
+
+    z = &zAlloc[TESTALLOC_OFFSET_FILENAME(p)];
+    Tcl_ListObjAppendElement(0, pEntry, Tcl_NewStringObj(z, -1));
+
+    z = &zAlloc[TESTALLOC_OFFSET_LINENUMBER(p)];
+    memcpy(&iLine, z, sizeof(u32));
+    Tcl_ListObjAppendElement(0, pEntry, Tcl_NewIntObj(iLine));
+
+    z = &zAlloc[TESTALLOC_OFFSET_USER(p)];
+    Tcl_ListObjAppendElement(0, pEntry, Tcl_NewStringObj(z, -1));
+
+    z = &zAlloc[TESTALLOC_OFFSET_STACK(p)];
+    for(i=0; i<TESTALLOC_STACKFRAMES; i++){
+      char zHex[128];
+      sprintf(zHex, "%p", ((void **)z)[i]);
+      Tcl_ListObjAppendElement(0, pStack, Tcl_NewStringObj(zHex, -1));
+    }
+
+    Tcl_ListObjAppendElement(0, pEntry, pStack);
+    Tcl_ListObjAppendElement(0, pRes, pEntry);
   }
-  if( n==0 ){
-    sqlite3Free_(oldP,zFile,line);
-    return 0;
+
+  Tcl_ResetResult(interp);
+  Tcl_SetObjResult(interp, pRes);
+  Tcl_DecrRefCount(pRes);
+  return TCL_OK;
+}
+#endif
+
+/*
+** This is the test layer's wrapper around sqlite3OsMalloc().
+*/
+static void * OSMALLOC(int n){
+  if( !failMalloc() ){
+    u32 *p;
+    p = (u32 *)sqlite3OsMalloc(n + TESTALLOC_OVERHEAD);
+    assert(p);
+    sqlite3_nMalloc++;
+    applyGuards(p);
+    linkAlloc(p);
+    return (void *)(&p[TESTALLOC_NGUARD + 2*sizeof(void *)/sizeof(u32)]);
   }
-  if( simulatedMallocFailure(n, zFile, line) ){
-    return 0;
+  return 0;
+}
+
+/*
+** This is the test layer's wrapper around sqlite3OsFree(). The argument is a
+** pointer to the space allocated for the application to use.
+*/
+void OSFREE(void *pFree){
+  u32 *p = (u32 *)getOsPointer(pFree);   /* p points to Os level allocation */
+  checkGuards(p);
+  unlinkAlloc(p);
+  sqlite3OsFree(p);
+  sqlite3_nFree++;
+}
+
+/*
+** This is the test layer's wrapper around sqlite3OsRealloc().
+*/
+void * OSREALLOC(void *pRealloc, int n){
+  if( !failMalloc() ){
+    u32 *p = (u32 *)getOsPointer(pRealloc);
+    checkGuards(p);
+    p = sqlite3OsRealloc(p, n + TESTALLOC_OVERHEAD);
+    applyGuards(p);
+    relinkAlloc(p);
+    return (void *)(&p[TESTALLOC_NGUARD + 2*sizeof(void *)/sizeof(u32)]);
   }
-  oldPi = oldP;
-  oldPi -= N_GUARD+1;
-  if( oldPi[0]!=0xdead1122 ){
-    fprintf(stderr,"Low-end memory corruption in realloc at 0x%x\n", (int)oldP);
-    return 0;
-  }
-  oldN = oldPi[N_GUARD];
-  sqlite3_memUsed -= oldN;
-  oldK = (oldN+sizeof(int)-1)/sizeof(int);
-  for(i=0; i<N_GUARD; i++){
-    if( oldPi[oldK+N_GUARD+1+i]!=0xdead3344 ){
-      fprintf(stderr,"High-end memory corruption in realloc at 0x%x\n",
-              (int)oldP);
-      return 0;
+  return 0;
+}
+
+void OSMALLOC_FAILED(){
+  sqlite3Tsd()->isFail = 0;
+}
+
+#else
+#define OSMALLOC(x) sqlite3OsMalloc(x)
+#define OSREALLOC(x,y) sqlite3OsRealloc(x,y)
+#define OSFREE(x) sqlite3OsFree(x)
+#define OSMALLOC_FAILED()
+#endif
+/*
+** End code for memory allocation system test layer.
+**--------------------------------------------------------------------------*/
+
+/*
+** Allocate and return N bytes of uninitialised memory by calling
+** sqlite3OsMalloc(). If the Malloc() call fails, attempt to free memory 
+** by calling sqlite3_release_memory().
+*/
+void *sqlite3MallocRaw(int n){
+  SqliteTsd *pTsd = sqlite3Tsd();
+  void *p = 0;
+
+  if( n>0 && !pTsd->mallocFailed ){
+    while( !(p = OSMALLOC(n)) && sqlite3_release_memory(n) );
+    if( !p ){
+      sqlite3Tsd()->mallocFailed = 1;
+      OSMALLOC_FAILED();
     }
   }
-  k = (n + sizeof(int) - 1)/sizeof(int);
-  pi = malloc( (k+N_GUARD*2+1)*sizeof(int) );
-  if( pi==0 ){
-    if( n>0 ) sqlite3Tsd()->mallocFailed++;
-    return 0;
-  }
-  for(i=0; i<N_GUARD; i++) pi[i] = 0xdead1122;
-  pi[N_GUARD] = n;
-  sqlite3_memUsed += n;
-  if( sqlite3_memMax<sqlite3_memUsed ) sqlite3_memMax = sqlite3_memUsed;
-  for(i=0; i<N_GUARD; i++) pi[k+N_GUARD+1+i] = 0xdead3344;
-  p = &pi[N_GUARD+1];
-  memcpy(p, oldP, n>oldN ? oldN : n);
-  if( n>oldN ){
-    memset(&((char*)p)[oldN], 0x55, n-oldN);
-  }
-  memset(oldPi, 0xab, (oldK+N_GUARD+2)*sizeof(int));
-  free(oldPi);
-#if SQLITE_MEMDEBUG>1
-  print_stack_trace();
-  fprintf(stderr,"%06d realloc %d to %d bytes at 0x%x to 0x%x at %s:%d\n",
-    ++memcnt, oldN, n, (int)oldP, (int)p, zFile, line);
-#endif
   return p;
 }
 
 /*
-** Make a copy of a string in memory obtained from sqliteMalloc()
+** Resize the allocation at p to n bytes by calling sqlite3OsRealloc(). The
+** pointer to the new allocation is returned.  If the Realloc() call fails,
+** attempt to free memory by calling sqlite3_release_memory().
 */
-char *sqlite3StrDup_(const char *z, char *zFile, int line){
-  char *zNew;
-  if( z==0 ) return 0;
-  zNew = sqlite3Malloc_(strlen(z)+1, 0, zFile, line);
-  if( zNew ) strcpy(zNew, z);
-  return zNew;
-}
-char *sqlite3StrNDup_(const char *z, int n, char *zFile, int line){
-  char *zNew;
-  if( z==0 ) return 0;
-  zNew = sqlite3Malloc_(n+1, 0, zFile, line);
-  if( zNew ){
-    memcpy(zNew, z, n);
-    zNew[n] = 0;
+void *sqlite3Realloc(void *p, int n){
+  SqliteTsd *pTsd = sqlite3Tsd();
+  if( pTsd->mallocFailed ){
+    return 0;
   }
-  return zNew;
+
+  if( !p ){
+    return sqlite3Malloc(n);
+  }else{
+    void *np = 0;
+    while( !(np = OSREALLOC(p, n)) && sqlite3_release_memory(n) );
+    if( !np ){
+      pTsd->mallocFailed = 1;
+      OSMALLOC_FAILED();
+    }
+    return np;
+  }
 }
 
 /*
-** A version of sqliteFree that is always a function, not a macro.
+** Free the memory pointed to by p. p must be either a NULL pointer or a 
+** value returned by a previous call to sqlite3Malloc() or sqlite3Realloc().
 */
 void sqlite3FreeX(void *p){
-  sqliteFree(p);
+  if( p ){
+    OSFREE(p);
+  }
 }
-#endif /* SQLITE_MEMDEBUG */
 
 /*
-** The following versions of malloc() and free() are for use in a
-** normal build.
+** A version of sqliteMalloc() that is always a function, not a macro.
+** Currently, this is used only to alloc only used drawback.
 */
-#if !defined(SQLITE_MEMDEBUG)
+void *sqlite3MallocX(int n){
+  return sqliteMalloc(n);
+}
 
 /*
-** Allocate new memory and set it to zero.  Return NULL if
-** no memory is available.  See also sqliteMallocRaw().
-*/
+** sqlite3Malloc
+** sqlite3ReallocOrFree
+**
+** These two are implemented as wrappers around sqlite3MallocRaw(), 
+** sqlite3Realloc() and sqlite3Free().
+*/ 
 void *sqlite3Malloc(int n){
-  void *p;
-  if( n==0 ) return 0;
-  if( (p = malloc(n))==0 ){
-    if( n>0 ) sqlite3Tsd()->mallocFailed++;
-  }else{
+  void *p = sqlite3MallocRaw(n);
+  if( p ){
     memset(p, 0, n);
   }
   return p;
 }
-
-/*
-** Allocate new memory but do not set it to zero.  Return NULL if
-** no memory is available.  See also sqliteMalloc().
-*/
-void *sqlite3MallocRaw(int n){
-  void *p;
-  if( n==0 ) return 0;
-  if( (p = malloc(n))==0 ){
-    if( n>0 ) sqlite3Tsd()->mallocFailed++;
+void sqlite3ReallocOrFree(void **pp, int n){
+  void *p = sqlite3Realloc(*pp, n);
+  if( !p ){
+    sqlite3FreeX(*pp);
   }
-  return p;
+  *pp = p;
 }
 
 /*
-** Free memory previously obtained from sqliteMalloc()
-*/
-void sqlite3FreeX(void *p){
-  if( p ){
-    free(p);
-  }
-}
-
-/*
-** Resize a prior allocation.  If p==0, then this routine
-** works just like sqliteMalloc().  If n==0, then this routine
-** works just like sqliteFree().
-*/
-void *sqlite3Realloc(void *p, int n){
-  void *p2;
-  if( p==0 ){
-    return sqliteMalloc(n);
-  }
-  if( n==0 ){
-    sqliteFree(p);
-    return 0;
-  }
-  p2 = realloc(p, n);
-  if( p2==0 ){
-    if( n>0 ) sqlite3Tsd()->mallocFailed++;
-  }
-  return p2;
-}
-
-/*
-** Make a copy of a string in memory obtained from sqliteMalloc()
+** Make a copy of a string in memory obtained from sqliteMalloc(). These 
+** functions call sqlite3MallocRaw() directly instead of sqliteMalloc(). This
+** is because when memory debugging is turned on, these two functions are 
+** called via macros that record the current file and line number in the
+** SqliteTsd structure.
 */
 char *sqlite3StrDup(const char *z){
   char *zNew;
   if( z==0 ) return 0;
-  zNew = sqliteMallocRaw(strlen(z)+1);
+  zNew = sqlite3MallocRaw(strlen(z)+1);
   if( zNew ) strcpy(zNew, z);
   return zNew;
 }
 char *sqlite3StrNDup(const char *z, int n){
   char *zNew;
   if( z==0 ) return 0;
-  zNew = sqliteMallocRaw(n+1);
+  zNew = sqlite3MallocRaw(n+1);
   if( zNew ){
     memcpy(zNew, z, n);
     zNew[n] = 0;
   }
   return zNew;
-}
-#endif /* !defined(SQLITE_MEMDEBUG) */
-
-/*
-** Reallocate a buffer to a different size.  This is similar to
-** sqliteRealloc() except that if the allocation fails the buffer
-** is freed.
-*/
-void sqlite3ReallocOrFree(void **ppBuf, int newSize){
-  void *pNew = sqliteRealloc(*ppBuf, newSize);
-  if( pNew==0 ){
-    sqliteFree(*ppBuf);
-  }
-  *ppBuf = pNew;
 }
 
 /*
@@ -426,11 +614,6 @@ void sqlite3SetString(char **pz, ...){
     zResult += strlen(zResult);
   }
   va_end(ap);
-#ifdef SQLITE_MEMDEBUG
-#if SQLITE_MEMDEBUG>1
-  fprintf(stderr,"string at 0x%x is %s\n", (int)*pz, *pz);
-#endif
-#endif
 }
 
 /*
@@ -1026,14 +1209,44 @@ void *sqlite3TextToPtr(const char *z){
 /*
 ** Return a pointer to the SqliteTsd associated with the calling thread.
 */
-static SqliteTsd tsd = { 0 };
+static SqliteTsd tsd = {
+  0                    /* mallocFailed flag */
+#ifndef NDEBUG
+  , 1                  /* mallocAllowed flag */
+#endif
+#ifndef SQLITE_MEMDEBUG
+  , 0
+  , 0
+  , 0
+  , 0
+#endif
+};
 SqliteTsd *sqlite3Tsd(){
   return &tsd;
 }
 
-void sqlite3ClearMallocFailed(){
+void sqlite3MallocClearFailed(){
   sqlite3Tsd()->mallocFailed = 0;
 }
 
+#ifndef NDEBUG
+/*
+** This function sets a flag in the thread-specific-data structure that will
+** cause an assert to fail if sqliteMalloc() or sqliteRealloc() is called.
+*/
+void sqlite3MallocDisallow(){
+  assert(sqlite3Tsd()->mallocAllowed);
+  sqlite3Tsd()->mallocAllowed = 0;
+}
+
+/*
+** This function clears the flag set in the thread-specific-data structure set
+** by sqlite3MallocDisallow().
+*/
+void sqlite3MallocAllow(){
+  assert(!sqlite3Tsd()->mallocAllowed);
+  sqlite3Tsd()->mallocAllowed = 1;
+}
+#endif
 
 

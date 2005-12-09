@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.171 2005/12/06 12:53:00 danielk1977 Exp $
+** $Id: test1.c,v 1.172 2005/12/09 14:25:08 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -831,6 +831,15 @@ static int sqlite_malloc_stat(
   sprintf(zBuf, "%d %d %d", sqlite3_nMalloc, sqlite3_nFree, sqlite3_iMallocFail);
   Tcl_AppendResult(interp, zBuf, 0);
   return TCL_OK;
+}
+static int sqlite_malloc_outstanding(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  extern int sqlite3OutstandingMallocs(Tcl_Interp *interp);
+  return sqlite3OutstandingMallocs(interp);
 }
 #endif
 
@@ -3082,6 +3091,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
 #ifdef SQLITE_MEMDEBUG
      { "sqlite_malloc_fail",            (Tcl_CmdProc*)sqlite_malloc_fail    },
      { "sqlite_malloc_stat",            (Tcl_CmdProc*)sqlite_malloc_stat    },
+     { "sqlite_malloc_outstanding",   (Tcl_CmdProc*)sqlite_malloc_outstanding},
 #endif
      { "sqlite_bind",                   (Tcl_CmdProc*)test_bind             },
      { "breakpoint",                    (Tcl_CmdProc*)test_breakpoint       },
@@ -3176,6 +3186,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
   extern int sqlite3_sync_count, sqlite3_fullsync_count;
   extern int sqlite3_opentemp_count;
   extern int sqlite3_memUsed;
+  extern int sqlite3_malloc_id;
   extern int sqlite3_memMax;
   extern int sqlite3_like_count;
 #if OS_WIN
@@ -3210,6 +3221,8 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
       (char*)&sqlite3_current_time, TCL_LINK_INT);
   Tcl_LinkVar(interp, "sqlite_os_trace",
       (char*)&sqlite3_os_trace, TCL_LINK_INT);
+  Tcl_LinkVar(interp, "sqlite_malloc_id",
+      (char*)&sqlite3_malloc_id, TCL_LINK_STRING);
 #if OS_WIN
   Tcl_LinkVar(interp, "sqlite_os_type",
       (char*)&sqlite3_os_type, TCL_LINK_INT);

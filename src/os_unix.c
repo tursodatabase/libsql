@@ -633,6 +633,7 @@ static int unixOpenReadWrite(
 static int unixOpenExclusive(const char *zFilename, OsFile **pId, int delFlag){
   int rc;
   unixFile f;
+  int fd;
 
   assert( 0==*pId );
   if( access(zFilename, 0)==0 ){
@@ -1485,6 +1486,8 @@ static int allocateUnixFile(unixFile *pInit, OsFile **pId){
   pNew = sqliteMalloc( sizeof(unixFile) );
   if( pNew==0 ){
     close(pInit->h);
+    releaseLockInfo(pInit->pLock);
+    releaseOpenCnt(pInit->pOpen);
     *pId = 0;
     return SQLITE_NOMEM;
   }else{

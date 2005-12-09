@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.5 2005/12/06 12:52:59 danielk1977 Exp $
+** $Id: prepare.c,v 1.6 2005/12/09 14:25:08 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -503,7 +503,7 @@ prepare_out:
     sqlite3Error(db, rc, 0);
   }
 
-  sqlite3ClearMallocFailed();
+  sqlite3MallocClearFailed();
   return rc;
 }
 

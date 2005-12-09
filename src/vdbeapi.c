@@ -241,7 +241,7 @@ int sqlite3_step(sqlite3_stmt *pStmt){
 #endif
 
   sqlite3Error(p->db, rc, p->zErrMsg ? "%s" : 0, p->zErrMsg);
-  sqlite3ClearMallocFailed();
+  sqlite3MallocClearFailed();
   return rc;
 }
 
@@ -378,30 +378,78 @@ static Mem *columnMem(sqlite3_stmt *pStmt, int i){
   return &pVm->pTos[(1-vals)+i];
 }
 
+/*
+** This function is called after invoking an sqlite3_value_XXX function on a 
+** column value (i.e. a value returned by evaluating an SQL expression in the
+** select list of a SELECT statement) that may cause a malloc() failure. If 
+** malloc() has failed, the threads mallocFailed flag is cleared and the result
+** code of statement pStmt set to SQLITE_NOMEM.
+**
+** Specificly, this is called from within:
+**
+**     sqlite3_column_int()
+**     sqlite3_column_int64()
+**     sqlite3_column_text()
+**     sqlite3_column_text16()
+**     sqlite3_column_real()
+**     sqlite3_column_bytes()
+**     sqlite3_column_bytes16()
+**
+** But not for sqlite3_column_blob(), which never calls malloc().
+*/
+static void columnMallocFailure(sqlite3_stmt *pStmt)
+{
+  /* If malloc() failed during an encoding conversion within an
+  ** sqlite3_column_XXX API, then set the return code of the statement to
+  ** SQLITE_NOMEM. The next call to _step() (if any) will return SQLITE_ERROR
+  ** and _finalize() will return NOMEM.
+  */
+  if( sqlite3Tsd()->mallocFailed ){
+    ((Vdbe *)pStmt)->rc = SQLITE_NOMEM;
+    sqlite3MallocClearFailed();
+  }
+}
+
 /**************************** sqlite3_column_  *******************************
 ** The following routines are used to access elements of the current row
 ** in the result set.
 */
 const void *sqlite3_column_blob(sqlite3_stmt *pStmt, int i){
-  return sqlite3_value_blob( columnMem(pStmt,i) );
+  const void *val;
+  sqlite3MallocDisallow();
+  val = sqlite3_value_blob( columnMem(pStmt,i) );
+  sqlite3MallocAllow();
+  return val;
 }
 int sqlite3_column_bytes(sqlite3_stmt *pStmt, int i){
-  return sqlite3_value_bytes( columnMem(pStmt,i) );
+  int val = sqlite3_value_bytes( columnMem(pStmt,i) );
+  columnMallocFailure(pStmt);
+  return val;
 }
 int sqlite3_column_bytes16(sqlite3_stmt *pStmt, int i){
-  return sqlite3_value_bytes16( columnMem(pStmt,i) );
+  int val = sqlite3_value_bytes16( columnMem(pStmt,i) );
+  columnMallocFailure(pStmt);
+  return val;
 }
 double sqlite3_column_double(sqlite3_stmt *pStmt, int i){
-  return sqlite3_value_double( columnMem(pStmt,i) );
+  double val = sqlite3_value_double( columnMem(pStmt,i) );
+  columnMallocFailure(pStmt);
+  return val;
 }
 int sqlite3_column_int(sqlite3_stmt *pStmt, int i){
-  return sqlite3_value_int( columnMem(pStmt,i) );
+  int val = sqlite3_value_int( columnMem(pStmt,i) );
+  columnMallocFailure(pStmt);
+  return val;
 }
 sqlite_int64 sqlite3_column_int64(sqlite3_stmt *pStmt, int i){
-  return sqlite3_value_int64( columnMem(pStmt,i) );
+  sqlite_int64 val = sqlite3_value_int64( columnMem(pStmt,i) );
+  columnMallocFailure(pStmt);
+  return val;
 }
 const unsigned char *sqlite3_column_text(sqlite3_stmt *pStmt, int i){
-  return sqlite3_value_text( columnMem(pStmt,i) );
+  const unsigned char *val = sqlite3_value_text( columnMem(pStmt,i) );
+  columnMallocFailure(pStmt);
+  return val;
 }
 #if 0
 sqlite3_value *sqlite3_column_value(sqlite3_stmt *pStmt, int i){
@@ -410,7 +458,9 @@ sqlite3_value *sqlite3_column_value(sqlite3_stmt *pStmt, int i){
 #endif
 #ifndef SQLITE_OMIT_UTF16
 const void *sqlite3_column_text16(sqlite3_stmt *pStmt, int i){
-  return sqlite3_value_text16( columnMem(pStmt,i) );
+  const void *val = sqlite3_value_text16( columnMem(pStmt,i) );
+  columnMallocFailure(pStmt);
+  return val;
 }
 #endif /* SQLITE_OMIT_UTF16 */
 int sqlite3_column_type(sqlite3_stmt *pStmt, int i){
@@ -452,10 +502,9 @@ static const void *columnName(
   /* A malloc may have failed inside of the xFunc() call. If this is the case,
   ** clear the mallocFailed flag and return NULL.
   */
-  sqlite3ClearMallocFailed();
+  sqlite3MallocClearFailed();
   return ret;
 }
-
 
 /*
 ** Return the name of the Nth column of the result set returned by SQL

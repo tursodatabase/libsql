@@ -415,7 +415,7 @@ static void freeP3(int p3type, void *p3){
 void sqlite3VdbeChangeP3(Vdbe *p, int addr, const char *zP3, int n){
   Op *pOp;
   assert( p->magic==VDBE_MAGIC_INIT );
-  if( p==0 || p->aOp==0 ){
+  if( p==0 || p->aOp==0 || sqlite3Tsd()->mallocFailed ){
     if (n != P3_KEYINFO) {
       freeP3(n, (void*)*(char**)&zP3);
     }
@@ -470,7 +470,7 @@ void sqlite3VdbeChangeP3(Vdbe *p, int addr, const char *zP3, int n){
 void sqlite3VdbeComment(Vdbe *p, const char *zFormat, ...){
   va_list ap;
   assert( p->nOp>0 );
-  assert( p->aOp==0 || p->aOp[p->nOp-1].p3==0 );
+  assert( p->aOp==0 || p->aOp[p->nOp-1].p3==0 || sqlite3Tsd()->mallocFailed );
   va_start(ap, zFormat);
   sqlite3VdbeChangeP3(p, -1, sqlite3VMPrintf(zFormat, ap), P3_DYNAMIC);
   va_end(ap);

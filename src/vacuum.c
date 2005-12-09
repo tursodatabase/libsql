@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.51 2005/12/06 17:48:32 danielk1977 Exp $
+** $Id: vacuum.c,v 1.52 2005/12/09 14:25:09 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -311,12 +311,17 @@ end_of_vacuum:
   db->autoCommit = 1;
 
   if( pDetach ){
+    int mf = sqlite3Tsd()->mallocFailed;
+    sqlite3Tsd()->mallocFailed = 0;
+    sqlite3MallocDisallow();
     ((Vdbe *)pDetach)->expired = 0;
     sqlite3_step(pDetach);
     rc2 = sqlite3_finalize(pDetach);
     if( rc==SQLITE_OK ){
       rc = rc2;
     }
+    sqlite3MallocAllow();
+    sqlite3Tsd()->mallocFailed = mf;
   }
 
   /* If one of the execSql() calls above returned SQLITE_NOMEM, then the

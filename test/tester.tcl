@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.52 2005/11/26 00:25:04 drh Exp $
+# $Id: tester.tcl,v 1.53 2005/12/09 14:25:12 danielk1977 Exp $
 
 # Make sure tclsqlite3 was compiled correctly.  Abort now with an
 # error message if not.
@@ -83,6 +83,7 @@ set maxErr 1000
 #
 proc do_test {name cmd expected} {
   global argv nErr nTest skip_test maxErr
+  set ::sqlite_malloc_id $name
   if {$skip_test} {
     set skip_test 0
     return
@@ -139,7 +140,13 @@ proc finish_test {} {
 proc finalize_testing {} {
   global nTest nErr nProb sqlite_open_file_count
   if {$nErr==0} memleak_check
+
   catch {db close}
+  catch {db2 close}
+  catch {db3 close}
+
+pp_check_for_leaks
+
   puts "$nErr errors out of $nTest tests"
   puts "Failures on these tests: $::failList"
   if {$nProb>0} {
@@ -421,6 +428,59 @@ proc copy_file {from to} {
     close $t
     close $f
   }
+}
+
+# This command checks for outstanding calls to sqliteMalloc() from within
+# the current thread. A list is returned with one entry for each outstanding
+# malloc. Each list entry is itself a list of 5 items, as follows:
+#
+#     { <number-bytes> <file-name> <line-number> <test-case> <stack-dump> }
+#
+proc check_for_leaks {} {
+  set ret [list]
+  foreach alloc [sqlite_malloc_outstanding] {
+    foreach {nBytes file iLine userstring backtrace} $alloc {}
+    set stack [list]
+    set skip 0
+
+    # The first command in this block will probably fail on windows. This
+    # means there will be no stack dump available.
+    catch {
+      set stuff [eval "exec addr2line -e ./testfixture -f $backtrace"]
+      foreach {func line} $stuff {
+        if {$func != "??" || $line != "??:0"} {
+          regexp {.*/(.*)} $line dummy line
+          lappend stack "${func}() $line"
+        } else {
+          if {[lindex $stack end] != "..."} {
+            lappend stack "..."
+          }
+        }
+      }
+    }
+
+    if {!$skip} {
+      lappend ret [list $nBytes $file $iLine $userstring $stack]
+    }
+  }
+  return $ret
+}
+
+# Pretty print a report based on the return value of [check_for_leaks] to
+# stdout.
+proc pp_check_for_leaks {} {
+  set l [check_for_leaks]
+  set n 0
+  foreach leak $l {
+    foreach {nBytes file iLine userstring stack} $leak {}
+    puts "$nBytes bytes leaked at $file:$iLine ($userstring)"
+    foreach frame $stack {
+      puts "        $frame"
+    }
+    incr n $nBytes
+  }
+  puts "Memory leaked: $n bytes in [llength $l] allocations"
+  puts ""
 }
 
 # If the library is compiled with the SQLITE_DEFAULT_AUTOVACUUM macro set

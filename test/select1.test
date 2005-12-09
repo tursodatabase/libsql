@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the SELECT statement.
 #
-# $Id: select1.test,v 1.43 2005/09/08 10:37:01 drh Exp $
+# $Id: select1.test,v 1.44 2005/12/09 14:25:12 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -798,6 +798,5 @@ ifcapable {compound && subquery} {
     }
   } {x 1 x 3}
 } ;# ifcapable compound
-
 
 finish_test

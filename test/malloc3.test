@@ -13,7 +13,7 @@
 # correctly. The emphasis of these tests are the _prepare(), _step() and
 # _finalize() calls.
 #
-# $Id: malloc3.test,v 1.3 2005/12/07 06:27:45 danielk1977 Exp $
+# $Id: malloc3.test,v 1.4 2005/12/09 14:25:12 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -580,14 +580,19 @@ proc run_test {arglist {pcstart 0} {iFailStart 1}} {
 
       default { error "Unknown switch: $k" }
     }
+# if {$iFail > ($iFailStart+1)} return
   }
 }
 
 # Turn of the Tcl interface's prepared statement caching facility.
 db cache size 0
 
-#run_test $::run_test_script 59 97 
-run_test $::run_test_script
+run_test $::run_test_script 
+# run_test [lrange $::run_test_script 0 3] 0 63
 sqlite_malloc_fail 0
+db close
+
+pp_check_for_leaks
+
 finish_test
 
