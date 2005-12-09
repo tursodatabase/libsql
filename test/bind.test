@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the sqlite_bind API.
 #
-# $Id: bind.test,v 1.34 2005/12/05 13:20:03 drh Exp $
+# $Id: bind.test,v 1.35 2005/12/09 20:54:35 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -500,27 +500,29 @@ ifcapable tclvar {
   } {1 {unrecognized token: "$abc(123"}}
 }
 
-# Test the ability to bind text that contains embedded '\000' characters.
-# Make sure we can recover the enter input string.
-#
-do_test bind-12.1 {
-  execsql {
-    CREATE TABLE t3(x BLOB);
-  }
-  set VM [sqlite3_prepare $DB {INSERT INTO t3 VALUES(?)} -1 TAIL]
-  sqlite_bind  $VM 1 not-used blob10
-  sqlite3_step $VM
-  sqlite3_finalize $VM
-  execsql {
-    SELECT typeof(x), length(x), quote(x),
-           length(cast(x AS BLOB)), quote(cast(x AS BLOB)) FROM t3
-  }
-} {text 3 'abc' 10 X'6162630078797A007071'}
-do_test bind-12.2 {
-  sqlite3_create_function $DB
-  execsql {
-    SELECT quote(cast(x_coalesce(x) AS blob)) FROM t3
-  }
-} {X'6162630078797A007071'}
+if {[execsql {pragma encoding}]=="UTF-8"} {
+  # Test the ability to bind text that contains embedded '\000' characters.
+  # Make sure we can recover the enter input string.
+  #
+  do_test bind-12.1 {
+    execsql {
+      CREATE TABLE t3(x BLOB);
+    }
+    set VM [sqlite3_prepare $DB {INSERT INTO t3 VALUES(?)} -1 TAIL]
+    sqlite_bind  $VM 1 not-used blob10
+    sqlite3_step $VM
+    sqlite3_finalize $VM
+    execsql {
+      SELECT typeof(x), length(x), quote(x),
+             length(cast(x AS BLOB)), quote(cast(x AS BLOB)) FROM t3
+    }
+  } {text 3 'abc' 10 X'6162630078797A007071'}
+  do_test bind-12.2 {
+    sqlite3_create_function $DB
+    execsql {
+      SELECT quote(cast(x_coalesce(x) AS blob)) FROM t3
+    }
+  } {X'6162630078797A007071'}
+}
 
 finish_test
