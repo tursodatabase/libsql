@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.306 2005/12/06 13:19:08 drh Exp $
+** $Id: main.c,v 1.307 2005/12/09 20:02:05 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -641,7 +641,7 @@ const char *sqlite3_errmsg(sqlite3 *db){
   if( sqlite3SafetyCheck(db) || db->errCode==SQLITE_MISUSE ){
     return sqlite3ErrStr(SQLITE_MISUSE);
   }
-  z = sqlite3_value_text(db->pErr);
+  z = (char*)sqlite3_value_text(db->pErr);
   if( z==0 ){
     z = sqlite3ErrStr(db->errCode);
   }

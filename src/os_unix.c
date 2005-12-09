@@ -633,7 +633,6 @@ static int unixOpenReadWrite(
 static int unixOpenExclusive(const char *zFilename, OsFile **pId, int delFlag){
   int rc;
   unixFile f;
-  int fd;
 
   assert( 0==*pId );
   if( access(zFilename, 0)==0 ){

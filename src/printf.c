@@ -627,7 +627,7 @@ static int vxprintf(
       case etTOKEN: {
         Token *pToken = va_arg(ap, Token*);
         if( pToken && pToken->z ){
-          (*func)(arg, pToken->z, pToken->n);
+          (*func)(arg, (char*)pToken->z, pToken->n);
         }
         length = width = 0;
         break;

@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.6 2005/12/09 14:25:08 danielk1977 Exp $
+** $Id: prepare.c,v 1.7 2005/12/09 20:02:05 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -478,7 +478,6 @@ int sqlite3_prepare(
   } 
 #endif
 
-prepare_out:
   if( sqlite3SafetyOff(db) ){
     rc = SQLITE_MISUSE;
   }

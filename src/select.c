@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.281 2005/12/06 12:52:59 danielk1977 Exp $
+** $Id: select.c,v 1.282 2005/12/09 20:02:05 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -109,7 +109,7 @@ int sqlite3JoinType(Parse *pParse, Token *pA, Token *pB, Token *pC){
     p = apAll[i];
     for(j=0; j<sizeof(keywords)/sizeof(keywords[0]); j++){
       if( p->n==keywords[j].nChar 
-          && sqlite3StrNICmp(p->z, keywords[j].zKeyword, p->n)==0 ){
+          && sqlite3StrNICmp((char*)p->z, keywords[j].zKeyword, p->n)==0 ){
         jointype |= keywords[j].code;
         break;
       }
@@ -154,7 +154,7 @@ static int columnIndex(Table *pTab, const char *zCol){
 ** Set the value of a token to a '\000'-terminated string.
 */
 static void setToken(Token *p, const char *z){
-  p->z = z;
+  p->z = (u8*)z;
   p->n = z ? strlen(z) : 0;
   p->dyn = 0;
 }
@@ -632,7 +632,7 @@ static KeyInfo *keyInfoFromExprList(Parse *pParse, ExprList *pList){
   nExpr = pList->nExpr;
   pInfo = sqliteMalloc( sizeof(*pInfo) + nExpr*(sizeof(CollSeq*)+1) );
   if( pInfo ){
-    pInfo->aSortOrder = (char*)&pInfo->aColl[nExpr];
+    pInfo->aSortOrder = (u8*)&pInfo->aColl[nExpr];
     pInfo->nField = nExpr;
     pInfo->enc = db->enc;
     for(i=0, pItem=pList->a; i<nExpr; i++, pItem++){
@@ -885,7 +885,7 @@ static void generateColumnNames(
         zCol = pTab->aCol[iCol].zName;
       }
       if( !shortNames && !fullNames && p->span.z && p->span.z[0] ){
-        sqlite3VdbeSetColName(v, i, p->span.z, p->span.n);
+        sqlite3VdbeSetColName(v, i, (char*)p->span.z, p->span.n);
       }else if( fullNames || (!shortNames && pTabList->nSrc>1) ){
         char *zName = 0;
         char *zTab;
@@ -898,7 +898,7 @@ static void generateColumnNames(
         sqlite3VdbeSetColName(v, i, zCol, strlen(zCol));
       }
     }else if( p->span.z && p->span.z[0] ){
-      sqlite3VdbeSetColName(v, i, p->span.z, p->span.n);
+      sqlite3VdbeSetColName(v, i, (char*)p->span.z, p->span.n);
       /* sqlite3VdbeCompressSpace(v, addr); */
     }else{
       char zName[30];
@@ -2117,7 +2117,7 @@ static int flattenSubquery(
   for(i=0; i<pList->nExpr; i++){
     Expr *pExpr;
     if( pList->a[i].zName==0 && (pExpr = pList->a[i].pExpr)->span.z!=0 ){
-      pList->a[i].zName = sqliteStrNDup(pExpr->span.z, pExpr->span.n);
+      pList->a[i].zName = sqliteStrNDup((char*)pExpr->span.z, pExpr->span.n);
     }
   }
   if( isAgg ){
@@ -2216,9 +2216,9 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
   pList = pExpr->pList;
   if( pList==0 || pList->nExpr!=1 ) return 0;
   if( pExpr->token.n!=3 ) return 0;
-  if( sqlite3StrNICmp(pExpr->token.z,"min",3)==0 ){
+  if( sqlite3StrNICmp((char*)pExpr->token.z,"min",3)==0 ){
     seekOp = OP_Rewind;
-  }else if( sqlite3StrNICmp(pExpr->token.z,"max",3)==0 ){
+  }else if( sqlite3StrNICmp((char*)pExpr->token.z,"max",3)==0 ){
     seekOp = OP_Last;
   }else{
     return 0;

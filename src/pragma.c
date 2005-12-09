@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.106 2005/12/08 18:12:56 drh Exp $
+** $Id: pragma.c,v 1.107 2005/12/09 20:02:05 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -36,7 +36,7 @@
 ** to support legacy SQL code.  The safety level used to be boolean
 ** and older scripts may have used numbers 0 for OFF and 1 for ON.
 */
-static int getSafetyLevel(const u8 *z){
+static int getSafetyLevel(const char *z){
                              /* 123456789 123456789 */
   static const char zText[] = "onoffalseyestruefull";
   static const u8 iOffset[] = {0, 1, 2, 4, 9, 12, 16};
@@ -58,7 +58,7 @@ static int getSafetyLevel(const u8 *z){
 /*
 ** Interpret the given string as a boolean value.
 */
-static int getBoolean(const u8 *z){
+static int getBoolean(const char *z){
   return getSafetyLevel(z)&1;
 }
 

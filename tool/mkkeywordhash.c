@@ -495,8 +495,8 @@ int main(int argc, char **argv){
   printf("  }\n");
   printf("  return TK_ID;\n");
   printf("}\n");
-  printf("int sqlite3KeywordCode(const char *z, int n){\n");
-  printf("  return keywordCode(z, n);\n");
+  printf("int sqlite3KeywordCode(const unsigned char *z, int n){\n");
+  printf("  return keywordCode((char*)z, n);\n");
   printf("}\n");
 
   return 0;

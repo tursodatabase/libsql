@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.272 2005/11/24 14:34:36 drh Exp $
+** $Id: btree.c,v 1.273 2005/12/09 20:02:05 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1535,7 +1535,7 @@ static void unlockBtreeIfUnused(Btree *pBt){
   if( pBt->inTrans==TRANS_NONE && pBt->pCursor==0 && pBt->pPage1!=0 ){
     if( pBt->pPage1->aData==0 ){
       MemPage *pPage = pBt->pPage1;
-      pPage->aData = &((char*)pPage)[-pBt->pageSize];
+      pPage->aData = &((u8*)pPage)[-pBt->pageSize];
       pPage->pBt = pBt;
       pPage->pgno = 1;
     }

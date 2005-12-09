@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.356 2005/12/06 12:52:59 danielk1977 Exp $
+** $Id: build.c,v 1.357 2005/12/09 20:02:05 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -509,7 +509,7 @@ void sqlite3UnlinkAndDeleteTable(sqlite3 *db, int iDb, const char *zTabName){
 char *sqlite3NameFromToken(Token *pName){
   char *zName;
   if( pName ){
-    zName = sqliteStrNDup(pName->z, pName->n);
+    zName = sqliteStrNDup((char*)pName->z, pName->n);
     sqlite3Dequote(zName);
   }else{
     zName = 0;
@@ -2224,8 +2224,8 @@ void sqlite3CreateIndex(
   ** So create a fake list to simulate this.
   */
   if( pList==0 ){
-    nullId.z = pTab->aCol[pTab->nCol-1].zName;
-    nullId.n = strlen(nullId.z);
+    nullId.z = (u8*)pTab->aCol[pTab->nCol-1].zName;
+    nullId.n = strlen((char*)nullId.z);
     pList = sqlite3ExprListAppend(0, 0, &nullId);
     if( pList==0 ) goto exit_create_index;
   }
@@ -2980,7 +2980,7 @@ void sqlite3Reindex(Parse *pParse, Token *pName1, Token *pName2){
     reindexDatabases(pParse, 0);
     return;
   }else if( pName2==0 || pName2->z==0 ){
-    pColl = sqlite3FindCollSeq(db, db->enc, pName1->z, pName1->n, 0);
+    pColl = sqlite3FindCollSeq(db, db->enc, (char*)pName1->z, pName1->n, 0);
     if( pColl ){
       reindexDatabases(pParse, pColl);
       return;

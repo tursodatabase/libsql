@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.241 2005/12/06 12:52:59 danielk1977 Exp $
+** $Id: expr.c,v 1.242 2005/12/09 20:02:05 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -235,7 +235,7 @@ Expr *sqlite3RegisterExpr(Parse *pParse, Token *pToken){
   if( p==0 ){
     return 0;  /* Malloc failed */
   }
-  depth = atoi(&pToken->z[1]);
+  depth = atoi((char*)&pToken->z[1]);
   p->iTable = pParse->nMem++;
   sqlite3VdbeAddOp(v, OP_Dup, depth, 0);
   sqlite3VdbeAddOp(v, OP_MemStore, p->iTable, 1);
@@ -327,7 +327,7 @@ void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr){
     /* Wildcard of the form "?nnn".  Convert "nnn" to an integer and
     ** use it as the variable number */
     int i;
-    pExpr->iTable = i = atoi(&pToken->z[1]);
+    pExpr->iTable = i = atoi((char*)&pToken->z[1]);
     if( i<1 || i>SQLITE_MAX_VARIABLE_NUMBER ){
       sqlite3ErrorMsg(pParse, "variable number must be between ?1 and ?%d",
           SQLITE_MAX_VARIABLE_NUMBER);
@@ -415,7 +415,7 @@ Expr *sqlite3ExprDup(Expr *p){
   if( pNew==0 ) return 0;
   memcpy(pNew, p, sizeof(*pNew));
   if( p->token.z!=0 ){
-    pNew->token.z = sqliteStrNDup(p->token.z, p->token.n);
+    pNew->token.z = (u8*)sqliteStrNDup((char*)p->token.z, p->token.n);
     pNew->token.dyn = 1;
   }else{
     assert( pNew->token.z==0 );
@@ -432,7 +432,7 @@ void sqlite3TokenCopy(Token *pTo, Token *pFrom){
   if( pTo->dyn ) sqliteFree((char*)pTo->z);
   if( pFrom->z ){
     pTo->n = pFrom->n;
-    pTo->z = sqliteStrNDup(pFrom->z, pFrom->n);
+    pTo->z = (u8*)sqliteStrNDup((char*)pFrom->z, pFrom->n);
     pTo->dyn = 1;
   }else{
     pTo->z = 0;
@@ -752,7 +752,7 @@ int sqlite3ExprIsConstantOrFunction(Expr *p){
 int sqlite3ExprIsInteger(Expr *p, int *pValue){
   switch( p->op ){
     case TK_INTEGER: {
-      if( sqlite3GetInt32(p->token.z, pValue) ){
+      if( sqlite3GetInt32((char*)p->token.z, pValue) ){
         return 1;
       }
       break;
@@ -1150,7 +1150,7 @@ static int nameResolverStep(void *pArg, Expr *pExpr){
       FuncDef *pDef;              /* Information about the function */
       int enc = pParse->db->enc;  /* The database encoding */
 
-      zId = pExpr->token.z;
+      zId = (char*)pExpr->token.z;
       nId = pExpr->token.n;
       pDef = sqlite3FindFunction(pParse->db, zId, nId, n, enc, 0);
       if( pDef==0 ){
@@ -1402,7 +1402,7 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
       ** value of this select in a memory cell and record the number
       ** of the memory cell in iColumn.
       */
-      static const Token one = { "1", 0, 1 };
+      static const Token one = { (u8*)"1", 0, 1 };
       Select *pSel;
       int iMem;
       int sop;
@@ -1503,7 +1503,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       break;
     }
     case TK_INTEGER: {
-      codeInteger(v, pExpr->token.z, pExpr->token.n);
+      codeInteger(v, (char*)pExpr->token.z, pExpr->token.n);
       break;
     }
     case TK_FLOAT:
@@ -1511,7 +1511,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       assert( TK_FLOAT==OP_Real );
       assert( TK_STRING==OP_String8 );
       sqlite3DequoteExpr(pExpr);
-      sqlite3VdbeOp3(v, op, 0, 0, pExpr->token.z, pExpr->token.n);
+      sqlite3VdbeOp3(v, op, 0, 0, (char*)pExpr->token.z, pExpr->token.n);
       break;
     }
     case TK_NULL: {
@@ -1524,7 +1524,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       const char *z;
       assert( TK_BLOB==OP_HexBlob );
       n = pExpr->token.n - 3;
-      z = pExpr->token.z + 2;
+      z = (char*)pExpr->token.z + 2;
       assert( n>=0 );
       if( n==0 ){
         z = "";
@@ -1536,7 +1536,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
     case TK_VARIABLE: {
       sqlite3VdbeAddOp(v, OP_Variable, pExpr->iTable, 0);
       if( pExpr->token.n>1 ){
-        sqlite3VdbeChangeP3(v, -1, pExpr->token.z, pExpr->token.n);
+        sqlite3VdbeChangeP3(v, -1, (char*)pExpr->token.z, pExpr->token.n);
       }
       break;
     }
@@ -1667,7 +1667,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       int i;
       u8 enc = pParse->db->enc;
       CollSeq *pColl = 0;
-      zId = pExpr->token.z;
+      zId = (char*)pExpr->token.z;
       nId = pExpr->token.n;
       pDef = sqlite3FindFunction(pParse->db, zId, nId, nExpr, enc, 0);
       assert( pDef!=0 );
@@ -1803,7 +1803,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
                  pExpr->iColumn == OE_Fail );
          sqlite3DequoteExpr(pExpr);
          sqlite3VdbeOp3(v, OP_Halt, SQLITE_CONSTRAINT, pExpr->iColumn,
-                        pExpr->token.z, pExpr->token.n);
+                        (char*)pExpr->token.z, pExpr->token.n);
       } else {
          assert( pExpr->iColumn == OE_Ignore );
          sqlite3VdbeAddOp(v, OP_ContextPop, 0, 0);
@@ -2106,7 +2106,9 @@ int sqlite3ExprCompare(Expr *pA, Expr *pB){
   if( pA->token.z ){
     if( pB->token.z==0 ) return 0;
     if( pB->token.n!=pA->token.n ) return 0;
-    if( sqlite3StrNICmp(pA->token.z, pB->token.z, pB->token.n)!=0 ) return 0;
+    if( sqlite3StrNICmp((char*)pA->token.z,(char*)pB->token.z,pB->token.n)!=0 ){
+      return 0;
+    }
   }
   return 1;
 }
@@ -2237,7 +2239,7 @@ static int analyzeAggregate(void *pArg, Expr *pExpr){
             pItem->pExpr = pExpr;
             pItem->iMem = pParse->nMem++;
             pItem->pFunc = sqlite3FindFunction(pParse->db,
-                   pExpr->token.z, pExpr->token.n,
+                   (char*)pExpr->token.z, pExpr->token.n,
                    pExpr->pList ? pExpr->pList->nExpr : 0, enc, 0);
             if( pExpr->flags & EP_Distinct ){
               pItem->iDistinct = pParse->nTab++;

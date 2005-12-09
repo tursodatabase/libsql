@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.112 2005/12/06 17:19:11 danielk1977 Exp $
+** $Id: func.c,v 1.113 2005/12/09 20:02:05 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -101,7 +101,7 @@ static void lengthFunc(
       break;
     }
     case SQLITE_TEXT: {
-      const char *z = sqlite3_value_text(argv[0]);
+      const unsigned char *z = sqlite3_value_text(argv[0]);
       for(len=0; *z; z++){ if( (0xc0&*z)!=0x80 ) len++; }
       sqlite3_result_int(context, len);
       break;
@@ -146,8 +146,8 @@ static void substrFunc(
   int argc,
   sqlite3_value **argv
 ){
-  const char *z;
-  const char *z2;
+  const unsigned char *z;
+  const unsigned char *z2;
   int i;
   int p1, p2, len;
 
@@ -178,7 +178,7 @@ static void substrFunc(
   }
   while( z[i] && (z[i]&0xc0)==0x80 ){ i++; p2++; }
   if( p2<0 ) p2 = 0;
-  sqlite3_result_text(context, &z[p1], p2, SQLITE_TRANSIENT);
+  sqlite3_result_text(context, (char*)&z[p1], p2, SQLITE_TRANSIENT);
 }
 
 /*
@@ -210,11 +210,11 @@ static void upperFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   if( argc<1 || SQLITE_NULL==sqlite3_value_type(argv[0]) ) return;
   z = sqliteMalloc(sqlite3_value_bytes(argv[0])+1);
   if( z==0 ) return;
-  strcpy(z, sqlite3_value_text(argv[0]));
+  strcpy((char*)z, (char*)sqlite3_value_text(argv[0]));
   for(i=0; z[i]; i++){
     z[i] = toupper(z[i]);
   }
-  sqlite3_result_text(context, z, -1, SQLITE_TRANSIENT);
+  sqlite3_result_text(context, (char*)z, -1, SQLITE_TRANSIENT);
   sqliteFree(z);
 }
 static void lowerFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
@@ -223,11 +223,11 @@ static void lowerFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   if( argc<1 || SQLITE_NULL==sqlite3_value_type(argv[0]) ) return;
   z = sqliteMalloc(sqlite3_value_bytes(argv[0])+1);
   if( z==0 ) return;
-  strcpy(z, sqlite3_value_text(argv[0]));
+  strcpy((char*)z, (char*)sqlite3_value_text(argv[0]));
   for(i=0; z[i]; i++){
     z[i] = tolower(z[i]);
   }
-  sqlite3_result_text(context, z, -1, SQLITE_TRANSIENT);
+  sqlite3_result_text(context, (char*)z, -1, SQLITE_TRANSIENT);
   sqliteFree(z);
 }
 
@@ -495,7 +495,7 @@ static void likeFunc(
     ** Otherwise, return an error.
     */
     const unsigned char *zEsc = sqlite3_value_text(argv[2]);
-    if( sqlite3utf8CharLen(zEsc, -1)!=1 ){
+    if( sqlite3utf8CharLen((char*)zEsc, -1)!=1 ){
       sqlite3_result_error(context, 
           "ESCAPE expression must be a single character", -1);
       return;
@@ -592,7 +592,7 @@ static void quoteFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
     }
     case SQLITE_TEXT: {
       int i,j,n;
-      const char *zArg = sqlite3_value_text(argv[0]);
+      const unsigned char *zArg = sqlite3_value_text(argv[0]);
       char *z;
 
       for(i=n=0; zArg[i]; i++){ if( zArg[i]=='\'' ) n++; }
@@ -692,7 +692,7 @@ static void randStr(sqlite3_context *context, int argc, sqlite3_value **argv){
     zBuf[i] = zSrc[zBuf[i]%(sizeof(zSrc)-1)];
   }
   zBuf[n] = 0;
-  sqlite3_result_text(context, zBuf, n, SQLITE_TRANSIENT);
+  sqlite3_result_text(context, (char*)zBuf, n, SQLITE_TRANSIENT);
 }
 #endif /* SQLITE_TEST */
 
@@ -776,7 +776,7 @@ static void test_auxdata(
   char *zRet = sqliteMalloc(nArg*2);
   if( !zRet ) return;
   for(i=0; i<nArg; i++){
-    char const *z = sqlite3_value_text(argv[i]);
+    char const *z = (char*)sqlite3_value_text(argv[i]);
     if( z ){
       char *zAux = sqlite3_get_auxdata(pCtx, i);
       if( zAux ){
@@ -807,7 +807,7 @@ static void test_error(
   int nArg,
   sqlite3_value **argv
 ){
-  sqlite3_result_error(pCtx, sqlite3_value_text(argv[0]), 0);
+  sqlite3_result_error(pCtx, (char*)sqlite3_value_text(argv[0]), 0);
 }
 #endif /* SQLITE_TEST */
 
@@ -1100,7 +1100,7 @@ int sqlite3IsLikeFunction(sqlite3 *db, Expr *pExpr, int *pIsNocase, char *aWc){
   if( pExpr->pList->nExpr!=2 ){
     return 0;
   }
-  pDef = sqlite3FindFunction(db, pExpr->token.z, pExpr->token.n, 2,
+  pDef = sqlite3FindFunction(db, (char*)pExpr->token.z, pExpr->token.n, 2,
                              SQLITE_UTF8, 0);
   if( pDef==0 || (pDef->flags & SQLITE_FUNC_LIKE)==0 ){
     return 0;

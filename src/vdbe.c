@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.503 2005/12/09 14:25:09 danielk1977 Exp $
+** $Id: vdbe.c,v 1.504 2005/12/09 20:02:06 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1885,7 +1885,7 @@ case OP_Column: {
       payloadSize = 0;
     }else if( pC->cacheValid ){
       payloadSize = pC->payloadSize;
-      zRec = pC->aRow;
+      zRec = (char*)pC->aRow;
     }else if( pC->isIndex ){
       i64 payloadSize64;
       sqlite3BtreeKeySize(pCrsr, &payloadSize64);
@@ -1952,12 +1952,13 @@ case OP_Column: {
       ** the record.
       */
       if( avail>=payloadSize ){
-        zRec = pC->aRow = zData;
+        zRec = zData;
+        pC->aRow = (u8*)zData;
       }else{
         pC->aRow = 0;
       }
     }
-    idx = sqlite3GetVarint32(zData, &szHdr);
+    idx = sqlite3GetVarint32((u8*)zData, &szHdr);
 
 
     /* The KeyFetch() or DataFetch() above are fast and will get the entire
@@ -1984,7 +1985,7 @@ case OP_Column: {
     i = 0;
     while( idx<szHdr && i<nField && offset<=payloadSize ){
       aOffset[i] = offset;
-      idx += sqlite3GetVarint32(&zData[idx], &aType[i]);
+      idx += sqlite3GetVarint32((u8*)&zData[idx], &aType[i]);
       offset += sqlite3VdbeSerialTypeLen(aType[i]);
       i++;
     }
@@ -2038,7 +2039,7 @@ case OP_Column: {
       }
       zData = sMem.z;
     }
-    sqlite3VdbeSerialGet(zData, aType[p2], pTos);
+    sqlite3VdbeSerialGet((u8*)zData, aType[p2], pTos);
     pTos->enc = db->enc;
   }else{
     if( pOp->p3type==P3_MEM ){
@@ -2198,7 +2199,7 @@ case OP_MakeRecord: {
       goto no_mem;
     }
   }else{
-    zNewRecord = zTemp;
+    zNewRecord = (u8*)zTemp;
   }
 
   /* Write the record */
@@ -2232,7 +2233,7 @@ case OP_MakeRecord: {
     pTos->flags = MEM_Blob | MEM_Short;
   }else{
     assert( zNewRecord!=(unsigned char *)zTemp );
-    pTos->z = zNewRecord;
+    pTos->z = (char*)zNewRecord;
     pTos->flags = MEM_Blob | MEM_Dyn;
     pTos->xDel = 0;
   }
@@ -2929,7 +2930,7 @@ case OP_IsUnique: {        /* no-push */
     zKey = pNos->z;
     nKey = pNos->n;
 
-    szRowid = sqlite3VdbeIdxRowidLen(nKey, zKey);
+    szRowid = sqlite3VdbeIdxRowidLen(nKey, (u8*)zKey);
     len = nKey-szRowid;
 
     /* Search for an entry in P1 where all but the last four bytes match K.
@@ -2946,7 +2947,7 @@ case OP_IsUnique: {        /* no-push */
         break;
       }
     }
-    rc = sqlite3VdbeIdxKeyCompare(pCx, len, zKey, &res); 
+    rc = sqlite3VdbeIdxKeyCompare(pCx, len, (u8*)zKey, &res); 
     if( rc!=SQLITE_OK ) goto abort_due_to_error;
     if( res>0 ){
       pc = pOp->p2 - 1;
@@ -3722,7 +3723,7 @@ case OP_IdxGE: {        /* no-push */
     assert( pC->deferredMoveto==0 );
     *pC->pIncrKey = pOp->p3!=0;
     assert( pOp->p3==0 || pOp->opcode!=OP_IdxGT );
-    rc = sqlite3VdbeIdxKeyCompare(pC, pTos->n, pTos->z, &res);
+    rc = sqlite3VdbeIdxKeyCompare(pC, pTos->n, (u8*)pTos->z, &res);
     *pC->pIncrKey = 0;
     if( rc!=SQLITE_OK ){
       break;
@@ -3760,9 +3761,9 @@ case OP_IdxIsNull: {        /* no-push */
   assert( pTos->flags & MEM_Blob );
   z = pTos->z;
   n = pTos->n;
-  k = sqlite3GetVarint32(z, &serial_type);
+  k = sqlite3GetVarint32((u8*)z, &serial_type);
   for(; k<n && i>0; i--){
-    k += sqlite3GetVarint32(&z[k], &serial_type);
+    k += sqlite3GetVarint32((u8*)&z[k], &serial_type);
     if( serial_type==0 ){   /* Serial type 0 is a NULL */
       pc = pOp->p2-1;
       break;

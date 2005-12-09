@@ -83,7 +83,7 @@ int sqlite3VdbeMemDynamicify(Mem *pMem){
   memcpy(z, pMem->z, n );
   z[n] = 0;
   z[n+1] = 0;
-  pMem->z = z;
+  pMem->z = (char*)z;
   pMem->flags &= ~(MEM_Ephem|MEM_Static|MEM_Short);
   return SQLITE_OK;
 }
@@ -103,7 +103,7 @@ int sqlite3VdbeMemMakeWriteable(Mem *pMem){
   assert( (pMem->flags & MEM_Dyn)==0 );
   assert( pMem->flags & (MEM_Str|MEM_Blob) );
   if( (n = pMem->n)+2<sizeof(pMem->zShort) ){
-    z = pMem->zShort;
+    z = (u8*)pMem->zShort;
     pMem->flags |= MEM_Short|MEM_Term;
   }else{
     z = sqliteMallocRaw( n+2 );
@@ -116,7 +116,7 @@ int sqlite3VdbeMemMakeWriteable(Mem *pMem){
   memcpy(z, pMem->z, n );
   z[n] = 0;
   z[n+1] = 0;
-  pMem->z = z;
+  pMem->z = (char*)z;
   pMem->flags &= ~(MEM_Ephem|MEM_Static);
   return SQLITE_OK;
 }
@@ -172,7 +172,7 @@ int sqlite3VdbeMemNulTerminate(Mem *pMem){
 int sqlite3VdbeMemStringify(Mem *pMem, int enc){
   int rc = SQLITE_OK;
   int fg = pMem->flags;
-  u8 *z = pMem->zShort;
+  char *z = pMem->zShort;
 
   assert( !(fg&(MEM_Str|MEM_Blob)) );
   assert( fg&(MEM_Int|MEM_Real) );
@@ -799,7 +799,7 @@ int sqlite3ValueFromExpr(
   op = pExpr->op;
 
   if( op==TK_STRING || op==TK_FLOAT || op==TK_INTEGER ){
-    zVal = sqliteStrNDup(pExpr->token.z, pExpr->token.n);
+    zVal = sqliteStrNDup((char*)pExpr->token.z, pExpr->token.n);
     pVal = sqlite3ValueNew();
     if( !zVal || !pVal ) goto no_mem;
     sqlite3Dequote(zVal);
@@ -819,7 +819,7 @@ int sqlite3ValueFromExpr(
   else if( op==TK_BLOB ){
     int nVal;
     pVal = sqlite3ValueNew();
-    zVal = sqliteStrNDup(pExpr->token.z+1, pExpr->token.n-1);
+    zVal = sqliteStrNDup((char*)pExpr->token.z+1, pExpr->token.n-1);
     if( !zVal || !pVal ) goto no_mem;
     sqlite3Dequote(zVal);
     nVal = strlen(zVal)/2;

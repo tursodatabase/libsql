@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.52 2005/12/09 14:25:09 danielk1977 Exp $
+** $Id: vacuum.c,v 1.53 2005/12/09 20:02:06 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -59,7 +59,7 @@ static int execExecSql(sqlite3 *db, const char *zSql){
   if( rc!=SQLITE_OK ) return rc;
 
   while( SQLITE_ROW==sqlite3_step(pStmt) ){
-    rc = execSql(db, sqlite3_column_text(pStmt, 0));
+    rc = execSql(db, (char*)sqlite3_column_text(pStmt, 0));
     if( rc!=SQLITE_OK ){
       sqlite3_finalize(pStmt);
       return rc;

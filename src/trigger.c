@@ -237,7 +237,7 @@ void sqlite3FinishTrigger(
     addr = sqlite3VdbeAddOpList(v, ArraySize(insertTrig), insertTrig);
     sqlite3VdbeChangeP3(v, addr+2, pTrig->name, 0); 
     sqlite3VdbeChangeP3(v, addr+3, pTrig->table, 0); 
-    sqlite3VdbeChangeP3(v, addr+6, pAll->z, pAll->n);
+    sqlite3VdbeChangeP3(v, addr+6, (char*)pAll->z, pAll->n);
     sqlite3ChangeCookie(db, v, pTrig->iDb);
     sqlite3VdbeAddOp(v, OP_Close, 0, 0);
     sqlite3VdbeOp3(v, OP_ParseSchema, pTrig->iDb, 0, 
@@ -278,7 +278,7 @@ triggerfinish_cleanup:
 */
 static void sqlitePersistTriggerStep(TriggerStep *p){
   if( p->target.z ){
-    p->target.z = sqliteStrNDup(p->target.z, p->target.n);
+    p->target.z = (u8*)sqliteStrNDup((char*)p->target.z, p->target.n);
     p->target.dyn = 1;
   }
   if( p->pSelect ){
@@ -623,8 +623,8 @@ static SrcList *targetSrcList(
   iDb = pStep->pTrig->iDb;
   if( iDb==0 || iDb>=2 ){
     assert( iDb<pParse->db->nDb );
-    sDb.z = pParse->db->aDb[iDb].zName;
-    sDb.n = strlen(sDb.z);
+    sDb.z = (u8*)pParse->db->aDb[iDb].zName;
+    sDb.n = strlen((char*)sDb.z);
     pSrc = sqlite3SrcListAppend(0, &sDb, &pStep->target);
   } else {
     pSrc = sqlite3SrcListAppend(0, &pStep->target, 0);

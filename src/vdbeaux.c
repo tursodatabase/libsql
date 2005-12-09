@@ -1780,10 +1780,10 @@ int sqlite3VdbeIdxRowid(BtCursor *pCur, i64 *rowid){
   if( rc ){
     return rc;
   }
-  sqlite3GetVarint32(m.z, &szHdr);
-  sqlite3GetVarint32(&m.z[szHdr-1], &typeRowid);
+  sqlite3GetVarint32((u8*)m.z, &szHdr);
+  sqlite3GetVarint32((u8*)&m.z[szHdr-1], &typeRowid);
   lenRowid = sqlite3VdbeSerialTypeLen(typeRowid);
-  sqlite3VdbeSerialGet(&m.z[m.n-lenRowid], typeRowid, &v);
+  sqlite3VdbeSerialGet((u8*)&m.z[m.n-lenRowid], typeRowid, &v);
   *rowid = v.i;
   sqlite3VdbeMemRelease(&m);
   return SQLITE_OK;
@@ -1819,7 +1819,7 @@ int sqlite3VdbeIdxKeyCompare(
   if( rc ){
     return rc;
   }
-  lenRowid = sqlite3VdbeIdxRowidLen(m.n, m.z);
+  lenRowid = sqlite3VdbeIdxRowidLen(m.n, (u8*)m.z);
   *res = sqlite3VdbeRecordCompare(pC->pKeyInfo, m.n-lenRowid, m.z, nKey, pKey);
   sqlite3VdbeMemRelease(&m);
   return SQLITE_OK;

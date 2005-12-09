@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.186 2005/12/06 17:19:11 danielk1977 Exp $
+** @(#) $Id: parse.y,v 1.187 2005/12/09 20:02:05 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -230,8 +230,8 @@ typetoken(A) ::= typename(X) LP signed COMMA signed RP(Y). {
 typename(A) ::= ids(X).             {A = X;}
 typename(A) ::= typename(X) ids(Y). {A.z=X.z; A.n=Y.n+(Y.z-X.z);}
 %type signed {int}
-signed(A) ::= plus_num(X).    { A = atoi(X.z); }
-signed(A) ::= minus_num(X).   { A = -atoi(X.z); }
+signed(A) ::= plus_num(X).    { A = atoi((char*)X.z); }
+signed(A) ::= minus_num(X).   { A = -atoi((char*)X.z); }
 
 // "carglist" is a list of additional constraints that come after the
 // column name and column type in a CREATE TABLE statement.
@@ -264,7 +264,7 @@ ccons ::= CHECK LP expr(X) RP.       {sqlite3AddCheckConstraint(pParse,X);}
 ccons ::= REFERENCES nm(T) idxlist_opt(TA) refargs(R).
                                 {sqlite3CreateForeignKey(pParse,0,&T,TA,R);}
 ccons ::= defer_subclause(D).   {sqlite3DeferForeignKey(pParse,D);}
-ccons ::= COLLATE id(C).  {sqlite3AddCollateType(pParse, C.z, C.n);}
+ccons ::= COLLATE id(C).  {sqlite3AddCollateType(pParse, (char*)C.z, C.n);}
 
 // The optional AUTOINCREMENT keyword
 %type autoinc {int}
@@ -853,7 +853,7 @@ idxlist(A) ::= idxlist(X) COMMA idxitem(Y) collate(C) sortorder.  {
   Expr *p = 0;
   if( C.n>0 ){
     p = sqlite3Expr(TK_COLUMN, 0, 0, 0);
-    if( p ) p->pColl = sqlite3LocateCollSeq(pParse, C.z, C.n);
+    if( p ) p->pColl = sqlite3LocateCollSeq(pParse, (char*)C.z, C.n);
   }
   A = sqlite3ExprListAppend(X, p, &Y);
 }
@@ -861,7 +861,7 @@ idxlist(A) ::= idxitem(Y) collate(C) sortorder. {
   Expr *p = 0;
   if( C.n>0 ){
     p = sqlite3Expr(TK_COLUMN, 0, 0, 0);
-    if( p ) p->pColl = sqlite3LocateCollSeq(pParse, C.z, C.n);
+    if( p ) p->pColl = sqlite3LocateCollSeq(pParse, (char*)C.z, C.n);
   }
   A = sqlite3ExprListAppend(0, p, &Y);
 }
