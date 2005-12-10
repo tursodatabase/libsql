@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.135 2005/12/07 06:27:44 danielk1977 Exp $
+** $Id: tclsqlite.c,v 1.136 2005/12/10 21:19:05 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -621,21 +621,22 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     "changes",            "close",             "collate",
     "collation_needed",   "commit_hook",       "complete",
     "copy",               "errorcode",         "eval",
-    "function",           "last_insert_rowid", "nullvalue",
-    "onecolumn",          "profile",           "progress",
-    "rekey",              "timeout",           "total_changes",
-    "trace",              "transaction",       "version",
-    0                    
+    "exists",             "function",          "last_insert_rowid",
+    "nullvalue",          "onecolumn",         "profile",
+    "progress",           "rekey",             "timeout",
+    "total_changes",      "trace",             "transaction",
+    "version",            0                    
   };
   enum DB_enum {
     DB_AUTHORIZER,        DB_BUSY,             DB_CACHE,
     DB_CHANGES,           DB_CLOSE,            DB_COLLATE,
     DB_COLLATION_NEEDED,  DB_COMMIT_HOOK,      DB_COMPLETE,
     DB_COPY,              DB_ERRORCODE,        DB_EVAL,
-    DB_FUNCTION,          DB_LAST_INSERT_ROWID,DB_NULLVALUE,
-    DB_ONECOLUMN,         DB_PROFILE,          DB_PROGRESS,
-    DB_REKEY,             DB_TIMEOUT,          DB_TOTAL_CHANGES,
-    DB_TRACE,             DB_TRANSACTION,      DB_VERSION
+    DB_EXISTS,            DB_FUNCTION,         DB_LAST_INSERT_ROWID,
+    DB_NULLVALUE,         DB_ONECOLUMN,        DB_PROFILE,
+    DB_PROGRESS,          DB_REKEY,            DB_TIMEOUT,
+    DB_TOTAL_CHANGES,     DB_TRACE,            DB_TRANSACTION,
+    DB_VERSION
   };
   /* don't leave trailing commas on DB_enum, it confuses the AIX xlc compiler */
 
@@ -1136,7 +1137,8 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   **     lindex [$db eval $sql] 0
   */
   case DB_ONECOLUMN:
-  case DB_EVAL: {
+  case DB_EVAL:
+  case DB_EXISTS: {
     char const *zSql;      /* Next SQL statement to execute */
     char const *zLeft;     /* What is left after first stmt in zSql */
     sqlite3_stmt *pStmt;   /* Compiled SQL statment */
@@ -1149,19 +1151,22 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     SqlPreparedStmt *pPreStmt;  /* Pointer to a prepared statement */
     int rc2;
 
-    if( choice==DB_ONECOLUMN ){
-      if( objc!=3 ){
-        Tcl_WrongNumArgs(interp, 2, objv, "SQL");
-        return TCL_ERROR;
-      }
-      pRet = 0;
-    }else{
+    if( choice==DB_EVAL ){
       if( objc<3 || objc>5 ){
         Tcl_WrongNumArgs(interp, 2, objv, "SQL ?ARRAY-NAME? ?SCRIPT?");
         return TCL_ERROR;
       }
       pRet = Tcl_NewObj();
       Tcl_IncrRefCount(pRet);
+    }else{
+      if( objc!=3 ){
+        Tcl_WrongNumArgs(interp, 2, objv, "SQL");
+        return TCL_ERROR;
+      }
+      pRet = 0;
+      if( choice==DB_EXISTS ){
+        Tcl_SetObjResult(interp, Tcl_NewBooleanObj(0));
+      }
     }
     if( objc==3 ){
       pArray = pScript = 0;
@@ -1366,11 +1371,18 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
               Tcl_ObjSetVar2(interp, pArray, apColName[i], pVal, 0);
             }
           }else if( choice==DB_ONECOLUMN ){
+            assert( pRet==0 );
             if( pRet==0 ){
               pRet = pVal;
               Tcl_IncrRefCount(pRet);
             }
             rc = TCL_BREAK;
+            i = nCol;
+          }else if( choice==DB_EXISTS ){
+            assert( pRet==0 );
+            Tcl_SetObjResult(interp, Tcl_NewBooleanObj(1));
+            rc = TCL_BREAK;
+            i = nCol;
           }else{
             Tcl_ListObjAppendElement(interp, pRet, pVal);
           }

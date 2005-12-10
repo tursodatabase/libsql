@@ -1,5 +1,5 @@
-C New\sbind\stests\s(check-ins\s(2797)\sand\s(2798))\sonly\swork\sright\son\sa\sUTF8\ndatabase.\s\sSo\smake\ssure\sthey\sare\sonly\srun\swhen\sthe\sdatabase\sis\sUTF8.\s(CVS\s2812)
-D 2005-12-09T20:54:35
+C Add\sthe\s"exists"\smethod\sto\sthe\sTCL\sinterface.\s(CVS\s2813)
+D 2005-12-10T21:19:05
 F Makefile.in e3c6b3a38d734d41574c04f2fc90d18de2b87102
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -71,7 +71,7 @@ F src/shell.c 4872acee1d2a826c73c914961e469e563204b7f9
 F src/sqlite.h.in 8e648e1f386e4509f2f96c09ded7c07b0df0c9a2
 F src/sqliteInt.h feb11bfe9bf79b4493319173c47739fe2bb7ffa4
 F src/table.c 486dcfce532685b53b5a2b5da8bba0ded6fb2316
-F src/tclsqlite.c 328060916c24d328cfab1622c9a0e7ad57c2da8c
+F src/tclsqlite.c 6b34de66e8098c306bc3b96300143c23d4797769
 F src/test1.c feae6cb2d70a1bc83d7084c590212989922b0f47
 F src/test2.c 36390cdfc70c08e5ee0b466d0654a117f398bbff
 F src/test3.c 7c97833e33496c2b69f4fe6b9882ac60a481da97
@@ -221,7 +221,7 @@ F test/subselect.test 2d13fb7f450db3595adcdd24079a0dd1d2d6abc2
 F test/sync.test 6e8b885cec5ccba2090e92c90f747a7142f53c88
 F test/table.test ec0e6c2186bb8f6824f470caa118524dfd8fe057
 F test/tableapi.test 6a66d58b37d46dc0f2b3c7d4bd2617d209399bd1
-F test/tclsqlite.test 2da3e4b3a79b13c1511c9d0cd995e08f8362e782
+F test/tclsqlite.test 07729a3b683407362bbd63c2a17b4c9ea8b0ec27
 F test/temptable.test 7927261befdbc7b0a7ffebb85ecc70a74fa7b15b
 F test/tester.tcl a06c798a653daefb5bce2c85fc3a7d06450a1875
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
@@ -327,7 +327,7 @@ F www/tclsqlite.tcl ddcf912ea48695603c8ed7efb29f0812ef8d1b49
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 590578bef88d0aa545f8138e8eec0db03c093861
-R b11ea4449bdd8f6caa2595a115b86b1e
+P 398037906956f0274ca35cbff6961f6df5149295
+R 8e7c1e3ead7dacbb9408f99afbdcbea3
 U drh
-Z 9a38610602d3cdfe49544eea7c9cc80d
+Z b05b2682bc485f2f8d89f673d48ca998
