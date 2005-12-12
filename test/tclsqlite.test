@@ -15,7 +15,7 @@
 # interface is pretty well tested.  This file contains some addition
 # tests for fringe issues that the main test suite does not cover.
 #
-# $Id: tclsqlite.test,v 1.45 2005/12/10 21:19:06 drh Exp $
+# $Id: tclsqlite.test,v 1.46 2005/12/12 06:53:05 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -34,7 +34,7 @@ do_test tcl-1.1 {
 do_test tcl-1.2 {
   set v [catch {db bogus} msg]
   lappend v $msg
-} {1 {bad option "bogus": must be authorizer, busy, cache, changes, close, collate, collation_needed, commit_hook, complete, copy, errorcode, eval, exists, function, last_insert_rowid, nullvalue, onecolumn, profile, progress, rekey, timeout, total_changes, trace, transaction, or version}}
+} {1 {bad option "bogus": must be authorizer, busy, cache, changes, close, collate, collation_needed, commit_hook, complete, copy, errorcode, eval, exists, function, last_insert_rowid, nullvalue, onecolumn, profile, progress, rekey, soft_heap_limit, timeout, total_changes, trace, transaction, or version}}
 do_test tcl-1.3 {
   execsql {CREATE TABLE t1(a int, b int)}
   execsql {INSERT INTO t1 VALUES(10,20)}
@@ -110,27 +110,27 @@ do_test tcl-1.15 {
   set v [catch {db function} msg]
   lappend v $msg
 } {1 {wrong # args: should be "db function NAME SCRIPT"}}
-do_test tcl-1.14 {
+do_test tcl-1.16 {
   set v [catch {db last_insert_rowid xyz} msg]
   lappend v $msg
 } {1 {wrong # args: should be "db last_insert_rowid "}}
-do_test tcl-1.15 {
+do_test tcl-1.17 {
   set v [catch {db rekey} msg]
   lappend v $msg
 } {1 {wrong # args: should be "db rekey KEY"}}
-do_test tcl-1.16 {
+do_test tcl-1.18 {
   set v [catch {db timeout} msg]
   lappend v $msg
 } {1 {wrong # args: should be "db timeout MILLISECONDS"}}
-do_test tcl-1.17 {
+do_test tcl-1.19 {
   set v [catch {db collate} msg]
   lappend v $msg
 } {1 {wrong # args: should be "db collate NAME SCRIPT"}}
-do_test tcl-1.18 {
+do_test tcl-1.20 {
   set v [catch {db collation_needed} msg]
   lappend v $msg
 } {1 {wrong # args: should be "db collation_needed SCRIPT"}}
-do_test tcl-1.19 {
+do_test tcl-1.21 {
   set v [catch {db total_changes xyz} msg]
   lappend v $msg
 } {1 {wrong # args: should be "db total_changes "}}

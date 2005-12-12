@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.136 2005/12/10 21:19:05 drh Exp $
+** $Id: tclsqlite.c,v 1.137 2005/12/12 06:53:05 danielk1977 Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -623,9 +623,9 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     "copy",               "errorcode",         "eval",
     "exists",             "function",          "last_insert_rowid",
     "nullvalue",          "onecolumn",         "profile",
-    "progress",           "rekey",             "timeout",
-    "total_changes",      "trace",             "transaction",
-    "version",            0                    
+    "progress",           "rekey",             "soft_heap_limit",
+    "timeout",            "total_changes",     "trace",
+    "transaction",        "version",            0                    
   };
   enum DB_enum {
     DB_AUTHORIZER,        DB_BUSY,             DB_CACHE,
@@ -634,9 +634,9 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     DB_COPY,              DB_ERRORCODE,        DB_EVAL,
     DB_EXISTS,            DB_FUNCTION,         DB_LAST_INSERT_ROWID,
     DB_NULLVALUE,         DB_ONECOLUMN,        DB_PROFILE,
-    DB_PROGRESS,          DB_REKEY,            DB_TIMEOUT,
-    DB_TOTAL_CHANGES,     DB_TRACE,            DB_TRANSACTION,
-    DB_VERSION
+    DB_PROGRESS,          DB_REKEY,            DB_SOFT_HEAP_LIMIT,
+    DB_TIMEOUT,           DB_TOTAL_CHANGES,    DB_TRACE,
+    DB_TRANSACTION,       DB_VERSION
   };
   /* don't leave trailing commas on DB_enum, it confuses the AIX xlc compiler */
 
@@ -1705,6 +1705,26 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     sqlite3_busy_timeout(pDb->db, ms);
     break;
   }
+
+  /*
+  **     $db soft_heap_limit N
+  **
+  ** Set the soft-heap-limit for this thread. Note that the limit is 
+  ** per-thread, not per-database.
+  */
+  case DB_SOFT_HEAP_LIMIT: {
+    int n;
+    if( objc!=3 ){
+      Tcl_WrongNumArgs(interp, 2, objv, "BYTES");
+      return TCL_ERROR;
+    }
+    if( Tcl_GetIntFromObj(interp, objv[2], &n) ){
+      return TCL_ERROR;
+    }
+    sqlite3_soft_heap_limit(n);
+    Tcl_ResetResult(interp);
+    break;
+  }
   
   /*
   **     $db total_changes
@@ -1961,7 +1981,7 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
 #ifdef SQLITE_MEMDEBUG
     sqlite3_iMallocFail = mallocfail;
 #endif
-   }
+  }
 #endif  
   p->interp = interp;
   return TCL_OK;

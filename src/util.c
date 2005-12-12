@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.151 2005/12/09 14:39:04 danielk1977 Exp $
+** $Id: util.c,v 1.152 2005/12/12 06:53:05 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -119,7 +119,7 @@ int sqlite3OsAllocationSize(void *p){
   #define TESTALLOC_STACKSIZE 128
   #define TESTALLOC_STACKFRAMES ((TESTALLOC_STACKSIZE-8)/sizeof(void*))
 #else
-  #define backtrace(x, y) 0
+  #define backtrace(x, y)
   #define TESTALLOC_STACKSIZE 0
   #define TESTALLOC_STACKFRAMES 0
 #endif
@@ -137,7 +137,9 @@ int sqlite3OsAllocationSize(void *p){
 #define TESTALLOC_FILESIZE 64
 
 /*
-** Size reserved for storing the user string.
+** Size reserved for storing the user string. Each time a Malloc() or Realloc()
+** call succeeds, up to TESTALLOC_USERSIZE bytes of the string pointed to by
+** sqlite3_malloc_id are stored along with the other test system metadata.
 */
 #define TESTALLOC_USERSIZE 64
 const char *sqlite3_malloc_id = 0;
@@ -364,8 +366,15 @@ static void relinkAlloc(void *p)
 
 /*
 ** This function sets the result of the Tcl interpreter passed as an argument
-** to a list containing an entry for each currently outstanding call made to
-** sqliteMalloc and friends by the current thread.
+** to a list containing an entry for each currently outstanding call made to 
+** sqliteMalloc and friends by the current thread. Each list entry is itself a
+** list, consisting of the following (in order):
+**
+**     * The number of bytes allocated
+**     * The __FILE__ macro at the time of the sqliteMalloc() call.
+**     * The __LINE__ macro ...
+**     * The value of the sqlite3_malloc_id variable ...
+**     * The output of backtrace() (if available) ...
 **
 ** Todo: We could have a version of this function that outputs to stdout, 
 ** to debug memory leaks when Tcl is not available.
@@ -464,15 +473,45 @@ void OSMALLOC_FAILED(){
   sqlite3Tsd()->isFail = 0;
 }
 
+int OSSIZEOF(void *p){
+  if( p ){
+    return sqlite3OsAllocationSize(p) - TESTALLOC_OVERHEAD;
+  }
+  return 0;
+}
+
 #else
 #define OSMALLOC(x) sqlite3OsMalloc(x)
 #define OSREALLOC(x,y) sqlite3OsRealloc(x,y)
 #define OSFREE(x) sqlite3OsFree(x)
+#define OSSIZEOF(x) sqlite3OsAllocationSize(x)
 #define OSMALLOC_FAILED()
 #endif
 /*
 ** End code for memory allocation system test layer.
 **--------------------------------------------------------------------------*/
+
+/*
+** The handleSoftLimit() function is called before each call to 
+** sqlite3OsMalloc() or sqlite3OsRealloc(). The parameter 'n' is the number of
+** extra bytes about to be allocated (for Realloc() this means the size of the
+** new allocation less the size of the old allocation). If the extra allocation
+** means that the total memory allocated to SQLite in this thread would exceed
+** the limit set by sqlite3_soft_heap_limit(), then sqlite3_release_memory() is
+** called to try to avoid this. No indication of whether or not this is
+** successful is returned to the caller.
+**
+** If SQLITE_OMIT_SOFTHEAPLIMIT is defined, this function is a no-op.
+*/
+#ifndef SQLITE_OMIT_SOFTHEAPLIMIT
+static void handleSoftLimit(int n){
+  SqliteTsd *pTsd = sqlite3Tsd();
+  pTsd->nAlloc += n;
+  while( pTsd->nAlloc>pTsd->nSoftHeapLimit && sqlite3_release_memory(n) );
+}
+#else
+#define handleSoftLimit()
+#endif
 
 /*
 ** Allocate and return N bytes of uninitialised memory by calling
@@ -482,8 +521,8 @@ void OSMALLOC_FAILED(){
 void *sqlite3MallocRaw(int n){
   SqliteTsd *pTsd = sqlite3Tsd();
   void *p = 0;
-
   if( n>0 && !pTsd->mallocFailed ){
+    handleSoftLimit(n);
     while( !(p = OSMALLOC(n)) && sqlite3_release_memory(n) );
     if( !p ){
       sqlite3Tsd()->mallocFailed = 1;
@@ -508,6 +547,7 @@ void *sqlite3Realloc(void *p, int n){
     return sqlite3Malloc(n);
   }else{
     void *np = 0;
+    handleSoftLimit(n - OSSIZEOF(p));
     while( !(np = OSREALLOC(p, n)) && sqlite3_release_memory(n) );
     if( !np ){
       pTsd->mallocFailed = 1;
@@ -529,7 +569,7 @@ void sqlite3FreeX(void *p){
 
 /*
 ** A version of sqliteMalloc() that is always a function, not a macro.
-** Currently, this is used only to alloc only used drawback.
+** Currently, this is used only to alloc to allocate the parser engine.
 */
 void *sqlite3MallocX(int n){
   return sqliteMalloc(n);
@@ -1208,26 +1248,51 @@ void *sqlite3TextToPtr(const char *z){
 
 /*
 ** Return a pointer to the SqliteTsd associated with the calling thread.
+** TODO: Actually return thread-specific-data instead of this global pointer.
 */
-static SqliteTsd tsd = {
-  0                    /* mallocFailed flag */
-#ifndef NDEBUG
-  , 1                  /* mallocAllowed flag */
-#endif
-#ifdef SQLITE_MEMDEBUG
-  , 0
-  , 0
-  , 0
-  , 0
-#endif
-};
 SqliteTsd *sqlite3Tsd(){
+  static SqliteTsd tsd = {
+    0                    /* mallocFailed flag */
+  #ifndef SQLITE_OMIT_SOFTHEAPLIMIT
+    , 0xFFFFFFFF         /* nSoftHeapLimit */
+    , 0                  /* nAlloc */
+  #endif
+  #ifndef NDEBUG
+    , 1                  /* mallocAllowed flag */
+  #endif
+  #ifdef SQLITE_MEMDEBUG
+    , 0
+    , 0
+    , 0
+    , 0
+  #endif
+  };
   return &tsd;
 }
 
+/*
+** Clear the "mallocFailed" flag. This should be invoked before exiting any
+** entry points that may have called sqliteMalloc().
+*/
 void sqlite3MallocClearFailed(){
   sqlite3Tsd()->mallocFailed = 0;
 }
+
+#ifndef SQLITE_OMIT_SOFTHEAPLIMIT
+/*
+** Set the soft heap-size limit for the current thread.
+*/
+void sqlite3_soft_heap_limit(int n){
+  unsigned int N;
+  if( n<0 ){
+    /* No limit */
+    N = 0xFFFFFFFF;
+  }else{
+    N = n;
+  }
+  sqlite3Tsd()->nSoftHeapLimit = N;
+}
+#endif
 
 #ifndef NDEBUG
 /*

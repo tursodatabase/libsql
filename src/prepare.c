@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.7 2005/12/09 20:02:05 drh Exp $
+** $Id: prepare.c,v 1.8 2005/12/12 06:53:04 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -443,12 +443,6 @@ int sqlite3_prepare(
 
   if( sqlite3Tsd()->mallocFailed ){
     sParse.rc = SQLITE_NOMEM;
-#if 0
-    sqlite3RollbackInternalChanges(db);
-    sqlite3RollbackAll(db);
-    db->flags &= ~SQLITE_InTrans;
-    db->autoCommit = 1;
-#endif
   }
   if( sParse.rc==SQLITE_DONE ) sParse.rc = SQLITE_OK;
   if( sParse.rc!=SQLITE_OK && sParse.checkSchema && !schemaIsValid(db) ){
