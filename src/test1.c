@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.175 2005/12/12 06:53:05 danielk1977 Exp $
+** $Id: test1.c,v 1.176 2005/12/14 20:11:30 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -1232,13 +1232,33 @@ bad_args:
   return TCL_ERROR;
 }
 
+/*
+** When the collation needed callback is invoked, record the name of 
+** the requested collating function here.  The recorded name is linked
+** to a TCL variable and used to make sure that the requested collation
+** name is correct.
+*/
+static char zNeededCollation[200];
+static char *pzNeededCollation = zNeededCollation;
+
+
+/*
+** Called when a collating sequence is needed.  Registered using
+** sqlite3_collation_needed16().
+*/
 static void test_collate_needed_cb(
   void *pCtx, 
   sqlite3 *db,
   int eTextRep,
-  const void *notUsed
+  const void *pName
 ){
   int enc = db->enc;
+  int i;
+  char *z;
+  for(z = (char*)pName, i=0; *z || z[1]; z++){
+    if( *z ) zNeededCollation[i++] = *z;
+  }
+  zNeededCollation[i] = 0;
   sqlite3_create_collation(
       db, "test_collate", db->enc, (void *)enc, test_collate_func);
 }
@@ -1258,6 +1278,7 @@ static int test_collate_needed(
   if( objc!=2 ) goto bad_args;
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
   rc = sqlite3_collation_needed16(db, 0, test_collate_needed_cb);
+  zNeededCollation[0] = 0;
   if( sqlite3TestErrCode(interp, db, rc) ) return TCL_ERROR;
   return TCL_OK;
 
@@ -3222,6 +3243,10 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
       (char*)&sqlite3_current_time, TCL_LINK_INT);
   Tcl_LinkVar(interp, "sqlite_os_trace",
       (char*)&sqlite3_os_trace, TCL_LINK_INT);
+#ifndef SQLITE_OMIT_UTF16
+  Tcl_LinkVar(interp, "sqlite_last_needed_collation",
+      (char*)&pzNeededCollation, TCL_LINK_STRING|TCL_LINK_READ_ONLY);
+#endif
 #ifdef SQLITE_MEMDEBUG
   Tcl_LinkVar(interp, "sqlite_malloc_id",
       (char*)&sqlite3_malloc_id, TCL_LINK_STRING);

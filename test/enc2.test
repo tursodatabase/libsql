@@ -13,7 +13,7 @@
 # various suported unicode encodings (UTF-8, UTF-16, UTF-16le and
 # UTF-16be).
 #
-# $Id: enc2.test,v 1.23 2005/09/01 12:16:29 drh Exp $
+# $Id: enc2.test,v 1.24 2005/12/14 20:11:31 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -203,7 +203,7 @@ do_test enc2-5.0 {
 } {}
 do_test enc2-5.1 {
   add_test_collate $DB 1 1 1
-  set res [execsql {SELECT * FROM t5 ORDER BY 1 COLLATE test_collate}]
+  set res [execsql {SELECT * FROM t5 ORDER BY 1 COLLATE test_collate;}]
   lappend res $::test_collate_enc
 } {one two three four five UTF-8}
 do_test enc2-5.2 {
@@ -286,12 +286,27 @@ do_test enc2-5-12 {
 } {1 {no such collation sequence: test_collate}}
 do_test enc2-5.13 {
   add_test_collate_needed $DB 
-  set res [execsql {SELECT * FROM t5 ORDER BY 1 COLLATE test_collate}]
+  set res [execsql {SELECT * FROM t5 ORDER BY 1 COLLATE test_collate; }]
   lappend res $::test_collate_enc
 } {one two three four five UTF-16BE}
+do_test enc2-5.14 {
+  set ::sqlite_last_needed_collation
+} test_collate
 
 db close
 file delete -force test.db
+
+do_test enc2-5.15 {
+  set ::DB [sqlite3 db test.db]
+  add_test_collate_needed $::DB
+  set ::sqlite_last_needed_collation
+} {}
+do_test enc2-5.16 {
+  execsql {CREATE TABLE t1(a varchar collate test_collate);}
+} {}
+do_test enc2-5.17 {
+  set ::sqlite_last_needed_collation
+} {test_collate}
 
 # The following tests - enc2-6.* - test that SQLite selects the correct
 # user function when more than one is available.
