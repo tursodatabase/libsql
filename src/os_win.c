@@ -1062,7 +1062,11 @@ struct sqlite3OsVtbl sqlite3Os = {
   winCurrentTime,
   winEnterMutex,
   winLeaveMutex,
-  winThreadSpecificData
+  winThreadSpecificData,
+  genericMalloc,
+  genericRealloc,
+  genericFree,
+  genericAllocationSize
 };
 
 #endif /* OS_WIN */

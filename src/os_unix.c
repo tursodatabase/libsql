@@ -1594,9 +1594,11 @@ static void unixLeaveMutex(){
 ** such as sqliteMalloc() we use OsFree() and OsMalloc() directly to
 ** allocate the thread specific data.
 */
+#ifdef SQLITE_UNIX_THREADS
 static void deleteTsd(void *pTsd){
-  sqlite3OsFree(pTsd);
+  sqlite3Os.xFree(pTsd);
 }
+#endif
 
 /* 
 ** The first time this function is called from a specific thread, nByte 
@@ -1627,7 +1629,7 @@ static void *unixThreadSpecificData(int nByte){
 
   pTsd = (SqliteTsd *)pthread_getspecific(key);
   if( !pTsd ){
-    pTsd = sqlite3OsMalloc(sizeof(SqliteTsd));
+    pTsd = sqlite3Os.xMalloc(sizeof(SqliteTsd));
     if( pTsd ){
       memset(pTsd, 0, sizeof(SqliteTsd));
       pthread_setspecific(key, pTsd);
@@ -1636,7 +1638,7 @@ static void *unixThreadSpecificData(int nByte){
   return pTsd;
 #else
   static char tsd[sizeof(SqliteTsd)];
-  static isInit = 0;
+  static int isInit = 0;
   assert( nByte==sizeof(SqliteTsd) );
   if( !isInit ){
     memset(tsd, 0, sizeof(SqliteTsd));
@@ -1704,7 +1706,11 @@ struct sqlite3OsVtbl sqlite3Os = {
   unixCurrentTime,
   unixEnterMutex,
   unixLeaveMutex,
-  unixThreadSpecificData
+  unixThreadSpecificData,
+  genericMalloc,
+  genericRealloc,
+  genericFree,
+  genericAllocationSize
 };
 
 

@@ -1,5 +1,5 @@
-C Add\sthe\ssqlite3_os_routine_set()/get()\sfunctions.\s(CVS\s2818)
-D 2005-12-15T10:11:31
+C Move\smalloc(),\sfree(),\srealloc()\sand\sallocationSize()\sinto\sthe\sOs\svtbl.\s(CVS\s2819)
+D 2005-12-15T10:50:54
 F Makefile.in e3c6b3a38d734d41574c04f2fc90d18de2b87102
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -51,13 +51,13 @@ F src/legacy.c 59757d857ab95fcbb0ac27692d3201e35f093dd7
 F src/main.c a12aa72335036bb22249418e222124abfc581b85
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/os.c 7b4a002d9c9421580276db55d2329636a604e8ef
-F src/os.h df6babd4fd74bb659470c31fa5a27de31b1c474e
-F src/os_common.h d74a11728ad2444b6b695b94c28c06881f049e49
+F src/os.h e941992043b127fdb1bd114f0b4319ae1c4562a7
+F src/os_common.h a4ad0448f112bb124e5df9eb41c377e770aee7b2
 F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
-F src/os_unix.c df6e4972099aa5263183009fb947083633236dd3
+F src/os_unix.c 6394d2fa3a8bfbceb227579b44b4b343b5b54a8f
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
-F src/os_win.c 2da77ddc03de8c51688cca648ced766b5dad8a6a
+F src/os_win.c 9feb97f49b93d451f8ef7c5dd388e05a44647dc6
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c 49f63a54b57164a70df0b1539141003fd27856c6
 F src/pager.h e7b41ce8e7b5f629d456708b7ad9a8c8ede37140
@@ -82,7 +82,7 @@ F src/tokenize.c 7a3a3d3cc734f684a77c4dfd09eb46fcee25394c
 F src/trigger.c 2925ba96d964d9b717e74006bf7e64b8a6b70d97
 F src/update.c ec8e540617b116725b5a55c8d6b4db8bc67fdd7d
 F src/utf.c d2360f55ecd666f3e472738191f8dae717b95e5e
-F src/util.c 06ab728430ae55191076cdf4075be36f621a7183
+F src/util.c 8bb5e0553692d36c769d6cd033eb7f68a7586648
 F src/vacuum.c fbfdd3967fd34e2f260fafed88dcbf3c10856b94
 F src/vdbe.c d09c185f4badac6c79f2a919cbf661e7b5618293
 F src/vdbe.h 8729a4ee16ff9aeab2af9667df3cf300ff978e13
@@ -327,7 +327,7 @@ F www/tclsqlite.tcl ddcf912ea48695603c8ed7efb29f0812ef8d1b49
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P ad292e27336b8c5afc0acdf111944a456bd23c32
-R 079783b8421fc6a8eada9a4aa8fe00c7
+P c1ed79f594fb85009c2e9e5e281cbe66a9d2fa17
+R e31df3de6303938f8025bb0d1c87c829
 U danielk1977
-Z 21e315959d3bb7c348f1a6f926708fc0
+Z d08eb08fd8a87ac6ccdc5f99bd5ce249

@@ -220,9 +220,15 @@ extern struct sqlite3OsVtbl {
   int  (*xRandomSeed)(char*);
   int  (*xSleep)(int ms);
   int  (*xCurrentTime)(double*);
+
   void (*xEnterMutex)(void);
   void (*xLeaveMutex)(void);
   void *(*xThreadSpecificData)(int);
+
+  void *(*xMalloc)(int);
+  void *(*xRealloc)(void *, int);
+  void (*xFree)(void *);
+  int (*xAllocationSize)(void *);
 } sqlite3Os;
 
 

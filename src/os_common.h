@@ -122,3 +122,40 @@ int sqlite3_open_file_count = 0;
 #else
 #define OpenCounter(X)
 #endif
+
+/*
+** genericMalloc
+** genericRealloc
+** genericOsFree
+** genericAllocationSize
+**
+** Implementation of the os level dynamic memory allocation interface in terms
+** of the standard malloc(), realloc() and free() found in many operating
+** systems. No rocket science here.
+*/
+static void *genericMalloc(int n){
+  char *p = (char *)malloc(n+8);
+  assert(n>0);
+  assert(sizeof(int)<=8);
+  if( p ){
+    *(int *)p = n;
+  }
+  return (void *)(p + 8);
+}
+static void *genericRealloc(void *p, int n){
+  char *p2 = ((char *)p - 8);
+  assert(n>0);
+  p2 = realloc(p2, n+8);
+  if( p2 ){
+    *(int *)p2 = n;
+  }
+  return (void *)((char *)p2 + 8);
+}
+static void genericFree(void *p){
+  assert(p);
+  free((void *)((char *)p - 8));
+}
+static int genericAllocationSize(void *p){
+  return *(int *)((char *)p - 8);
+}
+

@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.153 2005/12/15 10:11:32 danielk1977 Exp $
+** $Id: util.c,v 1.154 2005/12/15 10:50:54 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -40,14 +40,14 @@
 ** level (not in this file). The Os level interface is never accessed directly
 ** by code outside of this file.
 **
-**     sqlite3OsMalloc()
-**     sqlite3OsRealloc()
-**     sqlite3OsFree()
-**     sqlite3OsAllocationSize()
+**     sqlite3Os.xMalloc()
+**     sqlite3Os.xRealloc()
+**     sqlite3Os.xFree()
+**     sqlite3Os.xAllocationSize()
 **
 ** Functions sqlite3MallocRaw() and sqlite3Realloc() may invoke 
-** sqlite3_release_memory() if a call to sqlite3OsMalloc() or
-** sqlite3OsRealloc() fails. Function sqlite3Malloc() usually invokes
+** sqlite3_release_memory() if a call to sqlite3Os.xMalloc() or
+** sqlite3Os.xRealloc() fails. Function sqlite3Malloc() usually invokes
 ** sqlite3MallocRaw().
 **
 ** MALLOC TEST WRAPPER ARCHITECTURE
@@ -61,42 +61,6 @@
 **     * Ability to cause a specific Malloc() or Realloc() to fail.
 **     * Audit outstanding memory allocations (i.e check for leaks).
 */
-
-/*
-** sqlite3OsMalloc
-** sqlite3OsRealloc
-** sqlite3OsOsFree
-** sqlite3OsAllocationSize
-**
-** Implementation of the os level dynamic memory allocation interface in terms
-** of the standard malloc(), realloc() and free() found in many operating
-** systems. No rocket science here.
-*/
-void *sqlite3OsMalloc(int n){
-  char *p = (char *)malloc(n+8);
-  assert(n>0);
-  assert(sizeof(int)<=8);
-  if( p ){
-    *(int *)p = n;
-  }
-  return (void *)(p + 8);
-}
-void *sqlite3OsRealloc(void *p, int n){
-  char *p2 = ((char *)p - 8);
-  assert(n>0);
-  p2 = realloc(p2, n+8);
-  if( p2 ){
-    *(int *)p2 = n;
-  }
-  return (void *)((char *)p2 + 8);
-}
-void sqlite3OsFree(void *p){
-  assert(p);
-  free((void *)((char *)p - 8));
-}
-int sqlite3OsAllocationSize(void *p){
-  return *(int *)((char *)p - 8);
-}
 
 /*
 ** TODO!
@@ -167,7 +131,7 @@ const char *sqlite3_malloc_id = 0;
   TESTALLOC_OFFSET_GUARD1(p) + sizeof(u32) * TESTALLOC_NGUARD \
 )
 #define TESTALLOC_OFFSET_GUARD2(p) ( \
-  TESTALLOC_OFFSET_DATA(p) + sqlite3OsAllocationSize(p) - TESTALLOC_OVERHEAD \
+  TESTALLOC_OFFSET_DATA(p) + sqlite3Os.xAllocationSize(p) - TESTALLOC_OVERHEAD \
 )
 #define TESTALLOC_OFFSET_LINENUMBER(p) ( \
   TESTALLOC_OFFSET_GUARD2(p) + sizeof(u32) * TESTALLOC_NGUARD \
@@ -226,7 +190,7 @@ static int failMalloc(){
 }
 
 /*
-** The argument is a pointer returned by sqlite3OsMalloc() or Realloc().
+** The argument is a pointer returned by sqlite3Os.xMalloc() or xRealloc().
 ** assert() that the first and last (TESTALLOC_NGUARD*4) bytes are set to the
 ** values set by the applyGuards() function.
 */
@@ -252,7 +216,7 @@ static void checkGuards(u32 *p)
 }
 
 /*
-** The argument is a pointer returned by sqlite3OsMalloc() or Realloc(). The
+** The argument is a pointer returned by sqlite3Os.xMalloc() or Realloc(). The
 ** first and last (TESTALLOC_NGUARD*4) bytes are set to known values for use as 
 ** guard-posts.
 */
@@ -404,7 +368,7 @@ int sqlite3OutstandingMallocs(Tcl_Interp *interp){
     Tcl_Obj *pStack = Tcl_NewObj();
     char *z;
     u32 iLine;
-    int nBytes = sqlite3OsAllocationSize(p) - TESTALLOC_OVERHEAD;
+    int nBytes = sqlite3Os.xAllocationSize(p) - TESTALLOC_OVERHEAD;
     char *zAlloc = (char *)p;
     int i;
 
@@ -439,12 +403,12 @@ int sqlite3OutstandingMallocs(Tcl_Interp *interp){
 #endif
 
 /*
-** This is the test layer's wrapper around sqlite3OsMalloc().
+** This is the test layer's wrapper around sqlite3Os.xMalloc().
 */
 static void * OSMALLOC(int n){
   if( !failMalloc() ){
     u32 *p;
-    p = (u32 *)sqlite3OsMalloc(n + TESTALLOC_OVERHEAD);
+    p = (u32 *)sqlite3Os.xMalloc(n + TESTALLOC_OVERHEAD);
     assert(p);
     sqlite3_nMalloc++;
     applyGuards(p);
@@ -455,25 +419,25 @@ static void * OSMALLOC(int n){
 }
 
 /*
-** This is the test layer's wrapper around sqlite3OsFree(). The argument is a
+** This is the test layer's wrapper around sqlite3Os.xFree(). The argument is a
 ** pointer to the space allocated for the application to use.
 */
 void OSFREE(void *pFree){
   u32 *p = (u32 *)getOsPointer(pFree);   /* p points to Os level allocation */
   checkGuards(p);
   unlinkAlloc(p);
-  sqlite3OsFree(p);
+  sqlite3Os.xFree(p);
   sqlite3_nFree++;
 }
 
 /*
-** This is the test layer's wrapper around sqlite3OsRealloc().
+** This is the test layer's wrapper around sqlite3Os.xRealloc().
 */
 void * OSREALLOC(void *pRealloc, int n){
   if( !failMalloc() ){
     u32 *p = (u32 *)getOsPointer(pRealloc);
     checkGuards(p);
-    p = sqlite3OsRealloc(p, n + TESTALLOC_OVERHEAD);
+    p = sqlite3Os.xRealloc(p, n + TESTALLOC_OVERHEAD);
     applyGuards(p);
     relinkAlloc(p);
     return (void *)(&p[TESTALLOC_NGUARD + 2*sizeof(void *)/sizeof(u32)]);
@@ -487,16 +451,16 @@ void OSMALLOC_FAILED(){
 
 int OSSIZEOF(void *p){
   if( p ){
-    return sqlite3OsAllocationSize(p) - TESTALLOC_OVERHEAD;
+    return sqlite3Os.xAllocationSize(p) - TESTALLOC_OVERHEAD;
   }
   return 0;
 }
 
 #else
-#define OSMALLOC(x) sqlite3OsMalloc(x)
-#define OSREALLOC(x,y) sqlite3OsRealloc(x,y)
-#define OSFREE(x) sqlite3OsFree(x)
-#define OSSIZEOF(x) sqlite3OsAllocationSize(x)
+#define OSMALLOC(x) sqlite3Os.xMalloc(x)
+#define OSREALLOC(x,y) sqlite3Os.xRealloc(x,y)
+#define OSFREE(x) sqlite3Os.xFree(x)
+#define OSSIZEOF(x) sqlite3Os.xAllocationSize(x)
 #define OSMALLOC_FAILED()
 #endif
 /*
@@ -505,7 +469,7 @@ int OSSIZEOF(void *p){
 
 /*
 ** The handleSoftLimit() function is called before each call to 
-** sqlite3OsMalloc() or sqlite3OsRealloc(). The parameter 'n' is the number of
+** sqlite3Os.xMalloc() or xRealloc(). The parameter 'n' is the number of
 ** extra bytes about to be allocated (for Realloc() this means the size of the
 ** new allocation less the size of the old allocation). If the extra allocation
 ** means that the total memory allocated to SQLite in this thread would exceed
@@ -527,7 +491,7 @@ static void handleSoftLimit(int n){
 
 /*
 ** Allocate and return N bytes of uninitialised memory by calling
-** sqlite3OsMalloc(). If the Malloc() call fails, attempt to free memory 
+** sqlite3Os.xMalloc(). If the Malloc() call fails, attempt to free memory 
 ** by calling sqlite3_release_memory().
 */
 void *sqlite3MallocRaw(int n){
@@ -545,7 +509,7 @@ void *sqlite3MallocRaw(int n){
 }
 
 /*
-** Resize the allocation at p to n bytes by calling sqlite3OsRealloc(). The
+** Resize the allocation at p to n bytes by calling sqlite3Os.xRealloc(). The
 ** pointer to the new allocation is returned.  If the Realloc() call fails,
 ** attempt to free memory by calling sqlite3_release_memory().
 */
