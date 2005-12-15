@@ -1,5 +1,5 @@
-C Add\sthe\ssqlite3_update_hook()\sAPI.\s(CVS\s2820)
-D 2005-12-15T15:22:09
+C Fix\sthe\sutf8\sto\sutf16\sconversion\sroutine\sfor\sshort\sstrings.\s\sBug\nintroduced\sby\scheck-in\s(2817).\s(CVS\s2821)
+D 2005-12-15T22:34:01
 F Makefile.in e3c6b3a38d734d41574c04f2fc90d18de2b87102
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -81,7 +81,7 @@ F src/test6.c cb811391ec0b7c75f29e545d4820a9cf19f3637e
 F src/tokenize.c 7a3a3d3cc734f684a77c4dfd09eb46fcee25394c
 F src/trigger.c 2925ba96d964d9b717e74006bf7e64b8a6b70d97
 F src/update.c ec8e540617b116725b5a55c8d6b4db8bc67fdd7d
-F src/utf.c d2360f55ecd666f3e472738191f8dae717b95e5e
+F src/utf.c b7bffac4260177ae7f83c01d025fe0f5ed70ce71
 F src/util.c 8bb5e0553692d36c769d6cd033eb7f68a7586648
 F src/vacuum.c fbfdd3967fd34e2f260fafed88dcbf3c10856b94
 F src/vdbe.c a9acffc91d3e06af24dc1dcf5bf7d5e77460b1c5
@@ -327,7 +327,7 @@ F www/tclsqlite.tcl ddcf912ea48695603c8ed7efb29f0812ef8d1b49
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 81a41f66370ea7f6810dfb323ba5cea60f240edd
-R eb3fb006708e7ea223867bd463f746c4
-U danielk1977
-Z d4836e8df9c05467b16e6242a013ac68
+P 36229018817eebfbfca7a66d2285e4faf7b39845
+R db348b533dcaa66ab84d8527c31842a7
+U drh
+Z 04cd55b34392e021d53876472bf23ee4
