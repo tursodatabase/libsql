@@ -222,7 +222,29 @@ extern struct sqlite3OsVtbl {
   int  (*xCurrentTime)(double*);
   void (*xEnterMutex)(void);
   void (*xLeaveMutex)(void);
+  void *(*xThreadSpecificData)(int);
 } sqlite3Os;
+
+
+/*
+** The semi-published API for setting and getting methods from the 
+** global sqlite3OsVtbl structure. Neither sqlite3_os_routine_XXX() function
+** is intriniscally thread-safe.
+**
+** External get/set access is only provided to the routines identified 
+** by the hash-defined SQLITE_OS_ROUTINE symbols.
+*/
+#define SQLITE_OS_ROUTINE_OPENREADWRITE   1
+#define SQLITE_OS_ROUTINE_OPENREADONLY    2
+#define SQLITE_OS_ROUTINE_OPENEXCLUSIVE   3
+#define SQLITE_OS_ROUTINE_DELETE          4
+#define SQLITE_OS_ROUTINE_FILEEXISTS      5
+#define SQLITE_OS_ROUTINE_SYNCDIRECTORY   6
+void *sqlite3_os_routine_get(int);
+void *sqlite3_os_routine_set(int, void *);
+
+void sqlite3_os_enter_mutex();
+void sqlite3_os_leave_mutex();
 
 /*
 ** Prototypes for routines found in os.c

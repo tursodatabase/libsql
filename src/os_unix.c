@@ -1587,6 +1587,66 @@ static void unixLeaveMutex(){
 }
 
 /*
+** This function is called automatically when a thread exists to delete
+** the threads SqliteTsd structure. 
+**
+** Because the SqliteTsd structure is required by higher level routines
+** such as sqliteMalloc() we use OsFree() and OsMalloc() directly to
+** allocate the thread specific data.
+*/
+static void deleteTsd(void *pTsd){
+  sqlite3OsFree(pTsd);
+}
+
+/* 
+** The first time this function is called from a specific thread, nByte 
+** bytes of data area are allocated and zeroed. A pointer to the new 
+** allocation is returned to the caller. 
+**
+** Each subsequent call to this function from the thread returns the same
+** pointer. The argument is ignored in this case.
+*/
+static void *unixThreadSpecificData(int nByte){
+#ifdef SQLITE_UNIX_THREADS
+  static pthread_key_t key;
+  static int keyInit = 0;
+  void *pTsd;
+
+  if( !keyInit ){
+    sqlite3Os.xEnterMutex();
+    if( !keyInit ){
+      int rc;
+      rc = pthread_key_create(&key, deleteTsd);
+      if( rc ){
+        return 0;
+      }
+      keyInit = 1;
+    }
+    sqlite3Os.xLeaveMutex();
+  }
+
+  pTsd = (SqliteTsd *)pthread_getspecific(key);
+  if( !pTsd ){
+    pTsd = sqlite3OsMalloc(sizeof(SqliteTsd));
+    if( pTsd ){
+      memset(pTsd, 0, sizeof(SqliteTsd));
+      pthread_setspecific(key, pTsd);
+    }
+  }
+  return pTsd;
+#else
+  static char tsd[sizeof(SqliteTsd)];
+  static isInit = 0;
+  assert( nByte==sizeof(SqliteTsd) );
+  if( !isInit ){
+    memset(tsd, 0, sizeof(SqliteTsd));
+    isInit = 1;
+  }
+  return (void *)tsd;
+#endif
+}
+
+/*
 ** The following variable, if set to a non-zero value, becomes the result
 ** returned from sqlite3Os.xCurrentTime().  This is used for testing.
 */
@@ -1644,6 +1704,7 @@ struct sqlite3OsVtbl sqlite3Os = {
   unixCurrentTime,
   unixEnterMutex,
   unixLeaveMutex,
+  unixThreadSpecificData
 };
 
 

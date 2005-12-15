@@ -14,9 +14,10 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.152 2005/12/12 06:53:05 danielk1977 Exp $
+** $Id: util.c,v 1.153 2005/12/15 10:11:32 danielk1977 Exp $
 */
 #include "sqliteInt.h"
+#include "os.h"
 #include <stdarg.h>
 #include <ctype.h>
 
@@ -107,6 +108,10 @@ int sqlite3OsAllocationSize(void *p){
 ** Begin code for memory allocation system test layer.
 **
 ** Memory debugging is turned on by defining the SQLITE_MEMDEBUG macro.
+**
+** SQLITE_MEMDEBUG==1    -> Fence-posting only (thread safe) 
+** SQLITE_MEMDEBUG==2    -> Fence-posting + linked list of allocations (not ts)
+** SQLITE_MEMDEBUG==3    -> Above + backtraces (not thread safe, req. glibc)
 */
 
 /* Figure out whether or not to store backtrace() information for each malloc.
@@ -114,7 +119,7 @@ int sqlite3OsAllocationSize(void *p){
 ** greater and glibc is in use. If we don't want to use backtrace(), then just
 ** define it as an empty macro and set the amount of space reserved to 0.
 */
-#if defined(__GLIBC__) && SQLITE_MEMDEBUG>1
+#if defined(__GLIBC__) && SQLITE_MEMDEBUG>2
   extern int backtrace(void **, int);
   #define TESTALLOC_STACKSIZE 128
   #define TESTALLOC_STACKFRAMES ((TESTALLOC_STACKSIZE-8)/sizeof(void*))
@@ -302,6 +307,8 @@ static void *getOsPointer(void *p)
   return (void *)(&z[-1 * TESTALLOC_OFFSET_DATA(p)]);
 }
 
+
+#if SQLITE_MEMDEBUG>1
 /*
 ** The argument points to an Os level allocation. Link it into the threads list
 ** of allocations.
@@ -363,6 +370,11 @@ static void relinkAlloc(void *p)
     ((void **)(pp[1]))[0] = p;
   }
 }
+#else
+#define linkAlloc(x)
+#define relinkAlloc(x)
+#define unlinkAlloc(x)
+#endif
 
 /*
 ** This function sets the result of the Tcl interpreter passed as an argument
@@ -1248,26 +1260,17 @@ void *sqlite3TextToPtr(const char *z){
 
 /*
 ** Return a pointer to the SqliteTsd associated with the calling thread.
-** TODO: Actually return thread-specific-data instead of this global pointer.
 */
 SqliteTsd *sqlite3Tsd(){
-  static SqliteTsd tsd = {
-    0                    /* mallocFailed flag */
-  #ifndef SQLITE_OMIT_SOFTHEAPLIMIT
-    , 0xFFFFFFFF         /* nSoftHeapLimit */
-    , 0                  /* nAlloc */
-  #endif
-  #ifndef NDEBUG
-    , 1                  /* mallocAllowed flag */
-  #endif
-  #ifdef SQLITE_MEMDEBUG
-    , 0
-    , 0
-    , 0
-    , 0
-  #endif
-  };
-  return &tsd;
+  SqliteTsd *pTsd = sqlite3Os.xThreadSpecificData(sizeof(SqliteTsd));
+  if( pTsd && !pTsd->isInit ){
+    pTsd->nSoftHeapLimit = 0xFFFFFFFF;
+#ifndef NDEBUG
+    pTsd->mallocAllowed = 1;
+#endif
+    pTsd->isInit = 1;
+  }
+  return pTsd;
 }
 
 /*

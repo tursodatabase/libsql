@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the SELECT statement.
 #
-# $Id: select1.test,v 1.44 2005/12/09 14:25:12 danielk1977 Exp $
+# $Id: select1.test,v 1.45 2005/12/15 10:11:32 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -22,6 +22,7 @@ do_test select1-1.1 {
   set v [catch {execsql {SELECT * FROM test1}} msg]
   lappend v $msg
 } {1 {no such table: test1}}
+
 
 execsql {CREATE TABLE test1(f1 int, f2 int)}
 
@@ -798,5 +799,6 @@ ifcapable {compound && subquery} {
     }
   } {x 1 x 3}
 } ;# ifcapable compound
+
 
 finish_test

@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: all.test,v 1.30 2005/01/17 07:53:44 danielk1977 Exp $
+# $Id: all.test,v 1.31 2005/12/15 10:11:32 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -49,6 +49,7 @@ set LeakList {}
 
 set EXCLUDE {
   all.test
+  async.test
   crash.test
   autovacuum_crash.test
   quick.test

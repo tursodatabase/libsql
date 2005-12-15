@@ -1020,6 +1020,21 @@ static int winCurrentTime(double *prNow){
   return 0;
 }
 
+
+/*
+** Todo: This is a place-holder only
+*/
+static void *winThreadSpecificData(int nByte){
+  static char tsd[sizeof(SqliteTsd)];
+  static isInit = 0;
+  assert( nByte==sizeof(SqliteTsd) );
+  if( !isInit ){
+    memset(tsd, 0, sizeof(SqliteTsd));
+    isInit = 1;
+  }
+  return (void *)tsd;
+}
+
 /* Macro used to comment out routines that do not exists when there is
 ** no disk I/O
 */
@@ -1047,6 +1062,7 @@ struct sqlite3OsVtbl sqlite3Os = {
   winCurrentTime,
   winEnterMutex,
   winLeaveMutex,
+  winThreadSpecificData
 };
 
 #endif /* OS_WIN */
