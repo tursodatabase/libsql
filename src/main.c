@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.308 2005/12/12 06:53:04 danielk1977 Exp $
+** $Id: main.c,v 1.309 2005/12/15 03:04:10 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -33,19 +33,6 @@ const int sqlite3one = 1;
 ** by openDatabase() and removed by sqlite3_close().
 */
 static sqlite3 *pDbList = 0;
-#endif
-
-#ifndef SQLITE_OMIT_UTF16
-/* 
-** Return the transient sqlite3_value object used for encoding conversions
-** during SQL compilation.
-*/
-sqlite3_value *sqlite3GetTransientValue(sqlite3 *db){
-  if( !db->pValue ){
-    db->pValue = sqlite3ValueNew();
-  }
-  return db->pValue;
-}
 #endif
 
 /*
@@ -182,9 +169,6 @@ int sqlite3_close(sqlite3 *db){
 
   sqlite3HashClear(&db->aFunc);
   sqlite3Error(db, SQLITE_OK, 0); /* Deallocates any cached error strings. */
-  if( db->pValue ){
-    sqlite3ValueFree(db->pValue);
-  }
   if( db->pErr ){
     sqlite3ValueFree(db->pErr);
   }
@@ -496,21 +480,18 @@ int sqlite3_create_function16(
   void (*xFinal)(sqlite3_context*)
 ){
   int rc;
-  char const *zFunc8;
-  sqlite3_value *pTmp;
+  char *zFunc8;
 
   if( sqlite3SafetyCheck(db) ){
     return SQLITE_MISUSE;
   }
-  pTmp = sqlite3GetTransientValue(db);
-  sqlite3ValueSetStr(pTmp, -1, zFunctionName, SQLITE_UTF16NATIVE,SQLITE_STATIC);
-  zFunc8 = sqlite3ValueText(pTmp, SQLITE_UTF8);
-
+  zFunc8 = sqlite3utf16to8(zFunctionName, -1);
   if( !zFunc8 ){
     return SQLITE_NOMEM;
   }
   rc = sqlite3_create_function(db, zFunc8, nArg, eTextRep, 
       pUserData, xFunc, xStep, xFinal);
+  sqliteFree(zFunc8);
   return rc;
 }
 #endif
@@ -958,15 +939,15 @@ int sqlite3_create_collation16(
   void* pCtx,
   int(*xCompare)(void*,int,const void*,int,const void*)
 ){
-  char const *zName8;
-  sqlite3_value *pTmp;
+  char *zName8;
+  int rc;
   if( sqlite3SafetyCheck(db) ){
     return SQLITE_MISUSE;
   }
-  pTmp = sqlite3GetTransientValue(db);
-  sqlite3ValueSetStr(pTmp, -1, zName, SQLITE_UTF16NATIVE, SQLITE_STATIC);
-  zName8 = sqlite3ValueText(pTmp, SQLITE_UTF8);
-  return sqlite3_create_collation(db, zName8, enc, pCtx, xCompare);
+  zName8 = sqlite3utf16to8(zName, -1);
+  rc = sqlite3_create_collation(db, zName8, enc, pCtx, xCompare);
+  sqliteFree(zName8);
+  return rc;
 }
 #endif /* SQLITE_OMIT_UTF16 */
 

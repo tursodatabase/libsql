@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.8 2005/12/12 06:53:04 danielk1977 Exp $
+** $Id: prepare.c,v 1.9 2005/12/15 03:04:11 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -515,17 +515,14 @@ int sqlite3_prepare16(
   ** encoded string to UTF-8, then invoking sqlite3_prepare(). The
   ** tricky bit is figuring out the pointer to return in *pzTail.
   */
-  char const *zSql8 = 0;
-  char const *zTail8 = 0;
+  char *zSql8 = 0;
+  char *zTail8 = 0;
   int rc;
-  sqlite3_value *pTmp;
 
   if( sqlite3SafetyCheck(db) ){
     return SQLITE_MISUSE;
   }
-  pTmp = sqlite3GetTransientValue(db);
-  sqlite3ValueSetStr(pTmp, -1, zSql, SQLITE_UTF16NATIVE, SQLITE_STATIC);
-  zSql8 = sqlite3ValueText(pTmp, SQLITE_UTF8);
+  zSql8 = sqlite3utf16to8(zSql, nBytes);
   if( !zSql8 ){
     sqlite3Error(db, SQLITE_NOMEM, 0);
     return SQLITE_NOMEM;
@@ -541,7 +538,7 @@ int sqlite3_prepare16(
     int chars_parsed = sqlite3utf8CharLen(zSql8, zTail8-zSql8);
     *pzTail = (u8 *)zSql + sqlite3utf16ByteLen(zSql, chars_parsed);
   }
- 
+  sqliteFree(zSql8); 
   return rc;
 }
 #endif /* SQLITE_OMIT_UTF16 */

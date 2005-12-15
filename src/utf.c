@@ -12,7 +12,7 @@
 ** This file contains routines used to translate between UTF-8, 
 ** UTF-16, UTF-16BE, and UTF-16LE.
 **
-** $Id: utf.c,v 1.33 2005/12/09 20:02:06 drh Exp $
+** $Id: utf.c,v 1.34 2005/12/15 03:04:11 drh Exp $
 **
 ** Notes on UTF-8:
 **
@@ -450,6 +450,21 @@ int sqlite3utf8CharLen(const char *z, int nByte){
 }
 
 #ifndef SQLITE_OMIT_UTF16
+/*
+** Convert a UTF-16 string in the native encoding into a UTF-8 string.
+** Memory to hold the UTF-8 string is obtained from malloc and must be
+** freed by the calling function.
+**
+** NULL is returned if there is an allocation error.
+*/
+char *sqlite3utf16to8(const void *z, int nByte){
+  Mem m;
+  memset(&m, 0, sizeof(m));
+  sqlite3VdbeMemSetStr(&m, z, nByte, SQLITE_UTF16NATIVE, SQLITE_STATIC);
+  sqlite3VdbeChangeEncoding(&m, SQLITE_UTF8);
+  return m.z;
+}
+
 /*
 ** pZ is a UTF-16 encoded unicode string. If nChar is less than zero,
 ** return the number of bytes up to (but not including), the first pair
