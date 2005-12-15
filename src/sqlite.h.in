@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.145 2005/12/15 10:11:32 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.146 2005/12/15 15:22:09 danielk1977 Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1291,9 +1291,30 @@ sqlite3 *sqlite3_db_handle(sqlite3_stmt*);
 */
 void sqlite3_soft_heap_limit(int);
 
-
-int sqlite3_set_io_routine(int, void *);
-void *sqlite3_get_io_routine(int);
+/*
+** Register a callback function with the database connection identified by the 
+** first argument to be invoked whenever a row is updated, inserted or deleted.
+** Any callback set by a previous call to this function for the same 
+** database connection is overridden.
+**
+** The second argument is a pointer to the function to invoke when a 
+** row is updated, inserted or deleted. The first argument to the callback is
+** a copy of the third argument to sqlite3_update_hook. The second callback 
+** argument is one of SQLITE_INSERT, SQLITE_DELETE or SQLITE_UPDATE, depending
+** on the operation that caused the callback to be invoked. The third and 
+** fourth arguments to the callback contain pointers to the database and 
+** table name containing the affected row. The final callback parameter is 
+** the rowid of the row. In the case of an update, this is the rowid after 
+** the update takes place.
+**
+** The update hook is not invoked when internal system tables are
+** modified (i.e. sqlite_master and sqlite_sequence).
+*/
+void sqlite3_update_hook(
+  sqlite3*, 
+  void(*)(void *,int ,char const *,char const *,sqlite_int64),
+  void*
+);
 
 /*
 ** Undo the hack that converts floating point types to integer for

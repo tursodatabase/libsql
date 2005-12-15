@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.309 2005/12/15 03:04:10 drh Exp $
+** $Id: main.c,v 1.310 2005/12/15 15:22:09 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -546,6 +546,19 @@ void *sqlite3_commit_hook(
   db->xCommitCallback = xCallback;
   db->pCommitArg = pArg;
   return pOld;
+}
+
+/*
+** Register a callback to be invoked each time a row is updated,
+** inserted or deleted using this database connection.
+*/
+void sqlite3_update_hook(
+  sqlite3 *db,              /* Attach the hook to this database */
+  void (*xCallback)(void*,int,char const *,char const *,sqlite_int64),
+  void *pArg                /* Argument to the function */
+){
+  db->xUpdateCallback = xCallback;
+  db->pUpdateArg = pArg;
 }
 
 

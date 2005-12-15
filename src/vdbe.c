@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.504 2005/12/09 20:02:06 drh Exp $
+** $Id: vdbe.c,v 1.505 2005/12/15 15:22:10 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -160,13 +160,16 @@ static void popStack(Mem **ppTos, int N){
 ** Allocate cursor number iCur.  Return a pointer to it.  Return NULL
 ** if we run out of memory.
 */
-static Cursor *allocateCursor(Vdbe *p, int iCur){
+static Cursor *allocateCursor(Vdbe *p, int iCur, int iDb){
   Cursor *pCx;
   assert( iCur<p->nCursor );
   if( p->apCsr[iCur] ){
     sqlite3VdbeFreeCursor(p->apCsr[iCur]);
   }
   p->apCsr[iCur] = pCx = sqliteMalloc( sizeof(Cursor) );
+  if( pCx ){
+    pCx->iDb = iDb;
+  }
   return pCx;
 }
 
@@ -2525,7 +2528,7 @@ case OP_OpenWrite: {       /* no-push */
     assert( p2>=2 );
   }
   assert( i>=0 );
-  pCur = allocateCursor(p, i);
+  pCur = allocateCursor(p, i, iDb);
   if( pCur==0 ) goto no_mem;
   pCur->nullRow = 1;
   if( pX==0 ) break;
@@ -2603,7 +2606,7 @@ case OP_OpenVirtual: {       /* no-push */
   int i = pOp->p1;
   Cursor *pCx;
   assert( i>=0 );
-  pCx = allocateCursor(p, i);
+  pCx = allocateCursor(p, i, -1);
   if( pCx==0 ) goto no_mem;
   pCx->nullRow = 1;
   rc = sqlite3BtreeFactory(db, 0, 1, TEMP_PAGES, &pCx->pBt);
@@ -2655,7 +2658,7 @@ case OP_OpenPseudo: {       /* no-push */
   int i = pOp->p1;
   Cursor *pCx;
   assert( i>=0 );
-  pCx = allocateCursor(p, i);
+  pCx = allocateCursor(p, i, -1);
   if( pCx==0 ) goto no_mem;
   pCx->nullRow = 1;
   pCx->pseudoTable = 1;
@@ -3194,7 +3197,7 @@ case OP_NewRowid: {
   break;
 }
 
-/* Opcode: Insert P1 P2 *
+/* Opcode: Insert P1 P2 P3
 **
 ** Write an entry into the table of cursor P1.  A new entry is
 ** created if it doesn't already exist or the data for an existing
@@ -3261,12 +3264,23 @@ case OP_Insert: {         /* no-push */
     pC->rowidIsValid = 0;
     pC->deferredMoveto = 0;
     pC->cacheValid = 0;
+
+    /* Invoke the update-hook if required. */
+    if( rc==SQLITE_OK && db->xUpdateCallback && pOp->p3 ){
+      const char *zDb = db->aDb[pC->iDb].zName;
+      const char *zTbl = pOp->p3;
+      int op = ((pOp->p2 & OPFLAG_ISUPDATE) ? SQLITE_UPDATE : SQLITE_INSERT);
+      assert( pC->isTable );
+      db->xUpdateCallback(db->pUpdateArg, op, zDb, zTbl, iKey);
+      assert( pC->iDb>=0 );
+    }
   }
   popStack(&pTos, 2);
+
   break;
 }
 
-/* Opcode: Delete P1 P2 *
+/* Opcode: Delete P1 P2 P3
 **
 ** Delete the record at which the P1 cursor is currently pointing.
 **
@@ -3287,11 +3301,37 @@ case OP_Delete: {        /* no-push */
   pC = p->apCsr[i];
   assert( pC!=0 );
   if( pC->pCursor!=0 ){
+    i64 iKey;
+
+    /* If the update-hook will be invoked, set iKey to the rowid of the
+    ** row being deleted.
+    */
+    if( db->xUpdateCallback && pOp->p3 ){
+      assert( pC->isTable );
+      if( pC->rowidIsValid ){
+        iKey = pC->lastRowid;
+      }else{
+        rc = sqlite3BtreeKeySize(pC->pCursor, &iKey);
+        if( rc ){
+          goto abort_due_to_error;
+        }
+        iKey = keyToInt(iKey);
+      }
+    }
+
     rc = sqlite3VdbeCursorMoveto(pC);
     if( rc ) goto abort_due_to_error;
     rc = sqlite3BtreeDelete(pC->pCursor);
     pC->nextRowidValid = 0;
     pC->cacheValid = 0;
+
+    /* Invoke the update-hook if required. */
+    if( rc==SQLITE_OK && db->xUpdateCallback && pOp->p3 ){
+      const char *zDb = db->aDb[pC->iDb].zName;
+      const char *zTbl = pOp->p3;
+      db->xUpdateCallback(db->pUpdateArg, SQLITE_DELETE, zDb, zTbl, iKey);
+      assert( pC->iDb>=0 );
+    }
   }
   if( pOp->p2 & OPFLAG_NCHANGE ) p->nChange++;
   break;
@@ -3826,6 +3866,35 @@ case OP_Destroy: {
 ** See also: Destroy
 */
 case OP_Clear: {        /* no-push */
+  Btree *pBt = db->aDb[pOp->p2].pBt;
+  if( db->xUpdateCallback && pOp->p3 ){
+    const char *zDb = db->aDb[pOp->p2].zName;
+    const char *zTbl = pOp->p3;
+    BtCursor *pCur = 0;
+    int fin = 0;
+
+    rc = sqlite3BtreeCursor(pBt, pOp->p1, 0, 0, 0, &pCur);
+    if( rc!=SQLITE_OK ){
+      goto abort_due_to_error;
+    }
+    for(
+      rc=sqlite3BtreeFirst(pCur, &fin); 
+      rc==SQLITE_OK && !fin; 
+      rc=sqlite3BtreeNext(pCur, &fin)
+    ){
+      i64 iKey;
+      rc = sqlite3BtreeKeySize(pCur, &iKey);
+      if( rc ){
+        break;
+      }
+      iKey = keyToInt(iKey);
+      db->xUpdateCallback(db->pUpdateArg, SQLITE_DELETE, zDb, zTbl, iKey);
+    }
+    sqlite3BtreeCloseCursor(pCur);
+    if( rc!=SQLITE_OK ){
+      goto abort_due_to_error;
+    }
+  }
   rc = sqlite3BtreeClearTable(db->aDb[pOp->p2].pBt, pOp->p1);
   break;
 }
@@ -4343,7 +4412,6 @@ case OP_Expire: {        /* no-push */
   }
   break;
 }
-
 
 /* An other opcode is illegal...
 */

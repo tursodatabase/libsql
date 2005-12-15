@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.138 2005/12/15 10:11:32 danielk1977 Exp $
+** $Id: tclsqlite.c,v 1.139 2005/12/15 15:22:10 danielk1977 Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -99,6 +99,7 @@ struct SqliteDb {
   char *zAuth;               /* The authorization callback routine */
   char *zNull;               /* Text to substitute for an SQL NULL value */
   SqlFunc *pFunc;            /* List of SQL functions */
+  Tcl_Obj *pUpdateHook;      /* Update hook script (if any) */
   SqlCollate *pCollate;      /* List of SQL collation functions */
   int rc;                    /* Return code of most recent sqlite3_exec() */
   Tcl_Obj *pCollateNeeded;   /* Collation needed script */
@@ -210,6 +211,12 @@ static void DbDeleteCmd(void *db){
   if( pDb->zNull ){
     Tcl_Free(pDb->zNull);
   }
+  if( pDb->pUpdateHook ){
+    Tcl_DecrRefCount(pDb->pUpdateHook);
+  }
+  if( pDb->pCollateNeeded ){
+    Tcl_DecrRefCount(pDb->pCollateNeeded);
+  }
   Tcl_Free((char*)pDb);
 }
 
@@ -295,6 +302,29 @@ static int DbCommitHandler(void *cd){
     return 1;
   }
   return 0;
+}
+
+static void DbUpdateHandler(
+  void *p, 
+  int op,
+  const char *zDb, 
+  const char *zTbl, 
+  sqlite_int64 rowid
+){
+  SqliteDb *pDb = (SqliteDb *)p;
+  Tcl_Obj *pCmd;
+
+  assert( pDb->pUpdateHook );
+  assert( op==SQLITE_INSERT || op==SQLITE_UPDATE || op==SQLITE_DELETE );
+
+  pCmd = Tcl_DuplicateObj(pDb->pUpdateHook);
+  Tcl_IncrRefCount(pCmd);
+  Tcl_ListObjAppendElement(0, pCmd, Tcl_NewStringObj(
+    ( (op==SQLITE_INSERT)?"INSERT":(op==SQLITE_UPDATE)?"UPDATE":"DELETE"), -1));
+  Tcl_ListObjAppendElement(0, pCmd, Tcl_NewStringObj(zDb, -1));
+  Tcl_ListObjAppendElement(0, pCmd, Tcl_NewStringObj(zTbl, -1));
+  Tcl_ListObjAppendElement(0, pCmd, Tcl_NewWideIntObj(rowid));
+  Tcl_EvalObjEx(pDb->interp, pCmd, TCL_EVAL_DIRECT);
 }
 
 static void tclCollateNeeded(
@@ -625,7 +655,8 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     "nullvalue",          "onecolumn",         "profile",
     "progress",           "rekey",             "soft_heap_limit",
     "timeout",            "total_changes",     "trace",
-    "transaction",        "version",            0                    
+    "transaction",        "update_hook",       "version",
+    0                    
   };
   enum DB_enum {
     DB_AUTHORIZER,        DB_BUSY,             DB_CACHE,
@@ -636,7 +667,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     DB_NULLVALUE,         DB_ONECOLUMN,        DB_PROFILE,
     DB_PROGRESS,          DB_REKEY,            DB_SOFT_HEAP_LIMIT,
     DB_TIMEOUT,           DB_TOTAL_CHANGES,    DB_TRACE,
-    DB_TRANSACTION,       DB_VERSION
+    DB_TRANSACTION,       DB_UPDATE_HOOK,      DB_VERSION
   };
   /* don't leave trailing commas on DB_enum, it confuses the AIX xlc compiler */
 
@@ -1835,6 +1866,33 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
         zEnd = "COMMIT";
       }
       sqlite3_exec(pDb->db, zEnd, 0, 0, 0);
+    }
+    break;
+  }
+
+  /*
+  **    $db update_hook ?script?
+  */
+  case DB_UPDATE_HOOK: {
+    if( objc!=2 && objc!=3 ){
+       Tcl_WrongNumArgs(interp, 2, objv, "?SCRIPT?");
+       return TCL_ERROR;
+    }
+    if( pDb->pUpdateHook ){
+      Tcl_SetObjResult(interp, pDb->pUpdateHook);
+      if( objc==3 ){
+        Tcl_DecrRefCount(pDb->pUpdateHook);
+        pDb->pUpdateHook = 0;
+      }
+    }
+    if( objc==3 ){
+      if( Tcl_GetCharLength(objv[2])>0 ){
+        pDb->pUpdateHook = objv[2];
+        Tcl_IncrRefCount(pDb->pUpdateHook);
+        sqlite3_update_hook(pDb->db, DbUpdateHandler, pDb);
+      }else{
+        sqlite3_update_hook(pDb->db, 0, 0);
+      }
     }
     break;
   }

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.436 2005/12/15 10:11:32 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.437 2005/12/15 15:22:09 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -441,6 +441,8 @@ struct sqlite3 {
   void *pProfileArg;                        /* Argument to profile function */
   void *pCommitArg;             /* Argument to xCommitCallback() */   
   int (*xCommitCallback)(void*);/* Invoked at every commit. */
+  void *pUpdateArg;
+  void (*xUpdateCallback)(void*,int, const char*,const char*,sqlite_int64);
   void(*xCollNeeded)(void*,sqlite3*,int eTextRep,const char*);
   void(*xCollNeeded16)(void*,sqlite3*,int eTextRep,const void*);
   void *pCollNeededArg;
@@ -1234,6 +1236,7 @@ struct AuthContext {
 */
 #define OPFLAG_NCHANGE   1    /* Set to update db->nChange */
 #define OPFLAG_LASTROWID 2    /* Set to update db->lastRowid */
+#define OPFLAG_ISUPDATE  4    /* This OP_Insert is an sql UPDATE */
 
 /*
  * Each trigger present in the database schema is stored as an instance of

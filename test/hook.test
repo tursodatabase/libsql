@@ -14,8 +14,9 @@
 # The focus of the tests in this file is the  following interface:
 #
 #      sqlite_commit_hook
+#      sqlite_update_hook (tests hook-4 onwards)
 #
-# $Id: hook.test,v 1.5 2004/06/29 12:39:08 drh Exp $
+# $Id: hook.test,v 1.6 2005/12/15 15:22:10 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -90,4 +91,126 @@ do_test hook-3.9 {
   set ::commit_cnt
 } {}
 
+# Very simple tests. Test that the update hook is invoked correctly for INSERT,
+# DELETE and UPDATE statements, including DELETE statements with no WHERE
+# clause.
+#
+do_test hook-4.1 {
+  catchsql {
+    DROP TABLE t1;
+  }
+  execsql {
+    CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+    INSERT INTO t1 VALUES(1, 'one');
+    INSERT INTO t1 VALUES(2, 'two');
+    INSERT INTO t1 VALUES(3, 'three');
+  }
+  db update_hook [list lappend ::update_hook]
+} {}
+do_test hook-4.2 {
+  execsql {
+    INSERT INTO t1 VALUES(4, 'four');
+    DELETE FROM t1 WHERE b = 'two';
+    UPDATE t1 SET b = '' WHERE a = 1 OR a = 3;
+    DELETE FROM t1;
+  }
+  set ::update_hook
+} [list \
+    INSERT main t1 4 \
+    DELETE main t1 2 \
+    UPDATE main t1 1 \
+    UPDATE main t1 3 \
+    DELETE main t1 1 \
+    DELETE main t1 3 \
+    DELETE main t1 4 \
+]
+
+# Check that the update-hook is invoked for rows modified by trigger
+# bodies.
+#
+set ::update_hook {}
+do_test hook-5.1 {
+  catchsql {
+    DROP TABLE t2;
+  }
+  execsql {
+    CREATE TABLE t2(c INTEGER PRIMARY KEY, d);
+    CREATE TRIGGER t1_trigger AFTER INSERT ON t1 BEGIN
+      INSERT INTO t2 VALUES(new.a, new.b);
+      UPDATE t2 SET d = d || ' via trigger' WHERE new.a = c;
+      DELETE FROM t2 WHERE new.a = c;
+    END;
+  }
+} {}
+do_test hook-5.2 {
+  execsql {
+    INSERT INTO t1 VALUES(1, 'one');
+    INSERT INTO t1 VALUES(2, 'two');
+  }
+  set ::update_hook
+} [list \
+    INSERT main t1 1 \
+    INSERT main t2 1 \
+    UPDATE main t2 1 \
+    DELETE main t2 1 \
+    INSERT main t1 2 \
+    INSERT main t2 2 \
+    UPDATE main t2 2 \
+    DELETE main t2 2 \
+]
+
+set ::update_hook {}
+do_test hook-6.1 {
+  file delete -force test2.db
+  execsql {
+    ATTACH 'test2.db' AS aux;
+    CREATE TABLE aux.t3(a INTEGER PRIMARY KEY, b);
+    INSERT INTO aux.t3 SELECT * FROM t1;
+    UPDATE t3 SET b = 'two or so' WHERE a = 2;
+    DELETE FROM t3;
+  }
+  set ::update_hook
+} [list \
+    INSERT aux t3 1 \
+    INSERT aux t3 2 \
+    UPDATE aux t3 2 \
+    DELETE aux t3 1 \
+    DELETE aux t3 2 \
+]
+
+# Do some sorting, grouping, compound queries, population and depopulation 
+# of indices, to make sure the update-hook is not invoked incorrectly.
+#
+set ::update_hook {}
+do_test hook-7.1 {
+  execsql {
+    DROP TRIGGER t1_trigger;
+    CREATE INDEX t1_i ON t1(b);
+    INSERT INTO t1 VALUES(3, 'three');
+    UPDATE t1 SET b = '';
+    DELETE FROM t1 WHERE a > 1;
+  }
+  set ::update_hook
+} [list \
+    INSERT main t1 3 \
+    UPDATE main t1 1 \
+    UPDATE main t1 2 \
+    UPDATE main t1 3 \
+    DELETE main t1 2 \
+    DELETE main t1 3 \
+]
+set ::update_hook {}
+do_test hook-7.2 {
+  execsql {
+    SELECT * FROM t1 UNION SELECT * FROM t3;
+    SELECT * FROM t1 UNION ALL SELECT * FROM t3;
+    SELECT * FROM t1 INTERSECT SELECT * FROM t3;
+    SELECT * FROM t1 EXCEPT SELECT * FROM t3;
+    SELECT * FROM t1 ORDER BY b;
+    SELECT * FROM t1 GROUP BY b;
+  }
+  set ::update_hook
+} [list]
+
 finish_test
+

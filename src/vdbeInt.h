@@ -60,6 +60,7 @@ typedef unsigned char Bool;
 */
 struct Cursor {
   BtCursor *pCursor;    /* The cursor structure of the backend */
+  int iDb;              /* Index of cursor database in db->aDb[] (or -1) */
   i64 lastRowid;        /* Last rowid from a Next or NextIdx operation */
   i64 nextRowid;        /* Next rowid returned by OP_NewRowid */
   Bool zeroed;          /* True if zeroed out and ready for reuse */

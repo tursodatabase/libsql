@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.150 2005/12/06 12:52:59 danielk1977 Exp $
+** $Id: insert.c,v 1.151 2005/12/15 15:22:09 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -1079,9 +1079,13 @@ void sqlite3CompleteInsertion(
   if( pParse->nested ){
     pik_flags = 0;
   }else{
-    pik_flags = (OPFLAG_NCHANGE|(isUpdate?0:OPFLAG_LASTROWID));
+    pik_flags = OPFLAG_NCHANGE;
+    pik_flags |= (isUpdate?OPFLAG_ISUPDATE:OPFLAG_LASTROWID);
   }
   sqlite3VdbeAddOp(v, OP_Insert, base, pik_flags);
+  if( !pParse->nested ){
+    sqlite3VdbeChangeP3(v, -1, pTab->zName, P3_STATIC);
+  }
   
   if( isUpdate && rowidChng ){
     sqlite3VdbeAddOp(v, OP_Pop, 1, 0);
