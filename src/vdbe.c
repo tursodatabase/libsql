@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.505 2005/12/15 15:22:10 danielk1977 Exp $
+** $Id: vdbe.c,v 1.506 2005/12/16 15:24:29 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2299,16 +2299,19 @@ case OP_AutoCommit: {       /* no-push */
         " transaction - SQL statements in progress", 0);
     rc = SQLITE_ERROR;
   }else if( i!=db->autoCommit ){
-    db->autoCommit = i;
     if( pOp->p2 ){
       assert( i==1 );
       sqlite3RollbackAll(db);
-    }else if( sqlite3VdbeHalt(p)==SQLITE_BUSY ){
-      p->pTos = pTos;
-      p->pc = pc;
-      db->autoCommit = 1-i;
-      p->rc = SQLITE_BUSY;
-      return SQLITE_BUSY;
+      db->autoCommit = 1;
+    }else{
+      db->autoCommit = i;
+      if( sqlite3VdbeHalt(p)==SQLITE_BUSY ){
+        p->pTos = pTos;
+        p->pc = pc;
+        db->autoCommit = 1-i;
+        p->rc = SQLITE_BUSY;
+        return SQLITE_BUSY;
+      }
     }
     return SQLITE_DONE;
   }else{

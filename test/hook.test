@@ -17,7 +17,7 @@
 #      sqlite_update_hook    (tests hook-4-*)
 #      sqlite_rollback_hook  (tests hook-5.*)
 #
-# $Id: hook.test,v 1.7 2005/12/16 06:54:03 danielk1977 Exp $
+# $Id: hook.test,v 1.8 2005/12/16 15:24:30 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -231,8 +231,12 @@ db update_hook {}
 # error condition).
 #
 # hook-5.1.* - Test explicit rollbacks.
-# hook-5.2.* - Test implicit rollbacks.
-# hook-5.3.* - Test hot-journal rollbacks.
+# hook-5.2.* - Test implicit rollbacks caused by constraint failure.
+#
+# hook-5.3.* - Test implicit rollbacks caused by IO errors.
+# hook-5.4.* - Test implicit rollbacks caused by malloc() failure.
+# hook-5.5.* - Test hot-journal rollbacks. Or should the rollback hook 
+#              not be called for these?
 #
 
 do_test hook-5.0 {
@@ -243,6 +247,7 @@ do_test hook-5.0 {
 } {}
 
 # Test explicit rollbacks. Not much can really go wrong here.
+#
 do_test hook-5.1.1 {
   set ::rollback_hook 0
   execsql {
@@ -253,6 +258,7 @@ do_test hook-5.1.1 {
 } {1}
 
 # Test implicit rollbacks caused by constraints.
+#
 do_test hook-5.2.1 {
   set ::rollback_hook 0
   catchsql {
@@ -271,6 +277,7 @@ do_test hook-5.2.2 {
 } {1}
 
 #
+# End rollback-hook testing.
 #----------------------------------------------------------------------------
 
 finish_test

@@ -13,7 +13,7 @@
 # correctly. The emphasis of these tests are the _prepare(), _step() and
 # _finalize() calls.
 #
-# $Id: malloc3.test,v 1.4 2005/12/09 14:25:12 danielk1977 Exp $
+# $Id: malloc3.test,v 1.5 2005/12/16 15:24:30 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -503,6 +503,8 @@ proc run_test {arglist {pcstart 0} {iFailStart 1}} {
     if {$ac && !$nac} {set begin_pc $i}
   }
 
+  db rollback_hook [list incr ::rollback_hook_count]
+
   set iFail $iFailStart
   set pc $pcstart
   while {$pc*2 < [llength $arglist]} {
@@ -523,6 +525,8 @@ proc run_test {arglist {pcstart 0} {iFailStart 1}} {
       }
 
       -sql {
+        set ::rollback_hook_count 0
+
         set ac [sqlite3_get_autocommit $::DB]        ;# Auto-Commit
         sqlite_malloc_fail $iFail
 # puts "SQL $iterid [lindex $v 1]"
@@ -530,14 +534,32 @@ proc run_test {arglist {pcstart 0} {iFailStart 1}} {
 # puts "rc = $rc msg = \"$msg\""
         set nac [sqlite3_get_autocommit $::DB]       ;# New Auto-Commit 
 
+
+        if {$rc != 0 && $nac && !$ac} {
+          # Before [db eval] the auto-commit flag was clear. Now it
+          # is set. Since an error occured we assume this was not a
+	  # commit - therefore a rollback occured. Check that the
+	  # rollback-hook was invoked.
+          do_test malloc3-rollback_hook.$iterid {
+            set ::rollback_hook_count
+          } {1}
+        }
+
         if {$rc == 0} {
-            # Successful execution of sql.
+            # Successful execution of sql. Our "mallocs-until-failure" 
+            # count should be greater than 0. Otherwise a malloc() failed
+            # and the error was not reported.
             if {[lindex [sqlite_malloc_stat] 2] <= 0} {
               error "Unreported malloc() failure"
             }
+
             if {$ac && !$nac} {
+              # Before the [db eval] the auto-commit flag was set, now it
+              # is clear. We can deduce that a "BEGIN" statement has just
+              # been successfully executed.
               set begin_pc $pc
             } 
+
             incr pc
             set iFail 1
             sqlite_malloc_fail 0
@@ -547,9 +569,11 @@ proc run_test {arglist {pcstart 0} {iFailStart 1}} {
             integrity_check "malloc3-(integrity).$iterid"
             incr iFail
             if {$nac && !$ac} {
+
               if {![lindex $v 0]} {
                 error "Statement \"[lindex $v 1]\" caused a rollback"
               }
+
 # puts "Statement \"[lindex $v 1]\" caused a rollback"
               for {set i $begin_pc} {$i < $pc} {incr i} {
                 set k2 [lindex $arglist [expr 2 * $i]]
@@ -587,7 +611,7 @@ proc run_test {arglist {pcstart 0} {iFailStart 1}} {
 # Turn of the Tcl interface's prepared statement caching facility.
 db cache size 0
 
-run_test $::run_test_script 
+run_test $::run_test_script
 # run_test [lrange $::run_test_script 0 3] 0 63
 sqlite_malloc_fail 0
 db close

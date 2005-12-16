@@ -1177,12 +1177,12 @@ int sqlite3VdbeHalt(Vdbe *p){
         return SQLITE_BUSY;
       }else if( rc!=SQLITE_OK ){
         p->rc = rc;
-        xFunc = sqlite3BtreeRollback;
+        sqlite3RollbackAll(db);
       }else{
         sqlite3CommitInternalChanges(db);
       }
     }else{
-      xFunc = sqlite3BtreeRollback;
+      sqlite3RollbackAll(db);
     }
   }else{
 
@@ -1227,9 +1227,9 @@ int sqlite3VdbeHalt(Vdbe *p){
     }else if( p->errorAction==OE_Abort ){
       xFunc = sqlite3BtreeRollbackStmt;
     }else{
-      xFunc = sqlite3BtreeRollback;
-      db->autoCommit = 1;
       abortOtherActiveVdbes(p);
+      sqlite3RollbackAll(db);
+      db->autoCommit = 1;
     }
   }
 
@@ -1240,20 +1240,14 @@ int sqlite3VdbeHalt(Vdbe *p){
   */
   assert(!xFunc ||
     xFunc==sqlite3BtreeCommitStmt ||
-    xFunc==sqlite3BtreeRollbackStmt ||
-    xFunc==sqlite3BtreeRollback
+    xFunc==sqlite3BtreeRollbackStmt
   );
-  if( xFunc==sqlite3BtreeRollback ){
-    assert( p->rc!=SQLITE_OK );
-    sqlite3RollbackAll(db);
-  }else{
-    for(i=0; xFunc && i<db->nDb; i++){ 
-      int rc;
-      Btree *pBt = db->aDb[i].pBt;
-      if( pBt ){
-        rc = xFunc(pBt);
-        if( p->rc==SQLITE_OK ) p->rc = rc;
-      }
+  for(i=0; xFunc && i<db->nDb; i++){ 
+    int rc;
+    Btree *pBt = db->aDb[i].pBt;
+    if( pBt ){
+      rc = xFunc(pBt);
+      if( p->rc==SQLITE_OK ) p->rc = rc;
     }
   }
 
@@ -1270,9 +1264,7 @@ int sqlite3VdbeHalt(Vdbe *p){
   /* Rollback or commit any schema changes that occurred. */
   if( p->rc!=SQLITE_OK && db->flags&SQLITE_InternChanges ){
     sqlite3ResetInternalSchema(db, 0);
-    if( xFunc!=sqlite3BtreeRollback ){
-      db->flags = (db->flags | SQLITE_InternChanges);
-    }
+    db->flags = (db->flags | SQLITE_InternChanges);
   }
 
   /* We have successfully halted and closed the VM.  Record this fact. */

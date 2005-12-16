@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.311 2005/12/16 06:54:02 danielk1977 Exp $
+** $Id: main.c,v 1.312 2005/12/16 15:24:29 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -204,8 +204,12 @@ int sqlite3_close(sqlite3 *db){
 */
 void sqlite3RollbackAll(sqlite3 *db){
   int i;
+  int inTrans = 0;
   for(i=0; i<db->nDb; i++){
     if( db->aDb[i].pBt ){
+      if( sqlite3BtreeIsInTrans(db->aDb[i].pBt) ){
+        inTrans = 1;
+      }
       sqlite3BtreeRollback(db->aDb[i].pBt);
       db->aDb[i].inTrans = 0;
     }
@@ -215,7 +219,7 @@ void sqlite3RollbackAll(sqlite3 *db){
   }
 
   /* If one has been configured, invoke the rollback-hook callback */
-  if( db->xRollbackCallback ){
+  if( db->xRollbackCallback && (inTrans || !db->autoCommit) ){
     db->xRollbackCallback(db->pRollbackArg);
   }
 }

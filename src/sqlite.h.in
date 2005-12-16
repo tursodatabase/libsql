@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.147 2005/12/16 06:54:02 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.148 2005/12/16 15:24:29 danielk1977 Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1319,6 +1319,21 @@ void *sqlite3_update_hook(
   void*
 );
 
+/*
+** Register a callback to be invoked whenever a transaction is rolled
+** back. 
+**
+** The new callback function overrides any existing rollback-hook
+** callback. If there was an existing callback, then it's pArg value 
+** (the third argument to sqlite3_rollback_hook() when it was registered) 
+** is returned. Otherwise, NULL is returned.
+**
+** For the purposes of this API, a transaction is said to have been 
+** rolled back if an explicit "ROLLBACK" statement is executed, or
+** an error or constraint causes an implicit rollback to occur. The 
+** callback is not invoked if a transaction is automatically rolled
+** back because the database connection is closed.
+*/
 void *sqlite3_rollback_hook(sqlite3*, void(*)(void *), void*);
 
 /*
