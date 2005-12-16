@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.187 2005/12/09 20:02:05 drh Exp $
+** @(#) $Id: parse.y,v 1.188 2005/12/16 01:06:17 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -257,9 +257,9 @@ carg ::= DEFAULT id(X).              {
 //
 ccons ::= NULL onconf.
 ccons ::= NOT NULL onconf(R).               {sqlite3AddNotNull(pParse, R);}
-ccons ::= PRIMARY KEY sortorder onconf(R) autoinc(I).
-                                     {sqlite3AddPrimaryKey(pParse,0,R,I);}
-ccons ::= UNIQUE onconf(R).          {sqlite3CreateIndex(pParse,0,0,0,0,R,0,0);}
+ccons ::= PRIMARY KEY sortorder(Z) onconf(R) autoinc(I).
+                                     {sqlite3AddPrimaryKey(pParse,0,R,I,Z);}
+ccons ::= UNIQUE onconf(R).          {sqlite3CreateIndex(pParse,0,0,0,0,R,0,0,0);}
 ccons ::= CHECK LP expr(X) RP.       {sqlite3AddCheckConstraint(pParse,X);}
 ccons ::= REFERENCES nm(T) idxlist_opt(TA) refargs(R).
                                 {sqlite3CreateForeignKey(pParse,0,&T,TA,R);}
@@ -307,9 +307,9 @@ conslist ::= conslist tcons.
 conslist ::= tcons.
 tcons ::= CONSTRAINT nm.
 tcons ::= PRIMARY KEY LP idxlist(X) autoinc(I) RP onconf(R).
-                                         {sqlite3AddPrimaryKey(pParse,X,R,I);}
+                                         {sqlite3AddPrimaryKey(pParse,X,R,I,0);}
 tcons ::= UNIQUE LP idxlist(X) RP onconf(R).
-                                       {sqlite3CreateIndex(pParse,0,0,0,X,R,0,0);}
+                                 {sqlite3CreateIndex(pParse,0,0,0,X,R,0,0,0);}
 tcons ::= CHECK LP expr(E) RP onconf. {sqlite3AddCheckConstraint(pParse,E);}
 tcons ::= FOREIGN KEY LP idxlist(FA) RP
           REFERENCES nm(T) idxlist_opt(TA) refargs(R) defer_subclause_opt(D). {
@@ -834,7 +834,8 @@ cmd ::= CREATE(S) uniqueflag(U) INDEX nm(X) dbnm(D)
         ON nm(Y) LP idxlist(Z) RP(E) onconf(R). {
   if( U!=OE_None ) U = R;
   if( U==OE_Default) U = OE_Abort;
-  sqlite3CreateIndex(pParse, &X, &D, sqlite3SrcListAppend(0,&Y,0),Z,U, &S, &E);
+  sqlite3CreateIndex(pParse, &X, &D, sqlite3SrcListAppend(0,&Y,0), Z, U,
+                      &S, &E, SQLITE_SO_ASC);
 }
 
 %type uniqueflag {int}
@@ -849,21 +850,23 @@ uniqueflag(A) ::= .        {A = OE_None;}
 
 idxlist_opt(A) ::= .                         {A = 0;}
 idxlist_opt(A) ::= LP idxlist(X) RP.         {A = X;}
-idxlist(A) ::= idxlist(X) COMMA idxitem(Y) collate(C) sortorder.  {
+idxlist(A) ::= idxlist(X) COMMA idxitem(Y) collate(C) sortorder(Z).  {
   Expr *p = 0;
   if( C.n>0 ){
     p = sqlite3Expr(TK_COLUMN, 0, 0, 0);
     if( p ) p->pColl = sqlite3LocateCollSeq(pParse, (char*)C.z, C.n);
   }
   A = sqlite3ExprListAppend(X, p, &Y);
+  if( A ) A->a[A->nExpr-1].sortOrder = Z;
 }
-idxlist(A) ::= idxitem(Y) collate(C) sortorder. {
+idxlist(A) ::= idxitem(Y) collate(C) sortorder(Z). {
   Expr *p = 0;
   if( C.n>0 ){
     p = sqlite3Expr(TK_COLUMN, 0, 0, 0);
     if( p ) p->pColl = sqlite3LocateCollSeq(pParse, (char*)C.z, C.n);
   }
   A = sqlite3ExprListAppend(0, p, &Y);
+  if( A ) A->a[A->nExpr-1].sortOrder = Z;
 }
 idxitem(A) ::= nm(X).              {A = X;}
 

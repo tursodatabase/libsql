@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.357 2005/12/09 20:02:05 drh Exp $
+** $Id: build.c,v 1.358 2005/12/16 01:06:17 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -764,7 +764,7 @@ void sqlite3StartTable(
     sqlite3VdbeAddOp(v, OP_ReadCookie, iDb, 1);   /* file_format */
     lbl = sqlite3VdbeMakeLabel(v);
     sqlite3VdbeAddOp(v, OP_If, 0, lbl);
-    sqlite3VdbeAddOp(v, OP_Integer, db->file_format, 0);
+    sqlite3VdbeAddOp(v, OP_Integer, 1, 0);   /* file format defaults to 1 */
     sqlite3VdbeAddOp(v, OP_SetCookie, iDb, 1);
     sqlite3VdbeAddOp(v, OP_Integer, db->enc, 0);
     sqlite3VdbeAddOp(v, OP_SetCookie, iDb, 4);
@@ -1010,7 +1010,8 @@ void sqlite3AddPrimaryKey(
   Parse *pParse,    /* Parsing context */
   ExprList *pList,  /* List of field names to be indexed */
   int onError,      /* What to do with a uniqueness conflict */
-  int autoInc       /* True if the AUTOINCREMENT keyword is present */
+  int autoInc,      /* True if the AUTOINCREMENT keyword is present */
+  int sortOrder     /* SQLITE_SO_ASC or SQLITE_SO_DESC */
 ){
   Table *pTab = pParse->pNewTable;
   char *zType = 0;
@@ -1041,7 +1042,8 @@ void sqlite3AddPrimaryKey(
   if( iCol>=0 && iCol<pTab->nCol ){
     zType = pTab->aCol[iCol].zType;
   }
-  if( zType && sqlite3StrICmp(zType, "INTEGER")==0 ){
+  if( zType && sqlite3StrICmp(zType, "INTEGER")==0
+        && sortOrder==SQLITE_SO_ASC ){
     pTab->iPKey = iCol;
     pTab->keyConf = onError;
     pTab->autoInc = autoInc;
@@ -1051,7 +1053,7 @@ void sqlite3AddPrimaryKey(
        "INTEGER PRIMARY KEY");
 #endif
   }else{
-    sqlite3CreateIndex(pParse, 0, 0, 0, pList, onError, 0, 0);
+    sqlite3CreateIndex(pParse, 0, 0, 0, pList, onError, 0, 0, sortOrder);
     pList = 0;
   }
 
@@ -2094,18 +2096,24 @@ void sqlite3CreateIndex(
   ExprList *pList,   /* A list of columns to be indexed */
   int onError,       /* OE_Abort, OE_Ignore, OE_Replace, or OE_None */
   Token *pStart,     /* The CREATE token that begins a CREATE TABLE statement */
-  Token *pEnd        /* The ")" that closes the CREATE INDEX statement */
+  Token *pEnd,       /* The ")" that closes the CREATE INDEX statement */
+  int sortOrder      /* Sort order of primary key when pList==NULL */
 ){
-  Table *pTab = 0;   /* Table to be indexed */
-  Index *pIndex = 0; /* The index to be created */
-  char *zName = 0;
+  Table *pTab = 0;     /* Table to be indexed */
+  Index *pIndex = 0;   /* The index to be created */
+  char *zName = 0;     /* Name of the index */
+  int nName;           /* Number of characters in zName */
   int i, j;
-  Token nullId;    /* Fake token for an empty ID list */
-  DbFixer sFix;    /* For assigning database names to pTable */
+  Token nullId;        /* Fake token for an empty ID list */
+  DbFixer sFix;        /* For assigning database names to pTable */
+  int sortOrderMask;   /* 1 to honor DESC in index.  0 to ignore. */
+  int descSeen = 0;    /* Changes to true if a DESC is seen */
   sqlite3 *db = pParse->db;
-
-  int iDb;          /* Index of the database that is being written */
-  Token *pName = 0; /* Unqualified name of the index to create */
+  Db *pDb;             /* The specific table containing the indexed database */
+  int iDb;             /* Index of the database that is being written */
+  Token *pName = 0;    /* Unqualified name of the index to create */
+  struct ExprList_item *pListItem; /* For looping over pList */
+  CollSeq *pCollSeq;               /* Collating sequence for one index column */
 
   if( pParse->nErr || sqlite3Tsd()->mallocFailed ) goto exit_create_index;
 
@@ -2148,6 +2156,7 @@ void sqlite3CreateIndex(
     pTab =  pParse->pNewTable;
     iDb = pTab->iDb;
   }
+  pDb = &db->aDb[iDb];
 
   if( pTab==0 || pParse->nErr ) goto exit_create_index;
   if( pTab->readOnly ){
@@ -2183,7 +2192,7 @@ void sqlite3CreateIndex(
     }
     if( !db->init.busy ){
       if( SQLITE_OK!=sqlite3ReadSchema(pParse) ) goto exit_create_index;
-      if( sqlite3FindIndex(db, zName, db->aDb[iDb].zName)!=0 ){
+      if( sqlite3FindIndex(db, zName, pDb->zName)!=0 ){
         sqlite3ErrorMsg(pParse, "index %s already exists", zName);
         goto exit_create_index;
       }
@@ -2207,7 +2216,7 @@ void sqlite3CreateIndex(
   */
 #ifndef SQLITE_OMIT_AUTHORIZATION
   {
-    const char *zDb = db->aDb[iDb].zName;
+    const char *zDb = pDb->zName;
     if( sqlite3AuthCheck(pParse, SQLITE_INSERT, SCHEMA_TABLE(iDb), 0, zDb) ){
       goto exit_create_index;
     }
@@ -2228,17 +2237,20 @@ void sqlite3CreateIndex(
     nullId.n = strlen((char*)nullId.z);
     pList = sqlite3ExprListAppend(0, 0, &nullId);
     if( pList==0 ) goto exit_create_index;
+    pList->a[0].sortOrder = sortOrder;
   }
 
   /* 
   ** Allocate the index structure. 
   */
-  pIndex = sqliteMalloc( sizeof(Index) + strlen(zName) + 1 + sizeof(int) +
-                        (sizeof(int)*2 + sizeof(CollSeq*))*pList->nExpr );
+  nName = strlen(zName);
+  pIndex = sqliteMalloc( sizeof(Index) + nName + 2 + sizeof(int) +
+                        (sizeof(int)*2 + sizeof(CollSeq*) + 1)*pList->nExpr );
   if( sqlite3Tsd()->mallocFailed ) goto exit_create_index;
   pIndex->aiColumn = (int*)&pIndex->keyInfo.aColl[pList->nExpr];
   pIndex->aiRowEst = (unsigned*)&pIndex->aiColumn[pList->nExpr];
   pIndex->zName = (char*)&pIndex->aiRowEst[pList->nExpr+1];
+  pIndex->keyInfo.aSortOrder = &pIndex->zName[nName+1];
   strcpy(pIndex->zName, zName);
   pIndex->pTable = pTab;
   pIndex->nColumn = pList->nExpr;
@@ -2246,23 +2258,38 @@ void sqlite3CreateIndex(
   pIndex->autoIndex = pName==0;
   pIndex->iDb = iDb;
 
+  /* Check to see if we should honor DESC requests on index columns
+  */
+  if( pDb->file_format>=4 || (pDb->descIndex && db->init.busy) ){
+#if 0
+    sortOrderMask = -1;   /* Honor DESC */
+#else
+    sortOrderMask = 0;
+#endif
+  }else{
+    sortOrderMask = 0;    /* Ignore DESC */
+  }
+
   /* Scan the names of the columns of the table to be indexed and
   ** load the column indices into the Index structure.  Report an error
   ** if any column is not found.
   */
-  for(i=0; i<pList->nExpr; i++){
-    for(j=0; j<pTab->nCol; j++){
-      if( sqlite3StrICmp(pList->a[i].zName, pTab->aCol[j].zName)==0 ) break;
+  for(i=0, pListItem=pList->a; i<pList->nExpr; i++, pListItem++){
+    const char *zColName = pListItem->zName;
+    Column *pTabCol;
+    int sortOrder;
+    for(j=0, pTabCol=pTab->aCol; j<pTab->nCol; j++, pTabCol++){
+      if( sqlite3StrICmp(zColName, pTabCol->zName)==0 ) break;
     }
     if( j>=pTab->nCol ){
       sqlite3ErrorMsg(pParse, "table %s has no column named %s",
-        pTab->zName, pList->a[i].zName);
+        pTab->zName, zColName);
       goto exit_create_index;
     }
     pIndex->aiColumn[i] = j;
-    if( pList->a[i].pExpr ){
-      assert( pList->a[i].pExpr->pColl );
-      pIndex->keyInfo.aColl[i] = pList->a[i].pExpr->pColl;
+    if( pListItem->pExpr ){
+      assert( pListItem->pExpr->pColl );
+      pIndex->keyInfo.aColl[i] = pListItem->pExpr->pColl;
     }else{
       pIndex->keyInfo.aColl[i] = pTab->aCol[j].pColl;
     }
@@ -2272,6 +2299,11 @@ void sqlite3CreateIndex(
     ){
       goto exit_create_index;
     }
+    sortOrder = pListItem->sortOrder;
+    pDb->descIndex |= sortOrder;
+    sortOrder &= sortOrderMask;
+    pIndex->keyInfo.aSortOrder[i] = sortOrder;
+    descSeen |= sortOrder;
   }
   pIndex->keyInfo.nField = pList->nExpr;
   sqlite3DefaultRowEst(pIndex);
@@ -2301,6 +2333,7 @@ void sqlite3CreateIndex(
       for(k=0; k<pIdx->nColumn; k++){
         if( pIdx->aiColumn[k]!=pIndex->aiColumn[k] ) break;
         if( pIdx->keyInfo.aColl[k]!=pIndex->keyInfo.aColl[k] ) break;
+        if( pIdx->keyInfo.aSortOrder[k]!=pIndex->keyInfo.aSortOrder[k] ) break;
       }
       if( k==pIdx->nColumn ){
         if( pIdx->onError!=pIndex->onError ){
@@ -2363,6 +2396,11 @@ void sqlite3CreateIndex(
 
     v = sqlite3GetVdbe(pParse);
     if( v==0 ) goto exit_create_index;
+
+    /* Make sure the file_format is at least 4 if we have DESC indices. */
+    if( descSeen ){
+      sqlite3MinimumFileFormat(pParse, iDb, 4);
+    }
 
     /* Create the rootpage for the index
     */

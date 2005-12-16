@@ -12,7 +12,7 @@
 ** This file contains C code routines that used to generate VDBE code
 ** that implements the ALTER TABLE command.
 **
-** $Id: alter.c,v 1.11 2005/12/09 20:02:05 drh Exp $
+** $Id: alter.c,v 1.12 2005/12/16 01:06:17 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -462,19 +462,26 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
   ** format to 2. If the default value of the new column is not NULL,
   ** the file format becomes 3.
   */
-  if( (v=sqlite3GetVdbe(pParse))!=0 ){
-    int f = (pDflt?3:2);
-
-    /* Only set the file format to $f if it is currently less than $f. */
-    sqlite3VdbeAddOp(v, OP_ReadCookie, iDb, 1);
-    sqlite3VdbeAddOp(v, OP_Integer, f, 0);
-    sqlite3VdbeAddOp(v, OP_Ge, 0, sqlite3VdbeCurrentAddr(v)+3);
-    sqlite3VdbeAddOp(v, OP_Integer, f, 0);
-    sqlite3VdbeAddOp(v, OP_SetCookie, iDb, 1);
-  }
+  sqlite3MinimumFileFormat(pParse, iDb, pDflt ? 3 : 2);
 
   /* Reload the schema of the modified table. */
   reloadTableSchema(pParse, pTab, pTab->zName);
+}
+
+/*
+** Generate code to make sure the file format number is at least minFormat.
+** The generated code will increase the file format number if necessary.
+*/
+void sqlite3MinimumFileFormat(Parse *pParse, int iDb, int minFormat){
+  Vdbe *v;
+  v = sqlite3GetVdbe(pParse);
+  if( v ){
+    sqlite3VdbeAddOp(v, OP_ReadCookie, iDb, 1);
+    sqlite3VdbeAddOp(v, OP_Integer, minFormat, 0);
+    sqlite3VdbeAddOp(v, OP_Ge, 0, sqlite3VdbeCurrentAddr(v)+3);
+    sqlite3VdbeAddOp(v, OP_Integer, minFormat, 0);
+    sqlite3VdbeAddOp(v, OP_SetCookie, iDb, 1);
+  }
 }
 
 

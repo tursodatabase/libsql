@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.9 2005/12/15 03:04:11 drh Exp $
+** $Id: prepare.c,v 1.10 2005/12/16 01:06:17 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -115,6 +115,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   BtCursor *curMain;
   int size;
   Table *pTab;
+  Db *pDb;
   char const *azArg[5];
   char zDbNum[30];
   int meta[10];
@@ -184,11 +185,12 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
 
   /* Create a cursor to hold the database open
   */
-  if( db->aDb[iDb].pBt==0 ){
+  pDb = &db->aDb[iDb];
+  if( pDb->pBt==0 ){
     if( !OMIT_TEMPDB && iDb==1 ) DbSetProperty(db, 1, DB_SchemaLoaded);
     return SQLITE_OK;
   }
-  rc = sqlite3BtreeCursor(db->aDb[iDb].pBt, MASTER_ROOT, 0, 0, 0, &curMain);
+  rc = sqlite3BtreeCursor(pDb->pBt, MASTER_ROOT, 0, 0, 0, &curMain);
   if( rc!=SQLITE_OK && rc!=SQLITE_EMPTY ){
     sqlite3SetString(pzErrMsg, sqlite3ErrStr(rc), (char*)0);
     return rc;
@@ -214,7 +216,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   if( rc==SQLITE_OK ){
     int i;
     for(i=0; rc==SQLITE_OK && i<sizeof(meta)/sizeof(meta[0]); i++){
-      rc = sqlite3BtreeGetMeta(db->aDb[iDb].pBt, i+1, (u32 *)&meta[i]);
+      rc = sqlite3BtreeGetMeta(pDb->pBt, i+1, (u32 *)&meta[i]);
     }
     if( rc ){
       sqlite3SetString(pzErrMsg, sqlite3ErrStr(rc), (char*)0);
@@ -224,7 +226,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   }else{
     memset(meta, 0, sizeof(meta));
   }
-  db->aDb[iDb].schema_cookie = meta[0];
+  pDb->schema_cookie = meta[0];
 
   /* If opening a non-empty database, check the text encoding. For the
   ** main database, set sqlite3.enc to the encoding of the main database.
@@ -249,39 +251,25 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
 
   size = meta[2];
   if( size==0 ){ size = MAX_PAGES; }
-  db->aDb[iDb].cache_size = size;
-
-  if( iDb==0 ){
-    db->file_format = meta[1];
-    if( db->file_format==0 ){
-      /* This happens if the database was initially empty */
-      db->file_format = 1;
-    }
-
-    if( db->file_format==2 || db->file_format==3 ){
-      /* File format 2 is treated exactly as file format 1. New 
-      ** databases are created with file format 1.
-      */ 
-      db->file_format = 1;
-    }
-  }
+  pDb->cache_size = size;
+  sqlite3BtreeSetCacheSize(pDb->pBt, pDb->cache_size);
 
   /*
   ** file_format==1    Version 3.0.0.
-  ** file_format==2    Version 3.1.3.
-  ** file_format==3    Version 3.1.4.
-  **
-  ** Version 3.0 can only use files with file_format==1. Version 3.1.3
-  ** can read and write files with file_format==1 or file_format==2.
-  ** Version 3.1.4 can read and write file formats 1, 2 and 3.
+  ** file_format==2    Version 3.1.3.  // ALTER TABLE ADD COLUMN
+  ** file_format==3    Version 3.1.4.  // ditto but with non-NULL defaults
+  ** file_format==4    Version 3.3.0.  // DESC indices
   */
-  if( meta[1]>3 ){
+  pDb->file_format = meta[1];
+  if( pDb->file_format==0 ){
+    pDb->file_format = 1;
+  }
+  if( pDb->file_format>4 ){
     sqlite3BtreeCloseCursor(curMain);
     sqlite3SetString(pzErrMsg, "unsupported file format", (char*)0);
     return SQLITE_ERROR;
   }
 
-  sqlite3BtreeSetCacheSize(db->aDb[iDb].pBt, db->aDb[iDb].cache_size);
 
   /* Read the schema information out of the schema tables
   */

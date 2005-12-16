@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.437 2005/12/15 15:22:09 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.438 2005/12/16 01:06:17 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -356,6 +356,8 @@ struct Db {
   u16 flags;           /* Flags associated with this database */
   u8 inTrans;          /* 0: not writable.  1: Transaction.  2: Checkpoint */
   u8 safety_level;     /* How aggressive at synching data to disk */
+  u8 file_format;      /* Schema format version for this file */
+  u8 descIndex;        /* True if any index uses the DESC attribute */
   int cache_size;      /* Number of pages to use in the cache */
   Table *pSeqTab;      /* The sqlite_sequence table used by AUTOINCREMENT */
   void *pAux;               /* Auxiliary data.  Usually NULL */
@@ -419,7 +421,6 @@ struct sqlite3 {
   int errCode;                  /* Most recent error code (SQLITE_*) */
   u8 enc;                       /* Text encoding for this database. */
   u8 autoCommit;                /* The auto-commit flag. */
-  u8 file_format;               /* What file format version is this database? */
   u8 temp_store;                /* 1: file 2: memory 0: default */
   int nTable;                   /* Number of tables in the database */
   CollSeq *pDfltColl;           /* The default collating sequence (BINARY) */
@@ -1467,7 +1468,7 @@ void sqlite3OpenMasterTable(Vdbe *v, int);
 void sqlite3StartTable(Parse*,Token*,Token*,Token*,int,int);
 void sqlite3AddColumn(Parse*,Token*);
 void sqlite3AddNotNull(Parse*, int);
-void sqlite3AddPrimaryKey(Parse*, ExprList*, int, int);
+void sqlite3AddPrimaryKey(Parse*, ExprList*, int, int, int);
 void sqlite3AddCheckConstraint(Parse*, Expr*);
 void sqlite3AddColumnType(Parse*,Token*);
 void sqlite3AddDefaultValue(Parse*,Expr*);
@@ -1493,7 +1494,7 @@ void sqlite3SrcListAssignCursors(Parse*, SrcList*);
 void sqlite3IdListDelete(IdList*);
 void sqlite3SrcListDelete(SrcList*);
 void sqlite3CreateIndex(Parse*,Token*,Token*,SrcList*,ExprList*,int,Token*,
-                        Token*);
+                        Token*, int);
 void sqlite3DropIndex(Parse*, SrcList*);
 void sqlite3AddKeyType(Vdbe*, ExprList*);
 void sqlite3AddIdxKeyType(Vdbe*, Index*);
@@ -1676,6 +1677,7 @@ void sqlite3RegisterLikeFunctions(sqlite3*, int);
 int sqlite3IsLikeFunction(sqlite3*,Expr*,int*,char*);
 SqliteTsd *sqlite3Tsd();
 void sqlite3AttachFunctions(sqlite3 *);
+void sqlite3MinimumFileFormat(Parse*, int, int);
 
 void sqlite3MallocClearFailed();
 #ifdef NDEBUG

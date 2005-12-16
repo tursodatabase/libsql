@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi3.test,v 1.34 2005/08/11 02:10:19 drh Exp $
+# $Id: capi3.test,v 1.35 2005/12/16 01:06:18 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -490,7 +490,7 @@ if {![sqlite3 -has-codec]} {
     set ::bt [btree_open test.db 10 0]
     btree_begin_transaction $::bt
     set meta [btree_get_meta $::bt]
-    lset meta 2 4
+    lset meta 2 5
     eval [concat btree_update_meta $::bt [lrange $meta 0 end]]
     btree_commit $::bt
     btree_close $::bt
