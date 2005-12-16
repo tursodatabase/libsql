@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.146 2005/12/15 15:22:09 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.147 2005/12/16 06:54:02 danielk1977 Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1309,12 +1309,17 @@ void sqlite3_soft_heap_limit(int);
 **
 ** The update hook is not invoked when internal system tables are
 ** modified (i.e. sqlite_master and sqlite_sequence).
+**
+** If another function was previously registered, its pArg value is returned.
+** Otherwise NULL is returned.
 */
-void sqlite3_update_hook(
+void *sqlite3_update_hook(
   sqlite3*, 
   void(*)(void *,int ,char const *,char const *,sqlite_int64),
   void*
 );
+
+void *sqlite3_rollback_hook(sqlite3*, void(*)(void *), void*);
 
 /*
 ** Undo the hack that converts floating point types to integer for

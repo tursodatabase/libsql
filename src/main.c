@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.310 2005/12/15 15:22:09 danielk1977 Exp $
+** $Id: main.c,v 1.311 2005/12/16 06:54:02 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -210,7 +210,14 @@ void sqlite3RollbackAll(sqlite3 *db){
       db->aDb[i].inTrans = 0;
     }
   }
-  sqlite3ResetInternalSchema(db, 0);
+  if( db->flags&SQLITE_InternChanges ){
+    sqlite3ResetInternalSchema(db, 0);
+  }
+
+  /* If one has been configured, invoke the rollback-hook callback */
+  if( db->xRollbackCallback ){
+    db->xRollbackCallback(db->pRollbackArg);
+  }
 }
 
 /*
@@ -534,7 +541,7 @@ void *sqlite3_profile(
 /*** EXPERIMENTAL ***
 **
 ** Register a function to be invoked when a transaction comments.
-** If either function returns non-zero, then the commit becomes a
+** If the invoked function returns non-zero, then the commit becomes a
 ** rollback.
 */
 void *sqlite3_commit_hook(
@@ -552,15 +559,31 @@ void *sqlite3_commit_hook(
 ** Register a callback to be invoked each time a row is updated,
 ** inserted or deleted using this database connection.
 */
-void sqlite3_update_hook(
+void *sqlite3_update_hook(
   sqlite3 *db,              /* Attach the hook to this database */
   void (*xCallback)(void*,int,char const *,char const *,sqlite_int64),
   void *pArg                /* Argument to the function */
 ){
+  void *pRet = db->pUpdateArg;
   db->xUpdateCallback = xCallback;
   db->pUpdateArg = pArg;
+  return pRet;
 }
 
+/*
+** Register a callback to be invoked each time a transaction is rolled
+** back by this database connection.
+*/
+void *sqlite3_rollback_hook(
+  sqlite3 *db,              /* Attach the hook to this database */
+  void (*xCallback)(void*), /* Callback function */
+  void *pArg                /* Argument to the function */
+){
+  void *pRet = db->pRollbackArg;
+  db->xRollbackCallback = xCallback;
+  db->pRollbackArg = pArg;
+  return pRet;
+}
 
 /*
 ** This routine is called to create a connection to a database BTree

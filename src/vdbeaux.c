@@ -1233,17 +1233,27 @@ int sqlite3VdbeHalt(Vdbe *p){
     }
   }
 
-  /* If xFunc is not NULL, then it is one of sqlite3BtreeRollback,
+  /* If xFunc is not NULL, then it is one of 
   ** sqlite3BtreeRollbackStmt or sqlite3BtreeCommitStmt. Call it once on
   ** each backend. If an error occurs and the return code is still
   ** SQLITE_OK, set the return code to the new error value.
   */
-  for(i=0; xFunc && i<db->nDb; i++){ 
-    int rc;
-    Btree *pBt = db->aDb[i].pBt;
-    if( pBt ){
-      rc = xFunc(pBt);
-      if( p->rc==SQLITE_OK ) p->rc = rc;
+  assert(!xFunc ||
+    xFunc==sqlite3BtreeCommitStmt ||
+    xFunc==sqlite3BtreeRollbackStmt ||
+    xFunc==sqlite3BtreeRollback
+  );
+  if( xFunc==sqlite3BtreeRollback ){
+    assert( p->rc!=SQLITE_OK );
+    sqlite3RollbackAll(db);
+  }else{
+    for(i=0; xFunc && i<db->nDb; i++){ 
+      int rc;
+      Btree *pBt = db->aDb[i].pBt;
+      if( pBt ){
+        rc = xFunc(pBt);
+        if( p->rc==SQLITE_OK ) p->rc = rc;
+      }
     }
   }
 

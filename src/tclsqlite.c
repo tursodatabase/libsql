@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.139 2005/12/15 15:22:10 danielk1977 Exp $
+** $Id: tclsqlite.c,v 1.140 2005/12/16 06:54:03 danielk1977 Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -100,6 +100,7 @@ struct SqliteDb {
   char *zNull;               /* Text to substitute for an SQL NULL value */
   SqlFunc *pFunc;            /* List of SQL functions */
   Tcl_Obj *pUpdateHook;      /* Update hook script (if any) */
+  Tcl_Obj *pRollbackHook;    /* Rollback hook script (if any) */
   SqlCollate *pCollate;      /* List of SQL collation functions */
   int rc;                    /* Return code of most recent sqlite3_exec() */
   Tcl_Obj *pCollateNeeded;   /* Collation needed script */
@@ -214,6 +215,9 @@ static void DbDeleteCmd(void *db){
   if( pDb->pUpdateHook ){
     Tcl_DecrRefCount(pDb->pUpdateHook);
   }
+  if( pDb->pRollbackHook ){
+    Tcl_DecrRefCount(pDb->pRollbackHook);
+  }
   if( pDb->pCollateNeeded ){
     Tcl_DecrRefCount(pDb->pCollateNeeded);
   }
@@ -302,6 +306,14 @@ static int DbCommitHandler(void *cd){
     return 1;
   }
   return 0;
+}
+
+static void DbRollbackHandler(void *clientData){
+  SqliteDb *pDb = (SqliteDb*)clientData;
+  assert(pDb->pRollbackHook);
+  if( TCL_OK!=Tcl_EvalObjEx(pDb->interp, pDb->pRollbackHook, 0) ){
+    Tcl_BackgroundError(pDb->interp);
+  }
 }
 
 static void DbUpdateHandler(
@@ -653,10 +665,10 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     "copy",               "errorcode",         "eval",
     "exists",             "function",          "last_insert_rowid",
     "nullvalue",          "onecolumn",         "profile",
-    "progress",           "rekey",             "soft_heap_limit",
-    "timeout",            "total_changes",     "trace",
-    "transaction",        "update_hook",       "version",
-    0                    
+    "progress",           "rekey",             "rollback_hook",
+    "soft_heap_limit",    "timeout",           "total_changes",
+    "trace",              "transaction",       "update_hook",       
+    "version",            0                    
   };
   enum DB_enum {
     DB_AUTHORIZER,        DB_BUSY,             DB_CACHE,
@@ -665,9 +677,10 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     DB_COPY,              DB_ERRORCODE,        DB_EVAL,
     DB_EXISTS,            DB_FUNCTION,         DB_LAST_INSERT_ROWID,
     DB_NULLVALUE,         DB_ONECOLUMN,        DB_PROFILE,
-    DB_PROGRESS,          DB_REKEY,            DB_SOFT_HEAP_LIMIT,
-    DB_TIMEOUT,           DB_TOTAL_CHANGES,    DB_TRACE,
-    DB_TRANSACTION,       DB_UPDATE_HOOK,      DB_VERSION
+    DB_PROGRESS,          DB_REKEY,            DB_ROLLBACK_HOOK,
+    DB_SOFT_HEAP_LIMIT,   DB_TIMEOUT,          DB_TOTAL_CHANGES,    
+    DB_TRACE,             DB_TRANSACTION,      DB_UPDATE_HOOK,      
+    DB_VERSION
   };
   /* don't leave trailing commas on DB_enum, it confuses the AIX xlc compiler */
 
@@ -1872,28 +1885,43 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
 
   /*
   **    $db update_hook ?script?
+  **    $db rollback_hook ?script?
   */
-  case DB_UPDATE_HOOK: {
+  case DB_UPDATE_HOOK: 
+  case DB_ROLLBACK_HOOK: {
+
+    /* set ppHook to point at pUpdateHook or pRollbackHook, depending on 
+    ** whether [$db update_hook] or [$db rollback_hook] was invoked.
+    */
+    Tcl_Obj **ppHook; 
+    if( choice==DB_UPDATE_HOOK ){
+      ppHook = &pDb->pUpdateHook;
+    }else{
+      ppHook = &pDb->pRollbackHook;
+    }
+
     if( objc!=2 && objc!=3 ){
        Tcl_WrongNumArgs(interp, 2, objv, "?SCRIPT?");
        return TCL_ERROR;
     }
-    if( pDb->pUpdateHook ){
-      Tcl_SetObjResult(interp, pDb->pUpdateHook);
+    if( *ppHook ){
+      Tcl_SetObjResult(interp, *ppHook);
       if( objc==3 ){
-        Tcl_DecrRefCount(pDb->pUpdateHook);
-        pDb->pUpdateHook = 0;
+        Tcl_DecrRefCount(*ppHook);
+        *ppHook = 0;
       }
     }
     if( objc==3 ){
+      assert( !(*ppHook) );
       if( Tcl_GetCharLength(objv[2])>0 ){
-        pDb->pUpdateHook = objv[2];
-        Tcl_IncrRefCount(pDb->pUpdateHook);
-        sqlite3_update_hook(pDb->db, DbUpdateHandler, pDb);
-      }else{
-        sqlite3_update_hook(pDb->db, 0, 0);
+        *ppHook = objv[2];
+        Tcl_IncrRefCount(*ppHook);
       }
     }
+
+    sqlite3_update_hook(pDb->db, (pDb->pUpdateHook?DbUpdateHandler:0), pDb);
+    sqlite3_rollback_hook(pDb->db,(pDb->pRollbackHook?DbRollbackHandler:0),pDb);
+
     break;
   }
 
@@ -2160,7 +2188,7 @@ int TCLSH_MAIN(int argc, char **argv){
     Sqlitetest4_Init(interp);
     Sqlitetest5_Init(interp);
     Sqlitetest6_Init(interp);
-    Sqlitetestasync_Init(interp);
+    /* Sqlitetestasync_Init(interp); */
     Md5_Init(interp);
 #ifdef SQLITE_SSE
     Sqlitetestsse_Init(interp);

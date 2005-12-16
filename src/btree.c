@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.273 2005/12/09 20:02:05 drh Exp $
+** $Id: btree.c,v 1.274 2005/12/16 06:54:02 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -4906,9 +4906,11 @@ int sqlite3BtreeClearTable(Btree *pBt, int iTable){
     }
   }
   rc = clearDatabasePage(pBt, (Pgno)iTable, 0, 0);
+#if 0
   if( rc ){
     sqlite3BtreeRollback(pBt);
   }
+#endif
   return rc;
 }
 

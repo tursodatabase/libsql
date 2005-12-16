@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.438 2005/12/16 01:06:17 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.439 2005/12/16 06:54:02 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -440,8 +440,10 @@ struct sqlite3 {
   void *pTraceArg;                          /* Argument to the trace function */
   void (*xProfile)(void*,const char*,u64);  /* Profiling function */
   void *pProfileArg;                        /* Argument to profile function */
-  void *pCommitArg;             /* Argument to xCommitCallback() */   
-  int (*xCommitCallback)(void*);/* Invoked at every commit. */
+  void *pCommitArg;                 /* Argument to xCommitCallback() */   
+  int (*xCommitCallback)(void*);    /* Invoked at every commit. */
+  void *pRollbackArg;               /* Argument to xRollbackCallback() */   
+  void (*xRollbackCallback)(void*); /* Invoked at every commit. */
   void *pUpdateArg;
   void (*xUpdateCallback)(void*,int, const char*,const char*,sqlite_int64);
   void(*xCollNeeded)(void*,sqlite3*,int eTextRep,const char*);

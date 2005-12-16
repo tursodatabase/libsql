@@ -133,12 +133,13 @@ TESTSRC = \
   $(TOP)/src/test4.c \
   $(TOP)/src/test5.c \
   $(TOP)/src/test6.c \
-  $(TOP)/src/test_async.c \
   $(TOP)/src/utf.c \
   $(TOP)/src/util.c \
   $(TOP)/src/vdbe.c \
   $(TOP)/src/md5.c \
   $(TOP)/src/where.c
+
+#  $(TOP)/src/test_async.c 
 
 # Header files used by all library source files.
 #
