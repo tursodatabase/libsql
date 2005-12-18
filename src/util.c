@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.154 2005/12/15 10:50:54 danielk1977 Exp $
+** $Id: util.c,v 1.155 2005/12/18 08:51:24 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -32,6 +32,7 @@
 **     sqlite3Realloc()
 **     sqlite3ReallocOrFree()
 **     sqlite3Free()
+**     sqlite3AllocSize()
 **
 ** The function sqlite3FreeX performs the same task as sqlite3Free and is
 ** guaranteed to be a real function.
@@ -457,11 +458,15 @@ int OSSIZEOF(void *p){
 }
 
 #else
-#define OSMALLOC(x) sqlite3Os.xMalloc(x)
-#define OSREALLOC(x,y) sqlite3Os.xRealloc(x,y)
-#define OSFREE(x) sqlite3Os.xFree(x)
-#define OSSIZEOF(x) sqlite3Os.xAllocationSize(x)
+/* Define macros to call the sqlite3Os.xXXX interface directly if 
+** the SQLITE_MEMDEBUG macro is not defined.
+*/
+#define OSMALLOC(x)        sqlite3Os.xMalloc(x)
+#define OSREALLOC(x,y)     sqlite3Os.xRealloc(x,y)
+#define OSFREE(x)          sqlite3Os.xFree(x)
+#define OSSIZEOF(x)        sqlite3Os.xAllocationSize(x)
 #define OSMALLOC_FAILED()
+
 #endif
 /*
 ** End code for memory allocation system test layer.
@@ -477,9 +482,9 @@ int OSSIZEOF(void *p){
 ** called to try to avoid this. No indication of whether or not this is
 ** successful is returned to the caller.
 **
-** If SQLITE_OMIT_SOFTHEAPLIMIT is defined, this function is a no-op.
+** If SQLITE_OMIT_MEMORY_MANAGEMENT is defined, this function is a no-op.
 */
-#ifndef SQLITE_OMIT_SOFTHEAPLIMIT
+#ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
 static void handleSoftLimit(int n){
   SqliteTsd *pTsd = sqlite3Tsd();
   pTsd->nAlloc += n;
@@ -571,6 +576,20 @@ void sqlite3ReallocOrFree(void **pp, int n){
     sqlite3FreeX(*pp);
   }
   *pp = p;
+}
+
+/*
+** Return the number of bytes allocated at location p. p must be either 
+** a NULL pointer (in which case 0 is returned) or a pointer returned by 
+** sqlite3Malloc(), sqlite3Realloc() or sqlite3ReallocOrFree().
+**
+** The number of bytes allocated does not include any overhead inserted by 
+** any malloc() wrapper functions that may be called. So the value returned
+** is the number of bytes that were available to SQLite using pointer p, 
+** regardless of how much memory was actually allocated.
+*/
+int sqlite3AllocSize(void *p){
+  return OSSIZEOF(p);
 }
 
 /*
@@ -1245,7 +1264,7 @@ void sqlite3MallocClearFailed(){
   sqlite3Tsd()->mallocFailed = 0;
 }
 
-#ifndef SQLITE_OMIT_SOFTHEAPLIMIT
+#ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
 /*
 ** Set the soft heap-size limit for the current thread.
 */

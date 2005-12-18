@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.224 2005/12/09 20:02:05 drh Exp $
+** @(#) $Id: pager.c,v 1.225 2005/12/18 08:51:23 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -284,6 +284,9 @@ struct Pager {
   void (*xCodec)(void*,void*,Pgno,int); /* Routine for en/decoding data */
   void *pCodecArg;            /* First argument to xCodec() */
   PgHdr *aHash[N_PG_HASH];    /* Hash table to map page number to PgHdr */
+#ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
+  Pager *pNext;               /* Linked list of pagers in this thread */
+#endif
 };
 
 /*
@@ -1595,6 +1598,7 @@ int sqlite3pager_open(
   int useJournal = (flags & PAGER_OMIT_JOURNAL)==0;
   int noReadlock = (flags & PAGER_NO_READLOCK)!=0;
   char zTemp[SQLITE_TEMPNAME_SIZE];
+  SqliteTsd *pTsd = sqlite3Tsd();
 
   *ppPager = 0;
   memset(&fd, 0, sizeof(fd));
@@ -1680,6 +1684,8 @@ int sqlite3pager_open(
   pPager->pBusyHandler = 0;
   memset(pPager->aHash, 0, sizeof(pPager->aHash));
   *ppPager = pPager;
+  pPager->pNext = pTsd->pPager;
+  pTsd->pPager = pPager;
   return SQLITE_OK;
 }
 
@@ -1970,6 +1976,10 @@ int sqlite3pager_truncate(Pager *pPager, Pgno nPage){
 */
 int sqlite3pager_close(Pager *pPager){
   PgHdr *pPg, *pNext;
+#ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
+  SqliteTsd *pTsd = sqlite3Tsd();
+#endif
+
   switch( pPager->state ){
     case PAGER_RESERVED:
     case PAGER_SYNCED: 
@@ -2025,6 +2035,16 @@ int sqlite3pager_close(Pager *pPager){
   **   sqlite3Os.xDelete(pPager->zFilename);
   ** }
   */
+
+#ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
+  if( pPager==pTsd->pPager ){
+    pTsd->pPager = pPager->pNext;
+  }else{
+    Pager *pTmp;
+    for(pTmp = pTsd->pPager; pTmp->pNext!=pPager; pTmp=pTmp->pNext);
+    pTmp->pNext = pPager->pNext;
+  }
+#endif
 
   sqliteFree(pPager);
   return SQLITE_OK;
@@ -2289,6 +2309,154 @@ static int hasHotJournal(Pager *pPager){
   }
 }
 
+static int pager_recycle(Pager *pPager, int syncOk, PgHdr **ppPg){
+  PgHdr *pPg;
+  *ppPg = 0;
+
+  /* Find a page to recycle.  Try to locate a page that does not
+  ** require us to do an fsync() on the journal.
+  */
+  pPg = pPager->pFirstSynced;
+
+  /* If we could not find a page that does not require an fsync()
+  ** on the journal file then fsync the journal file.  This is a
+  ** very slow operation, so we work hard to avoid it.  But sometimes
+  ** it can't be helped.
+  */
+  if( pPg==0 && syncOk ){
+    int rc = syncJournal(pPager);
+    if( rc!=0 ){
+      sqlite3pager_rollback(pPager);
+      return SQLITE_IOERR;
+    }
+    if( pPager->fullSync ){
+      /* If in full-sync mode, write a new journal header into the
+      ** journal file. This is done to avoid ever modifying a journal
+      ** header that is involved in the rollback of pages that have
+      ** already been written to the database (in case the header is
+      ** trashed when the nRec field is updated).
+      */
+      pPager->nRec = 0;
+      assert( pPager->journalOff > 0 );
+      rc = writeJournalHdr(pPager);
+      if( rc!=0 ){
+        sqlite3pager_rollback(pPager);
+        return SQLITE_IOERR;
+      }
+    }
+    pPg = pPager->pFirst;
+  }
+  if( pPg==0 ){
+    return SQLITE_OK;
+  }
+
+  assert( pPg->nRef==0 );
+
+  /* Write the page to the database file if it is dirty.
+  */
+  if( pPg->dirty ){
+    int rc;
+    assert( pPg->needSync==0 );
+    pPg->pDirty = 0;
+    rc = pager_write_pagelist( pPg );
+    if( rc!=SQLITE_OK ){
+      sqlite3pager_rollback(pPager);
+      return SQLITE_IOERR;
+    }
+  }
+  assert( pPg->dirty==0 );
+
+  /* If the page we are recycling is marked as alwaysRollback, then
+  ** set the global alwaysRollback flag, thus disabling the
+  ** sqlite_dont_rollback() optimization for the rest of this transaction.
+  ** It is necessary to do this because the page marked alwaysRollback
+  ** might be reloaded at a later time but at that point we won't remember
+  ** that is was marked alwaysRollback.  This means that all pages must
+  ** be marked as alwaysRollback from here on out.
+  */
+  if( pPg->alwaysRollback ){
+    pPager->alwaysRollback = 1;
+  }
+
+  /* Unlink the old page from the free list and the hash table
+  */
+  unlinkPage(pPg);
+  TEST_INCR(pPager->nOvfl);
+
+  *ppPg = pPg;
+  return SQLITE_OK;
+}
+
+/*
+** This function is called to free superfluous dynamically allocated memory
+** held by the pager system. Memory in use by any SQLite pager allocated
+** by the current thread may be sqliteFree()ed.
+**
+** nReq is the number of bytes of memory required. Once this much has
+** been released, the function returns. The return value is the total number 
+** of bytes of memory released.
+*/
+int sqlite3pager_release_memory(int nReq){
+  SqliteTsd *pTsd = sqlite3Tsd();
+  Pager *pPager;
+  int nReleased = 0;
+  int i;
+
+  /* Outermost loop runs for at most two iterations. First iteration we
+  ** try to find memory that can be released without calling fsync(). Second
+  ** iteration (which only runs if the first failed to free nReq bytes of
+  ** memory) is permitted to call fsync(). This is of course much more 
+  ** expensive.
+  */
+  for(i=0; i==0 || i==1; i++){
+
+    /* Loop through all the SQLite pagers opened by the current thread. */
+    for(pPager=pTsd->pPager; pPager && nReleased<nReq; pPager=pPager->pNext){
+      PgHdr *pPg;
+      int rc;
+
+      /* For each pager, try to free as many pages as possible (without 
+      ** calling fsync() if this is the first iteration of the outermost 
+      ** loop).
+      */
+      while( SQLITE_OK==(rc = pager_recycle(pPager, i, &pPg)) && pPg) {
+	/* We've found a page to free. At this point the page has been 
+        ** removed from the page hash-table, free-list and synced-list 
+	** (pFirstSynced). It is still in the all pages (pAll) list. 
+        ** Remove it from this list before freeing.
+        **
+        ** Todo: Check the Pager.pStmt list to make sure this is Ok. It 
+        ** probably is though.
+        */
+        PgHdr *pTmp;
+        if( pPg==pPager->pAll ){
+           pPager->pAll = pPg->pNextAll;
+        }else{
+          for( pTmp=pPager->pAll; pTmp->pNextAll!=pPg; pTmp=pTmp->pNextAll );
+          pTmp->pNextAll = pPg->pNextAll;
+        }
+        nReleased += sqliteAllocSize(pPg);
+        sqliteFree(pPg);
+      }
+
+      if( rc!=SQLITE_OK ){
+        /* Assert that fsync() was enabled and the error was an io-error
+        ** or a full database. Nothing else should be able to wrong in 
+        ** pager_recycle.
+        */
+        assert( i && (rc==SQLITE_IOERR || rc==SQLITE_FULL) );
+
+        /* TODO: Figure out what to do about this. The IO-error
+        ** belongs to the connection that is executing a transaction. 
+        */
+        assert(0);
+      }
+    }
+  }
+  
+  return nReleased;
+}
+
 /*
 ** Acquire a page.
 **
@@ -2429,70 +2597,11 @@ int sqlite3pager_get(Pager *pPager, Pgno pgno, void **ppPage){
         pPager->nMaxPage++;
       }
     }else{
-      /* Find a page to recycle.  Try to locate a page that does not
-      ** require us to do an fsync() on the journal.
-      */
-      pPg = pPager->pFirstSynced;
-
-      /* If we could not find a page that does not require an fsync()
-      ** on the journal file then fsync the journal file.  This is a
-      ** very slow operation, so we work hard to avoid it.  But sometimes
-      ** it can't be helped.
-      */
-      if( pPg==0 ){
-        int rc = syncJournal(pPager);
-        if( rc!=0 ){
-          sqlite3pager_rollback(pPager);
-          return SQLITE_IOERR;
-        }
-        if( pPager->fullSync ){
-          /* If in full-sync mode, write a new journal header into the
-	  ** journal file. This is done to avoid ever modifying a journal
-	  ** header that is involved in the rollback of pages that have
-	  ** already been written to the database (in case the header is
-	  ** trashed when the nRec field is updated).
-          */
-          pPager->nRec = 0;
-          assert( pPager->journalOff > 0 );
-          rc = writeJournalHdr(pPager);
-          if( rc!=0 ){
-            sqlite3pager_rollback(pPager);
-            return SQLITE_IOERR;
-          }
-        }
-        pPg = pPager->pFirst;
+      rc = pager_recycle(pPager, 1, &pPg);
+      if( rc!=SQLITE_OK ){
+        return rc;
       }
-      assert( pPg->nRef==0 );
-
-      /* Write the page to the database file if it is dirty.
-      */
-      if( pPg->dirty ){
-        assert( pPg->needSync==0 );
-        pPg->pDirty = 0;
-        rc = pager_write_pagelist( pPg );
-        if( rc!=SQLITE_OK ){
-          sqlite3pager_rollback(pPager);
-          return SQLITE_IOERR;
-        }
-      }
-      assert( pPg->dirty==0 );
-
-      /* If the page we are recycling is marked as alwaysRollback, then
-      ** set the global alwaysRollback flag, thus disabling the
-      ** sqlite_dont_rollback() optimization for the rest of this transaction.
-      ** It is necessary to do this because the page marked alwaysRollback
-      ** might be reloaded at a later time but at that point we won't remember
-      ** that is was marked alwaysRollback.  This means that all pages must
-      ** be marked as alwaysRollback from here on out.
-      */
-      if( pPg->alwaysRollback ){
-        pPager->alwaysRollback = 1;
-      }
-
-      /* Unlink the old page from the free list and the hash table
-      */
-      unlinkPage(pPg);
-      TEST_INCR(pPager->nOvfl);
+      assert(pPg) ;
     }
     pPg->pgno = pgno;
     if( pPager->aInJournal && (int)pgno<=pPager->origDbSize ){
