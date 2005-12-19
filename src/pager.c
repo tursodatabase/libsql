@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.215 2005/09/17 15:20:27 drh Exp $
+** @(#) $Id: pager.c,v 1.215.2.1 2005/12/19 16:29:07 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -2981,7 +2981,7 @@ void sqlite3pager_dont_write(Pager *pPager, Pgno pgno){
 
   pPg = pager_lookup(pPager, pgno);
   pPg->alwaysRollback = 1;
-  if( pPg && pPg->dirty ){
+  if( pPg && pPg->dirty && !pPager->stmtInUse ){
     if( pPager->dbSize==(int)pPg->pgno && pPager->origDbSize<pPager->dbSize ){
       /* If this pages is the last page in the file and the file has grown
       ** during the current transaction, then do NOT mark the page as clean.
