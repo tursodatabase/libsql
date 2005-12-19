@@ -25,6 +25,13 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2005 December 19 (3.2.8)} {
+<li>Fix an obscure bug that can cause database corruption under the
+following unusual circumstances: A large INSERT or UPDATE statement which 
+is part of an even larger transaction fails due to a uniqueness contraint
+but the containing transaction commits.</li>
+}
+
 chng {2005 September 24 (3.2.7)} {
 <li>GROUP BY now considers NULLs to be equal again, as it should
 </li>
