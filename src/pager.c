@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.225 2005/12/18 08:51:23 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.226 2005/12/19 14:18:11 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -2323,7 +2323,7 @@ static int pager_recycle(Pager *pPager, int syncOk, PgHdr **ppPg){
   ** very slow operation, so we work hard to avoid it.  But sometimes
   ** it can't be helped.
   */
-  if( pPg==0 && syncOk ){
+  if( pPg==0 && pPager->pFirst && syncOk ){
     int rc = syncJournal(pPager);
     if( rc!=0 ){
       sqlite3pager_rollback(pPager);
@@ -2393,12 +2393,14 @@ static int pager_recycle(Pager *pPager, int syncOk, PgHdr **ppPg){
 ** by the current thread may be sqliteFree()ed.
 **
 ** nReq is the number of bytes of memory required. Once this much has
-** been released, the function returns. The return value is the total number 
+** been released, the function returns. A negative value for nReq means
+** free as much memory as possible. The return value is the total number 
 ** of bytes of memory released.
 */
+#ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
 int sqlite3pager_release_memory(int nReq){
   SqliteTsd *pTsd = sqlite3Tsd();
-  Pager *pPager;
+  Pager *p;
   int nReleased = 0;
   int i;
 
@@ -2411,7 +2413,7 @@ int sqlite3pager_release_memory(int nReq){
   for(i=0; i==0 || i==1; i++){
 
     /* Loop through all the SQLite pagers opened by the current thread. */
-    for(pPager=pTsd->pPager; pPager && nReleased<nReq; pPager=pPager->pNext){
+    for(p=pTsd->pPager; p && (nReq<0 || nReleased<nReq); p=p->pNext){
       PgHdr *pPg;
       int rc;
 
@@ -2419,7 +2421,7 @@ int sqlite3pager_release_memory(int nReq){
       ** calling fsync() if this is the first iteration of the outermost 
       ** loop).
       */
-      while( SQLITE_OK==(rc = pager_recycle(pPager, i, &pPg)) && pPg) {
+      while( SQLITE_OK==(rc = pager_recycle(p, i, &pPg)) && pPg) {
 	/* We've found a page to free. At this point the page has been 
         ** removed from the page hash-table, free-list and synced-list 
 	** (pFirstSynced). It is still in the all pages (pAll) list. 
@@ -2429,10 +2431,11 @@ int sqlite3pager_release_memory(int nReq){
         ** probably is though.
         */
         PgHdr *pTmp;
-        if( pPg==pPager->pAll ){
-           pPager->pAll = pPg->pNextAll;
+        assert( pPg );
+        if( pPg==p->pAll ){
+           p->pAll = pPg->pNextAll;
         }else{
-          for( pTmp=pPager->pAll; pTmp->pNextAll!=pPg; pTmp=pTmp->pNextAll );
+          for( pTmp=p->pAll; pTmp->pNextAll!=pPg; pTmp=pTmp->pNextAll );
           pTmp->pNextAll = pPg->pNextAll;
         }
         nReleased += sqliteAllocSize(pPg);
@@ -2456,6 +2459,7 @@ int sqlite3pager_release_memory(int nReq){
   
   return nReleased;
 }
+#endif
 
 /*
 ** Acquire a page.

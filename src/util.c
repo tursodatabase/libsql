@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.155 2005/12/18 08:51:24 danielk1977 Exp $
+** $Id: util.c,v 1.156 2005/12/19 14:18:11 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -35,7 +35,7 @@
 **     sqlite3AllocSize()
 **
 ** The function sqlite3FreeX performs the same task as sqlite3Free and is
-** guaranteed to be a real function.
+** guaranteed to be a real function. The same holds for sqlite3MallocX
 **
 ** The above APIs are implemented in terms of the functions provided at the Os
 ** level (not in this file). The Os level interface is never accessed directly
@@ -48,7 +48,8 @@
 **
 ** Functions sqlite3MallocRaw() and sqlite3Realloc() may invoke 
 ** sqlite3_release_memory() if a call to sqlite3Os.xMalloc() or
-** sqlite3Os.xRealloc() fails. Function sqlite3Malloc() usually invokes
+** sqlite3Os.xRealloc() fails (or if the soft-heap-limit for the thread is
+** exceeded). Function sqlite3Malloc() usually invokes
 ** sqlite3MallocRaw().
 **
 ** MALLOC TEST WRAPPER ARCHITECTURE
@@ -62,11 +63,6 @@
 **     * Ability to cause a specific Malloc() or Realloc() to fail.
 **     * Audit outstanding memory allocations (i.e check for leaks).
 */
-
-/*
-** TODO!
-*/
-#define sqlite3_release_memory(x) 0
 
 #ifdef SQLITE_MEMDEBUG
 /*--------------------------------------------------------------------------
@@ -155,6 +151,37 @@ const char *sqlite3_malloc_id = 0;
   TESTALLOC_USERSIZE +                 /* User string */                \
   TESTALLOC_STACKSIZE                  /* backtrace() stack */          \
 )
+
+
+#ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
+/*
+** Set the soft heap-size limit for the current thread.
+*/
+void sqlite3_soft_heap_limit(int n){
+  unsigned int N;
+  if( n<0 ){
+    /* No limit */
+    N = 0xFFFFFFFF;
+  }else{
+    N = n;
+  }
+  sqlite3Tsd()->nSoftHeapLimit = N;
+}
+
+/*
+** Release memory held by SQLite instances created by the current thread.
+*/
+int sqlite3_release_memory(int n){
+  return sqlite3pager_release_memory(n);
+}
+#else
+/* If SQLITE_OMIT_MEMORY_MANAGEMENT is defined, then define a version
+** of sqlite3_release_memory() to be used by other code in this file.
+** This is done for no better reason than to reduce the number of 
+** pre-processor #ifndef statements.
+*/
+#define sqlite3_release_memory(x) 0    /* 0 == no memory freed */
+#endif
 
 /*
 ** For keeping track of the number of mallocs and frees.   This
@@ -452,7 +479,8 @@ void OSMALLOC_FAILED(){
 
 int OSSIZEOF(void *p){
   if( p ){
-    return sqlite3Os.xAllocationSize(p) - TESTALLOC_OVERHEAD;
+    u32 *pOs = (u32 *)getOsPointer(p);
+    return sqlite3Os.xAllocationSize(pOs) - TESTALLOC_OVERHEAD;
   }
   return 0;
 }
@@ -1264,21 +1292,6 @@ void sqlite3MallocClearFailed(){
   sqlite3Tsd()->mallocFailed = 0;
 }
 
-#ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
-/*
-** Set the soft heap-size limit for the current thread.
-*/
-void sqlite3_soft_heap_limit(int n){
-  unsigned int N;
-  if( n<0 ){
-    /* No limit */
-    N = 0xFFFFFFFF;
-  }else{
-    N = n;
-  }
-  sqlite3Tsd()->nSoftHeapLimit = N;
-}
-#endif
 
 #ifndef NDEBUG
 /*
