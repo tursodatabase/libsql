@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.157 2005/12/20 09:19:37 danielk1977 Exp $
+** $Id: util.c,v 1.158 2005/12/20 14:38:00 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -65,6 +65,30 @@
 */
 
 #define MAX(x,y) ((x)>(y)?(x):(y))
+
+#ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
+/*
+** Set the soft heap-size limit for the current thread. Passing a negative
+** value indicates no limit.
+*/
+void sqlite3_soft_heap_limit(sqlite_int64 n){
+  sqlite3Tsd()->nSoftHeapLimit = n;
+}
+
+/*
+** Release memory held by SQLite instances created by the current thread.
+*/
+int sqlite3_release_memory(int n){
+  return sqlite3pager_release_memory(n);
+}
+#else
+/* If SQLITE_OMIT_MEMORY_MANAGEMENT is defined, then define a version
+** of sqlite3_release_memory() to be used by other code in this file.
+** This is done for no better reason than to reduce the number of 
+** pre-processor #ifndef statements.
+*/
+#define sqlite3_release_memory(x) 0    /* 0 == no memory freed */
+#endif
 
 #ifdef SQLITE_MEMDEBUG
 /*--------------------------------------------------------------------------
@@ -154,30 +178,6 @@ const char *sqlite3_malloc_id = 0;
   TESTALLOC_STACKSIZE                  /* backtrace() stack */          \
 )
 
-
-#ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
-/*
-** Set the soft heap-size limit for the current thread. Passing a negative
-** value indicates no limit.
-*/
-void sqlite3_soft_heap_limit(sqlite_int64 n){
-  sqlite3Tsd()->nSoftHeapLimit = n;
-}
-
-/*
-** Release memory held by SQLite instances created by the current thread.
-*/
-int sqlite3_release_memory(int n){
-  return sqlite3pager_release_memory(n);
-}
-#else
-/* If SQLITE_OMIT_MEMORY_MANAGEMENT is defined, then define a version
-** of sqlite3_release_memory() to be used by other code in this file.
-** This is done for no better reason than to reduce the number of 
-** pre-processor #ifndef statements.
-*/
-#define sqlite3_release_memory(x) 0    /* 0 == no memory freed */
-#endif
 
 /*
 ** For keeping track of the number of mallocs and frees.   This
