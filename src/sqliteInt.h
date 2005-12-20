@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.441 2005/12/19 14:18:11 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.442 2005/12/20 09:19:37 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -268,20 +268,19 @@ extern int sqlite3_iMallocReset; /* Set iMallocFail to this when it reaches 0 */
 /*
 ** An instance of this structure is allocated for each thread that uses SQLite.
 */
-typedef struct SqliteTsd SqliteTsd;
 struct SqliteTsd {
-  int isInit;                     /* True if structure has been initialised */
-  int mallocFailed;               /* True after a malloc() has failed */
+  u8 isInit;               /* True if structure has been initialised */
+  u8 mallocFailed;         /* True after a malloc() has failed */
+
 #ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
-  unsigned int nSoftHeapLimit;    /* (uint)-1 for unlimited */
-  unsigned int nAlloc;            /* Number of bytes currently allocated */
-  Pager *pPager;                  /* Linked list of all pagers in this thread */
+  i64 nSoftHeapLimit;      /* -ve for unlimited */
+  i64 nAlloc;              /* Number of bytes currently allocated */
+  Pager *pPager;           /* Linked list of all pagers in this thread */
 #endif
 
-#ifndef NDEBUG
-  int mallocAllowed;              /* assert() in sqlite3Malloc() if not set */
-#endif
 #ifdef SQLITE_MEMDEBUG
+  i64 nMaxAlloc;           /* High water mark of SqliteTsd.nAlloc */
+  int mallocAllowed;       /* assert() in sqlite3Malloc() if not set */
   int isFail;              /* True if all malloc() calls should fail */
   const char *zFile;       /* Filename to associate debugging info with */
   int iLine;               /* Line number to associate debugging info with */
@@ -333,6 +332,7 @@ typedef struct NameContext NameContext;
 typedef struct Parse Parse;
 typedef struct Select Select;
 typedef struct SrcList SrcList;
+typedef struct SqliteTsd SqliteTsd;
 typedef struct Table Table;
 typedef struct Token Token;
 typedef struct TriggerStack TriggerStack;

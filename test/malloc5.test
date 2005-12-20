@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: malloc5.test,v 1.1 2005/12/19 14:18:12 danielk1977 Exp $
+# $Id: malloc5.test,v 1.2 2005/12/20 09:19:38 danielk1977 Exp $
 
 #---------------------------------------------------------------------------
 # NOTES ON EXPECTED BEHAVIOUR
@@ -95,7 +95,6 @@ do_test malloc5-1.9 {
   }
 } {}
 
-
 do_test malloc5-2.1 {
   # Put some data in tables abc and def. Both tables are still wholly 
   # contained within their root pages.
@@ -116,12 +115,81 @@ do_test malloc5-2.2 {
     BEGIN;
     SELECT * FROM def;
   }
+  set data [list]
   db eval {SELECT * FROM abc} {
     incr nRelease [db release_memory]
     lappend data $a $b $c
   }
+  execsql {
+    COMMIT;
+  }
   list $nRelease $data
 } [list $pgalloc [list 1 2 3 4 5 6]]
+
+do_test malloc5-3.1 {
+  # Simple test to show that if two pagers are opened from within this
+  # thread, memory is freed from both when sqlite3_release_memory() is
+  # called.
+  execsql {
+    BEGIN;
+    SELECT * FROM abc;
+  }
+  execsql {
+    SELECT * FROM sqlite_master;
+    BEGIN;
+    SELECT * FROM def;
+  } db2
+  db release_memory
+} [expr $::pgalloc * 2]
+do_test malloc5-3.2 {
+  concat \
+    [execsql {SELECT * FROM abc; COMMIT}] \
+    [execsql {SELECT * FROM def; COMMIT} db2]
+} {1 2 3 4 5 6 7 8 9 10 11 12}
+
+db2 close
+sqlite_malloc_outstanding -clearmaxbytes
+
+# The following two test cases each execute a transaction in which 
+# 10000 rows are inserted into table abc. The first test case is used
+# to ensure that more than 1MB of dynamic memory is used to perform
+# the transaction. 
+#
+# The second test case sets the "soft-heap-limit" to 100,000 bytes (0.1 MB)
+# and tests to see that this limit is not exceeded at any point during 
+# transaction execution.
+#
+do_test malloc5-4.1 {
+  execsql {BEGIN;}
+  execsql {DELETE FROM abc;}
+  for {set i 0} {$i < 10000} {incr i} {
+    execsql "INSERT INTO abc VALUES($i, $i, '[string repeat X 100]');"
+  }
+  execsql {COMMIT;}
+  set ::nMaxBytes [sqlite_malloc_outstanding -maxbytes]
+  expr $::nMaxBytes > 1000000
+} {1}
+do_test malloc5-4.2 {
+  db release_memory
+  sqlite_malloc_outstanding -clearmaxbytes
+  db soft_heap_limit 100000
+  execsql {BEGIN;}
+  for {set i 0} {$i < 10000} {incr i} {
+    execsql "INSERT INTO abc VALUES($i, $i, '[string repeat X 100]');"
+  }
+  execsql {COMMIT;}
+  set ::nMaxBytes [sqlite_malloc_outstanding -maxbytes]
+  expr $::nMaxBytes <= 100000
+} {1}
+do_test malloc5-4.3 {
+  # Check that the content of table abc is at least roughly as expected.
+  execsql {
+    SELECT count(*), sum(a), sum(b) FROM abc;
+  }
+} [list 20000 [expr int(20000.0 * 4999.5)] [expr int(20000.0 * 4999.5)]]
+
+# Unset the soft-heap-limit value.
+db soft_heap_limit -1
 
 finish_test
 

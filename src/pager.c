@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.227 2005/12/19 16:15:31 drh Exp $
+** @(#) $Id: pager.c,v 1.228 2005/12/20 09:19:37 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -2309,6 +2309,9 @@ static int hasHotJournal(Pager *pPager){
   }
 }
 
+/*
+** Try to find a page in the cache that can be recycled.
+*/
 static int pager_recycle(Pager *pPager, int syncOk, PgHdr **ppPg){
   PgHdr *pPg;
   *ppPg = 0;
@@ -2323,7 +2326,7 @@ static int pager_recycle(Pager *pPager, int syncOk, PgHdr **ppPg){
   ** very slow operation, so we work hard to avoid it.  But sometimes
   ** it can't be helped.
   */
-  if( pPg==0 && pPager->pFirst && syncOk ){
+  if( pPg==0 && pPager->pFirst && syncOk && !MEMDB){
     int rc = syncJournal(pPager);
     if( rc!=0 ){
       sqlite3pager_rollback(pPager);

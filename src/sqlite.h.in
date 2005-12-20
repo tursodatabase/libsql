@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.150 2005/12/19 14:18:11 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.151 2005/12/20 09:19:37 danielk1977 Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1289,7 +1289,7 @@ sqlite3 *sqlite3_db_handle(sqlite3_stmt*);
 ** This function is only available if the library was compiled without the 
 ** SQLITE_OMIT_MEMORY_MANAGEMENT option set.
 */
-void sqlite3_soft_heap_limit(int);
+void sqlite3_soft_heap_limit(sqlite_int64);
 
 /*
 ** Register a callback function with the database connection identified by the 

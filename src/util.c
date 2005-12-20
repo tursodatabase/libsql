@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.156 2005/12/19 14:18:11 danielk1977 Exp $
+** $Id: util.c,v 1.157 2005/12/20 09:19:37 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -63,6 +63,8 @@
 **     * Ability to cause a specific Malloc() or Realloc() to fail.
 **     * Audit outstanding memory allocations (i.e check for leaks).
 */
+
+#define MAX(x,y) ((x)>(y)?(x):(y))
 
 #ifdef SQLITE_MEMDEBUG
 /*--------------------------------------------------------------------------
@@ -155,17 +157,11 @@ const char *sqlite3_malloc_id = 0;
 
 #ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
 /*
-** Set the soft heap-size limit for the current thread.
+** Set the soft heap-size limit for the current thread. Passing a negative
+** value indicates no limit.
 */
-void sqlite3_soft_heap_limit(int n){
-  unsigned int N;
-  if( n<0 ){
-    /* No limit */
-    N = 0xFFFFFFFF;
-  }else{
-    N = n;
-  }
-  sqlite3Tsd()->nSoftHeapLimit = N;
+void sqlite3_soft_heap_limit(sqlite_int64 n){
+  sqlite3Tsd()->nSoftHeapLimit = n;
 }
 
 /*
@@ -434,6 +430,10 @@ int sqlite3OutstandingMallocs(Tcl_Interp *interp){
 ** This is the test layer's wrapper around sqlite3Os.xMalloc().
 */
 static void * OSMALLOC(int n){
+#ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
+  SqliteTsd *pTsd = sqlite3Tsd();
+  pTsd->nMaxAlloc = MAX(pTsd->nMaxAlloc, pTsd->nAlloc);
+#endif
   if( !failMalloc() ){
     u32 *p;
     p = (u32 *)sqlite3Os.xMalloc(n + TESTALLOC_OVERHEAD);
@@ -462,6 +462,10 @@ void OSFREE(void *pFree){
 ** This is the test layer's wrapper around sqlite3Os.xRealloc().
 */
 void * OSREALLOC(void *pRealloc, int n){
+#ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
+  SqliteTsd *pTsd = sqlite3Tsd();
+  pTsd->nMaxAlloc = MAX(pTsd->nMaxAlloc, pTsd->nAlloc);
+#endif
   if( !failMalloc() ){
     u32 *p = (u32 *)getOsPointer(pRealloc);
     checkGuards(p);
@@ -515,8 +519,10 @@ int OSSIZEOF(void *p){
 #ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
 static void handleSoftLimit(int n){
   SqliteTsd *pTsd = sqlite3Tsd();
-  pTsd->nAlloc += n;
-  while( pTsd->nAlloc>pTsd->nSoftHeapLimit && sqlite3_release_memory(n) );
+  pTsd->nAlloc += (i64)n;
+  if( n>0 && pTsd->nSoftHeapLimit>0 ){
+    while( pTsd->nAlloc>pTsd->nSoftHeapLimit && sqlite3_release_memory(n) );
+  }
 }
 #else
 #define handleSoftLimit()
@@ -534,6 +540,12 @@ void *sqlite3MallocRaw(int n){
     handleSoftLimit(n);
     while( !(p = OSMALLOC(n)) && sqlite3_release_memory(n) );
     if( !p ){
+      /* If the allocation failed, call handleSoftLimit() again, this time
+      ** with the additive inverse of the argument passed to 
+      ** handleSoftLimit() above. This is so the SqliteTsd.nAlloc variable is
+      ** still correct after a malloc() failure. 
+      */
+      handleSoftLimit(n * -1);
       sqlite3Tsd()->mallocFailed = 1;
       OSMALLOC_FAILED();
     }
@@ -559,6 +571,12 @@ void *sqlite3Realloc(void *p, int n){
     handleSoftLimit(n - OSSIZEOF(p));
     while( !(np = OSREALLOC(p, n)) && sqlite3_release_memory(n) );
     if( !np ){
+      /* If the allocation failed, call handleSoftLimit() again, this time
+      ** with the additive inverse of the argument passed to 
+      ** handleSoftLimit() above. This is so the SqliteTsd.nAlloc variable is
+      ** still correct after a malloc() failure. 
+      */
+      handleSoftLimit(OSSIZEOF(p) - n);
       pTsd->mallocFailed = 1;
       OSMALLOC_FAILED();
     }
@@ -571,6 +589,7 @@ void *sqlite3Realloc(void *p, int n){
 ** value returned by a previous call to sqlite3Malloc() or sqlite3Realloc().
 */
 void sqlite3FreeX(void *p){
+  handleSoftLimit(0 - OSSIZEOF(p));
   if( p ){
     OSFREE(p);
   }
@@ -1275,7 +1294,7 @@ void *sqlite3TextToPtr(const char *z){
 SqliteTsd *sqlite3Tsd(){
   SqliteTsd *pTsd = sqlite3Os.xThreadSpecificData(sizeof(SqliteTsd));
   if( pTsd && !pTsd->isInit ){
-    pTsd->nSoftHeapLimit = 0xFFFFFFFF;
+    pTsd->nSoftHeapLimit = -1;
 #ifndef NDEBUG
     pTsd->mallocAllowed = 1;
 #endif
