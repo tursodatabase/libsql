@@ -12,7 +12,7 @@
 ** This file contains C code routines that used to generate VDBE code
 ** that implements the ALTER TABLE command.
 **
-** $Id: alter.c,v 1.12 2005/12/16 01:06:17 drh Exp $
+** $Id: alter.c,v 1.13 2005/12/21 14:43:12 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -385,7 +385,6 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
   char *zCol;               /* Null-terminated column definition */
   Column *pCol;             /* The new column */
   Expr *pDflt;              /* Default value for the new column */
-  Vdbe *v;
 
   if( pParse->nErr ) return;
   pNew = pParse->pNewTable;
@@ -467,23 +466,6 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
   /* Reload the schema of the modified table. */
   reloadTableSchema(pParse, pTab, pTab->zName);
 }
-
-/*
-** Generate code to make sure the file format number is at least minFormat.
-** The generated code will increase the file format number if necessary.
-*/
-void sqlite3MinimumFileFormat(Parse *pParse, int iDb, int minFormat){
-  Vdbe *v;
-  v = sqlite3GetVdbe(pParse);
-  if( v ){
-    sqlite3VdbeAddOp(v, OP_ReadCookie, iDb, 1);
-    sqlite3VdbeAddOp(v, OP_Integer, minFormat, 0);
-    sqlite3VdbeAddOp(v, OP_Ge, 0, sqlite3VdbeCurrentAddr(v)+3);
-    sqlite3VdbeAddOp(v, OP_Integer, minFormat, 0);
-    sqlite3VdbeAddOp(v, OP_SetCookie, iDb, 1);
-  }
-}
-
 
 /*
 ** This function is called by the parser after the table-name in

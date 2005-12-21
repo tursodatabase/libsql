@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.359 2005/12/21 03:16:43 drh Exp $
+** $Id: build.c,v 1.360 2005/12/21 14:43:12 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2259,12 +2259,8 @@ void sqlite3CreateIndex(
 
   /* Check to see if we should honor DESC requests on index columns
   */
-  if( pDb->file_format>=4 || (pDb->descIndex && db->init.busy) ){
-#if 0
+  if( pDb->file_format>=4 || (!pDb->descIndex && !db->init.busy) ){
     sortOrderMask = -1;   /* Honor DESC */
-#else
-    sortOrderMask = 0;
-#endif
   }else{
     sortOrderMask = 0;    /* Ignore DESC */
   }
@@ -2396,16 +2392,17 @@ void sqlite3CreateIndex(
     v = sqlite3GetVdbe(pParse);
     if( v==0 ) goto exit_create_index;
 
-    /* Make sure the file_format is at least 4 if we have DESC indices. */
-    if( descSeen ){
-      sqlite3MinimumFileFormat(pParse, iDb, 4);
-    }
 
     /* Create the rootpage for the index
     */
     sqlite3BeginWriteOperation(pParse, 1, iDb);
     sqlite3VdbeAddOp(v, OP_CreateIndex, iDb, 0);
     sqlite3VdbeAddOp(v, OP_MemStore, iMem, 0);
+
+    /* Make sure the file_format is at least 4 if we have DESC indices. */
+    if( descSeen ){
+      sqlite3MinimumFileFormat(pParse, iDb, 4);
+    }
 
     /* Gather the complete text of the CREATE INDEX statement into
     ** the zStmt variable
@@ -2476,6 +2473,22 @@ exit_create_index:
   sqlite3SrcListDelete(pTblName);
   sqliteFree(zName);
   return;
+}
+
+/*
+** Generate code to make sure the file format number is at least minFormat.
+** The generated code will increase the file format number if necessary.
+*/
+void sqlite3MinimumFileFormat(Parse *pParse, int iDb, int minFormat){
+  Vdbe *v;
+  v = sqlite3GetVdbe(pParse);
+  if( v ){
+    sqlite3VdbeAddOp(v, OP_ReadCookie, iDb, 1);
+    sqlite3VdbeAddOp(v, OP_Integer, minFormat, 0);
+    sqlite3VdbeAddOp(v, OP_Ge, 0, sqlite3VdbeCurrentAddr(v)+3);
+    sqlite3VdbeAddOp(v, OP_Integer, minFormat, 0);
+    sqlite3VdbeAddOp(v, OP_SetCookie, iDb, 1);
+  }
 }
 
 /*

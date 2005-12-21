@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.506 2005/12/16 15:24:29 danielk1977 Exp $
+** $Id: vdbe.c,v 1.507 2005/12/21 14:43:12 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2422,6 +2422,9 @@ case OP_SetCookie: {       /* no-push */
     /* When the schema cookie changes, record the new cookie internally */
     pDb->schema_cookie = pTos->i;
     db->flags |= SQLITE_InternChanges;
+  }else if( pOp->p2==1 ){
+    /* Record changes in the file format */
+    pDb->file_format = pTos->i;
   }
   assert( (pTos->flags & MEM_Dyn)==0 );
   pTos--;

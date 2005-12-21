@@ -1,0 +1,171 @@
+# 2005 December 21
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this script is descending indices.
+#
+# $Id: descidx1.test,v 1.1 2005/12/21 14:43:12 drh Exp $
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# This procedure sets the value of the file-format in file 'test.db'
+# to $newval. Also, the schema cookie is incremented.
+# 
+proc set_file_format {newval} {
+  set bt [btree_open test.db 10 0]
+  btree_begin_transaction $bt
+  set meta [btree_get_meta $bt]
+  lset meta 2 $newval                    ;# File format
+  lset meta 1 [expr [lindex $meta 1]+1]  ;# Schema cookie
+  eval "btree_update_meta $bt $meta"
+  btree_commit $bt
+  btree_close $bt
+}
+
+# This procedure returns the value of the file-format in file 'test.db'.
+# 
+proc get_file_format {{fname test.db}} {
+  set bt [btree_open $fname 10 0]
+  set meta [btree_get_meta $bt]
+  btree_close $bt
+  lindex $meta 2
+}
+
+# Verify that the file format jumps to (at least) 4 as soon as a
+# descending index is created.
+#
+do_test descidx1-1.1 {
+  execsql {
+    CREATE TABLE t1(a,b);
+    CREATE INDEX i1 ON t1(b ASC);
+  }
+  get_file_format
+} {1}
+do_test descidx1-1.2 {
+  execsql {
+    CREATE INDEX i2 ON t1(a DESC);
+  }
+  get_file_format
+} {4}
+
+# Put some information in the table and verify that the descending
+# index actually works.
+#
+do_test descidx1-2.1 {
+  execsql {
+    INSERT INTO t1 VALUES(1,1);
+    INSERT INTO t1 VALUES(2,2);
+    INSERT INTO t1 SELECT a+2, a+2 FROM t1;
+    INSERT INTO t1 SELECT a+4, a+4 FROM t1;
+    SELECT b FROM t1 WHERE a>3 AND a<7;
+  }
+} {6 5 4}
+do_test descidx1-2.2 {
+  execsql {
+    SELECT a FROM t1 WHERE b>3 AND b<7;
+  }
+} {4 5 6}
+do_test descidx1-2.3 {
+  execsql {
+    SELECT b FROM t1 WHERE a>=3 AND a<7;
+  }
+} {6 5 4 3}
+do_test descidx1-2.4 {
+  execsql {
+    SELECT b FROM t1 WHERE a>3 AND a<=7;
+  }
+} {7 6 5 4}
+do_test descidx1-2.5 {
+  execsql {
+    SELECT b FROM t1 WHERE a>=3 AND a<=7;
+  }
+} {7 6 5 4 3}
+do_test descidx1-2.6 {
+  execsql {
+    SELECT a FROM t1 WHERE b>=3 AND b<=7;
+  }
+} {3 4 5 6 7}
+
+# This procedure executes the SQL.  Then it checks to see if the OP_Sort
+# opcode was executed.  If an OP_Sort did occur, then "sort" is appended
+# to the result.  If no OP_Sort happened, then "nosort" is appended.
+#
+# This procedure is used to check to make sure sorting is or is not
+# occurring as expected.
+#
+proc cksort {sql} {
+  set ::sqlite_sort_count 0
+  set data [execsql $sql]
+  if {$::sqlite_sort_count} {set x sort} {set x nosort}
+  lappend data $x
+  return $data
+}
+
+# Test sorting using a descending index.
+#
+do_test descidx1-3.1 {
+  cksort {SELECT a FROM t1 ORDER BY a}
+} {1 2 3 4 5 6 7 8 nosort}
+do_test descidx1-3.2 {
+  cksort {SELECT a FROM t1 ORDER BY a ASC}
+} {1 2 3 4 5 6 7 8 nosort}
+do_test descidx1-3.3 {
+  cksort {SELECT a FROM t1 ORDER BY a DESC}
+} {8 7 6 5 4 3 2 1 nosort}
+do_test descidx1-3.4 {
+  cksort {SELECT b FROM t1 ORDER BY a}
+} {1 2 3 4 5 6 7 8 nosort}
+do_test descidx1-3.5 {
+  cksort {SELECT b FROM t1 ORDER BY a ASC}
+} {1 2 3 4 5 6 7 8 nosort}
+do_test descidx1-3.6 {
+  cksort {SELECT b FROM t1 ORDER BY a DESC}
+} {8 7 6 5 4 3 2 1 nosort}
+do_test descidx1-3.7 {
+  cksort {SELECT a FROM t1 ORDER BY b}
+} {1 2 3 4 5 6 7 8 nosort}
+do_test descidx1-3.8 {
+  cksort {SELECT a FROM t1 ORDER BY b ASC}
+} {1 2 3 4 5 6 7 8 nosort}
+do_test descidx1-3.9 {
+  cksort {SELECT a FROM t1 ORDER BY b DESC}
+} {8 7 6 5 4 3 2 1 nosort}
+do_test descidx1-3.10 {
+  cksort {SELECT b FROM t1 ORDER BY b}
+} {1 2 3 4 5 6 7 8 nosort}
+do_test descidx1-3.11 {
+  cksort {SELECT b FROM t1 ORDER BY b ASC}
+} {1 2 3 4 5 6 7 8 nosort}
+do_test descidx1-3.12 {
+  cksort {SELECT b FROM t1 ORDER BY b DESC}
+} {8 7 6 5 4 3 2 1 nosort}
+
+do_test descidx1-3.21 {
+  cksort {SELECT a FROM t1 WHERE a>3 AND a<8 ORDER BY a}
+} {4 5 6 7 nosort}
+do_test descidx1-3.22 {
+  cksort {SELECT a FROM t1 WHERE a>3 AND a<8 ORDER BY a ASC}
+} {4 5 6 7 nosort}
+do_test descidx1-3.23 {
+  cksort {SELECT a FROM t1 WHERE a>3 AND a<8 ORDER BY a DESC}
+} {7 6 5 4 nosort}
+do_test descidx1-3.24 {
+  cksort {SELECT b FROM t1 WHERE a>3 AND a<8 ORDER BY a}
+} {4 5 6 7 nosort}
+do_test descidx1-3.25 {
+  cksort {SELECT b FROM t1 WHERE a>3 AND a<8 ORDER BY a ASC}
+} {4 5 6 7 nosort}
+do_test descidx1-3.26 {
+  cksort {SELECT b FROM t1 WHERE a>3 AND a<8 ORDER BY a DESC}
+} {7 6 5 4 nosort}
+
+finish_test
