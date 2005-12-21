@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.507 2005/12/21 14:43:12 drh Exp $
+** $Id: vdbe.c,v 1.508 2005/12/21 18:36:46 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2763,7 +2763,8 @@ case OP_MoveGt: {       /* no-push */
       pC->lastRowid = pTos->i;
       pC->rowidIsValid = res==0;
     }else{
-      Stringify(pTos, db->enc);
+      assert( pTos->flags & MEM_Blob );
+      /* Stringify(pTos, db->enc); */
       rc = sqlite3BtreeMoveto(pC->pCursor, pTos->z, pTos->n, &res);
       if( rc!=SQLITE_OK ){
         goto abort_due_to_error;

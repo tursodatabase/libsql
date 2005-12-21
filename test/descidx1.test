@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is descending indices.
 #
-# $Id: descidx1.test,v 1.1 2005/12/21 14:43:12 drh Exp $
+# $Id: descidx1.test,v 1.2 2005/12/21 18:36:46 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -167,5 +167,125 @@ do_test descidx1-3.25 {
 do_test descidx1-3.26 {
   cksort {SELECT b FROM t1 WHERE a>3 AND a<8 ORDER BY a DESC}
 } {7 6 5 4 nosort}
+
+# Create a table with indices that are descending on some terms and
+# ascending on others.
+#
+do_test descidx1-4.1 {
+  execsql {
+    CREATE TABLE t2(a INT, b TEXT, c BLOB, d REAL);
+    CREATE INDEX i3 ON t2(a ASC, b DESC, c ASC);
+    CREATE INDEX i4 ON t2(b DESC, a ASC, d DESC);
+    INSERT INTO t2 VALUES(1,'one',x'31',1.0);
+    INSERT INTO t2 VALUES(2,'two',x'3232',2.0);
+    INSERT INTO t2 VALUES(3,'three',x'333333',3.0);
+    INSERT INTO t2 VALUES(4,'four',x'34343434',4.0);
+    INSERT INTO t2 VALUES(5,'five',x'3535353535',5.0);
+    INSERT INTO t2 VALUES(6,'six',x'363636363636',6.0);
+    INSERT INTO t2 VALUES(2,'two',x'323232',2.1);
+    INSERT INTO t2 VALUES(2,'zwei',x'3232',2.2);
+    INSERT INTO t2 VALUES(2,NULL,NULL,2.3);
+    SELECT count(*) FROM t2;
+  }
+} {9}
+do_test descidx1-4.2 {
+  execsql {
+    SELECT d FROM t2 ORDER BY a;
+  }
+} {1.0 2.2 2.0 2.1 2.3 3.0 4.0 5.0 6.0}
+do_test descidx1-4.3 {
+  execsql {
+    SELECT d FROM t2 WHERE a>=2;
+  }
+} {2.2 2.0 2.1 2.3 3.0 4.0 5.0 6.0}
+do_test descidx1-4.4 {
+  execsql {
+    SELECT d FROM t2 WHERE a>2;
+  }
+} {3.0 4.0 5.0 6.0}
+do_test descidx1-4.5 {
+  execsql {
+    SELECT d FROM t2 WHERE a=2 AND b>'two';
+  }
+} {2.2}
+do_test descidx1-4.6 {
+  execsql {
+    SELECT d FROM t2 WHERE a=2 AND b>='two';
+  }
+} {2.2 2.0 2.1}
+do_test descidx1-4.7 {
+  execsql {
+    SELECT d FROM t2 WHERE a=2 AND b<'two';
+  }
+} {}
+do_test descidx1-4.8 {
+  execsql {
+    SELECT d FROM t2 WHERE a=2 AND b<='two';
+  }
+} {2.0 2.1}
+
+do_test descidx1-5.1 {
+  execsql {
+    CREATE TABLE t3(a,b,c,d);
+    CREATE INDEX t3i1 ON t3(a DESC, b ASC, c DESC, d ASC);
+    INSERT INTO t3 VALUES(0,0,0,0);
+    INSERT INTO t3 VALUES(0,0,0,1);
+    INSERT INTO t3 VALUES(0,0,1,0);
+    INSERT INTO t3 VALUES(0,0,1,1);
+    INSERT INTO t3 VALUES(0,1,0,0);
+    INSERT INTO t3 VALUES(0,1,0,1);
+    INSERT INTO t3 VALUES(0,1,1,0);
+    INSERT INTO t3 VALUES(0,1,1,1);
+    INSERT INTO t3 VALUES(1,0,0,0);
+    INSERT INTO t3 VALUES(1,0,0,1);
+    INSERT INTO t3 VALUES(1,0,1,0);
+    INSERT INTO t3 VALUES(1,0,1,1);
+    INSERT INTO t3 VALUES(1,1,0,0);
+    INSERT INTO t3 VALUES(1,1,0,1);
+    INSERT INTO t3 VALUES(1,1,1,0);
+    INSERT INTO t3 VALUES(1,1,1,1);
+    SELECT count(*) FROM t3;
+  }
+} {16}
+do_test descidx1-5.2 {
+  cksort {
+    SELECT a||b||c||d FROM t3 ORDER BY a,b,c,d;
+  }
+} {0000 0001 0010 0011 0100 0101 0110 0111 1000 1001 1010 1011 1100 1101 1110 1111 sort}
+do_test descidx1-5.3 {
+  cksort {
+    SELECT a||b||c||d FROM t3 ORDER BY a DESC, b ASC, c DESC, d ASC;
+  }
+} {1010 1011 1000 1001 1110 1111 1100 1101 0010 0011 0000 0001 0110 0111 0100 0101 nosort}
+do_test descidx1-5.4 {
+  cksort {
+    SELECT a||b||c||d FROM t3 ORDER BY a ASC, b DESC, c ASC, d DESC;
+  }
+} {0101 0100 0111 0110 0001 0000 0011 0010 1101 1100 1111 1110 1001 1000 1011 1010 nosort}
+do_test descidx1-5.5 {
+  cksort {
+    SELECT a||b||c FROM t3 WHERE d=0 ORDER BY a DESC, b ASC, c DESC
+  }
+} {101 100 111 110 001 000 011 010 nosort}
+do_test descidx1-5.6 {
+  cksort {
+    SELECT a||b||c FROM t3 WHERE d=0 ORDER BY a ASC, b DESC, c ASC
+  }
+} {010 011 000 001 110 111 100 101 nosort}
+do_test descidx1-5.7 {
+  cksort {
+    SELECT a||b||c FROM t3 WHERE d=0 ORDER BY a ASC, b DESC, c DESC
+  }
+} {011 010 001 000 111 110 101 100 sort}
+do_test descidx1-5.8 {
+  cksort {
+    SELECT a||b||c FROM t3 WHERE d=0 ORDER BY a ASC, b ASC, c ASC
+  }
+} {000 001 010 011 100 101 110 111 sort}
+do_test descidx1-5.9 {
+  cksort {
+    SELECT a||b||c FROM t3 WHERE d=0 ORDER BY a DESC, b DESC, c ASC
+  }
+} {110 111 100 101 010 011 000 001 sort}
 
 finish_test

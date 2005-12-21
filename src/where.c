@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.188 2005/12/21 03:16:43 drh Exp $
+** $Id: where.c,v 1.189 2005/12/21 18:36:46 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1719,6 +1719,7 @@ WhereInfo *sqlite3WhereBegin(
       int btmEq=0;        /* True if btm limit uses ==. False if strictly > */
       int topOp, btmOp;   /* Operators for the top and bottom search bounds */
       int testOp;
+      int nNotNull;       /* Number of rows of index that must be non-NULL */
       int topLimit = (pLevel->flags & WHERE_TOP_LIMIT)!=0;
       int btmLimit = (pLevel->flags & WHERE_BTM_LIMIT)!=0;
 
@@ -1740,6 +1741,7 @@ WhereInfo *sqlite3WhereBegin(
       ** operator and the top bound is a < or <= operator.  For a descending
       ** index the operators are reversed.
       */
+      nNotNull = nEq + topLimit;
       if( pIdx->keyInfo.aSortOrder[nEq]==SQLITE_SO_ASC ){
         topOp = WO_LT|WO_LE;
         btmOp = WO_GT|WO_GE;
@@ -1837,7 +1839,7 @@ WhereInfo *sqlite3WhereBegin(
         }
       }
       sqlite3VdbeAddOp(v, OP_RowKey, iIdxCur, 0);
-      sqlite3VdbeAddOp(v, OP_IdxIsNull, nEq + topLimit, cont);
+      sqlite3VdbeAddOp(v, OP_IdxIsNull, nNotNull, cont);
       if( !omitTable ){
         sqlite3VdbeAddOp(v, OP_IdxRowid, iIdxCur, 0);
         sqlite3VdbeAddOp(v, OP_MoveGe, iCur, 0);

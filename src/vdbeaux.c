@@ -1738,9 +1738,8 @@ int sqlite3VdbeRecordCompare(
     }else if( d2<nKey2 ){
       rc = -1;
     }
-  }
-
-  if( pKeyInfo->aSortOrder && i<pKeyInfo->nField && pKeyInfo->aSortOrder[i] ){
+  }else if( pKeyInfo->aSortOrder && i<pKeyInfo->nField
+               && pKeyInfo->aSortOrder[i] ){
     rc = -rc;
   }
 

@@ -1,5 +1,5 @@
-C Basic\sfunctionality\sfor\sdescending\sindices\sis\sin\splace.\s\sLots\smore\stesting\nneeded.\s(CVS\s2840)
-D 2005-12-21T14:43:12
+C Bug\sfixes\sand\sadditional\stesting\sof\sdescending\sindices.\s(CVS\s2841)
+D 2005-12-21T18:36:46
 F Makefile.in e3c6b3a38d734d41574c04f2fc90d18de2b87102
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -34,9 +34,9 @@ F src/alter.c 5905a3372379daa4f860199452b4de5a836e53f3
 F src/analyze.c ea42005eed52c382fcc7ef66969e7f1858597633
 F src/attach.c ee70131f128d31a9c6dcb8824e8471c91b18601a
 F src/auth.c 31e2304bef67f44d635655f44234387ea7d21454
-F src/btree.c 300fd8342f4d9f75829a8a96d60578592f3dee79
+F src/btree.c 2b2651e0f6f9f8c5976b662fbfab7fc8f54f02c9
 F src/btree.h 8ff86378bb5af0cde282614c16bf0c0190b6d216
-F src/build.c fd4417648d8e06d7a67ecfc2128752e8dad8909a
+F src/build.c 51f3f46801f68f49be8a1887f6a88e7fa3a16956
 F src/callback.c 62066afd516f220575e81b1a1239ab92a2eae252
 F src/complete.c df1681cef40dec33a286006981845f87b194e7a4
 F src/date.c bb079317bff6a2b78aba5c0d2ddae5f6f03acfb7
@@ -84,14 +84,14 @@ F src/update.c ec8e540617b116725b5a55c8d6b4db8bc67fdd7d
 F src/utf.c b7bffac4260177ae7f83c01d025fe0f5ed70ce71
 F src/util.c 8e0e3b1ad4f7c70706a9e76881882a409ccdb2e8
 F src/vacuum.c fbfdd3967fd34e2f260fafed88dcbf3c10856b94
-F src/vdbe.c ac5789b1d90538a578c0898e53bcc78876ed5a99
+F src/vdbe.c c04d2e517e7b515993164f51a3a8fb0958b7f4ce
 F src/vdbe.h 8729a4ee16ff9aeab2af9667df3cf300ff978e13
 F src/vdbeInt.h 7b8b8c5dcb203243e4a9a4414c9e488473f67741
 F src/vdbeapi.c b270b680cbc5d20b5a1abfdb08339667985df94e
-F src/vdbeaux.c c38276e0c95d9ed9c35bab195faea3d57e787aea
+F src/vdbeaux.c 8fd4f36dba8729fabe7ed6b2a2c1b05b7bf96ebe
 F src/vdbefifo.c 9efb94c8c3f4c979ebd0028219483f88e57584f5
 F src/vdbemem.c deba8d6e3727643924b210a8c531a496c2b8d386
-F src/where.c 4db62a60cda1c267947b975daf177b3c99e90d2b
+F src/where.c 0296a20c2e2a39c0cb785efe471fd1958a5259f3
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
 F test/all.test 55706917a12cd616440d50c35323747b4a9f03c3
 F test/alter.test 9d6837a3d946b73df692b7cef2a7644d2e2f6bc6
@@ -145,7 +145,8 @@ F test/default.test 252298e42a680146b1dd64f563b95bdf088d94fb
 F test/delete.test e08ffb452f581d58703d0294242c9e2b8d091916
 F test/delete2.test e382b6a97787197eb8b93dd4ccd37797c3725ea3
 F test/delete3.test 555e84a00a99230b7d049d477a324a631126a6ab
-F test/descidx1.test c1e71467faea9757136c5e6189c86c08cdbd61e8
+F test/descidx1.test 8e9c3b91fd70d7a781d4081d8a62e24b7fd88aef
+F test/descidx2.test c68734d4068b7f7039deb9586cf0117b86c0d850
 F test/diskfull.test d828d72adfc9e2d1a194d25996718c1989152cf9
 F test/distinctagg.test 2b89d1c5220d966a30ba4b40430338669301188b
 F test/enc.test 7a03417a1051fe8bc6c7641cf4c8c3f7e0066d52
@@ -330,7 +331,7 @@ F www/tclsqlite.tcl ddcf912ea48695603c8ed7efb29f0812ef8d1b49
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 112a34b8dcceb39540cb0cd629e264a867400bfb
-R f37dcce5af7edd562296885925a69bf6
+P 7064433e5b06a4f858f39ce57650fba99fd72ffd
+R 94917009e8a89e467b492554dcbf3812
 U drh
-Z 916338110e2662cd6d96522a66ddbd1b
+Z f7950fd75afb0bae2ca1ce1afe7aaa41

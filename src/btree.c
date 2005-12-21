@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.275 2005/12/16 15:24:29 danielk1977 Exp $
+** $Id: btree.c,v 1.276 2005/12/21 18:36:46 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -2721,7 +2721,7 @@ int sqlite3BtreeLast(BtCursor *pCur, int *pRes){
 **
 ** For INTKEY tables, only the nKey parameter is used.  pKey is
 ** ignored.  For other tables, nKey is the number of bytes of data
-** in nKey.  The comparison function specified when the cursor was
+** in pKey.  The comparison function specified when the cursor was
 ** created is used to compare keys.
 **
 ** If an exact match is not found, then the cursor is always
@@ -5817,4 +5817,3 @@ int sqlite3BtreeSync(Btree *pBt, const char *zMaster){
   }
   return SQLITE_OK;
 }
-
