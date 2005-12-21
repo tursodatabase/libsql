@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.358 2005/12/16 01:06:17 drh Exp $
+** $Id: build.c,v 1.359 2005/12/21 03:16:43 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2113,7 +2113,6 @@ void sqlite3CreateIndex(
   int iDb;             /* Index of the database that is being written */
   Token *pName = 0;    /* Unqualified name of the index to create */
   struct ExprList_item *pListItem; /* For looping over pList */
-  CollSeq *pCollSeq;               /* Collating sequence for one index column */
 
   if( pParse->nErr || sqlite3Tsd()->mallocFailed ) goto exit_create_index;
 
@@ -2277,7 +2276,7 @@ void sqlite3CreateIndex(
   for(i=0, pListItem=pList->a; i<pList->nExpr; i++, pListItem++){
     const char *zColName = pListItem->zName;
     Column *pTabCol;
-    int sortOrder;
+    int requestedSortOrder;
     for(j=0, pTabCol=pTab->aCol; j<pTab->nCol; j++, pTabCol++){
       if( sqlite3StrICmp(zColName, pTabCol->zName)==0 ) break;
     }
@@ -2299,11 +2298,11 @@ void sqlite3CreateIndex(
     ){
       goto exit_create_index;
     }
-    sortOrder = pListItem->sortOrder;
-    pDb->descIndex |= sortOrder;
-    sortOrder &= sortOrderMask;
-    pIndex->keyInfo.aSortOrder[i] = sortOrder;
-    descSeen |= sortOrder;
+    requestedSortOrder = pListItem->sortOrder;
+    pDb->descIndex |= requestedSortOrder;
+    requestedSortOrder &= sortOrderMask;
+    pIndex->keyInfo.aSortOrder[i] = requestedSortOrder;
+    descSeen |= requestedSortOrder;
   }
   pIndex->keyInfo.nField = pList->nExpr;
   sqlite3DefaultRowEst(pIndex);

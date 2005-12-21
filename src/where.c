@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.187 2005/12/07 06:27:44 danielk1977 Exp $
+** $Id: where.c,v 1.188 2005/12/21 03:16:43 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -785,7 +785,7 @@ static int isSortingIndex(
   int *pbRev              /* Set to 1 if ORDER BY is DESC */
 ){
   int i, j;                       /* Loop counters */
-  int sortOrder = SQLITE_SO_ASC;  /* Which direction we are sorting */
+  int sortOrder = 0;              /* XOR of index and ORDER BY sort direction */
   int nTerm;                      /* Number of ORDER BY terms */
   struct ExprList_item *pTerm;    /* A term of the ORDER BY clause */
   sqlite3 *db = pParse->db;
@@ -800,6 +800,7 @@ static int isSortingIndex(
   for(i=j=0, pTerm=pOrderBy->a; j<nTerm && i<pIdx->nColumn; i++){
     Expr *pExpr;       /* The expression of the ORDER BY pTerm */
     CollSeq *pColl;    /* The collating sequence of pExpr */
+    int termSortOrder; /* Sort order for this term */
 
     pExpr = pTerm->pExpr;
     if( pExpr->op!=TK_COLUMN || pExpr->iTable!=base ){
@@ -823,14 +824,18 @@ static int isSortingIndex(
         return 0;
       }
     }
+    assert( pIdx->keyInfo.aSortOrder!=0 );
+    assert( pTerm->sortOrder==0 || pTerm->sortOrder==1 );
+    assert( pIdx->keyInfo.aSortOrder[i]==0 || pIdx->keyInfo.aSortOrder[i]==1 );
+    termSortOrder = pIdx->keyInfo.aSortOrder[i] ^ pTerm->sortOrder;
     if( i>nEqCol ){
-      if( pTerm->sortOrder!=sortOrder ){
+      if( termSortOrder!=sortOrder ){
         /* Indices can only be used if all ORDER BY terms past the
         ** equality constraints are all either DESC or ASC. */
         return 0;
       }
     }else{
-      sortOrder = pTerm->sortOrder;
+      sortOrder = termSortOrder;
     }
     j++;
     pTerm++;
@@ -840,7 +845,7 @@ static int isSortingIndex(
   ** are covered.
   */
   if( j>=nTerm ){
-    *pbRev = sortOrder==SQLITE_SO_DESC;
+    *pbRev = sortOrder!=0;
     return 1;
   }
   return 0;
@@ -1710,7 +1715,9 @@ WhereInfo *sqlite3WhereBegin(
       */
       int start;
       int nEq = pLevel->nEq;
-      int leFlag=0, geFlag=0;
+      int topEq=0;        /* True if top limit uses ==. False is strictly < */
+      int btmEq=0;        /* True if btm limit uses ==. False if strictly > */
+      int topOp, btmOp;   /* Operators for the top and bottom search bounds */
       int testOp;
       int topLimit = (pLevel->flags & WHERE_TOP_LIMIT)!=0;
       int btmLimit = (pLevel->flags & WHERE_BTM_LIMIT)!=0;
@@ -1728,6 +1735,20 @@ WhereInfo *sqlite3WhereBegin(
         sqlite3VdbeAddOp(v, OP_Dup, nEq-1, 0);
       }
 
+      /* Figure out what comparison operators to use for top and bottom 
+      ** search bounds. For an ascending index, the bottom bound is a > or >=
+      ** operator and the top bound is a < or <= operator.  For a descending
+      ** index the operators are reversed.
+      */
+      if( pIdx->keyInfo.aSortOrder[nEq]==SQLITE_SO_ASC ){
+        topOp = WO_LT|WO_LE;
+        btmOp = WO_GT|WO_GE;
+      }else{
+        topOp = WO_GT|WO_GE;
+        btmOp = WO_LT|WO_LE;
+        SWAP(int, topLimit, btmLimit);
+      }
+
       /* Generate the termination key.  This is the key value that
       ** will end the search.  There is no termination key if there
       ** are no equality terms and no "X<..." term.
@@ -1738,24 +1759,24 @@ WhereInfo *sqlite3WhereBegin(
       if( topLimit ){
         Expr *pX;
         int k = pIdx->aiColumn[j];
-        pTerm = findTerm(&wc, iCur, k, notReady, WO_LT|WO_LE, pIdx);
+        pTerm = findTerm(&wc, iCur, k, notReady, topOp, pIdx);
         assert( pTerm!=0 );
         pX = pTerm->pExpr;
         assert( (pTerm->flags & TERM_CODED)==0 );
         sqlite3ExprCode(pParse, pX->pRight);
-        leFlag = pX->op==TK_LE;
+        topEq = pTerm->operator & (WO_LE|WO_GE);
         disableTerm(pLevel, pTerm);
         testOp = OP_IdxGE;
       }else{
         testOp = nEq>0 ? OP_IdxGE : OP_Noop;
-        leFlag = 1;
+        topEq = 1;
       }
       if( testOp!=OP_Noop ){
         int nCol = nEq + topLimit;
         pLevel->iMem = pParse->nMem++;
         buildIndexProbe(v, nCol, brk, pIdx);
         if( bRev ){
-          int op = leFlag ? OP_MoveLe : OP_MoveLt;
+          int op = topEq ? OP_MoveLe : OP_MoveLt;
           sqlite3VdbeAddOp(v, op, iIdxCur, brk);
         }else{
           sqlite3VdbeAddOp(v, OP_MemStore, pLevel->iMem, 1);
@@ -1776,15 +1797,15 @@ WhereInfo *sqlite3WhereBegin(
       if( btmLimit ){
         Expr *pX;
         int k = pIdx->aiColumn[j];
-        pTerm = findTerm(&wc, iCur, k, notReady, WO_GT|WO_GE, pIdx);
+        pTerm = findTerm(&wc, iCur, k, notReady, btmOp, pIdx);
         assert( pTerm!=0 );
         pX = pTerm->pExpr;
         assert( (pTerm->flags & TERM_CODED)==0 );
         sqlite3ExprCode(pParse, pX->pRight);
-        geFlag = pX->op==TK_GE;
+        btmEq = pTerm->operator & (WO_LE|WO_GE);
         disableTerm(pLevel, pTerm);
       }else{
-        geFlag = 1;
+        btmEq = 1;
       }
       if( nEq>0 || btmLimit ){
         int nCol = nEq + btmLimit;
@@ -1794,7 +1815,7 @@ WhereInfo *sqlite3WhereBegin(
           sqlite3VdbeAddOp(v, OP_MemStore, pLevel->iMem, 1);
           testOp = OP_IdxLT;
         }else{
-          int op = geFlag ? OP_MoveGe : OP_MoveGt;
+          int op = btmEq ? OP_MoveGe : OP_MoveGt;
           sqlite3VdbeAddOp(v, op, iIdxCur, brk);
         }
       }else if( bRev ){
@@ -1811,7 +1832,7 @@ WhereInfo *sqlite3WhereBegin(
       if( testOp!=OP_Noop ){
         sqlite3VdbeAddOp(v, OP_MemLoad, pLevel->iMem, 0);
         sqlite3VdbeAddOp(v, testOp, iIdxCur, brk);
-        if( (leFlag && !bRev) || (!geFlag && bRev) ){
+        if( (topEq && !bRev) || (!btmEq && bRev) ){
           sqlite3VdbeChangeP3(v, -1, "+", P3_STATIC);
         }
       }
