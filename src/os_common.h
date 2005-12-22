@@ -156,6 +156,5 @@ static void genericFree(void *p){
   free((void *)((char *)p - 8));
 }
 static int genericAllocationSize(void *p){
-  return *(int *)((char *)p - 8);
+  return p ? *(int *)((char *)p - 8) : 0;
 }
-
