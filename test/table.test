@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE TABLE statement.
 #
-# $Id: table.test,v 1.41 2005/09/10 15:35:07 drh Exp $
+# $Id: table.test,v 1.42 2005/12/29 01:11:37 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -238,16 +238,17 @@ do_test table-4.3 {
 
 # Try to drop a table that does not exist
 #
-do_test table-5.1 {
-  set v [catch {execsql {DROP TABLE test009}} msg]
-  lappend v $msg
+do_test table-5.1.1 {
+  catchsql {DROP TABLE test009}
 } {1 {no such table: test009}}
+do_test table-5.1.2 {
+  catchsql {DROP TABLE IF EXISTS test009}
+} {0 {}}
 
 # Try to drop sqlite_master
 #
 do_test table-5.2 {
-  set v [catch {execsql {DROP TABLE sqlite_master}} msg]
-  lappend v $msg
+  catchsql {DROP TABLE IF EXISTS sqlite_master}
 } {1 {table sqlite_master may not be dropped}}
 
 # Make sure an EXPLAIN does not really create a new table

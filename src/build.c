@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.361 2005/12/21 18:36:46 drh Exp $
+** $Id: build.c,v 1.362 2005/12/29 01:11:37 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1754,7 +1754,7 @@ static void destroyTable(Parse *pParse, Table *pTab){
 ** This routine is called to do the work of a DROP TABLE statement.
 ** pName is the name of the table to be dropped.
 */
-void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView){
+void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
   Table *pTab;
   Vdbe *v;
   sqlite3 *db = pParse->db;
@@ -1764,7 +1764,12 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView){
   assert( pName->nSrc==1 );
   pTab = sqlite3LocateTable(pParse, pName->a[0].zName, pName->a[0].zDatabase);
 
-  if( pTab==0 ) goto exit_drop_table;
+  if( pTab==0 ){
+    if( noErr ){
+      sqlite3ErrorClear(pParse);
+    }
+    goto exit_drop_table;
+  }
   iDb = pTab->iDb;
   assert( iDb>=0 && iDb<db->nDb );
 #ifndef SQLITE_OMIT_AUTHORIZATION

@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.188 2005/12/16 01:06:17 drh Exp $
+** @(#) $Id: parse.y,v 1.189 2005/12/29 01:11:37 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -172,7 +172,7 @@ id(A) ::= ID(X).         {A = X;}
 %ifdef SQLITE_OMIT_COMPOUND_SELECT
   EXCEPT INTERSECT UNION
 %endif
-  REINDEX RENAME CTIME_KW
+  REINDEX RENAME CTIME_KW IF
   .
 
 // Define operator precedence early so that this is the first occurance
@@ -336,9 +336,12 @@ resolvetype(A) ::= REPLACE.                  {A = OE_Replace;}
 
 ////////////////////////// The DROP TABLE /////////////////////////////////////
 //
-cmd ::= DROP TABLE fullname(X). {
-  sqlite3DropTable(pParse, X, 0);
+cmd ::= DROP TABLE ifexists(E) fullname(X). {
+  sqlite3DropTable(pParse, X, 0, E);
 }
+%type ifexists {int}
+ifexists(A) ::= IF EXISTS.   {A = 1;}
+ifexists(A) ::= .            {A = 0;}
 
 ///////////////////// The CREATE VIEW statement /////////////////////////////
 //
@@ -346,8 +349,8 @@ cmd ::= DROP TABLE fullname(X). {
 cmd ::= CREATE(X) temp(T) VIEW nm(Y) dbnm(Z) AS select(S). {
   sqlite3CreateView(pParse, &X, &Y, &Z, S, T);
 }
-cmd ::= DROP VIEW fullname(X). {
-  sqlite3DropTable(pParse, X, 1);
+cmd ::= DROP VIEW ifexists(E) fullname(X). {
+  sqlite3DropTable(pParse, X, 1, E);
 }
 %endif // SQLITE_OMIT_VIEW
 
