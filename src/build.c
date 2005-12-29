@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.362 2005/12/29 01:11:37 drh Exp $
+** $Id: build.c,v 1.363 2005/12/29 19:23:07 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -764,7 +764,7 @@ void sqlite3StartTable(
     sqlite3VdbeAddOp(v, OP_ReadCookie, iDb, 1);   /* file_format */
     lbl = sqlite3VdbeMakeLabel(v);
     sqlite3VdbeAddOp(v, OP_If, 0, lbl);
-    sqlite3VdbeAddOp(v, OP_Integer, 1, 0);   /* file format defaults to 1 */
+    sqlite3VdbeAddOp(v, OP_Integer, SQLITE_DEFAULT_FILE_FORMAT, 0);
     sqlite3VdbeAddOp(v, OP_SetCookie, iDb, 1);
     sqlite3VdbeAddOp(v, OP_Integer, db->enc, 0);
     sqlite3VdbeAddOp(v, OP_SetCookie, iDb, 4);
@@ -2112,7 +2112,6 @@ void sqlite3CreateIndex(
   Token nullId;        /* Fake token for an empty ID list */
   DbFixer sFix;        /* For assigning database names to pTable */
   int sortOrderMask;   /* 1 to honor DESC in index.  0 to ignore. */
-  int descSeen = 0;    /* Changes to true if a DESC is seen */
   sqlite3 *db = pParse->db;
   Db *pDb;             /* The specific table containing the indexed database */
   int iDb;             /* Index of the database that is being written */
@@ -2264,7 +2263,7 @@ void sqlite3CreateIndex(
 
   /* Check to see if we should honor DESC requests on index columns
   */
-  if( pDb->file_format>=4 || (!pDb->descIndex && !db->init.busy) ){
+  if( pDb->file_format>=4 ){
     sortOrderMask = -1;   /* Honor DESC */
   }else{
     sortOrderMask = 0;    /* Ignore DESC */
@@ -2299,11 +2298,8 @@ void sqlite3CreateIndex(
     ){
       goto exit_create_index;
     }
-    requestedSortOrder = pListItem->sortOrder;
-    pDb->descIndex |= requestedSortOrder;
-    requestedSortOrder &= sortOrderMask;
+    requestedSortOrder = pListItem->sortOrder & sortOrderMask;
     pIndex->keyInfo.aSortOrder[i] = requestedSortOrder;
-    descSeen |= requestedSortOrder;
   }
   pIndex->keyInfo.nField = pList->nExpr;
   sqlite3DefaultRowEst(pIndex);
@@ -2403,11 +2399,6 @@ void sqlite3CreateIndex(
     sqlite3BeginWriteOperation(pParse, 1, iDb);
     sqlite3VdbeAddOp(v, OP_CreateIndex, iDb, 0);
     sqlite3VdbeAddOp(v, OP_MemStore, iMem, 0);
-
-    /* Make sure the file_format is at least 4 if we have DESC indices. */
-    if( descSeen ){
-      sqlite3MinimumFileFormat(pParse, iDb, 4);
-    }
 
     /* Gather the complete text of the CREATE INDEX statement into
     ** the zStmt variable

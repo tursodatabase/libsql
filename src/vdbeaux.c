@@ -782,6 +782,7 @@ void sqlite3VdbeMakeReady(
   p->explain |= isExplain;
   p->magic = VDBE_MAGIC_RUN;
   p->nChange = 0;
+  p->minWriteFileFormat = 255;
 #ifdef VDBE_PROFILE
   {
     int i;
@@ -1490,7 +1491,9 @@ int sqlite3VdbeCursorMoveto(Cursor *p){
 **      5                     6            signed integer
 **      6                     8            signed integer
 **      7                     8            IEEE float
-**     8-11                                reserved for expansion
+**      8                     0            Integer constant 0
+**      9                     0            Integer constant 1
+**     10,11                               reserved for expansion
 **    N>=12 and even       (N-12)/2        BLOB
 **    N>=13 and odd        (N-13)/2        text
 **
@@ -1499,7 +1502,7 @@ int sqlite3VdbeCursorMoveto(Cursor *p){
 /*
 ** Return the serial-type for the value stored in pMem.
 */
-u32 sqlite3VdbeSerialType(Mem *pMem){
+u32 sqlite3VdbeSerialType(Mem *pMem, int file_format){
   int flags = pMem->flags;
 
   if( flags&MEM_Null ){
@@ -1509,7 +1512,11 @@ u32 sqlite3VdbeSerialType(Mem *pMem){
     /* Figure out whether to use 1, 2, 4, 6 or 8 bytes. */
 #   define MAX_6BYTE ((((i64)0x00001000)<<32)-1)
     i64 i = pMem->i;
-    u64 u = i<0 ? -i : i;
+    u64 u;
+    if( file_format>=4 && (i&1)==i ){
+      return 8+i;
+    }
+    u = i<0 ? -i : i;
     if( u<=127 ) return 1;
     if( u<=32767 ) return 2;
     if( u<=8388607 ) return 3;
@@ -1548,17 +1555,12 @@ int sqlite3VdbeSerialTypeLen(u32 serial_type){
 ** buf. It is assumed that the caller has allocated sufficient space.
 ** Return the number of bytes written.
 */ 
-int sqlite3VdbeSerialPut(unsigned char *buf, Mem *pMem){
-  u32 serial_type = sqlite3VdbeSerialType(pMem);
+int sqlite3VdbeSerialPut(unsigned char *buf, Mem *pMem, int file_format){
+  u32 serial_type = sqlite3VdbeSerialType(pMem, file_format);
   int len;
 
-  /* NULL */
-  if( serial_type==0 ){
-    return 0;
-  }
- 
   /* Integer and Real */
-  if( serial_type<=7 ){
+  if( serial_type<=7 && serial_type>0 ){
     u64 v;
     int i;
     if( serial_type==7 ){
@@ -1573,12 +1575,16 @@ int sqlite3VdbeSerialPut(unsigned char *buf, Mem *pMem){
     }
     return len;
   }
-  
+
   /* String or blob */
-  assert( serial_type>=12 );
-  len = sqlite3VdbeSerialTypeLen(serial_type);
-  memcpy(buf, pMem->z, len);
-  return len;
+  if( serial_type>=12 ){
+    len = sqlite3VdbeSerialTypeLen(serial_type);
+    memcpy(buf, pMem->z, len);
+    return len;
+  }
+
+  /* NULL or constants 0 or 1 */
+  return 0;
 }
 
 /*
@@ -1591,8 +1597,6 @@ int sqlite3VdbeSerialGet(
   Mem *pMem                     /* Memory cell to write value into */
 ){
   switch( serial_type ){
-    case 8:    /* Reserved for future use */
-    case 9:    /* Reserved for future use */
     case 10:   /* Reserved for future use */
     case 11:   /* Reserved for future use */
     case 0: {  /* NULL */
@@ -1650,6 +1654,12 @@ int sqlite3VdbeSerialGet(
         pMem->flags = MEM_Real;
       }
       return 8;
+    }
+    case 8:    /* Integer 0 */
+    case 9: {  /* Integer 1 */
+      pMem->i = serial_type-8;
+      pMem->flags = MEM_Int;
+      return 0;
     }
     default: {
       int len = (serial_type-12)/2;

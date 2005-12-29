@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.508 2005/12/21 18:36:46 drh Exp $
+** $Id: vdbe.c,v 1.509 2005/12/29 19:23:07 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2107,7 +2107,7 @@ op_column_out:
 **
 ** See also OP_MakeIdxRec
 */
-/* Opcode: MakeRecordI P1 P2 P3
+/* Opcode: MakeIdxRec P1 P2 P3
 **
 ** This opcode works just OP_MakeRecord except that it reads an extra
 ** integer from the stack (thus reading a total of abs(P1+1) entries)
@@ -2149,6 +2149,7 @@ case OP_MakeRecord: {
   int jumpIfNull;        /* Jump here if non-zero and any entries are NULL. */
   int addRowid;          /* True to append a rowid column at the end */
   char *zAffinity;       /* The affinity string for the record */
+  int file_format;       /* File format to use for encoding */
 
   leaveOnStack = ((pOp->p1<0)?1:0);
   nField = pOp->p1 * (leaveOnStack?-1:1);
@@ -2159,6 +2160,7 @@ case OP_MakeRecord: {
   pData0 = &pTos[1-nField];
   assert( pData0>=p->aStack );
   containsNull = 0;
+  file_format = p->minWriteFileFormat;
 
   /* Loop through the elements that will make up the record to figure
   ** out how much space is required for the new record.
@@ -2170,7 +2172,7 @@ case OP_MakeRecord: {
     if( pRec->flags&MEM_Null ){
       containsNull = 1;
     }
-    serial_type = sqlite3VdbeSerialType(pRec);
+    serial_type = sqlite3VdbeSerialType(pRec, file_format);
     nData += sqlite3VdbeSerialTypeLen(serial_type);
     nHdr += sqlite3VarintLen(serial_type);
   }
@@ -2183,7 +2185,7 @@ case OP_MakeRecord: {
     pRowid = &pTos[0-nField];
     assert( pRowid>=p->aStack );
     sqlite3VdbeMemIntegerify(pRowid);
-    serial_type = sqlite3VdbeSerialType(pRowid);
+    serial_type = sqlite3VdbeSerialType(pRowid, 0);
     nData += sqlite3VdbeSerialTypeLen(serial_type);
     nHdr += sqlite3VarintLen(serial_type);
   }
@@ -2209,17 +2211,17 @@ case OP_MakeRecord: {
   zCsr = zNewRecord;
   zCsr += sqlite3PutVarint(zCsr, nHdr);
   for(pRec=pData0; pRec<=pTos; pRec++){
-    serial_type = sqlite3VdbeSerialType(pRec);
+    serial_type = sqlite3VdbeSerialType(pRec, file_format);
     zCsr += sqlite3PutVarint(zCsr, serial_type);      /* serial type */
   }
   if( addRowid ){
-    zCsr += sqlite3PutVarint(zCsr, sqlite3VdbeSerialType(pRowid));
+    zCsr += sqlite3PutVarint(zCsr, sqlite3VdbeSerialType(pRowid, 0));
   }
   for(pRec=pData0; pRec<=pTos; pRec++){
-    zCsr += sqlite3VdbeSerialPut(zCsr, pRec);  /* serial data */
+    zCsr += sqlite3VdbeSerialPut(zCsr, pRec, file_format);  /* serial data */
   }
   if( addRowid ){
-    zCsr += sqlite3VdbeSerialPut(zCsr, pRowid);
+    zCsr += sqlite3VdbeSerialPut(zCsr, pRowid, 0);
   }
   assert( zCsr==(zNewRecord+nByte) );
 
@@ -2515,6 +2517,7 @@ case OP_OpenWrite: {       /* no-push */
   Btree *pX;
   int iDb;
   Cursor *pCur;
+  Db *pDb;
   
   assert( pTos>=p->aStack );
   sqlite3VdbeMemIntegerify(pTos);
@@ -2522,9 +2525,17 @@ case OP_OpenWrite: {       /* no-push */
   assert( (pTos->flags & MEM_Dyn)==0 );
   pTos--;
   assert( iDb>=0 && iDb<db->nDb );
-  pX = db->aDb[iDb].pBt;
+  pDb = &db->aDb[iDb];
+  pX = pDb->pBt;
   assert( pX!=0 );
-  wrFlag = pOp->opcode==OP_OpenWrite;
+  if( pOp->opcode==OP_OpenWrite ){
+    wrFlag = 1;
+    if( pDb->file_format < p->minWriteFileFormat ){
+      p->minWriteFileFormat = pDb->file_format;
+    }
+  }else{
+    wrFlag = 0;
+  }
   if( p2<=0 ){
     assert( pTos>=p->aStack );
     sqlite3VdbeMemIntegerify(pTos);

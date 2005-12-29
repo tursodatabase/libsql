@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.443 2005/12/29 01:11:37 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.444 2005/12/29 19:23:07 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -139,6 +139,17 @@
 ** The maximum value of a ?nnn wildcard that the parser will accept.
 */
 #define SQLITE_MAX_VARIABLE_NUMBER 999
+
+/*
+** The "file format" number is an integer that is incremented whenever
+** the VDBE-level file format changes.  The following macros define the
+** the default file format for new databases and the maximum file format
+** that the library can read.
+*/
+#define SQLITE_MAX_FILE_FORMAT 4
+#ifndef SQLITE_DEFAULT_FILE_FORMAT
+# define SQLITE_DEFAULT_FILE_FORMAT 4
+#endif
 
 /*
 ** Provide a default value for TEMP_STORE in case it is not specified
@@ -360,7 +371,6 @@ struct Db {
   u8 inTrans;          /* 0: not writable.  1: Transaction.  2: Checkpoint */
   u8 safety_level;     /* How aggressive at synching data to disk */
   u8 file_format;      /* Schema format version for this file */
-  u8 descIndex;        /* True if any index uses the DESC attribute */
   int cache_size;      /* Number of pages to use in the cache */
   Table *pSeqTab;      /* The sqlite_sequence table used by AUTOINCREMENT */
   void *pAux;               /* Auxiliary data.  Usually NULL */

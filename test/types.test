@@ -12,7 +12,7 @@
 # it tests that the different storage classes (integer, real, text etc.)
 # all work correctly.
 #
-# $Id: types.test,v 1.16 2005/11/14 22:29:06 drh Exp $
+# $Id: types.test,v 1.17 2005/12/29 19:23:07 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -208,7 +208,7 @@ do_test types-2.1.8 {
 do_test types-2.1.9 {
   set root [db eval {select rootpage from sqlite_master where name = 't1'}]
   record_sizes $root
-} {3 3 3 4 4 6 6 10 10}
+} {2 3 3 4 4 6 6 10 10}
 
 # Insert some reals. These should be 10 byte records.
 do_test types-2.2.1 {
@@ -229,7 +229,7 @@ do_test types-2.2.2 {
 do_test types-2.2.3 {
   set root [db eval {select rootpage from sqlite_master where name = 't2'}]
   record_sizes $root
-} {3 10 10}
+} {2 10 10}
 
 # Insert a NULL. This should be a two byte record.
 do_test types-2.3.1 {

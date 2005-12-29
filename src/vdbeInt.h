@@ -307,6 +307,7 @@ struct Vdbe {
   u8 changeCntOn;         /* True to update the change-counter */
   u8 aborted;             /* True if ROLLBACK in another VM causes an abort */
   u8 expired;             /* True if the VM needs to be recompiled */
+  u8 minWriteFileFormat;  /* Minimum file format for writable database files */
   int nChange;            /* Number of db changes made since last reset */
   i64 startTime;          /* Time when query started - used for profiling */
 };
@@ -332,8 +333,8 @@ void sqlite3VdbePrintOp(FILE*, int, Op*);
 void sqlite3VdbePrintSql(Vdbe*);
 #endif
 int sqlite3VdbeSerialTypeLen(u32);
-u32 sqlite3VdbeSerialType(Mem*);
-int sqlite3VdbeSerialPut(unsigned char*, Mem*);
+u32 sqlite3VdbeSerialType(Mem*, int);
+int sqlite3VdbeSerialPut(unsigned char*, Mem*, int);
 int sqlite3VdbeSerialGet(const unsigned char*, u32, Mem*);
 void sqlite3VdbeDeleteAuxData(VdbeFunc*, int);
 

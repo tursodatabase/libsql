@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.10 2005/12/16 01:06:17 drh Exp $
+** $Id: prepare.c,v 1.11 2005/12/29 19:23:07 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -258,13 +258,13 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   ** file_format==1    Version 3.0.0.
   ** file_format==2    Version 3.1.3.  // ALTER TABLE ADD COLUMN
   ** file_format==3    Version 3.1.4.  // ditto but with non-NULL defaults
-  ** file_format==4    Version 3.3.0.  // DESC indices
+  ** file_format==4    Version 3.3.0.  // DESC indices.  Boolean constants
   */
   pDb->file_format = meta[1];
   if( pDb->file_format==0 ){
     pDb->file_format = 1;
   }
-  if( pDb->file_format>4 ){
+  if( pDb->file_format>SQLITE_MAX_FILE_FORMAT ){
     sqlite3BtreeCloseCursor(curMain);
     sqlite3SetString(pzErrMsg, "unsupported file format", (char*)0);
     return SQLITE_ERROR;
