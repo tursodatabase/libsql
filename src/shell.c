@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.129 2005/12/09 14:25:08 danielk1977 Exp $
+** $Id: shell.c,v 1.130 2005/12/29 12:53:10 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -830,7 +830,7 @@ static void resolve_backslashes(char *z){
       }else if( c=='r' ){
         c = '\r';
       }else if( c>='0' && c<='7' ){
-        c =- '0';
+        c -= '0';
         if( z[i+1]>='0' && z[i+1]<='7' ){
           i++;
           c = (c<<3) + z[i] - '0';
