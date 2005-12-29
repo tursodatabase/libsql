@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.444 2005/12/29 19:23:07 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.445 2005/12/29 23:33:54 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1482,7 +1482,7 @@ void sqlite3RollbackInternalChanges(sqlite3*);
 void sqlite3CommitInternalChanges(sqlite3*);
 Table *sqlite3ResultSetOfSelect(Parse*,char*,Select*);
 void sqlite3OpenMasterTable(Vdbe *v, int);
-void sqlite3StartTable(Parse*,Token*,Token*,Token*,int,int);
+void sqlite3StartTable(Parse*,Token*,Token*,Token*,int,int,int);
 void sqlite3AddColumn(Parse*,Token*);
 void sqlite3AddNotNull(Parse*, int);
 void sqlite3AddPrimaryKey(Parse*, ExprList*, int, int, int);
