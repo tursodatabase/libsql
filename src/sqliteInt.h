@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.445 2005/12/29 23:33:54 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.446 2005/12/30 16:28:02 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -287,6 +287,11 @@ struct SqliteTsd {
   i64 nSoftHeapLimit;      /* -ve for unlimited */
   i64 nAlloc;              /* Number of bytes currently allocated */
   Pager *pPager;           /* Linked list of all pagers in this thread */
+#endif
+
+#ifndef SQLITE_OMIT_SHARED_CACHE
+  u8 useSharedData;        /* True if shared pagers and schemas are enabled */
+  BtShared *pBtree;
 #endif
 
 #ifdef SQLITE_MEMDEBUG

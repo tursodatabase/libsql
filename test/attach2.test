@@ -12,12 +12,11 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach2.test,v 1.33 2005/12/06 17:19:12 danielk1977 Exp $
+# $Id: attach2.test,v 1.34 2005/12/30 16:28:02 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-
 
 # Ticket #354
 #
@@ -157,7 +156,7 @@ proc lock_status {testnum db expected_result} {
   # If the database was compiled with OMIT_TEMPDB set, then 
   # the lock_status list will not contain an entry for the temp
   # db. But the test code doesn't know this, so it's easiest 
-  # to filter it out here.
+  # to filter it out of the $expected_result list here.
   ifcapable !tempdb {
     set expected_result [concat \
         [lrange $expected_result 0 1] \

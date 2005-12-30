@@ -6,7 +6,25 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: quick.test,v 1.38 2005/12/15 10:11:32 danielk1977 Exp $
+# $Id: quick.test,v 1.39 2005/12/30 16:28:02 danielk1977 Exp $
+
+proc lshift {lvar} {
+  upvar $lvar l
+  set ret [lindex $l 0]
+  set l [lrange $l 1 end]
+  return $ret
+}
+while {[set arg [lshift argv]] != ""} {
+  switch -- $arg {
+    -sharedpagercache {
+      sqlite3_enable_shared_cache 1
+    }
+    default {
+      set argv [linsert $argv 0 $arg]
+      break
+    }
+  }
+}
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: trans.test,v 1.26 2005/03/29 03:11:00 danielk1977 Exp $
+# $Id: trans.test,v 1.27 2005/12/30 16:28:02 danielk1977 Exp $
 
 
 set testdir [file dirname $argv0]
@@ -97,6 +97,7 @@ do_test trans-3.2 {
     SELECT a FROM two ORDER BY a;
   } altdb
 } {0 {1 5 10}}
+
 do_test trans-3.3 {
   catchsql {
     SELECT a FROM one ORDER BY a;
@@ -135,6 +136,7 @@ do_test trans-3.9 {
 do_test trans-3.10 {
   execsql {END TRANSACTION}
 } {}
+
 do_test trans-3.11 {
   set v [catch {execsql {
     SELECT a FROM two ORDER BY a;

@@ -13,7 +13,7 @@
 # file format change that may be used in the future to implement
 # "ALTER TABLE ... ADD COLUMN".
 #
-# $Id: alter3.test,v 1.6 2005/03/29 03:11:00 danielk1977 Exp $
+# $Id: alter3.test,v 1.7 2005/12/30 16:28:02 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -360,6 +360,7 @@ do_test alter3-8.1 {
     CREATE TABLE t4(c1);
   }
 } {}
+set ::sql ""
 do_test alter3-8.2 {
   set cols c1
   for {set i 2} {$i < 100} {incr i} {

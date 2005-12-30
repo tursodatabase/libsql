@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.151 2005/12/20 09:19:37 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.152 2005/12/30 16:28:02 danielk1977 Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1337,6 +1337,14 @@ void *sqlite3_update_hook(
 void *sqlite3_rollback_hook(sqlite3*, void(*)(void *), void*);
 
 int sqlite3_release_memory(int);
+
+/*
+** This function is only available if the library is compiled without
+** the SQLITE_OMIT_SHARED_CACHE macro defined. It is used to enable or
+** disable (if the argument is true or false, respectively) the 
+** "shared pager" feature.
+*/
+int sqlite3_enable_shared_cache(int);
 
 /*
 ** Undo the hack that converts floating point types to integer for

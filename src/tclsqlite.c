@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.141 2005/12/19 14:18:11 danielk1977 Exp $
+** $Id: tclsqlite.c,v 1.142 2005/12/30 16:28:02 danielk1977 Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -1754,11 +1754,12 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   **     $db soft_heap_limit N
   **
   ** Set the soft-heap-limit for this thread. Note that the limit is 
-  ** per-thread, not per-database. An empty string is returned.
+  ** per-thread, not per-database. The previous limit is returned.
   */
   case DB_SOFT_HEAP_LIMIT: {
 #ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
     int n;
+    int ret;
     if( objc!=3 ){
       Tcl_WrongNumArgs(interp, 2, objv, "BYTES");
       return TCL_ERROR;
@@ -1766,8 +1767,9 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     if( Tcl_GetIntFromObj(interp, objv[2], &n) ){
       return TCL_ERROR;
     }
+    ret = sqlite3Tsd()->nSoftHeapLimit;
     sqlite3_soft_heap_limit(n);
-    Tcl_ResetResult(interp);
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(ret));
 #endif
     break;
   }

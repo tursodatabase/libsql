@@ -926,7 +926,6 @@ static int vdbeCommit(sqlite3 *db){
 
   /* If there are any write-transactions at all, invoke the commit hook */
   if( needXcommit && db->xCommitCallback ){
-    int rc;
     sqlite3SafetyOff(db);
     rc = db->xCommitCallback(db->pCommitArg);
     sqlite3SafetyOn(db);

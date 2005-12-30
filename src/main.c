@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.312 2005/12/16 15:24:29 danielk1977 Exp $
+** $Id: main.c,v 1.313 2005/12/30 16:28:02 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -25,15 +25,6 @@
 ** SQLITE_LITTLEENDIAN macros.
 */
 const int sqlite3one = 1;
-
-#ifndef SQLITE_OMIT_GLOBALRECOVER
-/*
-** Linked list of all open database handles. This is used by the 
-** sqlite3_global_recover() function. Entries are added to the list
-** by openDatabase() and removed by sqlite3_close().
-*/
-static sqlite3 *pDbList = 0;
-#endif
 
 /*
 ** The version of the library
@@ -648,7 +639,7 @@ int sqlite3BtreeFactory(
 #endif /* SQLITE_OMIT_MEMORYDB */
   }
 
-  rc = sqlite3BtreeOpen(zFilename, ppBtree, btree_flags);
+  rc = sqlite3BtreeOpen(zFilename, db, ppBtree, btree_flags);
   if( rc==SQLITE_OK ){
     sqlite3BtreeSetBusyHandler(*ppBtree, (void*)&db->busyHandler);
     sqlite3BtreeSetCacheSize(*ppBtree, nCache);

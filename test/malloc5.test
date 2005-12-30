@@ -9,7 +9,10 @@
 #
 #***********************************************************************
 #
-# $Id: malloc5.test,v 1.2 2005/12/20 09:19:38 danielk1977 Exp $
+# This file contains test cases focused on the two memory-management APIs, 
+# sqlite3_soft_heap_limit() and sqlite3_release_memory().
+#
+# $Id: malloc5.test,v 1.3 2005/12/30 16:28:02 danielk1977 Exp $
 
 #---------------------------------------------------------------------------
 # NOTES ON EXPECTED BEHAVIOUR
@@ -18,6 +21,13 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+# Only run these tests if memory debugging is turned on.
+if {[info command sqlite_malloc_stat]==""} {
+   puts "Skipping malloc tests: not compiled with -DSQLITE_MEMDEBUG..."
+   finish_test
+   return
+}
 
 do_test malloc5-1.1 {
   # Simplest possible test. Call [db release_memory] when there is exactly
@@ -159,6 +169,11 @@ sqlite_malloc_outstanding -clearmaxbytes
 # and tests to see that this limit is not exceeded at any point during 
 # transaction execution.
 #
+# Before executing malloc5-4.* we save the value of the current soft heap 
+# limit in variable ::soft_limit. The original value is restored after 
+# running the tests.
+#
+set ::soft_limit [db soft_heap_limit -1]
 do_test malloc5-4.1 {
   execsql {BEGIN;}
   execsql {DELETE FROM abc;}
@@ -188,8 +203,8 @@ do_test malloc5-4.3 {
   }
 } [list 20000 [expr int(20000.0 * 4999.5)] [expr int(20000.0 * 4999.5)]]
 
-# Unset the soft-heap-limit value.
-db soft_heap_limit -1
+# Restore the soft heap limit.
+db soft_heap_limit $::soft_limit
 
 finish_test
 
