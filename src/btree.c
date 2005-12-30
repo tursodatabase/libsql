@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.277 2005/12/30 16:28:02 danielk1977 Exp $
+** $Id: btree.c,v 1.278 2005/12/30 16:31:54 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -531,7 +531,9 @@ static int lockTable(Btree *p, Pgno iTable, u8 eLock){
   ** and a read-lock requested, we don't incorrectly downgrade the lock.
   */
   assert( WRITE_LOCK>READ_LOCK );
-  pLock->eLock = MAX(pLock->eLock, eLock);
+  if( eLock>pLock->eLock ){
+    pLock->eLock = eLock;
+  }
 
   return SQLITE_OK;
 }
