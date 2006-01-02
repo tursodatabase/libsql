@@ -1,5 +1,5 @@
-C Repair\stypo\sin\sprevious\scommit.\s(CVS\s2849)
-D 2005-12-30T16:31:54
+C Additional\stests\sfor\sdescending\sindices.\s\sComment\schanges.\s(CVS\s2850)
+D 2006-01-02T18:24:40
 F Makefile.in e3c6b3a38d734d41574c04f2fc90d18de2b87102
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -88,7 +88,7 @@ F src/vdbe.c 8b0d676bcd8d8b12606f684ea2d7934147b40101
 F src/vdbe.h 8729a4ee16ff9aeab2af9667df3cf300ff978e13
 F src/vdbeInt.h 9b78ba00cc006bff17e04a54ba3ded9fc7810a10
 F src/vdbeapi.c b270b680cbc5d20b5a1abfdb08339667985df94e
-F src/vdbeaux.c e7c116d4b14868d5fe570e361c6872839b6ab07a
+F src/vdbeaux.c 7d55232a7e8c21899bbfc9ba3bd2469eb32faaf0
 F src/vdbefifo.c 9efb94c8c3f4c979ebd0028219483f88e57584f5
 F src/vdbemem.c deba8d6e3727643924b210a8c531a496c2b8d386
 F src/where.c 0296a20c2e2a39c0cb785efe471fd1958a5259f3
@@ -147,6 +147,7 @@ F test/delete2.test e382b6a97787197eb8b93dd4ccd37797c3725ea3
 F test/delete3.test 555e84a00a99230b7d049d477a324a631126a6ab
 F test/descidx1.test 466a9b87f3a7682156916dcbd5b77be55fd39d75
 F test/descidx2.test f9f73c562932b81207faa525cd52acdfd2fc0482
+F test/descidx3.test 56daed47e2eb91cef15a21a656691bb82a4699ba
 F test/diskfull.test d828d72adfc9e2d1a194d25996718c1989152cf9
 F test/distinctagg.test 2b89d1c5220d966a30ba4b40430338669301188b
 F test/enc.test 7a03417a1051fe8bc6c7641cf4c8c3f7e0066d52
@@ -332,7 +333,7 @@ F www/tclsqlite.tcl ddcf912ea48695603c8ed7efb29f0812ef8d1b49
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 2afcad990190af97d1ad0010f211a5ca8f0fd745
-R a424e10a9f0c619045afb8d75245a73e
-U danielk1977
-Z 3408bf2c5f10e96359ff6870ee5c171c
+P a4aa0911bccd0627cd6d926c5bdd2a4f4b8f6cc5
+R c2bfcb4903f64a4a18ff50a2924cea57
+U drh
+Z 1c84688d70590b66b4c8fd7b5cde6cad

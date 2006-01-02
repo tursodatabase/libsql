@@ -1496,6 +1496,8 @@ int sqlite3VdbeCursorMoveto(Cursor *p){
 **    N>=12 and even       (N-12)/2        BLOB
 **    N>=13 and odd        (N-13)/2        text
 **
+** The 8 and 9 types were added in 3.3.0, file format 4.  Prior versions
+** of SQLite will not understand those serial types.
 */
 
 /*
