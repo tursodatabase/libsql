@@ -217,12 +217,13 @@ extern struct sqlite3OsVtbl {
   int (*xSyncDirectory)(const char*);
   int (*xTempFileName)(char*);
 
-  int  (*xRandomSeed)(char*);
-  int  (*xSleep)(int ms);
-  int  (*xCurrentTime)(double*);
+  int (*xRandomSeed)(char*);
+  int (*xSleep)(int ms);
+  int (*xCurrentTime)(double*);
 
   void (*xEnterMutex)(void);
   void (*xLeaveMutex)(void);
+  int (*xInMutex)(void);
   void *(*xThreadSpecificData)(int);
 
   void *(*xMalloc)(int);
@@ -238,7 +239,7 @@ extern struct sqlite3OsVtbl {
 ** is intriniscally thread-safe.
 **
 ** External get/set access is only provided to the routines identified 
-** by the hash-defined SQLITE_OS_ROUTINE symbols.
+** by the following SQLITE_OS_ROUTINE symbols:
 */
 #define SQLITE_OS_ROUTINE_OPENREADWRITE   1
 #define SQLITE_OS_ROUTINE_OPENREADONLY    2

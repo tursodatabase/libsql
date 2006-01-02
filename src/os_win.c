@@ -991,6 +991,17 @@ static void winLeaveMutex(){
 }
 
 /*
+** Return TRUE if we are currently within the mutex and FALSE if not.
+** This routine is intended for sanity checking only.  It is designed
+** for use in an assert() to verify that the mutex is held or not held
+** in certain routines.
+*/
+static int winInMutex(){
+  return inMutex;
+}
+
+
+/*
 ** The following variable, if set to a non-zero value, becomes the result
 ** returned from sqlite3OsCurrentTime().  This is used for testing.
 */
@@ -1062,6 +1073,7 @@ struct sqlite3OsVtbl sqlite3Os = {
   winCurrentTime,
   winEnterMutex,
   winLeaveMutex,
+  winInMutex,
   winThreadSpecificData,
   genericMalloc,
   genericRealloc,
