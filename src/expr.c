@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.242 2005/12/09 20:02:05 drh Exp $
+** $Id: expr.c,v 1.243 2006/01/03 15:16:26 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1005,9 +1005,9 @@ static int lookupName(
     char *zErr;
     zErr = cnt==0 ? "no such column: %s" : "ambiguous column name: %s";
     if( zDb ){
-      sqlite3SetString(&z, zDb, ".", zTab, ".", zCol, 0);
+      sqlite3SetString(&z, zDb, ".", zTab, ".", zCol, (char*)0);
     }else if( zTab ){
-      sqlite3SetString(&z, zTab, ".", zCol, 0);
+      sqlite3SetString(&z, zTab, ".", zCol, (char*)0);
     }else{
       z = sqliteStrDup(zCol);
     }

@@ -1,5 +1,5 @@
-C Add\stest\sfiles\sfor\sthe\sasynchronous\sIO\sconcept.\s(CVS\s2853)
-D 2006-01-03T13:39:26
+C Always\scase\s0\sto\s(char*)\son\svarargs\sfunctions.\s\sOtherwise\sthere\sare\sproblems\non\s64-bit\smachines.\s(CVS\s2854)
+D 2006-01-03T15:16:26
 F Makefile.in e3c6b3a38d734d41574c04f2fc90d18de2b87102
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -42,7 +42,7 @@ F src/complete.c df1681cef40dec33a286006981845f87b194e7a4
 F src/date.c bb079317bff6a2b78aba5c0d2ddae5f6f03acfb7
 F src/delete.c ebb83753b6eca870c90edf2de736ab547685c326
 F src/experimental.c 50c1e3b34f752f4ac10c36f287db095c2b61766d
-F src/expr.c abdd20121595e37cc2db3612f3c0e6f5db1a9652
+F src/expr.c 714a06707facc5152228f2c1758d5003bd3a5b3c
 F src/func.c 25f1e5710b71cb345b492a18088f546188599f6b
 F src/hash.c 8747cf51d12de46512880dfcf1b68b4e24072863
 F src/hash.h 1b0c445e1c89ff2aaad9b4605ba61375af001e84
@@ -66,7 +66,7 @@ F src/pragma.c 8883b4d34796efa315bdd0ec1b03f580ef1575b9
 F src/prepare.c 1f2bf83038792294ef4a307d95993f90e6c70561
 F src/printf.c f47a2f4b5387cd2ebb12e9117a1a5d6bd9a2b812
 F src/random.c ff5e9a8cad790e2a51cd4d2e7737dc8540e09d1d
-F src/select.c 2292b065bc6be61e01aad39a2e1b93e332fb7e57
+F src/select.c 5b0ccd6688e61c0720efa45075a3f9da60180554
 F src/shell.c 66b073375efbdee19045e7e0cd38b85f9aff71da
 F src/sqlite.h.in ba3a29daa6a16e054191ccb384a981964e882a1d
 F src/sqliteInt.h bb648c5274d67060cb13f0cd0da141aff1205358
@@ -85,7 +85,7 @@ F src/update.c ec8e540617b116725b5a55c8d6b4db8bc67fdd7d
 F src/utf.c b7bffac4260177ae7f83c01d025fe0f5ed70ce71
 F src/util.c a690bbf549fc5c465384f624e90c009935b6d18b
 F src/vacuum.c fbfdd3967fd34e2f260fafed88dcbf3c10856b94
-F src/vdbe.c 8b0d676bcd8d8b12606f684ea2d7934147b40101
+F src/vdbe.c 99bfdfda01747e11f74cb891312a669023ab355a
 F src/vdbe.h 8729a4ee16ff9aeab2af9667df3cf300ff978e13
 F src/vdbeInt.h 9b78ba00cc006bff17e04a54ba3ded9fc7810a10
 F src/vdbeapi.c b270b680cbc5d20b5a1abfdb08339667985df94e
@@ -335,7 +335,7 @@ F www/tclsqlite.tcl ddcf912ea48695603c8ed7efb29f0812ef8d1b49
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 70b228575e045bc56013aab945334203ceb31d8b
-R 3ad9f3b93cc87edd3692f844738f28c0
-U danielk1977
-Z d1aa958d08ac6132fcf74135e20aafaf
+P 7c3492c8404c39c808af4429b4fcdb7413539ab3
+R ce1d0ff632d7208d0510c9231ee127d4
+U drh
+Z 420d480c90c636c6935ddb788f609c13
