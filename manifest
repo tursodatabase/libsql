@@ -1,5 +1,5 @@
-C The\ssqlite\sTCL\scommand\sno\slonger\sreturns\sthe\shex\saddress\sof\sthe\ssqlite3*\nstructure.\s\sInstead\sthere\sis\sa\snew\scommand\sin\stestfixture\sto\sfind\sthat\ninformation.\s(CVS\s2852)
-D 2006-01-03T00:33:50
+C Add\stest\sfiles\sfor\sthe\sasynchronous\sIO\sconcept.\s(CVS\s2853)
+D 2006-01-03T13:39:26
 F Makefile.in e3c6b3a38d734d41574c04f2fc90d18de2b87102
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -78,6 +78,7 @@ F src/test3.c 9742aa146eb750cab81c1d5605286c3a0eb88054
 F src/test4.c a8fd681e139e1c61f22a77d07fc3a99cb28fff3f
 F src/test5.c 7162f8526affb771c4ed256826eee7bb9eca265f
 F src/test6.c cb811391ec0b7c75f29e545d4820a9cf19f3637e
+F src/test_async.c a383aed2753e47d2ac4b5397c43f6ac216a237ae
 F src/tokenize.c 7a3a3d3cc734f684a77c4dfd09eb46fcee25394c
 F src/trigger.c 2925ba96d964d9b717e74006bf7e64b8a6b70d97
 F src/update.c ec8e540617b116725b5a55c8d6b4db8bc67fdd7d
@@ -99,6 +100,7 @@ F test/alter2.test cc0b8832e4e98605dbc26910efd4bb89abe59cb2
 F test/alter3.test 6e144ea3dcc395afcc28e794bb532be83dc8fdcb
 F test/altermalloc.test 6e1f404ec021eb2ba6582e3c77b0a35cf206b7af
 F test/analyze.test 2f55535aa335785db1a2f97d3f3831c16c09f8b0
+F test/async.test 522826f998b24328ce221971dc30ebbc7c0c4adc
 F test/attach.test dae07fa1554b618b9cc4c7bc349b3bc1a532180e
 F test/attach2.test 0e6a7c54343c85dd877a1e86073a05176043ed40
 F test/attach3.test 63013383adc4380af69779f34f4af19bd49f7cbe
@@ -333,7 +335,7 @@ F www/tclsqlite.tcl ddcf912ea48695603c8ed7efb29f0812ef8d1b49
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P a582b159595ff8d31c81e9b3044711d6590d3f0e
-R 3443cda8c76c7eb6b12365da80f51486
-U drh
-Z e8e69e33240623256267b54701f3d2e2
+P 70b228575e045bc56013aab945334203ceb31d8b
+R 3ad9f3b93cc87edd3692f844738f28c0
+U danielk1977
+Z d1aa958d08ac6132fcf74135e20aafaf

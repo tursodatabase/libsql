@@ -1,0 +1,74 @@
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file runs all tests.
+#
+# $Id: async.test,v 1.1 2006/01/03 13:39:26 danielk1977 Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+rename finish_test really_finish_test
+proc finish_test {} {}
+set ISQUICK 1
+
+if {[info exists ::tcl_platform(threaded)]} {
+  set USE_THREAD 1
+} else {
+  set USE_THREAD 0
+}
+
+set INCLUDE {
+  select1.test
+  select2.test
+  select3.test
+  select4.test
+  insert.test
+  insert2.test
+  insert3.test
+}
+#set INCLUDE [lrange $INCLUDE 0 0]
+
+# Enable asynchronous IO.
+sqlite3_async_enable
+
+# set USE_THREAD 0
+if {$USE_THREAD} {
+  sqlite3_async_flush -start
+} else {
+  rename do_test really_do_test
+  proc do_test {name args} {
+    uplevel really_do_test async_io-$name $args
+    sqlite3_async_flush
+  }
+}
+
+foreach testfile [lsort -dictionary [glob $testdir/*.test]] {
+  set tail [file tail $testfile]
+  if {[lsearch -exact $INCLUDE $tail]<0} continue
+  source $testfile
+  catch {db close}
+#  if {$sqlite_open_file_count>0} {
+#    puts "$tail did not close all files: $sqlite_open_file_count"
+#    incr nErr
+#    lappend ::failList $tail
+#  }
+}
+#source $testdir/misuse.test
+
+
+if {$USE_THREAD} {
+  sqlite3_async_flush -stop
+} else {
+  rename do_test {}
+  rename really_do_test do_test
+  puts "Warning: Tcl library was without --enable-threads."
+  puts "         Cannot test async IO properly."
+  sqlite3_async_flush
+}
+
+set sqlite_open_file_count 0
+really_finish_test
+
