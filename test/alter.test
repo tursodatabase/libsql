@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing the ALTER TABLE statement.
 #
-# $Id: alter.test,v 1.11 2005/03/29 03:11:00 danielk1977 Exp $
+# $Id: alter.test,v 1.12 2006/01/03 00:33:50 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -144,7 +144,8 @@ do_test alter-1.5 {
 ifcapable tempdb {
   do_test alter-1.6 {
     db close
-    set DB [sqlite3 db test.db]
+    sqlite3 db test.db
+    set DB [sqlite3_connection_pointer db]
     execsql {
       CREATE TEMP TABLE objlist(type, name, tbl_name);
       INSERT INTO objlist SELECT type, name, tbl_name FROM sqlite_master;

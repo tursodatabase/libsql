@@ -13,14 +13,13 @@
 # functions.  Those routines are not strictly necessary - they are
 # designed to detect misuse of the library.
 #
-# $Id: safety.test,v 1.1 2005/01/11 15:28:33 drh Exp $
+# $Id: safety.test,v 1.2 2006/01/03 00:33:50 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
 do_test safety-1.1 {
-  db close
-  set DB [sqlite3 db test.db]
+  set DB [sqlite3_connection_pointer db]
   db eval {CREATE TABLE t1(a)}
   sqlite_set_magic $DB SQLITE_MAGIC_BUSY
   catchsql {

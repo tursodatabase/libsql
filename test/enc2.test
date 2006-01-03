@@ -13,7 +13,7 @@
 # various suported unicode encodings (UTF-8, UTF-16, UTF-16le and
 # UTF-16be).
 #
-# $Id: enc2.test,v 1.24 2005/12/14 20:11:31 drh Exp $
+# $Id: enc2.test,v 1.25 2006/01/03 00:33:50 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -71,7 +71,7 @@ proc run_test_script {t enc} {
 
 # Open the database and pull out a (the) row.
 do_test $t.1 {
-  set DB [sqlite3 db test.db]
+  sqlite3 db test.db; set DB [sqlite3_connection_pointer db]
   execsql {SELECT * FROM t1}
 } {one I 1}
 
@@ -190,7 +190,7 @@ proc test_collate {enc lhs rhs} {
 }
 
 file delete -force test.db
-set DB [sqlite3 db test.db]
+sqlite3 db test.db; set DB [sqlite3_connection_pointer db]
 do_test enc2-5.0 {
   execsql {
     CREATE TABLE t5(a);
@@ -219,7 +219,7 @@ do_test enc2-5.3 {
 
 db close
 file delete -force test.db
-set DB [sqlite3 db test.db]
+sqlite3 db test.db; set DB [sqlite3_connection_pointer db]
 execsql {pragma encoding = 'UTF-16LE'}
 do_test enc2-5.4 {
   execsql {
@@ -249,7 +249,7 @@ do_test enc2-5.7 {
 
 db close
 file delete -force test.db
-set DB [sqlite3 db test.db]
+sqlite3 db test.db; set DB [sqlite3_connection_pointer db]
 execsql {pragma encoding = 'UTF-16BE'}
 do_test enc2-5.8 {
   execsql {
@@ -297,7 +297,7 @@ db close
 file delete -force test.db
 
 do_test enc2-5.15 {
-  set ::DB [sqlite3 db test.db]
+  sqlite3 db test.db; set ::DB [sqlite3_connection_pointer db]
   add_test_collate_needed $::DB
   set ::sqlite_last_needed_collation
 } {}
@@ -316,7 +316,7 @@ proc test_function {enc arg} {
 }
 
 file delete -force test.db
-set DB [sqlite3 db test.db]
+sqlite3 db test.db; set DB [sqlite3_connection_pointer db]
 execsql {pragma encoding = 'UTF-8'}
 do_test enc2-6.0 {
   execsql {
@@ -331,7 +331,7 @@ do_test enc2-6.1 {
   }
 } {{UTF-8 sqlite}}
 db close
-set DB [sqlite3 db test.db]
+sqlite3 db test.db; set DB [sqlite3_connection_pointer db]
 do_test enc2-6.2 {
   add_test_function $DB 0 1 0
   execsql {
@@ -339,7 +339,7 @@ do_test enc2-6.2 {
   }
 } {{UTF-16LE sqlite}}
 db close
-set DB [sqlite3 db test.db]
+sqlite3 db test.db; set DB [sqlite3_connection_pointer db]
 do_test enc2-6.3 {
   add_test_function $DB 0 0 1
   execsql {
@@ -349,7 +349,7 @@ do_test enc2-6.3 {
 
 db close
 file delete -force test.db
-set DB [sqlite3 db test.db]
+sqlite3 db test.db; set DB [sqlite3_connection_pointer db]
 execsql {pragma encoding = 'UTF-16LE'}
 do_test enc2-6.3 {
   execsql {
@@ -364,7 +364,7 @@ do_test enc2-6.4 {
   }
 } {{UTF-16LE sqlite}}
 db close
-set DB [sqlite3 db test.db]
+sqlite3 db test.db; set DB [sqlite3_connection_pointer db]
 do_test enc2-6.5 {
   add_test_function $DB 0 1 0
   execsql {
@@ -372,7 +372,7 @@ do_test enc2-6.5 {
   }
 } {{UTF-16LE sqlite}}
 db close
-set DB [sqlite3 db test.db]
+sqlite3 db test.db; set DB [sqlite3_connection_pointer db]
 do_test enc2-6.6 {
   add_test_function $DB 0 0 1
   execsql {
@@ -382,7 +382,7 @@ do_test enc2-6.6 {
 
 db close
 file delete -force test.db
-set DB [sqlite3 db test.db]
+sqlite3 db test.db; set DB [sqlite3_connection_pointer db]
 execsql {pragma encoding = 'UTF-16BE'}
 do_test enc2-6.7 {
   execsql {
@@ -397,7 +397,7 @@ do_test enc2-6.8 {
   }
 } {{UTF-16BE sqlite}}
 db close
-set DB [sqlite3 db test.db]
+sqlite3 db test.db; set DB [sqlite3_connection_pointer db]
 do_test enc2-6.9 {
   add_test_function $DB 0 1 0
   execsql {
@@ -405,7 +405,7 @@ do_test enc2-6.9 {
   }
 } {{UTF-16LE sqlite}}
 db close
-set DB [sqlite3 db test.db]
+sqlite3 db test.db; set DB [sqlite3_connection_pointer db]
 do_test enc2-6.10 {
   add_test_function $DB 0 0 1
   execsql {

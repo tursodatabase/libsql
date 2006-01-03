@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the sqlite_transfer_bindings() API.
 #
-# $Id: bindxfer.test,v 1.1 2005/04/22 02:38:39 drh Exp $
+# $Id: bindxfer.test,v 1.2 2006/01/03 00:33:50 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -35,8 +35,7 @@ proc sqlite_step {stmt VALS COLS} {
 }
 
 do_test bindxfer-1.1 {
-  db close
-  set DB [sqlite3 db test.db]
+  set DB [sqlite3_connection_pointer db]
   execsql {CREATE TABLE t1(a,b,c);}
   set VM1 [sqlite3_prepare $DB {SELECT ?, ?, ?} -1 TAIL]
   set TAIL

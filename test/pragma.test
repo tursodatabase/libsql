@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.36 2005/05/22 20:30:39 drh Exp $
+# $Id: pragma.test,v 1.37 2006/01/03 00:33:50 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -38,7 +38,7 @@ source $testdir/tester.tcl
 #
 db close
 file delete test.db
-set DB [sqlite3 db test.db]
+sqlite3 db test.db; set DB [sqlite3_connection_pointer db]
 
 ifcapable pager_pragmas {
 do_test pragma-1.1 {
@@ -109,7 +109,7 @@ do_test pragma-1.8 {
 } {123 123 2}
 do_test pragma-1.9.1 {
   db close
-  set ::DB [sqlite3 db test.db]
+  sqlite3 db test.db; set ::DB [sqlite3_connection_pointer db]
   execsql {
     PRAGMA cache_size;
     PRAGMA default_cache_size;
@@ -144,7 +144,7 @@ do_test pragma-1.11 {
 } {123 123 2}
 do_test pragma-1.12 {
   db close
-  set ::DB [sqlite3 db test.db]
+  sqlite3 db test.db; set ::DB [sqlite3_connection_pointer db]
   execsql {
     PRAGMA cache_size;
     PRAGMA default_cache_size;
@@ -462,7 +462,7 @@ do_test pragma-8.1.6 {
 # to reload the schema. This has to be done using the C-API test functions,
 # because the TCL API accounts for SCHEMA_ERROR and retries the query.
 do_test pragma-8.1.7 {
-  set ::DB2 [sqlite3 db2 test.db]
+  sqlite3 db2 test.db; set ::DB2 [sqlite3_connection_pointer db2]
   execsql {
     SELECT * FROM t4;
   } db2
@@ -504,7 +504,7 @@ do_test pragma-8.1.13 {
 # And check that modifying the schema-version in an attached database
 # forces the second connection to reload the schema.
 do_test pragma-8.1.14 {
-  set ::DB2 [sqlite3 db2 test.db]
+  sqlite3 db2 test.db; set ::DB2 [sqlite3_connection_pointer db2]
   execsql {
     ATTACH 'test2.db' AS aux;
     SELECT * FROM aux.t1;

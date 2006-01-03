@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc4.test,v 1.20 2005/09/08 10:37:01 drh Exp $
+# $Id: misc4.test,v 1.21 2006/01/03 00:33:50 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -22,8 +22,7 @@ source $testdir/tester.tcl
 # a rollback.  Then try to execute the prepared statement.
 #
 do_test misc4-1.1 {
-  db close
-  set DB [sqlite3 db test.db]
+  set DB [sqlite3_connection_pointer db]
   execsql {
     CREATE TABLE t1(x);
     INSERT INTO t1 VALUES(1);

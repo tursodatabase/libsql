@@ -29,7 +29,7 @@
 # The solution to the problem was to detect that the table is locked
 # before the index entry is deleted.
 #
-# $Id: delete2.test,v 1.4 2004/11/22 10:02:23 danielk1977 Exp $
+# $Id: delete2.test,v 1.5 2006/01/03 00:33:50 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -38,8 +38,7 @@ source $testdir/tester.tcl
 # Create a table that has an index.
 #
 do_test delete2-1.1 {
-  db close
-  set DB [sqlite3 db test.db]
+  set DB [sqlite3_connection_pointer db]
   execsql {
     CREATE TABLE q(s string, id string, constraint pk_q primary key(id));
     BEGIN;

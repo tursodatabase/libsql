@@ -12,7 +12,7 @@
 #
 # This file implements tests for the "sqlite3_trace()" API.
 #
-# $Id: trace.test,v 1.5 2005/08/29 23:00:05 drh Exp $
+# $Id: trace.test,v 1.6 2006/01/03 00:33:50 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -53,7 +53,7 @@ do_test trace-1.5 {
 # happens on each execution.
 #
 db close
-set DB [sqlite3 db test.db]
+sqlite3 db test.db; set DB [sqlite3_connection_pointer db]
 do_test trace-2.1 {
   set STMT [sqlite3_prepare $DB {INSERT INTO t1 VALUES(2,3)} -1 TAIL]
   db trace trace_proc
@@ -116,7 +116,7 @@ do_test trace-3.5 {
 # happens on each execution.
 #
 db close
-set DB [sqlite3 db test.db]
+sqlite3 db test.db; set DB [sqlite3_connection_pointer db]
 do_test trace-4.1 {
   set STMT [sqlite3_prepare $DB {INSERT INTO t2 VALUES(2,3)} -1 TAIL]
   db trace trace_proc

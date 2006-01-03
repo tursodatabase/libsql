@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.142 2005/12/30 16:28:02 danielk1977 Exp $
+** $Id: tclsqlite.c,v 1.143 2006/01/03 00:33:50 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -89,7 +89,7 @@ struct SqlPreparedStmt {
 */
 typedef struct SqliteDb SqliteDb;
 struct SqliteDb {
-  sqlite3 *db;               /* The "real" database structure */
+  sqlite3 *db;               /* The "real" database structure. MUST BE FIRST */
   Tcl_Interp *interp;        /* The interpreter used for this database */
   char *zBusy;               /* The busy callback routine */
   char *zCommit;             /* The commit hook callback routine */
@@ -2008,7 +2008,6 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   const char *zArg;
   char *zErrMsg;
   const char *zFile;
-  char zBuf[80];
   if( objc==2 ){
     zArg = Tcl_GetStringFromObj(objv[1], 0);
     if( strcmp(zArg,"-version")==0 ){
@@ -2075,14 +2074,6 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   p->maxStmt = NUM_PREPARED_STMTS;
   zArg = Tcl_GetStringFromObj(objv[1], 0);
   Tcl_CreateObjCommand(interp, zArg, DbObjCmd, (char*)p, DbDeleteCmd);
-
-  /* The return value is the value of the sqlite* pointer
-  */
-  sprintf(zBuf, "%p", p->db);
-  if( strncmp(zBuf,"0x",2) ){
-    sprintf(zBuf, "0x%p", p->db);
-  }
-  Tcl_AppendResult(interp, zBuf, 0);
 
   /* If compiled with SQLITE_TEST turned on, then register the "md5sum"
   ** SQL function.

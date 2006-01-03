@@ -13,7 +13,7 @@
 # file format change that may be used in the future to implement
 # "ALTER TABLE ... ADD COLUMN".
 #
-# $Id: alter2.test,v 1.4 2005/03/10 12:52:47 drh Exp $
+# $Id: alter2.test,v 1.5 2006/01/03 00:33:50 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -250,8 +250,7 @@ do_test alter2-4.3 {
   sqlite3_errcode $::DB
 } {SQLITE_ERROR}
 do_test alter2-4.4 {
-  db close
-  set ::DB [sqlite3 db test.db]
+  set ::DB [sqlite3_connection_pointer db]
   catchsql {
     SELECT * FROM sqlite_master;
   }
@@ -284,7 +283,8 @@ do_test alter2-5.3 {
 do_test alter2-6.1 {
   db close
   set_file_format 2
-  set ::DB [sqlite3 db test.db]
+  sqlite3 db test.db
+  set ::DB [sqlite3_connection_pointer db]
   get_file_format
 } {2}
 do_test alter2-6.2 {

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing the AUTOINCREMENT features.
 #
-# $Id: autoinc.test,v 1.8 2005/11/14 22:29:06 drh Exp $
+# $Id: autoinc.test,v 1.9 2006/01/03 00:33:50 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -512,7 +512,8 @@ do_test autoinc-8.1 {
   catch {db2 close}
   catch {db close}
   file delete -force test.db
-  set DB [sqlite3 db test.db]
+  sqlite3 db test.db
+  set DB [sqlite3_connection_pointer db]
   set STMT [sqlite3_prepare $DB {
      CREATE TABLE t1(
        x INTEGER PRIMARY KEY AUTOINCREMENT

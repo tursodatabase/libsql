@@ -13,16 +13,16 @@
 # particular the behavior of sqlite3_step() when trying to commit
 # with lock contention.
 #
-# $Id: capi3b.test,v 1.2 2004/09/03 00:27:57 drh Exp $
+# $Id: capi3b.test,v 1.3 2006/01/03 00:33:50 drh Exp $
 #
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
 
-db close
-set DB [sqlite3 db test.db]
-set DB2 [sqlite3 db2 test.db]
+set DB [sqlite3_connection_pointer db]
+sqlite3 db2 test.db
+set DB2 [sqlite3_connection_pointer db2]
 
 # Create some data in the database
 #

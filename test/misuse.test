@@ -13,7 +13,7 @@
 # This file implements tests for the SQLITE_MISUSE detection logic.
 # This test file leaks memory and file descriptors.
 #
-# $Id: misuse.test,v 1.10 2005/01/24 10:26:00 danielk1977 Exp $
+# $Id: misuse.test,v 1.11 2006/01/03 00:33:50 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -41,7 +41,7 @@ do_test misuse-1.1 {
   db close
   catch {file delete -force test2.db}
   catch {file delete -force test2.db-journal}
-  set ::DB [sqlite3 db test2.db]
+  sqlite3 db test2.db; set ::DB [sqlite3_connection_pointer db]
   execsql {
     CREATE TABLE t1(a,b);
     INSERT INTO t1 VALUES(1,2);
@@ -89,7 +89,7 @@ do_test misuse-1.6 {
 #
 do_test misuse-2.1 {
   db close
-  set ::DB [sqlite3 db test2.db]
+  sqlite3 db test2.db; set ::DB [sqlite3_connection_pointer db]
   execsql {
     SELECT * FROM t1
   }
@@ -121,7 +121,7 @@ do_test misuse-2.5 {
 #
 do_test misuse-3.1 {
   db close
-  set ::DB [sqlite3 db test2.db]
+  sqlite3 db test2.db; set ::DB [sqlite3_connection_pointer db]
   execsql {
     SELECT * FROM t1
   }
@@ -155,7 +155,7 @@ do_test misuse-3.5 {
 # VMs. The sqlite3_close call would return SQLITE_BUSY.
 do_test misuse-4.1 {
   db close
-  set ::DB [sqlite3 db test2.db]
+  sqlite3 db test2.db; set ::DB [sqlite3_connection_pointer db]
   execsql {
     SELECT * FROM t1
   }
@@ -188,7 +188,7 @@ do_test misuse-4.5 {
 #
 do_test misuse-5.1 {
   db close
-  set ::DB [sqlite3 db test2.db]
+  sqlite3 db test2.db; set ::DB [sqlite3_connection_pointer db]
   execsql {
     SELECT * FROM t1
   }
