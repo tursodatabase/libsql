@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\sCREATE\sINDEX\sIF\sNOT\sEXISTS\sand\sDROP\sINDEX\sIF\sEXISTS.\s(CVS\s2855)
-D 2006-01-04T15:54:36
+C Update\sdocument\sfor\sCREATE\sINDEX\sIF\sNOT\sEXISTS\sand\sDROP\sINDEX\sIF\sEXISTS\s(CVS\s2856)
+D 2006-01-04T15:58:29
 F Makefile.in e3c6b3a38d734d41574c04f2fc90d18de2b87102
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -315,7 +315,7 @@ F www/fullscanb.gif f7c94cb227f060511f8909e10f570157263e9a25
 F www/index-ex1-x-b.gif f9b1d85c3fa2435cf38b15970c7e3aa1edae23a3
 F www/index.tcl 2217d1c755d3d4a421729135d1fd431fc0d7d67d
 F www/indirect1b1.gif adfca361d2df59e34f9c5cac52a670c2bfc303a1
-F www/lang.tcl b6f6c0584a03a3b08912521196671033e7f8d80f
+F www/lang.tcl 6f81b2726dc350ba5dc0dd6dcddb9e7a307b9976
 F www/lockingv3.tcl f59b19d6c8920a931f096699d6faaf61c05db55f
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
 F www/nulls.tcl ec35193f92485b87b90a994a01d0171b58823fcf
@@ -335,7 +335,7 @@ F www/tclsqlite.tcl ddcf912ea48695603c8ed7efb29f0812ef8d1b49
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 837dc77ff9f5271b7e1bb8602fc021670c7802d1
-R ec161a22b551e019c6b2c8761d7b0084
+P 551cdd6c309e75687abaeac5381b794cd5e4c10a
+R 28635e7d496f1c4b880f9ed468d83f4a
 U drh
-Z 4a9af6bfc70464e631ff856496627e88
+Z 26b7c1a3b995d35a5aa73e0e92185423

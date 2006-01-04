@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the lang-*.html files.
 #
-set rcsid {$Id: lang.tcl,v 1.103 2005/12/29 01:11:37 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.104 2006/01/04 15:58:29 drh Exp $}
 source common.tcl
 
 if {[llength $argv]>0} {
@@ -440,7 +440,7 @@ puts "\"[Operator \\.]\".</p>"
 Section {CREATE INDEX} createindex
 
 Syntax {sql-statement} {
-CREATE [UNIQUE] INDEX [<database-name> .] <index-name> 
+CREATE [UNIQUE] INDEX [IF NOT EXISTS] [<database-name> .] <index-name> 
 ON <table-name> ( <column-name> [, <column-name>]* )
 [ ON CONFLICT <conflict-algorithm> ]
 } {column-name} {
@@ -853,7 +853,7 @@ others intact.</p>
 Section {DROP INDEX} dropindex
 
 Syntax {sql-command} {
-DROP INDEX [<database-name> .] <index-name>
+DROP INDEX [IF EXISTS] [<database-name> .] <index-name>
 }
 
 puts {
