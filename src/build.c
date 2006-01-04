@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.365 2006/01/04 15:54:36 drh Exp $
+** $Id: build.c,v 1.366 2006/01/04 21:40:07 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2161,6 +2161,7 @@ void sqlite3CreateIndex(
   }else{
     assert( pName==0 );
     pTab =  pParse->pNewTable;
+    if( !pTab ) goto exit_create_index;
     iDb = pTab->iDb;
   }
   pDb = &db->aDb[iDb];
