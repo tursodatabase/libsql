@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE INDEX statement.
 #
-# $Id: index.test,v 1.39 2005/11/14 22:29:06 drh Exp $
+# $Id: index.test,v 1.40 2006/01/04 15:54:37 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -185,6 +185,9 @@ do_test index-6.1 {
 do_test index-6.1b {
   execsql {SELECT name FROM sqlite_master WHERE type!='meta' ORDER BY name}
 } {index1 test1 test2}
+do_test index-6.1c {
+  catchsql {CREATE INDEX IF NOT EXISTS index1 ON test1(f1)}
+} {0 {}}
 do_test index-6.2 {
   set v [catch {execsql {CREATE INDEX test1 ON test2(g1)}} msg]
   lappend v $msg
@@ -589,6 +592,17 @@ do_test index-17.2 {
     DROP INDEX sqlite_autoindex_t7_1;
   }
 } {1 {index associated with UNIQUE or PRIMARY KEY constraint cannot be dropped}}
+do_test index-17.3 {
+  catchsql {
+    DROP INDEX IF EXISTS sqlite_autoindex_t7_1;
+  }
+} {1 {index associated with UNIQUE or PRIMARY KEY constraint cannot be dropped}}
+do_test index-17.4 {
+  catchsql {
+    DROP INDEX IF EXISTS no_such_index;
+  }
+} {0 {}}
+
 
 # The following tests ensure that it is not possible to explicitly name
 # a schema object with a name beginning with "sqlite_". Granted that is a

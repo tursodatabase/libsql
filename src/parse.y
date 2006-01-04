@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.190 2005/12/29 23:33:54 drh Exp $
+** @(#) $Id: parse.y,v 1.191 2006/01/04 15:54:36 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -262,7 +262,7 @@ ccons ::= NULL onconf.
 ccons ::= NOT NULL onconf(R).               {sqlite3AddNotNull(pParse, R);}
 ccons ::= PRIMARY KEY sortorder(Z) onconf(R) autoinc(I).
                                      {sqlite3AddPrimaryKey(pParse,0,R,I,Z);}
-ccons ::= UNIQUE onconf(R).          {sqlite3CreateIndex(pParse,0,0,0,0,R,0,0,0);}
+ccons ::= UNIQUE onconf(R).    {sqlite3CreateIndex(pParse,0,0,0,0,R,0,0,0,0);}
 ccons ::= CHECK LP expr(X) RP.       {sqlite3AddCheckConstraint(pParse,X);}
 ccons ::= REFERENCES nm(T) idxlist_opt(TA) refargs(R).
                                 {sqlite3CreateForeignKey(pParse,0,&T,TA,R);}
@@ -312,7 +312,7 @@ tcons ::= CONSTRAINT nm.
 tcons ::= PRIMARY KEY LP idxlist(X) autoinc(I) RP onconf(R).
                                          {sqlite3AddPrimaryKey(pParse,X,R,I,0);}
 tcons ::= UNIQUE LP idxlist(X) RP onconf(R).
-                                 {sqlite3CreateIndex(pParse,0,0,0,X,R,0,0,0);}
+                                 {sqlite3CreateIndex(pParse,0,0,0,X,R,0,0,0,0);}
 tcons ::= CHECK LP expr(E) RP onconf. {sqlite3AddCheckConstraint(pParse,E);}
 tcons ::= FOREIGN KEY LP idxlist(FA) RP
           REFERENCES nm(T) idxlist_opt(TA) refargs(R) defer_subclause_opt(D). {
@@ -836,12 +836,12 @@ expritem(A) ::= .                       {A = 0;}
 
 ///////////////////////////// The CREATE INDEX command ///////////////////////
 //
-cmd ::= CREATE(S) uniqueflag(U) INDEX nm(X) dbnm(D)
+cmd ::= CREATE(S) uniqueflag(U) INDEX ifnotexists(NE) nm(X) dbnm(D)
         ON nm(Y) LP idxlist(Z) RP(E) onconf(R). {
   if( U!=OE_None ) U = R;
   if( U==OE_Default) U = OE_Abort;
   sqlite3CreateIndex(pParse, &X, &D, sqlite3SrcListAppend(0,&Y,0), Z, U,
-                      &S, &E, SQLITE_SO_ASC);
+                      &S, &E, SQLITE_SO_ASC, NE);
 }
 
 %type uniqueflag {int}
@@ -879,7 +879,7 @@ idxitem(A) ::= nm(X).              {A = X;}
 
 ///////////////////////////// The DROP INDEX command /////////////////////////
 //
-cmd ::= DROP INDEX fullname(X).   {sqlite3DropIndex(pParse, X);}
+cmd ::= DROP INDEX ifexists(E) fullname(X).   {sqlite3DropIndex(pParse, X, E);}
 
 ///////////////////////////// The VACUUM command /////////////////////////////
 //

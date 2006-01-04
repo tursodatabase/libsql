@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.364 2005/12/29 23:33:54 drh Exp $
+** $Id: build.c,v 1.365 2006/01/04 15:54:36 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1056,7 +1056,7 @@ void sqlite3AddPrimaryKey(
        "INTEGER PRIMARY KEY");
 #endif
   }else{
-    sqlite3CreateIndex(pParse, 0, 0, 0, pList, onError, 0, 0, sortOrder);
+    sqlite3CreateIndex(pParse, 0, 0, 0, pList, onError, 0, 0, sortOrder, 0);
     pList = 0;
   }
 
@@ -2105,7 +2105,8 @@ void sqlite3CreateIndex(
   int onError,       /* OE_Abort, OE_Ignore, OE_Replace, or OE_None */
   Token *pStart,     /* The CREATE token that begins a CREATE TABLE statement */
   Token *pEnd,       /* The ")" that closes the CREATE INDEX statement */
-  int sortOrder      /* Sort order of primary key when pList==NULL */
+  int sortOrder,     /* Sort order of primary key when pList==NULL */
+  int ifNotExist     /* Omit error if index already exists */
 ){
   Table *pTab = 0;     /* Table to be indexed */
   Index *pIndex = 0;   /* The index to be created */
@@ -2199,7 +2200,9 @@ void sqlite3CreateIndex(
     if( !db->init.busy ){
       if( SQLITE_OK!=sqlite3ReadSchema(pParse) ) goto exit_create_index;
       if( sqlite3FindIndex(db, zName, pDb->zName)!=0 ){
-        sqlite3ErrorMsg(pParse, "index %s already exists", zName);
+        if( !ifNotExist ){
+          sqlite3ErrorMsg(pParse, "index %s already exists", zName);
+        }
         goto exit_create_index;
       }
       if( sqlite3FindTable(db, zName, 0)!=0 ){
@@ -2525,7 +2528,7 @@ void sqlite3DefaultRowEst(Index *pIdx){
 ** This routine will drop an existing named index.  This routine
 ** implements the DROP INDEX statement.
 */
-void sqlite3DropIndex(Parse *pParse, SrcList *pName){
+void sqlite3DropIndex(Parse *pParse, SrcList *pName, int ifExists){
   Index *pIndex;
   Vdbe *v;
   sqlite3 *db = pParse->db;
@@ -2539,7 +2542,9 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName){
   }
   pIndex = sqlite3FindIndex(db, pName->a[0].zName, pName->a[0].zDatabase);
   if( pIndex==0 ){
-    sqlite3ErrorMsg(pParse, "no such index: %S", pName, 0);
+    if( !ifExists ){
+      sqlite3ErrorMsg(pParse, "no such index: %S", pName, 0);
+    }
     pParse->checkSchema = 1;
     goto exit_drop_index;
   }
