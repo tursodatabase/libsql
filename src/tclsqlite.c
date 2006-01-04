@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.143 2006/01/03 00:33:50 drh Exp $
+** $Id: tclsqlite.c,v 1.144 2006/01/04 18:13:26 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -1207,9 +1207,11 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
         Tcl_WrongNumArgs(interp, 2, objv, "SQL");
         return TCL_ERROR;
       }
-      pRet = 0;
       if( choice==DB_EXISTS ){
-        Tcl_SetObjResult(interp, Tcl_NewBooleanObj(0));
+        pRet = Tcl_NewBooleanObj(0);
+        Tcl_IncrRefCount(pRet);
+      }else{
+        pRet = 0;
       }
     }
     if( objc==3 ){
@@ -1423,8 +1425,9 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
             rc = TCL_BREAK;
             i = nCol;
           }else if( choice==DB_EXISTS ){
-            assert( pRet==0 );
-            Tcl_SetObjResult(interp, Tcl_NewBooleanObj(1));
+            Tcl_DecrRefCount(pRet);
+            pRet = Tcl_NewBooleanObj(1);
+            Tcl_IncrRefCount(pRet);
             rc = TCL_BREAK;
             i = nCol;
           }else{
