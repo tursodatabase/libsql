@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.314 2006/01/05 11:34:34 danielk1977 Exp $
+** $Id: main.c,v 1.315 2006/01/05 13:48:29 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -210,26 +210,6 @@ int sqlite3_close(sqlite3 *db){
   if( db->pErr ){
     sqlite3ValueFree(db->pErr);
   }
-
-#if 0 
-#ifndef SQLITE_OMIT_GLOBALRECOVER
-  {
-    sqlite3 *pPrev;
-    sqlite3Os.xEnterMutex();
-    pPrev = pDbList;
-    while( pPrev && pPrev->pNext!=db ){
-      pPrev = pPrev->pNext;
-    }
-    if( pPrev ){
-      pPrev->pNext = db->pNext;
-    }else{
-      assert( pDbList==db );
-      pDbList = db->pNext;
-    }
-    sqlite3Os.xLeaveMutex();
-  }
-#endif
-#endif
 
   db->magic = SQLITE_MAGIC_ERROR;
   sqliteFree(db->aDb[1].pSchema);

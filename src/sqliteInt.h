@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.448 2006/01/05 11:34:34 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.449 2006/01/05 13:48:29 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -282,6 +282,7 @@ extern int sqlite3_iMallocReset; /* Set iMallocFail to this when it reaches 0 */
 struct SqliteTsd {
   u8 isInit;               /* True if structure has been initialised */
   u8 mallocFailed;         /* True after a malloc() has failed */
+  u8 disableReleaseMemory; /* True to make sqlite3_release_memory() a no-op */
 
 #ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
   i64 nSoftHeapLimit;      /* -ve for unlimited */

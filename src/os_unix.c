@@ -485,8 +485,14 @@ static int findLockInfo(
   struct stat statbuf;
   struct lockInfo *pLock;
   struct openCnt *pOpen;
+  SqliteTsd *pTsd = sqlite3Tsd();
   rc = fstat(fd, &statbuf);
   if( rc!=0 ) return 1;
+
+  /* Disable the sqlite3_release_memory() function */
+  assert( !pTsd->disableReleaseMemory );
+  pTsd->disableReleaseMemory = 1;
+
   memset(&key1, 0, sizeof(key1));
   key1.dev = statbuf.st_dev;
   key1.ino = statbuf.st_ino;
@@ -503,7 +509,10 @@ static int findLockInfo(
   if( pLock==0 ){
     struct lockInfo *pOld;
     pLock = sqliteMallocRaw( sizeof(*pLock) );
-    if( pLock==0 ) return 1;
+    if( pLock==0 ){
+      rc = 1;
+      goto exit_findlockinfo;
+    }
     pLock->key = key1;
     pLock->nRef = 1;
     pLock->cnt = 0;
@@ -512,7 +521,8 @@ static int findLockInfo(
     if( pOld!=0 ){
       assert( pOld==pLock );
       sqliteFree(pLock);
-      return 1;
+      rc = 1;
+      goto exit_findlockinfo;
     }
   }else{
     pLock->nRef++;
@@ -524,7 +534,8 @@ static int findLockInfo(
     pOpen = sqliteMallocRaw( sizeof(*pOpen) );
     if( pOpen==0 ){
       releaseLockInfo(pLock);
-      return 1;
+      rc = 1;
+      goto exit_findlockinfo;
     }
     pOpen->key = key2;
     pOpen->nRef = 1;
@@ -536,13 +547,18 @@ static int findLockInfo(
       assert( pOld==pOpen );
       sqliteFree(pOpen);
       releaseLockInfo(pLock);
-      return 1;
+      rc = 1;
+      goto exit_findlockinfo;
     }
   }else{
     pOpen->nRef++;
   }
   *ppOpen = pOpen;
-  return 0;
+
+exit_findlockinfo:
+  /* Re-enable sqlite3_release_memory() */
+  pTsd->disableReleaseMemory = 0;
+  return rc;
 }
 
 /*
@@ -1371,6 +1387,7 @@ static int unixUnlock(OsFile *id, int locktype){
 ** Close a file.
 */
 static int unixClose(OsFile **pId){
+  SqliteTsd *pTsd = sqlite3Tsd();
   unixFile *id = (unixFile*)*pId;
   if( !id ) return SQLITE_OK;
   if( CHECK_THREADID(id) ) return SQLITE_MISUSE;
@@ -1378,6 +1395,11 @@ static int unixClose(OsFile **pId){
   if( id->dirfd>=0 ) close(id->dirfd);
   id->dirfd = -1;
   sqlite3Os.xEnterMutex();
+
+  /* Disable the sqlite3_release_memory() function */
+  assert( !pTsd->disableReleaseMemory );
+  pTsd->disableReleaseMemory = 1;
+
   if( id->pOpen->nLock ){
     /* If there are outstanding locks, do not actually close the file just
     ** yet because that would clear those locks.  Instead, add the file
@@ -1400,6 +1422,10 @@ static int unixClose(OsFile **pId){
   }
   releaseLockInfo(id->pLock);
   releaseOpenCnt(id->pOpen);
+
+  /* Disable the sqlite3_release_memory() function */
+  pTsd->disableReleaseMemory = 0;
+
   sqlite3Os.xLeaveMutex();
   id->isOpen = 0;
   TRACE2("CLOSE   %-3d\n", id->h);

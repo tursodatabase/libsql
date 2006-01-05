@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: all.test,v 1.32 2006/01/05 11:34:34 danielk1977 Exp $
+# $Id: all.test,v 1.33 2006/01/05 13:48:29 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -56,11 +56,6 @@ set EXCLUDE {
   malloc.test
   misuse.test
   memleak.test
-
-  malloc2.test
-  malloc3.test
-  malloc4.test
-  malloc5.test
 }
 
 # Test files btree2.test and btree4.test don't work if the 

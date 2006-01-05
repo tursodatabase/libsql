@@ -1,5 +1,5 @@
-C Add\sthe\sshared\sschema/pager\smodifications.\sVery\sfew\stests\sso\sfar.\s(CVS\s2859)
-D 2006-01-05T11:34:33
+C Disable\sautomatic\sinvocation\sof\ssqlite3_release_memory()\swhen\sa\smalloc()\sfails\nin\sthose\scases\swhere\sthe\sglobal\smutex\sis\sheld.\s(CVS\s2860)
+D 2006-01-05T13:48:29
 F Makefile.in e3c6b3a38d734d41574c04f2fc90d18de2b87102
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -48,18 +48,18 @@ F src/hash.c 8747cf51d12de46512880dfcf1b68b4e24072863
 F src/hash.h 1b0c445e1c89ff2aaad9b4605ba61375af001e84
 F src/insert.c d167f9d41932ddaff9162f116e2abc514b0680b6
 F src/legacy.c 59757d857ab95fcbb0ac27692d3201e35f093dd7
-F src/main.c 3a9689e4127ad7d4d417ff4e0bed2dd2b76ea445
+F src/main.c c1d8d2022a65104c847880882fbce9ba32381530
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/os.c 7b4a002d9c9421580276db55d2329636a604e8ef
 F src/os.h cc99e1515696728ba64c77fffa781ebadea34619
 F src/os_common.h d0b1f2f32926e9b6db7886a7f43008b596a9e926
 F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
-F src/os_unix.c e4fbf1370e1a03875ebb3239316fa8eb8476258b
+F src/os_unix.c d52d87a06ce62c7c6b9f7dcb7da1248737397765
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c 7e2d09f81cb83709b9774ac6be80fa3cb08ac86d
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 681b4e39d581ead8fd54283176138bec924a4bae
+F src/pager.c 07509ddb478f5a70f9ff53607ab8a44456c22811
 F src/pager.h e0acb095b3ad0bca48f2ab00c87346665643f64f
 F src/parse.y 58258759fabdd48f1d2561e276097290b1ea2680
 F src/pragma.c 4af4041a88d41421b8ff2e5574d82d7b9d1e35b1
@@ -69,7 +69,7 @@ F src/random.c ff5e9a8cad790e2a51cd4d2e7737dc8540e09d1d
 F src/select.c 7a78520fcd79daccd4e33721dbc977d2e5c5d95a
 F src/shell.c 66b073375efbdee19045e7e0cd38b85f9aff71da
 F src/sqlite.h.in ba3a29daa6a16e054191ccb384a981964e882a1d
-F src/sqliteInt.h 5117ce283868de7010e62ec1a80ce1162575c184
+F src/sqliteInt.h 6f29c97703b1a1e032916b0bab83efe9b2734984
 F src/table.c 486dcfce532685b53b5a2b5da8bba0ded6fb2316
 F src/tclsqlite.c 0386460a4c017d49d729d44cdcb3fb3ffb2503e0
 F src/test1.c 988dbac66c3ca92d69fbe0283d77e86cd6f73ce8
@@ -94,7 +94,7 @@ F src/vdbefifo.c 9efb94c8c3f4c979ebd0028219483f88e57584f5
 F src/vdbemem.c deba8d6e3727643924b210a8c531a496c2b8d386
 F src/where.c 3ec45076e7cce523aad34eaf9bd119237b56942a
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
-F test/all.test 18602f8cd97d5741574dee7288e1f5f427f12825
+F test/all.test 90cf64bb655e3d474b0dda04e63ece03e36b0ce2
 F test/alter.test b94b640063e725d062b2997bd2810ac39195c718
 F test/alter2.test cc0b8832e4e98605dbc26910efd4bb89abe59cb2
 F test/alter3.test 6e144ea3dcc395afcc28e794bb532be83dc8fdcb
@@ -336,7 +336,7 @@ F www/tclsqlite.tcl ddcf912ea48695603c8ed7efb29f0812ef8d1b49
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P cb9095ac52e76926f274678ef55ebb9df4b9fcac
-R a8dde2ab271da0ac5619066fd6022d05
+P deeda0dc06c1595aedd8d06a0c4e88a8abf78cf7
+R 9d12b452805846233d53c41b43a70bb0
 U danielk1977
-Z 0d100378c01552c949846ec200b31003
+Z f6fa8bc04dbc256a46d97346ce8d34cd
