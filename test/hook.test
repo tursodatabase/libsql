@@ -17,7 +17,7 @@
 #      sqlite_update_hook    (tests hook-4-*)
 #      sqlite_rollback_hook  (tests hook-5.*)
 #
-# $Id: hook.test,v 1.8 2005/12/16 15:24:30 danielk1977 Exp $
+# $Id: hook.test,v 1.9 2006/01/05 23:42:52 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -124,7 +124,7 @@ do_test hook-4.1.2 {
     INSERT INTO t1 VALUES(4, 'four');
     DELETE FROM t1 WHERE b = 'two';
     UPDATE t1 SET b = '' WHERE a = 1 OR a = 3;
-    DELETE FROM t1;
+    DELETE FROM t1 WHERE 1; -- Avoid the truncate optimization (for now)
   }
   set ::update_hook
 } [list \
@@ -177,7 +177,7 @@ do_test hook-4.2.3 {
     CREATE TABLE aux.t3(a INTEGER PRIMARY KEY, b);
     INSERT INTO aux.t3 SELECT * FROM t1;
     UPDATE t3 SET b = 'two or so' WHERE a = 2;
-    DELETE FROM t3;
+    DELETE FROM t3 WHERE 1; -- Avoid the truncate optimization (for now)
   }
   set ::update_hook
 } [list \
@@ -281,4 +281,3 @@ do_test hook-5.2.2 {
 #----------------------------------------------------------------------------
 
 finish_test
-

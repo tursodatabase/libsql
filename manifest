@@ -1,5 +1,5 @@
-C Move\sTCL\sinterface\sfor\ssqlite3_release_memory()\sand\ssqlite3_soft_heap_limit()\nout\sof\stclsqlite.c\sand\sinto\stest1.c.\s\sUpdate\sthe\sTCL\sinterface\sdocumention\nto\sdescribe\sthe\s"exists"\smethod.\s(CVS\s2862)
-D 2006-01-05T15:50:07
+C Disable\sthe\supdate\shook\sfor\sthe\struncation\soptimization\sused\sby\sDELETE.\s(CVS\s2863)
+D 2006-01-05T23:42:51
 F Makefile.in e3c6b3a38d734d41574c04f2fc90d18de2b87102
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -69,7 +69,7 @@ F src/random.c ff5e9a8cad790e2a51cd4d2e7737dc8540e09d1d
 F src/select.c a60e5c7fad9ce7adc78d9eb32a0a89dd5acd04fb
 F src/shell.c 66b073375efbdee19045e7e0cd38b85f9aff71da
 F src/sqlite.h.in ba3a29daa6a16e054191ccb384a981964e882a1d
-F src/sqliteInt.h 6f29c97703b1a1e032916b0bab83efe9b2734984
+F src/sqliteInt.h 06a37ed74f803ae669292f65e35977254d8e7be1
 F src/table.c 486dcfce532685b53b5a2b5da8bba0ded6fb2316
 F src/tclsqlite.c 351ae47649ac7119d772ab74ed7091f5e400041e
 F src/test1.c 89e25646feceaf09e55c11ecba03ddcfd7cf7c0a
@@ -85,7 +85,7 @@ F src/update.c c72e9cbbc0adf8d728c1c39ace03d4adb29b5cfb
 F src/utf.c b7bffac4260177ae7f83c01d025fe0f5ed70ce71
 F src/util.c a690bbf549fc5c465384f624e90c009935b6d18b
 F src/vacuum.c fbfdd3967fd34e2f260fafed88dcbf3c10856b94
-F src/vdbe.c ad844cc360807ad00e513d17d5a7cf8d844cb86c
+F src/vdbe.c 4dab34666edca29b937180965ad32120e98c8054
 F src/vdbe.h 8729a4ee16ff9aeab2af9667df3cf300ff978e13
 F src/vdbeInt.h 9b78ba00cc006bff17e04a54ba3ded9fc7810a10
 F src/vdbeapi.c b270b680cbc5d20b5a1abfdb08339667985df94e
@@ -158,7 +158,7 @@ F test/enc3.test f6a5f0b7b7f3a88f030d3143729b87cd5c86d837
 F test/expr.test 06381174d8c25fbbfd9ed335fe0cde835d39123d
 F test/fkey1.test 153004438d51e6769fb1ce165f6313972d6263ce
 F test/func.test a7119afcc16abdf24b24486684fb888279008f75
-F test/hook.test 3bae7892e04ba40f20e205027c3ba343e46d22ff
+F test/hook.test fc6821544ab2e0aacb398b742cdca925d4fb884c
 F test/in.test cead6165aebbe0d451bb2263a307173acfeb6240
 F test/index.test c90ab389586dbddfeb6817cd137737b2de1b6522
 F test/index2.test 9ad98243fd7fe833795a9cc662f371f0eed4ff4f
@@ -336,7 +336,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 5dec3a392ba3c249bbca899c12e99c26cc1b8cdb
-R 6ce19bb1451171f34823f6ee27789bdd
+P 98194a45cc60cb9942847f773bc797fb5463bd10
+R 07be59db7afabb7b45cf412f124e62ed
 U drh
-Z 920e9b3cd2f7e8da26bd87500adce907
+Z a5d8489d544088bc2e3c77613dd41537
