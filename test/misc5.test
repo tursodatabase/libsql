@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc5.test,v 1.7 2005/11/14 22:29:06 drh Exp $
+# $Id: misc5.test,v 1.8 2006/01/05 14:22:34 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -502,5 +502,32 @@ do_test misc5-5.4 {
   execsql {SELECT .4e+1}
 } 4.0
 
+# Ticket #1582.  Ensure that an unknown table in a LIMIT clause applied to
+# a UNION ALL query causes an error, not a crash.
+#
+db close
+file delete -force test.db
+sqlite3 db test.db
+ifcapable subquery {
+  do_test misc5-6.1 {
+    catchsql {
+      SELECT * FROM sqlite_master 
+      UNION ALL 
+      SELECT * FROM sqlite_master
+      LIMIT (SELECT count(*) FROM blah);
+    }
+  } {1 {no such table: blah}}
+  do_test misc5-6.2 {
+    execsql {
+      CREATE TABLE logs(msg TEXT, timestamp INTEGER, dbtime TEXT);
+    }
+    catchsql {
+      SELECT * FROM logs WHERE logs.id >= (SELECT head FROM logs_base) 
+      UNION ALL 
+      SELECT * FROM logs 
+      LIMIT (SELECT lmt FROM logs_base) ;
+    }
+  } {1 {no such column: logs.id}}
+}
 
 finish_test

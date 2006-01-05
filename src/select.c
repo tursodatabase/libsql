@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.284 2006/01/05 11:34:34 danielk1977 Exp $
+** $Id: select.c,v 1.285 2006/01/05 14:22:34 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -1548,14 +1548,14 @@ static int multiSelect(
         pPrior->pLimit = p->pLimit;
         pPrior->pOffset = p->pOffset;
         rc = sqlite3Select(pParse, pPrior, eDest, iParm, 0, 0, 0, aff);
+        p->pLimit = 0;
+        p->pOffset = 0;
         if( rc ){
           goto multi_select_end;
         }
         p->pPrior = 0;
         p->iLimit = pPrior->iLimit;
         p->iOffset = pPrior->iOffset;
-        p->pLimit = 0;
-        p->pOffset = 0;
         if( p->iLimit>=0 ){
           addr = sqlite3VdbeAddOp(v, OP_IfMemZero, p->iLimit, 0);
           VdbeComment((v, "# Jump ahead if LIMIT reached"));
