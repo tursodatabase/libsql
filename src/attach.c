@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the ATTACH and DETACH commands.
 **
-** $Id: attach.c,v 1.38 2005/12/29 23:04:02 drh Exp $
+** $Id: attach.c,v 1.39 2006/01/05 11:34:33 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -116,15 +116,20 @@ static void attachFunc(
   db->aDb = aNew;
   aNew = &db->aDb[db->nDb++];
   memset(aNew, 0, sizeof(*aNew));
-  sqlite3HashInit(&aNew->tblHash, SQLITE_HASH_STRING, 0);
-  sqlite3HashInit(&aNew->idxHash, SQLITE_HASH_STRING, 0);
-  sqlite3HashInit(&aNew->trigHash, SQLITE_HASH_STRING, 0);
-  sqlite3HashInit(&aNew->aFKey, SQLITE_HASH_STRING, 1);
+
+  /* Open the database file. If the btree is successfully opened, use
+  ** it to obtain the database schema. At this point the schema may
+  ** or may not be initialised.
+  */
+  rc = sqlite3BtreeFactory(db, zFile, 0, MAX_PAGES, &aNew->pBt);
+  if( rc==SQLITE_OK ){
+    aNew->pSchema = sqlite3SchemaGet(aNew->pBt);
+    if( !aNew->pSchema ){
+      rc = SQLITE_NOMEM;
+    }
+  }
   aNew->zName = sqliteStrDup(zName);
   aNew->safety_level = 3;
-  
-  /* Open the database file */
-  rc = sqlite3BtreeFactory(db, zFile, 0, MAX_PAGES, &aNew->pBt);
 
 #if SQLITE_HAS_CODEC
   {

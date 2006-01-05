@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.151 2005/12/15 15:22:09 danielk1977 Exp $
+** $Id: insert.c,v 1.152 2006/01/05 11:34:34 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -104,15 +104,15 @@ void sqlite3TableAffinityStr(Vdbe *v, Table *pTab){
 **
 ** No checking is done for sub-selects that are part of expressions.
 */
-static int selectReadsTable(Select *p, int iDb, int iTab){
+static int selectReadsTable(Select *p, DbSchema *pSchema, int iTab){
   int i;
   struct SrcList_item *pItem;
   if( p->pSrc==0 ) return 0;
   for(i=0, pItem=p->pSrc->a; i<p->pSrc->nSrc; i++, pItem++){
     if( pItem->pSelect ){
-      if( selectReadsTable(pItem->pSelect, iDb, iTab) ) return 1;
+      if( selectReadsTable(pItem->pSelect, pSchema, iTab) ) return 1;
     }else{
-      if( pItem->pTab->iDb==iDb && pItem->pTab->tnum==iTab ) return 1;
+      if( pItem->pTab->pSchema==pSchema && pItem->pTab->tnum==iTab ) return 1;
     }
   }
   return 0;
@@ -214,6 +214,7 @@ void sqlite3Insert(
   int newIdx = -1;      /* Cursor for the NEW table */
   Db *pDb;              /* The database containing table being inserted into */
   int counterMem = 0;   /* Memory cell holding AUTOINCREMENT counter */
+  int iDb;
 
 #ifndef SQLITE_OMIT_TRIGGER
   int isView;                 /* True if attempting to insert into a view */
@@ -236,8 +237,9 @@ void sqlite3Insert(
   if( pTab==0 ){
     goto insert_cleanup;
   }
-  assert( pTab->iDb<db->nDb );
-  pDb = &db->aDb[pTab->iDb];
+  iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
+  assert( iDb<db->nDb );
+  pDb = &db->aDb[iDb];
   zDb = pDb->zName;
   if( sqlite3AuthCheck(pParse, SQLITE_INSERT, pTab->zName, 0, zDb) ){
     goto insert_cleanup;
@@ -285,7 +287,7 @@ void sqlite3Insert(
   v = sqlite3GetVdbe(pParse);
   if( v==0 ) goto insert_cleanup;
   if( pParse->nested==0 ) sqlite3VdbeCountChanges(v);
-  sqlite3BeginWriteOperation(pParse, pSelect || triggers_exist, pTab->iDb);
+  sqlite3BeginWriteOperation(pParse, pSelect || triggers_exist, iDb);
 
   /* if there are row triggers, allocate a temp table for new.* references. */
   if( triggers_exist ){
@@ -303,8 +305,8 @@ void sqlite3Insert(
     int base = sqlite3VdbeCurrentAddr(v);
     counterRowid = pParse->nMem++;
     counterMem = pParse->nMem++;
-    sqlite3VdbeAddOp(v, OP_Integer, pTab->iDb, 0);
-    sqlite3VdbeAddOp(v, OP_OpenRead, iCur, pDb->pSeqTab->tnum);
+    sqlite3VdbeAddOp(v, OP_Integer, iDb, 0);
+    sqlite3VdbeAddOp(v, OP_OpenRead, iCur, pDb->pSchema->pSeqTab->tnum);
     sqlite3VdbeAddOp(v, OP_SetNumColumns, iCur, 2);
     sqlite3VdbeAddOp(v, OP_Rewind, iCur, base+13);
     sqlite3VdbeAddOp(v, OP_Column, iCur, 0);
@@ -353,7 +355,7 @@ void sqlite3Insert(
     ** of the tables being read by the SELECT statement.  Also use a 
     ** temp table in the case of row triggers.
     */
-    if( triggers_exist || selectReadsTable(pSelect, pTab->iDb, pTab->tnum) ){
+    if( triggers_exist || selectReadsTable(pSelect,pTab->pSchema,pTab->tnum) ){
       useTempTable = 1;
     }
 
@@ -684,8 +686,8 @@ void sqlite3Insert(
   if( pTab->autoInc ){
     int iCur = pParse->nTab;
     int base = sqlite3VdbeCurrentAddr(v);
-    sqlite3VdbeAddOp(v, OP_Integer, pTab->iDb, 0);
-    sqlite3VdbeAddOp(v, OP_OpenWrite, iCur, pDb->pSeqTab->tnum);
+    sqlite3VdbeAddOp(v, OP_Integer, iDb, 0);
+    sqlite3VdbeAddOp(v, OP_OpenWrite, iCur, pDb->pSchema->pSeqTab->tnum);
     sqlite3VdbeAddOp(v, OP_SetNumColumns, iCur, 2);
     sqlite3VdbeAddOp(v, OP_MemLoad, counterRowid, 0);
     sqlite3VdbeAddOp(v, OP_NotNull, -1, base+7);
@@ -1104,15 +1106,17 @@ void sqlite3OpenTableAndIndices(
   int op           /* OP_OpenRead or OP_OpenWrite */
 ){
   int i;
+  int iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
   Index *pIdx;
   Vdbe *v = sqlite3GetVdbe(pParse);
   assert( v!=0 );
-  sqlite3VdbeAddOp(v, OP_Integer, pTab->iDb, 0);
+  sqlite3VdbeAddOp(v, OP_Integer, iDb, 0);
   VdbeComment((v, "# %s", pTab->zName));
   sqlite3VdbeAddOp(v, op, base, pTab->tnum);
   sqlite3VdbeAddOp(v, OP_SetNumColumns, base, pTab->nCol);
   for(i=1, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
-    sqlite3VdbeAddOp(v, OP_Integer, pIdx->iDb, 0);
+    assert( pIdx->pSchema==pTab->pSchema );
+    sqlite3VdbeAddOp(v, OP_Integer, iDb, 0);
     VdbeComment((v, "# %s", pIdx->zName));
     sqlite3VdbeOp3(v, op, i+base, pIdx->tnum,
                    (char*)&pIdx->keyInfo, P3_KEYINFO);

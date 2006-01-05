@@ -455,6 +455,9 @@ pragma.html:	$(TOP)/www/pragma.tcl
 lockingv3.html:	$(TOP)/www/lockingv3.tcl
 	tclsh $(TOP)/www/lockingv3.tcl >lockingv3.html
 
+sharedcache.html: $(TOP)/www/sharedcache.tcl
+	tclsh $(TOP)/www/sharedcache.tcl >sharedcache.html
+
 mingw.html:	$(TOP)/www/mingw.tcl
 	tclsh $(TOP)/www/mingw.tcl >mingw.html
 
@@ -535,6 +538,7 @@ DOC = \
   optoverview.html \
   pragma.html \
   quickstart.html \
+  sharedcache.html \
   speed.html \
   sqlite.html \
   support.html \

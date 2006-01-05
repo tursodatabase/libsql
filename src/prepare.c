@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.12 2006/01/04 15:54:36 drh Exp $
+** $Id: prepare.c,v 1.13 2006/01/05 11:34:34 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -48,6 +48,10 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **azColName){
   InitData *pData = (InitData*)pInit;
   sqlite3 *db = pData->db;
   int iDb;
+
+  if( sqlite3Tsd()->mallocFailed ){
+    return SQLITE_NOMEM;
+  }
 
   assert( argc==4 );
   if( argv==0 ) return 0;   /* Might happen if EMPTY_RESULT_CALLBACKS are on */
@@ -151,6 +155,22 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
 
   assert( iDb>=0 && iDb<db->nDb );
 
+  if( 0==db->aDb[iDb].pSchema ){
+    DbSchema *pS = sqlite3BtreeSchema(db->aDb[iDb].pBt, sizeof(DbSchema), 
+        sqlite3SchemaFree);
+    db->aDb[iDb].pSchema = pS;
+    if( !pS ){
+      return SQLITE_NOMEM;
+    }else if( pS->file_format!=0 ){
+      return SQLITE_OK;
+    }else{
+      sqlite3HashInit(&pS->tblHash, SQLITE_HASH_STRING, 0);
+      sqlite3HashInit(&pS->idxHash, SQLITE_HASH_STRING, 0);
+      sqlite3HashInit(&pS->trigHash, SQLITE_HASH_STRING, 0);
+      sqlite3HashInit(&pS->aFKey, SQLITE_HASH_STRING, 1);
+    }
+  }
+
   /* zMasterSchema and zInitScript are set to point at the master schema
   ** and initialisation script appropriate for the database being
   ** initialised. zMasterName is the name of the master table.
@@ -226,7 +246,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   }else{
     memset(meta, 0, sizeof(meta));
   }
-  pDb->schema_cookie = meta[0];
+  pDb->pSchema->schema_cookie = meta[0];
 
   /* If opening a non-empty database, check the text encoding. For the
   ** main database, set sqlite3.enc to the encoding of the main database.
@@ -260,11 +280,11 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   ** file_format==3    Version 3.1.4.  // ditto but with non-NULL defaults
   ** file_format==4    Version 3.3.0.  // DESC indices.  Boolean constants
   */
-  pDb->file_format = meta[1];
-  if( pDb->file_format==0 ){
-    pDb->file_format = 1;
+  pDb->pSchema->file_format = meta[1];
+  if( pDb->pSchema->file_format==0 ){
+    pDb->pSchema->file_format = 1;
   }
-  if( pDb->file_format>SQLITE_MAX_FILE_FORMAT ){
+  if( pDb->pSchema->file_format>SQLITE_MAX_FILE_FORMAT ){
     sqlite3BtreeCloseCursor(curMain);
     sqlite3SetString(pzErrMsg, "unsupported file format", (char*)0);
     return SQLITE_ERROR;
@@ -394,7 +414,7 @@ static int schemaIsValid(sqlite3 *db){
     rc = sqlite3BtreeCursor(pBt, MASTER_ROOT, 0, 0, 0, &curTemp);
     if( rc==SQLITE_OK ){
       rc = sqlite3BtreeGetMeta(pBt, 1, (u32 *)&cookie);
-      if( rc==SQLITE_OK && cookie!=db->aDb[iDb].schema_cookie ){
+      if( rc==SQLITE_OK && cookie!=db->aDb[iDb].pSchema->schema_cookie ){
         allOk = 0;
       }
       sqlite3BtreeCloseCursor(curTemp);

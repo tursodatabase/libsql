@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** in order to generate code for DELETE FROM statements.
 **
-** $Id: delete.c,v 1.113 2005/12/15 15:22:09 danielk1977 Exp $
+** $Id: delete.c,v 1.114 2006/01/05 11:34:34 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -62,9 +62,10 @@ int sqlite3IsReadOnly(Parse *pParse, Table *pTab, int viewOk){
 void sqlite3OpenTableForReading(
   Vdbe *v,        /* Generate code into this VDBE */
   int iCur,       /* The cursor number of the table */
+  int iDb,        /* The database index in sqlite3.aDb[] */
   Table *pTab     /* The table to be opened */
 ){
-  sqlite3VdbeAddOp(v, OP_Integer, pTab->iDb, 0);
+  sqlite3VdbeAddOp(v, OP_Integer, iDb, 0);
   VdbeComment((v, "# %s", pTab->zName));
   sqlite3VdbeAddOp(v, OP_OpenRead, iCur, pTab->tnum);
   sqlite3VdbeAddOp(v, OP_SetNumColumns, iCur, pTab->nCol);
@@ -95,6 +96,7 @@ void sqlite3DeleteFrom(
   AuthContext sContext;  /* Authorization context */
   int oldIdx = -1;       /* Cursor for the OLD table of AFTER triggers */
   NameContext sNC;       /* Name context to resolve expressions in */
+  int iDb;
 
 #ifndef SQLITE_OMIT_TRIGGER
   int isView;                  /* True if attempting to delete from a view */
@@ -134,8 +136,9 @@ void sqlite3DeleteFrom(
   if( sqlite3IsReadOnly(pParse, pTab, triggers_exist) ){
     goto delete_from_cleanup;
   }
-  assert( pTab->iDb<db->nDb );
-  zDb = db->aDb[pTab->iDb].zName;
+  iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
+  assert( iDb<db->nDb );
+  zDb = db->aDb[iDb].zName;
   if( sqlite3AuthCheck(pParse, SQLITE_DELETE, pTab->zName, 0, zDb) ){
     goto delete_from_cleanup;
   }
@@ -176,7 +179,7 @@ void sqlite3DeleteFrom(
     goto delete_from_cleanup;
   }
   if( pParse->nested==0 ) sqlite3VdbeCountChanges(v);
-  sqlite3BeginWriteOperation(pParse, triggers_exist, pTab->iDb);
+  sqlite3BeginWriteOperation(pParse, triggers_exist, iDb);
 
   /* If we are trying to delete from a view, realize that view into
   ** a ephemeral table.
@@ -205,7 +208,7 @@ void sqlite3DeleteFrom(
       int endOfLoop = sqlite3VdbeMakeLabel(v);
       int addr;
       if( !isView ){
-        sqlite3OpenTableForReading(v, iCur, pTab);
+        sqlite3OpenTableForReading(v, iCur, iDb, pTab);
       }
       sqlite3VdbeAddOp(v, OP_Rewind, iCur, sqlite3VdbeCurrentAddr(v)+2);
       addr = sqlite3VdbeAddOp(v, OP_AddImm, 1, 0);
@@ -214,12 +217,13 @@ void sqlite3DeleteFrom(
       sqlite3VdbeAddOp(v, OP_Close, iCur, 0);
     }
     if( !isView ){
-      sqlite3VdbeAddOp(v, OP_Clear, pTab->tnum, pTab->iDb);
+      sqlite3VdbeAddOp(v, OP_Clear, pTab->tnum, iDb);
       if( !pParse->nested ){
         sqlite3VdbeChangeP3(v, -1, pTab->zName, P3_STATIC);
       }
       for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-        sqlite3VdbeAddOp(v, OP_Clear, pIdx->tnum, pIdx->iDb);
+        assert( pIdx->pSchema==pTab->pSchema );
+        sqlite3VdbeAddOp(v, OP_Clear, pIdx->tnum, iDb);
       }
     }
   }
@@ -272,7 +276,7 @@ void sqlite3DeleteFrom(
       addr = sqlite3VdbeAddOp(v, OP_FifoRead, 0, end);
       if( !isView ){
         sqlite3VdbeAddOp(v, OP_Dup, 0, 0);
-        sqlite3OpenTableForReading(v, iCur, pTab);
+        sqlite3OpenTableForReading(v, iCur, iDb, pTab);
       }
       sqlite3VdbeAddOp(v, OP_MoveGe, iCur, 0);
       sqlite3VdbeAddOp(v, OP_Rowid, iCur, 0);

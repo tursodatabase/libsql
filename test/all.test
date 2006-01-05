@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: all.test,v 1.31 2005/12/15 10:11:32 danielk1977 Exp $
+# $Id: all.test,v 1.32 2006/01/05 11:34:34 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -56,6 +56,11 @@ set EXCLUDE {
   malloc.test
   misuse.test
   memleak.test
+
+  malloc2.test
+  malloc3.test
+  malloc4.test
+  malloc5.test
 }
 
 # Test files btree2.test and btree4.test don't work if the 
@@ -126,7 +131,7 @@ if {$::tcl_platform(platform)=="unix"} {
 #
 catch {source $testdir/misuse.test}
 set sqlite_open_file_count 0
-catch {source $testdir/malloc.test}
+# catch {source $testdir/malloc.test}
 
 catch {db close}
 set sqlite_open_file_count 0

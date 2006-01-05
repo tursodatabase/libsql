@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.114 2005/12/06 12:53:01 danielk1977 Exp $
+** $Id: update.c,v 1.115 2006/01/05 11:34:34 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -89,6 +89,7 @@ void sqlite3Update(
   int openAll = 0;       /* True if all indices need to be opened */
   AuthContext sContext;  /* The authorization context */
   NameContext sNC;       /* The name-context to resolve expressions in */
+  int iDb;               /* Database containing the table being updated */
 
 #ifndef SQLITE_OMIT_TRIGGER
   int isView;                  /* Trying to update a view */
@@ -107,6 +108,7 @@ void sqlite3Update(
   */
   pTab = sqlite3SrcListLookup(pParse, pTabList);
   if( pTab==0 ) goto update_cleanup;
+  iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
 
   /* Figure out if we have any triggers and if the table being
   ** updated is a view
@@ -192,7 +194,7 @@ void sqlite3Update(
     {
       int rc;
       rc = sqlite3AuthCheck(pParse, SQLITE_UPDATE, pTab->zName,
-                           pTab->aCol[j].zName, db->aDb[pTab->iDb].zName);
+                           pTab->aCol[j].zName, db->aDb[iDb].zName);
       if( rc==SQLITE_DENY ){
         goto update_cleanup;
       }else if( rc==SQLITE_IGNORE ){
@@ -257,7 +259,7 @@ void sqlite3Update(
   v = sqlite3GetVdbe(pParse);
   if( v==0 ) goto update_cleanup;
   if( pParse->nested==0 ) sqlite3VdbeCountChanges(v);
-  sqlite3BeginWriteOperation(pParse, 1, pTab->iDb);
+  sqlite3BeginWriteOperation(pParse, 1, iDb);
 
   /* If we are trying to update a view, realize that view into
   ** a ephemeral table.
@@ -307,7 +309,7 @@ void sqlite3Update(
       /* Open a cursor and make it point to the record that is
       ** being updated.
       */
-      sqlite3OpenTableForReading(v, iCur, pTab);
+      sqlite3OpenTableForReading(v, iCur, iDb, pTab);
     }
     sqlite3VdbeAddOp(v, OP_MoveGe, iCur, 0);
 
@@ -362,7 +364,7 @@ void sqlite3Update(
     ** action, then we need to open all indices because we might need
     ** to be deleting some records.
     */
-    sqlite3VdbeAddOp(v, OP_Integer, pTab->iDb, 0);
+    sqlite3VdbeAddOp(v, OP_Integer, iDb, 0);
     sqlite3VdbeAddOp(v, OP_OpenWrite, iCur, pTab->tnum);
     sqlite3VdbeAddOp(v, OP_SetNumColumns, iCur, pTab->nCol);
     if( onError==OE_Replace ){
@@ -378,7 +380,7 @@ void sqlite3Update(
     }
     for(i=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
       if( openAll || aIdxUsed[i] ){
-        sqlite3VdbeAddOp(v, OP_Integer, pIdx->iDb, 0);
+        sqlite3VdbeAddOp(v, OP_Integer, iDb, 0);
         sqlite3VdbeOp3(v, OP_OpenWrite, iCur+i+1, pIdx->tnum,
                        (char*)&pIdx->keyInfo, P3_KEYINFO);
         assert( pParse->nTab>iCur+i+1 );

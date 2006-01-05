@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.447 2006/01/04 15:54:36 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.448 2006/01/05 11:34:34 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -336,6 +336,7 @@ typedef struct AuthContext AuthContext;
 typedef struct CollSeq CollSeq;
 typedef struct Column Column;
 typedef struct Db Db;
+typedef struct DbSchema DbSchema;
 typedef struct Expr Expr;
 typedef struct ExprList ExprList;
 typedef struct FKey FKey;
@@ -367,29 +368,36 @@ typedef struct WhereLevel WhereLevel;
 struct Db {
   char *zName;         /* Name of this database */
   Btree *pBt;          /* The B*Tree structure for this database file */
+  u8 inTrans;          /* 0: not writable.  1: Transaction.  2: Checkpoint */
+  u8 safety_level;     /* How aggressive at synching data to disk */
+  int cache_size;      /* Number of pages to use in the cache */
+  void *pAux;               /* Auxiliary data.  Usually NULL */
+  void (*xFreeAux)(void*);  /* Routine to free pAux */
+  DbSchema *pSchema;   /* Pointer to database schema (possibly shared) */
+};
+
+/*
+** An instance of the following structure stores a database schema.
+*/
+struct DbSchema {
   int schema_cookie;   /* Database schema version number for this file */
   Hash tblHash;        /* All tables indexed by name */
   Hash idxHash;        /* All (named) indices indexed by name */
   Hash trigHash;       /* All triggers indexed by name */
   Hash aFKey;          /* Foreign keys indexed by to-table */
-  u16 flags;           /* Flags associated with this database */
-  u8 inTrans;          /* 0: not writable.  1: Transaction.  2: Checkpoint */
-  u8 safety_level;     /* How aggressive at synching data to disk */
-  u8 file_format;      /* Schema format version for this file */
-  int cache_size;      /* Number of pages to use in the cache */
   Table *pSeqTab;      /* The sqlite_sequence table used by AUTOINCREMENT */
-  void *pAux;               /* Auxiliary data.  Usually NULL */
-  void (*xFreeAux)(void*);  /* Routine to free pAux */
+  u8 file_format;      /* Schema format version for this file */
+  u16 flags;           /* Flags associated with this schema */
 };
 
 /*
 ** These macros can be used to test, set, or clear bits in the 
 ** Db.flags field.
 */
-#define DbHasProperty(D,I,P)     (((D)->aDb[I].flags&(P))==(P))
-#define DbHasAnyProperty(D,I,P)  (((D)->aDb[I].flags&(P))!=0)
-#define DbSetProperty(D,I,P)     (D)->aDb[I].flags|=(P)
-#define DbClearProperty(D,I,P)   (D)->aDb[I].flags&=~(P)
+#define DbHasProperty(D,I,P)     (((D)->aDb[I].pSchema->flags&(P))==(P))
+#define DbHasAnyProperty(D,I,P)  (((D)->aDb[I].pSchema->flags&(P))!=0)
+#define DbSetProperty(D,I,P)     (D)->aDb[I].pSchema->flags|=(P)
+#define DbClearProperty(D,I,P)   (D)->aDb[I].pSchema->flags&=~(P)
 
 /*
 ** Allowed values for the DB.flags field.
@@ -518,6 +526,7 @@ struct sqlite3 {
 #define SQLITE_NoReadlock     0x00001000  /* Readlocks are omitted when 
                                           ** accessing read-only databases */
 #define SQLITE_IgnoreChecks   0x00002000  /* Do not enforce check constraints */
+#define SQLITE_ReadUncommitted 0x00004000  /* For shared-cache mode */
 
 /*
 ** Possible values for the sqlite.magic field.
@@ -672,7 +681,7 @@ struct Table {
   int tnum;        /* Root BTree node for this table (see note above) */
   Select *pSelect; /* NULL for tables.  Points to definition if a view. */
   u8 readOnly;     /* True if this table should not be written by the user */
-  u8 iDb;          /* Index into sqlite.aDb[] of the backend for this table */
+// u8 iDb;          /* Index into sqlite.aDb[] of the backend for this table */
   u8 isTransient;  /* True if automatically deleted when VDBE finishes */
   u8 hasPrimKey;   /* True if there exists a primary key */
   u8 keyConf;      /* What to do in case of uniqueness conflict on iPKey */
@@ -687,6 +696,7 @@ struct Table {
 #ifndef SQLITE_OMIT_ALTERTABLE
   int addColOffset;  /* Offset in CREATE TABLE statement to add a new column */
 #endif
+  DbSchema *pSchema;
 };
 
 /*
@@ -822,9 +832,10 @@ struct Index {
   int tnum;        /* Page containing root of this index in database file */
   u8 onError;      /* OE_Abort, OE_Ignore, OE_Replace, or OE_None */
   u8 autoIndex;    /* True if is automatically created (ex: by UNIQUE) */
-  u8 iDb;          /* Index in sqlite.aDb[] of where this index is stored */
+  // u8 iDb;          /* Index in sqlite.aDb[] of where this index is stored */
   char *zColAff;   /* String defining the affinity of each column */
   Index *pNext;    /* The next index associated with the same table */
+  DbSchema *pSchema;
   KeyInfo keyInfo; /* Info on how to order keys.  MUST BE LAST */
 };
 
@@ -934,7 +945,7 @@ struct AggInfo {
 struct Expr {
   u8 op;                 /* Operation performed by this node */
   char affinity;         /* The affinity of the column or 0 if not a column */
-  u8 iDb;                /* Database referenced by this expression */
+//u8 iDb;                /* Database referenced by this expression */
   u8 flags;              /* Various flags.  See below */
   CollSeq *pColl;        /* The collation type of the column or 0 */
   Expr *pLeft, *pRight;  /* Left and right subnodes */
@@ -950,6 +961,7 @@ struct Expr {
   Select *pSelect;       /* When the expression is a sub-select.  Also the
                          ** right side of "<expr> IN (<select>)" */
   Table *pTab;           /* Table for OP_Column expressions. */
+  DbSchema *pSchema;
 };
 
 /*
@@ -1277,7 +1289,7 @@ struct AuthContext {
 struct Trigger {
   char *name;             /* The name of the trigger                        */
   char *table;            /* The table or view to which the trigger applies */
-  u8 iDb;                 /* Database containing this trigger               */
+//u8 iDb;                 /* Database containing this trigger               */
   u8 iTabDb;              /* Database containing Trigger.table              */
   u8 op;                  /* One of TK_DELETE, TK_UPDATE, TK_INSERT         */
   u8 tr_tm;               /* One of TRIGGER_BEFORE, TRIGGER_AFTER */
@@ -1286,7 +1298,7 @@ struct Trigger {
                              the <column-list> is stored here */
   int foreach;            /* One of TK_ROW or TK_STATEMENT */
   Token nameToken;        /* Token containing zName. Use during parsing only */
-
+  DbSchema *pSchema;
   TriggerStep *step_list; /* Link list of trigger program steps             */
   Trigger *pNext;         /* Next trigger associated with the table */
 };
@@ -1527,7 +1539,7 @@ void sqlite3SelectDelete(Select*);
 void sqlite3SelectUnbind(Select*);
 Table *sqlite3SrcListLookup(Parse*, SrcList*);
 int sqlite3IsReadOnly(Parse*, Table*, int);
-void sqlite3OpenTableForReading(Vdbe*, int iCur, Table*);
+void sqlite3OpenTableForReading(Vdbe*, int iCur, int iDb, Table*);
 void sqlite3OpenTable(Vdbe*, int iCur, Table*, int);
 void sqlite3DeleteFrom(Parse*, SrcList*, Expr*);
 void sqlite3Update(Parse*, SrcList*, ExprList*, Expr*, int);
@@ -1700,6 +1712,9 @@ int sqlite3IsLikeFunction(sqlite3*,Expr*,int*,char*);
 SqliteTsd *sqlite3Tsd();
 void sqlite3AttachFunctions(sqlite3 *);
 void sqlite3MinimumFileFormat(Parse*, int, int);
+void sqlite3SchemaFree(void *);
+DbSchema *sqlite3SchemaGet(Btree *);
+int sqlite3SchemaToIndex(sqlite3 *db, DbSchema *);
 
 void sqlite3MallocClearFailed();
 #ifdef NDEBUG

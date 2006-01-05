@@ -58,6 +58,7 @@ void sqlite3BeginTrigger(
   int iDb;                /* The database to store the trigger in */
   Token *pName;           /* The unqualified db name */
   DbFixer sFix;
+  int iTabDb;
 
   if( isTemp ){
     /* If TEMP was specified, then the trigger name may not be qualified. */
@@ -82,7 +83,7 @@ void sqlite3BeginTrigger(
   */
   if( !pTableName || sqlite3Tsd()->mallocFailed ) goto trigger_cleanup;
   pTab = sqlite3SrcListLookup(pParse, pTableName);
-  if( pName2->n==0 && pTab && pTab->iDb==1 ){
+  if( pName2->n==0 && pTab && pTab->pSchema==db->aDb[1].pSchema ){
     iDb = 1;
   }
 
@@ -105,7 +106,7 @@ void sqlite3BeginTrigger(
   if( !zName || SQLITE_OK!=sqlite3CheckObjectName(pParse, zName) ){
     goto trigger_cleanup;
   }
-  if( sqlite3HashFind(&(db->aDb[iDb].trigHash), zName,pName->n+1) ){
+  if( sqlite3HashFind(&(db->aDb[iDb].pSchema->trigHash), zName,pName->n+1) ){
     sqlite3ErrorMsg(pParse, "trigger %T already exists", pName);
     goto trigger_cleanup;
   }
@@ -130,17 +131,18 @@ void sqlite3BeginTrigger(
         " trigger on table: %S", pTableName, 0);
     goto trigger_cleanup;
   }
+  iTabDb = sqlite3SchemaToIndex(db, pTab->pSchema);
 
 #ifndef SQLITE_OMIT_AUTHORIZATION
   {
     int code = SQLITE_CREATE_TRIGGER;
-    const char *zDb = db->aDb[pTab->iDb].zName;
+    const char *zDb = db->aDb[iTabDb].zName;
     const char *zDbTrig = isTemp ? db->aDb[1].zName : zDb;
-    if( pTab->iDb==1 || isTemp ) code = SQLITE_CREATE_TEMP_TRIGGER;
+    if( iTabDb==1 || isTemp ) code = SQLITE_CREATE_TEMP_TRIGGER;
     if( sqlite3AuthCheck(pParse, code, zName, pTab->zName, zDbTrig) ){
       goto trigger_cleanup;
     }
-    if( sqlite3AuthCheck(pParse, SQLITE_INSERT, SCHEMA_TABLE(pTab->iDb),0,zDb)){
+    if( sqlite3AuthCheck(pParse, SQLITE_INSERT, SCHEMA_TABLE(iTabDb),0,zDb)){
       goto trigger_cleanup;
     }
   }
@@ -161,8 +163,8 @@ void sqlite3BeginTrigger(
   pTrigger->name = zName;
   zName = 0;
   pTrigger->table = sqliteStrDup(pTableName->a[0].zName);
-  pTrigger->iDb = iDb;
-  pTrigger->iTabDb = pTab->iDb;
+  pTrigger->pSchema = db->aDb[iDb].pSchema;
+  pTrigger->iTabDb = iTabDb;
   pTrigger->op = op;
   pTrigger->tr_tm = tr_tm==TK_BEFORE ? TRIGGER_BEFORE : TRIGGER_AFTER;
   pTrigger->pWhen = sqlite3ExprDup(pWhen);
@@ -196,16 +198,18 @@ void sqlite3FinishTrigger(
   Trigger *pTrig = 0;     /* The trigger whose construction is finishing up */
   sqlite3 *db = pParse->db;  /* The database */
   DbFixer sFix;
+  int iDb;                   /* Database containing the trigger */
 
   pTrig = pParse->pNewTrigger;
   pParse->pNewTrigger = 0;
   if( pParse->nErr || !pTrig ) goto triggerfinish_cleanup;
+  iDb = sqlite3SchemaToIndex(pParse->db, pTrig->pSchema);
   pTrig->step_list = pStepList;
   while( pStepList ){
     pStepList->pTrig = pTrig;
     pStepList = pStepList->pNext;
   }
-  if( sqlite3FixInit(&sFix, pParse, pTrig->iDb, "trigger", &pTrig->nameToken) 
+  if( sqlite3FixInit(&sFix, pParse, iDb, "trigger", &pTrig->nameToken) 
           && sqlite3FixTriggerStep(&sFix, pTrig->step_list) ){
     goto triggerfinish_cleanup;
   }
@@ -232,22 +236,22 @@ void sqlite3FinishTrigger(
     /* Make an entry in the sqlite_master table */
     v = sqlite3GetVdbe(pParse);
     if( v==0 ) goto triggerfinish_cleanup;
-    sqlite3BeginWriteOperation(pParse, 0, pTrig->iDb);
-    sqlite3OpenMasterTable(v, pTrig->iDb);
+    sqlite3BeginWriteOperation(pParse, 0, iDb);
+    sqlite3OpenMasterTable(v, iDb);
     addr = sqlite3VdbeAddOpList(v, ArraySize(insertTrig), insertTrig);
     sqlite3VdbeChangeP3(v, addr+2, pTrig->name, 0); 
     sqlite3VdbeChangeP3(v, addr+3, pTrig->table, 0); 
     sqlite3VdbeChangeP3(v, addr+6, (char*)pAll->z, pAll->n);
-    sqlite3ChangeCookie(db, v, pTrig->iDb);
+    sqlite3ChangeCookie(db, v, iDb);
     sqlite3VdbeAddOp(v, OP_Close, 0, 0);
-    sqlite3VdbeOp3(v, OP_ParseSchema, pTrig->iDb, 0, 
+    sqlite3VdbeOp3(v, OP_ParseSchema, iDb, 0, 
        sqlite3MPrintf("type='trigger' AND name='%q'", pTrig->name), P3_DYNAMIC);
   }
 
   if( db->init.busy ){
     Table *pTab;
     Trigger *pDel;
-    pDel = sqlite3HashInsert(&db->aDb[pTrig->iDb].trigHash, 
+    pDel = sqlite3HashInsert(&db->aDb[iDb].pSchema->trigHash, 
                      pTrig->name, strlen(pTrig->name)+1, pTrig);
     if( pDel ){
       assert( sqlite3Tsd()->mallocFailed && pDel==pTrig );
@@ -445,7 +449,7 @@ void sqlite3DropTrigger(Parse *pParse, SrcList *pName){
   for(i=OMIT_TEMPDB; i<db->nDb; i++){
     int j = (i<2) ? i^1 : i;  /* Search TEMP before MAIN */
     if( zDb && sqlite3StrICmp(db->aDb[j].zName, zDb) ) continue;
-    pTrigger = sqlite3HashFind(&(db->aDb[j].trigHash), zName, nName+1);
+    pTrigger = sqlite3HashFind(&(db->aDb[j].pSchema->trigHash), zName, nName+1);
     if( pTrigger ) break;
   }
   if( !pTrigger ){
@@ -478,11 +482,11 @@ void sqlite3DropTriggerPtr(Parse *pParse, Trigger *pTrigger, int nested){
   sqlite3 *db = pParse->db;
   int iDb;
 
-  iDb = pTrigger->iDb;
+  iDb = sqlite3SchemaToIndex(pParse->db, pTrigger->pSchema);
   assert( iDb>=0 && iDb<db->nDb );
   pTable = tableOfTrigger(db, pTrigger);
   assert(pTable);
-  assert( pTable->iDb==iDb || iDb==1 );
+  assert( pTable->pSchema==pTrigger->pSchema || iDb==1 );
 #ifndef SQLITE_OMIT_AUTHORIZATION
   {
     int code = SQLITE_DROP_TRIGGER;
@@ -528,7 +532,7 @@ void sqlite3DropTriggerPtr(Parse *pParse, Trigger *pTrigger, int nested){
 void sqlite3UnlinkAndDeleteTrigger(sqlite3 *db, int iDb, const char *zName){
   Trigger *pTrigger;
   int nName = strlen(zName);
-  pTrigger = sqlite3HashInsert(&(db->aDb[iDb].trigHash), zName, nName+1, 0);
+  pTrigger = sqlite3HashInsert(&(db->aDb[iDb].pSchema->trigHash), zName, nName+1, 0);
   if( pTrigger ){
     Table *pTable = tableOfTrigger(db, pTrigger);
     assert( pTable!=0 );
@@ -620,7 +624,7 @@ static SrcList *targetSrcList(
   int iDb;             /* Index of the database to use */
   SrcList *pSrc;       /* SrcList to be returned */
 
-  iDb = pStep->pTrig->iDb;
+  iDb = sqlite3SchemaToIndex(pParse->db, pStep->pTrig->pSchema);
   if( iDb==0 || iDb>=2 ){
     assert( iDb<pParse->db->nDb );
     sDb.z = (u8*)pParse->db->aDb[iDb].zName;

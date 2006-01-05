@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.313 2005/12/30 16:28:02 danielk1977 Exp $
+** $Id: main.c,v 1.314 2006/01/05 11:34:34 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -93,6 +93,53 @@ int sqlite3_changes(sqlite3 *db){
 */
 int sqlite3_total_changes(sqlite3 *db){
   return db->nTotalChange;
+}
+
+/*
+** Free a schema structure.
+*/
+void sqlite3SchemaFree(void *p){
+  sqliteFree(p);
+}
+
+DbSchema *sqlite3SchemaGet(Btree *pBt){
+  DbSchema * p;
+  if( pBt ){
+    p = (DbSchema *)sqlite3BtreeSchema(pBt,sizeof(DbSchema),sqlite3SchemaFree);
+  }else{
+    p = (DbSchema *)sqliteMalloc(sizeof(DbSchema));
+  }
+  if( p ){
+    sqlite3HashInit(&p->tblHash, SQLITE_HASH_STRING, 0);
+    sqlite3HashInit(&p->idxHash, SQLITE_HASH_STRING, 0);
+    sqlite3HashInit(&p->trigHash, SQLITE_HASH_STRING, 0);
+    sqlite3HashInit(&p->aFKey, SQLITE_HASH_STRING, 1);
+  }
+  return p;
+}
+
+int sqlite3SchemaToIndex(sqlite3 *db, DbSchema *pSchema){
+  int i = -1000000;
+
+  /* If pSchema is NULL, then return -1000000. This happens when code in 
+  ** expr.c is trying to resolve a reference to a transient table (i.e. one
+  ** created by a sub-select). In this case the return value of this 
+  ** function should never be used.
+  **
+  ** We return -1000000 instead of the more usual -1 simply because using
+  ** -1000000 as incorrectly using -1000000 index into db->aDb[] is much 
+  ** more likely to cause a segfault than -1 (of course there are assert()
+  ** statements too, but it never hurts to play the odds).
+  */
+  if( pSchema ){
+    for(i=0; i<db->nDb; i++){
+      if( db->aDb[i].pSchema==pSchema ){
+        break;
+      }
+    }
+    assert( i>=0 &&i>=0 &&  i<db->nDb );
+  }
+  return i;
 }
 
 /*
@@ -185,6 +232,7 @@ int sqlite3_close(sqlite3 *db){
 #endif
 
   db->magic = SQLITE_MAGIC_ERROR;
+  sqliteFree(db->aDb[1].pSchema);
   sqliteFree(db);
   sqlite3MallocAllow();
   return SQLITE_OK;
@@ -639,7 +687,7 @@ int sqlite3BtreeFactory(
 #endif /* SQLITE_OMIT_MEMORYDB */
   }
 
-  rc = sqlite3BtreeOpen(zFilename, db, ppBtree, btree_flags);
+  rc = sqlite3BtreeOpen(zFilename, (sqlite3 *)db, ppBtree, btree_flags);
   if( rc==SQLITE_OK ){
     sqlite3BtreeSetBusyHandler(*ppBtree, (void*)&db->busyHandler);
     sqlite3BtreeSetCacheSize(*ppBtree, nCache);
@@ -732,7 +780,7 @@ static int openDatabase(
   sqlite3 **ppDb         /* OUT: Returned database handle */
 ){
   sqlite3 *db;
-  int rc, i;
+  int rc;
   CollSeq *pColl;
 
   assert( !sqlite3Tsd()->mallocFailed );
@@ -749,12 +797,15 @@ static int openDatabase(
   db->flags |= SQLITE_ShortColNames;
   sqlite3HashInit(&db->aFunc, SQLITE_HASH_STRING, 0);
   sqlite3HashInit(&db->aCollSeq, SQLITE_HASH_STRING, 0);
+
+#if 0
   for(i=0; i<db->nDb; i++){
     sqlite3HashInit(&db->aDb[i].tblHash, SQLITE_HASH_STRING, 0);
     sqlite3HashInit(&db->aDb[i].idxHash, SQLITE_HASH_STRING, 0);
     sqlite3HashInit(&db->aDb[i].trigHash, SQLITE_HASH_STRING, 0);
     sqlite3HashInit(&db->aDb[i].aFKey, SQLITE_HASH_STRING, 1);
   }
+#endif
   
   /* Add the default collation sequence BINARY. BINARY works for both UTF-8
   ** and UTF-16, so add a version for each to avoid any unnecessary
@@ -789,6 +840,8 @@ static int openDatabase(
     db->magic = SQLITE_MAGIC_CLOSED;
     goto opendb_out;
   }
+  db->aDb[0].pSchema = sqlite3SchemaGet(db->aDb[0].pBt);
+  db->aDb[1].pSchema = sqlite3SchemaGet(0);
 
   /* The default safety_level for the main database is 'full'; for the temp
   ** database it is 'NONE'. This matches the pager layer defaults.  
@@ -799,7 +852,6 @@ static int openDatabase(
   db->aDb[1].zName = "temp";
   db->aDb[1].safety_level = 1;
 #endif
-
 
   /* Register all built-in functions, but do not attempt to read the
   ** database schema yet. This is delayed until the first time the database

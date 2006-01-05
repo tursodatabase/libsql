@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code associated with the ANALYZE command.
 **
-** @(#) $Id: analyze.c,v 1.11 2005/11/14 22:29:05 drh Exp $
+** @(#) $Id: analyze.c,v 1.12 2006/01/05 11:34:33 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_ANALYZE
 #include "sqliteInt.h"
@@ -86,6 +86,7 @@ static void analyzeOneTable(
   int topOfLoop;   /* The top of the loop */
   int endOfLoop;   /* The end of the loop */
   int addr;        /* The address of an instruction */
+  int iDb;         /* Index of database containing pTab */
 
   v = sqlite3GetVdbe(pParse);
   if( pTab==0 || pTab->pIndex==0 ){
@@ -93,9 +94,11 @@ static void analyzeOneTable(
     return;
   }
 
+  iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
+  assert( iDb>=0 );
 #ifndef SQLITE_OMIT_AUTHORIZATION
   if( sqlite3AuthCheck(pParse, SQLITE_ANALYZE, pTab->zName, 0,
-      pParse->db->aDb[pTab->iDb].zName ) ){
+      pParse->db->aDb[iDb].zName ) ){
     return;
   }
 #endif
@@ -104,7 +107,8 @@ static void analyzeOneTable(
   for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
     /* Open a cursor to the index to be analyzed
     */
-    sqlite3VdbeAddOp(v, OP_Integer, pIdx->iDb, 0);
+    assert( iDb==sqlite3SchemaToIndex(pParse->db, pIdx->pSchema) );
+    sqlite3VdbeAddOp(v, OP_Integer, iDb, 0);
     VdbeComment((v, "# %s", pIdx->zName));
     sqlite3VdbeOp3(v, OP_OpenRead, iIdxCur, pIdx->tnum,
                      (char*)&pIdx->keyInfo, P3_KEYINFO);
@@ -215,6 +219,7 @@ static void loadAnalysis(Parse *pParse, int iDb){
 */
 static void analyzeDatabase(Parse *pParse, int iDb){
   sqlite3 *db = pParse->db;
+  DbSchema *pSchema = db->aDb[iDb].pSchema;    /* Schema of database iDb */
   HashElem *k;
   int iStatCur;
   int iMem;
@@ -223,7 +228,7 @@ static void analyzeDatabase(Parse *pParse, int iDb){
   iStatCur = pParse->nTab++;
   openStatTable(pParse, iDb, iStatCur, 0);
   iMem = pParse->nMem;
-  for(k=sqliteHashFirst(&db->aDb[iDb].tblHash);  k; k=sqliteHashNext(k)){
+  for(k=sqliteHashFirst(&pSchema->tblHash); k; k=sqliteHashNext(k)){
     Table *pTab = (Table*)sqliteHashData(k);
     analyzeOneTable(pParse, pTab, iStatCur, iMem);
   }
@@ -239,7 +244,7 @@ static void analyzeTable(Parse *pParse, Table *pTab){
   int iStatCur;
 
   assert( pTab!=0 );
-  iDb = pTab->iDb;
+  iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
   sqlite3BeginWriteOperation(pParse, 0, iDb);
   iStatCur = pParse->nTab++;
   openStatTable(pParse, iDb, iStatCur, pTab->zName);
@@ -361,7 +366,7 @@ void sqlite3AnalysisLoad(sqlite3 *db, int iDb){
   char *zSql;
 
   /* Clear any prior statistics */
-  for(i=sqliteHashFirst(&db->aDb[iDb].idxHash); i; i=sqliteHashNext(i)){
+  for(i=sqliteHashFirst(&db->aDb[iDb].pSchema->idxHash);i;i=sqliteHashNext(i)){
     Index *pIdx = sqliteHashData(i);
     sqlite3DefaultRowEst(pIdx);
   }

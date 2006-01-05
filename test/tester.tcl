@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.56 2006/01/03 00:33:50 drh Exp $
+# $Id: tester.tcl,v 1.57 2006/01/05 11:34:34 danielk1977 Exp $
 
 # Make sure tclsqlite3 was compiled correctly.  Abort now with an
 # error message if not.
@@ -449,7 +449,7 @@ proc check_for_leaks {} {
 
     # The first command in this block will probably fail on windows. This
     # means there will be no stack dump available.
-    if {$cnt < 25} {
+    if {$cnt < 25 && $backtrace!=""} {
       catch {
         set stuff [eval "exec addr2line -e ./testfixture -f $backtrace"]
         foreach {func line} $stuff {

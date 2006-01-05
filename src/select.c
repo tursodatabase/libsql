@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.283 2006/01/03 15:16:26 drh Exp $
+** $Id: select.c,v 1.284 2006/01/05 11:34:34 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -2202,6 +2202,7 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
   struct ExprList_item eListItem;
   SrcList *pSrc;
   int brk;
+  int iDb;
 
   /* Check to see if this query is a simple min() or max() query.  Return
   ** zero if it is  not.
@@ -2263,12 +2264,13 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
   ** the min() or max() is on the INTEGER PRIMARY KEY, then find the first
   ** or last entry in the main table.
   */
-  sqlite3CodeVerifySchema(pParse, pTab->iDb);
+  iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
+  sqlite3CodeVerifySchema(pParse, iDb);
   base = pSrc->a[0].iCursor;
   brk = sqlite3VdbeMakeLabel(v);
   computeLimitRegisters(pParse, p, brk);
   if( pSrc->a[0].pSelect==0 ){
-    sqlite3OpenTableForReading(v, base, pTab);
+    sqlite3OpenTableForReading(v, base, iDb, pTab);
   }
   if( pIdx==0 ){
     sqlite3VdbeAddOp(v, seekOp, base, 0);
@@ -2281,7 +2283,8 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
     */
     int iIdx;
     iIdx = pParse->nTab++;
-    sqlite3VdbeAddOp(v, OP_Integer, pIdx->iDb, 0);
+    assert( pIdx->pSchema==pTab->pSchema );
+    sqlite3VdbeAddOp(v, OP_Integer, iDb, 0);
     sqlite3VdbeOp3(v, OP_OpenRead, iIdx, pIdx->tnum,
                    (char*)&pIdx->keyInfo, P3_KEYINFO);
     if( seekOp==OP_Rewind ){

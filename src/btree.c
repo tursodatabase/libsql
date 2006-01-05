@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.278 2005/12/30 16:31:54 danielk1977 Exp $
+** $Id: btree.c,v 1.279 2006/01/05 11:34:34 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -349,6 +349,8 @@ struct BtShared {
   int nRef;             /* Number of references to this structure */
   int nTransaction;     /* Number of open transactions (read + write) */
   BtLock *pLock;        /* List of locks held on this shared-btree struct */
+  void *pSchema;
+  void (*xFreeSchema)(void*);
 };
 
 /*
@@ -382,8 +384,37 @@ struct BtCursor {
   int idx;                  /* Index of the entry in pPage->aCell[] */
   CellInfo info;            /* A parse of the cell we are pointing at */
   u8 wrFlag;                /* True if writable */
-  u8 isValid;               /* TRUE if points to a valid entry */
+  u8 eState;                /* One of the CURSOR_XXX constants (see below) */
+#ifndef SQLITE_OMIT_SHARED_CACHE
+  void *pKey;
+  i64 nKey;
+  int skip;        /* (skip<0) -> Prev() is a no-op. (skip>0) -> Next() is */
+#endif
 };
+
+/*
+** Potential values for BtCursor.eState. The first two values (VALID and 
+** INVALID) may occur in any build. The third (REQUIRESEEK) may only occur 
+** if sqlite was compiled without the OMIT_SHARED_CACHE symbol defined.
+**
+** CURSOR_VALID:
+**   Cursor points to a valid entry. getPayload() etc. may be called.
+**
+** CURSOR_INVALID:
+**   Cursor does not point to a valid entry. This can happen (for example) 
+**   because the table is empty or because BtreeCursorFirst() has not been
+**   called.
+**
+** CURSOR_REQUIRESEEK:
+**   The table that this cursor was opened on still exists, but has been 
+**   modified since the cursor was last used. The cursor position is saved
+**   in variables BtCursor.pKey and BtCursor.nKey. When a cursor is in 
+**   this state, restoreCursorPosition() can be called to attempt to seek 
+**   the cursor to the saved position.
+*/
+#define CURSOR_INVALID           0
+#define CURSOR_VALID             1
+#define CURSOR_REQUIRESEEK       2
 
 /*
 ** The TRACE macro will print high-level status information about the
@@ -462,13 +493,109 @@ struct BtLock {
   ** manipulate entries in the BtShared.pLock linked list used to store
   ** shared-cache table level locks. If the library is compiled with the
   ** shared-cache feature disabled, then there is only ever one user
-  ** of each BtShared structure and so this locking is not required. 
-  ** So define the three interface functions as no-ops.
+  ** of each BtShared structure and so this locking is not necessary. 
+  ** So define the lock related functions as no-ops.
   */
   #define queryTableLock(a,b,c) SQLITE_OK
   #define lockTable(a,b,c) SQLITE_OK
-  #define unlockAllTables(a,b,c)
+  #define unlockAllTables(a)
+  #define restoreCursorPosition(a,b) SQLITE_OK
+  #define saveAllCursors(a,b,c) SQLITE_OK
+
 #else
+
+/*
+** Save the current cursor position in the variables BtCursor.nKey 
+** and BtCursor.pKey. The cursor's state is set to CURSOR_REQUIRESEEK.
+*/
+static int saveCursorPosition(BtCursor *pCur){
+  int rc = SQLITE_OK;
+
+  assert( CURSOR_VALID==pCur->eState|| CURSOR_INVALID==pCur->eState );
+  assert( 0==pCur->pKey );
+
+  if( pCur->eState==CURSOR_VALID ){
+    rc = sqlite3BtreeKeySize(pCur, &pCur->nKey);
+
+    /* If this is an intKey table, then the above call to BtreeKeySize()
+    ** stores the integer key in pCur->nKey. In this case this value is
+    ** all that is required. Otherwise, if pCur is not open on an intKey
+    ** table, then malloc space for and store the pCur->nKey bytes of key 
+    ** data.
+    */
+    if( rc==SQLITE_OK && 0==pCur->pPage->intKey){
+      void *pKey = sqliteMalloc(pCur->nKey);
+      if( pKey ){
+        rc = sqlite3BtreeKey(pCur, 0, pCur->nKey, pKey);
+        if( pKey ){
+          pCur->pKey = pKey;
+        }else{
+          sqliteFree(pKey);
+        }
+      }else{
+        rc = SQLITE_NOMEM;
+      }
+    }
+    assert( !pCur->pPage->intKey || !pCur->pKey );
+
+    /* Todo: Should we drop the reference to pCur->pPage here? */
+
+    if( rc==SQLITE_OK ){
+      pCur->eState = CURSOR_REQUIRESEEK;
+    }
+  }
+
+  return rc;
+}
+
+/*
+** Save the positions of all cursors except pExcept open on the table 
+** with root-page iRoot. Usually, this is called just before cursor
+** pExcept is used to modify the table (BtreeDelete() or BtreeInsert()).
+*/
+static int saveAllCursors(BtShared *pBt, Pgno iRoot, BtCursor *pExcept){
+  BtCursor *p;
+  if( sqlite3Tsd()->useSharedData ){
+    for(p=pBt->pCursor; p; p=p->pNext){
+      if( p!=pExcept && p->pgnoRoot==iRoot && p->eState==CURSOR_VALID ){
+        int rc = saveCursorPosition(p);
+        if( SQLITE_OK!=rc ){
+          return rc;
+        }
+      }
+    }
+  }
+  return SQLITE_OK;
+}
+
+/*
+** Restore the cursor to the position it was in (or as close to as possible)
+** when saveCursorPosition() was called. Note that this call deletes the 
+** saved position info stored by saveCursorPosition(), so there can be
+** at most one effective restoreCursorPosition() call after each 
+** saveCursorPosition().
+**
+** If the second argument argument - doSeek - is false, then instead of 
+** returning the cursor to it's saved position, any saved position is deleted
+** and the cursor state set to CURSOR_INVALID.
+*/
+static int restoreCursorPosition(BtCursor *pCur, int doSeek){
+  int rc = SQLITE_OK;
+  if( pCur->eState==CURSOR_REQUIRESEEK ){
+    assert( sqlite3Tsd()->useSharedData );
+    if( doSeek ){
+      rc = sqlite3BtreeMoveto(pCur, pCur->pKey, pCur->nKey, &pCur->skip);
+    }else{
+      pCur->eState = CURSOR_INVALID;
+    }
+    if( rc==SQLITE_OK ){
+      sqliteFree(pCur->pKey);
+      pCur->pKey = 0;
+      assert( CURSOR_VALID==pCur->eState || CURSOR_INVALID==pCur->eState );
+    }
+  }
+  return rc;
+}
 
 /*
 ** Query to see if btree handle p may obtain a lock of type eLock 
@@ -480,10 +607,36 @@ static int queryTableLock(Btree *p, Pgno iTab, u8 eLock){
   BtShared *pBt = p->pBt;
   BtLock *pIter;
 
-  for(pIter=pBt->pLock; pIter; pIter=pIter->pNext){
-    if( pIter->pBtree!=p && pIter->iTable==iTab && 
-        (pIter->eLock!=READ_LOCK || eLock!=READ_LOCK) ){
-      return SQLITE_BUSY;
+  /* This is a no-op if the shared-cache is not enabled */
+  if( 0==sqlite3Tsd()->useSharedData ){
+    return SQLITE_OK;
+  }
+
+  /* This (along with lockTable()) is where the ReadUncommitted flag is
+  ** dealt with. If the caller is querying for a read-lock and the flag is
+  ** set, it is unconditionally granted - even if there are write-locks
+  ** on the table. If a write-lock is requested, the ReadUncommitted flag
+  ** is not considered.
+  **
+  ** In function lockTable(), if a read-lock is demanded and the 
+  ** ReadUncommitted flag is set, no entry is added to the locks list 
+  ** (BtShared.pLock).
+  **
+  ** To summarize: If the ReadUncommitted flag is set, then read cursors do
+  ** not create or respect table locks. The locking procedure for a 
+  ** write-cursor does not change.
+  */
+  if( 
+    !p->pSqlite || 
+    0==(p->pSqlite->flags&SQLITE_ReadUncommitted) || 
+    eLock==WRITE_LOCK ||
+    iTab==1
+  ){
+    for(pIter=pBt->pLock; pIter; pIter=pIter->pNext){
+      if( pIter->pBtree!=p && pIter->iTable==iTab && 
+          (pIter->eLock!=eLock || eLock!=READ_LOCK) ){
+        return SQLITE_BUSY;
+      }
     }
   }
   return SQLITE_OK;
@@ -502,7 +655,26 @@ static int lockTable(Btree *p, Pgno iTable, u8 eLock){
   BtLock *pLock = 0;
   BtLock *pIter;
 
+  /* This is a no-op if the shared-cache is not enabled */
+  if( 0==sqlite3Tsd()->useSharedData ){
+    return SQLITE_OK;
+  }
+
   assert( SQLITE_OK==queryTableLock(p, iTable, eLock) );
+
+  /* If the read-uncommitted flag is set and a read-lock is requested,
+  ** return early without adding an entry to the BtShared.pLock list. See
+  ** comment in function queryTableLock() for more info on handling 
+  ** the ReadUncommitted flag.
+  */
+  if( 
+    (p->pSqlite) && 
+    (p->pSqlite->flags&SQLITE_ReadUncommitted) && 
+    (eLock==READ_LOCK) &&
+    iTable!=1
+  ){
+    return SQLITE_OK;
+  }
 
   /* First search the list for an existing lock on this table. */
   for(pIter=pBt->pLock; pIter; pIter=pIter->pNext){
@@ -544,6 +716,13 @@ static int lockTable(Btree *p, Pgno iTable, u8 eLock){
 */
 static void unlockAllTables(Btree *p){
   BtLock **ppIter = &p->pBt->pLock;
+
+  /* If the shared-cache extension is not enabled, there should be no
+  ** locks in the BtShared.pLock list, making this procedure a no-op. Assert
+  ** that this is the case.
+  */
+  assert( sqlite3Tsd()->useSharedData || 0==*ppIter );
+
   while( *ppIter ){
     BtLock *pLock = *ppIter;
     if( pLock->pBtree==p ){
@@ -679,27 +858,6 @@ static int ptrmapGet(BtShared *pBt, Pgno key, u8 *pEType, Pgno *pPgno){
 }
 
 #endif /* SQLITE_OMIT_AUTOVACUUM */
-
-/*
-** Return a pointer to the Btree structure associated with btree pBt
-** and connection handle pSqlite.
-*/
-#if 0
-static Btree *btree_findref(BtShared *pBt, sqlite3 *pSqlite){
-#ifndef SQLITE_OMIT_SHARED_DATA
-  if( pBt->aRef ){
-    int i;
-    for(i=0; i<pBt->nRef; i++){
-      if( pBt->aRef[i].pSqlite==pSqlite ){
-        return &pBt->aRef[i];
-      }
-    }
-    assert(0);
-  }
-#endif
-  return &pBt->ref;
-}
-#endif
 
 /*
 ** Given a btree page and a cell index (0 means the first cell on
@@ -1386,7 +1544,9 @@ int sqlite3BtreeOpen(
   int rc;
   int nReserve;
   unsigned char zDbHeader[100];
+#ifndef SQLITE_OMIT_SHARED_CACHE
   SqliteTsd *pTsd = sqlite3Tsd();
+#endif
 
   /* Set the variable isMemdb to true for an in-memory database, or 
   ** false for a file-based database. This symbol is only required if
@@ -1501,8 +1661,8 @@ int sqlite3BtreeOpen(
     pBt->pNext = pTsd->pBtree;
     pTsd->pBtree = pBt;
   }
-  pBt->nRef = 1;
 #endif
+  pBt->nRef = 1;
   *ppBtree = p;
   return SQLITE_OK;
 }
@@ -1511,9 +1671,12 @@ int sqlite3BtreeOpen(
 ** Close an open database and invalidate all cursors.
 */
 int sqlite3BtreeClose(Btree *p){
-  SqliteTsd *pTsd = sqlite3Tsd();
   BtShared *pBt = p->pBt;
   BtCursor *pCur;
+
+#ifndef SQLITE_OMIT_SHARED_CACHE
+  SqliteTsd *pTsd = sqlite3Tsd();
+#endif
 
   /* Drop any table-locks */
   unlockAllTables(p);
@@ -1556,6 +1719,9 @@ int sqlite3BtreeClose(Btree *p){
   /* Close the pager and free the shared-btree structure */
   assert( !pBt->pCursor );
   sqlite3pager_close(pBt->pPager);
+  if( pBt->xFreeSchema && pBt->pSchema ){
+    pBt->xFreeSchema(pBt->pSchema);
+  }
   sqliteFree(pBt);
   return SQLITE_OK;
 }
@@ -2323,7 +2489,7 @@ void sqlite3BtreeCursorList(Btree *p){
     sqlite3DebugPrintf("CURSOR %p rooted at %4d(%s) currently at %d.%d%s\n",
        pCur, pCur->pgnoRoot, zMode,
        pPage ? pPage->pgno : 0, pCur->idx,
-       pCur->isValid ? "" : " eof"
+       (pCur->eState==CURSOR_VALID) ? "" : " eof"
     );
   }
 }
@@ -2532,7 +2698,7 @@ int sqlite3BtreeCursor(
       return rc;
     }
   }
-  pCur = sqliteMallocRaw( sizeof(*pCur) );
+  pCur = sqliteMalloc( sizeof(*pCur) );
   if( pCur==0 ){
     rc = SQLITE_NOMEM;
     goto create_cursor_exception;
@@ -2571,7 +2737,7 @@ int sqlite3BtreeCursor(
   }
   pCur->pPrev = 0;
   pBt->pCursor = pCur;
-  pCur->isValid = 0;
+  pCur->eState = CURSOR_INVALID;
   *ppCur = pCur;
 
   return SQLITE_OK;
@@ -2604,6 +2770,7 @@ void sqlite3BtreeSetCompare(
 */
 int sqlite3BtreeCloseCursor(BtCursor *pCur){
   BtShared *pBt = pCur->pBtree->pBt;
+  restoreCursorPosition(pCur, 0);
   if( pCur->pPrev ){
     pCur->pPrev->pNext = pCur->pNext;
   }else{
@@ -2670,13 +2837,17 @@ static void getCellInfo(BtCursor *pCur){
 ** itself, not the number of bytes in the key.
 */
 int sqlite3BtreeKeySize(BtCursor *pCur, i64 *pSize){
-  if( !pCur->isValid ){
-    *pSize = 0;
-  }else{
-    getCellInfo(pCur);
-    *pSize = pCur->info.nKey;
+  int rc = restoreCursorPosition(pCur, 1);
+  if( rc==SQLITE_OK ){
+    assert( pCur->eState==CURSOR_INVALID || pCur->eState==CURSOR_VALID );
+    if( pCur->eState==CURSOR_INVALID ){
+      *pSize = 0;
+    }else{
+      getCellInfo(pCur);
+      *pSize = pCur->info.nKey;
+    }
   }
-  return SQLITE_OK;
+  return rc;
 }
 
 /*
@@ -2687,14 +2858,18 @@ int sqlite3BtreeKeySize(BtCursor *pCur, i64 *pSize){
 ** the database is empty) then *pSize is set to 0.
 */
 int sqlite3BtreeDataSize(BtCursor *pCur, u32 *pSize){
-  if( !pCur->isValid ){
-    /* Not pointing at a valid entry - set *pSize to 0. */
-    *pSize = 0;
-  }else{
-    getCellInfo(pCur);
-    *pSize = pCur->info.nData;
+  int rc = restoreCursorPosition(pCur, 1);
+  if( rc==SQLITE_OK ){
+    assert( pCur->eState==CURSOR_INVALID || pCur->eState==CURSOR_VALID );
+    if( pCur->eState==CURSOR_INVALID ){
+      /* Not pointing at a valid entry - set *pSize to 0. */
+      *pSize = 0;
+    }else{
+      getCellInfo(pCur);
+      *pSize = pCur->info.nData;
+    }
   }
-  return SQLITE_OK;
+  return rc;
 }
 
 /*
@@ -2722,7 +2897,7 @@ static int getPayload(
   u32 nKey;
 
   assert( pCur!=0 && pCur->pPage!=0 );
-  assert( pCur->isValid );
+  assert( pCur->eState==CURSOR_VALID );
   pBt = pCur->pBtree->pBt;
   pPage = pCur->pPage;
   pageIntegrity(pPage);
@@ -2798,14 +2973,18 @@ static int getPayload(
 ** the available payload.
 */
 int sqlite3BtreeKey(BtCursor *pCur, u32 offset, u32 amt, void *pBuf){
-  assert( pCur->isValid );
-  assert( pCur->pPage!=0 );
-  if( pCur->pPage->intKey ){
-    return SQLITE_CORRUPT_BKPT;
+  int rc = restoreCursorPosition(pCur, 1);
+  if( rc==SQLITE_OK ){
+    assert( pCur->eState==CURSOR_VALID );
+    assert( pCur->pPage!=0 );
+    if( pCur->pPage->intKey ){
+      return SQLITE_CORRUPT_BKPT;
+    }
+    assert( pCur->pPage->intKey==0 );
+    assert( pCur->idx>=0 && pCur->idx<pCur->pPage->nCell );
+    rc = getPayload(pCur, offset, amt, (unsigned char*)pBuf, 0);
   }
-  assert( pCur->pPage->intKey==0 );
-  assert( pCur->idx>=0 && pCur->idx<pCur->pPage->nCell );
-  return getPayload(pCur, offset, amt, (unsigned char*)pBuf, 0);
+  return rc;
 }
 
 /*
@@ -2818,10 +2997,14 @@ int sqlite3BtreeKey(BtCursor *pCur, u32 offset, u32 amt, void *pBuf){
 ** the available payload.
 */
 int sqlite3BtreeData(BtCursor *pCur, u32 offset, u32 amt, void *pBuf){
-  assert( pCur->isValid );
-  assert( pCur->pPage!=0 );
-  assert( pCur->idx>=0 && pCur->idx<pCur->pPage->nCell );
-  return getPayload(pCur, offset, amt, pBuf, 1);
+  int rc = restoreCursorPosition(pCur, 1);
+  if( rc==SQLITE_OK ){
+    assert( pCur->eState==CURSOR_VALID );
+    assert( pCur->pPage!=0 );
+    assert( pCur->idx>=0 && pCur->idx<pCur->pPage->nCell );
+    rc = getPayload(pCur, offset, amt, pBuf, 1);
+  }
+  return rc;
 }
 
 /*
@@ -2854,7 +3037,7 @@ static const unsigned char *fetchPayload(
   int nLocal;
 
   assert( pCur!=0 && pCur->pPage!=0 );
-  assert( pCur->isValid );
+  assert( pCur->eState==CURSOR_VALID );
   pPage = pCur->pPage;
   pageIntegrity(pPage);
   assert( pCur->idx>=0 && pCur->idx<pPage->nCell );
@@ -2892,10 +3075,16 @@ static const unsigned char *fetchPayload(
 ** in the common case where no overflow pages are used.
 */
 const void *sqlite3BtreeKeyFetch(BtCursor *pCur, int *pAmt){
-  return (const void*)fetchPayload(pCur, pAmt, 0);
+  if( pCur->eState==CURSOR_VALID ){
+    return (const void*)fetchPayload(pCur, pAmt, 0);
+  }
+  return 0;
 }
 const void *sqlite3BtreeDataFetch(BtCursor *pCur, int *pAmt){
-  return (const void*)fetchPayload(pCur, pAmt, 1);
+  if( pCur->eState==CURSOR_VALID ){
+    return (const void*)fetchPayload(pCur, pAmt, 1);
+  }
+  return 0;
 }
 
 
@@ -2909,7 +3098,7 @@ static int moveToChild(BtCursor *pCur, u32 newPgno){
   MemPage *pOldPage;
   BtShared *pBt = pCur->pBtree->pBt;
 
-  assert( pCur->isValid );
+  assert( pCur->eState==CURSOR_VALID );
   rc = getAndInitPage(pBt, newPgno, &pNewPage, pCur->pPage);
   if( rc ) return rc;
   pageIntegrity(pNewPage);
@@ -2956,7 +3145,7 @@ static void moveToParent(BtCursor *pCur){
   MemPage *pPage;
   int idxParent;
 
-  assert( pCur->isValid );
+  assert( pCur->eState==CURSOR_VALID );
   pPage = pCur->pPage;
   assert( pPage!=0 );
   assert( !isRootPage(pPage) );
@@ -2981,9 +3170,10 @@ static int moveToRoot(BtCursor *pCur){
   int rc;
   BtShared *pBt = pCur->pBtree->pBt;
 
+  restoreCursorPosition(pCur, 0);
   rc = getAndInitPage(pBt, pCur->pgnoRoot, &pRoot, 0);
   if( rc ){
-    pCur->isValid = 0;
+    pCur->eState = CURSOR_INVALID;
     return rc;
   }
   releasePage(pCur->pPage);
@@ -2996,10 +3186,10 @@ static int moveToRoot(BtCursor *pCur){
     assert( pRoot->pgno==1 );
     subpage = get4byte(&pRoot->aData[pRoot->hdrOffset+8]);
     assert( subpage>0 );
-    pCur->isValid = 1;
+    pCur->eState = CURSOR_VALID;
     rc = moveToChild(pCur, subpage);
   }
-  pCur->isValid = pCur->pPage->nCell>0;
+  pCur->eState = ((pCur->pPage->nCell>0)?CURSOR_VALID:CURSOR_INVALID);
   return rc;
 }
 
@@ -3012,7 +3202,7 @@ static int moveToLeftmost(BtCursor *pCur){
   int rc;
   MemPage *pPage;
 
-  assert( pCur->isValid );
+  assert( pCur->eState==CURSOR_VALID );
   while( !(pPage = pCur->pPage)->leaf ){
     assert( pCur->idx>=0 && pCur->idx<pPage->nCell );
     pgno = get4byte(findCell(pPage, pCur->idx));
@@ -3034,7 +3224,7 @@ static int moveToRightmost(BtCursor *pCur){
   int rc;
   MemPage *pPage;
 
-  assert( pCur->isValid );
+  assert( pCur->eState==CURSOR_VALID );
   while( !(pPage = pCur->pPage)->leaf ){
     pgno = get4byte(&pPage->aData[pPage->hdrOffset+8]);
     pCur->idx = pPage->nCell;
@@ -3054,7 +3244,7 @@ int sqlite3BtreeFirst(BtCursor *pCur, int *pRes){
   int rc;
   rc = moveToRoot(pCur);
   if( rc ) return rc;
-  if( pCur->isValid==0 ){
+  if( pCur->eState==CURSOR_INVALID ){
     assert( pCur->pPage->nCell==0 );
     *pRes = 1;
     return SQLITE_OK;
@@ -3073,12 +3263,12 @@ int sqlite3BtreeLast(BtCursor *pCur, int *pRes){
   int rc;
   rc = moveToRoot(pCur);
   if( rc ) return rc;
-  if( pCur->isValid==0 ){
+  if( CURSOR_INVALID==pCur->eState ){
     assert( pCur->pPage->nCell==0 );
     *pRes = 1;
     return SQLITE_OK;
   }
-  assert( pCur->isValid );
+  assert( pCur->eState==CURSOR_VALID );
   *pRes = 0;
   rc = moveToRightmost(pCur);
   return rc;
@@ -3117,7 +3307,7 @@ int sqlite3BtreeMoveto(BtCursor *pCur, const void *pKey, i64 nKey, int *pRes){
   if( rc ) return rc;
   assert( pCur->pPage );
   assert( pCur->pPage->isInit );
-  if( pCur->isValid==0 ){
+  if( pCur->eState==CURSOR_INVALID ){
     *pRes = -1;
     assert( pCur->pPage->nCell==0 );
     return SQLITE_OK;
@@ -3209,7 +3399,11 @@ int sqlite3BtreeMoveto(BtCursor *pCur, const void *pKey, i64 nKey, int *pRes){
 ** the first entry.  TRUE is also returned if the table is empty.
 */
 int sqlite3BtreeEof(BtCursor *pCur){
-  return pCur->isValid==0;
+  /* TODO: What if the cursor is in CURSOR_REQUIRESEEK but all table entries
+  ** have been deleted? This API will need to change to return an error code
+  ** as well as the boolean result value.
+  */
+  return (CURSOR_VALID!=pCur->eState);
 }
 
 /*
@@ -3222,8 +3416,21 @@ int sqlite3BtreeNext(BtCursor *pCur, int *pRes){
   int rc;
   MemPage *pPage = pCur->pPage;
 
+#ifndef SQLITE_OMIT_SHARED_CACHE
+  rc = restoreCursorPosition(pCur, 1);
+  if( rc!=SQLITE_OK ){
+    return rc;
+  }
+  if( pCur->skip>0 ){
+    pCur->skip = 0;
+    *pRes = 0;
+    return SQLITE_OK;
+  }
+  pCur->skip = 0;
+#endif
+
   assert( pRes!=0 );
-  if( pCur->isValid==0 ){
+  if( CURSOR_INVALID==pCur->eState ){
     *pRes = 1;
     return SQLITE_OK;
   }
@@ -3243,7 +3450,7 @@ int sqlite3BtreeNext(BtCursor *pCur, int *pRes){
     do{
       if( isRootPage(pPage) ){
         *pRes = 1;
-        pCur->isValid = 0;
+        pCur->eState = CURSOR_INVALID;
         return SQLITE_OK;
       }
       moveToParent(pCur);
@@ -3275,7 +3482,21 @@ int sqlite3BtreePrevious(BtCursor *pCur, int *pRes){
   int rc;
   Pgno pgno;
   MemPage *pPage;
-  if( pCur->isValid==0 ){
+
+#ifndef SQLITE_OMIT_SHARED_CACHE
+  rc = restoreCursorPosition(pCur, 1);
+  if( rc!=SQLITE_OK ){
+    return rc;
+  }
+  if( pCur->skip<0 ){
+    pCur->skip = 0;
+    *pRes = 0;
+    return SQLITE_OK;
+  }
+  pCur->skip = 0;
+#endif
+
+  if( CURSOR_INVALID==pCur->eState ){
     *pRes = 1;
     return SQLITE_OK;
   }
@@ -3291,7 +3512,7 @@ int sqlite3BtreePrevious(BtCursor *pCur, int *pRes){
   }else{
     while( pCur->idx==0 ){
       if( isRootPage(pPage) ){
-        pCur->isValid = 0;
+        pCur->eState = CURSOR_INVALID;
         *pRes = 1;
         return SQLITE_OK;
       }
@@ -4887,7 +5108,9 @@ static int balance(MemPage *pPage, int insert){
 static int checkReadLocks(BtShared *pBt, Pgno pgnoRoot, BtCursor *pExclude){
   BtCursor *p;
   for(p=pBt->pCursor; p; p=p->pNext){
+    u32 flags = (p->pBtree->pSqlite ? p->pBtree->pSqlite->flags : 0);
     if( p->pgnoRoot!=pgnoRoot || p==pExclude ) continue;
+    if( p->wrFlag==0 && flags&SQLITE_ReadUncommitted ) continue;
     if( p->wrFlag==0 ) return SQLITE_LOCKED;
     if( p->pPage->pgno!=p->pgnoRoot ){
       moveToRoot(p);
@@ -4929,6 +5152,14 @@ int sqlite3BtreeInsert(
   if( checkReadLocks(pBt, pCur->pgnoRoot, pCur) ){
     return SQLITE_LOCKED; /* The table pCur points to has a read lock */
   }
+
+  /* Save the positions of any other cursors open on this table */
+  restoreCursorPosition(pCur, 0);
+  rc = saveAllCursors(pBt, pCur->pgnoRoot, pCur);
+  if( rc ){
+    return rc;
+  }
+
   rc = sqlite3BtreeMoveto(pCur, pKey, nKey, &loc);
   if( rc ) return rc;
   pPage = pCur->pPage;
@@ -4946,7 +5177,7 @@ int sqlite3BtreeInsert(
   if( rc ) goto end_insert;
   assert( szNew==cellSizePtr(pPage, newCell) );
   assert( szNew<=MX_CELL_SIZE(pBt) );
-  if( loc==0 && pCur->isValid ){
+  if( loc==0 && CURSOR_VALID==pCur->eState ){
     int szOld;
     assert( pCur->idx>=0 && pCur->idx<pPage->nCell );
     oldCell = findCell(pPage, pCur->idx);
@@ -5003,8 +5234,19 @@ int sqlite3BtreeDelete(BtCursor *pCur){
   if( checkReadLocks(pBt, pCur->pgnoRoot, pCur) ){
     return SQLITE_LOCKED; /* The table pCur points to has a read lock */
   }
-  rc = sqlite3pager_write(pPage->aData);
-  if( rc ) return rc;
+
+  /* Restore the current cursor position (a no-op if the cursor is not in 
+  ** CURSOR_REQUIRESEEK state) and save the positions of any other cursors 
+  ** open on the same table. Then call sqlite3pager_write() on the page
+  ** that the entry will be deleted from.
+  */
+  if( 
+    (rc = restoreCursorPosition(pCur, 1)) ||
+    (rc = saveAllCursors(pBt, pCur->pgnoRoot, pCur)) ||
+    (rc = sqlite3pager_write(pPage->aData))
+  ){
+    return rc;
+  }
 
   /* Locate the cell within it's page and leave pCell pointing to the
   ** data. The clearCell() call frees any overflow pages associated with the
@@ -5427,6 +5669,16 @@ int sqlite3BtreeGetMeta(Btree *p, int idx, u32 *pMeta){
   unsigned char *pP1;
   BtShared *pBt = p->pBt;
 
+  /* Reading a meta-data value requires a read-lock on page 1 (and hence
+  ** the sqlite_master table. We grab this lock regardless of whether or
+  ** not the SQLITE_ReadUncommitted flag is set (the table rooted at page
+  ** 1 is treated as a special case by queryTableLock() and lockTable()).
+  */
+  rc = queryTableLock(p, 1, READ_LOCK);
+  if( rc!=SQLITE_OK ){
+    return rc;
+  }
+
   assert( idx>=0 && idx<=15 );
   rc = sqlite3pager_get(pBt->pPager, 1, (void**)&pP1);
   if( rc ) return rc;
@@ -5440,7 +5692,9 @@ int sqlite3BtreeGetMeta(Btree *p, int idx, u32 *pMeta){
   if( idx==4 && *pMeta>0 ) pBt->readOnly = 1;
 #endif
 
-  return SQLITE_OK;
+  /* Grab the read-lock on page 1. */
+  rc = lockTable(p, 1, READ_LOCK);
+  return rc;
 }
 
 /*
@@ -5468,6 +5722,9 @@ int sqlite3BtreeUpdateMeta(Btree *p, int idx, u32 iMeta){
 ** is currently pointing to.
 */
 int sqlite3BtreeFlags(BtCursor *pCur){
+  /* TODO: What about CURSOR_REQUIRESEEK state? Probably need to call
+  ** restoreCursorPosition() here.
+  */
   MemPage *pPage = pCur->pPage;
   return pPage ? pPage->aData[pPage->hdrOffset] : 0;
 }
@@ -5600,6 +5857,11 @@ int sqlite3BtreeCursorInfo(BtCursor *pCur, int *aResult, int upCnt){
   int cnt, idx;
   MemPage *pPage = pCur->pPage;
   BtCursor tmpCur;
+
+  int rc = restoreCursorPosition(pCur, 1);
+  if( rc!=SQLITE_OK ){
+    return rc;
+  }
 
   pageIntegrity(pPage);
   assert( pPage->isInit );
@@ -6194,6 +6456,31 @@ int sqlite3BtreeSync(Btree *p, const char *zMaster){
     return sqlite3pager_sync(pBt->pPager, zMaster, 0);
   }
   return SQLITE_OK;
+}
+
+/*
+** This function returns a pointer to a blob of memory associated with
+** a single shared-btree. The memory is used by client code for it's own
+** purposes (for example, to store a high-level schema associated with 
+** the shared-btree). The btree layer manages reference counting issues.
+**
+** The first time this is called on a shared-btree, nBytes bytes of memory
+** are allocated, zeroed, and returned to the caller. For each subsequent 
+** call the nBytes parameter is ignored and a pointer to the same blob
+** of memory returned. 
+**
+** Just before the shared-btree is closed, the function passed as the 
+** xFree argument when the memory allocation was made is invoked on the 
+** blob of allocated memory. This function should not call sqliteFree()
+** on the memory, the btree layer does that.
+*/
+void *sqlite3BtreeSchema(Btree *p, int nBytes, void(*xFree)(void *)){
+  BtShared *pBt = p->pBt;
+  if( !pBt->pSchema ){
+    pBt->pSchema = sqliteMalloc(nBytes);
+    pBt->xFreeSchema = xFree;
+  }
+  return pBt->pSchema;
 }
 
 #ifndef SQLITE_OMIT_SHARED_CACHE
