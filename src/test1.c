@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.179 2006/01/03 00:33:50 drh Exp $
+** $Id: test1.c,v 1.180 2006/01/05 15:50:07 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -2939,6 +2939,67 @@ static int tcl_variable_type(
 }
 
 /*
+** Usage:  sqlite3_release_memory ?N?
+**
+** Attempt to release memory currently held but not actually required.
+** The integer N is the number of bytes we are trying to release.  The 
+** return value is the amount of memory actually released.
+*/
+static int test_release_memory(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+#ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
+  int N;
+  int amt;
+  if( objc!=1 && objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "?N?");
+    return TCL_ERROR;
+  }
+  if( objc==2 ){
+    if( Tcl_GetIntFromObj(interp, objv[1], &N) ) return TCL_ERROR;
+  }else{
+    N = -1;
+  }
+  amt = sqlite3_release_memory(N);
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(amt));
+#endif
+  return TCL_OK;
+}
+
+/*
+** Usage:  sqlite3_soft_heap_limit ?N?
+**
+** Query or set the soft heap limit for the current thread.  The
+** limit is only changed if the N is present.  The previous limit
+** is returned.
+*/
+static int test_soft_heap_limit(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+#ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
+  int amt;
+  if( objc!=1 && objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "?N?");
+    return TCL_ERROR;
+  }
+  amt = sqlite3Tsd()->nSoftHeapLimit;
+  if( objc==2 ){
+    int N;
+    if( Tcl_GetIntFromObj(interp, objv[1], &N) ) return TCL_ERROR;
+    sqlite3_soft_heap_limit(N);
+  }
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(amt));
+#endif
+  return TCL_OK;
+}
+
+/*
 ** This routine sets entries in the global ::sqlite_options() array variable
 ** according to the compile-time configuration of the database.  Test
 ** procedures use this to determine when tests should be omitted.
@@ -3097,6 +3158,12 @@ static void set_options(Tcl_Interp *interp){
   Tcl_SetVar2(interp, "sqlite_options", "memorydb", "0", TCL_GLOBAL_ONLY);
 #else
   Tcl_SetVar2(interp, "sqlite_options", "memorydb", "1", TCL_GLOBAL_ONLY);
+#endif
+
+#ifdef SQLITE_OMIT_MEMORY_MANAGEMENT
+  Tcl_SetVar2(interp, "sqlite_options", "memorymanage", "0", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "memorymanage", "1", TCL_GLOBAL_ONLY);
 #endif
 
 #ifdef SQLITE_OMIT_OR_OPTIMIZATION
@@ -3290,6 +3357,9 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_transfer_bindings",     test_transfer_bind ,0 },
      { "sqlite3_changes",               test_changes       ,0 },
      { "sqlite3_step",                  test_step          ,0 },
+
+     { "sqlite3_release_memory",        test_release_memory,  0},
+     { "sqlite3_soft_heap_limit",       test_soft_heap_limit, 0},
 
      /* sqlite3_column_*() API */
      { "sqlite3_column_count",          test_column_count  ,0 },

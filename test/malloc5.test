@@ -12,7 +12,7 @@
 # This file contains test cases focused on the two memory-management APIs, 
 # sqlite3_soft_heap_limit() and sqlite3_release_memory().
 #
-# $Id: malloc5.test,v 1.3 2005/12/30 16:28:02 danielk1977 Exp $
+# $Id: malloc5.test,v 1.4 2006/01/05 15:50:07 drh Exp $
 
 #---------------------------------------------------------------------------
 # NOTES ON EXPECTED BEHAVIOUR
@@ -30,7 +30,7 @@ if {[info command sqlite_malloc_stat]==""} {
 }
 
 do_test malloc5-1.1 {
-  # Simplest possible test. Call [db release_memory] when there is exactly
+  # Simplest possible test. Call sqlite3_release_memory when there is exactly
   # one unused page in a single pager cache. This test case set's the 
   # value of the ::pgalloc variable, which is used in subsequent tests.
   #
@@ -42,7 +42,7 @@ do_test malloc5-1.1 {
     BEGIN;
     CREATE TABLE abc(a, b, c);
   }
-  set ::pgalloc [db release_memory]
+  set ::pgalloc [sqlite3_release_memory]
   expr $::pgalloc > 0
 } {1}
 do_test malloc5-1.2 {
@@ -56,7 +56,7 @@ do_test malloc5-1.2 {
   } db2
 } {1 {database is locked}}
 do_test malloc5-1.3 {
-  # Again call [db release_memory] when there is exactly one unused page 
+  # Again call [sqlite3_release_memory] when there is exactly one unused page 
   # in the cache. The same amount of memory is required, but no journal-sync
   # or exclusive lock should be established.
   execsql {
@@ -64,7 +64,7 @@ do_test malloc5-1.3 {
     BEGIN;
     SELECT * FROM abc;
   }
-  db release_memory
+  sqlite3_release_memory
 } $::pgalloc
 do_test malloc5-1.4 {
   # Database should not be locked this time.
@@ -79,7 +79,7 @@ do_test malloc5-1.5 {
     SELECT * FROM abc;
     CREATE TABLE def(d, e, f);
   }
-  db release_memory 500
+  sqlite3_release_memory 500
 } $::pgalloc
 do_test malloc5-1.6 {
   # Database should not be locked this time. The above test case only
@@ -92,7 +92,7 @@ do_test malloc5-1.6 {
 do_test malloc5-1.7 {
   # Release another 500 bytes of memory. This time we require a sync(), 
   # so the database file will be locked afterwards.
-  db release_memory 500
+  sqlite3_release_memory 500
 } $::pgalloc
 do_test malloc5-1.8 {
   catchsql {
@@ -127,7 +127,7 @@ do_test malloc5-2.2 {
   }
   set data [list]
   db eval {SELECT * FROM abc} {
-    incr nRelease [db release_memory]
+    incr nRelease [sqlite3_release_memory]
     lappend data $a $b $c
   }
   execsql {
@@ -149,7 +149,7 @@ do_test malloc5-3.1 {
     BEGIN;
     SELECT * FROM def;
   } db2
-  db release_memory
+  sqlite3_release_memory
 } [expr $::pgalloc * 2]
 do_test malloc5-3.2 {
   concat \
@@ -173,7 +173,7 @@ sqlite_malloc_outstanding -clearmaxbytes
 # limit in variable ::soft_limit. The original value is restored after 
 # running the tests.
 #
-set ::soft_limit [db soft_heap_limit -1]
+set ::soft_limit [sqlite3_soft_heap_limit -1]
 do_test malloc5-4.1 {
   execsql {BEGIN;}
   execsql {DELETE FROM abc;}
@@ -185,9 +185,9 @@ do_test malloc5-4.1 {
   expr $::nMaxBytes > 1000000
 } {1}
 do_test malloc5-4.2 {
-  db release_memory
+  sqlite3_release_memory
   sqlite_malloc_outstanding -clearmaxbytes
-  db soft_heap_limit 100000
+  sqlite3_soft_heap_limit 100000
   execsql {BEGIN;}
   for {set i 0} {$i < 10000} {incr i} {
     execsql "INSERT INTO abc VALUES($i, $i, '[string repeat X 100]');"
@@ -204,8 +204,6 @@ do_test malloc5-4.3 {
 } [list 20000 [expr int(20000.0 * 4999.5)] [expr int(20000.0 * 4999.5)]]
 
 # Restore the soft heap limit.
-db soft_heap_limit $::soft_limit
+sqlite3_soft_heap_limit $::soft_limit
 
 finish_test
-
-

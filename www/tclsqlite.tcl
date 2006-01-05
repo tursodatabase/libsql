@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the tclsqlite.html file.
 #
-set rcsid {$Id: tclsqlite.tcl,v 1.15 2005/09/13 07:00:06 drh Exp $}
+set rcsid {$Id: tclsqlite.tcl,v 1.16 2006/01/05 15:50:07 drh Exp $}
 source common.tcl
 header {The Tcl interface to the SQLite library}
 proc METHOD {name text} {
@@ -71,6 +71,7 @@ foreach m [lsort {
  copy
  errorcode
  eval
+ exists
  function
  last_insert_rowid
  nullvalue
@@ -417,6 +418,28 @@ so that the lock can be tried again.  The callback procedure should
 return "0" if it wants SQLite to try again to open the database and
 should return "1" if it wants SQLite to abandon the current operation.
 }
+
+##############################################################################
+METHOD exists {
+
+<p>The "exists" method is similar to "onecolumn" and "eval" in that
+it executes SQL statements.  The difference is that the "exists" method
+always returns a boolean value which is TRUE if a query in the SQL
+statement it executes returns one or more rows and FALSE if the SQL
+returns an empty set.</p>
+
+<p>The "exists" method is often used to test for the existance of
+rows in a table.  For example:</p>
+
+<blockquote><b>
+if {[db exists {SELECT 1 FROM table1 WHERE user=$user}]} {<br>
+&nbsp;&nbsp;&nbsp;# Processing if $user exists<br>
+} else {<br>
+&nbsp;&nbsp;&nbsp;# Processing if $user does not exist<br>
+}
+</b></blockquote>
+}
+
 
 ##############################################################################
 METHOD last_insert_rowid {

@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.144 2006/01/04 18:13:26 drh Exp $
+** $Id: tclsqlite.c,v 1.145 2006/01/05 15:50:07 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -666,9 +666,9 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     "exists",             "function",          "last_insert_rowid",
     "nullvalue",          "onecolumn",         "profile",
     "progress",           "rekey",             "rollback_hook",
-    "release_memory",     "soft_heap_limit",   "timeout",
-    "total_changes",      "trace",             "transaction",
-    "update_hook",        "version",           0                    
+    "timeout",            "total_changes",     "trace",
+    "transaction",        "update_hook",       "version",
+    0                    
   };
   enum DB_enum {
     DB_AUTHORIZER,        DB_BUSY,             DB_CACHE,
@@ -678,9 +678,8 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     DB_EXISTS,            DB_FUNCTION,         DB_LAST_INSERT_ROWID,
     DB_NULLVALUE,         DB_ONECOLUMN,        DB_PROFILE,
     DB_PROGRESS,          DB_REKEY,            DB_ROLLBACK_HOOK,
-    DB_RELEASE_MEMORY,    DB_SOFT_HEAP_LIMIT,  DB_TIMEOUT,
-    DB_TOTAL_CHANGES,     DB_TRACE,            DB_TRANSACTION,
-    DB_UPDATE_HOOK,       DB_VERSION
+    DB_TIMEOUT,           DB_TOTAL_CHANGES,    DB_TRACE,
+    DB_TRANSACTION,       DB_UPDATE_HOOK,      DB_VERSION
   };
   /* don't leave trailing commas on DB_enum, it confuses the AIX xlc compiler */
 
@@ -1750,57 +1749,6 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     }
     if( Tcl_GetIntFromObj(interp, objv[2], &ms) ) return TCL_ERROR;
     sqlite3_busy_timeout(pDb->db, ms);
-    break;
-  }
-
-  /*
-  **     $db soft_heap_limit N
-  **
-  ** Set the soft-heap-limit for this thread. Note that the limit is 
-  ** per-thread, not per-database. The previous limit is returned.
-  */
-  case DB_SOFT_HEAP_LIMIT: {
-#ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
-    int n;
-    int ret;
-    if( objc!=3 ){
-      Tcl_WrongNumArgs(interp, 2, objv, "BYTES");
-      return TCL_ERROR;
-    }
-    if( Tcl_GetIntFromObj(interp, objv[2], &n) ){
-      return TCL_ERROR;
-    }
-    ret = sqlite3Tsd()->nSoftHeapLimit;
-    sqlite3_soft_heap_limit(n);
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(ret));
-#endif
-    break;
-  }
-
-  /*
-  **     $db release_memory ?N?
-  **
-  ** Try to release memory currently held (but not really required) by 
-  ** SQLite database connections opened by the current thread. If an
-  ** integer argument is supplied, then SQLite stops trying to free memory
-  ** after N bytes have been freed.
-  **
-  ** The value returned is the number of bytes actually freed.
-  **/
-  case DB_RELEASE_MEMORY: {
-    int nRelease = 0;
-    int N = -1;
-    if( objc!=2 && objc!=3 ){
-      Tcl_WrongNumArgs(interp, 2, objv, "?N?");
-      return TCL_ERROR;
-    }
-#ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
-    if( objc==3 && TCL_OK!=Tcl_GetIntFromObj(interp, objv[2], &N) ){
-      return TCL_ERROR;
-    }
-    nRelease = sqlite3_release_memory(N);
-#endif
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(nRelease));
     break;
   }
   
