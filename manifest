@@ -1,5 +1,5 @@
-C Change\sthe\sOS\sinterface\slayer\sto\suse\straditional\sdirect\sfunction\scall\nimplementations\sinstead\sof\sthe\smore\scomplicated\svirtual\sfunction\stable.\nOmit\sthe\sasynchronous\sI/O\sdemo.\s(CVS\s2870)
-D 2006-01-06T14:32:20
+C Remove\svestigial\sfile:\scrashtest1.c\s(CVS\s2871)
+D 2006-01-06T14:41:54
 F Makefile.in c79fbdaa264c6afcd435f2fb492551de5a8cf80d
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -335,7 +335,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P d054bed15aee3edef93cc84c83be443cdd489946
+P 2529c2e11fa1d345ec61f647e4f6fae20a7133d6
 R 9f9ead22d0bda9c720999a0d4a57571c
 U drh
-Z eaba12b8d678120171754da949bccb7f
+Z 4e702f097766ad2e85fd323db050798c
