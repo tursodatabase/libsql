@@ -644,6 +644,13 @@ static int winFileSize(OsFile *id, i64 *pSize){
 }
 
 /*
+** LOCKFILE_FAIL_IMMEDIATELY is undefined on some Windows systems.
+*/
+#ifndef LOCKFILE_FAIL_IMMEDIATELY
+# define LOCKFILE_FAIL_IMMEDIATELY 1
+#endif
+
+/*
 ** Acquire a reader lock.
 ** Different API routines are called depending on whether or not this
 ** is Win95 or WinNT.
