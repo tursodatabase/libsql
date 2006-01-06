@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.57 2006/01/05 11:34:34 danielk1977 Exp $
+# $Id: tester.tcl,v 1.58 2006/01/06 22:11:21 drh Exp $
 
 # Make sure tclsqlite3 was compiled correctly.  Abort now with an
 # error message if not.
@@ -336,7 +336,7 @@ proc do_ioerr_test {testname args} {
       catch {file delete -force test.db-journal}
       catch {file delete -force test2.db}
       catch {file delete -force test2.db-journal}
-      set ::DB [sqlite3 db test.db]
+      set ::DB [sqlite3 db test.db; sqlite3_connection_pointer db]
       if {[info exists ::ioerropts(-tclprep)]} {
         eval $::ioerropts(-tclprep)
       }
@@ -383,7 +383,7 @@ proc do_ioerr_test {testname args} {
     if {$::go && $::ioerropts(-cksum)} {
       do_test $testname.$n.4 {
         catch {db close}
-        set ::DB [sqlite3 db test.db]
+        set ::DB [sqlite3 db test.db; sqlite3_connection_pointer db]
         cksum
       } $checksum
     }

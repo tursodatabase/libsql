@@ -1,5 +1,5 @@
-C Changes\sso\sthat\sSQLITE_OMIT_PARSER\sand\sSQLITE_OMIT_DISKIO\swork.\s(CVS\s2878)
-D 2006-01-06T21:52:50
+C Fix\sbugs\sin\stest\sscripts\sthat\scame\sof\sof\ssse\stesting.\s(CVS\s2879)
+D 2006-01-06T22:11:21
 F Makefile.in c79fbdaa264c6afcd435f2fb492551de5a8cf80d
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -229,7 +229,7 @@ F test/table.test 6dc0dfa44dd429520e0e5a0c5e55025f730e9403
 F test/tableapi.test 6a66d58b37d46dc0f2b3c7d4bd2617d209399bd1
 F test/tclsqlite.test 2c4b5fb2f21e6740479463c263f3020f08e472d7
 F test/temptable.test 7927261befdbc7b0a7ffebb85ecc70a74fa7b15b
-F test/tester.tcl 58dcfde5265c3c46e05ae2af4accaa29f0b44d91
+F test/tester.tcl b9b2c481dbef7fec4b8b3b91c6b810e7f916ba28
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
 F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
 F test/threadtest2.c 97a830d53c24c42290501fdfba4a6e5bdd34748b
@@ -253,7 +253,7 @@ F test/trigger4.test 4bed3705c9df4aaf7a7b164a2d573410d05ca025
 F test/trigger5.test 619391a3e9fc194081d22cefd830d811e7badf83
 F test/trigger6.test 0e411654f122552da6590f0b4e6f781048a4a9b9
 F test/trigger7.test 0afa870be2ce1b132cdb85b17a4a4ef45aa8cece
-F test/types.test effd31af136981ab970f72951ef33f4f62297a63
+F test/types.test a74083427a73ff8af2723bae209d09cce5722c3a
 F test/types2.test 81dd1897be8ef4b5b73d0006e6076abe40610de3
 F test/types3.test e5f789503849294de74a23b433168e8211523a25
 F test/unique.test 0253c4227a5dc533e312202ce21ecfad18058d18
@@ -335,7 +335,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P b10343d9163263f97efb1bbc61af8307a2cfe8a4
-R 7448a19ee636e9ffd325b4650b4bdaba
+P 9d71b7deaffdd7eb9ddad1f03df3e4c51c2cbd98
+R c26d93a7bc480dc90dfa2a9916cab9d8
 U drh
-Z e7777ba038c36dae911772e25a7a8445
+Z 626943f0d31c84a3b631cde7e1c72b88
