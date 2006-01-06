@@ -35,6 +35,16 @@
 #include "os_common.h"
 
 /*
+** Determine if we are dealing with WindowsCE - which has a much
+** reduced API.
+*/
+#if defined(_WIN32_WCE)
+# define OS_WINCE 1
+#else
+# define OS_WINCE 0
+#endif
+
+/*
 ** The winFile structure is a subclass of OsFile specific to the win32
 ** portability layer.
 */
@@ -44,6 +54,9 @@ struct winFile {
   HANDLE h;               /* Handle for accessing the file */
   unsigned char locktype; /* Type of lock currently held on this file */
   short sharedLockByte;   /* Randomly chosen byte used as a shared lock */
+#if OS_WINCE
+  char *zDeleteOnClose;   /* Name of file to delete when closing */
+#endif
 };
 
 
@@ -69,8 +82,8 @@ struct winFile {
 int sqlite3_os_type = 0;
 
 /*
-** Return true (non-zero) if we are running under WinNT, Win2K or WinXP.
-** Return false (zero) for Win95, Win98, or WinME.
+** Return true (non-zero) if we are running under WinNT, Win2K, WinXP,
+** or WinCE.  Return false (zero) for Win95, Win98, or WinME.
 **
 ** Here is an interesting observation:  Win95, Win98, and WinME lack
 ** the LockFileEx() API.  But we can still statically link against that
@@ -79,15 +92,61 @@ int sqlite3_os_type = 0;
 ** WinNT/2K/XP so that we will know whether or not we can safely call
 ** the LockFileEx() API.
 */
-static int isNT(void){
-  if( sqlite3_os_type==0 ){
-    OSVERSIONINFO sInfo;
-    sInfo.dwOSVersionInfoSize = sizeof(sInfo);
-    GetVersionEx(&sInfo);
-    sqlite3_os_type = sInfo.dwPlatformId==VER_PLATFORM_WIN32_NT ? 2 : 1;
+#if OS_WINCE
+# define isNT()  (1)
+#else
+  static int isNT(void){
+    if( sqlite3_os_type==0 ){
+      OSVERSIONINFO sInfo;
+      sInfo.dwOSVersionInfoSize = sizeof(sInfo);
+      GetVersionEx(&sInfo);
+      sqlite3_os_type = sInfo.dwPlatformId==VER_PLATFORM_WIN32_NT ? 2 : 1;
+    }
+    return sqlite3_os_type==2;
   }
-  return sqlite3_os_type==2;
+#endif /* OS_WINCE */
+
+#if OS_WINCE
+/*
+** WindowsCE does not have a localtime() function.  So create a
+** substitute.
+*/
+#include <time.h>
+struct tm *__cdecl localtime(const time_t *t)
+{
+  static struct tm y;
+  FILETIME uTm, lTm;
+  SYSTEMTIME pTm;
+  i64 t64;
+  t64 = *t;
+  t64 = (t64 + 11644473600)*10000000;
+  uTm.dwLowDateTime = t64 & 0xFFFFFFFF;
+  uTm.dwHighDateTime= t64 >> 32;
+  FileTimeToLocalFileTime(&uTm,&lTm);
+  FileTimeToSystemTime(&lTm,&pTm);
+  y.tm_year = pTm.wYear - 1900;
+  y.tm_mon = pTm.wMonth - 1;
+  y.tm_wday = pTm.wDayOfWeek;
+  y.tm_mday = pTm.wDay;
+  y.tm_hour = pTm.wHour;
+  y.tm_min = pTm.wMinute;
+  y.tm_sec = pTm.wSecond;
+  return &y;
 }
+#endif
+
+/*
+** Compile with -DSQLITE_OMIT_WIN_LOCKS to disable file locking on
+** windows.  If you do this and two or more connections attempt to
+** write the database at the same time, the database file will be
+** corrupted.  But some versions of WindowsCE do not support locking,
+** in which case compiling with this option is required just to get
+** it to work at all.
+*/
+#ifdef SQLITE_OMIT_WIN_LOCKS
+# define LockFileEx(a,b,c,d,e,f) (1)
+# define UnlockFileEx(a,b,c,d,e) (1)
+#endif
 
 /*
 ** Convert a UTF-8 string to UTF-32.  Space to hold the returned string
@@ -145,7 +204,11 @@ int sqlite3WinDelete(const char *zFilename){
     DeleteFileW(zWide);
     sqliteFree(zWide);
   }else{
+#if OS_WINCE
+    return SQLITE_NOMEM;
+#else
     DeleteFileA(zFilename);
+#endif
   }
   TRACE2("DELETE \"%s\"\n", zFilename);
   return SQLITE_OK;
@@ -161,7 +224,11 @@ int sqlite3WinFileExists(const char *zFilename){
     exists = GetFileAttributesW(zWide) != 0xffffffff;
     sqliteFree(zWide);
   }else{
+#if OS_WINCE
+    return SQLITE_NOMEM;
+#else
     exists = GetFileAttributesA(zFilename) != 0xffffffff;
+#endif
   }
   return exists;
 }
@@ -219,6 +286,9 @@ int sqlite3WinOpenReadWrite(
     }
     sqliteFree(zWide);
   }else{
+#if OS_WINCE
+    return SQLITE_NOMEM;
+#else
     h = CreateFileA(zFilename,
        GENERIC_READ | GENERIC_WRITE,
        FILE_SHARE_READ | FILE_SHARE_WRITE,
@@ -243,6 +313,7 @@ int sqlite3WinOpenReadWrite(
     }else{
       *pReadonly = 0;
     }
+#endif /* OS_WINCE */
   }
   f.h = h;
   f.locktype = NO_LOCK;
@@ -272,12 +343,12 @@ int sqlite3WinOpenExclusive(const char *zFilename, OsFile **pId, int delFlag){
   int fileflags;
   WCHAR *zWide = utf8ToUnicode(zFilename);
   assert( *pId == 0 );
+  fileflags = FILE_FLAG_RANDOM_ACCESS;
+#if !OS_WINCE
   if( delFlag ){
-    fileflags = FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_RANDOM_ACCESS 
-                     | FILE_FLAG_DELETE_ON_CLOSE;
-  }else{
-    fileflags = FILE_FLAG_RANDOM_ACCESS;
+    fileflags |= FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_DELETE_ON_CLOSE;
   }
+#endif
   if( zWide ){
     h = CreateFileW(zWide,
        GENERIC_READ | GENERIC_WRITE,
@@ -289,6 +360,9 @@ int sqlite3WinOpenExclusive(const char *zFilename, OsFile **pId, int delFlag){
     );
     sqliteFree(zWide);
   }else{
+#if OS_WINCE
+    return SQLITE_NOMEM;
+#else
     h = CreateFileA(zFilename,
        GENERIC_READ | GENERIC_WRITE,
        0,
@@ -297,6 +371,7 @@ int sqlite3WinOpenExclusive(const char *zFilename, OsFile **pId, int delFlag){
        fileflags,
        NULL
     );
+#endif /* OS_WINCE */
   }
   if( h==INVALID_HANDLE_VALUE ){
     return SQLITE_CANTOPEN;
@@ -304,6 +379,9 @@ int sqlite3WinOpenExclusive(const char *zFilename, OsFile **pId, int delFlag){
   f.h = h;
   f.locktype = NO_LOCK;
   f.sharedLockByte = 0;
+#if OS_WINCE
+  f.zDeleteOnClose = delFlag ? sqlite3StrDup(zFilename) : 0;
+#endif
   TRACE3("OPEN EX %d \"%s\"\n", h, zFilename);
   return allocateWinFile(&f, pId);
 }
@@ -331,6 +409,9 @@ int sqlite3WinOpenReadOnly(const char *zFilename, OsFile **pId){
     );
     sqliteFree(zWide);
   }else{
+#if OS_WINCE
+    return SQLITE_NOMEM;
+#else
     h = CreateFileA(zFilename,
        GENERIC_READ,
        0,
@@ -339,6 +420,7 @@ int sqlite3WinOpenReadOnly(const char *zFilename, OsFile **pId){
        FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS,
        NULL
     );
+#endif
   }
   if( h==INVALID_HANDLE_VALUE ){
     return SQLITE_CANTOPEN;
@@ -431,6 +513,12 @@ static int winClose(OsFile **pId){
   if( pId && (pFile = (winFile*)*pId)!=0 ){
     TRACE2("CLOSE %d\n", pFile->h);
     CloseHandle(pFile->h);
+#if OS_WINCE
+    if( pFile->zDeleteOnClose ){
+      DeleteFileW((WCHAR*)pFile->zDeleteOnClose);
+      sqliteFree(pFile->zDeleteOnClose);
+    }
+#endif
     OpenCounter(-1);
     sqliteFree(pFile);
     *pId = 0;
@@ -605,7 +693,11 @@ int sqlite3WinIsDirWritable(char *zDirname){
     fileAttr = GetFileAttributesW(zWide);
     sqliteFree(zWide);
   }else{
+#if OS_WINCE
+    return 0;
+#else
     fileAttr = GetFileAttributesA(zDirname);
+#endif
   }
   if( fileAttr == 0xffffffff ) return 0;
   if( (fileAttr & FILE_ATTRIBUTE_DIRECTORY) != FILE_ATTRIBUTE_DIRECTORY ){
@@ -818,16 +910,20 @@ static int winUnlock(OsFile *id, int locktype){
 ** is no longer needed.
 */
 char *sqlite3WinFullPathname(const char *zRelative){
-  char *zNotUsed;
   char *zFull;
-  WCHAR *zWide;
+#if defined(__CYGWIN__)
   int nByte;
-#ifdef __CYGWIN__
   nByte = strlen(zRelative) + MAX_PATH + 1001;
   zFull = sqliteMalloc( nByte );
   if( zFull==0 ) return 0;
   if( cygwin_conv_to_full_win32_path(zRelative, zFull) ) return 0;
+#elif OS_WINCE
+  /* WinCE has no concept of a relative pathname, or so I am told. */
+  zFull = sqlite3StrDup(zRelative);
 #else
+  char *zNotUsed;
+  WCHAR *zWide;
+  int nByte;
   zWide = utf8ToUnicode(zRelative);
   if( zWide ){
     WCHAR *zTemp, *zNotUsedW;
@@ -901,6 +997,9 @@ int allocateWinFile(winFile *pInit, OsFile **pId){
   pNew = sqliteMalloc( sizeof(*pNew) );
   if( pNew==0 ){
     CloseHandle(pInit->h);
+#if OS_WINCE
+    sqliteFree(pInit->zDeleteOnClose);
+#endif
     *pId = 0;
     return SQLITE_NOMEM;
   }else{
@@ -1020,7 +1119,13 @@ int sqlite3WinCurrentTime(double *prNow){
      100-nanosecond intervals since January 1, 1601 (= JD 2305813.5). 
   */
   double now;
+#if OS_WINCE
+  SYSTEMTIME time;
+  GetSystemTime(&time);
+  SystemTimeToFileTime(&time,&ft);
+#else
   GetSystemTimeAsFileTime( &ft );
+#endif
   now = ((double)ft.dwHighDateTime) * 4294967296.0; 
   *prNow = (now + ft.dwLowDateTime)/864000000000.0 + 2305813.5;
 #ifdef SQLITE_TEST
