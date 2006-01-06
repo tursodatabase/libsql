@@ -152,7 +152,6 @@ HDR = \
    $(TOP)/src/os.h \
    $(TOP)/src/os_common.h \
    $(TOP)/src/sqliteInt.h  \
-   $(TOP)/src/sqlite3_aux.h \
    $(TOP)/src/vdbe.h \
    parse.h
 

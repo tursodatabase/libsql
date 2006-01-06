@@ -1,6 +1,6 @@
-C Fix\sa\sbug\sthat\swas\semptying\sshared-schema\stables\sduring\san\sATTACH.\s(CVS\s2867)
-D 2006-01-06T06:33:12
-F Makefile.in 899551ac1dfad4131a4480176eab9e03c64b71ea
+C Back\sout\sthe\saddition\sof\sthe\snew\sheader\sfile\s-\sbad\sidea.\s(CVS\s2868)
+D 2006-01-06T12:03:19
+F Makefile.in 131285a3e97597dd7ed3eb23a1010c7d0685ae41
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
 F VERSION b818cce180263e590a00ad4509a713892c3eecea
@@ -19,7 +19,7 @@ F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
-F main.mk d5fbd33af46d70d654689429f30be08c6f5d36b9
+F main.mk 27186ccd25ac0a49a0c0fae4b4e24db90b541bda
 F mkdll.sh 5ec23622515d5bf8969404e80cfb5e220ddf0512
 F mkopcodec.awk bd46ad001c98dfbab07b1713cb8e692fa0e5415d
 F mkopcodeh.awk 071dbba4eaf56c8d643baf4604a043af35683316
@@ -51,7 +51,7 @@ F src/legacy.c 59757d857ab95fcbb0ac27692d3201e35f093dd7
 F src/main.c 244a346ae0d1953c4c872b3429b8712b32f590a1
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/os.c a1953975771e1afa161a96e720e58a6f77f946e4
-F src/os.h 1f825a8ec854abe8f4cd3a1851c5f6c43e58fbf8
+F src/os.h 907e939f30eb01555ad34f4f96cd9333bf0495ea
 F src/os_common.h d0b1f2f32926e9b6db7886a7f43008b596a9e926
 F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
@@ -69,8 +69,7 @@ F src/random.c ff5e9a8cad790e2a51cd4d2e7737dc8540e09d1d
 F src/select.c a60e5c7fad9ce7adc78d9eb32a0a89dd5acd04fb
 F src/shell.c 66b073375efbdee19045e7e0cd38b85f9aff71da
 F src/sqlite.h.in ba3a29daa6a16e054191ccb384a981964e882a1d
-F src/sqlite3_aux.h c449ecf05325e4341da930ac963430c86055c52f
-F src/sqliteInt.h 06a37ed74f803ae669292f65e35977254d8e7be1
+F src/sqliteInt.h 9b89651a99687e25bdab1e4e33b7dcadcd890283
 F src/table.c 486dcfce532685b53b5a2b5da8bba0ded6fb2316
 F src/tclsqlite.c 6794d34f6ad3dc7dd25eecde887696e569f8efe1
 F src/test1.c 89e25646feceaf09e55c11ecba03ddcfd7cf7c0a
@@ -338,7 +337,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P b8332aa8b83142898779972b3dff13cbe3c78623
-R cf41b9057439725670e2ff912b4af45d
-U danielk1977
-Z c046cce8ff38eee9570320533f1a9c01
+P 752a2754879becc32da9f9b910f3330f8c7145e4
+R 77860345776bf3dbb42b93b9296c48b1
+U drh
+Z 246dc71f2673d21c26bf8f1421f9f9ff

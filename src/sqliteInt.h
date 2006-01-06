@@ -11,10 +11,17 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.450 2006/01/05 23:42:51 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.451 2006/01/06 12:03:19 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
+
+/*
+** Extra interface definitions for those who need them
+*/
+#ifdef SQLITE_EXTRA
+# include "sqliteExtra.h"
+#endif
 
 /*
 ** Many people are failing to set -DNDEBUG=1 when compiling SQLite.
