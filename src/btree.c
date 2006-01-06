@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.281 2006/01/06 06:33:12 danielk1977 Exp $
+** $Id: btree.c,v 1.282 2006/01/06 13:00:29 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -601,7 +601,7 @@ static int restoreCursorPosition(BtCursor *pCur, int doSeek){
 ** Query to see if btree handle p may obtain a lock of type eLock 
 ** (READ_LOCK or WRITE_LOCK) on the table with root-page iTab. Return
 ** SQLITE_OK if the lock may be obtained (by calling lockTable()), or
-** SQLITE_BUSY if not.
+** SQLITE_LOCKED if not.
 */
 static int queryTableLock(Btree *p, Pgno iTab, u8 eLock){
   BtShared *pBt = p->pBt;
@@ -635,7 +635,7 @@ static int queryTableLock(Btree *p, Pgno iTab, u8 eLock){
     for(pIter=pBt->pLock; pIter; pIter=pIter->pNext){
       if( pIter->pBtree!=p && pIter->iTable==iTab && 
           (pIter->eLock!=eLock || eLock!=READ_LOCK) ){
-        return SQLITE_BUSY;
+        return SQLITE_LOCKED;
       }
     }
   }
@@ -6482,6 +6482,14 @@ void *sqlite3BtreeSchema(Btree *p, int nBytes, void(*xFree)(void *)){
     pBt->xFreeSchema = xFree;
   }
   return pBt->pSchema;
+}
+
+/*
+** Return true if another user of the same shared btree as the argument
+** handle holds an exclusive lock on the sqlite_master table.
+*/
+int sqlite3BtreeSchemaLocked(Btree *p){
+  return (queryTableLock(p, MASTER_ROOT, READ_LOCK)!=SQLITE_OK);
 }
 
 #ifndef SQLITE_OMIT_SHARED_CACHE

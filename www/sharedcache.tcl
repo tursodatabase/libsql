@@ -120,11 +120,8 @@ read-lock, write-lock or no lock on each database table.
 or a single active write lock. To read data a table, a connection must 
 first obtain a read-lock. To write to a table, a connection must obtain a 
 write-lock on that table. If a required table lock cannot be obtained,
-the query fails and SQLITE_BUSY is returned to the caller.
+the query fails and SQLITE_LOCKED is returned to the caller.
 </p> 
-
-<p><b>TODO: Should we be invoking the busy-handler here? Just waiting won't do
-any good, but something else might...  </b></p>
 
 <p>Once a connection obtains a table lock, it is not released until the
 current transaction (read or write) is concluded.
@@ -181,10 +178,30 @@ accessing any database tables or obtaining any other read or write locks.</li>
 a CREATE or DROP TABLE statement), a connection must obtain a write-lock on 
 <i>sqlite_master</i>.
 </li>
-<li>A connection may not compile an SQL statement that refers to database
-tables if any other connection is holding a write-lock on <i>sqlite_master</i>.
+<li>A connection may not compile an SQL statement if any other connection
+is holding a write-lock on the <i>sqlite_master</i> table of any attached
+database (including the default database, "main"). 
 </li>
 </ul>
+}
+
+HEADING 3 {Schema locking and attached databases}
+
+puts {
+<p>The final point in the bullet list is deceptively complicated when
+multiple databases are attached to connections. Exactly when is access to a 
+specific database schema "required" to compile a statement? The way in
+which SQLite resolves the names of schema objects (i.e. tables, indices, 
+triggers and views) depends on whether or not the name was qualified
+or unqualified in the original SQL statement. The first statement below
+uses a qualified table name, the second uses an unqualified table name.
+Both refer to the same underlying table.
+</p>
+<pre>
+    SELECT name FROM main.sqlite_master;
+    SELECT name FROM sqlite_master;
+</pre>
+1
 }
 
 HEADING 1 {Thread Related Issues}

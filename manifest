@@ -1,5 +1,5 @@
-C Back\sout\sthe\saddition\sof\sthe\snew\sheader\sfile\s-\sbad\sidea.\s(CVS\s2868)
-D 2006-01-06T12:03:19
+C Add\ssome\ssimple\stests\sand\sfixes\sfor\sshared-schema\slocking.\s(CVS\s2869)
+D 2006-01-06T13:00:29
 F Makefile.in 131285a3e97597dd7ed3eb23a1010c7d0685ae41
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -34,8 +34,8 @@ F src/alter.c e9deb3f4fd7c663a0d1f235d541bc5ea1f2cfa8b
 F src/analyze.c d821684cdb4d0403e327e4a3440a832e9e54fa3a
 F src/attach.c 999104c56a60b88eab11ef9c8f40dedf1650b287
 F src/auth.c cdec356a5cd8b217c346f816c5912221537fe87f
-F src/btree.c d1402f4e1cfc500b31d13990f36dd8d3d27443bc
-F src/btree.h 96b8c00c6e11ff92f8d3d6a7a0ff358bd10d8f19
+F src/btree.c f34c1e8d93003cbd8cc579865e0c0db4f595b97e
+F src/btree.h f7ba8e2f9f387cca4978e1495504a0bf556dcbf2
 F src/build.c 715ac7d49bbfcae5f3fdfd60885397b2133c283b
 F src/callback.c 62066afd516f220575e81b1a1239ab92a2eae252
 F src/complete.c df1681cef40dec33a286006981845f87b194e7a4
@@ -63,7 +63,7 @@ F src/pager.c 07509ddb478f5a70f9ff53607ab8a44456c22811
 F src/pager.h e0acb095b3ad0bca48f2ab00c87346665643f64f
 F src/parse.y 58258759fabdd48f1d2561e276097290b1ea2680
 F src/pragma.c 4af4041a88d41421b8ff2e5574d82d7b9d1e35b1
-F src/prepare.c 67ff283f7c71e32a91d8c843e758eb4bf68ab94e
+F src/prepare.c 48baea211104dfcfa59857a32d62c934f63a15ed
 F src/printf.c f47a2f4b5387cd2ebb12e9117a1a5d6bd9a2b812
 F src/random.c ff5e9a8cad790e2a51cd4d2e7737dc8540e09d1d
 F src/select.c a60e5c7fad9ce7adc78d9eb32a0a89dd5acd04fb
@@ -222,7 +222,7 @@ F test/select4.test c239f516aa31f42f2ef7c6d7cd01105f08f934ca
 F test/select5.test 07a90ab3c7e3f0a241a9cdea1d997b2c8a89ff0b
 F test/select6.test f459a19bdac0501c4d3eb1a4df4b7a76f1bb8ad4
 F test/select7.test 1bf795b948c133a15a2a5e99d3270e652ec58ce6
-F test/shared.test ee5a4154d257e4c2ce1ae418783b87847473de90
+F test/shared.test eb6b9ac456f60ed485b9ca5873d563abacae815a
 F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
 F test/subquery.test e6de53332c0301b3cfa34edc3f3cd5fa1e859efd
 F test/subselect.test 2d13fb7f450db3595adcdd24079a0dd1d2d6abc2
@@ -328,7 +328,7 @@ F www/optimizing.tcl f0b2538988d1bbad16cbfe63ec6e8f48c9eb04e5
 F www/optoverview.tcl 815df406a38c9f69b27d37e8f7ede004c6d9f19e
 F www/pragma.tcl 44f7b665ca598ad24724f35991653638a36a6e3f
 F www/quickstart.tcl 2f3daf8038e82a102e1e8cc877aafa7a413f5f11
-F www/sharedcache.tcl c42098d1436bcb54ec7f08d07c2e75316e2dde68
+F www/sharedcache.tcl 884a93bf0f814204b24959c0c6229d61dd4734cc
 F www/speed.tcl 656ed5be8cc9d536353e1a96927b925634a62933
 F www/sqlite.tcl a883ed7b47371d31d471e6aea5ed1f972ae8e1be
 F www/support.tcl 7961ce16290692578d783bb11f0dc8391a9be9c3
@@ -337,7 +337,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 752a2754879becc32da9f9b910f3330f8c7145e4
-R 77860345776bf3dbb42b93b9296c48b1
-U drh
-Z 246dc71f2673d21c26bf8f1421f9f9ff
+P 0c4c45c36fe1c3c2980155ef5126a2ad53100d65
+R c892910cec71c19aeb323bc85b1a92ea
+U danielk1977
+Z 5e6321921a4935029ecd84d938104014

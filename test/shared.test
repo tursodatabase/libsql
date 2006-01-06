@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the SELECT statement.
 #
-# $Id: shared.test,v 1.3 2006/01/06 06:33:13 danielk1977 Exp $
+# $Id: shared.test,v 1.4 2006/01/06 13:00:30 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -73,7 +73,7 @@ do_test shared-1.4 {
   catchsql {
     INSERT INTO abc VALUES(4, 5, 6);
   } db2
-} {1 {database is locked}}
+} {1 {database table is locked}}
 do_test shared-1.5 {
   # Using connection 2 (the one without the open transaction), try to create
   # a new table. This should fail because of the open read transaction 
@@ -81,7 +81,7 @@ do_test shared-1.5 {
   catchsql {
     CREATE TABLE def(d, e, f);
   } db2
-} {1 {database is locked}}
+} {1 {database table is locked}}
 do_test shared-1.6 {
   # Upgrade connection 1's transaction to a write transaction. Create
   # a new table - def - and insert a row into it. Because the connection 1
@@ -104,7 +104,7 @@ do_test shared-1.7 {
   catchsql {
     SELECT * FROM sqlite_master;
   } db2
-} {1 {database is locked}}
+} {1 {database schema is locked: main}}
 do_test shared-1.8 {
   # Commit the connection 1 transaction.
   execsql {
@@ -133,7 +133,7 @@ do_test shared-2.2 {
   catchsql {
     INSERT INTO abc VALUES(1, 2, 3);
   } db2
-} {1 {database is locked}}
+} {1 {database table is locked}}
 do_test shared-2.3 {
   # Turn db's transaction into a write-transaction. db3 should still be
   # able to read from table def (but will not see the new row). Connection
@@ -157,7 +157,7 @@ do_test shared-2.3 {
   ] [
     catchsql { SELECT * FROM def; } db2
   ]
-} {0 {IV V VI} 1 {database is locked}}
+} {0 {IV V VI} 1 {database table is locked}}
 do_test shared-2.4 {
   # Commit the open transaction on db. db2 still holds a read-transaction.
   # This should prevent db3 from writing to the database, but not from 
@@ -257,10 +257,16 @@ do_test shared-4.1.3 {
   set sqlite_open_file_count
 } {2}
 
+# Sanity check: Create a table in ./test.db via handle db, and test that handle
+# db2 can "see" the new table immediately. A handle using a seperate pager
+# cache would have to reload the database schema before this were possible.
+#
 do_test shared-4.2.1 {
   execsql {
     CREATE TABLE abc(a, b, c);
+    CREATE TABLE def(d, e, f);
     INSERT INTO abc VALUES('i', 'ii', 'iii');
+    INSERT INTO def VALUES('I', 'II', 'III');
   }
 } {}
 do_test shared-4.2.2 {
@@ -268,6 +274,91 @@ do_test shared-4.2.2 {
     SELECT * FROM test.abc;
   } db2
 } {i ii iii}
+
+# Open a read-transaction and read from table abc via handle 2. Check that
+# handle 1 can read table abc. Check that handle 1 cannot modify table abc
+# or the database schema. Then check that handle 1 can modify table def.
+#
+do_test shared-4.3.1 {
+  execsql {
+    BEGIN;
+    SELECT * FROM test.abc;
+  } db2
+} {i ii iii}
+do_test shared-4.3.2 {
+  catchsql {
+    INSERT INTO abc VALUES('iv', 'v', 'vi');
+  }
+} {1 {database table is locked}}
+do_test shared-4.3.3 {
+  catchsql {
+    CREATE TABLE ghi(g, h, i);
+  }
+} {1 {database table is locked}}
+do_test shared-4.3.3 {
+  catchsql {
+    INSERT INTO def VALUES('IV', 'V', 'VI');
+  }
+} {0 {}}
+do_test shared-4.3.4 {
+  # Cleanup: commit the transaction opened by db2.
+  execsql {
+    COMMIT
+  } db2
+} {}
+
+# Open a write-transaction using handle 1 and modify the database schema.
+# Then try to execute a compiled statement to read from the same 
+# database via handle 2 (fails to get the lock on sqlite_master). Also
+# try to compile a read of the same database using handle 2 (also fails).
+# Finally, compile a read of the other database using handle 2. This
+# should also fail.
+#
+do_test shared-4.4.1.2 {
+  # Sanity check 1: Check that the schema is what we think it is when viewed
+  # via handle 1.
+  execsql {
+    CREATE TABLE test2.ghi(g, h, i);
+    SELECT 'test.db:'||name FROM sqlite_master 
+    UNION ALL
+    SELECT 'test2.db:'||name FROM test2.sqlite_master;
+  }
+} {test.db:abc test.db:def test2.db:ghi}
+do_test shared-4.4.1.2 {
+  # Sanity check 2: Check that the schema is what we think it is when viewed
+  # via handle 2.
+  execsql {
+    SELECT 'test2.db:'||name FROM sqlite_master 
+    UNION ALL
+    SELECT 'test.db:'||name FROM test.sqlite_master;
+  } db2
+} {test2.db:ghi test.db:abc test.db:def}
+
+do_test shared-4.4.2 {
+  set ::DB2 [sqlite3_connection_pointer db2]
+  set sql {SELECT * FROM abc}
+  set ::STMT1 [sqlite3_prepare $::DB2 $sql -1 DUMMY]
+  execsql {
+    BEGIN;
+    CREATE TABLE jkl(j, k, l);
+  }
+  sqlite3_step $::STMT1
+} {SQLITE_ERROR}
+do_test shared-4.4.3 {
+  sqlite3_finalize $::STMT1
+} {SQLITE_LOCKED}
+do_test shared-4.4.4 {
+  set rc [catch {
+    set ::STMT1 [sqlite3_prepare $::DB2 $sql -1 DUMMY]
+  } msg]
+  list $rc $msg
+} {1 {(6) database schema is locked: test}}
+do_test shared-4.4.5 {
+  set rc [catch {
+    set ::STMT1 [sqlite3_prepare $::DB2 "SELECT * FROM ghi" -1 DUMMY]
+  } msg]
+  list $rc $msg
+} {1 {(6) database schema is locked: test}}
 
 catch {db2 close}
 catch {db close}
