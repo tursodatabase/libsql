@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.279 2006/01/05 11:34:34 danielk1977 Exp $
+** $Id: btree.c,v 1.280 2006/01/06 01:42:58 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -289,10 +289,10 @@ struct MemPage {
     u8 *pCell;          /* Pointers to the body of the overflow cell */
     u16 idx;            /* Insert this cell before idx-th non-overflow cell */
   } aOvfl[5];
-  BtShared *pBt;        /* Pointer back to BTree structure */
-  u8 *aData;            /* Pointer back to the start of the page */
-  Pgno pgno;            /* Page number for this page */
-  MemPage *pParent;     /* The parent of this page.  NULL for root */
+  BtShared *pBt;       /* Pointer back to BTree structure */
+  u8 *aData;           /* Pointer back to the start of the page */
+  Pgno pgno;           /* Page number for this page */
+  MemPage *pParent;    /* The parent of this page.  NULL for root */
 };
 
 /*
@@ -527,7 +527,7 @@ static int saveCursorPosition(BtCursor *pCur){
       void *pKey = sqliteMalloc(pCur->nKey);
       if( pKey ){
         rc = sqlite3BtreeKey(pCur, 0, pCur->nKey, pKey);
-        if( pKey ){
+        if( rc==SQLITE_OK ){
           pCur->pKey = pKey;
         }else{
           sqliteFree(pKey);
@@ -630,7 +630,7 @@ static int queryTableLock(Btree *p, Pgno iTab, u8 eLock){
     !p->pSqlite || 
     0==(p->pSqlite->flags&SQLITE_ReadUncommitted) || 
     eLock==WRITE_LOCK ||
-    iTab==1
+    iTab==MASTER_ROOT
   ){
     for(pIter=pBt->pLock; pIter; pIter=pIter->pNext){
       if( pIter->pBtree!=p && pIter->iTable==iTab && 
@@ -671,7 +671,7 @@ static int lockTable(Btree *p, Pgno iTable, u8 eLock){
     (p->pSqlite) && 
     (p->pSqlite->flags&SQLITE_ReadUncommitted) && 
     (eLock==READ_LOCK) &&
-    iTable!=1
+    iTable!=MASTER_ROOT
   ){
     return SQLITE_OK;
   }
@@ -6496,4 +6496,3 @@ int sqlite3_enable_shared_cache(int enable){
   return SQLITE_OK;
 }
 #endif
-
