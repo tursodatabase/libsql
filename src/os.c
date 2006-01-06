@@ -69,42 +69,6 @@ int sqlite3OsLockState(OsFile *id){
 int sqlite3OsCheckReservedLock(OsFile *id){
   return id->pMethod->xCheckReservedLock(id);
 }
-
-static void**getOsRoutinePtr(int eRoutine){
-  switch( eRoutine ){
-    case SQLITE_OS_ROUTINE_OPENREADWRITE:
-      return (void **)(&sqlite3Os.xOpenReadWrite);
-    case SQLITE_OS_ROUTINE_OPENREADONLY:
-      return (void **)(&sqlite3Os.xOpenReadOnly);
-    case SQLITE_OS_ROUTINE_OPENEXCLUSIVE:
-      return (void **)(&sqlite3Os.xOpenExclusive);
-    case SQLITE_OS_ROUTINE_DELETE:
-      return (void **)(&sqlite3Os.xDelete);
-    case SQLITE_OS_ROUTINE_FILEEXISTS:
-      return (void **)(&sqlite3Os.xFileExists);
-    case SQLITE_OS_ROUTINE_SYNCDIRECTORY:
-      return (void **)(&sqlite3Os.xSyncDirectory);
-    default:
-      assert(!"Illegal eRoutine value");
-  }
-  return 0;
+struct sqlite3OsVtbl *sqlite3_os_switch(void){
+  return &sqlite3Os;
 }
-
-void *sqlite3_os_routine_get(int eRoutine){
-  return *getOsRoutinePtr(eRoutine);
-}
-
-void *sqlite3_os_routine_set(int eRoutine, void *pRoutine){
-  void **ppRet = getOsRoutinePtr(eRoutine);
-  void *pRet = *ppRet;
-  *ppRet = pRoutine;
-  return pRet;
-}
-
-void sqlite3_os_enter_mutex(){
-  sqlite3Os.xEnterMutex();
-}
-void sqlite3_os_leave_mutex(){
-  sqlite3Os.xLeaveMutex();
-}
-

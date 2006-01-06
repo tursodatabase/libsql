@@ -191,6 +191,7 @@ TESTSRC = \
   $(TOP)/src/test4.c \
   $(TOP)/src/test5.c \
   $(TOP)/src/test6.c \
+  $(TOP)/src/test_async.c \
   $(TOP)/src/utf.c \
   $(TOP)/src/util.c \
   $(TOP)/src/vdbe.c \
@@ -207,6 +208,7 @@ HDR = \
    $(TOP)/src/os.h \
    $(TOP)/src/os_common.h \
    $(TOP)/src/sqliteInt.h  \
+   $(TOP)/src/sqlite3_aux.h \
    $(TOP)/src/vdbe.h \
    parse.h
 

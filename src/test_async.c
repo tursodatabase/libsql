@@ -235,7 +235,7 @@ struct AsyncFile {
 ** sqlite3_async_flush() ).
 */
 static void addAsyncWrite(AsyncWrite *pWrite){
-  sqlite3_os_enter_mutex();
+  sqlite3Os.xEnterMutex();
   assert( !pWrite->pNext );
   if( sqlite3_asyncListLast ){
     assert( sqlite3_asyncListFirst );
@@ -244,7 +244,7 @@ static void addAsyncWrite(AsyncWrite *pWrite){
     sqlite3_asyncListFirst = pWrite;
   }
   sqlite3_asyncListLast = pWrite;
-  sqlite3_os_leave_mutex();
+  sqlite3Os.xLeaveMutex();
 }
 
 /*
@@ -360,7 +360,7 @@ static int asyncRead(OsFile *id, void *obuf, int amt){
   AsyncFile *pFile = (AsyncFile *)id;
 
   /* Grab the mutex for the duration of the call */
-  sqlite3_os_enter_mutex();
+  sqlite3Os.xEnterMutex();
 
   if( pFile->pBaseRead ){
     rc = sqlite3OsFileSize(pFile->pBaseRead, &filesize);
@@ -401,7 +401,7 @@ static int asyncRead(OsFile *id, void *obuf, int amt){
   }
 
 asyncread_out:
-  sqlite3_os_leave_mutex();
+  sqlite3Os.xLeaveMutex();
   return rc;
 }
 
@@ -427,7 +427,7 @@ int asyncFileSize(OsFile *id, i64 *pSize){
   int rc = SQLITE_OK;
   i64 s = 0;
   OsFile *pBase;
-  sqlite3_os_enter_mutex();
+  sqlite3Os.xEnterMutex();
 
   /* Read the filesystem size from the base file. If pBaseRead is NULL, this
   ** means the file hasn't been opened yet. In this case all relevant data 
@@ -455,7 +455,7 @@ int asyncFileSize(OsFile *id, i64 *pSize){
     }
     *pSize = s;
   }
-  sqlite3_os_leave_mutex();
+  sqlite3Os.xLeaveMutex();
   return rc;
 }
 
@@ -622,7 +622,7 @@ static int asyncSyncDirectory(const char *z){
 static int asyncFileExists(const char *z){
   int ret;
   AsyncWrite *p;
-  sqlite3_os_enter_mutex();
+  sqlite3Os.xEnterMutex();
 
   /* See if the real file system contains the specified file.  */
   ret = xOrigFileExists(z);
@@ -635,7 +635,7 @@ static int asyncFileExists(const char *z){
     }
   }
 
-  sqlite3_os_leave_mutex();
+  sqlite3Os.xLeaveMutex();
   return ret;
 }
 
@@ -648,28 +648,19 @@ static int asyncFileExists(const char *z){
 */
 int sqlite3_async_enable(void){
   if( xOrigOpenReadWrite==0 ){
-#define ROUTINE(a,b,c) {(void**)&a,SQLITE_OS_ROUTINE_ ## b,(void *)c}
-    struct ReplacementOp {
-      void ** pOldRoutine;
-      int eRoutine;
-      void * pNewRoutine;
-    } aRoutines[] = {
-      ROUTINE(xOrigOpenReadWrite, OPENREADWRITE, asyncOpenReadWrite),
-      ROUTINE(xOrigOpenReadOnly, OPENREADONLY, asyncOpenReadOnly), 
-      ROUTINE(xOrigOpenExclusive, OPENEXCLUSIVE, asyncOpenExclusive), 
-      ROUTINE(xOrigDelete, DELETE, asyncDelete), 
-      ROUTINE(xOrigFileExists, FILEEXISTS, asyncFileExists), 
-      ROUTINE(xOrigSyncDirectory, SYNCDIRECTORY, asyncSyncDirectory)
-    };
-#undef ROUTINE
-    int i;
+    xOrigOpenReadWrite = sqlite3Os.xOpenReadWrite;
+    xOrigOpenReadOnly = sqlite3Os.xOpenReadOnly;
+    xOrigOpenExclusive = sqlite3Os.xOpenExclusive;
+    xOrigDelete = sqlite3Os.xDelete;
+    xOrigFileExists = sqlite3Os.xFileExists;
+    xOrigSyncDirectory = sqlite3Os.xSyncDirectory;
 
-    sqlite3_os_enter_mutex();
-    for(i=0; i<sizeof(aRoutines)/sizeof(aRoutines[0]); i++){
-      struct ReplacementOp *p = &aRoutines[i];
-      *(p->pOldRoutine) = sqlite3_os_routine_set(p->eRoutine, p->pNewRoutine);
-    }
-    sqlite3_os_leave_mutex();
+    sqlite3Os.xOpenReadWrite = asyncOpenReadWrite;
+    sqlite3Os.xOpenReadOnly = asyncOpenReadOnly;
+    sqlite3Os.xOpenExclusive = asyncOpenExclusive;
+    sqlite3Os.xDelete = asyncDelete;
+    sqlite3Os.xFileExists = asyncFileExists;
+    sqlite3Os.xSyncDirectory = asyncSyncDirectory;
   }
   return SQLITE_OK;
 }
@@ -688,9 +679,9 @@ int sqlite3_async_flush(void){
   ** Or, if some other thread is already inside this function, return 
   ** SQLITE_BUSY to the caller.
   */
-  sqlite3_os_enter_mutex();
+  sqlite3Os.xEnterMutex();
   if( sqlite3_asyncIoBusy ){
-    sqlite3_os_leave_mutex();
+    sqlite3Os.xLeaveMutex();
     return SQLITE_BUSY;
   }
   sqlite3_asyncIoBusy = 1;
@@ -724,7 +715,7 @@ int sqlite3_async_flush(void){
         p->op==ASYNC_OPENEXCLUSIVE ||
         (pBase && (p->op==ASYNC_SYNC || p->op==ASYNC_WRITE) ) 
       ){
-        sqlite3_os_leave_mutex();
+        sqlite3Os.xLeaveMutex();
         isInsideMutex = 0;
       }
       if( !pBase ){
@@ -781,7 +772,7 @@ int sqlite3_async_flush(void){
         OsFile *pBase = 0;
         rc = xOrigOpenExclusive(p->zBuf, &pBase, delFlag);
 
-        sqlite3_os_enter_mutex();
+        sqlite3Os.xEnterMutex();
         isInsideMutex = 1;
         if( rc==SQLITE_OK ){
           pFile->pBaseRead = pBase;
@@ -797,7 +788,7 @@ int sqlite3_async_flush(void){
     ** global write-op queue.
     */
     if( !isInsideMutex ){
-      sqlite3_os_enter_mutex();
+      sqlite3Os.xEnterMutex();
     }
     if( rc==SQLITE_OK ){
       removeAsyncWrite(p);
@@ -808,7 +799,7 @@ int sqlite3_async_flush(void){
   /* Clear the io-busy flag and exit the mutex */
   assert( sqlite3_asyncIoBusy );
   sqlite3_asyncIoBusy = 0;
-  sqlite3_os_leave_mutex();
+  sqlite3Os.xLeaveMutex();
 
   return rc;
 }
@@ -926,4 +917,3 @@ int Sqlitetestasync_Init(Tcl_Interp *interp){
 }
 
 #endif
-
