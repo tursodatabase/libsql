@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.159 2005/12/29 01:11:37 drh Exp $
+** $Id: util.c,v 1.160 2006/01/06 06:33:13 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -289,6 +289,10 @@ static void applyGuards(u32 *p)
   checkGuards(p);
 }
 
+/*
+** The argument is a malloc()ed pointer as returned by the test-wrapper.
+** Return a pointer to the Os level allocation.
+*/
 static void *getOsPointer(void *p)
 {
   char *z = (char *)p;

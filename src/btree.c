@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.280 2006/01/06 01:42:58 drh Exp $
+** $Id: btree.c,v 1.281 2006/01/06 06:33:12 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1722,6 +1722,7 @@ int sqlite3BtreeClose(Btree *p){
   if( pBt->xFreeSchema && pBt->pSchema ){
     pBt->xFreeSchema(pBt->pSchema);
   }
+  sqliteFree(pBt->pSchema);
   sqliteFree(pBt);
   return SQLITE_OK;
 }

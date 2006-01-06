@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.315 2006/01/05 13:48:29 danielk1977 Exp $
+** $Id: main.c,v 1.316 2006/01/06 06:33:13 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -96,10 +96,34 @@ int sqlite3_total_changes(sqlite3 *db){
 }
 
 /*
-** Free a schema structure.
+** Free all resources held by the schema structure. The void* argument points
+** at a DbSchema struct. This function does not call sqliteFree() on the 
+** pointer itself, it just cleans up subsiduary resources (i.e. the contents
+** of the schema hash tables).
 */
 void sqlite3SchemaFree(void *p){
-  sqliteFree(p);
+  Hash temp1;
+  Hash temp2;
+  HashElem *pElem;
+  DbSchema *pSchema = (DbSchema *)p;
+
+  temp1 = pSchema->tblHash;
+  temp2 = pSchema->trigHash;
+  sqlite3HashInit(&pSchema->trigHash, SQLITE_HASH_STRING, 0);
+  sqlite3HashClear(&pSchema->aFKey);
+  sqlite3HashClear(&pSchema->idxHash);
+  for(pElem=sqliteHashFirst(&temp2); pElem; pElem=sqliteHashNext(pElem)){
+    sqlite3DeleteTrigger((Trigger*)sqliteHashData(pElem));
+  }
+  sqlite3HashClear(&temp2);
+  sqlite3HashInit(&pSchema->tblHash, SQLITE_HASH_STRING, 0);
+  for(pElem=sqliteHashFirst(&temp1); pElem; pElem=sqliteHashNext(pElem)){
+    Table *pTab = sqliteHashData(pElem);
+    sqlite3DeleteTable(0, pTab);
+  }
+  sqlite3HashClear(&temp1);
+  pSchema->pSeqTab = 0;
+  pSchema->flags &= ~DB_SchemaLoaded;
 }
 
 DbSchema *sqlite3SchemaGet(Btree *pBt){
@@ -109,7 +133,7 @@ DbSchema *sqlite3SchemaGet(Btree *pBt){
   }else{
     p = (DbSchema *)sqliteMalloc(sizeof(DbSchema));
   }
-  if( p ){
+  if( p && 0==p->file_format ){
     sqlite3HashInit(&p->tblHash, SQLITE_HASH_STRING, 0);
     sqlite3HashInit(&p->idxHash, SQLITE_HASH_STRING, 0);
     sqlite3HashInit(&p->trigHash, SQLITE_HASH_STRING, 0);

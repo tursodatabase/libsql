@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.367 2006/01/05 11:34:34 danielk1977 Exp $
+** $Id: build.c,v 1.368 2006/01/06 06:33:13 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -258,7 +258,6 @@ static void sqliteDeleteIndex(sqlite3 *db, Index *p){
   Index *pOld;
   const char *zName = p->zName;
 
-  assert( db!=0 && zName!=0 );
   pOld = sqlite3HashInsert(&p->pSchema->idxHash, zName, strlen( zName)+1, 0);
   assert( pOld==0 || pOld==p );
   freeIndex(p);
@@ -304,9 +303,6 @@ void sqlite3UnlinkAndDeleteIndex(sqlite3 *db, int iDb, const char *zIdxName){
 ** single file indicated.
 */
 void sqlite3ResetInternalSchema(sqlite3 *db, int iDb){
-  HashElem *pElem;
-  Hash temp1;
-  Hash temp2;
   int i, j;
 
   assert( iDb>=0 && iDb<db->nDb );
@@ -314,23 +310,7 @@ void sqlite3ResetInternalSchema(sqlite3 *db, int iDb){
   for(i=iDb; i<db->nDb; i++){
     Db *pDb = &db->aDb[i];
     if( pDb->pSchema ){
-      temp1 = pDb->pSchema->tblHash;
-      temp2 = pDb->pSchema->trigHash;
-      sqlite3HashInit(&pDb->pSchema->trigHash, SQLITE_HASH_STRING, 0);
-      sqlite3HashClear(&pDb->pSchema->aFKey);
-      sqlite3HashClear(&pDb->pSchema->idxHash);
-      for(pElem=sqliteHashFirst(&temp2); pElem; pElem=sqliteHashNext(pElem)){
-        sqlite3DeleteTrigger((Trigger*)sqliteHashData(pElem));
-      }
-      sqlite3HashClear(&temp2);
-      sqlite3HashInit(&pDb->pSchema->tblHash, SQLITE_HASH_STRING, 0);
-      for(pElem=sqliteHashFirst(&temp1); pElem; pElem=sqliteHashNext(pElem)){
-        Table *pTab = sqliteHashData(pElem);
-        sqlite3DeleteTable(db, pTab);
-      }
-      sqlite3HashClear(&temp1);
-      pDb->pSchema->pSeqTab = 0;
-      DbClearProperty(db, i, DB_SchemaLoaded);
+      sqlite3SchemaFree(pDb->pSchema);
     }
     if( iDb>0 ) return;
   }
@@ -427,6 +407,8 @@ void sqlite3DeleteTable(sqlite3 *db, Table *pTable){
   Index *pIndex, *pNext;
   FKey *pFKey, *pNextFKey;
 
+  db = 0;
+
   if( pTable==0 ) return;
 
   /* Do not delete the table until the reference count reaches zero. */
@@ -450,7 +432,6 @@ void sqlite3DeleteTable(sqlite3 *db, Table *pTable){
   */
   for(pFKey=pTable->pFKey; pFKey; pFKey=pNextFKey){
     pNextFKey = pFKey->pNextFrom;
-    assert( sqlite3SchemaToIndex(db, pTable->pSchema)<db->nDb );
     assert( sqlite3HashFind(&pTable->pSchema->aFKey,
                            pFKey->zTo, strlen(pFKey->zTo)+1)!=pFKey );
     sqliteFree(pFKey);
