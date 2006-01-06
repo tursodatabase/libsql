@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the ATTACH and DETACH commands.
 **
-** $Id: attach.c,v 1.39 2006/01/05 11:34:33 danielk1977 Exp $
+** $Id: attach.c,v 1.40 2006/01/06 21:52:50 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -335,8 +335,10 @@ void sqlite3Attach(Parse *pParse, Expr *p, Expr *pDbname, Expr *pKey){
   codeAttach(pParse, SQLITE_ATTACH, "sqlite_attach", 3, p, p, pDbname, pKey);
 }
 
-void sqlite3AttachFunctions(sqlite3 *db)
-{
+/*
+** Register the functions sqlite_attach and sqlite_detach.
+*/
+void sqlite3AttachFunctions(sqlite3 *db){
   static const int enc = SQLITE_UTF8;
   sqlite3_create_function(db, "sqlite_attach", 3, enc, db, attachFunc, 0, 0);
   sqlite3_create_function(db, "sqlite_detach", 1, enc, db, detachFunc, 0, 0);

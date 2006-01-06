@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.14 2006/01/06 13:00:30 danielk1977 Exp $
+** $Id: prepare.c,v 1.15 2006/01/06 21:52:50 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -421,6 +421,77 @@ static int schemaIsValid(sqlite3 *db){
     }
   }
   return allOk;
+}
+
+/*
+** Free all resources held by the schema structure. The void* argument points
+** at a DbSchema struct. This function does not call sqliteFree() on the 
+** pointer itself, it just cleans up subsiduary resources (i.e. the contents
+** of the schema hash tables).
+*/
+void sqlite3SchemaFree(void *p){
+  Hash temp1;
+  Hash temp2;
+  HashElem *pElem;
+  DbSchema *pSchema = (DbSchema *)p;
+
+  temp1 = pSchema->tblHash;
+  temp2 = pSchema->trigHash;
+  sqlite3HashInit(&pSchema->trigHash, SQLITE_HASH_STRING, 0);
+  sqlite3HashClear(&pSchema->aFKey);
+  sqlite3HashClear(&pSchema->idxHash);
+  for(pElem=sqliteHashFirst(&temp2); pElem; pElem=sqliteHashNext(pElem)){
+    sqlite3DeleteTrigger((Trigger*)sqliteHashData(pElem));
+  }
+  sqlite3HashClear(&temp2);
+  sqlite3HashInit(&pSchema->tblHash, SQLITE_HASH_STRING, 0);
+  for(pElem=sqliteHashFirst(&temp1); pElem; pElem=sqliteHashNext(pElem)){
+    Table *pTab = sqliteHashData(pElem);
+    sqlite3DeleteTable(0, pTab);
+  }
+  sqlite3HashClear(&temp1);
+  pSchema->pSeqTab = 0;
+  pSchema->flags &= ~DB_SchemaLoaded;
+}
+
+DbSchema *sqlite3SchemaGet(Btree *pBt){
+  DbSchema * p;
+  if( pBt ){
+    p = (DbSchema *)sqlite3BtreeSchema(pBt,sizeof(DbSchema),sqlite3SchemaFree);
+  }else{
+    p = (DbSchema *)sqliteMalloc(sizeof(DbSchema));
+  }
+  if( p && 0==p->file_format ){
+    sqlite3HashInit(&p->tblHash, SQLITE_HASH_STRING, 0);
+    sqlite3HashInit(&p->idxHash, SQLITE_HASH_STRING, 0);
+    sqlite3HashInit(&p->trigHash, SQLITE_HASH_STRING, 0);
+    sqlite3HashInit(&p->aFKey, SQLITE_HASH_STRING, 1);
+  }
+  return p;
+}
+
+int sqlite3SchemaToIndex(sqlite3 *db, DbSchema *pSchema){
+  int i = -1000000;
+
+  /* If pSchema is NULL, then return -1000000. This happens when code in 
+  ** expr.c is trying to resolve a reference to a transient table (i.e. one
+  ** created by a sub-select). In this case the return value of this 
+  ** function should never be used.
+  **
+  ** We return -1000000 instead of the more usual -1 simply because using
+  ** -1000000 as incorrectly using -1000000 index into db->aDb[] is much 
+  ** more likely to cause a segfault than -1 (of course there are assert()
+  ** statements too, but it never hurts to play the odds).
+  */
+  if( pSchema ){
+    for(i=0; i<db->nDb; i++){
+      if( db->aDb[i].pSchema==pSchema ){
+        break;
+      }
+    }
+    assert( i>=0 &&i>=0 &&  i<db->nDb );
+  }
+  return i;
 }
 
 /*

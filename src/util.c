@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.161 2006/01/06 14:32:20 drh Exp $
+** $Id: util.c,v 1.162 2006/01/06 21:52:50 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -66,7 +66,7 @@
 
 #define MAX(x,y) ((x)>(y)?(x):(y))
 
-#ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
+#if !defined(SQLITE_OMIT_MEMORY_MANAGEMENT) && !defined(SQLITE_OMIT_DISKIO)
 /*
 ** Set the soft heap-size limit for the current thread. Passing a negative
 ** value indicates no limit.

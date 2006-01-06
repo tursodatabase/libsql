@@ -107,6 +107,11 @@ struct unixFile {
 
 
 /*
+** Include code that is common to all os_*.c files
+*/
+#include "os_common.h"
+
+/*
 ** Do not include any of the File I/O interface procedures if the
 ** SQLITE_OMIT_DISKIO macro is defined (indicating that there database
 ** will be in-memory only)
@@ -140,11 +145,6 @@ struct unixFile {
 #ifdef __DJGPP__
 # define fcntl(A,B,C) 0
 #endif
-
-/*
-** Include code that is common to all os_*.c files
-*/
-#include "os_common.h"
 
 /*
 ** The threadid macro resolves to the thread-id or to 0.  Used for

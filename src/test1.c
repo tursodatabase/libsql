@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.181 2006/01/06 14:32:20 drh Exp $
+** $Id: test1.c,v 1.182 2006/01/06 21:52:50 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -2951,7 +2951,7 @@ static int test_release_memory(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-#ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
+#if !defined(SQLITE_OMIT_MEMORY_MANAGEMENT) && !defined(SQLITE_OMIT_DISKIO)
   int N;
   int amt;
   if( objc!=1 && objc!=2 ){
@@ -2982,7 +2982,7 @@ static int test_soft_heap_limit(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-#ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
+#if !defined(SQLITE_OMIT_MEMORY_MANAGEMENT) && !defined(SQLITE_OMIT_DISKIO)
   int amt;
   if( objc!=1 && objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "?N?");

@@ -19,6 +19,8 @@
 #include "os.h"
 #include "tcl.h"
 
+#ifndef SQLITE_OMIT_DISKIO  /* This file is a no-op if disk I/O is disabled */
+
 /*
 ** crashFile is a subclass of OsFile that is taylored for the
 ** crash test module.
@@ -534,11 +536,15 @@ static int crashParamsObjCmd(
   return TCL_OK;
 }
 
+#endif /* SQLITE_OMIT_DISKIO */
+
 /*
 ** This procedure registers the TCL procedures defined in this file.
 */
 int Sqlitetest6_Init(Tcl_Interp *interp){
+#ifndef SQLITE_OMIT_DISKIO
   Tcl_CreateObjCommand(interp, "sqlite3_crashparams", crashParamsObjCmd, 0, 0);
+#endif
   return TCL_OK;
 }
 
