@@ -144,7 +144,9 @@ struct tm *__cdecl localtime(const time_t *t)
 ** it to work at all.
 */
 #ifdef SQLITE_OMIT_WIN_LOCKS
+# define LockFile(a,b,c,d,e) (1)
 # define LockFileEx(a,b,c,d,e,f) (1)
+# define UnlockFile(a,b,c,d,e) (1)
 # define UnlockFileEx(a,b,c,d,e) (1)
 #endif
 
