@@ -55,7 +55,7 @@ struct winFile {
   unsigned char locktype; /* Type of lock currently held on this file */
   short sharedLockByte;   /* Randomly chosen byte used as a shared lock */
 #if OS_WINCE
-  char *zDeleteOnClose;   /* Name of file to delete when closing */
+  WCHAR *zDeleteOnClose;   /* Name of file to delete when closing */
 #endif
 };
 
@@ -382,7 +382,7 @@ int sqlite3WinOpenExclusive(const char *zFilename, OsFile **pId, int delFlag){
   f.locktype = NO_LOCK;
   f.sharedLockByte = 0;
 #if OS_WINCE
-  f.zDeleteOnClose = delFlag ? sqlite3StrDup(zFilename) : 0;
+  f.zDeleteOnClose = delFlag ? utf8ToUnicode(zFilename) : 0;
 #endif
   TRACE3("OPEN EX %d \"%s\"\n", h, zFilename);
   return allocateWinFile(&f, pId);
@@ -517,7 +517,7 @@ static int winClose(OsFile **pId){
     CloseHandle(pFile->h);
 #if OS_WINCE
     if( pFile->zDeleteOnClose ){
-      DeleteFileW((WCHAR*)pFile->zDeleteOnClose);
+      DeleteFileW(pFile->zDeleteOnClose);
       sqliteFree(pFile->zDeleteOnClose);
     }
 #endif
