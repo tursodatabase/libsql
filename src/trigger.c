@@ -164,7 +164,7 @@ void sqlite3BeginTrigger(
   zName = 0;
   pTrigger->table = sqliteStrDup(pTableName->a[0].zName);
   pTrigger->pSchema = db->aDb[iDb].pSchema;
-  pTrigger->iTabDb = iTabDb;
+  pTrigger->pTabSchema = pTab->pSchema;
   pTrigger->op = op;
   pTrigger->tr_tm = tr_tm==TK_BEFORE ? TRIGGER_BEFORE : TRIGGER_AFTER;
   pTrigger->pWhen = sqlite3ExprDup(pWhen);
@@ -249,6 +249,7 @@ void sqlite3FinishTrigger(
   }
 
   if( db->init.busy ){
+    int n;
     Table *pTab;
     Trigger *pDel;
     pDel = sqlite3HashInsert(&db->aDb[iDb].pSchema->trigHash, 
@@ -257,7 +258,8 @@ void sqlite3FinishTrigger(
       assert( sqlite3Tsd()->mallocFailed && pDel==pTrig );
       goto triggerfinish_cleanup;
     }
-    pTab = sqlite3LocateTable(pParse,pTrig->table,db->aDb[pTrig->iTabDb].zName);
+    n = strlen(pTrig->table) + 1;
+    pTab = sqlite3HashFind(&pTrig->pTabSchema->tblHash, pTrig->table, n);
     assert( pTab!=0 );
     pTrig->pNext = pTab->pTrigger;
     pTab->pTrigger = pTrig;
@@ -467,7 +469,8 @@ drop_trigger_cleanup:
 ** is set on.
 */
 static Table *tableOfTrigger(sqlite3 *db, Trigger *pTrigger){
-  return sqlite3FindTable(db,pTrigger->table,db->aDb[pTrigger->iTabDb].zName);
+  int n = strlen(pTrigger->table) + 1;
+  return sqlite3HashFind(&pTrigger->pTabSchema->tblHash, pTrigger->table, n);
 }
 
 

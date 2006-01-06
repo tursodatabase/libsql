@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.451 2006/01/06 12:03:19 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.452 2006/01/06 15:03:48 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1297,8 +1297,6 @@ struct AuthContext {
 struct Trigger {
   char *name;             /* The name of the trigger                        */
   char *table;            /* The table or view to which the trigger applies */
-//u8 iDb;                 /* Database containing this trigger               */
-  u8 iTabDb;              /* Database containing Trigger.table              */
   u8 op;                  /* One of TK_DELETE, TK_UPDATE, TK_INSERT         */
   u8 tr_tm;               /* One of TRIGGER_BEFORE, TRIGGER_AFTER */
   Expr *pWhen;            /* The WHEN clause of the expresion (may be NULL) */
@@ -1306,7 +1304,8 @@ struct Trigger {
                              the <column-list> is stored here */
   int foreach;            /* One of TK_ROW or TK_STATEMENT */
   Token nameToken;        /* Token containing zName. Use during parsing only */
-  DbSchema *pSchema;
+  DbSchema *pSchema;      /* Schema containing the trigger */
+  DbSchema *pTabSchema;   /* Schema containing the table */
   TriggerStep *step_list; /* Link list of trigger program steps             */
   Trigger *pNext;         /* Next trigger associated with the table */
 };

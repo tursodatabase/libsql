@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the SELECT statement.
 #
-# $Id: shared.test,v 1.4 2006/01/06 13:00:30 danielk1977 Exp $
+# $Id: shared.test,v 1.5 2006/01/06 15:03:48 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -31,8 +31,9 @@ set ::enable_shared_cache [sqlite3_enable_shared_cache 1]
 #             write-transaction, including a simple test to ensure the 
 #             external locking protocol is still working.
 # shared-3.*: Simple test of read-uncommitted mode.
-#
 # shared-4.*: Check that the schema is locked and unlocked correctly.
+# shared-5.*: Test that creating/dropping schema items works when databases
+#             are attached in different orders to different handles.
 #
 
 do_test shared-1.1 {
@@ -360,8 +361,54 @@ do_test shared-4.4.5 {
   list $rc $msg
 } {1 {(6) database schema is locked: test}}
 
+
 catch {db2 close}
 catch {db close}
+
+#--------------------------------------------------------------------------
+# Tests shared-5.* 
+#
+foreach db [list test.db test1.db test2.db test3.db] {
+  file delete -force $db ${db}-journal
+}
+do_test shared-5.1.1 {
+  sqlite3 db1 test.db
+  sqlite3 db2 test.db
+  execsql {
+    ATTACH 'test1.db' AS test1;
+    ATTACH 'test2.db' AS test2;
+    ATTACH 'test3.db' AS test3;
+  } db1
+  execsql {
+    ATTACH 'test3.db' AS test3;
+    ATTACH 'test2.db' AS test2;
+    ATTACH 'test1.db' AS test1;
+  } db2
+} {}
+do_test shared-5.1.2 {
+  execsql {
+    CREATE TABLE test1.t1(a, b);
+    CREATE INDEX test1.i1 ON t1(a, b);
+    CREATE VIEW test1.v1 AS SELECT * FROM t1;
+    CREATE TRIGGER test1.trig1 AFTER INSERT ON t1 BEGIN
+      INSERT INTO t1 VALUES(new.a, new.b);
+    END;
+  } db1
+  execsql {
+    DROP INDEX i1;
+    DROP VIEW v1;
+    DROP TRIGGER trig1;
+    DROP TABLE t1;
+  } db2
+} {}
+do_test shared-5.1.2 {
+  execsql {
+    SELECT * FROM sqlite_master UNION ALL SELECT * FROM test1.sqlite_master
+  } db1
+} {}
+
+catch {db1 close}
+catch {db2 close}
 
 finish_test
 sqlite3_enable_shared_cache $::enable_shared_cache
