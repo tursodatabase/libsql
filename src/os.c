@@ -69,6 +69,3 @@ int sqlite3OsLockState(OsFile *id){
 int sqlite3OsCheckReservedLock(OsFile *id){
   return id->pMethod->xCheckReservedLock(id);
 }
-struct sqlite3OsVtbl *sqlite3_os_switch(void){
-  return &sqlite3Os;
-}

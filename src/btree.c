@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.282 2006/01/06 13:00:29 danielk1977 Exp $
+** $Id: btree.c,v 1.283 2006/01/06 14:32:20 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1571,7 +1571,7 @@ int sqlite3BtreeOpen(
   /* Try to find an existing Btree structure opened on zFilename. */
 #ifndef SQLITE_OMIT_SHARED_CACHE
   if( pTsd->useSharedData && zFilename && !isMemdb ){
-    char *zFullPathname = sqlite3Os.xFullPathname(zFilename);
+    char *zFullPathname = sqlite3OsFullPathname(zFilename);
     if( !zFullPathname ){
       sqliteFree(p);
       return SQLITE_NOMEM;

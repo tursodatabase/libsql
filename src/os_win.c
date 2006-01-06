@@ -139,7 +139,7 @@ static char *unicodeToUtf8(const WCHAR *zWideFilename){
 /*
 ** Delete the named file
 */
-static int winDelete(const char *zFilename){
+int sqlite3WinDelete(const char *zFilename){
   WCHAR *zWide = utf8ToUnicode(zFilename);
   if( zWide ){
     DeleteFileW(zWide);
@@ -154,7 +154,7 @@ static int winDelete(const char *zFilename){
 /*
 ** Return TRUE if the named file exists.
 */
-static int winFileExists(const char *zFilename){
+int sqlite3WinFileExists(const char *zFilename){
   int exists = 0;
   WCHAR *zWide = utf8ToUnicode(zFilename);
   if( zWide ){
@@ -182,7 +182,7 @@ int allocateWinFile(winFile *pInit, OsFile **pId);
 ** On failure, the function returns SQLITE_CANTOPEN and leaves
 ** *id and *pReadonly unchanged.
 */
-static int winOpenReadWrite(
+int sqlite3WinOpenReadWrite(
   const char *zFilename,
   OsFile **pId,
   int *pReadonly
@@ -266,7 +266,7 @@ static int winOpenReadWrite(
 **
 ** On failure, return SQLITE_CANTOPEN.
 */
-static int winOpenExclusive(const char *zFilename, OsFile **pId, int delFlag){
+int sqlite3WinOpenExclusive(const char *zFilename, OsFile **pId, int delFlag){
   winFile f;
   HANDLE h;
   int fileflags;
@@ -315,7 +315,7 @@ static int winOpenExclusive(const char *zFilename, OsFile **pId, int delFlag){
 **
 ** On failure, return SQLITE_CANTOPEN.
 */
-static int winOpenReadOnly(const char *zFilename, OsFile **pId){
+int sqlite3WinOpenReadOnly(const char *zFilename, OsFile **pId){
   winFile f;
   HANDLE h;
   WCHAR *zWide = utf8ToUnicode(zFilename);
@@ -384,7 +384,7 @@ char *sqlite3_temp_directory = 0;
 ** Create a temporary file name in zBuf.  zBuf must be big enough to
 ** hold at least SQLITE_TEMPNAME_SIZE characters.
 */
-static int winTempFileName(char *zBuf){
+int sqlite3WinTempFileName(char *zBuf){
   static char zChars[] =
     "abcdefghijklmnopqrstuvwxyz"
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -417,7 +417,7 @@ static int winTempFileName(char *zBuf){
       zBuf[j] = (char)zChars[ ((unsigned char)zBuf[j])%(sizeof(zChars)-1) ];
     }
     zBuf[j] = 0;
-    if( !sqlite3Os.xFileExists(zBuf) ) break;
+    if( !sqlite3OsFileExists(zBuf) ) break;
   }
   TRACE2("TEMP FILENAME: %s\n", zBuf);
   return SQLITE_OK; 
@@ -525,7 +525,7 @@ static int winSync(OsFile *id, int dataOnly){
 ** Sync the directory zDirname. This is a no-op on operating systems other
 ** than UNIX.
 */
-static int winSyncDirectory(const char *zDirname){
+int sqlite3WinSyncDirectory(const char *zDirname){
   SimulateIOError(SQLITE_IOERR);
   return SQLITE_OK;
 }
@@ -595,7 +595,7 @@ static int unlockReadLock(winFile *pFile){
 ** Check that a given pathname is a directory and is writable 
 **
 */
-static int winIsDirWritable(char *zDirname){
+int sqlite3WinIsDirWritable(char *zDirname){
   int fileAttr;
   WCHAR *zWide;
   if( zDirname==0 ) return 0;
@@ -817,7 +817,7 @@ static int winUnlock(OsFile *id, int locktype){
 ** The calling function is responsible for freeing this space once it
 ** is no longer needed.
 */
-static char *winFullPathname(const char *zRelative){
+char *sqlite3WinFullPathname(const char *zRelative){
   char *zNotUsed;
   char *zFull;
   WCHAR *zWide;
@@ -906,7 +906,7 @@ int allocateWinFile(winFile *pInit, OsFile **pId){
   }else{
     *pNew = *pInit;
     pNew->pMethod = &sqlite3WinIoMethod;
-    *pId = pNew;
+    *pId = (OsFile*)pNew;
     return SQLITE_OK;
   }
 }
@@ -923,7 +923,7 @@ int allocateWinFile(winFile *pInit, OsFile **pId){
 ** is written into the buffer zBuf[256].  The calling function must
 ** supply a sufficiently large buffer.
 */
-static int winRandomSeed(char *zBuf){
+int sqlite3WinRandomSeed(char *zBuf){
   /* We have to initialize zBuf to prevent valgrind from reporting
   ** errors.  The reports issued by valgrind are incorrect - we would
   ** prefer that the randomness be increased by making use of the
@@ -944,7 +944,7 @@ static int winRandomSeed(char *zBuf){
 /*
 ** Sleep for a little while.  Return the amount of time slept.
 */
-static int winSleep(int ms){
+int sqlite3WinSleep(int ms){
   Sleep(ms);
   return ms;
 }
@@ -965,7 +965,7 @@ static int inMutex = 0;
 ** SQLite uses only a single Mutex.  There is not much critical
 ** code and what little there is executes quickly and without blocking.
 */
-static void winEnterMutex(){
+void sqlite3WinEnterMutex(){
 #ifdef SQLITE_W32_THREADS
   static int isInit = 0;
   while( !isInit ){
@@ -982,7 +982,7 @@ static void winEnterMutex(){
   assert( !inMutex );
   inMutex = 1;
 }
-static void winLeaveMutex(){
+void sqlite3WinLeaveMutex(){
   assert( inMutex );
   inMutex = 0;
 #ifdef SQLITE_W32_THREADS
@@ -996,7 +996,7 @@ static void winLeaveMutex(){
 ** for use in an assert() to verify that the mutex is held or not held
 ** in certain routines.
 */
-static int winInMutex(){
+int sqlite3WinInMutex(){
   return inMutex;
 }
 
@@ -1014,7 +1014,7 @@ int sqlite3_current_time = 0;
 ** current time and date as a Julian Day number into *prNow and
 ** return 0.  Return 1 if the time and date cannot be found.
 */
-static int winCurrentTime(double *prNow){
+int sqlite3WinCurrentTime(double *prNow){
   FILETIME ft;
   /* FILETIME structure is a 64-bit value representing the number of 
      100-nanosecond intervals since January 1, 1601 (= JD 2305813.5). 
@@ -1039,26 +1039,26 @@ static int winCurrentTime(double *prNow){
 ** Each subsequent call to this function from the thread returns the same
 ** pointer. The argument is ignored in this case.
 */
-static void *winThreadSpecificData(int nByte){
+void *sqlite3WinThreadSpecificData(int nByte){
   static void *pTsd = 0;
   static int key;
   static int keyInit = 0;
 
   if( !keyInit ){
-    sqlite3Os.xEnterMutex();
+    sqlite3OsEnterMutex();
     if( !keyInit ){
       key = TlsAlloc();
       if( key==0xffffffff ){
-        sqlite3Os.xLeaveMutex();
+        sqlite3OsLeaveMutex();
         return 0;
       }
       keyInit = 1;
     }
-    sqlite3Os.xLeaveMutex();
+    sqlite3OsLeaveMutex();
   }
   pTsd = TlsGetValue(key);
   if( !pTsd ){
-    pTsd = sqlite3Os.xMalloc(nByte);
+    pTsd = sqlite3OsMalloc(nByte);
     if( pTsd ){
       memset(pTsd, 0, nByte);
       TlsSetValue(key, pTsd);
@@ -1066,40 +1066,4 @@ static void *winThreadSpecificData(int nByte){
   }
   return pTsd;
 }
-
-/* Macro used to comment out routines that do not exists when there is
-** no disk I/O
-*/
-#ifdef SQLITE_OMIT_DISKIO
-# define IF_DISKIO(X)  0
-#else
-# define IF_DISKIO(X)  X
-#endif
-
-/*
-** This is the structure that defines all of the I/O routines.
-*/
-struct sqlite3OsVtbl sqlite3Os = {
-  IF_DISKIO( winOpenReadWrite ),
-  IF_DISKIO( winOpenExclusive ),
-  IF_DISKIO( winOpenReadOnly ),
-  IF_DISKIO( winDelete ),
-  IF_DISKIO( winFileExists ),
-  IF_DISKIO( winFullPathname ),
-  IF_DISKIO( winIsDirWritable ),
-  IF_DISKIO( winSyncDirectory ),
-  IF_DISKIO( winTempFileName ),
-  winRandomSeed,
-  winSleep,
-  winCurrentTime,
-  winEnterMutex,
-  winLeaveMutex,
-  winInMutex,
-  winThreadSpecificData,
-  genericMalloc,
-  genericRealloc,
-  genericFree,
-  genericAllocationSize
-};
-
 #endif /* OS_WIN */

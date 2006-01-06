@@ -193,7 +193,7 @@ int sqlite3_step(sqlite3_stmt *pStmt){
     }
     if( db->xProfile && !db->init.busy ){
       double rNow;
-      sqlite3Os.xCurrentTime(&rNow);
+      sqlite3OsCurrentTime(&rNow);
       p->startTime = (rNow - (int)rNow)*3600.0*24.0*1000000000.0;
     }
 #endif
@@ -230,7 +230,7 @@ int sqlite3_step(sqlite3_stmt *pStmt){
     double rNow;
     u64 elapseTime;
 
-    sqlite3Os.xCurrentTime(&rNow);
+    sqlite3OsCurrentTime(&rNow);
     elapseTime = (rNow - (int)rNow)*3600.0*24.0*1000000000.0 - p->startTime;
     assert( p->nOp>0 );
     assert( p->aOp[p->nOp-1].opcode==OP_Noop );

@@ -124,16 +124,16 @@ int sqlite3_open_file_count = 0;
 #endif
 
 /*
-** genericMalloc
-** genericRealloc
-** genericOsFree
-** genericAllocationSize
+** sqlite3GenericMalloc
+** sqlite3GenericRealloc
+** sqlite3GenericOsFree
+** sqlite3GenericAllocationSize
 **
 ** Implementation of the os level dynamic memory allocation interface in terms
 ** of the standard malloc(), realloc() and free() found in many operating
 ** systems. No rocket science here.
 */
-static void *genericMalloc(int n){
+void *sqlite3GenericMalloc(int n){
   char *p = (char *)malloc(n+8);
   assert(n>0);
   assert(sizeof(int)<=8);
@@ -142,7 +142,7 @@ static void *genericMalloc(int n){
   }
   return (void *)(p + 8);
 }
-static void *genericRealloc(void *p, int n){
+void *sqlite3GenericRealloc(void *p, int n){
   char *p2 = ((char *)p - 8);
   assert(n>0);
   p2 = realloc(p2, n+8);
@@ -151,10 +151,10 @@ static void *genericRealloc(void *p, int n){
   }
   return (void *)((char *)p2 + 8);
 }
-static void genericFree(void *p){
+void sqlite3GenericFree(void *p){
   assert(p);
   free((void *)((char *)p - 8));
 }
-static int genericAllocationSize(void *p){
+int sqlite3GenericAllocationSize(void *p){
   return p ? *(int *)((char *)p - 8) : 0;
 }

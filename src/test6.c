@@ -20,11 +20,6 @@
 #include "tcl.h"
 
 /*
-** A copy of the original sqlite3Os structure
-*/
-static struct sqlite3OsVtbl origOs;
-
-/*
 ** crashFile is a subclass of OsFile that is taylored for the
 ** crash test module.
 */
@@ -65,11 +60,11 @@ static char zCrashFile[500];
 ** Set the value of the two crash parameters.
 */
 static void setCrashParams(int iDelay, char const *zFile){
-  sqlite3Os.xEnterMutex();
+  sqlite3OsEnterMutex();
   assert( strlen(zFile)<sizeof(zCrashFile) );
   strcpy(zCrashFile, zFile);
   iCrashDelay = iDelay;
-  sqlite3Os.xLeaveMutex();
+  sqlite3OsLeaveMutex();
 }
 
 /*
@@ -79,7 +74,7 @@ static void setCrashParams(int iDelay, char const *zFile){
 static int crashRequired(char const *zPath){
   int r;
   int n;
-  sqlite3Os.xEnterMutex();
+  sqlite3OsEnterMutex();
   n = strlen(zCrashFile);
   if( zCrashFile[n-1]=='*' ){
     n--;
@@ -93,7 +88,7 @@ static int crashRequired(char const *zPath){
       r = 1;
     }
   }
-  sqlite3Os.xLeaveMutex();
+  sqlite3OsLeaveMutex();
   return r;
 }
 
@@ -388,29 +383,46 @@ static int crashFileSize(OsFile *id, i64 *pSize){
 }
 
 /*
+** Set this global variable to 1 to enable crash testing.
+*/
+int sqlite3CrashTestEnable = 0;
+
+/*
 ** The three functions used to open files. All that is required is to
 ** initialise the os_test.c specific fields and then call the corresponding
 ** os_unix.c function to really open the file.
 */
-static int crashOpenReadWrite(const char *zFilename, OsFile **pId,int *pRdonly){
+int sqlite3CrashOpenReadWrite(const char *zFilename, OsFile **pId,int *pRdonly){
   OsFile *pBase = 0;
-  int rc = origOs.xOpenReadWrite(zFilename, &pBase, pRdonly);
+  int rc;
+
+  sqlite3CrashTestEnable = 0;
+  rc = sqlite3OsOpenReadWrite(zFilename, &pBase, pRdonly);
+  sqlite3CrashTestEnable = 1;
   if( !rc ){
     initFile(pId, zFilename, pBase);
   }
   return rc;
 }
-static int crashOpenExclusive(const char *zFilename, OsFile **pId, int delFlag){
+int sqlite3CrashOpenExclusive(const char *zFilename, OsFile **pId, int delFlag){
   OsFile *pBase = 0;
-  int rc = origOs.xOpenExclusive(zFilename, &pBase, delFlag);
+  int rc;
+
+  sqlite3CrashTestEnable = 0;
+  rc = sqlite3OsOpenExclusive(zFilename, &pBase, delFlag);
+  sqlite3CrashTestEnable = 1;
   if( !rc ){
     initFile(pId, zFilename, pBase);
   }
   return rc;
 }
-static int crashOpenReadOnly(const char *zFilename, OsFile **pId){
+int sqlite3CrashOpenReadOnly(const char *zFilename, OsFile **pId, int NotUsed){
   OsFile *pBase = 0;
-  int rc = origOs.xOpenReadOnly(zFilename, &pBase);
+  int rc;
+
+  sqlite3CrashTestEnable = 0;
+  rc = sqlite3OsOpenReadOnly(zFilename, &pBase);
+  sqlite3CrashTestEnable = 1;
   if( !rc ){
     initFile(pId, zFilename, pBase);
   }
@@ -518,12 +530,7 @@ static int crashParamsObjCmd(
     return TCL_ERROR;
   }
   setCrashParams(delay, zFile);
-  if( origOs.xOpenReadWrite==0 ){
-    origOs = sqlite3Os;
-    sqlite3Os.xOpenReadWrite = crashOpenReadWrite;
-    sqlite3Os.xOpenExclusive = crashOpenExclusive;
-    sqlite3Os.xOpenReadOnly = crashOpenReadOnly;
-  }
+  sqlite3CrashTestEnable = 1;
   return TCL_OK;
 }
 

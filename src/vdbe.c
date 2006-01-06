@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.512 2006/01/05 23:42:51 drh Exp $
+** $Id: vdbe.c,v 1.513 2006/01/06 14:32:20 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -429,7 +429,7 @@ int sqlite3VdbeExec(
       }
       sqlite3VdbePrintOp(p->trace, pc, pOp);
     }
-    if( p->trace==0 && pc==0 && sqlite3Os.xFileExists("vdbe_sqltrace") ){
+    if( p->trace==0 && pc==0 && sqlite3OsFileExists("vdbe_sqltrace") ){
       sqlite3VdbePrintSql(p);
     }
 #endif

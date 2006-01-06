@@ -18,12 +18,10 @@
 #define _SQLITE_OS_H_
 
 /*
-** Figure out if we are dealing with Unix, Windows or MacOS.
-**
-** N.B. MacOS means Mac Classic (or Carbon). Treat Darwin (OS X) as Unix.
-**      The MacOS build is designed to use CodeWarrior (tested with v8)
+** Figure out if we are dealing with Unix, Windows, or some other
+** operating system.
 */
-#if !defined(OS_UNIX) && !defined(OS_ALT)
+#if !defined(OS_UNIX) && !defined(OS_OTHER)
 # define OS_OTHER 0
 # ifndef OS_WIN
 #   if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
@@ -72,6 +70,65 @@
 #ifndef TEMP_FILE_PREFIX
 # define TEMP_FILE_PREFIX "sqlite_"
 #endif
+
+/*
+** Define the interfaces for Unix and for Windows.
+*/
+#if OS_UNIX
+#define sqlite3OsOpenReadWrite      sqlite3UnixOpenReadWrite
+#define sqlite3OsOpenExclusive      sqlite3UnixOpenExclusive
+#define sqlite3OsOpenReadOnly       sqlite3UnixOpenReadOnly
+#define sqlite3OsDelete             sqlite3UnixDelete
+#define sqlite3OsFileExists         sqlite3UnixFileExists
+#define sqlite3OsFullPathname       sqlite3UnixFullPathname
+#define sqlite3OsIsDirWritable      sqlite3UnixIsDirWritable
+#define sqlite3OsSyncDirectory      sqlite3UnixSyncDirectory
+#define sqlite3OsTempFileName       sqlite3UnixTempFileName
+#define sqlite3OsRandomSeed         sqlite3UnixRandomSeed
+#define sqlite3OsSleep              sqlite3UnixSleep
+#define sqlite3OsCurrentTime        sqlite3UnixCurrentTime
+#define sqlite3OsEnterMutex         sqlite3UnixEnterMutex
+#define sqlite3OsLeaveMutex         sqlite3UnixLeaveMutex
+#define sqlite3OsInMutex            sqlite3UnixInMutex
+#define sqlite3OsThreadSpecificData sqlite3UnixThreadSpecificData
+#define sqlite3OsMalloc             sqlite3GenericMalloc
+#define sqlite3OsRealloc            sqlite3GenericRealloc
+#define sqlite3OsFree               sqlite3GenericFree
+#define sqlite3OsAllocationSize     sqlite3GenericAllocationSize
+#endif
+#if OS_WIN
+#define sqlite3OsOpenReadWrite      sqlite3WinOpenReadWrite
+#define sqlite3OsOpenExclusive      sqlite3WinOpenExclusive
+#define sqlite3OsOpenReadOnly       sqlite3WinOpenReadOnly
+#define sqlite3OsDelete             sqlite3WinDelete
+#define sqlite3OsFileExists         sqlite3WinFileExists
+#define sqlite3OsFullPathname       sqlite3WinFullPathname
+#define sqlite3OsIsDirWritable      sqlite3WinIsDirWritable
+#define sqlite3OsSyncDirectory      sqlite3WinSyncDirectory
+#define sqlite3OsTempFileName       sqlite3WinTempFileName
+#define sqlite3OsRandomSeed         sqlite3WinRandomSeed
+#define sqlite3OsSleep              sqlite3WinSleep
+#define sqlite3OsCurrentTime        sqlite3WinCurrentTime
+#define sqlite3OsEnterMutex         sqlite3WinEnterMutex
+#define sqlite3OsLeaveMutex         sqlite3WinLeaveMutex
+#define sqlite3OsInMutex            sqlite3WinInMutex
+#define sqlite3OsThreadSpecificData sqlite3WinThreadSpecificData
+#define sqlite3OsMalloc             sqlite3GenericMalloc
+#define sqlite3OsRealloc            sqlite3GenericRealloc
+#define sqlite3OsFree               sqlite3GenericFree
+#define sqlite3OsAllocationSize     sqlite3GenericAllocationSize
+#endif
+
+/*
+** If using an alternative OS interface, then we must have an "os_other.h"
+** header file available for that interface.  Presumably the "os_other.h"
+** header file contains #defines similar to those above.
+*/
+#if OS_OTHER
+# include "os_other.h"
+#endif
+
+
 
 /*
 ** Forward declarations
@@ -204,51 +261,7 @@ extern unsigned int sqlite3_pending_byte;
 #define SHARED_SIZE       510
 
 /*
-** A single global instance of the following structure holds pointers to 
-** the routines that SQLite uses to talk with the underlying operating
-** system.  Modify this structure (before using any SQLite API!) to
-** accomodate perculiar operating system interfaces or behaviors.
-*/
-extern struct sqlite3OsVtbl {
-  int (*xOpenReadWrite)(const char*, OsFile**, int*);
-  int (*xOpenExclusive)(const char*, OsFile**, int);
-  int (*xOpenReadOnly)(const char*, OsFile**);
-
-  int (*xDelete)(const char*);
-  int (*xFileExists)(const char*);
-  char *(*xFullPathname)(const char*);
-  int (*xIsDirWritable)(char*);
-  int (*xSyncDirectory)(const char*);
-  int (*xTempFileName)(char*);
-
-  int (*xRandomSeed)(char*);
-  int (*xSleep)(int ms);
-  int (*xCurrentTime)(double*);
-
-  void (*xEnterMutex)(void);
-  void (*xLeaveMutex)(void);
-  int (*xInMutex)(void);
-  void *(*xThreadSpecificData)(int);
-
-  void *(*xMalloc)(int);
-  void *(*xRealloc)(void *, int);
-  void (*xFree)(void *);
-  int (*xAllocationSize)(void *);
-} sqlite3Os;
-
-/*
-** The following API routine returns a pointer to the sqlite3Os global
-** variable.  It is probably easier just to reference the global variable
-** directly.  This routine is provided for backwards compatibility with
-** an older interface design.
-*/
-struct sqlite3OsVtbl *sqlite3_os_switch(void);
-
-
-/*
-** The following are prototypes of convenience routines that simply
-** call the corresponding routines in the OsFile.pMethod virtual
-** function table.
+** Prototypes for operating system interface routines.
 */
 int sqlite3OsClose(OsFile**);
 int sqlite3OsOpenDirectory(OsFile*, const char*);
@@ -264,5 +277,25 @@ int sqlite3OsLock(OsFile*, int);
 int sqlite3OsUnlock(OsFile*, int);
 int sqlite3OsLockState(OsFile *id);
 int sqlite3OsCheckReservedLock(OsFile *id);
+int sqlite3OsOpenReadWrite(const char*, OsFile**, int*);
+int sqlite3OsOpenExclusive(const char*, OsFile**, int);
+int sqlite3OsOpenReadOnly(const char*, OsFile**);
+int sqlite3OsDelete(const char*);
+int sqlite3OsFileExists(const char*);
+char *sqlite3OsFullPathname(const char*);
+int sqlite3OsIsDirWritable(char*);
+int sqlite3OsSyncDirectory(const char*);
+int sqlite3OsTempFileName(char*);
+int sqlite3OsRandomSeed(char*);
+int sqlite3OsSleep(int ms);
+int sqlite3OsCurrentTime(double*);
+void sqlite3OsEnterMutex(void);
+void sqlite3OsLeaveMutex(void);
+int sqlite3OsInMutex(void);
+void *sqlite3OsThreadSpecificData(int);
+void *sqlite3OsMalloc(int);
+void *sqlite3OsRealloc(void *, int);
+void sqlite3OsFree(void *);
+int sqlite3OsAllocationSize(void *);
 
 #endif /* _SQLITE_OS_H_ */

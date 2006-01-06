@@ -14,7 +14,7 @@
 # special feature is used to see what happens in the library if a malloc
 # were to really fail due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.25 2005/12/06 12:53:01 danielk1977 Exp $
+# $Id: malloc.test,v 1.26 2006/01/06 14:32:20 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -340,8 +340,8 @@ do_malloc_test 12 -tclbody {
 } 
 
 # Test malloc errors when replaying two hot journals from a 2-file 
-# transaction. This test only runs on UNIX.
-if {$tcl_platform(platform)=="unix"} {
+# transaction.
+ifcapable crashtest {
   do_malloc_test 13 -tclprep {
     set rc [crashsql 1 test2.db {
       ATTACH 'test2.db' as aux;

@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.53 2005/12/09 20:02:06 drh Exp $
+** $Id: vacuum.c,v 1.54 2006/01/06 14:32:20 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -148,7 +148,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   do {
     zTemp[nFilename] = '-';
     randomName((unsigned char*)&zTemp[nFilename+1]);
-  } while( sqlite3Os.xFileExists(zTemp) );
+  } while( sqlite3OsFileExists(zTemp) );
 
   /* Before we even attach it, compile a DETACH statement for vacuum_db. This
   ** way, if malloc() fails we can detach the database without needing to
@@ -333,7 +333,7 @@ end_of_vacuum:
   }
 
   if( zTemp ){
-    sqlite3Os.xDelete(zTemp);
+    sqlite3OsDelete(zTemp);
     sqliteFree(zTemp);
   }
   sqliteFree( zSql );

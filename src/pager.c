@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.230 2006/01/05 13:48:29 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.231 2006/01/06 14:32:20 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -934,7 +934,7 @@ static int pager_unwritelock(Pager *pPager){
   if( pPager->journalOpen ){
     sqlite3OsClose(&pPager->jfd);
     pPager->journalOpen = 0;
-    sqlite3Os.xDelete(pPager->zJournal);
+    sqlite3OsDelete(pPager->zJournal);
     sqliteFree( pPager->aInJournal );
     pPager->aInJournal = 0;
     for(pPg=pPager->pAll; pPg; pPg=pPg->pNextAll){
@@ -1110,7 +1110,7 @@ static int pager_delmaster(const char *zMaster){
   /* Open the master journal file exclusively in case some other process
   ** is running this routine also. Not that it makes too much difference.
   */
-  rc = sqlite3Os.xOpenReadOnly(zMaster, &master);
+  rc = sqlite3OsOpenReadOnly(zMaster, &master);
   if( rc!=SQLITE_OK ) goto delmaster_out;
   master_open = 1;
   rc = sqlite3OsFileSize(master, &nMasterJournal);
@@ -1133,7 +1133,7 @@ static int pager_delmaster(const char *zMaster){
 
     zJournal = zMasterJournal;
     while( (zJournal-zMasterJournal)<nMasterJournal ){
-      if( sqlite3Os.xFileExists(zJournal) ){
+      if( sqlite3OsFileExists(zJournal) ){
         /* One of the journals pointed to by the master journal exists.
         ** Open it and check if it points at the master journal. If
         ** so, return without deleting the master journal file.
@@ -1141,7 +1141,7 @@ static int pager_delmaster(const char *zMaster){
         OsFile *journal = 0;
         int c;
 
-        rc = sqlite3Os.xOpenReadOnly(zJournal, &journal);
+        rc = sqlite3OsOpenReadOnly(zJournal, &journal);
         if( rc!=SQLITE_OK ){
           goto delmaster_out;
         }
@@ -1163,7 +1163,7 @@ static int pager_delmaster(const char *zMaster){
     }
   }
   
-  sqlite3Os.xDelete(zMaster);
+  sqlite3OsDelete(zMaster);
 
 delmaster_out:
   if( zMasterJournal ){
@@ -1304,7 +1304,7 @@ static int pager_playback(Pager *pPager){
   */
   rc = readMasterJournal(pPager->jfd, &zMaster);
   assert( rc!=SQLITE_DONE );
-  if( rc!=SQLITE_OK || (zMaster && !sqlite3Os.xFileExists(zMaster)) ){
+  if( rc!=SQLITE_OK || (zMaster && !sqlite3OsFileExists(zMaster)) ){
     sqliteFree(zMaster);
     zMaster = 0;
     if( rc==SQLITE_DONE ) rc = SQLITE_OK;
@@ -1585,8 +1585,8 @@ static int sqlite3pager_opentemp(char *zFile, OsFile **pFd){
   sqlite3_opentemp_count++;  /* Used for testing and analysis only */
   do{
     cnt--;
-    sqlite3Os.xTempFileName(zFile);
-    rc = sqlite3Os.xOpenExclusive(zFile, pFd, 1);
+    sqlite3OsTempFileName(zFile);
+    rc = sqlite3OsOpenExclusive(zFile, pFd, 1);
   }while( cnt>0 && rc!=SQLITE_OK && rc!=SQLITE_NOMEM );
   return rc;
 }
@@ -1646,15 +1646,15 @@ int sqlite3pager_open(
     }else
 #endif
     {
-      zFullPathname = sqlite3Os.xFullPathname(zFilename);
+      zFullPathname = sqlite3OsFullPathname(zFilename);
       if( zFullPathname ){
-        rc = sqlite3Os.xOpenReadWrite(zFullPathname, &fd, &readOnly);
+        rc = sqlite3OsOpenReadWrite(zFullPathname, &fd, &readOnly);
       }
     }
   }else{
     rc = sqlite3pager_opentemp(zTemp, &fd);
     zFilename = zTemp;
-    zFullPathname = sqlite3Os.xFullPathname(zFilename);
+    zFullPathname = sqlite3OsFullPathname(zFilename);
     if( rc==SQLITE_OK ){
       tempFile = 1;
     }
@@ -2082,7 +2082,7 @@ int sqlite3pager_close(Pager *pPager){
   sqlite3OsClose(&pPager->fd);
   /* Temp files are automatically deleted by the OS
   ** if( pPager->tempFile ){
-  **   sqlite3Os.xDelete(pPager->zFilename);
+  **   sqlite3OsDelete(pPager->zFilename);
   ** }
   */
 
@@ -2352,10 +2352,10 @@ static PgHdr *pager_get_all_dirty_pages(Pager *pPager){
 */
 static int hasHotJournal(Pager *pPager){
   if( !pPager->useJournal ) return 0;
-  if( !sqlite3Os.xFileExists(pPager->zJournal) ) return 0;
+  if( !sqlite3OsFileExists(pPager->zJournal) ) return 0;
   if( sqlite3OsCheckReservedLock(pPager->fd) ) return 0;
   if( sqlite3pager_pagecount(pPager)==0 ){
-    sqlite3Os.xDelete(pPager->zJournal);
+    sqlite3OsDelete(pPager->zJournal);
     return 0;
   }else{
     return 1;
@@ -2462,7 +2462,7 @@ int sqlite3pager_release_memory(int nReq){
 
   /* If the disableReleaseMemory memory flag is set, this operation is
   ** a no-op; zero bytes of memory are freed. The flag is set before
-  ** malloc() is called while the global mutex (see sqlite3Os.xEnterMutex) 
+  ** malloc() is called while the global mutex (see sqlite3OsEnterMutex) 
   ** is held. Because some of the code invoked by this function may also
   ** try to obtain the mutex, proceding may cause a deadlock. 
   */
@@ -2613,7 +2613,7 @@ int sqlite3pager_get(Pager *pPager, Pgno pgno, void **ppPage){
        ** a write lock, so there is never any chance of two or more
        ** processes opening the journal at the same time.
        */
-       rc = sqlite3Os.xOpenReadOnly(pPager->zJournal, &pPager->jfd);
+       rc = sqlite3OsOpenReadOnly(pPager->zJournal, &pPager->jfd);
        if( rc!=SQLITE_OK ){
          sqlite3OsUnlock(pPager->fd, NO_LOCK);
          pPager->state = PAGER_UNLOCK;
@@ -2843,7 +2843,7 @@ static int pager_open_journal(Pager *pPager){
     rc = SQLITE_NOMEM;
     goto failed_to_open_journal;
   }
-  rc = sqlite3Os.xOpenExclusive(pPager->zJournal, &pPager->jfd,
+  rc = sqlite3OsOpenExclusive(pPager->zJournal, &pPager->jfd,
                                  pPager->tempFile);
   pPager->journalOff = 0;
   pPager->setMaster = 0;
@@ -2887,7 +2887,7 @@ failed_to_open_journal:
     ** the system will get confused, we have a read-lock on the file and a
     ** mysterious journal has appeared in the filesystem.
     */
-    sqlite3Os.xDelete(pPager->zJournal);
+    sqlite3OsDelete(pPager->zJournal);
   }else{
     sqlite3OsUnlock(pPager->fd, NO_LOCK);
     pPager->state = PAGER_UNLOCK;
