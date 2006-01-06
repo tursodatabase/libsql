@@ -1031,19 +1031,40 @@ static int winCurrentTime(double *prNow){
   return 0;
 }
 
-
-/*
-** Todo: This is a place-holder only
+/* 
+** The first time this function is called from a specific thread, nByte 
+** bytes of data area are allocated and zeroed. A pointer to the new 
+** allocation is returned to the caller. 
+**
+** Each subsequent call to this function from the thread returns the same
+** pointer. The argument is ignored in this case.
 */
 static void *winThreadSpecificData(int nByte){
-  static char tsd[sizeof(SqliteTsd)];
-  static isInit = 0;
-  assert( nByte==sizeof(SqliteTsd) );
-  if( !isInit ){
-    memset(tsd, 0, sizeof(SqliteTsd));
-    isInit = 1;
+  static void *pTsd = 0;
+  static int key;
+  static int keyInit = 0;
+
+  if( !keyInit ){
+    sqlite3Os.xEnterMutex();
+    if( !keyInit ){
+      key = TlsAlloc();
+      if( key==0xffffffff ){
+        sqlite3Os.xLeaveMutex();
+        return 0;
+      }
+      keyInit = 1;
+    }
+    sqlite3Os.xLeaveMutex();
   }
-  return (void *)tsd;
+  pTsd = TlsGetValue(key);
+  if( !pTsd ){
+    pTsd = sqlite3Os.xMalloc(nByte);
+    if( pTsd ){
+      memset(pTsd, 0, nByte);
+      TlsSetValue(key, pTsd);
+    }
+  }
+  return pTsd;
 }
 
 /* Macro used to comment out routines that do not exists when there is

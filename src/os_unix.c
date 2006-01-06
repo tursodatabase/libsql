@@ -1663,24 +1663,24 @@ static void *unixThreadSpecificData(int nByte){
     sqlite3Os.xLeaveMutex();
   }
 
-  pTsd = (SqliteTsd *)pthread_getspecific(key);
+  pTsd = pthread_getspecific(key);
   if( !pTsd ){
-    pTsd = sqlite3Os.xMalloc(sizeof(SqliteTsd));
+    pTsd = sqlite3Os.xMalloc(nByte);
     if( pTsd ){
-      memset(pTsd, 0, sizeof(SqliteTsd));
+      memset(pTsd, 0, nByte);
       pthread_setspecific(key, pTsd);
     }
   }
   return pTsd;
 #else
-  static char tsd[sizeof(SqliteTsd)];
-  static int isInit = 0;
-  assert( nByte==sizeof(SqliteTsd) );
-  if( !isInit ){
-    memset(tsd, 0, sizeof(SqliteTsd));
-    isInit = 1;
+  static void *pTsd = 0;
+  if( !pTsd ){
+    pTsd = sqlite3Os.xMalloc(nByte);
+    if( pTsd ){
+      memset(pTsd, 0, nByte);
+    }
   }
-  return (void *)tsd;
+  return pTsd;
 #endif
 }
 
