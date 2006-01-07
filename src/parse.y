@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.191 2006/01/04 15:54:36 drh Exp $
+** @(#) $Id: parse.y,v 1.192 2006/01/07 14:02:27 danielk1977 Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -685,6 +685,7 @@ expr(A) ::= expr(X) CONCAT(OP) expr(Y).         {A = sqlite3Expr(@OP, X, Y, 0);}
 likeop(A) ::= LIKE_KW(X).     {A.operator = X; A.not = 0;}
 likeop(A) ::= NOT LIKE_KW(X). {A.operator = X; A.not = 1;}
 %type escape {Expr*}
+%destructor escape {sqlite3ExprDelete($$);}
 escape(X) ::= ESCAPE expr(A). [ESCAPE] {X = A;}
 escape(X) ::= .               [ESCAPE] {X = 0;}
 expr(A) ::= expr(X) likeop(OP) expr(Y) escape(E).  [LIKE_KW]  {
@@ -817,9 +818,11 @@ case_exprlist(A) ::= WHEN expr(Y) THEN expr(Z). {
   A = sqlite3ExprListAppend(A, Z, 0);
 }
 %type case_else {Expr*}
+%destructor case_else {sqlite3ExprDelete($$);}
 case_else(A) ::=  ELSE expr(X).         {A = X;}
 case_else(A) ::=  .                     {A = 0;} 
 %type case_operand {Expr*}
+%destructor case_operand {sqlite3ExprDelete($$);}
 case_operand(A) ::= expr(X).            {A = X;} 
 case_operand(A) ::= .                   {A = 0;} 
 
@@ -940,6 +943,7 @@ foreach_clause(A) ::= FOR EACH ROW.       { A = TK_ROW; }
 foreach_clause(A) ::= FOR EACH STATEMENT. { A = TK_STATEMENT; }
 
 %type when_clause {Expr*}
+%destructor when_clause {sqlite3ExprDelete($$);}
 when_clause(A) ::= .             { A = 0; }
 when_clause(A) ::= WHEN expr(X). { A = X; }
 
@@ -1003,6 +1007,7 @@ cmd ::= ATTACH database_kw_opt expr(F) AS expr(D) key_opt(K). {
   sqlite3Attach(pParse, F, D, K);
 }
 %type key_opt {Expr *}
+%destructor key_opt {sqlite3ExprDelete($$);}
 key_opt(A) ::= .                     { A = 0; }
 key_opt(A) ::= KEY expr(X).          { A = X; }
 

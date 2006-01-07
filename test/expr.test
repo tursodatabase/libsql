@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing expressions.
 #
-# $Id: expr.test,v 1.48 2005/11/14 22:29:06 drh Exp $
+# $Id: expr.test,v 1.49 2006/01/07 14:02:27 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -633,6 +633,17 @@ do_test expr-11.2 {
   execsql {SELECT typeof(9223372036854775808)}
 } {real}
 
-
+# These two statements used to leak memory (because of missing %destructor
+# directives in parse.y).
+do_test expr-12.1 {
+  catchsql {
+    SELECT (CASE a>4 THEN 1 ELSE 0 END) FROM test1;
+  }
+} {1 {near "THEN": syntax error}}
+do_test expr-12.2 {
+  catchsql {
+    SELECT (CASE WHEN a>4 THEN 1 ELSE 0) FROM test1;
+  }
+} {1 {near ")": syntax error}}
 
 finish_test
