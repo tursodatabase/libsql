@@ -1678,6 +1678,7 @@ void *sqlite3UnixThreadSpecificData(int nByte){
       int rc;
       rc = pthread_key_create(&key, deleteTsd);
       if( rc ){
+        sqlite3OsLeaveMutex();
         return 0;
       }
       keyInit = 1;
