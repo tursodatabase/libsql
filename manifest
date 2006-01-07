@@ -1,5 +1,5 @@
-C Fix\ssome\smemory\sleaks\scaused\sby\sobscure\ssyntax\serrors\sin\sSQL.\s(CVS\s2882)
-D 2006-01-07T14:02:27
+C Enable\sredefinable\sI/O\sif\sthe\sSQLITE_ENABLE_REDEF_IO\smacro\sexists.\s(CVS\s2883)
+D 2006-01-07T16:06:07
 F Makefile.in c79fbdaa264c6afcd435f2fb492551de5a8cf80d
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -50,8 +50,8 @@ F src/insert.c 66f2e745bd3db551bed9756c7d7df191f7b72ba9
 F src/legacy.c 59757d857ab95fcbb0ac27692d3201e35f093dd7
 F src/main.c 8c2d64f1460200d79d7de4605a9489c0506be5fe
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
-F src/os.c bdd3a2fd089777e7ad18b57c896f1141d5a0c1fd
-F src/os.h 6e61d5e901dfec761660707e892890f6760b5e63
+F src/os.c 1d1a61cdf150e9f9520a3bc787c8465148ea2e78
+F src/os.h 8710c0068f3386a73a37f8ad242b92c7580464df
 F src/os_common.h 78bcc34dded9b625b3c16d072b7e5b76d075a674
 F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
@@ -72,7 +72,7 @@ F src/sqlite.h.in ba3a29daa6a16e054191ccb384a981964e882a1d
 F src/sqliteInt.h 40c3511c05df83c7c1c244d0432baa9497feee4d
 F src/table.c 486dcfce532685b53b5a2b5da8bba0ded6fb2316
 F src/tclsqlite.c 42151e6c78502277be77b88c00535d53ce89b917
-F src/test1.c 1171547fad57a104c716116695fb8c5c7ef43345
+F src/test1.c 53c6c0f86e280e739a9adfb56ba7d8b6e26cc16f
 F src/test2.c ca74a1d8aeb7d9606e8f6b762c5daf85c1a3f92b
 F src/test3.c 9742aa146eb750cab81c1d5605286c3a0eb88054
 F src/test4.c a8fd681e139e1c61f22a77d07fc3a99cb28fff3f
@@ -335,7 +335,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 23b587b05b89727248805e6d9e5141e018cf2152
-R b9ef38eb9219972e18666035e7ca732b
-U danielk1977
-Z 5df6fea511267cf56eade3a5959a2ec5
+P 6593199a4d0d0e1f9cc2f48d30327b1c03a8170e
+R dca0e78f8894e9c4b7522be7f86ed95c
+U drh
+Z faf501161ea4c7faed845a75b2858bde

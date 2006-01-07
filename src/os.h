@@ -298,4 +298,143 @@ void *sqlite3OsRealloc(void *, int);
 void sqlite3OsFree(void *);
 int sqlite3OsAllocationSize(void *);
 
+/*
+** If the SQLITE_ENABLE_REDEF_IO macro is defined, then the OS-layer
+** interface routines are not called directly but are invoked using
+** pointers to functions.  This allows the implementation of various
+** OS-layer interface routines to be modified at run-time.  There are
+** obscure but legitimate reasons for wanting to do this.  But for
+** most users, a direct call to the underlying interface is preferable
+** so the the redefinable I/O interface is turned off by default.
+*/
+#ifdef SQLITE_ENABLE_REDEF_IO
+
+/*
+** When redefinable I/O is enabled, a single global instance of the
+** following structure holds pointers to the routines that SQLite 
+** uses to talk with the underlying operating system.  Modify this
+** structure (before using any SQLite API!) to accomodate perculiar
+** operating system interfaces or behaviors.
+*/
+struct sqlite3OsVtbl {
+  int (*xOpenReadWrite)(const char*, OsFile**, int*);
+  int (*xOpenExclusive)(const char*, OsFile**, int);
+  int (*xOpenReadOnly)(const char*, OsFile**);
+
+  int (*xDelete)(const char*);
+  int (*xFileExists)(const char*);
+  char *(*xFullPathname)(const char*);
+  int (*xIsDirWritable)(char*);
+  int (*xSyncDirectory)(const char*);
+  int (*xTempFileName)(char*);
+
+  int (*xRandomSeed)(char*);
+  int (*xSleep)(int ms);
+  int (*xCurrentTime)(double*);
+
+  void (*xEnterMutex)(void);
+  void (*xLeaveMutex)(void);
+  int (*xInMutex)(void);
+  void *(*xThreadSpecificData)(int);
+
+  void *(*xMalloc)(int);
+  void *(*xRealloc)(void *, int);
+  void (*xFree)(void *);
+  int (*xAllocationSize)(void *);
+};
+
+/* Macro used to comment out routines that do not exists when there is
+** no disk I/O 
+*/
+#ifdef SQLITE_OMIT_DISKIO
+# define IF_DISKIO(X)  0
+#else
+# define IF_DISKIO(X)  X
+#endif
+
+#ifdef _SQLITE_OS_C_
+  /*
+  ** The os.c file implements the global virtual function table.
+  */
+  struct sqlite3OsVtbl sqlite3Os = {
+    IF_DISKIO( sqlite3OsOpenReadWrite ),
+    IF_DISKIO( sqlite3OsOpenExclusive ),
+    IF_DISKIO( sqlite3OsOpenReadOnly ),
+    IF_DISKIO( sqlite3OsDelete ),
+    IF_DISKIO( sqlite3OsFileExists ),
+    IF_DISKIO( sqlite3OsFullPathname ),
+    IF_DISKIO( sqlite3OsIsDirWritable ),
+    IF_DISKIO( sqlite3OsSyncDirectory ),
+    IF_DISKIO( sqlite3OsTempFileName ),
+    sqlite3OsRandomSeed,
+    sqlite3OsSleep,
+    sqlite3OsCurrentTime,
+    sqlite3OsEnterMutex,
+    sqlite3OsLeaveMutex,
+    sqlite3OsInMutex,
+    sqlite3OsThreadSpecificData,
+    sqlite3OsMalloc,
+    sqlite3OsRealloc,
+    sqlite3OsFree,
+    sqlite3OsAllocationSize
+  };
+#else
+  /*
+  ** Files other than os.c just reference the global virtual function table. 
+  */
+  extern struct sqlite3OsVtbl sqlite3Os;
+#endif /* _SQLITE_OS_C_ */
+
+
+/* This additional API routine is available with redefinable I/O */
+struct sqlite3OsVtbl *sqlite3_os_switch(void);
+
+
+/*
+** Redefine the OS interface to go through the virtual function table
+** rather than calling routines directly.
+*/
+#undef sqlite3OsOpenReadWrite
+#undef sqlite3OsOpenExclusive
+#undef sqlite3OsOpenReadOnly
+#undef sqlite3OsDelete
+#undef sqlite3OsFileExists
+#undef sqlite3OsFullPathname
+#undef sqlite3OsIsDirWritable
+#undef sqlite3OsSyncDirectory
+#undef sqlite3OsTempFileName
+#undef sqlite3OsRandomSeed
+#undef sqlite3OsSleep
+#undef sqlite3OsCurrentTime
+#undef sqlite3OsEnterMutex
+#undef sqlite3OsLeaveMutex
+#undef sqlite3OsInMutex
+#undef sqlite3OsThreadSpecificData
+#undef sqlite3OsMalloc
+#undef sqlite3OsRealloc
+#undef sqlite3OsFree
+#undef sqlite3OsAllocationSize
+#define sqlite3OsOpenReadWrite      sqlite3Os.xOpenReadWrite
+#define sqlite3OsOpenExclusive      sqlite3Os.xOpenExclusive
+#define sqlite3OsOpenReadOnly       sqlite3Os.xOpenReadOnly
+#define sqlite3OsDelete             sqlite3Os.xDelete
+#define sqlite3OsFileExists         sqlite3Os.xFileExists
+#define sqlite3OsFullPathname       sqlite3Os.xFullPathname
+#define sqlite3OsIsDirWritable      sqlite3Os.xIsDirWritable
+#define sqlite3OsSyncDirectory      sqlite3Os.xSyncDirectory
+#define sqlite3OsTempFileName       sqlite3Os.xTempFileName
+#define sqlite3OsRandomSeed         sqlite3Os.xRandomSeed
+#define sqlite3OsSleep              sqlite3Os.xSleep
+#define sqlite3OsCurrentTime        sqlite3Os.xCurrentTime
+#define sqlite3OsEnterMutex         sqlite3Os.xEnterMutex
+#define sqlite3OsLeaveMutex         sqlite3Os.xLeaveMutex
+#define sqlite3OsInMutex            sqlite3Os.xInMutex
+#define sqlite3OsThreadSpecificData sqlite3Os.xThreadSpecificData
+#define sqlite3OsMalloc             sqlite3Os.xMalloc
+#define sqlite3OsRealloc            sqlite3Os.xRealloc
+#define sqlite3OsFree               sqlite3Os.xFree
+#define sqlite3OsAllocationSize     sqlite3Os.xAllocationSize
+
+#endif /* SQLITE_ENABLE_REDEF_IO */
+
 #endif /* _SQLITE_OS_H_ */

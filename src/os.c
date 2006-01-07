@@ -13,6 +13,7 @@
 ** This file contains OS interface code that is common to all
 ** architectures.
 */
+#define _SQLITE_OS_C_ 1
 #include "sqliteInt.h"
 #include "os.h"
 
@@ -69,3 +70,18 @@ int sqlite3OsLockState(OsFile *id){
 int sqlite3OsCheckReservedLock(OsFile *id){
   return id->pMethod->xCheckReservedLock(id);
 }
+
+#ifdef SQLITE_ENABLE_REDEF_IO
+/*
+** A function to return a pointer to the virtual function table.
+** This routine really does not accomplish very much since the
+** virtual function table is a global variable and anybody who
+** can call this function can just as easily access the variable
+** for themselves.  Nevertheless, we include this routine for
+** backwards compatibility with an earlier redefinable I/O
+** interface design.
+*/
+struct sqlite3OsVtbl *sqlite3_os_switch(void){
+  return &sqlite3Os;
+}
+#endif
