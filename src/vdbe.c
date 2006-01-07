@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.514 2006/01/07 13:21:04 danielk1977 Exp $
+** $Id: vdbe.c,v 1.515 2006/01/07 18:10:33 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -855,20 +855,42 @@ case OP_Push: {            /* no-push */
 
 /* Opcode: Callback P1 * *
 **
-** Pop P1 values off the stack and form them into an array.  Then
-** invoke the callback function using the newly formed array as the
-** 3rd parameter.
+** The top P1 values on the stack represent a single result row from
+** a query.  This opcode causes the sqlite3_step() call to terminate
+** with an SQLITE_ROW return code and it sets up the sqlite3_stmt
+** structure to provide access to the top P1 values as the result
+** row.  When the sqlite3_step() function is run again, the top P1
+** values will be automatically popped from the stack before the next
+** instruction executes.
 */
 case OP_Callback: {            /* no-push */
-  int i;
+  Mem *pMem;
+  Mem *pFirstColumn;
   assert( p->nResColumn==pOp->p1 );
 
-  for(i=0; i<pOp->p1; i++){
-    Mem *pVal = &pTos[0-i];
-    sqlite3VdbeMemNulTerminate(pVal);
-    storeTypeInfo(pVal, db->enc);
+  /* Data in the pager might be moved or changed out from under us
+  ** in between the return from this sqlite3_step() call and the
+  ** next call to sqlite3_step().  So deephermeralize everything on 
+  ** the stack.  Note that ephemeral data is never stored in memory 
+  ** cells so we do not have to worry about them.
+  */
+  pFirstColumn = &pTos[0-pOp->p1];
+  for(pMem = p->aStack; pMem<pFirstColumn; pMem++){
+    Deephemeralize(pMem);
   }
 
+  /* Make sure the results of the current row are \000 terminated
+  ** and have an assigned type.  The results are deephemeralized as
+  ** as side effect.
+  */
+  for(; pMem<=pTos; pMem++ ){
+    sqlite3VdbeMemNulTerminate(pMem);
+    storeTypeInfo(pMem, db->enc);
+  }
+
+  /* Set up the statement structure so that it will pop the current
+  ** results from the stack when the statement returns.
+  */
   p->resOnStack = 1;
   p->nCallback++;
   p->popStack = pOp->p1;
