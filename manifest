@@ -1,5 +1,5 @@
-C Make\ssure\sthere\sis\sno\sephemeral\sdata\son\sthe\sstack\sbefore\sreturning\sfrom\nan\ssqlite3_step()\scall.\s\sOtherwise,\sif\sthe\sstatement\sis\sin\sREAD\sUNCOMMITTED\nmode\sthen\sthe\sdata\smight\sbe\sdeleted\sor\schanged\sout\sfrom\sunder\sus.\s(CVS\s2884)
-D 2006-01-07T18:10:33
+C Continued\sprogress\stoward\sa\sworking\swince\sbackend.\s(CVS\s2885)
+D 2006-01-07T18:14:48
 F Makefile.in c79fbdaa264c6afcd435f2fb492551de5a8cf80d
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -57,7 +57,7 @@ F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
 F src/os_unix.c ba70f76230c9cd95c08f27ec40710838ea15a785
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
-F src/os_win.c 88f372bf093b3257f54d2d7710f00cfcae86fb9d
+F src/os_win.c 9cedcb13d6bcd4ab5f50907a99112f45cd335893
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c f06b85eb1e43bb2e6a7a5108ac8346576b4b78fa
 F src/pager.h e0acb095b3ad0bca48f2ab00c87346665643f64f
@@ -335,7 +335,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P e170e15766389e978991b42a0d2ec303162aaad6
-R baaa14f4d07ba64e66d20e1ee1f3ee46
+P 19f71a6d1982e986f5436bff71ef38b1bcc2e11d
+R 90bcf273c8a689d05bbbb1a9b9eb146b
 U drh
-Z 6a48941c0b9363c7694c0db132553ba2
+Z fc0de77c4da0e5b5eb0148bbd35f7f04

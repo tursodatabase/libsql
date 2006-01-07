@@ -320,6 +320,9 @@ int sqlite3WinOpenReadWrite(
   f.h = h;
   f.locktype = NO_LOCK;
   f.sharedLockByte = 0;
+#if OS_WINCE
+  f.zDeleteOnClose = 0;
+#endif
   TRACE3("OPEN R/W %d \"%s\"\n", h, zFilename);
   return allocateWinFile(&f, pId);
 }
@@ -430,6 +433,9 @@ int sqlite3WinOpenReadOnly(const char *zFilename, OsFile **pId){
   f.h = h;
   f.locktype = NO_LOCK;
   f.sharedLockByte = 0;
+#if OS_WINCE
+  f.zDeleteOnClose = 0;
+#endif
   TRACE3("OPEN RO %d \"%s\"\n", h, zFilename);
   return allocateWinFile(&f, pId);
 }
