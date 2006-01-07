@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.115 2006/01/05 11:34:34 danielk1977 Exp $
+** $Id: update.c,v 1.116 2006/01/07 13:21:04 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -309,7 +309,7 @@ void sqlite3Update(
       /* Open a cursor and make it point to the record that is
       ** being updated.
       */
-      sqlite3OpenTableForReading(v, iCur, iDb, pTab);
+      sqlite3OpenTable(pParse, iCur, iDb, pTab, OP_OpenRead);
     }
     sqlite3VdbeAddOp(v, OP_MoveGe, iCur, 0);
 
@@ -364,9 +364,7 @@ void sqlite3Update(
     ** action, then we need to open all indices because we might need
     ** to be deleting some records.
     */
-    sqlite3VdbeAddOp(v, OP_Integer, iDb, 0);
-    sqlite3VdbeAddOp(v, OP_OpenWrite, iCur, pTab->tnum);
-    sqlite3VdbeAddOp(v, OP_SetNumColumns, iCur, pTab->nCol);
+    sqlite3OpenTable(pParse, iCur, iDb, pTab, OP_OpenWrite); 
     if( onError==OE_Replace ){
       openAll = 1;
     }else{

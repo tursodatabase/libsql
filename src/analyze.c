@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code associated with the ANALYZE command.
 **
-** @(#) $Id: analyze.c,v 1.12 2006/01/05 11:34:33 danielk1977 Exp $
+** @(#) $Id: analyze.c,v 1.13 2006/01/07 13:21:04 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_ANALYZE
 #include "sqliteInt.h"
@@ -61,8 +61,14 @@ static void openStatTable(
     sqlite3VdbeAddOp(v, OP_Clear, pStat->tnum, iDb);
   }
 
-  /* Open the sqlite_stat1 table for writing.
+  /* Open the sqlite_stat1 table for writing. Unless it was created
+  ** by this vdbe program, lock it for writing at the shared-cache level. 
+  ** If this vdbe did create the sqlite_stat1 table, then it must have 
+  ** already obtained a schema-lock, making the write-lock redundant.
   */
+  if( iRootPage>0 ){
+    sqlite3TableLock(pParse, iDb, iRootPage, 1, "sqlite_stat1");
+  }
   sqlite3VdbeAddOp(v, OP_Integer, iDb, 0);
   sqlite3VdbeAddOp(v, OP_OpenWrite, iStatCur, iRootPage);
   sqlite3VdbeAddOp(v, OP_SetNumColumns, iStatCur, 3);
@@ -102,6 +108,9 @@ static void analyzeOneTable(
     return;
   }
 #endif
+
+  /* Establish a read-lock on the table at the shared-cache level. */
+  sqlite3TableLock(pParse, iDb, pTab->tnum, 0, pTab->zName);
 
   iIdxCur = pParse->nTab;
   for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){

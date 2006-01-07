@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.513 2006/01/06 14:32:20 drh Exp $
+** $Id: vdbe.c,v 1.514 2006/01/07 13:21:04 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -4436,6 +4436,38 @@ case OP_Expire: {        /* no-push */
   }
   break;
 }
+
+#ifndef SQLITE_OMIT_SHARED_CACHE
+/* Opcode: TableLock P1 P2 P3
+**
+** Obtain a lock on a particular table. This instruction is only used when
+** the shared-cache feature is enabled. 
+**
+** If P1 is not negative, then it is the index of the index of the database
+** in sqlite3.aDb[] and a read-lock is required. If P1 is negative, a 
+** write-lock is required. In this case the index of the database is the 
+** absolute value of P1 minus one (iDb = abs(P1) - 1;) and a write-lock is
+** required. 
+**
+** P2 contains the root-page of the table to lock.
+**
+** P3 contains a pointer to the name of the table being locked. This is only
+** used to generate an error message if the lock cannot be obtained.
+*/
+case OP_TableLock: {        /* no-push */
+  int p1 = pOp->p1; 
+  u8 isWriteLock = (p1<0);
+  if( isWriteLock ){
+    p1 = (-1*p1)-1;
+  }
+  rc = sqlite3BtreeLockTable(db->aDb[p1].pBt, pOp->p2, isWriteLock);
+  if( rc==SQLITE_LOCKED ){
+    const char *z = (const char *)pOp->p3;
+    sqlite3SetString(&p->zErrMsg, "database table is locked: ", z, (char*)0);
+  }
+  break;
+}
+#endif /* SHARED_OMIT_SHARED_CACHE */
 
 /* An other opcode is illegal...
 */

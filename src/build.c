@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.368 2006/01/06 06:33:13 danielk1977 Exp $
+** $Id: build.c,v 1.369 2006/01/07 13:21:04 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -35,6 +35,87 @@ void sqlite3BeginParse(Parse *pParse, int explainFlag){
   pParse->explain = explainFlag;
   pParse->nVar = 0;
 }
+
+#ifndef SQLITE_OMIT_SHARED_CACHE
+/*
+** The TableLock structure is only used by the sqlite3TableLock() and
+** codeTableLocks() functions.
+*/
+struct TableLock {
+  int iDb;
+  int iTab;
+  u8 isWriteLock;
+  const char *zName;
+};
+
+/*
+** Have the compiled statement lock the table with rootpage iTab in database
+** iDb at the shared-cache level when executed. The isWriteLock argument 
+** is zero for a read-lock, or non-zero for a write-lock.
+**
+** The zName parameter should point to the unqualified table name. This is
+** used to provide a more informative error message should the lock fail.
+*/
+void sqlite3TableLock(
+  Parse *pParse, 
+  int iDb, 
+  int iTab, 
+  u8 isWriteLock,  
+  const char *zName
+){
+  int i;
+  int nBytes;
+  TableLock *p;
+  SqliteTsd *pTsd = sqlite3Tsd();
+
+  if( 0==pTsd->useSharedData ){
+    return;
+  }
+
+  for(i=0; i<pParse->nTableLock; i++){
+    p = &pParse->aTableLock[i];
+    if( p->iDb==iDb && p->iTab==iTab ){
+      p->isWriteLock = (p->isWriteLock || isWriteLock);
+      return;
+    }
+  }
+
+  nBytes = sizeof(TableLock) * (pParse->nTableLock+1);
+  sqliteReallocOrFree((void **)&pParse->aTableLock, nBytes);
+  if( pParse->aTableLock ){
+    p = &pParse->aTableLock[pParse->nTableLock++];
+    p->iDb = iDb;
+    p->iTab = iTab;
+    p->isWriteLock = isWriteLock;
+    p->zName = zName;
+  }
+}
+
+/*
+** Code an OP_TableLock instruction for each table locked by the
+** statement (configured by calls to sqlite3TableLock()).
+*/
+static void codeTableLocks(Parse *pParse){
+  int i;
+  Vdbe *pVdbe; 
+  assert( sqlite3Tsd()->useSharedData || pParse->nTableLock==0 );
+
+  if( 0==(pVdbe = sqlite3GetVdbe(pParse)) ){
+    return;
+  }
+
+  for(i=0; i<pParse->nTableLock; i++){
+    TableLock *p = &pParse->aTableLock[i];
+    int p1 = p->iDb;
+    if( p->isWriteLock ){
+      p1 = -1*(p1+1);
+    }
+    sqlite3VdbeOp3(pVdbe, OP_TableLock, p1, p->iTab, p->zName, P3_STATIC);
+  }
+}
+#else
+  #define codeTableLocks(x)
+#endif
 
 /*
 ** This routine is called after a single SQL statement has been
@@ -73,6 +154,7 @@ void sqlite3FinishCoding(Parse *pParse){
     ** transaction on each used database and to verify the schema cookie
     ** on each used database.
     */
+    assert( pParse->cookieGoto>0 || pParse->nTableLock==0 );
     if( pParse->cookieGoto>0 ){
       u32 mask;
       int iDb;
@@ -82,6 +164,12 @@ void sqlite3FinishCoding(Parse *pParse){
         sqlite3VdbeAddOp(v, OP_Transaction, iDb, (mask & pParse->writeMask)!=0);
         sqlite3VdbeAddOp(v, OP_VerifyCookie, iDb, pParse->cookieValue[iDb]);
       }
+
+      /* Once all the cookies have been verified and transactions opened, 
+      ** obtain the required table-locks. This is a no-op unless the 
+      ** shared-cache feature is enabled.
+      */
+      codeTableLocks(pParse);
       sqlite3VdbeAddOp(v, OP_Goto, 0, pParse->cookieGoto);
     }
 
@@ -509,7 +597,9 @@ char *sqlite3NameFromToken(Token *pName){
 ** Open the sqlite_master table stored in database number iDb for
 ** writing. The table is opened using cursor 0.
 */
-void sqlite3OpenMasterTable(Vdbe *v, int iDb){
+void sqlite3OpenMasterTable(Parse *p, int iDb){
+  Vdbe *v = sqlite3GetVdbe(p);
+  sqlite3TableLock(p, iDb, MASTER_ROOT, 1, SCHEMA_TABLE(iDb));
   sqlite3VdbeAddOp(v, OP_Integer, iDb, 0);
   sqlite3VdbeAddOp(v, OP_OpenWrite, 0, MASTER_ROOT);
   sqlite3VdbeAddOp(v, OP_SetNumColumns, 0, 5); /* sqlite_master has 5 columns */
@@ -777,7 +867,7 @@ void sqlite3StartTable(
     {
       sqlite3VdbeAddOp(v, OP_CreateTable, iDb, 0);
     }
-    sqlite3OpenMasterTable(v, iDb);
+    sqlite3OpenMasterTable(pParse, iDb);
     sqlite3VdbeAddOp(v, OP_NewRowid, 0, 0);
     sqlite3VdbeAddOp(v, OP_Dup, 0, 0);
     sqlite3VdbeAddOp(v, OP_Null, 0, 0);
@@ -1374,6 +1464,11 @@ void sqlite3EndTable(
     ** Once the SELECT has been coded by sqlite3Select(), it is in a
     ** suitable state to query for the column names and types to be used
     ** by the new table.
+    **
+    ** A shared-cache write-lock is not required to write to the new table,
+    ** as a schema-lock must have already been obtained to create it. Since
+    ** a schema-lock excludes all other database users, the write-lock would
+    ** be redundant.
     */
     if( pSelect ){
       Table *pSelTab;
@@ -2052,6 +2147,9 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
     return;
   }
 
+  /* Require a write-lock on the table to perform this operation */
+  sqlite3TableLock(pParse, iDb, pTab->tnum, 1, pTab->zName);
+
   v = sqlite3GetVdbe(pParse);
   if( v==0 ) return;
   if( memRootPage>=0 ){
@@ -2064,7 +2162,7 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
   sqlite3VdbeAddOp(v, OP_Integer, iDb, 0);
   sqlite3VdbeOp3(v, OP_OpenWrite, iIdx, tnum,
                     (char*)&pIndex->keyInfo, P3_KEYINFO);
-  sqlite3OpenTableForReading(v, iTab, iDb, pTab);
+  sqlite3OpenTable(pParse, iTab, iDb, pTab, OP_OpenRead);
   addr1 = sqlite3VdbeAddOp(v, OP_Rewind, iTab, 0);
   sqlite3GenerateIndexKey(v, pIndex, iTab);
   if( pIndex->onError!=OE_None ){

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.285 2006/01/05 14:22:34 danielk1977 Exp $
+** $Id: select.c,v 1.286 2006/01/07 13:21:04 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -2229,6 +2229,7 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
   iCol = pExpr->iColumn;
   pTab = pSrc->a[0].pTab;
 
+
   /* If we get to here, it means the query is of the correct form.
   ** Check to make sure we have an index and make pIdx point to the
   ** appropriate index.  If the min() or max() is on an INTEGER PRIMARY
@@ -2266,11 +2267,12 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
   */
   iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
   sqlite3CodeVerifySchema(pParse, iDb);
+  sqlite3TableLock(pParse, iDb, pTab->tnum, 0, pTab->zName);
   base = pSrc->a[0].iCursor;
   brk = sqlite3VdbeMakeLabel(v);
   computeLimitRegisters(pParse, p, brk);
   if( pSrc->a[0].pSelect==0 ){
-    sqlite3OpenTableForReading(v, base, iDb, pTab);
+    sqlite3OpenTable(pParse, base, iDb, pTab, OP_OpenRead);
   }
   if( pIdx==0 ){
     sqlite3VdbeAddOp(v, seekOp, base, 0);

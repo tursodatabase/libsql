@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** in order to generate code for DELETE FROM statements.
 **
-** $Id: delete.c,v 1.114 2006/01/05 11:34:34 danielk1977 Exp $
+** $Id: delete.c,v 1.115 2006/01/07 13:21:04 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -59,15 +59,19 @@ int sqlite3IsReadOnly(Parse *pParse, Table *pTab, int viewOk){
 /*
 ** Generate code that will open a table for reading.
 */
-void sqlite3OpenTableForReading(
-  Vdbe *v,        /* Generate code into this VDBE */
+void sqlite3OpenTable(
+  Parse *p,       /* Generate code into this VDBE */
   int iCur,       /* The cursor number of the table */
   int iDb,        /* The database index in sqlite3.aDb[] */
-  Table *pTab     /* The table to be opened */
+  Table *pTab,    /* The table to be opened */
+  int opcode      /* OP_OpenRead or OP_OpenWrite */
 ){
+  Vdbe *v = sqlite3GetVdbe(p);
+  assert( opcode==OP_OpenWrite || opcode==OP_OpenRead );
+  sqlite3TableLock(p, iDb, pTab->tnum, (opcode==OP_OpenWrite), pTab->zName);
   sqlite3VdbeAddOp(v, OP_Integer, iDb, 0);
   VdbeComment((v, "# %s", pTab->zName));
-  sqlite3VdbeAddOp(v, OP_OpenRead, iCur, pTab->tnum);
+  sqlite3VdbeAddOp(v, opcode, iCur, pTab->tnum);
   sqlite3VdbeAddOp(v, OP_SetNumColumns, iCur, pTab->nCol);
 }
 
@@ -208,7 +212,7 @@ void sqlite3DeleteFrom(
       int endOfLoop = sqlite3VdbeMakeLabel(v);
       int addr;
       if( !isView ){
-        sqlite3OpenTableForReading(v, iCur, iDb, pTab);
+        sqlite3OpenTable(pParse, iCur, iDb, pTab, OP_OpenRead);
       }
       sqlite3VdbeAddOp(v, OP_Rewind, iCur, sqlite3VdbeCurrentAddr(v)+2);
       addr = sqlite3VdbeAddOp(v, OP_AddImm, 1, 0);
@@ -276,7 +280,7 @@ void sqlite3DeleteFrom(
       addr = sqlite3VdbeAddOp(v, OP_FifoRead, 0, end);
       if( !isView ){
         sqlite3VdbeAddOp(v, OP_Dup, 0, 0);
-        sqlite3OpenTableForReading(v, iCur, iDb, pTab);
+        sqlite3OpenTable(pParse, iCur, iDb, pTab, OP_OpenRead);
       }
       sqlite3VdbeAddOp(v, OP_MoveGe, iCur, 0);
       sqlite3VdbeAddOp(v, OP_Rowid, iCur, 0);

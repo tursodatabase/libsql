@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the SELECT statement.
 #
-# $Id: shared.test,v 1.5 2006/01/06 15:03:48 danielk1977 Exp $
+# $Id: shared.test,v 1.6 2006/01/07 13:21:04 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -34,6 +34,7 @@ set ::enable_shared_cache [sqlite3_enable_shared_cache 1]
 # shared-4.*: Check that the schema is locked and unlocked correctly.
 # shared-5.*: Test that creating/dropping schema items works when databases
 #             are attached in different orders to different handles.
+# shared-6.*: Locking, UNION ALL queries and sub-queries.
 #
 
 do_test shared-1.1 {
@@ -74,7 +75,7 @@ do_test shared-1.4 {
   catchsql {
     INSERT INTO abc VALUES(4, 5, 6);
   } db2
-} {1 {database table is locked}}
+} {1 {database table is locked: abc}}
 do_test shared-1.5 {
   # Using connection 2 (the one without the open transaction), try to create
   # a new table. This should fail because of the open read transaction 
@@ -82,7 +83,7 @@ do_test shared-1.5 {
   catchsql {
     CREATE TABLE def(d, e, f);
   } db2
-} {1 {database table is locked}}
+} {1 {database table is locked: sqlite_master}}
 do_test shared-1.6 {
   # Upgrade connection 1's transaction to a write transaction. Create
   # a new table - def - and insert a row into it. Because the connection 1
@@ -134,7 +135,7 @@ do_test shared-2.2 {
   catchsql {
     INSERT INTO abc VALUES(1, 2, 3);
   } db2
-} {1 {database table is locked}}
+} {1 {database table is locked: abc}}
 do_test shared-2.3 {
   # Turn db's transaction into a write-transaction. db3 should still be
   # able to read from table def (but will not see the new row). Connection
@@ -158,7 +159,7 @@ do_test shared-2.3 {
   ] [
     catchsql { SELECT * FROM def; } db2
   ]
-} {0 {IV V VI} 1 {database table is locked}}
+} {0 {IV V VI} 1 {database table is locked: def}}
 do_test shared-2.4 {
   # Commit the open transaction on db. db2 still holds a read-transaction.
   # This should prevent db3 from writing to the database, but not from 
@@ -290,12 +291,12 @@ do_test shared-4.3.2 {
   catchsql {
     INSERT INTO abc VALUES('iv', 'v', 'vi');
   }
-} {1 {database table is locked}}
+} {1 {database table is locked: abc}}
 do_test shared-4.3.3 {
   catchsql {
     CREATE TABLE ghi(g, h, i);
   }
-} {1 {database table is locked}}
+} {1 {database table is locked: sqlite_master}}
 do_test shared-4.3.3 {
   catchsql {
     INSERT INTO def VALUES('IV', 'V', 'VI');
@@ -405,6 +406,60 @@ do_test shared-5.1.2 {
   execsql {
     SELECT * FROM sqlite_master UNION ALL SELECT * FROM test1.sqlite_master
   } db1
+} {}
+
+#--------------------------------------------------------------------------
+# Tests shared-6.* test that a query obtains all the read-locks it needs
+# before starting execution of the query. This means that there is no chance
+# some rows of data will be returned before a lock fails and SQLITE_LOCK
+# is returned.
+#
+do_test shared-6.1.1 {
+  execsql {
+    CREATE TABLE t1(a, b);
+    CREATE TABLE t2(a, b);
+    INSERT INTO t1 VALUES(1, 2);
+    INSERT INTO t2 VALUES(3, 4);
+  } db1
+  execsql {
+    SELECT * FROM t1 UNION ALL SELECT * FROM t2;
+  } db2
+} {1 2 3 4}
+do_test shared-6.1.2 {
+  # Establish a write lock on table t2 via connection db2. Then make a 
+  # UNION all query using connection db1 that first accesses t1, followed 
+  # by t2. If the locks are grabbed at the start of the statement (as 
+  # they should be), no rows are returned. If (as was previously the case)
+  # they are grabbed as the tables are accessed, the t1 rows will be 
+  # returned before the query fails.
+  #
+  execsql {
+    BEGIN;
+    INSERT INTO t2 VALUES(5, 6);
+  } db2
+  set ret [list]
+  catch {
+    db1 eval {SELECT * FROM t1 UNION ALL SELECT * FROM t2} {
+      lappend ret $a $b
+    }
+  }
+  set ret
+} {}
+do_test shared-6.1.3 {
+  execsql {
+    COMMIT;
+    BEGIN;
+    INSERT INTO t1 VALUES(7, 8);
+  } db2
+  set ret [list]
+  catch {
+    db1 eval {
+      SELECT (CASE WHEN a>4 THEN (SELECT a FROM t1) ELSE 0 END) AS d FROM t2;
+    } {
+      lappend ret $d
+    }
+  }
+  set ret
 } {}
 
 catch {db1 close}

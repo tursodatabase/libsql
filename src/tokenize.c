@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.110 2005/12/09 20:02:06 drh Exp $
+** $Id: tokenize.c,v 1.111 2006/01/07 13:21:04 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -425,6 +425,13 @@ abort_parse:
     sqlite3VdbeDelete(pParse->pVdbe);
     pParse->pVdbe = 0;
   }
+#ifndef SQLITE_OMIT_SHARED_CACHE
+  if( pParse->nested==0 ){
+    sqliteFree(pParse->aTableLock);
+    pParse->aTableLock = 0;
+    pParse->nTableLock = 0;
+  }
+#endif
   sqlite3DeleteTable(pParse->db, pParse->pNewTable);
   sqlite3DeleteTrigger(pParse->pNewTrigger);
   sqliteFree(pParse->apVarExpr);

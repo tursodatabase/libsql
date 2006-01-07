@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.452 2006/01/06 15:03:48 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.453 2006/01/07 13:21:04 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -255,7 +255,7 @@ struct BusyHandler {
 #ifdef SQLITE_MEMDEBUG
 /*
 ** The following global variables are used for testing and debugging
-** only.  They only work if SQLITE_DEBUG is defined.
+** only.  They only work if SQLITE_MEMDEBUG is defined.
 */
 extern int sqlite3_nMalloc;      /* Number of sqliteMalloc() calls */
 extern int sqlite3_nFree;        /* Number of sqliteFree() calls */
@@ -264,19 +264,21 @@ extern int sqlite3_iMallocReset; /* Set iMallocFail to this when it reaches 0 */
 #define ENTER_MALLOC (\
   sqlite3Tsd()->zFile = __FILE__, sqlite3Tsd()->iLine = __LINE__ \
 )
-#define sqliteMalloc(x)        (ENTER_MALLOC, sqlite3Malloc(x))
-#define sqliteMallocRaw(x)     (ENTER_MALLOC, sqlite3MallocRaw(x))
-#define sqliteRealloc(x,y)     (ENTER_MALLOC, sqlite3Realloc(x,y))
-#define sqliteStrDup(x)        (ENTER_MALLOC, sqlite3StrDup(x))
-#define sqliteStrNDup(x,y)     (ENTER_MALLOC, sqlite3StrNDup(x,y))
+#define sqliteMalloc(x)          (ENTER_MALLOC, sqlite3Malloc(x))
+#define sqliteMallocRaw(x)       (ENTER_MALLOC, sqlite3MallocRaw(x))
+#define sqliteRealloc(x,y)       (ENTER_MALLOC, sqlite3Realloc(x,y))
+#define sqliteStrDup(x)          (ENTER_MALLOC, sqlite3StrDup(x))
+#define sqliteStrNDup(x,y)       (ENTER_MALLOC, sqlite3StrNDup(x,y))
+#define sqliteReallocOrFree(x,y) (ENTER_MALLOC, sqlite3ReallocOrFree(x,y))
 
 #else
 
-#define sqliteMalloc(x)        sqlite3Malloc(x)
-#define sqliteMallocRaw(x)     sqlite3MallocRaw(x)
-#define sqliteRealloc(x,y)     sqlite3Realloc(x,y)
-#define sqliteStrDup(x)        sqlite3StrDup(x)
-#define sqliteStrNDup(x,y)     sqlite3StrNDup(x,y)
+#define sqliteMalloc(x)          sqlite3Malloc(x)
+#define sqliteMallocRaw(x)       sqlite3MallocRaw(x)
+#define sqliteRealloc(x,y)       sqlite3Realloc(x,y)
+#define sqliteStrDup(x)          sqlite3StrDup(x)
+#define sqliteStrNDup(x,y)       sqlite3StrNDup(x,y)
+#define sqliteReallocOrFree(x,y) sqlite3ReallocOrFree(x,y)
 
 #endif
 
@@ -359,6 +361,7 @@ typedef struct Select Select;
 typedef struct SrcList SrcList;
 typedef struct SqliteTsd SqliteTsd;
 typedef struct Table Table;
+typedef struct TableLock TableLock;
 typedef struct Token Token;
 typedef struct TriggerStack TriggerStack;
 typedef struct TriggerStep TriggerStep;
@@ -1224,6 +1227,12 @@ struct Select {
 ** generate call themselves recursively, the first part of the structure
 ** is constant but the second part is reset at the beginning and end of
 ** each recursion.
+**
+** The nTableLock and aTableLock variables are only used if the shared-cache 
+** feature is enabled (if sqlite3Tsd()->useSharedData is true). They are
+** used to store the set of table-locks required by the statement being
+** compiled. Function sqlite3TableLock() is used to add entries to the
+** list.
 */
 struct Parse {
   sqlite3 *db;         /* The main database structure */
@@ -1243,6 +1252,10 @@ struct Parse {
   u32 cookieMask;      /* Bitmask of schema verified databases */
   int cookieGoto;      /* Address of OP_Goto to cookie verifier subroutine */
   int cookieValue[MAX_ATTACHED+2];  /* Values of cookies to verify */
+#ifndef SQLITE_OMIT_SHARED_CACHE
+  int nTableLock;        /* Number of locks in aTableLock */
+  TableLock *aTableLock; /* Required table locks for shared-cache mode */
+#endif
 
   /* Above is constant between recursions.  Below is reset before and after
   ** each recursion */
@@ -1505,7 +1518,7 @@ void sqlite3BeginParse(Parse*,int);
 void sqlite3RollbackInternalChanges(sqlite3*);
 void sqlite3CommitInternalChanges(sqlite3*);
 Table *sqlite3ResultSetOfSelect(Parse*,char*,Select*);
-void sqlite3OpenMasterTable(Vdbe *v, int);
+void sqlite3OpenMasterTable(Parse *, int);
 void sqlite3StartTable(Parse*,Token*,Token*,Token*,int,int,int);
 void sqlite3AddColumn(Parse*,Token*);
 void sqlite3AddNotNull(Parse*, int);
@@ -1546,8 +1559,7 @@ void sqlite3SelectDelete(Select*);
 void sqlite3SelectUnbind(Select*);
 Table *sqlite3SrcListLookup(Parse*, SrcList*);
 int sqlite3IsReadOnly(Parse*, Table*, int);
-void sqlite3OpenTableForReading(Vdbe*, int iCur, int iDb, Table*);
-void sqlite3OpenTable(Vdbe*, int iCur, Table*, int);
+void sqlite3OpenTable(Parse*, int iCur, int iDb, Table*, int);
 void sqlite3DeleteFrom(Parse*, SrcList*, Expr*);
 void sqlite3Update(Parse*, SrcList*, ExprList*, Expr*, int);
 WhereInfo *sqlite3WhereBegin(Parse*, SrcList*, Expr*, ExprList**);
@@ -1722,6 +1734,12 @@ void sqlite3MinimumFileFormat(Parse*, int, int);
 void sqlite3SchemaFree(void *);
 DbSchema *sqlite3SchemaGet(Btree *);
 int sqlite3SchemaToIndex(sqlite3 *db, DbSchema *);
+
+#ifndef SQLITE_OMIT_SHARED_CACHE
+  void sqlite3TableLock(Parse *, int, int, u8, const char *);
+#else
+  #define sqlite3TableLock(v,w,x,y,z)
+#endif
 
 void sqlite3MallocClearFailed();
 #ifdef NDEBUG

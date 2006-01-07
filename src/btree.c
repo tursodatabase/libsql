@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.284 2006/01/06 21:52:50 drh Exp $
+** $Id: btree.c,v 1.285 2006/01/07 13:21:04 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -2686,13 +2686,6 @@ int sqlite3BtreeCursor(
     }
   }
 
-#ifndef SQLITE_OMIT_SHARED_CACHE
-  rc = queryTableLock(p, iTable, wrFlag?WRITE_LOCK:READ_LOCK);
-  if( rc!=SQLITE_OK ){
-    return rc;
-  }
-#endif
-
   if( pBt->pPage1==0 ){
     rc = lockBtreeWithRetry(p);
     if( rc!=SQLITE_OK ){
@@ -2712,13 +2705,6 @@ int sqlite3BtreeCursor(
   }
   rc = getAndInitPage(pBt, pCur->pgnoRoot, &pCur->pPage, 0);
   if( rc!=SQLITE_OK ){
-    goto create_cursor_exception;
-  }
-
-  /* Obtain the table-lock on the shared-btree. */
-  rc = lockTable(p, iTable, wrFlag?WRITE_LOCK:READ_LOCK);
-  if( rc!=SQLITE_OK ){
-    assert( rc==SQLITE_NOMEM );
     goto create_cursor_exception;
   }
 
@@ -6490,6 +6476,15 @@ void *sqlite3BtreeSchema(Btree *p, int nBytes, void(*xFree)(void *)){
 */
 int sqlite3BtreeSchemaLocked(Btree *p){
   return (queryTableLock(p, MASTER_ROOT, READ_LOCK)!=SQLITE_OK);
+}
+
+int sqlite3BtreeLockTable(Btree *p, int iTab, u8 isWriteLock){
+  u8 lockType = (isWriteLock?WRITE_LOCK:READ_LOCK);
+  int rc = queryTableLock(p, iTab, lockType);
+  if( rc==SQLITE_OK ){
+    rc = lockTable(p, iTab, lockType);
+  }
+  return rc;
 }
 
 #ifndef SQLITE_OMIT_SHARED_CACHE
