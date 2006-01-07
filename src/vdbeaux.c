@@ -782,6 +782,7 @@ void sqlite3VdbeMakeReady(
   p->explain |= isExplain;
   p->magic = VDBE_MAGIC_RUN;
   p->nChange = 0;
+  p->cacheCtr = 1;
   p->minWriteFileFormat = 255;
 #ifdef VDBE_PROFILE
   {
@@ -1453,7 +1454,7 @@ int sqlite3VdbeCursorMoveto(Cursor *p){
     }
     sqlite3_search_count++;
     p->deferredMoveto = 0;
-    p->cacheValid = 0;
+    p->cacheStatus = CACHE_STALE;
   }
   return SQLITE_OK;
 }

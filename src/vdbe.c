@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.515 2006/01/07 18:10:33 drh Exp $
+** $Id: vdbe.c,v 1.516 2006/01/07 18:48:26 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -878,6 +878,9 @@ case OP_Callback: {            /* no-push */
   for(pMem = p->aStack; pMem<pFirstColumn; pMem++){
     Deephemeralize(pMem);
   }
+
+  /* Invalidate all ephemeral cursor row caches */
+  p->cacheCtr = (p->cacheCtr + 2)|1;
 
   /* Make sure the results of the current row are \000 terminated
   ** and have an assigned type.  The results are deephemeralized as
@@ -1908,7 +1911,7 @@ case OP_Column: {
     pCrsr = pC->pCursor;
     if( pC->nullRow ){
       payloadSize = 0;
-    }else if( pC->cacheValid ){
+    }else if( pC->cacheStatus==p->cacheCtr ){
       payloadSize = pC->payloadSize;
       zRec = (char*)pC->aRow;
     }else if( pC->isIndex ){
@@ -1924,7 +1927,7 @@ case OP_Column: {
     /* The record is the sole entry of a pseudo-table */
     payloadSize = pC->nData;
     zRec = pC->pData;
-    pC->cacheValid = 0;
+    pC->cacheStatus = CACHE_STALE;
     assert( payloadSize==0 || zRec!=0 );
     nField = pC->nField;
     pCrsr = 0;
@@ -1947,7 +1950,7 @@ case OP_Column: {
   /* Read and parse the table header.  Store the results of the parse
   ** into the record header cache fields of the cursor.
   */
-  if( pC && pC->cacheValid ){
+  if( pC && pC->cacheStatus==p->cacheCtr ){
     aType = pC->aType;
     aOffset = pC->aOffset;
   }else{
@@ -2042,7 +2045,7 @@ case OP_Column: {
       pC->payloadSize = payloadSize;
       pC->aType = aType;
       pC->aOffset = aOffset;
-      pC->cacheValid = 1;
+      pC->cacheStatus = p->cacheCtr;
     }
   }
 
@@ -2805,7 +2808,7 @@ case OP_MoveGt: {       /* no-push */
       pC->rowidIsValid = 0;
     }
     pC->deferredMoveto = 0;
-    pC->cacheValid = 0;
+    pC->cacheStatus = CACHE_STALE;
     *pC->pIncrKey = 0;
     sqlite3_search_count++;
     if( oc==OP_MoveGe || oc==OP_MoveGt ){
@@ -2906,7 +2909,7 @@ case OP_Found: {        /* no-push */
     rx = sqlite3BtreeMoveto(pC->pCursor, pTos->z, pTos->n, &res);
     alreadyExists = rx==SQLITE_OK && res==0;
     pC->deferredMoveto = 0;
-    pC->cacheValid = 0;
+    pC->cacheStatus = CACHE_STALE;
   }
   if( pOp->opcode==OP_Found ){
     if( alreadyExists ) pc = pOp->p2 - 1;
@@ -2980,7 +2983,7 @@ case OP_IsUnique: {        /* no-push */
     ** If there is no such entry, jump immediately to P2.
     */
     assert( pCx->deferredMoveto==0 );
-    pCx->cacheValid = 0;
+    pCx->cacheStatus = CACHE_STALE;
     rc = sqlite3BtreeMoveto(pCrsr, zKey, len, &res);
     if( rc!=SQLITE_OK ) goto abort_due_to_error;
     if( res<0 ){
@@ -3053,7 +3056,7 @@ case OP_NotExists: {        /* no-push */
     pC->lastRowid = pTos->i;
     pC->rowidIsValid = res==0;
     pC->nullRow = 0;
-    pC->cacheValid = 0;
+    pC->cacheStatus = CACHE_STALE;
     if( res!=0 ){
       pc = pOp->p2 - 1;
       pC->rowidIsValid = 0;
@@ -3229,7 +3232,7 @@ case OP_NewRowid: {
     }
     pC->rowidIsValid = 0;
     pC->deferredMoveto = 0;
-    pC->cacheValid = 0;
+    pC->cacheStatus = CACHE_STALE;
   }
   pTos++;
   pTos->i = v;
@@ -3303,7 +3306,7 @@ case OP_Insert: {         /* no-push */
     
     pC->rowidIsValid = 0;
     pC->deferredMoveto = 0;
-    pC->cacheValid = 0;
+    pC->cacheStatus = CACHE_STALE;
 
     /* Invoke the update-hook if required. */
     if( rc==SQLITE_OK && db->xUpdateCallback && pOp->p3 ){
@@ -3363,7 +3366,7 @@ case OP_Delete: {        /* no-push */
     if( rc ) goto abort_due_to_error;
     rc = sqlite3BtreeDelete(pC->pCursor);
     pC->nextRowidValid = 0;
-    pC->cacheValid = 0;
+    pC->cacheStatus = CACHE_STALE;
 
     /* Invoke the update-hook if required. */
     if( rc==SQLITE_OK && db->xUpdateCallback && pOp->p3 ){
@@ -3541,7 +3544,7 @@ case OP_Last: {        /* no-push */
     rc = sqlite3BtreeLast(pCrsr, &res);
     pC->nullRow = res;
     pC->deferredMoveto = 0;
-    pC->cacheValid = 0;
+    pC->cacheStatus = CACHE_STALE;
     if( res && pOp->p2>0 ){
       pc = pOp->p2 - 1;
     }
@@ -3590,7 +3593,7 @@ case OP_Rewind: {        /* no-push */
     rc = sqlite3BtreeFirst(pCrsr, &res);
     pC->atFirst = res==0;
     pC->deferredMoveto = 0;
-    pC->cacheValid = 0;
+    pC->cacheStatus = CACHE_STALE;
   }else{
     res = 1;
   }
@@ -3635,7 +3638,7 @@ case OP_Next: {        /* no-push */
       rc = pOp->opcode==OP_Next ? sqlite3BtreeNext(pCrsr, &res) :
                                   sqlite3BtreePrevious(pCrsr, &res);
       pC->nullRow = res;
-      pC->cacheValid = 0;
+      pC->cacheStatus = CACHE_STALE;
     }
     if( res==0 ){
       pc = pOp->p2 - 1;
@@ -3672,7 +3675,7 @@ case OP_IdxInsert: {        /* no-push */
     assert( pC->isTable==0 );
     rc = sqlite3BtreeInsert(pCrsr, zKey, nKey, "", 0);
     assert( pC->deferredMoveto==0 );
-    pC->cacheValid = 0;
+    pC->cacheStatus = CACHE_STALE;
   }
   Release(pTos);
   pTos--;
@@ -3699,7 +3702,7 @@ case OP_IdxDelete: {        /* no-push */
       rc = sqlite3BtreeDelete(pCrsr);
     }
     assert( pC->deferredMoveto==0 );
-    pC->cacheValid = 0;
+    pC->cacheStatus = CACHE_STALE;
   }
   Release(pTos);
   pTos--;

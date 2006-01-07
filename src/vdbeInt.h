@@ -86,9 +86,10 @@ struct Cursor {
 
   /* Cached information about the header for the data record that the
   ** cursor is currently pointing to.  Only valid if cacheValid is true.
-  ** zRow might point to (ephemeral) data for the current row, or it might
-  ** be NULL. */
-  Bool cacheValid;      /* True if the cache is valid */
+  ** aRow might point to (ephemeral) data for the current row, or it might
+  ** be NULL.
+  */
+  int cacheStatus;      /* Cache is valid if this matches Vdbe.cacheCtr */
   int payloadSize;      /* Total number of bytes in the record */
   u32 *aType;           /* Type values for all entries in the record */
   u32 *aOffset;         /* Cached offsets to the start of each columns data */
@@ -102,6 +103,11 @@ typedef struct Cursor Cursor;
 ** For Strings.
 */
 #define NBFS 32
+
+/*
+** A value for Cursor.cacheValid that means the cache is always invalid.
+*/
+#define CACHE_STALE 0
 
 /*
 ** Internally, the vdbe manipulates nearly all SQL values as Mem
@@ -287,6 +293,7 @@ struct Vdbe {
   int nMem;               /* Number of memory locations currently allocated */
   Mem *aMem;              /* The memory locations */
   int nCallback;          /* Number of callbacks invoked so far */
+  int cacheCtr;           /* Cursor row cache generation counter */
   Fifo sFifo;             /* A list of ROWIDs */
   int contextStackTop;    /* Index of top element in the context stack */
   int contextStackDepth;  /* The size of the "context" stack */
