@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.517 2006/01/08 05:26:41 drh Exp $
+** $Id: vdbe.c,v 1.518 2006/01/08 18:10:18 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -4277,28 +4277,26 @@ case OP_MemMax: {        /* no-push */
 }
 #endif /* SQLITE_OMIT_AUTOINCREMENT */
 
-/* Opcode: MemIncr P1 * *
+/* Opcode: MemIncr P1 P2 *
 **
-** Increment the integer valued memory cell P1 by 1.
+** Increment the integer valued memory cell P2 by the value in P1.
 **
 ** It is illegal to use this instruction on a memory cell that does
 ** not contain an integer.  An assertion fault will result if you try.
 */
 case OP_MemIncr: {        /* no-push */
-  int i = pOp->p1;
+  int i = pOp->p2;
   Mem *pMem;
   assert( i>=0 && i<p->nMem );
   pMem = &p->aMem[i];
   assert( pMem->flags==MEM_Int );
-  pMem->i++;
-  assert( pOp->p2==0 );
+  pMem->i += pOp->p1;
   break;
 }
 
 /* Opcode: IfMemPos P1 P2 *
 **
-** If the value of memory cell P1 is 1 or greater, jump to P2.  If
-** the memory cell holds an integer of 0 or less.
+** If the value of memory cell P1 is 1 or greater, jump to P2.
 **
 ** It is illegal to use this instruction on a memory cell that does
 ** not contain an integer.  An assertion fault will result if you try.
@@ -4310,6 +4308,25 @@ case OP_IfMemPos: {        /* no-push */
   pMem = &p->aMem[i];
   assert( pMem->flags==MEM_Int );
   if( pMem->i>0 ){
+     pc = pOp->p2 - 1;
+  }
+  break;
+}
+
+/* Opcode: IfMemNeg P1 P2 *
+**
+** If the value of memory cell P1 is less than zero, jump to P2. 
+**
+** It is illegal to use this instruction on a memory cell that does
+** not contain an integer.  An assertion fault will result if you try.
+*/
+case OP_IfMemNeg: {        /* no-push */
+  int i = pOp->p1;
+  Mem *pMem;
+  assert( i>=0 && i<p->nMem );
+  pMem = &p->aMem[i];
+  assert( pMem->flags==MEM_Int );
+  if( pMem->i<0 ){
      pc = pOp->p2 - 1;
   }
   break;

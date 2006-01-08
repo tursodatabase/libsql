@@ -12,7 +12,7 @@
 # focus of this file is testing the LIMIT ... OFFSET ... clause
 #  of SELECT statements.
 #
-# $Id: limit.test,v 1.25 2005/09/08 10:37:01 drh Exp $
+# $Id: limit.test,v 1.26 2006/01/08 18:10:18 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -44,6 +44,18 @@ do_test limit-1.2.2 {
   execsql {SELECT x FROM t1 ORDER BY x LIMIT 5 OFFSET 2}
 } {2 3 4 5 6}
 do_test limit-1.2.3 {
+  execsql {SELECT x FROM t1 ORDER BY x+1 LIMIT 5 OFFSET -2}
+} {0 1 2 3 4}
+do_test limit-1.2.4 {
+  execsql {SELECT x FROM t1 ORDER BY x+1 LIMIT 2, -5}
+} {2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31}
+do_test limit-1.2.5 {
+  execsql {SELECT x FROM t1 ORDER BY x+1 LIMIT -2, 5}
+} {0 1 2 3 4}
+do_test limit-1.2.6 {
+  execsql {SELECT x FROM t1 ORDER BY x+1 LIMIT -2, -5}
+} {0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31}
+do_test limit-1.2.7 {
   execsql {SELECT x FROM t1 ORDER BY x LIMIT 2, 5}
 } {2 3 4 5 6}
 do_test limit-1.3 {

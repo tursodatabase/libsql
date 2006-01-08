@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.109 2006/01/06 14:32:20 drh Exp $
+** $Id: pragma.c,v 1.110 2006/01/08 18:10:18 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -686,7 +686,7 @@ void sqlite3Pragma(
       sqlite3VdbeAddOp(v, OP_Pull, 1, 0);
       sqlite3VdbeAddOp(v, OP_Concat, 0, 1);
       sqlite3VdbeAddOp(v, OP_Callback, 1, 0);
-      sqlite3VdbeAddOp(v, OP_MemIncr, 0, 0);
+      sqlite3VdbeAddOp(v, OP_MemIncr, 1, 0);
 
       /* Make sure all the indices are constructed correctly.
       */
@@ -700,11 +700,11 @@ void sqlite3Pragma(
         sqlite3OpenTableAndIndices(pParse, pTab, 1, OP_OpenRead);
         sqlite3VdbeAddOp(v, OP_MemInt, 0, 1);
         loopTop = sqlite3VdbeAddOp(v, OP_Rewind, 1, 0);
-        sqlite3VdbeAddOp(v, OP_MemIncr, 1, 0);
+        sqlite3VdbeAddOp(v, OP_MemIncr, 1, 1);
         for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
           int jmp2;
           static const VdbeOpList idxErr[] = {
-            { OP_MemIncr,     0,  0,  0},
+            { OP_MemIncr,     1,  0,  0},
             { OP_String8,     0,  0,  "rowid "},
             { OP_Rowid,       1,  0,  0},
             { OP_String8,     0,  0,  " missing from index "},
@@ -724,12 +724,12 @@ void sqlite3Pragma(
           static const VdbeOpList cntIdx[] = {
              { OP_MemInt,       0,  2,  0},
              { OP_Rewind,       0,  0,  0},  /* 1 */
-             { OP_MemIncr,      2,  0,  0},
+             { OP_MemIncr,      1,  2,  0},
              { OP_Next,         0,  0,  0},  /* 3 */
              { OP_MemLoad,      1,  0,  0},
              { OP_MemLoad,      2,  0,  0},
              { OP_Eq,           0,  0,  0},  /* 6 */
-             { OP_MemIncr,      0,  0,  0},
+             { OP_MemIncr,      1,  0,  0},
              { OP_String8,      0,  0,  "wrong # of entries in index "},
              { OP_String8,      0,  0,  0},  /* 9 */
              { OP_Concat,       0,  0,  0},
