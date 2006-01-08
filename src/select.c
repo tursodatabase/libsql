@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.286 2006/01/07 13:21:04 danielk1977 Exp $
+** $Id: select.c,v 1.287 2006/01/08 05:02:55 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -351,12 +351,28 @@ void sqlite3SelectDelete(Select *p){
 ** Insert code into "v" that will push the record on the top of the
 ** stack into the sorter.
 */
-static void pushOntoSorter(Parse *pParse, Vdbe *v, ExprList *pOrderBy){
+static void pushOntoSorter(
+  Parse *pParse,         /* Parser context */
+  ExprList *pOrderBy,    /* The ORDER BY clause */
+  Select *pSelect        /* The whole SELECT statement */
+){
+  Vdbe *v = pParse->pVdbe;
   sqlite3ExprCodeExprList(pParse, pOrderBy);
   sqlite3VdbeAddOp(v, OP_Sequence, pOrderBy->iECursor, 0);
   sqlite3VdbeAddOp(v, OP_Pull, pOrderBy->nExpr + 1, 0);
   sqlite3VdbeAddOp(v, OP_MakeRecord, pOrderBy->nExpr + 2, 0);
   sqlite3VdbeAddOp(v, OP_IdxInsert, pOrderBy->iECursor, 0);
+  if( pSelect->iLimit>=0 ){
+    int addr1;
+    sqlite3VdbeAddOp(v, OP_MemIncr, pSelect->iLimit+1, 0);
+    addr1 = sqlite3VdbeAddOp(v, OP_IfMemPos, pSelect->iLimit+1, 0);
+    sqlite3VdbeAddOp(v, OP_Goto, 0, 0);
+    sqlite3VdbeJumpHere(v, addr1);
+    sqlite3VdbeAddOp(v, OP_Last, pOrderBy->iECursor, 0);
+    sqlite3VdbeAddOp(v, OP_Delete, pOrderBy->iECursor, 0);
+    sqlite3VdbeJumpHere(v, addr1+1);
+    pSelect->iLimit = -1;
+  }
 }
 
 /*
@@ -504,7 +520,7 @@ static int selectInnerLoop(
     case SRT_VirtualTab: {
       sqlite3VdbeAddOp(v, OP_MakeRecord, nColumn, 0);
       if( pOrderBy ){
-        pushOntoSorter(pParse, v, pOrderBy);
+        pushOntoSorter(pParse, pOrderBy, p);
       }else{
         sqlite3VdbeAddOp(v, OP_NewRowid, iParm, 0);
         sqlite3VdbeAddOp(v, OP_Pull, 1, 0);
@@ -531,7 +547,7 @@ static int selectInnerLoop(
         ** ORDER BY in this case since the order of entries in the set
         ** does not matter.  But there might be a LIMIT clause, in which
         ** case the order does matter */
-        pushOntoSorter(pParse, v, pOrderBy);
+        pushOntoSorter(pParse, pOrderBy, p);
       }else{
         char aff = (iParm>>16)&0xFF;
         aff = sqlite3CompareAffinity(pEList->a[0].pExpr, aff);
@@ -558,7 +574,7 @@ static int selectInnerLoop(
     case SRT_Mem: {
       assert( nColumn==1 );
       if( pOrderBy ){
-        pushOntoSorter(pParse, v, pOrderBy);
+        pushOntoSorter(pParse, pOrderBy, p);
       }else{
         sqlite3VdbeAddOp(v, OP_MemStore, iParm, 1);
         /* The LIMIT clause will jump out of the loop for us */
@@ -575,7 +591,7 @@ static int selectInnerLoop(
     case SRT_Callback: {
       if( pOrderBy ){
         sqlite3VdbeAddOp(v, OP_MakeRecord, nColumn, 0);
-        pushOntoSorter(pParse, v, pOrderBy);
+        pushOntoSorter(pParse, pOrderBy, p);
       }else if( eDest==SRT_Subroutine ){
         sqlite3VdbeAddOp(v, OP_Gosub, 0, iParm);
       }else{
@@ -1358,7 +1374,7 @@ Vdbe *sqlite3GetVdbe(Parse *pParse){
 ** the limit and offset.  If there is no limit and/or offset, then 
 ** iLimit and iOffset are negative.
 **
-** This routine changes the values if iLimit and iOffset only if
+** This routine changes the values of iLimit and iOffset only if
 ** a limit or offset is defined by pLimit and pOffset.  iLimit and
 ** iOffset should have been preset to appropriate default values
 ** (usually but not always -1) prior to calling this routine.
@@ -1375,13 +1391,14 @@ static void computeLimitRegisters(Parse *pParse, Select *p, int iBreak){
   ** no rows.
   */
   if( p->pLimit ){
-    int iMem = pParse->nMem++;
+    int iMem = pParse->nMem;
+    pParse->nMem += 2;
     Vdbe *v = sqlite3GetVdbe(pParse);
     if( v==0 ) return;
     sqlite3ExprCode(pParse, p->pLimit);
     sqlite3VdbeAddOp(v, OP_MustBeInt, 0, 0);
     sqlite3VdbeAddOp(v, OP_Negative, 0, 0);
-    sqlite3VdbeAddOp(v, OP_MemStore, iMem, 1);
+    sqlite3VdbeAddOp(v, OP_MemStore, iMem, 0);
     VdbeComment((v, "# LIMIT counter"));
     sqlite3VdbeAddOp(v, OP_IfMemZero, iMem, iBreak);
     p->iLimit = iMem;
@@ -1393,9 +1410,17 @@ static void computeLimitRegisters(Parse *pParse, Select *p, int iBreak){
     sqlite3ExprCode(pParse, p->pOffset);
     sqlite3VdbeAddOp(v, OP_MustBeInt, 0, 0);
     sqlite3VdbeAddOp(v, OP_Negative, 0, 0);
-    sqlite3VdbeAddOp(v, OP_MemStore, iMem, 1);
+    sqlite3VdbeAddOp(v, OP_MemStore, iMem, p->pLimit==0);
     VdbeComment((v, "# OFFSET counter"));
+    if( p->pLimit ){
+      sqlite3VdbeAddOp(v, OP_Add, 0, 0);
+    }
     p->iOffset = iMem;
+  }
+  if( p->pLimit ){
+    Vdbe *v = pParse->pVdbe;
+    sqlite3VdbeAddOp(v, OP_MemStore, p->iLimit+1, 1);
+    VdbeComment((v, "# LIMIT+OFFSET"));
   }
 }
 
