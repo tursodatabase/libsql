@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.516 2006/01/07 18:48:26 drh Exp $
+** $Id: vdbe.c,v 1.517 2006/01/08 05:26:41 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -4277,14 +4277,12 @@ case OP_MemMax: {        /* no-push */
 }
 #endif /* SQLITE_OMIT_AUTOINCREMENT */
 
-/* Opcode: MemIncr P1 P2 *
+/* Opcode: MemIncr P1 * *
 **
-** Increment the integer valued memory cell P1 by 1.  If P2 is not zero
-** and the result after the increment is exactly 0, then jump
-** to P2.
+** Increment the integer valued memory cell P1 by 1.
 **
-** This instruction throws an error if the memory cell is not initially
-** an integer.
+** It is illegal to use this instruction on a memory cell that does
+** not contain an integer.  An assertion fault will result if you try.
 */
 case OP_MemIncr: {        /* no-push */
   int i = pOp->p1;
@@ -4293,24 +4291,25 @@ case OP_MemIncr: {        /* no-push */
   pMem = &p->aMem[i];
   assert( pMem->flags==MEM_Int );
   pMem->i++;
-  if( pOp->p2>0 && pMem->i==0 ){
-     pc = pOp->p2 - 1;
-  }
+  assert( pOp->p2==0 );
   break;
 }
 
 /* Opcode: IfMemPos P1 P2 *
 **
 ** If the value of memory cell P1 is 1 or greater, jump to P2.  If
-** the memory cell holds an integer of 0 or less or if it holds something
-** that is not an integer, then fall thru.
+** the memory cell holds an integer of 0 or less.
+**
+** It is illegal to use this instruction on a memory cell that does
+** not contain an integer.  An assertion fault will result if you try.
 */
 case OP_IfMemPos: {        /* no-push */
   int i = pOp->p1;
   Mem *pMem;
   assert( i>=0 && i<p->nMem );
   pMem = &p->aMem[i];
-  if( pMem->flags==MEM_Int && pMem->i>0 ){
+  assert( pMem->flags==MEM_Int );
+  if( pMem->i>0 ){
      pc = pOp->p2 - 1;
   }
   break;
@@ -4318,14 +4317,18 @@ case OP_IfMemPos: {        /* no-push */
 
 /* Opcode: IfMemZero P1 P2 *
 **
-** If the value of memory cell P1 is exactly 0, jump to P2.
+** If the value of memory cell P1 is exactly 0, jump to P2. 
+**
+** It is illegal to use this instruction on a memory cell that does
+** not contain an integer.  An assertion fault will result if you try.
 */
 case OP_IfMemZero: {        /* no-push */
   int i = pOp->p1;
   Mem *pMem;
   assert( i>=0 && i<p->nMem );
   pMem = &p->aMem[i];
-  if( pMem->flags==MEM_Int && pMem->i==0 ){
+  assert( pMem->flags==MEM_Int );
+  if( pMem->i==0 ){
      pc = pOp->p2 - 1;
   }
   break;
