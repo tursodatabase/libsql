@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code associated with the ANALYZE command.
 **
-** @(#) $Id: analyze.c,v 1.14 2006/01/08 18:10:18 drh Exp $
+** @(#) $Id: analyze.c,v 1.15 2006/01/09 06:29:48 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_ANALYZE
 #include "sqliteInt.h"
@@ -228,7 +228,7 @@ static void loadAnalysis(Parse *pParse, int iDb){
 */
 static void analyzeDatabase(Parse *pParse, int iDb){
   sqlite3 *db = pParse->db;
-  DbSchema *pSchema = db->aDb[iDb].pSchema;    /* Schema of database iDb */
+  Schema *pSchema = db->aDb[iDb].pSchema;    /* Schema of database iDb */
   HashElem *k;
   int iStatCur;
   int iMem;

@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.15 2006/01/06 21:52:50 drh Exp $
+** $Id: prepare.c,v 1.16 2006/01/09 06:29:49 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -24,7 +24,7 @@
 ** that the database is corrupt.
 */
 static void corruptSchema(InitData *pData, const char *zExtra){
-  if( !sqlite3Tsd()->mallocFailed ){
+  if( !sqlite3ThreadData()->mallocFailed ){
     sqlite3SetString(pData->pzErrMsg, "malformed database schema",
        zExtra!=0 && zExtra[0]!=0 ? " - " : (char*)0, zExtra, (char*)0);
   }
@@ -49,7 +49,7 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **azColName){
   sqlite3 *db = pData->db;
   int iDb;
 
-  if( sqlite3Tsd()->mallocFailed ){
+  if( sqlite3ThreadData()->mallocFailed ){
     return SQLITE_NOMEM;
   }
 
@@ -76,7 +76,7 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **azColName){
     db->init.iDb = 0;
     if( SQLITE_OK!=rc ){
       if( rc==SQLITE_NOMEM ){
-          sqlite3Tsd()->mallocFailed = 1;
+          sqlite3ThreadData()->mallocFailed = 1;
       }else{
           corruptSchema(pData, zErr);
       }
@@ -156,7 +156,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   assert( iDb>=0 && iDb<db->nDb );
 
   if( 0==db->aDb[iDb].pSchema ){
-    DbSchema *pS = sqlite3BtreeSchema(db->aDb[iDb].pBt, sizeof(DbSchema), 
+    Schema *pS = sqlite3BtreeSchema(db->aDb[iDb].pBt, sizeof(Schema), 
         sqlite3SchemaFree);
     db->aDb[iDb].pSchema = pS;
     if( !pS ){
@@ -313,7 +313,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
 #endif
     sqlite3BtreeCloseCursor(curMain);
   }
-  if( sqlite3Tsd()->mallocFailed ){
+  if( sqlite3ThreadData()->mallocFailed ){
     sqlite3SetString(pzErrMsg, "out of memory", (char*)0);
     rc = SQLITE_NOMEM;
     sqlite3ResetInternalSchema(db, 0);
@@ -425,7 +425,7 @@ static int schemaIsValid(sqlite3 *db){
 
 /*
 ** Free all resources held by the schema structure. The void* argument points
-** at a DbSchema struct. This function does not call sqliteFree() on the 
+** at a Schema struct. This function does not call sqliteFree() on the 
 ** pointer itself, it just cleans up subsiduary resources (i.e. the contents
 ** of the schema hash tables).
 */
@@ -433,7 +433,7 @@ void sqlite3SchemaFree(void *p){
   Hash temp1;
   Hash temp2;
   HashElem *pElem;
-  DbSchema *pSchema = (DbSchema *)p;
+  Schema *pSchema = (Schema *)p;
 
   temp1 = pSchema->tblHash;
   temp2 = pSchema->trigHash;
@@ -454,12 +454,12 @@ void sqlite3SchemaFree(void *p){
   pSchema->flags &= ~DB_SchemaLoaded;
 }
 
-DbSchema *sqlite3SchemaGet(Btree *pBt){
-  DbSchema * p;
+Schema *sqlite3SchemaGet(Btree *pBt){
+  Schema * p;
   if( pBt ){
-    p = (DbSchema *)sqlite3BtreeSchema(pBt,sizeof(DbSchema),sqlite3SchemaFree);
+    p = (Schema *)sqlite3BtreeSchema(pBt,sizeof(Schema),sqlite3SchemaFree);
   }else{
-    p = (DbSchema *)sqliteMalloc(sizeof(DbSchema));
+    p = (Schema *)sqliteMalloc(sizeof(Schema));
   }
   if( p && 0==p->file_format ){
     sqlite3HashInit(&p->tblHash, SQLITE_HASH_STRING, 0);
@@ -470,7 +470,7 @@ DbSchema *sqlite3SchemaGet(Btree *pBt){
   return p;
 }
 
-int sqlite3SchemaToIndex(sqlite3 *db, DbSchema *pSchema){
+int sqlite3SchemaToIndex(sqlite3 *db, Schema *pSchema){
   int i = -1000000;
 
   /* If pSchema is NULL, then return -1000000. This happens when code in 
@@ -509,7 +509,7 @@ int sqlite3_prepare(
   int rc = SQLITE_OK;
   int i;
 
-  assert( !sqlite3Tsd()->mallocFailed );
+  assert( !sqlite3ThreadData()->mallocFailed );
 
   assert( ppStmt );
   *ppStmt = 0;
@@ -534,7 +534,7 @@ int sqlite3_prepare(
   sParse.db = db;
   sqlite3RunParser(&sParse, zSql, &zErrMsg);
 
-  if( sqlite3Tsd()->mallocFailed ){
+  if( sqlite3ThreadData()->mallocFailed ){
     sParse.rc = SQLITE_NOMEM;
   }
   if( sParse.rc==SQLITE_DONE ) sParse.rc = SQLITE_OK;
@@ -584,7 +584,7 @@ int sqlite3_prepare(
   /* We must check for malloc failure last of all, in case malloc() failed
   ** inside of the sqlite3Error() call above or something.
   */
-  if( sqlite3Tsd()->mallocFailed ){
+  if( sqlite3ThreadData()->mallocFailed ){
     rc = SQLITE_NOMEM;
     sqlite3Error(db, rc, 0);
   }

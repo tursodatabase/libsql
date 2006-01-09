@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the ATTACH and DETACH commands.
 **
-** $Id: attach.c,v 1.40 2006/01/06 21:52:50 drh Exp $
+** $Id: attach.c,v 1.41 2006/01/09 06:29:48 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -267,7 +267,7 @@ static void codeAttach(
   sqlite3* db = pParse->db;
 
 #ifndef SQLITE_OMIT_AUTHORIZATION
-  assert( sqlite3Tsd()->mallocFailed || pAuthArg );
+  assert( sqlite3ThreadData()->mallocFailed || pAuthArg );
   if( pAuthArg ){
     char *zAuthArg = sqlite3NameFromToken(&pAuthArg->span);
     if( !zAuthArg ){
@@ -298,7 +298,7 @@ static void codeAttach(
   sqlite3ExprCode(pParse, pDbname);
   sqlite3ExprCode(pParse, pKey);
 
-  assert(v || sqlite3Tsd()->mallocFailed);
+  assert(v || sqlite3ThreadData()->mallocFailed);
   if( v ){
     sqlite3VdbeAddOp(v, OP_Function, 0, nFunc);
     pFunc = sqlite3FindFunction(db, zFunc, strlen(zFunc), nFunc, SQLITE_UTF8,0);

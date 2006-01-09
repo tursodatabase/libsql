@@ -102,7 +102,7 @@ int sqlite3VdbeAddOp(Vdbe *p, int op, int p1, int p2){
   p->nOp++;
   assert( p->magic==VDBE_MAGIC_INIT );
   resizeOpArray(p, i+1);
-  if( sqlite3Tsd()->mallocFailed ){
+  if( sqlite3ThreadData()->mallocFailed ){
     return 0;
   }
   pOp = &p->aOp[i];
@@ -301,7 +301,7 @@ int sqlite3VdbeAddOpList(Vdbe *p, int nOp, VdbeOpList const *aOp){
   int addr;
   assert( p->magic==VDBE_MAGIC_INIT );
   resizeOpArray(p, p->nOp + nOp);
-  if( sqlite3Tsd()->mallocFailed ){
+  if( sqlite3ThreadData()->mallocFailed ){
     return 0;
   }
   addr = p->nOp;
@@ -415,7 +415,7 @@ static void freeP3(int p3type, void *p3){
 void sqlite3VdbeChangeP3(Vdbe *p, int addr, const char *zP3, int n){
   Op *pOp;
   assert( p->magic==VDBE_MAGIC_INIT );
-  if( p==0 || p->aOp==0 || sqlite3Tsd()->mallocFailed ){
+  if( p==0 || p->aOp==0 || sqlite3ThreadData()->mallocFailed ){
     if (n != P3_KEYINFO) {
       freeP3(n, (void*)*(char**)&zP3);
     }
@@ -472,7 +472,7 @@ void sqlite3VdbeChangeP3(Vdbe *p, int addr, const char *zP3, int n){
 void sqlite3VdbeComment(Vdbe *p, const char *zFormat, ...){
   va_list ap;
   assert( p->nOp>0 );
-  assert( p->aOp==0 || p->aOp[p->nOp-1].p3==0 || sqlite3Tsd()->mallocFailed );
+  assert( p->aOp==0 || p->aOp[p->nOp-1].p3==0 || sqlite3ThreadData()->mallocFailed );
   va_start(ap, zFormat);
   sqlite3VdbeChangeP3(p, -1, sqlite3VMPrintf(zFormat, ap), P3_DYNAMIC);
   va_end(ap);
@@ -738,7 +738,7 @@ void sqlite3VdbeMakeReady(
       + nMem*sizeof(Mem)               /* aMem */
       + nCursor*sizeof(Cursor*)        /* apCsr */
     );
-    if( !sqlite3Tsd()->mallocFailed ){
+    if( !sqlite3ThreadData()->mallocFailed ){
       p->aMem = &p->aStack[nStack];
       p->nMem = nMem;
       p->aVar = &p->aMem[nMem];
@@ -890,7 +890,7 @@ int sqlite3VdbeSetColName(Vdbe *p, int idx, const char *zName, int N){
   int rc;
   Mem *pColName;
   assert( idx<(2*p->nResColumn) );
-  if( sqlite3Tsd()->mallocFailed ) return SQLITE_NOMEM;
+  if( sqlite3ThreadData()->mallocFailed ) return SQLITE_NOMEM;
   assert( p->aColName!=0 );
   pColName = &(p->aColName[idx]);
   if( N==P3_DYNAMIC || N==P3_STATIC ){
@@ -1153,7 +1153,7 @@ int sqlite3VdbeHalt(Vdbe *p){
   int i;
   int (*xFunc)(Btree *pBt) = 0;  /* Function to call on each btree backend */
 
-  if( sqlite3Tsd()->mallocFailed ){
+  if( sqlite3ThreadData()->mallocFailed ){
     p->rc = SQLITE_NOMEM;
   }
 

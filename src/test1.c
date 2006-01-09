@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.183 2006/01/07 16:06:07 drh Exp $
+** $Id: test1.c,v 1.184 2006/01/09 06:29:49 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -829,7 +829,7 @@ static int sqlite3_mprintf_hexdouble(
 ** first failure will continue to fail on every call.  If REPEAT-INTERVAL is
 ** 2 then every other malloc will fail.  And so forth.
 **
-** Turn off this mechanism and reset the sqlite3Tsd()->mallocFailed variable is N==0.
+** Turn off this mechanism and reset the sqlite3ThreadData()->mallocFailed variable is N==0.
 */
 #ifdef SQLITE_MEMDEBUG
 static int sqlite_malloc_fail(
@@ -911,12 +911,12 @@ static int sqlite_malloc_outstanding(
   if( objc==2 ){
     const char *zArg = Tcl_GetString(objv[1]);
     if( 0==strcmp(zArg, "-bytes") ){
-      Tcl_SetObjResult(interp, Tcl_NewIntObj(sqlite3Tsd()->nAlloc));
+      Tcl_SetObjResult(interp, Tcl_NewIntObj(sqlite3ThreadData()->nAlloc));
 #ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
     }else if( 0==strcmp(zArg, "-maxbytes") ){
-      Tcl_SetObjResult(interp, Tcl_NewWideIntObj(sqlite3Tsd()->nMaxAlloc));
+      Tcl_SetObjResult(interp, Tcl_NewWideIntObj(sqlite3ThreadData()->nMaxAlloc));
     }else if( 0==strcmp(zArg, "-clearmaxbytes") ){
-      sqlite3Tsd()->nMaxAlloc = sqlite3Tsd()->nAlloc;
+      sqlite3ThreadData()->nMaxAlloc = sqlite3ThreadData()->nAlloc;
 #endif
     }else{
       Tcl_AppendResult(interp, "bad option \"", zArg, 
@@ -945,7 +945,7 @@ static int test_enable_shared_cache(
 ){
   int rc;
   int enable;
-  SqliteTsd *pTsd = sqlite3Tsd();
+  ThreadData *pTsd = sqlite3ThreadData();
   Tcl_SetObjResult(interp, Tcl_NewBooleanObj(pTsd->useSharedData));
 
   if( objc!=2 ){
@@ -2988,7 +2988,7 @@ static int test_soft_heap_limit(
     Tcl_WrongNumArgs(interp, 1, objv, "?N?");
     return TCL_ERROR;
   }
-  amt = sqlite3Tsd()->nSoftHeapLimit;
+  amt = sqlite3ThreadData()->nSoftHeapLimit;
   if( objc==2 ){
     int N;
     if( Tcl_GetIntFromObj(interp, objv[1], &N) ) return TCL_ERROR;

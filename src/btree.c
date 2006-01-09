@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.286 2006/01/09 05:36:27 danielk1977 Exp $
+** $Id: btree.c,v 1.287 2006/01/09 06:29:48 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -345,13 +345,13 @@ struct BtShared {
   int minLeaf;          /* Minimum local payload in a LEAFDATA table */
   BusyHandler *pBusyHandler;   /* Callback for when there is lock contention */
   u8 inTransaction;     /* Transaction state */
-  BtShared *pNext;      /* Next in SqliteTsd.pBtree linked list */
   int nRef;             /* Number of references to this structure */
   int nTransaction;     /* Number of open transactions (read + write) */
   void *pSchema;        /* Pointer to space allocated by sqlite3BtreeSchema() */
   void (*xFreeSchema)(void*);  /* Destructor for BtShared.pSchema */
 #ifndef SQLITE_OMIT_SHARED_CACHE
   BtLock *pLock;        /* List of locks held on this shared-btree struct */
+  BtShared *pNext;      /* Next in ThreadData.pBtree linked list */
 #endif
 };
 
@@ -557,7 +557,7 @@ static int saveCursorPosition(BtCursor *pCur){
 */
 static int saveAllCursors(BtShared *pBt, Pgno iRoot, BtCursor *pExcept){
   BtCursor *p;
-  if( sqlite3Tsd()->useSharedData ){
+  if( sqlite3ThreadData()->useSharedData ){
     for(p=pBt->pCursor; p; p=p->pNext){
       if( p!=pExcept && p->pgnoRoot==iRoot && p->eState==CURSOR_VALID ){
         int rc = saveCursorPosition(p);
@@ -584,7 +584,7 @@ static int saveAllCursors(BtShared *pBt, Pgno iRoot, BtCursor *pExcept){
 static int restoreCursorPosition(BtCursor *pCur, int doSeek){
   int rc = SQLITE_OK;
   if( pCur->eState==CURSOR_REQUIRESEEK ){
-    assert( sqlite3Tsd()->useSharedData );
+    assert( sqlite3ThreadData()->useSharedData );
     if( doSeek ){
       rc = sqlite3BtreeMoveto(pCur, pCur->pKey, pCur->nKey, &pCur->skip);
     }else{
@@ -610,7 +610,7 @@ static int queryTableLock(Btree *p, Pgno iTab, u8 eLock){
   BtLock *pIter;
 
   /* This is a no-op if the shared-cache is not enabled */
-  if( 0==sqlite3Tsd()->useSharedData ){
+  if( 0==sqlite3ThreadData()->useSharedData ){
     return SQLITE_OK;
   }
 
@@ -658,7 +658,7 @@ static int lockTable(Btree *p, Pgno iTable, u8 eLock){
   BtLock *pIter;
 
   /* This is a no-op if the shared-cache is not enabled */
-  if( 0==sqlite3Tsd()->useSharedData ){
+  if( 0==sqlite3ThreadData()->useSharedData ){
     return SQLITE_OK;
   }
 
@@ -723,7 +723,7 @@ static void unlockAllTables(Btree *p){
   ** locks in the BtShared.pLock list, making this procedure a no-op. Assert
   ** that this is the case.
   */
-  assert( sqlite3Tsd()->useSharedData || 0==*ppIter );
+  assert( sqlite3ThreadData()->useSharedData || 0==*ppIter );
 
   while( *ppIter ){
     BtLock *pLock = *ppIter;
@@ -1547,7 +1547,7 @@ int sqlite3BtreeOpen(
   int nReserve;
   unsigned char zDbHeader[100];
 #ifndef SQLITE_OMIT_SHARED_CACHE
-  SqliteTsd *pTsd = sqlite3Tsd();
+  ThreadData *pTsd = sqlite3ThreadData();
 #endif
 
   /* Set the variable isMemdb to true for an in-memory database, or 
@@ -1658,7 +1658,7 @@ int sqlite3BtreeOpen(
   sqlite3pager_set_pagesize(pBt->pPager, pBt->pageSize);
 
 #ifndef SQLITE_OMIT_SHARED_CACHE
-  /* Add the new btree to the linked list starting at SqliteTsd.pBtree */
+  /* Add the new btree to the linked list starting at ThreadData.pBtree */
   if( pTsd->useSharedData && zFilename && !isMemdb ){
     pBt->pNext = pTsd->pBtree;
     pTsd->pBtree = pBt;
@@ -1677,7 +1677,7 @@ int sqlite3BtreeClose(Btree *p){
   BtCursor *pCur;
 
 #ifndef SQLITE_OMIT_SHARED_CACHE
-  SqliteTsd *pTsd = sqlite3Tsd();
+  ThreadData *pTsd = sqlite3ThreadData();
 #endif
 
   /* Drop any table-locks */
@@ -2305,11 +2305,11 @@ static int allocatePage(BtShared *, MemPage **, Pgno *, Pgno, u8);
 */
 static int autoVacuumCommit(BtShared *pBt, Pgno *nTrunc){
   Pager *pPager = pBt->pPager;
-  Pgno nFreeList;   /* Number of pages remaining on the free-list. */
-  int nPtrMap;      /* Number of pointer-map pages deallocated */
-  Pgno origSize;  /* Pages in the database file */
-  Pgno finSize;   /* Pages in the database file after truncation */
-  int rc;           /* Return code */
+  Pgno nFreeList;            /* Number of pages remaining on the free-list. */
+  int nPtrMap;               /* Number of pointer-map pages deallocated */
+  Pgno origSize;             /* Pages in the database file */
+  Pgno finSize;              /* Pages in the database file after truncation */
+  int rc;                    /* Return code */
   u8 eType;
   int pgsz = pBt->pageSize;  /* Page size for this database */
   Pgno iDbPage;              /* The database page to move */
@@ -2392,6 +2392,12 @@ static int autoVacuumCommit(BtShared *pBt, Pgno *nTrunc){
     releasePage(pFreeMemPage);
     pFreeMemPage = 0;
 
+    /* Relocate the page into the body of the file. Note that although the 
+    ** page has moved within the database file, the pDbMemPage pointer 
+    ** remains valid. This means that this function can run without
+    ** invalidating cursors open on the btree. This is important in 
+    ** shared-cache mode.
+    */
     rc = relocatePage(pBt, pDbMemPage, eType, iPtrPage, iFreePage);
     releasePage(pDbMemPage);
     if( rc!=SQLITE_OK ) goto autovacuum_out;
@@ -6498,7 +6504,7 @@ int sqlite3BtreeLockTable(Btree *p, int iTab, u8 isWriteLock){
 ** Enable the shared pager and schema features.
 */
 int sqlite3_enable_shared_cache(int enable){
-  SqliteTsd *pTsd = sqlite3Tsd();
+  ThreadData *pTsd = sqlite3ThreadData();
   if( pTsd->pPager ){
     return SQLITE_MISUSE;
   }

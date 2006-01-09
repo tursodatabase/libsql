@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.54 2006/01/06 14:32:20 drh Exp $
+** $Id: vacuum.c,v 1.55 2006/01/09 06:29:49 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -311,8 +311,8 @@ end_of_vacuum:
   db->autoCommit = 1;
 
   if( pDetach ){
-    int mf = sqlite3Tsd()->mallocFailed;
-    sqlite3Tsd()->mallocFailed = 0;
+    int mf = sqlite3ThreadData()->mallocFailed;
+    sqlite3ThreadData()->mallocFailed = 0;
     sqlite3MallocDisallow();
     ((Vdbe *)pDetach)->expired = 0;
     sqlite3_step(pDetach);
@@ -321,7 +321,7 @@ end_of_vacuum:
       rc = rc2;
     }
     sqlite3MallocAllow();
-    sqlite3Tsd()->mallocFailed = mf;
+    sqlite3ThreadData()->mallocFailed = mf;
   }
 
   /* If one of the execSql() calls above returned SQLITE_NOMEM, then the
@@ -329,7 +329,7 @@ end_of_vacuum:
   ** Fix this so the flag and return code match.
   */
   if( rc==SQLITE_NOMEM ){
-    sqlite3Tsd()->mallocFailed = 1;
+    sqlite3ThreadData()->mallocFailed = 1;
   }
 
   if( zTemp ){

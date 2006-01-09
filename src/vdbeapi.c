@@ -156,7 +156,7 @@ int sqlite3_step(sqlite3_stmt *pStmt){
   sqlite3 *db;
   int rc;
 
-  assert(!sqlite3Tsd()->mallocFailed);
+  assert(!sqlite3ThreadData()->mallocFailed);
 
   if( p==0 || p->magic!=VDBE_MAGIC_RUN ){
     return SQLITE_MISUSE;
@@ -404,7 +404,7 @@ static void columnMallocFailure(sqlite3_stmt *pStmt)
   ** SQLITE_NOMEM. The next call to _step() (if any) will return SQLITE_ERROR
   ** and _finalize() will return NOMEM.
   */
-  if( sqlite3Tsd()->mallocFailed ){
+  if( sqlite3ThreadData()->mallocFailed ){
     ((Vdbe *)pStmt)->rc = SQLITE_NOMEM;
     sqlite3MallocClearFailed();
   }

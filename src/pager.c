@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.231 2006/01/06 14:32:20 drh Exp $
+** @(#) $Id: pager.c,v 1.232 2006/01/09 06:29:49 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1623,14 +1623,14 @@ int sqlite3pager_open(
   int useJournal = (flags & PAGER_OMIT_JOURNAL)==0;
   int noReadlock = (flags & PAGER_NO_READLOCK)!=0;
   char zTemp[SQLITE_TEMPNAME_SIZE];
-  SqliteTsd *pTsd = sqlite3Tsd();
+  ThreadData *pTsd = sqlite3ThreadData();
 
   /* If malloc() has already failed return SQLITE_NOMEM. Before even
   ** testing for this, set *ppPager to NULL so the caller knows the pager
   ** structure was never allocated. 
   */
   *ppPager = 0;
-  if( sqlite3Tsd()->mallocFailed ){
+  if( sqlite3ThreadData()->mallocFailed ){
     return SQLITE_NOMEM;
   }
   memset(&fd, 0, sizeof(fd));
@@ -2027,7 +2027,7 @@ int sqlite3pager_truncate(Pager *pPager, Pgno nPage){
 int sqlite3pager_close(Pager *pPager){
   PgHdr *pPg, *pNext;
 #ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
-  SqliteTsd *pTsd = sqlite3Tsd();
+  ThreadData *pTsd = sqlite3ThreadData();
 #endif
 
   switch( pPager->state ){
@@ -2088,7 +2088,7 @@ int sqlite3pager_close(Pager *pPager){
 
 #ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
   /* Remove the pager from the linked list of pagers starting at 
-  ** SqliteTsd.pPager.
+  ** ThreadData.pPager.
   */
   if( pPager==pTsd->pPager ){
     pTsd->pPager = pPager->pNext;
@@ -2455,7 +2455,7 @@ static int pager_recycle(Pager *pPager, int syncOk, PgHdr **ppPg){
 */
 #ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
 int sqlite3pager_release_memory(int nReq){
-  SqliteTsd *pTsd = sqlite3Tsd();
+  ThreadData *pTsd = sqlite3ThreadData();
   Pager *p;
   int nReleased = 0;
   int i;

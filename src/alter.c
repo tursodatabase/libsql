@@ -12,7 +12,7 @@
 ** This file contains C code routines that used to generate VDBE code
 ** that implements the ALTER TABLE command.
 **
-** $Id: alter.c,v 1.14 2006/01/05 11:34:33 danielk1977 Exp $
+** $Id: alter.c,v 1.15 2006/01/09 06:29:48 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -177,7 +177,7 @@ static char *whereTempTriggers(Parse *pParse, Table *pTab){
   Trigger *pTrig;
   char *zWhere = 0;
   char *tmp = 0;
-  const DbSchema *pTempSchema = pParse->db->aDb[1].pSchema; /* Temp db schema */
+  const Schema *pTempSchema = pParse->db->aDb[1].pSchema; /* Temp db schema */
 
   /* If the table is not located in the temp-db (in which case NULL is 
   ** returned, loop through the tables list of triggers. For each trigger
@@ -267,7 +267,7 @@ void sqlite3AlterRenameTable(
   char *zWhere = 0;         /* Where clause to locate temp triggers */
 #endif
   
-  if( sqlite3Tsd()->mallocFailed ) goto exit_rename_table;
+  if( sqlite3ThreadData()->mallocFailed ) goto exit_rename_table;
   assert( pSrc->nSrc==1 );
 
   pTab = sqlite3LocateTable(pParse, pSrc->a[0].zName, pSrc->a[0].zDatabase);
@@ -501,7 +501,7 @@ void sqlite3AlterBeginAddColumn(Parse *pParse, SrcList *pSrc){
 
   /* Look up the table being altered. */
   assert( pParse->pNewTable==0 );
-  if( sqlite3Tsd()->mallocFailed ) goto exit_begin_add_column;
+  if( sqlite3ThreadData()->mallocFailed ) goto exit_begin_add_column;
   pTab = sqlite3LocateTable(pParse, pSrc->a[0].zName, pSrc->a[0].zDatabase);
   if( !pTab ) goto exit_begin_add_column;
 

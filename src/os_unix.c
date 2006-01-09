@@ -502,7 +502,7 @@ static int findLockInfo(
   struct stat statbuf;
   struct lockInfo *pLock;
   struct openCnt *pOpen;
-  SqliteTsd *pTsd = sqlite3Tsd();
+  ThreadData *pTsd = sqlite3ThreadData();
   rc = fstat(fd, &statbuf);
   if( rc!=0 ) return 1;
 
@@ -1407,7 +1407,7 @@ static int unixUnlock(OsFile *id, int locktype){
 ** Close a file.
 */
 static int unixClose(OsFile **pId){
-  SqliteTsd *pTsd = sqlite3Tsd();
+  ThreadData *pTsd = sqlite3ThreadData();
   unixFile *id = (unixFile*)*pId;
   if( !id ) return SQLITE_OK;
   if( CHECK_THREADID(id) ) return SQLITE_MISUSE;
@@ -1646,9 +1646,9 @@ int sqlite3UnixInMutex(){
 
 /*
 ** This function is called automatically when a thread exists to delete
-** the threads SqliteTsd structure. 
+** the threads ThreadData structure. 
 **
-** Because the SqliteTsd structure is required by higher level routines
+** Because the ThreadData structure is required by higher level routines
 ** such as sqliteMalloc() we use OsFree() and OsMalloc() directly to
 ** allocate the thread specific data.
 */

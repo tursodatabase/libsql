@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.453 2006/01/07 13:21:04 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.454 2006/01/09 06:29:49 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -262,7 +262,7 @@ extern int sqlite3_nFree;        /* Number of sqliteFree() calls */
 extern int sqlite3_iMallocFail;  /* Fail sqliteMalloc() after this many calls */
 extern int sqlite3_iMallocReset; /* Set iMallocFail to this when it reaches 0 */
 #define ENTER_MALLOC (\
-  sqlite3Tsd()->zFile = __FILE__, sqlite3Tsd()->iLine = __LINE__ \
+  sqlite3ThreadData()->zFile = __FILE__, sqlite3ThreadData()->iLine = __LINE__ \
 )
 #define sqliteMalloc(x)          (ENTER_MALLOC, sqlite3Malloc(x))
 #define sqliteMallocRaw(x)       (ENTER_MALLOC, sqlite3MallocRaw(x))
@@ -288,7 +288,7 @@ extern int sqlite3_iMallocReset; /* Set iMallocFail to this when it reaches 0 */
 /*
 ** An instance of this structure is allocated for each thread that uses SQLite.
 */
-struct SqliteTsd {
+struct ThreadData {
   u8 isInit;               /* True if structure has been initialised */
   u8 mallocFailed;         /* True after a malloc() has failed */
   u8 disableReleaseMemory; /* True to make sqlite3_release_memory() a no-op */
@@ -305,7 +305,7 @@ struct SqliteTsd {
 #endif
 
 #ifdef SQLITE_MEMDEBUG
-  i64 nMaxAlloc;           /* High water mark of SqliteTsd.nAlloc */
+  i64 nMaxAlloc;           /* High water mark of ThreadData.nAlloc */
   int mallocAllowed;       /* assert() in sqlite3Malloc() if not set */
   int isFail;              /* True if all malloc() calls should fail */
   const char *zFile;       /* Filename to associate debugging info with */
@@ -346,7 +346,7 @@ typedef struct AuthContext AuthContext;
 typedef struct CollSeq CollSeq;
 typedef struct Column Column;
 typedef struct Db Db;
-typedef struct DbSchema DbSchema;
+typedef struct Schema Schema;
 typedef struct Expr Expr;
 typedef struct ExprList ExprList;
 typedef struct FKey FKey;
@@ -359,7 +359,7 @@ typedef struct NameContext NameContext;
 typedef struct Parse Parse;
 typedef struct Select Select;
 typedef struct SrcList SrcList;
-typedef struct SqliteTsd SqliteTsd;
+typedef struct ThreadData ThreadData;
 typedef struct Table Table;
 typedef struct TableLock TableLock;
 typedef struct Token Token;
@@ -384,13 +384,13 @@ struct Db {
   int cache_size;      /* Number of pages to use in the cache */
   void *pAux;               /* Auxiliary data.  Usually NULL */
   void (*xFreeAux)(void*);  /* Routine to free pAux */
-  DbSchema *pSchema;   /* Pointer to database schema (possibly shared) */
+  Schema *pSchema;     /* Pointer to database schema (possibly shared) */
 };
 
 /*
 ** An instance of the following structure stores a database schema.
 */
-struct DbSchema {
+struct Schema {
   int schema_cookie;   /* Database schema version number for this file */
   Hash tblHash;        /* All tables indexed by name */
   Hash idxHash;        /* All (named) indices indexed by name */
@@ -707,7 +707,7 @@ struct Table {
 #ifndef SQLITE_OMIT_ALTERTABLE
   int addColOffset;  /* Offset in CREATE TABLE statement to add a new column */
 #endif
-  DbSchema *pSchema;
+  Schema *pSchema;
 };
 
 /*
@@ -846,7 +846,7 @@ struct Index {
   // u8 iDb;          /* Index in sqlite.aDb[] of where this index is stored */
   char *zColAff;   /* String defining the affinity of each column */
   Index *pNext;    /* The next index associated with the same table */
-  DbSchema *pSchema;
+  Schema *pSchema;
   KeyInfo keyInfo; /* Info on how to order keys.  MUST BE LAST */
 };
 
@@ -972,7 +972,7 @@ struct Expr {
   Select *pSelect;       /* When the expression is a sub-select.  Also the
                          ** right side of "<expr> IN (<select>)" */
   Table *pTab;           /* Table for OP_Column expressions. */
-  DbSchema *pSchema;
+  Schema *pSchema;
 };
 
 /*
@@ -1317,8 +1317,8 @@ struct Trigger {
                              the <column-list> is stored here */
   int foreach;            /* One of TK_ROW or TK_STATEMENT */
   Token nameToken;        /* Token containing zName. Use during parsing only */
-  DbSchema *pSchema;      /* Schema containing the trigger */
-  DbSchema *pTabSchema;   /* Schema containing the table */
+  Schema *pSchema;        /* Schema containing the trigger */
+  Schema *pTabSchema;     /* Schema containing the table */
   TriggerStep *step_list; /* Link list of trigger program steps             */
   Trigger *pNext;         /* Next trigger associated with the table */
 };
@@ -1728,12 +1728,12 @@ void sqlite3AnalysisLoad(sqlite3*,int iDB);
 void sqlite3DefaultRowEst(Index*);
 void sqlite3RegisterLikeFunctions(sqlite3*, int);
 int sqlite3IsLikeFunction(sqlite3*,Expr*,int*,char*);
-SqliteTsd *sqlite3Tsd();
+ThreadData *sqlite3ThreadData();
 void sqlite3AttachFunctions(sqlite3 *);
 void sqlite3MinimumFileFormat(Parse*, int, int);
 void sqlite3SchemaFree(void *);
-DbSchema *sqlite3SchemaGet(Btree *);
-int sqlite3SchemaToIndex(sqlite3 *db, DbSchema *);
+Schema *sqlite3SchemaGet(Btree *);
+int sqlite3SchemaToIndex(sqlite3 *db, Schema *);
 
 #ifndef SQLITE_OMIT_SHARED_CACHE
   void sqlite3TableLock(Parse *, int, int, u8, const char *);

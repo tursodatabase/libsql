@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.318 2006/01/06 21:52:50 drh Exp $
+** $Id: main.c,v 1.319 2006/01/09 06:29:49 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -634,7 +634,7 @@ int sqlite3BtreeFactory(
 */
 const char *sqlite3_errmsg(sqlite3 *db){
   const char *z;
-  if( sqlite3Tsd()->mallocFailed ){
+  if( sqlite3ThreadData()->mallocFailed ){
     return sqlite3ErrStr(SQLITE_NOMEM);
   }
   if( sqlite3SafetyCheck(db) || db->errCode==SQLITE_MISUSE ){
@@ -673,7 +673,7 @@ const void *sqlite3_errmsg16(sqlite3 *db){
   };
 
   const void *z;
-  if( sqlite3Tsd()->mallocFailed ){
+  if( sqlite3ThreadData()->mallocFailed ){
     return (void *)(&outOfMemBe[SQLITE_UTF16NATIVE==SQLITE_UTF16LE?1:0]);
   }
   if( sqlite3SafetyCheck(db) || db->errCode==SQLITE_MISUSE ){
@@ -694,7 +694,7 @@ const void *sqlite3_errmsg16(sqlite3 *db){
 ** passed to this function, we assume a malloc() failed during sqlite3_open().
 */
 int sqlite3_errcode(sqlite3 *db){
-  if( !db || sqlite3Tsd()->mallocFailed ){
+  if( !db || sqlite3ThreadData()->mallocFailed ){
     return SQLITE_NOMEM;
   }
   if( sqlite3SafetyCheck(db) ){
@@ -716,7 +716,7 @@ static int openDatabase(
   int rc;
   CollSeq *pColl;
 
-  assert( !sqlite3Tsd()->mallocFailed );
+  assert( !sqlite3ThreadData()->mallocFailed );
 
   /* Allocate the sqlite data structure */
   db = sqliteMalloc( sizeof(sqlite3) );
@@ -751,7 +751,7 @@ static int openDatabase(
     /* sqlite3_create_collation() is an external API. So the mallocFailed flag
     ** will have been cleared before returning. So set it explicitly here.
     */
-    sqlite3Tsd()->mallocFailed = 1;
+    sqlite3ThreadData()->mallocFailed = 1;
     db->magic = SQLITE_MAGIC_CLOSED;
     goto opendb_out;
   }
@@ -840,7 +840,7 @@ int sqlite3_open16(
       rc = sqlite3_exec(*ppDb, "PRAGMA encoding = 'UTF-16'", 0, 0, 0);
     }
   }else{
-    assert( sqlite3Tsd()->mallocFailed );
+    assert( sqlite3ThreadData()->mallocFailed );
     sqlite3MallocClearFailed();
   }
   sqlite3ValueFree(pVal);
