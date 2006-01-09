@@ -1,0 +1,63 @@
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file runs all tests.
+#
+# $Id: async.test,v 1.3 2006/01/09 17:29:53 drh Exp $
+
+
+if {[catch {sqlite3async_enable}]} {
+  # The async logic is not built into this system
+  return
+}
+
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+rename finish_test really_finish_test
+proc finish_test {} {}
+set ISQUICK 1
+
+set INCLUDE {
+  select1.test
+  select2.test
+  select3.test
+  select4.test
+  insert.test
+  insert2.test
+  insert3.test
+}
+#set INCLUDE [lrange $INCLUDE 0 0]
+
+# Enable asynchronous IO.
+sqlite3async_enable 1
+sqlite3async_halt never
+sqlite3async_start
+
+rename do_test really_do_test
+proc do_test {name args} {
+  uplevel really_do_test async_io-$name $args
+  sqlite3async_halt idle
+  sqlite3async_wait
+  sqlite3async_halt never
+  sqlite3async_start
+}
+
+foreach testfile [lsort -dictionary [glob $testdir/*.test]] {
+  set tail [file tail $testfile]
+  if {[lsearch -exact $INCLUDE $tail]<0} continue
+  source $testfile
+  catch {db close}
+}
+
+
+set sqlite_open_file_count 0
+really_finish_test
+sqlite3async_halt now
+sqlite3async_wait
+sqlite3async_enable 0
+rename really_do_test do_test
+rename really_finish_test finish_test
