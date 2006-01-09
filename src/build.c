@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.369 2006/01/07 13:21:04 danielk1977 Exp $
+** $Id: build.c,v 1.370 2006/01/09 05:36:27 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -154,7 +154,6 @@ void sqlite3FinishCoding(Parse *pParse){
     ** transaction on each used database and to verify the schema cookie
     ** on each used database.
     */
-    assert( pParse->cookieGoto>0 || pParse->nTableLock==0 );
     if( pParse->cookieGoto>0 ){
       u32 mask;
       int iDb;

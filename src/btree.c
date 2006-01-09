@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.285 2006/01/07 13:21:04 danielk1977 Exp $
+** $Id: btree.c,v 1.286 2006/01/09 05:36:27 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -348,9 +348,11 @@ struct BtShared {
   BtShared *pNext;      /* Next in SqliteTsd.pBtree linked list */
   int nRef;             /* Number of references to this structure */
   int nTransaction;     /* Number of open transactions (read + write) */
+  void *pSchema;        /* Pointer to space allocated by sqlite3BtreeSchema() */
+  void (*xFreeSchema)(void*);  /* Destructor for BtShared.pSchema */
+#ifndef SQLITE_OMIT_SHARED_CACHE
   BtLock *pLock;        /* List of locks held on this shared-btree struct */
-  void *pSchema;
-  void (*xFreeSchema)(void*);
+#endif
 };
 
 /*
@@ -3157,9 +3159,10 @@ static int moveToRoot(BtCursor *pCur){
   int rc;
   BtShared *pBt = pCur->pBtree->pBt;
 
-  restoreCursorPosition(pCur, 0);
-  rc = getAndInitPage(pBt, pCur->pgnoRoot, &pRoot, 0);
-  if( rc ){
+  if( 
+    SQLITE_OK!=(rc = restoreCursorPosition(pCur, 0)) ||
+    SQLITE_OK!=(rc = getAndInitPage(pBt, pCur->pgnoRoot, &pRoot, 0))
+  ){
     pCur->eState = CURSOR_INVALID;
     return rc;
   }
@@ -5141,14 +5144,14 @@ int sqlite3BtreeInsert(
   }
 
   /* Save the positions of any other cursors open on this table */
-  restoreCursorPosition(pCur, 0);
-  rc = saveAllCursors(pBt, pCur->pgnoRoot, pCur);
-  if( rc ){
+  if( 
+    SQLITE_OK!=(rc = restoreCursorPosition(pCur, 0)) ||
+    SQLITE_OK!=(rc = saveAllCursors(pBt, pCur->pgnoRoot, pCur)) ||
+    SQLITE_OK!=(rc = sqlite3BtreeMoveto(pCur, pKey, nKey, &loc))
+  ){
     return rc;
   }
 
-  rc = sqlite3BtreeMoveto(pCur, pKey, nKey, &loc);
-  if( rc ) return rc;
   pPage = pCur->pPage;
   assert( pPage->intKey || nKey>=0 );
   assert( pPage->leaf || !pPage->leafData );
@@ -6479,11 +6482,14 @@ int sqlite3BtreeSchemaLocked(Btree *p){
 }
 
 int sqlite3BtreeLockTable(Btree *p, int iTab, u8 isWriteLock){
+  int rc = SQLITE_OK;
+#ifndef SQLITE_OMIT_SHARED_CACHE
   u8 lockType = (isWriteLock?WRITE_LOCK:READ_LOCK);
-  int rc = queryTableLock(p, iTab, lockType);
+  rc = queryTableLock(p, iTab, lockType);
   if( rc==SQLITE_OK ){
     rc = lockTable(p, iTab, lockType);
   }
+#endif
   return rc;
 }
 
