@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the ATTACH and DETACH commands.
 **
-** $Id: attach.c,v 1.42 2006/01/09 16:12:05 danielk1977 Exp $
+** $Id: attach.c,v 1.43 2006/01/09 23:40:25 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -126,8 +126,7 @@ static void attachFunc(
     aNew->pSchema = sqlite3SchemaGet(aNew->pBt);
     if( !aNew->pSchema ){
       rc = SQLITE_NOMEM;
-    }
-    if( aNew->pSchema->file_format && aNew->pSchema->enc!=ENC(db) ){
+    }else if( aNew->pSchema->file_format && aNew->pSchema->enc!=ENC(db) ){
       strcpy(zErr, 
         "attached databases must use the same text encoding as main database");
       goto attach_error;

@@ -1106,9 +1106,6 @@ void sqlite3WinLeaveMutex(){
 
 /*
 ** Return TRUE if we are currently within the mutex and FALSE if not.
-** This routine is intended for sanity checking only.  It is designed
-** for use in an assert() to verify that the mutex is held or not held
-** in certain routines.
 */
 int sqlite3WinInMutex(){
   return inMutex;

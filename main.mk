@@ -127,12 +127,14 @@ TESTSRC = \
   $(TOP)/src/pager.c \
   $(TOP)/src/pragma.c \
   $(TOP)/src/printf.c \
+  $(TOP)/src/server.c \
   $(TOP)/src/test1.c \
   $(TOP)/src/test2.c \
   $(TOP)/src/test3.c \
   $(TOP)/src/test4.c \
   $(TOP)/src/test5.c \
   $(TOP)/src/test6.c \
+  $(TOP)/src/test7.c \
   $(TOP)/src/test_async.c \
   $(TOP)/src/utf.c \
   $(TOP)/src/util.c \
@@ -357,7 +359,7 @@ tclsqlite3:	$(TOP)/src/tclsqlite.c libsqlite3.a
 
 testfixture$(EXE):	$(TOP)/src/tclsqlite.c libsqlite3.a $(TESTSRC)
 	$(TCCX) $(TCL_FLAGS) -DTCLSH=1 -DSQLITE_TEST=1 -DSQLITE_CRASH_TEST=1 \
-		-o testfixture$(EXE) \
+		-DSQLITE_SERVER=1 -o testfixture$(EXE) \
 		$(TESTSRC) $(TOP)/src/tclsqlite.c \
 		libsqlite3.a $(LIBTCL) $(THREADLIB)
 

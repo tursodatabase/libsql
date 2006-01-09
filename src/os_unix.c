@@ -502,13 +502,8 @@ static int findLockInfo(
   struct stat statbuf;
   struct lockInfo *pLock;
   struct openCnt *pOpen;
-  ThreadData *pTsd = sqlite3ThreadData();
   rc = fstat(fd, &statbuf);
   if( rc!=0 ) return 1;
-
-  /* Disable the sqlite3_release_memory() function */
-  assert( !pTsd->disableReleaseMemory );
-  pTsd->disableReleaseMemory = 1;
 
   memset(&key1, 0, sizeof(key1));
   key1.dev = statbuf.st_dev;
@@ -573,8 +568,6 @@ static int findLockInfo(
   *ppOpen = pOpen;
 
 exit_findlockinfo:
-  /* Re-enable sqlite3_release_memory() */
-  pTsd->disableReleaseMemory = 0;
   return rc;
 }
 
@@ -1407,7 +1400,6 @@ static int unixUnlock(OsFile *id, int locktype){
 ** Close a file.
 */
 static int unixClose(OsFile **pId){
-  ThreadData *pTsd = sqlite3ThreadData();
   unixFile *id = (unixFile*)*pId;
   if( !id ) return SQLITE_OK;
   if( CHECK_THREADID(id) ) return SQLITE_MISUSE;
@@ -1415,10 +1407,6 @@ static int unixClose(OsFile **pId){
   if( id->dirfd>=0 ) close(id->dirfd);
   id->dirfd = -1;
   sqlite3OsEnterMutex();
-
-  /* Disable the sqlite3_release_memory() function */
-  assert( !pTsd->disableReleaseMemory );
-  pTsd->disableReleaseMemory = 1;
 
   if( id->pOpen->nLock ){
     /* If there are outstanding locks, do not actually close the file just
@@ -1442,9 +1430,6 @@ static int unixClose(OsFile **pId){
   }
   releaseLockInfo(id->pLock);
   releaseOpenCnt(id->pOpen);
-
-  /* Disable the sqlite3_release_memory() function */
-  pTsd->disableReleaseMemory = 0;
 
   sqlite3OsLeaveMutex();
   id->isOpen = 0;
@@ -1636,9 +1621,6 @@ void sqlite3UnixLeaveMutex(){
 
 /*
 ** Return TRUE if we are currently within the mutex and FALSE if not.
-** This routine is intended for sanity checking only.  It is designed
-** for use in an assert() to verify that the mutex is held or not held
-** in certain routines.
 */
 int sqlite3UnixInMutex(){
   return inMutex;

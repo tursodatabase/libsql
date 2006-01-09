@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: utf16.test,v 1.4 2005/03/28 00:07:16 danielk1977 Exp $
+# $Id: utf16.test,v 1.5 2006/01/09 23:40:26 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -73,4 +73,3 @@ rename really_finish_test2 finish_test
 rename do_test ""
 rename really_do_test do_test
 finish_test
-
