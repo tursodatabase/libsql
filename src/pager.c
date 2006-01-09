@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.232 2006/01/09 06:29:49 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.233 2006/01/09 09:59:49 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1623,7 +1623,9 @@ int sqlite3pager_open(
   int useJournal = (flags & PAGER_OMIT_JOURNAL)==0;
   int noReadlock = (flags & PAGER_NO_READLOCK)!=0;
   char zTemp[SQLITE_TEMPNAME_SIZE];
+#ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
   ThreadData *pTsd = sqlite3ThreadData();
+#endif
 
   /* If malloc() has already failed return SQLITE_NOMEM. Before even
   ** testing for this, set *ppPager to NULL so the caller knows the pager
@@ -1723,8 +1725,12 @@ int sqlite3pager_open(
   pPager->pBusyHandler = 0;
   memset(pPager->aHash, 0, sizeof(pPager->aHash));
   *ppPager = pPager;
-  pPager->pNext = pTsd->pPager;
-  pTsd->pPager = pPager;
+#ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
+  if( pTsd->useMemoryManagement ){
+    pPager->pNext = pTsd->pPager;
+    pTsd->pPager = pPager;
+  }
+#endif
   return SQLITE_OK;
 }
 
@@ -2088,14 +2094,16 @@ int sqlite3pager_close(Pager *pPager){
 
 #ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
   /* Remove the pager from the linked list of pagers starting at 
-  ** ThreadData.pPager.
+  ** ThreadData.pPager if memory-management is enabled.
   */
-  if( pPager==pTsd->pPager ){
-    pTsd->pPager = pPager->pNext;
-  }else{
-    Pager *pTmp;
-    for(pTmp = pTsd->pPager; pTmp->pNext!=pPager; pTmp=pTmp->pNext);
-    pTmp->pNext = pPager->pNext;
+  if( pTsd->useMemoryManagement ){
+    if( pPager==pTsd->pPager ){
+      pTsd->pPager = pPager->pNext;
+    }else{
+      Pager *pTmp;
+      for(pTmp = pTsd->pPager; pTmp->pNext!=pPager; pTmp=pTmp->pNext);
+      pTmp->pNext = pPager->pNext;
+    }
   }
 #endif
 

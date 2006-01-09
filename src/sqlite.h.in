@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.152 2005/12/30 16:28:02 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.153 2006/01/09 09:59:49 danielk1977 Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1277,21 +1277,6 @@ int sqlite3_get_autocommit(sqlite3*);
 sqlite3 *sqlite3_db_handle(sqlite3_stmt*);
 
 /*
-** Place a "soft" limit on the amount of heap memory that may be allocated by
-** SQLite within the current thread. If an internal allocation is requested 
-** that would exceed the specified limit, sqlite3_release_memory() is invoked
-** one or more times to free up some space before the allocation is made.
-**
-** The limit is called "soft", because if sqlite3_release_memory() cannot free
-** sufficient memory to prevent the limit from being exceeded, the memory is
-** allocated anyway and the current operation proceeds.
-**
-** This function is only available if the library was compiled without the 
-** SQLITE_OMIT_MEMORY_MANAGEMENT option set.
-*/
-void sqlite3_soft_heap_limit(sqlite_int64);
-
-/*
 ** Register a callback function with the database connection identified by the 
 ** first argument to be invoked whenever a row is updated, inserted or deleted.
 ** Any callback set by a previous call to this function for the same 
@@ -1336,8 +1321,6 @@ void *sqlite3_update_hook(
 */
 void *sqlite3_rollback_hook(sqlite3*, void(*)(void *), void*);
 
-int sqlite3_release_memory(int);
-
 /*
 ** This function is only available if the library is compiled without
 ** the SQLITE_OMIT_SHARED_CACHE macro defined. It is used to enable or
@@ -1345,6 +1328,40 @@ int sqlite3_release_memory(int);
 ** "shared pager" feature.
 */
 int sqlite3_enable_shared_cache(int);
+
+/*
+** This function is only available if the library is compiled without
+** the SQLITE_OMIT_MEMORY_MANAGEMENT macro defined. It is used to enable or
+** disable (if the argument is true or false, respectively) the 
+** "memory management" features (accessed via the sqlite3_soft_heap_limit()
+** and sqlite3_release_memory() APIs).
+*/
+int sqlite3_enable_memory_management(int);
+
+/*
+** Attempt to free N bytes of heap memory by deallocating non-essential
+** memory allocations held by the database library (example: memory 
+** used to cache database pages to improve performance).
+**
+** This function is a no-op unless memory-management has been enabled.
+*/
+int sqlite3_release_memory(int);
+
+/*
+** Place a "soft" limit on the amount of heap memory that may be allocated by
+** SQLite within the current thread. If an internal allocation is requested 
+** that would exceed the specified limit, sqlite3_release_memory() is invoked
+** one or more times to free up some space before the allocation is made.
+**
+** The limit is called "soft", because if sqlite3_release_memory() cannot free
+** sufficient memory to prevent the limit from being exceeded, the memory is
+** allocated anyway and the current operation proceeds.
+**
+** This function is only available if the library was compiled without the 
+** SQLITE_OMIT_MEMORY_MANAGEMENT option set. It is a no-op unless 
+** memory-management has been enabled.
+*/
+void sqlite3_soft_heap_limit(sqlite_int64);
 
 /*
 ** Undo the hack that converts floating point types to integer for

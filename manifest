@@ -1,5 +1,5 @@
-C Rename\sDbSchema\sto\s"Schema"\sand\sSqliteTsd\sto\s"ThreadData".\s(CVS\s2893)
-D 2006-01-09T06:29:48
+C Add\sa\sruntime\sinterface\sto\senable\smemory-management\sfeatures.\s(CVS\s2894)
+D 2006-01-09T09:59:49
 F Makefile.in c79fbdaa264c6afcd435f2fb492551de5a8cf80d
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -34,7 +34,7 @@ F src/alter.c d0dd079b9ef0d551ff4a4ce09ee270c07b307bbb
 F src/analyze.c ed87abad3f6f60e1bd5308ed6ff6e0fa396db52b
 F src/attach.c 833e38b4fa6966de05fcf875c94cd521478a2811
 F src/auth.c cdec356a5cd8b217c346f816c5912221537fe87f
-F src/btree.c fc3f7f936b4f58c05ce95d710c1c15bb86cd522a
+F src/btree.c 5e5dff4a667d93d49925d38de2d451a5bd1eabfd
 F src/btree.h 5663c4f43e8521546ccebc8fc95acb013b8f3184
 F src/build.c e40a4caaba4afab3fc7f0866ca8766e8146dd62c
 F src/callback.c 79cfbac59139b525e3a195ee27b8be1ca06fbd38
@@ -59,7 +59,7 @@ F src/os_unix.c c5d1a3fe88ad93b5f6a29f1b5b889f2a756aaec0
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c 9cedcb13d6bcd4ab5f50907a99112f45cd335893
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c f838695a6c0c8d0051ce7491036fd675052aa6f6
+F src/pager.c 6fbcc25f1f3fbe62cbbda3af3dbb9c3d758f8050
 F src/pager.h e0acb095b3ad0bca48f2ab00c87346665643f64f
 F src/parse.y 83df51fea35f68f7e07384d75dce83d1ed30434c
 F src/pragma.c 7358baf8e2be14a0f3d71e7afae41e430d76b054
@@ -68,11 +68,11 @@ F src/printf.c f47a2f4b5387cd2ebb12e9117a1a5d6bd9a2b812
 F src/random.c d40f8d356cecbd351ccfab6eaedd7ec1b54f5261
 F src/select.c d97a43973d82a2e1e24be43ca5543c08b93e9e8d
 F src/shell.c 66b073375efbdee19045e7e0cd38b85f9aff71da
-F src/sqlite.h.in ba3a29daa6a16e054191ccb384a981964e882a1d
-F src/sqliteInt.h 9fed92df9ab1cccbe649c28e6d24685a1f3373a4
+F src/sqlite.h.in 537bac9e9ef703695268aaad5c56b6bf64f815be
+F src/sqliteInt.h f9e4b620da09737e678271d45135088027d80307
 F src/table.c 486dcfce532685b53b5a2b5da8bba0ded6fb2316
 F src/tclsqlite.c 42151e6c78502277be77b88c00535d53ce89b917
-F src/test1.c 25e687fcc3c962958c5aa5114a74592cc5b7e6ba
+F src/test1.c a526810f7d1c73b7b9a85621dd655d4357e0ae6d
 F src/test2.c ca74a1d8aeb7d9606e8f6b762c5daf85c1a3f92b
 F src/test3.c 9742aa146eb750cab81c1d5605286c3a0eb88054
 F src/test4.c a8fd681e139e1c61f22a77d07fc3a99cb28fff3f
@@ -82,7 +82,7 @@ F src/tokenize.c 196486012c871cdcad6cc84a820cc988603f1b9d
 F src/trigger.c c515afa5fe964e9854c54dc66dde179a90d0cfe3
 F src/update.c 9a3761250c2ac9e6871f4e9c37560b224ba0067e
 F src/utf.c b7bffac4260177ae7f83c01d025fe0f5ed70ce71
-F src/util.c 9af2eab4203627982e433102be55b58dd38f8a38
+F src/util.c 0153015d99468e994a2c9bc6746262654ed5914a
 F src/vacuum.c f5a068096b22fad438bf1f1cf69ccb7f9e8cc7fb
 F src/vdbe.c ce31105fc91e1ea346e2383cd536149cc66c34bd
 F src/vdbe.h 8729a4ee16ff9aeab2af9667df3cf300ff978e13
@@ -186,7 +186,7 @@ F test/malloc.test 6245418d1b6635a2095d9ed0f5e84e029990da06
 F test/malloc2.test e6e321db96d6c94cb18bf82ad7215070c41e624e
 F test/malloc3.test 9797d39eca7087a1022bcc0eb0b22215475c9698
 F test/malloc4.test 2e29d155eb4b4808019ef47eeedfcbe9e09e0f05
-F test/malloc5.test 4ebf827a8173e1429480a6b276d37e89c6ab96f0
+F test/malloc5.test 1bac8c0dd98c387460920c1190f0996c5c62ea66
 F test/manydb.test d81debbf5871242e3b5df1d3bb5e14c50431b6f8
 F test/memdb.test 1860e060be810bf0775bc57408a5b7c4954bcaea
 F test/memleak.test df2b2b96e77f8ba159a332299535b1e5f18e49ac
@@ -335,7 +335,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P cc963f8cfc6c704c645c627bffb8df21dfebffc6
-R 7000da8baf46b4c1ff76e715121c7c17
+P 82b81f69c78cb3f54634d9aea4f6a838474dc5e5
+R bcf9f7930a1367ea3da4936a55af71d7
 U danielk1977
-Z c505bc6b6a245c795a8be1eda400ccd9
+Z b19a6ec12413214a65f445404992c64a

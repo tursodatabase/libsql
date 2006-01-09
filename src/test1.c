@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.184 2006/01/09 06:29:49 danielk1977 Exp $
+** $Id: test1.c,v 1.185 2006/01/09 09:59:49 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -903,21 +903,16 @@ static int sqlite_malloc_outstanding(
 ){
   extern int sqlite3OutstandingMallocs(Tcl_Interp *interp);
 
-  if( objc!=1 && objc!=2 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "?-bytes?");
-    return TCL_ERROR;
-  }
-
+#ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
   if( objc==2 ){
+    ThreadData *pTd = sqlite3ThreadData();
     const char *zArg = Tcl_GetString(objv[1]);
     if( 0==strcmp(zArg, "-bytes") ){
-      Tcl_SetObjResult(interp, Tcl_NewIntObj(sqlite3ThreadData()->nAlloc));
-#ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
+      Tcl_SetObjResult(interp, Tcl_NewIntObj(pTd->nAlloc));
     }else if( 0==strcmp(zArg, "-maxbytes") ){
-      Tcl_SetObjResult(interp, Tcl_NewWideIntObj(sqlite3ThreadData()->nMaxAlloc));
+      Tcl_SetObjResult(interp, Tcl_NewWideIntObj(pTd->nMaxAlloc));
     }else if( 0==strcmp(zArg, "-clearmaxbytes") ){
-      sqlite3ThreadData()->nMaxAlloc = sqlite3ThreadData()->nAlloc;
-#endif
+      pTd->nMaxAlloc = pTd->nAlloc;
     }else{
       Tcl_AppendResult(interp, "bad option \"", zArg, 
         "\": must be -bytes, -maxbytes or -clearmaxbytes", 0
@@ -927,27 +922,46 @@ static int sqlite_malloc_outstanding(
 
     return TCL_OK;
   }
+#endif
+
+  if( objc!=1 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "?-bytes?");
+    return TCL_ERROR;
+  }
 
   return sqlite3OutstandingMallocs(interp);
 }
 #endif
 
 /*
-** Usage: sqlite3_enable_shared_cache BOOLEAN
+** Usage: sqlite3_enable_shared_cache      BOOLEAN
+** Usage: sqlite3_enable_memory_management BOOLEAN
 **
 */
-#ifndef SQLITE_OMIT_SHARED_CACHE
-static int test_enable_shared_cache(
-  ClientData clientData,
+#if !defined(SQLITE_OMIT_SHARED_CACHE)||!defined(SQLITE_OMIT_MEMORY_MANAGEMENT)
+static int test_enable(
+  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int objc,              /* Number of arguments */
   Tcl_Obj *CONST objv[]  /* Command arguments */
 ){
   int rc;
   int enable;
+  int ret = 0;
+  int (*xFunc)(int) = (int(*)(int))clientData;
   ThreadData *pTsd = sqlite3ThreadData();
-  Tcl_SetObjResult(interp, Tcl_NewBooleanObj(pTsd->useSharedData));
 
+#ifndef SQLITE_OMIT_SHARED_CACHE
+  if( xFunc==sqlite3_enable_shared_cache ){
+    ret = pTsd->useSharedData;
+  }else
+#endif
+#ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
+  {
+    assert( xFunc==sqlite3_enable_memory_management );
+    ret = pTsd->useMemoryManagement;
+  }
+#endif
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "BOOLEAN");
     return TCL_ERROR;
@@ -955,11 +969,12 @@ static int test_enable_shared_cache(
   if( Tcl_GetBooleanFromObj(interp, objv[1], &enable) ){
     return TCL_ERROR;
   }
-  rc = sqlite3_enable_shared_cache(enable);
+  rc = xFunc(enable);
   if( rc!=SQLITE_OK ){
     Tcl_SetResult(interp, (char *)sqlite3ErrStr(rc), TCL_STATIC);
     return TCL_ERROR;
   }
+  Tcl_SetObjResult(interp, Tcl_NewBooleanObj(ret));
   return TCL_OK;
 }
 #endif
@@ -3414,7 +3429,11 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_test_errstr",     test_errstr, 0             },
      { "tcl_variable_type",       tcl_variable_type, 0       },
 #ifndef SQLITE_OMIT_SHARED_CACHE
-     { "sqlite3_enable_shared_cache", test_enable_shared_cache, 0},
+     { "sqlite3_enable_shared_cache", test_enable, sqlite3_enable_shared_cache},
+#endif
+#ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
+     { "sqlite3_enable_memory_management", test_enable, 
+       sqlite3_enable_memory_management},
 #endif
   };
   static int bitmask_size = sizeof(Bitmask)*8;

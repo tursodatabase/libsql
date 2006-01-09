@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.163 2006/01/09 06:29:49 danielk1977 Exp $
+** $Id: util.c,v 1.164 2006/01/09 09:59:49 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -529,7 +529,7 @@ static void handleSoftLimit(int n){
   }
 }
 #else
-#define handleSoftLimit()
+#define handleSoftLimit(x)
 #endif
 
 /*
@@ -1307,7 +1307,9 @@ void *sqlite3TextToPtr(const char *z){
 ThreadData *sqlite3ThreadData(){
   ThreadData *pTsd = sqlite3OsThreadSpecificData(sizeof(ThreadData));
   if( pTsd && !pTsd->isInit ){
+#ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
     pTsd->nSoftHeapLimit = -1;
+#endif
 #ifndef NDEBUG
     pTsd->mallocAllowed = 1;
 #endif
@@ -1324,6 +1326,25 @@ void sqlite3MallocClearFailed(){
   sqlite3ThreadData()->mallocFailed = 0;
 }
 
+#ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
+/*
+** Enable the shared pager and schema features.
+*/
+int sqlite3_enable_memory_management(int enable){
+  ThreadData *pTsd = sqlite3ThreadData();
+
+  /* It is only legal to call sqlite3_enable_memory_management() when there
+  ** are no currently open connections that were opened by the calling 
+  ** thread. This condition is only easy to detect if the feature were
+  ** previously enabled (and is being disabled). 
+  */
+  if( pTsd->pPager && !enable ){
+    return SQLITE_MISUSE;
+  }
+  pTsd->useMemoryManagement = enable;
+  return SQLITE_OK;
+}
+#endif
 
 #ifndef NDEBUG
 /*
