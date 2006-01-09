@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.185 2006/01/09 09:59:49 danielk1977 Exp $
+** $Id: test1.c,v 1.186 2006/01/09 16:12:05 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -1389,7 +1389,7 @@ static void test_collate_needed_cb(
   int eTextRep,
   const void *pName
 ){
-  int enc = db->enc;
+  int enc = ENC(db);
   int i;
   char *z;
   for(z = (char*)pName, i=0; *z || z[1]; z++){
@@ -1397,7 +1397,7 @@ static void test_collate_needed_cb(
   }
   zNeededCollation[i] = 0;
   sqlite3_create_collation(
-      db, "test_collate", db->enc, (void *)enc, test_collate_func);
+      db, "test_collate", ENC(db), (void *)enc, test_collate_func);
 }
 
 /*

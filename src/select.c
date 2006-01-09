@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.290 2006/01/09 06:29:49 danielk1977 Exp $
+** $Id: select.c,v 1.291 2006/01/09 16:12:05 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -650,7 +650,7 @@ static KeyInfo *keyInfoFromExprList(Parse *pParse, ExprList *pList){
   if( pInfo ){
     pInfo->aSortOrder = (u8*)&pInfo->aColl[nExpr];
     pInfo->nField = nExpr;
-    pInfo->enc = db->enc;
+    pInfo->enc = ENC(db);
     for(i=0, pItem=pList->a; i<nExpr; i++, pItem++){
       CollSeq *pColl;
       pColl = sqlite3ExprCollSeq(pParse, pItem->pExpr);
@@ -1828,7 +1828,7 @@ static int multiSelect(
       goto multi_select_end;
     }
 
-    pKeyInfo->enc = pParse->db->enc;
+    pKeyInfo->enc = ENC(pParse->db);
     pKeyInfo->nField = nCol;
 
     for(i=0, apColl=pKeyInfo->aColl; i<nCol; i++, apColl++){
@@ -2302,6 +2302,7 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
   ** or last entry in the main table.
   */
   iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
+  assert( iDb>=0 || pTab->isTransient );
   sqlite3CodeVerifySchema(pParse, iDb);
   sqlite3TableLock(pParse, iDb, pTab->tnum, 0, pTab->zName);
   base = pSrc->a[0].iCursor;

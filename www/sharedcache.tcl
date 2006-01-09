@@ -39,12 +39,11 @@ This can significantly reduce the quantity of memory and IO required by
 the system.</p>
 
 <p>Using shared-cache mode imposes some extra restrictions on 
-passing database handles between threads and also changes the semantics
+passing database handles between threads and changes the semantics
 of the locking model in some cases. These details are described in full by
 this document. A basic understanding of the normal SQLite locking model (see
 <a href="lockingv3.html">File Locking And Concurrency In SQLite Version 3</a>
-for details) is assumed.
-</p>
+for details) is assumed.</p>
 }
 
 HEADING 1 {Shared-Cache Locking Model}
@@ -183,25 +182,6 @@ is holding a write-lock on the <i>sqlite_master</i> table of any attached
 database (including the default database, "main"). 
 </li>
 </ul>
-}
-
-HEADING 3 {Schema locking and attached databases}
-
-puts {
-<p>The final point in the bullet list is deceptively complicated when
-multiple databases are attached to connections. Exactly when is access to a 
-specific database schema "required" to compile a statement? The way in
-which SQLite resolves the names of schema objects (i.e. tables, indices, 
-triggers and views) depends on whether or not the name was qualified
-or unqualified in the original SQL statement. The first statement below
-uses a qualified table name, the second uses an unqualified table name.
-Both refer to the same underlying table.
-</p>
-<pre>
-    SELECT name FROM main.sqlite_master;
-    SELECT name FROM sqlite_master;
-</pre>
-1
 }
 
 HEADING 1 {Thread Related Issues}

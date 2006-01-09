@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.455 2006/01/09 09:59:49 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.456 2006/01/09 16:12:05 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -382,7 +382,6 @@ struct Db {
   Btree *pBt;          /* The B*Tree structure for this database file */
   u8 inTrans;          /* 0: not writable.  1: Transaction.  2: Checkpoint */
   u8 safety_level;     /* How aggressive at synching data to disk */
-  int cache_size;      /* Number of pages to use in the cache */
   void *pAux;               /* Auxiliary data.  Usually NULL */
   void (*xFreeAux)(void*);  /* Routine to free pAux */
   Schema *pSchema;     /* Pointer to database schema (possibly shared) */
@@ -400,6 +399,8 @@ struct Schema {
   Table *pSeqTab;      /* The sqlite_sequence table used by AUTOINCREMENT */
   u8 file_format;      /* Schema format version for this file */
   u16 flags;           /* Flags associated with this schema */
+  int cache_size;      /* Number of pages to use in the cache */
+  u8 enc;              /* Text encoding used by this database */
 };
 
 /*
@@ -457,7 +458,6 @@ struct sqlite3 {
   Db *aDb;                      /* All backends */
   int flags;                    /* Miscellanous flags. See below */
   int errCode;                  /* Most recent error code (SQLITE_*) */
-  u8 enc;                       /* Text encoding for this database. */
   u8 autoCommit;                /* The auto-commit flag. */
   u8 temp_store;                /* 1: file 2: memory 0: default */
   int nTable;                   /* Number of tables in the database */
@@ -512,6 +512,8 @@ struct sqlite3 {
   sqlite3_stmt *pFetch;         /* Used by SSE to fetch stored statements */
 #endif
 };
+
+#define ENC(db) ((db)->aDb[0].pSchema->enc)
 
 /*
 ** Possible values for the sqlite.flags and or Db.flags fields.

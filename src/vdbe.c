@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.519 2006/01/09 06:29:49 danielk1977 Exp $
+** $Id: vdbe.c,v 1.520 2006/01/09 16:12:05 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -639,7 +639,7 @@ case OP_Real: {            /* same as TK_FLOAT, */
   pTos->enc = SQLITE_UTF8;
   pTos->r = sqlite3VdbeRealValue(pTos);
   pTos->flags |= MEM_Real;
-  sqlite3VdbeChangeEncoding(pTos, db->enc);
+  sqlite3VdbeChangeEncoding(pTos, ENC(db));
   break;
 }
 
@@ -655,10 +655,10 @@ case OP_String8: {         /* same as TK_STRING */
   pOp->p1 = strlen(pOp->p3);
 
 #ifndef SQLITE_OMIT_UTF16
-  if( db->enc!=SQLITE_UTF8 ){
+  if( ENC(db)!=SQLITE_UTF8 ){
     pTos++;
     sqlite3VdbeMemSetStr(pTos, pOp->p3, -1, SQLITE_UTF8, SQLITE_STATIC);
-    if( SQLITE_OK!=sqlite3VdbeChangeEncoding(pTos, db->enc) ) goto no_mem;
+    if( SQLITE_OK!=sqlite3VdbeChangeEncoding(pTos, ENC(db)) ) goto no_mem;
     if( SQLITE_OK!=sqlite3VdbeMemDynamicify(pTos) ) goto no_mem;
     pTos->flags &= ~(MEM_Dyn);
     pTos->flags |= MEM_Static;
@@ -684,7 +684,7 @@ case OP_String: {
   pTos->flags = MEM_Str|MEM_Static|MEM_Term;
   pTos->z = pOp->p3;
   pTos->n = pOp->p1;
-  pTos->enc = db->enc;
+  pTos->enc = ENC(db);
   break;
 }
 
@@ -888,7 +888,7 @@ case OP_Callback: {            /* no-push */
   */
   for(; pMem<=pTos; pMem++ ){
     sqlite3VdbeMemNulTerminate(pMem);
-    storeTypeInfo(pMem, db->enc);
+    storeTypeInfo(pMem, ENC(db));
   }
 
   /* Set up the statement structure so that it will pop the current
@@ -929,7 +929,7 @@ case OP_Concat: {           /* same as TK_CONCAT */
       nByte = -1;
       break;
     }
-    Stringify(pTerm, db->enc);
+    Stringify(pTerm, ENC(db));
     nByte += pTerm->n;
   }
 
@@ -968,7 +968,7 @@ case OP_Concat: {           /* same as TK_CONCAT */
     pTos->n = j;
     pTos->flags = MEM_Str|MEM_Dyn|MEM_Term;
     pTos->xDel = 0;
-    pTos->enc = db->enc;
+    pTos->enc = ENC(db);
     pTos->z = zNew;
   }
   break;
@@ -1142,7 +1142,7 @@ case OP_Function: {
   pArg = &pTos[1-n];
   for(i=0; i<n; i++, pArg++){
     apVal[i] = pArg;
-    storeTypeInfo(pArg, db->enc);
+    storeTypeInfo(pArg, ENC(db));
   }
 
   assert( pOp->p3type==P3_FUNCDEF || pOp->p3type==P3_VDBEFUNC );
@@ -1180,7 +1180,7 @@ case OP_Function: {
   }
 
   /* Copy the result of the function to the top of the stack */
-  sqlite3VdbeChangeEncoding(&ctx.s, db->enc);
+  sqlite3VdbeChangeEncoding(&ctx.s, ENC(db));
   pTos++;
   pTos->flags = 0;
   sqlite3VdbeMemMove(pTos, &ctx.s);
@@ -1191,7 +1191,7 @@ case OP_Function: {
       sqlite3SetString(&p->zErrMsg, "user function error", (char*)0);
     }else{
       sqlite3SetString(&p->zErrMsg, sqlite3_value_text(pTos), (char*)0);
-      sqlite3VdbeChangeEncoding(pTos, db->enc);
+      sqlite3VdbeChangeEncoding(pTos, ENC(db));
     }
     rc = SQLITE_ERROR;
   }
@@ -1284,7 +1284,7 @@ case OP_AddImm: {            /* no-push */
 case OP_ForceInt: {            /* no-push */
   i64 v;
   assert( pTos>=p->aStack );
-  applyAffinity(pTos, SQLITE_AFF_NUMERIC, db->enc);
+  applyAffinity(pTos, SQLITE_AFF_NUMERIC, ENC(db));
   if( (pTos->flags & (MEM_Int|MEM_Real))==0 ){
     Release(pTos);
     pTos--;
@@ -1319,7 +1319,7 @@ case OP_ForceInt: {            /* no-push */
 */
 case OP_MustBeInt: {            /* no-push */
   assert( pTos>=p->aStack );
-  applyAffinity(pTos, SQLITE_AFF_NUMERIC, db->enc);
+  applyAffinity(pTos, SQLITE_AFF_NUMERIC, ENC(db));
   if( (pTos->flags & MEM_Int)==0 ){
     if( pOp->p2==0 ){
       rc = SQLITE_MISMATCH;
@@ -1367,7 +1367,7 @@ case OP_ToText: {                  /* same as TK_TO_TEXT, no-push */
   if( pTos->flags & MEM_Null ) break;
   assert( MEM_Str==(MEM_Blob>>3) );
   pTos->flags |= (pTos->flags&MEM_Blob)>>3;
-  applyAffinity(pTos, SQLITE_AFF_TEXT, db->enc);
+  applyAffinity(pTos, SQLITE_AFF_TEXT, ENC(db));
   assert( pTos->flags & MEM_Str );
   pTos->flags &= ~(MEM_Int|MEM_Real|MEM_Blob);
   break;
@@ -1386,7 +1386,7 @@ case OP_ToBlob: {                  /* same as TK_TO_BLOB, no-push */
   assert( pTos>=p->aStack );
   if( pTos->flags & MEM_Null ) break;
   if( (pTos->flags & MEM_Blob)==0 ){
-    applyAffinity(pTos, SQLITE_AFF_TEXT, db->enc);
+    applyAffinity(pTos, SQLITE_AFF_TEXT, ENC(db));
     assert( pTos->flags & MEM_Str );
     pTos->flags |= MEM_Blob;
   }
@@ -1567,8 +1567,8 @@ case OP_Ge: {             /* same as TK_GE, no-push */
 
   affinity = pOp->p1 & 0xFF;
   if( affinity ){
-    applyAffinity(pNos, affinity, db->enc);
-    applyAffinity(pTos, affinity, db->enc);
+    applyAffinity(pNos, affinity, ENC(db));
+    applyAffinity(pTos, affinity, ENC(db));
   }
 
   assert( pOp->p3type==P3_COLLSEQ || pOp->p3==0 );
@@ -2068,7 +2068,7 @@ case OP_Column: {
       zData = sMem.z;
     }
     sqlite3VdbeSerialGet((u8*)zData, aType[p2], pTos);
-    pTos->enc = db->enc;
+    pTos->enc = ENC(db);
   }else{
     if( pOp->p3type==P3_MEM ){
       sqlite3VdbeMemShallowCopy(pTos, (Mem *)(pOp->p3), MEM_Static);
@@ -2192,7 +2192,7 @@ case OP_MakeRecord: {
   */
   for(pRec=pData0; pRec<=pTos; pRec++){
     if( zAffinity ){
-      applyAffinity(pRec, zAffinity[pRec-pData0], db->enc);
+      applyAffinity(pRec, zAffinity[pRec-pData0], ENC(db));
     }
     if( pRec->flags&MEM_Null ){
       containsNull = 1;
@@ -2582,7 +2582,7 @@ case OP_OpenWrite: {       /* no-push */
   if( pOp->p3type==P3_KEYINFO ){
     pCur->pKeyInfo = (KeyInfo*)pOp->p3;
     pCur->pIncrKey = &pCur->pKeyInfo->incrKey;
-    pCur->pKeyInfo->enc = p->db->enc;
+    pCur->pKeyInfo->enc = ENC(p->db);
   }else{
     pCur->pKeyInfo = 0;
     pCur->pIncrKey = &pCur->bogusIncrKey;
@@ -2670,7 +2670,7 @@ case OP_OpenVirtual: {       /* no-push */
         rc = sqlite3BtreeCursor(pCx->pBt, pgno, 1, sqlite3VdbeRecordCompare,
             pOp->p3, &pCx->pCursor);
         pCx->pKeyInfo = (KeyInfo*)pOp->p3;
-        pCx->pKeyInfo->enc = p->db->enc;
+        pCx->pKeyInfo->enc = ENC(p->db);
         pCx->pIncrKey = &pCx->pKeyInfo->incrKey;
       }
       pCx->isTable = 0;
@@ -2800,7 +2800,7 @@ case OP_MoveGt: {       /* no-push */
       pC->rowidIsValid = res==0;
     }else{
       assert( pTos->flags & MEM_Blob );
-      /* Stringify(pTos, db->enc); */
+      /* Stringify(pTos, ENC(db)); */
       rc = sqlite3BtreeMoveto(pC->pCursor, pTos->z, pTos->n, &res);
       if( rc!=SQLITE_OK ){
         goto abort_due_to_error;
@@ -2905,7 +2905,7 @@ case OP_Found: {        /* no-push */
   if( (pC = p->apCsr[i])->pCursor!=0 ){
     int res, rx;
     assert( pC->isTable==0 );
-    Stringify(pTos, db->enc);
+    Stringify(pTos, ENC(db));
     rx = sqlite3BtreeMoveto(pC->pCursor, pTos->z, pTos->n, &res);
     alreadyExists = rx==SQLITE_OK && res==0;
     pC->deferredMoveto = 0;
@@ -2972,7 +2972,7 @@ case OP_IsUnique: {        /* no-push */
 
     /* Make sure K is a string and make zKey point to K
     */
-    Stringify(pNos, db->enc);
+    Stringify(pNos, ENC(db));
     zKey = pNos->z;
     nKey = pNos->n;
 
@@ -3802,7 +3802,7 @@ case OP_IdxGE: {        /* no-push */
     int res, rc;
  
     assert( pTos->flags & MEM_Blob );  /* Created using OP_Make*Key */
-    Stringify(pTos, db->enc);
+    Stringify(pTos, ENC(db));
     assert( pC->deferredMoveto==0 );
     *pC->pIncrKey = pOp->p3!=0;
     assert( pOp->p3==0 || pOp->opcode!=OP_IdxGT );
@@ -4131,7 +4131,7 @@ case OP_IntegrityCk: {
     pTos->xDel = 0;
   }
   pTos->enc = SQLITE_UTF8;
-  sqlite3VdbeChangeEncoding(pTos, db->enc);
+  sqlite3VdbeChangeEncoding(pTos, ENC(db));
   sqliteFree(aRoot);
   break;
 }
@@ -4407,7 +4407,7 @@ case OP_AggStep: {        /* no-push */
   assert( apVal || n==0 );
   for(i=0; i<n; i++, pRec++){
     apVal[i] = pRec;
-    storeTypeInfo(pRec, db->enc);
+    storeTypeInfo(pRec, ENC(db));
   }
   ctx.pFunc = (FuncDef*)pOp->p3;
   assert( pOp->p1>=0 && pOp->p1<p->nMem );
@@ -4552,7 +4552,7 @@ default: {
 #ifndef NDEBUG
     /* Sanity checking on the top element of the stack */
     if( pTos>=p->aStack ){
-      sqlite3VdbeMemSanity(pTos, db->enc);
+      sqlite3VdbeMemSanity(pTos, ENC(db));
     }
     assert( pc>=-1 && pc<p->nOp );
 #ifdef SQLITE_DEBUG

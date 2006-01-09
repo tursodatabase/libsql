@@ -6,7 +6,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: quick.test,v 1.39 2005/12/30 16:28:02 danielk1977 Exp $
+# $Id: quick.test,v 1.40 2006/01/09 16:12:05 danielk1977 Exp $
 
 proc lshift {lvar} {
   upvar $lvar l
@@ -49,6 +49,8 @@ set EXCLUDE {
   memleak.test
   misuse.test
   quick.test
+
+  attachmalloc.test
   utf16.test
   autovacuum_crash.test
   btree8.test

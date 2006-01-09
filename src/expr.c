@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.245 2006/01/09 06:29:48 danielk1977 Exp $
+** $Id: expr.c,v 1.246 2006/01/09 16:12:05 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1149,7 +1149,7 @@ static int nameResolverStep(void *pArg, Expr *pExpr){
       int nId;                    /* Number of characters in function name */
       const char *zId;            /* The function name. */
       FuncDef *pDef;              /* Information about the function */
-      int enc = pParse->db->enc;  /* The database encoding */
+      int enc = ENC(pParse->db);  /* The database encoding */
 
       zId = (char*)pExpr->token.z;
       nId = pExpr->token.n;
@@ -1666,7 +1666,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       const char *zId;
       int constMask = 0;
       int i;
-      u8 enc = pParse->db->enc;
+      u8 enc = ENC(pParse->db);
       CollSeq *pColl = 0;
       zId = (char*)pExpr->token.z;
       nId = pExpr->token.n;
@@ -2233,7 +2233,7 @@ static int analyzeAggregate(void *pArg, Expr *pExpr){
         if( i>=pAggInfo->nFunc ){
           /* pExpr is original.  Make a new entry in pAggInfo->aFunc[]
           */
-          u8 enc = pParse->db->enc;
+          u8 enc = ENC(pParse->db);
           i = addAggInfoFunc(pAggInfo);
           if( i>=0 ){
             pItem = &pAggInfo->aFunc[i];

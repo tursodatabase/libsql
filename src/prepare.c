@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.16 2006/01/09 06:29:49 danielk1977 Exp $
+** $Id: prepare.c,v 1.17 2006/01/09 16:12:05 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -155,21 +155,26 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
 
   assert( iDb>=0 && iDb<db->nDb );
 
+  assert( db->aDb[iDb].pSchema );
+#if 0
   if( 0==db->aDb[iDb].pSchema ){
-    Schema *pS = sqlite3BtreeSchema(db->aDb[iDb].pBt, sizeof(Schema), 
-        sqlite3SchemaFree);
+    Schema *pS = sqlite3SchemaGet(db->aDb[iDb].pBt);
     db->aDb[iDb].pSchema = pS;
     if( !pS ){
       return SQLITE_NOMEM;
     }else if( pS->file_format!=0 ){
+      /* This means that the shared-schema associated with the the btree
+      ** is already open and populated.
+      */
+      if( pS->enc!=ENC(db) ){
+        sqlite3SetString(pzErrMsg, "attached databases must use the same"
+            " text encoding as main database", (char*)0);
+        return SQLITE_ERROR;
+      }
       return SQLITE_OK;
-    }else{
-      sqlite3HashInit(&pS->tblHash, SQLITE_HASH_STRING, 0);
-      sqlite3HashInit(&pS->idxHash, SQLITE_HASH_STRING, 0);
-      sqlite3HashInit(&pS->trigHash, SQLITE_HASH_STRING, 0);
-      sqlite3HashInit(&pS->aFKey, SQLITE_HASH_STRING, 1);
     }
   }
+#endif
 
   /* zMasterSchema and zInitScript are set to point at the master schema
   ** and initialisation script appropriate for the database being
@@ -255,12 +260,12 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   */
   if( meta[4] ){  /* text encoding */
     if( iDb==0 ){
-      /* If opening the main database, set db->enc. */
-      db->enc = (u8)meta[4];
-      db->pDfltColl = sqlite3FindCollSeq(db, db->enc, "BINARY", 6, 0);
+      /* If opening the main database, set ENC(db). */
+      ENC(db) = (u8)meta[4];
+      db->pDfltColl = sqlite3FindCollSeq(db, ENC(db), "BINARY", 6, 0);
     }else{
-      /* If opening an attached database, the encoding much match db->enc */
-      if( meta[4]!=db->enc ){
+      /* If opening an attached database, the encoding much match ENC(db) */
+      if( meta[4]!=ENC(db) ){
         sqlite3BtreeCloseCursor(curMain);
         sqlite3SetString(pzErrMsg, "attached databases must use the same"
             " text encoding as main database", (char*)0);
@@ -268,11 +273,12 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
       }
     }
   }
+  pDb->pSchema->enc = ENC(db);
 
   size = meta[2];
   if( size==0 ){ size = MAX_PAGES; }
-  pDb->cache_size = size;
-  sqlite3BtreeSetCacheSize(pDb->pBt, pDb->cache_size);
+  pDb->pSchema->cache_size = size;
+  sqlite3BtreeSetCacheSize(pDb->pBt, pDb->pSchema->cache_size);
 
   /*
   ** file_format==1    Version 3.0.0.

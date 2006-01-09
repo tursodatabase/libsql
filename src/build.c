@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.371 2006/01/09 06:29:48 danielk1977 Exp $
+** $Id: build.c,v 1.372 2006/01/09 16:12:05 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -68,7 +68,7 @@ void sqlite3TableLock(
   TableLock *p;
   ThreadData *pTsd = sqlite3ThreadData();
 
-  if( 0==pTsd->useSharedData ){
+  if( 0==pTsd->useSharedData || iDb<0 ){
     return;
   }
 
@@ -846,7 +846,7 @@ void sqlite3StartTable(
     sqlite3VdbeAddOp(v, OP_If, 0, lbl);
     sqlite3VdbeAddOp(v, OP_Integer, SQLITE_DEFAULT_FILE_FORMAT, 0);
     sqlite3VdbeAddOp(v, OP_SetCookie, iDb, 1);
-    sqlite3VdbeAddOp(v, OP_Integer, db->enc, 0);
+    sqlite3VdbeAddOp(v, OP_Integer, ENC(db), 0);
     sqlite3VdbeAddOp(v, OP_SetCookie, iDb, 4);
     sqlite3VdbeResolveLabel(v, lbl);
 
@@ -1220,7 +1220,7 @@ int sqlite3CheckIndexCollSeq(Parse *pParse, Index *pIdx){
 */
 CollSeq *sqlite3LocateCollSeq(Parse *pParse, const char *zName, int nName){
   sqlite3 *db = pParse->db;
-  u8 enc = db->enc;
+  u8 enc = ENC(db);
   u8 initbusy = db->init.busy;
 
   CollSeq *pColl = sqlite3FindCollSeq(db, enc, zName, nName, initbusy);
@@ -2955,12 +2955,6 @@ static int sqlite3OpenTempDatabase(Parse *pParse){
       pParse->rc = rc;
       return 1;
     }
-/*
-    db->aDb[1].pSchema = sqlite3SchemaGet(db->aDb[1].pBt);
-    if( !db->aDb[1].pSchema ){
-      return SQLITE_NOMEM;
-    }
-*/
     if( db->flags & !db->autoCommit ){
       rc = sqlite3BtreeBeginTrans(db->aDb[1].pBt, 1);
       if( rc!=SQLITE_OK ){
@@ -2970,6 +2964,7 @@ static int sqlite3OpenTempDatabase(Parse *pParse){
         return 1;
       }
     }
+    assert( db->aDb[1].pSchema );
   }
   return 0;
 }
@@ -3144,7 +3139,7 @@ void sqlite3Reindex(Parse *pParse, Token *pName1, Token *pName2){
     reindexDatabases(pParse, 0);
     return;
   }else if( pName2==0 || pName2->z==0 ){
-    pColl = sqlite3FindCollSeq(db, db->enc, (char*)pName1->z, pName1->n, 0);
+    pColl = sqlite3FindCollSeq(db, ENC(db), (char*)pName1->z, pName1->n, 0);
     if( pColl ){
       reindexDatabases(pParse, pColl);
       return;

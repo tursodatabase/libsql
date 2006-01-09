@@ -634,7 +634,7 @@ static int bindText(
     return rc;
   }
   if( rc==SQLITE_OK && encoding!=0 ){
-    rc = sqlite3VdbeChangeEncoding(pVar, p->db->enc);
+    rc = sqlite3VdbeChangeEncoding(pVar, ENC(p->db));
   }
   return rc;
 }

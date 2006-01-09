@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.110 2006/01/08 18:10:18 drh Exp $
+** $Id: pragma.c,v 1.111 2006/01/09 16:12:05 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -287,8 +287,8 @@ void sqlite3Pragma(
       sqlite3VdbeAddOp(v, OP_Ge, 0, addr+3);
       sqlite3VdbeAddOp(v, OP_Negative, 0, 0);
       sqlite3VdbeAddOp(v, OP_SetCookie, iDb, 2);
-      pDb->cache_size = size;
-      sqlite3BtreeSetCacheSize(pDb->pBt, pDb->cache_size);
+      pDb->pSchema->cache_size = size;
+      sqlite3BtreeSetCacheSize(pDb->pBt, pDb->pSchema->cache_size);
     }
   }else
 
@@ -349,12 +349,12 @@ void sqlite3Pragma(
   if( sqlite3StrICmp(zLeft,"cache_size")==0 ){
     if( sqlite3ReadSchema(pParse) ) goto pragma_out;
     if( !zRight ){
-      returnSingleInt(pParse, "cache_size", pDb->cache_size);
+      returnSingleInt(pParse, "cache_size", pDb->pSchema->cache_size);
     }else{
       int size = atoi(zRight);
       if( size<0 ) size = -size;
-      pDb->cache_size = size;
-      sqlite3BtreeSetCacheSize(pDb->pBt, pDb->cache_size);
+      pDb->pSchema->cache_size = size;
+      sqlite3BtreeSetCacheSize(pDb->pBt, pDb->pSchema->cache_size);
     }
   }else
 
@@ -797,7 +797,7 @@ void sqlite3Pragma(
       sqlite3VdbeSetColName(v, 0, "encoding", P3_STATIC);
       sqlite3VdbeAddOp(v, OP_String8, 0, 0);
       for(pEnc=&encnames[0]; pEnc->zName; pEnc++){
-        if( pEnc->enc==pParse->db->enc ){
+        if( pEnc->enc==ENC(pParse->db) ){
           sqlite3VdbeChangeP3(v, -1, pEnc->zName, P3_STATIC);
           break;
         }
@@ -812,7 +812,7 @@ void sqlite3Pragma(
       if( !(pParse->db->flags&SQLITE_Initialized) ){
         for(pEnc=&encnames[0]; pEnc->zName; pEnc++){
           if( 0==sqlite3StrICmp(zRight, pEnc->zName) ){
-            pParse->db->enc = pEnc->enc;
+            ENC(pParse->db) = pEnc->enc;
             break;
           }
         }

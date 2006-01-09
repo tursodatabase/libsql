@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.319 2006/01/09 06:29:49 danielk1977 Exp $
+** $Id: main.c,v 1.320 2006/01/09 16:12:05 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -725,7 +725,6 @@ static int openDatabase(
   db->magic = SQLITE_MAGIC_BUSY;
   db->nDb = 2;
   db->aDb = db->aDbStatic;
-  db->enc = SQLITE_UTF8;
   db->autoCommit = 1;
   db->flags |= SQLITE_ShortColNames;
   sqlite3HashInit(&db->aFunc, SQLITE_HASH_STRING, 0);
@@ -739,14 +738,14 @@ static int openDatabase(
     sqlite3HashInit(&db->aDb[i].aFKey, SQLITE_HASH_STRING, 1);
   }
 #endif
-  
+ 
   /* Add the default collation sequence BINARY. BINARY works for both UTF-8
   ** and UTF-16, so add a version for each to avoid any unnecessary
   ** conversions. The only error that can occur here is a malloc() failure.
   */
   if( sqlite3_create_collation(db, "BINARY", SQLITE_UTF8, 0,binCollFunc) ||
       sqlite3_create_collation(db, "BINARY", SQLITE_UTF16, 0,binCollFunc) ||
-      (db->pDfltColl = sqlite3FindCollSeq(db, db->enc, "BINARY", 6, 0))==0 
+      (db->pDfltColl = sqlite3FindCollSeq(db, SQLITE_UTF8, "BINARY", 6, 0))==0 
   ){
     /* sqlite3_create_collation() is an external API. So the mallocFailed flag
     ** will have been cleared before returning. So set it explicitly here.
@@ -777,6 +776,10 @@ static int openDatabase(
   db->aDb[0].pSchema = sqlite3SchemaGet(db->aDb[0].pBt);
   db->aDb[1].pSchema = sqlite3SchemaGet(0);
 #endif
+
+  if( db->aDb[0].pSchema ){
+    ENC(db) = SQLITE_UTF8;
+  }
 
   /* The default safety_level for the main database is 'full'; for the temp
   ** database it is 'NONE'. This matches the pager layer defaults.  

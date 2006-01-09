@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.114 2006/01/06 21:52:50 drh Exp $
+** $Id: func.c,v 1.115 2006/01/09 16:12:05 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -728,17 +728,17 @@ static void test_destructor(
   test_destructor_count_var++;
   assert( nArg==1 );
   if( sqlite3_value_type(argv[0])==SQLITE_NULL ) return;
-  len = sqlite3ValueBytes(argv[0], db->enc); 
+  len = sqlite3ValueBytes(argv[0], ENC(db)); 
   zVal = sqliteMalloc(len+3);
   zVal[len] = 0;
   zVal[len-1] = 0;
   assert( zVal );
   zVal++;
-  memcpy(zVal, sqlite3ValueText(argv[0], db->enc), len);
-  if( db->enc==SQLITE_UTF8 ){
+  memcpy(zVal, sqlite3ValueText(argv[0], ENC(db)), len);
+  if( ENC(db)==SQLITE_UTF8 ){
     sqlite3_result_text(pCtx, zVal, -1, destructor);
 #ifndef SQLITE_OMIT_UTF16
-  }else if( db->enc==SQLITE_UTF16LE ){
+  }else if( ENC(db)==SQLITE_UTF16LE ){
     sqlite3_result_text16le(pCtx, zVal, -1, destructor);
   }else{
     sqlite3_result_text16be(pCtx, zVal, -1, destructor);
