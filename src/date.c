@@ -16,7 +16,7 @@
 ** sqlite3RegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.48 2006/01/06 14:32:20 drh Exp $
+** $Id: date.c,v 1.49 2006/01/09 00:18:03 drh Exp $
 **
 ** NOTES:
 **
@@ -236,7 +236,7 @@ static void computeJD(DateTime *p){
   if( p->validHMS ){
     p->rJD += (p->h*3600.0 + p->m*60.0 + p->s)/86400.0;
     if( p->validTZ ){
-      p->rJD += p->tz*60/86400.0;
+      p->rJD -= p->tz*60/86400.0;
       p->validHMS = 0;
       p->validTZ = 0;
     }

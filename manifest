@@ -1,5 +1,5 @@
-C Remove\sbenign\sreference\sto\san\suninitialized\svariable.\s\sTicket\s#1590.\s(CVS\s2890)
-D 2006-01-09T00:09:02
+C Fix\stimezone\sparsing\sin\sthe\sdate/time\sfunctions.\s\sTicket\s#1587.\s(CVS\s2891)
+D 2006-01-09T00:18:03
 F Makefile.in c79fbdaa264c6afcd435f2fb492551de5a8cf80d
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -39,7 +39,7 @@ F src/btree.h 5663c4f43e8521546ccebc8fc95acb013b8f3184
 F src/build.c 0cf9f744911826ded1c8ee8adbf881ed5a2ef70a
 F src/callback.c 62066afd516f220575e81b1a1239ab92a2eae252
 F src/complete.c df1681cef40dec33a286006981845f87b194e7a4
-F src/date.c 9a1fe548e31a9b14a43b88f711254a968929659d
+F src/date.c a927bdbb51296ac398d2f667086a7072c099e5ab
 F src/delete.c 32ba37cced50d26ed996d67dc7d19195e081bbb7
 F src/experimental.c 50c1e3b34f752f4ac10c36f287db095c2b61766d
 F src/expr.c ed2a272c7afd63232ca04881159ce2366266e35d
@@ -140,7 +140,7 @@ F test/corrupt.test 18c7a995b1af76a8c8600b996257f2c7b7bff083
 F test/corrupt2.test 88342570828f2b8cbbd8369eff3891f5c0bdd5ba
 F test/crash.test 5f5f155393c5685b3842fef79b6fbafa55197d75
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
-F test/date.test 30ca15e608a45d868fd419c901795382efe27020
+F test/date.test 288b41dbcc7aa114a976c53b45b78b3aa7736940
 F test/default.test 252298e42a680146b1dd64f563b95bdf088d94fb
 F test/delete.test 525a6953bc3978780cae35f3eaf1027cf4ce887d
 F test/delete2.test d20b08733243f1890079f3b48f2356fbb62212b2
@@ -335,7 +335,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P b2ac0be07ec76ab23b7e5b800c0bc62d0bc97f4b
-R a9919b87664b805fe97fdd7f7e43274b
+P 32998fe8ed38a79eb79d8b13051b47bf74661e3c
+R 05890fde3a3c853b296df6bd6670d3bd
 U drh
-Z d9f487dbde41143452d66ece6be8dc06
+Z d4023a6da63972dce3bf97acfc91ffae
