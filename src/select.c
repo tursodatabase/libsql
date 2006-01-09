@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.288 2006/01/08 18:10:18 drh Exp $
+** $Id: select.c,v 1.289 2006/01/09 00:09:02 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -387,7 +387,7 @@ static void codeOffset(
   if( p->iOffset>=0 && iContinue!=0 ){
     int addr;
     sqlite3VdbeAddOp(v, OP_MemIncr, -1, p->iOffset);
-    addr = sqlite3VdbeAddOp(v, OP_IfMemNeg, p->iOffset, addr);
+    addr = sqlite3VdbeAddOp(v, OP_IfMemNeg, p->iOffset, 0);
     if( nPop>0 ){
       sqlite3VdbeAddOp(v, OP_Pop, nPop, 0);
     }
