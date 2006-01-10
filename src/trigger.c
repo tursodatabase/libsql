@@ -740,8 +740,7 @@ int sqlite3CodeRowTrigger(
   int orconf,          /* ON CONFLICT policy */
   int ignoreJump       /* Instruction to jump to for RAISE(IGNORE) */
 ){
-  Trigger *pTrigger;
-  TriggerStack *pStack;
+  Trigger *p;
   TriggerStack trigStackEntry;
 
   assert(op == TK_UPDATE || op == TK_INSERT || op == TK_DELETE);
@@ -749,21 +748,20 @@ int sqlite3CodeRowTrigger(
 
   assert(newIdx != -1 || oldIdx != -1);
 
-  pTrigger = pTab->pTrigger;
-  while( pTrigger ){
+  for(p=pTab->pTrigger; p; p=p->pNext){
     int fire_this = 0;
 
-    /* determine whether we should code this trigger */
-    if( pTrigger->op == op && pTrigger->tr_tm == tr_tm ){
-      fire_this = 1;
-      for(pStack=pParse->trigStack; pStack; pStack=pStack->pNext){
-        if( pStack->pTrigger==pTrigger ){
-	  fire_this = 0;
-	}
-      }
-      if( op == TK_UPDATE && pTrigger->pColumns &&
-          !checkColumnOverLap(pTrigger->pColumns, pChanges) ){
-        fire_this = 0;
+    /* Determine whether we should code this trigger */
+    if( 
+      p->op==op && 
+      p->tr_tm==tr_tm && 
+      (p->pSchema==p->pTabSchema || p->pSchema==pParse->db->aDb[1].pSchema) &&
+      (op!=TK_UPDATE||!p->pColumns||checkColumnOverLap(p->pColumns,pChanges))
+    ){
+      TriggerStack *pS;      /* Pointer to trigger-stack entry */
+      for(pS=pParse->trigStack; pS && p!=pS->pTrigger; pS=pS->pNext);
+      if( !pS ){
+        fire_this = 1;
       }
     }
  
@@ -777,18 +775,18 @@ int sqlite3CodeRowTrigger(
       sNC.pParse = pParse;
 
       /* Push an entry on to the trigger stack */
-      trigStackEntry.pTrigger = pTrigger;
+      trigStackEntry.pTrigger = p;
       trigStackEntry.newIdx = newIdx;
       trigStackEntry.oldIdx = oldIdx;
       trigStackEntry.pTab = pTab;
       trigStackEntry.pNext = pParse->trigStack;
       trigStackEntry.ignoreJump = ignoreJump;
       pParse->trigStack = &trigStackEntry;
-      sqlite3AuthContextPush(pParse, &sContext, pTrigger->name);
+      sqlite3AuthContextPush(pParse, &sContext, p->name);
 
       /* code the WHEN clause */
       endTrigger = sqlite3VdbeMakeLabel(pParse->pVdbe);
-      whenExpr = sqlite3ExprDup(pTrigger->pWhen);
+      whenExpr = sqlite3ExprDup(p->pWhen);
       if( sqlite3ExprResolveNames(&sNC, whenExpr) ){
         pParse->trigStack = trigStackEntry.pNext;
         sqlite3ExprDelete(whenExpr);
@@ -797,7 +795,7 @@ int sqlite3CodeRowTrigger(
       sqlite3ExprIfFalse(pParse, whenExpr, endTrigger, 1);
       sqlite3ExprDelete(whenExpr);
 
-      codeTriggerProgram(pParse, pTrigger->step_list, orconf); 
+      codeTriggerProgram(pParse, p->step_list, orconf); 
 
       /* Pop the entry off the trigger stack */
       pParse->trigStack = trigStackEntry.pNext;
@@ -805,7 +803,6 @@ int sqlite3CodeRowTrigger(
 
       sqlite3VdbeResolveLabel(pParse->pVdbe, endTrigger);
     }
-    pTrigger = pTrigger->pNext;
   }
   return 0;
 }

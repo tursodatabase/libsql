@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: shared.test,v 1.8 2006/01/09 16:12:05 danielk1977 Exp $
+# $Id: shared.test,v 1.9 2006/01/10 12:31:41 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -604,6 +604,59 @@ do_test shared-8.2.3 {
 
 catch {db close}
 catch {db2 close}
+file delete -force test.db test2.db
+
+if 0 {
+
+do_test shared-9.1 {
+  sqlite3 db test.db
+} {}
+do_test shared-9.2 {
+  execsql {CREATE TABLE t1(a);}
+} {}
+
+file delete -force test.db
+sqlite3 db test.db; set DB [sqlite3_connection_pointer db]
+do_test shared-9.3 {
+  execsql {
+    CREATE TABLE t5(a);
+    INSERT INTO t5 VALUES('one');
+  } db
+} {}
+
+}
+
+#---------------------------------------------------------------------------
+# The following tests - shared-9.* - test interactions between TEMP triggers
+# and shared-schemas.
+#
+ifcapable trigger&&tempdb {
+
+do_test shared-9.1 {
+  sqlite3 db test.db
+  sqlite3 db2 test.db
+  execsql {
+    CREATE TABLE abc(a, b, c);
+    CREATE TABLE abc_mirror(a, b, c);
+    CREATE TEMP TRIGGER BEFORE INSERT ON abc BEGIN 
+      INSERT INTO abc_mirror(a, b, c) VALUES(new.a, new.b, new.c);
+    END;
+    INSERT INTO abc VALUES(1, 2, 3);
+    SELECT * FROM abc_mirror;
+  }
+} {1 2 3}
+do_test shared-9.2 {
+  execsql {
+    INSERT INTO abc VALUES(4, 5, 6);
+    SELECT * FROM abc_mirror;
+  } db2
+} {1 2 3}
+do_test shared-9.3 {
+  db close
+  db2 close
+} {}
+
+} ; # End shared-9.*
 
 finish_test
 sqlite3_enable_shared_cache $::enable_shared_cache
