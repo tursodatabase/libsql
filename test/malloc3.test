@@ -13,7 +13,7 @@
 # correctly. The emphasis of these tests are the _prepare(), _step() and
 # _finalize() calls.
 #
-# $Id: malloc3.test,v 1.5 2005/12/16 15:24:30 danielk1977 Exp $
+# $Id: malloc3.test,v 1.6 2006/01/10 18:27:42 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -145,6 +145,7 @@ if {[info command sqlite_malloc_stat]==""} {
 # ::run_test_script. At the end of this file, the proc [run_test] is used
 # to execute the program (and all test cases contained therein).
 #
+set ::run_test_script [list]
 proc TEST {id t} {lappend ::run_test_script -test [list $id $t]}
 proc PREP {p} {lappend ::run_test_script -prep [string trim $p]}
 
