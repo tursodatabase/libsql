@@ -13,7 +13,7 @@
 #
 # This file is derived from thread1.test
 #
-# $Id: server1.test,v 1.1 2006/01/09 23:50:11 drh Exp $
+# $Id: server1.test,v 1.2 2006/01/10 02:30:33 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -96,20 +96,8 @@ do_test server1-1.12 {
 } {t1 t2}
 
 
-#
-# The following tests - server1-2.* - test the following scenario:
-#
-# 1:  Read-lock thread A
-# 2:  Read-lock thread B
-# 3:  Attempt to write in thread C -> SQLITE_BUSY
-# 4:  Check db write failed from main thread.
-# 5:  Unlock from thread A.
-# 6:  Attempt to write in thread C -> SQLITE_BUSY
-# 7:  Check db write failed from main thread.
-# 8:  Unlock from thread B.
-# 9:  Attempt to write in thread C -> SQLITE_DONE
-# 10: Finalize the write from thread C
-# 11: Check db write succeeded from main thread.
+# Read from table t1.  Do not finalize the statement.  This
+# will leave the lock pending.
 #
 do_test server1-2.1 {
   client_halt *
@@ -118,12 +106,19 @@ do_test server1-2.1 {
   client_step A
   client_result A
 } SQLITE_ROW
+
+# Read from the same table from another thread.  This is allows.
+#
 do_test server1-2.2 {
   client_create B test.db
   client_compile B {SELECT b FROM t1}
   client_step B
   client_result B
 } SQLITE_ROW
+
+# Write to a different table from another thread.  This is allowed
+# becaus in server mode with a shared cache we have table-level locking.
+#
 do_test server1-2.3 {
   client_create C test.db
   client_compile C {INSERT INTO t2 VALUES(98,99)}
@@ -131,42 +126,35 @@ do_test server1-2.3 {
   client_result C
   client_finalize C
   client_result C
-} SQLITE_BUSY
+} SQLITE_OK
 
+# But we cannot insert into table t1 because threads A and B have it locked.
+#
 do_test server1-2.4 {
-  execsql {SELECT * FROM t2}
-} {}
-
+  client_compile C {INSERT INTO t1 VALUES(98,99)}
+  client_step C
+  client_result C
+  client_finalize C
+  client_result C
+} SQLITE_LOCKED
 do_test server1-2.5 {
-  client_finalize A
-  client_result A
-} SQLITE_OK
-do_test server1-2.6 {
-  client_compile C {INSERT INTO t2 VALUES(98,99)}
-  client_step C
-  client_result C
-  client_finalize C
-  client_result C
-} SQLITE_BUSY
-do_test server1-2.7 {
-  execsql {SELECT * FROM t2}
-} {}
-do_test server1-2.8 {
   client_finalize B
-  client_result B
-} SQLITE_OK
-do_test server1-2.9 {
-  client_compile C {INSERT INTO t2 VALUES(98,99)}
+  client_compile C {INSERT INTO t1 VALUES(98,99)}
   client_step C
   client_result C
-} SQLITE_DONE
-do_test server1-2.10 {
+  client_finalize C
+  client_result C
+} SQLITE_LOCKED
+
+# Insert into t1 is successful after finishing the other two threads.
+do_test server1-2.6 {
+  client_finalize A
+  client_compile C {INSERT INTO t1 VALUES(98,99)}
+  client_step C
+  client_result C
   client_finalize C
   client_result C
 } SQLITE_OK
-do_test server1-2.11 {
-  execsql {SELECT * FROM t2}
-} {98 99}
 
 client_halt *   
 finish_test

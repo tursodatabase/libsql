@@ -1,5 +1,5 @@
-C Add\sthe\sfirst\ssimple\stests\sof\sserver\smode.\s\sGet\sthe\sMakefile\sgenerated\sfrom\nthe\sconfigure\sscript\sworking\sagain.\s(CVS\s2898)
-D 2006-01-09T23:50:11
+C Enable\sshared\scache\son\sthe\sserver\sdemonstration.\s(CVS\s2899)
+D 2006-01-10T02:30:33
 F Makefile.in ab3ffd8d469cef4477257169b82810030a6bb967
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -67,7 +67,7 @@ F src/prepare.c 41d9a8563e2b988932922c9f96a7bb1271932564
 F src/printf.c f47a2f4b5387cd2ebb12e9117a1a5d6bd9a2b812
 F src/random.c d40f8d356cecbd351ccfab6eaedd7ec1b54f5261
 F src/select.c acfeda959fe07eac04950d945ac7ec0518ef4b7d
-F src/server.c 934555eb73d9051c2ba1fc5367f0f969516dfec8
+F src/server.c 42a2bd02eec5018098a96e08f7a923f4965a2b1d
 F src/shell.c 66b073375efbdee19045e7e0cd38b85f9aff71da
 F src/sqlite.h.in 537bac9e9ef703695268aaad5c56b6bf64f815be
 F src/sqliteInt.h 073d84b12a07b25a31e08a3fd5115d44424511c3
@@ -224,7 +224,7 @@ F test/select4.test c239f516aa31f42f2ef7c6d7cd01105f08f934ca
 F test/select5.test 07a90ab3c7e3f0a241a9cdea1d997b2c8a89ff0b
 F test/select6.test f459a19bdac0501c4d3eb1a4df4b7a76f1bb8ad4
 F test/select7.test 1bf795b948c133a15a2a5e99d3270e652ec58ce6
-F test/server1.test c1611e0d6a032e740c09a07c9066ff9c83755126
+F test/server1.test 95c497a8b4c35599768d6a93b168cc272e83fee3
 F test/shared.test 413289e177e73c844cfc9896b6d78e0f2e62d963
 F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
 F test/subquery.test e6de53332c0301b3cfa34edc3f3cd5fa1e859efd
@@ -340,7 +340,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P ec332d8822d1ac9673581a26ab2a2fce5f2554a3
-R e5d15dbb3e926b9920df07fb0ac31ca5
+P 66f84068f3c7c0963ce88f84fc0ba6775f64cd19
+R c5563d07cb2805e3f2db53bc3bd82ad8
 U drh
-Z 9152e6540471def63c6c7493e6fbf1c1
+Z 3c5423459a64450bbf5c75dd316847e8
