@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.520 2006/01/09 16:12:05 danielk1977 Exp $
+** $Id: vdbe.c,v 1.521 2006/01/10 18:44:08 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2927,7 +2927,7 @@ case OP_Found: {        /* no-push */
 **
 ** The top of the stack is an integer record number.  Call this
 ** record number R.  The next on the stack is an index key created
-** using MakeIdxKey.  Call it K.  This instruction pops R from the
+** using MakeIdxRec.  Call it K.  This instruction pops R from the
 ** stack but it leaves K unchanged.
 **
 ** P1 is an index.  So it has no data and its key consists of a
@@ -3654,7 +3654,7 @@ case OP_Next: {        /* no-push */
 /* Opcode: IdxInsert P1 * *
 **
 ** The top of the stack holds a SQL index key made using the
-** MakeIdxKey instruction.  This opcode writes that key into the
+** MakeIdxRec instruction.  This opcode writes that key into the
 ** index P1.  Data for the entry is nil.
 **
 ** This instruction only works for indices.  The equivalent instruction
@@ -3684,7 +3684,7 @@ case OP_IdxInsert: {        /* no-push */
 
 /* Opcode: IdxDelete P1 * *
 **
-** The top of the stack is an index key built using the MakeIdxKey opcode.
+** The top of the stack is an index key built using the MakeIdxRec opcode.
 ** This opcode removes that entry from the index.
 */
 case OP_IdxDelete: {        /* no-push */
@@ -3715,7 +3715,7 @@ case OP_IdxDelete: {        /* no-push */
 ** the end of the index key pointed to by cursor P1.  This integer should be
 ** the rowid of the table entry to which this index entry points.
 **
-** See also: Rowid, MakeIdxKey.
+** See also: Rowid, MakeIdxRec.
 */
 case OP_IdxRowid: {
   int i = pOp->p1;
@@ -3828,7 +3828,7 @@ case OP_IdxGE: {        /* no-push */
 /* Opcode: IdxIsNull P1 P2 *
 **
 ** The top of the stack contains an index entry such as might be generated
-** by the MakeIdxKey opcode.  This routine looks at the first P1 fields of
+** by the MakeIdxRec opcode.  This routine looks at the first P1 fields of
 ** that key.  If any of the first P1 fields are NULL, then a jump is made
 ** to address P2.  Otherwise we fall straight through.
 **
