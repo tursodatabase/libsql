@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.321 2006/01/10 07:14:24 danielk1977 Exp $
+** $Id: main.c,v 1.322 2006/01/10 13:58:48 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1051,5 +1051,32 @@ int sqlite3_get_autocommit(sqlite3 *db){
 */
 int sqlite3Corrupt(void){
   return SQLITE_CORRUPT;
+}
+#endif
+
+
+#ifndef SQLITE_OMIT_SHARED_CACHE
+/*
+** Enable or disable the shared pager and schema features for the
+** current thread.
+**
+** This routine should only be called when there are no open
+** database connections.
+*/
+int sqlite3_enable_shared_cache(int enable){
+  ThreadData *pTd = sqlite3ThreadData();
+  
+  /* It is only legal to call sqlite3_enable_shared_cache() when there
+  ** are no currently open b-trees that were opened by the calling thread.
+  ** This condition is only easy to detect if the shared-cache were 
+  ** previously enabled (and is being disabled). 
+  */
+  if( pTd->pBtree && !enable ){
+    assert( pTd->useSharedData );
+    return SQLITE_MISUSE;
+  }
+
+  pTd->useSharedData = enable;
+  return SQLITE_OK;
 }
 #endif

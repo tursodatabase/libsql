@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.288 2006/01/09 09:59:49 danielk1977 Exp $
+** $Id: btree.c,v 1.289 2006/01/10 13:58:48 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -6498,25 +6498,3 @@ int sqlite3BtreeLockTable(Btree *p, int iTab, u8 isWriteLock){
 #endif
   return rc;
 }
-
-#ifndef SQLITE_OMIT_SHARED_CACHE
-/*
-** Enable the shared pager and schema features.
-*/
-int sqlite3_enable_shared_cache(int enable){
-  ThreadData *pTd = sqlite3ThreadData();
-  
-  /* It is only legal to call sqlite3_enable_shared_cache() when there
-  ** are no currently open b-trees that were opened by the calling thread.
-  ** This condition is only easy to detect if the shared-cache were 
-  ** previously enabled (and is being disabled). 
-  */
-  if( pTd->pBtree && !enable ){
-    assert( pTd->useSharedData );
-    return SQLITE_MISUSE;
-  }
-
-  pTd->useSharedData = enable;
-  return SQLITE_OK;
-}
-#endif
