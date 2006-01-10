@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.373 2006/01/09 23:40:25 drh Exp $
+** $Id: build.c,v 1.374 2006/01/10 07:14:23 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -405,7 +405,7 @@ void sqlite3ResetInternalSchema(sqlite3 *db, int iDb){
   db->flags &= ~SQLITE_InternChanges;
 
   /* If one or more of the auxiliary database files has been closed,
-  ** then remove then from the auxiliary database list.  We take the
+  ** then remove them from the auxiliary database list.  We take the
   ** opportunity to do this here since we have just deleted all of the
   ** schema hash tables and therefore do not have to make any changes
   ** to any of those tables.

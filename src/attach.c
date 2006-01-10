@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the ATTACH and DETACH commands.
 **
-** $Id: attach.c,v 1.43 2006/01/09 23:40:25 drh Exp $
+** $Id: attach.c,v 1.44 2006/01/10 07:14:23 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -182,6 +182,7 @@ static void attachFunc(
     if( db->aDb[i].pBt ){
       sqlite3BtreeClose(db->aDb[i].pBt);
       db->aDb[i].pBt = 0;
+      db->aDb[i].pSchema = 0;
     }
     sqlite3ResetInternalSchema(db, 0);
     db->nDb = i;
@@ -243,6 +244,7 @@ static void detachFunc(
 
   sqlite3BtreeClose(pDb->pBt);
   pDb->pBt = 0;
+  pDb->pSchema = 0;
   sqlite3ResetInternalSchema(db, 0);
   return;
 

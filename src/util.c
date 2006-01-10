@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.164 2006/01/09 09:59:49 danielk1977 Exp $
+** $Id: util.c,v 1.165 2006/01/10 07:14:24 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -450,14 +450,23 @@ static void * OSMALLOC(int n){
   return 0;
 }
 
+static int OSSIZEOF(void *p){
+  if( p ){
+    u32 *pOs = (u32 *)getOsPointer(p);
+    return sqlite3OsAllocationSize(pOs) - TESTALLOC_OVERHEAD;
+  }
+  return 0;
+}
+
 /*
 ** This is the test layer's wrapper around sqlite3OsFree(). The argument is a
 ** pointer to the space allocated for the application to use.
 */
-void OSFREE(void *pFree){
+static void OSFREE(void *pFree){
   u32 *p = (u32 *)getOsPointer(pFree);   /* p points to Os level allocation */
   checkGuards(p);
   unlinkAlloc(p);
+  memset(pFree, 0x55, OSSIZEOF(pFree));
   sqlite3OsFree(p);
   sqlite3_nFree++;
 }
@@ -465,7 +474,7 @@ void OSFREE(void *pFree){
 /*
 ** This is the test layer's wrapper around sqlite3OsRealloc().
 */
-void * OSREALLOC(void *pRealloc, int n){
+static void * OSREALLOC(void *pRealloc, int n){
 #ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
   ThreadData *pTsd = sqlite3ThreadData();
   pTsd->nMaxAlloc = MAX(pTsd->nMaxAlloc, pTsd->nAlloc);
@@ -481,16 +490,8 @@ void * OSREALLOC(void *pRealloc, int n){
   return 0;
 }
 
-void OSMALLOC_FAILED(){
+static void OSMALLOC_FAILED(){
   sqlite3ThreadData()->isFail = 0;
-}
-
-int OSSIZEOF(void *p){
-  if( p ){
-    u32 *pOs = (u32 *)getOsPointer(p);
-    return sqlite3OsAllocationSize(pOs) - TESTALLOC_OVERHEAD;
-  }
-  return 0;
 }
 
 #else
