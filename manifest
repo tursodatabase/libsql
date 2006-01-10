@@ -1,5 +1,5 @@
-C Combine\smultiple\ssmall\scalls\sto\ssqlite3OsWrite\sinto\sone\slarger\scall.\s(CVS\s2910)
-D 2006-01-10T20:32:32
+C Fix\sbug\sin\sthe\sserver1\stest\sscript.\s(CVS\s2911)
+D 2006-01-10T20:36:40
 F Makefile.in ab3ffd8d469cef4477257169b82810030a6bb967
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -224,7 +224,7 @@ F test/select4.test c239f516aa31f42f2ef7c6d7cd01105f08f934ca
 F test/select5.test 07a90ab3c7e3f0a241a9cdea1d997b2c8a89ff0b
 F test/select6.test f459a19bdac0501c4d3eb1a4df4b7a76f1bb8ad4
 F test/select7.test 1bf795b948c133a15a2a5e99d3270e652ec58ce6
-F test/server1.test 95c497a8b4c35599768d6a93b168cc272e83fee3
+F test/server1.test 9d2d5b17b537911214a7e2a2728ff4f6ff16319c
 F test/shared.test b375b17588568eb4080005167e7c717539f7574c
 F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
 F test/subquery.test e6de53332c0301b3cfa34edc3f3cd5fa1e859efd
@@ -340,7 +340,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P c0f47ccbc915f20d56f393383c21b4026785e6a5
-R 47f576a3900e4c28937875b78f472e44
+P e6e6750c24dc8b87be96bdc0e93254d7f0700543
+R 49a5607db3d0468e3f8a84a3544f61fc
 U drh
-Z b4dc310261f3df513fff82ddf0ae5002
+Z 596386da0eae24b859c010c9364f72a2
