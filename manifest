@@ -1,5 +1,5 @@
-C Store\scollation\ssequence\snames\sinstead\sof\spointers\sin\ssharable\sschema\sdata\sstructures.\s(CVS\s2904)
-D 2006-01-10T17:58:23
+C Typos\sin\snew\sdocumentation.\s(CVS\s2905)
+D 2006-01-10T18:08:10
 F Makefile.in ab3ffd8d469cef4477257169b82810030a6bb967
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -297,7 +297,7 @@ F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
 F www/autoinc.tcl b357f5ba954b046ee35392ce0f884a2fcfcdea06
 F www/c_interface.tcl b51b08591554c16a0c3ef718364a508ac25abc7e
 F www/capi3.tcl 7a7cc225fe02eb7ab861a6019b08baa0014409e1
-F www/capi3ref.tcl 5d67be5af0c6edc888dec19f99839e332e4bb470
+F www/capi3ref.tcl 3885ca3847f394db7aa035647f0ab1c140244042
 F www/changes.tcl 567069a3dc7d066f3687fe3697be62e6dd19e671
 F www/common.tcl 14d121c28532ad20c3e349caa4db708b0b822083
 F www/compile.tcl 276546d7eb445add5a867193bbd80f6919a6b084
@@ -340,7 +340,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P bdd35e9fbb651fe7a1ed5042923c9529c3c5ab7c
-R 86f043f12b95a158f3793bd5117e0f9d
+P 0f0213be4d064b3d24e31ff93ec16f6862003d26
+R 50307102b19c002c0e3dd37bf43d7381
 U danielk1977
-Z 598f1f083965de59648a9c0d25b3df80
+Z 3e291ae4c514c9dedda3a63f8160db01

@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3ref.tcl,v 1.26 2006/01/10 15:18:28 drh Exp $}
+set rcsid {$Id: capi3ref.tcl,v 1.27 2006/01/10 18:08:10 danielk1977 Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -1144,7 +1144,7 @@ api {} {
 api {} {
   int sqlite3_global_recover();
 } {
- This function is used to be involved in recovering from out-of-memory
+ This function used to be involved in recovering from out-of-memory
  errors.  But as of SQLite version 3.3.0, out-of-memory recovery is
  automatic and this routine now does nothing.  THe interface is retained
  to avoid link errors with legacy code.
@@ -1343,7 +1343,7 @@ api {} {
 
   SQLite makes a best effort to honor the soft heap limit.  But if it
   is unable to reduce memory usage below the soft limit, execution will
-  continue without error or notification.  This is way the limit is 
+  continue without error or notification.  This is why the limit is 
   called a "soft" limit.  It is advisory only.
 
   If memory management is not enabled, the soft heap limit is ignored.
