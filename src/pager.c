@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.234 2006/01/09 23:40:25 drh Exp $
+** @(#) $Id: pager.c,v 1.235 2006/01/10 20:32:32 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -444,15 +444,22 @@ static int read32bits(OsFile *fd, u32 *pRes){
 }
 
 /*
+** Write a 32-bit integer into a string buffer in big-endian byte order.
+*/
+static void put32bits(char *ac, u32 val){
+  ac[0] = (val>>24) & 0xff;
+  ac[1] = (val>>16) & 0xff;
+  ac[2] = (val>>8) & 0xff;
+  ac[3] = val & 0xff;
+}
+
+/*
 ** Write a 32-bit integer into the given file descriptor.  Return SQLITE_OK
 ** on success or an error code is something goes wrong.
 */
 static int write32bits(OsFile *fd, u32 val){
   unsigned char ac[4];
-  ac[0] = (val>>24) & 0xff;
-  ac[1] = (val>>16) & 0xff;
-  ac[2] = (val>>8) & 0xff;
-  ac[3] = val & 0xff;
+  put32bits(ac, val);
   return sqlite3OsWrite(fd, ac, 4);
 }
 
@@ -463,10 +470,7 @@ static int write32bits(OsFile *fd, u32 val){
 static void store32bits(u32 val, PgHdr *p, int offset){
   unsigned char *ac;
   ac = &((unsigned char*)PGHDR_TO_DATA(p))[offset];
-  ac[0] = (val>>24) & 0xff;
-  ac[1] = (val>>16) & 0xff;
-  ac[2] = (val>>8) & 0xff;
-  ac[3] = val & 0xff;
+  put32bits(ac, val);
 }
 
 /*
@@ -656,6 +660,7 @@ static int seekJournalHdr(Pager *pPager){
 ** Followed by (JOURNAL_HDR_SZ - 24) bytes of unused space.
 */
 static int writeJournalHdr(Pager *pPager){
+  char zHeader[sizeof(aJournalMagic)+16];
 
   int rc = seekJournalHdr(pPager);
   if( rc ) return rc;
@@ -674,25 +679,17 @@ static int writeJournalHdr(Pager *pPager){
   ** Actually maybe the whole journal header should be delayed until that
   ** point. Think about this.
   */
-  rc = sqlite3OsWrite(pPager->jfd, aJournalMagic, sizeof(aJournalMagic));
-
-  if( rc==SQLITE_OK ){
-    /* The nRec Field. 0xFFFFFFFF for no-sync journals. */
-    rc = write32bits(pPager->jfd, pPager->noSync ? 0xffffffff : 0);
-  }
-  if( rc==SQLITE_OK ){
-    /* The random check-hash initialiser */ 
-    sqlite3Randomness(sizeof(pPager->cksumInit), &pPager->cksumInit);
-    rc = write32bits(pPager->jfd, pPager->cksumInit);
-  }
-  if( rc==SQLITE_OK ){
-    /* The initial database size */
-    rc = write32bits(pPager->jfd, pPager->dbSize);
-  }
-  if( rc==SQLITE_OK ){
-    /* The assumed sector size for this process */
-    rc = write32bits(pPager->jfd, pPager->sectorSize);
-  }
+  memcpy(zHeader, aJournalMagic, sizeof(aJournalMagic));
+  /* The nRec Field. 0xFFFFFFFF for no-sync journals. */
+  put32bits(&zHeader[sizeof(aJournalMagic)], pPager->noSync ? 0xffffffff : 0);
+  /* The random check-hash initialiser */ 
+  sqlite3Randomness(sizeof(pPager->cksumInit), &pPager->cksumInit);
+  put32bits(&zHeader[sizeof(aJournalMagic)+4], pPager->cksumInit);
+  /* The initial database size */
+  put32bits(&zHeader[sizeof(aJournalMagic)+8], pPager->dbSize);
+  /* The assumed sector size for this process */
+  put32bits(&zHeader[sizeof(aJournalMagic)+12], pPager->sectorSize);
+  rc = sqlite3OsWrite(pPager->jfd, zHeader, sizeof(zHeader));
 
   /* The journal header has been written successfully. Seek the journal
   ** file descriptor to the end of the journal header sector.
@@ -792,7 +789,8 @@ static int writeMasterJournal(Pager *pPager, const char *zMaster){
   int rc;
   int len; 
   int i; 
-  u32 cksum = 0; 
+  u32 cksum = 0;
+  char zBuf[sizeof(aJournalMagic)+2*4];
 
   if( !zMaster || pPager->setMaster) return SQLITE_OK;
   pPager->setMaster = 1;
@@ -818,13 +816,10 @@ static int writeMasterJournal(Pager *pPager, const char *zMaster){
   rc = sqlite3OsWrite(pPager->jfd, zMaster, len);
   if( rc!=SQLITE_OK ) return rc;
 
-  rc = write32bits(pPager->jfd, len);
-  if( rc!=SQLITE_OK ) return rc;
-
-  rc = write32bits(pPager->jfd, cksum);
-  if( rc!=SQLITE_OK ) return rc;
-
-  rc = sqlite3OsWrite(pPager->jfd, aJournalMagic, sizeof(aJournalMagic));
+  put32bits(zBuf, len);
+  put32bits(&zBuf[4], cksum);
+  memcpy(&zBuf[8], aJournalMagic, sizeof(aJournalMagic));
+  rc = sqlite3OsWrite(pPager->jfd, zBuf, 8+sizeof(aJournalMagic));
   pPager->needSync = !pPager->noSync;
   return rc;
 }
