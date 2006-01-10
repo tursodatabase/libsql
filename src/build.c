@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.374 2006/01/10 07:14:23 danielk1977 Exp $
+** $Id: build.c,v 1.375 2006/01/10 17:58:23 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -468,6 +468,7 @@ static void sqliteResetColumnNames(Table *pTable){
       sqliteFree(pCol->zName);
       sqlite3ExprDelete(pCol->pDflt);
       sqliteFree(pCol->zType);
+      sqliteFree(pCol->zColl);
     }
     sqliteFree(pTable->aCol);
   }
@@ -938,7 +939,6 @@ void sqlite3AddColumn(Parse *pParse, Token *pName){
   ** be called next to set pCol->affinity correctly.
   */
   pCol->affinity = SQLITE_AFF_NONE;
-  pCol->pColl = pParse->db->pDfltColl;
   p->nCol++;
 }
 
@@ -1167,41 +1167,26 @@ void sqlite3AddCheckConstraint(
 */
 void sqlite3AddCollateType(Parse *pParse, const char *zType, int nType){
   Table *p;
-  Index *pIdx;
-  CollSeq *pColl;
   int i;
 
   if( (p = pParse->pNewTable)==0 ) return;
   i = p->nCol-1;
 
-  pColl = sqlite3LocateCollSeq(pParse, zType, nType);
-  p->aCol[i].pColl = pColl;
-
-  /* If the column is declared as "<name> PRIMARY KEY COLLATE <type>",
-  ** then an index may have been created on this column before the
-  ** collation type was added. Correct this if it is the case.
-  */
-  for(pIdx = p->pIndex; pIdx; pIdx=pIdx->pNext){
-    assert( pIdx->nColumn==1 );
-    if( pIdx->aiColumn[0]==i ) pIdx->keyInfo.aColl[0] = pColl;
-  }
-}
-
-/*
-** Call sqlite3CheckCollSeq() for all collating sequences in an index,
-** in order to verify that all the necessary collating sequences are
-** loaded.
-*/
-int sqlite3CheckIndexCollSeq(Parse *pParse, Index *pIdx){
-  if( pIdx ){
-    int i;
-    for(i=0; i<pIdx->nColumn; i++){
-      if( sqlite3CheckCollSeq(pParse, pIdx->keyInfo.aColl[i]) ){
-        return SQLITE_ERROR;
+  if( sqlite3LocateCollSeq(pParse, zType, nType) ){
+    Index *pIdx;
+    p->aCol[i].zColl = sqlite3StrNDup(zType, nType);
+  
+    /* If the column is declared as "<name> PRIMARY KEY COLLATE <type>",
+    ** then an index may have been created on this column before the
+    ** collation type was added. Correct this if it is the case.
+    */
+    for(pIdx=p->pIndex; pIdx; pIdx=pIdx->pNext){
+      assert( pIdx->nColumn==1 );
+      if( pIdx->aiColumn[0]==i ){
+        pIdx->azColl[0] = p->aCol[i].zColl;
       }
     }
   }
-  return SQLITE_OK;
 }
 
 /*
@@ -1222,8 +1207,9 @@ CollSeq *sqlite3LocateCollSeq(Parse *pParse, const char *zName, int nName){
   sqlite3 *db = pParse->db;
   u8 enc = ENC(db);
   u8 initbusy = db->init.busy;
+  CollSeq *pColl;
 
-  CollSeq *pColl = sqlite3FindCollSeq(db, enc, zName, nName, initbusy);
+  pColl = sqlite3FindCollSeq(db, enc, zName, nName, initbusy);
   if( !initbusy && (!pColl || !pColl->xCmp) ){
     pColl = sqlite3GetCollSeq(db, pColl, zName, nName);
     if( !pColl ){
@@ -2131,6 +2117,7 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
   int addr1;                     /* Address of top of loop */
   int tnum;                      /* Root page of index */
   Vdbe *v;                       /* Generate code into this virtual machine */
+  KeyInfo *pKey;                 /* KeyInfo for index */
   int iDb = sqlite3SchemaToIndex(pParse->db, pIndex->pSchema);
 
 #ifndef SQLITE_OMIT_AUTHORIZATION
@@ -2139,14 +2126,6 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
     return;
   }
 #endif
-
-  /* Ensure all the required collation sequences are available. This
-  ** routine will invoke the collation-needed callback if necessary (and
-  ** if one has been registered).
-  */
-  if( sqlite3CheckIndexCollSeq(pParse, pIndex) ){
-    return;
-  }
 
   /* Require a write-lock on the table to perform this operation */
   sqlite3TableLock(pParse, iDb, pTab->tnum, 1, pTab->zName);
@@ -2161,8 +2140,8 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
     sqlite3VdbeAddOp(v, OP_Clear, tnum, iDb);
   }
   sqlite3VdbeAddOp(v, OP_Integer, iDb, 0);
-  sqlite3VdbeOp3(v, OP_OpenWrite, iIdx, tnum,
-                    (char*)&pIndex->keyInfo, P3_KEYINFO);
+  pKey = sqlite3IndexKeyinfo(pParse, pIndex);
+  sqlite3VdbeOp3(v, OP_OpenWrite, iIdx, tnum, (char *)pKey, P3_KEYINFO_HANDOFF);
   sqlite3OpenTable(pParse, iTab, iDb, pTab, OP_OpenRead);
   addr1 = sqlite3VdbeAddOp(v, OP_Rewind, iTab, 0);
   sqlite3GenerateIndexKey(v, pIndex, iTab);
@@ -2221,6 +2200,9 @@ void sqlite3CreateIndex(
   int iDb;             /* Index of the database that is being written */
   Token *pName = 0;    /* Unqualified name of the index to create */
   struct ExprList_item *pListItem; /* For looping over pList */
+  int nCol;
+  int nExtra = 0;
+  char *zExtra;
 
   if( pParse->nErr || sqlite3ThreadData()->mallocFailed ){
     goto exit_create_index;
@@ -2352,17 +2334,37 @@ void sqlite3CreateIndex(
     pList->a[0].sortOrder = sortOrder;
   }
 
+  /* Figure out how many bytes of space are required to store explicitly
+  ** specified collation sequence names.
+  */
+  for(i=0; i<pList->nExpr; i++){
+    Expr *pExpr = pList->a[i].pExpr;
+    if( pExpr ){
+      nExtra += (1 + strlen(pExpr->pColl->zName));
+    }
+  }
+
   /* 
   ** Allocate the index structure. 
   */
   nName = strlen(zName);
-  pIndex = sqliteMalloc( sizeof(Index) + nName + 2 + sizeof(int) +
-                        (sizeof(int)*2 + sizeof(CollSeq*) + 1)*pList->nExpr );
+  nCol = pList->nExpr;
+  pIndex = sqliteMalloc( 
+      sizeof(Index) +              /* Index structure  */
+      sizeof(int)*nCol +           /* Index.aiColumn   */
+      sizeof(int)*(nCol+1) +       /* Index.aiRowEst   */
+      sizeof(char *)*nCol +        /* Index.azColl     */
+      sizeof(u8)*nCol +            /* Index.aSortOrder */
+      nName + 1 +                  /* Index.zName      */
+      nExtra                       /* Collation sequence names */
+  );
   if( sqlite3ThreadData()->mallocFailed ) goto exit_create_index;
-  pIndex->aiColumn = (int*)&pIndex->keyInfo.aColl[pList->nExpr];
-  pIndex->aiRowEst = (unsigned*)&pIndex->aiColumn[pList->nExpr];
-  pIndex->zName = (char*)&pIndex->aiRowEst[pList->nExpr+1];
-  pIndex->keyInfo.aSortOrder = &pIndex->zName[nName+1];
+  pIndex->aiColumn = (int *)(&pIndex[1]);
+  pIndex->aiRowEst = (int *)(&pIndex->aiColumn[nCol]);
+  pIndex->azColl = (char **)(&pIndex->aiRowEst[nCol+1]);
+  pIndex->aSortOrder = (u8 *)(&pIndex->azColl[nCol]);
+  pIndex->zName = (char *)(&pIndex->aSortOrder[nCol]);
+  zExtra = (char *)(&pIndex->zName[nName+1]);
   strcpy(pIndex->zName, zName);
   pIndex->pTable = pTab;
   pIndex->nColumn = pList->nExpr;
@@ -2386,6 +2388,8 @@ void sqlite3CreateIndex(
     const char *zColName = pListItem->zName;
     Column *pTabCol;
     int requestedSortOrder;
+    char *zColl;                   /* Collation sequence */
+
     for(j=0, pTabCol=pTab->aCol; j<pTab->nCol; j++, pTabCol++){
       if( sqlite3StrICmp(zColName, pTabCol->zName)==0 ) break;
     }
@@ -2397,20 +2401,22 @@ void sqlite3CreateIndex(
     pIndex->aiColumn[i] = j;
     if( pListItem->pExpr ){
       assert( pListItem->pExpr->pColl );
-      pIndex->keyInfo.aColl[i] = pListItem->pExpr->pColl;
+      zColl = zExtra;
+      strcpy(zExtra, pListItem->pExpr->pColl->zName);
+      zExtra += (strlen(zColl) + 1);
     }else{
-      pIndex->keyInfo.aColl[i] = pTab->aCol[j].pColl;
+      zColl = pTab->aCol[j].zColl;
+      if( !zColl ){
+        zColl = db->pDfltColl->zName;
+      }
     }
-    assert( pIndex->keyInfo.aColl[i] );
-    if( !db->init.busy && 
-        sqlite3CheckCollSeq(pParse, pIndex->keyInfo.aColl[i]) 
-    ){
+    if( !db->init.busy && !sqlite3LocateCollSeq(pParse, zColl, -1) ){
       goto exit_create_index;
     }
+    pIndex->azColl[i] = zColl;
     requestedSortOrder = pListItem->sortOrder & sortOrderMask;
-    pIndex->keyInfo.aSortOrder[i] = requestedSortOrder;
+    pIndex->aSortOrder[i] = requestedSortOrder;
   }
-  pIndex->keyInfo.nField = pList->nExpr;
   sqlite3DefaultRowEst(pIndex);
 
   if( pTab==pParse->pNewTable ){
@@ -2436,9 +2442,11 @@ void sqlite3CreateIndex(
 
       if( pIdx->nColumn!=pIndex->nColumn ) continue;
       for(k=0; k<pIdx->nColumn; k++){
+        const char *z1 = pIdx->azColl[k];
+        const char *z2 = pIndex->azColl[k];
         if( pIdx->aiColumn[k]!=pIndex->aiColumn[k] ) break;
-        if( pIdx->keyInfo.aColl[k]!=pIndex->keyInfo.aColl[k] ) break;
-        if( pIdx->keyInfo.aSortOrder[k]!=pIndex->keyInfo.aSortOrder[k] ) break;
+        if( pIdx->aSortOrder[k]!=pIndex->aSortOrder[k] ) break;
+        if( z1!=z2 && sqlite3StrICmp(z1, z2) ) break;
       }
       if( k==pIdx->nColumn ){
         if( pIdx->onError!=pIndex->onError ){
@@ -3054,12 +3062,13 @@ void sqlite3BeginWriteOperation(Parse *pParse, int setStatement, int iDb){
 ** true if it does and false if it does not.
 */
 #ifndef SQLITE_OMIT_REINDEX
-static int collationMatch(CollSeq *pColl, Index *pIndex){
-  int n = pIndex->keyInfo.nField;
-  CollSeq **pp = pIndex->keyInfo.aColl;
-  while( n-- ){
-    if( *pp==pColl ) return 1;
-    pp++;
+static int collationMatch(const char *zColl, Index *pIndex){
+  int i;
+  for(i=0; i<pIndex->nColumn; i++){
+    const char *z = pIndex->azColl[i];
+    if( z==zColl || (z && zColl && 0==sqlite3StrICmp(z, zColl)) ){
+      return 1;
+    }
   }
   return 0;
 }
@@ -3070,11 +3079,11 @@ static int collationMatch(CollSeq *pColl, Index *pIndex){
 ** If pColl==0 then recompute all indices of pTab.
 */
 #ifndef SQLITE_OMIT_REINDEX
-static void reindexTable(Parse *pParse, Table *pTab, CollSeq *pColl){
+static void reindexTable(Parse *pParse, Table *pTab, char const *zColl){
   Index *pIndex;              /* An index associated with pTab */
 
   for(pIndex=pTab->pIndex; pIndex; pIndex=pIndex->pNext){
-    if( pColl==0 || collationMatch(pColl,pIndex) ){
+    if( zColl==0 || collationMatch(zColl, pIndex) ){
       int iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
       sqlite3BeginWriteOperation(pParse, 0, iDb);
       sqlite3RefillIndex(pParse, pIndex, -1);
@@ -3089,7 +3098,7 @@ static void reindexTable(Parse *pParse, Table *pTab, CollSeq *pColl){
 ** all indices everywhere.
 */
 #ifndef SQLITE_OMIT_REINDEX
-static void reindexDatabases(Parse *pParse, CollSeq *pColl){
+static void reindexDatabases(Parse *pParse, char const *zColl){
   Db *pDb;                    /* A single database */
   int iDb;                    /* The database index number */
   sqlite3 *db = pParse->db;   /* The database connection */
@@ -3100,7 +3109,7 @@ static void reindexDatabases(Parse *pParse, CollSeq *pColl){
     if( pDb==0 ) continue;
     for(k=sqliteHashFirst(&pDb->pSchema->tblHash);  k; k=sqliteHashNext(k)){
       pTab = (Table*)sqliteHashData(k);
-      reindexTable(pParse, pTab, pColl);
+      reindexTable(pParse, pTab, zColl);
     }
   }
 }
@@ -3140,9 +3149,14 @@ void sqlite3Reindex(Parse *pParse, Token *pName1, Token *pName2){
     reindexDatabases(pParse, 0);
     return;
   }else if( pName2==0 || pName2->z==0 ){
+    assert( pName1->z );
     pColl = sqlite3FindCollSeq(db, ENC(db), (char*)pName1->z, pName1->n, 0);
     if( pColl ){
-      reindexDatabases(pParse, pColl);
+      char *z = sqlite3StrNDup(pName1->z, pName1->n);
+      if( z ){
+        reindexDatabases(pParse, z);
+        sqliteFree(z);
+      }
       return;
     }
   }
@@ -3166,3 +3180,39 @@ void sqlite3Reindex(Parse *pParse, Token *pName1, Token *pName2){
   sqlite3ErrorMsg(pParse, "unable to identify the object to be reindexed");
 }
 #endif
+
+/*
+** Return a dynamicly allocated KeyInfo structure that can be used
+** with OP_OpenRead or OP_OpenWrite to access database index pIdx.
+**
+** If successful, a pointer to the new structure is returned. In this case
+** the caller is responsible for calling sqliteFree() on the returned 
+** pointer. If an error occurs (out of memory or missing collation 
+** sequence), NULL is returned and the state of pParse updated to reflect
+** the error.
+*/
+KeyInfo *sqlite3IndexKeyinfo(Parse *pParse, Index *pIdx){
+  int i;
+  int nCol = pIdx->nColumn;
+  int nBytes = sizeof(KeyInfo) + (nCol-1)*sizeof(CollSeq*) + nCol;
+  KeyInfo *pKey = (KeyInfo *)sqliteMalloc(nBytes);
+
+  if( pKey ){
+    pKey->aSortOrder = (u8 *)&(pKey->aColl[nCol]);
+    assert( &pKey->aSortOrder[nCol]==&(((u8 *)pKey)[nBytes]) );
+    for(i=0; i<nCol; i++){
+      char *zColl = pIdx->azColl[i];
+      assert( zColl );
+      pKey->aColl[i] = sqlite3LocateCollSeq(pParse, zColl, -1);
+      pKey->aSortOrder[i] = pIdx->aSortOrder[i];
+    }
+    pKey->nField = nCol;
+  }
+
+  if( pParse->nErr ){
+    sqliteFree(pKey);
+    pKey = 0;
+  }
+  return pKey;
+}
+

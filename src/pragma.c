@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.111 2006/01/09 16:12:05 danielk1977 Exp $
+** $Id: pragma.c,v 1.112 2006/01/10 17:58:23 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -670,7 +670,6 @@ void sqlite3Pragma(
         sqlite3VdbeAddOp(v, OP_Integer, pTab->tnum, 0);
         cnt++;
         for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-          if( sqlite3CheckIndexCollSeq(pParse, pIdx) ) goto pragma_out;
           sqlite3VdbeAddOp(v, OP_Integer, pIdx->tnum, 0);
           cnt++;
         }

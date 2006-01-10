@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code associated with the ANALYZE command.
 **
-** @(#) $Id: analyze.c,v 1.15 2006/01/09 06:29:48 danielk1977 Exp $
+** @(#) $Id: analyze.c,v 1.16 2006/01/10 17:58:23 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_ANALYZE
 #include "sqliteInt.h"
@@ -114,13 +114,15 @@ static void analyzeOneTable(
 
   iIdxCur = pParse->nTab;
   for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+    KeyInfo *pKey = sqlite3IndexKeyinfo(pParse, pIdx);
+
     /* Open a cursor to the index to be analyzed
     */
     assert( iDb==sqlite3SchemaToIndex(pParse->db, pIdx->pSchema) );
     sqlite3VdbeAddOp(v, OP_Integer, iDb, 0);
     VdbeComment((v, "# %s", pIdx->zName));
     sqlite3VdbeOp3(v, OP_OpenRead, iIdxCur, pIdx->tnum,
-                     (char*)&pIdx->keyInfo, P3_KEYINFO);
+        (char *)pKey, P3_KEYINFO_HANDOFF);
     nCol = pIdx->nColumn;
     if( iMem+nCol*2>=pParse->nMem ){
       pParse->nMem = iMem+nCol*2+1;

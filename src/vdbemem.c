@@ -579,9 +579,9 @@ int sqlite3MemCompare(const Mem *pMem1, const Mem *pMem2, const CollSeq *pColl){
     assert( pMem1->enc==SQLITE_UTF8 || 
             pMem1->enc==SQLITE_UTF16LE || pMem1->enc==SQLITE_UTF16BE );
 
-    /* This assert may fail if the collation sequence is deleted after this
-    ** vdbe program is compiled. The documentation defines this as an
-    ** undefined condition. A crash is usual result.
+    /* The collation sequence must be defined at this point, even if
+    ** the user deletes the collation sequence after the vdbe program is
+    ** compiled (this was not always the case).
     */
     assert( !pColl || pColl->xCmp );
 

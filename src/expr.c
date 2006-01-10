@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.246 2006/01/09 16:12:05 danielk1977 Exp $
+** $Id: expr.c,v 1.247 2006/01/10 17:58:23 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -867,6 +867,7 @@ static int lookupName(
         }
         for(j=0, pCol=pTab->aCol; j<pTab->nCol; j++, pCol++){
           if( sqlite3StrICmp(pCol->zName, zCol)==0 ){
+            const char *zColl = pTab->aCol[j].zColl;
             IdList *pUsing;
             cnt++;
             pExpr->iTable = pItem->iCursor;
@@ -875,7 +876,7 @@ static int lookupName(
             /* Substitute the rowid (column -1) for the INTEGER PRIMARY KEY */
             pExpr->iColumn = j==pTab->iPKey ? -1 : j;
             pExpr->affinity = pTab->aCol[j].affinity;
-            pExpr->pColl = pTab->aCol[j].pColl;
+            pExpr->pColl = sqlite3FindCollSeq(db, ENC(db), zColl,-1, 0);
             if( pItem->jointype & JT_NATURAL ){
               /* If this match occurred in the left table of a natural join,
               ** then skip the right table to avoid a duplicate match */
@@ -926,10 +927,11 @@ static int lookupName(
         cntTab++;
         for(j=0; j < pTab->nCol; j++, pCol++) {
           if( sqlite3StrICmp(pCol->zName, zCol)==0 ){
+            const char *zColl = pTab->aCol[j].zColl;
             cnt++;
             pExpr->iColumn = j==pTab->iPKey ? -1 : j;
             pExpr->affinity = pTab->aCol[j].affinity;
-            pExpr->pColl = pTab->aCol[j].pColl;
+            pExpr->pColl = sqlite3FindCollSeq(db, ENC(db), zColl,-1, 0);
             pExpr->pTab = pTab;
             break;
           }

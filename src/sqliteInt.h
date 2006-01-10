@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.459 2006/01/10 15:18:28 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.460 2006/01/10 17:58:23 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -584,7 +584,7 @@ struct Column {
   char *zName;     /* Name of this column */
   Expr *pDflt;     /* Default value of this column */
   char *zType;     /* Data type for this column */
-  CollSeq *pColl;  /* Collating sequence.  If NULL, use the default */
+  char *zColl;     /* Collating sequence.  If NULL, use the default */
   u8 notNull;      /* True if there is a NOT NULL constraint */
   u8 isPrimKey;    /* True if this column is part of the PRIMARY KEY */
   char affinity;   /* One of the SQLITE_AFF_... values */
@@ -600,7 +600,7 @@ struct Column {
 ** processes text encoded in UTF-16 (CollSeq.xCmp16), using the machine
 ** native byte order. When a collation sequence is invoked, SQLite selects
 ** the version that will require the least expensive encoding
-** transalations, if any.
+** translations, if any.
 **
 ** The CollSeq.pUser member variable is an extra parameter that passed in
 ** as the first argument to the UTF-8 comparison function, xCmp.
@@ -845,11 +845,11 @@ struct Index {
   int tnum;        /* Page containing root of this index in database file */
   u8 onError;      /* OE_Abort, OE_Ignore, OE_Replace, or OE_None */
   u8 autoIndex;    /* True if is automatically created (ex: by UNIQUE) */
-  // u8 iDb;          /* Index in sqlite.aDb[] of where this index is stored */
   char *zColAff;   /* String defining the affinity of each column */
   Index *pNext;    /* The next index associated with the same table */
-  Schema *pSchema;
-  KeyInfo keyInfo; /* Info on how to order keys.  MUST BE LAST */
+  Schema *pSchema; /* Schema containing this index */
+  u8 *aSortOrder;  /* Array of size Index.nColumn. True==DESC, False==ASC */
+  char **azColl;   /* Array of collation sequence names for index */
 };
 
 /*
@@ -1736,6 +1736,7 @@ void sqlite3MinimumFileFormat(Parse*, int, int);
 void sqlite3SchemaFree(void *);
 Schema *sqlite3SchemaGet(Btree *);
 int sqlite3SchemaToIndex(sqlite3 *db, Schema *);
+KeyInfo *sqlite3IndexKeyinfo(Parse *, Index *);
 
 #ifndef SQLITE_OMIT_SHARED_CACHE
   void sqlite3TableLock(Parse *, int, int, u8, const char *);

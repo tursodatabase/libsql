@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.291 2006/01/09 16:12:05 danielk1977 Exp $
+** $Id: select.c,v 1.292 2006/01/10 17:58:23 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -978,6 +978,7 @@ Table *sqlite3ResultSetOfSelect(Parse *pParse, char *zTabName, Select *pSelect){
     char *zType;
     char *zName;
     char *zBasename;
+    CollSeq *pColl;
     int cnt;
     NameContext sNC;
     
@@ -1030,9 +1031,9 @@ Table *sqlite3ResultSetOfSelect(Parse *pParse, char *zTabName, Select *pSelect){
     zType = sqliteStrDup(columnType(&sNC, p));
     pCol->zType = zType;
     pCol->affinity = sqlite3ExprAffinity(p);
-    pCol->pColl = sqlite3ExprCollSeq(pParse, p);
-    if( !pCol->pColl ){
-      pCol->pColl = pParse->db->pDfltColl;
+    pColl = sqlite3ExprCollSeq(pParse, p);
+    if( pColl ){
+      pCol->zColl = sqlite3StrDup(pColl->zName);
     }
   }
   pTab->iPKey = -1;
@@ -2278,7 +2279,10 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
     CollSeq *pColl = sqlite3ExprCollSeq(pParse, pExpr);
     for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
       assert( pIdx->nColumn>=1 );
-      if( pIdx->aiColumn[0]==iCol && pIdx->keyInfo.aColl[0]==pColl ) break;
+      if( pIdx->aiColumn[0]==iCol && 
+          0==sqlite3StrICmp(pIdx->azColl[0], pColl->zName) ){
+        break;
+      }
     }
     if( pIdx==0 ) return 0;
   }
@@ -2321,11 +2325,12 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
     ** "INSERT INTO x SELECT max() FROM x".
     */
     int iIdx;
+    KeyInfo *pKey = sqlite3IndexKeyinfo(pParse, pIdx);
     iIdx = pParse->nTab++;
     assert( pIdx->pSchema==pTab->pSchema );
     sqlite3VdbeAddOp(v, OP_Integer, iDb, 0);
-    sqlite3VdbeOp3(v, OP_OpenRead, iIdx, pIdx->tnum,
-                   (char*)&pIdx->keyInfo, P3_KEYINFO);
+    sqlite3VdbeOp3(v, OP_OpenRead, iIdx, pIdx->tnum, 
+        (char*)pKey, P3_KEYINFO_HANDOFF);
     if( seekOp==OP_Rewind ){
       sqlite3VdbeAddOp(v, OP_Null, 0, 0);
       sqlite3VdbeAddOp(v, OP_MakeRecord, 1, 0);

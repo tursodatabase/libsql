@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.192 2006/01/09 06:29:49 danielk1977 Exp $
+** $Id: where.c,v 1.193 2006/01/10 17:58:23 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -450,7 +450,7 @@ static WhereTerm *findTerm(
         }
         for(k=0; k<pIdx->nColumn && pIdx->aiColumn[k]!=iColumn; k++){}
         assert( k<pIdx->nColumn );
-        if( pColl!=pIdx->keyInfo.aColl[k] ) continue;
+        if( sqlite3StrICmp(pColl->zName, pIdx->azColl[k]) ) continue;
       }
       return pTerm;
     }
@@ -810,7 +810,8 @@ static int isSortingIndex(
     }
     pColl = sqlite3ExprCollSeq(pParse, pExpr);
     if( !pColl ) pColl = db->pDfltColl;
-    if( pExpr->iColumn!=pIdx->aiColumn[i] || pColl!=pIdx->keyInfo.aColl[i] ){
+    if( pExpr->iColumn!=pIdx->aiColumn[i] || 
+        sqlite3StrICmp(pColl->zName, pIdx->azColl[i]) ){
       /* Term j of the ORDER BY clause does not match column i of the index */
       if( i<nEqCol ){
         /* If an index column that is constrained by == fails to match an
@@ -824,10 +825,10 @@ static int isSortingIndex(
         return 0;
       }
     }
-    assert( pIdx->keyInfo.aSortOrder!=0 );
+    assert( pIdx->aSortOrder!=0 );
     assert( pTerm->sortOrder==0 || pTerm->sortOrder==1 );
-    assert( pIdx->keyInfo.aSortOrder[i]==0 || pIdx->keyInfo.aSortOrder[i]==1 );
-    termSortOrder = pIdx->keyInfo.aSortOrder[i] ^ pTerm->sortOrder;
+    assert( pIdx->aSortOrder[i]==0 || pIdx->aSortOrder[i]==1 );
+    termSortOrder = pIdx->aSortOrder[i] ^ pTerm->sortOrder;
     if( i>nEqCol ){
       if( termSortOrder!=sortOrder ){
         /* Indices can only be used if all ORDER BY terms past the
@@ -1586,11 +1587,12 @@ WhereInfo *sqlite3WhereBegin(
     }
     pLevel->iTabCur = pTabItem->iCursor;
     if( (pIx = pLevel->pIdx)!=0 ){
+      KeyInfo *pKey = sqlite3IndexKeyinfo(pParse, pIx);
       assert( pIx->pSchema==pTab->pSchema );
       sqlite3VdbeAddOp(v, OP_Integer, iDb, 0);
       VdbeComment((v, "# %s", pIx->zName));
       sqlite3VdbeOp3(v, OP_OpenRead, iIdxCur, pIx->tnum,
-                     (char*)&pIx->keyInfo, P3_KEYINFO);
+                     (char*)pKey, P3_KEYINFO_HANDOFF);
     }
     if( (pLevel->flags & WHERE_IDX_ONLY)!=0 ){
       sqlite3VdbeAddOp(v, OP_SetNumColumns, iIdxCur, pIx->nColumn+1);
@@ -1747,7 +1749,7 @@ WhereInfo *sqlite3WhereBegin(
       ** index the operators are reversed.
       */
       nNotNull = nEq + topLimit;
-      if( pIdx->keyInfo.aSortOrder[nEq]==SQLITE_SO_ASC ){
+      if( pIdx->aSortOrder[nEq]==SQLITE_SO_ASC ){
         topOp = WO_LT|WO_LE;
         btmOp = WO_GT|WO_GE;
       }else{
