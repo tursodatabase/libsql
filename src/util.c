@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.165 2006/01/10 07:14:24 danielk1977 Exp $
+** $Id: util.c,v 1.166 2006/01/10 15:18:28 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -71,7 +71,7 @@
 ** Set the soft heap-size limit for the current thread. Passing a negative
 ** value indicates no limit.
 */
-void sqlite3_soft_heap_limit(sqlite_int64 n){
+void sqlite3_soft_heap_limit(int n){
   sqlite3ThreadData()->nSoftHeapLimit = n;
 }
 
@@ -524,7 +524,7 @@ static void OSMALLOC_FAILED(){
 #ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
 static void handleSoftLimit(int n){
   ThreadData *pTsd = sqlite3ThreadData();
-  pTsd->nAlloc += (i64)n;
+  pTsd->nAlloc += n;
   if( n>0 && pTsd->nSoftHeapLimit>0 ){
     while( pTsd->nAlloc>pTsd->nSoftHeapLimit && sqlite3_release_memory(n) );
   }

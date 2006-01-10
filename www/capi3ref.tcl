@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3ref.tcl,v 1.25 2005/12/02 01:57:43 drh Exp $}
+set rcsid {$Id: capi3ref.tcl,v 1.26 2006/01/10 15:18:28 drh Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -1144,23 +1144,10 @@ api {} {
 api {} {
   int sqlite3_global_recover();
 } {
- This function is called to recover from a malloc() failure that occured
- within the SQLite library. Normally, after a single malloc() fails the 
- library refuses to function (all major calls return SQLITE_NOMEM).
- This function restores the library state so that it can be used again.
-
- All existing statements (sqlite3_stmt pointers) must be finalized or
- reset before this call is made. Otherwise, SQLITE_BUSY is returned.
- If any in-memory databases are in use, either as a main or TEMP
- database, SQLITE_ERROR is returned. In either of these cases, the 
- library is not reset and remains unusable.
-
- This function is *not* threadsafe. Calling this from within a threaded
- application when threads other than the caller have used SQLite is
- dangerous and will almost certainly result in malfunctions.
-
- This functionality can be omitted from a build by defining the 
- SQLITE_OMIT_GLOBALRECOVER at compile time.
+ This function is used to be involved in recovering from out-of-memory
+ errors.  But as of SQLite version 3.3.0, out-of-memory recovery is
+ automatic and this routine now does nothing.  THe interface is retained
+ to avoid link errors with legacy code.
 }
 
 api {} {
@@ -1187,6 +1174,180 @@ api {} {
  the statement in the first place.
 }
 
+api {} {
+  void *sqlite3_update_hook(
+    sqlite3*, 
+    void(*)(void *,int ,char const *,char const *,sqlite_int64),
+    void*
+  );
+} {
+ Register a callback function with the database connection identified by the 
+ first argument to be invoked whenever a row is updated, inserted or deleted.
+ Any callback set by a previous call to this function for the same 
+ database connection is overridden.
+
+ The second argument is a pointer to the function to invoke when a 
+ row is updated, inserted or deleted. The first argument to the callback is
+ a copy of the third argument to sqlite3_update_hook. The second callback 
+ argument is one of SQLITE_INSERT, SQLITE_DELETE or SQLITE_UPDATE, depending
+ on the operation that caused the callback to be invoked. The third and 
+ fourth arguments to the callback contain pointers to the database and 
+ table name containing the affected row. The final callback parameter is 
+ the rowid of the row. In the case of an update, this is the rowid after 
+ the update takes place.
+
+ The update hook is not invoked when internal system tables are
+ modified (i.e. sqlite_master and sqlite_sequence).
+
+ If another function was previously registered, its pArg value is returned.
+ Otherwise NULL is returned.
+
+ See also: sqlite3_commit_hook(), sqlite3_rollback_hook()
+}
+
+api {} {
+  void *sqlite3_rollback_hook(sqlite3*, void(*)(void *), void*);
+} {
+ Register a callback to be invoked whenever a transaction is rolled
+ back. 
+
+ The new callback function overrides any existing rollback-hook
+ callback. If there was an existing callback, then it's pArg value 
+ (the third argument to sqlite3_rollback_hook() when it was registered) 
+ is returned. Otherwise, NULL is returned.
+
+ For the purposes of this API, a transaction is said to have been 
+ rolled back if an explicit "ROLLBACK" statement is executed, or
+ an error or constraint causes an implicit rollback to occur. The 
+ callback is not invoked if a transaction is automatically rolled
+ back because the database connection is closed.
+}
+
+api {} {
+  int sqlite3_enable_shared_cache(int);
+} {
+  This routine enables or disables the sharing of the database cache
+  and schema data structures between connections to the same database.
+  Sharing is enabled if the argument is true and disabled if the argument
+  is false.
+
+  Cache sharing is enabled and disabled on a thread-by-thread basis.
+  Each call to this routine enables or disables cache sharing only for
+  connections created in the same thread in which this routine is called.
+  There is no mechanism for sharing cache between database connections
+  running in different threads.
+
+  This routine must not be called when any database connections
+  are active in the current thread.  Enabling or disabling shared
+  cache while there are active database connections will result
+  in memory corruption.
+
+  For any given database connection, SQLite requires that the
+  following routines always be called from the same thread:
+  sqlite3_open(), sqlite3_prepare(), sqlite3_step(), sqlite3_reset(),
+  sqlite3_finalize(), and sqlite3_close().  On some operating systems
+  (ex: windows and linux 2.6) you can get away with calling these routines
+  from different threads as long as their executions never overlap in time
+  and the shared cache is disabled.
+  But when the shared cache is enabled, some information about the
+  database connection is stored in thread-specific storage so that it
+  will be available for sharing with other connections.  Consequently,
+  the previously enumerated routines must always be called from the
+  same thread when shared cache is enabled, regardless of what operating
+  system is used.
+
+  This routine returns SQLITE_OK if shared cache was
+  enabled or disabled successfully.  An error code is returned
+  otherwise.
+
+  Shared cache is disabled by default for backward compatibility.
+}
+
+api {} {
+  int sqlite3_enable_memory_management(int);
+} {
+  This routine enables or disables heap memory management for the
+  thread in which it is called.  Memory management is enabled if
+  the argument is true and disabled if the argument is false.
+
+  This routine must not be called when any database connections
+  are active in the current thread.  Enabling or disabling memory
+  management while there are active database connections will result
+  in memory corruption.
+
+  When memory management is enabled, SQLite tries to automatically
+  recover from out-of-memory errors by freeing unused cache memory
+  and retrying the allocation.
+  This allows operations to continue when available memory is limit
+  though with some loss of performance due to the reduction in cache
+  size.
+
+  The sqlite3_soft_heap_limit() API can be used to restrict SQLite's
+  heap memory usage to a preset amount so that the reclamation of
+  cache begins to occur before memory is exhausted.
+
+  Memory management is enabled and disabled on a thread-by-thread basis.
+  Each call to this routine enables or disabled memory management only for
+  database connections created and used in the same thread in which this
+  routine is called.
+
+  For any given database connection, SQLite requires that the
+  following routines always be called from the same thread:
+  sqlite3_open(), sqlite3_prepare(), sqlite3_step(), sqlite3_reset(),
+  sqlite3_finalize(), and sqlite3_close().  On some operating systems
+  (ex: windows and linux 2.6) you can get away with calling these routines
+  from different threads as long as their executions never overlap in time
+  and memory management is disabled.
+  But when the memory management is enabled, some information about the
+  database connections is stored in thread-specific storage so that it
+  will be available to remediate memory shortages.  Consequently,
+  the previously enumerated routines must always be called from the
+  same thread when memory management is enabled, regardless of what
+  operating system is used.
+
+  This routine returns SQLITE_OK if the memory management module was
+  enabled or disabled successfully.  An error code is returned
+  otherwise.
+
+  Memory management is disabled by default for backwards compatibility
+  and because it is normally only useful for embedded devices.  The
+  code that implements the memory management feature can be omitted by
+  recompiling SQLite with the SQLITE_OMIT_MEMORY_MANAGEMENT macro defined.
+}
+
+api {} {
+  int sqlite3_release_memory(int N);
+} {
+  This routine attempts to free at least N bytes of memory from the caches
+  of database connecions that were created in the same thread from which this
+  routine is called.  The value returned is the number of bytes actually
+  freed.  
+
+  If memory management has not been enabled by calling
+  sqlite3_enable_memory_management() then this routine is a no-op
+  and always returns 0.
+}
+
+api {} {
+  void sqlite3_soft_heap_limit(int N);
+} {
+  This routine sets the soft heap limit for the current thread to N.
+  If memory management is enabled on the thread  by the
+  sqlite3_enable_memory_management() function and the total heap usage
+  by SQLite in that thread exceeds N, then sqlite3_release_memory() is
+  called to try to reduce the memory usage below the soft limit.
+
+  A negative value for N means that there is no soft heap limit and
+  sqlite3_release_memory() will only be called when memory is exhaused.
+  The default value for the soft heap limit is negative.
+
+  SQLite makes a best effort to honor the soft heap limit.  But if it
+  is unable to reduce memory usage below the soft limit, execution will
+  continue without error or notification.  This is way the limit is 
+  called a "soft" limit.  It is advisory only.
+
+  If memory management is not enabled, the soft heap limit is ignored.
+}
 
 set n 0
 set i 0

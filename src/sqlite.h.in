@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.153 2006/01/09 09:59:49 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.154 2006/01/10 15:18:28 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1361,7 +1361,7 @@ int sqlite3_release_memory(int);
 ** SQLITE_OMIT_MEMORY_MANAGEMENT option set. It is a no-op unless 
 ** memory-management has been enabled.
 */
-void sqlite3_soft_heap_limit(sqlite_int64);
+void sqlite3_soft_heap_limit(int);
 
 /*
 ** Undo the hack that converts floating point types to integer for
