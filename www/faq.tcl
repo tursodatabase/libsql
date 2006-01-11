@@ -1,7 +1,7 @@
 #
 # Run this script to generated a faq.html output file
 #
-set rcsid {$Id: faq.tcl,v 1.33 2006/01/11 01:08:34 drh Exp $}
+set rcsid {$Id: faq.tcl,v 1.34 2006/01/11 05:49:50 danielk1977 Exp $}
 source common.tcl
 header {SQLite Frequently Asked Questions</title>}
 
@@ -324,8 +324,8 @@ faq {
 faq {
   Does SQLite support a BLOB type?
 } {
-  <p>SQLite versions 3.0 and later let you puts BLOB data into any column, even
-  columns that are declared to hold some other type.</p>
+  <p>SQLite versions 3.0 and later allow you to store BLOB data in any 
+  column, even columns that are declared to hold some other type.</p>
 }
 
 faq {
