@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.18 2006/01/10 17:58:23 danielk1977 Exp $
+** $Id: prepare.c,v 1.19 2006/01/11 14:09:32 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -154,27 +154,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
 #endif
 
   assert( iDb>=0 && iDb<db->nDb );
-
   assert( db->aDb[iDb].pSchema );
-#if 0
-  if( 0==db->aDb[iDb].pSchema ){
-    Schema *pS = sqlite3SchemaGet(db->aDb[iDb].pBt);
-    db->aDb[iDb].pSchema = pS;
-    if( !pS ){
-      return SQLITE_NOMEM;
-    }else if( pS->file_format!=0 ){
-      /* This means that the shared-schema associated with the the btree
-      ** is already open and populated.
-      */
-      if( pS->enc!=ENC(db) ){
-        sqlite3SetString(pzErrMsg, "attached databases must use the same"
-            " text encoding as main database", (char*)0);
-        return SQLITE_ERROR;
-      }
-      return SQLITE_OK;
-    }
-  }
-#endif
 
   /* zMasterSchema and zInitScript are set to point at the master schema
   ** and initialisation script appropriate for the database being
@@ -212,7 +192,9 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   */
   pDb = &db->aDb[iDb];
   if( pDb->pBt==0 ){
-    if( !OMIT_TEMPDB && iDb==1 ) DbSetProperty(db, 1, DB_SchemaLoaded);
+    if( !OMIT_TEMPDB && iDb==1 ){
+      DbSetProperty(db, 1, DB_SchemaLoaded);
+    }
     return SQLITE_OK;
   }
   rc = sqlite3BtreeCursor(pDb->pBt, MASTER_ROOT, 0, 0, 0, &curMain);
@@ -272,6 +254,8 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
         return SQLITE_ERROR;
       }
     }
+  }else{
+    DbSetProperty(db, iDb, DB_Empty);
   }
   pDb->pSchema->enc = ENC(db);
 
@@ -343,9 +327,9 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
 */
 int sqlite3Init(sqlite3 *db, char **pzErrMsg){
   int i, rc;
+  int called_initone = 0;
   
   if( db->init.busy ) return SQLITE_OK;
-  assert( (db->flags & SQLITE_Initialized)==0 );
   rc = SQLITE_OK;
   db->init.busy = 1;
   for(i=0; rc==SQLITE_OK && i<db->nDb; i++){
@@ -354,6 +338,7 @@ int sqlite3Init(sqlite3 *db, char **pzErrMsg){
     if( rc ){
       sqlite3ResetInternalSchema(db, i);
     }
+    called_initone = 1;
   }
 
   /* Once all the other databases have been initialised, load the schema
@@ -366,19 +351,16 @@ int sqlite3Init(sqlite3 *db, char **pzErrMsg){
     if( rc ){
       sqlite3ResetInternalSchema(db, 1);
     }
+    called_initone = 1;
   }
 #endif
 
   db->init.busy = 0;
-  if( rc==SQLITE_OK ){
-    db->flags |= SQLITE_Initialized;
+  if( rc==SQLITE_OK && called_initone ){
     sqlite3CommitInternalChanges(db);
   }
 
-  if( rc!=SQLITE_OK ){
-    db->flags &= ~SQLITE_Initialized;
-  }
-  return rc;
+  return rc; 
 }
 
 /*
@@ -389,11 +371,8 @@ int sqlite3ReadSchema(Parse *pParse){
   int rc = SQLITE_OK;
   sqlite3 *db = pParse->db;
   if( !db->init.busy ){
-    if( (db->flags & SQLITE_Initialized)==0 ){
-      rc = sqlite3Init(db, &pParse->zErrMsg);
-    }
+    rc = sqlite3Init(db, &pParse->zErrMsg);
   }
-  assert( rc!=SQLITE_OK || (db->flags & SQLITE_Initialized) || db->init.busy );
   if( rc!=SQLITE_OK ){
     pParse->rc = rc;
     pParse->nErr++;

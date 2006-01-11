@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: shared.test,v 1.10 2006/01/11 01:08:34 drh Exp $
+# $Id: shared.test,v 1.11 2006/01/11 14:09:32 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -607,26 +607,6 @@ do_test shared-8.2.3 {
 catch {db close}
 catch {db2 close}
 file delete -force test.db test2.db
-
-if 0 {
-
-do_test shared-9.1 {
-  sqlite3 db test.db
-} {}
-do_test shared-9.2 {
-  execsql {CREATE TABLE t1(a);}
-} {}
-
-file delete -force test.db
-sqlite3 db test.db; set DB [sqlite3_connection_pointer db]
-do_test shared-9.3 {
-  execsql {
-    CREATE TABLE t5(a);
-    INSERT INTO t5 VALUES('one');
-  } db
-} {}
-
-}
 
 #---------------------------------------------------------------------------
 # The following tests - shared-9.* - test interactions between TEMP triggers

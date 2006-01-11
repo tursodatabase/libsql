@@ -13,7 +13,7 @@
 # various suported unicode encodings (UTF-8, UTF-16, UTF-16le and
 # UTF-16be).
 #
-# $Id: enc2.test,v 1.25 2006/01/03 00:33:50 drh Exp $
+# $Id: enc2.test,v 1.26 2006/01/11 14:09:32 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -472,5 +472,46 @@ ifcapable {complete} {
     sqlite3_complete16 [utf16 "SELECT * FROM"]
   } {0}
 }
+
+# Test that the encoding of an empty database may still be set after the
+# (empty) schema has been initialized.
+file delete -force test.db
+do_test enc2-9.1 {
+  sqlite3 db test.db
+  execsql {
+    PRAGMA encoding = 'UTF-8';
+    PRAGMA encoding;
+  }
+} {UTF-8}
+do_test enc2-9.2 {
+  sqlite3 db test.db
+  execsql {
+    PRAGMA encoding = 'UTF-16le';
+    PRAGMA encoding;
+  }
+} {UTF-16le}
+do_test enc2-9.3 {
+  sqlite3 db test.db
+  execsql {
+    SELECT * FROM sqlite_master;
+    PRAGMA encoding = 'UTF-8';
+    PRAGMA encoding;
+  }
+} {UTF-8}
+do_test enc2-9.4 {
+  sqlite3 db test.db
+  execsql {
+    PRAGMA encoding = 'UTF-16le';
+    CREATE TABLE abc(a, b, c);
+    PRAGMA encoding;
+  }
+} {UTF-16le}
+do_test enc2-9.5 {
+  sqlite3 db test.db
+  execsql {
+    PRAGMA encoding = 'UTF-8';
+    PRAGMA encoding;
+  }
+} {UTF-16le}
 
 finish_test

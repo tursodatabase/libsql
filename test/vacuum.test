@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the VACUUM statement.
 #
-# $Id: vacuum.test,v 1.36 2006/01/03 00:33:50 drh Exp $
+# $Id: vacuum.test,v 1.37 2006/01/11 14:09:32 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -164,6 +164,11 @@ do_test vacuum-2.5 {
   }
   sqlite3 db3 test.db
   execsql {
+    -- The "SELECT * FROM sqlite_master" statement ensures that this test
+    -- works when shared-cache is enabled. If shared-cache is enabled, then
+    -- db3 shares a cache with db2 (but not db - it was opened as 
+    -- "./test.db").
+    SELECT * FROM sqlite_master;
     SELECT * FROM t7 LIMIT 1
   } db3
   execsql {

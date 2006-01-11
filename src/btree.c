@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.289 2006/01/10 13:58:48 drh Exp $
+** $Id: btree.c,v 1.290 2006/01/11 14:09:31 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1579,6 +1579,7 @@ int sqlite3BtreeOpen(
       return SQLITE_NOMEM;
     }
     for(pBt=pTsd->pBtree; pBt; pBt=pBt->pNext){
+      assert( pBt->nRef>0 );
       if( 0==strcmp(zFullPathname, sqlite3pager_filename(pBt->pPager)) ){
         p->pBt = pBt;
         *ppBtree = p;
@@ -6498,3 +6499,27 @@ int sqlite3BtreeLockTable(Btree *p, int iTab, u8 isWriteLock){
 #endif
   return rc;
 }
+
+#if defined(SQLITE_TEST) && !defined(NO_TCL)
+#include <tcl.h>
+int sqlite3_shared_cache_report(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  ThreadData *pTd = sqlite3ThreadData();
+  if( pTd->useSharedData ){
+    BtShared *pBt;
+    Tcl_Obj *pRet = Tcl_NewObj();
+    for(pBt=pTd->pBtree; pBt; pBt=pBt->pNext){
+      const char *zFile = sqlite3pager_filename(pBt->pPager);
+      Tcl_ListObjAppendElement(interp, pRet, Tcl_NewStringObj(zFile, -1));
+      Tcl_ListObjAppendElement(interp, pRet, Tcl_NewIntObj(pBt->nRef));
+    }
+    Tcl_SetObjResult(interp, pRet);
+  }
+  return TCL_OK;
+}
+#endif
+
