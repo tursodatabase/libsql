@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: shared.test,v 1.9 2006/01/10 12:31:41 danielk1977 Exp $
+# $Id: shared.test,v 1.10 2006/01/11 01:08:34 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -485,6 +485,7 @@ do_test shared-7.1 {
     CREATE TABLE t1(a PRIMARY KEY, b);
     CREATE TABLE t2(a PRIMARY KEY, b);
   }
+  set ::contents {}
   for {set i 0} {$i < 100} {incr i} {
     set a [string repeat "$i " 20]
     set b [string repeat "$i " 20]
@@ -547,6 +548,7 @@ do_test shared-7.2 {
 
 catch {db close}
 catch {db2 close}
+unset -nocomplain contents
 
 #--------------------------------------------------------------------------
 # The following tests try to trick the shared-cache code into assuming
@@ -660,4 +662,3 @@ do_test shared-9.3 {
 
 finish_test
 sqlite3_enable_shared_cache $::enable_shared_cache
-

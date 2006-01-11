@@ -25,18 +25,22 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
-chng {2006 January ? (3.3.0)} {
+chng {2006 January 10 (3.3.0 alpha)} {
 <li>CHECK constraints</li>
 <li>IF EXISTS and IF NOT EXISTS clauses on CREATE/DROP TABLE/INDEX.</li>
 <li>DESC indices</li>
 <li>More efficient encoding of boolean values resulting in smaller database
 files</li>
-<li>More aggressive SQLITE_OMIT_FLOATING_POINT<li>
+<li>More aggressive SQLITE_OMIT_FLOATING_POINT</li>
 <li>Separate INTEGER and REAL affinity</li>
-<li>Add a virtual function layer for the OS interface</li>
+<li>Added a virtual function layer for the OS interface</li>
 <li>"exists" method added to the TCL interface</li>
 <li>Improved response to out-of-memory errors</li>
-<li>Database cached shared between connections in the same thread</li>
+<li>Database cache can be optionally shared between connections
+in the same thread</li>
+<li>Optional READ UNCOMMITTED isolation (instead of the default
+isolation level of SERIALIZABLE) and table level locking when
+database connections share a common cache.</li>
 }
 
 chng {2005 December 19 (3.2.8)} {

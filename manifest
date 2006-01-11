@@ -1,9 +1,9 @@
-C Fix\sa\stypo\sin\sthe\sFAQ.\s(CVS\s2912)
-D 2006-01-10T23:00:42
+C Prepare\sfor\sthe\srelease\sof\sversion\s3.3.0.\s(CVS\s2913)
+D 2006-01-11T01:08:34
 F Makefile.in ab3ffd8d469cef4477257169b82810030a6bb967
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
-F VERSION b818cce180263e590a00ad4509a713892c3eecea
+F VERSION 1baada7465ebb7e855da5e7e02542273019f4333
 F aclocal.m4 7daea4c35e88de30d5a3f6f7a2ab99720e803bbd
 F addopcodes.awk 701697fae48376375ec8532c3d04e910cfeef352
 F art/2005osaward.gif 0d1851b2a7c1c9d0ccce545f3e14bca42d7fd248
@@ -96,7 +96,7 @@ F src/vdbefifo.c 9efb94c8c3f4c979ebd0028219483f88e57584f5
 F src/vdbemem.c 2ada7cae76da9c840cd0d3c01d2b3987d97141c6
 F src/where.c 4fecfccf8f35ec7b325d666f0cd2fb016a53da43
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
-F test/all.test 90cf64bb655e3d474b0dda04e63ece03e36b0ce2
+F test/all.test a23fcbbf1f53515bde840d78732a6d94c673b327
 F test/alter.test b94b640063e725d062b2997bd2810ac39195c718
 F test/alter2.test cc0b8832e4e98605dbc26910efd4bb89abe59cb2
 F test/alter3.test 6e144ea3dcc395afcc28e794bb532be83dc8fdcb
@@ -191,7 +191,7 @@ F test/malloc2.test e6e321db96d6c94cb18bf82ad7215070c41e624e
 F test/malloc3.test 265644c655497242f7c0a1bb5b36c8500a5fc27c
 F test/malloc4.test 2e29d155eb4b4808019ef47eeedfcbe9e09e0f05
 F test/malloc5.test 1bac8c0dd98c387460920c1190f0996c5c62ea66
-F test/manydb.test d81debbf5871242e3b5df1d3bb5e14c50431b6f8
+F test/manydb.test 8de36b8d33aab5ef295b11d9e95310aeded31af8
 F test/memdb.test 1860e060be810bf0775bc57408a5b7c4954bcaea
 F test/memleak.test df2b2b96e77f8ba159a332299535b1e5f18e49ac
 F test/minmax.test cad887abca5504396718e2cd5729ca40758743e8
@@ -225,7 +225,7 @@ F test/select5.test 07a90ab3c7e3f0a241a9cdea1d997b2c8a89ff0b
 F test/select6.test f459a19bdac0501c4d3eb1a4df4b7a76f1bb8ad4
 F test/select7.test 1bf795b948c133a15a2a5e99d3270e652ec58ce6
 F test/server1.test 9d2d5b17b537911214a7e2a2728ff4f6ff16319c
-F test/shared.test b375b17588568eb4080005167e7c717539f7574c
+F test/shared.test 2c0089652d936771ca7eeab51cc3c93a9e2dce36
 F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
 F test/subquery.test e6de53332c0301b3cfa34edc3f3cd5fa1e859efd
 F test/subselect.test 2d13fb7f450db3595adcdd24079a0dd1d2d6abc2
@@ -298,7 +298,7 @@ F www/autoinc.tcl b357f5ba954b046ee35392ce0f884a2fcfcdea06
 F www/c_interface.tcl b51b08591554c16a0c3ef718364a508ac25abc7e
 F www/capi3.tcl 7a7cc225fe02eb7ab861a6019b08baa0014409e1
 F www/capi3ref.tcl 3885ca3847f394db7aa035647f0ab1c140244042
-F www/changes.tcl 567069a3dc7d066f3687fe3697be62e6dd19e671
+F www/changes.tcl 661937260b6eac4af510e068f33f3ce7b3298ff6
 F www/common.tcl 14d121c28532ad20c3e349caa4db708b0b822083
 F www/compile.tcl 276546d7eb445add5a867193bbd80f6919a6b084
 F www/conflict.tcl cdd0f4b59b0ba6d61f67e6a38f3ae45853bacb30
@@ -312,12 +312,12 @@ F www/direct1b.gif 32b48b764244817b6b591898dc52a04299a7b8a7
 F www/docs.tcl 4e2d716f004cc4c4dae773206ed58f50d4468a87
 F www/download.tcl d56a1c30b1c3c18f62926a806179976eb133ce94
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
-F www/faq.tcl 82edcb9861cdf283cb143a51bd7d36c167c22ea5
+F www/faq.tcl f048b67fb6f90f6e97bbbda226a41e11a906cf04
 F www/fileformat.tcl 900c95b9633abc3dcfc384d9ddd8eb4876793059
-F www/formatchng.tcl 053ddb73646701353a5b1c9ca6274d5900739b45
+F www/formatchng.tcl f4f5f32205c0a70d07784f7bf9ce33ed34bfcbf3
 F www/fullscanb.gif f7c94cb227f060511f8909e10f570157263e9a25
 F www/index-ex1-x-b.gif f9b1d85c3fa2435cf38b15970c7e3aa1edae23a3
-F www/index.tcl 2217d1c755d3d4a421729135d1fd431fc0d7d67d
+F www/index.tcl f84bf390bd272035934639748c89730f3d60dc44
 F www/indirect1b1.gif adfca361d2df59e34f9c5cac52a670c2bfc303a1
 F www/lang.tcl 6f81b2726dc350ba5dc0dd6dcddb9e7a307b9976
 F www/lockingv3.tcl f59b19d6c8920a931f096699d6faaf61c05db55f
@@ -340,7 +340,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 25db22b6711590214f4f953e6e3cf6be2d7451db
-R d48a4c648f0220e653566c58ebdc11a0
+P 5be03a361d9292ccdf311372be6add29ade4dd04
+R 60fc801cbd9b41024c075c90268ee8a3
 U drh
-Z 99149940f874e469da65b843b8bd5846
+Z e83beb38a64ea7c5c2bbe383411f4d11

@@ -1,7 +1,7 @@
 #
 # Run this script to generated a faq.html output file
 #
-set rcsid {$Id: faq.tcl,v 1.32 2006/01/10 23:00:42 drh Exp $}
+set rcsid {$Id: faq.tcl,v 1.33 2006/01/11 01:08:34 drh Exp $}
 source common.tcl
 header {SQLite Frequently Asked Questions</title>}
 
@@ -202,9 +202,15 @@ faq {
   You cannot open a
   database in one thread then pass the handle off to another thread for
   it to use.  This is due to limitations (bugs?) in many common threading
-  implementations such as on RedHat9.  There may be ways to work around
-  these limitations, but they are complex and exceedingly difficult to
-  test for correctness.  For that reason, SQLite currently takes the safe
+  implementations such as on RedHat9.  Specifically, an fcntl() lock
+  created by one thread cannot be removed or modified by a different
+  thread on the troublesome systems.  And since SQLite uses fcntl()
+  locks heavily for concurrency control, serious problems arise if you 
+  start moving database connections across threads.</p>
+
+  <p>There may be ways to work around the fcntl() lock problems in Linux,
+  but they are complex and exceedingly difficult to test for correctness.
+  For that reason, SQLite currently takes the safe
   approach and disallows the sharing of handles among threads.</p>
 
   <p>Under UNIX, you should not carry an open SQLite database across
