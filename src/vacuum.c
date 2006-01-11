@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.55 2006/01/09 06:29:49 danielk1977 Exp $
+** $Id: vacuum.c,v 1.56 2006/01/11 16:10:20 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -103,7 +103,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   char *zSql = 0;
   int rc2;  
   int saved_flags;       /* Saved value of the db->flags */
-  sqlite3_stmt *pDetach = 0;
+  Db *pDb = 0;           /* Database to detach at end of vacuum */
 
   /* Save the current value of the write-schema flag before setting it. */
   saved_flags = db->flags;
@@ -150,15 +150,6 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
     randomName((unsigned char*)&zTemp[nFilename+1]);
   } while( sqlite3OsFileExists(zTemp) );
 
-  /* Before we even attach it, compile a DETACH statement for vacuum_db. This
-  ** way, if malloc() fails we can detach the database without needing to
-  ** dynamically allocate memory.
-  */ 
-  rc = sqlite3_prepare(db, "DETACH vacuum_db", -1, &pDetach, 0);
-  if( rc!=SQLITE_OK ){
-    goto end_of_vacuum;
-  }
-
   /* Attach the temporary database as 'vacuum_db'. The synchronous pragma
   ** can be set to 'off' for this file, as it is not recovered if a crash
   ** occurs anyway. The integrity of the database is maintained by a
@@ -176,6 +167,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   sqliteFree(zSql);
   zSql = 0;
   if( rc!=SQLITE_OK ) goto end_of_vacuum;
+  pDb = &db->aDb[db->nDb-1];
   assert( strcmp(db->aDb[db->nDb-1].zName,"vacuum_db")==0 );
   pTemp = db->aDb[db->nDb-1].pBt;
   sqlite3BtreeSetPageSize(pTemp, sqlite3BtreeGetPageSize(pMain),
@@ -310,18 +302,12 @@ end_of_vacuum:
   */
   db->autoCommit = 1;
 
-  if( pDetach ){
-    int mf = sqlite3ThreadData()->mallocFailed;
-    sqlite3ThreadData()->mallocFailed = 0;
+  if( pDb ){
     sqlite3MallocDisallow();
-    ((Vdbe *)pDetach)->expired = 0;
-    sqlite3_step(pDetach);
-    rc2 = sqlite3_finalize(pDetach);
-    if( rc==SQLITE_OK ){
-      rc = rc2;
-    }
+    sqlite3BtreeClose(pDb->pBt);
     sqlite3MallocAllow();
-    sqlite3ThreadData()->mallocFailed = mf;
+    pDb->pBt = 0;
+    pDb->pSchema = 0;
   }
 
   /* If one of the execSql() calls above returned SQLITE_NOMEM, then the

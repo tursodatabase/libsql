@@ -1,5 +1,5 @@
-C Fix\sbugs\scaused\sby\sassuming\sthat\sshared-schemas\sare\sinitialized.\s(CVS\s2917)
-D 2006-01-11T14:09:31
+C Ensure\sthe\sdatabase\sattached\sas\spart\sof\sVACUUM\scan\sbe\sdetached\ssuccessfully\safter\sa\smalloc()\sfailure.\s(CVS\s2918)
+D 2006-01-11T16:10:20
 F Makefile.in ab3ffd8d469cef4477257169b82810030a6bb967
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -85,8 +85,8 @@ F src/tokenize.c 196486012c871cdcad6cc84a820cc988603f1b9d
 F src/trigger.c 883b5f3b97137fbe417e3337c3fa20ac8e9c1ae5
 F src/update.c cd8ad5bb1a29f2056347481308fca4a59f2f4764
 F src/utf.c b7bffac4260177ae7f83c01d025fe0f5ed70ce71
-F src/util.c 5d5792d4a4dda20d70fdfb973ed8a5ed71fea98c
-F src/vacuum.c f5a068096b22fad438bf1f1cf69ccb7f9e8cc7fb
+F src/util.c 3616a0a1f1b89cfb376240c75434431b8028681e
+F src/vacuum.c cd56995ecea281b3ac306ef88128ebc8a2117f84
 F src/vdbe.c aa4360d28c4476e435c84e92ad3fbd65a8944156
 F src/vdbe.h 8729a4ee16ff9aeab2af9667df3cf300ff978e13
 F src/vdbeInt.h 5451cf71f229e366ac543607c0a17f36e5737ea9
@@ -340,7 +340,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 1b368c7c5ca7974e0975dc4e3c931680c9e8df1f
-R 1449ef4e2e811b71b71db6703a8a24ab
+P 3970eb875d1830d35b3a70a7583a8ab6b238cad6
+R 5d634fd31ace904b5b4a4cd1fc441144
 U danielk1977
-Z 8596c20274e6f745d3adfacf59742397
+Z 11d0cd52f201ef748e551ed33dbe55f7
