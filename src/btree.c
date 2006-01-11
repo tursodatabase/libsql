@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.290 2006/01/11 14:09:31 danielk1977 Exp $
+** $Id: btree.c,v 1.291 2006/01/11 21:41:22 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -557,7 +557,7 @@ static int saveCursorPosition(BtCursor *pCur){
 */
 static int saveAllCursors(BtShared *pBt, Pgno iRoot, BtCursor *pExcept){
   BtCursor *p;
-  if( sqlite3ThreadData()->useSharedData ){
+  if( sqlite3ThreadDataReadOnly()->useSharedData ){
     for(p=pBt->pCursor; p; p=p->pNext){
       if( p!=pExcept && p->pgnoRoot==iRoot && p->eState==CURSOR_VALID ){
         int rc = saveCursorPosition(p);
@@ -584,7 +584,7 @@ static int saveAllCursors(BtShared *pBt, Pgno iRoot, BtCursor *pExcept){
 static int restoreCursorPosition(BtCursor *pCur, int doSeek){
   int rc = SQLITE_OK;
   if( pCur->eState==CURSOR_REQUIRESEEK ){
-    assert( sqlite3ThreadData()->useSharedData );
+    assert( sqlite3ThreadDataReadOnly()->useSharedData );
     if( doSeek ){
       rc = sqlite3BtreeMoveto(pCur, pCur->pKey, pCur->nKey, &pCur->skip);
     }else{
@@ -610,7 +610,7 @@ static int queryTableLock(Btree *p, Pgno iTab, u8 eLock){
   BtLock *pIter;
 
   /* This is a no-op if the shared-cache is not enabled */
-  if( 0==sqlite3ThreadData()->useSharedData ){
+  if( 0==sqlite3ThreadDataReadOnly()->useSharedData ){
     return SQLITE_OK;
   }
 
@@ -658,7 +658,7 @@ static int lockTable(Btree *p, Pgno iTable, u8 eLock){
   BtLock *pIter;
 
   /* This is a no-op if the shared-cache is not enabled */
-  if( 0==sqlite3ThreadData()->useSharedData ){
+  if( 0==sqlite3ThreadDataReadOnly()->useSharedData ){
     return SQLITE_OK;
   }
 
@@ -723,7 +723,7 @@ static void unlockAllTables(Btree *p){
   ** locks in the BtShared.pLock list, making this procedure a no-op. Assert
   ** that this is the case.
   */
-  assert( sqlite3ThreadData()->useSharedData || 0==*ppIter );
+  assert( sqlite3ThreadDataReadOnly()->useSharedData || 0==*ppIter );
 
   while( *ppIter ){
     BtLock *pLock = *ppIter;
@@ -1546,8 +1546,8 @@ int sqlite3BtreeOpen(
   int rc;
   int nReserve;
   unsigned char zDbHeader[100];
-#ifndef SQLITE_OMIT_SHARED_CACHE
-  ThreadData *pTsd = sqlite3ThreadData();
+#if !defined(SQLITE_OMIT_SHARED_CACHE) && !defined(SQLITE_OMIT_DISKIO)
+  const ThreadData *pTsdro;
 #endif
 
   /* Set the variable isMemdb to true for an in-memory database, or 
@@ -1572,13 +1572,14 @@ int sqlite3BtreeOpen(
 
   /* Try to find an existing Btree structure opened on zFilename. */
 #if !defined(SQLITE_OMIT_SHARED_CACHE) && !defined(SQLITE_OMIT_DISKIO)
-  if( pTsd->useSharedData && zFilename && !isMemdb ){
+  pTsdro = sqlite3ThreadDataReadOnly();
+  if( pTsdro->useSharedData && zFilename && !isMemdb ){
     char *zFullPathname = sqlite3OsFullPathname(zFilename);
     if( !zFullPathname ){
       sqliteFree(p);
       return SQLITE_NOMEM;
     }
-    for(pBt=pTsd->pBtree; pBt; pBt=pBt->pNext){
+    for(pBt=pTsdro->pBtree; pBt; pBt=pBt->pNext){
       assert( pBt->nRef>0 );
       if( 0==strcmp(zFullPathname, sqlite3pager_filename(pBt->pPager)) ){
         p->pBt = pBt;
@@ -1660,9 +1661,9 @@ int sqlite3BtreeOpen(
 
 #ifndef SQLITE_OMIT_SHARED_CACHE
   /* Add the new btree to the linked list starting at ThreadData.pBtree */
-  if( pTsd->useSharedData && zFilename && !isMemdb ){
-    pBt->pNext = pTsd->pBtree;
-    pTsd->pBtree = pBt;
+  if( pTsdro->useSharedData && zFilename && !isMemdb ){
+    pBt->pNext = pTsdro->pBtree;
+    sqlite3ThreadData()->pBtree = pBt;
   }
 #endif
   pBt->nRef = 1;
@@ -1678,7 +1679,7 @@ int sqlite3BtreeClose(Btree *p){
   BtCursor *pCur;
 
 #ifndef SQLITE_OMIT_SHARED_CACHE
-  ThreadData *pTsd = sqlite3ThreadData();
+  ThreadData *pTsd;
 #endif
 
   /* Drop any table-locks */
@@ -1708,6 +1709,7 @@ int sqlite3BtreeClose(Btree *p){
   }
 
   /* Remove the shared-btree from the thread wide list */
+  pTsd = sqlite3ThreadData();
   if( pTsd->pBtree==pBt ){
     pTsd->pBtree = pBt->pNext;
   }else{
@@ -6500,7 +6502,12 @@ int sqlite3BtreeLockTable(Btree *p, int iTab, u8 isWriteLock){
   return rc;
 }
 
-#if defined(SQLITE_TEST) && !defined(NO_TCL)
+/*
+** The following debugging interface has to be in this file (rather
+** than in, for example, test1.c) so that it can get access to
+** the definition of BtShared.
+*/
+#if defined(SQLITE_TEST) && defined(TCLSH)
 #include <tcl.h>
 int sqlite3_shared_cache_report(
   void * clientData,
@@ -6508,7 +6515,7 @@ int sqlite3_shared_cache_report(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-  ThreadData *pTd = sqlite3ThreadData();
+  const ThreadData *pTd = sqlite3ThreadDataReadOnly();
   if( pTd->useSharedData ){
     BtShared *pBt;
     Tcl_Obj *pRet = Tcl_NewObj();
@@ -6522,4 +6529,3 @@ int sqlite3_shared_cache_report(
   return TCL_OK;
 }
 #endif
-

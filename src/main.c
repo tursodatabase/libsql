@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.322 2006/01/10 13:58:48 drh Exp $
+** $Id: main.c,v 1.323 2006/01/11 21:41:22 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -176,9 +176,9 @@ int sqlite3_close(sqlite3 *db){
   ** structure?
   */
   sqliteFree(db->aDb[1].pSchema);
-
   sqliteFree(db);
   sqlite3MallocAllow();
+  sqlite3ReleaseThreadData();
   return SQLITE_OK;
 }
 
@@ -645,7 +645,7 @@ int sqlite3BtreeFactory(
 */
 const char *sqlite3_errmsg(sqlite3 *db){
   const char *z;
-  if( sqlite3ThreadData()->mallocFailed ){
+  if( sqlite3ThreadDataReadOnly()->mallocFailed ){
     return sqlite3ErrStr(SQLITE_NOMEM);
   }
   if( sqlite3SafetyCheck(db) || db->errCode==SQLITE_MISUSE ){
@@ -684,7 +684,7 @@ const void *sqlite3_errmsg16(sqlite3 *db){
   };
 
   const void *z;
-  if( sqlite3ThreadData()->mallocFailed ){
+  if( sqlite3ThreadDataReadOnly()->mallocFailed ){
     return (void *)(&outOfMemBe[SQLITE_UTF16NATIVE==SQLITE_UTF16LE?1:0]);
   }
   if( sqlite3SafetyCheck(db) || db->errCode==SQLITE_MISUSE ){
@@ -705,7 +705,7 @@ const void *sqlite3_errmsg16(sqlite3 *db){
 ** passed to this function, we assume a malloc() failed during sqlite3_open().
 */
 int sqlite3_errcode(sqlite3 *db){
-  if( !db || sqlite3ThreadData()->mallocFailed ){
+  if( !db || sqlite3ThreadDataReadOnly()->mallocFailed ){
     return SQLITE_NOMEM;
   }
   if( sqlite3SafetyCheck(db) ){
@@ -727,7 +727,7 @@ static int openDatabase(
   int rc;
   CollSeq *pColl;
 
-  assert( !sqlite3ThreadData()->mallocFailed );
+  assert( !sqlite3ThreadDataReadOnly()->mallocFailed );
 
   /* Allocate the sqlite data structure */
   db = sqliteMalloc( sizeof(sqlite3) );
@@ -854,7 +854,7 @@ int sqlite3_open16(
       rc = sqlite3_exec(*ppDb, "PRAGMA encoding = 'UTF-16'", 0, 0, 0);
     }
   }else{
-    assert( sqlite3ThreadData()->mallocFailed );
+    assert( sqlite3ThreadDataReadOnly()->mallocFailed );
     sqlite3MallocClearFailed();
   }
   sqlite3ValueFree(pVal);
@@ -1077,6 +1077,17 @@ int sqlite3_enable_shared_cache(int enable){
   }
 
   pTd->useSharedData = enable;
+  sqlite3ReleaseThreadData();
   return SQLITE_OK;
 }
 #endif
+
+/*
+** This is a convenience routine that makes sure that all thread-specific
+** data for this thread has been deallocated.
+*/
+void sqlite3_thread_cleanup(void){
+  ThreadData *pTd = sqlite3ThreadData();
+  memset(pTd, 0, sizeof(*pTd));
+  sqlite3ReleaseThreadData();
+}

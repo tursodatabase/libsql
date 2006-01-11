@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.187 2006/01/11 14:09:32 danielk1977 Exp $
+** $Id: test1.c,v 1.188 2006/01/11 21:41:22 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -903,9 +903,9 @@ static int sqlite_malloc_outstanding(
 ){
   extern int sqlite3OutstandingMallocs(Tcl_Interp *interp);
 
-#ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
+#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
   if( objc==2 ){
-    ThreadData *pTd = sqlite3ThreadData();
+    const ThreadData *pTd = sqlite3ThreadDataReadOnly();
     const char *zArg = Tcl_GetString(objv[1]);
     if( 0==strcmp(zArg, "-bytes") ){
       Tcl_SetObjResult(interp, Tcl_NewIntObj(pTd->nAlloc));
@@ -935,11 +935,10 @@ static int sqlite_malloc_outstanding(
 
 /*
 ** Usage: sqlite3_enable_shared_cache      BOOLEAN
-** Usage: sqlite3_enable_memory_management BOOLEAN
 **
 */
-#if !defined(SQLITE_OMIT_SHARED_CACHE)||!defined(SQLITE_OMIT_MEMORY_MANAGEMENT)
-static int test_enable(
+#if !defined(SQLITE_OMIT_SHARED_CACHE)
+static int test_enable_shared(
   ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int objc,              /* Number of arguments */
@@ -948,20 +947,7 @@ static int test_enable(
   int rc;
   int enable;
   int ret = 0;
-  int (*xFunc)(int) = (int(*)(int))clientData;
-  ThreadData *pTsd = sqlite3ThreadData();
 
-#ifndef SQLITE_OMIT_SHARED_CACHE
-  if( xFunc==sqlite3_enable_shared_cache ){
-    ret = pTsd->useSharedData;
-  }else
-#endif
-#ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
-  {
-    assert( xFunc==sqlite3_enable_memory_management );
-    ret = pTsd->useMemoryManagement;
-  }
-#endif
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "BOOLEAN");
     return TCL_ERROR;
@@ -969,7 +955,8 @@ static int test_enable(
   if( Tcl_GetBooleanFromObj(interp, objv[1], &enable) ){
     return TCL_ERROR;
   }
-  rc = xFunc(enable);
+  ret = sqlite3ThreadDataReadOnly()->useSharedData;
+  rc = sqlite3_enable_shared_cache(enable);
   if( rc!=SQLITE_OK ){
     Tcl_SetResult(interp, (char *)sqlite3ErrStr(rc), TCL_STATIC);
     return TCL_ERROR;
@@ -2966,7 +2953,7 @@ static int test_release_memory(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-#if !defined(SQLITE_OMIT_MEMORY_MANAGEMENT) && !defined(SQLITE_OMIT_DISKIO)
+#if defined(SQLITE_ENABLE_MEMORY_MANAGEMENT) && !defined(SQLITE_OMIT_DISKIO)
   int N;
   int amt;
   if( objc!=1 && objc!=2 ){
@@ -2997,13 +2984,13 @@ static int test_soft_heap_limit(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-#if !defined(SQLITE_OMIT_MEMORY_MANAGEMENT) && !defined(SQLITE_OMIT_DISKIO)
+#if defined(SQLITE_ENABLE_MEMORY_MANAGEMENT) && !defined(SQLITE_OMIT_DISKIO)
   int amt;
   if( objc!=1 && objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "?N?");
     return TCL_ERROR;
   }
-  amt = sqlite3ThreadData()->nSoftHeapLimit;
+  amt = sqlite3ThreadDataReadOnly()->nSoftHeapLimit;
   if( objc==2 ){
     int N;
     if( Tcl_GetIntFromObj(interp, objv[1], &N) ) return TCL_ERROR;
@@ -3181,10 +3168,10 @@ static void set_options(Tcl_Interp *interp){
   Tcl_SetVar2(interp, "sqlite_options", "memorydb", "1", TCL_GLOBAL_ONLY);
 #endif
 
-#ifdef SQLITE_OMIT_MEMORY_MANAGEMENT
-  Tcl_SetVar2(interp, "sqlite_options", "memorymanage", "0", TCL_GLOBAL_ONLY);
-#else
+#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
   Tcl_SetVar2(interp, "sqlite_options", "memorymanage", "1", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "memorymanage", "0", TCL_GLOBAL_ONLY);
 #endif
 
 #ifdef SQLITE_OMIT_OR_OPTIMIZATION
@@ -3429,11 +3416,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_test_errstr",     test_errstr, 0             },
      { "tcl_variable_type",       tcl_variable_type, 0       },
 #ifndef SQLITE_OMIT_SHARED_CACHE
-     { "sqlite3_enable_shared_cache", test_enable, sqlite3_enable_shared_cache},
-#endif
-#ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
-     { "sqlite3_enable_memory_management", test_enable, 
-       sqlite3_enable_memory_management},
+     { "sqlite3_enable_shared_cache", test_enable_shared, 0  },
 #endif
   };
   static int bitmask_size = sizeof(Bitmask)*8;

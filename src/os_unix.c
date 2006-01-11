@@ -1627,38 +1627,27 @@ int sqlite3UnixInMutex(){
 }
 
 /*
-** This function is called automatically when a thread exists to delete
-** the threads ThreadData structure. 
+** If called with allocateFlag==1, then return a pointer to thread
+** specific data for the current thread.  Allocate and zero the
+** thread-specific data if it does not already exist necessary.
 **
-** Because the ThreadData structure is required by higher level routines
-** such as sqliteMalloc() we use OsFree() and OsMalloc() directly to
-** allocate the thread specific data.
+** If called with allocateFlag==0, then check the current thread
+** specific data.  If it exists and is all zeros, then deallocate it.
+** Return a pointer to the thread specific data or NULL if it is
+** unallocated.
 */
-#ifdef SQLITE_UNIX_THREADS
-static void deleteTsd(void *pTsd){
-  sqlite3OsFree(pTsd);
-}
-#endif
-
-/* 
-** The first time this function is called from a specific thread, nByte 
-** bytes of data area are allocated and zeroed. A pointer to the new 
-** allocation is returned to the caller. 
-**
-** Each subsequent call to this function from the thread returns the same
-** pointer. The argument is ignored in this case.
-*/
-void *sqlite3UnixThreadSpecificData(int nByte){
+ThreadData *sqlite3UnixThreadSpecificData(int allocateFlag){
+  static const ThreadData zeroData;
 #ifdef SQLITE_UNIX_THREADS
   static pthread_key_t key;
   static int keyInit = 0;
-  void *pTsd;
+  ThreadData *pTsd;
 
   if( !keyInit ){
     sqlite3OsEnterMutex();
     if( !keyInit ){
       int rc;
-      rc = pthread_key_create(&key, deleteTsd);
+      rc = pthread_key_create(&key, 0);
       if( rc ){
         sqlite3OsLeaveMutex();
         return 0;
@@ -1669,21 +1658,32 @@ void *sqlite3UnixThreadSpecificData(int nByte){
   }
 
   pTsd = pthread_getspecific(key);
-  if( !pTsd ){
-    pTsd = sqlite3OsMalloc(nByte);
-    if( pTsd ){
-      memset(pTsd, 0, nByte);
-      pthread_setspecific(key, pTsd);
+  if( allocateFlag ){
+    if( pTsd==0 ){
+      pTsd = sqlite3OsMalloc(sizeof(zeroData));
+      if( pTsd ){
+        *pTsd = zeroData;
+        pthread_setspecific(key, pTsd);
+      }
     }
+  }else if( pTsd!=0 && memcmp(pTsd, &zeroData, sizeof(zeroData))==0 ){
+    sqlite3OsFree(pTsd);
+    pthread_setspecific(key, 0);
+    pTsd = 0;
   }
   return pTsd;
 #else
-  static void *pTsd = 0;
-  if( !pTsd ){
-    pTsd = sqlite3OsMalloc(nByte);
-    if( pTsd ){
-      memset(pTsd, 0, nByte);
+  static ThreadData *pTsd = 0;
+  if( allocateFlag ){
+    if( pTsd==0 ){
+      pTsd = sqlite3OsMalloc( sizeof(zeroData) );
+      if( pTsd ){
+        *pTsd = zeroData;
+      }
     }
+  }else if( pTsd!=0 && memcmp(pTsd, &zeroData, sizeof(zeroData))==0 ){
+    sqlite3OsFree(pTsd);
+    pTsd = 0;
   }
   return pTsd;
 #endif

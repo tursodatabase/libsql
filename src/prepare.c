@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.19 2006/01/11 14:09:32 danielk1977 Exp $
+** $Id: prepare.c,v 1.20 2006/01/11 21:41:22 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -24,7 +24,7 @@
 ** that the database is corrupt.
 */
 static void corruptSchema(InitData *pData, const char *zExtra){
-  if( !sqlite3ThreadData()->mallocFailed ){
+  if( !sqlite3ThreadDataReadOnly()->mallocFailed ){
     sqlite3SetString(pData->pzErrMsg, "malformed database schema",
        zExtra!=0 && zExtra[0]!=0 ? " - " : (char*)0, zExtra, (char*)0);
   }
@@ -49,7 +49,7 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **azColName){
   sqlite3 *db = pData->db;
   int iDb;
 
-  if( sqlite3ThreadData()->mallocFailed ){
+  if( sqlite3ThreadDataReadOnly()->mallocFailed ){
     return SQLITE_NOMEM;
   }
 
@@ -303,7 +303,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
 #endif
     sqlite3BtreeCloseCursor(curMain);
   }
-  if( sqlite3ThreadData()->mallocFailed ){
+  if( sqlite3ThreadDataReadOnly()->mallocFailed ){
     sqlite3SetString(pzErrMsg, "out of memory", (char*)0);
     rc = SQLITE_NOMEM;
     sqlite3ResetInternalSchema(db, 0);
@@ -494,7 +494,7 @@ int sqlite3_prepare(
   int rc = SQLITE_OK;
   int i;
 
-  assert( !sqlite3ThreadData()->mallocFailed );
+  assert( !sqlite3ThreadDataReadOnly()->mallocFailed );
 
   assert( ppStmt );
   *ppStmt = 0;
@@ -519,7 +519,7 @@ int sqlite3_prepare(
   sParse.db = db;
   sqlite3RunParser(&sParse, zSql, &zErrMsg);
 
-  if( sqlite3ThreadData()->mallocFailed ){
+  if( sqlite3ThreadDataReadOnly()->mallocFailed ){
     sParse.rc = SQLITE_NOMEM;
   }
   if( sParse.rc==SQLITE_DONE ) sParse.rc = SQLITE_OK;
@@ -569,7 +569,7 @@ int sqlite3_prepare(
   /* We must check for malloc failure last of all, in case malloc() failed
   ** inside of the sqlite3Error() call above or something.
   */
-  if( sqlite3ThreadData()->mallocFailed ){
+  if( sqlite3ThreadDataReadOnly()->mallocFailed ){
     rc = SQLITE_NOMEM;
     sqlite3Error(db, rc, 0);
   }

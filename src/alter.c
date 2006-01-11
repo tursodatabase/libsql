@@ -12,7 +12,7 @@
 ** This file contains C code routines that used to generate VDBE code
 ** that implements the ALTER TABLE command.
 **
-** $Id: alter.c,v 1.15 2006/01/09 06:29:48 danielk1977 Exp $
+** $Id: alter.c,v 1.16 2006/01/11 21:41:21 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -267,7 +267,7 @@ void sqlite3AlterRenameTable(
   char *zWhere = 0;         /* Where clause to locate temp triggers */
 #endif
   
-  if( sqlite3ThreadData()->mallocFailed ) goto exit_rename_table;
+  if( sqlite3ThreadDataReadOnly()->mallocFailed ) goto exit_rename_table;
   assert( pSrc->nSrc==1 );
 
   pTab = sqlite3LocateTable(pParse, pSrc->a[0].zName, pSrc->a[0].zDatabase);
@@ -501,7 +501,7 @@ void sqlite3AlterBeginAddColumn(Parse *pParse, SrcList *pSrc){
 
   /* Look up the table being altered. */
   assert( pParse->pNewTable==0 );
-  if( sqlite3ThreadData()->mallocFailed ) goto exit_begin_add_column;
+  if( sqlite3ThreadDataReadOnly()->mallocFailed ) goto exit_begin_add_column;
   pTab = sqlite3LocateTable(pParse, pSrc->a[0].zName, pSrc->a[0].zDatabase);
   if( !pTab ) goto exit_begin_add_column;
 

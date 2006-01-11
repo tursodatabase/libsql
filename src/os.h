@@ -292,7 +292,7 @@ int sqlite3OsCurrentTime(double*);
 void sqlite3OsEnterMutex(void);
 void sqlite3OsLeaveMutex(void);
 int sqlite3OsInMutex(void);
-void *sqlite3OsThreadSpecificData(int);
+ThreadData *sqlite3OsThreadSpecificData(int);
 void *sqlite3OsMalloc(int);
 void *sqlite3OsRealloc(void *, int);
 void sqlite3OsFree(void *);
@@ -335,7 +335,7 @@ struct sqlite3OsVtbl {
   void (*xEnterMutex)(void);
   void (*xLeaveMutex)(void);
   int (*xInMutex)(void);
-  void *(*xThreadSpecificData)(int);
+  ThreadData *(*xThreadSpecificData)(int);
 
   void *(*xMalloc)(int);
   void *(*xRealloc)(void *, int);

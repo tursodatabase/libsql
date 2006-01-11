@@ -1148,18 +1148,21 @@ int sqlite3WinCurrentTime(double *prNow){
   return 0;
 }
 
-/* 
-** The first time this function is called from a specific thread, nByte 
-** bytes of data area are allocated and zeroed. A pointer to the new 
-** allocation is returned to the caller. 
+/*
+** If called with allocateFlag==1, then return a pointer to thread
+** specific data for the current thread.  Allocate and zero the
+** thread-specific data if it does not already exist necessary.
 **
-** Each subsequent call to this function from the thread returns the same
-** pointer. The argument is ignored in this case.
+** If called with allocateFlag==0, then check the current thread
+** specific data.  If it exists and is all zeros, then deallocate it.
+** Return a pointer to the thread specific data or NULL if it is
+** unallocated.
 */
-void *sqlite3WinThreadSpecificData(int nByte){
+void *sqlite3WinThreadSpecificData(int allocateFlag){
   static void *pTsd = 0;
   static int key;
   static int keyInit = 0;
+  static const ThreadData zeroData;
 
   if( !keyInit ){
     sqlite3OsEnterMutex();
@@ -1174,12 +1177,18 @@ void *sqlite3WinThreadSpecificData(int nByte){
     sqlite3OsLeaveMutex();
   }
   pTsd = TlsGetValue(key);
-  if( !pTsd ){
-    pTsd = sqlite3OsMalloc(nByte);
-    if( pTsd ){
-      memset(pTsd, 0, nByte);
-      TlsSetValue(key, pTsd);
+  if( allocateFlag ){
+    if( !pTsd ){
+      pTsd = sqlite3OsMalloc(nByte);
+      if( pTsd ){
+        *pTsd = zeroData;
+        TlsSetValue(key, pTsd);
+      }
     }
+  }else if( pTsd!=0 && memcmp(pTsd, &zeroData, sizeof(zeroData))==0 ){
+    sqlite3OsFree(pTsd);
+    TlsSetValue(key, 0);
+    pTsd = 0;
   }
   return pTsd;
 }

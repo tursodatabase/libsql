@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.167 2006/01/11 16:10:20 danielk1977 Exp $
+** $Id: util.c,v 1.168 2006/01/11 21:41:22 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -66,13 +66,14 @@
 
 #define MAX(x,y) ((x)>(y)?(x):(y))
 
-#if !defined(SQLITE_OMIT_MEMORY_MANAGEMENT) && !defined(SQLITE_OMIT_DISKIO)
+#if defined(SQLITE_ENABLE_MEMORY_MANAGEMENT) && !defined(SQLITE_OMIT_DISKIO)
 /*
 ** Set the soft heap-size limit for the current thread. Passing a negative
 ** value indicates no limit.
 */
 void sqlite3_soft_heap_limit(int n){
   sqlite3ThreadData()->nSoftHeapLimit = n;
+  sqlite3ReleaseThreadData();
 }
 
 /*
@@ -82,7 +83,7 @@ int sqlite3_release_memory(int n){
   return sqlite3pager_release_memory(n);
 }
 #else
-/* If SQLITE_OMIT_MEMORY_MANAGEMENT is defined, then define a version
+/* If SQLITE_ENABLE_MEMORY_MANAGEMENT is not defined, then define a version
 ** of sqlite3_release_memory() to be used by other code in this file.
 ** This is done for no better reason than to reduce the number of 
 ** pre-processor #ifndef statements.
@@ -121,7 +122,9 @@ int sqlite3_release_memory(int n){
 ** 2 since on 64-bit machines we want the value returned by sqliteMalloc()
 ** to be 8-byte aligned.
 */
-#define TESTALLOC_NGUARD 2
+#ifndef TESTALLOC_NGUARD
+# define TESTALLOC_NGUARD 2
+#endif
 
 /*
 ** Size reserved for storing file-name along with each malloc()ed blob.
@@ -434,11 +437,11 @@ int sqlite3OutstandingMallocs(Tcl_Interp *interp){
 ** This is the test layer's wrapper around sqlite3OsMalloc().
 */
 static void * OSMALLOC(int n){
-#ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
+#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
   ThreadData *pTsd = sqlite3ThreadData();
   pTsd->nMaxAlloc = MAX(pTsd->nMaxAlloc, pTsd->nAlloc);
 #endif
-  assert( sqlite3ThreadData()->mallocAllowed );
+  assert( !sqlite3ThreadData()->mallocDisallowed );
   if( !failMalloc() ){
     u32 *p;
     p = (u32 *)sqlite3OsMalloc(n + TESTALLOC_OVERHEAD);
@@ -476,11 +479,11 @@ static void OSFREE(void *pFree){
 ** This is the test layer's wrapper around sqlite3OsRealloc().
 */
 static void * OSREALLOC(void *pRealloc, int n){
-#ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
+#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
   ThreadData *pTsd = sqlite3ThreadData();
   pTsd->nMaxAlloc = MAX(pTsd->nMaxAlloc, pTsd->nAlloc);
 #endif
-  assert( sqlite3ThreadData()->mallocAllowed );
+  assert( !sqlite3ThreadData()->mallocDisallowed );
   if( !failMalloc() ){
     u32 *p = (u32 *)getOsPointer(pRealloc);
     checkGuards(p);
@@ -521,14 +524,18 @@ static void OSMALLOC_FAILED(){
 ** called to try to avoid this. No indication of whether or not this is
 ** successful is returned to the caller.
 **
-** If SQLITE_OMIT_MEMORY_MANAGEMENT is defined, this function is a no-op.
+** If SQLITE_ENABLE_MEMORY_MANAGEMENT is not defined, this routine is
+** a no-op
 */
-#ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
+#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
 static void handleSoftLimit(int n){
   ThreadData *pTsd = sqlite3ThreadData();
   pTsd->nAlloc += n;
+  assert( pTsd->nAlloc>=0 );
   if( n>0 && pTsd->nSoftHeapLimit>0 ){
     while( pTsd->nAlloc>pTsd->nSoftHeapLimit && sqlite3_release_memory(n) );
+  }else if( pTsd->nAlloc==0 && pTsd->nSoftHeapLimit==0 ){
+    sqlite3ReleaseThreadData();
   }
 }
 #else
@@ -541,9 +548,8 @@ static void handleSoftLimit(int n){
 ** by calling sqlite3_release_memory().
 */
 void *sqlite3MallocRaw(int n){
-  ThreadData *pTsd = sqlite3ThreadData();
   void *p = 0;
-  if( n>0 && !pTsd->mallocFailed ){
+  if( n>0 && !sqlite3ThreadDataReadOnly()->mallocFailed ){
     handleSoftLimit(n);
     while( !(p = OSMALLOC(n)) && sqlite3_release_memory(n) );
     if( !p ){
@@ -566,8 +572,7 @@ void *sqlite3MallocRaw(int n){
 ** attempt to free memory by calling sqlite3_release_memory().
 */
 void *sqlite3Realloc(void *p, int n){
-  ThreadData *pTsd = sqlite3ThreadData();
-  if( pTsd->mallocFailed ){
+  if( sqlite3ThreadDataReadOnly()->mallocFailed ){
     return 0;
   }
 
@@ -584,7 +589,7 @@ void *sqlite3Realloc(void *p, int n){
       ** still correct after a malloc() failure. 
       */
       handleSoftLimit(OSSIZEOF(p) - n);
-      pTsd->mallocFailed = 1;
+      sqlite3ThreadData()->mallocFailed = 1;
       OSMALLOC_FAILED();
     }
     return np;
@@ -1308,17 +1313,26 @@ void *sqlite3TextToPtr(const char *z){
 ** Return a pointer to the ThreadData associated with the calling thread.
 */
 ThreadData *sqlite3ThreadData(){
-  ThreadData *pTsd = sqlite3OsThreadSpecificData(sizeof(ThreadData));
-  if( pTsd && !pTsd->isInit ){
-#ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
-    pTsd->nSoftHeapLimit = -1;
-#endif
-#ifndef NDEBUG
-    pTsd->mallocAllowed = 1;
-#endif
-    pTsd->isInit = 1;
-  }
-  return pTsd;
+  return (ThreadData*)sqlite3OsThreadSpecificData(1);
+}
+
+/*
+** Return a pointer to the ThreadData associated with the calling thread.
+** If no ThreadData has been allocated to this thread yet, return a pointer
+** to a substitute ThreadData structure that is all zeros. 
+*/
+const ThreadData *sqlite3ThreadDataReadOnly(){
+  static const ThreadData zeroData;
+  const ThreadData *pTd = sqlite3OsThreadSpecificData(0);
+  return pTd ? pTd : &zeroData;
+}
+
+/*
+** Check to see if the ThreadData for this thread is all zero.  If it
+** is, then deallocate it. 
+*/
+void sqlite3ReleaseThreadData(){
+  sqlite3OsThreadSpecificData(0);
 }
 
 /*
@@ -1326,28 +1340,12 @@ ThreadData *sqlite3ThreadData(){
 ** entry points that may have called sqliteMalloc().
 */
 void sqlite3MallocClearFailed(){
-  sqlite3ThreadData()->mallocFailed = 0;
-}
-
-#ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
-/*
-** Enable the shared pager and schema features.
-*/
-int sqlite3_enable_memory_management(int enable){
-  ThreadData *pTsd = sqlite3ThreadData();
-
-  /* It is only legal to call sqlite3_enable_memory_management() when there
-  ** are no currently open connections that were opened by the calling 
-  ** thread. This condition is only easy to detect if the feature were
-  ** previously enabled (and is being disabled). 
-  */
-  if( pTsd->pPager && !enable ){
-    return SQLITE_MISUSE;
+  ThreadData *pTd = sqlite3OsThreadSpecificData(0);
+  if( pTd && pTd->mallocFailed ){
+    pTd->mallocFailed = 0;
+    sqlite3OsThreadSpecificData(0);
   }
-  pTsd->useMemoryManagement = enable;
-  return SQLITE_OK;
 }
-#endif
 
 #ifndef NDEBUG
 /*
@@ -1355,8 +1353,8 @@ int sqlite3_enable_memory_management(int enable){
 ** cause an assert to fail if sqliteMalloc() or sqliteRealloc() is called.
 */
 void sqlite3MallocDisallow(){
-  assert(sqlite3ThreadData()->mallocAllowed);
-  sqlite3ThreadData()->mallocAllowed = 0;
+  assert(!sqlite3ThreadData()->mallocDisallowed);
+  sqlite3ThreadData()->mallocDisallowed = 1;
 }
 
 /*
@@ -1364,7 +1362,7 @@ void sqlite3MallocDisallow(){
 ** by sqlite3MallocDisallow().
 */
 void sqlite3MallocAllow(){
-  assert(!sqlite3ThreadData()->mallocAllowed);
-  sqlite3ThreadData()->mallocAllowed = 1;
+  assert(sqlite3ThreadData()->mallocDisallowed);
+  sqlite3ThreadData()->mallocDisallowed = 0;
 }
 #endif

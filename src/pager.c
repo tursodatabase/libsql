@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.235 2006/01/10 20:32:32 drh Exp $
+** @(#) $Id: pager.c,v 1.236 2006/01/11 21:41:22 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -284,7 +284,7 @@ struct Pager {
   void (*xCodec)(void*,void*,Pgno,int); /* Routine for en/decoding data */
   void *pCodecArg;            /* First argument to xCodec() */
   PgHdr *aHash[N_PG_HASH];    /* Hash table to map page number to PgHdr */
-#ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
+#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
   Pager *pNext;               /* Linked list of pagers in this thread */
 #endif
 };
@@ -1618,8 +1618,8 @@ int sqlite3pager_open(
   int useJournal = (flags & PAGER_OMIT_JOURNAL)==0;
   int noReadlock = (flags & PAGER_NO_READLOCK)!=0;
   char zTemp[SQLITE_TEMPNAME_SIZE];
-#ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
-  ThreadData *pTsd = sqlite3ThreadData();
+#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
+  const ThreadData *pTsdro = sqlite3ThreadDataReadOnly();
 #endif
 
   /* If malloc() has already failed return SQLITE_NOMEM. Before even
@@ -1627,7 +1627,7 @@ int sqlite3pager_open(
   ** structure was never allocated. 
   */
   *ppPager = 0;
-  if( sqlite3ThreadData()->mallocFailed ){
+  if( sqlite3ThreadDataReadOnly()->mallocFailed ){
     return SQLITE_NOMEM;
   }
   memset(&fd, 0, sizeof(fd));
@@ -1720,8 +1720,9 @@ int sqlite3pager_open(
   pPager->pBusyHandler = 0;
   memset(pPager->aHash, 0, sizeof(pPager->aHash));
   *ppPager = pPager;
-#ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
-  if( pTsd->useMemoryManagement ){
+#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
+  if( pTsdro->useMemoryManagement ){
+    ThreadData *pTsd = sqlite3ThreadData();
     pPager->pNext = pTsd->pPager;
     pTsd->pPager = pPager;
   }
@@ -2027,8 +2028,8 @@ int sqlite3pager_truncate(Pager *pPager, Pgno nPage){
 */
 int sqlite3pager_close(Pager *pPager){
   PgHdr *pPg, *pNext;
-#ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
-  ThreadData *pTsd = sqlite3ThreadData();
+#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
+  const ThreadData *pTsd = sqlite3ThreadDataReadOnly();
 #endif
 
   switch( pPager->state ){
@@ -2087,7 +2088,7 @@ int sqlite3pager_close(Pager *pPager){
   ** }
   */
 
-#ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
+#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
   /* Remove the pager from the linked list of pagers starting at 
   ** ThreadData.pPager if memory-management is enabled.
   */
@@ -2456,9 +2457,9 @@ static int pager_recycle(Pager *pPager, int syncOk, PgHdr **ppPg){
 ** free as much memory as possible. The return value is the total number 
 ** of bytes of memory released.
 */
-#ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
+#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
 int sqlite3pager_release_memory(int nReq){
-  ThreadData *pTsd = sqlite3ThreadData();
+  const ThreadData *pTsdro = sqlite3ThreadDataReadOnly();
   Pager *p;
   int nReleased = 0;
   int i;
@@ -2481,7 +2482,7 @@ int sqlite3pager_release_memory(int nReq){
   for(i=0; i<=1; i++){
 
     /* Loop through all the SQLite pagers opened by the current thread. */
-    for(p=pTsd->pPager; p && (nReq<0 || nReleased<nReq); p=p->pNext){
+    for(p=pTsdro->pPager; p && (nReq<0 || nReleased<nReq); p=p->pNext){
       PgHdr *pPg;
       int rc;
 
@@ -2527,7 +2528,7 @@ int sqlite3pager_release_memory(int nReq){
 
   return nReleased;
 }
-#endif /* SQLITE_OMIT_MEMORY_MANAGEMENT */
+#endif /* SQLITE_ENABLE_MEMORY_MANAGEMENT */
 
 /*
 ** Acquire a page.

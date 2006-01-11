@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: legacy.c,v 1.10 2006/01/09 06:29:49 danielk1977 Exp $
+** $Id: legacy.c,v 1.11 2006/01/11 21:41:22 drh Exp $
 */
 
 #include "sqliteInt.h"
@@ -121,7 +121,7 @@ exec_out:
   if( pStmt ) sqlite3_finalize(pStmt);
   if( azCols ) sqliteFree(azCols);
 
-  if( sqlite3ThreadData()->mallocFailed ){
+  if( sqlite3ThreadDataReadOnly()->mallocFailed ){
     rc = SQLITE_NOMEM;
     sqlite3MallocClearFailed();
   }

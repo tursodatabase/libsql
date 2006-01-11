@@ -84,6 +84,7 @@ sqlite3_set_auxdata
 sqlite3_snprintf
 sqlite3_soft_heap_limit
 sqlite3_step
+sqlite3_thread_cleanup
 sqlite3_total_changes
 sqlite3_trace
 sqlite3_transfer_bindings

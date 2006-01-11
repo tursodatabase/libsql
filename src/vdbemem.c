@@ -756,7 +756,7 @@ const void *sqlite3ValueText(sqlite3_value* pVal, u8 enc){
   }else if( !(pVal->flags&MEM_Blob) ){
     sqlite3VdbeMemStringify(pVal, enc);
   }
-  assert(pVal->enc==enc || sqlite3ThreadData()->mallocFailed);
+  assert(pVal->enc==enc || sqlite3ThreadDataReadOnly()->mallocFailed);
   return (const void *)(pVal->enc==enc ? (pVal->z) : 0);
 }
 

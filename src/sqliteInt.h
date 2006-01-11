@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.461 2006/01/11 14:09:32 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.462 2006/01/11 21:41:22 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -286,14 +286,17 @@ extern int sqlite3_iMallocReset; /* Set iMallocFail to this when it reaches 0 */
 #define sqliteAllocSize(x)     sqlite3AllocSize(x)
 
 /*
-** An instance of this structure is allocated for each thread that uses SQLite.
+** An instance of this structure might be allocated to store information
+** specific to a single thread.
+**
+** To avoid a memory leak on windows, the content of this structure is
+** checked at the conclusion of each API call.  If it is all zero, it
+** is deallocated.
 */
 struct ThreadData {
-  u8 isInit;               /* True if structure has been initialised */
   u8 mallocFailed;         /* True after a malloc() has failed */
 
-#ifndef SQLITE_OMIT_MEMORY_MANAGEMENT
-  u8 useMemoryManagement;  /* True if memory-management is enabled */
+#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
   int nSoftHeapLimit;      /* Suggested max mem allocation.  No limit if <0 */
   int nAlloc;              /* Number of bytes currently allocated */
   Pager *pPager;           /* Linked list of all pagers in this thread */
@@ -306,7 +309,7 @@ struct ThreadData {
 
 #ifdef SQLITE_MEMDEBUG
   int nMaxAlloc;           /* High water mark of ThreadData.nAlloc */
-  int mallocAllowed;       /* assert() in sqlite3Malloc() if not set */
+  int mallocDisallowed;    /* assert() in sqlite3Malloc() if set */
   int isFail;              /* True if all malloc() calls should fail */
   const char *zFile;       /* Filename to associate debugging info with */
   int iLine;               /* Line number to associate debugging info with */
@@ -1730,7 +1733,9 @@ void sqlite3AnalysisLoad(sqlite3*,int iDB);
 void sqlite3DefaultRowEst(Index*);
 void sqlite3RegisterLikeFunctions(sqlite3*, int);
 int sqlite3IsLikeFunction(sqlite3*,Expr*,int*,char*);
-ThreadData *sqlite3ThreadData();
+ThreadData *sqlite3ThreadData(void);
+const ThreadData *sqlite3ThreadDataReadOnly(void);
+void sqlite3ReleaseThreadData(void);
 void sqlite3AttachFunctions(sqlite3 *);
 void sqlite3MinimumFileFormat(Parse*, int, int);
 void sqlite3SchemaFree(void *);
