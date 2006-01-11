@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3ref.tcl,v 1.27 2006/01/10 18:08:10 danielk1977 Exp $}
+set rcsid {$Id: capi3ref.tcl,v 1.28 2006/01/11 23:40:34 drh Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -1237,6 +1237,10 @@ api {} {
   There is no mechanism for sharing cache between database connections
   running in different threads.
 
+  Sharing must be disabled prior to shutting down a thread or else
+  the thread will leak memory.  Call this routine with an argument of
+  0 to turn of sharing.  Or use the sqlite3_thread_cleanup() API.
+
   This routine must not be called when any database connections
   are active in the current thread.  Enabling or disabling shared
   cache while there are active database connections will result
@@ -1264,55 +1268,20 @@ api {} {
 }
 
 api {} {
-  int sqlite3_enable_memory_management(int);
+  void sqlite3_thread_cleanup(void);
 } {
-  This routine enables or disables heap memory management for the
-  thread in which it is called.  Memory management is enabled if
-  the argument is true and disabled if the argument is false.
+  This routine makes sure that all thread local storage used by SQLite
+  in the current thread has been deallocated.  A thread can call this
+  routine prior to terminating in order to make sure there are no memory
+  leaks.
 
-  This routine must not be called when any database connections
-  are active in the current thread.  Enabling or disabling memory
-  management while there are active database connections will result
-  in memory corruption.
-
-  When memory management is enabled, SQLite tries to automatically
-  recover from out-of-memory errors by freeing unused cache memory
-  and retrying the allocation.
-  This allows operations to continue when available memory is limit
-  though with some loss of performance due to the reduction in cache
-  size.
-
-  The sqlite3_soft_heap_limit() API can be used to restrict SQLite's
-  heap memory usage to a preset amount so that the reclamation of
-  cache begins to occur before memory is exhausted.
-
-  Memory management is enabled and disabled on a thread-by-thread basis.
-  Each call to this routine enables or disabled memory management only for
-  database connections created and used in the same thread in which this
-  routine is called.
-
-  For any given database connection, SQLite requires that the
-  following routines always be called from the same thread:
-  sqlite3_open(), sqlite3_prepare(), sqlite3_step(), sqlite3_reset(),
-  sqlite3_finalize(), and sqlite3_close().  On some operating systems
-  (ex: windows and linux 2.6) you can get away with calling these routines
-  from different threads as long as their executions never overlap in time
-  and memory management is disabled.
-  But when the memory management is enabled, some information about the
-  database connections is stored in thread-specific storage so that it
-  will be available to remediate memory shortages.  Consequently,
-  the previously enumerated routines must always be called from the
-  same thread when memory management is enabled, regardless of what
-  operating system is used.
-
-  This routine returns SQLITE_OK if the memory management module was
-  enabled or disabled successfully.  An error code is returned
-  otherwise.
-
-  Memory management is disabled by default for backwards compatibility
-  and because it is normally only useful for embedded devices.  The
-  code that implements the memory management feature can be omitted by
-  recompiling SQLite with the SQLITE_OMIT_MEMORY_MANAGEMENT macro defined.
+  This routine is not strictly necessary.  If cache sharing has been
+  disabled using sqlite3_enable_shared_cache() and if all database
+  connections have been closed and if SQLITE_ENABLE_MEMORY_MANAGMENT is
+  on and all memory has been freed, then the thread local storage will
+  already have been automatically deallocated.  This routine is provided
+  as a convenience to the program who just wants to make sure that there
+  are no leaks.
 }
 
 api {} {
@@ -1323,30 +1292,29 @@ api {} {
   routine is called.  The value returned is the number of bytes actually
   freed.  
 
-  If memory management has not been enabled by calling
-  sqlite3_enable_memory_management() then this routine is a no-op
-  and always returns 0.
+  This routine is only available if memory management has been enabled
+  by compiling with the SQLITE_ENABLE_MEMORY_MANAGMENT macro.
 }
 
 api {} {
   void sqlite3_soft_heap_limit(int N);
 } {
   This routine sets the soft heap limit for the current thread to N.
-  If memory management is enabled on the thread  by the
-  sqlite3_enable_memory_management() function and the total heap usage
-  by SQLite in that thread exceeds N, then sqlite3_release_memory() is
+  If the total heap usage by SQLite in the current thread exceeds N,
+  then sqlite3_release_memory() is
   called to try to reduce the memory usage below the soft limit.
 
-  A negative value for N means that there is no soft heap limit and
+  A negative or zero value for N means that there is no soft heap limit and
   sqlite3_release_memory() will only be called when memory is exhaused.
-  The default value for the soft heap limit is negative.
+  The default value for the soft heap limit is zero.
 
   SQLite makes a best effort to honor the soft heap limit.  But if it
   is unable to reduce memory usage below the soft limit, execution will
   continue without error or notification.  This is why the limit is 
   called a "soft" limit.  It is advisory only.
 
-  If memory management is not enabled, the soft heap limit is ignored.
+  This routine is only available if memory management has been enabled
+  by compiling with the SQLITE_ENABLE_MEMORY_MANAGMENT macro.
 }
 
 set n 0

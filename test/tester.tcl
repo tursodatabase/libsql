@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.58 2006/01/06 22:11:21 drh Exp $
+# $Id: tester.tcl,v 1.59 2006/01/11 23:40:34 drh Exp $
 
 # Make sure tclsqlite3 was compiled correctly.  Abort now with an
 # error message if not.
@@ -149,7 +149,16 @@ proc finalize_testing {} {
   catch {
     pp_check_for_leaks
   }
-
+  sqlite3 db {}
+  sqlite3_clear_tsd_memdebug
+  db close
+  if {$::sqlite3_tsd_count} {
+     puts "Thread-specific data leak: $::sqlite3_tsd_count instances"
+     incr nErr
+  } else {
+     puts "Thread-specific data deallocated properly"
+  }
+  incr nTest
   puts "$nErr errors out of $nTest tests"
   puts "Failures on these tests: $::failList"
   if {$nProb>0} {

@@ -1,5 +1,5 @@
-C Automatically\sdeallocate\sthread-specific\sdata\swhen\sit\sis\sno\slonger\nbeing\sused.\s\sTicket\s#1601.\s\sAlso\simplemented\sthe\ssuggestion\sof\nticket\s#1603.\sMemory\smanagement\sis\snow\soff\sby\sdefault\sat\scompile-time.\nThe\ssqlite3_enable_memory_management()\sAPI\shas\sbeen\sremoved.\s(CVS\s2919)
-D 2006-01-11T21:41:21
+C Testing\sof\sthe\sautomatic\sTSD\sdeallocation\slogic.\s\sThe\ssqlite3_thread_cleanup()\nAPI\sis\sdocumented.\s\sThis\sshould\sclose\sticket\s#1601.\s(CVS\s2920)
+D 2006-01-11T23:40:33
 F Makefile.in ab3ffd8d469cef4477257169b82810030a6bb967
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -55,9 +55,9 @@ F src/os.h 9debc3d3ca4cdafde222a0ea74a4c8415aef4f22
 F src/os_common.h 78bcc34dded9b625b3c16d072b7e5b76d075a674
 F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
-F src/os_unix.c 557a21c563496a1ccef32b1d57376d135884eac5
+F src/os_unix.c d3ec9c61a1194d3e475423298de6ce13871605a1
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
-F src/os_win.c b67dd34bf1ae796851910a229bd94026b42d942f
+F src/os_win.c e372f99c4a89b9c54249a29c8c4912e5a2e67fb4
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c a96b9c43664670576e41eac699277c7862d604d8
 F src/pager.h e0acb095b3ad0bca48f2ab00c87346665643f64f
@@ -67,19 +67,19 @@ F src/prepare.c 60c1f5e3d2901d651f8ca9f06e39e2ff3f335844
 F src/printf.c f47a2f4b5387cd2ebb12e9117a1a5d6bd9a2b812
 F src/random.c d40f8d356cecbd351ccfab6eaedd7ec1b54f5261
 F src/select.c 7b19d350cb2a18ae4a59d6b87049aa2ce9c671ae
-F src/server.c 519e308651e30102dd3d1f4053ac64c14267e44c
+F src/server.c e425729aa7ff374637033a38ba9fd9938c432244
 F src/shell.c 66b073375efbdee19045e7e0cd38b85f9aff71da
 F src/sqlite.h.in 4320cff369e37897d2839d526c2b8917a2756d60
 F src/sqliteInt.h bd3fba6d7163ef402b5633191ee5d7de5b7f6e80
 F src/table.c 486dcfce532685b53b5a2b5da8bba0ded6fb2316
 F src/tclsqlite.c d650bea0248fc0a310ddc2cb94273a3a5021fddf
-F src/test1.c d38c9f4da2136c5e1747517d7b564ba88a91fbee
+F src/test1.c 30ed0d4d594db0bb2beb98be7024cde1fe686f14
 F src/test2.c ca74a1d8aeb7d9606e8f6b762c5daf85c1a3f92b
 F src/test3.c 9742aa146eb750cab81c1d5605286c3a0eb88054
-F src/test4.c a8fd681e139e1c61f22a77d07fc3a99cb28fff3f
+F src/test4.c 0f95de81629a53fc6ab104f64a7ccb1dcbb8af90
 F src/test5.c 7162f8526affb771c4ed256826eee7bb9eca265f
 F src/test6.c 74d91b487c68154156eded457925d96aa2a3fdbb
-F src/test7.c bfe36c62cae189509660acfeeb891ffb9da8ef0c
+F src/test7.c c87fd373a613986113717ba51e6a5ad86407c1f7
 F src/test_async.c 6776f5027ca6378c116ff5ccc2fe41b908e33772
 F src/tokenize.c b75d24cbb419eef9ae7be286dd66723a2ee49f4f
 F src/trigger.c 694b247476d2fc0dce003af564f79e8752fc1158
@@ -234,7 +234,7 @@ F test/table.test 6dc0dfa44dd429520e0e5a0c5e55025f730e9403
 F test/tableapi.test 6a66d58b37d46dc0f2b3c7d4bd2617d209399bd1
 F test/tclsqlite.test 2c4b5fb2f21e6740479463c263f3020f08e472d7
 F test/temptable.test 7927261befdbc7b0a7ffebb85ecc70a74fa7b15b
-F test/tester.tcl b9b2c481dbef7fec4b8b3b91c6b810e7f916ba28
+F test/tester.tcl ed59b4eaa180728e4be1c55dc2823d66e03ae79a
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
 F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
 F test/threadtest2.c 97a830d53c24c42290501fdfba4a6e5bdd34748b
@@ -297,7 +297,7 @@ F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
 F www/autoinc.tcl b357f5ba954b046ee35392ce0f884a2fcfcdea06
 F www/c_interface.tcl b51b08591554c16a0c3ef718364a508ac25abc7e
 F www/capi3.tcl 7a7cc225fe02eb7ab861a6019b08baa0014409e1
-F www/capi3ref.tcl 3885ca3847f394db7aa035647f0ab1c140244042
+F www/capi3ref.tcl 47c6014600805f4e385cf6b2e12b227ba1a906ec
 F www/changes.tcl 661937260b6eac4af510e068f33f3ce7b3298ff6
 F www/common.tcl 14d121c28532ad20c3e349caa4db708b0b822083
 F www/compile.tcl 276546d7eb445add5a867193bbd80f6919a6b084
@@ -340,7 +340,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 8c26893c65574b0667bb84bde3ca49751079cc8d
-R a464a0f33259fc5b6aae2e3199e401a7
+P 5d9c6aa964305c3f36741ff0058da5b5f3ce0d24
+R 3399b09fea32a929acfc809e2317093c
 U drh
-Z 7760f8b5862256854e201380c09a40e6
+Z 938c3f3406b28a56fdbffbe4eafe6c93

@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.188 2006/01/11 21:41:22 drh Exp $
+** $Id: test1.c,v 1.189 2006/01/11 23:40:34 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -3002,6 +3002,60 @@ static int test_soft_heap_limit(
 }
 
 /*
+** Usage:   sqlite3_clear_tsd_memdebug
+**
+** Clear all of the MEMDEBUG information out of thread-specific data.
+** This will allow it to be deallocated.
+*/
+static int test_clear_tsd_memdebug(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+#if defined(SQLITE_MEMDEBUG)
+  ThreadData *pTd = sqlite3ThreadData();
+  pTd->nMaxAlloc = 0;
+  pTd->zFile = 0;
+  pTd->iLine = 0;
+#endif
+  return TCL_OK;
+}
+
+/*
+** Usage:   sqlite3_tsd_release
+**
+** Call sqlite3ReleaseThreadData.
+*/
+static int test_tsd_release(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+#if defined(SQLITE_MEMDEBUG)
+  sqlite3ReleaseThreadData();
+#endif
+  return TCL_OK;
+}
+
+/*
+** Usage:   sqlite3_thread_cleanup
+**
+** Call the sqlite3_thread_cleanup API.
+*/
+static int test_thread_cleanup(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_thread_cleanup();
+  return TCL_OK;
+}
+
+
+/*
 ** This routine sets entries in the global ::sqlite_options() array variable
 ** according to the compile-time configuration of the database.  Test
 ** procedures use this to determine when tests should be omitted.
@@ -3372,8 +3426,11 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_changes",               test_changes       ,0 },
      { "sqlite3_step",                  test_step          ,0 },
 
-     { "sqlite3_release_memory",        test_release_memory,  0},
-     { "sqlite3_soft_heap_limit",       test_soft_heap_limit, 0},
+     { "sqlite3_release_memory",        test_release_memory,     0},
+     { "sqlite3_soft_heap_limit",       test_soft_heap_limit,    0},
+     { "sqlite3_clear_tsd_memdebug",    test_clear_tsd_memdebug, 0},
+     { "sqlite3_tsd_release",           test_tsd_release,        0},
+     { "sqlite3_thread_cleanup",        test_thread_cleanup,     0},
 
      /* sqlite3_column_*() API */
      { "sqlite3_column_count",          test_column_count  ,0 },
@@ -3429,6 +3486,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
   extern int sqlite3_malloc_id;
   extern int sqlite3_memMax;
   extern int sqlite3_like_count;
+  extern int sqlite3_tsd_count;
 #if OS_WIN
   extern int sqlite3_os_type;
 #endif
@@ -3461,6 +3519,8 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
       (char*)&sqlite3_current_time, TCL_LINK_INT);
   Tcl_LinkVar(interp, "sqlite_os_trace",
       (char*)&sqlite3_os_trace, TCL_LINK_INT);
+  Tcl_LinkVar(interp, "sqlite3_tsd_count",
+      (char*)&sqlite3_tsd_count, TCL_LINK_INT);
 #ifndef SQLITE_OMIT_UTF16
   Tcl_LinkVar(interp, "sqlite_last_needed_collation",
       (char*)&pzNeededCollation, TCL_LINK_STRING|TCL_LINK_READ_ONLY);
@@ -3507,8 +3567,11 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
 #endif /* OS_UNIX */
   set_options(interp);
 
-  int sqlite3_shared_cache_report(void *, Tcl_Interp *, int, Tcl_Obj *CONST[]);
-  Tcl_CreateObjCommand(interp, "sqlite_shared_cache_report", 
-      sqlite3_shared_cache_report, 0, 0);
+  {
+    extern int sqlite3_shared_cache_report(void *, Tcl_Interp *,
+                                    int, Tcl_Obj *CONST[]);
+    Tcl_CreateObjCommand(interp, "sqlite_shared_cache_report", 
+        sqlite3_shared_cache_report, 0, 0);
+  }
   return TCL_OK;
 }

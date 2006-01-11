@@ -332,6 +332,7 @@ int sqlite3_client_close(sqlite3 *pDb){
 void *sqlite3_server(void *NotUsed){
   sqlite3_enable_shared_cache(1);
   if( pthread_mutex_trylock(&g.serverMutex) ){
+    sqlite3_enable_shared_cache(0);
     return 0;  /* Another server is already running */
   }
   while( !g.serverHalt ){
@@ -393,6 +394,7 @@ void *sqlite3_server(void *NotUsed){
     pthread_cond_signal(&pMsg->clientWakeup);
   }
   pthread_mutex_unlock(&g.serverMutex);
+  sqlite3_thread_cleanup();
   return 0;
 }
 

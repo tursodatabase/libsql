@@ -12,7 +12,7 @@
 ** Code for testing the client/server version of the SQLite library.
 ** Derived from test4.c.
 **
-** $Id: test7.c,v 1.1 2006/01/09 23:40:25 drh Exp $
+** $Id: test7.c,v 1.2 2006/01/11 23:40:34 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -118,6 +118,7 @@ static void *client_main(void *pArg){
     p->zErr = 0;
   }
   p->completed++;
+  sqlite3_thread_cleanup();
   return 0;
 }
 

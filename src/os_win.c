@@ -1149,6 +1149,22 @@ int sqlite3WinCurrentTime(double *prNow){
 }
 
 /*
+** Remember the number of thread-specific-data blocks allocated.
+** Use this to verify that we are not leaking thread-specific-data.
+** Ticket #1601
+*/
+#ifdef SQLITE_TEST
+int sqlite3_tsd_count = 0;
+# define TSD_COUNTER_INCR InterlockedIncrement(&sqlite3_tsd_count)
+# define TSD_COUNTER_DECR InterlockedDecrement(&sqlite3_tsd_count)
+#else
+# define TSD_COUNTER_INCR  /* no-op */
+# define TSD_COUNTER_DECR  /* no-op */
+#endif
+
+
+
+/*
 ** If called with allocateFlag==1, then return a pointer to thread
 ** specific data for the current thread.  Allocate and zero the
 ** thread-specific data if it does not already exist necessary.
@@ -1158,11 +1174,11 @@ int sqlite3WinCurrentTime(double *prNow){
 ** Return a pointer to the thread specific data or NULL if it is
 ** unallocated.
 */
-void *sqlite3WinThreadSpecificData(int allocateFlag){
-  static void *pTsd = 0;
+ThreadData *sqlite3WinThreadSpecificData(int allocateFlag){
   static int key;
   static int keyInit = 0;
   static const ThreadData zeroData;
+  ThreadData *pTsd;
 
   if( !keyInit ){
     sqlite3OsEnterMutex();
@@ -1179,15 +1195,17 @@ void *sqlite3WinThreadSpecificData(int allocateFlag){
   pTsd = TlsGetValue(key);
   if( allocateFlag ){
     if( !pTsd ){
-      pTsd = sqlite3OsMalloc(nByte);
+      pTsd = sqlite3OsMalloc( sizeof(zeroData) );
       if( pTsd ){
         *pTsd = zeroData;
         TlsSetValue(key, pTsd);
+        TSD_COUNTER_INCR;
       }
     }
   }else if( pTsd!=0 && memcmp(pTsd, &zeroData, sizeof(zeroData))==0 ){
     sqlite3OsFree(pTsd);
     TlsSetValue(key, 0);
+    TSD_COUNTER_DECR;
     pTsd = 0;
   }
   return pTsd;
