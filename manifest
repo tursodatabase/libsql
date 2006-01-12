@@ -1,5 +1,5 @@
-C About\sa\s2.5%\sspeed\simprovement\sby\sreducing\sthe\snumber\sof\ssqlite3ThreadData\ncalls\sin\sthe\sparser.\s(CVS\s2924)
-D 2006-01-12T12:43:36
+C BtreeMoveto\soptimization\sgoes\sabout\s1.5%\sfaster.\s(CVS\s2925)
+D 2006-01-12T14:30:19
 F Makefile.in ab3ffd8d469cef4477257169b82810030a6bb967
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -34,7 +34,7 @@ F src/alter.c 4139c8f1d0f12b1759e767b1d09dd594e2b5ac1d
 F src/analyze.c 7d2b7ab9a9c2fd6e55700f69064dfdd3e36d7a8a
 F src/attach.c d4b9d8bd71d72409720946355be41cafb6c09079
 F src/auth.c cdec356a5cd8b217c346f816c5912221537fe87f
-F src/btree.c b407273cb22f39606acc27b8a4a74c6272c7a9d2
+F src/btree.c 9ac50babae65052bb7e412a5281f80d4e225b574
 F src/btree.h 5663c4f43e8521546ccebc8fc95acb013b8f3184
 F src/build.c a055974683ddc465bdc8669d43d6ab35d3dbb55f
 F src/callback.c ba3e6cc7a6beb562e7a66f92e26fabcb21aab1e2
@@ -340,7 +340,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 19b848d99f215914454422edc0ce72422de0774e
-R 5f224f07433a963a361b7df37917ef79
+P 0caa1994770142d6ca15284a26bad3879b07b15a
+R 6e451212b773e5c55266fd23d96e352b
 U drh
-Z 4d26681c8651422323c8992b3ad94507
+Z bd6e25ca98e62bf29a6a6907bd5ed271

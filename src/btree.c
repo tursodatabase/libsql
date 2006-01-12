@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.291 2006/01/11 21:41:22 drh Exp $
+** $Id: btree.c,v 1.292 2006/01/12 14:30:19 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -3326,8 +3326,8 @@ int sqlite3BtreeMoveto(BtCursor *pCur, const void *pKey, i64 nKey, int *pRes){
       void *pCellKey;
       i64 nCellKey;
       pCur->idx = (lwr+upr)/2;
-      pCur->info.nSize = 0;
-      sqlite3BtreeKeySize(pCur, &nCellKey);
+      parseCell(pPage, pCur->idx, &pCur->info);
+      nCellKey = pCur->info.nKey;
       if( pPage->intKey ){
         if( nCellKey<nKey ){
           c = -1;
