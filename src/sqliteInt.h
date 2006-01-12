@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.465 2006/01/12 12:43:36 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.466 2006/01/12 17:20:51 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -401,9 +401,9 @@ struct Schema {
   Hash aFKey;          /* Foreign keys indexed by to-table */
   Table *pSeqTab;      /* The sqlite_sequence table used by AUTOINCREMENT */
   u8 file_format;      /* Schema format version for this file */
+  u8 enc;              /* Text encoding used by this database */
   u16 flags;           /* Flags associated with this schema */
   int cache_size;      /* Number of pages to use in the cache */
-  u8 enc;              /* Text encoding used by this database */
 };
 
 /*
