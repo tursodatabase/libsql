@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.20 2006/01/11 21:41:22 drh Exp $
+** $Id: prepare.c,v 1.21 2006/01/12 12:43:36 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -517,9 +517,11 @@ int sqlite3_prepare(
   
   memset(&sParse, 0, sizeof(sParse));
   sParse.db = db;
+  sParse.pTsd = sqlite3ThreadData();
+  sParse.pTsd->nRef++;
   sqlite3RunParser(&sParse, zSql, &zErrMsg);
 
-  if( sqlite3ThreadDataReadOnly()->mallocFailed ){
+  if( sParse.pTsd->mallocFailed ){
     sParse.rc = SQLITE_NOMEM;
   }
   if( sParse.rc==SQLITE_DONE ) sParse.rc = SQLITE_OK;
@@ -569,12 +571,14 @@ int sqlite3_prepare(
   /* We must check for malloc failure last of all, in case malloc() failed
   ** inside of the sqlite3Error() call above or something.
   */
-  if( sqlite3ThreadDataReadOnly()->mallocFailed ){
+  if( sParse.pTsd->mallocFailed ){
     rc = SQLITE_NOMEM;
     sqlite3Error(db, rc, 0);
   }
 
+  sParse.pTsd->nRef--;
   sqlite3MallocClearFailed();
+  sqlite3ReleaseThreadData();
   return rc;
 }
 

@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.113 2006/01/11 21:41:22 drh Exp $
+** $Id: tokenize.c,v 1.114 2006/01/12 12:43:36 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -339,6 +339,7 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   int tokenType;
   int lastTokenParsed = -1;
   sqlite3 *db = pParse->db;
+  ThreadData *pTsd = pParse->pTsd;
   extern void *sqlite3ParserAlloc(void*(*)(int));
   extern void sqlite3ParserFree(void*, void(*)(void*));
   extern int sqlite3Parser(void*, int, Token, Parse*);
@@ -358,7 +359,7 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   assert( pParse->nVarExprAlloc==0 );
   assert( pParse->apVarExpr==0 );
   pParse->zTail = pParse->zSql = zSql;
-  while( sqlite3ThreadDataReadOnly()->mallocFailed==0 && zSql[i]!=0 ){
+  while( pTsd->mallocFailed==0 && zSql[i]!=0 ){
     assert( i>=0 );
     pParse->sLastToken.z = (u8*)&zSql[i];
     assert( pParse->sLastToken.dyn==0 );
@@ -406,7 +407,7 @@ abort_parse:
     sqlite3Parser(pEngine, 0, pParse->sLastToken, pParse);
   }
   sqlite3ParserFree(pEngine, sqlite3FreeX);
-  if( sqlite3ThreadDataReadOnly()->mallocFailed ){
+  if( pTsd->mallocFailed ){
     pParse->rc = SQLITE_NOMEM;
   }
   if( pParse->rc!=SQLITE_OK && pParse->rc!=SQLITE_DONE && pParse->zErrMsg==0 ){

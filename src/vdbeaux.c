@@ -102,7 +102,7 @@ int sqlite3VdbeAddOp(Vdbe *p, int op, int p1, int p2){
   p->nOp++;
   assert( p->magic==VDBE_MAGIC_INIT );
   resizeOpArray(p, i+1);
-  if( sqlite3ThreadDataReadOnly()->mallocFailed ){
+  if( p->aOp==0 || p->nOp<=i ){
     return 0;
   }
   pOp = &p->aOp[i];
