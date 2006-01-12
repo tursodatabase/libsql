@@ -1681,6 +1681,23 @@ int sqlite3VdbeSerialGet(
 }
 
 /*
+** The header of a record consists of a sequence variable-length integers.
+** These integers are almost always small and are encoded as a single byte.
+** The following macro takes advantage this fact to provide a fast decode
+** of the integers in a record header.  It is faster for the common case
+** where the integer is a single byte.  It is a little slower when the
+** integer is two or more bytes.  But overall it is faster.
+**
+** The following expressions are equivalent:
+**
+**     x = sqlite3GetVarint32( A, &B );
+**
+**     x = GetVarint( A, B );
+**
+*/
+#define GetVarint(A,B)  ((B = *(A))<=0x7f ? 1 : sqlite3GetVarint32(A, &B))
+
+/*
 ** This function compares the two table rows or index records specified by 
 ** {nKey1, pKey1} and {nKey2, pKey2}, returning a negative, zero
 ** or positive integer if {nKey1, pKey1} is less than, equal to or 
@@ -1707,9 +1724,9 @@ int sqlite3VdbeRecordCompare(
   mem1.enc = pKeyInfo->enc;
   mem2.enc = pKeyInfo->enc;
   
-  idx1 = sqlite3GetVarint32(pKey1, &szHdr1);
+  idx1 = GetVarint(aKey1, szHdr1);
   d1 = szHdr1;
-  idx2 = sqlite3GetVarint32(pKey2, &szHdr2);
+  idx2 = GetVarint(aKey2, szHdr2);
   d2 = szHdr2;
   nField = pKeyInfo->nField;
   while( idx1<szHdr1 && idx2<szHdr2 ){
@@ -1717,9 +1734,9 @@ int sqlite3VdbeRecordCompare(
     u32 serial_type2;
 
     /* Read the serial types for the next element in each key. */
-    idx1 += sqlite3GetVarint32(&aKey1[idx1], &serial_type1);
+    idx1 += GetVarint( aKey1+idx1, serial_type1 );
     if( d1>=nKey1 && sqlite3VdbeSerialTypeLen(serial_type1)>0 ) break;
-    idx2 += sqlite3GetVarint32(&aKey2[idx2], &serial_type2);
+    idx2 += GetVarint( aKey2+idx2, serial_type2 );
     if( d2>=nKey2 && sqlite3VdbeSerialTypeLen(serial_type2)>0 ) break;
 
     /* Assert that there is enough space left in each key for the blob of
