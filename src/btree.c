@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.292 2006/01/12 14:30:19 drh Exp $
+** $Id: btree.c,v 1.293 2006/01/12 15:01:16 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -3326,9 +3326,15 @@ int sqlite3BtreeMoveto(BtCursor *pCur, const void *pKey, i64 nKey, int *pRes){
       void *pCellKey;
       i64 nCellKey;
       pCur->idx = (lwr+upr)/2;
-      parseCell(pPage, pCur->idx, &pCur->info);
-      nCellKey = pCur->info.nKey;
       if( pPage->intKey ){
+        u8 *pCell = findCell(pPage, pCur->idx);
+        pCell += pPage->childPtrSize;
+        if( pPage->hasData ){
+          int dummy;
+          pCell += getVarint32(pCell, &dummy);
+        }
+        getVarint(pCell, &nCellKey);
+        pCur->info.nSize = 0;
         if( nCellKey<nKey ){
           c = -1;
         }else if( nCellKey>nKey ){
@@ -3338,6 +3344,8 @@ int sqlite3BtreeMoveto(BtCursor *pCur, const void *pKey, i64 nKey, int *pRes){
         }
       }else{
         int available;
+        parseCell(pPage, pCur->idx, &pCur->info);
+        nCellKey = pCur->info.nKey;
         pCellKey = (void *)fetchPayload(pCur, &available, 0);
         if( available>=nCellKey ){
           c = pCur->xCompare(pCur->pArg, nCellKey, pCellKey, nKey, pKey);
