@@ -13,7 +13,7 @@
 # The focus of this file is testing of the proper handling of conversions
 # to the native text representation.
 #
-# $Id: enc3.test,v 1.4 2004/11/14 21:56:31 drh Exp $
+# $Id: enc3.test,v 1.5 2006/01/12 19:42:41 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -51,6 +51,20 @@ ifcapable {bloblit} {
       SELECT quote(x) || ' ' || quote(y) FROM t1
     }
   } {{X'616263646566' NULL}}
+}
+ifcapable {bloblit && utf16} {
+  do_test enc3-2.1 {
+    execsql {
+      PRAGMA encoding
+    }
+  } {UTF-16le}
+  do_test enc3-2.2 {
+    execsql {
+      CREATE TABLE t2(a);
+      INSERT INTO t2 VALUES(x'61006200630064006500');
+      SELECT CAST(a AS text) FROM t2 WHERE a LIKE 'abc%';
+    }
+  } {abcde}
 }
 
 
