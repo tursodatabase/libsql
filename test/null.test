@@ -102,6 +102,14 @@ do_test null-3.1 {
   }
 } {7 4 6 2 3 0.5 0.5 0 1}
 
+# The sum of zero entries is a NULL, but the total of zero entries is 0.
+#
+do_test null-3.2 {
+  execsql {
+    SELECT sum(b), total(b) FROM t1 WHERE b<0
+  }
+} {{} 0.0}
+
 # Check to see how WHERE clauses handle NULL values.  A NULL value
 # is the same as UNKNOWN.  The WHERE clause should only select those
 # rows that are TRUE.  FALSE and UNKNOWN rows are rejected.

@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.115 2006/01/09 16:12:05 danielk1977 Exp $
+** $Id: func.c,v 1.116 2006/01/12 22:17:50 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -823,7 +823,13 @@ struct SumCtx {
 };
 
 /*
-** Routines used to compute the sum or average.
+** Routines used to compute the sum, average, and total.
+**
+** The SUM() function follows the (broken) SQL standard which means
+** that it returns NULL if it sums over no inputs.  TOTAL returns
+** 0.0 in that case.  In addition, TOTAL always returns a float where
+** SUM might return an integer if it never encounters a floating point
+** value.
 */
 static void sumStep(sqlite3_context *context, int argc, sqlite3_value **argv){
   SumCtx *p;
@@ -856,6 +862,11 @@ static void avgFinalize(sqlite3_context *context){
   if( p && p->cnt>0 ){
     sqlite3_result_double(context, p->sum/(double)p->cnt);
   }
+}
+static void totalFinalize(sqlite3_context *context){
+  SumCtx *p;
+  p = sqlite3_aggregate_context(context, 0);
+  sqlite3_result_double(context, p ? p->sum : 0.0);
 }
 
 /*
@@ -1000,6 +1011,7 @@ void sqlite3RegisterBuiltinFunctions(sqlite3 *db){
     { "min",    1, 0, 1, minmaxStep,   minMaxFinalize },
     { "max",    1, 2, 1, minmaxStep,   minMaxFinalize },
     { "sum",    1, 0, 0, sumStep,      sumFinalize    },
+    { "total",  1, 0, 0, sumStep,      totalFinalize    },
     { "avg",    1, 0, 0, sumStep,      avgFinalize    },
     { "count",  0, 0, 0, countStep,    countFinalize  },
     { "count",  1, 0, 0, countStep,    countFinalize  },

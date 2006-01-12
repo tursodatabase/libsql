@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the lang-*.html files.
 #
-set rcsid {$Id: lang.tcl,v 1.104 2006/01/04 15:58:29 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.105 2006/01/12 22:17:50 drh Exp $}
 source common.tcl
 
 if {[llength $argv]>0} {
@@ -1395,15 +1395,15 @@ if all values in the group are NULL.</td>
 </tr>
 
 <tr>
-<td valign="top" align="right">sum(<i>X</i>)</td>
+<td valign="top" align="right">sum(<i>X</i>)<br>total(<i>X</i>)</td>
 <td valign="top">Return the numeric sum of all numeric values in the group.
-   If there are no input rows or all values are NULL, then NULL is returned.
+   If there are no input rows or all values are NULL, then sum() returns
+   NULL but total() returns zero.
    NULL is not a helpful result in that case (the correct answer should be
-   zero) but it is what the SQL standard requires and how 
-   most other SQL database engines operate so SQLite does it that way
-   in order to be compatible. 
-   You will probably want to use
-   "<b>coalesce(sum(</b>X<b>),0)</b>" instead of just "<b>sum(</b>X<b>)</b>"
+   zero) but the SQL standard requires that behavior from sum() and that is how 
+   most other SQL database engines implement sum() so SQLite does it that way
+   in order to be compatible.   The non-standard total() function is provided
+   as a convenient way
    to work around this design problem in the SQL language.</td>
 </tr>
 </table>
