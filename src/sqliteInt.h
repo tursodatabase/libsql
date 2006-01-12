@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.462 2006/01/11 21:41:22 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.463 2006/01/12 01:25:18 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -294,7 +294,8 @@ extern int sqlite3_iMallocReset; /* Set iMallocFail to this when it reaches 0 */
 ** is deallocated.
 */
 struct ThreadData {
-  u8 mallocFailed;         /* True after a malloc() has failed */
+  int mallocFailed;        /* True after a malloc() has failed */
+  int nRef;                /* Number of users */
 
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
   int nSoftHeapLimit;      /* Suggested max mem allocation.  No limit if <0 */

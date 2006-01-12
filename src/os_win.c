@@ -1165,14 +1165,18 @@ int sqlite3_tsd_count = 0;
 
 
 /*
-** If called with allocateFlag==1, then return a pointer to thread
+** If called with allocateFlag>1, then return a pointer to thread
 ** specific data for the current thread.  Allocate and zero the
 ** thread-specific data if it does not already exist necessary.
 **
 ** If called with allocateFlag==0, then check the current thread
-** specific data.  If it exists and is all zeros, then deallocate it.
+** specific data.  Return it if it exists.  If it does not exist,
+** then return NULL.
+**
+** If called with allocateFlag<0, check to see if the thread specific
+** data is allocated and is all zero.  If it is then deallocate it.
 ** Return a pointer to the thread specific data or NULL if it is
-** unallocated.
+** unallocated or gets deallocated.
 */
 ThreadData *sqlite3WinThreadSpecificData(int allocateFlag){
   static int key;
@@ -1193,7 +1197,7 @@ ThreadData *sqlite3WinThreadSpecificData(int allocateFlag){
     sqlite3OsLeaveMutex();
   }
   pTsd = TlsGetValue(key);
-  if( allocateFlag ){
+  if( allocateFlag>0 ){
     if( !pTsd ){
       pTsd = sqlite3OsMalloc( sizeof(zeroData) );
       if( pTsd ){
@@ -1202,7 +1206,8 @@ ThreadData *sqlite3WinThreadSpecificData(int allocateFlag){
         TSD_COUNTER_INCR;
       }
     }
-  }else if( pTsd!=0 && memcmp(pTsd, &zeroData, sizeof(zeroData))==0 ){
+  }else if( pTsd!=0 && allocateFlag<0 
+              && memcmp(pTsd, &zeroData, sizeof(zeroData))==0 ){
     sqlite3OsFree(pTsd);
     TlsSetValue(key, 0);
     TSD_COUNTER_DECR;

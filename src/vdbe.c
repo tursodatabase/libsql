@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.523 2006/01/11 21:41:22 drh Exp $
+** $Id: vdbe.c,v 1.524 2006/01/12 01:25:18 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -390,8 +390,10 @@ int sqlite3VdbeExec(
 #ifndef NDEBUG
   Mem *pStackLimit;
 #endif
+  ThreadData *pTsd = sqlite3ThreadData();
 
   if( p->magic!=VDBE_MAGIC_RUN ) return SQLITE_MISUSE;
+  pTsd->nRef++;
   assert( db->magic==SQLITE_MAGIC_BUSY );
   pTos = p->pTos;
   if( p->rc==SQLITE_NOMEM ){
@@ -412,7 +414,7 @@ int sqlite3VdbeExec(
   for(pc=p->pc; rc==SQLITE_OK; pc++){
     assert( pc>=0 && pc<p->nOp );
     assert( pTos<=&p->aStack[pc] );
-    if( sqlite3ThreadDataReadOnly()->mallocFailed ) goto no_mem;
+    if( pTsd->mallocFailed ) goto no_mem;
 #ifdef VDBE_PROFILE
     origPc = pc;
     start = hwtime();
@@ -592,6 +594,7 @@ case OP_Halt: {            /* no-push */
   }
   rc = sqlite3VdbeHalt(p);
   assert( rc==SQLITE_BUSY || rc==SQLITE_OK );
+  pTsd->nRef--;
   if( rc==SQLITE_BUSY ){
     p->rc = SQLITE_BUSY;
     return SQLITE_BUSY;
@@ -899,6 +902,7 @@ case OP_Callback: {            /* no-push */
   p->popStack = pOp->p1;
   p->pc = pc + 1;
   p->pTos = pTos;
+  pTsd->nRef--;
   return SQLITE_ROW;
 }
 
@@ -1167,7 +1171,7 @@ case OP_Function: {
   if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
   (*ctx.pFunc->xFunc)(&ctx, n, apVal);
   if( sqlite3SafetyOn(db) ) goto abort_due_to_misuse;
-  if( sqlite3ThreadDataReadOnly()->mallocFailed ) goto no_mem;
+  if( pTsd->mallocFailed ) goto no_mem;
   popStack(&pTos, n);
 
   /* If any auxilary data functions have been called by this user function,
@@ -2326,6 +2330,7 @@ case OP_AutoCommit: {       /* no-push */
         " transaction - SQL statements in progress", (char*)0);
     rc = SQLITE_ERROR;
   }else if( i!=db->autoCommit ){
+    pTsd->nRef--;
     if( pOp->p2 ){
       assert( i==1 );
       sqlite3RollbackAll(db);
@@ -2385,6 +2390,7 @@ case OP_Transaction: {       /* no-push */
       p->pc = pc;
       p->rc = SQLITE_BUSY;
       p->pTos = pTos;
+      pTsd->nRef--;
       return SQLITE_BUSY;
     }
     if( rc!=SQLITE_OK && rc!=SQLITE_READONLY /* && rc!=SQLITE_BUSY */ ){
@@ -2592,6 +2598,7 @@ case OP_OpenWrite: {       /* no-push */
       p->pc = pc;
       p->rc = SQLITE_BUSY;
       p->pTos = &pTos[1 + (pOp->p2<=0)]; /* Operands must remain on stack */
+      pTsd->nRef--;
       return SQLITE_BUSY;
     }
     case SQLITE_OK: {
@@ -4020,13 +4027,13 @@ case OP_ParseSchema: {        /* no-push */
   sqlite3SafetyOff(db);
   assert( db->init.busy==0 );
   db->init.busy = 1;
-  assert(0==sqlite3ThreadDataReadOnly()->mallocFailed);
+  assert(0==pTsd->mallocFailed);
   rc = sqlite3_exec(db, zSql, sqlite3InitCallback, &initData, 0);
   sqliteFree(zSql);
   db->init.busy = 0;
   sqlite3SafetyOn(db);
   if( rc==SQLITE_NOMEM ){
-    sqlite3ThreadData()->mallocFailed = 1;
+    pTsd->mallocFailed = 1;
     goto no_mem;
   }
   break;  
@@ -4595,6 +4602,7 @@ vdbe_halt:
   }
   sqlite3VdbeHalt(p);
   p->pTos = pTos;
+  pTsd->nRef--;
   return rc;
 
   /* Jump to here if a malloc() fails.  It's hard to get a malloc()
@@ -4616,7 +4624,7 @@ abort_due_to_misuse:
   */
 abort_due_to_error:
   if( p->zErrMsg==0 ){
-    if( sqlite3ThreadDataReadOnly()->mallocFailed ) rc = SQLITE_NOMEM;
+    if( pTsd->mallocFailed ) rc = SQLITE_NOMEM;
     sqlite3SetString(&p->zErrMsg, sqlite3ErrStr(rc), (char*)0);
   }
   goto vdbe_halt;

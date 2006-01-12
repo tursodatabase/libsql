@@ -1,5 +1,5 @@
-C Testing\sof\sthe\sautomatic\sTSD\sdeallocation\slogic.\s\sThe\ssqlite3_thread_cleanup()\nAPI\sis\sdocumented.\s\sThis\sshould\sclose\sticket\s#1601.\s(CVS\s2920)
-D 2006-01-11T23:40:33
+C Improve\sperformance\sby\sabout\s10%\sby\savoiding\sexcess\scalls\sto\sget\nthe\sthread-specific\sdata.\s(CVS\s2921)
+D 2006-01-12T01:25:18
 F Makefile.in ab3ffd8d469cef4477257169b82810030a6bb967
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -55,9 +55,9 @@ F src/os.h 9debc3d3ca4cdafde222a0ea74a4c8415aef4f22
 F src/os_common.h 78bcc34dded9b625b3c16d072b7e5b76d075a674
 F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
-F src/os_unix.c d3ec9c61a1194d3e475423298de6ce13871605a1
+F src/os_unix.c bc35a237a10c2ecb5c5b038d31d20ecb098dcc7d
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
-F src/os_win.c e372f99c4a89b9c54249a29c8c4912e5a2e67fb4
+F src/os_win.c 4ebb7e116e144d5bdfa4a0d4c31061d6f22b0736
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c a96b9c43664670576e41eac699277c7862d604d8
 F src/pager.h e0acb095b3ad0bca48f2ab00c87346665643f64f
@@ -70,7 +70,7 @@ F src/select.c 7b19d350cb2a18ae4a59d6b87049aa2ce9c671ae
 F src/server.c e425729aa7ff374637033a38ba9fd9938c432244
 F src/shell.c 66b073375efbdee19045e7e0cd38b85f9aff71da
 F src/sqlite.h.in 4320cff369e37897d2839d526c2b8917a2756d60
-F src/sqliteInt.h bd3fba6d7163ef402b5633191ee5d7de5b7f6e80
+F src/sqliteInt.h 34e251f02155ba30f8c9872c23fcc5ce822a66f0
 F src/table.c 486dcfce532685b53b5a2b5da8bba0ded6fb2316
 F src/tclsqlite.c d650bea0248fc0a310ddc2cb94273a3a5021fddf
 F src/test1.c 30ed0d4d594db0bb2beb98be7024cde1fe686f14
@@ -85,9 +85,9 @@ F src/tokenize.c b75d24cbb419eef9ae7be286dd66723a2ee49f4f
 F src/trigger.c 694b247476d2fc0dce003af564f79e8752fc1158
 F src/update.c 261d75c702c2852d1a64274d7c414485e6f2d177
 F src/utf.c b7bffac4260177ae7f83c01d025fe0f5ed70ce71
-F src/util.c 8a147f96099ce716e4ee750142a8f53f1aed3286
+F src/util.c 1d751152ab36d2756deec68e576366f58b73968f
 F src/vacuum.c cd56995ecea281b3ac306ef88128ebc8a2117f84
-F src/vdbe.c db592ade9a0e381f5e6a7a35a67e81c2722480b5
+F src/vdbe.c 6312ac70c72b84e99d20689a1541648f929ea6a9
 F src/vdbe.h 8729a4ee16ff9aeab2af9667df3cf300ff978e13
 F src/vdbeInt.h 5451cf71f229e366ac543607c0a17f36e5737ea9
 F src/vdbeapi.c afd3837cea0dec93dcb4724d073c84fa0da68e23
@@ -340,7 +340,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 5d9c6aa964305c3f36741ff0058da5b5f3ce0d24
-R 3399b09fea32a929acfc809e2317093c
+P fb518b0ce4ddd4aaca5cccf61e651f173e735119
+R ce9b50ecb217fb792018eee2bef49d6e
 U drh
-Z 938c3f3406b28a56fdbffbe4eafe6c93
+Z e741755610cebec2aa9bd0a607d8cdad

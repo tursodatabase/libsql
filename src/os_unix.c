@@ -1648,14 +1648,18 @@ int sqlite3_tsd_count = 0;
 
 
 /*
-** If called with allocateFlag==1, then return a pointer to thread
+** If called with allocateFlag>1, then return a pointer to thread
 ** specific data for the current thread.  Allocate and zero the
 ** thread-specific data if it does not already exist necessary.
 **
 ** If called with allocateFlag==0, then check the current thread
-** specific data.  If it exists and is all zeros, then deallocate it.
+** specific data.  Return it if it exists.  If it does not exist,
+** then return NULL.
+**
+** If called with allocateFlag<0, check to see if the thread specific
+** data is allocated and is all zero.  If it is then deallocate it.
 ** Return a pointer to the thread specific data or NULL if it is
-** unallocated.
+** unallocated or gets deallocated.
 */
 ThreadData *sqlite3UnixThreadSpecificData(int allocateFlag){
   static const ThreadData zeroData;
@@ -1679,7 +1683,7 @@ ThreadData *sqlite3UnixThreadSpecificData(int allocateFlag){
   }
 
   pTsd = pthread_getspecific(key);
-  if( allocateFlag ){
+  if( allocateFlag>0 ){
     if( pTsd==0 ){
       pTsd = sqlite3OsMalloc(sizeof(zeroData));
       if( pTsd ){
@@ -1688,7 +1692,8 @@ ThreadData *sqlite3UnixThreadSpecificData(int allocateFlag){
         TSD_COUNTER(+1);
       }
     }
-  }else if( pTsd!=0 && memcmp(pTsd, &zeroData, sizeof(zeroData))==0 ){
+  }else if( pTsd!=0 && allocateFlag<0 
+            && memcmp(pTsd, &zeroData, sizeof(zeroData))==0 ){
     sqlite3OsFree(pTsd);
     pthread_setspecific(key, 0);
     TSD_COUNTER(-1);
@@ -1697,7 +1702,7 @@ ThreadData *sqlite3UnixThreadSpecificData(int allocateFlag){
   return pTsd;
 #else
   static ThreadData *pTsd = 0;
-  if( allocateFlag ){
+  if( allocateFlag>0 ){
     if( pTsd==0 ){
       pTsd = sqlite3OsMalloc( sizeof(zeroData) );
       if( pTsd ){
@@ -1705,7 +1710,8 @@ ThreadData *sqlite3UnixThreadSpecificData(int allocateFlag){
         TSD_COUNTER(+1);
       }
     }
-  }else if( pTsd!=0 && memcmp(pTsd, &zeroData, sizeof(zeroData))==0 ){
+  }else if( pTsd!=0 && allocateFlag<0
+            && memcmp(pTsd, &zeroData, sizeof(zeroData))==0 ){
     sqlite3OsFree(pTsd);
     TSD_COUNTER(-1);
     pTsd = 0;

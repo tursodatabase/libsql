@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.168 2006/01/11 21:41:22 drh Exp $
+** $Id: util.c,v 1.169 2006/01/12 01:25:18 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -509,7 +509,7 @@ static void OSMALLOC_FAILED(){
 #define OSSIZEOF(x)        sqlite3OsAllocationSize(x)
 #define OSMALLOC_FAILED()
 
-#endif
+#endif  /* SQLITE_MEMDEBUG */
 /*
 ** End code for memory allocation system test layer.
 **--------------------------------------------------------------------------*/
@@ -1332,7 +1332,7 @@ const ThreadData *sqlite3ThreadDataReadOnly(){
 ** is, then deallocate it. 
 */
 void sqlite3ReleaseThreadData(){
-  sqlite3OsThreadSpecificData(0);
+  sqlite3OsThreadSpecificData(-1);
 }
 
 /*
