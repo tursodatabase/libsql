@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\sthe\sTOTAL()\saggregate\sfunction\s-\sworks\slike\sSUM()\sexcept\nthat\sit\sreturns\s0\sinstead\sof\sNULL\swhen\spresented\swith\san\sempty\slist.\s(CVS\s2930)
-D 2006-01-12T22:17:50
+C Terminate\sthe\sva_start\sin\sthe\sgetDigits\sfunction\sof\sdate.c.\s(CVS\s2931)
+D 2006-01-13T01:17:21
 F Makefile.in ab3ffd8d469cef4477257169b82810030a6bb967
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -39,7 +39,7 @@ F src/btree.h 5663c4f43e8521546ccebc8fc95acb013b8f3184
 F src/build.c a055974683ddc465bdc8669d43d6ab35d3dbb55f
 F src/callback.c ba3e6cc7a6beb562e7a66f92e26fabcb21aab1e2
 F src/complete.c df1681cef40dec33a286006981845f87b194e7a4
-F src/date.c a927bdbb51296ac398d2f667086a7072c099e5ab
+F src/date.c 5b86bc41754ffffb2b5742fbd71ea687f01cc6ca
 F src/delete.c c7bd5708a629585e073ce34cf3b1fcb52c2fef38
 F src/experimental.c 50c1e3b34f752f4ac10c36f287db095c2b61766d
 F src/expr.c 3b6acdb4e254027fe72ce70054ea6b71c7d423a3
@@ -340,7 +340,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 14c423075bcebf42a3f4e24838bc865cfb90afda
-R 96aa9577c2fe78f0881f3a139cc6dc0c
+P a7f528ff3446d50b280fb0b85063879e3ac5751a
+R c60cdc2db0777fd677af9bcfd84e3399
 U drh
-Z 680a9cdd5661322ac6544d3998d3b8d1
+Z 8d294c6b791d83d220a7952b7ed547a8

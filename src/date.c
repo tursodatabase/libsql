@@ -16,7 +16,7 @@
 ** sqlite3RegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.49 2006/01/09 00:18:03 drh Exp $
+** $Id: date.c,v 1.50 2006/01/13 01:17:21 drh Exp $
 **
 ** NOTES:
 **
@@ -117,6 +117,7 @@ static int getDigits(const char *zDate, ...){
     zDate++;
     cnt++;
   }while( nextC );
+  va_end(ap);
   return cnt;
 }
 
