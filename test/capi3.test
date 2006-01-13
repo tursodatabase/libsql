@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi3.test,v 1.37 2006/01/09 23:40:25 drh Exp $
+# $Id: capi3.test,v 1.38 2006/01/13 01:25:06 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -87,30 +87,42 @@ do_test capi3-1.7 {
 } {no such column: namex}
 
 ifcapable {utf16} {
-do_test capi3-2.1 {
-  set sql16 [utf16 {SELECT name FROM sqlite_master}]
-  set STMT [sqlite3_prepare16 $DB $sql16 -1 ::TAIL]
-  sqlite3_finalize $STMT
-  utf8 $::TAIL
-} {}
-do_test capi3-2.2 {
-  set sql [utf16 {SELECT name FROM sqlite_master;SELECT 10}]
-  set STMT [sqlite3_prepare16 $DB $sql -1 TAIL]
-  sqlite3_finalize $STMT
-  utf8 $TAIL
-} {SELECT 10}
-do_test capi3-2.3 {
-  set sql [utf16 {SELECT namex FROM sqlite_master}]
-  catch {
+  do_test capi3-2.1 {
+    set sql16 [utf16 {SELECT name FROM sqlite_master}]
+    set STMT [sqlite3_prepare16 $DB $sql16 -1 ::TAIL]
+    sqlite3_finalize $STMT
+    utf8 $::TAIL
+  } {}
+  do_test capi3-2.2 {
+    set sql [utf16 {SELECT name FROM sqlite_master;SELECT 10}]
     set STMT [sqlite3_prepare16 $DB $sql -1 TAIL]
-  }
-} {1}
-do_test capi3-2.4 {
-  sqlite3_errcode $DB
-} {SQLITE_ERROR}
-do_test capi3-2.5 {
-  sqlite3_errmsg $DB
-} {no such column: namex}
+    sqlite3_finalize $STMT
+    utf8 $TAIL
+  } {SELECT 10}
+  do_test capi3-2.3 {
+    set sql [utf16 {SELECT namex FROM sqlite_master}]
+    catch {
+      set STMT [sqlite3_prepare16 $DB $sql -1 TAIL]
+    }
+  } {1}
+  do_test capi3-2.4 {
+    sqlite3_errcode $DB
+  } {SQLITE_ERROR}
+  do_test capi3-2.5 {
+    sqlite3_errmsg $DB
+  } {no such column: namex}
+  do_test capi3-2.6 {
+    execsql {CREATE TABLE tablename(x)}
+    set sql16 [utf16 {PRAGMA table_info("TableName")}]
+    set STMT [sqlite3_prepare16 $DB $sql16 -1 TAIL]
+    sqlite3_step $STMT
+  } SQLITE_ROW
+  do_test capi3-2.7 {
+    sqlite3_step $STMT
+  } SQLITE_DONE
+  do_test capi3-2.8 {
+    sqlite3_finalize $STMT
+  } SQLITE_OK
 } ;# endif utf16
 
 # rename sqlite3_open sqlite3_open_old

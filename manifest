@@ -1,5 +1,5 @@
-C Terminate\sthe\sva_start\sin\sthe\sgetDigits\sfunction\sof\sdate.c.\s(CVS\s2931)
-D 2006-01-13T01:17:21
+C Add\stests\sto\smake\ssure\s"PRAGMA\stable_info"\sworks\susing\ssqlite3_prepare16.\nTicket\s#1606.\s(CVS\s2932)
+D 2006-01-13T01:25:06
 F Makefile.in ab3ffd8d469cef4477257169b82810030a6bb967
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -129,7 +129,7 @@ F test/btree7.test a6d3b842db22af97dd14b989e90a2fd96066b72f
 F test/btree8.test fadc112bcbd6a0c622d34c813fc8a648eacf8804
 F test/busy.test 0271c854738e23ad76e10d4096a698e5af29d211
 F test/capi2.test b9354d6c37e6f8f858c08952ebc9709712581221
-F test/capi3.test 523bae084ad1aa0085f458dc0c087a660e11c786
+F test/capi3.test 318098b606490b2e29c6228743e5c4b37da8c368
 F test/capi3b.test 5f0bc94b104e11086b1103b20277e1910f59c7f4
 F test/cast.test 2543165ced4249c89ce5f0352222df503a98b9e5
 F test/check.test 8154b8ac0c56c34088168b8d87eee713fba2b31b
@@ -340,7 +340,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P a7f528ff3446d50b280fb0b85063879e3ac5751a
-R c60cdc2db0777fd677af9bcfd84e3399
+P 94eac140f2363c7c3df68fa6f46728abfbfee1e6
+R ba7eec4e12c4f8d86b5257326d18ba78
 U drh
-Z 8d294c6b791d83d220a7952b7ed547a8
+Z d711b0916a7e82a2a363fa2441e78363
