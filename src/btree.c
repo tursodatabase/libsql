@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.294 2006/01/13 02:35:10 drh Exp $
+** $Id: btree.c,v 1.295 2006/01/13 04:31:58 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -411,7 +411,7 @@ struct BtCursor {
 **   The table that this cursor was opened on still exists, but has been 
 **   modified since the cursor was last used. The cursor position is saved
 **   in variables BtCursor.pKey and BtCursor.nKey. When a cursor is in 
-**   this state, restoreCursorPosition() can be called to attempt to seek 
+**   this state, restoreOrClearCursorPosition() can be called to attempt to seek 
 **   the cursor to the saved position.
 */
 #define CURSOR_INVALID           0
@@ -501,7 +501,7 @@ struct BtLock {
   #define queryTableLock(a,b,c) SQLITE_OK
   #define lockTable(a,b,c) SQLITE_OK
   #define unlockAllTables(a)
-  #define restoreCursorPosition(a,b) SQLITE_OK
+  #define restoreOrClearCursorPosition(a,b) SQLITE_OK
   #define saveAllCursors(a,b,c) SQLITE_OK
 
 #else
@@ -574,14 +574,14 @@ static int saveAllCursors(BtShared *pBt, Pgno iRoot, BtCursor *pExcept){
 ** Restore the cursor to the position it was in (or as close to as possible)
 ** when saveCursorPosition() was called. Note that this call deletes the 
 ** saved position info stored by saveCursorPosition(), so there can be
-** at most one effective restoreCursorPosition() call after each 
+** at most one effective restoreOrClearCursorPosition() call after each 
 ** saveCursorPosition().
 **
 ** If the second argument argument - doSeek - is false, then instead of 
 ** returning the cursor to it's saved position, any saved position is deleted
 ** and the cursor state set to CURSOR_INVALID.
 */
-static int restoreCursorPosition(BtCursor *pCur, int doSeek){
+static int restoreOrClearCursorPosition(BtCursor *pCur, int doSeek){
   int rc = SQLITE_OK;
   if( pCur->eState==CURSOR_REQUIRESEEK ){
     assert( sqlite3ThreadDataReadOnly()->useSharedData );
@@ -2768,7 +2768,7 @@ void sqlite3BtreeSetCompare(
 */
 int sqlite3BtreeCloseCursor(BtCursor *pCur){
   BtShared *pBt = pCur->pBtree->pBt;
-  restoreCursorPosition(pCur, 0);
+  restoreOrClearCursorPosition(pCur, 0);
   if( pCur->pPrev ){
     pCur->pPrev->pNext = pCur->pNext;
   }else{
@@ -2835,7 +2835,7 @@ static void getCellInfo(BtCursor *pCur){
 ** itself, not the number of bytes in the key.
 */
 int sqlite3BtreeKeySize(BtCursor *pCur, i64 *pSize){
-  int rc = restoreCursorPosition(pCur, 1);
+  int rc = restoreOrClearCursorPosition(pCur, 1);
   if( rc==SQLITE_OK ){
     assert( pCur->eState==CURSOR_INVALID || pCur->eState==CURSOR_VALID );
     if( pCur->eState==CURSOR_INVALID ){
@@ -2856,7 +2856,7 @@ int sqlite3BtreeKeySize(BtCursor *pCur, i64 *pSize){
 ** the database is empty) then *pSize is set to 0.
 */
 int sqlite3BtreeDataSize(BtCursor *pCur, u32 *pSize){
-  int rc = restoreCursorPosition(pCur, 1);
+  int rc = restoreOrClearCursorPosition(pCur, 1);
   if( rc==SQLITE_OK ){
     assert( pCur->eState==CURSOR_INVALID || pCur->eState==CURSOR_VALID );
     if( pCur->eState==CURSOR_INVALID ){
@@ -2970,7 +2970,7 @@ static int getPayload(
 ** the available payload.
 */
 int sqlite3BtreeKey(BtCursor *pCur, u32 offset, u32 amt, void *pBuf){
-  int rc = restoreCursorPosition(pCur, 1);
+  int rc = restoreOrClearCursorPosition(pCur, 1);
   if( rc==SQLITE_OK ){
     assert( pCur->eState==CURSOR_VALID );
     assert( pCur->pPage!=0 );
@@ -2994,7 +2994,7 @@ int sqlite3BtreeKey(BtCursor *pCur, u32 offset, u32 amt, void *pBuf){
 ** the available payload.
 */
 int sqlite3BtreeData(BtCursor *pCur, u32 offset, u32 amt, void *pBuf){
-  int rc = restoreCursorPosition(pCur, 1);
+  int rc = restoreOrClearCursorPosition(pCur, 1);
   if( rc==SQLITE_OK ){
     assert( pCur->eState==CURSOR_VALID );
     assert( pCur->pPage!=0 );
@@ -3164,19 +3164,25 @@ static void moveToParent(BtCursor *pCur){
 */
 static int moveToRoot(BtCursor *pCur){
   MemPage *pRoot;
-  int rc;
+  int rc = SQLITE_OK;
   BtShared *pBt = pCur->pBtree->pBt;
 
-  if( 
-    SQLITE_OK!=(rc = restoreCursorPosition(pCur, 0)) ||
-    SQLITE_OK!=(rc = getAndInitPage(pBt, pCur->pgnoRoot, &pRoot, 0))
-  ){
-    pCur->eState = CURSOR_INVALID;
-    return rc;
+  restoreOrClearCursorPosition(pCur, 0);
+  assert( pCur->pPage );
+  pRoot = pCur->pPage;
+  if( pRoot->pgno==pCur->pgnoRoot ){
+    assert( pRoot->isInit );
+  }else{
+    if( 
+      SQLITE_OK!=(rc = getAndInitPage(pBt, pCur->pgnoRoot, &pRoot, 0))
+    ){
+      pCur->eState = CURSOR_INVALID;
+      return rc;
+    }
+    releasePage(pCur->pPage);
+    pageIntegrity(pRoot);
+    pCur->pPage = pRoot;
   }
-  releasePage(pCur->pPage);
-  pageIntegrity(pRoot);
-  pCur->pPage = pRoot;
   pCur->idx = 0;
   pCur->info.nSize = 0;
   if( pRoot->nCell==0 && !pRoot->leaf ){
@@ -3194,6 +3200,9 @@ static int moveToRoot(BtCursor *pCur){
 /*
 ** Move the cursor down to the left-most leaf entry beneath the
 ** entry to which it is currently pointing.
+**
+** The left-most leaf is the one with the smallest key - the first
+** in ascending order.
 */
 static int moveToLeftmost(BtCursor *pCur){
   Pgno pgno;
@@ -3216,6 +3225,9 @@ static int moveToLeftmost(BtCursor *pCur){
 ** between moveToLeftmost() and moveToRightmost().  moveToLeftmost()
 ** finds the left-most entry beneath the *entry* whereas moveToRightmost()
 ** finds the right-most entry beneath the *page*.
+**
+** The right-most entry is the one with the largest key - the last
+** key in ascending order.
 */
 static int moveToRightmost(BtCursor *pCur){
   Pgno pgno;
@@ -3301,10 +3313,12 @@ int sqlite3BtreeLast(BtCursor *pCur, int *pRes){
 */
 int sqlite3BtreeMoveto(BtCursor *pCur, const void *pKey, i64 nKey, int *pRes){
   int rc;
+  int tryRightmost;
   rc = moveToRoot(pCur);
   if( rc ) return rc;
   assert( pCur->pPage );
   assert( pCur->pPage->isInit );
+  tryRightmost = pCur->pPage->intKey;
   if( pCur->eState==CURSOR_INVALID ){
     *pRes = -1;
     assert( pCur->pPage->nCell==0 );
@@ -3327,8 +3341,11 @@ int sqlite3BtreeMoveto(BtCursor *pCur, const void *pKey, i64 nKey, int *pRes){
       pCur->idx = (lwr+upr)/2;
       pCur->info.nSize = 0;
       if( pPage->intKey ){
-        u8 *pCell = findCell(pPage, pCur->idx);
-        pCell += pPage->childPtrSize;
+        u8 *pCell;
+        if( tryRightmost ){
+          pCur->idx = upr;
+        }
+        pCell = findCell(pPage, pCur->idx) + pPage->childPtrSize;
         if( pPage->hasData ){
           int dummy;
           pCell += getVarint32(pCell, &dummy);
@@ -3338,6 +3355,7 @@ int sqlite3BtreeMoveto(BtCursor *pCur, const void *pKey, i64 nKey, int *pRes){
           c = -1;
         }else if( nCellKey>nKey ){
           c = +1;
+          tryRightmost = 0;
         }else{
           c = 0;
         }
@@ -3422,7 +3440,7 @@ int sqlite3BtreeNext(BtCursor *pCur, int *pRes){
   MemPage *pPage = pCur->pPage;
 
 #ifndef SQLITE_OMIT_SHARED_CACHE
-  rc = restoreCursorPosition(pCur, 1);
+  rc = restoreOrClearCursorPosition(pCur, 1);
   if( rc!=SQLITE_OK ){
     return rc;
   }
@@ -3489,7 +3507,7 @@ int sqlite3BtreePrevious(BtCursor *pCur, int *pRes){
   MemPage *pPage;
 
 #ifndef SQLITE_OMIT_SHARED_CACHE
-  rc = restoreCursorPosition(pCur, 1);
+  rc = restoreOrClearCursorPosition(pCur, 1);
   if( rc!=SQLITE_OK ){
     return rc;
   }
@@ -5159,8 +5177,8 @@ int sqlite3BtreeInsert(
   }
 
   /* Save the positions of any other cursors open on this table */
+  restoreOrClearCursorPosition(pCur, 0);
   if( 
-    SQLITE_OK!=(rc = restoreCursorPosition(pCur, 0)) ||
     SQLITE_OK!=(rc = saveAllCursors(pBt, pCur->pgnoRoot, pCur)) ||
     SQLITE_OK!=(rc = sqlite3BtreeMoveto(pCur, pKey, nKey, &loc))
   ){
@@ -5246,7 +5264,7 @@ int sqlite3BtreeDelete(BtCursor *pCur){
   ** that the entry will be deleted from.
   */
   if( 
-    (rc = restoreCursorPosition(pCur, 1)) ||
+    (rc = restoreOrClearCursorPosition(pCur, 1)) ||
     (rc = saveAllCursors(pBt, pCur->pgnoRoot, pCur)) ||
     (rc = sqlite3pager_write(pPage->aData))
   ){
@@ -5728,7 +5746,7 @@ int sqlite3BtreeUpdateMeta(Btree *p, int idx, u32 iMeta){
 */
 int sqlite3BtreeFlags(BtCursor *pCur){
   /* TODO: What about CURSOR_REQUIRESEEK state? Probably need to call
-  ** restoreCursorPosition() here.
+  ** restoreOrClearCursorPosition() here.
   */
   MemPage *pPage = pCur->pPage;
   return pPage ? pPage->aData[pPage->hdrOffset] : 0;
@@ -5863,7 +5881,7 @@ int sqlite3BtreeCursorInfo(BtCursor *pCur, int *aResult, int upCnt){
   MemPage *pPage = pCur->pPage;
   BtCursor tmpCur;
 
-  int rc = restoreCursorPosition(pCur, 1);
+  int rc = restoreOrClearCursorPosition(pCur, 1);
   if( rc!=SQLITE_OK ){
     return rc;
   }
