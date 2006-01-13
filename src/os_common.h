@@ -132,8 +132,16 @@ int sqlite3_open_file_count = 0;
 ** Implementation of the os level dynamic memory allocation interface in terms
 ** of the standard malloc(), realloc() and free() found in many operating
 ** systems. No rocket science here.
+**
+** There are two versions of these four functions here. The version
+** implemented here is only used if memory-management or memory-debugging is
+** enabled. This version allocates an extra 8-bytes at the beginning of each
+** block and stores the size of the allocation there.
+**
+** If neither memory-management or debugging is enabled, the second
+** set of implementations is used instead.
 */
-#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
+#if defined(SQLITE_ENABLE_MEMORY_MANAGEMENT) || defined (SQLITE_MEMDEBUG)
 void *sqlite3GenericMalloc(int n){
   char *p = (char *)malloc(n+8);
   assert(n>0);
@@ -173,7 +181,9 @@ void sqlite3GenericFree(void *p){
   assert(p);
   free(p);
 }
+#if 0   /* Never actually invoked */
 int sqlite3GenericAllocationSize(void *p){
   assert(0);
 }
+#endif
 #endif

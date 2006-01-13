@@ -1,5 +1,5 @@
-C Minor\smodification\sto\srestoreOrClearCursorPosition()\sto\simprove\sefficiency.\sDo\snot\sallocate\sthe\sextra\s8-bytes\sif\smemory-management\sis\snot\senabled.\s(CVS\s2936)
-D 2006-01-13T06:33:24
+C Remove\sa\sfew\sduplicate\svariable\sinitializations\sin\ssqlite3BtreeCursor().\s(CVS\s2937)
+D 2006-01-13T11:22:07
 F Makefile.in ab3ffd8d469cef4477257169b82810030a6bb967
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -34,7 +34,7 @@ F src/alter.c 4139c8f1d0f12b1759e767b1d09dd594e2b5ac1d
 F src/analyze.c 7d2b7ab9a9c2fd6e55700f69064dfdd3e36d7a8a
 F src/attach.c d4b9d8bd71d72409720946355be41cafb6c09079
 F src/auth.c cdec356a5cd8b217c346f816c5912221537fe87f
-F src/btree.c 46061b59a71da48fb269a3ac318f560fe5c4f449
+F src/btree.c fe2bdc08a1fc5847eb7eebfce5251558440dcc28
 F src/btree.h 5663c4f43e8521546ccebc8fc95acb013b8f3184
 F src/build.c 6db3dcb70ae17dcd303493c021e6dd233217828f
 F src/callback.c ba3e6cc7a6beb562e7a66f92e26fabcb21aab1e2
@@ -52,7 +52,7 @@ F src/main.c 39d073fb1f95f874ee0c98366e99005cf14742dd
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/os.c 1d1a61cdf150e9f9520a3bc787c8465148ea2e78
 F src/os.h 9debc3d3ca4cdafde222a0ea74a4c8415aef4f22
-F src/os_common.h 44783a37f78ab6e0dd5fa156530dbc58beadbba6
+F src/os_common.h 6b76efa9b252e288de53b202ed5a0d48f48dc8db
 F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
 F src/os_unix.c bc35a237a10c2ecb5c5b038d31d20ecb098dcc7d
@@ -340,7 +340,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 48b550ce2ea43c7c1c59cd43d0008ba18fc0215b
-R 6c60b8d6c2a158ae481c8f06f49dfdff
+P dd705955429d847af85ffaf248976bcd1d861852
+R 40dd1503ed21c91f3caf35fc59e72104
 U danielk1977
-Z 1089e014c07372cc03784a37d45ba046
+Z 69d38632915b9f5de07c1fb25a99a6fb

@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.296 2006/01/13 06:33:24 danielk1977 Exp $
+** $Id: btree.c,v 1.297 2006/01/13 11:22:07 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -2711,7 +2711,6 @@ int sqlite3BtreeCursor(
     goto create_cursor_exception;
   }
   pCur->pgnoRoot = (Pgno)iTable;
-  pCur->pPage = 0;  /* For exit-handler, in case getAndInitPage() fails. */
   if( iTable==1 && sqlite3pager_pagecount(pBt->pPager)==0 ){
     rc = SQLITE_EMPTY;
     goto create_cursor_exception;
@@ -2729,13 +2728,10 @@ int sqlite3BtreeCursor(
   pCur->pArg = pArg;
   pCur->pBtree = p;
   pCur->wrFlag = wrFlag;
-  pCur->idx = 0;
-  memset(&pCur->info, 0, sizeof(pCur->info));
   pCur->pNext = pBt->pCursor;
   if( pCur->pNext ){
     pCur->pNext->pPrev = pCur;
   }
-  pCur->pPrev = 0;
   pBt->pCursor = pCur;
   pCur->eState = CURSOR_INVALID;
   *ppCur = pCur;
