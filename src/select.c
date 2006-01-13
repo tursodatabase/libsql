@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.293 2006/01/11 21:41:22 drh Exp $
+** $Id: select.c,v 1.294 2006/01/13 06:33:24 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -1034,7 +1034,7 @@ Table *sqlite3ResultSetOfSelect(Parse *pParse, char *zTabName, Select *pSelect){
     pCol->affinity = sqlite3ExprAffinity(p);
     pColl = sqlite3ExprCollSeq(pParse, p);
     if( pColl ){
-      pCol->zColl = sqlite3StrDup(pColl->zName);
+      pCol->zColl = sqliteStrDup(pColl->zName);
     }
   }
   pTab->iPKey = -1;

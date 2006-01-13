@@ -133,6 +133,7 @@ int sqlite3_open_file_count = 0;
 ** of the standard malloc(), realloc() and free() found in many operating
 ** systems. No rocket science here.
 */
+#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
 void *sqlite3GenericMalloc(int n){
   char *p = (char *)malloc(n+8);
   assert(n>0);
@@ -158,3 +159,21 @@ void sqlite3GenericFree(void *p){
 int sqlite3GenericAllocationSize(void *p){
   return p ? *(int *)((char *)p - 8) : 0;
 }
+#else
+void *sqlite3GenericMalloc(int n){
+  char *p = (char *)malloc(n);
+  return (void *)p;
+}
+void *sqlite3GenericRealloc(void *p, int n){
+  assert(n>0);
+  p = realloc(p, n);
+  return p;
+}
+void sqlite3GenericFree(void *p){
+  assert(p);
+  free(p);
+}
+int sqlite3GenericAllocationSize(void *p){
+  assert(0);
+}
+#endif

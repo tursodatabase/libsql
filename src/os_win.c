@@ -934,7 +934,7 @@ char *sqlite3WinFullPathname(const char *zRelative){
   if( cygwin_conv_to_full_win32_path(zRelative, zFull) ) return 0;
 #elif OS_WINCE
   /* WinCE has no concept of a relative pathname, or so I am told. */
-  zFull = sqlite3StrDup(zRelative);
+  zFull = sqliteStrDup(zRelative);
 #else
   char *zNotUsed;
   WCHAR *zWide;

@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.21 2006/01/12 12:43:36 drh Exp $
+** $Id: prepare.c,v 1.22 2006/01/13 06:33:24 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -322,8 +322,9 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
 ** created using ATTACH statements.  Return a success code.  If an
 ** error occurs, write an error message into *pzErrMsg.
 **
-** After the database is initialized, the SQLITE_Initialized
-** bit is set in the flags field of the sqlite structure. 
+** After a database is initialized, the DB_SchemaLoaded bit is set
+** bit is set in the flags field of the Db structure. If the database
+** file was of zero-length, then the DB_Empty flag is also set.
 */
 int sqlite3Init(sqlite3 *db, char **pzErrMsg){
   int i, rc;

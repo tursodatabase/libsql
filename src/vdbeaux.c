@@ -147,7 +147,7 @@ int sqlite3VdbeMakeLabel(Vdbe *p){
   assert( p->magic==VDBE_MAGIC_INIT );
   if( i>=p->nLabelAlloc ){
     p->nLabelAlloc = p->nLabelAlloc*2 + 10;
-    sqlite3ReallocOrFree((void**)&p->aLabel,
+    sqliteReallocOrFree((void**)&p->aLabel,
                           p->nLabelAlloc*sizeof(p->aLabel[0]));
   }
   if( p->aLabel ){
