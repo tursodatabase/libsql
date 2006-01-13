@@ -1,5 +1,5 @@
-C Remove\sa\sfew\sduplicate\svariable\sinitializations\sin\ssqlite3BtreeCursor().\s(CVS\s2937)
-D 2006-01-13T11:22:07
+C Fix\sa\svdbe\sstack\soverflow\sproblem\sthat\scould\soccur\swith\sa\scorrelated\ssub-query.\s(CVS\s2938)
+D 2006-01-13T13:01:19
 F Makefile.in ab3ffd8d469cef4477257169b82810030a6bb967
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -94,7 +94,7 @@ F src/vdbeapi.c afd3837cea0dec93dcb4724d073c84fa0da68e23
 F src/vdbeaux.c 1d765d671ae31a067b2b064c3f193690f91eea62
 F src/vdbefifo.c 9efb94c8c3f4c979ebd0028219483f88e57584f5
 F src/vdbemem.c dd08a0eea4868ac4a2d91fdec32424308b1db772
-F src/where.c a12b4542f6cee2f2180854c2e16bef84225866ec
+F src/where.c 1e19c96cf8a55310118130ce251511be72e766f7
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
 F test/all.test a23fcbbf1f53515bde840d78732a6d94c673b327
 F test/alter.test b94b640063e725d062b2997bd2810ac39195c718
@@ -217,7 +217,7 @@ F test/rollback.test fc6be5a5e4b1347fd96777c65484a24fc75e8f0e
 F test/rowid.test 040a3bef06f970c45f5fcd14b2355f7f4d62f0cf
 F test/safety.test 4a06934e45d03b8b50ebcd8d174eb0367d2fd851
 F test/schema.test 8a2ae440fb15f5798a68059e8746402f3137be46
-F test/select1.test 386cc42da2d0fade5dfb25c85118009c0ef26637
+F test/select1.test ed95ce4c27ab390bcd2d573a0c77ad42599b8a88
 F test/select2.test f3c2678c3a9f3cf08ec4988a3845bda64be6d9e3
 F test/select3.test 8fece41cd8f2955131b3f973a7123bec60b6e65e
 F test/select4.test c239f516aa31f42f2ef7c6d7cd01105f08f934ca
@@ -340,7 +340,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P dd705955429d847af85ffaf248976bcd1d861852
-R 40dd1503ed21c91f3caf35fc59e72104
+P 5e46ec01ff3fe8654fc267efbb12d2d1b01c48aa
+R dcb9fd33555e157fe0ad7a05ab19e97e
 U danielk1977
-Z 69d38632915b9f5de07c1fb25a99a6fb
+Z 81727b2a642e7063a9db6351127fac13

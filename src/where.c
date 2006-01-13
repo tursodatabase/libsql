@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.195 2006/01/13 06:33:25 danielk1977 Exp $
+** $Id: where.c,v 1.196 2006/01/13 13:01:19 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -1164,14 +1164,24 @@ static void disableTerm(WhereLevel *pLevel, WhereTerm *pTerm){
 **    *  Check the top nColumn entries on the stack.  If any
 **       of those entries are NULL, jump immediately to brk,
 **       which is the loop exit, since no index entry will match
-**       if any part of the key is NULL.
+**       if any part of the key is NULL. Pop (nColumn+nExtra) 
+**       elements from the stack.
 **
 **    *  Construct a probe entry from the top nColumn entries in
-**       the stack with affinities appropriate for index pIdx.
+**       the stack with affinities appropriate for index pIdx. 
+**       Only nColumn elements are popped from the stack in this case
+**       (by OP_MakeRecord).
+**
 */
-static void buildIndexProbe(Vdbe *v, int nColumn, int brk, Index *pIdx){
+static void buildIndexProbe(
+  Vdbe *v, 
+  int nColumn, 
+  int nExtra, 
+  int brk, 
+  Index *pIdx
+){
   sqlite3VdbeAddOp(v, OP_NotNull, -nColumn, sqlite3VdbeCurrentAddr(v)+3);
-  sqlite3VdbeAddOp(v, OP_Pop, nColumn, 0);
+  sqlite3VdbeAddOp(v, OP_Pop, nColumn+nExtra, 0);
   sqlite3VdbeAddOp(v, OP_Goto, 0, brk);
   sqlite3VdbeAddOp(v, OP_MakeRecord, nColumn, 0);
   sqlite3IndexAffinityStr(v, pIdx);
@@ -1783,7 +1793,7 @@ WhereInfo *sqlite3WhereBegin(
       if( testOp!=OP_Noop ){
         int nCol = nEq + topLimit;
         pLevel->iMem = pParse->nMem++;
-        buildIndexProbe(v, nCol, brk, pIdx);
+        buildIndexProbe(v, nCol, nEq, brk, pIdx);
         if( bRev ){
           int op = topEq ? OP_MoveLe : OP_MoveLt;
           sqlite3VdbeAddOp(v, op, iIdxCur, brk);
@@ -1818,7 +1828,7 @@ WhereInfo *sqlite3WhereBegin(
       }
       if( nEq>0 || btmLimit ){
         int nCol = nEq + btmLimit;
-        buildIndexProbe(v, nCol, brk, pIdx);
+        buildIndexProbe(v, nCol, 0, brk, pIdx);
         if( bRev ){
           pLevel->iMem = pParse->nMem++;
           sqlite3VdbeAddOp(v, OP_MemStore, pLevel->iMem, 1);
@@ -1872,7 +1882,7 @@ WhereInfo *sqlite3WhereBegin(
       /* Generate a single key that will be used to both start and terminate
       ** the search
       */
-      buildIndexProbe(v, nEq, brk, pIdx);
+      buildIndexProbe(v, nEq, 0, brk, pIdx);
       sqlite3VdbeAddOp(v, OP_MemStore, pLevel->iMem, 0);
 
       /* Generate code (1) to move to the first matching element of the table.
