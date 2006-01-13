@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.527 2006/01/13 06:33:24 danielk1977 Exp $
+** $Id: vdbe.c,v 1.528 2006/01/13 15:58:43 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1962,7 +1962,7 @@ case OP_Column: {
 
   /* If payloadSize is 0, then just push a NULL onto the stack. */
   if( payloadSize==0 ){
-    pTos->flags = MEM_Null;
+    assert( pTos->flags==MEM_Null );
     break;
   }
 
@@ -2051,11 +2051,11 @@ case OP_Column: {
       aOffset[i++] = 0;
     }
 
-    /* The header should end at the start of data and the data should
-    ** end at last byte of the record. If this is not the case then
-    ** we are dealing with a malformed record.
+    /* If we have read more header data than was contained in the header,
+    ** or if the end of the last field appears to be past the end of the
+    ** record, then we must be dealing with a corrupt database.
     */
-    if( idx!=szHdr || offset!=payloadSize ){
+    if( idx>szHdr || offset>payloadSize ){
       rc = SQLITE_CORRUPT_BKPT;
       goto op_column_out;
     }
