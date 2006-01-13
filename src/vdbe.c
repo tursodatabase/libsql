@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.525 2006/01/12 17:20:51 drh Exp $
+** $Id: vdbe.c,v 1.526 2006/01/13 01:48:59 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -101,6 +101,22 @@ int sqlite3_sort_count = 0;
 */
 #define Dynamicify(P,enc) sqlite3VdbeMemDynamicify(P)
 
+/*
+** The header of a record consists of a sequence variable-length integers.
+** These integers are almost always small and are encoded as a single byte.
+** The following macro takes advantage this fact to provide a fast decode
+** of the integers in a record header.  It is faster for the common case
+** where the integer is a single byte.  It is a little slower when the
+** integer is two or more bytes.  But overall it is faster.
+**
+** The following expressions are equivalent:
+**
+**     x = sqlite3GetVarint32( A, &B );
+**
+**     x = GetVarint( A, B );
+**
+*/
+#define GetVarint(A,B)  ((B = *(A))<=0x7f ? 1 : sqlite3GetVarint32(A, &B))
 
 /*
 ** An ephemeral string value (signified by the MEM_Ephem flag) contains
@@ -1991,7 +2007,7 @@ case OP_Column: {
         pC->aRow = 0;
       }
     }
-    idx = sqlite3GetVarint32((u8*)zData, &szHdr);
+    idx = GetVarint((u8*)zData, szHdr);
 
 
     /* The KeyFetch() or DataFetch() above are fast and will get the entire
@@ -2018,7 +2034,7 @@ case OP_Column: {
     i = 0;
     while( idx<szHdr && i<nField && offset<=payloadSize ){
       aOffset[i] = offset;
-      idx += sqlite3GetVarint32((u8*)&zData[idx], &aType[i]);
+      idx += GetVarint((u8*)&zData[idx], aType[i]);
       offset += sqlite3VdbeSerialTypeLen(aType[i]);
       i++;
     }

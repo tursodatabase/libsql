@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.56 2006/01/11 16:10:20 danielk1977 Exp $
+** $Id: vacuum.c,v 1.57 2006/01/13 01:48:59 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -101,7 +101,6 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   Btree *pMain;           /* The database being vacuumed */
   Btree *pTemp;
   char *zSql = 0;
-  int rc2;  
   int saved_flags;       /* Saved value of the db->flags */
   Db *pDb = 0;           /* Database to detach at end of vacuum */
 

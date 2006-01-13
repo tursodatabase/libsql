@@ -1,5 +1,5 @@
-C Add\stests\sto\smake\ssure\s"PRAGMA\stable_info"\sworks\susing\ssqlite3_prepare16.\nTicket\s#1606.\s(CVS\s2932)
-D 2006-01-13T01:25:06
+C Add\sa\shigh-speed\sversion\sof\ssqlite3GetVarint32\sto\svdbe.c\sfor\sa\s3%\sperformance\ngain.\s(CVS\s2933)
+D 2006-01-13T01:48:59
 F Makefile.in ab3ffd8d469cef4477257169b82810030a6bb967
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -86,8 +86,8 @@ F src/trigger.c 694b247476d2fc0dce003af564f79e8752fc1158
 F src/update.c 261d75c702c2852d1a64274d7c414485e6f2d177
 F src/utf.c b7bffac4260177ae7f83c01d025fe0f5ed70ce71
 F src/util.c 1d751152ab36d2756deec68e576366f58b73968f
-F src/vacuum.c cd56995ecea281b3ac306ef88128ebc8a2117f84
-F src/vdbe.c 59df15f96354ddd051212499e0cf4a3392c522c1
+F src/vacuum.c 21a3c7f6f7be86bb1182fbc3df416ad702435b9e
+F src/vdbe.c f77826242cea1789990bc8ee590a30827d514475
 F src/vdbe.h 8729a4ee16ff9aeab2af9667df3cf300ff978e13
 F src/vdbeInt.h 5451cf71f229e366ac543607c0a17f36e5737ea9
 F src/vdbeapi.c afd3837cea0dec93dcb4724d073c84fa0da68e23
@@ -340,7 +340,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 94eac140f2363c7c3df68fa6f46728abfbfee1e6
-R ba7eec4e12c4f8d86b5257326d18ba78
+P ace8ba817766f9da270cd7f06b68cc537768a8be
+R 4f16d865eb1a68e0be85977f1ba457c6
 U drh
-Z d711b0916a7e82a2a363fa2441e78363
+Z a443a150c79d39fb2ce3f4a546cc3706
