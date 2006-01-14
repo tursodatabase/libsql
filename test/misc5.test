@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc5.test,v 1.8 2006/01/05 14:22:34 danielk1977 Exp $
+# $Id: misc5.test,v 1.9 2006/01/14 08:02:28 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -439,38 +439,40 @@ do_test misc5-2.2 {
 # Ticket #1210.  Do proper reference counting of Table structures
 # so that deeply nested SELECT statements can be flattened correctly.
 #
-do_test misc5-3.1 {
-  execsql {
-    CREATE TABLE songs(songid, artist, timesplayed);
-    INSERT INTO songs VALUES(1,'one',1);
-    INSERT INTO songs VALUES(2,'one',2);
-    INSERT INTO songs VALUES(3,'two',3);
-    INSERT INTO songs VALUES(4,'three',5);
-    INSERT INTO songs VALUES(5,'one',7);
-    INSERT INTO songs VALUES(6,'two',11);
-    SELECT DISTINCT artist 
-    FROM (    
-     SELECT DISTINCT artist    
-     FROM songs      
-     WHERE songid IN (    
-      SELECT songid    
-      FROM songs    
-      WHERE LOWER(artist) = (    
-        SELECT DISTINCT LOWER(artist)    
-        FROM (      
-          SELECT DISTINCT artist,sum(timesplayed) AS total      
-          FROM songs      
-          GROUP BY LOWER(artist)      
-          ORDER BY total DESC      
-          LIMIT 10    
-        )    
-        WHERE artist <> '' 
+ifcapable subquery {
+  do_test misc5-3.1 {
+    execsql {
+      CREATE TABLE songs(songid, artist, timesplayed);
+      INSERT INTO songs VALUES(1,'one',1);
+      INSERT INTO songs VALUES(2,'one',2);
+      INSERT INTO songs VALUES(3,'two',3);
+      INSERT INTO songs VALUES(4,'three',5);
+      INSERT INTO songs VALUES(5,'one',7);
+      INSERT INTO songs VALUES(6,'two',11);
+      SELECT DISTINCT artist 
+      FROM (    
+       SELECT DISTINCT artist    
+       FROM songs      
+       WHERE songid IN (    
+        SELECT songid    
+        FROM songs    
+        WHERE LOWER(artist) = (    
+          SELECT DISTINCT LOWER(artist)    
+          FROM (      
+            SELECT DISTINCT artist,sum(timesplayed) AS total      
+            FROM songs      
+            GROUP BY LOWER(artist)      
+            ORDER BY total DESC      
+            LIMIT 10    
+          )    
+          WHERE artist <> '' 
+        )  
+       )       
       )  
-     )       
-    )  
-    ORDER BY LOWER(artist) ASC;
-  }
-} {two}
+      ORDER BY LOWER(artist) ASC;
+    }
+  } {two}
+}
 
 # Ticket #1370.  Do not overwrite small files (less than 1024 bytes)
 # when trying to open them as a database.

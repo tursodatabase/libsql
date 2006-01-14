@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is descending indices.
 #
-# $Id: descidx3.test,v 1.1 2006/01/02 18:24:40 drh Exp $
+# $Id: descidx3.test,v 1.2 2006/01/14 08:02:28 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -122,23 +122,28 @@ do_test descidx3-3.5 {
   }
 } {9 7 6 8 3 4 2 5}
 
-do_test descidx3-4.1 {
-  execsql {
-    UPDATE t1 SET a=2 WHERE i<6;
-    SELECT i FROM t1 WHERE a IN (1,2) AND b>0 AND b<'zzz';
-  }
-} {8 6 2 4 3}
-do_test descidx3-4.2 {
-  execsql {
-    UPDATE t1 SET a=1;
-    SELECT i FROM t1 WHERE a IN (1,2) AND b>0 AND b<'zzz';
-  }
-} {2 4 3 8 6}
-do_test descidx3-4.3 {
-  execsql {
-    UPDATE t1 SET b=2;
-    SELECT i FROM t1 WHERE a IN (1,2) AND b>0 AND b<'zzz';
-  }
-} {9 7 6 8 3 4 2 5 1}
+ifcapable subquery {
+  # If the subquery capability is not compiled in to the binary, then
+  # the IN(...) operator is not available. Hence these tests cannot be 
+  # run.
+  do_test descidx3-4.1 {
+    execsql {
+      UPDATE t1 SET a=2 WHERE i<6;
+      SELECT i FROM t1 WHERE a IN (1,2) AND b>0 AND b<'zzz';
+    }
+  } {8 6 2 4 3}
+  do_test descidx3-4.2 {
+    execsql {
+      UPDATE t1 SET a=1;
+      SELECT i FROM t1 WHERE a IN (1,2) AND b>0 AND b<'zzz';
+    }
+  } {2 4 3 8 6}
+  do_test descidx3-4.3 {
+    execsql {
+      UPDATE t1 SET b=2;
+      SELECT i FROM t1 WHERE a IN (1,2) AND b>0 AND b<'zzz';
+    }
+  } {9 7 6 8 3 4 2 5 1}
+}
 
 finish_test

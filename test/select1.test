@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the SELECT statement.
 #
-# $Id: select1.test,v 1.46 2006/01/13 13:01:20 danielk1977 Exp $
+# $Id: select1.test,v 1.47 2006/01/14 08:02:28 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -803,27 +803,29 @@ ifcapable {compound && subquery} {
 
 # Check for a VDBE stack growth problem that existed at one point.
 #
-do_test select1-13.1 {
-  execsql {
-    BEGIN;
-    create TABLE abc(a, b, c, PRIMARY KEY(a, b));
-    INSERT INTO abc VALUES(1, 1, 1);
-  }
-  for {set i 0} {$i<10} {incr i} {
+ifcapable subquery {
+  do_test select1-13.1 {
     execsql {
-      INSERT INTO abc SELECT a+(select max(a) FROM abc), 
-          b+(select max(a) FROM abc), c+(select max(a) FROM abc) FROM abc;
+      BEGIN;
+      create TABLE abc(a, b, c, PRIMARY KEY(a, b));
+      INSERT INTO abc VALUES(1, 1, 1);
     }
-  }
-  execsql {COMMIT}
-
-  # This used to seg-fault when the problem existed.
-  execsql {
-    SELECT count(
-      (SELECT a FROM abc WHERE a = NULL AND b >= upper.c) 
-    ) FROM abc AS upper;
-  }
-} {0}
+    for {set i 0} {$i<10} {incr i} {
+      execsql {
+        INSERT INTO abc SELECT a+(select max(a) FROM abc), 
+            b+(select max(a) FROM abc), c+(select max(a) FROM abc) FROM abc;
+      }
+    }
+    execsql {COMMIT}
+  
+    # This used to seg-fault when the problem existed.
+    execsql {
+      SELECT count(
+        (SELECT a FROM abc WHERE a = NULL AND b >= upper.c) 
+      ) FROM abc AS upper;
+    }
+  } {0}
+}
 
 finish_test
 

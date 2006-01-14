@@ -17,6 +17,13 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+# Somewhere in tkt1449-1.1 is a VIEW definition that uses a subquery.
+# So we cannot run this file if subqueries are not available.
+ifcapable !subquery {
+  finish_test
+  return
+}
+
 # The following schema generated problems in ticket #1449.  We've retained
 # the original schema here because it is some unbelievably complex, it seemed
 # like a good test case for SQLite.

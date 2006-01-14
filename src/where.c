@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.197 2006/01/13 15:58:43 danielk1977 Exp $
+** $Id: where.c,v 1.198 2006/01/14 08:02:28 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -643,7 +643,7 @@ static void exprAnalyze(
   }
 #endif /* SQLITE_OMIT_BETWEEN_OPTIMIZATION */
 
-#ifndef SQLITE_OMIT_OR_OPTIMIZATION
+#if !defined(SQLITE_OMIT_OR_OPTIMIZATION) && !defined(SQLITE_OMIT_SUBQUERY)
   /* Attempt to convert OR-connected terms into an IN operator so that
   ** they can make use of indices.  Example:
   **
@@ -652,6 +652,9 @@ static void exprAnalyze(
   ** is converted into
   **
   **      x IN (expr1,expr2,expr3)
+  **
+  ** This optimization must be omitted if OMIT_SUBQUERY is defined because
+  ** the compiler for the the IN operator is part of sub-queries.
   */
   else if( pExpr->op==TK_OR ){
     int ok;

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing the ALTER TABLE statement.
 #
-# $Id: alter.test,v 1.13 2006/01/13 18:06:40 danielk1977 Exp $
+# $Id: alter.test,v 1.14 2006/01/14 08:02:28 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -560,9 +560,9 @@ do_test alter-5.2 {
   execsql "
     CREATE TABLE ${tbl_name}(a, b, c);
   "
+  set ::oid [execsql {SELECT max(oid) FROM sqlite_master}]
   execsql {
-    SELECT sql FROM sqlite_master 
-        WHERE oid = (SELECT max(oid) FROM sqlite_master);
+    SELECT sql FROM sqlite_master WHERE oid = $::oid;
   }
 } "{CREATE TABLE ${::tbl_name}(a, b, c)}"
 set ::tbl_name2 "abcXdef"
@@ -571,8 +571,7 @@ do_test alter-5.2 {
     ALTER TABLE $::tbl_name RENAME TO $::tbl_name2 
   "
   execsql {
-    SELECT sql FROM sqlite_master 
-        WHERE oid = (SELECT max(oid) FROM sqlite_master);
+    SELECT sql FROM sqlite_master WHERE oid = $::oid;
   }
 } "{CREATE TABLE '${::tbl_name2}'(a, b, c)}"
 do_test alter-5.3 {
@@ -580,8 +579,7 @@ do_test alter-5.3 {
     ALTER TABLE $::tbl_name2 RENAME TO $::tbl_name
   "
   execsql {
-    SELECT sql FROM sqlite_master 
-        WHERE oid = (SELECT max(oid) FROM sqlite_master);
+    SELECT sql FROM sqlite_master WHERE oid = $::oid;
   }
 } "{CREATE TABLE '${::tbl_name}'(a, b, c)}"
 set ::col_name ghi\1234\jkl
@@ -590,8 +588,7 @@ do_test alter-5.4 {
     ALTER TABLE $::tbl_name ADD COLUMN $::col_name VARCHAR
   "
   execsql {
-    SELECT sql FROM sqlite_master 
-        WHERE oid = (SELECT max(oid) FROM sqlite_master);
+    SELECT sql FROM sqlite_master WHERE oid = $::oid;
   }
 } "{CREATE TABLE '${::tbl_name}'(a, b, c, $::col_name VARCHAR)}"
 set ::col_name2 B\3421\A
@@ -602,8 +599,7 @@ do_test alter-5.5 {
     ALTER TABLE $::tbl_name ADD COLUMN $::col_name2
   "
   execsql {
-    SELECT sql FROM sqlite_master 
-        WHERE oid = (SELECT max(oid) FROM sqlite_master);
+    SELECT sql FROM sqlite_master WHERE oid = $::oid;
   }
 } "{CREATE TABLE '${::tbl_name}'(a, b, c, $::col_name VARCHAR, $::col_name2)}"
 do_test alter-5.6 {

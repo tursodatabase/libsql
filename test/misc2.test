@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc2.test,v 1.22 2005/04/29 02:10:00 drh Exp $
+# $Id: misc2.test,v 1.23 2006/01/14 08:02:28 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -257,14 +257,16 @@ ifcapable tempdb {
 #
 # The SQL code below was causing a segfault.
 #
-do_test misc2-10.1 {
-  execsql {
-    CREATE TABLE t1229(x);
-    CREATE TRIGGER r1229 BEFORE INSERT ON t1229 BEGIN
-      INSERT INTO t1229 SELECT y FROM (SELECT new.x y);
-    END;
-    INSERT INTO t1229 VALUES(1);
-  }
-} {}
+ifcapable subquery {
+  do_test misc2-10.1 {
+    execsql {
+      CREATE TABLE t1229(x);
+      CREATE TRIGGER r1229 BEFORE INSERT ON t1229 BEGIN
+        INSERT INTO t1229 SELECT y FROM (SELECT new.x y);
+      END;
+      INSERT INTO t1229 VALUES(1);
+    }
+  } {}
+}
 
 finish_test

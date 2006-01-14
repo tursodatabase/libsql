@@ -34,11 +34,15 @@
 # name be the time I noticed the error.  With CVS it is a really hassle
 # to change filenames, so I'll just leave it as is.  No harm done.
 #
-# $Id: tkt1443.test,v 1.2 2005/09/17 13:29:24 drh Exp $
+# $Id: tkt1443.test,v 1.3 2006/01/14 08:02:29 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+ifcapable !subquery {
+  finish_test
+  return
+}
 
 # Construct the sample database.
 #

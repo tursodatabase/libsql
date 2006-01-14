@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing CHECK constraints
 #
-# $Id: check.test,v 1.6 2005/11/14 22:29:06 drh Exp $
+# $Id: check.test,v 1.7 2006/01/14 08:02:28 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -151,14 +151,17 @@ do_test check-2.6 {
   }
 } {1 {constraint failed}}
 
-do_test check-3.1 {
-  catchsql {
-    CREATE TABLE t3(
-      x, y, z,
-      CHECK( x<(SELECT min(x) FROM t1) )
-    );
-  }
-} {1 {subqueries prohibited in CHECK constraints}}
+ifcapable subquery {
+  do_test check-3.1 {
+    catchsql {
+      CREATE TABLE t3(
+        x, y, z,
+        CHECK( x<(SELECT min(x) FROM t1) )
+      );
+    }
+  } {1 {subqueries prohibited in CHECK constraints}}
+}
+
 do_test check-3.2 {
   execsql {
     SELECT name FROM sqlite_master ORDER BY name

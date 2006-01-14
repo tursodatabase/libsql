@@ -38,16 +38,18 @@ do_test tkt1537-1.3 {
     SELECT * FROM t2 LEFT JOIN t1 ON a1=b OR a2=b;
   }
 } {3 1 2 1 3 4 {} {} {} {}}
-do_test tkt1537-1.4 {
-  execsql {
-    SELECT * FROM t1 LEFT JOIN t2 ON b IN (a1,a2);
-  }
-} {1 {} {} {} {} 2 1 3 3 1}
-do_test tkt1537-1.5 {
-  execsql {
-    SELECT * FROM t2 LEFT JOIN t1 ON b IN (a2,a1);
-  }
-} {3 1 2 1 3 4 {} {} {} {}}
+ifcapable subquery {
+  do_test tkt1537-1.4 {
+    execsql {
+      SELECT * FROM t1 LEFT JOIN t2 ON b IN (a1,a2);
+    }
+  } {1 {} {} {} {} 2 1 3 3 1}
+  do_test tkt1537-1.5 {
+    execsql {
+      SELECT * FROM t2 LEFT JOIN t1 ON b IN (a2,a1);
+    }
+  } {3 1 2 1 3 4 {} {} {} {}}
+}
 do_test tkt1537-1.6 {
   execsql {
     CREATE INDEX t1a1 ON t1(a1);
@@ -61,16 +63,19 @@ do_test tkt1537-1.7 {
     SELECT * FROM t2 LEFT JOIN t1 ON a1=b OR a2=b;
   }
 } {3 1 2 1 3 4 {} {} {} {}}
-do_test tkt1537-1.8 {
-  execsql {
-    SELECT * FROM t1 LEFT JOIN t2 ON b IN (a1,a2);
-  }
-} {1 {} {} {} {} 2 1 3 3 1}
-do_test tkt1537-1.9 {
-  execsql {
-    SELECT * FROM t2 LEFT JOIN t1 ON b IN (a2,a1);
-  }
-} {3 1 2 1 3 4 {} {} {} {}}
+
+ifcapable subquery {
+  do_test tkt1537-1.8 {
+    execsql {
+      SELECT * FROM t1 LEFT JOIN t2 ON b IN (a1,a2);
+    }
+  } {1 {} {} {} {} 2 1 3 3 1}
+  do_test tkt1537-1.9 {
+    execsql {
+      SELECT * FROM t2 LEFT JOIN t1 ON b IN (a2,a1);
+    }
+  } {3 1 2 1 3 4 {} {} {} {}}
+}
 
 execsql {
   DROP INDEX t1a1;

@@ -155,7 +155,7 @@ static Keyword aKeywordTable[] = {
   { "ESCAPE",           "TK_ESCAPE",       ALWAYS                 },
   { "EXCEPT",           "TK_EXCEPT",       COMPOUND               },
   { "EXCLUSIVE",        "TK_EXCLUSIVE",    ALWAYS                 },
-  { "EXISTS",           "TK_EXISTS",       SUBQUERY               },
+  { "EXISTS",           "TK_EXISTS",       ALWAYS                 },
   { "EXPLAIN",          "TK_EXPLAIN",      EXPLAIN                },
   { "FAIL",             "TK_FAIL",         CONFLICT|TRIGGER       },
   { "FOR",              "TK_FOR",          TRIGGER                },

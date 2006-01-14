@@ -67,6 +67,13 @@ do_test tkt1473-1.9 {
   }
 } {}
 
+# Everything from this point on depends on sub-queries. So skip it
+# if sub-queries are not available.
+ifcapable !subquery {
+  finish_test
+  return
+}
+
 do_test tkt1473-2.2 {
   execsql {
     SELECT (SELECT 1 FROM t1 WHERE a=1 UNION ALL SELECT 2 FROM t1 WHERE b=0)
