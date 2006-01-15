@@ -1,5 +1,5 @@
-C Fixes\sfor\sOMIT_SUBQUERY\sbuilds:\sDisable\swhere\sclause\sOR->IN\soptimization.\sInclude\sEXISTS\skeyword\s(for\snew\sCREATE\sTABLE\ssyntax).\sTest\sfile\sfixes.\s(CVS\s2943)
-D 2006-01-14T08:02:28
+C Documentation\supdates.\s\sFix\sto\sdate.c.\s\sBut\smost\simportantly:\sdatabase\nconnections\sare\snow\sallowed\sto\schange\sthreads\sas\slong\sas\sthey\sare\snot\nholding\sa\slock.\s(CVS\s2944)
+D 2006-01-15T00:13:16
 F Makefile.in ab3ffd8d469cef4477257169b82810030a6bb967
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -39,7 +39,7 @@ F src/btree.h 5663c4f43e8521546ccebc8fc95acb013b8f3184
 F src/build.c 206c891028158668691f27bcbf7c3c4f15248a94
 F src/callback.c ba3e6cc7a6beb562e7a66f92e26fabcb21aab1e2
 F src/complete.c df1681cef40dec33a286006981845f87b194e7a4
-F src/date.c 5b86bc41754ffffb2b5742fbd71ea687f01cc6ca
+F src/date.c 5f5850c6b5da68fdc47d124573715ba948c9d8e0
 F src/delete.c c7bd5708a629585e073ce34cf3b1fcb52c2fef38
 F src/experimental.c 50c1e3b34f752f4ac10c36f287db095c2b61766d
 F src/expr.c f885cfe73fb235635fba72e78bb858c64529771f
@@ -55,7 +55,7 @@ F src/os.h 9debc3d3ca4cdafde222a0ea74a4c8415aef4f22
 F src/os_common.h 6b76efa9b252e288de53b202ed5a0d48f48dc8db
 F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
-F src/os_unix.c bc35a237a10c2ecb5c5b038d31d20ecb098dcc7d
+F src/os_unix.c e6ff5035b3d06fc69773e52e1bc6f7f7ccace084
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c cd4ca2753aeaad11f5c9b9b6ef28752f45ed4529
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
@@ -67,13 +67,13 @@ F src/prepare.c 1058dcb102005a880d757551d52a0a2830c05f27
 F src/printf.c f47a2f4b5387cd2ebb12e9117a1a5d6bd9a2b812
 F src/random.c d40f8d356cecbd351ccfab6eaedd7ec1b54f5261
 F src/select.c 28d449c7762dd580aaba49a9c6c16e93ca951e49
-F src/server.c e425729aa7ff374637033a38ba9fd9938c432244
+F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 66b073375efbdee19045e7e0cd38b85f9aff71da
 F src/sqlite.h.in 492580f7e3ff71eb43193eb7bb98e2d549889ce3
 F src/sqliteInt.h ed482d6de58fa79000f9c3bb00d7740126fb55fb
 F src/table.c 486dcfce532685b53b5a2b5da8bba0ded6fb2316
 F src/tclsqlite.c d650bea0248fc0a310ddc2cb94273a3a5021fddf
-F src/test1.c 30ed0d4d594db0bb2beb98be7024cde1fe686f14
+F src/test1.c 22709543ac2f7a5979ec51c3130ba93cf6e82951
 F src/test2.c ca74a1d8aeb7d9606e8f6b762c5daf85c1a3f92b
 F src/test3.c 9742aa146eb750cab81c1d5605286c3a0eb88054
 F src/test4.c 0f95de81629a53fc6ab104f64a7ccb1dcbb8af90
@@ -224,7 +224,7 @@ F test/select4.test c239f516aa31f42f2ef7c6d7cd01105f08f934ca
 F test/select5.test 07a90ab3c7e3f0a241a9cdea1d997b2c8a89ff0b
 F test/select6.test f459a19bdac0501c4d3eb1a4df4b7a76f1bb8ad4
 F test/select7.test 1bf795b948c133a15a2a5e99d3270e652ec58ce6
-F test/server1.test 9d2d5b17b537911214a7e2a2728ff4f6ff16319c
+F test/server1.test e328b8e641ba8fe9273132cfef497383185dc1f5
 F test/shared.test 2a7ae35bbf0f805cb9782146f5e812003ee8d1dc
 F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
 F test/subquery.test e6de53332c0301b3cfa34edc3f3cd5fa1e859efd
@@ -340,7 +340,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P d634f8b28abd7af4565c644bd7972b067caa0133
-R e68269cdd28a8797bb4063cb46df0175
-U danielk1977
-Z 2134ba8d1976f430c91af4baa4a445ff
+P 8e79a0c24a03ccf960d6ccfb7c6b9b0f7c614e9b
+R 9d07ce30bc69528746c99ed3d4ba8921
+U drh
+Z 392783876068e8090d13d0e230d0bba8

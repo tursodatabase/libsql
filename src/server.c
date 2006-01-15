@@ -18,7 +18,7 @@
 ** The configure script will never generate a Makefile with the option
 ** above.  You will need to manually modify the Makefile if you want to
 ** include any of the code from this file in your project.  Or, at your
-** option, you may want to copy and paste the code from this file and
+** option, you may copy and paste the code from this file and
 ** thereby avoiding a recompile of SQLite.
 **
 **
@@ -40,8 +40,9 @@
 **
 **    (2)  Beginning with SQLite version 3.3.0, when two or more 
 **         connections to the same database occur within the same thread,
-**         they will share their database cache.  This reduces I/O
-**         and memory requirements.
+**         they can optionally share their database cache.  This reduces
+**         I/O and memory requirements.  Cache shared is controlled using
+**         the sqlite3_enable_shared_cache() API.
 **
 **    (3)  Database connections on a shared cache use table-level locking
 **         instead of file-level locking for improved concurrency.
@@ -96,7 +97,8 @@
 ** These interfaces work exactly like the standard core SQLite interfaces
 ** having the same names without the "_client_" infix.  Many other SQLite
 ** interfaces can be used directly without having to send messages to the
-** server.  The following interfaces fall into this second category:
+** server as long as SQLITE_ENABLE_MEMORY_MANAGEMENT is not defined.
+** The following interfaces fall into this second category:
 **
 **       sqlite3_bind_*
 **       sqlite3_changes
@@ -110,16 +112,17 @@
 **       sqlite3_errcode
 **       sqlite3_errmsg
 **       sqlite3_last_insert_rowid
-**       sqlite3_libversion
-**       sqlite3_mprintf
 **       sqlite3_total_changes
 **       sqlite3_transfer_bindings
-**       sqlite3_vmprintf
 **
 ** A single SQLite connection (an sqlite3* object) or an SQLite statement
 ** (an sqlite3_stmt* object) should only be passed to a single interface
-** function at a time.  The connections and statements can be freely used
-** by any thread as long as only one thread is using them at a time.
+** function at a time.  The connections and statements can be passed from
+** any thread to any of the functions listed in the second group above as
+** long as the same connection is not in use by two threads at once and
+** as long as SQLITE_ENABLE_MEMORY_MANAGEMENT is not defined.  Additional
+** information about the SQLITE_ENABLE_MEMORY_MANAGEMENT constraint is
+** below.
 **
 ** The busy handler for all database connections should remain turned
 ** off.  That means that any lock contention will cause the associated
@@ -132,12 +135,65 @@
 ** the queue to be tried again later.  But such enhanced processing is
 ** not included here, in order to keep the example simple.
 **
-** This code assumes the use of pthreads.  Pthreads implementations
-** are available for windows.  (See, for example
+** This example code assumes the use of pthreads.  Pthreads
+** implementations are available for windows.  (See, for example
 ** http://sourceware.org/pthreads-win32/announcement.html.)  Or, you
 ** can translate the locking and thread synchronization code to use
 ** windows primitives easily enough.  The details are left as an
 ** exercise to the reader.
+**
+**** Restrictions Associated With SQLITE_ENABLE_MEMORY_MANAGEMENT ****
+**
+** If you compile with SQLITE_ENABLE_MEMORY_MANAGEMENT defined, then
+** SQLite includes code that tracks how much memory is being used by
+** each thread.  These memory counts can become confused if memory
+** is allocated by one thread and then freed by another.  For that
+** reason, when SQLITE_ENABLE_MEMORY_MANAGEMENT is used, all operations
+** that might allocate or free memory should be performanced in the same
+** thread that originally created the database connection.  In that case,
+** many of the operations that are listed above as safe to be performed
+** in separate threads would need to be sent over to the server to be
+** done there.  If SQLITE_ENABLE_MEMORY_MANAGEMENT is defined, then
+** the following functions can be used safely from different threads
+** without messing up the allocation counts:
+**
+**       sqlite3_bind_parameter_name
+**       sqlite3_bind_parameter_index
+**       sqlite3_changes
+**       sqlite3_column_blob
+**       sqlite3_column_count
+**       sqlite3_complete
+**       sqlite3_data_count
+**       sqlite3_db_handle
+**       sqlite3_errcode
+**       sqlite3_errmsg
+**       sqlite3_last_insert_rowid
+**       sqlite3_total_changes
+**
+** The remaining functions are not thread-safe when memory management
+** is enabled.  So one would have to define some new interface routines
+** along the following lines:
+**
+**       sqlite3_client_bind_*
+**       sqlite3_client_clear_bindings
+**       sqlite3_client_column_*
+**       sqlite3_client_create_collation
+**       sqlite3_client_create_function
+**       sqlite3_client_transfer_bindings
+**
+** The example code in this file is intended for use with memory
+** management turned off.  So the implementation of these additional
+** client interfaces is left as an exercise to the reader.
+**
+** It may seem surprising to the reader that the list of safe functions
+** above does not include things like sqlite3_bind_int() or
+** sqlite3_column_int().  But those routines might, in fact, allocate
+** or deallocate memory.  In the case of sqlite3_bind_int(), if the
+** parameter was previously bound to a string that string might need
+** to be deallocated before the new integer value is inserted.  In
+** the case of sqlite3_column_int(), the value of the column might be
+** a UTF-16 string which will need to be converted to UTF-8 then into
+** an integer.
 */
 
 /*

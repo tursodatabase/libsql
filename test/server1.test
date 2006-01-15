@@ -13,7 +13,7 @@
 #
 # This file is derived from thread1.test
 #
-# $Id: server1.test,v 1.3 2006/01/10 20:36:40 drh Exp $
+# $Id: server1.test,v 1.4 2006/01/15 00:13:16 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -22,6 +22,14 @@ source $testdir/tester.tcl
 # Skip this whole file if the server testing code is not enabled
 #
 if {[llength [info command client_step]]==0 || [sqlite3 -has-codec]} {
+  finish_test
+  return
+}
+
+# The sample server implementation does not work right when memory
+# management is enabled.
+#
+ifcapable memorymanage {
   finish_test
   return
 }
