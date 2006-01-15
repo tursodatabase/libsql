@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.236 2006/01/11 21:41:22 drh Exp $
+** @(#) $Id: pager.c,v 1.237 2006/01/15 20:28:28 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -431,15 +431,11 @@ static const unsigned char aJournalMagic[] = {
 ** All values are stored on disk as big-endian.
 */
 static int read32bits(OsFile *fd, u32 *pRes){
-  u32 res;
-  int rc;
-  rc = sqlite3OsRead(fd, &res, sizeof(res));
+  unsigned char ac[4];
+  int rc = sqlite3OsRead(fd, ac, sizeof(ac));
   if( rc==SQLITE_OK ){
-    unsigned char ac[4];
-    memcpy(ac, &res, 4);
-    res = (ac[0]<<24) | (ac[1]<<16) | (ac[2]<<8) | ac[3];
+    *pRes = (ac[0]<<24) | (ac[1]<<16) | (ac[2]<<8) | ac[3];
   }
-  *pRes = res;
   return rc;
 }
 
@@ -1691,34 +1687,35 @@ int sqlite3pager_open(
   sqliteFree(zFullPathname);
   strcpy(&pPager->zJournal[nameLen], "-journal");
   pPager->fd = fd;
-  pPager->journalOpen = 0;
+  /* pPager->journalOpen = 0; */
   pPager->useJournal = useJournal && !memDb;
   pPager->noReadlock = noReadlock && readOnly;
-  pPager->stmtOpen = 0;
-  pPager->stmtInUse = 0;
-  pPager->nRef = 0;
+  /* pPager->stmtOpen = 0; */
+  /* pPager->stmtInUse = 0; */
+  /* pPager->nRef = 0; */
   pPager->dbSize = memDb-1;
   pPager->pageSize = SQLITE_DEFAULT_PAGE_SIZE;
-  pPager->stmtSize = 0;
-  pPager->stmtJSize = 0;
-  pPager->nPage = 0;
-  pPager->nMaxPage = 0;
+  /* pPager->stmtSize = 0; */
+  /* pPager->stmtJSize = 0; */
+  /* pPager->nPage = 0; */
+  /* pPager->nMaxPage = 0; */
   pPager->mxPage = 100;
-  pPager->state = PAGER_UNLOCK;
-  pPager->errMask = 0;
+  assert( PAGER_UNLOCK==0 );
+  /* pPager->state = PAGER_UNLOCK; */
+  /* pPager->errMask = 0; */
   pPager->tempFile = tempFile;
   pPager->memDb = memDb;
   pPager->readOnly = readOnly;
-  pPager->needSync = 0;
+  /* pPager->needSync = 0; */
   pPager->noSync = pPager->tempFile || !useJournal;
   pPager->fullSync = (pPager->noSync?0:1);
-  pPager->pFirst = 0;
-  pPager->pFirstSynced = 0;
-  pPager->pLast = 0;
+  /* pPager->pFirst = 0; */
+  /* pPager->pFirstSynced = 0; */
+  /* pPager->pLast = 0; */
   pPager->nExtra = FORCE_ALIGNMENT(nExtra);
   pPager->sectorSize = PAGER_SECTOR_SIZE;
-  pPager->pBusyHandler = 0;
-  memset(pPager->aHash, 0, sizeof(pPager->aHash));
+  /* pPager->pBusyHandler = 0; */
+  /* memset(pPager->aHash, 0, sizeof(pPager->aHash)); */
   *ppPager = pPager;
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
   if( pTsdro->useMemoryManagement ){
