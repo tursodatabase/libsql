@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.170 2006/01/13 06:33:24 danielk1977 Exp $
+** $Id: util.c,v 1.171 2006/01/15 11:39:18 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1355,8 +1355,8 @@ void sqlite3MallocClearFailed(){
 ** cause an assert to fail if sqliteMalloc() or sqliteRealloc() is called.
 */
 void sqlite3MallocDisallow(){
-  assert(!sqlite3ThreadData()->mallocDisallowed);
-  sqlite3ThreadData()->mallocDisallowed = 1;
+  assert( sqlite3ThreadData()->mallocDisallowed>=0 );
+  sqlite3ThreadData()->mallocDisallowed++;
 }
 
 /*
@@ -1364,7 +1364,7 @@ void sqlite3MallocDisallow(){
 ** by sqlite3MallocDisallow().
 */
 void sqlite3MallocAllow(){
-  assert(sqlite3ThreadData()->mallocDisallowed);
-  sqlite3ThreadData()->mallocDisallowed = 0;
+  assert( sqlite3ThreadData()->mallocDisallowed>0 );
+  sqlite3ThreadData()->mallocDisallowed--;
 }
 #endif

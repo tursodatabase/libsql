@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.297 2006/01/13 11:22:07 danielk1977 Exp $
+** $Id: btree.c,v 1.298 2006/01/15 11:39:18 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1697,6 +1697,8 @@ int sqlite3BtreeClose(Btree *p){
     }
   }
 
+  /* Rollback any active transaction and free the handle structure */
+  sqlite3BtreeRollback(p);
   sqliteFree(p);
 
 #ifndef SQLITE_OMIT_SHARED_CACHE

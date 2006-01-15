@@ -1,5 +1,5 @@
-C Closing\sa\sfile\sfrom\sthe\swrong\sthread\sis\sharmless\son\smost\ssystems.\n(See\sticket\s#1611)\nBut\son\ssystems\slike\sRedHat9\swith\sbroken\sfcntl()\slocks,\sit\sleaks\sfile\ndescriptors.\s\sThat\sis\sbetter\sthan\sthe\salternative\sof\sprematurely\sbreaking\nlocks\sand\scausing\sdatabase\scorruption.\s\sNevertheless,\sit\swould\sbe\sgood\nif\swe\scould\sfigure\sout\sa\sway\sto\sreport\serrors\swhen\sclosing\sa\sfile\sfrom\nthe\swrong\sthread.\s(CVS\s2946)
-D 2006-01-15T02:43:16
+C Rollback\sany\sopen\swrite-transaction\swhen\sa\sshared-cache\sconnection\sis\sclosed.\s(CVS\s2947)
+D 2006-01-15T11:39:18
 F Makefile.in ab3ffd8d469cef4477257169b82810030a6bb967
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -34,7 +34,7 @@ F src/alter.c 4139c8f1d0f12b1759e767b1d09dd594e2b5ac1d
 F src/analyze.c 7d2b7ab9a9c2fd6e55700f69064dfdd3e36d7a8a
 F src/attach.c d4b9d8bd71d72409720946355be41cafb6c09079
 F src/auth.c 9ae84d2d94eb96195e04515715e08e85963e96c2
-F src/btree.c fe2bdc08a1fc5847eb7eebfce5251558440dcc28
+F src/btree.c a4c147937df5ab7d18cf8da67eb766a00c0be1b2
 F src/btree.h 5663c4f43e8521546ccebc8fc95acb013b8f3184
 F src/build.c 206c891028158668691f27bcbf7c3c4f15248a94
 F src/callback.c ba3e6cc7a6beb562e7a66f92e26fabcb21aab1e2
@@ -85,7 +85,7 @@ F src/tokenize.c 8b694d42b48f22c2037da7e1e716201aaaaa0f3a
 F src/trigger.c 694b247476d2fc0dce003af564f79e8752fc1158
 F src/update.c 261d75c702c2852d1a64274d7c414485e6f2d177
 F src/utf.c 5ab8ca05d4e9ec81174b010f01ab12a232f0087d
-F src/util.c b26be916edd1c991450cccc6503356c4f776598b
+F src/util.c 0d0dc8279d4d0f43eb5d02313b77ab0ffa70f96d
 F src/vacuum.c 21a3c7f6f7be86bb1182fbc3df416ad702435b9e
 F src/vdbe.c bf64026224ade859b32e6c01fcf292fbf069cb95
 F src/vdbe.h 8729a4ee16ff9aeab2af9667df3cf300ff978e13
@@ -225,7 +225,7 @@ F test/select5.test 07a90ab3c7e3f0a241a9cdea1d997b2c8a89ff0b
 F test/select6.test f459a19bdac0501c4d3eb1a4df4b7a76f1bb8ad4
 F test/select7.test 1bf795b948c133a15a2a5e99d3270e652ec58ce6
 F test/server1.test e328b8e641ba8fe9273132cfef497383185dc1f5
-F test/shared.test 2a7ae35bbf0f805cb9782146f5e812003ee8d1dc
+F test/shared.test 3c4be6c54a7b0938b9e513a1c78ca246e9fd954d
 F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
 F test/subquery.test e6de53332c0301b3cfa34edc3f3cd5fa1e859efd
 F test/subselect.test 2d13fb7f450db3595adcdd24079a0dd1d2d6abc2
@@ -341,7 +341,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P f68e05cb2be65fad43fac823b2a9c53b6d2e797d
-R 76190566241ae754dc84e6c279c75a73
-U drh
-Z a4433a493a2ee00e7ecf875fa7f10806
+P ad8f12cad1fcd9c54478abe20050f9a953035506
+R 954aa80dd6874104e30f75bce2182119
+U danielk1977
+Z 837b481c27f9c4453e777b73d583ce2e

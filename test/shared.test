@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: shared.test,v 1.12 2006/01/14 08:02:29 danielk1977 Exp $
+# $Id: shared.test,v 1.13 2006/01/15 11:39:18 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -640,6 +640,88 @@ do_test shared-9.3 {
 } {}
 
 } ; # End shared-9.*
+
+#---------------------------------------------------------------------------
+# The following tests - shared-10.* - test that the library behaves 
+# correctly when a connection to a shared-cache is closed. 
+#
+do_test shared-10.1 {
+  # Create a small sample database with two connections to it (db and db2).
+  file delete -force test.db
+  sqlite3 db  test.db
+  sqlite3 db2 test.db
+  execsql {
+    CREATE TABLE ab(a PRIMARY KEY, b);
+    CREATE TABLE de(d PRIMARY KEY, e);
+    INSERT INTO ab VALUES('Chiang Mai', 100000);
+    INSERT INTO ab VALUES('Bangkok', 8000000);
+    INSERT INTO de VALUES('Ubon', 120000);
+    INSERT INTO de VALUES('Khon Kaen', 200000);
+  }
+} {}
+do_test shared-10.2 {
+  # Open a read-transaction with the first connection, a write-transaction
+  # with the second.
+  execsql {
+    BEGIN;
+    SELECT * FROM ab;
+  }
+  execsql {
+    BEGIN;
+    INSERT INTO de VALUES('Pataya', 30000);
+  } db2
+} {}
+do_test shared-10.3 {
+  # An external connection should be able to read the database, but not
+  # prepare a write operation.
+  sqlite3 db3 ./test.db
+  execsql {
+    SELECT * FROM ab;
+  } db3
+  catchsql {
+    BEGIN;
+    INSERT INTO de VALUES('Pataya', 30000);
+  } db3
+} {1 {database is locked}}
+do_test shared-10.4 {
+  # Close the connection with the write-transaction open
+  db2 close
+} {}
+do_test shared-10.5 {
+  # Test that the db2 transaction has been automatically rolled back.
+  # If it has not the ('Pataya', 30000) entry will still be in the table.
+  execsql {
+    SELECT * FROM de;
+  }
+} {Ubon 120000 {Khon Kaen} 200000}
+do_test shared-10.5 {
+  # Closing db2 should have dropped the shared-cache back to a read-lock.
+  # So db3 should be able to prepare a write...
+  catchsql {INSERT INTO de VALUES('Pataya', 30000);} db3
+} {0 {}}
+do_test shared-10.6 {
+  # ... but not commit it.
+  catchsql {COMMIT} db3
+} {1 {database is locked}}
+do_test shared-10.7 {
+  # Commit the (read-only) db transaction. Check via db3 to make sure the 
+  # contents of table "de" are still as they should be.
+  execsql {
+    COMMIT;
+  }
+  execsql {
+    SELECT * FROM de;
+  } db3
+} {Ubon 120000 {Khon Kaen} 200000 Pataya 30000}
+do_test shared-10.9 {
+  # Commit the external transaction.
+  catchsql {COMMIT} db3
+} {0 {}}
+integrity_check shared-10.10
+do_test shared-10.11 {
+  db close
+  db3 close
+} {}
 
 finish_test
 sqlite3_enable_shared_cache $::enable_shared_cache
