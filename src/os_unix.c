@@ -486,7 +486,7 @@ static void releaseOpenCnt(struct openCnt *pOpen){
   pOpen->nRef--;
   if( pOpen->nRef==0 ){
     sqlite3HashInsert(&openHash, &pOpen->key, sizeof(pOpen->key), 0);
-    sqliteFree(pOpen->aPending);
+    free(pOpen->aPending);
     sqliteFree(pOpen);
   }
 }
@@ -581,6 +581,24 @@ exit_findlockinfo:
   return rc;
 }
 
+#ifdef SQLITE_DEBUG
+/*
+** Helper function for printing out trace information from debugging
+** binaries. This returns the string represetation of the supplied
+** integer lock-type.
+*/
+static const char *locktypeName(int locktype){
+  switch( locktype ){
+  case NO_LOCK: return "NONE";
+  case SHARED_LOCK: return "SHARED";
+  case RESERVED_LOCK: return "RESERVED";
+  case PENDING_LOCK: return "PENDING";
+  case EXCLUSIVE_LOCK: return "EXCLUSIVE";
+  }
+  return "ERROR";
+}
+#endif
+
 /*
 ** If we are currently in a different thread than the thread that the
 ** unixFile argument belongs to, then transfer ownership of the unixFile
@@ -596,6 +614,7 @@ exit_findlockinfo:
 */
 #ifdef SQLITE_UNIX_THREADS
 static int transferOwnership(unixFile *pFile){
+  int rc;
   pthread_t hSelf;
   if( threadsOverrideEachOthersLocks ){
     /* Ownership transfers not needed on this system */
@@ -604,15 +623,21 @@ static int transferOwnership(unixFile *pFile){
   hSelf = pthread_self();
   if( pthread_equal(pFile->tid, hSelf) ){
     /* We are still in the same thread */
+    TRACE1("No-transfer, same thread\n");
     return SQLITE_OK;
   }
   if( pFile->locktype!=NO_LOCK ){
     /* We cannot change ownership while we are holding a lock! */
     return SQLITE_MISUSE;
   }
+  TRACE4("Transfer ownership of %d from %d to %d\n", pFile->h,pFile->tid,hSelf);
   pFile->tid = hSelf;
   releaseLockInfo(pFile->pLock);
-  return findLockInfo(pFile->h, &pFile->pLock, 0);
+  rc = findLockInfo(pFile->h, &pFile->pLock, 0);
+  TRACE5("LOCK    %d is now %s(%s,%d)\n", pFile->h,
+     locktypeName(pFile->locktype),
+     locktypeName(pFile->pLock->locktype), pFile->pLock->cnt);
+  return rc;
 }
 #else
 # define transferOwnership(X) SQLITE_OK
@@ -1121,24 +1146,6 @@ static int unixCheckReservedLock(OsFile *id){
   return r;
 }
 
-#ifdef SQLITE_DEBUG
-/*
-** Helper function for printing out trace information from debugging
-** binaries. This returns the string represetation of the supplied
-** integer lock-type.
-*/
-static const char *locktypeName(int locktype){
-  switch( locktype ){
-  case NO_LOCK: return "NONE";
-  case SHARED_LOCK: return "SHARED";
-  case RESERVED_LOCK: return "RESERVED";
-  case PENDING_LOCK: return "PENDING";
-  case EXCLUSIVE_LOCK: return "EXCLUSIVE";
-  }
-  return "ERROR";
-}
-#endif
-
 /*
 ** Lock the file with the lock specified by parameter locktype - one
 ** of the following:
@@ -1240,6 +1247,7 @@ static int unixLock(OsFile *id, int locktype){
     sqlite3OsLeaveMutex();
     return rc;
   }
+  pLock = pFile->pLock;
 
   /* If some thread using this PID has a lock via a different OsFile*
   ** handle that precludes the requested lock, return BUSY.
@@ -1439,7 +1447,7 @@ static int unixUnlock(OsFile *id, int locktype){
       for(i=0; i<pOpen->nPending; i++){
         close(pOpen->aPending[i]);
       }
-      sqliteFree(pOpen->aPending);
+      free(pOpen->aPending);
       pOpen->nPending = 0;
       pOpen->aPending = 0;
     }
@@ -1458,12 +1466,11 @@ static int unixClose(OsFile **pId){
 
   if( !id ) return SQLITE_OK;
   rc = unixUnlock(*pId, NO_LOCK);
-  if( rc ) return rc;
   if( id->dirfd>=0 ) close(id->dirfd);
   id->dirfd = -1;
   sqlite3OsEnterMutex();
 
-  if( id->pOpen->nLock ){
+  if( id->pOpen->nLock && rc==SQLITE_OK ){
     /* If there are outstanding locks, do not actually close the file just
     ** yet because that would clear those locks.  Instead, add the file
     ** descriptor to pOpen->aPending.  It will be automatically closed when
@@ -1471,7 +1478,7 @@ static int unixClose(OsFile **pId){
     */
     int *aNew;
     struct openCnt *pOpen = id->pOpen;
-    aNew = sqliteRealloc( pOpen->aPending, (pOpen->nPending+1)*sizeof(int) );
+    aNew = realloc( pOpen->aPending, (pOpen->nPending+1)*sizeof(int) );
     if( aNew==0 ){
       /* If a malloc fails, just leak the file descriptor */
     }else{

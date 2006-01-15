@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.190 2006/01/15 00:13:16 drh Exp $
+** $Id: test1.c,v 1.191 2006/01/15 02:30:58 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -166,7 +166,7 @@ static int getFilePointer(
 ** understood by scanf, and if not, try prepending an "0x" to see if
 ** that helps.  If nothing works, a fatal error is generated.
 */
-static int makePointerStr(Tcl_Interp *interp, char *zPtr, void *p){
+int sqlite3TestMakePointerStr(Tcl_Interp *interp, char *zPtr, void *p){
   sqlite3_snprintf(100, zPtr, "%p", p);
   return TCL_OK;
 }
@@ -2096,7 +2096,7 @@ static int test_prepare(
   }
 
   if( pStmt ){
-    if( makePointerStr(interp, zBuf, pStmt) ) return TCL_ERROR;
+    if( sqlite3TestMakePointerStr(interp, zBuf, pStmt) ) return TCL_ERROR;
     Tcl_AppendResult(interp, zBuf, 0);
   }
   return TCL_OK;
@@ -2153,7 +2153,7 @@ static int test_prepare16(
   Tcl_DecrRefCount(pTail);
 
   if( pStmt ){
-    if( makePointerStr(interp, zBuf, pStmt) ) return TCL_ERROR;
+    if( sqlite3TestMakePointerStr(interp, zBuf, pStmt) ) return TCL_ERROR;
   }
   Tcl_AppendResult(interp, zBuf, 0);
 #endif /* SQLITE_OMIT_UTF16 */
@@ -2183,7 +2183,7 @@ static int test_open(
   zFilename = Tcl_GetString(objv[1]);
   rc = sqlite3_open(zFilename, &db);
   
-  if( makePointerStr(interp, zBuf, db) ) return TCL_ERROR;
+  if( sqlite3TestMakePointerStr(interp, zBuf, db) ) return TCL_ERROR;
   Tcl_AppendResult(interp, zBuf, 0);
   return TCL_OK;
 }
@@ -2212,7 +2212,7 @@ static int test_open16(
   zFilename = Tcl_GetByteArrayFromObj(objv[1], 0);
   rc = sqlite3_open16(zFilename, &db);
   
-  if( makePointerStr(interp, zBuf, db) ) return TCL_ERROR;
+  if( sqlite3TestMakePointerStr(interp, zBuf, db) ) return TCL_ERROR;
   Tcl_AppendResult(interp, zBuf, 0);
 #endif /* SQLITE_OMIT_UTF16 */
   return TCL_OK;
@@ -2606,7 +2606,7 @@ static int test_sqlite3OsOpenReadWrite(
     Tcl_SetResult(interp, (char *)errorName(rc), TCL_STATIC);
     return TCL_ERROR;
   }
-  makePointerStr(interp, zBuf, pFile);
+  sqlite3TestMakePointerStr(interp, zBuf, pFile);
   Tcl_SetResult(interp, zBuf, 0);
   return TCL_ERROR;
 }
