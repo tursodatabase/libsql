@@ -19,7 +19,7 @@
 /*
 ** These #defines should enable >2GB file support on Posix if the
 ** underlying operating system supports it.  If the OS lacks
-** large file support, or if the OS is windows, these should be no-ops.
+** large file support, these should be no-ops.
 **
 ** Large file support can be disabled using the -DSQLITE_DISABLE_LFS switch
 ** on the compiler command line.  This is necessary if you are compiling
@@ -28,8 +28,6 @@
 ** without this option, LFS is enable.  But LFS does not exist in the kernel
 ** in RedHat 6.0, so the code won't work.  Hence, for maximum binary
 ** portability you should omit LFS.
-**
-** Similar is true for MacOS.  LFS is only supported on MacOS 9 and later.
 */
 #ifndef SQLITE_DISABLE_LFS
 # define _LARGE_FILE       1
@@ -51,10 +49,8 @@
 #include <errno.h>
 
 /*
-** Macros used to determine whether or not to use threads.  The
-** SQLITE_UNIX_THREADS macro is defined if we are synchronizing for
-** Posix threads and SQLITE_W32_THREADS is defined if we are
-** synchronizing using Win32 threads.
+** If we are to be thread-safe, include the pthreads header and define
+** the SQLITE_UNIX_THREADS macro.
 */
 #if defined(THREADSAFE) && THREADSAFE
 # include <pthread.h>
@@ -85,7 +81,7 @@ struct unixFile {
   unsigned char fullSync;   /* Use F_FULLSYNC if available */
   int dirfd;                /* File descriptor for the directory */
 #ifdef SQLITE_UNIX_THREADS
-  pthread_t tid;            /* The thread authorized to use this OsFile */
+  pthread_t tid;            /* The thread that "owns" this OsFile */
 #endif
 };
 
@@ -113,7 +109,7 @@ struct unixFile {
 
 /*
 ** Do not include any of the File I/O interface procedures if the
-** SQLITE_OMIT_DISKIO macro is defined (indicating that there database
+** SQLITE_OMIT_DISKIO macro is defined (indicating that the database
 ** will be in-memory only)
 */
 #ifndef SQLITE_OMIT_DISKIO
@@ -164,6 +160,13 @@ struct unixFile {
 ** means that sqlite3* database handles cannot be moved from one thread
 ** to another.  This logic makes sure a user does not try to do that
 ** by mistake.
+**
+** Version 3.3.1 (2006-01-15):  OsFiles can be moved from one thread to
+** another as long as we are running on a system that supports threads
+** overriding each others locks (which now the most common behavior)
+** or if no locks are held.  But the OsFile.pLock field needs to be
+** recomputed because its key includes the thread-id.  See the 
+** transferOwnership() function below for additional information
 */
 #if defined(SQLITE_UNIX_THREADS)
 # define SET_THREADID(X)   (X)->tid = pthread_self()
@@ -280,8 +283,8 @@ struct unixFile {
 **
 ** If threads cannot override each others locks, then we set the
 ** lockKey.tid field to the thread ID.  If threads can override
-** each others locks then tid is always set to zero.  tid is also
-** set to zero if we compile without threading support.
+** each others locks then tid is always set to zero.  tid is omitted
+** if we compile without threading support.
 */
 struct lockKey {
   dev_t dev;       /* Device number */
@@ -333,8 +336,9 @@ struct openCnt {
 };
 
 /* 
-** These hash table maps inodes and process IDs into lockInfo and openCnt
-** structures.  Access to these hash tables must be protected by a mutex.
+** These hash tables map inodes and file descriptors (really, lockKey and
+** openKey structures) into lockInfo and openCnt structures.  Access to 
+** these hash tables must be protected by a mutex.
 */
 static Hash lockHash = { SQLITE_HASH_BINARY, 0, 0, 0, 0, 0 };
 static Hash openHash = { SQLITE_HASH_BINARY, 0, 0, 0, 0, 0 };
@@ -348,6 +352,10 @@ static Hash openHash = { SQLITE_HASH_BINARY, 0, 0, 0, 0, 0 };
 **    0:  No.  Threads cannot override each others locks.
 **    1:  Yes.  Threads can override each others locks.
 **   -1:  We don't know yet.
+**
+** This variable normally has file scope only.  But during testing, we make
+** it a global so that the test code can change its value in order to verify
+** that the right stuff happens in either case.
 */
 #ifdef SQLITE_TEST
 int threadsOverrideEachOthersLocks = -1;
@@ -372,7 +380,7 @@ struct threadTestData {
 ** This routine is used for troubleshooting locks on multithreaded
 ** platforms.  Enable by compiling with the -DSQLITE_LOCK_TRACE
 ** command-line option on the compiler.  This code is normally
-** turnned off.
+** turned off.
 */
 static int lockTrace(int fd, int op, struct flock *p){
   char *zOpName, *zType;
@@ -610,7 +618,7 @@ static const char *locktypeName(int locktype){
 **
 ** Ownership transfer is only allowed if the unixFile is currently unlocked.
 ** If the unixFile is locked and an ownership is wrong, then return
-** SQLITE_MISUSE.  Otherwise return SQLITE_OK.
+** SQLITE_MISUSE.  SQLITE_OK is returned if everything works.
 */
 #ifdef SQLITE_UNIX_THREADS
 static int transferOwnership(unixFile *pFile){
@@ -640,6 +648,7 @@ static int transferOwnership(unixFile *pFile){
   return rc;
 }
 #else
+  /* On single-threaded builds, ownership transfer is a no-op */
 # define transferOwnership(X) SQLITE_OK
 #endif
 
@@ -834,6 +843,8 @@ static int unixOpenDirectory(
 ** If the following global variable points to a string which is the
 ** name of a directory, then that directory will be used to store
 ** temporary files.
+**
+** See also the "PRAGMA temp_store_directory" SQL command.
 */
 char *sqlite3_temp_directory = 0;
 
@@ -1371,10 +1382,6 @@ end_lock:
 **
 ** If the locking level of the file descriptor is already at or below
 ** the requested locking level, this routine is a no-op.
-**
-** It is not possible for this routine to fail if the second argument
-** is NO_LOCK.  If the second argument is SHARED_LOCK, this routine
-** might return SQLITE_IOERR instead of SQLITE_OK.
 */
 static int unixUnlock(OsFile *id, int locktype){
   struct lockInfo *pLock;
@@ -1390,7 +1397,9 @@ static int unixUnlock(OsFile *id, int locktype){
   if( pFile->locktype<=locktype ){
     return SQLITE_OK;
   }
-  if( CHECK_THREADID(pFile) ) return SQLITE_MISUSE;
+  if( CHECK_THREADID(pFile) ){
+    return SQLITE_MISUSE;
+  }
   sqlite3OsEnterMutex();
   pLock = pFile->pLock;
   assert( pLock->cnt!=0 );
@@ -1616,7 +1625,7 @@ int sqlite3UnixRandomSeed(char *zBuf){
   ** in the random seed.
   **
   ** When testing, initializing zBuf[] to zero is all we do.  That means
-  ** that we always use the same random number sequence.* This makes the
+  ** that we always use the same random number sequence.  This makes the
   ** tests repeatable.
   */
   memset(zBuf, 0, 256);
@@ -1641,6 +1650,7 @@ int sqlite3UnixRandomSeed(char *zBuf){
 
 /*
 ** Sleep for a little while.  Return the amount of time slept.
+** The argument is the number of milliseconds we want to sleep.
 */
 int sqlite3UnixSleep(int ms){
 #if defined(HAVE_USLEEP) && HAVE_USLEEP
@@ -1667,6 +1677,8 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 **
 ** SQLite uses only a single Mutex.  There is not much critical
 ** code and what little there is executes quickly and without blocking.
+**
+** This mutex is not recursive.
 */
 void sqlite3UnixEnterMutex(){
 #ifdef SQLITE_UNIX_THREADS
@@ -1712,9 +1724,9 @@ int sqlite3_tsd_count = 0;
 
 
 /*
-** If called with allocateFlag>1, then return a pointer to thread
+** If called with allocateFlag>0, then return a pointer to thread
 ** specific data for the current thread.  Allocate and zero the
-** thread-specific data if it does not already exist necessary.
+** thread-specific data if it does not already exist.
 **
 ** If called with allocateFlag==0, then check the current thread
 ** specific data.  Return it if it exists.  If it does not exist,
