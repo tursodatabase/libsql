@@ -1,5 +1,5 @@
-C Add\stests\sand\sfix\sbugs\sin\sthe\snew\scross-thread\slock\sresolution\scode.\nWhen\san\sunlock\sfails,\sdo\snot\sleak\sfile\sdescriptors\s(ticket\s#1611).\nBut\swe\sreally\sought\sto\sreport\sSQLITE_MISUSE\sor\ssome\sother\serror\sinstead\nof\sjust\sreturning\sSQLITE_OK.\s(CVS\s2945)
-D 2006-01-15T02:30:58
+C Closing\sa\sfile\sfrom\sthe\swrong\sthread\sis\sharmless\son\smost\ssystems.\n(See\sticket\s#1611)\nBut\son\ssystems\slike\sRedHat9\swith\sbroken\sfcntl()\slocks,\sit\sleaks\sfile\ndescriptors.\s\sThat\sis\sbetter\sthan\sthe\salternative\sof\sprematurely\sbreaking\nlocks\sand\scausing\sdatabase\scorruption.\s\sNevertheless,\sit\swould\sbe\sgood\nif\swe\scould\sfigure\sout\sa\sway\sto\sreport\serrors\swhen\sclosing\sa\sfile\sfrom\nthe\swrong\sthread.\s(CVS\s2946)
+D 2006-01-15T02:43:16
 F Makefile.in ab3ffd8d469cef4477257169b82810030a6bb967
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -55,7 +55,7 @@ F src/os.h 9debc3d3ca4cdafde222a0ea74a4c8415aef4f22
 F src/os_common.h 6b76efa9b252e288de53b202ed5a0d48f48dc8db
 F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
-F src/os_unix.c a1245b110150254ed2186d43edad9e00f21bc869
+F src/os_unix.c 7457d51c00337bf164eea7f10836d6e8a60b6b07
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c cd4ca2753aeaad11f5c9b9b6ef28752f45ed4529
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
@@ -341,7 +341,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 03c422ecb508dd84dfafc8b7a0b790a43f5dadda
-R 1642e8fb6600fd54b6368241cbaa46c5
+P f68e05cb2be65fad43fac823b2a9c53b6d2e797d
+R 76190566241ae754dc84e6c279c75a73
 U drh
-Z 4fe4a4d33caa52376ec7d83da72f0c2f
+Z a4433a493a2ee00e7ecf875fa7f10806

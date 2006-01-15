@@ -1465,12 +1465,12 @@ static int unixClose(OsFile **pId){
   int rc;
 
   if( !id ) return SQLITE_OK;
-  rc = unixUnlock(*pId, NO_LOCK);
+  unixUnlock(*pId, NO_LOCK);
   if( id->dirfd>=0 ) close(id->dirfd);
   id->dirfd = -1;
   sqlite3OsEnterMutex();
 
-  if( id->pOpen->nLock && rc==SQLITE_OK ){
+  if( id->pOpen->nLock ){
     /* If there are outstanding locks, do not actually close the file just
     ** yet because that would clear those locks.  Instead, add the file
     ** descriptor to pOpen->aPending.  It will be automatically closed when
@@ -1499,7 +1499,7 @@ static int unixClose(OsFile **pId){
   OpenCounter(-1);
   sqliteFree(id);
   *pId = 0;
-  return SQLITE_OK;
+  return rc;
 }
 
 /*
