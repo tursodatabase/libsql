@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.529 2006/01/13 17:12:01 danielk1977 Exp $
+** $Id: vdbe.c,v 1.530 2006/01/15 14:11:49 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -665,8 +665,7 @@ case OP_Real: {            /* same as TK_FLOAT, */
 
 /* Opcode: String8 * * P3
 **
-** P3 points to a nul terminated UTF-8 string that is P1 character long
-** (not counting the nul terminator). This opcode is transformed
+** P3 points to a nul terminated UTF-8 string. This opcode is transformed 
 ** into an OP_String before it is executed for the first time.
 */
 case OP_String8: {         /* same as TK_STRING */
@@ -687,7 +686,7 @@ case OP_String8: {         /* same as TK_STRING */
     }
     pOp->p3type = P3_DYNAMIC;
     pOp->p3 = pTos->z;
-    pOp->p1 *= 2;
+    pOp->p1 = pTos->n;
     break;
   }
 #endif
@@ -696,7 +695,7 @@ case OP_String8: {         /* same as TK_STRING */
   
 /* Opcode: String P1 * P3
 **
-** The string value P3 of length P1 is pushed onto the stack.
+** The string value P3 of length P1 (bytes) is pushed onto the stack.
 */
 case OP_String: {
   pTos++;
