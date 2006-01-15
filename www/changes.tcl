@@ -25,6 +25,13 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2006 January 16 (3.3.1 alpha)} {
+<li>Countless bug fixes</li>
+<li>Speed improvements</li>
+<li>Database connections can now be used by multiple threads, not just
+the thread in which they were created.</li>
+}
+
 chng {2006 January 10 (3.3.0 alpha)} {
 <li>CHECK constraints</li>
 <li>IF EXISTS and IF NOT EXISTS clauses on CREATE/DROP TABLE/INDEX.</li>

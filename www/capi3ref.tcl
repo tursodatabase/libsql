@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3ref.tcl,v 1.28 2006/01/11 23:40:34 drh Exp $}
+set rcsid {$Id: capi3ref.tcl,v 1.29 2006/01/15 18:29:18 drh Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -1317,6 +1317,18 @@ api {} {
   by compiling with the SQLITE_ENABLE_MEMORY_MANAGMENT macro.
 }
 
+api {} {
+  void sqlite3_thread_cleanup(void);
+} {
+  This routine ensures that a thread that has used SQLite in the past
+  has released any thread-local storage it might have allocated.  
+  When the rest of the API is used properly, the cleanup of 
+  thread-local storage should be completely automatic.  You should
+  never really need to invoke this API.  But it is provided to you
+  as a precaution and as a potential work-around for future
+  thread-releated memory-leaks.
+}
+
 set n 0
 set i 0
 foreach item $apilist {
@@ -1334,6 +1346,11 @@ foreach name [lsort [array names name_to_idx]] {
   set sname($i) $name
   incr i
 }
+#parray n_to_name
+#parray n_to_idx
+#parray name_to_idx
+#parray sname
+incr n -1
 puts {<table width="100%" cellpadding="5"><tr>}
 set nrow [expr {($n+2)/3}]
 set i 0
