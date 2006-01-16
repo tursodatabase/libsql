@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: shared.test,v 1.13 2006/01/15 11:39:18 danielk1977 Exp $
+# $Id: shared.test,v 1.14 2006/01/16 12:46:41 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -19,7 +19,23 @@ ifcapable !shared_cache {
   finish_test
   return
 }
+
 set ::enable_shared_cache [sqlite3_enable_shared_cache 1]
+
+foreach av [list 0 1] {
+
+ifcapable !autovacuum {
+  if {$av} break
+}
+
+# Open the database connection and execute the auto-vacuum pragma
+do_test shared-$av.1.0 {
+  file delete -force test.db
+  sqlite3 db test.db
+  execsql "pragma auto_vacuum=$::av"
+  execsql {pragma auto_vacuum}
+} "$av"
+incr av
 
 # Test organization:
 #
@@ -36,15 +52,14 @@ set ::enable_shared_cache [sqlite3_enable_shared_cache 1]
 # shared-7.*: Autovacuum and shared-cache.
 #
 
-do_test shared-1.1 {
+do_test shared-$av.1.1 {
   # Open a second database on the file test.db. It should use the same pager
   # cache and schema as the original connection. Verify that only 1 file is 
   # opened.
   sqlite3 db2 test.db
-  sqlite3 db  test.db
   set ::sqlite_open_file_count
 } {1}
-do_test shared-1.2 {
+do_test shared-$av.1.2 {
   # Add a table and a single row of data via the first connection. 
   # Ensure that the second connection can see them.
   execsql {
@@ -55,7 +70,7 @@ do_test shared-1.2 {
     SELECT * FROM abc;
   } db2
 } {1 2 3}
-do_test shared-1.3 {
+do_test shared-$av.1.3 {
   # Have the first connection begin a transaction and obtain a read-lock
   # on table abc. This should not prevent the second connection from 
   # querying abc.
@@ -67,7 +82,7 @@ do_test shared-1.3 {
     SELECT * FROM abc;
   } db2
 } {1 2 3}
-do_test shared-1.4 {
+do_test shared-$av.1.4 {
   # Try to insert a row into abc via connection 2. This should fail because
   # of the read-lock connection 1 is holding on table abc (obtained in the
   # previous test case).
@@ -75,7 +90,7 @@ do_test shared-1.4 {
     INSERT INTO abc VALUES(4, 5, 6);
   } db2
 } {1 {database table is locked: abc}}
-do_test shared-1.5 {
+do_test shared-$av.1.5 {
   # Using connection 2 (the one without the open transaction), try to create
   # a new table. This should fail because of the open read transaction 
   # held by connection 1.
@@ -83,7 +98,7 @@ do_test shared-1.5 {
     CREATE TABLE def(d, e, f);
   } db2
 } {1 {database table is locked: sqlite_master}}
-do_test shared-1.6 {
+do_test shared-$av.1.6 {
   # Upgrade connection 1's transaction to a write transaction. Create
   # a new table - def - and insert a row into it. Because the connection 1
   # transaction modifies the schema, it should not be possible for 
@@ -94,7 +109,7 @@ do_test shared-1.6 {
     INSERT INTO def VALUES('IV', 'V', 'VI');
   }
 } {}
-do_test shared-1.7 {
+do_test shared-$av.1.7 {
   # Read from the sqlite_master table with connection 1 (inside the 
   # transaction). Then test that we can not do this with connection 2. This
   # is because of the schema-modified lock established by connection 1 
@@ -106,21 +121,21 @@ do_test shared-1.7 {
     SELECT * FROM sqlite_master;
   } db2
 } {1 {database schema is locked: main}}
-do_test shared-1.8 {
+do_test shared-$av.1.8 {
   # Commit the connection 1 transaction.
   execsql {
     COMMIT;
   }
 } {}
 
-do_test shared-2.1 {
+do_test shared-$av.2.1 {
   # Open connection db3 to the database. Use a different path to the same
   # file so that db3 does *not* share the same pager cache as db and db2
   # (there should be two open file handles).
   sqlite3 db3 ./test.db
   set ::sqlite_open_file_count
 } {2}
-do_test shared-2.2 {
+do_test shared-$av.2.2 {
   # Start read transactions on db and db2 (the shared pager cache). Ensure
   # db3 cannot write to the database.
   execsql {
@@ -135,7 +150,7 @@ do_test shared-2.2 {
     INSERT INTO abc VALUES(1, 2, 3);
   } db2
 } {1 {database table is locked: abc}}
-do_test shared-2.3 {
+do_test shared-$av.2.3 {
   # Turn db's transaction into a write-transaction. db3 should still be
   # able to read from table def (but will not see the new row). Connection
   # db2 should not be able to read def (because of the write-lock).
@@ -159,7 +174,7 @@ do_test shared-2.3 {
     catchsql { SELECT * FROM def; } db2
   ]
 } {0 {IV V VI} 1 {database table is locked: def}}
-do_test shared-2.4 {
+do_test shared-$av.2.4 {
   # Commit the open transaction on db. db2 still holds a read-transaction.
   # This should prevent db3 from writing to the database, but not from 
   # reading.
@@ -175,7 +190,7 @@ do_test shared-2.4 {
 
 catchsql COMMIT db2
 
-do_test shared-3.1.1 {
+do_test shared-$av.3.1.1 {
   # This test case starts a linear scan of table 'seq' using a 
   # read-uncommitted connection. In the middle of the scan, rows are added
   # to the end of the seq table (ahead of the current cursor position).
@@ -200,7 +215,7 @@ do_test shared-3.1.1 {
   }
   set ret
 } {1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16}
-do_test shared-3.1.2 {
+do_test shared-$av.3.1.2 {
   # Another linear scan through table seq using a read-uncommitted connection.
   # This time, delete each row as it is read. Should not affect the results of
   # the scan, but the table should be empty after the scan is concluded 
@@ -212,7 +227,7 @@ do_test shared-3.1.2 {
   }
   set ret
 } {1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16}
-do_test shared-3.1.3 {
+do_test shared-$av.3.1.3 {
   execsql {
     SELECT * FROM seq;
   }
@@ -247,14 +262,14 @@ file delete -force test2.db
 file delete -force test2.db-journal
 sqlite3 db  test.db
 sqlite3 db2 test2.db
-do_test shared-4.1.1 {
+do_test shared-$av.4.1.1 {
   set sqlite_open_file_count
 } {2}
-do_test shared-4.1.2 {
+do_test shared-$av.4.1.2 {
   execsql {ATTACH 'test2.db' AS test2}
   set sqlite_open_file_count
 } {2}
-do_test shared-4.1.3 {
+do_test shared-$av.4.1.3 {
   execsql {ATTACH 'test.db' AS test} db2
   set sqlite_open_file_count
 } {2}
@@ -263,7 +278,7 @@ do_test shared-4.1.3 {
 # db2 can "see" the new table immediately. A handle using a seperate pager
 # cache would have to reload the database schema before this were possible.
 #
-do_test shared-4.2.1 {
+do_test shared-$av.4.2.1 {
   execsql {
     CREATE TABLE abc(a, b, c);
     CREATE TABLE def(d, e, f);
@@ -271,7 +286,7 @@ do_test shared-4.2.1 {
     INSERT INTO def VALUES('I', 'II', 'III');
   }
 } {}
-do_test shared-4.2.2 {
+do_test shared-$av.4.2.2 {
   execsql {
     SELECT * FROM test.abc;
   } db2
@@ -281,28 +296,28 @@ do_test shared-4.2.2 {
 # handle 1 can read table abc. Check that handle 1 cannot modify table abc
 # or the database schema. Then check that handle 1 can modify table def.
 #
-do_test shared-4.3.1 {
+do_test shared-$av.4.3.1 {
   execsql {
     BEGIN;
     SELECT * FROM test.abc;
   } db2
 } {i ii iii}
-do_test shared-4.3.2 {
+do_test shared-$av.4.3.2 {
   catchsql {
     INSERT INTO abc VALUES('iv', 'v', 'vi');
   }
 } {1 {database table is locked: abc}}
-do_test shared-4.3.3 {
+do_test shared-$av.4.3.3 {
   catchsql {
     CREATE TABLE ghi(g, h, i);
   }
 } {1 {database table is locked: sqlite_master}}
-do_test shared-4.3.3 {
+do_test shared-$av.4.3.3 {
   catchsql {
     INSERT INTO def VALUES('IV', 'V', 'VI');
   }
 } {0 {}}
-do_test shared-4.3.4 {
+do_test shared-$av.4.3.4 {
   # Cleanup: commit the transaction opened by db2.
   execsql {
     COMMIT
@@ -316,7 +331,7 @@ do_test shared-4.3.4 {
 # Finally, compile a read of the other database using handle 2. This
 # should also fail.
 #
-do_test shared-4.4.1.2 {
+do_test shared-$av.4.4.1.2 {
   # Sanity check 1: Check that the schema is what we think it is when viewed
   # via handle 1.
   execsql {
@@ -326,7 +341,7 @@ do_test shared-4.4.1.2 {
     SELECT 'test2.db:'||name FROM test2.sqlite_master;
   }
 } {test.db:abc test.db:def test2.db:ghi}
-do_test shared-4.4.1.2 {
+do_test shared-$av.4.4.1.2 {
   # Sanity check 2: Check that the schema is what we think it is when viewed
   # via handle 2.
   execsql {
@@ -336,7 +351,7 @@ do_test shared-4.4.1.2 {
   } db2
 } {test2.db:ghi test.db:abc test.db:def}
 
-do_test shared-4.4.2 {
+do_test shared-$av.4.4.2 {
   set ::DB2 [sqlite3_connection_pointer db2]
   set sql {SELECT * FROM abc}
   set ::STMT1 [sqlite3_prepare $::DB2 $sql -1 DUMMY]
@@ -346,16 +361,16 @@ do_test shared-4.4.2 {
   }
   sqlite3_step $::STMT1
 } {SQLITE_ERROR}
-do_test shared-4.4.3 {
+do_test shared-$av.4.4.3 {
   sqlite3_finalize $::STMT1
 } {SQLITE_LOCKED}
-do_test shared-4.4.4 {
+do_test shared-$av.4.4.4 {
   set rc [catch {
     set ::STMT1 [sqlite3_prepare $::DB2 $sql -1 DUMMY]
   } msg]
   list $rc $msg
 } {1 {(6) database schema is locked: test}}
-do_test shared-4.4.5 {
+do_test shared-$av.4.4.5 {
   set rc [catch {
     set ::STMT1 [sqlite3_prepare $::DB2 "SELECT * FROM ghi" -1 DUMMY]
   } msg]
@@ -372,7 +387,7 @@ catch {db close}
 foreach db [list test.db test1.db test2.db test3.db] {
   file delete -force $db ${db}-journal
 }
-do_test shared-5.1.1 {
+do_test shared-$av.5.1.1 {
   sqlite3 db1 test.db
   sqlite3 db2 test.db
   execsql {
@@ -386,7 +401,7 @@ do_test shared-5.1.1 {
     ATTACH 'test1.db' AS test1;
   } db2
 } {}
-do_test shared-5.1.2 {
+do_test shared-$av.5.1.2 {
   execsql {
     CREATE TABLE test1.t1(a, b);
     CREATE INDEX test1.i1 ON t1(a, b);
@@ -402,7 +417,7 @@ do_test shared-5.1.2 {
     DROP TABLE t1;
   } db2
 } {}
-do_test shared-5.1.2 {
+do_test shared-$av.5.1.2 {
   execsql {
     SELECT * FROM sqlite_master UNION ALL SELECT * FROM test1.sqlite_master
   } db1
@@ -414,7 +429,7 @@ do_test shared-5.1.2 {
 # some rows of data will be returned before a lock fails and SQLITE_LOCK
 # is returned.
 #
-do_test shared-6.1.1 {
+do_test shared-$av.6.1.1 {
   execsql {
     CREATE TABLE t1(a, b);
     CREATE TABLE t2(a, b);
@@ -425,7 +440,7 @@ do_test shared-6.1.1 {
     SELECT * FROM t1 UNION ALL SELECT * FROM t2;
   } db2
 } {1 2 3 4}
-do_test shared-6.1.2 {
+do_test shared-$av.6.1.2 {
   # Establish a write lock on table t2 via connection db2. Then make a 
   # UNION all query using connection db1 that first accesses t1, followed 
   # by t2. If the locks are grabbed at the start of the statement (as 
@@ -445,7 +460,7 @@ do_test shared-6.1.2 {
   }
   set ret
 } {}
-do_test shared-6.1.3 {
+do_test shared-$av.6.1.3 {
   execsql {
     COMMIT;
     BEGIN;
@@ -473,7 +488,7 @@ foreach f [list test.db test2.db] {
 # other shared-cache users when it reorganizes the database on 
 # COMMIT.
 #
-do_test shared-7.1 {
+do_test shared-$av.7.1 {
   # This test case sets up a test database in auto-vacuum mode consisting 
   # of two tables, t1 and t2. Both have a single index. Table t1 is 
   # populated first (so consists of pages toward the start of the db file), 
@@ -503,7 +518,7 @@ do_test shared-7.1 {
     PRAGMA auto_vacuum;
   }
 } {1}
-do_test shared-7.2 {
+do_test shared-$av.7.2 {
   # This test case deletes the contents of table t1 (the one at the start of
   # the file) while many cursors are open on table t2 and it's index. All of
   # the non-root pages will be moved from the end to the start of the file
@@ -556,42 +571,42 @@ unset -nocomplain contents
 # the wrong encoding for a database.
 #
 file delete -force test.db test.db-journal
-do_test shared-8.1.1 {
+do_test shared-$av.8.1.1 {
   sqlite3 db test.db
   execsql {
     PRAGMA encoding = 'UTF-16';
     SELECT * FROM sqlite_master;
   }
 } {}
-do_test shared-8.1.2 {
+do_test shared-$av.8.1.2 {
   string range [execsql {PRAGMA encoding;}] 0 end-2
 } {UTF-16}
-do_test shared-8.1.3 {
+do_test shared-$av.8.1.3 {
   sqlite3 db2 test.db
   execsql {
     PRAGMA encoding = 'UTF-8';
     CREATE TABLE abc(a, b, c);
   } db2
 } {}
-do_test shared-8.1.4 {
+do_test shared-$av.8.1.4 {
   execsql {
     SELECT * FROM sqlite_master;
   }
 } "table abc abc [expr $AUTOVACUUM?3:2] {CREATE TABLE abc(a, b, c)}"
-do_test shared-8.1.5 {
+do_test shared-$av.8.1.5 {
   db2 close
   execsql {
     PRAGMA encoding;
   }
 } {UTF-8}
 file delete -force test2.db test2.db-journal
-do_test shared-8.2.1 {
+do_test shared-$av.8.2.1 {
   execsql {
     ATTACH 'test2.db' AS aux;
     SELECT * FROM aux.sqlite_master;
   }
 } {}
-do_test shared-8.2.2 {
+do_test shared-$av.8.2.2 {
   sqlite3 db2 test2.db
   execsql {
     PRAGMA encoding = 'UTF-16';
@@ -599,7 +614,7 @@ do_test shared-8.2.2 {
   } db2
   string range [execsql {PRAGMA encoding;} db2] 0 end-2
 } {UTF-16}
-do_test shared-8.2.3 {
+do_test shared-$av.8.2.3 {
   catchsql {
     SELECT * FROM aux.sqlite_master;
   }
@@ -615,7 +630,7 @@ file delete -force test.db test2.db
 #
 ifcapable trigger&&tempdb {
 
-do_test shared-9.1 {
+do_test shared-$av.9.1 {
   sqlite3 db test.db
   sqlite3 db2 test.db
   execsql {
@@ -628,13 +643,13 @@ do_test shared-9.1 {
     SELECT * FROM abc_mirror;
   }
 } {1 2 3}
-do_test shared-9.2 {
+do_test shared-$av.9.2 {
   execsql {
     INSERT INTO abc VALUES(4, 5, 6);
     SELECT * FROM abc_mirror;
   } db2
 } {1 2 3}
-do_test shared-9.3 {
+do_test shared-$av.9.3 {
   db close
   db2 close
 } {}
@@ -645,7 +660,7 @@ do_test shared-9.3 {
 # The following tests - shared-10.* - test that the library behaves 
 # correctly when a connection to a shared-cache is closed. 
 #
-do_test shared-10.1 {
+do_test shared-$av.10.1 {
   # Create a small sample database with two connections to it (db and db2).
   file delete -force test.db
   sqlite3 db  test.db
@@ -659,7 +674,7 @@ do_test shared-10.1 {
     INSERT INTO de VALUES('Khon Kaen', 200000);
   }
 } {}
-do_test shared-10.2 {
+do_test shared-$av.10.2 {
   # Open a read-transaction with the first connection, a write-transaction
   # with the second.
   execsql {
@@ -671,7 +686,7 @@ do_test shared-10.2 {
     INSERT INTO de VALUES('Pataya', 30000);
   } db2
 } {}
-do_test shared-10.3 {
+do_test shared-$av.10.3 {
   # An external connection should be able to read the database, but not
   # prepare a write operation.
   sqlite3 db3 ./test.db
@@ -683,27 +698,27 @@ do_test shared-10.3 {
     INSERT INTO de VALUES('Pataya', 30000);
   } db3
 } {1 {database is locked}}
-do_test shared-10.4 {
+do_test shared-$av.10.4 {
   # Close the connection with the write-transaction open
   db2 close
 } {}
-do_test shared-10.5 {
+do_test shared-$av.10.5 {
   # Test that the db2 transaction has been automatically rolled back.
   # If it has not the ('Pataya', 30000) entry will still be in the table.
   execsql {
     SELECT * FROM de;
   }
 } {Ubon 120000 {Khon Kaen} 200000}
-do_test shared-10.5 {
+do_test shared-$av.10.5 {
   # Closing db2 should have dropped the shared-cache back to a read-lock.
   # So db3 should be able to prepare a write...
   catchsql {INSERT INTO de VALUES('Pataya', 30000);} db3
 } {0 {}}
-do_test shared-10.6 {
+do_test shared-$av.10.6 {
   # ... but not commit it.
   catchsql {COMMIT} db3
 } {1 {database is locked}}
-do_test shared-10.7 {
+do_test shared-$av.10.7 {
   # Commit the (read-only) db transaction. Check via db3 to make sure the 
   # contents of table "de" are still as they should be.
   execsql {
@@ -713,15 +728,17 @@ do_test shared-10.7 {
     SELECT * FROM de;
   } db3
 } {Ubon 120000 {Khon Kaen} 200000 Pataya 30000}
-do_test shared-10.9 {
+do_test shared-$av.10.9 {
   # Commit the external transaction.
   catchsql {COMMIT} db3
 } {0 {}}
-integrity_check shared-10.10
-do_test shared-10.11 {
+integrity_check shared-$av.10.10
+do_test shared-$av.10.11 {
   db close
   db3 close
 } {}
 
-finish_test
+}
+
 sqlite3_enable_shared_cache $::enable_shared_cache
+finish_test

@@ -1,5 +1,5 @@
-C Clarify\serror\shandling\sin\spager\scode.\sNo\sfunctional\schanges.\s(CVS\s2956)
-D 2006-01-16T11:29:19
+C Run\sthe\stests\sin\sshared.test\sa\ssecond\stime\susing\san\sautovacuum\sdatabase.\s(CVS\s2957)
+D 2006-01-16T12:46:41
 F Makefile.in ab3ffd8d469cef4477257169b82810030a6bb967
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -59,7 +59,7 @@ F src/os_unix.c 7daa1720d46bbc31c6138462b35876650eb1885e
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c cd4ca2753aeaad11f5c9b9b6ef28752f45ed4529
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 24d4b97c29a6a3d9f4437e6b56debb7e3f3183b2
+F src/pager.c 02a30687533da39851f7776ae49671684333b248
 F src/pager.h e0acb095b3ad0bca48f2ab00c87346665643f64f
 F src/parse.y 83df51fea35f68f7e07384d75dce83d1ed30434c
 F src/pragma.c 4496cc77dc35824e1c978c3d1413b8a5a4c777d3
@@ -111,7 +111,7 @@ F test/auth.test 487fdd95cf1f765815455012e7338d9019bf8852
 F test/autoinc.test 60005a676e3e4e17dfa9dbd08aa0b76587ff97e3
 F test/autovacuum.test 9471d58a08b14dc0d2c15b87583c46d1744343d6
 F test/autovacuum_crash.test 05a63b8805b20cfba7ace82856ce4ccdda075a31
-F test/autovacuum_ioerr.test 9cf27275ca47b72e188a47c53b61b6d583a01d24
+F test/autovacuum_ioerr.test c46a76869cb6eddbbb40b419b2b6c4c001766b1f
 F test/autovacuum_ioerr2.test 2f8a3fb31f833fd0ca86ad4ad98913c73e807572
 F test/avtrans.test 507834a6e1ef4aeea9b8bc2b45f9246d7e66ad3f
 F test/between.test ca092fa28b665ca92172b182c6c360a92f7ca348
@@ -225,7 +225,7 @@ F test/select5.test 07a90ab3c7e3f0a241a9cdea1d997b2c8a89ff0b
 F test/select6.test f459a19bdac0501c4d3eb1a4df4b7a76f1bb8ad4
 F test/select7.test 1bf795b948c133a15a2a5e99d3270e652ec58ce6
 F test/server1.test e328b8e641ba8fe9273132cfef497383185dc1f5
-F test/shared.test 3c4be6c54a7b0938b9e513a1c78ca246e9fd954d
+F test/shared.test e392ddbf1d2cc95b4e48a7ab0a65c891ad7388c0
 F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
 F test/subquery.test e6de53332c0301b3cfa34edc3f3cd5fa1e859efd
 F test/subselect.test 2d13fb7f450db3595adcdd24079a0dd1d2d6abc2
@@ -234,7 +234,7 @@ F test/table.test 6dc0dfa44dd429520e0e5a0c5e55025f730e9403
 F test/tableapi.test 6a66d58b37d46dc0f2b3c7d4bd2617d209399bd1
 F test/tclsqlite.test 2c4b5fb2f21e6740479463c263f3020f08e472d7
 F test/temptable.test 7927261befdbc7b0a7ffebb85ecc70a74fa7b15b
-F test/tester.tcl ed59b4eaa180728e4be1c55dc2823d66e03ae79a
+F test/tester.tcl 1f90490c63a2529ba94ca4f67608feddd33cfbcf
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
 F test/thread2.test c88da55fb60d5975be91f1e2942a5e267c33f8ed
 F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
@@ -341,7 +341,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P bd7c5699939fda2bb792a0e2448df064a1171769
-R 24df549afc2503239ffb645fa43166ce
+P 7b48836214ea3152f46e2dffb097ae7ea14901f4
+R 46ff0e2f5c8b7e28aaa85a7986807ca7
 U danielk1977
-Z c2d3eab392f302df5565749bb5c35c05
+Z 8d66a8b94efb498b44d61fc42165eff2

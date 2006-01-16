@@ -9,10 +9,10 @@
 #
 #***********************************************************************
 #
-# This file runs the tests in the file crash.test with auto-vacuum enabled
+# This file runs the tests in the file ioerr.test with auto-vacuum enabled
 # databases.
 #
-# $Id: autovacuum_ioerr.test,v 1.2 2005/01/16 09:06:34 danielk1977 Exp $
+# $Id: autovacuum_ioerr.test,v 1.3 2006/01/16 12:46:41 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
