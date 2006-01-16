@@ -148,8 +148,9 @@ void *sqlite3GenericMalloc(int n){
   assert(sizeof(int)<=8);
   if( p ){
     *(int *)p = n;
+    p += 8;
   }
-  return (void *)(p + 8);
+  return (void *)p;
 }
 void *sqlite3GenericRealloc(void *p, int n){
   char *p2 = ((char *)p - 8);
@@ -157,8 +158,9 @@ void *sqlite3GenericRealloc(void *p, int n){
   p2 = realloc(p2, n+8);
   if( p2 ){
     *(int *)p2 = n;
+    p2 += 8;
   }
-  return (void *)((char *)p2 + 8);
+  return (void *)p2;
 }
 void sqlite3GenericFree(void *p){
   assert(p);
