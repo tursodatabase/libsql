@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the INSERT statement.
 #
-# $Id: insert.test,v 1.27 2005/07/08 17:13:47 drh Exp $
+# $Id: insert.test,v 1.28 2006/01/16 16:24:25 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -346,7 +346,7 @@ do_test insert-7.3 {
 # to see if the right-hand side of an INSERT...SELECT references the left-hand
 # side.
 #
-ifcapable subquery {
+ifcapable subquery&&compound {
   do_test insert-8.1 {
     execsql {
       INSERT INTO t3 SELECT * FROM (SELECT * FROM t3 UNION ALL SELECT 1,2,3)

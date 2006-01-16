@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CAST operator.
 #
-# $Id: cast.test,v 1.3 2005/11/01 15:48:25 drh Exp $
+# $Id: cast.test,v 1.4 2006/01/16 16:24:25 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -24,36 +24,38 @@ ifcapable !cast {
 
 # Tests for the CAST( AS blob), CAST( AS text) and CAST( AS numeric) built-ins
 #
-do_test cast-1.1 {
-  execsql {SELECT x'616263'}
-} abc
-do_test cast-1.2 {
-  execsql {SELECT typeof(x'616263')}
-} blob
-do_test cast-1.3 {
-  execsql {SELECT CAST(x'616263' AS text)}
-} abc
-do_test cast-1.4 {
-  execsql {SELECT typeof(CAST(x'616263' AS text))}
-} text
-do_test cast-1.5 {
-  execsql {SELECT CAST(x'616263' AS numeric)}
-} 0
-do_test cast-1.6 {
-  execsql {SELECT typeof(CAST(x'616263' AS numeric))}
-} integer
-do_test cast-1.7 {
-  execsql {SELECT CAST(x'616263' AS blob)}
-} abc
-do_test cast-1.8 {
-  execsql {SELECT typeof(CAST(x'616263' AS blob))}
-} blob
-do_test cast-1.9 {
-  execsql {SELECT CAST(x'616263' AS integer)}
-} 0
-do_test cast-1.10 {
-  execsql {SELECT typeof(CAST(x'616263' AS integer))}
-} integer
+ifcapable bloblit {
+  do_test cast-1.1 {
+    execsql {SELECT x'616263'}
+  } abc
+  do_test cast-1.2 {
+    execsql {SELECT typeof(x'616263')}
+  } blob
+  do_test cast-1.3 {
+    execsql {SELECT CAST(x'616263' AS text)}
+  } abc
+  do_test cast-1.4 {
+    execsql {SELECT typeof(CAST(x'616263' AS text))}
+  } text
+  do_test cast-1.5 {
+    execsql {SELECT CAST(x'616263' AS numeric)}
+  } 0
+  do_test cast-1.6 {
+    execsql {SELECT typeof(CAST(x'616263' AS numeric))}
+  } integer
+  do_test cast-1.7 {
+    execsql {SELECT CAST(x'616263' AS blob)}
+  } abc
+  do_test cast-1.8 {
+    execsql {SELECT typeof(CAST(x'616263' AS blob))}
+  } blob
+  do_test cast-1.9 {
+    execsql {SELECT CAST(x'616263' AS integer)}
+  } 0
+  do_test cast-1.10 {
+    execsql {SELECT typeof(CAST(x'616263' AS integer))}
+  } integer
+}
 do_test cast-1.11 {
   execsql {SELECT null}
 } {{}}

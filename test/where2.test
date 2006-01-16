@@ -12,7 +12,7 @@
 # focus of this file is testing the use of indices in WHERE clauses
 # based on recent changes to the optimizer.
 #
-# $Id: where2.test,v 1.6 2006/01/14 08:02:29 danielk1977 Exp $
+# $Id: where2.test,v 1.7 2006/01/16 16:24:25 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -146,22 +146,24 @@ ifcapable subquery {
       ORDER BY w
     }
   } {99 6 10000 10006 sort t1 i1zyx}
-  do_test where2-4.4 {
-    queryplan {
-      SELECT * FROM t1 WHERE z IN (SELECT 10207 UNION SELECT 10006)
-                       AND y IN (10000,10201)
-                       AND x>0 AND x<10
-      ORDER BY w
-    }
-  } {99 6 10000 10006 100 6 10201 10207 sort t1 i1zyx}
-  do_test where2-4.5 {
-    queryplan {
-      SELECT * FROM t1 WHERE z IN (SELECT 10207 UNION SELECT 10006)
-                       AND y IN (SELECT 10000 UNION SELECT 10201)
-                       AND x>0 AND x<10
-      ORDER BY w
-    }
-  } {99 6 10000 10006 100 6 10201 10207 sort t1 i1zyx}
+  ifcapable compound {
+    do_test where2-4.4 {
+      queryplan {
+        SELECT * FROM t1 WHERE z IN (SELECT 10207 UNION SELECT 10006)
+                         AND y IN (10000,10201)
+                         AND x>0 AND x<10
+        ORDER BY w
+      }
+    } {99 6 10000 10006 100 6 10201 10207 sort t1 i1zyx}
+    do_test where2-4.5 {
+      queryplan {
+        SELECT * FROM t1 WHERE z IN (SELECT 10207 UNION SELECT 10006)
+                         AND y IN (SELECT 10000 UNION SELECT 10201)
+                         AND x>0 AND x<10
+        ORDER BY w
+      }
+    } {99 6 10000 10006 100 6 10201 10207 sort t1 i1zyx}
+  }
   do_test where2-4.6 {
     queryplan {
       SELECT * FROM t1
@@ -180,14 +182,16 @@ ifcapable subquery {
       ORDER BY w
     }
   } {99 6 10000 10006 100 6 10201 10207 sort t1 i1zyx}
-  do_test where2-4.7 {
-    queryplan {
-      SELECT * FROM t1 WHERE z IN (
-         SELECT 10207 UNION ALL SELECT 10006
-         UNION ALL SELECT 10006 UNION ALL SELECT 10207)
-      ORDER BY w
-    }
-  } {99 6 10000 10006 100 6 10201 10207 sort t1 i1zyx}
+  ifcapable compound {
+    do_test where2-4.7 {
+      queryplan {
+        SELECT * FROM t1 WHERE z IN (
+           SELECT 10207 UNION ALL SELECT 10006
+           UNION ALL SELECT 10006 UNION ALL SELECT 10207)
+        ORDER BY w
+      }
+    } {99 6 10000 10006 100 6 10201 10207 sort t1 i1zyx}
+  }
 
 } ;# ifcapable subquery
 

@@ -12,7 +12,7 @@
 # of this file is testing the interaction of SQLite manifest types
 # with Tcl dual-representations.
 #
-# $Id: types3.test,v 1.3 2005/11/14 22:29:06 drh Exp $
+# $Id: types3.test,v 1.4 2006/01/16 16:24:25 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -56,10 +56,12 @@ do_test types3-1.6 {
 
 # Check to make sure return values are of the right types.
 #
-do_test types3-2.1 {
-  set V [db one {SELECT x'616263'}]
-  tcl_variable_type V
-} bytearray
+ifcapable bloblit {
+  do_test types3-2.1 {
+    set V [db one {SELECT x'616263'}]
+    tcl_variable_type V
+  } bytearray
+}
 do_test types3-2.2 {
   set V [db one {SELECT 123}]
   tcl_variable_type V

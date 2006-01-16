@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: shared.test,v 1.15 2006/01/16 15:14:29 danielk1977 Exp $
+# $Id: shared.test,v 1.16 2006/01/16 16:24:25 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -336,25 +336,27 @@ do_test shared-$av.4.3.4 {
 # Finally, compile a read of the other database using handle 2. This
 # should also fail.
 #
-do_test shared-$av.4.4.1.2 {
-  # Sanity check 1: Check that the schema is what we think it is when viewed
-  # via handle 1.
-  execsql {
-    CREATE TABLE test2.ghi(g, h, i);
-    SELECT 'test.db:'||name FROM sqlite_master 
-    UNION ALL
-    SELECT 'test2.db:'||name FROM test2.sqlite_master;
-  }
-} {test.db:abc test.db:def test2.db:ghi}
-do_test shared-$av.4.4.1.2 {
-  # Sanity check 2: Check that the schema is what we think it is when viewed
-  # via handle 2.
-  execsql {
-    SELECT 'test2.db:'||name FROM sqlite_master 
-    UNION ALL
-    SELECT 'test.db:'||name FROM test.sqlite_master;
-  } db2
-} {test2.db:ghi test.db:abc test.db:def}
+ifcapable compound {
+  do_test shared-$av.4.4.1.2 {
+    # Sanity check 1: Check that the schema is what we think it is when viewed
+    # via handle 1.
+    execsql {
+      CREATE TABLE test2.ghi(g, h, i);
+      SELECT 'test.db:'||name FROM sqlite_master 
+      UNION ALL
+      SELECT 'test2.db:'||name FROM test2.sqlite_master;
+    }
+  } {test.db:abc test.db:def test2.db:ghi}
+  do_test shared-$av.4.4.1.2 {
+    # Sanity check 2: Check that the schema is what we think it is when viewed
+    # via handle 2.
+    execsql {
+      SELECT 'test2.db:'||name FROM sqlite_master 
+      UNION ALL
+      SELECT 'test.db:'||name FROM test.sqlite_master;
+    } db2
+  } {test2.db:ghi test.db:abc test.db:def}
+}
 
 do_test shared-$av.4.4.2 {
   set ::DB2 [sqlite3_connection_pointer db2]
@@ -422,11 +424,13 @@ do_test shared-$av.5.1.2 {
     DROP TABLE t1;
   } db2
 } {}
-do_test shared-$av.5.1.2 {
-  execsql {
-    SELECT * FROM sqlite_master UNION ALL SELECT * FROM test1.sqlite_master
-  } db1
-} {}
+ifcapable compound {
+  do_test shared-$av.5.1.2 {
+    execsql {
+      SELECT * FROM sqlite_master UNION ALL SELECT * FROM test1.sqlite_master
+    } db1
+  } {}
+}
 
 #--------------------------------------------------------------------------
 # Tests shared-6.* test that a query obtains all the read-locks it needs
@@ -441,11 +445,15 @@ do_test shared-$av.6.1.1 {
     INSERT INTO t1 VALUES(1, 2);
     INSERT INTO t2 VALUES(3, 4);
   } db1
-  execsql {
-    SELECT * FROM t1 UNION ALL SELECT * FROM t2;
-  } db2
-} {1 2 3 4}
-do_test shared-$av.6.1.2 {
+} {}
+ifcapable compound {
+  do_test shared-$av.6.1.2 {
+    execsql {
+      SELECT * FROM t1 UNION ALL SELECT * FROM t2;
+    } db2
+  } {1 2 3 4}
+}
+do_test shared-$av.6.1.3 {
   # Establish a write lock on table t2 via connection db2. Then make a 
   # UNION all query using connection db1 that first accesses t1, followed 
   # by t2. If the locks are grabbed at the start of the statement (as 
@@ -465,7 +473,7 @@ do_test shared-$av.6.1.2 {
   }
   set ret
 } {}
-do_test shared-$av.6.1.3 {
+do_test shared-$av.6.1.4 {
   execsql {
     COMMIT;
     BEGIN;

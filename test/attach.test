@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach.test,v 1.41 2005/11/29 03:13:22 drh Exp $
+# $Id: attach.test,v 1.42 2006/01/16 16:24:25 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -728,13 +728,6 @@ do_test attach-6.3 {
     CREATE TABLE no_such_db.t1(a, b, c);
   }
 } {1 {unknown database no_such_db}}
-ifcapable !compound {
-  do_test attach-6.4 {
-    catchsql {
-      CREATE TEMP TABLE db2.temp1(a, b, c);
-    }
-  } {1 {temporary table name must be unqualified}}
-}
 for {set i 2} {$i<=15} {incr i} {
   catch {db$i close}
 }

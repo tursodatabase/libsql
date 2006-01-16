@@ -11,14 +11,14 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the SELECT statement.
 #
-# $Id: autovacuum.test,v 1.19 2005/09/16 09:52:30 danielk1977 Exp $
+# $Id: autovacuum.test,v 1.20 2006/01/16 16:24:25 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
 # If this build of the library does not support auto-vacuum, omit this
 # whole file.
-ifcapable {!autovacuum} {
+ifcapable {!autovacuum || !pragma} {
   finish_test
   return
 }

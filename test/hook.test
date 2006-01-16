@@ -17,7 +17,7 @@
 #      sqlite_update_hook    (tests hook-4-*)
 #      sqlite_rollback_hook  (tests hook-5.*)
 #
-# $Id: hook.test,v 1.9 2006/01/05 23:42:52 drh Exp $
+# $Id: hook.test,v 1.10 2006/01/16 16:24:25 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -209,17 +209,19 @@ do_test hook-4.3.1 {
     DELETE main t1 3 \
 ]
 set ::update_hook {}
-do_test hook-4.3.2 {
-  execsql {
-    SELECT * FROM t1 UNION SELECT * FROM t3;
-    SELECT * FROM t1 UNION ALL SELECT * FROM t3;
-    SELECT * FROM t1 INTERSECT SELECT * FROM t3;
-    SELECT * FROM t1 EXCEPT SELECT * FROM t3;
-    SELECT * FROM t1 ORDER BY b;
-    SELECT * FROM t1 GROUP BY b;
-  }
-  set ::update_hook
-} [list]
+ifcapable compound {
+  do_test hook-4.3.2 {
+    execsql {
+      SELECT * FROM t1 UNION SELECT * FROM t3;
+      SELECT * FROM t1 UNION ALL SELECT * FROM t3;
+      SELECT * FROM t1 INTERSECT SELECT * FROM t3;
+      SELECT * FROM t1 EXCEPT SELECT * FROM t3;
+      SELECT * FROM t1 ORDER BY b;
+      SELECT * FROM t1 GROUP BY b;
+    }
+    set ::update_hook
+  } [list]
+}
 db update_hook {}
 #
 #----------------------------------------------------------------------------

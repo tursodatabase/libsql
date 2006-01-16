@@ -13,7 +13,7 @@
 # file format change that may be used in the future to implement
 # "ALTER TABLE ... ADD COLUMN".
 #
-# $Id: alter3.test,v 1.7 2005/12/30 16:28:02 danielk1977 Exp $
+# $Id: alter3.test,v 1.8 2006/01/16 16:24:25 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -87,13 +87,15 @@ do_test alter3-1.5 {
     SELECT sql FROM sqlite_master WHERE tbl_name = 't1';
   }
 } {{CREATE TABLE t1(a, b, c, d CHECK (a>d))}}
-do_test alter3-1.6 {
-  execsql {
-    CREATE TABLE t2(a, b, UNIQUE(a, b));
-    ALTER TABLE t2 ADD c REFERENCES t1(c)  ;
-    SELECT sql FROM sqlite_master WHERE tbl_name = 't2' AND type = 'table';
-  }
-} {{CREATE TABLE t2(a, b, c REFERENCES t1(c), UNIQUE(a, b))}}
+ifcapable foreignkey {
+  do_test alter3-1.6 {
+    execsql {
+      CREATE TABLE t2(a, b, UNIQUE(a, b));
+      ALTER TABLE t2 ADD c REFERENCES t1(c)  ;
+      SELECT sql FROM sqlite_master WHERE tbl_name = 't2' AND type = 'table';
+    }
+  } {{CREATE TABLE t2(a, b, c REFERENCES t1(c), UNIQUE(a, b))}}
+}
 do_test alter3-1.7 {
   execsql {
     CREATE TABLE t3(a, b, UNIQUE(a, b));
@@ -102,10 +104,13 @@ do_test alter3-1.7 {
   }
 } {{CREATE TABLE t3(a, b, c VARCHAR(10, 20), UNIQUE(a, b))}}
 do_test alter3-1.99 {
+  catchsql {
+    # May not exist if foriegn-keys are omitted at compile time.
+    DROP TABLE t2; 
+  }
   execsql {
     DROP TABLE abc; 
     DROP TABLE t1; 
-    DROP TABLE t2; 
     DROP TABLE t3; 
   }
 } {}

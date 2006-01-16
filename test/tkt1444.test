@@ -17,6 +17,11 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+ifcapable compound {
+  finish_test
+  return 
+}
+
 # The use of a VIEW that contained an ORDER BY clause within a UNION ALL
 # was causing problems.  See ticket #1444.
 #

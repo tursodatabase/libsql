@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is descending indices.
 #
-# $Id: descidx1.test,v 1.4 2006/01/12 01:56:44 drh Exp $
+# $Id: descidx1.test,v 1.5 2006/01/16 16:24:25 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -170,58 +170,60 @@ do_test descidx1-3.26 {
 # Create a table with indices that are descending on some terms and
 # ascending on others.
 #
-do_test descidx1-4.1 {
-  execsql {
-    CREATE TABLE t2(a INT, b TEXT, c BLOB, d REAL);
-    CREATE INDEX i3 ON t2(a ASC, b DESC, c ASC);
-    CREATE INDEX i4 ON t2(b DESC, a ASC, d DESC);
-    INSERT INTO t2 VALUES(1,'one',x'31',1.0);
-    INSERT INTO t2 VALUES(2,'two',x'3232',2.0);
-    INSERT INTO t2 VALUES(3,'three',x'333333',3.0);
-    INSERT INTO t2 VALUES(4,'four',x'34343434',4.0);
-    INSERT INTO t2 VALUES(5,'five',x'3535353535',5.0);
-    INSERT INTO t2 VALUES(6,'six',x'363636363636',6.0);
-    INSERT INTO t2 VALUES(2,'two',x'323232',2.1);
-    INSERT INTO t2 VALUES(2,'zwei',x'3232',2.2);
-    INSERT INTO t2 VALUES(2,NULL,NULL,2.3);
-    SELECT count(*) FROM t2;
-  }
-} {9}
-do_test descidx1-4.2 {
-  execsql {
-    SELECT d FROM t2 ORDER BY a;
-  }
-} {1.0 2.2 2.0 2.1 2.3 3.0 4.0 5.0 6.0}
-do_test descidx1-4.3 {
-  execsql {
-    SELECT d FROM t2 WHERE a>=2;
-  }
-} {2.2 2.0 2.1 2.3 3.0 4.0 5.0 6.0}
-do_test descidx1-4.4 {
-  execsql {
-    SELECT d FROM t2 WHERE a>2;
-  }
-} {3.0 4.0 5.0 6.0}
-do_test descidx1-4.5 {
-  execsql {
-    SELECT d FROM t2 WHERE a=2 AND b>'two';
-  }
-} {2.2}
-do_test descidx1-4.6 {
-  execsql {
-    SELECT d FROM t2 WHERE a=2 AND b>='two';
-  }
-} {2.2 2.0 2.1}
-do_test descidx1-4.7 {
-  execsql {
-    SELECT d FROM t2 WHERE a=2 AND b<'two';
-  }
-} {}
-do_test descidx1-4.8 {
-  execsql {
-    SELECT d FROM t2 WHERE a=2 AND b<='two';
-  }
-} {2.0 2.1}
+ifcapable bloblit {
+  do_test descidx1-4.1 {
+    execsql {
+      CREATE TABLE t2(a INT, b TEXT, c BLOB, d REAL);
+      CREATE INDEX i3 ON t2(a ASC, b DESC, c ASC);
+      CREATE INDEX i4 ON t2(b DESC, a ASC, d DESC);
+      INSERT INTO t2 VALUES(1,'one',x'31',1.0);
+      INSERT INTO t2 VALUES(2,'two',x'3232',2.0);
+      INSERT INTO t2 VALUES(3,'three',x'333333',3.0);
+      INSERT INTO t2 VALUES(4,'four',x'34343434',4.0);
+      INSERT INTO t2 VALUES(5,'five',x'3535353535',5.0);
+      INSERT INTO t2 VALUES(6,'six',x'363636363636',6.0);
+      INSERT INTO t2 VALUES(2,'two',x'323232',2.1);
+      INSERT INTO t2 VALUES(2,'zwei',x'3232',2.2);
+      INSERT INTO t2 VALUES(2,NULL,NULL,2.3);
+      SELECT count(*) FROM t2;
+    }
+  } {9}
+  do_test descidx1-4.2 {
+    execsql {
+      SELECT d FROM t2 ORDER BY a;
+    }
+  } {1.0 2.2 2.0 2.1 2.3 3.0 4.0 5.0 6.0}
+  do_test descidx1-4.3 {
+    execsql {
+      SELECT d FROM t2 WHERE a>=2;
+    }
+  } {2.2 2.0 2.1 2.3 3.0 4.0 5.0 6.0}
+  do_test descidx1-4.4 {
+    execsql {
+      SELECT d FROM t2 WHERE a>2;
+    }
+  } {3.0 4.0 5.0 6.0}
+  do_test descidx1-4.5 {
+    execsql {
+      SELECT d FROM t2 WHERE a=2 AND b>'two';
+    }
+  } {2.2}
+  do_test descidx1-4.6 {
+    execsql {
+      SELECT d FROM t2 WHERE a=2 AND b>='two';
+    }
+  } {2.2 2.0 2.1}
+  do_test descidx1-4.7 {
+    execsql {
+      SELECT d FROM t2 WHERE a=2 AND b<'two';
+    }
+  } {}
+  do_test descidx1-4.8 {
+    execsql {
+      SELECT d FROM t2 WHERE a=2 AND b<='two';
+    }
+  } {2.0 2.1}
+}
 
 do_test descidx1-5.1 {
   execsql {

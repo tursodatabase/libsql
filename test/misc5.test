@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc5.test,v 1.9 2006/01/14 08:02:28 danielk1977 Exp $
+# $Id: misc5.test,v 1.10 2006/01/16 16:24:25 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -510,7 +510,7 @@ do_test misc5-5.4 {
 db close
 file delete -force test.db
 sqlite3 db test.db
-ifcapable subquery {
+ifcapable subquery&&compound {
   do_test misc5-6.1 {
     catchsql {
       SELECT * FROM sqlite_master 
