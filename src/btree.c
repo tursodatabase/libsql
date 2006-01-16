@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.298 2006/01/15 11:39:18 danielk1977 Exp $
+** $Id: btree.c,v 1.299 2006/01/16 15:14:27 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -3347,10 +3347,10 @@ int sqlite3BtreeMoveto(BtCursor *pCur, const void *pKey, i64 nKey, int *pRes){
         }
         pCell = findCell(pPage, pCur->idx) + pPage->childPtrSize;
         if( pPage->hasData ){
-          int dummy;
+          u32 dummy;
           pCell += getVarint32(pCell, &dummy);
         }
-        getVarint(pCell, &nCellKey);
+        getVarint(pCell, (u64 *)&nCellKey);
         if( nCellKey<nKey ){
           c = -1;
         }else if( nCellKey>nKey ){

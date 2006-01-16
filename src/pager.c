@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.239 2006/01/16 12:46:41 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.240 2006/01/16 15:14:28 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -429,7 +429,7 @@ static void put32bits(char *ac, u32 val){
 ** on success or an error code is something goes wrong.
 */
 static int write32bits(OsFile *fd, u32 val){
-  unsigned char ac[4];
+  char ac[4];
   put32bits(ac, val);
   return sqlite3OsWrite(fd, ac, 4);
 }
@@ -439,8 +439,8 @@ static int write32bits(OsFile *fd, u32 val){
 ** 'p' at offset 'offset'.
 */
 static void store32bits(u32 val, PgHdr *p, int offset){
-  unsigned char *ac;
-  ac = &((unsigned char*)PGHDR_TO_DATA(p))[offset];
+  char *ac;
+  ac = &((char*)PGHDR_TO_DATA(p))[offset];
   put32bits(ac, val);
 }
 

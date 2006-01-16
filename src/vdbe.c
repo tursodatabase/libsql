@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.530 2006/01/15 14:11:49 danielk1977 Exp $
+** $Id: vdbe.c,v 1.531 2006/01/16 15:14:28 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2022,7 +2022,7 @@ case OP_Column: {
       zData = sMem.z;
     }
     zEndHdr = (u8 *)zData + offset;
-    zIdx = zData + (int)zIdx;
+    zIdx = (u8 *)zData + (int)zIdx;
 
     /* Scan the header and use it to fill in the aType[] and aOffset[]
     ** arrays.  aType[i] will contain the type integer for the i-th

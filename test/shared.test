@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: shared.test,v 1.14 2006/01/16 12:46:41 danielk1977 Exp $
+# $Id: shared.test,v 1.15 2006/01/16 15:14:29 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -24,17 +24,22 @@ set ::enable_shared_cache [sqlite3_enable_shared_cache 1]
 
 foreach av [list 0 1] {
 
-ifcapable !autovacuum {
-  if {$av} break
+# Open the database connection and execute the auto-vacuum pragma
+file delete -force test.db
+sqlite3 db test.db
+
+ifcapable autovacuum {
+  do_test shared-[expr $av+1].1.0 {
+    execsql "pragma auto_vacuum=$::av"
+    execsql {pragma auto_vacuum}
+  } "$av"
+} else {
+  if {$av} {
+    db close
+    break
+  }
 }
 
-# Open the database connection and execute the auto-vacuum pragma
-do_test shared-$av.1.0 {
-  file delete -force test.db
-  sqlite3 db test.db
-  execsql "pragma auto_vacuum=$::av"
-  execsql {pragma auto_vacuum}
-} "$av"
 incr av
 
 # Test organization:
@@ -496,7 +501,6 @@ do_test shared-$av.7.1 {
   sqlite3 db test.db
   sqlite3 db2 test.db
   execsql {
-    PRAGMA auto_vacuum = 1;
     BEGIN;
     CREATE TABLE t1(a PRIMARY KEY, b);
     CREATE TABLE t2(a PRIMARY KEY, b);
@@ -514,10 +518,7 @@ do_test shared-$av.7.1 {
     INSERT INTO t2 SELECT * FROM t1;
     COMMIT;
   }
-  execsql {
-    PRAGMA auto_vacuum;
-  }
-} {1}
+} {}
 do_test shared-$av.7.2 {
   # This test case deletes the contents of table t1 (the one at the start of
   # the file) while many cursors are open on table t2 and it's index. All of

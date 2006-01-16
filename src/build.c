@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.380 2006/01/13 18:06:40 danielk1977 Exp $
+** $Id: build.c,v 1.381 2006/01/16 15:14:28 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1547,10 +1547,14 @@ void sqlite3EndTable(
 
 #ifndef SQLITE_OMIT_ALTERTABLE
     if( !p->pSelect ){
-      const unsigned char *zName = pParse->sNameToken.z;
+      const char *zName = (const char *)pParse->sNameToken.z;
+      int nName;
       assert( !pSelect && pCons && pEnd );
-      if( pCons->z==0 ) pCons = pEnd;
-      p->addColOffset = 13 + sqlite3utf8CharLen(zName, pCons->z - zName);
+      if( pCons->z==0 ){
+        pCons = pEnd;
+      }
+      nName = (const char *)pCons->z - zName;
+      p->addColOffset = 13 + sqlite3utf8CharLen(zName, nName);
     }
 #endif
   }
@@ -2362,7 +2366,7 @@ void sqlite3CreateIndex(
   );
   if( sqlite3ThreadDataReadOnly()->mallocFailed ) goto exit_create_index;
   pIndex->aiColumn = (int *)(&pIndex[1]);
-  pIndex->aiRowEst = (int *)(&pIndex->aiColumn[nCol]);
+  pIndex->aiRowEst = (unsigned *)(&pIndex->aiColumn[nCol]);
   pIndex->azColl = (char **)(&pIndex->aiRowEst[nCol+1]);
   pIndex->aSortOrder = (u8 *)(&pIndex->azColl[nCol]);
   pIndex->zName = (char *)(&pIndex->aSortOrder[nCol]);
@@ -3154,7 +3158,7 @@ void sqlite3Reindex(Parse *pParse, Token *pName1, Token *pName2){
     assert( pName1->z );
     pColl = sqlite3FindCollSeq(db, ENC(db), (char*)pName1->z, pName1->n, 0);
     if( pColl ){
-      char *z = sqliteStrNDup(pName1->z, pName1->n);
+      char *z = sqliteStrNDup((const char *)pName1->z, pName1->n);
       if( z ){
         reindexDatabases(pParse, z);
         sqliteFree(z);

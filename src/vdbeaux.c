@@ -440,11 +440,11 @@ void sqlite3VdbeChangeP3(Vdbe *p, int addr, const char *zP3, int n){
     pKeyInfo = sqliteMallocRaw( nByte );
     pOp->p3 = (char*)pKeyInfo;
     if( pKeyInfo ){
-      char *aSortOrder;
+      unsigned char *aSortOrder;
       memcpy(pKeyInfo, zP3, nByte);
       aSortOrder = pKeyInfo->aSortOrder;
       if( aSortOrder ){
-        pKeyInfo->aSortOrder = (char*)&pKeyInfo->aColl[nField];
+        pKeyInfo->aSortOrder = (unsigned char*)&pKeyInfo->aColl[nField];
         memcpy(pKeyInfo->aSortOrder, aSortOrder, nField);
       }
       pOp->p3type = P3_KEYINFO;
