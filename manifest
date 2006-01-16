@@ -1,5 +1,5 @@
-C Version\s3.3.1\s(withdrawn\s-\ssee\sticket\s#1614)\s(CVS\s2955)
-D 2006-01-16T00:05:00
+C Fix\sthe\sscript\sthat\scross-compiles\sthe\swindows\sDLL\sso\sthat\sit\sworks\ncorrectly\swith\sthe\slatest\sinterface.\s\sTicket\s#1614.\s\sDo\snot\sstrip\nthe\swindows\sDLL.\s\sTicket\s#1474.\s(CVS\s2954)
+D 2006-01-16T02:37:51
 F Makefile.in ab3ffd8d469cef4477257169b82810030a6bb967
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -20,7 +20,7 @@ F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
 F main.mk f397e2343efec5f89f6481c694439e0f50c30ee1
-F mkdll.sh 5ec23622515d5bf8969404e80cfb5e220ddf0512
+F mkdll.sh f80661ba5f9e23fb5d6e3da532433da766c917f5
 F mkopcodec.awk bd46ad001c98dfbab07b1713cb8e692fa0e5415d
 F mkopcodeh.awk 071dbba4eaf56c8d643baf4604a043af35683316
 F mkso.sh 125868def279650a07d3f0f5e8476fecf99613fd
@@ -28,7 +28,7 @@ F publish.sh ed0aba4ffdfadb36597d03ce8efdae96efc038cb
 F spec.template b2f6c4e488cbc3b993a57deba22cbc36203c4da3
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
-F sqlite3.def 99ac9728b515bb49d1af29153d64c8e7aad7bcc3
+F sqlite3.def f756049b1bf3e8442baf6862db393ca423225262
 F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
 F src/alter.c 4139c8f1d0f12b1759e767b1d09dd594e2b5ac1d
 F src/analyze.c 7d2b7ab9a9c2fd6e55700f69064dfdd3e36d7a8a
@@ -341,7 +341,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P c7da3aa9bdf7b788424633015000955606e93f48
-R 1dc12218426b9b407634d9b62a2d6462
+P ed0f1d9086de3ffa77c9864bf880e2930ef0f96f
+R 7d7be83f73b610d0efb0d6e55a70818a
 U drh
-Z f41c463b978890872fd3ae89232ee21f
+Z 169f3017b17a0fb01db92683b9d558b0

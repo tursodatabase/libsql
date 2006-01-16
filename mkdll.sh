@@ -31,7 +31,7 @@ i386-mingw32msvc-dllwrap \
      --as i386-mingw32msvc-as \
      --target i386-mingw32 \
      -dllname tclsqlite3.dll -lmsvcrt *.o $TCLSTUBLIB
-i386-mingw32msvc-strip tclsqlite3.dll
+#i386-mingw32msvc-strip tclsqlite3.dll
 rm tclsqlite.o
 i386-mingw32msvc-dllwrap \
      --def sqlite3.def -v --export-all \

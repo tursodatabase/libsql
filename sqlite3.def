@@ -40,7 +40,6 @@ sqlite3_create_function
 sqlite3_create_function16
 sqlite3_data_count
 sqlite3_db_handle
-sqlite3_enable_memory_management
 sqlite3_enable_shared_cache
 sqlite3_errcode
 sqlite3_errmsg
@@ -64,7 +63,6 @@ sqlite3_open16
 sqlite3_prepare
 sqlite3_prepare16
 sqlite3_progress_handler
-sqlite3_release_memory
 sqlite3_reset
 sqlite3_result_blob
 sqlite3_result_double
@@ -82,7 +80,6 @@ sqlite3_rollback_hook
 sqlite3_set_authorizer
 sqlite3_set_auxdata
 sqlite3_snprintf
-sqlite3_soft_heap_limit
 sqlite3_step
 sqlite3_thread_cleanup
 sqlite3_total_changes
