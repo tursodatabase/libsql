@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.240 2006/01/16 15:14:28 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.241 2006/01/16 15:32:23 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1577,7 +1577,7 @@ int sqlite3pager_open(
   int noReadlock = (flags & PAGER_NO_READLOCK)!=0;
   char zTemp[SQLITE_TEMPNAME_SIZE];
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
-  const ThreadData *pTsdro = sqlite3ThreadDataReadOnly();
+  ThreadData *pTsd = sqlite3ThreadData();
 #endif
 
   /* If malloc() has already failed return SQLITE_NOMEM. Before even
@@ -1680,11 +1680,8 @@ int sqlite3pager_open(
   /* memset(pPager->aHash, 0, sizeof(pPager->aHash)); */
   *ppPager = pPager;
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
-  if( pTsdro->useMemoryManagement ){
-    ThreadData *pTsd = sqlite3ThreadData();
-    pPager->pNext = pTsd->pPager;
-    pTsd->pPager = pPager;
-  }
+  pPager->pNext = pTsd->pPager;
+  pTsd->pPager = pPager;
 #endif
   return SQLITE_OK;
 }
@@ -1988,7 +1985,7 @@ int sqlite3pager_truncate(Pager *pPager, Pgno nPage){
 int sqlite3pager_close(Pager *pPager){
   PgHdr *pPg, *pNext;
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
-  const ThreadData *pTsd = sqlite3ThreadDataReadOnly();
+  ThreadData *pTsd = sqlite3ThreadData();
 #endif
 
   switch( pPager->state ){
@@ -2051,14 +2048,12 @@ int sqlite3pager_close(Pager *pPager){
   /* Remove the pager from the linked list of pagers starting at 
   ** ThreadData.pPager if memory-management is enabled.
   */
-  if( pTsd->useMemoryManagement ){
-    if( pPager==pTsd->pPager ){
-      pTsd->pPager = pPager->pNext;
-    }else{
-      Pager *pTmp;
-      for(pTmp = pTsd->pPager; pTmp->pNext!=pPager; pTmp=pTmp->pNext);
-      pTmp->pNext = pPager->pNext;
-    }
+  if( pPager==pTsd->pPager ){
+    pTsd->pPager = pPager->pNext;
+  }else{
+    Pager *pTmp;
+    for(pTmp = pTsd->pPager; pTmp->pNext!=pPager; pTmp=pTmp->pNext);
+    pTmp->pNext = pPager->pNext;
   }
 #endif
 
