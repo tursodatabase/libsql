@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.467 2006/01/13 06:33:24 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.468 2006/01/16 11:29:20 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1754,7 +1754,7 @@ KeyInfo *sqlite3IndexKeyinfo(Parse *, Index *);
 #endif
 
 void sqlite3MallocClearFailed();
-#ifdef NDEBUG
+#ifndef SQLITE_MEMDEBUG
   #define sqlite3MallocDisallow()
   #define sqlite3MallocAllow()
 #else

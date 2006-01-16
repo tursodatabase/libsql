@@ -156,7 +156,8 @@ int sqlite3_step(sqlite3_stmt *pStmt){
   sqlite3 *db;
   int rc;
 
-  assert(!sqlite3ThreadDataReadOnly()->mallocFailed);
+  /* Assert that malloc() has not failed */
+  assert( !sqlite3ThreadDataReadOnly()->mallocFailed );
 
   if( p==0 || p->magic!=VDBE_MAGIC_RUN ){
     return SQLITE_MISUSE;

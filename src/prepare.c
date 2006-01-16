@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.22 2006/01/13 06:33:24 danielk1977 Exp $
+** $Id: prepare.c,v 1.23 2006/01/16 11:29:20 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -495,6 +495,7 @@ int sqlite3_prepare(
   int rc = SQLITE_OK;
   int i;
 
+  /* Assert that malloc() has not failed */
   assert( !sqlite3ThreadDataReadOnly()->mallocFailed );
 
   assert( ppStmt );
