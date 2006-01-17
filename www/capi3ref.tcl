@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3ref.tcl,v 1.29 2006/01/15 18:29:18 drh Exp $}
+set rcsid {$Id: capi3ref.tcl,v 1.30 2006/01/17 16:10:14 danielk1977 Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -1301,8 +1301,12 @@ api {} {
 } {
   This routine sets the soft heap limit for the current thread to N.
   If the total heap usage by SQLite in the current thread exceeds N,
-  then sqlite3_release_memory() is
-  called to try to reduce the memory usage below the soft limit.
+  then sqlite3_release_memory() is called to try to reduce the memory usage
+  below the soft limit.
+
+  Prior to shutting down a thread sqlite3_soft_heap_limit() must be set to 
+  zero (the default) or else the thread will leak memory. Alternatively, use
+  the sqlite3_thread_cleanup() API.
 
   A negative or zero value for N means that there is no soft heap limit and
   sqlite3_release_memory() will only be called when memory is exhaused.

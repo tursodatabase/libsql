@@ -1207,7 +1207,7 @@ ThreadData *sqlite3WinThreadSpecificData(int allocateFlag){
       }
     }
   }else if( pTsd!=0 && allocateFlag<0 
-              && memcmp(pTsd, &zeroData, sizeof(zeroData))==0 ){
+              && memcmp(pTsd, &zeroData, THREADDATASIZE)==0 ){
     sqlite3OsFree(pTsd);
     TlsSetValue(key, 0);
     TSD_COUNTER_DECR;

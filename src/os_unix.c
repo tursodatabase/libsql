@@ -1769,7 +1769,7 @@ ThreadData *sqlite3UnixThreadSpecificData(int allocateFlag){
       }
     }
   }else if( pTsd!=0 && allocateFlag<0 
-            && memcmp(pTsd, &zeroData, sizeof(zeroData))==0 ){
+            && memcmp(pTsd, &zeroData, THREADDATASIZE)==0 ){
     sqlite3OsFree(pTsd);
     pthread_setspecific(key, 0);
     TSD_COUNTER(-1);
@@ -1787,7 +1787,7 @@ ThreadData *sqlite3UnixThreadSpecificData(int allocateFlag){
       }
     }
   }else if( pTsd!=0 && allocateFlag<0
-            && memcmp(pTsd, &zeroData, sizeof(zeroData))==0 ){
+            && memcmp(pTsd, &zeroData, THREADDATASIZE)==0 ){
     sqlite3OsFree(pTsd);
     TSD_COUNTER(-1);
     pTsd = 0;

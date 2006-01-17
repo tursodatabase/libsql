@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.471 2006/01/17 15:36:32 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.472 2006/01/17 16:10:14 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -310,14 +310,30 @@ struct ThreadData {
 #endif
 
 #ifdef SQLITE_MEMDEBUG
+  void *pFirst;            /* Pointer to linked list of allocations */
   int nMaxAlloc;           /* High water mark of ThreadData.nAlloc */
   int mallocDisallowed;    /* assert() in sqlite3Malloc() if set */
   int isFail;              /* True if all malloc() calls should fail */
   const char *zFile;       /* Filename to associate debugging info with */
   int iLine;               /* Line number to associate debugging info with */
-  void *pFirst;            /* Pointer to linked list of allocations */
 #endif
 };
+
+/*
+** The THREADDATASIZE macro is used by the system that automatically 
+** deallocates ThreadData structures. If the first THREADDATASIZE bytes
+** of a ThreadData structure are all zero, then the structure is eligible
+** for deallocation.
+**
+** Usually, THREADDATASIZE is set to the size of the structure. However
+** if SQLITE_MEMDEBUG is defined, all variables declared after the 
+** ThreadData.pFirst variable are excluded.
+*/
+#ifdef SQLITE_MEMDEBUG
+  #define THREADDATASIZE (int)(&(((ThreadData *)0)->nMaxAlloc))
+#else
+  #define THREADDATASIZE sizeof(ThreadData)
+#endif
 
 /*
 ** Name of the master database table.  The master database table

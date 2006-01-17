@@ -1,5 +1,5 @@
-C Fix\scompilation\serrors\swhen\sbuilding\sSQLITE_DEBUG\sdefined\sbut\swithout\sSQLITE_MEMDEBUG.\s(CVS\s2964)
-D 2006-01-17T15:36:32
+C Arrange\sfor\sThreadData\sto\sbe\sautomatically\sdeallocated\seven\sif\sSQLITE_MEMDEBUG\sis\sdefined.\sFix\sfor\s#1623.\s(CVS\s2965)
+D 2006-01-17T16:10:14
 F Makefile.in ab3ffd8d469cef4477257169b82810030a6bb967
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -55,9 +55,9 @@ F src/os.h 9debc3d3ca4cdafde222a0ea74a4c8415aef4f22
 F src/os_common.h 95b29ca6f3e6636cb33c9219b3f91a96fa7224b1
 F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
-F src/os_unix.c 7daa1720d46bbc31c6138462b35876650eb1885e
+F src/os_unix.c 5f1ce55c0264114219cb9ae8e95b8624376c4fcb
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
-F src/os_win.c cd4ca2753aeaad11f5c9b9b6ef28752f45ed4529
+F src/os_win.c b9cb6254698cd7c2587c27e65b78c585473c6ffa
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c e84713f7196a81103cc8e2b55cebbaa1723c4926
 F src/pager.h e0acb095b3ad0bca48f2ab00c87346665643f64f
@@ -70,7 +70,7 @@ F src/select.c 28d449c7762dd580aaba49a9c6c16e93ca951e49
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 66b073375efbdee19045e7e0cd38b85f9aff71da
 F src/sqlite.h.in 492580f7e3ff71eb43193eb7bb98e2d549889ce3
-F src/sqliteInt.h e6c2e3afa7a1eab72dcaf30ad1f3410db9ddd3e4
+F src/sqliteInt.h d7b20e0a9453db123809d0bcc46d6ae0e4cf6bca
 F src/table.c 486dcfce532685b53b5a2b5da8bba0ded6fb2316
 F src/tclsqlite.c d650bea0248fc0a310ddc2cb94273a3a5021fddf
 F src/test1.c 4dccd51f786f24d8f947f1028d840ab35f46d4de
@@ -234,7 +234,7 @@ F test/table.test 6dc0dfa44dd429520e0e5a0c5e55025f730e9403
 F test/tableapi.test 6a66d58b37d46dc0f2b3c7d4bd2617d209399bd1
 F test/tclsqlite.test 9b5c4a09879a97572e5c84372f5d045dd4703392
 F test/temptable.test 7927261befdbc7b0a7ffebb85ecc70a74fa7b15b
-F test/tester.tcl b260c1acda75b4a1a03ef0c9c5582e466e350b06
+F test/tester.tcl e207c5008493dee7a03a619f1a5f23d4841ca7d7
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
 F test/thread2.test c88da55fb60d5975be91f1e2942a5e267c33f8ed
 F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
@@ -298,7 +298,7 @@ F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
 F www/autoinc.tcl b357f5ba954b046ee35392ce0f884a2fcfcdea06
 F www/c_interface.tcl b51b08591554c16a0c3ef718364a508ac25abc7e
 F www/capi3.tcl 7a7cc225fe02eb7ab861a6019b08baa0014409e1
-F www/capi3ref.tcl a029fa712ebcc7b408160ee4fb0c1b182cceea06
+F www/capi3ref.tcl 6311fd30c07aa82b4bdaab9822bce95dd8ab0e7c
 F www/changes.tcl fe45a019735518af9add1144bafd8ca3e30ad11b
 F www/common.tcl 14d121c28532ad20c3e349caa4db708b0b822083
 F www/compile.tcl 276546d7eb445add5a867193bbd80f6919a6b084
@@ -341,7 +341,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 0505405fb9ae1068b7976718efbf2aabd07592d4
-R cb03a308542c42e76784fb6f3e9d9763
+P 62dd2427784721436737a6e8e11fc05e10f0c44d
+R 394c8b76a3f1fd5dd680d2c15b203185
 U danielk1977
-Z eeefbc2d36846c9ebcbcff8403adbd5b
+Z 4cce626803e4e936d7ee616c54ded64d
