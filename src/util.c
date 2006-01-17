@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.172 2006/01/16 15:32:23 danielk1977 Exp $
+** $Id: util.c,v 1.173 2006/01/17 15:36:32 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1347,7 +1347,7 @@ void sqlite3MallocClearFailed(){
   }
 }
 
-#ifndef NDEBUG
+#ifdef SQLITE_MEMDEBUG
 /*
 ** This function sets a flag in the thread-specific-data structure that will
 ** cause an assert to fail if sqliteMalloc() or sqliteRealloc() is called.
