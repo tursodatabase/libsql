@@ -17,9 +17,10 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-# Somewhere in tkt1449-1.1 is a VIEW definition that uses a subquery.
-# So we cannot run this file if subqueries are not available.
-ifcapable !subquery {
+# Somewhere in tkt1449-1.1 is a VIEW definition that uses a subquery and
+# a compound SELECT. So we cannot run this file if any of these features
+# are not available.
+ifcapable !subquery||!compound||!view {
   finish_test
   return
 }

@@ -13,7 +13,7 @@
 # file format change that may be used in the future to implement
 # "ALTER TABLE ... ADD COLUMN".
 #
-# $Id: alter3.test,v 1.8 2006/01/16 16:24:25 danielk1977 Exp $
+# $Id: alter3.test,v 1.9 2006/01/17 09:35:02 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -143,14 +143,16 @@ do_test alter3-2.4 {
     ALTER TABLE t1 ADD c NOT NULL DEFAULT 10;
   }
 } {0 {}}
-do_test alter3-2.5 {
-  execsql {
-    CREATE VIEW v1 AS SELECT * FROM t1;
-  }
-  catchsql {
-    alter table v1 add column d;
-  }
-} {1 {Cannot add a column to a view}}
+ifcapable view {
+  do_test alter3-2.5 {
+    execsql {
+      CREATE VIEW v1 AS SELECT * FROM t1;
+    }
+    catchsql {
+      alter table v1 add column d;
+    }
+  } {1 {Cannot add a column to a view}}
+}
 do_test alter3-2.6 {
   catchsql {
     alter table t1 add column d DEFAULT CURRENT_TIME;
@@ -186,11 +188,13 @@ if {!$has_codec} {
     get_file_format
   } {3}
 }
-do_test alter3-3.4 {
-  execsql {
-    PRAGMA schema_version;
-  }
-} {11}
+ifcapable schema_version {
+  do_test alter3-3.4 {
+    execsql {
+      PRAGMA schema_version;
+    }
+  } {11}
+}
 
 do_test alter3-4.1 {
   db close
@@ -219,11 +223,13 @@ if {!$has_codec} {
     get_file_format
   } {3}
 }
-do_test alter3-4.4 {
-  execsql {
-    PRAGMA schema_version;
-  }
-} {21}
+ifcapable schema_version {
+  do_test alter3-4.4 {
+    execsql {
+      PRAGMA schema_version;
+    }
+  } {21}
+}
 do_test alter3-4.99 {
   execsql {
     DROP TABLE t1;
@@ -254,11 +260,13 @@ do_test alter3-5.3 {
     SELECT * FROM aux.t1;
   }
 } {1 one {} 2 two {}}
-do_test alter3-5.4 {
-  execsql {
-    PRAGMA aux.schema_version;
-  }
-} {31}
+ifcapable schema_version {
+  do_test alter3-5.4 {
+    execsql {
+      PRAGMA aux.schema_version;
+    }
+  } {31}
+}
 if {!$has_codec} {
   do_test alter3-5.5 {
     list [get_file_format test2.db] [get_file_format]
@@ -275,11 +283,13 @@ do_test alter3-5.7 {
     SELECT * FROM aux.t1;
   }
 } {1 one {} 1000 2 two {} 1000}
-do_test alter3-5.8 {
-  execsql {
-    PRAGMA aux.schema_version;
-  }
-} {32}
+ifcapable schema_version {
+  do_test alter3-5.8 {
+    execsql {
+      PRAGMA aux.schema_version;
+    }
+  } {32}
+}
 do_test alter3-5.9 {
   execsql {
     SELECT * FROM t1;

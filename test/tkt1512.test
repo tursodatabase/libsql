@@ -17,6 +17,11 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+ifcapable !vacuum {
+  finish_test
+  return
+}
+
 do_test tkt1512-1.1 {
   execsql {
     CREATE TABLE t1(a,b);

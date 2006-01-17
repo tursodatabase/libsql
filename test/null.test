@@ -162,26 +162,28 @@ do_test null-6.1 {
 
 # The UNIQUE constraint only applies to non-null values
 #
+ifcapable conflict {
 do_test null-7.1 {
-  execsql {
-    create table t2(a, b unique on conflict ignore);
-    insert into t2 values(1,1);
-    insert into t2 values(2,null);
-    insert into t2 values(3,null);
-    insert into t2 values(4,1);
-    select a from t2;
-  }
-} {1 2 3}
-do_test null-7.2 {
-  execsql {
-    create table t3(a, b, c, unique(b,c) on conflict ignore);
-    insert into t3 values(1,1,1);
-    insert into t3 values(2,null,1);
-    insert into t3 values(3,null,1);
-    insert into t3 values(4,1,1);
-    select a from t3;
-  }
-} {1 2 3}
+    execsql {
+      create table t2(a, b unique on conflict ignore);
+      insert into t2 values(1,1);
+      insert into t2 values(2,null);
+      insert into t2 values(3,null);
+      insert into t2 values(4,1);
+      select a from t2;
+    }
+  } {1 2 3}
+  do_test null-7.2 {
+    execsql {
+      create table t3(a, b, c, unique(b,c) on conflict ignore);
+      insert into t3 values(1,1,1);
+      insert into t3 values(2,null,1);
+      insert into t3 values(3,null,1);
+      insert into t3 values(4,1,1);
+      select a from t3;
+    }
+  } {1 2 3}
+}
 
 # Ticket #461 - Make sure nulls are handled correctly when doing a
 # lookup using an index.

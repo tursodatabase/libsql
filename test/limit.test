@@ -12,7 +12,7 @@
 # focus of this file is testing the LIMIT ... OFFSET ... clause
 #  of SELECT statements.
 #
-# $Id: limit.test,v 1.26 2006/01/08 18:10:18 drh Exp $
+# $Id: limit.test,v 1.27 2006/01/17 09:35:02 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -404,27 +404,27 @@ ifcapable compound {
 do_test limit-10.1 {
   set limit 10
   db eval {
-    SELECT x FROM t1 LIMIT $limit;
+    SELECT x FROM t1 LIMIT :limit;
   }
 } {31 30 29 28 27 26 25 24 23 22}
 do_test limit-10.2 {
   set limit 5
   set offset 5
   db eval {
-    SELECT x FROM t1 LIMIT $limit OFFSET $offset;
+    SELECT x FROM t1 LIMIT :limit OFFSET :offset;
   }
 } {26 25 24 23 22}
 do_test limit-10.3 {
   set limit -1
   db eval {
-    SELECT x FROM t1 WHERE x<10 LIMIT $limit;
+    SELECT x FROM t1 WHERE x<10 LIMIT :limit;
   }
 } {9 8 7 6 5 4 3 2 1 0}
 do_test limit-10.4 {
   set limit 1.5
   set rc [catch {
   db eval {
-    SELECT x FROM t1 WHERE x<10 LIMIT $limit;
+    SELECT x FROM t1 WHERE x<10 LIMIT :limit;
   } } msg]
   list $rc $msg
 } {1 {datatype mismatch}}
@@ -432,7 +432,7 @@ do_test limit-10.5 {
   set limit "hello world"
   set rc [catch {
   db eval {
-    SELECT x FROM t1 WHERE x<10 LIMIT $limit;
+    SELECT x FROM t1 WHERE x<10 LIMIT :limit;
   } } msg]
   list $rc $msg
 } {1 {datatype mismatch}}

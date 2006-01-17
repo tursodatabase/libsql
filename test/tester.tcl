@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.60 2006/01/16 12:46:41 danielk1977 Exp $
+# $Id: tester.tcl,v 1.61 2006/01/17 09:35:02 danielk1977 Exp $
 
 # Make sure tclsqlite3 was compiled correctly.  Abort now with an
 # error message if not.
@@ -178,7 +178,7 @@ proc finalize_testing {} {
 #
 proc execsql {sql {db db}} {
   # puts "SQL = $sql"
-  return [$db eval $sql]
+  uplevel [list $db eval $sql]
 }
 
 # Execute SQL and catch exceptions.

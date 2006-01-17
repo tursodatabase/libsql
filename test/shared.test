@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: shared.test,v 1.16 2006/01/16 16:24:25 danielk1977 Exp $
+# $Id: shared.test,v 1.17 2006/01/17 09:35:02 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -213,7 +213,7 @@ do_test shared-$av.3.1.1 {
     if {$i < 4} {
       set max [execsql {SELECT max(i) FROM seq}]
       db eval {
-        INSERT INTO seq SELECT i + $max, x FROM seq;
+        INSERT INTO seq SELECT i + :max, x FROM seq;
       }
     }
     lappend ret $i
@@ -227,7 +227,7 @@ do_test shared-$av.3.1.2 {
   # (test 3.1.3 verifies this).
   set ret [list]
   db2 eval {SELECT i FROM seq} {
-    db eval {DELETE FROM seq WHERE i = $i}
+    db eval {DELETE FROM seq WHERE i = :i}
     lappend ret $i
   }
   set ret
@@ -412,20 +412,50 @@ do_test shared-$av.5.1.2 {
   execsql {
     CREATE TABLE test1.t1(a, b);
     CREATE INDEX test1.i1 ON t1(a, b);
-    CREATE VIEW test1.v1 AS SELECT * FROM t1;
-    CREATE TRIGGER test1.trig1 AFTER INSERT ON t1 BEGIN
-      INSERT INTO t1 VALUES(new.a, new.b);
-    END;
   } db1
+} {}
+ifcapable view {
+  do_test shared-$av.5.1.3 {
+    execsql {
+      CREATE VIEW test1.v1 AS SELECT * FROM t1;
+    } db1
+  } {}
+}
+ifcapable trigger {
+  do_test shared-$av.5.1.4 {
+    execsql {
+      CREATE TRIGGER test1.trig1 AFTER INSERT ON t1 BEGIN
+        INSERT INTO t1 VALUES(new.a, new.b);
+      END;
+    } db1
+  } {}
+}
+do_test shared-$av.5.1.5 {
   execsql {
     DROP INDEX i1;
-    DROP VIEW v1;
-    DROP TRIGGER trig1;
+  } db2
+} {}
+ifcapable view {
+  do_test shared-$av.5.1.6 {
+    execsql {
+      DROP VIEW v1;
+    } db2
+  } {}
+}
+ifcapable trigger {
+  do_test shared-$av.5.1.7 {
+    execsql {
+      DROP TRIGGER trig1;
+    } db2
+  } {}
+}
+do_test shared-$av.5.1.8 {
+  execsql {
     DROP TABLE t1;
   } db2
 } {}
 ifcapable compound {
-  do_test shared-$av.5.1.2 {
+  do_test shared-$av.5.1.9 {
     execsql {
       SELECT * FROM sqlite_master UNION ALL SELECT * FROM test1.sqlite_master
     } db1
@@ -518,7 +548,7 @@ do_test shared-$av.7.1 {
     set a [string repeat "$i " 20]
     set b [string repeat "$i " 20]
     db eval {
-      INSERT INTO t1 VALUES($a, $b);
+      INSERT INTO t1 VALUES(:a, :b);
     }
     lappend ::contents [list [expr $i+1] $a $b]
   }
@@ -580,54 +610,56 @@ unset -nocomplain contents
 # the wrong encoding for a database.
 #
 file delete -force test.db test.db-journal
-do_test shared-$av.8.1.1 {
-  sqlite3 db test.db
-  execsql {
-    PRAGMA encoding = 'UTF-16';
-    SELECT * FROM sqlite_master;
-  }
-} {}
-do_test shared-$av.8.1.2 {
-  string range [execsql {PRAGMA encoding;}] 0 end-2
-} {UTF-16}
-do_test shared-$av.8.1.3 {
-  sqlite3 db2 test.db
-  execsql {
-    PRAGMA encoding = 'UTF-8';
-    CREATE TABLE abc(a, b, c);
-  } db2
-} {}
-do_test shared-$av.8.1.4 {
-  execsql {
-    SELECT * FROM sqlite_master;
-  }
-} "table abc abc [expr $AUTOVACUUM?3:2] {CREATE TABLE abc(a, b, c)}"
-do_test shared-$av.8.1.5 {
-  db2 close
-  execsql {
-    PRAGMA encoding;
-  }
-} {UTF-8}
-file delete -force test2.db test2.db-journal
-do_test shared-$av.8.2.1 {
-  execsql {
-    ATTACH 'test2.db' AS aux;
-    SELECT * FROM aux.sqlite_master;
-  }
-} {}
-do_test shared-$av.8.2.2 {
-  sqlite3 db2 test2.db
-  execsql {
-    PRAGMA encoding = 'UTF-16';
-    CREATE TABLE def(d, e, f);
-  } db2
-  string range [execsql {PRAGMA encoding;} db2] 0 end-2
-} {UTF-16}
-do_test shared-$av.8.2.3 {
-  catchsql {
-    SELECT * FROM aux.sqlite_master;
-  }
-} {1 {attached databases must use the same text encoding as main database}}
+ifcapable utf16 {
+  do_test shared-$av.8.1.1 {
+    sqlite3 db test.db
+    execsql {
+      PRAGMA encoding = 'UTF-16';
+      SELECT * FROM sqlite_master;
+    }
+  } {}
+  do_test shared-$av.8.1.2 {
+    string range [execsql {PRAGMA encoding;}] 0 end-2
+  } {UTF-16}
+  do_test shared-$av.8.1.3 {
+    sqlite3 db2 test.db
+    execsql {
+      PRAGMA encoding = 'UTF-8';
+      CREATE TABLE abc(a, b, c);
+    } db2
+  } {}
+  do_test shared-$av.8.1.4 {
+    execsql {
+      SELECT * FROM sqlite_master;
+    }
+  } "table abc abc [expr $AUTOVACUUM?3:2] {CREATE TABLE abc(a, b, c)}"
+  do_test shared-$av.8.1.5 {
+    db2 close
+    execsql {
+      PRAGMA encoding;
+    }
+  } {UTF-8}
+  file delete -force test2.db test2.db-journal
+  do_test shared-$av.8.2.1 {
+    execsql {
+      ATTACH 'test2.db' AS aux;
+      SELECT * FROM aux.sqlite_master;
+    }
+  } {}
+  do_test shared-$av.8.2.2 {
+    sqlite3 db2 test2.db
+    execsql {
+      PRAGMA encoding = 'UTF-16';
+      CREATE TABLE def(d, e, f);
+    } db2
+    string range [execsql {PRAGMA encoding;} db2] 0 end-2
+  } {UTF-16}
+  do_test shared-$av.8.2.3 {
+    catchsql {
+      SELECT * FROM aux.sqlite_master;
+    }
+  } {1 {attached databases must use the same text encoding as main database}}
+}
 
 catch {db close}
 catch {db2 close}

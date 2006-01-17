@@ -473,119 +473,121 @@ execsql {
   DROP TABLE tbl;
 }
 
-# Handling of ON CONFLICT by INSERT statements inside triggers
-execsql {
-  CREATE TABLE tbl (a primary key, b, c);
-  CREATE TRIGGER ai_tbl AFTER INSERT ON tbl BEGIN
-    INSERT OR IGNORE INTO tbl values (new.a, 0, 0);
-  END;
-}
-do_test trigger2-6.1a {
+ifcapable conflict {
+  # Handling of ON CONFLICT by INSERT statements inside triggers
   execsql {
-    BEGIN;
-    INSERT INTO tbl values (1, 2, 3);
-    SELECT * from tbl;
+    CREATE TABLE tbl (a primary key, b, c);
+    CREATE TRIGGER ai_tbl AFTER INSERT ON tbl BEGIN
+      INSERT OR IGNORE INTO tbl values (new.a, 0, 0);
+    END;
   }
-} {1 2 3}
-do_test trigger2-6.1b {
-  catchsql {
-    INSERT OR ABORT INTO tbl values (2, 2, 3);
-  }
-} {1 {column a is not unique}}
-do_test trigger2-6.1c {
+  do_test trigger2-6.1a {
+    execsql {
+      BEGIN;
+      INSERT INTO tbl values (1, 2, 3);
+      SELECT * from tbl;
+    }
+  } {1 2 3}
+  do_test trigger2-6.1b {
+    catchsql {
+      INSERT OR ABORT INTO tbl values (2, 2, 3);
+    }
+  } {1 {column a is not unique}}
+  do_test trigger2-6.1c {
+    execsql {
+      SELECT * from tbl;
+    }
+  } {1 2 3}
+  do_test trigger2-6.1d {
+    catchsql {
+      INSERT OR FAIL INTO tbl values (2, 2, 3);
+    }
+  } {1 {column a is not unique}}
+  do_test trigger2-6.1e {
+    execsql {
+      SELECT * from tbl;
+    }
+  } {1 2 3 2 2 3}
+  do_test trigger2-6.1f {
+    execsql {
+      INSERT OR REPLACE INTO tbl values (2, 2, 3);
+      SELECT * from tbl;
+    }
+  } {1 2 3 2 0 0}
+  do_test trigger2-6.1g {
+    catchsql {
+      INSERT OR ROLLBACK INTO tbl values (3, 2, 3);
+    }
+  } {1 {column a is not unique}}
+  do_test trigger2-6.1h {
+    execsql {
+      SELECT * from tbl;
+    }
+  } {}
+  execsql {DELETE FROM tbl}
+  
+  
+  # Handling of ON CONFLICT by UPDATE statements inside triggers
   execsql {
-    SELECT * from tbl;
+    INSERT INTO tbl values (4, 2, 3);
+    INSERT INTO tbl values (6, 3, 4);
+    CREATE TRIGGER au_tbl AFTER UPDATE ON tbl BEGIN
+      UPDATE OR IGNORE tbl SET a = new.a, c = 10;
+    END;
   }
-} {1 2 3}
-do_test trigger2-6.1d {
-  catchsql {
-    INSERT OR FAIL INTO tbl values (2, 2, 3);
-  }
-} {1 {column a is not unique}}
-do_test trigger2-6.1e {
+  do_test trigger2-6.2a {
+    execsql {
+      BEGIN;
+      UPDATE tbl SET a = 1 WHERE a = 4;
+      SELECT * from tbl;
+    }
+  } {1 2 10 6 3 4}
+  do_test trigger2-6.2b {
+    catchsql {
+      UPDATE OR ABORT tbl SET a = 4 WHERE a = 1;
+    }
+  } {1 {column a is not unique}}
+  do_test trigger2-6.2c {
+    execsql {
+      SELECT * from tbl;
+    }
+  } {1 2 10 6 3 4}
+  do_test trigger2-6.2d {
+    catchsql {
+      UPDATE OR FAIL tbl SET a = 4 WHERE a = 1;
+    }
+  } {1 {column a is not unique}}
+  do_test trigger2-6.2e {
+    execsql {
+      SELECT * from tbl;
+    }
+  } {4 2 10 6 3 4}
+  do_test trigger2-6.2f.1 {
+    execsql {
+      UPDATE OR REPLACE tbl SET a = 1 WHERE a = 4;
+      SELECT * from tbl;
+    }
+  } {1 3 10}
+  do_test trigger2-6.2f.2 {
+    execsql {
+      INSERT INTO tbl VALUES (2, 3, 4);
+      SELECT * FROM tbl;
+    }
+  } {1 3 10 2 3 4}
+  do_test trigger2-6.2g {
+    catchsql {
+      UPDATE OR ROLLBACK tbl SET a = 4 WHERE a = 1;
+    }
+  } {1 {column a is not unique}}
+  do_test trigger2-6.2h {
+    execsql {
+      SELECT * from tbl;
+    }
+  } {4 2 3 6 3 4}
   execsql {
-    SELECT * from tbl;
+    DROP TABLE tbl;
   }
-} {1 2 3 2 2 3}
-do_test trigger2-6.1f {
-  execsql {
-    INSERT OR REPLACE INTO tbl values (2, 2, 3);
-    SELECT * from tbl;
-  }
-} {1 2 3 2 0 0}
-do_test trigger2-6.1g {
-  catchsql {
-    INSERT OR ROLLBACK INTO tbl values (3, 2, 3);
-  }
-} {1 {column a is not unique}}
-do_test trigger2-6.1h {
-  execsql {
-    SELECT * from tbl;
-  }
-} {}
-execsql {DELETE FROM tbl}
-
-
-# Handling of ON CONFLICT by UPDATE statements inside triggers
-execsql {
-  INSERT INTO tbl values (4, 2, 3);
-  INSERT INTO tbl values (6, 3, 4);
-  CREATE TRIGGER au_tbl AFTER UPDATE ON tbl BEGIN
-    UPDATE OR IGNORE tbl SET a = new.a, c = 10;
-  END;
-}
-do_test trigger2-6.2a {
-  execsql {
-    BEGIN;
-    UPDATE tbl SET a = 1 WHERE a = 4;
-    SELECT * from tbl;
-  }
-} {1 2 10 6 3 4}
-do_test trigger2-6.2b {
-  catchsql {
-    UPDATE OR ABORT tbl SET a = 4 WHERE a = 1;
-  }
-} {1 {column a is not unique}}
-do_test trigger2-6.2c {
-  execsql {
-    SELECT * from tbl;
-  }
-} {1 2 10 6 3 4}
-do_test trigger2-6.2d {
-  catchsql {
-    UPDATE OR FAIL tbl SET a = 4 WHERE a = 1;
-  }
-} {1 {column a is not unique}}
-do_test trigger2-6.2e {
-  execsql {
-    SELECT * from tbl;
-  }
-} {4 2 10 6 3 4}
-do_test trigger2-6.2f.1 {
-  execsql {
-    UPDATE OR REPLACE tbl SET a = 1 WHERE a = 4;
-    SELECT * from tbl;
-  }
-} {1 3 10}
-do_test trigger2-6.2f.2 {
-  execsql {
-    INSERT INTO tbl VALUES (2, 3, 4);
-    SELECT * FROM tbl;
-  }
-} {1 3 10 2 3 4}
-do_test trigger2-6.2g {
-  catchsql {
-    UPDATE OR ROLLBACK tbl SET a = 4 WHERE a = 1;
-  }
-} {1 {column a is not unique}}
-do_test trigger2-6.2h {
-  execsql {
-    SELECT * from tbl;
-  }
-} {4 2 3 6 3 4}
-execsql {
-  DROP TABLE tbl;
-}
+} ; # ifcapable conflict
 
 # 7. Triggers on views
 ifcapable view {

@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: auth.test,v 1.32 2006/01/16 16:24:25 danielk1977 Exp $
+# $Id: auth.test,v 1.33 2006/01/17 09:35:02 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -2092,32 +2092,32 @@ do_test auth-2.11.2 {
 # Make sure the OLD and NEW pseudo-tables of a trigger get authorized.
 #
 ifcapable trigger {
-do_test auth-3.1 {
-  proc auth {code arg1 arg2 arg3 arg4} {
-    return SQLITE_OK
-  }
-  execsql {
-    CREATE TABLE tx(a1,a2,b1,b2,c1,c2);
-    CREATE TRIGGER r1 AFTER UPDATE ON t2 FOR EACH ROW BEGIN
-      INSERT INTO tx VALUES(OLD.a,NEW.a,OLD.b,NEW.b,OLD.c,NEW.c);
-    END;
-    UPDATE t2 SET a=a+1;
-    SELECT * FROM tx;
-  }
-} {11 12 2 2 33 33 7 8 8 8 9 9}
-do_test auth-3.2 {
-  proc auth {code arg1 arg2 arg3 arg4} {
-    if {$code=="SQLITE_READ" && $arg1=="t2" && $arg2=="c"} {
-      return SQLITE_IGNORE
+  do_test auth-3.1 {
+    proc auth {code arg1 arg2 arg3 arg4} {
+      return SQLITE_OK
     }
-    return SQLITE_OK
-  }
-  execsql {
-    DELETE FROM tx;
-    UPDATE t2 SET a=a+100;
-    SELECT * FROM tx;
-  }
-} {12 112 2 2 {} {} 8 108 8 8 {} {}}
+    execsql {
+      CREATE TABLE tx(a1,a2,b1,b2,c1,c2);
+      CREATE TRIGGER r1 AFTER UPDATE ON t2 FOR EACH ROW BEGIN
+        INSERT INTO tx VALUES(OLD.a,NEW.a,OLD.b,NEW.b,OLD.c,NEW.c);
+      END;
+      UPDATE t2 SET a=a+1;
+      SELECT * FROM tx;
+    }
+  } {11 12 2 2 33 33 7 8 8 8 9 9}
+  do_test auth-3.2 {
+    proc auth {code arg1 arg2 arg3 arg4} {
+      if {$code=="SQLITE_READ" && $arg1=="t2" && $arg2=="c"} {
+        return SQLITE_IGNORE
+      }
+      return SQLITE_OK
+    }
+    execsql {
+      DELETE FROM tx;
+      UPDATE t2 SET a=a+100;
+      SELECT * FROM tx;
+    }
+  } {12 112 2 2 {} {} 8 108 8 8 {} {}}
 } ;# ifcapable trigger
 
 # Make sure the names of views and triggers are passed on on arg4.
@@ -2210,7 +2210,17 @@ do_test auth-5.1 {
 
 # Ticket #1607
 #
-ifcapable compound {
+ifcapable compound&&subquery {
+  ifcapable trigger {
+    execsql {
+      DROP TABLE tx;
+    }
+    ifcapable view {
+      execsql {
+        DROP TABLE v1chng;
+      }
+    }
+  }
   do_test auth-5.2 {
     execsql {
       SELECT name FROM (
@@ -2218,7 +2228,7 @@ ifcapable compound {
       WHERE type='table'
       ORDER BY name
     }
-  } {sqlite_stat1 t1 t2 t3 t4 tx v1chng}
+  } {sqlite_stat1 t1 t2 t3 t4}
 }
 
 

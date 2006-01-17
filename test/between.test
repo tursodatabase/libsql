@@ -12,7 +12,7 @@
 # focus of this file is testing the use of indices in WHERE clauses
 # when the WHERE clause contains the BETWEEN operator.
 #
-# $Id: between.test,v 1.1 2005/07/28 23:12:08 drh Exp $
+# $Id: between.test,v 1.2 2006/01/17 09:35:02 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -29,7 +29,14 @@ do_test between-1.0 {
     set x [expr {int(log($i)/log(2))}]
     set y [expr {$i*$i + 2*$i + 1}]
     set z [expr {$x+$y}]
-    execsql {INSERT INTO t1 VALUES($::w,$::x,$::y,$::z)}
+    ifcapable tclvar {
+      # Random unplanned test of the $varname variable syntax.
+      execsql {INSERT INTO t1 VALUES($::w,$::x,$::y,$::z)}
+    } else {
+      # If the $varname syntax is not available, use the regular variable
+      # declaration syntax.
+      execsql {INSERT INTO t1 VALUES(:w,:x,:y,:z)}
+    }
   }
   execsql {
     CREATE UNIQUE INDEX i1w ON t1(w);

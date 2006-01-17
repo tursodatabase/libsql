@@ -17,7 +17,7 @@
 #      sqlite_update_hook    (tests hook-4-*)
 #      sqlite_rollback_hook  (tests hook-5.*)
 #
-# $Id: hook.test,v 1.10 2006/01/16 16:24:25 danielk1977 Exp $
+# $Id: hook.test,v 1.11 2006/01/17 09:35:02 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -138,37 +138,44 @@ do_test hook-4.1.2 {
 ]
 
 set ::update_hook {}
-do_test hook-4.2.1 {
-  catchsql {
-    DROP TABLE t2;
-  }
-  execsql {
-    CREATE TABLE t2(c INTEGER PRIMARY KEY, d);
-    CREATE TRIGGER t1_trigger AFTER INSERT ON t1 BEGIN
-      INSERT INTO t2 VALUES(new.a, new.b);
-      UPDATE t2 SET d = d || ' via trigger' WHERE new.a = c;
-      DELETE FROM t2 WHERE new.a = c;
-    END;
-  }
-} {}
-do_test hook-4.2.2 {
+ifcapable trigger {
+  do_test hook-4.2.1 {
+    catchsql {
+      DROP TABLE t2;
+    }
+    execsql {
+      CREATE TABLE t2(c INTEGER PRIMARY KEY, d);
+      CREATE TRIGGER t1_trigger AFTER INSERT ON t1 BEGIN
+        INSERT INTO t2 VALUES(new.a, new.b);
+        UPDATE t2 SET d = d || ' via trigger' WHERE new.a = c;
+        DELETE FROM t2 WHERE new.a = c;
+      END;
+    }
+  } {}
+  do_test hook-4.2.2 {
+    execsql {
+      INSERT INTO t1 VALUES(1, 'one');
+      INSERT INTO t1 VALUES(2, 'two');
+    }
+    set ::update_hook
+  } [list \
+      INSERT main t1 1 \
+      INSERT main t2 1 \
+      UPDATE main t2 1 \
+      DELETE main t2 1 \
+      INSERT main t1 2 \
+      INSERT main t2 2 \
+      UPDATE main t2 2 \
+      DELETE main t2 2 \
+  ]
+} else {
   execsql {
     INSERT INTO t1 VALUES(1, 'one');
     INSERT INTO t1 VALUES(2, 'two');
   }
-  set ::update_hook
-} [list \
-    INSERT main t1 1 \
-    INSERT main t2 1 \
-    UPDATE main t2 1 \
-    DELETE main t2 1 \
-    INSERT main t1 2 \
-    INSERT main t2 2 \
-    UPDATE main t2 2 \
-    DELETE main t2 2 \
-]
+}
 
-# Triggers + ATTACH
+# Update-hook + ATTACH
 set ::update_hook {}
 do_test hook-4.2.3 {
   file delete -force test2.db
@@ -188,12 +195,17 @@ do_test hook-4.2.3 {
     DELETE aux t3 2 \
 ]
 
+ifcapable trigger {
+  execsql {
+    DROP TRIGGER t1_trigger;
+  }
+}
+
 # Test that other vdbe operations involving btree structures do not 
 # incorrectly invoke the update-hook.
 set ::update_hook {}
 do_test hook-4.3.1 {
   execsql {
-    DROP TRIGGER t1_trigger;
     CREATE INDEX t1_i ON t1(b);
     INSERT INTO t1 VALUES(3, 'three');
     UPDATE t1 SET b = '';

@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc1.test,v 1.39 2005/11/01 15:48:25 drh Exp $
+# $Id: misc1.test,v 1.40 2006/01/17 09:35:02 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -364,18 +364,20 @@ do_test misc1-12.4 {
     SELECT * FROM t6;
   }
 } {0 0.0}
-do_test misc1-12.5 {
-  execsql {
-    INSERT OR IGNORE INTO t6 VALUES(0.0,'x');
-    SELECT * FROM t6;
-  }
-} {0 0.0}
-do_test misc1-12.6 {
-  execsql {
-    INSERT OR IGNORE INTO t6 VALUES('y',0);
-    SELECT * FROM t6;
-  }
-} {0 0.0 y 0}
+ifcapable conflict {
+  do_test misc1-12.5 {
+    execsql {
+      INSERT OR IGNORE INTO t6 VALUES(0.0,'x');
+      SELECT * FROM t6;
+    }
+  } {0 0.0}
+  do_test misc1-12.6 {
+    execsql {
+      INSERT OR IGNORE INTO t6 VALUES('y',0);
+      SELECT * FROM t6;
+    }
+  } {0 0.0 y 0}
+}
 do_test misc1-12.7 {
   execsql {
     CREATE TABLE t7(x INTEGER, y TEXT, z);

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the INSERT statement.
 #
-# $Id: insert.test,v 1.28 2006/01/16 16:24:25 danielk1977 Exp $
+# $Id: insert.test,v 1.29 2006/01/17 09:35:02 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -288,34 +288,43 @@ ifcapable tempdb {
 
 # Ticket #334:  REPLACE statement corrupting indices.
 #
-do_test insert-6.1 {
-  execsql {
-    CREATE TABLE t1(a INTEGER PRIMARY KEY, b UNIQUE);
-    INSERT INTO t1 VALUES(1,2);
-    INSERT INTO t1 VALUES(2,3);
-    SELECT b FROM t1 WHERE b=2;
+ifcapable conflict {
+  # The REPLACE command is not available if SQLITE_OMIT_CONFLICT is 
+  # defined at compilation time.
+  do_test insert-6.1 {
+    execsql {
+      CREATE TABLE t1(a INTEGER PRIMARY KEY, b UNIQUE);
+      INSERT INTO t1 VALUES(1,2);
+      INSERT INTO t1 VALUES(2,3);
+      SELECT b FROM t1 WHERE b=2;
+    }
+  } {2}
+  do_test insert-6.2 {
+    execsql {
+      REPLACE INTO t1 VALUES(1,4);
+      SELECT b FROM t1 WHERE b=2;
+    }
+  } {}
+  do_test insert-6.3 {
+    execsql {
+      UPDATE OR REPLACE t1 SET a=2 WHERE b=4;
+      SELECT * FROM t1 WHERE b=4;
+    }
+  } {2 4}
+  do_test insert-6.4 {
+    execsql {
+      SELECT * FROM t1 WHERE b=3;
+    }
+  } {}
+  ifcapable {reindex} {
+    do_test insert-6.5 {
+      execsql REINDEX
+    } {}
   }
-} {2}
-do_test insert-6.2 {
-  execsql {
-    REPLACE INTO t1 VALUES(1,4);
-    SELECT b FROM t1 WHERE b=2;
-  }
-} {}
-do_test insert-6.3 {
-  execsql {
-    UPDATE OR REPLACE t1 SET a=2 WHERE b=4;
-    SELECT * FROM t1 WHERE b=4;
-  }
-} {2 4}
-do_test insert-6.4 {
-  execsql {
-    SELECT * FROM t1 WHERE b=3;
-  }
-} {}
-ifcapable {reindex} {
-  do_test insert-6.7 {
-    execsql REINDEX
+  do_test insert-6.6 {
+    execsql {
+      DROP TABLE t1;
+    }
   } {}
 }
 
@@ -324,7 +333,6 @@ ifcapable {reindex} {
 # INSERT statments.
 do_test insert-7.1 {
   execsql {
-    DROP TABLE t1;
     CREATE TABLE t1(a);
     INSERT INTO t1 VALUES(1);
     INSERT INTO t1 VALUES(2);

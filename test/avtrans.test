@@ -12,7 +12,7 @@
 # file is a copy of "trans.test" modified to run under autovacuum mode.
 # the point is to stress the autovacuum logic and try to get it to fail.
 #
-# $Id: avtrans.test,v 1.1 2005/12/09 02:35:54 drh Exp $
+# $Id: avtrans.test,v 1.2 2006/01/17 09:35:02 danielk1977 Exp $
 
 
 set testdir [file dirname $argv0]
@@ -896,9 +896,15 @@ for {set i 2} {$i<=$limit} {incr i} {
       do_test avtrans-9.$i.4-$cnt {
          expr {$sqlite_sync_count>0}
       } 1
-      do_test avtrans-9.$i.5-$cnt {
-         expr {$sqlite_fullsync_count>0}
-      } [expr {$i%2==0}]
+      ifcapable pager_pragmas {
+        do_test avtrans-9.$i.5-$cnt {
+           expr {$sqlite_fullsync_count>0}
+        } [expr {$i%2==0}]
+      } else {
+        do_test avtrans-9.$i.5-$cnt {
+           expr {$sqlite_fullsync_count>0}
+        } {1}
+      }
     }
   }
   set ::pager_old_format 0
