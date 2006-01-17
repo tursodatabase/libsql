@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.23 2006/01/16 11:29:20 danielk1977 Exp $
+** $Id: prepare.c,v 1.24 2006/01/17 13:21:40 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -608,6 +608,7 @@ int sqlite3_prepare16(
   }
   zSql8 = sqlite3utf16to8(zSql, nBytes);
   if( !zSql8 ){
+    sqlite3MallocClearFailed();
     sqlite3Error(db, SQLITE_NOMEM, 0);
     return SQLITE_NOMEM;
   }

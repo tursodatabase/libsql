@@ -14,7 +14,7 @@
 # special feature is used to see what happens in the library if a malloc
 # were to really fail due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.26 2006/01/06 14:32:20 drh Exp $
+# $Id: malloc.test,v 1.27 2006/01/17 13:21:40 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -63,12 +63,13 @@ proc do_malloc_test {tn args} {
       # system. Then open (empty database) "test.db" with the handle [db].
       # 
       sqlite_malloc_fail 0
-      catch {db close}
+      catch {db close} 
       catch {file delete -force test.db}
       catch {file delete -force test.db-journal}
       catch {file delete -force test2.db}
       catch {file delete -force test2.db-journal}
-      set ::DB [sqlite3 db test.db]
+      catch {sqlite3 db test.db} 
+      set ::DB [sqlite3_connection_pointer db]
 
       # Execute any -tclprep and -sqlprep scripts.
       #
@@ -318,7 +319,7 @@ do_malloc_test 9 -sqlprep {
 do_malloc_test 10 -sqlprep {
   CREATE TABLE abc(a, b, c);
 } -tclbody {
-  set ::DB [sqlite3 db2 test.db]
+  sqlite3 db2 test.db
   db2 eval {SELECT * FROM sqlite_master}
   db2 close
 } 

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.469 2006/01/16 15:14:28 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.470 2006/01/17 13:21:40 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -30,7 +30,7 @@
 ** option is set.  Thus NDEBUG becomes an opt-in rather than an opt-out
 ** feature.
 */
-#if !defined(NDEBUG) && !defined(SQLITE_DEBUG)
+#if !defined(NDEBUG) && !defined(SQLITE_DEBUG) 
 # define NDEBUG 1
 #endif
 
@@ -1746,6 +1746,9 @@ void sqlite3SchemaFree(void *);
 Schema *sqlite3SchemaGet(Btree *);
 int sqlite3SchemaToIndex(sqlite3 *db, Schema *);
 KeyInfo *sqlite3IndexKeyinfo(Parse *, Index *);
+int sqlite3CreateFunc(sqlite3 *, const char *, int, int, void *, 
+  void (*)(sqlite3_context*,int,sqlite3_value **),
+  void (*)(sqlite3_context*,int,sqlite3_value **), void (*)(sqlite3_context*));
 
 #ifndef SQLITE_OMIT_SHARED_CACHE
   void sqlite3TableLock(Parse *, int, int, u8, const char *);

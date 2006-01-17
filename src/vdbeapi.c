@@ -631,12 +631,11 @@ static int bindText(
   }
   pVar = &p->aVar[i-1];
   rc = sqlite3VdbeMemSetStr(pVar, zData, nData, encoding, xDel);
-  if( rc ){
-    return rc;
-  }
   if( rc==SQLITE_OK && encoding!=0 ){
     rc = sqlite3VdbeChangeEncoding(pVar, ENC(p->db));
   }
+  sqlite3MallocClearFailed();
+  sqlite3Error(((Vdbe *)pStmt)->db, rc, 0);
   return rc;
 }
 

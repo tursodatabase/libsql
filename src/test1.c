@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.192 2006/01/16 15:32:23 danielk1977 Exp $
+** $Id: test1.c,v 1.193 2006/01/17 13:21:40 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -534,6 +534,11 @@ static int test_create_function(
   ** because it is not tested anywhere else. */
   if( rc==SQLITE_OK ){
     sqlite3_value *pVal;
+#ifdef SQLITE_MEMDEBUG
+    if( sqlite3_iMallocFail>0 ){
+      sqlite3_iMallocFail++;
+    }
+#endif 
     pVal = sqlite3ValueNew();
     sqlite3ValueSetStr(pVal, -1, "x_sqlite_exec", SQLITE_UTF8, SQLITE_STATIC);
     rc = sqlite3_create_function16(db, 

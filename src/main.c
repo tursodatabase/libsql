@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.323 2006/01/11 21:41:22 drh Exp $
+** $Id: main.c,v 1.324 2006/01/17 13:21:40 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -386,9 +386,12 @@ void sqlite3_interrupt(sqlite3 *db){
 void sqlite3_free(char *p){ free(p); }
 
 /*
-** Create new user functions.
+** This function is exactly the same as sqlite3_create_function(), except
+** that it is designed to be called by internal code. The difference is
+** that if a malloc() fails in sqlite3_create_function(), an error code
+** is returned and the mallocFailed flag cleared. 
 */
-int sqlite3_create_function(
+int sqlite3CreateFunc(
   sqlite3 *db,
   const char *zFunctionName,
   int nArg,
@@ -425,10 +428,10 @@ int sqlite3_create_function(
     enc = SQLITE_UTF16NATIVE;
   }else if( enc==SQLITE_ANY ){
     int rc;
-    rc = sqlite3_create_function(db, zFunctionName, nArg, SQLITE_UTF8,
+    rc = sqlite3CreateFunc(db, zFunctionName, nArg, SQLITE_UTF8,
          pUserData, xFunc, xStep, xFinal);
     if( rc!=SQLITE_OK ) return rc;
-    rc = sqlite3_create_function(db, zFunctionName, nArg, SQLITE_UTF16LE,
+    rc = sqlite3CreateFunc(db, zFunctionName, nArg, SQLITE_UTF16LE,
         pUserData, xFunc, xStep, xFinal);
     if( rc!=SQLITE_OK ) return rc;
     enc = SQLITE_UTF16BE;
@@ -447,6 +450,7 @@ int sqlite3_create_function(
     if( db->activeVdbeCnt ){
       sqlite3Error(db, SQLITE_BUSY, 
         "Unable to delete/modify user-function due to active statements");
+      assert( !sqlite3ThreadDataReadOnly()->mallocFailed );
       return SQLITE_BUSY;
     }else{
       sqlite3ExpirePreparedStatements(db);
@@ -454,38 +458,65 @@ int sqlite3_create_function(
   }
 
   p = sqlite3FindFunction(db, zFunctionName, nName, nArg, enc, 1);
-  if( p==0 ) return SQLITE_NOMEM;
-  p->flags = 0;
-  p->xFunc = xFunc;
-  p->xStep = xStep;
-  p->xFinalize = xFinal;
-  p->pUserData = pUserData;
+  if( p ){
+    p->flags = 0;
+    p->xFunc = xFunc;
+    p->xStep = xStep;
+    p->xFinalize = xFinal;
+    p->pUserData = pUserData;
+  }
   return SQLITE_OK;
 }
+
+/*
+** Create new user functions.
+*/
+int sqlite3_create_function(
+  sqlite3 *db,
+  const char *zFunctionName,
+  int nArg,
+  int enc,
+  void *p,
+  void (*xFunc)(sqlite3_context*,int,sqlite3_value **),
+  void (*xStep)(sqlite3_context*,int,sqlite3_value **),
+  void (*xFinal)(sqlite3_context*)
+){
+  int rc;
+  assert( !sqlite3ThreadDataReadOnly()->mallocFailed );
+  rc = sqlite3CreateFunc(db, zFunctionName, nArg, enc, p, xFunc, xStep, xFinal);
+
+  if( sqlite3ThreadDataReadOnly()->mallocFailed ){
+    sqlite3MallocClearFailed();
+    rc = SQLITE_NOMEM;
+    sqlite3Error(db, SQLITE_NOMEM, 0);
+  }
+  return rc;
+}
+
 #ifndef SQLITE_OMIT_UTF16
 int sqlite3_create_function16(
   sqlite3 *db,
   const void *zFunctionName,
   int nArg,
   int eTextRep,
-  void *pUserData,
+  void *p,
   void (*xFunc)(sqlite3_context*,int,sqlite3_value**),
   void (*xStep)(sqlite3_context*,int,sqlite3_value**),
   void (*xFinal)(sqlite3_context*)
 ){
   int rc;
   char *zFunc8;
+  assert( !sqlite3ThreadDataReadOnly()->mallocFailed );
 
-  if( sqlite3SafetyCheck(db) ){
-    return SQLITE_MISUSE;
-  }
   zFunc8 = sqlite3utf16to8(zFunctionName, -1);
-  if( !zFunc8 ){
-    return SQLITE_NOMEM;
-  }
-  rc = sqlite3_create_function(db, zFunc8, nArg, eTextRep, 
-      pUserData, xFunc, xStep, xFinal);
+  rc = sqlite3CreateFunc(db, zFunc8, nArg, eTextRep, p, xFunc, xStep, xFinal);
   sqliteFree(zFunc8);
+
+  if( sqlite3ThreadDataReadOnly()->mallocFailed ){
+    sqlite3MallocClearFailed();
+    rc = SQLITE_NOMEM;
+    sqlite3Error(db, SQLITE_NOMEM, 0);
+  }
   return rc;
 }
 #endif
@@ -645,7 +676,7 @@ int sqlite3BtreeFactory(
 */
 const char *sqlite3_errmsg(sqlite3 *db){
   const char *z;
-  if( sqlite3ThreadDataReadOnly()->mallocFailed ){
+  if( !db || sqlite3ThreadDataReadOnly()->mallocFailed ){
     return sqlite3ErrStr(SQLITE_NOMEM);
   }
   if( sqlite3SafetyCheck(db) || db->errCode==SQLITE_MISUSE ){
@@ -741,15 +772,6 @@ static int openDatabase(
   sqlite3HashInit(&db->aFunc, SQLITE_HASH_STRING, 0);
   sqlite3HashInit(&db->aCollSeq, SQLITE_HASH_STRING, 0);
 
-#if 0
-  for(i=0; i<db->nDb; i++){
-    sqlite3HashInit(&db->aDb[i].tblHash, SQLITE_HASH_STRING, 0);
-    sqlite3HashInit(&db->aDb[i].idxHash, SQLITE_HASH_STRING, 0);
-    sqlite3HashInit(&db->aDb[i].trigHash, SQLITE_HASH_STRING, 0);
-    sqlite3HashInit(&db->aDb[i].aFKey, SQLITE_HASH_STRING, 1);
-  }
-#endif
- 
   /* Add the default collation sequence BINARY. BINARY works for both UTF-8
   ** and UTF-16, so add a version for each to avoid any unnecessary
   ** conversions. The only error that can occur here is a malloc() failure.
@@ -806,8 +828,10 @@ static int openDatabase(
   ** database schema yet. This is delayed until the first time the database
   ** is accessed.
   */
-  sqlite3RegisterBuiltinFunctions(db);
-  sqlite3Error(db, SQLITE_OK, 0);
+  if( !sqlite3ThreadDataReadOnly()->mallocFailed ){
+    sqlite3RegisterBuiltinFunctions(db);
+    sqlite3Error(db, SQLITE_OK, 0);
+  }
   db->magic = SQLITE_MAGIC_OPEN;
 
 opendb_out:

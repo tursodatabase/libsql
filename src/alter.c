@@ -12,7 +12,7 @@
 ** This file contains C code routines that used to generate VDBE code
 ** that implements the ALTER TABLE command.
 **
-** $Id: alter.c,v 1.16 2006/01/11 21:41:21 drh Exp $
+** $Id: alter.c,v 1.17 2006/01/17 13:21:40 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -162,7 +162,7 @@ void sqlite3AlterFunctions(sqlite3 *db){
   int i;
 
   for(i=0; i<sizeof(aFuncs)/sizeof(aFuncs[0]); i++){
-    sqlite3_create_function(db, aFuncs[i].zName, aFuncs[i].nArg,
+    sqlite3CreateFunc(db, aFuncs[i].zName, aFuncs[i].nArg,
         SQLITE_UTF8, 0, aFuncs[i].xFunc, 0, 0);
   }
 }

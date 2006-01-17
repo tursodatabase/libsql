@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.116 2006/01/12 22:17:50 drh Exp $
+** $Id: func.c,v 1.117 2006/01/17 13:21:40 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1024,7 +1024,7 @@ void sqlite3RegisterBuiltinFunctions(sqlite3 *db){
       case 1: pArg = db; break;
       case 2: pArg = (void *)(-1); break;
     }
-    sqlite3_create_function(db, aFuncs[i].zName, aFuncs[i].nArg,
+    sqlite3CreateFunc(db, aFuncs[i].zName, aFuncs[i].nArg,
         aFuncs[i].eTextRep, pArg, aFuncs[i].xFunc, 0, 0);
     if( aFuncs[i].needCollSeq ){
       FuncDef *pFunc = sqlite3FindFunction(db, aFuncs[i].zName, 
@@ -1046,7 +1046,7 @@ void sqlite3RegisterBuiltinFunctions(sqlite3 *db){
       case 1: pArg = db; break;
       case 2: pArg = (void *)(-1); break;
     }
-    sqlite3_create_function(db, aAggs[i].zName, aAggs[i].nArg, SQLITE_UTF8, 
+    sqlite3CreateFunc(db, aAggs[i].zName, aAggs[i].nArg, SQLITE_UTF8, 
         pArg, 0, aAggs[i].xStep, aAggs[i].xFinalize);
     if( aAggs[i].needCollSeq ){
       FuncDef *pFunc = sqlite3FindFunction( db, aAggs[i].zName,
@@ -1090,9 +1090,9 @@ void sqlite3RegisterLikeFunctions(sqlite3 *db, int caseSensitive){
   }else{
     pInfo = (struct compareInfo*)&likeInfoNorm;
   }
-  sqlite3_create_function(db, "like", 2, SQLITE_UTF8, pInfo, likeFunc, 0, 0);
-  sqlite3_create_function(db, "like", 3, SQLITE_UTF8, pInfo, likeFunc, 0, 0);
-  sqlite3_create_function(db, "glob", 2, SQLITE_UTF8, 
+  sqlite3CreateFunc(db, "like", 2, SQLITE_UTF8, pInfo, likeFunc, 0, 0);
+  sqlite3CreateFunc(db, "like", 3, SQLITE_UTF8, pInfo, likeFunc, 0, 0);
+  sqlite3CreateFunc(db, "glob", 2, SQLITE_UTF8, 
       (struct compareInfo*)&globInfo, likeFunc, 0,0);
   setLikeOptFlag(db, "glob", SQLITE_FUNC_LIKE | SQLITE_FUNC_CASE);
   setLikeOptFlag(db, "like", 
