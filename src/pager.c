@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.243 2006/01/18 16:51:35 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.244 2006/01/18 17:25:46 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -2437,7 +2437,7 @@ int sqlite3pager_release_memory(int nReq){
   ** some of the code invoked by this function may also
   ** try to obtain the mutex, resulting in a deadlock.
   */
-  if( sqlite3OsInMutex() ){
+  if( sqlite3OsInMutex(0) ){
     return 0;
   }
 

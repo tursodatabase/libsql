@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.176 2006/01/18 16:51:36 danielk1977 Exp $
+** $Id: util.c,v 1.177 2006/01/18 17:25:46 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1373,7 +1373,7 @@ int sqlite3ApiExit(sqlite3* db, int rc){
 ** to sqlite3ApiExit(), or false otherwise.
 */
 int sqlite3MallocFailed(){
-  return (mallocHasFailed && sqlite3OsInMutex());
+  return (mallocHasFailed && sqlite3OsInMutex(1));
 }
 
 /* 

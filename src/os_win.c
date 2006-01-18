@@ -1068,17 +1068,20 @@ int sqlite3WinSleep(int ms){
 */
 static int inMutex = 0;
 #ifdef SQLITE_W32_THREADS
-  static HANDLE mutexOwner;
+  static DWORD mutexOwner;
   static CRITICAL_SECTION cs;
 #endif
 
 /*
-** The following pair of routine implement mutual exclusion for
+** The following pair of routines implement mutual exclusion for
 ** multi-threaded processes.  Only a single thread is allowed to
 ** executed code that is surrounded by EnterMutex() and LeaveMutex().
 **
 ** SQLite uses only a single Mutex.  There is not much critical
 ** code and what little there is executes quickly and without blocking.
+**
+** Version 3.3.1 and earlier used a simple mutex.  Beginning with
+** version 3.3.2, a recursive mutex is required.
 */
 void sqlite3WinEnterMutex(){
 #ifdef SQLITE_W32_THREADS
@@ -1093,7 +1096,7 @@ void sqlite3WinEnterMutex(){
     }
   }
   EnterCriticalSection(&cs);
-  mutexOwner = GetCurrentThread();
+  mutexOwner = GetCurrentThreadId();
 #endif
   inMutex++;
 }
@@ -1101,18 +1104,23 @@ void sqlite3WinLeaveMutex(){
   assert( inMutex );
   inMutex--;
 #ifdef SQLITE_W32_THREADS
+  assert( mutexOwner==GetCurrentThreadId() );
   LeaveCriticalSection(&cs);
 #endif
 }
 
 /*
-** Return TRUE if we are currently within the mutex and FALSE if not.
+** Return TRUE if the mutex is currently held.
+**
+** If the thisThreadOnly parameter is true, return true if and only if the
+** calling thread holds the mutex.  If the parameter is false, return
+** true if any thread holds the mutex.
 */
-int sqlite3WinInMutex(){
+int sqlite3WinInMutex(int thisThreadOnly){
 #ifdef SQLITE_W32_THREADS
-  return inMutex && mutexOwner==GetCurrentThread();
+  return inMutex>0 && (thisThreadOnly==0 || mutexOwner==GetCurrentThreadId());
 #else
-  return inMutex;
+  return inMutex>0;
 #endif
 }
 

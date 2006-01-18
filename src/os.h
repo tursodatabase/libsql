@@ -291,7 +291,7 @@ int sqlite3OsSleep(int ms);
 int sqlite3OsCurrentTime(double*);
 void sqlite3OsEnterMutex(void);
 void sqlite3OsLeaveMutex(void);
-int sqlite3OsInMutex(void);
+int sqlite3OsInMutex(int);
 ThreadData *sqlite3OsThreadSpecificData(int);
 void *sqlite3OsMalloc(int);
 void *sqlite3OsRealloc(void *, int);

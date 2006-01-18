@@ -478,7 +478,7 @@ static void testThreadLockingBehavior(fd_orig){
 ** Release a lockInfo structure previously allocated by findLockInfo().
 */
 static void releaseLockInfo(struct lockInfo *pLock){
-  assert( sqlite3OsInMutex() );
+  assert( sqlite3OsInMutex(1) );
   pLock->nRef--;
   if( pLock->nRef==0 ){
     sqlite3HashInsert(&lockHash, &pLock->key, sizeof(pLock->key), 0);
@@ -490,7 +490,7 @@ static void releaseLockInfo(struct lockInfo *pLock){
 ** Release a openCnt structure previously allocated by findLockInfo().
 */
 static void releaseOpenCnt(struct openCnt *pOpen){
-  assert( sqlite3OsInMutex() );
+  assert( sqlite3OsInMutex(1) );
   pOpen->nRef--;
   if( pOpen->nRef==0 ){
     sqlite3HashInsert(&openHash, &pOpen->key, sizeof(pOpen->key), 0);
@@ -520,7 +520,7 @@ static int findLockInfo(
   rc = fstat(fd, &statbuf);
   if( rc!=0 ) return 1;
 
-  assert( sqlite3OsInMutex() );
+  assert( sqlite3OsInMutex(1) );
   memset(&key1, 0, sizeof(key1));
   key1.dev = statbuf.st_dev;
   key1.ino = statbuf.st_ino;
@@ -1680,7 +1680,7 @@ static pthread_mutex_t mutex2 = PTHREAD_MUTEX_INITIALIZER;
 ** SQLite uses only a single Mutex.  There is not much critical
 ** code and what little there is executes quickly and without blocking.
 **
-** This mutex is not recursive.
+** As of version 3.3.2, this mutex must be recursive.
 */
 void sqlite3UnixEnterMutex(){
 #ifdef SQLITE_UNIX_THREADS
@@ -1709,13 +1709,18 @@ void sqlite3UnixLeaveMutex(){
 }
 
 /*
-** Return TRUE if we are currently within the mutex and FALSE if not.
+** Return TRUE if the mutex is currently held.
+**
+** If the thisThreadOnly parameter is true, return true only if the
+** calling thread holds the mutex.  If the parameter is false, return
+** true if any thread holds the mutex.
 */
-int sqlite3UnixInMutex(){
+int sqlite3UnixInMutex(int thisThreadOnly){
 #ifdef SQLITE_UNIX_THREADS
-  return inMutex && pthread_equal(mutexOwner, pthread_self());
+  return inMutex>0 && 
+           (thisThreadOnly==0 || pthread_equal(mutexOwner, pthread_self()));
 #else
-  return inMutex;
+  return inMutex>0;
 #endif
 }
 
