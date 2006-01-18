@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.244 2006/01/18 17:25:46 drh Exp $
+** @(#) $Id: pager.c,v 1.245 2006/01/18 18:22:43 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1999,6 +1999,7 @@ int sqlite3pager_close(Pager *pPager){
   ** so that ThreadData.nAlloc can be set.
   */
   ThreadData *pTsd = sqlite3ThreadData();
+  assert( pPager );
   assert( pTsd && pTsd->nAlloc );
 #endif
 

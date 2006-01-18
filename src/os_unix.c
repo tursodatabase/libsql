@@ -1782,7 +1782,12 @@ ThreadData *sqlite3UnixThreadSpecificData(int allocateFlag){
   pTsd = pthread_getspecific(key);
   if( allocateFlag>0 ){
     if( pTsd==0 ){
-      pTsd = sqlite3OsMalloc(sizeof(zeroData));
+      if( !sqlite3TestMallocFail() ){
+        pTsd = sqlite3OsMalloc(sizeof(zeroData));
+      }
+#ifdef SQLITE_MEMDEBUG
+      sqlite3_isFail = 0;
+#endif
       if( pTsd ){
         *pTsd = zeroData;
         pthread_setspecific(key, pTsd);
@@ -1801,7 +1806,12 @@ ThreadData *sqlite3UnixThreadSpecificData(int allocateFlag){
   static ThreadData *pTsd = 0;
   if( allocateFlag>0 ){
     if( pTsd==0 ){
-      pTsd = sqlite3OsMalloc( sizeof(zeroData) );
+      if( !sqlite3TestMallocFail() ){
+        pTsd = sqlite3OsMalloc( sizeof(zeroData) );
+      }
+#ifdef SQLITE_MEMDEBUG
+      sqlite3_isFail = 0;
+#endif
       if( pTsd ){
         *pTsd = zeroData;
         TSD_COUNTER(+1);

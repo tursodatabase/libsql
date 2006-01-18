@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.532 2006/01/18 16:51:36 danielk1977 Exp $
+** $Id: vdbe.c,v 1.533 2006/01/18 18:22:43 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -408,6 +408,9 @@ int sqlite3VdbeExec(
   Mem *pStackLimit;
 #endif
   ThreadData *pTsd = sqlite3ThreadData();
+  if( !pTsd ){
+    goto no_mem;
+  }
 
   if( p->magic!=VDBE_MAGIC_RUN ) return SQLITE_MISUSE;
   pTsd->nRef++;
@@ -4615,7 +4618,9 @@ vdbe_halt:
   }
   sqlite3VdbeHalt(p);
   p->pTos = pTos;
-  pTsd->nRef--;
+  if( pTsd ){
+    pTsd->nRef--;
+  }
   return rc;
 
   /* Jump to here if a malloc() fails.  It's hard to get a malloc()
