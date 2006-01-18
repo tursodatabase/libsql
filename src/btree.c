@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.299 2006/01/16 15:14:27 danielk1977 Exp $
+** $Id: btree.c,v 1.300 2006/01/18 15:25:17 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1662,7 +1662,11 @@ int sqlite3BtreeOpen(
   sqlite3pager_set_pagesize(pBt->pPager, pBt->pageSize);
 
 #ifndef SQLITE_OMIT_SHARED_CACHE
-  /* Add the new btree to the linked list starting at ThreadData.pBtree */
+  /* Add the new btree to the linked list starting at ThreadData.pBtree.
+  ** There is no chance that a malloc() may fail inside of the 
+  ** sqlite3ThreadData() call, as the ThreadData structure must have already
+  ** been allocated for pTsdro->useSharedData to be non-zero.
+  */
   if( pTsdro->useSharedData && zFilename && !isMemdb ){
     pBt->pNext = pTsdro->pBtree;
     sqlite3ThreadData()->pBtree = pBt;
@@ -1712,14 +1716,19 @@ int sqlite3BtreeClose(Btree *p){
     return SQLITE_OK;
   }
 
-  /* Remove the shared-btree from the thread wide list */
-  pTsd = sqlite3ThreadData();
+  /* Remove the shared-btree from the thread wide list. Call 
+  ** ThreadDataReadOnly() and then cast away the const property of the 
+  ** pointer to avoid allocating thread data if it is not really required.
+  */
+  pTsd = (ThreadData *)sqlite3ThreadDataReadOnly();
   if( pTsd->pBtree==pBt ){
+    assert( pTsd==sqlite3ThreadData() );
     pTsd->pBtree = pBt->pNext;
   }else{
     BtShared *pPrev;
     for(pPrev=pTsd->pBtree; pPrev && pPrev->pNext!=pBt; pPrev=pPrev->pNext);
     if( pPrev ){
+      assert( pTsd==sqlite3ThreadData() );
       pPrev->pNext = pBt->pNext;
     }
   }

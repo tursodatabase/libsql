@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.326 2006/01/18 05:51:58 danielk1977 Exp $
+** $Id: main.c,v 1.327 2006/01/18 15:25:17 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -485,12 +485,7 @@ int sqlite3_create_function(
   assert( !sqlite3ThreadDataReadOnly()->mallocFailed );
   rc = sqlite3CreateFunc(db, zFunctionName, nArg, enc, p, xFunc, xStep, xFinal);
 
-  if( sqlite3ThreadDataReadOnly()->mallocFailed ){
-    sqlite3MallocClearFailed();
-    rc = SQLITE_NOMEM;
-    sqlite3Error(db, SQLITE_NOMEM, 0);
-  }
-  return rc;
+  return sqlite3ApiExit(db, rc);
 }
 
 #ifndef SQLITE_OMIT_UTF16
@@ -512,12 +507,7 @@ int sqlite3_create_function16(
   rc = sqlite3CreateFunc(db, zFunc8, nArg, eTextRep, p, xFunc, xStep, xFinal);
   sqliteFree(zFunc8);
 
-  if( sqlite3ThreadDataReadOnly()->mallocFailed ){
-    sqlite3MallocClearFailed();
-    rc = SQLITE_NOMEM;
-    sqlite3Error(db, SQLITE_NOMEM, 0);
-  }
-  return rc;
+  return sqlite3ApiExit(db, rc);
 }
 #endif
 
@@ -727,7 +717,7 @@ const void *sqlite3_errmsg16(sqlite3 *db){
          SQLITE_UTF8, SQLITE_STATIC);
     z = sqlite3_value_text16(db->pErr);
   }
-  sqlite3MallocClearFailed();
+  sqlite3ApiExit(0, 0);
   return z;
 }
 #endif /* SQLITE_OMIT_UTF16 */
@@ -835,10 +825,7 @@ static int openDatabase(
       createCollation(db, "BINARY", SQLITE_UTF16, 0,binCollFunc) ||
       (db->pDfltColl = sqlite3FindCollSeq(db, SQLITE_UTF8, "BINARY", 6, 0))==0 
   ){
-    /* sqlite3_create_collation() is an external API. So the mallocFailed flag
-    ** will have been cleared before returning. So set it explicitly here.
-    */
-    sqlite3ThreadData()->mallocFailed = 1;
+    assert( sqlite3ThreadDataReadOnly()->mallocFailed );
     db->magic = SQLITE_MAGIC_CLOSED;
     goto opendb_out;
   }
@@ -895,8 +882,7 @@ opendb_out:
     db = 0;
   }
   *ppDb = db;
-  sqlite3MallocClearFailed();
-  return rc;
+  return sqlite3ApiExit(0, rc);
 }
 
 /*
@@ -918,7 +904,7 @@ int sqlite3_open16(
   sqlite3 **ppDb
 ){
   char const *zFilename8;   /* zFilename encoded in UTF-8 instead of UTF-16 */
-  int rc = SQLITE_NOMEM;
+  int rc = SQLITE_OK;
   sqlite3_value *pVal;
 
   assert( zFilename );
@@ -936,13 +922,10 @@ int sqlite3_open16(
         *ppDb = 0;
       }
     }
-  }else{
-    assert( sqlite3ThreadDataReadOnly()->mallocFailed );
-    sqlite3MallocClearFailed();
   }
   sqlite3ValueFree(pVal);
 
-  return rc;
+  return sqlite3ApiExit(0, rc);
 }
 #endif /* SQLITE_OMIT_UTF16 */
 
@@ -997,12 +980,7 @@ int sqlite3_create_collation(
   int rc;
   assert( !sqlite3ThreadDataReadOnly()->mallocFailed );
   rc = createCollation(db, zName, enc, pCtx, xCompare);
-  if( sqlite3ThreadDataReadOnly()->mallocFailed ){
-    sqlite3MallocClearFailed();
-    rc = SQLITE_NOMEM;
-    sqlite3Error(db, rc, 0);
-  }
-  return rc;
+  return sqlite3ApiExit(db, rc);
 }
 
 #ifndef SQLITE_OMIT_UTF16
@@ -1024,12 +1002,7 @@ int sqlite3_create_collation16(
     rc = createCollation(db, zName8, enc, pCtx, xCompare);
     sqliteFree(zName8);
   }
-  if( sqlite3ThreadDataReadOnly()->mallocFailed ){
-    sqlite3MallocClearFailed();
-    rc = SQLITE_NOMEM;
-    sqlite3Error(db, rc, 0);
-  }
-  return rc;
+  return sqlite3ApiExit(db, rc);
 }
 #endif /* SQLITE_OMIT_UTF16 */
 
@@ -1115,6 +1088,9 @@ int sqlite3Corrupt(void){
 */
 int sqlite3_enable_shared_cache(int enable){
   ThreadData *pTd = sqlite3ThreadData();
+  if( !pTd ){
+    return SQLITE_NOMEM;
+  }
   
   /* It is only legal to call sqlite3_enable_shared_cache() when there
   ** are no currently open b-trees that were opened by the calling thread.
@@ -1138,6 +1114,8 @@ int sqlite3_enable_shared_cache(int enable){
 */
 void sqlite3_thread_cleanup(void){
   ThreadData *pTd = sqlite3ThreadData();
-  memset(pTd, 0, sizeof(*pTd));
+  if( pTd ){
+    memset(pTd, 0, sizeof(*pTd));
+  }
   sqlite3ReleaseThreadData();
 }

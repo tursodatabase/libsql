@@ -242,8 +242,7 @@ int sqlite3_step(sqlite3_stmt *pStmt){
 #endif
 
   sqlite3Error(p->db, rc, p->zErrMsg ? "%s" : 0, p->zErrMsg);
-  sqlite3MallocClearFailed();
-  return rc;
+  return sqlite3ApiExit(p->db, rc);
 }
 
 /*
@@ -405,10 +404,8 @@ static void columnMallocFailure(sqlite3_stmt *pStmt)
   ** SQLITE_NOMEM. The next call to _step() (if any) will return SQLITE_ERROR
   ** and _finalize() will return NOMEM.
   */
-  if( sqlite3ThreadDataReadOnly()->mallocFailed ){
-    ((Vdbe *)pStmt)->rc = SQLITE_NOMEM;
-    sqlite3MallocClearFailed();
-  }
+  Vdbe *p = (Vdbe *)pStmt;
+  p->rc = sqlite3ApiExit(0, p->rc);
 }
 
 /**************************** sqlite3_column_  *******************************
@@ -503,7 +500,7 @@ static const void *columnName(
   /* A malloc may have failed inside of the xFunc() call. If this is the case,
   ** clear the mallocFailed flag and return NULL.
   */
-  sqlite3MallocClearFailed();
+  sqlite3ApiExit(0, 0);
   return ret;
 }
 
@@ -634,9 +631,9 @@ static int bindText(
   if( rc==SQLITE_OK && encoding!=0 ){
     rc = sqlite3VdbeChangeEncoding(pVar, ENC(p->db));
   }
-  sqlite3MallocClearFailed();
+
   sqlite3Error(((Vdbe *)pStmt)->db, rc, 0);
-  return rc;
+  return sqlite3ApiExit(((Vdbe *)pStmt)->db, rc);
 }
 
 

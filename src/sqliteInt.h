@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.472 2006/01/17 16:10:14 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.473 2006/01/18 15:25:18 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1765,6 +1765,7 @@ KeyInfo *sqlite3IndexKeyinfo(Parse *, Index *);
 int sqlite3CreateFunc(sqlite3 *, const char *, int, int, void *, 
   void (*)(sqlite3_context*,int,sqlite3_value **),
   void (*)(sqlite3_context*,int,sqlite3_value **), void (*)(sqlite3_context*));
+int sqlite3ApiExit(sqlite3 *db, int);
 
 #ifndef SQLITE_OMIT_SHARED_CACHE
   void sqlite3TableLock(Parse *, int, int, u8, const char *);
@@ -1772,7 +1773,6 @@ int sqlite3CreateFunc(sqlite3 *, const char *, int, int, void *,
   #define sqlite3TableLock(v,w,x,y,z)
 #endif
 
-void sqlite3MallocClearFailed();
 #ifdef SQLITE_MEMDEBUG
   void sqlite3MallocDisallow();
   void sqlite3MallocAllow();

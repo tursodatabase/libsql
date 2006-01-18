@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.241 2006/01/16 15:32:23 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.242 2006/01/18 15:25:17 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1577,7 +1577,15 @@ int sqlite3pager_open(
   int noReadlock = (flags & PAGER_NO_READLOCK)!=0;
   char zTemp[SQLITE_TEMPNAME_SIZE];
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
+  /* A malloc() cannot fail in sqlite3ThreadData() as one or more calls to 
+  ** malloc() must have already been made by this thread before it gets
+  ** to this point. This means the ThreadData must have been allocated already
+  ** so that ThreadData.nAlloc can be set. It would be nice to assert
+  ** that ThreadData.nAlloc is non-zero, but alas this breaks test cases 
+  ** written to invoke the pager directly.
+  */
   ThreadData *pTsd = sqlite3ThreadData();
+  assert( pTsd );
 #endif
 
   /* If malloc() has already failed return SQLITE_NOMEM. Before even
@@ -1985,7 +1993,13 @@ int sqlite3pager_truncate(Pager *pPager, Pgno nPage){
 int sqlite3pager_close(Pager *pPager){
   PgHdr *pPg, *pNext;
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
+  /* A malloc() cannot fail in sqlite3ThreadData() as one or more calls to 
+  ** malloc() must have already been made by this thread before it gets
+  ** to this point. This means the ThreadData must have been allocated already
+  ** so that ThreadData.nAlloc can be set.
+  */
   ThreadData *pTsd = sqlite3ThreadData();
+  assert( pTsd && pTsd->nAlloc );
 #endif
 
   switch( pPager->state ){
