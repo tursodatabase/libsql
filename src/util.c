@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.174 2006/01/18 15:25:18 danielk1977 Exp $
+** $Id: util.c,v 1.175 2006/01/18 15:39:26 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -647,9 +647,11 @@ void sqlite3ReallocOrFree(void **pp, int n){
 ** is the number of bytes that were available to SQLite using pointer p, 
 ** regardless of how much memory was actually allocated.
 */
+#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
 int sqlite3AllocSize(void *p){
   return OSSIZEOF(p);
 }
+#endif
 
 /*
 ** Make a copy of a string in memory obtained from sqliteMalloc(). These 
