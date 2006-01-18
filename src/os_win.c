@@ -1068,6 +1068,7 @@ int sqlite3WinSleep(int ms){
 */
 static int inMutex = 0;
 #ifdef SQLITE_W32_THREADS
+  static HANDLE mutexOwner;
   static CRITICAL_SECTION cs;
 #endif
 
@@ -1092,13 +1093,13 @@ void sqlite3WinEnterMutex(){
     }
   }
   EnterCriticalSection(&cs);
+  mutexOwner = GetCurrentThread();
 #endif
-  assert( !inMutex );
-  inMutex = 1;
+  inMutex++;
 }
 void sqlite3WinLeaveMutex(){
   assert( inMutex );
-  inMutex = 0;
+  inMutex--;
 #ifdef SQLITE_W32_THREADS
   LeaveCriticalSection(&cs);
 #endif
@@ -1108,7 +1109,11 @@ void sqlite3WinLeaveMutex(){
 ** Return TRUE if we are currently within the mutex and FALSE if not.
 */
 int sqlite3WinInMutex(){
+#ifdef SQLITE_W32_THREADS
+  return inMutex && mutexOwner==GetCurrentThread();
+#else
   return inMutex;
+#endif
 }
 
 
