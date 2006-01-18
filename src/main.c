@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.325 2006/01/18 04:26:07 danielk1977 Exp $
+** $Id: main.c,v 1.326 2006/01/18 05:51:58 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -727,6 +727,7 @@ const void *sqlite3_errmsg16(sqlite3 *db){
          SQLITE_UTF8, SQLITE_STATIC);
     z = sqlite3_value_text16(db->pErr);
   }
+  sqlite3MallocClearFailed();
   return z;
 }
 #endif /* SQLITE_OMIT_UTF16 */
@@ -930,6 +931,10 @@ int sqlite3_open16(
     rc = openDatabase(zFilename8, ppDb);
     if( rc==SQLITE_OK && *ppDb ){
       rc = sqlite3_exec(*ppDb, "PRAGMA encoding = 'UTF-16'", 0, 0, 0);
+      if( rc!=SQLITE_OK ){
+        sqlite3_close(*ppDb);
+        *ppDb = 0;
+      }
     }
   }else{
     assert( sqlite3ThreadDataReadOnly()->mallocFailed );

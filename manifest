@@ -1,5 +1,5 @@
-C Handle\smalloc()\sfailures\sthat\soccur\sinside\screate_collation()\scalls.\s(CVS\s2966)
-D 2006-01-18T04:26:07
+C Handle\smalloc()\sfailures\sthat\soccur\sin\sopen16()\sand\serrmsg16().\s(CVS\s2967)
+D 2006-01-18T05:51:58
 F Makefile.in ab3ffd8d469cef4477257169b82810030a6bb967
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -48,7 +48,7 @@ F src/hash.c 8747cf51d12de46512880dfcf1b68b4e24072863
 F src/hash.h 1b0c445e1c89ff2aaad9b4605ba61375af001e84
 F src/insert.c a5595cf8d1d8ba087b676a63f1f7277ea44b5ac1
 F src/legacy.c 9bf7ee1b63c99aac6669533986a5240b16101458
-F src/main.c bab16cf13d9a6388c321f6bc4693d258aea80a2a
+F src/main.c fd9cb79c9fb6c61a67ad8be19a782372b0c4f48d
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/os.c 1d1a61cdf150e9f9520a3bc787c8465148ea2e78
 F src/os.h 9debc3d3ca4cdafde222a0ea74a4c8415aef4f22
@@ -73,7 +73,7 @@ F src/sqlite.h.in 492580f7e3ff71eb43193eb7bb98e2d549889ce3
 F src/sqliteInt.h d7b20e0a9453db123809d0bcc46d6ae0e4cf6bca
 F src/table.c 486dcfce532685b53b5a2b5da8bba0ded6fb2316
 F src/tclsqlite.c d650bea0248fc0a310ddc2cb94273a3a5021fddf
-F src/test1.c deb48cd5ab369a2ffccb62b017d248188a3be201
+F src/test1.c b076d9c42b547ec0891b67722f00681b21756d91
 F src/test2.c ca74a1d8aeb7d9606e8f6b762c5daf85c1a3f92b
 F src/test3.c 9742aa146eb750cab81c1d5605286c3a0eb88054
 F src/test4.c 6633cb7b4a7429e938804a34f688d118c8b7f8e1
@@ -90,7 +90,7 @@ F src/vacuum.c 21a3c7f6f7be86bb1182fbc3df416ad702435b9e
 F src/vdbe.c 3db9bfc86e71dc0758524fb82cfcfd4c30e92716
 F src/vdbe.h 8729a4ee16ff9aeab2af9667df3cf300ff978e13
 F src/vdbeInt.h 5451cf71f229e366ac543607c0a17f36e5737ea9
-F src/vdbeapi.c 9cc9b7a0fc65c29c7d249c0101897ff27eedffe8
+F src/vdbeapi.c 2c3068bc5d17f7bd179b346a4a920199ea451694
 F src/vdbeaux.c 723e0ec773aeec53e9448b2ac5b136677e64ece0
 F src/vdbefifo.c 9efb94c8c3f4c979ebd0028219483f88e57584f5
 F src/vdbemem.c dd08a0eea4868ac4a2d91fdec32424308b1db772
@@ -186,7 +186,7 @@ F test/lock.test 9b7afcb24f53d24da502abb33daaad2cd6d44107
 F test/lock2.test d83ba79d3c4fffdb5b926c7d8ca7a36c34288a55
 F test/lock3.test 615111293cf32aa2ed16d01c6611737651c96fb9
 F test/main.test b12f01d49a5c805a33fa6c0ef168691f63056e79
-F test/malloc.test 095d23a3840549cfc4282f95d9dc531152473c05
+F test/malloc.test ce6d1e7e79f9db967b51e1975b50760af66db90d
 F test/malloc2.test e6e321db96d6c94cb18bf82ad7215070c41e624e
 F test/malloc3.test 265644c655497242f7c0a1bb5b36c8500a5fc27c
 F test/malloc4.test 2e29d155eb4b4808019ef47eeedfcbe9e09e0f05
@@ -341,7 +341,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 9e2e40845d30cc150abe23ee318a721b4fe9613c
-R 07ad42513a6cd0f560889373df73f012
+P 95c5903f368413019af83aa73263e0e9d1204b62
+R 6a825d2cc0d8c1f698b4dde375d79ff9
 U danielk1977
-Z 7bf4533c1b6879283691c3482fcc8f38
+Z 11afff1c430074d91a3b87b617dd2674

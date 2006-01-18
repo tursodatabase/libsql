@@ -780,7 +780,9 @@ int sqlite3_transfer_bindings(sqlite3_stmt *pFromStmt, sqlite3_stmt *pToStmt){
     return SQLITE_ERROR;
   }
   for(i=0; rc==SQLITE_OK && i<pFrom->nVar; i++){
+    sqlite3MallocDisallow();
     rc = sqlite3VdbeMemMove(&pTo->aVar[i], &pFrom->aVar[i]);
+    sqlite3MallocAllow();
   }
   return rc;
 }

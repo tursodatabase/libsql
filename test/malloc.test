@@ -14,7 +14,7 @@
 # special feature is used to see what happens in the library if a malloc
 # were to really fail due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.28 2006/01/18 04:26:08 danielk1977 Exp $
+# $Id: malloc.test,v 1.29 2006/01/18 05:51:58 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -110,7 +110,7 @@ proc do_malloc_test {tn args} {
     } {1 1}
 
     if {[info exists ::mallocopts(-cleanup)]} {
-      catch $::mallocopts(-cleanup)
+      catch [list uplevel #0 $::mallocopts(-cleanup)] msg
     }
   }
   unset ::mallocopts
@@ -359,10 +359,15 @@ ifcapable crashtest {
     if {$rc!="1 {child process exited abnormally}"} {
       error "Wrong error message: $rc"
     }
-  } -sqlbody {
-    ATTACH 'test2.db' as aux;
-    SELECT * FROM t1;
-    SELECT * FROM t2;
+  } -tclbody {
+    db eval {ATTACH 'test2.db' as aux;}
+    set rc [catch {db eval {
+      SELECT * FROM t1; 
+      SELECT * FROM t2;
+    }} err]
+    if {$rc && $err!="no such table: t1"} {
+      error $err
+    }
   }
 }
 
@@ -394,16 +399,87 @@ proc string_compare {a b} {
 
 # Test for malloc() failures in sqlite3_create_collation() and 
 # sqlite3_create_collation16().
+#
 do_malloc_test 15 -tclbody {
   db collate string_compare string_compare
   if {[catch {add_test_collate $::DB 1 1 1} msg]} {
     if {$msg=="SQLITE_NOMEM"} {set msg "out of memory"}
     error $msg
   }
+
+  db complete {SELECT "hello """||'world"' [microsoft], * FROM anicetable;}
+  db complete {-- Useful comment}
+
   execsql {
     CREATE TABLE t1(a, b COLLATE string_compare);
     INSERT INTO t1 VALUES(10, 'string');
     INSERT INTO t1 VALUES(10, 'string2');
+  }
+}
+
+# Also test sqlite3_complete(). There are (currently) no malloc()
+# calls in this function, but test anyway against future changes.
+#
+do_malloc_test 16 -tclbody {
+  db complete {SELECT "hello """||'world"' [microsoft], * FROM anicetable;}
+  db complete {-- Useful comment}
+  db eval {
+    SELECT * FROM sqlite_master;
+  }
+}
+
+# Test handling of malloc() failures in sqlite3_open16().
+#
+do_malloc_test 17 -tclbody {
+  set DB2 0
+  set STMT 0
+
+  # open database using sqlite3_open16()
+  set DB2 [sqlite3_open16 test.db -unused]
+  if {0==$DB2} {
+    error "out of memory"
+  }
+
+  # Prepare statement
+  set rc [catch {sqlite3_prepare $DB2 {SELECT * FROM sqlite_master} -1 X} msg]
+  if {$rc} {
+    error [string range $msg 4 end]
+  }
+  set STMT $msg
+
+  # Finalize statement
+  set rc [sqlite3_finalize $STMT]
+  if {$rc!="SQLITE_OK"} {
+    error [sqlite3_errmsg $DB2]
+  }
+  set STMT 0
+
+  # Close database
+  set rc [sqlite3_close $DB2]
+  if {$rc!="SQLITE_OK"} {
+    error [sqlite3_errmsg $DB2]
+  }
+  set DB2 0
+} -cleanup {
+  if {$STMT!="0"} {
+    sqlite3_finalize $STMT
+  }
+  if {$DB2!="0"} {
+    set rc [sqlite3_close $DB2]
+  }
+}
+
+# Test handling of malloc() failures in sqlite3_errmsg16().
+#
+do_malloc_test 18 -tclbody {
+  catch {
+    db eval "SELECT [string repeat longcolumnname 10] FROM sqlite_master"
+  } msg
+  if {$msg=="out of memory"} {error $msg}
+  set utf16 [sqlite3_errmsg16 [sqlite3_connection_pointer db]]
+  binary scan $utf16 c* bytes
+  if {[llength $bytes]==0} {
+    error "out of memory"
   }
 }
 
