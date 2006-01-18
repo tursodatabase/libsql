@@ -1667,7 +1667,9 @@ int sqlite3UnixSleep(int ms){
 */
 static int inMutex = 0;
 #ifdef SQLITE_UNIX_THREADS
-static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_t mutexOwner;
+static pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t mutex2 = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
 /*
@@ -1682,16 +1684,27 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 */
 void sqlite3UnixEnterMutex(){
 #ifdef SQLITE_UNIX_THREADS
-  pthread_mutex_lock(&mutex);
+  pthread_mutex_lock(&mutex1);
+  if( inMutex==0 ){
+    pthread_mutex_lock(&mutex2);
+    mutexOwner = pthread_self();
+  }
+  pthread_mutex_unlock(&mutex1);
 #endif
-  assert( !inMutex );
-  inMutex = 1;
+  inMutex++;
 }
 void sqlite3UnixLeaveMutex(){
-  assert( inMutex );
-  inMutex = 0;
+  assert( inMutex>0 );
 #ifdef SQLITE_UNIX_THREADS
-  pthread_mutex_unlock(&mutex);
+  assert( pthread_equal(mutexOwner, pthread_self()) );
+  pthread_mutex_lock(&mutex1);
+  inMutex--;
+  if( inMutex==0 ){
+    pthread_mutex_unlock(&mutex2);
+  }
+  pthread_mutex_unlock(&mutex1);
+#else
+  inMutex--;
 #endif
 }
 
@@ -1699,7 +1712,11 @@ void sqlite3UnixLeaveMutex(){
 ** Return TRUE if we are currently within the mutex and FALSE if not.
 */
 int sqlite3UnixInMutex(){
+#ifdef SQLITE_UNIX_THREADS
+  return inMutex && pthread_equal(mutexOwner, pthread_self());
+#else
   return inMutex;
+#endif
 }
 
 /*
