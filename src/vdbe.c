@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.531 2006/01/16 15:14:28 danielk1977 Exp $
+** $Id: vdbe.c,v 1.532 2006/01/18 16:51:36 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -431,7 +431,7 @@ int sqlite3VdbeExec(
   for(pc=p->pc; rc==SQLITE_OK; pc++){
     assert( pc>=0 && pc<p->nOp );
     assert( pTos<=&p->aStack[pc] );
-    if( pTsd->mallocFailed ) goto no_mem;
+    if( sqlite3MallocFailed() ) goto no_mem;
 #ifdef VDBE_PROFILE
     origPc = pc;
     start = hwtime();
@@ -1187,7 +1187,7 @@ case OP_Function: {
   if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
   (*ctx.pFunc->xFunc)(&ctx, n, apVal);
   if( sqlite3SafetyOn(db) ) goto abort_due_to_misuse;
-  if( pTsd->mallocFailed ) goto no_mem;
+  if( sqlite3MallocFailed() ) goto no_mem;
   popStack(&pTos, n);
 
   /* If any auxilary data functions have been called by this user function,
@@ -4040,13 +4040,13 @@ case OP_ParseSchema: {        /* no-push */
   sqlite3SafetyOff(db);
   assert( db->init.busy==0 );
   db->init.busy = 1;
-  assert(0==pTsd->mallocFailed);
+  assert( !sqlite3MallocFailed() );
   rc = sqlite3_exec(db, zSql, sqlite3InitCallback, &initData, 0);
   sqliteFree(zSql);
   db->init.busy = 0;
   sqlite3SafetyOn(db);
   if( rc==SQLITE_NOMEM ){
-    pTsd->mallocFailed = 1;
+    sqlite3FailedMalloc();
     goto no_mem;
   }
   break;  
@@ -4637,7 +4637,7 @@ abort_due_to_misuse:
   */
 abort_due_to_error:
   if( p->zErrMsg==0 ){
-    if( pTsd->mallocFailed ) rc = SQLITE_NOMEM;
+    if( sqlite3MallocFailed() ) rc = SQLITE_NOMEM;
     sqlite3SetString(&p->zErrMsg, sqlite3ErrStr(rc), (char*)0);
   }
   goto vdbe_halt;

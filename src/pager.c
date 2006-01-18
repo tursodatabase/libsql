@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.242 2006/01/18 15:25:17 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.243 2006/01/18 16:51:35 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1593,7 +1593,7 @@ int sqlite3pager_open(
   ** structure was never allocated. 
   */
   *ppPager = 0;
-  if( sqlite3ThreadDataReadOnly()->mallocFailed ){
+  if( sqlite3MallocFailed() ){
     return SQLITE_NOMEM;
   }
   memset(&fd, 0, sizeof(fd));

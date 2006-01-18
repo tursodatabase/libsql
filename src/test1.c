@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.195 2006/01/18 05:51:58 danielk1977 Exp $
+** $Id: test1.c,v 1.196 2006/01/18 16:51:35 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -834,7 +834,8 @@ static int sqlite3_mprintf_hexdouble(
 ** first failure will continue to fail on every call.  If REPEAT-INTERVAL is
 ** 2 then every other malloc will fail.  And so forth.
 **
-** Turn off this mechanism and reset the sqlite3ThreadData()->mallocFailed variable is N==0.
+** Turn off this mechanism and reset the sqlite3ThreadData()->mallocFailed 
+** variable if N==0.
 */
 #ifdef SQLITE_MEMDEBUG
 static int sqlite_malloc_fail(
@@ -915,9 +916,9 @@ static int sqlite_malloc_outstanding(
     if( 0==strcmp(zArg, "-bytes") ){
       Tcl_SetObjResult(interp, Tcl_NewIntObj(pTd->nAlloc));
     }else if( 0==strcmp(zArg, "-maxbytes") ){
-      Tcl_SetObjResult(interp, Tcl_NewWideIntObj(pTd->nMaxAlloc));
+      Tcl_SetObjResult(interp, Tcl_NewWideIntObj(sqlite3_nMaxAlloc));
     }else if( 0==strcmp(zArg, "-clearmaxbytes") ){
-      pTd->nMaxAlloc = pTd->nAlloc;
+      sqlite3_nMaxAlloc = pTd->nAlloc;
     }else{
       Tcl_AppendResult(interp, "bad option \"", zArg, 
         "\": must be -bytes, -maxbytes or -clearmaxbytes", 0
@@ -3031,12 +3032,6 @@ static int test_clear_tsd_memdebug(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-#if defined(SQLITE_MEMDEBUG)
-  ThreadData *pTd = sqlite3ThreadData();
-  pTd->nMaxAlloc = 0;
-  pTd->zFile = 0;
-  pTd->iLine = 0;
-#endif
   return TCL_OK;
 }
 

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.473 2006/01/18 15:25:18 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.474 2006/01/18 16:51:35 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -261,9 +261,16 @@ extern int sqlite3_nMalloc;      /* Number of sqliteMalloc() calls */
 extern int sqlite3_nFree;        /* Number of sqliteFree() calls */
 extern int sqlite3_iMallocFail;  /* Fail sqliteMalloc() after this many calls */
 extern int sqlite3_iMallocReset; /* Set iMallocFail to this when it reaches 0 */
-#define ENTER_MALLOC (\
-  sqlite3ThreadData()->zFile = __FILE__, sqlite3ThreadData()->iLine = __LINE__ \
-)
+
+
+extern void *sqlite3_pFirst;         /* Pointer to linked list of allocations */
+extern int sqlite3_nMaxAlloc;        /* High water mark of ThreadData.nAlloc */
+extern int sqlite3_mallocDisallowed; /* assert() in sqlite3Malloc() if set */
+extern int sqlite3_isFail;           /* True if all malloc calls should fail */
+extern const char *sqlite3_zFile;    /* Filename to associate debug info with */
+extern int sqlite3_iLine;            /* Line number for debug info */
+
+#define ENTER_MALLOC (sqlite3_zFile = __FILE__, sqlite3_iLine = __LINE__)
 #define sqliteMalloc(x)          (ENTER_MALLOC, sqlite3Malloc(x))
 #define sqliteMallocRaw(x)       (ENTER_MALLOC, sqlite3MallocRaw(x))
 #define sqliteRealloc(x,y)       (ENTER_MALLOC, sqlite3Realloc(x,y))
@@ -295,7 +302,6 @@ extern int sqlite3_iMallocReset; /* Set iMallocFail to this when it reaches 0 */
 ** is deallocated.
 */
 struct ThreadData {
-  int mallocFailed;        /* True after a malloc() has failed */
   int nRef;                /* Number of users */
 
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
@@ -308,32 +314,7 @@ struct ThreadData {
   u8 useSharedData;        /* True if shared pagers and schemas are enabled */
   BtShared *pBtree;        /* Linked list of all currently open BTrees */
 #endif
-
-#ifdef SQLITE_MEMDEBUG
-  void *pFirst;            /* Pointer to linked list of allocations */
-  int nMaxAlloc;           /* High water mark of ThreadData.nAlloc */
-  int mallocDisallowed;    /* assert() in sqlite3Malloc() if set */
-  int isFail;              /* True if all malloc() calls should fail */
-  const char *zFile;       /* Filename to associate debugging info with */
-  int iLine;               /* Line number to associate debugging info with */
-#endif
 };
-
-/*
-** The THREADDATASIZE macro is used by the system that automatically 
-** deallocates ThreadData structures. If the first THREADDATASIZE bytes
-** of a ThreadData structure are all zero, then the structure is eligible
-** for deallocation.
-**
-** Usually, THREADDATASIZE is set to the size of the structure. However
-** if SQLITE_MEMDEBUG is defined, all variables declared after the 
-** ThreadData.pFirst variable are excluded.
-*/
-#ifdef SQLITE_MEMDEBUG
-  #define THREADDATASIZE (int)(&(((ThreadData *)0)->nMaxAlloc))
-#else
-  #define THREADDATASIZE sizeof(ThreadData)
-#endif
 
 /*
 ** Name of the master database table.  The master database table
@@ -1766,6 +1747,8 @@ int sqlite3CreateFunc(sqlite3 *, const char *, int, int, void *,
   void (*)(sqlite3_context*,int,sqlite3_value **),
   void (*)(sqlite3_context*,int,sqlite3_value **), void (*)(sqlite3_context*));
 int sqlite3ApiExit(sqlite3 *db, int);
+int sqlite3MallocFailed();
+void sqlite3FailedMalloc();
 
 #ifndef SQLITE_OMIT_SHARED_CACHE
   void sqlite3TableLock(Parse *, int, int, u8, const char *);

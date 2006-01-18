@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.175 2006/01/18 15:39:26 danielk1977 Exp $
+** $Id: util.c,v 1.176 2006/01/18 16:51:36 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -196,20 +196,27 @@ int sqlite3_memMax;          /* TODO Mem usage high-water mark */
 int sqlite3_iMallocFail;     /* Fail sqliteMalloc() after this many calls */
 int sqlite3_iMallocReset = -1; /* When iMallocFail reaches 0, set to this */
 
+void *sqlite3_pFirst = 0;         /* Pointer to linked list of allocations */
+int sqlite3_nMaxAlloc = 0;        /* High water mark of ThreadData.nAlloc */
+int sqlite3_mallocDisallowed = 0; /* assert() in sqlite3Malloc() if set */
+int sqlite3_isFail = 0;           /* True if all malloc calls should fail */
+const char *sqlite3_zFile = 0;    /* Filename to associate debug info with */
+int sqlite3_iLine = 0;            /* Line number for debug info */
+
 /*
 ** Check for a simulated memory allocation failure.  Return true if
 ** the failure should be simulated.  Return false to proceed as normal.
 */
 static int failMalloc(){
   ThreadData *pTsd = sqlite3ThreadData();
-  if( pTsd->isFail ){
+  if( sqlite3_isFail ){
     return 1;
   }
   if( sqlite3_iMallocFail>=0 ){
     sqlite3_iMallocFail--;
     if( sqlite3_iMallocFail==0 ){
       sqlite3_iMallocFail = sqlite3_iMallocReset;
-      pTsd->isFail = 1;
+      sqlite3_isFail = 1;
       return 1;
     }
   }
@@ -269,11 +276,11 @@ static void applyGuards(u32 *p)
   /* Line number */
   z = &((char *)z)[TESTALLOC_NGUARD*sizeof(u32)];             /* Guard words */
   z = &zAlloc[TESTALLOC_OFFSET_LINENUMBER(p)];
-  memcpy(z, &sqlite3ThreadData()->iLine, sizeof(u32));
+  memcpy(z, &sqlite3_iLine, sizeof(u32));
 
   /* File name */
   z = &zAlloc[TESTALLOC_OFFSET_FILENAME(p)];
-  strncpy(z, sqlite3ThreadData()->zFile, TESTALLOC_FILESIZE);
+  strncpy(z, sqlite3_zFile, TESTALLOC_FILESIZE);
   z[TESTALLOC_FILESIZE - 1] = '\0';
 
   /* User string */
@@ -312,11 +319,11 @@ static void linkAlloc(void *p){
   ThreadData *pTsd = sqlite3ThreadData();
   void **pp = (void **)p;
   pp[0] = 0;
-  pp[1] = pTsd->pFirst;
-  if( pTsd->pFirst ){
-    ((void **)pTsd->pFirst)[0] = p;
+  pp[1] = sqlite3_pFirst;
+  if( sqlite3_pFirst ){
+    ((void **)sqlite3_pFirst)[0] = p;
   }
-  pTsd->pFirst = p;
+  sqlite3_pFirst = p;
 }
 
 /*
@@ -327,12 +334,12 @@ static void unlinkAlloc(void *p)
 {
   ThreadData *pTsd = sqlite3ThreadData();
   void **pp = (void **)p;
-  if( p==pTsd->pFirst ){
+  if( p==sqlite3_pFirst ){
     assert(!pp[0]);
     assert(!pp[1] || ((void **)(pp[1]))[0]==p);
-    pTsd->pFirst = pp[1];
-    if( pTsd->pFirst ){
-      ((void **)pTsd->pFirst)[0] = 0;
+    sqlite3_pFirst = pp[1];
+    if( sqlite3_pFirst ){
+      ((void **)sqlite3_pFirst)[0] = 0;
     }
   }else{
     void **pprev = pp[0];
@@ -359,7 +366,7 @@ static void relinkAlloc(void *p)
     ((void **)(pp[0]))[1] = p;
   }else{
     ThreadData *pTsd = sqlite3ThreadData();
-    pTsd->pFirst = p;
+    sqlite3_pFirst = p;
   }
   if( pp[1] ){
     ((void **)(pp[1]))[0] = p;
@@ -394,7 +401,7 @@ int sqlite3OutstandingMallocs(Tcl_Interp *interp){
   Tcl_Obj *pRes = Tcl_NewObj();
   Tcl_IncrRefCount(pRes);
 
-  for(p=pTsd->pFirst; p; p=((void **)p)[1]){
+  for(p=sqlite3_pFirst; p; p=((void **)p)[1]){
     Tcl_Obj *pEntry = Tcl_NewObj();
     Tcl_Obj *pStack = Tcl_NewObj();
     char *z;
@@ -439,9 +446,9 @@ int sqlite3OutstandingMallocs(Tcl_Interp *interp){
 static void * OSMALLOC(int n){
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
   ThreadData *pTsd = sqlite3ThreadData();
-  pTsd->nMaxAlloc = MAX(pTsd->nMaxAlloc, pTsd->nAlloc);
+  sqlite3_nMaxAlloc = MAX(sqlite3_nMaxAlloc, pTsd->nAlloc);
 #endif
-  assert( !sqlite3ThreadData()->mallocDisallowed );
+  assert( !sqlite3_mallocDisallowed );
   if( !failMalloc() ){
     u32 *p;
     p = (u32 *)sqlite3OsMalloc(n + TESTALLOC_OVERHEAD);
@@ -481,9 +488,9 @@ static void OSFREE(void *pFree){
 static void * OSREALLOC(void *pRealloc, int n){
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
   ThreadData *pTsd = sqlite3ThreadData();
-  pTsd->nMaxAlloc = MAX(pTsd->nMaxAlloc, pTsd->nAlloc);
+  sqlite3_nMaxAlloc = MAX(sqlite3_nMaxAlloc, pTsd->nAlloc);
 #endif
-  assert( !sqlite3ThreadData()->mallocDisallowed );
+  assert( !sqlite3_mallocDisallowed );
   if( !failMalloc() ){
     u32 *p = (u32 *)getOsPointer(pRealloc);
     checkGuards(p);
@@ -496,7 +503,7 @@ static void * OSREALLOC(void *pRealloc, int n){
 }
 
 static void OSMALLOC_FAILED(){
-  sqlite3ThreadData()->isFail = 0;
+  sqlite3_isFail = 0;
 }
 
 #else
@@ -549,7 +556,7 @@ static void handleSoftLimit(int n){
 */
 void *sqlite3MallocRaw(int n){
   void *p = 0;
-  if( n>0 && !sqlite3ThreadDataReadOnly()->mallocFailed ){
+  if( n>0 && !sqlite3MallocFailed() ){
     handleSoftLimit(n);
     while( !(p = OSMALLOC(n)) && sqlite3_release_memory(n) );
     if( !p ){
@@ -559,7 +566,7 @@ void *sqlite3MallocRaw(int n){
       ** still correct after a malloc() failure. 
       */
       handleSoftLimit(n * -1);
-      sqlite3ThreadData()->mallocFailed = 1;
+      sqlite3FailedMalloc();
       OSMALLOC_FAILED();
     }
   }
@@ -572,7 +579,7 @@ void *sqlite3MallocRaw(int n){
 ** attempt to free memory by calling sqlite3_release_memory().
 */
 void *sqlite3Realloc(void *p, int n){
-  if( sqlite3ThreadDataReadOnly()->mallocFailed ){
+  if( sqlite3MallocFailed() ){
     return 0;
   }
 
@@ -589,7 +596,7 @@ void *sqlite3Realloc(void *p, int n){
       ** still correct after a malloc() failure. 
       */
       handleSoftLimit(OSSIZEOF(p) - n);
-      sqlite3ThreadData()->mallocFailed = 1;
+      sqlite3FailedMalloc();
       OSMALLOC_FAILED();
     }
     return np;
@@ -1350,16 +1357,32 @@ void sqlite3ReleaseThreadData(){
 ** then the connection error-code (the value returned by sqlite3_errcode())
 ** is set to SQLITE_NOMEM.
 */
+static int mallocHasFailed = 0;
 int sqlite3ApiExit(sqlite3* db, int rc){
-  ThreadData *pTd = sqlite3OsThreadSpecificData(0);
-  if( pTd && pTd->mallocFailed ){
-    pTd->mallocFailed = 0;
-    if( db ){
-      sqlite3Error(db, SQLITE_NOMEM, 0);
-    }
-    return SQLITE_NOMEM;
+  if( sqlite3MallocFailed() ){
+    mallocHasFailed = 0;
+    sqlite3OsLeaveMutex();
+    sqlite3Error(db, SQLITE_NOMEM, 0);
+    rc = SQLITE_NOMEM;
   }
   return rc;
+}
+
+/* 
+** Return true is a malloc has failed in this thread since the last call
+** to sqlite3ApiExit(), or false otherwise.
+*/
+int sqlite3MallocFailed(){
+  return (mallocHasFailed && sqlite3OsInMutex());
+}
+
+/* 
+** Set the "malloc has failed" condition to true for this thread.
+*/
+void sqlite3FailedMalloc(){
+  sqlite3OsEnterMutex();
+  assert( mallocHasFailed==0 );
+  mallocHasFailed = 1;
 }
 
 #ifdef SQLITE_MEMDEBUG
@@ -1368,8 +1391,8 @@ int sqlite3ApiExit(sqlite3* db, int rc){
 ** cause an assert to fail if sqliteMalloc() or sqliteRealloc() is called.
 */
 void sqlite3MallocDisallow(){
-  assert( sqlite3ThreadData()->mallocDisallowed>=0 );
-  sqlite3ThreadData()->mallocDisallowed++;
+  assert( sqlite3_mallocDisallowed>=0 );
+  sqlite3_mallocDisallowed++;
 }
 
 /*
@@ -1377,7 +1400,7 @@ void sqlite3MallocDisallow(){
 ** by sqlite3MallocDisallow().
 */
 void sqlite3MallocAllow(){
-  assert( sqlite3ThreadData()->mallocDisallowed>0 );
-  sqlite3ThreadData()->mallocDisallowed--;
+  assert( sqlite3_mallocDisallowed>0 );
+  sqlite3_mallocDisallowed--;
 }
 #endif

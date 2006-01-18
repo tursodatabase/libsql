@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.57 2006/01/13 01:48:59 drh Exp $
+** $Id: vacuum.c,v 1.58 2006/01/18 16:51:36 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -314,7 +314,7 @@ end_of_vacuum:
   ** Fix this so the flag and return code match.
   */
   if( rc==SQLITE_NOMEM ){
-    sqlite3ThreadData()->mallocFailed = 1;
+    sqlite3MallocFailed();
   }
 
   if( zTemp ){

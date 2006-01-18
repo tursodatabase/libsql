@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.249 2006/01/13 06:33:24 danielk1977 Exp $
+** $Id: expr.c,v 1.250 2006/01/18 16:51:35 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -263,7 +263,7 @@ Expr *sqlite3ExprAnd(Expr *pLeft, Expr *pRight){
 void sqlite3ExprSpan(Expr *pExpr, Token *pLeft, Token *pRight){
   assert( pRight!=0 );
   assert( pLeft!=0 );
-  if( !sqlite3ThreadDataReadOnly()->mallocFailed && pRight->z && pLeft->z ){
+  if( !sqlite3MallocFailed() && pRight->z && pLeft->z ){
     assert( pLeft->dyn==0 || pLeft->z[pLeft->n]==0 );
     if( pLeft->dyn==0 && pRight->dyn==0 ){
       pExpr->span.z = pLeft->z;
@@ -358,7 +358,7 @@ void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr){
         sqliteReallocOrFree((void**)&pParse->apVarExpr,
                        pParse->nVarExprAlloc*sizeof(pParse->apVarExpr[0]) );
       }
-      if( !sqlite3ThreadDataReadOnly()->mallocFailed ){
+      if( !sqlite3MallocFailed() ){
         assert( pParse->apVarExpr!=0 );
         pParse->apVarExpr[pParse->nVarExpr++] = pExpr;
       }
@@ -463,7 +463,7 @@ ExprList *sqlite3ExprListDup(ExprList *p){
     }
     assert( pNewExpr==0 || pNewExpr->span.z!=0 
             || pOldExpr->span.z==0
-            || sqlite3ThreadDataReadOnly()->mallocFailed );
+            || sqlite3MallocFailed() );
     pItem->zName = sqliteStrDup(pOldItem->zName);
     pItem->sortOrder = pOldItem->sortOrder;
     pItem->isAgg = pOldItem->isAgg;
@@ -832,7 +832,7 @@ static int lookupName(
   zDb = sqlite3NameFromToken(pDbToken);
   zTab = sqlite3NameFromToken(pTableToken);
   zCol = sqlite3NameFromToken(pColumnToken);
-  if( sqlite3ThreadDataReadOnly()->mallocFailed ){
+  if( sqlite3MallocFailed() ){
     goto lookupname_end;
   }
 
@@ -1309,7 +1309,7 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
     int mem = pParse->nMem++;
     sqlite3VdbeAddOp(v, OP_MemLoad, mem, 0);
     testAddr = sqlite3VdbeAddOp(v, OP_If, 0, 0);
-    assert( testAddr>0 || sqlite3ThreadDataReadOnly()->mallocFailed );
+    assert( testAddr>0 || sqlite3MallocFailed() );
     sqlite3VdbeAddOp(v, OP_MemInt, 1, mem);
   }
 

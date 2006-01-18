@@ -1739,20 +1739,6 @@ int sqlite3_tsd_count = 0;
 # define TSD_COUNTER(N)  /* no-op */
 #endif
 
-#if 0 && defined(SQLITE_MEMDEBUG)
-static void *mallocThreadData(size_t nBytes){
-  if( sqlite3_iMallocFail>=0 ){
-    sqlite3_iMallocFail--;
-    if( sqlite3_iMallocFail==0 ){
-      return 0;
-    }
-  }
-  return sqlite3OsMalloc(nBytes);
-}
-#else
-  #define mallocThreadData(x) sqlite3OsMalloc(x)
-#endif
-
 /*
 ** If called with allocateFlag>0, then return a pointer to thread
 ** specific data for the current thread.  Allocate and zero the
@@ -1791,7 +1777,7 @@ ThreadData *sqlite3UnixThreadSpecificData(int allocateFlag){
   pTsd = pthread_getspecific(key);
   if( allocateFlag>0 ){
     if( pTsd==0 ){
-      pTsd = mallocThreadData(sizeof(zeroData));
+      pTsd = sqlite3OsMalloc(sizeof(zeroData));
       if( pTsd ){
         *pTsd = zeroData;
         pthread_setspecific(key, pTsd);
@@ -1799,7 +1785,7 @@ ThreadData *sqlite3UnixThreadSpecificData(int allocateFlag){
       }
     }
   }else if( pTsd!=0 && allocateFlag<0 
-            && memcmp(pTsd, &zeroData, THREADDATASIZE)==0 ){
+            && memcmp(pTsd, &zeroData, sizeof(ThreadData))==0 ){
     sqlite3OsFree(pTsd);
     pthread_setspecific(key, 0);
     TSD_COUNTER(-1);
@@ -1810,14 +1796,14 @@ ThreadData *sqlite3UnixThreadSpecificData(int allocateFlag){
   static ThreadData *pTsd = 0;
   if( allocateFlag>0 ){
     if( pTsd==0 ){
-      pTsd = mallocThreadData( sizeof(zeroData) );
+      pTsd = sqlite3OsMalloc( sizeof(zeroData) );
       if( pTsd ){
         *pTsd = zeroData;
         TSD_COUNTER(+1);
       }
     }
   }else if( pTsd!=0 && allocateFlag<0
-            && memcmp(pTsd, &zeroData, THREADDATASIZE)==0 ){
+            && memcmp(pTsd, &zeroData, sizeof(ThreadData))==0 ){
     sqlite3OsFree(pTsd);
     TSD_COUNTER(-1);
     pTsd = 0;

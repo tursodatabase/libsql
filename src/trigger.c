@@ -81,7 +81,7 @@ void sqlite3BeginTrigger(
   ** If sqlite3SrcListLookup() returns 0, indicating the table does not
   ** exist, the error is caught by the block below.
   */
-  if( !pTableName || sqlite3ThreadDataReadOnly()->mallocFailed ){
+  if( !pTableName || sqlite3MallocFailed() ){
     goto trigger_cleanup;
   }
   pTab = sqlite3SrcListLookup(pParse, pTableName);
@@ -90,7 +90,7 @@ void sqlite3BeginTrigger(
   }
 
   /* Ensure the table name matches database name and that the table exists */
-  if( sqlite3ThreadDataReadOnly()->mallocFailed ) goto trigger_cleanup;
+  if( sqlite3MallocFailed() ) goto trigger_cleanup;
   assert( pTableName->nSrc==1 );
   if( sqlite3FixInit(&sFix, pParse, iDb, "trigger", pName) && 
       sqlite3FixSrcList(&sFix, pTableName) ){
@@ -257,7 +257,7 @@ void sqlite3FinishTrigger(
     pDel = sqlite3HashInsert(&db->aDb[iDb].pSchema->trigHash, 
                      pTrig->name, strlen(pTrig->name)+1, pTrig);
     if( pDel ){
-      assert( sqlite3ThreadDataReadOnly()->mallocFailed && pDel==pTrig );
+      assert( sqlite3MallocFailed() && pDel==pTrig );
       goto triggerfinish_cleanup;
     }
     n = strlen(pTrig->table) + 1;
@@ -441,7 +441,7 @@ void sqlite3DropTrigger(Parse *pParse, SrcList *pName){
   int nName;
   sqlite3 *db = pParse->db;
 
-  if( sqlite3ThreadDataReadOnly()->mallocFailed ) goto drop_trigger_cleanup;
+  if( sqlite3MallocFailed() ) goto drop_trigger_cleanup;
   if( SQLITE_OK!=sqlite3ReadSchema(pParse) ){
     goto drop_trigger_cleanup;
   }

@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.25 2006/01/18 15:25:18 danielk1977 Exp $
+** $Id: prepare.c,v 1.26 2006/01/18 16:51:35 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -24,7 +24,7 @@
 ** that the database is corrupt.
 */
 static void corruptSchema(InitData *pData, const char *zExtra){
-  if( !sqlite3ThreadDataReadOnly()->mallocFailed ){
+  if( !sqlite3MallocFailed() ){
     sqlite3SetString(pData->pzErrMsg, "malformed database schema",
        zExtra!=0 && zExtra[0]!=0 ? " - " : (char*)0, zExtra, (char*)0);
   }
@@ -49,7 +49,7 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **azColName){
   sqlite3 *db = pData->db;
   int iDb;
 
-  if( sqlite3ThreadDataReadOnly()->mallocFailed ){
+  if( sqlite3MallocFailed() ){
     return SQLITE_NOMEM;
   }
 
@@ -76,9 +76,9 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **azColName){
     db->init.iDb = 0;
     if( SQLITE_OK!=rc ){
       if( rc==SQLITE_NOMEM ){
-          sqlite3ThreadData()->mallocFailed = 1;
+        sqlite3FailedMalloc();
       }else{
-          corruptSchema(pData, zErr);
+        corruptSchema(pData, zErr);
       }
       sqlite3_free(zErr);
       return rc;
@@ -303,8 +303,8 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
 #endif
     sqlite3BtreeCloseCursor(curMain);
   }
-  if( sqlite3ThreadDataReadOnly()->mallocFailed ){
-    sqlite3SetString(pzErrMsg, "out of memory", (char*)0);
+  if( sqlite3MallocFailed() ){
+    /* sqlite3SetString(pzErrMsg, "out of memory", (char*)0); */
     rc = SQLITE_NOMEM;
     sqlite3ResetInternalSchema(db, 0);
   }
@@ -496,7 +496,7 @@ int sqlite3_prepare(
   int i;
 
   /* Assert that malloc() has not failed */
-  assert( !sqlite3ThreadDataReadOnly()->mallocFailed );
+  assert( !sqlite3MallocFailed() );
 
   assert( ppStmt );
   *ppStmt = 0;
@@ -523,7 +523,7 @@ int sqlite3_prepare(
   sParse.pTsd->nRef++;
   sqlite3RunParser(&sParse, zSql, &zErrMsg);
 
-  if( sParse.pTsd->mallocFailed ){
+  if( sqlite3MallocFailed() ){
     sParse.rc = SQLITE_NOMEM;
   }
   if( sParse.rc==SQLITE_DONE ) sParse.rc = SQLITE_OK;

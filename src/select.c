@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.294 2006/01/13 06:33:24 danielk1977 Exp $
+** $Id: select.c,v 1.295 2006/01/18 16:51:35 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -872,8 +872,7 @@ static void generateColumnNames(
 #endif
 
   assert( v!=0 );
-  if( pParse->colNamesSet || v==0
-     || sqlite3ThreadDataReadOnly()->mallocFailed ) return;
+  if( pParse->colNamesSet || v==0 || sqlite3MallocFailed() ) return;
   pParse->colNamesSet = 1;
   fullNames = (db->flags & SQLITE_FullColNames)!=0;
   shortNames = (db->flags & SQLITE_ShortColNames)!=0;
@@ -1002,7 +1001,7 @@ Table *sqlite3ResultSetOfSelect(Parse *pParse, char *zTabName, Select *pSelect){
       zName = sqlite3MPrintf("column%d", i+1);
     }
     sqlite3Dequote(zName);
-    if( sqlite3ThreadDataReadOnly()->mallocFailed ){
+    if( sqlite3MallocFailed() ){
       sqliteFree(zName);
       sqlite3DeleteTable(0, pTab);
       return 0;
@@ -1074,7 +1073,7 @@ static int prepSelectStmt(Parse *pParse, Select *p){
   Table *pTab;
   struct SrcList_item *pFrom;
 
-  if( p==0 || p->pSrc==0 || sqlite3ThreadDataReadOnly()->mallocFailed ){
+  if( p==0 || p->pSrc==0 || sqlite3MallocFailed() ){
     return 1;
   }
   pTabList = p->pSrc;
@@ -2693,7 +2692,7 @@ int sqlite3Select(
   AggInfo sAggInfo;      /* Information used by aggregate queries */
   int iEnd;              /* Address of the end of the query */
 
-  if( p==0 || sqlite3ThreadDataReadOnly()->mallocFailed || pParse->nErr ){
+  if( p==0 || sqlite3MallocFailed() || pParse->nErr ){
     return 1;
   }
   if( sqlite3AuthCheck(pParse, SQLITE_SELECT, 0, 0, 0) ) return 1;
@@ -2949,7 +2948,7 @@ int sqlite3Select(
         goto select_end;
       }
     }
-    if( sqlite3ThreadDataReadOnly()->mallocFailed ) goto select_end;
+    if( sqlite3MallocFailed() ) goto select_end;
 
     /* Processing for aggregates with GROUP BY is very different and
     ** much more complex tha aggregates without a GROUP BY.

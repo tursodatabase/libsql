@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.327 2006/01/18 15:25:17 danielk1977 Exp $
+** $Id: main.c,v 1.328 2006/01/18 16:51:35 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -450,7 +450,7 @@ int sqlite3CreateFunc(
     if( db->activeVdbeCnt ){
       sqlite3Error(db, SQLITE_BUSY, 
         "Unable to delete/modify user-function due to active statements");
-      assert( !sqlite3ThreadDataReadOnly()->mallocFailed );
+      assert( !sqlite3MallocFailed() );
       return SQLITE_BUSY;
     }else{
       sqlite3ExpirePreparedStatements(db);
@@ -482,7 +482,7 @@ int sqlite3_create_function(
   void (*xFinal)(sqlite3_context*)
 ){
   int rc;
-  assert( !sqlite3ThreadDataReadOnly()->mallocFailed );
+  assert( !sqlite3MallocFailed() );
   rc = sqlite3CreateFunc(db, zFunctionName, nArg, enc, p, xFunc, xStep, xFinal);
 
   return sqlite3ApiExit(db, rc);
@@ -501,7 +501,7 @@ int sqlite3_create_function16(
 ){
   int rc;
   char *zFunc8;
-  assert( !sqlite3ThreadDataReadOnly()->mallocFailed );
+  assert( !sqlite3MallocFailed() );
 
   zFunc8 = sqlite3utf16to8(zFunctionName, -1);
   rc = sqlite3CreateFunc(db, zFunc8, nArg, eTextRep, p, xFunc, xStep, xFinal);
@@ -666,7 +666,7 @@ int sqlite3BtreeFactory(
 */
 const char *sqlite3_errmsg(sqlite3 *db){
   const char *z;
-  if( !db || sqlite3ThreadDataReadOnly()->mallocFailed ){
+  if( !db || sqlite3MallocFailed() ){
     return sqlite3ErrStr(SQLITE_NOMEM);
   }
   if( sqlite3SafetyCheck(db) || db->errCode==SQLITE_MISUSE ){
@@ -705,7 +705,7 @@ const void *sqlite3_errmsg16(sqlite3 *db){
   };
 
   const void *z;
-  if( sqlite3ThreadDataReadOnly()->mallocFailed ){
+  if( sqlite3MallocFailed() ){
     return (void *)(&outOfMemBe[SQLITE_UTF16NATIVE==SQLITE_UTF16LE?1:0]);
   }
   if( sqlite3SafetyCheck(db) || db->errCode==SQLITE_MISUSE ){
@@ -727,7 +727,7 @@ const void *sqlite3_errmsg16(sqlite3 *db){
 ** passed to this function, we assume a malloc() failed during sqlite3_open().
 */
 int sqlite3_errcode(sqlite3 *db){
-  if( !db || sqlite3ThreadDataReadOnly()->mallocFailed ){
+  if( !db || sqlite3MallocFailed() ){
     return SQLITE_NOMEM;
   }
   if( sqlite3SafetyCheck(db) ){
@@ -803,7 +803,7 @@ static int openDatabase(
   int rc;
   CollSeq *pColl;
 
-  assert( !sqlite3ThreadDataReadOnly()->mallocFailed );
+  assert( !sqlite3MallocFailed() );
 
   /* Allocate the sqlite data structure */
   db = sqliteMalloc( sizeof(sqlite3) );
@@ -825,7 +825,7 @@ static int openDatabase(
       createCollation(db, "BINARY", SQLITE_UTF16, 0,binCollFunc) ||
       (db->pDfltColl = sqlite3FindCollSeq(db, SQLITE_UTF8, "BINARY", 6, 0))==0 
   ){
-    assert( sqlite3ThreadDataReadOnly()->mallocFailed );
+    assert( sqlite3MallocFailed() );
     db->magic = SQLITE_MAGIC_CLOSED;
     goto opendb_out;
   }
@@ -870,7 +870,7 @@ static int openDatabase(
   ** database schema yet. This is delayed until the first time the database
   ** is accessed.
   */
-  if( !sqlite3ThreadDataReadOnly()->mallocFailed ){
+  if( !sqlite3MallocFailed() ){
     sqlite3RegisterBuiltinFunctions(db);
     sqlite3Error(db, SQLITE_OK, 0);
   }
@@ -978,7 +978,7 @@ int sqlite3_create_collation(
   int(*xCompare)(void*,int,const void*,int,const void*)
 ){
   int rc;
-  assert( !sqlite3ThreadDataReadOnly()->mallocFailed );
+  assert( !sqlite3MallocFailed() );
   rc = createCollation(db, zName, enc, pCtx, xCompare);
   return sqlite3ApiExit(db, rc);
 }
@@ -996,7 +996,7 @@ int sqlite3_create_collation16(
 ){
   int rc = SQLITE_OK;
   char *zName8; 
-  assert( !sqlite3ThreadDataReadOnly()->mallocFailed );
+  assert( !sqlite3MallocFailed() );
   zName8 = sqlite3utf16to8(zName, -1);
   if( zName8 ){
     rc = createCollation(db, zName8, enc, pCtx, xCompare);
