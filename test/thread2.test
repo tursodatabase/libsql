@@ -11,11 +11,20 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is multithreading behavior
 #
-# $Id: thread2.test,v 1.1 2006/01/15 02:30:58 drh Exp $
+# $Id: thread2.test,v 1.2 2006/01/18 18:33:42 danielk1977 Exp $
 
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+# This file swaps database connections between threads. This
+# is illegal if memory-management is enabled, so skip this file
+# in that case.
+ifcapable memorymanage {
+  finish_test
+  return
+}
+
 
 # Skip this whole file if the thread testing code is not enabled
 #

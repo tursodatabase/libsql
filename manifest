@@ -1,5 +1,5 @@
-C Include\sthe\sThreadData\sstructure\sin\sinternal\smalloc()\stesting.\sAlso\sfixes\sfor\srevealed\sbugs.\s(CVS\s2974)
-D 2006-01-18T18:22:43
+C Omit\sthread2.test\sif\smemory-management\sis\senabled\sat\scompile\stime.\s(CVS\s2975)
+D 2006-01-18T18:33:42
 F Makefile.in ab3ffd8d469cef4477257169b82810030a6bb967
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -236,7 +236,7 @@ F test/tclsqlite.test 9b5c4a09879a97572e5c84372f5d045dd4703392
 F test/temptable.test 7927261befdbc7b0a7ffebb85ecc70a74fa7b15b
 F test/tester.tcl e207c5008493dee7a03a619f1a5f23d4841ca7d7
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
-F test/thread2.test c88da55fb60d5975be91f1e2942a5e267c33f8ed
+F test/thread2.test 6d7b30102d600f51b4055ee3a5a19228799049fb
 F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
 F test/threadtest2.c 97a830d53c24c42290501fdfba4a6e5bdd34748b
 F test/tkt1435.test f8c52c41de6e5ca02f1845f3a46e18e25cadac00
@@ -341,7 +341,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P e1ad9df1cf46287f2a7789275e98d28e05880e17
-R d16f70b255799a1d6293d5f839dfd544
+P c7b9d50d0a975912776aaa2b870308652f77e1e6
+R 0b4da9c6676a7d07030b097567d769d5
 U danielk1977
-Z d52ffd289093139bee40bd2d96a45c60
+Z d8e3e0fd22ee5223fc21b64d390a9190
