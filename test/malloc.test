@@ -14,7 +14,7 @@
 # special feature is used to see what happens in the library if a malloc
 # were to really fail due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.27 2006/01/17 13:21:40 danielk1977 Exp $
+# $Id: malloc.test,v 1.28 2006/01/18 04:26:08 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -97,7 +97,11 @@ proc do_malloc_test {tn args} {
       if {$leftover>0} {
         if {$leftover>1} {puts "\nLeftover: $leftover\nReturn=$v  Message=$msg"}
         set ::go 0
-        set v {1 1}
+        if {$v} {
+          puts "\nError message returned: $msg"
+        } else {
+          set v {1 1}
+        }
       } else {
         set v2 [expr {$msg=="" || $msg=="out of memory"}]
         if {!$v2} {puts "\nError message returned: $msg"}
@@ -363,25 +367,44 @@ ifcapable crashtest {
 }
 
 if {$tcl_platform(platform)!="windows"} {
-do_malloc_test 14 -tclprep {
-  catch {db close}
-  sqlite3 db2 test2.db
-  db2 eval {
-    PRAGMA synchronous = 0;
-    CREATE TABLE t1(a, b);
-    INSERT INTO t1 VALUES(1, 2);
-    BEGIN;
-    INSERT INTO t1 VALUES(3, 4);
+  do_malloc_test 14 -tclprep {
+    catch {db close}
+    sqlite3 db2 test2.db
+    db2 eval {
+      PRAGMA synchronous = 0;
+      CREATE TABLE t1(a, b);
+      INSERT INTO t1 VALUES(1, 2);
+      BEGIN;
+      INSERT INTO t1 VALUES(3, 4);
+    }
+    copy_file test2.db test.db
+    copy_file test2.db-journal test.db-journal
+    db2 close
+  } -tclbody {
+    sqlite3 db test.db
+    db eval {
+      SELECT * FROM t1;
+    }  
   }
-  copy_file test2.db test.db
-  copy_file test2.db-journal test.db-journal
-  db2 close
-} -tclbody {
-  sqlite3 db test.db
-  db eval {
-    SELECT * FROM t1;
-  }  
 }
+
+proc string_compare {a b} {
+  return [string compare $a $b]
+}
+
+# Test for malloc() failures in sqlite3_create_collation() and 
+# sqlite3_create_collation16().
+do_malloc_test 15 -tclbody {
+  db collate string_compare string_compare
+  if {[catch {add_test_collate $::DB 1 1 1} msg]} {
+    if {$msg=="SQLITE_NOMEM"} {set msg "out of memory"}
+    error $msg
+  }
+  execsql {
+    CREATE TABLE t1(a, b COLLATE string_compare);
+    INSERT INTO t1 VALUES(10, 'string');
+    INSERT INTO t1 VALUES(10, 'string2');
+  }
 }
 
 # Ensure that no file descriptors were leaked.

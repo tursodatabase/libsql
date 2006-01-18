@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.193 2006/01/17 13:21:40 danielk1977 Exp $
+** $Id: test1.c,v 1.194 2006/01/18 04:26:07 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -1346,13 +1346,24 @@ static int test_collate(
             (void *)SQLITE_UTF16LE, val?test_collate_func:0);
     if( TCL_OK!=Tcl_GetBooleanFromObj(interp, objv[4], &val) ) return TCL_ERROR;
 
+#ifdef SQLITE_MEMDEBUG
+    if( sqlite3_iMallocFail>0 ){
+      sqlite3_iMallocFail++;
+    }
+#endif
     pVal = sqlite3ValueNew();
     sqlite3ValueSetStr(pVal, -1, "test_collate", SQLITE_UTF8, SQLITE_STATIC);
-    sqlite3_create_collation16(db, sqlite3ValueText(pVal, SQLITE_UTF16NATIVE), 
-          SQLITE_UTF16BE, (void *)SQLITE_UTF16BE, val?test_collate_func:0);
+    rc = sqlite3_create_collation16(db, 
+          sqlite3ValueText(pVal, SQLITE_UTF16NATIVE), SQLITE_UTF16BE, 
+          (void *)SQLITE_UTF16BE, val?test_collate_func:0);
     sqlite3ValueFree(pVal);
   }
   if( sqlite3TestErrCode(interp, db, rc) ) return TCL_ERROR;
+  
+  if( rc!=SQLITE_OK ){
+    Tcl_AppendResult(interp, sqlite3TestErrorName(rc), 0);
+    return TCL_ERROR;
+  }
   return TCL_OK;
 
 bad_args:

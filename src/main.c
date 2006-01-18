@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.324 2006/01/17 13:21:40 danielk1977 Exp $
+** $Id: main.c,v 1.325 2006/01/18 04:26:07 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -745,6 +745,60 @@ int sqlite3_errcode(sqlite3 *db){
   return db->errCode;
 }
 
+static int createCollation(
+  sqlite3* db, 
+  const char *zName, 
+  int enc, 
+  void* pCtx,
+  int(*xCompare)(void*,int,const void*,int,const void*)
+){
+  CollSeq *pColl;
+  
+  if( sqlite3SafetyCheck(db) ){
+    return SQLITE_MISUSE;
+  }
+
+  /* If SQLITE_UTF16 is specified as the encoding type, transform this
+  ** to one of SQLITE_UTF16LE or SQLITE_UTF16BE using the
+  ** SQLITE_UTF16NATIVE macro. SQLITE_UTF16 is not used internally.
+  */
+  if( enc==SQLITE_UTF16 ){
+    enc = SQLITE_UTF16NATIVE;
+  }
+
+  if( enc!=SQLITE_UTF8 && enc!=SQLITE_UTF16LE && enc!=SQLITE_UTF16BE ){
+    sqlite3Error(db, SQLITE_ERROR, 
+        "Param 3 to sqlite3_create_collation() must be one of "
+        "SQLITE_UTF8, SQLITE_UTF16, SQLITE_UTF16LE or SQLITE_UTF16BE"
+    );
+    return SQLITE_ERROR;
+  }
+
+  /* Check if this call is removing or replacing an existing collation 
+  ** sequence. If so, and there are active VMs, return busy. If there
+  ** are no active VMs, invalidate any pre-compiled statements.
+  */
+  pColl = sqlite3FindCollSeq(db, (u8)enc, zName, strlen(zName), 0);
+  if( pColl && pColl->xCmp ){
+    if( db->activeVdbeCnt ){
+      sqlite3Error(db, SQLITE_BUSY, 
+        "Unable to delete/modify collation sequence due to active statements");
+      return SQLITE_BUSY;
+    }
+    sqlite3ExpirePreparedStatements(db);
+  }
+
+  pColl = sqlite3FindCollSeq(db, (u8)enc, zName, strlen(zName), 1);
+  if( pColl ){
+    pColl->xCmp = xCompare;
+    pColl->pUser = pCtx;
+    pColl->enc = enc;
+  }
+  sqlite3Error(db, SQLITE_OK, 0);
+  return SQLITE_OK;
+}
+
+
 /*
 ** This routine does the work of opening a database on behalf of
 ** sqlite3_open() and sqlite3_open16(). The database filename "zFilename"  
@@ -776,8 +830,8 @@ static int openDatabase(
   ** and UTF-16, so add a version for each to avoid any unnecessary
   ** conversions. The only error that can occur here is a malloc() failure.
   */
-  if( sqlite3_create_collation(db, "BINARY", SQLITE_UTF8, 0,binCollFunc) ||
-      sqlite3_create_collation(db, "BINARY", SQLITE_UTF16, 0,binCollFunc) ||
+  if( createCollation(db, "BINARY", SQLITE_UTF8, 0,binCollFunc) ||
+      createCollation(db, "BINARY", SQLITE_UTF16, 0,binCollFunc) ||
       (db->pDfltColl = sqlite3FindCollSeq(db, SQLITE_UTF8, "BINARY", 6, 0))==0 
   ){
     /* sqlite3_create_collation() is an external API. So the mallocFailed flag
@@ -789,7 +843,7 @@ static int openDatabase(
   }
 
   /* Also add a UTF-8 case-insensitive collation sequence. */
-  sqlite3_create_collation(db, "NOCASE", SQLITE_UTF8, 0, nocaseCollatingFunc);
+  createCollation(db, "NOCASE", SQLITE_UTF8, 0, nocaseCollatingFunc);
 
   /* Set flags on the built-in collating sequences */
   db->pDfltColl->type = SQLITE_COLL_BINARY;
@@ -935,52 +989,14 @@ int sqlite3_create_collation(
   void* pCtx,
   int(*xCompare)(void*,int,const void*,int,const void*)
 ){
-  CollSeq *pColl;
-  int rc = SQLITE_OK;
-  
-  if( sqlite3SafetyCheck(db) ){
-    return SQLITE_MISUSE;
-  }
-
-  /* If SQLITE_UTF16 is specified as the encoding type, transform this
-  ** to one of SQLITE_UTF16LE or SQLITE_UTF16BE using the
-  ** SQLITE_UTF16NATIVE macro. SQLITE_UTF16 is not used internally.
-  */
-  if( enc==SQLITE_UTF16 ){
-    enc = SQLITE_UTF16NATIVE;
-  }
-
-  if( enc!=SQLITE_UTF8 && enc!=SQLITE_UTF16LE && enc!=SQLITE_UTF16BE ){
-    sqlite3Error(db, SQLITE_ERROR, 
-        "Param 3 to sqlite3_create_collation() must be one of "
-        "SQLITE_UTF8, SQLITE_UTF16, SQLITE_UTF16LE or SQLITE_UTF16BE"
-    );
-    return SQLITE_ERROR;
-  }
-
-  /* Check if this call is removing or replacing an existing collation 
-  ** sequence. If so, and there are active VMs, return busy. If there
-  ** are no active VMs, invalidate any pre-compiled statements.
-  */
-  pColl = sqlite3FindCollSeq(db, (u8)enc, zName, strlen(zName), 0);
-  if( pColl && pColl->xCmp ){
-    if( db->activeVdbeCnt ){
-      sqlite3Error(db, SQLITE_BUSY, 
-        "Unable to delete/modify collation sequence due to active statements");
-      return SQLITE_BUSY;
-    }
-    sqlite3ExpirePreparedStatements(db);
-  }
-
-  pColl = sqlite3FindCollSeq(db, (u8)enc, zName, strlen(zName), 1);
-  if( 0==pColl ){
+  int rc;
+  assert( !sqlite3ThreadDataReadOnly()->mallocFailed );
+  rc = createCollation(db, zName, enc, pCtx, xCompare);
+  if( sqlite3ThreadDataReadOnly()->mallocFailed ){
+    sqlite3MallocClearFailed();
     rc = SQLITE_NOMEM;
-  }else{
-    pColl->xCmp = xCompare;
-    pColl->pUser = pCtx;
-    pColl->enc = enc;
+    sqlite3Error(db, rc, 0);
   }
-  sqlite3Error(db, rc, 0);
   return rc;
 }
 
@@ -995,14 +1011,19 @@ int sqlite3_create_collation16(
   void* pCtx,
   int(*xCompare)(void*,int,const void*,int,const void*)
 ){
-  char *zName8;
-  int rc;
-  if( sqlite3SafetyCheck(db) ){
-    return SQLITE_MISUSE;
-  }
+  int rc = SQLITE_OK;
+  char *zName8; 
+  assert( !sqlite3ThreadDataReadOnly()->mallocFailed );
   zName8 = sqlite3utf16to8(zName, -1);
-  rc = sqlite3_create_collation(db, zName8, enc, pCtx, xCompare);
-  sqliteFree(zName8);
+  if( zName8 ){
+    rc = createCollation(db, zName8, enc, pCtx, xCompare);
+    sqliteFree(zName8);
+  }
+  if( sqlite3ThreadDataReadOnly()->mallocFailed ){
+    sqlite3MallocClearFailed();
+    rc = SQLITE_NOMEM;
+    sqlite3Error(db, rc, 0);
+  }
   return rc;
 }
 #endif /* SQLITE_OMIT_UTF16 */
