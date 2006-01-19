@@ -12,7 +12,7 @@
 # This file contains test cases focused on the two memory-management APIs, 
 # sqlite3_soft_heap_limit() and sqlite3_release_memory().
 #
-# $Id: malloc5.test,v 1.6 2006/01/16 15:32:23 danielk1977 Exp $
+# $Id: malloc5.test,v 1.7 2006/01/19 08:43:32 danielk1977 Exp $
 
 #---------------------------------------------------------------------------
 # NOTES ON EXPECTED BEHAVIOUR
@@ -192,6 +192,7 @@ do_test malloc5-4.1 {
   }
   execsql {COMMIT;}
   set ::nMaxBytes [sqlite_malloc_outstanding -maxbytes]
+  if {$::nMaxBytes==""} {set ::nMaxBytes 1000001}
   expr $::nMaxBytes > 1000000
 } {1}
 do_test malloc5-4.2 {
@@ -204,6 +205,7 @@ do_test malloc5-4.2 {
   }
   execsql {COMMIT;}
   set ::nMaxBytes [sqlite_malloc_outstanding -maxbytes]
+  if {$::nMaxBytes==""} {set ::nMaxBytes 0}
   expr $::nMaxBytes <= 100000
 } {1}
 do_test malloc5-4.3 {

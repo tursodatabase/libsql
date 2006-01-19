@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.301 2006/01/19 07:18:14 danielk1977 Exp $
+** $Id: btree.c,v 1.302 2006/01/19 08:43:31 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -5537,22 +5537,31 @@ int sqlite3BtreeClearTable(Btree *p, int iTable){
   int rc;
   BtCursor *pCur;
   BtShared *pBt = p->pBt;
+  sqlite3 *db = p->pSqlite;
   if( p->inTrans!=TRANS_WRITE ){
     return pBt->readOnly ? SQLITE_READONLY : SQLITE_ERROR;
   }
-  for(pCur=pBt->pCursor; pCur; pCur=pCur->pNext){
-    if( pCur->pgnoRoot==(Pgno)iTable ){
-      if( pCur->wrFlag==0 ) return SQLITE_LOCKED;
-      moveToRoot(pCur);
+
+  /* If this connection is not in read-uncommitted mode and currently has
+  ** a read-cursor open on the table being cleared, return SQLITE_LOCKED.
+  */
+  if( 0==db || 0==(db->flags&SQLITE_ReadUncommitted) ){
+    for(pCur=pBt->pCursor; pCur; pCur=pCur->pNext){
+      if( pCur->pBtree==p && pCur->pgnoRoot==(Pgno)iTable ){
+        if( 0==pCur->wrFlag ){
+          return SQLITE_LOCKED;
+        }
+        moveToRoot(pCur);
+      }
     }
   }
-  rc = clearDatabasePage(pBt, (Pgno)iTable, 0, 0);
-#if 0
-  if( rc ){
-    sqlite3BtreeRollback(pBt);
+
+  /* Save the position of all cursors open on this table */
+  if( SQLITE_OK!=(rc = saveAllCursors(pBt, iTable, 0)) ){
+    return rc;
   }
-#endif
-  return rc;
+
+  return clearDatabasePage(pBt, (Pgno)iTable, 0, 0);
 }
 
 /*

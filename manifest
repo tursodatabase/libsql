@@ -1,5 +1,5 @@
-C Fix\sa\sbug\swith\sinternally\ssaving\scursors\sopen\son\sindex\stables.\sAlso\sincrease\scoverage\sof\sutil.c\sand\sbtree.c.\s(CVS\s2976)
-D 2006-01-19T07:18:14
+C Account\sfor\sread-uncommitted\scursors\sin\ssqlite3BtreeClearTable().\s(CVS\s2977)
+D 2006-01-19T08:43:31
 F Makefile.in ab3ffd8d469cef4477257169b82810030a6bb967
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -34,7 +34,7 @@ F src/alter.c 90b779cf00489535cab6490df6dc050f40e4e874
 F src/analyze.c 7d2b7ab9a9c2fd6e55700f69064dfdd3e36d7a8a
 F src/attach.c 0081040e9a5d13669b6712e947688c10f030bfc1
 F src/auth.c 9ae84d2d94eb96195e04515715e08e85963e96c2
-F src/btree.c 1f760cdb5bd763e8c8a7e4cf822a4266274e3faa
+F src/btree.c 2ea7d4372e8ec0a8894ec13e890aedf976e4bbd1
 F src/btree.h 5663c4f43e8521546ccebc8fc95acb013b8f3184
 F src/build.c 15224e2fd348ad32b9044aaa5bdc912e4067da15
 F src/callback.c 1bf497306c32229114f826707054df7ebe10abf2
@@ -190,7 +190,7 @@ F test/malloc.test ce6d1e7e79f9db967b51e1975b50760af66db90d
 F test/malloc2.test e6e321db96d6c94cb18bf82ad7215070c41e624e
 F test/malloc3.test 265644c655497242f7c0a1bb5b36c8500a5fc27c
 F test/malloc4.test 2e29d155eb4b4808019ef47eeedfcbe9e09e0f05
-F test/malloc5.test 7c0a02ab2fef82af6febacc02e033514f1674066
+F test/malloc5.test 7425272e263325fda7d32cb55706e52b5c09e7e0
 F test/manydb.test 8de36b8d33aab5ef295b11d9e95310aeded31af8
 F test/memdb.test ed97df0414a6e33e043e3eeffccb54d06098d0ae
 F test/memleak.test df2b2b96e77f8ba159a332299535b1e5f18e49ac
@@ -225,7 +225,8 @@ F test/select5.test 07a90ab3c7e3f0a241a9cdea1d997b2c8a89ff0b
 F test/select6.test f459a19bdac0501c4d3eb1a4df4b7a76f1bb8ad4
 F test/select7.test 1bf795b948c133a15a2a5e99d3270e652ec58ce6
 F test/server1.test e328b8e641ba8fe9273132cfef497383185dc1f5
-F test/shared.test 688bffac6928329f2e4d188de6c674652b7d61b7
+F test/shared.test 9982a65ccf3f4eee844a19f3ab0bcd7a158a76e5
+F test/shared2.test 909fc0f0277684ed29cc1b36c8e159188aec7f28
 F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
 F test/subquery.test ae324ee928c5fb463a3ce08a8860d6e7f1ca5797
 F test/subselect.test 2d13fb7f450db3595adcdd24079a0dd1d2d6abc2
@@ -341,7 +342,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P df91f685cacbcb3e048eaa03260b33bbcfcb321c
-R 72a56160d91187b3cc45d20fb8121c09
+P a628d84d3185fb7742cc929e758bfd59c811ca0b
+R 8df41433786382b17ec3ae6b6ca9db68
 U danielk1977
-Z 2d080ce01ccda1df734492ab6955a12f
+Z d31ef3f0be10e8c94b80e49b253c3a40
