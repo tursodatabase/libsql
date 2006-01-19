@@ -1,5 +1,5 @@
-C Account\sfor\sread-uncommitted\scursors\sin\ssqlite3BtreeClearTable().\s(CVS\s2977)
-D 2006-01-19T08:43:31
+C Fix\sthe\s#ifdef\saround\ssqlite3OutstandingMallocs()\sin\stest1.c.\s(CVS\s2978)
+D 2006-01-19T11:28:07
 F Makefile.in ab3ffd8d469cef4477257169b82810030a6bb967
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -73,7 +73,7 @@ F src/sqlite.h.in 492580f7e3ff71eb43193eb7bb98e2d549889ce3
 F src/sqliteInt.h 7ddd6141a57748363fe42119f165d06260996aa3
 F src/table.c 486dcfce532685b53b5a2b5da8bba0ded6fb2316
 F src/tclsqlite.c d650bea0248fc0a310ddc2cb94273a3a5021fddf
-F src/test1.c b7051f5080b1f9796cbc071f2cf4c03a4a975af3
+F src/test1.c 1f1c9cd74b8127d0e29519362a4f0e6e45c9f255
 F src/test2.c ca74a1d8aeb7d9606e8f6b762c5daf85c1a3f92b
 F src/test3.c 9742aa146eb750cab81c1d5605286c3a0eb88054
 F src/test4.c 6633cb7b4a7429e938804a34f688d118c8b7f8e1
@@ -342,7 +342,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P a628d84d3185fb7742cc929e758bfd59c811ca0b
-R 8df41433786382b17ec3ae6b6ca9db68
-U danielk1977
-Z d31ef3f0be10e8c94b80e49b253c3a40
+P 950798326860de40926e82e10134f09e6ea86245
+R 8aac43680a02cf4bd620fa26a626200d
+U drh
+Z ad072caf18fdc9767a40c11dca64eaaf
