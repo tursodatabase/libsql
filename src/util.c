@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.178 2006/01/18 18:22:43 danielk1977 Exp $
+** $Id: util.c,v 1.179 2006/01/19 07:18:14 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -392,12 +392,13 @@ static void relinkAlloc(void *p)
 ** Todo: We could have a version of this function that outputs to stdout, 
 ** to debug memory leaks when Tcl is not available.
 */
-#ifdef TCLSH
+#if defined(TCLSH) && defined(SQLITE_DEBUG) && SQLITE_MEMDEBUG>1
 #include <tcl.h>
 int sqlite3OutstandingMallocs(Tcl_Interp *interp){
   void *p;
   Tcl_Obj *pRes = Tcl_NewObj();
   Tcl_IncrRefCount(pRes);
+
 
   for(p=sqlite3_pFirst; p; p=((void **)p)[1]){
     Tcl_Obj *pEntry = Tcl_NewObj();
@@ -443,8 +444,8 @@ int sqlite3OutstandingMallocs(Tcl_Interp *interp){
 */
 static void * OSMALLOC(int n){
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
-  ThreadData const *pTsd = sqlite3ThreadDataReadOnly();
-  sqlite3_nMaxAlloc = MAX(sqlite3_nMaxAlloc, pTsd->nAlloc);
+  sqlite3_nMaxAlloc = 
+      MAX(sqlite3_nMaxAlloc, sqlite3ThreadDataReadOnly()->nAlloc);
 #endif
   assert( !sqlite3_mallocDisallowed );
   if( !sqlite3TestMallocFail() ){
@@ -485,11 +486,8 @@ static void OSFREE(void *pFree){
 */
 static void * OSREALLOC(void *pRealloc, int n){
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
-  ThreadData *pTsd = sqlite3ThreadData();
-  if( !pTsd ){
-    return 0;
-  }
-  sqlite3_nMaxAlloc = MAX(sqlite3_nMaxAlloc, pTsd->nAlloc);
+  sqlite3_nMaxAlloc = 
+      MAX(sqlite3_nMaxAlloc, sqlite3ThreadDataReadOnly()->nAlloc);
 #endif
   assert( !sqlite3_mallocDisallowed );
   if( !sqlite3TestMallocFail() ){

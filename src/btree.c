@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.300 2006/01/18 15:25:17 danielk1977 Exp $
+** $Id: btree.c,v 1.301 2006/01/19 07:18:14 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -511,40 +511,38 @@ struct BtLock {
 ** and BtCursor.pKey. The cursor's state is set to CURSOR_REQUIRESEEK.
 */
 static int saveCursorPosition(BtCursor *pCur){
-  int rc = SQLITE_OK;
+  int rc;
 
-  assert( CURSOR_VALID==pCur->eState|| CURSOR_INVALID==pCur->eState );
+  assert( CURSOR_VALID==pCur->eState );
   assert( 0==pCur->pKey );
 
-  if( pCur->eState==CURSOR_VALID ){
-    rc = sqlite3BtreeKeySize(pCur, &pCur->nKey);
+  rc = sqlite3BtreeKeySize(pCur, &pCur->nKey);
 
-    /* If this is an intKey table, then the above call to BtreeKeySize()
-    ** stores the integer key in pCur->nKey. In this case this value is
-    ** all that is required. Otherwise, if pCur is not open on an intKey
-    ** table, then malloc space for and store the pCur->nKey bytes of key 
-    ** data.
-    */
-    if( rc==SQLITE_OK && 0==pCur->pPage->intKey){
-      void *pKey = sqliteMalloc(pCur->nKey);
-      if( pKey ){
-        rc = sqlite3BtreeKey(pCur, 0, pCur->nKey, pKey);
-        if( rc==SQLITE_OK ){
-          pCur->pKey = pKey;
-        }else{
-          sqliteFree(pKey);
-        }
+  /* If this is an intKey table, then the above call to BtreeKeySize()
+  ** stores the integer key in pCur->nKey. In this case this value is
+  ** all that is required. Otherwise, if pCur is not open on an intKey
+  ** table, then malloc space for and store the pCur->nKey bytes of key 
+  ** data.
+  */
+  if( rc==SQLITE_OK && 0==pCur->pPage->intKey){
+    void *pKey = sqliteMalloc(pCur->nKey);
+    if( pKey ){
+      rc = sqlite3BtreeKey(pCur, 0, pCur->nKey, pKey);
+      if( rc==SQLITE_OK ){
+        pCur->pKey = pKey;
       }else{
-        rc = SQLITE_NOMEM;
+        sqliteFree(pKey);
       }
+    }else{
+      rc = SQLITE_NOMEM;
     }
-    assert( !pCur->pPage->intKey || !pCur->pKey );
+  }
+  assert( !pCur->pPage->intKey || !pCur->pKey );
 
-    /* Todo: Should we drop the reference to pCur->pPage here? */
+  /* Todo: Should we drop the reference to pCur->pPage here? */
 
-    if( rc==SQLITE_OK ){
-      pCur->eState = CURSOR_REQUIRESEEK;
-    }
+  if( rc==SQLITE_OK ){
+    pCur->eState = CURSOR_REQUIRESEEK;
   }
 
   return rc;
@@ -585,10 +583,9 @@ static int restoreOrClearCursorPositionX(BtCursor *pCur, int doSeek){
   int rc = SQLITE_OK;
   assert( sqlite3ThreadDataReadOnly()->useSharedData );
   assert( pCur->eState==CURSOR_REQUIRESEEK );
+  pCur->eState = CURSOR_INVALID;
   if( doSeek ){
     rc = sqlite3BtreeMoveto(pCur, pCur->pKey, pCur->nKey, &pCur->skip);
-  }else{
-    pCur->eState = CURSOR_INVALID;
   }
   if( rc==SQLITE_OK ){
     sqliteFree(pCur->pKey);

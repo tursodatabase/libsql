@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: shared.test,v 1.17 2006/01/17 09:35:02 danielk1977 Exp $
+# $Id: shared.test,v 1.18 2006/01/19 07:18:15 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -40,6 +40,11 @@ ifcapable autovacuum {
   }
 }
 
+# $av is currently 0 if this loop iteration is to test with auto-vacuum turned
+# off, and 1 if it is turned on. Increment it so that (1 -> no auto-vacuum) 
+# and (2 -> auto-vacuum). The sole reason for this is so that it looks nicer
+# when we use this variable as part of test-case names.
+#
 incr av
 
 # Test organization:
@@ -201,7 +206,7 @@ do_test shared-$av.3.1.1 {
   # to the end of the seq table (ahead of the current cursor position).
   # The uncommitted rows should be included in the results of the scan.
   execsql "
-    CREATE TABLE seq(i, x);
+    CREATE TABLE seq(i PRIMARY KEY, x);
     INSERT INTO seq VALUES(1, '[string repeat X 500]');
     INSERT INTO seq VALUES(2, '[string repeat X 500]');
   "
@@ -209,7 +214,7 @@ do_test shared-$av.3.1.1 {
   execsql {PRAGMA read_uncommitted = 1} db2
 
   set ret [list]
-  db2 eval {SELECT i FROM seq} {
+  db2 eval {SELECT i FROM seq ORDER BY i} {
     if {$i < 4} {
       set max [execsql {SELECT max(i) FROM seq}]
       db eval {

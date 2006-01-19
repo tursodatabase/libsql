@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.197 2006/01/18 18:22:43 danielk1977 Exp $
+** $Id: test1.c,v 1.198 2006/01/19 07:18:14 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -909,16 +909,19 @@ static int sqlite_malloc_outstanding(
 ){
   extern int sqlite3OutstandingMallocs(Tcl_Interp *interp);
 
-#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
+#if defined(SQLITE_DEBUG) && defined(SQLITE_MEMDEBUG)
   if( objc==2 ){
-    ThreadData const *pTd = sqlite3ThreadDataReadOnly();
     const char *zArg = Tcl_GetString(objv[1]);
+#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
+    ThreadData const *pTd = sqlite3ThreadDataReadOnly();
     if( 0==strcmp(zArg, "-bytes") ){
       Tcl_SetObjResult(interp, Tcl_NewIntObj(pTd->nAlloc));
-    }else if( 0==strcmp(zArg, "-maxbytes") ){
-      Tcl_SetObjResult(interp, Tcl_NewWideIntObj(sqlite3_nMaxAlloc));
     }else if( 0==strcmp(zArg, "-clearmaxbytes") ){
       sqlite3_nMaxAlloc = pTd->nAlloc;
+    }else 
+#endif
+    if( 0==strcmp(zArg, "-maxbytes") ){
+      Tcl_SetObjResult(interp, Tcl_NewWideIntObj(sqlite3_nMaxAlloc));
     }else{
       Tcl_AppendResult(interp, "bad option \"", zArg, 
         "\": must be -bytes, -maxbytes or -clearmaxbytes", 0
@@ -928,7 +931,6 @@ static int sqlite_malloc_outstanding(
 
     return TCL_OK;
   }
-#endif
 
   if( objc!=1 ){
     Tcl_WrongNumArgs(interp, 1, objv, "?-bytes?");
@@ -936,6 +938,9 @@ static int sqlite_malloc_outstanding(
   }
 
   return sqlite3OutstandingMallocs(interp);
+#else
+  return TCL_OK;
+#endif
 }
 #endif
 
