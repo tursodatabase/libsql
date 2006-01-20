@@ -1471,7 +1471,6 @@ static int unixUnlock(OsFile *id, int locktype){
 */
 static int unixClose(OsFile **pId){
   unixFile *id = (unixFile*)*pId;
-  int rc;
 
   if( !id ) return SQLITE_OK;
   unixUnlock(*pId, NO_LOCK);
@@ -1508,7 +1507,7 @@ static int unixClose(OsFile **pId){
   OpenCounter(-1);
   sqliteFree(id);
   *pId = 0;
-  return rc;
+  return SQLITE_OK;
 }
 
 /*

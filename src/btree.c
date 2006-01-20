@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.304 2006/01/20 16:32:04 danielk1977 Exp $
+** $Id: btree.c,v 1.305 2006/01/20 18:10:57 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -5307,7 +5307,9 @@ int sqlite3BtreeDelete(BtCursor *pCur){
     */
     BtCursor leafCur;
     unsigned char *pNext;
-    int szNext;
+    int szNext;  /* The compiler warning is wrong: szNext is always 
+                 ** initialized before use.  Adding an extra initialization
+                 ** to silence the compiler slows down the code. */
     int notUsed;
     unsigned char *tempCell = 0;
     assert( !pPage->leafData );

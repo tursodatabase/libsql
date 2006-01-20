@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.295 2006/01/18 16:51:35 danielk1977 Exp $
+** $Id: select.c,v 1.296 2006/01/20 18:10:57 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1388,8 +1388,8 @@ Vdbe *sqlite3GetVdbe(Parse *pParse){
 ** SELECT statements.
 */
 static void computeLimitRegisters(Parse *pParse, Select *p, int iBreak){
-  Vdbe *v;
-  int iLimit;
+  Vdbe *v = 0;
+  int iLimit = 0;
   int iOffset;
   int addr1, addr2;
 

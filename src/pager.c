@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.247 2006/01/20 16:32:04 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.248 2006/01/20 18:10:57 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1566,7 +1566,7 @@ int sqlite3pager_open(
 ){
   Pager *pPager = 0;
   char *zFullPathname = 0;
-  int nameLen;
+  int nameLen;  /* Compiler is wrong. This is always initialized before use */
   OsFile *fd;
   int rc = SQLITE_OK;
   int i;

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.158 2006/01/18 16:51:35 danielk1977 Exp $
+** $Id: insert.c,v 1.159 2006/01/20 18:10:57 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -222,7 +222,7 @@ void sqlite3Insert(
 #endif
 
 #ifndef SQLITE_OMIT_AUTOINCREMENT
-  int counterRowid;     /* Memory cell holding rowid of autoinc counter */
+  int counterRowid = 0;  /* Memory cell holding rowid of autoinc counter */
 #endif
 
   if( pParse->nErr || sqlite3MallocFailed() ){
