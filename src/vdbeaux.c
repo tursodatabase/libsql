@@ -1111,11 +1111,6 @@ static void abortOtherActiveVdbes(Vdbe *pVdbe){
   }
 }
 
-static void rollbackAll(sqlite3 *db, Vdbe *pVdbe){
-  abortOtherActiveVdbes(pVdbe);
-  sqlite3RollbackAll(db);
-}
-
 /* 
 ** This routine checks that the sqlite3.activeVdbeCnt count variable
 ** matches the number of vdbe's in the list sqlite3.pVdbe that are

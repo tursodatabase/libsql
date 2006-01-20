@@ -12,7 +12,7 @@
 ** Code for testing the client/server version of the SQLite library.
 ** Derived from test4.c.
 **
-** $Id: test7.c,v 1.2 2006/01/11 23:40:34 drh Exp $
+** $Id: test7.c,v 1.3 2006/01/20 17:56:33 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -526,7 +526,7 @@ static void do_step(Thread *p){
   if( p->rc==SQLITE_ROW ){
     p->argc = sqlite3_column_count(p->pStmt);
     for(i=0; i<sqlite3_data_count(p->pStmt); i++){
-      p->argv[i] = sqlite3_column_text(p->pStmt, i);
+      p->argv[i] = (char*)sqlite3_column_text(p->pStmt, i);
     }
     for(i=0; i<p->argc; i++){
       p->colv[i] = sqlite3_column_name(p->pStmt, i);

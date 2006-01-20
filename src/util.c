@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.179 2006/01/19 07:18:14 danielk1977 Exp $
+** $Id: util.c,v 1.180 2006/01/20 17:56:33 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -566,7 +566,7 @@ void *sqlite3MallocRaw(int n){
       ** handleSoftLimit() above. This is so the ThreadData.nAlloc variable is
       ** still correct after a malloc() failure. 
       */
-      handleSoftLimit(n * -1);
+      (void)handleSoftLimit(n * -1);
       sqlite3FailedMalloc();
       OSMALLOC_FAILED();
     }
@@ -596,7 +596,7 @@ void *sqlite3Realloc(void *p, int n){
         ** handleSoftLimit() above. This is so the ThreadData.nAlloc variable is
         ** still correct after a malloc() failure. 
         */
-        handleSoftLimit(OSSIZEOF(p) - n);
+        (void)handleSoftLimit(OSSIZEOF(p) - n);
         sqlite3FailedMalloc();
         OSMALLOC_FAILED();
       }
@@ -610,7 +610,7 @@ void *sqlite3Realloc(void *p, int n){
 ** value returned by a previous call to sqlite3Malloc() or sqlite3Realloc().
 */
 void sqlite3FreeX(void *p){
-  handleSoftLimit(0 - OSSIZEOF(p));
+  (void)handleSoftLimit(0 - OSSIZEOF(p));
   if( p ){
     OSFREE(p);
   }
