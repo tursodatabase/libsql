@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.246 2006/01/20 10:55:05 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.247 2006/01/20 16:32:04 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -2693,10 +2693,15 @@ int sqlite3pager_get(Pager *pPager, Pgno pgno, void **ppPage){
       CODEC(pPager, PGHDR_TO_DATA(pPg), pPg->pgno, 3);
       if( rc!=SQLITE_OK ){
         i64 fileSize;
-        if( sqlite3OsFileSize(pPager->fd,&fileSize)!=SQLITE_OK
-               || fileSize>=pgno*pPager->pageSize ){
+        int rc2 = sqlite3OsFileSize(pPager->fd, &fileSize);
+        if( rc2!=SQLITE_OK || fileSize>=pgno*pPager->pageSize ){
+	  /* An IO error occured in one of the the sqlite3OsSeek() or
+          ** sqlite3OsRead() calls above. Unreference the page and then
+          ** set it's page number to 0 (0 means "not a page").
+          */
           sqlite3pager_unref(PGHDR_TO_DATA(pPg));
-          return pager_error(pPager, rc);
+          pPg->pgno = 0;
+          return rc;
         }else{
           clear_simulated_io_error();
           memset(PGHDR_TO_DATA(pPg), 0, pPager->pageSize);

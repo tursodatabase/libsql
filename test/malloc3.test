@@ -13,7 +13,7 @@
 # correctly. The emphasis of these tests are the _prepare(), _step() and
 # _finalize() calls.
 #
-# $Id: malloc3.test,v 1.7 2006/01/20 10:55:05 danielk1977 Exp $
+# $Id: malloc3.test,v 1.8 2006/01/20 16:32:04 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -492,13 +492,27 @@ TEST 32 {
       sqlite3_step $::STMT32
     } {SQLITE_ROW}
   }
-puts [execsql {SELECT * FROM ghi}]
 }
-SQL {
-  BEGIN;
-  INSERT INTO ghi SELECT * FROM ghi;
-  COMMIT;
+SQL BEGIN
+TEST 33 { 
+  do_test $testid {
+    execsql {SELECT * FROM ghi}
+  } {a b c 1 2 3}
 }
+SQL -norollback { 
+  -- There is a unique index on ghi(g), so this statement may not cause
+  -- an automatic ROLLBACK. Hence the "-norollback" switch.
+  INSERT INTO ghi SELECT '2'||g, h, i FROM ghi;
+}
+TEST 34 {
+  if {[info exists ::STMT32]} {
+    do_test $testid {
+      sqlite3_finalize $::STMT32
+    } {SQLITE_OK}
+    unset ::STMT32
+  }
+}
+SQL COMMIT
 
 #
 # End of test program declaration
@@ -630,7 +644,7 @@ proc run_test {arglist {pcstart 0} {iFailStart 1}} {
 # Turn of the Tcl interface's prepared statement caching facility.
 db cache size 0
 
-run_test $::run_test_script 76 6
+run_test $::run_test_script
 # run_test [lrange $::run_test_script 0 3] 0 63
 sqlite_malloc_fail 0
 db close

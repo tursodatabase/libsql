@@ -1,5 +1,5 @@
-C Fix\sand\stest\sthe\sprocessing\sof\ssqlite3_result_error()\swithing\saggregate\nfunctions.\s\sAllow\serrors\sto\scome\sfrom\sthe\sstep\sfunction\s(a\snew\ncapability).\s\sTicket\s#1632.\s(CVS\s2981)
-D 2006-01-20T15:45:36
+C Fix\sanother\scouple\sof\sIO\sor\smalloc()\sfailure\sproblems\sin\sa\sshared-cache\scontext.\s(CVS\s2982)
+D 2006-01-20T16:32:04
 F Makefile.in ab3ffd8d469cef4477257169b82810030a6bb967
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -34,7 +34,7 @@ F src/alter.c 90b779cf00489535cab6490df6dc050f40e4e874
 F src/analyze.c 7d2b7ab9a9c2fd6e55700f69064dfdd3e36d7a8a
 F src/attach.c 0081040e9a5d13669b6712e947688c10f030bfc1
 F src/auth.c 9ae84d2d94eb96195e04515715e08e85963e96c2
-F src/btree.c e8ff8d76a412299cad1c9a2c4e1fd15ad48bae27
+F src/btree.c 8b890e64b0ad7c510635244b75d65a97ee9f26ad
 F src/btree.h 5663c4f43e8521546ccebc8fc95acb013b8f3184
 F src/build.c 15224e2fd348ad32b9044aaa5bdc912e4067da15
 F src/callback.c 1bf497306c32229114f826707054df7ebe10abf2
@@ -59,7 +59,7 @@ F src/os_unix.c a242a9458b08f01fa11d42b23bcdb89a3fbf2a68
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c 98e4e38db7d4a00647b2bb1c60d28b7ca5034c03
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 49fab8c32de2419cb549220d285c6399bc0d899e
+F src/pager.c 39bf1957f8531c9056c8659048a4cdd949439d66
 F src/pager.h e0acb095b3ad0bca48f2ab00c87346665643f64f
 F src/parse.y 83df51fea35f68f7e07384d75dce83d1ed30434c
 F src/pragma.c 4496cc77dc35824e1c978c3d1413b8a5a4c777d3
@@ -90,8 +90,8 @@ F src/vacuum.c 3865673cc66acd0717ecd517f6b8fdb2a5e7924b
 F src/vdbe.c 9eceb866b8197d25d07f700e16b1a50638d4bd6e
 F src/vdbe.h 8729a4ee16ff9aeab2af9667df3cf300ff978e13
 F src/vdbeInt.h eb3f86ab08ef11635bc78eb88c3ff13f923c233b
-F src/vdbeapi.c b5a3eacce266a657cdc0fc740b60ba480fb88649
-F src/vdbeaux.c d9a757ed4e3eefc54408226cb781694059fe2b39
+F src/vdbeapi.c 75eabedc09b3b2a6f2d256f85704b8b0cc0f50fa
+F src/vdbeaux.c 9d92640082c632ab2a48fa0b1763390a78573607
 F src/vdbefifo.c 9efb94c8c3f4c979ebd0028219483f88e57584f5
 F src/vdbemem.c 2034e93b32c14bda6e306bb54e3a8e930b963027
 F src/where.c 5215507b232e718606e0014f999912d53de32a70
@@ -189,7 +189,7 @@ F test/lock3.test 615111293cf32aa2ed16d01c6611737651c96fb9
 F test/main.test b12f01d49a5c805a33fa6c0ef168691f63056e79
 F test/malloc.test ce6d1e7e79f9db967b51e1975b50760af66db90d
 F test/malloc2.test e6e321db96d6c94cb18bf82ad7215070c41e624e
-F test/malloc3.test 1cf2376c9495973608c021efaefb25e71bd6e21f
+F test/malloc3.test 5494b3fac35a2362584c97dc5655c2c3227c798a
 F test/malloc4.test 2e29d155eb4b4808019ef47eeedfcbe9e09e0f05
 F test/malloc5.test 7425272e263325fda7d32cb55706e52b5c09e7e0
 F test/manydb.test 8de36b8d33aab5ef295b11d9e95310aeded31af8
@@ -228,7 +228,7 @@ F test/select7.test 1bf795b948c133a15a2a5e99d3270e652ec58ce6
 F test/server1.test e328b8e641ba8fe9273132cfef497383185dc1f5
 F test/shared.test 9982a65ccf3f4eee844a19f3ab0bcd7a158a76e5
 F test/shared2.test 909fc0f0277684ed29cc1b36c8e159188aec7f28
-F test/shared_err.test dea32ad1ce72c1aa88a4671b5de3900961f6c687
+F test/shared_err.test f72c9fbe1802500f0d97e768f947ae5c703c0152
 F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
 F test/subquery.test ae324ee928c5fb463a3ce08a8860d6e7f1ca5797
 F test/subselect.test 2d13fb7f450db3595adcdd24079a0dd1d2d6abc2
@@ -344,7 +344,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 97491d4eb5fc24d8f5cc7605db844359ecc6a818
-R 0ac1c3b7951d8503eabc2e4f37bf1aac
-U drh
-Z 64f4b8a9886c6294a59c365b44cd61fd
+P fd4a6bb1ac94d085dda247799c0a5c64aaeec046
+R bde9ce22812627a378f8978bb7879372
+U danielk1977
+Z c8dd5ea23e29760f9b39f58f5d5d0fb8

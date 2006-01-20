@@ -1242,6 +1242,8 @@ int sqlite3VdbeHalt(Vdbe *p){
           /* We are forced to roll back the active transaction. Before doing
           ** so, abort any other statements this handle currently has active.
           */
+          abortOtherActiveVdbes(p);
+          sqlite3RollbackAll(db);
           db->autoCommit = 1;
         }
       }
@@ -1264,12 +1266,12 @@ int sqlite3VdbeHalt(Vdbe *p){
           return SQLITE_BUSY;
         }else if( rc!=SQLITE_OK ){
           p->rc = rc;
-          rollbackAll(db, p);
+          sqlite3RollbackAll(db);
         }else{
           sqlite3CommitInternalChanges(db);
         }
       }else{
-        rollbackAll(db, p);
+        sqlite3RollbackAll(db);
       }
     }else if( !xFunc ){
       if( p->rc==SQLITE_OK || p->errorAction==OE_Fail ){
@@ -1277,7 +1279,8 @@ int sqlite3VdbeHalt(Vdbe *p){
       }else if( p->errorAction==OE_Abort ){
         xFunc = sqlite3BtreeRollbackStmt;
       }else{
-        rollbackAll(db, p);
+        abortOtherActiveVdbes(p);
+        sqlite3RollbackAll(db);
         db->autoCommit = 1;
       }
     }
@@ -1359,8 +1362,9 @@ int sqlite3VdbeReset(Vdbe *p){
   */
   if( p->pc>=0 ){
     if( p->zErrMsg ){
-      sqlite3Error(p->db, p->rc, "%s", p->zErrMsg);
-      sqliteFree(p->zErrMsg);
+      sqlite3* db = p->db;
+      sqlite3ValueSetStr(db->pErr, -1, p->zErrMsg, SQLITE_UTF8, sqlite3FreeX);
+      db->errCode = p->rc;
       p->zErrMsg = 0;
     }else if( p->rc ){
       sqlite3Error(p->db, p->rc, 0);

@@ -13,7 +13,7 @@
 # cache context. What happens to connection B if one connection A encounters
 # an IO-error whilst reading or writing the file-system?
 #
-# $Id: shared_err.test,v 1.1 2006/01/20 10:55:05 danielk1977 Exp $
+# $Id: shared_err.test,v 1.2 2006/01/20 16:32:05 danielk1977 Exp $
 
 proc skip {args} {}
 
@@ -28,7 +28,6 @@ ifcapable !shared_cache||!subquery {
 }
 set ::enable_shared_cache [sqlite3_enable_shared_cache 1]
 
-skip \
 do_ioerr_test shared_ioerr-1 -tclprep {
   sqlite3 db2 test.db
   execsql {
@@ -52,7 +51,7 @@ do_ioerr_test shared_ioerr-1 -tclprep {
   SELECT * FROM t1;
   DELETE FROM t1 WHERE a<100;
 } -cleanup {
-  do_test shared_ioerr-$n.cleanup.1 {
+  do_test shared_ioerr-1.$n.cleanup.1 {
     set res [catchsql {
       SELECT * FROM t1;
     } db2]
@@ -128,6 +127,44 @@ do_ioerr_test shared_ioerr-2 -tclprep {
     }
     set success
   } {1}
+  db2 close
+}
+
+# This test is designed to provoke an IO error when a cursor position is
+# "saved" (because another cursor is going to modify the underlying table). 
+# 
+do_ioerr_test shared_ioerr-3 -tclprep {
+  sqlite3 db2 test.db
+  execsql {
+    PRAGMA read_uncommitted = 1;
+    BEGIN;
+    CREATE TABLE t1(a, b, UNIQUE(a, b));
+  } db2
+  for {set i 0} {$i < 5} {incr i} {
+    set a [string repeat $i 10]
+    set b [string repeat $i 2000]
+    execsql {INSERT INTO t1 VALUES($a, $b)} db2
+  }
+  execsql {COMMIT} db2
+  set ::DB2 [sqlite3_connection_pointer db2]
+  set ::STMT [sqlite3_prepare $::DB2 "SELECT a FROM t1 ORDER BY a" -1 DUMMY]
+  sqlite3_step $::STMT       ;# Cursor points at 0000000000
+  sqlite3_step $::STMT       ;# Cursor points at 1111111111
+} -tclbody {
+  execsql {
+    INSERT INTO t1 VALUES(6, NULL);
+  }
+} -cleanup {
+  do_test shared_ioerr-3.$n.cleanup.1 {
+    sqlite3_step $::STMT
+  } {SQLITE_ROW}
+  do_test shared_ioerr-3.$n.cleanup.2 {
+    sqlite3_column_text $::STMT 0
+  } {2222222222}
+  do_test shared_ioerr-3.$n.cleanup.3 {
+    sqlite3_finalize $::STMT
+  } {SQLITE_OK}
+# db2 eval {select * from sqlite_master}
   db2 close
 }
 

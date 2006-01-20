@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.303 2006/01/20 10:55:05 danielk1977 Exp $
+** $Id: btree.c,v 1.304 2006/01/20 16:32:04 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -506,6 +506,8 @@ struct BtLock {
 
 #else
 
+static void releasePage(MemPage *pPage);
+
 /*
 ** Save the current cursor position in the variables BtCursor.nKey 
 ** and BtCursor.pKey. The cursor's state is set to CURSOR_REQUIRESEEK.
@@ -540,6 +542,8 @@ static int saveCursorPosition(BtCursor *pCur){
   assert( !pCur->pPage->intKey || !pCur->pKey );
 
   /* Todo: Should we drop the reference to pCur->pPage here? */
+  releasePage(pCur->pPage);
+  pCur->pPage = 0;
 
   if( rc==SQLITE_OK ){
     pCur->eState = CURSOR_REQUIRESEEK;
@@ -2617,12 +2621,15 @@ int sqlite3BtreeCommitStmt(Btree *p){
 ** will result in an error.
 */
 int sqlite3BtreeRollbackStmt(Btree *p){
-  int rc;
+  int rc = SQLITE_OK;
   BtShared *pBt = p->pBt;
-  if( pBt->inStmt==0 || pBt->readOnly ) return SQLITE_OK;
-  rc = sqlite3pager_stmt_rollback(pBt->pPager);
-  assert( countWriteCursors(pBt)==0 );
-  pBt->inStmt = 0;
+  sqlite3MallocDisallow();
+  if( pBt->inStmt && !pBt->readOnly ){
+    rc = sqlite3pager_stmt_rollback(pBt->pPager);
+    assert( countWriteCursors(pBt)==0 );
+    pBt->inStmt = 0;
+  }
+  sqlite3MallocAllow();
   return rc;
 }
 
@@ -3174,9 +3181,8 @@ static int moveToRoot(BtCursor *pCur){
   BtShared *pBt = pCur->pBtree->pBt;
 
   restoreOrClearCursorPosition(pCur, 0);
-  assert( pCur->pPage );
   pRoot = pCur->pPage;
-  if( pRoot->pgno==pCur->pgnoRoot ){
+  if( pRoot && pRoot->pgno==pCur->pgnoRoot ){
     assert( pRoot->isInit );
   }else{
     if( 
@@ -3443,7 +3449,7 @@ int sqlite3BtreeEof(BtCursor *pCur){
 */
 int sqlite3BtreeNext(BtCursor *pCur, int *pRes){
   int rc;
-  MemPage *pPage = pCur->pPage;
+  MemPage *pPage;
 
 #ifndef SQLITE_OMIT_SHARED_CACHE
   rc = restoreOrClearCursorPosition(pCur, 1);
@@ -3456,9 +3462,10 @@ int sqlite3BtreeNext(BtCursor *pCur, int *pRes){
     return SQLITE_OK;
   }
   pCur->skip = 0;
-#endif
+#endif 
 
   assert( pRes!=0 );
+  pPage = pCur->pPage;
   if( CURSOR_INVALID==pCur->eState ){
     *pRes = 1;
     return SQLITE_OK;

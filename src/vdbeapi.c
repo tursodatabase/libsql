@@ -241,7 +241,7 @@ int sqlite3_step(sqlite3_stmt *pStmt){
   }
 #endif
 
-  sqlite3Error(p->db, rc, p->zErrMsg ? "%s" : 0, p->zErrMsg);
+  sqlite3Error(p->db, rc, 0);
   p->rc = sqlite3ApiExit(p->db, p->rc);
   return rc;
 }
