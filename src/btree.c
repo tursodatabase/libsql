@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.302 2006/01/19 08:43:31 danielk1977 Exp $
+** $Id: btree.c,v 1.303 2006/01/20 10:55:05 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -2498,7 +2498,7 @@ static int countWriteCursors(BtShared *pBt){
 }
 #endif
 
-#ifdef SQLITE_TEST
+#if defined(SQLITE_TEST) && defined(SQLITE_DEBUG)
 /*
 ** Print debugging information about all cursors to standard output.
 */
@@ -4433,8 +4433,10 @@ static int balance_nonroot(MemPage *pPage){
   assert( sqlite3pager_iswriteable(pPage->aData) );
   pBt = pPage->pBt;
   pParent = pPage->pParent;
-  sqlite3pager_write(pParent->aData);
   assert( pParent );
+  if( SQLITE_OK!=(rc = sqlite3pager_write(pParent->aData)) ){
+    return rc;
+  }
   TRACE(("BALANCE: begin page %d child of %d\n", pPage->pgno, pParent->pgno));
 
 #ifndef SQLITE_OMIT_QUICKBALANCE
@@ -5873,7 +5875,7 @@ int sqlite3BtreePageDump(Btree *p, int pgno, int recursive){
 }
 #endif
 
-#ifdef SQLITE_TEST
+#if defined(SQLITE_TEST) && defined(SQLITE_DEBUG)
 /*
 ** Fill aResult[] with information about the entry and page that the
 ** cursor is pointing to.
@@ -6546,7 +6548,7 @@ int sqlite3BtreeLockTable(Btree *p, int iTab, u8 isWriteLock){
 ** than in, for example, test1.c) so that it can get access to
 ** the definition of BtShared.
 */
-#if defined(SQLITE_TEST) && defined(TCLSH)
+#if defined(SQLITE_DEBUG) && defined(TCLSH)
 #include <tcl.h>
 int sqlite3_shared_cache_report(
   void * clientData,

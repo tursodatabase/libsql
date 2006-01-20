@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test3.c,v 1.64 2005/12/30 16:28:02 danielk1977 Exp $
+** $Id: test3.c,v 1.65 2006/01/20 10:55:05 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -597,6 +597,7 @@ static int btree_integrity_check(
 **
 ** Print information about all cursors to standard output for debugging.
 */
+#ifdef SQLITE_DEBUG
 static int btree_cursor_list(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
@@ -614,6 +615,7 @@ static int btree_cursor_list(
   sqlite3BtreeCursorList(pBt);
   return SQLITE_OK;
 }
+#endif
 
 /*
 ** Usage:   btree_cursor ID TABLENUM WRITEABLE
@@ -1184,6 +1186,7 @@ static int btree_payload_size(
 **   aResult[8] =  Local payload size
 **   aResult[9] =  Parent page number
 */
+#ifdef SQLITE_DEBUG
 static int btree_cursor_info(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
@@ -1221,6 +1224,7 @@ static int btree_cursor_info(
   Tcl_AppendResult(interp, &zBuf[1], 0);
   return SQLITE_OK;
 }
+#endif
 
 /*
 ** The command is provided for the purpose of setting breakpoints.
@@ -1428,8 +1432,6 @@ int Sqlitetest3_Init(Tcl_Interp *interp){
      { "btree_payload_size",       (Tcl_CmdProc*)btree_payload_size       },
      { "btree_first",              (Tcl_CmdProc*)btree_first              },
      { "btree_last",               (Tcl_CmdProc*)btree_last               },
-     { "btree_cursor_info",        (Tcl_CmdProc*)btree_cursor_info        },
-     { "btree_cursor_list",        (Tcl_CmdProc*)btree_cursor_list        },
      { "btree_integrity_check",    (Tcl_CmdProc*)btree_integrity_check    },
      { "btree_breakpoint",         (Tcl_CmdProc*)btree_breakpoint         },
      { "btree_varint_test",        (Tcl_CmdProc*)btree_varint_test        },
@@ -1438,6 +1440,10 @@ int Sqlitetest3_Init(Tcl_Interp *interp){
      { "btree_rollback_statement", (Tcl_CmdProc*)btree_rollback_statement },
      { "btree_from_db",            (Tcl_CmdProc*)btree_from_db            },
      { "btree_set_cache_size",     (Tcl_CmdProc*)btree_set_cache_size     },
+#ifdef SQLITE_DEBUG
+     { "btree_cursor_info",        (Tcl_CmdProc*)btree_cursor_info        },
+     { "btree_cursor_list",        (Tcl_CmdProc*)btree_cursor_list        },
+#endif
   };
   int i;
 

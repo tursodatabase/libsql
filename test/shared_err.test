@@ -1,0 +1,137 @@
+# 2005 December 30
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# The focus of the tests in this file are IO errors that occur in a shared
+# cache context. What happens to connection B if one connection A encounters
+# an IO-error whilst reading or writing the file-system?
+#
+# $Id: shared_err.test,v 1.1 2006/01/20 10:55:05 danielk1977 Exp $
+
+proc skip {args} {}
+
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+db close
+
+ifcapable !shared_cache||!subquery {
+  finish_test
+  return
+}
+set ::enable_shared_cache [sqlite3_enable_shared_cache 1]
+
+skip \
+do_ioerr_test shared_ioerr-1 -tclprep {
+  sqlite3 db2 test.db
+  execsql {
+    PRAGMA read_uncommitted = 1;
+    CREATE TABLE t1(a,b,c);
+    BEGIN;
+    SELECT * FROM sqlite_master;
+  } db2
+} -sqlbody {
+  SELECT * FROM sqlite_master;
+  INSERT INTO t1 VALUES(1,2,3);
+  BEGIN TRANSACTION;
+  INSERT INTO t1 VALUES(1,2,3);
+  INSERT INTO t1 VALUES(4,5,6);
+  ROLLBACK;
+  SELECT * FROM t1;
+  BEGIN TRANSACTION;
+  INSERT INTO t1 VALUES(1,2,3);
+  INSERT INTO t1 VALUES(4,5,6);
+  COMMIT;
+  SELECT * FROM t1;
+  DELETE FROM t1 WHERE a<100;
+} -cleanup {
+  do_test shared_ioerr-$n.cleanup.1 {
+    set res [catchsql {
+      SELECT * FROM t1;
+    } db2]
+    set possible_results [list            \
+      "1 {disk I/O error}"                \
+      "0 {1 2 3}"                         \
+      "0 {1 2 3 1 2 3 4 5 6}"             \
+      "0 {1 2 3 1 2 3 4 5 6 1 2 3 4 5 6}" \
+      "0 {}"                              \
+    ]
+    set rc [expr [lsearch -exact $possible_results $res] >= 0]
+    if {$rc != 1} {
+      puts ""
+      puts "Result: $res"
+    }
+    set rc
+  } {1}
+  db2 close
+}
+
+do_ioerr_test shared_ioerr-2 -tclprep {
+  sqlite3 db2 test.db
+  execsql {
+    PRAGMA read_uncommitted = 1;
+    BEGIN;
+    CREATE TABLE t1(a, b);
+    INSERT INTO t1(oid) VALUES(NULL);
+    INSERT INTO t1(oid) SELECT NULL FROM t1;
+    INSERT INTO t1(oid) SELECT NULL FROM t1;
+    INSERT INTO t1(oid) SELECT NULL FROM t1;
+    INSERT INTO t1(oid) SELECT NULL FROM t1;
+    INSERT INTO t1(oid) SELECT NULL FROM t1;
+    INSERT INTO t1(oid) SELECT NULL FROM t1;
+    INSERT INTO t1(oid) SELECT NULL FROM t1;
+    INSERT INTO t1(oid) SELECT NULL FROM t1;
+    INSERT INTO t1(oid) SELECT NULL FROM t1;
+    INSERT INTO t1(oid) SELECT NULL FROM t1;
+    UPDATE t1 set a = oid, b = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    CREATE INDEX i1 ON t1(a);
+    COMMIT;
+    BEGIN;
+    SELECT * FROM sqlite_master;
+  } db2
+} -tclbody {
+  set ::residx 0
+  execsql {DELETE FROM t1 WHERE 0 = (a % 2);}
+  incr ::residx
+
+  # When this transaction begins the table contains 512 entries. The
+  # two statements together add 512+146 more if it succeeds. 
+  # (1024/7==146)
+  execsql {BEGIN;}
+  execsql {INSERT INTO t1 SELECT a+1, b FROM t1;}
+  execsql {INSERT INTO t1 SELECT 'string' || a, b FROM t1 WHERE 0 = (a%7);}
+  execsql {COMMIT;}
+
+  incr ::residx
+} -cleanup {
+  do_test shared_ioerr-2.$n.cleanup.1 {
+    set res [catchsql {
+      SELECT max(a), min(a), count(*) FROM (SELECT a FROM t1 order by a);
+    } db2]
+    set possible_results [list \
+      {0 {1024 1 1024}}        \
+      {0 {1023 1 512}}         \
+      {0 {string994 1 1170}}   \
+    ]
+    set idx [lsearch -exact $possible_results $res]
+    set success [expr {$idx==$::residx || $res=="1 {disk I/O error}"}]
+    if {!$success} {
+      puts ""
+      puts "Result: \"$res\" ($::residx)"
+    }
+    set success
+  } {1}
+  db2 close
+}
+
+catch {db close}
+sqlite3_enable_shared_cache $::enable_shared_cache
+finish_test
+

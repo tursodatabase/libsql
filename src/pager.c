@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.245 2006/01/18 18:22:43 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.246 2006/01/20 10:55:05 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -468,8 +468,8 @@ static u32 retrieve32bits(PgHdr *p, int offset){
 static int pager_error(Pager *pPager, int rc){
   assert( pPager->errCode==SQLITE_FULL || pPager->errCode==SQLITE_OK );
   if( 
-    rc==SQLITE_FULL || 
-    rc==SQLITE_IOERR || 
+    rc==SQLITE_FULL ||
+    rc==SQLITE_IOERR ||
     rc==SQLITE_CORRUPT ||
     rc==SQLITE_PROTOCOL
   ){
@@ -3017,19 +3017,27 @@ int sqlite3pager_write(void *pData){
           store32bits(cksum, pPg, pPager->pageSize);
           szPg = pPager->pageSize+8;
           store32bits(pPg->pgno, pPg, -4);
+
           rc = sqlite3OsWrite(pPager->jfd, &((char*)pData)[-4], szPg);
           pPager->journalOff += szPg;
           TRACE4("JOURNAL %d page %d needSync=%d\n",
                   PAGERID(pPager), pPg->pgno, pPg->needSync);
           CODEC(pPager, pData, pPg->pgno, 0);
           *(u32*)PGHDR_TO_EXTRA(pPg, pPager) = saved;
+
+	  /* An error has occured writing to the journal file. The 
+          ** transaction will be rolled back by the layer above.
+          */
           if( rc!=SQLITE_OK ){
+#if 0
             sqlite3pager_rollback(pPager);
             if( !pPager->errCode ){
               pager_error(pPager, SQLITE_FULL);
             }
+#endif
             return rc;
           }
+
           pPager->nRec++;
           assert( pPager->aInJournal!=0 );
           pPager->aInJournal[pPg->pgno/8] |= 1<<(pPg->pgno&7);
@@ -3371,12 +3379,18 @@ int sqlite3pager_rollback(Pager *pPager){
   }else{
     rc = pager_playback(pPager);
   }
+#if 0
   if( rc!=SQLITE_OK ){
     rc = SQLITE_CORRUPT_BKPT;
-    pager_error(pPager, SQLITE_CORRUPT);
   }
+#endif
   pPager->dbSize = -1;
-  return rc;
+
+  /* If an error occurs during a ROLLBACK, we can no longer trust the pager
+  ** cache. So call pager_error() on the way out to make any error 
+  ** persistent.
+  */
+  return pager_error(pPager, rc);
 }
 
 /*

@@ -6,7 +6,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: quick.test,v 1.41 2006/01/10 07:14:24 danielk1977 Exp $
+# $Id: quick.test,v 1.42 2006/01/20 10:55:05 danielk1977 Exp $
 
 proc lshift {lvar} {
   upvar $lvar l
@@ -45,7 +45,6 @@ set EXCLUDE {
   malloc.test
   malloc2.test
   malloc3.test
-  malloc4.test
   memleak.test
   misuse.test
   quick.test
@@ -53,6 +52,7 @@ set EXCLUDE {
   autovacuum_crash.test
   btree8.test
   utf16.test
+  shared_err.test
 }
 
 if {[sqlite3 -has-codec]} {

@@ -1111,6 +1111,11 @@ static void abortOtherActiveVdbes(Vdbe *pVdbe){
   }
 }
 
+static void rollbackAll(sqlite3 *db, Vdbe *pVdbe){
+  abortOtherActiveVdbes(pVdbe);
+  sqlite3RollbackAll(db);
+}
+
 /* 
 ** This routine checks that the sqlite3.activeVdbeCnt count variable
 ** matches the number of vdbe's in the list sqlite3.pVdbe that are
@@ -1153,11 +1158,39 @@ int sqlite3VdbeHalt(Vdbe *p){
   sqlite3 *db = p->db;
   int i;
   int (*xFunc)(Btree *pBt) = 0;  /* Function to call on each btree backend */
+  int isSpecialError;            /* Set to true if SQLITE_NOMEM or IOERR */
+
+  /* This function contains the logic that determines if a statement or
+  ** transaction will be committed or rolled back as a result of the
+  ** execution of this virtual machine. 
+  **
+  ** Special errors:
+  **
+  **     If an SQLITE_NOMEM error has occured in a statement that writes to
+  **     the database, then either a statement or transaction must be rolled
+  **     back to ensure the tree-structures are in a consistent state. A
+  **     statement transaction is rolled back if one is open, otherwise the
+  **     entire transaction must be rolled back.
+  **
+  **     If an SQLITE_IOERR error has occured in a statement that writes to
+  **     the database, then the entire transaction must be rolled back. The
+  **     I/O error may have caused garbage to be written to the journal 
+  **     file. Were the transaction to continue and eventually be rolled 
+  **     back that garbage might end up in the database file.
+  **     
+  **     In both of the above cases, the Vdbe.errorAction variable is 
+  **     ignored. If the sqlite3.autoCommit flag is false and a transaction
+  **     is rolled back, it will be set to true.
+  **
+  ** Other errors:
+  **
+  ** No error:
+  **
+  */
 
   if( sqlite3MallocFailed() ){
     p->rc = SQLITE_NOMEM;
   }
-
   if( p->magic!=VDBE_MAGIC_RUN ){
     /* Already halted.  Nothing to do. */
     assert( p->magic==VDBE_MAGIC_HALT );
@@ -1165,44 +1198,25 @@ int sqlite3VdbeHalt(Vdbe *p){
   }
   closeAllCursors(p);
   checkActiveVdbeCnt(db);
-  if( p->pc<0 ){
-    /* No commit or rollback needed if the program never started */
-  }else if( db->autoCommit && db->activeVdbeCnt==1 ){
 
-    if( p->rc==SQLITE_OK || (p->errorAction==OE_Fail && p->rc!=SQLITE_NOMEM)){
-      /* The auto-commit flag is true, there are no other active queries
-      ** using this handle and the vdbe program was successful or hit an
-      ** 'OR FAIL' constraint. This means a commit is required.
-      */
-      int rc = vdbeCommit(db);
-      if( rc==SQLITE_BUSY ){
-        return SQLITE_BUSY;
-      }else if( rc!=SQLITE_OK ){
-        p->rc = rc;
-        sqlite3RollbackAll(db);
-      }else{
-        sqlite3CommitInternalChanges(db);
-      }
-    }else{
-      sqlite3RollbackAll(db);
-    }
-  }else{
+  /* No commit or rollback needed if the program never started */
+  if( p->pc>=0 ){
 
-    if( p->rc==SQLITE_NOMEM ){
+    /* Check for one of the special errors - SQLITE_NOMEM or SQLITE_IOERR */
+    isSpecialError = ((p->rc==SQLITE_NOMEM || p->rc==SQLITE_IOERR)?1:0);
+    if( isSpecialError ){
       /* This loop does static analysis of the query to see which of the
       ** following three categories it falls into:
       **
       **     Read-only
-      **     Query with statement journal          -> rollback statement
-      **     Query without statement journal       -> rollback transaction
+      **     Query with statement journal
+      **     Query without statement journal
       **
       ** We could do something more elegant than this static analysis (i.e.
       ** store the type of query as part of the compliation phase), but 
-      ** handling malloc() failure is a fairly obscure edge case so this is
-      ** probably easier.
-      **
-      ** Todo: This means we always override the p->errorAction value for a
-      ** malloc() failure. Is there any other choice here though?
+      ** handling malloc() or IO failure is a fairly obscure edge case so 
+      ** this is probably easier. Todo: Might be an opportunity to reduce 
+      ** code size a very small amount though...
       */
       int isReadOnly = 1;
       int isStatement = 0;
@@ -1217,56 +1231,92 @@ int sqlite3VdbeHalt(Vdbe *p){
             break;
         }
       }
-      if( (isReadOnly||isStatement) && p->errorAction!=OE_Rollback ){
-        p->errorAction = OE_Abort;
-      }else{ 
-        p->errorAction = OE_Rollback;
+  
+      /* If the query was read-only, we need do no rollback at all. Otherwise,
+      ** proceed with the special handling.
+      */
+      if( !isReadOnly ){
+        if( p->rc==SQLITE_NOMEM && isStatement ){
+          xFunc = sqlite3BtreeRollbackStmt;
+        }else{
+          /* We are forced to roll back the active transaction. Before doing
+          ** so, abort any other statements this handle currently has active.
+          */
+          db->autoCommit = 1;
+        }
       }
     }
-
-    if( p->rc==SQLITE_OK || p->errorAction==OE_Fail ){
-      xFunc = sqlite3BtreeCommitStmt;
-    }else if( p->errorAction==OE_Abort ){
-      xFunc = sqlite3BtreeRollbackStmt;
-    }else{
-      abortOtherActiveVdbes(p);
-      sqlite3RollbackAll(db);
-      db->autoCommit = 1;
+  
+    /* If the auto-commit flag is set and this is the only active vdbe, then
+    ** we do either a commit or rollback of the current transaction. 
+    **
+    ** Note: This block also runs if one of the special errors handled 
+    ** above has occured. 
+    */
+    if( db->autoCommit && db->activeVdbeCnt==1 ){
+      if( p->rc==SQLITE_OK || (p->errorAction==OE_Fail && !isSpecialError) ){
+	/* The auto-commit flag is true, and the vdbe program was 
+        ** successful or hit an 'OR FAIL' constraint. This means a commit 
+        ** is required.
+        */
+        int rc = vdbeCommit(db);
+        if( rc==SQLITE_BUSY ){
+          return SQLITE_BUSY;
+        }else if( rc!=SQLITE_OK ){
+          p->rc = rc;
+          rollbackAll(db, p);
+        }else{
+          sqlite3CommitInternalChanges(db);
+        }
+      }else{
+        rollbackAll(db, p);
+      }
+    }else if( !xFunc ){
+      if( p->rc==SQLITE_OK || p->errorAction==OE_Fail ){
+        xFunc = sqlite3BtreeCommitStmt;
+      }else if( p->errorAction==OE_Abort ){
+        xFunc = sqlite3BtreeRollbackStmt;
+      }else{
+        rollbackAll(db, p);
+        db->autoCommit = 1;
+      }
     }
-  }
-
-  /* If xFunc is not NULL, then it is one of 
-  ** sqlite3BtreeRollbackStmt or sqlite3BtreeCommitStmt. Call it once on
-  ** each backend. If an error occurs and the return code is still
-  ** SQLITE_OK, set the return code to the new error value.
-  */
-  assert(!xFunc ||
-    xFunc==sqlite3BtreeCommitStmt ||
-    xFunc==sqlite3BtreeRollbackStmt
-  );
-  for(i=0; xFunc && i<db->nDb; i++){ 
-    int rc;
-    Btree *pBt = db->aDb[i].pBt;
-    if( pBt ){
-      rc = xFunc(pBt);
-      if( p->rc==SQLITE_OK ) p->rc = rc;
+  
+    /* If xFunc is not NULL, then it is one of sqlite3BtreeRollbackStmt or
+    ** sqlite3BtreeCommitStmt. Call it once on each backend. If an error occurs
+    ** and the return code is still SQLITE_OK, set the return code to the new
+    ** error value.
+    */
+    assert(!xFunc ||
+      xFunc==sqlite3BtreeCommitStmt ||
+      xFunc==sqlite3BtreeRollbackStmt
+    );
+    for(i=0; xFunc && i<db->nDb; i++){ 
+      int rc;
+      Btree *pBt = db->aDb[i].pBt;
+      if( pBt ){
+        rc = xFunc(pBt);
+        if( p->rc==SQLITE_OK ) p->rc = rc;
+      }
     }
-  }
-
-  /* If this was an INSERT, UPDATE or DELETE, set the change counter. */
-  if( p->changeCntOn && p->pc>=0 ){
-    if( !xFunc || xFunc==sqlite3BtreeCommitStmt ){
-      sqlite3VdbeSetChanges(db, p->nChange);
-    }else{
-      sqlite3VdbeSetChanges(db, 0);
+  
+    /* If this was an INSERT, UPDATE or DELETE and the statement was committed, 
+    ** set the change counter. 
+    */
+    if( p->changeCntOn && p->pc>=0 ){
+      if( !xFunc || xFunc==sqlite3BtreeCommitStmt ){
+        sqlite3VdbeSetChanges(db, p->nChange);
+      }else{
+        sqlite3VdbeSetChanges(db, 0);
+      }
+      p->nChange = 0;
     }
-    p->nChange = 0;
-  }
-
-  /* Rollback or commit any schema changes that occurred. */
-  if( p->rc!=SQLITE_OK && db->flags&SQLITE_InternChanges ){
-    sqlite3ResetInternalSchema(db, 0);
-    db->flags = (db->flags | SQLITE_InternChanges);
+  
+    /* Rollback or commit any schema changes that occurred. */
+    if( p->rc!=SQLITE_OK && db->flags&SQLITE_InternChanges ){
+      sqlite3ResetInternalSchema(db, 0);
+      db->flags = (db->flags | SQLITE_InternChanges);
+    }
   }
 
   /* We have successfully halted and closed the VM.  Record this fact. */
