@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.533 2006/01/18 18:22:43 danielk1977 Exp $
+** $Id: vdbe.c,v 1.534 2006/01/20 15:45:36 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1202,22 +1202,17 @@ case OP_Function: {
     pOp->p3type = P3_VDBEFUNC;
   }
 
+  /* If the function returned an error, throw an exception */
+  if( ctx.isError ){
+    sqlite3SetString(&p->zErrMsg, sqlite3_value_text(&ctx.s), (char*)0);
+    rc = SQLITE_ERROR;
+  }
+
   /* Copy the result of the function to the top of the stack */
   sqlite3VdbeChangeEncoding(&ctx.s, encoding);
   pTos++;
   pTos->flags = 0;
   sqlite3VdbeMemMove(pTos, &ctx.s);
-
-  /* If the function returned an error, throw an exception */
-  if( ctx.isError ){
-    if( !(pTos->flags&MEM_Str) ){
-      sqlite3SetString(&p->zErrMsg, "user function error", (char*)0);
-    }else{
-      sqlite3SetString(&p->zErrMsg, sqlite3_value_text(pTos), (char*)0);
-      sqlite3VdbeChangeEncoding(pTos, encoding);
-    }
-    rc = SQLITE_ERROR;
-  }
   break;
 }
 
@@ -4437,6 +4432,9 @@ case OP_AggStep: {        /* no-push */
   assert( pOp->p1>=0 && pOp->p1<p->nMem );
   ctx.pMem = pMem = &p->aMem[pOp->p1];
   pMem->n++;
+  ctx.s.flags = MEM_Null;
+  ctx.s.z = 0;
+  ctx.s.xDel = 0;
   ctx.isError = 0;
   ctx.pColl = 0;
   if( ctx.pFunc->needCollSeq ){
@@ -4448,8 +4446,10 @@ case OP_AggStep: {        /* no-push */
   (ctx.pFunc->xStep)(&ctx, n, apVal);
   popStack(&pTos, n);
   if( ctx.isError ){
+    sqlite3SetString(&p->zErrMsg, sqlite3_value_text(&ctx.s), (char*)0);
     rc = SQLITE_ERROR;
   }
+  sqlite3VdbeMemRelease(&ctx.s);
   break;
 }
 
@@ -4470,7 +4470,10 @@ case OP_AggFinal: {        /* no-push */
   assert( pOp->p1>=0 && pOp->p1<p->nMem );
   pMem = &p->aMem[pOp->p1];
   assert( (pMem->flags & ~(MEM_Null|MEM_Agg))==0 );
-  sqlite3VdbeMemFinalize(pMem, (FuncDef*)pOp->p3);
+  rc = sqlite3VdbeMemFinalize(pMem, (FuncDef*)pOp->p3);
+  if( rc==SQLITE_ERROR ){
+    sqlite3SetString(&p->zErrMsg, sqlite3_value_text(pMem), (char*)0);
+  }
   break;
 }
 

@@ -201,8 +201,12 @@ int sqlite3VdbeMemStringify(Mem *pMem, int enc){
 ** Memory cell pMem contains the context of an aggregate function.
 ** This routine calls the finalize method for that function.  The
 ** result of the aggregate is stored back into pMem.
+**
+** Return SQLITE_ERROR if the finalizer reports an error.  SQLITE_OK
+** otherwise.
 */
-void sqlite3VdbeMemFinalize(Mem *pMem, FuncDef *pFunc){
+int sqlite3VdbeMemFinalize(Mem *pMem, FuncDef *pFunc){
+  int rc = SQLITE_OK;
   if( pFunc && pFunc->xFinalize ){
     sqlite3_context ctx;
     assert( (pMem->flags & MEM_Null)!=0 || pFunc==*(FuncDef**)&pMem->i );
@@ -210,6 +214,7 @@ void sqlite3VdbeMemFinalize(Mem *pMem, FuncDef *pFunc){
     ctx.s.z = pMem->zShort;
     ctx.pMem = pMem;
     ctx.pFunc = pFunc;
+    ctx.isError = 0;
     pFunc->xFinalize(&ctx);
     if( pMem->z && pMem->z!=pMem->zShort ){
       sqliteFree( pMem->z );
@@ -218,7 +223,11 @@ void sqlite3VdbeMemFinalize(Mem *pMem, FuncDef *pFunc){
     if( pMem->flags & MEM_Short ){
       pMem->z = pMem->zShort;
     }
+    if( ctx.isError ){
+      rc = SQLITE_ERROR;
+    }
   }
+  return rc;
 }
 
 /*

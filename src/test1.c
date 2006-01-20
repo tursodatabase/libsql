@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.200 2006/01/20 10:55:05 danielk1977 Exp $
+** $Id: test1.c,v 1.201 2006/01/20 15:45:36 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -555,6 +555,14 @@ static int test_create_function(
 
 /*
 ** Routines to implement the x_count() aggregate function.
+**
+** x_count() counts the number of non-null arguments.  But there are
+** some twists for testing purposes.
+**
+** If the argument to x_count() is 40 then a UTF-8 error is reported
+** on the step function.  If x_count(41) is seen, then a UTF-16 error
+** is reported on the step function.  If the total count is 42, then
+** a UTF-8 error is reported on the finalize function.
 */
 typedef struct CountCtx CountCtx;
 struct CountCtx {
@@ -566,11 +574,26 @@ static void countStep(sqlite3_context *context, int argc, sqlite3_value **argv){
   if( (argc==0 || SQLITE_NULL!=sqlite3_value_type(argv[0]) ) && p ){
     p->n++;
   }
+  if( argc>0 ){
+    int v = sqlite3_value_int(argv[0]);
+    if( v==40 ){
+      sqlite3_result_error(context, "value of 40 handed to x_count", -1);
+    }else if( v==41 ){
+      const char zUtf16ErrMsg[] = { 0, 0x61, 0, 0x62, 0, 0x63, 0, 0, 0};
+      sqlite3_result_error16(context, &zUtf16ErrMsg[1-SQLITE_BIGENDIAN], -1);
+    }
+  }
 }   
 static void countFinalize(sqlite3_context *context){
   CountCtx *p;
   p = sqlite3_aggregate_context(context, sizeof(*p));
-  sqlite3_result_int(context, p ? p->n : 0);
+  if( p ){
+    if( p->n==42 ){
+      sqlite3_result_error(context, "x_count totals to 42", -1);
+    }else{
+      sqlite3_result_int(context, p ? p->n : 0);
+    }
+  }
 }
 
 /*
@@ -582,7 +605,10 @@ static void countFinalize(sqlite3_context *context){
 **
 ** The original motivation for this routine was to be able to call the
 ** sqlite3_create_aggregate function while a query is in progress in order
-** to test the SQLITE_MISUSE detection logic.
+** to test the SQLITE_MISUSE detection logic.  See misuse.test.
+**
+** This routine was later extended to test the use of sqlite3_result_error()
+** within aggregate functions.
 */
 static int test_create_aggregate(
   void *NotUsed,
