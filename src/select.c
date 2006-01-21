@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.296 2006/01/20 18:10:57 drh Exp $
+** $Id: select.c,v 1.297 2006/01/21 22:19:55 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2020,6 +2020,10 @@ static void substSelect(Select *p, int iTable, ExprList *pEList){
 **  (12)  The subquery is not the right term of a LEFT OUTER JOIN or the
 **        subquery has no WHERE clause.  (added by ticket #350)
 **
+**  (13)  The subquery and outer query do not both use LIMIT
+**
+**  (14)  The subquery does not use OFFSET
+**
 ** In this routine, the "p" parameter is a pointer to the outer query.
 ** The subquery is p->pSrc->a[iFrom].  isAgg is true if the outer query
 ** uses aggregates and subqueryIsAgg is true if the subquery uses aggregates.
@@ -2054,18 +2058,26 @@ static int flattenSubquery(
   pSubitem = &pSrc->a[iFrom];
   pSub = pSubitem->pSelect;
   assert( pSub!=0 );
-  if( isAgg && subqueryIsAgg ) return 0;
-  if( subqueryIsAgg && pSrc->nSrc>1 ) return 0;
+  if( isAgg && subqueryIsAgg ) return 0;                 /* Restriction (1)  */
+  if( subqueryIsAgg && pSrc->nSrc>1 ) return 0;          /* Restriction (2)  */
   pSubSrc = pSub->pSrc;
   assert( pSubSrc );
-  if( (pSub->pLimit && p->pLimit) || pSub->pOffset || 
-      (pSub->pLimit && isAgg) ) return 0;
-  if( pSubSrc->nSrc==0 ) return 0;
-  if( pSub->isDistinct && (pSrc->nSrc>1 || isAgg) ){
-     return 0;
+  /* Prior to version 3.1.2, when LIMIT and OFFSET had to be simple constants,
+  ** not arbitrary expresssions, we allowed some combining of LIMIT and OFFSET
+  ** because they could be computed at compile-time.  But when LIMIT and OFFSET
+  ** became arbitrary expressions, we were forced to add restrictions (13)
+  ** and (14). */
+  if( pSub->pLimit && p->pLimit ) return 0;              /* Restriction (13) */
+  if( pSub->pOffset ) return 0;                          /* Restriction (14) */
+  if( pSubSrc->nSrc==0 ) return 0;                       /* Restriction (7)  */
+  if( (pSub->isDistinct || pSub->pLimit) 
+         && (pSrc->nSrc>1 || isAgg) ){          /* Restrictions (4)(5)(8)(9) */
+     return 0;       
   }
-  if( p->isDistinct && subqueryIsAgg ) return 0;
-  if( (p->disallowOrderBy || p->pOrderBy) && pSub->pOrderBy ) return 0;
+  if( p->isDistinct && subqueryIsAgg ) return 0;         /* Restriction (6)  */
+  if( (p->disallowOrderBy || p->pOrderBy) && pSub->pOrderBy ){
+     return 0;                                           /* Restriction (11) */
+  }
 
   /* Restriction 3:  If the subquery is a join, make sure the subquery is 
   ** not used as the right operand of an outer join.  Examples of why this
@@ -2195,6 +2207,9 @@ static int flattenSubquery(
 
   /*
   ** SELECT ... FROM (SELECT ... LIMIT a OFFSET b) LIMIT x OFFSET y;
+  **
+  ** One is tempted to try to add a and b to combine the limits.  But this
+  ** does not work if either limit is negative.
   */
   if( pSub->pLimit ){
     p->pLimit = pSub->pLimit;
