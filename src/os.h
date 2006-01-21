@@ -334,7 +334,7 @@ struct sqlite3OsVtbl {
 
   void (*xEnterMutex)(void);
   void (*xLeaveMutex)(void);
-  int (*xInMutex)(void);
+  int (*xInMutex)(int);
   ThreadData *(*xThreadSpecificData)(int);
 
   void *(*xMalloc)(int);
