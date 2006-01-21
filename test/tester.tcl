@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.62 2006/01/17 16:10:14 danielk1977 Exp $
+# $Id: tester.tcl,v 1.63 2006/01/21 12:08:55 danielk1977 Exp $
 
 # Make sure tclsqlite3 was compiled correctly.  Abort now with an
 # error message if not.
@@ -398,6 +398,7 @@ proc do_ioerr_test {testname args} {
       } $checksum
     }
 
+    set ::sqlite_io_error_pending 0
     if {[info exists ::ioerropts(-cleanup)]} {
       catch $::ioerropts(-cleanup)
     }

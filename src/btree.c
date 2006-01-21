@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.305 2006/01/20 18:10:57 drh Exp $
+** $Id: btree.c,v 1.306 2006/01/21 12:08:54 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -541,11 +541,9 @@ static int saveCursorPosition(BtCursor *pCur){
   }
   assert( !pCur->pPage->intKey || !pCur->pKey );
 
-  /* Todo: Should we drop the reference to pCur->pPage here? */
-  releasePage(pCur->pPage);
-  pCur->pPage = 0;
-
   if( rc==SQLITE_OK ){
+    releasePage(pCur->pPage);
+    pCur->pPage = 0;
     pCur->eState = CURSOR_REQUIRESEEK;
   }
 

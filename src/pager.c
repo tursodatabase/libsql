@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.248 2006/01/20 18:10:57 drh Exp $
+** @(#) $Id: pager.c,v 1.249 2006/01/21 12:08:54 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -909,6 +909,8 @@ static int pager_unwritelock(Pager *pPager){
   pPager->state = PAGER_SHARED;
   pPager->origDbSize = 0;
   pPager->setMaster = 0;
+  pPager->needSync = 0;
+  pPager->pFirstSynced = pPager->pFirst;
   return rc;
 }
 
