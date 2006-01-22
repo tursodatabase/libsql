@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.306 2006/01/21 12:08:54 danielk1977 Exp $
+** $Id: btree.c,v 1.307 2006/01/22 21:52:57 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -462,7 +462,8 @@ static void put4byte(unsigned char *p, u32 v){
 ** file.
 */
 #define getVarint    sqlite3GetVarint
-#define getVarint32  sqlite3GetVarint32
+/* #define getVarint32  sqlite3GetVarint32 */
+#define getVarint32(A,B)  ((*B=*(A))<=0x7f?1:sqlite3GetVarint32(A,B))
 #define putVarint    sqlite3PutVarint
 
 /* The database page the PENDING_BYTE occupies. This page is never used.
@@ -920,12 +921,16 @@ static void parseCellPtr(
   }else{
     nPayload = 0;
   }
-  n += getVarint(&pCell[n], (u64 *)&pInfo->nKey);
-  pInfo->nHeader = n;
   pInfo->nData = nPayload;
-  if( !pPage->intKey ){
-    nPayload += pInfo->nKey;
+  if( pPage->intKey ){
+    n += getVarint(&pCell[n], (u64 *)&pInfo->nKey);
+  }else{
+    u32 x;
+    n += getVarint32(&pCell[n], &x);
+    pInfo->nKey = x;
+    nPayload += x;
   }
+  pInfo->nHeader = n;
   if( nPayload<=pPage->maxLocal ){
     /* This is the (easy) common case where the entire payload fits
     ** on the local page.  No overflow is required.

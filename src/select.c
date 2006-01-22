@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.298 2006/01/22 00:42:09 drh Exp $
+** $Id: select.c,v 1.299 2006/01/22 21:52:57 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -566,7 +566,7 @@ static int selectInnerLoop(
       break;
     }
 
-    /* If any row exists in the result set, record that fact and abort.
+    /* If any row exist in the result set, record that fact and abort.
     */
     case SRT_Exists: {
       sqlite3VdbeAddOp(v, OP_MemInt, 1, iParm);
