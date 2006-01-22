@@ -12,7 +12,7 @@
 # focus of this file is testing SELECT statements that contain
 # subqueries in their FROM clause.
 #
-# $Id: select6.test,v 1.21 2005/11/14 22:29:06 drh Exp $
+# $Id: select6.test,v 1.22 2006/01/22 00:14:39 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -453,6 +453,55 @@ do_test select6-8.6 {
   }
 } {1}
 } ;# ifcapable view
+
+# Ticket #1634
+#
+do_test select6-9.1 {
+  execsql {
+    SELECT a.x, b.x FROM t1 AS a, (SELECT x FROM t1 LIMIT 2) AS b
+  }
+} {1 1 1 2 2 1 2 2 3 1 3 2 4 1 4 2}
+do_test select6-9.2 {
+  execsql {
+    SELECT x FROM (SELECT x FROM t1 LIMIT 2);
+  }
+} {1 2}
+do_test select6-9.3 {
+  execsql {
+    SELECT x FROM (SELECT x FROM t1 LIMIT 2 OFFSET 1);
+  }
+} {2 3}
+do_test select6-9.4 {
+  execsql {
+    SELECT x FROM (SELECT x FROM t1) LIMIT 2;
+  }
+} {1 2}
+do_test select6-9.5 {
+  execsql {
+    SELECT x FROM (SELECT x FROM t1) LIMIT 2 OFFSET 1;
+  }
+} {2 3}
+do_test select6-9.6 {
+  execsql {
+    SELECT x FROM (SELECT x FROM t1 LIMIT 2) LIMIT 3;
+  }
+} {1 2}
+do_test select6-9.7 {
+  execsql {
+    SELECT x FROM (SELECT x FROM t1 LIMIT -1) LIMIT 3;
+  }
+} {1 2 3}
+do_test select6-9.8 {
+  execsql {
+    SELECT x FROM (SELECT x FROM t1 LIMIT -1);
+  }
+} {1 2 3 4}
+do_test select6-9.9 {
+  execsql {
+    SELECT x FROM (SELECT x FROM t1 LIMIT -1 OFFSET 1);
+  }
+} {2 3 4}
+
 
 
 finish_test
