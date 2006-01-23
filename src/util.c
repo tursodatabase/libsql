@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.181 2006/01/23 13:00:38 drh Exp $
+** $Id: util.c,v 1.182 2006/01/23 15:39:59 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -25,7 +25,7 @@
 ** MALLOC WRAPPER ARCHITECTURE
 **
 ** The sqlite code accesses dynamic memory allocation/deallocation by invoking
-** the following four APIs (which may be implemented as macros).
+** the following six APIs (which may be implemented as macros).
 **
 **     sqlite3Malloc()
 **     sqlite3MallocRaw()
@@ -37,8 +37,8 @@
 ** The function sqlite3FreeX performs the same task as sqlite3Free and is
 ** guaranteed to be a real function. The same holds for sqlite3MallocX
 **
-** The above APIs are implemented in terms of the functions provided at the Os
-** level (not in this file). The Os level interface is never accessed directly
+** The above APIs are implemented in terms of the functions provided in the
+** operating-system interface. The OS interface is never accessed directly
 ** by code outside of this file.
 **
 **     sqlite3OsMalloc()
@@ -55,7 +55,7 @@
 ** MALLOC TEST WRAPPER ARCHITECTURE
 **
 ** The test wrapper provides extra test facilities to ensure the library 
-** does not leak memory and handles the failure of the underlying (Os level)
+** does not leak memory and handles the failure of the underlying OS level
 ** allocation system correctly. It is only present if the library is 
 ** compiled with the SQLITE_MEMDEBUG macro set.
 **
