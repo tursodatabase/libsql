@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi3.test,v 1.39 2006/01/17 09:35:02 danielk1977 Exp $
+# $Id: capi3.test,v 1.40 2006/01/23 21:37:32 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -430,6 +430,11 @@ do_test $test.13 {
   sqlite3_column_text $STMT -1
 } {}
 
+}
+
+ifcapable !floatingpoint {
+  finish_test
+  return
 }
 
 do_test capi3-5.0 {
