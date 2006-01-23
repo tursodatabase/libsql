@@ -13,7 +13,7 @@
 # cache context. What happens to connection B if one connection A encounters
 # an IO-error whilst reading or writing the file-system?
 #
-# $Id: shared_err.test,v 1.4 2006/01/23 05:50:58 danielk1977 Exp $
+# $Id: shared_err.test,v 1.5 2006/01/23 13:09:47 danielk1977 Exp $
 
 proc skip {args} {}
 
@@ -250,7 +250,10 @@ do_ioerr_test shared_ioerr-3 -tclprep {
 
 } -tclbody {
   execsql {
+    BEGIN;
     INSERT INTO t1 VALUES('201.201.201.201.201', NULL);
+    UPDATE t1 SET a = '202.202.202.202.202' WHERE a LIKE '201%';
+    COMMIT;
   }
 } -cleanup {
   do_test shared_ioerr-3.$n.cleanup.1 {
