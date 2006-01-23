@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: legacy.c,v 1.12 2006/01/18 15:25:17 danielk1977 Exp $
+** $Id: legacy.c,v 1.13 2006/01/23 13:14:55 drh Exp $
 */
 
 #include "sqliteInt.h"
@@ -68,8 +68,8 @@ int sqlite3_exec(
     nCallback = 0;
 
     nCol = sqlite3_column_count(pStmt);
-    azCols = sqliteMalloc(2*nCol*sizeof(const char *));
-    if( nCol && !azCols ){
+    azCols = sqliteMalloc(2*nCol*sizeof(const char *) + 1);
+    if( azCols==0 ){
       goto exec_out;
     }
 
