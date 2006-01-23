@@ -1294,7 +1294,10 @@ int sqlite3VdbeHalt(Vdbe *p){
       Btree *pBt = db->aDb[i].pBt;
       if( pBt ){
         rc = xFunc(pBt);
-        if( p->rc==SQLITE_OK ) p->rc = rc;
+        if( rc && (p->rc==SQLITE_OK || p->rc==SQLITE_CONSTRAINT) ){
+          p->rc = rc;
+          sqlite3SetString(&p->zErrMsg, 0);
+        }
       }
     }
   

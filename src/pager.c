@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.251 2006/01/23 13:47:47 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.252 2006/01/23 15:25:48 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1464,9 +1464,7 @@ static int pager_stmt_playback(Pager *pPager){
   pPager->journalOff = szJ;
   
 end_stmt_playback:
-  if( rc!=SQLITE_OK ){
-    rc = pager_error(pPager, SQLITE_CORRUPT);
-  }else{
+  if( rc==SQLITE_OK) {
     pPager->journalOff = szJ;
     /* pager_reload_cache(pPager); */
   }

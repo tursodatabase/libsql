@@ -15,7 +15,7 @@
 # The tests in this file use special facilities that are only
 # available in the SQLite test fixture.
 #
-# $Id: ioerr.test,v 1.22 2006/01/06 14:32:20 drh Exp $
+# $Id: ioerr.test,v 1.23 2006/01/23 15:25:48 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -200,6 +200,58 @@ do_ioerr_test ioerr-8 -tclprep {
   sqlite3 db test.db
 } -sqlbody {
   SELECT c FROM t1;
+}
+
+# For test coverage: Cause an IO error whilst reading the master-journal
+# name from a journal file.
+do_ioerr_test ioerr-9 -tclprep {
+  execsql {
+    CREATE TABLE t1(a,b,c);
+    INSERT INTO t1 VALUES(randstr(200,200), randstr(1000,1000), 2);
+    BEGIN;
+    INSERT INTO t1 VALUES(randstr(200,200), randstr(1000,1000), 2);
+  }
+  copy_file test.db-journal test2.db-journal
+  execsql {
+    COMMIT;
+  }
+  copy_file test2.db-journal test.db-journal
+  set f [open test.db-journal a]
+  fconfigure $f -encoding binary
+  puts -nonewline $f "hello"
+  puts -nonewline $f "\x00\x00\x00\x05\x01\x02\x03\x04"
+  puts -nonewline $f "\xd9\xd5\x05\xf9\x20\xa1\x63\xd7"
+  close $f
+} -sqlbody {
+  SELECT a FROM t1;
+}
+
+# For test coverage: Cause an IO error during statement playback (i.e. 
+# a constraint).
+do_ioerr_test ioerr-10 -tclprep {
+  execsql {
+    BEGIN;
+    CREATE TABLE t1(a PRIMARY KEY, b);
+  }
+  for {set i 0} {$i < 500} {incr i} {
+    execsql {INSERT INTO t1 VALUES($i, 'hello world');}
+  }
+  execsql {
+    COMMIT;
+  }
+} -tclbody {
+
+  catch {execsql {
+    BEGIN;
+    INSERT INTO t1 VALUES('abc', 123);
+    INSERT INTO t1 VALUES('def', 123);
+    INSERT INTO t1 VALUES('ghi', 123);
+    INSERT INTO t1 SELECT (a+500)%900, 'good string' FROM t1;
+  }} msg
+
+  if {$msg != "column a is not unique"} {
+    error $msg
+  }
 }
 
 finish_test

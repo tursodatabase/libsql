@@ -1,5 +1,5 @@
-C Fix\sos_common.h\sso\sthat\sthe\scode\sbuilds\swithout\s-DSQLITE_MEMDEBUG.\s(CVS\s3000)
-D 2006-01-23T14:05:18
+C Further\scoverage\simprovements\sfor\spager.c\sand\sanother\sIO\serror\sbug\sfix.\s(CVS\s3001)
+D 2006-01-23T15:25:48
 F Makefile.in ab3ffd8d469cef4477257169b82810030a6bb967
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -59,7 +59,7 @@ F src/os_unix.c 38a55e51fb2c6f32c0ce86d274f5787f6c3668ed
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c 98e4e38db7d4a00647b2bb1c60d28b7ca5034c03
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 9c0ac7536168f92eef1c4033ef97414d838cd504
+F src/pager.c 86619d2739fe8757a0d5eff72a02a290b1c3fba0
 F src/pager.h e0acb095b3ad0bca48f2ab00c87346665643f64f
 F src/parse.y 4285cd2d0f31a8db4c4d54325f88e500452fa029
 F src/pragma.c 4496cc77dc35824e1c978c3d1413b8a5a4c777d3
@@ -91,7 +91,7 @@ F src/vdbe.c 1b50083eb941eab37ffa220fdc47cf0965a7f176
 F src/vdbe.h 8729a4ee16ff9aeab2af9667df3cf300ff978e13
 F src/vdbeInt.h eb3f86ab08ef11635bc78eb88c3ff13f923c233b
 F src/vdbeapi.c dcb2636f49b4807e34960d52a2fc257b3a751140
-F src/vdbeaux.c 1dce6e5f51d6119220e12ecbceccccf97ca8b8be
+F src/vdbeaux.c 2f12c17b4a27607d92330f4f70100b3435557e0d
 F src/vdbefifo.c 9efb94c8c3f4c979ebd0028219483f88e57584f5
 F src/vdbemem.c 2034e93b32c14bda6e306bb54e3a8e930b963027
 F src/where.c f79bc17f6228f69181da3dfc97986a690bce25ce
@@ -172,7 +172,7 @@ F test/insert2.test 5a20e1ace5fa0800b58d28284212290189b49aed
 F test/insert3.test c67f0240b1c17e71fa2ed8bb6de064928f549f95
 F test/interrupt.test cd24dc5bedd02325be4bfa5d6209fae01c465157
 F test/intpkey.test af4fd826c4784ec5c93b444de07adea0254d0d30
-F test/ioerr.test aca09f9b303e2e69a42b61298e6e659d92e5c532
+F test/ioerr.test 3c9facf13063084fdf4cbe1449b619977b342806
 F test/join.test db3802739fb695bdfa2e88805e3d64ec5ffbebd1
 F test/join2.test f2171c265e57ee298a27e57e7051d22962f9f324
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
@@ -204,7 +204,7 @@ F test/misc5.test cff0e9ff3a79c5116d5bce077a0bacf9bb300324
 F test/misuse.test 30b3a458e5a70c31e74c291937b6c82204c59f33
 F test/notnull.test 44d600f916b770def8b095a9962dbe3be5a70d82
 F test/null.test 9503e1f63e959544c006d9f01709c5b5eab67d54
-F test/pager.test cc1f516a87440487e83f480de9e942518b3e3fc1
+F test/pager.test 6ee95e90ee8295e376e39a6c6566ef6df993601a
 F test/pager2.test 49c0f57c7da0b060f0486b85fdd074025caa694e
 F test/pager3.test 2323bf27fd5bd887b580247e5bce500ceee994b4
 F test/pagesize.test 05c74ea49f790734ec1e9ab765d9bf1cce79b8f2
@@ -344,7 +344,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 0f6329ef1fe0d5b225b6381fda1e8d800f65ea0f
-R ee5aceed6ef85c38491a964c1b25cb83
-U drh
-Z ac527cb7d8df8581edac16d40fd54c3f
+P 06d6540026568ca69410354ca8d85da78970c94b
+R c456675e3ecb5484a33151ee57d158b9
+U danielk1977
+Z d1bfbd0b2d33163ba712dc25d4306067
