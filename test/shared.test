@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: shared.test,v 1.20 2006/01/23 05:50:58 danielk1977 Exp $
+# $Id: shared.test,v 1.21 2006/01/23 21:38:03 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -146,7 +146,11 @@ do_test shared-$av.2.1 {
   # Open connection db3 to the database. Use a different path to the same
   # file so that db3 does *not* share the same pager cache as db and db2
   # (there should be two open file handles).
-  sqlite3 db3 ./test.db
+  if {$::tcl_platform(platform)=="unix"} {
+    sqlite3 db3 ./test.db
+  } else {
+    sqlite3 db3 TEST.DB
+  }
   set ::sqlite_open_file_count
 } {2}
 do_test shared-$av.2.2 {
@@ -739,7 +743,11 @@ do_test shared-$av.10.2 {
 do_test shared-$av.10.3 {
   # An external connection should be able to read the database, but not
   # prepare a write operation.
-  sqlite3 db3 ./test.db
+  if {$::tcl_platform(platform)=="unix"} {
+    sqlite3 db3 ./test.db
+  } else {
+    sqlite3 db3 TEST.DB
+  }
   execsql {
     SELECT * FROM ab;
   } db3
