@@ -12,7 +12,7 @@
 # This file contains tests to ensure that the library handles malloc() failures
 # correctly. The emphasis in this file is on sqlite3_column_XXX() APIs.
 #
-# $Id: malloc4.test,v 1.2 2005/12/09 14:25:12 danielk1977 Exp $
+# $Id: malloc4.test,v 1.3 2006/01/23 07:52:41 danielk1977 Exp $
 
 #---------------------------------------------------------------------------
 # NOTES ON EXPECTED BEHAVIOUR
@@ -31,6 +31,11 @@ if {[info command sqlite_malloc_stat]==""} {
    puts "Skipping malloc tests: not compiled with -DSQLITE_MEMDEBUG..."
    finish_test
    return
+}
+
+ifcapable !utf16 {
+  finish_test
+  return
 }
 
 proc do_stmt_test {id sql} {

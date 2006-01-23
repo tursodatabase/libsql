@@ -95,10 +95,12 @@ void sqlite3_result_error(sqlite3_context *pCtx, const char *z, int n){
   pCtx->isError = 1;
   sqlite3VdbeMemSetStr(&pCtx->s, z, n, SQLITE_UTF8, SQLITE_TRANSIENT);
 }
+#ifndef SQLITE_OMIT_UTF16
 void sqlite3_result_error16(sqlite3_context *pCtx, const void *z, int n){
   pCtx->isError = 1;
   sqlite3VdbeMemSetStr(&pCtx->s, z, n, SQLITE_UTF16NATIVE, SQLITE_TRANSIENT);
 }
+#endif
 void sqlite3_result_int(sqlite3_context *pCtx, int iVal){
   sqlite3VdbeMemSetInt64(&pCtx->s, (i64)iVal);
 }

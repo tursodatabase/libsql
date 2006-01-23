@@ -13,7 +13,7 @@
 # correctly. The emphasis of these tests are the _prepare(), _step() and
 # _finalize() calls.
 #
-# $Id: malloc3.test,v 1.8 2006/01/20 16:32:04 danielk1977 Exp $
+# $Id: malloc3.test,v 1.9 2006/01/23 07:52:41 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -644,7 +644,7 @@ proc run_test {arglist {pcstart 0} {iFailStart 1}} {
 # Turn of the Tcl interface's prepared statement caching facility.
 db cache size 0
 
-run_test $::run_test_script
+run_test $::run_test_script 9 1
 # run_test [lrange $::run_test_script 0 3] 0 63
 sqlite_malloc_fail 0
 db close
