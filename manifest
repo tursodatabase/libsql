@@ -1,5 +1,5 @@
-C Makefile\schanges\sso\sthat\sbuilds\swork\son\sSolaris.\s\sTicket\s#1604.\s(CVS\s3009)
-D 2006-01-23T18:06:52
+C Add\sdocumentation\son\sthe\sIF\sNOT\sEXISTS\sclause\sto\sCREATE\sstatements.\nTicket\s#1608.\s(CVS\s3010)
+D 2006-01-23T18:14:22
 F Makefile.in 53841eb72e9eeb6030a8ce28c2595a92f440fd10
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -323,7 +323,7 @@ F www/fullscanb.gif f7c94cb227f060511f8909e10f570157263e9a25
 F www/index-ex1-x-b.gif f9b1d85c3fa2435cf38b15970c7e3aa1edae23a3
 F www/index.tcl 9ce47a2f3163c4feafe1b593c14215994f2a0155
 F www/indirect1b1.gif adfca361d2df59e34f9c5cac52a670c2bfc303a1
-F www/lang.tcl b3561af8d85d2d712d43b3604e4aadce9257e4d9
+F www/lang.tcl ce9de23a6693469c5bfdafc1fd50d7b18752e7d7
 F www/lockingv3.tcl f59b19d6c8920a931f096699d6faaf61c05db55f
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
 F www/nulls.tcl ec35193f92485b87b90a994a01d0171b58823fcf
@@ -344,7 +344,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P dfe282386896967832826d130323c3ff11532873
-R f92eb95c24a3788f463c36b42d884897
+P 7addf70445d46cab148496ba2f27ab3764b70f66
+R 4292464c44eb181bca9cbae1286aaf63
 U drh
-Z 147ff440aaacf1366a5ab3a300aa4908
+Z 084b0c92b7e97fe9d76e7f212b9e5b45

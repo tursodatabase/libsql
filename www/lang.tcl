@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the lang-*.html files.
 #
-set rcsid {$Id: lang.tcl,v 1.105 2006/01/12 22:17:50 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.106 2006/01/23 18:14:22 drh Exp $}
 source common.tcl
 
 if {[llength $argv]>0} {
@@ -487,6 +487,9 @@ all CREATE INDEX statements
 are read from the <b>sqlite_master</b> table and used to regenerate
 SQLite's internal representation of the index layout.</p>
 
+<p>If the optional IF NOT EXISTS clause is present and another index
+with the same name aleady exists, then this command becomes a no-op.</p>
+
 <p>Indexes are removed with the <a href="#dropindex">DROP INDEX</a> 
 command.</p>
 }
@@ -495,7 +498,7 @@ command.</p>
 Section {CREATE TABLE} {createtable}
 
 Syntax {sql-command} {
-CREATE [TEMP | TEMPORARY] TABLE <table-name> (
+CREATE [TEMP | TEMPORARY] TABLE [IF NOT EXISTS] <table-name> (
   <column-def> [, <column-def>]*
   [, <constraint>]*
 )
@@ -621,6 +624,9 @@ in place of the original command.
 The text of CREATE TEMPORARY TABLE statements are stored in the
 <b>sqlite_temp_master</b> table.
 </p>
+
+<p>If the optional IF NOT EXISTS clause is present and another table
+with the same name aleady exists, then this command becomes a no-op.</p>
 
 <p>Tables are removed using the <a href="#droptable">DROP TABLE</a> 
 statement.  </p>
