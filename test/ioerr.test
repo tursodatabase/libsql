@@ -15,7 +15,7 @@
 # The tests in this file use special facilities that are only
 # available in the SQLite test fixture.
 #
-# $Id: ioerr.test,v 1.23 2006/01/23 15:25:48 danielk1977 Exp $
+# $Id: ioerr.test,v 1.24 2006/01/23 16:25:22 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -204,26 +204,28 @@ do_ioerr_test ioerr-8 -tclprep {
 
 # For test coverage: Cause an IO error whilst reading the master-journal
 # name from a journal file.
-do_ioerr_test ioerr-9 -tclprep {
-  execsql {
-    CREATE TABLE t1(a,b,c);
-    INSERT INTO t1 VALUES(randstr(200,200), randstr(1000,1000), 2);
-    BEGIN;
-    INSERT INTO t1 VALUES(randstr(200,200), randstr(1000,1000), 2);
+if {$tcl_platform(platform)=="unix"} {
+  do_ioerr_test ioerr-9 -tclprep {
+    execsql {
+      CREATE TABLE t1(a,b,c);
+      INSERT INTO t1 VALUES(randstr(200,200), randstr(1000,1000), 2);
+      BEGIN;
+      INSERT INTO t1 VALUES(randstr(200,200), randstr(1000,1000), 2);
+    }
+    copy_file test.db-journal test2.db-journal
+    execsql {
+      COMMIT;
+    }
+    copy_file test2.db-journal test.db-journal
+    set f [open test.db-journal a]
+    fconfigure $f -encoding binary
+    puts -nonewline $f "hello"
+    puts -nonewline $f "\x00\x00\x00\x05\x01\x02\x03\x04"
+    puts -nonewline $f "\xd9\xd5\x05\xf9\x20\xa1\x63\xd7"
+    close $f
+  } -sqlbody {
+    SELECT a FROM t1;
   }
-  copy_file test.db-journal test2.db-journal
-  execsql {
-    COMMIT;
-  }
-  copy_file test2.db-journal test.db-journal
-  set f [open test.db-journal a]
-  fconfigure $f -encoding binary
-  puts -nonewline $f "hello"
-  puts -nonewline $f "\x00\x00\x00\x05\x01\x02\x03\x04"
-  puts -nonewline $f "\xd9\xd5\x05\xf9\x20\xa1\x63\xd7"
-  close $f
-} -sqlbody {
-  SELECT a FROM t1;
 }
 
 # For test coverage: Cause an IO error during statement playback (i.e. 
