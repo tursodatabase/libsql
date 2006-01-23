@@ -41,6 +41,11 @@ THREADSAFE = -DTHREADSAFE=0
 #THREADLIB = -lpthread
 THREADLIB = 
 
+#### Specify any extra libraries needed to access required functions.
+#
+#TLIBS = -lrt    # fdatasync on Solaris 8
+TLIBS = 
+
 #### Leave SQLITE_DEBUG undefined for maximum speed.  Use SQLITE_DEBUG=1
 #    to check for memory leaks.  Use SQLITE_DEBUG=2 to print a log of all
 #    malloc()s and free()s in order to track down memory leaks.
@@ -107,6 +112,12 @@ LIBREADLINE =
 #
 # ENCODING  = UTF8
 ENCODING = ISO8859
+
+
+#### Which "awk" program provides nawk compatibilty
+#
+# NAWK = nawk
+NAWK = awk
 
 # You should not have to change anything below this line
 ###############################################################################

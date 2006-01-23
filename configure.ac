@@ -116,13 +116,14 @@ AC_INIT(src/sqlite.h.in)
 dnl Put the RCS revision string after AC_INIT so that it will also
 dnl show in in configure.
 # The following RCS revision string applies to configure.in
-# $Revision: 1.21 $
+# $Revision: 1.22 $
 
 #########
 # Programs needed
 #
 AC_PROG_LIBTOOL
 AC_PROG_INSTALL
+AC_PROG_AWK
 
 #########
 # Set up an appropriate program prefix
@@ -412,7 +413,6 @@ if test "$config_TARGET_LIBS" != ""; then
 else
   TARGET_LIBS=""
 fi
-AC_SUBST(TARGET_LIBS)
 
 ##########
 # Figure out all the parameters needed to compile against Tcl.
@@ -572,6 +572,15 @@ fi
 AC_SUBST(TARGET_READLINE_LIBS)
 
 ##########
+# Figure out what C libraries are required to compile programs
+# that use "fdatasync()" function.
+#
+CC=$TARGET_CC
+LIBS=$TARGET_LIBS
+AC_SEARCH_LIBS(fdatasync, [rt])
+TARGET_LIBS="$LIBS"
+
+##########
 # Figure out where to get the READLINE header files.
 #
 AC_MSG_CHECKING([readline header files])
@@ -633,6 +642,11 @@ AC_CHECK_FUNC(usleep, [TARGET_CFLAGS="$TARGET_CFLAGS -DHAVE_USLEEP=1"])
 #--------------------------------------------------------------------
 
 AC_CHECK_FUNC(fdatasync, [TARGET_CFLAGS="$TARGET_CFLAGS -DHAVE_FDATASYNC=1"])
+
+#########
+# Put out accumulated miscellaneous LIBRARIES
+#
+AC_SUBST(TARGET_LIBS)
 
 #########
 # Generate the output files.

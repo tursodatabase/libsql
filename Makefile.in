@@ -58,6 +58,9 @@ TCC += -DTHREADSAFE=@THREADSAFE@
 #
 LIBPTHREAD=@TARGET_THREAD_LIB@
 
+# The fdatasync library
+TLIBS = @TARGET_LIBS@
+
 # Flags controlling use of the in memory btree implementation
 #
 # TEMP_STORE is 0 to force temporary tables to be in a file, 1 to
@@ -103,6 +106,9 @@ ALLOWRELEASE = @ALLOWRELEASE@
 LTCOMPILE = $(LIBTOOL) --mode=compile $(TCC)
 LTLINK = $(LIBTOOL) --mode=link $(TCC)
 LTINSTALL = $(LIBTOOL) --mode=install $(INSTALL)
+
+# nawk compatible awk.
+NAWK = @AWK@
 
 # You should not have to change anything below this line
 ###############################################################################
@@ -232,7 +238,7 @@ Makefile: $(TOP)/Makefile.in
 #
 last_change:	$(SRC)
 	cat $(SRC) | grep '$$Id: ' | sort +4 | tail -1 \
-          | awk '{print $$5,$$6}' >last_change
+          | $(NAWK) '{print $$5,$$6}' >last_change
 
 libsqlite3.la:	$(LIBOBJ)
 	$(LTLINK) -o libsqlite3.la $(LIBOBJ) $(LIBPTHREAD) \
@@ -246,7 +252,8 @@ libtclsqlite3.la:	tclsqlite.lo libsqlite3.la
 
 sqlite3$(TEXE):	$(TOP)/src/shell.c libsqlite3.la sqlite3.h
 	$(LTLINK) $(READLINE_FLAGS) $(LIBPTHREAD) \
-		-o sqlite3 $(TOP)/src/shell.c libsqlite3.la $(LIBREADLINE)
+		-o sqlite3 $(TOP)/src/shell.c libsqlite3.la \
+		$(LIBREADLINE) $(TLIBS)
 
 # This target creates a directory named "tsrc" and fills it with
 # copies of all of the C source code and header files needed to
@@ -326,10 +333,10 @@ opcodes.lo:	opcodes.c
 	$(LTCOMPILE) -c opcodes.c
 
 opcodes.c:	opcodes.h $(TOP)/mkopcodec.awk
-	sort -n -b +2 opcodes.h | awk -f $(TOP)/mkopcodec.awk >opcodes.c
+	sort -n -b +2 opcodes.h | $(NAWK) -f $(TOP)/mkopcodec.awk >opcodes.c
 
 opcodes.h:	parse.h $(TOP)/src/vdbe.c $(TOP)/mkopcodeh.awk
-	cat parse.h $(TOP)/src/vdbe.c | awk -f $(TOP)/mkopcodeh.awk >opcodes.h
+	cat parse.h $(TOP)/src/vdbe.c | $(NAWK) -f $(TOP)/mkopcodeh.awk >opcodes.h
 
 os.lo:	$(TOP)/src/os.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/os.c

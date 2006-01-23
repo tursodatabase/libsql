@@ -42,7 +42,8 @@
 # LIBREADLINE      Linker options needed by programs using readline() must
 #                  link against.
 #
-# ENCODING         "UTF8" or "ISO8859"
+# NAWK             Nawk compatible awk program.  Older (obsolete?) solaris
+#                  systems need this to avoid using the original AT&T AWK.
 #
 # Once the macros above are defined, the rest of this make script will
 # build the SQLite library and testing tools.
@@ -171,7 +172,7 @@ all:	sqlite3.h libsqlite3.a sqlite3$(EXE)
 #
 last_change:	$(SRC)
 	cat $(SRC) | grep '$$Id: ' | sort +4 | tail -1 \
-          | awk '{print $$5,$$6}' >last_change
+          | $(NAWK) '{print $$5,$$6}' >last_change
 
 libsqlite3.a:	$(LIBOBJ)
 	$(AR) libsqlite3.a $(LIBOBJ)
@@ -179,7 +180,7 @@ libsqlite3.a:	$(LIBOBJ)
 
 sqlite3$(EXE):	$(TOP)/src/shell.c libsqlite3.a sqlite3.h
 	$(TCCX) $(READLINE_FLAGS) -o sqlite3$(EXE) $(TOP)/src/shell.c \
-		libsqlite3.a $(LIBREADLINE) $(THREADLIB)
+		libsqlite3.a $(LIBREADLINE) $(TLIBS) $(THREADLIB)
 
 objects: $(LIBOBJ_ORIG)
 
@@ -260,10 +261,10 @@ opcodes.o:	opcodes.c
 	$(TCCX) -c opcodes.c
 
 opcodes.c:	opcodes.h $(TOP)/mkopcodec.awk
-	sort -n -b +2 opcodes.h | awk -f $(TOP)/mkopcodec.awk >opcodes.c
+	sort -n -b +2 opcodes.h | $(NAWK) -f $(TOP)/mkopcodec.awk >opcodes.c
 
 opcodes.h:	parse.h $(TOP)/src/vdbe.c $(TOP)/mkopcodeh.awk
-	cat parse.h $(TOP)/src/vdbe.c | awk -f $(TOP)/mkopcodeh.awk >opcodes.h
+	cat parse.h $(TOP)/src/vdbe.c | $(NAWK) -f $(TOP)/mkopcodeh.awk >opcodes.h
 
 os.o:	$(TOP)/src/os.c $(HDR)
 	$(TCCX) -c $(TOP)/src/os.c
@@ -302,7 +303,7 @@ select.o:	$(TOP)/src/select.c $(HDR)
 
 sqlite3.h:	$(TOP)/src/sqlite.h.in 
 	sed -e s/--VERS--/`cat ${TOP}/VERSION`/ \
-	    -e s/--VERSION-NUMBER--/`cat ${TOP}/VERSION | sed 's/[^0-9]/ /g' | awk '{printf "%d%03d%03d",$$1,$$2,$$3}'`/ \
+	    -e s/--VERSION-NUMBER--/`cat ${TOP}/VERSION | sed 's/[^0-9]/ /g' | $(NAWK) '{printf "%d%03d%03d",$$1,$$2,$$3}'`/ \
                  $(TOP)/src/sqlite.h.in >sqlite3.h
 
 table.o:	$(TOP)/src/table.c $(HDR)
