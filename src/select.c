@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.299 2006/01/22 21:52:57 drh Exp $
+** $Id: select.c,v 1.300 2006/01/23 18:42:21 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1869,7 +1869,7 @@ static int multiSelect(
       int addr;
       u8 *pSortOrder;
 
-      aCopy = (CollSeq**)&pKeyInfo[1];
+      aCopy = &pKeyInfo->aColl[nCol];
       pSortOrder = pKeyInfo->aSortOrder = (u8*)&aCopy[nCol];
       memcpy(aCopy, pKeyInfo->aColl, nCol*sizeof(CollSeq*));
       apColl = pKeyInfo->aColl;

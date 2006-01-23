@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing corner cases of the INSERT statement.
 #
-# $Id: insert3.test,v 1.3 2005/01/29 08:32:46 danielk1977 Exp $
+# $Id: insert3.test,v 1.4 2006/01/23 18:42:21 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -59,11 +59,17 @@ do_test insert3-1.3 {
   }
 } {hi 1}
 ifcapable compound {
-  do_test insert3-1.4 {
+  do_test insert3-1.4.1 {
     execsql {
       INSERT INTO t1 SELECT * FROM t1;
       SELECT 'a:', x, y FROM log UNION ALL 
           SELECT 'b:', x, y FROM log2 ORDER BY x;
+    }
+  } {a: 5 4 b: 10 2 b: 20 1 a: 453 2 a: hello 4 b: hi 2 b: world 1}
+  do_test insert3-1.4.2 {
+    execsql {
+      SELECT 'a:', x, y FROM log UNION ALL 
+          SELECT 'b:', x, y FROM log2 ORDER BY x, y;
     }
   } {a: 5 4 b: 10 2 b: 20 1 a: 453 2 a: hello 4 b: hi 2 b: world 1}
   do_test insert3-1.5 {
