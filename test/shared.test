@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: shared.test,v 1.19 2006/01/19 08:43:32 danielk1977 Exp $
+# $Id: shared.test,v 1.20 2006/01/23 05:50:58 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -63,6 +63,7 @@ incr av
 # shared-8.*: Tests related to the text encoding of shared-cache databases.
 # shared-9.*: TEMP triggers and shared-cache databases.
 # shared-10.*: Tests of sqlite3_close().
+# shared-11.*: Test transaction locking.
 #
 
 do_test shared-$av.1.1 {
@@ -785,6 +786,64 @@ integrity_check shared-$av.10.10
 do_test shared-$av.10.11 {
   db close
   db3 close
+} {}
+
+do_test shared-$av.11.1 {
+  file delete -force test.db
+  sqlite3 db  test.db
+  sqlite3 db2 test.db
+  execsql {
+    CREATE TABLE abc(a, b, c);
+    CREATE TABLE abc2(a, b, c);
+    BEGIN;
+    INSERT INTO abc VALUES(1, 2, 3);
+  }
+} {}
+do_test shared-$av.11.2 {
+  catchsql {BEGIN;} db2
+  catchsql {SELECT * FROM abc;} db2
+} {1 {database table is locked: abc}}
+do_test shared-$av.11.3 {
+  catchsql {BEGIN} db2
+} {1 {cannot start a transaction within a transaction}}
+do_test shared-$av.11.4 {
+  catchsql {SELECT * FROM abc2;} db2
+} {0 {}}
+do_test shared-$av.11.5 {
+  catchsql {INSERT INTO abc2 VALUES(1, 2, 3);} db2
+} {1 {database is locked}}
+do_test shared-$av.11.6 {
+  catchsql {SELECT * FROM abc2}
+} {0 {}}
+do_test shared-$av.11.6 {
+  execsql {
+    ROLLBACK;
+    PRAGMA read_uncommitted = 1;
+  } db2
+} {}
+do_test shared-$av.11.7 {
+  execsql {
+    INSERT INTO abc2 VALUES(4, 5, 6);
+    INSERT INTO abc2 VALUES(7, 8, 9);
+  }
+} {}
+do_test shared-$av.11.8 {
+  set res [list]
+  breakpoint
+  db2 eval {
+    SELECT abc.a as I, abc2.a as II FROM abc, abc2;
+  } {
+    execsql {
+      DELETE FROM abc WHERE 1;
+    }
+    lappend res $I $II
+  }
+  set res
+} {1 4 {} 7}
+
+do_test shared-$av.11.11 {
+  db close
+  db2 close
 } {}
 
 }
