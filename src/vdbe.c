@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.536 2006/01/23 13:09:46 danielk1977 Exp $
+** $Id: vdbe.c,v 1.537 2006/01/23 17:43:53 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -3280,7 +3280,7 @@ case OP_Insert: {         /* no-push */
 
     if( pOp->p2 & OPFLAG_NCHANGE ) p->nChange++;
     if( pOp->p2 & OPFLAG_LASTROWID ) db->lastRowid = pNos->i;
-    if( pC->nextRowidValid && pTos->i>=pC->nextRowid ){
+    if( pC->nextRowidValid && pNos->i>=pC->nextRowid ){
       pC->nextRowidValid = 0;
     }
     if( pTos->flags & MEM_Null ){
