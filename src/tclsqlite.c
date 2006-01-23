@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.149 2006/01/09 23:40:25 drh Exp $
+** $Id: tclsqlite.c,v 1.150 2006/01/23 13:00:38 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -256,6 +256,7 @@ static int DbProgressHandler(void *cd){
   return 0;
 }
 
+#ifndef SQLITE_OMIT_TRACE
 /*
 ** This routine is called by the SQLite trace handler whenever a new
 ** block of SQL is executed.  The TCL script in pDb->zTrace is executed.
@@ -271,7 +272,9 @@ static void DbTraceHandler(void *cd, const char *zSql){
   Tcl_DStringFree(&str);
   Tcl_ResetResult(pDb->interp);
 }
+#endif
 
+#ifndef SQLITE_OMIT_TRACE
 /*
 ** This routine is called by the SQLite profile handler after a statement
 ** SQL has executed.  The TCL script in pDb->zProfile is evaluated.
@@ -290,6 +293,7 @@ static void DbProfileHandler(void *cd, const char *zSql, sqlite_uint64 tm){
   Tcl_DStringFree(&str);
   Tcl_ResetResult(pDb->interp);
 }
+#endif
 
 /*
 ** This routine is called when a transaction is committed.  The

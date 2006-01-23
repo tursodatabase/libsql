@@ -1,5 +1,5 @@
-C Fixes\sfor\sOMIT_UTF16\sand\sOMIT_COMPOUND\s(CVS\s2993)
-D 2006-01-23T07:52:38
+C Fix\sadditional\scompiler\swarnings.\s\sTickets\s#1615,\s#1616,\s#1627\s(CVS\s2994)
+D 2006-01-23T13:00:36
 F Makefile.in ab3ffd8d469cef4477257169b82810030a6bb967
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -34,7 +34,7 @@ F src/alter.c 90b779cf00489535cab6490df6dc050f40e4e874
 F src/analyze.c 7d2b7ab9a9c2fd6e55700f69064dfdd3e36d7a8a
 F src/attach.c 0081040e9a5d13669b6712e947688c10f030bfc1
 F src/auth.c 9ae84d2d94eb96195e04515715e08e85963e96c2
-F src/btree.c 9de685a11ede765542a644441340cbed32380c3d
+F src/btree.c ab0f6813b32e0db14883a71bd228470989dea609
 F src/btree.h 5663c4f43e8521546ccebc8fc95acb013b8f3184
 F src/build.c 15224e2fd348ad32b9044aaa5bdc912e4067da15
 F src/callback.c 1bf497306c32229114f826707054df7ebe10abf2
@@ -70,9 +70,9 @@ F src/select.c 11ad28afb33bb83b655074c87557d4686c67f92f
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 66b073375efbdee19045e7e0cd38b85f9aff71da
 F src/sqlite.h.in 492580f7e3ff71eb43193eb7bb98e2d549889ce3
-F src/sqliteInt.h 8cbeb4346a70ca47a2ec5935ec26b5c7f0b1948f
+F src/sqliteInt.h fba26ce93a090aed928bcb1edcc58c0c1717c5b0
 F src/table.c 486dcfce532685b53b5a2b5da8bba0ded6fb2316
-F src/tclsqlite.c d650bea0248fc0a310ddc2cb94273a3a5021fddf
+F src/tclsqlite.c 7764ab34df617b3d3cfd5f0fdf3444ed219c11d6
 F src/test1.c 846b3731af01ac90bad583f55e7969c8fb232172
 F src/test2.c ca74a1d8aeb7d9606e8f6b762c5daf85c1a3f92b
 F src/test3.c 86e99724ee898b119ed575ef9f98618afe7e5e5d
@@ -85,7 +85,7 @@ F src/tokenize.c 9ae9a59238eb97fbc61baea280563b91100518fb
 F src/trigger.c 4d3644cbd16959b568c95ae73493402be8021b08
 F src/update.c 14be4ba2f438919b4217085c02feff569e6cf1f2
 F src/utf.c 5ab8ca05d4e9ec81174b010f01ab12a232f0087d
-F src/util.c 2510e040166cb07b7e8ed0c1ccaec22350d57df4
+F src/util.c 8c2e824e0bab3e5d1673213235e5dc0bdec441d4
 F src/vacuum.c 3865673cc66acd0717ecd517f6b8fdb2a5e7924b
 F src/vdbe.c e04bf3035a7dc547e80ba1130a716a7e8c9f7c93
 F src/vdbe.h 8729a4ee16ff9aeab2af9667df3cf300ff978e13
@@ -94,7 +94,7 @@ F src/vdbeapi.c dcb2636f49b4807e34960d52a2fc257b3a751140
 F src/vdbeaux.c 1dce6e5f51d6119220e12ecbceccccf97ca8b8be
 F src/vdbefifo.c 9efb94c8c3f4c979ebd0028219483f88e57584f5
 F src/vdbemem.c 2034e93b32c14bda6e306bb54e3a8e930b963027
-F src/where.c 7ce7a52fdc696d26cd9f9c939dc972585d3dd72d
+F src/where.c 4c77a9dc132095a73021186a90fe44ba086f67ce
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
 F test/aggerror.test b854de90f530ae37be68fbfe6de40e111358cbb2
 F test/all.test 5df90d015ca63fcef2a4b62c24f7316b66c4bfd4
@@ -344,7 +344,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P cc2e8e87cfd474b4dc6833ee0c38e2cd2dd3a494
-R e7686387c0d32f2c77df0a39b8385c89
-U danielk1977
-Z de4e011a442de96ed72224d63af9baef
+P f58bbdc0ac6e618686c598aaafb3a41b972e078e
+R 0db26160e071e13e253b47ccdbdc4fe3
+U drh
+Z bfce48ac39b5c5b64554076983aa10ce

@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.307 2006/01/22 21:52:57 drh Exp $
+** $Id: btree.c,v 1.308 2006/01/23 13:00:36 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -5282,9 +5282,9 @@ int sqlite3BtreeDelete(BtCursor *pCur){
   ** that the entry will be deleted from.
   */
   if( 
-    (rc = restoreOrClearCursorPosition(pCur, 1)) ||
-    (rc = saveAllCursors(pBt, pCur->pgnoRoot, pCur)) ||
-    (rc = sqlite3pager_write(pPage->aData))
+    (rc = restoreOrClearCursorPosition(pCur, 1))!=0 ||
+    (rc = saveAllCursors(pBt, pCur->pgnoRoot, pCur))!=0 ||
+    (rc = sqlite3pager_write(pPage->aData))!=0
   ){
     return rc;
   }

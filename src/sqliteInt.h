@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.476 2006/01/23 00:04:55 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.477 2006/01/23 13:00:38 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -73,9 +73,14 @@
 #ifdef SQLITE_OMIT_FLOATING_POINT
 # define double sqlite_int64
 # define LONGDOUBLE_TYPE sqlite_int64
-# define SQLITE_BIG_DBL (0x7fffffffffffffff)
+# ifndef SQLITE_BIG_DBL
+#   define SQLITE_BIG_DBL (0x7fffffffffffffff)
+# endif
 # define SQLITE_OMIT_DATETIME_FUNCS 1
 # define SQLITE_OMIT_TRACE 1
+#endif
+#ifndef SQLITE_BIG_DBL
+# define SQLITE_BIG_DBL (1e99)
 #endif
 
 /*
@@ -693,7 +698,6 @@ struct Table {
   int tnum;        /* Root BTree node for this table (see note above) */
   Select *pSelect; /* NULL for tables.  Points to definition if a view. */
   u8 readOnly;     /* True if this table should not be written by the user */
-// u8 iDb;          /* Index into sqlite.aDb[] of the backend for this table */
   u8 isTransient;  /* True if automatically deleted when VDBE finishes */
   u8 hasPrimKey;   /* True if there exists a primary key */
   u8 keyConf;      /* What to do in case of uniqueness conflict on iPKey */
@@ -957,7 +961,6 @@ struct AggInfo {
 struct Expr {
   u8 op;                 /* Operation performed by this node */
   char affinity;         /* The affinity of the column or 0 if not a column */
-//u8 iDb;                /* Database referenced by this expression */
   u8 flags;              /* Various flags.  See below */
   CollSeq *pColl;        /* The collation type of the column or 0 */
   Expr *pLeft, *pRight;  /* Left and right subnodes */
@@ -1742,8 +1745,8 @@ int sqlite3CreateFunc(sqlite3 *, const char *, int, int, void *,
   void (*)(sqlite3_context*,int,sqlite3_value **),
   void (*)(sqlite3_context*,int,sqlite3_value **), void (*)(sqlite3_context*));
 int sqlite3ApiExit(sqlite3 *db, int);
-int sqlite3MallocFailed();
-void sqlite3FailedMalloc();
+int sqlite3MallocFailed(void);
+void sqlite3FailedMalloc(void);
 
 #ifndef SQLITE_OMIT_SHARED_CACHE
   void sqlite3TableLock(Parse *, int, int, u8, const char *);
@@ -1752,13 +1755,13 @@ void sqlite3FailedMalloc();
 #endif
 
 #ifdef SQLITE_MEMDEBUG
-  void sqlite3MallocDisallow();
-  void sqlite3MallocAllow();
-  int sqlite3TestMallocFail();
+  void sqlite3MallocDisallow(void);
+  void sqlite3MallocAllow(void);
+  int sqlite3TestMallocFail(void);
 #else
-  #define sqlite3TestMallocFail() 0
-  #define sqlite3MallocDisallow()
-  #define sqlite3MallocAllow()
+  #define sqlite3TestMallocFail(void) 0
+  #define sqlite3MallocDisallow(void)
+  #define sqlite3MallocAllow(void)
 #endif
 
 #ifdef SQLITE_SSE

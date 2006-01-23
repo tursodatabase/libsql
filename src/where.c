@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.200 2006/01/20 18:10:57 drh Exp $
+** $Id: where.c,v 1.201 2006/01/23 13:00:38 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -38,16 +38,6 @@ int sqlite3_where_trace = 0;
 # define TRACE(X)  if(sqlite3_where_trace) sqlite3DebugPrintf X
 #else
 # define TRACE(X)
-#endif
-
-/*
-** A large value which is the maximum cost of using an index.
-** By default this is a large floating point value.  When compiling
-** SQLite for a processor that lacks floating point support, simply
-** redefine this constant to a large integer.
-*/
-#ifndef SQLITE_BIG_DBL
-# define SQLITE_BIG_DBL (1.0e+99)
 #endif
 
 /* Forward reference

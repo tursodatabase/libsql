@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.180 2006/01/20 17:56:33 drh Exp $
+** $Id: util.c,v 1.181 2006/01/23 13:00:38 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -559,7 +559,7 @@ static int handleSoftLimit(int n){
 void *sqlite3MallocRaw(int n){
   void *p = 0;
   if( n>0 && !sqlite3MallocFailed() && !handleSoftLimit(n) ){
-    while( !(p = OSMALLOC(n)) && sqlite3_release_memory(n) );
+    while( (p = OSMALLOC(n))==0 && sqlite3_release_memory(n) );
     if( !p ){
       /* If the allocation failed, call handleSoftLimit() again, this time
       ** with the additive inverse of the argument passed to 
@@ -589,7 +589,7 @@ void *sqlite3Realloc(void *p, int n){
   }else{
     void *np = 0;
     if( !handleSoftLimit(n - OSSIZEOF(p)) ){
-      while( !(np = OSREALLOC(p, n)) && sqlite3_release_memory(n) );
+      while( (np = OSREALLOC(p, n))==0 && sqlite3_release_memory(n) );
       if( !np ){
         /* If the allocation failed, call handleSoftLimit() again, this time
         ** with the additive inverse of the argument passed to 
@@ -743,7 +743,7 @@ void sqlite3SetString(char **pz, ...){
 ** to NULL.
 */
 void sqlite3Error(sqlite3 *db, int err_code, const char *zFormat, ...){
-  if( db && (db->pErr || (db->pErr = sqlite3ValueNew()))!=0 ){
+  if( db && (db->pErr || (db->pErr = sqlite3ValueNew())!=0) ){
     db->errCode = err_code;
     if( zFormat ){
       char *z;
@@ -1337,7 +1337,8 @@ ThreadData *sqlite3ThreadData(){
 ** to a substitute ThreadData structure that is all zeros. 
 */
 const ThreadData *sqlite3ThreadDataReadOnly(){
-  static const ThreadData zeroData;
+  static const ThreadData zeroData = {0};  /* Initializer to silence warnings
+                                           ** from broken compilers */
   const ThreadData *pTd = sqlite3OsThreadSpecificData(0);
   return pTd ? pTd : &zeroData;
 }
