@@ -66,7 +66,7 @@ proc newsitem {date title text} {
   puts "<hr width=\"50%\">"
 }
 
-newsitem {2006-Jan-23} {Version 3.3.2 beta} {
+newsitem {2006-Jan-24} {Version 3.3.2 beta} {
   More bug fixes and performance improvements as we move closer to
   a production-ready version 3.3.x.
 }
@@ -154,4 +154,4 @@ puts {
 <p align="right"><a href="oldnews.html">Old news...</a></p>
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.131 2006/01/23 00:04:55 drh Exp $}
+footer {$Id: index.tcl,v 1.132 2006/01/23 23:53:17 drh Exp $}

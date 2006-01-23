@@ -1,5 +1,5 @@
-C Disable\sshared-cache\sOOM\stests\sif\snot\scompiled\swith\s-DSQLITE_MEMDEBUG.\s(CVS\s3016)
-D 2006-01-23T23:49:34
+C Change\sthe\srelease\sdate\sfor\sversion\s3.3.2\sto\sJanuary\s24.\s(CVS\s3017)
+D 2006-01-23T23:53:17
 F Makefile.in 53841eb72e9eeb6030a8ce28c2595a92f440fd10
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -302,7 +302,7 @@ F www/autoinc.tcl b357f5ba954b046ee35392ce0f884a2fcfcdea06
 F www/c_interface.tcl b51b08591554c16a0c3ef718364a508ac25abc7e
 F www/capi3.tcl 7a7cc225fe02eb7ab861a6019b08baa0014409e1
 F www/capi3ref.tcl 6311fd30c07aa82b4bdaab9822bce95dd8ab0e7c
-F www/changes.tcl 0061617f2948f856a8cca7be4c2569b59f4e09a7
+F www/changes.tcl 1fe4a87982bb4d58a1205cbfe1600a8b3863a1aa
 F www/common.tcl 14d121c28532ad20c3e349caa4db708b0b822083
 F www/compile.tcl 276546d7eb445add5a867193bbd80f6919a6b084
 F www/conflict.tcl cdd0f4b59b0ba6d61f67e6a38f3ae45853bacb30
@@ -321,7 +321,7 @@ F www/fileformat.tcl 900c95b9633abc3dcfc384d9ddd8eb4876793059
 F www/formatchng.tcl f4f5f32205c0a70d07784f7bf9ce33ed34bfcbf3
 F www/fullscanb.gif f7c94cb227f060511f8909e10f570157263e9a25
 F www/index-ex1-x-b.gif f9b1d85c3fa2435cf38b15970c7e3aa1edae23a3
-F www/index.tcl 9ce47a2f3163c4feafe1b593c14215994f2a0155
+F www/index.tcl 23c5ce792b1f127d19d17237ec856f2b29996eda
 F www/indirect1b1.gif adfca361d2df59e34f9c5cac52a670c2bfc303a1
 F www/lang.tcl ce9de23a6693469c5bfdafc1fd50d7b18752e7d7
 F www/lockingv3.tcl f59b19d6c8920a931f096699d6faaf61c05db55f
@@ -344,7 +344,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P c57922838a31b45f69ba14ae13df8a612884cb4b
-R 5e1b892c69d173cc527853a83af7875b
+P 2d896667e460dcdaf83d18bd03050e917d54edc7
+R 6ca3af49120dacc86427ba0773bf9d85
 U drh
-Z 074472f85902605580f7668797d6a950
+Z b32a0e21e59fef4d86a584d6ddfeba8d
