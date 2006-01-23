@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.253 2006/01/23 15:39:59 drh Exp $
+** @(#) $Id: pager.c,v 1.254 2006/01/23 16:21:06 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -2695,6 +2695,7 @@ int sqlite3pager_get(Pager *pPager, Pgno pgno, void **ppPage){
         if( rc2!=SQLITE_OK || fileSize>=pgno*pPager->pageSize ){
 	  /* An IO error occured in one of the the sqlite3OsSeek() or
           ** sqlite3OsRead() calls above. */
+          pPg->pgno = 0;
           sqlite3pager_unref(PGHDR_TO_DATA(pPg));
           return rc;
         }else{
@@ -3111,10 +3112,12 @@ int sqlite3pager_write(void *pData){
 ** to sqlite3pager_write().  In other words, return TRUE if it is ok
 ** to change the content of the page.
 */
+#ifndef NDEBUG
 int sqlite3pager_iswriteable(void *pData){
   PgHdr *pPg = DATA_TO_PGHDR(pData);
   return pPg->dirty;
 }
+#endif
 
 #ifndef SQLITE_OMIT_VACUUM
 /*
