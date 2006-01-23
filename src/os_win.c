@@ -667,6 +667,7 @@ int sqlite3WinOpenExclusive(const char *zFilename, OsFile **pId, int delFlag){
   f.h = h;
 #if OS_WINCE
   f.zDeleteOnClose = delFlag ? utf8ToUnicode(zFilename) : 0;
+  f.hMutex = NULL;
 #endif
   TRACE3("OPEN EX %d \"%s\"\n", h, zFilename);
   return allocateWinFile(&f, pId);
@@ -714,6 +715,7 @@ int sqlite3WinOpenReadOnly(const char *zFilename, OsFile **pId){
   f.h = h;
 #if OS_WINCE
   f.zDeleteOnClose = 0;
+  f.hMutex = NULL;
 #endif
   TRACE3("OPEN RO %d \"%s\"\n", h, zFilename);
   return allocateWinFile(&f, pId);
@@ -1302,9 +1304,6 @@ int allocateWinFile(winFile *pInit, OsFile **pId){
     pNew->pMethod = &sqlite3WinIoMethod;
     pNew->locktype = NO_LOCK;
     pNew->sharedLockByte = 0;
-#if OS_WINCE
-    pNew->hMutex = NULL;
-#endif
     *pId = (OsFile*)pNew;
     OpenCounter(+1);
     return SQLITE_OK;
