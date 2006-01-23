@@ -1,5 +1,5 @@
-C Do\snot\sname\svariables\s"operator"\sbecause\ssome\scompilers\sdo\snot\srealize\sthat\n"operator"\sis\snot\sa\sreserved\sword\sin\sANSI-C.\s\sTicket\s#1625.\s(CVS\s2997)
-D 2006-01-23T13:22:09
+C Fix\sto\ssqlite3AllocMalloc()\swhen\sit\sis\sa\sno-op\smacro.\s(CVS\s2998)
+D 2006-01-23T13:28:54
 F Makefile.in ab3ffd8d469cef4477257169b82810030a6bb967
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -70,7 +70,7 @@ F src/select.c 11ad28afb33bb83b655074c87557d4686c67f92f
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 66b073375efbdee19045e7e0cd38b85f9aff71da
 F src/sqlite.h.in 492580f7e3ff71eb43193eb7bb98e2d549889ce3
-F src/sqliteInt.h fba26ce93a090aed928bcb1edcc58c0c1717c5b0
+F src/sqliteInt.h 35a3c3556abfca796cf44fea83c9f04385efcfb6
 F src/table.c 486dcfce532685b53b5a2b5da8bba0ded6fb2316
 F src/tclsqlite.c 7764ab34df617b3d3cfd5f0fdf3444ed219c11d6
 F src/test1.c 846b3731af01ac90bad583f55e7969c8fb232172
@@ -344,7 +344,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P ada5490f12795a8d13d0f42077c463709c677846
-R 4e45df66c826875844a3eaf91a8a5713
+P 1f42a338e2ee90f4c24a9eb19054c4b831dd661f
+R db1024d73945d88640ca69945bf51c00
 U drh
-Z 738eabaacc09b208edf518564b3dc665
+Z 098c9854808402d15135d501adfed3ef
