@@ -25,6 +25,13 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2006 January 23 (3.3.2 beta)} {
+<li>Bug fixes and speed improvements.  Improved test coverage.</li>
+<li>Changes to the OS-layer interface: mutexes must now be recursive.</li>
+<li>Discontinue the use of thread-specific data for out-of-memory
+exception handling</li>
+}
+
 chng {2006 January 16 (3.3.1 alpha)} {
 <li>Countless bug fixes</li>
 <li>Speed improvements</li>

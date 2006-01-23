@@ -1,9 +1,9 @@
-C Performance\soptimization\sin\sbtree.c.\s(CVS\s2990)
-D 2006-01-22T21:52:57
+C Remove\svestiges\sof\sthe\solder\sTSD\scode\sfor\shandling\sOOM\sexceptions.\nPrepare\sfor\sthe\srelease\sof\s3.3.2.\s(CVS\s2991)
+D 2006-01-23T00:04:54
 F Makefile.in ab3ffd8d469cef4477257169b82810030a6bb967
 F Makefile.linux-gcc aee18d8a05546dcf1888bd4547e442008a49a092
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
-F VERSION c8f0db9f26a66d73b1a3a93e006fd0a5dc4cd764
+F VERSION dd67e1a7f1eae49ac8becb23f04d064c3cae6a5d
 F aclocal.m4 7daea4c35e88de30d5a3f6f7a2ab99720e803bbd
 F addopcodes.awk 701697fae48376375ec8532c3d04e910cfeef352
 F art/2005osaward.gif 0d1851b2a7c1c9d0ccce545f3e14bca42d7fd248
@@ -63,14 +63,14 @@ F src/pager.c 0f1565938ca972490ff72a8dc0a90d3a1d563883
 F src/pager.h e0acb095b3ad0bca48f2ab00c87346665643f64f
 F src/parse.y 83df51fea35f68f7e07384d75dce83d1ed30434c
 F src/pragma.c 4496cc77dc35824e1c978c3d1413b8a5a4c777d3
-F src/prepare.c 5d6f5b7194ee72cecd66cab49d15159e55d63f28
+F src/prepare.c 6349208568d7967a3d1b6625e5af736fd0d5d264
 F src/printf.c f47a2f4b5387cd2ebb12e9117a1a5d6bd9a2b812
 F src/random.c d40f8d356cecbd351ccfab6eaedd7ec1b54f5261
 F src/select.c 11ad28afb33bb83b655074c87557d4686c67f92f
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 66b073375efbdee19045e7e0cd38b85f9aff71da
 F src/sqlite.h.in 492580f7e3ff71eb43193eb7bb98e2d549889ce3
-F src/sqliteInt.h 7ddd6141a57748363fe42119f165d06260996aa3
+F src/sqliteInt.h 8cbeb4346a70ca47a2ec5935ec26b5c7f0b1948f
 F src/table.c 486dcfce532685b53b5a2b5da8bba0ded6fb2316
 F src/tclsqlite.c d650bea0248fc0a310ddc2cb94273a3a5021fddf
 F src/test1.c bcdd1978cb4f576611917948728acd09ede9c85d
@@ -87,7 +87,7 @@ F src/update.c 14be4ba2f438919b4217085c02feff569e6cf1f2
 F src/utf.c 5ab8ca05d4e9ec81174b010f01ab12a232f0087d
 F src/util.c 2510e040166cb07b7e8ed0c1ccaec22350d57df4
 F src/vacuum.c 3865673cc66acd0717ecd517f6b8fdb2a5e7924b
-F src/vdbe.c 9eceb866b8197d25d07f700e16b1a50638d4bd6e
+F src/vdbe.c e04bf3035a7dc547e80ba1130a716a7e8c9f7c93
 F src/vdbe.h 8729a4ee16ff9aeab2af9667df3cf300ff978e13
 F src/vdbeInt.h eb3f86ab08ef11635bc78eb88c3ff13f923c233b
 F src/vdbeapi.c 75eabedc09b3b2a6f2d256f85704b8b0cc0f50fa
@@ -302,7 +302,7 @@ F www/autoinc.tcl b357f5ba954b046ee35392ce0f884a2fcfcdea06
 F www/c_interface.tcl b51b08591554c16a0c3ef718364a508ac25abc7e
 F www/capi3.tcl 7a7cc225fe02eb7ab861a6019b08baa0014409e1
 F www/capi3ref.tcl 6311fd30c07aa82b4bdaab9822bce95dd8ab0e7c
-F www/changes.tcl fe45a019735518af9add1144bafd8ca3e30ad11b
+F www/changes.tcl 0061617f2948f856a8cca7be4c2569b59f4e09a7
 F www/common.tcl 14d121c28532ad20c3e349caa4db708b0b822083
 F www/compile.tcl 276546d7eb445add5a867193bbd80f6919a6b084
 F www/conflict.tcl cdd0f4b59b0ba6d61f67e6a38f3ae45853bacb30
@@ -321,7 +321,7 @@ F www/fileformat.tcl 900c95b9633abc3dcfc384d9ddd8eb4876793059
 F www/formatchng.tcl f4f5f32205c0a70d07784f7bf9ce33ed34bfcbf3
 F www/fullscanb.gif f7c94cb227f060511f8909e10f570157263e9a25
 F www/index-ex1-x-b.gif f9b1d85c3fa2435cf38b15970c7e3aa1edae23a3
-F www/index.tcl 5b3506a29f853f801fb36fdf2f64c20b4281d4fc
+F www/index.tcl 9ce47a2f3163c4feafe1b593c14215994f2a0155
 F www/indirect1b1.gif adfca361d2df59e34f9c5cac52a670c2bfc303a1
 F www/lang.tcl b3561af8d85d2d712d43b3604e4aadce9257e4d9
 F www/lockingv3.tcl f59b19d6c8920a931f096699d6faaf61c05db55f
@@ -344,7 +344,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 3c2eee5e1f6c7d701a6d362a04cf896d44e97fd9
-R 79b2ebcd5c87d6676140e58c49de75b7
+P 3e1e6affe256a950a81ad5939b628bafb8463b42
+R bc5b2ca65db1b6cb2127e17629a50b89
 U drh
-Z fd205e297bbdc82d40fc2de1ce715a4f
+Z 123ef0750be477d63bf6489bbd9d0613

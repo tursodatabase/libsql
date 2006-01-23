@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.534 2006/01/20 15:45:36 drh Exp $
+** $Id: vdbe.c,v 1.535 2006/01/23 00:04:55 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -407,13 +407,8 @@ int sqlite3VdbeExec(
 #ifndef NDEBUG
   Mem *pStackLimit;
 #endif
-  ThreadData *pTsd = sqlite3ThreadData();
-  if( !pTsd ){
-    goto no_mem;
-  }
 
   if( p->magic!=VDBE_MAGIC_RUN ) return SQLITE_MISUSE;
-  pTsd->nRef++;
   assert( db->magic==SQLITE_MAGIC_BUSY );
   pTos = p->pTos;
   if( p->rc==SQLITE_NOMEM ){
@@ -614,7 +609,6 @@ case OP_Halt: {            /* no-push */
   }
   rc = sqlite3VdbeHalt(p);
   assert( rc==SQLITE_BUSY || rc==SQLITE_OK );
-  pTsd->nRef--;
   if( rc==SQLITE_BUSY ){
     p->rc = SQLITE_BUSY;
     return SQLITE_BUSY;
@@ -921,7 +915,6 @@ case OP_Callback: {            /* no-push */
   p->popStack = pOp->p1;
   p->pc = pc + 1;
   p->pTos = pTos;
-  pTsd->nRef--;
   return SQLITE_ROW;
 }
 
@@ -2341,7 +2334,6 @@ case OP_AutoCommit: {       /* no-push */
         " transaction - SQL statements in progress", (char*)0);
     rc = SQLITE_ERROR;
   }else if( i!=db->autoCommit ){
-    pTsd->nRef--;
     if( pOp->p2 ){
       assert( i==1 );
       sqlite3RollbackAll(db);
@@ -2401,7 +2393,6 @@ case OP_Transaction: {       /* no-push */
       p->pc = pc;
       p->rc = SQLITE_BUSY;
       p->pTos = pTos;
-      pTsd->nRef--;
       return SQLITE_BUSY;
     }
     if( rc!=SQLITE_OK && rc!=SQLITE_READONLY /* && rc!=SQLITE_BUSY */ ){
@@ -2609,7 +2600,6 @@ case OP_OpenWrite: {       /* no-push */
       p->pc = pc;
       p->rc = SQLITE_BUSY;
       p->pTos = &pTos[1 + (pOp->p2<=0)]; /* Operands must remain on stack */
-      pTsd->nRef--;
       return SQLITE_BUSY;
     }
     case SQLITE_OK: {
@@ -4621,9 +4611,6 @@ vdbe_halt:
   }
   sqlite3VdbeHalt(p);
   p->pTos = pTos;
-  if( pTsd ){
-    pTsd->nRef--;
-  }
   return rc;
 
   /* Jump to here if a malloc() fails.  It's hard to get a malloc()
