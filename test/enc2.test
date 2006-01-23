@@ -13,7 +13,7 @@
 # various suported unicode encodings (UTF-8, UTF-16, UTF-16le and
 # UTF-16be).
 #
-# $Id: enc2.test,v 1.26 2006/01/11 14:09:32 danielk1977 Exp $
+# $Id: enc2.test,v 1.27 2006/01/23 15:59:55 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -315,6 +315,7 @@ proc test_function {enc arg} {
   return "$enc $arg"
 }
 
+db close
 file delete -force test.db
 sqlite3 db test.db; set DB [sqlite3_connection_pointer db]
 execsql {pragma encoding = 'UTF-8'}
