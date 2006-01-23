@@ -693,8 +693,6 @@ int sqlite3UnixOpenReadWrite(
 
   CRASH_TEST_OVERRIDE(sqlite3CrashOpenReadWrite, zFilename, pId, pReadonly);
   assert( 0==*pId );
-  f.dirfd = -1;
-  SET_THREADID(&f);
   f.h = open(zFilename, O_RDWR|O_CREAT|O_LARGEFILE|O_BINARY,
                           SQLITE_DEFAULT_FILE_PERMISSIONS);
   if( f.h<0 ){
@@ -718,7 +716,6 @@ int sqlite3UnixOpenReadWrite(
     close(f.h);
     return SQLITE_NOMEM;
   }
-  f.locktype = 0;
   TRACE3("OPEN    %-3d %s\n", f.h, zFilename);
   return allocateUnixFile(&f, pId);
 }
@@ -747,8 +744,6 @@ int sqlite3UnixOpenExclusive(const char *zFilename, OsFile **pId, int delFlag){
   if( access(zFilename, 0)==0 ){
     return SQLITE_CANTOPEN;
   }
-  SET_THREADID(&f);
-  f.dirfd = -1;
   f.h = open(zFilename,
                 O_RDWR|O_CREAT|O_EXCL|O_NOFOLLOW|O_LARGEFILE|O_BINARY,
                 SQLITE_DEFAULT_FILE_PERMISSIONS);
@@ -763,7 +758,6 @@ int sqlite3UnixOpenExclusive(const char *zFilename, OsFile **pId, int delFlag){
     unlink(zFilename);
     return SQLITE_NOMEM;
   }
-  f.locktype = 0;
   if( delFlag ){
     unlink(zFilename);
   }
@@ -784,8 +778,6 @@ int sqlite3UnixOpenReadOnly(const char *zFilename, OsFile **pId){
 
   CRASH_TEST_OVERRIDE(sqlite3CrashOpenReadOnly, zFilename, pId, 0);
   assert( 0==*pId );
-  SET_THREADID(&f);
-  f.dirfd = -1;
   f.h = open(zFilename, O_RDONLY|O_LARGEFILE|O_BINARY);
   if( f.h<0 ){
     return SQLITE_CANTOPEN;
@@ -797,9 +789,7 @@ int sqlite3UnixOpenReadOnly(const char *zFilename, OsFile **pId){
     close(f.h);
     return SQLITE_NOMEM;
   }
-  f.locktype = 0;
   TRACE3("OPEN-RO %-3d %s\n", f.h, zFilename);
-
   return allocateUnixFile(&f, pId);
 }
 
@@ -1583,6 +1573,10 @@ static const IoMethod sqlite3UnixIoMethod = {
 */
 static int allocateUnixFile(unixFile *pInit, OsFile **pId){
   unixFile *pNew;
+  pInit->dirfd = -1;
+  pInit->fullSync = 0;
+  pInit->locktype = 0;
+  SET_THREADID(pInit);
   pNew = sqliteMalloc( sizeof(unixFile) );
   if( pNew==0 ){
     close(pInit->h);
