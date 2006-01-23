@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.201 2006/01/23 13:00:38 drh Exp $
+** $Id: where.c,v 1.202 2006/01/23 13:22:10 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -83,7 +83,7 @@ struct WhereTerm {
   i16 iParent;            /* Disable pWC->a[iParent] when this term disabled */
   i16 leftCursor;         /* Cursor number of X in "X <op> <expr>" */
   i16 leftColumn;         /* Column number of X in "X <op> <expr>" */
-  u16 operator;           /* A WO_xx value describing <op> */
+  u16 eOperator;          /* A WO_xx value describing <op> */
   u8 flags;               /* Bit flags.  See below */
   u8 nChild;              /* Number of children that must disable us */
   WhereClause *pWC;       /* The clause this term is part of */
@@ -418,7 +418,7 @@ static WhereTerm *findTerm(
     if( pTerm->leftCursor==iCur
        && (pTerm->prereqRight & notReady)==0
        && pTerm->leftColumn==iColumn
-       && (pTerm->operator & op)!=0
+       && (pTerm->eOperator & op)!=0
     ){
       if( iCur>=0 && pIdx ){
         Expr *pX = pTerm->pExpr;
@@ -573,14 +573,14 @@ static void exprAnalyze(
   pTerm->prereqAll = prereqAll;
   pTerm->leftCursor = -1;
   pTerm->iParent = -1;
-  pTerm->operator = 0;
+  pTerm->eOperator = 0;
   if( allowedOp(pExpr->op) && (pTerm->prereqRight & prereqLeft)==0 ){
     Expr *pLeft = pExpr->pLeft;
     Expr *pRight = pExpr->pRight;
     if( pLeft->op==TK_COLUMN ){
       pTerm->leftCursor = pLeft->iTable;
       pTerm->leftColumn = pLeft->iColumn;
-      pTerm->operator = operatorMask(pExpr->op);
+      pTerm->eOperator = operatorMask(pExpr->op);
     }
     if( pRight && pRight->op==TK_COLUMN ){
       WhereTerm *pNew;
@@ -605,7 +605,7 @@ static void exprAnalyze(
       pNew->leftColumn = pLeft->iColumn;
       pNew->prereqRight = prereqLeft;
       pNew->prereqAll = prereqAll;
-      pNew->operator = operatorMask(pDup->op);
+      pNew->eOperator = operatorMask(pDup->op);
     }
   }
 
@@ -664,7 +664,7 @@ static void exprAnalyze(
       iCursor = sOr.a[j].leftCursor;
       ok = iCursor>=0;
       for(i=sOr.nTerm-1, pOrTerm=sOr.a; i>=0 && ok; i--, pOrTerm++){
-        if( pOrTerm->operator!=WO_EQ ){
+        if( pOrTerm->eOperator!=WO_EQ ){
           goto or_not_possible;
         }
         if( pOrTerm->leftCursor==iCursor && pOrTerm->leftColumn==iColumn ){
@@ -935,7 +935,7 @@ static double bestIndex(
     Expr *pExpr;
     *ppIndex = 0;
     bestFlags = WHERE_ROWID_EQ;
-    if( pTerm->operator & WO_EQ ){
+    if( pTerm->eOperator & WO_EQ ){
       /* Rowid== is always the best pick.  Look no further.  Because only
       ** a single row is generated, output is always in sorted order */
       *pFlags = WHERE_ROWID_EQ | WHERE_UNIQUE;
@@ -1016,7 +1016,7 @@ static double bestIndex(
       pTerm = findTerm(pWC, iCur, j, notReady, WO_EQ|WO_IN, pProbe);
       if( pTerm==0 ) break;
       flags |= WHERE_COLUMN_EQ;
-      if( pTerm->operator & WO_IN ){
+      if( pTerm->eOperator & WO_IN ){
         Expr *pExpr = pTerm->pExpr;
         flags |= WHERE_COLUMN_IN;
         if( pExpr->pSelect!=0 ){
@@ -1783,7 +1783,7 @@ WhereInfo *sqlite3WhereBegin(
         pX = pTerm->pExpr;
         assert( (pTerm->flags & TERM_CODED)==0 );
         sqlite3ExprCode(pParse, pX->pRight);
-        topEq = pTerm->operator & (WO_LE|WO_GE);
+        topEq = pTerm->eOperator & (WO_LE|WO_GE);
         disableTerm(pLevel, pTerm);
         testOp = OP_IdxGE;
       }else{
@@ -1821,7 +1821,7 @@ WhereInfo *sqlite3WhereBegin(
         pX = pTerm->pExpr;
         assert( (pTerm->flags & TERM_CODED)==0 );
         sqlite3ExprCode(pParse, pX->pRight);
-        btmEq = pTerm->operator & (WO_LE|WO_GE);
+        btmEq = pTerm->eOperator & (WO_LE|WO_GE);
         disableTerm(pLevel, pTerm);
       }else{
         btmEq = 1;

@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.192 2006/01/07 14:02:27 danielk1977 Exp $
+** @(#) $Id: parse.y,v 1.193 2006/01/23 13:22:09 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -66,7 +66,7 @@ struct LimitVal {
 ** GLOB, NOT LIKE, and NOT GLOB operators.
 */
 struct LikeOp {
-  Token operator;  /* "like" or "glob" or "regexp" */
+  Token eOperator;  /* "like" or "glob" or "regexp" */
   int not;         /* True if the NOT keyword is present */
 };
 
@@ -682,8 +682,8 @@ expr(A) ::= expr(X) PLUS|MINUS(OP) expr(Y).     {A = sqlite3Expr(@OP, X, Y, 0);}
 expr(A) ::= expr(X) STAR|SLASH|REM(OP) expr(Y). {A = sqlite3Expr(@OP, X, Y, 0);}
 expr(A) ::= expr(X) CONCAT(OP) expr(Y).         {A = sqlite3Expr(@OP, X, Y, 0);}
 %type likeop {struct LikeOp}
-likeop(A) ::= LIKE_KW(X).     {A.operator = X; A.not = 0;}
-likeop(A) ::= NOT LIKE_KW(X). {A.operator = X; A.not = 1;}
+likeop(A) ::= LIKE_KW(X).     {A.eOperator = X; A.not = 0;}
+likeop(A) ::= NOT LIKE_KW(X). {A.eOperator = X; A.not = 1;}
 %type escape {Expr*}
 %destructor escape {sqlite3ExprDelete($$);}
 escape(X) ::= ESCAPE expr(A). [ESCAPE] {X = A;}
@@ -694,7 +694,7 @@ expr(A) ::= expr(X) likeop(OP) expr(Y) escape(E).  [LIKE_KW]  {
   if( E ){
     pList = sqlite3ExprListAppend(pList, E, 0);
   }
-  A = sqlite3ExprFunction(pList, &OP.operator);
+  A = sqlite3ExprFunction(pList, &OP.eOperator);
   if( OP.not ) A = sqlite3Expr(TK_NOT, A, 0, 0);
   sqlite3ExprSpan(A, &X->span, &Y->span);
 }
