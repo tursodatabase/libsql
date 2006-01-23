@@ -1,5 +1,5 @@
-C Fix\sthe\sshared\spager\stests\sso\sthat\sthey\swork\sunder\swindows.\s(CVS\s3013)
-D 2006-01-23T21:38:03
+C More\sprogress\stoward\sgetting\sSQLITE_OMIT_FLOATING_POINT\sto\spass\stests.\nTicket\s#1621.\s(CVS\s3014)
+D 2006-01-23T21:44:54
 F Makefile.in 53841eb72e9eeb6030a8ce28c2595a92f440fd10
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -91,7 +91,7 @@ F src/vdbe.c 484a724611113426744caa295be6ee947cc51317
 F src/vdbe.h 8729a4ee16ff9aeab2af9667df3cf300ff978e13
 F src/vdbeInt.h eb3f86ab08ef11635bc78eb88c3ff13f923c233b
 F src/vdbeapi.c dcb2636f49b4807e34960d52a2fc257b3a751140
-F src/vdbeaux.c 2f12c17b4a27607d92330f4f70100b3435557e0d
+F src/vdbeaux.c 0c27d3b3bd8dda7ed73eb8fcfa74350ca6633895
 F src/vdbefifo.c 9efb94c8c3f4c979ebd0028219483f88e57584f5
 F src/vdbemem.c 2034e93b32c14bda6e306bb54e3a8e930b963027
 F src/where.c f79bc17f6228f69181da3dfc97986a690bce25ce
@@ -344,7 +344,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P c4c90965c98c591f601cd69c70351c20ba37218a
-R 5613994f41ad606b02c3d4c0a912b165
+P 4a1a9f3e9df6588bcd4da13456790fbbc58f66de
+R 6b8fafd0b1455cf565f915edd63f61f7
 U drh
-Z 8753f8001747d0ef47a6f8dba5f3dfc4
+Z cd141eec2e5f17ef19649782bda7ef21

@@ -1690,7 +1690,7 @@ int sqlite3VdbeSerialGet(
     case 7: { /* IEEE floating point */
       u64 x;
       u32 y;
-#ifndef NDEBUG
+#if !defined(NDEBUG) && !defined(SQLITE_OMIT_FLOATING_POINT)
       /* Verify that integers and floating point values use the same
       ** byte order.  The byte order differs on some (broken) architectures.
       */
