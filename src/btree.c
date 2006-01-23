@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.308 2006/01/23 13:00:36 drh Exp $
+** $Id: btree.c,v 1.309 2006/01/23 13:47:47 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -2450,22 +2450,25 @@ autovacuum_out:
 ** are no active cursors, it also releases the read lock.
 */
 int sqlite3BtreeCommit(Btree *p){
-  int rc = SQLITE_OK;
   BtShared *pBt = p->pBt;
 
   btreeIntegrity(p);
-  unlockAllTables(p);
 
   /* If the handle has a write-transaction open, commit the shared-btrees 
   ** transaction and set the shared state to TRANS_READ.
   */
   if( p->inTrans==TRANS_WRITE ){
+    int rc;
     assert( pBt->inTransaction==TRANS_WRITE );
     assert( pBt->nTransaction>0 );
     rc = sqlite3pager_commit(pBt->pPager);
+    if( rc!=SQLITE_OK ){
+      return rc;
+    }
     pBt->inTransaction = TRANS_READ;
     pBt->inStmt = 0;
   }
+  unlockAllTables(p);
 
   /* If the handle has any kind of transaction open, decrement the transaction
   ** count of the shared btree. If the transaction count reaches 0, set
@@ -2486,7 +2489,7 @@ int sqlite3BtreeCommit(Btree *p){
   unlockBtreeIfUnused(pBt);
 
   btreeIntegrity(p);
-  return rc;
+  return SQLITE_OK;
 }
 
 #ifndef NDEBUG
