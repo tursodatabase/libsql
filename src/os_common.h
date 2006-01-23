@@ -183,9 +183,6 @@ void sqlite3GenericFree(void *p){
   assert(p);
   free(p);
 }
-#if 0   /* Never actually invoked */
-int sqlite3GenericAllocationSize(void *p){
-  assert(0);
-}
-#endif
+/* Never actually used, but needed for the linker */
+int sqlite3GenericAllocationSize(void *p){ return 0; }
 #endif
