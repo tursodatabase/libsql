@@ -1,5 +1,5 @@
-C Version\s3.3.2\s(beta)\s(CVS\s3019)
-D 2006-01-24T00:40:03
+C Update\sthe\spublish\sscripts\sto\scorrectly\sbuild\sthe\sTCL\sDLL\sfor\swindows.\s(CVS\s3020)
+D 2006-01-24T02:00:32
 F Makefile.in 53841eb72e9eeb6030a8ce28c2595a92f440fd10
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -20,11 +20,11 @@ F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
 F main.mk ff2b29a41a3862d44075194203f96192a6013871
-F mkdll.sh f80661ba5f9e23fb5d6e3da532433da766c917f5
+F mkdll.sh 89b5390110c0b7fd93d6c456964c2b9adfcfc339
 F mkopcodec.awk bd46ad001c98dfbab07b1713cb8e692fa0e5415d
 F mkopcodeh.awk 071dbba4eaf56c8d643baf4604a043af35683316
 F mkso.sh 125868def279650a07d3f0f5e8476fecf99613fd
-F publish.sh ed0aba4ffdfadb36597d03ce8efdae96efc038cb
+F publish.sh 0803a2952107454d3eaf2e239bd6699951ecfbab
 F spec.template b2f6c4e488cbc3b993a57deba22cbc36203c4da3
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
@@ -344,7 +344,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 0ede5e496bc779e96f05602bebadd10f8a208d48
-R aeb8e31d2337a89e74930e20ea61b258
+P 1fdde6c5061ceb14baa43402652bdd24e3fa85df
+R 548408d39d0369933f03c8c4adca8dce
 U drh
-Z 8c42bcec139aa7fd8755cf9399a5d556
+Z 01f4a8ba070dc8846f590a58996ddffb

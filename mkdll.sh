@@ -11,7 +11,7 @@ cd tsrc
 PATH=$PATH:/opt/mingw/bin
 TCLDIR=/home/drh/tcltk/846/win/846win
 TCLSTUBLIB=$TCLDIR/libtcl84stub.a
-OPTS='-DUSE_TCL_STUBS=1 -DNDEBUG=1 -DTHREADSAFE=1'
+OPTS='-DUSE_TCL_STUBS=1 -DNDEBUG=1 -DTHREADSAFE=1 -DBUILD_sqlite=1'
 CC="i386-mingw32msvc-gcc -O2 $OPTS -I. -I$TCLDIR"
 rm shell.c
 for i in *.c; do
