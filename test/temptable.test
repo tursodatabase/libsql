@@ -12,7 +12,7 @@
 #
 # This file implements tests for temporary tables and indices.
 #
-# $Id: temptable.test,v 1.16 2005/08/20 03:03:04 drh Exp $
+# $Id: temptable.test,v 1.17 2006/01/24 00:15:16 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -403,6 +403,7 @@ do_test temptable-6.8 {
   }
 } {1 {no such table: t9}}
 
+file delete -force test2.db test2.db-journal
 do_test temptable-7.1 {
   catchsql {
     ATTACH 'test2.db' AS two;

@@ -1,5 +1,5 @@
-C Change\sthe\srelease\sdate\sfor\sversion\s3.3.2\sto\sJanuary\s24.\s(CVS\s3017)
-D 2006-01-23T23:53:17
+C More\stest\sscript\schanges\sto\sget\sit\sto\srun\swithout\s-DSQLITE_MEMDEBUG.\s(CVS\s3018)
+D 2006-01-24T00:15:16
 F Makefile.in 53841eb72e9eeb6030a8ce28c2595a92f440fd10
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -228,7 +228,7 @@ F test/select7.test 1bf795b948c133a15a2a5e99d3270e652ec58ce6
 F test/server1.test e328b8e641ba8fe9273132cfef497383185dc1f5
 F test/shared.test 0ed247941236788c255b3b29b5a82d5ca71b6432
 F test/shared2.test 909fc0f0277684ed29cc1b36c8e159188aec7f28
-F test/shared_err.test c8a5b717178bca3f1f4cccebd167b08252833307
+F test/shared_err.test 7bc1c8fa8a8c25fd6f7af8541d02cf6ebdb4b1e0
 F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
 F test/subquery.test ae324ee928c5fb463a3ce08a8860d6e7f1ca5797
 F test/subselect.test 2d13fb7f450db3595adcdd24079a0dd1d2d6abc2
@@ -236,7 +236,7 @@ F test/sync.test 0c43399676de101e3af4d6069a94e211bb77f6b9
 F test/table.test 6dc0dfa44dd429520e0e5a0c5e55025f730e9403
 F test/tableapi.test 6a66d58b37d46dc0f2b3c7d4bd2617d209399bd1
 F test/tclsqlite.test 9b5c4a09879a97572e5c84372f5d045dd4703392
-F test/temptable.test 7927261befdbc7b0a7ffebb85ecc70a74fa7b15b
+F test/temptable.test c36f3e5a94507abb64f7ba23deeb4e1a8a8c3821
 F test/tester.tcl 0a939262ccb0b87449f98d8780396a4c293831b0
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
 F test/thread2.test 6d7b30102d600f51b4055ee3a5a19228799049fb
@@ -344,7 +344,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 2d896667e460dcdaf83d18bd03050e917d54edc7
-R 6ca3af49120dacc86427ba0773bf9d85
+P 7a2617f6a5990dc711cacc993d7a91e4d7b6a815
+R aeb8e31d2337a89e74930e20ea61b258
 U drh
-Z b32a0e21e59fef4d86a584d6ddfeba8d
+Z 0d54f3e3344700c939657c49746571f7
