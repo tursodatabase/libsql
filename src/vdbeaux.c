@@ -1101,10 +1101,10 @@ static int vdbeCommit(sqlite3 *db){
 ** aborted so that they do not have data rolled out from underneath
 ** them leading to a segfault.
 */
-static void abortOtherActiveVdbes(Vdbe *pVdbe){
+void sqlite3AbortOtherActiveVdbes(sqlite3 *db, Vdbe *pExcept){
   Vdbe *pOther;
-  for(pOther=pVdbe->db->pVdbe; pOther; pOther=pOther->pNext){
-    if( pOther==pVdbe ) continue;
+  for(pOther=db->pVdbe; pOther; pOther=pOther->pNext){
+    if( pOther==pExcept ) continue;
     if( pOther->magic!=VDBE_MAGIC_RUN || pOther->pc<0 ) continue;
     closeAllCursors(pOther);
     pOther->aborted = 1;
@@ -1237,7 +1237,7 @@ int sqlite3VdbeHalt(Vdbe *p){
           /* We are forced to roll back the active transaction. Before doing
           ** so, abort any other statements this handle currently has active.
           */
-          abortOtherActiveVdbes(p);
+          sqlite3AbortOtherActiveVdbes(db, p);
           sqlite3RollbackAll(db);
           db->autoCommit = 1;
         }
@@ -1274,7 +1274,7 @@ int sqlite3VdbeHalt(Vdbe *p){
       }else if( p->errorAction==OE_Abort ){
         xFunc = sqlite3BtreeRollbackStmt;
       }else{
-        abortOtherActiveVdbes(p);
+        sqlite3AbortOtherActiveVdbes(db, p);
         sqlite3RollbackAll(db);
         db->autoCommit = 1;
       }

@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.330 2006/01/24 13:09:33 danielk1977 Exp $
+** $Id: main.c,v 1.331 2006/01/24 16:37:58 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -131,9 +131,6 @@ int sqlite3_close(sqlite3 *db){
     return SQLITE_ERROR;
   }
 
-  /* sqlite3_close() may not invoke sqliteMalloc(). */
-  sqlite3MallocDisallow();
-
   for(j=0; j<db->nDb; j++){
     struct Db *pDb = &db->aDb[j];
     if( pDb->pBt ){
@@ -177,7 +174,6 @@ int sqlite3_close(sqlite3 *db){
   */
   sqliteFree(db->aDb[1].pSchema);
   sqliteFree(db);
-  sqlite3MallocAllow();
   sqlite3ReleaseThreadData();
   return SQLITE_OK;
 }
