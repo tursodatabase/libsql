@@ -514,7 +514,7 @@ int sqlite3WinFileExists(const char *zFilename){
 }
 
 /* Forward declaration */
-int allocateWinFile(winFile *pInit, OsFile **pId);
+static int allocateWinFile(winFile *pInit, OsFile **pId);
 
 /*
 ** Attempt to open a file for both reading and writing.  If that
@@ -1289,7 +1289,7 @@ static const IoMethod sqlite3WinIoMethod = {
 ** to the value given in pInit and return a pointer to the new
 ** OsFile.  If we run out of memory, close the file and return NULL.
 */
-int allocateWinFile(winFile *pInit, OsFile **pId){
+static int allocateWinFile(winFile *pInit, OsFile **pId){
   winFile *pNew;
   pNew = sqliteMalloc( sizeof(*pNew) );
   if( pNew==0 ){

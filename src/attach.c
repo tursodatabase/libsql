@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the ATTACH and DETACH commands.
 **
-** $Id: attach.c,v 1.48 2006/01/18 16:51:35 danielk1977 Exp $
+** $Id: attach.c,v 1.49 2006/01/24 12:09:18 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -33,7 +33,7 @@
 **
 ** will fail because neither abc or def can be resolved.
 */
-int resolveAttachExpr(NameContext *pName, Expr *pExpr)
+static int resolveAttachExpr(NameContext *pName, Expr *pExpr)
 {
   int rc = SQLITE_OK;
   if( pExpr ){
@@ -176,15 +176,15 @@ static void attachFunc(
     sqlite3SafetyOff(db);
   }
   if( rc ){
-    int i = db->nDb - 1;
-    assert( i>=2 );
-    if( db->aDb[i].pBt ){
-      sqlite3BtreeClose(db->aDb[i].pBt);
-      db->aDb[i].pBt = 0;
-      db->aDb[i].pSchema = 0;
+    int iDb = db->nDb - 1;
+    assert( iDb>=2 );
+    if( db->aDb[iDb].pBt ){
+      sqlite3BtreeClose(db->aDb[iDb].pBt);
+      db->aDb[iDb].pBt = 0;
+      db->aDb[iDb].pSchema = 0;
     }
     sqlite3ResetInternalSchema(db, 0);
-    db->nDb = i;
+    db->nDb = iDb;
     sqlite3_snprintf(127, zErr, "unable to open database: %s", zFile);
     goto attach_error;
   }

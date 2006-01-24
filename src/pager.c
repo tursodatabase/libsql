@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.254 2006/01/23 16:21:06 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.255 2006/01/24 12:09:19 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1444,17 +1444,17 @@ static int pager_stmt_playback(Pager *pPager){
   }
 
   while( pPager->journalOff < szJ ){
-    u32 nRec;
+    u32 nJRec;         /* Number of Journal Records */
     u32 dummy;
-    rc = readJournalHdr(pPager, szJ, &nRec, &dummy);
+    rc = readJournalHdr(pPager, szJ, &nJRec, &dummy);
     if( rc!=SQLITE_OK ){
       assert( rc!=SQLITE_DONE );
       goto end_stmt_playback;
     }
-    if( nRec==0 ){
-      nRec = (szJ - pPager->journalOff) / (pPager->pageSize+8);
+    if( nJRec==0 ){
+      nJRec = (szJ - pPager->journalOff) / (pPager->pageSize+8);
     }
-    for(i=nRec-1; i>=0 && pPager->journalOff < szJ; i--){
+    for(i=nJRec-1; i>=0 && pPager->journalOff < szJ; i--){
       rc = pager_playback_one_page(pPager, pPager->jfd, 1);
       assert( rc!=SQLITE_DONE );
       if( rc!=SQLITE_OK ) goto end_stmt_playback;
@@ -2556,8 +2556,6 @@ int sqlite3pager_get(Pager *pPager, Pgno pgno, void **ppPage){
     ** database file, then it either needs to be played back or deleted.
     */
     if( hasHotJournal(pPager) ){
-       int rc;
-
        /* Get an EXCLUSIVE lock on the database file. At this point it is
        ** important that a RESERVED lock is not obtained on the way to the
        ** EXCLUSIVE lock. If it were, another process might open the
@@ -2680,7 +2678,6 @@ int sqlite3pager_get(Pager *pPager, Pgno pgno, void **ppPage){
     if( sqlite3pager_pagecount(pPager)<(int)pgno ){
       memset(PGHDR_TO_DATA(pPg), 0, pPager->pageSize);
     }else{
-      int rc;
       assert( MEMDB==0 );
       rc = sqlite3OsSeek(pPager->fd, (pgno-1)*(i64)pPager->pageSize);
       if( rc==SQLITE_OK ){

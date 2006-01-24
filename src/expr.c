@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.251 2006/01/23 05:50:58 danielk1977 Exp $
+** $Id: expr.c,v 1.252 2006/01/24 12:09:19 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -918,17 +918,17 @@ static int lookupName(
       }
 
       if( pTab ){ 
-        int j;
+        int iCol;
         Column *pCol = pTab->aCol;
 
         pExpr->pSchema = pTab->pSchema;
         cntTab++;
-        for(j=0; j < pTab->nCol; j++, pCol++) {
+        for(iCol=0; iCol < pTab->nCol; iCol++, pCol++) {
           if( sqlite3StrICmp(pCol->zName, zCol)==0 ){
-            const char *zColl = pTab->aCol[j].zColl;
+            const char *zColl = pTab->aCol[iCol].zColl;
             cnt++;
-            pExpr->iColumn = j==pTab->iPKey ? -1 : j;
-            pExpr->affinity = pTab->aCol[j].affinity;
+            pExpr->iColumn = iCol==pTab->iPKey ? -1 : iCol;
+            pExpr->affinity = pTab->aCol[iCol].affinity;
             pExpr->pColl = sqlite3FindCollSeq(db, ENC(db), zColl,-1, 0);
             pExpr->pTab = pTab;
             break;
@@ -1077,20 +1077,19 @@ lookupname_end_2:
 */
 static int nameResolverStep(void *pArg, Expr *pExpr){
   NameContext *pNC = (NameContext*)pArg;
-  SrcList *pSrcList;
   Parse *pParse;
 
   if( pExpr==0 ) return 1;
   assert( pNC!=0 );
-  pSrcList = pNC->pSrcList;
   pParse = pNC->pParse;
 
   if( ExprHasAnyProperty(pExpr, EP_Resolved) ) return 1;
   ExprSetProperty(pExpr, EP_Resolved);
 #ifndef NDEBUG
-  if( pSrcList && pSrcList->nAlloc>0 ){
+  if( pNC->pSrcList && pNC->pSrcList->nAlloc>0 ){
+    SrcList *pSrcList = pNC->pSrcList;
     int i;
-    for(i=0; i<pSrcList->nSrc; i++){
+    for(i=0; i<pNC->pSrcList->nSrc; i++){
       assert( pSrcList->a[i].iCursor>=0 && pSrcList->a[i].iCursor<pParse->nTab);
     }
   }
@@ -1380,9 +1379,9 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
           */
           if( testAddr>0 && !sqlite3ExprIsConstant(pE2) ){
             VdbeOp *aOp = sqlite3VdbeGetOp(v, testAddr-1);
-            int i;
-            for(i=0; i<3; i++){
-              aOp[i].opcode = OP_Noop;
+            int j;
+            for(j=0; j<3; j++){
+              aOp[j].opcode = OP_Noop;
             }
             testAddr = 0;
           }
@@ -1548,16 +1547,16 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
 #ifndef SQLITE_OMIT_CAST
     case TK_CAST: {
       /* Expressions of the form:   CAST(pLeft AS token) */
-      int aff, op;
+      int aff, to_op;
       sqlite3ExprCode(pParse, pExpr->pLeft);
       aff = sqlite3AffinityType(&pExpr->token);
-      op = aff - SQLITE_AFF_TEXT + OP_ToText;
-      assert( op==OP_ToText    || aff!=SQLITE_AFF_TEXT    );
-      assert( op==OP_ToBlob    || aff!=SQLITE_AFF_NONE    );
-      assert( op==OP_ToNumeric || aff!=SQLITE_AFF_NUMERIC );
-      assert( op==OP_ToInt     || aff!=SQLITE_AFF_INTEGER );
-      assert( op==OP_ToReal    || aff!=SQLITE_AFF_REAL    );
-      sqlite3VdbeAddOp(v, op, 0, 0);
+      to_op = aff - SQLITE_AFF_TEXT + OP_ToText;
+      assert( to_op==OP_ToText    || aff!=SQLITE_AFF_TEXT    );
+      assert( to_op==OP_ToBlob    || aff!=SQLITE_AFF_NONE    );
+      assert( to_op==OP_ToNumeric || aff!=SQLITE_AFF_NUMERIC );
+      assert( to_op==OP_ToInt     || aff!=SQLITE_AFF_INTEGER );
+      assert( to_op==OP_ToReal    || aff!=SQLITE_AFF_REAL    );
+      sqlite3VdbeAddOp(v, to_op, 0, 0);
       stackChng = 0;
       break;
     }

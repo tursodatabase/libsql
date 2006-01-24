@@ -596,13 +596,13 @@ static int vxprintf(
         break;
       case etSQLESCAPE:
       case etSQLESCAPE2: {
-        int i, j, n, c, isnull;
+        int i, j, n, ch, isnull;
         int needQuote;
-        char *arg = va_arg(ap,char*);
-        isnull = arg==0;
-        if( isnull ) arg = (xtype==etSQLESCAPE2 ? "NULL" : "(NULL)");
-        for(i=n=0; (c=arg[i])!=0; i++){
-          if( c=='\'' )  n++;
+        char *escarg = va_arg(ap,char*);
+        isnull = escarg==0;
+        if( isnull ) escarg = (xtype==etSQLESCAPE2 ? "NULL" : "(NULL)");
+        for(i=n=0; (ch=escarg[i])!=0; i++){
+          if( ch=='\'' )  n++;
         }
         needQuote = !isnull && xtype==etSQLESCAPE2;
         n += i + 1 + needQuote*2;
@@ -614,9 +614,9 @@ static int vxprintf(
         }
         j = 0;
         if( needQuote ) bufpt[j++] = '\'';
-        for(i=0; (c=arg[i])!=0; i++){
-          bufpt[j++] = c;
-          if( c=='\'' ) bufpt[j++] = c;
+        for(i=0; (ch=escarg[i])!=0; i++){
+          bufpt[j++] = ch;
+          if( ch=='\'' ) bufpt[j++] = ch;
         }
         if( needQuote ) bufpt[j++] = '\'';
         bufpt[j] = 0;

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.300 2006/01/23 18:42:21 drh Exp $
+** $Id: select.c,v 1.301 2006/01/24 12:09:19 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -21,7 +21,7 @@
 ** Delete all the content of a Select structure but do not deallocate
 ** the select structure itself.
 */
-void clearSelect(Select *p){
+static void clearSelect(Select *p){
   sqlite3ExprListDelete(p->pEList);
   sqlite3SrcListDelete(p->pSrc);
   sqlite3ExprDelete(p->pWhere);
@@ -557,9 +557,9 @@ static int selectInnerLoop(
         ** case the order does matter */
         pushOntoSorter(pParse, pOrderBy, p);
       }else{
-        char aff = (iParm>>16)&0xFF;
-        aff = sqlite3CompareAffinity(pEList->a[0].pExpr, aff);
-        sqlite3VdbeOp3(v, OP_MakeRecord, 1, 0, &aff, 1);
+        char affinity = (iParm>>16)&0xFF;
+        affinity = sqlite3CompareAffinity(pEList->a[0].pExpr, affinity);
+        sqlite3VdbeOp3(v, OP_MakeRecord, 1, 0, &affinity, 1);
         sqlite3VdbeAddOp(v, OP_IdxInsert, (iParm&0x0000FFFF), 0);
       }
       sqlite3VdbeJumpHere(v, addr2);
@@ -1078,7 +1078,6 @@ static int prepSelectStmt(Parse *pParse, Select *p){
   int i, j, k, rc;
   SrcList *pTabList;
   ExprList *pEList;
-  Table *pTab;
   struct SrcList_item *pFrom;
 
   if( p==0 || p->pSrc==0 || sqlite3MallocFailed() ){
@@ -1097,6 +1096,7 @@ static int prepSelectStmt(Parse *pParse, Select *p){
   ** then create a transient table structure to describe the subquery.
   */
   for(i=0, pFrom=pTabList->a; i<pTabList->nSrc; i++, pFrom++){
+    Table *pTab;
     if( pFrom->pTab!=0 ){
       /* This statement has already been prepared.  There is no need
       ** to go further. */
@@ -1220,7 +1220,7 @@ static int prepSelectStmt(Parse *pParse, Select *p){
           }
           tableSeen = 1;
           for(j=0; j<pTab->nCol; j++){
-            Expr *pExpr, *pLeft, *pRight;
+            Expr *pExpr, *pRight;
             char *zName = pTab->aCol[j].zName;
 
             if( i>0 ){
@@ -1241,7 +1241,7 @@ static int prepSelectStmt(Parse *pParse, Select *p){
             if( pRight==0 ) break;
             setToken(&pRight->token, zName);
             if( zTabName && (longNames || pTabList->nSrc>1) ){
-              pLeft = sqlite3Expr(TK_ID, 0, 0, 0);
+              Expr *pLeft = sqlite3Expr(TK_ID, 0, 0, 0);
               pExpr = sqlite3Expr(TK_DOT, pLeft, pRight, 0);
               if( pExpr==0 ) break;
               setToken(&pLeft->token, zTabName);

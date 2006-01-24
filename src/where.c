@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.202 2006/01/23 13:22:10 drh Exp $
+** $Id: where.c,v 1.203 2006/01/24 12:09:20 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -424,7 +424,7 @@ static WhereTerm *findTerm(
         Expr *pX = pTerm->pExpr;
         CollSeq *pColl;
         char idxaff;
-        int k;
+        int j;
         Parse *pParse = pWC->pParse;
 
         idxaff = pIdx->pTable->aCol[iColumn].affinity;
@@ -438,9 +438,9 @@ static WhereTerm *findTerm(
             pColl = pParse->db->pDfltColl;
           }
         }
-        for(k=0; k<pIdx->nColumn && pIdx->aiColumn[k]!=iColumn; k++){}
-        assert( k<pIdx->nColumn );
-        if( sqlite3StrICmp(pColl->zName, pIdx->azColl[k]) ) continue;
+        for(j=0; j<pIdx->nColumn && pIdx->aiColumn[j]!=iColumn; j++){}
+        assert( j<pIdx->nColumn );
+        if( sqlite3StrICmp(pColl->zName, pIdx->azColl[j]) ) continue;
       }
       return pTerm;
     }
@@ -2085,14 +2085,14 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     ** reference the index.
     */
     if( pLevel->flags & WHERE_IDX_ONLY ){
-      int i, j, last;
+      int k, j, last;
       VdbeOp *pOp;
       Index *pIdx = pLevel->pIdx;
 
       assert( pIdx!=0 );
       pOp = sqlite3VdbeGetOp(v, pWInfo->iTop);
       last = sqlite3VdbeCurrentAddr(v);
-      for(i=pWInfo->iTop; i<last; i++, pOp++){
+      for(k=pWInfo->iTop; k<last; k++, pOp++){
         if( pOp->p1!=pLevel->iTabCur ) continue;
         if( pOp->opcode==OP_Column ){
           pOp->p1 = pLevel->iIdxCur;

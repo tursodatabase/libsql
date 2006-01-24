@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.382 2006/01/18 16:51:35 danielk1977 Exp $
+** $Id: build.c,v 1.383 2006/01/24 12:09:19 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -3157,10 +3157,10 @@ void sqlite3Reindex(Parse *pParse, Token *pName1, Token *pName2){
     assert( pName1->z );
     pColl = sqlite3FindCollSeq(db, ENC(db), (char*)pName1->z, pName1->n, 0);
     if( pColl ){
-      char *z = sqliteStrNDup((const char *)pName1->z, pName1->n);
-      if( z ){
-        reindexDatabases(pParse, z);
-        sqliteFree(z);
+      char *zColl = sqliteStrNDup((const char *)pName1->z, pName1->n);
+      if( zColl ){
+        reindexDatabases(pParse, zColl);
+        sqliteFree(zColl);
       }
       return;
     }
