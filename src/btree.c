@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.309 2006/01/23 13:47:47 danielk1977 Exp $
+** $Id: btree.c,v 1.310 2006/01/24 14:21:24 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -560,7 +560,8 @@ static int saveAllCursors(BtShared *pBt, Pgno iRoot, BtCursor *pExcept){
   BtCursor *p;
   if( sqlite3ThreadDataReadOnly()->useSharedData ){
     for(p=pBt->pCursor; p; p=p->pNext){
-      if( p!=pExcept && p->pgnoRoot==iRoot && p->eState==CURSOR_VALID ){
+      if( p!=pExcept && (0==iRoot || p->pgnoRoot==iRoot) && 
+          p->eState==CURSOR_VALID ){
         int rc = saveCursorPosition(p);
         if( SQLITE_OK!=rc ){
           return rc;
@@ -2541,6 +2542,10 @@ int sqlite3BtreeRollback(Btree *p){
   BtShared *pBt = p->pBt;
   MemPage *pPage1;
 
+  rc = saveAllCursors(pBt, 0, 0);
+  if( rc!=SQLITE_OK ){
+    return rc;
+  }
   btreeIntegrity(p);
   unlockAllTables(p);
 
