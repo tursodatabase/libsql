@@ -14,7 +14,7 @@
 # special feature is used to see what happens in the library if a malloc
 # were to really fail due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.29 2006/01/18 05:51:58 danielk1977 Exp $
+# $Id: malloc.test,v 1.30 2006/01/24 10:58:23 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -482,6 +482,36 @@ do_malloc_test 18 -tclbody {
     error "out of memory"
   }
 }
+
+# This test is aimed at coverage testing. Specificly, it is supposed to
+# cause a malloc() only used when converting between the two utf-16 
+# encodings to fail (i.e. little-endian->big-endian). It only actually 
+# hits this malloc() on little-endian hosts.
+#
+set static_string "\x00h\x00e\x00l\x00l\x00o"
+for {set l 0} {$l<10} {incr l} {
+  append static_string $static_string
+}
+append static_string "\x00\x00"
+do_malloc_test 19 -tclprep {
+  execsql {
+    PRAGMA encoding = "UTF16be";
+    CREATE TABLE abc(a, b, c);
+  }
+} -tclbody {
+  unset -nocomplain ::STMT
+  set r [catch {
+    set ::STMT [sqlite3_prepare $::DB {SELECT ?} -1 DUMMY]
+    sqlite3_bind_text16 -static $::STMT 1 $static_string 112
+  } msg]
+  if {$r} {error [string range $msg 4 end]}
+  set msg
+} -cleanup {
+  if {[info exists ::STMT]} {
+    sqlite3_finalize $::STMT
+  }
+}
+unset static_string
 
 # Ensure that no file descriptors were leaked.
 do_test malloc-99.X {

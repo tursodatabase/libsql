@@ -462,7 +462,10 @@ int crashLockState(OsFile *id){
 ** Return the underlying file handle.
 */
 int crashFileHandle(OsFile *id){
+#if defined(SQLITE_TEST) || defined(SQLITE_DEBUG)
   return sqlite3OsFileHandle(((crashFile*)id)->pBase);
+#endif
+  return 0;
 }
 
 /*

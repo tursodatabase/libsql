@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.202 2006/01/23 07:52:38 danielk1977 Exp $
+** $Id: test1.c,v 1.203 2006/01/24 10:58:22 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -1006,6 +1006,20 @@ static int test_enable_shared(
 #endif
 
 /*
+** Usage: sqlite3_libversion_number
+**
+*/
+static int test_libversion_number(
+  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(sqlite3_libversion_number()));
+  return TCL_OK;
+}
+
+/*
 ** Usage:  sqlite_abort
 **
 ** Shutdown the process immediately.  This is not a clean shutdown.
@@ -1835,7 +1849,7 @@ static int test_bind_text(
 }
 
 /*
-** Usage:   sqlite3_bind_text16  STMT N STRING BYTES
+** Usage:   sqlite3_bind_text16 ?-static? STMT N STRING BYTES
 **
 ** Test the sqlite3_bind_text16 interface.  STMT is a prepared statement.
 ** N is the index of a wildcard in the prepared statement.  This command
@@ -1855,18 +1869,24 @@ static int test_bind_text16(
   char *value;
   int rc;
 
-  if( objc!=5 ){
+  void (*xDel)() = (objc==6?SQLITE_STATIC:SQLITE_TRANSIENT);
+  Tcl_Obj *oStmt    = objv[objc-4];
+  Tcl_Obj *oN       = objv[objc-3];
+  Tcl_Obj *oString  = objv[objc-2];
+  Tcl_Obj *oBytes   = objv[objc-1];
+
+  if( objc!=5 && objc!=6){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
         Tcl_GetStringFromObj(objv[0], 0), " STMT N VALUE BYTES", 0);
     return TCL_ERROR;
   }
 
-  if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
-  if( Tcl_GetIntFromObj(interp, objv[2], &idx) ) return TCL_ERROR;
-  value = (char*)Tcl_GetByteArrayFromObj(objv[3], 0);
-  if( Tcl_GetIntFromObj(interp, objv[4], &bytes) ) return TCL_ERROR;
+  if( getStmtPointer(interp, Tcl_GetString(oStmt), &pStmt) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, oN, &idx) ) return TCL_ERROR;
+  value = (char*)Tcl_GetByteArrayFromObj(oString, 0);
+  if( Tcl_GetIntFromObj(interp, oBytes, &bytes) ) return TCL_ERROR;
 
-  rc = sqlite3_bind_text16(pStmt, idx, (void *)value, bytes, SQLITE_TRANSIENT);
+  rc = sqlite3_bind_text16(pStmt, idx, (void *)value, bytes, xDel);
   if( sqlite3TestErrCode(interp, StmtToDb(pStmt), rc) ) return TCL_ERROR;
   if( rc!=SQLITE_OK ){
     return TCL_ERROR;
@@ -3521,6 +3541,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
 #ifndef SQLITE_OMIT_SHARED_CACHE
      { "sqlite3_enable_shared_cache", test_enable_shared, 0  },
 #endif
+     { "sqlite3_libversion_number", test_libversion_number, 0  },
   };
   static int bitmask_size = sizeof(Bitmask)*8;
   int i;

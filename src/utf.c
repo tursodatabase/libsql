@@ -12,7 +12,7 @@
 ** This file contains routines used to translate between UTF-8, 
 ** UTF-16, UTF-16BE, and UTF-16LE.
 **
-** $Id: utf.c,v 1.36 2006/01/13 06:33:24 danielk1977 Exp $
+** $Id: utf.c,v 1.37 2006/01/24 10:58:22 danielk1977 Exp $
 **
 ** Notes on UTF-8:
 **
@@ -479,6 +479,15 @@ int sqlite3utf16ByteLen(const void *zIn, int nChar){
   char const *z = zIn;
   int n = 0;
   if( SQLITE_UTF16NATIVE==SQLITE_UTF16BE ){
+    /* Using an "if (SQLITE_UTF16NATIVE==SQLITE_UTF16BE)" construct here
+    ** and in other parts of this file means that at one branch will
+    ** not be covered by coverage testing on any single host. But coverage
+    ** will be complete if the tests are run on both a little-endian and 
+    ** big-endian host. Because both the UTF16NATIVE and SQLITE_UTF16BE
+    ** macros are constant at compile time the compiler can determine
+    ** which branch will be followed. It is therefore assumed that no runtime
+    ** penalty is paid for this "if" statement.
+    */
     while( c && ((nChar<0) || n<nChar) ){
       READ_UTF16BE(z, c);
       n++;

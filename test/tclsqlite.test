@@ -15,7 +15,7 @@
 # interface is pretty well tested.  This file contains some addition
 # tests for fringe issues that the main test suite does not cover.
 #
-# $Id: tclsqlite.test,v 1.50 2006/01/17 09:35:02 danielk1977 Exp $
+# $Id: tclsqlite.test,v 1.51 2006/01/24 10:58:23 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -446,5 +446,12 @@ do_test tcl-11.2 {
 do_test tcl-11.3 {
   db exists {SELECT 1 FROM t4 WHERE x==8}
 } {0}
+
+do_test tcl-12.1 {
+  unset -nocomplain a b c version
+  set version [db version]
+  scan $version "%d.%d.%d" a b c
+  expr $a*1000000 + $b*1000 + $c
+} [sqlite3_libversion_number]
 
 finish_test

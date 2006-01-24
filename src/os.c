@@ -52,9 +52,14 @@ int sqlite3OsSync(OsFile *id, int fullsync){
 void sqlite3OsSetFullSync(OsFile *id, int value){
   id->pMethod->xSetFullSync(id, value);
 }
+#if defined(SQLITE_TEST) || defined(SQLITE_DEBUG)
+/* This method is currently only used while interactively debugging the 
+** pager. More specificly, it can only be used when sqlite3DebugPrintf() is
+** included in the build. */
 int sqlite3OsFileHandle(OsFile *id){
   return id->pMethod->xFileHandle(id);
 }
+#endif
 int sqlite3OsFileSize(OsFile *id, i64 *pSize){
   return id->pMethod->xFileSize(id, pSize);
 }
