@@ -3,6 +3,8 @@
 # versus how much space is unused.
 #
 
+if {[catch {
+
 # Get the name of the database to analyze
 #
 #set argv $argv0
@@ -799,3 +801,9 @@ mem eval {SELECT * FROM space_used} x {
   puts ");"
 }
 puts "COMMIT;"
+
+} err]} {
+  puts "ERROR: $err"
+  puts $errorInfo
+  exit 1
+}
