@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.329 2006/01/19 17:42:51 drh Exp $
+** $Id: main.c,v 1.330 2006/01/24 13:09:33 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1088,23 +1088,21 @@ int sqlite3Corrupt(void){
 */
 int sqlite3_enable_shared_cache(int enable){
   ThreadData *pTd = sqlite3ThreadData();
-  if( !pTd ){
-    return SQLITE_NOMEM;
-  }
-  
-  /* It is only legal to call sqlite3_enable_shared_cache() when there
-  ** are no currently open b-trees that were opened by the calling thread.
-  ** This condition is only easy to detect if the shared-cache were 
-  ** previously enabled (and is being disabled). 
-  */
-  if( pTd->pBtree && !enable ){
-    assert( pTd->useSharedData );
-    return SQLITE_MISUSE;
-  }
+  if( pTd ){
+    /* It is only legal to call sqlite3_enable_shared_cache() when there
+    ** are no currently open b-trees that were opened by the calling thread.
+    ** This condition is only easy to detect if the shared-cache were 
+    ** previously enabled (and is being disabled). 
+    */
+    if( pTd->pBtree && !enable ){
+      assert( pTd->useSharedData );
+      return SQLITE_MISUSE;
+    }
 
-  pTd->useSharedData = enable;
-  sqlite3ReleaseThreadData();
-  return SQLITE_OK;
+    pTd->useSharedData = enable;
+    sqlite3ReleaseThreadData();
+  }
+  return sqlite3ApiExit(0, SQLITE_OK);
 }
 #endif
 

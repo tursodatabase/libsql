@@ -15,7 +15,7 @@
 # The tests in this file use special facilities that are only
 # available in the SQLite test fixture.
 #
-# $Id: ioerr.test,v 1.24 2006/01/23 16:25:22 drh Exp $
+# $Id: ioerr.test,v 1.25 2006/01/24 13:09:33 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -44,7 +44,7 @@ do_ioerr_test ioerr-1 -sqlprep {
   COMMIT;
   SELECT * FROM t1;
   DELETE FROM t1 WHERE a<100;
-} -exclude [expr [string match [execsql {pragma auto_vacuum}] 1] ? 8 : 0]
+} -exclude [expr [string match [execsql {pragma auto_vacuum}] 1] ? 4 : 0]
 
 # Test for IO errors during a VACUUM. 
 #
@@ -75,7 +75,7 @@ ifcapable vacuum {
   } -sqlbody {
     VACUUM;
   } -exclude [list \
-      1 [expr [string match [execsql {pragma auto_vacuum}] 1]?12:-1]]
+      1 [expr [string match [execsql {pragma auto_vacuum}] 1]?9:-1]]
 }
 
 do_ioerr_test ioerr-3 -tclprep {
@@ -120,7 +120,7 @@ do_ioerr_test ioerr-4 -tclprep {
 # reason as in test cases ioerr-1.XXX
 set ex ""
 if {[string match [execsql {pragma auto_vacuum}] 1]} {
-  set ex [list 8 17]
+  set ex [list 4 17]
 }
 do_ioerr_test ioerr-5 -sqlprep {
   ATTACH 'test2.db' AS test2;

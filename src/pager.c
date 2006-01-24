@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.255 2006/01/24 12:09:19 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.256 2006/01/24 13:09:33 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1778,9 +1778,10 @@ void enable_simulated_io_errors(void){
 void sqlite3pager_read_fileheader(Pager *pPager, int N, unsigned char *pDest){
   memset(pDest, 0, N);
   if( MEMDB==0 ){
+    disable_simulated_io_errors();
     sqlite3OsSeek(pPager->fd, 0);
     sqlite3OsRead(pPager->fd, pDest, N);
-    clear_simulated_io_error();
+    enable_simulated_io_errors();
   }
 }
 
