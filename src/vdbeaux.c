@@ -102,7 +102,8 @@ int sqlite3VdbeAddOp(Vdbe *p, int op, int p1, int p2){
   p->nOp++;
   assert( p->magic==VDBE_MAGIC_INIT );
   resizeOpArray(p, i+1);
-  if( p->aOp==0 || p->nOpAlloc<=i ){
+  assert( p->aOp==0 || p->nOpAlloc>=i+1 );
+  if( p->aOp==0 ){
     return 0;
   }
   pOp = &p->aOp[i];
