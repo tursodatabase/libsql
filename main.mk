@@ -129,7 +129,6 @@ TESTSRC = \
   $(TOP)/src/pager.c \
   $(TOP)/src/pragma.c \
   $(TOP)/src/printf.c \
-  $(TOP)/src/server.c \
   $(TOP)/src/test1.c \
   $(TOP)/src/test2.c \
   $(TOP)/src/test3.c \
@@ -138,10 +137,11 @@ TESTSRC = \
   $(TOP)/src/test6.c \
   $(TOP)/src/test7.c \
   $(TOP)/src/test_async.c \
+  $(TOP)/src/test_md5.c \
+  $(TOP)/src/test_server.c \
   $(TOP)/src/utf.c \
   $(TOP)/src/util.c \
   $(TOP)/src/vdbe.c \
-  $(TOP)/src/md5.c \
   $(TOP)/src/where.c
 
 # Header files used by all library source files.
@@ -380,7 +380,7 @@ sqlite3_analyzer$(EXE):	$(TOP)/src/tclsqlite.c libsqlite3.a $(TESTSRC) \
 	  -e 's,^,",' \
 	  -e 's,$$,\\n",' \
 	  $(TOP)/tool/spaceanal.tcl >spaceanal_tcl.h
-	$(TCCX) $(TCL_FLAGS) -DTCLSH=2 -DSQLITE_TEST=1 -o \
+	$(TCCX) $(TCL_FLAGS) -DTCLSH=2 -DSQLITE_TEST=1 -DSQLITE_DEBUG=1 -o \
  		sqlite3_analyzer$(EXE) $(TESTSRC) $(TOP)/src/tclsqlite.c \
 		libsqlite3.a $(LIBTCL) $(THREADLIB)
 

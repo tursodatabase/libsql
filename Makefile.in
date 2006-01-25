@@ -191,7 +191,6 @@ TESTSRC = \
   $(TOP)/src/pager.c \
   $(TOP)/src/pragma.c \
   $(TOP)/src/printf.c \
-  $(TOP)/src/server.c \
   $(TOP)/src/test1.c \
   $(TOP)/src/test2.c \
   $(TOP)/src/test3.c \
@@ -200,10 +199,11 @@ TESTSRC = \
   $(TOP)/src/test6.c \
   $(TOP)/src/test7.c \
   $(TOP)/src/test_async.c \
+  $(TOP)/src/test_md5.c \
+  $(TOP)/src/test_server.c \
   $(TOP)/src/utf.c \
   $(TOP)/src/util.c \
   $(TOP)/src/vdbe.c \
-  $(TOP)/src/md5.c \
   $(TOP)/src/where.c
 
 # Header files used by all library source files.
