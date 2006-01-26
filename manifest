@@ -1,5 +1,5 @@
-C Minor\scomment\schanges\sand\scode\soptimizations.\s(CVS\s3029)
-D 2006-01-25T22:50:38
+C Handle\sa\smalloc()\sfailure\sin\sresizeOpArray().\s(CVS\s3030)
+D 2006-01-26T10:35:05
 F Makefile.in e936c6fc3134838318aa0335a85041e6da31f6ee
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -93,7 +93,7 @@ F src/vdbe.c 799e6280aef25bae55d2da21b5a6dbdda5e76e36
 F src/vdbe.h 8729a4ee16ff9aeab2af9667df3cf300ff978e13
 F src/vdbeInt.h eb3f86ab08ef11635bc78eb88c3ff13f923c233b
 F src/vdbeapi.c dcb2636f49b4807e34960d52a2fc257b3a751140
-F src/vdbeaux.c f2ffd1fd0e12108093db4438f111eeb7da885eda
+F src/vdbeaux.c 9bf50cdb6a6c40b8c06ca9a8d87cf90120a16797
 F src/vdbefifo.c 9efb94c8c3f4c979ebd0028219483f88e57584f5
 F src/vdbemem.c 2034e93b32c14bda6e306bb54e3a8e930b963027
 F src/where.c 8409e00fa2cb5fce873b4c911165cfed097e9c49
@@ -346,7 +346,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P e4e6a205e4f7c14aae31f26f42a143fce143db1c
-R f02e858571336485cba13e0e2bb39429
-U drh
-Z 6426185fbffdb9e75af912e639a777f1
+P 9e55dcd1a57f2b6ad5b267e8fa58c58b266dc8c7
+R 50d385e1d4cc2be81d84f045aa659461
+U danielk1977
+Z 3e812ebff127cb7648b222781378b092

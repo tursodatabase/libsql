@@ -58,8 +58,14 @@ void sqlite3VdbeTrace(Vdbe *p, FILE *trace){
 /*
 ** Resize the Vdbe.aOp array so that it contains at least N
 ** elements. If the Vdbe is in VDBE_MAGIC_RUN state, then
-** the Vdbe.aOp array will be sized to contain exactly N 
-** elements.
+** the Vdbe.aOp array will be sized to contain exactly N
+** elements. Vdbe.nOpAlloc is set to reflect the new size of
+** the array.
+**
+** If an out-of-memory error occurs while resizing the array,
+** Vdbe.aOp and Vdbe.nOpAlloc remain unchanged (this is so that
+** any opcodes already allocated can be correctly deallocated
+** along with the rest of the Vdbe).
 */
 static void resizeOpArray(Vdbe *p, int N){
   int runMode = p->magic==VDBE_MAGIC_RUN;
@@ -102,8 +108,7 @@ int sqlite3VdbeAddOp(Vdbe *p, int op, int p1, int p2){
   p->nOp++;
   assert( p->magic==VDBE_MAGIC_INIT );
   resizeOpArray(p, i+1);
-  assert( p->aOp==0 || p->nOpAlloc>=i+1 );
-  if( p->aOp==0 ){
+  if( sqlite3MallocFailed() ){
     return 0;
   }
   pOp = &p->aOp[i];
