@@ -1,4 +1,4 @@
-set rcsid {$Id: datatype3.tcl,v 1.11 2005/09/17 02:34:05 drh Exp $}
+set rcsid {$Id: datatype3.tcl,v 1.12 2006/01/26 13:25:08 danielk1977 Exp $}
 source common.tcl
 header {Datatypes In SQLite Version 3}
 puts {
@@ -388,10 +388,10 @@ CREATE TABLE t1(
 SELECT (a = b) FROM t1;
 
 -- Text comparison is performed using the NOCASE collation sequence.
-SELECT (a = d) FROM t1;
+SELECT (d = a) FROM t1;
 
 -- Text comparison is performed using the BINARY collation sequence.
-SELECT (d = a) FROM t1;
+SELECT (a = d) FROM t1;
 
 -- Text comparison is performed using the REVERSE collation sequence.
 SELECT ('abc' = c) FROM t1;
