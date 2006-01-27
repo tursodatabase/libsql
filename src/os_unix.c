@@ -450,7 +450,7 @@ static void *threadLockingTest(void *pArg){
 ** can override each others locks then sets the 
 ** threadsOverrideEachOthersLocks variable appropriately.
 */
-static void testThreadLockingBehavior(fd_orig){
+static void testThreadLockingBehavior(int fd_orig){
   int fd;
   struct threadTestData d[2];
   pthread_t t[2];
@@ -1752,7 +1752,8 @@ int sqlite3_tsd_count = 0;
 ** unallocated or gets deallocated.
 */
 ThreadData *sqlite3UnixThreadSpecificData(int allocateFlag){
-  static const ThreadData zeroData;
+  static const ThreadData zeroData = {0};  /* Initializer to silence warnings
+                                           ** from broken compilers */
 #ifdef SQLITE_UNIX_THREADS
   static pthread_key_t key;
   static int keyInit = 0;
