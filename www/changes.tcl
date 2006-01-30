@@ -25,7 +25,7 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
-chng {2006 January 30 (3.3.3 beta)} {
+chng {2006 January 30 (3.3.3 stable)} {
 <li>Minor bug fixes only.</li>
 }
 

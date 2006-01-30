@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3ref.tcl,v 1.30 2006/01/17 16:10:14 danielk1977 Exp $}
+set rcsid {$Id: capi3ref.tcl,v 1.31 2006/01/30 22:12:31 drh Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -108,11 +108,11 @@ api {} {
 
  In those
  routines that have a fourth argument, its value is the number of bytes
- in the parameter.  This is the number of characters for UTF-8 strings
- and the number of bytes for UTF-16 strings and blobs.  The number
+ in the parameter.  To be clear: the value is the number of bytes in the
+ string, not the number of characters.  The number
  of bytes does not include the zero-terminator at the end of strings.
  If the fourth parameter is negative, the length of the string is
- computed using strlen().
+ number of bytes up to the first zero terminator.
 
  The fifth argument to sqlite3_bind_blob(), sqlite3_bind_text(), and
  sqlite3_bind_text16() is a destructor used to dispose of the BLOB or
