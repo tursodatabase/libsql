@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.256 2006/01/24 13:09:33 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.257 2006/01/30 22:48:44 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -2676,7 +2676,7 @@ int sqlite3pager_get(Pager *pPager, Pgno pgno, void **ppPage){
     /* Populate the page with data, either by reading from the database
     ** file, or by setting the entire page to zero.
     */
-    if( sqlite3pager_pagecount(pPager)<(int)pgno ){
+    if( sqlite3pager_pagecount(pPager)<(int)pgno || MEMDB ){
       memset(PGHDR_TO_DATA(pPg), 0, pPager->pageSize);
     }else{
       assert( MEMDB==0 );

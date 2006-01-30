@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is in-memory database backend.
 #
-# $Id: memdb.test,v 1.14 2006/01/17 09:35:02 danielk1977 Exp $
+# $Id: memdb.test,v 1.15 2006/01/30 22:48:44 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -387,6 +387,30 @@ ifcapable subquery {
     } [expr {256-$i}]
   }
 }
+
+# Ticket #1524
+#
+do_test memdb-8.1 {
+  db close
+  sqlite3 db {:memory:}
+  execsql {
+    PRAGMA auto_vacuum=TRUE;
+    CREATE TABLE t1(a);
+    INSERT INTO t1 VALUES(randstr(5000,6000));
+    INSERT INTO t1 VALUES(randstr(5000,6000));
+    INSERT INTO t1 VALUES(randstr(5000,6000));
+    INSERT INTO t1 VALUES(randstr(5000,6000));
+    INSERT INTO t1 VALUES(randstr(5000,6000));
+    SELECT count(*) FROM t1;
+  }
+} 5
+do_test memdb-8.2 {
+  execsql {
+    DELETE FROM t1;
+    SELECT count(*) FROM t1;
+  }
+} 0
+
 
 } ;# ifcapable memorydb
 
