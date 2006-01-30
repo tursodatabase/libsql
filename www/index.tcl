@@ -66,6 +66,12 @@ proc newsitem {date title text} {
   puts "<hr width=\"50%\">"
 }
 
+newsitem {2006-Jan-30} {Version 3.3.3 stable} {
+  There have been no major problems discovered in version 3.3.2, so
+  we hereby declare the new APIs and language features to be stable
+  and supported.
+}
+
 newsitem {2006-Jan-24} {Version 3.3.2 beta} {
   More bug fixes and performance improvements as we move closer to
   a production-ready version 3.3.x.
@@ -108,50 +114,9 @@ newsitem {2005-Dec-19} {Versions 3.2.8 and 2.8.17} {
   uniqueness constraint but the containing transaction commits.
 }
 
-newsitem {2005-Sep-24} {Version 3.2.7} {
-  This version fixes several minor and obscure bugs.
-  Upgrade only if you are having problems.
-}
-
-newsitem {2005-Sep-16} {Version 3.2.6 - Critical Bug Fix} {
-  This version fixes a bug that can result in database
-  corruption if a VACUUM of a 1 gibibyte or larger database fails
-  (perhaps do to running out of disk space or an unexpected power loss)
-  and is later rolled back.
-  <p>
-  Also in this release:
-  The ORDER BY and GROUP BY processing was rewritten to use less memory.
-  Support for COUNT(DISTINCT) was added.  The LIKE operator can now be
-  used by the optimizer on columns with COLLATE NOCASE.
-}
-
-newsitem {2005-Aug-27} {Version 3.2.5} {
-  This release fixes a few more lingering bugs in the new code.
-  We expect that this release will be stable and ready for production use.
-}
-
-newsitem {2005-Aug-24} {Version 3.2.4} {
-  This release fixes a bug in the new optimizer that can lead to segfaults
-  when parsing very complex WHERE clauses.
-}
-
-newsitem {2005-Aug-21} {Version 3.2.3} {
-  This release adds the <a href="lang_analyze.html">ANALYZE</a> command,
-  the <a href="lang_expr.html">CAST</a> operator, and many
-  very substantial improvements to the query optimizer.  See the
-  <a href="changes.html#version_3_2_3">change log</a> for additional
-  information.
-}
-
-newsitem {2005-Aug-2} {2005 Open Source Award for SQLite} {
-  SQLite and its primary author D. Richard Hipp have been honored with
-  a <a href="http://osdir.com/Article6677.phtml">2005 Open Source
-  Award</a> from Google and O'Reilly.<br clear="right">
-}
-
 
 puts {
 <p align="right"><a href="oldnews.html">Old news...</a></p>
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.132 2006/01/23 23:53:17 drh Exp $}
+footer {$Id: index.tcl,v 1.133 2006/01/30 16:20:30 drh Exp $}

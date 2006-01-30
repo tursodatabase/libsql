@@ -1,7 +1,7 @@
 # This script generates the "docs.html" page that describes various
 # sources of documentation available for SQLite.
 #
-set rcsid {$Id: docs.tcl,v 1.13 2005/09/08 11:04:57 drh Exp $}
+set rcsid {$Id: docs.tcl,v 1.14 2006/01/30 16:20:30 drh Exp $}
 source common.tcl
 header {SQLite Documentation}
 puts {
@@ -40,6 +40,11 @@ doc {SQL Syntax} {lang.html} {
 }
 doc {Version 3 C/C++ API<br>Reference} {capi3ref.html} {
   This document describes each API function separately.
+}
+doc {Sharing Cache Mode} {sharedcache.html} {
+  Version 3.3.0 and later supports the ability for two or more
+  database connections to share the same page and schema cache.
+  This feature is useful for certain specialized applications.
 }
 doc {Tcl API} {tclsqlite.html} {
   A description of the TCL interface bindings for SQLite.
