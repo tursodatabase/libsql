@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the IN and BETWEEN operator.
 #
-# $Id: in.test,v 1.14 2005/07/08 18:25:26 drh Exp $
+# $Id: in.test,v 1.15 2006/01/30 14:36:59 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -303,5 +303,24 @@ do_test in-9.4 {
     SELECT b FROM t1 WHERE a NOT IN tb;
   }
 } {1 {only a single result allowed for a SELECT that is part of an expression}}
+
+# IN clauses in CHECK constraints.  Ticket #1645
+#
+do_test in-10.1 {
+  execsql {
+    CREATE TABLE t5(
+      a INTEGER,
+      CHECK( a IN (111,222,333) )
+    );
+    INSERT INTO t5 VALUES(111);
+    SELECT * FROM t5;
+  }
+} {111}
+do_test in-10.2 {
+  catchsql {
+    INSERT INTO t5 VALUES(4);
+  }
+} {1 {constraint failed}}
+
 
 finish_test

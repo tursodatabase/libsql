@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.252 2006/01/24 12:09:19 danielk1977 Exp $
+** $Id: expr.c,v 1.253 2006/01/30 14:36:59 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1699,6 +1699,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
     case TK_IN: {
       int addr;
       char affinity;
+      int ckOffset = pParse->ckOffset;
       sqlite3CodeSubselect(pParse, pExpr);
 
       /* Figure out the affinity to use to create a key from the results
@@ -1708,6 +1709,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       affinity = comparisonAffinity(pExpr);
 
       sqlite3VdbeAddOp(v, OP_Integer, 1, 0);
+      pParse->ckOffset = ckOffset+1;
 
       /* Code the <expr> from "<expr> IN (...)". The temporary table
       ** pExpr->iTable contains the values that make up the (...) set.
