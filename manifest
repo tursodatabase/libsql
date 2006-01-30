@@ -1,5 +1,5 @@
-C Fix\sbug\swith\sCHECK\sconstraints\scontain\san\sIN\soperator.\s\sTicket\s#1645.\s(CVS\s3035)
-D 2006-01-30T14:36:59
+C Expire\sall\sprepared\sstatements\swhenever\sthere\sis\sa\schange\sto\sthe\sschema\nof\sthe\sTEMP\sdatabase.\s\sTicket\s#1644.\s(CVS\s3036)
+D 2006-01-30T15:34:23
 F Makefile.in e936c6fc3134838318aa0335a85041e6da31f6ee
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -89,7 +89,7 @@ F src/update.c 14be4ba2f438919b4217085c02feff569e6cf1f2
 F src/utf.c 1199766bbb0157931a83aa6eede6b6381177be64
 F src/util.c 82ee598519b8193184bdeab06b51a4ffa05ad60b
 F src/vacuum.c 3865673cc66acd0717ecd517f6b8fdb2a5e7924b
-F src/vdbe.c 799e6280aef25bae55d2da21b5a6dbdda5e76e36
+F src/vdbe.c fee677e05236e483d6c75d1d4229955fc1b89193
 F src/vdbe.h 8729a4ee16ff9aeab2af9667df3cf300ff978e13
 F src/vdbeInt.h eb3f86ab08ef11635bc78eb88c3ff13f923c233b
 F src/vdbeapi.c dcb2636f49b4807e34960d52a2fc257b3a751140
@@ -255,6 +255,7 @@ F test/tkt1514.test baa587a69fa2e8d575ebdaf1460f711281dcba49
 F test/tkt1536.test 83ff7a7b6e248016f8d682d4f7a4ae114070d466
 F test/tkt1537.test e3a14332de9770be8ff14bd15c19a49cbec10808
 F test/tkt1567.test 18023cc3626a365f0118e17b66decedec93b1a6f
+F test/tkt1644.test c44a4957874583de0854159d3481bed8facc9c2d
 F test/trace.test 75ffc1b992c780d054748a656e3e7fd674f18567
 F test/trans.test b25eae982d156867eac338409905fd4ca589b7f8
 F test/trigger1.test 0c1d44882dba5c92e4efee4dd133cc979f0b1860
@@ -347,7 +348,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 2e23231f0c10b2bba9e08ea47859e2c0ffa84c76
-R 3b0f9d35458ab8f6669640d2d99a201a
+P 944df310ce8d32798135c70becee7845676520ae
+R 29e2b008efd55eab83787ea3973e471c
 U drh
-Z da68d113e790373b1b3d356e0a8d22c5
+Z 695d02c988e27778f6752e27ab962e1f

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.539 2006/01/24 13:09:33 danielk1977 Exp $
+** $Id: vdbe.c,v 1.540 2006/01/30 15:34:23 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2463,6 +2463,11 @@ case OP_SetCookie: {       /* no-push */
   }
   assert( (pTos->flags & MEM_Dyn)==0 );
   pTos--;
+  if( pOp->p1==1 ){
+    /* Invalidate all prepared statements whenever the TEMP database
+    ** schema is changed.  Ticket #1644 */
+    sqlite3ExpirePreparedStatements(db);
+  }
   break;
 }
 
