@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi3.test,v 1.40 2006/01/23 21:37:32 drh Exp $
+# $Id: capi3.test,v 1.41 2006/01/30 22:35:44 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -885,5 +885,22 @@ do_test capi3-14.1 {
   lappend rc $msg
 } {1 SQLITE_MISUSE}
 
+# Ticket #1650:  Honor the nBytes parameter to sqlite3_prepare.
+#
+do_test capi3-15.1 {
+  set sql {SELECT * FROM t2}
+  set nbytes [string length $sql]
+  append sql { WHERE a==1}
+  set STMT [sqlite3_prepare $DB $sql $nbytes TAIL]
+  sqlite3_step $STMT
+  sqlite3_column_int $STMT 0
+} {1}
+do_test capi3-15.2 {
+  sqlite3_step $STMT
+  sqlite3_column_int $STMT 0
+} {2}
+do_test capi3-15.3 {
+  sqlite3_finalize $STMT
+} {SQLITE_OK}
 
 finish_test

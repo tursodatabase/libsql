@@ -1,5 +1,5 @@
-C Clarify\sthat\sthe\snBytes\sparameter\sto\ssqlite3_prepare\sis\salways\sthe\nnumber\sof\sbytes\sand\snever\sthe\snumber\sof\scharacters.\s\sTicket\s#1646.\s(CVS\s3039)
-D 2006-01-30T22:12:31
+C Make\ssure\sthe\s3rd\sparameter\sto\ssqlite3_prepare()\sis\shonored.\s\sTicket\s#1650.\s(CVS\s3040)
+D 2006-01-30T22:35:44
 F Makefile.in e936c6fc3134838318aa0335a85041e6da31f6ee
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -63,7 +63,7 @@ F src/pager.c c9fdc3f4026f22e73d8fa586c4f58e14129036bb
 F src/pager.h e0acb095b3ad0bca48f2ab00c87346665643f64f
 F src/parse.y 4285cd2d0f31a8db4c4d54325f88e500452fa029
 F src/pragma.c 4496cc77dc35824e1c978c3d1413b8a5a4c777d3
-F src/prepare.c 9753e8e5876faf806ecce8008ca8e5ed6ef768b7
+F src/prepare.c 40ae23c8aeb641dc7b9bb271eb5e295b815154a7
 F src/printf.c c7d6ad9efb71c466305297a448308f467b6e2b6e
 F src/random.c d40f8d356cecbd351ccfab6eaedd7ec1b54f5261
 F src/select.c daee9b20702ba51cf3807fc1b130edd8846e3e48
@@ -132,7 +132,7 @@ F test/btree7.test a6d3b842db22af97dd14b989e90a2fd96066b72f
 F test/btree8.test fadc112bcbd6a0c622d34c813fc8a648eacf8804
 F test/busy.test 0271c854738e23ad76e10d4096a698e5af29d211
 F test/capi2.test b9354d6c37e6f8f858c08952ebc9709712581221
-F test/capi3.test e573d6b8b67e8a25aeb471b20ed527a975d43c7d
+F test/capi3.test f36912f21457fa713ace874e73f2b54d55d1b9dd
 F test/capi3b.test 5f0bc94b104e11086b1103b20277e1910f59c7f4
 F test/cast.test aabdcb3873bb2f40d855bf63950f6d99a5a196c7
 F test/check.test 55ad950d7ad24d6eb3328c54149f90d38a39a962
@@ -349,7 +349,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 6537b5713a9541ec5712ae2564a801a07f93f4c8
-R 266b57c79998c7761e70c9e0903587ae
+P 8efc8c57103cab61bc06842391744bec69c24428
+R 67662a16bac53c6b6882b43161155881
 U drh
-Z 21899a16ae1af06f390fe8c9764e27e4
+Z 3ce9dce65c4451fa921d25ff4c0e8dad
