@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the lang-*.html files.
 #
-set rcsid {$Id: lang.tcl,v 1.106 2006/01/23 18:14:22 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.107 2006/01/30 23:04:52 drh Exp $}
 source common.tcl
 
 if {[llength $argv]>0} {
@@ -442,7 +442,6 @@ Section {CREATE INDEX} createindex
 Syntax {sql-statement} {
 CREATE [UNIQUE] INDEX [IF NOT EXISTS] [<database-name> .] <index-name> 
 ON <table-name> ( <column-name> [, <column-name>]* )
-[ ON CONFLICT <conflict-algorithm> ]
 } {column-name} {
 <name> [ COLLATE <collation-name>] [ ASC | DESC ]
 }
@@ -468,16 +467,6 @@ attached to a single table, nor on the number of columns in an index.</p>
 <p>If the UNIQUE keyword appears between CREATE and INDEX then duplicate
 index entries are not allowed.  Any attempt to insert a duplicate entry
 will result in an error.</p>
-
-<p>The optional conflict-clause allows the specification of an alternative
-default constraint conflict resolution algorithm for this index.
-This only makes sense if the UNIQUE keyword is used since otherwise
-there are not constraints on the index.  The default algorithm is
-ABORT.  If a COPY, INSERT, or UPDATE statement specifies a particular
-conflict resolution algorithm, that algorithm is used in place of
-the default algorithm specified here.
-See the section titled
-<a href="#conflict">ON CONFLICT</a> for additional information.</p>
 
 <p>The exact text
 of each CREATE INDEX statement is stored in the <b>sqlite_master</b>
@@ -1468,9 +1457,11 @@ It is given its own section in this document because it is not
 part of standard SQL and therefore might not be familiar.</p>
 
 <p>The syntax for the ON CONFLICT clause is as shown above for
-the CREATE TABLE and CREATE INDEX commands.  For the COPY, INSERT, and
+the CREATE TABLE command.  For the INSERT and
 UPDATE commands, the keywords "ON CONFLICT" are replaced by "OR", to make
-the syntax seem more natural.  But the meaning of the clause is the same
+the syntax seem more natural.  For example, instead of
+"INSERT ON CONFLICT IGNORE" we have "INSERT OR IGNORE".
+The keywords change but the meaning of the clause is the same
 either way.</p>
 
 <p>The ON CONFLICT clause specifies an algorithm used to resolve
@@ -1523,12 +1514,10 @@ satisfy a constraint, it does not invoke delete triggers on those
 rows.  But that may change in a future release.</p>
 </dl>
 
-<p>The algorithm specified in the OR clause of a COPY, INSERT, or UPDATE
-overrides any algorithm specified in a CREATE TABLE or CREATE INDEX.
+<p>The algorithm specified in the OR clause of a INSERT or UPDATE
+overrides any algorithm specified in a CREATE TABLE.
 If no algorithm is specified anywhere, the ABORT algorithm is used.</p>
 }
-# <p>For additional information, see 
-# <a href="conflict.html">conflict.html</a>.</p>
 
 Section REINDEX reindex
 
