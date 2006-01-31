@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.131 2006/01/25 15:55:38 drh Exp $
+** $Id: shell.c,v 1.132 2006/01/31 19:07:22 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -1040,7 +1040,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     zSql = sqlite3_mprintf("SELECT * FROM '%q'", zTable);
     if( zSql==0 ) return 0;
     nByte = strlen(zSql);
-    rc = sqlite3_prepare(p->db, zSql, 0, &pStmt, 0);
+    rc = sqlite3_prepare(p->db, zSql, -1, &pStmt, 0);
     sqlite3_free(zSql);
     if( rc ){
       fprintf(stderr,"Error: %s\n", sqlite3_errmsg(db));
@@ -1060,7 +1060,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     }
     zSql[j++] = ')';
     zSql[j] = 0;
-    rc = sqlite3_prepare(p->db, zSql, 0, &pStmt, 0);
+    rc = sqlite3_prepare(p->db, zSql, -1, &pStmt, 0);
     free(zSql);
     if( rc ){
       fprintf(stderr, "Error: %s\n", sqlite3_errmsg(db));
