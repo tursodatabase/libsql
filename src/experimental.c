@@ -12,9 +12,10 @@
 ** This file contains C code routines that are not a part of the official
 ** SQLite API.  These routines are unsupported.
 **
-** $Id: experimental.c,v 1.3 2005/03/02 05:18:30 drh Exp $
+** $Id: experimental.c,v 1.4 2006/01/31 20:49:13 drh Exp $
 */
 #include "sqliteInt.h"
+#include "os.h"
 
 /*
 ** Set all the parameters in the compiled SQL statement to NULL.
