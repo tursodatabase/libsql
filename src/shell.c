@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.132 2006/01/31 19:07:22 drh Exp $
+** $Id: shell.c,v 1.133 2006/01/31 19:31:44 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -247,7 +247,7 @@ struct callback_data {
 #define MODE_Csv      7  /* Quote strings, numbers are plain */
 #define MODE_NUM_OF   8  /* The number of modes (not a mode itself) */
 
-char *modeDescr[MODE_NUM_OF] = {
+static const char *modeDescr[MODE_NUM_OF] = {
   "line",
   "column",
   "list",
@@ -1618,7 +1618,7 @@ static void usage(int showDetail){
 /*
 ** Initialize the state information in data
 */
-void main_init(struct callback_data *data) {
+static void main_init(struct callback_data *data) {
   memset(data, 0, sizeof(*data));
   data->mode = MODE_List;
   strcpy(data->separator,"|");

@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.331 2006/01/24 16:37:58 danielk1977 Exp $
+** $Id: main.c,v 1.332 2006/01/31 19:31:44 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -29,7 +29,6 @@ const int sqlite3one = 1;
 /*
 ** The version of the library
 */
-const char rcsid3[] = "@(#) \044Id: SQLite version " SQLITE_VERSION " $";
 const char sqlite3_version[] = SQLITE_VERSION;
 const char *sqlite3_libversion(void){ return sqlite3_version; }
 int sqlite3_libversion_number(void){ return SQLITE_VERSION_NUMBER; }

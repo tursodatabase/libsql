@@ -1479,7 +1479,7 @@ int sqlite3_tsd_count = 0;
 ThreadData *sqlite3WinThreadSpecificData(int allocateFlag){
   static int key;
   static int keyInit = 0;
-  static const ThreadData zeroData;
+  static const ThreadData zeroData = {0};
   ThreadData *pTsd;
 
   if( !keyInit ){
