@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: auth.test,v 1.33 2006/01/17 09:35:02 danielk1977 Exp $
+# $Id: auth.test,v 1.34 2006/01/31 14:28:46 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -1994,6 +1994,73 @@ ifcapable analyze {
     }
   } 2
 } ;# ifcapable analyze
+
+
+# Authorization for ALTER TABLE ADD COLUMN.
+# These tests are omitted if the library
+# was built without ALTER TABLE support.
+ifcapable {altertable} {
+  do_test auth-1.300 {
+    execsql {CREATE TABLE t5(x)}
+    proc auth {code arg1 arg2 arg3 arg4} {
+      if {$code=="SQLITE_ALTER_TABLE"} {
+        set ::authargs [list $arg1 $arg2 $arg3 $arg4]
+        return SQLITE_OK
+      }
+      return SQLITE_OK
+    }
+    catchsql {
+      ALTER TABLE t5 ADD COLUMN new_col_1;
+    }
+  } {0 {}}
+  do_test auth-1.301 {
+    set x [execsql {SELECT sql FROM sqlite_master WHERE name='t5'}]
+    regexp new_col_1 $x
+  } {1}
+  do_test auth-1.302 {
+    set authargs
+  } {main t5 {} {}}
+  do_test auth-1.303 {
+    proc auth {code arg1 arg2 arg3 arg4} {
+      if {$code=="SQLITE_ALTER_TABLE"} {
+        set ::authargs [list $arg1 $arg2 $arg3 $arg4]
+        return SQLITE_IGNORE
+      }
+      return SQLITE_OK
+    }
+    catchsql {
+      ALTER TABLE t5 ADD COLUMN new_col_2;
+    }
+  } {0 {}}
+  do_test auth-1.304 {
+    set x [execsql {SELECT sql FROM sqlite_master WHERE name='t5'}]
+    regexp new_col_2 $x
+  } {0}
+  do_test auth-1.305 {
+    set authargs
+  } {main t5 {} {}}
+  do_test auth-1.306 {
+    proc auth {code arg1 arg2 arg3 arg4} {
+      if {$code=="SQLITE_ALTER_TABLE"} {
+        set ::authargs [list $arg1 $arg2 $arg3 $arg4]
+        return SQLITE_DENY
+      }
+      return SQLITE_OK
+    }
+    catchsql {
+      ALTER TABLE t5 ADD COLUMN new_col_3
+    }
+  } {1 {not authorized}}
+  do_test auth-1.307 {
+    set x [execsql {SELECT sql FROM sqlite_temp_master WHERE type='t5'}]
+    regexp new_col_3 $x
+  } {0}
+
+  do_test auth-1.308 {
+    set authargs
+  } {main t5 {} {}}
+  execsql {DROP TABLE t5}
+} ;# ifcapable altertable
 
 do_test auth-2.1 {
   proc auth {code arg1 arg2 arg3 arg4} {

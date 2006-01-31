@@ -12,7 +12,7 @@
 ** This file contains C code routines that used to generate VDBE code
 ** that implements the ALTER TABLE command.
 **
-** $Id: alter.c,v 1.18 2006/01/18 16:51:35 danielk1977 Exp $
+** $Id: alter.c,v 1.19 2006/01/31 14:28:45 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -406,6 +406,13 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
   pDflt = pCol->pDflt;
   pTab = sqlite3FindTable(pParse->db, zTab, zDb);
   assert( pTab );
+
+#ifndef SQLITE_OMIT_AUTHORIZATION
+  /* Invoke the authorization callback. */
+  if( sqlite3AuthCheck(pParse, SQLITE_ALTER_TABLE, zDb, pTab->zName, 0) ){
+    return;
+  }
+#endif
 
   /* If the default value for the new column was specified with a 
   ** literal NULL, then set pDflt to 0. This simplifies checking
