@@ -25,8 +25,16 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
-chng {2006 January 30 (3.3.3 stable)} {
-<li>Minor bug fixes only.</li>
+chng {2006 January 31 (3.3.3)} {
+<li>Removed support for an ON CONFLICT clause on CREATE INDEX - it never
+worked correctly so this should not present any backward compatibility
+problems.</li>
+<li>Authorizer callback now notified of ALTER TABLE ADD COLUMN commands</li>
+<li>After any changes to the TEMP database schema, all prepared statements
+are invalidated and must be recreated using a new call to
+sqlite3_prepare()</li>
+<li>Other minor bug fixes in preparation for the first stable release
+of version 3.3</li>
 }
 
 chng {2006 January 24 (3.3.2 beta)} {
