@@ -1,5 +1,5 @@
-C Patches\sto\ssupport\slinux\son\sembedded\splatforms.\s(CVS\s3049)
-D 2006-01-31T20:49:13
+C Add\sthe\sSQLITE_THREADS_OVERRIDE_LOCKS\scompile-time\soption\sthat\sdisables\nthe\srun-time\stest\sto\ssee\sif\sthreads\scan\soverride\seach\sothers\slocks\son\sunix.\s(CVS\s3050)
+D 2006-01-31T23:03:35
 F Makefile.in e936c6fc3134838318aa0335a85041e6da31f6ee
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -55,7 +55,7 @@ F src/os.h 93035a0e3b9dd05cdd0aaef32ea28ca28e02fe78
 F src/os_common.h 061fba8511a656b118551424f64e366ad0d4cb3b
 F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
-F src/os_unix.c 73c5e722a661ed98d8919f204911e4e34e51fa41
+F src/os_unix.c 9de1887768d94a63a4043ad487dd1c595437488e
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c c67a2c46d929cf54c8f80ec5e6079cf684a141a9
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
@@ -349,7 +349,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P b922c8e45f9a7799583d8b42875b27032fd71422
-R b8251799cdb5710fd1ee4d218b3330fc
+P a088eb6d6eda70d89add1e5d95be5efda6c0de67
+R 6b10277b6e963aadabfbe9c5e02eda02
 U drh
-Z 30ced3c5bffcb60966170fd64437cef6
+Z d1818b449aa61cbf719901ce4af7d893

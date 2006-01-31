@@ -353,14 +353,23 @@ static Hash openHash = { SQLITE_HASH_BINARY, 0, 0, 0, 0, 0 };
 **    1:  Yes.  Threads can override each others locks.
 **   -1:  We don't know yet.
 **
+** On some systems, we know at compile-time if threads can override each
+** others locks.  On those systems, the SQLITE_THREAD_OVERRIDE_LOCK macro
+** will be set appropriately.  On other systems, we have to check at
+** runtime.  On these latter systems, SQLTIE_THREAD_OVERRIDE_LOCK is
+** undefined.
+**
 ** This variable normally has file scope only.  But during testing, we make
 ** it a global so that the test code can change its value in order to verify
 ** that the right stuff happens in either case.
 */
+#ifndef SQLITE_THREAD_OVERRIDE_LOCK
+# define SQLITE_THREAD_OVERRIDE_LOCK -1
+#endif
 #ifdef SQLITE_TEST
-int threadsOverrideEachOthersLocks = -1;
+int threadsOverrideEachOthersLocks = SQLITE_THREAD_OVERRIDE_LOCK;
 #else
-static int threadsOverrideEachOthersLocks = -1;
+static int threadsOverrideEachOthersLocks = SQLITE_THREAD_OVERRIDE_LOCK;
 #endif
 
 /*
