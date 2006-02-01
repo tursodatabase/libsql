@@ -1,5 +1,5 @@
-C In\sjoins\sof\sthe\sform:\s"A,\sB\sleft\sC"\smake\ssure\sthat\sthe\sreordering\soptimization\ndoes\snot\sput\stable\sA\safter\stable\sC.\s\sTicket\s#1652.\s(CVS\s3052)
-D 2006-02-01T02:45:02
+C Always\sregister\sBINARY\scollating\ssequences\sfor\sUTF-16BE\sand\sUTF-16LE\sboth.\nFormerly\swe\swere\sonly\sregistering\sthe\snative\sbyte\sorder\sby\sdefault.\nTicket\s#1654.\s\sNote:\s\sThere\smay\sstill\sbe\sproblems\swith\scollating\ssequence\nsynthesis.\s(CVS\s3053)
+D 2006-02-01T13:50:42
 F Makefile.in 5d8dff443383918b700e495de42ec65bc1c8865b
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -48,7 +48,7 @@ F src/hash.c 8747cf51d12de46512880dfcf1b68b4e24072863
 F src/hash.h 1b0c445e1c89ff2aaad9b4605ba61375af001e84
 F src/insert.c 7e931b7f06afbcefcbbaab175c02eff8268db33f
 F src/legacy.c 86b669707b3cefd570e34154e2f6457547d1df4f
-F src/main.c 5c890c27e05e083e4df2547ae3679f21ed05adc3
+F src/main.c ce5b9f0af959b6c7dc14c42815edd28e2153621b
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/os.c 59f05de8c5777c34876607114a2fbe55ae578235
 F src/os.h 93035a0e3b9dd05cdd0aaef32ea28ca28e02fe78
@@ -350,7 +350,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 82f558bd11ddb20792fbc9f579b40ad38d7f6af5
-R 2af434e8b15703eb7f034d5057b5c6a7
+P 248b9be93d9532e31c640432b75c3310e180acb3
+R 859a862fe83457f62502860af9a0f719
 U drh
-Z 400ad0ae9ac8ef551d8c82316e3538c4
+Z b0413d62db13b211c799ec334f107158
