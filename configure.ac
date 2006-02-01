@@ -116,7 +116,7 @@ AC_INIT(src/sqlite.h.in)
 dnl Put the RCS revision string after AC_INIT so that it will also
 dnl show in in configure.
 # The following RCS revision string applies to configure.in
-# $Revision: 1.22 $
+# $Revision: 1.23 $
 
 #########
 # Programs needed
@@ -316,6 +316,24 @@ else
   AC_MSG_RESULT([yes])
 fi
 AC_SUBST(XTHREADCONNECT)
+
+##########
+# Do we want to set threadsOverrideEachOthersLocks variable to be 1 (true) by
+# default. Normally, a test at runtime is performed to determine the
+# appropriate value of this variable. Use this option only if you're sure that
+# threads can safely override each others locks in all runtime situations.
+#
+AC_ARG_ENABLE(threads-override-locks, 
+[  --enable-threads-override-locks     Threads can override each others locks],,enable_threads_override_locks=no)
+AC_MSG_CHECKING([whether threads can override each others locks])
+if test "$enable_threads_override_locks" = "no"; then
+  THREADSOVERRIDELOCKS='-1'
+  AC_MSG_RESULT([no])
+else
+  THREADSOVERRIDELOCKS='1'
+  AC_MSG_RESULT([yes])
+fi
+AC_SUBST(THREADSOVERRIDELOCKS)
 
 ##########
 # Do we want to support release

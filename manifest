@@ -1,6 +1,6 @@
-C Add\sthe\sSQLITE_THREADS_OVERRIDE_LOCKS\scompile-time\soption\sthat\sdisables\nthe\srun-time\stest\sto\ssee\sif\sthreads\scan\soverride\seach\sothers\slocks\son\sunix.\s(CVS\s3050)
-D 2006-01-31T23:03:35
-F Makefile.in e936c6fc3134838318aa0335a85041e6da31f6ee
+C Added\ssupport\sfor\sthe\s-enable-thread-override-lock\soption\son\sthe\nconfigure\sscript.\s(CVS\s3051)
+D 2006-02-01T01:55:17
+F Makefile.in 5d8dff443383918b700e495de42ec65bc1c8865b
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
 F VERSION 54c34680bfafc0aa2310025258978b402d7eaa64
@@ -12,8 +12,8 @@ F art/SQLite.gif 1bbb94484963f1382e27e1c5e86dd0c1061eba2b
 F art/SQLiteLogo3.tiff b9e6bf022ae939bc986cddb8ab99583ca1b02cb3
 F config.guess 2103e94b15dc57112d7b9ee152c6fac5288895b4
 F config.sub 9bf686ec001ae7bc53f5b3563c90c62d4c6d48be
-F configure 630b53719ed71ab8eb0a0c183443379bac32da92 x
-F configure.ac 49e15376e486660044532154eb2ab458f8410da3
+F configure 16f3446471ac3c6d2a0b72ba1e9e6e391fefb76b x
+F configure.ac 030dca81015979b579ab7c056dec166ecff600d5
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
@@ -349,7 +349,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P a088eb6d6eda70d89add1e5d95be5efda6c0de67
-R 6b10277b6e963aadabfbe9c5e02eda02
+P e83a19e8cb6d721b02502925b362f2e86b2de742
+R 8e940d36d3cad60499f251caa2aa3738
 U drh
-Z d1818b449aa61cbf719901ce4af7d893
+Z cc40a051ac76c8707a4ca4b120503958
