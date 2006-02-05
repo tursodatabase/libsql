@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing VIEW statements.
 #
-# $Id: view.test,v 1.28 2006/01/14 08:02:29 danielk1977 Exp $
+# $Id: view.test,v 1.29 2006/02/05 18:55:21 drh Exp $
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
@@ -458,5 +458,14 @@ do_test view-13.1 {
     CREATE VIEW v13 AS SELECT y FROM two.t2;
   }
 } {1 {view v13 cannot reference objects in database two}}
+
+# Ticket #1658
+#
+do_test view-14.1 {
+  catchsql {
+    CREATE TEMP VIEW t1 AS SELECT a,b FROM t1;
+    SELECT * FROM temp.t1;
+  }
+} {1 {view t1 is circularly defined}}
 
 finish_test
