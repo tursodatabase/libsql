@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.114 2006/01/12 01:56:44 drh Exp $
+** $Id: pragma.c,v 1.115 2006/02/06 21:34:27 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -468,23 +468,29 @@ void sqlite3Pragma(
     pTab = sqlite3FindTable(db, zRight, zDb);
     if( pTab ){
       int i;
-      sqlite3VdbeSetNumCols(v, 6);
+      Column *pCol;
+      sqlite3VdbeSetNumCols(v, 8);
       sqlite3VdbeSetColName(v, 0, "cid", P3_STATIC);
       sqlite3VdbeSetColName(v, 1, "name", P3_STATIC);
       sqlite3VdbeSetColName(v, 2, "type", P3_STATIC);
       sqlite3VdbeSetColName(v, 3, "notnull", P3_STATIC);
       sqlite3VdbeSetColName(v, 4, "dflt_value", P3_STATIC);
       sqlite3VdbeSetColName(v, 5, "pk", P3_STATIC);
+      sqlite3VdbeSetColName(v, 6, "autoinc", P3_STATIC);
+      sqlite3VdbeSetColName(v, 7, "collseq", P3_STATIC);
       sqlite3ViewGetColumnNames(pParse, pTab);
-      for(i=0; i<pTab->nCol; i++){
+      for(i=0, pCol=pTab->aCol; i<pTab->nCol; i++, pCol++){
         sqlite3VdbeAddOp(v, OP_Integer, i, 0);
-        sqlite3VdbeOp3(v, OP_String8, 0, 0, pTab->aCol[i].zName, 0);
+        sqlite3VdbeOp3(v, OP_String8, 0, 0, pCol->zName, 0);
         sqlite3VdbeOp3(v, OP_String8, 0, 0,
-           pTab->aCol[i].zType ? pTab->aCol[i].zType : "numeric", 0);
-        sqlite3VdbeAddOp(v, OP_Integer, pTab->aCol[i].notNull, 0);
-        sqlite3ExprCode(pParse, pTab->aCol[i].pDflt);
-        sqlite3VdbeAddOp(v, OP_Integer, pTab->aCol[i].isPrimKey, 0);
-        sqlite3VdbeAddOp(v, OP_Callback, 6, 0);
+           pCol->zType ? pCol->zType : "numeric", 0);
+        sqlite3VdbeAddOp(v, OP_Integer, pCol->notNull, 0);
+        sqlite3ExprCode(pParse, pCol->pDflt);
+        sqlite3VdbeAddOp(v, OP_Integer, pCol->isPrimKey, 0);
+        sqlite3VdbeAddOp(v, OP_Integer, pCol->isPrimKey && pTab->autoInc, 0);
+        sqlite3VdbeOp3(v, OP_String8, 0, 0,
+           pCol->zColl ? pCol->zColl : "binary", 0);
+        sqlite3VdbeAddOp(v, OP_Callback, 8, 0);
       }
     }
   }else

@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.37 2006/01/03 00:33:50 drh Exp $
+# $Id: pragma.test,v 1.38 2006/02/06 21:34:27 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -345,7 +345,7 @@ do_test pragma-6.2 {
   execsql {
     pragma table_info(t2)
   }
-} {0 a numeric 0 {} 0 1 b numeric 0 {} 0 2 c numeric 0 {} 0}
+} {0 a numeric 0 {} 0 0 binary 1 b numeric 0 {} 0 0 binary 2 c numeric 0 {} 0 0 binary}
 ifcapable {foreignkey} {
   do_test pragma-6.3 {
     execsql {

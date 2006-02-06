@@ -15,7 +15,7 @@
 # interface is pretty well tested.  This file contains some addition
 # tests for fringe issues that the main test suite does not cover.
 #
-# $Id: tclsqlite.test,v 1.51 2006/01/24 10:58:23 danielk1977 Exp $
+# $Id: tclsqlite.test,v 1.52 2006/02/06 21:34:27 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -148,7 +148,7 @@ if {[sqlite3 -tcl-uses-utf]} {
   ifcapable schema_pragmas {
     do_test tcl-2.2 {
       execsql "PRAGMA table_info(t\u0123x)"
-    } "0 a int 0 {} 0 1 b\u1235 float 0 {} 0"
+    } "0 a int 0 {} 0 0 binary 1 b\u1235 float 0 {} 0 0 binary"
   }
   do_test tcl-2.3 {
     execsql "INSERT INTO t\u0123x VALUES(1,2.3)"
