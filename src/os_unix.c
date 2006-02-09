@@ -1060,7 +1060,12 @@ static int unixSync(OsFile *id, int dataOnly){
     TRACE2("DIRSYNC %-3d\n", pFile->dirfd);
 #ifndef SQLITE_DISABLE_DIRSYNC
     if( full_fsync(pFile->dirfd, pFile->fullSync, 0) ){
-        return SQLITE_IOERR;
+       /* We have received multiple reports of fsync() returning
+       ** errors when applied to directories on certain file systems.
+       ** A failed directory sync is not a big deal.  So it seems
+       ** better to ignore the error.  Ticket #1657
+       */
+       /* return SQLITE_IOERR; */
     }
 #endif
     close(pFile->dirfd);  /* Only need to sync once, so close the directory */
