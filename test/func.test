@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing built-in functions.
 #
-# $Id: func.test,v 1.44 2006/01/20 15:45:37 drh Exp $
+# $Id: func.test,v 1.45 2006/02/09 13:38:21 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -537,5 +537,16 @@ do_test func-18.6 {
     SELECT sum(x) FROM t5
   }
 } {123}
+
+# Ticket #1664: 64-bit overflow in sum()
+#
+do_test func-18.10 {
+  execsql {
+    CREATE TABLE t6(x INTEGER);
+    INSERT INTO t6 VALUES(1);
+    INSERT INTO t6 VALUES(1<<62);
+    SELECT sum(x) - ((1<<62)+1) from t6;
+  }
+} 0
 
 finish_test
