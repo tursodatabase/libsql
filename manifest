@@ -1,5 +1,5 @@
-C Add\sthe\ssqlite3_table_column_meta()\sAPI.\s(CVS\s3062)
-D 2006-02-09T13:43:29
+C Back\sout\scheck-in\s(3058)\s-\sit\sbreaks\stoo\smuch\sapplication\scode.\s(CVS\s3063)
+D 2006-02-09T16:52:24
 F Makefile.in 5d8dff443383918b700e495de42ec65bc1c8865b
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -62,7 +62,7 @@ F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c b5b380ea7a36f84e50c3adc1a414820a0eb3baa6
 F src/pager.h e0acb095b3ad0bca48f2ab00c87346665643f64f
 F src/parse.y ce7182bfd47b7e5921bc55dcc399cda5cb879f19
-F src/pragma.c 0986217308f5607c1e585cab774976bbfa8998b2
+F src/pragma.c c26c810e9c7d3a95a2c617b507bf8e8d65be7721
 F src/prepare.c 40ae23c8aeb641dc7b9bb271eb5e295b815154a7
 F src/printf.c c7d6ad9efb71c466305297a448308f467b6e2b6e
 F src/random.c d40f8d356cecbd351ccfab6eaedd7ec1b54f5261
@@ -211,7 +211,7 @@ F test/pager.test 6ee95e90ee8295e376e39a6c6566ef6df993601a
 F test/pager2.test 49c0f57c7da0b060f0486b85fdd074025caa694e
 F test/pager3.test 2323bf27fd5bd887b580247e5bce500ceee994b4
 F test/pagesize.test 05c74ea49f790734ec1e9ab765d9bf1cce79b8f2
-F test/pragma.test 71bdf78d1b881bf15db3aa42cb3935fc3e4e6eab
+F test/pragma.test 12e1b74e37964bb161f21fb8b1d3f31b2724b47e
 F test/printf.test 9e10c74e16bf889f8495ddb3d6f5f891e75ff1b7
 F test/progress.test 16496001da445e6534afb94562c286708316d82f x
 F test/quick.test 38d1feefe5bfd0a61aa535775448276630ecfb92
@@ -238,7 +238,7 @@ F test/subselect.test 2d13fb7f450db3595adcdd24079a0dd1d2d6abc2
 F test/sync.test 6c8dc6592cd8dd770c739d9b5a9a9976c7124de6
 F test/table.test 6dc0dfa44dd429520e0e5a0c5e55025f730e9403
 F test/tableapi.test 6a66d58b37d46dc0f2b3c7d4bd2617d209399bd1
-F test/tclsqlite.test 1b9edb34413b857b7d03ede396873816d90ae458
+F test/tclsqlite.test 93c399414273d829f3fc5fc4a8349b484fe84d5b
 F test/temptable.test c36f3e5a94507abb64f7ba23deeb4e1a8a8c3821
 F test/tester.tcl 66a4bfa61a05e08ea523ef077e7ad0eab090c327
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
@@ -351,7 +351,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P a9169e879de5d5e4192d1681bc3e119fb83e739c
-R eb59a6ba771a7cc02809648acaa12265
-U danielk1977
-Z 279c4d9c07e1c4addc6e70e0387b9c2f
+P 1ac72f68c0e9fd63decc97c166f49b405a9d323c
+R 8e4c508c267bfbc23c6be5d5e383bf10
+U drh
+Z 7f3d92afc83bfa30fa7e5b6bf900d3a0
