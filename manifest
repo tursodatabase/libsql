@@ -1,5 +1,5 @@
-C SUM\snever\sgives\san\serror.\s\sAn\sinteger\sresult\sis\sreturned\sfor\sexact\sresults\nand\sa\sfloating\spoint\sresult\sis\sreturned\sfor\sapproximate\sresults.\nTickets\s#1664,\s#1669,\sand\s#1670.\s(CVS\s3066)
-D 2006-02-09T22:13:42
+C Allow\s'@'\sto\sintroduce\shost\sparameter\snames\sfor\scompatibility\swith\nMS\sSQL\sServer.\s\sTicket\s#1671.\s(CVS\s3067)
+D 2006-02-09T22:24:41
 F Makefile.in 5d8dff443383918b700e495de42ec65bc1c8865b
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -83,7 +83,7 @@ F src/test7.c d28d3e62f9594923648fc6a8fb030eba36564ba1
 F src/test_async.c 6776f5027ca6378c116ff5ccc2fe41b908e33772
 F src/test_md5.c 6c42bc0a3c0b54be34623ff77a0eec32b2fa96e3
 F src/test_server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
-F src/tokenize.c 9ae9a59238eb97fbc61baea280563b91100518fb
+F src/tokenize.c 382b3bb0ca26eb9153b5d20b246ef512a114a24f
 F src/trigger.c 4d3644cbd16959b568c95ae73493402be8021b08
 F src/update.c 14be4ba2f438919b4217085c02feff569e6cf1f2
 F src/utf.c 1199766bbb0157931a83aa6eede6b6381177be64
@@ -189,7 +189,7 @@ F test/limit.test f593d0ff02b3ab657d08e4ffbf14081bda763393
 F test/lock.test 9b7afcb24f53d24da502abb33daaad2cd6d44107
 F test/lock2.test d83ba79d3c4fffdb5b926c7d8ca7a36c34288a55
 F test/lock3.test 615111293cf32aa2ed16d01c6611737651c96fb9
-F test/main.test b12f01d49a5c805a33fa6c0ef168691f63056e79
+F test/main.test e7212ce1023957c7209778cc87fa932bd79ba89a
 F test/malloc.test 7d875b2b59ae1d79fba71403298a1eb4a1ed7c38
 F test/malloc2.test e6e321db96d6c94cb18bf82ad7215070c41e624e
 F test/malloc3.test fd4186bee73c2a2638f4e2a05a684c06836f725b
@@ -351,7 +351,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 44bd7ba432123ec77904b862d11521f4ab96d2cf
-R dfa46f13c8dc60b1e9e94224c227881b
+P 9e04f8fdf1ec0dc36effb55c05d075b3b4777fef
+R e678992aa2b606745868d200436d156c
 U drh
-Z 3323dfe512cf86b69d178e38ebdbf07d
+Z cc6709d698c915cec8c5cbd42f8301c1
