@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing built-in functions.
 #
-# $Id: func.test,v 1.46 2006/02/09 17:47:42 drh Exp $
+# $Id: func.test,v 1.47 2006/02/09 22:13:42 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -551,7 +551,9 @@ do_test func-18.10 {
   }
 } 0
 
-# Ticket #1669: If an integer SUM overflows, throw an error, thus
+# Ticket #1669, #1670: I am told that if an integer overflow occurs
+# during a sum that the result should be an error.  This strikes me
+# as being brittle.  So I'm not doing it that way.
 # making the SQL-standard version SUM() even more useless than it
 # was before.  
 #
@@ -563,11 +565,11 @@ do_test func-18.11 {
   }
 } integer
 do_test func-18.12 {
-  catchsql {
+  execsql {
     INSERT INTO t6 VALUES(1<<62);
     SELECT sum(x) - ((1<<62)*2.0+1) from t6;
   }
-} {1 {integer overflow}}
+} {0.0}
 do_test func-18.13 {
   execsql {
     SELECT total(x) - ((1<<62)*2.0+1) FROM t6

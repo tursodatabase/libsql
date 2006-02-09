@@ -354,9 +354,6 @@ int Md5_Init(Tcl_Interp *interp){
 }
 
 /*
-** 
-
-/*
 ** During testing, the special md5sum() aggregate function is available.
 ** inside SQLite.  The following routines implement that function.
 */

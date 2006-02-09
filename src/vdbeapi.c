@@ -74,6 +74,7 @@ const void *sqlite3_value_text16le(sqlite3_value *pVal){
 int sqlite3_value_type(sqlite3_value* pVal){
   return pVal->type;
 }
+/* sqlite3_value_numeric_type() defined in vdbe.c */
 
 /**************************** sqlite3_result_  *******************************
 ** The following routines are used by user-defined functions to specify
@@ -468,6 +469,13 @@ const void *sqlite3_column_text16(sqlite3_stmt *pStmt, int i){
 int sqlite3_column_type(sqlite3_stmt *pStmt, int i){
   return sqlite3_value_type( columnMem(pStmt,i) );
 }
+
+/* The following function is experimental and subject to change or
+** removal */
+/*int sqlite3_column_numeric_type(sqlite3_stmt *pStmt, int i){
+**  return sqlite3_value_numeric_type( columnMem(pStmt,i) );
+**}
+*/
 
 /*
 ** Convert the N-th element of pStmt->pColName[] into a string using

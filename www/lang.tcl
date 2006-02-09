@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the lang-*.html files.
 #
-set rcsid {$Id: lang.tcl,v 1.107 2006/01/30 23:04:52 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.108 2006/02/09 22:13:42 drh Exp $}
 source common.tcl
 
 if {[llength $argv]>0} {
@@ -1366,7 +1366,10 @@ values in column X.
 <tr>
 <td valign="top" align="right" width=120>avg(<i>X</i>)</td>
 <td valign="top">Return the average value of all non-NULL <i>X</i> within a
-group.  Non-numeric values are interpreted as 0.</td>
+group.  String and BLOB values that do not look like numbers are
+interpreted as 0.
+The result of avg() is always a floating point value even if all
+inputs are integers. </p></td>
 </tr>
 
 <tr>
@@ -1391,15 +1394,23 @@ if all values in the group are NULL.</td>
 
 <tr>
 <td valign="top" align="right">sum(<i>X</i>)<br>total(<i>X</i>)</td>
-<td valign="top">Return the numeric sum of all numeric values in the group.
-   If there are no input rows or all values are NULL, then sum() returns
-   NULL but total() returns zero.
-   NULL is not a helpful result in that case (the correct answer should be
-   zero) but the SQL standard requires that behavior from sum() and that is how 
-   most other SQL database engines implement sum() so SQLite does it that way
-   in order to be compatible.   The non-standard total() function is provided
-   as a convenient way
-   to work around this design problem in the SQL language.</td>
+<td valign="top">Return the numeric sum of all non-NULL values in the group.
+   If there are no non-NULL input rows then sum() returns
+   NULL but total() returns 0.0.
+   NULL is not normally a helpful result for the sum of no rows
+   but the SQL standard requires it and most other
+   SQL database engines implement sum() that way so SQLite does it in the
+   same way in order to be compatible.   The non-standard total() function
+   is provided as a convenient way to work around this design problem
+   in the SQL language.</p>
+
+   <p>The result of total() is always a floating point value.
+   The result of sum() is an integer value if all non-NULL inputs are integers
+   and the sum is exact.  If any input to sum() is neither an integer or
+   a NULL or if the
+   an integer overflow occurs at any point during the computation,
+   then sum() returns a floating point value
+   which might be an approximation to the true sum.</td>
 </tr>
 </table>
 }

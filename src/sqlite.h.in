@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.159 2006/02/09 18:35:30 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.160 2006/02/09 22:13:42 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -898,6 +898,7 @@ sqlite_int64 sqlite3_column_int64(sqlite3_stmt*, int iCol);
 const unsigned char *sqlite3_column_text(sqlite3_stmt*, int iCol);
 const void *sqlite3_column_text16(sqlite3_stmt*, int iCol);
 int sqlite3_column_type(sqlite3_stmt*, int iCol);
+int sqlite3_column_numeric_type(sqlite3_stmt*, int iCol);
 
 /*
 ** The sqlite3_finalize() function is called to delete a compiled
@@ -1005,6 +1006,7 @@ const void *sqlite3_value_text16(sqlite3_value*);
 const void *sqlite3_value_text16le(sqlite3_value*);
 const void *sqlite3_value_text16be(sqlite3_value*);
 int sqlite3_value_type(sqlite3_value*);
+int sqlite3_value_numeric_type(sqlite3_value*);
 
 /*
 ** Aggregate functions use the following routine to allocate

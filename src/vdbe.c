@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.541 2006/01/31 19:31:44 drh Exp $
+** $Id: vdbe.c,v 1.542 2006/02/09 22:13:42 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -190,6 +190,31 @@ static Cursor *allocateCursor(Vdbe *p, int iCur, int iDb){
 }
 
 /*
+** Try to convert a value into a numeric representation if we can
+** do so without loss of information.  In other words, if the string
+** looks like a number, convert it into a number.  If it does not
+** look like a number, leave it alone.
+*/
+static void applyNumericAffinity(Mem *pRec){
+  if( (pRec->flags & (MEM_Real|MEM_Int))==0 ){
+    int realnum;
+    sqlite3VdbeMemNulTerminate(pRec);
+    if( (pRec->flags&MEM_Str)
+         && sqlite3IsNumber(pRec->z, &realnum, pRec->enc) ){
+      i64 value;
+      sqlite3VdbeChangeEncoding(pRec, SQLITE_UTF8);
+      if( !realnum && sqlite3atoi64(pRec->z, &value) ){
+        sqlite3VdbeMemRelease(pRec);
+        pRec->i = value;
+        pRec->flags = MEM_Int;
+      }else{
+        sqlite3VdbeMemRealify(pRec);
+      }
+    }
+  }
+}
+
+/*
 ** Processing is determine by the affinity parameter:
 **
 ** SQLITE_AFF_INTEGER:
@@ -220,29 +245,26 @@ static void applyAffinity(Mem *pRec, char affinity, u8 enc){
   }else if( affinity!=SQLITE_AFF_NONE ){
     assert( affinity==SQLITE_AFF_INTEGER || affinity==SQLITE_AFF_REAL
              || affinity==SQLITE_AFF_NUMERIC );
-    if( 0==(pRec->flags&(MEM_Real|MEM_Int)) ){
-      /* pRec does not have a valid integer or real representation. 
-      ** Attempt a conversion if pRec has a string representation and
-      ** it looks like a number.
-      */
-      int realnum;
-      sqlite3VdbeMemNulTerminate(pRec);
-      if( (pRec->flags&MEM_Str)
-           && sqlite3IsNumber(pRec->z, &realnum, pRec->enc) ){
-        i64 value;
-        sqlite3VdbeChangeEncoding(pRec, SQLITE_UTF8);
-        if( !realnum && sqlite3atoi64(pRec->z, &value) ){
-          sqlite3VdbeMemRelease(pRec);
-          pRec->i = value;
-          pRec->flags = MEM_Int;
-        }else{
-          sqlite3VdbeMemNumerify(pRec);
-        }
-      }
-    }else if( pRec->flags & MEM_Real ){
+    applyNumericAffinity(pRec);
+    if( pRec->flags & MEM_Real ){
       sqlite3VdbeIntegerAffinity(pRec);
     }
   }
+}
+
+/*
+** Try to convert the type of a function argument or a result column
+** into a numeric representation.  Use either INTEGER or REAL whichever
+** is appropriate.  But only do the conversion if it is possible without
+** loss of information and return the revised type of the argument.
+**
+** This is an EXPERIMENTAL api and is subject to change or removal.
+*/
+int sqlite3_value_numeric_type(sqlite3_value *pVal){
+  Mem *pMem = (Mem*)pVal;
+  applyNumericAffinity(pMem);
+  storeTypeInfo(pMem, 0);
+  return pMem->type;
 }
 
 /*
