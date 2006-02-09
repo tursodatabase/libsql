@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.203 2006/01/24 10:58:22 danielk1977 Exp $
+** $Id: test1.c,v 1.204 2006/02/09 13:43:29 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -1018,6 +1018,61 @@ static int test_libversion_number(
   Tcl_SetObjResult(interp, Tcl_NewIntObj(sqlite3_libversion_number()));
   return TCL_OK;
 }
+
+/*
+** Usage: sqlite3_table_column_metadata DB dbname tblname colname
+**
+*/
+#ifdef SQLITE_ENABLE_COLUMN_METADATA
+static int test_table_column_metadata(
+  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  sqlite3 *db;
+  const char *zDb;
+  const char *zTbl;
+  const char *zCol;
+  int rc;
+  Tcl_Obj *pRet;
+
+  const char *zDatatype;
+  const char *zCollseq;
+  int notnull;
+  int primarykey;
+  int autoincrement;
+
+  if( objc!=5 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB dbname tblname colname");
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  zDb = Tcl_GetString(objv[2]);
+  zTbl = Tcl_GetString(objv[3]);
+  zCol = Tcl_GetString(objv[4]);
+
+  if( strlen(zDb)==0 ) zDb = 0;
+
+  rc = sqlite3_table_column_metadata(db, zDb, zTbl, zCol, 
+      &zDatatype, &zCollseq, &notnull, &primarykey, &autoincrement);
+
+  if( rc!=SQLITE_OK ){
+    Tcl_AppendResult(interp, sqlite3_errmsg(db), 0);
+    return TCL_ERROR;
+  }
+
+  pRet = Tcl_NewObj();
+  Tcl_ListObjAppendElement(0, pRet, Tcl_NewStringObj(zDatatype, -1));
+  Tcl_ListObjAppendElement(0, pRet, Tcl_NewStringObj(zCollseq, -1));
+  Tcl_ListObjAppendElement(0, pRet, Tcl_NewIntObj(notnull));
+  Tcl_ListObjAppendElement(0, pRet, Tcl_NewIntObj(primarykey));
+  Tcl_ListObjAppendElement(0, pRet, Tcl_NewIntObj(autoincrement));
+  Tcl_SetObjResult(interp, pRet);
+
+  return TCL_OK;
+}
+#endif
 
 /*
 ** Usage:  sqlite_abort
@@ -3210,6 +3265,12 @@ static void set_options(Tcl_Interp *interp){
   Tcl_SetVar2(interp, "sqlite_options", "check", "1", TCL_GLOBAL_ONLY);
 #endif
 
+#ifdef SQLITE_ENABLE_COLUMN_METADATA
+  Tcl_SetVar2(interp, "sqlite_options", "columnmetadata", "1", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "columnmetadata", "0", TCL_GLOBAL_ONLY);
+#endif
+
 #ifdef SQLITE_OMIT_COMPLETE
   Tcl_SetVar2(interp, "sqlite_options", "complete", "0", TCL_GLOBAL_ONLY);
 #else
@@ -3542,6 +3603,9 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_enable_shared_cache", test_enable_shared, 0  },
 #endif
      { "sqlite3_libversion_number", test_libversion_number, 0  },
+#ifdef SQLITE_ENABLE_COLUMN_METADATA
+     { "sqlite3_table_column_metadata", test_table_column_metadata, 0  },
+#endif
   };
   static int bitmask_size = sizeof(Bitmask)*8;
   int i;

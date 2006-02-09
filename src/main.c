@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.333 2006/02/01 13:50:42 drh Exp $
+** $Id: main.c,v 1.334 2006/02/09 13:43:29 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1117,3 +1117,117 @@ void sqlite3_thread_cleanup(void){
     sqlite3OsThreadSpecificData(-1);
   }
 }
+
+/*
+** Return meta information about a specific column of a database table.
+** See comment in sqlite3.h (sqlite.h.in) for details.
+*/
+#ifdef SQLITE_ENABLE_COLUMN_METADATA
+int sqlite3_table_column_metadata(
+  sqlite3 *db,                /* Connection handle */
+  const char *zDbName,        /* Database name or NULL */
+  const char *zTableName,     /* Table name */
+  const char *zColumnName,    /* Column name */
+  char const **pzDataType,    /* OUTPUT: Declared data type */
+  char const **pzCollSeq,     /* OUTPUT: Collation sequence name */
+  int *pNotNull,              /* OUTPUT: True if NOT NULL constraint exists */
+  int *pPrimaryKey,           /* OUTPUT: True if column part of PK */
+  int *pAutoinc               /* OUTPUT: True if colums is auto-increment */
+){
+  int rc;
+  char *zErrMsg = 0;
+  Table *pTab = 0;
+  Column *pCol = 0;
+  int iCol;
+
+  char const *zDataType = 0;
+  char const *zCollSeq = 0;
+  int notnull = 0;
+  int primarykey = 0;
+  int autoinc = 0;
+
+  /* Ensure the database schema has been loaded */
+  if( sqlite3SafetyOn(db) ){
+    return SQLITE_MISUSE;
+  }
+  rc = sqlite3Init(db, &zErrMsg);
+  if( SQLITE_OK!=rc ){
+    goto error_out;
+  }
+
+  /* Locate the table in question */
+  pTab = sqlite3FindTable(db, zTableName, zDbName);
+  if( !pTab || pTab->pSelect ){
+    pTab = 0;
+    goto error_out;
+  }
+
+  /* Find the column for which info is requested */
+  if( sqlite3IsRowid(zColumnName) ){
+    iCol = pTab->iPKey;
+    if( iCol>=0 ){
+      pCol = &pTab->aCol[iCol];
+    }
+  }else{
+    for(iCol=0; iCol<pTab->nCol; iCol++){
+      pCol = &pTab->aCol[iCol];
+      if( 0==sqlite3StrICmp(pCol->zName, zColumnName) ){
+        break;
+      }
+    }
+    if( iCol==pTab->nCol ){
+      pTab = 0;
+      goto error_out;
+    }
+  }
+
+  /* The following block stores the meta information that will be returned
+  ** to the caller in local variables zDataType, zCollSeq, notnull, primarykey
+  ** and autoinc. At this point there are two possibilities:
+  ** 
+  **     1. The specified column name was rowid", "oid" or "_rowid_" 
+  **        and there is no explicitly declared IPK column. 
+  **
+  **     2. The table is not a view and the column name identified an 
+  **        explicitly declared column. Copy meta information from *pCol.
+  */ 
+  if( pCol ){
+    zDataType = pCol->zType;
+    zCollSeq = pCol->zColl;
+    notnull = (pCol->notNull?1:0);
+    primarykey  = (pCol->isPrimKey?1:0);
+    autoinc = ((pTab->iPKey==iCol && pTab->autoInc)?1:0);
+  }else{
+    zDataType = "INTEGER";
+    primarykey = 1;
+  }
+  if( !zCollSeq ){
+    zCollSeq = "BINARY";
+  }
+
+error_out:
+  if( sqlite3SafetyOff(db) ){
+    rc = SQLITE_MISUSE;
+  }
+
+  /* Whether the function call succeeded or failed, set the output parameters
+  ** to whatever their local counterparts contain. If an error did occur,
+  ** this has the effect of zeroing all output parameters.
+  */
+  if( pzDataType ) *pzDataType = zDataType;
+  if( pzCollSeq ) *pzCollSeq = zCollSeq;
+  if( pNotNull ) *pNotNull = notnull;
+  if( pPrimaryKey ) *pPrimaryKey = primarykey;
+  if( pAutoinc ) *pAutoinc = autoinc;
+
+  if( SQLITE_OK==rc && !pTab ){
+    sqlite3SetString(&zErrMsg, "no such table column: ", zTableName, ".", 
+        zColumnName, 0);
+    rc = SQLITE_ERROR;
+  }
+  sqlite3Error(db, rc, (zErrMsg?"%s":0), zErrMsg);
+  sqliteFree(zErrMsg);
+  return sqlite3ApiExit(db, rc);
+}
+#endif
+

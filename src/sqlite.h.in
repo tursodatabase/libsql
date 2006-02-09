@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.157 2006/01/31 20:49:13 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.158 2006/02/09 13:43:29 danielk1977 Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1369,6 +1369,72 @@ void sqlite3_soft_heap_limit(int);
 ** prior to killing off a thread.
 */
 void sqlite3_thread_cleanup(void);
+
+/*
+** Return meta information about a specific column of a specific database
+** table accessible using the connection handle passed as the first function 
+** argument.
+**
+** The column is identified by the second, third and fourth parameters to 
+** this function. The second parameter is either the name of the database
+** (i.e. "main", "temp" or an attached database) containing the specified
+** table or NULL. If it is NULL, then all attached databases are searched
+** for the table using the same algorithm as the database engine uses to 
+** resolve unqualified table references.
+**
+** The third and fourth parameters to this function are the table and column 
+** name of the desired column, respectively. Neither of these parameters 
+** may be NULL.
+**
+** Meta information is returned by writing to the memory locations passed as
+** the 5th and subsequent parameters to this function. Any of these 
+** arguments may be NULL, in which case the corresponding element of meta 
+** information is ommitted.
+**
+** Parameter     Output Type      Description
+** -----------------------------------
+**
+**   5th         const char*      Data type
+**   6th         const char*      Name of the default collation sequence 
+**   7th         int              True if the column has a NOT NULL constraint
+**   8th         int              True if the column is part of the PRIMARY KEY
+**   9th         int              True if the column is AUTOINCREMENT
+**
+**
+** The memory pointed to by the character pointers returned for the 
+** declaration type and collation sequence is valid only until the next 
+** call to any sqlite API function.
+**
+** If the specified table is actually a view, then an error is returned.
+**
+** If the specified column is "rowid", "oid" or "_rowid_" and an 
+** INTEGER PRIMARY KEY column has been explicitly declared, then the output 
+** parameters are set for the explicitly declared column. If there is no
+** explicitly declared IPK column, then the output parameters are set as 
+** follows:
+**
+**     data type: "INTEGER"
+**     collation sequence: "BINARY"
+**     not null: 0
+**     primary key: 1
+**     auto increment: 0
+**
+** This function may load one or more schemas from database files. If an
+** error occurs during this process, or if the requested table or column
+** cannot be found, an SQLITE error code is returned and an error message
+** left in the database handle (to be retrieved using sqlite3_errmsg()).
+*/
+int sqlite3_table_column_metadata(
+  sqlite3 *db,                /* Connection handle */
+  const char *zDbName,        /* Database name or NULL */
+  const char *zTableName,     /* Table name */
+  const char *zColumnName,    /* Column name */
+  char const **pzDataType,    /* OUTPUT: Declared data type */
+  char const **pzCollSeq,     /* OUTPUT: Collation sequence name */
+  int *pNotNull,              /* OUTPUT: True if NOT NULL constraint exists */
+  int *pPrimaryKey,           /* OUTPUT: True if column part of PK */
+  int *pAutoinc               /* OUTPUT: True if colums is auto-increment */
+);
 
 /*
 ** Undo the hack that converts floating point types to integer for
