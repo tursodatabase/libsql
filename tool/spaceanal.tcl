@@ -124,6 +124,7 @@ set sql {
   SELECT 'sqlite_master', 1
   ORDER BY 1
 }
+set wideZero [expr {10000000000 - 10000000000}]
 foreach {name rootpage} [db eval $sql] {
   puts stderr "Analyzing table $name..."
 
@@ -131,18 +132,18 @@ foreach {name rootpage} [db eval $sql] {
   # btree cursor $cursor. Statistics related to table $name are accumulated in
   # the following variables:
   #
-  set total_payload 0        ;# Payload space used by all entries
-  set total_ovfl 0           ;# Payload space on overflow pages
-  set unused_int 0           ;# Unused space on interior nodes
-  set unused_leaf 0          ;# Unused space on leaf nodes
-  set unused_ovfl 0          ;# Unused space on overflow pages
-  set cnt_ovfl 0             ;# Number of entries that use overflows
-  set cnt_leaf_entry 0       ;# Number of leaf entries
-  set cnt_int_entry 0        ;# Number of interor entries
-  set mx_payload 0           ;# Maximum payload size
-  set ovfl_pages 0           ;# Number of overflow pages used
-  set leaf_pages 0           ;# Number of leaf pages
-  set int_pages 0            ;# Number of interior pages
+  set total_payload $wideZero        ;# Payload space used by all entries
+  set total_ovfl $wideZero           ;# Payload space on overflow pages
+  set unused_int $wideZero           ;# Unused space on interior nodes
+  set unused_leaf $wideZero          ;# Unused space on leaf nodes
+  set unused_ovfl $wideZero          ;# Unused space on overflow pages
+  set cnt_ovfl $wideZero             ;# Number of entries that use overflows
+  set cnt_leaf_entry $wideZero       ;# Number of leaf entries
+  set cnt_int_entry $wideZero        ;# Number of interor entries
+  set mx_payload $wideZero           ;# Maximum payload size
+  set ovfl_pages $wideZero           ;# Number of overflow pages used
+  set leaf_pages $wideZero           ;# Number of leaf pages
+  set int_pages $wideZero            ;# Number of interior pages
 
   # As the btree is traversed, the array variable $seen($pgno) is set to 1
   # the first time page $pgno is encountered.
@@ -268,15 +269,15 @@ foreach {name tbl_name rootpage} [db eval $sql] {
   # btree cursor $cursor. Statistics related to index $name are accumulated in
   # the following variables:
   #
-  set total_payload 0        ;# Payload space used by all entries
-  set total_ovfl 0           ;# Payload space on overflow pages
-  set unused_leaf 0          ;# Unused space on leaf nodes
-  set unused_ovfl 0          ;# Unused space on overflow pages
-  set cnt_ovfl 0             ;# Number of entries that use overflows
-  set cnt_leaf_entry 0       ;# Number of leaf entries
-  set mx_payload 0           ;# Maximum payload size
-  set ovfl_pages 0           ;# Number of overflow pages used
-  set leaf_pages 0           ;# Number of leaf pages
+  set total_payload $wideZero        ;# Payload space used by all entries
+  set total_ovfl $wideZero           ;# Payload space on overflow pages
+  set unused_leaf $wideZero          ;# Unused space on leaf nodes
+  set unused_ovfl $wideZero          ;# Unused space on overflow pages
+  set cnt_ovfl $wideZero             ;# Number of entries that use overflows
+  set cnt_leaf_entry $wideZero       ;# Number of leaf entries
+  set mx_payload $wideZero           ;# Maximum payload size
+  set ovfl_pages $wideZero           ;# Number of overflow pages used
+  set leaf_pages $wideZero           ;# Number of leaf pages
 
   # As the btree is traversed, the array variable $seen($pgno) is set to 1
   # the first time page $pgno is encountered.
