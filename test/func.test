@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing built-in functions.
 #
-# $Id: func.test,v 1.45 2006/02/09 13:38:21 drh Exp $
+# $Id: func.test,v 1.46 2006/02/09 17:47:42 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -513,30 +513,32 @@ do_test func-18.2 {
 
 # The sum of nothing is NULL.  But the sum of all NULLs is NULL.
 #
+# The TOTAL of nothing is 0.0.
+#
 do_test func-18.3 {
   execsql {
     DELETE FROM t5;
-    SELECT sum(x) FROM t5;
+    SELECT sum(x), total(x) FROM t5;
   }
-} {{}}
+} {{} 0.0}
 do_test func-18.4 {
   execsql {
     INSERT INTO t5 VALUES(NULL);
-    SELECT sum(x) FROM t5
+    SELECT sum(x), total(x) FROM t5
   }
-} {{}}
+} {{} 0.0}
 do_test func-18.5 {
   execsql {
     INSERT INTO t5 VALUES(NULL);
-    SELECT sum(x) FROM t5
+    SELECT sum(x), total(x) FROM t5
   }
-} {{}}
+} {{} 0.0}
 do_test func-18.6 {
   execsql {
     INSERT INTO t5 VALUES(123);
-    SELECT sum(x) FROM t5
+    SELECT sum(x), total(x) FROM t5
   }
-} {123}
+} {123 123.0}
 
 # Ticket #1664: 64-bit overflow in sum()
 #
@@ -548,5 +550,29 @@ do_test func-18.10 {
     SELECT sum(x) - ((1<<62)+1) from t6;
   }
 } 0
+
+# Ticket #1669: If an integer SUM overflows, throw an error, thus
+# making the SQL-standard version SUM() even more useless than it
+# was before.  
+#
+# The non-standard TOTAL() function continues to give a helpful result.
+#
+do_test func-18.11 {
+  execsql {
+    SELECT typeof(sum(x)) FROM t6
+  }
+} integer
+do_test func-18.12 {
+  catchsql {
+    INSERT INTO t6 VALUES(1<<62);
+    SELECT sum(x) - ((1<<62)*2.0+1) from t6;
+  }
+} {1 {integer overflow}}
+do_test func-18.13 {
+  execsql {
+    SELECT total(x) - ((1<<62)*2.0+1) FROM t6
+  }
+} 0.0
+
 
 finish_test
