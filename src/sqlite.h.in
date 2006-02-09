@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.158 2006/02/09 13:43:29 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.159 2006/02/09 18:35:30 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -981,9 +981,8 @@ int sqlite3_create_function16(
 );
 
 /*
-** The next routine returns the number of calls to xStep for a particular
-** aggregate function instance.  The current call to xStep counts so this
-** routine always returns at least 1.
+** This function is deprecated.  Do not use it.  It continues to exist
+** so as not to break legacy code.  But new code should avoid using it.
 */
 int sqlite3_aggregate_count(sqlite3_context*);
 

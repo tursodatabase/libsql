@@ -335,9 +335,10 @@ void sqlite3_set_auxdata(
 ** Return the number of times the Step function of a aggregate has been 
 ** called.
 **
-** This routine is defined here in vdbe.c because it depends on knowing
-** the internals of the sqlite3_context structure which is only defined in
-** this source file.
+** This function is deprecated.  Do not use it for new code.  It is
+** provide only to avoid breaking legacy code.  New aggregate function
+** implementations should keep their own counts within their aggregate
+** context.
 */
 int sqlite3_aggregate_count(sqlite3_context *p){
   assert( p && p->pFunc && p->pFunc->xStep );

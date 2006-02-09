@@ -45,11 +45,12 @@
 #endif
 
 struct Context {
+  int isInit;
   uint32 buf[4];
   uint32 bits[2];
   unsigned char in[64];
 };
-typedef char MD5Context[88];
+typedef struct Context MD5Context;
 
 /*
  * Note: this code is harmless on little-endian machines.
@@ -166,8 +167,8 @@ static void MD5Transform(uint32 buf[4], const uint32 in[16]){
  * Start MD5 accumulation.  Set bit count to 0 and buffer to mysterious
  * initialization constants.
  */
-static void MD5Init(MD5Context *pCtx){
-        struct Context *ctx = (struct Context *)pCtx;
+static void MD5Init(MD5Context *ctx){
+	ctx->isInit = 1;
         ctx->buf[0] = 0x67452301;
         ctx->buf[1] = 0xefcdab89;
         ctx->buf[2] = 0x98badcfe;
@@ -353,6 +354,9 @@ int Md5_Init(Tcl_Interp *interp){
 }
 
 /*
+** 
+
+/*
 ** During testing, the special md5sum() aggregate function is available.
 ** inside SQLite.  The following routines implement that function.
 */
@@ -362,7 +366,7 @@ static void md5step(sqlite3_context *context, int argc, sqlite3_value **argv){
   if( argc<1 ) return;
   p = sqlite3_aggregate_context(context, sizeof(*p));
   if( p==0 ) return;
-  if( sqlite3_aggregate_count(context)==1 ){
+  if( !p->isInit ){
     MD5Init(p);
   }
   for(i=0; i<argc; i++){

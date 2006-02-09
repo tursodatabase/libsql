@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.119 2006/02/09 17:47:42 drh Exp $
+** $Id: func.c,v 1.120 2006/02/09 18:35:30 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -818,7 +818,7 @@ static void test_error(
 typedef struct SumCtx SumCtx;
 struct SumCtx {
   LONGDOUBLE_TYPE sum;    /* Sum of terms */
-  u32 cnt;                /* Number of elements summed */
+  i64 cnt;                /* Number of elements summed */
   u8 seenFloat;   /* True if there has been any floating point value */
 };
 
@@ -871,17 +871,6 @@ static void totalFinalize(sqlite3_context *context){
   p = sqlite3_aggregate_context(context, 0);
   sqlite3_result_double(context, p ? p->sum : 0.0);
 }
-
-/*
-** An instance of the following structure holds the context of a
-** variance or standard deviation computation.
-*/
-typedef struct StdDevCtx StdDevCtx;
-struct StdDevCtx {
-  double sum;     /* Sum of terms */
-  double sum2;    /* Sum of the squares of terms */
-  int cnt;        /* Number of terms counted */
-};
 
 /*
 ** The following structure keeps track of state information for the
