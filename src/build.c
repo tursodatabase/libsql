@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.384 2006/02/05 18:55:20 drh Exp $
+** $Id: build.c,v 1.385 2006/02/10 07:07:14 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2847,6 +2847,7 @@ SrcList *sqlite3SrcListAppend(SrcList *pList, Token *pTable, Token *pDatabase){
   pItem->zName = sqlite3NameFromToken(pTable);
   pItem->zDatabase = sqlite3NameFromToken(pDatabase);
   pItem->iCursor = -1;
+  pItem->isPopulated = 0;
   pList->nSrc++;
   return pList;
 }

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.303 2006/02/10 03:06:10 danielk1977 Exp $
+** $Id: select.c,v 1.304 2006/02/10 07:07:16 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -2865,7 +2865,7 @@ int sqlite3Select(
     int needRestoreContext;
     struct SrcList_item *pItem = &pTabList->a[i];
 
-    if( pItem->pSelect==0 ) continue;
+    if( pItem->pSelect==0 || pItem->isPopulated ) continue;
     if( pItem->zName!=0 ){
       zSavedAuthContext = pParse->zAuthContext;
       pParse->zAuthContext = pItem->zName;
@@ -3259,15 +3259,14 @@ int sqlite3Select(
 
 #ifndef SQLITE_OMIT_SUBQUERY
   /* If this was a subquery, we have now converted the subquery into a
-  ** temporary table.  So delete the subquery structure from the parent
-  ** to prevent this subquery from being evaluated again and to force the
-  ** the use of the temporary table.
+  ** temporary table.  So set the SrcList_item.isPopulated flag to prevent
+  ** this subquery from being evaluated again and to force the use of
+  ** the temporary table.
   */
   if( pParent ){
     assert( pParent->pSrc->nSrc>parentTab );
     assert( pParent->pSrc->a[parentTab].pSelect==p );
-    sqlite3SelectDelete(p);
-    pParent->pSrc->a[parentTab].pSelect = 0;
+    pParent->pSrc->a[parentTab].isPopulated = 1;
   }
 #endif
 

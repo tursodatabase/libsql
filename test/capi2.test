@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi2.test,v 1.29 2006/02/10 03:06:10 danielk1977 Exp $
+# $Id: capi2.test,v 1.30 2006/02/10 07:07:16 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -722,8 +722,65 @@ do_test capi2-12.5 {
 do_test capi2-12.6 {
   check_origins {SELECT (SELECT col2), (SELECT col1) FROM view1}
 } [list {main tab1 col2} {main tab1 col1}]
-db2 close
+do_test capi2-12.7 {
+  check_origins {SELECT * FROM view1}
+} [list {main tab1 col1} {main tab1 col2}]
+do_test capi2-12.8 {
+  check_origins {select * from (select * from view1)}
+} [list {main tab1 col1} {main tab1 col2}]
+do_test capi2-12.9 {
+  check_origins {select * from (select * from (select * from view1))}
+} [list {main tab1 col1} {main tab1 col2}]
+do_test capi2-12.10 {
+  db close
+  sqlite3 db test.db
+  set ::DB [sqlite3_connection_pointer db]
+  check_origins {select * from (select * from (select * from view1))}
+} [list {main tab1 col1} {main tab1 col2}]
+
+# This view will thwart the flattening optimization.
+do_test capi2-13.1 {
+  execsql {
+    CREATE VIEW view2 AS SELECT * FROM tab1 limit 10 offset 10;
+  }
+} {}
+breakpoint
+do_test capi2-13.2 {
+  check_origins {SELECT col2, col1 FROM view2}
+} [list {main tab1 col2} {main tab1 col1}]
+do_test capi2-13.3 {
+  check_origins {SELECT col2 AS hello, col1 AS world FROM view2}
+} [list {main tab1 col2} {main tab1 col1}]
+do_test capi2-13.4 {
+  check_origins {SELECT b, a FROM (SELECT col1 AS a, col2 AS b FROM view2)}
+} [list {main tab1 col2} {main tab1 col1}]
+do_test capi2-13.5 {
+  check_origins {SELECT (SELECT col2 FROM view2), (SELECT col1 FROM view2)}
+} [list {main tab1 col2} {main tab1 col1}]
+do_test capi2-13.6 {
+  check_origins {SELECT (SELECT col2), (SELECT col1) FROM view2}
+} [list {main tab1 col2} {main tab1 col1}]
+do_test capi2-13.7 {
+  check_origins {SELECT * FROM view2}
+} [list {main tab1 col1} {main tab1 col2}]
+do_test capi2-13.8 {
+  check_origins {select * from (select * from view2)}
+} [list {main tab1 col1} {main tab1 col2}]
+do_test capi2-13.9 {
+  check_origins {select * from (select * from (select * from view2))}
+} [list {main tab1 col1} {main tab1 col2}]
+do_test capi2-13.10 {
+  db close
+  sqlite3 db test.db
+  set ::DB [sqlite3_connection_pointer db]
+  check_origins {select * from (select * from (select * from view2))}
+} [list {main tab1 col1} {main tab1 col2}]
+do_test capi2-13.11 {
+  check_origins {select * from (select * from tab1 limit 10 offset 10)}
+} [list {main tab1 col1} {main tab1 col2}]
+
 
 } ;# ifcapable columnmetadata
 
+db2 close
 finish_test

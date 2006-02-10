@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi3.test,v 1.42 2006/02/10 02:27:47 danielk1977 Exp $
+# $Id: capi3.test,v 1.43 2006/02/10 07:07:16 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -308,69 +308,76 @@ proc check_header {STMT test names decltypes} {
 # check_header test1.1 {1 2 3} {"" "" ""}
 #
 proc check_origin_header {STMT test dbs tables cols} {
-  # Use the return value of sqlite3_column_count() to build
-  # a list of column indexes. i.e. If sqlite3_column_count
-  # is 3, build the list {0 1 2}.
-  set ::idxlist [list]
-  set ::numcols [sqlite3_column_count $STMT]
-  for {set i 0} {$i < $::numcols} {incr i} {lappend ::idxlist $i}
+  # If sqlite3_column_origin_name() and friends are not compiled into
+  # this build, this proc is a no-op.
+ifcapable columnmetadata {
 
-  # Database names in UTF-8
-  do_test $test.8 {
-    set cnamelist [list]
-    foreach i $idxlist {
-      lappend cnamelist [sqlite3_column_database_name $STMT $i]
-    } 
-    set cnamelist
-  } $dbs
-
-  # Database names in UTF-16
-  ifcapable {utf16} {
-    do_test $test.9 {
+    # Use the return value of sqlite3_column_count() to build
+    # a list of column indexes. i.e. If sqlite3_column_count
+    # is 3, build the list {0 1 2}.
+    set ::idxlist [list]
+    set ::numcols [sqlite3_column_count $STMT]
+    for {set i 0} {$i < $::numcols} {incr i} {lappend ::idxlist $i}
+  
+    # Database names in UTF-8
+    do_test $test.8 {
       set cnamelist [list]
       foreach i $idxlist {
-        lappend cnamelist [utf8 [sqlite3_column_database_name16 $STMT $i]]
-      }
+        lappend cnamelist [sqlite3_column_database_name $STMT $i]
+      } 
       set cnamelist
     } $dbs
-  }
-
-  # Table names in UTF-8
-  do_test $test.10 {
-    set cnamelist [list]
-    foreach i $idxlist {lappend cnamelist [sqlite3_column_table_name $STMT $i]} 
-    set cnamelist
-  } $tables
-
-  # Table names in UTF-16
-  ifcapable {utf16} {
-    do_test $test.11 {
+  
+    # Database names in UTF-16
+    ifcapable {utf16} {
+      do_test $test.9 {
+        set cnamelist [list]
+        foreach i $idxlist {
+          lappend cnamelist [utf8 [sqlite3_column_database_name16 $STMT $i]]
+        }
+        set cnamelist
+      } $dbs
+    }
+  
+    # Table names in UTF-8
+    do_test $test.10 {
       set cnamelist [list]
       foreach i $idxlist {
-        lappend cnamelist [utf8 [sqlite3_column_table_name16 $STMT $i]]
-      }
+        lappend cnamelist [sqlite3_column_table_name $STMT $i]
+      } 
       set cnamelist
     } $tables
-  }
-
-  # Origin names in UTF-8
-  do_test $test.12 {
-    set cnamelist [list]
-    foreach i $idxlist {
-      lappend cnamelist [sqlite3_column_origin_name $STMT $i]
-    } 
-    set cnamelist
-  } $cols
-
-  # Origin declaration types in UTF-16
-  ifcapable {utf16} {
-    do_test $test.13 {
+  
+    # Table names in UTF-16
+    ifcapable {utf16} {
+      do_test $test.11 {
+        set cnamelist [list]
+        foreach i $idxlist {
+          lappend cnamelist [utf8 [sqlite3_column_table_name16 $STMT $i]]
+        }
+        set cnamelist
+      } $tables
+    }
+  
+    # Origin names in UTF-8
+    do_test $test.12 {
       set cnamelist [list]
       foreach i $idxlist {
-        lappend cnamelist [utf8 [sqlite3_column_origin_name16 $STMT $i]]
-      }
+        lappend cnamelist [sqlite3_column_origin_name $STMT $i]
+      } 
       set cnamelist
     } $cols
+  
+    # Origin declaration types in UTF-16
+    ifcapable {utf16} {
+      do_test $test.13 {
+        set cnamelist [list]
+        foreach i $idxlist {
+          lappend cnamelist [utf8 [sqlite3_column_origin_name16 $STMT $i]]
+        }
+        set cnamelist
+      } $cols
+    }
   }
 }
 
