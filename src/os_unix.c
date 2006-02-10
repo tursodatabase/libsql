@@ -1675,22 +1675,34 @@ int sqlite3UnixSleep(int ms){
 ** inMutex      the nesting depth of the recursive mutex.  The thread
 **              holding mutexMain can read this variable at any time.
 **              But is must hold mutexAux to change this variable.  Other
-**              threads must hold mutexAux to read the variable.
+**              threads must hold mutexAux to read the variable and can
+**              never write.
 **
 ** mutexOwner   The thread id of the thread holding mutexMain.  Same
 **              access rules as for inMutex.
 **
-** mutexOwnerValid   True if the value in mutexOwner is valid.  
+** mutexOwnerValid   True if the value in mutexOwner is valid.  The same
+**                   access rules apply as for inMutex.
 **
 ** mutexMain    The main mutex.  Hold this mutex in order to get exclusive
 **              access to SQLite data structures.
 **
 ** mutexAux     An auxiliary mutex needed to access variables defined above.
 **
+** Mutexes are always acquired in this order: mutexMain mutexAux.   It
+** is not necessary to acquire mutexMain in order to get mutexAux - just
+** do not attempt to acquire them in the reverse order: mutexAux mutexMain.
+** Either get the mutexes with mutexMain first or get mutexAux only.
+**
+** When running on a platform where the three variables inMutex, mutexOwner,
+** and mutexOwnerValid can be set atomically, the mutexAux is not required.
+** On many systems, all three are 32-bit integers and writing to a 32-bit
+** integer is atomic.  I think.  But there are no guarantees.  So it seems
+** safer to protect them using mutexAux.
 */
 static int inMutex = 0;
 #ifdef SQLITE_UNIX_THREADS
-static pthread_t mutexOwner;          /* Thread holding the mutex */
+static pthread_t mutexOwner;          /* Thread holding mutexMain */
 static int mutexOwnerValid = 0;       /* True if mutexOwner is valid */
 static pthread_mutex_t mutexMain = PTHREAD_MUTEX_INITIALIZER; /* The mutex */
 static pthread_mutex_t mutexAux = PTHREAD_MUTEX_INITIALIZER;  /* Aux mutex */
