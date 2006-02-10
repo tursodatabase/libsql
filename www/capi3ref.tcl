@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3ref.tcl,v 1.32 2006/02/09 18:35:30 drh Exp $}
+set rcsid {$Id: capi3ref.tcl,v 1.33 2006/02/10 13:14:21 danielk1977 Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -366,11 +366,10 @@ const void *sqlite3_column_decltype16(sqlite3_stmt*,int);
  The first argument is a prepared SQL statement. If this statement
  is a SELECT statement, the Nth column of the returned result set 
  of the SELECT is a table column then the declared type of the table
- column is returned. If the Nth column of the result set is not at table
+ column is returned. If the Nth column of the result set is not a table
  column, then a NULL pointer is returned. The returned string is 
  UTF-8 encoded for sqlite3_column_decltype() and UTF-16 encoded
- for sqlite3_column_decltype16().
- For example, in the database schema:
+ for sqlite3_column_decltype16(). For example, in the database schema:
 
  <blockquote><pre>
  CREATE TABLE t1(c1 INTEGER);
@@ -379,12 +378,140 @@ const void *sqlite3_column_decltype16(sqlite3_stmt*,int);
  And the following statement compiled:
 
  <blockquote><pre>
- SELECT c1 + 1, 0 FROM t1;
+ SELECT c1 + 1, c1 FROM t1;
  </pre></blockquote>
 
  Then this routine would return the string "INTEGER" for the second
  result column (i==1), and a NULL pointer for the first result column
  (i==0).
+
+ If the following statements were compiled then this routine would
+ return "INTEGER" for the first (only) result column.
+
+ <blockquote><pre>
+ SELECT (SELECT c1) FROM t1;
+ SELECT (SELECT c1 FROM t1);
+ SELECT c1 FROM (SELECT c1 FROM t1);
+ SELECT * FROM (SELECT c1 FROM t1);
+ SELECT * FROM (SELECT * FROM t1);
+ </pre></blockquote>
+}
+
+api {} {
+  int sqlite3_table_column_metadata(
+    sqlite3 *db,                /* Connection handle */
+    const char *zDbName,        /* Database name or NULL */
+    const char *zTableName,     /* Table name */
+    const char *zColumnName,    /* Column name */
+    char const **pzDataType,    /* OUTPUT: Declared data type */
+    char const **pzCollSeq,     /* OUTPUT: Collation sequence name */
+    int *pNotNull,              /* OUTPUT: True if NOT NULL constraint exists */
+    int *pPrimaryKey,           /* OUTPUT: True if column part of PK */
+    int *pAutoinc               /* OUTPUT: True if colums is auto-increment */
+  );
+} {
+ This routine is used to obtain meta information about a specific column of a
+ specific database table accessible using the connection handle passed as the
+ first function argument.
+
+ The column is identified by the second, third and fourth parameters to 
+ this function. The second parameter is either the name of the database
+ (i.e. "main", "temp" or an attached database) containing the specified
+ table or NULL. If it is NULL, then all attached databases are searched
+ for the table using the same algorithm as the database engine uses to 
+ resolve unqualified table references.
+
+ The third and fourth parameters to this function are the table and column 
+ name of the desired column, respectively. Neither of these parameters 
+ may be NULL.
+
+ Meta information is returned by writing to the memory locations passed as
+ the 5th and subsequent parameters to this function. Any of these 
+ arguments may be NULL, in which case the corresponding element of meta 
+ information is ommitted.
+
+<pre>
+ Parameter     Output Type      Description
+ -----------------------------------
+   5th         const char*      Declared data type 
+   6th         const char*      Name of the columns default collation sequence 
+   7th         int              True if the column has a NOT NULL constraint
+   8th         int              True if the column is part of the PRIMARY KEY
+   9th         int              True if the column is AUTOINCREMENT
+</pre>
+
+ The memory pointed to by the character pointers returned for the 
+ declaration type and collation sequence is valid only until the next 
+ call to any sqlite API function.
+
+ This function may load one or more schemas from database files. If an
+ error occurs during this process, or if the requested table or column
+ cannot be found, an SQLITE error code is returned and an error message
+ left in the database handle (to be retrieved using sqlite3_errmsg()).
+ Specifying an SQL view instead of a table as the third argument is also
+ considered an error.
+
+ If the specified column is "rowid", "oid" or "_rowid_" and an 
+ INTEGER PRIMARY KEY column has been explicitly declared, then the output 
+ parameters are set for the explicitly declared column. If there is no
+ explicitly declared IPK column, then the data-type is "INTEGER", the
+ collation sequence "BINARY" and the primary-key flag is set. Both
+ the not-null and auto-increment flags are clear.
+
+ This API is only available if the library was compiled with the
+ SQLITE_ENABLE_COLUMN_METADATA preprocessor symbol defined.
+}
+
+api {} {
+const char *sqlite3_column_database_name(sqlite3_stmt *pStmt, int N);
+const void *sqlite3_column_database_name16(sqlite3_stmt *pStmt, int N);
+} {
+If the Nth column returned by statement pStmt is a column reference,
+these functions may be used to access the name of the database (either 
+"main", "temp" or the name of an attached database) that contains
+the column. If the Nth column is not a column reference, NULL is
+returned.
+
+See the description of function sqlite3_column_decltype() for a
+description of exactly which expressions are considered column references.
+
+Function sqlite3_column_database_name() returns a pointer to a UTF-8
+encoded string. sqlite3_column_database_name16() returns a pointer
+to a UTF-16 encoded string. 
+}
+
+api {} {
+const char *sqlite3_column_origin_name(sqlite3_stmt *pStmt, int N);
+const void *sqlite3_column_origin_name16(sqlite3_stmt *pStmt, int N);
+} {
+If the Nth column returned by statement pStmt is a column reference,
+these functions may be used to access the schema name of the referenced 
+column in the database schema. If the Nth column is not a column 
+reference, NULL is returned.
+
+See the description of function sqlite3_column_decltype() for a
+description of exactly which expressions are considered column references.
+
+Function sqlite3_column_origin_name() returns a pointer to a UTF-8
+encoded string. sqlite3_column_origin_name16() returns a pointer
+to a UTF-16 encoded string. 
+}
+
+api {} {
+const char *sqlite3_column_table_name(sqlite3_stmt *pStmt, int N);
+const void *sqlite3_column_table_name16(sqlite3_stmt *pStmt, int N);
+} {
+If the Nth column returned by statement pStmt is a column reference, 
+these functions may be used to access the name of the table that 
+contains the column.  If the Nth column is not a column reference, 
+NULL is returned.
+
+See the description of function sqlite3_column_decltype() for a
+description of exactly which expressions are considered column references.
+
+Function sqlite3_column_table_name() returns a pointer to a UTF-8
+encoded string. sqlite3_column_table_name16() returns a pointer
+to a UTF-16 encoded string. 
 }
 
 api {} {
