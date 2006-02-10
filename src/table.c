@@ -145,6 +145,7 @@ int sqlite3_get_table(
   res.azResult[0] = 0;
   rc = sqlite3_exec(db, zSql, sqlite3_get_table_cb, &res, pzErrMsg);
   if( res.azResult ){
+    assert( sizeof(res.azResult[0])>= sizeof(res.nData) );
     res.azResult[0] = (char*)res.nData;
   }
   if( rc==SQLITE_ABORT ){
