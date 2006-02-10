@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.542 2006/02/09 22:13:42 drh Exp $
+** $Id: vdbe.c,v 1.543 2006/02/10 14:02:07 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1987,6 +1987,7 @@ case OP_Column: {
     u8 *zIdx;        /* Index into header */
     u8 *zEndHdr;     /* Pointer to first byte after the header */
     u32 offset;      /* Offset into the data */
+    int szHdrSz;     /* Size of the header size field at start of record */
     int avail;       /* Number of bytes of available data */
     if( pC && pC->aType ){
       aType = pC->aType;
@@ -2019,7 +2020,8 @@ case OP_Column: {
         pC->aRow = 0;
       }
     }
-    zIdx = (u8 *)GetVarint((u8*)zData, offset);
+    assert( zRec!=0 || avail>=payloadSize || avail>=9 );
+    szHdrSz = GetVarint((u8*)zData, offset);
 
     /* The KeyFetch() or DataFetch() above are fast and will get the entire
     ** record header in most cases.  But they will fail to get the complete
@@ -2034,8 +2036,8 @@ case OP_Column: {
       }
       zData = sMem.z;
     }
-    zEndHdr = (u8 *)zData + offset;
-    zIdx = (u8 *)zData + (int)zIdx;
+    zEndHdr = (u8 *)&zData[offset];
+    zIdx = (u8 *)&zData[szHdrSz];
 
     /* Scan the header and use it to fill in the aType[] and aOffset[]
     ** arrays.  aType[i] will contain the type integer for the i-th
