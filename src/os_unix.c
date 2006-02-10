@@ -1670,13 +1670,30 @@ int sqlite3UnixSleep(int ms){
 }
 
 /*
-** Static variables used for thread synchronization
+** Static variables used for thread synchronization.
+**
+** inMutex      the nesting depth of the recursive mutex.  The thread
+**              holding mutexMain can read this variable at any time.
+**              But is must hold mutexAux to change this variable.  Other
+**              threads must hold mutexAux to read the variable.
+**
+** mutexOwner   The thread id of the thread holding mutexMain.  Same
+**              access rules as for inMutex.
+**
+** mutexOwnerValid   True if the value in mutexOwner is valid.  
+**
+** mutexMain    The main mutex.  Hold this mutex in order to get exclusive
+**              access to SQLite data structures.
+**
+** mutexAux     An auxiliary mutex needed to access variables defined above.
+**
 */
 static int inMutex = 0;
 #ifdef SQLITE_UNIX_THREADS
-static pthread_t mutexOwner;
-static pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
-static pthread_mutex_t mutex2 = PTHREAD_MUTEX_INITIALIZER;
+static pthread_t mutexOwner;          /* Thread holding the mutex */
+static int mutexOwnerValid = 0;       /* True if mutexOwner is valid */
+static pthread_mutex_t mutexMain = PTHREAD_MUTEX_INITIALIZER; /* The mutex */
+static pthread_mutex_t mutexAux = PTHREAD_MUTEX_INITIALIZER;  /* Aux mutex */
 #endif
 
 /*
@@ -1691,25 +1708,34 @@ static pthread_mutex_t mutex2 = PTHREAD_MUTEX_INITIALIZER;
 */
 void sqlite3UnixEnterMutex(){
 #ifdef SQLITE_UNIX_THREADS
-  pthread_mutex_lock(&mutex1);
-  if( inMutex==0 ){
-    pthread_mutex_lock(&mutex2);
+  pthread_mutex_lock(&mutexAux);
+  if( !mutexOwnerValid || !pthread_equal(mutexOwner, pthread_self()) ){
+    pthread_mutex_unlock(&mutexAux);
+    pthread_mutex_lock(&mutexMain);
+    assert( inMutex==0 );
+    assert( !mutexOwnerValid );
+    pthread_mutex_lock(&mutexAux);
     mutexOwner = pthread_self();
+    mutexOwnerValid = 1;
   }
-  pthread_mutex_unlock(&mutex1);
-#endif
   inMutex++;
+  pthread_mutex_unlock(&mutexAux);
+#else
+  inMutex++
+#endif
 }
 void sqlite3UnixLeaveMutex(){
   assert( inMutex>0 );
 #ifdef SQLITE_UNIX_THREADS
-  assert( pthread_equal(mutexOwner, pthread_self()) );
-  pthread_mutex_lock(&mutex1);
+  pthread_mutex_lock(&mutexAux);
   inMutex--;
+  assert( pthread_equal(mutexOwner, pthread_self()) );
   if( inMutex==0 ){
-    pthread_mutex_unlock(&mutex2);
+    assert( mutexOwnerValid );
+    mutexOwnerValid = 0;
+    pthread_mutex_unlock(&mutexMain);
   }
-  pthread_mutex_unlock(&mutex1);
+  pthread_mutex_unlock(&mutexAux);
 #else
   inMutex--;
 #endif
@@ -1718,14 +1744,17 @@ void sqlite3UnixLeaveMutex(){
 /*
 ** Return TRUE if the mutex is currently held.
 **
-** If the thisThreadOnly parameter is true, return true only if the
+** If the thisThrd parameter is true, return true only if the
 ** calling thread holds the mutex.  If the parameter is false, return
 ** true if any thread holds the mutex.
 */
-int sqlite3UnixInMutex(int thisThreadOnly){
+int sqlite3UnixInMutex(int thisThrd){
 #ifdef SQLITE_UNIX_THREADS
-  return inMutex>0 && 
-           (thisThreadOnly==0 || pthread_equal(mutexOwner, pthread_self()));
+  int rc;
+  pthread_mutex_lock(&mutexAux);
+  rc = inMutex>0 && (thisThrd==0 || pthread_equal(mutexOwner,pthread_self()));
+  pthread_mutex_unlock(&mutexAux);
+  return rc;
 #else
   return inMutex>0;
 #endif

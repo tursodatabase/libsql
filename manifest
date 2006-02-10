@@ -1,5 +1,5 @@
-C Add\sa\ssymbol\sP3_TRANSIENT\sto\spass\sto\sVdbeSetColName()\sto\smake\sit\scopy\sthe\sstring\sparameter\sup\sto\sthe\sfirst\s0\sbyte.\s(CVS\s3070)
-D 2006-02-10T03:06:10
+C Fix\sdeadlock\sproblem\sin\sthe\sunix\smutex.\s\sTicket\s#1672.\s(CVS\s3071)
+D 2006-02-10T04:33:12
 F Makefile.in 5d8dff443383918b700e495de42ec65bc1c8865b
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -55,7 +55,7 @@ F src/os.h 93035a0e3b9dd05cdd0aaef32ea28ca28e02fe78
 F src/os_common.h 108cd719c96a2b714b64e02aeabbd40684274e6a
 F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
-F src/os_unix.c dfd3b03ab09a43d50d0fabc3bca7b0796512d088
+F src/os_unix.c 50e51ba8a78e4a26850d77b077f0d43a5036a76c
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c c67a2c46d929cf54c8f80ec5e6079cf684a141a9
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
@@ -351,7 +351,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 82f502cdc1fead3bf7e3190d5c9db3aee6919ed4
-R e8ab349255445085d0fedc02cdd56499
-U danielk1977
-Z 91cde64b2b17550c6eb4505abb4035ed
+P 6ebb8f9bb2f6a3f7fde19267727aa4e2d878a416
+R f2123b74208f8dc7a90c193c43dfdac6
+U drh
+Z 902f2f44199cd95ee9b139b42f49b143
