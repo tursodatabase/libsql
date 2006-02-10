@@ -12,7 +12,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is the sqlite3_table_column_metadata() API.
 #
-# $Id: colmeta.test,v 1.1 2006/02/09 13:43:29 danielk1977 Exp $
+# $Id: colmeta.test,v 1.2 2006/02/10 12:48:55 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -52,7 +52,8 @@ set tests {
   12 {main v1 rowid}             {1 {no such table column: v1.rowid}}
   13 {main abc rowid}            {0 {INTEGER BINARY 0 1 0}}
   14 {main abc3 rowid}           {0 {INTEGER BINARY 0 1 0}}
-  14 {main abc4 rowid}           {0 {INTEGER BINARY 0 1 1}}
+  15 {main abc4 rowid}           {0 {INTEGER BINARY 0 1 1}}
+  16 {main abc d}                {1 {no such table column: abc.d}}
 }
 
 foreach {tn params results} $tests {
@@ -72,6 +73,14 @@ foreach {tn params results} $tests {
     list [catch $tstbody msg] [set msg]
   } $results
 }
+
+do_test colmeta-misuse.1 {
+  db close
+  set rc [catch {
+    sqlite3_table_column_metadata $::DB a b c
+  } msg]
+  list $rc $msg
+} {1 {library routine called out of sequence}}
 
 finish_test
 
