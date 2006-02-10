@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.311 2006/01/24 16:37:58 danielk1977 Exp $
+** $Id: btree.c,v 1.312 2006/02/10 02:27:42 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -411,8 +411,8 @@ struct BtCursor {
 **   The table that this cursor was opened on still exists, but has been 
 **   modified since the cursor was last used. The cursor position is saved
 **   in variables BtCursor.pKey and BtCursor.nKey. When a cursor is in 
-**   this state, restoreOrClearCursorPosition() can be called to attempt to seek 
-**   the cursor to the saved position.
+**   this state, restoreOrClearCursorPosition() can be called to attempt to
+**   seek the cursor to the saved position.
 */
 #define CURSOR_INVALID           0
 #define CURSOR_VALID             1

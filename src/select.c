@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.301 2006/01/24 12:09:19 danielk1977 Exp $
+** $Id: select.c,v 1.302 2006/02/10 02:27:43 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -762,14 +762,31 @@ static void generateSortTail(
 ** Return a pointer to a string containing the 'declaration type' of the
 ** expression pExpr. The string may be treated as static by the caller.
 **
-** If the declaration type is the exact datatype definition extracted from
-** the original CREATE TABLE statement if the expression is a column.
+** The declaration type is the exact datatype definition extracted from the
+** original CREATE TABLE statement if the expression is a column. The
+** declaration type for a ROWID field is INTEGER. Exactly when an expression
+** is considered a column can be complex in the presence of subqueries. The
+** result-set expression in all of the following SELECT statements is 
+** considered a column by this function.
+**
+**   SELECT col FROM tbl;
+**   SELECT (SELECT col FROM tbl;
+**   SELECT (SELECT col FROM tbl);
+**   SELECT abc FROM (SELECT col AS abc FROM tbl);
 ** 
-** The declaration type for an expression is either TEXT, NUMERIC or ANY.
-** The declaration type for a ROWID field is INTEGER.
+** The declaration type for any expression other than a column is NULL.
 */
-static const char *columnType(NameContext *pNC, Expr *pExpr){
-  char const *zType;
+static const char *columnType(
+  NameContext *pNC, 
+  Expr *pExpr,
+  const char **pzOriginDb,
+  const char **pzOriginTab,
+  const char **pzOriginCol
+){
+  char const *zType = 0;
+  char const *zOriginDb = 0;
+  char const *zOriginTab = 0;
+  char const *zOriginCol = 0;
   int j;
   if( pExpr==0 || pNC->pSrcList==0 ) return 0;
 
@@ -781,17 +798,24 @@ static const char *columnType(NameContext *pNC, Expr *pExpr){
 
   switch( pExpr->op ){
     case TK_COLUMN: {
-      Table *pTab = 0;
-      int iCol = pExpr->iColumn;
+      /* The expression is a column. Locate the table the column is being
+      ** extracted from in NameContext.pSrcList. This table may be real
+      ** database table or a subquery.
+      */
+      Table *pTab = 0;            /* Table structure column is extracted from */
+      Select *pS = 0;             /* Select the column is extracted from */
+      int iCol = pExpr->iColumn;  /* Index of column in pTab */
       while( pNC && !pTab ){
         SrcList *pTabList = pNC->pSrcList;
         for(j=0;j<pTabList->nSrc && pTabList->a[j].iCursor!=pExpr->iTable;j++);
         if( j<pTabList->nSrc ){
           pTab = pTabList->a[j].pTab;
+          pS = pTabList->a[j].pSelect;
         }else{
           pNC = pNC->pNext;
         }
       }
+
       if( pTab==0 ){
         /* FIX ME:
         ** This can occurs if you have something like "SELECT new.x;" inside
@@ -806,30 +830,72 @@ static const char *columnType(NameContext *pNC, Expr *pExpr){
         zType = "TEXT";
         break;
       }
+
       assert( pTab );
-      if( iCol<0 ) iCol = pTab->iPKey;
-      assert( iCol==-1 || (iCol>=0 && iCol<pTab->nCol) );
-      if( iCol<0 ){
-        zType = "INTEGER";
-      }else{
-        zType = pTab->aCol[iCol].zType;
+#ifndef SQLITE_OMIT_SUBQUERY
+      if( pS ){
+        /* The "table" is actually a sub-select or a view in the FROM clause
+        ** of the SELECT statement. Return the declaration type and origin
+        ** data for the result-set column of the sub-select.
+        */
+        if( iCol>=0 && iCol<pS->pEList->nExpr ){
+          /* If iCol is less than zero, then the expression requests the
+          ** rowid of the sub-select or view. This expression is legal (see 
+          ** test case misc2.2.2) - it always evaluates to NULL.
+          */
+          NameContext sNC;
+          Expr *p = pS->pEList->a[iCol].pExpr;
+          sNC.pSrcList = pS->pSrc;
+          sNC.pNext = 0;
+          sNC.pParse = pNC->pParse;
+          zType = columnType(&sNC, p, &zOriginDb, &zOriginTab, &zOriginCol); 
+        }
+      }else
+#endif
+      if( pTab->pSchema ){
+        /* A real table */
+        assert( !pS );
+        if( iCol<0 ) iCol = pTab->iPKey;
+        assert( iCol==-1 || (iCol>=0 && iCol<pTab->nCol) );
+        if( iCol<0 ){
+          zType = "INTEGER";
+          zOriginCol = "rowid";
+        }else{
+          zType = pTab->aCol[iCol].zType;
+          zOriginCol = pTab->aCol[iCol].zName;
+        }
+        zOriginTab = pTab->zName;
+        if( pNC->pParse ){
+          int iDb = sqlite3SchemaToIndex(pNC->pParse->db, pTab->pSchema);
+          zOriginDb = pNC->pParse->db->aDb[iDb].zName;
+        }
       }
       break;
     }
 #ifndef SQLITE_OMIT_SUBQUERY
     case TK_SELECT: {
+      /* The expression is a sub-select. Return the declaration type and
+      ** origin info for the single column in the result set of the SELECT
+      ** statement.
+      */
       NameContext sNC;
       Select *pS = pExpr->pSelect;
-      sNC.pSrcList = pExpr->pSelect->pSrc;
+      Expr *p = pS->pEList->a[0].pExpr;
+      sNC.pSrcList = pS->pSrc;
       sNC.pNext = pNC;
-      zType = columnType(&sNC, pS->pEList->a[0].pExpr); 
+      sNC.pParse = pNC->pParse;
+      zType = columnType(&sNC, p, &zOriginDb, &zOriginTab, &zOriginCol); 
       break;
     }
 #endif
-    default:
-      zType = 0;
   }
   
+  if( pzOriginDb ){
+    assert( pzOriginTab && pzOriginCol );
+    *pzOriginDb = zOriginDb;
+    *pzOriginTab = zOriginTab;
+    *pzOriginCol = zOriginCol;
+  }
   return zType;
 }
 
@@ -846,14 +912,27 @@ static void generateColumnTypes(
   int i;
   NameContext sNC;
   sNC.pSrcList = pTabList;
+  sNC.pParse = pParse;
   for(i=0; i<pEList->nExpr; i++){
     Expr *p = pEList->a[i].pExpr;
-    const char *zType = columnType(&sNC, p);
-    if( zType==0 ) continue;
+    const char *zOrigDb = 0;
+    const char *zOrigTab = 0;
+    const char *zOrigCol = 0;
+    const char *zType = columnType(&sNC, p, &zOrigDb, &zOrigTab, &zOrigCol);
+
     /* The vdbe must make it's own copy of the column-type, in case the 
     ** schema is reset before this virtual machine is deleted.
+    **
+    ** TODO: Create some symbol that is better than "-20" to pass to 
+    ** sqlite3VdbeSetColName(). As is this is a ticking bomb. An alternative
+    ** is to pass the length of the string, but that means calling strlen()
+    ** here which consumes code space. By passing a negative value that is
+    ** not P3_DYNAMIC or P3_STATIC, strlen() is called by VdbeSetColName().
     */
-    sqlite3VdbeSetColName(v, i+pEList->nExpr, zType, strlen(zType));
+    sqlite3VdbeSetColName(v, i, COLNAME_DECLTYPE, zType, -20);
+    sqlite3VdbeSetColName(v, i, COLNAME_DATABASE, zOrigDb, -20);
+    sqlite3VdbeSetColName(v, i, COLNAME_TABLE, zOrigTab, -20);
+    sqlite3VdbeSetColName(v, i, COLNAME_COLUMN, zOrigCol, -20);
   }
 }
 
@@ -891,7 +970,7 @@ static void generateColumnNames(
     if( p==0 ) continue;
     if( pEList->a[i].zName ){
       char *zName = pEList->a[i].zName;
-      sqlite3VdbeSetColName(v, i, zName, strlen(zName));
+      sqlite3VdbeSetColName(v, i, COLNAME_NAME, zName, strlen(zName));
       continue;
     }
     if( p->op==TK_COLUMN && pTabList ){
@@ -909,7 +988,7 @@ static void generateColumnNames(
         zCol = pTab->aCol[iCol].zName;
       }
       if( !shortNames && !fullNames && p->span.z && p->span.z[0] ){
-        sqlite3VdbeSetColName(v, i, (char*)p->span.z, p->span.n);
+        sqlite3VdbeSetColName(v, i, COLNAME_NAME, (char*)p->span.z, p->span.n);
       }else if( fullNames || (!shortNames && pTabList->nSrc>1) ){
         char *zName = 0;
         char *zTab;
@@ -917,18 +996,18 @@ static void generateColumnNames(
         zTab = pTabList->a[j].zAlias;
         if( fullNames || zTab==0 ) zTab = pTab->zName;
         sqlite3SetString(&zName, zTab, ".", zCol, (char*)0);
-        sqlite3VdbeSetColName(v, i, zName, P3_DYNAMIC);
+        sqlite3VdbeSetColName(v, i, COLNAME_NAME, zName, P3_DYNAMIC);
       }else{
-        sqlite3VdbeSetColName(v, i, zCol, strlen(zCol));
+        sqlite3VdbeSetColName(v, i, COLNAME_NAME, zCol, strlen(zCol));
       }
     }else if( p->span.z && p->span.z[0] ){
-      sqlite3VdbeSetColName(v, i, (char*)p->span.z, p->span.n);
+      sqlite3VdbeSetColName(v, i, COLNAME_NAME, (char*)p->span.z, p->span.n);
       /* sqlite3VdbeCompressSpace(v, addr); */
     }else{
       char zName[30];
       assert( p->op!=TK_COLUMN || pTabList==0 );
       sprintf(zName, "column%d", i+1);
-      sqlite3VdbeSetColName(v, i, zName, 0);
+      sqlite3VdbeSetColName(v, i, COLNAME_NAME, zName, 0);
     }
   }
   generateColumnTypes(pParse, pTabList, pEList);
@@ -1036,7 +1115,7 @@ Table *sqlite3ResultSetOfSelect(Parse *pParse, char *zTabName, Select *pSelect){
     */
     memset(&sNC, 0, sizeof(sNC));
     sNC.pSrcList = pSelect->pSrc;
-    zType = sqliteStrDup(columnType(&sNC, p));
+    zType = sqliteStrDup(columnType(&sNC, p, 0, 0, 0));
     pCol->zType = zType;
     pCol->affinity = sqlite3ExprAffinity(p);
     pColl = sqlite3ExprCollSeq(pParse, p);
@@ -2783,13 +2862,6 @@ int sqlite3Select(
   v = sqlite3GetVdbe(pParse);
   if( v==0 ) goto select_end;
 
-  /* Identify column names if we will be using them in a callback.  This
-  ** step is skipped if the output is going to some other destination.
-  */
-  if( eDest==SRT_Callback ){
-    generateColumnNames(pParse, pTabList, pEList);
-  }
-
   /* Generate code for all sub-queries in the FROM clause
   */
 #if !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW)
@@ -3217,6 +3289,14 @@ int sqlite3Select(
   ** successful coding of the SELECT.
   */
 select_end:
+
+  /* Identify column names if we will be using them in a callback.  This
+  ** step is skipped if the output is going to some other destination.
+  */
+  if( rc==SQLITE_OK && eDest==SRT_Callback ){
+    generateColumnNames(pParse, pTabList, pEList);
+  }
+
   sqliteFree(sAggInfo.aCol);
   sqliteFree(sAggInfo.aFunc);
   return rc;

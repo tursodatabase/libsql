@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.150 2006/01/23 13:00:38 drh Exp $
+** $Id: tclsqlite.c,v 1.151 2006/02/10 02:27:43 danielk1977 Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -1116,7 +1116,8 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       if( i+1!=nCol ){
         char *zErr;
         zErr = malloc(200 + strlen(zFile));
-        sprintf(zErr,"Error: %s line %d: expected %d columns of data but found %d",
+        sprintf(zErr,
+           "Error: %s line %d: expected %d columns of data but found %d",
            zFile, lineno, nCol, i+1);
         Tcl_AppendResult(interp, zErr, 0);
         free(zErr);

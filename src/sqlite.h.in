@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.160 2006/02/09 22:13:42 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.161 2006/02/10 02:27:43 danielk1977 Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -726,6 +726,27 @@ const char *sqlite3_column_name(sqlite3_stmt*,int);
 const void *sqlite3_column_name16(sqlite3_stmt*,int);
 
 /*
+** The first parameter to the following calls is a compiled SQL statement.
+** These functions return information about the Nth column returned by 
+** the statement, where N is the second function argument.
+**
+** If the Nth column returned by the statement is not a column value,
+** then all of the functions return NULL. Otherwise, the return the 
+** name of the attached database, table and column that the expression
+** extracts a value from.
+**
+** As with all other SQLite APIs, those postfixed with "16" return UTF-16
+** encoded strings, the other functions return UTF-8. The memory containing
+** the returned strings is valid until the statement handle is finalized().
+*/
+const char *sqlite3_column_database_name(sqlite3_stmt*,int);
+const void *sqlite3_column_database_name16(sqlite3_stmt*,int);
+const char *sqlite3_column_table_name(sqlite3_stmt*,int);
+const void *sqlite3_column_table_name16(sqlite3_stmt*,int);
+const char *sqlite3_column_origin_name(sqlite3_stmt*,int);
+const void *sqlite3_column_origin_name16(sqlite3_stmt*,int);
+
+/*
 ** The first parameter is a compiled SQL statement. If this statement
 ** is a SELECT statement, the Nth column of the returned result set 
 ** of the SELECT is a table column then the declared type of the table
@@ -737,7 +758,7 @@ const void *sqlite3_column_name16(sqlite3_stmt*,int);
 **
 ** And the following statement compiled:
 **
-** SELECT c1 + 1, 0 FROM t1;
+** SELECT c1 + 1, c1 FROM t1;
 **
 ** Then this routine would return the string "VARIANT" for the second
 ** result column (i==1), and a NULL pointer for the first result column
@@ -757,7 +778,7 @@ const char *sqlite3_column_decltype(sqlite3_stmt *, int i);
 **
 ** And the following statement compiled:
 **
-** SELECT c1 + 1, 0 FROM t1;
+** SELECT c1 + 1, c1 FROM t1;
 **
 ** Then this routine would return the string "INTEGER" for the second
 ** result column (i==1), and a NULL pointer for the first result column

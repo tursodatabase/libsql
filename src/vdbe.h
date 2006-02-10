@@ -15,7 +15,7 @@
 ** or VDBE.  The VDBE implements an abstract machine that runs a
 ** simple program to access and modify the underlying database.
 **
-** $Id: vdbe.h,v 1.99 2005/09/20 17:42:23 drh Exp $
+** $Id: vdbe.h,v 1.100 2006/02/10 02:27:44 danielk1977 Exp $
 */
 #ifndef _SQLITE_VDBE_H_
 #define _SQLITE_VDBE_H_
@@ -80,6 +80,17 @@ typedef struct VdbeOpList VdbeOpList;
 #define P3_KEYINFO_HANDOFF (-9)
 
 /*
+** The Vdbe.aColName array contains 5n Mem structures, where n is the 
+** number of columns of data returned by the statement.
+*/
+#define COLNAME_NAME     0
+#define COLNAME_DECLTYPE 1
+#define COLNAME_DATABASE 2
+#define COLNAME_TABLE    3
+#define COLNAME_COLUMN   4
+#define COLNAME_N        5      /* Number of COLNAME_xxx symbols */
+
+/*
 ** The following macro converts a relative address in the p2 field
 ** of a VdbeOp structure into a negative number so that 
 ** sqlite3VdbeAddOpList() knows that the address is relative.  Calling
@@ -117,7 +128,7 @@ void sqlite3VdbeTrace(Vdbe*,FILE*);
 int sqlite3VdbeReset(Vdbe*);
 int sqliteVdbeSetVariables(Vdbe*,int,const char**);
 void sqlite3VdbeSetNumCols(Vdbe*,int);
-int sqlite3VdbeSetColName(Vdbe*, int, const char *, int);
+int sqlite3VdbeSetColName(Vdbe*, int, int, const char *, int);
 void sqlite3VdbeCountChanges(Vdbe*);
 sqlite3 *sqlite3VdbeDb(Vdbe*);
 

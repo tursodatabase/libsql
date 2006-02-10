@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi3.test,v 1.41 2006/01/30 22:35:44 drh Exp $
+# $Id: capi3.test,v 1.42 2006/02/10 02:27:47 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -286,8 +286,93 @@ proc check_header {STMT test names decltypes} {
         [sqlite3_column_decltype16 $STMT $numcols]
     } {{} {} {} {} {} {} {} {}}
   }
-
 } 
+
+# This proc is used to test the following API calls:
+#
+# sqlite3_column_origin_name
+# sqlite3_column_origin_name16
+# sqlite3_column_table_name
+# sqlite3_column_table_name16
+# sqlite3_column_database_name
+# sqlite3_column_database_name16
+#
+# $STMT is a compiled SQL statement. $test is a prefix
+# to use for test names within this proc. $names is a list
+# of the column names that should be returned by $STMT.
+# $decltypes is a list of column declaration types for $STMT.
+#
+# Example:
+#
+# set STMT [sqlite3_prepare "SELECT 1, 2, 2;" -1 DUMMY]
+# check_header test1.1 {1 2 3} {"" "" ""}
+#
+proc check_origin_header {STMT test dbs tables cols} {
+  # Use the return value of sqlite3_column_count() to build
+  # a list of column indexes. i.e. If sqlite3_column_count
+  # is 3, build the list {0 1 2}.
+  set ::idxlist [list]
+  set ::numcols [sqlite3_column_count $STMT]
+  for {set i 0} {$i < $::numcols} {incr i} {lappend ::idxlist $i}
+
+  # Database names in UTF-8
+  do_test $test.8 {
+    set cnamelist [list]
+    foreach i $idxlist {
+      lappend cnamelist [sqlite3_column_database_name $STMT $i]
+    } 
+    set cnamelist
+  } $dbs
+
+  # Database names in UTF-16
+  ifcapable {utf16} {
+    do_test $test.9 {
+      set cnamelist [list]
+      foreach i $idxlist {
+        lappend cnamelist [utf8 [sqlite3_column_database_name16 $STMT $i]]
+      }
+      set cnamelist
+    } $dbs
+  }
+
+  # Table names in UTF-8
+  do_test $test.10 {
+    set cnamelist [list]
+    foreach i $idxlist {lappend cnamelist [sqlite3_column_table_name $STMT $i]} 
+    set cnamelist
+  } $tables
+
+  # Table names in UTF-16
+  ifcapable {utf16} {
+    do_test $test.11 {
+      set cnamelist [list]
+      foreach i $idxlist {
+        lappend cnamelist [utf8 [sqlite3_column_table_name16 $STMT $i]]
+      }
+      set cnamelist
+    } $tables
+  }
+
+  # Origin names in UTF-8
+  do_test $test.12 {
+    set cnamelist [list]
+    foreach i $idxlist {
+      lappend cnamelist [sqlite3_column_origin_name $STMT $i]
+    } 
+    set cnamelist
+  } $cols
+
+  # Origin declaration types in UTF-16
+  ifcapable {utf16} {
+    do_test $test.13 {
+      set cnamelist [list]
+      foreach i $idxlist {
+        lappend cnamelist [utf8 [sqlite3_column_origin_name16 $STMT $i]]
+      }
+      set cnamelist
+    } $cols
+  }
+}
 
 # This proc is used to test the following APIs:
 #
@@ -450,11 +535,13 @@ do_test capi3-5.0 {
 } 3
 
 check_header $STMT capi3-5.1 {a b c} {VARINT BLOB VARCHAR(16)}
+check_origin_header $STMT capi3-5.1 {main main main} {t1 t1 t1} {a b c}
 do_test capi3-5.2 {
   sqlite3_step $STMT
 } SQLITE_ROW
 
 check_header $STMT capi3-5.3 {a b c} {VARINT BLOB VARCHAR(16)}
+check_origin_header $STMT capi3-5.3 {main main main} {t1 t1 t1} {a b c}
 check_data $STMT capi3-5.4 {INTEGER INTEGER TEXT} {1 2 3} {1.0 2.0 3.0} {1 2 3}
 
 do_test capi3-5.5 {
@@ -462,6 +549,7 @@ do_test capi3-5.5 {
 } SQLITE_ROW
 
 check_header $STMT capi3-5.6 {a b c} {VARINT BLOB VARCHAR(16)}
+check_origin_header $STMT capi3-5.6 {main main main} {t1 t1 t1} {a b c}
 check_data $STMT capi3-5.7 {TEXT TEXT NULL} {0 0 0} {0.0 0.0 0.0} {one two {}}
 
 do_test capi3-5.8 {
@@ -469,6 +557,7 @@ do_test capi3-5.8 {
 } SQLITE_ROW
 
 check_header $STMT capi3-5.9 {a b c} {VARINT BLOB VARCHAR(16)}
+check_origin_header $STMT capi3-5.9 {main main main} {t1 t1 t1} {a b c}
 check_data $STMT capi3-5.10 {FLOAT FLOAT TEXT} {1 1 1} {1.2 1.3 1.4} {1.2 1.3 1.4}
 
 do_test capi3-5.11 {

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi2.test,v 1.27 2006/01/03 00:33:50 drh Exp $
+# $Id: capi2.test,v 1.28 2006/02/10 02:27:47 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -638,12 +638,89 @@ do_test capi2-9.1 {
   sqlite3_finalize $VM1
 } {SQLITE_OK}
 
+# Test that passing a NULL pointer to sqlite3_finalize() or sqlite3_reset
+# does not cause an error.
 do_test capi2-10.1 {
   sqlite3_finalize 0
 } {SQLITE_OK}
 do_test capi2-10.2 {
   sqlite3_reset 0
 } {SQLITE_OK}
+
+#---------------------------------------------------------------------------
+# The following tests - capi2-11.* - test the "column origin" APIs.
+#
+#   sqlite3_column_origin_name()
+#   sqlite3_column_database_name()
+#   sqlite3_column_table_name()
+#
+
+# This proc uses the database handle $::DB to compile the SQL statement passed
+# as a parameter. The return value of this procedure is a list with one
+# element for each column returned by the compiled statement. Each element of
+# this list is itself a list of length three, consisting of the origin
+# database, table and column for the corresponding returned column.
+proc check_origins {sql} {
+  set ret [list]
+  set ::STMT [sqlite3_prepare $::DB $sql -1 dummy]
+  for {set i 0} {$i < [sqlite3_column_count $::STMT]} {incr i} {
+    lappend ret [list                           \
+      [sqlite3_column_database_name $::STMT $i] \
+      [sqlite3_column_table_name $::STMT $i]    \
+      [sqlite3_column_origin_name $::STMT $i]   \
+    ]
+  }
+  sqlite3_finalize $::STMT
+  return $ret
+}
+do_test capi2-11.1 {
+  execsql {
+    CREATE TABLE tab1(col1, col2);
+  }
+} {}
+do_test capi2-11.2 {
+  check_origins {SELECT col2, col1 FROM tab1}
+} [list {main tab1 col2} {main tab1 col1}]
+do_test capi2-11.3 {
+  check_origins {SELECT col2 AS hello, col1 AS world FROM tab1}
+} [list {main tab1 col2} {main tab1 col1}]
+do_test capi2-11.4 {
+  check_origins {SELECT b, a FROM (SELECT col1 AS a, col2 AS b FROM tab1)}
+} [list {main tab1 col2} {main tab1 col1}]
+do_test capi2-11.5 {
+  check_origins {SELECT (SELECT col2 FROM tab1), (SELECT col1 FROM tab1)}
+} [list {main tab1 col2} {main tab1 col1}]
+do_test capi2-11.6 {
+  check_origins {SELECT (SELECT col2), (SELECT col1) FROM tab1}
+} [list {main tab1 col2} {main tab1 col1}]
+do_test capi2-11.7 {
+  check_origins {SELECT * FROM tab1}
+} [list {main tab1 col1} {main tab1 col2}]
+do_test capi2-11.8 {
+  check_origins {SELECT * FROM (SELECT * FROM tab1)}
+} [list {main tab1 col1} {main tab1 col2}]
+
+do_test capi2-12.1 {
+  execsql {
+    CREATE VIEW view1 AS SELECT * FROM  tab1;
+  }
+} {}
+do_test capi2-12.2 {
+breakpoint
+  check_origins {SELECT col2, col1 FROM view1}
+} [list {main tab1 col2} {main tab1 col1}]
+do_test capi2-12.3 {
+  check_origins {SELECT col2 AS hello, col1 AS world FROM view1}
+} [list {main tab1 col2} {main tab1 col1}]
+do_test capi2-12.4 {
+  check_origins {SELECT b, a FROM (SELECT col1 AS a, col2 AS b FROM view1)}
+} [list {main tab1 col2} {main tab1 col1}]
+do_test capi2-12.5 {
+  check_origins {SELECT (SELECT col2 FROM view1), (SELECT col1 FROM view1)}
+} [list {main tab1 col2} {main tab1 col1}]
+do_test capi2-12.6 {
+  check_origins {SELECT (SELECT col2), (SELECT col1) FROM view1}
+} [list {main tab1 col2} {main tab1 col1}]
 
 db2 close
 

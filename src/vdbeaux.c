@@ -871,9 +871,9 @@ static void Cleanup(Vdbe *p){
 void sqlite3VdbeSetNumCols(Vdbe *p, int nResColumn){
   Mem *pColName;
   int n;
-  releaseMemArray(p->aColName, p->nResColumn*2);
+  releaseMemArray(p->aColName, p->nResColumn*COLNAME_N);
   sqliteFree(p->aColName);
-  n = nResColumn*2;
+  n = nResColumn*COLNAME_N;
   p->nResColumn = nResColumn;
   p->aColName = pColName = (Mem*)sqliteMalloc( sizeof(Mem)*n );
   if( p->aColName==0 ) return;
@@ -893,13 +893,14 @@ void sqlite3VdbeSetNumCols(Vdbe *p, int nResColumn){
 ** the string is freed using sqliteFree() when the vdbe is finished with
 ** it. Otherwise, N bytes of zName are copied.
 */
-int sqlite3VdbeSetColName(Vdbe *p, int idx, const char *zName, int N){
+int sqlite3VdbeSetColName(Vdbe *p, int idx, int var, const char *zName, int N){
   int rc;
   Mem *pColName;
-  assert( idx<(2*p->nResColumn) );
+  assert( idx<p->nResColumn );
+  assert( var<COLNAME_N );
   if( sqlite3MallocFailed() ) return SQLITE_NOMEM;
   assert( p->aColName!=0 );
-  pColName = &(p->aColName[idx]);
+  pColName = &(p->aColName[idx+var*p->nResColumn]);
   if( N==P3_DYNAMIC || N==P3_STATIC ){
     rc = sqlite3VdbeMemSetStr(pColName, zName, -1, SQLITE_UTF8, SQLITE_STATIC);
   }else{
@@ -1481,7 +1482,7 @@ void sqlite3VdbeDelete(Vdbe *p){
   releaseMemArray(p->aVar, p->nVar);
   sqliteFree(p->aLabel);
   sqliteFree(p->aStack);
-  releaseMemArray(p->aColName, p->nResColumn*2);
+  releaseMemArray(p->aColName, p->nResColumn*COLNAME_N);
   sqliteFree(p->aColName);
   p->magic = VDBE_MAGIC_DEAD;
   sqliteFree(p);
