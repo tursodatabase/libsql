@@ -15,7 +15,7 @@
 # The tests in this file use special facilities that are only
 # available in the SQLite test fixture.
 #
-# $Id: ioerr.test,v 1.25 2006/01/24 13:09:33 danielk1977 Exp $
+# $Id: ioerr.test,v 1.26 2006/02/10 13:33:31 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -236,7 +236,7 @@ do_ioerr_test ioerr-10 -tclprep {
     CREATE TABLE t1(a PRIMARY KEY, b);
   }
   for {set i 0} {$i < 500} {incr i} {
-    execsql {INSERT INTO t1 VALUES($i, 'hello world');}
+    execsql {INSERT INTO t1 VALUES(:i, 'hello world');}
   }
   execsql {
     COMMIT;
