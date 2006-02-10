@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.161 2006/02/10 02:27:43 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.162 2006/02/10 03:06:10 danielk1977 Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -738,6 +738,9 @@ const void *sqlite3_column_name16(sqlite3_stmt*,int);
 ** As with all other SQLite APIs, those postfixed with "16" return UTF-16
 ** encoded strings, the other functions return UTF-8. The memory containing
 ** the returned strings is valid until the statement handle is finalized().
+**
+** These APIs are only available if the library was compiled with the 
+** SQLITE_ENABLE_COLUMN_METADATA preprocessor symbol defined.
 */
 const char *sqlite3_column_database_name(sqlite3_stmt*,int);
 const void *sqlite3_column_database_name16(sqlite3_stmt*,int);
@@ -1445,6 +1448,9 @@ void sqlite3_thread_cleanup(void);
 ** error occurs during this process, or if the requested table or column
 ** cannot be found, an SQLITE error code is returned and an error message
 ** left in the database handle (to be retrieved using sqlite3_errmsg()).
+**
+** This API is only available if the library was compiled with the
+** SQLITE_ENABLE_COLUMN_METADATA preprocessor symbol defined.
 */
 int sqlite3_table_column_metadata(
   sqlite3 *db,                /* Connection handle */

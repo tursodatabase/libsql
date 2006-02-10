@@ -546,7 +546,7 @@ const void *sqlite3_column_decltype16(sqlite3_stmt *pStmt, int N){
 }
 #endif /* SQLITE_OMIT_UTF16 */
 
-#if !defined(SQLITE_OMIT_ORIGIN_NAMES)
+#ifdef SQLITE_ENABLE_COLUMN_METADATA
 /*
 ** Return the name of the database from which a result column derives.
 ** NULL is returned if the result column is an expression or constant or
@@ -594,9 +594,7 @@ const void *sqlite3_column_origin_name16(sqlite3_stmt *pStmt, int N){
       pStmt, N, (const void*(*)(Mem*))sqlite3_value_text16, COLNAME_COLUMN);
 }
 #endif /* SQLITE_OMIT_UTF16 */
-#endif /* SQLITE_OMIT_ORIGIN_NAMES */
-
-
+#endif /* SQLITE_ENABLE_COLUMN_METADATA */
 
 
 /******************************* sqlite3_bind_  ***************************

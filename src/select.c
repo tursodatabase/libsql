@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.302 2006/02/10 02:27:43 danielk1977 Exp $
+** $Id: select.c,v 1.303 2006/02/10 03:06:10 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -920,19 +920,14 @@ static void generateColumnTypes(
     const char *zOrigCol = 0;
     const char *zType = columnType(&sNC, p, &zOrigDb, &zOrigTab, &zOrigCol);
 
-    /* The vdbe must make it's own copy of the column-type, in case the 
-    ** schema is reset before this virtual machine is deleted.
-    **
-    ** TODO: Create some symbol that is better than "-20" to pass to 
-    ** sqlite3VdbeSetColName(). As is this is a ticking bomb. An alternative
-    ** is to pass the length of the string, but that means calling strlen()
-    ** here which consumes code space. By passing a negative value that is
-    ** not P3_DYNAMIC or P3_STATIC, strlen() is called by VdbeSetColName().
+    /* The vdbe must make it's own copy of the column-type and other 
+    ** column specific strings, in case the schema is reset before this
+    ** virtual machine is deleted.
     */
-    sqlite3VdbeSetColName(v, i, COLNAME_DECLTYPE, zType, -20);
-    sqlite3VdbeSetColName(v, i, COLNAME_DATABASE, zOrigDb, -20);
-    sqlite3VdbeSetColName(v, i, COLNAME_TABLE, zOrigTab, -20);
-    sqlite3VdbeSetColName(v, i, COLNAME_COLUMN, zOrigCol, -20);
+    sqlite3VdbeSetColName(v, i, COLNAME_DECLTYPE, zType, P3_TRANSIENT);
+    sqlite3VdbeSetColName(v, i, COLNAME_DATABASE, zOrigDb, P3_TRANSIENT);
+    sqlite3VdbeSetColName(v, i, COLNAME_TABLE, zOrigTab, P3_TRANSIENT);
+    sqlite3VdbeSetColName(v, i, COLNAME_COLUMN, zOrigCol, P3_TRANSIENT);
   }
 }
 

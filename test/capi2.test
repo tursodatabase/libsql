@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi2.test,v 1.28 2006/02/10 02:27:47 danielk1977 Exp $
+# $Id: capi2.test,v 1.29 2006/02/10 03:06:10 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -655,6 +655,8 @@ do_test capi2-10.2 {
 #   sqlite3_column_table_name()
 #
 
+ifcapable columnmetadata {
+
 # This proc uses the database handle $::DB to compile the SQL statement passed
 # as a parameter. The return value of this procedure is a list with one
 # element for each column returned by the compiled statement. Each element of
@@ -706,7 +708,6 @@ do_test capi2-12.1 {
   }
 } {}
 do_test capi2-12.2 {
-breakpoint
   check_origins {SELECT col2, col1 FROM view1}
 } [list {main tab1 col2} {main tab1 col1}]
 do_test capi2-12.3 {
@@ -721,7 +722,8 @@ do_test capi2-12.5 {
 do_test capi2-12.6 {
   check_origins {SELECT (SELECT col2), (SELECT col1) FROM view1}
 } [list {main tab1 col2} {main tab1 col1}]
-
 db2 close
+
+} ;# ifcapable columnmetadata
 
 finish_test
