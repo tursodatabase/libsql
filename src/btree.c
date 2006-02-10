@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.312 2006/02/10 02:27:42 danielk1977 Exp $
+** $Id: btree.c,v 1.313 2006/02/10 08:24:21 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -756,9 +756,19 @@ static void unlockAllTables(Btree *p){
 ** used to test if pgno is a pointer-map page. PTRMAP_ISPAGE implements
 ** this test.
 */
-#define PTRMAP_PAGENO(pgsz, pgno) (((pgno-2)/(pgsz/5+1))*(pgsz/5+1)+2)
-#define PTRMAP_PTROFFSET(pgsz, pgno) (((pgno-2)%(pgsz/5+1)-1)*5)
-#define PTRMAP_ISPAGE(pgsz, pgno) (PTRMAP_PAGENO(pgsz,pgno)==pgno)
+#define PTRMAP_PAGENO(pBt, pgno) ptrmapPageno(pBt, pgno)
+#define PTRMAP_PTROFFSET(pBt, pgno) (5*(pgno-ptrmapPageno(pBt, pgno)-1))
+#define PTRMAP_ISPAGE(pBt, pgno) (PTRMAP_PAGENO((pBt),(pgno))==(pgno))
+
+static Pgno ptrmapPageno(BtShared *pBt, Pgno pgno){
+  int nPagesPerMapPage = (pBt->usableSize/5)+1;
+  int iPtrMap = (pgno-2)/nPagesPerMapPage;
+  int ret = (iPtrMap*nPagesPerMapPage) + 2; 
+  if( ret==PENDING_BYTE_PAGE(pBt) ){
+    ret++;
+  }
+  return ret;
+}
 
 /*
 ** The pointer map is a lookup table that identifies the parent page for
@@ -810,16 +820,19 @@ static int ptrmapPut(BtShared *pBt, Pgno key, u8 eType, Pgno parent){
   int offset;     /* Offset in pointer map page */
   int rc;
 
+  /* The master-journal page number must never be used as a pointer map page */
+  assert( 0==PTRMAP_ISPAGE(pBt, PENDING_BYTE_PAGE(pBt)) );
+
   assert( pBt->autoVacuum );
   if( key==0 ){
     return SQLITE_CORRUPT_BKPT;
   }
-  iPtrmap = PTRMAP_PAGENO(pBt->usableSize, key);
+  iPtrmap = PTRMAP_PAGENO(pBt, key);
   rc = sqlite3pager_get(pBt->pPager, iPtrmap, (void **)&pPtrmap);
   if( rc!=SQLITE_OK ){
     return rc;
   }
-  offset = PTRMAP_PTROFFSET(pBt->usableSize, key);
+  offset = PTRMAP_PTROFFSET(pBt, key);
 
   if( eType!=pPtrmap[offset] || get4byte(&pPtrmap[offset+1])!=parent ){
     TRACE(("PTRMAP_UPDATE: %d->(%d,%d)\n", key, eType, parent));
@@ -847,13 +860,13 @@ static int ptrmapGet(BtShared *pBt, Pgno key, u8 *pEType, Pgno *pPgno){
   int offset;        /* Offset of entry in pointer map */
   int rc;
 
-  iPtrmap = PTRMAP_PAGENO(pBt->usableSize, key);
+  iPtrmap = PTRMAP_PAGENO(pBt, key);
   rc = sqlite3pager_get(pBt->pPager, iPtrmap, (void **)&pPtrmap);
   if( rc!=0 ){
     return rc;
   }
 
-  offset = PTRMAP_PTROFFSET(pBt->usableSize, key);
+  offset = PTRMAP_PTROFFSET(pBt, key);
   if( pEType ) *pEType = pPtrmap[offset];
   if( pPgno ) *pPgno = get4byte(&pPtrmap[offset+1]);
 
@@ -2344,7 +2357,7 @@ static int autoVacuumCommit(BtShared *pBt, Pgno *nTrunc){
 #endif
 
   assert( pBt->autoVacuum );
-  if( PTRMAP_ISPAGE(pgsz, sqlite3pager_pagecount(pPager)) ){
+  if( PTRMAP_ISPAGE(pBt, sqlite3pager_pagecount(pPager)) ){
     return SQLITE_CORRUPT_BKPT;
   }
 
@@ -2357,14 +2370,26 @@ static int autoVacuumCommit(BtShared *pBt, Pgno *nTrunc){
     return SQLITE_OK;
   }
 
+  /* This block figures out how many pages there are in the database
+  ** now (variable origSize), and how many there will be after the
+  ** truncation (variable finSize).
+  **
+  ** The final size is the original size, less the number of free pages
+  ** in the database, less any pointer-map pages that will no longer
+  ** be required, less 1 if the pending-byte page was part of the database
+  ** but is not after the truncation.
+  **/
   origSize = sqlite3pager_pagecount(pPager);
-  nPtrMap = (nFreeList-origSize+PTRMAP_PAGENO(pgsz, origSize)+pgsz/5)/(pgsz/5);
+  if( origSize==PENDING_BYTE_PAGE(pBt) ){
+    origSize--;
+  }
+  nPtrMap = (nFreeList-origSize+PTRMAP_PAGENO(pBt, origSize)+pgsz/5)/(pgsz/5);
   finSize = origSize - nFreeList - nPtrMap;
-  if( origSize>=PENDING_BYTE_PAGE(pBt) && finSize<=PENDING_BYTE_PAGE(pBt) ){
+  if( origSize>PENDING_BYTE_PAGE(pBt) && finSize<=PENDING_BYTE_PAGE(pBt) ){
     finSize--;
-    if( PTRMAP_ISPAGE(pBt->usableSize, finSize) ){
-      finSize--;
-    }
+  }
+  while( PTRMAP_ISPAGE(pBt, finSize) || finSize==PENDING_BYTE_PAGE(pBt) ){
+    finSize--;
   }
   TRACE(("AUTOVACUUM: Begin (db size %d->%d)\n", origSize, finSize));
 
@@ -2376,7 +2401,7 @@ static int autoVacuumCommit(BtShared *pBt, Pgno *nTrunc){
   */
   for( iDbPage=finSize+1; iDbPage<=origSize; iDbPage++ ){
     /* If iDbPage is a pointer map page, or the pending-byte page, skip it. */
-    if( PTRMAP_ISPAGE(pgsz, iDbPage) || iDbPage==PENDING_BYTE_PAGE(pBt) ){
+    if( PTRMAP_ISPAGE(pBt, iDbPage) || iDbPage==PENDING_BYTE_PAGE(pBt) ){
       continue;
     }
 
@@ -2434,6 +2459,7 @@ static int autoVacuumCommit(BtShared *pBt, Pgno *nTrunc){
   put4byte(&pBt->pPage1->aData[36], 0);
   if( rc!=SQLITE_OK ) goto autovacuum_out;
   *nTrunc = finSize;
+  assert( finSize!=PENDING_BYTE_PAGE(pBt) );
 
 autovacuum_out:
   assert( nRef==*sqlite3pager_stats(pPager) );
@@ -3806,7 +3832,7 @@ static int allocatePage(
     *pPgno = sqlite3pager_pagecount(pBt->pPager) + 1;
 
 #ifndef SQLITE_OMIT_AUTOVACUUM
-    if( pBt->autoVacuum && PTRMAP_ISPAGE(pBt->usableSize, *pPgno) ){
+    if( pBt->autoVacuum && PTRMAP_ISPAGE(pBt, *pPgno) ){
       /* If *pPgno refers to a pointer-map page, allocate two new pages
       ** at the end of the file instead of one. The first allocated page
       ** becomes a new pointer-map page, the second is used by the caller.
@@ -5440,7 +5466,7 @@ int sqlite3BtreeCreateTable(Btree *p, int *piTable, int flags){
     /* The new root-page may not be allocated on a pointer-map page, or the
     ** PENDING_BYTE page.
     */
-    if( pgnoRoot==PTRMAP_PAGENO(pBt->usableSize, pgnoRoot) ||
+    if( pgnoRoot==PTRMAP_PAGENO(pBt, pgnoRoot) ||
         pgnoRoot==PENDING_BYTE_PAGE(pBt) ){
       pgnoRoot++;
     }
@@ -5713,7 +5739,7 @@ int sqlite3BtreeDropTable(Btree *p, int iTable, int *piMoved){
       if( maxRootPgno==PENDING_BYTE_PAGE(pBt) ){
         maxRootPgno--;
       }
-      if( maxRootPgno==PTRMAP_PAGENO(pBt->usableSize, maxRootPgno) ){
+      if( maxRootPgno==PTRMAP_PAGENO(pBt, maxRootPgno) ){
         maxRootPgno--;
       }
       assert( maxRootPgno!=PENDING_BYTE_PAGE(pBt) );
@@ -6390,11 +6416,11 @@ char *sqlite3BtreeIntegrityCheck(Btree *p, int *aRoot, int nRoot){
     ** references to pointer-map pages.
     */
     if( sCheck.anRef[i]==0 && 
-       (PTRMAP_PAGENO(pBt->usableSize, i)!=i || !pBt->autoVacuum) ){
+       (PTRMAP_PAGENO(pBt, i)!=i || !pBt->autoVacuum) ){
       checkAppendMsg(&sCheck, 0, "Page %d is never used", i);
     }
     if( sCheck.anRef[i]!=0 && 
-       (PTRMAP_PAGENO(pBt->usableSize, i)==i && pBt->autoVacuum) ){
+       (PTRMAP_PAGENO(pBt, i)==i && pBt->autoVacuum) ){
       checkAppendMsg(&sCheck, 0, "Pointer map page %d is referenced", i);
     }
 #endif
@@ -6522,19 +6548,21 @@ int sqlite3BtreeIsInStmt(Btree *p){
 ** the write-transaction for this database file is to delete the journal.
 */
 int sqlite3BtreeSync(Btree *p, const char *zMaster){
+  int rc = SQLITE_OK;
   if( p->inTrans==TRANS_WRITE ){
     BtShared *pBt = p->pBt;
-#ifndef SQLITE_OMIT_AUTOVACUUM
     Pgno nTrunc = 0;
+#ifndef SQLITE_OMIT_AUTOVACUUM
     if( pBt->autoVacuum ){
-      int rc = autoVacuumCommit(pBt, &nTrunc); 
-      if( rc!=SQLITE_OK ) return rc;
+      rc = autoVacuumCommit(pBt, &nTrunc); 
+      if( rc!=SQLITE_OK ){
+        return rc;
+      }
     }
-    return sqlite3pager_sync(pBt->pPager, zMaster, nTrunc);
 #endif
-    return sqlite3pager_sync(pBt->pPager, zMaster, 0);
+    rc = sqlite3pager_sync(pBt->pPager, zMaster, nTrunc);
   }
-  return SQLITE_OK;
+  return rc;
 }
 
 /*
