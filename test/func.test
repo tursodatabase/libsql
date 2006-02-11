@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing built-in functions.
 #
-# $Id: func.test,v 1.47 2006/02/09 22:13:42 drh Exp $
+# $Id: func.test,v 1.48 2006/02/11 17:34:01 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -540,7 +540,9 @@ do_test func-18.6 {
   }
 } {123 123.0}
 
-# Ticket #1664: 64-bit overflow in sum()
+# Ticket #1664, #1669, #1670, #1674: An integer overflow on SUM causes
+# an error. The non-standard TOTAL() function continues to give a helpful
+# result.
 #
 do_test func-18.10 {
   execsql {
@@ -550,31 +552,75 @@ do_test func-18.10 {
     SELECT sum(x) - ((1<<62)+1) from t6;
   }
 } 0
-
-# Ticket #1669, #1670: I am told that if an integer overflow occurs
-# during a sum that the result should be an error.  This strikes me
-# as being brittle.  So I'm not doing it that way.
-# making the SQL-standard version SUM() even more useless than it
-# was before.  
-#
-# The non-standard TOTAL() function continues to give a helpful result.
-#
 do_test func-18.11 {
   execsql {
     SELECT typeof(sum(x)) FROM t6
   }
 } integer
 do_test func-18.12 {
-  execsql {
+  catchsql {
     INSERT INTO t6 VALUES(1<<62);
     SELECT sum(x) - ((1<<62)*2.0+1) from t6;
   }
-} {0.0}
+} {1 {integer overflow}}
 do_test func-18.13 {
   execsql {
     SELECT total(x) - ((1<<62)*2.0+1) FROM t6
   }
 } 0.0
+do_test func-18.14 {
+  execsql {
+    SELECT sum(-9223372036854775805);
+  }
+} -9223372036854775805
+do_test func-18.15 {
+  catchsql {
+    SELECT sum(x) FROM 
+       (SELECT 9223372036854775807 AS x UNION ALL
+        SELECT 10 AS x);
+  }
+} {1 {integer overflow}}
+do_test func-18.16 {
+  catchsql {
+    SELECT sum(x) FROM 
+       (SELECT 9223372036854775807 AS x UNION ALL
+        SELECT -10 AS x);
+  }
+} {0 9223372036854775797}
+do_test func-18.17 {
+  catchsql {
+    SELECT sum(x) FROM 
+       (SELECT -9223372036854775807 AS x UNION ALL
+        SELECT 10 AS x);
+  }
+} {0 -9223372036854775797}
+do_test func-18.18 {
+  catchsql {
+    SELECT sum(x) FROM 
+       (SELECT -9223372036854775807 AS x UNION ALL
+        SELECT -10 AS x);
+  }
+} {1 {integer overflow}}
+do_test func-18.19 {
+  catchsql {
+    SELECT sum(x) FROM (SELECT 9 AS x UNION ALL SELECT -10 AS x);
+  }
+} {0 -1}
+do_test func-18.20 {
+  catchsql {
+    SELECT sum(x) FROM (SELECT -9 AS x UNION ALL SELECT 10 AS x);
+  }
+} {0 1}
+do_test func-18.21 {
+  catchsql {
+    SELECT sum(x) FROM (SELECT -10 AS x UNION ALL SELECT 9 AS x);
+  }
+} {0 -1}
+do_test func-18.22 {
+  catchsql {
+    SELECT sum(x) FROM (SELECT 10 AS x UNION ALL SELECT -9 AS x);
+  }
+} {0 1}
 
 
 finish_test
