@@ -25,6 +25,20 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2006 February 11 (3.3.4)} {
+<li>Fix a blunder in the Unix mutex implementation that can lead to
+deadlock on multithreaded systems.</li>
+<li>Fix an alignment problem on 64-bit machines</li>
+<li>Added the fullfsync pragma.</li>
+<li>Fix an optimizer bug that could have caused some unusual LEFT OUTER JOINs
+to give incorrect results.</li>
+<li>The SUM function detects integer overflow and converts to accumulating
+an approximate result using floating point numbers</li>
+<li>Host parameter names can begin with '@' for compatibility with SQL Server.
+</li>
+<li>Other miscellaneous bug fixes</li>
+}
+
 chng {2006 January 31 (3.3.3)} {
 <li>Removed support for an ON CONFLICT clause on CREATE INDEX - it never
 worked correctly so this should not present any backward compatibility
