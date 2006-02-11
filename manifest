@@ -1,5 +1,5 @@
-C Fix\stypo\sin\sos_unix.c.\s(CVS\s3082)
-D 2006-02-11T02:03:53
+C Version\s3.3.4\s(CVS\s3083)
+D 2006-02-11T02:12:00
 F Makefile.in 5d8dff443383918b700e495de42ec65bc1c8865b
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -352,7 +352,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 951f3322c0eac4ae311c84f2d15f2c264f5c473a
+P c0e987bcfa899c073d54fbd5a3606c704b8bc3d9
 R 74c84829966fa422ec55f82e716c67ca
 U drh
-Z a5e57ae99df00a155263840248f54bd8
+Z 8d0dd4dfcf62226da288e0212a12f178
