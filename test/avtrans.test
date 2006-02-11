@@ -12,7 +12,7 @@
 # file is a copy of "trans.test" modified to run under autovacuum mode.
 # the point is to stress the autovacuum logic and try to get it to fail.
 #
-# $Id: avtrans.test,v 1.3 2006/01/23 21:37:32 drh Exp $
+# $Id: avtrans.test,v 1.4 2006/02/11 01:25:51 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -864,9 +864,9 @@ for {set i 2} {$i<=$limit} {incr i} {
   set ::sig [signature]
   set cnt [lindex $::sig 0]
   if {$i%2==0} {
-    execsql {PRAGMA synchronous=FULL}
+    execsql {PRAGMA fullfsync=ON}
   } else {
-    execsql {PRAGMA synchronous=NORMAL}
+    execsql {PRAGMA fullfsync=OFF}
   }
   set sqlite_sync_count 0
   set sqlite_fullsync_count 0

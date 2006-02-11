@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the pragma.html file.
 #
-set rcsid {$Id: pragma.tcl,v 1.16 2005/08/28 17:00:26 drh Exp $}
+set rcsid {$Id: pragma.tcl,v 1.17 2006/02/11 01:25:52 drh Exp $}
 source common.tcl
 header {Pragma statements supported by SQLite}
 
@@ -211,6 +211,16 @@ puts {
     </p>
 </li>
 
+<a name="pragma_fullfsync"></a>
+<li><p><b>PRAGMA fullfsync
+       <br>PRAGMA fullfsync = </b><i>0 | 1</i><b>;</b></p>
+    <p>Query or change the fullfsync flag. This flag affects
+    determines whether or not the F_FULLFSYNC syncing method is used
+    on systems that support it.  The default value is off.  As of this
+    writing (2006-02-10) only Mac OS X supports F_FULLFSYNC.
+    </p>
+</li>
+
 <a name="pragma_page_size"></a>
 <li><p><b>PRAGMA page_size;
        <br>PRAGMA page_size = </b><i>bytes</i><b>;</b></p>
@@ -220,6 +230,20 @@ puts {
     than or equal to 8192. The upper limit may be modified by setting
     the value of macro SQLITE_MAX_PAGE_SIZE during compilation.  The
     maximum upper bound is 32768.
+    </p>
+</li>
+
+<a name="pragma_read_uncommitted"></a>
+<li><p><b>PRAGMA read_uncommitted;
+       <br>PRAGMA read_uncommitted = </b><i>0 | 1</i><b>;</b></p>
+    <p>Query, set, or clear READ UNCOMMITTED isolation.  The default isolation
+    level for SQLite is SERIALIZABLE.  Any process or thread can select
+    READ UNCOMMITTED isolation, but SERIALIZABLE will still be used except
+    between connections that share a common page and schema cache.
+    Cache sharing is enabled using the
+    <a href="capi3ref.html#sqlite3_enable_shared_cache">
+    sqlite3_enable_shared_cache()</a> API and is only available between
+    connections running the same thread.  Cache sharing is off by default.
     </p>
 </li>
 

@@ -981,6 +981,17 @@ int sqlite3_fullsync_count = 0;
 # define fdatasync fsync
 #endif
 
+/*
+** Define HAVE_FULLFSYNC to 0 or 1 depending on whether or not
+** the F_FULLFSYNC macro is defined.  F_FULLFSYNC is currently
+** only available on Mac OS X.  But that could change.
+*/
+#ifdef F_FULLFSYNC
+# define HAVE_FULLFSYNC 1
+#else
+# define HAVE_FULLFSYNC 0
+#endif
+
 
 /*
 ** The fsync() system call does not work as advertised on many
@@ -1012,7 +1023,7 @@ static int full_fsync(int fd, int fullSync, int dataOnly){
   rc = SQLITE_OK;
 #else
 
-#ifdef F_FULLFSYNC
+#if HAVE_FULLFSYNC
   if( fullSync ){
     rc = fcntl(fd, F_FULLFSYNC, 0);
   }else{
@@ -1057,10 +1068,16 @@ static int unixSync(OsFile *id, int dataOnly){
     return SQLITE_IOERR;
   }
   if( pFile->dirfd>=0 ){
-    TRACE2("DIRSYNC %-3d\n", pFile->dirfd);
+    TRACE4("DIRSYNC %-3d (have_fullfsync=%d fullsync=%d)\n", pFile->dirfd,
+            HAVE_FULLFSYNC, pFile->fullSync);
 #ifndef SQLITE_DISABLE_DIRSYNC
-    if( full_fsync(pFile->dirfd, pFile->fullSync, 0) ){
-       /* We have received multiple reports of fsync() returning
+    /* The directory sync is only attempted if full_fsync is
+    ** turned off or unavailable.  If a full_fsync occurred above,
+    ** then the directory sync is superfluous.
+    */
+    if( (!HAVE_FULLFSYNC || !pFile->fullSync) && full_fsync(pFile->dirfd,0,0) ){
+       /*
+       ** We have received multiple reports of fsync() returning
        ** errors when applied to directories on certain file systems.
        ** A failed directory sync is not a big deal.  So it seems
        ** better to ignore the error.  Ticket #1657

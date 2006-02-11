@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.257 2006/01/30 22:48:44 drh Exp $
+** @(#) $Id: pager.c,v 1.258 2006/02/11 01:25:51 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -244,6 +244,7 @@ struct Pager {
   u8 stmtAutoopen;            /* Open stmt journal when main journal is opened*/
   u8 noSync;                  /* Do not sync the journal if true */
   u8 fullSync;                /* Do extra syncs of the journal for robustness */
+  u8 full_fsync;              /* Use F_FULLFSYNC when available */
   u8 state;                   /* PAGER_UNLOCK, _SHARED, _RESERVED, etc. */
   u8 errCode;                 /* One of several kinds of errors */
   u8 tempFile;                /* zFilename is a temporary file */
@@ -1509,9 +1510,10 @@ void sqlite3pager_set_cachesize(Pager *pPager, int mxPage){
 ** and FULL=3.
 */
 #ifndef SQLITE_OMIT_PAGER_PRAGMAS
-void sqlite3pager_set_safety_level(Pager *pPager, int level){
+void sqlite3pager_set_safety_level(Pager *pPager, int level, int full_fsync){
   pPager->noSync =  level==1 || pPager->tempFile;
   pPager->fullSync = level==3 && !pPager->tempFile;
+  pPager->full_fsync = full_fsync;
   if( pPager->noSync ) pPager->needSync = 0;
 }
 #endif
@@ -2204,7 +2206,7 @@ static int syncJournal(Pager *pPager){
         if( rc ) return rc;
       }
       TRACE2("SYNC journal of %d\n", PAGERID(pPager));
-      rc = sqlite3OsSync(pPager->jfd, pPager->fullSync);
+      rc = sqlite3OsSync(pPager->jfd, pPager->full_fsync);
       if( rc!=0 ) return rc;
       pPager->journalStarted = 1;
     }
@@ -2832,8 +2834,8 @@ static int pager_open_journal(Pager *pPager){
   if( rc!=SQLITE_OK ){
     goto failed_to_open_journal;
   }
-  sqlite3OsSetFullSync(pPager->jfd, pPager->fullSync);
-  sqlite3OsSetFullSync(pPager->fd, pPager->fullSync);
+  sqlite3OsSetFullSync(pPager->jfd, pPager->full_fsync);
+  sqlite3OsSetFullSync(pPager->fd, pPager->full_fsync);
   sqlite3OsOpenDirectory(pPager->jfd, pPager->zDirectory);
   pPager->journalOpen = 1;
   pPager->journalStarted = 0;

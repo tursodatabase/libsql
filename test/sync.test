@@ -13,7 +13,7 @@
 # This file implements tests to verify that fsync is disabled when
 # pragma synchronous=off even for multi-database commits.
 #
-# $Id: sync.test,v 1.4 2006/01/31 15:19:45 drh Exp $
+# $Id: sync.test,v 1.5 2006/02/11 01:25:51 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -36,6 +36,7 @@ do_test sync-1.1 {
   file delete -force test2.db
   file delete -force test2.db-journal
   execsql {
+    PRAGMA fullfsync=OFF;
     CREATE TABLE t1(a,b);
     ATTACH DATABASE 'test2.db' AS db2;
     CREATE TABLE db2.t2(x,y);

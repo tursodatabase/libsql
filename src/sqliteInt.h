@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.480 2006/02/10 07:07:16 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.481 2006/02/11 01:25:51 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -544,6 +544,7 @@ struct sqlite3 {
 #define SQLITE_IgnoreChecks   0x00002000  /* Do not enforce check constraints */
 #define SQLITE_ReadUncommitted 0x00004000  /* For shared-cache mode */
 #define SQLITE_LegacyFileFmt  0x00008000  /* Create new databases in format 1 */
+#define SQLITE_FullFSync      0x00010000  /* Use full fsync on the backend */
 
 /*
 ** Possible values for the sqlite.magic field.

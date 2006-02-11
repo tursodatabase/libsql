@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.117 2006/02/10 02:27:43 danielk1977 Exp $
+** $Id: pragma.c,v 1.118 2006/02/11 01:25:51 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -152,6 +152,7 @@ static int flagPragma(Parse *pParse, const char *zLeft, const char *zRight){
     { "count_changes",            SQLITE_CountRows     },
     { "empty_result_callbacks",   SQLITE_NullCallback  },
     { "legacy_file_format",       SQLITE_LegacyFileFmt },
+    { "fullfsync",                SQLITE_FullFSync     },
 #ifndef SQLITE_OMIT_CHECK
     { "ignore_check_constraints", SQLITE_IgnoreChecks  },
 #endif
@@ -180,10 +181,6 @@ static int flagPragma(Parse *pParse, const char *zLeft, const char *zRight){
             db->flags &= ~p->mask;
           }
         }
-        /* If one of these pragmas is executed, any prepared statements
-        ** need to be recompiled.
-        */
-        sqlite3VdbeAddOp(v, OP_Expire, 0, 0);
       }
       return 1;
     }
@@ -437,7 +434,6 @@ void sqlite3Pragma(
             "Safety level may not be changed inside a transaction");
       }else{
         pDb->safety_level = getSafetyLevel(zRight)+1;
-        sqlite3BtreeSetSafetyLevel(pDb->pBt, pDb->safety_level);
       }
     }
   }else
@@ -947,6 +943,15 @@ void sqlite3Pragma(
     ** are only valid for a single execution.
     */
     sqlite3VdbeAddOp(v, OP_Expire, 1, 0);
+
+    /*
+    ** Reset the safety level, in case the fullfsync flag or synchronous
+    ** setting changed.
+    */
+    if( db->autoCommit ){
+      sqlite3BtreeSetSafetyLevel(pDb->pBt, pDb->safety_level,
+                 (db->flags&SQLITE_FullFSync)!=0);
+    }
   }
 pragma_out:
   sqliteFree(zLeft);

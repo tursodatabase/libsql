@@ -1,7 +1,7 @@
 #
 # Run this script to generated a faq.html output file
 #
-set rcsid {$Id: faq.tcl,v 1.34 2006/01/11 05:49:50 danielk1977 Exp $}
+set rcsid {$Id: faq.tcl,v 1.35 2006/02/11 01:25:52 drh Exp $}
 source common.tcl
 header {SQLite Frequently Asked Questions</title>}
 
@@ -197,21 +197,24 @@ faq {
   to use the same <b>sqlite3</b> structure pointer in two
   or more threads.</p>
 
-  <p>An <b>sqlite3</b> structure can only be used in the same thread
+  <p>Prior to version 3.3.1,
+  an <b>sqlite3</b> structure could only be used in the same thread
   that called <a href="capi3ref#sqlite3_open">sqlite3_open</a> to create it.
-  You cannot open a
+  You could not open a
   database in one thread then pass the handle off to another thread for
-  it to use.  This is due to limitations (bugs?) in many common threading
+  it to use.  This was due to limitations (bugs?) in many common threading
   implementations such as on RedHat9.  Specifically, an fcntl() lock
   created by one thread cannot be removed or modified by a different
   thread on the troublesome systems.  And since SQLite uses fcntl()
-  locks heavily for concurrency control, serious problems arise if you 
+  locks heavily for concurrency control, serious problems arose if you 
   start moving database connections across threads.</p>
 
-  <p>There may be ways to work around the fcntl() lock problems in Linux,
-  but they are complex and exceedingly difficult to test for correctness.
-  For that reason, SQLite currently takes the safe
-  approach and disallows the sharing of handles among threads.</p>
+  <p>The restriction on moving database connections across threads
+  was relaxed somewhat in version 3.3.1.  With that and subsequent
+  versions, it is safe to move a connection handle across threads
+  as long as the connection is not holding any fcntl() locks.  You
+  can safely assume that no locks are being held if no
+  transaction is pending and all statements have been finalized.</p>
 
   <p>Under UNIX, you should not carry an open SQLite database across
   a fork() system call into the child process.  Problems will result
