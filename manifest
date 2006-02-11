@@ -1,5 +1,5 @@
-C Prepare\sfor\sthe\srelease\sof\s3.3.4.\s(CVS\s3081)
-D 2006-02-11T01:56:54
+C Fix\stypo\sin\sos_unix.c.\s(CVS\s3082)
+D 2006-02-11T02:03:53
 F Makefile.in 5d8dff443383918b700e495de42ec65bc1c8865b
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -55,7 +55,7 @@ F src/os.h 93035a0e3b9dd05cdd0aaef32ea28ca28e02fe78
 F src/os_common.h 108cd719c96a2b714b64e02aeabbd40684274e6a
 F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
-F src/os_unix.c 88f3f422f4715b7008f50ac4b50d8fe670c8055f
+F src/os_unix.c 378a89aaf15d83b901c1b73350e91ddecf743986
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c c67a2c46d929cf54c8f80ec5e6079cf684a141a9
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
@@ -352,7 +352,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P f2069d0bf3161591535e68b7389792e9cb7fe043
-R b5f58a10da936a365a77f409adec1c4f
+P 951f3322c0eac4ae311c84f2d15f2c264f5c473a
+R 74c84829966fa422ec55f82e716c67ca
 U drh
-Z c05de412f812a5f24b07e7bc73f64526
+Z a5e57ae99df00a155263840248f54bd8

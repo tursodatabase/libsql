@@ -1750,7 +1750,7 @@ void sqlite3UnixEnterMutex(){
   inMutex++;
   pthread_mutex_unlock(&mutexAux);
 #else
-  inMutex++
+  inMutex++;
 #endif
 }
 void sqlite3UnixLeaveMutex(){
