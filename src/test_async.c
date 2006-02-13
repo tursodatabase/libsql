@@ -497,7 +497,8 @@ static int asyncRead(OsFile *id, void *obuf, int amt){
     }
     nRead = MIN(filesize - pFile->iOffset, amt);
     if( nRead>0 ){
-      rc = sqlite3OsRead(((AsyncFile *)id)->pBaseRead, obuf, nRead);
+      rc = sqlite3OsRead(pFile->pBaseRead, obuf, nRead);
+      TRACE(("READ %s %d bytes at %d\n", pFile->zName, nRead, pFile->iOffset));
     }
   }
 
@@ -517,6 +518,7 @@ static int asyncRead(OsFile *id, void *obuf, int amt){
 
         if( nCopy>0 ){
           memcpy(&((char *)obuf)[iBeginOut], &p->zBuf[iBeginIn], nCopy);
+          TRACE(("OVERREAD %d bytes at %d\n", nCopy, iBeginOut+iOffset));
         }
       }
     }
@@ -623,7 +625,7 @@ static int asyncCheckReservedLock(OsFile *id){
   rc = (int)sqlite3HashFind(&async.aLock, pFile->zName, pFile->nName);
   pthread_mutex_unlock(&async.lockMutex);
   TRACE(("CHECK-LOCK %d (%s)\n", rc, pFile->zName));
-  return rc;
+  return rc>SHARED_LOCK;
 }
 
 /* 
@@ -879,8 +881,6 @@ static void *asyncWriterThread(void *NotUsed){
       }
     }
     if( p==0 ) break;
-    TRACE(("PROCESSING %p (%s %s)\n", p, azOpcodeName[p->op],
-            p->pFile ? p->pFile->zName : "-"));
 
     /* Right now this thread is holding the mutex on the write-op queue.
     ** Variable 'p' points to the first entry in the write-op queue. In
@@ -925,6 +925,8 @@ static void *asyncWriterThread(void *NotUsed){
 
       case ASYNC_WRITE:
         assert( pBase );
+        TRACE(("WRITE %s %d bytes at %d\n",
+                p->pFile->zName, p->nByte, p->iOffset));
         rc = sqlite3OsSeek(pBase, p->iOffset);
         if( rc==SQLITE_OK ){
           rc = sqlite3OsWrite(pBase, (const void *)(p->zBuf), p->nByte);
@@ -933,15 +935,18 @@ static void *asyncWriterThread(void *NotUsed){
 
       case ASYNC_SYNC:
         assert( pBase );
+        TRACE(("SYNC %s\n", p->pFile->zName));
         rc = sqlite3OsSync(pBase, p->nByte);
         break;
 
       case ASYNC_TRUNCATE:
         assert( pBase );
-        rc = sqlite3OsTruncate(pBase, p->nByte);
+        TRACE(("TRUNCATE %s to %d bytes\n", p->pFile->zName, p->iOffset));
+        rc = sqlite3OsTruncate(pBase, p->iOffset);
         break;
 
       case ASYNC_CLOSE:
+        TRACE(("CLOSE %s\n", p->pFile->zName));
         sqlite3OsClose(&p->pFile->pBaseRead);
         sqlite3OsClose(&p->pFile->pBaseWrite);
         sqlite3OsFree(p->pFile);
@@ -949,19 +954,23 @@ static void *asyncWriterThread(void *NotUsed){
 
       case ASYNC_OPENDIRECTORY:
         assert( pBase );
+        TRACE(("OPENDIR %s\n", p->zBuf));
         sqlite3OsOpenDirectory(pBase, p->zBuf);
         break;
 
       case ASYNC_SETFULLSYNC:
         assert( pBase );
+        TRACE(("SETFULLSYNC %s %d\n", p->pFile->zName, p->nByte));
         sqlite3OsSetFullSync(pBase, p->nByte);
         break;
 
       case ASYNC_DELETE:
+        TRACE(("DELETE %s\n", p->zBuf));
         rc = xOrigDelete(p->zBuf);
         break;
 
       case ASYNC_SYNCDIRECTORY:
+        TRACE(("SYNCDIR %s\n", p->zBuf));
         rc = xOrigSyncDirectory(p->zBuf);
         break;
 
@@ -969,6 +978,7 @@ static void *asyncWriterThread(void *NotUsed){
         AsyncFile *pFile = p->pFile;
         int delFlag = ((p->iOffset)?1:0);
         OsFile *pBase = 0;
+        TRACE(("OPEN %s delFlag=%d\n", p->zBuf, delFlag));
         rc = xOrigOpenExclusive(p->zBuf, &pBase, delFlag);
         assert( holdingMutex==0 );
         pthread_mutex_lock(&async.queueMutex);
@@ -1175,7 +1185,7 @@ static int testAsyncWait(
     pthread_mutex_lock(&async.writerMutex);
     pthread_mutex_unlock(&async.writerMutex);
   }else{
-    TRACE(("NOTHING TO WAIT ON\n"));
+    TRACE(("NO-WAIT\n"));
   }
   return TCL_OK;
 }
