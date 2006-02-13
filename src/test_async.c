@@ -474,8 +474,8 @@ static int asyncRead(OsFile *id, void *obuf, int amt){
 
     for(p=async.pQueueFirst; p; p = p->pNext){
       if( p->pFile==pFile && p->op==ASYNC_WRITE ){
-        int iBeginIn = (p->iOffset - iOffset);
-        int iBeginOut = (iOffset - p->iOffset);
+        int iBeginOut = (p->iOffset - iOffset);
+        int iBeginIn = -iBeginOut;
         int nCopy;
 
         if( iBeginIn<0 ) iBeginIn = 0;
