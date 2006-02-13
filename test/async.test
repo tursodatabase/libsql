@@ -6,7 +6,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: async.test,v 1.4 2006/02/13 18:35:06 drh Exp $
+# $Id: async.test,v 1.5 2006/02/13 18:42:21 drh Exp $
 
 
 if {[catch {sqlite3async_enable}]} {
