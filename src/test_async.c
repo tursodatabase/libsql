@@ -105,8 +105,8 @@ typedef struct AsyncWrite AsyncWrite;
 typedef struct AsyncFile AsyncFile;
 
 /* Enable for debugging */
-#if 0
-# define TRACE(X) asyncTrace X
+static int sqlite3async_trace = 0;
+# define TRACE(X) if( sqlite3async_trace ) asyncTrace X
 static void asyncTrace(const char *zFormat, ...){
   char *z;
   va_list ap;
@@ -116,9 +116,6 @@ static void asyncTrace(const char *zFormat, ...){
   fprintf(stderr, "[%d] %s", (int)pthread_self(), z);
   free(z);
 }
-#else
-# define TRACE(X) /* noop */
-#endif
 
 /*
 ** THREAD SAFETY NOTES
@@ -263,6 +260,14 @@ static struct TestAsyncStaticData {
 #define ASYNC_OPENEXCLUSIVE 8
 #define ASYNC_SYNCDIRECTORY 9
 
+/* Names of opcodes.  Used for debugging only.
+** Make sure these stay in sync with the macros above!
+*/
+static const char *azOpcodeName[] = {
+  "NOOP", "WRITE", "SYNC", "TRUNCATE", "CLOSE",
+  "OPENDIR", "SETFULLSYNC", "DELETE", "OPENEX", "SYNCDIR"
+};
+
 /*
 ** Entries on the write-op queue are instances of the AsyncWrite
 ** structure, defined here.
@@ -351,7 +356,7 @@ static void addAsyncWrite(AsyncWrite *pWrite){
     async.pQueueFirst = pWrite;
   }
   async.pQueueLast = pWrite;
-  TRACE(("PUSH %p\n", pWrite));
+  TRACE(("PUSH %p (%s)\n", pWrite, azOpcodeName[pWrite->op]));
 
   /* Drop the queue mutex */
   pthread_mutex_unlock(&async.queueMutex);
@@ -842,7 +847,7 @@ static void *asyncWriterThread(void *NotUsed){
       }
     }
     if( p==0 ) break;
-    TRACE(("PROCESSING %p\n", p));
+    TRACE(("PROCESSING %p (%s)\n", p, azOpcodeName[p->op]));
 
     /* Right now this thread is holding the mutex on the write-op queue.
     ** Variable 'p' points to the first entry in the write-op queue. In
@@ -965,7 +970,7 @@ static void *asyncWriterThread(void *NotUsed){
       pthread_mutex_lock(&async.queueMutex);
       holdingMutex = 1;
     }
-    TRACE(("UNLINK %p\n", p));
+    /* TRACE(("UNLINK %p\n", p)); */
     if( p==async.pQueueLast ){
       async.pQueueLast = 0;
     }
@@ -1125,7 +1130,9 @@ static int testAsyncWait(
     return TCL_ERROR;
   }
   TRACE(("WAIT\n"));
+  pthread_mutex_lock(&async.queueMutex);
   pthread_cond_broadcast(&async.queueSignal);
+  pthread_mutex_unlock(&async.queueMutex);
   pthread_mutex_lock(&async.writerMutex);
   pthread_mutex_unlock(&async.writerMutex);
   return TCL_OK;
@@ -1146,6 +1153,8 @@ int Sqlitetestasync_Init(Tcl_Interp *interp){
   Tcl_CreateObjCommand(interp,"sqlite3async_delay",testAsyncDelay,0,0);
   Tcl_CreateObjCommand(interp,"sqlite3async_start",testAsyncStart,0,0);
   Tcl_CreateObjCommand(interp,"sqlite3async_wait",testAsyncWait,0,0);
+  Tcl_LinkVar(interp, "sqlite3async_trace",
+      (char*)&sqlite3async_trace, TCL_LINK_INT);
 #endif  /* OS_UNIX and THREADSAFE and defined(SQLITE_ENABLE_REDEF_IO) */
   return TCL_OK;
 }
