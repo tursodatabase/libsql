@@ -106,11 +106,18 @@ typedef struct AsyncFile AsyncFile;
 
 /* Enable for debugging */
 #if 0
-# define TRACE(X,Y) \
-    fprintf(stderr,"THRD=%d: ", (int)pthread_self()); \
-    fprintf(stderr,X,Y);
+# define TRACE(X) asyncTrace X
+static void asyncTrace(const char *zFormat, ...){
+  char *z;
+  va_list ap;
+  va_start(ap, zFormat);
+  z = sqlite3_vmprintf(zFormat, ap);
+  va_end(ap);
+  fprintf(stderr, "[%d] %s", (int)pthread_self(), z);
+  free(z);
+}
 #else
-# define TRACE(X,Y) /* noop */
+# define TRACE(X) /* noop */
 #endif
 
 /*
@@ -315,7 +322,8 @@ struct AsyncWrite {
 */
 struct AsyncFile {
   IoMethod *pMethod;   /* Must be first */
-  int ioError;         /* Value of any asychronous error we have seen */	  i64 iOffset;         /* Current seek() offset in file */
+  int ioError;         /* Value of any asychronous error we have seen */
+  i64 iOffset;         /* Current seek() offset in file */
   OsFile *pBaseRead;   /* Read handle to the underlying Os file */
   OsFile *pBaseWrite;  /* Write handle to the underlying Os file */
 };
@@ -343,7 +351,7 @@ static void addAsyncWrite(AsyncWrite *pWrite){
     async.pQueueFirst = pWrite;
   }
   async.pQueueLast = pWrite;
-  TRACE("PUSH %p\n", pWrite);
+  TRACE(("PUSH %p\n", pWrite));
 
   /* Drop the queue mutex */
   pthread_mutex_unlock(&async.queueMutex);
@@ -828,13 +836,13 @@ static void *asyncWriterThread(void *NotUsed){
         pthread_mutex_unlock(&async.queueMutex);
         break;
       }else{
-        TRACE("IDLE\n", 0);
+        TRACE(("IDLE\n"));
         pthread_cond_wait(&async.queueSignal, &async.queueMutex);
-        TRACE("WAKEUP\n", 0);
+        TRACE(("WAKEUP\n"));
       }
     }
     if( p==0 ) break;
-    TRACE("PROCESSING %p\n", p);
+    TRACE(("PROCESSING %p\n", p));
 
     /* Right now this thread is holding the mutex on the write-op queue.
     ** Variable 'p' points to the first entry in the write-op queue. In
@@ -957,7 +965,7 @@ static void *asyncWriterThread(void *NotUsed){
       pthread_mutex_lock(&async.queueMutex);
       holdingMutex = 1;
     }
-    TRACE("UNLINK %p\n", p);
+    TRACE(("UNLINK %p\n", p));
     if( p==async.pQueueLast ){
       async.pQueueLast = 0;
     }
@@ -1116,7 +1124,7 @@ static int testAsyncWait(
     Tcl_AppendResult(interp, "would block forever", (char*)0);
     return TCL_ERROR;
   }
-  TRACE("WAIT\n",0);
+  TRACE(("WAIT\n"));
   pthread_cond_broadcast(&async.queueSignal);
   pthread_mutex_lock(&async.writerMutex);
   pthread_mutex_unlock(&async.writerMutex);
