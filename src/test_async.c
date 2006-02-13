@@ -161,8 +161,10 @@ static void asyncTrace(const char *zFormat, ...){
 **
 **         asyncLock, asyncUnlock, asyncLockState, asyncCheckReservedLock
 **    
-**     These locking primitives become no-ops. Files are always opened for 
-**     exclusive access when using this IO backend.  
+**     These primitives implement in-process locking using a hash table
+**     on the file name.  Files are locked correctly for connections coming
+**     from the same process.  But other processes cannot see these locks
+**     and will therefore not honor them.
 **
 **
 **         asyncFileHandle.
@@ -233,14 +235,17 @@ static void asyncTrace(const char *zFormat, ...){
 static struct TestAsyncStaticData {
   pthread_mutex_t queueMutex;  /* Mutex for access to write operation queue */
   pthread_mutex_t writerMutex; /* Prevents multiple writer threads */
+  pthread_mutex_t lockMutex;   /* For access to aLock hash table */
   pthread_cond_t queueSignal;  /* For waking up sleeping writer thread */
   pthread_cond_t emptySignal;  /* Notify when the write queue is empty */
   AsyncWrite *pQueueFirst;     /* Next write operation to be processed */
   AsyncWrite *pQueueLast;      /* Last write operation on the list */
+  Hash aLock;                  /* Files locked */
   volatile int ioDelay;             /* Extra delay between write operations */
   volatile int writerHaltWhenIdle;  /* Writer thread halts when queue empty */
   volatile int writerHaltNow;       /* Writer thread halts after next op */
 } async = {
+  PTHREAD_MUTEX_INITIALIZER,
   PTHREAD_MUTEX_INITIALIZER,
   PTHREAD_MUTEX_INITIALIZER,
   PTHREAD_COND_INITIALIZER,
@@ -255,7 +260,6 @@ static struct TestAsyncStaticData {
 #define ASYNC_CLOSE         4
 #define ASYNC_OPENDIRECTORY 5
 #define ASYNC_SETFULLSYNC   6
-
 #define ASYNC_DELETE        7
 #define ASYNC_OPENEXCLUSIVE 8
 #define ASYNC_SYNCDIRECTORY 9
@@ -265,7 +269,7 @@ static struct TestAsyncStaticData {
 */
 static const char *azOpcodeName[] = {
   "NOOP", "WRITE", "SYNC", "TRUNCATE", "CLOSE",
-  "OPENDIR", "SETFULLSYNC", "DELETE", "OPENEX", "SYNCDIR"
+  "OPENDIR", "SETFULLSYNC", "DELETE", "OPENEX", "SYNCDIR",
 };
 
 /*
@@ -308,6 +312,7 @@ static const char *azOpcodeName[] = {
 **     iOffset -> Value of "delflag".
 **     nByte   -> Number of bytes of zBuf points to (file name).
 **
+**
 ** For an ASYNC_WRITE operation, zBuf points to the data to write to the file. 
 ** This space is sqliteMalloc()d along with the AsyncWrite structure in a
 ** single blob, so is deleted when sqliteFree() is called on the parent 
@@ -329,6 +334,8 @@ struct AsyncFile {
   IoMethod *pMethod;   /* Must be first */
   int ioError;         /* Value of any asychronous error we have seen */
   i64 iOffset;         /* Current seek() offset in file */
+  char *zName;         /* Underlying OS filename - used for debugging */
+  int nName;           /* Number of characters in zName */
   OsFile *pBaseRead;   /* Read handle to the underlying Os file */
   OsFile *pBaseWrite;  /* Write handle to the underlying Os file */
 };
@@ -356,7 +363,8 @@ static void addAsyncWrite(AsyncWrite *pWrite){
     async.pQueueFirst = pWrite;
   }
   async.pQueueLast = pWrite;
-  TRACE(("PUSH %p (%s)\n", pWrite, azOpcodeName[pWrite->op]));
+  TRACE(("PUSH %p (%s %s)\n", pWrite, azOpcodeName[pWrite->op],
+         pWrite->pFile ? pWrite->pFile->zName : "-"));
 
   /* Drop the queue mutex */
   pthread_mutex_unlock(&async.queueMutex);
@@ -585,14 +593,23 @@ static int asyncFileHandle(OsFile *id){
 }
 
 /*
-** No file locking occurs with this version of the asynchronous backend.
-** So the locking routines are no-ops.
+** No disk locking is performed.  We keep track of locks locally in
+** the async.aLock hash table.  Locking should appear to work the same
+** as with standard (unmodified) SQLite as long as all connections 
+** come from this one process.  Connections from external processes
+** cannot see our internal hash table (obviously) and will thus not
+** honor our locks.
 */
 static int asyncLock(OsFile *id, int lockType){
+  AsyncFile *pFile = (AsyncFile*)id;
+  TRACE(("LOCK %d (%s)\n", lockType, pFile->zName));
+  pthread_mutex_lock(&async.lockMutex);
+  sqlite3HashInsert(&async.aLock, pFile->zName, pFile->nName, (void*)lockType);
+  pthread_mutex_unlock(&async.lockMutex);
   return SQLITE_OK;
 }
 static int asyncUnlock(OsFile *id, int lockType){
-  return SQLITE_OK;
+  return asyncLock(id, lockType);
 }
 
 /*
@@ -600,7 +617,13 @@ static int asyncUnlock(OsFile *id, int lockType){
 ** and is checking for a hot-journal.
 */
 static int asyncCheckReservedLock(OsFile *id){
-  return SQLITE_OK;
+  AsyncFile *pFile = (AsyncFile*)id;
+  int rc;
+  pthread_mutex_lock(&async.lockMutex);
+  rc = (int)sqlite3HashFind(&async.aLock, pFile->zName, pFile->nName);
+  pthread_mutex_unlock(&async.lockMutex);
+  TRACE(("CHECK-LOCK %d (%s)\n", rc, pFile->zName));
+  return rc;
 }
 
 /* 
@@ -632,7 +655,7 @@ static int asyncOpenFile(
   OsFile *pBaseRead,     /* The real OsFile from the real I/O routine */
   int openForWriting     /* Open a second file handle for writing if true */
 ){
-  int rc;
+  int rc, i, n;
   AsyncFile *p;
   OsFile *pBaseWrite = 0;
 
@@ -661,13 +684,17 @@ static int asyncOpenFile(
     }
   }
 
-  p = (AsyncFile *)sqlite3OsMalloc(sizeof(AsyncFile));
+  n = strlen(zName);
+  for(i=n-1; i>=0 && zName[i]!='/'; i--){}
+  p = (AsyncFile *)sqlite3OsMalloc(sizeof(AsyncFile) + n - i);
   if( !p ){
     rc = SQLITE_NOMEM;
     goto error_out;
   }
   memset(p, 0, sizeof(AsyncFile));
-  
+  p->zName = (char*)&p[1];
+  strcpy(p->zName, &zName[i+1]);
+  p->nName = n - i;
   p->pMethod = &iomethod;
   p->pBaseRead = pBaseRead;
   p->pBaseWrite = pBaseWrite;
@@ -759,6 +786,7 @@ static int asyncFileExists(const char *z){
     }
   }
 
+  TRACE(("EXISTS: %s = %d\n", z, ret));
   pthread_mutex_unlock(&async.queueMutex);
   return ret;
 }
@@ -772,6 +800,8 @@ static int asyncFileExists(const char *z){
 */
 static void asyncEnable(int enable){
   if( enable && xOrigOpenReadWrite==0 ){
+    sqlite3HashInit(&async.aLock, SQLITE_HASH_BINARY, 1);
+    
     xOrigOpenReadWrite = sqlite3Os.xOpenReadWrite;
     xOrigOpenReadOnly = sqlite3Os.xOpenReadOnly;
     xOrigOpenExclusive = sqlite3Os.xOpenExclusive;
@@ -787,6 +817,8 @@ static void asyncEnable(int enable){
     sqlite3Os.xSyncDirectory = asyncSyncDirectory;
   }
   if( !enable && xOrigOpenReadWrite!=0 ){
+    sqlite3HashClear(&async.aLock);
+
     sqlite3Os.xOpenReadWrite = xOrigOpenReadWrite;
     sqlite3Os.xOpenReadOnly = xOrigOpenReadOnly;
     sqlite3Os.xOpenExclusive = xOrigOpenExclusive;
@@ -847,7 +879,8 @@ static void *asyncWriterThread(void *NotUsed){
       }
     }
     if( p==0 ) break;
-    TRACE(("PROCESSING %p (%s)\n", p, azOpcodeName[p->op]));
+    TRACE(("PROCESSING %p (%s %s)\n", p, azOpcodeName[p->op],
+            p->pFile ? p->pFile->zName : "-"));
 
     /* Right now this thread is holding the mutex on the write-op queue.
     ** Variable 'p' points to the first entry in the write-op queue. In
@@ -1125,16 +1158,25 @@ static int testAsyncWait(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
+  int cnt = 10;
   if( async.writerHaltNow==0 && async.writerHaltWhenIdle==0 ){
     Tcl_AppendResult(interp, "would block forever", (char*)0);
     return TCL_ERROR;
   }
-  TRACE(("WAIT\n"));
-  pthread_mutex_lock(&async.queueMutex);
-  pthread_cond_broadcast(&async.queueSignal);
-  pthread_mutex_unlock(&async.queueMutex);
-  pthread_mutex_lock(&async.writerMutex);
-  pthread_mutex_unlock(&async.writerMutex);
+  while( cnt-- && !pthread_mutex_trylock(&async.writerMutex) ){
+    pthread_mutex_unlock(&async.writerMutex);
+    sched_yield();
+  }
+  if( cnt>=0 ){
+    TRACE(("WAIT\n"));
+    pthread_mutex_lock(&async.queueMutex);
+    pthread_cond_broadcast(&async.queueSignal);
+    pthread_mutex_unlock(&async.queueMutex);
+    pthread_mutex_lock(&async.writerMutex);
+    pthread_mutex_unlock(&async.writerMutex);
+  }else{
+    TRACE(("NOTHING TO WAIT ON\n"));
+  }
   return TCL_OK;
 }
 

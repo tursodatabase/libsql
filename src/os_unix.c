@@ -1539,6 +1539,7 @@ static int unixClose(OsFile **pId){
 */
 char *sqlite3UnixFullPathname(const char *zRelative){
   char *zFull = 0;
+  int i, j;
   if( zRelative[0]=='/' ){
     sqlite3SetString(&zFull, zRelative, (char*)0);
   }else{
@@ -1550,6 +1551,28 @@ char *sqlite3UnixFullPathname(const char *zRelative){
     sqlite3SetString(&zFull, getcwd(zBuf, 5000), "/", zRelative,
                     (char*)0);
     sqliteFree(zBuf);
+  }
+  /*
+  ** Remove "/./" path elements and convert "/A/./" path elements
+  ** to just "/".
+  */
+  if( zFull ){
+    for(i=j=0; zFull[i]; i++){
+      if( zFull[i]=='/' ){
+        if( zFull[i+1]=='/' ) continue;
+        if( zFull[i+1]=='.' && zFull[i+2]=='/' ){
+          i += 1;
+          continue;
+        }
+        if( zFull[i+1]=='.' && zFull[i+2]=='.' && zFull[i+3]=='/' ){
+          while( j>0 && zFull[j-1]!='/' ){ j--; }
+          i += 3;
+          continue;
+        }
+      }
+      zFull[j++] = zFull[i];
+    }
+    zFull[j] = 0;
   }
   return zFull;
 }
