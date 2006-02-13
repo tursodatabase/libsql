@@ -1,5 +1,5 @@
-C I\sgive\sup.\s\sSUM()\snow\sthrows\san\serror\son\sinteger\soverflow.\s\sThose\sof\sus\nwho\sthink\sthis\sis\sgoofy\scan\suse\sTOTAL()\sinstead.\nTickets\s#1664,\s#1669,\s#1670,\s#1674.\s(CVS\s3084)
-D 2006-02-11T17:34:00
+C Fix\sa\smemory\sleak\sin\stest_async.c.\s(CVS\s3085)
+D 2006-02-13T13:23:58
 F Makefile.in 5d8dff443383918b700e495de42ec65bc1c8865b
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -80,7 +80,7 @@ F src/test4.c ff4e9406b3d2809966d8f0e82468ac5508be9f56
 F src/test5.c 7162f8526affb771c4ed256826eee7bb9eca265f
 F src/test6.c 60a02961ceb7b3edc25f5dc5c1ac2556622a76de
 F src/test7.c d28d3e62f9594923648fc6a8fb030eba36564ba1
-F src/test_async.c 6776f5027ca6378c116ff5ccc2fe41b908e33772
+F src/test_async.c 2d11e331559eb6ec99907bb953a3bf9b2c2502a1
 F src/test_md5.c 6c42bc0a3c0b54be34623ff77a0eec32b2fa96e3
 F src/test_server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/tokenize.c 382b3bb0ca26eb9153b5d20b246ef512a114a24f
@@ -352,7 +352,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 033aaab67f3759f2f65d047ecbc027de9b37d7a7
-R cb8fe231efd5065f9640736e57eef926
+P 1c3e6002cd9fd5d30e197448c4d98cdd59163cac
+R 71863abd1f71061a21b384345e5e9e1f
 U drh
-Z 4270a5cac50f6da385f72cb1e88e2c89
+Z 59791472a43f1b258d07c84799e710dd

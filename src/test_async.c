@@ -932,6 +932,7 @@ static void *asyncWriterThread(void *NotUsed){
       }
       async.pQueueFirst = p->pNext;
     }
+    sqlite3OsFree(p);
     assert( holdingMutex );
 
     /* Drop the queue mutex before continuing to the next write operation
