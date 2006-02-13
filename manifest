@@ -1,5 +1,5 @@
-C Fix\soverlapping\sread\slogic\sin\sthe\stest_async.c\sdemonstration.\s(CVS\s3086)
-D 2006-02-13T13:30:19
+C I/O\serrors\sshut\sdown\sall\sprocessing\son\sthe\ssame\sfile\sin\stest_async.c.\s(CVS\s3087)
+D 2006-02-13T13:50:56
 F Makefile.in 5d8dff443383918b700e495de42ec65bc1c8865b
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -80,7 +80,7 @@ F src/test4.c ff4e9406b3d2809966d8f0e82468ac5508be9f56
 F src/test5.c 7162f8526affb771c4ed256826eee7bb9eca265f
 F src/test6.c 60a02961ceb7b3edc25f5dc5c1ac2556622a76de
 F src/test7.c d28d3e62f9594923648fc6a8fb030eba36564ba1
-F src/test_async.c 818c346094f164a5f6d1051c5df4849f548a832c
+F src/test_async.c 3788835109389314abd9281b42bdb3a39e626016
 F src/test_md5.c 6c42bc0a3c0b54be34623ff77a0eec32b2fa96e3
 F src/test_server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/tokenize.c 382b3bb0ca26eb9153b5d20b246ef512a114a24f
@@ -352,7 +352,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 904ffa4dfb60e00b01db17049de2f4934537f3d8
-R c15c7a4a0ef3b7c380f375710e72f985
+P ad25127b067b3135694ddb0de552aad981640669
+R c172fd59b56c5fed4fe5f809faeffff3
 U drh
-Z 3b25fcdac403270a231a8a67cd00fbda
+Z 077affc5334060506b2ff1fb3322bebe

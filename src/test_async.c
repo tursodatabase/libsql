@@ -244,6 +244,7 @@ static struct TestAsyncStaticData {
 };
 
 /* Possible values of AsyncWrite.op */
+#define ASYNC_NOOP          0
 #define ASYNC_WRITE         1
 #define ASYNC_SYNC          2
 #define ASYNC_TRUNCATE      3
@@ -314,7 +315,7 @@ struct AsyncWrite {
 */
 struct AsyncFile {
   IoMethod *pMethod;   /* Must be first */
-  i64 iOffset;         /* Current seek() offset in file */
+  int ioError;         /* Value of any asychronous error we have seen */	  i64 iOffset;         /* Current seek() offset in file */
   OsFile *pBaseRead;   /* Read handle to the underlying Os file */
   OsFile *pBaseWrite;  /* Write handle to the underlying Os file */
 };
@@ -363,7 +364,11 @@ static int addNewAsyncWrite(
   int nByte,
   const char *zByte
 ){
-  AsyncWrite *p = sqlite3OsMalloc(sizeof(AsyncWrite) + (zByte?nByte:0));
+  AsyncWrite *p;
+  if( pFile && pFile->ioError!=SQLITE_OK ){
+    return pFile->ioError;
+  }
+  p = sqlite3OsMalloc(sizeof(AsyncWrite) + (zByte?nByte:0));
   if( !p ){
     return SQLITE_NOMEM;
   }
@@ -449,6 +454,13 @@ static int asyncRead(OsFile *id, void *obuf, int amt){
   i64 filesize;
   int nRead;
   AsyncFile *pFile = (AsyncFile *)id;
+
+  /* If an I/O error has previously occurred on this file, then all
+  ** subsequent operations fail.
+  */
+  if( pFile->ioError!=SQLITE_OK ){
+    return pFile->ioError;
+  }
 
   /* Grab the write queue mutex for the duration of the call */
   pthread_mutex_lock(&async.queueMutex);
@@ -646,6 +658,7 @@ static int asyncOpenFile(
   p->pMethod = &iomethod;
   p->pBaseRead = pBaseRead;
   p->pBaseWrite = pBaseWrite;
+  p->ioError = SQLITE_OK;
   
   *pFile = (OsFile *)p;
   return SQLITE_OK;
@@ -844,6 +857,9 @@ static void *asyncWriterThread(void *NotUsed){
     */
     if( p->pFile ){
       pBase = p->pFile->pBaseWrite;
+      if( p->pFile->ioError!=SQLITE_OK && p->op!=ASYNC_CLOSE ){
+        p->op = ASYNC_NOOP;
+      }
       if( 
         p->op==ASYNC_CLOSE || 
         p->op==ASYNC_OPENEXCLUSIVE ||
@@ -858,6 +874,9 @@ static void *asyncWriterThread(void *NotUsed){
     }
 
     switch( p->op ){
+      case ASYNC_NOOP:
+        break;
+
       case ASYNC_WRITE:
         assert( pBase );
         rc = sqlite3OsSeek(pBase, p->iOffset);
@@ -917,6 +936,19 @@ static void *asyncWriterThread(void *NotUsed){
       default: assert(!"Illegal value for AsyncWrite.op");
     }
 
+    /* If an error happens, store the error code in the pFile.ioError
+    ** field.  This will prevent any future operations on that file,
+    ** other than closing it.
+    **
+    ** We cannot report the error back to the connection that requested
+    ** the I/O since the error happened asynchronously.  The connection has
+    ** already moved on.  There really is nobody to report the error to.
+    */
+    if( rc!=SQLITE_OK ){
+      p->pFile->ioError = rc;
+      rc = SQLITE_OK;
+    }
+
     /* If we didn't hang on to the mutex during the IO op, obtain it now
     ** so that the AsyncWrite structure can be safely removed from the 
     ** global write-op queue.
@@ -926,12 +958,10 @@ static void *asyncWriterThread(void *NotUsed){
       holdingMutex = 1;
     }
     TRACE("UNLINK %p\n", p);
-    if( rc==SQLITE_OK ){
-      if( p==async.pQueueLast ){
-        async.pQueueLast = 0;
-      }
-      async.pQueueFirst = p->pNext;
+    if( p==async.pQueueLast ){
+      async.pQueueLast = 0;
     }
+    async.pQueueFirst = p->pNext;
     sqlite3OsFree(p);
     assert( holdingMutex );
 
