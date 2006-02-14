@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.481 2006/02/11 01:25:51 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.482 2006/02/14 10:48:39 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -267,7 +267,6 @@ extern int sqlite3_nFree;        /* Number of sqliteFree() calls */
 extern int sqlite3_iMallocFail;  /* Fail sqliteMalloc() after this many calls */
 extern int sqlite3_iMallocReset; /* Set iMallocFail to this when it reaches 0 */
 
-
 extern void *sqlite3_pFirst;         /* Pointer to linked list of allocations */
 extern int sqlite3_nMaxAlloc;        /* High water mark of ThreadData.nAlloc */
 extern int sqlite3_mallocDisallowed; /* assert() in sqlite3Malloc() if set */
@@ -276,8 +275,8 @@ extern const char *sqlite3_zFile;    /* Filename to associate debug info with */
 extern int sqlite3_iLine;            /* Line number for debug info */
 
 #define ENTER_MALLOC (sqlite3_zFile = __FILE__, sqlite3_iLine = __LINE__)
-#define sqliteMalloc(x)          (ENTER_MALLOC, sqlite3Malloc(x))
-#define sqliteMallocRaw(x)       (ENTER_MALLOC, sqlite3MallocRaw(x))
+#define sqliteMalloc(x)          (ENTER_MALLOC, sqlite3Malloc(x,1))
+#define sqliteMallocRaw(x)       (ENTER_MALLOC, sqlite3MallocRaw(x,1))
 #define sqliteRealloc(x,y)       (ENTER_MALLOC, sqlite3Realloc(x,y))
 #define sqliteStrDup(x)          (ENTER_MALLOC, sqlite3StrDup(x))
 #define sqliteStrNDup(x,y)       (ENTER_MALLOC, sqlite3StrNDup(x,y))
@@ -1483,8 +1482,8 @@ int sqlite3Compare(const char *, const char *);
 int sqlite3SortCompare(const char *, const char *);
 void sqlite3RealToSortable(double r, char *);
 
-void *sqlite3Malloc(int);
-void *sqlite3MallocRaw(int);
+void *sqlite3Malloc(int,int);
+void *sqlite3MallocRaw(int,int);
 void sqlite3Free(void*);
 void *sqlite3Realloc(void*,int);
 char *sqlite3StrDup(const char*);
@@ -1765,6 +1764,14 @@ void sqlite3AbortOtherActiveVdbes(sqlite3 *, Vdbe *);
   #define sqlite3TestMallocFail() 0
   #define sqlite3MallocDisallow()
   #define sqlite3MallocAllow()
+#endif
+
+#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
+  void *sqlite3ThreadSafeMalloc(int);
+  void sqlite3ThreadSafeFree(void *);
+#else
+  #define sqlite3ThreadSafeMalloc sqlite3MallocX
+  #define sqlite3ThreadSafeFree sqlite3FreeX
 #endif
 
 #ifdef SQLITE_SSE

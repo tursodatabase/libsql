@@ -6,7 +6,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: quick.test,v 1.42 2006/01/20 10:55:05 danielk1977 Exp $
+# $Id: quick.test,v 1.43 2006/02/14 10:48:40 danielk1977 Exp $
 
 proc lshift {lvar} {
   upvar $lvar l
@@ -35,6 +35,7 @@ set ISQUICK 1
 set EXCLUDE {
   all.test
   async.test
+  async2.test
   btree2.test
   btree3.test
   btree4.test

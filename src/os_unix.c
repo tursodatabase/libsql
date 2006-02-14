@@ -340,9 +340,10 @@ struct openCnt {
 ** openKey structures) into lockInfo and openCnt structures.  Access to 
 ** these hash tables must be protected by a mutex.
 */
-static Hash lockHash = { SQLITE_HASH_BINARY, 0, 0, 0, 0, 0 };
-static Hash openHash = { SQLITE_HASH_BINARY, 0, 0, 0, 0, 0 };
-
+static Hash lockHash = {SQLITE_HASH_BINARY, 0, 0, 0, 
+    sqlite3ThreadSafeMalloc, sqlite3ThreadSafeFree, 0, 0};
+static Hash openHash = {SQLITE_HASH_BINARY, 0, 0, 0, 
+    sqlite3ThreadSafeMalloc, sqlite3ThreadSafeFree, 0, 0};
 
 #ifdef SQLITE_UNIX_THREADS
 /*
@@ -491,7 +492,7 @@ static void releaseLockInfo(struct lockInfo *pLock){
   pLock->nRef--;
   if( pLock->nRef==0 ){
     sqlite3HashInsert(&lockHash, &pLock->key, sizeof(pLock->key), 0);
-    sqliteFree(pLock);
+    sqlite3ThreadSafeFree(pLock);
   }
 }
 
@@ -504,7 +505,7 @@ static void releaseOpenCnt(struct openCnt *pOpen){
   if( pOpen->nRef==0 ){
     sqlite3HashInsert(&openHash, &pOpen->key, sizeof(pOpen->key), 0);
     free(pOpen->aPending);
-    sqliteFree(pOpen);
+    sqlite3ThreadSafeFree(pOpen);
   }
 }
 
@@ -545,7 +546,7 @@ static int findLockInfo(
   pLock = (struct lockInfo*)sqlite3HashFind(&lockHash, &key1, sizeof(key1));
   if( pLock==0 ){
     struct lockInfo *pOld;
-    pLock = sqliteMallocRaw( sizeof(*pLock) );
+    pLock = sqlite3ThreadSafeMalloc( sizeof(*pLock) );
     if( pLock==0 ){
       rc = 1;
       goto exit_findlockinfo;
@@ -557,7 +558,7 @@ static int findLockInfo(
     pOld = sqlite3HashInsert(&lockHash, &pLock->key, sizeof(key1), pLock);
     if( pOld!=0 ){
       assert( pOld==pLock );
-      sqliteFree(pLock);
+      sqlite3ThreadSafeFree(pLock);
       rc = 1;
       goto exit_findlockinfo;
     }
@@ -569,7 +570,7 @@ static int findLockInfo(
     pOpen = (struct openCnt*)sqlite3HashFind(&openHash, &key2, sizeof(key2));
     if( pOpen==0 ){
       struct openCnt *pOld;
-      pOpen = sqliteMallocRaw( sizeof(*pOpen) );
+      pOpen = sqlite3ThreadSafeMalloc( sizeof(*pOpen) );
       if( pOpen==0 ){
         releaseLockInfo(pLock);
         rc = 1;
@@ -583,7 +584,7 @@ static int findLockInfo(
       pOld = sqlite3HashInsert(&openHash, &pOpen->key, sizeof(key2), pOpen);
       if( pOld!=0 ){
         assert( pOld==pOpen );
-        sqliteFree(pOpen);
+        sqlite3ThreadSafeFree(pOpen);
         releaseLockInfo(pLock);
         rc = 1;
         goto exit_findlockinfo;
@@ -1526,7 +1527,7 @@ static int unixClose(OsFile **pId){
   id->isOpen = 0;
   TRACE2("CLOSE   %-3d\n", id->h);
   OpenCounter(-1);
-  sqliteFree(id);
+  sqlite3ThreadSafeFree(id);
   *pId = 0;
   return SQLITE_OK;
 }
@@ -1635,7 +1636,7 @@ static int allocateUnixFile(unixFile *pInit, OsFile **pId){
   pInit->fullSync = 0;
   pInit->locktype = 0;
   SET_THREADID(pInit);
-  pNew = sqliteMalloc( sizeof(unixFile) );
+  pNew = sqlite3ThreadSafeMalloc( sizeof(unixFile) );
   if( pNew==0 ){
     close(pInit->h);
     sqlite3OsEnterMutex();

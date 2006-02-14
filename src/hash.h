@@ -12,7 +12,7 @@
 ** This is the header file for the generic hash-table implemenation
 ** used in SQLite.
 **
-** $Id: hash.h,v 1.8 2004/08/20 14:08:51 drh Exp $
+** $Id: hash.h,v 1.9 2006/02/14 10:48:39 danielk1977 Exp $
 */
 #ifndef _SQLITE_HASH_H_
 #define _SQLITE_HASH_H_
@@ -34,6 +34,8 @@ struct Hash {
   char copyKey;           /* True if copy of key made on insert */
   int count;              /* Number of entries in this table */
   HashElem *first;        /* The first element of the array */
+  void *(*xMalloc)(int);  /* malloc() function to use */
+  void (*xFree)(void *);  /* free() function to use */
   int htsize;             /* Number of buckets in the hash table */
   struct _ht {            /* the hash table */
     int count;               /* Number of entries with this hash */

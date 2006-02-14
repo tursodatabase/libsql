@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.184 2006/02/06 21:22:31 drh Exp $
+** $Id: util.c,v 1.185 2006/02/14 10:48:39 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -443,6 +443,7 @@ int sqlite3OutstandingMallocs(Tcl_Interp *interp){
 ** This is the test layer's wrapper around sqlite3OsMalloc().
 */
 static void * OSMALLOC(int n){
+  sqlite3OsEnterMutex();
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
   sqlite3_nMaxAlloc = 
       MAX(sqlite3_nMaxAlloc, sqlite3ThreadDataReadOnly()->nAlloc);
@@ -455,8 +456,10 @@ static void * OSMALLOC(int n){
     sqlite3_nMalloc++;
     applyGuards(p);
     linkAlloc(p);
+    sqlite3OsLeaveMutex();
     return (void *)(&p[TESTALLOC_NGUARD + 2*sizeof(void *)/sizeof(u32)]);
   }
+  sqlite3OsLeaveMutex();
   return 0;
 }
 
@@ -473,12 +476,14 @@ static int OSSIZEOF(void *p){
 ** pointer to the space allocated for the application to use.
 */
 static void OSFREE(void *pFree){
+  sqlite3OsEnterMutex();
   u32 *p = (u32 *)getOsPointer(pFree);   /* p points to Os level allocation */
   checkGuards(p);
   unlinkAlloc(p);
   memset(pFree, 0x55, OSSIZEOF(pFree));
   sqlite3OsFree(p);
   sqlite3_nFree++;
+  sqlite3OsLeaveMutex();
 }
 
 /*
@@ -578,14 +583,14 @@ static void updateMemoryUsedCount(int n){
 ** sqlite3OsMalloc(). If the Malloc() call fails, attempt to free memory 
 ** by calling sqlite3_release_memory().
 */
-void *sqlite3MallocRaw(int n){
+void *sqlite3MallocRaw(int n, int doMemManage){
   void *p = 0;
-  if( n>0 && !sqlite3MallocFailed() && enforceSoftLimit(n) ){
+  if( n>0 && !sqlite3MallocFailed() && (!doMemManage || enforceSoftLimit(n)) ){
     while( (p = OSMALLOC(n))==0 && sqlite3_release_memory(n) );
     if( !p ){
       sqlite3FailedMalloc();
       OSMALLOC_FAILED();
-    }else{
+    }else if( doMemManage ){
       updateMemoryUsedCount(OSSIZEOF(p));
     }
   }
@@ -603,7 +608,7 @@ void *sqlite3Realloc(void *p, int n){
   }
 
   if( !p ){
-    return sqlite3Malloc(n);
+    return sqlite3Malloc(n, 1);
   }else{
     void *np = 0;
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
@@ -648,8 +653,8 @@ void *sqlite3MallocX(int n){
 ** These two are implemented as wrappers around sqlite3MallocRaw(), 
 ** sqlite3Realloc() and sqlite3Free().
 */ 
-void *sqlite3Malloc(int n){
-  void *p = sqlite3MallocRaw(n);
+void *sqlite3Malloc(int n, int doMemManage){
+  void *p = sqlite3MallocRaw(n, doMemManage);
   if( p ){
     memset(p, 0, n);
   }
@@ -662,6 +667,33 @@ void sqlite3ReallocOrFree(void **pp, int n){
   }
   *pp = p;
 }
+
+/*
+** sqlite3ThreadSafeMalloc() and sqlite3ThreadSafeFree() are used in those
+** rare scenarios where sqlite may allocate memory in one thread and free
+** it in another. They are exactly the same as sqlite3Malloc() and 
+** sqlite3Free() except that:
+**
+**   * The allocated memory is not included in any calculations with 
+**     respect to the soft-heap-limit, and
+**
+**   * sqlite3ThreadSafeMalloc() must be matched with ThreadSafeFree(),
+**     not sqlite3Free(). Calling sqlite3Free() on memory obtained from
+**     ThreadSafeMalloc() will cause an error somewhere down the line.
+*/
+#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
+void *sqlite3ThreadSafeMalloc(int n){
+  ENTER_MALLOC;
+  return sqlite3Malloc(n, 0);
+}
+void sqlite3ThreadSafeFree(void *p){
+  ENTER_MALLOC;
+  if( p ){
+    OSFREE(p);
+  }
+}
+#endif
+
 
 /*
 ** Return the number of bytes allocated at location p. p must be either 
@@ -689,14 +721,14 @@ int sqlite3AllocSize(void *p){
 char *sqlite3StrDup(const char *z){
   char *zNew;
   if( z==0 ) return 0;
-  zNew = sqlite3MallocRaw(strlen(z)+1);
+  zNew = sqlite3MallocRaw(strlen(z)+1, 1);
   if( zNew ) strcpy(zNew, z);
   return zNew;
 }
 char *sqlite3StrNDup(const char *z, int n){
   char *zNew;
   if( z==0 ) return 0;
-  zNew = sqlite3MallocRaw(n+1);
+  zNew = sqlite3MallocRaw(n+1, 1);
   if( zNew ){
     memcpy(zNew, z, n);
     zNew[n] = 0;

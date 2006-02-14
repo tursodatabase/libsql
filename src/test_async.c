@@ -475,6 +475,11 @@ static int asyncRead(OsFile *id, void *obuf, int amt){
   i64 filesize;
   int nRead;
   AsyncFile *pFile = (AsyncFile *)id;
+  OsFile *pBase = pFile->pBaseRead;
+
+  if( !pBase ){
+    pBase = pFile->pBaseWrite;
+  }
 
   /* If an I/O error has previously occurred on this file, then all
   ** subsequent operations fail.
@@ -486,18 +491,18 @@ static int asyncRead(OsFile *id, void *obuf, int amt){
   /* Grab the write queue mutex for the duration of the call */
   pthread_mutex_lock(&async.queueMutex);
 
-  if( pFile->pBaseRead ){
-    rc = sqlite3OsFileSize(pFile->pBaseRead, &filesize);
+  if( pBase ){
+    rc = sqlite3OsFileSize(pBase, &filesize);
     if( rc!=SQLITE_OK ){
       goto asyncread_out;
     }
-    rc = sqlite3OsSeek(pFile->pBaseRead, pFile->iOffset);
+    rc = sqlite3OsSeek(pBase, pFile->iOffset);
     if( rc!=SQLITE_OK ){
       goto asyncread_out;
     }
     nRead = MIN(filesize - pFile->iOffset, amt);
     if( nRead>0 ){
-      rc = sqlite3OsRead(pFile->pBaseRead, obuf, nRead);
+      rc = sqlite3OsRead(pBase, obuf, nRead);
       TRACE(("READ %s %d bytes at %d\n", pFile->zName, nRead, pFile->iOffset));
     }
   }
@@ -562,6 +567,9 @@ int asyncFileSize(OsFile *id, i64 *pSize){
   ** file-system.
   */
   pBase = ((AsyncFile *)id)->pBaseRead;
+  if( !pBase ){
+    pBase = ((AsyncFile *)id)->pBaseWrite;
+  }
   if( pBase ){
     rc = sqlite3OsFileSize(pBase, &s);
   }
@@ -802,8 +810,8 @@ static int asyncFileExists(const char *z){
 */
 static void asyncEnable(int enable){
   if( enable && xOrigOpenReadWrite==0 ){
+    assert(sqlite3Os.xOpenReadWrite);
     sqlite3HashInit(&async.aLock, SQLITE_HASH_BINARY, 1);
-    
     xOrigOpenReadWrite = sqlite3Os.xOpenReadWrite;
     xOrigOpenReadOnly = sqlite3Os.xOpenReadOnly;
     xOrigOpenExclusive = sqlite3Os.xOpenExclusive;
@@ -817,10 +825,11 @@ static void asyncEnable(int enable){
     sqlite3Os.xDelete = asyncDelete;
     sqlite3Os.xFileExists = asyncFileExists;
     sqlite3Os.xSyncDirectory = asyncSyncDirectory;
+    assert(sqlite3Os.xOpenReadWrite);
   }
   if( !enable && xOrigOpenReadWrite!=0 ){
+    assert(sqlite3Os.xOpenReadWrite);
     sqlite3HashClear(&async.aLock);
-
     sqlite3Os.xOpenReadWrite = xOrigOpenReadWrite;
     sqlite3Os.xOpenReadOnly = xOrigOpenReadOnly;
     sqlite3Os.xOpenExclusive = xOrigOpenExclusive;
@@ -834,6 +843,7 @@ static void asyncEnable(int enable){
     xOrigDelete = 0;
     xOrigFileExists = 0;
     xOrigSyncDirectory = 0;
+    assert(sqlite3Os.xOpenReadWrite);
   }
 }
 
@@ -947,8 +957,8 @@ static void *asyncWriterThread(void *NotUsed){
 
       case ASYNC_CLOSE:
         TRACE(("CLOSE %s\n", p->pFile->zName));
-        sqlite3OsClose(&p->pFile->pBaseRead);
         sqlite3OsClose(&p->pFile->pBaseWrite);
+        sqlite3OsClose(&p->pFile->pBaseRead);
         sqlite3OsFree(p->pFile);
         break;
 
@@ -979,12 +989,13 @@ static void *asyncWriterThread(void *NotUsed){
         int delFlag = ((p->iOffset)?1:0);
         OsFile *pBase = 0;
         TRACE(("OPEN %s delFlag=%d\n", p->zBuf, delFlag));
+        assert(pFile->pBaseRead==0 && pFile->pBaseWrite==0);
         rc = xOrigOpenExclusive(p->zBuf, &pBase, delFlag);
         assert( holdingMutex==0 );
         pthread_mutex_lock(&async.queueMutex);
         holdingMutex = 1;
         if( rc==SQLITE_OK ){
-          pFile->pBaseRead = pBase;
+          pFile->pBaseWrite = pBase;
         }
         break;
       }
@@ -1173,6 +1184,7 @@ static int testAsyncWait(
     Tcl_AppendResult(interp, "would block forever", (char*)0);
     return TCL_ERROR;
   }
+
   while( cnt-- && !pthread_mutex_trylock(&async.writerMutex) ){
     pthread_mutex_unlock(&async.writerMutex);
     sched_yield();
