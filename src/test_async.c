@@ -498,10 +498,6 @@ static int asyncRead(OsFile *id, void *obuf, int amt){
   AsyncFile *pFile = (AsyncFile *)id;
   OsFile *pBase = pFile->pBaseRead;
 
-  if( !pBase ){
-    pBase = pFile->pBaseWrite;
-  }
-
   /* If an I/O error has previously occurred on this file, then all
   ** subsequent operations fail.
   */
@@ -588,9 +584,6 @@ int asyncFileSize(OsFile *id, i64 *pSize){
   ** file-system.
   */
   pBase = ((AsyncFile *)id)->pBaseRead;
-  if( !pBase ){
-    pBase = ((AsyncFile *)id)->pBaseWrite;
-  }
   if( pBase ){
     rc = sqlite3OsFileSize(pBase, &s);
   }
@@ -1026,7 +1019,7 @@ static void *asyncWriterThread(void *NotUsed){
         pthread_mutex_lock(&async.queueMutex);
         holdingMutex = 1;
         if( rc==SQLITE_OK ){
-          pFile->pBaseWrite = pBase;
+          pFile->pBaseRead = pBase;
         }
         break;
       }
