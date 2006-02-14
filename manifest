@@ -1,5 +1,5 @@
-C Fix\sbug\sin\stest_async.c\sversion\sof\sOsFileSize().\s(CVS\s3095)
-D 2006-02-14T13:48:34
+C Account\sfor\sa\smalloc\sfailure\sin\sthe\sasynchronous\swriter\sthread\sin\stest_async.c\s(CVS\s3096)
+D 2006-02-14T14:02:08
 F Makefile.in 5d8dff443383918b700e495de42ec65bc1c8865b
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -80,7 +80,7 @@ F src/test4.c ff4e9406b3d2809966d8f0e82468ac5508be9f56
 F src/test5.c 7162f8526affb771c4ed256826eee7bb9eca265f
 F src/test6.c 60a02961ceb7b3edc25f5dc5c1ac2556622a76de
 F src/test7.c d28d3e62f9594923648fc6a8fb030eba36564ba1
-F src/test_async.c 3cdf60bc8c171edb6dcca2280f3856e3222f54c4
+F src/test_async.c 2caf868189978e12feece7ec3db5e6b6829cedf4
 F src/test_md5.c 6c42bc0a3c0b54be34623ff77a0eec32b2fa96e3
 F src/test_server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/tokenize.c 382b3bb0ca26eb9153b5d20b246ef512a114a24f
@@ -106,7 +106,7 @@ F test/alter3.test a6eec8f454be9b6ce73d8d7dc711453675a10ce7
 F test/altermalloc.test 6e1f404ec021eb2ba6582e3c77b0a35cf206b7af
 F test/analyze.test 2f55535aa335785db1a2f97d3f3831c16c09f8b0
 F test/async.test ae59f861f17f3e9076cd557cd93677b7c77e57b5
-F test/async2.test 48ad3250cd8c330bbc453677050f2479b1cd6f5b
+F test/async2.test 81e4a1fd010c903eb3b763fdb4c4cad7a99afb14
 F test/attach.test 036315207c477211470168bf121b1c493f781515
 F test/attach2.test 0e6a7c54343c85dd877a1e86073a05176043ed40
 F test/attach3.test 63013383adc4380af69779f34f4af19bd49f7cbe
@@ -353,7 +353,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 528dfb71801bb7b8a66944db6f32cc3dc0054118
-R a1b635f09d2d56322ff3f05d56d57b87
+P 239e53b4f29b4faf2dbdc2aebd2332ad25b14286
+R 2158cc9ca69931f8ebc942cba11a47eb
 U danielk1977
-Z ddae2f240109eb3d55973c2c0f0a9799
+Z 6ea576e81af03625c298029f69fe98ad

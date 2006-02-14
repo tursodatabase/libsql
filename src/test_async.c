@@ -1076,6 +1076,7 @@ static void *asyncWriterThread(void *NotUsed){
     ** in order to give other threads a chance to work with the write queue.
     */
     if( !async.pQueueFirst || !async.ioError ){
+      sqlite3ApiExit(0, 0);
       pthread_mutex_unlock(&async.queueMutex);
       holdingMutex = 0;
       if( async.ioDelay>0 ){
