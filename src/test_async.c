@@ -364,8 +364,8 @@ static void addAsyncWrite(AsyncWrite *pWrite){
     async.pQueueFirst = pWrite;
   }
   async.pQueueLast = pWrite;
-  TRACE(("PUSH %p (%s %s)\n", pWrite, azOpcodeName[pWrite->op],
-         pWrite->pFile ? pWrite->pFile->zName : "-"));
+  TRACE(("PUSH %p (%s %s %d)\n", pWrite, azOpcodeName[pWrite->op],
+         pWrite->pFile ? pWrite->pFile->zName : "-", pWrite->iOffset));
 
   if( pWrite->op==ASYNC_CLOSE ){
     async.nFile--;
@@ -604,7 +604,7 @@ int asyncFileSize(OsFile *id, i64 *pSize){
             s = MAX(p->iOffset + (i64)(p->nByte), s);
             break;
           case ASYNC_TRUNCATE:
-            s = MIN(s, p->nByte);
+            s = MIN(s, p->iOffset);
             break;
         }
       }

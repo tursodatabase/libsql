@@ -5,7 +5,7 @@
 #
 #***********************************************************************
 #
-# $Id: async2.test,v 1.1 2006/02/14 13:25:45 danielk1977 Exp $
+# $Id: async2.test,v 1.2 2006/02/14 13:48:34 danielk1977 Exp $
 
 
 if {[info commands sqlite3async_enable]==""} {
@@ -59,7 +59,6 @@ for {set n 3} {$::go} {incr n} {
   sqlite3async_start
   sqlite3async_wait
 
-  sqlite3async_enable 0
   set ::sqlite_io_error_pending 0
   sqlite3 db test.db
   set c [db eval {SELECT c FROM counter LIMIT 1}]
