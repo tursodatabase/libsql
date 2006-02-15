@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the lang-*.html files.
 #
-set rcsid {$Id: lang.tcl,v 1.109 2006/02/11 17:34:02 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.110 2006/02/15 17:30:31 drh Exp $}
 source common.tcl
 
 if {[llength $argv]>0} {
@@ -988,7 +988,7 @@ OR</font>
 <p>Supported unary operators are these:</p>
 
 <blockquote><pre>
-<font color="#2c2cf0"><big>-    +    !    ~</big></font>
+<font color="#2c2cf0"><big>-    +    !    ~    NOT</big></font>
 </pre></blockquote>
 
 <p>Note that there are two variations of the equals and not equals

@@ -1,5 +1,5 @@
-C Update\sthe\sconfigure\sscript\sto\suse\sAC_HELP_STRING.\s(CVS\s3098)
-D 2006-02-15T02:00:26
+C Mention\sthe\sNOT\sunary\soperator\sin\sthe\sdocumentation.\s(CVS\s3099)
+D 2006-02-15T17:30:31
 F Makefile.in 5d8dff443383918b700e495de42ec65bc1c8865b
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -331,7 +331,7 @@ F www/fullscanb.gif f7c94cb227f060511f8909e10f570157263e9a25
 F www/index-ex1-x-b.gif f9b1d85c3fa2435cf38b15970c7e3aa1edae23a3
 F www/index.tcl 9c659eec487d5e9196d4125ab200cfc86e93528d
 F www/indirect1b1.gif adfca361d2df59e34f9c5cac52a670c2bfc303a1
-F www/lang.tcl 03c852ea4e4277a0ac517b50c3ad5c237d0bc3ae
+F www/lang.tcl 53a3643fe8a1f2397a0be00527eb26e4c801c0ae
 F www/lockingv3.tcl f59b19d6c8920a931f096699d6faaf61c05db55f
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
 F www/nulls.tcl ec35193f92485b87b90a994a01d0171b58823fcf
@@ -353,7 +353,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P f0c45b7eab219ee812dbd2eb5e1c39fdf52a0ff2
-R 958af96d13ce0faac0c95d0bf444bc77
+P 92be79debf328b9b2aac6509ed1dd94528306d3b
+R 339b4750bd4ec95632107395a93b3c99
 U drh
-Z 67033d760f4f258dce43de518e3a9ae5
+Z 89d7d9a09550d84cc5fc33393b1b8887
