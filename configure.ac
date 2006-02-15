@@ -116,7 +116,7 @@ AC_INIT(src/sqlite.h.in)
 dnl Put the RCS revision string after AC_INIT so that it will also
 dnl show in in configure.
 # The following RCS revision string applies to configure.in
-# $Revision: 1.23 $
+# $Revision: 1.24 $
 
 #########
 # Programs needed
@@ -153,7 +153,7 @@ AC_SUBST(VERSION_NUMBER)
 # $system is the result of uname -s.
 #
 AC_ARG_WITH(hints,
-  [  --with-hints=FILE       Read configuration options from FILE],
+  AC_HELP_STRING([--with-hints=FILE],[Read configuration options from FILE]),
   hints=$withval)
 if test "$hints" = ""; then
   host=`hostname | sed 's/\..*//'`
@@ -279,7 +279,7 @@ fi
 # Do we want to support multithreaded use of sqlite
 #
 AC_ARG_ENABLE(threadsafe, 
-[  --enable-threadsafe           Support threadsafe operation],,enable_threadsafe=no)
+AC_HELP_STRING([--enable-threadsafe],[Support threadsafe operation]),,enable_threadsafe=no)
 AC_MSG_CHECKING([whether to support threadsafe operation])
 if test "$enable_threadsafe" = "no"; then
   THREADSAFE=0
@@ -306,7 +306,7 @@ AC_SUBST(TARGET_THREAD_LIB)
 # due to bugs in the threading implementations.  This is thus off by default.
 #
 AC_ARG_ENABLE(cross-thread-connections, 
-[  --enable-cross-thread-connections   Allow connection sharing across threads],,enable_xthreadconnect=no)
+AC_HELP_STRING([--enable-cross-thread-connections],[Allow connection sharing across threads]),,enable_xthreadconnect=no)
 AC_MSG_CHECKING([whether to allow connections to be shared across threads])
 if test "$enable_xthreadconnect" = "no"; then
   XTHREADCONNECT=''
@@ -324,7 +324,7 @@ AC_SUBST(XTHREADCONNECT)
 # threads can safely override each others locks in all runtime situations.
 #
 AC_ARG_ENABLE(threads-override-locks, 
-[  --enable-threads-override-locks     Threads can override each others locks],,enable_threads_override_locks=no)
+AC_HELP_STRING([--enable-threads-override-locks],[Threads can override each others locks]),,enable_threads_override_locks=no)
 AC_MSG_CHECKING([whether threads can override each others locks])
 if test "$enable_threads_override_locks" = "no"; then
   THREADSOVERRIDELOCKS='-1'
@@ -339,7 +339,7 @@ AC_SUBST(THREADSOVERRIDELOCKS)
 # Do we want to support release
 #
 AC_ARG_ENABLE(releasemode, 
-[  --enable-releasemode           Support libtool link to release mode],,enable_releasemode=no)
+AC_HELP_STRING([--enable-releasemode],[Support libtool link to release mode]),,enable_releasemode=no)
 AC_MSG_CHECKING([whether to support shared library linked as release mode or not])
 if test "$enable_releasemode" = "no"; then
   ALLOWRELEASE=""
@@ -354,7 +354,7 @@ AC_SUBST(ALLOWRELEASE)
 # Do we want temporary databases in memory
 #
 AC_ARG_ENABLE(tempstore, 
-[  --enable-tempstore     Use an in-ram database for temporary tables (never,no,yes,always)],,enable_tempstore=no)
+AC_HELP_STRING([--enable-tempstore],[Use an in-ram database for temporary tables (never,no,yes,always)]),,enable_tempstore=no)
 AC_MSG_CHECKING([whether to use an in-ram database for temporary tables])
 case "$enable_tempstore" in
   never ) 
@@ -440,10 +440,10 @@ fi
 # Those macros could not be used directly since we have to make some
 # minor changes to accomodate systems that do not have TCL installed.
 #
-AC_ARG_ENABLE(tcl, [  --disable-tcl       do not build TCL extension],
+AC_ARG_ENABLE(tcl, AC_HELP_STRING([--disable-tcl],[do not build TCL extension]),
       [use_tcl=$enableval],[use_tcl=yes])
 if test "${use_tcl}" = "yes" ; then
-  AC_ARG_WITH(tcl, [  --with-tcl=DIR          directory containing tcl configuration (tclConfig.sh)], with_tclconfig=${withval})
+  AC_ARG_WITH(tcl, AC_HELP_STRING([--with-tcl=DIR],[directory containing tcl configuration (tclConfig.sh)]), with_tclconfig=${withval})
   AC_MSG_CHECKING([for Tcl configuration])
   AC_CACHE_VAL(ac_cv_c_tclconfig,[
     # First check to see if --with-tcl was specified.
@@ -641,7 +641,7 @@ AC_SUBST(TARGET_HAVE_READLINE)
 
 #########
 # check for debug enabled
-AC_ARG_ENABLE(debug, [  --enable-debug         enable debugging & verbose explain],
+AC_ARG_ENABLE(debug, AC_HELP_STRING([--enable-debug],[enable debugging & verbose explain]),
       [use_debug=$enableval],[use_debug=no])
 if test "${use_debug}" = "yes" ; then
   TARGET_DEBUG=""
