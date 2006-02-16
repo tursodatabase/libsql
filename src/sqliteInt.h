@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.483 2006/02/15 21:19:01 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.484 2006/02/16 18:16:37 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -250,12 +250,6 @@ struct BusyHandler {
 #include "vdbe.h"
 #include "btree.h"
 #include "pager.h"
-
-/*
-** This macro casts a pointer to an integer.  Useful for doing
-** pointer arithmetic.
-*/
-#define Addr(X)  ((uptr)X)
 
 #ifdef SQLITE_MEMDEBUG
 /*

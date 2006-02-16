@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.162 2006/02/10 03:06:10 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.163 2006/02/16 18:16:37 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1114,11 +1114,12 @@ void sqlite3_result_value(sqlite3_context*, sqlite3_value*);
 ** These are the allowed values for the eTextRep argument to
 ** sqlite3_create_collation and sqlite3_create_function.
 */
-#define SQLITE_UTF8    1
-#define SQLITE_UTF16LE 2
-#define SQLITE_UTF16BE 3
-#define SQLITE_UTF16   4    /* Use native byte order */
-#define SQLITE_ANY     5    /* sqlite3_create_function only */
+#define SQLITE_UTF8           1
+#define SQLITE_UTF16LE        2
+#define SQLITE_UTF16BE        3
+#define SQLITE_UTF16          4    /* Use native byte order */
+#define SQLITE_ANY            5    /* sqlite3_create_function only */
+#define SQLITE_UTF16_ALIGNED  8    /* sqlite3_create_collation only */
 
 /*
 ** These two functions are used to add new collation sequences to the

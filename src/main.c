@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.334 2006/02/09 13:43:29 danielk1977 Exp $
+** $Id: main.c,v 1.335 2006/02/16 18:16:37 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -743,6 +743,7 @@ static int createCollation(
   int(*xCompare)(void*,int,const void*,int,const void*)
 ){
   CollSeq *pColl;
+  int enc2;
   
   if( sqlite3SafetyCheck(db) ){
     return SQLITE_MISUSE;
@@ -752,15 +753,13 @@ static int createCollation(
   ** to one of SQLITE_UTF16LE or SQLITE_UTF16BE using the
   ** SQLITE_UTF16NATIVE macro. SQLITE_UTF16 is not used internally.
   */
-  if( enc==SQLITE_UTF16 ){
-    enc = SQLITE_UTF16NATIVE;
+  enc2 = enc & ~SQLITE_UTF16_ALIGNED;
+  if( enc2==SQLITE_UTF16 ){
+    enc2 = SQLITE_UTF16NATIVE;
   }
 
-  if( enc!=SQLITE_UTF8 && enc!=SQLITE_UTF16LE && enc!=SQLITE_UTF16BE ){
-    sqlite3Error(db, SQLITE_ERROR, 
-        "Param 3 to sqlite3_create_collation() must be one of "
-        "SQLITE_UTF8, SQLITE_UTF16, SQLITE_UTF16LE or SQLITE_UTF16BE"
-    );
+  if( (enc2&~3)!=0 ){
+    sqlite3Error(db, SQLITE_ERROR, "unknown encoding");
     return SQLITE_ERROR;
   }
 
@@ -768,7 +767,7 @@ static int createCollation(
   ** sequence. If so, and there are active VMs, return busy. If there
   ** are no active VMs, invalidate any pre-compiled statements.
   */
-  pColl = sqlite3FindCollSeq(db, (u8)enc, zName, strlen(zName), 0);
+  pColl = sqlite3FindCollSeq(db, (u8)enc2, zName, strlen(zName), 0);
   if( pColl && pColl->xCmp ){
     if( db->activeVdbeCnt ){
       sqlite3Error(db, SQLITE_BUSY, 
@@ -778,11 +777,11 @@ static int createCollation(
     sqlite3ExpirePreparedStatements(db);
   }
 
-  pColl = sqlite3FindCollSeq(db, (u8)enc, zName, strlen(zName), 1);
+  pColl = sqlite3FindCollSeq(db, (u8)enc2, zName, strlen(zName), 1);
   if( pColl ){
     pColl->xCmp = xCompare;
     pColl->pUser = pCtx;
-    pColl->enc = enc;
+    pColl->enc = enc2 | (enc & SQLITE_UTF16_ALIGNED);
   }
   sqlite3Error(db, SQLITE_OK, 0);
   return SQLITE_OK;
@@ -1230,4 +1229,3 @@ error_out:
   return sqlite3ApiExit(db, rc);
 }
 #endif
-

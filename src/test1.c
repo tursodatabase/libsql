@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.206 2006/02/10 03:06:10 danielk1977 Exp $
+** $Id: test1.c,v 1.207 2006/02/16 18:16:37 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -1529,7 +1529,56 @@ bad_args:
   Tcl_WrongNumArgs(interp, 1, objv, "DB");
   return TCL_ERROR;
 }
-#endif /* SQLITE_OMIT_UTF16 */
+
+/*
+** tclcmd:   add_alignment_test_collations  DB
+**
+** Add two new collating sequences to the database DB
+**
+**     utf16_aligned
+**     utf16_unaligned
+**
+** Both collating sequences use the same sort order as BINARY.
+** The only difference is that the utf16_aligned collating
+** sequence is declared with the SQLITE_UTF16_ALIGNED flag.
+** Both collating functions increment the unaligned utf16 counter
+** whenever they see a string that begins on an odd byte boundary.
+*/
+static int unaligned_string_counter = 0;
+static int alignmentCollFunc(
+  void *NotUsed,
+  int nKey1, const void *pKey1,
+  int nKey2, const void *pKey2
+){
+  int rc, n;
+  n = nKey1<nKey2 ? nKey1 : nKey2;
+  if( nKey1>0 && 1==(1&(int)pKey1) ) unaligned_string_counter++;
+  if( nKey2>0 && 1==(1&(int)pKey2) ) unaligned_string_counter++;
+  rc = memcmp(pKey1, pKey2, n);
+  if( rc==0 ){
+    rc = nKey1 - nKey2;
+  }
+  return rc;
+}
+static int add_alignment_test_collations(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3 *db;
+  if( objc>=2 ){
+    if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+    sqlite3_create_collation(db, "utf16_unaligned",
+        SQLITE_UTF16, 
+        0, alignmentCollFunc);
+    sqlite3_create_collation(db, "utf16_aligned",
+        SQLITE_UTF16 | SQLITE_UTF16_ALIGNED, 
+        0, alignmentCollFunc);
+  }
+  return SQLITE_OK;
+}
+#endif /* !defined(SQLITE_OMIT_UTF16) */
 
 /*
 ** Usage: add_test_function <db ptr> <utf8> <utf16le> <utf16be>
@@ -3582,6 +3631,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_column_text16",     test_stmt_utf16, sqlite3_column_text16    },
      { "sqlite3_column_decltype16", test_stmt_utf16, sqlite3_column_decltype16},
      { "sqlite3_column_name16",     test_stmt_utf16, sqlite3_column_name16    },
+     { "add_alignment_test_collations", add_alignment_test_collations, 0      },
 #ifdef SQLITE_ENABLE_COLUMN_METADATA
 {"sqlite3_column_database_name16",
   test_stmt_utf16, sqlite3_column_database_name16},
@@ -3667,6 +3717,8 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
       (char*)&sqlite3_os_trace, TCL_LINK_INT);
   Tcl_LinkVar(interp, "sqlite3_tsd_count",
       (char*)&sqlite3_tsd_count, TCL_LINK_INT);
+  Tcl_LinkVar(interp, "unaligned_string_counter",
+      (char*)&unaligned_string_counter, TCL_LINK_INT);
 #if OS_UNIX && defined(SQLITE_TEST) && defined(THREADSAFE) && THREADSAFE
   Tcl_LinkVar(interp, "threadsOverrideEachOthersLocks",
       (char*)&threadsOverrideEachOthersLocks, TCL_LINK_INT);
