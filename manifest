@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sthe\sfile\sformat\sdocument.\s(CVS\s3101)
-D 2006-02-16T00:31:01
+C Fix\smore\stypos\sin\sthe\sfile\sformat\sdocument.\s(CVS\s3102)
+D 2006-02-16T00:32:37
 F Makefile.in 5d8dff443383918b700e495de42ec65bc1c8865b
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -326,7 +326,7 @@ F www/download.tcl d56a1c30b1c3c18f62926a806179976eb133ce94
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/faq.tcl ad5f388e1924c3fff4892b7f45ea58aa1d7a562a
 F www/fileformat.tcl 900c95b9633abc3dcfc384d9ddd8eb4876793059
-F www/formatchng.tcl 00827d3f37bc3a41506961a50b94fb54a28256d1
+F www/formatchng.tcl 4972e680f9331ea46f47001e349baba807f5b60a
 F www/fullscanb.gif f7c94cb227f060511f8909e10f570157263e9a25
 F www/index-ex1-x-b.gif f9b1d85c3fa2435cf38b15970c7e3aa1edae23a3
 F www/index.tcl 9c659eec487d5e9196d4125ab200cfc86e93528d
@@ -353,7 +353,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 4e6b74b290282fd10fae97df8dfa643a1b7ef0c6
-R 66f1afc2d861e340571ee31a150cfe92
+P fac0d202e1d9fcc33dc69006a369034ee003e183
+R a8c099a939bc283313912ffbefa2b486
 U drh
-Z fa194c2de6a56b73ed49a7241cfafc7c
+Z 64309bca2b9a9ab73935cca1b1290146

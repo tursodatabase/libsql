@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the formatchng.html file.
 #
-set rcsid {$Id: formatchng.tcl,v 1.16 2006/02/16 00:31:01 drh Exp $ }
+set rcsid {$Id: formatchng.tcl,v 1.17 2006/02/16 00:32:37 drh Exp $ }
 source common.tcl
 header {File Format Changes in SQLite}
 puts {
@@ -189,7 +189,7 @@ occurred since version 1.0.0:
 </tr>
 <tr>
   <td valign="top">3.0.8 to 3.1.0</td>
-  <td valign="top">2004-Jan-21</td>
+  <td valign="top">2005-Jan-21</td>
   <td><p>Version 3.1.0 adds support for
   <a href="pragma.html#pragma_auto_vacuum">autovacuum mode</a>.
   Prior versions of SQLite will be able to read an autovacuumed
@@ -200,7 +200,7 @@ occurred since version 1.0.0:
 </tr>
 <tr>
   <td valign="top">3.1.6 to 3.2.0</td>
-  <td valign="top">2004-Mar-19</td>
+  <td valign="top">2005-Mar-19</td>
   <td><p>Version 3.2.0 adds support for the 
   <a href="lang_altertable.html">ALTER TABLE ADD COLUMN</a>
   command.  A database that has been modified by this command can
