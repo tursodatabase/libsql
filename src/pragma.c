@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.118 2006/02/11 01:25:51 drh Exp $
+** $Id: pragma.c,v 1.119 2006/02/17 12:25:16 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -226,6 +226,13 @@ void sqlite3Pragma(
   iDb = sqlite3TwoPartName(pParse, pId1, pId2, &pId);
   if( iDb<0 ) return;
   pDb = &db->aDb[iDb];
+
+  /* If the temp database has been explicitly named as part of the 
+  ** pragma, make sure it is open. 
+  */
+  if( iDb==1 && sqlite3OpenTempDatabase(pParse) ){
+    return;
+  }
 
   zLeft = sqlite3NameFromToken(pId);
   if( !zLeft ) return;
@@ -948,10 +955,12 @@ void sqlite3Pragma(
     ** Reset the safety level, in case the fullfsync flag or synchronous
     ** setting changed.
     */
+#ifndef SQLITE_OMIT_PAGER_PRAGMAS
     if( db->autoCommit ){
       sqlite3BtreeSetSafetyLevel(pDb->pBt, pDb->safety_level,
                  (db->flags&SQLITE_FullFSync)!=0);
     }
+#endif
   }
 pragma_out:
   sqliteFree(zLeft);

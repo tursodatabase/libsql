@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.39 2006/02/09 16:52:24 drh Exp $
+# $Id: pragma.test,v 1.40 2006/02/17 12:25:16 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -768,6 +768,34 @@ ifcapable schema_pragmas {
       pragma collation_list;
     }
   } {0 New_Collation 1 NOCASE 2 BINARY}
+}
+
+ifcapable schema_pragmas&&tempdb {
+  do_test pragma-12.1 {
+    sqlite3 db2 test.db
+    execsql {
+      PRAGMA temp.table_info('abc');
+    } db2
+  } {}
+  db2 close
+
+  do_test pragma-12.2 {
+    sqlite3 db2 test.db
+    execsql {
+      PRAGMA temp.default_cache_size = 200;
+      PRAGMA temp.default_cache_size;
+    } db2
+  } {200}
+  db2 close
+
+  do_test pragma-12.3 {
+    sqlite3 db2 test.db
+    execsql {
+      PRAGMA temp.cache_size = 400;
+      PRAGMA temp.cache_size;
+    } db2
+  } {400}
+  db2 close
 }
 
 # Reset the sqlite3_temp_directory variable for the next run of tests:

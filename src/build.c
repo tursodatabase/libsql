@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.386 2006/02/10 18:08:09 drh Exp $
+** $Id: build.c,v 1.387 2006/02/17 12:25:15 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2958,7 +2958,7 @@ void sqlite3RollbackTransaction(Parse *pParse){
 ** Make sure the TEMP database is open and available for use.  Return
 ** the number of errors.  Leave any error messages in the pParse structure.
 */
-static int sqlite3OpenTempDatabase(Parse *pParse){
+int sqlite3OpenTempDatabase(Parse *pParse){
   sqlite3 *db = pParse->db;
   if( db->aDb[1].pBt==0 && !pParse->explain ){
     int rc = sqlite3BtreeFactory(db, 0, 0, MAX_PAGES, &db->aDb[1].pBt);
