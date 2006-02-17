@@ -1,5 +1,5 @@
-C Ensure\stemp\sdb\sis\sopen\sbefore\sexecuting\sa\spragma\slike\s"temp.cachesize\s=\sxxx".\sFix\sfor\s#1682.\s(CVS\s3104)
-D 2006-02-17T12:25:15
+C Fix\sbug\spreventing\scompliation\swithout\sMEMDEBUG\swhen\sENABLE_MEMORY_MANAGE\sis\sdefined.\s(CVS\s3105)
+D 2006-02-17T15:01:36
 F Makefile.in 5d8dff443383918b700e495de42ec65bc1c8865b
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -70,7 +70,7 @@ F src/select.c 7d069e875d0eec05129c7e8b9c99422d7c9c6321
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 738f55ed75fb36731e764bfdb40756ac43b90b08
 F src/sqlite.h.in 0bf6f03f9a14dde5f3a4f87471840803acaa4497
-F src/sqliteInt.h 0b52ba38f922dcb79ddf806aa33377620df9773c
+F src/sqliteInt.h bd6a966fecba8955e5861234d97d6f835e347c42
 F src/table.c f64ec4fbfe333f8df925bc6ba494f55e05b0e75e
 F src/tclsqlite.c d9c26374b52cd47233ae0620d0a858a59b601f89
 F src/test1.c 9d299609a0ce35157fe15cdf8b4c663db5d40386
@@ -95,7 +95,7 @@ F src/vdbeInt.h eb3f86ab08ef11635bc78eb88c3ff13f923c233b
 F src/vdbeapi.c 7dc662e7c905ce666bb506dced932e0307115cbf
 F src/vdbeaux.c 95f4ed0bc8ed45f16823d84504310495b5dc587d
 F src/vdbefifo.c 9efb94c8c3f4c979ebd0028219483f88e57584f5
-F src/vdbemem.c 51a810d5a23cd7e93ac631bb4e4e32136d9fbeb7
+F src/vdbemem.c a1738a8605bcb92615698eeda9c61c0d46971b10
 F src/where.c c7d71d5e55c9c4c1e948089280fb0dec7c7d1ef6
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
 F test/aggerror.test b854de90f530ae37be68fbfe6de40e111358cbb2
@@ -354,7 +354,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 7a1701e8c562087d364dff28cd7cad7ca4cdb5ae
-R 9f6be0b8a587ac5dc16004f273a10940
+P 1e4644b2369547da65fcaa9a3c8ddd206a3c82ae
+R 264a524f59c325c01de8c7c5135ec4f0
 U danielk1977
-Z 5b1fc2d6ea9d692bde7c50e61899b51e
+Z d4257cc0376e2524b4b1d5c966469142

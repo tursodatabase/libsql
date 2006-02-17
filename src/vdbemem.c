@@ -119,6 +119,7 @@ int sqlite3VdbeMemMakeWriteable(Mem *pMem){
   z[n+1] = 0;
   pMem->z = (char*)z;
   pMem->flags &= ~(MEM_Ephem|MEM_Static);
+  assert(0==(1&(int)pMem->z));
   return SQLITE_OK;
 }
 

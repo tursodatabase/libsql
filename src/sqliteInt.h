@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.485 2006/02/17 12:25:16 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.486 2006/02/17 15:01:36 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -278,6 +278,7 @@ extern int sqlite3_iLine;            /* Line number for debug info */
 
 #else
 
+#define ENTER_MALLOC 0
 #define sqliteMalloc(x)          sqlite3Malloc(x,1)
 #define sqliteMallocRaw(x)       sqlite3MallocRaw(x,1)
 #define sqliteRealloc(x,y)       sqlite3Realloc(x,y)
