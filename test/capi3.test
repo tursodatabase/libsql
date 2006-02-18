@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi3.test,v 1.43 2006/02/10 07:07:16 danielk1977 Exp $
+# $Id: capi3.test,v 1.44 2006/02/18 16:36:46 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -998,5 +998,38 @@ do_test capi3-15.2 {
 do_test capi3-15.3 {
   sqlite3_finalize $STMT
 } {SQLITE_OK}
+
+# Make sure code is always generated even if an IF EXISTS or 
+# IF NOT EXISTS clause is present that the table does not or
+# does exists.  That way we will always have a prepared statement
+# to expire when the schema changes.
+#
+do_test capi3-16.1 {
+  set sql {DROP TABLE IF EXISTS t3}
+  set STMT [sqlite3_prepare $DB $sql -1 TAIL]
+  sqlite3_finalize $STMT
+  expr {$STMT!=""}
+} {1}
+do_test capi3-16.2 {
+  set sql {CREATE TABLE IF NOT EXISTS t1(x,y)}
+  set STMT [sqlite3_prepare $DB $sql -1 TAIL]
+  sqlite3_finalize $STMT
+  expr {$STMT!=""}
+} {1}
+
+# But still we do not generate code if there is no SQL
+#
+do_test capi3-16.3 {
+  set STMT [sqlite3_prepare $DB {} -1 TAIL]
+  sqlite3_finalize $STMT
+  expr {$STMT==""}
+} {1}
+do_test capi3-16.4 {
+  set STMT [sqlite3_prepare $DB {;} -1 TAIL]
+  sqlite3_finalize $STMT
+  expr {$STMT==""}
+} {1}
+
+
 
 finish_test
