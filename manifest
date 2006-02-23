@@ -1,5 +1,5 @@
-C New\scompile-time\soption\sSQLITE_SECURE_DELETE\stakes\scare\sto\soverwrite\sdeleted\sdata\swith\szeros.\s(CVS\s3107)
-D 2006-02-22T03:08:33
+C Detect\sinteger\soverflow\sin\sthe\sabs()\sfunction.\s\sThe\srandom()\sfunction\nnow\sprovides\s64\sbits\sof\srandomness\sinstead\sof\sjust\s32.\s\sFix\sbugs\sin\ntesting\slogic\sof\stest4.c.\s(CVS\s3108)
+D 2006-02-23T21:43:56
 F Makefile.in 5d8dff443383918b700e495de42ec65bc1c8865b
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -43,7 +43,7 @@ F src/date.c cd2bd5d1ebc6fa12d6312f69789ae5b0a2766f2e
 F src/delete.c ca404d5fd5f678e32f2f46377ad802cd0219aa99
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
 F src/expr.c 9c957fabf95ef62288151eecd5c490a629470666
-F src/func.c aa62ef0f5b7d2907ea7e34a33402409f1a8806eb
+F src/func.c b1919255cef5580ac1fcd555ee9bb96974bde64d
 F src/hash.c 449f3d6620193aa557f5d86cbc5cc6b87702b185
 F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
 F src/insert.c 67b3dc11831c58d8703eb502355ad3704ee18f66
@@ -76,7 +76,7 @@ F src/tclsqlite.c d9c26374b52cd47233ae0620d0a858a59b601f89
 F src/test1.c 9d299609a0ce35157fe15cdf8b4c663db5d40386
 F src/test2.c ca74a1d8aeb7d9606e8f6b762c5daf85c1a3f92b
 F src/test3.c 86e99724ee898b119ed575ef9f98618afe7e5e5d
-F src/test4.c ff4e9406b3d2809966d8f0e82468ac5508be9f56
+F src/test4.c 8b784cd82de158a2317cb4ac4bc86f91ad315e25
 F src/test5.c 7162f8526affb771c4ed256826eee7bb9eca265f
 F src/test6.c 60a02961ceb7b3edc25f5dc5c1ac2556622a76de
 F src/test7.c d28d3e62f9594923648fc6a8fb030eba36564ba1
@@ -165,7 +165,7 @@ F test/enc3.test 890508efff6677345e93bf2a8adb0489b30df030
 F test/expr.test 4e65cade931e14a0194eee41e33707e7af5f397a
 F test/fkey1.test 153004438d51e6769fb1ce165f6313972d6263ce
 F test/format4.test 9f31d41d4f926cab97b2ebe6be00a6ab12dece87
-F test/func.test 1dbd4a4bb250b6e481a1b70e2d40a8836c886cfb
+F test/func.test 9fdc0a5ba9435dc7700cb81dbc46ee2459fb21e4
 F test/hook.test 7e7645fd9a033f79cce8fdff151e32715e7ec50a
 F test/in.test 40feeebc7e38576255051aad428322be1545e0f1
 F test/index.test c478459611ded74745fee57f99f424da8a5f5fbd
@@ -354,7 +354,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P f8173e6aea8e90f64f5907f3f7ff4f34281f40da
-R 9d6c9e65820f501eb557494790540e66
+P 614fac906807b8c75e04effc01666874d13ce636
+R f5403923a4dc3e33ec17bd28655d7e3e
 U drh
-Z 6bba2fc0555872ca4ae957a6ce0a202d
+Z a926d16e02bacd004ff1a77e6671add9

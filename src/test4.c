@@ -11,7 +11,7 @@
 *************************************************************************
 ** Code for testing the the SQLite library in a multithreaded environment.
 **
-** $Id: test4.c,v 1.16 2006/01/20 17:56:33 drh Exp $
+** $Id: test4.c,v 1.17 2006/02/23 21:43:56 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -645,7 +645,7 @@ static int tcl_thread_db_get(
   thread_wait(&threadset[i]);
   sqlite3TestMakePointerStr(interp, zBuf, threadset[i].db);
   threadset[i].db = 0;
-  Tcl_SetResult(interp, zBuf, 0);
+  Tcl_AppendResult(interp, zBuf, (char*)0);
   return TCL_OK;
 }
 
@@ -678,7 +678,7 @@ static int tcl_thread_stmt_get(
   thread_wait(&threadset[i]);
   sqlite3TestMakePointerStr(interp, zBuf, threadset[i].pStmt);
   threadset[i].pStmt = 0;
-  Tcl_SetResult(interp, zBuf, 0);
+  Tcl_AppendResult(interp, zBuf, (char*)0);
   return TCL_OK;
 }
 
