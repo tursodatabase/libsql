@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.123 2006/02/23 21:43:56 drh Exp $
+** $Id: func.c,v 1.124 2006/02/23 21:51:13 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -266,6 +266,8 @@ static void randomFunc(
 ){
   sqlite_int64 r;
   sqlite3Randomness(sizeof(r), &r);
+  if( (r<<1)==0 ) r = 0;  /* Prevent 0x8000.... as the result so that we */
+                          /* can always do abs() of the result */
   sqlite3_result_int64(context, r);
 }
 
