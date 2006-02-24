@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.388 2006/02/18 16:36:45 drh Exp $
+** $Id: build.c,v 1.389 2006/02/24 02:53:50 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -338,7 +338,7 @@ static void freeIndex(Index *p){
 ** it is not unlinked from the Table that it indexes.
 ** Unlinking from the Table must be done by the calling function.
 */
-static void sqliteDeleteIndex(sqlite3 *db, Index *p){
+static void sqliteDeleteIndex(Index *p){
   Index *pOld;
   const char *zName = p->zName;
 
@@ -507,7 +507,7 @@ void sqlite3DeleteTable(sqlite3 *db, Table *pTable){
   for(pIndex = pTable->pIndex; pIndex; pIndex=pNext){
     pNext = pIndex->pNext;
     assert( pIndex->pSchema==pTable->pSchema );
-    sqliteDeleteIndex(db, pIndex);
+    sqliteDeleteIndex(pIndex);
   }
 
 #ifndef SQLITE_OMIT_FOREIGN_KEY
@@ -690,8 +690,7 @@ int sqlite3CheckObjectName(Parse *pParse, const char *zName){
 ** Begin constructing a new table representation in memory.  This is
 ** the first of several action routines that get called in response
 ** to a CREATE TABLE statement.  In particular, this routine is called
-** after seeing tokens "CREATE" and "TABLE" and the table name.  The
-** pStart token is the CREATE and pName is the table name.  The isTemp
+** after seeing tokens "CREATE" and "TABLE" and the table name. The isTemp
 ** flag is true if the table should be stored in the auxiliary database
 ** file instead of in the main database file.  This is normally the case
 ** when the "TEMP" or "TEMPORARY" keyword occurs in between
@@ -705,7 +704,6 @@ int sqlite3CheckObjectName(Parse *pParse, const char *zName){
 */
 void sqlite3StartTable(
   Parse *pParse,   /* Parser context */
-  Token *pStart,   /* The "CREATE" token */
   Token *pName1,   /* First part of the name of the table or view */
   Token *pName2,   /* Second part of the name of the table or view */
   int isTemp,      /* True if this is a TEMP table */
@@ -1584,7 +1582,7 @@ void sqlite3CreateView(
     sqlite3SelectDelete(pSelect);
     return;
   }
-  sqlite3StartTable(pParse, pBegin, pName1, pName2, isTemp, 1, 0);
+  sqlite3StartTable(pParse, pName1, pName2, isTemp, 1, 0);
   p = pParse->pNewTable;
   if( p==0 || pParse->nErr ){
     sqlite3SelectDelete(pSelect);
@@ -1925,7 +1923,7 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
     while( pTrigger ){
       assert( pTrigger->pSchema==pTab->pSchema || 
           pTrigger->pSchema==db->aDb[1].pSchema );
-      sqlite3DropTriggerPtr(pParse, pTrigger, 1);
+      sqlite3DropTriggerPtr(pParse, pTrigger);
       pTrigger = pTrigger->pNext;
     }
 

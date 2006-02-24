@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.185 2006/02/14 10:48:39 danielk1977 Exp $
+** $Id: util.c,v 1.186 2006/02/24 02:53:50 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -547,7 +547,7 @@ static int enforceSoftLimit(int n){
   }
   assert( pTsd->nAlloc>=0 );
   if( n>0 && pTsd->nSoftHeapLimit>0 ){
-    while( pTsd->nAlloc+n>pTsd->nSoftHeapLimit && sqlite3_release_memory(n) );
+    while( pTsd->nAlloc+n>pTsd->nSoftHeapLimit && sqlite3_release_memory(n) ){}
   }
   return 1;
 }
@@ -586,7 +586,7 @@ static void updateMemoryUsedCount(int n){
 void *sqlite3MallocRaw(int n, int doMemManage){
   void *p = 0;
   if( n>0 && !sqlite3MallocFailed() && (!doMemManage || enforceSoftLimit(n)) ){
-    while( (p = OSMALLOC(n))==0 && sqlite3_release_memory(n) );
+    while( (p = OSMALLOC(n))==0 && sqlite3_release_memory(n) ){}
     if( !p ){
       sqlite3FailedMalloc();
       OSMALLOC_FAILED();
@@ -615,7 +615,7 @@ void *sqlite3Realloc(void *p, int n){
     int origSize = OSSIZEOF(p);
 #endif
     if( enforceSoftLimit(n - origSize) ){
-      while( (np = OSREALLOC(p, n))==0 && sqlite3_release_memory(n) );
+      while( (np = OSREALLOC(p, n))==0 && sqlite3_release_memory(n) ){}
       if( !np ){
         sqlite3FailedMalloc();
         OSMALLOC_FAILED();

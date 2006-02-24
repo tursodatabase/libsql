@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.161 2006/02/10 02:27:43 danielk1977 Exp $
+** $Id: insert.c,v 1.162 2006/02/24 02:53:50 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -911,7 +911,7 @@ void sqlite3GenerateConstraintChecks(
         break;
       }
       case OE_Replace: {
-        sqlite3GenerateRowIndexDelete(pParse->db, v, pTab, base, 0);
+        sqlite3GenerateRowIndexDelete(v, pTab, base, 0);
         if( isUpdate ){
           sqlite3VdbeAddOp(v, OP_Dup, nCol+hasTwoRowids, 1);
           sqlite3VdbeAddOp(v, OP_MoveGe, base, 0);

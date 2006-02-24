@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.304 2006/02/10 07:07:16 danielk1977 Exp $
+** $Id: select.c,v 1.305 2006/02/24 02:53:50 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -680,7 +680,6 @@ static KeyInfo *keyInfoFromExprList(Parse *pParse, ExprList *pList){
 ** routine generates the code needed to do that.
 */
 static void generateSortTail(
-  Parse *pParse,   /* The parsing context */
   Select *p,       /* The SELECT statement */
   Vdbe *v,         /* Generate code into this VDBE */
   int nColumn,     /* Number of columns of data */
@@ -1965,7 +1964,7 @@ static int multiSelect(
       pKeyInfo->nField = nOrderByExpr;
       sqlite3VdbeChangeP3(v, addr, (char*)pKeyInfo, P3_KEYINFO_HANDOFF);
       pKeyInfo = 0;
-      generateSortTail(pParse, p, v, p->pEList->nExpr, eDest, iParm);
+      generateSortTail(p, v, p->pEList->nExpr, eDest, iParm);
     }
 
     sqliteFree(pKeyInfo);
@@ -2117,7 +2116,6 @@ static void substSelect(Select *p, int iTable, ExprList *pEList){
 ** the subquery before this routine runs.
 */
 static int flattenSubquery(
-  Parse *pParse,       /* The parsing context */
   Select *p,           /* The parent or outer SELECT statement */
   int iFrom,           /* Index in p->pSrc->a[] of the inner subquery */
   int isAgg,           /* True if outer SELECT uses aggregate functions */
@@ -2902,7 +2900,7 @@ int sqlite3Select(
   */
 #ifndef SQLITE_OMIT_VIEW
   if( pParent && pParentAgg &&
-      flattenSubquery(pParse, pParent, parentTab, *pParentAgg, isAgg) ){
+      flattenSubquery(pParent, parentTab, *pParentAgg, isAgg) ){
     if( isAgg ) *pParentAgg = 1;
     goto select_end;
   }
@@ -3254,7 +3252,7 @@ int sqlite3Select(
   ** and send them to the callback one by one.
   */
   if( pOrderBy ){
-    generateSortTail(pParse, p, v, pEList->nExpr, eDest, iParm);
+    generateSortTail(p, v, pEList->nExpr, eDest, iParm);
   }
 
 #ifndef SQLITE_OMIT_SUBQUERY

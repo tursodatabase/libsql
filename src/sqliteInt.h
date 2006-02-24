@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.486 2006/02/17 15:01:36 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.487 2006/02/24 02:53:50 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1519,7 +1519,7 @@ void sqlite3RollbackInternalChanges(sqlite3*);
 void sqlite3CommitInternalChanges(sqlite3*);
 Table *sqlite3ResultSetOfSelect(Parse*,char*,Select*);
 void sqlite3OpenMasterTable(Parse *, int);
-void sqlite3StartTable(Parse*,Token*,Token*,Token*,int,int,int);
+void sqlite3StartTable(Parse*,Token*,Token*,int,int,int);
 void sqlite3AddColumn(Parse*,Token*);
 void sqlite3AddNotNull(Parse*, int);
 void sqlite3AddPrimaryKey(Parse*, ExprList*, int, int, int);
@@ -1575,7 +1575,7 @@ Table *sqlite3LocateTable(Parse*,const char*, const char*);
 Index *sqlite3FindIndex(sqlite3*,const char*, const char*);
 void sqlite3UnlinkAndDeleteTable(sqlite3*,int,const char*);
 void sqlite3UnlinkAndDeleteIndex(sqlite3*,int,const char*);
-void sqlite3Vacuum(Parse*, Token*);
+void sqlite3Vacuum(Parse*);
 int sqlite3RunVacuum(char**, sqlite3*);
 char *sqlite3NameFromToken(Token*);
 int sqlite3ExprCheck(Parse*, Expr*, int, int*);
@@ -1596,7 +1596,7 @@ int sqlite3ExprIsConstantOrFunction(Expr*);
 int sqlite3ExprIsInteger(Expr*, int*);
 int sqlite3IsRowid(const char*);
 void sqlite3GenerateRowDelete(sqlite3*, Vdbe*, Table*, int, int);
-void sqlite3GenerateRowIndexDelete(sqlite3*, Vdbe*, Table*, int, char*);
+void sqlite3GenerateRowIndexDelete(Vdbe*, Table*, int, char*);
 void sqlite3GenerateIndexKey(Vdbe*, Index*, int);
 void sqlite3GenerateConstraintChecks(Parse*,Table*,int,char*,int,int,int,int);
 void sqlite3CompleteInsertion(Parse*, Table*, int, char*, int, int, int);
@@ -1621,7 +1621,7 @@ void sqlite3ChangeCookie(sqlite3*, Vdbe*, int);
                            int,Expr*,int);
   void sqlite3FinishTrigger(Parse*, TriggerStep*, Token*);
   void sqlite3DropTrigger(Parse*, SrcList*);
-  void sqlite3DropTriggerPtr(Parse*, Trigger*, int);
+  void sqlite3DropTriggerPtr(Parse*, Trigger*);
   int sqlite3TriggersExist(Parse*, Table*, int, ExprList*);
   int sqlite3CodeRowTrigger(Parse*, int, ExprList*, int, Table *, int, int, 
                            int, int);

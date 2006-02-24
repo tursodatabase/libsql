@@ -1841,7 +1841,7 @@ int sqlite3VdbeRecordCompare(
 ** an integer rowid).  This routine returns the number of bytes in
 ** that integer.
 */
-int sqlite3VdbeIdxRowidLen(int nKey, const u8 *aKey){
+int sqlite3VdbeIdxRowidLen(const u8 *aKey){
   u32 szHdr;        /* Size of the header */
   u32 typeRowid;    /* Serial type of the rowid */
 
@@ -1911,7 +1911,7 @@ int sqlite3VdbeIdxKeyCompare(
   if( rc ){
     return rc;
   }
-  lenRowid = sqlite3VdbeIdxRowidLen(m.n, (u8*)m.z);
+  lenRowid = sqlite3VdbeIdxRowidLen((u8*)m.z);
   *res = sqlite3VdbeRecordCompare(pC->pKeyInfo, m.n-lenRowid, m.z, nKey, pKey);
   sqlite3VdbeMemRelease(&m);
   return SQLITE_OK;

@@ -444,7 +444,7 @@ static int vxprintf(
         for(idx=precision, rounder=0.4999; idx>0; idx--, rounder*=0.1);
 #else
         /* It makes more sense to use 0.5 */
-        for(idx=precision, rounder=0.5; idx>0; idx--, rounder*=0.1);
+        for(idx=precision, rounder=0.5; idx>0; idx--, rounder*=0.1){}
 #endif
         if( xtype==etFLOAT ) realvalue += rounder;
         /* Normalize realvalue to within 10.0 > realvalue >= 1.0 */

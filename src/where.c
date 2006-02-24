@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.204 2006/02/01 02:45:02 drh Exp $
+** $Id: where.c,v 1.205 2006/02/24 02:53:51 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -771,8 +771,7 @@ or_not_possible:
 static int isSortingIndex(
   Parse *pParse,          /* Parsing context */
   Index *pIdx,            /* The index we are testing */
-  Table *pTab,            /* The table to be sorted */
-  int base,               /* Cursor number for pTab */
+  int base,               /* Cursor number for the table to be sorted */
   ExprList *pOrderBy,     /* The ORDER BY clause */
   int nEqCol,             /* Number of index columns with == constraints */
   int *pbRev              /* Set to 1 if ORDER BY is DESC */
@@ -1057,7 +1056,7 @@ static double bestIndex(
     */
     if( pOrderBy ){
       if( (flags & WHERE_COLUMN_IN)==0 &&
-           isSortingIndex(pParse,pProbe,pSrc->pTab,iCur,pOrderBy,nEq,&rev) ){
+           isSortingIndex(pParse,pProbe,iCur,pOrderBy,nEq,&rev) ){
         if( flags==0 ){
           flags = WHERE_COLUMN_RANGE;
         }
@@ -1591,7 +1590,7 @@ WhereInfo *sqlite3WhereBegin(
       if( pTab->nCol<(sizeof(Bitmask)*8) ){
         Bitmask b = pTabItem->colUsed;
         int n = 0;
-        for(; b; b=b>>1, n++);
+        for(; b; b=b>>1, n++){}
         sqlite3VdbeChangeP2(v, sqlite3VdbeCurrentAddr(v)-1, n);
         assert( n<=pTab->nCol );
       }

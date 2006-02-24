@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.258 2006/02/11 01:25:51 drh Exp $
+** @(#) $Id: pager.c,v 1.259 2006/02/24 02:53:50 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -935,7 +935,7 @@ static int pager_unwritelock(Pager *pPager){
 ** only the middle sector is corrupt, we will still have a reasonable
 ** chance of failing the checksum and thus detecting the problem.
 */
-static u32 pager_cksum(Pager *pPager, Pgno pgno, const u8 *aData){
+static u32 pager_cksum(Pager *pPager, const u8 *aData){
   u32 cksum = pPager->cksumInit;
   int i = pPager->pageSize-200;
   while( i>0 ){
@@ -987,7 +987,7 @@ static int pager_playback_one_page(Pager *pPager, OsFile *jfd, int useCksum){
     rc = read32bits(jfd, &cksum);
     if( rc ) return rc;
     pPager->journalOff += 4;
-    if( pager_cksum(pPager, pgno, aData)!=cksum ){
+    if( pager_cksum(pPager, aData)!=cksum ){
       return SQLITE_DONE;
     }
   }
@@ -2070,7 +2070,7 @@ int sqlite3pager_close(Pager *pPager){
     pTsd->pPager = pPager->pNext;
   }else{
     Pager *pTmp;
-    for(pTmp = pTsd->pPager; pTmp->pNext!=pPager; pTmp=pTmp->pNext);
+    for(pTmp = pTsd->pPager; pTmp->pNext!=pPager; pTmp=pTmp->pNext){}
     pTmp->pNext = pPager->pNext;
   }
 #endif
@@ -2477,7 +2477,7 @@ int sqlite3pager_release_memory(int nReq){
         if( pPg==p->pAll ){
            p->pAll = pPg->pNextAll;
         }else{
-          for( pTmp=p->pAll; pTmp->pNextAll!=pPg; pTmp=pTmp->pNextAll );
+          for( pTmp=p->pAll; pTmp->pNextAll!=pPg; pTmp=pTmp->pNextAll ){}
           pTmp->pNextAll = pPg->pNextAll;
         }
         nReleased += sqliteAllocSize(pPg);
@@ -3023,7 +3023,7 @@ int sqlite3pager_write(void *pData){
           ** that we do not. */
           assert( pPg->pgno!=PAGER_MJ_PGNO(pPager) );
           CODEC(pPager, pData, pPg->pgno, 7);
-          cksum = pager_cksum(pPager, pPg->pgno, pData);
+          cksum = pager_cksum(pPager, pData);
           saved = *(u32*)PGHDR_TO_EXTRA(pPg, pPager);
           store32bits(cksum, pPg, pPager->pageSize);
           szPg = pPager->pageSize+8;

@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.58 2006/01/18 16:51:36 danielk1977 Exp $
+** $Id: vacuum.c,v 1.59 2006/02/24 02:53:50 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -43,7 +43,7 @@ static int execSql(sqlite3 *db, const char *zSql){
   if( SQLITE_OK!=sqlite3_prepare(db, zSql, -1, &pStmt, 0) ){
     return sqlite3_errcode(db);
   }
-  while( SQLITE_ROW==sqlite3_step(pStmt) );
+  while( SQLITE_ROW==sqlite3_step(pStmt) ){}
   return sqlite3_finalize(pStmt);
 }
 
@@ -81,7 +81,7 @@ static int execExecSql(sqlite3 *db, const char *zSql){
 ** with 2.0.0, SQLite no longer uses GDBM so this command has
 ** become a no-op.
 */
-void sqlite3Vacuum(Parse *pParse, Token *pTableName){
+void sqlite3Vacuum(Parse *pParse){
   Vdbe *v = sqlite3GetVdbe(pParse);
   if( v ){
     sqlite3VdbeAddOp(v, OP_Vacuum, 0, 0);

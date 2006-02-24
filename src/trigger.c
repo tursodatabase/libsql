@@ -460,7 +460,7 @@ void sqlite3DropTrigger(Parse *pParse, SrcList *pName){
     sqlite3ErrorMsg(pParse, "no such trigger: %S", pName, 0);
     goto drop_trigger_cleanup;
   }
-  sqlite3DropTriggerPtr(pParse, pTrigger, 0);
+  sqlite3DropTriggerPtr(pParse, pTrigger);
 
 drop_trigger_cleanup:
   sqlite3SrcListDelete(pName);
@@ -470,18 +470,16 @@ drop_trigger_cleanup:
 ** Return a pointer to the Table structure for the table that a trigger
 ** is set on.
 */
-static Table *tableOfTrigger(sqlite3 *db, Trigger *pTrigger){
+static Table *tableOfTrigger(Trigger *pTrigger){
   int n = strlen(pTrigger->table) + 1;
   return sqlite3HashFind(&pTrigger->pTabSchema->tblHash, pTrigger->table, n);
 }
 
 
 /*
-** Drop a trigger given a pointer to that trigger.  If nested is false,
-** then also generate code to remove the trigger from the SQLITE_MASTER
-** table.
+** Drop a trigger given a pointer to that trigger. 
 */
-void sqlite3DropTriggerPtr(Parse *pParse, Trigger *pTrigger, int nested){
+void sqlite3DropTriggerPtr(Parse *pParse, Trigger *pTrigger){
   Table   *pTable;
   Vdbe *v;
   sqlite3 *db = pParse->db;
@@ -489,7 +487,7 @@ void sqlite3DropTriggerPtr(Parse *pParse, Trigger *pTrigger, int nested){
 
   iDb = sqlite3SchemaToIndex(pParse->db, pTrigger->pSchema);
   assert( iDb>=0 && iDb<db->nDb );
-  pTable = tableOfTrigger(db, pTrigger);
+  pTable = tableOfTrigger(pTrigger);
   assert(pTable);
   assert( pTable->pSchema==pTrigger->pSchema || iDb==1 );
 #ifndef SQLITE_OMIT_AUTHORIZATION
@@ -539,7 +537,7 @@ void sqlite3UnlinkAndDeleteTrigger(sqlite3 *db, int iDb, const char *zName){
   int nName = strlen(zName);
   pTrigger = sqlite3HashInsert(&(db->aDb[iDb].pSchema->trigHash), zName, nName+1, 0);
   if( pTrigger ){
-    Table *pTable = tableOfTrigger(db, pTrigger);
+    Table *pTable = tableOfTrigger(pTrigger);
     assert( pTable!=0 );
     if( pTable->pTrigger == pTrigger ){
       pTable->pTrigger = pTrigger->pNext;
@@ -761,7 +759,7 @@ int sqlite3CodeRowTrigger(
       (op!=TK_UPDATE||!p->pColumns||checkColumnOverLap(p->pColumns,pChanges))
     ){
       TriggerStack *pS;      /* Pointer to trigger-stack entry */
-      for(pS=pParse->trigStack; pS && p!=pS->pTrigger; pS=pS->pNext);
+      for(pS=pParse->trigStack; pS && p!=pS->pTrigger; pS=pS->pNext){}
       if( !pS ){
         fire_this = 1;
       }

@@ -711,7 +711,7 @@ int sqlite3VdbeMemFromBtree(
 ** Perform various checks on the memory cell pMem. An assert() will
 ** fail if pMem is internally inconsistent.
 */
-void sqlite3VdbeMemSanity(Mem *pMem, u8 db_enc){
+void sqlite3VdbeMemSanity(Mem *pMem){
   int flags = pMem->flags;
   assert( flags!=0 );  /* Must define some type */
   if( pMem->flags & (MEM_Str|MEM_Blob) ){

@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.195 2006/02/10 02:27:43 danielk1977 Exp $
+** @(#) $Id: parse.y,v 1.196 2006/02/24 02:53:50 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -120,8 +120,8 @@ cmd ::= ROLLBACK trans_opt.    {sqlite3RollbackTransaction(pParse);}
 ///////////////////// The CREATE TABLE statement ////////////////////////////
 //
 cmd ::= create_table create_table_args.
-create_table ::= CREATE(X) temp(T) TABLE ifnotexists(E) nm(Y) dbnm(Z). {
-   sqlite3StartTable(pParse,&X,&Y,&Z,T,0,E);
+create_table ::= CREATE temp(T) TABLE ifnotexists(E) nm(Y) dbnm(Z). {
+   sqlite3StartTable(pParse,&Y,&Z,T,0,E);
 }
 %type ifnotexists {int}
 ifnotexists(A) ::= .              {A = 0;}
@@ -884,8 +884,8 @@ cmd ::= DROP INDEX ifexists(E) fullname(X).   {sqlite3DropIndex(pParse, X, E);}
 
 ///////////////////////////// The VACUUM command /////////////////////////////
 //
-cmd ::= VACUUM.                {sqlite3Vacuum(pParse,0);}
-cmd ::= VACUUM nm.             {sqlite3Vacuum(pParse,0);}
+cmd ::= VACUUM.                {sqlite3Vacuum(pParse);}
+cmd ::= VACUUM nm.             {sqlite3Vacuum(pParse);}
 
 ///////////////////////////// The PRAGMA command /////////////////////////////
 //
