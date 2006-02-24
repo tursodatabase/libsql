@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.259 2006/02/24 02:53:50 drh Exp $
+** @(#) $Id: pager.c,v 1.260 2006/02/24 03:09:37 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1328,13 +1328,8 @@ static int pager_playback(Pager *pPager){
       }
     }
   }
-
-  /* Pages that have been written to the journal but never synced
-  ** where not restored by the loop above.  We have to restore those
-  ** pages by reading them back from the original database.
-  */
-  assert( rc==SQLITE_OK );
-  pager_reload_cache(pPager);
+  /*NOTREACHED*/
+  assert( 0 );
 
 end_playback:
   if( rc==SQLITE_OK ){

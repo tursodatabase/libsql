@@ -202,11 +202,11 @@ static int opcodeNoPush(u8 op){
   ** IEEE floats.
   */ 
   static const u32 masks[5] = {
-    NOPUSH_MASK_0 + (NOPUSH_MASK_1<<16),
-    NOPUSH_MASK_2 + (NOPUSH_MASK_3<<16),
-    NOPUSH_MASK_4 + (NOPUSH_MASK_5<<16),
-    NOPUSH_MASK_6 + (NOPUSH_MASK_7<<16),
-    NOPUSH_MASK_8 + (NOPUSH_MASK_9<<16)
+    NOPUSH_MASK_0 + (((unsigned)NOPUSH_MASK_1)<<16),
+    NOPUSH_MASK_2 + (((unsigned)NOPUSH_MASK_3)<<16),
+    NOPUSH_MASK_4 + (((unsigned)NOPUSH_MASK_5)<<16),
+    NOPUSH_MASK_6 + (((unsigned)NOPUSH_MASK_7)<<16),
+    NOPUSH_MASK_8 + (((unsigned)NOPUSH_MASK_9)<<16)
   };
   assert( op<32*5 );
   return (masks[op>>5] & (1<<(op&0x1F)));
