@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.487 2006/02/24 02:53:50 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.488 2006/02/27 22:22:29 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1383,8 +1383,8 @@ struct TriggerStep {
   ExprList *pExprList; /* Valid for UPDATE statements and sometimes 
 			   INSERT steps (when pSelect == 0)         */
   IdList *pIdList;     /* Valid for INSERT statements only */
-
-  TriggerStep * pNext; /* Next in the link-list */
+  TriggerStep *pNext;  /* Next in the link-list */
+  TriggerStep *pLast;  /* Last element in link-list. Valid for 1st elem only */
 };
 
 /*
