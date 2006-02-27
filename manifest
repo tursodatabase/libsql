@@ -1,5 +1,5 @@
-C Add\sa\stest\sto\smake\ssure\sparser\sstack\soverflow\sis\sdetected\sand\sreported.\s(CVS\s3114)
-D 2006-02-27T23:19:21
+C Reduce\sthe\ssize\sof\sa\smemory\sallocation\sin\sthe\swindows\sdriver\sto\sthe\nminimum\sneeded.\s\sTicket\s#1690.\s(CVS\s3115)
+D 2006-02-27T23:44:36
 F Makefile.in 5d8dff443383918b700e495de42ec65bc1c8865b
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -57,7 +57,7 @@ F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
 F src/os_unix.c 757a7b726764367f7b0595c4302969582c04413d
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
-F src/os_win.c c67a2c46d929cf54c8f80ec5e6079cf684a141a9
+F src/os_win.c 8ced9ac82670bbf77492961a2f7ff80a87f1404f
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c f65d0b05182ff6059e9566b2eed1ec5f0cddc2f6
 F src/pager.h 425a9e52d5404158de016799715cbc2c3d685178
@@ -355,7 +355,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P b4fa96d0e92182cd8792e88b4540b95912bb9f95
-R 8d868f83c9df2c0ba23fef932e27f7d3
+P 201ab3b5238c4afeb9a9f254f9ed3632b106066d
+R 9dca04ddafe342429b84cfc45a77a9a4
 U drh
-Z 4a7aff4a2d7dbe6239cfb63a8ccfb2ec
+Z 4896a5f6cfb8b9ec7a034a281b292e51
