@@ -1,5 +1,5 @@
-C The\sparser\snow\spermits\svery\slarge\striggers\s-\striggers\swith\s10000\sor\smore\nstatements.\s(CVS\s3113)
-D 2006-02-27T22:22:28
+C Add\sa\stest\sto\smake\ssure\sparser\sstack\soverflow\sis\sdetected\sand\sreported.\s(CVS\s3114)
+D 2006-02-27T23:19:21
 F Makefile.in 5d8dff443383918b700e495de42ec65bc1c8865b
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -204,7 +204,7 @@ F test/misc1.test 5a9cfffc59e5da583492a1c07efcb08a48cd1135
 F test/misc2.test 09388e5a2c5c1017ad3ff1c4bf469375def2a0c2
 F test/misc3.test 7bd937e2c62bcc6be71939faf068d506467b1e03
 F test/misc4.test b043a05dea037cca5989f3ae09552fa16119bc80
-F test/misc5.test cff0e9ff3a79c5116d5bce077a0bacf9bb300324
+F test/misc5.test 911da8d04989b839b221dd50f31dffdafb51135f
 F test/misuse.test 30b3a458e5a70c31e74c291937b6c82204c59f33
 F test/notnull.test 44d600f916b770def8b095a9962dbe3be5a70d82
 F test/null.test 9503e1f63e959544c006d9f01709c5b5eab67d54
@@ -355,7 +355,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P bd2c38f4670d1243284f2431b5e0712a6d1de1d7
-R 24d0b5ace2fb2a16cf769d74dd5e70e5
+P b4fa96d0e92182cd8792e88b4540b95912bb9f95
+R 8d868f83c9df2c0ba23fef932e27f7d3
 U drh
-Z 6578b75ec2a8a5a9e423f996f316552a
+Z 4a7aff4a2d7dbe6239cfb63a8ccfb2ec
