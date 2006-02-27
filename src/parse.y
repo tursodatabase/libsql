@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.196 2006/02/24 02:53:50 drh Exp $
+** @(#) $Id: parse.y,v 1.197 2006/02/27 21:58:08 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -39,6 +39,9 @@
       sqlite3ErrorMsg(pParse, "incomplete SQL statement");
     }
   }
+}
+%stack_overflow {
+  sqlite3ErrorMsg(pParse, "parser stack overflow");
 }
 
 // The name of the generated procedure that implements the parser
