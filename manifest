@@ -1,5 +1,5 @@
-C Reduce\sthe\ssize\sof\sa\smemory\sallocation\sin\sthe\swindows\sdriver\sto\sthe\nminimum\sneeded.\s\sTicket\s#1690.\s(CVS\s3115)
-D 2006-02-27T23:44:36
+C Change\sthe\sROUND()\sfunction\sto\sreturn\sa\sREAL\svalue\sinstead\sof\sTEXT.\nTicket\s#1699.\s(CVS\s3116)
+D 2006-03-02T03:02:48
 F Makefile.in 5d8dff443383918b700e495de42ec65bc1c8865b
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -43,7 +43,7 @@ F src/date.c cd2bd5d1ebc6fa12d6312f69789ae5b0a2766f2e
 F src/delete.c 2dea1a83e6ef534346e74fd03114d3a7b16f08fc
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
 F src/expr.c 9c957fabf95ef62288151eecd5c490a629470666
-F src/func.c 402b305b0f0d8709cce343e74312bcc38ed61f06
+F src/func.c ea1a4480bacfb17f8e08d675313f024fe7136c00
 F src/hash.c 449f3d6620193aa557f5d86cbc5cc6b87702b185
 F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
 F src/insert.c ae51e360d1e710870471fb72d00f84c3d98292a0
@@ -165,7 +165,7 @@ F test/enc3.test 890508efff6677345e93bf2a8adb0489b30df030
 F test/expr.test 4e65cade931e14a0194eee41e33707e7af5f397a
 F test/fkey1.test 153004438d51e6769fb1ce165f6313972d6263ce
 F test/format4.test 9f31d41d4f926cab97b2ebe6be00a6ab12dece87
-F test/func.test 9fdc0a5ba9435dc7700cb81dbc46ee2459fb21e4
+F test/func.test 0996e47cb5bb24007cec76f1a4cac9f4417360be
 F test/hook.test 7e7645fd9a033f79cce8fdff151e32715e7ec50a
 F test/in.test 40feeebc7e38576255051aad428322be1545e0f1
 F test/index.test c478459611ded74745fee57f99f424da8a5f5fbd
@@ -355,7 +355,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 201ab3b5238c4afeb9a9f254f9ed3632b106066d
-R 9dca04ddafe342429b84cfc45a77a9a4
+P 1fe9ca078b77b79ac738a095d8d4c82ae0926286
+R b3fdad5802e6bee698b446a91a4e2c53
 U drh
-Z 4896a5f6cfb8b9ec7a034a281b292e51
+Z 321fd91bd847dc54e0ab9246b1daf202

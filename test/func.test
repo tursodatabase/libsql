@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing built-in functions.
 #
-# $Id: func.test,v 1.49 2006/02/23 21:43:56 drh Exp $
+# $Id: func.test,v 1.50 2006/03/02 03:02:48 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -179,28 +179,35 @@ do_test func-4.5 {
 } {1 {wrong number of arguments to function round()}}
 do_test func-4.6 {
   catchsql {SELECT round(b,2) FROM t1 ORDER BY b}
-} {0 {-2.00 1.23 2.00}}
+} {0 {-2.0 1.23 2.0}}
 do_test func-4.7 {
   catchsql {SELECT round(b,0) FROM t1 ORDER BY a}
-} {0 {2 1 -2}}
+} {0 {2.0 1.0 -2.0}}
 do_test func-4.8 {
   catchsql {SELECT round(c) FROM t1 ORDER BY a}
-} {0 {3 -12346 -5}}
+} {0 {3.0 -12346.0 -5.0}}
 do_test func-4.9 {
   catchsql {SELECT round(c,a) FROM t1 ORDER BY a}
-} {0 {3.0 -12345.68 -5.000}}
+} {0 {3.0 -12345.68 -5.0}}
 do_test func-4.10 {
   catchsql {SELECT 'x' || round(c,a) || 'y' FROM t1 ORDER BY a}
-} {0 {x3.0y x-12345.68y x-5.000y}}
+} {0 {x3.0y x-12345.68y x-5.0y}}
 do_test func-4.11 {
   catchsql {SELECT round() FROM t1 ORDER BY a}
 } {1 {wrong number of arguments to function round()}}
 do_test func-4.12 {
   execsql {SELECT coalesce(round(a,2),'nil') FROM t2}
-} {1.00 nil 345.00 nil 67890.00}
+} {1.0 nil 345.0 nil 67890.0}
 do_test func-4.13 {
   execsql {SELECT round(t1,2) FROM tbl1}
-} {0.00 0.00 0.00 0.00 0.00}
+} {0.0 0.0 0.0 0.0 0.0}
+do_test func-4.14 {
+  execsql {SELECT typeof(round(5.1,1));}
+} {real}
+do_test func-4.15 {
+  execsql {SELECT typeof(round(5.1));}
+} {real}
+
 
 # Test the upper() and lower() functions
 #
