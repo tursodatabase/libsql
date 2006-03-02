@@ -12,7 +12,7 @@
 #
 # This file implements tests for joins, including outer joins.
 #
-# $Id: join.test,v 1.20 2005/06/06 17:11:46 drh Exp $
+# $Id: join.test,v 1.21 2006/03/02 04:44:24 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -442,5 +442,18 @@ ifcapable view {
   } {}
 } ;# ifcapable view
 } ;# ifcapable compound
+
+# Ticket #1697:  Left Join WHERE clause terms that contain an
+# aggregate subquery.
+#
+do_test join-10.1 {
+  execsql {
+    CREATE TABLE t21(a,b,c);
+    CREATE TABLE t22(p,q);
+    CREATE INDEX i22 ON t22(q);
+    SELECT a FROM t21 LEFT JOIN t22 ON b=p WHERE q=
+       (SELECT max(m.q) FROM t22 m JOIN t21 n ON n.b=m.p WHERE n.c=1);
+  }  
+} {}
 
 finish_test
