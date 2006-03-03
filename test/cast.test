@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CAST operator.
 #
-# $Id: cast.test,v 1.4 2006/01/16 16:24:25 danielk1977 Exp $
+# $Id: cast.test,v 1.5 2006/03/03 19:12:30 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -182,5 +182,15 @@ do_test cast-1.51 {
 do_test cast-1.53 {
   execsql {SELECT CAST('123.5abc' AS integer)}
 } 123
+
+# Ticket #1662.  Ignore leading spaces in numbers when casting.
+#
+do_test cast-2.1 {
+  execsql {SELECT CAST('   123' AS integer)}
+} 123
+do_test cast-2.2 {
+  execsql {SELECT CAST('   -123.456' AS real)}
+} -123.456
+
 
 finish_test

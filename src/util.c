@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.186 2006/02/24 02:53:50 drh Exp $
+** $Id: util.c,v 1.187 2006/03/03 19:12:30 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -971,6 +971,7 @@ int sqlite3AtoF(const char *z, double *pResult){
   int sign = 1;
   const char *zBegin = z;
   LONGDOUBLE_TYPE v1 = 0.0;
+  while( isspace(*z) ) z++;
   if( *z=='-' ){
     sign = -1;
     z++;
@@ -1038,6 +1039,7 @@ int sqlite3atoi64(const char *zNum, i64 *pNum){
   i64 v = 0;
   int neg;
   int i, c;
+  while( isspace(*zNum) ) zNum++;
   if( *zNum=='-' ){
     neg = 1;
     zNum++;
