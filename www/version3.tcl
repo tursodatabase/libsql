@@ -216,7 +216,7 @@ or BLOBs, only text.
 A collating sequence is implemented as a function that takes the
 two strings being compared as inputs and returns negative, zero, or
 positive if the first string is less than, equal to, or greater than
-the first.
+the second.
 SQLite 3.0 comes with a single built-in collating sequence named "BINARY"
 which is implemented using the memcmp() routine from the standard C library.
 The BINARY collating sequence works well for English text.  For other
@@ -290,4 +290,4 @@ supporting and embracing great Open-Source Software.
 
 
 }
-footer {$Id: version3.tcl,v 1.5 2005/03/31 21:02:46 drh Exp $}
+footer {$Id: version3.tcl,v 1.6 2006/03/03 21:39:54 drh Exp $}
