@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.151 2006/02/10 02:27:43 danielk1977 Exp $
+** $Id: tclsqlite.c,v 1.152 2006/03/03 20:32:19 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -23,15 +23,6 @@
 #include <assert.h>
 #include <ctype.h>
 
-/*
- * Windows needs to know which symbols to export.  Unix does not.
- * BUILD_sqlite should be undefined for Unix.
- */
-
-#ifdef BUILD_sqlite
-#undef TCL_STORAGE_CLASS
-#define TCL_STORAGE_CLASS DLLEXPORT
-#endif /* BUILD_sqlite */
 
 #define NUM_PREPARED_STMTS 10
 #define MAX_PREPARED_STMTS 100
@@ -2078,6 +2069,9 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
 ** used to open a new SQLite database.  See the DbMain() routine above
 ** for additional information.
 */
+#ifndef EXTERN
+# define EXTERN extern
+#endif
 EXTERN int Sqlite3_Init(Tcl_Interp *interp){
   Tcl_InitStubs(interp, "8.4", 0);
   Tcl_CreateObjCommand(interp, "sqlite3", (Tcl_ObjCmdProc*)DbMain, 0, 0);
