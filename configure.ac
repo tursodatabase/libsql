@@ -116,7 +116,7 @@ AC_INIT(src/sqlite.h.in)
 dnl Put the RCS revision string after AC_INIT so that it will also
 dnl show in in configure.
 # The following RCS revision string applies to configure.in
-# $Revision: 1.24 $
+# $Revision: 1.25 $
 
 #########
 # Programs needed
@@ -644,7 +644,7 @@ AC_SUBST(TARGET_HAVE_READLINE)
 AC_ARG_ENABLE(debug, AC_HELP_STRING([--enable-debug],[enable debugging & verbose explain]),
       [use_debug=$enableval],[use_debug=no])
 if test "${use_debug}" = "yes" ; then
-  TARGET_DEBUG=""
+  TARGET_DEBUG="-DSQLITE_DEBUG=1"
 else
   TARGET_DEBUG="-DNDEBUG"
 fi

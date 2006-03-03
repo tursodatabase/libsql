@@ -1502,7 +1502,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 # The following RCS revision string applies to configure.in
-# $Revision: 1.38 $
+# $Revision: 1.39 $
 
 #########
 # Programs needed
@@ -20471,7 +20471,7 @@ else
   use_debug=no
 fi;
 if test "${use_debug}" = "yes" ; then
-  TARGET_DEBUG=""
+  TARGET_DEBUG="-DSQLITE_DEBUG=1"
 else
   TARGET_DEBUG="-DNDEBUG"
 fi

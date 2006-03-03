@@ -1,5 +1,5 @@
-C Fix\stclsqlite.c\sto\sbetter\ssupport\sMingw.\s\sTicket\s#1687.\s(CVS\s3119)
-D 2006-03-03T20:32:19
+C The\s--enable-debug\soption\son\sconfigure\senables\sverbose\sexplain\sand\svdbe_trace.\nTicket\s#1680.\s(CVS\s3120)
+D 2006-03-03T20:37:52
 F Makefile.in 5d8dff443383918b700e495de42ec65bc1c8865b
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -12,8 +12,8 @@ F art/SQLite.gif 1bbb94484963f1382e27e1c5e86dd0c1061eba2b
 F art/SQLiteLogo3.tiff b9e6bf022ae939bc986cddb8ab99583ca1b02cb3
 F config.guess 2103e94b15dc57112d7b9ee152c6fac5288895b4
 F config.sub 9bf686ec001ae7bc53f5b3563c90c62d4c6d48be
-F configure b5ef6973ab768007d745e58084711fe3ec7de9d8 x
-F configure.ac 752078e892cee32b1ec4c845fa21d43e8c2ed102
+F configure d454f3ef3a1cf42e91e97d06c27179d56a77c005 x
+F configure.ac f6c5246585d14bc1ee1773ae5b71ae6cafa7494a
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
@@ -355,7 +355,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P cdca3383c54b33aeafbbdbbb4ae7c90796cf66e5
-R 6cc1348a371ee31255d1425554e4ea3a
+P da0e843c05fc708d48e396aaab00fb6247180b51
+R 25495443f5aa0048df74abe783779554
 U drh
-Z af92bed19d59cce04291436bb9f6f48c
+Z 022c8ead1b8d79a556e21e2c2e0fd4b7
