@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.335 2006/02/16 18:16:37 drh Exp $
+** $Id: main.c,v 1.336 2006/03/03 20:54:41 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -250,7 +250,7 @@ static int sqliteDefaultBusyCallback(
  void *ptr,               /* Database connection */
  int count                /* Number of times table has been busy */
 ){
-#if SQLITE_MIN_SLEEP_MS==1
+#if OS_WIN || (defined(HAVE_USLEEP) && HAVE_USLEEP)
   static const u8 delays[] =
      { 1, 2, 5, 10, 15, 20, 25, 25,  25,  50,  50, 100 };
   static const u8 totals[] =
