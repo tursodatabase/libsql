@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.152 2006/03/03 20:32:19 drh Exp $
+** $Id: tclsqlite.c,v 1.153 2006/03/06 20:55:46 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -1085,6 +1085,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     azCol = malloc( sizeof(azCol[0])*(nCol+1) );
     if( azCol==0 ) {
       Tcl_AppendResult(interp, "Error: can't malloc()", 0);
+      fclose(in);
       return TCL_ERROR;
     }
     sqlite3_exec(pDb->db, "BEGIN", 0, 0, 0);

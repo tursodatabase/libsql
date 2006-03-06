@@ -1747,6 +1747,7 @@ FILE *err;
   int j;
   int errcnt = 0;
   cp = strchr(argv[i],'=');
+  assert( cp!=0 );
   *cp = 0;
   for(j=0; op[j].label; j++){
     if( strcmp(argv[i],op[j].label)==0 ) break;

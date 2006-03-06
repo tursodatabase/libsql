@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.316 2006/02/24 02:53:50 drh Exp $
+** $Id: btree.c,v 1.317 2006/03/06 20:55:46 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -867,7 +867,8 @@ static int ptrmapGet(BtShared *pBt, Pgno key, u8 *pEType, Pgno *pPgno){
   }
 
   offset = PTRMAP_PTROFFSET(pBt, key);
-  if( pEType ) *pEType = pPtrmap[offset];
+  assert( pEType!=0 );
+  *pEType = pPtrmap[offset];
   if( pPgno ) *pPgno = get4byte(&pPtrmap[offset+1]);
 
   sqlite3pager_unref(pPtrmap);
@@ -2463,7 +2464,6 @@ static int autoVacuumCommit(BtShared *pBt, Pgno *nTrunc){
   if( rc!=SQLITE_OK ) goto autovacuum_out;
   put4byte(&pBt->pPage1->aData[32], 0);
   put4byte(&pBt->pPage1->aData[36], 0);
-  if( rc!=SQLITE_OK ) goto autovacuum_out;
   *nTrunc = finSize;
   assert( finSize!=PENDING_BYTE_PAGE(pBt) );
 
@@ -4093,6 +4093,7 @@ static int reparentPage(BtShared *pBt, Pgno pgno, MemPage *pNewParent, int idx){
   MemPage *pThis;
   unsigned char *aData;
 
+  assert( pNewParent!=0 );
   if( pgno==0 ) return SQLITE_OK;
   assert( pBt->pPager!=0 );
   aData = sqlite3pager_lookup(pBt->pPager, pgno);
@@ -4103,7 +4104,7 @@ static int reparentPage(BtShared *pBt, Pgno pgno, MemPage *pNewParent, int idx){
       if( pThis->pParent!=pNewParent ){
         if( pThis->pParent ) sqlite3pager_unref(pThis->pParent->aData);
         pThis->pParent = pNewParent;
-        if( pNewParent ) sqlite3pager_ref(pNewParent->aData);
+        sqlite3pager_ref(pNewParent->aData);
       }
       pThis->idxParent = idx;
     }

@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.389 2006/02/24 02:53:50 drh Exp $
+** $Id: build.c,v 1.390 2006/03/06 20:55:46 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -3108,7 +3108,7 @@ static void reindexDatabases(Parse *pParse, char const *zColl){
   Table *pTab;                /* A table in the database */
 
   for(iDb=0, pDb=db->aDb; iDb<db->nDb; iDb++, pDb++){
-    if( pDb==0 ) continue;
+    assert( pDb!=0 );
     for(k=sqliteHashFirst(&pDb->pSchema->tblHash);  k; k=sqliteHashNext(k)){
       pTab = (Table*)sqliteHashData(k);
       reindexTable(pParse, pTab, zColl);

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.162 2006/02/24 02:53:50 drh Exp $
+** $Id: insert.c,v 1.163 2006/03/06 20:55:46 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -269,7 +269,7 @@ void sqlite3Insert(
   if( sqlite3IsReadOnly(pParse, pTab, triggers_exist) ){
     goto insert_cleanup;
   }
-  if( pTab==0 ) goto insert_cleanup;
+  assert( pTab!=0 );
 
   /* If pTab is really a view, make sure it has been initialized.
   */

@@ -340,6 +340,10 @@ static int vxprintf(
       }
     }
     zExtra = 0;
+    if( infop==0 ){
+      return -1;
+    }
+
 
     /* Limit the precision to prevent overflowing buf[] during conversion */
     if( precision>etBUFSIZE-40 && (infop->flags & FLAG_STRING)==0 ){

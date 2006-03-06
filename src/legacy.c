@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: legacy.c,v 1.13 2006/01/23 13:14:55 drh Exp $
+** $Id: legacy.c,v 1.14 2006/03/06 20:55:46 drh Exp $
 */
 
 #include "sqliteInt.h"
@@ -54,8 +54,8 @@ int sqlite3_exec(
 
     pStmt = 0;
     rc = sqlite3_prepare(db, zSql, -1, &pStmt, &zLeftover);
+    assert( rc==SQLITE_OK || pStmt==0 );
     if( rc!=SQLITE_OK ){
-      if( pStmt ) sqlite3_finalize(pStmt);
       continue;
     }
     if( !pStmt ){

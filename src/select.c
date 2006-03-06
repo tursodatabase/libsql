@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.305 2006/02/24 02:53:50 drh Exp $
+** $Id: select.c,v 1.306 2006/03/06 20:55:46 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2687,7 +2687,8 @@ static void updateAccumulator(Parse *pParse, AggInfo *pAggInfo){
       CollSeq *pColl = 0;
       struct ExprList_item *pItem;
       int j;
-      for(j=0, pItem=pList->a; !pColl && j<pList->nExpr; j++, pItem++){
+      assert( pList!=0 );  /* pList!=0 if pF->pFunc->needCollSeq is true */
+      for(j=0, pItem=pList->a; !pColl && j<nArg; j++, pItem++){
         pColl = sqlite3ExprCollSeq(pParse, pItem->pExpr);
       }
       if( !pColl ){

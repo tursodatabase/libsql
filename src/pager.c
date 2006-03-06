@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.261 2006/03/06 18:23:17 drh Exp $
+** @(#) $Id: pager.c,v 1.262 2006/03/06 20:55:46 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1302,9 +1302,6 @@ static int pager_playback(Pager *pPager){
       pPager->dbSize = mxPg;
     }
 
-    /* rc = sqlite3OsSeek(pPager->jfd, JOURNAL_HDR_SZ(pPager)); */
-    if( rc!=SQLITE_OK ) goto end_playback;
-  
     /* Copy original pages out of the journal and back into the database file.
     */
     for(i=0; i<nRec; i++){
@@ -3153,8 +3150,9 @@ void sqlite3pager_dont_write(Pager *pPager, Pgno pgno){
   if( MEMDB ) return;
 
   pPg = pager_lookup(pPager, pgno);
+  assert( pPg!=0 );  /* We never call _dont_write unless the page is in mem */
   pPg->alwaysRollback = 1;
-  if( pPg && pPg->dirty && !pPager->stmtInUse ){
+  if( pPg->dirty && !pPager->stmtInUse ){
     if( pPager->dbSize==(int)pPg->pgno && pPager->origDbSize<pPager->dbSize ){
       /* If this pages is the last page in the file and the file has grown
       ** during the current transaction, then do NOT mark the page as clean.

@@ -60,9 +60,11 @@ void sqlite3BeginTrigger(
   DbFixer sFix;
   int iTabDb;
 
+  assert( pName1!=0 );   /* pName1->z might be NULL, but not pName1 itself */
+  assert( pName2!=0 );
   if( isTemp ){
     /* If TEMP was specified, then the trigger name may not be qualified. */
-    if( pName2 && pName2->n>0 ){
+    if( pName2->n>0 ){
       sqlite3ErrorMsg(pParse, "temporary trigger may not have qualified name");
       goto trigger_cleanup;
     }
@@ -488,7 +490,7 @@ void sqlite3DropTriggerPtr(Parse *pParse, Trigger *pTrigger){
   iDb = sqlite3SchemaToIndex(pParse->db, pTrigger->pSchema);
   assert( iDb>=0 && iDb<db->nDb );
   pTable = tableOfTrigger(pTrigger);
-  assert(pTable);
+  assert( pTable );
   assert( pTable->pSchema==pTrigger->pSchema || iDb==1 );
 #ifndef SQLITE_OMIT_AUTHORIZATION
   {
@@ -505,7 +507,8 @@ void sqlite3DropTriggerPtr(Parse *pParse, Trigger *pTrigger){
 
   /* Generate code to destroy the database record of the trigger.
   */
-  if( pTable!=0 && (v = sqlite3GetVdbe(pParse))!=0 ){
+  assert( pTable!=0 );
+  if( (v = sqlite3GetVdbe(pParse))!=0 ){
     int base;
     static const VdbeOpList dropTrigger[] = {
       { OP_Rewind,     0, ADDR(9),  0},

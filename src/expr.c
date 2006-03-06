@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.255 2006/03/02 04:44:24 drh Exp $
+** $Id: expr.c,v 1.256 2006/03/06 20:55:46 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -841,11 +841,13 @@ static int lookupName(
 
     if( pSrcList ){
       for(i=0, pItem=pSrcList->a; i<pSrcList->nSrc; i++, pItem++){
-        Table *pTab = pItem->pTab;
-        int iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
+        Table *pTab;
+        int iDb;
         Column *pCol;
   
-        if( pTab==0 ) continue;
+        pTab = pItem->pTab;
+        assert( pTab!=0 );
+        iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
         assert( pTab->nCol>0 );
         if( zTab ){
           if( pItem->zAlias ){

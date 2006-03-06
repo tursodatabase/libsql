@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.31 2006/02/10 02:27:43 danielk1977 Exp $
+** $Id: prepare.c,v 1.32 2006/03/06 20:55:46 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -74,6 +74,7 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **azColName){
     db->init.newTnum = atoi(argv[1]);
     rc = sqlite3_exec(db, argv[2], 0, 0, &zErr);
     db->init.iDb = 0;
+    assert( rc!=SQLITE_OK || zErr==0 );
     if( SQLITE_OK!=rc ){
       if( rc==SQLITE_NOMEM ){
         sqlite3FailedMalloc();
