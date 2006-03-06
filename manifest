@@ -1,5 +1,5 @@
-C Fix\stypo\sin\sdocumentation.\s\sTicket\s#1578.\s(CVS\s3124)
-D 2006-03-03T21:39:54
+C Pager\sperformance\senhancements.\s(CVS\s3125)
+D 2006-03-06T18:23:17
 F Makefile.in 5d8dff443383918b700e495de42ec65bc1c8865b
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -59,8 +59,8 @@ F src/os_unix.c 757a7b726764367f7b0595c4302969582c04413d
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c 8ced9ac82670bbf77492961a2f7ff80a87f1404f
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c f65d0b05182ff6059e9566b2eed1ec5f0cddc2f6
-F src/pager.h 425a9e52d5404158de016799715cbc2c3d685178
+F src/pager.c dcc9966177d6fad54aefbcdb4fc49ed2cdda8672
+F src/pager.h 43f32f3847421f7502cfbb66f4eb2302b8033818
 F src/parse.y c2daaa24fa2c8e256af740f29d3d61ac552fbd49
 F src/pragma.c 27d5e395c5d950931c7ac4fe610e7c2993e2fa55
 F src/prepare.c cf0fc8ebaf94409955ecb09ffeb0099c9ef44693
@@ -355,7 +355,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 34b560e81170b33b766a6a7cd462a227425c15d9
-R e2c712bd2bb5bc47bf91421593e8acaf
+P cb2e009f1748e8c4945e85a3d36b4435003412f0
+R a08949d926616be5599aabd575dcd92e
 U drh
-Z 0e21f9a12d523b738cd926bd7dc2a5b0
+Z 5dda9791f2fd667e7a224f45611c21fd
