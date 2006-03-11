@@ -1,5 +1,5 @@
-C Correct\snames\sreturned\sfrom\sa\squery\sagainst\sa\sview.\s\sTicket\s#1709,\s#1688,\s#1711.\s(CVS\s3128)
-D 2006-03-09T17:28:12
+C Add\san\sassert()\sto\sdemonstrate\sthat\sKlockworks\sis\swrong\sabout\san\saleged\sbug.\s(CVS\s3129)
+D 2006-03-11T12:04:18
 F Makefile.in 5d8dff443383918b700e495de42ec65bc1c8865b
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -34,7 +34,7 @@ F src/alter.c 451b34fc4eb2475ca76a2e86b21e1030a9428091
 F src/analyze.c 7d2b7ab9a9c2fd6e55700f69064dfdd3e36d7a8a
 F src/attach.c d73a3505de3fb9e373d0a158978116c4212031d0
 F src/auth.c 9ae84d2d94eb96195e04515715e08e85963e96c2
-F src/btree.c 3f3b6ccdf8ea59dd736bf3f8fb2061947fa4bd4d
+F src/btree.c 861f6a805b55dbf37a35a0561e0cf5e99ed073ae
 F src/btree.h 40055cfc09defd1146bc5b922399c035f969e56d
 F src/build.c 98b458e30906461777ff1e003eef2db14c37314f
 F src/callback.c 1bf497306c32229114f826707054df7ebe10abf2
@@ -355,7 +355,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P b4d3e0d528c7d17fa3d05956a188cd4d431204b2
-R 51935685599ad30afbcbf808bc91dbf7
+P 36830fafa405c9eae4795045efc6843394c67555
+R 49e02133024179ffb0fdf1048751534a
 U drh
-Z 36810395a2addfbb68c63e8614294e10
+Z 526a9d7b9b1e35a7ab2038e1353a52ca

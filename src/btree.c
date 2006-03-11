@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.317 2006/03/06 20:55:46 drh Exp $
+** $Id: btree.c,v 1.318 2006/03/11 12:04:18 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -4069,6 +4069,7 @@ static int fillInCell(
     n = nPayload;
     if( n>spaceLeft ) n = spaceLeft;
     if( n>nSrc ) n = nSrc;
+    assert( pSrc );
     memcpy(pPayload, pSrc, n);
     nPayload -= n;
     pPayload += n;
