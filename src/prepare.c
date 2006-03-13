@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.32 2006/03/06 20:55:46 drh Exp $
+** $Id: prepare.c,v 1.33 2006/03/13 15:06:07 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -408,57 +408,6 @@ static int schemaIsValid(sqlite3 *db){
     }
   }
   return allOk;
-}
-
-/*
-** Free all resources held by the schema structure. The void* argument points
-** at a Schema struct. This function does not call sqliteFree() on the 
-** pointer itself, it just cleans up subsiduary resources (i.e. the contents
-** of the schema hash tables).
-*/
-void sqlite3SchemaFree(void *p){
-  Hash temp1;
-  Hash temp2;
-  HashElem *pElem;
-  Schema *pSchema = (Schema *)p;
-
-  temp1 = pSchema->tblHash;
-  temp2 = pSchema->trigHash;
-  sqlite3HashInit(&pSchema->trigHash, SQLITE_HASH_STRING, 0);
-  sqlite3HashClear(&pSchema->aFKey);
-  sqlite3HashClear(&pSchema->idxHash);
-  for(pElem=sqliteHashFirst(&temp2); pElem; pElem=sqliteHashNext(pElem)){
-    sqlite3DeleteTrigger((Trigger*)sqliteHashData(pElem));
-  }
-  sqlite3HashClear(&temp2);
-  sqlite3HashInit(&pSchema->tblHash, SQLITE_HASH_STRING, 0);
-  for(pElem=sqliteHashFirst(&temp1); pElem; pElem=sqliteHashNext(pElem)){
-    Table *pTab = sqliteHashData(pElem);
-    sqlite3DeleteTable(0, pTab);
-  }
-  sqlite3HashClear(&temp1);
-  pSchema->pSeqTab = 0;
-  pSchema->flags &= ~DB_SchemaLoaded;
-}
-
-/*
-** Find and return the schema associated with a BTree.  Create
-** a new one if necessary.
-*/
-Schema *sqlite3SchemaGet(Btree *pBt){
-  Schema * p;
-  if( pBt ){
-    p = (Schema *)sqlite3BtreeSchema(pBt,sizeof(Schema),sqlite3SchemaFree);
-  }else{
-    p = (Schema *)sqliteMalloc(sizeof(Schema));
-  }
-  if( p && 0==p->file_format ){
-    sqlite3HashInit(&p->tblHash, SQLITE_HASH_STRING, 0);
-    sqlite3HashInit(&p->idxHash, SQLITE_HASH_STRING, 0);
-    sqlite3HashInit(&p->trigHash, SQLITE_HASH_STRING, 0);
-    sqlite3HashInit(&p->aFKey, SQLITE_HASH_STRING, 1);
-  }
-  return p;
 }
 
 /*

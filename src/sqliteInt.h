@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.488 2006/02/27 22:22:29 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.489 2006/03/13 15:06:07 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -510,6 +510,9 @@ struct sqlite3 {
 #endif
 };
 
+/*
+** A macro to discover the encoding of a database.
+*/
 #define ENC(db) ((db)->aDb[0].pSchema->enc)
 
 /*

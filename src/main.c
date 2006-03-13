@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.336 2006/03/03 20:54:41 drh Exp $
+** $Id: main.c,v 1.337 2006/03/13 15:06:07 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -846,14 +846,12 @@ static int openDatabase(
     db->magic = SQLITE_MAGIC_CLOSED;
     goto opendb_out;
   }
-#ifndef SQLITE_OMIT_PARSER
   db->aDb[0].pSchema = sqlite3SchemaGet(db->aDb[0].pBt);
   db->aDb[1].pSchema = sqlite3SchemaGet(0);
-#endif
-
   if( db->aDb[0].pSchema ){
     ENC(db) = SQLITE_UTF8;
   }
+
 
   /* The default safety_level for the main database is 'full'; for the temp
   ** database it is 'NONE'. This matches the pager layer defaults.  
