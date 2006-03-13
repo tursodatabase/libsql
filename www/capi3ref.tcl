@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3ref.tcl,v 1.34 2006/02/11 01:25:52 drh Exp $}
+set rcsid {$Id: capi3ref.tcl,v 1.35 2006/03/13 14:31:39 drh Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -1296,7 +1296,7 @@ api {} {
 }
 
 api {} {
-  int sqlite3_db_handle(sqlite3_stmt*);
+  sqlite3 *sqlite3_db_handle(sqlite3_stmt*);
 } {
  Return the sqlite3* database handle to which the prepared statement given
  in the argument belongs.  This is the same database handle that was
