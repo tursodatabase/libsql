@@ -1,5 +1,5 @@
-C Additional\schanges\sdue\sto\sCoverity\sscans.\s(CVS\s3130)
-D 2006-03-13T12:54:10
+C Changes\sto\sget\sthe\sSerialized\sStatement\sExtension\sworking\sagain.\s(CVS\s3131)
+D 2006-03-13T14:28:05
 F Makefile.in 5d8dff443383918b700e495de42ec65bc1c8865b
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -34,7 +34,7 @@ F src/alter.c 451b34fc4eb2475ca76a2e86b21e1030a9428091
 F src/analyze.c 7d2b7ab9a9c2fd6e55700f69064dfdd3e36d7a8a
 F src/attach.c d73a3505de3fb9e373d0a158978116c4212031d0
 F src/auth.c 9ae84d2d94eb96195e04515715e08e85963e96c2
-F src/btree.c 861f6a805b55dbf37a35a0561e0cf5e99ed073ae
+F src/btree.c 96a383ddf9a391d017bfa36c89dc528ccfc5d9bb
 F src/btree.h 40055cfc09defd1146bc5b922399c035f969e56d
 F src/build.c 4bd8471e4f20f5623c15fd71d2aaee0f66e394d8
 F src/callback.c 1bf497306c32229114f826707054df7ebe10abf2
@@ -89,7 +89,7 @@ F src/update.c 34add66fcd3301b33b6e4c4c813f4e408f7ee4a0
 F src/utf.c 1d51225bce1ea8d1978e8ab28e862a0c12c7a8e8
 F src/util.c 59389ed717f0fa9d8023b3f482ba09dcf41343a8
 F src/vacuum.c 5b37d0f436f8e1ffacd17934e44720b38d2247f9
-F src/vdbe.c 5fb9d3e64ed18f82e71bd2ff94c3e5f07384c7d4
+F src/vdbe.c 2c687d8cf6b75380ef26a8c9db047ce0e3fa7424
 F src/vdbe.h 80ba1c391ec28180dd07a630577f50b22c2062da
 F src/vdbeInt.h 2109be6b58e3bfcd8e5b56d3b212b1a105a61051
 F src/vdbeapi.c 7dc662e7c905ce666bb506dced932e0307115cbf
@@ -355,7 +355,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 0910022be3ec8ce540e0e6adce2eed7a7cd28fd3
-R 3b0768980a7df91b35d6774b73d561d5
+P a69f697d50124f2c0c654d56390ae83a4ac5e9e8
+R 88d366a1182cf27af32cd61f9e0ea7ee
 U drh
-Z 43c825bec0d49c278c25514cf14fe00a
+Z 86c65569dc0e41105f23665a78f26052

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.544 2006/02/24 02:53:50 drh Exp $
+** $Id: vdbe.c,v 1.545 2006/03/13 14:28:05 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -4071,7 +4071,7 @@ case OP_ParseSchema: {        /* no-push */
   break;  
 }
 
-#ifndef SQLITE_OMIT_ANALYZE
+#if !defined(SQLITE_OMIT_ANALYZE) && !defined(SQLITE_OMIT_PARSER)
 /* Opcode: LoadAnalysis P1 * *
 **
 ** Read the sqlite_stat1 table for database P1 and load the content
@@ -4084,7 +4084,7 @@ case OP_LoadAnalysis: {        /* no-push */
   sqlite3AnalysisLoad(db, iDb);
   break;  
 }
-#endif /* SQLITE_OMIT_ANALYZE */
+#endif /* !defined(SQLITE_OMIT_ANALYZE) && !defined(SQLITE_OMIT_PARSER)  */
 
 /* Opcode: DropTable P1 * P3
 **

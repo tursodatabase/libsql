@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.318 2006/03/11 12:04:18 drh Exp $
+** $Id: btree.c,v 1.319 2006/03/13 14:28:05 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1686,7 +1686,7 @@ int sqlite3BtreeOpen(
   assert( (pBt->pageSize & 7)==0 );  /* 8-byte alignment of pageSize */
   sqlite3pager_set_pagesize(pBt->pPager, pBt->pageSize);
 
-#ifndef SQLITE_OMIT_SHARED_CACHE
+#if !defined(SQLITE_OMIT_SHARED_CACHE) && !defined(SQLITE_OMIT_DISKIO)
   /* Add the new btree to the linked list starting at ThreadData.pBtree.
   ** There is no chance that a malloc() may fail inside of the 
   ** sqlite3ThreadData() call, as the ThreadData structure must have already
