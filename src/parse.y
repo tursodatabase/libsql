@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.198 2006/02/27 22:22:28 drh Exp $
+** @(#) $Id: parse.y,v 1.199 2006/03/13 12:54:10 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -661,7 +661,7 @@ expr(A) ::= CAST(X) LP expr(E) AS typetoken(T) RP(Y). {
 expr(A) ::= ID(X) LP distinct(D) exprlist(Y) RP(E). {
   A = sqlite3ExprFunction(Y, &X);
   sqlite3ExprSpan(A,&X,&E);
-  if( D ){
+  if( D && A ){
     A->flags |= EP_Distinct;
   }
 }
@@ -692,7 +692,8 @@ likeop(A) ::= NOT LIKE_KW(X). {A.eOperator = X; A.not = 1;}
 escape(X) ::= ESCAPE expr(A). [ESCAPE] {X = A;}
 escape(X) ::= .               [ESCAPE] {X = 0;}
 expr(A) ::= expr(X) likeop(OP) expr(Y) escape(E).  [LIKE_KW]  {
-  ExprList *pList = sqlite3ExprListAppend(0, Y, 0);
+  ExprList *pList;
+  pList = sqlite3ExprListAppend(0, Y, 0);
   pList = sqlite3ExprListAppend(pList, X, 0);
   if( E ){
     pList = sqlite3ExprListAppend(pList, E, 0);
@@ -985,13 +986,17 @@ trigger_cmd(A) ::= select(X).  {A = sqlite3TriggerSelectStep(X); }
 // The special RAISE expression that may occur in trigger programs
 expr(A) ::= RAISE(X) LP IGNORE RP(Y).  {
   A = sqlite3Expr(TK_RAISE, 0, 0, 0); 
-  A->iColumn = OE_Ignore;
-  sqlite3ExprSpan(A, &X, &Y);
+  if( A ){
+    A->iColumn = OE_Ignore;
+    sqlite3ExprSpan(A, &X, &Y);
+  }
 }
 expr(A) ::= RAISE(X) LP raisetype(T) COMMA nm(Z) RP(Y).  {
   A = sqlite3Expr(TK_RAISE, 0, 0, &Z); 
-  A->iColumn = T;
-  sqlite3ExprSpan(A, &X, &Y);
+  if( A ) {
+    A->iColumn = T;
+    sqlite3ExprSpan(A, &X, &Y);
+  }
 }
 %endif // !SQLITE_OMIT_TRIGGER
 

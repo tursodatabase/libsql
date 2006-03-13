@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.390 2006/03/06 20:55:46 drh Exp $
+** $Id: build.c,v 1.391 2006/03/13 12:54:10 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -3016,7 +3016,7 @@ void sqlite3CodeVerifySchema(Parse *pParse, int iDb){
   if( iDb>=0 ){
     assert( iDb<db->nDb );
     assert( db->aDb[iDb].pBt!=0 || iDb==1 );
-    assert( iDb<32 );
+    assert( iDb<MAX_ATTACHED+2 );
     mask = 1<<iDb;
     if( (pParse->cookieMask & mask)==0 ){
       pParse->cookieMask |= mask;

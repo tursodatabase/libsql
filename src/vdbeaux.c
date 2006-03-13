@@ -340,7 +340,7 @@ int sqlite3VdbeAddOpList(Vdbe *p, int nOp, VdbeOpList const *aOp){
 ** few minor changes to the program.
 */
 void sqlite3VdbeChangeP1(Vdbe *p, int addr, int val){
-  assert( p->magic==VDBE_MAGIC_INIT );
+  assert( p==0 || p->magic==VDBE_MAGIC_INIT );
   if( p && addr>=0 && p->nOp>addr && p->aOp ){
     p->aOp[addr].p1 = val;
   }
@@ -352,7 +352,7 @@ void sqlite3VdbeChangeP1(Vdbe *p, int addr, int val){
 */
 void sqlite3VdbeChangeP2(Vdbe *p, int addr, int val){
   assert( val>=0 );
-  assert( p->magic==VDBE_MAGIC_INIT );
+  assert( p==0 || p->magic==VDBE_MAGIC_INIT );
   if( p && addr>=0 && p->nOp>addr && p->aOp ){
     p->aOp[addr].p2 = val;
   }
@@ -420,7 +420,7 @@ static void freeP3(int p3type, void *p3){
 */
 void sqlite3VdbeChangeP3(Vdbe *p, int addr, const char *zP3, int n){
   Op *pOp;
-  assert( p->magic==VDBE_MAGIC_INIT );
+  assert( p==0 || p->magic==VDBE_MAGIC_INIT );
   if( p==0 || p->aOp==0 || sqlite3MallocFailed() ){
     if (n != P3_KEYINFO) {
       freeP3(n, (void*)*(char**)&zP3);
