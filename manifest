@@ -1,5 +1,5 @@
-C Get\sparserless\sbuilds\sworking\sagain.\s(CVS\s3133)
-D 2006-03-13T15:06:06
+C Make\ssure\ssqlite3FindCollSeq()\sreturns\sNULL\safter\sa\smalloc()\sfailure.\s(CVS\s3134)
+D 2006-03-14T11:08:28
 F Makefile.in 5d8dff443383918b700e495de42ec65bc1c8865b
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -37,7 +37,7 @@ F src/auth.c 9ae84d2d94eb96195e04515715e08e85963e96c2
 F src/btree.c 96a383ddf9a391d017bfa36c89dc528ccfc5d9bb
 F src/btree.h 40055cfc09defd1146bc5b922399c035f969e56d
 F src/build.c 4bd8471e4f20f5623c15fd71d2aaee0f66e394d8
-F src/callback.c 2c69d539224fa29a70bedda821d59f99e1591df5
+F src/callback.c d8c5ab1cd6f3b7182b2ee63bf53f1b69c0f74306
 F src/complete.c 7d1a44be8f37de125fcafd3d3a018690b3799675
 F src/date.c cd2bd5d1ebc6fa12d6312f69789ae5b0a2766f2e
 F src/delete.c 2dea1a83e6ef534346e74fd03114d3a7b16f08fc
@@ -355,7 +355,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P f4fb047d0a0939ab6a25b75999501f5956e9f67c
-R 6aed0072db6a7040096e4fdf5bd6fa26
+P 5ddc09a5e4d81a73228cd8038c6dc345b1fdf4af
+R a43a2ff24d785747f0cbefa76b43ba7a
 U drh
-Z cb6f6f80a408e1622368754a6e64a089
+Z ab1fe4d8ebe166f5ed63d7ad4e8eac3a
