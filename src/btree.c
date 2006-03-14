@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.319 2006/03/13 14:28:05 drh Exp $
+** $Id: btree.c,v 1.320 2006/03/14 12:59:10 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -469,8 +469,15 @@ static void put4byte(unsigned char *p, u32 v){
 /* The database page the PENDING_BYTE occupies. This page is never used.
 ** TODO: This macro is very similary to PAGER_MJ_PGNO() in pager.c. They
 ** should possibly be consolidated (presumably in pager.h).
+**
+** If disk I/O is omitted (meaning that the database is stored purely
+** in memory) then there is no pending byte.
 */
-#define PENDING_BYTE_PAGE(pBt) ((PENDING_BYTE/(pBt)->pageSize)+1)
+#ifdef SQLITE_OMIT_DISKIO
+# define PENDING_BYTE_PAGE(pBt)  0x7fffffff
+#else
+# define PENDING_BYTE_PAGE(pBt) ((PENDING_BYTE/(pBt)->pageSize)+1)
+#endif
 
 /*
 ** A linked list of the following structures is stored at BtShared.pLock.
