@@ -1,5 +1,5 @@
-C Move\sthe\sPENDING_PAGE\sto\sa\svery\slarge\svalue\sif\sdisk\sI/O\sis\somitted.\s(CVS\s3135)
-D 2006-03-14T12:59:10
+C Set\sand\sclear\sthe\sfull_column_name\sflag\susing\sdirect\sinvocation\srather\sthan\nthe\sexecsql\stcl\scommand\sso\sthat\sthe\sselect1\stest\sworks\swith\sthe\sserialized\nstatement\sextension.\s(CVS\s3136)
+D 2006-03-14T13:10:43
 F Makefile.in 5d8dff443383918b700e495de42ec65bc1c8865b
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -222,7 +222,7 @@ F test/rollback.test 673cd8c44c685ad54987fe7f0eeba84efa09685d
 F test/rowid.test 040a3bef06f970c45f5fcd14b2355f7f4d62f0cf
 F test/safety.test 4a06934e45d03b8b50ebcd8d174eb0367d2fd851
 F test/schema.test 8a2ae440fb15f5798a68059e8746402f3137be46
-F test/select1.test 9991b12eb68fa86e0faa29f26f51986d80ce0c42
+F test/select1.test db53c257559a0ed817a5be23947dccc48828edb7
 F test/select2.test f3c2678c3a9f3cf08ec4988a3845bda64be6d9e3
 F test/select3.test 8fece41cd8f2955131b3f973a7123bec60b6e65e
 F test/select4.test c239f516aa31f42f2ef7c6d7cd01105f08f934ca
@@ -355,7 +355,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 0e05355f3ca795f0ab959553e6c9462e5483c3b2
-R 8b2158249132ee17ae57b7db010b8498
+P f07181739f82b0d23f934f51b97e67c32efe6f42
+R 2f1c4b3a9a42e21655f80f86a32ab92a
 U drh
-Z f8486d741b67f811d2affb3cc9c5f176
+Z f9b20f77c14e1ce189c3b40b91bc6cce
