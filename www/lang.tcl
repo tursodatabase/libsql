@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the lang-*.html files.
 #
-set rcsid {$Id: lang.tcl,v 1.110 2006/02/15 17:30:31 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.111 2006/03/15 16:26:10 drh Exp $}
 source common.tcl
 
 if {[llength $argv]>0} {
@@ -1521,11 +1521,12 @@ or updating the current row.  Thus the insert or update always occurs.
 The command continues executing normally.  No error is returned.
 If a NOT NULL constraint violation occurs, the NULL value is replaced
 by the default value for that column.  If the column has no default
-value, then the ABORT algorithm is used.</p>
+value, then the ABORT algorithm is used.  If a CHECK constraint violation
+occurs then the IGNORE algorithm is used.</p>
 
 <p>When this conflict resolution strategy deletes rows in order to
 satisfy a constraint, it does not invoke delete triggers on those
-rows.  But that may change in a future release.</p>
+rows.  This behavior might change in a future release.</p>
 </dl>
 
 <p>The algorithm specified in the OR clause of a INSERT or UPDATE
