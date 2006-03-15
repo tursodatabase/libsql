@@ -107,9 +107,11 @@ int sqlite3VdbeAddOp(Vdbe *p, int op, int p1, int p2){
   i = p->nOp;
   p->nOp++;
   assert( p->magic==VDBE_MAGIC_INIT );
-  resizeOpArray(p, i+1);
-  if( sqlite3MallocFailed() ){
-    return 0;
+  if( p->nOpAlloc<=i ){
+    resizeOpArray(p, i+1);
+    if( sqlite3MallocFailed() ){
+      return 0;
+    }
   }
   pOp = &p->aOp[i];
   pOp->opcode = op;
