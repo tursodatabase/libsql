@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.337 2006/03/13 15:06:07 drh Exp $
+** $Id: main.c,v 1.338 2006/03/16 14:05:15 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -109,7 +109,7 @@ int sqlite3_close(sqlite3 *db){
   }
 
 #ifdef SQLITE_SSE
-  sqlite3_finalize(db->pFetch);
+  sqlite3SseCleanup(db);
 #endif 
 
   /* If there are any outstanding VMs, return SQLITE_BUSY. */

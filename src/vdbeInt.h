@@ -317,6 +317,10 @@ struct Vdbe {
   u8 minWriteFileFormat;  /* Minimum file format for writable database files */
   int nChange;            /* Number of db changes made since last reset */
   i64 startTime;          /* Time when query started - used for profiling */
+#ifdef SQLITE_SSE
+  int fetchId;          /* Statement number used by sqlite3_fetch_statement */
+  int lru;              /* Counter used for LRU cache replacement */
+#endif
 };
 
 /*
