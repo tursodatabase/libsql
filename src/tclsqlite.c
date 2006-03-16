@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.154 2006/03/06 23:30:52 drh Exp $
+** $Id: tclsqlite.c,v 1.155 2006/03/16 16:19:56 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -1088,7 +1088,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       fclose(in);
       return TCL_ERROR;
     }
-    sqlite3_exec(pDb->db, "BEGIN", 0, 0, 0);
+    (void)sqlite3_exec(pDb->db, "BEGIN", 0, 0, 0);
     zCommit = "COMMIT";
     while( (zLine = local_getline(0, in))!=0 ){
       char *z;
@@ -1136,7 +1136,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     free(azCol);
     fclose(in);
     sqlite3_finalize(pStmt);
-    sqlite3_exec(pDb->db, zCommit, 0, 0, 0);
+    (void)sqlite3_exec(pDb->db, zCommit, 0, 0, 0);
 
     if( zCommit[0] == 'C' ){
       /* success, set result as number of lines processed */
@@ -1847,7 +1847,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     }
     inTrans = !sqlite3_get_autocommit(pDb->db);
     if( !inTrans ){
-      sqlite3_exec(pDb->db, zBegin, 0, 0, 0);
+      (void)sqlite3_exec(pDb->db, zBegin, 0, 0, 0);
     }
     rc = Tcl_EvalObjEx(interp, pScript, 0);
     if( !inTrans ){
@@ -1857,7 +1857,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       } else {
         zEnd = "COMMIT";
       }
-      sqlite3_exec(pDb->db, zEnd, 0, 0, 0);
+      (void)sqlite3_exec(pDb->db, zEnd, 0, 0, 0);
     }
     break;
   }

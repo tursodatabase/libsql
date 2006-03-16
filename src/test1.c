@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.207 2006/02/16 18:16:37 drh Exp $
+** $Id: test1.c,v 1.208 2006/03/16 16:19:56 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -488,7 +488,7 @@ static void sqlite3ExecFunc(
 ){
   struct dstr x;
   memset(&x, 0, sizeof(x));
-  sqlite3_exec((sqlite3*)sqlite3_user_data(context),
+  (void)sqlite3_exec((sqlite3*)sqlite3_user_data(context),
       (char*)sqlite3_value_text(argv[0]),
       execFuncCallback, &x, 0);
   sqlite3_result_text(context, x.z, x.nUsed, SQLITE_TRANSIENT);
@@ -3008,7 +3008,7 @@ static int test_stack_used(
   }
   if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
   prepStack();
-  sqlite3_exec(db, argv[2], 0, 0, 0);
+  (void)sqlite3_exec(db, argv[2], 0, 0, 0);
   for(i=65535; i>=0 && ((u32*)sqlite3_stack_baseline)[-i]==0xdeadbeef; i--){}
   Tcl_SetObjResult(interp, Tcl_NewIntObj(i*4));
   return TCL_OK;

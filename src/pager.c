@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.262 2006/03/06 20:55:46 drh Exp $
+** @(#) $Id: pager.c,v 1.263 2006/03/16 16:19:56 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -3005,7 +3005,7 @@ int sqlite3pager_write(void *pData){
           ** that we do not. */
           assert( pPg->pgno!=PAGER_MJ_PGNO(pPager) );
           pData2 = CODEC2(pPager, pData, pPg->pgno, 7);
-          cksum = pager_cksum(pPager, pData2);
+          cksum = pager_cksum(pPager, (u8*)pData2);
           pEnd = pData2 + pPager->pageSize;
           pData2 -= 4;
           saved = *(u32*)pEnd;

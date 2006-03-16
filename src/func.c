@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.125 2006/03/02 03:02:48 drh Exp $
+** $Id: func.c,v 1.126 2006/03/16 16:19:56 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1079,7 +1079,7 @@ void sqlite3RegisterBuiltinFunctions(sqlite3 *db){
   }
   sqlite3RegisterDateTimeFunctions(db);
 #ifdef SQLITE_SSE
-  sqlite3SseFunctions(db);
+  (void)sqlite3SseFunctions(db);
 #endif
 #ifdef SQLITE_CASE_SENSITIVE_LIKE
   sqlite3RegisterLikeFunctions(db, 1);
