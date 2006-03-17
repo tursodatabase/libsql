@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.307 2006/03/09 17:28:12 drh Exp $
+** $Id: select.c,v 1.308 2006/03/17 00:04:03 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -680,6 +680,7 @@ static KeyInfo *keyInfoFromExprList(Parse *pParse, ExprList *pList){
 ** routine generates the code needed to do that.
 */
 static void generateSortTail(
+  Parse *pParse,   /* Parsing context */
   Select *p,       /* The SELECT statement */
   Vdbe *v,         /* Generate code into this VDBE */
   int nColumn,     /* Number of columns of data */
@@ -690,11 +691,20 @@ static void generateSortTail(
   int cont = sqlite3VdbeMakeLabel(v);
   int addr;
   int iTab;
+  int pseudoTab;
   ExprList *pOrderBy = p->pOrderBy;
 
   iTab = pOrderBy->iECursor;
+  if( eDest==SRT_Callback || eDest==SRT_Subroutine ){
+    pseudoTab = pParse->nTab++;
+    sqlite3VdbeAddOp(v, OP_OpenPseudo, pseudoTab, 0);
+    sqlite3VdbeAddOp(v, OP_SetNumColumns, pseudoTab, nColumn);
+  }
   addr = 1 + sqlite3VdbeAddOp(v, OP_Sort, iTab, brk);
   codeOffset(v, p, cont, 0);
+  if( eDest==SRT_Callback || eDest==SRT_Subroutine ){
+    sqlite3VdbeAddOp(v, OP_Integer, 1, 0);
+  }
   sqlite3VdbeAddOp(v, OP_Column, iTab, pOrderBy->nExpr + 1);
   switch( eDest ){
     case SRT_Table:
@@ -724,17 +734,15 @@ static void generateSortTail(
     case SRT_Callback:
     case SRT_Subroutine: {
       int i;
-      sqlite3VdbeAddOp(v, OP_Integer, p->pEList->nExpr, 0);
-      sqlite3VdbeAddOp(v, OP_Pull, 1, 0);
+      sqlite3VdbeAddOp(v, OP_Insert, pseudoTab, 0);
       for(i=0; i<nColumn; i++){
-        sqlite3VdbeAddOp(v, OP_Column, -1-i, i);
+        sqlite3VdbeAddOp(v, OP_Column, pseudoTab, i);
       }
       if( eDest==SRT_Callback ){
         sqlite3VdbeAddOp(v, OP_Callback, nColumn, 0);
       }else{
         sqlite3VdbeAddOp(v, OP_Gosub, 0, iParm);
       }
-      sqlite3VdbeAddOp(v, OP_Pop, 2, 0);
       break;
     }
     default: {
@@ -755,6 +763,10 @@ static void generateSortTail(
   sqlite3VdbeResolveLabel(v, cont);
   sqlite3VdbeAddOp(v, OP_Next, iTab, addr);
   sqlite3VdbeResolveLabel(v, brk);
+  if( eDest==SRT_Callback || eDest==SRT_Subroutine ){
+    sqlite3VdbeAddOp(v, OP_Close, pseudoTab, 0);
+  }
+
 }
 
 /*
@@ -1964,7 +1976,7 @@ static int multiSelect(
       pKeyInfo->nField = nOrderByExpr;
       sqlite3VdbeChangeP3(v, addr, (char*)pKeyInfo, P3_KEYINFO_HANDOFF);
       pKeyInfo = 0;
-      generateSortTail(p, v, p->pEList->nExpr, eDest, iParm);
+      generateSortTail(pParse, p, v, p->pEList->nExpr, eDest, iParm);
     }
 
     sqliteFree(pKeyInfo);
@@ -3253,7 +3265,7 @@ int sqlite3Select(
   ** and send them to the callback one by one.
   */
   if( pOrderBy ){
-    generateSortTail(p, v, pEList->nExpr, eDest, iParm);
+    generateSortTail(pParse, p, v, pEList->nExpr, eDest, iParm);
   }
 
 #ifndef SQLITE_OMIT_SUBQUERY

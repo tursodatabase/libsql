@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.545 2006/03/13 14:28:05 drh Exp $
+** $Id: vdbe.c,v 1.546 2006/03/17 00:04:04 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1921,6 +1921,7 @@ case OP_Column: {
   ** which is the number of records.
   */
   assert( p1<0 || p->apCsr[p1]!=0 );
+#if 0
   if( p1<0 ){
     /* Take the record off of the stack */
     Mem *pRec = &pTos[p1];
@@ -1933,7 +1934,9 @@ case OP_Column: {
     assert( pCnt->flags & MEM_Int );
     nField = pCnt->i;
     pCrsr = 0;
-  }else if( (pC = p->apCsr[p1])->pCursor!=0 ){
+  }else
+#endif
+  if( (pC = p->apCsr[p1])->pCursor!=0 ){
     /* The record is stored in a B-Tree */
     rc = sqlite3VdbeCursorMoveto(pC);
     if( rc ) goto abort_due_to_error;
@@ -1952,7 +1955,6 @@ case OP_Column: {
       sqlite3BtreeDataSize(pCrsr, &payloadSize);
     }
     nField = pC->nField;
-#ifndef SQLITE_OMIT_TRIGGER
   }else if( pC->pseudoTable ){
     /* The record is the sole entry of a pseudo-table */
     payloadSize = pC->nData;
@@ -1961,7 +1963,6 @@ case OP_Column: {
     assert( payloadSize==0 || zRec!=0 );
     nField = pC->nField;
     pCrsr = 0;
-#endif
   }else{
     zRec = 0;
     payloadSize = 0;
@@ -2111,7 +2112,7 @@ case OP_Column: {
 
   /* If we dynamically allocated space to hold the data (in the
   ** sqlite3VdbeMemFromBtree() call above) then transfer control of that
-  ** dynamically allocated space over to the pTos structure rather.
+  ** dynamically allocated space over to the pTos structure.
   ** This prevents a memory copy.
   */
   if( (sMem.flags & MEM_Dyn)!=0 ){
@@ -2722,7 +2723,6 @@ case OP_OpenVirtual: {       /* no-push */
   break;
 }
 
-#ifndef SQLITE_OMIT_TRIGGER
 /* Opcode: OpenPseudo P1 * *
 **
 ** Open a new cursor that points to a fake table that contains a single
@@ -2731,7 +2731,9 @@ case OP_OpenVirtual: {       /* no-push */
 ** closed.
 **
 ** A pseudo-table created by this opcode is useful for holding the
-** NEW or OLD tables in a trigger.
+** NEW or OLD tables in a trigger.  Also used to hold the a single
+** row output from the sorter so that the row can be decomposed into
+** individual columns using the OP_Column opcode.
 */
 case OP_OpenPseudo: {       /* no-push */
   int i = pOp->p1;
@@ -2746,7 +2748,6 @@ case OP_OpenPseudo: {       /* no-push */
   pCx->isIndex = 0;
   break;
 }
-#endif
 
 /* Opcode: Close P1 * *
 **
@@ -3320,7 +3321,6 @@ case OP_Insert: {         /* no-push */
     }else{
       assert( pTos->flags & (MEM_Blob|MEM_Str) );
     }
-#ifndef SQLITE_OMIT_TRIGGER
     if( pC->pseudoTable ){
       sqliteFree(pC->pData);
       pC->iKey = iKey;
@@ -3337,11 +3337,8 @@ case OP_Insert: {         /* no-push */
       }
       pC->nullRow = 0;
     }else{
-#endif
       rc = sqlite3BtreeInsert(pC->pCursor, 0, iKey, pTos->z, pTos->n);
-#ifndef SQLITE_OMIT_TRIGGER
     }
-#endif
     
     pC->rowidIsValid = 0;
     pC->deferredMoveto = 0;
@@ -3498,12 +3495,10 @@ case OP_RowData: {
     }else{
       sqlite3BtreeData(pCrsr, 0, n, pTos->z);
     }
-#ifndef SQLITE_OMIT_TRIGGER
   }else if( pC->pseudoTable ){
     pTos->n = pC->nData;
     pTos->z = pC->pData;
     pTos->flags = MEM_Blob|MEM_Ephem;
-#endif
   }else{
     pTos->flags = MEM_Null;
   }

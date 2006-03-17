@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.489 2006/03/13 15:06:07 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.490 2006/03/17 00:04:04 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1639,7 +1639,7 @@ void sqlite3ChangeCookie(sqlite3*, Vdbe*, int);
 #else
 # define sqlite3TriggersExist(A,B,C,D,E,F) 0
 # define sqlite3DeleteTrigger(A)
-# define sqlite3DropTriggerPtr(A,B,C)
+# define sqlite3DropTriggerPtr(A,B)
 # define sqlite3UnlinkAndDeleteTrigger(A,B,C)
 # define sqlite3CodeRowTrigger(A,B,C,D,E,F,G,H,I) 0
 #endif
