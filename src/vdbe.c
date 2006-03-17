@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.546 2006/03/17 00:04:04 drh Exp $
+** $Id: vdbe.c,v 1.547 2006/03/17 00:26:00 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1871,13 +1871,6 @@ case OP_SetNumColumns: {       /* no-push */
 ** If the KeyAsData opcode has previously executed on this cursor, then the
 ** field might be extracted from the key rather than the data.
 **
-** If P1 is negative, then the record is stored on the stack rather than in
-** a table.  For P1==-1, the top of the stack is used.  For P1==-2, the
-** next on the stack is used.  And so forth.  The value pushed is always
-** just a pointer into the record which is stored further down on the
-** stack.  The column value is not copied. The number of columns in the
-** record is stored on the stack just above the record itself.
-**
 ** If the column contains fewer than P2 fields, then push a NULL.  Or
 ** if P3 is of type P3_MEM, then push the P3 value.  The P3 value will
 ** be default value for a column that has been added using the ALTER TABLE
@@ -1909,34 +1902,19 @@ case OP_Column: {
   ** bytes in the record.
   **
   ** zRec is set to be the complete text of the record if it is available.
-  ** The complete record text is always available for pseudo-tables and
-  ** when we are decoded a record from the stack.  If the record is stored
-  ** in a cursor, the complete record text might be available in the 
-  ** pC->aRow cache.  Or it might not be.  If the data is unavailable,
-  ** zRec is set to NULL.
+  ** The complete record text is always available for pseudo-tables
+  ** If the record is stored in a cursor, the complete record text
+  ** might be available in the  pC->aRow cache.  Or it might not be.
+  ** If the data is unavailable,  zRec is set to NULL.
   **
   ** We also compute the number of columns in the record.  For cursors,
   ** the number of columns is stored in the Cursor.nField element.  For
   ** records on the stack, the next entry down on the stack is an integer
   ** which is the number of records.
   */
-  assert( p1<0 || p->apCsr[p1]!=0 );
-#if 0
-  if( p1<0 ){
-    /* Take the record off of the stack */
-    Mem *pRec = &pTos[p1];
-    Mem *pCnt = &pRec[-1];
-    assert( pRec>=p->aStack );
-    assert( pRec->flags & MEM_Blob );
-    payloadSize = pRec->n;
-    zRec = pRec->z;
-    assert( pCnt>=p->aStack );
-    assert( pCnt->flags & MEM_Int );
-    nField = pCnt->i;
-    pCrsr = 0;
-  }else
-#endif
-  if( (pC = p->apCsr[p1])->pCursor!=0 ){
+  pC = p->apCsr[p1];
+  assert( pC!=0 );
+  if( pC->pCursor!=0 ){
     /* The record is stored in a B-Tree */
     rc = sqlite3VdbeCursorMoveto(pC);
     if( rc ) goto abort_due_to_error;
@@ -1990,15 +1968,17 @@ case OP_Column: {
     u32 offset;      /* Offset into the data */
     int szHdrSz;     /* Size of the header size field at start of record */
     int avail;       /* Number of bytes of available data */
-    if( pC && pC->aType ){
-      aType = pC->aType;
-    }else{
-      aType = sqliteMallocRaw( 2*nField*sizeof(aType) );
+
+    aType = pC->aType;
+    if( aType==0 ){
+      pC->aType = aType = sqliteMallocRaw( 2*nField*sizeof(aType) );
     }
-    aOffset = &aType[nField];
     if( aType==0 ){
       goto no_mem;
     }
+    pC->aOffset = aOffset = &aType[nField];
+    pC->payloadSize = payloadSize;
+    pC->cacheStatus = p->cacheCtr;
 
     /* Figure out how many bytes are in the header */
     if( zRec ){
@@ -2071,15 +2051,6 @@ case OP_Column: {
       rc = SQLITE_CORRUPT_BKPT;
       goto op_column_out;
     }
-
-    /* Remember all aType and aColumn information if we have a cursor
-    ** to remember it in. */
-    if( pC ){
-      pC->payloadSize = payloadSize;
-      pC->aType = aType;
-      pC->aOffset = aOffset;
-      pC->cacheStatus = p->cacheCtr;
-    }
   }
 
   /* Get the column information. If aOffset[p2] is non-zero, then 
@@ -2129,10 +2100,6 @@ case OP_Column: {
   rc = sqlite3VdbeMemMakeWriteable(pTos);
 
 op_column_out:
-  /* Release the aType[] memory if we are not dealing with cursor */
-  if( !pC || !pC->aType ){
-    sqliteFree(aType);
-  }
   break;
 }
 

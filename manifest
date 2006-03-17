@@ -1,5 +1,5 @@
-C Much\sfaster\ssorting\swhen\sthere\sare\sa\slarge\snumber\sof\scolumns\sin\sthe\nresult\sset.\s(CVS\s3141)
-D 2006-03-17T00:04:03
+C Code\sand\scomment\scleanup\sfor\sthe\ssorting\soptimization\sof\sthe\sprevious\scheck-in.\s(CVS\s3142)
+D 2006-03-17T00:26:00
 F Makefile.in 5d8dff443383918b700e495de42ec65bc1c8865b
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -89,7 +89,7 @@ F src/update.c 34add66fcd3301b33b6e4c4c813f4e408f7ee4a0
 F src/utf.c 1d51225bce1ea8d1978e8ab28e862a0c12c7a8e8
 F src/util.c 59389ed717f0fa9d8023b3f482ba09dcf41343a8
 F src/vacuum.c 5b37d0f436f8e1ffacd17934e44720b38d2247f9
-F src/vdbe.c 0d19124eeb6c38bbc960f2676048652bb9134e99
+F src/vdbe.c dcc469dabef9462b3e8bc77193f83a57f3084363
 F src/vdbe.h 80ba1c391ec28180dd07a630577f50b22c2062da
 F src/vdbeInt.h 85cd5f81d38edb1b8f4786f407c77a7a3ba636fb
 F src/vdbeapi.c 7dc662e7c905ce666bb506dced932e0307115cbf
@@ -355,7 +355,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 6c5175bc0f98e4ce715b099394f3fdc878ed82e8
-R 33078041ea680509db177f2f08180f2d
+P 6b3717aeb4ac45a433f2a30bdd0264ed728676e1
+R f6f3e7e6d067c9a94240a0959ac790cf
 U drh
-Z d6f3682faa4b50ddafbdf0b8d9e74c43
+Z 6dcf6a197f2543f12524c83228a1e433
