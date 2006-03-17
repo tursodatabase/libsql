@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.308 2006/03/17 00:04:03 drh Exp $
+** $Id: select.c,v 1.309 2006/03/17 13:56:34 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -411,22 +411,18 @@ static void codeOffset(
 ** seen combinations of the N values.  A new entry is made in iTab
 ** if the current N values are new.
 **
-** A jump to addrRepeat is made and the K values are popped from the
+** A jump to addrRepeat is made and the N+1 values are popped from the
 ** stack if the top N elements are not distinct.
 */
 static void codeDistinct(
   Vdbe *v,           /* Generate code into this VM */
   int iTab,          /* A sorting index used to test for distinctness */
   int addrRepeat,    /* Jump to here if not distinct */
-  int N,             /* The top N elements of the stack must be distinct */
-  int K              /* Pop K elements from the stack if indistinct */
+  int N              /* The top N elements of the stack must be distinct */
 ){
-#if NULL_ALWAYS_DISTINCT
-  sqlite3VdbeAddOp(v, OP_IsNull, -N, sqlite3VdbeCurrentAddr(v)+6);
-#endif
   sqlite3VdbeAddOp(v, OP_MakeRecord, -N, 0);
   sqlite3VdbeAddOp(v, OP_Distinct, iTab, sqlite3VdbeCurrentAddr(v)+3);
-  sqlite3VdbeAddOp(v, OP_Pop, K, 0);
+  sqlite3VdbeAddOp(v, OP_Pop, N+1, 0);
   sqlite3VdbeAddOp(v, OP_Goto, 0, addrRepeat);
   VdbeComment((v, "# skip indistinct records"));
   sqlite3VdbeAddOp(v, OP_IdxInsert, iTab, 0);
@@ -487,8 +483,9 @@ static int selectInnerLoop(
   ** part of the result.
   */
   if( hasDistinct ){
-    int n = pEList->nExpr;
-    codeDistinct(v, distinct, iContinue, n, n+1);
+    assert( pEList!=0 );
+    assert( pEList->nExpr==nColumn );
+    codeDistinct(v, distinct, iContinue, nColumn);
     if( pOrderBy==0 ){
       codeOffset(v, p, iContinue, nColumn);
     }
@@ -500,7 +497,7 @@ static int selectInnerLoop(
     */
 #ifndef SQLITE_OMIT_COMPOUND_SELECT
     case SRT_Union: {
-      sqlite3VdbeAddOp(v, OP_MakeRecord, nColumn, NULL_ALWAYS_DISTINCT);
+      sqlite3VdbeAddOp(v, OP_MakeRecord, nColumn, 0);
       if( aff ){
         sqlite3VdbeChangeP3(v, -1, aff, P3_STATIC);
       }
@@ -514,7 +511,7 @@ static int selectInnerLoop(
     */
     case SRT_Except: {
       int addr;
-      addr = sqlite3VdbeAddOp(v, OP_MakeRecord, nColumn, NULL_ALWAYS_DISTINCT);
+      addr = sqlite3VdbeAddOp(v, OP_MakeRecord, nColumn, 0);
       sqlite3VdbeChangeP3(v, -1, aff, P3_STATIC);
       sqlite3VdbeAddOp(v, OP_NotFound, iParm, addr+3);
       sqlite3VdbeAddOp(v, OP_Delete, iParm, 0);
@@ -1544,20 +1541,6 @@ static void createSortingIndex(Parse *pParse, Select *p, ExprList *pOrderBy){
     assert( p->addrOpenVirt[2] == -1 );
     p->addrOpenVirt[2] = addr;
   }
-}
-
-/*
-** The opcode at addr is an OP_OpenVirtual that created a sorting
-** index tha we ended up not needing.  This routine changes that
-** opcode to OP_Noop.
-*/
-static void uncreateSortingIndex(Parse *pParse, int addr){
-  Vdbe *v = pParse->pVdbe;
-  VdbeOp *pOp = sqlite3VdbeGetOp(v, addr);
-  sqlite3VdbeChangeP3(v, addr, 0, 0);
-  pOp->opcode = OP_Noop;
-  pOp->p1 = 0;
-  pOp->p2 = 0;
 }
 
 #ifndef SQLITE_OMIT_COMPOUND_SELECT
@@ -2693,7 +2676,7 @@ static void updateAccumulator(Parse *pParse, AggInfo *pAggInfo){
     if( pF->iDistinct>=0 ){
       addrNext = sqlite3VdbeMakeLabel(v);
       assert( nArg==1 );
-      codeDistinct(v, pF->iDistinct, addrNext, 1, 2);
+      codeDistinct(v, pF->iDistinct, addrNext, 1);
     }
     if( pF->pFunc->needCollSeq ){
       CollSeq *pColl = 0;
@@ -2984,7 +2967,7 @@ int sqlite3Select(
     ** into an OP_Noop.
     */
     if( addrSortIndex>=0 && pOrderBy==0 ){
-      uncreateSortingIndex(pParse, addrSortIndex);
+      sqlite3VdbeChangeToNoop(v, addrSortIndex, 1);
       p->addrOpenVirt[2] = -1;
     }
 
@@ -3230,7 +3213,7 @@ int sqlite3Select(
         sqlite3VdbeAddOp(v, OP_Next, sAggInfo.sortingIdx, addrTopOfLoop);
       }else{
         sqlite3WhereEnd(pWInfo);
-        uncreateSortingIndex(pParse, addrSortingIdx);
+        sqlite3VdbeChangeToNoop(v, addrSortingIdx, 1);
       }
 
       /* Output the final row of result

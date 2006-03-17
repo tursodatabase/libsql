@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.256 2006/03/06 20:55:46 drh Exp $
+** $Id: expr.c,v 1.257 2006/03/17 13:56:34 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1381,11 +1381,7 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
           ** expression we need to rerun this code each time.
           */
           if( testAddr>0 && !sqlite3ExprIsConstant(pE2) ){
-            VdbeOp *aOp = sqlite3VdbeGetOp(v, testAddr-1);
-            int j;
-            for(j=0; j<3; j++){
-              aOp[j].opcode = OP_Noop;
-            }
+            sqlite3VdbeChangeToNoop(v, testAddr-1, 3);
             testAddr = 0;
           }
 

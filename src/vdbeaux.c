@@ -361,7 +361,7 @@ void sqlite3VdbeChangeP2(Vdbe *p, int addr, int val){
 }
 
 /*
-** Change teh P2 operand of instruction addr so that it points to
+** Change the P2 operand of instruction addr so that it points to
 ** the address of the next instruction to be coded.
 */
 void sqlite3VdbeJumpHere(Vdbe *p, int addr){
@@ -394,6 +394,19 @@ static void freeP3(int p3type, void *p3){
   }
 }
 
+
+/*
+** Change N opcodes starting at addr to No-ops.
+*/
+void sqlite3VdbeChangeToNoop(Vdbe *p, int addr, int N){
+  VdbeOp *pOp = &p->aOp[addr];
+  while( N-- ){
+    freeP3(pOp->p3type, pOp->p3);
+    memset(pOp, 0, sizeof(pOp[0]));
+    pOp->opcode = OP_Noop;
+    pOp++;
+  }
+}
 
 /*
 ** Change the value of the P3 operand for a specific instruction.

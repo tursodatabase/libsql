@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.490 2006/03/17 00:04:04 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.491 2006/03/17 13:56:34 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -111,18 +111,6 @@
 #else
 #define OMIT_TEMPDB 0
 #endif
-
-/*
-** If the following macro is set to 1, then NULL values are considered
-** distinct for the SELECT DISTINCT statement and for UNION or EXCEPT
-** compound queries.  No other SQL database engine (among those tested) 
-** works this way except for OCELOT.  But the SQL92 spec implies that
-** this is how things should work.
-**
-** If the following macro is set to 0, then NULLs are indistinct for
-** SELECT DISTINCT and for UNION.
-*/
-#define NULL_ALWAYS_DISTINCT 0
 
 /*
 ** If the following macro is set to 1, then NULL values are considered
