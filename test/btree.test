@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is btree database backend
 #
-# $Id: btree.test,v 1.35 2005/01/11 10:25:07 danielk1977 Exp $
+# $Id: btree.test,v 1.36 2006/03/19 13:00:25 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -537,108 +537,6 @@ do_test btree-7.1 {
 } {}
 catch {unset key}
 catch {unset data}
-if 0 {
-do_test btree-7.2 {
-  # Each record will be 10 bytes in size.
-  #   + 100 bytes of database header
-  #   + 8 bytes of table header
-  #   + 91*10=910 bytes of cells
-  # Totals 1018 bytes.  6 bytes left over
-  # Keys are 1000 through 1090.
-  for {set i 1000} {$i<1091} {incr i} {
-    set key $i
-    set data [format %5d $i]
-    btree_insert $::c1 $key $data
-  }
-  lrange [btree_cursor_info $::c1] 4 5
-} {6 0}
-#btree_tree_dump $::b1 1
-do_test btree-7.3 {
-  for {set i 1001} {$i<1091} {incr i 2} {
-    btree_move_to $::c1 $i
-    btree_delete $::c1
-  }
-  # Freed 45 blocks.  Total freespace is 456
-  # Keys remaining are even numbers between 1000 and 1090, inclusive
-  lrange [btree_cursor_info $::c1] 4 5
-} {456 45}
-#btree_tree_dump $::b1 1
-do_test btree-7.4 {
-  # The largest free block is 8 bytes long.  But there is also a
-  # huge hole between the cell pointer array and the cellcontent.
-  # But if we insert a large enough record, it should force a defrag.
-  set data 123456789_
-  append data $data
-  append data $data
-  append data $data
-  append data $data
-  append data $data
-  btree_insert $::c1 2000 $data
-  btree_move_to $::c1 2000
-  btree_key $::c1
-} {2000}
-do_test btree-7.5 {
-  lrange [btree_cursor_info $::c1] 4 5
-} {343 0}
-#btree_tree_dump $::b1 1
-
-# Delete an entry to make a hole of a known size, then immediately recreate
-# that entry.  This tests the path into allocateSpace where the hole exactly
-# matches the size of the desired space.
-#
-# Keys are even numbers between 1000 and 1090 and one record of 2000.
-# There are 47 keys total.
-#
-do_test btree-7.6 {
-  btree_move_to $::c1 1006
-  btree_delete $::c1
-  btree_move_to $::c1 1010
-  btree_delete $::c1
-} {}
-do_test btree-7.7 {
-  lrange [btree_cursor_info $::c1] 4 5
-} {363 2}   ;# Create two new holes of 10 bytes each
-#btree_page_dump $::b1 1
-do_test btree-7.8 {
-  btree_insert $::c1 1006 { 1006}
-  lrange [btree_cursor_info $::c1] 4 5
-} {353 1}   ;# Filled in the first hole
-btree_page_dump $::b1 1
-
-# Make sure the freeSpace() routine properly coaleses adjacent memory blocks
-#
-do_test btree-7.9 {
-  btree_move_to $::c1 1012
-  btree_delete $::c1
-  lrange [btree_cursor_info $::c1] 4 5
-} {363 2}  ;# Coalesce with the hole before
-btree_page_dump $::b1 1
-exit
-do_test btree-7.10 {
-  btree_move_to $::c1 1008
-  btree_delete $::c1
-  lrange [btree_cursor_info $::c1] 4 5
-} {468 2}  ;# Coalesce with whole after
-do_test btree-7.11 {
-  btree_move_to $::c1 1030
-  btree_delete $::c1
-  lrange [btree_cursor_info $::c1] 4 5
-} {478 3}   ;# Make a new hole
-do_test btree-7.13 {
-  btree_move_to $::c1 1034
-  btree_delete $::c1
-  lrange [btree_cursor_info $::c1] 4 5
-} {488 4}   ;# Make another hole
-do_test btree-7.14 {
-  btree_move_to $::c1 1032
-  btree_delete $::c1
-  lrange [btree_cursor_info $::c1] 4 5
-} {498 3}   ;# The freed space should coalesce on both ends
-#btree_page_dump $::b1 2
-do_test btree-7.15 {
-  lindex [btree_pager_stats $::b1] 1
-} {1}
-} ;# endif
 
 # Check to see that data on overflow pages work correctly.
 #
@@ -648,7 +546,9 @@ do_test btree-8.1 {
   set ::data $data
   btree_insert $::c1 2020 $data
 } {}
-#btree_page_dump $::b1 1
+btree_page_dump $::b1 1
+btree_page_dump $::b1 2
+btree_page_dump $::b1 3
 do_test btree-8.1.1 {
   lindex [btree_pager_stats $::b1] 1
 } {1}

@@ -6,7 +6,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: async.test,v 1.6 2006/02/14 10:48:40 danielk1977 Exp $
+# $Id: async.test,v 1.7 2006/03/19 13:00:25 drh Exp $
 
 
 if {[catch {sqlite3async_enable}]} {
@@ -53,10 +53,12 @@ foreach testfile [lsort -dictionary [glob $testdir/*.test]] {
 
 # Flush the write-queue and disable asynchronous IO. This should ensure
 # all allocated memory is cleaned up.
+set sqlite3async_trace 1
 sqlite3async_halt idle
 sqlite3async_start
 sqlite3async_wait
 sqlite3async_enable 0
+set sqlite3async_trace 0
 
 really_finish_test
 rename really_do_test do_test

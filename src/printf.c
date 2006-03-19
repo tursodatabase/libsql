@@ -65,15 +65,14 @@
 #define etDYNSTRING   7 /* Dynamically allocated strings. %z */
 #define etPERCENT     8 /* Percent symbol. %% */
 #define etCHARX       9 /* Characters. %c */
-#define etERROR      10 /* Used to indicate no such conversion type */
 /* The rest are extensions, not normally found in printf() */
-#define etCHARLIT    11 /* Literal characters.  %' */
-#define etSQLESCAPE  12 /* Strings with '\'' doubled.  %q */
-#define etSQLESCAPE2 13 /* Strings with '\'' doubled and enclosed in '',
+#define etCHARLIT    10 /* Literal characters.  %' */
+#define etSQLESCAPE  11 /* Strings with '\'' doubled.  %q */
+#define etSQLESCAPE2 12 /* Strings with '\'' doubled and enclosed in '',
                           NULL pointers replaced by SQL NULL.  %Q */
-#define etTOKEN      14 /* a pointer to a Token structure */
-#define etSRCLIST    15 /* a pointer to a SrcList */
-#define etPOINTER    16 /* The %p conversion */
+#define etTOKEN      13 /* a pointer to a Token structure */
+#define etSRCLIST    14 /* a pointer to a SrcList */
+#define etPOINTER    15 /* The %p conversion */
 
 
 /*
@@ -329,7 +328,6 @@ static int vxprintf(
     }
     /* Fetch the info entry for the field */
     infop = 0;
-    xtype = etERROR;
     for(idx=0; idx<etNINFO; idx++){
       if( c==fmtinfo[idx].fmttype ){
         infop = &fmtinfo[idx];
@@ -625,7 +623,8 @@ static int vxprintf(
         if( needQuote ) bufpt[j++] = '\'';
         bufpt[j] = 0;
         length = j;
-        if( precision>=0 && precision<length ) length = precision;
+        /* The precision is ignored on %q and %Q */
+        /* if( precision>=0 && precision<length ) length = precision; */
         break;
       }
       case etTOKEN: {
@@ -649,15 +648,6 @@ static int vxprintf(
         length = width = 0;
         break;
       }
-      case etERROR:
-        buf[0] = '%';
-        buf[1] = c;
-        errorflag = 0;
-        idx = 1+(c!=0);
-        (*func)(arg,"%",idx);
-        count += idx;
-        if( c==0 ) fmt--;
-        break;
     }/* End switch over the format type */
     /*
     ** The text of the conversion is pointed to by "bufpt" and is

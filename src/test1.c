@@ -9,11 +9,11 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** Code for testing the printf() interface to SQLite.  This code
+** Code for testing all sorts of SQLite interfaces.  This code
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.208 2006/03/16 16:19:56 drh Exp $
+** $Id: test1.c,v 1.209 2006/03/19 13:00:25 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -230,7 +230,7 @@ static int test_exec_printf(
 /*
 ** Usage:  sqlite3_mprintf_z_test  SEPARATOR  ARG0  ARG1 ...
 **
-** Test the %z format of mprintf().  Use multiple mprintf() calls to 
+** Test the %z format of sqliteMPrintf().  Use multiple mprintf() calls to 
 ** concatenate arg0 through argn using separator as the separator.
 ** Return the result.
 */
@@ -248,6 +248,26 @@ static int test_mprintf_z(
   }
   Tcl_AppendResult(interp, zResult, 0);
   sqliteFree(zResult);
+  return TCL_OK;
+}
+
+/*
+** Usage:  sqlite3_mprintf_n_test  STRING
+**
+** Test the %n format of sqliteMPrintf().  Return the length of the
+** input string.
+*/
+static int test_mprintf_n(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  char *zStr;
+  int n = 0;
+  zStr = sqlite3MPrintf("%s%n", argv[1], &n);
+  sqliteFree(zStr);
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(n));
   return TCL_OK;
 }
 
@@ -3541,6 +3561,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_mprintf_scaled",        (Tcl_CmdProc*)sqlite3_mprintf_scaled },
      { "sqlite3_mprintf_hexdouble",   (Tcl_CmdProc*)sqlite3_mprintf_hexdouble},
      { "sqlite3_mprintf_z_test",        (Tcl_CmdProc*)test_mprintf_z        },
+     { "sqlite3_mprintf_n_test",        (Tcl_CmdProc*)test_mprintf_n        },
      { "sqlite3_last_insert_rowid",     (Tcl_CmdProc*)test_last_rowid       },
      { "sqlite3_exec_printf",           (Tcl_CmdProc*)test_exec_printf      },
      { "sqlite3_get_table_printf",      (Tcl_CmdProc*)test_get_table_printf },

@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.41 2006/03/03 21:20:17 drh Exp $
+# $Id: pragma.test,v 1.42 2006/03/19 13:00:25 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -32,6 +32,11 @@ source $testdir/tester.tcl
 # pragma-10.*: Test the count_changes pragma in the presence of triggers.
 # pragma-11.*: Test the collation_list pragma.
 #
+
+ifcapable !pragma {
+  finish_test
+  return
+}
 
 # Delete the preexisting database to avoid the special setup
 # that the "all.test" script does.
@@ -797,6 +802,28 @@ ifcapable schema_pragmas&&tempdb {
   } {400}
   db2 close
 }
+
+do_test pragma-13.1 {
+  execsql {
+    DROP TABLE IF EXISTS t4;
+    PRAGMA vdbe_trace=on;
+    PRAGMA vdbe_listing=on;
+    PRAGMA sql_trace=on;
+    CREATE TABLE t4(a INTEGER PRIMARY KEY,b);
+    INSERT INTO t4(b) VALUES(x'0123456789abcdef0123456789abcdef0123456789');
+    INSERT INTO t4(b) VALUES(randstr(30,30));
+    INSERT INTO t4(b) VALUES(1.23456);
+    INSERT INTO t4(b) VALUES(NULL);
+    INSERT INTO t4(b) VALUES(0);
+    INSERT INTO t4(b) SELECT b||b||b||b FROM t4;
+    SELECT * FROM t4;
+  }
+  execsql {
+    PRAGMA vdbe_trace=off;
+    PRAGMA vdbe_listing=off;
+    PRAGMA sql_trace=off;
+  }
+} {}
 
 # Reset the sqlite3_temp_directory variable for the next run of tests:
 sqlite3 dbX :memory:
