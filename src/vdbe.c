@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.547 2006/03/17 00:26:00 drh Exp $
+** $Id: vdbe.c,v 1.548 2006/03/22 22:10:08 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -4498,7 +4498,7 @@ case OP_Expire: {        /* no-push */
 ** Obtain a lock on a particular table. This instruction is only used when
 ** the shared-cache feature is enabled. 
 **
-** If P1 is not negative, then it is the index of the index of the database
+** If P1 is not negative, then it is the index of the database
 ** in sqlite3.aDb[] and a read-lock is required. If P1 is negative, a 
 ** write-lock is required. In this case the index of the database is the 
 ** absolute value of P1 minus one (iDb = abs(P1) - 1;) and a write-lock is

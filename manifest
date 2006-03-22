@@ -1,5 +1,5 @@
-C Increase\stest\scoverage\sto\sabove\s98%.\s(CVS\s3144)
-D 2006-03-19T13:00:25
+C Get\sthe\sbuild\sto\srun\swith\s-DSQLITE_OMIT_SHARED_CACHE.\s(CVS\s3145)
+D 2006-03-22T22:10:08
 F Makefile.in 5d8dff443383918b700e495de42ec65bc1c8865b
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -34,7 +34,7 @@ F src/alter.c 451b34fc4eb2475ca76a2e86b21e1030a9428091
 F src/analyze.c 7d2b7ab9a9c2fd6e55700f69064dfdd3e36d7a8a
 F src/attach.c d73a3505de3fb9e373d0a158978116c4212031d0
 F src/auth.c 9ae84d2d94eb96195e04515715e08e85963e96c2
-F src/btree.c caf4b7477b6667dcf4ca4eb9024826cab6877d87
+F src/btree.c 3f9f3fac30722635517e1b633762b383d6c091a7
 F src/btree.h 40055cfc09defd1146bc5b922399c035f969e56d
 F src/build.c 4bd8471e4f20f5623c15fd71d2aaee0f66e394d8
 F src/callback.c d8c5ab1cd6f3b7182b2ee63bf53f1b69c0f74306
@@ -79,17 +79,17 @@ F src/test3.c 86e99724ee898b119ed575ef9f98618afe7e5e5d
 F src/test4.c 8b784cd82de158a2317cb4ac4bc86f91ad315e25
 F src/test5.c 7162f8526affb771c4ed256826eee7bb9eca265f
 F src/test6.c 60a02961ceb7b3edc25f5dc5c1ac2556622a76de
-F src/test7.c d28d3e62f9594923648fc6a8fb030eba36564ba1
+F src/test7.c 03fa8d787f6aebc6d1f72504d52f33013ad2c8e3
 F src/test_async.c e3deaedd4d86a56391b81808fde9e44fbd92f1d3
 F src/test_md5.c 6c42bc0a3c0b54be34623ff77a0eec32b2fa96e3
-F src/test_server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
+F src/test_server.c a6460daed0b92ecbc2531b6dc73717470e7a648c
 F src/tokenize.c 382b3bb0ca26eb9153b5d20b246ef512a114a24f
 F src/trigger.c 6e63d6d8104a395d6a472d2678a62f1cf6140a6d
 F src/update.c 34add66fcd3301b33b6e4c4c813f4e408f7ee4a0
 F src/utf.c 1d51225bce1ea8d1978e8ab28e862a0c12c7a8e8
 F src/util.c 59389ed717f0fa9d8023b3f482ba09dcf41343a8
 F src/vacuum.c 5b37d0f436f8e1ffacd17934e44720b38d2247f9
-F src/vdbe.c dcc469dabef9462b3e8bc77193f83a57f3084363
+F src/vdbe.c a56ef5de6d91aedf6f1f0db03c65aa01ecbe11ba
 F src/vdbe.h 44ff995a8b4e87016794095273e9e7300f0001bb
 F src/vdbeInt.h 85cd5f81d38edb1b8f4786f407c77a7a3ba636fb
 F src/vdbeapi.c 7dc662e7c905ce666bb506dced932e0307115cbf
@@ -355,7 +355,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 8f60139f688903f0e635b0a904ab9ca401fbe71f
-R 707703c2ca060ba4895ca4d552db9f64
+P 8ae6ccc715b081cd422e847cd9e5cc22b04d8512
+R b79fbe7fb8192652eac7593ec87ed9d8
 U drh
-Z 3e0248fc76ba37aacd5663fd5b64af16
+Z d653181aec4bc727423b2c5df88a6017

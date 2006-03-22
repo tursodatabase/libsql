@@ -200,7 +200,7 @@
 ** Only compile the code in this file on UNIX with a THREADSAFE build
 ** and only if the SQLITE_SERVER macro is defined.
 */
-#ifdef SQLITE_SERVER
+#if defined(SQLITE_SERVER) && !defined(SQLITE_OMIT_SHARED_CACHE)
 #if defined(OS_UNIX) && OS_UNIX && defined(THREADSAFE) && THREADSAFE
 
 /*

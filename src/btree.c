@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.320 2006/03/14 12:59:10 drh Exp $
+** $Id: btree.c,v 1.321 2006/03/22 22:10:08 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -6620,17 +6620,23 @@ int sqlite3BtreeSchemaLocked(Btree *p){
   return (queryTableLock(p, MASTER_ROOT, READ_LOCK)!=SQLITE_OK);
 }
 
+
+#ifndef SQLITE_OMIT_SHARED_CACHE
+/*
+** Obtain a lock on the table whose root page is iTab.  The
+** lock is a write lock if isWritelock is true or a read lock
+** if it is false.
+*/
 int sqlite3BtreeLockTable(Btree *p, int iTab, u8 isWriteLock){
   int rc = SQLITE_OK;
-#ifndef SQLITE_OMIT_SHARED_CACHE
   u8 lockType = (isWriteLock?WRITE_LOCK:READ_LOCK);
   rc = queryTableLock(p, iTab, lockType);
   if( rc==SQLITE_OK ){
     rc = lockTable(p, iTab, lockType);
   }
-#endif
   return rc;
 }
+#endif
 
 /*
 ** The following debugging interface has to be in this file (rather
@@ -6645,6 +6651,7 @@ int sqlite3_shared_cache_report(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
+#ifndef SQLITE_OMIT_SHARED_CACHE
   const ThreadData *pTd = sqlite3ThreadDataReadOnly();
   if( pTd->useSharedData ){
     BtShared *pBt;
@@ -6656,6 +6663,7 @@ int sqlite3_shared_cache_report(
     }
     Tcl_SetObjResult(interp, pRet);
   }
+#endif
   return TCL_OK;
 }
 #endif
