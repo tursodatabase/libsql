@@ -80,6 +80,7 @@ struct unixFile {
   unsigned char isOpen;     /* True if needs to be closed */
   unsigned char fullSync;   /* Use F_FULLSYNC if available */
   int dirfd;                /* File descriptor for the directory */
+  i64 offset;               /* Seek offset */
 #ifdef SQLITE_UNIX_THREADS
   pthread_t tid;            /* The thread that "owns" this OsFile */
 #endif
@@ -905,6 +906,24 @@ int sqlite3UnixIsDirWritable(char *zBuf){
 }
 
 /*
+** Seek to the offset in id->offset then read cnt bytes into pBuf.
+** Return the number of bytes actually read.  Update the offset.
+*/
+static int seekAndRead(unixFile *id, void *pBuf, int cnt){
+  int got;
+#ifdef USE_PREAD
+  got = pread(id->h, pBuf, cnt, id->offset);
+#else
+  lseek(id->h, id->offset, SEEK_SET);
+  got = read(id->h, pBuf, cnt);
+#endif
+  if( got>0 ){
+    id->offset += got;
+  }
+  return got;
+}
+
+/*
 ** Read data from a file into a buffer.  Return SQLITE_OK if all
 ** bytes were read successfully and SQLITE_IOERR if anything goes
 ** wrong.
@@ -914,7 +933,7 @@ static int unixRead(OsFile *id, void *pBuf, int amt){
   assert( id );
   SimulateIOError(SQLITE_IOERR);
   TIMER_START;
-  got = read(((unixFile*)id)->h, pBuf, amt);
+  got = seekAndRead((unixFile*)id, pBuf, amt);
   TIMER_END;
   TRACE5("READ    %-3d %5d %7d %d\n", ((unixFile*)id)->h, got,
           last_page, TIMER_ELAPSED);
@@ -928,6 +947,25 @@ static int unixRead(OsFile *id, void *pBuf, int amt){
 }
 
 /*
+** Seek to the offset in id->offset then read cnt bytes into pBuf.
+** Return the number of bytes actually read.  Update the offset.
+*/
+static int seekAndWrite(unixFile *id, const void *pBuf, int cnt){
+  int got;
+#ifdef USE_PREAD
+  got = pwrite(id->h, pBuf, cnt, id->offset);
+#else
+  lseek(id->h, id->offset, SEEK_SET);
+  got = write(id->h, pBuf, cnt);
+#endif
+  if( got>0 ){
+    id->offset += got;
+  }
+  return got;
+}
+
+
+/*
 ** Write data from a buffer into a file.  Return SQLITE_OK on success
 ** or some other error code on failure.
 */
@@ -938,7 +976,7 @@ static int unixWrite(OsFile *id, const void *pBuf, int amt){
   SimulateIOError(SQLITE_IOERR);
   SimulateDiskfullError;
   TIMER_START;
-  while( amt>0 && (wrote = write(((unixFile*)id)->h, pBuf, amt))>0 ){
+  while( amt>0 && (wrote = seekAndWrite((unixFile*)id, pBuf, amt))>0 ){
     amt -= wrote;
     pBuf = &((char*)pBuf)[wrote];
   }
@@ -961,7 +999,7 @@ static int unixSeek(OsFile *id, i64 offset){
 #ifdef SQLITE_TEST
   if( offset ) SimulateDiskfullError
 #endif
-  lseek(((unixFile*)id)->h, offset, SEEK_SET);
+  ((unixFile*)id)->offset = offset;
   return SQLITE_OK;
 }
 
@@ -1635,6 +1673,7 @@ static int allocateUnixFile(unixFile *pInit, OsFile **pId){
   pInit->dirfd = -1;
   pInit->fullSync = 0;
   pInit->locktype = 0;
+  pInit->offset = 0;
   SET_THREADID(pInit);
   pNew = sqlite3ThreadSafeMalloc( sizeof(unixFile) );
   if( pNew==0 ){
