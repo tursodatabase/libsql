@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.321 2006/03/22 22:10:08 drh Exp $
+** $Id: btree.c,v 1.322 2006/03/23 14:03:00 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -388,8 +388,8 @@ struct BtCursor {
   u8 wrFlag;                /* True if writable */
   u8 eState;                /* One of the CURSOR_XXX constants (see below) */
 #ifndef SQLITE_OMIT_SHARED_CACHE
-  void *pKey;
-  i64 nKey;
+  void *pKey;      /* Saved key that was cursor's last known position */
+  i64 nKey;        /* Size of pKey, or last integer key */
   int skip;        /* (skip<0) -> Prev() is a no-op. (skip>0) -> Next() is */
 #endif
 };
