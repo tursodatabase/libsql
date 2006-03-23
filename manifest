@@ -1,5 +1,5 @@
-C Use\sthe\spread()/pwrite()\sinterface\son\sPosix\sif\scompiled\swith\s-DUSE_PREAD=1.\nNote\sthat\son\sLinux\sthis\sis\sslower\sand\sdoes\snot\swork\sfor\slarge\sfiles.\s(CVS\s3147)
-D 2006-03-23T22:42:20
+C Get\sautovacuum\sand\sin-memory\sdatabases\sworking\stogether.\s\sTicket\s#1727.\s(CVS\s3148)
+D 2006-03-23T23:29:04
 F Makefile.in 5d8dff443383918b700e495de42ec65bc1c8865b
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -59,7 +59,7 @@ F src/os_unix.c 35ad4d81c90800f509d28580742b67906d289223
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c 8ced9ac82670bbf77492961a2f7ff80a87f1404f
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 0e5a3d1e7e6822e731da4ea90eedff3c7857ddc9
+F src/pager.c 0b34f79119dfd302e371f5f172f434613336ca67
 F src/pager.h 43f32f3847421f7502cfbb66f4eb2302b8033818
 F src/parse.y ee1887ce0e6eea15cc728913ad3462898f88e9b0
 F src/pragma.c 27d5e395c5d950931c7ac4fe610e7c2993e2fa55
@@ -113,7 +113,7 @@ F test/attach3.test 63013383adc4380af69779f34f4af19bd49f7cbe
 F test/attachmalloc.test cdb26c42850f04698377ccec05f5fa89d987837c
 F test/auth.test 9776ab43de94801f0fa6787b3f3e803686ffa0ff
 F test/autoinc.test 60005a676e3e4e17dfa9dbd08aa0b76587ff97e3
-F test/autovacuum.test 0dd22b0e1fe2013abe03e2ef5000bb3b9c1b6666
+F test/autovacuum.test 12bb130cf7ee5b9cf9672bc82655b5f4391e1d15
 F test/autovacuum_crash.test 05a63b8805b20cfba7ace82856ce4ccdda075a31
 F test/autovacuum_ioerr.test c46a76869cb6eddbbb40b419b2b6c4c001766b1f
 F test/autovacuum_ioerr2.test 2f8a3fb31f833fd0ca86ad4ad98913c73e807572
@@ -355,7 +355,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 01e164da67fde3a89abeadd5973ead7a74e23a51
-R 5cbb3e3897611b57c9aea56a412ade76
+P 5a24f61981df4d8b696f03372eba2d37228906d9
+R 750982574ed29edef07cf0a26cbd5a70
 U drh
-Z 617ee67652f0c5592bd9cf08ec1103f6
+Z ec805b2d5215633dd615b072bbda2925
