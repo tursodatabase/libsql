@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.392 2006/03/23 23:33:27 drh Exp $
+** $Id: build.c,v 1.393 2006/03/24 03:36:26 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1727,6 +1727,17 @@ static void sqliteViewResetAll(sqlite3 *db, int idx){
 ** used by SQLite when the btree layer moves a table root page. The
 ** root-page of a table or index in database iDb has changed from iFrom
 ** to iTo.
+**
+** Ticket #1728:  The symbol table might still contain information
+** on tables and/or indices that are the process of being deleted.
+** If you are unlucky, one of those deleted indices or tables might
+** have the same rootpage number as the real table or index that is
+** being moved.  So we cannot stop searching after the first match 
+** because the first match might be for one of the deleted indices
+** or tables and not the table/index that is actually being moved.
+** We must continue looping until all tables and indices with
+** rootpage==iFrom have been converted to have a rootpage of iTo
+** in order to be certain that we got the right one.
 */
 #ifndef SQLITE_OMIT_AUTOVACUUM
 void sqlite3RootPageMoved(Db *pDb, int iFrom, int iTo){
@@ -1738,7 +1749,6 @@ void sqlite3RootPageMoved(Db *pDb, int iFrom, int iTo){
     Table *pTab = sqliteHashData(pElem);
     if( pTab->tnum==iFrom ){
       pTab->tnum = iTo;
-      return;
     }
   }
   pHash = &pDb->pSchema->idxHash;
@@ -1746,10 +1756,8 @@ void sqlite3RootPageMoved(Db *pDb, int iFrom, int iTo){
     Index *pIdx = sqliteHashData(pElem);
     if( pIdx->tnum==iFrom ){
       pIdx->tnum = iTo;
-      return;
     }
   }
-  assert(0);
 }
 #endif
 
