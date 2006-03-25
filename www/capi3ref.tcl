@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3ref.tcl,v 1.35 2006/03/13 14:31:39 drh Exp $}
+set rcsid {$Id: capi3ref.tcl,v 1.36 2006/03/25 14:03:42 drh Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -988,6 +988,11 @@ int sqlite3_open16(
  pass the resulting database handle off to another thread to use.  This
  restriction is due to goofy design decisions (bugs?) in the way some
  threading implementations interact with file locks.
+
+ Note to windows users:  The encoding used for the filename argument
+ of sqlite3_open() must be UTF-8, not whatever codepage is currently
+ defined.  Filenames containing international characters must be converted
+ to UTF-8 prior to passing them into sqlite3_open().
 }
 
 api {} {
