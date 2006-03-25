@@ -598,14 +598,7 @@ int sqlite3TriggersExist(
 
   while( pTrigger ){
     if( pTrigger->op==op && checkColumnOverLap(pTrigger->pColumns, pChanges) ){
-      TriggerStack *ss;
-      ss = pParse->trigStack;
-      while( ss && ss->pTrigger!=pTab->pTrigger ){
-	ss = ss->pNext;
-      }
-      if( ss==0 ){
-        mask |= pTrigger->tr_tm;
-      }
+      mask |= pTrigger->tr_tm;
     }
     pTrigger = pTrigger->pNext;
   }
@@ -766,6 +759,13 @@ int sqlite3CodeRowTrigger(
       if( !pS ){
         fire_this = 1;
       }
+#if 0    /* Give no warning for recursive triggers.  Just do not do them */
+      else{
+        sqlite3ErrorMsg(pParse, "recursive triggers not supported (%s)",
+            p->name);
+        return SQLITE_ERROR;
+      }
+#endif
     }
  
     if( fire_this ){
