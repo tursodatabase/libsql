@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.264 2006/03/23 23:29:04 drh Exp $
+** @(#) $Id: pager.c,v 1.265 2006/03/26 20:49:18 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1809,6 +1809,7 @@ int sqlite3pager_pagecount(Pager *pPager){
 ** Forward declaration
 */
 static int syncJournal(Pager*);
+static void clearHistory(PgHistory*);
 
 
 /*
@@ -1834,7 +1835,6 @@ static void unlinkHashChain(Pager *pPager, PgHdr *pPg){
     pPager->aHash[h] = pPg->pNextHash;
   }
   if( MEMDB ){
-    static void clearHistory(PgHistory*);  /* Forward reference */
     clearHistory(PGHDR_TO_HIST(pPg, pPager));
   }
   pPg->pgno = 0;
