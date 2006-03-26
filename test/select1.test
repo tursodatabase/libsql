@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the SELECT statement.
 #
-# $Id: select1.test,v 1.49 2006/03/14 13:10:43 drh Exp $
+# $Id: select1.test,v 1.50 2006/03/26 01:21:23 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -473,14 +473,14 @@ do_test select1-6.10 {
     ORDER BY f2;
   }} msg]
   lappend v $msg
-} {0 {f2 11 f2 22 f2 33 f2 44}}
+} {0 {f1 11 f1 22 f1 33 f1 44}}
 do_test select1-6.11 {
   set v [catch {execsql2 {
     SELECT f1 FROM test1 UNION SELECT f2+100 FROM test1
     ORDER BY f2+100;
   }} msg]
   lappend v $msg
-} {0 {f2+100 11 f2+100 33 f2+100 122 f2+100 144}}
+} {0 {f1 11 f1 33 f1 122 f1 144}}
 } ;#ifcapable compound
 
 do_test select1-7.1 {
@@ -787,14 +787,14 @@ ifcapable {compound && subquery} {
   do_test select1-12.9 {
     execsql2 {
       SELECT x FROM (
-        SELECT a,b FROM t3 UNION SELECT a AS 'x', b AS 'y' FROM t4 ORDER BY a,b
+        SELECT a AS x, b AS y FROM t3 UNION SELECT a,b FROM t4 ORDER BY a,b
       ) ORDER BY x;
     }
   } {x 1 x 3}
   do_test select1-12.10 {
     execsql2 {
       SELECT z.x FROM (
-        SELECT a,b FROM t3 UNION SELECT a AS 'x', b AS 'y' FROM t4 ORDER BY a,b
+        SELECT a AS x,b AS y FROM t3 UNION SELECT a, b FROM t4 ORDER BY a,b
       ) AS 'z' ORDER BY x;
     }
   } {x 1 x 3}

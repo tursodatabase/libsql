@@ -12,7 +12,7 @@
 # focus of this file is testing UNION, INTERSECT and EXCEPT operators
 # in SELECT statements.
 #
-# $Id: select4.test,v 1.18 2005/01/21 04:25:47 danielk1977 Exp $
+# $Id: select4.test,v 1.19 2006/03/26 01:21:23 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -510,5 +510,97 @@ do_test select4-8.2 {
   }
 } {1.1 1.10 1.2 1.3}
 
+# Make sure the names of columns are takenf rom the right-most subquery
+# right in a compound query.  Ticket #1721
+#
+do_test select4-9.1 {
+  execsql2 {
+    SELECT x, y FROM t2 UNION SELECT a, b FROM t3 ORDER BY x LIMIT 1
+  }
+} {x 0 y 1}
+do_test select4-9.2 {
+  execsql2 {
+    SELECT x, y FROM t2 UNION ALL SELECT a, b FROM t3 ORDER BY x LIMIT 1
+  }
+} {x 0 y 1}
+do_test select4-9.3 {
+  execsql2 {
+    SELECT x, y FROM t2 EXCEPT SELECT a, b FROM t3 ORDER BY x LIMIT 1
+  }
+} {x 0 y 1}
+do_test select4-9.4 {
+  execsql2 {
+    SELECT x, y FROM t2 INTERSECT SELECT 0 AS a, 1 AS b;
+  }
+} {x 0 y 1}
+do_test select4-9.5 {
+  execsql2 {
+    SELECT 0 AS x, 1 AS y
+    UNION
+    SELECT 2 AS p, 3 AS q
+    UNION
+    SELECT 4 AS a, 5 AS b
+    ORDER BY x LIMIT 1
+  }
+} {x 0 y 1}
+do_test select4-9.6 {
+  execsql2 {
+    SELECT * FROM (
+      SELECT 0 AS x, 1 AS y
+      UNION
+      SELECT 2 AS p, 3 AS q
+      UNION
+      SELECT 4 AS a, 5 AS b
+    ) ORDER BY 1 LIMIT 1;
+  }
+} {x 0 y 1}
+do_test select4-9.7 {
+  execsql2 {
+    SELECT * FROM (
+      SELECT 0 AS x, 1 AS y
+      UNION
+      SELECT 2 AS p, 3 AS q
+      UNION
+      SELECT 4 AS a, 5 AS b
+    ) ORDER BY x LIMIT 1;
+  }
+} {x 0 y 1}
+do_test select4-9.8 {
+  execsql2 {
+    SELECT 0 AS x, 1 AS y
+    UNION
+    SELECT 2 AS y, -3 AS x
+    ORDER BY x LIMIT 1;
+  }
+} {x 0 y 1}
+do_test select4-9.9 {
+  execsql2 {
+    SELECT 1 AS a, 2 AS b UNION ALL SELECT 3 AS b, 4 AS a
+  }
+} {a 1 b 2 a 3 b 4}
+do_test select4-9.9 {
+  execsql2 {
+    SELECT * FROM (SELECT 1 AS a, 2 AS b UNION ALL SELECT 3 AS b, 4 AS a)
+     WHERE b=3
+  }
+} {}
+do_test select4-9.10 {
+  execsql2 {
+    SELECT * FROM (SELECT 1 AS a, 2 AS b UNION ALL SELECT 3 AS b, 4 AS a)
+     WHERE b=2
+  }
+} {a 1 b 2}
+do_test select4-9.11 {
+  execsql2 {
+    SELECT * FROM (SELECT 1 AS a, 2 AS b UNION ALL SELECT 3 AS e, 4 AS b)
+     WHERE b=2
+  }
+} {a 1 b 2}
+do_test select4-9.12 {
+  execsql2 {
+    SELECT * FROM (SELECT 1 AS a, 2 AS b UNION ALL SELECT 3 AS e, 4 AS b)
+     WHERE b>0
+  }
+} {a 1 b 2 a 3 b 4}
 
 finish_test

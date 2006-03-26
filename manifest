@@ -1,5 +1,5 @@
-C Add\scode\sto\sreport\san\serror\son\sa\srecursive\strigger,\sbut\sleave\sit\ncommented\sout\s-\sturning\sit\son\swill\slikely\sbreak\sa\slot\sof\scode.\s(CVS\s3152)
-D 2006-03-25T15:52:20
+C SQLite\snow\salways\schooses\sthe\scolumn\snames\sfor\scompound\sselects\susing\nthe\sleft-most\sselect.\s\sThis\smakes\sSQLite\swork\slike\sother\sSQL\sdatabase,\nbut\sit\salso\sis\sa\schange\sfrom\shistorical\sbehavior\sand\smay\sbreak\ssome\nscripts.\s\sTicket\s#1721.\s(CVS\s3153)
+D 2006-03-26T01:21:23
 F Makefile.in 5d8dff443383918b700e495de42ec65bc1c8865b
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -66,7 +66,7 @@ F src/pragma.c 27d5e395c5d950931c7ac4fe610e7c2993e2fa55
 F src/prepare.c 6afd730cc8851c0920b5f9050294646b1c2ab28c
 F src/printf.c 6801501273c060ffe58160a2aa9a7ff7d0ac162f
 F src/random.c d40f8d356cecbd351ccfab6eaedd7ec1b54f5261
-F src/select.c eefb46a67c8d154aa87e9fad2ffb0671f1fe4027
+F src/select.c ca8ee9b54a52e31c22c23ae5264d323f723d253b
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 5cce3dabcad1f61fa80f8cbcd29bcb5776bda585
 F src/sqlite.h.in 0bf6f03f9a14dde5f3a4f87471840803acaa4497
@@ -165,7 +165,7 @@ F test/enc3.test 890508efff6677345e93bf2a8adb0489b30df030
 F test/expr.test 7b4b349abdb05ab1862c1cfcf7607e3731efc5d2
 F test/fkey1.test 153004438d51e6769fb1ce165f6313972d6263ce
 F test/format4.test 9f31d41d4f926cab97b2ebe6be00a6ab12dece87
-F test/func.test 0996e47cb5bb24007cec76f1a4cac9f4417360be
+F test/func.test 27d02fd00b7c2a6b5c8c302d02f9f20876ce5cc8
 F test/hook.test 7e7645fd9a033f79cce8fdff151e32715e7ec50a
 F test/in.test 40feeebc7e38576255051aad428322be1545e0f1
 F test/index.test c478459611ded74745fee57f99f424da8a5f5fbd
@@ -199,7 +199,7 @@ F test/malloc5.test 7425272e263325fda7d32cb55706e52b5c09e7e0
 F test/manydb.test 8de36b8d33aab5ef295b11d9e95310aeded31af8
 F test/memdb.test a67bda4ff90a38f2b19f6c7f95aa7289e051d893
 F test/memleak.test df2b2b96e77f8ba159a332299535b1e5f18e49ac
-F test/minmax.test cad887abca5504396718e2cd5729ca40758743e8
+F test/minmax.test 66434d8ee04869fe4c220b665b73748accbb9163
 F test/misc1.test 5a9cfffc59e5da583492a1c07efcb08a48cd1135
 F test/misc2.test 09388e5a2c5c1017ad3ff1c4bf469375def2a0c2
 F test/misc3.test 7bd937e2c62bcc6be71939faf068d506467b1e03
@@ -222,10 +222,10 @@ F test/rollback.test 673cd8c44c685ad54987fe7f0eeba84efa09685d
 F test/rowid.test 040a3bef06f970c45f5fcd14b2355f7f4d62f0cf
 F test/safety.test 4a06934e45d03b8b50ebcd8d174eb0367d2fd851
 F test/schema.test 8a2ae440fb15f5798a68059e8746402f3137be46
-F test/select1.test db53c257559a0ed817a5be23947dccc48828edb7
+F test/select1.test cf2553f611a3393e4424e61eac8eafcb04b86cd7
 F test/select2.test f3c2678c3a9f3cf08ec4988a3845bda64be6d9e3
 F test/select3.test 8fece41cd8f2955131b3f973a7123bec60b6e65e
-F test/select4.test c239f516aa31f42f2ef7c6d7cd01105f08f934ca
+F test/select4.test d0280e3b6d760d1cff0fcc2a65ecb0611aec3df2
 F test/select5.test 0b47058d3e916c1fc9fe81f44b438e02bade21ce
 F test/select6.test d8ea108b65607399580f2765df0aee5e464b0fd8
 F test/select7.test 1bf795b948c133a15a2a5e99d3270e652ec58ce6
@@ -279,7 +279,7 @@ F test/utf16align.test 7360e84472095518c56746f76b1f9d4dce99fb4d
 F test/vacuum.test 37f998b841cb335397c26d9bbc3457182af2565f
 F test/vacuum2.test 5aea8c88a65cb29f7d175296e7c819c6158d838c
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
-F test/view.test ef328f28f5658988f1a521720fb9cf940c9532a2
+F test/view.test b0aeb933cc9dc5bb44d87f3859f3763d770f0153
 F test/where.test ee7c9a6659b07e1ee61177f6e7ff71565ee2c9df
 F test/where2.test fde821b9cb8e20d53ccd2e71482b063c5b1e222a
 F test/where3.test 6356013ce1c8ddc22a65c880dfff2b2c985634cb
@@ -355,7 +355,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P b0111f43e4f82f0c3144d1e6348d9e5fae504d95
-R 07f26df1ae14843844bd0e7a7c105a61
+P c83ec81d53f756660cafbbdaf9cf92e9e4bab4ad
+R 3cde0732a4aff50430bbc2aaeb80af28
 U drh
-Z 8dfcbbac72e2253b5a292c2031f2b098
+Z 51ed0eb85034f61e3452cfde62b62d0e

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing built-in functions.
 #
-# $Id: func.test,v 1.50 2006/03/02 03:02:48 drh Exp $
+# $Id: func.test,v 1.51 2006/03/26 01:21:23 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -411,6 +411,7 @@ do_test func-12.7 {
 # Test that the auxdata API for scalar functions works. This test uses
 # a special user-defined function only available in test builds,
 # test_auxdata(). Function test_auxdata() takes any number of arguments.
+btree_breakpoint
 do_test func-13.1 {
   execsql {
     SELECT test_auxdata('hello world');

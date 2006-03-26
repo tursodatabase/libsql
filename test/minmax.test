@@ -13,7 +13,7 @@
 # aggregate min() and max() functions and which are handled as
 # as a special case.
 #
-# $Id: minmax.test,v 1.18 2005/09/08 19:45:58 drh Exp $
+# $Id: minmax.test,v 1.19 2006/03/26 01:21:23 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -144,14 +144,14 @@ ifcapable {compound && subquery} {
   do_test minmax-4.2 {
     execsql {
       SELECT y, coalesce(sum(x),0) FROM
-        (SELECT null, y+1 FROM t1 UNION SELECT * FROM t1)
+        (SELECT null AS x, y+1 AS y FROM t1 UNION SELECT * FROM t1)
       GROUP BY y ORDER BY y;
     }
   } {1 1 2 5 3 22 4 92 5 90 6 0}
   do_test minmax-4.3 {
     execsql {
       SELECT y, count(x), count(*) FROM
-        (SELECT null, y+1 FROM t1 UNION SELECT * FROM t1)
+        (SELECT null AS x, y+1 AS y FROM t1 UNION SELECT * FROM t1)
       GROUP BY y ORDER BY y;
     }
   } {1 1 1 2 2 3 3 4 5 4 8 9 5 5 6 6 0 1}

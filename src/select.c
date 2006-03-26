@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.309 2006/03/17 13:56:34 drh Exp $
+** $Id: select.c,v 1.310 2006/03/26 01:21:23 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1047,6 +1047,7 @@ Table *sqlite3ResultSetOfSelect(Parse *pParse, char *zTabName, Select *pSelect){
   ExprList *pEList;
   Column *aCol, *pCol;
 
+  while( pSelect->pPrior ) pSelect = pSelect->pPrior;
   if( prepSelectStmt(pParse, pSelect) ){
     return 0;
   }
@@ -1765,7 +1766,9 @@ static int multiSelect(
         int iCont, iBreak, iStart;
         assert( p->pEList );
         if( eDest==SRT_Callback ){
-          generateColumnNames(pParse, 0, p->pEList);
+          Select *pFirst = p;
+          while( pFirst->pPrior ) pFirst = pFirst->pPrior;
+          generateColumnNames(pParse, 0, pFirst->pEList);
         }
         iBreak = sqlite3VdbeMakeLabel(v);
         iCont = sqlite3VdbeMakeLabel(v);
@@ -1841,7 +1844,9 @@ static int multiSelect(
       */
       assert( p->pEList );
       if( eDest==SRT_Callback ){
-        generateColumnNames(pParse, 0, p->pEList);
+        Select *pFirst = p;
+        while( pFirst->pPrior ) pFirst = pFirst->pPrior;
+        generateColumnNames(pParse, 0, pFirst->pEList);
       }
       iBreak = sqlite3VdbeMakeLabel(v);
       iCont = sqlite3VdbeMakeLabel(v);
