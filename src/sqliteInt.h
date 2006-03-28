@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.491 2006/03/17 13:56:34 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.492 2006/03/28 23:57:18 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -174,13 +174,6 @@
 **
 **         cc '-DUINTPTR_TYPE=long long int' ...
 */
-#ifndef UINT64_TYPE
-# if defined(_MSC_VER) || defined(__BORLANDC__)
-#   define UINT64_TYPE unsigned __int64
-# else
-#   define UINT64_TYPE unsigned long long int
-# endif
-#endif
 #ifndef UINT32_TYPE
 # define UINT32_TYPE unsigned int
 #endif
@@ -200,7 +193,7 @@
 # define LONGDOUBLE_TYPE long double
 #endif
 typedef sqlite_int64 i64;          /* 8-byte signed integer */
-typedef UINT64_TYPE u64;           /* 8-byte unsigned integer */
+typedef sqlite_uint64 u64;         /* 8-byte unsigned integer */
 typedef UINT32_TYPE u32;           /* 4-byte unsigned integer */
 typedef UINT16_TYPE u16;           /* 2-byte unsigned integer */
 typedef INT16_TYPE i16;            /* 2-byte signed integer */

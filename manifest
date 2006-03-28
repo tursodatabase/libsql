@@ -1,5 +1,5 @@
-C Join\soptimizer\senhancements.\s(CVS\s3156)
-D 2006-03-28T23:55:58
+C Compile-time\soption\sto\suse\sonly\s32-bit\sintegers.\s(CVS\s3157)
+D 2006-03-28T23:57:18
 F Makefile.in 5d8dff443383918b700e495de42ec65bc1c8865b
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -64,13 +64,13 @@ F src/pager.h 43f32f3847421f7502cfbb66f4eb2302b8033818
 F src/parse.y ee1887ce0e6eea15cc728913ad3462898f88e9b0
 F src/pragma.c 27d5e395c5d950931c7ac4fe610e7c2993e2fa55
 F src/prepare.c 6afd730cc8851c0920b5f9050294646b1c2ab28c
-F src/printf.c 6801501273c060ffe58160a2aa9a7ff7d0ac162f
+F src/printf.c 358b4b585270f92a228e646e7bbb261c65f2a166
 F src/random.c d40f8d356cecbd351ccfab6eaedd7ec1b54f5261
 F src/select.c ca8ee9b54a52e31c22c23ae5264d323f723d253b
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 5cce3dabcad1f61fa80f8cbcd29bcb5776bda585
-F src/sqlite.h.in 0bf6f03f9a14dde5f3a4f87471840803acaa4497
-F src/sqliteInt.h 18a99e57fd6c8fc4a309107230bcb05556f2194e
+F src/sqlite.h.in 5ea9ca5ae4b5ff7dca7e8780e3e5e861b62f0006
+F src/sqliteInt.h f068088dccae2933e6b8f2e8040de7b8a682d29a
 F src/table.c f64ec4fbfe333f8df925bc6ba494f55e05b0e75e
 F src/tclsqlite.c d20bdf1822c47e367f5acd37823ffe67df40301c
 F src/test1.c becd9202b733debc607b5aec43002769730e1f71
@@ -355,7 +355,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P c64542d0e8efd6daecb037009474f4448793e4c0
-R be2bfccd653aba096ff32476dc4af713
+P 0039888f9132dc7461af4ae448292a0ce9adf804
+R 7b0bb8019b375c888b65242e6615f9d7
 U drh
-Z b6bf7917bf581c09596ff64aa1f0e8ad
+Z 82fdf51cac010092a92a7602ec803684
