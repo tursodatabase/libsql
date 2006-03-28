@@ -1,5 +1,5 @@
-C Extra\sasserts\sto\sprove\sthat\scertain\sreported\serrors\sin\sbtree.c\sare\snot\sreally\nerrors.\s(CVS\s3155)
-D 2006-03-28T00:24:45
+C Join\soptimizer\senhancements.\s(CVS\s3156)
+D 2006-03-28T23:55:58
 F Makefile.in 5d8dff443383918b700e495de42ec65bc1c8865b
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -96,7 +96,7 @@ F src/vdbeapi.c 7dc662e7c905ce666bb506dced932e0307115cbf
 F src/vdbeaux.c 4002e6b19d7c9719cb81f9797316b9ad118e4370
 F src/vdbefifo.c 9efb94c8c3f4c979ebd0028219483f88e57584f5
 F src/vdbemem.c 5f0afe3b92bb2c037f8d5d697f7c151fa50783a3
-F src/where.c 39af47e7f48be8df8a14a5965a38326bccf8eeed
+F src/where.c 1ba8eb02aba7eb8b75d7be0635200a14f0bef73a
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
 F test/aggerror.test b854de90f530ae37be68fbfe6de40e111358cbb2
 F test/all.test 5df90d015ca63fcef2a4b62c24f7316b66c4bfd4
@@ -355,7 +355,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P fe0920c7922bfdbefbc0107fb9170d98bec2dcef
-R 444a3e4a4674aa9d8e71f6503c2669c2
+P c64542d0e8efd6daecb037009474f4448793e4c0
+R be2bfccd653aba096ff32476dc4af713
 U drh
-Z 3c3d6534961b5bfe4745ed9f24024a53
+Z b6bf7917bf581c09596ff64aa1f0e8ad
