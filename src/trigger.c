@@ -110,7 +110,7 @@ void sqlite3BeginTrigger(
   if( !zName || SQLITE_OK!=sqlite3CheckObjectName(pParse, zName) ){
     goto trigger_cleanup;
   }
-  if( sqlite3HashFind(&(db->aDb[iDb].pSchema->trigHash), zName,pName->n+1) ){
+  if( sqlite3HashFind(&(db->aDb[iDb].pSchema->trigHash), zName,strlen(zName)) ){
     sqlite3ErrorMsg(pParse, "trigger %T already exists", pName);
     goto trigger_cleanup;
   }
@@ -257,7 +257,7 @@ void sqlite3FinishTrigger(
     Table *pTab;
     Trigger *pDel;
     pDel = sqlite3HashInsert(&db->aDb[iDb].pSchema->trigHash, 
-                     pTrig->name, strlen(pTrig->name)+1, pTrig);
+                     pTrig->name, strlen(pTrig->name), pTrig);
     if( pDel ){
       assert( sqlite3MallocFailed() && pDel==pTrig );
       goto triggerfinish_cleanup;
@@ -455,7 +455,7 @@ void sqlite3DropTrigger(Parse *pParse, SrcList *pName){
   for(i=OMIT_TEMPDB; i<db->nDb; i++){
     int j = (i<2) ? i^1 : i;  /* Search TEMP before MAIN */
     if( zDb && sqlite3StrICmp(db->aDb[j].zName, zDb) ) continue;
-    pTrigger = sqlite3HashFind(&(db->aDb[j].pSchema->trigHash), zName, nName+1);
+    pTrigger = sqlite3HashFind(&(db->aDb[j].pSchema->trigHash), zName, nName);
     if( pTrigger ) break;
   }
   if( !pTrigger ){
@@ -538,7 +538,8 @@ void sqlite3DropTriggerPtr(Parse *pParse, Trigger *pTrigger){
 void sqlite3UnlinkAndDeleteTrigger(sqlite3 *db, int iDb, const char *zName){
   Trigger *pTrigger;
   int nName = strlen(zName);
-  pTrigger = sqlite3HashInsert(&(db->aDb[iDb].pSchema->trigHash), zName, nName+1, 0);
+  pTrigger = sqlite3HashInsert(&(db->aDb[iDb].pSchema->trigHash),
+                               zName, nName, 0);
   if( pTrigger ){
     Table *pTable = tableOfTrigger(pTrigger);
     assert( pTable!=0 );

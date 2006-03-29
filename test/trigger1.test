@@ -60,13 +60,27 @@ execsql {
 	  INSERT INTO t1 values(1);
  	END;
 }
-do_test trigger1-1.2 {
+do_test trigger1-1.2.1 {
     catchsql {
 	CREATE TRIGGER tr1 DELETE ON t1 BEGIN
 	    SELECT * FROM sqlite_master;
  	END
      }
 } {1 {trigger tr1 already exists}}
+do_test trigger1-1.2.2 {
+    catchsql {
+	CREATE TRIGGER "tr1" DELETE ON t1 BEGIN
+	    SELECT * FROM sqlite_master;
+ 	END
+     }
+} {1 {trigger "tr1" already exists}}
+do_test trigger1-1.2.3 {
+    catchsql {
+	CREATE TRIGGER [tr1] DELETE ON t1 BEGIN
+	    SELECT * FROM sqlite_master;
+ 	END
+     }
+} {1 {trigger [tr1] already exists}}
 
 do_test trigger1-1.3 {
     catchsql {

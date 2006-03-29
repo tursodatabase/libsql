@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE TABLE statement.
 #
-# $Id: table.test,v 1.44 2006/01/04 21:40:07 drh Exp $
+# $Id: table.test,v 1.45 2006/03/29 00:24:07 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -92,6 +92,9 @@ do_test table-2.1 {
   execsql {CREATE TABLE TEST2(one text)}
   catchsql {CREATE TABLE test2(two text default 'hi')}
 } {1 {table test2 already exists}}
+do_test table-2.1.1 {
+  catchsql {CREATE TABLE "test2" (two)}
+} {1 {table "test2" already exists}}
 do_test table-2.1b {
   set v [catch {execsql {CREATE TABLE sqlite_master(two text)}} msg]
   lappend v $msg

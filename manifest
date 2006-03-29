@@ -1,5 +1,5 @@
-C Compile-time\soption\sto\suse\sonly\s32-bit\sintegers.\s(CVS\s3157)
-D 2006-03-28T23:57:18
+C Properly\srecord\sthe\snames\sof\striggers\seven\sif\sthe\sname\sis\squoted.\nTicket\s#1737.\s(CVS\s3158)
+D 2006-03-29T00:24:07
 F Makefile.in 5d8dff443383918b700e495de42ec65bc1c8865b
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -84,7 +84,7 @@ F src/test_async.c e3deaedd4d86a56391b81808fde9e44fbd92f1d3
 F src/test_md5.c 6c42bc0a3c0b54be34623ff77a0eec32b2fa96e3
 F src/test_server.c a6460daed0b92ecbc2531b6dc73717470e7a648c
 F src/tokenize.c 382b3bb0ca26eb9153b5d20b246ef512a114a24f
-F src/trigger.c 825e5b98183a0ad066d0e1dfa6708c2aac089723
+F src/trigger.c 48bbb94c11954c8e132efcc04478efe8304c4196
 F src/update.c 34add66fcd3301b33b6e4c4c813f4e408f7ee4a0
 F src/utf.c 1d51225bce1ea8d1978e8ab28e862a0c12c7a8e8
 F src/util.c 59389ed717f0fa9d8023b3f482ba09dcf41343a8
@@ -168,7 +168,7 @@ F test/format4.test 9f31d41d4f926cab97b2ebe6be00a6ab12dece87
 F test/func.test 27d02fd00b7c2a6b5c8c302d02f9f20876ce5cc8
 F test/hook.test 7e7645fd9a033f79cce8fdff151e32715e7ec50a
 F test/in.test 40feeebc7e38576255051aad428322be1545e0f1
-F test/index.test c478459611ded74745fee57f99f424da8a5f5fbd
+F test/index.test e65df12bed94b2903ee89987115e1578687e9266
 F test/index2.test ee83c6b5e3173a3d7137140d945d9a5d4fdfb9d6
 F test/index3.test f66718cd92ce1216819d47e6a156755e4b2c4ca1
 F test/insert.test b4d43f8e75e203fe51bc06cacf3636081903dcd1
@@ -237,7 +237,7 @@ F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
 F test/subquery.test ae324ee928c5fb463a3ce08a8860d6e7f1ca5797
 F test/subselect.test 2d13fb7f450db3595adcdd24079a0dd1d2d6abc2
 F test/sync.test d05397b8f89f423dd6dba528692019ab036bc1c3
-F test/table.test 6dc0dfa44dd429520e0e5a0c5e55025f730e9403
+F test/table.test 1c1539af8db89c68e467df02ec2607ec61c67bac
 F test/tableapi.test 6a66d58b37d46dc0f2b3c7d4bd2617d209399bd1
 F test/tclsqlite.test 93c399414273d829f3fc5fc4a8349b484fe84d5b
 F test/temptable.test c36f3e5a94507abb64f7ba23deeb4e1a8a8c3821
@@ -261,7 +261,7 @@ F test/tkt1644.test 80b6a2bb17885f3cf1cb886d97cdad13232bb869
 F test/tkt1667.test c7faac5050b45d81d0b9f6294e4570b588106e19
 F test/trace.test 75ffc1b992c780d054748a656e3e7fd674f18567
 F test/trans.test dbadb11882da0fa0ed2a74acecd28e10965b48d0
-F test/trigger1.test 0c1d44882dba5c92e4efee4dd133cc979f0b1860
+F test/trigger1.test e8c717e959c2f98c8181cd9466e140fa7aac781f
 F test/trigger2.test 33bf8ae9b788013be194efe5f66c04a202facbb4
 F test/trigger3.test 9102fd3933db294dc654b5aee9edfe9e94f2b9e2
 F test/trigger4.test 4bed3705c9df4aaf7a7b164a2d573410d05ca025
@@ -355,7 +355,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 0039888f9132dc7461af4ae448292a0ce9adf804
-R 7b0bb8019b375c888b65242e6615f9d7
+P aedadfc3e47efa28ff81d7789b54fba9fcc128db
+R cd3eacf83ff32f49c3fe5762f71c525c
 U drh
-Z 82fdf51cac010092a92a7602ec803684
+Z d07dd13e5dad42ca4274dcff96af4d1e
