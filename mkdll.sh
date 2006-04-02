@@ -40,5 +40,5 @@ i386-mingw32msvc-dllwrap \
      --as i386-mingw32msvc-as \
      --target i386-mingw32 \
      -dllname sqlite3.dll -lmsvcrt *.o
-i386-mingw32msvc-strip sqlite3.dll
+#i386-mingw32msvc-strip sqlite3.dll
 cd ..
