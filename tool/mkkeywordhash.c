@@ -485,8 +485,8 @@ int main(int argc, char **argv){
 
   printf("  int h, i;\n");
   printf("  if( n<2 ) return TK_ID;\n");
-  printf("  h = ((sqlite3UpperToLower[((unsigned char*)z)[0]]*4) ^\n"
-         "      (sqlite3UpperToLower[((unsigned char*)z)[n-1]]*3) ^\n"
+  printf("  h = ((charMap(z[0])*4) ^\n"
+         "      (charMap(z[n-1])*3) ^\n"
          "      n) %% %d;\n", bestSize);
   printf("  for(i=((int)aHash[h])-1; i>=0; i=((int)aNext[i])-1){\n");
   printf("    if( aLen[i]==n &&"
