@@ -1,9 +1,9 @@
-C Make\ssure\sSQLITE_NOMEM\sis\sreported\sout\son\sa\smalloc\sfailure\sin\san\sATTACH\neven\sif\sthe\smalloc\sfailure\sreports\swithin\sa\snested\scalls\sto\ssqlite3_prepare().\s(CVS\s3164)
-D 2006-04-05T11:57:37
+C Preparing\sfor\sthe\srelease\sof\sversion\s3.3.5.\s(CVS\s3165)
+D 2006-04-05T12:15:11
 F Makefile.in 5d8dff443383918b700e495de42ec65bc1c8865b
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
-F VERSION bb72027a4c27efb46a02c4fcb1fa959db9a5bc79
+F VERSION 2bc3eace6a71bc4f2575679b944378b275e9412c
 F aclocal.m4 7daea4c35e88de30d5a3f6f7a2ab99720e803bbd
 F addopcodes.awk 701697fae48376375ec8532c3d04e910cfeef352
 F art/2005osaward.gif 0d1851b2a7c1c9d0ccce545f3e14bca42d7fd248
@@ -312,7 +312,7 @@ F www/autoinc.tcl b357f5ba954b046ee35392ce0f884a2fcfcdea06
 F www/c_interface.tcl b51b08591554c16a0c3ef718364a508ac25abc7e
 F www/capi3.tcl 7a7cc225fe02eb7ab861a6019b08baa0014409e1
 F www/capi3ref.tcl 38704c15900a9c16641e79c1c1fe9a3c2c479ada
-F www/changes.tcl 06e23e1286bee6753d405047f0ccb5c2ba8ca555
+F www/changes.tcl 8cf905727bfba4cda522a80716e8fc742420c085
 F www/common.tcl 14d121c28532ad20c3e349caa4db708b0b822083
 F www/compile.tcl 276546d7eb445add5a867193bbd80f6919a6b084
 F www/conflict.tcl cdd0f4b59b0ba6d61f67e6a38f3ae45853bacb30
@@ -331,7 +331,7 @@ F www/fileformat.tcl 900c95b9633abc3dcfc384d9ddd8eb4876793059
 F www/formatchng.tcl 4972e680f9331ea46f47001e349baba807f5b60a
 F www/fullscanb.gif f7c94cb227f060511f8909e10f570157263e9a25
 F www/index-ex1-x-b.gif f9b1d85c3fa2435cf38b15970c7e3aa1edae23a3
-F www/index.tcl 9c659eec487d5e9196d4125ab200cfc86e93528d
+F www/index.tcl 216b7d9ea9db20cd85c0eff7a4369904d5768c68
 F www/indirect1b1.gif adfca361d2df59e34f9c5cac52a670c2bfc303a1
 F www/lang.tcl 9fe2b8bb0a3158f4b629e184f5db9f895ecbb4cd
 F www/lockingv3.tcl f59b19d6c8920a931f096699d6faaf61c05db55f
@@ -355,7 +355,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P fdbff3f145296d5dcba8987c25629e27353e2ab0
-R a178117f13217df6aee4e3891a129fac
+P 3538a4e30fb5131b461bb0cf72cada63e9724e14
+R fd2db87b33493ad440519b524e22f08b
 U drh
-Z 43dddd673d1c73ea60cfe59bfb56a0fc
+Z 12625599af2328aaa544e40b359eb8cb
