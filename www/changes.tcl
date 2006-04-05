@@ -30,15 +30,16 @@ chng {2006 April 5 (3.3.5)} {
 <li>The SUM() function throws an error on integer overflow.</li>
 <li>Choose the column names in a compound query from the left-most SELECT
     instead of the right-most.</li>
-<li>The sqlite3_create_collation honors the SQLITE_UTF16_ALIGNED flag.</li>
-<li>SQLITE_SECURE_DELETE compile-time option always overwrites deleted
-    data with zeros.</li>
+<li>The sqlite3_create_collation() function
+    honors the SQLITE_UTF16_ALIGNED flag.</li>
+<li>SQLITE_SECURE_DELETE compile-time option causes deletes to overwrite
+    old data with zeros.</li>
 <li>Detect integer overflow in abs().</li>
 <li>The random() function provides 64 bits of randomness instead of
     only 32 bits.</li>
 <li>Parser detects and reports automaton stack overflow.</li>
 <li>Change the round() function to return REAL instead of TEXT.</li>
-<li>All WHERE clause terms on the left table of a LEFT OUTER JOIN to
+<li>Allow WHERE clause terms on the left table of a LEFT OUTER JOIN to
     contain aggregate subqueries.</li>
 <li>Skip over leading spaces in text to numeric conversions.</li>
 <li>Various minor bug and documentation typo fixes and
