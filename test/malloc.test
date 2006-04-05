@@ -14,7 +14,7 @@
 # special feature is used to see what happens in the library if a malloc
 # were to really fail due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.30 2006/01/24 10:58:23 danielk1977 Exp $
+# $Id: malloc.test,v 1.31 2006/04/05 11:57:37 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -512,6 +512,26 @@ do_malloc_test 19 -tclprep {
   }
 }
 unset static_string
+
+# Make sure SQLITE_NOMEM is reported out on an ATTACH failure even
+# when the malloc failure occurs within the nested parse.
+#
+do_malloc_test 20 -tclprep {
+  db close
+  file delete -force test2.db test2.db-journal
+  sqlite3 db test2.db
+  db eval {CREATE TABLE t1(x);}
+  db close
+} -tclbody {
+  if {[catch {sqlite3 db test.db}]} {
+    error "out of memory"
+  }
+} -sqlbody {
+  ATTACH DATABASE 'test2.db' AS t2;
+  SELECT * FROM t1;
+  DETACH DATABASE t2;
+} 
+
 
 # Ensure that no file descriptors were leaked.
 do_test malloc-99.X {
