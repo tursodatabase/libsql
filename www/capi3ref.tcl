@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3ref.tcl,v 1.36 2006/03/25 14:03:42 drh Exp $}
+set rcsid {$Id: capi3ref.tcl,v 1.37 2006/04/05 01:02:08 drh Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -176,7 +176,7 @@ api {} {
  If the busy callback is NULL, then SQLITE_BUSY is returned immediately
  upon encountering the lock.
  If the busy callback is not NULL, then the
- callback might invoked with two arguments.  The
+ callback will be invoked with two arguments.  The
  second argument is the number of prior calls to the busy callback
  for the same lock.  If the
  busy callback returns 0, then no additional attempts are made to

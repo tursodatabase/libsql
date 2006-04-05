@@ -1,7 +1,7 @@
 #
 # Run this script to generated a faq.html output file
 #
-set rcsid {$Id: faq.tcl,v 1.35 2006/02/11 01:25:52 drh Exp $}
+set rcsid {$Id: faq.tcl,v 1.36 2006/04/05 01:02:08 drh Exp $}
 source common.tcl
 header {SQLite Frequently Asked Questions</title>}
 
@@ -136,7 +136,7 @@ faq {
   <p>Multiple processes can have the same database open at the same
   time.  Multiple processes can be doing a SELECT
   at the same time.  But only one process can be making changes to
-  the database at an given moement in time, however.</p>
+  the database at any moment in time, however.</p>
 
   <p>SQLite uses reader/writer locks to control access to the database.
   (Under Win95/98/ME which lacks support for reader/writer locks, a
