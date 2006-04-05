@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3ref.tcl,v 1.37 2006/04/05 01:02:08 drh Exp $}
+set rcsid {$Id: capi3ref.tcl,v 1.38 2006/04/05 01:08:35 drh Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -1133,6 +1133,9 @@ int sqlite3_set_authorizer(
 #define SQLITE_UPDATE               23   /* Table Name      Column Name     */
 #define SQLITE_ATTACH               24   /* Filename        NULL            */
 #define SQLITE_DETACH               25   /* Database Name   NULL            */
+#define SQLITE_ALTER_TABLE          26   /* Database Name   Table Name      */
+#define SQLITE_REINDEX              27   /* Index Name      NULL            */
+#define SQLITE_ANALYZE              28   /* Table Name      NULL            */
 
 #define SQLITE_DENY   1   /* Abort the SQL statement with an error */
 #define SQLITE_IGNORE 2   /* Don't allow access, but don't generate an error */

@@ -1,5 +1,5 @@
-C Documentation\stypos.\s\sTickets\s#1749\sand\s#1750.\s(CVS\s3162)
-D 2006-04-05T01:02:08
+C Add\sdocumentation\son\snew\ssqlite_authorizer\scallback\stypes.\sTicket\s#1744.\s(CVS\s3163)
+D 2006-04-05T01:08:35
 F Makefile.in 5d8dff443383918b700e495de42ec65bc1c8865b
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -311,7 +311,7 @@ F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
 F www/autoinc.tcl b357f5ba954b046ee35392ce0f884a2fcfcdea06
 F www/c_interface.tcl b51b08591554c16a0c3ef718364a508ac25abc7e
 F www/capi3.tcl 7a7cc225fe02eb7ab861a6019b08baa0014409e1
-F www/capi3ref.tcl 5f0c4020c90b8eb44f8e0a9e1852faa492ca2dfe
+F www/capi3ref.tcl 38704c15900a9c16641e79c1c1fe9a3c2c479ada
 F www/changes.tcl 06e23e1286bee6753d405047f0ccb5c2ba8ca555
 F www/common.tcl 14d121c28532ad20c3e349caa4db708b0b822083
 F www/compile.tcl 276546d7eb445add5a867193bbd80f6919a6b084
@@ -355,7 +355,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 4342b4997199241cafd6120c6abda665770e270c
-R 88387a0cc316d99ca837eadb3ffa1349
+P 51b35ace203a33f6f04f1139ca8ab652c5c76f9a
+R 37db2ed2a2f394b32b2c98ec1c3f61dd
 U drh
-Z 7ef64da569599f201110df193cbd2576
+Z bea39b4c4681bce541ac61af0db836c7
