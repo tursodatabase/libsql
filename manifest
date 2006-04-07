@@ -1,5 +1,5 @@
-C Return\sthe\scorrect\sdeclared\scolumn\stype,\sorigin\scolumn\sname,\sorigin\sdatabase\nname,\setc.\sfrom\saggregate\squeries.\s\sTicket\s#1726\sand\s#1755.\s(CVS\s3169)
-D 2006-04-07T13:50:37
+C Reorder\scode\sso\sthat\sit\scompiles\swith\sSQLITE_OMIT_MEMORYDB.\s\sTicket\s#1754.\s(CVS\s3170)
+D 2006-04-07T13:54:47
 F Makefile.in 5d8dff443383918b700e495de42ec65bc1c8865b
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -59,7 +59,7 @@ F src/os_unix.c 35ad4d81c90800f509d28580742b67906d289223
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c 8ced9ac82670bbf77492961a2f7ff80a87f1404f
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 33186636a07eeaf34028083c32b27b9647556be7
+F src/pager.c ca7112635ac51779c44f93e562e811df939fb402
 F src/pager.h 43f32f3847421f7502cfbb66f4eb2302b8033818
 F src/parse.y ee1887ce0e6eea15cc728913ad3462898f88e9b0
 F src/pragma.c 27d5e395c5d950931c7ac4fe610e7c2993e2fa55
@@ -355,7 +355,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 76aef93c3e113b0077f534a437a339be2b15ca3d
-R b895140886bedf91189ddd9cc3a44c7a
+P e64809f0ae98ce9d152cf030cae72bf3df3e2403
+R 4f389ce5b05094a6ce92673da3fd0dc1
 U drh
-Z 406bc64563c9f79b54905625fb460237
+Z e53dff01699d01b873dcbd1273c67527

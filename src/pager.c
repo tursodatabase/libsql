@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.265 2006/03/26 20:49:18 drh Exp $
+** @(#) $Id: pager.c,v 1.266 2006/04/07 13:54:47 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1805,12 +1805,25 @@ int sqlite3pager_pagecount(Pager *pPager){
   return n;
 }
 
+
+#ifndef SQLITE_OMIT_MEMORYDB
+/*
+** Clear a PgHistory block
+*/
+static void clearHistory(PgHistory *pHist){
+  sqliteFree(pHist->pOrig);
+  sqliteFree(pHist->pStmt);
+  pHist->pOrig = 0;
+  pHist->pStmt = 0;
+}
+#else
+#define clearHistory(x)
+#endif
+
 /*
 ** Forward declaration
 */
 static int syncJournal(Pager*);
-static void clearHistory(PgHistory*);
-
 
 /*
 ** Unlink pPg from it's hash chain. Also set the page number to 0 to indicate
@@ -3205,20 +3218,6 @@ void sqlite3pager_dont_rollback(void *pData){
   }
 }
 
-
-#ifndef SQLITE_OMIT_MEMORYDB
-/*
-** Clear a PgHistory block
-*/
-static void clearHistory(PgHistory *pHist){
-  sqliteFree(pHist->pOrig);
-  sqliteFree(pHist->pStmt);
-  pHist->pOrig = 0;
-  pHist->pStmt = 0;
-}
-#else
-#define clearHistory(x)
-#endif
 
 /*
 ** Commit all changes to the database and release the write lock.
