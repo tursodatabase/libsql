@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi3.test,v 1.44 2006/02/18 16:36:46 drh Exp $
+# $Id: capi3.test,v 1.45 2006/04/07 13:50:38 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -574,6 +574,19 @@ do_test capi3-5.11 {
 do_test capi3-5.12 {
   sqlite3_finalize $STMT
 } SQLITE_OK
+
+do_test capi3-5.20 {
+  set sql "SELECT a, sum(b), max(c) FROM t1 GROUP BY a"
+  set STMT [sqlite3_prepare $DB $sql -1 TAIL]
+  sqlite3_column_count $STMT
+} 3
+
+check_header $STMT capi3-5.21 {a sum(b) max(c)} {VARINT {} {}}
+check_origin_header $STMT capi3-5.22 {main {} {}} {t1 {} {}} {a {} {}}
+do_test capi3-5.23 {
+  sqlite3_finalize $STMT
+} SQLITE_OK
+
 
 set ::ENC [execsql {pragma encoding}]
 db close
