@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.126 2006/03/16 16:19:56 drh Exp $
+** $Id: func.c,v 1.127 2006/04/07 13:26:43 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -204,7 +204,8 @@ static void roundFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   if( sqlite3_value_type(argv[0])==SQLITE_NULL ) return;
   r = sqlite3_value_double(argv[0]);
   sqlite3_snprintf(sizeof(zBuf),zBuf,"%.*f",n,r);
-  sqlite3_result_double(context, atof(zBuf));
+  sqlite3AtoF(zBuf, &r);
+  sqlite3_result_double(context, r);
 }
 
 /*
