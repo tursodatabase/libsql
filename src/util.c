@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.188 2006/04/04 01:54:55 drh Exp $
+** $Id: util.c,v 1.189 2006/04/08 19:14:53 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -476,8 +476,9 @@ static int OSSIZEOF(void *p){
 ** pointer to the space allocated for the application to use.
 */
 static void OSFREE(void *pFree){
+  u32 *p;         /* Pointer to the OS-layer allocation */
   sqlite3OsEnterMutex();
-  u32 *p = (u32 *)getOsPointer(pFree);   /* p points to Os level allocation */
+  p = (u32 *)getOsPointer(pFree);
   checkGuards(p);
   unlinkAlloc(p);
   memset(pFree, 0x55, OSSIZEOF(pFree));
