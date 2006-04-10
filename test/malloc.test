@@ -14,7 +14,7 @@
 # special feature is used to see what happens in the library if a malloc
 # were to really fail due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.31 2006/04/05 11:57:37 drh Exp $
+# $Id: malloc.test,v 1.32 2006/04/10 13:37:47 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -92,6 +92,13 @@ proc do_malloc_test {tn args} {
         append ::mallocbody "db eval {$::mallocopts(-sqlbody)}"
       }
       set v [catch $::mallocbody msg]
+
+      # If the test fails (if $v!=0) and the database connection actually
+      # exists, make sure the failure code is SQLITE_NOMEM.
+      if {$v && [info command db]=="db" && [info exists ::mallocopts(-sqlbody)]
+              && [db errorcode]!=7} {
+        set v 999
+      }
 
       set leftover [lindex [sqlite_malloc_stat] 2]
       if {$leftover>0} {
