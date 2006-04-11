@@ -12,7 +12,7 @@
 # focus of this file is testing aggregate functions and the
 # GROUP BY and HAVING clauses of SELECT statements.
 #
-# $Id: select3.test,v 1.18 2005/11/14 22:29:06 drh Exp $
+# $Id: select3.test,v 1.19 2006/04/11 14:16:22 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -84,11 +84,11 @@ do_test select3-2.8 {
     SELECT log*2+1 AS x, count(*) AS y FROM t1 GROUP BY x ORDER BY 10-(x+y)
   }
 } {11 15 9 8 7 4 5 2 3 1 1 1}
-do_test select3-2.9 {
-  catchsql {
-    SELECT log, count(*) FROM t1 GROUP BY 'x' ORDER BY log;
-  }
-} {1 {GROUP BY terms must not be non-integer constants}}
+#do_test select3-2.9 {
+#  catchsql {
+#    SELECT log, count(*) FROM t1 GROUP BY 'x' ORDER BY log;
+#  }
+#} {1 {GROUP BY terms must not be non-integer constants}}
 do_test select3-2.10 {
   catchsql {
     SELECT log, count(*) FROM t1 GROUP BY 0 ORDER BY log;

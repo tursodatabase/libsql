@@ -1,5 +1,5 @@
-C Follow-up\sto\scheck-in\s(3164).\s\sMake\ssure\sSQLITE_NOMEM\sis\sreturned\safter\na\smemory\sallocation\sfailure.\s\sIt\sis\snot\ssufficent\sto\sreturn\san\s"out\sof\smemory"\nerror\smessage.\s\sThe\sreturn\scode\sneeds\sto\sbe\sSQLITE_NOMEM.\s(CVS\s3172)
-D 2006-04-10T13:37:47
+C Allow\sconstant\sterms\sin\sthe\sORDER\sBY\sor\sGROUP\sBY\sclauses.\s\sTicket\s#1768.\s(CVS\s3173)
+D 2006-04-11T14:16:21
 F Makefile.in 5d8dff443383918b700e495de42ec65bc1c8865b
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -66,7 +66,7 @@ F src/pragma.c 27d5e395c5d950931c7ac4fe610e7c2993e2fa55
 F src/prepare.c 6afd730cc8851c0920b5f9050294646b1c2ab28c
 F src/printf.c 358b4b585270f92a228e646e7bbb261c65f2a166
 F src/random.c d40f8d356cecbd351ccfab6eaedd7ec1b54f5261
-F src/select.c 3519dc645855e6ef73cab273e275e46a6b788980
+F src/select.c cb5d86615e45d7bda31b72ef08ef4c5c14e831f9
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 5cce3dabcad1f61fa80f8cbcd29bcb5776bda585
 F src/sqlite.h.in e783b895fe2fcd68f6c04408a4efaef58cd1cdda
@@ -222,9 +222,9 @@ F test/rollback.test 673cd8c44c685ad54987fe7f0eeba84efa09685d
 F test/rowid.test 040a3bef06f970c45f5fcd14b2355f7f4d62f0cf
 F test/safety.test 4a06934e45d03b8b50ebcd8d174eb0367d2fd851
 F test/schema.test 8a2ae440fb15f5798a68059e8746402f3137be46
-F test/select1.test cf2553f611a3393e4424e61eac8eafcb04b86cd7
+F test/select1.test fa4e941da0a38961635d903530bd292dc149a8e8
 F test/select2.test f3c2678c3a9f3cf08ec4988a3845bda64be6d9e3
-F test/select3.test 8fece41cd8f2955131b3f973a7123bec60b6e65e
+F test/select3.test 33c78663e6b1b41220dcec4eb6affb1a05001ffe
 F test/select4.test d0280e3b6d760d1cff0fcc2a65ecb0611aec3df2
 F test/select5.test 0b47058d3e916c1fc9fe81f44b438e02bade21ce
 F test/select6.test d8ea108b65607399580f2765df0aee5e464b0fd8
@@ -355,7 +355,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 9682f84401f7e21630246e1c37351425b78b7afa
-R 20cddda4405a1c926f2f032a7ab7a815
+P 9d95750e8556aef20a637a815652d547ed2f887c
+R 573c5535ced3d1d890b186177a1d009e
 U drh
-Z 63f846bed204f2b1d5e1629dade835cf
+Z 807a1306c0c39a0be040f04b1cc803c5
