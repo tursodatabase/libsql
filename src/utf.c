@@ -12,7 +12,7 @@
 ** This file contains routines used to translate between UTF-8, 
 ** UTF-16, UTF-16BE, and UTF-16LE.
 **
-** $Id: utf.c,v 1.38 2006/02/24 02:53:50 drh Exp $
+** $Id: utf.c,v 1.39 2006/04/16 12:05:03 drh Exp $
 **
 ** Notes on UTF-8:
 **
@@ -287,11 +287,11 @@ int sqlite3VdbeMemTranslate(Mem *pMem, u8 desiredEnc){
   /* Set len to the maximum number of bytes required in the output buffer. */
   if( desiredEnc==SQLITE_UTF8 ){
     /* When converting from UTF-16, the maximum growth results from
-    ** translating a 2-byte character to a 3-byte UTF-8 character (i.e.
-    ** code-point 0xFFFC). A single byte is required for the output string
+    ** translating a 2-byte character to a 4-byte UTF-8 character.
+    ** A single byte is required for the output string
     ** nul-terminator.
     */
-    len = (pMem->n/2) * 3 + 1;
+    len = pMem->n * 2 + 1;
   }else{
     /* When converting from UTF-8 to UTF-16 the maximum growth is caused
     ** when a 1-byte UTF-8 character is translated into a 2-byte UTF-16
