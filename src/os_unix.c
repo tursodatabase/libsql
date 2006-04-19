@@ -752,9 +752,6 @@ int sqlite3UnixOpenExclusive(const char *zFilename, OsFile **pId, int delFlag){
 
   CRASH_TEST_OVERRIDE(sqlite3CrashOpenExclusive, zFilename, pId, delFlag);
   assert( 0==*pId );
-  if( access(zFilename, 0)==0 ){
-    return SQLITE_CANTOPEN;
-  }
   f.h = open(zFilename,
                 O_RDWR|O_CREAT|O_EXCL|O_NOFOLLOW|O_LARGEFILE|O_BINARY,
                 SQLITE_DEFAULT_FILE_PERMISSIONS);
