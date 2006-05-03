@@ -1,5 +1,5 @@
-C Faster\s:memory:\sdatabase\sCOMMITs.\s\sTicket\s#1790.\s(CVS\s3178)
-D 2006-05-03T23:34:06
+C Fix\sa\stypo\son\sa\swebpage.\s\sTicket\s#1792.\s(CVS\s3179)
+D 2006-05-03T23:39:37
 F Makefile.in 5d8dff443383918b700e495de42ec65bc1c8865b
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -318,7 +318,7 @@ F www/compile.tcl 276546d7eb445add5a867193bbd80f6919a6b084
 F www/conflict.tcl cdd0f4b59b0ba6d61f67e6a38f3ae45853bacb30
 F www/copyright-release.html 294e011760c439c44951a6bfecd4c81a1ae359e8
 F www/copyright-release.pdf cfca3558fc97095e57c6117d08f1f5b80d95125a
-F www/copyright.tcl 82c9670c7ddb0311912ab7fe24703f33c531066c
+F www/copyright.tcl 58b9586cac0d5914387cfc170bfd80f999dde469
 F www/datatype3.tcl 3216d4586d28c4f1f2d4fbb4c42f12e1d6bdd67e
 F www/datatypes.tcl 7c786d2e8ff434346764534ec015966d17efce60
 F www/different.tcl 81377eb0c8e27d3bdf812bde357281c4c44bec0c
@@ -355,7 +355,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 7f3ef7ddba22d69a23e656836ba76738c9652b4d
-R 44ec6e5db6ad334f233b7b64f878721e
+P 8f820e435272c0a4861421508c7e6f2979c2750f
+R 04653401c505e2c6061ff2b69b857755
 U drh
-Z d5ea3db4b30df259b8b3ffa443e2426d
+Z 8508385ee7359f0e5208e0edf1f45b07

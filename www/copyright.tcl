@@ -1,4 +1,4 @@
-set rcsid {$Id: copyright.tcl,v 1.1 2004/05/31 16:04:08 drh Exp $}
+set rcsid {$Id: copyright.tcl,v 1.2 2006/05/03 23:39:37 drh Exp $}
 source common.tcl
 header {SQLite Copyright}
 puts {
@@ -8,7 +8,7 @@ puts {
 The original author of SQLite has dedicated the code to the public domain.
 Anyone is free to copy, modify, publish, use, compile, sell, or distribute
 the original SQLite code, either in source code form or as a compiled binary,
-for any purpose, commerical or non-commerical, and by any means.
+for any purpose, commercial or non-commercial, and by any means.
 </p>
 
 <h2>Contributed Code</h2>
