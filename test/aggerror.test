@@ -13,7 +13,7 @@
 # This file implements tests for calling sqlite3_result_error()
 # from within an aggregate function implementation.
 #
-# $Id: aggerror.test,v 1.2 2006/01/23 07:52:41 danielk1977 Exp $
+# $Id: aggerror.test,v 1.3 2006/05/03 23:34:06 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -24,7 +24,7 @@ source $testdir/tester.tcl
 # final results is 42.  Make sure that such errors are handled
 # appropriately.
 #
-do_test aggfunc-1.1 {
+do_test aggerror-1.1 {
   set DB [sqlite3_connection_pointer db]
   sqlite3_create_aggregate $DB
   execsql {
@@ -39,19 +39,19 @@ do_test aggfunc-1.1 {
     SELECT x_count(*) FROM t1;
   }
 } {39}
-do_test aggfunc-1.2 {
+do_test aggerror-1.2 {
   execsql {
     INSERT INTO t1 VALUES(40);
     SELECT x_count(*) FROM t1;
   }
 } {40}
-do_test aggfunc-1.3 {
+do_test aggerror-1.3 {
   catchsql {
     SELECT x_count(a) FROM t1;
   }
 } {1 {value of 40 handed to x_count}}
 ifcapable utf16 {
-  do_test aggfunc-1.4 {
+  do_test aggerror-1.4 {
     execsql {
       UPDATE t1 SET a=41 WHERE a=40
     }
@@ -60,12 +60,12 @@ ifcapable utf16 {
     }
   } {1 abc}
 }
-do_test aggfunc-1.5 {
+do_test aggerror-1.5 {
   execsql {
     SELECT x_count(*) FROM t1
   }
 } 40
-do_test aggfunc-1.6 {
+do_test aggerror-1.6 {
   execsql {
     INSERT INTO t1 VALUES(40);
     INSERT INTO t1 VALUES(42);
