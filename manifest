@@ -1,5 +1,5 @@
-C Automatically\sincrease\sthe\ssize\sof\sthe\spager\shash\stable\sas\sthe\snumber\nof\sin-memory\spages\sincreases.\s\sTickets\s#1790\sand\s#1799.\s(CVS\s3180)
-D 2006-05-07T17:49:39
+C Fix\serror\sprocessing\sin\sLemon.\s\sSQLite\sdoes\snot\suse\sthis\sfeature\sof\slemon\nso\sit\sis\suneffected.\s(CVS\s3181)
+D 2006-05-08T15:14:19
 F Makefile.in 5d8dff443383918b700e495de42ec65bc1c8865b
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -285,7 +285,7 @@ F test/where2.test fde821b9cb8e20d53ccd2e71482b063c5b1e222a
 F test/where3.test 6356013ce1c8ddc22a65c880dfff2b2c985634cb
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/lemon.c b0b881c172b5375444ef1c13d80ab01efec3605e
-F tool/lempar.c 424df14a48736bb961ed47acf30c26d66ed85a62
+F tool/lempar.c 5112eda4ad6dc8694b6a68004542da174b436ad9
 F tool/memleak.awk 4e7690a51bf3ed757e611273d43fe3f65b510133
 F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
 F tool/memleak3.tcl 7707006ee908cffff210c98158788d85bb3fcdbf
@@ -355,7 +355,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 2702205277f45aadd2f07d51f71af4efd266228f
-R 682ba0f4fded90e799844395c2609fd0
+P ef8e9886f40c8528604264308f5e4734ae6706c5
+R 7371efdf26683a66acd98a01f6ba8973
 U drh
-Z 5c4f907a07f2808d253fc1ec4dae9689
+Z 3b1eb8279fc00d23e86479f81bdf405c

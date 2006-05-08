@@ -667,7 +667,9 @@ void Parse(
          while(
           yypParser->yyidx >= 0 &&
           yymx != YYERRORSYMBOL &&
-          (yyact = yy_find_shift_action(yypParser,YYERRORSYMBOL)) >= YYNSTATE
+          (yyact = yy_find_reduce_action(
+                        yypParser->yystack[yypParser->yyidx].stateno,
+                        YYERRORSYMBOL)) >= YYNSTATE
         ){
           yy_pop_parser_stack(yypParser);
         }
