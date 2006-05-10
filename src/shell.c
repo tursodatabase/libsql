@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.135 2006/03/19 13:00:25 drh Exp $
+** $Id: shell.c,v 1.136 2006/05/10 14:39:14 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -1471,6 +1471,10 @@ static void process_input(struct callback_data *p, FILE *in){
       if( zLine[i]!=0 ){
         nSql = strlen(zLine);
         zSql = malloc( nSql+1 );
+        if( zSql==0 ){
+          fprintf(stderr, "out of memory\n");
+          exit(1);
+        }
         strcpy(zSql, zLine);
       }
     }else{
