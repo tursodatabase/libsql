@@ -1,5 +1,5 @@
-C Out-of-memory\schecks\sadded\sto\stclsqlite.c\sand\sshell.c.\s\sTickets\s#1805\sand\s#1806.\s(CVS\s3182)
-D 2006-05-10T14:39:14
+C Fix\scomments\son\sthe\simplementation\sof\sthe\sSUM()\sfunction.\s(CVS\s3183)
+D 2006-05-11T13:25:39
 F Makefile.in 5d8dff443383918b700e495de42ec65bc1c8865b
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -43,7 +43,7 @@ F src/date.c cd2bd5d1ebc6fa12d6312f69789ae5b0a2766f2e
 F src/delete.c 2dea1a83e6ef534346e74fd03114d3a7b16f08fc
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
 F src/expr.c c85d7bee7d8e3184e00166c2c2ab6edd57b60486
-F src/func.c 7dac3a08b99d997591a65c3e730c49169c4d19cb
+F src/func.c acbbf533b55221f26760798d99b37de3ac5678fe
 F src/hash.c 449f3d6620193aa557f5d86cbc5cc6b87702b185
 F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
 F src/insert.c 1ae4b8ff5549497808e1b57b9243abcb599fd02f
@@ -355,7 +355,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 864cac960390a31c240d34ffd62bb084ab780267
-R fd698bfdf84969615fcfbfaf72ad31c9
+P 364031d6e512b992a7147bbc8e046c20c0c5335a
+R 9cfa66f5d989cfd0f2aaee034ce3a939
 U drh
-Z e750a9d73cf64d5d55602faaba0f7878
+Z d937dfe62cc7b6890517312daa4fad61

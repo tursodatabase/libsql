@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.127 2006/04/07 13:26:43 drh Exp $
+** $Id: func.c,v 1.128 2006/05/11 13:25:39 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -840,16 +840,8 @@ struct SumCtx {
 ** that it returns NULL if it sums over no inputs.  TOTAL returns
 ** 0.0 in that case.  In addition, TOTAL always returns a float where
 ** SUM might return an integer if it never encounters a floating point
-** value.
-**
-** I am told that SUM() should raise an exception if it encounters
-** a integer overflow.  But after pondering this, I decided that 
-** behavior leads to brittle programs.  So instead, I have coded
-** SUM() to revert to using floating point if it encounters an
-** integer overflow.  The answer may not be exact, but it will be
-** close.  If the SUM() function returns an integer, the value is
-** exact.  If SUM() returns a floating point value, it means the
-** value might be approximated.
+** value.  TOTAL never fails, but SUM might through an exception if
+** it overflows an integer.
 */
 static void sumStep(sqlite3_context *context, int argc, sqlite3_value **argv){
   SumCtx *p;
