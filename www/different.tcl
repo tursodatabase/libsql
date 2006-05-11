@@ -1,4 +1,4 @@
-set rcsid {$Id: different.tcl,v 1.6 2005/09/08 11:04:57 drh Exp $}
+set rcsid {$Id: different.tcl,v 1.7 2006/05/11 13:33:15 drh Exp $}
 source common.tcl
 header {Distinctive Features Of SQLite}
 puts {
@@ -89,7 +89,7 @@ feature small {Compact} {
   Most other SQL database engines are much larger than this.  IBM boasts
   that it's recently released CloudScape database engine is "only" a 2MiB
   jar file - 10 times larger than SQLite even after it is compressed!
-  Firefox boasts that it's client-side library is only 350KiB.  That's
+  Firebird boasts that it's client-side library is only 350KiB.  That's
   50% larger than SQLite and does not even contain the database engine.
   The Berkeley DB library from Sleepycat is 450KiB and it omits SQL
   support, providing the programmer with only simple key/value pairs.
