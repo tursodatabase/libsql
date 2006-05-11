@@ -12,7 +12,7 @@
 # focus of this file is testing the use of indices in WHERE clauses
 # based on recent changes to the optimizer.
 #
-# $Id: where2.test,v 1.8 2006/01/17 09:35:03 danielk1977 Exp $
+# $Id: where2.test,v 1.9 2006/05/11 13:26:26 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -291,4 +291,164 @@ do_test where2-7.4 {
   }
 } {1 2 3 2 3 nosort}
 
+# Ticket #1807.  Using IN constrains on multiple columns of
+# a multi-column index.
+#
+ifcapable subquery {
+  do_test where2-8.1 {
+    execsql {
+      SELECT * FROM t1 WHERE x IN (20,21) AND y IN (1,2)
+    }
+  } {}
+  do_test where2-8.2 {
+    execsql {
+      SELECT * FROM t1 WHERE x IN (1,2) AND y IN (-5,-6)
+    }
+  } {}
+  execsql {CREATE TABLE tx AS SELECT * FROM t1}
+  do_test where2-8.3 {
+    execsql {
+      SELECT w FROM t1
+       WHERE x IN (SELECT x FROM tx WHERE rowid<0)
+         AND +y IN (SELECT y FROM tx WHERE rowid=1)
+    }
+  } {}
+  do_test where2-8.4 {
+    execsql {
+      SELECT w FROM t1
+       WHERE x IN (SELECT x FROM tx WHERE rowid=1)
+         AND y IN (SELECT y FROM tx WHERE rowid<0)
+    }
+  } {}
+  #set sqlite_where_trace 1
+  do_test where2-8.5 {
+    execsql {
+      CREATE INDEX tx_xyz ON tx(x, y, z, w);
+      SELECT w FROM tx
+       WHERE x IN (SELECT x FROM t1 WHERE w BETWEEN 10 AND 20)
+         AND y IN (SELECT y FROM t1 WHERE w BETWEEN 10 AND 20)
+         AND z IN (SELECT z FROM t1 WHERE w BETWEEN 12 AND 14)
+    }
+  } {12 13 14}
+  do_test where2-8.6 {
+    execsql {
+      SELECT w FROM tx
+       WHERE x IN (SELECT x FROM t1 WHERE w BETWEEN 10 AND 20)
+         AND y IN (SELECT y FROM t1 WHERE w BETWEEN 12 AND 14)
+         AND z IN (SELECT z FROM t1 WHERE w BETWEEN 10 AND 20)
+    }
+  } {12 13 14}
+  do_test where2-8.7 {
+    execsql {
+      SELECT w FROM tx
+       WHERE x IN (SELECT x FROM t1 WHERE w BETWEEN 12 AND 14)
+         AND y IN (SELECT y FROM t1 WHERE w BETWEEN 10 AND 20)
+         AND z IN (SELECT z FROM t1 WHERE w BETWEEN 10 AND 20)
+    }
+  } {10 11 12 13 14 15}
+  do_test where2-8.8 {
+    execsql {
+      SELECT w FROM tx
+       WHERE x IN (SELECT x FROM t1 WHERE w BETWEEN 10 AND 20)
+         AND y IN (SELECT y FROM t1 WHERE w BETWEEN 10 AND 20)
+         AND z IN (SELECT z FROM t1 WHERE w BETWEEN 10 AND 20)
+    }
+  } {10 11 12 13 14 15 16 17 18 19 20}
+  do_test where2-8.9 {
+    execsql {
+      SELECT w FROM tx
+       WHERE x IN (SELECT x FROM t1 WHERE w BETWEEN 10 AND 20)
+         AND y IN (SELECT y FROM t1 WHERE w BETWEEN 10 AND 20)
+         AND z IN (SELECT z FROM t1 WHERE w BETWEEN 2 AND 4)
+    }
+  } {}
+  do_test where2-8.10 {
+    execsql {
+      SELECT w FROM tx
+       WHERE x IN (SELECT x FROM t1 WHERE w BETWEEN 10 AND 20)
+         AND y IN (SELECT y FROM t1 WHERE w BETWEEN 2 AND 4)
+         AND z IN (SELECT z FROM t1 WHERE w BETWEEN 10 AND 20)
+    }
+  } {}
+  do_test where2-8.11 {
+    execsql {
+      SELECT w FROM tx
+       WHERE x IN (SELECT x FROM t1 WHERE w BETWEEN 2 AND 4)
+         AND y IN (SELECT y FROM t1 WHERE w BETWEEN 10 AND 20)
+         AND z IN (SELECT z FROM t1 WHERE w BETWEEN 10 AND 20)
+    }
+  } {}
+  do_test where2-8.12 {
+    execsql {
+      SELECT w FROM tx
+       WHERE x IN (SELECT x FROM t1 WHERE w BETWEEN 10 AND 20)
+         AND y IN (SELECT y FROM t1 WHERE w BETWEEN 10 AND 20)
+         AND z IN (SELECT z FROM t1 WHERE w BETWEEN -4 AND -2)
+    }
+  } {}
+  do_test where2-8.13 {
+    execsql {
+      SELECT w FROM tx
+       WHERE x IN (SELECT x FROM t1 WHERE w BETWEEN 10 AND 20)
+         AND y IN (SELECT y FROM t1 WHERE w BETWEEN -4 AND -2)
+         AND z IN (SELECT z FROM t1 WHERE w BETWEEN 10 AND 20)
+    }
+  } {}
+  do_test where2-8.14 {
+    execsql {
+      SELECT w FROM tx
+       WHERE x IN (SELECT x FROM t1 WHERE w BETWEEN -4 AND -2)
+         AND y IN (SELECT y FROM t1 WHERE w BETWEEN 10 AND 20)
+         AND z IN (SELECT z FROM t1 WHERE w BETWEEN 10 AND 20)
+    }
+  } {}
+  do_test where2-8.15 {
+    execsql {
+      SELECT w FROM tx
+       WHERE x IN (SELECT x FROM t1 WHERE w BETWEEN 10 AND 20)
+         AND y IN (SELECT y FROM t1 WHERE w BETWEEN 10 AND 20)
+         AND z IN (SELECT z FROM t1 WHERE w BETWEEN 200 AND 300)
+    }
+  } {}
+  do_test where2-8.16 {
+    execsql {
+      SELECT w FROM tx
+       WHERE x IN (SELECT x FROM t1 WHERE w BETWEEN 10 AND 20)
+         AND y IN (SELECT y FROM t1 WHERE w BETWEEN 200 AND 300)
+         AND z IN (SELECT z FROM t1 WHERE w BETWEEN 10 AND 20)
+    }
+  } {}
+  do_test where2-8.17 {
+    execsql {
+      SELECT w FROM tx
+       WHERE x IN (SELECT x FROM t1 WHERE w BETWEEN 200 AND 300)
+         AND y IN (SELECT y FROM t1 WHERE w BETWEEN 10 AND 20)
+         AND z IN (SELECT z FROM t1 WHERE w BETWEEN 10 AND 20)
+    }
+  } {}
+  do_test where2-8.18 {
+    execsql {
+      SELECT w FROM tx
+       WHERE x IN (SELECT x FROM t1 WHERE +w BETWEEN 10 AND 20)
+         AND y IN (SELECT y FROM t1 WHERE +w BETWEEN 10 AND 20)
+         AND z IN (SELECT z FROM t1 WHERE +w BETWEEN 200 AND 300)
+    }
+  } {}
+  do_test where2-8.19 {
+    execsql {
+      SELECT w FROM tx
+       WHERE x IN (SELECT x FROM t1 WHERE +w BETWEEN 10 AND 20)
+         AND y IN (SELECT y FROM t1 WHERE +w BETWEEN 200 AND 300)
+         AND z IN (SELECT z FROM t1 WHERE +w BETWEEN 10 AND 20)
+    }
+  } {}
+  do_test where2-8.20 {
+    execsql {
+      SELECT w FROM tx
+       WHERE x IN (SELECT x FROM t1 WHERE +w BETWEEN 200 AND 300)
+         AND y IN (SELECT y FROM t1 WHERE +w BETWEEN 10 AND 20)
+         AND z IN (SELECT z FROM t1 WHERE +w BETWEEN 10 AND 20)
+    }
+  } {}
+}  
 finish_test

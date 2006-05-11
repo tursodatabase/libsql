@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.207 2006/04/21 09:38:37 drh Exp $
+** $Id: where.c,v 1.208 2006/05/11 13:26:26 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1034,7 +1034,7 @@ static double bestIndex(
         Expr *pExpr = pTerm->pExpr;
         flags |= WHERE_COLUMN_IN;
         if( pExpr->pSelect!=0 ){
-          inMultiplier *= 100;
+          inMultiplier *= 25;
         }else if( pExpr->pList!=0 ){
           inMultiplier *= pExpr->pList->nExpr + 1;
         }
@@ -1224,17 +1224,16 @@ static void codeEqualityTerm(
 
     sqlite3CodeSubselect(pParse, pX);
     iTab = pX->iTable;
-    sqlite3VdbeAddOp(v, OP_Rewind, iTab, brk);
+    sqlite3VdbeAddOp(v, OP_Rewind, iTab, 0);
     VdbeComment((v, "# %.*s", pX->span.n, pX->span.z));
     pLevel->nIn++;
     sqliteReallocOrFree((void**)&pLevel->aInLoop,
-                                 sizeof(pLevel->aInLoop[0])*3*pLevel->nIn);
+                                 sizeof(pLevel->aInLoop[0])*2*pLevel->nIn);
     aIn = pLevel->aInLoop;
     if( aIn ){
-      aIn += pLevel->nIn*3 - 3;
-      aIn[0] = OP_Next;
-      aIn[1] = iTab;
-      aIn[2] = sqlite3VdbeAddOp(v, OP_Column, iTab, 0);
+      aIn += pLevel->nIn*2 - 2;
+      aIn[0] = iTab;
+      aIn[1] = sqlite3VdbeAddOp(v, OP_Column, iTab, 0);
     }else{
       pLevel->nIn = 0;
     }
@@ -2059,8 +2058,9 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     if( pLevel->nIn ){
       int *a;
       int j;
-      for(j=pLevel->nIn, a=&pLevel->aInLoop[j*3-3]; j>0; j--, a-=3){
-        sqlite3VdbeAddOp(v, a[0], a[1], a[2]);
+      for(j=pLevel->nIn, a=&pLevel->aInLoop[j*2-2]; j>0; j--, a-=2){
+        sqlite3VdbeAddOp(v, OP_Next, a[0], a[1]);
+        sqlite3VdbeJumpHere(v, a[1]-1);
       }
       sqliteFree(pLevel->aInLoop);
     }
