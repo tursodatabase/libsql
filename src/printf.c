@@ -333,6 +333,8 @@ static int vxprintf(
         infop = &fmtinfo[idx];
         if( useExtended || (infop->flags & FLAG_INTERN)==0 ){
           xtype = infop->type;
+        }else{
+          return -1;
         }
         break;
       }
