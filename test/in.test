@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the IN and BETWEEN operator.
 #
-# $Id: in.test,v 1.16 2006/05/23 23:22:29 drh Exp $
+# $Id: in.test,v 1.17 2006/05/23 23:25:10 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -344,6 +344,23 @@ do_test in-11.3 {
   # No coercion should occur here because of the unary + before b.
   execsql {
     SELECT * FROM t6 WHERE +b IN ('2');
+  }
+} {}
+do_test in-11.4 {
+  # No coercion because column a as affinity NONE
+  execsql {
+    SELECT * FROM t6 WHERE a IN ('2');
+  }
+} {}
+do_test in-11.5 {
+  execsql {
+    SELECT * FROM t6 WHERE a IN (2);
+  }
+} {2 3}
+do_test in-11.6 {
+  # No coercion because column a as affinity NONE
+  execsql {
+    SELECT * FROM t6 WHERE +a IN ('2');
   }
 } {}
 
