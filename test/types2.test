@@ -12,7 +12,7 @@
 # of this file is testing the interaction of manifest types, type affinity
 # and comparison expressions.
 #
-# $Id: types2.test,v 1.5 2005/01/21 03:12:16 danielk1977 Exp $
+# $Id: types2.test,v 1.6 2006/05/23 23:22:29 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -199,10 +199,10 @@ test_bool types2-4.28 {o1='500'} {'500.0' > o1} 1
 ifcapable subquery {
   # types2-5.* - The 'IN (x, y....)' operator with no index.
   # 
-  # Compare literals against literals (always a numeric comparison).
+  # Compare literals against literals (no affinity applied)
   test_bool types2-5.1 {} {(NULL IN ('10.0', 20)) ISNULL} 1
-  test_bool types2-5.2 {} {10 IN ('10.0', 20)} 1
-  test_bool types2-5.3 {} {'10' IN ('10.0', 20)} 1
+  test_bool types2-5.2 {} {10 IN ('10.0', 20)} 0
+  test_bool types2-5.3 {} {'10' IN ('10.0', 20)} 0
   test_bool types2-5.4 {} {10 IN (10.0, 20)} 1
   test_bool types2-5.5 {} {'10.0' IN (10, 20)} 1
   

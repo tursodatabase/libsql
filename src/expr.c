@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.257 2006/03/17 13:56:34 drh Exp $
+** $Id: expr.c,v 1.258 2006/05/23 23:22:29 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1367,7 +1367,7 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
         struct ExprList_item *pItem;
 
         if( !affinity ){
-          affinity = SQLITE_AFF_NUMERIC;
+          affinity = SQLITE_AFF_NONE;
         }
         keyInfo.aColl[0] = pExpr->pLeft->pColl;
 

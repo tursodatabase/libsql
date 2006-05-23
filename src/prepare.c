@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.33 2006/03/13 15:06:07 drh Exp $
+** $Id: prepare.c,v 1.34 2006/05/23 23:22:29 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -211,7 +211,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   **    meta[1]   File format of schema layer.
   **    meta[2]   Size of the page cache.
   **    meta[3]   Use freelist if 0.  Autovacuum if greater than zero.
-  **    meta[4]   Db text encoding. 1:UTF-8 3:UTF-16 LE 4:UTF-16 BE
+  **    meta[4]   Db text encoding. 1:UTF-8 2:UTF-16LE 3:UTF-16BE
   **    meta[5]   The user cookie. Used by the application.
   **    meta[6]   
   **    meta[7]

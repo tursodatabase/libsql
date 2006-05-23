@@ -1,4 +1,4 @@
-set rcsid {$Id: datatype3.tcl,v 1.13 2006/04/01 14:38:41 drh Exp $}
+set rcsid {$Id: datatype3.tcl,v 1.14 2006/05/23 23:22:29 drh Exp $}
 source common.tcl
 header {Datatypes In SQLite Version 3}
 puts {
@@ -87,6 +87,7 @@ following type affinities:</P>
 	<LI>TEXT</LI>
 	<LI>NUMERIC</LI>
 	<LI>INTEGER</LI>
+        <LI>REAL</li>
 	<LI>NONE</LI>
 </UL>
 
@@ -108,6 +109,12 @@ floating point component (or text value that converts to such) is
 inserted it is converted to an integer and stored using the INTEGER
 storage class.</P>
 
+<P>A column with REAL affinity behaves like a column with NUMERIC
+affinity except that it forces integer values into floating point
+representation.  (As an optimization, integer values are stored on
+disk as integers in order to take up less space and are only converted
+to floating point as the value is read out of the table.)</P>
+
 <P>A column with affinity NONE does not prefer one storage class over
 another.  It makes no attempt to coerce data before
 it is inserted.</P>
@@ -128,6 +135,10 @@ of the column, according to the following rules:</P>
 	<LI><P>If the datatype for a column
          contains the string &quot;BLOB&quot; or if
         no datatype is specified then the column has affinity NONE.</P>
+
+        <LI><P>If the datatype for a column
+        contains any of the strings &quot;REAL&quot;, &quot;FLOA&quot;,
+        or &quot;DOUB&quot; then the column has REAL affinity</P>
 
 	<LI><P>Otherwise, the affinity is NUMERIC.</P>
 </OL>
@@ -196,7 +207,7 @@ SQL scalar expression or literal other than a column value.</P>
 	affinity is applied to any values with storage class TEXT extracted
 	from the non-NUMERIC column.</P>
 
-	<LI><P>When the results of two expressions are compared, the no
+	<LI><P>When the results of two expressions are compared, no
         conversions occur.  The results are compared as is.  If a string
         is compared to a number, the number will always be less than the
         string.</P>
