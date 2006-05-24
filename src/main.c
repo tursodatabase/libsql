@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.339 2006/03/16 16:19:56 drh Exp $
+** $Id: main.c,v 1.340 2006/05/24 12:43:27 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -851,9 +851,6 @@ static int openDatabase(
   }
   db->aDb[0].pSchema = sqlite3SchemaGet(db->aDb[0].pBt);
   db->aDb[1].pSchema = sqlite3SchemaGet(0);
-  if( db->aDb[0].pSchema ){
-    ENC(db) = SQLITE_UTF8;
-  }
 
 
   /* The default safety_level for the main database is 'full'; for the temp

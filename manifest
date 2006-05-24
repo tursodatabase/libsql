@@ -1,5 +1,5 @@
-C Additional\stests\sfor\sticket\s#1821.\s(CVS\s3189)
-D 2006-05-23T23:25:10
+C When\sopening\sa\snew\sconnection\son\sa\sshared\scache,\sbe\scareful\snot\sto\noverwrite\sthe\sencoding\sflag\son\sthe\sshared\scache.\s\sTicket\s#1824.\s(CVS\s3190)
+D 2006-05-24T12:43:27
 F Makefile.in 5d8dff443383918b700e495de42ec65bc1c8865b
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -37,7 +37,7 @@ F src/auth.c 9ae84d2d94eb96195e04515715e08e85963e96c2
 F src/btree.c ed343b3dbcbc7da9ac481ef2b98c4239fe6d9629
 F src/btree.h 40055cfc09defd1146bc5b922399c035f969e56d
 F src/build.c eefefdc88cb342bc0f7cb41ccdf3930739ab50e9
-F src/callback.c d8c5ab1cd6f3b7182b2ee63bf53f1b69c0f74306
+F src/callback.c fd9bb39f7ff6b52bad8365617abc61c720640429
 F src/complete.c 7d1a44be8f37de125fcafd3d3a018690b3799675
 F src/date.c cd2bd5d1ebc6fa12d6312f69789ae5b0a2766f2e
 F src/delete.c 2dea1a83e6ef534346e74fd03114d3a7b16f08fc
@@ -48,7 +48,7 @@ F src/hash.c 449f3d6620193aa557f5d86cbc5cc6b87702b185
 F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
 F src/insert.c 1ae4b8ff5549497808e1b57b9243abcb599fd02f
 F src/legacy.c fa15d505dd4e45044177ee4d1c6aeaf8c836d390
-F src/main.c 5cdd81aaf159836b5ca277192da4f7461fd15078
+F src/main.c 928d93cfd5d72be3a619ee908182c9432151a99e
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/os.c 59f05de8c5777c34876607114a2fbe55ae578235
 F src/os.h 93035a0e3b9dd05cdd0aaef32ea28ca28e02fe78
@@ -232,6 +232,7 @@ F test/select7.test 1bf795b948c133a15a2a5e99d3270e652ec58ce6
 F test/server1.test e328b8e641ba8fe9273132cfef497383185dc1f5
 F test/shared.test 0ed247941236788c255b3b29b5a82d5ca71b6432
 F test/shared2.test 8b48f8d33494413ef4cf250110d89403e2bf6b23
+F test/shared3.test 01e3e124dbb3859788aabc7cfb82f7ea04421749
 F test/shared_err.test 299a9180a6376b2089e8e0d469f383fe91bfa4ff
 F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
 F test/subquery.test ae324ee928c5fb463a3ce08a8860d6e7f1ca5797
@@ -355,7 +356,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 6e5a49762166a942e1b2c3beae8a30c07187eb10
-R 877479d6ed6f9aea415d473667144301
+P b93e3fb02aeff7fe6cae56c3a45c43ffdb2f030b
+R 6f1ef5bdf0e46314fcf96d09a1927ff3
 U drh
-Z 8e45d4e74c04ae5de7b6a03b72d1d07f
+Z 3023c12e4514d7a00d29c00958bc4963
