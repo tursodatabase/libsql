@@ -1,5 +1,5 @@
-C Handle\sNULL\sdatabase\snames\sin\sATTACH\sand\sDETACH\sas\sif\sthey\swere\sempty\nstrings.\s\sTicket\s#1825.\s(CVS\s3191)
-D 2006-05-25T11:52:38
+C Syntax\serrors\soverride\serrors\sfrom\sthe\scode\sgenerator,\snot\sthe\sother\nway\saround.\s(CVS\s3192)
+D 2006-05-25T12:17:31
 F Makefile.in 5d8dff443383918b700e495de42ec65bc1c8865b
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -61,7 +61,7 @@ F src/os_win.c 8ced9ac82670bbf77492961a2f7ff80a87f1404f
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c ddd05666bb89808a516baef2c186d6a75887ae90
 F src/pager.h 43f32f3847421f7502cfbb66f4eb2302b8033818
-F src/parse.y ee1887ce0e6eea15cc728913ad3462898f88e9b0
+F src/parse.y 50ab45ec8e01a90cb5d75f53ce4bf95f0ca10481
 F src/pragma.c 27d5e395c5d950931c7ac4fe610e7c2993e2fa55
 F src/prepare.c bbf12d3147116b284b157232efaef3bbe5df08fc
 F src/printf.c 7029e5f7344a478394a02c52837ff296ee1ab240
@@ -70,7 +70,7 @@ F src/select.c 8daba07a04a6d41f5267ea8353324cbe5a210e14
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 1862fab6f7cfe80749b21eb7d6d3195585461a83
 F src/sqlite.h.in e783b895fe2fcd68f6c04408a4efaef58cd1cdda
-F src/sqliteInt.h 9052a26e0467be0ac0c554fb1f8de671eda2ea0d
+F src/sqliteInt.h 98b3d7e9c4c48fd128d03d5788ca8fae0994280a
 F src/table.c f64ec4fbfe333f8df925bc6ba494f55e05b0e75e
 F src/tclsqlite.c 5ae9f08f7af7fe80d38fbccc4f5359f272643af1
 F src/test1.c becd9202b733debc607b5aec43002769730e1f71
@@ -107,7 +107,7 @@ F test/altermalloc.test 6e1f404ec021eb2ba6582e3c77b0a35cf206b7af
 F test/analyze.test 2f55535aa335785db1a2f97d3f3831c16c09f8b0
 F test/async.test 464dc7c7ccb144e8c82ecca429e6d7cd1c96bd6e
 F test/async2.test 81e4a1fd010c903eb3b763fdb4c4cad7a99afb14
-F test/attach.test 036315207c477211470168bf121b1c493f781515
+F test/attach.test c616a88eab6b6fd99b7b2fcf449420f14628bc0b
 F test/attach2.test 0e6a7c54343c85dd877a1e86073a05176043ed40
 F test/attach3.test fc0302e8fe9c172fb49e000227c19b5c428a9429
 F test/attachmalloc.test cdb26c42850f04698377ccec05f5fa89d987837c
@@ -356,7 +356,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P c8e5ceedee087098c04e3b6b8b82710de0563e77
-R 92b272fc10eef000585a2fbf978f3171
+P 79a818bb05bc95c4c83375a679955dd18659b2b8
+R 6afc2153b06fc7cd8865c6e7fb5353fb
 U drh
-Z a97a523d146f3a82e0903b8c989a26c5
+Z eed30d1789873390dba60e245702f077

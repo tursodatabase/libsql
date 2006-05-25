@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach.test,v 1.42 2006/01/16 16:24:25 danielk1977 Exp $
+# $Id: attach.test,v 1.43 2006/05/25 12:17:32 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -618,7 +618,7 @@ do_test attach-5.1 {
   sqlite3 db2 test2.db
   catchsql {
     ATTACH DATABASE 'test.db' AS orig;
-    CREATE TRIGGER r1 AFTER INSERT ON orig.t1 BEGIN;
+    CREATE TRIGGER r1 AFTER INSERT ON orig.t1 BEGIN
       SELECT 'no-op';
     END;
   } db2
