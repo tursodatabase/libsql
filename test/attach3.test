@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and schema changes to attached databases.
 #
-# $Id: attach3.test,v 1.15 2005/03/29 03:11:00 danielk1977 Exp $
+# $Id: attach3.test,v 1.16 2006/05/25 11:52:38 drh Exp $
 #
 
 
@@ -241,5 +241,96 @@ do_test attach3-11.2 {
     DETACH DATABASE notadb;
   }
 } {0 {}}
+
+# Return a list of attached databases
+#
+proc db_list {} {
+  set x [execsql {
+    PRAGMA database_list;
+  }]
+  set y {}
+  foreach {n id file} $x {lappend y $id}
+  return $y
+}
+
+# Ticket #1825
+#
+do_test attach3-12.1 {
+  db_list
+} {main temp aux}
+do_test attach3-12.2 {
+  execsql {
+    ATTACH DATABASE ? AS ?
+  }
+  db_list
+} {main temp aux {}}
+do_test attach3-12.3 {
+  execsql {
+    DETACH aux
+  }
+  db_list
+} {main temp {}}
+do_test attach3-12.4 {
+  execsql {
+    DETACH ?
+  }
+  db_list
+} {main temp}
+do_test attach3-12.5 {
+  execsql {
+    ATTACH DATABASE '' AS ''
+  }
+  db_list
+} {main temp {}}
+do_test attach3-12.6 {
+  execsql {
+    DETACH ''
+  }
+  db_list
+} {main temp}
+do_test attach3-12.7 {
+  execsql {
+    ATTACH DATABASE '' AS ?
+  }
+  db_list
+} {main temp {}}
+do_test attach3-12.8 {
+  execsql {
+    DETACH ''
+  }
+  db_list
+} {main temp}
+do_test attach3-12.9 {
+  execsql {
+    ATTACH DATABASE '' AS NULL
+  }
+  db_list
+} {main temp {}}
+do_test attach3-12.10 {
+  execsql {
+    DETACH ?
+  }
+  db_list
+} {main temp}
+do_test attach3-12.11 {
+  catchsql {
+    DETACH NULL
+  }
+} {1 {no such database: }}
+do_test attach3-12.12 {
+  catchsql {
+    ATTACH null AS null;
+    ATTACH '' AS '';
+  }
+} {1 {database  is already in use}}
+do_test attach3-12.13 {
+  db_list
+} {main temp {}}
+do_test attach3-12.14 {
+  execsql {
+    DETACH '';
+  }
+  db_list
+} {main temp}
 
 finish_test
