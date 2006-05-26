@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the 'progress callback'.
 #
-# $Id: progress.test,v 1.5 2005/01/20 02:17:02 danielk1977 Exp $
+# $Id: progress.test,v 1.6 2006/05/26 19:57:20 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -128,5 +128,24 @@ do_test progress-1.4 {
 } 0
 
 db progress 0 ""
+
+# Make sure other queries can be run from within the progress
+# handler.  Ticket #1827
+#
+do_test progress-1.5 {
+  set rx 0
+  proc set_rx {args} {
+    db progress 0 {}
+    set ::rx [db eval {SELECT count(*) FROM t1}]
+    return [expr 0]
+  }
+  db progress 10 set_rx
+  db eval {
+    SELECT sum(a) FROM t1
+  }
+} {66}
+do_test progress-1.6 {
+  set ::rx
+} {11}
 
 finish_test

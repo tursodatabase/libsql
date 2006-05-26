@@ -1,5 +1,5 @@
-C Syntax\serrors\soverride\serrors\sfrom\sthe\scode\sgenerator,\snot\sthe\sother\nway\saround.\s(CVS\s3192)
-D 2006-05-25T12:17:31
+C Allow\sSQL\sstatements\sto\sbe\sexecuted\sfrom\swithin\sa\sprogress\scallback.\nBe\swarned,\showever,\sthat\sthe\sprogress\scallback\smight\sbe\scalled\nrecursively\sin\sthis\scase.\s\sIt\sis\sup\sto\sthe\sprogram\sto\sdisable\sthe\nprogress\scallback\sto\sprevent\srecursive\sinvocations.\nTicket\s#1827.\s(CVS\s3193)
+D 2006-05-26T19:57:20
 F Makefile.in 5d8dff443383918b700e495de42ec65bc1c8865b
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -89,7 +89,7 @@ F src/update.c 34add66fcd3301b33b6e4c4c813f4e408f7ee4a0
 F src/utf.c ab81ac59084ff1c07d421eb1a0a84ec809603b44
 F src/util.c ca6ee72772c0f5dc04d2e0ab1973fd3b6a9bf79d
 F src/vacuum.c 5b37d0f436f8e1ffacd17934e44720b38d2247f9
-F src/vdbe.c a56ef5de6d91aedf6f1f0db03c65aa01ecbe11ba
+F src/vdbe.c b28d2da3235e42beebf2fc50450e17511dc855cf
 F src/vdbe.h 44ff995a8b4e87016794095273e9e7300f0001bb
 F src/vdbeInt.h 85cd5f81d38edb1b8f4786f407c77a7a3ba636fb
 F src/vdbeapi.c 7dc662e7c905ce666bb506dced932e0307115cbf
@@ -214,7 +214,7 @@ F test/pager3.test 2323bf27fd5bd887b580247e5bce500ceee994b4
 F test/pagesize.test 05c74ea49f790734ec1e9ab765d9bf1cce79b8f2
 F test/pragma.test 2ca8f71989dc4b9ad68210d1943040321c663a19
 F test/printf.test cdd8e20dd901382a385afcbaa777b9377815c2ad
-F test/progress.test 16496001da445e6534afb94562c286708316d82f x
+F test/progress.test 8b22b4974b0a95272566385f8cb8c341c7130df8 x
 F test/quick.test e220b3b6e62fe4fb4e2a703ab2ba730fedfe0424
 F test/quote.test 5891f2338980916cf7415484b4ce785294044adb
 F test/reindex.test 38b138abe36bf9a08c791ed44d9f76cd6b97b78b
@@ -356,7 +356,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 79a818bb05bc95c4c83375a679955dd18659b2b8
-R 6afc2153b06fc7cd8865c6e7fb5353fb
+P 5031ffc665782e7b300c498fb8be168443505add
+R 2cfd5505821ed35ab79a1cd8d40513fb
 U drh
-Z eed30d1789873390dba60e245702f077
+Z efb45abaf10add9abf49d6724472d8b2
