@@ -1,5 +1,5 @@
-C Allow\sSQL\sstatements\sto\sbe\sexecuted\sfrom\swithin\sa\sprogress\scallback.\nBe\swarned,\showever,\sthat\sthe\sprogress\scallback\smight\sbe\scalled\nrecursively\sin\sthis\scase.\s\sIt\sis\sup\sto\sthe\sprogram\sto\sdisable\sthe\nprogress\scallback\sto\sprevent\srecursive\sinvocations.\nTicket\s#1827.\s(CVS\s3193)
-D 2006-05-26T19:57:20
+C Clarify\sthe\soperation\sof\ssqlite3_last_insert_rowid()\sin\sthe\sdocumentation.\s(CVS\s3194)
+D 2006-05-27T11:15:48
 F Makefile.in 5d8dff443383918b700e495de42ec65bc1c8865b
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -312,7 +312,7 @@ F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
 F www/autoinc.tcl b357f5ba954b046ee35392ce0f884a2fcfcdea06
 F www/c_interface.tcl b51b08591554c16a0c3ef718364a508ac25abc7e
 F www/capi3.tcl 7a7cc225fe02eb7ab861a6019b08baa0014409e1
-F www/capi3ref.tcl 38704c15900a9c16641e79c1c1fe9a3c2c479ada
+F www/capi3ref.tcl ab76e918c52f7d4027accc6f84a8845ee5c43b16
 F www/changes.tcl 8965f1493adc0f3a97e1e46a29f2cf54064f4ae1
 F www/common.tcl 14d121c28532ad20c3e349caa4db708b0b822083
 F www/compile.tcl 276546d7eb445add5a867193bbd80f6919a6b084
@@ -356,7 +356,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 5031ffc665782e7b300c498fb8be168443505add
-R 2cfd5505821ed35ab79a1cd8d40513fb
+P ffc4730c05ea64b8c32f64b323db9b96b26bcb88
+R 76f2d03929d2e9d7dccede2cc8b6ecb6
 U drh
-Z efb45abaf10add9abf49d6724472d8b2
+Z 7ac8106f6b234944118b1262127e78ce

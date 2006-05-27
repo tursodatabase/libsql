@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3ref.tcl,v 1.38 2006/04/05 01:08:35 drh Exp $}
+set rcsid {$Id: capi3ref.tcl,v 1.39 2006/05/27 11:15:48 drh Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -895,13 +895,23 @@ api {sqlite3_interrupt} {
 api {} {
 long long int sqlite3_last_insert_rowid(sqlite3*);
 } {
- Each entry in an SQLite table has a unique integer key.  (The key is
- the value of the INTEGER PRIMARY KEY column if there is such a column,
- otherwise the key is generated at random.  The unique key is always
- available as the ROWID, OID, or _ROWID_ column.)  This routine
- returns the integer key of the most recent insert in the database.
+ Each entry in an SQLite table has a unique integer key called the "rowid".
+ The rowid is always available as an undeclared column
+ named ROWID, OID, or _ROWID_.
+ If the table has a column of type INTEGER PRIMARY KEY then that column
+ is another an alias for the rowid.
 
- This function is similar to the mysql_insert_id() function from MySQL.
+ This routine
+ returns the rowid of the most recent INSERT into the database
+ from the database connection given in the first argument.  If
+ no inserts have ever occurred on this database connection, zero
+ is returned.
+
+ If an INSERT occurs within a trigger, then the rowid of the
+ inserted row is returned by this routine as long as the trigger
+ is running.  But once the trigger terminates, the value returned
+ by this routine reverts to the last value inserted before the
+ trigger fired.
 } {}
 
 api {} {
