@@ -1,5 +1,5 @@
-C Clarify\sthe\soperation\sof\ssqlite3_last_insert_rowid()\sin\sthe\sdocumentation.\s(CVS\s3194)
-D 2006-05-27T11:15:48
+C Fix\stypo\sin\slang_analyze.html.\s(CVS\s3195)
+D 2006-05-31T11:12:01
 F Makefile.in 5d8dff443383918b700e495de42ec65bc1c8865b
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -334,7 +334,7 @@ F www/fullscanb.gif f7c94cb227f060511f8909e10f570157263e9a25
 F www/index-ex1-x-b.gif f9b1d85c3fa2435cf38b15970c7e3aa1edae23a3
 F www/index.tcl 7c4a297a4b6ee178f050644a4b0bae1ca864d788
 F www/indirect1b1.gif adfca361d2df59e34f9c5cac52a670c2bfc303a1
-F www/lang.tcl 9fe2b8bb0a3158f4b629e184f5db9f895ecbb4cd
+F www/lang.tcl 46d34df01cbb3fb280aa9389a144a33f90e0c495
 F www/lockingv3.tcl f59b19d6c8920a931f096699d6faaf61c05db55f
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
 F www/nulls.tcl ec35193f92485b87b90a994a01d0171b58823fcf
@@ -356,7 +356,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P ffc4730c05ea64b8c32f64b323db9b96b26bcb88
-R 76f2d03929d2e9d7dccede2cc8b6ecb6
+P 9e0b83b81f13277b9da877bdd96c544ec66533f0
+R 266aa47eb3b01cf89f64731c0b52eebe
 U drh
-Z 7ac8106f6b234944118b1262127e78ce
+Z fc1f4cfb1332111488a800cde342c7af

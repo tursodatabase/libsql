@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the lang-*.html files.
 #
-set rcsid {$Id: lang.tcl,v 1.111 2006/03/15 16:26:10 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.112 2006/05/31 11:12:01 drh Exp $}
 source common.tcl
 
 if {[llength $argv]>0} {
@@ -214,7 +214,7 @@ table named <b>sqlite_stat1</b>.  Future enhancements may create
 additional tables with the same name pattern except with the "1"
 changed to a different digit.  The <b>sqlite_stat1</b> table cannot
 be <a href="#droptable">DROP</a>ped,
-but it all the content can be <a href="#delete">DELETE</a>d which has the
+but all the content can be <a href="#delete">DELETE</a>d which has the
 same effect.</p>
 }
 
