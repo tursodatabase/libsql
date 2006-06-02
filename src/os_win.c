@@ -550,7 +550,7 @@ int sqlite3WinOpenReadWrite(
     if( h==INVALID_HANDLE_VALUE ){
       h = CreateFileW(zWide,
          GENERIC_READ,
-         FILE_SHARE_READ,
+         FILE_SHARE_READ | FILE_SHARE_WRITE,
          NULL,
          OPEN_ALWAYS,
          FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS,
@@ -587,7 +587,7 @@ int sqlite3WinOpenReadWrite(
     if( h==INVALID_HANDLE_VALUE ){
       h = CreateFileA(zFilename,
          GENERIC_READ,
-         FILE_SHARE_READ,
+         FILE_SHARE_READ | FILE_SHARE_WRITE,
          NULL,
          OPEN_ALWAYS,
          FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS,
