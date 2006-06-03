@@ -58,7 +58,7 @@ TCCX = $(TCC) $(OPTS) $(THREADSAFE) $(USLEEP) -I. -I$(TOP)/src
 LIBOBJ+= alter.o analyze.o attach.o auth.o btree.o build.o \
          callback.o complete.o date.o delete.o \
          expr.o func.o hash.o insert.o \
-         main.o opcodes.o os.o os_unix.o os_win.o \
+         main.o opcodes.o os.o os_os2.o os_unix.o os_win.o \
          pager.o parse.o pragma.o prepare.o printf.o random.o \
          select.o table.o tclsqlite.o tokenize.o trigger.o \
          update.o util.o vacuum.o \
@@ -87,6 +87,7 @@ SRC = \
   $(TOP)/src/legacy.c \
   $(TOP)/src/main.c \
   $(TOP)/src/os.c \
+  $(TOP)/src/os_os2.c \
   $(TOP)/src/os_unix.c \
   $(TOP)/src/os_win.c \
   $(TOP)/src/pager.c \
@@ -124,6 +125,7 @@ TESTSRC = \
   $(TOP)/src/date.c \
   $(TOP)/src/func.c \
   $(TOP)/src/os.c \
+  $(TOP)/src/os_os2.c \
   $(TOP)/src/os_unix.c \
   $(TOP)/src/os_win.c \
   $(TOP)/src/pager.c \
@@ -269,6 +271,9 @@ opcodes.h:	parse.h $(TOP)/src/vdbe.c $(TOP)/mkopcodeh.awk
 
 os.o:	$(TOP)/src/os.c $(HDR)
 	$(TCCX) -c $(TOP)/src/os.c
+
+os_os2.o:	$(TOP)/src/os_os2.c $(HDR)
+	$(TCCX) -c $(TOP)/src/os_os2.c
 
 os_unix.o:	$(TOP)/src/os_unix.c $(HDR)
 	$(TCCX) -c $(TOP)/src/os_unix.c

@@ -1,10 +1,10 @@
-C Do\snot\srecord\sblank\slines\sin\sthe\scommand-line\sediting\shistory\sof\sthe\sshell.\s(CVS\s3197)
-D 2006-06-03T17:37:26
-F Makefile.in 5d8dff443383918b700e495de42ec65bc1c8865b
+C Added\ssupport\sfor\sOS/2.\s\sTicket\s#1817\s(CVS\s3198)
+D 2006-06-03T18:02:16
+F Makefile.in 87b6d483513ab8a4e763775bc5b434d6b5c34963
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
 F VERSION 2bc3eace6a71bc4f2575679b944378b275e9412c
-F aclocal.m4 7daea4c35e88de30d5a3f6f7a2ab99720e803bbd
+F aclocal.m4 a8df0ae21d1ac797fa7d7eaa1703412bc61b973f
 F addopcodes.awk 701697fae48376375ec8532c3d04e910cfeef352
 F art/2005osaward.gif 0d1851b2a7c1c9d0ccce545f3e14bca42d7fd248
 F art/SQLite.eps 9b43cc99cfd2be687d386faea6862ea68d6a72b2
@@ -12,14 +12,14 @@ F art/SQLite.gif 1bbb94484963f1382e27e1c5e86dd0c1061eba2b
 F art/SQLiteLogo3.tiff b9e6bf022ae939bc986cddb8ab99583ca1b02cb3
 F config.guess 2103e94b15dc57112d7b9ee152c6fac5288895b4
 F config.sub 9bf686ec001ae7bc53f5b3563c90c62d4c6d48be
-F configure d454f3ef3a1cf42e91e97d06c27179d56a77c005 x
-F configure.ac f6c5246585d14bc1ee1773ae5b71ae6cafa7494a
+F configure 6be7b37dd811c43f59c119aa5a713f688a2184c4 x
+F configure.ac 83eaf11869cd893db6126c0ce77381a9cd264bad
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
-F main.mk 33144e8ccfa885a4b0c1c03e85131bd6c541f30c
+F main.mk e3dd76266d1b62f1835b238bb0565900ab99fe14
 F mkdll.sh 919df5efde876194e3102c6ebc60657d38949909
 F mkopcodec.awk bd46ad001c98dfbab07b1713cb8e692fa0e5415d
 F mkopcodeh.awk cde995d269aa06c94adbf6455bea0acedb913fa5
@@ -51,8 +51,10 @@ F src/legacy.c fa15d505dd4e45044177ee4d1c6aeaf8c836d390
 F src/main.c 928d93cfd5d72be3a619ee908182c9432151a99e
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/os.c 59f05de8c5777c34876607114a2fbe55ae578235
-F src/os.h 93035a0e3b9dd05cdd0aaef32ea28ca28e02fe78
+F src/os.h 46fad85c707ad8643622bab9d894a642940850aa
 F src/os_common.h 108cd719c96a2b714b64e02aeabbd40684274e6a
+F src/os_os2.c 123cb394c069bc8c6a305830ffa2bc5f72e5b83a
+F src/os_os2.h e5f17dd69333632bbc3112881ea407c37d245eb3
 F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
 F src/os_unix.c 17d91581a0ab478a06cb6f257b707a4c4a93e5a7
@@ -356,7 +358,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 4bf03c3bbc1303ed9b4059917e8d6a613b1510f3
-R b3aa39403a9b5a900b82638a005965c6
+P 0eabda82cd0d476a7e05ba4b027b819318aef9c3
+R 6acf85d509c19fb60080d44405f8852c
 U drh
-Z eb8ea770aee12d212e5ceb58cc64d4fe
+Z b6f82a7c0122f6042d20b908e87d0aa6

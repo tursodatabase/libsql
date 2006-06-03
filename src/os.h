@@ -27,12 +27,19 @@
 #   if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
 #     define OS_WIN 1
 #     define OS_UNIX 0
+#     define OS_OS2 0
+#   elif defined(_EMX_) || defined(_OS2) || defined(OS2) || defined(OS_OS2)
+#     define OS_WIN 0
+#     define OS_UNIX 0
+#     define OS_OS2 1
 #   else
 #     define OS_WIN 0
 #     define OS_UNIX 1
+#     define OS_OS2 0
 #  endif
 # else
 #  define OS_UNIX 0
+#  define OS_OS2 0
 # endif
 #else
 # ifndef OS_WIN
@@ -47,6 +54,14 @@
 #if OS_WIN
 # include <windows.h>
 # define SQLITE_TEMPNAME_SIZE (MAX_PATH+50)
+#elif OS_OS2
+# define INCL_DOSDATETIME
+# define INCL_DOSFILEMGR
+# define INCL_DOSERRORS
+# define INCL_DOSMISC
+# define INCL_DOSPROCESS
+# include <os2.h>
+# define SQLITE_TEMPNAME_SIZE (CCHMAXPATHCOMP)
 #else
 # define SQLITE_TEMPNAME_SIZE 200
 #endif
@@ -72,7 +87,7 @@
 #endif
 
 /*
-** Define the interfaces for Unix and for Windows.
+** Define the interfaces for Unix, Windows, and OS/2.
 */
 #if OS_UNIX
 #define sqlite3OsOpenReadWrite      sqlite3UnixOpenReadWrite
@@ -118,6 +133,29 @@
 #define sqlite3OsFree               sqlite3GenericFree
 #define sqlite3OsAllocationSize     sqlite3GenericAllocationSize
 #endif
+#if OS_OS2
+#define sqlite3OsOpenReadWrite      sqlite3Os2OpenReadWrite
+#define sqlite3OsOpenExclusive      sqlite3Os2OpenExclusive
+#define sqlite3OsOpenReadOnly       sqlite3Os2OpenReadOnly
+#define sqlite3OsDelete             sqlite3Os2Delete
+#define sqlite3OsFileExists         sqlite3Os2FileExists
+#define sqlite3OsFullPathname       sqlite3Os2FullPathname
+#define sqlite3OsIsDirWritable      sqlite3Os2IsDirWritable
+#define sqlite3OsSyncDirectory      sqlite3Os2SyncDirectory
+#define sqlite3OsTempFileName       sqlite3Os2TempFileName
+#define sqlite3OsRandomSeed         sqlite3Os2RandomSeed
+#define sqlite3OsSleep              sqlite3Os2Sleep
+#define sqlite3OsCurrentTime        sqlite3Os2CurrentTime
+#define sqlite3OsEnterMutex         sqlite3Os2EnterMutex
+#define sqlite3OsLeaveMutex         sqlite3Os2LeaveMutex
+#define sqlite3OsInMutex            sqlite3Os2InMutex
+#define sqlite3OsThreadSpecificData sqlite3Os2ThreadSpecificData
+#define sqlite3OsMalloc             sqlite3GenericMalloc
+#define sqlite3OsRealloc            sqlite3GenericRealloc
+#define sqlite3OsFree               sqlite3GenericFree
+#define sqlite3OsAllocationSize     sqlite3GenericAllocationSize
+#endif
+
 
 /*
 ** If using an alternative OS interface, then we must have an "os_other.h"
