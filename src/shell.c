@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.136 2006/05/10 14:39:14 drh Exp $
+** $Id: shell.c,v 1.137 2006/06/03 17:37:26 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -197,7 +197,7 @@ static char *one_input_line(const char *zPrior, FILE *in){
   }
   zResult = readline(zPrompt);
 #if defined(HAVE_READLINE) && HAVE_READLINE==1
-  if( zResult ) add_history(zResult);
+  if( zResult && *zResult ) add_history(zResult);
 #endif
   return zResult;
 }

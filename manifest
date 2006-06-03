@@ -1,5 +1,5 @@
-C The\swindows\sdriver\salways\sallows\sother\sprocesses\sto\swrite\sthe\sdatabase\sfile\neven\sif\sit\sonly\shas\sread\spermission\son\sthe\sfile.\s\sThis\sis\san\sexperimental\ncheckin\s-\swe\sstill\shave\snot\sdetermined\sthat\sthis\schange\sis\ssafe.\s\sTicket\s#1803.\s(CVS\s3196)
-D 2006-06-02T12:40:08
+C Do\snot\srecord\sblank\slines\sin\sthe\scommand-line\sediting\shistory\sof\sthe\sshell.\s(CVS\s3197)
+D 2006-06-03T17:37:26
 F Makefile.in 5d8dff443383918b700e495de42ec65bc1c8865b
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -68,7 +68,7 @@ F src/printf.c 7029e5f7344a478394a02c52837ff296ee1ab240
 F src/random.c d40f8d356cecbd351ccfab6eaedd7ec1b54f5261
 F src/select.c 8daba07a04a6d41f5267ea8353324cbe5a210e14
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
-F src/shell.c 1862fab6f7cfe80749b21eb7d6d3195585461a83
+F src/shell.c 894d780d439af6b51e9769b0280e937cd29a319c
 F src/sqlite.h.in e783b895fe2fcd68f6c04408a4efaef58cd1cdda
 F src/sqliteInt.h 98b3d7e9c4c48fd128d03d5788ca8fae0994280a
 F src/table.c f64ec4fbfe333f8df925bc6ba494f55e05b0e75e
@@ -356,7 +356,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P fba8ce8c383fa8e66bc2dd5a354f411ad2b83c6d
-R e8e28b68f68e385df9ce00b0c40a195e
+P 4bf03c3bbc1303ed9b4059917e8d6a613b1510f3
+R b3aa39403a9b5a900b82638a005965c6
 U drh
-Z 98e47813ae5d17f133d2a7209ac7086e
+Z eb8ea770aee12d212e5ceb58cc64d4fe
