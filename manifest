@@ -1,5 +1,5 @@
-C Added\ssupport\sfor\sOS/2.\s\sTicket\s#1817\s(CVS\s3198)
-D 2006-06-03T18:02:16
+C Remove\sunused\svariables\sfrom\svdbe.c.\s(CVS\s3199)
+D 2006-06-03T18:04:17
 F Makefile.in 87b6d483513ab8a4e763775bc5b434d6b5c34963
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -91,7 +91,7 @@ F src/update.c 34add66fcd3301b33b6e4c4c813f4e408f7ee4a0
 F src/utf.c ab81ac59084ff1c07d421eb1a0a84ec809603b44
 F src/util.c ca6ee72772c0f5dc04d2e0ab1973fd3b6a9bf79d
 F src/vacuum.c 5b37d0f436f8e1ffacd17934e44720b38d2247f9
-F src/vdbe.c b28d2da3235e42beebf2fc50450e17511dc855cf
+F src/vdbe.c a4c970bd74a5af20bf4627f704a634ceff8ff68d
 F src/vdbe.h 44ff995a8b4e87016794095273e9e7300f0001bb
 F src/vdbeInt.h 85cd5f81d38edb1b8f4786f407c77a7a3ba636fb
 F src/vdbeapi.c 7dc662e7c905ce666bb506dced932e0307115cbf
@@ -358,7 +358,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 0eabda82cd0d476a7e05ba4b027b819318aef9c3
-R 6acf85d509c19fb60080d44405f8852c
+P 373246c2d1edaec1ce248ff875db48ce51d896f9
+R b48d479098e93e880ab65de32baab4b2
 U drh
-Z b6f82a7c0122f6042d20b908e87d0aa6
+Z 7efde1f713a350fe61db31962972de9c
