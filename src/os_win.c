@@ -480,18 +480,24 @@ static BOOL winceLockFileEx(
 */
 int sqlite3WinDelete(const char *zFilename){
   WCHAR *zWide = utf8ToUnicode(zFilename);
+  int cnt = 0;
+  int rc;
   if( zWide ){
-    DeleteFileW(zWide);
+    do{
+      rc = DeleteFileW(zWide);
+    }while( rc==0 && cnt++ < 3 && (Sleep(100), 1) );
     sqliteFree(zWide);
   }else{
 #if OS_WINCE
     return SQLITE_NOMEM;
 #else
-    DeleteFileA(zFilename);
+    do{
+      rc = DeleteFileA(zFilename);
+    }while( rc==0 && cnt++ < 3 && (Sleep(100), 1) );
 #endif
   }
   TRACE2("DELETE \"%s\"\n", zFilename);
-  return SQLITE_OK;
+  return rc==0 ? SQLITE_OK : SQLITE_IOERR;
 }
 
 /*
@@ -638,27 +644,33 @@ int sqlite3WinOpenExclusive(const char *zFilename, OsFile **pId, int delFlag){
   }
 #endif
   if( zWide ){
-    h = CreateFileW(zWide,
-       GENERIC_READ | GENERIC_WRITE,
-       0,
-       NULL,
-       CREATE_ALWAYS,
-       fileflags,
-       NULL
-    );
+    int cnt = 0;
+    do{
+      h = CreateFileW(zWide,
+         GENERIC_READ | GENERIC_WRITE,
+         0,
+         NULL,
+         CREATE_ALWAYS,
+         fileflags,
+         NULL
+      );
+    }while( h==INVALID_HANDLE_VALUE && cnt++ < 2 && (Sleep(100), 1) );
     sqliteFree(zWide);
   }else{
 #if OS_WINCE
     return SQLITE_NOMEM;
 #else
-    h = CreateFileA(zFilename,
-       GENERIC_READ | GENERIC_WRITE,
-       0,
-       NULL,
-       CREATE_ALWAYS,
-       fileflags,
-       NULL
-    );
+    int cnt = 0;
+    do{
+      h = CreateFileA(zFilename,
+        GENERIC_READ | GENERIC_WRITE,
+        0,
+        NULL,
+        CREATE_ALWAYS,
+        fileflags,
+        NULL
+      );
+    }while( h==INVALID_HANDLE_VALUE && cnt++ < 2 && (Sleep(100), 1) );
 #endif /* OS_WINCE */
   }
   if( h==INVALID_HANDLE_VALUE ){
@@ -799,9 +811,13 @@ int sqlite3WinTempFileName(char *zBuf){
 */
 static int winClose(OsFile **pId){
   winFile *pFile;
+  int rc = 1;
   if( pId && (pFile = (winFile*)*pId)!=0 ){
+    int rc, cnt = 0;
     TRACE2("CLOSE %d\n", pFile->h);
-    CloseHandle(pFile->h);
+    do{
+      rc = CloseHandle(pFile->h);
+    }while( rc==0 && cnt++ < 3 && (Sleep(100), 1) );
 #if OS_WINCE
     winceDestroyLock(pFile);
     if( pFile->zDeleteOnClose ){
@@ -813,7 +829,7 @@ static int winClose(OsFile **pId){
     sqliteFree(pFile);
     *pId = 0;
   }
-  return SQLITE_OK;
+  return rc ? SQLITE_OK : SQLITE_IOERR;
 }
 
 /*

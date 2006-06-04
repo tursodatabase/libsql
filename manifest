@@ -1,5 +1,5 @@
-C Remove\sunused\svariables\sfrom\svdbe.c.\s(CVS\s3199)
-D 2006-06-03T18:04:17
+C Changes\sto\shelp\sSQLite\scope\swith\svirus\sscanners\sand\sother\sprograms\sthat\nopen\sjournal\sfiles\sfor\sreading\sand\sthus\sprevent\sSQLite\sfrom\sdeleting\nthem\sin\sorder\sto\scommit\sa\stransaction.\s(CVS\s3200)
+D 2006-06-04T23:02:20
 F Makefile.in 87b6d483513ab8a4e763775bc5b434d6b5c34963
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -59,7 +59,7 @@ F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
 F src/os_unix.c 17d91581a0ab478a06cb6f257b707a4c4a93e5a7
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
-F src/os_win.c f48550e191c7e37cd8e802b6a84433e9a3b84d3a
+F src/os_win.c e64e6bdfc42d867fff05f4d7a64ea110d675bcee
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c ddd05666bb89808a516baef2c186d6a75887ae90
 F src/pager.h 43f32f3847421f7502cfbb66f4eb2302b8033818
@@ -358,7 +358,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 373246c2d1edaec1ce248ff875db48ce51d896f9
-R b48d479098e93e880ab65de32baab4b2
+P d54750aefba0accd66f928e55ae52fe074f2b8da
+R 9cbcd05930c9ecc6055d180c4440ce81
 U drh
-Z 7efde1f713a350fe61db31962972de9c
+Z 76393d3c5b3afb3e710409c428223801
