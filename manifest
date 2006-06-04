@@ -1,5 +1,5 @@
-C Changes\sto\shelp\sSQLite\scope\swith\svirus\sscanners\sand\sother\sprograms\sthat\nopen\sjournal\sfiles\sfor\sreading\sand\sthus\sprevent\sSQLite\sfrom\sdeleting\nthem\sin\sorder\sto\scommit\sa\stransaction.\s(CVS\s3200)
-D 2006-06-04T23:02:20
+C Fix\sa\swindows\sportability\sproblem\sin\strans.test.\s(CVS\s3201)
+D 2006-06-04T23:20:10
 F Makefile.in 87b6d483513ab8a4e763775bc5b434d6b5c34963
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -263,7 +263,7 @@ F test/tkt1567.test 18023cc3626a365f0118e17b66decedec93b1a6f
 F test/tkt1644.test 80b6a2bb17885f3cf1cb886d97cdad13232bb869
 F test/tkt1667.test c7faac5050b45d81d0b9f6294e4570b588106e19
 F test/trace.test 75ffc1b992c780d054748a656e3e7fd674f18567
-F test/trans.test dbadb11882da0fa0ed2a74acecd28e10965b48d0
+F test/trans.test 0f6b9405cf6bbe52ebcddeb089088aa3f42044d1
 F test/trigger1.test e8c717e959c2f98c8181cd9466e140fa7aac781f
 F test/trigger2.test 33bf8ae9b788013be194efe5f66c04a202facbb4
 F test/trigger3.test 9102fd3933db294dc654b5aee9edfe9e94f2b9e2
@@ -358,7 +358,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P d54750aefba0accd66f928e55ae52fe074f2b8da
-R 9cbcd05930c9ecc6055d180c4440ce81
+P f32dbe47ffd1e7e5695f02bf4263d80bea177ffb
+R fdbddefcc4faca3a136fc36ee74f50cf
 U drh
-Z 76393d3c5b3afb3e710409c428223801
+Z 3232c1640de3ece87648ffe1a2cfee85
