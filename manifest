@@ -1,5 +1,5 @@
-C Fix\sa\swindows\sportability\sproblem\sin\strans.test.\s(CVS\s3201)
-D 2006-06-04T23:20:10
+C Add\scomments\sto\sthe\schanges\sof\scheck-in\s(3200).\s(CVS\s3202)
+D 2006-06-04T23:31:49
 F Makefile.in 87b6d483513ab8a4e763775bc5b434d6b5c34963
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -59,7 +59,7 @@ F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
 F src/os_unix.c 17d91581a0ab478a06cb6f257b707a4c4a93e5a7
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
-F src/os_win.c e64e6bdfc42d867fff05f4d7a64ea110d675bcee
+F src/os_win.c c6976ae50b61fb5b7dce399e578aa1865f02b84f
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c ddd05666bb89808a516baef2c186d6a75887ae90
 F src/pager.h 43f32f3847421f7502cfbb66f4eb2302b8033818
@@ -358,7 +358,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P f32dbe47ffd1e7e5695f02bf4263d80bea177ffb
-R fdbddefcc4faca3a136fc36ee74f50cf
+P f2538dfdb608b7f849bfc5fac0ec9d0d8dece4c7
+R 450ca953aa563fb633123fb7704167a9
 U drh
-Z 3232c1640de3ece87648ffe1a2cfee85
+Z 91538f76d1061379dfa3e8a2e60214bc

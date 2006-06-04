@@ -476,8 +476,18 @@ static BOOL winceLockFileEx(
 #endif /* OS_WINCE */
 
 /*
-** Delete the named file
+** Delete the named file.
+**
+** Note that windows does not allow a file to be deleted if some other
+** process has it open.  Sometimes a virus scanner or indexing program
+** will open a journal file shortly after it is created in order to do
+** whatever it is it does.  While this other process is holding the
+** file open, we will be unable to delete it.  To work around this
+** problem, we delay 100 milliseconds and try to delete again.  Up
+** to MX_DELETION_ATTEMPTs deletion attempts are run before giving
+** up and returning an error.
 */
+#define MX_DELETION_ATTEMPTS 3
 int sqlite3WinDelete(const char *zFilename){
   WCHAR *zWide = utf8ToUnicode(zFilename);
   int cnt = 0;
@@ -485,7 +495,7 @@ int sqlite3WinDelete(const char *zFilename){
   if( zWide ){
     do{
       rc = DeleteFileW(zWide);
-    }while( rc==0 && cnt++ < 3 && (Sleep(100), 1) );
+    }while( rc==0 && cnt++ < MX_DELETION_ATTEMPTS && (Sleep(100), 1) );
     sqliteFree(zWide);
   }else{
 #if OS_WINCE
@@ -493,7 +503,7 @@ int sqlite3WinDelete(const char *zFilename){
 #else
     do{
       rc = DeleteFileA(zFilename);
-    }while( rc==0 && cnt++ < 3 && (Sleep(100), 1) );
+    }while( rc==0 && cnt++ < MX_DELETION_ATTEMPTS && (Sleep(100), 1) );
 #endif
   }
   TRACE2("DELETE \"%s\"\n", zFilename);
@@ -630,6 +640,12 @@ int sqlite3WinOpenReadWrite(
 ** On success, write the file handle into *id and return SQLITE_OK.
 **
 ** On failure, return SQLITE_CANTOPEN.
+**
+** Sometimes if we have just deleted a prior journal file, windows
+** will fail to open a new one because there is a "pending delete".
+** To work around this bug, we pause for 100 milliseconds and attempt
+** a second open after the first one fails.  The whole operation only
+** fails if both open attempts are unsuccessful.
 */
 int sqlite3WinOpenExclusive(const char *zFilename, OsFile **pId, int delFlag){
   winFile f;
@@ -808,7 +824,15 @@ int sqlite3WinTempFileName(char *zBuf){
 
 /*
 ** Close a file.
+**
+** It is reported that an attempt to close a handle might sometimes
+** fail.  This is a very unreasonable result, but windows is notorious
+** for being unreasonable so I do not doubt that it might happen.  If
+** the close fails, we pause for 100 milliseconds and try again.  As
+** many as MX_CLOSE_ATTEMPT attempts to close the handle are made before
+** giving up and returning an error.
 */
+#define MX_CLOSE_ATTEMPT 3
 static int winClose(OsFile **pId){
   winFile *pFile;
   int rc = 1;
@@ -817,7 +841,7 @@ static int winClose(OsFile **pId){
     TRACE2("CLOSE %d\n", pFile->h);
     do{
       rc = CloseHandle(pFile->h);
-    }while( rc==0 && cnt++ < 3 && (Sleep(100), 1) );
+    }while( rc==0 && cnt++ < MX_CLOSE_ATTEMPT && (Sleep(100), 1) );
 #if OS_WINCE
     winceDestroyLock(pFile);
     if( pFile->zDeleteOnClose ){
