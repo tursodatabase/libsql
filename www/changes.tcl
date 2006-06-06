@@ -25,6 +25,20 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2006 June 6 (3.3.6)} {
+<li>Plays better with virus scanners on windows</li>
+<li>Faster :memory: databases</li>
+<li>Fix an obscure segfault in UTF-8 to UTF-16 conversions</li>
+<li>Added driver for OS/2</li>
+<li>Correct column meta-information returned for aggregate queries</li>
+<li>Enhanced output from EXPLAIN QUERY PLAN</li>
+<li>LIMIT 0 now works on subqueries</li>
+<li>Bug fixes and performance enhancements in the query optimizer</li>
+<li>Correctly handle NULL filenames in ATTACH and DETACH</li>
+<li>Inproved syntax error messages in the parser</li>
+<li>Fix type coercion rules for the IN operator</li>
+}
+
 chng {2006 April 5 (3.3.5)} {
 <li>CHECK constraints use conflict resolution algorithms correctly.</li>
 <li>The SUM() function throws an error on integer overflow.</li>

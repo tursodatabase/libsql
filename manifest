@@ -1,9 +1,9 @@
-C Command\s"sqlite3\s-version"\sreturns\s0\sinstead\sof\s1.\s\sTicket\s#1771.\s(CVS\s3204)
-D 2006-06-06T12:32:21
+C Changes\sin\spreparation\sfor\sversion\s3.3.6.\s(CVS\s3205)
+D 2006-06-06T12:38:51
 F Makefile.in 87b6d483513ab8a4e763775bc5b434d6b5c34963
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
-F VERSION 2bc3eace6a71bc4f2575679b944378b275e9412c
+F VERSION 301ed2b2c08f5cca242ea56e50a9ed0264a3eb76
 F aclocal.m4 a8df0ae21d1ac797fa7d7eaa1703412bc61b973f
 F addopcodes.awk 701697fae48376375ec8532c3d04e910cfeef352
 F art/2005osaward.gif 0d1851b2a7c1c9d0ccce545f3e14bca42d7fd248
@@ -315,7 +315,7 @@ F www/autoinc.tcl b357f5ba954b046ee35392ce0f884a2fcfcdea06
 F www/c_interface.tcl b51b08591554c16a0c3ef718364a508ac25abc7e
 F www/capi3.tcl 7a7cc225fe02eb7ab861a6019b08baa0014409e1
 F www/capi3ref.tcl ab76e918c52f7d4027accc6f84a8845ee5c43b16
-F www/changes.tcl 8965f1493adc0f3a97e1e46a29f2cf54064f4ae1
+F www/changes.tcl ec6d4fa4d302a76d662509c7c4796a159bd66b31
 F www/common.tcl 14d121c28532ad20c3e349caa4db708b0b822083
 F www/compile.tcl 276546d7eb445add5a867193bbd80f6919a6b084
 F www/conflict.tcl cdd0f4b59b0ba6d61f67e6a38f3ae45853bacb30
@@ -334,7 +334,7 @@ F www/fileformat.tcl 900c95b9633abc3dcfc384d9ddd8eb4876793059
 F www/formatchng.tcl 4972e680f9331ea46f47001e349baba807f5b60a
 F www/fullscanb.gif f7c94cb227f060511f8909e10f570157263e9a25
 F www/index-ex1-x-b.gif f9b1d85c3fa2435cf38b15970c7e3aa1edae23a3
-F www/index.tcl 7c4a297a4b6ee178f050644a4b0bae1ca864d788
+F www/index.tcl 1d4a2d4011bbc85e060b36094c071e3c47cd786b
 F www/indirect1b1.gif adfca361d2df59e34f9c5cac52a670c2bfc303a1
 F www/lang.tcl 46d34df01cbb3fb280aa9389a144a33f90e0c495
 F www/lockingv3.tcl f59b19d6c8920a931f096699d6faaf61c05db55f
@@ -358,7 +358,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 2baa983653796e16d36739e37b0be1672bf59a92
-R 305fdb1b4efb9e63119ad6c982aa2837
+P fd0fae4835a7d16b0186827b756c44bc984b42dc
+R 505b982c1bdabcdfb694033eb3799e95
 U drh
-Z d9b7c36de39fd631a3d8948bfe053881
+Z e58d8c2e9996fb7239c33cf3c0498260

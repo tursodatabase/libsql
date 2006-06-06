@@ -66,6 +66,12 @@ proc newsitem {date title text} {
   puts "<hr width=\"50%\">"
 }
 
+newsitem {2006-Jun-6} {Version 3.3.6} {
+  Changes include improved tolerance for windows virus scanners
+  and faster :memory: databases.  There are also fixes for several
+  obscure bugs.  Upgrade if you are having problems.
+}
+
 newsitem {2006-Apr-5} {Version 3.3.5} {
   This release fixes many minor bugs and documentation typos and
   provides some minor new features and performance enhancements.
@@ -131,4 +137,4 @@ puts {
 <p align="right"><a href="oldnews.html">Old news...</a></p>
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.137 2006/04/05 12:50:08 drh Exp $}
+footer {$Id: index.tcl,v 1.138 2006/06/06 12:38:51 drh Exp $}
