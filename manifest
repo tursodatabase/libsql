@@ -1,5 +1,5 @@
-C Add\scomments\sto\sthe\schanges\sof\scheck-in\s(3200).\s(CVS\s3202)
-D 2006-06-04T23:31:49
+C In\sjoins\sof\sthe\sform\s"A\sleft\sB,\sC"\smake\ssure\sthey\sare\snot\stransformed\sinto\n"A\sleft\sC,\sB".\s\sTicket\s#1830.\s\sSee\salso\s#1652.\s(CVS\s3203)
+D 2006-06-06T11:45:55
 F Makefile.in 87b6d483513ab8a4e763775bc5b434d6b5c34963
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -98,7 +98,7 @@ F src/vdbeapi.c 7dc662e7c905ce666bb506dced932e0307115cbf
 F src/vdbeaux.c 4002e6b19d7c9719cb81f9797316b9ad118e4370
 F src/vdbefifo.c 9efb94c8c3f4c979ebd0028219483f88e57584f5
 F src/vdbemem.c 5f0afe3b92bb2c037f8d5d697f7c151fa50783a3
-F src/where.c a8f0317d6e0b8b1681cb0dea51f08db97ea818e1
+F src/where.c 06ec443109d8aec7be6d491ef31f72bc08af2c75
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/all.test 5df90d015ca63fcef2a4b62c24f7316b66c4bfd4
@@ -285,7 +285,7 @@ F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/view.test b0aeb933cc9dc5bb44d87f3859f3763d770f0153
 F test/where.test ee7c9a6659b07e1ee61177f6e7ff71565ee2c9df
 F test/where2.test a16476a5913e75cf65b38f2daa6157a6b7791394
-F test/where3.test 6356013ce1c8ddc22a65c880dfff2b2c985634cb
+F test/where3.test 3b5ad2c58069e12be2bd86bc5e211a82810521aa
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/lemon.c b0b881c172b5375444ef1c13d80ab01efec3605e
 F tool/lempar.c 5112eda4ad6dc8694b6a68004542da174b436ad9
@@ -358,7 +358,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P f2538dfdb608b7f849bfc5fac0ec9d0d8dece4c7
-R 450ca953aa563fb633123fb7704167a9
+P 697498d4e86a42d7063417a9549ad04aaf4db31c
+R c8b25fa05e5443a2f693eb2537ea814f
 U drh
-Z 91538f76d1061379dfa3e8a2e60214bc
+Z e2a135b14e9ec8de33a3411cbf3f2a90

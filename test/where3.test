@@ -12,7 +12,7 @@
 # focus of this file is testing the join reordering optimization
 # in cases that include a LEFT JOIN.
 #
-# $Id: where3.test,v 1.1 2006/02/01 02:45:02 drh Exp $
+# $Id: where3.test,v 1.2 2006/06/06 11:45:55 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -45,5 +45,37 @@ do_test where3-1.1 {
   }
 } {222 two 2 222 {} {}}
 
+# Ticket #1830
+#
+# This is similar to the above but with the LEFT JOIN on the
+# other side.
+#
+do_test where3-1.2 {
+  execsql {
+    CREATE TABLE parent1(parent1key, child1key, Child2key, child3key);
+    CREATE TABLE child1 ( child1key NVARCHAR, value NVARCHAR );
+    CREATE UNIQUE INDEX PKIDXChild1 ON child1 ( child1key );
+    CREATE TABLE child2 ( child2key NVARCHAR, value NVARCHAR );
+
+    INSERT INTO parent1(parent1key,child1key,child2key)
+       VALUES ( 1, 'C1.1', 'C2.1' );
+    INSERT INTO child1 ( child1key, value ) VALUES ( 'C1.1', 'Value for C1.1' );
+    INSERT INTO child2 ( child2key, value ) VALUES ( 'C2.1', 'Value for C2.1' );
+
+    INSERT INTO parent1 ( parent1key, child1key, child2key )
+       VALUES ( 2, 'C1.2', 'C2.2' );
+    INSERT INTO child2 ( child2key, value ) VALUES ( 'C2.2', 'Value for C2.2' );
+
+    INSERT INTO parent1 ( parent1key, child1key, child2key )
+       VALUES ( 3, 'C1.3', 'C2.3' );
+    INSERT INTO child1 ( child1key, value ) VALUES ( 'C1.3', 'Value for C1.3' );
+    INSERT INTO child2 ( child2key, value ) VALUES ( 'C2.3', 'Value for C2.3' );
+
+    SELECT parent1.parent1key, child1.value, child2.value
+    FROM parent1
+    LEFT OUTER JOIN child1 ON child1.child1key = parent1.child1key
+    INNER JOIN child2 ON child2.child2key = parent1.child2key;
+  }
+} {1 {Value for C1.1} {Value for C2.1} 2 {} {Value for C2.2} 3 {Value for C1.3} {Value for C2.3}}
 
 finish_test
