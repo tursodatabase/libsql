@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.137 2006/06/03 17:37:26 drh Exp $
+** $Id: shell.c,v 1.138 2006/06/06 12:32:21 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -1740,7 +1740,7 @@ int main(int argc, char **argv){
       data.echoOn = 1;
     }else if( strcmp(z,"-version")==0 ){
       printf("%s\n", sqlite3_libversion());
-      return 1;
+      return 0;
     }else if( strcmp(z,"-help")==0 ){
       usage(1);
     }else{
