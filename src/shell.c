@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.138 2006/06/06 12:32:21 drh Exp $
+** $Id: shell.c,v 1.139 2006/06/08 15:28:44 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -759,6 +759,7 @@ static char zHelp[] =
   ".help                  Show this message\n"
   ".import FILE TABLE     Import data from FILE into TABLE\n"
   ".indices TABLE         Show names of all indices on TABLE\n"
+  ".load FILE ?ENTRY?     Load an extension library\n"
   ".mode MODE ?TABLE?     Set output mode where MODE is one of:\n"
   "                         csv      Comma-separated values\n"
   "                         column   Left-aligned columns.  (See .width)\n"
@@ -1140,6 +1141,20 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     zShellStatic = 0;
     if( zErrMsg ){
       fprintf(stderr,"Error: %s\n", zErrMsg);
+      sqlite3_free(zErrMsg);
+    }
+  }else
+
+  if( c=='l' && strncmp(azArg[0], "load", n)==0 && nArg>=2 ){
+    const char *zFile, *zProc;
+    char *zErrMsg = 0;
+    int rc;
+    zFile = azArg[1];
+    zProc = nArg>=3 ? azArg[2] : 0;
+    open_db(p);
+    rc = sqlite3_load_extension(p->db, zFile, zProc, &zErrMsg);
+    if( rc!=SQLITE_OK ){
+      fprintf(stderr, "%s\n", zErrMsg);
       sqlite3_free(zErrMsg);
     }
   }else

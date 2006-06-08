@@ -124,7 +124,7 @@ TCC += -DSQLITE_OMIT_CURSOR
 #
 LIBOBJ = alter.lo analyze.lo attach.lo auth.lo btree.lo build.lo \
          callback.lo complete.lo date.lo \
-         delete.lo expr.lo func.lo hash.lo insert.lo \
+         delete.lo expr.lo func.lo hash.lo insert.lo loadext.lo \
          main.lo opcodes.lo os.lo os_unix.lo os_win.lo os_os2.lo \
          pager.lo parse.lo pragma.lo prepare.lo printf.lo random.lo \
          select.lo table.lo tokenize.lo trigger.lo update.lo \
@@ -152,6 +152,7 @@ SRC = \
   $(TOP)/src/hash.h \
   $(TOP)/src/insert.c \
   $(TOP)/src/legacy.c \
+  $(TOP)/src/loadext.c \
   $(TOP)/src/main.c \
   $(TOP)/src/os.c \
   $(TOP)/src/os_unix.c \
@@ -222,6 +223,7 @@ HDR = \
    opcodes.h \
    $(TOP)/src/os.h \
    $(TOP)/src/os_common.h \
+   $(TOP)/src/sqlite3ext.h \
    $(TOP)/src/sqliteInt.h  \
    $(TOP)/src/vdbe.h \
    parse.h
@@ -329,6 +331,9 @@ insert.lo:	$(TOP)/src/insert.c $(HDR)
 
 legacy.lo:	$(TOP)/src/legacy.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/legacy.c
+
+loadext.lo:	$(TOP)/src/loadext.c $(HDR)
+	$(LTCOMPILE) -c $(TOP)/src/loadext.c
 
 main.lo:	$(TOP)/src/main.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/main.c

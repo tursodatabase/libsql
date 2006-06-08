@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.165 2006/04/04 01:54:55 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.166 2006/06/08 15:28:44 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1466,6 +1466,46 @@ int sqlite3_table_column_metadata(
   int *pNotNull,              /* OUTPUT: True if NOT NULL constraint exists */
   int *pPrimaryKey,           /* OUTPUT: True if column part of PK */
   int *pAutoinc               /* OUTPUT: True if colums is auto-increment */
+);
+
+/*
+****** EXPERIMENTAL - subject to change without notice **************
+**
+** Attempt to load an SQLite extension library contained in the file
+** zFile.  The entry point is zProc.  zProc may be 0 in which case the
+** name of the entry point is derived from the filename.
+**
+** Return SQLITE_OK on success and SQLITE_ERROR if something goes wrong.
+**
+** If an error occurs and pzErrMsg is not 0, then fill *pzErrMsg with 
+** error message text.  The calling function should free this memory
+** by calling sqlite3_free().
+**
+** The entry point name is derived from the filename according to the
+** following steps:
+**
+**    * Convert the name to lower case
+**    * Remove the path prefix from the name
+**    * Remove the first "." and all following characters from the name
+**    * If the name begins with "lib" remove the first 3 characters
+**    * Remove all characters that are not US-ASCII alphanumerics
+**      or underscores
+**    * Remove any leading digits and underscores from the name
+**    * Append "_init" to the name
+**
+** So, for example, if the input filename is "/home/drh/libtest1.52.so"
+** then the entry point would be computed as "test1_init".
+**
+** The derived entry point name is limited to a reasonable number of
+** characters (currently 200).
+**
+****** EXPERIMENTAL - subject to change without notice **************
+*/
+int sqlite3_load_extension(
+  sqlite3 *db,          /* Load the extension into this database connection */
+  const char *zFile,    /* Name of the shared library containing extension */
+  const char *zProc,    /* Entry point.  Derived from zFile if 0 */
+  char **pzErrMsg       /* Put error message here if not 0 */
 );
 
 /*

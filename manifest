@@ -1,6 +1,6 @@
-C Version\s3.3.6\s(CVS\s3206)
-D 2006-06-06T13:34:16
-F Makefile.in 87b6d483513ab8a4e763775bc5b434d6b5c34963
+C New\sshell\scommand\s".load"\sand\sthe\ssqlite3_load_extension()\sAPI\sallow\nnew\sSQL\sfunctions\sand\scollating\ssequences\sto\sbe\sloaded\sat\srun-time\sfrom\na\sDLL\sor\sshared\slibrary.\s(CVS\s3207)
+D 2006-06-08T15:28:44
+F Makefile.in 50d948a8c4eda30ebb5799b661bd4c2de11824d0
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
 F VERSION 301ed2b2c08f5cca242ea56e50a9ed0264a3eb76
@@ -19,7 +19,7 @@ F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
-F main.mk e3dd76266d1b62f1835b238bb0565900ab99fe14
+F main.mk 9a328281e0d992dcbbf502ec868793dca0a1d7b9
 F mkdll.sh 919df5efde876194e3102c6ebc60657d38949909
 F mkopcodec.awk bd46ad001c98dfbab07b1713cb8e692fa0e5415d
 F mkopcodeh.awk cde995d269aa06c94adbf6455bea0acedb913fa5
@@ -48,6 +48,7 @@ F src/hash.c 449f3d6620193aa557f5d86cbc5cc6b87702b185
 F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
 F src/insert.c 1ae4b8ff5549497808e1b57b9243abcb599fd02f
 F src/legacy.c fa15d505dd4e45044177ee4d1c6aeaf8c836d390
+F src/loadext.c 71405a8f9fedc0c21b63bbe24a0fb52081caf4a5
 F src/main.c 928d93cfd5d72be3a619ee908182c9432151a99e
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/os.c 59f05de8c5777c34876607114a2fbe55ae578235
@@ -70,8 +71,9 @@ F src/printf.c 7029e5f7344a478394a02c52837ff296ee1ab240
 F src/random.c d40f8d356cecbd351ccfab6eaedd7ec1b54f5261
 F src/select.c 8daba07a04a6d41f5267ea8353324cbe5a210e14
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
-F src/shell.c 087d388b2517b410b11b25d7b91728d0859f866c
-F src/sqlite.h.in e783b895fe2fcd68f6c04408a4efaef58cd1cdda
+F src/shell.c 4f1e4a4d3e7aadd1369604a30293fc3e1726c78c
+F src/sqlite.h.in d33c4688ba292af5f84fea49b2e3946b9129673a
+F src/sqlite3ext.h 127bd394c8eea481f2ac9b754bf399dbfc818b75
 F src/sqliteInt.h 98b3d7e9c4c48fd128d03d5788ca8fae0994280a
 F src/table.c f64ec4fbfe333f8df925bc6ba494f55e05b0e75e
 F src/tclsqlite.c 5ae9f08f7af7fe80d38fbccc4f5359f272643af1
@@ -358,7 +360,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P b2e11e02902d6fa8fc2fb95cda4810e837d6861e
-R 505b982c1bdabcdfb694033eb3799e95
+P c11cb07e4b3f0b815a7099c8d201b3473869cba2
+R 46a5b7e0c262c56ce770de14a1643ea8
 U drh
-Z 520f79fd80b6c51afb7f59475232b5c8
+Z edb9ada8988bcadffc5de5550d7a256a

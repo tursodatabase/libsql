@@ -57,7 +57,7 @@ TCCX = $(TCC) $(OPTS) $(THREADSAFE) $(USLEEP) -I. -I$(TOP)/src
 #
 LIBOBJ+= alter.o analyze.o attach.o auth.o btree.o build.o \
          callback.o complete.o date.o delete.o \
-         expr.o func.o hash.o insert.o \
+         expr.o func.o hash.o insert.o loadext.o \
          main.o opcodes.o os.o os_os2.o os_unix.o os_win.o \
          pager.o parse.o pragma.o prepare.o printf.o random.o \
          select.o table.o tclsqlite.o tokenize.o trigger.o \
@@ -85,6 +85,7 @@ SRC = \
   $(TOP)/src/hash.h \
   $(TOP)/src/insert.c \
   $(TOP)/src/legacy.c \
+  $(TOP)/src/loadext.c \
   $(TOP)/src/main.c \
   $(TOP)/src/os.c \
   $(TOP)/src/os_os2.c \
@@ -155,6 +156,7 @@ HDR = \
    opcodes.h \
    $(TOP)/src/os.h \
    $(TOP)/src/os_common.h \
+   $(TOP)/src/sqlite3ext.h \
    $(TOP)/src/sqliteInt.h  \
    $(TOP)/src/vdbe.h \
    parse.h
@@ -253,6 +255,9 @@ insert.o:	$(TOP)/src/insert.c $(HDR)
 
 legacy.o:	$(TOP)/src/legacy.c $(HDR)
 	$(TCCX) -c $(TOP)/src/legacy.c
+
+loadext.o:	$(TOP)/src/loadext.c $(HDR)
+	$(TCCX) -c $(TOP)/src/loadext.c
 
 main.o:	$(TOP)/src/main.c $(HDR)
 	$(TCCX) -c $(TOP)/src/main.c
