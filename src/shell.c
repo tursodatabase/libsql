@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.139 2006/06/08 15:28:44 drh Exp $
+** $Id: shell.c,v 1.140 2006/06/08 16:10:15 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -1033,6 +1033,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     FILE *in;                   /* The input file */
     int lineno = 0;             /* Line number of input file */
 
+    open_db(p);
     nSep = strlen(p->separator);
     if( nSep==0 ){
       fprintf(stderr, "non-null separator required for import\n");
