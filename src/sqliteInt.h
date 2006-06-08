@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.494 2006/05/25 12:17:31 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.495 2006/06/08 15:48:01 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -460,6 +460,8 @@ struct sqlite3 {
     int newTnum;                /* Rootpage of table being initialized */
     u8 busy;                    /* TRUE if currently initializing */
   } init;
+  int nExtension;               /* Number of loaded extensions */
+  void *aExtension;             /* Array of shared libraray handles */
   struct Vdbe *pVdbe;           /* List of active virtual machines */
   int activeVdbeCnt;            /* Number of vdbes currently executing */
   void (*xTrace)(void*,const char*);        /* Trace function */
@@ -1740,6 +1742,7 @@ int sqlite3MallocFailed(void);
 void sqlite3FailedMalloc(void);
 void sqlite3AbortOtherActiveVdbes(sqlite3 *, Vdbe *);
 int sqlite3OpenTempDatabase(Parse *);
+void sqlite3CloseExtensions(sqlite3*);
 
 #ifndef SQLITE_OMIT_SHARED_CACHE
   void sqlite3TableLock(Parse *, int, int, u8, const char *);

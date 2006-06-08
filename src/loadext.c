@@ -16,6 +16,7 @@
 
 #define SQLITE_CORE 1  /* Disable the API redefinition in sqlite3ext.h */
 #include "sqlite3ext.h"
+#include "sqliteInt.h"
 #include <string.h>
 #include <ctype.h>
 
@@ -147,8 +148,7 @@ const sqlite3_api_routines sqlite3_api = {
 # define SQLITE_LIBRARY_TYPE     HANDLE
 # define SQLITE_OPEN_LIBRARY(A)  LoadLibrary(A)
 # define SQLITE_FIND_SYMBOL(A,B) GetProcAddress(A,B)
-# define SQLITE_LIBRARY_ERROR(A) FreeLibrary(A)
-# define SQLITE_CLOSE_LIBRARY(A) 
+# define SQLITE_CLOSE_LIBRARY(A) FreeLibrary(A)
 #endif /* windows */
 
 /*
@@ -159,8 +159,7 @@ const sqlite3_api_routines sqlite3_api = {
 # define SQLITE_LIBRARY_TYPE     void*
 # define SQLITE_OPEN_LIBRARY(A)  dlopen(A, RTLD_NOW | RTLD_GLOBAL)
 # define SQLITE_FIND_SYMBOL(A,B) dlsym(A,B)
-# define SQLITE_LIBRARY_ERROR(A) dlclose(A)
-# define SQLITE_CLOSE_LIBRARY(A)
+# define SQLITE_CLOSE_LIBRARY(A) dlclose(A)
 #endif
 
 /*
@@ -202,7 +201,18 @@ int sqlite3_load_extension(
   SQLITE_LIBRARY_TYPE handle;
   int (*xInit)(sqlite3*,char**,const sqlite3_api_routines*);
   char *zErrmsg = 0;
+  SQLITE_LIBRARY_TYPE *aHandle;
 
+  db->nExtension++;
+  aHandle = sqliteMalloc(sizeof(handle)*db->nExtension);
+  if( aHandle==0 ){
+    return SQLITE_NOMEM;
+  }
+  if( db->nExtension>0 ){
+    memcpy(aHandle, db->aExtension, sizeof(handle)*(db->nExtension-1));
+  }
+  sqliteFree(db->aExtension);
+  db->aExtension = aHandle;
   if( zProc==0 ){
     int i, j, n;
     char *z;
@@ -244,17 +254,17 @@ int sqlite3_load_extension(
        *pzErrMsg = sqlite3_mprintf("no entry point [%s] in shared library [%s]",
                                    zProc, zFile);
     }
-    SQLITE_LIBRARY_ERROR(handle);
+    SQLITE_CLOSE_LIBRARY(handle);
     return SQLITE_ERROR;
   }else if( xInit(db, &zErrmsg, &sqlite3_api) ){
     if( pzErrMsg ){
       *pzErrMsg = sqlite3_mprintf("error during initialization: %s", zErrmsg);
     }
     sqlite3_free(zErrmsg);
-    SQLITE_LIBRARY_ERROR(handle);
+    SQLITE_CLOSE_LIBRARY(handle);
     return SQLITE_ERROR;
   }
-  SQLITE_CLOSE_LIBRARY(handle);
+  ((SQLITE_LIBRARY_TYPE*)db->aExtension)[db->nExtension-1] = handle;
   return SQLITE_OK;
 #else
   if( pzErrMsg ){
@@ -264,4 +274,17 @@ int sqlite3_load_extension(
   return SQLITE_ERROR;
 #endif
 }
+
+/*
+** Call this routine when the database connection is closing in order
+** to clean up loaded extensions
+*/
+void sqlite3CloseExtensions(sqlite3 *db){
+  int i;
+  for(i=0; i<db->nExtension; i++){
+    SQLITE_CLOSE_LIBRARY(((SQLITE_LIBRARY_TYPE*)db->aExtension)[i]);
+  }
+  sqliteFree(db->aExtension);
+}
+
 #endif /* SQLITE_OMIT_LOAD_EXTENSION */

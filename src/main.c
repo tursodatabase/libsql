@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.340 2006/05/24 12:43:27 drh Exp $
+** $Id: main.c,v 1.341 2006/06/08 15:48:01 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -165,6 +165,7 @@ int sqlite3_close(sqlite3 *db){
   if( db->pErr ){
     sqlite3ValueFree(db->pErr);
   }
+  sqlite3CloseExtensions(db);
 
   db->magic = SQLITE_MAGIC_ERROR;
 
