@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.394 2006/05/11 23:14:59 drh Exp $
+** $Id: build.c,v 1.395 2006/06/10 13:29:32 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -533,6 +533,12 @@ void sqlite3DeleteTable(sqlite3 *db, Table *pTable){
 #ifndef SQLITE_OMIT_CHECK
   sqlite3ExprDelete(pTable->pCheck);
 #endif
+#ifndef SQLITE_OMIT_MODULE
+  sqliteFree(pTable->zModuleName);
+  if( pTable->pMod && pTable->pVTab ){
+    pTable->pMod->xDisconnect(pTable->pVTab);
+  }
+#endif SQLITE_OMIT_MODULE
   sqliteFree(pTable);
 }
 

@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.200 2006/05/25 12:17:31 drh Exp $
+** @(#) $Id: parse.y,v 1.201 2006/06/10 13:29:33 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -176,12 +176,13 @@ id(A) ::= ID(X).         {A = X;}
   DATABASE DEFERRED DESC DETACH EACH END EXCLUSIVE EXPLAIN FAIL FOR
   IGNORE IMMEDIATE INITIALLY INSTEAD LIKE_KW MATCH PLAN QUERY KEY
   OF OFFSET PRAGMA RAISE REPLACE RESTRICT ROW STATEMENT
-  TEMP TRIGGER VACUUM VIEW
+  TEMP TRIGGER VACUUM VIEW VIRTUAL
 %ifdef SQLITE_OMIT_COMPOUND_SELECT
   EXCEPT INTERSECT UNION
 %endif
   REINDEX RENAME CTIME_KW IF
   .
+%wildcard ANY.
 
 // Define operator precedence early so that this is the first occurance
 // of the operator tokens in the grammer.  Keeping the operators together
@@ -1057,4 +1058,15 @@ add_column_fullname ::= fullname(X). {
 }
 kwcolumn_opt ::= .
 kwcolumn_opt ::= COLUMNKW.
+%endif
+
+//////////////////////// CREATE VIRTUAL TABLE ... /////////////////////////////
+%ifndef SQLITE_OMIT_VIRTUALTABLE
+cmd ::= CREATE VIRTUAL TABLE nm(X) dbnm(Y) USING nm(Z) vtabargsopt.
+vtabargsopt ::= .
+vtabargsopt ::= LP vtabarglist RP.
+vtabarglist ::= vtabarg.
+vtabarglist ::= vtabarglist COMMA vtabarg.
+vtabarg ::= ANY.
+vtabarg ::= vtabarg ANY.
 %endif

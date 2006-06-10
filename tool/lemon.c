@@ -241,6 +241,7 @@ struct lemon {
   struct symbol **symbols; /* Sorted array of pointers to symbols */
   int errorcnt;            /* Number of errors */
   struct symbol *errsym;   /* The error symbol */
+  struct symbol *wildcard; /* Token that matches anything */
   char *name;              /* Name of the generated parser */
   char *arg;               /* Declaration of the 3th argument to parser */
   char *tokentype;         /* Type of terminal symbols in the parser stack */
@@ -1442,6 +1443,7 @@ char **argv;
   lem.tablesize = 0;
   Symbol_new("$");
   lem.errsym = Symbol_new("error");
+  lem.wildcard = 0;
 
   /* Parse the input file */
   Parse(&lem);
@@ -1960,7 +1962,8 @@ struct pstate {
     RESYNC_AFTER_DECL_ERROR,
     WAITING_FOR_DESTRUCTOR_SYMBOL,
     WAITING_FOR_DATATYPE_SYMBOL,
-    WAITING_FOR_FALLBACK_ID
+    WAITING_FOR_FALLBACK_ID,
+    WAITING_FOR_WILDCARD_ID
   } state;                   /* The state of the parser */
   struct symbol *fallback;   /* The fallback token */
   struct symbol *lhs;        /* Left-hand side of current rule */
@@ -2264,6 +2267,8 @@ to follow the previous rule.");
         }else if( strcmp(x,"fallback")==0 ){
           psp->fallback = 0;
           psp->state = WAITING_FOR_FALLBACK_ID;
+        }else if( strcmp(x,"wildcard")==0 ){
+          psp->state = WAITING_FOR_WILDCARD_ID;
         }else{
           ErrorMsg(psp->filename,psp->tokenlineno,
             "Unknown declaration keyword: \"%%%s\".",x);
@@ -2361,6 +2366,24 @@ to follow the previous rule.");
         }else{
           sp->fallback = psp->fallback;
           psp->gp->has_fallback = 1;
+        }
+      }
+      break;
+    case WAITING_FOR_WILDCARD_ID:
+      if( x[0]=='.' ){
+        psp->state = WAITING_FOR_DECL_OR_RULE;
+      }else if( !isupper(x[0]) ){
+        ErrorMsg(psp->filename, psp->tokenlineno,
+          "%%wildcard argument \"%s\" should be a token", x);
+        psp->errorcnt++;
+      }else{
+        struct symbol *sp = Symbol_new(x);
+        if( psp->gp->wildcard==0 ){
+          psp->gp->wildcard = sp;
+        }else{
+          ErrorMsg(psp->filename, psp->tokenlineno,
+            "Extra wildcard to token: %s", x);
+          psp->errorcnt++;
         }
       }
       break;
@@ -3489,6 +3512,10 @@ int mhflag;     /* Output in makeheaders format if true */
   fprintf(out,"#define YYNOCODE %d\n",lemp->nsymbol+1);  lineno++;
   fprintf(out,"#define YYACTIONTYPE %s\n",
     minimum_size_type(0, lemp->nstate+lemp->nrule+5));  lineno++;
+  if( lemp->wildcard ){
+    fprintf(out,"#define YYWILDCARD %d\n",
+       lemp->wildcard->index); lineno++;
+  }
   print_stack_union(out,lemp,&lineno,mhflag);
   if( lemp->stacksize ){
     if( atoi(lemp->stacksize)<=0 ){
@@ -3885,7 +3912,8 @@ struct lemon *lemp;
 ** of defaults.
 **
 ** In this version, we take the most frequent REDUCE action and make
-** it the default.
+** it the default.  Except, there is no default if the wildcard token
+** is a possible look-ahead.
 */
 void CompressTables(lemp)
 struct lemon *lemp;
@@ -3895,13 +3923,18 @@ struct lemon *lemp;
   struct rule *rp, *rp2, *rbest;
   int nbest, n;
   int i;
+  int usesWildcard;
 
   for(i=0; i<lemp->nstate; i++){
     stp = lemp->sorted[i];
     nbest = 0;
     rbest = 0;
+    usesWildcard = 0;
 
     for(ap=stp->ap; ap; ap=ap->next){
+      if( ap->type==SHIFT && ap->sp==lemp->wildcard ){
+        usesWildcard = 1;
+      }
       if( ap->type!=REDUCE ) continue;
       rp = ap->x.rp;
       if( rp==rbest ) continue;
@@ -3919,8 +3952,10 @@ struct lemon *lemp;
     }
  
     /* Do not make a default if the number of rules to default
-    ** is not at least 1 */
-    if( nbest<1 ) continue;
+    ** is not at least 1 or if the wildcard token is a possible
+    ** lookahead.
+    */
+    if( nbest<1 || usesWildcard ) continue;
 
 
     /* Combine matching REDUCE actions into a single default */

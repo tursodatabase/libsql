@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.166 2006/06/08 15:28:44 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.167 2006/06/10 13:29:33 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1507,6 +1507,68 @@ int sqlite3_load_extension(
   const char *zProc,    /* Entry point.  Derived from zFile if 0 */
   char **pzErrMsg       /* Put error message here if not 0 */
 );
+
+/*
+****** EXPERIMENTAL - subject to change without notice **************
+*/
+typedef struct sqlite3_vtab sqlite3_vtab;
+typedef struct sqlite3_index_info sqlite3_index_info;
+typedef struct sqlite3_vtab_cursor sqlite3_vtab_cursor;
+typedef struct sqlite3_module sqlite3_module;
+struct sqlite3_module {
+  int iVersion;
+  void *pAux;
+  int (*xCreate)(sqlite3*, const sqlite3_module *pModule,
+               int argc, char **argv,
+               sqlite3_vtab **ppVTab);
+  int (*xConnect)(sqlite3*, const sqlite3_module *pModule,
+               int argc, char **argv,
+               sqlite3_vtab **ppVTab);
+  int (*xBestIndex)(sqlite3_vtab *pVTab, sqlite3_index_info*);
+  int (*xDisconnect)(sqlite3_vtab *pVTab);
+  int (*xDestroy)(sqlite3_vtab *pVTab);
+  int (*xOpen)(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor);
+  int (*xClose)(sqlite3_vtab_cursor*);
+  int (*xFilter)(sqlite3_vtab_cursor*, int idx,
+                int argc, sqlite3_value **argv);
+  int (*xNext)(sqlite3_vtab_cursor*);
+  int (*xColumn)(sqlite3_vtab_cursor*, sqlite3_context*, int);
+  int (*xRowid)(sqlite3_vtab_cursor*, sqlite_int64 *pRowid);
+  int (*xInsert)(sqlite3_vtab *pVTab, sqlite3_value **apData);
+  int (*xDelete)(sqlite3_vtab *pVTab, sqlite_int64 rowid);
+  int (*xBegin)(sqlite3_vtab *pVTab);
+  int (*xSync)(sqlite3_vtab *pVTab);
+  int (*xCommit)(sqlite3_vtab *pVTab);
+  int (*xRollback)(sqlite3_vtab *pVTab);
+  int (*xIsInTrans)(sqlite3_vtab *pVTab);
+};
+struct sqlite3_index_info {
+  /* Inputs */
+  int nConstraint;
+  struct sqlite3_index_constraint {
+     int iColumn;
+     unsigned char op;
+     unsigned char omit;
+  } *aConstraint;
+  int nOrderBy;
+  struct sqlite3_index_orderby {
+     int iColumn;
+     unsigned char desc;
+  } *aOrderBy;
+
+  /* Outputs */
+  int idxNum;
+  int columnCount;
+  int *aColumn;
+  int orderByConsumed;
+};
+#define SQLITE_INDEX_CONSTRAINT_EQ    1
+#define SQLITE_INDEX_CONSTRAINT_GT    3
+#define SQLITE_INDEX_CONSTRAINT_LE    4
+#define SQLITE_INDEX_CONSTRAINT_LT    5
+#define SQLITE_INDEX_CONSTRAINT_GE    6
+#define SQLITE_INDEX_CONSTRAINT_MATCH 7
+
 
 /*
 ** Undo the hack that converts floating point types to integer for
