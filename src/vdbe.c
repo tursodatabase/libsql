@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.550 2006/06/03 18:04:17 drh Exp $
+** $Id: vdbe.c,v 1.551 2006/06/11 23:41:56 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2640,9 +2640,9 @@ case OP_OpenWrite: {       /* no-push */
   break;
 }
 
-/* Opcode: OpenVirtual P1 P2 P3
+/* Opcode: OpenEphemeral P1 P2 P3
 **
-** Open a new cursor P1 to a transient or virtual table.
+** Open a new cursor P1 to a transient table.
 ** The cursor is always opened read/write even if 
 ** the main database is read-only.  The transient or virtual
 ** table is deleted automatically when the cursor is closed.
@@ -2651,8 +2651,14 @@ case OP_OpenWrite: {       /* no-push */
 ** The cursor points to a BTree table if P3==0 and to a BTree index
 ** if P3 is not 0.  If P3 is not NULL, it points to a KeyInfo structure
 ** that defines the format of keys in the index.
+**
+** This opcode was once called OpenTemp.  But that created
+** confusion because the term "temp table", might refer either
+** to a TEMP table at the SQL level, or to a table opened by
+** this opcode.  Then this opcode was call OpenVirtual.  But
+** that created confusion with the whole virtual-table idea.
 */
-case OP_OpenVirtual: {       /* no-push */
+case OP_OpenEphemeral: {       /* no-push */
   int i = pOp->p1;
   Cursor *pCx;
   assert( i>=0 );
@@ -4525,7 +4531,29 @@ case OP_TableLock: {        /* no-push */
   }
   break;
 }
-#endif /* SHARED_OMIT_SHARED_CACHE */
+#endif /* SQLITE_OMIT_SHARED_CACHE */
+
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+/* Opcode: VCreate * * P3
+**
+** P3 is the name of a virtual table.  Call the xCreate method for
+** that table.
+*/
+case OP_VCreate: {
+  break;
+}
+#endif /* SQLITE_OMIT_VIRTUALTABLE */
+
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+/* Opcode: VDestroy * * P3
+**
+** P3 is the name of a virtual table.  Call the xCreate method for
+** that table.
+*/
+case OP_VDestroy: {
+  break;
+}
+#endif /* SQLITE_OMIT_VIRTUALTABLE */
 
 /* An other opcode is illegal...
 */

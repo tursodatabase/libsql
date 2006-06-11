@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.395 2006/06/10 13:29:32 drh Exp $
+** $Id: build.c,v 1.396 2006/06/11 23:41:55 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -533,12 +533,7 @@ void sqlite3DeleteTable(sqlite3 *db, Table *pTable){
 #ifndef SQLITE_OMIT_CHECK
   sqlite3ExprDelete(pTable->pCheck);
 #endif
-#ifndef SQLITE_OMIT_MODULE
-  sqliteFree(pTable->zModuleName);
-  if( pTable->pMod && pTable->pVTab ){
-    pTable->pMod->xDisconnect(pTable->pVTab);
-  }
-#endif SQLITE_OMIT_MODULE
+  sqlite3VtabClear(pTable);
   sqliteFree(pTable);
 }
 
@@ -810,10 +805,7 @@ void sqlite3StartTable(
     goto begin_table_error;
   }
   pTable->zName = zName;
-  pTable->nCol = 0;
-  pTable->aCol = 0;
   pTable->iPKey = -1;
-  pTable->pIndex = 0;
   pTable->pSchema = db->aDb[iDb].pSchema;
   pTable->nRef = 1;
   if( pParse->pNewTable ) sqlite3DeleteTable(db, pParse->pNewTable);
@@ -1378,7 +1370,7 @@ void sqlite3EndTable(
 
   assert( !db->init.busy || !pSelect );
 
-  iDb = sqlite3SchemaToIndex(pParse->db, p->pSchema);
+  iDb = sqlite3SchemaToIndex(db, p->pSchema);
 
 #ifndef SQLITE_OMIT_CHECK
   /* Resolve names in all CHECK constraint expressions.
@@ -1974,7 +1966,14 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
     /* Remove the table entry from SQLite's internal schema and modify
     ** the schema cookie.
     */
-    sqlite3VdbeOp3(v, OP_DropTable, iDb, 0, pTab->zName, 0);
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+    if( pTab->isEphem ){
+      sqlite3VdbeOp3(v, OP_VDestroy, iDb, 0, pTab->zName, 0);
+    }else
+#endif
+    {
+      sqlite3VdbeOp3(v, OP_DropTable, iDb, 0, pTab->zName, 0);
+    }
     sqlite3ChangeCookie(db, v, iDb);
   }
   sqliteViewResetAll(db, iDb);

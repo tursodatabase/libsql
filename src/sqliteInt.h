@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.496 2006/06/10 13:29:33 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.497 2006/06/11 23:41:56 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -490,13 +490,13 @@ struct sqlite3 {
   void *pProgressArg;           /* Argument to the progress callback */
   int nProgressOps;             /* Number of opcodes for progress callback */
 #endif
-#ifndef SQLITE_OMIT_GLOBALRECOVER
-  sqlite3 *pNext;               /* Linked list of open db handles. */
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+  Hash aModule;                 /* populated by sqlite3_create_module() */
 #endif
   Hash aFunc;                   /* All functions that can be in SQL exprs */
   Hash aCollSeq;                /* All collating sequences */
   BusyHandler busyHandler;      /* Busy callback */
-  int busyTimeout;             /* Busy handler timeout, in msec */
+  int busyTimeout;              /* Busy handler timeout, in msec */
   Db aDbStatic[2];              /* Static space for the 2 default backends */
 #ifdef SQLITE_SSE
   sqlite3_stmt *pFetch;         /* Used by SSE to fetch stored statements */
@@ -672,7 +672,7 @@ struct CollSeq {
 ** Table.tnum is the page number for the root BTree page of the table in the
 ** database file.  If Table.iDb is the index of the database table backend
 ** in sqlite.aDb[].  0 is for the main database and 1 is for the file that
-** holds temporary tables and indices.  If Table.isTransient
+** holds temporary tables and indices.  If Table.isEphem
 ** is true, then the table is stored in a file that is automatically deleted
 ** when the VDBE cursor to the table is closed.  In this case Table.tnum 
 ** refers VDBE cursor number that holds the table open, not to the root
@@ -689,7 +689,7 @@ struct Table {
   int tnum;        /* Root BTree node for this table (see note above) */
   Select *pSelect; /* NULL for tables.  Points to definition if a view. */
   u8 readOnly;     /* True if this table should not be written by the user */
-  u8 isTransient;  /* True if automatically deleted when VDBE finishes */
+  u8 isEphem;      /* True if created using OP_OpenEphermeral */
   u8 hasPrimKey;   /* True if there exists a primary key */
   u8 keyConf;      /* What to do in case of uniqueness conflict on iPKey */
   u8 autoInc;      /* True if the integer primary key is autoincrement */
@@ -704,10 +704,12 @@ struct Table {
   int addColOffset;  /* Offset in CREATE TABLE statement to add a new column */
 #endif
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-  char *zModuleName;     /* Name of module implementing this virtual table */
-  sqlite3_module *pMod;  /* Pointer to the implementation of the module */
-  sqlite3_vtab *pVTab;   /* Pointer to the module instance */
-  u8 needCreate;         /* Need to call pMod->xCreate() */
+  sqlite3_module *pModule;  /* Pointer to the implementation of the module */
+  sqlite3_vtab *pVtab;      /* Pointer to the module instance */
+  int nModuleArg;           /* Number of arguments to the module */
+  char **azModuleArg;       /* Text of all module args. [0] is module name */
+  u8 needCreate;            /* Need to call pMod->xCreate() */
+  u8 isVirtual;             /* True if this is a virtual table */
 #endif
   Schema *pSchema;
 };
@@ -903,7 +905,7 @@ struct AggInfo {
     Expr *pExpr;             /* Expression encoding the function */
     FuncDef *pFunc;          /* The aggregate function implementation */
     int iMem;                /* Memory location that acts as accumulator */
-    int iDistinct;           /* Virtual table used to enforce DISTINCT */
+    int iDistinct;           /* Ephermeral table used to enforce DISTINCT */
   } *aFunc;
   int nFunc;              /* Number of entries in aFunc[] */
   int nFuncAlloc;         /* Number of slots allocated for aFunc[] */
@@ -1171,14 +1173,14 @@ struct NameContext {
 ** offset).  But later on, nLimit and nOffset become the memory locations
 ** in the VDBE that record the limit and offset counters.
 **
-** addrOpenVirt[] entries contain the address of OP_OpenVirtual opcodes.
+** addrOpenEphm[] entries contain the address of OP_OpenEphemeral opcodes.
 ** These addresses must be stored so that we can go back and fill in
 ** the P3_KEYINFO and P2 parameters later.  Neither the KeyInfo nor
 ** the number of columns in P2 can be computed at the same time
-** as the OP_OpenVirtual instruction is coded because not
+** as the OP_OpenEphm instruction is coded because not
 ** enough information about the compound query is known at that point.
-** The KeyInfo for addrOpenVirt[0] and [1] contains collating sequences
-** for the result set.  The KeyInfo for addrOpenVirt[2] contains collating
+** The KeyInfo for addrOpenTran[0] and [1] contains collating sequences
+** for the result set.  The KeyInfo for addrOpenTran[2] contains collating
 ** sequences for the ORDER BY clause.
 */
 struct Select {
@@ -1187,7 +1189,7 @@ struct Select {
   u8 isDistinct;         /* True if the DISTINCT keyword is present */
   u8 isResolved;         /* True once sqlite3SelectResolve() has run. */
   u8 isAgg;              /* True if this is an aggregate query */
-  u8 usesVirt;           /* True if uses an OpenVirtual opcode */
+  u8 usesEphm;           /* True if uses an OpenEphemeral opcode */
   u8 disallowOrderBy;    /* Do not allow an ORDER BY to be attached if TRUE */
   SrcList *pSrc;         /* The FROM clause */
   Expr *pWhere;          /* The WHERE clause */
@@ -1199,7 +1201,7 @@ struct Select {
   Expr *pLimit;          /* LIMIT expression. NULL means not used. */
   Expr *pOffset;         /* OFFSET expression. NULL means not used. */
   int iLimit, iOffset;   /* Memory registers holding LIMIT & OFFSET counters */
-  int addrOpenVirt[3];   /* OP_OpenVirtual opcodes related to this select */
+  int addrOpenEphm[3];   /* OP_OpenEphem opcodes related to this select */
 };
 
 /*
@@ -1216,7 +1218,7 @@ struct Select {
 #define SRT_Mem          5  /* Store result in a memory cell */
 #define SRT_Set          6  /* Store non-null results as keys in an index */
 #define SRT_Table        7  /* Store result as data with an automatic rowid */
-#define SRT_VirtualTab   8  /* Create virtual table and store like SRT_Table */
+#define SRT_EphemTab     8  /* Create transient tab and store like SRT_Table */
 #define SRT_Subroutine   9  /* Call a subroutine to handle results */
 #define SRT_Exists      10  /* Store 1 if the result is not empty */
 
@@ -1277,6 +1279,11 @@ struct Parse {
   Trigger *pNewTrigger;     /* Trigger under construct by a CREATE TRIGGER */
   TriggerStack *trigStack;  /* Trigger actions being coded */
   const char *zAuthContext; /* The 6th parameter to db->xAuth callbacks */
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+  int nArgAlloc;            /* Number of bytes allocated for zArg[] */
+  int nArgUsed;             /* Number of bytes of zArg[] used so far */
+  char *zArg;               /* Complete text of a module argument */
+#endif
 };
 
 /*
@@ -1773,6 +1780,16 @@ void sqlite3CloseExtensions(sqlite3*);
   #define sqlite3ThreadSafeMalloc sqlite3MallocX
   #define sqlite3ThreadSafeFree sqlite3FreeX
 #endif
+
+#ifdef SQLITE_OMIT_VIRTUALTABLE
+#  define sqlite3VtabClear(X)
+#else
+   void sqlite3VtabClear(Table*);
+#endif
+void sqlite3VtabBeginParse(Parse*, Token*, Token*, Token*);
+void sqlite3VtabFinishParse(Parse*, Token*);
+void sqlite3VtabArgInit(Parse*);
+void sqlite3VtabArgExtend(Parse*, Token*);
 
 #ifdef SQLITE_SSE
 #include "sseInt.h"

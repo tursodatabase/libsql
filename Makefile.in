@@ -130,7 +130,7 @@ LIBOBJ = alter.lo analyze.lo attach.lo auth.lo btree.lo build.lo \
          select.lo table.lo tokenize.lo trigger.lo update.lo \
          util.lo vacuum.lo \
          vdbe.lo vdbeapi.lo vdbeaux.lo vdbefifo.lo vdbemem.lo \
-         where.lo utf.lo legacy.lo
+         where.lo utf.lo legacy.lo vtab.lo
 
 # All of the source code files.
 #
@@ -184,6 +184,7 @@ SRC = \
   $(TOP)/src/vdbefifo.c \
   $(TOP)/src/vdbemem.c \
   $(TOP)/src/vdbeInt.h \
+  $(TOP)/src/vtab.c \
   $(TOP)/src/where.c
 
 # Source code to the test files.
@@ -206,6 +207,7 @@ TESTSRC = \
   $(TOP)/src/test5.c \
   $(TOP)/src/test6.c \
   $(TOP)/src/test7.c \
+  $(TOP)/src/test8.c \
   $(TOP)/src/test_async.c \
   $(TOP)/src/test_md5.c \
   $(TOP)/src/test_server.c \
@@ -434,6 +436,9 @@ vdbefifo.lo:	$(TOP)/src/vdbefifo.c $(VDBEHDR)
 
 vdbemem.lo:	$(TOP)/src/vdbemem.c $(VDBEHDR)
 	$(LTCOMPILE) -c $(TOP)/src/vdbemem.c
+
+vtab.lo:	$(TOP)/src/vtab.c $(VDBEHDR)
+	$(LTCOMPILE) -c $(TOP)/src/vtab.c
 
 where.lo:	$(TOP)/src/where.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/where.c

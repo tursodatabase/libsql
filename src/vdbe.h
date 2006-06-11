@@ -15,7 +15,7 @@
 ** or VDBE.  The VDBE implements an abstract machine that runs a
 ** simple program to access and modify the underlying database.
 **
-** $Id: vdbe.h,v 1.102 2006/03/17 13:56:34 drh Exp $
+** $Id: vdbe.h,v 1.103 2006/06/11 23:41:56 drh Exp $
 */
 #ifndef _SQLITE_VDBE_H_
 #define _SQLITE_VDBE_H_
@@ -69,7 +69,7 @@ typedef struct VdbeOpList VdbeOpList;
 #define P3_KEYINFO  (-6)  /* P3 is a pointer to a KeyInfo structure */
 #define P3_VDBEFUNC (-7)  /* P3 is a pointer to a VdbeFunc structure */
 #define P3_MEM      (-8)  /* P3 is a pointer to a Mem*    structure */
-#define P3_TRANSIENT (-9)  /* P3 is a pointer to a transient string */
+#define P3_TRANSIENT (-9) /* P3 is a pointer to a transient string */
 
 /* When adding a P3 argument using P3_KEYINFO, a copy of the KeyInfo structure
 ** is made.  That copy is freed when the Vdbe is finalized.  But if the

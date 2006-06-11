@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.123 2006/02/24 02:53:50 drh Exp $
+** $Id: update.c,v 1.124 2006/06/11 23:41:56 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -268,7 +268,7 @@ void sqlite3Update(
   if( isView ){
     Select *pView;
     pView = sqlite3SelectDup(pTab->pSelect);
-    sqlite3Select(pParse, pView, SRT_VirtualTab, iCur, 0, 0, 0, 0);
+    sqlite3Select(pParse, pView, SRT_EphemTab, iCur, 0, 0, 0, 0);
     sqlite3SelectDelete(pView);
   }
 

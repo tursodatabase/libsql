@@ -1,0 +1,53 @@
+# 2006 June 10
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is creating and dropping virtual tables.
+#
+# $Id: vtab1.test,v 1.1 2006/06/11 23:41:56 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# We cannot create a virtual table if the module has not
+# been registered.
+#
+do_test vtab1-1.1 {
+  catchsql {
+    CREATE VIRTUAL TABLE t1 USING echo;
+  }
+} {1 {unknown module: echo}}
+do_test vtab1-1.2 {
+  execsql {
+    SELECT name FROM sqlite_master ORDER BY 1
+  }
+} {}
+
+# After we register the echo module, we are allowed to create
+# virtual tables using that module.
+#
+do_test vtab1-1.3 {
+  register_echo_module [sqlite3_connection_pointer db]
+execsql {pragma vdbe_listing=on; pragma vdbe_trace=on}
+  catchsql {
+    CREATE VIRTUAL TABLE t1 USING echo;
+  }
+} {0 {}}
+do_test vtab1-1.4 {
+  set echo_module
+} {xCreate echo}
+do_test vtab1-1.5 {
+  execsql {
+    SELECT name, sql FROM sqlite_master ORDER BY 1
+  }
+} {t1 {CREATE VIRTUAL TABLE t1 USING echo}}
+
+
+finish_test

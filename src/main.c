@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.341 2006/06/08 15:48:01 drh Exp $
+** $Id: main.c,v 1.342 2006/06/11 23:41:55 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -159,6 +159,9 @@ int sqlite3_close(sqlite3 *db){
     sqliteFree(pColl);
   }
   sqlite3HashClear(&db->aCollSeq);
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+  sqlite3HashClear(&db->aModule);
+#endif
 
   sqlite3HashClear(&db->aFunc);
   sqlite3Error(db, SQLITE_OK, 0); /* Deallocates any cached error strings. */
@@ -818,6 +821,9 @@ static int openDatabase(
   db->flags |= SQLITE_ShortColNames;
   sqlite3HashInit(&db->aFunc, SQLITE_HASH_STRING, 0);
   sqlite3HashInit(&db->aCollSeq, SQLITE_HASH_STRING, 0);
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+  sqlite3HashInit(&db->aModule, SQLITE_HASH_STRING, 0);
+#endif
 
   /* Add the default collation sequence BINARY. BINARY works for both UTF-8
   ** and UTF-16, so add a version for each to avoid any unnecessary

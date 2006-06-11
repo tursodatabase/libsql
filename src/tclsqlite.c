@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.156 2006/05/10 14:39:14 drh Exp $
+** $Id: tclsqlite.c,v 1.157 2006/06/11 23:41:56 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -2151,6 +2151,7 @@ int TCLSH_MAIN(int argc, char **argv){
     extern int Sqlitetest5_Init(Tcl_Interp*);
     extern int Sqlitetest6_Init(Tcl_Interp*);
     extern int Sqlitetest7_Init(Tcl_Interp*);
+    extern int Sqlitetest8_Init(Tcl_Interp*);
     extern int Md5_Init(Tcl_Interp*);
     extern int Sqlitetestsse_Init(Tcl_Interp*);
     extern int Sqlitetestasync_Init(Tcl_Interp*);
@@ -2162,6 +2163,7 @@ int TCLSH_MAIN(int argc, char **argv){
     Sqlitetest5_Init(interp);
     Sqlitetest6_Init(interp);
     Sqlitetest7_Init(interp);
+    Sqlitetest8_Init(interp);
     Sqlitetestasync_Init(interp);
     Md5_Init(interp);
 #ifdef SQLITE_SSE

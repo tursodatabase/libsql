@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.201 2006/06/10 13:29:33 drh Exp $
+** @(#) $Id: parse.y,v 1.202 2006/06/11 23:41:55 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -1062,11 +1062,18 @@ kwcolumn_opt ::= COLUMNKW.
 
 //////////////////////// CREATE VIRTUAL TABLE ... /////////////////////////////
 %ifndef SQLITE_OMIT_VIRTUALTABLE
-cmd ::= CREATE VIRTUAL TABLE nm(X) dbnm(Y) USING nm(Z) vtabargsopt.
-vtabargsopt ::= .
-vtabargsopt ::= LP vtabarglist RP.
+cmd ::= create_vtab.                       {sqlite3VtabFinishParse(pParse,0);}
+cmd ::= create_vtab LP vtabarglist RP(X).  {sqlite3VtabFinishParse(pParse,&X);}
+create_vtab ::= CREATE VIRTUAL TABLE nm(X) dbnm(Y) USING nm(Z). {
+    sqlite3VtabBeginParse(pParse, &X, &Y, &Z);
+}
 vtabarglist ::= vtabarg.
 vtabarglist ::= vtabarglist COMMA vtabarg.
-vtabarg ::= ANY.
-vtabarg ::= vtabarg ANY.
+vtabarg ::= .                       {sqlite3VtabArgInit(pParse);}
+vtabarg ::= vtabarg vtabargtoken.
+vtabargtoken ::= ANY(X).            {sqlite3VtabArgExtend(pParse,&X);}
+vtabargtoken ::= lp anylist RP(X).  {sqlite3VtabArgExtend(pParse,&X);}
+lp ::= LP(X).                       {sqlite3VtabArgExtend(pParse,&X);}
+anylist ::= .
+anylist ::= anylist ANY(X).         {sqlite3VtabArgExtend(pParse,&X);}
 %endif

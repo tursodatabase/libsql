@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.209 2006/06/06 11:45:55 drh Exp $
+** $Id: where.c,v 1.210 2006/06/11 23:41:56 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1601,7 +1601,7 @@ WhereInfo *sqlite3WhereBegin(
     pTabItem = &pTabList->a[pLevel->iFrom];
     pTab = pTabItem->pTab;
     iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
-    if( pTab->isTransient || pTab->pSelect ) continue;
+    if( pTab->isEphem || pTab->pSelect ) continue;
     if( (pLevel->flags & WHERE_IDX_ONLY)==0 ){
       sqlite3OpenTable(pParse, pTabItem->iCursor, iDb, pTab, OP_OpenRead);
       if( pTab->nCol<(sizeof(Bitmask)*8) ){
@@ -2087,7 +2087,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     struct SrcList_item *pTabItem = &pTabList->a[pLevel->iFrom];
     Table *pTab = pTabItem->pTab;
     assert( pTab!=0 );
-    if( pTab->isTransient || pTab->pSelect ) continue;
+    if( pTab->isEphem || pTab->pSelect ) continue;
     if( (pLevel->flags & WHERE_IDX_ONLY)==0 ){
       sqlite3VdbeAddOp(v, OP_Close, pTabItem->iCursor, 0);
     }

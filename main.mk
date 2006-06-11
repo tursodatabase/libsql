@@ -63,7 +63,7 @@ LIBOBJ+= alter.o analyze.o attach.o auth.o btree.o build.o \
          select.o table.o tclsqlite.o tokenize.o trigger.o \
          update.o util.o vacuum.o \
          vdbe.o vdbeapi.o vdbeaux.o vdbefifo.o vdbemem.o \
-         where.o utf.o legacy.o
+         where.o utf.o legacy.o vtab.o
 
 # All of the source code files.
 #
@@ -117,6 +117,7 @@ SRC = \
   $(TOP)/src/vdbefifo.c \
   $(TOP)/src/vdbemem.c \
   $(TOP)/src/vdbeInt.h \
+  $(TOP)/src/vtab.c \
   $(TOP)/src/where.c
 
 # Source code to the test files.
@@ -139,6 +140,7 @@ TESTSRC = \
   $(TOP)/src/test5.c \
   $(TOP)/src/test6.c \
   $(TOP)/src/test7.c \
+  $(TOP)/src/test8.c \
   $(TOP)/src/test_async.c \
   $(TOP)/src/test_md5.c \
   $(TOP)/src/test_server.c \
@@ -359,6 +361,9 @@ vdbefifo.o:	$(TOP)/src/vdbefifo.c $(VDBEHDR)
 
 vdbemem.o:	$(TOP)/src/vdbemem.c $(VDBEHDR)
 	$(TCCX) -c $(TOP)/src/vdbemem.c
+
+vtab.o:	$(TOP)/src/vtab.c $(VDBEHDR)
+	$(TCCX) -c $(TOP)/src/vtab.c
 
 where.o:	$(TOP)/src/where.c $(HDR)
 	$(TCCX) -c $(TOP)/src/where.c
