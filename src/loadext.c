@@ -280,11 +280,13 @@ int sqlite3_load_extension(
 ** to clean up loaded extensions
 */
 void sqlite3CloseExtensions(sqlite3 *db){
+#ifdef SQLITE_LIBRARY_TYPE
   int i;
   for(i=0; i<db->nExtension; i++){
     SQLITE_CLOSE_LIBRARY(((SQLITE_LIBRARY_TYPE*)db->aExtension)[i]);
   }
   sqliteFree(db->aExtension);
+#endif
 }
 
 #endif /* SQLITE_OMIT_LOAD_EXTENSION */
