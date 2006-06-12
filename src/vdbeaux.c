@@ -832,6 +832,14 @@ void sqlite3VdbeFreeCursor(Cursor *pCx){
   if( pCx->pBt ){
     sqlite3BtreeClose(pCx->pBt);
   }
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+  if( pCx->pVtabCursor ){
+    sqlite3_vtab_cursor *pVtabCursor = pCx->pVtabCursor;
+    sqlite3_vtab *pVtab = pVtabCursor->pVtab;
+    sqlite3_module *pModule = pVtab->pModule;
+    pModule->xClose(pVtabCursor);
+  }
+#endif
   sqliteFree(pCx->pData);
   sqliteFree(pCx->aType);
   sqliteFree(pCx);

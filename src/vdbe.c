@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.553 2006/06/12 16:01:22 danielk1977 Exp $
+** $Id: vdbe.c,v 1.554 2006/06/12 21:59:14 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -4553,6 +4553,73 @@ case OP_VCreate: {
 */
 case OP_VDestroy: {
   rc = sqlite3VtabCallDestroy(db, pOp->p1, pOp->p3);
+  break;
+}
+#endif /* SQLITE_OMIT_VIRTUALTABLE */
+
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+/* Opcode: VOpen P1 * P3
+**
+** P3 is a pointer to a virtual table object, an sqlite3_vtab structure.
+** P1 is a cursor number.  This opcode opens a cursor to the virtual
+** table and stores that cursor in P1.
+*/
+case OP_VOpen: {
+  break;
+}
+#endif /* SQLITE_OMIT_VIRTUALTABLE */
+
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+/* Opcode: VFilter P1 P2 *
+**
+** P1 is a cursor opened using VOpen.  P2 is an address to jump to if
+** the filtered result set is empty.
+**
+** This opcode invokes the xFilter method on the virtual table specified
+** by P1.  The index number parameter to xFilter is the top of the stack.
+** Next down on the stack is the argc parameter.  Beneath the
+** next of stack are argc additional parameters which are passed to
+** xFilter as argv.  The index number, argc, and all argv stack values
+** are popped from the stack before this instruction completes.
+**
+** A jump is made to P2 if the result set after filtering would be 
+** empty.
+*/
+case OP_VFilter: {
+  break;
+}
+#endif /* SQLITE_OMIT_VIRTUALTABLE */
+
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+/* Opcode: VRowid P1 * *
+**
+** Push an integer onto the stack which is the rowid of
+** the virtual-table that the P1 cursor is pointing to.
+*/
+case OP_VRowid: {
+  break;
+}
+#endif /* SQLITE_OMIT_VIRTUALTABLE */
+
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+/* Opcode: VColumn P1 P2 *
+**
+** Push onto the stack the value of the P2-th column of
+** the row of the virtual-table that the P1 cursor is pointing to.
+*/
+case OP_VColumn: {
+  break;
+}
+#endif /* SQLITE_OMIT_VIRTUALTABLE */
+
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+/* Opcode: VNext P1 P2 *
+**
+** Advance virtual table P1 to the next row in its result set and
+** jump to instruction P2.  Or, if the virtual table has reached
+** the end of its result set, then fall through to the next instruction.
+*/
+case OP_VNext: {
   break;
 }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */

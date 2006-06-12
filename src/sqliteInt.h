@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.501 2006/06/12 16:01:22 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.502 2006/06/12 21:59:14 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1110,6 +1110,7 @@ struct WhereLevel {
   int nEq;              /* Number of == or IN constraints on this loop */
   int nIn;              /* Number of IN operators constraining this loop */
   int *aInLoop;         /* Loop terminators for IN operators */
+  sqlite3_index_info *pIdxInfo;  /* Index information for virtual tables */
 };
 
 /*
