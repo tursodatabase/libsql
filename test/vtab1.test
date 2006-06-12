@@ -11,10 +11,15 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is creating and dropping virtual tables.
 #
-# $Id: vtab1.test,v 1.4 2006/06/12 12:08:45 danielk1977 Exp $
+# $Id: vtab1.test,v 1.5 2006/06/12 12:50:23 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+ifcapable !vtab {
+  finish_test
+  return
+}
 
 # We cannot create a virtual table if the module has not
 # been registered.
@@ -95,4 +100,3 @@ do_test vtab1-2.4 {
 ]
 
 finish_test
-
