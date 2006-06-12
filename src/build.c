@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.398 2006/06/12 12:08:45 danielk1977 Exp $
+** $Id: build.c,v 1.399 2006/06/12 16:01:22 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1982,13 +1982,11 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
     ** the schema cookie.
     */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-    if( pTab->isEphem ){
+    if( pTab->isVirtual ){
       sqlite3VdbeOp3(v, OP_VDestroy, iDb, 0, pTab->zName, 0);
-    }else
-#endif
-    {
-      sqlite3VdbeOp3(v, OP_DropTable, iDb, 0, pTab->zName, 0);
     }
+#endif
+    sqlite3VdbeOp3(v, OP_DropTable, iDb, 0, pTab->zName, 0);
     sqlite3ChangeCookie(db, v, iDb);
   }
   sqliteViewResetAll(db, iDb);

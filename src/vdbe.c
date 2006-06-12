@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.552 2006/06/12 06:09:19 danielk1977 Exp $
+** $Id: vdbe.c,v 1.553 2006/06/12 16:01:22 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -4546,12 +4546,13 @@ case OP_VCreate: {
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-/* Opcode: VDestroy * * P3
+/* Opcode: VDestroy P1 * P3
 **
-** P3 is the name of a virtual table.  Call the xDestroy method for
-** that table.
+** P3 is the name of a virtual table in database P1.  Call the xDestroy method
+** of that table.
 */
 case OP_VDestroy: {
+  rc = sqlite3VtabCallDestroy(db, pOp->p1, pOp->p3);
   break;
 }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
