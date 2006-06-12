@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.396 2006/06/11 23:41:55 drh Exp $
+** $Id: build.c,v 1.397 2006/06/12 11:24:37 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -782,22 +782,28 @@ void sqlite3StartTable(
 
   /* Make sure the new table name does not collide with an existing
   ** index or table name in the same database.  Issue an error message if
-  ** it does.
+  ** it does. The exception is if the statement being parsed was passed
+  ** to an sqlite3_declare_vtab() call. In that case only the column names
+  ** and types will be used, so there is no need to test for namespace
+  ** collisions.
   */
-  if( SQLITE_OK!=sqlite3ReadSchema(pParse) ){
-    goto begin_table_error;
-  }
-  pTable = sqlite3FindTable(db, zName, db->aDb[iDb].zName);
-  if( pTable ){
-    if( !noErr ){
-      sqlite3ErrorMsg(pParse, "table %T already exists", pName);
+  if( !IN_DECLARE_VTAB ){
+    if( SQLITE_OK!=sqlite3ReadSchema(pParse) ){
+      goto begin_table_error;
     }
-    goto begin_table_error;
+    pTable = sqlite3FindTable(db, zName, db->aDb[iDb].zName);
+    if( pTable ){
+      if( !noErr ){
+        sqlite3ErrorMsg(pParse, "table %T already exists", pName);
+      }
+      goto begin_table_error;
+    }
+    if( sqlite3FindIndex(db, zName, 0)!=0 && (iDb==0 || !db->init.busy) ){
+      sqlite3ErrorMsg(pParse, "there is already an index named %s", zName);
+      goto begin_table_error;
+    }
   }
-  if( sqlite3FindIndex(db, zName, 0)!=0 && (iDb==0 || !db->init.busy) ){
-    sqlite3ErrorMsg(pParse, "there is already an index named %s", zName);
-    goto begin_table_error;
-  }
+
   pTable = sqliteMalloc( sizeof(Table) );
   if( pTable==0 ){
     pParse->rc = SQLITE_NOMEM;
@@ -1649,6 +1655,9 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
   ** already known.
   */
   if( pTable->nCol>0 ) return 0;
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+  if( pTable->isVirtual ) return 0;
+#endif
 
   /* A negative nCol is a special marker meaning that we are currently
   ** trying to compute the column names.  If we enter this routine with

@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to help implement virtual tables.
 **
-** $Id: vtab.c,v 1.2 2006/06/12 06:09:19 danielk1977 Exp $
+** $Id: vtab.c,v 1.3 2006/06/12 11:24:37 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
@@ -128,7 +128,6 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
   if( pTab==0 ) return;
   db = pParse->db;
   if( pTab->nModuleArg<1 ) return;
-  pParse->pNewTable = 0;
   zModule = pTab->azModuleArg[0];
   pTab->pModule = (sqlite3_module*)sqlite3HashFind(&db->aModule, 
                      zModule, strlen(zModule));
@@ -188,14 +187,10 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
   **
   ** TODO: If the module is already registered, should we call xConnect()
   ** here, or should it wait until the table is first referenced. Maybe
-  ** it's better to be lazy here, in case xConnect() is expensive to call.
+  ** it's better to be lazy here, in case xConnect() is expensive to call
+  ** and the schema is reparsed a number of times.
   */
   else {
-#if 0
-    sqlite3_module *pMod = pTab->pModule;
-    assert( pMod->xConnect );
-    pMod->xConnect(db, pMod, pTab->nModuleArg, pTab->azModuleArg, &pTab->pVtab);
-#endif
     Table *pOld;
     Schema *pSchema = pTab->pSchema;
     const char *zName = pTab->zName;
@@ -205,6 +200,7 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
       assert( pTab==pOld );  /* Malloc must have failed inside HashInsert() */
       return;
     }
+    pParse->pNewTable = 0;
   }
 }
 
@@ -239,6 +235,84 @@ void sqlite3VtabArgExtend(Parse *pParse, Token *p){
 }
 
 /*
+** This function is invoked by the parser to call the xConnect() method
+** of table pTab. If an error occurs, an error code is returned and an error
+** left in pParse.
+*/
+int sqlite3VtabCallConnect(Parse *pParse, Table *pTab){
+  sqlite3_module *pModule;
+  const char *zModule;
+  int rc = SQLITE_OK;
+
+  assert(pTab && pTab->isVirtual);
+  if( pTab->pVtab ){
+    return SQLITE_OK;
+  }
+
+  pModule = pTab->pModule;
+  zModule = pTab->azModuleArg[0];
+  if( !pModule || !pModule->xConnect ){
+    const char *zModule = pTab->azModuleArg[0];
+    sqlite3ErrorMsg(pParse, "unknown module: %s", zModule);
+    rc = SQLITE_ERROR;
+  } else {
+    char **azArg = pTab->azModuleArg;
+    int nArg = pTab->nModuleArg;
+    assert( !pParse->db->pVTab );
+    pParse->db->pVTab = pTab;
+    rc = pModule->xConnect(pParse->db, pModule, nArg, azArg, &pTab->pVtab);
+    pParse->db->pVTab = 0;
+    if( rc ){
+      sqlite3ErrorMsg(pParse, "module connect failed: %s", zModule);
+    }
+  }
+
+  return rc;
+}
+
+int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
+  Parse sParse;
+
+  int rc = SQLITE_OK;
+  Table *pTab = db->pVTab;
+  char *zErr = 0;
+
+  if( !pTab ){
+    sqlite3Error(db, SQLITE_MISUSE, 0);
+    return SQLITE_MISUSE;
+  }
+  assert(pTab->isVirtual && pTab->nCol==0 && pTab->aCol==0);
+
+  memset(&sParse, 0, sizeof(Parse));
+  sParse.declareVtab = 1;
+  sParse.db = db;
+
+  if( 
+      SQLITE_OK == sqlite3RunParser(&sParse, zCreateTable, &zErr) && 
+      sParse.pNewTable && 
+      !sParse.pNewTable->pSelect && 
+      !sParse.pNewTable->isVirtual 
+  ){
+    pTab->aCol = sParse.pNewTable->aCol;
+    pTab->nCol = sParse.pNewTable->nCol;
+    sParse.pNewTable->nCol = 0;
+    sParse.pNewTable->aCol = 0;
+  } else {
+    sqlite3Error(db, SQLITE_ERROR, zErr);
+    sqliteFree(zErr);
+    rc = SQLITE_ERROR;
+  }
+  sParse.declareVtab = 0;
+
+  sqlite3_finalize((sqlite3_stmt*)sParse.pVdbe);
+  sqlite3DeleteTable(0, sParse.pNewTable);
+  sParse.pNewTable = 0;
+  db->pVTab = 0;
+
+  return rc;
+}
+
+/*
 ** This function is invoked by the vdbe to call the xCreate method
 ** of the virtual table named zTab in database iDb. 
 **
@@ -250,11 +324,12 @@ int sqlite3VtabCallCreate(sqlite3 *db, int iDb, const char *zTab, char **pzErr){
   int rc = SQLITE_OK;
   Table *pTab;
   sqlite3_module *pModule;
+  const char *zModule;
 
   pTab = sqlite3FindTable(db, zTab, db->aDb[iDb].zName);
-  assert(pTab && pTab->isVirtual);
+  assert(pTab && pTab->isVirtual && !pTab->pVtab);
   pModule = pTab->pModule;
-  const char *zModule = pTab->azModuleArg[0];
+  zModule = pTab->azModuleArg[0];
 
   /* If the module has been registered and includes a Create method, 
   ** invoke it now. If the module has not been registered, return an 
@@ -264,10 +339,20 @@ int sqlite3VtabCallCreate(sqlite3 *db, int iDb, const char *zTab, char **pzErr){
     *pzErr = sqlite3MPrintf("unknown module: %s", zModule);
     rc = SQLITE_ERROR;
   }else if( pModule->xCreate ){
-    /* TODO: Maybe the above condition should refer to pTable->needCreate. */
     char **azArg = pTab->azModuleArg;
     int nArg = pTab->nModuleArg;
+    assert( !db->pVTab );
+    db->pVTab = pTab;
+    rc = sqlite3SafetyOff(db);
+    assert( rc==SQLITE_OK );
     rc = pModule->xCreate(db, pModule, nArg, azArg, &pTab->pVtab);
+    db->pVTab = 0;
+    if( rc ){
+      *pzErr = sqlite3MPrintf("module create failed: %s", zModule);
+      sqlite3SafetyOn(db);
+    } else {
+      rc = sqlite3SafetyOn(db);
+    }
   }
 
   if( SQLITE_OK==rc ){

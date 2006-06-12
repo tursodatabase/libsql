@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.498 2006/06/12 06:09:18 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.499 2006/06/12 11:24:37 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -492,6 +492,7 @@ struct sqlite3 {
 #endif
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   Hash aModule;                 /* populated by sqlite3_create_module() */
+  Table *pVTab;                 /* vtab with active Connect/Create method */
 #endif
   Hash aFunc;                   /* All functions that can be in SQL exprs */
   Hash aCollSeq;                /* All collating sequences */
@@ -1283,8 +1284,15 @@ struct Parse {
   int nArgAlloc;            /* Number of bytes allocated for zArg[] */
   int nArgUsed;             /* Number of bytes of zArg[] used so far */
   char *zArg;               /* Complete text of a module argument */
+  u8 declareVtab;           /* True if inside sqlite3_declare_vtab() */
 #endif
 };
+
+#ifdef SQLITE_OMIT_VIRTUALTABLE
+  #define IN_DECLARE_VTAB 0
+#else
+  #define IN_DECLARE_VTAB (pParse->declareVtab)
+#endif
 
 /*
 ** An instance of the following structure can be declared on a stack and used
@@ -1791,6 +1799,7 @@ void sqlite3VtabFinishParse(Parse*, Token*);
 void sqlite3VtabArgInit(Parse*);
 void sqlite3VtabArgExtend(Parse*, Token*);
 int sqlite3VtabCallCreate(sqlite3*, int, const char *, char **);
+int sqlite3VtabCallConnect(Parse*, Table*);
 
 #ifdef SQLITE_SSE
 #include "sseInt.h"

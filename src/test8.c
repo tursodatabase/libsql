@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test8.c,v 1.2 2006/06/12 06:09:19 danielk1977 Exp $
+** $Id: test8.c,v 1.3 2006/06/12 11:24:37 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -30,6 +30,44 @@ static void appendToEchoModule(const sqlite3_module *pModule, const char *zArg){
   Tcl_SetVar((Tcl_Interp *)(pModule->pAux), "echo_module", zArg, flags);
 }
 
+/*
+** This function is called from within the echo-modules xCreate and
+** xConnect methods. The argc and argv arguments are copies of those 
+** passed to the calling method. This function is responsible for
+** calling sqlite3_declare_vtab() to declare the schema of the virtual
+** table being created or connected.
+**
+** If the constructor was passed just one argument, i.e.:
+**
+**   CREATE TABLE t1 AS echo(t2);
+**
+** Then t2 is assumed to be the name of a *real* database table. The
+** schema of the virtual table is declared by passing a copy of the 
+** CREATE TABLE statement for the real table to sqlite3_declare_vtab().
+** Hence, the virtual table should have exactly the same column names and 
+** types as the real table.
+*/
+static int echoDeclareVtab(sqlite3 *db, int argc, char **argv){
+  int rc = SQLITE_OK;
+
+  if( argc==2 ){
+    sqlite3_stmt *pStmt = 0;
+    sqlite3_prepare(db, 
+        "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = ?",
+        -1, &pStmt, 0);
+    sqlite3_bind_text(pStmt, 1, argv[1], -1, 0);
+    if( sqlite3_step(pStmt)==SQLITE_ROW ){
+      const char *zCreateTable = sqlite3_column_text(pStmt, 0);
+      sqlite3_declare_vtab(db, zCreateTable);
+    } else {
+      rc = SQLITE_ERROR;
+    }
+    sqlite3_finalize(pStmt);
+  }
+
+  return rc;
+}
+
 /* Methods for the echo module */
 static int echoCreate(
   sqlite3 *db,
@@ -38,7 +76,6 @@ static int echoCreate(
   sqlite3_vtab **ppVtab
 ){
   int i;
-  Tcl_Interp *interp = pModule->pAux;
   *ppVtab = pModule->pAux;
 
   appendToEchoModule(pModule, "xCreate");
@@ -46,6 +83,7 @@ static int echoCreate(
     appendToEchoModule(pModule, argv[i]);
   }
 
+  echoDeclareVtab(db, argc, argv);
   return 0;
 }
 static int echoConnect(
@@ -63,6 +101,8 @@ static int echoConnect(
     Tcl_SetVar(interp, "echo_module", argv[i],
                 TCL_APPEND_VALUE | TCL_LIST_ELEMENT | TCL_GLOBAL_ONLY);
   }
+
+  echoDeclareVtab(db, argc, argv);
   return 0;
 }
 static int echoDisconnect(sqlite3_vtab *pVtab){

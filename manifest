@@ -1,5 +1,5 @@
-C Incremental\swork\son\sparsing/storing\sand\sinvoking\sthe\sxCreate\scallback\sfor\svirtual\stables.\s(CVS\s3212)
-D 2006-06-12T06:09:18
+C Add\sfirst\scut\sof\ssqlite3_declare_vtab().\sNot\sat\sall\swell\stested\syet.\s(CVS\s3213)
+D 2006-06-12T11:24:37
 F Makefile.in 56fd6261e83f60724e6dcd764e06ab68cbd53909
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -36,7 +36,7 @@ F src/attach.c 27a31d3b89d7ebb5b358847607b1ec795384123c
 F src/auth.c 9ae84d2d94eb96195e04515715e08e85963e96c2
 F src/btree.c ed343b3dbcbc7da9ac481ef2b98c4239fe6d9629
 F src/btree.h 40055cfc09defd1146bc5b922399c035f969e56d
-F src/build.c f541d3e9afed5eb8a397353b2b54c23d8d531e97
+F src/build.c a72a709541c62402665e053e2e173dfdc62ce049
 F src/callback.c fd9bb39f7ff6b52bad8365617abc61c720640429
 F src/complete.c 7d1a44be8f37de125fcafd3d3a018690b3799675
 F src/date.c cd2bd5d1ebc6fa12d6312f69789ae5b0a2766f2e
@@ -72,9 +72,9 @@ F src/random.c d40f8d356cecbd351ccfab6eaedd7ec1b54f5261
 F src/select.c 38eda11d950ed5e631ea9054f84a4a8b9e9b39d8
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c b9eb3ed4d3ab41fbf630eabb602f3c9d20fc737a
-F src/sqlite.h.in ca30260d7815ee68be410e1fa0bd1f131c86cf10
+F src/sqlite.h.in cad97e59cfad8337f9f43ea9662714a256ca80b2
 F src/sqlite3ext.h 127bd394c8eea481f2ac9b754bf399dbfc818b75
-F src/sqliteInt.h 4ac8c35fec748b1886bed00f1086fa2520faea80
+F src/sqliteInt.h ef7b936e38858c98c35ab3cad55eea0859c64a94
 F src/table.c f64ec4fbfe333f8df925bc6ba494f55e05b0e75e
 F src/tclsqlite.c 0b2a04cfc1b4298adfbe90a754cfbbe207aca11a
 F src/test1.c 88291fa6674dcd409b1c9d76d3119151d4b81a50
@@ -84,11 +84,11 @@ F src/test4.c 8b784cd82de158a2317cb4ac4bc86f91ad315e25
 F src/test5.c 7162f8526affb771c4ed256826eee7bb9eca265f
 F src/test6.c 60a02961ceb7b3edc25f5dc5c1ac2556622a76de
 F src/test7.c 03fa8d787f6aebc6d1f72504d52f33013ad2c8e3
-F src/test8.c c1a91a3307e4d8d8a46211498111d1c5778b9294
+F src/test8.c 9eb1d2e41b81df15952ee8ee54f95fa214f8813e
 F src/test_async.c e3deaedd4d86a56391b81808fde9e44fbd92f1d3
 F src/test_md5.c 6c42bc0a3c0b54be34623ff77a0eec32b2fa96e3
 F src/test_server.c a6460daed0b92ecbc2531b6dc73717470e7a648c
-F src/tokenize.c 279c62792222e0ae6efc4f7609bc47301dde1ef3
+F src/tokenize.c 6ebcafa6622839968dda4418a7b6945f277a128f
 F src/trigger.c 48bbb94c11954c8e132efcc04478efe8304c4196
 F src/update.c 0186f09414a6578156d40666becc964f85c2a616
 F src/utf.c ab81ac59084ff1c07d421eb1a0a84ec809603b44
@@ -101,7 +101,7 @@ F src/vdbeapi.c 7dc662e7c905ce666bb506dced932e0307115cbf
 F src/vdbeaux.c 4002e6b19d7c9719cb81f9797316b9ad118e4370
 F src/vdbefifo.c 9efb94c8c3f4c979ebd0028219483f88e57584f5
 F src/vdbemem.c 5f0afe3b92bb2c037f8d5d697f7c151fa50783a3
-F src/vtab.c 6872f6a6ca33aac85b62bcd66d883f4deffab00d
+F src/vtab.c 36778506d9af9b750e01eeea1e116f3c80b7fa01
 F src/where.c 3dc5269ba552c0db39247f6bbc98b312ae786863
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -287,7 +287,7 @@ F test/vacuum.test 37f998b841cb335397c26d9bbc3457182af2565f
 F test/vacuum2.test 5aea8c88a65cb29f7d175296e7c819c6158d838c
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/view.test 16e2774fe35e47a07ac4471b7f0bcc948b1aa6d5
-F test/vtab1.test 5bf2bebe96272953928596b256cefb21d9c765b1
+F test/vtab1.test 5c7f4a2a53f3894d571239099c0253e27263cc84
 F test/where.test ee7c9a6659b07e1ee61177f6e7ff71565ee2c9df
 F test/where2.test a16476a5913e75cf65b38f2daa6157a6b7791394
 F test/where3.test 3b5ad2c58069e12be2bd86bc5e211a82810521aa
@@ -363,7 +363,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 898ec36b4102aaa03979f8f5c510936e57e2ae48
-R fd0d79bfdfee01e76c00d486659426af
+P 8ffbab79d5a76dea0f87cf551d5b6ad4f0fab337
+R 26c5c53e0c5dda8d367ac8454cb93c3e
 U danielk1977
-Z 21ad209dbac4dc09cf972c3f2b10f101
+Z dfbf7809fd6098db180fe009efbe7300
