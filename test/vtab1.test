@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is creating and dropping virtual tables.
 #
-# $Id: vtab1.test,v 1.3 2006/06/12 11:24:38 danielk1977 Exp $
+# $Id: vtab1.test,v 1.4 2006/06/12 12:08:45 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -67,6 +67,26 @@ do_test vtab1-2.2 {
   execsql {
     CREATE VIRTUAL TABLE t2 USING echo(template);
   }
+  execsql { PRAGMA table_info(t2); }
+} [list         \
+  0 a {} 0 {} 0 \
+  1 b {} 0 {} 0 \
+  2 c {} 0 {} 0 \
+]
+
+# Test that the database can be unloaded. This should invoke 
+# the xDisconnect() callback each of the two virtual tables - t1 and t2.
+do_test vtab1-2.3 {
+  set echo_module [list]
+  db close
+  set echo_module
+} [list xDisconnect xDisconnect]
+
+# Re-open the database. Check that the schema of the virtual
+# table is still correct.
+do_test vtab1-2.4 {
+  sqlite3 db test.db
+  register_echo_module [sqlite3_connection_pointer db]
   execsql { PRAGMA table_info(t2); }
 } [list         \
   0 a {} 0 {} 0 \

@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test8.c,v 1.3 2006/06/12 11:24:37 danielk1977 Exp $
+** $Id: test8.c,v 1.4 2006/06/12 12:08:45 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -28,6 +28,11 @@
 static void appendToEchoModule(const sqlite3_module *pModule, const char *zArg){
   int flags = (TCL_APPEND_VALUE | TCL_LIST_ELEMENT | TCL_GLOBAL_ONLY);
   Tcl_SetVar((Tcl_Interp *)(pModule->pAux), "echo_module", zArg, flags);
+}
+
+static void appendToEchoTable(const sqlite3_vtab *pTab, const char *zArg){
+  int flags = (TCL_APPEND_VALUE | TCL_LIST_ELEMENT | TCL_GLOBAL_ONLY);
+  Tcl_SetVar((Tcl_Interp *)(pTab), "echo_module", zArg, flags);
 }
 
 /*
@@ -106,9 +111,7 @@ static int echoConnect(
   return 0;
 }
 static int echoDisconnect(sqlite3_vtab *pVtab){
-  Tcl_Interp *interp = (Tcl_Interp*)pVtab;
-  Tcl_SetVar(interp, "echo_module", "xDisconnect",
-                TCL_APPEND_VALUE | TCL_LIST_ELEMENT | TCL_GLOBAL_ONLY);
+  appendToEchoTable(pVtab, "xDisconnect");
   return 0;
 }
 static int echoDestroy(sqlite3_vtab *pVtab){

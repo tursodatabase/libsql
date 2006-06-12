@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.397 2006/06/12 11:24:37 danielk1977 Exp $
+** $Id: build.c,v 1.398 2006/06/12 12:08:45 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1637,7 +1637,7 @@ void sqlite3CreateView(
 }
 #endif /* SQLITE_OMIT_VIEW */
 
-#ifndef SQLITE_OMIT_VIEW
+#if !defined(SQLITE_OMIT_VIEW) || !defined(SQLITE_OMIT_VIRTUALTABLE)
 /*
 ** The Table structure pTable is really a VIEW.  Fill in the names of
 ** the columns of the view in the pTable structure.  Return the number
@@ -1651,13 +1651,18 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
 
   assert( pTable );
 
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+  if( sqlite3VtabCallConnect(pParse, pTable) ){
+    return SQLITE_ERROR;
+  }
+  if( pTable->isVirtual ) return 0;
+#endif
+
+#ifndef SQLITE_OMIT_VIEW
   /* A positive nCol means the columns names for this view are
   ** already known.
   */
   if( pTable->nCol>0 ) return 0;
-#ifndef SQLITE_OMIT_VIRTUALTABLE
-  if( pTable->isVirtual ) return 0;
-#endif
 
   /* A negative nCol is a special marker meaning that we are currently
   ** trying to compute the column names.  If we enter this routine with
@@ -1707,8 +1712,9 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
     nErr++;
   }
   return nErr;  
-}
 #endif /* SQLITE_OMIT_VIEW */
+}
+#endif /* !defined(SQLITE_OMIT_VIEW) || !defined(SQLITE_OMIT_VIRTUALTABLE) */
 
 #ifndef SQLITE_OMIT_VIEW
 /*

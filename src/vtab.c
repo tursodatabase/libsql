@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to help implement virtual tables.
 **
-** $Id: vtab.c,v 1.3 2006/06/12 11:24:37 danielk1977 Exp $
+** $Id: vtab.c,v 1.4 2006/06/12 12:08:45 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
@@ -186,7 +186,7 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
   ** record of the table. 
   **
   ** TODO: If the module is already registered, should we call xConnect()
-  ** here, or should it wait until the table is first referenced. Maybe
+  ** here, or should it wait until the table is first referenced? Maybe
   ** it's better to be lazy here, in case xConnect() is expensive to call
   ** and the schema is reparsed a number of times.
   */
@@ -236,16 +236,17 @@ void sqlite3VtabArgExtend(Parse *pParse, Token *p){
 
 /*
 ** This function is invoked by the parser to call the xConnect() method
-** of table pTab. If an error occurs, an error code is returned and an error
-** left in pParse.
+** of the virtual table pTab. If an error occurs, an error code is returned 
+** and an error left in pParse.
+**
+** This call is a no-op if table pTab is not a virtual table.
 */
 int sqlite3VtabCallConnect(Parse *pParse, Table *pTab){
   sqlite3_module *pModule;
   const char *zModule;
   int rc = SQLITE_OK;
 
-  assert(pTab && pTab->isVirtual);
-  if( pTab->pVtab ){
+  if( !pTab || !pTab->isVirtual || pTab->pVtab ){
     return SQLITE_OK;
   }
 
@@ -258,18 +259,29 @@ int sqlite3VtabCallConnect(Parse *pParse, Table *pTab){
   } else {
     char **azArg = pTab->azModuleArg;
     int nArg = pTab->nModuleArg;
-    assert( !pParse->db->pVTab );
-    pParse->db->pVTab = pTab;
-    rc = pModule->xConnect(pParse->db, pModule, nArg, azArg, &pTab->pVtab);
-    pParse->db->pVTab = 0;
+    sqlite3 *db = pParse->db;
+    assert( !db->pVTab );
+    db->pVTab = pTab;
+    rc = sqlite3SafetyOff(db);
+    assert( rc==SQLITE_OK );
+    rc = pModule->xConnect(db, pModule, nArg, azArg, &pTab->pVtab);
+    db->pVTab = 0;
     if( rc ){
       sqlite3ErrorMsg(pParse, "module connect failed: %s", zModule);
+      sqlite3SafetyOn(db);
+    } else {
+      rc = sqlite3SafetyOn(db);
     }
   }
 
   return rc;
 }
 
+/*
+** This function is used to set the schema of a virtual table.  It is only
+** valid to call this function from within the xCreate() or xConnect() of a
+** virtual table module.
+*/
 int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
   Parse sParse;
 
