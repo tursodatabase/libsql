@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to help implement virtual tables.
 **
-** $Id: vtab.c,v 1.1 2006/06/11 23:41:56 drh Exp $
+** $Id: vtab.c,v 1.2 2006/06/12 06:09:19 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
@@ -81,7 +81,14 @@ void sqlite3VtabBeginParse(
 ){
   Table *pTable;        /* The new virtual table */
 
-  sqlite3StartTable(pParse, pName1, pName2, 0, 0, 0);
+  /* TODO: The 5th argument to sqlite3StartTable() - isView - is being 
+  ** passed a true value at present. This prevents sqlite3StartTable()
+  ** from coding OP_CreateTable, which is correct, but causes it
+  ** to invoke the authorization function as if a CREATE VIEW statement
+  ** were attempted, which is incorrect.
+  */
+  sqlite3StartTable(pParse, pName1, pName2, 0, 1, 0);
+
   pTable = pParse->pNewTable;
   if( pTable==0 ) return;
   pTable->isVirtual = 1;
@@ -134,6 +141,7 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
   */
   if( !db->init.busy ){
     char *zStmt;
+    char *zWhere;
     int iDb;
     Vdbe *v;
     if( pTab->pModule==0 ){
@@ -148,14 +156,18 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
 
     /* A slot for the record has already been allocated in the 
     ** SQLITE_MASTER table.  We just need to update that slot with all
-    ** the information we've collected.  The rowid for the preallocated
-    ** slot is the top the stack.
+    ** the information we've collected.  
+    **
+    ** The top of the stack is the rootpage allocated by sqlite3StartTable().
+    ** This value is always 0 and is ignored, a virtual table does not have a
+    ** rootpage. The next entry on the stack is the rowid of the record
+    ** in the sqlite_master table.
     */
     iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
     sqlite3NestedParse(pParse,
       "UPDATE %Q.%s "
-         "SET type='table', name=%Q, tbl_name=%Q, rootpage=NULL, sql=%Q "
-       "WHERE rowid=#0",
+         "SET type='table', name=%Q, tbl_name=%Q, rootpage=0, sql=%Q "
+       "WHERE rowid=#1",
       db->aDb[iDb].zName, SCHEMA_TABLE(iDb),
       pTab->zName,
       pTab->zName,
@@ -163,18 +175,36 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
     );
     sqliteFree(zStmt);
     v = sqlite3GetVdbe(pParse);
-    sqlite3VdbeOp3(v, OP_VCreate, 0, 0, pTab->zName, P3_DYNAMIC);
     sqlite3ChangeCookie(db, v, iDb);
+
+    sqlite3VdbeAddOp(v, OP_Expire, 0, 0);
+    zWhere = sqlite3MPrintf("name='%q'", pTab->zName);
+    sqlite3VdbeOp3(v, OP_ParseSchema, iDb, 0, zWhere, P3_DYNAMIC);
+    sqlite3VdbeOp3(v, OP_VCreate, iDb, 0, pTab->zName, strlen(pTab->zName) + 1);
   }
 
-  /* If we are rereading the sqlite_master table and we happen to
-  ** currently know the module for the new table, create an
-  ** sqlite3_vtab instance.
+  /* If we are rereading the sqlite_master table create the in-memory
+  ** record of the table. 
+  **
+  ** TODO: If the module is already registered, should we call xConnect()
+  ** here, or should it wait until the table is first referenced. Maybe
+  ** it's better to be lazy here, in case xConnect() is expensive to call.
   */
-  else if( pTab->pModule ){
+  else {
+#if 0
     sqlite3_module *pMod = pTab->pModule;
     assert( pMod->xConnect );
     pMod->xConnect(db, pMod, pTab->nModuleArg, pTab->azModuleArg, &pTab->pVtab);
+#endif
+    Table *pOld;
+    Schema *pSchema = pTab->pSchema;
+    const char *zName = pTab->zName;
+    int nName = strlen(zName) + 1;
+    pOld = sqlite3HashInsert(&pSchema->tblHash, zName, nName, pTab);
+    if( pOld ){
+      assert( pTab==pOld );  /* Malloc must have failed inside HashInsert() */
+      return;
+    }
   }
 }
 
@@ -206,6 +236,44 @@ void sqlite3VtabArgExtend(Parse *pParse, Token *p){
   memcpy(&pParse->zArg[pParse->nArgUsed], p->z, p->n);
   pParse->nArgUsed += p->n;
   pParse->zArg[pParse->nArgUsed] = 0;
+}
+
+/*
+** This function is invoked by the vdbe to call the xCreate method
+** of the virtual table named zTab in database iDb. 
+**
+** If an error occurs, *pzErr is set to point an an English language
+** description of the error and an SQLITE_XXX error code is returned.
+** In this case the caller must call sqliteFree() on *pzErr.
+*/
+int sqlite3VtabCallCreate(sqlite3 *db, int iDb, const char *zTab, char **pzErr){
+  int rc = SQLITE_OK;
+  Table *pTab;
+  sqlite3_module *pModule;
+
+  pTab = sqlite3FindTable(db, zTab, db->aDb[iDb].zName);
+  assert(pTab && pTab->isVirtual);
+  pModule = pTab->pModule;
+  const char *zModule = pTab->azModuleArg[0];
+
+  /* If the module has been registered and includes a Create method, 
+  ** invoke it now. If the module has not been registered, return an 
+  ** error. Otherwise, do nothing.
+  */
+  if( !pModule ){
+    *pzErr = sqlite3MPrintf("unknown module: %s", zModule);
+    rc = SQLITE_ERROR;
+  }else if( pModule->xCreate ){
+    /* TODO: Maybe the above condition should refer to pTable->needCreate. */
+    char **azArg = pTab->azModuleArg;
+    int nArg = pTab->nModuleArg;
+    rc = pModule->xCreate(db, pModule, nArg, azArg, &pTab->pVtab);
+  }
+
+  if( SQLITE_OK==rc ){
+    pTab->needCreate = 0;
+  }
+  return rc;
 }
 
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
