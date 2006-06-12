@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.140 2006/06/08 16:10:15 drh Exp $
+** $Id: shell.c,v 1.141 2006/06/12 12:57:46 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -21,7 +21,7 @@
 #include "sqlite3.h"
 #include <ctype.h>
 
-#if !defined(_WIN32) && !defined(WIN32) && !defined(__MACOS__)
+#if !defined(_WIN32) && !defined(WIN32) && !defined(__MACOS__) && !defined(__OS2__)
 # include <signal.h>
 # include <pwd.h>
 # include <unistd.h>
@@ -35,6 +35,10 @@
 # include <extras.h>
 # include <Files.h>
 # include <Folders.h>
+#endif
+
+#ifdef __OS2__
+# include <unistd.h>
 #endif
 
 #if defined(HAVE_READLINE) && HAVE_READLINE==1
@@ -1539,7 +1543,7 @@ static void process_input(struct callback_data *p, FILE *in){
 static char *find_home_dir(void){
   char *home_dir = NULL;
 
-#if !defined(_WIN32) && !defined(WIN32) && !defined(__MACOS__)
+#if !defined(_WIN32) && !defined(WIN32) && !defined(__MACOS__) && !defined(__OS2__)
   struct passwd *pwent;
   uid_t uid = getuid();
   if( (pwent=getpwuid(uid)) != NULL) {
@@ -1559,7 +1563,7 @@ static char *find_home_dir(void){
     }
   }
 
-#if defined(_WIN32) || defined(WIN32)
+#if defined(_WIN32) || defined(WIN32) || defined(__OS2__)
   if (!home_dir) {
     home_dir = "c:";
   }

@@ -28,7 +28,7 @@
 #     define OS_WIN 1
 #     define OS_UNIX 0
 #     define OS_OS2 0
-#   elif defined(_EMX_) || defined(_OS2) || defined(OS2) || defined(OS_OS2)
+#   elif defined(_EMX_) || defined(_OS2) || defined(OS2) || defined(OS_OS2) || defined(__OS2__)
 #     define OS_WIN 0
 #     define OS_UNIX 0
 #     define OS_OS2 1
