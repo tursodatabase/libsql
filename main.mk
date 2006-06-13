@@ -144,6 +144,7 @@ TESTSRC = \
   $(TOP)/src/test_async.c \
   $(TOP)/src/test_md5.c \
   $(TOP)/src/test_server.c \
+  $(TOP)/src/test_tclvar.c \
   $(TOP)/src/utf.c \
   $(TOP)/src/util.c \
   $(TOP)/src/vdbe.c \

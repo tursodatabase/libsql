@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.215 2006/06/13 17:39:01 drh Exp $
+** $Id: where.c,v 1.216 2006/06/13 23:51:35 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1108,8 +1108,12 @@ static double bestVirtualIndex(
     pIdxCons->usable =  (pTerm->prereqRight & notReady)==0;
   }
   memset(pUsage, 0, sizeof(pUsage[0])*pIdxInfo->nConstraint);
-  pIdxInfo->zPlan = 0;
-  pIdxInfo->nPlan = 0;
+  if( pIdxInfo->needToFreeIdxStr ){
+    sqlite3_free(pIdxInfo->idxStr);
+  }
+  pIdxInfo->idxStr = 0;
+  pIdxInfo->idxNum = 0;
+  pIdxInfo->needToFreeIdxStr = 0;
   pIdxInfo->orderByConsumed = 0;
   pIdxInfo->estimatedCost = SQLITE_BIG_DBL;
   nOrderBy = pIdxInfo->nOrderBy;
@@ -1572,10 +1576,13 @@ static void whereInfoFree(WhereInfo *pWInfo){
   if( pWInfo ){
     int i;
     for(i=0; i<pWInfo->nLevel; i++){
-      if( pWInfo->a[i].pIdxInfo ){
-        sqliteFree(pWInfo->a[i].pIdxInfo->zPlan);
+      sqlite3_index_info *pInfo = pWInfo->a[i].pIdxInfo;
+      if( pInfo ){
+        if( pInfo->needToFreeIdxStr ){
+          sqlite3_free(pInfo->idxStr);
+        }
+        sqliteFree(pInfo);
       }
-      sqliteFree(pWInfo->a[i].pIdxInfo);
     }
     sqliteFree(pWInfo);
   }
@@ -1861,8 +1868,9 @@ WhereInfo *sqlite3WhereBegin(
       }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
       else if( pLevel->pIdxInfo ){
-        zMsg = sqlite3MPrintf("%z VIRTUAL TABLE INDEX %s",
-                    pLevel->pIdxInfo->zPlan);
+        sqlite3_index_info *pIdxInfo = pLevel->pIdxInfo;
+        zMsg = sqlite3MPrintf("%z VIRTUAL TABLE INDEX %d:%s",
+                    pIdxInfo->idxNum, pIdxInfo->idxStr);
       }
 #endif
       if( pLevel->flags & WHERE_ORDERBY ){
@@ -1952,26 +1960,29 @@ WhereInfo *sqlite3WhereBegin(
       /* Case 0:  The table is a virtual-table.  Use the VFilter and VNext
       **          to access the data.
       */
-      char *zSpace;     /* Space for OP_VFilter to marshall it's arguments */
-
       sqlite3_index_info *pIdxInfo = pLevel->pIdxInfo;
-      for(i=1; i<=pIdxInfo->nConstraint; i++){
+      int nConstraint = pIdxInfo->nConstraint;
+      struct sqlite3_index_constraint_usage *aUsage =
+                                                  pIdxInfo->aConstraintUsage;
+      const struct sqlite3_index_constraint *aConstraint =
+                                                  pIdxInfo->aConstraint;
+
+      for(i=1; i<=nConstraint; i++){
         int j;
-        for(j=0; j<pIdxInfo->nConstraint; j++){
-          if( pIdxInfo->aConstraintUsage[j].argvIndex==i ){
-            sqlite3ExprCode(pParse, wc.a[j].pExpr->pRight);
+        for(j=0; j<nConstraint; j++){
+          if( aUsage[j].argvIndex==i ){
+            int k = aConstraint[j].iTermOffset;
+            sqlite3ExprCode(pParse, wc.a[k].pExpr->pRight);
             break;
           }
         }
-        if( j==pIdxInfo->nConstraint ) break;
+        if( j==nConstraint ) break;
       }
       sqlite3VdbeAddOp(v, OP_Integer, i-1, 0);
-      sqlite3VdbeAddOp(v, OP_Blob, pIdxInfo->nPlan, 0);
-      sqlite3VdbeChangeP3(v, -1, pIdxInfo->zPlan, P3_DYNAMIC);
-      pIdxInfo->zPlan = 0;
-      sqlite3VdbeAddOp(v, OP_VFilter, iCur, brk);
-      zSpace = (char *)sqliteMalloc(sizeof(sqlite3_value*)*(i-1));
-      sqlite3VdbeChangeP3(v, -1, zSpace, P3_DYNAMIC);
+      sqlite3VdbeAddOp(v, OP_Integer, pIdxInfo->idxNum, 0);
+      sqlite3VdbeOp3(v, OP_VFilter, iCur, brk, pIdxInfo->idxStr,
+                      pIdxInfo->needToFreeIdxStr ? P3_MPRINTF : P3_STATIC);
+      pIdxInfo->needToFreeIdxStr = 0;
       for(i=0; i<pIdxInfo->nConstraint; i++){
         if( pIdxInfo->aConstraintUsage[i].omit ){
           disableTerm(pLevel, &wc.a[i]);

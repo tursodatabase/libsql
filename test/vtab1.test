@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is creating and dropping virtual tables.
 #
-# $Id: vtab1.test,v 1.10 2006/06/13 15:00:55 danielk1977 Exp $
+# $Id: vtab1.test,v 1.11 2006/06/13 23:51:35 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -144,7 +144,7 @@ do_test vtab1-2.9 {
 do_test vtab1-3.1 {
   set echo_module ""
   execsql {
-    CREATE TABLE treal(a INTEGER, b VARCHAR(32), c); 
+    CREATE TABLE treal(a INTEGER, b INTEGER, c); 
     CREATE INDEX treal_idx ON treal(b);
     CREATE VIRTUAL TABLE t1 USING echo(treal);
   }
@@ -181,29 +181,36 @@ do_test vtab1-3.6 {
   execsql {
     SELECT * FROM t1;
   }
-  set echo_module
-} {xBestIndex {} {} xFilter {}}
+} {1 2 3 4 5 6}
 do_test vtab1-3.7 {
+  set echo_module
+} {xBestIndex {SELECT rowid, * FROM 'treal'} xFilter {SELECT rowid, * FROM 'treal'}}
+do_test vtab1-3.8 {
   set echo_module ""
   execsql {
-    SELECT * FROM t1 WHERE b = 10;
+    SELECT * FROM t1 WHERE b = 5;
   }
+} {4 5 6}
+do_test vtab1-3.9 {
   set echo_module
-} {xBestIndex {WHERE b = ?} {} xFilter {WHERE b = ?} 10}
-do_test vtab1-3.8 {
+} {xBestIndex {SELECT rowid, * FROM 'treal' WHERE b = ?} xFilter {SELECT rowid, * FROM 'treal' WHERE b = ?} 5}
+do_test vtab1-3.10 {
   set echo_module ""
   execsql {
     SELECT * FROM t1 WHERE b >= 5 AND b <= 10;
   }
+} {4 5 6}
+do_test vtab1-3.11 {
   set echo_module
-} {xBestIndex {WHERE b >= ? AND b <= ?} {} xFilter {WHERE b >= ? AND b <= ?} 5 10}
-do_test vtab1-3.9 {
+} {xBestIndex {SELECT rowid, * FROM 'treal' WHERE b >= ? AND b <= ?} xFilter {SELECT rowid, * FROM 'treal' WHERE b >= ? AND b <= ?} 5 10}
+do_test vtab1-3.12 {
   set echo_module ""
   execsql {
-    SELECT * FROM t1 WHERE b BETWEEN 5 AND 10;
+    SELECT * FROM t1 WHERE b BETWEEN 2 AND 10;
   }
+} {1 2 3 4 5 6}
+do_test vtab1-3.13 {
   set echo_module
-} {xBestIndex {WHERE b >= ? AND b <= ?} {} xFilter {WHERE b >= ? AND b <= ?} 5 10}
+} {xBestIndex {SELECT rowid, * FROM 'treal' WHERE b >= ? AND b <= ?} xFilter {SELECT rowid, * FROM 'treal' WHERE b >= ? AND b <= ?} 2 10}
 
 finish_test
-

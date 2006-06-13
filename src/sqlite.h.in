@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.173 2006/06/13 15:00:55 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.174 2006/06/13 23:51:34 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -926,6 +926,7 @@ const unsigned char *sqlite3_column_text(sqlite3_stmt*, int iCol);
 const void *sqlite3_column_text16(sqlite3_stmt*, int iCol);
 int sqlite3_column_type(sqlite3_stmt*, int iCol);
 int sqlite3_column_numeric_type(sqlite3_stmt*, int iCol);
+sqlite3_value *sqlite3_column_value(sqlite3_stmt*, int iCol);
 
 /*
 ** The sqlite3_finalize() function is called to delete a compiled
@@ -1547,7 +1548,7 @@ struct sqlite3_module {
   int (*xDestroy)(sqlite3_vtab *pVTab);
   int (*xOpen)(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor);
   int (*xClose)(sqlite3_vtab_cursor*);
-  int (*xFilter)(sqlite3_vtab_cursor*, char *zPlan, int nPlan,
+  int (*xFilter)(sqlite3_vtab_cursor*, int idxNum, const char *idxStr,
                 int argc, sqlite3_value **argv);
   int (*xNext)(sqlite3_vtab_cursor*);
   int (*xColumn)(sqlite3_vtab_cursor*, sqlite3_context*, int);
@@ -1595,7 +1596,8 @@ struct sqlite3_module {
 ** is true, then the constraint is assumed to be fully handled by the
 ** virtual table and is not checked again by SQLite.
 **
-** The idxNum value is recorded and passed into xFilter.  
+** The idxNum and idxPtr values are recorded and passed into xFilter.
+** sqlite3_free() is used to free idxPtr if needToFreeIdxPtr is true.
 **
 ** The orderByConsumed means that output from xFilter will occur in
 ** the correct order to satisfy the ORDER BY clause so that no separate
@@ -1626,10 +1628,9 @@ struct sqlite3_index_info {
     int argvIndex;           /* if >0, constraint is part of argv to xFilter */
     unsigned char omit;      /* Do not code a test for this constraint */
   } *const aConstraintUsage;
-
-  char *zPlan;               /* xBestIndex blob passed to xFilter */
-  int nPlan;                 /* Size of nPlan */
-
+  int idxNum;                /* Number used to identify the index */
+  char *idxStr;              /* String, possibly obtained from sqlite3_malloc */
+  int needToFreeIdxStr;      /* Free idxStr using sqlite3_free() if true */
   int orderByConsumed;       /* True if output is already ordered */
   double estimatedCost;      /* Estimated cost of using this index */
 };
@@ -1684,13 +1685,6 @@ struct sqlite3_vtab_cursor {
 ** the virtual tables they implement.
 */
 int sqlite3_declare_vtab(sqlite3*, const char *zCreateTable);
-
-/*
-** This function is called by the xBestIndex method of a module to 
-** allocate space to store the query-plan passed to the corresponding
-** xFilter invocation(s).
-*/
-char *sqlite3_allocate_queryplan(sqlite3_index_info *, int);
 
 /*
 ** The interface to the virtual-table mechanism defined above (back up

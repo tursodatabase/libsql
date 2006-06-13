@@ -454,11 +454,9 @@ const unsigned char *sqlite3_column_text(sqlite3_stmt *pStmt, int i){
   columnMallocFailure(pStmt);
   return val;
 }
-#if 0
 sqlite3_value *sqlite3_column_value(sqlite3_stmt *pStmt, int i){
   return columnMem(pStmt, i);
 }
-#endif
 #ifndef SQLITE_OMIT_UTF16
 const void *sqlite3_column_text16(sqlite3_stmt *pStmt, int i){
   const void *val = sqlite3_value_text16( columnMem(pStmt,i) );

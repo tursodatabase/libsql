@@ -263,8 +263,13 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs, int *pMaxStack){
       }
     }else if( opcode==OP_Statement ){
       hasStatementBegin = 1;
+    }else if( opcode==OP_VFilter ){
+      int n;
+      assert( p->nOp - i >= 3 );
+      assert( pOp[-2].opcode==OP_Integer );
+      n = pOp[-2].p1;
+      if( n>nMaxArgs ) nMaxArgs = n;
     }
-
     if( opcodeNoPush(opcode) ){
       nMaxStack--;
     }
@@ -378,6 +383,10 @@ static void freeP3(int p3type, void *p3){
       case P3_KEYINFO:
       case P3_KEYINFO_HANDOFF: {
         sqliteFree(p3);
+        break;
+      }
+      case P3_MPRINTF: {
+        sqlite3_free(p3);
         break;
       }
       case P3_VDBEFUNC: {
