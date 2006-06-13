@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to help implement virtual tables.
 **
-** $Id: vtab.c,v 1.6 2006/06/13 10:24:43 danielk1977 Exp $
+** $Id: vtab.c,v 1.7 2006/06/13 15:00:55 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
@@ -276,6 +276,17 @@ int sqlite3VtabCallConnect(Parse *pParse, Table *pTab){
 
   return rc;
 }
+
+/*
+** Resize pInfo->zPlan to nBytes bytes using realloc(). Set pInfo->nPlan
+** to nBytes and return a pointer to the allocated memory.
+*/
+char *sqlite3_allocate_queryplan(sqlite3_index_info *pInfo, int nBytes){
+  pInfo->nPlan = nBytes;
+  sqlite3ReallocOrFree(&pInfo->zPlan, nBytes);
+  return pInfo->zPlan;
+}
+
 
 /*
 ** This function is used to set the schema of a virtual table.  It is only

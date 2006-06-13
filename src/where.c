@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.213 2006/06/13 14:16:59 danielk1977 Exp $
+** $Id: where.c,v 1.214 2006/06/13 15:00:55 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -1005,7 +1005,8 @@ static double bestVirtualIndex(
     pIdxCons->usable =  (pTerm->prereqRight & notReady)==0;
   }
   memset(pUsage, 0, sizeof(pUsage[0])*pIdxInfo->nConstraint);
-  pIdxInfo->idxNum = 0;
+  pIdxInfo->zPlan = 0;
+  pIdxInfo->nPlan = 0;
   pIdxInfo->orderByConsumed = 0;
   pIdxInfo->estimatedCost = SQLITE_BIG_DBL;
   nOrderBy = pIdxInfo->nOrderBy;
@@ -1468,6 +1469,9 @@ static void whereInfoFree(WhereInfo *pWInfo){
   if( pWInfo ){
     int i;
     for(i=0; i<pWInfo->nLevel; i++){
+      if( pWInfo->a[i].pIdxInfo ){
+        sqliteFree(pWInfo->a[i].pIdxInfo->zPlan);
+      }
       sqliteFree(pWInfo->a[i].pIdxInfo);
     }
     sqliteFree(pWInfo);
@@ -1754,8 +1758,8 @@ WhereInfo *sqlite3WhereBegin(
       }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
       else if( pLevel->pIdxInfo ){
-        zMsg = sqlite3MPrintf("%z VIRTUAL TABLE INDEX %d",
-                    pLevel->pIdxInfo->idxNum);
+        zMsg = sqlite3MPrintf("%z VIRTUAL TABLE INDEX %s",
+                    pLevel->pIdxInfo->zPlan);
       }
 #endif
       if( pLevel->flags & WHERE_ORDERBY ){
@@ -1858,7 +1862,9 @@ WhereInfo *sqlite3WhereBegin(
         if( j==pIdxInfo->nConstraint ) break;
       }
       sqlite3VdbeAddOp(v, OP_Integer, i-1, 0);
-      sqlite3VdbeAddOp(v, OP_Integer, pIdxInfo->idxNum, 0);
+      sqlite3VdbeAddOp(v, OP_Blob, pIdxInfo->nPlan, 0);
+      sqlite3VdbeChangeP3(v, -1, pIdxInfo->zPlan, P3_DYNAMIC);
+      pIdxInfo->zPlan = 0;
       sqlite3VdbeAddOp(v, OP_VFilter, iCur, brk);
       zSpace = (char *)sqliteMalloc(sizeof(sqlite3_value*)*(i-1));
       sqlite3VdbeChangeP3(v, -1, zSpace, P3_DYNAMIC);

@@ -1,5 +1,5 @@
-C Add\ssimple\stests\sfor\sthe\sxFilter\sand\sxBestIndex\smethods.\s(CVS\s3227)
-D 2006-06-13T14:16:59
+C Add\sthe\stentative\ssqlite3_allocate_queryplan()\sAPI.\s(CVS\s3228)
+D 2006-06-13T15:00:55
 F Makefile.in 56fd6261e83f60724e6dcd764e06ab68cbd53909
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -72,7 +72,7 @@ F src/random.c d40f8d356cecbd351ccfab6eaedd7ec1b54f5261
 F src/select.c 38eda11d950ed5e631ea9054f84a4a8b9e9b39d8
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 55bf6335dae7146f7a300039f5d6bb35010f1996
-F src/sqlite.h.in 8a515d52a95aafff6eaaf13e6db38d3325b76af8
+F src/sqlite.h.in 92cbeeacf040bffe109057d3af2db9dc63db8a67
 F src/sqlite3ext.h 127bd394c8eea481f2ac9b754bf399dbfc818b75
 F src/sqliteInt.h 91cc3603fe2e1be18d52490a2fa65ed9640fb338
 F src/table.c f64ec4fbfe333f8df925bc6ba494f55e05b0e75e
@@ -84,7 +84,7 @@ F src/test4.c 8b784cd82de158a2317cb4ac4bc86f91ad315e25
 F src/test5.c 7162f8526affb771c4ed256826eee7bb9eca265f
 F src/test6.c 60a02961ceb7b3edc25f5dc5c1ac2556622a76de
 F src/test7.c 03fa8d787f6aebc6d1f72504d52f33013ad2c8e3
-F src/test8.c 61d89b51c3cd3407f860134bff9011b081afc69c
+F src/test8.c 34b04bd826b3f7fa843c5b60052928412591c5c7
 F src/test_async.c e3deaedd4d86a56391b81808fde9e44fbd92f1d3
 F src/test_md5.c 6c42bc0a3c0b54be34623ff77a0eec32b2fa96e3
 F src/test_server.c a6460daed0b92ecbc2531b6dc73717470e7a648c
@@ -94,15 +94,15 @@ F src/update.c 0186f09414a6578156d40666becc964f85c2a616
 F src/utf.c ab81ac59084ff1c07d421eb1a0a84ec809603b44
 F src/util.c ca6ee72772c0f5dc04d2e0ab1973fd3b6a9bf79d
 F src/vacuum.c 5b37d0f436f8e1ffacd17934e44720b38d2247f9
-F src/vdbe.c e2d6072b36a3b32310916dd8443d811eb1b65747
+F src/vdbe.c 1d5ae83b7122146c0193f52750e37aacd633bccc
 F src/vdbe.h f72e5c00af759b7ed6fd606d508036d732098cc3
 F src/vdbeInt.h 6ccb7eaae76ebd761470f6a035501ff33aa92c20
 F src/vdbeapi.c 7dc662e7c905ce666bb506dced932e0307115cbf
 F src/vdbeaux.c 0168d770d03f9815511780a49cd8360d9a5f1ec5
 F src/vdbefifo.c 9efb94c8c3f4c979ebd0028219483f88e57584f5
 F src/vdbemem.c 5f0afe3b92bb2c037f8d5d697f7c151fa50783a3
-F src/vtab.c 0e39af5822bb17b0007b0df7fad527aa0e3ebd38
-F src/where.c f2e17c6f50e137c14f05f501f0ba15235a711986
+F src/vtab.c 12d83f7de893d06592d6d37c285defefebbd2d48
+F src/where.c 0b1fcf590040175e20c6d8f2e13485b683d3d03c
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/all.test 5df90d015ca63fcef2a4b62c24f7316b66c4bfd4
@@ -287,7 +287,7 @@ F test/vacuum.test 37f998b841cb335397c26d9bbc3457182af2565f
 F test/vacuum2.test 5aea8c88a65cb29f7d175296e7c819c6158d838c
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/view.test 16e2774fe35e47a07ac4471b7f0bcc948b1aa6d5
-F test/vtab1.test 56b29fcdafec53841730933f99a927e23cd593a6
+F test/vtab1.test c94c8bdadfdd9c474146874562925830ab0413c5
 F test/where.test ee7c9a6659b07e1ee61177f6e7ff71565ee2c9df
 F test/where2.test a16476a5913e75cf65b38f2daa6157a6b7791394
 F test/where3.test 3b5ad2c58069e12be2bd86bc5e211a82810521aa
@@ -363,7 +363,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 55392922686691db3d41525a7f4cb7f976e73467
-R f0c782b5451cd45871a352c2a0318f22
+P 0f4657ea69314e49bc7c9faf9a653ef072f5082d
+R b1fdb74ba8eeb04baf985a2eb223a6b1
 U danielk1977
-Z c4c527997467541782ddbca206039900
+Z f48f6df0484e720f46ed17f757e9f5ce

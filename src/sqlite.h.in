@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.172 2006/06/13 14:16:59 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.173 2006/06/13 15:00:55 danielk1977 Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1547,7 +1547,7 @@ struct sqlite3_module {
   int (*xDestroy)(sqlite3_vtab *pVTab);
   int (*xOpen)(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor);
   int (*xClose)(sqlite3_vtab_cursor*);
-  int (*xFilter)(sqlite3_vtab_cursor*, int idx,
+  int (*xFilter)(sqlite3_vtab_cursor*, char *zPlan, int nPlan,
                 int argc, sqlite3_value **argv);
   int (*xNext)(sqlite3_vtab_cursor*);
   int (*xColumn)(sqlite3_vtab_cursor*, sqlite3_context*, int);
@@ -1626,7 +1626,10 @@ struct sqlite3_index_info {
     int argvIndex;           /* if >0, constraint is part of argv to xFilter */
     unsigned char omit;      /* Do not code a test for this constraint */
   } *const aConstraintUsage;
-  int idxNum;                /* Index number passed to xFilter */
+
+  char *zPlan;               /* xBestIndex blob passed to xFilter */
+  int nPlan;                 /* Size of nPlan */
+
   int orderByConsumed;       /* True if output is already ordered */
   double estimatedCost;      /* Estimated cost of using this index */
 };
@@ -1681,6 +1684,13 @@ struct sqlite3_vtab_cursor {
 ** the virtual tables they implement.
 */
 int sqlite3_declare_vtab(sqlite3*, const char *zCreateTable);
+
+/*
+** This function is called by the xBestIndex method of a module to 
+** allocate space to store the query-plan passed to the corresponding
+** xFilter invocation(s).
+*/
+char *sqlite3_allocate_queryplan(sqlite3_index_info *, int);
 
 /*
 ** The interface to the virtual-table mechanism defined above (back up

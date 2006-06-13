@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.556 2006/06/13 14:16:59 danielk1977 Exp $
+** $Id: vdbe.c,v 1.557 2006/06/13 15:00:55 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -4596,20 +4596,19 @@ case OP_VOpen: {
 ** P3 points to enough free space to use to marshall the arguments.
 **
 ** This opcode invokes the xFilter method on the virtual table specified
-** by P1.  The index number parameter to xFilter is the top of the stack.
+** by P1.  The query plan parameter to xFilter is the top of the stack.
 ** Next down on the stack is the argc parameter.  Beneath the
 ** next of stack are argc additional parameters which are passed to
 ** xFilter as argv. The topmost parameter (i.e. 3rd element popped from
 ** the stack) becomes argv[argc-1] when passed to xFilter.
 **
-** The index number, argc, and all argv stack values are popped from the
+** The query plan, argc, and all argv stack values are popped from the
 ** stack before this instruction completes.
 **
 ** A jump is made to P2 if the result set after filtering would be 
 ** empty.
 */
 case OP_VFilter: {
-  int iIndex;
   int nArg;
 
   const sqlite3_module *pModule;
@@ -4620,21 +4619,20 @@ case OP_VFilter: {
 
   /* Grab the index number and argc parameters off the top of the stack. */
   assert( (&pTos[-1])>=p->aStack );
-  assert( pTos[0].flags==MEM_Int && pTos[-1].flags==MEM_Int );
-  iIndex = pTos[0].i;
+  assert( pTos[0].flags&MEM_Blob && pTos[-1].flags==MEM_Int );
   nArg = pTos[-1].i;
 
   /* Invoke the xFilter method if one is defined. */
   if( pModule->xFilter ){
     int res;
     int ii;
-    Mem **apArg = pOp->p3;
+    Mem **apArg = (Mem **)pOp->p3;
     for(ii = 0; ii<nArg; ii++){
       apArg[ii] = &pTos[ii+1-2-nArg];
     }
 
     if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
-    res = pModule->xFilter(pCur->pVtabCursor, iIndex, nArg, apArg);
+    res = pModule->xFilter(pCur->pVtabCursor, pTos->z, pTos->n, nArg, apArg);
     if( sqlite3SafetyOn(db) ) goto abort_due_to_misuse;
 
     if( res==0 ){

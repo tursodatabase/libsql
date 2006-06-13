@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is creating and dropping virtual tables.
 #
-# $Id: vtab1.test,v 1.9 2006/06/13 14:16:59 danielk1977 Exp $
+# $Id: vtab1.test,v 1.10 2006/06/13 15:00:55 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -182,28 +182,28 @@ do_test vtab1-3.6 {
     SELECT * FROM t1;
   }
   set echo_module
-} {xBestIndex {} {} xFilter 123}
+} {xBestIndex {} {} xFilter {}}
 do_test vtab1-3.7 {
   set echo_module ""
   execsql {
     SELECT * FROM t1 WHERE b = 10;
   }
   set echo_module
-} {xBestIndex {WHERE b = ?} {} xFilter 123 10}
+} {xBestIndex {WHERE b = ?} {} xFilter {WHERE b = ?} 10}
 do_test vtab1-3.8 {
   set echo_module ""
   execsql {
     SELECT * FROM t1 WHERE b >= 5 AND b <= 10;
   }
   set echo_module
-} {xBestIndex {WHERE b >= ? AND b <= ?} {} xFilter 123 5 10}
+} {xBestIndex {WHERE b >= ? AND b <= ?} {} xFilter {WHERE b >= ? AND b <= ?} 5 10}
 do_test vtab1-3.9 {
   set echo_module ""
   execsql {
     SELECT * FROM t1 WHERE b BETWEEN 5 AND 10;
   }
   set echo_module
-} {xBestIndex {WHERE b >= ? AND b <= ?} {} xFilter 123 5 10}
+} {xBestIndex {WHERE b >= ? AND b <= ?} {} xFilter {WHERE b >= ? AND b <= ?} 5 10}
 
 finish_test
 
