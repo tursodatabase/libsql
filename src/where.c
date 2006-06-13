@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.211 2006/06/12 21:59:14 drh Exp $
+** $Id: where.c,v 1.212 2006/06/13 01:04:53 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1010,10 +1010,10 @@ static double bestVirtualIndex(
   pIdxInfo->estimatedCost = SQLITE_BIG_DBL;
   nOrderBy = pIdxInfo->nOrderBy;
   if( pIdxInfo->nOrderBy && !orderByUsable ){
-    *(int*)pIdxInfo->nOrderBy = 0;
+    *(int*)&pIdxInfo->nOrderBy = 0;
   }
   pTab->pVtab->pModule->xBestIndex(pTab->pVtab, pIdxInfo);
-  *(int*)pIdxInfo->nOrderBy = nOrderBy;
+  *(int*)&pIdxInfo->nOrderBy = nOrderBy;
   return pIdxInfo->estimatedCost;
 }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
@@ -1770,7 +1770,7 @@ WhereInfo *sqlite3WhereBegin(
     if( pTab->isEphem || pTab->pSelect ) continue;
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     if( pLevel->pIdxInfo ){
-      sqlite3VdbeAddOp(v, OP_VOpen, 0, 0);  /***** Fix Me *****/
+      sqlite3VdbeOp3(v, OP_VOpen, 0, 0, (const char*)pTab->pVtab, P3_VTAB);
     }else
 #endif
     if( (pLevel->flags & WHERE_IDX_ONLY)==0 ){
@@ -1855,16 +1855,17 @@ WhereInfo *sqlite3WhereBegin(
         }
         if( j==pIdxInfo->nConstraint ) break;
       }
-      sqlite3VdbeAddOp(v, OP_VFilter, iCur, pIdxInfo->idxNum);
-      if( i>1 ){
-        sqlite3VdbeAddOp(v, OP_Pop, i-1, 0);
-      }
+      sqlite3VdbeAddOp(v, OP_Integer, i-1, 0);
+      sqlite3VdbeAddOp(v, OP_Integer, pIdxInfo->idxNum, 0);
+      sqlite3VdbeAddOp(v, OP_VFilter, iCur, brk);
       for(i=0; i<pIdxInfo->nConstraint; i++){
         if( pIdxInfo->aConstraintUsage[i].omit ){
           disableTerm(pLevel, &wc.a[i]);
         }
       }
       pLevel->op = OP_VNext;
+      pLevel->p1 = iCur;
+      pLevel->p2 = sqlite3VdbeCurrentAddr(v);
     }else
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 

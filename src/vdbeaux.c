@@ -558,15 +558,18 @@ static char *displayP3(Op *pOp, char *zTemp, int nTemp){
     }
     case P3_FUNCDEF: {
       FuncDef *pDef = (FuncDef*)pOp->p3;
-      char zNum[30];
-      sprintf(zTemp, "%.*s", nTemp, pDef->zName);
-      sprintf(zNum,"(%d)", pDef->nArg);
-      if( strlen(zTemp)+strlen(zNum)+1<=nTemp ){
-        strcat(zTemp, zNum);
-      }
+      sqlite3_snprintf(nTemp, zTemp, "%s(%d)", pDef->zName, pDef->nArg);
       zP3 = zTemp;
       break;
     }
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+    case P3_VTAB: {
+      sqlite3_vtab *pVtab = (sqlite3_vtab*)pOp->p3;
+      sqlite3_snprintf(nTemp, zTemp, "%p:%s", pVtab, pVtab->pModule->zName);
+      zP3 = zTemp;
+      break;
+    }
+#endif
     default: {
       zP3 = pOp->p3;
       if( zP3==0 || pOp->opcode==OP_Noop ){

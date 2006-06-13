@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test8.c,v 1.5 2006/06/12 12:50:23 drh Exp $
+** $Id: test8.c,v 1.6 2006/06/13 01:04:53 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -25,14 +25,14 @@
 ** Global Tcl variable $echo_module is a list. This routine appends
 ** the string element zArg to that list in interpreter interp.
 */
-static void appendToEchoModule(const sqlite3_module *pModule, const char *zArg){
+static void appendToEchoModule(Tcl_Interp *interp, const char *zArg){
   int flags = (TCL_APPEND_VALUE | TCL_LIST_ELEMENT | TCL_GLOBAL_ONLY);
-  Tcl_SetVar((Tcl_Interp *)(pModule->pAux), "echo_module", zArg, flags);
+  Tcl_SetVar(interp, "echo_module", zArg, flags);
 }
 
-static void appendToEchoTable(const sqlite3_vtab *pTab, const char *zArg){
+static void appendToEchoTable(Tcl_Interp *interp, const char *zArg){
   int flags = (TCL_APPEND_VALUE | TCL_LIST_ELEMENT | TCL_GLOBAL_ONLY);
-  Tcl_SetVar((Tcl_Interp *)(pTab), "echo_module", zArg, flags);
+  Tcl_SetVar(interp, "echo_module", zArg, flags);
 }
 
 /*
@@ -75,6 +75,13 @@ static int echoDeclareVtab(sqlite3 *db, int argc, char **argv){
   return rc;
 }
 
+/* An echo vtab object */
+typedef struct echo_vtab echo_vtab;
+struct echo_vtab {
+  sqlite3_vtab base;
+  Tcl_Interp *interp;
+};
+
 /* Methods for the echo module */
 static int echoCreate(
   sqlite3 *db,
@@ -83,11 +90,15 @@ static int echoCreate(
   sqlite3_vtab **ppVtab
 ){
   int i;
-  *ppVtab = pModule->pAux;
+  echo_vtab *pVtab;
 
-  appendToEchoModule(pModule, "xCreate");
+  pVtab = sqliteMalloc( sizeof(*pVtab) );
+  *ppVtab = &pVtab->base;
+  pVtab->base.pModule = pModule;
+  pVtab->interp = pModule->pAux;
+  appendToEchoModule(pVtab->interp, "xCreate");
   for(i=0; i<argc; i++){
-    appendToEchoModule(pModule, argv[i]);
+    appendToEchoModule(pVtab->interp, argv[i]);
   }
 
   echoDeclareVtab(db, argc, argv);
@@ -101,8 +112,12 @@ static int echoConnect(
 ){
   int i;
   Tcl_Interp *interp = pModule->pAux;
-  *ppVtab = pModule->pAux;
+  echo_vtab *pVtab;
 
+  pVtab = sqliteMalloc( sizeof(*pVtab) );
+  *ppVtab = &pVtab->base;
+  pVtab->base.pModule = pModule;
+  pVtab->interp = pModule->pAux;
   Tcl_SetVar(interp, "echo_module", "xConnect", TCL_GLOBAL_ONLY);
   for(i=0; i<argc; i++){
     Tcl_SetVar(interp, "echo_module", argv[i],
@@ -113,14 +128,25 @@ static int echoConnect(
   return 0;
 }
 static int echoDisconnect(sqlite3_vtab *pVtab){
-  appendToEchoTable(pVtab, "xDisconnect");
+  echo_vtab *p = (echo_vtab*)pVtab;
+  appendToEchoTable(p->interp, "xDisconnect");
+  sqliteFree(pVtab);
   return 0;
 }
 static int echoDestroy(sqlite3_vtab *pVtab){
-  Tcl_Interp *interp = (Tcl_Interp*)pVtab;
-  Tcl_SetVar(interp, "echo_module", "xDestroy",
+  echo_vtab *p = (echo_vtab*)pVtab;
+  Tcl_SetVar(p->interp, "echo_module", "xDestroy",
                 TCL_APPEND_VALUE | TCL_LIST_ELEMENT | TCL_GLOBAL_ONLY);
   return 0;
+}
+
+/*
+** The xBestIndex method for the echo module always returns
+** an index of 123.
+*/
+static int echoBestIndex(sqlite3_vtab *pVtab, sqlite3_index_info *pIdxInfo){
+  pIdxInfo->idxNum = 123;
+  return SQLITE_OK;
 }
 
 /*
@@ -133,7 +159,7 @@ static sqlite3_module echoModule = {
   0,                         /* pAux */
   echoCreate,
   echoConnect,
-  0,                         /* xBestIndex */
+  echoBestIndex,
   echoDisconnect, 
   echoDestroy,
 };
