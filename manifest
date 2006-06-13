@@ -1,5 +1,5 @@
-C Get\sthe\scode\sto\scompile\swith\s-DSQLITE_OMIT_VIRTUALTABLE=1\s(CVS\s3230)
-D 2006-06-13T15:36:07
+C Add\ssupport\sfor\sthe\sMATCH\soperator.\s(CVS\s3231)
+D 2006-06-13T15:37:26
 F Makefile.in 56fd6261e83f60724e6dcd764e06ab68cbd53909
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -64,7 +64,7 @@ F src/os_win.c c6976ae50b61fb5b7dce399e578aa1865f02b84f
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c ddd05666bb89808a516baef2c186d6a75887ae90
 F src/pager.h 43f32f3847421f7502cfbb66f4eb2302b8033818
-F src/parse.y 05cd1419b625df99ea9776e2c767d2a792d84345
+F src/parse.y 14ce6fb228b5a06fd5c10999aed2cbbfafe630a7
 F src/pragma.c 27d5e395c5d950931c7ac4fe610e7c2993e2fa55
 F src/prepare.c 6dc945dab34cf97364c661d2b7a12be65d338267
 F src/printf.c 7029e5f7344a478394a02c52837ff296ee1ab240
@@ -363,7 +363,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 0bcec95963603270ee053c83b1f6960b2029d378
-R b10d238a92b39f83ee40dd1156a4642c
+P ea4bc5a0be6cfc81ef1e9405f396c43205fe9cd8
+R 3c35da63c52751c585cf9cb6b2473575
 U drh
-Z fda6c445ee74204475ea68b334d7f609
+Z a4bc00b43637d2bd30e6651aa4a937df

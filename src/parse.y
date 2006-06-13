@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.202 2006/06/11 23:41:55 drh Exp $
+** @(#) $Id: parse.y,v 1.203 2006/06/13 15:37:26 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -198,7 +198,7 @@ id(A) ::= ID(X).         {A = X;}
 %left OR.
 %left AND.
 %right NOT.
-%left IS LIKE_KW BETWEEN IN ISNULL NOTNULL NE EQ.
+%left IS MATCH LIKE_KW BETWEEN IN ISNULL NOTNULL NE EQ.
 %left GT LE LT GE.
 %right ESCAPE.
 %left BITAND BITOR LSHIFT RSHIFT.
@@ -690,6 +690,8 @@ expr(A) ::= expr(X) CONCAT(OP) expr(Y).         {A = sqlite3Expr(@OP, X, Y, 0);}
 %type likeop {struct LikeOp}
 likeop(A) ::= LIKE_KW(X).     {A.eOperator = X; A.not = 0;}
 likeop(A) ::= NOT LIKE_KW(X). {A.eOperator = X; A.not = 1;}
+likeop(A) ::= MATCH(X).       {A.eOperator = X; A.not = 0;}
+likeop(A) ::= NOT MATCH(X).   {A.eOperator = X; A.not = 1;}
 %type escape {Expr*}
 %destructor escape {sqlite3ExprDelete($$);}
 escape(X) ::= ESCAPE expr(A). [ESCAPE] {X = A;}
