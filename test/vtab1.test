@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is creating and dropping virtual tables.
 #
-# $Id: vtab1.test,v 1.8 2006/06/13 10:24:44 danielk1977 Exp $
+# $Id: vtab1.test,v 1.9 2006/06/13 14:16:59 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -82,6 +82,7 @@ do_test vtab1-2.2 {
 # Test that the database can be unloaded. This should invoke 
 # the xDisconnect() callback each of the two virtual tables - t1 and t2.
 do_test vtab1-2.3 {
+breakpoint
   set echo_module [list]
   db close
   set echo_module
@@ -92,6 +93,7 @@ do_test vtab1-2.3 {
 # table is still correct.
 do_test vtab1-2.4 {
   sqlite3 db test.db
+  db cache size 0
   register_echo_module [sqlite3_connection_pointer db]
   execsql { PRAGMA table_info(t2); }
 } [list         \
@@ -143,6 +145,7 @@ do_test vtab1-3.1 {
   set echo_module ""
   execsql {
     CREATE TABLE treal(a INTEGER, b VARCHAR(32), c); 
+    CREATE INDEX treal_idx ON treal(b);
     CREATE VIRTUAL TABLE t1 USING echo(treal);
   }
   set echo_module
@@ -172,6 +175,35 @@ do_test vtab1-3.5 {
     SELECT rowid FROM t1;
   }
 } {1 2}
+
+do_test vtab1-3.6 {
+  set echo_module ""
+  execsql {
+    SELECT * FROM t1;
+  }
+  set echo_module
+} {xBestIndex {} {} xFilter 123}
+do_test vtab1-3.7 {
+  set echo_module ""
+  execsql {
+    SELECT * FROM t1 WHERE b = 10;
+  }
+  set echo_module
+} {xBestIndex {WHERE b = ?} {} xFilter 123 10}
+do_test vtab1-3.8 {
+  set echo_module ""
+  execsql {
+    SELECT * FROM t1 WHERE b >= 5 AND b <= 10;
+  }
+  set echo_module
+} {xBestIndex {WHERE b >= ? AND b <= ?} {} xFilter 123 5 10}
+do_test vtab1-3.9 {
+  set echo_module ""
+  execsql {
+    SELECT * FROM t1 WHERE b BETWEEN 5 AND 10;
+  }
+  set echo_module
+} {xBestIndex {WHERE b >= ? AND b <= ?} {} xFilter 123 5 10}
 
 finish_test
 

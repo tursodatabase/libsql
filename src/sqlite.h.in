@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.171 2006/06/13 01:04:53 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.172 2006/06/13 14:16:59 danielk1977 Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1589,7 +1589,7 @@ struct sqlite3_module {
 ** Each term of aOrderBy records a column of the ORDER BY clause.
 **
 ** The xBestIndex method must fill aConstraintUsage[] with information
-** about what parameters to pass to xBestIndex.  If argvIndex>0 then
+** about what parameters to pass to xFilter.  If argvIndex>0 then
 ** the right-hand side of the corresponding aConstraint[] is evaluated
 ** and becomes the argvIndex-th entry in argv.  If aConstraintUsage[].omit
 ** is true, then the constraint is assumed to be fully handled by the

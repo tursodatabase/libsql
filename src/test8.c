@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test8.c,v 1.8 2006/06/13 10:24:43 danielk1977 Exp $
+** $Id: test8.c,v 1.9 2006/06/13 14:16:59 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -24,12 +24,22 @@
 typedef struct echo_vtab echo_vtab;
 typedef struct echo_cursor echo_cursor;
 
-/* An echo vtab object */
+/* 
+** An echo virtual-table object 
+**
+** If it is not NULL, the aHasIndex array is allocated so that it has
+** the same number of entries as there are columns in the underlying
+** real table.
+*/
 struct echo_vtab {
   sqlite3_vtab base;
   Tcl_Interp *interp;
   sqlite3 *db;
-  char *zStmt;
+  char *zStmt;                 /* "SELECT rowid, * FROM <real-table-name> " */
+
+  int *aIndex;
+  int nCol;
+  char **aCol;
 };
 
 /* An echo cursor object */
@@ -39,13 +49,112 @@ struct echo_cursor {
   int errcode;                 /* Error code */
 };
 
+static int getColumnNames(
+  sqlite3 *db, 
+  const char *zTab,
+  char ***paCol, 
+  int *pnCol
+){
+  char **aCol = 0;
+  char zBuf[1024];
+  sqlite3_stmt *pStmt = 0;
+  int rc = SQLITE_OK;
+  int nCol;
+
+  sprintf(zBuf, "SELECT * FROM %s", zTab);
+  rc = sqlite3_prepare(db, zBuf, -1, &pStmt, 0);
+  if( rc==SQLITE_OK ){
+    int ii;
+    nCol = sqlite3_column_count(pStmt);
+    aCol = sqliteMalloc(sizeof(char *) * nCol);
+    if( !aCol ){
+      rc = SQLITE_NOMEM;
+      goto fail;
+    }
+    for(ii=0; ii<nCol; ii++){
+      aCol[ii] = sqlite3StrDup(sqlite3_column_name(pStmt, ii));
+      if( !aCol[ii] ){
+        rc = SQLITE_NOMEM;
+        goto fail;
+      }
+    }
+  }
+
+  *paCol = aCol;
+  *pnCol = nCol;
+
+fail:
+  sqlite3_finalize(pStmt);
+  if( rc!=SQLITE_OK && aCol ){
+    int ii;
+    for(ii=0; ii<nCol; ii++){
+      sqliteFree(aCol[ii]);
+    }
+    sqliteFree(aCol);
+  }
+  return rc;
+}
+
+static int getIndexArray(sqlite3 *db, const char *zTab, int **paIndex){
+  char zBuf[1024];
+  sqlite3_stmt *pStmt = 0;
+  int nCol;
+  int *aIndex = 0;
+  int rc;
+
+  sprintf(zBuf, "SELECT * FROM %s", zTab);
+  rc = sqlite3_prepare(db, zBuf, -1, &pStmt, 0);
+  nCol = sqlite3_column_count(pStmt);
+
+  sqlite3_finalize(pStmt);
+  pStmt = 0;
+  if( rc!=SQLITE_OK ){
+    goto get_index_array_out;
+  }
+
+  aIndex = (int *)sqliteMalloc(sizeof(int) * nCol);
+  if( !aIndex ){
+    rc = SQLITE_NOMEM;
+    goto get_index_array_out;
+  }
+
+  sprintf(zBuf, "PRAGMA index_list(%s)", zTab);
+  rc = sqlite3_prepare(db, zBuf, -1, &pStmt, 0);
+
+  while( pStmt && sqlite3_step(pStmt)==SQLITE_ROW ){
+    sqlite3_stmt *pStmt2 = 0;
+    sprintf(zBuf, "PRAGMA index_info(%s)", sqlite3_column_text(pStmt, 1));
+    rc = sqlite3_prepare(db, zBuf, -1, &pStmt2, 0);
+    if( pStmt2 && sqlite3_step(pStmt2)==SQLITE_ROW ){
+      int cid = sqlite3_column_int(pStmt2, 1);
+      assert( cid>=0 && cid<nCol );
+      aIndex[cid] = 1;
+    }
+    rc = sqlite3_finalize(pStmt2);
+    if( rc!=SQLITE_OK ){
+      sqlite3_finalize(pStmt);
+      goto get_index_array_out;
+    }
+  }
+
+  rc = sqlite3_finalize(pStmt);
+
+get_index_array_out:
+  if( rc!=SQLITE_OK ){
+    sqliteFree(aIndex);
+    aIndex = 0;
+  }
+  *paIndex = aIndex;
+  return rc;
+}
+
 /*
 ** Global Tcl variable $echo_module is a list. This routine appends
 ** the string element zArg to that list in interpreter interp.
 */
 static void appendToEchoModule(Tcl_Interp *interp, const char *zArg){
   int flags = (TCL_APPEND_VALUE | TCL_LIST_ELEMENT | TCL_GLOBAL_ONLY);
-  Tcl_SetVar(interp, "echo_module", zArg, flags);
+  Tcl_SetVar(interp, "echo_module", (zArg?zArg:""), flags);
 }
 
 /*
@@ -89,6 +198,12 @@ static int echoDeclareVtab(
     }
     sqlite3_finalize(pStmt);
     pVtab->zStmt = sqlite3MPrintf("SELECT rowid, * FROM %s ", argv[1]);
+    if( rc==SQLITE_OK ){
+      rc = getIndexArray(db, argv[1], &pVtab->aIndex);
+    }
+    if( rc==SQLITE_OK ){
+      rc = getColumnNames(db, argv[1], &pVtab->aCol, &pVtab->nCol);
+    }
   }
 
   return rc;
@@ -137,39 +252,43 @@ static int echoConnect(
   return echoConstructor(db, pModule, argc, argv, ppVtab);
 }
 
-static int echoDisconnect(sqlite3_vtab *pVtab){
+static int echoDestructor(sqlite3_vtab *pVtab){
+  int ii;
   echo_vtab *p = (echo_vtab*)pVtab;
-  appendToEchoModule(p->interp, "xDisconnect");
   sqliteFree(p->zStmt);
-  sqliteFree(p);
-  return 0;
-}
-static int echoDestroy(sqlite3_vtab *pVtab){
-  echo_vtab *p = (echo_vtab*)pVtab;
-  appendToEchoModule(p->interp, "xDestroy");
-  sqliteFree(p->zStmt);
+  sqliteFree(p->aIndex);
+  for(ii=0; ii<p->nCol; ii++){
+    sqliteFree(p->aCol[ii]);
+  }
+  sqliteFree(p->aCol);
   sqliteFree(p);
   return 0;
 }
 
-static int echoOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor)
-{
+static int echoDisconnect(sqlite3_vtab *pVtab){
+  appendToEchoModule(((echo_vtab *)pVtab)->interp, "xDisconnect");
+  return echoDestructor(pVtab);
+}
+static int echoDestroy(sqlite3_vtab *pVtab){
+  appendToEchoModule(((echo_vtab *)pVtab)->interp, "xDestroy");
+  return echoDestructor(pVtab);
+}
+
+static int echoOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
   echo_cursor *pCur;
   pCur = sqliteMalloc(sizeof(echo_cursor));
   *ppCursor = (sqlite3_vtab_cursor *)pCur;
   return SQLITE_OK;
 }
 
-static int echoClose(sqlite3_vtab_cursor *cur)
-{
+static int echoClose(sqlite3_vtab_cursor *cur){
   echo_cursor *pCur = (echo_cursor *)cur;
   sqlite3_finalize(pCur->pStmt);
   sqliteFree(pCur);
   return SQLITE_OK;
 }
 
-static int echoNext(sqlite3_vtab_cursor *cur)
-{
+static int echoNext(sqlite3_vtab_cursor *cur){
   int rc;
   echo_cursor *pCur = (echo_cursor *)cur;
 
@@ -186,31 +305,7 @@ static int echoNext(sqlite3_vtab_cursor *cur)
   return rc;
 }
 
-static int echoFilter(
-  sqlite3_vtab_cursor *pVtabCursor, 
-  int idx,
-  int argc, 
-  sqlite3_value **argv
-){
-  int rc;
-
-  echo_cursor *pCur = (echo_cursor *)pVtabCursor;
-  echo_vtab *pVtab = (echo_vtab *)pVtabCursor->pVtab;
-  sqlite3 *db = pVtab->db;
-
-  sqlite3_finalize(pCur->pStmt);
-  pCur->pStmt = 0;
-  rc = sqlite3_prepare(db, pVtab->zStmt, -1, &pCur->pStmt, 0);
-
-  if( rc==SQLITE_OK ){
-    rc = echoNext(pVtabCursor);
-  }
-
-  return rc;
-}
-
-static int echoColumn(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int i)
-{
+static int echoColumn(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int i){
   int iCol = i + 1;
   sqlite3_stmt *pStmt = ((echo_cursor *)cur)->pStmt;
 
@@ -240,20 +335,109 @@ static int echoColumn(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int i)
   return SQLITE_OK;
 }
 
-static int echoRowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid)
-{
+static int echoRowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
   sqlite3_stmt *pStmt = ((echo_cursor *)cur)->pStmt;
   *pRowid = sqlite3_column_int64(pStmt, 0);
   return SQLITE_OK;
 }
 
 
+static int echoFilter(
+  sqlite3_vtab_cursor *pVtabCursor, 
+  int idx,
+  int argc, 
+  sqlite3_value **argv
+){
+  int rc;
+  char zBuf[32];
+  int ii;
+
+  echo_cursor *pCur = (echo_cursor *)pVtabCursor;
+  echo_vtab *pVtab = (echo_vtab *)pVtabCursor->pVtab;
+  sqlite3 *db = pVtab->db;
+
+  sprintf(zBuf, "%d", idx);
+  appendToEchoModule(pVtab->interp, "xFilter");
+  appendToEchoModule(pVtab->interp, zBuf);
+  for(ii=0; ii<argc; ii++){
+    appendToEchoModule(pVtab->interp, sqlite3_value_text(argv[ii]));
+  }
+
+  sqlite3_finalize(pCur->pStmt);
+  pCur->pStmt = 0;
+  rc = sqlite3_prepare(db, pVtab->zStmt, -1, &pCur->pStmt, 0);
+
+  if( rc==SQLITE_OK ){
+    rc = echoNext(pVtabCursor);
+  }
+
+  return rc;
+}
 
 /*
-** The xBestIndex method for the echo module always returns
-** an index of 123.
+** The echo module implements the subset of query constraints and sort
+** orders that may take advantage of SQLite indices on the underlying
+** real table. For example, if the real table is declared as:
+**
+**     CREATE TABLE real(a, b, c);
+**     CREATE INDEX real_index ON real(b);
+**
+** then the echo module handles WHERE or ORDER BY clauses that refer
+** to the column "b", but not "a" or "c". If a multi-column index is
+** present, only it's left most column is considered. 
 */
-static int echoBestIndex(sqlite3_vtab *pVtab, sqlite3_index_info *pIdxInfo){
+static int echoBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
+  int ii;
+  char *zWhere = 0;
+  char *zOrder = 0;
+  int nArg = 0;
+  echo_vtab *pVtab = (echo_vtab *)tab;
+
+  for(ii=0; ii<pIdxInfo->nConstraint; ii++){
+    const struct sqlite3_index_constraint *pConstraint;
+    struct sqlite3_index_constraint_usage *pUsage;
+
+    pConstraint = &pIdxInfo->aConstraint[ii];
+    pUsage = &pIdxInfo->aConstraintUsage[ii];
+
+    int iCol = pConstraint->iColumn;
+    if( pVtab->aIndex[iCol] ){
+      char *zCol = pVtab->aCol[iCol];
+      char *zOp = 0;
+      switch( pConstraint->op ){
+        case SQLITE_INDEX_CONSTRAINT_EQ:
+          zOp = "="; break;
+        case SQLITE_INDEX_CONSTRAINT_LT:
+          zOp = "<"; break;
+        case SQLITE_INDEX_CONSTRAINT_GT:
+          zOp = ">"; break;
+        case SQLITE_INDEX_CONSTRAINT_LE:
+          zOp = "<="; break;
+        case SQLITE_INDEX_CONSTRAINT_GE:
+          zOp = ">="; break;
+        case SQLITE_INDEX_CONSTRAINT_MATCH:
+          zOp = "MATCH"; break;
+      }
+      if( zWhere ){
+        char *zTmp = zWhere;
+        zWhere = sqlite3MPrintf("%s AND %s %s ?", zWhere, zCol, zOp);
+        sqliteFree(zTmp);
+      } else {
+        zWhere = sqlite3MPrintf("WHERE %s %s ?", zCol, zOp);
+      }
+
+      pUsage->argvIndex = ++nArg;
+      pUsage->omit = 1;
+    }
+  }
+
+  appendToEchoModule(pVtab->interp, "xBestIndex");;
+  appendToEchoModule(pVtab->interp, zWhere);
+  appendToEchoModule(pVtab->interp, zOrder);
+
+  sqliteFree(zWhere);
+  sqliteFree(zOrder);
+
   pIdxInfo->idxNum = 123;
   return SQLITE_OK;
 }

@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.212 2006/06/13 01:04:53 drh Exp $
+** $Id: where.c,v 1.213 2006/06/13 14:16:59 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -1842,6 +1842,8 @@ WhereInfo *sqlite3WhereBegin(
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     if( pLevel->pIdxInfo ){
+      char *zSpace;     /* Space for OP_VFilter to marshall it's arguments */
+
       /* Case 0:  That table is a virtual-table.  Use the VFilter and VNext.
       */
       sqlite3_index_info *pIdxInfo = pLevel->pIdxInfo;
@@ -1858,6 +1860,8 @@ WhereInfo *sqlite3WhereBegin(
       sqlite3VdbeAddOp(v, OP_Integer, i-1, 0);
       sqlite3VdbeAddOp(v, OP_Integer, pIdxInfo->idxNum, 0);
       sqlite3VdbeAddOp(v, OP_VFilter, iCur, brk);
+      zSpace = (char *)sqliteMalloc(sizeof(sqlite3_value*)*(i-1));
+      sqlite3VdbeChangeP3(v, -1, zSpace, P3_DYNAMIC);
       for(i=0; i<pIdxInfo->nConstraint; i++){
         if( pIdxInfo->aConstraintUsage[i].omit ){
           disableTerm(pLevel, &wc.a[i]);
