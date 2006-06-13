@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to help implement virtual tables.
 **
-** $Id: vtab.c,v 1.5 2006/06/12 16:01:22 danielk1977 Exp $
+** $Id: vtab.c,v 1.6 2006/06/13 10:24:43 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
@@ -367,9 +367,6 @@ int sqlite3VtabCallCreate(sqlite3 *db, int iDb, const char *zTab, char **pzErr){
     }
   }
 
-  if( SQLITE_OK==rc ){
-    pTab->needCreate = 0;
-  }
   return rc;
 }
 

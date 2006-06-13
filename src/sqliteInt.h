@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.502 2006/06/12 21:59:14 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.503 2006/06/13 10:24:43 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -709,7 +709,6 @@ struct Table {
   sqlite3_vtab *pVtab;      /* Pointer to the module instance */
   int nModuleArg;           /* Number of arguments to the module */
   char **azModuleArg;       /* Text of all module args. [0] is module name */
-  u8 needCreate;            /* Need to call pMod->xCreate() */
   u8 isVirtual;             /* True if this is a virtual table */
 #endif
   Schema *pSchema;

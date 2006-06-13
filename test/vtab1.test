@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is creating and dropping virtual tables.
 #
-# $Id: vtab1.test,v 1.7 2006/06/13 04:11:44 danielk1977 Exp $
+# $Id: vtab1.test,v 1.8 2006/06/13 10:24:44 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -110,8 +110,6 @@ do_test vtab1-2.5 {
   set echo_module
 } [list xDestroy]
 
-finish_test
-
 do_test vtab1-2.6 {
   execsql { 
     PRAGMA table_info(t2); 
@@ -138,4 +136,42 @@ do_test vtab1-2.9 {
   }
 } [list]
 
+#----------------------------------------------------------------------
+# Test case vtab1-3 tests simple linear scans (no filter conditions) of 
+# virtual table modules.
+do_test vtab1-3.1 {
+  set echo_module ""
+  execsql {
+    CREATE TABLE treal(a INTEGER, b VARCHAR(32), c); 
+    CREATE VIRTUAL TABLE t1 USING echo(treal);
+  }
+  set echo_module
+} [list xCreate echo treal]
+do_test vtab1-3.2 {
+  # Test that a SELECT on t2 doesn't crash. No rows are returned
+  # because the underlying real table, is currently empty.
+  execsql {
+    SELECT a, b, c FROM t1;
+  }
+} {}
+do_test vtab1-3.3 {
+  # Put some data into the table treal. Then try a select on t1.
+  execsql {
+    INSERT INTO treal VALUES(1, 2, 3);
+    INSERT INTO treal VALUES(4, 5, 6);
+    SELECT * FROM t1;
+  }
+} {1 2 3 4 5 6}
+do_test vtab1-3.4 {
+  execsql {
+    SELECT a FROM t1;
+  }
+} {1 4}
+do_test vtab1-3.5 {
+  execsql {
+    SELECT rowid FROM t1;
+  }
+} {1 2}
+
 finish_test
+

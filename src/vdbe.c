@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.554 2006/06/12 21:59:14 drh Exp $
+** $Id: vdbe.c,v 1.555 2006/06/13 10:24:43 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -4565,6 +4565,24 @@ case OP_VDestroy: {
 ** table and stores that cursor in P1.
 */
 case OP_VOpen: {
+  Cursor *pCur = 0;
+  sqlite3_vtab_cursor *pVtabCursor = 0;
+
+  sqlite3_vtab *pVtab = (sqlite3_vtab *)(pOp->p3);
+  sqlite3_module *pModule = (sqlite3_module *)pVtab->pModule;
+
+  assert(pVtab && pModule);
+  if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
+  rc = pModule->xOpen(pVtab, &pVtabCursor);
+  if( sqlite3SafetyOn(db) ) goto abort_due_to_misuse;
+  if( SQLITE_OK==rc ){
+    /* Initialise sqlite3_vtab_cursor base class */
+    pVtabCursor->pVtab = pVtab;
+
+    /* Initialise vdbe cursor object */
+    pCur = allocateCursor(p, pOp->p1, -1);
+    pCur->pVtabCursor = pVtabCursor;
+  }
   break;
 }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
@@ -4579,13 +4597,48 @@ case OP_VOpen: {
 ** by P1.  The index number parameter to xFilter is the top of the stack.
 ** Next down on the stack is the argc parameter.  Beneath the
 ** next of stack are argc additional parameters which are passed to
-** xFilter as argv.  The index number, argc, and all argv stack values
-** are popped from the stack before this instruction completes.
+** xFilter as argv. The topmost parameter (i.e. 3rd element popped from
+** the stack) becomes argv[argc-1] when passed to xFilter.
+**
+** The index number, argc, and all argv stack values are popped from the
+** stack before this instruction completes.
 **
 ** A jump is made to P2 if the result set after filtering would be 
 ** empty.
 */
 case OP_VFilter: {
+  int iIndex;
+  int nArg;
+
+  const sqlite3_module *pModule;
+
+  Cursor *pCur = p->apCsr[pOp->p1];
+  assert( pCur->pVtabCursor );
+  pModule = pCur->pVtabCursor->pVtab->pModule;
+
+  /* Grab the index number and argc parameters off the top of the stack. */
+  assert( (&pTos[-1])>=p->aStack );
+  assert( pTos[0].flags==MEM_Int && pTos[-1].flags==MEM_Int );
+  iIndex = pTos[0].i;
+  nArg = pTos[-1].i;
+
+  /* Invoke the xFilter method if one is defined. */
+  if( pModule->xFilter ){
+    int res;
+    Mem *apArg;
+    apArg = &pTos[1-2-nArg];
+
+    if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
+    res = pModule->xFilter(pCur->pVtabCursor, iIndex, nArg, &apArg);
+    if( sqlite3SafetyOn(db) ) goto abort_due_to_misuse;
+
+    if( res==0 ){
+      pc = pOp->p2 - 1;
+    }
+  }
+
+  /* Pop the index number, argc value and parameters off the stack */
+  popStack(&pTos, 2+nArg);
   break;
 }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
@@ -4597,6 +4650,26 @@ case OP_VFilter: {
 ** the virtual-table that the P1 cursor is pointing to.
 */
 case OP_VRowid: {
+  const sqlite3_module *pModule;
+
+  Cursor *pCur = p->apCsr[pOp->p1];
+  assert( pCur->pVtabCursor );
+  pModule = pCur->pVtabCursor->pVtab->pModule;
+  if( pModule->xRowid==0 ){
+    sqlite3SetString(&p->zErrMsg, "Unsupported module operation: xRowid", 0);
+    rc = SQLITE_ERROR;
+  } else {
+    sqlite_int64 iRow;
+
+    if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
+    rc = pModule->xRowid(pCur->pVtabCursor, &iRow);
+    if( sqlite3SafetyOn(db) ) goto abort_due_to_misuse;
+
+    pTos++;
+    pTos->flags = MEM_Int;
+    pTos->i = iRow;
+  }
+
   break;
 }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
@@ -4608,6 +4681,33 @@ case OP_VRowid: {
 ** the row of the virtual-table that the P1 cursor is pointing to.
 */
 case OP_VColumn: {
+  const sqlite3_module *pModule;
+
+  Cursor *pCur = p->apCsr[pOp->p1];
+  assert( pCur->pVtabCursor );
+  pModule = pCur->pVtabCursor->pVtab->pModule;
+  if( pModule->xColumn==0 ){
+    sqlite3SetString(&p->zErrMsg, "Unsupported module operation: xColumn", 0);
+    rc = SQLITE_ERROR;
+  } else {
+    sqlite3_context sContext;
+    memset(&sContext, 0, sizeof(sContext));
+    sContext.s.flags = MEM_Null;
+    if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
+    rc = pModule->xColumn(pCur->pVtabCursor, &sContext, pOp->p2);
+
+    /* Copy the result of the function to the top of the stack. We
+    ** do this regardless of whether or not an error occured to ensure any
+    ** dynamic allocation in sContext.s (a Mem struct) is  released.
+    */
+    sqlite3VdbeChangeEncoding(&sContext.s, encoding);
+    pTos++;
+    pTos->flags = 0;
+    sqlite3VdbeMemMove(pTos, &sContext.s);
+
+    if( sqlite3SafetyOn(db) ) goto abort_due_to_misuse;
+  }
+  
   break;
 }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
@@ -4620,6 +4720,32 @@ case OP_VColumn: {
 ** the end of its result set, then fall through to the next instruction.
 */
 case OP_VNext: {
+  const sqlite3_module *pModule;
+  int res = 0;
+
+  Cursor *pCur = p->apCsr[pOp->p1];
+  assert( pCur->pVtabCursor );
+  pModule = pCur->pVtabCursor->pVtab->pModule;
+  if( pModule->xNext==0 ){
+    sqlite3SetString(&p->zErrMsg, "Unsupported module operation: xNext", 0);
+    rc = SQLITE_ERROR;
+  } else {
+    /* Invoke the xNext() method of the module. There is no way for the
+    ** underlying implementation to return an error if one occurs during
+    ** xNext(). Instead, if an error occurs, true is returned (indicating that 
+    ** data is available) and the error code returned when xColumn or
+    ** some other method is next invoked on the save virtual table cursor.
+    */
+    if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
+    res = pModule->xNext(pCur->pVtabCursor);
+    if( sqlite3SafetyOn(db) ) goto abort_due_to_misuse;
+
+    if( res ){
+      /* If there is data (or an error), jump to P2 */
+      pc = pOp->p2 - 1;
+    }
+  }
+
   break;
 }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
