@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.141 2006/06/12 12:57:46 drh Exp $
+** $Id: shell.c,v 1.142 2006/06/13 15:12:21 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -763,7 +763,9 @@ static char zHelp[] =
   ".help                  Show this message\n"
   ".import FILE TABLE     Import data from FILE into TABLE\n"
   ".indices TABLE         Show names of all indices on TABLE\n"
+#ifndef SQLITE_OMIT_LOAD_EXTENSION
   ".load FILE ?ENTRY?     Load an extension library\n"
+#endif
   ".mode MODE ?TABLE?     Set output mode where MODE is one of:\n"
   "                         csv      Comma-separated values\n"
   "                         column   Left-aligned columns.  (See .width)\n"
@@ -1150,6 +1152,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     }
   }else
 
+#ifndef SQLITE_OMIT_LOAD_EXTENSION
   if( c=='l' && strncmp(azArg[0], "load", n)==0 && nArg>=2 ){
     const char *zFile, *zProc;
     char *zErrMsg = 0;
@@ -1163,6 +1166,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
       sqlite3_free(zErrMsg);
     }
   }else
+#endif
 
   if( c=='m' && strncmp(azArg[0], "mode", n)==0 && nArg>=2 ){
     int n2 = strlen(azArg[1]);

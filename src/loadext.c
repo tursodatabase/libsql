@@ -20,6 +20,11 @@
 #include <string.h>
 #include <ctype.h>
 
+/*
+** Some API routines are omitted when various features are
+** excluded from a build of SQLite.  Substitute a NULL pointer
+** for any missing APIs.
+*/
 #ifndef SQLITE_ENABLE_COLUMN_METADATA
 # define sqlite3_column_database_name   0
 # define sqlite3_column_database_name16 0
@@ -30,6 +35,21 @@
 # define sqlite3_table_column_metadata  0
 #endif
 
+/*
+** The following structure contains pointers to all SQLite API routines.
+** A pointer to this structure is passed into extensions when they are
+** loaded so that the extension can make calls back into the SQLite
+** library.
+**
+** When adding new APIs, add them to the bottom of this structure
+** in order to preserve backwards compatibility.
+**
+** Extensions that use newer APIs should first call the
+** sqlite3_libversion_number() to make sure that the API they
+** intend to use is supported by the library.  Extensions should
+** also check to make sure that the pointer to the function is
+** not NULL before calling it.
+*/
 const sqlite3_api_routines sqlite3_api = {
   sqlite3_aggregate_context,
   sqlite3_aggregate_count,
@@ -140,10 +160,20 @@ const sqlite3_api_routines sqlite3_api = {
   sqlite3_value_text16le,
   sqlite3_value_type,
   sqlite3_vmprintf,
+  /*
+  ** The original API set ends here.  All extensions can call any
+  ** of the APIs above provided that the pointer is not NULL.  But
+  ** before calling APIs that follow, extension should check the
+  ** sqlite3_libversion_number() to make sure they are dealing with
+  ** a library that is new enough to support that API.
+  *************************************************************************
+  */
 };
 
-
- #if defined(_WIN32) || defined(WIN32) || defined(__MINGW32__) || defined(__BORLANDC__)
+/*
+** The windows implementation of shared-library loaders
+*/
+#if defined(_WIN32) || defined(WIN32) || defined(__MINGW32__) || defined(__BORLANDC__)
 # include <windows.h>
 # define SQLITE_LIBRARY_TYPE     HANDLE
 # define SQLITE_OPEN_LIBRARY(A)  LoadLibrary(A)
@@ -152,7 +182,7 @@ const sqlite3_api_routines sqlite3_api = {
 #endif /* windows */
 
 /*
-** Non-windows implementation of shared-library loaders
+** The unix implementation of shared-library loaders
 */
 #if defined(HAVE_DLOPEN) && !defined(SQLITE_LIBRARY_TYPE)
 # include <dlfcn.h>
@@ -268,8 +298,7 @@ int sqlite3_load_extension(
   return SQLITE_OK;
 #else
   if( pzErrMsg ){
-    *pzErrMsg = sqlite3_mprintf(
-                     "shared library loading not enabled for this build");
+    *pzErrMsg = sqlite3_mprintf("extension loading is disabled");
   }
   return SQLITE_ERROR;
 #endif

@@ -1,5 +1,5 @@
-C Add\sthe\stentative\ssqlite3_allocate_queryplan()\sAPI.\s(CVS\s3228)
-D 2006-06-13T15:00:55
+C Improved\scomments\sand\sdocumentation\sof\ssqlite3_load_extension().\s(CVS\s3229)
+D 2006-06-13T15:12:21
 F Makefile.in 56fd6261e83f60724e6dcd764e06ab68cbd53909
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -48,7 +48,7 @@ F src/hash.c 449f3d6620193aa557f5d86cbc5cc6b87702b185
 F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
 F src/insert.c 2c3eeb4bcde13c1006824ef14953c2fdad31cf36
 F src/legacy.c fa15d505dd4e45044177ee4d1c6aeaf8c836d390
-F src/loadext.c d0fadf55c55144334a879a32e346c0204658e882
+F src/loadext.c 0215a9c83b7f720aba30f06f183fe6fb3c56a009
 F src/main.c f4397bf95216496e49db2153789788f4b1207b91
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/os.c 59f05de8c5777c34876607114a2fbe55ae578235
@@ -71,7 +71,7 @@ F src/printf.c 7029e5f7344a478394a02c52837ff296ee1ab240
 F src/random.c d40f8d356cecbd351ccfab6eaedd7ec1b54f5261
 F src/select.c 38eda11d950ed5e631ea9054f84a4a8b9e9b39d8
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
-F src/shell.c 55bf6335dae7146f7a300039f5d6bb35010f1996
+F src/shell.c ad73192b30a338a58fe81183d4a5d5a1d4e51d36
 F src/sqlite.h.in 92cbeeacf040bffe109057d3af2db9dc63db8a67
 F src/sqlite3ext.h 127bd394c8eea481f2ac9b754bf399dbfc818b75
 F src/sqliteInt.h 91cc3603fe2e1be18d52490a2fa65ed9640fb338
@@ -363,7 +363,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 0f4657ea69314e49bc7c9faf9a653ef072f5082d
-R b1fdb74ba8eeb04baf985a2eb223a6b1
-U danielk1977
-Z f48f6df0484e720f46ed17f757e9f5ce
+P 7a3e97f76b1f4f97a04f7c5a9daa400402b2ff25
+R 99814ab55d5388c50dbc5b5d45b55362
+U drh
+Z 9e34725cf1a9f7698b5b20c0e7a693ad
