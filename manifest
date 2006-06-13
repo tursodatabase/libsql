@@ -1,4 +1,4 @@
-C Bugfixes:\sFix\sa\ssegfault\sintroduced\sas\spart\sof\sthe\snew\svtab\scode,\sdeallocate\smemory\sin\sthe\sDestroy()\smethod\sof\sthe\secho\smodule.\s(CVS\s3221)
+C Bugfixes:\sFix\sa\ssegfault\sintroduced\sas\spart\sof\sthe\snew\svtab\scode,\sdeallocate\smemory\sin\sthe\sDestroy()\smethod\sof\sthe\secho\smodule.\s(CVS\s3222)
 D 2006-06-13T04:11:44
 F Makefile.in 56fd6261e83f60724e6dcd764e06ab68cbd53909
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
@@ -363,7 +363,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 3532f1340f939b0231c1d82a7b2d186cb096fb29
+P f9ea9704755eee3fd29af7a47be1d41620be8835
 R b50ded4b4061c3fa2b3bc042599da575
 U danielk1977
-Z d664bf5f89df9a39843ed66a526c4f5a
+Z 42d9f8623c9300c98d0eb90f55c29716
