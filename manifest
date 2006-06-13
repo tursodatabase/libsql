@@ -1,5 +1,5 @@
-C Improved\scomments\sand\sdocumentation\sof\ssqlite3_load_extension().\s(CVS\s3229)
-D 2006-06-13T15:12:21
+C Get\sthe\scode\sto\scompile\swith\s-DSQLITE_OMIT_VIRTUALTABLE=1\s(CVS\s3230)
+D 2006-06-13T15:36:07
 F Makefile.in 56fd6261e83f60724e6dcd764e06ab68cbd53909
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -74,7 +74,7 @@ F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c ad73192b30a338a58fe81183d4a5d5a1d4e51d36
 F src/sqlite.h.in 92cbeeacf040bffe109057d3af2db9dc63db8a67
 F src/sqlite3ext.h 127bd394c8eea481f2ac9b754bf399dbfc818b75
-F src/sqliteInt.h 91cc3603fe2e1be18d52490a2fa65ed9640fb338
+F src/sqliteInt.h e8710fd5c10c03ca4a2fb49802b8aae6689f27a0
 F src/table.c f64ec4fbfe333f8df925bc6ba494f55e05b0e75e
 F src/tclsqlite.c 0b2a04cfc1b4298adfbe90a754cfbbe207aca11a
 F src/test1.c 88291fa6674dcd409b1c9d76d3119151d4b81a50
@@ -363,7 +363,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 7a3e97f76b1f4f97a04f7c5a9daa400402b2ff25
-R 99814ab55d5388c50dbc5b5d45b55362
+P 0bcec95963603270ee053c83b1f6960b2029d378
+R b10d238a92b39f83ee40dd1156a4642c
 U drh
-Z 9e34725cf1a9f7698b5b20c0e7a693ad
+Z fda6c445ee74204475ea68b334d7f609
