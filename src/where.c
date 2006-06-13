@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.214 2006/06/13 15:00:55 danielk1977 Exp $
+** $Id: where.c,v 1.215 2006/06/13 17:39:01 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -156,6 +156,7 @@ struct ExprMaskSet {
 #define WO_LE     (WO_EQ<<(TK_LE-TK_EQ))
 #define WO_GT     (WO_EQ<<(TK_GT-TK_EQ))
 #define WO_GE     (WO_EQ<<(TK_GE-TK_EQ))
+#define WO_MATCH  64
 
 /*
 ** Value for flags returned by bestIndex()
@@ -524,6 +525,34 @@ static int isLikeOrGlob(
 #endif /* SQLITE_OMIT_LIKE_OPTIMIZATION */
 
 /*
+** Check to see if the given expression is of the form
+**
+**         column MATCH expr
+**
+** If it is then return TRUE.  If not, return FALSE.
+*/
+static int isMatchOfColumn(
+  Expr *pExpr      /* Test this expression */
+){
+  ExprList *pList;
+
+  if( pExpr->op!=TK_FUNCTION ){
+    return 0;
+  }
+  if( pExpr->token.n!=5 || sqlite3StrNICmp(pExpr->token.z,"match",5)!=0 ){
+    return 0;
+  }
+  pList = pExpr->pList;
+  if( pList->nExpr!=2 ){
+    return 0;
+  }
+  if( pList->a[1].pExpr->op != TK_COLUMN ){
+    return 0;
+  }
+  return 1;
+}
+
+/*
 ** If the pBase expression originated in the ON or USING clause of
 ** a join, then transfer the appropriate markings over to derived.
 */
@@ -747,6 +776,39 @@ or_not_possible:
     }
   }
 #endif /* SQLITE_OMIT_LIKE_OPTIMIZATION */
+
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+  /* Add a WO_MATCH auxiliary term to the constraint set if the
+  ** current expression is of the form:  column MATCH expr.
+  ** This information is used by the xBestIndex methods of
+  ** virtual tables.  The native query optimizer does not attempt
+  ** to do anything with MATCH functions.
+  */
+  if( isMatchOfColumn(pExpr) ){
+    int idxNew;
+    Expr *pRight, *pLeft;
+    WhereTerm *pNewTerm;
+    Bitmask prereqColumn, prereqExpr;
+
+    pRight = pExpr->pList->a[0].pExpr;
+    pLeft = pExpr->pList->a[1].pExpr;
+    prereqExpr = exprTableUsage(pMaskSet, pRight);
+    prereqColumn = exprTableUsage(pMaskSet, pLeft);
+    if( (prereqExpr & prereqColumn)==0 ){
+      idxNew = whereClauseInsert(pWC, pExpr, TERM_VIRTUAL);
+      pNewTerm = &pWC->a[idxNew];
+      pNewTerm->prereqRight = prereqExpr;
+      pNewTerm->leftCursor = pLeft->iTable;
+      pNewTerm->leftColumn = pLeft->iColumn;
+      pNewTerm->eOperator = WO_MATCH;
+      pNewTerm->iParent = idxTerm;
+      pTerm = &pWC->a[idxNew];
+      pTerm->nChild = 1;
+      pTerm->flags |= TERM_COPIED;
+      pNewTerm->prereqAll = pTerm->prereqAll;
+    }
+  }
+#endif /* SQLITE_OMIT_VIRTUALTABLE */
 }
 
 
@@ -887,7 +949,20 @@ static double estLog(double N){
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 /*
-** Compute the best index for a virtual table
+** Compute the best index for a virtual table.
+**
+** The best index is computed by the xBestIndex method of the virtual
+** table module.  This routine is really just a wrapper that sets up
+** the sqlite3_index_info structure that is used to communicate with
+** xBestIndex.
+**
+** In a join, this routine might be called multiple times for the
+** same virtual table.  The sqlite3_index_info structure is created
+** and initialized on the first invocation and reused on all subsequent
+** invocations.  The sqlite3_index_info structure is also used when
+** code is generated to access the virtual table.  The whereInfoDelete() 
+** routine takes care of freeing the sqlite3_index_info structure after
+** everybody has finished with it.
 */
 static double bestVirtualIndex(
   Parse *pParse,                 /* The parsing context */
@@ -971,12 +1046,16 @@ static double bestVirtualIndex(
       pIdxCons[j].iColumn = pTerm->leftColumn;
       pIdxCons[j].iTermOffset = i;
       pIdxCons[j].op = pTerm->eOperator;
+      /* The direct assignment in the previous line is possible only because
+      ** the WO_ and SQLITE_INDEX_CONSTRAINT_ codes are identical.  The
+      ** following asserts verify this fact. */
       assert( WO_EQ==SQLITE_INDEX_CONSTRAINT_EQ );
       assert( WO_LT==SQLITE_INDEX_CONSTRAINT_LT );
       assert( WO_LE==SQLITE_INDEX_CONSTRAINT_LE );
       assert( WO_GT==SQLITE_INDEX_CONSTRAINT_GT );
       assert( WO_GE==SQLITE_INDEX_CONSTRAINT_GE );
-      assert( pTerm->eOperator & (WO_EQ|WO_LT|WO_LE|WO_GT|WO_GE) );
+      assert( WO_MATCH==SQLITE_INDEX_CONSTRAINT_MATCH );
+      assert( pTerm->eOperator & (WO_EQ|WO_LT|WO_LE|WO_GT|WO_GE|WO_MATCH) );
       j++;
     }
     for(i=0; i<nOrderBy; i++){
@@ -985,6 +1064,13 @@ static double bestVirtualIndex(
       pIdxOrderBy[i].desc = pOrderBy->a[i].sortOrder;
     }
   }
+
+  /* At this point, the sqlite3_index_info structure that pIdxInfo points
+  ** to will have been initialized, either during the current invocation or
+  ** during some prior invocation.  Now we just have to customize the
+  ** details of pIdxInfo for the current invocation and pass it to
+  ** xBestIndex.
+  */
 
   /* The module name must be defined */
   assert( pTab->azModuleArg && pTab->azModuleArg[0] );
@@ -995,7 +1081,24 @@ static double bestVirtualIndex(
   }
 
   /* Set the aConstraint[].usable fields and initialize all 
-  ** output variables
+  ** output variables to zero.
+  **
+  ** aConstraint[].usable is true for constraints where the right-hand
+  ** side contains only references to tables to the left of the current
+  ** table.  In other words, if the constraint is of the form:
+  **
+  **           column = expr
+  **
+  ** and we are evaluating a join, then the constraint on column is 
+  ** only valid if all tables referenced in expr occur to the left
+  ** of the table containing column.
+  **
+  ** The aConstraints[] array contains entries for all constraints
+  ** on the current table.  That way we only have to compute it once
+  ** even though we might try to pick the best index multiple times.
+  ** For each attempt at picking an index, the order of tables in the
+  ** join might be different so we have to recompute the usable flag
+  ** each time.
   */
   pIdxCons = *(struct sqlite3_index_constraint**)&pIdxInfo->aConstraint;
   pUsage = pIdxInfo->aConstraintUsage;
@@ -1846,10 +1949,11 @@ WhereInfo *sqlite3WhereBegin(
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     if( pLevel->pIdxInfo ){
+      /* Case 0:  The table is a virtual-table.  Use the VFilter and VNext
+      **          to access the data.
+      */
       char *zSpace;     /* Space for OP_VFilter to marshall it's arguments */
 
-      /* Case 0:  That table is a virtual-table.  Use the VFilter and VNext.
-      */
       sqlite3_index_info *pIdxInfo = pLevel->pIdxInfo;
       for(i=1; i<=pIdxInfo->nConstraint; i++){
         int j;
