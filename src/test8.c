@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test8.c,v 1.6 2006/06/13 01:04:53 drh Exp $
+** $Id: test8.c,v 1.7 2006/06/13 04:11:44 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -26,11 +26,6 @@
 ** the string element zArg to that list in interpreter interp.
 */
 static void appendToEchoModule(Tcl_Interp *interp, const char *zArg){
-  int flags = (TCL_APPEND_VALUE | TCL_LIST_ELEMENT | TCL_GLOBAL_ONLY);
-  Tcl_SetVar(interp, "echo_module", zArg, flags);
-}
-
-static void appendToEchoTable(Tcl_Interp *interp, const char *zArg){
   int flags = (TCL_APPEND_VALUE | TCL_LIST_ELEMENT | TCL_GLOBAL_ONLY);
   Tcl_SetVar(interp, "echo_module", zArg, flags);
 }
@@ -118,10 +113,9 @@ static int echoConnect(
   *ppVtab = &pVtab->base;
   pVtab->base.pModule = pModule;
   pVtab->interp = pModule->pAux;
-  Tcl_SetVar(interp, "echo_module", "xConnect", TCL_GLOBAL_ONLY);
+  appendToEchoModule(pVtab->interp, "xConnect");
   for(i=0; i<argc; i++){
-    Tcl_SetVar(interp, "echo_module", argv[i],
-                TCL_APPEND_VALUE | TCL_LIST_ELEMENT | TCL_GLOBAL_ONLY);
+    appendToEchoModule(pVtab->interp, argv[i]);
   }
 
   echoDeclareVtab(db, argc, argv);
@@ -129,14 +123,14 @@ static int echoConnect(
 }
 static int echoDisconnect(sqlite3_vtab *pVtab){
   echo_vtab *p = (echo_vtab*)pVtab;
-  appendToEchoTable(p->interp, "xDisconnect");
+  appendToEchoModule(p->interp, "xDisconnect");
   sqliteFree(pVtab);
   return 0;
 }
 static int echoDestroy(sqlite3_vtab *pVtab){
   echo_vtab *p = (echo_vtab*)pVtab;
-  Tcl_SetVar(p->interp, "echo_module", "xDestroy",
-                TCL_APPEND_VALUE | TCL_LIST_ELEMENT | TCL_GLOBAL_ONLY);
+  appendToEchoModule(p->interp, "xDestroy");
+  sqliteFree(pVtab);
   return 0;
 }
 
