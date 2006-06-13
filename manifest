@@ -1,5 +1,5 @@
-C Free\serror\smessage\sstring\sin\sthe\squick\sstart\sexample.\s(CVS\s3225)
-D 2006-06-13T11:27:22
+C Lemon\scorrectly\srecognizes\san\sempty\sgrammar\sand\serrors\sout.\nFix\sfor\sa\sbug\sreported\son\sthe\ssqlite-users\smailing\slist.\s(CVS\s3226)
+D 2006-06-13T13:27:47
 F Makefile.in 56fd6261e83f60724e6dcd764e06ab68cbd53909
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -292,7 +292,7 @@ F test/where.test ee7c9a6659b07e1ee61177f6e7ff71565ee2c9df
 F test/where2.test a16476a5913e75cf65b38f2daa6157a6b7791394
 F test/where3.test 3b5ad2c58069e12be2bd86bc5e211a82810521aa
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
-F tool/lemon.c 64aa2436ef7fcc1a6dc49bf205225a542fc05c48
+F tool/lemon.c c0ff92f7d44e108be8499d553f6fd7041487e707
 F tool/lempar.c bd4efbd36f7dab8740408479a47ae48d5ae078a7
 F tool/memleak.awk 4e7690a51bf3ed757e611273d43fe3f65b510133
 F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
@@ -363,7 +363,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P dae71de10d0f34a001b8070266d4016baafa6623
-R e7376a83f134c36434881f57eb210665
+P 1273261ba7a21062217e7fbc3447b5dadf53010f
+R 146414985fadd865b1b6e26a67559392
 U drh
-Z 57bb6b23cb2de5c6b49e04e433b0f4dd
+Z f01f64f9187ce173db934fba71a8e2fd

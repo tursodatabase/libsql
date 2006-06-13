@@ -1423,6 +1423,7 @@ char **argv;
     fprintf(stderr,"Exactly one filename argument is required.\n");
     exit(1);
   }
+  memset(&lem, 0, sizeof(lem));
   lem.errorcnt = 0;
 
   /* Initialize the machine */
@@ -1432,23 +1433,13 @@ char **argv;
   lem.argv0 = argv[0];
   lem.filename = OptArg(0);
   lem.basisflag = basisflag;
-  lem.has_fallback = 0;
-  lem.nconflict = 0;
-  lem.name = lem.include = lem.arg = lem.tokentype = lem.start = 0;
-  lem.vartype = 0;
-  lem.stacksize = 0;
-  lem.error = lem.overflow = lem.failure = lem.accept = lem.tokendest =
-     lem.tokenprefix = lem.outname = lem.extracode = 0;
-  lem.vardest = 0;
-  lem.tablesize = 0;
   Symbol_new("$");
   lem.errsym = Symbol_new("error");
-  lem.wildcard = 0;
 
   /* Parse the input file */
   Parse(&lem);
   if( lem.errorcnt ) exit(lem.errorcnt);
-  if( lem.rule==0 ){
+  if( lem.nrule==0 ){
     fprintf(stderr,"Empty grammar.\n");
     exit(1);
   }
