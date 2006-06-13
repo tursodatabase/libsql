@@ -107,7 +107,7 @@
 **  yy_default[]       Default action for each state.
 */
 %%
-#define YY_SZ_ACTTAB (sizeof(yy_action)/sizeof(yy_action[0]))
+#define YY_SZ_ACTTAB (int)(sizeof(yy_action)/sizeof(yy_action[0]))
 
 /* The next table maps tokens into fallback tokens.  If a construct
 ** like the following:
@@ -321,7 +321,7 @@ void ParseFree(
 */
 static int yy_find_shift_action(
   yyParser *pParser,        /* The parser */
-  int iLookAhead            /* The look-ahead token */
+  YYCODETYPE iLookAhead     /* The look-ahead token */
 ){
   int i;
   int stateno = pParser->yystack[pParser->yyidx].stateno;
@@ -377,7 +377,7 @@ static int yy_find_shift_action(
 */
 static int yy_find_reduce_action(
   int stateno,              /* Current state number */
-  int iLookAhead            /* The look-ahead token */
+  YYCODETYPE iLookAhead     /* The look-ahead token */
 ){
   int i;
   /* int stateno = pParser->yystack[pParser->yyidx].stateno; */
@@ -468,7 +468,7 @@ static void yy_reduce(
   yymsp = &yypParser->yystack[yypParser->yyidx];
 #ifndef NDEBUG
   if( yyTraceFILE && yyruleno>=0 
-        && yyruleno<sizeof(yyRuleName)/sizeof(yyRuleName[0]) ){
+        && yyruleno<(int)(sizeof(yyRuleName)/sizeof(yyRuleName[0])) ){
     fprintf(yyTraceFILE, "%sReduce [%s].\n", yyTracePrompt,
       yyRuleName[yyruleno]);
   }
