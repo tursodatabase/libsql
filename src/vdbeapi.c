@@ -711,6 +711,15 @@ int sqlite3_bind_text16(
   return bindText(pStmt, i, zData, nData, xDel, SQLITE_UTF16NATIVE);
 }
 #endif /* SQLITE_OMIT_UTF16 */
+int sqlite3_bind_value(sqlite3_stmt *pStmt, int i, const sqlite3_value *pValue){
+  int rc;
+  Vdbe *p = (Vdbe *)pStmt;
+  rc = vdbeUnbind(p, i);
+  if( rc==SQLITE_OK ){
+    sqlite3VdbeMemCopy(&p->aVar[i-1], pValue);
+  }
+  return rc;
+}
 
 /*
 ** Return the number of wildcards that can be potentially bound to.

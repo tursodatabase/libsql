@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test8.c,v 1.16 2006/06/14 10:55:53 danielk1977 Exp $
+** $Id: test8.c,v 1.17 2006/06/14 15:16:36 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -474,6 +474,79 @@ static int echoBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
   return SQLITE_OK;
 }
 
+int echoUpdate(sqlite3_vtab *tab, int nData, sqlite3_value **apData){
+  echo_vtab *pVtab = (echo_vtab *)tab;
+  sqlite3 *db = pVtab->db;
+  int rc = SQLITE_OK;
+
+  assert( nData==pVtab->nCol+2 || nData==1 );
+
+  /* If apData[0] is an integer, delete the identified row */
+  if( sqlite3_value_type(apData[0])==SQLITE_INTEGER ){
+    const char *zFormat = "DELETE FROM %Q WHERE rowid = ?";
+    char *zDelete = sqlite3_mprintf(zFormat, pVtab->zTableName);
+    if( !zDelete ){
+      rc = SQLITE_NOMEM;
+    }else{
+      sqlite3_stmt *pStmt = 0;
+      rc = sqlite3_prepare(db, zDelete, -1, &pStmt, 0);
+      assert( rc!=SQLITE_OK || pStmt );
+      if( rc==SQLITE_OK ){
+        sqlite3_step(pStmt);
+        rc = sqlite3_finalize(pStmt);
+      }
+    }
+  }
+
+  /* If there is more than a single argument, INSERT a new row */
+  if( rc==SQLITE_OK && nData>1 ){
+    int ii;
+    char *zInsert = 0;
+    char *zValues = 0;
+    char *zQuery = 0;
+    const char *zTab = pVtab->zTableName;
+
+    zInsert = sqlite3_mprintf("INSERT OR REPLACE INTO %Q (rowid", zTab);
+    zValues = sqlite3_mprintf("?");
+
+    for(ii=0; ii<pVtab->nCol && zInsert && zValues; ii++){
+      char *zNew = sqlite3_mprintf("%s, %Q", zInsert, pVtab->aCol[ii]);
+      sqliteFree(zInsert);
+      zInsert = zNew;
+
+      zNew = sqlite3_mprintf("%s, ?", zValues);
+      sqliteFree(zValues);
+      zValues = zNew;
+    }
+
+    if( zInsert && zValues ){
+      zQuery = sqlite3_mprintf("%s) VALUES(%s)", zInsert, zValues);
+    }
+    if( zQuery ){
+      sqlite3_stmt *pStmt = 0;
+      rc = sqlite3_prepare(db, zQuery, -1, &pStmt, 0);
+      for(ii=1; rc==SQLITE_OK && ii<nData; ii++){
+        rc = sqlite3_bind_value(pStmt, ii, apData[ii]);
+      }
+      if( rc==SQLITE_OK ){
+        sqlite3_step(pStmt);
+        rc = sqlite3_finalize(pStmt);
+      }else{
+        sqlite3_finalize(pStmt);
+      }
+    }
+
+    sqliteFree(zValues);
+    sqliteFree(zInsert);
+    sqliteFree(zQuery);
+    if( rc==SQLITE_OK && (!zValues || !zInsert || !zQuery) ){
+      rc = SQLITE_NOMEM;
+    }
+  }
+
+  return rc;
+}
+
 /*
 ** A virtual table module that merely echos method calls into TCL
 ** variables.
@@ -492,7 +565,8 @@ static sqlite3_module echoModule = {
   echoFilter,                /* xFilter - configure scan constraints */
   echoNext,                  /* xNext - advance a cursor */
   echoColumn,                /* xColumn - read data */
-  echoRowid                  /* xRowid - read data */
+  echoRowid,                 /* xRowid - read data */
+  echoUpdate                 /* xUpdate - write data */
 };
 
 /*

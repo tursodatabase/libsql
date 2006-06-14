@@ -1,5 +1,5 @@
-C Fix\ssegfault\sintroduced\sin\s(3243).\s(CVS\s3245)
-D 2006-06-14T15:14:51
+C Add\sxUpdate\smethod\sto\sthe\secho\stest\smodule.\sCurrently\suntested.\s(CVS\s3246)
+D 2006-06-14T15:16:36
 F Makefile.in 200f6dc376ecfd9b01e5359c4e0c10c02f649b34
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -84,7 +84,7 @@ F src/test4.c 8b784cd82de158a2317cb4ac4bc86f91ad315e25
 F src/test5.c 7162f8526affb771c4ed256826eee7bb9eca265f
 F src/test6.c 60a02961ceb7b3edc25f5dc5c1ac2556622a76de
 F src/test7.c 03fa8d787f6aebc6d1f72504d52f33013ad2c8e3
-F src/test8.c 4ef86f83e5d119a29deb43602a34260a6c1e45cc
+F src/test8.c a698ff6a0e4b3b919bdd3ee493fee7fe45e3d29a
 F src/test_async.c e3deaedd4d86a56391b81808fde9e44fbd92f1d3
 F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
 F src/test_md5.c 6c42bc0a3c0b54be34623ff77a0eec32b2fa96e3
@@ -99,7 +99,7 @@ F src/vacuum.c 5b37d0f436f8e1ffacd17934e44720b38d2247f9
 F src/vdbe.c 337ef4045ade927fa77192d0d040001b2386fba3
 F src/vdbe.h 258b5d1c0aaa72192f09ff0568ce42b383f156fa
 F src/vdbeInt.h 6ccb7eaae76ebd761470f6a035501ff33aa92c20
-F src/vdbeapi.c af663689ef57e5506f190bbd1068d28936b0fb34
+F src/vdbeapi.c 6af0e7160af260052a7a4500464221a03dada75f
 F src/vdbeaux.c de49c1943146ad97538bc2bb0bce7f2c5e5db4f2
 F src/vdbefifo.c 9efb94c8c3f4c979ebd0028219483f88e57584f5
 F src/vdbemem.c 5f0afe3b92bb2c037f8d5d697f7c151fa50783a3
@@ -366,7 +366,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P a0a3b34db86ef1c31d172ca1b56afd26d18e429f
-R 5cf64d6162ed85384d1c169cb605133e
+P e5fff87d004ccf0cf8ba1f6afa032f31144527d9
+R d24bc91ccb9a06f930675327990c7800
 U danielk1977
-Z 4a56dce6497b12dbb8af9a219a9335b4
+Z db7c917a9ca4e17b1b7a1b3ea7331c7f
