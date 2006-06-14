@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is creating and dropping virtual tables.
 #
-# $Id: vtab1.test,v 1.12 2006/06/14 06:31:28 danielk1977 Exp $
+# $Id: vtab1.test,v 1.13 2006/06/14 07:41:32 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -320,6 +320,56 @@ do_test vtab1-3.13 {
   set echo_module
 } [list xBestIndex {SELECT rowid, * FROM 'treal' WHERE b >= ? AND b <= ?}      \
         xFilter    {SELECT rowid, * FROM 'treal' WHERE b >= ? AND b <= ?} 2 10 ]
+
+#----------------------------------------------------------------------
+# Test case vtab1-3 test table scans and the echo module's 
+# xBestIndex/xFilter handling of ORDER BY clauses.
+
+# This procedure executes the SQL.  Then it checks to see if the OP_Sort
+# opcode was executed.  If an OP_Sort did occur, then "sort" is appended
+# to the result.  If no OP_Sort happened, then "nosort" is appended.
+#
+# This procedure is used to check to make sure sorting is or is not
+# occurring as expected.
+#
+proc cksort {sql} {
+  set ::sqlite_sort_count 0
+  set data [execsql $sql]
+  if {$::sqlite_sort_count} {set x sort} {set x nosort}
+  lappend data $x
+  return $data
+}
+
+do_test vtab1-4.1 {
+  set echo_module ""
+  cksort {
+    SELECT b FROM t1 ORDER BY b;
+  }
+} {2 5 nosort}
+do_test vtab1-4.2 {
+  set echo_module
+} [list xBestIndex {SELECT rowid, * FROM 'treal' ORDER BY b ASC} \
+        xFilter    {SELECT rowid, * FROM 'treal' ORDER BY b ASC} ]
+do_test vtab1-4.3 {
+  set echo_module ""
+  cksort {
+    SELECT b FROM t1 ORDER BY b DESC;
+  }
+} {5 2 nosort}
+do_test vtab1-4.4 {
+  set echo_module
+} [list xBestIndex {SELECT rowid, * FROM 'treal' ORDER BY b DESC} \
+        xFilter    {SELECT rowid, * FROM 'treal' ORDER BY b DESC} ]
+do_test vtab1-4.3 {
+  set echo_module ""
+  cksort {
+    SELECT b FROM t1 ORDER BY b||'';
+  }
+} {2 5 sort}
+do_test vtab1-4.4 {
+  set echo_module
+} [list xBestIndex {SELECT rowid, * FROM 'treal'} \
+        xFilter    {SELECT rowid, * FROM 'treal'} ]
 
 finish_test
 

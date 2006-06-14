@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test8.c,v 1.13 2006/06/14 06:58:16 danielk1977 Exp $
+** $Id: test8.c,v 1.14 2006/06/14 07:41:32 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -431,6 +431,26 @@ static int echoBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
       pUsage->omit = 1;
     }
   }
+
+  /* If there is only one term in the ORDER BY clause, and it is
+  ** on a column that this virtual table has an index for, then consume 
+  ** the ORDER BY clause.
+  */
+  if( pIdxInfo->nOrderBy==1 && pVtab->aIndex[pIdxInfo->aOrderBy->iColumn] ){
+    char *zCol = pVtab->aCol[pIdxInfo->aOrderBy->iColumn];
+    char *zDir = pIdxInfo->aOrderBy->desc?"DESC":"ASC";
+    zNew = sqlite3_mprintf("%s ORDER BY %s %s", zQuery, zCol, zDir);
+    sqlite3_free(zQuery);
+    zQuery = zNew;
+    pIdxInfo->orderByConsumed = 1;
+  }
+
+  const int nOrderBy;        /* Number of terms in the ORDER BY clause */
+  const struct sqlite3_index_orderby {
+     int iColumn;              /* Column number */
+     unsigned char desc;       /* True for DESC.  False for ASC. */
+  } *const aOrderBy;         /* The ORDER BY clause */
+
   appendToEchoModule(pVtab->interp, "xBestIndex");;
   appendToEchoModule(pVtab->interp, zQuery);
 
