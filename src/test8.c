@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test8.c,v 1.12 2006/06/14 06:31:28 danielk1977 Exp $
+** $Id: test8.c,v 1.13 2006/06/14 06:58:16 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -223,7 +223,7 @@ static int echoDestructor(sqlite3_vtab *pVtab){
 
 static int echoConstructor(
   sqlite3 *db,
-  const sqlite3_module *pModule,
+  void *pAux,
   int argc, char **argv,
   sqlite3_vtab **ppVtab
 ){
@@ -231,8 +231,7 @@ static int echoConstructor(
   echo_vtab *pVtab;
 
   pVtab = sqliteMalloc( sizeof(*pVtab) );
-  pVtab->base.pModule = pModule;
-  pVtab->interp = pModule->pAux;
+  pVtab->interp = (Tcl_Interp *)pAux;
   pVtab->db = db;
   pVtab->zTableName = sqlite3MPrintf("%s", argv[1]);
   for(i=0; i<argc; i++){
@@ -251,21 +250,21 @@ static int echoConstructor(
 /* Methods for the echo module */
 static int echoCreate(
   sqlite3 *db,
-  const sqlite3_module *pModule,
+  void *pAux,
   int argc, char **argv,
   sqlite3_vtab **ppVtab
 ){
-  appendToEchoModule((Tcl_Interp *)(pModule->pAux), "xCreate");
-  return echoConstructor(db, pModule, argc, argv, ppVtab);
+  appendToEchoModule((Tcl_Interp *)(pAux), "xCreate");
+  return echoConstructor(db, pAux, argc, argv, ppVtab);
 }
 static int echoConnect(
   sqlite3 *db,
-  const sqlite3_module *pModule,
+  void *pAux,
   int argc, char **argv,
   sqlite3_vtab **ppVtab
 ){
-  appendToEchoModule((Tcl_Interp *)(pModule->pAux), "xConnect");
-  return echoConstructor(db, pModule, argc, argv, ppVtab);
+  appendToEchoModule((Tcl_Interp *)(pAux), "xConnect");
+  return echoConstructor(db, pAux, argc, argv, ppVtab);
 }
 
 static int echoDisconnect(sqlite3_vtab *pVtab){

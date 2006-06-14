@@ -1,5 +1,5 @@
-C Add\stests\sfor\serror\sconditions\ssurrounding\sthe\screation/connection\sof\svirtual\stables.\s(CVS\s3235)
-D 2006-06-14T06:31:28
+C Change\sthe\spModule\sparameter\sof\sthe\sxCreate\sand\sxConnect\smethods\sto\sa\svoid*.\s(CVS\s3236)
+D 2006-06-14T06:58:16
 F Makefile.in 200f6dc376ecfd9b01e5359c4e0c10c02f649b34
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -72,7 +72,7 @@ F src/random.c d40f8d356cecbd351ccfab6eaedd7ec1b54f5261
 F src/select.c 38eda11d950ed5e631ea9054f84a4a8b9e9b39d8
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c ad73192b30a338a58fe81183d4a5d5a1d4e51d36
-F src/sqlite.h.in 84522f48a0a044987267a82d680121194d31fb7a
+F src/sqlite.h.in 45975614ab23be1be971a1624a2c5f6801c99c2d
 F src/sqlite3ext.h 127bd394c8eea481f2ac9b754bf399dbfc818b75
 F src/sqliteInt.h e8710fd5c10c03ca4a2fb49802b8aae6689f27a0
 F src/table.c f64ec4fbfe333f8df925bc6ba494f55e05b0e75e
@@ -84,11 +84,11 @@ F src/test4.c 8b784cd82de158a2317cb4ac4bc86f91ad315e25
 F src/test5.c 7162f8526affb771c4ed256826eee7bb9eca265f
 F src/test6.c 60a02961ceb7b3edc25f5dc5c1ac2556622a76de
 F src/test7.c 03fa8d787f6aebc6d1f72504d52f33013ad2c8e3
-F src/test8.c f91c78d8ad3aecf3e670e66c087a79ff806b21b2
+F src/test8.c 06c0a7b6057b8733f8ef94e9eae815b32141c143
 F src/test_async.c e3deaedd4d86a56391b81808fde9e44fbd92f1d3
 F src/test_md5.c 6c42bc0a3c0b54be34623ff77a0eec32b2fa96e3
 F src/test_server.c a6460daed0b92ecbc2531b6dc73717470e7a648c
-F src/test_tclvar.c 3157e17194caa73434041d310b66ec93803aa1be
+F src/test_tclvar.c d434037c1730cfffbf007ac82f1c405d7155a92a
 F src/tokenize.c 6ebcafa6622839968dda4418a7b6945f277a128f
 F src/trigger.c 48bbb94c11954c8e132efcc04478efe8304c4196
 F src/update.c 0186f09414a6578156d40666becc964f85c2a616
@@ -102,7 +102,7 @@ F src/vdbeapi.c af663689ef57e5506f190bbd1068d28936b0fb34
 F src/vdbeaux.c c9474fd27f1735170feb4f6a46885d282cf22d52
 F src/vdbefifo.c 9efb94c8c3f4c979ebd0028219483f88e57584f5
 F src/vdbemem.c 5f0afe3b92bb2c037f8d5d697f7c151fa50783a3
-F src/vtab.c 6af0aa0ef2ebca743a4647eb22fd5d5d3813d83e
+F src/vtab.c b198496e428e1d1c1fef96afeac36828f0171628
 F src/where.c 299c385e32a7b98d42864c7c83cdc6a778fae562
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -364,7 +364,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 29199eeea4c46168ccaa7535d4941bd740479dee
-R dc5e6094d3fe7373d35dfb54c78f916b
+P 5e592c422b86deb5802c6536e91661717ee9bbe1
+R 4fa19ffe7cfb0134822441de8330a6ea
 U danielk1977
-Z 267156075d7b55f7a94e810698d71dbc
+Z 368680ae09650a1bb3f150de6a1748ad

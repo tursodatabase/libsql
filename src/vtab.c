@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to help implement virtual tables.
 **
-** $Id: vtab.c,v 1.9 2006/06/14 06:31:28 danielk1977 Exp $
+** $Id: vtab.c,v 1.10 2006/06/14 06:58:16 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
@@ -235,6 +235,49 @@ void sqlite3VtabArgExtend(Parse *pParse, Token *p){
 }
 
 /*
+** Invoke a virtual table constructor (either xCreate or xConnect). The
+** pointer to the function to invoke is passed as the fourth parameter
+** to this procedure.
+*/
+static int vtabCallConstructor(
+  sqlite3 *db, 
+  Table *pTab,
+  sqlite3_module *pModule,
+  int (*xConstruct)(sqlite3*, void *, int, char **, sqlite3_vtab **),
+  char **pzErr
+){
+  int rc;
+  int rc2;
+  char **azArg = pTab->azModuleArg;
+  int nArg = pTab->nModuleArg;
+
+  assert( !db->pVTab );
+  assert( xConstruct );
+
+  db->pVTab = pTab;
+  rc = sqlite3SafetyOff(db);
+  assert( rc==SQLITE_OK );
+  rc = xConstruct(db, pModule->pAux, nArg, azArg, &pTab->pVtab);
+  rc2 = sqlite3SafetyOn(db);
+  if( pTab->pVtab ){
+    pTab->pVtab->pModule = pModule;
+  }
+
+  if( SQLITE_OK!=rc ){
+    *pzErr = sqlite3MPrintf("vtable constructor failed: %s", pTab->zName);
+  } else if( db->pVTab ){
+    const char *zFormat = "vtable constructor did not declare schema: %s";
+    *pzErr = sqlite3MPrintf(zFormat, pTab->zName);
+    rc = SQLITE_ERROR;
+  } 
+  if( rc==SQLITE_OK ){
+    rc = rc2;
+  }
+  db->pVTab = 0;
+  return rc;
+}
+
+/*
 ** This function is invoked by the parser to call the xConnect() method
 ** of the virtual table pTab. If an error occurs, an error code is returned 
 ** and an error left in pParse.
@@ -252,31 +295,54 @@ int sqlite3VtabCallConnect(Parse *pParse, Table *pTab){
 
   pModule = pTab->pModule;
   zModule = pTab->azModuleArg[0];
-  if( !pModule || !pModule->xConnect ){
+  if( !pModule ){
     const char *zModule = pTab->azModuleArg[0];
     sqlite3ErrorMsg(pParse, "no such module: %s", zModule);
     rc = SQLITE_ERROR;
   } else {
-    char **azArg = pTab->azModuleArg;
-    int nArg = pTab->nModuleArg;
-    sqlite3 *db = pParse->db;
-    assert( !db->pVTab );
-    db->pVTab = pTab;
-    rc = sqlite3SafetyOff(db);
-    assert( rc==SQLITE_OK );
-    rc = pModule->xConnect(db, pModule, nArg, azArg, &pTab->pVtab);
-    db->pVTab = 0;
-    if( rc ){
-      sqlite3ErrorMsg(pParse, "module connect failed: %s", zModule);
-      sqlite3SafetyOn(db);
-    } else {
-      rc = sqlite3SafetyOn(db);
+    char *zErr = 0;
+    rc = vtabCallConstructor(pParse->db,pTab,pModule,pModule->xConnect,&zErr);
+    if( rc!=SQLITE_OK ){
+      sqlite3ErrorMsg(pParse, "%s", zErr);
     }
+    sqliteFree(zErr);
   }
 
   return rc;
 }
 
+/*
+** This function is invoked by the vdbe to call the xCreate method
+** of the virtual table named zTab in database iDb. 
+**
+** If an error occurs, *pzErr is set to point an an English language
+** description of the error and an SQLITE_XXX error code is returned.
+** In this case the caller must call sqliteFree() on *pzErr.
+*/
+int sqlite3VtabCallCreate(sqlite3 *db, int iDb, const char *zTab, char **pzErr){
+  int rc = SQLITE_OK;
+  Table *pTab;
+  sqlite3_module *pModule;
+  const char *zModule;
+
+  pTab = sqlite3FindTable(db, zTab, db->aDb[iDb].zName);
+  assert(pTab && pTab->isVirtual && !pTab->pVtab);
+  pModule = pTab->pModule;
+  zModule = pTab->azModuleArg[0];
+
+  /* If the module has been registered and includes a Create method, 
+  ** invoke it now. If the module has not been registered, return an 
+  ** error. Otherwise, do nothing.
+  */
+  if( !pModule ){
+    *pzErr = sqlite3MPrintf("no such module: %s", zModule);
+    rc = SQLITE_ERROR;
+  }else{
+    rc = vtabCallConstructor(db, pTab, pModule, pModule->xCreate, pzErr);
+  }
+
+  return rc;
+}
 
 /*
 ** This function is used to set the schema of a virtual table.  It is only
@@ -321,61 +387,6 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
   sqlite3DeleteTable(0, sParse.pNewTable);
   sParse.pNewTable = 0;
   db->pVTab = 0;
-
-  return rc;
-}
-
-/*
-** This function is invoked by the vdbe to call the xCreate method
-** of the virtual table named zTab in database iDb. 
-**
-** If an error occurs, *pzErr is set to point an an English language
-** description of the error and an SQLITE_XXX error code is returned.
-** In this case the caller must call sqliteFree() on *pzErr.
-*/
-int sqlite3VtabCallCreate(sqlite3 *db, int iDb, const char *zTab, char **pzErr){
-  int rc = SQLITE_OK;
-  Table *pTab;
-  sqlite3_module *pModule;
-  const char *zModule;
-
-  pTab = sqlite3FindTable(db, zTab, db->aDb[iDb].zName);
-  assert(pTab && pTab->isVirtual && !pTab->pVtab);
-  pModule = pTab->pModule;
-  zModule = pTab->azModuleArg[0];
-
-  /* If the module has been registered and includes a Create method, 
-  ** invoke it now. If the module has not been registered, return an 
-  ** error. Otherwise, do nothing.
-  */
-  if( !pModule ){
-    *pzErr = sqlite3MPrintf("no such module: %s", zModule);
-    rc = SQLITE_ERROR;
-  }else{
-    int rc2;
-    char **azArg = pTab->azModuleArg;
-    int nArg = pTab->nModuleArg;
-
-    assert( !db->pVTab );
-    assert( pModule->xCreate );
-    db->pVTab = pTab;
-    rc = sqlite3SafetyOff(db);
-    assert( rc==SQLITE_OK );
-    rc = pModule->xCreate(db, pModule, nArg, azArg, &pTab->pVtab);
-    rc2 = sqlite3SafetyOn(db);
-
-    if( SQLITE_OK!=rc ){
-      *pzErr = sqlite3MPrintf("vtable constructor failed: %s", zTab);
-    } else if( db->pVTab ){
-      const char *zFormat = "vtable constructor did not declare schema: %s";
-      *pzErr = sqlite3MPrintf(zFormat, zTab);
-      rc = SQLITE_ERROR;
-    } 
-    db->pVTab = 0;
-    if( rc==SQLITE_OK ){
-      rc = rc2;
-    }
-  }
 
   return rc;
 }
