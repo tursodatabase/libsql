@@ -1,5 +1,5 @@
-C Bug\sfixes\sin\sthe\sMATCH\sand\sORDER\sBY\sprocessing\sof\svirtual\stables.\s(CVS\s3249)
-D 2006-06-14T22:07:11
+C Changes\sto\stest8.c\sto\ssupport\sUPDATE\soperations\son\sxUpdate.\s(CVS\s3250)
+D 2006-06-14T23:43:31
 F Makefile.in 200f6dc376ecfd9b01e5359c4e0c10c02f649b34
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -84,7 +84,7 @@ F src/test4.c 8b784cd82de158a2317cb4ac4bc86f91ad315e25
 F src/test5.c 7162f8526affb771c4ed256826eee7bb9eca265f
 F src/test6.c 60a02961ceb7b3edc25f5dc5c1ac2556622a76de
 F src/test7.c 03fa8d787f6aebc6d1f72504d52f33013ad2c8e3
-F src/test8.c e923b74e2e627d5d53413b3d69fc89b621eb8253
+F src/test8.c 2f38a6c295f15dd9dbb3db954be21aa8ea3c284b
 F src/test_async.c e3deaedd4d86a56391b81808fde9e44fbd92f1d3
 F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
 F src/test_md5.c 6c42bc0a3c0b54be34623ff77a0eec32b2fa96e3
@@ -366,7 +366,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 32c97b884b104d120db3c0a87f5eab28f36851f8
-R 343eac0ed8ef0f1713e901c87b91ee1c
+P c996185a9e0671e46bed06e5803b1ca3b42d61e2
+R ee3ad5273671026614072c99f84a0525
 U drh
-Z 8a0af575be32f8c2cbffbf5691e9cf94
+Z bbafadf19467cae14bf8a8d2edcf9481

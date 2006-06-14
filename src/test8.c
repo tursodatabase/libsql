@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test8.c,v 1.18 2006/06/14 22:07:11 drh Exp $
+** $Id: test8.c,v 1.19 2006/06/14 23:43:31 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -485,6 +485,69 @@ int echoUpdate(sqlite3_vtab *tab, int nData, sqlite3_value **apData){
   int rc = SQLITE_OK;
 
   assert( nData==pVtab->nCol+2 || nData==1 );
+
+  /* If apData[0] is an integer and nData>1 then do an UPDATE */
+  if( nData>1 && sqlite3_value_type(apData[0])==SQLITE_INTEGER ){
+    char *zUpdate = sqlite3_mprintf("UPDATE %Q", pVtab->zTableName);
+    char *zSep = " SET";
+    char *zTemp;
+    int i, j;
+    sqlite3_stmt *pStmt;
+    
+    if( apData[1] && sqlite3_value_type(apData[1])  &&
+           sqlite3_value_int64(apData[0])!=sqlite3_value_int64(apData[1]) ){
+       zTemp = sqlite3_mprintf("%s SET rowid=%lld", zUpdate, zSep,
+                                sqlite3_value_int64(apData[1]));
+       sqlite3_free(zUpdate);
+       zUpdate = zTemp;
+       zSep = ",";
+    }
+    for(i=2; i<nData; i++){
+      if( apData[i]==0 ) continue;
+      zTemp = sqlite3_mprintf("%s%s %Q=?", zUpdate, zSep, pVtab->aCol[i-2]);
+      sqlite3_free(zUpdate);
+      zUpdate = zTemp;
+      zSep = ",";
+    }
+    zTemp = sqlite3_mprintf("%s WHERE rowid=%lld", zUpdate,
+                             sqlite3_value_int64(apData[0]));
+    sqlite3_free(zUpdate);
+    zUpdate = zTemp;
+    rc = sqlite3_prepare(db, zUpdate, -1, &pStmt, 0);
+    assert( rc!=SQLITE_OK || pStmt );
+    if( rc ) return rc;
+    for(i=2, j=1; i<nData; i++){
+      if( apData[i]==0 ) continue;
+      switch( sqlite3_value_type(apData[i]) ){
+        case SQLITE_INTEGER: {
+          sqlite3_bind_int64(pStmt, j, sqlite3_value_int64(apData[i]));
+          break;
+        }
+        case SQLITE_FLOAT: {
+          sqlite3_bind_double(pStmt, j, sqlite3_value_double(apData[i]));
+          break;
+        }
+        case SQLITE_NULL: {
+          sqlite3_bind_null(pStmt, j);
+          break;
+        }
+        case SQLITE_TEXT: {
+          sqlite3_bind_text(pStmt, j, sqlite3_value_text(apData[i]),
+                            sqlite3_value_bytes(apData[i]), SQLITE_TRANSIENT);
+          break;
+        }
+        case SQLITE_BLOB: {
+          sqlite3_bind_blob(pStmt, j, sqlite3_value_blob(apData[i]),
+                            sqlite3_value_bytes(apData[i]), SQLITE_TRANSIENT);
+          break;
+        }
+      }
+      j++;
+    }
+    sqlite3_step(pStmt);
+    rc = sqlite3_finalize(pStmt);
+    return rc;
+  }
 
   /* If apData[0] is an integer, delete the identified row */
   if( sqlite3_value_type(apData[0])==SQLITE_INTEGER ){
