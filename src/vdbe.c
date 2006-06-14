@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.558 2006/06/13 23:51:35 drh Exp $
+** $Id: vdbe.c,v 1.559 2006/06/14 13:03:24 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -4753,6 +4753,34 @@ case OP_VNext: {
   }
 
   break;
+}
+#endif /* SQLITE_OMIT_VIRTUALTABLE */
+
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+/* Opcode: VUpdate * P2 P3
+**
+** P3 is a pointer to a virtual table object, an sqlite3_vtab structure.
+** This opcode invokes the corresponding xUpdate method. P2 values
+** are taken from the stack to pass to the xUpdate invocation. The
+** value on the top of the stack corresponds to the p2th element 
+** of the argv array passed to xUpdate.
+*/
+case OP_VUpdate: {
+  sqlite3_vtab *pVtab = (sqlite3_vtab *)(pOp->p3);
+  sqlite3_module *pModule = (sqlite3_module *)pVtab->pModule;
+  if( pModule->xUpdate==0 ){
+    sqlite3SetString(&p->zErrMsg, "Unsupported module operation: xUpdate", 0);
+    rc = SQLITE_ERROR;
+  }else{
+    int i;
+    Mem **apArg = p->apArg;
+    int nArg = pOp->p1;
+    for(i = 0; i<nArg; i++){
+      apArg[i] = &pTos[i+1-nArg];
+      storeTypeInfo(apArg[i], 0);
+    }
+    rc = pModule->xUpdate(pVtab, nArg, apArg);
+  }
 }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 

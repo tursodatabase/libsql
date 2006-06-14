@@ -228,7 +228,7 @@ int sqlite3VdbeOpcodeNoPush(u8 op){
 ** This routine is called once after all opcodes have been inserted.
 **
 ** Variable *pMaxFuncArgs is set to the maximum value of any P2 argument 
-** to an OP_Function or OP_AggStep opcode. This is used by 
+** to an OP_Function, OP_AggStep or OP_VFilter opcode. This is used by 
 ** sqlite3VdbeMakeReady() to size the Vdbe.apArg[] array.
 **
 ** The integer *pMaxStack is set to the maximum number of vdbe stack
@@ -251,7 +251,11 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs, int *pMaxStack){
   for(pOp=p->aOp, i=p->nOp-1; i>=0; i--, pOp++){
     u8 opcode = pOp->opcode;
 
-    if( opcode==OP_Function || opcode==OP_AggStep ){
+    if( opcode==OP_Function || opcode==OP_AggStep ||
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+        opcode==OP_VFilter
+#endif
+    ){
       if( pOp->p2>nMaxArgs ) nMaxArgs = pOp->p2;
     }else if( opcode==OP_Halt ){
       if( pOp->p1==SQLITE_CONSTRAINT && pOp->p2==OE_Abort ){

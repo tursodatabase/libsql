@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to help implement virtual tables.
 **
-** $Id: vtab.c,v 1.10 2006/06/14 06:58:16 danielk1977 Exp $
+** $Id: vtab.c,v 1.11 2006/06/14 13:03:24 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
@@ -28,7 +28,6 @@ int sqlite3_create_module(
   sqlite3ResetInternalSchema(db, 0);
   return SQLITE_OK;
 }
-
 
 /*
 ** Clear any and all virtual-table information from the Table record.
