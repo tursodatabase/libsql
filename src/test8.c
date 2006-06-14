@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test8.c,v 1.11 2006/06/13 23:51:35 drh Exp $
+** $Id: test8.c,v 1.12 2006/06/14 06:31:28 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -35,12 +35,11 @@ struct echo_vtab {
   sqlite3_vtab base;
   Tcl_Interp *interp;
   sqlite3 *db;
-  char *zTableName;       /* Name of the real table */
-  char *zStmt;                 /* "SELECT rowid, * FROM <real-table-name> " */
 
-  int *aIndex;
-  int nCol;
-  char **aCol;
+  char *zTableName;       /* Name of the real table */
+  int nCol;               /* Number of columns in the real table */
+  int *aIndex;            /* Array of size nCol. True if column has an index */
+  char **aCol;            /* Array of size nCol. Column names */
 };
 
 /* An echo cursor object */
@@ -198,7 +197,6 @@ static int echoDeclareVtab(
       rc = SQLITE_ERROR;
     }
     sqlite3_finalize(pStmt);
-    pVtab->zStmt = sqlite3MPrintf("SELECT rowid, * FROM %s ", argv[1]);
     if( rc==SQLITE_OK ){
       rc = getIndexArray(db, argv[1], &pVtab->aIndex);
     }
@@ -208,6 +206,19 @@ static int echoDeclareVtab(
   }
 
   return rc;
+}
+
+static int echoDestructor(sqlite3_vtab *pVtab){
+  int ii;
+  echo_vtab *p = (echo_vtab*)pVtab;
+  sqliteFree(p->aIndex);
+  for(ii=0; ii<p->nCol; ii++){
+    sqliteFree(p->aCol[ii]);
+  }
+  sqliteFree(p->aCol);
+  sqliteFree(p->zTableName);
+  sqliteFree(p);
+  return 0;
 }
 
 static int echoConstructor(
@@ -220,8 +231,6 @@ static int echoConstructor(
   echo_vtab *pVtab;
 
   pVtab = sqliteMalloc( sizeof(*pVtab) );
-
-  *ppVtab = &pVtab->base;
   pVtab->base.pModule = pModule;
   pVtab->interp = pModule->pAux;
   pVtab->db = db;
@@ -230,8 +239,13 @@ static int echoConstructor(
     appendToEchoModule(pVtab->interp, argv[i]);
   }
 
-  echoDeclareVtab(pVtab, db, argc, argv);
-  return 0;
+  if( echoDeclareVtab(pVtab, db, argc, argv) ){
+    echoDestructor((sqlite3_vtab *)pVtab);
+    return SQLITE_ERROR;
+  }
+
+  *ppVtab = &pVtab->base;
+  return SQLITE_OK;
 }
 
 /* Methods for the echo module */
@@ -252,20 +266,6 @@ static int echoConnect(
 ){
   appendToEchoModule((Tcl_Interp *)(pModule->pAux), "xConnect");
   return echoConstructor(db, pModule, argc, argv, ppVtab);
-}
-
-static int echoDestructor(sqlite3_vtab *pVtab){
-  int ii;
-  echo_vtab *p = (echo_vtab*)pVtab;
-  sqliteFree(p->zStmt);
-  sqliteFree(p->aIndex);
-  for(ii=0; ii<p->nCol; ii++){
-    sqliteFree(p->aCol[ii]);
-  }
-  sqliteFree(p->aCol);
-  sqliteFree(p->zTableName);
-  sqliteFree(p);
-  return 0;
 }
 
 static int echoDisconnect(sqlite3_vtab *pVtab){

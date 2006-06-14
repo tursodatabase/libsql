@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is creating and dropping virtual tables.
 #
-# $Id: vtab1.test,v 1.11 2006/06/13 23:51:35 drh Exp $
+# $Id: vtab1.test,v 1.12 2006/06/14 06:31:28 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -21,37 +21,107 @@ ifcapable !vtab {
   return
 }
 
-# We cannot create a virtual table if the module has not
-# been registered.
+#----------------------------------------------------------------------
+# Organization of tests in this file:
+#
+# vtab1-1.*: Error conditions and other issues surrounding creation/connection
+#            of a virtual module.
+# vtab1-2.*: Test sqlite3_declare_vtab() and the xConnect/xDisconnect methods.
+# vtab1-3.*: Table scans and WHERE clauses.
+# vtab1-4.*: Table scans and ORDER BY clauses.
+# vtab1-5.*: Test queries that include joins. This brings the
+#            sqlite3_index_info.estimatedCost variable into play.
+#
+# This file uses the "echo" module (see src/test8.c). Refer to comments
+# in that file for the special behaviour of the Tcl $echo_module variable.
+#
+# TODO: 
+#
+# * How to test the sqlite3_index_constraint_usage.omit field? Or
+#   sqlite3_index_info.orderByConsumed?
+#
+
+
+#----------------------------------------------------------------------
+# Test cases vtab1.1.*
+#
+
+# We cannot create a virtual table if the module has not been registered.
 #
 do_test vtab1-1.1 {
   catchsql {
     CREATE VIRTUAL TABLE t1 USING echo;
   }
-} {1 {unknown module: echo}}
+} {1 {no such module: echo}}
 do_test vtab1-1.2 {
   execsql {
     SELECT name FROM sqlite_master ORDER BY 1
   }
 } {}
 
-# After we register the echo module, we are allowed to create
-# virtual tables using that module.
+# Register the module
+register_echo_module [sqlite3_connection_pointer db]
+
+# Once a module has been registered, virtual tables using that module
+# may be created. However if a module xCreate() fails to call
+# sqlite3_declare_vtab() an error will be raised and the table not created.
+#
+# The "echo" module does not invoke sqlite3_declare_vtab() if it is
+# passed zero arguments.
 #
 do_test vtab1-1.3 {
-  register_echo_module [sqlite3_connection_pointer db]
   catchsql {
     CREATE VIRTUAL TABLE t1 USING echo;
   }
-} {0 {}}
+} {1 {vtable constructor did not declare schema: t1}}
 do_test vtab1-1.4 {
-  set echo_module
-} {xCreate echo}
-do_test vtab1-1.5 {
   execsql {
-    SELECT name, sql FROM sqlite_master ORDER BY 1
+    SELECT name FROM sqlite_master ORDER BY 1
   }
-} {t1 {CREATE VIRTUAL TABLE t1 USING echo}}
+} {}
+
+# The "echo" module xCreate method returns an error and does not create
+# the virtual table if it is passed an argument that does not correspond
+# to an existing real table in the same database.
+#
+do_test vtab1-1.5 {
+  catchsql {
+    CREATE VIRTUAL TABLE t1 USING echo(no_such_table);
+  }
+} {1 {vtable constructor failed: t1}}
+do_test vtab1-1.6 {
+  execsql {
+    SELECT name FROM sqlite_master ORDER BY 1
+  }
+} {}
+
+# Test to make sure nothing goes wrong and no memory is leaked if we 
+# select an illegal table-name (i.e a reserved name or the name of a
+# table that already exists).
+#
+do_test vtab1-1.7 {
+  catchsql {
+    CREATE VIRTUAL TABLE sqlite_master USING echo;
+  }
+} {1 {object name reserved for internal use: sqlite_master}}
+do_test vtab1-1.8 {
+  catchsql {
+    CREATE TABLE treal(a, b, c);
+    CREATE VIRTUAL TABLE treal USING echo(treal);
+  }
+} {1 {table treal already exists}}
+do_test vtab1-1.9 {
+  execsql {
+    DROP TABLE treal;
+    SELECT name FROM sqlite_master ORDER BY 1
+  }
+} {}
+
+#----------------------------------------------------------------------
+# Test cases vtab1.2.*
+#
+# At this point, the database is completely empty. The echo module
+# has already been registered.
 
 # If a single argument is passed to the echo module during table
 # creation, it is assumed to be the name of a table in the same
@@ -70,77 +140,92 @@ do_test vtab1-2.1 {
 ]
 do_test vtab1-2.2 {
   execsql {
-    CREATE VIRTUAL TABLE t2 USING echo(template);
+    CREATE VIRTUAL TABLE t1 USING echo(template);
   }
-  execsql { PRAGMA table_info(t2); }
+  execsql { PRAGMA table_info(t1); }
 } [list         \
   0 a {} 0 {} 0 \
   1 b {} 0 {} 0 \
   2 c {} 0 {} 0 \
 ]
 
-# Test that the database can be unloaded. This should invoke 
-# the xDisconnect() callback each of the two virtual tables - t1 and t2.
+# Test that the database can be unloaded. This should invoke the xDisconnect()
+# callback for the successfully create virtual table (t1).
+#
 do_test vtab1-2.3 {
-breakpoint
   set echo_module [list]
   db close
   set echo_module
-} [list xDisconnect xDisconnect]
+} [list xDisconnect]
 
-  set echo_module [list]
-# Re-open the database. Check that the schema of the virtual
-# table is still correct.
+# Re-open the database. This should not cause any virtual methods to 
+# be called. The invocation of xConnect() is delayed until the virtual
+# table schema is first required by the compiler.
+#
 do_test vtab1-2.4 {
+  set echo_module [list]
   sqlite3 db test.db
   db cache size 0
-  register_echo_module [sqlite3_connection_pointer db]
-  execsql { PRAGMA table_info(t2); }
+  set echo_module
+} {}
+
+# Try to query the virtual table schema. This should fail, as the
+# echo module has not been registered with this database connection.
+#
+do_test vtab1.2.6 {
+breakpoint
+  catchsql { PRAGMA table_info(t1); }
+} {1 {no such module: echo}}
+
+# Register the module
+register_echo_module [sqlite3_connection_pointer db]
+
+# Try to query the virtual table schema again. This time it should
+# invoke the xConnect method and succeed.
+#
+do_test vtab1.2.7 {
+  execsql { PRAGMA table_info(t1); }
 } [list         \
   0 a {} 0 {} 0 \
   1 b {} 0 {} 0 \
   2 c {} 0 {} 0 \
 ]
+do_test vtab1.2.8 {
+  set echo_module
+} {xConnect echo template}
 
-# Drop the table t2. This should cause the xDestroy (but not xDisconnect)
-# method to be invoked.
+# Drop table t1. This should cause the xDestroy (but not xDisconnect) method 
+# to be invoked.
 do_test vtab1-2.5 {
-  set echo_module [list]
+  set echo_module ""
   execsql { 
-    DROP TABLE t2;
+    DROP TABLE t1;
   }
   set echo_module
-} [list xDestroy]
-
+} {xDestroy}
 do_test vtab1-2.6 {
   execsql { 
-    PRAGMA table_info(t2); 
+    PRAGMA table_info(t1); 
   }
 } {}
 do_test vtab1-2.7 {
   execsql {
     SELECT sql FROM sqlite_master;
   }
-} [list {CREATE VIRTUAL TABLE t1 USING echo} \
-        {CREATE TABLE template(a, b, c)}     \
-]
+} [list {CREATE TABLE template(a, b, c)}]
+
+# Clean up other test artifacts:
 do_test vtab1-2.8 {
-  set echo_module [list]
   execsql { 
-    DROP TABLE t1;
     DROP TABLE template;
-  }
-  set echo_module
-} [list]
-do_test vtab1-2.9 {
-  execsql {
     SELECT sql FROM sqlite_master;
   }
 } [list]
 
 #----------------------------------------------------------------------
-# Test case vtab1-3 tests simple linear scans (no filter conditions) of 
-# virtual table modules.
+# Test case vtab1-3 test table scans and the echo module's 
+# xBestIndex/xFilter handling of WHERE conditions.
+
 do_test vtab1-3.1 {
   set echo_module ""
   execsql {
@@ -150,15 +235,20 @@ do_test vtab1-3.1 {
   }
   set echo_module
 } [list xCreate echo treal]
+
+# Test that a SELECT on t1 doesn't crash. No rows are returned
+# because the underlying real table is currently empty.
+#
 do_test vtab1-3.2 {
-  # Test that a SELECT on t2 doesn't crash. No rows are returned
-  # because the underlying real table, is currently empty.
   execsql {
     SELECT a, b, c FROM t1;
   }
 } {}
+
+# Put some data into the table treal. Then try a few simple SELECT 
+# statements on t1.
+#
 do_test vtab1-3.3 {
-  # Put some data into the table treal. Then try a select on t1.
   execsql {
     INSERT INTO treal VALUES(1, 2, 3);
     INSERT INTO treal VALUES(4, 5, 6);
@@ -175,7 +265,6 @@ do_test vtab1-3.5 {
     SELECT rowid FROM t1;
   }
 } {1 2}
-
 do_test vtab1-3.6 {
   set echo_module ""
   execsql {
@@ -183,17 +272,34 @@ do_test vtab1-3.6 {
   }
 } {1 2 3 4 5 6}
 do_test vtab1-3.7 {
-  set echo_module
-} {xBestIndex {SELECT rowid, * FROM 'treal'} xFilter {SELECT rowid, * FROM 'treal'}}
+  execsql {
+    SELECT rowid, * FROM t1;
+  }
+} {1 1 2 3 2 4 5 6}
+
+# Execute some SELECT statements with WHERE clauses on the t1 table.
+# Then check the echo_module variable (written to by the module methods
+# in test8.c) to make sure the xBestIndex() and xFilter() methods were
+# called correctly.
+#
 do_test vtab1-3.8 {
+  set echo_module ""
+  execsql {
+    SELECT * FROM t1;
+  }
+  set echo_module
+} [list xBestIndex {SELECT rowid, * FROM 'treal'} \
+        xFilter    {SELECT rowid, * FROM 'treal'} ]
+do_test vtab1-3.9 {
   set echo_module ""
   execsql {
     SELECT * FROM t1 WHERE b = 5;
   }
 } {4 5 6}
-do_test vtab1-3.9 {
+do_test vtab1-3.10 {
   set echo_module
-} {xBestIndex {SELECT rowid, * FROM 'treal' WHERE b = ?} xFilter {SELECT rowid, * FROM 'treal' WHERE b = ?} 5}
+} [list xBestIndex {SELECT rowid, * FROM 'treal' WHERE b = ?}   \
+        xFilter    {SELECT rowid, * FROM 'treal' WHERE b = ?} 5 ]
 do_test vtab1-3.10 {
   set echo_module ""
   execsql {
@@ -202,7 +308,8 @@ do_test vtab1-3.10 {
 } {4 5 6}
 do_test vtab1-3.11 {
   set echo_module
-} {xBestIndex {SELECT rowid, * FROM 'treal' WHERE b >= ? AND b <= ?} xFilter {SELECT rowid, * FROM 'treal' WHERE b >= ? AND b <= ?} 5 10}
+} [list xBestIndex {SELECT rowid, * FROM 'treal' WHERE b >= ? AND b <= ?}      \
+        xFilter    {SELECT rowid, * FROM 'treal' WHERE b >= ? AND b <= ?} 5 10 ]
 do_test vtab1-3.12 {
   set echo_module ""
   execsql {
@@ -211,6 +318,8 @@ do_test vtab1-3.12 {
 } {1 2 3 4 5 6}
 do_test vtab1-3.13 {
   set echo_module
-} {xBestIndex {SELECT rowid, * FROM 'treal' WHERE b >= ? AND b <= ?} xFilter {SELECT rowid, * FROM 'treal' WHERE b >= ? AND b <= ?} 2 10}
+} [list xBestIndex {SELECT rowid, * FROM 'treal' WHERE b >= ? AND b <= ?}      \
+        xFilter    {SELECT rowid, * FROM 'treal' WHERE b >= ? AND b <= ?} 2 10 ]
 
 finish_test
+

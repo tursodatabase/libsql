@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to help implement virtual tables.
 **
-** $Id: vtab.c,v 1.8 2006/06/13 23:51:35 drh Exp $
+** $Id: vtab.c,v 1.9 2006/06/14 06:31:28 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
@@ -144,7 +144,7 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
     int iDb;
     Vdbe *v;
     if( pTab->pModule==0 ){
-      sqlite3ErrorMsg(pParse, "unknown module: %s", zModule);
+      sqlite3ErrorMsg(pParse, "no such module: %s", zModule);
     }
 
     /* Compute the complete text of the CREATE VIRTUAL TABLE statement */
@@ -254,7 +254,7 @@ int sqlite3VtabCallConnect(Parse *pParse, Table *pTab){
   zModule = pTab->azModuleArg[0];
   if( !pModule || !pModule->xConnect ){
     const char *zModule = pTab->azModuleArg[0];
-    sqlite3ErrorMsg(pParse, "unknown module: %s", zModule);
+    sqlite3ErrorMsg(pParse, "no such module: %s", zModule);
     rc = SQLITE_ERROR;
   } else {
     char **azArg = pTab->azModuleArg;
@@ -349,22 +349,31 @@ int sqlite3VtabCallCreate(sqlite3 *db, int iDb, const char *zTab, char **pzErr){
   ** error. Otherwise, do nothing.
   */
   if( !pModule ){
-    *pzErr = sqlite3MPrintf("unknown module: %s", zModule);
+    *pzErr = sqlite3MPrintf("no such module: %s", zModule);
     rc = SQLITE_ERROR;
-  }else if( pModule->xCreate ){
+  }else{
+    int rc2;
     char **azArg = pTab->azModuleArg;
     int nArg = pTab->nModuleArg;
+
     assert( !db->pVTab );
+    assert( pModule->xCreate );
     db->pVTab = pTab;
     rc = sqlite3SafetyOff(db);
     assert( rc==SQLITE_OK );
     rc = pModule->xCreate(db, pModule, nArg, azArg, &pTab->pVtab);
+    rc2 = sqlite3SafetyOn(db);
+
+    if( SQLITE_OK!=rc ){
+      *pzErr = sqlite3MPrintf("vtable constructor failed: %s", zTab);
+    } else if( db->pVTab ){
+      const char *zFormat = "vtable constructor did not declare schema: %s";
+      *pzErr = sqlite3MPrintf(zFormat, zTab);
+      rc = SQLITE_ERROR;
+    } 
     db->pVTab = 0;
-    if( rc ){
-      *pzErr = sqlite3MPrintf("module create failed: %s", zModule);
-      sqlite3SafetyOn(db);
-    } else {
-      rc = sqlite3SafetyOn(db);
+    if( rc==SQLITE_OK ){
+      rc = rc2;
     }
   }
 
