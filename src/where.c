@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.216 2006/06/13 23:51:35 drh Exp $
+** $Id: where.c,v 1.217 2006/06/14 19:00:22 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1790,7 +1790,7 @@ WhereInfo *sqlite3WhereBegin(
       }
       assert( pTabItem->pTab );
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-      if( pTabItem->pTab->isVirtual ){
+      if( IsVirtual(pTabItem->pTab) ){
         cost = bestVirtualIndex(pParse, &wc, pTabItem, notReady,
                                 ppOrderBy ? *ppOrderBy : 0, i==0,
                                 &pLevel->pIdxInfo);

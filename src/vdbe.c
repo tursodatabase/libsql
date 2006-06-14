@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.559 2006/06/14 13:03:24 danielk1977 Exp $
+** $Id: vdbe.c,v 1.560 2006/06/14 19:00:22 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -4539,7 +4539,7 @@ case OP_TableLock: {        /* no-push */
 ** P3 is the name of a virtual table in database P1. Call the xCreate method
 ** for that table.
 */
-case OP_VCreate: {
+case OP_VCreate: {   /* no-push */
   rc = sqlite3VtabCallCreate(db, pOp->p1, pOp->p3, &p->zErrMsg);
   break;
 }
@@ -4551,7 +4551,7 @@ case OP_VCreate: {
 ** P3 is the name of a virtual table in database P1.  Call the xDestroy method
 ** of that table.
 */
-case OP_VDestroy: {
+case OP_VDestroy: {   /* no-push */
   rc = sqlite3VtabCallDestroy(db, pOp->p1, pOp->p3);
   break;
 }
@@ -4564,7 +4564,7 @@ case OP_VDestroy: {
 ** P1 is a cursor number.  This opcode opens a cursor to the virtual
 ** table and stores that cursor in P1.
 */
-case OP_VOpen: {
+case OP_VOpen: {   /* no-push */
   Cursor *pCur = 0;
   sqlite3_vtab_cursor *pVtabCursor = 0;
 
@@ -4610,7 +4610,7 @@ case OP_VOpen: {
 ** A jump is made to P2 if the result set after filtering would be 
 ** empty.
 */
-case OP_VFilter: {
+case OP_VFilter: {   /* no-push */
   int nArg;
 
   const sqlite3_module *pModule;
@@ -4725,7 +4725,7 @@ case OP_VColumn: {
 ** jump to instruction P2.  Or, if the virtual table has reached
 ** the end of its result set, then fall through to the next instruction.
 */
-case OP_VNext: {
+case OP_VNext: {   /* no-push */
   const sqlite3_module *pModule;
   int res = 0;
 
@@ -4756,6 +4756,22 @@ case OP_VNext: {
 }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 
+
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+/* Opcode: VNoChange * * *
+**
+** Push an entry onto the stack which says to the VUpdate command
+** that the corresponding column of the row should not be modified.
+*/
+case OP_VNoChange: {
+  pTos++;
+  pTos->flags = 0;
+  pTos->n = 0;
+  break;
+}
+#endif /* SQLITE_OMIT_VIRTUALTABLE */
+
+
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 /* Opcode: VUpdate * P2 P3
 **
@@ -4764,23 +4780,41 @@ case OP_VNext: {
 ** are taken from the stack to pass to the xUpdate invocation. The
 ** value on the top of the stack corresponds to the p2th element 
 ** of the argv array passed to xUpdate.
+**
+** The xUpdate method will do a DELETE or an INSERT or both.
+** The argv[0] element (which corresponds to the P2-th element down
+** on the stack) is the rowid of a row to delete.  If argv[0] is
+** NULL then no deletion occurs.  The argv[1] element is the rowid
+** of the new row.  This can be NULL to have the virtual table
+** select the new rowid for itself.  The higher elements in the
+** stack are the values of columns in the new row.  if any argv[i]
+** where i>=2 is a NULL pointer (that is to say if argv[i]==NULL 
+** which is different from if sqlite3_value_type(argv[i])==SQLITE_NULL)
+** that means to preserve a copy of that element.  In other words,
+** copy the corresponding value from the argv[0] row into the new row.
+**
+** If P2==1 then no insert is performed.  argv[0] is the rowid of
+** a row to delete.
 */
-case OP_VUpdate: {
+case OP_VUpdate: {   /* no-push */
   sqlite3_vtab *pVtab = (sqlite3_vtab *)(pOp->p3);
   sqlite3_module *pModule = (sqlite3_module *)pVtab->pModule;
+  int nArg = pOp->p2;
+  assert( pOp->p3type==P3_VTAB );
   if( pModule->xUpdate==0 ){
-    sqlite3SetString(&p->zErrMsg, "Unsupported module operation: xUpdate", 0);
+    sqlite3SetString(&p->zErrMsg, "read-only table", 0);
     rc = SQLITE_ERROR;
   }else{
     int i;
     Mem **apArg = p->apArg;
-    int nArg = pOp->p1;
-    for(i = 0; i<nArg; i++){
-      apArg[i] = &pTos[i+1-nArg];
-      storeTypeInfo(apArg[i], 0);
+    Mem *pX = &pTos[1-nArg];
+    for(i = 0; i<nArg; i++, pX++){
+      apArg[i] = pX->flags ? storeTypeInfo(pX,0), pX : 0;
     }
     rc = pModule->xUpdate(pVtab, nArg, apArg);
   }
+  popStack(&pTos, nArg);
+  break;
 }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 

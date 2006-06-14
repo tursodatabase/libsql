@@ -103,6 +103,10 @@ void sqlite3BeginTrigger(
     /* The table does not exist. */
     goto trigger_cleanup;
   }
+  if( IsVirtual(pTab) ){
+    sqlite3ErrorMsg(pParse, "cannot create triggers on virtual tables");
+    goto trigger_cleanup;
+  }
 
   /* Check that the trigger name is not reserved and that no trigger of the
   ** specified name exists */
@@ -594,9 +598,10 @@ int sqlite3TriggersExist(
   int op,                 /* one of TK_DELETE, TK_INSERT, TK_UPDATE */
   ExprList *pChanges      /* Columns that change in an UPDATE statement */
 ){
-  Trigger *pTrigger = pTab->pTrigger;
+  Trigger *pTrigger;
   int mask = 0;
 
+  pTrigger = IsVirtual(pTab) ? 0 : pTab->pTrigger;
   while( pTrigger ){
     if( pTrigger->op==op && checkColumnOverLap(pTrigger->pColumns, pChanges) ){
       mask |= pTrigger->tr_tm;

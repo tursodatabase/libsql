@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.124 2006/06/11 23:41:56 drh Exp $
+** $Id: update.c,v 1.125 2006/06/14 19:00:22 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -277,9 +277,9 @@ void sqlite3Update(
   pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, 0);
   if( pWInfo==0 ) goto update_cleanup;
 
-  /* Remember the index of every item to be updated.
+  /* Remember the rowid of every item to be updated.
   */
-  sqlite3VdbeAddOp(v, OP_Rowid, iCur, 0);
+  sqlite3VdbeAddOp(v, IsVirtual(pTab) ? OP_VRowid : OP_Rowid, iCur, 0);
   sqlite3VdbeAddOp(v, OP_FifoWrite, 0, 0);
 
   /* End the database scan loop.
@@ -358,7 +358,7 @@ void sqlite3Update(
     }
   }
 
-  if( !isView ){
+  if( !isView && !IsVirtual(pTab) ){
     /* 
     ** Open every index that needs updating.  Note that if any
     ** index could potentially invoke a REPLACE conflict resolution 
@@ -390,7 +390,7 @@ void sqlite3Update(
     /* Loop over every record that needs updating.  We have to load
     ** the old data for each record to be updated because some columns
     ** might not change and we will need to copy the old value.
-    ** Also, the old data is needed to delete the old index entires.
+    ** Also, the old data is needed to delete the old index entries.
     ** So make the cursor point at the old record.
     */
     if( !triggers_exist ){
@@ -444,6 +444,42 @@ void sqlite3Update(
     sqlite3CompleteInsertion(pParse, pTab, iCur, aIdxUsed, chngRowid, 1, -1);
   }
 
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+  if( !isView && IsVirtual(pTab) ){
+    addr = sqlite3VdbeAddOp(v, OP_FifoRead, 0, 0);
+
+    /* If the record number will change, push the record number as it
+    ** will be after the update. (The old record number is currently
+    ** on top of the stack.)
+    */
+    if( chngRowid ){
+      sqlite3ExprCode(pParse, pRowidExpr);
+      sqlite3VdbeAddOp(v, OP_MustBeInt, 0, 0);
+    }else{
+      sqlite3VdbeAddOp(v, OP_Dup, 0, 0);
+    }
+
+    /* Compute new data for this record.  
+    */
+    for(i=0; i<pTab->nCol; i++){
+      if( i==pTab->iPKey ){
+        sqlite3VdbeAddOp(v, OP_Null, 0, 0);
+        continue;
+      }
+      j = aXRef[i];
+      if( j<0 ){
+        sqlite3VdbeAddOp(v, OP_VNoChange, 0, 0);
+      }else{
+        sqlite3ExprCode(pParse, pChanges->a[j].pExpr);
+      }
+    }
+
+    /* Make the update */
+    sqlite3VdbeOp3(v, OP_VUpdate, 0, pTab->nCol+2, 
+                      (const char*)pTab->pVtab, P3_VTAB);
+  }
+#endif /* SQLITE_OMIT_VIRTUAL */
+
   /* Increment the row counter 
   */
   if( db->flags & SQLITE_CountRows && !pParse->trigStack){
@@ -474,7 +510,7 @@ void sqlite3Update(
   sqlite3VdbeJumpHere(v, addr);
 
   /* Close all tables if there were no FOR EACH ROW triggers */
-  if( !triggers_exist ){
+  if( !triggers_exist && !IsVirtual(pTab) ){
     for(i=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
       if( openAll || aIdxUsed[i] ){
         sqlite3VdbeAddOp(v, OP_Close, iCur+i+1, 0);

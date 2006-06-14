@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.504 2006/06/13 15:36:07 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.505 2006/06/14 19:00:21 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -694,7 +694,6 @@ struct Table {
   u8 hasPrimKey;   /* True if there exists a primary key */
   u8 keyConf;      /* What to do in case of uniqueness conflict on iPKey */
   u8 autoInc;      /* True if the integer primary key is autoincrement */
-  u8 isVirtual;    /* True if this is a virtual table */
   int nRef;          /* Number of pointers to this Table */
   Trigger *pTrigger; /* List of SQL triggers on this table */
   FKey *pFKey;       /* Linked list of all foreign keys in this table */
@@ -708,11 +707,23 @@ struct Table {
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   sqlite3_module *pModule;  /* Pointer to the implementation of the module */
   sqlite3_vtab *pVtab;      /* Pointer to the module instance */
+  u8 isVirtual;             /* True if this is a virtual table */
   int nModuleArg;           /* Number of arguments to the module */
   char **azModuleArg;       /* Text of all module args. [0] is module name */
 #endif
   Schema *pSchema;
 };
+
+/*
+** Test to see whether or not a table is a virtual table.  This is
+** done as a macro so that it will be optimized out when virtual
+** table support is omitted from the build.
+*/
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+#  define IsVirtual(X) ((X)->isVirtual)
+#else
+#  define IsVirtual(X) 0
+#endif
 
 /*
 ** Each foreign key constraint is an instance of the following structure.

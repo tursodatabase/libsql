@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.261 2006/06/13 04:11:44 danielk1977 Exp $
+** $Id: expr.c,v 1.262 2006/06/14 19:00:21 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1489,7 +1489,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       }else if( pExpr->iColumn>=0 ){
         Table *pTab = pExpr->pTab;
         int iCol = pExpr->iColumn;
-        int op = (pTab && pTab->isVirtual) ? OP_VColumn : OP_Column;
+        int op = (pTab && IsVirtual(pTab)) ? OP_VColumn : OP_Column;
         sqlite3VdbeAddOp(v, op, pExpr->iTable, iCol);
         sqlite3ColumnDefault(v, pTab, iCol);
 #ifndef SQLITE_OMIT_FLOATING_POINT
@@ -1499,7 +1499,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
 #endif
       }else{
         Table *pTab = pExpr->pTab;
-        int op = (pTab && pTab->isVirtual) ? OP_VRowid : OP_Rowid;
+        int op = (pTab && IsVirtual(pTab)) ? OP_VRowid : OP_Rowid;
         sqlite3VdbeAddOp(v, op, pExpr->iTable, 0);
       }
       break;
