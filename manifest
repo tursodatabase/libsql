@@ -1,5 +1,5 @@
-C Add\sa\stest\scase\sfor\sORDER\sBY\susing\sthe\secho\smodule.\s(CVS\s3237)
-D 2006-06-14T07:41:32
+C Add\stests\sfor\sthe\snew\sMATCH\soperator.\s(CVS\s3238)
+D 2006-06-14T08:48:26
 F Makefile.in 200f6dc376ecfd9b01e5359c4e0c10c02f649b34
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -192,7 +192,7 @@ F test/join5.test 2646825693a6e066ea89b498176d4a68df45ab68
 F test/journal1.test 36f2d1bb9bf03f790f43fbdb439e44c0657fab19
 F test/lastinsert.test 9d7241f562d7adcf61730de83176417d7e30d76b
 F test/laststmtchanges.test 19a6d0c11f7a31dc45465b495f7b845a62cbec17
-F test/like.test 1665284b66060934568e2b4a69ad4f9033ecb5dd
+F test/like.test 5f7d76574752a9101cac13372c8a85999d0d91e6
 F test/limit.test 71884068d47b18f614735f0686690319b32cdc22
 F test/lock.test 9b7afcb24f53d24da502abb33daaad2cd6d44107
 F test/lock2.test d83ba79d3c4fffdb5b926c7d8ca7a36c34288a55
@@ -288,7 +288,7 @@ F test/vacuum.test 37f998b841cb335397c26d9bbc3457182af2565f
 F test/vacuum2.test 5aea8c88a65cb29f7d175296e7c819c6158d838c
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/view.test 16e2774fe35e47a07ac4471b7f0bcc948b1aa6d5
-F test/vtab1.test 8f123ec98d9492528d2a1c41561f69d2ed8a4b9a
+F test/vtab1.test c74328129c2b6c3821c903b05dea8076fc362bf9
 F test/where.test ee7c9a6659b07e1ee61177f6e7ff71565ee2c9df
 F test/where2.test a16476a5913e75cf65b38f2daa6157a6b7791394
 F test/where3.test 3b5ad2c58069e12be2bd86bc5e211a82810521aa
@@ -364,7 +364,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 3ffa51b50a7831ef359bc40acf605decc922c498
-R a42bc0c303b9b85b83b5dd270a6f439d
+P f459f034f659a4c418aa1bc72135cc93d04565df
+R ea0e08f5993556739ac65af3b6ec4b97
 U danielk1977
-Z 1ff93a8928398e025b1675757469e123
+Z 19fda68a524896e3f72b47e2caafc4a8
