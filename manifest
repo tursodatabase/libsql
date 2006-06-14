@@ -1,5 +1,5 @@
-C Add\sxUpdate\smethod\sto\sthe\secho\stest\smodule.\sCurrently\suntested.\s(CVS\s3246)
-D 2006-06-14T15:16:36
+C Better\sdocumentation\son\sthe\slimits\sof\suser-defined\sfunctions.\s\sAnd\sa\nmarginally\sbetter\serror\smessage\swhen\sthose\slimits\sare\sexceeded.\nTicket\s#1847.\s(CVS\s3247)
+D 2006-06-14T15:35:37
 F Makefile.in 200f6dc376ecfd9b01e5359c4e0c10c02f649b34
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -49,7 +49,7 @@ F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
 F src/insert.c 2c3eeb4bcde13c1006824ef14953c2fdad31cf36
 F src/legacy.c fa15d505dd4e45044177ee4d1c6aeaf8c836d390
 F src/loadext.c d8c7bd14e6ebc4e9f1ff269475bf63e131919449
-F src/main.c f4397bf95216496e49db2153789788f4b1207b91
+F src/main.c 4e48472d06ac3fc0250023e2eb406fc7d8d0a27c
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/os.c 59f05de8c5777c34876607114a2fbe55ae578235
 F src/os.h ac2ccb4f48902c1611a7e1f171eb81d17e3b8eb2
@@ -322,7 +322,7 @@ F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
 F www/autoinc.tcl b357f5ba954b046ee35392ce0f884a2fcfcdea06
 F www/c_interface.tcl b51b08591554c16a0c3ef718364a508ac25abc7e
 F www/capi3.tcl 7a7cc225fe02eb7ab861a6019b08baa0014409e1
-F www/capi3ref.tcl ab76e918c52f7d4027accc6f84a8845ee5c43b16
+F www/capi3ref.tcl 530fffe3b5729981dc4cfd32e2bafd4ba3dad2ec
 F www/changes.tcl ec6d4fa4d302a76d662509c7c4796a159bd66b31
 F www/common.tcl 14d121c28532ad20c3e349caa4db708b0b822083
 F www/compile.tcl 276546d7eb445add5a867193bbd80f6919a6b084
@@ -366,7 +366,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P e5fff87d004ccf0cf8ba1f6afa032f31144527d9
-R d24bc91ccb9a06f930675327990c7800
-U danielk1977
-Z db7c917a9ca4e17b1b7a1b3ea7331c7f
+P 676de55b28f0b22cf78f5e71f4a960f3d76c2d72
+R a8a1cc8c95b40bc320a675a33fc7e864
+U drh
+Z a5cbc134908c784d2a3323e83c952926

@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.342 2006/06/11 23:41:55 drh Exp $
+** $Id: main.c,v 1.343 2006/06/14 15:35:37 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -415,6 +415,7 @@ int sqlite3CreateFunc(
       (!xFunc && (!xFinal && xStep)) ||
       (nArg<-1 || nArg>127) ||
       (255<(nName = strlen(zFunctionName))) ){
+    sqlite3Error(db, SQLITE_ERROR, "bad parameters");
     return SQLITE_ERROR;
   }
   

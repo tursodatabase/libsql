@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3ref.tcl,v 1.39 2006/05/27 11:15:48 drh Exp $}
+set rcsid {$Id: capi3ref.tcl,v 1.40 2006/06/14 15:35:37 drh Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -669,7 +669,11 @@ int sqlite3_create_function16(
  only difference between these two routines is that the second argument, the
  name of the (scalar) function or aggregate, is encoded in UTF-8 for
  sqlite3_create_function() and UTF-16 for sqlite3_create_function16().
-
+ The length of the name is limited to 255 bytes, exclusive of the 
+ zero-terminator.  Note that the name length limit is in bytes, not
+ characters.  Any attempt to create a function with a longer name
+ will result in an SQLITE_ERROR error.
+ 
  The first argument is the database handle that the new function or
  aggregate is to be added to. If a single program uses more than one
  database handle internally, then user functions or aggregates must 
@@ -678,7 +682,9 @@ int sqlite3_create_function16(
 
  The third argument is the number of arguments that the function or
  aggregate takes. If this argument is -1 then the function or
- aggregate may take any number of arguments.
+ aggregate may take any number of arguments.  The maximum number
+ of arguments to a new SQL function is 127.  A number larger than
+ 127 for the third argument results in an SQLITE_ERROR error.
 
  The fourth argument, eTextRep, specifies what type of text arguments
  this function prefers to receive.  Any function should be able to work
