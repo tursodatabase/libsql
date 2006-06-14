@@ -335,31 +335,33 @@ static int yy_find_shift_action(
   i += iLookAhead;
   if( i<0 || i>=YY_SZ_ACTTAB || yy_lookahead[i]!=iLookAhead ){
     if( iLookAhead>0 ){
-  #ifdef YYFALLBACK
+#ifdef YYFALLBACK
       int iFallback;            /* Fallback token */
       if( iLookAhead<sizeof(yyFallback)/sizeof(yyFallback[0])
              && (iFallback = yyFallback[iLookAhead])!=0 ){
-  #ifndef NDEBUG
+#ifndef NDEBUG
         if( yyTraceFILE ){
           fprintf(yyTraceFILE, "%sFALLBACK %s => %s\n",
              yyTracePrompt, yyTokenName[iLookAhead], yyTokenName[iFallback]);
         }
-  #endif
+#endif
         return yy_find_shift_action(pParser, iFallback);
       }
-  #endif
-  #ifdef YYWILDCARD
-      int j = i - iLookAhead + YYWILDCARD;
-      if( j>=0 && j<YY_SZ_ACTTAB && yy_lookahead[j]==YYWILDCARD ){
-  #ifndef NDEBUG
-        if( yyTraceFILE ){
-          fprintf(yyTraceFILE, "%sWILDCARD %s => %s\n",
-             yyTracePrompt, yyTokenName[iLookAhead], yyTokenName[YYWILDCARD]);
+#endif
+#ifdef YYWILDCARD
+      {
+        int j = i - iLookAhead + YYWILDCARD;
+        if( j>=0 && j<YY_SZ_ACTTAB && yy_lookahead[j]==YYWILDCARD ){
+#ifndef NDEBUG
+          if( yyTraceFILE ){
+            fprintf(yyTraceFILE, "%sWILDCARD %s => %s\n",
+               yyTracePrompt, yyTokenName[iLookAhead], yyTokenName[YYWILDCARD]);
+          }
+#endif /* NDEBUG */
+          return yy_action[j];
         }
-  #endif
-        return yy_action[j];
       }
-  #endif
+#endif /* YYWILDCARD */
     }
     return yy_default[stateno];
   }else{
