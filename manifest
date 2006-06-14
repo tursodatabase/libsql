@@ -1,5 +1,5 @@
-C Fix\stypo\sin\stest8.c.\s(CVS\s3240)
-D 2006-06-14T10:47:04
+C Add\scode\sto\stest8.c\sto\scheck\sthat\sthe\scorrect\sidxNum\svalue\sis\spassed\sto\sthe\sxFilter\smethod.\s(CVS\s3241)
+D 2006-06-14T10:55:53
 F Makefile.in 200f6dc376ecfd9b01e5359c4e0c10c02f649b34
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -84,7 +84,7 @@ F src/test4.c 8b784cd82de158a2317cb4ac4bc86f91ad315e25
 F src/test5.c 7162f8526affb771c4ed256826eee7bb9eca265f
 F src/test6.c 60a02961ceb7b3edc25f5dc5c1ac2556622a76de
 F src/test7.c 03fa8d787f6aebc6d1f72504d52f33013ad2c8e3
-F src/test8.c cbf59c055ee5997e3296cb8b54fd654dffedc5be
+F src/test8.c 4ef86f83e5d119a29deb43602a34260a6c1e45cc
 F src/test_async.c e3deaedd4d86a56391b81808fde9e44fbd92f1d3
 F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
 F src/test_md5.c 6c42bc0a3c0b54be34623ff77a0eec32b2fa96e3
@@ -366,7 +366,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 402a77c43d4e4dcd2e1197cfaaa2ed51249a1b8f
-R 85ab82b2cd4cf7efd7ef1f8ff6fc6e7a
+P 75be7d4988a3618ea9e3c1b65d5c05380ec7d25d
+R f2a6628a8f1ede4d65ffbece9678b741
 U danielk1977
-Z df06791bd553f74b590c885aa7f9bb9a
+Z 0fc9e6c28ad3363f40d3a481f56028e0
