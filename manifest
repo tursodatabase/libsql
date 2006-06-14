@@ -1,5 +1,5 @@
-C Added\scode\sto\sINSERT,\sDELETE\sand\sUPDATE\svirtual\stables.\s\sThe\snew\scode\sis\nmostly\suntested.\s(CVS\s3248)
-D 2006-06-14T19:00:21
+C Bug\sfixes\sin\sthe\sMATCH\sand\sORDER\sBY\sprocessing\sof\svirtual\stables.\s(CVS\s3249)
+D 2006-06-14T22:07:11
 F Makefile.in 200f6dc376ecfd9b01e5359c4e0c10c02f649b34
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -84,7 +84,7 @@ F src/test4.c 8b784cd82de158a2317cb4ac4bc86f91ad315e25
 F src/test5.c 7162f8526affb771c4ed256826eee7bb9eca265f
 F src/test6.c 60a02961ceb7b3edc25f5dc5c1ac2556622a76de
 F src/test7.c 03fa8d787f6aebc6d1f72504d52f33013ad2c8e3
-F src/test8.c a698ff6a0e4b3b919bdd3ee493fee7fe45e3d29a
+F src/test8.c e923b74e2e627d5d53413b3d69fc89b621eb8253
 F src/test_async.c e3deaedd4d86a56391b81808fde9e44fbd92f1d3
 F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
 F src/test_md5.c 6c42bc0a3c0b54be34623ff77a0eec32b2fa96e3
@@ -104,7 +104,7 @@ F src/vdbeaux.c de49c1943146ad97538bc2bb0bce7f2c5e5db4f2
 F src/vdbefifo.c 9efb94c8c3f4c979ebd0028219483f88e57584f5
 F src/vdbemem.c 5f0afe3b92bb2c037f8d5d697f7c151fa50783a3
 F src/vtab.c 507cbb4e2101900339ce88e57144cc01dafa374e
-F src/where.c 393022cb4ac77d1f00d9c27540ce13ca5486c5b0
+F src/where.c d7c3cc011834882b2d58ebb3a6a1a569ead7ebd7
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/all.test 5df90d015ca63fcef2a4b62c24f7316b66c4bfd4
@@ -290,7 +290,7 @@ F test/vacuum.test 37f998b841cb335397c26d9bbc3457182af2565f
 F test/vacuum2.test 5aea8c88a65cb29f7d175296e7c819c6158d838c
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/view.test 16e2774fe35e47a07ac4471b7f0bcc948b1aa6d5
-F test/vtab1.test c74328129c2b6c3821c903b05dea8076fc362bf9
+F test/vtab1.test 3897a14010f3e74cd64dd03c71e8c87248facbea
 F test/where.test ee7c9a6659b07e1ee61177f6e7ff71565ee2c9df
 F test/where2.test a16476a5913e75cf65b38f2daa6157a6b7791394
 F test/where3.test 3b5ad2c58069e12be2bd86bc5e211a82810521aa
@@ -366,7 +366,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 0d369ff071d296501cc33d4622144b22946ac555
-R 0b4c2c0c45eeadd2de545aaca4dfef08
+P 32c97b884b104d120db3c0a87f5eab28f36851f8
+R 343eac0ed8ef0f1713e901c87b91ee1c
 U drh
-Z 2664815c8d0942e02de99ff6b38443c3
+Z 8a0af575be32f8c2cbffbf5691e9cf94

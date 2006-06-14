@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is creating and dropping virtual tables.
 #
-# $Id: vtab1.test,v 1.14 2006/06/14 08:48:26 danielk1977 Exp $
+# $Id: vtab1.test,v 1.15 2006/06/14 22:07:11 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -322,36 +322,37 @@ do_test vtab1-3.13 {
         xFilter    {SELECT rowid, * FROM 'treal' WHERE b >= ? AND b <= ?} 2 10 ]
 
 # Add a function for the MATCH operator. Everything always matches!
-proc test_match {lhs rhs} {
-  lappend ::echo_module MATCH $lhs $rhs
-  return 1
-}
-db function match test_match
+#proc test_match {lhs rhs} {
+#  lappend ::echo_module MATCH $lhs $rhs
+#  return 1
+#}
+#db function match test_match
 
 set echo_module ""
 do_test vtab1-3.12 {
   set echo_module ""
-  execsql {
+  catchsql {
     SELECT * FROM t1 WHERE a MATCH 'string';
   }
-} {1 2 3 4 5 6}
+} {1 {MATCH is not implemented}}
 do_test vtab1-3.13 {
   set echo_module
 } [list xBestIndex {SELECT rowid, * FROM 'treal'} \
-        xFilter    {SELECT rowid, * FROM 'treal'} \
-        MATCH string 1                            \
-        MATCH string 4                            \
-]
+        xFilter    {SELECT rowid, * FROM 'treal'}]
 do_test vtab1-3.14 {
   set echo_module ""
+btree_breakpoint
   execsql {
     SELECT * FROM t1 WHERE b MATCH 'string';
   }
-} {1 2 3 4 5 6}
+} {}
 do_test vtab1-3.15 {
   set echo_module
-} [list xBestIndex {SELECT rowid, * FROM 'treal' WHERE b MATCH ?}        \
-        xFilter    {SELECT rowid, * FROM 'treal' WHERE b MATCH ?} string ]
+} [list xBestIndex \
+        {SELECT rowid, * FROM 'treal' WHERE b LIKE (SELECT '%'||?||'%')}  \
+        xFilter \
+        {SELECT rowid, * FROM 'treal' WHERE b LIKE (SELECT '%'||?||'%')} \
+        string ]
 
 #----------------------------------------------------------------------
 # Test case vtab1-3 test table scans and the echo module's 
@@ -404,4 +405,3 @@ do_test vtab1-4.4 {
         xFilter    {SELECT rowid, * FROM 'treal'} ]
 
 finish_test
-

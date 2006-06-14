@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.217 2006/06/14 19:00:22 drh Exp $
+** $Id: where.c,v 1.218 2006/06/14 22:07:11 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -795,7 +795,9 @@ or_not_possible:
     prereqExpr = exprTableUsage(pMaskSet, pRight);
     prereqColumn = exprTableUsage(pMaskSet, pLeft);
     if( (prereqExpr & prereqColumn)==0 ){
-      idxNew = whereClauseInsert(pWC, pExpr, TERM_VIRTUAL);
+      Expr *pNewExpr;
+      pNewExpr = sqlite3Expr(TK_MATCH, 0, sqlite3ExprDup(pRight), 0);
+      idxNew = whereClauseInsert(pWC, pNewExpr, TERM_VIRTUAL|TERM_DYNAMIC);
       pNewTerm = &pWC->a[idxNew];
       pNewTerm->prereqRight = prereqExpr;
       pNewTerm->leftCursor = pLeft->iTable;
@@ -1795,6 +1797,9 @@ WhereInfo *sqlite3WhereBegin(
                                 ppOrderBy ? *ppOrderBy : 0, i==0,
                                 &pLevel->pIdxInfo);
         flags = WHERE_VIRTUALTABLE;
+        if( pLevel->pIdxInfo && pLevel->pIdxInfo->orderByConsumed ){
+          flags = WHERE_VIRTUALTABLE | WHERE_ORDERBY;
+        }
         pIdx = 0;
         nEq = 0;
       }else 
