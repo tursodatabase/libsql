@@ -253,7 +253,7 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs, int *pMaxStack){
 
     if( opcode==OP_Function || opcode==OP_AggStep ||
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-        opcode==OP_VFilter
+        opcode==OP_VUpdate
 #endif
     ){
       if( pOp->p2>nMaxArgs ) nMaxArgs = pOp->p2;
