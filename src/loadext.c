@@ -233,16 +233,6 @@ int sqlite3_load_extension(
   char *zErrmsg = 0;
   SQLITE_LIBRARY_TYPE *aHandle;
 
-  db->nExtension++;
-  aHandle = sqliteMalloc(sizeof(handle)*db->nExtension);
-  if( aHandle==0 ){
-    return SQLITE_NOMEM;
-  }
-  if( db->nExtension>0 ){
-    memcpy(aHandle, db->aExtension, sizeof(handle)*(db->nExtension-1));
-  }
-  sqliteFree(db->aExtension);
-  db->aExtension = aHandle;
   if( zProc==0 ){
     int i, j, n;
     char *z;
@@ -294,6 +284,19 @@ int sqlite3_load_extension(
     SQLITE_CLOSE_LIBRARY(handle);
     return SQLITE_ERROR;
   }
+
+  /* Append the new shared library handle to the db->aExtension array. */
+  db->nExtension++;
+  aHandle = sqliteMalloc(sizeof(handle)*db->nExtension);
+  if( aHandle==0 ){
+    return SQLITE_NOMEM;
+  }
+  if( db->nExtension>0 ){
+    memcpy(aHandle, db->aExtension, sizeof(handle)*(db->nExtension-1));
+  }
+  sqliteFree(db->aExtension);
+  db->aExtension = aHandle;
+
   ((SQLITE_LIBRARY_TYPE*)db->aExtension)[db->nExtension-1] = handle;
   return SQLITE_OK;
 #else

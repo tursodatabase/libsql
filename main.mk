@@ -400,6 +400,13 @@ sqlite3_analyzer$(EXE):	$(TOP)/src/tclsqlite.c libsqlite3.a $(TESTSRC) \
  		sqlite3_analyzer$(EXE) $(TESTSRC) $(TOP)/src/tclsqlite.c \
 		libsqlite3.a $(LIBTCL) $(THREADLIB)
 
+TEST_EXTENSION = $(SHPREFIX)testloadext.$(SO)
+$(TEST_EXTENSION): $(TOP)/src/test_loadext.c
+	$(MKSHLIB) $(TOP)/src/test_loadext.c -o $(TEST_EXTENSION)
+
+extensiontest: testfixture$(EXE) $(TEST_EXTENSION)
+	./testfixture$(EXE) $(TOP)/test/loadext.test
+
 # Rules used to build documentation
 #
 arch.html:	$(TOP)/www/arch.tcl

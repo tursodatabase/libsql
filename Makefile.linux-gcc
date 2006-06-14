@@ -83,6 +83,12 @@ AR = ar cr
 RANLIB = ranlib
 #RANLIB = /opt/mingw/bin/i386-mingw32-ranlib
 
+MKSHLIB = gcc -shared
+SO = so
+SHPREFIX = lib
+# SO = dll
+# SHPREFIX =
+
 #### Extra compiler options needed for programs that use the TCL library.
 #
 #TCL_FLAGS =
