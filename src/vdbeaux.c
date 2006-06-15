@@ -590,6 +590,7 @@ static char *displayP3(Op *pOp, char *zTemp, int nTemp){
       }
     }
   }
+  assert( zP3!=0 );
   return zP3;
 }
 #endif
@@ -672,6 +673,7 @@ int sqlite3VdbeList(
 
     pMem->flags = MEM_Static|MEM_Str|MEM_Term;
     pMem->z = sqlite3OpcodeNames[pOp->opcode];  /* Opcode */
+    assert( pMem->z!=0 );
     pMem->n = strlen(pMem->z);
     pMem->type = SQLITE_TEXT;
     pMem->enc = SQLITE_UTF8;
@@ -689,6 +691,7 @@ int sqlite3VdbeList(
 
     pMem->flags = MEM_Ephem|MEM_Str|MEM_Term;   /* P3 */
     pMem->z = displayP3(pOp, pMem->zShort, sizeof(pMem->zShort));
+    assert( pMem->z!=0 );
     pMem->n = strlen(pMem->z);
     pMem->type = SQLITE_TEXT;
     pMem->enc = SQLITE_UTF8;

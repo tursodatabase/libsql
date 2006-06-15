@@ -1,5 +1,5 @@
-C Add\stests\s(and\smodify\stest\scode)\sfor\swriting\sto\svirtual\stables.\s(CVS\s3253)
-D 2006-06-15T10:41:16
+C Asserts\sadded\sthat\sverify\sthat\sthe\scode\sworks\scorrectly\nthat\sticket\s#1849\sclaims\sis\swrong.\s(CVS\s3254)
+D 2006-06-15T13:22:23
 F Makefile.in 200f6dc376ecfd9b01e5359c4e0c10c02f649b34
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -100,7 +100,7 @@ F src/vdbe.c 4a66e5815c50e7f39454fe75d2e3f342785ea20a
 F src/vdbe.h 258b5d1c0aaa72192f09ff0568ce42b383f156fa
 F src/vdbeInt.h 6ccb7eaae76ebd761470f6a035501ff33aa92c20
 F src/vdbeapi.c 6af0e7160af260052a7a4500464221a03dada75f
-F src/vdbeaux.c de49c1943146ad97538bc2bb0bce7f2c5e5db4f2
+F src/vdbeaux.c 85f2184f536219d3c20c66f1403ef77321d1e715
 F src/vdbefifo.c 9efb94c8c3f4c979ebd0028219483f88e57584f5
 F src/vdbemem.c 5f0afe3b92bb2c037f8d5d697f7c151fa50783a3
 F src/vtab.c 745148c6f83f7c146ce93cc22c6716ff05a246e2
@@ -366,7 +366,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 88fa510e4c684513bbb59031d034fdb5c51a6a15
-R 9f300784595c0ed5be31e8d13114f756
-U danielk1977
-Z 6d8c84f1329cd866e4eca1550fa6f4bb
+P 6380a9b118cf972c3c7d4886ecdb62c44f2208ca
+R 7c8c83f41ad732828e19404b0580f1d2
+U drh
+Z 7d97f3dfe7f27a791bb719d9b2679d1a
