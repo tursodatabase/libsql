@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.560 2006/06/14 19:00:22 drh Exp $
+** $Id: vdbe.c,v 1.561 2006/06/15 07:29:01 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -4811,7 +4811,9 @@ case OP_VUpdate: {   /* no-push */
     for(i = 0; i<nArg; i++, pX++){
       apArg[i] = pX->flags ? storeTypeInfo(pX,0), pX : 0;
     }
+    if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
     rc = pModule->xUpdate(pVtab, nArg, apArg);
+    if( sqlite3SafetyOn(db) ) goto abort_due_to_misuse;
   }
   popStack(&pTos, nArg);
   break;
@@ -4854,8 +4856,12 @@ default: {
     ** the evaluator loop.  So we can leave it out when NDEBUG is defined.
     */
 #ifndef NDEBUG
-    /* Sanity checking on the top element of the stack */
-    if( pTos>=p->aStack ){
+    /* Sanity checking on the top element of the stack. If the previous
+    ** instruction was VNoChange, then the flags field of the top
+    ** of the stack is set to 0. This is technically invalid for a memory
+    ** cell, so avoid calling MemSanity() in this case.
+    */
+    if( pTos>=p->aStack && pTos->flags ){
       sqlite3VdbeMemSanity(pTos);
     }
     assert( pc>=-1 && pc<p->nOp );

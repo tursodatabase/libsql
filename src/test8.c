@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test8.c,v 1.20 2006/06/15 04:28:13 danielk1977 Exp $
+** $Id: test8.c,v 1.21 2006/06/15 07:29:01 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -560,6 +560,7 @@ int echoUpdate(sqlite3_vtab *tab, int nData, sqlite3_value **apData){
       rc = sqlite3_prepare(db, zDelete, -1, &pStmt, 0);
       assert( rc!=SQLITE_OK || pStmt );
       if( rc==SQLITE_OK ){
+        sqlite3_bind_value(pStmt, 1, apData[0]);
         sqlite3_step(pStmt);
         rc = sqlite3_finalize(pStmt);
       }
@@ -579,11 +580,11 @@ int echoUpdate(sqlite3_vtab *tab, int nData, sqlite3_value **apData){
 
     for(ii=0; ii<pVtab->nCol && zInsert && zValues; ii++){
       char *zNew = sqlite3_mprintf("%s, %Q", zInsert, pVtab->aCol[ii]);
-      sqliteFree(zInsert);
+      sqlite3_free(zInsert);
       zInsert = zNew;
 
       zNew = sqlite3_mprintf("%s, ?", zValues);
-      sqliteFree(zValues);
+      sqlite3_free(zValues);
       zValues = zNew;
     }
 
@@ -604,10 +605,11 @@ int echoUpdate(sqlite3_vtab *tab, int nData, sqlite3_value **apData){
       }
     }
 
-    sqliteFree(zValues);
-    sqliteFree(zInsert);
-    sqliteFree(zQuery);
+    sqlite3_free(zValues);
+    sqlite3_free(zInsert);
+    sqlite3_free(zQuery);
     if( rc==SQLITE_OK && (!zValues || !zInsert || !zQuery) ){
+      sqlite3FailedMalloc();
       rc = SQLITE_NOMEM;
     }
   }

@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to help implement virtual tables.
 **
-** $Id: vtab.c,v 1.12 2006/06/15 04:28:13 danielk1977 Exp $
+** $Id: vtab.c,v 1.13 2006/06/15 07:29:01 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
@@ -194,12 +194,8 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
   }
 
   /* If we are rereading the sqlite_master table create the in-memory
-  ** record of the table. 
-  **
-  ** TODO: If the module is already registered, should we call xConnect()
-  ** here, or should it wait until the table is first referenced? Maybe
-  ** it's better to be lazy here, in case xConnect() is expensive to call
-  ** and the schema is reparsed a number of times.
+  ** record of the table. If the module has already been registered,
+  ** also call the xConnect method here.
   */
   else {
     Table *pOld;

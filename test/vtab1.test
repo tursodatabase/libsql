@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is creating and dropping virtual tables.
 #
-# $Id: vtab1.test,v 1.15 2006/06/14 22:07:11 drh Exp $
+# $Id: vtab1.test,v 1.16 2006/06/15 07:29:01 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -36,9 +36,9 @@ ifcapable !vtab {
 # in that file for the special behaviour of the Tcl $echo_module variable.
 #
 # TODO: 
-#
-# * How to test the sqlite3_index_constraint_usage.omit field? Or
-#   sqlite3_index_info.orderByConsumed?
+#   * How to test the sqlite3_index_constraint_usage.omit field?
+#   * vtab1-5.*
+#   * 
 #
 
 
@@ -404,4 +404,43 @@ do_test vtab1-4.4 {
 } [list xBestIndex {SELECT rowid, * FROM 'treal'} \
         xFilter    {SELECT rowid, * FROM 'treal'} ]
 
+execsql {
+  DROP TABLE t1;
+  DROP TABLE treal;
+}
+
+#----------------------------------------------------------------------
+# Test cases vtab1-6 test INSERT, UPDATE and DELETE operations 
+# on virtual tables.
+do_test vtab1-6-1 {
+  execsql { SELECT sql FROM sqlite_master }
+} {}
+do_test vtab1-6-2 {
+  execsql {
+    CREATE TABLE treal(a PRIMARY KEY, b, c);
+    CREATE VIRTUAL TABLE techo USING echo(treal);
+    SELECT name FROM sqlite_master WHERE type = 'table';
+  }
+} {treal techo}
+do_test vtab1-6-3 {
+  execsql {
+    INSERT INTO techo VALUES(1, 2, 3);
+    SELECT * FROM techo;
+  }
+} {1 2 3}
+do_test vtab1-6-4 {
+  execsql {
+    UPDATE techo SET a = 5;
+    SELECT * FROM techo;
+  }
+} {5 2 3}
+do_test vtab1-6-5 {
+  execsql {
+    DELETE FROM techo;
+    SELECT * FROM techo;
+  }
+} {}
+# check_echo_table vtab1-6.3 treal techo
+
 finish_test
+

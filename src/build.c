@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.400 2006/06/14 19:00:21 drh Exp $
+** $Id: build.c,v 1.401 2006/06/15 07:29:01 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1099,7 +1099,7 @@ void sqlite3AddPrimaryKey(
   Table *pTab = pParse->pNewTable;
   char *zType = 0;
   int iCol = -1, i;
-  if( pTab==0 ) goto primary_key_exit;
+  if( pTab==0 || IN_DECLARE_VTAB ) goto primary_key_exit;
   if( pTab->hasPrimKey ){
     sqlite3ErrorMsg(pParse, 
       "table \"%s\" has more than one primary key", pTab->zName);
@@ -1154,7 +1154,7 @@ void sqlite3AddCheckConstraint(
 ){
 #ifndef SQLITE_OMIT_CHECK
   Table *pTab = pParse->pNewTable;
-  if( pTab ){
+  if( pTab && !IN_DECLARE_VTAB ){
     /* The CHECK expression must be duplicated so that tokens refer
     ** to malloced space and not the (ephemeral) text of the CREATE TABLE
     ** statement */
@@ -1172,7 +1172,7 @@ void sqlite3AddCollateType(Parse *pParse, const char *zType, int nType){
   Table *p;
   int i;
 
-  if( (p = pParse->pNewTable)==0 ) return;
+  if( (p = pParse->pNewTable)==0 || IN_DECLARE_VTAB ) return;
   i = p->nCol-1;
 
   if( sqlite3LocateCollSeq(pParse, zType, nType) ){
@@ -2027,7 +2027,7 @@ void sqlite3CreateForeignKey(
   char *z;
 
   assert( pTo!=0 );
-  if( p==0 || pParse->nErr ) goto fk_end;
+  if( p==0 || pParse->nErr || IN_DECLARE_VTAB ) goto fk_end;
   if( pFromCol==0 ){
     int iCol = p->nCol-1;
     if( iCol<0 ) goto fk_end;
