@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.176 2006/06/14 13:03:23 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.177 2006/06/15 04:28:13 danielk1977 Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1536,7 +1536,6 @@ typedef struct sqlite3_module sqlite3_module;
 struct sqlite3_module {
   int iVersion;
   const char *zName;
-  void *pAux;
   int (*xCreate)(sqlite3*, void *pAux,
                int argc, char **argv,
                sqlite3_vtab **ppVTab);
@@ -1649,7 +1648,8 @@ struct sqlite3_index_info {
 int sqlite3_create_module(
   sqlite3 *db,               /* SQLite connection to register module with */
   const char *zName,         /* Name of the module */
-  const sqlite3_module *     /* Methods for the module */
+  const sqlite3_module *,    /* Methods for the module */
+  void *                     /* Client data for xCreate/xConnect */
 );
 
 /*

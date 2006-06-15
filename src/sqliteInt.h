@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.505 2006/06/14 19:00:21 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.506 2006/06/15 04:28:13 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -343,6 +343,7 @@ typedef struct IdList IdList;
 typedef struct Index Index;
 typedef struct KeyClass KeyClass;
 typedef struct KeyInfo KeyInfo;
+typedef struct Module Module;
 typedef struct NameContext NameContext;
 typedef struct Parse Parse;
 typedef struct Select Select;
@@ -567,6 +568,17 @@ struct FuncDef {
 };
 
 /*
+** Each SQLite module (virtual table definition) is defined by an
+** instance of the following structure, stored in the sqlite3.aModule
+** hash table.
+*/
+struct Module {
+  const sqlite3_module *pModule;       /* Callback pointers */
+  const char *zName;                   /* Name passed to create_module() */
+  void *pAux;                          /* pAux passed to create_module() */
+};
+
+/*
 ** Possible values for FuncDef.flags
 */
 #define SQLITE_FUNC_LIKE   0x01  /* Candidate for the LIKE optimization */
@@ -705,7 +717,7 @@ struct Table {
   int addColOffset;  /* Offset in CREATE TABLE statement to add a new column */
 #endif
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-  sqlite3_module *pModule;  /* Pointer to the implementation of the module */
+  Module *pMod;             /* Pointer to the implementation of the module */
   sqlite3_vtab *pVtab;      /* Pointer to the module instance */
   u8 isVirtual;             /* True if this is a virtual table */
   int nModuleArg;           /* Number of arguments to the module */

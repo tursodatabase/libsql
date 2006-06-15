@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.343 2006/06/14 15:35:37 drh Exp $
+** $Id: main.c,v 1.344 2006/06/15 04:28:13 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -160,6 +160,10 @@ int sqlite3_close(sqlite3 *db){
   }
   sqlite3HashClear(&db->aCollSeq);
 #ifndef SQLITE_OMIT_VIRTUALTABLE
+  for(i=sqliteHashFirst(&db->aModule); i; i=sqliteHashNext(i)){
+    Module *pMod = (Module *)sqliteHashData(i);
+    sqliteFree(pMod);
+  }
   sqlite3HashClear(&db->aModule);
 #endif
 

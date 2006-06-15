@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test8.c,v 1.19 2006/06/14 23:43:31 drh Exp $
+** $Id: test8.c,v 1.20 2006/06/15 04:28:13 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -622,7 +622,6 @@ int echoUpdate(sqlite3_vtab *tab, int nData, sqlite3_value **apData){
 static sqlite3_module echoModule = {
   0,                         /* iVersion */
   "echo",                    /* zName */
-  0,                         /* pAux */
   echoCreate,
   echoConnect,
   echoBestIndex,
@@ -661,9 +660,8 @@ static int register_echo_module(
     return TCL_ERROR;
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
-  echoModule.pAux = interp;
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-  sqlite3_create_module(db, "echo", &echoModule);
+  sqlite3_create_module(db, "echo", &echoModule, (void *)interp);
 #endif
   return TCL_OK;
 }

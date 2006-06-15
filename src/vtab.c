@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to help implement virtual tables.
 **
-** $Id: vtab.c,v 1.11 2006/06/14 13:03:24 danielk1977 Exp $
+** $Id: vtab.c,v 1.12 2006/06/15 04:28:13 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
@@ -22,11 +22,22 @@
 int sqlite3_create_module(
   sqlite3 *db,                    /* Database in which module is registered */
   const char *zName,              /* Name assigned to this module */
-  const sqlite3_module *pModule   /* The definition of the module */
+  const sqlite3_module *pModule,  /* The definition of the module */
+  void *pAux                      /* Context pointer for xCreate/xConnect */
 ){
-  sqlite3HashInsert(&db->aModule, zName, strlen(zName), (void*)pModule);
-  sqlite3ResetInternalSchema(db, 0);
-  return SQLITE_OK;
+  int nName = strlen(zName);
+  Module *pMod = (Module *)sqliteMallocRaw(sizeof(Module) + nName + 1);
+  if( pMod ){
+    char *zCopy = (char *)(&pMod[1]);
+    strcpy(zCopy, zName);
+    pMod->zName = zCopy;
+    pMod->pModule = pModule;
+    pMod->pAux = pAux;
+    pMod = (Module *)sqlite3HashInsert(&db->aModule, zCopy, nName, (void*)pMod);
+    sqliteFree(pMod);
+    sqlite3ResetInternalSchema(db, 0);
+  }
+  return sqlite3ApiExit(db, SQLITE_OK);
 }
 
 /*
@@ -36,8 +47,8 @@ int sqlite3_create_module(
 */
 void sqlite3VtabClear(Table *p){
   if( p->pVtab ){
-    assert( p->pModule!=0 );
-    p->pModule->xDisconnect(p->pVtab);
+    assert( p->pMod && p->pMod->pModule );
+    p->pMod->pModule->xDisconnect(p->pVtab);
   }
   if( p->azModuleArg ){
     int i;
@@ -116,6 +127,7 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
   Table *pTab;        /* The table being constructed */
   sqlite3 *db;        /* The database connection */
   char *zModule;      /* The module name of the table: USING modulename */
+  Module *pMod = 0;
 
   addArgumentToVtab(pParse);
   sqliteFree(pParse->zArg);
@@ -128,8 +140,8 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
   db = pParse->db;
   if( pTab->nModuleArg<1 ) return;
   zModule = pTab->azModuleArg[0];
-  pTab->pModule = (sqlite3_module*)sqlite3HashFind(&db->aModule, 
-                     zModule, strlen(zModule));
+  pMod = (Module *)sqlite3HashFind(&db->aModule, zModule, strlen(zModule));
+  pTab->pMod = pMod;
   
   /* If the CREATE VIRTUAL TABLE statement is being entered for the
   ** first time (in other words if the virtual table is actually being
@@ -142,7 +154,7 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
     char *zWhere;
     int iDb;
     Vdbe *v;
-    if( pTab->pModule==0 ){
+    if( !pMod ){
       sqlite3ErrorMsg(pParse, "no such module: %s", zModule);
     }
 
@@ -241,7 +253,7 @@ void sqlite3VtabArgExtend(Parse *pParse, Token *p){
 static int vtabCallConstructor(
   sqlite3 *db, 
   Table *pTab,
-  sqlite3_module *pModule,
+  Module *pMod,
   int (*xConstruct)(sqlite3*, void *, int, char **, sqlite3_vtab **),
   char **pzErr
 ){
@@ -256,10 +268,10 @@ static int vtabCallConstructor(
   db->pVTab = pTab;
   rc = sqlite3SafetyOff(db);
   assert( rc==SQLITE_OK );
-  rc = xConstruct(db, pModule->pAux, nArg, azArg, &pTab->pVtab);
+  rc = xConstruct(db, pMod->pAux, nArg, azArg, &pTab->pVtab);
   rc2 = sqlite3SafetyOn(db);
   if( pTab->pVtab ){
-    pTab->pVtab->pModule = pModule;
+    pTab->pVtab->pModule = pMod->pModule;
   }
 
   if( SQLITE_OK!=rc ){
@@ -284,7 +296,7 @@ static int vtabCallConstructor(
 ** This call is a no-op if table pTab is not a virtual table.
 */
 int sqlite3VtabCallConnect(Parse *pParse, Table *pTab){
-  sqlite3_module *pModule;
+  Module *pMod;
   const char *zModule;
   int rc = SQLITE_OK;
 
@@ -292,15 +304,16 @@ int sqlite3VtabCallConnect(Parse *pParse, Table *pTab){
     return SQLITE_OK;
   }
 
-  pModule = pTab->pModule;
+  pMod = pTab->pMod;
   zModule = pTab->azModuleArg[0];
-  if( !pModule ){
+  if( !pMod ){
     const char *zModule = pTab->azModuleArg[0];
     sqlite3ErrorMsg(pParse, "no such module: %s", zModule);
     rc = SQLITE_ERROR;
   } else {
     char *zErr = 0;
-    rc = vtabCallConstructor(pParse->db,pTab,pModule,pModule->xConnect,&zErr);
+    sqlite3 *db = pParse->db;
+    rc = vtabCallConstructor(db, pTab, pMod, pMod->pModule->xConnect, &zErr);
     if( rc!=SQLITE_OK ){
       sqlite3ErrorMsg(pParse, "%s", zErr);
     }
@@ -321,23 +334,23 @@ int sqlite3VtabCallConnect(Parse *pParse, Table *pTab){
 int sqlite3VtabCallCreate(sqlite3 *db, int iDb, const char *zTab, char **pzErr){
   int rc = SQLITE_OK;
   Table *pTab;
-  sqlite3_module *pModule;
+  Module *pMod;
   const char *zModule;
 
   pTab = sqlite3FindTable(db, zTab, db->aDb[iDb].zName);
   assert(pTab && pTab->isVirtual && !pTab->pVtab);
-  pModule = pTab->pModule;
+  pMod = pTab->pMod;
   zModule = pTab->azModuleArg[0];
 
   /* If the module has been registered and includes a Create method, 
   ** invoke it now. If the module has not been registered, return an 
   ** error. Otherwise, do nothing.
   */
-  if( !pModule ){
+  if( !pMod ){
     *pzErr = sqlite3MPrintf("no such module: %s", zModule);
     rc = SQLITE_ERROR;
   }else{
-    rc = vtabCallConstructor(db, pTab, pModule, pModule->xCreate, pzErr);
+    rc = vtabCallConstructor(db, pTab, pMod, pMod->pModule->xCreate, pzErr);
   }
 
   return rc;
@@ -401,15 +414,16 @@ int sqlite3VtabCallDestroy(sqlite3 *db, int iDb, const char *zTab)
 {
   int rc = SQLITE_OK;
   Table *pTab;
-  sqlite3_module *pModule;
 
   pTab = sqlite3FindTable(db, zTab, db->aDb[iDb].zName);
-  pModule = pTab->pModule;
   assert(pTab);
   if( pTab->pVtab ){
+    int (*xDestroy)(sqlite3_vtab *pVTab) = pTab->pMod->pModule->xDestroy;
     rc = sqlite3SafetyOff(db);
     assert( rc==SQLITE_OK );
-    rc = pModule->xDestroy(pTab->pVtab);
+    if( xDestroy ){
+      rc = xDestroy(pTab->pVtab);
+    }
     sqlite3SafetyOn(db);
     if( rc==SQLITE_OK ){
       pTab->pVtab = 0;

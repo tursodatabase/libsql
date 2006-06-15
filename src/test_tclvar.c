@@ -16,7 +16,7 @@
 ** The emphasis of this file is a virtual table that provides
 ** access to TCL variables.
 **
-** $Id: test_tclvar.c,v 1.2 2006/06/14 06:58:16 danielk1977 Exp $
+** $Id: test_tclvar.c,v 1.3 2006/06/15 04:28:13 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -65,6 +65,7 @@ static int tclvarConnect(
 ** methods are identical. */
 static int tclvarDisconnect(sqlite3_vtab *pVtab){
   free(pVtab);
+  return SQLITE_OK;
 }
 /* The xDisconnect and xDestroy methods are also the same */
 
@@ -126,7 +127,6 @@ static int tclvarBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
 static sqlite3_module tclvarModule = {
   0,                         /* iVersion */
   "tclvar",                  /* zName */
-  0,                         /* pAux */
   tclvarConnect,
   tclvarConnect,
   tclvarBestIndex,
@@ -164,9 +164,8 @@ static int register_tclvar_module(
     return TCL_ERROR;
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
-  tclvarModule.pAux = interp;
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-  sqlite3_create_module(db, "tclvar", &tclvarModule);
+  sqlite3_create_module(db, "tclvar", &tclvarModule, (void *)interp);
 #endif
   return TCL_OK;
 }
