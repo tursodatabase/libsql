@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.268 2006/05/07 17:49:39 drh Exp $
+** @(#) $Id: pager.c,v 1.269 2006/06/15 14:31:07 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -161,7 +161,7 @@ struct PgHdr {
   u8 needSync;                   /* Sync journal before writing this page */
   u8 alwaysRollback;             /* Disable dont_rollback() for this page */
   short int nRef;                /* Number of users of this page */
-  PgHdr *pDirty, *pPrevDirty;    /* Dirty pages sorted by PgHdr.pgno */
+  PgHdr *pDirty, *pPrevDirty;    /* Dirty pages */
   u32 notUsed;                   /* Buffer space */
 #ifdef SQLITE_CHECK_PAGES
   u32 pageHash;
@@ -2261,6 +2261,68 @@ static int syncJournal(Pager *pPager){
 }
 
 /*
+** Merge two lists of pages connected by pDirty and in pgno order.
+** Do not both fixing the pPrevDirty pointers.
+*/
+static PgHdr *merge_pagelist(PgHdr *pA, PgHdr *pB){
+  PgHdr result, *pTail;
+  pTail = &result;
+  while( pA && pB ){
+    if( pA->pgno<pB->pgno ){
+      pTail->pDirty = pA;
+      pTail = pA;
+      pA = pA->pDirty;
+    }else{
+      pTail->pDirty = pB;
+      pTail = pB;
+      pB = pB->pDirty;
+    }
+  }
+  if( pA ){
+    pTail->pDirty = pA;
+  }else if( pB ){
+    pTail->pDirty = pB;
+  }else{
+    pTail->pDirty = 0;
+  }
+  return result.pDirty;
+}
+
+/*
+** Sort the list of pages in accending order by pgno.  Pages are
+** connected by pDirty pointers.  The pPrevDirty pointers are
+** corrupted by this sort.
+*/
+#define N_SORT_BUCKET 25
+static PgHdr *sort_pagelist(PgHdr *pIn){
+  PgHdr *a[N_SORT_BUCKET], *p;
+  int i;
+  memset(a, 0, sizeof(a));
+  while( pIn ){
+    p = pIn;
+    pIn = p->pDirty;
+    p->pDirty = 0;
+    for(i=0; i<N_SORT_BUCKET-1; i++){
+      if( a[i]==0 ){
+        a[i] = p;
+        break;
+      }else{
+        p = merge_pagelist(a[i], p);
+        a[i] = 0;
+      }
+    }
+    if( i==N_SORT_BUCKET-1 ){
+      a[i] = merge_pagelist(a[i], p);
+    }
+  }
+  p = a[0];
+  for(i=1; i<N_SORT_BUCKET; i++){
+    p = merge_pagelist(p, a[i]);
+  }
+  return p;
+}
+
+/*
 ** Given a list of pages (connected by the PgHdr.pDirty pointer) write
 ** every one of those pages out to the database file and mark them all
 ** as clean.
@@ -2293,6 +2355,7 @@ static int pager_write_pagelist(PgHdr *pList){
     return rc;
   }
 
+  pList = sort_pagelist(pList);
   while( pList ){
     assert( pList->dirty );
     rc = sqlite3OsSeek(pPager->fd, (pList->pgno-1)*(i64)pPager->pageSize);
