@@ -15,7 +15,7 @@
 ** as extensions by SQLite should #include this file instead of 
 ** sqlite3.h.
 **
-** @(#) $Id: sqlite3ext.h,v 1.1 2006/06/08 15:28:44 drh Exp $
+** @(#) $Id: sqlite3ext.h,v 1.2 2006/06/15 15:38:42 danielk1977 Exp $
 */
 #ifndef _SQLITE3EXT_H_
 #define _SQLITE3EXT_H_
@@ -66,6 +66,7 @@ struct sqlite3_api_routines {
   const unsigned char * (*column_text)(sqlite3_stmt*,int iCol);
   const void * (*column_text16)(sqlite3_stmt*,int iCol);
   int  (*column_type)(sqlite3_stmt*,int iCol);
+  sqlite3_value* (*column_value)(sqlite3_stmt*,int iCol);
   void * (*commit_hook)(sqlite3*,int(*)(void*),void*);
   int  (*complete)(const char*sql);
   int  (*complete16)(const void*sql);
@@ -73,8 +74,10 @@ struct sqlite3_api_routines {
   int  (*create_collation16)(sqlite3*,const char*,int,void*,int(*)(void*,int,const void*,int,const void*));
   int  (*create_function)(sqlite3*,const char*,int,int,void*,void (*xFunc)(sqlite3_context*,int,sqlite3_value**),void (*xStep)(sqlite3_context*,int,sqlite3_value**),void (*xFinal)(sqlite3_context*));
   int  (*create_function16)(sqlite3*,const void*,int,int,void*,void (*xFunc)(sqlite3_context*,int,sqlite3_value**),void (*xStep)(sqlite3_context*,int,sqlite3_value**),void (*xFinal)(sqlite3_context*));
+  int (*create_module)(sqlite3*,const char*,sqlite3_module*,void*);
   int  (*data_count)(sqlite3_stmt*pStmt);
   sqlite3 * (*db_handle)(sqlite3_stmt*);
+  int (*declare_vtab)(sqlite3*,const char*);
   int  (*enable_shared_cache)(int);
   int  (*errcode)(sqlite3*db);
   const char * (*errmsg)(sqlite3*);
@@ -189,6 +192,7 @@ struct sqlite3_api_routines {
 #define sqlite3_column_text            sqlite3_api->column_text
 #define sqlite3_column_text16          sqlite3_api->column_text16
 #define sqlite3_column_type            sqlite3_api->column_type
+#define sqlite3_column_value           sqlite3_api->column_value
 #define sqlite3_commit_hook            sqlite3_api->commit_hook
 #define sqlite3_complete               sqlite3_api->complete
 #define sqlite3_complete16             sqlite3_api->complete16
@@ -196,8 +200,10 @@ struct sqlite3_api_routines {
 #define sqlite3_create_collation16     sqlite3_api->create_collation16
 #define sqlite3_create_function        sqlite3_api->create_function
 #define sqlite3_create_function16      sqlite3_api->create_function16
+#define sqlite3_create_module          sqlite3_api->create_module
 #define sqlite3_data_count             sqlite3_api->data_count
 #define sqlite3_db_handle              sqlite3_api->db_handle
+#define sqlite3_declare_vtab           sqlite3_api->declare_vtab
 #define sqlite3_enable_shared_cache    sqlite3_api->enable_shared_cache
 #define sqlite3_errcode                sqlite3_api->errcode
 #define sqlite3_errmsg                 sqlite3_api->errmsg
