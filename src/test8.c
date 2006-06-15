@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test8.c,v 1.21 2006/06/15 07:29:01 danielk1977 Exp $
+** $Id: test8.c,v 1.22 2006/06/15 10:41:16 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -428,6 +428,9 @@ static int echoBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
     if( pVtab->aIndex[iCol] ){
       char *zCol = pVtab->aCol[iCol];
       char *zOp = 0;
+      if( iCol<0 ){
+        zCol = "rowid";
+      }
       switch( pConstraint->op ){
         case SQLITE_INDEX_CONSTRAINT_EQ:
           zOp = "="; break;
@@ -479,139 +482,121 @@ static int echoBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
   return SQLITE_OK;
 }
 
+static void string_concat(char **pzStr, char *zAppend, int doFree){
+  char *zIn = *pzStr;
+  if( zIn ){
+    char *zTemp = zIn;
+    zIn = sqlite3_mprintf("%s%s", zIn, zAppend);
+    sqlite3_free(zTemp);
+  }else{
+    zIn = sqlite3_mprintf("%s", zAppend);
+  }
+  *pzStr = zIn;
+  if( doFree ){
+    sqlite3_free(zAppend);
+  }
+}
+
+/*
+**    apData[0]  apData[1]  apData[2..]
+**
+**    INTEGER                              DELETE            
+**
+**    INTEGER    NULL       (nCol args)    UPDATE (do not set rowid)
+**    INTEGER    INTEGER    (nCol args)    UPDATE (with SET rowid = <arg1>)
+**
+**    NULL       NULL       (nCol args)    INSERT INTO (automatic rowid value)
+**    NULL       INTEGER    (nCol args)    INSERT (incl. rowid value)
+**
+*/
 int echoUpdate(sqlite3_vtab *tab, int nData, sqlite3_value **apData){
   echo_vtab *pVtab = (echo_vtab *)tab;
   sqlite3 *db = pVtab->db;
   int rc = SQLITE_OK;
 
+  sqlite3_stmt *pStmt;
+  char *z = 0;               /* SQL statement to execute */
+  int bindArgZero = 0;       /* True to bind apData[0] to sql var no. nData */
+  int bindArgOne = 0;        /* True to bind apData[1] to sql var no. 1 */
+  int i;                     /* Counter variable used by for loops */
+
   assert( nData==pVtab->nCol+2 || nData==1 );
 
   /* If apData[0] is an integer and nData>1 then do an UPDATE */
   if( nData>1 && sqlite3_value_type(apData[0])==SQLITE_INTEGER ){
-    char *zUpdate = sqlite3_mprintf("UPDATE %Q", pVtab->zTableName);
+    z = sqlite3_mprintf("UPDATE %Q", pVtab->zTableName);
     char *zSep = " SET";
-    char *zTemp;
-    int i, j;
-    sqlite3_stmt *pStmt;
-    
-    if( apData[1] && sqlite3_value_type(apData[1])  &&
-           sqlite3_value_int64(apData[0])!=sqlite3_value_int64(apData[1]) ){
-       zTemp = sqlite3_mprintf("%s SET rowid=%lld", zUpdate, zSep,
-                                sqlite3_value_int64(apData[1]));
-       sqlite3_free(zUpdate);
-       zUpdate = zTemp;
+
+    bindArgOne = (apData[1] && sqlite3_value_type(apData[1])==SQLITE_INTEGER);
+    bindArgZero = 1;
+
+    if( bindArgOne ){
+       string_concat(&z, " SET rowid=?1 ", 0);
        zSep = ",";
     }
     for(i=2; i<nData; i++){
       if( apData[i]==0 ) continue;
-      zTemp = sqlite3_mprintf("%s%s %Q=?", zUpdate, zSep, pVtab->aCol[i-2]);
-      sqlite3_free(zUpdate);
-      zUpdate = zTemp;
+      string_concat(&z, sqlite3_mprintf(
+          "%s %Q=?%d", zSep, pVtab->aCol[i-2], i), 1);
       zSep = ",";
     }
-    zTemp = sqlite3_mprintf("%s WHERE rowid=%lld", zUpdate,
-                             sqlite3_value_int64(apData[0]));
-    sqlite3_free(zUpdate);
-    zUpdate = zTemp;
-    rc = sqlite3_prepare(db, zUpdate, -1, &pStmt, 0);
-    assert( rc!=SQLITE_OK || pStmt );
-    if( rc ) return rc;
-    for(i=2, j=1; i<nData; i++){
-      if( apData[i]==0 ) continue;
-      switch( sqlite3_value_type(apData[i]) ){
-        case SQLITE_INTEGER: {
-          sqlite3_bind_int64(pStmt, j, sqlite3_value_int64(apData[i]));
-          break;
-        }
-        case SQLITE_FLOAT: {
-          sqlite3_bind_double(pStmt, j, sqlite3_value_double(apData[i]));
-          break;
-        }
-        case SQLITE_NULL: {
-          sqlite3_bind_null(pStmt, j);
-          break;
-        }
-        case SQLITE_TEXT: {
-          sqlite3_bind_text(pStmt, j, sqlite3_value_text(apData[i]),
-                            sqlite3_value_bytes(apData[i]), SQLITE_TRANSIENT);
-          break;
-        }
-        case SQLITE_BLOB: {
-          sqlite3_bind_blob(pStmt, j, sqlite3_value_blob(apData[i]),
-                            sqlite3_value_bytes(apData[i]), SQLITE_TRANSIENT);
-          break;
-        }
-      }
-      j++;
-    }
-    sqlite3_step(pStmt);
-    rc = sqlite3_finalize(pStmt);
-    return rc;
+    string_concat(&z, sqlite3_mprintf(" WHERE rowid=?%d", nData), 0);
   }
 
-  /* If apData[0] is an integer, delete the identified row */
-  if( sqlite3_value_type(apData[0])==SQLITE_INTEGER ){
-    const char *zFormat = "DELETE FROM %Q WHERE rowid = ?";
-    char *zDelete = sqlite3_mprintf(zFormat, pVtab->zTableName);
-    if( !zDelete ){
-      rc = SQLITE_NOMEM;
-    }else{
-      sqlite3_stmt *pStmt = 0;
-      rc = sqlite3_prepare(db, zDelete, -1, &pStmt, 0);
-      assert( rc!=SQLITE_OK || pStmt );
-      if( rc==SQLITE_OK ){
-        sqlite3_bind_value(pStmt, 1, apData[0]);
-        sqlite3_step(pStmt);
-        rc = sqlite3_finalize(pStmt);
-      }
-    }
+  /* If apData[0] is an integer and nData==1 then do a DELETE */
+  else if( nData==1 && sqlite3_value_type(apData[0])==SQLITE_INTEGER ){
+    z = sqlite3_mprintf("DELETE FROM %Q WHERE rowid = ?1", pVtab->zTableName);
+    bindArgZero = 1;
   }
 
-  /* If there is more than a single argument, INSERT a new row */
-  if( rc==SQLITE_OK && nData>1 ){
+  /* If the first argument is NULL and there are more than two args, INSERT */
+  else if( nData>2 && sqlite3_value_type(apData[0])==SQLITE_NULL ){
     int ii;
     char *zInsert = 0;
     char *zValues = 0;
-    char *zQuery = 0;
-    const char *zTab = pVtab->zTableName;
 
-    zInsert = sqlite3_mprintf("INSERT OR REPLACE INTO %Q (rowid", zTab);
-    zValues = sqlite3_mprintf("?");
-
-    for(ii=0; ii<pVtab->nCol && zInsert && zValues; ii++){
-      char *zNew = sqlite3_mprintf("%s, %Q", zInsert, pVtab->aCol[ii]);
-      sqlite3_free(zInsert);
-      zInsert = zNew;
-
-      zNew = sqlite3_mprintf("%s, ?", zValues);
-      sqlite3_free(zValues);
-      zValues = zNew;
+    zInsert = sqlite3_mprintf("INSERT OR REPLACE INTO %Q (", pVtab->zTableName);
+    if( sqlite3_value_type(apData[1])==SQLITE_INTEGER ){
+      bindArgOne = 1;
+      zValues = sqlite3_mprintf("?");
+      string_concat(&zInsert, "rowid", 0);
     }
 
-    if( zInsert && zValues ){
-      zQuery = sqlite3_mprintf("%s) VALUES(%s)", zInsert, zValues);
-    }
-    if( zQuery ){
-      sqlite3_stmt *pStmt = 0;
-      rc = sqlite3_prepare(db, zQuery, -1, &pStmt, 0);
-      for(ii=1; rc==SQLITE_OK && ii<nData; ii++){
-        rc = sqlite3_bind_value(pStmt, ii, apData[ii]);
-      }
-      if( rc==SQLITE_OK ){
-        sqlite3_step(pStmt);
-        rc = sqlite3_finalize(pStmt);
-      }else{
-        sqlite3_finalize(pStmt);
-      }
+    assert((pVtab->nCol+2)==nData);
+    for(ii=2; ii<nData; ii++){
+      string_concat(&zInsert, 
+          sqlite3_mprintf("%s%Q", zValues?", ":"", pVtab->aCol[ii-2]), 1);
+      string_concat(&zValues, 
+          sqlite3_mprintf("%s?%d", zValues?", ":"", ii), 1);
     }
 
-    sqlite3_free(zValues);
-    sqlite3_free(zInsert);
-    sqlite3_free(zQuery);
-    if( rc==SQLITE_OK && (!zValues || !zInsert || !zQuery) ){
-      sqlite3FailedMalloc();
-      rc = SQLITE_NOMEM;
+    string_concat(&z, zInsert, 1);
+    string_concat(&z, ") VALUES(", 0);
+    string_concat(&z, zValues, 1);
+    string_concat(&z, ")", 0);
+  }
+
+  /* Anything else is an error */
+  else{
+    assert(0);
+    return SQLITE_ERROR;
+  }
+
+  rc = sqlite3_prepare(db, z, -1, &pStmt, 0);
+  assert( rc!=SQLITE_OK || pStmt );
+  sqlite3_free(z);
+  if( rc==SQLITE_OK ) {
+    if( bindArgZero ){
+      sqlite3_bind_value(pStmt, nData, apData[0]);
     }
+    if( bindArgOne ){
+      sqlite3_bind_value(pStmt, 1, apData[1]);
+    }
+    for(i=2; i<nData; i++){
+      if( apData[i] ) sqlite3_bind_value(pStmt, i, apData[i]);
+    }
+    sqlite3_step(pStmt);
+    rc = sqlite3_finalize(pStmt);
   }
 
   return rc;

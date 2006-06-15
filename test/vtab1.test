@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is creating and dropping virtual tables.
 #
-# $Id: vtab1.test,v 1.16 2006/06/15 07:29:01 danielk1977 Exp $
+# $Id: vtab1.test,v 1.17 2006/06/15 10:41:16 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -434,13 +434,63 @@ do_test vtab1-6-4 {
     SELECT * FROM techo;
   }
 } {5 2 3}
-do_test vtab1-6-5 {
+
+# TODO: This causes a crash at present.
+#
+# do_test vtab1-6-5 {
+# explain {
+#    UPDATE techo set a = a||b||c;
+#  }
+#  execsql {
+#    UPDATE techo set a = a||b||c;
+#    SELECT * FROM techo;
+#  }
+#} {523 2 3}
+
+do_test vtab1-6-6 {
+  execsql {
+    UPDATE techo set rowid = 10;
+    SELECT rowid FROM techo;
+  }
+} {10}
+
+do_test vtab1-6-7 {
   execsql {
     DELETE FROM techo;
     SELECT * FROM techo;
   }
 } {}
-# check_echo_table vtab1-6.3 treal techo
 
+file delete -force test2.db
+file delete -force test2.db-journal
+sqlite3 db2 test2.db
+execsql {
+  CREATE TABLE techo(a PRIMARY KEY, b, c);
+} db2
+proc check_echo_table {tn} {
+  set ::data1 [execsql {SELECT rowid, * FROM techo}]
+  set ::data2 [execsql {SELECT rowid, * FROM techo} db2]
+  do_test $tn {
+    string equal $::data1 $::data2
+  } 1
+}
+set tn 0
+foreach stmt [list \
+  {INSERT INTO techo VALUES('abc', 'def', 'ghi')}                        \
+  {INSERT INTO techo SELECT a||'.'||rowid, b, c FROM techo}              \
+  {INSERT INTO techo SELECT a||'x'||rowid, b, c FROM techo}              \
+  {INSERT INTO techo SELECT a||'y'||rowid, b, c FROM techo}              \
+  {DELETE FROM techo WHERE (oid % 3) = 0}                                \
+  {UPDATE techo set rowid = 100 WHERE rowid = 1}                         \
+  {INSERT INTO techo(a, b) VALUES('hello', 'world')}                     \
+  {DELETE FROM techo}                                                    \
+] {
+  execsql $stmt
+  execsql $stmt db2
+  check_echo_table vtab1-6.6.[incr tn]
+}
+
+
+db2 close
 finish_test
 
