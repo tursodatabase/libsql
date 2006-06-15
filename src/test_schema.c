@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test_schema.c,v 1.1 2006/06/15 15:59:20 danielk1977 Exp $
+** $Id: test_schema.c,v 1.2 2006/06/15 16:26:45 danielk1977 Exp $
 */
 
 /* The code in this file defines a sqlite3 module that provides
@@ -39,7 +39,7 @@
 #ifdef SQLITE_TEST
   #include "sqliteInt.h"
   #include "tcl.h"
-  #define MALLOC(x) sqliteRawMalloc(x) 
+  #define MALLOC(x) sqliteMallocRaw(x) 
   #define FREE(x)   sqliteFree(x)
 #else
   #include "sqlite3ext.h"

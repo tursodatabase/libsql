@@ -1,5 +1,5 @@
-C Add\stest_schema.c,\scontaining\sa\smodule\sfor\sviewing\sthe\sdatabase\sschema\svia\sa\svirtual\stable.\s(CVS\s3257)
-D 2006-06-15T15:59:19
+C Fix\stype\sin\stest_schema.c.\s(CVS\s3258)
+D 2006-06-15T16:26:45
 F Makefile.in f839b470345d3cb4b0644068474623fe2464b5d3
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -88,7 +88,7 @@ F src/test8.c 9579de4645c9b8be3f8de217224bcf9280da9b6a
 F src/test_async.c e3deaedd4d86a56391b81808fde9e44fbd92f1d3
 F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
 F src/test_md5.c 6c42bc0a3c0b54be34623ff77a0eec32b2fa96e3
-F src/test_schema.c 533a9ed125a4676a22a20d9e87e6379989d901e9
+F src/test_schema.c 889fde757c78b11538c7e448c392198a1ccc8be3
 F src/test_server.c a6460daed0b92ecbc2531b6dc73717470e7a648c
 F src/test_tclvar.c c52f67fbe06d32804af2ba9a2d7aadfc15f5910c
 F src/tokenize.c 6ebcafa6622839968dda4418a7b6945f277a128f
@@ -367,7 +367,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 25c475087892fea83bce9d140b46651793b85a86
-R fb8cae10b8c9b6f899ced712e7826fd2
+P de8d32ac71a6e113e83b952813424cb3fb5a2e59
+R a9b9717f996b4f699ae87b1b5716d890
 U danielk1977
-Z 593d3f2a16cc3c6c0ea1ba4705d0de74
+Z c802729e8f39cde93a7672cc85fc0701
