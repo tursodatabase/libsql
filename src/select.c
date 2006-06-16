@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.314 2006/06/11 23:41:56 drh Exp $
+** $Id: select.c,v 1.315 2006/06/16 21:13:22 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -187,7 +187,7 @@ static void setToken(Token *p, const char *z){
 /*
 ** Create an expression node for an identifier with the name of zName
 */
-static Expr *createIdExpr(const char *zName){
+Expr *sqlite3CreateIdExpr(const char *zName){
   Token dummy;
   setToken(&dummy, zName);
   return sqlite3Expr(TK_ID, 0, 0, &dummy);
@@ -211,16 +211,16 @@ static void addWhereTerm(
   Expr *pE2a, *pE2b, *pE2c;
   Expr *pE;
 
-  pE1a = createIdExpr(zCol);
-  pE2a = createIdExpr(zCol);
+  pE1a = sqlite3CreateIdExpr(zCol);
+  pE2a = sqlite3CreateIdExpr(zCol);
   if( zAlias1==0 ){
     zAlias1 = pTab1->zName;
   }
-  pE1b = createIdExpr(zAlias1);
+  pE1b = sqlite3CreateIdExpr(zAlias1);
   if( zAlias2==0 ){
     zAlias2 = pTab2->zName;
   }
-  pE2b = createIdExpr(zAlias2);
+  pE2b = sqlite3CreateIdExpr(zAlias2);
   pE1c = sqlite3Expr(TK_DOT, pE1b, pE1a, 0);
   pE2c = sqlite3Expr(TK_DOT, pE2b, pE2a, 0);
   pE = sqlite3Expr(TK_EQ, pE1c, pE2c, 0);

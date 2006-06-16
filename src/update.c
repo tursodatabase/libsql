@@ -12,9 +12,20 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.126 2006/06/16 16:08:55 danielk1977 Exp $
+** $Id: update.c,v 1.127 2006/06/16 21:13:22 drh Exp $
 */
 #include "sqliteInt.h"
+
+/* Forward declaration */
+static void updateVirtualTable(
+  Parse *pParse,       /* The parsing context */
+  SrcList *pSrc,       /* The virtual table to be modified */
+  Table *pTab,         /* The virtual table */
+  ExprList *pChanges,  /* The columns to change in the UPDATE statement */
+  Expr *pRowidExpr,    /* Expression used to recompute the rowid */
+  int *aXRef,          /* Mapping from columns of pTab to entries in pChanges */
+  Expr *pWhere         /* WHERE clause of the UPDATE statement */
+);
 
 /*
 ** The most recently coded instruction was an OP_Column to retrieve the
@@ -242,13 +253,6 @@ void sqlite3Update(
     }
   }
 
-  /* Resolve the column names in all the expressions in the
-  ** WHERE clause.
-  */
-  if( sqlite3ExprResolveNames(&sNC, pWhere) ){
-    goto update_cleanup;
-  }
-
   /* Start the view context
   */
   if( isView ){
@@ -261,6 +265,24 @@ void sqlite3Update(
   if( v==0 ) goto update_cleanup;
   if( pParse->nested==0 ) sqlite3VdbeCountChanges(v);
   sqlite3BeginWriteOperation(pParse, 1, iDb);
+
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+  /* Virtual tables must be handled separately */
+  if( IsVirtual(pTab) ){
+    updateVirtualTable(pParse, pTabList, pTab, pChanges, pRowidExpr, aXRef,
+                       pWhere);
+    pWhere = 0;
+    pTabList = 0;
+    goto update_cleanup;
+  }
+#endif
+
+  /* Resolve the column names in all the expressions in the
+  ** WHERE clause.
+  */
+  if( sqlite3ExprResolveNames(&sNC, pWhere) ){
+    goto update_cleanup;
+  }
 
   /* If we are trying to update a view, realize that view into
   ** a ephemeral table.
@@ -444,43 +466,6 @@ void sqlite3Update(
     sqlite3CompleteInsertion(pParse, pTab, iCur, aIdxUsed, chngRowid, 1, -1);
   }
 
-#ifndef SQLITE_OMIT_VIRTUALTABLE
-  if( !isView && IsVirtual(pTab) ){
-    addr = sqlite3VdbeAddOp(v, OP_FifoRead, 0, 0);
-
-    /* If the record number will change, push the record number as it
-    ** will be after the update. (The old record number is currently
-    ** on top of the stack.)
-    */
-    if( chngRowid ){
-      sqlite3ExprCode(pParse, pRowidExpr);
-      sqlite3VdbeAddOp(v, OP_MustBeInt, 0, 0);
-    }else{
-      sqlite3VdbeAddOp(v, OP_Dup, 0, 0);
-    }
-
-    /* Compute new data for this record.  
-    */
-    for(i=0; i<pTab->nCol; i++){
-      if( i==pTab->iPKey ){
-        sqlite3VdbeAddOp(v, OP_Null, 0, 0);
-        continue;
-      }
-      j = aXRef[i];
-      if( j<0 ){
-        sqlite3VdbeAddOp(v, OP_VNoChange, 0, 0);
-      }else{
-        sqlite3ExprCode(pParse, pChanges->a[j].pExpr);
-      }
-    }
-
-    /* Make the update */
-    pParse->pVirtualLock = pTab;
-    sqlite3VdbeOp3(v, OP_VUpdate, 0, pTab->nCol+2, 
-                      (const char*)pTab->pVtab, P3_VTAB);
-  }
-#endif /* SQLITE_OMIT_VIRTUAL */
-
   /* Increment the row counter 
   */
   if( db->flags & SQLITE_CountRows && !pParse->trigStack){
@@ -511,7 +496,7 @@ void sqlite3Update(
   sqlite3VdbeJumpHere(v, addr);
 
   /* Close all tables if there were no FOR EACH ROW triggers */
-  if( !triggers_exist && !IsVirtual(pTab) ){
+  if( !triggers_exist ){
     for(i=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
       if( openAll || aIdxUsed[i] ){
         sqlite3VdbeAddOp(v, OP_Close, iCur+i+1, 0);
@@ -543,3 +528,95 @@ update_cleanup:
   sqlite3ExprDelete(pWhere);
   return;
 }
+
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+/*
+** Generate code for an UPDATE of a virtual table.
+**
+** The strategy is that we create an ephemerial table that contains
+** for each row to be changed:
+**
+**   (A)  The original rowid of that row.
+**   (B)  The revised rowid for the row. (note1)
+**   (C)  The content of every column in the row.
+**
+** Then we loop over this ephemeral table and for each row in
+** the ephermeral table call VUpdate.
+**
+** When finished, drop the ephemeral table.
+**
+** (note1) Actually, if we know in advance that (A) is always the same
+** as (B) we only store (A), then duplicate (A) when pulling
+** it out of the ephemeral table before calling VUpdate.
+*/
+static void updateVirtualTable(
+  Parse *pParse,       /* The parsing context */
+  SrcList *pSrc,       /* The virtual table to be modified */
+  Table *pTab,         /* The virtual table */
+  ExprList *pChanges,  /* The columns to change in the UPDATE statement */
+  Expr *pRowid,        /* Expression used to recompute the rowid */
+  int *aXRef,          /* Mapping from columns of pTab to entries in pChanges */
+  Expr *pWhere         /* WHERE clause of the UPDATE statement */
+){
+  Vdbe *v = pParse->pVdbe;  /* Virtual machine under construction */
+  ExprList *pEList = 0;     /* The result set of the SELECT statement */
+  Select *pSelect = 0;      /* The SELECT statement */
+  Expr *pExpr;              /* Temporary expression */
+  int ephemTab;             /* Table holding the result of the SELECT */
+  int i;                    /* Loop counter */
+  int addr;                 /* Address of top of loop */
+
+  /* Construct the SELECT statement that will find the new values for
+  ** all updated rows. 
+  */
+  pEList = sqlite3ExprListAppend(0, sqlite3CreateIdExpr("_rowid_"), 0);
+  if( pRowid ){
+    pEList = sqlite3ExprListAppend(pEList, pRowid, 0);
+  }
+  for(i=0; i<pTab->nCol; i++){
+    if( i==pTab->iPKey ){
+      pExpr = sqlite3Expr(TK_NULL, 0, 0, 0);
+    }else if( aXRef[i]>=0 ){
+      pExpr = sqlite3ExprDup(pChanges->a[aXRef[i]].pExpr);
+    }else{
+      pExpr = sqlite3CreateIdExpr(pTab->aCol[i].zName);
+    }
+    pEList = sqlite3ExprListAppend(pEList, pExpr, 0);
+  }
+  pSelect = sqlite3SelectNew(pEList, pSrc, pWhere, 0, 0, 0, 0, 0, 0);
+  
+  /* Create the ephemeral table into which the update results will
+  ** be stored.
+  */
+  assert( v );
+  ephemTab = pParse->nTab++;
+  sqlite3VdbeAddOp(v, OP_OpenEphemeral, ephemTab, pTab->nCol+1+(pRowid!=0));
+
+  /* fill the ephemeral table 
+  */
+  sqlite3Select(pParse, pSelect, SRT_Table, ephemTab, 0, 0, 0, 0);
+
+  /*
+  ** Generate code to scan the ephemeral table and call VDelete and
+  ** VInsert
+  */
+  sqlite3VdbeAddOp(v, OP_Rewind, ephemTab, 0);
+  addr = sqlite3VdbeCurrentAddr(v);
+  sqlite3VdbeAddOp(v, OP_Column,  ephemTab, 0);
+  if( pRowid ){
+    sqlite3VdbeAddOp(v, OP_Column, ephemTab, 1);
+  }else{
+    sqlite3VdbeAddOp(v, OP_Dup, 1, 0);
+  }
+  for(i=0; i<pTab->nCol; i++){
+    sqlite3VdbeAddOp(v, OP_Column, ephemTab, i+1+(pRowid!=0));
+  }
+  sqlite3VdbeOp3(v, OP_VUpdate, 0, pTab->nCol+2, 
+                     (const char*)pTab->pVtab, P3_VTAB);
+  sqlite3VdbeAddOp(v, OP_Next, ephemTab, addr);
+  sqlite3VdbeAddOp(v, OP_Close, ephemTab, 0);
+
+  /* Cleanup */
+  sqlite3SelectDelete(pSelect);  
+}
+#endif /* SQLITE_OMIT_VIRTUALTABLE */

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.563 2006/06/16 16:08:55 danielk1977 Exp $
+** $Id: vdbe.c,v 1.564 2006/06/16 21:13:22 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -4774,21 +4774,6 @@ case OP_VNext: {   /* no-push */
 
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-/* Opcode: VNoChange * * *
-**
-** Push an entry onto the stack which says to the VUpdate command
-** that the corresponding column of the row should not be modified.
-*/
-case OP_VNoChange: {
-  pTos++;
-  pTos->flags = 0;
-  pTos->n = 0;
-  break;
-}
-#endif /* SQLITE_OMIT_VIRTUALTABLE */
-
-
-#ifndef SQLITE_OMIT_VIRTUALTABLE
 /* Opcode: VUpdate P1 P2 P3
 **
 ** P3 is a pointer to a virtual table object, an sqlite3_vtab structure.
@@ -4803,11 +4788,7 @@ case OP_VNoChange: {
 ** NULL then no deletion occurs.  The argv[1] element is the rowid
 ** of the new row.  This can be NULL to have the virtual table
 ** select the new rowid for itself.  The higher elements in the
-** stack are the values of columns in the new row.  if any argv[i]
-** where i>=2 is a NULL pointer (that is to say if argv[i]==NULL 
-** which is different from if sqlite3_value_type(argv[i])==SQLITE_NULL)
-** that means to preserve a copy of that element.  In other words,
-** copy the corresponding value from the argv[0] row into the new row.
+** stack are the values of columns in the new row.
 **
 ** If P2==1 then no insert is performed.  argv[0] is the rowid of
 ** a row to delete.
@@ -4830,7 +4811,8 @@ case OP_VUpdate: {   /* no-push */
     Mem **apArg = p->apArg;
     Mem *pX = &pTos[1-nArg];
     for(i = 0; i<nArg; i++, pX++){
-      apArg[i] = pX->flags ? storeTypeInfo(pX,0), pX : 0;
+      storeTypeInfo(pX, 0);
+      apArg[i] = pX;
     }
     if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
     rc = pModule->xUpdate(pVtab, nArg, apArg, &rowid);
