@@ -1,5 +1,5 @@
-C Arrange\sfor\ssqlite3_last_insert_rowid()\sto\swork\swith\svirtual\stables.\s(CVS\s3259)
-D 2006-06-16T06:17:47
+C Add\ssome\stests\s(and\sfixes)\sfor\svirtual\stables\sand\sthe\sauthorization\scallback.\sStill\smore\sto\scome.\s(CVS\s3260)
+D 2006-06-16T08:01:03
 F Makefile.in f839b470345d3cb4b0644068474623fe2464b5d3
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -33,10 +33,10 @@ F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
 F src/alter.c 451b34fc4eb2475ca76a2e86b21e1030a9428091
 F src/analyze.c 7d2b7ab9a9c2fd6e55700f69064dfdd3e36d7a8a
 F src/attach.c 27a31d3b89d7ebb5b358847607b1ec795384123c
-F src/auth.c 9ae84d2d94eb96195e04515715e08e85963e96c2
+F src/auth.c 902f4722661c796b97f007d9606bd7529c02597f
 F src/btree.c ed343b3dbcbc7da9ac481ef2b98c4239fe6d9629
 F src/btree.h 40055cfc09defd1146bc5b922399c035f969e56d
-F src/build.c a295396a6a5624604c729c3b895902c8b2b1dc5e
+F src/build.c 28208a9049d7bf61f16fcb4bb850406857135953
 F src/callback.c fd9bb39f7ff6b52bad8365617abc61c720640429
 F src/complete.c 7d1a44be8f37de125fcafd3d3a018690b3799675
 F src/date.c cd2bd5d1ebc6fa12d6312f69789ae5b0a2766f2e
@@ -64,7 +64,7 @@ F src/os_win.c c6976ae50b61fb5b7dce399e578aa1865f02b84f
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c 7ef4c5098b378d81d3687919d9de99ea99bbb6bb
 F src/pager.h 43f32f3847421f7502cfbb66f4eb2302b8033818
-F src/parse.y 14ce6fb228b5a06fd5c10999aed2cbbfafe630a7
+F src/parse.y e0831a269fbbd21414bb367fd0b806569c934683
 F src/pragma.c 27d5e395c5d950931c7ac4fe610e7c2993e2fa55
 F src/prepare.c 6dc945dab34cf97364c661d2b7a12be65d338267
 F src/printf.c 7029e5f7344a478394a02c52837ff296ee1ab240
@@ -72,11 +72,11 @@ F src/random.c d40f8d356cecbd351ccfab6eaedd7ec1b54f5261
 F src/select.c 38eda11d950ed5e631ea9054f84a4a8b9e9b39d8
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c ad73192b30a338a58fe81183d4a5d5a1d4e51d36
-F src/sqlite.h.in 2fc589cf9b550c5bb8b0bac6414389e2057940d1
+F src/sqlite.h.in 77b42d1bb5deafa04ae156d24cd243c2d75800ac
 F src/sqlite3ext.h fc8647211af0caa9d8e49ab31624b357c1332380
-F src/sqliteInt.h 5eb64f1dd9a8b237d147962bc57637d87e044ff4
+F src/sqliteInt.h 2eb48bd25f5fccce86d80e6872b045ed61b91687
 F src/table.c f64ec4fbfe333f8df925bc6ba494f55e05b0e75e
-F src/tclsqlite.c c03bf44bd9f629d4c8d6545788c647b2e846b523
+F src/tclsqlite.c c408a49ae44525fc69757b4ed39f6ca0f56549a5
 F src/test1.c 40f20775903bc76d3be3e7c026dddcbc221c1cb0
 F src/test2.c ca74a1d8aeb7d9606e8f6b762c5daf85c1a3f92b
 F src/test3.c 86e99724ee898b119ed575ef9f98618afe7e5e5d
@@ -104,7 +104,7 @@ F src/vdbeapi.c 6af0e7160af260052a7a4500464221a03dada75f
 F src/vdbeaux.c 85f2184f536219d3c20c66f1403ef77321d1e715
 F src/vdbefifo.c 9efb94c8c3f4c979ebd0028219483f88e57584f5
 F src/vdbemem.c 5f0afe3b92bb2c037f8d5d697f7c151fa50783a3
-F src/vtab.c 745148c6f83f7c146ce93cc22c6716ff05a246e2
+F src/vtab.c cb5a2b23a241e657a8ee7c2b03574f6afa27214a
 F src/where.c d7c3cc011834882b2d58ebb3a6a1a569ead7ebd7
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -292,6 +292,7 @@ F test/vacuum2.test 5aea8c88a65cb29f7d175296e7c819c6158d838c
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/view.test 16e2774fe35e47a07ac4471b7f0bcc948b1aa6d5
 F test/vtab1.test a31c323cf158bf7326b3a4af4156b1bdd98cf8a8
+F test/vtab3.test b3ea5dfdc36ba23ba5136928b6c307c5125ababc
 F test/where.test ee7c9a6659b07e1ee61177f6e7ff71565ee2c9df
 F test/where2.test a16476a5913e75cf65b38f2daa6157a6b7791394
 F test/where3.test 3b5ad2c58069e12be2bd86bc5e211a82810521aa
@@ -367,7 +368,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P d65d83d38321258a7bb8c38f4b2657650b0f1033
-R cbf7f69fafe0127b012e719eed74f4d3
+P afa39a46320e9996a5478ea6e19eb4c2014327ac
+R e864f985538904b7098e2d0d1765152d
 U danielk1977
-Z 33e3dbe7c063b046d5656223c8b15932
+Z b35d7828e5c540d613e21e95c6dfce99

@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.401 2006/06/15 07:29:01 danielk1977 Exp $
+** $Id: build.c,v 1.402 2006/06/16 08:01:03 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -711,6 +711,7 @@ void sqlite3StartTable(
   Token *pName2,   /* Second part of the name of the table or view */
   int isTemp,      /* True if this is a TEMP table */
   int isView,      /* True if this is a VIEW */
+  int isVirtual,   /* True if this is a VIRTUAL table */
   int noErr        /* Do nothing if table already exists */
 ){
   Table *pTable;
@@ -774,7 +775,7 @@ void sqlite3StartTable(
         code = SQLITE_CREATE_TABLE;
       }
     }
-    if( sqlite3AuthCheck(pParse, code, zName, 0, zDb) ){
+    if( !isVirtual && sqlite3AuthCheck(pParse, code, zName, 0, zDb) ){
       goto begin_table_error;
     }
   }
@@ -862,8 +863,8 @@ void sqlite3StartTable(
     ** The rowid value is needed by the code that sqlite3EndTable will
     ** generate.
     */
-#ifndef SQLITE_OMIT_VIEW
-    if( isView ){
+#if !defined(SQLITE_OMIT_VIEW) || !defined(SQLITE_OMIT_VIRTUALTABLE)
+    if( isView || isVirtual ){
       sqlite3VdbeAddOp(v, OP_Integer, 0, 0);
     }else
 #endif
@@ -1588,7 +1589,7 @@ void sqlite3CreateView(
     sqlite3SelectDelete(pSelect);
     return;
   }
-  sqlite3StartTable(pParse, pName1, pName2, isTemp, 1, 0);
+  sqlite3StartTable(pParse, pName1, pName2, isTemp, 1, 0, 0);
   p = pParse->pNewTable;
   if( p==0 || pParse->nErr ){
     sqlite3SelectDelete(pSelect);
@@ -1886,6 +1887,7 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
     int code;
     const char *zTab = SCHEMA_TABLE(iDb);
     const char *zDb = db->aDb[iDb].zName;
+    const char *zArg2 = 0;
     if( sqlite3AuthCheck(pParse, SQLITE_DELETE, zTab, 0, zDb)){
       goto exit_drop_table;
     }
@@ -1895,6 +1897,9 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
       }else{
         code = SQLITE_DROP_VIEW;
       }
+    }else if( IsVirtual(pTab) ){
+      code = SQLITE_DROP_VTABLE;
+      zArg2 = pTab->pMod->zName;
     }else{
       if( !OMIT_TEMPDB && iDb==1 ){
         code = SQLITE_DROP_TEMP_TABLE;
@@ -1902,7 +1907,7 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
         code = SQLITE_DROP_TABLE;
       }
     }
-    if( sqlite3AuthCheck(pParse, code, pTab->zName, 0, zDb) ){
+    if( sqlite3AuthCheck(pParse, code, pTab->zName, zArg2, zDb) ){
       goto exit_drop_table;
     }
     if( sqlite3AuthCheck(pParse, SQLITE_DELETE, pTab->zName, 0, zDb) ){
@@ -2231,7 +2236,7 @@ void sqlite3CreateIndex(
   int nExtra = 0;
   char *zExtra;
 
-  if( pParse->nErr || sqlite3MallocFailed() ){
+  if( pParse->nErr || sqlite3MallocFailed() || IN_DECLARE_VTAB ){
     goto exit_create_index;
   }
 
