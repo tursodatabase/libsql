@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.177 2006/06/15 04:28:13 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.178 2006/06/16 06:17:47 danielk1977 Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1552,7 +1552,7 @@ struct sqlite3_module {
   int (*xNext)(sqlite3_vtab_cursor*);
   int (*xColumn)(sqlite3_vtab_cursor*, sqlite3_context*, int);
   int (*xRowid)(sqlite3_vtab_cursor*, sqlite_int64 *pRowid);
-  int (*xUpdate)(sqlite3_vtab *pVTab, int, sqlite3_value **apData);
+  int (*xUpdate)(sqlite3_vtab *, int, sqlite3_value **, sqlite_int64 *);
   int (*xBegin)(sqlite3_vtab *pVTab);
   int (*xSync)(sqlite3_vtab *pVTab);
   int (*xCommit)(sqlite3_vtab *pVTab);

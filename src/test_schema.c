@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test_schema.c,v 1.2 2006/06/15 16:26:45 danielk1977 Exp $
+** $Id: test_schema.c,v 1.3 2006/06/16 06:17:47 danielk1977 Exp $
 */
 
 /* The code in this file defines a sqlite3 module that provides
@@ -301,6 +301,7 @@ static int register_schema_module(
     Tcl_WrongNumArgs(interp, 1, objv, "DB");
     return TCL_ERROR;
   }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   sqlite3_create_module(db, "schema", &schemaModule, 0);
 #endif

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is creating and dropping virtual tables.
 #
-# $Id: vtab1.test,v 1.17 2006/06/15 10:41:16 danielk1977 Exp $
+# $Id: vtab1.test,v 1.18 2006/06/16 06:17:47 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -31,6 +31,7 @@ ifcapable !vtab {
 # vtab1-4.*: Table scans and ORDER BY clauses.
 # vtab1-5.*: Test queries that include joins. This brings the
 #            sqlite3_index_info.estimatedCost variable into play.
+# vtab1-6.*: Test UPDATE/INSERT/DELETE on vtables.
 #
 # This file uses the "echo" module (see src/test8.c). Refer to comments
 # in that file for the special behaviour of the Tcl $echo_module variable.
@@ -38,7 +39,6 @@ ifcapable !vtab {
 # TODO: 
 #   * How to test the sqlite3_index_constraint_usage.omit field?
 #   * vtab1-5.*
-#   * 
 #
 
 
@@ -487,10 +487,99 @@ foreach stmt [list \
 ] {
   execsql $stmt
   execsql $stmt db2
-  check_echo_table vtab1-6.6.[incr tn]
+  check_echo_table vtab1-6.8.[incr tn]
 }
 
-
 db2 close
+
+#----------------------------------------------------------------------
+# Test cases vtab1-7 tests that the value returned by 
+# sqlite3_last_insert_rowid() is set correctly when rows are inserted
+# into virtual tables.
+do_test vtab1.7-1 {
+  execsql {
+    CREATE TABLE real_abc(a PRIMARY KEY, b, c);
+    CREATE VIRTUAL TABLE echo_abc USING echo(real_abc);
+  }
+} {}
+do_test vtab1.7-2 {
+  execsql {
+    INSERT INTO echo_abc VALUES(1, 2, 3);
+    SELECT last_insert_rowid();
+  }
+} {1}
+do_test vtab1.7-3 {
+  execsql {
+    INSERT INTO echo_abc(rowid) VALUES(31427);
+    SELECT last_insert_rowid();
+  }
+} {31427}
+do_test vtab1.7-4 {
+  execsql {
+    INSERT INTO echo_abc SELECT a||'.v2', b, c FROM echo_abc;
+    SELECT last_insert_rowid();
+  }
+} {31429}
+do_test vtab1.7-5 {
+  execsql {
+    SELECT rowid, a, b, c FROM echo_abc
+  }
+} [list 1     1    2  3  \
+        31427 {}   {} {} \
+        31428 1.v2 2  3  \
+        31429 {}  {} {}  \
+]
+
+# Now test that DELETE and UPDATE operations do not modify the value.
+do_test vtab1.7-6 {
+  execsql {
+    UPDATE echo_abc SET c = 5 WHERE b = 2;
+    SELECT last_insert_rowid();
+  }
+} {31429}
+do_test vtab1.7-7 {
+  execsql {
+    UPDATE echo_abc SET rowid = 5 WHERE rowid = 1;
+    SELECT last_insert_rowid();
+  }
+} {31429}
+do_test vtab1.7-8 {
+  execsql {
+    DELETE FROM echo_abc WHERE b = 2;
+    SELECT last_insert_rowid();
+  }
+} {31429}
+do_test vtab1.7-9 {
+  execsql {
+    SELECT rowid, a, b, c FROM echo_abc
+  }
+} [list 31427 {} {} {} \
+        31429 {} {} {} \
+]
+do_test vtab1.7-10 {
+  execsql {
+    DELETE FROM echo_abc WHERE b = 2;
+    SELECT last_insert_rowid();
+  }
+} {31429}
+do_test vtab1.7-11 {
+  execsql {
+    SELECT rowid, a, b, c FROM real_abc
+  }
+} [list 31427 {} {} {} \
+        31429 {} {} {} \
+]
+do_test vtab1.7-12 {
+  execsql {
+    DELETE FROM echo_abc;
+    SELECT last_insert_rowid();
+  }
+} {31429}
+do_test vtab1.7-13 {
+  execsql {
+    SELECT rowid, a, b, c FROM real_abc
+  }
+} {}
+
 finish_test
 

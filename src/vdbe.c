@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.561 2006/06/15 07:29:01 danielk1977 Exp $
+** $Id: vdbe.c,v 1.562 2006/06/16 06:17:47 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -3269,6 +3269,10 @@ case OP_NewRowid: {
 ** then rowid is stored for subsequent return by the
 ** sqlite3_last_insert_rowid() function (otherwise it's unmodified).
 **
+** Parameter P3 may point to a string containing the table-name, or
+** may be NULL. If it is not NULL, then the update-hook 
+** (sqlite3.xUpdateCallback) is invoked following a successful insert.
+**
 ** This instruction only works on tables.  The equivalent instruction
 ** for indices is OP_IdxInsert.
 */
@@ -4773,7 +4777,7 @@ case OP_VNoChange: {
 
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-/* Opcode: VUpdate * P2 P3
+/* Opcode: VUpdate P1 P2 P3
 **
 ** P3 is a pointer to a virtual table object, an sqlite3_vtab structure.
 ** This opcode invokes the corresponding xUpdate method. P2 values
@@ -4795,6 +4799,10 @@ case OP_VNoChange: {
 **
 ** If P2==1 then no insert is performed.  argv[0] is the rowid of
 ** a row to delete.
+**
+** P1 is a boolean flag. If it is set to true and the xUpdate call
+** is successful, then the value returned by sqlite3_last_insert_rowid() 
+** is set to the value of the rowid for the row just inserted.
 */
 case OP_VUpdate: {   /* no-push */
   sqlite3_vtab *pVtab = (sqlite3_vtab *)(pOp->p3);
@@ -4806,14 +4814,19 @@ case OP_VUpdate: {   /* no-push */
     rc = SQLITE_ERROR;
   }else{
     int i;
+    sqlite_int64 rowid;
     Mem **apArg = p->apArg;
     Mem *pX = &pTos[1-nArg];
     for(i = 0; i<nArg; i++, pX++){
       apArg[i] = pX->flags ? storeTypeInfo(pX,0), pX : 0;
     }
     if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
-    rc = pModule->xUpdate(pVtab, nArg, apArg);
+    rc = pModule->xUpdate(pVtab, nArg, apArg, &rowid);
     if( sqlite3SafetyOn(db) ) goto abort_due_to_misuse;
+    if( pOp->p1 && rc==SQLITE_OK ){
+      assert( nArg>1 && apArg[0] && (apArg[0]->flags&MEM_Null) );
+      db->lastRowid = rowid;
+    }
   }
   popStack(&pTos, nArg);
   break;
