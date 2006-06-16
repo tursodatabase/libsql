@@ -1002,6 +1002,7 @@ static int vdbeCommit(sqlite3 *db){
         rc = sqlite3BtreeSync(pBt, 0);
       }
     }
+    rc = sqlite3VtabSync(db, rc);
 
     /* Do the commit only if all databases successfully synced */
     if( rc==SQLITE_OK ){
@@ -1011,6 +1012,7 @@ static int vdbeCommit(sqlite3 *db){
           sqlite3BtreeCommit(pBt);
         }
       }
+      sqlite3VtabCommit(db);
     }
   }
 
@@ -1103,6 +1105,8 @@ static int vdbeCommit(sqlite3 *db){
         }
       }
     }
+    rc = sqlite3VtabSync(db, SQLITE_OK);
+    if( rc!=SQLITE_OK ) return rc;
     sqlite3OsClose(&master);
 
     /* Delete the master journal file. This commits the transaction. After
@@ -1138,6 +1142,7 @@ static int vdbeCommit(sqlite3 *db){
         sqlite3BtreeCommit(pBt);
       }
     }
+    sqlite3VtabCommit(db);
   }
 #endif
 

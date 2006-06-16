@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.344 2006/06/15 04:28:13 danielk1977 Exp $
+** $Id: main.c,v 1.345 2006/06/16 16:08:55 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -206,6 +206,7 @@ void sqlite3RollbackAll(sqlite3 *db){
   if( db->flags&SQLITE_InternChanges ){
     sqlite3ResetInternalSchema(db, 0);
   }
+  sqlite3VtabRollback(db);
 
   /* If one has been configured, invoke the rollback-hook callback */
   if( db->xRollbackCallback && (inTrans || !db->autoCommit) ){

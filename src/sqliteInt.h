@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.507 2006/06/16 08:01:04 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.508 2006/06/16 16:08:55 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -494,6 +494,8 @@ struct sqlite3 {
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   Hash aModule;                 /* populated by sqlite3_create_module() */
   Table *pVTab;                 /* vtab with active Connect/Create method */
+  sqlite3_vtab **aVTrans;       /* Virtual tables with open transactions */
+  int nVTrans;                  /* Allocated size of aVTrans */
 #endif
   Hash aFunc;                   /* All functions that can be in SQL exprs */
   Hash aCollSeq;                /* All collating sequences */
@@ -722,6 +724,7 @@ struct Table {
   u8 isVirtual;             /* True if this is a virtual table */
   int nModuleArg;           /* Number of arguments to the module */
   char **azModuleArg;       /* Text of all module args. [0] is module name */
+  u8 isCommit;              /* True once the CREATE TABLE has been committed */
 #endif
   Schema *pSchema;
 };
@@ -1304,10 +1307,11 @@ struct Parse {
   TriggerStack *trigStack;  /* Trigger actions being coded */
   const char *zAuthContext; /* The 6th parameter to db->xAuth callbacks */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-  int nArgAlloc;            /* Number of bytes allocated for zArg[] */
-  int nArgUsed;             /* Number of bytes of zArg[] used so far */
-  char *zArg;               /* Complete text of a module argument */
-  u8 declareVtab;           /* True if inside sqlite3_declare_vtab() */
+  int nArgAlloc;             /* Number of bytes allocated for zArg[] */
+  int nArgUsed;              /* Number of bytes of zArg[] used so far */
+  char *zArg;                /* Complete text of a module argument */
+  u8 declareVtab;            /* True if inside sqlite3_declare_vtab() */
+  Table *pVirtualLock;       /* Require virtual table lock on this table */
 #endif
 };
 
@@ -1815,8 +1819,15 @@ void sqlite3CloseExtensions(sqlite3*);
 
 #ifdef SQLITE_OMIT_VIRTUALTABLE
 #  define sqlite3VtabClear(X)
+#  define sqlite3VtabCodeLock(X,Y)
+#  define sqlite3VtabSync(X,Y) (Y)
+#  define sqlite3VtabRollback(X)
+#  define sqlite3VtabCommit(X)
 #else
-   void sqlite3VtabClear(Table*);
+   void sqlite3VtabCodeLock(Parse *pParse, Table *pTab);
+   int sqlite3VtabSync(sqlite3 *db, int rc);
+   int sqlite3VtabRollback(sqlite3 *db);
+   int sqlite3VtabCommit(sqlite3 *db);
 #endif
 void sqlite3VtabBeginParse(Parse*, Token*, Token*, Token*);
 void sqlite3VtabFinishParse(Parse*, Token*);
@@ -1825,6 +1836,7 @@ void sqlite3VtabArgExtend(Parse*, Token*);
 int sqlite3VtabCallCreate(sqlite3*, int, const char *, char **);
 int sqlite3VtabCallConnect(Parse*, Table*);
 int sqlite3VtabCallDestroy(sqlite3*, int, const char *);
+int sqlite3VtabBegin(sqlite3 *, sqlite3_vtab *);
 
 #ifdef SQLITE_SSE
 #include "sseInt.h"

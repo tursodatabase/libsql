@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to help implement virtual tables.
 **
-** $Id: vtab.c,v 1.14 2006/06/16 08:01:04 danielk1977 Exp $
+** $Id: vtab.c,v 1.15 2006/06/16 16:08:55 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
@@ -438,6 +438,103 @@ int sqlite3VtabCallDestroy(sqlite3 *db, int iDb, const char *zTab)
     }
   }
 
+  return rc;
+}
+
+static int callFinaliser(sqlite3 *db, int offset, int doDelete){
+  int rc = SQLITE_OK;
+  int i;
+  for(i=0; rc==SQLITE_OK && i<db->nVTrans && db->aVTrans[i]; i++){
+    sqlite3_vtab *pVtab = db->aVTrans[i];
+    int (*x)(sqlite3_vtab *);
+    x = (int (*)(sqlite3_vtab *))((char *)pVtab->pModule + offset);
+    if( x ){
+      rc = x(pVtab);
+    }
+  }
+  if( doDelete ){
+    sqliteFree(db->aVTrans);
+    db->nVTrans = 0;
+    db->aVTrans = 0;
+  }
+  return rc;
+}
+
+void sqlite3VtabCodeLock(Parse *pParse, Table *pTab){
+  Vdbe *v = sqlite3GetVdbe(pParse);
+  sqlite3VdbeOp3(v, OP_VBegin, 0, 0, (const char*)pTab->pVtab, P3_VTAB);
+}
+
+/*
+** If argument rc is not SQLITE_OK, then return it and do nothing. 
+** Otherwise, invoke the xSync method of all virtual tables in the 
+** sqlite3.aVTrans array. Return the error code for the first error 
+** that occurs, or SQLITE_OK if all xSync operations are successful.
+*/
+int sqlite3VtabSync(sqlite3 *db, int rc){
+  if( rc!=SQLITE_OK ) return rc;
+  return callFinaliser(db, (int)(&((sqlite3_module *)0)->xSync), 0);
+}
+
+/*
+** Invoke the xRollback method of all virtual tables in the 
+** sqlite3.aVTrans array. Then clear the array itself.
+*/
+int sqlite3VtabRollback(sqlite3 *db){
+  return callFinaliser(db, (int)(&((sqlite3_module *)0)->xRollback), 1);
+}
+
+/*
+** Invoke the xCommit method of all virtual tables in the 
+** sqlite3.aVTrans array. Then clear the array itself.
+*/
+int sqlite3VtabCommit(sqlite3 *db){
+  return callFinaliser(db, (int)(&((sqlite3_module *)0)->xCommit), 1);
+}
+
+/*
+** If the virtual table pVtab supports the transaction interface
+** (xBegin/xRollback/xCommit and optionally xSync) and a transaction is
+** not currently open, invoke the xBegin method now.
+**
+** If the xBegin call is successful, place the sqlite3_vtab pointer
+** in the sqlite3.aVTrans array.
+*/
+int sqlite3VtabBegin(sqlite3 *db, sqlite3_vtab *pVtab){
+  int rc = SQLITE_OK;
+  const int ARRAY_INCR = 5;
+  const sqlite3_module *pModule = pVtab->pModule;
+  if( pModule->xBegin ){
+    int i;
+
+    /* If pVtab is already in the aVTrans array, return early */
+    for(i=0; (i<db->nVTrans) && 0!=db->aVTrans[i]; i++){
+      if( db->aVTrans[i]==pVtab ){
+        return SQLITE_OK;
+      }
+    }
+
+    /* Invoke the xBegin method */
+    rc = pModule->xBegin(pVtab);
+    if( rc!=SQLITE_OK ){
+      return rc;
+    }
+
+    /* Grow the sqlite3.aVTrans array if required */
+    if( (db->nVTrans%ARRAY_INCR)==0 ){
+      sqlite3_vtab *aVTrans;
+      int nBytes = sizeof(sqlite3_vtab *) * (db->nVTrans + ARRAY_INCR);
+      aVTrans = sqliteRealloc((void *)db->aVTrans, nBytes);
+      if( !aVTrans ){
+        return SQLITE_NOMEM;
+      }
+      memset(&aVTrans[db->nVTrans], 0, sizeof(sqlite3_vtab *)*ARRAY_INCR);
+      db->aVTrans = aVTrans;
+    }
+
+    /* Add pVtab to the end of sqlite3.aVTrans */
+    db->aVTrans[db->nVTrans++] = pVtab;
+  }
   return rc;
 }
 

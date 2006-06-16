@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.562 2006/06/16 06:17:47 danielk1977 Exp $
+** $Id: vdbe.c,v 1.563 2006/06/16 16:08:55 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -4536,6 +4536,18 @@ case OP_TableLock: {        /* no-push */
   break;
 }
 #endif /* SQLITE_OMIT_SHARED_CACHE */
+
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+/* Opcode: VCreate P1 * P3
+**
+** P3 is the name of a virtual table in database P1. Call the xCreate method
+** for that table.
+*/
+case OP_VBegin: {   /* no-push */
+  rc = sqlite3VtabBegin(db, (sqlite3_vtab *)pOp->p3);
+  break;
+}
+#endif /* SQLITE_OMIT_VIRTUALTABLE */
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 /* Opcode: VCreate P1 * P3

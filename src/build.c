@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.402 2006/06/16 08:01:03 danielk1977 Exp $
+** $Id: build.c,v 1.403 2006/06/16 16:08:54 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -164,6 +164,12 @@ void sqlite3FinishCoding(Parse *pParse){
         sqlite3VdbeAddOp(v, OP_Transaction, iDb, (mask & pParse->writeMask)!=0);
         sqlite3VdbeAddOp(v, OP_VerifyCookie, iDb, pParse->cookieValue[iDb]);
       }
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+      if( pParse->pVirtualLock ){
+        char *vtab = (char *)pParse->pVirtualLock->pVtab;
+        sqlite3VdbeOp3(v, OP_VBegin, 0, 0, vtab, P3_VTAB);
+      }
+#endif
 
       /* Once all the cookies have been verified and transactions opened, 
       ** obtain the required table-locks. This is a no-op unless the 
