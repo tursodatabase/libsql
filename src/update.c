@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.128 2006/06/17 03:27:22 danielk1977 Exp $
+** $Id: update.c,v 1.129 2006/06/17 06:31:19 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -253,12 +253,6 @@ void sqlite3Update(
     }
   }
 
-  /* Start the view context
-  */
-  if( isView ){
-    sqlite3AuthContextPush(pParse, &sContext, pTab->zName);
-  }
-
   /* Begin generating code.
   */
   v = sqlite3GetVdbe(pParse);
@@ -282,6 +276,12 @@ void sqlite3Update(
   */
   if( sqlite3ExprResolveNames(&sNC, pWhere) ){
     goto update_cleanup;
+  }
+
+  /* Start the view context
+  */
+  if( isView ){
+    sqlite3AuthContextPush(pParse, &sContext, pTab->zName);
   }
 
   /* If we are trying to update a view, realize that view into
