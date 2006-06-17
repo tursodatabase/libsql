@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.129 2006/06/17 06:31:19 danielk1977 Exp $
+** $Id: update.c,v 1.130 2006/06/17 09:39:56 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -611,6 +611,7 @@ static void updateVirtualTable(
   for(i=0; i<pTab->nCol; i++){
     sqlite3VdbeAddOp(v, OP_Column, ephemTab, i+1+(pRowid!=0));
   }
+  pParse->pVirtualLock = pTab;
   sqlite3VdbeOp3(v, OP_VUpdate, 0, pTab->nCol+2, 
                      (const char*)pTab->pVtab, P3_VTAB);
   sqlite3VdbeAddOp(v, OP_Next, ephemTab, addr);

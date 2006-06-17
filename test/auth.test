@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: auth.test,v 1.35 2006/06/17 06:31:19 danielk1977 Exp $
+# $Id: auth.test,v 1.36 2006/06/17 09:39:56 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -2225,7 +2225,6 @@ do_test auth-4.2 {
 } {115 117}
 do_test auth-4.3 {
   set authargs {}
-breakpoint
   execsql {
     UPDATE v1 SET x=1 WHERE x=117
   }

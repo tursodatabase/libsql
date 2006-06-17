@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test8.c,v 1.24 2006/06/16 06:17:47 danielk1977 Exp $
+** $Id: test8.c,v 1.25 2006/06/17 09:39:56 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -24,6 +24,14 @@
 typedef struct echo_vtab echo_vtab;
 typedef struct echo_cursor echo_cursor;
 
+/*
+** The test module defined in this file uses two global Tcl variables to
+** commicate with test-scripts:
+**
+**     $::echo_module
+**     $::echo_module_sync_fail
+*/
+
 /* 
 ** An echo virtual-table object.
 **
@@ -32,7 +40,8 @@ typedef struct echo_cursor echo_cursor;
 ** (implicit or otherwise). In other words, if SQLite can optimize
 ** a query like "SELECT * FROM real_table WHERE col = ?".
 **
-** Member variable contains copies of the column names of the real table.
+** Member variable aCol[] contains copies of the column names of the real
+** table.
 */
 struct echo_vtab {
   sqlite3_vtab base;
@@ -615,6 +624,47 @@ int echoUpdate(
 }
 
 /*
+** xBegin, xSync, xCommit and xRollback callbacks for echo module
+** virtual tables. Do nothing other than add the name of the callback
+** to the $::echo_module Tcl variable.
+*/
+static int echoTransactionCall(sqlite3_vtab *tab, const char *zCall){
+  char *z;
+  echo_vtab *pVtab = (echo_vtab *)tab;
+  z = sqlite3_mprintf("echo(%s)", pVtab->zTableName);
+  appendToEchoModule(pVtab->interp, zCall);
+  appendToEchoModule(pVtab->interp, z);
+  sqlite3_free(z);
+  return SQLITE_OK;
+}
+static int echoBegin(sqlite3_vtab *tab){
+  return echoTransactionCall(tab, "xBegin");
+}
+static int echoSync(sqlite3_vtab *tab){
+  echo_vtab *pVtab = (echo_vtab *)tab;
+  Tcl_Interp *interp = pVtab->interp;
+  const char *zVal; 
+
+  echoTransactionCall(tab, "xSync");
+
+  /* Check if the $::echo_module_sync_fail variable is defined. If it is,
+  ** and it is set to the name of the real table underlying this virtual
+  ** echo module table, then cause this xSync operation to fail.
+  */
+  zVal = Tcl_GetVar(interp, "echo_module_sync_fail", TCL_GLOBAL_ONLY);
+  if( zVal && 0==strcmp(zVal, pVtab->zTableName) ){
+    return -1;
+  }
+  return SQLITE_OK;
+}
+static int echoCommit(sqlite3_vtab *tab){
+  return echoTransactionCall(tab, "xCommit");
+}
+static int echoRollback(sqlite3_vtab *tab){
+  return echoTransactionCall(tab, "xRollback");
+}
+
+/*
 ** A virtual table module that merely echos method calls into TCL
 ** variables.
 */
@@ -632,7 +682,11 @@ static sqlite3_module echoModule = {
   echoNext,                  /* xNext - advance a cursor */
   echoColumn,                /* xColumn - read data */
   echoRowid,                 /* xRowid - read data */
-  echoUpdate                 /* xUpdate - write data */
+  echoUpdate,                /* xUpdate - write data */
+  echoBegin,                 /* xBegin - begin transaction */
+  echoSync,                  /* xSync - sync transaction */
+  echoCommit,                /* xCommit - commit transaction */
+  echoRollback               /* xRollback - rollback transaction */
 };
 
 /*

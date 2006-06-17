@@ -1,5 +1,5 @@
-C When\supdating\sa\sview,\sinvoke\sthe\sauthorization\scallback\sfor\sreading\sthe\sview\sbefore\ssetting\sthe\sauthorization-context\sto\sthe\sview\sname.\s(CVS\s3264)
-D 2006-06-17T06:31:19
+C Add\stests\s(and\sfixes)\sfor\sthe\svirtual\stable\stransaction\sinterface.\s(CVS\s3265)
+D 2006-06-17T09:39:56
 F Makefile.in f839b470345d3cb4b0644068474623fe2464b5d3
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -72,7 +72,7 @@ F src/random.c d40f8d356cecbd351ccfab6eaedd7ec1b54f5261
 F src/select.c c1965c636482bf96754c518b91600f81e17f5c85
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c ad73192b30a338a58fe81183d4a5d5a1d4e51d36
-F src/sqlite.h.in 77b42d1bb5deafa04ae156d24cd243c2d75800ac
+F src/sqlite.h.in 7855b46387f3f6ac1925301f450df9cbd7a1269b
 F src/sqlite3ext.h e334107f6cad0d00c0414e04189742a45ce916b1
 F src/sqliteInt.h dc69927751ee107aa5232e5c3aa7dd1d4329bb15
 F src/table.c f64ec4fbfe333f8df925bc6ba494f55e05b0e75e
@@ -84,7 +84,7 @@ F src/test4.c 8b784cd82de158a2317cb4ac4bc86f91ad315e25
 F src/test5.c 7162f8526affb771c4ed256826eee7bb9eca265f
 F src/test6.c 60a02961ceb7b3edc25f5dc5c1ac2556622a76de
 F src/test7.c 03fa8d787f6aebc6d1f72504d52f33013ad2c8e3
-F src/test8.c 75d9ef60e12ea8a281ab6cd9643992a5a99b2c6a
+F src/test8.c 9641e41a7d35588fc0a834439b6c404700e7c148
 F src/test_async.c e3deaedd4d86a56391b81808fde9e44fbd92f1d3
 F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
 F src/test_md5.c 6c42bc0a3c0b54be34623ff77a0eec32b2fa96e3
@@ -93,7 +93,7 @@ F src/test_server.c a6460daed0b92ecbc2531b6dc73717470e7a648c
 F src/test_tclvar.c c52f67fbe06d32804af2ba9a2d7aadfc15f5910c
 F src/tokenize.c 6ebcafa6622839968dda4418a7b6945f277a128f
 F src/trigger.c 0fc40125820409a6274834a6e04ad804d96e2793
-F src/update.c 81e8d54aa970e045f930cd5c918363f669db0420
+F src/update.c 23a71ccef6b26e8fddfc2e5b3d36f3e8d0fa868d
 F src/utf.c ab81ac59084ff1c07d421eb1a0a84ec809603b44
 F src/util.c ca6ee72772c0f5dc04d2e0ab1973fd3b6a9bf79d
 F src/vacuum.c 5b37d0f436f8e1ffacd17934e44720b38d2247f9
@@ -104,7 +104,7 @@ F src/vdbeapi.c 6af0e7160af260052a7a4500464221a03dada75f
 F src/vdbeaux.c dc5cfd11a0529fcfd217a1807f7c9df513f1c276
 F src/vdbefifo.c 9efb94c8c3f4c979ebd0028219483f88e57584f5
 F src/vdbemem.c 5f0afe3b92bb2c037f8d5d697f7c151fa50783a3
-F src/vtab.c a0bcc2da7e27fbfa2635c2dc4b964a641f220c78
+F src/vtab.c d9f19d0d5afe2ebf68f111672a4d24deb3231fe3
 F src/where.c d7c3cc011834882b2d58ebb3a6a1a569ead7ebd7
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -120,7 +120,7 @@ F test/attach.test c616a88eab6b6fd99b7b2fcf449420f14628bc0b
 F test/attach2.test 0e6a7c54343c85dd877a1e86073a05176043ed40
 F test/attach3.test fc0302e8fe9c172fb49e000227c19b5c428a9429
 F test/attachmalloc.test cdb26c42850f04698377ccec05f5fa89d987837c
-F test/auth.test b7db5241345bc6cb4164cdef2dd687576c4611d4
+F test/auth.test 5e27e39ed196bea6ddb5f4a55e1a202062ea2cf8
 F test/autoinc.test 60005a676e3e4e17dfa9dbd08aa0b76587ff97e3
 F test/autovacuum.test eee7e67d80f7839d11435660ae0a5566a9f7558c
 F test/autovacuum_crash.test 05a63b8805b20cfba7ace82856ce4ccdda075a31
@@ -293,6 +293,7 @@ F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/view.test 16e2774fe35e47a07ac4471b7f0bcc948b1aa6d5
 F test/vtab1.test 6a7defe56939acae6d4f725f2837468e4e212bff
 F test/vtab3.test b3ea5dfdc36ba23ba5136928b6c307c5125ababc
+F test/vtab4.test 4b4293341443839ef6dc02f8d9e614702a6c67ff
 F test/where.test ee7c9a6659b07e1ee61177f6e7ff71565ee2c9df
 F test/where2.test a16476a5913e75cf65b38f2daa6157a6b7791394
 F test/where3.test 3b5ad2c58069e12be2bd86bc5e211a82810521aa
@@ -368,7 +369,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 81c5a5b48b05186a1690198092ac92006d9f7020
-R 4bd1f7bb52bbedc6bf653776cdf0cb73
+P 48d297c561b8d3d670ab425115ef50d1901523b6
+R 5211a47fbe9c7d890a08bd8b570a8a1d
 U danielk1977
-Z 949ec801aa978076825007b5248ff956
+Z 158058c4c02e6113c0e6c0e187c6e004
