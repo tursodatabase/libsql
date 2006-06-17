@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to help implement virtual tables.
 **
-** $Id: vtab.c,v 1.17 2006/06/17 09:39:56 danielk1977 Exp $
+** $Id: vtab.c,v 1.18 2006/06/17 11:30:32 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
@@ -332,6 +332,29 @@ int sqlite3VtabCallConnect(Parse *pParse, Table *pTab){
 }
 
 /*
+** Add the virtual table pVtab to the array sqlite3.aVTrans[].
+*/
+int addToVTrans(sqlite3 *db, sqlite3_vtab *pVtab){
+  const int ARRAY_INCR = 5;
+
+  /* Grow the sqlite3.aVTrans array if required */
+  if( (db->nVTrans%ARRAY_INCR)==0 ){
+    sqlite3_vtab **aVTrans;
+    int nBytes = sizeof(sqlite3_vtab *) * (db->nVTrans + ARRAY_INCR);
+    aVTrans = sqliteRealloc((void *)db->aVTrans, nBytes);
+    if( !aVTrans ){
+      return SQLITE_NOMEM;
+    }
+    memset(&aVTrans[db->nVTrans], 0, sizeof(sqlite3_vtab *)*ARRAY_INCR);
+    db->aVTrans = aVTrans;
+  }
+
+  /* Add pVtab to the end of sqlite3.aVTrans */
+  db->aVTrans[db->nVTrans++] = pVtab;
+  return SQLITE_OK;
+}
+
+/*
 ** This function is invoked by the vdbe to call the xCreate method
 ** of the virtual table named zTab in database iDb. 
 **
@@ -359,6 +382,10 @@ int sqlite3VtabCallCreate(sqlite3 *db, int iDb, const char *zTab, char **pzErr){
     rc = SQLITE_ERROR;
   }else{
     rc = vtabCallConstructor(db, pTab, pMod, pMod->pModule->xCreate, pzErr);
+  }
+
+  if( rc==SQLITE_OK && pTab->pVtab ){
+    rc = addToVTrans(db, pTab->pVtab);
   }
 
   return rc;
@@ -441,28 +468,30 @@ int sqlite3VtabCallDestroy(sqlite3 *db, int iDb, const char *zTab)
   return rc;
 }
 
-static int callFinaliser(sqlite3 *db, int offset, int doDelete){
-  int rc = SQLITE_OK;
-  int i;
-  for(i=0; rc==SQLITE_OK && i<db->nVTrans && db->aVTrans[i]; i++){
-    sqlite3_vtab *pVtab = db->aVTrans[i];
-    int (*x)(sqlite3_vtab *);
-    x = *(int (**)(sqlite3_vtab *))((char *)pVtab->pModule + offset);
-    if( x ){
-      rc = x(pVtab);
-    }
-  }
-  if( doDelete ){
-    sqliteFree(db->aVTrans);
-    db->nVTrans = 0;
-    db->aVTrans = 0;
-  }
-  return rc;
-}
-
 void sqlite3VtabCodeLock(Parse *pParse, Table *pTab){
   Vdbe *v = sqlite3GetVdbe(pParse);
   sqlite3VdbeOp3(v, OP_VBegin, 0, 0, (const char*)pTab->pVtab, P3_VTAB);
+}
+
+/*
+** This function invokes either the xRollback or xCommit method
+** of each of the virtual tables in the sqlite3.aVTrans array. The method
+** called is identified by the second argument, "offset", which is
+** the offset of the method to call in the sqlite3_module structure.
+**
+** The array is cleared after invoking the callbacks. 
+*/
+static void callFinaliser(sqlite3 *db, int offset){
+  int i;
+  for(i=0; i<db->nVTrans && db->aVTrans[i]; i++){
+    sqlite3_vtab *pVtab = db->aVTrans[i];
+    int (*x)(sqlite3_vtab *);
+    x = *(int (**)(sqlite3_vtab *))((char *)pVtab->pModule + offset);
+    if( x ) x(pVtab);
+  }
+  sqliteFree(db->aVTrans);
+  db->nVTrans = 0;
+  db->aVTrans = 0;
 }
 
 /*
@@ -471,9 +500,19 @@ void sqlite3VtabCodeLock(Parse *pParse, Table *pTab){
 ** sqlite3.aVTrans array. Return the error code for the first error 
 ** that occurs, or SQLITE_OK if all xSync operations are successful.
 */
-int sqlite3VtabSync(sqlite3 *db, int rc){
-  if( rc!=SQLITE_OK ) return rc;
-  return callFinaliser(db, (int)(&((sqlite3_module *)0)->xSync), 0);
+int sqlite3VtabSync(sqlite3 *db, int rc2){
+  int i;
+  int rc = SQLITE_OK;
+  if( rc2!=SQLITE_OK ) return rc2;
+  for(i=0; rc==SQLITE_OK && i<db->nVTrans && db->aVTrans[i]; i++){
+    sqlite3_vtab *pVtab = db->aVTrans[i];
+    int (*x)(sqlite3_vtab *);
+    x = pVtab->pModule->xSync;
+    if( x ){
+      rc = x(pVtab);
+    }
+  }
+  return rc;
 }
 
 /*
@@ -481,7 +520,8 @@ int sqlite3VtabSync(sqlite3 *db, int rc){
 ** sqlite3.aVTrans array. Then clear the array itself.
 */
 int sqlite3VtabRollback(sqlite3 *db){
-  return callFinaliser(db, (int)(&((sqlite3_module *)0)->xRollback), 1);
+  callFinaliser(db, (int)(&((sqlite3_module *)0)->xRollback));
+  return SQLITE_OK;
 }
 
 /*
@@ -489,7 +529,8 @@ int sqlite3VtabRollback(sqlite3 *db){
 ** sqlite3.aVTrans array. Then clear the array itself.
 */
 int sqlite3VtabCommit(sqlite3 *db){
-  return callFinaliser(db, (int)(&((sqlite3_module *)0)->xCommit), 1);
+  callFinaliser(db, (int)(&((sqlite3_module *)0)->xCommit));
+  return SQLITE_OK;
 }
 
 /*
@@ -502,7 +543,6 @@ int sqlite3VtabCommit(sqlite3 *db){
 */
 int sqlite3VtabBegin(sqlite3 *db, sqlite3_vtab *pVtab){
   int rc = SQLITE_OK;
-  const int ARRAY_INCR = 5;
   const sqlite3_module *pModule = pVtab->pModule;
   if( pModule->xBegin ){
     int i;
@@ -520,20 +560,7 @@ int sqlite3VtabBegin(sqlite3 *db, sqlite3_vtab *pVtab){
       return rc;
     }
 
-    /* Grow the sqlite3.aVTrans array if required */
-    if( (db->nVTrans%ARRAY_INCR)==0 ){
-      sqlite3_vtab **aVTrans;
-      int nBytes = sizeof(sqlite3_vtab *) * (db->nVTrans + ARRAY_INCR);
-      aVTrans = sqliteRealloc((void *)db->aVTrans, nBytes);
-      if( !aVTrans ){
-        return SQLITE_NOMEM;
-      }
-      memset(&aVTrans[db->nVTrans], 0, sizeof(sqlite3_vtab *)*ARRAY_INCR);
-      db->aVTrans = aVTrans;
-    }
-
-    /* Add pVtab to the end of sqlite3.aVTrans */
-    db->aVTrans[db->nVTrans++] = pVtab;
+    rc = addToVTrans(db, pVtab);
   }
   return rc;
 }

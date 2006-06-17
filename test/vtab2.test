@@ -1,0 +1,41 @@
+# 2006 June 10
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.
+#
+# $Id: vtab2.test,v 1.1 2006/06/17 11:30:33 danielk1977 Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+ifcapable !vtab {
+  finish_test
+  return
+}
+
+register_schema_module [sqlite3_connection_pointer db]
+do_test vtab2-1.1 {
+  execsql {
+    CREATE VIRTUAL TABLE schema USING schema;
+    SELECT * FROM schema;
+  }
+} [list \
+  main schema 0 database   {} 0 {} 0 \
+  main schema 1 tablename  {} 0 {} 0 \
+  main schema 2 cid        {} 0 {} 0 \
+  main schema 3 name       {} 0 {} 0 \
+  main schema 4 type       {} 0 {} 0 \
+  main schema 5 not_null   {} 0 {} 0 \
+  main schema 6 dflt_value {} 0 {} 0 \
+  main schema 7 pk         {} 0 {} 0 \
+]
+
+finish_test
+

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is creating and dropping virtual tables.
 #
-# $Id: vtab1.test,v 1.20 2006/06/17 03:27:23 danielk1977 Exp $
+# $Id: vtab1.test,v 1.21 2006/06/17 11:30:33 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -234,7 +234,10 @@ do_test vtab1-3.1 {
     CREATE VIRTUAL TABLE t1 USING echo(treal);
   }
   set echo_module
-} [list xCreate echo treal]
+} [list xCreate echo treal   \
+        xSync   echo(treal)  \
+        xCommit echo(treal)  \
+]
 
 # Test that a SELECT on t1 doesn't crash. No rows are returned
 # because the underlying real table is currently empty.
