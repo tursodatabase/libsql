@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is in-memory database backend.
 #
-# $Id: loadext.test,v 1.2 2006/06/17 13:21:33 drh Exp $
+# $Id: loadext.test,v 1.3 2006/06/17 14:12:48 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -129,5 +129,33 @@ do_test loadext-2.4 {
   } msg]
   list $rc $msg
 } {1 {error during initialization: broken!}}
+
+############################################################################
+# Tests for the load_extension() SQL function
+#
+
+db close
+sqlite3 db test.db
+do_test loadext-3.1 {
+  catchsql {
+    SELECT half(5);
+  }
+} {1 {no such function: half}}
+do_test loadext-3.2 {
+  catchsql {
+    SELECT load_extension($::testextension)
+  }
+} [list 1 "no entry point \[sqlite3_extension_init\]\
+           in shared library \[$testextension\]"]
+do_test loadext-3.3 {
+  catchsql {
+    SELECT load_extension($::testextension,'testloadext_init')
+  }
+} {0 {{}}}
+do_test loadext-3.4 {
+  catchsql {
+    SELECT half(5);
+  }
+} {0 2.5}
 
 finish_test

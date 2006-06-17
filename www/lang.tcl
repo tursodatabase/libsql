@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the lang-*.html files.
 #
-set rcsid {$Id: lang.tcl,v 1.112 2006/05/31 11:12:01 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.113 2006/06/17 14:12:48 drh Exp $}
 source common.tcl
 
 if {[llength $argv]>0} {
@@ -962,7 +962,7 @@ Syntax {expr} {
 CASE [<expr>] LP WHEN <expr> THEN <expr> RPPLUS [ELSE <expr>] END |
 CAST ( <expr> AS <type> )
 } {like-op} {
-LIKE | GLOB | REGEXP
+LIKE | GLOB | REGEXP | MATCH
 }
 
 puts {
@@ -990,6 +990,10 @@ OR</font>
 <blockquote><pre>
 <font color="#2c2cf0"><big>-    +    !    ~    NOT</big></font>
 </pre></blockquote>
+
+<p>The unary operator [Operator +] is a no-op.  It can be applied
+to strings, numbers, or blobs and it always gives as its result the
+value of the operand.</p>
 
 <p>Note that there are two variations of the equals and not equals
 operators.  Equals can be either}
@@ -1054,6 +1058,10 @@ the next unused parameter.</td>
 parameter with the name AAAA.  Named parameters are also numbered.
 The number assigned is the next unused number.  To avoid confusion,
 it is best to avoid mixing named and numbered parameters.</td>
+</tr>
+<tr>
+<td align="right" valign="top"><b>@</b><i>AAAA</i></td><td width="20"></td>
+<td>An "at" sign works exactly like a colon.</td>
 </tr>
 <tr>
 <td align="right" valign="top"><b>$</b><i>AAAA</i></td><td width="20"></td>
@@ -1127,8 +1135,15 @@ that function.</p>
 user function.  No regexp() user function is defined by default
 and so use of the REGEXP operator will normally result in an
 error message.  If a user-defined function named "regexp"
-is defined at run-time, that function will be called in order
+is added at run-time, that function will be called in order
 to implement the REGEXP operator.</p>
+
+<a name="match"></a>
+<p>The MATCH operator is a special syntax for the match()
+user function.  The default match() function implementation
+raises and exception and is not really useful for anything.
+But extensions can override the match() function with more
+helpful logic.</p>
 
 <p>A column name can be any of the names defined in the CREATE TABLE
 statement or one of the following special identifiers: "<b>ROWID</b>",
@@ -1250,6 +1265,16 @@ specified.</td>
 </tr>
 
 <tr>
+<td valign="top" align="right">load_extension(<i>X</i>)<br>
+load_extension(<i>X</i>,<i>Y</i>)</td>
+<td valign="top">Load SQLite extensions out of the shared library
+file named <i>X</i> using the entry point <i>Y</i>.  The result
+is a NULL.  If <i>Y</i> is omitted then the default entry point
+of <b>sqlite3_extension_init</b> is used.  This function raises
+an exception if the extension fails to load or initialize correctly.
+</tr>
+
+<tr>
 <td valign="top" align="right">lower(<i>X</i>)</td>
 <td valign="top">Return a copy of string <i>X</i> will all characters
 converted to lower case.  The C library <b>tolower()</b> routine is used
@@ -1294,8 +1319,8 @@ is also useful when writing triggers to implement undo/redo functionality.
 
 <tr>
 <td valign="top" align="right">random(*)</td>
-<td valign="top">Return a random integer between -2147483648 and
-+2147483647.</td>
+<td valign="top">Return a pseudo-random integer
+between -9223372036854775808 and +9223372036854775807.</td>
 </tr>
 
 <tr>

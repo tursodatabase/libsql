@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.130 2006/06/13 19:26:11 drh Exp $
+** $Id: func.c,v 1.131 2006/06/17 14:12:48 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -676,6 +676,26 @@ static void soundexFunc(sqlite3_context *context, int argc, sqlite3_value **argv
 }
 #endif
 
+#ifndef SQLITE_OMIT_LOAD_EXTENSION
+/*
+** A function that loads a shared-library extension then returns NULL.
+*/
+static void loadExt(sqlite3_context *context, int argc, sqlite3_value **argv){
+  const char *zFile = sqlite3_value_text(argv[0]);
+  const char *zProc = 0;
+  sqlite3 *db = sqlite3_user_data(context);
+  char *zErrMsg = 0;
+
+  if( argc==2 ){
+    zProc = sqlite3_value_text(argv[1]);
+  }
+  if( sqlite3_load_extension(db, zFile, zProc, &zErrMsg) ){
+    sqlite3_result_error(context, zErrMsg, -1);
+    sqlite3_free(zErrMsg);
+  }
+}
+#endif
+
 #ifdef SQLITE_TEST
 /*
 ** This function generates a string of random characters.  Used for
@@ -1020,6 +1040,10 @@ void sqlite3RegisterBuiltinFunctions(sqlite3 *db){
     { "match",              2, 0, SQLITE_UTF8,    0, matchStub },
 #ifdef SQLITE_SOUNDEX
     { "soundex",            1, 0, SQLITE_UTF8, 0, soundexFunc},
+#endif
+#ifndef SQLITE_OMIT_LOAD_EXTENSION
+    { "load_extension",     1, 1, SQLITE_UTF8,    0, loadExt },
+    { "load_extension",     2, 1, SQLITE_UTF8,    0, loadExt },
 #endif
 #ifdef SQLITE_TEST
     { "randstr",               2, 0, SQLITE_UTF8, 0, randStr    },
