@@ -11,21 +11,34 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is in-memory database backend.
 #
-# $Id: loadext.test,v 1.1 2006/06/14 10:38:03 danielk1977 Exp $
+# $Id: loadext.test,v 1.2 2006/06/17 13:21:33 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+# The name of the test extension varies by operating system.
+#
 if {$::tcl_platform(platform) eq "windows"} {
-  set testextension testloadext.dll
+  set testextension ./testloadext.dll
 } else {
-  set testextension libtestloadext.so
+  set testextension ./libtestloadext.so
 }
 
+# Make sure the test extension actually exists.  If it does not
+# exist, try to create it.  If unable to create it, then skip this
+# test file.
+#
 if {![file exists $testextension]} {
-  puts "Skipping loadext tests: Test extension not built..."
-  finish_test
-  return
+  set srcdir [file dir $testdir]/src
+  set testextsrc $srcdir/test_loadext.c
+  if {[catch {
+    exec gcc -shared $testextsrc -o $testextension
+  } msg]} {
+    puts "Skipping loadext tests: Test extension not built..."
+    puts $msg
+    finish_test
+    return
+  }
 }
 
 # Test that loading the extension produces the expected results - adding
@@ -37,7 +50,7 @@ do_test loadext-1.1 {
   }
 } {1 {no such function: half}}
 do_test loadext-1.2 {
-  sqlite3_load_extension db $testextension
+  sqlite3_load_extension db $testextension testloadext_init
   catchsql {
     SELECT half(1.0);
   }
@@ -52,7 +65,7 @@ do_test loadext-1.3 {
   } db2
 } {1 {no such function: half}}
 do_test loadext-1.4 {
-  sqlite3_load_extension db2 $testextension
+  sqlite3_load_extension db2 $testextension testloadext_init
   catchsql {
     SELECT half(1.0);
   } db2
@@ -75,25 +88,25 @@ sqlite3 db test.db
 #
 do_test loadext-2.1 {
   set rc [catch {
-    sqlite3_load_extension db "xx${testextension}"
+    sqlite3_load_extension db "${testextension}xx"
   } msg]
   list $rc $msg
 } [list 1 [subst -nocommands \
-  {unable to open shared library [xx${testextension}]}
+  {unable to open shared library [${testextension}xx]}
 ]]
 
 # Try to load an extension for which the file is not a shared object
 #
 do_test loadext-2.2 {
-  set fd [open "xx${testextension}" w]
+  set fd [open "${testextension}xx" w]
   puts $fd blah
   close $fd
   set rc [catch {
-    sqlite3_load_extension db "xx${testextension}"
+    sqlite3_load_extension db "${testextension}xx"
   } msg]
   list $rc $msg
 } [list 1 [subst -nocommands \
-  {unable to open shared library [xx${testextension}]}
+  {unable to open shared library [${testextension}xx]}
 ]]
 
 # Try to load an extension for which the file is present but the
@@ -118,4 +131,3 @@ do_test loadext-2.4 {
 } {1 {error during initialization: broken!}}
 
 finish_test
-

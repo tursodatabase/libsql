@@ -197,37 +197,20 @@ const sqlite3_api_routines sqlite3_api = {
 
 /*
 ** Attempt to load an SQLite extension library contained in the file
-** zFile.  The entry point is zProc.  zProc may be 0 in which case the
-** name of the entry point is derived from the filename.
+** zFile.  The entry point is zProc.  zProc may be 0 in which case a
+** default entry point name (sqlite3_extension_init) is used.  Use
+** of the default name is recommended.
 **
 ** Return SQLITE_OK on success and SQLITE_ERROR if something goes wrong.
 **
 ** If an error occurs and pzErrMsg is not 0, then fill *pzErrMsg with 
 ** error message text.  The calling function should free this memory
 ** by calling sqlite3_free().
-**
-** The entry point name is derived from the filename according to the
-** following steps:
-**
-**    * Convert the name to lower case
-**    * Remove the path prefix from the name
-**    * Remove the first "." and all following characters from the name
-**    * If the name begins with "lib" remove the first 3 characters
-**    * Remove all characters that are not US-ASCII alphanumerics
-**      or underscores
-**    * Remove any leading digits and underscores from the name
-**    * Append "_init" to the name
-**
-** So, for example, if the input filename is "/home/drh/libtest1.52.so"
-** then the entry point would be computed as "test1_init".
-**
-** The derived entry point name is limited to a reasonable number of
-** characters (currently 200).
 */
 int sqlite3_load_extension(
   sqlite3 *db,          /* Load the extension into this database connection */
   const char *zFile,    /* Name of the shared library containing extension */
-  const char *zProc,    /* Entry point.  Derived from zFile if 0 */
+  const char *zProc,    /* Entry point.  Use "sqlite3_extension_init" if 0 */
   char **pzErrMsg       /* Put error message here if not 0 */
 ){
 #ifdef SQLITE_LIBRARY_TYPE
@@ -237,30 +220,7 @@ int sqlite3_load_extension(
   SQLITE_LIBRARY_TYPE *aHandle;
 
   if( zProc==0 ){
-    int i, j, n;
-    char *z;
-    char zBuf[200];
-    n = strlen(zFile);
-    for(i=n-1; i>0 && zFile[i-1]!='/'; i--){}
-    for(j=i; zFile[j] && zFile[j]!='.'; j++){}
-    if( j-i > sizeof(zBuf)-10 ) j = i + sizeof(zBuf) - 10;
-    memcpy(zBuf, &zFile[i], j - i);
-    zBuf[j - i] = 0;
-    z = zBuf;
-    for(i=j=0; z[i]; i++){
-      int c = z[i];
-      if( (c & 0x80)!=0 || (!isalnum(c) && c!='_') ) continue;
-      z[j++] = tolower(c);
-    }
-    z[j] = 0;
-    if( strncmp(z, "lib", 3)==0 ){
-      z += 3;
-    }
-    while( z[0] && !isalpha(z[0]) ){
-      z++;
-    }
-    strcat(z, "_init");
-    zProc = z;
+    zProc = "sqlite3_extension_init";
   }
 
   handle = SQLITE_OPEN_LIBRARY(zFile);
