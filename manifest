@@ -1,5 +1,5 @@
-C Rework\sthe\sway\sUPDATE\sworks\sfor\svirtual\stables.\s(CVS\s3262)
-D 2006-06-16T21:13:22
+C Fixes\sfor\sUPDATE\sstatements\son\svirtual\stables.\s(CVS\s3263)
+D 2006-06-17T03:27:22
 F Makefile.in f839b470345d3cb4b0644068474623fe2464b5d3
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -93,7 +93,7 @@ F src/test_server.c a6460daed0b92ecbc2531b6dc73717470e7a648c
 F src/test_tclvar.c c52f67fbe06d32804af2ba9a2d7aadfc15f5910c
 F src/tokenize.c 6ebcafa6622839968dda4418a7b6945f277a128f
 F src/trigger.c 0fc40125820409a6274834a6e04ad804d96e2793
-F src/update.c 4fb474fab5b51fdcdee27f23a41c843c4b23ebe2
+F src/update.c 37fb7bb2c220c170ca7c0d0b42d1d6b33ecd0c40
 F src/utf.c ab81ac59084ff1c07d421eb1a0a84ec809603b44
 F src/util.c ca6ee72772c0f5dc04d2e0ab1973fd3b6a9bf79d
 F src/vacuum.c 5b37d0f436f8e1ffacd17934e44720b38d2247f9
@@ -104,7 +104,7 @@ F src/vdbeapi.c 6af0e7160af260052a7a4500464221a03dada75f
 F src/vdbeaux.c dc5cfd11a0529fcfd217a1807f7c9df513f1c276
 F src/vdbefifo.c 9efb94c8c3f4c979ebd0028219483f88e57584f5
 F src/vdbemem.c 5f0afe3b92bb2c037f8d5d697f7c151fa50783a3
-F src/vtab.c 5d69a87980eaac026f74c8712961ed2b306ffba2
+F src/vtab.c a0bcc2da7e27fbfa2635c2dc4b964a641f220c78
 F src/where.c d7c3cc011834882b2d58ebb3a6a1a569ead7ebd7
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -291,7 +291,7 @@ F test/vacuum.test 37f998b841cb335397c26d9bbc3457182af2565f
 F test/vacuum2.test 5aea8c88a65cb29f7d175296e7c819c6158d838c
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/view.test 16e2774fe35e47a07ac4471b7f0bcc948b1aa6d5
-F test/vtab1.test 028298f87b9a1a93536fc8f8a90c1e342109543f
+F test/vtab1.test 6a7defe56939acae6d4f725f2837468e4e212bff
 F test/vtab3.test b3ea5dfdc36ba23ba5136928b6c307c5125ababc
 F test/where.test ee7c9a6659b07e1ee61177f6e7ff71565ee2c9df
 F test/where2.test a16476a5913e75cf65b38f2daa6157a6b7791394
@@ -368,7 +368,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 6125140228e09cad2029a48e92aa0123d3daecfb
-R c6423d78b30f09b39a0d99eff61f3284
-U drh
-Z 58b933b2b7f2511ff044743b3247c932
+P 2119e7bf5577350e4e1236ea729568085620a826
+R 62905f1f1c0b62dcb77e124d65c8ac57
+U danielk1977
+Z e81e11fc0bdc2a8704dbb42dcaace95a

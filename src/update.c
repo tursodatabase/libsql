@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.127 2006/06/16 21:13:22 drh Exp $
+** $Id: update.c,v 1.128 2006/06/17 03:27:22 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -571,7 +571,7 @@ static void updateVirtualTable(
   */
   pEList = sqlite3ExprListAppend(0, sqlite3CreateIdExpr("_rowid_"), 0);
   if( pRowid ){
-    pEList = sqlite3ExprListAppend(pEList, pRowid, 0);
+    pEList = sqlite3ExprListAppend(pEList, sqlite3ExprDup(pRowid), 0);
   }
   for(i=0; i<pTab->nCol; i++){
     if( i==pTab->iPKey ){
@@ -606,7 +606,7 @@ static void updateVirtualTable(
   if( pRowid ){
     sqlite3VdbeAddOp(v, OP_Column, ephemTab, 1);
   }else{
-    sqlite3VdbeAddOp(v, OP_Dup, 1, 0);
+    sqlite3VdbeAddOp(v, OP_Dup, 0, 0);
   }
   for(i=0; i<pTab->nCol; i++){
     sqlite3VdbeAddOp(v, OP_Column, ephemTab, i+1+(pRowid!=0));

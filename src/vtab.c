@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to help implement virtual tables.
 **
-** $Id: vtab.c,v 1.15 2006/06/16 16:08:55 danielk1977 Exp $
+** $Id: vtab.c,v 1.16 2006/06/17 03:27:23 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
@@ -522,7 +522,7 @@ int sqlite3VtabBegin(sqlite3 *db, sqlite3_vtab *pVtab){
 
     /* Grow the sqlite3.aVTrans array if required */
     if( (db->nVTrans%ARRAY_INCR)==0 ){
-      sqlite3_vtab *aVTrans;
+      sqlite3_vtab **aVTrans;
       int nBytes = sizeof(sqlite3_vtab *) * (db->nVTrans + ARRAY_INCR);
       aVTrans = sqliteRealloc((void *)db->aVTrans, nBytes);
       if( !aVTrans ){
