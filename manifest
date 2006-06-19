@@ -1,5 +1,5 @@
-C Respect\sdefault\scollation\ssequences\sassigned\sto\svirtual\stable\scolumns.\s(CVS\s3272)
-D 2006-06-19T05:33:45
+C Add\stests\sto\sensure\striggers\scannot\sbe\screated\son\svirtual\stables.\s(CVS\s3273)
+D 2006-06-19T06:32:23
 F Makefile.in f839b470345d3cb4b0644068474623fe2464b5d3
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -295,7 +295,7 @@ F test/vtab1.test 97d68ca03f18ed14ffec6420363a13b486fd66bb
 F test/vtab2.test b8daa5d9989c3096a294bce0f614ff6f37db0f99
 F test/vtab3.test b3ea5dfdc36ba23ba5136928b6c307c5125ababc
 F test/vtab4.test 4b4293341443839ef6dc02f8d9e614702a6c67ff
-F test/vtab5.test 367019fbbaf60991273277c8e132e4f2f2930edc
+F test/vtab5.test adec2187f7e7d15ef04f5f94bfa52cbf2aa14fbb
 F test/where.test ee7c9a6659b07e1ee61177f6e7ff71565ee2c9df
 F test/where2.test a16476a5913e75cf65b38f2daa6157a6b7791394
 F test/where3.test 3b5ad2c58069e12be2bd86bc5e211a82810521aa
@@ -371,7 +371,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 3d10e8f36113a189aa19ecd99007cd0a926b2f8a
-R 3686b7d5151dd1e0ec15c63f3d0caed7
+P d9b205acac34ba9703bc35dfb101aedd95cb5a16
+R b587e837f4d09c3b4bad373a725b9eeb
 U danielk1977
-Z 349996879b693696c81b0ab00849dfc2
+Z ba3c570300d0562a9cfe3fa18b037faa

@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.
 #
-# $Id: vtab5.test,v 1.3 2006/06/19 05:33:45 danielk1977 Exp $
+# $Id: vtab5.test,v 1.4 2006/06/19 06:32:23 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -99,6 +99,30 @@ do_test vtab5.2.3 {
     SELECT str||'' FROM echo_strings ORDER BY 1;
   }
 } {ABc2 Abc3 aBc4 abc1}
+
+# Test that it is impossible to create a triggger on a virtual table.
+#
+do_test vtab5.3.1 {
+  catchsql {
+    CREATE TRIGGER trig INSTEAD OF INSERT ON echo_strings BEGIN
+      SELECT 1, 2, 3;
+    END;
+  }
+} {1 {cannot create triggers on virtual tables}}
+do_test vtab5.3.2 {
+  catchsql {
+    CREATE TRIGGER trig AFTER INSERT ON echo_strings BEGIN
+      SELECT 1, 2, 3;
+    END;
+  }
+} {1 {cannot create triggers on virtual tables}}
+do_test vtab5.3.2 {
+  catchsql {
+    CREATE TRIGGER trig BEFORE INSERT ON echo_strings BEGIN
+      SELECT 1, 2, 3;
+    END;
+  }
+} {1 {cannot create triggers on virtual tables}}
 
 finish_test
 
