@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test8.c,v 1.25 2006/06/17 09:39:56 danielk1977 Exp $
+** $Id: test8.c,v 1.26 2006/06/19 12:02:59 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -427,6 +427,28 @@ static int echoBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
   int nArg = 0;
   const char *zSep = "WHERE";
   echo_vtab *pVtab = (echo_vtab *)tab;
+  sqlite3_stmt *pStmt = 0;
+
+  int nRow;
+  int useIdx = 0;
+  int rc = SQLITE_OK;
+
+  /* Determine the number of rows in the table and store this value in local
+  ** variable nRow. The 'estimated-cost' of the scan will be the number of
+  ** rows in the table for a linear scan, or the log (base 2) of the 
+  ** number of rows if the proposed scan uses an index.  
+  */
+  zQuery = sqlite3_mprintf("SELECT count(*) FROM %Q", pVtab->zTableName);
+  rc = sqlite3_prepare(pVtab->db, zQuery, -1, &pStmt, 0);
+  if( rc!=SQLITE_OK ){
+    return rc;
+  }
+  sqlite3_step(pStmt);
+  nRow = sqlite3_column_int(pStmt, 0);
+  rc = sqlite3_finalize(pStmt);
+  if( rc!=SQLITE_OK ){
+    return rc;
+  }
 
   zQuery = sqlite3_mprintf("SELECT rowid, * FROM %Q", pVtab->zTableName);
   for(ii=0; ii<pIdxInfo->nConstraint; ii++){
@@ -440,6 +462,7 @@ static int echoBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
     if( pVtab->aIndex[iCol] ){
       char *zCol = pVtab->aCol[iCol];
       char *zOp = 0;
+      useIdx = 1;
       if( iCol<0 ){
         zCol = "rowid";
       }
@@ -490,8 +513,17 @@ static int echoBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
   pIdxInfo->idxNum = hashString(zQuery);
   pIdxInfo->idxStr = zQuery;
   pIdxInfo->needToFreeIdxStr = 1;
-  pIdxInfo->estimatedCost = 1.0;
-  return SQLITE_OK;
+  if( useIdx ){
+    /* Approximation of log2(nRow). */
+    for( ii=0; ii<(sizeof(int)*8); ii++ ){
+      if( nRow & (1<<ii) ){
+        pIdxInfo->estimatedCost = (double)ii;
+      }
+    }
+  } else {
+    pIdxInfo->estimatedCost = (double)nRow;
+  }
+  return rc;
 }
 
 static void string_concat(char **pzStr, char *zAppend, int doFree){

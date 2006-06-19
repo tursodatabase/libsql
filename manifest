@@ -1,5 +1,5 @@
-C Add\stests\sto\sensure\striggers\scannot\sbe\screated\son\svirtual\stables.\s(CVS\s3273)
-D 2006-06-19T06:32:23
+C Avoid\sreturning\sMISUSE\swhen\ssqlite\sis\scalled\srecursively\sby\san\sxBestIndex\scallback.\s(CVS\s3274)
+D 2006-06-19T12:02:59
 F Makefile.in f839b470345d3cb4b0644068474623fe2464b5d3
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -84,7 +84,7 @@ F src/test4.c 8b784cd82de158a2317cb4ac4bc86f91ad315e25
 F src/test5.c 7162f8526affb771c4ed256826eee7bb9eca265f
 F src/test6.c 60a02961ceb7b3edc25f5dc5c1ac2556622a76de
 F src/test7.c 03fa8d787f6aebc6d1f72504d52f33013ad2c8e3
-F src/test8.c 9641e41a7d35588fc0a834439b6c404700e7c148
+F src/test8.c ac1def5e4f411a3ac24a58177cd771290054e4ce
 F src/test_async.c e3deaedd4d86a56391b81808fde9e44fbd92f1d3
 F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
 F src/test_md5.c 6c42bc0a3c0b54be34623ff77a0eec32b2fa96e3
@@ -105,7 +105,7 @@ F src/vdbeaux.c dc5cfd11a0529fcfd217a1807f7c9df513f1c276
 F src/vdbefifo.c 9efb94c8c3f4c979ebd0028219483f88e57584f5
 F src/vdbemem.c 5f0afe3b92bb2c037f8d5d697f7c151fa50783a3
 F src/vtab.c 8fbf4a8f718229d2158826ed6e440f2d32a07c80
-F src/where.c 0f1fcc2c7446b6dd947bf0069487b3ff282043ee
+F src/where.c 485d368d1f6c71713d6190cd730f9efde1385e6e
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/all.test 5df90d015ca63fcef2a4b62c24f7316b66c4bfd4
@@ -371,7 +371,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P d9b205acac34ba9703bc35dfb101aedd95cb5a16
-R b587e837f4d09c3b4bad373a725b9eeb
+P 9470e27962d2fe9c0d1921d9aab7d8f0047ac1fd
+R e911807803f92d410300bd3d3bd48573
 U danielk1977
-Z ba3c570300d0562a9cfe3fa18b037faa
+Z 123bfb4cc39e6acb4da9c11956198a0d
