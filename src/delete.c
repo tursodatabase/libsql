@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** in order to generate code for DELETE FROM statements.
 **
-** $Id: delete.c,v 1.126 2006/06/16 16:08:55 danielk1977 Exp $
+** $Id: delete.c,v 1.127 2006/06/19 03:05:10 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -155,7 +155,7 @@ void sqlite3DeleteFrom(
 
   /* If pTab is really a view, make sure it has been initialized.
   */
-  if( isView && sqlite3ViewGetColumnNames(pParse, pTab) ){
+  if( sqlite3ViewGetColumnNames(pParse, pTab) ){
     goto delete_from_cleanup;
   }
 

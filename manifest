@@ -1,5 +1,5 @@
-C Add\sthe\sload_extension()\sSQL\sfunction.\s(CVS\s3269)
-D 2006-06-17T14:12:48
+C Add\stests\sto\sensure\san\sINSERT/UPDATE/DELETE\simmediately\safter\svirtual\stable\sconstruction\sdoes\snot\sfail.\s(CVS\s3270)
+D 2006-06-19T03:05:10
 F Makefile.in f839b470345d3cb4b0644068474623fe2464b5d3
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -40,13 +40,13 @@ F src/build.c 3eb63f61249fd0fcd7075456b522a1ceb5f912bd
 F src/callback.c fd9bb39f7ff6b52bad8365617abc61c720640429
 F src/complete.c 7d1a44be8f37de125fcafd3d3a018690b3799675
 F src/date.c cd2bd5d1ebc6fa12d6312f69789ae5b0a2766f2e
-F src/delete.c e6a324650fb9f6afe5757ec5c7d8dad62d9496b8
+F src/delete.c 804384761144fe1a5035b99f4bd7d706976831bd
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
 F src/expr.c 78b521337d628b1fd9d87b12dbbe771247aab585
 F src/func.c a8a52723878b38ad275513b81260c29980332504
 F src/hash.c 449f3d6620193aa557f5d86cbc5cc6b87702b185
 F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
-F src/insert.c 5c1fddd7e4d05805e02e12bdced2a3841d2bd8dc
+F src/insert.c 63f01d3f4e0ba7ed171934a24aece2191824faec
 F src/legacy.c fa15d505dd4e45044177ee4d1c6aeaf8c836d390
 F src/loadext.c 3a730b22dfb6ba2c261848c72fb96a5c3195defd
 F src/main.c 7101314a365120465bf5e308caaf518b7776430c
@@ -93,7 +93,7 @@ F src/test_server.c a6460daed0b92ecbc2531b6dc73717470e7a648c
 F src/test_tclvar.c c52f67fbe06d32804af2ba9a2d7aadfc15f5910c
 F src/tokenize.c 6ebcafa6622839968dda4418a7b6945f277a128f
 F src/trigger.c 0fc40125820409a6274834a6e04ad804d96e2793
-F src/update.c 23a71ccef6b26e8fddfc2e5b3d36f3e8d0fa868d
+F src/update.c 686b13db8b28a129a2407aaffc8b7588d1104e0b
 F src/utf.c ab81ac59084ff1c07d421eb1a0a84ec809603b44
 F src/util.c ca6ee72772c0f5dc04d2e0ab1973fd3b6a9bf79d
 F src/vacuum.c 5b37d0f436f8e1ffacd17934e44720b38d2247f9
@@ -291,10 +291,11 @@ F test/vacuum.test 37f998b841cb335397c26d9bbc3457182af2565f
 F test/vacuum2.test 5aea8c88a65cb29f7d175296e7c819c6158d838c
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/view.test 16e2774fe35e47a07ac4471b7f0bcc948b1aa6d5
-F test/vtab1.test cb90ff6852a0dcb72965939df5da2bb1b3fcbcf9
-F test/vtab2.test a0968c4e5e1b4197bd9a5a348bd4022196711a65
+F test/vtab1.test 97d68ca03f18ed14ffec6420363a13b486fd66bb
+F test/vtab2.test b8daa5d9989c3096a294bce0f614ff6f37db0f99
 F test/vtab3.test b3ea5dfdc36ba23ba5136928b6c307c5125ababc
 F test/vtab4.test 4b4293341443839ef6dc02f8d9e614702a6c67ff
+F test/vtab5.test a76f85c2762b96b96ce7c82e496102533049d80b
 F test/where.test ee7c9a6659b07e1ee61177f6e7ff71565ee2c9df
 F test/where2.test a16476a5913e75cf65b38f2daa6157a6b7791394
 F test/where3.test 3b5ad2c58069e12be2bd86bc5e211a82810521aa
@@ -370,7 +371,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 059b1f61406ca60fdbd3ec59c5b15fadc6552564
-R 6e75aa9555d6b6ac99ebbabeb152a126
-U drh
-Z 6bcb5d58c602d9ee2f0ac3771c819d7b
+P e08e2ddafe909ae6073ec56dfa3fdca23e36bf2e
+R 4cf9e2b8592ece2ea2925c06bcdec672
+U danielk1977
+Z e0e66e994bedc3899b9799edc6b24f36

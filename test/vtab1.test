@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is creating and dropping virtual tables.
 #
-# $Id: vtab1.test,v 1.21 2006/06/17 11:30:33 danielk1977 Exp $
+# $Id: vtab1.test,v 1.22 2006/06/19 03:05:10 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -32,6 +32,7 @@ ifcapable !vtab {
 # vtab1-5.*: Test queries that include joins. This brings the
 #            sqlite3_index_info.estimatedCost variable into play.
 # vtab1-6.*: Test UPDATE/INSERT/DELETE on vtables.
+# vtab1-7.*: Test sqlite3_last_insert_rowid().
 #
 # This file uses the "echo" module (see src/test8.c). Refer to comments
 # in that file for the special behaviour of the Tcl $echo_module variable.
@@ -581,5 +582,6 @@ do_test vtab1.7-13 {
     SELECT rowid, a, b, c FROM real_abc
   }
 } {}
+
 
 finish_test

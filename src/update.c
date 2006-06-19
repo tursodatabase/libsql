@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.130 2006/06/17 09:39:56 danielk1977 Exp $
+** $Id: update.c,v 1.131 2006/06/19 03:05:10 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -141,10 +141,8 @@ void sqlite3Update(
   if( sqlite3IsReadOnly(pParse, pTab, triggers_exist) ){
     goto update_cleanup;
   }
-  if( isView ){
-    if( sqlite3ViewGetColumnNames(pParse, pTab) ){
-      goto update_cleanup;
-    }
+  if( sqlite3ViewGetColumnNames(pParse, pTab) ){
+    goto update_cleanup;
   }
   aXRef = sqliteMallocRaw( sizeof(int) * pTab->nCol );
   if( aXRef==0 ) goto update_cleanup;

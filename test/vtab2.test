@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.
 #
-# $Id: vtab2.test,v 1.1 2006/06/17 11:30:33 danielk1977 Exp $
+# $Id: vtab2.test,v 1.2 2006/06/19 03:05:10 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -36,6 +36,5 @@ do_test vtab2-1.1 {
   main schema 6 dflt_value {} 0 {} 0 \
   main schema 7 pk         {} 0 {} 0 \
 ]
-
 finish_test
 
