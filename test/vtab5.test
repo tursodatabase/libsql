@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.
 #
-# $Id: vtab5.test,v 1.1 2006/06/19 03:05:10 danielk1977 Exp $
+# $Id: vtab5.test,v 1.2 2006/06/19 04:49:35 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -36,9 +36,10 @@ do_test vtab5-1.1 {
 
 do_test vtab5.1.2 {
   execsql {
-    SELECT * FROM treal;
+    SELECT * FROM techo;
   }
 } {a b c}
+
 do_test vtab5.1.3 {
   db close
   sqlite3 db test.db
