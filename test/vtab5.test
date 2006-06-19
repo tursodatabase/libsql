@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.
 #
-# $Id: vtab5.test,v 1.2 2006/06/19 04:49:35 danielk1977 Exp $
+# $Id: vtab5.test,v 1.3 2006/06/19 05:33:45 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -24,7 +24,7 @@ ifcapable !vtab {
 # statement can be executed immediately after a CREATE or schema reload. The
 # point here is testing that the parser always calls xConnect() before the
 # schema of a virtual table is used.
-
+#
 register_echo_module [sqlite3_connection_pointer db]
 do_test vtab5-1.1 {
   execsql {
@@ -67,6 +67,38 @@ do_test vtab5.1.5 {
     SELECT * FROM techo;
   }
 } {10 b c}
+do_test vtab5.1.X {
+  execsql {
+    DROP TABLE techo;
+    DROP TABLE treal;
+  }
+} {}
+
+# The following tests - vtab5-2.* - ensure that collation sequences
+# assigned to virtual table columns via the "CREATE TABLE" statement 
+# passed to sqlite3_declare_vtab() are used correctly.
+#
+do_test vtab5.2.1 {
+  execsql {
+    CREATE TABLE strings(str COLLATE NOCASE);
+    INSERT INTO strings VALUES('abc1');
+    INSERT INTO strings VALUES('Abc3');
+    INSERT INTO strings VALUES('ABc2');
+    INSERT INTO strings VALUES('aBc4');
+    SELECT str FROM strings ORDER BY 1;
+  }
+} {abc1 ABc2 Abc3 aBc4}
+do_test vtab5.2.2 {
+  execsql {
+    CREATE VIRTUAL TABLE echo_strings USING echo(strings);
+    SELECT str FROM echo_strings ORDER BY 1;
+  }
+} {abc1 ABc2 Abc3 aBc4}
+do_test vtab5.2.3 {
+  execsql {
+    SELECT str||'' FROM echo_strings ORDER BY 1;
+  }
+} {ABc2 Abc3 aBc4 abc1}
 
 finish_test
 

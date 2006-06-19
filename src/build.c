@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.403 2006/06/16 16:08:54 danielk1977 Exp $
+** $Id: build.c,v 1.404 2006/06/19 05:33:45 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1179,7 +1179,7 @@ void sqlite3AddCollateType(Parse *pParse, const char *zType, int nType){
   Table *p;
   int i;
 
-  if( (p = pParse->pNewTable)==0 || IN_DECLARE_VTAB ) return;
+  if( (p = pParse->pNewTable)==0 ) return;
   i = p->nCol-1;
 
   if( sqlite3LocateCollSeq(pParse, zType, nType) ){
