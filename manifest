@@ -1,5 +1,5 @@
-C Avoid\sreturning\sMISUSE\swhen\ssqlite\sis\scalled\srecursively\sby\san\sxBestIndex\scallback.\s(CVS\s3274)
-D 2006-06-19T12:02:59
+C Update\sthe\snews\scolumn\son\sthe\shomepage.\s(CVS\s3275)
+D 2006-06-20T00:22:38
 F Makefile.in f839b470345d3cb4b0644068474623fe2464b5d3
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -347,7 +347,7 @@ F www/fileformat.tcl 900c95b9633abc3dcfc384d9ddd8eb4876793059
 F www/formatchng.tcl 4972e680f9331ea46f47001e349baba807f5b60a
 F www/fullscanb.gif f7c94cb227f060511f8909e10f570157263e9a25
 F www/index-ex1-x-b.gif f9b1d85c3fa2435cf38b15970c7e3aa1edae23a3
-F www/index.tcl 1d4a2d4011bbc85e060b36094c071e3c47cd786b
+F www/index.tcl 38fac8344e6f514725a57cf32946463581459464
 F www/indirect1b1.gif adfca361d2df59e34f9c5cac52a670c2bfc303a1
 F www/lang.tcl 432ee67f7528dd6e6313f149d5df33cad2dfb359
 F www/lockingv3.tcl f59b19d6c8920a931f096699d6faaf61c05db55f
@@ -359,7 +359,7 @@ F www/opcode.tcl 5bd68059416b223515a680d410a9f7cb6736485f
 F www/optimizer.tcl d6812a10269bd0d7c488987aac0ad5036cace9dc
 F www/optimizing.tcl f0b2538988d1bbad16cbfe63ec6e8f48c9eb04e5
 F www/optoverview.tcl 815df406a38c9f69b27d37e8f7ede004c6d9f19e
-F www/pragma.tcl 0e6316315d1e418bfc8c31b949a0243aa0f2e65d
+F www/pragma.tcl c3d103838ae1c66729f8286e276735618af2a88a
 F www/quickstart.tcl 8708a4ca83fbf55c66af1782992626f20c3df095
 F www/shared.gif 265bae80c5b311c5a86e47662821076ffaf5c6ea
 F www/sharedcache.tcl 3ebec81110e606af6fd65a3c4c19562cb173b29c
@@ -371,7 +371,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 9470e27962d2fe9c0d1921d9aab7d8f0047ac1fd
-R e911807803f92d410300bd3d3bd48573
-U danielk1977
-Z 123bfb4cc39e6acb4da9c11956198a0d
+P 4339e1bf664c4287aabe0993a9c5a2b783019cb3
+R f78c14eb0ac084fc4dad89e26b5927cd
+U drh
+Z a24c85fba3541a1495ae9b4faac1f418

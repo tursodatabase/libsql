@@ -66,6 +66,16 @@ proc newsitem {date title text} {
   puts "<hr width=\"50%\">"
 }
 
+newsitem {2006-Jun-19} {New Book About SQLite} {
+  <a href="http://www.apress.com/book/bookDisplay.html?bID=10130">
+  <i>The Definitive Guide to SQLite</i></a>, a new book by
+  <a href="http://www.mikesclutter.com">Mike Owens</a>.
+  is now available from <a href="http://www.apress.com">Apress</a>.
+  The books covers the latest SQLite internals as well as
+  the native C interface and bindings for PHP, Python,
+  Pearl, Ruby, Tcl, and Java.  Recommended.
+}
+
 newsitem {2006-Jun-6} {Version 3.3.6} {
   Changes include improved tolerance for windows virus scanners
   and faster :memory: databases.  There are also fixes for several
@@ -137,4 +147,4 @@ puts {
 <p align="right"><a href="oldnews.html">Old news...</a></p>
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.138 2006/06/06 12:38:51 drh Exp $}
+footer {$Id: index.tcl,v 1.139 2006/06/20 00:22:38 drh Exp $}

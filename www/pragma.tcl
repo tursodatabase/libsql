@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the pragma.html file.
 #
-set rcsid {$Id: pragma.tcl,v 1.17 2006/02/11 01:25:52 drh Exp $}
+set rcsid {$Id: pragma.tcl,v 1.18 2006/06/20 00:22:38 drh Exp $}
 source common.tcl
 header {Pragma statements supported by SQLite}
 
@@ -220,6 +220,21 @@ puts {
     writing (2006-02-10) only Mac OS X supports F_FULLFSYNC.
     </p>
 </li>
+
+<a name="pragma_legacy_file_format"></a>
+<li><p><b>PRAGMA legacy_file_format;
+       <br>PRAGMA legacy_file_format = <i>ON | OFF</i></b></p>
+    <p>This pragma sets or queries the value of the legacy_file_format
+    flag.  When this flag is on, new SQLite databases are created in
+    a file format that is readable and writable by all versions of
+    SQLite going back to 3.0.0.  When the flag is off, new databases
+    are created using the latest file format which might to be
+    readable or writable by older versions of SQLite.</p>
+
+    <p>This flag only effects newly created databases.  It has no
+    effect on databases that already exists.</p>
+</li>
+
 
 <a name="pragma_page_size"></a>
 <li><p><b>PRAGMA page_size;
