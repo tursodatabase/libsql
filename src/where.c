@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.220 2006/06/19 12:02:59 danielk1977 Exp $
+** $Id: where.c,v 1.221 2006/06/20 13:07:28 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -1118,7 +1118,7 @@ static double bestVirtualIndex(
   pIdxInfo->idxNum = 0;
   pIdxInfo->needToFreeIdxStr = 0;
   pIdxInfo->orderByConsumed = 0;
-  pIdxInfo->estimatedCost = SQLITE_BIG_DBL;
+  pIdxInfo->estimatedCost = SQLITE_BIG_DBL / 2.0;
   nOrderBy = pIdxInfo->nOrderBy;
   if( pIdxInfo->nOrderBy && !orderByUsable ){
     *(int*)&pIdxInfo->nOrderBy = 0;
@@ -1786,6 +1786,8 @@ WhereInfo *sqlite3WhereBegin(
     int bestJ = 0;              /* The value of j */
     Bitmask m;                  /* Bitmask value for j or bestJ */
     int once = 0;               /* True when first table is seen */
+    sqlite3_index_info *pBestIndex = 0;
+    sqlite3_index_info *pIndex = 0;
 
     lowestCost = SQLITE_BIG_DBL;
     for(j=iFrom, pTabItem=&pTabList->a[j]; j<pTabList->nSrc; j++, pTabItem++){
@@ -1804,9 +1806,9 @@ WhereInfo *sqlite3WhereBegin(
       if( IsVirtual(pTabItem->pTab) ){
         cost = bestVirtualIndex(pParse, &wc, pTabItem, notReady,
                                 ppOrderBy ? *ppOrderBy : 0, i==0,
-                                &pLevel->pIdxInfo);
+                                &pIndex);
         flags = WHERE_VIRTUALTABLE;
-        if( pLevel->pIdxInfo && pLevel->pIdxInfo->orderByConsumed ){
+        if( pIndex && pIndex->orderByConsumed ){
           flags = WHERE_VIRTUALTABLE | WHERE_ORDERBY;
         }
         pIdx = 0;
@@ -1825,6 +1827,14 @@ WhereInfo *sqlite3WhereBegin(
         bestFlags = flags;
         bestNEq = nEq;
         bestJ = j;
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+        sqliteFree(pBestIndex);
+        pBestIndex = pIndex;
+        pIndex = 0;
+      }else{
+        sqliteFree(pIndex);
+        pIndex = 0;
+#endif
       }
       if( doNotReorder ) break;
     }
@@ -1839,6 +1849,7 @@ WhereInfo *sqlite3WhereBegin(
     pLevel->nEq = bestNEq;
     pLevel->aInLoop = 0;
     pLevel->nIn = 0;
+    pLevel->pIdxInfo = pBestIndex;
     if( pBest ){
       pLevel->iIdxCur = pParse->nTab++;
     }else{
@@ -1899,7 +1910,8 @@ WhereInfo *sqlite3WhereBegin(
     if( pTab->isEphem || pTab->pSelect ) continue;
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     if( pLevel->pIdxInfo ){
-      sqlite3VdbeOp3(v, OP_VOpen, 0, 0, (const char*)pTab->pVtab, P3_VTAB);
+      int iCur = pTabItem->iCursor;
+      sqlite3VdbeOp3(v, OP_VOpen, iCur, 0, (const char*)pTab->pVtab, P3_VTAB);
     }else
 #endif
     if( (pLevel->flags & WHERE_IDX_ONLY)==0 ){
@@ -1974,6 +1986,7 @@ WhereInfo *sqlite3WhereBegin(
       /* Case 0:  The table is a virtual-table.  Use the VFilter and VNext
       **          to access the data.
       */
+      int ii;
       sqlite3_index_info *pIdxInfo = pLevel->pIdxInfo;
       int nConstraint = pIdxInfo->nConstraint;
       struct sqlite3_index_constraint_usage *aUsage =
@@ -1981,10 +1994,10 @@ WhereInfo *sqlite3WhereBegin(
       const struct sqlite3_index_constraint *aConstraint =
                                                   pIdxInfo->aConstraint;
 
-      for(i=1; i<=nConstraint; i++){
+      for(ii=1; ii<=nConstraint; ii++){
         int j;
         for(j=0; j<nConstraint; j++){
-          if( aUsage[j].argvIndex==i ){
+          if( aUsage[j].argvIndex==ii ){
             int k = aConstraint[j].iTermOffset;
             sqlite3ExprCode(pParse, wc.a[k].pExpr->pRight);
             break;
@@ -1992,14 +2005,14 @@ WhereInfo *sqlite3WhereBegin(
         }
         if( j==nConstraint ) break;
       }
-      sqlite3VdbeAddOp(v, OP_Integer, i-1, 0);
+      sqlite3VdbeAddOp(v, OP_Integer, ii-1, 0);
       sqlite3VdbeAddOp(v, OP_Integer, pIdxInfo->idxNum, 0);
       sqlite3VdbeOp3(v, OP_VFilter, iCur, brk, pIdxInfo->idxStr,
                       pIdxInfo->needToFreeIdxStr ? P3_MPRINTF : P3_STATIC);
       pIdxInfo->needToFreeIdxStr = 0;
-      for(i=0; i<pIdxInfo->nConstraint; i++){
-        if( pIdxInfo->aConstraintUsage[i].omit ){
-          disableTerm(pLevel, &wc.a[i]);
+      for(ii=0; ii<pIdxInfo->nConstraint; ii++){
+        if( pIdxInfo->aConstraintUsage[ii].omit ){
+          disableTerm(pLevel, &wc.a[ii]);
         }
       }
       pLevel->op = OP_VNext;

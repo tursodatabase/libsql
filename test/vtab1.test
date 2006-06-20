@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is creating and dropping virtual tables.
 #
-# $Id: vtab1.test,v 1.23 2006/06/20 11:01:09 danielk1977 Exp $
+# $Id: vtab1.test,v 1.24 2006/06/20 13:07:28 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -204,7 +204,6 @@ do_test vtab1-2.5 {
   }
   set echo_module
 } {xDestroy}
-finish_test
 
 do_test vtab1-2.6 {
   execsql { 
@@ -412,6 +411,99 @@ do_test vtab1-4.4 {
 execsql {
   DROP TABLE t1;
   DROP TABLE treal;
+}
+
+#----------------------------------------------------------------------
+# Test cases vtab1-5 test SELECT queries that include joins on virtual 
+# tables.
+
+proc filter {log} {
+  set out [list]
+  for {set ii 0} {$ii < [llength $log]} {incr ii} {
+    if {[lindex $log $ii] eq "xFilter"} {
+      lappend out xFilter
+      lappend out [lindex $log [expr $ii+1]]
+    }
+  }
+  return $out
+}
+
+do_test vtab1-5-1 {
+  execsql { 
+    CREATE TABLE t1(a, b, c);
+    CREATE TABLE t2(d, e, f);
+    INSERT INTO t1 VALUES(1, 'red', 'green');
+    INSERT INTO t1 VALUES(2, 'blue', 'black');
+    INSERT INTO t2 VALUES(1, 'spades', 'clubs');
+    INSERT INTO t2 VALUES(2, 'hearts', 'diamonds');
+    CREATE VIRTUAL TABLE et1 USING echo(t1);
+    CREATE VIRTUAL TABLE et2 USING echo(t2);
+  }
+} {}
+
+do_test vtab1-5-2 {
+  set echo_module ""
+  execsql {
+    SELECT * FROM et1, et2;
+  }
+} [list \
+  1 red green 1 spades clubs     \
+  1 red green 2 hearts diamonds  \
+  2 blue black 1 spades clubs    \
+  2 blue black 2 hearts diamonds \
+]
+do_test vtab1-5-3 {
+  filter $echo_module
+} [list \
+  xFilter {SELECT rowid, * FROM 't1'} \
+  xFilter {SELECT rowid, * FROM 't2'} \
+  xFilter {SELECT rowid, * FROM 't2'} \
+]
+do_test vtab1-5-4 {
+  set echo_module ""
+  execsql {
+    SELECT * FROM et1, et2 WHERE et2.d = 2;
+  }
+} [list \
+  1 red green 2 hearts diamonds  \
+  2 blue black 2 hearts diamonds \
+]
+do_test vtab1-5-5 {
+  filter $echo_module
+} [list \
+  xFilter {SELECT rowid, * FROM 't1'} \
+  xFilter {SELECT rowid, * FROM 't2'} \
+  xFilter {SELECT rowid, * FROM 't2'} \
+]
+do_test vtab1-5-6 {
+  execsql {
+    CREATE INDEX i1 ON t2(d);
+  }
+
+  db close
+  sqlite3 db test.db
+  register_echo_module [sqlite3_connection_pointer db]
+
+  set echo_module ""
+  execsql {
+    SELECT * FROM et1, et2 WHERE et2.d = 2;
+  }
+} [list \
+  1 red green 2 hearts diamonds  \
+  2 blue black 2 hearts diamonds \
+]
+do_test vtab1-5-7 {
+  filter $echo_module
+} [list \
+  xFilter {SELECT rowid, * FROM 't2' WHERE d = ?} \
+  xFilter {SELECT rowid, * FROM 't1'}             \
+]
+
+execsql {
+  DROP TABLE t1;
+  DROP TABLE t2;
+  DROP TABLE et1;
+  DROP TABLE et2;
 }
 
 #----------------------------------------------------------------------
