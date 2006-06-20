@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test8.c,v 1.26 2006/06/19 12:02:59 danielk1977 Exp $
+** $Id: test8.c,v 1.27 2006/06/20 11:01:08 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -322,6 +322,9 @@ static int echoNext(sqlite3_vtab_cursor *cur){
 static int echoColumn(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int i){
   int iCol = i + 1;
   sqlite3_stmt *pStmt = ((echo_cursor *)cur)->pStmt;
+  if( ((echo_cursor *)cur)->errcode ){
+    return ((echo_cursor *)cur)->errcode;
+  }
 
   assert( sqlite3_data_count(pStmt)>iCol );
   sqlite3_result_value(ctx, sqlite3_column_value(pStmt, iCol));
@@ -359,6 +362,7 @@ static int echoFilter(
   int argc, sqlite3_value **argv
 ){
   int rc;
+  int ret;
   int i;
 
   echo_cursor *pCur = (echo_cursor *)pVtabCursor;
@@ -369,7 +373,7 @@ static int echoFilter(
   sqlite3_finalize(pCur->pStmt);
   pCur->pStmt = 0;
   rc = sqlite3_prepare(db, idxStr, -1, &pCur->pStmt, 0);
-  for(i=0; i<argc; i++){
+  for(i=0; rc==SQLITE_OK && i<argc; i++){
     switch( sqlite3_value_type(argv[i]) ){
       case SQLITE_INTEGER: {
         sqlite3_bind_int64(pCur->pStmt, i+1, sqlite3_value_int64(argv[i]));
@@ -396,7 +400,10 @@ static int echoFilter(
     }
   }
   if( rc==SQLITE_OK ){
-    rc = echoNext(pVtabCursor);
+    ret = echoNext(pVtabCursor);
+  }else{
+    ret = 0;
+    pCur->errcode = rc;
   }
 
   appendToEchoModule(pVtab->interp, "xFilter");
@@ -405,7 +412,7 @@ static int echoFilter(
     appendToEchoModule(pVtab->interp, sqlite3_value_text(argv[i]));
   }
 
-  return rc;
+  return ret;
 }
 
 /*
@@ -604,7 +611,7 @@ int echoUpdate(
     char *zInsert = 0;
     char *zValues = 0;
   
-    zInsert = sqlite3_mprintf("INSERT OR REPLACE INTO %Q (", pVtab->zTableName);
+    zInsert = sqlite3_mprintf("INSERT INTO %Q (", pVtab->zTableName);
     if( sqlite3_value_type(apData[1])==SQLITE_INTEGER ){
       bindArgOne = 1;
       zValues = sqlite3_mprintf("?");

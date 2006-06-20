@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and schema changes to attached databases.
 #
-# $Id: attach3.test,v 1.16 2006/05/25 11:52:38 drh Exp $
+# $Id: attach3.test,v 1.17 2006/06/20 11:01:09 danielk1977 Exp $
 #
 
 
@@ -253,6 +253,12 @@ proc db_list {} {
   return $y
 }
 
+ifcapable schema_pragmas&&tempdb {
+
+ifcapable !trigger {
+  execsql {create temp table dummy(dummy)}
+}
+
 # Ticket #1825
 #
 do_test attach3-12.1 {
@@ -332,5 +338,7 @@ do_test attach3-12.14 {
   }
   db_list
 } {main temp}
+
+} ;# ifcapable pragma
 
 finish_test

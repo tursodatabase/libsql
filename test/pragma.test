@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.42 2006/03/19 13:00:25 drh Exp $
+# $Id: pragma.test,v 1.43 2006/06/20 11:01:09 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -803,6 +803,8 @@ ifcapable schema_pragmas&&tempdb {
   db2 close
 }
 
+ifcapable bloblit {
+
 do_test pragma-13.1 {
   execsql {
     DROP TABLE IF EXISTS t4;
@@ -824,6 +826,8 @@ do_test pragma-13.1 {
     PRAGMA sql_trace=off;
   }
 } {}
+
+} ;# ifcapable bloblit 
 
 # Reset the sqlite3_temp_directory variable for the next run of tests:
 sqlite3 dbX :memory:

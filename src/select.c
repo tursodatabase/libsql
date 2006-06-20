@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.315 2006/06/16 21:13:22 drh Exp $
+** $Id: select.c,v 1.316 2006/06/20 11:01:08 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -841,7 +841,6 @@ static const char *columnType(
       }
 
       assert( pTab );
-#ifndef SQLITE_OMIT_SUBQUERY
       if( pS ){
         /* The "table" is actually a sub-select or a view in the FROM clause
         ** of the SELECT statement. Return the declaration type and origin
@@ -859,9 +858,7 @@ static const char *columnType(
           sNC.pParse = pNC->pParse;
           zType = columnType(&sNC, p, &zOriginDb, &zOriginTab, &zOriginCol); 
         }
-      }else
-#endif
-      if( pTab->pSchema ){
+      }else if( pTab->pSchema ){
         /* A real table */
         assert( !pS );
         if( iCol<0 ) iCol = pTab->iPKey;

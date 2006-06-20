@@ -1,5 +1,5 @@
 
-set rcsid {$Id: omittest.tcl,v 1.1 2006/01/26 13:11:37 danielk1977 Exp $}
+set rcsid {$Id: omittest.tcl,v 1.2 2006/06/20 11:01:09 danielk1977 Exp $}
 
 # Documentation for this script. This may be output to stderr
 # if the script is invoked incorrectly.
@@ -115,18 +115,13 @@ proc process_options {argv} {
 
 # Main routine.
 #
+
 proc main {argv} {
   # List of SQLITE_OMIT_XXX symbols supported by SQLite.
   set ::SYMBOLS [list                  \
-    SQLITE_OMIT_COMPLETE               \
+    SQLITE_OMIT_VIEW                   \
+    SQLITE_OMIT_VIRTUALTABLE           \
     SQLITE_OMIT_ALTERTABLE             \
-    SQLITE_OMIT_AUTOVACUUM             \
-    SQLITE_OMIT_AUTHORIZATION          \
-    SQLITE_OMIT_AUTOINCREMENT          \
-    SQLITE_OMIT_BLOB_LITERAL           \
-    SQLITE_OMIT_COMPOUND_SELECT        \
-    SQLITE_OMIT_CONFLICT_CLAUSE        \
-    SQLITE_OMIT_DATETIME_FUNCS         \
     SQLITE_OMIT_EXPLAIN                \
     SQLITE_OMIT_FLOATING_POINT         \
     SQLITE_OMIT_FOREIGN_KEY            \
@@ -138,12 +133,19 @@ proc main {argv} {
     SQLITE_OMIT_REINDEX                \
     SQLITE_OMIT_SCHEMA_PRAGMAS         \
     SQLITE_OMIT_SCHEMA_VERSION_PRAGMAS \
+    SQLITE_OMIT_DATETIME_FUNCS         \
     SQLITE_OMIT_SUBQUERY               \
     SQLITE_OMIT_TCL_VARIABLE           \
     SQLITE_OMIT_TRIGGER                \
     SQLITE_OMIT_UTF16                  \
     SQLITE_OMIT_VACUUM                 \
-    SQLITE_OMIT_VIEW                   \
+    SQLITE_OMIT_COMPLETE               \
+    SQLITE_OMIT_AUTOVACUUM             \
+    SQLITE_OMIT_AUTHORIZATION          \
+    SQLITE_OMIT_AUTOINCREMENT          \
+    SQLITE_OMIT_BLOB_LITERAL           \
+    SQLITE_OMIT_COMPOUND_SELECT        \
+    SQLITE_OMIT_CONFLICT_CLAUSE        \
   ]
 
   # Process any command line options.

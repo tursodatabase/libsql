@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the SELECT statement.
 #
-# $Id: autovacuum.test,v 1.22 2006/03/24 03:36:26 drh Exp $
+# $Id: autovacuum.test,v 1.23 2006/06/20 11:01:09 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -525,6 +525,8 @@ do_test autovacuum-4.4 {
   }
 } {}
 
+ifcapable integrityck {
+
 # Ticket #1727
 do_test autovacuum-5.1 {
   db close
@@ -538,6 +540,8 @@ do_test autovacuum-5.1 {
   }
 } ok
 
+}
+
 # Ticket #1728.
 #
 # In autovacuum mode, when tables or indices are deleted, the rootpage
@@ -550,6 +554,8 @@ do_test autovacuum-5.1 {
 # the following test are carefully designed make it occur and thus to
 # verify that this very obscure bug has been resolved.
 # 
+ifcapable integrityck&&memorydb {
+
 do_test autovacuum-6.1 {
   db close
   sqlite3 db :memory:
@@ -570,5 +576,7 @@ do_test autovacuum-6.1 {
     PRAGMA integrity_check;
   }
 } {ok ok ok}
+
+}
 
 finish_test

@@ -11,12 +11,12 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is the authorisation callback and virtual tables.
 #
-# $Id: vtab3.test,v 1.1 2006/06/16 08:01:04 danielk1977 Exp $
+# $Id: vtab3.test,v 1.2 2006/06/20 11:01:09 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-ifcapable !vtab {
+ifcapable !vtab||!auth {
   finish_test
   return
 }

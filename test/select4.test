@@ -12,7 +12,7 @@
 # focus of this file is testing UNION, INTERSECT and EXCEPT operators
 # in SELECT statements.
 #
-# $Id: select4.test,v 1.19 2006/03/26 01:21:23 drh Exp $
+# $Id: select4.test,v 1.20 2006/06/20 11:01:09 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -513,6 +513,8 @@ do_test select4-8.2 {
 # Make sure the names of columns are takenf rom the right-most subquery
 # right in a compound query.  Ticket #1721
 #
+ifcapable compound {
+
 do_test select4-9.1 {
   execsql2 {
     SELECT x, y FROM t2 UNION SELECT a, b FROM t3 ORDER BY x LIMIT 1
@@ -543,6 +545,8 @@ do_test select4-9.5 {
     ORDER BY x LIMIT 1
   }
 } {x 0 y 1}
+
+ifcapable subquery {
 do_test select4-9.6 {
   execsql2 {
     SELECT * FROM (
@@ -565,6 +569,8 @@ do_test select4-9.7 {
     ) ORDER BY x LIMIT 1;
   }
 } {x 0 y 1}
+} ;# ifcapable subquery
+
 do_test select4-9.8 {
   execsql2 {
     SELECT 0 AS x, 1 AS y
@@ -573,12 +579,14 @@ do_test select4-9.8 {
     ORDER BY x LIMIT 1;
   }
 } {x 0 y 1}
-do_test select4-9.9 {
+do_test select4-9.9.1 {
   execsql2 {
     SELECT 1 AS a, 2 AS b UNION ALL SELECT 3 AS b, 4 AS a
   }
 } {a 1 b 2 a 3 b 4}
-do_test select4-9.9 {
+
+ifcapable subquery {
+do_test select4-9.9.2 {
   execsql2 {
     SELECT * FROM (SELECT 1 AS a, 2 AS b UNION ALL SELECT 3 AS b, 4 AS a)
      WHERE b=3
@@ -602,5 +610,8 @@ do_test select4-9.12 {
      WHERE b>0
   }
 } {a 1 b 2 a 3 b 4}
+} ;# ifcapable subquery
+
+} ;# ifcapable compound
 
 finish_test

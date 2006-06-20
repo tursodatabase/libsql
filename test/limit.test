@@ -12,7 +12,7 @@
 # focus of this file is testing the LIMIT ... OFFSET ... clause
 #  of SELECT statements.
 #
-# $Id: limit.test,v 1.29 2006/04/26 17:39:34 drh Exp $
+# $Id: limit.test,v 1.30 2006/06/20 11:01:09 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -437,10 +437,12 @@ do_test limit-10.5 {
   list $rc $msg
 } {1 {datatype mismatch}}
 
+ifcapable subquery {
 do_test limit-11.1 {
   db eval {
      SELECT x FROM (SELECT x FROM t1 ORDER BY x LIMIT 0) ORDER BY x
   }
 } {}
+} ;# ifcapable subquery
 
 finish_test

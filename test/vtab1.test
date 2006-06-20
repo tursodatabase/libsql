@@ -11,12 +11,12 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is creating and dropping virtual tables.
 #
-# $Id: vtab1.test,v 1.22 2006/06/19 03:05:10 danielk1977 Exp $
+# $Id: vtab1.test,v 1.23 2006/06/20 11:01:09 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-ifcapable !vtab {
+ifcapable !vtab||!schema_pragmas {
   finish_test
   return
 }
@@ -199,11 +199,13 @@ do_test vtab1.2.8 {
 # to be invoked.
 do_test vtab1-2.5 {
   set echo_module ""
-  execsql { 
+  execsql {
     DROP TABLE t1;
   }
   set echo_module
 } {xDestroy}
+finish_test
+
 do_test vtab1-2.6 {
   execsql { 
     PRAGMA table_info(t1); 
@@ -214,7 +216,6 @@ do_test vtab1-2.7 {
     SELECT sql FROM sqlite_master;
   }
 } [list {CREATE TABLE template(a, b, c)}]
-
 # Clean up other test artifacts:
 do_test vtab1-2.8 {
   execsql { 

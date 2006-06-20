@@ -35,6 +35,45 @@
 # define sqlite3_table_column_metadata  0
 #endif
 
+#ifdef SQLITE_OMIT_AUTHORIZATION
+# define sqlite3_set_authorizer     0
+#endif
+
+#ifdef SQLITE_OMIT_UTF16
+# define sqlite3_bind_text16        0
+# define sqlite3_collation_needed16 0
+# define sqlite3_column_decltype16  0
+# define sqlite3_column_name16      0
+# define sqlite3_column_text16      0
+# define sqlite3_complete16         0
+# define sqlite3_create_collation16 0
+# define sqlite3_create_function16  0
+# define sqlite3_errmsg16           0
+# define sqlite3_open16             0
+# define sqlite3_prepare16          0
+# define sqlite3_result_error16     0
+# define sqlite3_result_text16      0
+# define sqlite3_result_text16be    0
+# define sqlite3_result_text16le    0
+# define sqlite3_value_text16       0
+# define sqlite3_value_text16be     0
+# define sqlite3_value_text16le     0
+#endif
+
+#ifdef SQLITE_OMIT_COMPLETE
+# define sqlite3_complete 0
+# define sqlite3_complete16 0
+#endif
+
+#ifdef SQLITE_OMIT_PROGRESS_CALLBACK
+# define sqlite3_progress_handler 0
+#endif
+
+#ifdef SQLITE_OMIT_VIRTUALTABLE
+# define sqlite3_create_module 0
+# define sqlite3_declare_vtab 0
+#endif
+
 /*
 ** The following structure contains pointers to all SQLite API routines.
 ** A pointer to this structure is passed into extensions when they are
