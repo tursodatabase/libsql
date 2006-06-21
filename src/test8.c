@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test8.c,v 1.29 2006/06/21 13:21:51 danielk1977 Exp $
+** $Id: test8.c,v 1.30 2006/06/21 16:02:43 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -194,12 +194,12 @@ static int echoDeclareVtab(
 ){
   int rc = SQLITE_OK;
 
-  if( argc==3 ){
+  if( argc==4 ){
     sqlite3_stmt *pStmt = 0;
     sqlite3_prepare(db, 
         "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = ?",
         -1, &pStmt, 0);
-    sqlite3_bind_text(pStmt, 1, argv[2], -1, 0);
+    sqlite3_bind_text(pStmt, 1, argv[3], -1, 0);
     if( sqlite3_step(pStmt)==SQLITE_ROW ){
       const char *zCreateTable = sqlite3_column_text(pStmt, 0);
 #ifndef SQLITE_OMIT_VIRTUALTABLE
@@ -210,10 +210,10 @@ static int echoDeclareVtab(
     }
     sqlite3_finalize(pStmt);
     if( rc==SQLITE_OK ){
-      rc = getIndexArray(db, argv[2], &pVtab->aIndex);
+      rc = getIndexArray(db, argv[3], &pVtab->aIndex);
     }
     if( rc==SQLITE_OK ){
-      rc = getColumnNames(db, argv[2], &pVtab->aCol, &pVtab->nCol);
+      rc = getColumnNames(db, argv[3], &pVtab->aCol, &pVtab->nCol);
     }
   }
 
@@ -245,7 +245,7 @@ static int echoConstructor(
   pVtab = sqliteMalloc( sizeof(*pVtab) );
   pVtab->interp = (Tcl_Interp *)pAux;
   pVtab->db = db;
-  pVtab->zTableName = sqlite3MPrintf("%s", argv[2]);
+  pVtab->zTableName = sqlite3MPrintf("%s", argv[3]);
   for(i=0; i<argc; i++){
     appendToEchoModule(pVtab->interp, argv[i]);
   }

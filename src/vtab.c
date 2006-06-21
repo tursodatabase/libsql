@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to help implement virtual tables.
 **
-** $Id: vtab.c,v 1.19 2006/06/21 13:21:51 danielk1977 Exp $
+** $Id: vtab.c,v 1.20 2006/06/21 16:02:43 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
@@ -92,18 +92,20 @@ void sqlite3VtabBeginParse(
   int iDb;              /* The database the table is being created in */
   Table *pTable;        /* The new virtual table */
   Token *pDummy;        /* Dummy arg for sqlite3TwoPartName() */
-  char *zTab;
 
   sqlite3StartTable(pParse, pName1, pName2, 0, 0, 1, 0);
   pTable = pParse->pNewTable;
   if( pTable==0 || pParse->nErr ) return;
   assert( 0==pTable->pIndex );
 
+  iDb = sqlite3SchemaToIndex(pParse->db, pTable->pSchema);
+  assert( iDb>=0 );
+
   pTable->isVirtual = 1;
   pTable->nModuleArg = 0;
   addModuleArgument(pTable, sqlite3NameFromToken(pModuleName));
-  zTab = sqlite3NameFromToken((pName2&&pName2->z)?pName2:pName1);
-  addModuleArgument(pTable, zTab);
+  addModuleArgument(pTable, sqlite3StrDup(pParse->db->aDb[iDb].zName));
+  addModuleArgument(pTable, sqlite3StrDup(pTable->zName));
   pParse->sNameToken.n = pModuleName->z + pModuleName->n - pName1->z;
 
 #ifndef SQLITE_OMIT_AUTHORIZATION
@@ -112,8 +114,6 @@ void sqlite3VtabBeginParse(
   ** sqlite_master table, has already been made by sqlite3StartTable().
   ** The second call, to obtain permission to create the table, is made now.
   */
-  iDb = sqlite3TwoPartName(pParse, pName1, pName2, &pDummy);
-  assert( iDb>=0 );
   if( sqlite3AuthCheck(pParse, SQLITE_CREATE_VTABLE, pTable->zName, 
           pTable->azModuleArg[0], pParse->db->aDb[iDb].zName) 
   ){
