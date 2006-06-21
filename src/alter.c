@@ -12,7 +12,7 @@
 ** This file contains C code routines that used to generate VDBE code
 ** that implements the ALTER TABLE command.
 **
-** $Id: alter.c,v 1.20 2006/02/09 02:56:03 drh Exp $
+** $Id: alter.c,v 1.21 2006/06/21 12:36:25 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -272,6 +272,12 @@ void sqlite3AlterRenameTable(
 
   pTab = sqlite3LocateTable(pParse, pSrc->a[0].zName, pSrc->a[0].zDatabase);
   if( !pTab ) goto exit_rename_table;
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+  if( IsVirtual(pTab) ){
+    sqlite3ErrorMsg(pParse, "virtual tables may not be altered");
+    goto exit_rename_table;
+  }
+#endif
   iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
   zDb = db->aDb[iDb].zName;
 
@@ -511,6 +517,13 @@ void sqlite3AlterBeginAddColumn(Parse *pParse, SrcList *pSrc){
   if( sqlite3MallocFailed() ) goto exit_begin_add_column;
   pTab = sqlite3LocateTable(pParse, pSrc->a[0].zName, pSrc->a[0].zDatabase);
   if( !pTab ) goto exit_begin_add_column;
+
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+  if( IsVirtual(pTab) ){
+    sqlite3ErrorMsg(pParse, "virtual tables may not be altered");
+    goto exit_begin_add_column;
+  }
+#endif
 
   /* Make sure this is not an attempt to ALTER a view. */
   if( pTab->pSelect ){

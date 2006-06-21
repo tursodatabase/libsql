@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.406 2006/06/21 07:34:11 danielk1977 Exp $
+** $Id: build.c,v 1.407 2006/06/21 12:36:25 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2301,6 +2301,12 @@ void sqlite3CreateIndex(
 #ifndef SQLITE_OMIT_VIEW
   if( pTab->pSelect ){
     sqlite3ErrorMsg(pParse, "views may not be indexed");
+    goto exit_create_index;
+  }
+#endif
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+  if( IsVirtual(pTab) ){
+    sqlite3ErrorMsg(pParse, "virtual tables may not be indexed");
     goto exit_create_index;
   }
 #endif

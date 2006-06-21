@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.
 #
-# $Id: vtab5.test,v 1.5 2006/06/20 11:01:09 danielk1977 Exp $
+# $Id: vtab5.test,v 1.6 2006/06/21 12:36:26 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -33,13 +33,11 @@ do_test vtab5-1.1 {
     CREATE VIRTUAL TABLE techo USING echo(treal);
   }
 } {}
-
 do_test vtab5.1.2 {
   execsql {
     SELECT * FROM techo;
   }
 } {a b c}
-
 do_test vtab5.1.3 {
   db close
   sqlite3 db test.db
@@ -125,6 +123,30 @@ ifcapable trigger {
     }
   } {1 {cannot create triggers on virtual tables}}
 }
+
+# Test that it is impossible to create an index on a virtual table.
+#
+do_test vtab5.4.1 {
+  catchsql {
+    CREATE INDEX echo_strings_i ON echo_strings(str);
+  }
+} {1 {virtual tables may not be indexed}}
+
+# Test that it is impossible to add a column to a virtual table.
+#
+do_test vtab5.4.2 {
+  catchsql {
+    ALTER TABLE echo_strings ADD COLUMN col2;
+  }
+} {1 {virtual tables may not be altered}}
+
+# Test that it is impossible to add a column to a virtual table.
+#
+do_test vtab5.4.3 {
+  catchsql {
+    ALTER TABLE echo_strings RENAME TO echo_strings2;
+  }
+} {1 {virtual tables may not be altered}}
 
 finish_test
 
