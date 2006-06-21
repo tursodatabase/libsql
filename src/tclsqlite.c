@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.160 2006/06/16 08:01:04 danielk1977 Exp $
+** $Id: tclsqlite.c,v 1.161 2006/06/21 19:30:34 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -1618,14 +1618,14 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   */
   case DB_LAST_INSERT_ROWID: {
     Tcl_Obj *pResult;
-    int rowid;
+    Tcl_WideInt rowid;
     if( objc!=2 ){
       Tcl_WrongNumArgs(interp, 2, objv, "");
       return TCL_ERROR;
     }
     rowid = sqlite3_last_insert_rowid(pDb->db);
     pResult = Tcl_GetObjResult(interp);
-    Tcl_SetIntObj(pResult, rowid);
+    Tcl_SetWideIntObj(pResult, rowid);
     break;
   }
 

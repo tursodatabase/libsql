@@ -355,6 +355,11 @@ do_test lastinsert-8.1 {
   }
 } 5000000000
 
+do_test lastinsert-9.1 {
+  db eval {INSERT INTO t2 VALUES(123456789012345,0)}
+  db last_insert_rowid
+} {123456789012345}
+
 
 } ;# ifcapable (view && trigger)
 
