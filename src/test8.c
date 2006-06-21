@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test8.c,v 1.27 2006/06/20 11:01:08 danielk1977 Exp $
+** $Id: test8.c,v 1.28 2006/06/21 07:02:34 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -325,9 +325,12 @@ static int echoColumn(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int i){
   if( ((echo_cursor *)cur)->errcode ){
     return ((echo_cursor *)cur)->errcode;
   }
-
-  assert( sqlite3_data_count(pStmt)>iCol );
-  sqlite3_result_value(ctx, sqlite3_column_value(pStmt, iCol));
+  if( !pStmt ){
+    sqlite3_result_null(ctx);
+  }else{
+    assert( sqlite3_data_count(pStmt)>iCol );
+    sqlite3_result_value(ctx, sqlite3_column_value(pStmt, iCol));
+  }
   return SQLITE_OK;
 }
 
@@ -373,6 +376,7 @@ static int echoFilter(
   sqlite3_finalize(pCur->pStmt);
   pCur->pStmt = 0;
   rc = sqlite3_prepare(db, idxStr, -1, &pCur->pStmt, 0);
+  assert( pCur->pStmt || rc!=SQLITE_OK );
   for(i=0; rc==SQLITE_OK && i<argc; i++){
     switch( sqlite3_value_type(argv[i]) ){
       case SQLITE_INTEGER: {
