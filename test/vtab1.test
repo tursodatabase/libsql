@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is creating and dropping virtual tables.
 #
-# $Id: vtab1.test,v 1.26 2006/06/21 07:34:11 danielk1977 Exp $
+# $Id: vtab1.test,v 1.27 2006/06/21 13:21:51 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -239,7 +239,7 @@ do_test vtab1.2.7 {
 ]
 do_test vtab1.2.8 {
   set echo_module
-} {xConnect echo template}
+} {xConnect echo t1 template}
 
 # Drop table t1. This should cause the xDestroy (but not xDisconnect) method 
 # to be invoked.
@@ -281,7 +281,7 @@ do_test vtab1-3.1 {
     CREATE VIRTUAL TABLE t1 USING echo(treal);
   }
   set echo_module
-} [list xCreate echo treal   \
+} [list xCreate echo t1 treal   \
         xSync   echo(treal)  \
         xCommit echo(treal)  \
 ]
