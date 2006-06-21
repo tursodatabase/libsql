@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\svirtual\stables\sand\sjoins.\s(CVS\s3278)
-D 2006-06-21T07:02:33
+C Test\scases\sfor\saccessing\svirtual\stables\swhen\sthe\scorresponding\smodule\sis\sundefined.\s(CVS\s3279)
+D 2006-06-21T07:34:11
 F Makefile.in f839b470345d3cb4b0644068474623fe2464b5d3
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -36,7 +36,7 @@ F src/attach.c 27a31d3b89d7ebb5b358847607b1ec795384123c
 F src/auth.c 902f4722661c796b97f007d9606bd7529c02597f
 F src/btree.c ed343b3dbcbc7da9ac481ef2b98c4239fe6d9629
 F src/btree.h 40055cfc09defd1146bc5b922399c035f969e56d
-F src/build.c ef7debea37252a5bdc3dd88f45d3016a9fb27d0a
+F src/build.c 467944d9b0dc1483a50e5ee0f0771e0e53264c43
 F src/callback.c fd9bb39f7ff6b52bad8365617abc61c720640429
 F src/complete.c 7d1a44be8f37de125fcafd3d3a018690b3799675
 F src/date.c cd2bd5d1ebc6fa12d6312f69789ae5b0a2766f2e
@@ -291,7 +291,7 @@ F test/vacuum.test 37f998b841cb335397c26d9bbc3457182af2565f
 F test/vacuum2.test 5aea8c88a65cb29f7d175296e7c819c6158d838c
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/view.test 16e2774fe35e47a07ac4471b7f0bcc948b1aa6d5
-F test/vtab1.test ab6cf2670f769efc0ac8a7d8c272f910da296dbc
+F test/vtab1.test a4a613abd0dc3d89e6c3850c8fdaf21b3235900b
 F test/vtab2.test e57f9865368df26ef5eb8bc630962d82086f174b
 F test/vtab3.test f38d6d7d19f08bffdadce4d5b8cba078f8118587
 F test/vtab4.test 4b4293341443839ef6dc02f8d9e614702a6c67ff
@@ -372,7 +372,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 3e19a7d8eabcd2fa71ced3f76c5f9bc1f3900b81
-R dd2e65c82fc19b7cf06d61c3f62a9682
+P 643e63e5883eec109a91a44dae62b58650646575
+R 5df237ae1d0f32a0a5347808bfb7d55a
 U danielk1977
-Z 403c1a151f48024ee7e51bb28ac7757a
+Z 155064465a7da1b6e1f61624d89bfddf

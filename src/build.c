@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.405 2006/06/20 11:01:07 danielk1977 Exp $
+** $Id: build.c,v 1.406 2006/06/21 07:34:11 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1905,6 +1905,9 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
       }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     }else if( IsVirtual(pTab) ){
+      if( sqlite3ViewGetColumnNames(pParse, pTab) ){
+        goto exit_drop_table;
+      }
       code = SQLITE_DROP_VTABLE;
       zArg2 = pTab->pMod->zName;
 #endif
