@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test_schema.c,v 1.5 2006/06/20 11:01:08 danielk1977 Exp $
+** $Id: test_schema.c,v 1.6 2006/06/22 09:53:50 danielk1977 Exp $
 */
 
 /* The code in this file defines a sqlite3 virtual-table module that
@@ -161,6 +161,11 @@ static int finalize(sqlite3_stmt **ppStmt){
   return rc;
 }
 
+static int schemaEof(sqlite3_vtab_cursor *cur){
+  schema_cursor *pCur = (schema_cursor *)cur;
+  return (pCur->pDbList ? 0 : 1);
+}
+
 /*
 ** Advance the cursor to the next row.
 */
@@ -171,15 +176,15 @@ static int schemaNext(sqlite3_vtab_cursor *cur){
   char *zSql = 0;
 
   while( !pCur->pColumnList || SQLITE_ROW!=sqlite3_step(pCur->pColumnList) ){
-    if( SQLITE_OK!=(rc = finalize(&pCur->pColumnList)) ) goto fail;
+    if( SQLITE_OK!=(rc = finalize(&pCur->pColumnList)) ) goto next_exit;
 
     while( !pCur->pTableList || SQLITE_ROW!=sqlite3_step(pCur->pTableList) ){
-      if( SQLITE_OK!=(rc = finalize(&pCur->pTableList)) ) goto fail;
+      if( SQLITE_OK!=(rc = finalize(&pCur->pTableList)) ) goto next_exit;
 
       assert(pCur->pDbList);
       while( SQLITE_ROW!=sqlite3_step(pCur->pDbList) ){
-        if( SQLITE_OK!=(rc = finalize(&pCur->pDbList)) ) goto fail;
-        return 0;
+        rc = finalize(&pCur->pDbList);
+        goto next_exit;
       }
 
       /* Set zSql to the SQL to pull the list of tables from the 
@@ -200,12 +205,12 @@ static int schemaNext(sqlite3_vtab_cursor *cur){
       }
       if( !zSql ){
         rc = SQLITE_NOMEM;
-        goto fail;
+        goto next_exit;
       }
 
       rc = sqlite3_prepare(pVtab->db, zSql, -1, &pCur->pTableList, 0);
       sqlite3_free(zSql);
-      if( rc!=SQLITE_OK ) goto fail;
+      if( rc!=SQLITE_OK ) goto next_exit;
     }
 
     /* Set zSql to the SQL to the table_info pragma for the table currently
@@ -219,17 +224,17 @@ static int schemaNext(sqlite3_vtab_cursor *cur){
 
     if( !zSql ){
       rc = SQLITE_NOMEM;
-      goto fail;
+      goto next_exit;
     }
     rc = sqlite3_prepare(pVtab->db, zSql, -1, &pCur->pColumnList, 0);
     sqlite3_free(zSql);
-    if( rc!=SQLITE_OK ) goto fail;
+    if( rc!=SQLITE_OK ) goto next_exit;
   }
   pCur->rowid++;
 
-fail:
+next_exit:
   /* TODO: Handle rc */
-  return 1;
+  return rc;
 }
 
 /*
@@ -274,6 +279,7 @@ static sqlite3_module schemaModule = {
   schemaClose,                 /* xClose - close a cursor */
   schemaFilter,                /* xFilter - configure scan constraints */
   schemaNext,                  /* xNext - advance a cursor */
+  schemaEof,                   /* xEof */
   schemaColumn,                /* xColumn - read data */
   schemaRowid,                 /* xRowid - read data */
 };

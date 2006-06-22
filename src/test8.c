@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test8.c,v 1.30 2006/06/21 16:02:43 danielk1977 Exp $
+** $Id: test8.c,v 1.31 2006/06/22 09:53:50 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -49,6 +49,7 @@ struct echo_vtab {
   sqlite3 *db;
 
   char *zTableName;       /* Name of the real table */
+  char *zLogName;         /* Name of the log table */
   int nCol;               /* Number of columns in the real table */
   int *aIndex;            /* Array of size nCol. True if column has an index */
   char **aCol;            /* Array of size nCol. Column names */
@@ -194,7 +195,7 @@ static int echoDeclareVtab(
 ){
   int rc = SQLITE_OK;
 
-  if( argc==4 ){
+  if( argc>=4 ){
     sqlite3_stmt *pStmt = 0;
     sqlite3_prepare(db, 
         "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = ?",
@@ -266,8 +267,20 @@ static int echoCreate(
   int argc, char **argv,
   sqlite3_vtab **ppVtab
 ){
+  int rc = SQLITE_OK;
   appendToEchoModule((Tcl_Interp *)(pAux), "xCreate");
-  return echoConstructor(db, pAux, argc, argv, ppVtab);
+  rc = echoConstructor(db, pAux, argc, argv, ppVtab);
+#if 0
+  if( rc==SQLITE_OK && argc==5 ){
+    char *zSql;
+    echo_vtab *pVtab = *(echo_vtab **)ppVtab;
+    pVtab->zLogName = sqlite3MPrintf("%s", argv[4]);
+    zSql = sqlite3MPrintf("CREATE TABLE %Q(logmsg)", pVtab->zLogName);
+    rc = sqlite3_exec(db, zSql, 0, 0, 0);
+    sqliteFree(zSql);
+  }
+#endif
+  return rc;
 }
 static int echoConnect(
   sqlite3 *db,
@@ -284,8 +297,21 @@ static int echoDisconnect(sqlite3_vtab *pVtab){
   return echoDestructor(pVtab);
 }
 static int echoDestroy(sqlite3_vtab *pVtab){
+  int rc = SQLITE_OK;
+  echo_vtab *p = (echo_vtab *)pVtab;
   appendToEchoModule(((echo_vtab *)pVtab)->interp, "xDestroy");
-  return echoDestructor(pVtab);
+#if 0
+  if( p && p->zLogName ){
+    char *zSql;
+    zSql = sqlite3MPrintf("DROP TABLE %Q", p->zLogName);
+    rc = sqlite3_exec(p->db, zSql, 0, 0, 0);
+    sqliteFree(zSql);
+  }
+#endif
+  if( rc==SQLITE_OK ){
+    rc = echoDestructor(pVtab);
+  }
+  return rc;
 }
 
 static int echoOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
@@ -302,6 +328,14 @@ static int echoClose(sqlite3_vtab_cursor *cur){
   return SQLITE_OK;
 }
 
+/*
+** Return non-zero if the cursor does not currently point to a valid record
+** (i.e if the scan has finished), or zero otherwise.
+*/
+static int echoEof(sqlite3_vtab_cursor *cur){
+  return (((echo_cursor *)cur)->pStmt ? 0 : 1);
+}
+
 static int echoNext(sqlite3_vtab_cursor *cur){
   int rc;
   echo_cursor *pCur = (echo_cursor *)cur;
@@ -309,11 +343,10 @@ static int echoNext(sqlite3_vtab_cursor *cur){
   rc = sqlite3_step(pCur->pStmt);
 
   if( rc==SQLITE_ROW ){
-    rc = 1;
-  } else {
-    pCur->errcode = sqlite3_finalize(pCur->pStmt);
+    rc = SQLITE_OK;
+  }else{
+    rc = sqlite3_finalize(pCur->pStmt);
     pCur->pStmt = 0;
-    rc = 0;
   }
 
   return rc;
@@ -406,6 +439,7 @@ static int echoFilter(
   if( rc==SQLITE_OK ){
     ret = echoNext(pVtabCursor);
   }else{
+    assert( !pCur->pStmt );
     ret = 0;
     pCur->errcode = rc;
   }
@@ -723,6 +757,7 @@ static sqlite3_module echoModule = {
   echoClose,                 /* xClose - close a cursor */
   echoFilter,                /* xFilter - configure scan constraints */
   echoNext,                  /* xNext - advance a cursor */
+  echoEof,                   /* xEof */
   echoColumn,                /* xColumn - read data */
   echoRowid,                 /* xRowid - read data */
   echoUpdate,                /* xUpdate - write data */
