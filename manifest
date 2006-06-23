@@ -1,5 +1,5 @@
-C Allow\sxDestroy\smethods\sto\sexecute\s"DROP\sTABLE"\sstatements.\s(CVS\s3287)
-D 2006-06-23T14:32:08
+C Modify\sthe\stest\scases\sin\stkt1444.test\sthat\swere\sfailing.\sI\sam\sconvinced\sthat\sthe\stest\scases\swere\sincorrect.\s(CVS\s3288)
+D 2006-06-23T14:43:30
 F Makefile.in f839b470345d3cb4b0644068474623fe2464b5d3
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -259,7 +259,7 @@ F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
 F test/threadtest2.c 97a830d53c24c42290501fdfba4a6e5bdd34748b
 F test/tkt1435.test f8c52c41de6e5ca02f1845f3a46e18e25cadac00
 F test/tkt1443.test bacc311da5c96a227bf8c167e77a30c99f8e8368
-F test/tkt1444.test b8de3146ad0be7e39e95aa9d53c66740eaa7f192
+F test/tkt1444.test a9d72f9e942708bd82dde6c707da61c489e213e9
 F test/tkt1449.test 93584a449752d52b07d2cfc280a69842b6e16ed5
 F test/tkt1473.test 9d000af3e11a4450d4c596f5e58b4b0d24eb0f8b
 F test/tkt1501.test 2064f98e00871848af4b2f517e46c1a7fb2e32db
@@ -373,7 +373,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P b56cc035f2be5c1a3f63efbb4c181e405a140fbb
-R d196b750d3fe8f695cd7b6908a213779
+P a56bfa560425a5dc9273229f8838471dfc402024
+R e8bb3e94e8692c0623fd2ff8d33a84bc
 U danielk1977
-Z 3dbe3cb63d42318e08050a7c6163ebb3
+Z d9a57a4940bb8ae48fc84966242bf92b
