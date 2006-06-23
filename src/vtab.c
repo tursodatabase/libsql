@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to help implement virtual tables.
 **
-** $Id: vtab.c,v 1.21 2006/06/23 08:05:30 danielk1977 Exp $
+** $Id: vtab.c,v 1.22 2006/06/23 11:34:55 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
@@ -72,15 +72,22 @@ void sqlite3VtabClear(Table *p){
 */
 static void addModuleArgument(Table *pTable, char *zArg){
   int i = pTable->nModuleArg++;
-  pTable->azModuleArg = sqliteRealloc(pTable->azModuleArg,
-                             sizeof(char*)*(pTable->nModuleArg+1));
-  if( pTable->azModuleArg==0 ){
-    pTable->nModuleArg = 0;
+  int nBytes = sizeof(char *)*(1+pTable->nModuleArg);
+  char **azModuleArg;
+  azModuleArg = sqliteRealloc(pTable->azModuleArg, nBytes);
+  if( azModuleArg==0 ){
+    int j;
+    for(j=0; j<i; j++){
+      sqliteFree(pTable->azModuleArg[j]);
+    }
     sqliteFree(zArg);
+    sqliteFree(pTable->azModuleArg);
+    pTable->nModuleArg = 0;
   }else{
-    pTable->azModuleArg[i] = zArg;
-    pTable->azModuleArg[i+1] = 0;
+    azModuleArg[i] = zArg;
+    azModuleArg[i+1] = 0;
   }
+  pTable->azModuleArg = azModuleArg;
 }
 
 /*

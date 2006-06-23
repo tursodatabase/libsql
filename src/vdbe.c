@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.566 2006/06/23 08:05:26 danielk1977 Exp $
+** $Id: vdbe.c,v 1.567 2006/06/23 11:34:55 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -4600,6 +4600,8 @@ case OP_VOpen: {   /* no-push */
     if( pCur ){
       pCur->pVtabCursor = pVtabCursor;
       pCur->pModule = pVtabCursor->pVtab->pModule;
+    }else{
+      pModule->xClose(pVtabCursor);
     }
   }
   break;

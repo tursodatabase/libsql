@@ -875,8 +875,8 @@ static void closeAllCursors(Vdbe *p){
   for(i=0; i<p->nCursor; i++){
     if( !p->inVtabMethod || (p->apCsr[i] && !p->apCsr[i]->pVtabCursor) ){
       sqlite3VdbeFreeCursor(p, p->apCsr[i]);
+      p->apCsr[i] = 0;
     }
-    p->apCsr[i] = 0;
   }
 }
 
@@ -1250,6 +1250,9 @@ int sqlite3VdbeHalt(Vdbe *p){
   if( p->magic!=VDBE_MAGIC_RUN ){
     /* Already halted.  Nothing to do. */
     assert( p->magic==VDBE_MAGIC_HALT );
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+    closeAllCursors(p);
+#endif
     return SQLITE_OK;
   }
   closeAllCursors(p);

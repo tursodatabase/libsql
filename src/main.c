@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.346 2006/06/22 09:53:49 danielk1977 Exp $
+** $Id: main.c,v 1.347 2006/06/23 11:34:55 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -132,6 +132,8 @@ int sqlite3_close(sqlite3 *db){
     /* printf("DID NOT CLOSE\n"); fflush(stdout); */
     return SQLITE_ERROR;
   }
+
+  sqlite3VtabRollback(db);
 
   for(j=0; j<db->nDb; j++){
     struct Db *pDb = &db->aDb[j];

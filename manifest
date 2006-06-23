@@ -1,5 +1,5 @@
-C Add\stests\sand\sfixes\sfor\shandling\smalloc()\sfailures\srelated\sto\sthe\svirtual\stable\sfeature.\s(CVS\s3285)
-D 2006-06-23T08:05:19
+C Fix\ssome\smemory\sleaks\sthat\soccur\swhen\smalloc()\sfails.\s(CVS\s3286)
+D 2006-06-23T11:34:55
 F Makefile.in f839b470345d3cb4b0644068474623fe2464b5d3
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -49,7 +49,7 @@ F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
 F src/insert.c 63f01d3f4e0ba7ed171934a24aece2191824faec
 F src/legacy.c fa15d505dd4e45044177ee4d1c6aeaf8c836d390
 F src/loadext.c b08c5f5a57b78afd8cd0dd1677e98519e18db56f
-F src/main.c 645a02be048d60ead33e53e10e0b84fb002bf7ca
+F src/main.c efdd186a443ec8015d0fa6049a031df667f3efd2
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/os.c 59f05de8c5777c34876607114a2fbe55ae578235
 F src/os.h ac2ccb4f48902c1611a7e1f171eb81d17e3b8eb2
@@ -84,7 +84,7 @@ F src/test4.c 8b784cd82de158a2317cb4ac4bc86f91ad315e25
 F src/test5.c 7162f8526affb771c4ed256826eee7bb9eca265f
 F src/test6.c 60a02961ceb7b3edc25f5dc5c1ac2556622a76de
 F src/test7.c 03fa8d787f6aebc6d1f72504d52f33013ad2c8e3
-F src/test8.c e09bf2654269ff025350d1a40f4b1058a6a07dbb
+F src/test8.c 9ea0fd1708d714205b2db044d9d1e081182602a1
 F src/test_async.c e3deaedd4d86a56391b81808fde9e44fbd92f1d3
 F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
 F src/test_md5.c 6c42bc0a3c0b54be34623ff77a0eec32b2fa96e3
@@ -97,14 +97,14 @@ F src/update.c 686b13db8b28a129a2407aaffc8b7588d1104e0b
 F src/utf.c ab81ac59084ff1c07d421eb1a0a84ec809603b44
 F src/util.c ca6ee72772c0f5dc04d2e0ab1973fd3b6a9bf79d
 F src/vacuum.c 5b37d0f436f8e1ffacd17934e44720b38d2247f9
-F src/vdbe.c b4232a43e8603ed2aced49865bb1de82aa8371e1
+F src/vdbe.c 1e16fbc5ba4d84f2310ebac4cc61e387ab4da130
 F src/vdbe.h 258b5d1c0aaa72192f09ff0568ce42b383f156fa
 F src/vdbeInt.h de89a3475a0a914c49f92e51c303f7dd6f2b21fe
 F src/vdbeapi.c 6af0e7160af260052a7a4500464221a03dada75f
-F src/vdbeaux.c d8cf95bc96fbcd933db14cf6cd196098146d2afd
+F src/vdbeaux.c 1144cee0a5644c26f63e7fa34574dcd9349ac799
 F src/vdbefifo.c 9efb94c8c3f4c979ebd0028219483f88e57584f5
 F src/vdbemem.c 5f0afe3b92bb2c037f8d5d697f7c151fa50783a3
-F src/vtab.c 7edad77e201cc83b7826e53393c21d617e472fe1
+F src/vtab.c fd7e62d6efa403a7aa082a0e9535e5677669cabb
 F src/where.c 6175449f1ff97a5bfea4068a35c050456c632e89
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -373,7 +373,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 51b729d9d9f8a60cdfb552809e4aa10012f4eb68
-R c21237f21b6a4ca0ffad3dda7ecba2f2
+P 5d1d907189ff3ca7afada83033280cf258984ac0
+R 9aaa96fd253428f51eb81ad079eb4637
 U danielk1977
-Z 9f0e1165f66a8128b5c09a2e388b1740
+Z 5fb128a15d49c4268bc0417c4ae9ed76
