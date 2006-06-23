@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.181 2006/06/22 09:53:50 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.182 2006/06/23 08:05:19 danielk1977 Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1662,6 +1662,7 @@ int sqlite3_create_module(
 */
 struct sqlite3_vtab {
   const sqlite3_module *pModule;  /* The module for this virtual table */
+  int nRef;                       /* Used internally */
   /* Virtual table implementations will typically add additional fields */
 };
 

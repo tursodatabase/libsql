@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.565 2006/06/22 09:53:50 danielk1977 Exp $
+** $Id: vdbe.c,v 1.566 2006/06/23 08:05:26 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -180,7 +180,7 @@ static Cursor *allocateCursor(Vdbe *p, int iCur, int iDb){
   Cursor *pCx;
   assert( iCur<p->nCursor );
   if( p->apCsr[iCur] ){
-    sqlite3VdbeFreeCursor(p->apCsr[iCur]);
+    sqlite3VdbeFreeCursor(p, p->apCsr[iCur]);
   }
   p->apCsr[iCur] = pCx = sqliteMalloc( sizeof(Cursor) );
   if( pCx ){
@@ -2733,7 +2733,7 @@ case OP_OpenPseudo: {       /* no-push */
 case OP_Close: {       /* no-push */
   int i = pOp->p1;
   if( i>=0 && i<p->nCursor ){
-    sqlite3VdbeFreeCursor(p->apCsr[i]);
+    sqlite3VdbeFreeCursor(p, p->apCsr[i]);
     p->apCsr[i] = 0;
   }
   break;
@@ -4597,7 +4597,10 @@ case OP_VOpen: {   /* no-push */
 
     /* Initialise vdbe cursor object */
     pCur = allocateCursor(p, pOp->p1, -1);
-    pCur->pVtabCursor = pVtabCursor;
+    if( pCur ){
+      pCur->pVtabCursor = pVtabCursor;
+      pCur->pModule = pVtabCursor->pVtab->pModule;
+    }
   }
   break;
 }
@@ -4651,7 +4654,9 @@ case OP_VFilter: {   /* no-push */
     }
 
     if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
+    p->inVtabMethod = 1;
     rc = pModule->xFilter(pCur->pVtabCursor, pTos->i, pOp->p3, nArg, apArg);
+    p->inVtabMethod = 0;
     if( rc==SQLITE_OK ){
       res = pModule->xEof(pCur->pVtabCursor);
     }
@@ -4762,7 +4767,9 @@ case OP_VNext: {   /* no-push */
     ** some other method is next invoked on the save virtual table cursor.
     */
     if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
+    p->inVtabMethod = 1;
     rc = pModule->xNext(pCur->pVtabCursor);
+    p->inVtabMethod = 0;
     if( rc==SQLITE_OK ){
       res = pModule->xEof(pCur->pVtabCursor);
     }

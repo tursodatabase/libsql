@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to help implement virtual tables.
 **
-** $Id: vtab.c,v 1.20 2006/06/21 16:02:43 danielk1977 Exp $
+** $Id: vtab.c,v 1.21 2006/06/23 08:05:30 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
@@ -46,9 +46,14 @@ int sqlite3_create_module(
 ** record.
 */
 void sqlite3VtabClear(Table *p){
-  if( p->pVtab ){
+  sqlite3_vtab *pVtab = p->pVtab;
+  if( pVtab ){
     assert( p->pMod && p->pMod->pModule );
-    p->pMod->pModule->xDisconnect(p->pVtab);
+    pVtab->nRef--;
+    if( pVtab->nRef==0 ){
+      pVtab->pModule->xDisconnect(pVtab);
+    }
+    p->pVtab = 0;
   }
   if( p->azModuleArg ){
     int i;
@@ -91,7 +96,6 @@ void sqlite3VtabBeginParse(
 ){
   int iDb;              /* The database the table is being created in */
   Table *pTable;        /* The new virtual table */
-  Token *pDummy;        /* Dummy arg for sqlite3TwoPartName() */
 
   sqlite3StartTable(pParse, pName1, pName2, 0, 0, 1, 0);
   pTable = pParse->pNewTable;
@@ -114,10 +118,9 @@ void sqlite3VtabBeginParse(
   ** sqlite_master table, has already been made by sqlite3StartTable().
   ** The second call, to obtain permission to create the table, is made now.
   */
-  if( sqlite3AuthCheck(pParse, SQLITE_CREATE_VTABLE, pTable->zName, 
-          pTable->azModuleArg[0], pParse->db->aDb[iDb].zName) 
-  ){
-    return;
+  if( pTable->azModuleArg ){
+    sqlite3AuthCheck(pParse, SQLITE_CREATE_VTABLE, pTable->zName, 
+            pTable->azModuleArg[0], pParse->db->aDb[iDb].zName);
   }
 #endif
 }
@@ -272,6 +275,7 @@ static int vtabCallConstructor(
   int rc2;
   char **azArg = pTab->azModuleArg;
   int nArg = pTab->nModuleArg;
+  char *zErr = sqlite3MPrintf("vtable constructor failed: %s", pTab->zName);
 
   assert( !db->pVTab );
   assert( xConstruct );
@@ -281,12 +285,14 @@ static int vtabCallConstructor(
   assert( rc==SQLITE_OK );
   rc = xConstruct(db, pMod->pAux, nArg, azArg, &pTab->pVtab);
   rc2 = sqlite3SafetyOn(db);
-  if( pTab->pVtab ){
+  if( rc==SQLITE_OK && pTab->pVtab ){
     pTab->pVtab->pModule = pMod->pModule;
+    pTab->pVtab->nRef = 1;
   }
 
   if( SQLITE_OK!=rc ){
-    *pzErr = sqlite3MPrintf("vtable constructor failed: %s", pTab->zName);
+    *pzErr = zErr;
+    zErr = 0;
   } else if( db->pVTab ){
     const char *zFormat = "vtable constructor did not declare schema: %s";
     *pzErr = sqlite3MPrintf(zFormat, pTab->zName);
@@ -296,6 +302,7 @@ static int vtabCallConstructor(
     rc = rc2;
   }
   db->pVTab = 0;
+  sqliteFree(zErr);
   return rc;
 }
 
@@ -337,7 +344,7 @@ int sqlite3VtabCallConnect(Parse *pParse, Table *pTab){
 /*
 ** Add the virtual table pVtab to the array sqlite3.aVTrans[].
 */
-int addToVTrans(sqlite3 *db, sqlite3_vtab *pVtab){
+static int addToVTrans(sqlite3 *db, sqlite3_vtab *pVtab){
   const int ARRAY_INCR = 5;
 
   /* Grow the sqlite3.aVTrans array if required */
@@ -354,6 +361,7 @@ int addToVTrans(sqlite3 *db, sqlite3_vtab *pVtab){
 
   /* Add pVtab to the end of sqlite3.aVTrans */
   db->aVTrans[db->nVTrans++] = pVtab;
+  pVtab->nRef++;
   return SQLITE_OK;
 }
 
@@ -471,11 +479,6 @@ int sqlite3VtabCallDestroy(sqlite3 *db, int iDb, const char *zTab)
   return rc;
 }
 
-void sqlite3VtabCodeLock(Parse *pParse, Table *pTab){
-  Vdbe *v = sqlite3GetVdbe(pParse);
-  sqlite3VdbeOp3(v, OP_VBegin, 0, 0, (const char*)pTab->pVtab, P3_VTAB);
-}
-
 /*
 ** This function invokes either the xRollback or xCommit method
 ** of each of the virtual tables in the sqlite3.aVTrans array. The method
@@ -491,6 +494,10 @@ static void callFinaliser(sqlite3 *db, int offset){
     int (*x)(sqlite3_vtab *);
     x = *(int (**)(sqlite3_vtab *))((char *)pVtab->pModule + offset);
     if( x ) x(pVtab);
+    pVtab->nRef--;
+    if( pVtab->nRef==0 ){
+      pVtab->pModule->xDisconnect(pVtab);
+    }
   }
   sqliteFree(db->aVTrans);
   db->nVTrans = 0;

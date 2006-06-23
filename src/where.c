@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.221 2006/06/20 13:07:28 danielk1977 Exp $
+** $Id: where.c,v 1.222 2006/06/23 08:05:31 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -1125,10 +1125,16 @@ static double bestVirtualIndex(
   }
 
   sqlite3SafetyOff(pParse->db);
-  pTab->pVtab->pModule->xBestIndex(pTab->pVtab, pIdxInfo);
-  rc = sqlite3SafetyOn(pParse->db);
+  rc = pTab->pVtab->pModule->xBestIndex(pTab->pVtab, pIdxInfo);
   if( rc!=SQLITE_OK ){
-    sqlite3ErrorMsg(pParse, "%s", sqlite3ErrStr(rc));
+    if( rc==SQLITE_NOMEM ){
+      sqlite3FailedMalloc();
+    }else {
+      sqlite3ErrorMsg(pParse, "%s", sqlite3ErrStr(rc));
+    }
+    sqlite3SafetyOn(pParse->db);
+  }else{
+    rc = sqlite3SafetyOn(pParse->db);
   }
 
   *(int*)&pIdxInfo->nOrderBy = nOrderBy;

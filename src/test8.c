@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test8.c,v 1.31 2006/06/22 09:53:50 danielk1977 Exp $
+** $Id: test8.c,v 1.32 2006/06/23 08:05:26 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -72,7 +72,7 @@ static int getColumnNames(
   char zBuf[1024];
   sqlite3_stmt *pStmt = 0;
   int rc = SQLITE_OK;
-  int nCol;
+  int nCol = 0;
 
   sprintf(zBuf, "SELECT * FROM %s", zTab);
   rc = sqlite3_prepare(db, zBuf, -1, &pStmt, 0);
@@ -143,14 +143,18 @@ static int getIndexArray(sqlite3 *db, const char *zTab, int **paIndex){
       assert( cid>=0 && cid<nCol );
       aIndex[cid] = 1;
     }
-    rc = sqlite3_finalize(pStmt2);
+    if( pStmt2 ){
+      rc = sqlite3_finalize(pStmt2);
+    }
     if( rc!=SQLITE_OK ){
       sqlite3_finalize(pStmt);
       goto get_index_array_out;
     }
   }
 
-  rc = sqlite3_finalize(pStmt);
+  if( pStmt ){
+    rc = sqlite3_finalize(pStmt);
+  }
 
 get_index_array_out:
   if( rc!=SQLITE_OK ){
@@ -206,10 +210,14 @@ static int echoDeclareVtab(
 #ifndef SQLITE_OMIT_VIRTUALTABLE
       sqlite3_declare_vtab(db, zCreateTable);
 #endif
+      rc = sqlite3_finalize(pStmt);
     } else {
-      rc = SQLITE_ERROR;
+      rc = sqlite3_finalize(pStmt);
+      if( rc==SQLITE_OK ){ 
+        rc = SQLITE_ERROR;
+      }
     }
-    sqlite3_finalize(pStmt);
+
     if( rc==SQLITE_OK ){
       rc = getIndexArray(db, argv[3], &pVtab->aIndex);
     }
@@ -244,9 +252,16 @@ static int echoConstructor(
   echo_vtab *pVtab;
 
   pVtab = sqliteMalloc( sizeof(*pVtab) );
+  if( !pVtab ){
+    return SQLITE_NOMEM;
+  }
   pVtab->interp = (Tcl_Interp *)pAux;
   pVtab->db = db;
   pVtab->zTableName = sqlite3MPrintf("%s", argv[3]);
+  if( !pVtab->zTableName ){
+    return SQLITE_NOMEM;
+  }
+
   for(i=0; i<argc; i++){
     appendToEchoModule(pVtab->interp, argv[i]);
   }
@@ -318,14 +333,17 @@ static int echoOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
   echo_cursor *pCur;
   pCur = sqliteMalloc(sizeof(echo_cursor));
   *ppCursor = (sqlite3_vtab_cursor *)pCur;
-  return SQLITE_OK;
+  return (pCur ? SQLITE_OK : SQLITE_NOMEM);
 }
 
 static int echoClose(sqlite3_vtab_cursor *cur){
+  int rc;
   echo_cursor *pCur = (echo_cursor *)cur;
-  sqlite3_finalize(pCur->pStmt);
+  sqlite3_stmt *pStmt = pCur->pStmt;
+  pCur->pStmt = 0;
   sqliteFree(pCur);
-  return SQLITE_OK;
+  rc = sqlite3_finalize(pStmt);
+  return rc;
 }
 
 /*
@@ -339,7 +357,7 @@ static int echoEof(sqlite3_vtab_cursor *cur){
 static int echoNext(sqlite3_vtab_cursor *cur){
   int rc;
   echo_cursor *pCur = (echo_cursor *)cur;
-
+  sqlite3_stmt *pStmt = pCur->pStmt;
   rc = sqlite3_step(pCur->pStmt);
 
   if( rc==SQLITE_ROW ){
@@ -398,12 +416,17 @@ static int echoFilter(
   int argc, sqlite3_value **argv
 ){
   int rc;
-  int ret;
   int i;
 
   echo_cursor *pCur = (echo_cursor *)pVtabCursor;
   echo_vtab *pVtab = (echo_vtab *)pVtabCursor->pVtab;
   sqlite3 *db = pVtab->db;
+
+  appendToEchoModule(pVtab->interp, "xFilter");
+  appendToEchoModule(pVtab->interp, idxStr);
+  for(i=0; i<argc; i++){
+    appendToEchoModule(pVtab->interp, sqlite3_value_text(argv[i]));
+  }
 
   assert( idxNum==hashString(idxStr) );
   sqlite3_finalize(pCur->pStmt);
@@ -437,20 +460,12 @@ static int echoFilter(
     }
   }
   if( rc==SQLITE_OK ){
-    ret = echoNext(pVtabCursor);
+    rc = echoNext(pVtabCursor);
   }else{
     assert( !pCur->pStmt );
-    ret = 0;
-    pCur->errcode = rc;
   }
 
-  appendToEchoModule(pVtab->interp, "xFilter");
-  appendToEchoModule(pVtab->interp, idxStr);
-  for(i=0; i<argc; i++){
-    appendToEchoModule(pVtab->interp, sqlite3_value_text(argv[i]));
-  }
-
-  return ret;
+  return rc;
 }
 
 /*

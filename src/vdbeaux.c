@@ -841,7 +841,7 @@ void sqlite3VdbeMakeReady(
 ** Close a cursor and release all the resources that cursor happens
 ** to hold.
 */
-void sqlite3VdbeFreeCursor(Cursor *pCx){
+void sqlite3VdbeFreeCursor(Vdbe *p, Cursor *pCx){
   if( pCx==0 ){
     return;
   }
@@ -855,8 +855,10 @@ void sqlite3VdbeFreeCursor(Cursor *pCx){
   if( pCx->pVtabCursor ){
     sqlite3_vtab_cursor *pVtabCursor = pCx->pVtabCursor;
     sqlite3_vtab *pVtab = pVtabCursor->pVtab;
-    const sqlite3_module *pModule = pVtab->pModule;
+    const sqlite3_module *pModule = pCx->pModule;
+    p->inVtabMethod = 1;
     pModule->xClose(pVtabCursor);
+    p->inVtabMethod = 0;
   }
 #endif
   sqliteFree(pCx->pData);
@@ -871,7 +873,9 @@ static void closeAllCursors(Vdbe *p){
   int i;
   if( p->apCsr==0 ) return;
   for(i=0; i<p->nCursor; i++){
-    sqlite3VdbeFreeCursor(p->apCsr[i]);
+    if( !p->inVtabMethod || (p->apCsr[i] && !p->apCsr[i]->pVtabCursor) ){
+      sqlite3VdbeFreeCursor(p, p->apCsr[i]);
+    }
     p->apCsr[i] = 0;
   }
 }
@@ -1149,23 +1153,6 @@ static int vdbeCommit(sqlite3 *db){
   return rc;
 }
 
-/*
-** Find every active VM other than pVdbe and change its status to
-** aborted.  This happens when one VM causes a rollback due to an
-** ON CONFLICT ROLLBACK clause (for example).  The other VMs must be
-** aborted so that they do not have data rolled out from underneath
-** them leading to a segfault.
-*/
-void sqlite3AbortOtherActiveVdbes(sqlite3 *db, Vdbe *pExcept){
-  Vdbe *pOther;
-  for(pOther=db->pVdbe; pOther; pOther=pOther->pNext){
-    if( pOther==pExcept ) continue;
-    if( pOther->magic!=VDBE_MAGIC_RUN || pOther->pc<0 ) continue;
-    closeAllCursors(pOther);
-    pOther->aborted = 1;
-  }
-}
-
 /* 
 ** This routine checks that the sqlite3.activeVdbeCnt count variable
 ** matches the number of vdbe's in the list sqlite3.pVdbe that are
@@ -1191,6 +1178,25 @@ static void checkActiveVdbeCnt(sqlite3 *db){
 #else
 #define checkActiveVdbeCnt(x)
 #endif
+
+/*
+** Find every active VM other than pVdbe and change its status to
+** aborted.  This happens when one VM causes a rollback due to an
+** ON CONFLICT ROLLBACK clause (for example).  The other VMs must be
+** aborted so that they do not have data rolled out from underneath
+** them leading to a segfault.
+*/
+void sqlite3AbortOtherActiveVdbes(sqlite3 *db, Vdbe *pExcept){
+  Vdbe *pOther;
+  for(pOther=db->pVdbe; pOther; pOther=pOther->pNext){
+    if( pOther==pExcept ) continue;
+    if( pOther->magic!=VDBE_MAGIC_RUN || pOther->pc<0 ) continue;
+    checkActiveVdbeCnt(db);
+    closeAllCursors(pOther);
+    checkActiveVdbeCnt(db);
+    pOther->aborted = 1;
+  }
+}
 
 /*
 ** This routine is called the when a VDBE tries to halt.  If the VDBE
@@ -1375,8 +1381,7 @@ int sqlite3VdbeHalt(Vdbe *p){
     }
   }
 
-  /* We have successfully halted and closed the VM.  Record this fact. */
-  if( p->pc>=0 ){
+  if( p->pc>=0  ){
     db->activeVdbeCnt--;
   }
   p->magic = VDBE_MAGIC_HALT;

@@ -85,6 +85,7 @@ struct Cursor {
   i64 seqCount;         /* Sequence counter */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   sqlite3_vtab_cursor *pVtabCursor;  /* The cursor for a virtual table */
+  sqlite3_module *pModule;           /* Module for cursor pVtabCursor */
 #endif
 
   /* Cached information about the header for the data record that the
@@ -324,6 +325,9 @@ struct Vdbe {
   int fetchId;          /* Statement number used by sqlite3_fetch_statement */
   int lru;              /* Counter used for LRU cache replacement */
 #endif
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+  int inVtabMethod;
+#endif
 };
 
 /*
@@ -337,7 +341,7 @@ struct Vdbe {
 /*
 ** Function prototypes
 */
-void sqlite3VdbeFreeCursor(Cursor*);
+void sqlite3VdbeFreeCursor(Vdbe *, Cursor*);
 void sqliteVdbePopStack(Vdbe*,int);
 int sqlite3VdbeCursorMoveto(Cursor*);
 #if defined(SQLITE_DEBUG) || defined(VDBE_PROFILE)

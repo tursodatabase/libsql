@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.64 2006/01/24 13:09:33 danielk1977 Exp $
+# $Id: tester.tcl,v 1.65 2006/06/23 08:05:38 danielk1977 Exp $
 
 # Make sure tclsqlite3 was compiled correctly.  Abort now with an
 # error message if not.
@@ -149,6 +149,7 @@ proc finalize_testing {} {
   catch {
     pp_check_for_leaks
   }
+breakpoint
   sqlite3 db {}
   # sqlite3_clear_tsd_memdebug
   db close
