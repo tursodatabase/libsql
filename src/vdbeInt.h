@@ -272,6 +272,14 @@ struct Context {
 **
 ** The "sqlite3_stmt" structure pointer that is returned by sqlite3_compile()
 ** is really a pointer to an instance of this structure.
+**
+** The Vdbe.inVtabMethod variable is set to non-zero for the duration of
+** any virtual table method invocations made by the vdbe program. It is
+** set to 2 for xDestroy method calls and 1 for all other methods. This
+** variable is used for two purposes: to allow xDestroy methods to execute
+** "DROP TABLE" statements and to prevent some nasty side effects of
+** malloc failure when SQLite is invoked recursively by a virtual table 
+** method function.
 */
 struct Vdbe {
   sqlite3 *db;        /* The whole database */
@@ -326,7 +334,7 @@ struct Vdbe {
   int lru;              /* Counter used for LRU cache replacement */
 #endif
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-  int inVtabMethod;
+  int inVtabMethod;     /* See comments above */
 #endif
 };
 

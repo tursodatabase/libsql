@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test8.c,v 1.33 2006/06/23 11:34:55 danielk1977 Exp $
+** $Id: test8.c,v 1.34 2006/06/23 14:32:08 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -238,6 +238,7 @@ static int echoDestructor(sqlite3_vtab *pVtab){
   }
   sqliteFree(p->aCol);
   sqliteFree(p->zTableName);
+  sqliteFree(p->zLogName);
   sqliteFree(p);
   return 0;
 }
@@ -286,7 +287,7 @@ static int echoCreate(
   int rc = SQLITE_OK;
   appendToEchoModule((Tcl_Interp *)(pAux), "xCreate");
   rc = echoConstructor(db, pAux, argc, argv, ppVtab);
-#if 0
+#if 1
   if( rc==SQLITE_OK && argc==5 ){
     char *zSql;
     echo_vtab *pVtab = *(echo_vtab **)ppVtab;
@@ -316,7 +317,7 @@ static int echoDestroy(sqlite3_vtab *pVtab){
   int rc = SQLITE_OK;
   echo_vtab *p = (echo_vtab *)pVtab;
   appendToEchoModule(((echo_vtab *)pVtab)->interp, "xDestroy");
-#if 0
+#if 1
   if( p && p->zLogName ){
     char *zSql;
     zSql = sqlite3MPrintf("DROP TABLE %Q", p->zLogName);

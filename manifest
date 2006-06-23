@@ -1,5 +1,5 @@
-C Fix\ssome\smemory\sleaks\sthat\soccur\swhen\smalloc()\sfails.\s(CVS\s3286)
-D 2006-06-23T11:34:55
+C Allow\sxDestroy\smethods\sto\sexecute\s"DROP\sTABLE"\sstatements.\s(CVS\s3287)
+D 2006-06-23T14:32:08
 F Makefile.in f839b470345d3cb4b0644068474623fe2464b5d3
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -84,7 +84,7 @@ F src/test4.c 8b784cd82de158a2317cb4ac4bc86f91ad315e25
 F src/test5.c 7162f8526affb771c4ed256826eee7bb9eca265f
 F src/test6.c 60a02961ceb7b3edc25f5dc5c1ac2556622a76de
 F src/test7.c 03fa8d787f6aebc6d1f72504d52f33013ad2c8e3
-F src/test8.c 9ea0fd1708d714205b2db044d9d1e081182602a1
+F src/test8.c 054989bf4b6f10ffac090e24ce6843662ebb9b91
 F src/test_async.c e3deaedd4d86a56391b81808fde9e44fbd92f1d3
 F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
 F src/test_md5.c 6c42bc0a3c0b54be34623ff77a0eec32b2fa96e3
@@ -97,9 +97,9 @@ F src/update.c 686b13db8b28a129a2407aaffc8b7588d1104e0b
 F src/utf.c ab81ac59084ff1c07d421eb1a0a84ec809603b44
 F src/util.c ca6ee72772c0f5dc04d2e0ab1973fd3b6a9bf79d
 F src/vacuum.c 5b37d0f436f8e1ffacd17934e44720b38d2247f9
-F src/vdbe.c 1e16fbc5ba4d84f2310ebac4cc61e387ab4da130
+F src/vdbe.c 294e2f35fbd81f5b1e4bd918d2d0bb38313d4b11
 F src/vdbe.h 258b5d1c0aaa72192f09ff0568ce42b383f156fa
-F src/vdbeInt.h de89a3475a0a914c49f92e51c303f7dd6f2b21fe
+F src/vdbeInt.h be3396aa33e7587c96f8c8c264100623a071a3d0
 F src/vdbeapi.c 6af0e7160af260052a7a4500464221a03dada75f
 F src/vdbeaux.c 1144cee0a5644c26f63e7fa34574dcd9349ac799
 F src/vdbefifo.c 9efb94c8c3f4c979ebd0028219483f88e57584f5
@@ -291,7 +291,7 @@ F test/vacuum.test 37f998b841cb335397c26d9bbc3457182af2565f
 F test/vacuum2.test 5aea8c88a65cb29f7d175296e7c819c6158d838c
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/view.test 16e2774fe35e47a07ac4471b7f0bcc948b1aa6d5
-F test/vtab1.test 3f21d81e599afd100e60830f5f0426c1f74febda
+F test/vtab1.test 55c7415e8b6c05a648c57434b97dcd709bec4e53
 F test/vtab2.test e57f9865368df26ef5eb8bc630962d82086f174b
 F test/vtab3.test f38d6d7d19f08bffdadce4d5b8cba078f8118587
 F test/vtab4.test 4b4293341443839ef6dc02f8d9e614702a6c67ff
@@ -373,7 +373,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 5d1d907189ff3ca7afada83033280cf258984ac0
-R 9aaa96fd253428f51eb81ad079eb4637
+P b56cc035f2be5c1a3f63efbb4c181e405a140fbb
+R d196b750d3fe8f695cd7b6908a213779
 U danielk1977
-Z 5fb128a15d49c4268bc0417c4ae9ed76
+Z 3dbe3cb63d42318e08050a7c6163ebb3
