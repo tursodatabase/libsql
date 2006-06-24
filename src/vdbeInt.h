@@ -85,7 +85,7 @@ struct Cursor {
   i64 seqCount;         /* Sequence counter */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   sqlite3_vtab_cursor *pVtabCursor;  /* The cursor for a virtual table */
-  sqlite3_module *pModule;           /* Module for cursor pVtabCursor */
+  const sqlite3_module *pModule;     /* Module for cursor pVtabCursor */
 #endif
 
   /* Cached information about the header for the data record that the
