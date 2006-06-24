@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test8.c,v 1.36 2006/06/24 09:34:23 danielk1977 Exp $
+** $Id: test8.c,v 1.37 2006/06/24 11:51:34 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -189,7 +189,7 @@ static int getIndexArray(
   ** corresponding entry in aIndex[] to 1.
   */
   while( pStmt && sqlite3_step(pStmt)==SQLITE_ROW ){
-    const char *zIdx = sqlite3_column_text(pStmt, 1);
+    const char *zIdx = (const char *)sqlite3_column_text(pStmt, 1);
     sqlite3_stmt *pStmt2 = 0;
     zSql = sqlite3MPrintf("PRAGMA index_info(%s)", zIdx);
     if( !zSql ){
@@ -268,7 +268,7 @@ static int echoDeclareVtab(
         -1, &pStmt, 0);
     sqlite3_bind_text(pStmt, 1, argv[3], -1, 0);
     if( sqlite3_step(pStmt)==SQLITE_ROW ){
-      const char *zCreateTable = sqlite3_column_text(pStmt, 0);
+      const char *zCreateTable = (const char *)sqlite3_column_text(pStmt, 0);
       sqlite3_declare_vtab(db, zCreateTable);
       rc = sqlite3_finalize(pStmt);
     } else {
@@ -542,7 +542,7 @@ static int echoFilter(
   appendToEchoModule(pVtab->interp, "xFilter");
   appendToEchoModule(pVtab->interp, idxStr);
   for(i=0; i<argc; i++){
-    appendToEchoModule(pVtab->interp, sqlite3_value_text(argv[i]));
+    appendToEchoModule(pVtab->interp, (const char*)sqlite3_value_text(argv[i]));
   }
 
   sqlite3_finalize(pCur->pStmt);
@@ -695,8 +695,12 @@ static int echoBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
   ** the ORDER BY clause.
   */
   if( pIdxInfo->nOrderBy==1 && pVtab->aIndex[pIdxInfo->aOrderBy->iColumn] ){
-    char *zCol = pVtab->aCol[pIdxInfo->aOrderBy->iColumn];
+    int iCol = pIdxInfo->aOrderBy->iColumn;
+    char *zCol = pVtab->aCol[iCol];
     char *zDir = pIdxInfo->aOrderBy->desc?"DESC":"ASC";
+    if( iCol<0 ){
+      zCol = "rowid";
+    }
     zNew = sqlite3_mprintf(" ORDER BY %s %s", zCol, zDir);
     string_concat(&zQuery, zNew, 1);
     pIdxInfo->orderByConsumed = 1;
@@ -965,7 +969,7 @@ static int declare_vtab(
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
   rc = sqlite3_declare_vtab(db, Tcl_GetString(objv[2]));
   if( rc!=SQLITE_OK ){
-    Tcl_SetResult(interp, sqlite3_errmsg(db), TCL_VOLATILE);
+    Tcl_SetResult(interp, (char *)sqlite3_errmsg(db), TCL_VOLATILE);
     return TCL_ERROR;
   }
   return TCL_OK;

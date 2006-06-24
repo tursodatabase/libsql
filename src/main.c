@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.347 2006/06/23 11:34:55 danielk1977 Exp $
+** $Id: main.c,v 1.348 2006/06/24 11:51:33 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -474,6 +474,7 @@ int sqlite3CreateFunc(
     p->xStep = xStep;
     p->xFinalize = xFinal;
     p->pUserData = pUserData;
+    p->nArg = nArg;
   }
   return SQLITE_OK;
 }

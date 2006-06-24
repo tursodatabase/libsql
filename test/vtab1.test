@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is creating and dropping virtual tables.
 #
-# $Id: vtab1.test,v 1.32 2006/06/24 09:34:24 danielk1977 Exp $
+# $Id: vtab1.test,v 1.33 2006/06/24 11:51:35 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -803,6 +803,35 @@ do_test vtab1.10-3 {
     INSERT INTO e VALUES(1, 2, 3);
   }
 } {1 {SQL logic error or missing database}}
+do_test vtab1.10-4 {
+  catch {execsql {
+    EXPLAIN SELECT * FROM e WHERE rowid = 2;
+    EXPLAIN QUERY PLAN SELECT * FROM e WHERE rowid = 2 ORDER BY rowid;
+  }}
+} {0}
+
+do_test vtab1.10-5 {
+  set echo_module ""
+  execsql {
+    SELECT * FROM e WHERE rowid||'' MATCH 'pattern';
+  }
+  set echo_module
+} [list \
+  xBestIndex {SELECT rowid, * FROM 'r'} \
+  xFilter {SELECT rowid, * FROM 'r'}    \
+]
+proc match_func {args} {return ""}
+do_test vtab1.10-6 {
+  set echo_module ""
+  db function match match_func
+  execsql {
+    SELECT * FROM e WHERE match('pattern', rowid, 'pattern2');
+  }
+  set echo_module
+} [list \
+  xBestIndex {SELECT rowid, * FROM 'r'} \
+  xFilter {SELECT rowid, * FROM 'r'}    \
+]
 
 finish_test
 

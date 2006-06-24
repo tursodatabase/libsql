@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.131 2006/06/17 14:12:48 drh Exp $
+** $Id: func.c,v 1.132 2006/06/24 11:51:33 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -681,13 +681,13 @@ static void soundexFunc(sqlite3_context *context, int argc, sqlite3_value **argv
 ** A function that loads a shared-library extension then returns NULL.
 */
 static void loadExt(sqlite3_context *context, int argc, sqlite3_value **argv){
-  const char *zFile = sqlite3_value_text(argv[0]);
+  const char *zFile = (const char *)sqlite3_value_text(argv[0]);
   const char *zProc = 0;
   sqlite3 *db = sqlite3_user_data(context);
   char *zErrMsg = 0;
 
   if( argc==2 ){
-    zProc = sqlite3_value_text(argv[1]);
+    zProc = (const char *)sqlite3_value_text(argv[1]);
   }
   if( sqlite3_load_extension(db, zFile, zProc, &zErrMsg) ){
     sqlite3_result_error(context, zErrMsg, -1);

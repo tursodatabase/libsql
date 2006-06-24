@@ -261,10 +261,6 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs, int *pMaxStack){
       if( pOp->p1==SQLITE_CONSTRAINT && pOp->p2==OE_Abort ){
         doesStatementRollback = 1;
       }
-    }else if( opcode==OP_IdxInsert ){
-      if( pOp->p2 ){
-        doesStatementRollback = 1;
-      }
     }else if( opcode==OP_Statement ){
       hasStatementBegin = 1;
     }else if( opcode==OP_VFilter ){
@@ -1384,7 +1380,8 @@ int sqlite3VdbeHalt(Vdbe *p){
     }
   }
 
-  if( p->pc>=0  ){
+  /* We have successfully halted and closed the VM.  Record this fact. */
+  if( p->pc>=0 ){
     db->activeVdbeCnt--;
   }
   p->magic = VDBE_MAGIC_HALT;
