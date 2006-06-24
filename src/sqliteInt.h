@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.511 2006/06/23 08:05:19 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.512 2006/06/24 08:51:05 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1307,9 +1307,7 @@ struct Parse {
   TriggerStack *trigStack;  /* Trigger actions being coded */
   const char *zAuthContext; /* The 6th parameter to db->xAuth callbacks */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-  int nArgAlloc;             /* Number of bytes allocated for zArg[] */
-  int nArgUsed;              /* Number of bytes of zArg[] used so far */
-  char *zArg;                /* Complete text of a module argument */
+  Token sArg;                /* Complete text of a module argument */
   u8 declareVtab;            /* True if inside sqlite3_declare_vtab() */
   Table *pVirtualLock;       /* Require virtual table lock on this table */
 #endif

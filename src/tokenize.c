@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.120 2006/06/12 11:24:37 danielk1977 Exp $
+** $Id: tokenize.c,v 1.121 2006/06/24 08:51:05 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -482,10 +482,6 @@ abort_parse:
     pParse->aTableLock = 0;
     pParse->nTableLock = 0;
   }
-#endif
-
-#ifndef SQLITE_OMIT_VIRTUALTABLE
-  sqliteFree(pParse->zArg);
 #endif
 
   if( !IN_DECLARE_VTAB ){

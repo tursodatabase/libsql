@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is creating and dropping virtual tables.
 #
-# $Id: vtab1.test,v 1.30 2006/06/23 14:32:09 danielk1977 Exp $
+# $Id: vtab1.test,v 1.31 2006/06/24 08:51:05 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -762,6 +762,18 @@ do_test vtab1.9-2 {
     SELECT name FROM sqlite_master;
   }
 } {r}
+
+do_test vtab1.9-3 {
+  set echo_module ""
+  execsql {
+    CREATE VIRTUAL TABLE e USING echo(r, e_log, virtual 1 2 3 varchar(32));
+  }
+  set echo_module
+} [list                                                        \
+  xCreate echo main e r e_log {virtual 1 2 3 varchar(32)}      \
+  xSync echo(r)                                                \
+  xCommit echo(r)                                              \
+]
 
 finish_test
 

@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to help implement virtual tables.
 **
-** $Id: vtab.c,v 1.22 2006/06/23 11:34:55 danielk1977 Exp $
+** $Id: vtab.c,v 1.23 2006/06/24 08:51:05 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
@@ -138,10 +138,11 @@ void sqlite3VtabBeginParse(
 ** virtual table currently under construction in pParse->pTable.
 */
 static void addArgumentToVtab(Parse *pParse){
-  if( pParse->nArgUsed && pParse->pNewTable ){
-    addModuleArgument(pParse->pNewTable, sqliteStrDup(pParse->zArg));
+  if( pParse->sArg.z && pParse->pNewTable ){
+    char *z = pParse->sArg.z;
+    int n = pParse->sArg.n;
+    addModuleArgument(pParse->pNewTable, sqliteStrNDup(z, n));
   }
-  pParse->nArgUsed = 0;
 }
 
 /*
@@ -155,9 +156,7 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
   Module *pMod = 0;
 
   addArgumentToVtab(pParse);
-  sqliteFree(pParse->zArg);
-  pParse->zArg = 0;
-  pParse->nArgAlloc = 0;
+  pParse->sArg.z = 0;
 
   /* Lookup the module name. */
   pTab = pParse->pNewTable;
@@ -242,7 +241,8 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
 */
 void sqlite3VtabArgInit(Parse *pParse){
   addArgumentToVtab(pParse);
-  pParse->nArgUsed = 0;
+  pParse->sArg.z = 0;
+  pParse->sArg.n = 0;
 }
 
 /*
@@ -250,20 +250,14 @@ void sqlite3VtabArgInit(Parse *pParse){
 ** in an argument to the module name in a CREATE VIRTUAL TABLE statement.
 */
 void sqlite3VtabArgExtend(Parse *pParse, Token *p){
-  if( pParse->nArgUsed + p->n + 2 >= pParse->nArgAlloc ){
-    pParse->nArgAlloc = pParse->nArgAlloc*2 + p->n + 200;
-    pParse->zArg = sqliteRealloc(pParse->zArg, pParse->nArgAlloc);
-    if( pParse->zArg==0 ){
-      pParse->nArgAlloc = 0;
-      return;
-    }
+  Token *pArg = &pParse->sArg;
+  if( pArg->z==0 ){
+    pArg->z = p->z;
+    pArg->n = p->n;
+  }else{
+    assert(pArg->z < p->z);
+    pArg->n = (p->z + p->n - pArg->z);
   }
-  if( pParse->nArgUsed ){
-    pParse->zArg[pParse->nArgUsed++] = ' ';
-  }
-  memcpy(&pParse->zArg[pParse->nArgUsed], p->z, p->n);
-  pParse->nArgUsed += p->n;
-  pParse->zArg[pParse->nArgUsed] = 0;
 }
 
 /*
