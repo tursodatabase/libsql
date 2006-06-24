@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test8.c,v 1.35 2006/06/24 06:36:11 danielk1977 Exp $
+** $Id: test8.c,v 1.36 2006/06/24 09:34:23 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -32,6 +32,7 @@ typedef struct echo_cursor echo_cursor;
 **
 **     $::echo_module
 **     $::echo_module_sync_fail
+**     $::echo_module_begin_fail
 **
 ** The variable ::echo_module is a list. Each time one of the following
 ** methods is called, one or more elements are appended to the list.
@@ -851,7 +852,21 @@ static int echoTransactionCall(sqlite3_vtab *tab, const char *zCall){
   return SQLITE_OK;
 }
 static int echoBegin(sqlite3_vtab *tab){
-  return echoTransactionCall(tab, "xBegin");
+  echo_vtab *pVtab = (echo_vtab *)tab;
+  Tcl_Interp *interp = pVtab->interp;
+  const char *zVal; 
+
+  echoTransactionCall(tab, "xBegin");
+
+  /* Check if the $::echo_module_begin_fail variable is defined. If it is,
+  ** and it is set to the name of the real table underlying this virtual
+  ** echo module table, then cause this xSync operation to fail.
+  */
+  zVal = Tcl_GetVar(interp, "echo_module_begin_fail", TCL_GLOBAL_ONLY);
+  if( zVal && 0==strcmp(zVal, pVtab->zTableName) ){
+    return SQLITE_ERROR;
+  }
+  return SQLITE_OK;
 }
 static int echoSync(sqlite3_vtab *tab){
   echo_vtab *pVtab = (echo_vtab *)tab;
@@ -930,6 +945,32 @@ static int register_echo_module(
   return TCL_OK;
 }
 
+/*
+** Tcl interface to sqlite3_declare_vtab, invoked as follows from Tcl:
+**
+** sqlite3_declare_vtab DB SQL
+*/
+static int declare_vtab(
+  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  sqlite3 *db;
+  int rc;
+  if( objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB SQL");
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  rc = sqlite3_declare_vtab(db, Tcl_GetString(objv[2]));
+  if( rc!=SQLITE_OK ){
+    Tcl_SetResult(interp, sqlite3_errmsg(db), TCL_VOLATILE);
+    return TCL_ERROR;
+  }
+  return TCL_OK;
+}
+
 #endif /* ifndef SQLITE_OMIT_VIRTUALTABLE */
 
 /*
@@ -943,6 +984,7 @@ int Sqlitetest8_Init(Tcl_Interp *interp){
   } aObjCmd[] = {
 #ifndef SQLITE_OMIT_VIRTUALTABLE
      { "register_echo_module",   register_echo_module, 0 },
+     { "sqlite3_declare_vtab",   declare_vtab, 0 },
 #endif
   };
   int i;

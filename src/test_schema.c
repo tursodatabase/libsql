@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test_schema.c,v 1.6 2006/06/22 09:53:50 danielk1977 Exp $
+** $Id: test_schema.c,v 1.7 2006/06/24 09:34:23 danielk1977 Exp $
 */
 
 /* The code in this file defines a sqlite3 virtual-table module that
@@ -170,7 +170,7 @@ static int schemaEof(sqlite3_vtab_cursor *cur){
 ** Advance the cursor to the next row.
 */
 static int schemaNext(sqlite3_vtab_cursor *cur){
-  int rc;
+  int rc = SQLITE_OK;
   schema_cursor *pCur = (schema_cursor *)cur;
   schema_vtab *pVtab = (schema_vtab *)(cur->pVtab);
   char *zSql = 0;

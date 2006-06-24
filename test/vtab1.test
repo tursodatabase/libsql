@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is creating and dropping virtual tables.
 #
-# $Id: vtab1.test,v 1.31 2006/06/24 08:51:05 danielk1977 Exp $
+# $Id: vtab1.test,v 1.32 2006/06/24 09:34:24 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -774,6 +774,35 @@ do_test vtab1.9-3 {
   xSync echo(r)                                                \
   xCommit echo(r)                                              \
 ]
+
+do_test vtab1.10-1 {
+  execsql {
+    CREATE TABLE del(d);
+    CREATE VIRTUAL TABLE e2 USING echo(del);
+  }
+  db close
+  sqlite3 db test.db
+  register_echo_module [sqlite3_connection_pointer db]
+  execsql {
+    DROP TABLE del;
+  }
+  catchsql {
+    SELECT * FROM e2;
+  }
+} {1 {vtable constructor failed: e2}}
+do_test vtab1.10-2 {
+  set rc [catch {
+    set ptr [sqlite3_connection_pointer db]
+    sqlite3_declare_vtab $ptr {CREATE TABLE abc(a, b, c)}
+  } msg]
+  list $rc $msg
+} {1 {library routine called out of sequence}}
+do_test vtab1.10-3 {
+  set ::echo_module_begin_fail r
+  catchsql {
+    INSERT INTO e VALUES(1, 2, 3);
+  }
+} {1 {SQL logic error or missing database}}
 
 finish_test
 

@@ -1,5 +1,5 @@
-C Ensure\swhitespace\sspecified\sas\spart\sof\sa\svirtual\stable\sconstructor\sargument\sis\scorrectly\spassed\sto\sthe\sconstructor\sfunction.\s(CVS\s3290)
-D 2006-06-24T08:51:05
+C Add\stests\sto\simprove\scoverage\sof\svtab.c.\s(CVS\s3291)
+D 2006-06-24T09:34:23
 F Makefile.in f839b470345d3cb4b0644068474623fe2464b5d3
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -84,11 +84,11 @@ F src/test4.c 8b784cd82de158a2317cb4ac4bc86f91ad315e25
 F src/test5.c 7162f8526affb771c4ed256826eee7bb9eca265f
 F src/test6.c 60a02961ceb7b3edc25f5dc5c1ac2556622a76de
 F src/test7.c 03fa8d787f6aebc6d1f72504d52f33013ad2c8e3
-F src/test8.c c7aa1d069087935f3d4eecd685c80a8d4426ece0
+F src/test8.c 3e0d66d6b82bd2dda88031788a9169e322b3bf5f
 F src/test_async.c e3deaedd4d86a56391b81808fde9e44fbd92f1d3
 F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
 F src/test_md5.c 6c42bc0a3c0b54be34623ff77a0eec32b2fa96e3
-F src/test_schema.c 5aeddd60a60c3070de4c5bfa4f5c333c7769109c
+F src/test_schema.c 06042ea462608aecb6f9a95d5649227121093646
 F src/test_server.c a6460daed0b92ecbc2531b6dc73717470e7a648c
 F src/test_tclvar.c c52f67fbe06d32804af2ba9a2d7aadfc15f5910c
 F src/tokenize.c 7b448440dfd6e984d6bef7ac7fc60f1d26eaf8e7
@@ -104,7 +104,7 @@ F src/vdbeapi.c 6af0e7160af260052a7a4500464221a03dada75f
 F src/vdbeaux.c 1144cee0a5644c26f63e7fa34574dcd9349ac799
 F src/vdbefifo.c 9efb94c8c3f4c979ebd0028219483f88e57584f5
 F src/vdbemem.c 5f0afe3b92bb2c037f8d5d697f7c151fa50783a3
-F src/vtab.c 1f3d6758eabffa381080b540fbf5ffd2b3b208db
+F src/vtab.c 1eaa23c1a52c96927076c196c5b19752efd02111
 F src/where.c 6175449f1ff97a5bfea4068a35c050456c632e89
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -291,7 +291,7 @@ F test/vacuum.test 37f998b841cb335397c26d9bbc3457182af2565f
 F test/vacuum2.test 5aea8c88a65cb29f7d175296e7c819c6158d838c
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/view.test 16e2774fe35e47a07ac4471b7f0bcc948b1aa6d5
-F test/vtab1.test 1513060e02136c9ba0a83c201698de7c5846f7e6
+F test/vtab1.test 566632d6c0e722222679228e4cb5bca72411a9cb
 F test/vtab2.test e57f9865368df26ef5eb8bc630962d82086f174b
 F test/vtab3.test f38d6d7d19f08bffdadce4d5b8cba078f8118587
 F test/vtab4.test 4b4293341443839ef6dc02f8d9e614702a6c67ff
@@ -373,7 +373,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 4acf7594a6c47142e7112d2cd9766a563401879b
-R beecc5e611a3a30bf373ae1be7ae7d60
+P 4630e11d9a697a7fa29a0a1bbca91da4ad2bde7b
+R c24a599dff967aa04649cf25f3993ffe
 U danielk1977
-Z 14efa5deb3b9156b894cf23e7d8a3299
+Z 795fb524dae0f40446874bdb9f8a49ca
