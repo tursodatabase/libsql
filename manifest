@@ -1,5 +1,5 @@
-C A\sfew\smore\stest\scases\sto\simprove\scoverage\sof\svirtual\stable\smodule\srelated\scode.\s(CVS\s3292)
-D 2006-06-24T11:51:33
+C (OS/2)\sArmor\sOS/2\sagainst\saccidental\sdeletion\sof\sfiles,\stoo\s(patch\sby\sDaniel\sKruse,\sverified\sby\sme)\s(CVS\s3293)
+D 2006-06-24T12:39:00
 F Makefile.in f839b470345d3cb4b0644068474623fe2464b5d3
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -52,9 +52,9 @@ F src/loadext.c b08c5f5a57b78afd8cd0dd1677e98519e18db56f
 F src/main.c b71877c9c3cd491417fc7d4bbc785ddab411034c
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/os.c 59f05de8c5777c34876607114a2fbe55ae578235
-F src/os.h ac2ccb4f48902c1611a7e1f171eb81d17e3b8eb2
+F src/os.h 3fd6a022bafd620fdfd779a51dccb42f31c97f75
 F src/os_common.h 108cd719c96a2b714b64e02aeabbd40684274e6a
-F src/os_os2.c 123cb394c069bc8c6a305830ffa2bc5f72e5b83a
+F src/os_os2.c 1cf00781716ae8f9ae1d886e819c55731249b3a8
 F src/os_os2.h e5f17dd69333632bbc3112881ea407c37d245eb3
 F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
@@ -373,7 +373,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 0c5f4ee39cb76747cf01398867fed2c7ae3edc84
-R 2d3154b85b2d1db6b9e65d6433ce4721
-U danielk1977
-Z c6c7a990fc60a21156c29c57e99dddc4
+P 255aa9121a2ef4fec7fa5523e52969acc96f4b40
+R 2b758788fcbcea37bf1aacb95194485d
+U pweilbacher
+Z dba44f16a572c90023dd1e7bf0447866
