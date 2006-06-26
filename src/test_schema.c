@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test_schema.c,v 1.7 2006/06/24 09:34:23 danielk1977 Exp $
+** $Id: test_schema.c,v 1.8 2006/06/26 19:10:32 drh Exp $
 */
 
 /* The code in this file defines a sqlite3 virtual-table module that
@@ -269,7 +269,6 @@ static int schemaBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
 */
 static sqlite3_module schemaModule = {
   0,                           /* iVersion */
-  "schema",                    /* zName */
   schemaCreate,
   schemaCreate,
   schemaBestIndex,

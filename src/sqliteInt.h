@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.512 2006/06/24 08:51:05 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.513 2006/06/26 19:10:32 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -703,11 +703,6 @@ struct Table {
   Index *pIndex;   /* List of SQL indexes on this table. */
   int tnum;        /* Root BTree node for this table (see note above) */
   Select *pSelect; /* NULL for tables.  Points to definition if a view. */
-  u8 readOnly;     /* True if this table should not be written by the user */
-  u8 isEphem;      /* True if created using OP_OpenEphermeral */
-  u8 hasPrimKey;   /* True if there exists a primary key */
-  u8 keyConf;      /* What to do in case of uniqueness conflict on iPKey */
-  u8 autoInc;      /* True if the integer primary key is autoincrement */
   int nRef;          /* Number of pointers to this Table */
   Trigger *pTrigger; /* List of SQL triggers on this table */
   FKey *pFKey;       /* Linked list of all foreign keys in this table */
@@ -718,13 +713,18 @@ struct Table {
 #ifndef SQLITE_OMIT_ALTERTABLE
   int addColOffset;  /* Offset in CREATE TABLE statement to add a new column */
 #endif
+  u8 readOnly;     /* True if this table should not be written by the user */
+  u8 isEphem;      /* True if created using OP_OpenEphermeral */
+  u8 hasPrimKey;   /* True if there exists a primary key */
+  u8 keyConf;      /* What to do in case of uniqueness conflict on iPKey */
+  u8 autoInc;      /* True if the integer primary key is autoincrement */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
+  u8 isVirtual;             /* True if this is a virtual table */
+  u8 isCommit;              /* True once the CREATE TABLE has been committed */
   Module *pMod;             /* Pointer to the implementation of the module */
   sqlite3_vtab *pVtab;      /* Pointer to the module instance */
-  u8 isVirtual;             /* True if this is a virtual table */
   int nModuleArg;           /* Number of arguments to the module */
   char **azModuleArg;       /* Text of all module args. [0] is module name */
-  u8 isCommit;              /* True once the CREATE TABLE has been committed */
 #endif
   Schema *pSchema;
 };

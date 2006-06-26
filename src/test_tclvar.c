@@ -16,7 +16,7 @@
 ** The emphasis of this file is a virtual table that provides
 ** access to TCL variables.
 **
-** $Id: test_tclvar.c,v 1.4 2006/06/26 11:17:51 danielk1977 Exp $
+** $Id: test_tclvar.c,v 1.5 2006/06/26 19:10:32 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -126,7 +126,6 @@ static int tclvarBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
 */
 static sqlite3_module tclvarModule = {
   0,                         /* iVersion */
-  "tclvar",                  /* zName */
   tclvarConnect,
   tclvarConnect,
   tclvarBestIndex,

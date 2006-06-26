@@ -574,7 +574,7 @@ static char *displayP3(Op *pOp, char *zTemp, int nTemp){
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     case P3_VTAB: {
       sqlite3_vtab *pVtab = (sqlite3_vtab*)pOp->p3;
-      sqlite3_snprintf(nTemp, zTemp, "%p:%s", pVtab, pVtab->pModule->zName);
+      sqlite3_snprintf(nTemp, zTemp, "vtab:%p:%p", pVtab, pVtab->pModule);
       zP3 = zTemp;
       break;
     }
