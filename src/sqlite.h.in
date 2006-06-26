@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.183 2006/06/26 19:10:32 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.184 2006/06/26 21:35:45 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -405,8 +405,18 @@ void sqlite3_free_table(char **result);
 */
 char *sqlite3_mprintf(const char*,...);
 char *sqlite3_vmprintf(const char*, va_list);
-void sqlite3_free(char *z);
 char *sqlite3_snprintf(int,char*,const char*, ...);
+
+/*
+** SQLite uses its own memory allocator.  On many installations, this
+** memory allocator is identical to the standard malloc()/realloc()/free()
+** and can be used interchangable.  On others, the implementations are
+** different.  For maximum portability, it is best not to mix calls
+** to the standard malloc/realloc/free with the sqlite versions.
+*/
+void *sqlite3_malloc(int);
+void *sqlite3_realloc(void*, int);
+void sqlite3_free(void*);
 
 #ifndef SQLITE_OMIT_AUTHORIZATION
 /*

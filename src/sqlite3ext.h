@@ -15,7 +15,7 @@
 ** as extensions by SQLite should #include this file instead of 
 ** sqlite3.h.
 **
-** @(#) $Id: sqlite3ext.h,v 1.3 2006/06/16 21:13:22 drh Exp $
+** @(#) $Id: sqlite3ext.h,v 1.4 2006/06/26 21:35:45 drh Exp $
 */
 #ifndef _SQLITE3EXT_H_
 #define _SQLITE3EXT_H_
@@ -95,6 +95,7 @@ struct sqlite3_api_routines {
   sqlite_int64  (*last_insert_rowid)(sqlite3*);
   const char * (*libversion)(void);
   int  (*libversion_number)(void);
+  void *(*malloc)(int);
   char * (*mprintf)(const char*,...);
   int  (*open)(const char*,sqlite3**);
   int  (*open16)(const void*,sqlite3**);
@@ -102,6 +103,7 @@ struct sqlite3_api_routines {
   int  (*prepare16)(sqlite3*,const void*,int,sqlite3_stmt**,const void**);
   void * (*profile)(sqlite3*,void(*)(void*,const char*,sqlite_uint64),void*);
   void  (*progress_handler)(sqlite3*,int,int(*)(void*),void*);
+  void *(*realloc)(void*,int);
   int  (*reset)(sqlite3_stmt*pStmt);
   void  (*result_blob)(sqlite3_context*,const void*,int,void(*)(void*));
   void  (*result_double)(sqlite3_context*,double);
@@ -221,6 +223,7 @@ struct sqlite3_api_routines {
 #define sqlite3_last_insert_rowid      sqlite3_api->last_insert_rowid
 #define sqlite3_libversion             sqlite3_api->libversion
 #define sqlite3_libversion_number      sqlite3_api->libversion_number
+#define sqlite3_malloc                 sqlite3_api->malloc
 #define sqlite3_mprintf                sqlite3_api->mprintf
 #define sqlite3_open                   sqlite3_api->open
 #define sqlite3_open16                 sqlite3_api->open16
@@ -228,6 +231,7 @@ struct sqlite3_api_routines {
 #define sqlite3_prepare16              sqlite3_api->prepare16
 #define sqlite3_profile                sqlite3_api->profile
 #define sqlite3_progress_handler       sqlite3_api->progress_handler
+#define sqlite3_realloc                sqlite3_api->realloc
 #define sqlite3_reset                  sqlite3_api->reset
 #define sqlite3_result_blob            sqlite3_api->result_blob
 #define sqlite3_result_double          sqlite3_api->result_double

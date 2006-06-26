@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: legacy.c,v 1.14 2006/03/06 20:55:46 drh Exp $
+** $Id: legacy.c,v 1.15 2006/06/26 21:35:45 drh Exp $
 */
 
 #include "sqliteInt.h"
@@ -123,7 +123,7 @@ exec_out:
 
   rc = sqlite3ApiExit(0, rc);
   if( rc!=SQLITE_OK && rc==sqlite3_errcode(db) && pzErrMsg ){
-    *pzErrMsg = malloc(1+strlen(sqlite3_errmsg(db)));
+    *pzErrMsg = sqlite3_malloc(1+strlen(sqlite3_errmsg(db)));
     if( *pzErrMsg ){
       strcpy(*pzErrMsg, sqlite3_errmsg(db));
     }

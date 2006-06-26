@@ -806,27 +806,26 @@ char *sqlite3MPrintf(const char *zFormat, ...){
 }
 
 /*
-** Print into memory obtained from malloc().  Do not use the internal
-** %-conversion extensions.  This routine is for use by external users.
+** Print into memory obtained from sqlite3_malloc().  Omit the internal
+** %-conversion extensions.
+*/
+char *sqlite3_vmprintf(const char *zFormat, va_list ap){
+  char zBase[SQLITE_PRINT_BUF_SIZE];
+  return base_vprintf(sqlite3_realloc, 0, zBase, sizeof(zBase), zFormat, ap);
+}
+
+/*
+** Print into memory obtained from sqlite3_malloc()().  Omit the internal
+** %-conversion extensions.
 */
 char *sqlite3_mprintf(const char *zFormat, ...){
   va_list ap;
   char *z;
-  char zBuf[200];
-
-  va_start(ap,zFormat);
-  z = base_vprintf((void*(*)(void*,int))realloc, 0, 
-                   zBuf, sizeof(zBuf), zFormat, ap);
+  char zBase[SQLITE_PRINT_BUF_SIZE];
+  va_start(ap, zFormat);
+  z = base_vprintf(sqlite3_realloc, 0, zBase, sizeof(zBase), zFormat, ap);
   va_end(ap);
   return z;
-}
-
-/* This is the varargs version of sqlite3_mprintf.  
-*/
-char *sqlite3_vmprintf(const char *zFormat, va_list ap){
-  char zBuf[200];
-  return base_vprintf((void*(*)(void*,int))realloc, 0,
-                      zBuf, sizeof(zBuf), zFormat, ap);
 }
 
 /*

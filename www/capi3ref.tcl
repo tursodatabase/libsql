@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3ref.tcl,v 1.40 2006/06/14 15:35:37 drh Exp $}
+set rcsid {$Id: capi3ref.tcl,v 1.41 2006/06/26 21:35:46 drh Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -826,10 +826,36 @@ int sqlite3_finalize(sqlite3_stmt *pStmt);
 }
 
 api {} {
-void sqlite3_free(char *z);
+void *sqlite3_malloc(int);
+void *sqlite3_realloc(void*, int);
+void sqlite3_free(void*);
 } {
- Use this routine to free memory obtained from 
- sqlite3_mprintf() or sqlite3_vmprintf().
+ These routines provide access to the memory allocator used by SQLite.
+ Depending on how SQLite has been compiled and the OS-layer backend,
+ the memory allocator used by SQLite might be the standard system
+ malloc()/realloc()/free(), or it might be something different.  With
+ certain compile-time flags, SQLite will add wrapper logic around the
+ memory allocator to add memory leak and buffer overrun detection.  The
+ OS layer might substitute a completely different memory allocator.
+ Use these APIs to be sure you are always using the correct memory
+ allocator.
+ 
+ The sqlite3_free() API, not the standard free() from the system library,
+ should always be used to free the memory buffer returned by
+ sqlite3_mprintf() or sqlite3_vmprintf() and to free the error message
+ string returned by sqlite3_exec().  Using free() instead of sqlite3_free()
+ might accidentally work on some systems and build configurations but 
+ will fail on others.
+
+ Compatibility Note:  Prior to version 3.4.0, the sqlite3_free API
+ was prototyped to take a <tt>char*</tt> parameter rather than 
+ <tt>void*</tt>.  Like this:
+<blockquote><pre>
+void sqlite3_free(char*);
+</pre></blockquote>
+ The change to using <tt>void*</tt> might cause warnings when 
+ compiling older code against
+ newer libraries, but everything should still work correctly.
 }
 
 api {} {
