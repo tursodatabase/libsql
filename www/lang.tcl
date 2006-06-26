@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the lang-*.html files.
 #
-set rcsid {$Id: lang.tcl,v 1.113 2006/06/17 14:12:48 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.114 2006/06/26 10:37:12 drh Exp $}
 source common.tcl
 
 if {[llength $argv]>0} {
@@ -49,6 +49,7 @@ proc slink {label} {
 
 foreach {section} [lsort -index 0 -dictionary {
   {{CREATE TABLE} createtable}
+  {{CREATE VIRTUAL TABLE} createvtab}
   {{CREATE INDEX} createindex}
   {VACUUM vacuum}
   {{DROP TABLE} droptable}
@@ -225,7 +226,7 @@ ATTACH [DATABASE] <database-filename> AS <database-name>
 }
 
 puts {
-<p>The ATTACH DATABASE statement adds a preexisting database 
+<p>The ATTACH DATABASE statement adds another database 
 file to the current database connection.  If the filename contains 
 punctuation characters it must be quoted.  The names 'main' and 
 'temp' refer to the main database and the database used for 
@@ -247,9 +248,9 @@ also permissible to attach the same database file multiple times.</p>
 <i>database-name.table-name</i>.  If an attached table doesn't have 
 a duplicate table name in the main database, it doesn't require a 
 database name prefix.  When a database is attached, all of its 
-tables which don't have duplicate names become the 'default' table
+tables which don't have duplicate names become the default table
 of that name.  Any tables of that name attached afterwards require the table 
-prefix. If the 'default' table of a given name is detached, then 
+prefix. If the default table of a given name is detached, then 
 the last table of that name attached becomes the new default.</p>
 
 <p>
@@ -487,7 +488,7 @@ command.</p>
 Section {CREATE TABLE} {createtable}
 
 Syntax {sql-command} {
-CREATE [TEMP | TEMPORARY] TABLE [IF NOT EXISTS] <table-name> (
+CREATE [TEMP | TEMPORARY] TABLE [IF NOT EXISTS] [<database-name> .] <table-name> (
   <column-def> [, <column-def>]*
   [, <constraint>]*
 )
@@ -809,6 +810,40 @@ with the <a href="#dropview">DROP VIEW</a>
 command.</p>
 }
 
+Section {CREATE VIRTUAL TABLE} {createvtab}
+
+Syntax {sql-command} {
+CREATE VIRTUAL TABLE [<database-name> .] <table-name> USING <module-name> [( <arguments> )]
+}
+
+puts {
+<p>A virtual table is an interface to an external storage or computation
+engine that appears to be a table but does not actually store information
+in the database file.</p>
+
+<p>In general, you can do anything with a virtual table that can be done
+with an ordinary table, except that you cannot create triggers on a
+virtual table.  Some virtual table implementations might impose additional
+restrictions.  For example, many virtual tables are read-only.</p>
+
+<p>The &lt;module-name&gt; is the name of an object that implements
+the virtual table.  The &lt;module-name&gt; must be registered with
+the SQLite database connection using
+<a href="capi3ref.html#sqlite3_create_module">sqlite3_create_module</a>
+prior to issuing the CREATE VIRTUAL TABLE statement.
+The module takes zero or more comma-separated arguments.
+The arguments can be just about any text as long as it has balanced
+parentheses.  The argument syntax is sufficiently general that the
+arguments can be made to appear as column definitions in a traditional
+<a href="#createtable">CREATE TABLE</a> statement.  
+SQLite passes the module arguments directly
+to the module without any interpretation.  It is the responsibility
+of the module implementation to parse and interpret its own arguments.</p>
+
+<p>A virtual table is destroyed using the ordinary
+<a href="#droptable">DROP TABLE</a> statement.  There is no
+DROP VIRTUAL TABLE statement.</p>
+}
 
 Section DELETE delete
 
@@ -1196,7 +1231,10 @@ a result immediately based on their inputs.  Aggregate functions
 may only be used in a SELECT statement.  Aggregate functions compute
 their result across all rows of the result set.</p>
 
-<p>The functions shown below are available by default.  Additional
+<a name="corefunctions"></a>
+<b>Core Functions</b>
+
+<p>The core functions shown below are available by default.  Additional
 functions may be written in C and added to the database engine using
 the <a href="capi3ref.html#cfunc">sqlite3_create_function()</a>
 API.</p>
@@ -1371,6 +1409,15 @@ routine <b>toupper()</b> which means it may not work correctly on
 UTF-8 strings.</td>
 </tr>
 </table>
+
+<b>Date And Time Functions</b>
+
+<p>Date and time functions are documented in the 
+<a href="http://www.sqlite.org/cvstrac/wiki?p=DateAndTimeFunctions">
+SQLite Wiki</a>.</p>
+
+<a name="aggregatefunctions"></a>
+<b>Aggregate Functions</b>
 
 <p>
 The aggregate functions shown below are available by default.  Additional
