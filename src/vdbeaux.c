@@ -850,7 +850,6 @@ void sqlite3VdbeFreeCursor(Vdbe *p, Cursor *pCx){
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   if( pCx->pVtabCursor ){
     sqlite3_vtab_cursor *pVtabCursor = pCx->pVtabCursor;
-    sqlite3_vtab *pVtab = pVtabCursor->pVtab;
     const sqlite3_module *pModule = pCx->pModule;
     p->inVtabMethod = 1;
     pModule->xClose(pVtabCursor);

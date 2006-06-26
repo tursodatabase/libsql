@@ -16,7 +16,7 @@
 ** The emphasis of this file is a virtual table that provides
 ** access to TCL variables.
 **
-** $Id: test_tclvar.c,v 1.3 2006/06/15 04:28:13 danielk1977 Exp $
+** $Id: test_tclvar.c,v 1.4 2006/06/26 11:17:51 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -136,6 +136,7 @@ static sqlite3_module tclvarModule = {
   tclvarClose,                 /* xClose - close a cursor */
   tclvarFilter,                /* xFilter - configure scan constraints */
   tclvarNext,                  /* xNext - advance a cursor */
+  0,                           /* xEof - check for end of scan */
   tclvarColumn,                /* xColumn - read data */
   tclvarRowid                  /* xRowid - read data */
 };

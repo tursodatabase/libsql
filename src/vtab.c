@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to help implement virtual tables.
 **
-** $Id: vtab.c,v 1.24 2006/06/24 09:34:23 danielk1977 Exp $
+** $Id: vtab.c,v 1.25 2006/06/26 11:17:51 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
@@ -139,7 +139,7 @@ void sqlite3VtabBeginParse(
 */
 static void addArgumentToVtab(Parse *pParse){
   if( pParse->sArg.z && pParse->pNewTable ){
-    char *z = pParse->sArg.z;
+    const char *z = pParse->sArg.z;
     int n = pParse->sArg.n;
     addModuleArgument(pParse->pNewTable, sqliteStrNDup(z, n));
   }
