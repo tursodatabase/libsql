@@ -1,5 +1,5 @@
-C Fix\strivial\scompiler\swarnings.\s(CVS\s3295)
-D 2006-06-26T11:17:51
+C Fix\sa\sfile\sdescriptor\sleak\sfollowing\smalloc\sfailure\son\sDROP\sTABLE\sIF\sEXISTS.\s(CVS\s3296)
+D 2006-06-26T12:50:09
 F Makefile.in f839b470345d3cb4b0644068474623fe2464b5d3
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -66,7 +66,7 @@ F src/pager.c 7ef4c5098b378d81d3687919d9de99ea99bbb6bb
 F src/pager.h 43f32f3847421f7502cfbb66f4eb2302b8033818
 F src/parse.y e0831a269fbbd21414bb367fd0b806569c934683
 F src/pragma.c 27d5e395c5d950931c7ac4fe610e7c2993e2fa55
-F src/prepare.c 6dc945dab34cf97364c661d2b7a12be65d338267
+F src/prepare.c e477df44112e3ce167f048226432fca9d9cba6a0
 F src/printf.c 7029e5f7344a478394a02c52837ff296ee1ab240
 F src/random.c d40f8d356cecbd351ccfab6eaedd7ec1b54f5261
 F src/select.c 380fa06c99ae01050c0054c4b1db91e9f1d8322d
@@ -201,11 +201,12 @@ F test/lock.test 9b7afcb24f53d24da502abb33daaad2cd6d44107
 F test/lock2.test d83ba79d3c4fffdb5b926c7d8ca7a36c34288a55
 F test/lock3.test 615111293cf32aa2ed16d01c6611737651c96fb9
 F test/main.test e7212ce1023957c7209778cc87fa932bd79ba89a
-F test/malloc.test 684510c0e60dfb1660fa441e811ae79e97e8ea82
+F test/malloc.test 98a189ae3d49ab6259578dbf776decc172c6b7b9
 F test/malloc2.test e6e321db96d6c94cb18bf82ad7215070c41e624e
 F test/malloc3.test fd4186bee73c2a2638f4e2a05a684c06836f725b
 F test/malloc4.test 59cd02f71b363302a04c4e77b97c0a1572eaa210
 F test/malloc5.test 7425272e263325fda7d32cb55706e52b5c09e7e0
+F test/malloc6.test 025ae0b78542e0ddd000d23f79d93e9be9ba0f15
 F test/manydb.test 8de36b8d33aab5ef295b11d9e95310aeded31af8
 F test/memdb.test a67bda4ff90a38f2b19f6c7f95aa7289e051d893
 F test/memleak.test df2b2b96e77f8ba159a332299535b1e5f18e49ac
@@ -373,7 +374,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P df601a7b374cb6ec21a2e91abf17af4fed404393
-R d69c8936d3b462628cdb2178258952aa
-U danielk1977
-Z 61efe5f570c81872f1fcd01cde3929c6
+P 3538beace8ece6339fe8aaf40852ce5e5e7da283
+R 7f31a48109f4f6df3e35eac6efc09953
+U drh
+Z b3481a9c45f0d830fe849860e961f559

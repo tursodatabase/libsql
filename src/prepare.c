@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.35 2006/06/12 06:09:18 danielk1977 Exp $
+** $Id: prepare.c,v 1.36 2006/06/26 12:50:09 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -498,6 +498,9 @@ int sqlite3_prepare(
   }
   if( sParse.rc==SQLITE_SCHEMA ){
     sqlite3ResetInternalSchema(db, 0);
+  }
+  if( sqlite3MallocFailed() ){
+    sParse.rc = SQLITE_NOMEM;
   }
   if( pzTail ) *pzTail = sParse.zTail;
   rc = sParse.rc;
