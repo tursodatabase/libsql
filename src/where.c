@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.223 2006/06/24 11:51:35 danielk1977 Exp $
+** $Id: where.c,v 1.224 2006/06/27 01:54:26 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -949,6 +949,51 @@ static double estLog(double N){
   return logN;
 }
 
+/*
+** Two routines for printing the content of an sqlite3_index_info
+** structure.  Used for testing and debugging only.  If neither
+** SQLITE_TEST or SQLITE_DEBUG are defined, then these routines
+** are no-ops.
+*/
+#if !defined(SQLITE_OMIT_VIRTUALTABLE) && \
+        (defined(SQLITE_TEST) || defined(SQLITE_DEBUG))
+static void TRACE_IDX_INPUTS(sqlite3_index_info *p){
+  int i;
+  if( !sqlite3_where_trace ) return;
+  for(i=0; i<p->nConstraint; i++){
+    sqlite3DebugPrintf("  constraint[%d]: col=%d termid=%d op=%d usabled=%d\n",
+       i,
+       p->aConstraint[i].iColumn,
+       p->aConstraint[i].iTermOffset,
+       p->aConstraint[i].op,
+       p->aConstraint[i].usable);
+  }
+  for(i=0; i<p->nOrderBy; i++){
+    sqlite3DebugPrintf("  orderby[%d]: col=%d desc=%d\n",
+       i,
+       p->aOrderBy[i].iColumn,
+       p->aOrderBy[i].desc);
+  }
+}
+static void TRACE_IDX_OUTPUTS(sqlite3_index_info *p){
+  int i;
+  if( !sqlite3_where_trace ) return;
+  for(i=0; i<p->nConstraint; i++){
+    sqlite3DebugPrintf("  usage[%d]: argvIdx=%d omit=%d\n",
+       i,
+       p->aConstraintUsage[i].argvIndex,
+       p->aConstraintUsage[i].omit);
+  }
+  sqlite3DebugPrintf("  idxNum=%d\n", p->idxNum);
+  sqlite3DebugPrintf("  idxStr=%s\n", p->idxStr);
+  sqlite3DebugPrintf("  orderByConsumed=%d\n", p->orderByConsumed);
+  sqlite3DebugPrintf("  estimatedCost=%g\n", p->estimatedCost);
+}
+#else
+#define TRACE_IDX_INPUTS(A)
+#define TRACE_IDX_OUTPUTS(A)
+#endif
+
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 /*
 ** Compute the best index for a virtual table.
@@ -993,6 +1038,7 @@ static double bestVirtualIndex(
   if( pIdxInfo==0 ){
     WhereTerm *pTerm;
     int nTerm;
+    TRACE(("Recomputing index info for %s...\n", pTab->zName));
 
     /* Count the number of possible WHERE clause constraints referring
     ** to this virtual table */
@@ -1125,7 +1171,10 @@ static double bestVirtualIndex(
   }
 
   sqlite3SafetyOff(pParse->db);
+  TRACE(("xBestIndex for %s\n", pTab->zName));
+  TRACE_IDX_INPUTS(pIdxInfo);
   rc = pTab->pVtab->pModule->xBestIndex(pTab->pVtab, pIdxInfo);
+  TRACE_IDX_OUTPUTS(pIdxInfo);
   if( rc!=SQLITE_OK ){
     if( rc==SQLITE_NOMEM ){
       sqlite3FailedMalloc();
@@ -1136,7 +1185,6 @@ static double bestVirtualIndex(
   }else{
     rc = sqlite3SafetyOn(pParse->db);
   }
-
   *(int*)&pIdxInfo->nOrderBy = nOrderBy;
   return pIdxInfo->estimatedCost;
 }
@@ -1792,8 +1840,7 @@ WhereInfo *sqlite3WhereBegin(
     int bestJ = 0;              /* The value of j */
     Bitmask m;                  /* Bitmask value for j or bestJ */
     int once = 0;               /* True when first table is seen */
-    sqlite3_index_info *pBestIndex = 0;
-    sqlite3_index_info *pIndex = 0;
+    sqlite3_index_info *pIndex; /* Current virtual index */
 
     lowestCost = SQLITE_BIG_DBL;
     for(j=iFrom, pTabItem=&pTabList->a[j]; j<pTabList->nSrc; j++, pTabItem++){
@@ -1809,11 +1856,14 @@ WhereInfo *sqlite3WhereBegin(
       }
       assert( pTabItem->pTab );
 #ifndef SQLITE_OMIT_VIRTUALTABLE
+      pIndex = 0;
       if( IsVirtual(pTabItem->pTab) ){
+        sqlite3_index_info **ppIdxInfo = &pWInfo->a[j].pIdxInfo;
         cost = bestVirtualIndex(pParse, &wc, pTabItem, notReady,
                                 ppOrderBy ? *ppOrderBy : 0, i==0,
-                                &pIndex);
+                                ppIdxInfo);
         flags = WHERE_VIRTUALTABLE;
+        pIndex = *ppIdxInfo;
         if( pIndex && pIndex->orderByConsumed ){
           flags = WHERE_VIRTUALTABLE | WHERE_ORDERBY;
         }
@@ -1834,12 +1884,7 @@ WhereInfo *sqlite3WhereBegin(
         bestNEq = nEq;
         bestJ = j;
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-        sqliteFree(pBestIndex);
-        pBestIndex = pIndex;
-        pIndex = 0;
-      }else{
-        sqliteFree(pIndex);
-        pIndex = 0;
+        pLevel->pBestIdx = pIndex;
 #endif
       }
       if( doNotReorder ) break;
@@ -1855,7 +1900,6 @@ WhereInfo *sqlite3WhereBegin(
     pLevel->nEq = bestNEq;
     pLevel->aInLoop = 0;
     pLevel->nIn = 0;
-    pLevel->pIdxInfo = pBestIndex;
     if( pBest ){
       pLevel->iIdxCur = pParse->nTab++;
     }else{
@@ -1898,10 +1942,10 @@ WhereInfo *sqlite3WhereBegin(
         zMsg = sqlite3MPrintf("%z USING PRIMARY KEY", zMsg);
       }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-      else if( pLevel->pIdxInfo ){
-        sqlite3_index_info *pIdxInfo = pLevel->pIdxInfo;
+      else if( pLevel->pBestIdx ){
+        sqlite3_index_info *pBestIdx = pLevel->pBestIdx;
         zMsg = sqlite3MPrintf("%z VIRTUAL TABLE INDEX %d:%s", zMsg,
-                    pIdxInfo->idxNum, pIdxInfo->idxStr);
+                    pBestIdx->idxNum, pBestIdx->idxStr);
       }
 #endif
       if( pLevel->flags & WHERE_ORDERBY ){
@@ -1915,7 +1959,7 @@ WhereInfo *sqlite3WhereBegin(
     iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
     if( pTab->isEphem || pTab->pSelect ) continue;
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-    if( pLevel->pIdxInfo ){
+    if( pLevel->pBestIdx ){
       int iCur = pTabItem->iCursor;
       sqlite3VdbeOp3(v, OP_VOpen, iCur, 0, (const char*)pTab->pVtab, P3_VTAB);
     }else
@@ -1988,17 +2032,17 @@ WhereInfo *sqlite3WhereBegin(
     }
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-    if( pLevel->pIdxInfo ){
+    if( pLevel->pBestIdx ){
       /* Case 0:  The table is a virtual-table.  Use the VFilter and VNext
       **          to access the data.
       */
       int ii;
-      sqlite3_index_info *pIdxInfo = pLevel->pIdxInfo;
-      int nConstraint = pIdxInfo->nConstraint;
+      sqlite3_index_info *pBestIdx = pLevel->pBestIdx;
+      int nConstraint = pBestIdx->nConstraint;
       struct sqlite3_index_constraint_usage *aUsage =
-                                                  pIdxInfo->aConstraintUsage;
+                                                  pBestIdx->aConstraintUsage;
       const struct sqlite3_index_constraint *aConstraint =
-                                                  pIdxInfo->aConstraint;
+                                                  pBestIdx->aConstraint;
 
       for(ii=1; ii<=nConstraint; ii++){
         int j;
@@ -2012,12 +2056,12 @@ WhereInfo *sqlite3WhereBegin(
         if( j==nConstraint ) break;
       }
       sqlite3VdbeAddOp(v, OP_Integer, ii-1, 0);
-      sqlite3VdbeAddOp(v, OP_Integer, pIdxInfo->idxNum, 0);
-      sqlite3VdbeOp3(v, OP_VFilter, iCur, brk, pIdxInfo->idxStr,
-                      pIdxInfo->needToFreeIdxStr ? P3_MPRINTF : P3_STATIC);
-      pIdxInfo->needToFreeIdxStr = 0;
-      for(ii=0; ii<pIdxInfo->nConstraint; ii++){
-        if( pIdxInfo->aConstraintUsage[ii].omit ){
+      sqlite3VdbeAddOp(v, OP_Integer, pBestIdx->idxNum, 0);
+      sqlite3VdbeOp3(v, OP_VFilter, iCur, brk, pBestIdx->idxStr,
+                      pBestIdx->needToFreeIdxStr ? P3_MPRINTF : P3_STATIC);
+      pBestIdx->needToFreeIdxStr = 0;
+      for(ii=0; ii<pBestIdx->nConstraint; ii++){
+        if( pBestIdx->aConstraintUsage[ii].omit ){
           disableTerm(pLevel, &wc.a[ii]);
         }
       }

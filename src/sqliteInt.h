@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.514 2006/06/26 21:35:45 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.515 2006/06/27 01:54:26 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1119,6 +1119,19 @@ struct SrcList {
 ** structure contains a single instance of this structure.  This structure
 ** is intended to be private the the where.c module and should not be
 ** access or modified by other modules.
+**
+** The pIdxInfo and pBestIdx fields are used to help pick the best
+** index on a virtual table.  The pIdxInfo pointer contains indexing
+** information for the i-th table in the FROM clause before reordering.
+** All the pIdxInfo pointers are freed by whereInfoFree() in where.c.
+** The pBestIdx pointer is a copy of pIdxInfo for the i-th table after
+** FROM clause ordering.  This is a little confusing so I will repeat
+** it in different words.  WhereInfo.a[i].pIdxInfo is index information 
+** for WhereInfo.pTabList.a[i].  WhereInfo.a[i].pBestInfo is the
+** index information for the i-th loop of the join.  pBestInfo is always
+** either NULL or a copy of some pIdxInfo.  So for cleanup it is 
+** sufficient to free all of the pIdxInfo pointers.
+** 
 */
 struct WhereLevel {
   int iFrom;            /* Which entry in the FROM clause */
@@ -1135,7 +1148,13 @@ struct WhereLevel {
   int nEq;              /* Number of == or IN constraints on this loop */
   int nIn;              /* Number of IN operators constraining this loop */
   int *aInLoop;         /* Loop terminators for IN operators */
-  sqlite3_index_info *pIdxInfo;  /* Index information for virtual tables */
+  sqlite3_index_info *pBestIdx;  /* Index information for this level */
+
+  /* The following field is really not part of the current level.  But
+  ** we need a place to cache index information for each table in the
+  ** FROM clause and the WhereLevel structure is a convenient place.
+  */
+  sqlite3_index_info *pIdxInfo;  /* Index info for n-th source table */
 };
 
 /*
@@ -1152,6 +1171,7 @@ struct WhereInfo {
   int iContinue;       /* Jump here to continue with next record */
   int iBreak;          /* Jump here to break out of the loop */
   int nLevel;          /* Number of nested loop */
+  sqlite3_index_info **apInfo;  /* Array of pointers to index info structures */
   WhereLevel a[1];     /* Information about each nest loop in the WHERE */
 };
 
