@@ -1,5 +1,5 @@
-C In\stest\scode,\salways\suse\ssqlite3_free()\sinstead\sof\sfree()\sto\sfree\serror\smessages\sreturned\sby\ssqlite3_exec().\s(CVS\s3303)
-D 2006-06-27T07:34:40
+C Move\solder\snews\sitems\r\nto\sthe\soldnews.html\spage.\s(CVS\s3304)
+D 2006-06-27T11:14:13
 F Makefile.in f839b470345d3cb4b0644068474623fe2464b5d3
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -350,13 +350,13 @@ F www/fileformat.tcl 900c95b9633abc3dcfc384d9ddd8eb4876793059
 F www/formatchng.tcl 4972e680f9331ea46f47001e349baba807f5b60a
 F www/fullscanb.gif f7c94cb227f060511f8909e10f570157263e9a25
 F www/index-ex1-x-b.gif f9b1d85c3fa2435cf38b15970c7e3aa1edae23a3
-F www/index.tcl 38fac8344e6f514725a57cf32946463581459464
+F www/index.tcl 2ec7b369b682a3636bf440ade6fb2e0e87e8541f
 F www/indirect1b1.gif adfca361d2df59e34f9c5cac52a670c2bfc303a1
 F www/lang.tcl d5414bd9f63ea3763887893b437d0dce4ad4f403
 F www/lockingv3.tcl f59b19d6c8920a931f096699d6faaf61c05db55f
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
 F www/nulls.tcl ec35193f92485b87b90a994a01d0171b58823fcf
-F www/oldnews.tcl 593255c2b99afd93f4deba9d1f949bccd6c569b5
+F www/oldnews.tcl f0491f4f69ec114ecd168077f2df48022b1352b2
 F www/omitted.tcl ee6b46f83d513b2187869740da829a700e1a355e
 F www/opcode.tcl 5bd68059416b223515a680d410a9f7cb6736485f
 F www/optimizer.tcl d6812a10269bd0d7c488987aac0ad5036cace9dc
@@ -374,7 +374,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 3e1f5567dfd306bdb97275a32afd02ea693eaf58
-R 80f93022d986d1101b4cc35d47fb5dc0
-U danielk1977
-Z b8db982134c877730ff38a4ddba62af5
+P 6521ee5f320e47f8fbd7d6b23929fab431023483
+R 94079b24dd5b629652ba782053290e98
+U drh
+Z b56a36b2fc50729ff0ac932ffe779d5a

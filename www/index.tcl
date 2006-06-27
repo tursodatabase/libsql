@@ -100,51 +100,9 @@ newsitem {2006-Jan-31} {Version 3.3.3 stable} {
   and supported.
 }
 
-newsitem {2006-Jan-24} {Version 3.3.2 beta} {
-  More bug fixes and performance improvements as we move closer to
-  a production-ready version 3.3.x.
-}
-
-newsitem {2006-Jan-16} {Version 3.3.1 alpha} {
-  Many bugs found in last week's alpha release have now been fixed and
-  the library is running much faster again.
-
-  Database connections can now be moved between threads as long as the
-  connection holds no locks at the time it is moved.  Thus the common
-  paradigm of maintaining a pool of database connections and handing
-  them off to transient worker threads is now supported.
-  Please help test this new feature.
-  See <a href="http://www.sqlite.org/cvstrac/wiki?p=MultiThreading">
-  the MultiThreading wiki page</a> for additional
-  information.
-}
-
-newsitem {2006-Jan-10} {Version 3.3.0 alpha} {
-  Version 3.3.0 adds support for CHECK constraints, DESC indices,
-  separate REAL and INTEGER column affinities, a new OS interface layer
-  design, and many other changes.  The code passed a regression
-  test but should still be considered alpha.  Please report any
-  problems.
-
-  The file format for version 3.3.0 has changed slightly in order provide
-  a more efficient encoding of binary values.  SQLite 3.3.0 will read and
-  write legacy databases created with any prior version of SQLite 3.  But
-  databases created by version 3.3.0 will not be readable or writable
-  by earlier versions of the SQLite.  The older file format can be
-  specified at compile-time for those rare cases where it is needed.
-}
-
-newsitem {2005-Dec-19} {Versions 3.2.8 and 2.8.17} {
-  These versions contain one-line changes to 3.2.7 and 2.8.16 to fix a bug
-  that has been present since March of 2002 and version 2.4.0.
-  That bug might possibly cause database corruption if a large INSERT or
-  UPDATE statement within a multi-statement transaction fails due to a
-  uniqueness constraint but the containing transaction commits.
-}
-
 
 puts {
 <p align="right"><a href="oldnews.html">Old news...</a></p>
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.139 2006/06/20 00:22:38 drh Exp $}
+footer {$Id: index.tcl,v 1.140 2006/06/27 11:14:13 drh Exp $}
