@@ -11,11 +11,16 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is descending indices.
 #
-# $Id: descidx1.test,v 1.5 2006/01/16 16:24:25 danielk1977 Exp $
+# $Id: descidx1.test,v 1.6 2006/06/27 12:51:13 drh Exp $
 #
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+ifcapable legacyformat {
+  finish_test
+  return
+}
 
 # This procedure sets the value of the file-format in file 'test.db'
 # to $newval. Also, the schema cookie is incremented.
