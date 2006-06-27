@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the sqlite_bind API.
 #
-# $Id: bind.test,v 1.37 2006/01/23 18:42:21 drh Exp $
+# $Id: bind.test,v 1.38 2006/06/27 20:06:45 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -501,7 +501,7 @@ ifcapable tclvar {
 
 if {[execsql {pragma encoding}]=="UTF-8"} {
   # Test the ability to bind text that contains embedded '\000' characters.
-  # Make sure we can recover the enter input string.
+  # Make sure we can recover the entire input string.
   #
   do_test bind-12.1 {
     execsql {
@@ -523,5 +523,37 @@ if {[execsql {pragma encoding}]=="UTF-8"} {
     }
   } {X'6162630078797A007071'}
 }
+
+# Test the operation of sqlite3_clear_bindings
+#
+do_test bind-13.1 {
+  set VM [sqlite3_prepare $DB {SELECT ?,?,?} -1 TAIL]
+  sqlite3_step $VM
+  list [sqlite3_column_type $VM 0] [sqlite3_column_type $VM 1] \
+               [sqlite3_column_type $VM 2]
+} {NULL NULL NULL}
+do_test bind-13.2 {
+  sqlite3_reset $VM
+  sqlite3_bind_int $VM 1 1
+  sqlite3_bind_int $VM 2 2
+  sqlite3_bind_int $VM 3 3
+  sqlite3_step $VM
+  list [sqlite3_column_type $VM 0] [sqlite3_column_type $VM 1] \
+               [sqlite3_column_type $VM 2]
+} {INTEGER INTEGER INTEGER}
+do_test bind-13.3 {
+  sqlite3_reset $VM
+  sqlite3_step $VM
+  list [sqlite3_column_type $VM 0] [sqlite3_column_type $VM 1] \
+               [sqlite3_column_type $VM 2]
+} {INTEGER INTEGER INTEGER}
+do_test bind-13.4 {
+  sqlite3_reset $VM
+  sqlite3_clear_bindings $VM
+  sqlite3_step $VM
+  list [sqlite3_column_type $VM 0] [sqlite3_column_type $VM 1] \
+               [sqlite3_column_type $VM 2]
+} {NULL NULL NULL}
+sqlite3_finalize $VM
 
 finish_test

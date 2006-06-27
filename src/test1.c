@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.215 2006/06/27 15:16:16 drh Exp $
+** $Id: test1.c,v 1.216 2006/06/27 20:06:45 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -2239,7 +2239,6 @@ static int test_bind_parameter_index(
 ** Usage:   sqlite3_clear_bindings STMT
 **
 */
-#if 0
 static int test_clear_bindings(
   void * clientData,
   Tcl_Interp *interp,
@@ -2256,7 +2255,28 @@ static int test_clear_bindings(
   Tcl_SetObjResult(interp, Tcl_NewIntObj(sqlite3_clear_bindings(pStmt)));
   return TCL_OK;
 }
-#endif
+
+/*
+** Usage:   sqlite3_sleep MILLISECONDS
+*/
+static int test_sleep(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int ms;
+
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "MILLISECONDS");
+    return TCL_ERROR;
+  }
+  if( Tcl_GetIntFromObj(interp, objv[1], &ms) ){
+    return TCL_ERROR;
+  }
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(sqlite3_sleep(ms)));
+  return TCL_OK;
+}
 
 /*
 ** Usage: sqlite3_errcode DB
@@ -3691,9 +3711,6 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_rekey",                 (Tcl_CmdProc*)test_rekey            },
      { "sqlite_set_magic",              (Tcl_CmdProc*)sqlite_set_magic      },
      { "sqlite3_interrupt",             (Tcl_CmdProc*)test_interrupt        },
-#if 0
-     { "sqlite3_sleep",                 (Tcl_CmdProc*)test_sleep            },
-#endif
      { "sqlite_delete_function",        (Tcl_CmdProc*)delete_function       },
      { "sqlite_delete_collation",       (Tcl_CmdProc*)delete_collation      },
      { "sqlite3_get_autocommit",        (Tcl_CmdProc*)get_autocommit        },
@@ -3715,9 +3732,8 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_bind_parameter_count",  test_bind_parameter_count, 0},
      { "sqlite3_bind_parameter_name",   test_bind_parameter_name,  0},
      { "sqlite3_bind_parameter_index",  test_bind_parameter_index, 0},
-#if 0
      { "sqlite3_clear_bindings",        test_clear_bindings, 0},
-#endif
+     { "sqlite3_sleep",                 test_sleep,          0},
      { "sqlite3_errcode",               test_errcode       ,0 },
      { "sqlite3_errmsg",                test_errmsg        ,0 },
      { "sqlite3_errmsg16",              test_errmsg16      ,0 },

@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc1.test,v 1.40 2006/01/17 09:35:02 danielk1977 Exp $
+# $Id: misc1.test,v 1.41 2006/06/27 20:06:45 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -576,5 +576,10 @@ do_test misc1-17.1 {
   }
 } {2 3}
 }
+
+do_test misc1-18.1 {
+  set n [sqlite3_sleep 100]
+  expr {$n>=100}
+} {1}
 
 finish_test

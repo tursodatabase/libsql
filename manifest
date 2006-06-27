@@ -1,5 +1,5 @@
-C Off\sby\s1\serror\sin\scheck-in\s(3314).\s\sNote\sthat\sthis\schange\sis\sa\slikely\r\nfix\sfor\sticket\s#1875.\s\sBut\sI\shave\snot\stested\sit\sfor\sthat\spurpose\syet.\s(CVS\s3315)
-D 2006-06-27T20:05:24
+C Move\sthe\ssqlite3_sleep()\sand\ssqlite3_clear_bindings()\sinterfaces\sinto\sthe\nmain\slibrary\sand\smake\sthis\sofficial.\s(CVS\s3316)
+D 2006-06-27T20:06:45
 F Makefile.in 9c2a76055c305868cc5f5b73e29a252ff3632c0a
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -49,7 +49,7 @@ F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
 F src/insert.c 63f01d3f4e0ba7ed171934a24aece2191824faec
 F src/legacy.c 10e01a902d7f2c872c7922fedf19a2df70935857
 F src/loadext.c 040853b36adf535bba6a2e9f5d921422a4394baf
-F src/main.c 2f78bd86852fdd42e3e9e0e4dba54000d9dc516d
+F src/main.c 4a9be207fc6d0161eee2e520622260af8b2f187b
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/os.c 59f05de8c5777c34876607114a2fbe55ae578235
 F src/os.h 3fd6a022bafd620fdfd779a51dccb42f31c97f75
@@ -77,7 +77,7 @@ F src/sqlite3ext.h c611255287e9a11ce4f1fe6251c2a0b9d32a828b
 F src/sqliteInt.h e07a49b3e349c2c5f1bcb7dd9371fc3faf5ba338
 F src/table.c e707e822aad688034d391b93df63d6b2d302fdca
 F src/tclsqlite.c 32d9e0147077f2e2c127c5f214fb3fe03ef97d18
-F src/test1.c 4127f457e4d9bf086c58b32297c098963defddf6
+F src/test1.c 42c423aad0d9477b1fc229e4d0aa000f2b3310b4
 F src/test2.c ca74a1d8aeb7d9606e8f6b762c5daf85c1a3f92b
 F src/test3.c 833dc8346e431182ae6bd0648455c3d4cc65a19f
 F src/test4.c 8b784cd82de158a2317cb4ac4bc86f91ad315e25
@@ -130,7 +130,7 @@ F test/avtrans.test b77740800de0d2cdcf394ef94d2d61225a1941d8
 F test/between.test 16b1776c6323faadb097a52d673e8e3d8be7d070
 F test/bigfile.test ebc9ce9216e08bead63734ab816d0f27858f3b80
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
-F test/bind.test 238612427136404738a5a74323885923991d7dad
+F test/bind.test 941a424e7722dd8994c2d503b28d00e6a8f87f23
 F test/bindxfer.test b76bfb7df68bb0b238039f4543a84e9612291b54
 F test/blob.test 28c3b25150684ee3d108bb78cfb67a472deef2f0
 F test/btree.test b1957e39f4858b0722dc0f70f926a2143d3b25f9
@@ -211,7 +211,7 @@ F test/manydb.test 8de36b8d33aab5ef295b11d9e95310aeded31af8
 F test/memdb.test a67bda4ff90a38f2b19f6c7f95aa7289e051d893
 F test/memleak.test df2b2b96e77f8ba159a332299535b1e5f18e49ac
 F test/minmax.test 66434d8ee04869fe4c220b665b73748accbb9163
-F test/misc1.test 5a9cfffc59e5da583492a1c07efcb08a48cd1135
+F test/misc1.test 27a6ad11ba6e4b73aeee650ab68053ad7dfd0433
 F test/misc2.test 09388e5a2c5c1017ad3ff1c4bf469375def2a0c2
 F test/misc3.test 7bd937e2c62bcc6be71939faf068d506467b1e03
 F test/misc4.test b043a05dea037cca5989f3ae09552fa16119bc80
@@ -375,7 +375,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 5d7e6bbddb522de2283474eb6d30cc376daf66f0
-R 71f191800b950e120f864eeb8d1efe93
+P c7477459e92209ad792f0e11e4a4dd8abf0f2f11
+R 52123310555fce7d05407190dc5a314c
 U drh
-Z a57f4bd73f3d98e9d9acaea09ff3475f
+Z 8242f839c9f5ef79d75ea82732d8a51d

@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.349 2006/06/26 21:35:45 drh Exp $
+** $Id: main.c,v 1.350 2006/06/27 20:06:45 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1258,3 +1258,22 @@ error_out:
   return sqlite3ApiExit(db, rc);
 }
 #endif
+
+/*
+** Set all the parameters in the compiled SQL statement to NULL.
+*/
+int sqlite3_clear_bindings(sqlite3_stmt *pStmt){
+  int i;
+  int rc = SQLITE_OK;
+  for(i=1; rc==SQLITE_OK && i<=sqlite3_bind_parameter_count(pStmt); i++){
+    rc = sqlite3_bind_null(pStmt, i);
+  }
+  return rc;
+}
+
+/*
+** Sleep for a little while.  Return the amount of time slept.
+*/
+int sqlite3_sleep(int ms){
+  return sqlite3OsSleep(ms);
+}
