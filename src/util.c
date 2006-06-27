@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.189 2006/04/08 19:14:53 drh Exp $
+** $Id: util.c,v 1.190 2006/06/27 13:20:21 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -684,11 +684,11 @@ void sqlite3ReallocOrFree(void **pp, int n){
 */
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
 void *sqlite3ThreadSafeMalloc(int n){
-  ENTER_MALLOC;
+  (void)ENTER_MALLOC;
   return sqlite3Malloc(n, 0);
 }
 void sqlite3ThreadSafeFree(void *p){
-  ENTER_MALLOC;
+  (void)ENTER_MALLOC;
   if( p ){
     OSFREE(p);
   }

@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.227 2006/06/27 12:16:56 danielk1977 Exp $
+** $Id: where.c,v 1.228 2006/06/27 13:20:22 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -524,6 +524,8 @@ static int isLikeOrGlob(
 }
 #endif /* SQLITE_OMIT_LIKE_OPTIMIZATION */
 
+
+#ifndef SQLITE_OMIT_VIRTUALTABLE
 /*
 ** Check to see if the given expression is of the form
 **
@@ -539,7 +541,8 @@ static int isMatchOfColumn(
   if( pExpr->op!=TK_FUNCTION ){
     return 0;
   }
-  if( pExpr->token.n!=5 || sqlite3StrNICmp(pExpr->token.z,"match",5)!=0 ){
+  if( pExpr->token.n!=5 ||
+       sqlite3StrNICmp((const char*)pExpr->token.z,"match",5)!=0 ){
     return 0;
   }
   pList = pExpr->pList;
@@ -551,6 +554,7 @@ static int isMatchOfColumn(
   }
   return 1;
 }
+#endif /* SQLITE_OMIT_VIRTUALTABLE */
 
 /*
 ** If the pBase expression originated in the ON or USING clause of

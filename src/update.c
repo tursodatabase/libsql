@@ -12,10 +12,11 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.132 2006/06/24 11:51:34 danielk1977 Exp $
+** $Id: update.c,v 1.133 2006/06/27 13:20:21 drh Exp $
 */
 #include "sqliteInt.h"
 
+#ifndef SQLITE_OMIT_VIRTUALTABLE
 /* Forward declaration */
 static void updateVirtualTable(
   Parse *pParse,       /* The parsing context */
@@ -26,6 +27,7 @@ static void updateVirtualTable(
   int *aXRef,          /* Mapping from columns of pTab to entries in pChanges */
   Expr *pWhere         /* WHERE clause of the UPDATE statement */
 );
+#endif /* SQLITE_OMIT_VIRTUALTABLE */
 
 /*
 ** The most recently coded instruction was an OP_Column to retrieve the
