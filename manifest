@@ -1,5 +1,5 @@
-C Fix\sbug\sin\stransfer\sof\sarguments\sfrom\sWHERE\sclause\sto\svirtual\stable\sxFilter()\smethods.\s(CVS\s3305)
-D 2006-06-27T12:16:56
+C Additional\sdocumentation\son\sthe\s3.3.0\sfile\sformat\schange\sadded\sto\nformatchng.html.\s(CVS\s3306)
+D 2006-06-27T12:24:14
 F Makefile.in f839b470345d3cb4b0644068474623fe2464b5d3
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -347,7 +347,7 @@ F www/download.tcl d56a1c30b1c3c18f62926a806179976eb133ce94
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/faq.tcl 705c986e40775cc3d92a1676dcbb55f00f0459c5
 F www/fileformat.tcl 900c95b9633abc3dcfc384d9ddd8eb4876793059
-F www/formatchng.tcl 4972e680f9331ea46f47001e349baba807f5b60a
+F www/formatchng.tcl c9f5ded025504b4ae6a39cb8a6630709a981f6b5
 F www/fullscanb.gif f7c94cb227f060511f8909e10f570157263e9a25
 F www/index-ex1-x-b.gif f9b1d85c3fa2435cf38b15970c7e3aa1edae23a3
 F www/index.tcl 2ec7b369b682a3636bf440ade6fb2e0e87e8541f
@@ -374,7 +374,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 80163ded7d7a8d6897b59df988286f987b221d08
-R 92ef8332c4454ad08c23a0d99eed847a
-U danielk1977
-Z 897e2d4eed2cdcbe8bf33e402c2b5888
+P cf41f2a33f94c6c94fb39ae6ffcd58bbf9ea88c8
+R d795e51bfb50cf8f5991b3a004ce6875
+U drh
+Z 9d94388a6945b56f01bf4b619ff75d29

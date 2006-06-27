@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the formatchng.html file.
 #
-set rcsid {$Id: formatchng.tcl,v 1.17 2006/02/16 00:32:37 drh Exp $ }
+set rcsid {$Id: formatchng.tcl,v 1.18 2006/06/27 12:24:14 drh Exp $ }
 source common.tcl
 header {File Format Changes in SQLite}
 puts {
@@ -214,11 +214,22 @@ occurred since version 1.0.0:
 <tr>
   <td valign="top">3.2.8 to 3.3.0</td>
   <td valign="top">2006-Jan-10</td>
-  <td><p>Version 3.3.0 uses a new encoding for boolean values that
-  uses less disk space.  Version 3.3.0 can read and write database
+  <td><p>Version 3.3.0 adds support for descending indices and
+  uses a new encoding for boolean values that requires
+  less disk space.  Version 3.3.0 can read and write database
   files created by prior versions of SQLite.  But prior versions
   of SQLite will not be able to read or write databases created
   by Version 3.3.0</p>
+  <p>If you need backwards and forwards capatibility, you can
+  compile with -DSQLITE_DEFAULT_FILE_FORMAT=1.  Or at runtime
+  you can say "PRAGMA legacy_file_format=ON" prior to creating
+  a new database file</p>
+  <p>Once a database file is created, its format is fixed.  So
+  a database file created by SQLite 3.2.8 and merely modified
+  by version 3.3.0 or later will retain the old format.  Except,
+  the VACUUM command recreates the database so running VACUUM
+  on 3.3.0 or later will change the file format to the latest
+  edition.</p>
   </td>
 </tr>
 </table>
