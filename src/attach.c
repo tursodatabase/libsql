@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the ATTACH and DETACH commands.
 **
-** $Id: attach.c,v 1.52 2006/05/25 11:52:38 drh Exp $
+** $Id: attach.c,v 1.53 2006/06/27 16:34:57 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -245,6 +245,10 @@ static void detachFunc(
   }
   if( !db->autoCommit ){
     strcpy(zErr, "cannot DETACH database within transaction");
+    goto detach_error;
+  }
+  if( sqlite3BtreeIsInReadTrans(pDb->pBt) ){
+    sqlite3_snprintf(sizeof(zErr),zErr, "database %s is locked", zName);
     goto detach_error;
   }
 

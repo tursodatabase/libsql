@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.324 2006/04/04 01:54:55 drh Exp $
+** $Id: btree.c,v 1.325 2006/06/27 16:34:57 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -6556,6 +6556,13 @@ int sqlite3BtreeIsInTrans(Btree *p){
 */
 int sqlite3BtreeIsInStmt(Btree *p){
   return (p->pBt && p->pBt->inStmt);
+}
+
+/*
+** Return non-zero if a read (or write) transaction is active.
+*/
+int sqlite3BtreeIsInReadTrans(Btree *p){
+  return (p && (p->inTrans!=TRANS_NONE));
 }
 
 /*

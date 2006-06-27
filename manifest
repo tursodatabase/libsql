@@ -1,5 +1,5 @@
-C The\sability\sto\sload\sextensions\sis\sturned\soff\sby\sdefault.\s\sIt\smust\sbe\nenabled\sby\scalling\ssqlite3_enable_load_extension()\sbefore\sit\swill\swork.\nThis\sprevents\ssecurity\sproblems\sin\slegacy\sapplications.\s\sTicket\s#1863.\s(CVS\s3311)
-D 2006-06-27T15:16:15
+C Prevent\sdatabases\sfrom\sbeing\sDETACHed\swhile\sthey\sare\sin\suse.\sFix\sfor\s#1873.\s(CVS\s3312)
+D 2006-06-27T16:34:57
 F Makefile.in f839b470345d3cb4b0644068474623fe2464b5d3
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -32,10 +32,10 @@ F sqlite3.def f756049b1bf3e8442baf6862db393ca423225262
 F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
 F src/alter.c eba661e77bfd00282fbfa316cdb6aef04856fedc
 F src/analyze.c 7d2b7ab9a9c2fd6e55700f69064dfdd3e36d7a8a
-F src/attach.c 27a31d3b89d7ebb5b358847607b1ec795384123c
+F src/attach.c b11eb4d5d3fb99a10a626956bccc7215f6b68b16
 F src/auth.c 902f4722661c796b97f007d9606bd7529c02597f
-F src/btree.c ed343b3dbcbc7da9ac481ef2b98c4239fe6d9629
-F src/btree.h 40055cfc09defd1146bc5b922399c035f969e56d
+F src/btree.c fc077741b35efd2015b0f56e62d00370bed1fcc8
+F src/btree.h 061c50e37de7f50b58528e352d400cf33ead7418
 F src/build.c ef710ff6b3a91d4c1dd4c7009a8800ff38660613
 F src/callback.c fd9bb39f7ff6b52bad8365617abc61c720640429
 F src/complete.c 7d1a44be8f37de125fcafd3d3a018690b3799675
@@ -271,6 +271,7 @@ F test/tkt1537.test e3a14332de9770be8ff14bd15c19a49cbec10808
 F test/tkt1567.test 18023cc3626a365f0118e17b66decedec93b1a6f
 F test/tkt1644.test 80b6a2bb17885f3cf1cb886d97cdad13232bb869
 F test/tkt1667.test ef52c857940755ea5eab24d68f808826e7dcdc94
+F test/tkt1873.test 7159a1c1bf627bbb03f11362e4ad4de11d6ff316
 F test/trace.test 75ffc1b992c780d054748a656e3e7fd674f18567
 F test/trans.test 06bff0246886858793fca3748721936e2f65e3df
 F test/trigger1.test e8c717e959c2f98c8181cd9466e140fa7aac781f
@@ -374,7 +375,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 783369e870df9d189fc75c98fa574fe4fc9843d0
-R 03b010c340d22a562ee989d0414f81c5
-U drh
-Z b75df8d7be6621720643222d3b606d63
+P 4692319ccf28b0ebe64d5c5d189f444034fe0cb2
+R 00197d0cb5b5b0794b65c7727c5ea79d
+U danielk1977
+Z 1504eda4a9a7a809d58a186051ca9568
