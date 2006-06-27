@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.225 2006/06/27 02:33:40 drh Exp $
+** $Id: where.c,v 1.226 2006/06/27 02:36:58 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -804,7 +804,7 @@ or_not_possible:
       pNewTerm->leftColumn = pLeft->iColumn;
       pNewTerm->eOperator = WO_MATCH;
       pNewTerm->iParent = idxTerm;
-      pTerm = &pWC->a[idxNew];
+      pTerm = &pWC->a[idxTerm];
       pTerm->nChild = 1;
       pTerm->flags |= TERM_COPIED;
       pNewTerm->prereqAll = pTerm->prereqAll;
