@@ -15,7 +15,7 @@
 ** as extensions by SQLite should #include this file instead of 
 ** sqlite3.h.
 **
-** @(#) $Id: sqlite3ext.h,v 1.4 2006/06/26 21:35:45 drh Exp $
+** @(#) $Id: sqlite3ext.h,v 1.5 2006/06/27 00:14:28 drh Exp $
 */
 #ifndef _SQLITE3EXT_H_
 #define _SQLITE3EXT_H_
@@ -40,6 +40,7 @@ struct sqlite3_api_routines {
   const char * (*bind_parameter_name)(sqlite3_stmt*,int);
   int  (*bind_text)(sqlite3_stmt*,int,const char*,int n,void(*)(void*));
   int  (*bind_text16)(sqlite3_stmt*,int,const void*,int,void(*)(void*));
+  int  (*bind_value)(sqlite3_stmt*,int,const sqlite3_value*);
   int  (*busy_handler)(sqlite3*,int(*)(void*,int),void*);
   int  (*busy_timeout)(sqlite3*,int ms);
   int  (*changes)(sqlite3*);
@@ -85,7 +86,7 @@ struct sqlite3_api_routines {
   int  (*exec)(sqlite3*,const char*,sqlite3_callback,void*,char**);
   int  (*expired)(sqlite3_stmt*);
   int  (*finalize)(sqlite3_stmt*pStmt);
-  void  (*free)(char*z);
+  void  (*free)(void*);
   void  (*free_table)(char**result);
   int  (*get_autocommit)(sqlite3*);
   void * (*get_auxdata)(sqlite3_context*,int);
@@ -168,6 +169,7 @@ struct sqlite3_api_routines {
 #define sqlite3_bind_parameter_name    sqlite3_api->bind_parameter_name
 #define sqlite3_bind_text              sqlite3_api->bind_text
 #define sqlite3_bind_text16            sqlite3_api->bind_text16
+#define sqlite3_bind_value             sqlite3_api->bind_value
 #define sqlite3_busy_handler           sqlite3_api->busy_handler
 #define sqlite3_busy_timeout           sqlite3_api->busy_timeout
 #define sqlite3_changes                sqlite3_api->changes

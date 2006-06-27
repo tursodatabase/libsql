@@ -102,6 +102,7 @@ const sqlite3_api_routines sqlite3_api = {
   sqlite3_bind_parameter_name,
   sqlite3_bind_text,
   sqlite3_bind_text16,
+  sqlite3_bind_value,
   sqlite3_busy_handler,
   sqlite3_busy_timeout,
   sqlite3_changes,
