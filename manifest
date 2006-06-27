@@ -1,6 +1,6 @@
-C Use\sthe\s-k\soption\sto\ssort.\s\sThis\sallows\sthe\sbuild\sto\srun\son\snewer\sunix\nsystems,\sbut\swill\slikely\sbreak\sthe\sbuild\son\solder\sones.\s\sPlease\saddress\nyour\scomplaints\sto\sthe\sposix\scommittee\smembers\sthat\sthought\sthis\swould\nbe\sa\sgood\sidea.\s(CVS\s3314)
-D 2006-06-27T18:55:10
-F Makefile.in 8da50d5e90e0d38517effad2ed6ac9da62625ded
+C Off\sby\s1\serror\sin\scheck-in\s(3314).\s\sNote\sthat\sthis\schange\sis\sa\slikely\r\nfix\sfor\sticket\s#1875.\s\sBut\sI\shave\snot\stested\sit\sfor\sthat\spurpose\syet.\s(CVS\s3315)
+D 2006-06-27T20:05:24
+F Makefile.in 9c2a76055c305868cc5f5b73e29a252ff3632c0a
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
 F VERSION 301ed2b2c08f5cca242ea56e50a9ed0264a3eb76
@@ -19,7 +19,7 @@ F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
-F main.mk 43cc6505f373b4d1ab0d8c71aad53e38230965c9
+F main.mk e753590214c7f8d4588e130b811495611dddaa5c
 F mkdll.sh 919df5efde876194e3102c6ebc60657d38949909
 F mkopcodec.awk bd46ad001c98dfbab07b1713cb8e692fa0e5415d
 F mkopcodeh.awk cde995d269aa06c94adbf6455bea0acedb913fa5
@@ -375,7 +375,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P aee4b669944ccf3888daa9d9e54f16261c64f380
-R 84fee334d2d1fcf58ce4a0326b97a22a
+P 5d7e6bbddb522de2283474eb6d30cc376daf66f0
+R 71f191800b950e120f864eeb8d1efe93
 U drh
-Z 1f2e986872dcc5ed763574e172ea3147
+Z a57f4bd73f3d98e9d9acaea09ff3475f
