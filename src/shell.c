@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.143 2006/06/27 15:16:15 drh Exp $
+** $Id: shell.c,v 1.144 2006/06/27 20:39:04 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -388,12 +388,12 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
       int w = 5;
       if( azArg==0 ) break;
       for(i=0; i<nArg; i++){
-        int len = strlen(azCol[i]);
+        int len = strlen(azCol[i] ? azCol[i] : "");
         if( len>w ) w = len;
       }
       if( p->cnt++>0 ) fprintf(p->out,"\n");
       for(i=0; i<nArg; i++){
-        fprintf(p->out,"%*s = %s\n", w, azCol[i], 
+        fprintf(p->out,"%*s = %s\n", w, azCol[i],
                 azArg[i] ? azArg[i] : p->nullvalue);
       }
       break;
@@ -490,7 +490,7 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
     case MODE_Tcl: {
       if( p->cnt++==0 && p->showHeader ){
         for(i=0; i<nArg; i++){
-          output_c_string(p->out,azCol[i]);
+          output_c_string(p->out,azCol[i] ? azCol[i] : "");
           fprintf(p->out, "%s", p->separator);
         }
         fprintf(p->out,"\n");
@@ -506,7 +506,7 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
     case MODE_Csv: {
       if( p->cnt++==0 && p->showHeader ){
         for(i=0; i<nArg; i++){
-          output_csv(p, azCol[i], i<nArg-1);
+          output_csv(p, azCol[i] ? azCol[i] : "", i<nArg-1);
         }
         fprintf(p->out,"\n");
       }

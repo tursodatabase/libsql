@@ -71,11 +71,9 @@ static int sqlite3_get_table_cb(void *pArg, int nCol, char **argv, char **colv){
     p->nColumn = nCol;
     for(i=0; i<nCol; i++){
       if( colv[i]==0 ){
-        z = 0;
+        z = sqlite3_mprintf("");
       }else{
-        z = sqlite3_malloc( strlen(colv[i])+1 );
-        if( z==0 ) goto malloc_failed;
-        strcpy(z, colv[i]);
+        z = sqlite3_mprintf("%s", colv[i]);
       }
       p->azResult[p->nData++] = z;
     }
