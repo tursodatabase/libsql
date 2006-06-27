@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.
 #
-# $Id: vtab2.test,v 1.3 2006/06/20 11:01:09 danielk1977 Exp $
+# $Id: vtab2.test,v 1.4 2006/06/27 12:25:00 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -35,6 +35,35 @@ do_test vtab2-1.1 {
   main schema 5 not_null   {} 0 {} 0 \
   main schema 6 dflt_value {} 0 {} 0 \
   main schema 7 pk         {} 0 {} 0 \
+]
+
+register_tclvar_module [sqlite3_connection_pointer db]
+do_test vtab2-2.1 {
+  set ::abc 123
+  execsql {
+    CREATE VIRTUAL TABLE vars USING tclvar;
+    SELECT * FROM vars WHERE name='abc';
+  }
+} [list abc "" 123]
+do_test vtab2-2.2 {
+  set A(1) 1
+  set A(2) 4
+  set A(3) 9
+  execsql {
+    SELECT * FROM vars WHERE name='A';
+  }
+} [list A 1 1 A 2 4 A 3 9]
+do_test vtab2-2.3 {
+  execsql {
+    SELECT name, value FROM vars
+      WHERE name MATCH 'tcl_*' AND arrayname = '' 
+      ORDER BY name;
+  }
+} [list \
+  tcl_patchLevel $tcl_patchLevel            \
+  tcl_pkgPath $tcl_pkgPath                  \
+  tcl_precision $tcl_precision              \
+  tcl_version $tcl_version                  \
 ]
 
 finish_test
