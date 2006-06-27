@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.224 2006/06/27 01:54:26 drh Exp $
+** $Id: where.c,v 1.225 2006/06/27 02:33:40 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1856,7 +1856,6 @@ WhereInfo *sqlite3WhereBegin(
       }
       assert( pTabItem->pTab );
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-      pIndex = 0;
       if( IsVirtual(pTabItem->pTab) ){
         sqlite3_index_info **ppIdxInfo = &pWInfo->a[j].pIdxInfo;
         cost = bestVirtualIndex(pParse, &wc, pTabItem, notReady,
@@ -1875,6 +1874,7 @@ WhereInfo *sqlite3WhereBegin(
         cost = bestIndex(pParse, &wc, pTabItem, notReady,
                          (i==0 && ppOrderBy) ? *ppOrderBy : 0,
                          &pIdx, &flags, &nEq);
+        pIndex = 0;
       }
       if( cost<lowestCost ){
         once = 1;
@@ -1883,9 +1883,7 @@ WhereInfo *sqlite3WhereBegin(
         bestFlags = flags;
         bestNEq = nEq;
         bestJ = j;
-#ifndef SQLITE_OMIT_VIRTUALTABLE
         pLevel->pBestIdx = pIndex;
-#endif
       }
       if( doNotReorder ) break;
     }
@@ -1921,7 +1919,6 @@ WhereInfo *sqlite3WhereBegin(
   ** searching those tables.
   */
   sqlite3CodeVerifySchema(pParse, -1); /* Insert the cookie verifier Goto */
-  pLevel = pWInfo->a;
   for(i=0, pLevel=pWInfo->a; i<pTabList->nSrc; i++, pLevel++){
     Table *pTab;     /* Table to open */
     Index *pIx;      /* Index used to access pTab (if any) */
@@ -2036,7 +2033,7 @@ WhereInfo *sqlite3WhereBegin(
       /* Case 0:  The table is a virtual-table.  Use the VFilter and VNext
       **          to access the data.
       */
-      int ii;
+      int j;
       sqlite3_index_info *pBestIdx = pLevel->pBestIdx;
       int nConstraint = pBestIdx->nConstraint;
       struct sqlite3_index_constraint_usage *aUsage =
@@ -2044,25 +2041,26 @@ WhereInfo *sqlite3WhereBegin(
       const struct sqlite3_index_constraint *aConstraint =
                                                   pBestIdx->aConstraint;
 
-      for(ii=1; ii<=nConstraint; ii++){
-        int j;
-        for(j=0; j<nConstraint; j++){
-          if( aUsage[j].argvIndex==ii ){
-            int k = aConstraint[j].iTermOffset;
-            sqlite3ExprCode(pParse, wc.a[k].pExpr->pRight);
+      for(j=1; j<=nConstraint; j++){
+        int k;
+        for(k=0; k<nConstraint; k++){
+          if( aUsage[k].argvIndex==j ){
+            int iTerm = aConstraint[j-1].iTermOffset;
+            sqlite3ExprCode(pParse, wc.a[iTerm].pExpr->pRight);
             break;
           }
         }
-        if( j==nConstraint ) break;
+        if( k==nConstraint ) break;
       }
-      sqlite3VdbeAddOp(v, OP_Integer, ii-1, 0);
+      sqlite3VdbeAddOp(v, OP_Integer, j-1, 0);
       sqlite3VdbeAddOp(v, OP_Integer, pBestIdx->idxNum, 0);
       sqlite3VdbeOp3(v, OP_VFilter, iCur, brk, pBestIdx->idxStr,
                       pBestIdx->needToFreeIdxStr ? P3_MPRINTF : P3_STATIC);
       pBestIdx->needToFreeIdxStr = 0;
-      for(ii=0; ii<pBestIdx->nConstraint; ii++){
-        if( pBestIdx->aConstraintUsage[ii].omit ){
-          disableTerm(pLevel, &wc.a[ii]);
+      for(j=0; j<pBestIdx->nConstraint; j++){
+        if( aUsage[j].omit ){
+          int iTerm = aConstraint[j].iTermOffset;
+          disableTerm(pLevel, &wc.a[iTerm]);
         }
       }
       pLevel->op = OP_VNext;
