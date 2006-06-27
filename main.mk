@@ -180,7 +180,7 @@ all:	sqlite3.h libsqlite3.a sqlite3$(EXE)
 # of the most recently modified source code file
 #
 last_change:	$(SRC)
-	cat $(SRC) | grep '$$Id: ' | sort +4 | tail -1 \
+	cat $(SRC) | grep '$$Id: ' | sort -k 4 | tail -1 \
           | $(NAWK) '{print $$5,$$6}' >last_change
 
 libsqlite3.a:	$(LIBOBJ)
@@ -273,7 +273,7 @@ opcodes.o:	opcodes.c
 	$(TCCX) -c opcodes.c
 
 opcodes.c:	opcodes.h $(TOP)/mkopcodec.awk
-	sort -n -b +2 opcodes.h | $(NAWK) -f $(TOP)/mkopcodec.awk >opcodes.c
+	sort -n -b -k 2 opcodes.h | $(NAWK) -f $(TOP)/mkopcodec.awk >opcodes.c
 
 opcodes.h:	parse.h $(TOP)/src/vdbe.c $(TOP)/mkopcodeh.awk
 	cat parse.h $(TOP)/src/vdbe.c | $(NAWK) -f $(TOP)/mkopcodeh.awk >opcodes.h
