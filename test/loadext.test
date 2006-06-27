@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is in-memory database backend.
 #
-# $Id: loadext.test,v 1.5 2006/06/27 15:16:16 drh Exp $
+# $Id: loadext.test,v 1.6 2006/06/27 18:38:52 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -32,7 +32,7 @@ if {![file exists $testextension]} {
   set srcdir [file dir $testdir]/src
   set testextsrc $srcdir/test_loadext.c
   if {[catch {
-    exec gcc -Wall -g -shared $testextsrc -o $testextension
+    exec gcc -Wall -I$srcdir -I. -g -shared $testextsrc -o $testextension
   } msg]} {
     puts "Skipping loadext tests: Test extension not built..."
     puts $msg

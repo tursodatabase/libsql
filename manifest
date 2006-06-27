@@ -1,5 +1,5 @@
-C Prevent\sdatabases\sfrom\sbeing\sDETACHed\swhile\sthey\sare\sin\suse.\sFix\sfor\s#1873.\s(CVS\s3312)
-D 2006-06-27T16:34:57
+C When\scompiling\sextensions\sin\sthe\sload_extension\stests,\sspecify\sa\spath\nfor\sfinding\sinclude\sfiles.\s(CVS\s3313)
+D 2006-06-27T18:38:52
 F Makefile.in f839b470345d3cb4b0644068474623fe2464b5d3
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -196,7 +196,7 @@ F test/lastinsert.test 474d519c68cb79d07ecae56a763aa7f322c72f51
 F test/laststmtchanges.test 19a6d0c11f7a31dc45465b495f7b845a62cbec17
 F test/like.test 5f7d76574752a9101cac13372c8a85999d0d91e6
 F test/limit.test 2a87b9cb2165abb49ca0ddcf5cb43cf24074581f
-F test/loadext.test 146ead2c34b76fe4d51a5054b7e52b76f35fba90
+F test/loadext.test 0f6e7c469d2a3036c29512c1a36c09b303dfd727
 F test/lock.test 9b7afcb24f53d24da502abb33daaad2cd6d44107
 F test/lock2.test d83ba79d3c4fffdb5b926c7d8ca7a36c34288a55
 F test/lock3.test 615111293cf32aa2ed16d01c6611737651c96fb9
@@ -375,7 +375,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 4692319ccf28b0ebe64d5c5d189f444034fe0cb2
-R 00197d0cb5b5b0794b65c7727c5ea79d
-U danielk1977
-Z 1504eda4a9a7a809d58a186051ca9568
+P 70a48b250bab99c5d9b4ad17c471663b8628e8d2
+R 79c4a0c26ade3124618190d2b0ac3a29
+U drh
+Z 4c8a86e91bcfbf402d238b06dc62212e
