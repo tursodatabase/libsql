@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.184 2006/06/26 21:35:45 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.185 2006/06/27 15:16:15 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1485,7 +1485,7 @@ int sqlite3_table_column_metadata(
 **
 ** Attempt to load an SQLite extension library contained in the file
 ** zFile.  The entry point is zProc.  zProc may be 0 in which case the
-** name of the entry point is derived from the filename.
+** name of the entry point defaults to "sqlite3_extension_init".
 **
 ** Return SQLITE_OK on success and SQLITE_ERROR if something goes wrong.
 **
@@ -1493,23 +1493,8 @@ int sqlite3_table_column_metadata(
 ** error message text.  The calling function should free this memory
 ** by calling sqlite3_free().
 **
-** The entry point name is derived from the filename according to the
-** following steps:
-**
-**    * Convert the name to lower case
-**    * Remove the path prefix from the name
-**    * Remove the first "." and all following characters from the name
-**    * If the name begins with "lib" remove the first 3 characters
-**    * Remove all characters that are not US-ASCII alphanumerics
-**      or underscores
-**    * Remove any leading digits and underscores from the name
-**    * Append "_init" to the name
-**
-** So, for example, if the input filename is "/home/drh/libtest1.52.so"
-** then the entry point would be computed as "test1_init".
-**
-** The derived entry point name is limited to a reasonable number of
-** characters (currently 200).
+** Extension loading must be enabled using sqlite3_enable_load_extension()
+** prior to calling this API or an error will be returned.
 **
 ****** EXPERIMENTAL - subject to change without notice **************
 */
@@ -1519,6 +1504,18 @@ int sqlite3_load_extension(
   const char *zProc,    /* Entry point.  Derived from zFile if 0 */
   char **pzErrMsg       /* Put error message here if not 0 */
 );
+
+/*
+** So as not to open security holes in older applications that are
+** unprepared to deal with extension load, and as a means of disabling
+** extension loading while executing user-entered SQL, the following
+** API is provided to turn the extension loading mechanism on and
+** off.  It is off by default.  See ticket #1863.
+**
+** Call this routine with onoff==1 to turn extension loading on
+** and call it with onoff==0 to turn it back off again.
+*/
+int sqlite3_enable_load_extension(sqlite3 *db, int onoff);
 
 /*
 ****** EXPERIMENTAL - subject to change without notice **************

@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.214 2006/06/27 12:51:13 drh Exp $
+** $Id: test1.c,v 1.215 2006/06/27 15:16:16 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -1094,6 +1094,7 @@ static int test_table_column_metadata(
 }
 #endif
 
+
 /*
 ** Usage: sqlite3_load_extension DB-HANDLE FILE ?PROC?
 */
@@ -1133,7 +1134,12 @@ static int test_load_extension(
   ** TCL_ERROR and load any error string into the interpreter. If no 
   ** error occurs, set rc to TCL_OK.
   */
+#ifdef SQLITE_OMIT_LOAD_EXTENSION
+  rc = SQLITE_ERROR;
+  zErr = sqlite3_mprintf("this build omits sqlite3_load_extension()");
+#else
   rc = sqlite3_load_extension(db, zFile, zProc, &zErr);
+#endif
   if( rc!=SQLITE_OK ){
     Tcl_SetResult(interp, zErr ? zErr : "", TCL_VOLATILE);
     rc = TCL_ERROR;
@@ -1143,6 +1149,48 @@ static int test_load_extension(
   sqlite3_free(zErr);
 
   return rc;
+}
+
+/*
+** Usage: sqlite3_enable_load_extension DB-HANDLE ONOFF
+*/
+static int test_enable_load(
+  ClientData clientData, /* Not used */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  Tcl_CmdInfo cmdInfo;
+  sqlite3 *db;
+  char *zDb;
+  int onoff;
+
+  if( objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB-HANDLE ONOFF");
+    return TCL_ERROR;
+  }
+  zDb = Tcl_GetString(objv[1]);
+
+  /* Extract the C database handle from the Tcl command name */
+  if( !Tcl_GetCommandInfo(interp, zDb, &cmdInfo) ){
+    Tcl_AppendResult(interp, "command not found: ", zDb, (char*)0);
+    return TCL_ERROR;
+  }
+  db = ((struct SqliteDb*)cmdInfo.objClientData)->db;
+  assert(db);
+
+  /* Get the onoff parameter */
+  if( Tcl_GetBooleanFromObj(interp, objv[2], &onoff) ){
+    return TCL_ERROR;
+  }
+
+#ifdef SQLITE_OMIT_LOAD_EXTENSION
+  Tcl_AppendResult(interp, "this build omits sqlite3_load_extension()");
+  return TCL_ERROR;
+#else
+  sqlite3_enable_load_extension(db, onoff);
+  return TCL_OK;
+#endif
 }
 
 /*
@@ -3692,6 +3740,9 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_tsd_release",           test_tsd_release,        0},
      { "sqlite3_thread_cleanup",        test_thread_cleanup,     0},
 
+     { "sqlite3_load_extension",        test_load_extension,     0},
+     { "sqlite3_enable_load_extension", test_enable_load,        0},
+
      /* sqlite3_column_*() API */
      { "sqlite3_column_count",          test_column_count  ,0 },
      { "sqlite3_data_count",            test_data_count    ,0 },
@@ -3751,9 +3802,6 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_libversion_number", test_libversion_number, 0  },
 #ifdef SQLITE_ENABLE_COLUMN_METADATA
      { "sqlite3_table_column_metadata", test_table_column_metadata, 0  },
-#endif
-#ifndef SQLITE_OMIT_LOAD_EXTENSION
-     { "sqlite3_load_extension", test_load_extension, 0  },
 #endif
   };
   static int bitmask_size = sizeof(Bitmask)*8;

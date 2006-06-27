@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.142 2006/06/13 15:12:21 drh Exp $
+** $Id: shell.c,v 1.143 2006/06/27 15:16:15 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -807,6 +807,9 @@ static void open_db(struct callback_data *p){
           p->zDbFilename, sqlite3_errmsg(db));
       exit(1);
     }
+#ifndef SQLITE_OMIT_LOAD_EXTENSION
+    sqlite3_enable_load_extension(p->db, 1);
+#endif
   }
 }
 

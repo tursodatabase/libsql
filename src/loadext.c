@@ -261,6 +261,19 @@ int sqlite3_load_extension(
   char *zErrmsg = 0;
   SQLITE_LIBRARY_TYPE *aHandle;
 
+  /* Ticket #1863.  To avoid a creating security problems for older
+  ** applications that relink against newer versions of SQLite, the
+  ** ability to run load_extension is turned off by default.  One
+  ** must call sqlite3_enable_load_extension() to turn on extension
+  ** loading.  Otherwise you get the following error.
+  */
+  if( (db->flags & SQLITE_LoadExtension)==0 ){
+    if( pzErrMsg ){
+      *pzErrMsg = sqlite3_mprintf("not authorized");
+    }
+    return SQLITE_ERROR;
+  }
+
   if( zProc==0 ){
     zProc = "sqlite3_extension_init";
   }
@@ -324,6 +337,19 @@ void sqlite3CloseExtensions(sqlite3 *db){
   }
   sqliteFree(db->aExtension);
 #endif
+}
+
+/*
+** Enable or disable extension loading.  Extension loading is disabled by
+** default so as not to open security holes in older applications.
+*/
+int sqlite3_enable_load_extension(sqlite3 *db, int onoff){
+  if( onoff ){
+    db->flags |= SQLITE_LoadExtension;
+  }else{
+    db->flags &= ~SQLITE_LoadExtension;
+  }
+  return SQLITE_OK;
 }
 
 #endif /* SQLITE_OMIT_LOAD_EXTENSION */
