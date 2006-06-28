@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.269 2006/06/15 14:31:07 drh Exp $
+** @(#) $Id: pager.c,v 1.270 2006/06/28 18:18:09 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -403,7 +403,12 @@ static void pager_resize_hash_table(Pager *pPager, int N){
   pPager->nHash = N;
   pPager->aHash = aHash;
   for(pPg=pPager->pAll; pPg; pPg=pPg->pNextAll){
-    int h = pPg->pgno & (N-1);
+    int h;
+    if( pPg->pgno==0 ){
+      assert( pPg->pNextHash==0 && pPg->pPrevHash==0 );
+      continue;
+    }
+    h = pPg->pgno & (N-1);
     pPg->pNextHash = aHash[h];
     if( aHash[h] ){
       aHash[h]->pPrevHash = pPg;
@@ -1856,7 +1861,7 @@ static int syncJournal(Pager*);
 */
 static void unlinkHashChain(Pager *pPager, PgHdr *pPg){
   if( pPg->pgno==0 ){
-    /* If the page number is zero, then this page is not in any hash chain. */
+    assert( pPg->pNextHash==0 && pPg->pPrevHash==0 );
     return;
   }
   if( pPg->pNextHash ){
@@ -1867,7 +1872,6 @@ static void unlinkHashChain(Pager *pPager, PgHdr *pPg){
     pPg->pPrevHash->pNextHash = pPg->pNextHash;
   }else{
     int h = pPg->pgno & (pPager->nHash-1);
-    assert( pPager->aHash[h]==pPg );
     pPager->aHash[h] = pPg->pNextHash;
   }
   if( MEMDB ){
@@ -2795,6 +2799,7 @@ int sqlite3pager_get(Pager *pPager, Pgno pgno, void **ppPage){
 
     /* Link the page into the page hash table */
     h = pgno & (pPager->nHash-1);
+    assert( pgno!=0 );
     pPg->pNextHash = pPager->aHash[h];
     pPager->aHash[h] = pPg;
     if( pPg->pNextHash ){
@@ -3849,6 +3854,7 @@ int sqlite3pager_movepage(Pager *pPager, void *pData, Pgno pgno){
   }
 
   /* Change the page number for pPg and insert it into the new hash-chain. */
+  assert( pgno!=0 );
   pPg->pgno = pgno;
   h = pgno & (pPager->nHash-1);
   if( pPager->aHash[h] ){

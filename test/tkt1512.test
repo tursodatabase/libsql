@@ -21,6 +21,10 @@ ifcapable !vacuum {
   finish_test
   return
 }
+if {[db one {PRAGMA auto_vacuum}]} {
+  finish_test
+  return
+}
 
 do_test tkt1512-1.1 {
   execsql {

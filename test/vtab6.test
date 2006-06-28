@@ -14,10 +14,15 @@
 # virtual tables. The test cases in this file are copied from the file
 # join.test, and some of the comments still reflect that.
 #
-# $Id: vtab6.test,v 1.1 2006/06/21 07:02:34 danielk1977 Exp $
+# $Id: vtab6.test,v 1.2 2006/06/28 18:18:10 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+ifcapable !vtab {
+  finish_test
+  return
+}
 
 register_echo_module [sqlite3_connection_pointer db]
 

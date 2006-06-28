@@ -22,6 +22,17 @@ ifcapable legacyformat {
   return
 }
 
+# The size of the database depends on whether or not autovacuum
+# is enabled.
+#
+if {[db one {PRAGMA auto_vacuum}]} {
+  set small 3072
+  set large 5120
+} else {
+  set small 2048
+  set large 4096
+}
+
 do_test format4-1.1 {
   execsql {
     CREATE TABLE t1(x0,x1,x2,x3,x4,x5,x6,x7,x8,x9);
@@ -34,19 +45,19 @@ do_test format4-1.1 {
     INSERT INTO t1 SELECT * FROM t1;
   }
   file size test.db
-} {2048}
+} $small
 do_test format4-1.2 {
   execsql {
     UPDATE t1 SET x0=1, x1=1, x2=1, x3=1, x4=1, x5=1, x6=1, x7=1, x8=1, x9=1
   }
   file size test.db
-} {2048}
+} $small
 do_test format4-1.3 {
   execsql {
     UPDATE t1 SET x0=2, x1=2, x2=2, x3=2, x4=2, x5=2, x6=2, x7=2, x8=2, x9=2
   }
   file size test.db
-} {4096}
+} $large
 
 
 finish_test

@@ -1,5 +1,5 @@
-C Better\shandling\sof\sNULL\scolumn\snames.\s(CVS\s3317)
-D 2006-06-27T20:39:04
+C Changes\sto\sget\stests\sto\spass\swith\sOMIT_VIRTUALTABLE.\s\sTicket\s#1877.\s(CVS\s3318)
+D 2006-06-28T18:18:09
 F Makefile.in 9c2a76055c305868cc5f5b73e29a252ff3632c0a
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -62,7 +62,7 @@ F src/os_unix.c 17d91581a0ab478a06cb6f257b707a4c4a93e5a7
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c c6976ae50b61fb5b7dce399e578aa1865f02b84f
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 7ef4c5098b378d81d3687919d9de99ea99bbb6bb
+F src/pager.c 2ae998a64f98bc2fa14893e08537365865a09519
 F src/pager.h 43f32f3847421f7502cfbb66f4eb2302b8033818
 F src/parse.y e0831a269fbbd21414bb367fd0b806569c934683
 F src/pragma.c 27d5e395c5d950931c7ac4fe610e7c2993e2fa55
@@ -97,7 +97,7 @@ F src/update.c 951f95ef044cf6d28557c48dc35cb0711a0b9129
 F src/utf.c ab81ac59084ff1c07d421eb1a0a84ec809603b44
 F src/util.c 410adf9074b81c58e276a3dd5c1295ef6e5eeda4
 F src/vacuum.c 5b37d0f436f8e1ffacd17934e44720b38d2247f9
-F src/vdbe.c 77679f2e01cb7bbd5087dca96c79116b66119a8f
+F src/vdbe.c 3ffc96ec2e870b3ab3e59d1f6fe34687e4ed1db6
 F src/vdbe.h 258b5d1c0aaa72192f09ff0568ce42b383f156fa
 F src/vdbeInt.h e3eaab262b67b84474625cfc38aec1125c32834b
 F src/vdbeapi.c 6af0e7160af260052a7a4500464221a03dada75f
@@ -173,7 +173,7 @@ F test/enc2.test 9f15cb7adc745fbb93d083ae1cf5a2deaa04d25f
 F test/enc3.test 890508efff6677345e93bf2a8adb0489b30df030
 F test/expr.test 7b4b349abdb05ab1862c1cfcf7607e3731efc5d2
 F test/fkey1.test 153004438d51e6769fb1ce165f6313972d6263ce
-F test/format4.test aec322535418f5e86b056bf4dfbcfb45bf09802e
+F test/format4.test ddb875c0d423bb3fbe923d2ba89773d4afb5c46a
 F test/func.test c0df82c29f07b8b6ee0aaa13950f43880f8046bf
 F test/hook.test 7e7645fd9a033f79cce8fdff151e32715e7ec50a
 F test/in.test 369cb2aa1eab02296b4ec470732fe8c131260b1d
@@ -264,7 +264,7 @@ F test/tkt1444.test a9d72f9e942708bd82dde6c707da61c489e213e9
 F test/tkt1449.test 93584a449752d52b07d2cfc280a69842b6e16ed5
 F test/tkt1473.test 9d000af3e11a4450d4c596f5e58b4b0d24eb0f8b
 F test/tkt1501.test 2064f98e00871848af4b2f517e46c1a7fb2e32db
-F test/tkt1512.test d8cd5f1c16103b5bc3ccf254731f63e69c364d1d
+F test/tkt1512.test ec9a6d9f874a61b50e9fd62ef7947adef6c947ce
 F test/tkt1514.test baa587a69fa2e8d575ebdaf1460f711281dcba49
 F test/tkt1536.test 83ff7a7b6e248016f8d682d4f7a4ae114070d466
 F test/tkt1537.test e3a14332de9770be8ff14bd15c19a49cbec10808
@@ -298,7 +298,7 @@ F test/vtab2.test bd6d6f3dc0403f42a63a63e3319e0a689d27dd4f
 F test/vtab3.test f38d6d7d19f08bffdadce4d5b8cba078f8118587
 F test/vtab4.test 4b4293341443839ef6dc02f8d9e614702a6c67ff
 F test/vtab5.test 9fb8f335651afe8f870011e2f68e5b00c5ad03cd
-F test/vtab6.test 0b4fe07e421b2b9a334bec8781e75cbd8e230bd3
+F test/vtab6.test ec0036f29f8a803da9935206f2d9d1b6a8026392
 F test/vtab_err.test 11b90203ad60d63746d0de547b1ca014704d8f0e
 F test/where.test ee7c9a6659b07e1ee61177f6e7ff71565ee2c9df
 F test/where2.test a16476a5913e75cf65b38f2daa6157a6b7791394
@@ -375,7 +375,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P eb3442c44ef1dbf8895195bb08fbeeea315b44c1
-R 950547ff05ca6adfe4c9ef0816623482
+P 9f13972b93a3cac95b4319d3e75343e02a30a38f
+R 54c6672921ebefe1614738cd3c9704f9
 U drh
-Z 442e3d34de52d4352748481f67186145
+Z e1fff001b97c51467fd6bfa672183691
