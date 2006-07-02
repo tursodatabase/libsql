@@ -1,5 +1,5 @@
-C Changes\sto\sget\stests\sto\spass\swith\sOMIT_VIRTUALTABLE.\s\sTicket\s#1877.\s(CVS\s3318)
-D 2006-06-28T18:18:09
+C Fix\sspelling\sof\sPerl\son\sthe\shomepage.\s(CVS\s3319)
+D 2006-07-02T10:21:36
 F Makefile.in 9c2a76055c305868cc5f5b73e29a252ff3632c0a
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -351,7 +351,7 @@ F www/fileformat.tcl 900c95b9633abc3dcfc384d9ddd8eb4876793059
 F www/formatchng.tcl c9f5ded025504b4ae6a39cb8a6630709a981f6b5
 F www/fullscanb.gif f7c94cb227f060511f8909e10f570157263e9a25
 F www/index-ex1-x-b.gif f9b1d85c3fa2435cf38b15970c7e3aa1edae23a3
-F www/index.tcl 2ec7b369b682a3636bf440ade6fb2e0e87e8541f
+F www/index.tcl 17cdd87e0b5e5eff158309f5209b86e47f964604
 F www/indirect1b1.gif adfca361d2df59e34f9c5cac52a670c2bfc303a1
 F www/lang.tcl d5414bd9f63ea3763887893b437d0dce4ad4f403
 F www/lockingv3.tcl f59b19d6c8920a931f096699d6faaf61c05db55f
@@ -375,7 +375,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 9f13972b93a3cac95b4319d3e75343e02a30a38f
-R 54c6672921ebefe1614738cd3c9704f9
+P 60616496b7d97fdda99262e2bab25e625151e857
+R f21ef9c9d2a83cb1b73f18058667c707
 U drh
-Z e1fff001b97c51467fd6bfa672183691
+Z 2dc56494ce52f5d2e2f4151155d77d84

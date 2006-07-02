@@ -73,7 +73,7 @@ newsitem {2006-Jun-19} {New Book About SQLite} {
   is now available from <a href="http://www.apress.com">Apress</a>.
   The books covers the latest SQLite internals as well as
   the native C interface and bindings for PHP, Python,
-  Pearl, Ruby, Tcl, and Java.  Recommended.
+  Perl, Ruby, Tcl, and Java.  Recommended.
 }
 
 newsitem {2006-Jun-6} {Version 3.3.6} {
@@ -105,4 +105,4 @@ puts {
 <p align="right"><a href="oldnews.html">Old news...</a></p>
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.140 2006/06/27 11:14:13 drh Exp $}
+footer {$Id: index.tcl,v 1.141 2006/07/02 10:21:36 drh Exp $}
