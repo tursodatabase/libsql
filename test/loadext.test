@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is in-memory database backend.
 #
-# $Id: loadext.test,v 1.6 2006/06/27 18:38:52 drh Exp $
+# $Id: loadext.test,v 1.7 2006/07/06 17:08:48 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -50,7 +50,7 @@ do_test loadext-1.1 {
   }
 } {1 {no such function: half}}
 do_test loadext-1.2 {
-  sqlite3_enable_load_extension db 1
+  db enable_load_extension 1
   sqlite3_load_extension db $testextension testloadext_init
   catchsql {
     SELECT half(1.0);

@@ -1,5 +1,5 @@
-C Change\ssqlite3_busy_timeout\sso\sthat\sit\schecks\sfor\san\sinvalid\sdatabase\npointer.\s(CVS\s3320)
-D 2006-07-06T10:59:58
+C Make\sthe\ssqlite3_enable_load_extension()\sinterface\saccessible\sfrom\sthe\nTCL\sbindings.\s(CVS\s3321)
+D 2006-07-06T17:08:48
 F Makefile.in 9c2a76055c305868cc5f5b73e29a252ff3632c0a
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -76,7 +76,7 @@ F src/sqlite.h.in a1ae5f372affd1313d9bea98155f01626f538fbd
 F src/sqlite3ext.h c611255287e9a11ce4f1fe6251c2a0b9d32a828b
 F src/sqliteInt.h e07a49b3e349c2c5f1bcb7dd9371fc3faf5ba338
 F src/table.c d8817f43a6c6bf139487db161760b9e1e02da3f1
-F src/tclsqlite.c 32d9e0147077f2e2c127c5f214fb3fe03ef97d18
+F src/tclsqlite.c 0220791dc66d287a7f199568393f04f3db24364b
 F src/test1.c 535294d7f21a4127082c4f7a57f225482df9cc36
 F src/test2.c ca74a1d8aeb7d9606e8f6b762c5daf85c1a3f92b
 F src/test3.c 833dc8346e431182ae6bd0648455c3d4cc65a19f
@@ -196,7 +196,7 @@ F test/lastinsert.test 474d519c68cb79d07ecae56a763aa7f322c72f51
 F test/laststmtchanges.test 19a6d0c11f7a31dc45465b495f7b845a62cbec17
 F test/like.test 5f7d76574752a9101cac13372c8a85999d0d91e6
 F test/limit.test 2a87b9cb2165abb49ca0ddcf5cb43cf24074581f
-F test/loadext.test 0f6e7c469d2a3036c29512c1a36c09b303dfd727
+F test/loadext.test 6e4ecf99ec26334768c63b4322177b5e147f006a
 F test/lock.test 9b7afcb24f53d24da502abb33daaad2cd6d44107
 F test/lock2.test d83ba79d3c4fffdb5b926c7d8ca7a36c34288a55
 F test/lock3.test 615111293cf32aa2ed16d01c6611737651c96fb9
@@ -251,7 +251,7 @@ F test/subselect.test 2d13fb7f450db3595adcdd24079a0dd1d2d6abc2
 F test/sync.test d05397b8f89f423dd6dba528692019ab036bc1c3
 F test/table.test 1c1539af8db89c68e467df02ec2607ec61c67bac
 F test/tableapi.test a1982276274d292110d549206bc365b2da43e2ee
-F test/tclsqlite.test 93c399414273d829f3fc5fc4a8349b484fe84d5b
+F test/tclsqlite.test e1ae0280f9150b4c43f2a6f1a16fc5e8511cd747
 F test/temptable.test c36f3e5a94507abb64f7ba23deeb4e1a8a8c3821
 F test/tester.tcl 0436eda9b45cd937662b9766262cc2527448413f
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
@@ -375,7 +375,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 255c5a99468c47fed0aaffeeeb28d5af9a99ee11
-R b03964d63723030c462302499ff2ade8
+P 225a9597b21bde7666451fc2eb7695dc35c438bb
+R cceec30f57fbf4deae9e1f3246c140c4
 U drh
-Z 2ee3981b3f2c34f2126176c3f6db2a7c
+Z 6a689bc7d7abe6c2c593a3ba21b7a44d
