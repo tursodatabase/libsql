@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.204 2006/06/16 08:01:04 danielk1977 Exp $
+** @(#) $Id: parse.y,v 1.205 2006/07/08 18:35:00 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -706,6 +706,7 @@ expr(A) ::= expr(X) likeop(OP) expr(Y) escape(E).  [LIKE_KW]  {
   A = sqlite3ExprFunction(pList, &OP.eOperator);
   if( OP.not ) A = sqlite3Expr(TK_NOT, A, 0, 0);
   sqlite3ExprSpan(A, &X->span, &Y->span);
+  if( A ) A->flags |= EP_InfixFunc;
 }
 
 expr(A) ::= expr(X) ISNULL|NOTNULL(E). {

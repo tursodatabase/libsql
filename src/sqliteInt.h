@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.518 2006/07/08 17:06:44 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.519 2006/07/08 18:35:00 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -988,7 +988,7 @@ struct AggInfo {
 struct Expr {
   u8 op;                 /* Operation performed by this node */
   char affinity;         /* The affinity of the column or 0 if not a column */
-  u8 flags;              /* Various flags.  See below */
+  u16 flags;             /* Various flags.  See below */
   CollSeq *pColl;        /* The collation type of the column or 0 */
   Expr *pLeft, *pRight;  /* Left and right subnodes */
   ExprList *pList;       /* A list of expressions used as function arguments
@@ -1016,6 +1016,7 @@ struct Expr {
 #define EP_Distinct     0x10  /* Aggregate function with DISTINCT keyword */
 #define EP_VarSelect    0x20  /* pSelect is correlated, not constant */
 #define EP_Dequoted     0x40  /* True if the string has been dequoted */
+#define EP_InfixFunc    0x80  /* True for an infix function: LIKE, GLOB, etc */
 
 /*
 ** These macros can be used to test, set, or clear bits in the 
