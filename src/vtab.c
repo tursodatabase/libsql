@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to help implement virtual tables.
 **
-** $Id: vtab.c,v 1.25 2006/06/26 11:17:51 danielk1977 Exp $
+** $Id: vtab.c,v 1.26 2006/07/08 17:06:44 drh Exp $
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
@@ -571,6 +571,66 @@ int sqlite3VtabBegin(sqlite3 *db, sqlite3_vtab *pVtab){
     rc = addToVTrans(db, pVtab);
   }
   return rc;
+}
+
+/*
+** The first parameter (pDef) is a function implementation.  The
+** second parameter (pExpr) is the first argument to this function.
+** If pExpr is a column in a virtual table, then let the virtual
+** table implementation have an opportunity to overload the function.
+**
+** This routine is used to allow virtual table implementations to
+** overload MATCH, LIKE, GLOB, and REGEXP operators.
+**
+** Return either the pDef argument (indicating no change) or a 
+** new FuncDef structure that is marked as ephemeral using the
+** SQLITE_FUNC_EPHEM flag.
+*/
+FuncDef *sqlite3VtabOverloadFunction(
+  FuncDef *pDef,  /* Function to possibly overload */
+  int nArg,       /* Number of arguments to the function */
+  Expr *pExpr     /* First argument to the function */
+){
+  Table *pTab;
+  sqlite3_vtab *pVtab;
+  sqlite3_module *pMod;
+  int (*xFunc)(sqlite3_context*,int,sqlite3_value**);
+  void *pArg;
+  int iEnc;
+  int rc;
+  FuncDef *pNew;
+
+  /* Check to see the left operand is a column in a virtual table */
+  if( pExpr==0 ) return pDef;
+  if( pExpr->op!=TK_COLUMN ) return pDef;
+  pTab = pExpr->pTab;
+  if( pTab==0 ) return pDef;
+  if( !pTab->isVirtual ) return pDef;
+  pVtab = pTab->pVtab;
+  assert( pVtab!=0 );
+  assert( pVtab->pModule!=0 );
+  pMod = pVtab->pModule;
+  if( pMod->xFindFunction==0 ) return pDef;
+ 
+  /* Call the xFuncFunction method on the virtual table implementation
+  ** to see if the implementation wants to overload this function */
+  if( pMod->xFindFunction(pVtab, nArg, pDef->zName, &xFunc, &pArg, &iEnc)==0 ){
+    return pDef;
+  }
+
+  /* Create a new ephemeral function definition for the overloaded
+  ** function */
+  pNew = sqliteMalloc( sizeof(*pNew) + strlen(pDef->zName) );
+  if( pNew==0 ){
+    return pDef;
+  }
+  *pNew = *pDef;
+  strcpy(pNew->zName, pDef->zName);
+  pNew->xFunc = xFunc;
+  pNew->pUserData = pArg;
+  pNew->iPrefEnc = iEnc;
+  pNew->flags |= SQLITE_FUNC_EPHEM;
+  return pNew;
 }
 
 #endif /* SQLITE_OMIT_VIRTUALTABLE */

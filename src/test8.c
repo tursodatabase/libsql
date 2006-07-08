@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test8.c,v 1.38 2006/06/26 19:10:32 drh Exp $
+** $Id: test8.c,v 1.39 2006/07/08 17:06:44 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -918,7 +918,8 @@ static sqlite3_module echoModule = {
   echoBegin,                 /* xBegin - begin transaction */
   echoSync,                  /* xSync - sync transaction */
   echoCommit,                /* xCommit - commit transaction */
-  echoRollback               /* xRollback - rollback transaction */
+  echoRollback,              /* xRollback - rollback transaction */
+  0,                         /* xFindMethod - function overloading */
 };
 
 /*

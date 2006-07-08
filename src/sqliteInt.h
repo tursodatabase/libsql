@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.517 2006/06/27 15:16:15 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.518 2006/07/08 17:06:44 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -586,6 +586,7 @@ struct Module {
 */
 #define SQLITE_FUNC_LIKE   0x01  /* Candidate for the LIKE optimization */
 #define SQLITE_FUNC_CASE   0x02  /* Case-sensitive LIKE-type function */
+#define SQLITE_FUNC_EPHEM  0x04  /* Ephermeral.  Delete with VDBE */
 
 /*
 ** information about each column of an SQL table is held in an instance
@@ -1861,6 +1862,7 @@ int sqlite3VtabCallCreate(sqlite3*, int, const char *, char **);
 int sqlite3VtabCallConnect(Parse*, Table*);
 int sqlite3VtabCallDestroy(sqlite3*, int, const char *);
 int sqlite3VtabBegin(sqlite3 *, sqlite3_vtab *);
+FuncDef *sqlite3VtabOverloadFunction(FuncDef*, int nArg, Expr*);
 
 #ifdef SQLITE_SSE
 #include "sseInt.h"

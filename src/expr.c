@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.262 2006/06/14 19:00:21 drh Exp $
+** $Id: expr.c,v 1.263 2006/07/08 17:06:44 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1674,6 +1674,11 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       pDef = sqlite3FindFunction(pParse->db, zId, nId, nExpr, enc, 0);
       assert( pDef!=0 );
       nExpr = sqlite3ExprCodeExprList(pParse, pList);
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+      if( nExpr>0 ){
+        pDef = sqlite3VtabOverloadFunction(pDef, nExpr, pList->a[0].pExpr);
+      }
+#endif
       for(i=0; i<nExpr && i<32; i++){
         if( sqlite3ExprIsConstant(pList->a[i].pExpr) ){
           constMask |= (1<<i);

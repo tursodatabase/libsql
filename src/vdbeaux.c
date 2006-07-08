@@ -373,6 +373,17 @@ void sqlite3VdbeJumpHere(Vdbe *p, int addr){
   sqlite3VdbeChangeP2(p, addr, p->nOp);
 }
 
+
+/*
+** If the input FuncDef structure is ephemeral, then free it.  If
+** the FuncDef is not ephermal, then do nothing.
+*/
+static void freeEphemeralFunction(FuncDef *pDef){
+  if( pDef && (pDef->flags & SQLITE_FUNC_EPHEM)!=0 ){
+    sqliteFree(pDef);
+  }
+}
+
 /*
 ** Delete a P3 value if necessary.
 */
@@ -391,8 +402,13 @@ static void freeP3(int p3type, void *p3){
       }
       case P3_VDBEFUNC: {
         VdbeFunc *pVdbeFunc = (VdbeFunc *)p3;
+        freeEphemeralFunction(pVdbeFunc->pFunc);
         sqlite3VdbeDeleteAuxData(pVdbeFunc, 0);
         sqliteFree(pVdbeFunc);
+        break;
+      }
+      case P3_FUNCDEF: {
+        freeEphemeralFunction((FuncDef*)p3);
         break;
       }
       case P3_MEM: {
