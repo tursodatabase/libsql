@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test8.c,v 1.39 2006/07/08 17:06:44 drh Exp $
+** $Id: test8.c,v 1.40 2006/07/08 18:09:15 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -897,6 +897,65 @@ static int echoRollback(sqlite3_vtab *tab){
 }
 
 /*
+** Implementation of "GLOB" function on the echo module.  Pass
+** all arguments to the ::echo_glob_overload procedure of TCL
+** and return the result of that procedure as a string.
+*/
+static void overloadedGlobFunction(
+  sqlite3_context *pContext,
+  int nArg,
+  sqlite3_value **apArg
+){
+  Tcl_Interp *interp = sqlite3_user_data(pContext);
+  Tcl_DString str;
+  int i;
+  int rc;
+  Tcl_DStringInit(&str);
+  Tcl_DStringAppendElement(&str, "::echo_glob_overload");
+  for(i=0; i<nArg; i++){
+    Tcl_DStringAppendElement(&str, (char*)sqlite3_value_text(apArg[i]));
+  }
+  rc = Tcl_Eval(interp, Tcl_DStringValue(&str));
+  Tcl_DStringFree(&str);
+  if( rc ){
+    sqlite3_result_error(pContext, Tcl_GetStringResult(interp), -1);
+  }else{
+    sqlite3_result_text(pContext, Tcl_GetStringResult(interp),
+                        -1, SQLITE_TRANSIENT);
+  }
+  Tcl_ResetResult(interp);
+}
+
+/*
+** This is the xFindFunction implementation for the echo module.
+** SQLite calls this routine when the first argument of a function
+** is a column of an echo virtual table.  This routine can optionally
+** override the implementation of that function.  It will choose to
+** do so if the function is named "glob", and a TCL command named
+** ::echo_glob_overload exists.
+*/
+static int echoFindFunction(
+  sqlite3_vtab *vtab,
+  int nArg,
+  const char *zFuncName,
+  void (**pxFunc)(sqlite3_context*,int,sqlite3_value**),
+  void **ppArg
+){
+  echo_vtab *pVtab = (echo_vtab *)vtab;
+  Tcl_Interp *interp = pVtab->interp;
+  Tcl_CmdInfo info;
+  if( strcmp(zFuncName,"glob")!=0 ){
+    return 0;
+  }
+  if( Tcl_GetCommandInfo(interp, "::echo_glob_overload", &info)==0 ){
+    return 0;
+  }
+  *pxFunc = overloadedGlobFunction;
+  *ppArg = interp;
+  return 1;
+}
+
+/*
 ** A virtual table module that merely "echos" the contents of another
 ** table (like an SQL VIEW).
 */
@@ -919,7 +978,7 @@ static sqlite3_module echoModule = {
   echoSync,                  /* xSync - sync transaction */
   echoCommit,                /* xCommit - commit transaction */
   echoRollback,              /* xRollback - rollback transaction */
-  0,                         /* xFindMethod - function overloading */
+  echoFindFunction,          /* xFindFunction - function overloading */
 };
 
 /*
