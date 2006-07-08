@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.264 2006/07/08 18:35:00 drh Exp $
+** $Id: expr.c,v 1.265 2006/07/08 18:41:37 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1675,16 +1675,21 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       assert( pDef!=0 );
       nExpr = sqlite3ExprCodeExprList(pParse, pList);
 #ifndef SQLITE_OMIT_VIRTUALTABLE
+      /* Possibly overload the function if the first argument is
+      ** a virtual table column.
+      **
+      ** For infix functions (LIKE, GLOB, REGEXP, and MATCH) use the
+      ** second argument, not the first, as the argument to test to
+      ** see if it is a column in a virtual table.  This is done because
+      ** the left operand of infix functions (the operand we want to
+      ** control overloading) ends up as the second argument to the
+      ** function.  The expression "A glob B" is equivalent to 
+      ** "glob(B,A).  We want to use the A in "A glob B" to test
+      ** for function overloading.  But we use the B term in "glob(B,A)".
+      */
       if( nExpr>=2 && (pExpr->flags & EP_InfixFunc) ){
-        /* For infix functions GLOB, LIKE, REGEXP, and MATCH, check
-        ** the second argument to the function which is operand to
-        ** left of the function name.  Users normally consider the
-        ** left operand to be the first argument, even though it is
-        ** really the second argument to the underlying function. */
         pDef = sqlite3VtabOverloadFunction(pDef, nExpr, pList->a[1].pExpr);
       }else if( nExpr>0 ){
-        /* For normal functions, go by the first argument - the first
-        ** argument after the "(" that follows the function name */
         pDef = sqlite3VtabOverloadFunction(pDef, nExpr, pList->a[0].pExpr);
       }
 #endif
