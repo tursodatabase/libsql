@@ -1,5 +1,5 @@
-C Better\scomment\sto\sdescribe\sthe\sconfusing\soperand\sreversal\sfor\sinfix\nfunctions.\s(CVS\s3325)
-D 2006-07-08T18:41:37
+C Back\sout\sthe\schanges\sof\sticket\s#1687\ssince\sthey\sbroken\sthe\sActiveTcl\sbuild.\s(CVS\s3326)
+D 2006-07-10T21:15:52
 F Makefile.in 9c2a76055c305868cc5f5b73e29a252ff3632c0a
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -76,7 +76,7 @@ F src/sqlite.h.in 432848ac7f8d7e6fea727668acccec62bdd86cc4
 F src/sqlite3ext.h c611255287e9a11ce4f1fe6251c2a0b9d32a828b
 F src/sqliteInt.h 434b530013bd3093faa7c1c1a5817df81616f6ec
 F src/table.c d8817f43a6c6bf139487db161760b9e1e02da3f1
-F src/tclsqlite.c 0220791dc66d287a7f199568393f04f3db24364b
+F src/tclsqlite.c 22ab598cfaa6fda50dec9035852687114286d06e
 F src/test1.c 535294d7f21a4127082c4f7a57f225482df9cc36
 F src/test2.c ca74a1d8aeb7d9606e8f6b762c5daf85c1a3f92b
 F src/test3.c 833dc8346e431182ae6bd0648455c3d4cc65a19f
@@ -375,7 +375,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 6e98373ca11c9d476f4c6b1841c6e006b7a49f29
-R fb2db0f3e3dec3a535007370db8c858a
+P 30dfb9bf2131370fe57e000495f5c292d392a010
+R ac4f8fe432dfc259763ae91b1cd16083
 U drh
-Z 03250fa1943b65f5e69e097a8e8f5c3f
+Z c8a3ef1571f936b0d43c784c52bf347b
