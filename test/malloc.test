@@ -14,7 +14,7 @@
 # special feature is used to see what happens in the library if a malloc
 # were to really fail due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.33 2006/06/26 12:50:09 drh Exp $
+# $Id: malloc.test,v 1.34 2006/07/11 12:40:25 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -136,7 +136,7 @@ do_malloc_test 1 -tclprep {
      primary key(a,b,c)
   );
   CREATE INDEX i1 ON t1(a,b);
-  INSERT INTO t1 VALUES(1,2.3,4.5,'hi','there');
+  INSERT INTO t1 VALUES(1,2.3,4.5,'hi',x'746865726500');
   INSERT INTO t1 VALUES(6,7.0,0.8,'hello','out yonder');
   SELECT * FROM t1;
   SELECT avg(b) FROM t1 GROUP BY a HAVING b>20.0;

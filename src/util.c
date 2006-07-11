@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.190 2006/06/27 13:20:21 drh Exp $
+** $Id: util.c,v 1.191 2006/07/11 12:40:25 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1357,8 +1357,10 @@ void *sqlite3HexToBlob(const char *z){
   if( n%2 ) return 0;
 
   zBlob = (char *)sqliteMalloc(n/2);
-  for(i=0; i<n; i+=2){
-    zBlob[i/2] = (hexToInt(z[i])<<4) | hexToInt(z[i+1]);
+  if( zBlob ){
+    for(i=0; i<n; i+=2){
+      zBlob[i/2] = (hexToInt(z[i])<<4) | hexToInt(z[i+1]);
+    }
   }
   return zBlob;
 }

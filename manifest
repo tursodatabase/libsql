@@ -1,5 +1,5 @@
-C Fix\sa\spossible\sNULL-pointer\sdeference\sfollowing\sa\smalloc\sfailure.\nError\sdiscovered\sby\sKlocwork.\s(CVS\s3327)
-D 2006-07-11T10:42:36
+C Fix\sa\sNULL\spointer\sdeference\sfollowing\smalloc\sfailure.\s\sBug\sdiscovered\nby\sklocwork.\s(CVS\s3328)
+D 2006-07-11T12:40:25
 F Makefile.in 9c2a76055c305868cc5f5b73e29a252ff3632c0a
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -95,7 +95,7 @@ F src/tokenize.c 7b448440dfd6e984d6bef7ac7fc60f1d26eaf8e7
 F src/trigger.c 0fc40125820409a6274834a6e04ad804d96e2793
 F src/update.c 951f95ef044cf6d28557c48dc35cb0711a0b9129
 F src/utf.c ab81ac59084ff1c07d421eb1a0a84ec809603b44
-F src/util.c 410adf9074b81c58e276a3dd5c1295ef6e5eeda4
+F src/util.c c8ada8bab6b8822084d05c270d160867d3714aaf
 F src/vacuum.c 5b37d0f436f8e1ffacd17934e44720b38d2247f9
 F src/vdbe.c 3ffc96ec2e870b3ab3e59d1f6fe34687e4ed1db6
 F src/vdbe.h 258b5d1c0aaa72192f09ff0568ce42b383f156fa
@@ -201,7 +201,7 @@ F test/lock.test 9b7afcb24f53d24da502abb33daaad2cd6d44107
 F test/lock2.test d83ba79d3c4fffdb5b926c7d8ca7a36c34288a55
 F test/lock3.test 615111293cf32aa2ed16d01c6611737651c96fb9
 F test/main.test e7212ce1023957c7209778cc87fa932bd79ba89a
-F test/malloc.test 98a189ae3d49ab6259578dbf776decc172c6b7b9
+F test/malloc.test 4d5d382e40f1171cc63adb44aca4ab2dbb8a098c
 F test/malloc2.test e6e321db96d6c94cb18bf82ad7215070c41e624e
 F test/malloc3.test fd4186bee73c2a2638f4e2a05a684c06836f725b
 F test/malloc4.test 59cd02f71b363302a04c4e77b97c0a1572eaa210
@@ -375,7 +375,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P b10d4220dc12728933eae1fcdcebd88a5f92e3a7
-R 2487fc8a76f352045b0f691568aa792d
+P 368bcf264456f5506260797497bc8d8dc4897e0f
+R 23b4814e29ce2ab5bcc6f845bb301aeb
 U drh
-Z 94d7b33c75f2bffcb7a8af85fe3a09da
+Z 94facde76db6586626f382b43ed3c568
