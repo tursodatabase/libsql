@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.318 2006/06/21 07:02:33 danielk1977 Exp $
+** $Id: select.c,v 1.319 2006/07/11 13:15:08 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -221,12 +221,17 @@ static void addWhereTerm(
     zAlias2 = pTab2->zName;
   }
   pE2b = sqlite3CreateIdExpr(zAlias2);
-  pE1c = sqlite3Expr(TK_DOT, pE1b, pE1a, 0);
-  pE2c = sqlite3Expr(TK_DOT, pE2b, pE2a, 0);
-  pE = sqlite3Expr(TK_EQ, pE1c, pE2c, 0);
-  ExprSetProperty(pE, EP_FromJoin);
-  pE->iRightJoinTable = iRightJoinTable;
-  *ppExpr = sqlite3ExprAnd(*ppExpr, pE);
+  pE1c = sqlite3ExprOrFree(TK_DOT, pE1b, pE1a, 0);
+  pE2c = sqlite3ExprOrFree(TK_DOT, pE2b, pE2a, 0);
+  pE = sqlite3ExprOrFree(TK_EQ, pE1c, pE2c, 0);
+  if( pE ){
+    ExprSetProperty(pE, EP_FromJoin);
+    pE->iRightJoinTable = iRightJoinTable;
+  }
+  pE = sqlite3ExprAnd(*ppExpr, pE);
+  if( pE ){
+    *ppExpr = pE;
+  }
 }
 
 /*
@@ -2373,6 +2378,7 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
     pIdx = 0;
   }else{
     CollSeq *pColl = sqlite3ExprCollSeq(pParse, pExpr);
+    if( pColl==0 ) return 0;
     for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
       assert( pIdx->nColumn>=1 );
       if( pIdx->aiColumn[0]==iCol && 

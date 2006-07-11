@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.265 2006/07/08 18:41:37 drh Exp $
+** $Id: expr.c,v 1.266 2006/07/11 13:15:08 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -207,6 +207,19 @@ Expr *sqlite3Expr(int op, Expr *pLeft, Expr *pRight, const Token *pToken){
     pNew->span = pNew->token = *pToken;
   }else if( pLeft && pRight ){
     sqlite3ExprSpan(pNew, &pLeft->span, &pRight->span);
+  }
+  return pNew;
+}
+
+/*
+** Works like sqlite3Expr() but frees its pLeft and pRight arguments
+** if it fails due to a malloc problem.
+*/
+Expr *sqlite3ExprOrFree(int op, Expr *pLeft, Expr *pRight, const Token *pToken){
+  Expr *pNew = sqlite3Expr(op, pLeft, pRight, pToken);
+  if( pNew==0 ){
+    sqlite3ExprDelete(pLeft);
+    sqlite3ExprDelete(pRight);
   }
   return pNew;
 }

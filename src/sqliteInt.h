@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.519 2006/07/08 18:35:00 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.520 2006/07/11 13:15:08 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1568,6 +1568,7 @@ int sqlite3KeywordCode(const unsigned char*, int);
 int sqlite3RunParser(Parse*, const char*, char **);
 void sqlite3FinishCoding(Parse*);
 Expr *sqlite3Expr(int, Expr*, Expr*, const Token*);
+Expr *sqlite3ExprOrFree(int, Expr*, Expr*, const Token*);
 Expr *sqlite3RegisterExpr(Parse*,Token*);
 Expr *sqlite3ExprAnd(Expr*, Expr*);
 void sqlite3ExprSpan(Expr*,Token*,Token*);
