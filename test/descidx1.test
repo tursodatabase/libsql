@@ -11,16 +11,13 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is descending indices.
 #
-# $Id: descidx1.test,v 1.6 2006/06/27 12:51:13 drh Exp $
+# $Id: descidx1.test,v 1.7 2006/07/11 14:17:52 drh Exp $
 #
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-ifcapable legacyformat {
-  finish_test
-  return
-}
+db eval {PRAGMA legacy_file_format=OFF}
 
 # This procedure sets the value of the file-format in file 'test.db'
 # to $newval. Also, the schema cookie is incremented.
@@ -297,12 +294,21 @@ do_test descidx1-5.9 {
 # Test the legacy_file_format pragma here because we have access to
 # the get_file_format command.
 #
-do_test descidx1-6.1 {
-  db close
-  file delete -force test.db test.db-journal
-  sqlite3 db test.db
-  execsql {PRAGMA legacy_file_format}
-} {0}
+ifcapable legacyformat {
+  do_test descidx1-6.1 {
+    db close
+    file delete -force test.db test.db-journal
+    sqlite3 db test.db
+    execsql {PRAGMA legacy_file_format}
+  } {1}
+} else {
+  do_test descidx1-6.1 {
+    db close
+    file delete -force test.db test.db-journal
+    sqlite3 db test.db
+    execsql {PRAGMA legacy_file_format}
+  } {0}
+}
 do_test descidx1-6.2 {
   execsql {PRAGMA legacy_file_format=YES}
   execsql {PRAGMA legacy_file_format}
@@ -313,6 +319,19 @@ do_test descidx1-6.3 {
   }
   get_file_format
 } {1}
+do_test descidx1-6.4 {
+  db close
+  file delete -force test.db test.db-journal
+  sqlite3 db test.db
+  execsql {PRAGMA legacy_file_format=NO}
+  execsql {PRAGMA legacy_file_format}
+} {0}
+do_test descidx1-6.5 {
+  execsql {
+    CREATE TABLE t1(a,b,c);
+  }
+  get_file_format
+} {4}
 
 
 finish_test

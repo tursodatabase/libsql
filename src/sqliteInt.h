@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.520 2006/07/11 13:15:08 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.521 2006/07/11 14:17:52 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -148,7 +148,7 @@
 */
 #define SQLITE_MAX_FILE_FORMAT 4
 #ifndef SQLITE_DEFAULT_FILE_FORMAT
-# define SQLITE_DEFAULT_FILE_FORMAT 4
+# define SQLITE_DEFAULT_FILE_FORMAT 1
 #endif
 
 /*

@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.407 2006/06/21 12:36:25 danielk1977 Exp $
+** $Id: build.c,v 1.408 2006/07/11 14:17:52 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -854,7 +854,7 @@ void sqlite3StartTable(
     lbl = sqlite3VdbeMakeLabel(v);
     sqlite3VdbeAddOp(v, OP_If, 0, lbl);
     fileFormat = (db->flags & SQLITE_LegacyFileFmt)!=0 ?
-                  1 : SQLITE_DEFAULT_FILE_FORMAT;
+                  1 : SQLITE_MAX_FILE_FORMAT;
     sqlite3VdbeAddOp(v, OP_Integer, fileFormat, 0);
     sqlite3VdbeAddOp(v, OP_SetCookie, iDb, 1);
     sqlite3VdbeAddOp(v, OP_Integer, ENC(db), 0);
