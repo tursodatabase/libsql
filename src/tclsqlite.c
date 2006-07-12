@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.163 2006/07/10 21:15:52 drh Exp $
+** $Id: tclsqlite.c,v 1.164 2006/07/12 00:18:41 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -1568,6 +1568,8 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
         Tcl_SetObjResult(interp, pRet);
       }
       Tcl_DecrRefCount(pRet);
+    }else if( rc==TCL_OK ){
+      Tcl_ResetResult(interp);
     }
     break;
   }
