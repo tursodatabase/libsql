@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.164 2006/07/12 00:18:41 drh Exp $
+** $Id: tclsqlite.c,v 1.165 2006/07/17 00:02:45 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -669,11 +669,11 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     "collation_needed",   "commit_hook",       "complete",
     "copy",               "enable_load_extension","errorcode",
     "eval",               "exists",            "function",
-    "last_insert_rowid",  "nullvalue",         "onecolumn",
-    "profile",            "progress",          "rekey",
-    "rollback_hook",      "timeout",           "total_changes",
-    "trace",              "transaction",       "update_hook",
-    "version",            0                    
+    "interrupt",          "last_insert_rowid", "nullvalue",
+    "onecolumn",          "profile",           "progress",
+    "rekey",              "rollback_hook",     "timeout",
+    "total_changes",      "trace",             "transaction",
+    "update_hook",        "version",           0
   };
   enum DB_enum {
     DB_AUTHORIZER,        DB_BUSY,             DB_CACHE,
@@ -681,11 +681,11 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     DB_COLLATION_NEEDED,  DB_COMMIT_HOOK,      DB_COMPLETE,
     DB_COPY,              DB_ENABLE_LOAD_EXTENSION,DB_ERRORCODE,
     DB_EVAL,              DB_EXISTS,           DB_FUNCTION,
-    DB_LAST_INSERT_ROWID, DB_NULLVALUE,        DB_ONECOLUMN,
-    DB_PROFILE,           DB_PROGRESS,         DB_REKEY,
-    DB_ROLLBACK_HOOK,     DB_TIMEOUT,          DB_TOTAL_CHANGES,
-    DB_TRACE,             DB_TRANSACTION,      DB_UPDATE_HOOK,
-    DB_VERSION,          
+    DB_INTERRUPT,         DB_LAST_INSERT_ROWID,DB_NULLVALUE,
+    DB_ONECOLUMN,         DB_PROFILE,          DB_PROGRESS,
+    DB_REKEY,             DB_ROLLBACK_HOOK,    DB_TIMEOUT,
+    DB_TOTAL_CHANGES,     DB_TRACE,            DB_TRANSACTION,
+    DB_UPDATE_HOOK,       DB_VERSION,          
   };
   /* don't leave trailing commas on DB_enum, it confuses the AIX xlc compiler */
 
@@ -1607,6 +1607,17 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       /* Must flush any cached statements */
       flushStmtCache( pDb );
     }
+    break;
+  }
+
+  /*
+  **     $db interrupt
+  **
+  ** Interrupt the execution of the inner-most SQL interpreter.  This
+  ** causes the SQL statement to return an error of SQLITE_INTERRUPT.
+  */
+  case DB_INTERRUPT: {
+    sqlite3_interrupt(pDb->db);
     break;
   }
 

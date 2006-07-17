@@ -1,5 +1,5 @@
-C Reset\sTCL\sresults\swhen\sonecolumn\sor\seval\smethods\shave\sno\sreply.\nTicket\s#1887.\s(CVS\s3331)
-D 2006-07-12T00:18:41
+C Add\sthe\s"interrupt"\smethod\sto\sthe\sTCL\sinterface.\s\sTicket\s#1889.\s(CVS\s3332)
+D 2006-07-17T00:02:45
 F Makefile.in 9c2a76055c305868cc5f5b73e29a252ff3632c0a
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -76,7 +76,7 @@ F src/sqlite.h.in 432848ac7f8d7e6fea727668acccec62bdd86cc4
 F src/sqlite3ext.h c611255287e9a11ce4f1fe6251c2a0b9d32a828b
 F src/sqliteInt.h a413094c83dd3e79f129afb9d453b5680651176b
 F src/table.c d8817f43a6c6bf139487db161760b9e1e02da3f1
-F src/tclsqlite.c 64c4a41dac9dae0d2258b06c4229e995d5fa7cc4
+F src/tclsqlite.c 92a997ee5caca4923a6452ff8ebfaa8d37334f4a
 F src/test1.c 535294d7f21a4127082c4f7a57f225482df9cc36
 F src/test2.c ca74a1d8aeb7d9606e8f6b762c5daf85c1a3f92b
 F src/test3.c 833dc8346e431182ae6bd0648455c3d4cc65a19f
@@ -183,7 +183,7 @@ F test/index3.test f66718cd92ce1216819d47e6a156755e4b2c4ca1
 F test/insert.test 42e26d9192f36859938765e6817fb957cf19532b
 F test/insert2.test 5a20e1ace5fa0800b58d28284212290189b49aed
 F test/insert3.test 0096bd9766f94f4fa06ef712658e590b782cb44f
-F test/interrupt.test cd24dc5bedd02325be4bfa5d6209fae01c465157
+F test/interrupt.test c38b7f7c17914f0cd6a119beed5d03bc3f47f9eb
 F test/intpkey.test af4fd826c4784ec5c93b444de07adea0254d0d30
 F test/ioerr.test 804d56cfa698e7c90590921f984eb49ceb30c2a9
 F test/join.test af0443185378b64878750aa1cf4b83c216f246b4
@@ -251,7 +251,7 @@ F test/subselect.test 2d13fb7f450db3595adcdd24079a0dd1d2d6abc2
 F test/sync.test d05397b8f89f423dd6dba528692019ab036bc1c3
 F test/table.test 1c1539af8db89c68e467df02ec2607ec61c67bac
 F test/tableapi.test a1982276274d292110d549206bc365b2da43e2ee
-F test/tclsqlite.test e1ae0280f9150b4c43f2a6f1a16fc5e8511cd747
+F test/tclsqlite.test e7f7b891ccd971379106a656d4b2f27d246cc8fd
 F test/temptable.test c36f3e5a94507abb64f7ba23deeb4e1a8a8c3821
 F test/tester.tcl 0436eda9b45cd937662b9766262cc2527448413f
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
@@ -375,7 +375,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 65b60f05ce49ff127bf5044f96db36caf1fa0106
-R c2fe2d2fef5276c6e646e7b15fa1fb09
+P 9c6090c609afa9906029ed4ba22375f5bee058c4
+R ec56b496437631175dc2c4cfe87c3e4f
 U drh
-Z 97a143b73f2650c099952ed39c8d5956
+Z 78911d3d9efaa6da8fd47f85853e0527
