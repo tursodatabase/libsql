@@ -4111,6 +4111,7 @@ char *y;
 {
   char *z;
 
+  if( y==0 ) return 0;
   z = Strsafe_find(y);
   if( z==0 && (z=malloc( strlen(y)+1 ))!=0 ){
     strcpy(z,y);
