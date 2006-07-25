@@ -868,7 +868,9 @@ void sqlite3VdbeFreeCursor(Vdbe *p, Cursor *pCx){
     sqlite3_vtab_cursor *pVtabCursor = pCx->pVtabCursor;
     const sqlite3_module *pModule = pCx->pModule;
     p->inVtabMethod = 1;
+    sqlite3SafetyOff(p->db);
     pModule->xClose(pVtabCursor);
+    sqlite3SafetyOn(p->db);
     p->inVtabMethod = 0;
   }
 #endif
@@ -983,6 +985,23 @@ static int vdbeCommit(sqlite3 *db){
   int rc = SQLITE_OK;
   int needXcommit = 0;
 
+  /* Before doing anything else, call the xSync() callback for any
+  ** virtual module tables written in this transaction. This has to
+  ** be done before determining whether a master journal file is 
+  ** required, as an xSync() callback may add an attached database
+  ** to the transaction.
+  */
+  rc = sqlite3VtabSync(db, rc);
+  if( rc!=SQLITE_OK ){
+    return rc;
+  }
+
+  /* This loop determines (a) if the commit hook should be invoked and
+  ** (b) how many database files have open write transactions, not 
+  ** including the temp database. (b) is important because if more than 
+  ** one database file has an open write transaction, a master journal
+  ** file is required for an atomic commit.
+  */ 
   for(i=0; i<db->nDb; i++){ 
     Btree *pBt = db->aDb[i].pBt;
     if( pBt && sqlite3BtreeIsInTrans(pBt) ){
@@ -1017,7 +1036,6 @@ static int vdbeCommit(sqlite3 *db){
         rc = sqlite3BtreeSync(pBt, 0);
       }
     }
-    rc = sqlite3VtabSync(db, rc);
 
     /* Do the commit only if all databases successfully synced */
     if( rc==SQLITE_OK ){
@@ -1109,20 +1127,17 @@ static int vdbeCommit(sqlite3 *db){
     ** file name was written into the journal file before the failure
     ** occured.
     */
-    for(i=0; i<db->nDb; i++){ 
+    for(i=0; rc==SQLITE_OK && i<db->nDb; i++){ 
       Btree *pBt = db->aDb[i].pBt;
       if( pBt && sqlite3BtreeIsInTrans(pBt) ){
         rc = sqlite3BtreeSync(pBt, zMaster);
-        if( rc!=SQLITE_OK ){
-          sqlite3OsClose(&master);
-          sqliteFree(zMaster);
-          return rc;
-        }
       }
     }
-    rc = sqlite3VtabSync(db, SQLITE_OK);
-    if( rc!=SQLITE_OK ) return rc;
     sqlite3OsClose(&master);
+    if( rc!=SQLITE_OK ){
+      sqliteFree(zMaster);
+      return rc;
+    }
 
     /* Delete the master journal file. This commits the transaction. After
     ** doing this the directory is synced again before any individual
@@ -1426,7 +1441,9 @@ int sqlite3VdbeReset(Vdbe *p){
   ** error, then it might not have been halted properly.  So halt
   ** it now.
   */
+  sqlite3SafetyOn(p->db);
   sqlite3VdbeHalt(p);
+  sqlite3SafetyOff(p->db);
 
   /* If the VDBE has be run even partially, then transfer the error code
   ** and error message from the VDBE into the main database structure.  But
@@ -1495,7 +1512,6 @@ int sqlite3VdbeReset(Vdbe *p){
 */
 int sqlite3VdbeFinalize(Vdbe *p){
   int rc = SQLITE_OK;
-
   if( p->magic==VDBE_MAGIC_RUN || p->magic==VDBE_MAGIC_HALT ){
     rc = sqlite3VdbeReset(p);
   }else if( p->magic!=VDBE_MAGIC_INIT ){

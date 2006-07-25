@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to help implement virtual tables.
 **
-** $Id: vtab.c,v 1.27 2006/07/08 18:09:15 drh Exp $
+** $Id: vtab.c,v 1.28 2006/07/25 15:14:53 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
@@ -503,7 +503,7 @@ static void callFinaliser(sqlite3 *db, int offset){
 }
 
 /*
-** If argument rc is not SQLITE_OK, then return it and do nothing. 
+** If argument rc2 is not SQLITE_OK, then return it and do nothing. 
 ** Otherwise, invoke the xSync method of all virtual tables in the 
 ** sqlite3.aVTrans array. Return the error code for the first error 
 ** that occurs, or SQLITE_OK if all xSync operations are successful.
@@ -511,7 +511,9 @@ static void callFinaliser(sqlite3 *db, int offset){
 int sqlite3VtabSync(sqlite3 *db, int rc2){
   int i;
   int rc = SQLITE_OK;
+  int rcsafety;
   if( rc2!=SQLITE_OK ) return rc2;
+  rc = sqlite3SafetyOff(db);
   for(i=0; rc==SQLITE_OK && i<db->nVTrans && db->aVTrans[i]; i++){
     sqlite3_vtab *pVtab = db->aVTrans[i];
     int (*x)(sqlite3_vtab *);
@@ -519,6 +521,10 @@ int sqlite3VtabSync(sqlite3 *db, int rc2){
     if( x ){
       rc = x(pVtab);
     }
+  }
+  rcsafety = sqlite3SafetyOn(db);
+  if( rc==SQLITE_OK ){
+    rc = rcsafety;
   }
   return rc;
 }
@@ -596,7 +602,6 @@ FuncDef *sqlite3VtabOverloadFunction(
   sqlite3_module *pMod;
   void (*xFunc)(sqlite3_context*,int,sqlite3_value**);
   void *pArg;
-  int rc;
   FuncDef *pNew;
 
   /* Check to see the left operand is a column in a virtual table */
@@ -608,7 +613,7 @@ FuncDef *sqlite3VtabOverloadFunction(
   pVtab = pTab->pVtab;
   assert( pVtab!=0 );
   assert( pVtab->pModule!=0 );
-  pMod = pVtab->pModule;
+  pMod = (sqlite3_module *)pVtab->pModule;
   if( pMod->xFindFunction==0 ) return pDef;
  
   /* Call the xFuncFunction method on the virtual table implementation
