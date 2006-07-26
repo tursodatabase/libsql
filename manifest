@@ -1,5 +1,5 @@
-C More\swork\stoward\sgetting\ssqlite3_interrupt()\sto\swork\sfrom\sseparate\nthreads.\s\sTicket\s#1897.\s(CVS\s3336)
-D 2006-07-26T13:43:31
+C Add\sa\stest\scase\sto\strigger\san\sassertion\sfault\swhen\srunning\nsqlite3_prepare16()\swith\sa\spredefined\sstring\ssize.\s(CVS\s3337)
+D 2006-07-26T14:49:19
 F Makefile.in 9c2a76055c305868cc5f5b73e29a252ff3632c0a
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -207,6 +207,7 @@ F test/malloc3.test fd4186bee73c2a2638f4e2a05a684c06836f725b
 F test/malloc4.test 59cd02f71b363302a04c4e77b97c0a1572eaa210
 F test/malloc5.test 7425272e263325fda7d32cb55706e52b5c09e7e0
 F test/malloc6.test 025ae0b78542e0ddd000d23f79d93e9be9ba0f15
+F test/malloc7.test 436b90dbe4a22a2f5309124f3b13ff33082e162d
 F test/manydb.test 8de36b8d33aab5ef295b11d9e95310aeded31af8
 F test/memdb.test a67bda4ff90a38f2b19f6c7f95aa7289e051d893
 F test/memleak.test df2b2b96e77f8ba159a332299535b1e5f18e49ac
@@ -376,7 +377,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 35fd67d7a0c55797eb460e3bd02c96afe619f026
-R 81058f7cc0073e22a60fae6f780adbf1
+P e431131d47481f9fc64c498e8934b10a96b0a931
+R 7e8761d6a912e35c00881f2d7e6d80bf
 U drh
-Z 506916b1bf3ff2edf2b1a6a42bca76f1
+Z 2f225d06d095b7c64a3eddb40e300558
