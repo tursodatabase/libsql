@@ -1,4 +1,4 @@
-# 2001 September 15
+# 2006 July 26
 #
 # The author disclaims copyright to this source code.  In place of
 # a legal notice, here is a blessing:
@@ -8,13 +8,10 @@
 #    May you share freely, never taking more than you give.
 #
 #***********************************************************************
-# This file attempts to check the library in an out-of-memory situation.
-# When compiled with -DSQLITE_DEBUG=1, the SQLite library accepts a special
-# command (sqlite_malloc_fail N) which causes the N-th malloc to fail.  This
-# special feature is used to see what happens in the library if a malloc
-# were to really fail due to an out-of-memory situation.
+# This file contains additional out-of-memory checks (see malloc.tcl)
+# added to expose a bug in out-of-memory handling for sqlite3_prepare16().
 #
-# $Id: malloc7.test,v 1.1 2006/07/26 14:49:19 drh Exp $
+# $Id: malloc7.test,v 1.2 2006/07/26 14:57:30 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
