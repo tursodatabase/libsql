@@ -671,7 +671,6 @@ int sqlite3VdbeList(
     p->rc = SQLITE_OK;
     rc = SQLITE_DONE;
   }else if( db->u1.isInterrupted ){
-    db->u1.isInterrupted = 0;
     p->rc = SQLITE_INTERRUPT;
     rc = SQLITE_ERROR;
     sqlite3SetString(&p->zErrMsg, sqlite3ErrStr(p->rc), (char*)0);

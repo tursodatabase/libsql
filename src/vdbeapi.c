@@ -180,6 +180,14 @@ int sqlite3_step(sqlite3_stmt *pStmt){
     return SQLITE_MISUSE;
   }
   if( p->pc<0 ){
+    /* If there are no other statements currently running, then
+    ** reset the interrupt flag.  This prevents a call to sqlite3_interrupt
+    ** from interrupting a statement that has not yet started.
+    */
+    if( db->activeVdbeCnt==0 ){
+      db->u1.isInterrupted = 0;
+    }
+
 #ifndef SQLITE_OMIT_TRACE
     /* Invoke the trace callback if there is one
     */

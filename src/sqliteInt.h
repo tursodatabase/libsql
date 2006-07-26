@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.522 2006/07/26 01:39:30 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.523 2006/07/26 13:43:31 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1513,6 +1513,7 @@ struct DbFixer {
 typedef struct {
   sqlite3 *db;        /* The database being initialized */
   char **pzErrMsg;    /* Error message stored here */
+  int rc;             /* Result code stored here */
 } InitData;
 
 /*
