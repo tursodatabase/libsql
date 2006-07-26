@@ -12,7 +12,7 @@
 # of this test is reading and writing to the database from within a
 # virtual table xSync() callback.
 #
-# $Id: vtab7.test,v 1.1 2006/07/25 15:14:53 danielk1977 Exp $
+# $Id: vtab7.test,v 1.2 2006/07/26 16:22:16 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -155,6 +155,42 @@ do_test vtab7-3.1 {
 #   }
 # } {1 {library routine called out of sequence}}
 
+# These tests, vtab7-4.*, test that an SQLITE_LOCKED error is returned
+# if an attempt to write to a virtual module table or create a new 
+# virtual table from within an xSync() callback.
+do_test vtab7-4.1 {
+  execsql {
+    CREATE TABLE def(d, e, f);
+    CREATE VIRTUAL TABLE def2 USING echo(def);
+  }
+  set ::callbacks(xSync,abc) {
+    set ::error [catchsql { INSERT INTO def2 VALUES(1, 2, 3) }]
+  }
+  execsql {
+    INSERT INTO abc2 VALUES(1, 2, 3);
+  }
+  set ::error
+} {1 {database table is locked}}
+do_test vtab7-4.2 {
+  set ::callbacks(xSync,abc) {
+    set ::error [catchsql { CREATE VIRTUAL TABLE def3 USING echo(def) }]
+  }
+  execsql {
+    INSERT INTO abc2 VALUES(1, 2, 3);
+  }
+  set ::error
+} {1 {database table is locked}}
+
+do_test vtab7-4.3 {
+  set ::callbacks(xSync,abc) {
+    set ::error [catchsql { DROP TABLE def2 }]
+  }
+  execsql {
+    INSERT INTO abc2 VALUES(1, 2, 3);
+    SELECT name FROM sqlite_master ORDER BY name;
+  }
+  set ::error
+} {1 {database table is locked}}
 
 trace remove variable ::echo_module write echo_module_trace
 unset -nocomplain ::callbacks

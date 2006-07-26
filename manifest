@@ -1,5 +1,5 @@
-C Fix\san\soverzealous\sassert()\sin\sthe\sUTF-16\sto\sUTF-8\sconverter.\s(CVS\s3338)
-D 2006-07-26T14:57:30
+C Disallow\swriting\sto,\screating\sor\sdropping\svirtual\stables\sfrom\swithin\sxSync()\scallbacks.\s(CVS\s3339)
+D 2006-07-26T16:22:15
 F Makefile.in 9c2a76055c305868cc5f5b73e29a252ff3632c0a
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -36,7 +36,7 @@ F src/attach.c b11eb4d5d3fb99a10a626956bccc7215f6b68b16
 F src/auth.c 902f4722661c796b97f007d9606bd7529c02597f
 F src/btree.c fc077741b35efd2015b0f56e62d00370bed1fcc8
 F src/btree.h 061c50e37de7f50b58528e352d400cf33ead7418
-F src/build.c b5eb033a663798af85735392bea73f9bd3b16e8a
+F src/build.c 2ea8ad0e2e49b3957692588182524e6c390ab5a9
 F src/callback.c fd9bb39f7ff6b52bad8365617abc61c720640429
 F src/complete.c 7d1a44be8f37de125fcafd3d3a018690b3799675
 F src/date.c cd2bd5d1ebc6fa12d6312f69789ae5b0a2766f2e
@@ -104,7 +104,7 @@ F src/vdbeapi.c a2274726d16893337c60937235040fc36792cb48
 F src/vdbeaux.c f3d25be011aa5b883166466ed06c7c40dbc6cc2e
 F src/vdbefifo.c 9efb94c8c3f4c979ebd0028219483f88e57584f5
 F src/vdbemem.c 5f0afe3b92bb2c037f8d5d697f7c151fa50783a3
-F src/vtab.c 1fe25b3e59f92ed1f29b63ac9c6f954eb6907a29
+F src/vtab.c cae036dc7b0b7d7f5f17eef646b1d53940a21572
 F src/where.c 75a89957fcb8c068bec55caa4e9d2ed5fa0b0724
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -300,7 +300,7 @@ F test/vtab3.test f38d6d7d19f08bffdadce4d5b8cba078f8118587
 F test/vtab4.test 4b4293341443839ef6dc02f8d9e614702a6c67ff
 F test/vtab5.test 9fb8f335651afe8f870011e2f68e5b00c5ad03cd
 F test/vtab6.test ec0036f29f8a803da9935206f2d9d1b6a8026392
-F test/vtab7.test b87ed57f6f635728c86fbad556e7844927dbc9a8
+F test/vtab7.test 5f9ef9fb84733e928d5d0267c821072561b198d5
 F test/vtab_err.test 11b90203ad60d63746d0de547b1ca014704d8f0e
 F test/where.test ee7c9a6659b07e1ee61177f6e7ff71565ee2c9df
 F test/where2.test a16476a5913e75cf65b38f2daa6157a6b7791394
@@ -377,7 +377,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 93878e6ebf703be022f83fd670c1aaaf7d4f1266
-R 167e4d31c3ceea093995728310ddba84
-U drh
-Z b21afc244e8797d2644f042e2547a6b5
+P 096bd8212fa06c7271fc24280133d1f0864ffb42
+R 3362c9632601e96a747bcf16cc5e9841
+U danielk1977
+Z 7bc02f9ce0fbfffc39f7d31467d5ba55

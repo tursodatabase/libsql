@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to help implement virtual tables.
 **
-** $Id: vtab.c,v 1.28 2006/07/25 15:14:53 danielk1977 Exp $
+** $Id: vtab.c,v 1.29 2006/07/26 16:22:15 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
@@ -394,7 +394,7 @@ int sqlite3VtabCallCreate(sqlite3 *db, int iDb, const char *zTab, char **pzErr){
   }
 
   if( rc==SQLITE_OK && pTab->pVtab ){
-    rc = addToVTrans(db, pTab->pVtab);
+      rc = addToVTrans(db, pTab->pVtab);
   }
 
   return rc;
@@ -512,17 +512,22 @@ int sqlite3VtabSync(sqlite3 *db, int rc2){
   int i;
   int rc = SQLITE_OK;
   int rcsafety;
+  sqlite3_vtab **aVTrans = db->aVTrans;
   if( rc2!=SQLITE_OK ) return rc2;
+
   rc = sqlite3SafetyOff(db);
-  for(i=0; rc==SQLITE_OK && i<db->nVTrans && db->aVTrans[i]; i++){
-    sqlite3_vtab *pVtab = db->aVTrans[i];
+  db->aVTrans = 0;
+  for(i=0; rc==SQLITE_OK && i<db->nVTrans && aVTrans[i]; i++){
+    sqlite3_vtab *pVtab = aVTrans[i];
     int (*x)(sqlite3_vtab *);
     x = pVtab->pModule->xSync;
     if( x ){
       rc = x(pVtab);
     }
   }
+  db->aVTrans = aVTrans;
   rcsafety = sqlite3SafetyOn(db);
+
   if( rc==SQLITE_OK ){
     rc = rcsafety;
   }
@@ -557,9 +562,24 @@ int sqlite3VtabCommit(sqlite3 *db){
 */
 int sqlite3VtabBegin(sqlite3 *db, sqlite3_vtab *pVtab){
   int rc = SQLITE_OK;
-  const sqlite3_module *pModule = pVtab->pModule;
+  const sqlite3_module *pModule;
+
+  /* Special case: If db->aVTrans is NULL and db->nVTrans is greater
+  ** than zero, then this function is being called from within a
+  ** virtual module xSync() callback. It is illegal to write to 
+  ** virtual module tables in this case, so return SQLITE_LOCKED.
+  */
+  if( 0==db->aVTrans && db->nVTrans>0 ){
+    return SQLITE_LOCKED;
+  }
+  if( !pVtab ){
+    return SQLITE_OK;
+  } 
+  pModule = pVtab->pModule;
+
   if( pModule->xBegin ){
     int i;
+
 
     /* If pVtab is already in the aVTrans array, return early */
     for(i=0; (i<db->nVTrans) && 0!=db->aVTrans[i]; i++){

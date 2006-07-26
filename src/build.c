@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.408 2006/07/11 14:17:52 drh Exp $
+** $Id: build.c,v 1.409 2006/07/26 16:22:15 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -846,6 +846,12 @@ void sqlite3StartTable(
     int lbl;
     int fileFormat;
     sqlite3BeginWriteOperation(pParse, 0, iDb);
+
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+    if( isVirtual ){
+      sqlite3VdbeAddOp(v, OP_VBegin, 0, 0);
+    }
+#endif
 
     /* If the file format and encoding in the database have not been set, 
     ** set them now.
@@ -1953,6 +1959,15 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
     Trigger *pTrigger;
     Db *pDb = &db->aDb[iDb];
     sqlite3BeginWriteOperation(pParse, 0, iDb);
+
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+    if( IsVirtual(pTab) ){
+      Vdbe *v = sqlite3GetVdbe(pParse);
+      if( v ){
+        sqlite3VdbeAddOp(v, OP_VBegin, 0, 0);
+      }
+    }
+#endif
 
     /* Drop all triggers associated with the table being dropped. Code
     ** is generated to remove entries from sqlite_master and/or
