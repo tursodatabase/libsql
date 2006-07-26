@@ -1,5 +1,5 @@
-C Allow\sdatabase\swrites\sfrom\swithin\svirtual\stable\smodule\sxSync()\scallbacks.\s(CVS\s3334)
-D 2006-07-25T15:14:53
+C Initial\sattempt\sat\smaking\ssqlite3_interrupt()\swork\seven\swhen\scalled\sfrom\na\sseparate\sthread.\s(CVS\s3335)
+D 2006-07-26T01:39:30
 F Makefile.in 9c2a76055c305868cc5f5b73e29a252ff3632c0a
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -49,7 +49,7 @@ F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
 F src/insert.c 63f01d3f4e0ba7ed171934a24aece2191824faec
 F src/legacy.c 10e01a902d7f2c872c7922fedf19a2df70935857
 F src/loadext.c 040853b36adf535bba6a2e9f5d921422a4394baf
-F src/main.c 14937db8a0c383598f1901fcc308cf9126ef62ae
+F src/main.c 494d3750d0969404a7747ff45cf0226fd6e42abf
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/os.c 59f05de8c5777c34876607114a2fbe55ae578235
 F src/os.h 3fd6a022bafd620fdfd779a51dccb42f31c97f75
@@ -74,7 +74,7 @@ F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 359551ab5cdd8f8fe5f3fe170fd330b108b08d7d
 F src/sqlite.h.in 432848ac7f8d7e6fea727668acccec62bdd86cc4
 F src/sqlite3ext.h c611255287e9a11ce4f1fe6251c2a0b9d32a828b
-F src/sqliteInt.h a413094c83dd3e79f129afb9d453b5680651176b
+F src/sqliteInt.h 670d36af1fe0fe1933e0a5abf26558873f3ff481
 F src/table.c d8817f43a6c6bf139487db161760b9e1e02da3f1
 F src/tclsqlite.c 92a997ee5caca4923a6452ff8ebfaa8d37334f4a
 F src/test1.c 535294d7f21a4127082c4f7a57f225482df9cc36
@@ -91,17 +91,17 @@ F src/test_md5.c 6c42bc0a3c0b54be34623ff77a0eec32b2fa96e3
 F src/test_schema.c 8b2aaa9136edf3187a51166849c2de0aaaa27ce5
 F src/test_server.c a6460daed0b92ecbc2531b6dc73717470e7a648c
 F src/test_tclvar.c 6611657977c69bccd32b4ff7ccfb221a403ca2f0
-F src/tokenize.c 7b448440dfd6e984d6bef7ac7fc60f1d26eaf8e7
+F src/tokenize.c 288e860be49a20a18dfe7456e7a8948aee5d2c26
 F src/trigger.c 0fc40125820409a6274834a6e04ad804d96e2793
 F src/update.c 951f95ef044cf6d28557c48dc35cb0711a0b9129
 F src/utf.c ab81ac59084ff1c07d421eb1a0a84ec809603b44
-F src/util.c c8ada8bab6b8822084d05c270d160867d3714aaf
+F src/util.c 5409031819ee4672c5f9c3ac7cf517e267a25845
 F src/vacuum.c 5b37d0f436f8e1ffacd17934e44720b38d2247f9
-F src/vdbe.c 3ffc96ec2e870b3ab3e59d1f6fe34687e4ed1db6
+F src/vdbe.c c20911652577abc0afb683b5214e04fab6659a0f
 F src/vdbe.h 258b5d1c0aaa72192f09ff0568ce42b383f156fa
 F src/vdbeInt.h e3eaab262b67b84474625cfc38aec1125c32834b
 F src/vdbeapi.c 6af0e7160af260052a7a4500464221a03dada75f
-F src/vdbeaux.c 0088120c4e321f680d2728d26770f35c10dc64b1
+F src/vdbeaux.c 1047944652093a6583a308ec89e8e517e8951d2e
 F src/vdbefifo.c 9efb94c8c3f4c979ebd0028219483f88e57584f5
 F src/vdbemem.c 5f0afe3b92bb2c037f8d5d697f7c151fa50783a3
 F src/vtab.c 1fe25b3e59f92ed1f29b63ac9c6f954eb6907a29
@@ -376,7 +376,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 4207ebc4e107df9f9f046be652f061e53263c8dd
-R b62c9f53d5d9aafa4e186b1b50a281ff
-U danielk1977
-Z 4145b3acb8db85dcd373c4df89f46175
+P d5a608d0a412e13dfced6a3827574a2cff802f25
+R 8e7083ca7f3cd7ca6f02160c3ed214e7
+U drh
+Z f2c6da8c85bcdb4581d0e12508de1697

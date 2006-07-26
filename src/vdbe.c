@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.570 2006/06/28 18:18:09 drh Exp $
+** $Id: vdbe.c,v 1.571 2006/07/26 01:39:30 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -61,8 +61,8 @@ int sqlite3_search_count = 0;
 
 /*
 ** When this global variable is positive, it gets decremented once before
-** each instruction in the VDBE.  When reaches zero, the SQLITE_Interrupt
-** of the db.flags field is set in order to simulate and interrupt.
+** each instruction in the VDBE.  When reaches zero, the u1.isInterrupted
+** field of the sqlite3 structure is set in order to simulate and interrupt.
 **
 ** This facility is used for testing purposes only.  It does not function
 ** in an ordinary build.
@@ -376,7 +376,7 @@ __inline__ unsigned long long int hwtime(void){
 ** flag on jump instructions, we get a (small) speed improvement.
 */
 #define CHECK_FOR_INTERRUPT \
-   if( db->flags & SQLITE_Interrupt ) goto abort_due_to_interrupt;
+   if( db->u1.isInterrupted ) goto abort_due_to_interrupt;
 
 
 /*
@@ -4970,8 +4970,8 @@ abort_due_to_error:
   ** flag.
   */
 abort_due_to_interrupt:
-  assert( db->flags & SQLITE_Interrupt );
-  db->flags &= ~SQLITE_Interrupt;
+  assert( db->u1.isInterrupted );
+  db->u1.isInterrupted = 0;
   if( db->magic!=SQLITE_MAGIC_BUSY ){
     rc = SQLITE_MISUSE;
   }else{

@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.191 2006/07/11 12:40:25 drh Exp $
+** $Id: util.c,v 1.192 2006/07/26 01:39:30 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1151,7 +1151,7 @@ int sqlite3SafetyOn(sqlite3 *db){
     return 0;
   }else if( db->magic==SQLITE_MAGIC_BUSY ){
     db->magic = SQLITE_MAGIC_ERROR;
-    db->flags |= SQLITE_Interrupt;
+    db->u1.isInterrupted = 1;
   }
   return 1;
 }
@@ -1167,7 +1167,7 @@ int sqlite3SafetyOff(sqlite3 *db){
     return 0;
   }else if( db->magic==SQLITE_MAGIC_OPEN ){
     db->magic = SQLITE_MAGIC_ERROR;
-    db->flags |= SQLITE_Interrupt;
+    db->u1.isInterrupted = 1;
   }
   return 1;
 }

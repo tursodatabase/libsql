@@ -670,8 +670,8 @@ int sqlite3VdbeList(
   if( i>=p->nOp ){
     p->rc = SQLITE_OK;
     rc = SQLITE_DONE;
-  }else if( db->flags & SQLITE_Interrupt ){
-    db->flags &= ~SQLITE_Interrupt;
+  }else if( db->u1.isInterrupted ){
+    db->u1.isInterrupted = 0;
     p->rc = SQLITE_INTERRUPT;
     rc = SQLITE_ERROR;
     sqlite3SetString(&p->zErrMsg, sqlite3ErrStr(p->rc), (char*)0);

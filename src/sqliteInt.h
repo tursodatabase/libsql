@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.521 2006/07/11 14:17:52 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.522 2006/07/26 01:39:30 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -481,6 +481,10 @@ struct sqlite3 {
   sqlite3_value *pErr;          /* Most recent error message */
   char *zErrMsg;                /* Most recent error message (UTF-8 encoded) */
   char *zErrMsg16;              /* Most recent error message (UTF-16 encoded) */
+  union {
+    int isInterrupted;          /* True if sqlite3_interrupt has been called */
+    double notUsed1;            /* Spacer */
+  } u1;
 #ifndef SQLITE_OMIT_AUTHORIZATION
   int (*xAuth)(void*,int,const char*,const char*,const char*,const char*);
                                 /* Access authorization function */
@@ -520,7 +524,6 @@ struct sqlite3 {
 ** transaction is active on that particular database file.
 */
 #define SQLITE_VdbeTrace      0x00000001  /* True to trace VDBE execution */
-#define SQLITE_Interrupt      0x00000004  /* Cancel current operation */
 #define SQLITE_InTrans        0x00000008  /* True if in a transaction */
 #define SQLITE_InternChanges  0x00000010  /* Uncommitted Hash table changes */
 #define SQLITE_FullColNames   0x00000020  /* Show full column names on SELECT */
