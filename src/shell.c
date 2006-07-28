@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.144 2006/06/27 20:39:04 drh Exp $
+** $Id: shell.c,v 1.145 2006/07/28 20:16:14 adamd Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -1814,12 +1814,18 @@ int main(int argc, char **argv){
       if( zHistory ){
         stifle_history(100);
         write_history(zHistory);
+        free(zHistory);
       }
+      free(zHome);
     }else{
       process_input(&data, stdin);
     }
   }
   set_table_name(&data, 0);
-  if( db ) sqlite3_close(db);
+  if( db ){
+    if( sqlite3_close(db)!=SQLITE_OK ){
+      fprintf(stderr,"error closing database: %s\n", sqlite3_errmsg(db));
+    }
+  }
   return 0;
 }

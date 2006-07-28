@@ -1,5 +1,5 @@
-C Disallow\swriting\sto,\screating\sor\sdropping\svirtual\stables\sfrom\swithin\sxSync()\scallbacks.\s(CVS\s3339)
-D 2006-07-26T16:22:15
+C Report\sany\serror\swhich\soccurs\sin\sclosing\sthe\sdatabase\sat\sexit.\s\sFree\sa\ncouple\sof\sstrings\swhich\swere\sleaking.\s(CVS\s3340)
+D 2006-07-28T20:16:14
 F Makefile.in 9c2a76055c305868cc5f5b73e29a252ff3632c0a
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -71,7 +71,7 @@ F src/printf.c b179b6ed12f793e028dd169e2e2e2b2a37eedc63
 F src/random.c d40f8d356cecbd351ccfab6eaedd7ec1b54f5261
 F src/select.c aeec8efbe83bc1e50e9b49ada19b34eda5de05bd
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
-F src/shell.c 359551ab5cdd8f8fe5f3fe170fd330b108b08d7d
+F src/shell.c 9e95f12ef57c3dc9fa0774c27f8743e2d39a9f1f
 F src/sqlite.h.in 432848ac7f8d7e6fea727668acccec62bdd86cc4
 F src/sqlite3ext.h c611255287e9a11ce4f1fe6251c2a0b9d32a828b
 F src/sqliteInt.h 85975cbb95777f619fd76f1ba728022f13321e1b
@@ -377,7 +377,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 096bd8212fa06c7271fc24280133d1f0864ffb42
-R 3362c9632601e96a747bcf16cc5e9841
-U danielk1977
-Z 7bc02f9ce0fbfffc39f7d31467d5ba55
+P e705d232324c71738b8b25713a134617dd1fc525
+R b40f334bf7acf292fd580f71f8cea324
+U adamd
+Z 7beffdbc9373e3cba85945f496f9b64c
