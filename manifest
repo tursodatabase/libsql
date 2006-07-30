@@ -1,5 +1,5 @@
-C Report\sany\serror\swhich\soccurs\sin\sclosing\sthe\sdatabase\sat\sexit.\s\sFree\sa\ncouple\sof\sstrings\swhich\swere\sleaking.\s(CVS\s3340)
-D 2006-07-28T20:16:14
+C Reset\sthe\sschema\sbefore\schecking\sfor\soutstanding\sstatements\sinside\nsqlite3_close()\sso\sthat\svirtual\stables\swill\sbe\sdisconnected.\s(CVS\s3341)
+D 2006-07-30T20:50:45
 F Makefile.in 9c2a76055c305868cc5f5b73e29a252ff3632c0a
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -49,7 +49,7 @@ F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
 F src/insert.c 63f01d3f4e0ba7ed171934a24aece2191824faec
 F src/legacy.c 10e01a902d7f2c872c7922fedf19a2df70935857
 F src/loadext.c 040853b36adf535bba6a2e9f5d921422a4394baf
-F src/main.c 494d3750d0969404a7747ff45cf0226fd6e42abf
+F src/main.c 3690d4a440c0bfba7b4816d52869e17b9adccb58
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/os.c 59f05de8c5777c34876607114a2fbe55ae578235
 F src/os.h 3fd6a022bafd620fdfd779a51dccb42f31c97f75
@@ -377,7 +377,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P e705d232324c71738b8b25713a134617dd1fc525
-R b40f334bf7acf292fd580f71f8cea324
-U adamd
-Z 7beffdbc9373e3cba85945f496f9b64c
+P 47353f62ca7635b693718997e792358d16bd117b
+R 9a3e9175ab65d62b48310a673dd1e811
+U drh
+Z fc59d02196f8c93727c6028eaedb3295

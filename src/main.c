@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.353 2006/07/26 01:39:30 drh Exp $
+** $Id: main.c,v 1.354 2006/07/30 20:50:45 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -116,6 +116,7 @@ int sqlite3_close(sqlite3 *db){
 #endif 
 
   /* If there are any outstanding VMs, return SQLITE_BUSY. */
+  sqlite3ResetInternalSchema(db, 0);
   if( db->pVdbe ){
     sqlite3Error(db, SQLITE_BUSY, 
         "Unable to close due to unfinalised statements");
