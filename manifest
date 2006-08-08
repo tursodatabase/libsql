@@ -1,5 +1,5 @@
-C Reset\sthe\sschema\sbefore\schecking\sfor\soutstanding\sstatements\sinside\nsqlite3_close()\sso\sthat\svirtual\stables\swill\sbe\sdisconnected.\s(CVS\s3341)
-D 2006-07-30T20:50:45
+C Remove\smost\sstatic\sand\sglobal\svariables\sfrom\sa\spure\sbuild.\s\sThere\nare\sstill\sa\snumber\sof\sstatic\sand\sglobal\svariables\sused\sfor\stesting.\s(CVS\s3342)
+D 2006-08-08T13:51:43
 F Makefile.in 9c2a76055c305868cc5f5b73e29a252ff3632c0a
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -34,7 +34,7 @@ F src/alter.c eba661e77bfd00282fbfa316cdb6aef04856fedc
 F src/analyze.c 7d2b7ab9a9c2fd6e55700f69064dfdd3e36d7a8a
 F src/attach.c b11eb4d5d3fb99a10a626956bccc7215f6b68b16
 F src/auth.c 902f4722661c796b97f007d9606bd7529c02597f
-F src/btree.c fc077741b35efd2015b0f56e62d00370bed1fcc8
+F src/btree.c c4757940df58fc0914d2c4f1778a66101df2c6b9
 F src/btree.h 061c50e37de7f50b58528e352d400cf33ead7418
 F src/build.c 2ea8ad0e2e49b3957692588182524e6c390ab5a9
 F src/callback.c fd9bb39f7ff6b52bad8365617abc61c720640429
@@ -62,10 +62,10 @@ F src/os_unix.c 17d91581a0ab478a06cb6f257b707a4c4a93e5a7
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c c6976ae50b61fb5b7dce399e578aa1865f02b84f
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 2ae998a64f98bc2fa14893e08537365865a09519
-F src/pager.h 43f32f3847421f7502cfbb66f4eb2302b8033818
+F src/pager.c e51c079b3cad8394898a6c22330150339103700a
+F src/pager.h 0cff9de5e9019cb695a04d18df8caaaff933a272
 F src/parse.y ecac666005bec0c813681a81de88d1de5d27577f
-F src/pragma.c 27d5e395c5d950931c7ac4fe610e7c2993e2fa55
+F src/pragma.c cc12939bb74a6e28eb2e867e75175eecffe089a1
 F src/prepare.c 06fdfea0920f2fe67df29ce6b2eebc83a9e6aedf
 F src/printf.c b179b6ed12f793e028dd169e2e2e2b2a37eedc63
 F src/random.c d40f8d356cecbd351ccfab6eaedd7ec1b54f5261
@@ -97,11 +97,11 @@ F src/update.c 951f95ef044cf6d28557c48dc35cb0711a0b9129
 F src/utf.c 4459801e9b00cfd69993bfca58545d3775682d6e
 F src/util.c 5409031819ee4672c5f9c3ac7cf517e267a25845
 F src/vacuum.c 5b37d0f436f8e1ffacd17934e44720b38d2247f9
-F src/vdbe.c 106bc6216f1bf0176ae645813647b7c496ace962
+F src/vdbe.c 3cea0b930abca02facd4c01fc6f369015730a926
 F src/vdbe.h 258b5d1c0aaa72192f09ff0568ce42b383f156fa
 F src/vdbeInt.h e3eaab262b67b84474625cfc38aec1125c32834b
-F src/vdbeapi.c a2274726d16893337c60937235040fc36792cb48
-F src/vdbeaux.c f3d25be011aa5b883166466ed06c7c40dbc6cc2e
+F src/vdbeapi.c 81f531d7dc5c898131b02ef85f6c6144ab2892cf
+F src/vdbeaux.c e850cdfa3a2a575cdd79a0a998dab812a01e10d3
 F src/vdbefifo.c 9efb94c8c3f4c979ebd0028219483f88e57584f5
 F src/vdbemem.c 5f0afe3b92bb2c037f8d5d697f7c151fa50783a3
 F src/vtab.c cae036dc7b0b7d7f5f17eef646b1d53940a21572
@@ -377,7 +377,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 47353f62ca7635b693718997e792358d16bd117b
-R 9a3e9175ab65d62b48310a673dd1e811
+P af05c3ca06163ef92ca1ca135302c00b7ddddabf
+R f5ef17a5493e5cfcde82b3eadef654c3
 U drh
-Z fc59d02196f8c93727c6028eaedb3295
+Z 67d07ebceb0040add56e64c2bec7e348

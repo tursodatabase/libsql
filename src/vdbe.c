@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.572 2006/07/26 13:43:31 drh Exp $
+** $Id: vdbe.c,v 1.573 2006/08/08 13:51:43 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -57,7 +57,9 @@
 ** working correctly.  This variable has no function other than to
 ** help verify the correct operation of the library.
 */
+#ifdef SQLITE_TEST
 int sqlite3_search_count = 0;
+#endif
 
 /*
 ** When this global variable is positive, it gets decremented once before
@@ -67,7 +69,9 @@ int sqlite3_search_count = 0;
 ** This facility is used for testing purposes only.  It does not function
 ** in an ordinary build.
 */
+#ifdef SQLITE_TEST
 int sqlite3_interrupt_count = 0;
+#endif
 
 /*
 ** The next global variable is incremented each type the OP_Sort opcode
@@ -76,7 +80,9 @@ int sqlite3_interrupt_count = 0;
 ** has no function other than to help verify the correct operation of the
 ** library.
 */
+#ifdef SQLITE_TEST
 int sqlite3_sort_count = 0;
+#endif
 
 /*
 ** Release the memory associated with the given stack level.  This
@@ -2824,7 +2830,9 @@ case OP_MoveGt: {       /* no-push */
     pC->deferredMoveto = 0;
     pC->cacheStatus = CACHE_STALE;
     *pC->pIncrKey = 0;
+#ifdef SQLITE_TEST
     sqlite3_search_count++;
+#endif
     if( oc==OP_MoveGe || oc==OP_MoveGt ){
       if( res<0 ){
         rc = sqlite3BtreeNext(pC->pCursor, &res);
@@ -3582,8 +3590,10 @@ case OP_Last: {        /* no-push */
 ** correctly optimizing out sorts.
 */
 case OP_Sort: {        /* no-push */
+#ifdef SQLITE_TEST
   sqlite3_sort_count++;
   sqlite3_search_count--;
+#endif
   /* Fall through into OP_Rewind */
 }
 /* Opcode: Rewind P1 P2 *
@@ -3656,7 +3666,9 @@ case OP_Next: {        /* no-push */
     }
     if( res==0 ){
       pc = pOp->p2 - 1;
+#ifdef SQLITE_TEST
       sqlite3_search_count++;
+#endif
     }
   }else{
     pC->nullRow = 1;

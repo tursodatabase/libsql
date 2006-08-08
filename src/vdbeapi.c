@@ -383,10 +383,9 @@ static Mem *columnMem(sqlite3_stmt *pStmt, int i){
   Vdbe *pVm = (Vdbe *)pStmt;
   int vals = sqlite3_data_count(pStmt);
   if( i>=vals || i<0 ){
-    static Mem nullMem;
-    if( nullMem.flags==0 ){ nullMem.flags = MEM_Null; }
+    static const Mem nullMem = {0, 0.0, "", 0, MEM_Null, MEM_Null };
     sqlite3Error(pVm->db, SQLITE_RANGE, 0);
-    return &nullMem;
+    return (Mem*)&nullMem;
   }
   return &pVm->pTos[(1-vals)+i];
 }

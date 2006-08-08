@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.270 2006/06/28 18:18:09 drh Exp $
+** @(#) $Id: pager.c,v 1.271 2006/08/08 13:51:43 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -370,7 +370,7 @@ static const unsigned char aJournalMagic[] = {
 /*
 ** Enable reference count tracking (for debugging) here:
 */
-#ifdef SQLITE_DEBUG
+#ifdef SQLITE_TEST
   int pager3_refinfo_enable = 0;
   static void pager_refinfo(PgHdr *p){
     static int cnt = 0;
@@ -1535,7 +1535,9 @@ void sqlite3pager_set_safety_level(Pager *pPager, int level, int full_fsync){
 ** attempts to open a temporary file.  This information is used for
 ** testing and analysis only.  
 */
+#ifdef SQLITE_TEST
 int sqlite3_opentemp_count = 0;
+#endif
 
 /*
 ** Open a temporary file.  Write the name of the file into zFile
@@ -1549,7 +1551,9 @@ int sqlite3_opentemp_count = 0;
 static int sqlite3pager_opentemp(char *zFile, OsFile **pFd){
   int cnt = 8;
   int rc;
+#ifdef SQLITE_TEST
   sqlite3_opentemp_count++;  /* Used for testing and analysis only */
+#endif
   do{
     cnt--;
     sqlite3OsTempFileName(zFile);
@@ -3498,6 +3502,14 @@ int sqlite3pager_isreadonly(Pager *pPager){
 }
 
 /*
+** Return the number of references to the pager.
+*/
+int sqlite3pager_refcount(Pager *pPager){
+  return pPager->nRef;
+}
+
+#ifdef SQLITE_TEST
+/*
 ** This routine is used for testing and analysis only.
 */
 int *sqlite3pager_stats(Pager *pPager){
@@ -3508,15 +3520,14 @@ int *sqlite3pager_stats(Pager *pPager){
   a[3] = pPager->dbSize;
   a[4] = pPager->state;
   a[5] = pPager->errCode;
-#ifdef SQLITE_TEST
   a[6] = pPager->nHit;
   a[7] = pPager->nMiss;
   a[8] = pPager->nOvfl;
   a[9] = pPager->nRead;
   a[10] = pPager->nWrite;
-#endif
   return a;
 }
+#endif
 
 /*
 ** Set the statement rollback point.

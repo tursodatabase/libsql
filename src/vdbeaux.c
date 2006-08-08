@@ -782,7 +782,9 @@ void sqlite3VdbeMakeReady(
     resizeOpArray(p, p->nOp);
     assert( nVar>=0 );
     assert( nStack<p->nOp );
-    nStack = isExplain ? 10 : nStack;
+    if( isExplain ){
+      nStack = 10;
+    }
     p->aStack = sqliteMalloc(
         nStack*sizeof(p->aStack[0])    /* aStack */
       + nArg*sizeof(Mem*)              /* apArg */
