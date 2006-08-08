@@ -1597,7 +1597,9 @@ int sqlite3VdbeCursorMoveto(Cursor *p){
       rc = sqlite3BtreeNext(p->pCursor, &res);
       if( rc ) return rc;
     }
+#ifdef SQLITE_TEST
     sqlite3_search_count++;
+#endif
     p->deferredMoveto = 0;
     p->cacheStatus = CACHE_STALE;
   }

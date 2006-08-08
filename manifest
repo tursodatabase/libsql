@@ -1,5 +1,5 @@
-C Remove\smost\sstatic\sand\sglobal\svariables\sfrom\sa\spure\sbuild.\s\sThere\nare\sstill\sa\snumber\sof\sstatic\sand\sglobal\svariables\sused\sfor\stesting.\s(CVS\s3342)
-D 2006-08-08T13:51:43
+C Fix\san\sreference\sto\san\sundefined\svariable\sintroduced\sby\sthe\sprevious\ncheckin.\s(CVS\s3343)
+D 2006-08-08T15:42:59
 F Makefile.in 9c2a76055c305868cc5f5b73e29a252ff3632c0a
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -101,7 +101,7 @@ F src/vdbe.c 3cea0b930abca02facd4c01fc6f369015730a926
 F src/vdbe.h 258b5d1c0aaa72192f09ff0568ce42b383f156fa
 F src/vdbeInt.h e3eaab262b67b84474625cfc38aec1125c32834b
 F src/vdbeapi.c 81f531d7dc5c898131b02ef85f6c6144ab2892cf
-F src/vdbeaux.c e850cdfa3a2a575cdd79a0a998dab812a01e10d3
+F src/vdbeaux.c d56304b50c912faefd9f88dff621391310ed2fc5
 F src/vdbefifo.c 9efb94c8c3f4c979ebd0028219483f88e57584f5
 F src/vdbemem.c 5f0afe3b92bb2c037f8d5d697f7c151fa50783a3
 F src/vtab.c cae036dc7b0b7d7f5f17eef646b1d53940a21572
@@ -377,7 +377,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P af05c3ca06163ef92ca1ca135302c00b7ddddabf
-R f5ef17a5493e5cfcde82b3eadef654c3
+P 76e4d4187779097954038e444111f837737e789c
+R b7c13d6e7706855171446520e8d69fa0
 U drh
-Z 67d07ebceb0040add56e64c2bec7e348
+Z 94f1a89da8a7fc7f73f13919d2161127
