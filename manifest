@@ -1,5 +1,5 @@
-C Fix\san\sreference\sto\san\sundefined\svariable\sintroduced\sby\sthe\sprevious\ncheckin.\s(CVS\s3343)
-D 2006-08-08T15:42:59
+C Make\ssure\ssufficient\smemory\sis\sallocated\sto\shold\sthe\scollating\ssequence\npointers\sfor\sall\scolumns\sof\san\sORDER\sBY\sclause\seven\sif\sthe\sORDER\sBY\nclause\scontains\smore\scolumns\sthan\swhere\soriginally\sin\sthe\stable.\nTicket\s#1911.\s(CVS\s3344)
+D 2006-08-11T19:08:27
 F Makefile.in 9c2a76055c305868cc5f5b73e29a252ff3632c0a
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -69,7 +69,7 @@ F src/pragma.c cc12939bb74a6e28eb2e867e75175eecffe089a1
 F src/prepare.c 06fdfea0920f2fe67df29ce6b2eebc83a9e6aedf
 F src/printf.c b179b6ed12f793e028dd169e2e2e2b2a37eedc63
 F src/random.c d40f8d356cecbd351ccfab6eaedd7ec1b54f5261
-F src/select.c aeec8efbe83bc1e50e9b49ada19b34eda5de05bd
+F src/select.c 0d4724930a1f34c747105ed1802fa4af0d8eb519
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 9e95f12ef57c3dc9fa0774c27f8743e2d39a9f1f
 F src/sqlite.h.in 432848ac7f8d7e6fea727668acccec62bdd86cc4
@@ -216,7 +216,7 @@ F test/misc1.test 27a6ad11ba6e4b73aeee650ab68053ad7dfd0433
 F test/misc2.test 09388e5a2c5c1017ad3ff1c4bf469375def2a0c2
 F test/misc3.test 7bd937e2c62bcc6be71939faf068d506467b1e03
 F test/misc4.test b043a05dea037cca5989f3ae09552fa16119bc80
-F test/misc5.test a20303ea455f5e209ea3ba9f7fc8d48dace43d67
+F test/misc5.test 4035863b8dd5e6b501c80ff23cc99aa98b49894c
 F test/misuse.test 30b3a458e5a70c31e74c291937b6c82204c59f33
 F test/notnull.test 44d600f916b770def8b095a9962dbe3be5a70d82
 F test/null.test 9503e1f63e959544c006d9f01709c5b5eab67d54
@@ -377,7 +377,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 76e4d4187779097954038e444111f837737e789c
-R b7c13d6e7706855171446520e8d69fa0
+P 73ff3452a0e38f046b7b41bcf653cf5e6848471f
+R 7f0367aaaf9bc4489d050fda3a47981a
 U drh
-Z 94f1a89da8a7fc7f73f13919d2161127
+Z 087aba4f2b01e3013f35d0a9a6b8b5b7

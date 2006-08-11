@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc5.test,v 1.13 2006/07/06 10:59:58 drh Exp $
+# $Id: misc5.test,v 1.14 2006/08/11 19:08:28 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -579,5 +579,24 @@ do_test misc5-8.1 {
   sqlite3_busy_timeout $DB 1000
 } SQLITE_MISUSE
 sqlite3 db test.db
+
+# Ticket #1911
+#
+do_test misc5-9.1 {
+  execsql {
+    SELECT name, type FROM sqlite_master WHERE name IS NULL
+    UNION
+    SELECT type, name FROM sqlite_master WHERE type IS NULL
+    ORDER BY 1, 2, 1, 2, 1, 2
+  }
+} {}
+do_test misc5-9.2 {
+  execsql {
+    SELECT name, type FROM sqlite_master WHERE name IS NULL
+    UNION
+    SELECT type, name FROM sqlite_master WHERE type IS NULL
+    ORDER BY 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2
+  }
+} {}
 
 finish_test

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.319 2006/07/11 13:15:08 drh Exp $
+** $Id: select.c,v 1.320 2006/08/11 19:08:27 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1905,11 +1905,13 @@ static int multiSelect(
     int i;                        /* Loop counter */
     KeyInfo *pKeyInfo;            /* Collating sequence for the result set */
     Select *pLoop;                /* For looping through SELECT statements */
+    int nKeyCol;                  /* Number of entries in pKeyInfo->aCol[] */
     CollSeq **apColl;
     CollSeq **aCopy;
 
     assert( p->pRightmost==p );
-    pKeyInfo = sqliteMalloc(sizeof(*pKeyInfo)+nCol*2*sizeof(CollSeq*) + nCol);
+    nKeyCol = nCol + (pOrderBy ? pOrderBy->nExpr : 0);
+    pKeyInfo = sqliteMalloc(sizeof(*pKeyInfo)+nKeyCol*(sizeof(CollSeq*) + 1));
     if( !pKeyInfo ){
       rc = SQLITE_NOMEM;
       goto multi_select_end;
@@ -1945,7 +1947,7 @@ static int multiSelect(
       int addr;
       u8 *pSortOrder;
 
-      aCopy = &pKeyInfo->aColl[nCol];
+      aCopy = &pKeyInfo->aColl[nOrderByExpr];
       pSortOrder = pKeyInfo->aSortOrder = (u8*)&aCopy[nCol];
       memcpy(aCopy, pKeyInfo->aColl, nCol*sizeof(CollSeq*));
       apColl = pKeyInfo->aColl;
@@ -2930,8 +2932,7 @@ int sqlite3Select(
     pKeyInfo = keyInfoFromExprList(pParse, pOrderBy);
     pOrderBy->iECursor = pParse->nTab++;
     p->addrOpenEphm[2] = addrSortIndex =
-       sqlite3VdbeOp3(v, OP_OpenEphemeral, pOrderBy->iECursor, pOrderBy->nExpr+2, 
-                        (char*)pKeyInfo, P3_KEYINFO_HANDOFF);
+      sqlite3VdbeOp3(v, OP_OpenEphemeral, pOrderBy->iECursor, pOrderBy->nExpr+2,                     (char*)pKeyInfo, P3_KEYINFO_HANDOFF);
   }else{
     addrSortIndex = -1;
   }
