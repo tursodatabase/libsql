@@ -1,5 +1,5 @@
-C Make\ssure\ssufficient\smemory\sis\sallocated\sto\shold\sthe\scollating\ssequence\npointers\sfor\sall\scolumns\sof\san\sORDER\sBY\sclause\seven\sif\sthe\sORDER\sBY\nclause\scontains\smore\scolumns\sthan\swhere\soriginally\sin\sthe\stable.\nTicket\s#1911.\s(CVS\s3344)
-D 2006-08-11T19:08:27
+C Require\swhitespace\sor\spunctuation\sbetween\sa\snumeric\sliteral\sand\san\nidentifier\sor\skeyword.\s\sTicket\s#1912.\s(CVS\s3345)
+D 2006-08-12T12:33:14
 F Makefile.in 9c2a76055c305868cc5f5b73e29a252ff3632c0a
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -91,7 +91,7 @@ F src/test_md5.c 6c42bc0a3c0b54be34623ff77a0eec32b2fa96e3
 F src/test_schema.c 8b2aaa9136edf3187a51166849c2de0aaaa27ce5
 F src/test_server.c a6460daed0b92ecbc2531b6dc73717470e7a648c
 F src/test_tclvar.c 6611657977c69bccd32b4ff7ccfb221a403ca2f0
-F src/tokenize.c 3454200eeec5b917efa513f0c5b093e1c81c72d3
+F src/tokenize.c dfdff21768fbedd40e8d3ca84fc5d0d7af2b46dd
 F src/trigger.c 0fc40125820409a6274834a6e04ad804d96e2793
 F src/update.c 951f95ef044cf6d28557c48dc35cb0711a0b9129
 F src/utf.c 4459801e9b00cfd69993bfca58545d3775682d6e
@@ -122,7 +122,7 @@ F test/attach3.test eafcafb107585aecc2ed1569a77914138eef46a9
 F test/attachmalloc.test cdb26c42850f04698377ccec05f5fa89d987837c
 F test/auth.test 5e27e39ed196bea6ddb5f4a55e1a202062ea2cf8
 F test/autoinc.test 60005a676e3e4e17dfa9dbd08aa0b76587ff97e3
-F test/autovacuum.test 493ba914a0cf0c3d0f371dc7ab24ee6539d8726f
+F test/autovacuum.test 5f5d843ff856b7dcfdf3f36b7e1acb04895047ce
 F test/autovacuum_crash.test 05a63b8805b20cfba7ace82856ce4ccdda075a31
 F test/autovacuum_ioerr.test c46a76869cb6eddbbb40b419b2b6c4c001766b1f
 F test/autovacuum_ioerr2.test 2f8a3fb31f833fd0ca86ad4ad98913c73e807572
@@ -216,7 +216,7 @@ F test/misc1.test 27a6ad11ba6e4b73aeee650ab68053ad7dfd0433
 F test/misc2.test 09388e5a2c5c1017ad3ff1c4bf469375def2a0c2
 F test/misc3.test 7bd937e2c62bcc6be71939faf068d506467b1e03
 F test/misc4.test b043a05dea037cca5989f3ae09552fa16119bc80
-F test/misc5.test 4035863b8dd5e6b501c80ff23cc99aa98b49894c
+F test/misc5.test 83bceca3d38ed10ced00271e02b26b24795def83
 F test/misuse.test 30b3a458e5a70c31e74c291937b6c82204c59f33
 F test/notnull.test 44d600f916b770def8b095a9962dbe3be5a70d82
 F test/null.test 9503e1f63e959544c006d9f01709c5b5eab67d54
@@ -377,7 +377,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 73ff3452a0e38f046b7b41bcf653cf5e6848471f
-R 7f0367aaaf9bc4489d050fda3a47981a
+P 924ea730f4dd384d7ef3deca357befd064dac70a
+R c84be7546d2eb42c47883b4193b9aa30
 U drh
-Z 087aba4f2b01e3013f35d0a9a6b8b5b7
+Z 3e1bc30e7fc972dc1a9935e1b2be02e3

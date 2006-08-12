@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc5.test,v 1.14 2006/08/11 19:08:28 drh Exp $
+# $Id: misc5.test,v 1.15 2006/08/12 12:33:15 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -598,5 +598,21 @@ do_test misc5-9.2 {
     ORDER BY 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2
   }
 } {}
+
+# Ticket #1912.  Make the tokenizer require a space after a numeric
+# literal.
+#
+do_test misc5-10.1 {
+  catchsql {
+    SELECT 123abc
+  }
+} {1 {unrecognized token: "123abc"}}
+do_test misc5-10.2 {
+  catchsql {
+    SELECT 1*123.4e5ghi;
+  }
+} {1 {unrecognized token: "123.4e5ghi"}}
+
+
 
 finish_test

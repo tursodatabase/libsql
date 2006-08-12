@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the SELECT statement.
 #
-# $Id: autovacuum.test,v 1.23 2006/06/20 11:01:09 danielk1977 Exp $
+# $Id: autovacuum.test,v 1.24 2006/08/12 12:33:15 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -95,7 +95,7 @@ foreach delete_order $delete_orders {
     # Delete one set of rows from the table.
     do_test autovacuum-1.$tn.($delete).1 {
       execsql "
-        DELETE FROM av1 WHERE oid = [join $delete "OR oid = "]
+        DELETE FROM av1 WHERE oid = [join $delete " OR oid = "]
       "
     } {}
 
