@@ -10,6 +10,18 @@ proc newsitem {date title text} {
 }
 
 
+newsitem {2006-Feb-11} {Version 3.3.4} {
+  This release fixes several bugs, including a 
+  a blunder that might cause a deadlock on multithreaded systems.
+  Anyone using SQLite in a multithreaded environment should probably upgrade.
+}
+
+newsitem {2006-Jan-31} {Version 3.3.3 stable} {
+  There have been no major problems discovered in version 3.3.2, so
+  we hereby declare the new APIs and language features to be stable
+  and supported.
+}
+
 newsitem {2006-Jan-24} {Version 3.3.2 beta} {
   More bug fixes and performance improvements as we move closer to
   a production-ready version 3.3.x.
@@ -336,4 +348,4 @@ newsitem {2004-Apr-23} {Work Begins On SQLite Version 3} {
   Plans are to continue to support SQLite version 2.8 with
   bug fixes.  But all new development will occur in version 3.0.
 }
-footer {$Id: oldnews.tcl,v 1.15 2006/06/27 11:14:13 drh Exp $}
+footer {$Id: oldnews.tcl,v 1.16 2006/08/12 14:38:47 drh Exp $}

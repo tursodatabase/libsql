@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3ref.tcl,v 1.41 2006/06/26 21:35:46 drh Exp $}
+set rcsid {$Id: capi3ref.tcl,v 1.42 2006/08/12 14:38:47 drh Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -66,7 +66,8 @@ api {} {
   same aggregate instance) the same buffer is returned.  The implementation
   of the aggregate can use the returned buffer to accumulate data.
 
-  The buffer allocated is freed automatically by SQLite.
+  The buffer is freed automatically by SQLite when the query that
+  invoked the aggregate function terminates.
 }
 
 api {} {
@@ -92,7 +93,8 @@ api {} {
   #define SQLITE_TRANSIENT   ((void(*)(void *))-1)
 } {
  In the SQL strings input to sqlite3_prepare() and sqlite3_prepare16(),
- one or more literals can be replace by a parameter "?" or ":AAA" or "\$VVV"
+ one or more literals can be replace by a parameter "?" or ":AAA" or 
+ "@AAA" or "\$VVV"
  where AAA is an alphanumeric identifier and VVV is a variable name according
  to the syntax rules of the TCL programming language.
  The values of these parameters (also called "host parameter names")
@@ -123,7 +125,8 @@ api {} {
  special value SQLITE_STATIC, then the library assumes that the information
  is in static, unmanaged space and does not need to be freed.  If the
  fifth argument has the value SQLITE_TRANSIENT, then SQLite makes its
- own private copy of the data before returning.
+ own private copy of the data immediately, before the sqlite3_bind_*()
+ routine returns.
 
  The sqlite3_bind_*() routines must be called after
  sqlite3_prepare() or sqlite3_reset() and before sqlite3_step().
@@ -148,10 +151,12 @@ api {} {
   const char *sqlite3_bind_parameter_name(sqlite3_stmt*, int n);
 } {
   Return the name of the n-th parameter in the precompiled statement.
-  Parameters of the form ":AAA" or "\$VVV" have a name which is the
-  string ":AAA" or "\$VVV".  In other words, the initial ":" or "$"
+  Parameters of the form ":AAA" or "@AAA" or "\$VVV" have a name which is the
+  string ":AAA" or "\$VVV".  In other words, the initial ":" or "$" or "@"
   is included as part of the name.
   Parameters of the form "?" have no name.
+
+  The first bound parameter has an index of 1, not 0.
 
   If the value n is out of range or if the n-th parameter is nameless,
   then NULL is returned.  The returned string is always in the
@@ -207,6 +212,11 @@ api {} {
  database.  Closing the database from a busy handler will delete 
  data structures out from under the executing query and will 
  probably result in a coredump.
+
+ There can only be a single busy handler defined for each database
+ connection.  Setting a new busy handler clears any previous one.
+ Note that calling sqlite3_busy_timeout() will also set or clear
+ the busy handler.
 }
 
 api {} {
@@ -220,6 +230,11 @@ api {} {
 
  Calling this routine with an argument less than or equal to zero
  turns off all busy handlers.
+
+ There can only be a single busy handler for a particular database
+ connection.  If another busy handler was defined  
+ (using sqlite3_busy_handler()) prior to calling
+ this routine, that other busy handler is cleared.
 }
 
 api {} {
@@ -549,6 +564,11 @@ int sqlite3_complete16(const void *sql);
  one or more complete SQL statements.
  The argument must be a nul-terminated UTF-8 string for sqlite3_complete()
  and a nul-terminated UTF-16 string for sqlite3_complete16().
+
+ These routines do not check to see if the SQL statement is well-formed.
+ They only check to see that the statement is terminated by a semicolon
+ that is not part of a string literal and is not inside
+ the body of a trigger.
 } {}
 
 api {} {

@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the formatchng.html file.
 #
-set rcsid {$Id: formatchng.tcl,v 1.18 2006/06/27 12:24:14 drh Exp $ }
+set rcsid {$Id: formatchng.tcl,v 1.19 2006/08/12 14:38:47 drh Exp $ }
 source common.tcl
 header {File Format Changes in SQLite}
 puts {
@@ -231,6 +231,26 @@ occurred since version 1.0.0:
   on 3.3.0 or later will change the file format to the latest
   edition.</p>
   </td>
+</tr>
+<tr>
+  <td valign="top">3.3.6 to 3.3.7</td>
+  <td valign="top">2006-Aug-12</td>
+  <td><p>The previous file format change has caused so much
+  grief that the default behavior has been changed back to 
+  the original file format.  This means that DESC option on
+  indices is ignored by default that the more efficient encoding
+  of boolean values is not used.  In that way, older versions
+  of SQLite can read and write databases created by newer
+  versions.  If the new features are desired, they can be
+  enabled using pragma: "PRAGMA legacy_file_format=OFF".</p>
+  <p>To be clear: both old and new file formats continue to
+  be understood and continue to work.  But the old file format
+  is used by default instead of the new.  This might change
+  again in some future release - we may go back to generating
+  the new file format by default - but probably not until
+  all users have upgraded to a version of SQLite that will
+  understand the new file format.  That might take several
+  years.</p></td>
 </tr>
 </table>
 </blockquote>

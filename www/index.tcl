@@ -66,6 +66,16 @@ proc newsitem {date title text} {
   puts "<hr width=\"50%\">"
 }
 
+newsitem {2006-Aug-12} {Version 3.3.7} {
+  Version 3.3.7 includes support for loadable extensions and virtual
+  tables.  But both features are still considered "beta" and their
+  APIs are subject to change in a future release.  This release is
+  mostly to make available the minor bug fixes that have accumulated
+  since 3.3.6.  Upgrading is not necessary.  Do so only if you encounter
+  one of the obscure bugs that have been fixed or if you want to try
+  out the new features.
+}
+
 newsitem {2006-Jun-19} {New Book About SQLite} {
   <a href="http://www.apress.com/book/bookDisplay.html?bID=10130">
   <i>The Definitive Guide to SQLite</i></a>, a new book by
@@ -88,21 +98,9 @@ newsitem {2006-Apr-5} {Version 3.3.5} {
   Upgrade only if you are having problems or need one of the new features.
 }
 
-newsitem {2006-Feb-11} {Version 3.3.4} {
-  This release fixes several bugs, including a 
-  a blunder that might cause a deadlock on multithreaded systems.
-  Anyone using SQLite in a multithreaded environment should probably upgrade.
-}
-
-newsitem {2006-Jan-31} {Version 3.3.3 stable} {
-  There have been no major problems discovered in version 3.3.2, so
-  we hereby declare the new APIs and language features to be stable
-  and supported.
-}
-
 
 puts {
 <p align="right"><a href="oldnews.html">Old news...</a></p>
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.141 2006/07/02 10:21:36 drh Exp $}
+footer {$Id: index.tcl,v 1.142 2006/08/12 14:38:47 drh Exp $}

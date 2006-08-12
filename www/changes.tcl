@@ -25,6 +25,20 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2006 August 12 (3.3.7)} {
+<li>Added support for
+<a href="http://www.sqlite.org/cvstrac/wiki?p=VirtualTables">virtual tables</a>
+(beta)</li>
+<li>Added support for 
+<a href="http://www.sqlite.org/cvstrac/wiki?p=LoadableExtensions">
+dynamically loaded extensions</a> (beta)</li>
+<li>The 
+<a href="capi3ref.html#sqlite3_interrupt">sqlite3_interrupt()</a>
+routine can be called for a different thread</li>
+<li>Added the <a href="lang_expr.html#match">MATCH</a> operator.</li>
+<li>The default file format is now 1.  
+}
+
 chng {2006 June 6 (3.3.6)} {
 <li>Plays better with virus scanners on windows</li>
 <li>Faster :memory: databases</li>
