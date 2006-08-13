@@ -1,5 +1,5 @@
-C Version\s3.3.7\s(CVS\s3348)
-D 2006-08-12T14:42:58
+C Compile\sin\stest\scode\swhenever\s-DSQLITE_TEST=1\sis\spresent.\s\sDo\snot\srely\non\s-DSQLITE_DEBUG=1\sbecause\ssomebody\smight\stry\sto\srun\sthe\stests\swithout\sit.\s(CVS\s3349)
+D 2006-08-13T18:39:26
 F Makefile.in 9c2a76055c305868cc5f5b73e29a252ff3632c0a
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -28,13 +28,13 @@ F publish.sh 0803a2952107454d3eaf2e239bd6699951ecfbab
 F spec.template b2f6c4e488cbc3b993a57deba22cbc36203c4da3
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
-F sqlite3.def f756049b1bf3e8442baf6862db393ca423225262
+F sqlite3.def 1769dc61f40c11e724f223ec675130b23115681b
 F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
 F src/alter.c eba661e77bfd00282fbfa316cdb6aef04856fedc
 F src/analyze.c 7d2b7ab9a9c2fd6e55700f69064dfdd3e36d7a8a
 F src/attach.c b11eb4d5d3fb99a10a626956bccc7215f6b68b16
 F src/auth.c 902f4722661c796b97f007d9606bd7529c02597f
-F src/btree.c c4757940df58fc0914d2c4f1778a66101df2c6b9
+F src/btree.c b39b7147d400b4906a48850b83d22b0c2a641007
 F src/btree.h 061c50e37de7f50b58528e352d400cf33ead7418
 F src/build.c 2ea8ad0e2e49b3957692588182524e6c390ab5a9
 F src/callback.c fd9bb39f7ff6b52bad8365617abc61c720640429
@@ -79,7 +79,7 @@ F src/table.c d8817f43a6c6bf139487db161760b9e1e02da3f1
 F src/tclsqlite.c 92a997ee5caca4923a6452ff8ebfaa8d37334f4a
 F src/test1.c 535294d7f21a4127082c4f7a57f225482df9cc36
 F src/test2.c ca74a1d8aeb7d9606e8f6b762c5daf85c1a3f92b
-F src/test3.c 833dc8346e431182ae6bd0648455c3d4cc65a19f
+F src/test3.c 85135c09560c48bdb0a23c9b890ab405486b8ec9
 F src/test4.c 8b784cd82de158a2317cb4ac4bc86f91ad315e25
 F src/test5.c 7162f8526affb771c4ed256826eee7bb9eca265f
 F src/test6.c 60a02961ceb7b3edc25f5dc5c1ac2556622a76de
@@ -377,7 +377,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P c276cca2aafc1b417e12ba7119c65902ef7d61ec
-R 020f98eb0b5ebf9cf9f7532c7acdc3ce
+P 85434a4b96389359a15556551cdc72259fc505e8
+R a059c4b4cac6c1b282cab53f8fba2604
 U drh
-Z 7ca726032be8e54e9c6e86afac4be4ee
+Z be0950499a88a5bf353c223f4acee36d
