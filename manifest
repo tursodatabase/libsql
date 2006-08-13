@@ -1,6 +1,6 @@
-C Add\svdbeaux.c\sto\sthe\slist\sof\sfiles\sthat\smust\sbe\scompiled\swith\s-DSQLITE_TEST=1\nin\sorder\sto\sgenerate\stestfixture.\s\sDo\snot\srequire\ssqlit3OsDelete()\sto\nsucceed\son\sa\smulti-database\scommit.\s\s(Ticket\s#1917)\s(CVS\s3351)
-D 2006-08-13T19:04:19
-F Makefile.in 9c2a76055c305868cc5f5b73e29a252ff3632c0a
+C Adjust\sthe\sMakefile.in\sso\sthat\sthere\sare\sno\stest\serrors\swhen\susing\nthe\sconfigure\sscript.\s\sTicket\s#1918.\s(CVS\s3352)
+D 2006-08-13T21:49:08
+F Makefile.in 986db66b0239b460fc118e7d2fa88b45b26c444e
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
 F VERSION ef6abd4b2095b0f378b428ed251e16f0213fcf3f
@@ -377,7 +377,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 6df3f6761a16ac5a02152f3c7f0c0e4944112ada
-R 9bbe5e643c0a843783f511bd51b4a1b6
+P dfc833ac79cb255902b20700d6d8949a66af093f
+R e1cc72cb7c6e1344e7ec904d59f232df
 U drh
-Z 075f467ece5b5f168ef23828395a4d30
+Z 943f77acaa1a7c5b768deaacaf18e194

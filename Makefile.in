@@ -194,9 +194,9 @@ TESTSRC = \
   $(TOP)/src/date.c \
   $(TOP)/src/func.c \
   $(TOP)/src/os.c \
+  $(TOP)/src/os_os2.c \
   $(TOP)/src/os_unix.c \
   $(TOP)/src/os_win.c \
-  $(TOP)/src/os_os2.c \
   $(TOP)/src/pager.c \
   $(TOP)/src/pragma.c \
   $(TOP)/src/printf.c \
@@ -216,6 +216,7 @@ TESTSRC = \
   $(TOP)/src/utf.c \
   $(TOP)/src/util.c \
   $(TOP)/src/vdbe.c \
+  $(TOP)/src/vdbeaux.c \
   $(TOP)/src/where.c
 
 # Header files used by all library source files.
@@ -457,7 +458,8 @@ tclsqlite3:	tclsqlite-shell.lo libsqlite3.la
 
 testfixture$(TEXE):	$(TOP)/src/tclsqlite.c libsqlite3.la $(TESTSRC)
 	$(LTLINK) -DTCLSH=1 -DSQLITE_TEST=1 -DSQLITE_CRASH_TEST=1 \
-		$(TEMP_STORE) -o testfixture $(TESTSRC) $(TOP)/src/tclsqlite.c \
+                -DSQLITE_NO_SYNC=1 $(TEMP_STORE) \
+		-o testfixture $(TESTSRC) $(TOP)/src/tclsqlite.c \
 		libsqlite3.la $(LIBTCL)
 
 
