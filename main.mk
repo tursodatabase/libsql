@@ -149,6 +149,7 @@ TESTSRC = \
   $(TOP)/src/utf.c \
   $(TOP)/src/util.c \
   $(TOP)/src/vdbe.c \
+  $(TOP)/src/vdbeaux.c \
   $(TOP)/src/where.c
 
 # Header files used by all library source files.

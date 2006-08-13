@@ -1,5 +1,5 @@
-C Vtab2.test\sscript\sworks\sregardless\sof\swhat\sTCL\sversion\sis\sused.\s(CVS\s3350)
-D 2006-08-13T18:43:55
+C Add\svdbeaux.c\sto\sthe\slist\sof\sfiles\sthat\smust\sbe\scompiled\swith\s-DSQLITE_TEST=1\nin\sorder\sto\sgenerate\stestfixture.\s\sDo\snot\srequire\ssqlit3OsDelete()\sto\nsucceed\son\sa\smulti-database\scommit.\s\s(Ticket\s#1917)\s(CVS\s3351)
+D 2006-08-13T19:04:19
 F Makefile.in 9c2a76055c305868cc5f5b73e29a252ff3632c0a
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -19,7 +19,7 @@ F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
-F main.mk e753590214c7f8d4588e130b811495611dddaa5c
+F main.mk bfa218fe52af316390bb344f8660241d90f277dd
 F mkdll.sh 919df5efde876194e3102c6ebc60657d38949909
 F mkopcodec.awk bd46ad001c98dfbab07b1713cb8e692fa0e5415d
 F mkopcodeh.awk cde995d269aa06c94adbf6455bea0acedb913fa5
@@ -101,7 +101,7 @@ F src/vdbe.c 3cea0b930abca02facd4c01fc6f369015730a926
 F src/vdbe.h 258b5d1c0aaa72192f09ff0568ce42b383f156fa
 F src/vdbeInt.h e3eaab262b67b84474625cfc38aec1125c32834b
 F src/vdbeapi.c 81f531d7dc5c898131b02ef85f6c6144ab2892cf
-F src/vdbeaux.c d56304b50c912faefd9f88dff621391310ed2fc5
+F src/vdbeaux.c 9fab61427a0741c9c123e8ff16e349b1f90397be
 F src/vdbefifo.c 9efb94c8c3f4c979ebd0028219483f88e57584f5
 F src/vdbemem.c 5f0afe3b92bb2c037f8d5d697f7c151fa50783a3
 F src/vtab.c cae036dc7b0b7d7f5f17eef646b1d53940a21572
@@ -295,7 +295,7 @@ F test/vacuum2.test 5aea8c88a65cb29f7d175296e7c819c6158d838c
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/view.test 16e2774fe35e47a07ac4471b7f0bcc948b1aa6d5
 F test/vtab1.test c794695b32fe9428ef1087281374e2a1e6044df2
-F test/vtab2.test a025a21c2f7d29d9635b30490a8fb1961095b3dc
+F test/vtab2.test 43763026b124e68785de05d3fbf957a4b5f81a0d
 F test/vtab3.test f38d6d7d19f08bffdadce4d5b8cba078f8118587
 F test/vtab4.test 4b4293341443839ef6dc02f8d9e614702a6c67ff
 F test/vtab5.test 9fb8f335651afe8f870011e2f68e5b00c5ad03cd
@@ -377,7 +377,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 867defe32873ce82b6e1f5ddb8ad12178f2d76d6
-R 10309f6475890ae53aa0abb8bbf23f75
+P 6df3f6761a16ac5a02152f3c7f0c0e4944112ada
+R 9bbe5e643c0a843783f511bd51b4a1b6
 U drh
-Z d91510d341360efc878c541625fb7e42
+Z 075f467ece5b5f168ef23828395a4d30

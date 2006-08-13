@@ -1145,7 +1145,9 @@ static int vdbeCommit(sqlite3 *db){
     ** transaction files are deleted.
     */
     rc = sqlite3OsDelete(zMaster);
-    assert( rc==SQLITE_OK );
+    if( rc ){
+      return rc;
+    }
     sqliteFree(zMaster);
     zMaster = 0;
     rc = sqlite3OsSyncDirectory(zMainFile);

@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.
 #
-# $Id: vtab2.test,v 1.5 2006/08/13 18:43:55 drh Exp $
+# $Id: vtab2.test,v 1.6 2006/08/13 19:04:19 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -53,6 +53,8 @@ do_test vtab2-2.2 {
     SELECT * FROM vars WHERE name='A';
   }
 } [list A 1 1 A 2 4 A 3 9]
+unset -nocomplain result
+unset -nocomplain var
 set result {}
 foreach var [lsort [info vars tcl_*]] {
   catch {lappend result $var [set $var]}
@@ -64,5 +66,7 @@ do_test vtab2-2.3 {
       ORDER BY name;
   }
 } $result
+unset result
+unset var
 
 finish_test
