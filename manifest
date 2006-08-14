@@ -1,5 +1,5 @@
-C Adjust\sthe\sMakefile.in\sso\sthat\sthere\sare\sno\stest\serrors\swhen\susing\nthe\sconfigure\sscript.\s\sTicket\s#1918.\s(CVS\s3352)
-D 2006-08-13T21:49:08
+C Change\sthe\stable_info\spragma\sto\sshow\sthe\stext\sof\sthe\sdefault\svalue\sexpression,\r\nnot\sthe\sresult\sof\sevaluating\sthe\sdefault\svalue\sexpression.\r\nTicket\s#1919.\s(CVS\s3353)
+D 2006-08-14T14:23:42
 F Makefile.in 986db66b0239b460fc118e7d2fa88b45b26c444e
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -36,7 +36,7 @@ F src/attach.c b11eb4d5d3fb99a10a626956bccc7215f6b68b16
 F src/auth.c 902f4722661c796b97f007d9606bd7529c02597f
 F src/btree.c b39b7147d400b4906a48850b83d22b0c2a641007
 F src/btree.h 061c50e37de7f50b58528e352d400cf33ead7418
-F src/build.c 2ea8ad0e2e49b3957692588182524e6c390ab5a9
+F src/build.c 4359b34a36938716ed10ac037eec9dc5173b8f4b
 F src/callback.c fd9bb39f7ff6b52bad8365617abc61c720640429
 F src/complete.c 7d1a44be8f37de125fcafd3d3a018690b3799675
 F src/date.c cd2bd5d1ebc6fa12d6312f69789ae5b0a2766f2e
@@ -64,8 +64,8 @@ F src/os_win.c c6976ae50b61fb5b7dce399e578aa1865f02b84f
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c e51c079b3cad8394898a6c22330150339103700a
 F src/pager.h 0cff9de5e9019cb695a04d18df8caaaff933a272
-F src/parse.y ecac666005bec0c813681a81de88d1de5d27577f
-F src/pragma.c cc12939bb74a6e28eb2e867e75175eecffe089a1
+F src/parse.y ec897a969f2b0488878f63c286bf466d38c55710
+F src/pragma.c dcb79b8170231f3aed99d4004b4d0a0fc14c4b4d
 F src/prepare.c 84e2c855600c7bfbe2ca691b263301de525f9123
 F src/printf.c b179b6ed12f793e028dd169e2e2e2b2a37eedc63
 F src/random.c d40f8d356cecbd351ccfab6eaedd7ec1b54f5261
@@ -224,7 +224,7 @@ F test/pager.test 6ee95e90ee8295e376e39a6c6566ef6df993601a
 F test/pager2.test 49c0f57c7da0b060f0486b85fdd074025caa694e
 F test/pager3.test 2323bf27fd5bd887b580247e5bce500ceee994b4
 F test/pagesize.test 05c74ea49f790734ec1e9ab765d9bf1cce79b8f2
-F test/pragma.test e2d72d9e9a24744356cd5a4d25ea842c5020d345
+F test/pragma.test b81f483cac7b8fe519988a102303799cc72d25a2
 F test/printf.test cdd8e20dd901382a385afcbaa777b9377815c2ad
 F test/progress.test 8b22b4974b0a95272566385f8cb8c341c7130df8 x
 F test/quick.test 4eabf0fd67dc6e116cbebe3f8d899608239eae50
@@ -377,7 +377,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P dfc833ac79cb255902b20700d6d8949a66af093f
-R e1cc72cb7c6e1344e7ec904d59f232df
+P 6a25be921b7255e540952fc213e145ae3b56daf0
+R f4e4c034fd68390ec0fdfad99db713ed
 U drh
-Z 943f77acaa1a7c5b768deaacaf18e194
+Z b7bd1406595f5fdc7d4072dd1c34cd85

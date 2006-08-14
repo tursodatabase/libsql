@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.206 2006/07/11 10:42:36 drh Exp $
+** @(#) $Id: parse.y,v 1.207 2006/08/14 14:23:42 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -676,7 +676,10 @@ term(A) ::= CTIME_KW(OP). {
   /* The CURRENT_TIME, CURRENT_DATE, and CURRENT_TIMESTAMP values are
   ** treated as functions that return constants */
   A = sqlite3ExprFunction(0,&OP);
-  if( A ) A->op = TK_CONST_FUNC;  
+  if( A ){
+    A->op = TK_CONST_FUNC;  
+    A->span = OP;
+  }
 }
 expr(A) ::= expr(X) AND(OP) expr(Y).            {A = sqlite3Expr(@OP, X, Y, 0);}
 expr(A) ::= expr(X) OR(OP) expr(Y).             {A = sqlite3Expr(@OP, X, Y, 0);}

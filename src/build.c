@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.409 2006/07/26 16:22:15 danielk1977 Exp $
+** $Id: build.c,v 1.410 2006/08/14 14:23:42 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1077,8 +1077,12 @@ void sqlite3AddDefaultValue(Parse *pParse, Expr *pExpr){
       sqlite3ErrorMsg(pParse, "default value of column [%s] is not constant",
           pCol->zName);
     }else{
+      Expr *pCopy;
       sqlite3ExprDelete(pCol->pDflt);
-      pCol->pDflt = sqlite3ExprDup(pExpr);
+      pCol->pDflt = pCopy = sqlite3ExprDup(pExpr);
+      if( pCopy ){
+        sqlite3TokenCopy(&pCopy->span, &pExpr->span);
+      }
     }
   }
   sqlite3ExprDelete(pExpr);
