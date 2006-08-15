@@ -1,5 +1,5 @@
-C Change\sthe\stable_info\spragma\sto\sshow\sthe\stext\sof\sthe\sdefault\svalue\sexpression,\r\nnot\sthe\sresult\sof\sevaluating\sthe\sdefault\svalue\sexpression.\r\nTicket\s#1919.\s(CVS\s3353)
-D 2006-08-14T14:23:42
+C Tighten\san\sassert\s(ticket\s#1920).\s\sChange\sto\s"sqlite3.h"\sfrom\s<sqlite3.h>\non\sthe\ssqlite3ext.h\sheader\s(ticket\s#1916).\s\sFix\sa\sbug\sin\sthe\stest\sscripts.\s(CVS\s3354)
+D 2006-08-15T14:21:16
 F Makefile.in 986db66b0239b460fc118e7d2fa88b45b26c444e
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -73,7 +73,7 @@ F src/select.c 0d4724930a1f34c747105ed1802fa4af0d8eb519
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 9e95f12ef57c3dc9fa0774c27f8743e2d39a9f1f
 F src/sqlite.h.in 432848ac7f8d7e6fea727668acccec62bdd86cc4
-F src/sqlite3ext.h c611255287e9a11ce4f1fe6251c2a0b9d32a828b
+F src/sqlite3ext.h 11a046b3519c4b9b7709e6d6a95c3a36366f684a
 F src/sqliteInt.h 85975cbb95777f619fd76f1ba728022f13321e1b
 F src/table.c d8817f43a6c6bf139487db161760b9e1e02da3f1
 F src/tclsqlite.c 92a997ee5caca4923a6452ff8ebfaa8d37334f4a
@@ -90,14 +90,14 @@ F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
 F src/test_md5.c 6c42bc0a3c0b54be34623ff77a0eec32b2fa96e3
 F src/test_schema.c 8b2aaa9136edf3187a51166849c2de0aaaa27ce5
 F src/test_server.c a6460daed0b92ecbc2531b6dc73717470e7a648c
-F src/test_tclvar.c 6611657977c69bccd32b4ff7ccfb221a403ca2f0
+F src/test_tclvar.c ea90da5ad6f25bbf908f309b9c3256bf3766d441
 F src/tokenize.c dfdff21768fbedd40e8d3ca84fc5d0d7af2b46dd
 F src/trigger.c 0fc40125820409a6274834a6e04ad804d96e2793
 F src/update.c 951f95ef044cf6d28557c48dc35cb0711a0b9129
 F src/utf.c 4459801e9b00cfd69993bfca58545d3775682d6e
 F src/util.c 5409031819ee4672c5f9c3ac7cf517e267a25845
 F src/vacuum.c 5b37d0f436f8e1ffacd17934e44720b38d2247f9
-F src/vdbe.c 3cea0b930abca02facd4c01fc6f369015730a926
+F src/vdbe.c 24c2cc3b08223140b45d15d05644210ac4363573
 F src/vdbe.h 258b5d1c0aaa72192f09ff0568ce42b383f156fa
 F src/vdbeInt.h e3eaab262b67b84474625cfc38aec1125c32834b
 F src/vdbeapi.c 81f531d7dc5c898131b02ef85f6c6144ab2892cf
@@ -294,14 +294,14 @@ F test/vacuum.test 37f998b841cb335397c26d9bbc3457182af2565f
 F test/vacuum2.test 5aea8c88a65cb29f7d175296e7c819c6158d838c
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/view.test 16e2774fe35e47a07ac4471b7f0bcc948b1aa6d5
-F test/vtab1.test c794695b32fe9428ef1087281374e2a1e6044df2
+F test/vtab1.test 20715bc2334d910a40cca2afc61869025411bcaa
 F test/vtab2.test 43763026b124e68785de05d3fbf957a4b5f81a0d
 F test/vtab3.test f38d6d7d19f08bffdadce4d5b8cba078f8118587
 F test/vtab4.test 4b4293341443839ef6dc02f8d9e614702a6c67ff
 F test/vtab5.test 9fb8f335651afe8f870011e2f68e5b00c5ad03cd
 F test/vtab6.test ec0036f29f8a803da9935206f2d9d1b6a8026392
 F test/vtab7.test 5f9ef9fb84733e928d5d0267c821072561b198d5
-F test/vtab_err.test 11b90203ad60d63746d0de547b1ca014704d8f0e
+F test/vtab_err.test c07f7665dd90bc757f80f05e7951d826eda9bc48
 F test/where.test ee7c9a6659b07e1ee61177f6e7ff71565ee2c9df
 F test/where2.test a16476a5913e75cf65b38f2daa6157a6b7791394
 F test/where3.test 3b5ad2c58069e12be2bd86bc5e211a82810521aa
@@ -377,7 +377,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 6a25be921b7255e540952fc213e145ae3b56daf0
-R f4e4c034fd68390ec0fdfad99db713ed
+P b4d53974c30d195c061cc7605a707d7d30c52740
+R 89af5dea7bfa8fd23f7d7d4bce8f2b2b
 U drh
-Z b7bd1406595f5fdc7d4072dd1c34cd85
+Z 69cf4aeab2e20bee08dd4d43f781d8b4

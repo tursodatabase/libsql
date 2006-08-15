@@ -15,11 +15,11 @@
 ** as extensions by SQLite should #include this file instead of 
 ** sqlite3.h.
 **
-** @(#) $Id: sqlite3ext.h,v 1.5 2006/06/27 00:14:28 drh Exp $
+** @(#) $Id: sqlite3ext.h,v 1.6 2006/08/15 14:21:16 drh Exp $
 */
 #ifndef _SQLITE3EXT_H_
 #define _SQLITE3EXT_H_
-#include <sqlite3.h>
+#include "sqlite3.h"
 
 typedef struct sqlite3_api_routines sqlite3_api_routines;
 

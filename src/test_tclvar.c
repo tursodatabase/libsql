@@ -16,7 +16,7 @@
 ** The emphasis of this file is a virtual table that provides
 ** access to TCL variables.
 **
-** $Id: test_tclvar.c,v 1.7 2006/07/08 17:06:44 drh Exp $
+** $Id: test_tclvar.c,v 1.8 2006/08/15 14:21:16 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -163,7 +163,7 @@ static int tclvarFilter(
 
   assert( argc==0 || argc==1 );
   if( argc==1 ){
-    Tcl_Obj *pArg = Tcl_NewStringObj(sqlite3_value_text(argv[0]), -1);
+    Tcl_Obj *pArg = Tcl_NewStringObj((char*)sqlite3_value_text(argv[0]), -1);
     Tcl_ListObjAppendElement(0, p, pArg);
   }
   Tcl_EvalObjEx(interp, p, TCL_EVAL_GLOBAL);

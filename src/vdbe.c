@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.573 2006/08/08 13:51:43 drh Exp $
+** $Id: vdbe.c,v 1.574 2006/08/15 14:21:16 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2980,7 +2980,7 @@ case OP_IsUnique: {        /* no-push */
   R = pTos->i;
   assert( (pTos->flags & MEM_Dyn)==0 );
   pTos--;
-  assert( i>=0 && i<=p->nCursor );
+  assert( i>=0 && i<p->nCursor );
   pCx = p->apCsr[i];
   assert( pCx!=0 );
   pCrsr = pCx->pCursor;

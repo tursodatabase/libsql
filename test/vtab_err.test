@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: vtab_err.test,v 1.2 2006/06/23 08:05:39 danielk1977 Exp $
+# $Id: vtab_err.test,v 1.3 2006/08/15 14:21:16 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -119,7 +119,7 @@ proc do_malloc_test {tn args} {
   unset ::mallocopts
 }
 
-
+unset -nocomplain echo_module_begin_fail
 do_ioerr_test vtab_err-1 -tclprep {
   register_echo_module [sqlite3_connection_pointer db]
 } -sqlbody {
@@ -159,4 +159,3 @@ do_malloc_test vtab_err-2 -tclprep {
 
 sqlite_malloc_fail 0
 finish_test
-
