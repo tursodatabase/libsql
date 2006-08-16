@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: lock.test,v 1.32 2005/03/29 03:11:00 danielk1977 Exp $
+# $Id: lock.test,v 1.33 2006/08/16 16:42:48 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -100,13 +100,17 @@ do_test lock-1.17 {
 
 # You cannot UPDATE a table from within the callback of a SELECT
 # on that same table because the SELECT has the table locked.
-do_test lock-1.18 {
-  db eval {SELECT * FROM t1} qv {
-    set r [catch {db eval {UPDATE t1 SET a=b, b=a}} msg]
-    lappend r $msg
-  }
-  set r
-} {1 {database table is locked}}
+#
+# 2006-08-16:  Reads no longer block writes within the same
+# database connection.
+#
+#do_test lock-1.18 {
+#  db eval {SELECT * FROM t1} qv {
+#    set r [catch {db eval {UPDATE t1 SET a=b, b=a}} msg]
+#    lappend r $msg
+#  }
+#  set r
+#} {1 {database table is locked}}
 
 # But you can UPDATE a different table from the one that is used in
 # the SELECT.

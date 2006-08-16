@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi2.test,v 1.31 2006/02/10 13:33:31 danielk1977 Exp $
+# $Id: capi2.test,v 1.32 2006/08/16 16:42:48 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -470,9 +470,11 @@ do_test capi2-6.12 {
        [get_column_names $VM1]
 } {SQLITE_ROW 1 5 {x counter}}
 
-do_test capi2-6.13 {
-  catchsql {UPDATE t3 SET x=x+1}
-} {1 {database table is locked}}
+# A read no longer blocks a write in the same connection.
+#do_test capi2-6.13 {
+#  catchsql {UPDATE t3 SET x=x+1}
+#} {1 {database table is locked}}
+
 do_test capi2-6.14 {
   list [sqlite3_step $VM1] \
        [sqlite3_column_count $VM1] \

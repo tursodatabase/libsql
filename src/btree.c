@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.327 2006/08/13 18:39:26 drh Exp $
+** $Id: btree.c,v 1.328 2006/08/16 16:42:48 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -387,17 +387,13 @@ struct BtCursor {
   CellInfo info;            /* A parse of the cell we are pointing at */
   u8 wrFlag;                /* True if writable */
   u8 eState;                /* One of the CURSOR_XXX constants (see below) */
-#ifndef SQLITE_OMIT_SHARED_CACHE
   void *pKey;      /* Saved key that was cursor's last known position */
   i64 nKey;        /* Size of pKey, or last integer key */
   int skip;        /* (skip<0) -> Prev() is a no-op. (skip>0) -> Next() is */
-#endif
 };
 
 /*
-** Potential values for BtCursor.eState. The first two values (VALID and 
-** INVALID) may occur in any build. The third (REQUIRESEEK) may only occur 
-** if sqlite was compiled without the OMIT_SHARED_CACHE symbol defined.
+** Potential values for BtCursor.eState.
 **
 ** CURSOR_VALID:
 **   Cursor points to a valid entry. getPayload() etc. may be called.
@@ -434,7 +430,7 @@ int sqlite3_btree_trace=0;  /* True to enable tracing */
 /*
 ** Forward declaration
 */
-static int checkReadLocks(BtShared*,Pgno,BtCursor*);
+static int checkReadLocks(Btree*,Pgno,BtCursor*);
 
 /*
 ** Read or write a two- and four-byte big-endian integer values.
@@ -509,105 +505,8 @@ struct BtLock {
   #define queryTableLock(a,b,c) SQLITE_OK
   #define lockTable(a,b,c) SQLITE_OK
   #define unlockAllTables(a)
-  #define restoreOrClearCursorPosition(a,b) SQLITE_OK
-  #define saveAllCursors(a,b,c) SQLITE_OK
-
 #else
 
-static void releasePage(MemPage *pPage);
-
-/*
-** Save the current cursor position in the variables BtCursor.nKey 
-** and BtCursor.pKey. The cursor's state is set to CURSOR_REQUIRESEEK.
-*/
-static int saveCursorPosition(BtCursor *pCur){
-  int rc;
-
-  assert( CURSOR_VALID==pCur->eState );
-  assert( 0==pCur->pKey );
-
-  rc = sqlite3BtreeKeySize(pCur, &pCur->nKey);
-
-  /* If this is an intKey table, then the above call to BtreeKeySize()
-  ** stores the integer key in pCur->nKey. In this case this value is
-  ** all that is required. Otherwise, if pCur is not open on an intKey
-  ** table, then malloc space for and store the pCur->nKey bytes of key 
-  ** data.
-  */
-  if( rc==SQLITE_OK && 0==pCur->pPage->intKey){
-    void *pKey = sqliteMalloc(pCur->nKey);
-    if( pKey ){
-      rc = sqlite3BtreeKey(pCur, 0, pCur->nKey, pKey);
-      if( rc==SQLITE_OK ){
-        pCur->pKey = pKey;
-      }else{
-        sqliteFree(pKey);
-      }
-    }else{
-      rc = SQLITE_NOMEM;
-    }
-  }
-  assert( !pCur->pPage->intKey || !pCur->pKey );
-
-  if( rc==SQLITE_OK ){
-    releasePage(pCur->pPage);
-    pCur->pPage = 0;
-    pCur->eState = CURSOR_REQUIRESEEK;
-  }
-
-  return rc;
-}
-
-/*
-** Save the positions of all cursors except pExcept open on the table 
-** with root-page iRoot. Usually, this is called just before cursor
-** pExcept is used to modify the table (BtreeDelete() or BtreeInsert()).
-*/
-static int saveAllCursors(BtShared *pBt, Pgno iRoot, BtCursor *pExcept){
-  BtCursor *p;
-  if( sqlite3ThreadDataReadOnly()->useSharedData ){
-    for(p=pBt->pCursor; p; p=p->pNext){
-      if( p!=pExcept && (0==iRoot || p->pgnoRoot==iRoot) && 
-          p->eState==CURSOR_VALID ){
-        int rc = saveCursorPosition(p);
-        if( SQLITE_OK!=rc ){
-          return rc;
-        }
-      }
-    }
-  }
-  return SQLITE_OK;
-}
-
-/*
-** Restore the cursor to the position it was in (or as close to as possible)
-** when saveCursorPosition() was called. Note that this call deletes the 
-** saved position info stored by saveCursorPosition(), so there can be
-** at most one effective restoreOrClearCursorPosition() call after each 
-** saveCursorPosition().
-**
-** If the second argument argument - doSeek - is false, then instead of 
-** returning the cursor to it's saved position, any saved position is deleted
-** and the cursor state set to CURSOR_INVALID.
-*/
-static int restoreOrClearCursorPositionX(BtCursor *pCur, int doSeek){
-  int rc = SQLITE_OK;
-  assert( sqlite3ThreadDataReadOnly()->useSharedData );
-  assert( pCur->eState==CURSOR_REQUIRESEEK );
-  pCur->eState = CURSOR_INVALID;
-  if( doSeek ){
-    rc = sqlite3BtreeMoveto(pCur, pCur->pKey, pCur->nKey, &pCur->skip);
-  }
-  if( rc==SQLITE_OK ){
-    sqliteFree(pCur->pKey);
-    pCur->pKey = 0;
-    assert( CURSOR_VALID==pCur->eState || CURSOR_INVALID==pCur->eState );
-  }
-  return rc;
-}
-
-#define restoreOrClearCursorPosition(p,x) \
-  (p->eState==CURSOR_REQUIRESEEK?restoreOrClearCursorPositionX(p,x):SQLITE_OK)
 
 /*
 ** Query to see if btree handle p may obtain a lock of type eLock 
@@ -746,6 +645,98 @@ static void unlockAllTables(Btree *p){
   }
 }
 #endif /* SQLITE_OMIT_SHARED_CACHE */
+
+static void releasePage(MemPage *pPage);  /* Forward reference */
+
+/*
+** Save the current cursor position in the variables BtCursor.nKey 
+** and BtCursor.pKey. The cursor's state is set to CURSOR_REQUIRESEEK.
+*/
+static int saveCursorPosition(BtCursor *pCur){
+  int rc;
+
+  assert( CURSOR_VALID==pCur->eState );
+  assert( 0==pCur->pKey );
+
+  rc = sqlite3BtreeKeySize(pCur, &pCur->nKey);
+
+  /* If this is an intKey table, then the above call to BtreeKeySize()
+  ** stores the integer key in pCur->nKey. In this case this value is
+  ** all that is required. Otherwise, if pCur is not open on an intKey
+  ** table, then malloc space for and store the pCur->nKey bytes of key 
+  ** data.
+  */
+  if( rc==SQLITE_OK && 0==pCur->pPage->intKey){
+    void *pKey = sqliteMalloc(pCur->nKey);
+    if( pKey ){
+      rc = sqlite3BtreeKey(pCur, 0, pCur->nKey, pKey);
+      if( rc==SQLITE_OK ){
+        pCur->pKey = pKey;
+      }else{
+        sqliteFree(pKey);
+      }
+    }else{
+      rc = SQLITE_NOMEM;
+    }
+  }
+  assert( !pCur->pPage->intKey || !pCur->pKey );
+
+  if( rc==SQLITE_OK ){
+    releasePage(pCur->pPage);
+    pCur->pPage = 0;
+    pCur->eState = CURSOR_REQUIRESEEK;
+  }
+
+  return rc;
+}
+
+/*
+** Save the positions of all cursors except pExcept open on the table 
+** with root-page iRoot. Usually, this is called just before cursor
+** pExcept is used to modify the table (BtreeDelete() or BtreeInsert()).
+*/
+static int saveAllCursors(BtShared *pBt, Pgno iRoot, BtCursor *pExcept){
+  BtCursor *p;
+  for(p=pBt->pCursor; p; p=p->pNext){
+    if( p!=pExcept && (0==iRoot || p->pgnoRoot==iRoot) && 
+        p->eState==CURSOR_VALID ){
+      int rc = saveCursorPosition(p);
+      if( SQLITE_OK!=rc ){
+        return rc;
+      }
+    }
+  }
+  return SQLITE_OK;
+}
+
+/*
+** Restore the cursor to the position it was in (or as close to as possible)
+** when saveCursorPosition() was called. Note that this call deletes the 
+** saved position info stored by saveCursorPosition(), so there can be
+** at most one effective restoreOrClearCursorPosition() call after each 
+** saveCursorPosition().
+**
+** If the second argument argument - doSeek - is false, then instead of 
+** returning the cursor to it's saved position, any saved position is deleted
+** and the cursor state set to CURSOR_INVALID.
+*/
+static int restoreOrClearCursorPositionX(BtCursor *pCur, int doSeek){
+  int rc = SQLITE_OK;
+  assert( pCur->eState==CURSOR_REQUIRESEEK );
+  pCur->eState = CURSOR_INVALID;
+  if( doSeek ){
+    rc = sqlite3BtreeMoveto(pCur, pCur->pKey, pCur->nKey, &pCur->skip);
+  }
+  if( rc==SQLITE_OK ){
+    sqliteFree(pCur->pKey);
+    pCur->pKey = 0;
+    assert( CURSOR_VALID==pCur->eState || CURSOR_INVALID==pCur->eState );
+  }
+  return rc;
+}
+
+#define restoreOrClearCursorPosition(p,x) \
+  (p->eState==CURSOR_REQUIRESEEK?restoreOrClearCursorPositionX(p,x):SQLITE_OK)
 
 #ifndef SQLITE_OMIT_AUTOVACUUM
 /*
@@ -1591,9 +1582,9 @@ int sqlite3BtreeOpen(
   */
 #if !defined(SQLITE_OMIT_SHARED_CACHE) || !defined(SQLITE_OMIT_AUTOVACUUM)
   #ifdef SQLITE_OMIT_MEMORYDB
-  const int isMemdb = !zFilename;
+    const int isMemdb = 0;
   #else
-  const int isMemdb = !zFilename || (strcmp(zFilename, ":memory:")?0:1);
+    const int isMemdb = zFilename && !strcmp(zFilename, ":memory:");
   #endif
 #endif
 
@@ -2778,7 +2769,7 @@ int sqlite3BtreeCursor(
     if( pBt->readOnly ){
       return SQLITE_READONLY;
     }
-    if( checkReadLocks(pBt, iTable, 0) ){
+    if( checkReadLocks(p, iTable, 0) ){
       return SQLITE_LOCKED;
     }
   }
@@ -5215,27 +5206,35 @@ static int balance(MemPage *pPage, int insert){
 
 /*
 ** This routine checks all cursors that point to table pgnoRoot.
-** If any of those cursors other than pExclude were opened with 
-** wrFlag==0 then this routine returns SQLITE_LOCKED.  If all
-** cursors that point to pgnoRoot were opened with wrFlag==1
-** then this routine returns SQLITE_OK.
+** If any of those cursors were opened with wrFlag==0 in a different
+** database connection (a database connection that shares the pager
+** cache with the current connection) and that other connection 
+** is not in the ReadUncommmitted state, then this routine returns 
+** SQLITE_LOCKED.
 **
 ** In addition to checking for read-locks (where a read-lock 
 ** means a cursor opened with wrFlag==0) this routine also moves
-** all cursors other than pExclude so that they are pointing to the 
-** first Cell on root page.  This is necessary because an insert 
+** all cursors write cursors so that they are pointing to the 
+** first Cell on the root page.  This is necessary because an insert 
 ** or delete might change the number of cells on a page or delete
 ** a page entirely and we do not want to leave any cursors 
 ** pointing to non-existant pages or cells.
 */
-static int checkReadLocks(BtShared *pBt, Pgno pgnoRoot, BtCursor *pExclude){
+static int checkReadLocks(Btree *pBtree, Pgno pgnoRoot, BtCursor *pExclude){
   BtCursor *p;
+  BtShared *pBt = pBtree->pBt;
+  sqlite3 *db = pBtree->pSqlite;
   for(p=pBt->pCursor; p; p=p->pNext){
-    u32 flags = (p->pBtree->pSqlite ? p->pBtree->pSqlite->flags : 0);
-    if( p->pgnoRoot!=pgnoRoot || p==pExclude ) continue;
-    if( p->wrFlag==0 && flags&SQLITE_ReadUncommitted ) continue;
-    if( p->wrFlag==0 ) return SQLITE_LOCKED;
-    if( p->pPage->pgno!=p->pgnoRoot ){
+    if( p==pExclude ) continue;
+    if( p->eState!=CURSOR_VALID ) continue;
+    if( p->pgnoRoot!=pgnoRoot ) continue;
+    if( p->wrFlag==0 ){
+      sqlite3 *dbOther = p->pBtree->pSqlite;
+      if( dbOther==0 ||
+         (dbOther!=db && (dbOther->flags & SQLITE_ReadUncommitted)==0) ){
+        return SQLITE_LOCKED;
+      }
+    }else if( p->pPage->pgno!=p->pgnoRoot ){
       moveToRoot(p);
     }
   }
@@ -5272,7 +5271,7 @@ int sqlite3BtreeInsert(
   if( !pCur->wrFlag ){
     return SQLITE_PERM;   /* Cursor not open for writing */
   }
-  if( checkReadLocks(pBt, pCur->pgnoRoot, pCur) ){
+  if( checkReadLocks(pCur->pBtree, pCur->pgnoRoot, pCur) ){
     return SQLITE_LOCKED; /* The table pCur points to has a read lock */
   }
 
@@ -5354,7 +5353,7 @@ int sqlite3BtreeDelete(BtCursor *pCur){
   if( !pCur->wrFlag ){
     return SQLITE_PERM;   /* Did not open this cursor for writing */
   }
-  if( checkReadLocks(pBt, pCur->pgnoRoot, pCur) ){
+  if( checkReadLocks(pCur->pBtree, pCur->pgnoRoot, pCur) ){
     return SQLITE_LOCKED; /* The table pCur points to has a read lock */
   }
 
@@ -5631,25 +5630,13 @@ cleardatabasepage_out:
 */
 int sqlite3BtreeClearTable(Btree *p, int iTable){
   int rc;
-  BtCursor *pCur;
   BtShared *pBt = p->pBt;
-  sqlite3 *db = p->pSqlite;
   if( p->inTrans!=TRANS_WRITE ){
     return pBt->readOnly ? SQLITE_READONLY : SQLITE_ERROR;
   }
-
-  /* If this connection is not in read-uncommitted mode and currently has
-  ** a read-cursor open on the table being cleared, return SQLITE_LOCKED.
-  */
-  if( 0==db || 0==(db->flags&SQLITE_ReadUncommitted) ){
-    for(pCur=pBt->pCursor; pCur; pCur=pCur->pNext){
-      if( pCur->pBtree==p && pCur->pgnoRoot==(Pgno)iTable ){
-        if( 0==pCur->wrFlag ){
-          return SQLITE_LOCKED;
-        }
-        moveToRoot(pCur);
-      }
-    }
+  rc = checkReadLocks(p, iTable, 0);
+  if( rc ){
+    return rc;
   }
 
   /* Save the position of all cursors open on this table */

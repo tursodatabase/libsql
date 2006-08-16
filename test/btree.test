@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is btree database backend
 #
-# $Id: btree.test,v 1.36 2006/03/19 13:00:25 drh Exp $
+# $Id: btree.test,v 1.37 2006/08/16 16:42:48 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -1018,22 +1018,30 @@ do_test btree-16.10 {
   catch {btree_delete $::c1} msg
   set msg
 } {SQLITE_PERM}
+
+# As of 2006-08-16 (version 3.3.7+) a read cursor will no
+# longer block a write cursor from the same database
+# connectiin.  The following three tests uses to return
+# the SQLITE_LOCK error, but no more.
+#
 do_test btree-16.11 {
   btree_close_cursor $::c1
   set ::c2 [btree_cursor $::b1 2 1]
   set ::c1 [btree_cursor $::b1 2 0]
   catch {btree_insert $::c2 101 helloworld} msg
   set msg
-} {SQLITE_LOCKED}
+} {}
 do_test btree-16.12 {
   btree_first $::c2
   catch {btree_delete $::c2} msg
   set msg
-} {SQLITE_LOCKED}
+} {}
 do_test btree-16.13 {
   catch {btree_clear_table $::b1 2} msg
   set msg
-} {SQLITE_LOCKED}
+} {}
+
+
 do_test btree-16.14 {
   btree_close_cursor $::c1
   btree_close_cursor $::c2
