@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the lang-*.html files.
 #
-set rcsid {$Id: lang.tcl,v 1.114 2006/06/26 10:37:12 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.115 2006/08/16 22:58:50 drh Exp $}
 source common.tcl
 
 if {[llength $argv]>0} {
@@ -1515,8 +1515,7 @@ SELECT must exactly match the number of columns in the table if
 no column list is specified, or it must match the number of columns
 name in the column list.  A new entry is made in the table
 for every row of the SELECT result.  The SELECT may be simple
-or compound.  If the SELECT statement has an ORDER BY clause,
-the ORDER BY is ignored.</p>
+or compound.</p>
 
 <p>The optional conflict-clause allows the specification of an alternative
 constraint conflict resolution algorithm to use during this one command.
