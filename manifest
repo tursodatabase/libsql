@@ -1,5 +1,5 @@
-C Remove\sobsolete\sclause\sin\sthe\sdocumentation.\s\sTicket\s#1923.\s(CVS\s3356)
-D 2006-08-16T22:58:50
+C Improved\smethod\sfor\sfinding\sthe\shome\sdirectory\sunder\swindows.\s\sTicket\s#1926.\s(CVS\s3357)
+D 2006-08-19T11:15:20
 F Makefile.in 986db66b0239b460fc118e7d2fa88b45b26c444e
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -71,7 +71,7 @@ F src/printf.c b179b6ed12f793e028dd169e2e2e2b2a37eedc63
 F src/random.c d40f8d356cecbd351ccfab6eaedd7ec1b54f5261
 F src/select.c 0d4724930a1f34c747105ed1802fa4af0d8eb519
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
-F src/shell.c 9e95f12ef57c3dc9fa0774c27f8743e2d39a9f1f
+F src/shell.c bc41feffb59676885368b7be5104e7d65ddb55d3
 F src/sqlite.h.in 432848ac7f8d7e6fea727668acccec62bdd86cc4
 F src/sqlite3ext.h 11a046b3519c4b9b7709e6d6a95c3a36366f684a
 F src/sqliteInt.h 85975cbb95777f619fd76f1ba728022f13321e1b
@@ -377,7 +377,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 8c52d2ad468615e50a727adab2977a0bef1bc068
-R 265ca43621ca392582e4afb82527077a
+P d4f182e5aa7163de3c692c9ce8dc9092d9d8de49
+R 2c6b6a7b6c9000afdeb6274ef1bce859
 U drh
-Z 683f3f97e1dcf3338ec8beb16c941c2a
+Z 0759be7ee293a30335cb7327cd80ca65

@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.145 2006/07/28 20:16:14 adamd Exp $
+** $Id: shell.c,v 1.146 2006/08/19 11:15:20 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -1563,16 +1563,30 @@ static char *find_home_dir(void){
   home_dir = getcwd(home_path, _MAX_PATH);
 #endif
 
+#if defined(_WIN32) || defined(WIN32) || defined(__OS2__)
+  if (!home_dir) {
+    home_dir = getenv("USERPROFILE");
+  }
+#endif
+
   if (!home_dir) {
     home_dir = getenv("HOME");
-    if (!home_dir) {
-      home_dir = getenv("HOMEPATH"); /* Windows? */
-    }
   }
 
 #if defined(_WIN32) || defined(WIN32) || defined(__OS2__)
   if (!home_dir) {
-    home_dir = "c:";
+    char *zDrive, *zPath;
+    int n;
+    zDrive = getenv("HOMEDRIVE");
+    zPath = getenv("HOMEPATH");
+    if( zDrive && zPath ){
+      n = strlen(zDrive) + strlen(zPath) + 1;
+      home_dir = malloc( n );
+      if( home_dir==0 ) return 0;
+      sqlite3_snprintf(n, home_dir, "%s%s", zDrive, zPath);
+      return home_dir;
+    }
+    home_dir = "c:\\";
   }
 #endif
 
