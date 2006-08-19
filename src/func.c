@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.132 2006/06/24 11:51:33 danielk1977 Exp $
+** $Id: func.c,v 1.133 2006/08/19 11:34:01 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -655,14 +655,20 @@ static void soundexFunc(sqlite3_context *context, int argc, sqlite3_value **argv
   };
   assert( argc==1 );
   zIn = (u8*)sqlite3_value_text(argv[0]);
-  if( zIn==0 ) zIn = "";
+  if( zIn==0 ) zIn = (u8*)"";
   for(i=0; zIn[i] && !isalpha(zIn[i]); i++){}
   if( zIn[i] ){
+    u8 prevcode = iCode[zIn[i]&0x7f];
     zResult[0] = toupper(zIn[i]);
     for(j=1; j<4 && zIn[i]; i++){
       int code = iCode[zIn[i]&0x7f];
       if( code>0 ){
-        zResult[j++] = code + '0';
+        if( code!=prevcode ){
+          prevcode = code;
+          zResult[j++] = code + '0';
+        }
+      }else{
+        prevcode = 0;
       }
     }
     while( j<4 ){

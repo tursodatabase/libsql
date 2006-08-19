@@ -1,5 +1,5 @@
-C Improved\smethod\sfor\sfinding\sthe\shome\sdirectory\sunder\swindows.\s\sTicket\s#1926.\s(CVS\s3357)
-D 2006-08-19T11:15:20
+C Fix\sfor\sthe\s(unsupported)\ssoundex\salgorithm\sso\sthat\sit\sconforms\sto\sKnuth.\nTicket\s#1925.\s\sTest\scases\sadded.\s(CVS\s3358)
+D 2006-08-19T11:34:01
 F Makefile.in 986db66b0239b460fc118e7d2fa88b45b26c444e
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -43,7 +43,7 @@ F src/date.c cd2bd5d1ebc6fa12d6312f69789ae5b0a2766f2e
 F src/delete.c 804384761144fe1a5035b99f4bd7d706976831bd
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
 F src/expr.c 715734d8681c5ad179a24156800b5c5646489e05
-F src/func.c f357a81bcdd83684cb198a8ad96be1c21e29f85c
+F src/func.c dd9cea8ed3246d7a4c49fd01034d470d5702b8b0
 F src/hash.c 449f3d6620193aa557f5d86cbc5cc6b87702b185
 F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
 F src/insert.c 63f01d3f4e0ba7ed171934a24aece2191824faec
@@ -174,7 +174,7 @@ F test/enc3.test 890508efff6677345e93bf2a8adb0489b30df030
 F test/expr.test 7b4b349abdb05ab1862c1cfcf7607e3731efc5d2
 F test/fkey1.test 153004438d51e6769fb1ce165f6313972d6263ce
 F test/format4.test bf3bed3b13c63abfb3cfec232597a319a31d0bcc
-F test/func.test c0df82c29f07b8b6ee0aaa13950f43880f8046bf
+F test/func.test 7f2c91a948a0a177635835dc9afa078413c54ae1
 F test/hook.test 7e7645fd9a033f79cce8fdff151e32715e7ec50a
 F test/in.test 369cb2aa1eab02296b4ec470732fe8c131260b1d
 F test/index.test e65df12bed94b2903ee89987115e1578687e9266
@@ -377,7 +377,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P d4f182e5aa7163de3c692c9ce8dc9092d9d8de49
-R 2c6b6a7b6c9000afdeb6274ef1bce859
+P 10907bb2011eefa306c0e6ee573b6dfe765c8631
+R ebb62594a66010c4b8b28eb6089f2dd8
 U drh
-Z 0759be7ee293a30335cb7327cd80ca65
+Z 46d50053f744f8251c3eeed26f8889ee
