@@ -1,5 +1,5 @@
-C Add\sthe\sext/fts1\ssubdirectory\sfor\sholding\sthe\sfirst\sfull-text\ssearch\nextension.\s(CVS\s3360)
-D 2006-08-22T14:45:37
+C Add\sargc\sas\sa\sdefault\sglobal\sto\smatch\sstandard\stcl\senvironment.\s(CVS\s3361)
+D 2006-08-22T23:53:46
 F Makefile.in 986db66b0239b460fc118e7d2fa88b45b26c444e
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -78,7 +78,7 @@ F src/sqlite.h.in 432848ac7f8d7e6fea727668acccec62bdd86cc4
 F src/sqlite3ext.h 11a046b3519c4b9b7709e6d6a95c3a36366f684a
 F src/sqliteInt.h 85975cbb95777f619fd76f1ba728022f13321e1b
 F src/table.c d8817f43a6c6bf139487db161760b9e1e02da3f1
-F src/tclsqlite.c 92a997ee5caca4923a6452ff8ebfaa8d37334f4a
+F src/tclsqlite.c 7eb16876ab49d267a28a9ba0fdb84f5639e0949e
 F src/test1.c 535294d7f21a4127082c4f7a57f225482df9cc36
 F src/test2.c ca74a1d8aeb7d9606e8f6b762c5daf85c1a3f92b
 F src/test3.c 85135c09560c48bdb0a23c9b890ab405486b8ec9
@@ -379,7 +379,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 90296bc8fa443833e6316c873dd18b951d3247f7
-R 0a22e115644297fc64cecdb15c3620af
-U drh
-Z 5e7c107a752868c645bb44a17905bc47
+P 7f152f9f3a647d30874f2da46ce93a1e31ea7cf3
+R cba7bc9ab66dad7b20373ff0d772e84a
+U shess
+Z 305d02f352f76b62ef3fbc17bad7eb56
