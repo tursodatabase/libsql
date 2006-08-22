@@ -1,5 +1,5 @@
-C Fix\sbug\sin\sdocumentation.\s\sTicket\s#1927.\s(CVS\s3359)
-D 2006-08-19T13:32:05
+C Add\sthe\sext/fts1\ssubdirectory\sfor\sholding\sthe\sfirst\sfull-text\ssearch\nextension.\s(CVS\s3360)
+D 2006-08-22T14:45:37
 F Makefile.in 986db66b0239b460fc118e7d2fa88b45b26c444e
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -17,6 +17,8 @@ F configure.ac 83eaf11869cd893db6126c0ce77381a9cd264bad
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
+F ext/README.txt 913a7bd3f4837ab14d7e063304181787658b14e1
+F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
 F main.mk bfa218fe52af316390bb344f8660241d90f277dd
@@ -377,7 +379,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 7810d1abf611ce40dd0de45610269359a8ca9222
-R 9663f9084c4b1df09c3f26b44c3b7140
+P 90296bc8fa443833e6316c873dd18b951d3247f7
+R 0a22e115644297fc64cecdb15c3620af
 U drh
-Z f3c15b991dde60a2e6e4af57bd6ff00f
+Z 5e7c107a752868c645bb44a17905bc47
