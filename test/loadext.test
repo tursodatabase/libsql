@@ -9,9 +9,9 @@
 #
 #***********************************************************************
 # This file implements regression tests for SQLite library.  The
-# focus of this script is in-memory database backend.
+# focus of this script is extension loading.
 #
-# $Id: loadext.test,v 1.7 2006/07/06 17:08:48 drh Exp $
+# $Id: loadext.test,v 1.8 2006/08/23 20:07:22 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl

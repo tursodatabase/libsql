@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.523 2006/07/26 13:43:31 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.524 2006/08/23 20:07:22 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1821,8 +1821,10 @@ int sqlite3OpenTempDatabase(Parse *);
 
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
   void sqlite3CloseExtensions(sqlite3*);
+  int sqlite3AutoLoadExtensions(sqlite3*);
 #else
 # define sqlite3CloseExtensions(X)
+# define sqlite3AutoLoadExtensions(X)  SQLITE_OK
 #endif
 
 #ifndef SQLITE_OMIT_SHARED_CACHE

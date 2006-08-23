@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.166 2006/08/22 23:53:46 shess Exp $
+** $Id: tclsqlite.c,v 1.167 2006/08/23 20:07:22 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -1035,7 +1035,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     nSep = strlen(zSep);
     nNull = strlen(zNull);
     if( nSep==0 ){
-      Tcl_AppendResult(interp, "Error: non-null separator required for copy", 0);
+      Tcl_AppendResult(interp,"Error: non-null separator required for copy",0);
       return TCL_ERROR;
     }
     if(sqlite3StrICmp(zConflict, "rollback") != 0 &&
@@ -2200,6 +2200,7 @@ int TCLSH_MAIN(int argc, char **argv){
     extern int Sqlitetestasync_Init(Tcl_Interp*);
     extern int Sqlitetesttclvar_Init(Tcl_Interp*);
     extern int Sqlitetestschema_Init(Tcl_Interp*);
+    extern int Sqlitetest_autoext_Init(Tcl_Interp*);
 
     Sqlitetest1_Init(interp);
     Sqlitetest2_Init(interp);
@@ -2212,6 +2213,7 @@ int TCLSH_MAIN(int argc, char **argv){
     Sqlitetestasync_Init(interp);
     Sqlitetesttclvar_Init(interp);
     Sqlitetestschema_Init(interp);
+    Sqlitetest_autoext_Init(interp);
     Md5_Init(interp);
 #ifdef SQLITE_SSE
     Sqlitetestsse_Init(interp);

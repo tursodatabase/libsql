@@ -1,6 +1,6 @@
-C Add\sargc\sas\sa\sdefault\sglobal\sto\smatch\sstandard\stcl\senvironment.\s(CVS\s3361)
-D 2006-08-22T23:53:46
-F Makefile.in 986db66b0239b460fc118e7d2fa88b45b26c444e
+C Add\sthe\snew\sexperimental\ssqlite3_auto_extension()\sAPI.\s(CVS\s3362)
+D 2006-08-23T20:07:21
+F Makefile.in 8e7f9ecebab2c6e0f3db20ff129a8f9405ab64f8
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
 F VERSION ef6abd4b2095b0f378b428ed251e16f0213fcf3f
@@ -21,7 +21,7 @@ F ext/README.txt 913a7bd3f4837ab14d7e063304181787658b14e1
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
-F main.mk bfa218fe52af316390bb344f8660241d90f277dd
+F main.mk 22a0c92f24ffc377c41ac9d7d63ae3cbb813e532
 F mkdll.sh 919df5efde876194e3102c6ebc60657d38949909
 F mkopcodec.awk bd46ad001c98dfbab07b1713cb8e692fa0e5415d
 F mkopcodeh.awk cde995d269aa06c94adbf6455bea0acedb913fa5
@@ -50,8 +50,8 @@ F src/hash.c 449f3d6620193aa557f5d86cbc5cc6b87702b185
 F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
 F src/insert.c 63f01d3f4e0ba7ed171934a24aece2191824faec
 F src/legacy.c 10e01a902d7f2c872c7922fedf19a2df70935857
-F src/loadext.c 040853b36adf535bba6a2e9f5d921422a4394baf
-F src/main.c 3690d4a440c0bfba7b4816d52869e17b9adccb58
+F src/loadext.c 7a41142266dd2570fedf00108e1772047f98a673
+F src/main.c 96ab5f29fe903aa8a28f6e1463a3b8245bf1c416
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/os.c 59f05de8c5777c34876607114a2fbe55ae578235
 F src/os.h 3fd6a022bafd620fdfd779a51dccb42f31c97f75
@@ -74,11 +74,11 @@ F src/random.c d40f8d356cecbd351ccfab6eaedd7ec1b54f5261
 F src/select.c 0d4724930a1f34c747105ed1802fa4af0d8eb519
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c bc41feffb59676885368b7be5104e7d65ddb55d3
-F src/sqlite.h.in 432848ac7f8d7e6fea727668acccec62bdd86cc4
+F src/sqlite.h.in 181d04022bcf63a6e8a9111848940512344f41ab
 F src/sqlite3ext.h 11a046b3519c4b9b7709e6d6a95c3a36366f684a
-F src/sqliteInt.h 85975cbb95777f619fd76f1ba728022f13321e1b
+F src/sqliteInt.h 325a2d45be2b22c1e21ad649e0a898c74eaec7de
 F src/table.c d8817f43a6c6bf139487db161760b9e1e02da3f1
-F src/tclsqlite.c 7eb16876ab49d267a28a9ba0fdb84f5639e0949e
+F src/tclsqlite.c 61342fafe17a49e3e613f3b4703b41cab3bf824d
 F src/test1.c 535294d7f21a4127082c4f7a57f225482df9cc36
 F src/test2.c ca74a1d8aeb7d9606e8f6b762c5daf85c1a3f92b
 F src/test3.c 85135c09560c48bdb0a23c9b890ab405486b8ec9
@@ -88,6 +88,7 @@ F src/test6.c 60a02961ceb7b3edc25f5dc5c1ac2556622a76de
 F src/test7.c 03fa8d787f6aebc6d1f72504d52f33013ad2c8e3
 F src/test8.c 56d891ac9a37d1e1e941d9da7307e8d757a7b8e1
 F src/test_async.c e3deaedd4d86a56391b81808fde9e44fbd92f1d3
+F src/test_autoext.c bbb70bc1c83bd273cf59908ca9b486ae5df55a59
 F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
 F src/test_md5.c 6c42bc0a3c0b54be34623ff77a0eec32b2fa96e3
 F src/test_schema.c 8b2aaa9136edf3187a51166849c2de0aaaa27ce5
@@ -198,7 +199,8 @@ F test/lastinsert.test 474d519c68cb79d07ecae56a763aa7f322c72f51
 F test/laststmtchanges.test 19a6d0c11f7a31dc45465b495f7b845a62cbec17
 F test/like.test 5f7d76574752a9101cac13372c8a85999d0d91e6
 F test/limit.test 2a87b9cb2165abb49ca0ddcf5cb43cf24074581f
-F test/loadext.test 6e4ecf99ec26334768c63b4322177b5e147f006a
+F test/loadext.test bee44cf7c6d54c5a46650bb2a1b0d778bcd34034
+F test/loadext2.test 4472af96306b127b378a1b2026fe15ed5863f9cf
 F test/lock.test 6825aea0b5885578b1b63a3b178803842c4ee9f1
 F test/lock2.test d83ba79d3c4fffdb5b926c7d8ca7a36c34288a55
 F test/lock3.test 615111293cf32aa2ed16d01c6611737651c96fb9
@@ -379,7 +381,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 7f152f9f3a647d30874f2da46ce93a1e31ea7cf3
-R cba7bc9ab66dad7b20373ff0d772e84a
-U shess
-Z 305d02f352f76b62ef3fbc17bad7eb56
+P 533154099c9fe1238705eea03aba388dd71dc35e
+R 6e117482355c04ea4130650a5df55269
+U drh
+Z 4fd4520cd0f576a9a4485f55b2ce4752

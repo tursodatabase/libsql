@@ -17,6 +17,7 @@
 #define SQLITE_CORE 1  /* Disable the API redefinition in sqlite3ext.h */
 #include "sqlite3ext.h"
 #include "sqliteInt.h"
+#include "os.h"
 #include <string.h>
 #include <ctype.h>
 
@@ -89,7 +90,7 @@
 ** also check to make sure that the pointer to the function is
 ** not NULL before calling it.
 */
-const sqlite3_api_routines sqlite3_api = {
+const sqlite3_api_routines sqlite3_apis = {
   sqlite3_aggregate_context,
   sqlite3_aggregate_count,
   sqlite3_bind_blob,
@@ -294,7 +295,7 @@ int sqlite3_load_extension(
     }
     SQLITE_CLOSE_LIBRARY(handle);
     return SQLITE_ERROR;
-  }else if( xInit(db, &zErrmsg, &sqlite3_api) ){
+  }else if( xInit(db, &zErrmsg, &sqlite3_apis) ){
     if( pzErrMsg ){
       *pzErrMsg = sqlite3_mprintf("error during initialization: %s", zErrmsg);
     }
@@ -350,6 +351,87 @@ int sqlite3_enable_load_extension(sqlite3 *db, int onoff){
     db->flags &= ~SQLITE_LoadExtension;
   }
   return SQLITE_OK;
+}
+
+/*
+** A list of automatically loaded extensions.
+**
+** This list is shared across threads, so be sure to hold the
+** mutex while accessing or changing it.
+*/
+static int nAutoExtension = 0;
+static void **aAutoExtension = 0;
+
+
+/*
+** Register a statically linked extension that is automatically
+** loaded by every new database connection.
+*/
+int sqlite3_auto_extension(void *xInit){
+  int i;
+  int rc = SQLITE_OK;
+  sqlite3OsEnterMutex();
+  for(i=0; i<nAutoExtension; i++){
+    if( aAutoExtension[i]==xInit ) break;
+  }
+  if( i==nAutoExtension ){
+    nAutoExtension++;
+    aAutoExtension = sqlite3Realloc( aAutoExtension,
+                                     nAutoExtension*sizeof(aAutoExtension[0]) );
+    if( aAutoExtension==0 ){
+      nAutoExtension = 0;
+      rc = SQLITE_NOMEM;
+    }else{
+      aAutoExtension[nAutoExtension-1] = xInit;
+    }
+  }
+  sqlite3OsLeaveMutex();  
+  return rc;
+}
+
+/*
+** Reset the automatic extension loading mechanism.
+*/
+void sqlite3_reset_auto_extension(void){
+  sqlite3OsEnterMutex();
+  sqliteFree(aAutoExtension);
+  aAutoExtension = 0;
+  nAutoExtension = 0;
+  sqlite3OsLeaveMutex();
+}
+
+/*
+** Load all automatic extensions.
+*/
+int sqlite3AutoLoadExtensions(sqlite3 *db){
+  int i;
+  int go = 1;
+  int rc = SQLITE_OK;
+  int (*xInit)(sqlite3*,char**,const sqlite3_api_routines*);
+
+  if( nAutoExtension==0 ){
+    /* Common case: early out without every having to acquire a mutex */
+    return SQLITE_OK;
+  }
+  for(i=0; go; i++){
+    char *zErrmsg = 0;
+    sqlite3OsEnterMutex();
+    if( i>=nAutoExtension ){
+      xInit = 0;
+      go = 0;
+    }else{
+      xInit = (int(*)(sqlite3*,char**,const sqlite3_api_routines*))
+              aAutoExtension[i];
+    }
+    sqlite3OsLeaveMutex();
+    if( xInit && xInit(db, &zErrmsg, &sqlite3_apis) ){
+      sqlite3Error(db, SQLITE_ERROR,
+            "automatic extension loading failed: %s", zErrmsg);
+      go = 0;
+      rc = SQLITE_ERROR;
+    }
+  }
+  return rc;
 }
 
 #endif /* SQLITE_OMIT_LOAD_EXTENSION */
