@@ -1,5 +1,5 @@
-C Add\sthe\snew\sexperimental\ssqlite3_auto_extension()\sAPI.\s(CVS\s3362)
-D 2006-08-23T20:07:21
+C A\sfirst\simplementation\sof\sa\sfull-text\ssearch\smodule\sfor\sSQLite.\s(CVS\s3363)
+D 2006-08-23T23:58:50
 F Makefile.in 8e7f9ecebab2c6e0f3db20ff129a8f9405ab64f8
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -19,6 +19,12 @@ F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F ext/README.txt 913a7bd3f4837ab14d7e063304181787658b14e1
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
+F ext/fts1/ft_hash.c 3927bd880e65329bdc6f506555b228b28924921b
+F ext/fts1/ft_hash.h 1a35e654a235c2c662d3ca0dfc3138ad60b8b7d5
+F ext/fts1/fulltext.c 373ee2d9d79eb46f09e95ca01d88b6ce62f85821
+F ext/fts1/fulltext.h 08525a47852d1d62a0be81d3fc3fe2d23b094efd
+F ext/fts1/simple_tokenizer.c 289b7f35bf692e85834a7b599fd0a136e415a9eb
+F ext/fts1/tokenizer.h 0c53421b832366d20d720d21ea3e1f6e66a36ef9
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
 F main.mk 22a0c92f24ffc377c41ac9d7d63ae3cbb813e532
@@ -381,7 +387,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 533154099c9fe1238705eea03aba388dd71dc35e
-R 6e117482355c04ea4130650a5df55269
-U drh
-Z 4fd4520cd0f576a9a4485f55b2ce4752
+P a85fc877eb8c92bbb79ac9b7fa91fb362f37cdf7
+R 04b40b5b3a8b4af8436a461b6264fde6
+U adamd
+Z e3809b70bf4ea26198337b68886699ce
