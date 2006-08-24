@@ -1,5 +1,5 @@
-C A\sfirst\simplementation\sof\sa\sfull-text\ssearch\smodule\sfor\sSQLite.\s(CVS\s3363)
-D 2006-08-23T23:58:50
+C Tcl\sinterface\sdoes\sfilename\stranslation\sprior\sto\scalling\ssqlite3_open().\nTicket\s#1937.\s(CVS\s3364)
+D 2006-08-24T02:42:28
 F Makefile.in 8e7f9ecebab2c6e0f3db20ff129a8f9405ab64f8
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -84,7 +84,7 @@ F src/sqlite.h.in 181d04022bcf63a6e8a9111848940512344f41ab
 F src/sqlite3ext.h 11a046b3519c4b9b7709e6d6a95c3a36366f684a
 F src/sqliteInt.h 325a2d45be2b22c1e21ad649e0a898c74eaec7de
 F src/table.c d8817f43a6c6bf139487db161760b9e1e02da3f1
-F src/tclsqlite.c 61342fafe17a49e3e613f3b4703b41cab3bf824d
+F src/tclsqlite.c 075616e270b5e9986f09eac28914b8261ea312e8
 F src/test1.c 535294d7f21a4127082c4f7a57f225482df9cc36
 F src/test2.c ca74a1d8aeb7d9606e8f6b762c5daf85c1a3f92b
 F src/test3.c 85135c09560c48bdb0a23c9b890ab405486b8ec9
@@ -387,7 +387,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P a85fc877eb8c92bbb79ac9b7fa91fb362f37cdf7
-R 04b40b5b3a8b4af8436a461b6264fde6
-U adamd
-Z e3809b70bf4ea26198337b68886699ce
+P b0d8e0d314d6f77b7d4b5dd00c694a1323f7a8e4
+R 847b829d695356d3a7be5ec77800c446
+U drh
+Z 5000c3ac936c8f6f0859cbaf4d2914c9
