@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3ref.tcl,v 1.42 2006/08/12 14:38:47 drh Exp $}
+set rcsid {$Id: capi3ref.tcl,v 1.43 2006/08/24 15:18:25 drh Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -1198,29 +1198,52 @@ int sqlite3_set_authorizer(
 #define SQLITE_ALTER_TABLE          26   /* Database Name   Table Name      */
 #define SQLITE_REINDEX              27   /* Index Name      NULL            */
 #define SQLITE_ANALYZE              28   /* Table Name      NULL            */
+#define SQLITE_CREATE_VTABLE        29   /* Table Name      Module Name     */
+#define SQLITE_DROP_VTABLE          30   /* Table Name      Module Name     */
+#define SQLITE_FUNCTION             31   /* Function Name   NULL            */
 
 #define SQLITE_DENY   1   /* Abort the SQL statement with an error */
 #define SQLITE_IGNORE 2   /* Don't allow access, but don't generate an error */
 } {
  This routine registers a callback with the SQLite library.  The
- callback is invoked (at compile-time, not at run-time) for each
- attempt to access a column of a table in the database.  The callback should
+ callback is invoked by sqlite3_prepare() to authorize various
+ operations against the database.  The callback should
  return SQLITE_OK if access is allowed, SQLITE_DENY if the entire
  SQL statement should be aborted with an error and SQLITE_IGNORE
- if the column should be treated as a NULL value.
+ if the operation should be treated as a no-op.
+
+ Each database connection have at most one authorizer registered
+ at a time one time.  Each call
+ to sqlite3_set_authorizer() overrides the previous authorizer.
+ Setting the callback to NULL disables the authorizer.
 
  The second argument to the access authorization function will be one
  of the defined constants shown.  These values signify what kind of operation
  is to be authorized.  The 3rd and 4th arguments to the authorization
- function will be arguments or NULL depending on which of the following
- codes is used as the second argument.  The 5th argument is the name
- of the database ("main", "temp", etc.) if applicable.  The 6th argument
+ function will be arguments or NULL depending on which of the 
+ codes is used as the second argument.  For example, if the the
+ 2nd argument code is SQLITE_READ then the 3rd argument will be the name
+ of the table that is being read from and the 4th argument will be the
+ name of the column that is being read from.  Or if the 2nd argument
+ is SQLITE_FUNCTION then the 3rd argument will be the name of the
+ function that is being invoked and the 4th argument will be NULL.
+
+ The 5th argument is the name
+ of the database ("main", "temp", etc.) where applicable.  The 6th argument
  is the name of the inner-most trigger or view that is responsible for
  the access attempt or NULL if this access attempt is directly from 
  input SQL code.
 
  The return value of the authorization function should be one of the
- constants SQLITE_OK, SQLITE_DENY, or SQLITE_IGNORE.
+ constants SQLITE_OK, SQLITE_DENY, or SQLITE_IGNORE.  A return of
+ SQLITE_OK means that the operation is permitted and that 
+ sqlite3_prepare() can proceed as normal.
+ A return of SQLITE_DENY means that the sqlite3_prepare()
+ should fail with an error.  A return of SQLITE_IGNORE causes the 
+ sqlite3_prepare() to continue as normal but the requested 
+ operation is silently converted into a no-op.  A return of SQLITE_IGNORE
+ in response to an SQLITE_READ or SQLITE_FUNCTION causes the column
+ being read or the function being invoked to return a NULL.
 
  The intent of this routine is to allow applications to safely execute
  user-entered SQL.  An appropriate callback can deny the user-entered
