@@ -1,5 +1,5 @@
-C Tcl\sinterface\sdoes\sfilename\stranslation\sprior\sto\scalling\ssqlite3_open().\nTicket\s#1937.\s(CVS\s3364)
-D 2006-08-24T02:42:28
+C Enhance\sthe\ssqlite3_set_authorizer()\scallback\sso\sthat\sit\sprovides\scallbacks\non\seach\sSQL\sfunction\sthat\sis\sinvoked.\s(CVS\s3365)
+D 2006-08-24T14:59:46
 F Makefile.in 8e7f9ecebab2c6e0f3db20ff129a8f9405ab64f8
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -50,7 +50,7 @@ F src/complete.c 7d1a44be8f37de125fcafd3d3a018690b3799675
 F src/date.c cd2bd5d1ebc6fa12d6312f69789ae5b0a2766f2e
 F src/delete.c 804384761144fe1a5035b99f4bd7d706976831bd
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
-F src/expr.c 715734d8681c5ad179a24156800b5c5646489e05
+F src/expr.c fb53fb9ddbfb2868bf148031adde2290de0fd65a
 F src/func.c dd9cea8ed3246d7a4c49fd01034d470d5702b8b0
 F src/hash.c 449f3d6620193aa557f5d86cbc5cc6b87702b185
 F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
@@ -80,11 +80,11 @@ F src/random.c d40f8d356cecbd351ccfab6eaedd7ec1b54f5261
 F src/select.c 0d4724930a1f34c747105ed1802fa4af0d8eb519
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c bc41feffb59676885368b7be5104e7d65ddb55d3
-F src/sqlite.h.in 181d04022bcf63a6e8a9111848940512344f41ab
+F src/sqlite.h.in 84ac26ca94a84dd603fb57a27d862f51bfd9f687
 F src/sqlite3ext.h 11a046b3519c4b9b7709e6d6a95c3a36366f684a
 F src/sqliteInt.h 325a2d45be2b22c1e21ad649e0a898c74eaec7de
 F src/table.c d8817f43a6c6bf139487db161760b9e1e02da3f1
-F src/tclsqlite.c 075616e270b5e9986f09eac28914b8261ea312e8
+F src/tclsqlite.c b706556687f0113e01d0574b0caa59c1cd4f3034
 F src/test1.c 535294d7f21a4127082c4f7a57f225482df9cc36
 F src/test2.c ca74a1d8aeb7d9606e8f6b762c5daf85c1a3f92b
 F src/test3.c 85135c09560c48bdb0a23c9b890ab405486b8ec9
@@ -129,7 +129,8 @@ F test/attach.test c616a88eab6b6fd99b7b2fcf449420f14628bc0b
 F test/attach2.test 0e6a7c54343c85dd877a1e86073a05176043ed40
 F test/attach3.test eafcafb107585aecc2ed1569a77914138eef46a9
 F test/attachmalloc.test cdb26c42850f04698377ccec05f5fa89d987837c
-F test/auth.test 5e27e39ed196bea6ddb5f4a55e1a202062ea2cf8
+F test/auth.test 66923137cf78475f5671b5e6e6274935e055aea0
+F test/auth2.test 8da06f0ffcfd98154dda78e0f3b35a6503c27b64
 F test/autoinc.test 60005a676e3e4e17dfa9dbd08aa0b76587ff97e3
 F test/autovacuum.test 5f5d843ff856b7dcfdf3f36b7e1acb04895047ce
 F test/autovacuum_crash.test 05a63b8805b20cfba7ace82856ce4ccdda075a31
@@ -387,7 +388,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P b0d8e0d314d6f77b7d4b5dd00c694a1323f7a8e4
-R 847b829d695356d3a7be5ec77800c446
+P 5696e0cb771ea62df6f91cb03dfc428af1441e9e
+R adbd010d3035a48a51b9cccec0ffd93d
 U drh
-Z 5000c3ac936c8f6f0859cbaf4d2914c9
+Z e780ba3f47ab009dda8d768d0c7835f6

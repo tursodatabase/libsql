@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.266 2006/07/11 13:15:08 drh Exp $
+** $Id: expr.c,v 1.267 2006/08/24 14:59:46 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1161,6 +1161,7 @@ static int nameResolverStep(void *pArg, Expr *pExpr){
       int wrong_num_args = 0;     /* True if wrong number of arguments */
       int is_agg = 0;             /* True if is an aggregate function */
       int i;
+      int auth;                   /* Authorization to use the function */
       int nId;                    /* Number of characters in function name */
       const char *zId;            /* The function name. */
       FuncDef *pDef;              /* Information about the function */
@@ -1178,6 +1179,18 @@ static int nameResolverStep(void *pArg, Expr *pExpr){
         }
       }else{
         is_agg = pDef->xFunc==0;
+      }
+      if( pDef ){
+        auth = sqlite3AuthCheck(pParse, SQLITE_FUNCTION, 0, pDef->zName, 0);
+        if( auth!=SQLITE_OK ){
+          if( auth==SQLITE_DENY ){
+            sqlite3ErrorMsg(pParse, "not authorized to use function: %s",
+                                    pDef->zName);
+            pNC->nErr++;
+          }
+          pExpr->op = TK_NULL;
+          return 1;
+        }
       }
       if( is_agg && !pNC->allowAgg ){
         sqlite3ErrorMsg(pParse, "misuse of aggregate function %.*s()", nId,zId);
