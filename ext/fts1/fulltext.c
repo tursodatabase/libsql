@@ -294,14 +294,13 @@ static int docListUpdate(DocList *d, sqlite_int64 iDocid, DocList *pUpdate){
   DocListReader reader;
   char *p;
 
-  assert( d->iType==pUpdate->iType);
   if( pUpdate!=NULL ){
+    assert( d->iType==pUpdate->iType);
     assert( iDocid==firstDocid(pUpdate) );
   }
 
   readerInit(&reader, d);
-  while( !readerAtEnd(&reader) ){
-    if( peekDocid(&reader) >= iDocid ) break;
+  while( !readerAtEnd(&reader) && peekDocid(&reader)<iDocid ){
     skipDocument(&reader);
   }
 
@@ -316,19 +315,15 @@ static int docListUpdate(DocList *d, sqlite_int64 iDocid, DocList *pUpdate){
 
   /* Insert if indicated. */
   if( pUpdate!=NULL ){
-    int iDoclist;
-    int nNeed;
+    int iDoclist = p-d->pData;
     docListAddEndPos(pUpdate);
-    nNeed = pUpdate->nData;
 
-    iDoclist = p - d->pData;
-    d->pData = realloc(d->pData, d->nData+nNeed);
+    d->pData = realloc(d->pData, d->nData+pUpdate->nData);
     p = d->pData + iDoclist;
 
-    memmove(p+nNeed, p, docListEnd(d) - p);
-    memcpy(p, pUpdate->pData, nNeed);
-    p += nNeed;
-    d->nData += nNeed;
+    memmove(p+pUpdate->nData, p, docListEnd(d) - p);
+    memcpy(p, pUpdate->pData, pUpdate->nData);
+    d->nData += pUpdate->nData;
     modified = 1;
   }
 
@@ -413,7 +408,7 @@ static void mergePosList(DocListMerge *m, sqlite_int64 iDocid,
       }
       block_pos = readPosition(pBlockReader);
       in_pos = readPosition(&m->in);
-    } else if( in_pos==-1 || block_pos!=-1 && block_pos-m->iOffset<in_pos ){
+    } else if( in_pos==-1 || (block_pos!=-1 && block_pos-m->iOffset<in_pos) ){
       block_pos = readPosition(pBlockReader);
     } else {
       in_pos = readPosition(&m->in);
@@ -1338,8 +1333,6 @@ static int index_insert_term(fulltext_vtab *v, const char *zTerm, int nTerm,
   sqlite_int64 iFirst;
   sqlite_int64 iIndexRow;
   DocList doclist;
-  char *pBlob = NULL;
-  int nBlob = 0;
 
   int rc = term_chunk_select(v, zTerm, nTerm, iDocid, &iFirst);
   if( rc==SQLITE_DONE ){
