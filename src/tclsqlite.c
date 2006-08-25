@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.169 2006/08/24 14:59:46 drh Exp $
+** $Id: tclsqlite.c,v 1.170 2006/08/25 23:42:53 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -2072,8 +2072,6 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   p->interp = interp;
   zArg = Tcl_GetStringFromObj(objv[1], 0);
   Tcl_CreateObjCommand(interp, zArg, DbObjCmd, (char*)p, DbDeleteCmd);
-
-  /* If a TCL procedure named "::sqlite3_init
 
   /* If compiled with SQLITE_TEST turned on, then register the "md5sum"
   ** SQL function.

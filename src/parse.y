@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.207 2006/08/14 14:23:42 drh Exp $
+** @(#) $Id: parse.y,v 1.208 2006/08/25 23:42:53 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -600,6 +600,8 @@ cmd ::= insert_cmd(R) INTO fullname(X) inscollist_opt(F)
             {sqlite3Insert(pParse, X, Y, 0, F, R);}
 cmd ::= insert_cmd(R) INTO fullname(X) inscollist_opt(F) select(S).
             {sqlite3Insert(pParse, X, 0, S, F, R);}
+cmd ::= insert_cmd(R) INTO fullname(X) inscollist_opt(F) DEFAULT VALUES.
+            {sqlite3Insert(pParse, X, 0, 0, F, R);}
 
 %type insert_cmd {int}
 insert_cmd(A) ::= INSERT orconf(R).   {A = R;}
