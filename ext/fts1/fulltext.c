@@ -41,7 +41,7 @@ SQLITE_EXTENSION_INIT1
 /* Write a 64-bit variable-length integer to memory starting at p[0].
  * The length of data written will be between 1 and VARINT_MAX bytes.
  * The number of bytes written is returned. */
-int putVarint(char *p, sqlite_int64 v){
+static int putVarint(char *p, sqlite_int64 v){
   unsigned char *q = (unsigned char *) p;
   sqlite_uint64 vu = v;
   do{
@@ -56,7 +56,7 @@ int putVarint(char *p, sqlite_int64 v){
 /* Read a 64-bit variable-length integer from memory starting at p[0].
  * Return the number of bytes read, or 0 on error.
  * The value is stored in *v. */
-int getVarint(const char *p, sqlite_int64 *v){
+static int getVarint(const char *p, sqlite_int64 *v){
   const unsigned char *q = (const unsigned char *) p;
   sqlite_uint64 x = 0, y = 1;
   while( (*q & 0x80) == 0x80 ){
@@ -72,7 +72,7 @@ int getVarint(const char *p, sqlite_int64 *v){
   return (int) (q - (unsigned char *)p);
 }
 
-int getVarint32(const char *p, int *pi){
+static int getVarint32(const char *p, int *pi){
  sqlite_int64 i;
  int ret = getVarint(p, &i);
  *pi = (int) i;
@@ -544,7 +544,7 @@ typedef enum fulltext_statement {
 ** query joins a virtual table to itself?  If so perhaps we should
 ** move some of these to the cursor object.
 */
-const char *fulltext_zStatement[MAX_STMT] = {
+static const char *fulltext_zStatement[MAX_STMT] = {
   /* CONTENT_INSERT */ "insert into %_content (rowid, content) values (?, ?)",
   /* CONTENT_SELECT */ "select content from %_content where rowid = ?",
   /* CONTENT_DELETE */ "delete from %_content where rowid = ?",
@@ -1117,7 +1117,7 @@ typedef struct Query {
   QueryTerm *pTerm;
 } Query;
 
-void query_add(Query *q, int is_phrase, const char *zTerm){
+static void query_add(Query *q, int is_phrase, const char *zTerm){
   QueryTerm *t;
   ++q->nTerms;
   q->pTerm = realloc(q->pTerm, q->nTerms * sizeof(q->pTerm[0]));
@@ -1126,7 +1126,7 @@ void query_add(Query *q, int is_phrase, const char *zTerm){
   t->zTerm = zTerm;
 }
     
-void query_free(Query *q){
+static void query_free(Query *q){
   int i;
   for(i = 0; i < q->nTerms; ++i){
     free((void *) q->pTerm[i].zTerm);
@@ -1134,9 +1134,9 @@ void query_free(Query *q){
   free(q->pTerm);
 }
 
-int tokenize_segment(sqlite3_tokenizer *pTokenizer,
-                     const char *zQuery, int in_phrase,
-                     Query *pQuery){
+static int tokenize_segment(sqlite3_tokenizer *pTokenizer,
+                            const char *zQuery, int in_phrase,
+                            Query *pQuery){
   sqlite3_tokenizer_module *pModule = pTokenizer->pModule;
   sqlite3_tokenizer_cursor *pCursor;
   int is_first = 1;
@@ -1162,7 +1162,7 @@ int tokenize_segment(sqlite3_tokenizer *pTokenizer,
 }
 
 /* Parse a query string, yielding a Query object. */
-int parse_query(fulltext_vtab *v, const char *zQuery, Query *pQuery){
+static int parse_query(fulltext_vtab *v, const char *zQuery, Query *pQuery){
   char *zQuery1 = string_dup(zQuery);
   int in_phrase = 0;
   char *s = zQuery1;

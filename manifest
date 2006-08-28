@@ -1,5 +1,5 @@
-C Make\shi-bit\scharacters\sdelimiters.\s\sThis\sis\sa\sstopgap\suntil\sthe\stokenizer\nand\sfulltext.c\srecognize\sUTF-8\scorrectly.\s(CVS\s3370)
-D 2006-08-28T20:08:57
+C Make\sstatic\ssome\ssymbols\swhich\sshouldn't\shave\sbeen\sexported.\s(CVS\s3371)
+D 2006-08-28T23:46:02
 F Makefile.in 8e7f9ecebab2c6e0f3db20ff129a8f9405ab64f8
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -21,7 +21,7 @@ F ext/README.txt 913a7bd3f4837ab14d7e063304181787658b14e1
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
 F ext/fts1/ft_hash.c 3927bd880e65329bdc6f506555b228b28924921b
 F ext/fts1/ft_hash.h 1a35e654a235c2c662d3ca0dfc3138ad60b8b7d5
-F ext/fts1/fulltext.c 2bf058ab2835531fa5fee4242c51eda19cfe88a7
+F ext/fts1/fulltext.c d935e600d87bc86b7d64f55c7520ea41d6034c5c
 F ext/fts1/fulltext.h 08525a47852d1d62a0be81d3fc3fe2d23b094efd
 F ext/fts1/simple_tokenizer.c 22501944cd77686be592382692051514ef228ec6
 F ext/fts1/tokenizer.h 0c53421b832366d20d720d21ea3e1f6e66a36ef9
@@ -388,7 +388,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 4a74838eac5b939058c8aebef30113c5bdb354e5
-R 4dd7009178412e6bfe81d5289193af1c
+P ca850d3d80f67672172d11392fcdf60bfbb94c02
+R f983b00fc1cd0fd5bcd1ed5dd6fe41c1
 U shess
-Z 847ff5b71d65a558b08ddb2fff6d70a4
+Z a627c5db236e5e7e63a2a59bb168ce0e
