@@ -61,11 +61,11 @@ static int simpleCreate(
   if( argc>1 ){
     t->zDelim = string_dup(argv[1]);
   } else {
-    /* Build a string of non-alphanumeric ASCII characters */
-    char zDelim[128];               /* nul-terminated, so nul not a member */
+    /* Build a string excluding alphanumeric ASCII characters */
+    char zDelim[256];               /* nul-terminated, so nul not a member */
     int i, j;
-    for(i=1, j=0; i<0x80; i++){
-      if( !isalnum(i) ){
+    for(i=1, j=0; i<0x100; i++){
+      if( i>=0x80 || !isalnum(i) ){
         zDelim[j++] = i;
       }
     }
