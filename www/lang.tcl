@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the lang-*.html files.
 #
-set rcsid {$Id: lang.tcl,v 1.115 2006/08/16 22:58:50 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.116 2006/08/29 13:08:38 drh Exp $}
 source common.tcl
 
 if {[llength $argv]>0} {
@@ -563,6 +563,18 @@ keyword AUTOINCREMENT.  The AUTOINCREMENT keyword modified the way
 that B-Tree keys are automatically generated.  Additional detail
 on automatic B-Tree key generation is available
 <a href="autoinc.html">separately</a>.</p>
+
+<p>According to the SQL standard, PRIMARY KEY should imply NOT NULL.
+Unfortunately, due to a long-standing coding oversight, this is not 
+the case in SQLite.  SQLite allows NULL values
+in a PRIMARY KEY column.  We could change SQLite to conform to the
+standard (and we might do so in the future), but by the time the
+oversight was discovered, SQLite was in such wide use that we feared
+breaking legacy code if we fixed the problem.  So for now we have
+chosen to contain allowing NULLs in PRIMARY KEY columns.
+Developers should be aware, however, that we may change SQLite to
+conform to the SQL standard in future and should design new programs
+accordingly.</p>
 
 <p>If the "TEMP" or "TEMPORARY" keyword occurs in between "CREATE"
 and "TABLE" then the table that is created is only visible
