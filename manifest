@@ -1,4 +1,4 @@
-C Bug\sfix:\s\sGet\sINSERT\sINTO\s...\sSELECT\sworking\swhen\sthe\starget\sis\sa\svirtual\ntable.\s(CVS\s3374)
+C Bug\sfix:\s\sGet\sINSERT\sINTO\s...\sSELECT\sworking\swhen\sthe\starget\sis\sa\svirtual\ntable.\s(CVS\s3375)
 D 2006-08-29T18:46:14
 F Makefile.in 8e7f9ecebab2c6e0f3db20ff129a8f9405ab64f8
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
@@ -389,7 +389,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P b99d845ef4776595022c6fb855e582cfe6ef2f9f
+P 7912485705c96e365a942932bb12d5b9113c9885
 R 4352118a59289a52b86b658cdde17fb3
 U drh
-Z 9d7f68330daac70a81faf03194d4ceba
+Z 5cfb5a1d8f96c7ba03546ff34401bf1f
