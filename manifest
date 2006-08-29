@@ -1,5 +1,5 @@
-C Document\sthe\sfact\sthat\sSQLite\sallows\sNULL\svalues\sin\sPRIMARY\sKEY\scolumns\nand\sthe\sfact\sthat\swe\smight\sdesign\sto\schange\sthis\sin\sthe\sfuture.\nTicket\s#518.\s(CVS\s3373)
-D 2006-08-29T13:08:38
+C Bug\sfix:\s\sGet\sINSERT\sINTO\s...\sSELECT\sworking\swhen\sthe\starget\sis\sa\svirtual\ntable.\s(CVS\s3374)
+D 2006-08-29T18:46:14
 F Makefile.in 8e7f9ecebab2c6e0f3db20ff129a8f9405ab64f8
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -54,7 +54,7 @@ F src/expr.c 0546cc60f08c426d96092dea0789d085aed3580e
 F src/func.c dd9cea8ed3246d7a4c49fd01034d470d5702b8b0
 F src/hash.c 449f3d6620193aa557f5d86cbc5cc6b87702b185
 F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
-F src/insert.c 924d3cdd59a47d4a506fd13420b9c0b32d5ed377
+F src/insert.c e9526ced19978a55687b55faea969b6ff2a53fb4
 F src/legacy.c 10e01a902d7f2c872c7922fedf19a2df70935857
 F src/loadext.c 7a41142266dd2570fedf00108e1772047f98a673
 F src/main.c 96ab5f29fe903aa8a28f6e1463a3b8245bf1c416
@@ -312,6 +312,7 @@ F test/vtab4.test 4b4293341443839ef6dc02f8d9e614702a6c67ff
 F test/vtab5.test 9fb8f335651afe8f870011e2f68e5b00c5ad03cd
 F test/vtab6.test ec0036f29f8a803da9935206f2d9d1b6a8026392
 F test/vtab7.test 5f9ef9fb84733e928d5d0267c821072561b198d5
+F test/vtab9.test 87afba55339b0c255e9697fbfb5bfb6120505d9d
 F test/vtab_err.test c07f7665dd90bc757f80f05e7951d826eda9bc48
 F test/where.test ee7c9a6659b07e1ee61177f6e7ff71565ee2c9df
 F test/where2.test a16476a5913e75cf65b38f2daa6157a6b7791394
@@ -388,7 +389,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 9763b4bfd5f0579f9fb821899ffa8bfe650054d7
-R e72221fee1f8d400d3a9ceae8a3d3fc0
+P b99d845ef4776595022c6fb855e582cfe6ef2f9f
+R 4352118a59289a52b86b658cdde17fb3
 U drh
-Z 7758aacd5468f280d9ccb11e2061d137
+Z 9d7f68330daac70a81faf03194d4ceba
