@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.146 2006/08/19 11:15:20 drh Exp $
+** $Id: shell.c,v 1.147 2006/08/29 12:04:19 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -1653,12 +1653,14 @@ static const char zOptions[] =
   "   -separator 'x'       set output field separator (|)\n"
   "   -nullvalue 'text'    set text string for NULL values\n"
   "   -version             show SQLite version\n"
-  "   -help                show this text, also show dot-commands\n"
 ;
 static void usage(int showDetail){
-  fprintf(stderr, "Usage: %s [OPTIONS] FILENAME [SQL]\n", Argv0);
+  fprintf(stderr,
+      "Usage: %s [OPTIONS] FILENAME [SQL]\n"  
+      "FILENAME is the name of an SQLite database. A new database is created\n"
+      "if the file does not previously exist.\n", Argv0);
   if( showDetail ){
-    fprintf(stderr, "Options are:\n%s", zOptions);
+    fprintf(stderr, "OPTIONS include:\n%s", zOptions);
   }else{
     fprintf(stderr, "Use the -help option for additional information\n");
   }
@@ -1782,7 +1784,7 @@ int main(int argc, char **argv){
     }else if( strcmp(z,"-version")==0 ){
       printf("%s\n", sqlite3_libversion());
       return 0;
-    }else if( strcmp(z,"-help")==0 ){
+    }else if( strcmp(z,"-help")==0 || strcmp(z, "--help")==0 ){
       usage(1);
     }else{
       fprintf(stderr,"%s: unknown option: %s\n", Argv0, z);
