@@ -62,10 +62,10 @@ static int simpleCreate(
     t->zDelim = string_dup(argv[1]);
   } else {
     /* Build a string excluding alphanumeric ASCII characters */
-    char zDelim[256];               /* nul-terminated, so nul not a member */
+    char zDelim[0x80];               /* nul-terminated, so nul not a member */
     int i, j;
-    for(i=1, j=0; i<0x100; i++){
-      if( i>=0x80 || !isalnum(i) ){
+    for(i=1, j=0; i<0x80; i++){
+      if( !isalnum(i) ){
         zDelim[j++] = i;
       }
     }
@@ -134,7 +134,11 @@ static int simpleNext(
         c->zToken = realloc(c->zToken, n+1);
       }
       for(ii=0; ii<n; ii++){
-        c->zToken[ii] = tolower(c->pCurrent[ii]);
+        /* TODO(shess) This needs expansion to handle UTF-8
+        ** case-insensitivity.
+        */
+        char ch = c->pCurrent[ii];
+        c->zToken[ii] = (unsigned char)ch<0x80 ? tolower(ch) : ch;
       }
       c->zToken[n] = '\0';
       *ppToken = c->zToken;

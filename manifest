@@ -1,5 +1,5 @@
-C Bug\sfix:\s\sGet\sINSERT\sINTO\s...\sSELECT\sworking\swhen\sthe\starget\sis\sa\svirtual\ntable.\s(CVS\s3375)
-D 2006-08-29T18:46:14
+C Just\sdon't\srun\stolower()\son\shi-bit\scharacters.\s\sThis\sshouldn't\scause\nus\sto\sbreak\sany\sUTF-8\scode\spoints,\sunless\sthey\swere\salready\sbroken\sin\nthe\sinput.\s(CVS\s3376)
+D 2006-08-30T21:40:30
 F Makefile.in 8e7f9ecebab2c6e0f3db20ff129a8f9405ab64f8
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -23,7 +23,7 @@ F ext/fts1/ft_hash.c 3927bd880e65329bdc6f506555b228b28924921b
 F ext/fts1/ft_hash.h 1a35e654a235c2c662d3ca0dfc3138ad60b8b7d5
 F ext/fts1/fulltext.c d935e600d87bc86b7d64f55c7520ea41d6034c5c
 F ext/fts1/fulltext.h 08525a47852d1d62a0be81d3fc3fe2d23b094efd
-F ext/fts1/simple_tokenizer.c 22501944cd77686be592382692051514ef228ec6
+F ext/fts1/simple_tokenizer.c 1844d72f7194c3fd3d7e4173053911bf0661b70d
 F ext/fts1/tokenizer.h 0c53421b832366d20d720d21ea3e1f6e66a36ef9
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
@@ -389,7 +389,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 7912485705c96e365a942932bb12d5b9113c9885
-R 4352118a59289a52b86b658cdde17fb3
-U drh
-Z 5cfb5a1d8f96c7ba03546ff34401bf1f
+P 7cdc41e748c2d8f9e3d85c07143b8bc343bf2426
+R a3d0c16407fadd186adf26ca579a098c
+U shess
+Z 3d482d971ce8627e2fdb8650b1cf61df
