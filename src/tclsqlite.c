@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.171 2006/08/29 12:04:19 drh Exp $
+** $Id: tclsqlite.c,v 1.172 2006/08/31 15:07:15 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -2075,8 +2075,8 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
 
 #ifdef SQLITE_ENABLE_FTS1
   {
-    extern int fulltext_init(sqlite3*);
-    fulltext_init(p->db);
+    extern int sqlite3Fts1Init(sqlite3*);
+    sqlite3Fts1Init(p->db);
   }
 #endif
 
