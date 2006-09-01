@@ -468,18 +468,15 @@ static void mergeBlock(DocListMerge *m, DocList *pBlock){
   }
 }
 
-static char *string_dup_n(const char *s, int n){
-  char *str = malloc(n + 1);
-  memcpy(str, s, n);
-  str[n] = '\0';
-  return str;
-}
-
 /* Duplicate a string; the caller must free() the returned string.
  * (We don't use strdup() since it's not part of the standard C library and
  * may not be available everywhere.) */
 static char *string_dup(const char *s){
-  return string_dup_n(s, strlen(s));
+  int n = strlen(s);
+  char *str = malloc(n + 1);
+  memcpy(str, s, n);
+  str[n] = '\0';
+  return str;
 }
 
 /* Format a string, replacing each occurrence of the % character with
@@ -673,7 +670,7 @@ static int sql_single_step_statement(fulltext_vtab *v,
 
 /* insert into %_content (rowid, content) values ([rowid], [zContent]) */
 static int content_insert(fulltext_vtab *v, sqlite3_value *rowid,
-                          const char *zContent, int nContent){
+                          const char *pContent, int nContent){
   sqlite3_stmt *s;
   int rc = sql_get_statement(v, CONTENT_INSERT_STMT, &s);
   if( rc!=SQLITE_OK ) return rc;
@@ -681,7 +678,8 @@ static int content_insert(fulltext_vtab *v, sqlite3_value *rowid,
   rc = sqlite3_bind_value(s, 1, rowid);
   if( rc!=SQLITE_OK ) return rc;
 
-  rc = sqlite3_bind_text(s, 2, zContent, nContent, SQLITE_STATIC);
+  assert( nContent>=0 );
+  rc = sqlite3_bind_text(s, 2, pContent, nContent, SQLITE_STATIC);
   if( rc!=SQLITE_OK ) return rc;
 
   return sql_single_step_statement(v, CONTENT_INSERT_STMT, &s);
@@ -690,7 +688,7 @@ static int content_insert(fulltext_vtab *v, sqlite3_value *rowid,
 /* select content from %_content where rowid = [iRow]
  * The caller must delete the returned string. */
 static int content_select(fulltext_vtab *v, sqlite_int64 iRow,
-                          char **pzContent){
+                          char **ppContent, int *pnContent){
   sqlite3_stmt *s;
   int rc = sql_get_statement(v, CONTENT_SELECT_STMT, &s);
   if( rc!=SQLITE_OK ) return rc;
@@ -701,14 +699,16 @@ static int content_select(fulltext_vtab *v, sqlite_int64 iRow,
   rc = sql_step_statement(v, CONTENT_SELECT_STMT, &s);
   if( rc!=SQLITE_ROW ) return rc;
 
-  *pzContent = string_dup((const char *)sqlite3_column_text(s, 0));
+  *pnContent = sqlite3_column_bytes(s, 0);
+  *ppContent = malloc(*pnContent);
+  memcpy(*ppContent, sqlite3_column_blob(s, 0), *pnContent);
 
   /* We expect only one row.  We must execute another sqlite3_step()
    * to complete the iteration; otherwise the table will remain locked. */
   rc = sqlite3_step(s);
   if( rc==SQLITE_DONE ) return SQLITE_OK;
 
-  free(*pzContent);
+  free(*ppContent);
   return rc;
 }
 
@@ -724,10 +724,10 @@ static int content_delete(fulltext_vtab *v, sqlite_int64 iRow){
   return sql_single_step_statement(v, CONTENT_DELETE_STMT, &s);
 }
 
-/* select rowid, doclist from %_term where term = [zTerm] and first = [iFirst]
+/* select rowid, doclist from %_term where term = [pTerm] and first = [iFirst]
  * If found, returns SQLITE_OK; the caller must free the returned doclist.
  * If no rows found, returns SQLITE_ERROR. */
-static int term_select(fulltext_vtab *v, const char *zTerm, int nTerm,
+static int term_select(fulltext_vtab *v, const char *pTerm, int nTerm,
                        sqlite_int64 iFirst,
                        sqlite_int64 *rowid,
                        DocList *out){
@@ -735,7 +735,7 @@ static int term_select(fulltext_vtab *v, const char *zTerm, int nTerm,
   int rc = sql_get_statement(v, TERM_SELECT_STMT, &s);
   if( rc!=SQLITE_OK ) return rc;
 
-  rc = sqlite3_bind_text(s, 1, zTerm, nTerm, SQLITE_TRANSIENT);
+  rc = sqlite3_bind_text(s, 1, pTerm, nTerm, SQLITE_STATIC);
   if( rc!=SQLITE_OK ) return rc;
 
   rc = sqlite3_bind_int64(s, 2, iFirst);
@@ -754,17 +754,17 @@ static int term_select(fulltext_vtab *v, const char *zTerm, int nTerm,
   return rc==SQLITE_DONE ? SQLITE_OK : rc;
 }
 
-/* select max(first) from %_term where term = [zTerm] and first <= [iFirst]
+/* select max(first) from %_term where term = [pTerm] and first <= [iFirst]
  * If found, returns SQLITE_ROW and result in *piResult; if the query returns
  * NULL (meaning no row found) returns SQLITE_DONE.
  */
-static int term_chunk_select(fulltext_vtab *v, const char *zTerm, int nTerm,
+static int term_chunk_select(fulltext_vtab *v, const char *pTerm, int nTerm,
                            sqlite_int64 iFirst, sqlite_int64 *piResult){
   sqlite3_stmt *s;
   int rc = sql_get_statement(v, TERM_CHUNK_SELECT_STMT, &s);
   if( rc!=SQLITE_OK ) return rc;
 
-  rc = sqlite3_bind_text(s, 1, zTerm, nTerm, SQLITE_STATIC);
+  rc = sqlite3_bind_text(s, 1, pTerm, nTerm, SQLITE_STATIC);
   if( rc!=SQLITE_OK ) return rc;
 
   rc = sqlite3_bind_int64(s, 2, iFirst);
@@ -790,14 +790,14 @@ static int term_chunk_select(fulltext_vtab *v, const char *zTerm, int nTerm,
 }
 
 /* insert into %_term (term, first, doclist)
-               values ([zTerm], [iFirst], [doclist]) */
-static int term_insert(fulltext_vtab *v, const char *zTerm, int nTerm,
+               values ([pTerm], [iFirst], [doclist]) */
+static int term_insert(fulltext_vtab *v, const char *pTerm, int nTerm,
                        sqlite_int64 iFirst, DocList *doclist){
   sqlite3_stmt *s;
   int rc = sql_get_statement(v, TERM_INSERT_STMT, &s);
   if( rc!=SQLITE_OK ) return rc;
 
-  rc = sqlite3_bind_text(s, 1, zTerm, nTerm, SQLITE_STATIC);
+  rc = sqlite3_bind_text(s, 1, pTerm, nTerm, SQLITE_STATIC);
   if( rc!=SQLITE_OK ) return rc;
 
   rc = sqlite3_bind_int64(s, 2, iFirst);
@@ -816,8 +816,7 @@ static int term_update(fulltext_vtab *v, sqlite_int64 rowid,
   int rc = sql_get_statement(v, TERM_UPDATE_STMT, &s);
   if( rc!=SQLITE_OK ) return rc;
 
-  rc = sqlite3_bind_blob(s, 1, doclist->pData, doclist->nData,
-                         SQLITE_STATIC);
+  rc = sqlite3_bind_blob(s, 1, doclist->pData, doclist->nData, SQLITE_STATIC);
   if( rc!=SQLITE_OK ) return rc;
 
   rc = sqlite3_bind_int64(s, 2, rowid);
@@ -1076,7 +1075,7 @@ static int term_select_doclist(fulltext_vtab *v, const char *pTerm, int nTerm,
  * the caller should initialize *pSelect to NULL before the first call.
  */
 static int query_merge(fulltext_vtab *v, sqlite3_stmt **pSelect,
-                       const char *zTerm,
+                       const char *pTerm, int nTerm,
                        DocList *pIn, int iOffset, DocList *out){
   int rc;
   DocListMerge merge;
@@ -1087,7 +1086,7 @@ static int query_merge(fulltext_vtab *v, sqlite3_stmt **pSelect,
       return SQLITE_OK;
   }
 
-  rc = term_select_doclist(v, zTerm, -1, pSelect);
+  rc = term_select_doclist(v, pTerm, nTerm, pSelect);
   if( rc!=SQLITE_ROW && rc!=SQLITE_DONE ) return rc;
 
   mergeInit(&merge, pIn, iOffset, out);
@@ -1110,7 +1109,8 @@ static int query_merge(fulltext_vtab *v, sqlite3_stmt **pSelect,
 
 typedef struct QueryTerm {
   int is_phrase;    /* true if this term begins a new phrase */
-  const char *zTerm;
+  char *pTerm;
+  int nTerm;
 } QueryTerm;
 
 /* A parsed query.
@@ -1128,44 +1128,46 @@ typedef struct Query {
   QueryTerm *pTerm;
 } Query;
 
-static void query_add(Query *q, int is_phrase, const char *zTerm){
+static void query_add(Query *q, int is_phrase, const char *pTerm, int nTerm){
   QueryTerm *t;
   ++q->nTerms;
   q->pTerm = realloc(q->pTerm, q->nTerms * sizeof(q->pTerm[0]));
   t = &q->pTerm[q->nTerms - 1];
   t->is_phrase = is_phrase;
-  t->zTerm = zTerm;
+  t->pTerm = malloc(nTerm);
+  memcpy(t->pTerm, pTerm, nTerm);
+  t->nTerm = nTerm;
 }
     
 static void query_free(Query *q){
   int i;
   for(i = 0; i < q->nTerms; ++i){
-    free((void *) q->pTerm[i].zTerm);
+    free(q->pTerm[i].pTerm);
   }
   free(q->pTerm);
 }
 
 static int tokenize_segment(sqlite3_tokenizer *pTokenizer,
-                            const char *zQuery, int in_phrase,
+                            const char *pSegment, int nSegment, int in_phrase,
                             Query *pQuery){
   sqlite3_tokenizer_module *pModule = pTokenizer->pModule;
   sqlite3_tokenizer_cursor *pCursor;
   int is_first = 1;
   
-  int rc = pModule->xOpen(pTokenizer, zQuery, -1, &pCursor);
+  int rc = pModule->xOpen(pTokenizer, pSegment, nSegment, &pCursor);
   if( rc!=SQLITE_OK ) return rc;
   pCursor->pTokenizer = pTokenizer;
 
   while( 1 ){
-    const char *zToken;
+    const char *pToken;
     int nToken, iStartOffset, iEndOffset, dummy_pos;
 
     rc = pModule->xNext(pCursor,
-                        &zToken, &nToken,
+                        &pToken, &nToken,
                         &iStartOffset, &iEndOffset,
                         &dummy_pos);
     if( rc!=SQLITE_OK ) break;
-    query_add(pQuery, !in_phrase || is_first, string_dup_n(zToken, nToken));
+    query_add(pQuery, !in_phrase || is_first, pToken, nToken);
     is_first = 0;
   }
 
@@ -1173,35 +1175,30 @@ static int tokenize_segment(sqlite3_tokenizer *pTokenizer,
 }
 
 /* Parse a query string, yielding a Query object. */
-static int parse_query(fulltext_vtab *v, const char *zQuery, Query *pQuery){
-  char *zQuery1 = string_dup(zQuery);
-  int in_phrase = 0;
-  char *s = zQuery1;
+static int parse_query(fulltext_vtab *v, const char *pInput, int nInput,
+                       Query *pQuery){
+  int iInput, in_phrase = 0;
+
+  if( nInput<0 ) nInput = strlen(pInput);
   pQuery->nTerms = 0;
   pQuery->pTerm = NULL;
 
-  while( *s ){
-    char *t = s;
-    while( *t ){
-      if( *t=='"' ){
-        *t++ = '\0';
-        break;
-      }
-      ++t;
+  for(iInput=0; iInput<nInput; ++iInput){
+    int i;
+    for(i=iInput; i<nInput && pInput[i]!='"'; ++i)
+      ;
+    if( i>iInput ){
+      tokenize_segment(v->pTokenizer, pInput+iInput, i-iInput, in_phrase,
+                       pQuery);
     }
-    if( *s ){
-      tokenize_segment(v->pTokenizer, s, in_phrase, pQuery);
-    }
-    s = t;
+    iInput = i;
     in_phrase = !in_phrase;
   }
-  
-  free(zQuery1);
   return SQLITE_OK;
 }
 
 /* Perform a full-text query; return a list of documents in [pResult]. */
-static int fulltext_query(fulltext_vtab *v, const char *zQuery,
+static int fulltext_query(fulltext_vtab *v, const char *pInput, int nInput,
                           DocList **pResult){
   Query q;
   int phrase_start = -1;
@@ -1209,7 +1206,7 @@ static int fulltext_query(fulltext_vtab *v, const char *zQuery,
   sqlite3_stmt *pSelect = NULL;
   DocList *d = NULL;
 
-  int rc = parse_query(v, zQuery, &q);
+  int rc = parse_query(v, pInput, nInput, &q);
   if( rc!=SQLITE_OK ) return rc;
 
   /* Merge terms. */
@@ -1221,7 +1218,8 @@ static int fulltext_query(fulltext_vtab *v, const char *zQuery,
     if( q.pTerm[i].is_phrase ){
       phrase_start = i;
     }
-    rc = query_merge(v, &pSelect, q.pTerm[i].zTerm, d, i - phrase_start, next);
+    rc = query_merge(v, &pSelect, q.pTerm[i].pTerm, q.pTerm[i].nTerm,
+                     d, i-phrase_start, next);
     if( rc!=SQLITE_OK ) break;
     if( d!=NULL ){
       docListDelete(d);
@@ -1254,7 +1252,7 @@ static int fulltextFilter(sqlite3_vtab_cursor *pCursor,
       const char *zQuery = (const char *)sqlite3_value_text(argv[0]);
       DocList *pResult;
       assert( argc==1 );
-      rc = fulltext_query(v, zQuery, &pResult);
+      rc = fulltext_query(v, zQuery, -1, &pResult);
       if( rc!=SQLITE_OK ) return rc;
       readerInit(&c->result, pResult);
       zStatement = "select rowid, content from %_content where rowid = ?";
@@ -1295,15 +1293,18 @@ static int fulltextRowid(sqlite3_vtab_cursor *pCursor, sqlite_int64 *pRowid){
   return SQLITE_OK;
 }
 
-/* Build a hash table containing all terms in zText. */
+/* Build a hash table containing all terms in pText. */
 static int build_terms(fts1Hash *terms, sqlite3_tokenizer *pTokenizer,
-                       const char *zText, sqlite_int64 iDocid){
+                       const char *pText, int nText, sqlite_int64 iDocid){
   sqlite3_tokenizer_cursor *pCursor;
   const char *pToken;
   int nTokenBytes;
   int iStartOffset, iEndOffset, iPosition;
+  int rc;
 
-  int rc = pTokenizer->pModule->xOpen(pTokenizer, zText, -1, &pCursor);
+  assert( nText>=0 );
+
+  rc = pTokenizer->pModule->xOpen(pTokenizer, pText, nText, &pCursor);
   if( rc!=SQLITE_OK ) return rc;
 
   pCursor->pTokenizer = pTokenizer;
@@ -1339,17 +1340,17 @@ err:
   return rc;
 }
 /* Update the %_terms table to map the term [zTerm] to the given rowid. */
-static int index_insert_term(fulltext_vtab *v, const char *zTerm, int nTerm,
+static int index_insert_term(fulltext_vtab *v, const char *pTerm, int nTerm,
                              sqlite_int64 iDocid, DocList *p){
   sqlite_int64 iFirst;
   sqlite_int64 iIndexRow;
   DocList doclist;
 
-  int rc = term_chunk_select(v, zTerm, nTerm, iDocid, &iFirst);
+  int rc = term_chunk_select(v, pTerm, nTerm, iDocid, &iFirst);
   if( rc==SQLITE_DONE ){
     docListInit(&doclist, DL_POSITIONS_OFFSETS, 0, 0);
     if( docListUpdate(&doclist, iDocid, p) ){
-      rc = term_insert(v, zTerm, nTerm, iDocid, &doclist);
+      rc = term_insert(v, pTerm, nTerm, iDocid, &doclist);
       docListDestroy(&doclist);
       return rc;
     }
@@ -1359,7 +1360,7 @@ static int index_insert_term(fulltext_vtab *v, const char *zTerm, int nTerm,
 
   /* This word is in the index; add this document ID to its blob. */
 
-  rc = term_select(v, zTerm, nTerm, iFirst, &iIndexRow, &doclist);
+  rc = term_select(v, pTerm, nTerm, iFirst, &iIndexRow, &doclist);
   if( rc!=SQLITE_OK ) return rc;
 
   if( docListUpdate(&doclist, iDocid, p) ){
@@ -1367,7 +1368,7 @@ static int index_insert_term(fulltext_vtab *v, const char *zTerm, int nTerm,
     if( doclist.nData>CHUNK_MAX ){
       DocList half;
       if( docListSplit(&doclist, &half) ){
-        rc = term_insert(v, zTerm, nTerm, firstDocid(&half), &half);
+        rc = term_insert(v, pTerm, nTerm, firstDocid(&half), &half);
         docListDestroy(&half);
         if( rc!=SQLITE_OK ) goto err;
       }
@@ -1382,19 +1383,22 @@ err:
 
 /* Insert a row into the full-text index; set *piRowid to be the ID of the
  * new row. */
-static int index_insert(fulltext_vtab *v,
-                        sqlite3_value *pRequestRowid, const char *zText,
+static int index_insert(fulltext_vtab *v, sqlite3_value *pRequestRowid,
+                        const char *pText, int nText,
                         sqlite_int64 *piRowid){
   fts1Hash terms;  /* maps term string -> PosList */
   fts1HashElem *e;
+  int rc;
 
-  int rc = content_insert(v, pRequestRowid, zText, -1);
+  assert( nText>=0 );
+
+  rc = content_insert(v, pRequestRowid, pText, nText);
   if( rc!=SQLITE_OK ) return rc;
   *piRowid = sqlite3_last_insert_rowid(v->db);
 
-  if( !zText ) return SQLITE_OK;   /* nothing to index */
+  if( !pText || !nText ) return SQLITE_OK;   /* nothing to index */
 
-  rc = build_terms(&terms, v->pTokenizer, zText, *piRowid);
+  rc = build_terms(&terms, v->pTokenizer, pText, nText, *piRowid);
   if( rc!=SQLITE_OK ) return rc;
 
   for(e=fts1HashFirst(&terms); e; e=fts1HashNext(e)){
@@ -1411,16 +1415,19 @@ static int index_insert(fulltext_vtab *v,
   return rc;
 }
 
-static int index_delete_term(fulltext_vtab *v, const char *zTerm, int nTerm,
+static int index_delete_term(fulltext_vtab *v, const char *pTerm, int nTerm,
                              sqlite_int64 iDocid){
   sqlite_int64 iFirst;
   sqlite_int64 iIndexRow;
   DocList doclist;
+  int rc;
 
-  int rc = term_chunk_select(v, zTerm, nTerm, iDocid, &iFirst);
+  assert( nTerm>=0 );
+
+  rc = term_chunk_select(v, pTerm, nTerm, iDocid, &iFirst);
   if( rc!=SQLITE_ROW ) return SQLITE_ERROR;
 
-  rc = term_select(v, zTerm, nTerm, iFirst, &iIndexRow, &doclist);
+  rc = term_select(v, pTerm, nTerm, iFirst, &iIndexRow, &doclist);
   if( rc!=SQLITE_OK ) return rc;
 
   if( docListUpdate(&doclist, iDocid, NULL) ){
@@ -1436,15 +1443,16 @@ static int index_delete_term(fulltext_vtab *v, const char *zTerm, int nTerm,
 
 /* Delete a row from the full-text index. */
 static int index_delete(fulltext_vtab *v, sqlite_int64 iRow){
-  char *zText;
+  char *pText;
+  int nText;
   fts1Hash terms;
   fts1HashElem *e;
 
-  int rc = content_select(v, iRow, &zText);
+  int rc = content_select(v, iRow, &pText, &nText);
   if( rc!=SQLITE_OK ) return rc;
 
-  rc = build_terms(&terms, v->pTokenizer, zText, iRow);
-  free(zText);
+  rc = build_terms(&terms, v->pTokenizer, pText, nText, iRow);
+  free(pText);
   if( rc!=SQLITE_OK ) return rc;
 
   for(e=fts1HashFirst(&terms); e; e=fts1HashNext(e)){
@@ -1474,7 +1482,9 @@ static int fulltextUpdate(sqlite3_vtab *pVtab, int nArg, sqlite3_value **ppArg,
 
   assert( nArg==3 );    /* ppArg[1] = rowid, ppArg[2] = content */
   return index_insert(v, ppArg[1],
-                      (const char *)sqlite3_value_text(ppArg[2]), pRowid);
+                      sqlite3_value_blob(ppArg[2]),
+                      sqlite3_value_bytes(ppArg[2]),
+                      pRowid);
 }
 
 static sqlite3_module fulltextModule = {
