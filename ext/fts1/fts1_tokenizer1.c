@@ -29,34 +29,26 @@
 
 #include "fts1_tokenizer.h"
 
-/* Duplicate a string; the caller must free() the returned string.
- * (We don't use strdup() since it's not part of the standard C library and
- * may not be available everywhere.) */
-/* TODO(shess) Copied from fulltext.c, consider util.c for such
-** things. */
-static char *string_dup(const char *s){
-  char *str = malloc(strlen(s) + 1);
-  strcpy(str, s);
-  return str;
-}
-
 typedef struct simple_tokenizer {
   sqlite3_tokenizer base;
-  const char *zDelim;          /* token delimiters */
+  char delim[128];             /* flag ASCII delimiters */
 } simple_tokenizer;
 
 typedef struct simple_tokenizer_cursor {
   sqlite3_tokenizer_cursor base;
   const char *pInput;          /* input we are tokenizing */
   int nBytes;                  /* size of the input */
-  const char *pCurrent;        /* current position in pInput */
+  int iOffset;                 /* current position in pInput */
   int iToken;                  /* index of next token to be returned */
-  char *zToken;                /* storage for current token */
-  int nTokenBytes;             /* actual size of current token */
+  char *pToken;                /* storage for current token */
   int nTokenAllocated;         /* space allocated to zToken buffer */
 } simple_tokenizer_cursor;
 
 static sqlite3_tokenizer_module simpleTokenizerModule;/* forward declaration */
+
+static int isDelim(simple_tokenizer *t, unsigned char c){
+  return c<0x80 && t->delim[c];
+}
 
 static int simpleCreate(
   int argc, const char **argv,
@@ -64,26 +56,29 @@ static int simpleCreate(
 ){
   simple_tokenizer *t;
 
-  t = (simple_tokenizer *) malloc(sizeof(simple_tokenizer));
+  t = (simple_tokenizer *) calloc(sizeof(simple_tokenizer), 1);
   /* TODO(shess) Delimiters need to remain the same from run to run,
   ** else we need to reindex.  One solution would be a meta-table to
   ** track such information in the database, then we'd only want this
   ** information on the initial create.
   */
   if( argc>1 ){
-    t->zDelim = string_dup(argv[1]);
-  } else {
-    /* Build a string excluding alphanumeric ASCII characters */
-    char zDelim[0x80];               /* nul-terminated, so nul not a member */
-    int i, j;
-    for(i=1, j=0; i<0x80; i++){
-      if( !isalnum(i) ){
-        zDelim[j++] = i;
+    int i, n = strlen(argv[1]);
+    for(i=0; i<n; i++){
+      unsigned char ch = argv[1][i];
+      /* We explicitly don't support UTF-8 delimiters for now. */
+      if( ch>=0x80 ){
+        free(t);
+        return SQLITE_ERROR;
       }
+      t->delim[ch] = 1;
     }
-    zDelim[j++] = '\0';
-    assert( j<=sizeof(zDelim) );
-    t->zDelim = string_dup(zDelim);
+  } else {
+    /* Mark non-alphanumeric ASCII characters as delimiters */
+    int i;
+    for(i=1; i<0x80; i++){
+      t->delim[i] = !isalnum(i);
+    }
   }
 
   *ppTokenizer = &t->base;
@@ -91,11 +86,7 @@ static int simpleCreate(
 }
 
 static int simpleDestroy(sqlite3_tokenizer *pTokenizer){
-  simple_tokenizer *t = (simple_tokenizer *) pTokenizer;
-
-  free((void *) t->zDelim);
-  free(t);
-
+  free(pTokenizer);
   return SQLITE_OK;
 }
 
@@ -109,10 +100,9 @@ static int simpleOpen(
   c = (simple_tokenizer_cursor *) malloc(sizeof(simple_tokenizer_cursor));
   c->pInput = pInput;
   c->nBytes = nBytes<0 ? (int) strlen(pInput) : nBytes;
-  c->pCurrent = c->pInput;        /* start tokenizing at the beginning */
+  c->iOffset = 0;                 /* start tokenizing at the beginning */
   c->iToken = 0;
-  c->zToken = NULL;               /* no space allocated, yet. */
-  c->nTokenBytes = 0;
+  c->pToken = NULL;               /* no space allocated, yet. */
   c->nTokenAllocated = 0;
 
   *ppCursor = &c->base;
@@ -121,12 +111,8 @@ static int simpleOpen(
 
 static int simpleClose(sqlite3_tokenizer_cursor *pCursor){
   simple_tokenizer_cursor *c = (simple_tokenizer_cursor *) pCursor;
-
-  if( NULL!=c->zToken ){
-    free(c->zToken);
-  }
+  free(c->pToken);
   free(c);
-
   return SQLITE_OK;
 }
 
@@ -137,35 +123,42 @@ static int simpleNext(
 ){
   simple_tokenizer_cursor *c = (simple_tokenizer_cursor *) pCursor;
   simple_tokenizer *t = (simple_tokenizer *) pCursor->pTokenizer;
-  int ii;
+  unsigned char *p = (unsigned char *)c->pInput;
 
-  while( c->pCurrent-c->pInput<c->nBytes ){
-    int n = (int) strcspn(c->pCurrent, t->zDelim);
-    if( n>0 ){
-      if( n+1>c->nTokenAllocated ){
-        c->zToken = realloc(c->zToken, n+1);
+  while( c->iOffset<c->nBytes ){
+    int iStartOffset;
+
+    /* Scan past delimiter characters */
+    while( c->iOffset<c->nBytes && isDelim(t, p[c->iOffset]) ){
+      c->iOffset++;
+    }
+
+    /* Count non-delimiter characters. */
+    iStartOffset = c->iOffset;
+    while( c->iOffset<c->nBytes && !isDelim(t, p[c->iOffset]) ){
+      c->iOffset++;
+    }
+
+    if( c->iOffset>iStartOffset ){
+      int i, n = c->iOffset-iStartOffset;
+      if( n>c->nTokenAllocated ){
+        c->pToken = realloc(c->pToken, n);
       }
-      for(ii=0; ii<n; ii++){
+      for(i=0; i<n; i++){
         /* TODO(shess) This needs expansion to handle UTF-8
         ** case-insensitivity.
         */
-        char ch = c->pCurrent[ii];
-        c->zToken[ii] = (unsigned char)ch<0x80 ? tolower(ch) : ch;
+        unsigned char ch = p[iStartOffset+i];
+        c->pToken[i] = ch<0x80 ? tolower(ch) : ch;
       }
-      c->zToken[n] = '\0';
-      *ppToken = c->zToken;
+      *ppToken = c->pToken;
       *pnBytes = n;
-      *piStartOffset = (int) (c->pCurrent-c->pInput);
-      *piEndOffset = *piStartOffset+n;
+      *piStartOffset = iStartOffset;
+      *piEndOffset = c->iOffset;
       *piPosition = c->iToken++;
-      c->pCurrent += n + 1;
 
       return SQLITE_OK;
     }
-    c->pCurrent += n + 1;
-    /* TODO(shess) could strspn() to skip delimiters en masse.  Needs
-    ** to happen in two places, though, which is annoying.
-    */
   }
   return SQLITE_DONE;
 }
