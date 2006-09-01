@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE TABLE statement.
 #
-# $Id: table.test,v 1.45 2006/03/29 00:24:07 drh Exp $
+# $Id: table.test,v 1.46 2006/09/01 15:49:06 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -565,15 +565,14 @@ do_test table-13.1 {
   }
 } {}
 set i 0
-foreach {date time} {
-  1976-07-04 12:00:00
-  1994-04-16 14:00:00
-  2000-01-01 00:00:00
-  2003-12-31 12:34:56
+foreach {date time seconds} {
+  1976-07-04 12:00:00 205329600
+  1994-04-16 14:00:00 766504800
+  2000-01-01 00:00:00 946684800
+  2003-12-31 12:34:56 1072874096
 } {
   incr i
-  set sqlite_current_time [clock scan "$date $time" -gmt 1]
-  # set sqlite_current_time [execsql "SELECT strftime('%s','$date $time')"]
+  set sqlite_current_time $seconds
   do_test table-13.2.$i {
     execsql "
       INSERT INTO tablet8(a) VALUES($i);

@@ -15,7 +15,7 @@
 # interface is pretty well tested.  This file contains some addition
 # tests for fringe issues that the main test suite does not cover.
 #
-# $Id: tclsqlite.test,v 1.55 2006/07/17 00:02:46 drh Exp $
+# $Id: tclsqlite.test,v 1.56 2006/09/01 15:49:06 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -325,11 +325,11 @@ do_test tcl-9.1 {
   execsql {SELECT typeof(ret_str())}
 } {text}
 do_test tcl-9.2 {
-  db function ret_dbl {return [expr {[clock seconds]*0.5}]}
+  db function ret_dbl {return [expr {rand()*0.5}]}
   execsql {SELECT typeof(ret_dbl())}
 } {real}
 do_test tcl-9.3 {
-  db function ret_int {clock seconds}
+  db function ret_int {return [expr {int(rand()*200)}]}
   execsql {SELECT typeof(ret_int())}
 } {integer}
 

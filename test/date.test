@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing date and time functions.
 #
-# $Id: date.test,v 1.14 2006/01/09 00:18:03 drh Exp $
+# $Id: date.test,v 1.15 2006/09/01 15:49:06 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -139,8 +139,9 @@ datetest 3.16 "strftime('[repeat 200 %Y]','2003-10-31')" [repeat 200 2003]
 datetest 3.17 "strftime('[repeat 200 abc%m123]','2003-10-31')" \
     [repeat 200 abc10123]
 
-set now [clock format [clock seconds] -format "%Y-%m-%d" -gmt 1]
-datetest 4.1 {date('now')} $now
+set sqlite_current_time 1157124367
+datetest 4.1 {date('now')} {2006-09-01}
+set sqlite_current_time 0
 
 datetest 5.1 {datetime('1994-04-16 14:00:00 +05:00')} {1994-04-16 09:00:00}
 datetest 5.2 {datetime('1994-04-16 14:00:00 -05:15')} {1994-04-16 19:15:00}
@@ -152,7 +153,12 @@ datetest 5.5 {datetime('1994-04-16 14:00:00 -11:60')} NULL
 # if the localtime is in the US Eastern Time (the time in Charlotte, NC
 # and in New York.)
 #
-if {[clock scan [clock format 0 -format {%b %d, %Y %H:%M:%S}] -gmt 1]==-18000} {
+set tzoffset [db one {
+  SELECT CAST(24*(julianday('2006-09-01') -
+                  julianday('2006-09-01','localtime'))+0.5
+              AS INT)
+}]
+if {$tzoffset==4} {
   datetest 6.1 {datetime('2000-10-29 05:59:00','localtime')}\
       {2000-10-29 01:59:00}
   datetest 6.2 {datetime('2000-10-29 06:00:00','localtime')}\
