@@ -1,6 +1,6 @@
-C Remove\suse\sof\sthe\s"clock"\scommand\sin\sthe\stest\ssuite\sso\sthat\sthe\stests\nwill\srun\sin\sTcl8.5.\s\sTicket\s#1445.\s(CVS\s3380)
-D 2006-09-01T15:49:06
-F Makefile.in 8e7f9ecebab2c6e0f3db20ff129a8f9405ab64f8
+C Automatically\scompute\sthe\ssqlite3.def\sand\stclsqlite3.def\sfiles\swhen\nbuilding\swindows\sDLLs.\s\sThis\swill\s(hopefully)\skeep\sthe\s.def\sfiles\sin\nperfect\ssynchronization\swith\sthe\sDLLs.\s\sTicket\s#1951.\s(CVS\s3381)
+D 2006-09-01T17:06:20
+F Makefile.in 659b63368cfbb95a224c9d2f2a9897802d96a4ea
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
 F VERSION ef6abd4b2095b0f378b428ed251e16f0213fcf3f
@@ -33,8 +33,8 @@ F ext/fts1/simple_tokenizer.c 1844d72f7194c3fd3d7e4173053911bf0661b70d
 F ext/fts1/tokenizer.h 0c53421b832366d20d720d21ea3e1f6e66a36ef9
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
-F main.mk 22a0c92f24ffc377c41ac9d7d63ae3cbb813e532
-F mkdll.sh 919df5efde876194e3102c6ebc60657d38949909
+F main.mk d37d13489426c7a5277cd5944e7487120f9b4ece
+F mkdll.sh 7e2324f53504fa89121f10da79cbc709fdd7c596
 F mkopcodec.awk bd46ad001c98dfbab07b1713cb8e692fa0e5415d
 F mkopcodeh.awk cde995d269aa06c94adbf6455bea0acedb913fa5
 F mkso.sh 125868def279650a07d3f0f5e8476fecf99613fd
@@ -395,7 +395,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 5844db1aa9c23a005c88104b084f68afb21891c7
-R 765da857e431aa5621e7d9277521435a
+P bedbac54db173ceb74bd78acd021209f28aa30a8
+R 95867c71124f856bb75de299ad025124
 U drh
-Z 7b02ae26a0272b8886b39369de36f0d1
+Z 2f626a5cf47e2b61edd21d8619c7423b

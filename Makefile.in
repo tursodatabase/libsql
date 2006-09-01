@@ -282,7 +282,6 @@ target_source:	$(SRC) parse.c opcodes.c keywordhash.h $(VDBEHDR)
 	cp $(SRC) $(VDBEHDR) tsrc
 	rm tsrc/sqlite.h.in tsrc/parse.y
 	cp parse.c opcodes.c keywordhash.h tsrc
-	cp $(TOP)/sqlite3.def tsrc
 
 # Rules to build the LEMON compiler generator
 #
@@ -667,27 +666,6 @@ clean:
 	rm -rf doc
 	rm -f common.tcl
 	rm -f sqlite3.dll sqlite3.lib
-
-#
-# Windows section; all this funky .dll stuff ;-)
-#
-dll: sqlite3.dll
-
-REAL_LIBOBJ = $(LIBOBJ:%.lo=.libs/%.o)
-
-sqlite3.dll: $(LIBOBJ) $(TOP)/sqlite3.def
-	dllwrap --dllname sqlite3.dll --def $(TOP)/sqlite3.def $(REAL_LIBOBJ)
-	strip sqlite3.dll
-
-#target for dll import libraries
-implib: sqlite3.lib 
-
-#make Borland C++ and/or Microsoft VC import library for the dll
-#   ignore any errors (usually due to missing programs)
-sqlite3.lib: sqlite3.dll
-	-impdef -a sqlite3.def sqlite3.dll
-	-implib sqlite3.lib sqlite3.def
-	-lib /machine:i386 /def:$(TOP)/sqlite3.def 
 
 distclean:	clean
 	rm -f config.log config.status libtool Makefile config.h
