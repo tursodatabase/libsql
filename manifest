@@ -1,5 +1,5 @@
-C Changes\sto\sthe\sMakefile.in\sso\sthat\sMinGW\susers\scan\sbuild\sa\sDLL.\s\sTicket\s#1955.\s(CVS\s3389)
-D 2006-09-02T22:14:12
+C Fix\sbugs\sin\stest\sscripts\sso\sthat\sfulltest\swill\spass.\s(CVS\s3390)
+D 2006-09-02T22:14:59
 F Makefile.in cabd42d34340f49260bc2a7668c38eba8d4cfd99
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -33,7 +33,7 @@ F ext/fts1/simple_tokenizer.c 1844d72f7194c3fd3d7e4173053911bf0661b70d
 F ext/fts1/tokenizer.h 0c53421b832366d20d720d21ea3e1f6e66a36ef9
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
-F main.mk d37d13489426c7a5277cd5944e7487120f9b4ece
+F main.mk ffbbe60740e7601caa326bffe1e70ac3fdfb5bc4
 F mkdll.sh cbc7d92d02f9317a3d24ab55bb727275417260ca
 F mkopcodec.awk bd46ad001c98dfbab07b1713cb8e692fa0e5415d
 F mkopcodeh.awk cde995d269aa06c94adbf6455bea0acedb913fa5
@@ -311,10 +311,10 @@ F test/vacuum.test 37f998b841cb335397c26d9bbc3457182af2565f
 F test/vacuum2.test 5aea8c88a65cb29f7d175296e7c819c6158d838c
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/view.test 16e2774fe35e47a07ac4471b7f0bcc948b1aa6d5
-F test/vtab1.test 20715bc2334d910a40cca2afc61869025411bcaa
+F test/vtab1.test c7275c6c6575dfbbd975757f646f94477a6ea5c0
 F test/vtab2.test 43763026b124e68785de05d3fbf957a4b5f81a0d
 F test/vtab3.test f38d6d7d19f08bffdadce4d5b8cba078f8118587
-F test/vtab4.test 4b4293341443839ef6dc02f8d9e614702a6c67ff
+F test/vtab4.test a9d7104d41a787754a734740d7aa61c807a69f87
 F test/vtab5.test 9fb8f335651afe8f870011e2f68e5b00c5ad03cd
 F test/vtab6.test ec0036f29f8a803da9935206f2d9d1b6a8026392
 F test/vtab7.test 5f9ef9fb84733e928d5d0267c821072561b198d5
@@ -395,7 +395,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P d4923e98c66ae03d899f633e5e309471f5695abb
-R d829b8762af2a72f56db333e1db29bd2
+P 7279ddd08444d54712f738d997c5d11f6af064c1
+R 0154a554f51203117c37cdba6d80f9d4
 U drh
-Z b65c57dac37a62be54424983aa5a8361
+Z 1d0c9fd6f6dadab65fcbce0df688ab5a

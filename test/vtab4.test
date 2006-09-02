@@ -16,10 +16,13 @@
 #     xCommit
 #     xRollback
 #
-# $Id: vtab4.test,v 1.1 2006/06/17 09:39:56 danielk1977 Exp $
+# $Id: vtab4.test,v 1.2 2006/09/02 22:14:59 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+unset -nocomplain echo_module
+unset -nocomplain echo_module_sync_fail
 
 ifcapable !vtab {
   finish_test
@@ -189,4 +192,3 @@ do_test vtab4-3.3 {
 ]
 
 finish_test
-

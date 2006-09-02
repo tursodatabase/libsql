@@ -594,3 +594,4 @@ clean:
 	rm -f $(PUBLISH)
 	rm -f *.da *.bb *.bbg gmon.out
 	rm -rf tsrc
+	rm -f testloadext.dll libtestloadext.so

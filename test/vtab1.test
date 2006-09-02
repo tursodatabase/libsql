@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is creating and dropping virtual tables.
 #
-# $Id: vtab1.test,v 1.36 2006/08/15 14:21:16 drh Exp $
+# $Id: vtab1.test,v 1.37 2006/09/02 22:14:59 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -835,6 +835,7 @@ do_test vtab1.10-6 {
 
 # Testing the xFindFunction interface
 #
+catch {rename ::echo_glob_overload {}}
 do_test vtab1.11-1 {
   execsql {
     INSERT INTO r(a,b,c) VALUES(1,'?',99);
