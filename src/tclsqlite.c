@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.172 2006/08/31 15:07:15 drh Exp $
+** $Id: tclsqlite.c,v 1.173 2006/09/02 14:17:00 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -2072,13 +2072,6 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   p->interp = interp;
   zArg = Tcl_GetStringFromObj(objv[1], 0);
   Tcl_CreateObjCommand(interp, zArg, DbObjCmd, (char*)p, DbDeleteCmd);
-
-#ifdef SQLITE_ENABLE_FTS1
-  {
-    extern int sqlite3Fts1Init(sqlite3*);
-    sqlite3Fts1Init(p->db);
-  }
-#endif
 
   /* If compiled with SQLITE_TEST turned on, then register the "md5sum"
   ** SQL function.

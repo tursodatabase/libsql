@@ -44,7 +44,9 @@ typedef struct simple_tokenizer_cursor {
   int nTokenAllocated;         /* space allocated to zToken buffer */
 } simple_tokenizer_cursor;
 
-static sqlite3_tokenizer_module simpleTokenizerModule;/* forward declaration */
+
+/* Forward declaration */
+static const sqlite3_tokenizer_module simpleTokenizerModule;
 
 static int isDelim(simple_tokenizer *t, unsigned char c){
   return c<0x80 && t->delim[c];
@@ -163,7 +165,7 @@ static int simpleNext(
   return SQLITE_DONE;
 }
 
-static sqlite3_tokenizer_module simpleTokenizerModule = {
+static const sqlite3_tokenizer_module simpleTokenizerModule = {
   0,
   simpleCreate,
   simpleDestroy,
@@ -173,7 +175,7 @@ static sqlite3_tokenizer_module simpleTokenizerModule = {
 };
 
 void sqlite3Fts1SimpleTokenizerModule(
-  sqlite3_tokenizer_module **ppModule
+  sqlite3_tokenizer_module const**ppModule
 ){
   *ppModule = &simpleTokenizerModule;
 }

@@ -1,5 +1,5 @@
-C Automatically\sregister\sthe\sFTS\smodule\sif\sit\sis\scompiled\sinto\sthe\sbuild.\s(CVS\s3384)
-D 2006-09-02T13:58:07
+C Convert\sstatic\svariables\sinto\sconstants\sin\sthe\sFTS\smodule.\s(CVS\s3385)
+D 2006-09-02T14:17:00
 F Makefile.in 659b63368cfbb95a224c9d2f2a9897802d96a4ea
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -21,12 +21,12 @@ F ext/README.txt 913a7bd3f4837ab14d7e063304181787658b14e1
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
 F ext/fts1/ft_hash.c 3927bd880e65329bdc6f506555b228b28924921b
 F ext/fts1/ft_hash.h 1a35e654a235c2c662d3ca0dfc3138ad60b8b7d5
-F ext/fts1/fts1.c 98f1b10b6af53dc665eee9bccf7179c817b54b3c
+F ext/fts1/fts1.c c8532f1367150245d7d9dab4178159eeafeeece9
 F ext/fts1/fts1.h fe8e8f38dd6d2d2645b9b0d6972e80985249575f
 F ext/fts1/fts1_hash.c 3196cee866edbebb1c0521e21672e6d599965114
 F ext/fts1/fts1_hash.h 957d378355ed29f672cd5add012ce8b088a5e089
-F ext/fts1/fts1_tokenizer.h 887580709d32e44ca4ee3c7107c06ee444eb44c2
-F ext/fts1/fts1_tokenizer1.c 03a9af15f252cf0ee3d518be8c2f48b3eb1d31a1
+F ext/fts1/fts1_tokenizer.h a90c4d022d1c5e50ca931a9b6415bc8bce12b76e
+F ext/fts1/fts1_tokenizer1.c 1155942be01e8b191b13ac2ea4604b301f77e73e
 F ext/fts1/fulltext.c d935e600d87bc86b7d64f55c7520ea41d6034c5c
 F ext/fts1/fulltext.h 08525a47852d1d62a0be81d3fc3fe2d23b094efd
 F ext/fts1/simple_tokenizer.c 1844d72f7194c3fd3d7e4173053911bf0661b70d
@@ -90,7 +90,7 @@ F src/sqlite.h.in 84ac26ca94a84dd603fb57a27d862f51bfd9f687
 F src/sqlite3ext.h 11a046b3519c4b9b7709e6d6a95c3a36366f684a
 F src/sqliteInt.h 325a2d45be2b22c1e21ad649e0a898c74eaec7de
 F src/table.c d8817f43a6c6bf139487db161760b9e1e02da3f1
-F src/tclsqlite.c fae9746f1da8ab888364a5ba02e691922e0a184e
+F src/tclsqlite.c e029f739bed90071789fe81a226d53e97a80a4d8
 F src/test1.c 535294d7f21a4127082c4f7a57f225482df9cc36
 F src/test2.c ca74a1d8aeb7d9606e8f6b762c5daf85c1a3f92b
 F src/test3.c 85135c09560c48bdb0a23c9b890ab405486b8ec9
@@ -119,7 +119,7 @@ F src/vdbeapi.c 81f531d7dc5c898131b02ef85f6c6144ab2892cf
 F src/vdbeaux.c 9fab61427a0741c9c123e8ff16e349b1f90397be
 F src/vdbefifo.c 9efb94c8c3f4c979ebd0028219483f88e57584f5
 F src/vdbemem.c 5f0afe3b92bb2c037f8d5d697f7c151fa50783a3
-F src/vtab.c cae036dc7b0b7d7f5f17eef646b1d53940a21572
+F src/vtab.c 6067f9ec011880fadb04be1ca24dbe30c575a5bf
 F src/where.c 75a89957fcb8c068bec55caa4e9d2ed5fa0b0724
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -395,7 +395,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P e6e49a3811d4b26518026cc1692c654e8edbf741
-R 300b9738759115b8e19a01418309b320
+P 8a96bdb72439c0b337cbaa2d07897d0896ea3024
+R 05da3dd8f2c28296657c8de18470d807
 U drh
-Z 653f283d344be54f865316af17b0e6ad
+Z a3892b4353b377a4e8243da61653303c

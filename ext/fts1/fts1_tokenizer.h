@@ -66,7 +66,7 @@ struct sqlite3_tokenizer_module {
 };
 
 struct sqlite3_tokenizer {
-  sqlite3_tokenizer_module *pModule;  /* The module for this tokenizer */
+  const sqlite3_tokenizer_module *pModule;  /* The module for this tokenizer */
   /* Tokenizer implementations will typically add additional fields */
 };
 
@@ -84,6 +84,6 @@ struct sqlite3_tokenizer_cursor {
 /* TODO(shess) This doesn't belong here.  Need some sort of
 ** registration process.
 */
-void sqlite3Fts1SimpleTokenizerModule(sqlite3_tokenizer_module **ppModule);
+void sqlite3Fts1SimpleTokenizerModule(sqlite3_tokenizer_module const**ppModule);
 
 #endif /* _FTS1_TOKENIZER_H_ */

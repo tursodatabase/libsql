@@ -575,7 +575,7 @@ typedef enum fulltext_statement {
 ** query joins a virtual table to itself?  If so perhaps we should
 ** move some of these to the cursor object.
 */
-static const char *fulltext_zStatement[MAX_STMT] = {
+static const char *const fulltext_zStatement[MAX_STMT] = {
   /* CONTENT_INSERT */ "insert into %_content (rowid, content) values (?, ?)",
   /* CONTENT_SELECT */ "select content from %_content where rowid = ?",
   /* CONTENT_DELETE */ "delete from %_content where rowid = ?",
@@ -618,7 +618,7 @@ static struct fulltext_vtab *cursor_vtab(fulltext_cursor *c){
   return (fulltext_vtab *) c->base.pVtab;
 }
 
-static sqlite3_module fulltextModule;   /* forward declaration */
+static const sqlite3_module fulltextModule;   /* forward declaration */
 
 /* Puts a freshly-prepared statement determined by iStmt in *ppStmt.
 ** If the indicated statement has never been prepared, it is prepared
@@ -889,7 +889,7 @@ static int fulltextConnect(sqlite3 *db, void *pAux, int argc, char **argv,
                            sqlite3_vtab **ppVTab){
   int rc;
   fulltext_vtab *v;
-  sqlite3_tokenizer_module *m = NULL;
+  const sqlite3_tokenizer_module *m = NULL;
 
   assert( argc>=3 );
   v = (fulltext_vtab *) malloc(sizeof(fulltext_vtab));
@@ -1168,7 +1168,7 @@ static void queryDestroy(Query *q){
 static int tokenizeSegment(sqlite3_tokenizer *pTokenizer,
                             const char *pSegment, int nSegment, int inPhrase,
                             Query *pQuery){
-  sqlite3_tokenizer_module *pModule = pTokenizer->pModule;
+  const sqlite3_tokenizer_module *pModule = pTokenizer->pModule;
   sqlite3_tokenizer_cursor *pCursor;
   int is_first = 1;
   
@@ -1514,7 +1514,7 @@ static int fulltextUpdate(sqlite3_vtab *pVtab, int nArg, sqlite3_value **ppArg,
                       pRowid);
 }
 
-static sqlite3_module fulltextModule = {
+static const sqlite3_module fulltextModule = {
   0,
   fulltextCreate,
   fulltextConnect,
