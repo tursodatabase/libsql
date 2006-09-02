@@ -31,6 +31,13 @@
 #include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT1
 
+
+#if 0
+# define TRACE(A)  printf A; fflush(stdout)
+#else
+# define TRACE(A)
+#endif
+
 /* utility functions */
 
 /* We encode variable-length integers in little-endian order using seven bits
@@ -535,6 +542,7 @@ static char *string_format(const char *zFormat, const char *zName){
 
 static int sql_exec(sqlite3 *db, const char *zName, const char *zFormat){
   char *zCommand = string_format(zFormat, zName);
+  TRACE(("FTS1 sql: %s\n", zCommand));
   int rc = sqlite3_exec(db, zCommand, NULL, 0, NULL);
   free(zCommand);
   return rc;
@@ -543,6 +551,7 @@ static int sql_exec(sqlite3 *db, const char *zName, const char *zFormat){
 static int sql_prepare(sqlite3 *db, const char *zName, sqlite3_stmt **ppStmt,
                 const char *zFormat){
   char *zCommand = string_format(zFormat, zName);
+  TRACE(("FTS1 prepare: %s\n", zCommand));
   int rc = sqlite3_prepare(db, zCommand, -1, ppStmt, NULL);
   free(zCommand);
   return rc;
@@ -862,6 +871,7 @@ static int term_delete(fulltext_vtab *v, sqlite_int64 rowid){
 static void fulltext_vtab_destroy(fulltext_vtab *v){
   int iStmt;
 
+  TRACE(("FTS1 Destroy %p\n", v));
   for( iStmt=0; iStmt<MAX_STMT; iStmt++ ){
     if( v->pFulltextStatements[iStmt]!=NULL ){
       sqlite3_finalize(v->pFulltextStatements[iStmt]);
@@ -928,6 +938,7 @@ static int fulltextConnect(sqlite3 *db, void *pAux, int argc, char **argv,
   memset(v->pFulltextStatements, 0, sizeof(v->pFulltextStatements));
 
   *ppVTab = &v->base;
+  TRACE(("FTS1 Connect %p\n", v));
   return SQLITE_OK;
 }
 
@@ -935,6 +946,7 @@ static int fulltextCreate(sqlite3 *db, void *pAux, int argc, char **argv,
                           sqlite3_vtab **ppVTab){
   int rc;
   assert( argc>=3 );
+  TRACE(("FTS1 Create\n"));
 
   /* The %_content table holds the text of each full-text item, with
   ** the rowid used as the docid.
@@ -990,10 +1002,12 @@ static int fulltextBestIndex(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
     }
   }
   pInfo->idxNum = QUERY_GENERIC;
+  TRACE(("FTS1 BestIndex\n"));
   return SQLITE_OK;
 }
 
 static int fulltextDisconnect(sqlite3_vtab *pVTab){
+  TRACE(("FTS1 Disconnect %p\n", pVTab));
   fulltext_vtab_destroy((fulltext_vtab *)pVTab);
   return SQLITE_OK;
 }
@@ -1001,6 +1015,7 @@ static int fulltextDisconnect(sqlite3_vtab *pVTab){
 static int fulltextDestroy(sqlite3_vtab *pVTab){
   fulltext_vtab *v = (fulltext_vtab *)pVTab;
 
+  TRACE(("FTS1 Destroy %p\n", pVTab));
   int rc = sql_exec(v->db, v->zName,
                     "drop table %_content; drop table %_term");
   if( rc!=SQLITE_OK ) return rc;
@@ -1015,12 +1030,14 @@ static int fulltextOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
   c = (fulltext_cursor *) calloc(sizeof(fulltext_cursor), 1);
   /* sqlite will initialize c->base */
   *ppCursor = &c->base;
+  TRACE(("FTS1 Open %p: %p\n", pVTab, c));
 
   return SQLITE_OK;
 }
 
 static int fulltextClose(sqlite3_vtab_cursor *pCursor){
   fulltext_cursor *c = (fulltext_cursor *) pCursor;
+  TRACE(("FTS1 Close %p\n", c));
   sqlite3_finalize(c->pStmt);
   if( c->result.pDoclist!=NULL ){
     docListDelete(c->result.pDoclist);
@@ -1034,6 +1051,7 @@ static int fulltextNext(sqlite3_vtab_cursor *pCursor){
   sqlite_int64 iDocid;
   int rc;
 
+  TRACE(("FTS1 Next %p\n", pCursor));
   switch( c->iCursorType ){
     case QUERY_GENERIC:
       /* TODO(shess) Handle SQLITE_SCHEMA AND SQLITE_BUSY. */
@@ -1268,6 +1286,7 @@ static int fulltextFilter(sqlite3_vtab_cursor *pCursor,
   int rc;
   const char *zStatement;
 
+  TRACE(("FTS1 Filter %p\n",pCursor));
   c->iCursorType = idxNum;
   switch( idxNum ){
     case QUERY_GENERIC:
@@ -1499,6 +1518,7 @@ static int fulltextUpdate(sqlite3_vtab *pVtab, int nArg, sqlite3_value **ppArg,
                    sqlite_int64 *pRowid){
   fulltext_vtab *v = (fulltext_vtab *) pVtab;
 
+  TRACE(("FTS1 Update %p\n", pVtab));
   if( nArg<2 ){
     return index_delete(v, sqlite3_value_int64(ppArg[0]));
   }
