@@ -665,7 +665,25 @@ clean:
 	rm -f testfixture$(TEXE) test.db
 	rm -rf doc
 	rm -f common.tcl
-	rm -f sqlite3.dll sqlite3.lib
+	rm -f sqlite3.dll sqlite3.lib sqlite3.def
 
 distclean:	clean
 	rm -f config.log config.status libtool Makefile config.h
+
+#
+# Windows section
+#
+dll: sqlite3.dll
+
+REAL_LIBOBJ = $(LIBOBJ:%.lo=.libs/%.o)
+
+$(REAL_LIBOBJ): $(LIBOBJ)
+
+sqlite3.def: $(REAL_LIBOBJ)
+	echo 'EXPORTS' >sqlite3.def
+	nm $(REAL_LIBOBJ) | grep ' T ' | grep ' _sqlite3_' \
+		| sed 's/^.* _//' >>sqlite3.def
+
+sqlite3.dll: $(REAL_LIBOBJ) sqlite3.def
+	$(TCC) -shared -o sqlite3.dll sqlite3.def \
+		-Wl,"--strip-all" $(REAL_LIBOBJ)
