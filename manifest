@@ -1,5 +1,5 @@
-C Miscellaneous\srestructuring\sand\scleanup\sbased\son\ssuggestions\sfrom\sshess.\s(CVS\s3382)
-D 2006-09-02T00:23:02
+C Construct\sthe\s.def\sfiles\sbefore\scalling\sdllwrap\sto\sbuild\sthe\s.dll\sfiles.\nTicket\s#1951.\s(CVS\s3383)
+D 2006-09-02T13:22:29
 F Makefile.in 659b63368cfbb95a224c9d2f2a9897802d96a4ea
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -34,7 +34,7 @@ F ext/fts1/tokenizer.h 0c53421b832366d20d720d21ea3e1f6e66a36ef9
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
 F main.mk d37d13489426c7a5277cd5944e7487120f9b4ece
-F mkdll.sh 7e2324f53504fa89121f10da79cbc709fdd7c596
+F mkdll.sh cbc7d92d02f9317a3d24ab55bb727275417260ca
 F mkopcodec.awk bd46ad001c98dfbab07b1713cb8e692fa0e5415d
 F mkopcodeh.awk cde995d269aa06c94adbf6455bea0acedb913fa5
 F mkso.sh 125868def279650a07d3f0f5e8476fecf99613fd
@@ -395,7 +395,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 1f6d79266a7f8d0e909e47d9858557e3f95407db
-R 9f47934fbcba4f9a0e1f8df18feb2204
-U adamd
-Z fba5a153a6d748159bc7d61ee5016242
+P e98b0cf292f6dc9deb6ae9b773c52b16867f7556
+R d30765d3536c7164bd9433463202374c
+U drh
+Z 9802cd201774000537322344bd2335b3

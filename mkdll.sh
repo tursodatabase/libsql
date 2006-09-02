@@ -21,6 +21,12 @@ for i in *.c; do
   $CMD
 done
 echo 'EXPORTS' >tclsqlite3.def
+$NM *.o | grep ' T ' >temp1
+grep '_Init$' temp1 >temp2
+grep '_SafeInit$' temp1 >>temp2
+grep ' T _sqlite3_' temp1 >>temp2
+echo 'EXPORTS' >tclsqlite3.def
+sed 's/^.* T _//' temp2 | sort | uniq >>tclsqlite3.def
 i386-mingw32msvc-dllwrap \
      --def tclsqlite3.def -v --export-all \
      --driver-name i386-mingw32msvc-gcc \
@@ -29,13 +35,10 @@ i386-mingw32msvc-dllwrap \
      --target i386-mingw32 \
      -dllname tclsqlite3.dll -lmsvcrt *.o $TCLSTUBLIB
 #i386-mingw32msvc-strip tclsqlite3.dll
-$NM tclsqlite3.dll | grep ' T ' >temp1
-grep '_Init$' temp1 >temp2
-grep '_SafeInit$' temp1 >>temp2
-grep ' T _sqlite3_' temp1 >>temp2
-echo 'EXPORTS' >tclsqlite3.def
-sed 's/^.* T _//' temp2 | sort | uniq >>tclsqlite3.def
 rm tclsqlite.o
+$NM *.o | grep ' T ' >temp1
+echo 'EXPORTS' >sqlite3.def
+grep ' _sqlite3_' temp1 | sed 's/^.* _//' >>sqlite3.def
 i386-mingw32msvc-dllwrap \
      --def sqlite3.def -v --export-all \
      --driver-name i386-mingw32msvc-gcc \
@@ -44,7 +47,4 @@ i386-mingw32msvc-dllwrap \
      --target i386-mingw32 \
      -dllname sqlite3.dll -lmsvcrt *.o
 #i386-mingw32msvc-strip sqlite3.dll
-$NM sqlite3.dll | grep ' T ' >temp1
-echo 'EXPORTS' >sqlite3.def
-grep ' _sqlite3_' temp1 | sed 's/^.* _//' >>sqlite3.def
 cd ..
