@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.574 2006/08/15 14:21:16 drh Exp $
+** $Id: vdbe.c,v 1.575 2006/09/02 20:57:52 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -4857,7 +4857,9 @@ case OP_VUpdate: {   /* no-push */
       apArg[i] = pX;
     }
     if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
+    sqlite3VtabLock(pVtab);
     rc = pModule->xUpdate(pVtab, nArg, apArg, &rowid);
+    sqlite3VtabUnlock(pVtab);
     if( sqlite3SafetyOn(db) ) goto abort_due_to_misuse;
     if( pOp->p1 && rc==SQLITE_OK ){
       assert( nArg>1 && apArg[0] && (apArg[0]->flags&MEM_Null) );

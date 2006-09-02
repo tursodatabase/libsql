@@ -1,5 +1,5 @@
-C Test\sfor\sbusted\sTCL\sbuilds\sthat\sdo\snot\ssupport\s64-bit\sintegers\sand\sprint\na\swarning\smessage\sto\susers\sthat\stest\sfailures\smay\sbe\sa\sresult\sof\sthe\sbad\nTCL\sbuild\sand\snot\ssome\sproblem\swith\sSQLite.\s\sTicket\s#1953.\s(CVS\s3386)
-D 2006-09-02T14:50:24
+C Do\snot\scall\sthe\sxDisconnect\smethod\son\sa\svirtual\stable\swhile\sxUpdate\sis\npending.\s\sInstead,\sdefer\sthe\sxDisconnect\suntil\safter\sxUpdate\scompletes.\s(CVS\s3387)
+D 2006-09-02T20:57:52
 F Makefile.in 659b63368cfbb95a224c9d2f2a9897802d96a4ea
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -88,7 +88,7 @@ F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 3496a1b0a23a6b77f90231b9e2f521fd93dcb5b1
 F src/sqlite.h.in 84ac26ca94a84dd603fb57a27d862f51bfd9f687
 F src/sqlite3ext.h 11a046b3519c4b9b7709e6d6a95c3a36366f684a
-F src/sqliteInt.h 325a2d45be2b22c1e21ad649e0a898c74eaec7de
+F src/sqliteInt.h 259adce944cc3b28da1fa3df9beb9ba86017a45d
 F src/table.c d8817f43a6c6bf139487db161760b9e1e02da3f1
 F src/tclsqlite.c e029f739bed90071789fe81a226d53e97a80a4d8
 F src/test1.c cb3688f5d2094dc708a7959bd99aed411e096e49
@@ -112,14 +112,14 @@ F src/update.c 951f95ef044cf6d28557c48dc35cb0711a0b9129
 F src/utf.c 4459801e9b00cfd69993bfca58545d3775682d6e
 F src/util.c 5409031819ee4672c5f9c3ac7cf517e267a25845
 F src/vacuum.c 5b37d0f436f8e1ffacd17934e44720b38d2247f9
-F src/vdbe.c 24c2cc3b08223140b45d15d05644210ac4363573
+F src/vdbe.c a77869949ddd0afe01443611edb949e24e67c91c
 F src/vdbe.h 258b5d1c0aaa72192f09ff0568ce42b383f156fa
 F src/vdbeInt.h e3eaab262b67b84474625cfc38aec1125c32834b
 F src/vdbeapi.c 81f531d7dc5c898131b02ef85f6c6144ab2892cf
 F src/vdbeaux.c 9fab61427a0741c9c123e8ff16e349b1f90397be
 F src/vdbefifo.c 9efb94c8c3f4c979ebd0028219483f88e57584f5
 F src/vdbemem.c 5f0afe3b92bb2c037f8d5d697f7c151fa50783a3
-F src/vtab.c 6067f9ec011880fadb04be1ca24dbe30c575a5bf
+F src/vtab.c 7fc0624c2bb6156c3d99e2ce706f2a5b54094e36
 F src/where.c 75a89957fcb8c068bec55caa4e9d2ed5fa0b0724
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -395,7 +395,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 098cbafcd6dcf57142b0417e796d27ffddcc0920
-R a457dec7946d047fe968e63a72fc157e
+P ca864ee913ea5ae88761e617bcac300ffa339369
+R a007e2ad3282d7bf3c46df0a1cb84279
 U drh
-Z f4d682ad54f7e32ce0b41ddbb807a8aa
+Z cb0935641e94f4c2fc376bd17950fce1

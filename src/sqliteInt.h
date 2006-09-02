@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.524 2006/08/23 20:07:22 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.525 2006/09/02 20:57:52 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1862,6 +1862,8 @@ int sqlite3OpenTempDatabase(Parse *);
    int sqlite3VtabRollback(sqlite3 *db);
    int sqlite3VtabCommit(sqlite3 *db);
 #endif
+void sqlite3VtabLock(sqlite3_vtab*);
+void sqlite3VtabUnlock(sqlite3_vtab*);
 void sqlite3VtabBeginParse(Parse*, Token*, Token*, Token*);
 void sqlite3VtabFinishParse(Parse*, Token*);
 void sqlite3VtabArgInit(Parse*);

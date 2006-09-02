@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to help implement virtual tables.
 **
-** $Id: vtab.c,v 1.30 2006/09/02 14:17:00 drh Exp $
+** $Id: vtab.c,v 1.31 2006/09/02 20:57:52 drh Exp $
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
@@ -41,6 +41,29 @@ int sqlite3_create_module(
 }
 
 /*
+** Lock the virtual table so that it cannot be disconnected.
+** Locks nest.  Every lock should have a corresponding unlock.
+** If an unlock is omitted, resources leaks will occur.  
+**
+** If a disconnect is attempted while a virtual table is locked,
+** the disconnect is deferred until all locks have been removed.
+*/
+void sqlite3VtabLock(sqlite3_vtab *pVtab){
+  pVtab->nRef++;
+}
+
+/*
+** Unlock a virtual table.  When the last lock is removed,
+** disconnect the virtual table.
+*/
+void sqlite3VtabUnlock(sqlite3_vtab *pVtab){
+  pVtab->nRef--;
+  if( pVtab->nRef==0 ){
+    pVtab->pModule->xDisconnect(pVtab);
+  }
+}
+
+/*
 ** Clear any and all virtual-table information from the Table record.
 ** This routine is called, for example, just before deleting the Table
 ** record.
@@ -49,10 +72,7 @@ void sqlite3VtabClear(Table *p){
   sqlite3_vtab *pVtab = p->pVtab;
   if( pVtab ){
     assert( p->pMod && p->pMod->pModule );
-    pVtab->nRef--;
-    if( pVtab->nRef==0 ){
-      pVtab->pModule->xDisconnect(pVtab);
-    }
+    sqlite3VtabUnlock(pVtab);
     p->pVtab = 0;
   }
   if( p->azModuleArg ){
@@ -359,7 +379,7 @@ static int addToVTrans(sqlite3 *db, sqlite3_vtab *pVtab){
 
   /* Add pVtab to the end of sqlite3.aVTrans */
   db->aVTrans[db->nVTrans++] = pVtab;
-  pVtab->nRef++;
+  sqlite3VtabLock(pVtab);
   return SQLITE_OK;
 }
 
@@ -492,10 +512,7 @@ static void callFinaliser(sqlite3 *db, int offset){
     int (*x)(sqlite3_vtab *);
     x = *(int (**)(sqlite3_vtab *))((char *)pVtab->pModule + offset);
     if( x ) x(pVtab);
-    pVtab->nRef--;
-    if( pVtab->nRef==0 ){
-      pVtab->pModule->xDisconnect(pVtab);
-    }
+    sqlite3VtabUnlock(pVtab);
   }
   sqliteFree(db->aVTrans);
   db->nVTrans = 0;
