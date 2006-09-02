@@ -194,34 +194,43 @@ static void appendVarint(DocList *d, sqlite_int64 i){
 
 static void docListAddDocid(DocList *d, sqlite_int64 iDocid){
   appendVarint(d, iDocid);
-  d->iLastPos = 0;
+  if( d->iType>=DL_POSITIONS ){
+    appendVarint(d, 0);  /* initially empty position list */
+    d->iLastPos = 0;
+  }
+}
+
+/* helper function for docListAddPos and docListAddPosOffset */
+static void addPos(DocList *d, int iPos) {
+  appendVarint(d, iPos-d->iLastPos+1);
+  d->iLastPos = iPos;
 }
 
 /* Add a position to the last position list in a doclist. */
 static void docListAddPos(DocList *d, int iPos){
-  assert( d->iType>=DL_POSITIONS );
-  appendVarint(d, iPos-d->iLastPos+1);
-  d->iLastPos = iPos;
+  assert( d->iType==DL_POSITIONS );
+  assert( d->nData>0 );
+  --d->nData;  /* remove previous terminator */
+  addPos(d, iPos);
+  appendVarint(d, 0);  /* add new terminator */
 }
 
 static void docListAddPosOffset(DocList *d, int iPos,
                                 int iStartOffset, int iEndOffset){
   assert( d->iType==DL_POSITIONS_OFFSETS );
-  docListAddPos(d, iPos);
+  assert( d->nData>0 );
+  --d->nData;  /* remove previous terminator */
+  addPos(d, iPos);
   appendVarint(d, iStartOffset-d->iLastOffset);
   d->iLastOffset = iStartOffset;
   appendVarint(d, iEndOffset-iStartOffset);
-}
-
-/* Terminate the last position list in the given doclist. */
-static void docListAddEndPos(DocList *d){
-  appendVarint(d, 0);
+  appendVarint(d, 0);  /* add new terminator */
 }
 
 typedef struct DocListReader {
   DocList *pDoclist;
   char *p;
-  int iLastPos;    /* the last position read */
+  int iLastPos;  /* the last position read, or -1 when not in a position list */
 } DocListReader;
 
 static void readerInit(DocListReader *r, DocList *pDoclist){
@@ -229,17 +238,18 @@ static void readerInit(DocListReader *r, DocList *pDoclist){
   if( pDoclist!=NULL ){
     r->p = pDoclist->pData;
   }
-  r->iLastPos = 0;
+  r->iLastPos = -1;
 }
 
-static int readerAtEnd(DocListReader *pReader){
+static int atEnd(DocListReader *pReader){
   return pReader->p >= docListEnd(pReader->pDoclist);
 }
 
 /* Peek at the next docid without advancing the read pointer. */
 static sqlite_int64 peekDocid(DocListReader *pReader){
   sqlite_int64 ret;
-  assert( !readerAtEnd(pReader) );
+  assert( !atEnd(pReader) );
+  assert( pReader->iLastPos==-1 );
   getVarint(pReader->p, &ret);
   return ret;
 }
@@ -247,9 +257,12 @@ static sqlite_int64 peekDocid(DocListReader *pReader){
 /* Read the next docid. */
 static sqlite_int64 readDocid(DocListReader *pReader){
   sqlite_int64 ret;
-  assert( !readerAtEnd(pReader) );
+  assert( !atEnd(pReader) );
+  assert( pReader->iLastPos==-1 );
   pReader->p += getVarint(pReader->p, &ret);
-  pReader->iLastPos = 0;
+  if( pReader->pDoclist->iType>=DL_POSITIONS ){
+    pReader->iLastPos = 0;
+  }
   return ret;
 }
 
@@ -259,7 +272,8 @@ static int readPosition(DocListReader *pReader){
   int i;
   int iType = pReader->pDoclist->iType;
   assert( iType>=DL_POSITIONS );
-  assert( !readerAtEnd(pReader) );
+  assert( !atEnd(pReader) );
+  assert( pReader->iLastPos!=-1 );
 
   pReader->p += getVarint32(pReader->p, &i);
   if( i==0 ){
@@ -286,9 +300,19 @@ static void skipPositionList(DocListReader *pReader){
  * positions. */
 static void skipDocument(DocListReader *pReader){
   readDocid(pReader);
-  if( pReader->pDoclist->iType >= DL_POSITIONS ){
+  if( pReader->pDoclist->iType>=DL_POSITIONS ){
     skipPositionList(pReader);
   }
+}
+
+/* Skip past all docids which are less than [iDocid].  Returns 1 if a docid
+ * matching [iDocid] was found.  */
+static int skipToDocid(DocListReader *pReader, sqlite_int64 iDocid){
+  sqlite_int64 d = 0;
+  while( !atEnd(pReader) && (d=peekDocid(pReader))<iDocid ){
+    skipDocument(pReader);
+  }
+  return !atEnd(pReader) && d==iDocid;
 }
 
 static sqlite_int64 firstDocid(DocList *d){
@@ -303,6 +327,7 @@ static sqlite_int64 firstDocid(DocList *d){
 static int docListUpdate(DocList *d, sqlite_int64 iDocid, DocList *pUpdate){
   int modified = 0;
   DocListReader reader;
+  int found;
   char *p;
 
   if( pUpdate!=NULL ){
@@ -311,13 +336,11 @@ static int docListUpdate(DocList *d, sqlite_int64 iDocid, DocList *pUpdate){
   }
 
   readerInit(&reader, d);
-  while( !readerAtEnd(&reader) && peekDocid(&reader)<iDocid ){
-    skipDocument(&reader);
-  }
+  found = skipToDocid(&reader, iDocid);
 
   p = reader.p;
   /* Delete if there is a matching element. */
-  if( !readerAtEnd(&reader) && iDocid==peekDocid(&reader) ){
+  if( found ){
     skipDocument(&reader);
     memmove(p, reader.p, docListEnd(d) - reader.p);
     d->nData -= (reader.p - p);
@@ -327,7 +350,6 @@ static int docListUpdate(DocList *d, sqlite_int64 iDocid, DocList *pUpdate){
   /* Insert if indicated. */
   if( pUpdate!=NULL ){
     int iDoclist = p-d->pData;
-    docListAddEndPos(pUpdate);
 
     d->pData = realloc(d->pData, d->nData+pUpdate->nData);
     p = d->pData + iDoclist;
@@ -352,7 +374,7 @@ static int docListSplit(DocList *d, DocList *d2){
   while( reader.p<pSplitPoint ){
     skipDocument(&reader);
   }
-  if( readerAtEnd(&reader) ) return 0;
+  if( atEnd(&reader) ) return 0;
   docListInit(d2, d->iType, reader.p, docListEnd(d) - reader.p);
   d->nData = reader.p - d->pData;
   d->pData = realloc(d->pData, d->nData);
@@ -374,8 +396,8 @@ static int docListSplit(DocList *d, DocList *d2){
  *
  * If [in] is NULL, then the on-disk doclist is copied to [out] directly.
  *
- * A merge is performed using an integer [iOffset] provided by the caller.
- * [iOffset] is subtracted from each position in the on-disk doclist for the
+ * A merge is performed using an integer [iPhrasePos] provided by the caller.
+ * [iPhrasePos] is subtracted from each position in the on-disk doclist for the
  * purpose of position comparison; this is helpful in implementing phrase
  * searches.
  *
@@ -385,18 +407,18 @@ static int docListSplit(DocList *d, DocList *d2){
 typedef struct DocListMerge {
   DocListReader in;
   DocList *pOut;
-  int iOffset;
+  int iPhrasePos;
 } DocListMerge;
 
 static void mergeInit(DocListMerge *m,
-                      DocList *pIn, int iOffset, DocList *pOut){
+                      DocList *pIn, int iPhrasePos, DocList *pOut){
   readerInit(&m->in, pIn);
   m->pOut = pOut;
-  m->iOffset = iOffset;
+  m->iPhrasePos = iPhrasePos;
 
   /* can't handle offsets yet */
-  assert( pIn==NULL || pIn->iType <= DL_POSITIONS );
-  assert( pOut->iType <= DL_POSITIONS );
+  assert( pIn==NULL || pIn->iType<=DL_POSITIONS );
+  assert( pOut->iType<=DL_POSITIONS );
 }
 
 /* A helper function for mergeBlock(), below.  Merge the position lists
@@ -404,67 +426,68 @@ static void mergeInit(DocListMerge *m,
  * If the merge matches, write [iDocid] to m->pOut; if m->pOut
  * has positions then write all matching positions as well. */
 static void mergePosList(DocListMerge *m, sqlite_int64 iDocid,
-                  DocListReader *pBlockReader){
-  int block_pos = readPosition(pBlockReader);
-  int in_pos = readPosition(&m->in);
+                         DocListReader *pBlockReader){
+  int iBlockPos = readPosition(pBlockReader);
+  int iInPos = readPosition(&m->in);
   int match = 0;
-  while( block_pos!=-1 || in_pos!=-1 ){
-    if( block_pos-m->iOffset==in_pos ){
+
+  /* Loop until we've reached the end of both position lists. */
+  while( iBlockPos!=-1 || iInPos!=-1 ){
+    if( iBlockPos-m->iPhrasePos==iInPos ){
       if( !match ){
         docListAddDocid(m->pOut, iDocid);
         match = 1;
       }
-      if( m->pOut->iType >= DL_POSITIONS ){
-        docListAddPos(m->pOut, in_pos);
+      if( m->pOut->iType>=DL_POSITIONS ){
+        docListAddPos(m->pOut, iInPos);
       }
-      block_pos = readPosition(pBlockReader);
-      in_pos = readPosition(&m->in);
-    } else if( in_pos==-1 || (block_pos!=-1 && block_pos-m->iOffset<in_pos) ){
-      block_pos = readPosition(pBlockReader);
+      iBlockPos = readPosition(pBlockReader);
+      iInPos = readPosition(&m->in);
+    } else if( iInPos==-1 || (iBlockPos!=-1 && iBlockPos-m->iPhrasePos<iInPos) ){
+      iBlockPos = readPosition(pBlockReader);
     } else {
-      in_pos = readPosition(&m->in);
+      iInPos = readPosition(&m->in);
     }
   }
-  if( m->pOut->iType >= DL_POSITIONS && match ){
-    docListAddEndPos(m->pOut);
+}
+
+/* A helper function for mergeBlock(), below.  Copy the docid and
+ * position list (if wanted) from pBlockReader to pOut. */
+static void copyDocument(DocList *pOut, sqlite_int64 iDocid,
+                         DocListReader *pBlockReader){
+  docListAddDocid(pOut, iDocid);
+  if( pOut->iType<DL_POSITIONS ){
+    skipPositionList(pBlockReader);
+  } else {
+    /* Copy all positions to the output doclist. */
+    int pos;
+    while( (pos = readPosition(pBlockReader))!=-1 ){
+      docListAddPos(pOut, pos);
+    }
   }
 }
 
 /* Merge one block of an on-disk doclist into a DocListMerge. */
 static void mergeBlock(DocListMerge *m, DocList *pBlock){
   DocListReader blockReader;
-  assert( pBlock->iType >= DL_POSITIONS );
+  assert( pBlock->iType>=DL_POSITIONS );
   readerInit(&blockReader, pBlock);
-  while( !readerAtEnd(&blockReader) ){
+  while( !atEnd(&blockReader) ){
     sqlite_int64 iDocid = readDocid(&blockReader);
-    if( m->in.pDoclist!=NULL ){
-      while( 1 ){
-        if( readerAtEnd(&m->in) ) return;  /* nothing more to merge */
-        if( peekDocid(&m->in)>=iDocid ) break;
-        skipDocument(&m->in);
-      }
-      if( peekDocid(&m->in)>iDocid ){  /* [pIn] has no match with iDocid */
-        skipPositionList(&blockReader);  /* skip this docid in the block */
-        continue;
-      }
-      readDocid(&m->in);
-    }
-    /* We have a document match. */
-    if( m->in.pDoclist==NULL || m->in.pDoclist->iType < DL_POSITIONS ){
-      /* We don't need to do a poslist merge. */
-      docListAddDocid(m->pOut, iDocid);
-      if( m->pOut->iType >= DL_POSITIONS ){
-        /* Copy all positions to the output doclist. */
-        while( 1 ){
-          int pos = readPosition(&blockReader);
-          if( pos==-1 ) break;
-          docListAddPos(m->pOut, pos);
-        }
-        docListAddEndPos(m->pOut);
-      } else skipPositionList(&blockReader);
+    if( m->in.pDoclist==NULL ){
+      copyDocument(m->pOut, iDocid, &blockReader);
       continue;
     }
-    mergePosList(m, iDocid, &blockReader);
+    if( skipToDocid(&m->in, iDocid) ){  /* we have a docid match */
+      readDocid(&m->in);
+      if( m->in.pDoclist->iType>=DL_POSITIONS ){
+        mergePosList(m, iDocid, &blockReader);
+      } else {
+        copyDocument(m->pOut, iDocid, &blockReader);
+      }
+    } else if( !atEnd(&m->in) ){
+      skipPositionList(&blockReader);  /* skip this docid in the block */
+    } else return;  /* nothing more to merge */
   }
 }
 
@@ -1030,7 +1053,7 @@ static int fulltextNext(sqlite3_vtab_cursor *pCursor){
       rc = sqlite3_reset(c->pStmt);
       if( rc!=SQLITE_OK ) return rc;
 
-      if( readerAtEnd(&c->result)){
+      if( atEnd(&c->result)){
         c->eof = 1;
         return SQLITE_OK;
       }
@@ -1068,28 +1091,25 @@ static int term_select_doclist(fulltext_vtab *v, const char *pTerm, int nTerm,
   return sqlite3_step(*ppStmt);   /* TODO(adamd): handle schema error */
 }
 
-/* Read the posting list for [zTerm]; AND it with the doclist [in] to
- * produce the doclist [out], using the given offset [iOffset] for phrase
- * matching.
+/* Read the posting list for [pTerm]; AND it with the doclist [pIn] to
+ * produce the doclist [out], using the given phrase position [iPhrasePos].
  * (*pSelect) is used to hold an SQLite statement used inside this function;
  * the caller should initialize *pSelect to NULL before the first call.
  */
-static int query_merge(fulltext_vtab *v, sqlite3_stmt **pSelect,
+static int mergeQuery(fulltext_vtab *v, sqlite3_stmt **pSelect,
                        const char *pTerm, int nTerm,
-                       DocList *pIn, int iOffset, DocList *out){
+                       DocList *pIn, int iPhrasePos, DocList *out){
   int rc;
   DocListMerge merge;
 
-  if( pIn!=NULL && !pIn->nData ){
-    /* If [pIn] is already empty, there's no point in reading the
-     * posting list to AND it in; return immediately. */
-      return SQLITE_OK;
-  }
+  /* If [pIn] is already empty, there's no point in reading the
+   * posting list to AND it in; return immediately. */
+  if( pIn!=NULL && !pIn->nData ) return SQLITE_OK;
 
   rc = term_select_doclist(v, pTerm, nTerm, pSelect);
   if( rc!=SQLITE_ROW && rc!=SQLITE_DONE ) return rc;
 
-  mergeInit(&merge, pIn, iOffset, out);
+  mergeInit(&merge, pIn, iPhrasePos, out);
   while( rc==SQLITE_ROW ){
     DocList block;
     docListInit(&block, DL_POSITIONS_OFFSETS,
@@ -1099,16 +1119,14 @@ static int query_merge(fulltext_vtab *v, sqlite3_stmt **pSelect,
     docListDestroy(&block);
 
     rc = sqlite3_step(*pSelect);
-    if( rc!=SQLITE_ROW && rc!=SQLITE_DONE ){
-      return rc;
-    }
+    if( rc!=SQLITE_ROW && rc!=SQLITE_DONE ) return rc;
   }
   
   return SQLITE_OK;
 }
 
 typedef struct QueryTerm {
-  int is_phrase;    /* true if this term begins a new phrase */
+  int isPhrase;    /* true if this term begins a new phrase */
   char *pTerm;
   int nTerm;
 } QueryTerm;
@@ -1117,38 +1135,38 @@ typedef struct QueryTerm {
  *
  * As an example, parsing the query ["four score" years "new nation"] will
  * yield a Query with 5 terms:
- *   "four",   is_phrase = 1
- *   "score",  is_phrase = 0
- *   "years",  is_phrase = 1
- *   "new",    is_phrase = 1
- *   "nation", is_phrase = 0
+ *   "four",   isPhrase = 1
+ *   "score",  isPhrase = 0
+ *   "years",  isPhrase = 1
+ *   "new",    isPhrase = 1
+ *   "nation", isPhrase = 0
  */
 typedef struct Query {
   int nTerms;
-  QueryTerm *pTerm;
+  QueryTerm *pTerms;
 } Query;
 
-static void query_add(Query *q, int is_phrase, const char *pTerm, int nTerm){
+static void queryAdd(Query *q, int isPhrase, const char *pTerm, int nTerm){
   QueryTerm *t;
   ++q->nTerms;
-  q->pTerm = realloc(q->pTerm, q->nTerms * sizeof(q->pTerm[0]));
-  t = &q->pTerm[q->nTerms - 1];
-  t->is_phrase = is_phrase;
+  q->pTerms = realloc(q->pTerms, q->nTerms * sizeof(q->pTerms[0]));
+  t = &q->pTerms[q->nTerms - 1];
+  t->isPhrase = isPhrase;
   t->pTerm = malloc(nTerm);
   memcpy(t->pTerm, pTerm, nTerm);
   t->nTerm = nTerm;
 }
     
-static void query_free(Query *q){
+static void queryDestroy(Query *q){
   int i;
   for(i = 0; i < q->nTerms; ++i){
-    free(q->pTerm[i].pTerm);
+    free(q->pTerms[i].pTerm);
   }
-  free(q->pTerm);
+  free(q->pTerms);
 }
 
-static int tokenize_segment(sqlite3_tokenizer *pTokenizer,
-                            const char *pSegment, int nSegment, int in_phrase,
+static int tokenizeSegment(sqlite3_tokenizer *pTokenizer,
+                            const char *pSegment, int nSegment, int inPhrase,
                             Query *pQuery){
   sqlite3_tokenizer_module *pModule = pTokenizer->pModule;
   sqlite3_tokenizer_cursor *pCursor;
@@ -1160,45 +1178,54 @@ static int tokenize_segment(sqlite3_tokenizer *pTokenizer,
 
   while( 1 ){
     const char *pToken;
-    int nToken, iStartOffset, iEndOffset, dummy_pos;
+    int nToken, iDummyOffset, iDummyPos;
 
     rc = pModule->xNext(pCursor,
                         &pToken, &nToken,
-                        &iStartOffset, &iEndOffset,
-                        &dummy_pos);
+                        &iDummyOffset, &iDummyOffset,
+                        &iDummyPos);
     if( rc!=SQLITE_OK ) break;
-    query_add(pQuery, !in_phrase || is_first, pToken, nToken);
+    queryAdd(pQuery, !inPhrase || is_first, pToken, nToken);
     is_first = 0;
   }
 
   return pModule->xClose(pCursor);
 }
 
-/* Parse a query string, yielding a Query object. */
-static int parse_query(fulltext_vtab *v, const char *pInput, int nInput,
-                       Query *pQuery){
-  int iInput, in_phrase = 0;
+/* Parse a query string, yielding a Query object [pQuery], which the caller
+ * must free. */
+static int parseQuery(fulltext_vtab *v, const char *pInput, int nInput,
+                      Query *pQuery){
+  int iInput, inPhrase = 0;
 
   if( nInput<0 ) nInput = strlen(pInput);
   pQuery->nTerms = 0;
-  pQuery->pTerm = NULL;
+  pQuery->pTerms = NULL;
 
   for(iInput=0; iInput<nInput; ++iInput){
     int i;
     for(i=iInput; i<nInput && pInput[i]!='"'; ++i)
       ;
     if( i>iInput ){
-      tokenize_segment(v->pTokenizer, pInput+iInput, i-iInput, in_phrase,
+      tokenizeSegment(v->pTokenizer, pInput+iInput, i-iInput, inPhrase,
                        pQuery);
     }
     iInput = i;
-    in_phrase = !in_phrase;
+    if( i<nInput ){
+      assert( pInput[i]=='"' );
+      inPhrase = !inPhrase;
+    }
+  }
+
+  if(inPhrase) {  /* unmatched quote */
+    queryDestroy(pQuery);
+    return SQLITE_ERROR;
   }
   return SQLITE_OK;
 }
 
 /* Perform a full-text query; return a list of documents in [pResult]. */
-static int fulltext_query(fulltext_vtab *v, const char *pInput, int nInput,
+static int fulltextQuery(fulltext_vtab *v, const char *pInput, int nInput,
                           DocList **pResult){
   Query q;
   int phrase_start = -1;
@@ -1206,19 +1233,19 @@ static int fulltext_query(fulltext_vtab *v, const char *pInput, int nInput,
   sqlite3_stmt *pSelect = NULL;
   DocList *d = NULL;
 
-  int rc = parse_query(v, pInput, nInput, &q);
+  int rc = parseQuery(v, pInput, nInput, &q);
   if( rc!=SQLITE_OK ) return rc;
 
   /* Merge terms. */
   for(i = 0 ; i < q.nTerms ; ++i){
     /* In each merge step, we need to generate positions whenever we're
      * processing a phrase which hasn't ended yet. */
-    int need_positions = i<q.nTerms-1 && !q.pTerm[i+1].is_phrase;
-    DocList *next = docListNew(need_positions ? DL_POSITIONS : DL_DOCIDS);
-    if( q.pTerm[i].is_phrase ){
+    int needPositions = i<q.nTerms-1 && !q.pTerms[i+1].isPhrase;
+    DocList *next = docListNew(needPositions ? DL_POSITIONS : DL_DOCIDS);
+    if( q.pTerms[i].isPhrase ){
       phrase_start = i;
     }
-    rc = query_merge(v, &pSelect, q.pTerm[i].pTerm, q.pTerm[i].nTerm,
+    rc = mergeQuery(v, &pSelect, q.pTerms[i].pTerm, q.pTerms[i].nTerm,
                      d, i-phrase_start, next);
     if( rc!=SQLITE_OK ) break;
     if( d!=NULL ){
@@ -1228,7 +1255,7 @@ static int fulltext_query(fulltext_vtab *v, const char *pInput, int nInput,
   }
 
   sqlite3_finalize(pSelect);
-  query_free(&q);
+  queryDestroy(&q);
   *pResult = d;
   return rc;
 }
@@ -1252,7 +1279,7 @@ static int fulltextFilter(sqlite3_vtab_cursor *pCursor,
       const char *zQuery = (const char *)sqlite3_value_text(argv[0]);
       DocList *pResult;
       assert( argc==1 );
-      rc = fulltext_query(v, zQuery, -1, &pResult);
+      rc = fulltextQuery(v, zQuery, -1, &pResult);
       if( rc!=SQLITE_OK ) return rc;
       readerInit(&c->result, pResult);
       zStatement = "select rowid, content from %_content where rowid = ?";
@@ -1294,7 +1321,7 @@ static int fulltextRowid(sqlite3_vtab_cursor *pCursor, sqlite_int64 *pRowid){
 }
 
 /* Build a hash table containing all terms in pText. */
-static int build_terms(fts1Hash *terms, sqlite3_tokenizer *pTokenizer,
+static int buildTerms(fts1Hash *terms, sqlite3_tokenizer *pTokenizer,
                        const char *pText, int nText, sqlite_int64 iDocid){
   sqlite3_tokenizer_cursor *pCursor;
   const char *pToken;
@@ -1398,7 +1425,7 @@ static int index_insert(fulltext_vtab *v, sqlite3_value *pRequestRowid,
 
   if( !pText || !nText ) return SQLITE_OK;   /* nothing to index */
 
-  rc = build_terms(&terms, v->pTokenizer, pText, nText, *piRowid);
+  rc = buildTerms(&terms, v->pTokenizer, pText, nText, *piRowid);
   if( rc!=SQLITE_OK ) return rc;
 
   for(e=fts1HashFirst(&terms); e; e=fts1HashNext(e)){
@@ -1451,7 +1478,7 @@ static int index_delete(fulltext_vtab *v, sqlite_int64 iRow){
   int rc = content_select(v, iRow, &pText, &nText);
   if( rc!=SQLITE_OK ) return rc;
 
-  rc = build_terms(&terms, v->pTokenizer, pText, nText, iRow);
+  rc = buildTerms(&terms, v->pTokenizer, pText, nText, iRow);
   free(pText);
   if( rc!=SQLITE_OK ) return rc;
 

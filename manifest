@@ -1,5 +1,5 @@
-C Automatically\scompute\sthe\ssqlite3.def\sand\stclsqlite3.def\sfiles\swhen\nbuilding\swindows\sDLLs.\s\sThis\swill\s(hopefully)\skeep\sthe\s.def\sfiles\sin\nperfect\ssynchronization\swith\sthe\sDLLs.\s\sTicket\s#1951.\s(CVS\s3381)
-D 2006-09-01T17:06:20
+C Miscellaneous\srestructuring\sand\scleanup\sbased\son\ssuggestions\sfrom\sshess.\s(CVS\s3382)
+D 2006-09-02T00:23:02
 F Makefile.in 659b63368cfbb95a224c9d2f2a9897802d96a4ea
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -21,7 +21,7 @@ F ext/README.txt 913a7bd3f4837ab14d7e063304181787658b14e1
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
 F ext/fts1/ft_hash.c 3927bd880e65329bdc6f506555b228b28924921b
 F ext/fts1/ft_hash.h 1a35e654a235c2c662d3ca0dfc3138ad60b8b7d5
-F ext/fts1/fts1.c 6ac8a4d6203431b16ea36681101ee146bea6abcc
+F ext/fts1/fts1.c 98f1b10b6af53dc665eee9bccf7179c817b54b3c
 F ext/fts1/fts1.h fe8e8f38dd6d2d2645b9b0d6972e80985249575f
 F ext/fts1/fts1_hash.c 3196cee866edbebb1c0521e21672e6d599965114
 F ext/fts1/fts1_hash.h 957d378355ed29f672cd5add012ce8b088a5e089
@@ -395,7 +395,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P bedbac54db173ceb74bd78acd021209f28aa30a8
-R 95867c71124f856bb75de299ad025124
-U drh
-Z 2f626a5cf47e2b61edd21d8619c7423b
+P 1f6d79266a7f8d0e909e47d9858557e3f95407db
+R 9f47934fbcba4f9a0e1f8df18feb2204
+U adamd
+Z fba5a153a6d748159bc7d61ee5016242
