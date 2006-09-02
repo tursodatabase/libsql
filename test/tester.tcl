@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.65 2006/06/23 08:05:38 danielk1977 Exp $
+# $Id: tester.tcl,v 1.66 2006/09/02 14:50:24 drh Exp $
 
 # Make sure tclsqlite3 was compiled correctly.  Abort now with an
 # error message if not.
@@ -75,7 +75,6 @@ if {[info exists nTest]} return
 #
 set nErr 0
 set nTest 0
-set nProb 0
 set skip_test 0
 set failList {}
 set maxErr 1000
@@ -139,7 +138,7 @@ proc finish_test {} {
   finalize_testing
 }
 proc finalize_testing {} {
-  global nTest nErr nProb sqlite_open_file_count
+  global nTest nErr sqlite_open_file_count
   if {$nErr==0} memleak_check
 
   catch {db close}
@@ -149,7 +148,6 @@ proc finalize_testing {} {
   catch {
     pp_check_for_leaks
   }
-breakpoint
   sqlite3 db {}
   # sqlite3_clear_tsd_memdebug
   db close
@@ -162,15 +160,17 @@ breakpoint
   incr nTest
   puts "$nErr errors out of $nTest tests"
   puts "Failures on these tests: $::failList"
-  if {$nProb>0} {
-    puts "$nProb probabilistic tests also failed, but this does"
-    puts "not necessarily indicate a malfunction."
+  if {$nErr>0 && ![working_64bit_int]} {
+    puts "******************************************************************"
+    puts "N.B.:  The version of TCL that you used to build this test harness"
+    puts "is defective in that it does not support 64-bit integers.  Some or"
+    puts "all of the test failures above might be a result from this defect"
+    puts "in your TCL build."
+    puts "******************************************************************"
   }
-  if 0 {
   if {$sqlite_open_file_count} {
     puts "$sqlite_open_file_count files were left open"
     incr nErr
-  }
   }
   exit [expr {$nErr>0}]
 }

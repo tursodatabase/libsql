@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.217 2006/07/06 10:59:58 drh Exp $
+** $Id: test1.c,v 1.218 2006/09/02 14:50:24 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -3699,6 +3699,35 @@ static void set_options(Tcl_Interp *interp){
 }
 
 /*
+** tclcmd:   working_64bit_int
+**
+** Some TCL builds (ex: cygwin) do not support 64-bit integers.  This
+** leads to a number of test failures.  The present command checks the
+** TCL build to see whether or not it supports 64-bit integers.  It
+** returns TRUE if it does and FALSE if not.
+**
+** This command is used to warn users that their TCL build is defective
+** and that the errors they are seeing in the test scripts might be
+** a result of their defective TCL rather than problems in SQLite.
+*/
+static int working_64bit_int(
+  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  Tcl_Obj *pTestObj;
+  int working = 0;
+
+  pTestObj = Tcl_NewWideIntObj(1000000*(i64)1234567890);
+  working = strcmp(Tcl_GetString(pTestObj), "1234567890000000")==0;
+  Tcl_DecrRefCount(pTestObj);
+  Tcl_SetObjResult(interp, Tcl_NewBooleanObj(working));
+  return TCL_OK;
+}
+
+
+/*
 ** Register commands with the TCL interpreter.
 */
 int Sqlitetest1_Init(Tcl_Interp *interp){
@@ -3819,6 +3848,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
 #endif
 #endif
      { "sqlite3_global_recover",    test_global_recover, 0   },
+     { "working_64bit_int",         working_64bit_int,   0   },
 
      /* Functions from os.h */
 #ifndef SQLITE_OMIT_DISKIO
