@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.218 2006/09/02 14:50:24 drh Exp $
+** $Id: test1.c,v 1.219 2006/09/04 15:53:53 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -443,6 +443,34 @@ static void ifnullFunc(sqlite3_context *context, int argc, sqlite3_value **argv)
 }
 
 /*
+** These are test functions.    hex8() interprets its argument as
+** UTF8 and returns a hex encoding.  hex16le() interprets its argument
+** as UTF16le and returns a hex encoding.
+*/
+static void hex8Func(sqlite3_context *p, int argc, sqlite3_value **argv){
+  const unsigned char *z;
+  int i;
+  char zBuf[200];
+  z = sqlite3_value_text(argv[0]);
+  for(i=0; i<sizeof(zBuf)/2 - 2 && z[i]; i++){
+    sprintf(&zBuf[i*2], "%02x", z[i]&0xff);
+  }
+  zBuf[i*2] = 0;
+  sqlite3_result_text(p, (char*)zBuf, -1, SQLITE_TRANSIENT);
+}
+static void hex16Func(sqlite3_context *p, int argc, sqlite3_value **argv){
+  const unsigned short int *z;
+  int i;
+  char zBuf[400];
+  z = sqlite3_value_text16(argv[0]);
+  for(i=0; i<sizeof(zBuf)/4 - 4 && z[i]; i++){
+    sprintf(&zBuf[i*4], "%04x", z[i]&0xff);
+  }
+  zBuf[i*4] = 0;
+  sqlite3_result_text(p, (char*)zBuf, -1, SQLITE_TRANSIENT);
+}
+
+/*
 ** A structure into which to accumulate text.
 */
 struct dstr {
@@ -548,6 +576,10 @@ static int test_create_function(
   if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
   rc = sqlite3_create_function(db, "x_coalesce", -1, SQLITE_ANY, 0, 
         ifnullFunc, 0, 0);
+  rc = sqlite3_create_function(db, "hex8", 1, SQLITE_ANY, 0, 
+        hex8Func, 0, 0);
+  rc = sqlite3_create_function(db, "hex16", 1, SQLITE_ANY, 0, 
+        hex16Func, 0, 0);
 
 #ifndef SQLITE_OMIT_UTF16
   /* Use the sqlite3_create_function16() API here. Mainly for fun, but also 
@@ -1417,6 +1449,7 @@ static int test_changes(
 ** the FLAG option of sqlite3_bind is "static"
 */
 static char *sqlite_static_bind_value = 0;
+static int sqlite_static_bind_nbyte = 0;
 
 /*
 ** Usage:  sqlite3_bind  VM  IDX  VALUE  FLAGS
@@ -1449,6 +1482,9 @@ static int test_bind(
     rc = sqlite3_bind_null(pStmt, idx);
   }else if( strcmp(argv[4],"static")==0 ){
     rc = sqlite3_bind_text(pStmt, idx, sqlite_static_bind_value, -1, 0);
+  }else if( strcmp(argv[4],"static-nbytes")==0 ){
+    rc = sqlite3_bind_text(pStmt, idx, sqlite_static_bind_value,
+                                       sqlite_static_bind_nbyte, 0);
   }else if( strcmp(argv[4],"normal")==0 ){
     rc = sqlite3_bind_text(pStmt, idx, argv[3], -1, SQLITE_TRANSIENT);
   }else if( strcmp(argv[4],"blob10")==0 ){
@@ -3968,6 +4004,8 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
 #endif
   Tcl_LinkVar(interp, "sqlite_static_bind_value",
       (char*)&sqlite_static_bind_value, TCL_LINK_STRING);
+  Tcl_LinkVar(interp, "sqlite_static_bind_nbyte",
+      (char*)&sqlite_static_bind_nbyte, TCL_LINK_INT);
   Tcl_LinkVar(interp, "sqlite_temp_directory",
       (char*)&sqlite3_temp_directory, TCL_LINK_STRING);
   Tcl_LinkVar(interp, "bitmask_size",
