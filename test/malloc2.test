@@ -11,7 +11,7 @@
 # This file attempts to check that the library can recover from a malloc()
 # failure when sqlite3_global_recover() is invoked.
 #
-# $Id: malloc2.test,v 1.4 2005/12/06 12:53:01 danielk1977 Exp $
+# $Id: malloc2.test,v 1.5 2006/09/04 18:54:14 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -19,7 +19,7 @@ source $testdir/tester.tcl
 # Only run these tests if memory debugging is turned on.
 #
 if {[info command sqlite_malloc_stat]==""} {
-  puts "Skipping malloc tests: not compiled with -DSQLITE_DEBUG..."
+  puts "Skipping malloc tests: not compiled with -DSQLITE_MEMDEBUG=1"
   finish_test
   return
 }

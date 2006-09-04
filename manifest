@@ -1,5 +1,5 @@
-C Make\ssure\sstrings\sreturned\sby\ssqlite3_value_text()\sand\ssqlite3_value_text16()\nare\salways\s'\\000'-terminated.\s(CVS\s3391)
-D 2006-09-04T15:53:53
+C Fix\sa\sbug\sin\sthe\snew\smisc6.test\sscript.\s\sFix\serror\smessages\swhen\snot\ncompiled\swith\smemory\sdebugging\senabled.\s\sTicket\s#1957.\s(CVS\s3392)
+D 2006-09-04T18:54:14
 F Makefile.in cabd42d34340f49260bc2a7668c38eba8d4cfd99
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -127,14 +127,14 @@ F test/all.test 5df90d015ca63fcef2a4b62c24f7316b66c4bfd4
 F test/alter.test 29234396d738966d512dcb0d71c137a2315d38d7
 F test/alter2.test cc0b8832e4e98605dbc26910efd4bb89abe59cb2
 F test/alter3.test a6eec8f454be9b6ce73d8d7dc711453675a10ce7
-F test/altermalloc.test 6e1f404ec021eb2ba6582e3c77b0a35cf206b7af
+F test/altermalloc.test 19323e0f452834044c27a54c6e78554d706de7ba
 F test/analyze.test 2f55535aa335785db1a2f97d3f3831c16c09f8b0
 F test/async.test 464dc7c7ccb144e8c82ecca429e6d7cd1c96bd6e
 F test/async2.test 81e4a1fd010c903eb3b763fdb4c4cad7a99afb14
 F test/attach.test c616a88eab6b6fd99b7b2fcf449420f14628bc0b
 F test/attach2.test 0e6a7c54343c85dd877a1e86073a05176043ed40
 F test/attach3.test eafcafb107585aecc2ed1569a77914138eef46a9
-F test/attachmalloc.test cdb26c42850f04698377ccec05f5fa89d987837c
+F test/attachmalloc.test 03eeddd06e685ddbe975efd51824e4941847e5f4
 F test/auth.test 66923137cf78475f5671b5e6e6274935e055aea0
 F test/auth2.test 8da06f0ffcfd98154dda78e0f3b35a6503c27b64
 F test/autoinc.test 60005a676e3e4e17dfa9dbd08aa0b76587ff97e3
@@ -219,7 +219,7 @@ F test/lock2.test d83ba79d3c4fffdb5b926c7d8ca7a36c34288a55
 F test/lock3.test 615111293cf32aa2ed16d01c6611737651c96fb9
 F test/main.test e7212ce1023957c7209778cc87fa932bd79ba89a
 F test/malloc.test 4d5d382e40f1171cc63adb44aca4ab2dbb8a098c
-F test/malloc2.test e6e321db96d6c94cb18bf82ad7215070c41e624e
+F test/malloc2.test 4ed7d719542c4570dec9c2ebe2bbdf3a9f3b0d05
 F test/malloc3.test fd4186bee73c2a2638f4e2a05a684c06836f725b
 F test/malloc4.test 59cd02f71b363302a04c4e77b97c0a1572eaa210
 F test/malloc5.test 7425272e263325fda7d32cb55706e52b5c09e7e0
@@ -234,7 +234,7 @@ F test/misc2.test 9740c2fb7e4a69b2bebd4c5fd9ba45ae27b27e98
 F test/misc3.test 7bd937e2c62bcc6be71939faf068d506467b1e03
 F test/misc4.test b043a05dea037cca5989f3ae09552fa16119bc80
 F test/misc5.test 83bceca3d38ed10ced00271e02b26b24795def83
-F test/misc6.test 6d1b1535ad9e8788334ac2462deec662a2f82c57
+F test/misc6.test 3de55ec5cadf466ada587173faa5d6a4790a8bb7
 F test/misuse.test 30b3a458e5a70c31e74c291937b6c82204c59f33
 F test/notnull.test 44d600f916b770def8b095a9962dbe3be5a70d82
 F test/null.test 9503e1f63e959544c006d9f01709c5b5eab67d54
@@ -396,7 +396,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 367bd8376f323beb3148eab86ada1a3cb379ba3b
-R 65d3fac7dc50afc9b2c593fb5d16df61
+P 2c63588b45f4e1ab9b9f1b72c901f3800433424a
+R f402629df719cd6a62a288d804cc12e4
 U drh
-Z 7a672874943fae922a528231fba04d93
+Z 73048297660aa7bcb266fb7c1ff65219
