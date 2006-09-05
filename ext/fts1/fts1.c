@@ -542,8 +542,9 @@ static char *string_format(const char *zFormat, const char *zName){
 
 static int sql_exec(sqlite3 *db, const char *zName, const char *zFormat){
   char *zCommand = string_format(zFormat, zName);
+  int rc;
   TRACE(("FTS1 sql: %s\n", zCommand));
-  int rc = sqlite3_exec(db, zCommand, NULL, 0, NULL);
+  rc = sqlite3_exec(db, zCommand, NULL, 0, NULL);
   free(zCommand);
   return rc;
 }
@@ -551,8 +552,9 @@ static int sql_exec(sqlite3 *db, const char *zName, const char *zFormat){
 static int sql_prepare(sqlite3 *db, const char *zName, sqlite3_stmt **ppStmt,
                 const char *zFormat){
   char *zCommand = string_format(zFormat, zName);
+  int rc;
   TRACE(("FTS1 prepare: %s\n", zCommand));
-  int rc = sqlite3_prepare(db, zCommand, -1, ppStmt, NULL);
+  rc = sqlite3_prepare(db, zCommand, -1, ppStmt, NULL);
   free(zCommand);
   return rc;
 }
@@ -1014,9 +1016,10 @@ static int fulltextDisconnect(sqlite3_vtab *pVTab){
 
 static int fulltextDestroy(sqlite3_vtab *pVTab){
   fulltext_vtab *v = (fulltext_vtab *)pVTab;
+  int rc;
 
   TRACE(("FTS1 Destroy %p\n", pVTab));
-  int rc = sql_exec(v->db, v->zName,
+  rc = sql_exec(v->db, v->zName,
                     "drop table %_content; drop table %_term");
   if( rc!=SQLITE_OK ) return rc;
 
