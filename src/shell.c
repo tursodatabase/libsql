@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.147 2006/08/29 12:04:19 drh Exp $
+** $Id: shell.c,v 1.148 2006/09/06 21:39:40 adamd Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -52,9 +52,13 @@
 # define stifle_history(X)
 #endif
 
+#if defined(_WIN32) || defined(WIN32)
+# include <io.h>
+#else
 /* Make sure isatty() has a prototype.
 */
 extern int isatty();
+#endif
 
 /*
 ** The following is the open SQLite database.  We make a pointer

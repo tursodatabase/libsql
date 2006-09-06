@@ -1,5 +1,5 @@
-C A\sminor\schange\sto\sfts1.c\sto\sfix\sbroken\sbuild.\s(CVS\s3393)
-D 2006-09-05T18:21:32
+C Include\sio.h\son\sWindows\sto\squell\sa\sbuild\swarning\sabout\saccess()\shaving\sno\sprototype.\s(CVS\s3394)
+D 2006-09-06T21:39:40
 F Makefile.in cabd42d34340f49260bc2a7668c38eba8d4cfd99
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -85,7 +85,7 @@ F src/printf.c b179b6ed12f793e028dd169e2e2e2b2a37eedc63
 F src/random.c d40f8d356cecbd351ccfab6eaedd7ec1b54f5261
 F src/select.c 0d4724930a1f34c747105ed1802fa4af0d8eb519
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
-F src/shell.c 3496a1b0a23a6b77f90231b9e2f521fd93dcb5b1
+F src/shell.c 233f7766e532a204bed465249ffc584424ed1757
 F src/sqlite.h.in 84ac26ca94a84dd603fb57a27d862f51bfd9f687
 F src/sqlite3ext.h 11a046b3519c4b9b7709e6d6a95c3a36366f684a
 F src/sqliteInt.h 259adce944cc3b28da1fa3df9beb9ba86017a45d
@@ -396,7 +396,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 9fb92024bf5058bdc32066a0d07b93da575779fa
-R 7a0ae1e98ee3c864a6975ca4554852a8
+P 55a03b96251515a4817a0eefb197219a460640e7
+R 6e16a3f89d647bcc85e29d207220a908
 U adamd
-Z c63adab53ae160858e72e981eae8a8d5
+Z 21a30daa992edd6252c2ee677fe7df56
