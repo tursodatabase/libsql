@@ -16,7 +16,7 @@
 ** sqlite3RegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.54 2006/01/31 20:49:13 drh Exp $
+** $Id: date.c,v 1.55 2006/09/08 12:27:37 drh Exp $
 **
 ** NOTES:
 **
@@ -234,11 +234,11 @@ static void computeJD(DateTime *p){
   X2 = 30.6001*(M+1);
   p->rJD = X1 + X2 + D + B - 1524.5;
   p->validJD = 1;
-  p->validYMD = 0;
   if( p->validHMS ){
     p->rJD += (p->h*3600.0 + p->m*60.0 + p->s)/86400.0;
     if( p->validTZ ){
       p->rJD -= p->tz*60/86400.0;
+      p->validYMD = 0;
       p->validHMS = 0;
       p->validTZ = 0;
     }
@@ -357,6 +357,7 @@ static void computeYMD(DateTime *p){
 static void computeHMS(DateTime *p){
   int Z, s;
   if( p->validHMS ) return;
+  computeJD(p);
   Z = p->rJD + 0.5;
   s = (p->rJD + 0.5 - Z)*86400000.0 + 0.5;
   p->s = 0.001*s;
@@ -581,7 +582,7 @@ static int parseModifier(const char *zMod, DateTime *p){
         if( z[0]=='-' ) tx.rJD = -tx.rJD;
         computeJD(p);
         clearYMD_HMS_TZ(p);
-       p->rJD += tx.rJD;
+        p->rJD += tx.rJD;
         rc = 0;
         break;
       }
