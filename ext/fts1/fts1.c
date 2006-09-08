@@ -328,64 +328,86 @@ static sqlite_int64 firstDocid(DocList *d){
   return readDocid(&r);
 }
 
-/* Doclist multi-tool.  Pass pUpdate==NULL to delete the indicated docid;
- * otherwise pUpdate, which must contain only the single docid [iDocid], is
- * inserted (if not present) or updated (if already present). */
-static int docListUpdate(DocList *d, sqlite_int64 iDocid, DocList *pUpdate){
-  int modified = 0;
-  DocListReader reader;
-  int found;
-  char *p;
+/* Helper function for docListUpdate() and docListAccumulate().
+** Splices a doclist element into the doclist represented by r,
+** leaving r pointing after the newly spliced element.
+*/
+static void docListSpliceElement(DocListReader *r, sqlite_int64 iDocid,
+                                 const char *pSource, int nSource){
+  DocList *d = r->pDoclist;
+  char *pTarget;
+  int nTarget, found;
 
-  if( pUpdate!=NULL ){
-    assert( d->iType==pUpdate->iType);
-    assert( iDocid==firstDocid(pUpdate) );
-  }
+  found = skipToDocid(r, iDocid);
 
-  readerInit(&reader, d);
-  found = skipToDocid(&reader, iDocid);
-
-  p = reader.p;
-  /* Delete if there is a matching element. */
+  /* Describe slice in d to place pSource/nSource. */
+  pTarget = r->p;
   if( found ){
-    skipDocument(&reader);
-    memmove(p, reader.p, docListEnd(d) - reader.p);
-    d->nData -= (reader.p - p);
-    modified = 1;
+    skipDocument(r);
+    nTarget = r->p-pTarget;
+  }else{
+    nTarget = 0;
   }
 
-  /* Insert if indicated. */
-  if( pUpdate!=NULL ){
-    int iDoclist = p-d->pData;
-
-    d->pData = realloc(d->pData, d->nData+pUpdate->nData);
-    p = d->pData + iDoclist;
-
-    memmove(p+pUpdate->nData, p, docListEnd(d) - p);
-    memcpy(p, pUpdate->pData, pUpdate->nData);
-    d->nData += pUpdate->nData;
-    modified = 1;
+  /* The sense of the following is that there are three possibilities.
+  ** If nTarget==nSource, we should not move any memory nor realloc.
+  ** If nTarget>nSource, trim target and realloc.
+  ** If nTarget<nSource, realloc then expand target.
+  */
+  if( nTarget>nSource ){
+    memmove(pTarget+nSource, pTarget+nTarget, docListEnd(d)-(pTarget+nTarget));
+  }
+  if( nTarget!=nSource ){
+    int iDoclist = pTarget-d->pData;
+    d->pData = realloc(d->pData, d->nData+nSource-nTarget);
+    pTarget = d->pData+iDoclist;
+  }
+  if( nTarget<nSource ){
+    memmove(pTarget+nSource, pTarget+nTarget, docListEnd(d)-(pTarget+nTarget));
   }
 
-  return modified;
+  memcpy(pTarget, pSource, nSource);
+  d->nData += nSource-nTarget;
+  r->p = pTarget+nSource;
 }
 
-/* Split the second half of doclist d into a separate doclist d2.  Returns 1
- * if successful, or 0 if d contains a single document and hence can't be
- * split. */
-static int docListSplit(DocList *d, DocList *d2){
-  const char *pSplitPoint = d->pData + d->nData / 2;
+/* Insert/update pUpdate into the doclist. */
+static void docListUpdate(DocList *d, DocList *pUpdate){
   DocListReader reader;
 
+  assert( d!=NULL && pUpdate!=NULL );
+  assert( d->iType==pUpdate->iType);
+
   readerInit(&reader, d);
-  while( reader.p<pSplitPoint ){
-    skipDocument(&reader);
+  docListSpliceElement(&reader, firstDocid(pUpdate),
+                       pUpdate->pData, pUpdate->nData);
+}
+
+/* Propagate elements from pUpdate to pAcc, overwriting elements with
+** matching docids.
+*/
+static void docListAccumulate(DocList *pAcc, DocList *pUpdate){
+  DocListReader accReader, updateReader;
+
+  /* Handle edge cases where one doclist is empty. */
+  assert( pAcc!=NULL );
+  if( pUpdate==NULL || pUpdate->nData==0 ) return;
+  if( pAcc->nData==0 ){
+    pAcc->pData = malloc(pUpdate->nData);
+    memcpy(pAcc->pData, pUpdate->pData, pUpdate->nData);
+    pAcc->nData = pUpdate->nData;
+    return;
   }
-  if( atEnd(&reader) ) return 0;
-  docListInit(d2, d->iType, reader.p, docListEnd(d) - reader.p);
-  d->nData = reader.p - d->pData;
-  d->pData = realloc(d->pData, d->nData);
-  return 1;
+
+  readerInit(&accReader, pAcc);
+  readerInit(&updateReader, pUpdate);
+
+  while( !atEnd(&updateReader) ){
+    char *pSource = updateReader.p;
+    sqlite_int64 iDocid = readDocid(&updateReader);
+    skipPositionList(&updateReader);
+    docListSpliceElement(&accReader, iDocid, pSource, updateReader.p-pSource);
+  }
 }
 
 /* A DocListMerge computes the AND of an in-memory DocList [in] and a chunked
@@ -410,6 +432,11 @@ static int docListSplit(DocList *d, DocList *d2){
  *
  * A DocListMerge is not yet able to propagate offsets through query
  * processing; we should add that capability soon.
+*/
+/* TODO(shess) Adam indicates that since we no longer can stream
+** ordered doclist chunks, DocListMerge is no longer as useful and
+** should be removed.  Not removing at this time so that the removal
+** doesn't obscure the exponential-chunking change.
 */
 typedef struct DocListMerge {
   DocListReader in;
@@ -482,15 +509,25 @@ static void mergeBlock(DocListMerge *m, DocList *pBlock){
   while( !atEnd(&blockReader) ){
     sqlite_int64 iDocid = readDocid(&blockReader);
     if( m->in.pDoclist==NULL ){
-      copyDocument(m->pOut, iDocid, &blockReader);
+      /* Skip document delete crumbs */
+      if( *blockReader.p=='\0' ){
+        skipPositionList(&blockReader);
+      } else {
+        copyDocument(m->pOut, iDocid, &blockReader);
+      }
       continue;
     }
     if( skipToDocid(&m->in, iDocid) ){  /* we have a docid match */
       readDocid(&m->in);
-      if( m->in.pDoclist->iType>=DL_POSITIONS ){
-        mergePosList(m, iDocid, &blockReader);
-      } else {
-        copyDocument(m->pOut, iDocid, &blockReader);
+      /* Skip document delete crumbs */
+      if( *blockReader.p=='\0' ){
+        skipPositionList(&blockReader);
+      }else{
+        if( m->in.pDoclist->iType>=DL_POSITIONS ){
+          mergePosList(m, iDocid, &blockReader);
+        } else {
+          copyDocument(m->pOut, iDocid, &blockReader);
+        }
       }
     } else if( !atEnd(&m->in) ){
       skipPositionList(&blockReader);  /* skip this docid in the block */
@@ -564,7 +601,18 @@ static int sql_prepare(sqlite3 *db, const char *zName, sqlite3_stmt **ppStmt,
 #define QUERY_GENERIC 0
 #define QUERY_FULLTEXT 1
 
-#define CHUNK_MAX 1024
+/* TODO(shess) CHUNK_MAX controls how much data we allow in segment 0
+** before we start aggregating into larger segments.  Lower CHUNK_MAX
+** means that for a given input we have more individual segments per
+** term, which means more rows in the table and a bigger index (due to
+** both more rows and bigger rowids).  But it also reduces the average
+** cost of adding new elements to the segment 0 doclist, and it seems
+** to reduce the number of pages read and written during inserts.  256
+** was chosen by measuring insertion times for a certain input (first
+** 10k documents of Enron corpus), though including query performance
+** in the decision may argue for a larger value.
+*/
+#define CHUNK_MAX 256
 
 typedef enum fulltext_statement {
   CONTENT_INSERT_STMT,
@@ -572,7 +620,7 @@ typedef enum fulltext_statement {
   CONTENT_DELETE_STMT,
 
   TERM_SELECT_STMT,
-  TERM_CHUNK_SELECT_STMT,
+  TERM_SELECT_ALL_STMT,
   TERM_INSERT_STMT,
   TERM_UPDATE_STMT,
   TERM_DELETE_STMT,
@@ -592,11 +640,11 @@ static const char *const fulltext_zStatement[MAX_STMT] = {
   /* CONTENT_DELETE */ "delete from %_content where rowid = ?",
 
   /* TERM_SELECT */
-  "select rowid, doclist from %_term where term = ? and first = ?",
-  /* TERM_CHUNK_SELECT */
-  "select max(first) from %_term where term = ? and first <= ?",
+  "select rowid, doclist from %_term where term = ? and segment = ?",
+  /* TERM_SELECT_ALL */
+  "select doclist from %_term where term = ? order by segment",
   /* TERM_INSERT */
-  "insert into %_term (term, first, doclist) values (?, ?, ?)",
+  "insert into %_term (term, segment, doclist) values (?, ?, ?)",
   /* TERM_UPDATE */ "update %_term set doclist = ? where rowid = ?",
   /* TERM_DELETE */ "delete from %_term where rowid = ?",
 };
@@ -758,13 +806,13 @@ static int content_delete(fulltext_vtab *v, sqlite_int64 iRow){
   return sql_single_step_statement(v, CONTENT_DELETE_STMT, &s);
 }
 
-/* select rowid, doclist from %_term where term = [pTerm] and first = [iFirst]
- * If found, returns SQLITE_OK; the caller must free the returned doclist.
- * If no rows found, returns SQLITE_ERROR. */
+/* select rowid, doclist from %_term
+ *  where term = [pTerm] and segment = [iSegment]
+ * If found, returns SQLITE_ROW; the caller must free the
+ * returned doclist.  If no rows found, returns SQLITE_DONE. */
 static int term_select(fulltext_vtab *v, const char *pTerm, int nTerm,
-                       sqlite_int64 iFirst,
-                       sqlite_int64 *rowid,
-                       DocList *out){
+                       int iSegment,
+                       sqlite_int64 *rowid, DocList *out){
   sqlite3_stmt *s;
   int rc = sql_get_statement(v, TERM_SELECT_STMT, &s);
   if( rc!=SQLITE_OK ) return rc;
@@ -772,11 +820,11 @@ static int term_select(fulltext_vtab *v, const char *pTerm, int nTerm,
   rc = sqlite3_bind_text(s, 1, pTerm, nTerm, SQLITE_STATIC);
   if( rc!=SQLITE_OK ) return rc;
 
-  rc = sqlite3_bind_int64(s, 2, iFirst);
+  rc = sqlite3_bind_int(s, 2, iSegment);
   if( rc!=SQLITE_OK ) return rc;
 
   rc = sql_step_statement(v, TERM_SELECT_STMT, &s);
-  if( rc!=SQLITE_ROW ) return rc==SQLITE_DONE ? SQLITE_ERROR : rc;
+  if( rc!=SQLITE_ROW ) return rc;
 
   *rowid = sqlite3_column_int64(s, 0);
   docListInit(out, DL_POSITIONS_OFFSETS,
@@ -785,48 +833,59 @@ static int term_select(fulltext_vtab *v, const char *pTerm, int nTerm,
   /* We expect only one row.  We must execute another sqlite3_step()
    * to complete the iteration; otherwise the table will remain locked. */
   rc = sqlite3_step(s);
-  return rc==SQLITE_DONE ? SQLITE_OK : rc;
+  return rc==SQLITE_DONE ? SQLITE_ROW : rc;
 }
 
-/* select max(first) from %_term where term = [pTerm] and first <= [iFirst]
- * If found, returns SQLITE_ROW and result in *piResult; if the query returns
- * NULL (meaning no row found) returns SQLITE_DONE.
- */
-static int term_chunk_select(fulltext_vtab *v, const char *pTerm, int nTerm,
-                           sqlite_int64 iFirst, sqlite_int64 *piResult){
+/* Load the segment doclists for term pTerm and merge them in
+** appropriate order into out.  Returns SQLITE_OK if successful.  If
+** there are no segments for pTerm, successfully returns an empty
+** doclist in out.
+*/
+static int term_select_all(fulltext_vtab *v, const char *pTerm, int nTerm,
+                           DocList *out){
+  DocList doclist;
   sqlite3_stmt *s;
-  int rc = sql_get_statement(v, TERM_CHUNK_SELECT_STMT, &s);
+  int rc = sql_get_statement(v, TERM_SELECT_ALL_STMT, &s);
   if( rc!=SQLITE_OK ) return rc;
 
   rc = sqlite3_bind_text(s, 1, pTerm, nTerm, SQLITE_STATIC);
   if( rc!=SQLITE_OK ) return rc;
 
-  rc = sqlite3_bind_int64(s, 2, iFirst);
-  if( rc!=SQLITE_OK ) return rc;
+  docListInit(&doclist, DL_POSITIONS_OFFSETS, 0, 0);
 
-  rc = sql_step_statement(v, TERM_CHUNK_SELECT_STMT, &s);
-  if( rc!=SQLITE_ROW ) return rc==SQLITE_DONE ? SQLITE_ERROR : rc;
+  /* TODO(shess) Handle schema and busy errors. */
+  while( (rc=sql_step_statement(v, TERM_SELECT_ALL_STMT, &s))==SQLITE_ROW ){
+    DocList old;
 
-  switch( sqlite3_column_type(s, 0) ){
-    case SQLITE_NULL:
-      rc = SQLITE_DONE;
-      break;
-    case SQLITE_INTEGER:
-     *piResult = sqlite3_column_int64(s, 0);
-     break;
-    default:
-      return SQLITE_ERROR;
+    /* TODO(shess) If we processed doclists from oldest to newest, we
+    ** could skip the malloc() involved with the following call.  For
+    ** now, I'd rather keep this logic similar to index_insert_term().
+    ** We could additionally drop elements when we see deletes, but
+    ** that would require a distinct version of docListAccumulate().
+    */
+    docListInit(&old, doclist.iType,
+                sqlite3_column_blob(s, 0), sqlite3_column_bytes(s, 0));
+
+    /* doclist contains the newer data, so write it over old.  Then
+    ** steal accumulated result for doclist.
+    */
+    docListAccumulate(&old, &doclist);
+    docListDestroy(&doclist);
+    doclist = old;
   }
-  /* We expect only one row.  We must execute another sqlite3_step()
-   * to complete the iteration; otherwise the table will remain locked. */
-  if( sqlite3_step(s) != SQLITE_DONE ) return SQLITE_ERROR;
-  return rc;
+  if( rc!=SQLITE_DONE ){
+    docListDestroy(&doclist);
+    return rc;
+  }
+
+  *out = doclist;
+  return SQLITE_OK;
 }
 
-/* insert into %_term (term, first, doclist)
-               values ([pTerm], [iFirst], [doclist]) */
+/* insert into %_term (term, segment, doclist)
+               values ([pTerm], [iSegment], [doclist]) */
 static int term_insert(fulltext_vtab *v, const char *pTerm, int nTerm,
-                       sqlite_int64 iFirst, DocList *doclist){
+                       int iSegment, DocList *doclist){
   sqlite3_stmt *s;
   int rc = sql_get_statement(v, TERM_INSERT_STMT, &s);
   if( rc!=SQLITE_OK ) return rc;
@@ -834,7 +893,7 @@ static int term_insert(fulltext_vtab *v, const char *pTerm, int nTerm,
   rc = sqlite3_bind_text(s, 1, pTerm, nTerm, SQLITE_STATIC);
   if( rc!=SQLITE_OK ) return rc;
 
-  rc = sqlite3_bind_int64(s, 2, iFirst);
+  rc = sqlite3_bind_int(s, 2, iSegment);
   if( rc!=SQLITE_OK ) return rc;
 
   rc = sqlite3_bind_blob(s, 3, doclist->pData, doclist->nData, SQLITE_STATIC);
@@ -958,27 +1017,37 @@ static int fulltextCreate(sqlite3 *db, void *pAux, int argc, char **argv,
   ** encoded as:
   **
   **   docid varint-encoded
-  **   token count varint-encoded
-  **   "count" token elements (poslist):
-  **     position varint-encoded as delta from previous position
+  **   token elements:
+  **     position+1 varint-encoded as delta from previous position
   **     start offset varint-encoded as delta from previous start offset
   **     end offset varint-encoded as delta from start offset
   **
-  ** Additionally, doclist blobs can be chunked into multiple rows,
-  ** using "first" to order the blobs.  "first" is simply the first
-  ** docid in the blob.
+  ** The sentinel position of 0 indicates the end of the token list.
+  **
+  ** Additionally, doclist blobs are chunked into multiple segments,
+  ** using segment to order the segments.  New elements are added to
+  ** the segment at segment 0, until it exceeds CHUNK_MAX.  Then
+  ** segment 0 is deleted, and the doclist is inserted at segment 1.
+  ** If there is already a doclist at segment 1, the segment 0 doclist
+  ** is merged with it, the segment 1 doclist is deleted, and the
+  ** merged doclist is inserted at segment 2, repeating those
+  ** operations until an insert succeeds.
+  **
+  ** Since this structure doesn't allow us to update elements in place
+  ** in case of deletion or update, these are simply written to
+  ** segment 0 (with an empty token list in case of deletion), with
+  ** docListAccumulate() taking care to retain lower-segment
+  ** information in preference to higher-segment information.
   */
-  /*
-  ** NOTE(shess) That last sentence is incorrect in the face of
-  ** deletion, which can leave a doclist that doesn't contain the
-  ** first from that row.  I _believe_ this does not matter to the
-  ** operation of the system, but it might be reasonable to update
-  ** appropriately in case this assumption becomes more important.
+  /* TODO(shess) Provide a VACUUM type operation which both removes
+  ** deleted elements which are no longer necessary, and duplicated
+  ** elements.  I suspect this will probably not be necessary in
+  ** practice, though.
   */
   rc = sql_exec(db, argv[2],
     "create table %_content(content text);"
-    "create table %_term(term text, first integer, doclist blob);"
-    "create index %_index on %_term(term, first)");
+    "create table %_term(term text, segment integer, doclist blob, "
+                        "primary key(term, segment));");
   if( rc!=SQLITE_OK ) return rc;
 
   return fulltextConnect(db, pAux, argc, argv, ppVTab);
@@ -1095,54 +1164,28 @@ static int fulltextNext(sqlite3_vtab_cursor *pCursor){
   }
 }
 
-static int term_select_doclist(fulltext_vtab *v, const char *pTerm, int nTerm,
-                               sqlite3_stmt **ppStmt){
-  int rc;
-  if( *ppStmt ){
-    rc = sqlite3_reset(*ppStmt);
-  } else {
-    rc = sql_prepare(v->db, v->zName, ppStmt,
-      "select doclist from %_term where term = ? order by first");
-  }
-  if( rc!=SQLITE_OK ) return rc;
-
-  rc = sqlite3_bind_text(*ppStmt, 1, pTerm, nTerm, SQLITE_TRANSIENT);
-  if( rc!=SQLITE_OK ) return rc;
-
-  return sqlite3_step(*ppStmt);   /* TODO(adamd): handle schema error */
-}
-
 /* Read the posting list for [pTerm]; AND it with the doclist [pIn] to
  * produce the doclist [out], using the given phrase position [iPhrasePos].
  * (*pSelect) is used to hold an SQLite statement used inside this function;
  * the caller should initialize *pSelect to NULL before the first call.
  */
-static int mergeQuery(fulltext_vtab *v, sqlite3_stmt **pSelect,
-                       const char *pTerm, int nTerm,
+static int mergeQuery(fulltext_vtab *v, const char *pTerm, int nTerm,
                        DocList *pIn, int iPhrasePos, DocList *out){
   int rc;
   DocListMerge merge;
+  DocList doclist;
 
   /* If [pIn] is already empty, there's no point in reading the
    * posting list to AND it in; return immediately. */
   if( pIn!=NULL && !pIn->nData ) return SQLITE_OK;
 
-  rc = term_select_doclist(v, pTerm, nTerm, pSelect);
-  if( rc!=SQLITE_ROW && rc!=SQLITE_DONE ) return rc;
+  rc = term_select_all(v, pTerm, nTerm, &doclist);
+  if( rc!=SQLITE_OK ) return rc;
 
   mergeInit(&merge, pIn, iPhrasePos, out);
-  while( rc==SQLITE_ROW ){
-    DocList block;
-    docListInit(&block, DL_POSITIONS_OFFSETS,
-                sqlite3_column_blob(*pSelect, 0),
-                sqlite3_column_bytes(*pSelect, 0));
-    mergeBlock(&merge, &block);
-    docListDestroy(&block);
+  mergeBlock(&merge, &doclist);
+  docListDestroy(&doclist);
 
-    rc = sqlite3_step(*pSelect);
-    if( rc!=SQLITE_ROW && rc!=SQLITE_DONE ) return rc;
-  }
-  
   return SQLITE_OK;
 }
 
@@ -1251,7 +1294,6 @@ static int fulltextQuery(fulltext_vtab *v, const char *pInput, int nInput,
   Query q;
   int phrase_start = -1;
   int i;
-  sqlite3_stmt *pSelect = NULL;
   DocList *d = NULL;
 
   int rc = parseQuery(v, pInput, nInput, &q);
@@ -1266,7 +1308,7 @@ static int fulltextQuery(fulltext_vtab *v, const char *pInput, int nInput,
     if( q.pTerms[i].isPhrase ){
       phrase_start = i;
     }
-    rc = mergeQuery(v, &pSelect, q.pTerms[i].pTerm, q.pTerms[i].nTerm,
+    rc = mergeQuery(v, q.pTerms[i].pTerm, q.pTerms[i].nTerm,
                      d, i-phrase_start, next);
     if( rc!=SQLITE_OK ) break;
     if( d!=NULL ){
@@ -1275,7 +1317,6 @@ static int fulltextQuery(fulltext_vtab *v, const char *pInput, int nInput,
     d = next;
   }
 
-  sqlite3_finalize(pSelect);
   queryDestroy(&q);
   *pResult = d;
   return rc;
@@ -1388,44 +1429,65 @@ err:
   pTokenizer->pModule->xClose(pCursor);
   return rc;
 }
-/* Update the %_terms table to map the term [zTerm] to the given rowid. */
+
+/* Update the %_terms table to map the term [pTerm] to the given rowid. */
 static int index_insert_term(fulltext_vtab *v, const char *pTerm, int nTerm,
-                             sqlite_int64 iDocid, DocList *p){
-  sqlite_int64 iFirst;
+                             DocList *d){
   sqlite_int64 iIndexRow;
   DocList doclist;
+  int iSegment = 0, rc;
 
-  int rc = term_chunk_select(v, pTerm, nTerm, iDocid, &iFirst);
+  rc = term_select(v, pTerm, nTerm, iSegment, &iIndexRow, &doclist);
   if( rc==SQLITE_DONE ){
     docListInit(&doclist, DL_POSITIONS_OFFSETS, 0, 0);
-    if( docListUpdate(&doclist, iDocid, p) ){
-      rc = term_insert(v, pTerm, nTerm, iDocid, &doclist);
-      docListDestroy(&doclist);
-      return rc;
-    }
-    return SQLITE_OK;
+    docListUpdate(&doclist, d);
+    /* TODO(shess) Consider length(doclist)>CHUNK_MAX? */
+    rc = term_insert(v, pTerm, nTerm, iSegment, &doclist);
+    goto err;
   }
   if( rc!=SQLITE_ROW ) return SQLITE_ERROR;
 
-  /* This word is in the index; add this document ID to its blob. */
-
-  rc = term_select(v, pTerm, nTerm, iFirst, &iIndexRow, &doclist);
-  if( rc!=SQLITE_OK ) return rc;
-
-  if( docListUpdate(&doclist, iDocid, p) ){
-    /* If the blob is too big, split it in half. */
-    if( doclist.nData>CHUNK_MAX ){
-      DocList half;
-      if( docListSplit(&doclist, &half) ){
-        rc = term_insert(v, pTerm, nTerm, firstDocid(&half), &half);
-        docListDestroy(&half);
-        if( rc!=SQLITE_OK ) goto err;
-      }
-    }
+  docListUpdate(&doclist, d);
+  if( doclist.nData<=CHUNK_MAX ){
     rc = term_update(v, iIndexRow, &doclist);
+    goto err;
   }
 
-err:
+  /* Doclist doesn't fit, delete what's there, and accumulate
+  ** forward.
+  */
+  rc = term_delete(v, iIndexRow);
+  if( rc!=SQLITE_OK ) goto err;
+
+  /* Try to insert the doclist into a higher segment bucket.  On
+  ** failure, accumulate existing doclist with the doclist from that
+  ** bucket, and put results in the next bucket.
+  */
+  iSegment++;
+  while( (rc=term_insert(v, pTerm, nTerm, iSegment, &doclist))!=SQLITE_OK ){
+    DocList old;
+    int rc2;
+
+    /* Retain old error in case the term_insert() error was really an
+    ** error rather than a bounced insert.
+    */
+    rc2 = term_select(v, pTerm, nTerm, iSegment, &iIndexRow, &old);
+    if( rc2!=SQLITE_ROW ) goto err;
+
+    rc = term_delete(v, iIndexRow);
+    if( rc!=SQLITE_OK ) goto err;
+
+    /* doclist contains the newer data, so accumulate it over old.
+    ** Then steal accumulated data for doclist.
+    */
+    docListAccumulate(&old, &doclist);
+    docListDestroy(&doclist);
+    doclist = old;
+
+    iSegment++;
+  }
+
+ err:
   docListDestroy(&doclist);
   return rc;
 }
@@ -1452,7 +1514,7 @@ static int index_insert(fulltext_vtab *v, sqlite3_value *pRequestRowid,
 
   for(e=fts1HashFirst(&terms); e; e=fts1HashNext(e)){
     DocList *p = fts1HashData(e);
-    rc = index_insert_term(v, fts1HashKey(e), fts1HashKeysize(e), *piRowid, p);
+    rc = index_insert_term(v, fts1HashKey(e), fts1HashKeysize(e), p);
     if( rc!=SQLITE_OK ) break;
   }
 
@@ -1464,38 +1526,13 @@ static int index_insert(fulltext_vtab *v, sqlite3_value *pRequestRowid,
   return rc;
 }
 
-static int index_delete_term(fulltext_vtab *v, const char *pTerm, int nTerm,
-                             sqlite_int64 iDocid){
-  sqlite_int64 iFirst;
-  sqlite_int64 iIndexRow;
-  DocList doclist;
-  int rc;
-
-  assert( nTerm>=0 );
-
-  rc = term_chunk_select(v, pTerm, nTerm, iDocid, &iFirst);
-  if( rc!=SQLITE_ROW ) return SQLITE_ERROR;
-
-  rc = term_select(v, pTerm, nTerm, iFirst, &iIndexRow, &doclist);
-  if( rc!=SQLITE_OK ) return rc;
-
-  if( docListUpdate(&doclist, iDocid, NULL) ){
-    if( doclist.nData>0 ){
-      rc = term_update(v, iIndexRow, &doclist);
-    } else {  /* empty posting list */
-      rc = term_delete(v, iIndexRow);
-    }
-  }
-  docListDestroy(&doclist);
-  return rc;
-}
-
 /* Delete a row from the full-text index. */
 static int index_delete(fulltext_vtab *v, sqlite_int64 iRow){
-  char *pText;
-  int nText;
+  char *pText = 0;
+  int nText = 0;
   fts1Hash terms;
   fts1HashElem *e;
+  DocList doclist;
 
   int rc = content_select(v, iRow, &pText, &nText);
   if( rc!=SQLITE_OK ) return rc;
@@ -1504,8 +1541,15 @@ static int index_delete(fulltext_vtab *v, sqlite_int64 iRow){
   free(pText);
   if( rc!=SQLITE_OK ) return rc;
 
+  /* Delete by inserting a doclist with no positions.  This will
+  ** overwrite existing data as it is merged forward by
+  ** index_insert_term().
+  */
+  docListInit(&doclist, DL_POSITIONS_OFFSETS, 0, 0);
+  docListAddDocid(&doclist, iRow);
+
   for(e=fts1HashFirst(&terms); e; e=fts1HashNext(e)){
-    rc = index_delete_term(v, fts1HashKey(e), fts1HashKeysize(e), iRow);
+    rc = index_insert_term(v, fts1HashKey(e), fts1HashKeysize(e), &doclist);
     if( rc!=SQLITE_OK ) break;
   }
   for(e=fts1HashFirst(&terms); e; e=fts1HashNext(e)){
@@ -1513,7 +1557,9 @@ static int index_delete(fulltext_vtab *v, sqlite_int64 iRow){
     docListDelete(p);
   }
   fts1HashClear(&terms);
+  docListDestroy(&doclist);
 
+  if( rc!=SQLITE_OK ) return rc;
   return content_delete(v, iRow);
 }
 
