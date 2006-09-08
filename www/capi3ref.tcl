@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3ref.tcl,v 1.43 2006/08/24 15:18:25 drh Exp $}
+set rcsid {$Id: capi3ref.tcl,v 1.44 2006/09/08 11:56:30 drh Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -1279,12 +1279,46 @@ int sqlite3_step(sqlite3_stmt*);
  SQLITE_ERROR means that a run-time error (such as a constraint
  violation) has occurred.  sqlite3_step() should not be called again on
  the VM. More information may be found by calling sqlite3_errmsg().
+ A more specific error code (example: SQLITE_INTERRUPT, SQLITE_SCHEMA,
+ SQLITE_CORRUPT, and so forth) can be obtained by calling
+ sqlite3_reset() on the prepared statement.
 
  SQLITE_MISUSE means that the this routine was called inappropriately.
  Perhaps it was called on a virtual machine that had already been
  finalized or on one that had previously returned SQLITE_ERROR or
  SQLITE_DONE.  Or it could be the case that a database connection
  is being used by a different thread than the one it was created it.
+
+ <b>Goofy Interface Alert:</b>
+ The sqlite3_step() API always returns a generic error code,
+ SQLITE_ERROR, following any error other than SQLITE_BUSY and SQLITE_MISUSE.
+ You must call sqlite3_reset() (or sqlite3_finalize()) in order to find
+ the specific error code that better describes the error.  We admit that
+ this is a goofy design.  Sqlite3_step() would be much easier to use if
+ it returned the specific error code directly.  But we cannot change that
+ now without breaking backwards compatibility.
+
+ Note that there is never any harm in calling sqlite3_reset() after
+ getting back an SQLITE_ERROR from sqlite3_step().  Any API that can
+ be used after an sqlite3_step() can also be used after sqlite3_reset().
+ You may want to create a simple wrapper around sqlite3_step() to make
+ this easier.  For example:
+
+ <blockquote><pre>
+    int less_goofy_sqlite3_step(sqlite3_stmt *pStatement){
+      int rc;
+      rc = sqlite3_step(pStatement);
+      if( rc==SQLITE_ERROR ){
+        rc = sqlite3_reset(pStatement);
+      }
+      return rc;
+    }
+ </pre></blockquote>
+
+ Simply substitute the less_goofy_sqlite3_step() call above for 
+ the normal sqlite3_step() everywhere in your code, and you will
+ always get back the specific error code rather than a generic
+ SQLITE_ERROR error code.
 }
 
 api {} {
