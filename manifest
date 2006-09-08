@@ -1,5 +1,5 @@
-C Bug\sfix\sin\sdate/time\scomputations.\s\sTicket\s#1964.\r\nSome\sunrelated\scomment\stypos\sare\salso\sfixed\sand\sgot\saccidently\r\nchecked\sin\sat\sthe\ssame\stime.\s(CVS\s3396)
-D 2006-09-08T12:27:37
+C Add\sHAVE_GMTIME_R\sand\sHAVE_LOCALTIME_R\sflags\sand\suse\sthem\sif\sdefined.\nUnable\sto\smodify\sthe\sconfigure\sscript\sto\stest\sfor\sgmtime_r\sand\nlocaltime_r,\showever,\sbecause\son\smy\sSuSE\s10.2\ssystem,\sautoconf\sgenerates\na\sconfigure\sscript\sthat\sdoes\snot\swork.\s\sBummer.\s\sTicket\s#1906\s(CVS\s3397)
+D 2006-09-08T12:49:44
 F Makefile.in cabd42d34340f49260bc2a7668c38eba8d4cfd99
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -53,7 +53,7 @@ F src/btree.h 061c50e37de7f50b58528e352d400cf33ead7418
 F src/build.c 4359b34a36938716ed10ac037eec9dc5173b8f4b
 F src/callback.c fd9bb39f7ff6b52bad8365617abc61c720640429
 F src/complete.c 7d1a44be8f37de125fcafd3d3a018690b3799675
-F src/date.c bbfc2db2b713193f08bc482c27961a801fce6671
+F src/date.c d5519023569adf30892ff7be6deadf25ecdf1ecd
 F src/delete.c 804384761144fe1a5035b99f4bd7d706976831bd
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
 F src/expr.c 0546cc60f08c426d96092dea0789d085aed3580e
@@ -396,7 +396,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 508248e783dc1e3da3695b28467ca3b79629e582
-R db789daf8e27e8308536c276b6e1da10
+P c81eaa0dc9a327d222e066076c4a2da5e69d8c21
+R 6a9c50d36dc1896e63c9a41784e343ad
 U drh
-Z c96944e52a68f5437f07b5ef49e8020c
+Z 6afb2ccd411e0e0ff1288b2aea9c08c4

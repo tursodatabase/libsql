@@ -16,7 +16,7 @@
 ** sqlite3RegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.55 2006/09/08 12:27:37 drh Exp $
+** $Id: date.c,v 1.56 2006/09/08 12:49:44 drh Exp $
 **
 ** NOTES:
 **
@@ -394,7 +394,6 @@ static void clearYMD_HMS_TZ(DateTime *p){
 static double localtimeOffset(DateTime *p){
   DateTime x, y;
   time_t t;
-  struct tm *pTm;
   x = *p;
   computeYMD_HMS(&x);
   if( x.Y<1971 || x.Y>=2038 ){
@@ -412,15 +411,31 @@ static double localtimeOffset(DateTime *p){
   x.validJD = 0;
   computeJD(&x);
   t = (x.rJD-2440587.5)*86400.0 + 0.5;
-  sqlite3OsEnterMutex();
-  pTm = localtime(&t);
-  y.Y = pTm->tm_year + 1900;
-  y.M = pTm->tm_mon + 1;
-  y.D = pTm->tm_mday;
-  y.h = pTm->tm_hour;
-  y.m = pTm->tm_min;
-  y.s = pTm->tm_sec;
-  sqlite3OsLeaveMutex();
+#ifdef HAVE_LOCALTIME_R
+  {
+    struct tm sLocal;
+    localtime_r(&t, &sLocal);
+    y.Y = sLocal.tm_year + 1900;
+    y.M = sLocal.tm_mon + 1;
+    y.D = sLocal.tm_mday;
+    y.h = sLocal.tm_hour;
+    y.m = sLocal.tm_min;
+    y.s = sLocal.tm_sec;
+  }
+#else
+  {
+    struct tm *pTm;
+    sqlite3OsEnterMutex();
+    pTm = localtime(&t);
+    y.Y = pTm->tm_year + 1900;
+    y.M = pTm->tm_mon + 1;
+    y.D = pTm->tm_mday;
+    y.h = pTm->tm_hour;
+    y.m = pTm->tm_min;
+    y.s = pTm->tm_sec;
+    sqlite3OsLeaveMutex();
+  }
+#endif
   y.validYMD = 1;
   y.validHMS = 1;
   y.validJD = 0;
@@ -945,9 +960,21 @@ static void currentTimeFunc(
   }
 #endif
 
-  sqlite3OsEnterMutex();
-  strftime(zBuf, 20, zFormat, gmtime(&t));
-  sqlite3OsLeaveMutex();
+#ifdef HAVE_GMTIME_R
+  {
+    struct tm sNow;
+    gmtime_r(&t, &sNow);
+    strftime(zBuf, 20, zFormat, &sNow);
+  }
+#else
+  {
+    struct tm *pTm;
+    sqlite3OsEnterMutex();
+    pTm = gmtime(&t);
+    strftime(zBuf, 20, zFormat, pTm);
+    sqlite3OsLeaveMutex();
+  }
+#endif
 
   sqlite3_result_text(context, zBuf, -1, SQLITE_TRANSIENT);
 }
