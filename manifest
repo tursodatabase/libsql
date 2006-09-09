@@ -1,5 +1,5 @@
-C Write\sdoclists\susing\sa\ssegmented\stechnique\sto\samortize\scosts\sbetter.\nNew\sitems\sfor\sa\sterm\sare\smerged\swith\sthe\sterm's\ssegment\s0\sdoclist,\nuntil\sthat\sdoclist\sexceeds\sCHUNK_MAX.\s\sThen\sthe\ssegments\sare\smerged\sin\nexponential\sfashion,\sso\sthat\ssegment\s1\scontains\sapproximately\n2*CHUNK_MAX\sdata,\ssegment\s2\s4*CHUNK_MAX,\sand\sso\son.\s(CVS\s3398)
-D 2006-09-08T17:00:17
+C Add\ssupport\sfor\sOR\sand\sNOT\sterms\sin\sfts1.\s(CVS\s3399)
+D 2006-09-09T23:11:51
 F Makefile.in cabd42d34340f49260bc2a7668c38eba8d4cfd99
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -21,7 +21,7 @@ F ext/README.txt 913a7bd3f4837ab14d7e063304181787658b14e1
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
 F ext/fts1/ft_hash.c 3927bd880e65329bdc6f506555b228b28924921b
 F ext/fts1/ft_hash.h 1a35e654a235c2c662d3ca0dfc3138ad60b8b7d5
-F ext/fts1/fts1.c 9197a418d912cabd4c77905d327bf0be5d2fe736
+F ext/fts1/fts1.c c212d1a32d7438359aed98553a0762b9b21cab02
 F ext/fts1/fts1.h fe8e8f38dd6d2d2645b9b0d6972e80985249575f
 F ext/fts1/fts1_hash.c 3196cee866edbebb1c0521e21672e6d599965114
 F ext/fts1/fts1_hash.h 957d378355ed29f672cd5add012ce8b088a5e089
@@ -396,7 +396,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 862302eaae7bdad6f1b6431f08439c4ce7e0e4bb
-R 517c1520f7148559506f6e5057b6c34f
-U shess
-Z 4423ad6055ad5c961bb5a06d759b642c
+P b6b93a3325d3e728ca36255c0ff6e1f63e03b0ac
+R 17eff1219fcc00b41520f89f3f182cf9
+U drh
+Z 1588e41141ad25d002ad462a5bfc63c4
