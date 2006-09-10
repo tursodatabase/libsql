@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to help implement virtual tables.
 **
-** $Id: vtab.c,v 1.32 2006/09/10 17:08:30 drh Exp $
+** $Id: vtab.c,v 1.33 2006/09/10 17:32:00 drh Exp $
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
@@ -59,8 +59,6 @@ void sqlite3VtabLock(sqlite3_vtab *pVtab){
 void sqlite3VtabUnlock(sqlite3_vtab *pVtab){
   pVtab->nRef--;
   if( pVtab->nRef==0 ){
-    sqlite3_free(pVtab->zErrMsg);
-    pVtab->zErrMsg = 0;
     pVtab->pModule->xDisconnect(pVtab);
   }
 }
@@ -288,7 +286,7 @@ static int vtabCallConstructor(
   sqlite3 *db, 
   Table *pTab,
   Module *pMod,
-  int (*xConstruct)(sqlite3*, void *, int, char **, sqlite3_vtab **),
+  int (*xConstruct)(sqlite3*,void*,int,char**,sqlite3_vtab**,char**),
   char **pzErr
 ){
   int rc;
@@ -296,7 +294,7 @@ static int vtabCallConstructor(
   sqlite3_vtab *pVtab;
   char **azArg = pTab->azModuleArg;
   int nArg = pTab->nModuleArg;
-  char *zErr = sqlite3MPrintf("vtable constructor failed: %s", pTab->zName);
+  char *zErr = 0;
 
   assert( !db->pVTab );
   assert( xConstruct );
@@ -304,7 +302,7 @@ static int vtabCallConstructor(
   db->pVTab = pTab;
   rc = sqlite3SafetyOff(db);
   assert( rc==SQLITE_OK );
-  rc = xConstruct(db, pMod->pAux, nArg, azArg, &pTab->pVtab);
+  rc = xConstruct(db, pMod->pAux, nArg, azArg, &pTab->pVtab, &zErr);
   rc2 = sqlite3SafetyOn(db);
   pVtab = pTab->pVtab;
   if( rc==SQLITE_OK && pVtab ){
@@ -313,13 +311,11 @@ static int vtabCallConstructor(
   }
 
   if( SQLITE_OK!=rc ){
-    if( pVtab && pVtab->zErrMsg ){
-      *pzErr = sqlite3MPrintf("%s", pVtab->zErrMsg);
-      sqlite3_free(pVtab->zErrMsg);
-      pVtab->zErrMsg = 0;
-    }else{
-      *pzErr = zErr;
-      zErr = 0;
+    if( zErr==0 ){
+      *pzErr = sqlite3MPrintf("vtable constructor failed: %s", pTab->zName);
+    }else {
+      *pzErr = sqlite3_mprintf("%s", zErr);
+      sqlite3_free(zErr);
     }
   }else if( db->pVTab ){
     const char *zFormat = "vtable constructor did not declare schema: %s";
@@ -330,7 +326,6 @@ static int vtabCallConstructor(
     rc = rc2;
   }
   db->pVTab = 0;
-  sqliteFree(zErr);
   return rc;
 }
 

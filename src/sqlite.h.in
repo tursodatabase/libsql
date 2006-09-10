@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.190 2006/09/10 17:08:30 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.191 2006/09/10 17:31:59 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1582,10 +1582,10 @@ struct sqlite3_module {
   int iVersion;
   int (*xCreate)(sqlite3*, void *pAux,
                int argc, char **argv,
-               sqlite3_vtab **ppVTab);
+               sqlite3_vtab **ppVTab, char**);
   int (*xConnect)(sqlite3*, void *pAux,
                int argc, char **argv,
-               sqlite3_vtab **ppVTab);
+               sqlite3_vtab **ppVTab, char**);
   int (*xBestIndex)(sqlite3_vtab *pVTab, sqlite3_index_info*);
   int (*xDisconnect)(sqlite3_vtab *pVTab);
   int (*xDestroy)(sqlite3_vtab *pVTab);
@@ -1719,7 +1719,7 @@ int sqlite3_create_module(
 struct sqlite3_vtab {
   const sqlite3_module *pModule;  /* The module for this virtual table */
   int nRef;                       /* Used internally */
-  char *zErrMsg;                  /* Error message text */
+  char *zErrMsg;                  /* Error message from sqlite3_mprintf() */
   /* Virtual table implementations will typically add additional fields */
 };
 

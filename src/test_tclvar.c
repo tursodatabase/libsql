@@ -16,7 +16,7 @@
 ** The emphasis of this file is a virtual table that provides
 ** access to TCL variables.
 **
-** $Id: test_tclvar.c,v 1.8 2006/08/15 14:21:16 drh Exp $
+** $Id: test_tclvar.c,v 1.9 2006/09/10 17:32:00 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -52,7 +52,8 @@ static int tclvarConnect(
   sqlite3 *db,
   void *pAux,
   int argc, char **argv,
-  sqlite3_vtab **ppVtab
+  sqlite3_vtab **ppVtab,
+  char **pzErr
 ){
   tclvar_vtab *pVtab;
   static const char zSchema[] = 

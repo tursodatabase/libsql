@@ -1109,14 +1109,14 @@ static void fulltext_vtab_destroy(fulltext_vtab *v){
 ** argv[4..] - passed to tokenizer (optional based on tokenizer)
 **/
 static int fulltextConnect(sqlite3 *db, void *pAux, int argc, char **argv,
-                           sqlite3_vtab **ppVTab){
+                           sqlite3_vtab **ppVTab, char **pzErr){
   int rc;
   fulltext_vtab *v;
   const sqlite3_tokenizer_module *m = NULL;
 
   assert( argc>=3 );
   v = (fulltext_vtab *) malloc(sizeof(fulltext_vtab));
-  /* sqlite will initialize v->base */
+  memset(v, 0, sizeof(*v));
   v->db = db;
   v->zName = string_dup(argv[2]);
   v->pTokenizer = NULL;
@@ -1128,6 +1128,7 @@ static int fulltextConnect(sqlite3 *db, void *pAux, int argc, char **argv,
     if( !strcmp(argv[3], "simple") ){
       sqlite3Fts1SimpleTokenizerModule(&m);
     } else {
+      *pzErr = sqlite3_mprintf("unknown tokenizer: %s", argv[3]);
       assert( "unrecognized tokenizer"==NULL );
     }
   }
@@ -1156,7 +1157,7 @@ static int fulltextConnect(sqlite3 *db, void *pAux, int argc, char **argv,
 }
 
 static int fulltextCreate(sqlite3 *db, void *pAux, int argc, char **argv,
-                          sqlite3_vtab **ppVTab){
+                          sqlite3_vtab **ppVTab, char **pzErr){
   int rc;
   assert( argc>=3 );
   TRACE(("FTS1 Create\n"));
@@ -1202,7 +1203,7 @@ static int fulltextCreate(sqlite3 *db, void *pAux, int argc, char **argv,
                         "primary key(term, segment));");
   if( rc!=SQLITE_OK ) return rc;
 
-  return fulltextConnect(db, pAux, argc, argv, ppVTab);
+  return fulltextConnect(db, pAux, argc, argv, ppVTab, pzErr);
 }
 
 /* Decide how to handle an SQL query.
