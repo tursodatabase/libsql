@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\sOR\sand\sNOT\sterms\sin\sfts1.\s(CVS\s3399)
-D 2006-09-09T23:11:51
+C Add\ssome\ssimple\stest\scases\sfor\sthe\sOR\sand\sNOT\slogic\sof\sthe\sfts1\smodule.\nFix\slots\sof\sbugs\sdiscovered\swhile\sdeveloping\sthese\stest\scases.\s(CVS\s3400)
+D 2006-09-10T03:34:06
 F Makefile.in cabd42d34340f49260bc2a7668c38eba8d4cfd99
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -21,7 +21,7 @@ F ext/README.txt 913a7bd3f4837ab14d7e063304181787658b14e1
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
 F ext/fts1/ft_hash.c 3927bd880e65329bdc6f506555b228b28924921b
 F ext/fts1/ft_hash.h 1a35e654a235c2c662d3ca0dfc3138ad60b8b7d5
-F ext/fts1/fts1.c c212d1a32d7438359aed98553a0762b9b21cab02
+F ext/fts1/fts1.c 36a33f0dae9b7106737d550e42a8e3974614dc5a
 F ext/fts1/fts1.h fe8e8f38dd6d2d2645b9b0d6972e80985249575f
 F ext/fts1/fts1_hash.c 3196cee866edbebb1c0521e21672e6d599965114
 F ext/fts1/fts1_hash.h 957d378355ed29f672cd5add012ce8b088a5e089
@@ -91,7 +91,7 @@ F src/sqlite3ext.h 11a046b3519c4b9b7709e6d6a95c3a36366f684a
 F src/sqliteInt.h 259adce944cc3b28da1fa3df9beb9ba86017a45d
 F src/table.c d8817f43a6c6bf139487db161760b9e1e02da3f1
 F src/tclsqlite.c e029f739bed90071789fe81a226d53e97a80a4d8
-F src/test1.c c8c3b2fd9e71cda3e6598f84357734cfd4fb93e2
+F src/test1.c e8213bf8024a47b49ee8ad276ea07d8e3d4c3c26
 F src/test2.c ca74a1d8aeb7d9606e8f6b762c5daf85c1a3f92b
 F src/test3.c 85135c09560c48bdb0a23c9b890ab405486b8ec9
 F src/test4.c 8b784cd82de158a2317cb4ac4bc86f91ad315e25
@@ -190,6 +190,7 @@ F test/enc3.test 890508efff6677345e93bf2a8adb0489b30df030
 F test/expr.test c78843f730ccbe973d0c2ad1c99978f936893131
 F test/fkey1.test 153004438d51e6769fb1ce165f6313972d6263ce
 F test/format4.test bf3bed3b13c63abfb3cfec232597a319a31d0bcc
+F test/fts1a.test 78cc3c4630fbc3c64eeafc67464947054dc540d1
 F test/func.test 7f2c91a948a0a177635835dc9afa078413c54ae1
 F test/hook.test 7e7645fd9a033f79cce8fdff151e32715e7ec50a
 F test/in.test 369cb2aa1eab02296b4ec470732fe8c131260b1d
@@ -396,7 +397,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P b6b93a3325d3e728ca36255c0ff6e1f63e03b0ac
-R 17eff1219fcc00b41520f89f3f182cf9
+P ae50265791d1a7500aa3c405a78a9bca8ff0cc08
+R 102c1a21ff09d0f20e46f405978da02e
 U drh
-Z 1588e41141ad25d002ad462a5bfc63c4
+Z f515ac19d2cdc367f4c6838848ae4bb1

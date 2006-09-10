@@ -283,7 +283,7 @@ static sqlite_int64 peekDocid(DocListReader *pReader){
   return ret;
 }
 
-/* Read the next docid. 
+/* Read the next docid.   See also nextValidDocid().
 */
 static sqlite_int64 readDocid(DocListReader *pReader){
   sqlite_int64 ret;
@@ -302,8 +302,10 @@ static int readPosition(DocListReader *pReader){
   int i;
   int iType = pReader->pDoclist->iType;
 
+  if( pReader->iLastPos==-1 ){
+    return -1;
+  }
   assert( !atEnd(pReader) );
-  assert( pReader->iLastPos!=-1 );
 
   if( iType<DL_POSITIONS ){
     return -1;
@@ -474,24 +476,38 @@ static void docListAccumulate(DocList *pAcc, DocList *pUpdate){
 }
 
 /*
+** Read the next non-deleted docid off of pIn.  Return
+** 0 if we reach the end of pDoclist.
+*/
+static sqlite_int64 nextValidDocid(DocListReader *pIn){
+  sqlite_int64 docid = 0;
+  skipPositionList(pIn);
+  while( !atEnd(pIn) && (docid = readDocid(pIn))==0 ){
+    skipPositionList(pIn);
+  }
+  return docid;
+}
+
+/*
 ** pLeft and pRight are two DocListReaders that are pointing to
 ** positions lists of the same document: iDocid. 
 **
 ** If there are no instances in pLeft or pRight where the position
-** of pLeft is iOffset less than the position of pRight, then this
+** of pLeft is one less than the position of pRight, then this
 ** routine adds nothing to pOut.
 **
 ** If there are one or more instances where positions from pLeft
-** are exactly iOffset less than positions from pRight, then add a new
-** document record to pOut and include the positions from pLeft.
+** are exactly one less than positions from pRight, then add a new
+** document record to pOut.  If pOut wants to hold positions, then
+** include the positions from pRight that are one more than a
+** position in pLeft.  In other words:  pRight.iPos==pLeft.iPos+1.
 **
-** pLeft and pRight are left pointing at the next document.
+** pLeft and pRight are left pointing at the next document record.
 */
 static void mergePosList(
   DocListReader *pLeft,    /* Left position list */
   DocListReader *pRight,   /* Right position list */
   sqlite_int64 iDocid,     /* The docid from pLeft and pRight */
-  int iOffset,             /* Copy if pLeft.pos+iOffset==pRight.iPos */
   DocList *pOut            /* Write the merged document record here */
 ){
   int iLeftPos = readPosition(pLeft);
@@ -500,17 +516,17 @@ static void mergePosList(
 
   /* Loop until we've reached the end of both position lists. */
   while( iLeftPos!=-1 && iRightPos!=-1 ){
-    if( iLeftPos+iOffset==iRightPos ){
+    if( iLeftPos+1==iRightPos ){
       if( !match ){
         docListAddDocid(pOut, iDocid);
         match = 1;
       }
       if( pOut->iType>=DL_POSITIONS ){
-        docListAddPos(pOut, iLeftPos);
+        docListAddPos(pOut, iRightPos);
       }
       iLeftPos = readPosition(pLeft);
       iRightPos = readPosition(pRight);
-    }else if( iRightPos<iLeftPos+iOffset ){
+    }else if( iRightPos<iLeftPos+1 ){
       iRightPos = readPosition(pRight);
     }else{
       iLeftPos = readPosition(pLeft);
@@ -520,28 +536,18 @@ static void mergePosList(
   if( iRightPos>=0 ) skipPositionList(pRight);
 }
 
-/*
-** Read the next non-deleted docid off of pIn.  Return
-** 0 if we reach the end of pDoclist.
-*/
-static sqlite_int64 nextValidDocid(DocListReader *pIn){
-  sqlite_int64 docid = 0;
-  while( !atEnd(pIn) && (docid = readDocid(pIn))==0 ){
-    skipPositionList(pIn);
-  }
-  return docid;
-}
-
 /* We have two doclists:  pLeft and pRight.
-** Write the intersection of these two doclists into pOut.
+** Write the phrase intersection of these two doclists into pOut.
 **
-** nLeftPhrase is the number of words of a phrase that have
-** contributed to pLeft.
+** A phrase intersection means that two documents only match
+** if pLeft.iPos+1==pRight.iPos.
+**
+** The output pOut may or may not contain positions.  If pOut
+** does contain positions, they are the positions of pRight.
 */
-static void mergeBlockAnd(
+static void docListPhraseMerge(
   DocList *pLeft,    /* Doclist resulting from the words on the left */
   DocList *pRight,   /* Doclist for the next word to the right */
-  int nLeftPhrase,   /* Number of matching phrase terms in pLeft */
   DocList *pOut      /* Write the combined doclist here */
 ){
   DocListReader left, right;
@@ -554,20 +560,11 @@ static void mergeBlockAnd(
 
   while( docidLeft>0 && docidRight>0 ){
     if( docidLeft<docidRight ){
-      skipPositionList(&left);
       docidLeft = nextValidDocid(&left);
     }else if( docidRight<docidLeft ){
-      skipPositionList(&right);
       docidRight = nextValidDocid(&right);
     }else{
-      /* Found a match */
-      if( pLeft->iType>=DL_POSITIONS ){
-        mergePosList(&left, &right, docidLeft, nLeftPhrase, pOut);
-      }else{
-        docListAddDocid(pOut, docidLeft);
-        skipPositionList(&left);
-        skipPositionList(&right);
-      }
+      mergePosList(&left, &right, docidLeft, pOut);
       docidLeft = nextValidDocid(&left);
       docidRight = nextValidDocid(&right);
     }
@@ -575,35 +572,34 @@ static void mergeBlockAnd(
 }
 
 /* We have two doclists:  pLeft and pRight.
-** Write into pOut all documents that occur in pLeft but not
-** in pRight.
+** Write the intersection of these two doclists into pOut.
+** Only docids are matched.  Position information is ignored.
 **
 ** The output pOut never holds positions.
 */
-static void mergeBlockExcept(
+static void docListAndMerge(
   DocList *pLeft,    /* Doclist resulting from the words on the left */
   DocList *pRight,   /* Doclist for the next word to the right */
   DocList *pOut      /* Write the combined doclist here */
 ){
   DocListReader left, right;
-  sqlite_int64 docidLeft, docidRight, priorLeft;
+  sqlite_int64 docidLeft, docidRight;
+
+  assert( pOut->iType<DL_POSITIONS );
 
   readerInit(&left, pLeft);
   readerInit(&right, pRight);
   docidLeft = nextValidDocid(&left);
   docidRight = nextValidDocid(&right);
 
-  while( docidLeft>0 ){
-    priorLeft = docidLeft;
-    if( docidRight==0 || docidLeft<docidRight ){
-      docListAddDocid(pOut, docidLeft);
-    }
-    if( docidRight==0 || docidLeft<=docidRight ){
-      skipPositionList(&left);
+  while( docidLeft>0 && docidRight>0 ){
+    if( docidLeft<docidRight ){
       docidLeft = nextValidDocid(&left);
-    }
-    if( docidRight>0 && docidRight<=priorLeft ){
-      skipPositionList(&right);
+    }else if( docidRight<docidLeft ){
+      docidRight = nextValidDocid(&right);
+    }else{
+      docListAddDocid(pOut, docidLeft);
+      docidLeft = nextValidDocid(&left);
       docidRight = nextValidDocid(&right);
     }
   }
@@ -611,10 +607,11 @@ static void mergeBlockExcept(
 
 /* We have two doclists:  pLeft and pRight.
 ** Write the union of these two doclists into pOut.
+** Only docids are matched.  Position information is ignored.
 **
 ** The output pOut never holds positions.
 */
-static void mergeBlockOr(
+static void docListOrMerge(
   DocList *pLeft,    /* Doclist resulting from the words on the left */
   DocList *pRight,   /* Doclist for the next word to the right */
   DocList *pOut      /* Write the combined doclist here */
@@ -635,23 +632,58 @@ static void mergeBlockOr(
     }
     priorLeft = docidLeft;
     if( docidLeft<=docidRight ){
-      skipPositionList(&left);
       docidLeft = nextValidDocid(&left);
     }
     if( docidRight>0 && docidRight<=priorLeft ){
-      skipPositionList(&right);
       docidRight = nextValidDocid(&right);
     }
   }
   while( docidLeft>0 ){
     docListAddDocid(pOut, docidLeft);
-    skipPositionList(&left);
     docidLeft = nextValidDocid(&left);
   }
   while( docidRight>0 ){
     docListAddDocid(pOut, docidRight);
-    skipPositionList(&right);
     docidRight = nextValidDocid(&right);
+  }
+}
+
+/* We have two doclists:  pLeft and pRight.
+** Write into pOut all documents that occur in pLeft but not
+** in pRight.
+**
+** Only docids are matched.  Position information is ignored.
+**
+** The output pOut never holds positions.
+*/
+static void docListExceptMerge(
+  DocList *pLeft,    /* Doclist resulting from the words on the left */
+  DocList *pRight,   /* Doclist for the next word to the right */
+  DocList *pOut      /* Write the combined doclist here */
+){
+  DocListReader left, right;
+  sqlite_int64 docidLeft, docidRight, priorLeft;
+
+  readerInit(&left, pLeft);
+  readerInit(&right, pRight);
+  docidLeft = nextValidDocid(&left);
+  docidRight = nextValidDocid(&right);
+
+  while( docidLeft>0 && docidRight>0 ){
+    priorLeft = docidLeft;
+    if( docidLeft<docidRight ){
+      docListAddDocid(pOut, docidLeft);
+    }
+    if( docidLeft<=docidRight ){
+      docidLeft = nextValidDocid(&left);
+    }
+    if( docidRight>0 && docidRight<=priorLeft ){
+      docidRight = nextValidDocid(&right);
+    }
+  }
+  while( docidLeft>0 ){
+    docListAddDocid(pOut, docidLeft);
+    docidLeft = nextValidDocid(&left);
   }
 }
 
@@ -1263,11 +1295,11 @@ static int fulltextNext(sqlite3_vtab_cursor *pCursor){
       rc = sqlite3_reset(c->pStmt);
       if( rc!=SQLITE_OK ) return rc;
 
-      if( atEnd(&c->result)){
+      iDocid = nextValidDocid(&c->result);
+      if( iDocid==0 ){
         c->eof = 1;
         return SQLITE_OK;
       }
-      iDocid = readDocid(&c->result);
       rc = sqlite3_bind_int64(c->pStmt, 1, iDocid);
       if( rc!=SQLITE_OK ) return rc;
       /* TODO(shess) Handle SQLITE_SCHEMA AND SQLITE_BUSY. */
@@ -1284,69 +1316,55 @@ static int fulltextNext(sqlite3_vtab_cursor *pCursor){
   }
 }
 
-/*
-** Different kinds of allowed document merge operations.
-*/
-#define MERGE_AND    1     /* Intersection of left and right */
-#define MERGE_OR     2     /* Union of left and right */
-#define MERGE_EXCEPT 3     /* Documents in left but not in right */
-
-/* Read the posting list for [pTerm]; AND it with the doclist [pIn] to
- * produce the doclist [out], using the given phrase position [iPhrasePos].
- * (*pSelect) is used to hold an SQLite statement used inside this function;
- * the caller should initialize *pSelect to NULL before the first call.
- */
-static int mergeQuery(
-  fulltext_vtab *v,              /* The full text index virtual table */
-  const char *pTerm, int nTerm,  /* Term we are searching for */
-  DocList *pIn,                  /* Prior search results. NULL for first term */
-  int iPhrasePos,                /* Offset to first term of phrase search */
-  int eOp,                       /* MERGE_AND, MERGE_OR, or MERGE_EXCEPT */
-  DocList *out                   /* Write results here */
-){
-  int rc;
-  DocList doclist;
-
-  /* If [pIn] is already empty, there's no point in reading the
-   * posting list to AND it in; return immediately. */
-  if( pIn!=NULL && eOp==MERGE_AND && !pIn->nData ) return SQLITE_OK;
-
-  rc = term_select_all(v, pTerm, nTerm, &doclist);
-  if( rc!=SQLITE_OK ) return rc;
-
-  /* If there is no input and the output wants to contain position
-  ** information, then make the result the doclist for pTerm.
-  */
-  if( pIn==0 && out->iType>=DL_POSITIONS ){
-    docListDestroy(out);
-    *out = doclist;
-    return SQLITE_OK;
-  }
-
-  if( eOp==MERGE_AND && pIn!=0 ){
-    mergeBlockAnd(pIn, &doclist, iPhrasePos, out);
-  }else if( eOp==MERGE_OR || pIn==0 ){
-    mergeBlockOr(pIn, &doclist, out);
-  }else if( eOp==MERGE_EXCEPT ){
-    mergeBlockExcept(pIn, &doclist, out);
-  }
-  docListDestroy(&doclist);
-
-  return SQLITE_OK;
-}
-
 /* A single term in a query is represented by an instances of
 ** the following structure.
 */
 typedef struct QueryTerm {
-  int firstInPhrase; /* true if this term begins a new phrase */
+  int nPhrase;       /* How many following terms are part of the same phrase */
   int isOr;          /* this term is preceded by "OR" */
   int isNot;         /* this term is preceded by "-" */
   char *pTerm;       /* text of the term.  '\000' terminated.  malloced */
   int nTerm;         /* Number of bytes in pTerm[] */
 } QueryTerm;
 
-/* A parsed query.
+
+/* Return a DocList corresponding to the query term *pTerm.  If *pTerm
+** is the first term of a phrase query, go ahead and evaluate the phrase
+** query and return the doclist for the entire phrase query.
+**
+** The result is stored in pTerm->doclist.
+*/
+static int docListOfTerm(
+  fulltext_vtab *v,     /* The full text index */
+  QueryTerm *pQTerm,    /* Term we are looking for, or 1st term of a phrase */
+  DocList **ppResult    /* Write the result here */
+){
+  DocList *pLeft, *pRight, *pNew;
+  int i, rc;
+
+  pLeft = docListNew(DL_POSITIONS);
+  rc = term_select_all(v, pQTerm->pTerm, pQTerm->nTerm, pLeft);
+  if( rc ) return rc;
+  for(i=1; i<=pQTerm->nPhrase; i++){
+    pRight = docListNew(DL_POSITIONS);
+    rc = term_select_all(v, pQTerm[i].pTerm, pQTerm[i].nTerm, pRight);
+    if( rc ){
+      docListDelete(pLeft);
+      return rc;
+    }
+    pNew = docListNew(i<pQTerm->nPhrase ? DL_POSITIONS : DL_DOCIDS);
+    docListPhraseMerge(pLeft, pRight, pNew);
+    docListDelete(pLeft);
+    docListDelete(pRight);
+    pLeft = pNew;
+  }
+  *ppResult = pLeft;
+  return SQLITE_OK;
+}
+
+
+
+/* Parse a query string into a Query structure.
  *
  * We could, in theory, allow query strings to be complicated
  * nested expressions with precedence determined by parentheses.
@@ -1377,12 +1395,12 @@ typedef struct QueryTerm {
 typedef struct Query {
   int nTerms;           /* Number of terms in the query */
   QueryTerm *pTerms;    /* Array of terms.  Space obtained from malloc() */
+  int nextIsOr;         /* Set the isOr flag on the next inserted term */
 } Query;
 
-/* Add a new term pTerm[0..nTerm-1] to the query *q.  The new term is
-** the beginning of a phrase is firstInPhrase is true.
+/* Add a new term pTerm[0..nTerm-1] to the query *q.
 */
-static void queryAdd(Query *q, int firstInPhrase, const char *pTerm, int nTerm){
+static void queryAdd(Query *q, const char *pTerm, int nTerm){
   QueryTerm *t;
   ++q->nTerms;
   q->pTerms = realloc(q->pTerms, q->nTerms * sizeof(q->pTerms[0]));
@@ -1392,11 +1410,12 @@ static void queryAdd(Query *q, int firstInPhrase, const char *pTerm, int nTerm){
   }
   t = &q->pTerms[q->nTerms - 1];
   memset(t, 0, sizeof(*t));
-  t->firstInPhrase = firstInPhrase;
   t->pTerm = malloc(nTerm+1);
   memcpy(t->pTerm, pTerm, nTerm);
   t->pTerm[nTerm] = 0;
   t->nTerm = nTerm;
+  t->isOr = q->nextIsOr;
+  q->nextIsOr = 0;
 }
 
 /* Free all of the memory that was malloced in order to build *q.
@@ -1414,18 +1433,20 @@ static void queryDestroy(Query *q){
 ** to the query being assemblied in pQuery.
 **
 ** inPhrase is true if pSegment[0..nSegement-1] is contained within
-** double-quotes.  If inPhrase is true, then only the first term
-** is marked with firstInPhrase and OR and "-" syntax is ignored.
-** If inPhrase is false, then every term found is marked with
-** firstInPhrase and OR and "-" syntax is significant.
+** double-quotes.  If inPhrase is true, then the first term
+** is marked with the number of terms in the phrase less one and
+** OR and "-" syntax is ignored.  If inPhrase is false, then every
+** term found is marked with nPhrase=0 and OR and "-" syntax is significant.
 */
-static int tokenizeSegment(sqlite3_tokenizer *pTokenizer,
-                            const char *pSegment, int nSegment, int inPhrase,
-                            Query *pQuery){
+static int tokenizeSegment(
+  sqlite3_tokenizer *pTokenizer,          /* The tokenizer to use */
+  const char *pSegment, int nSegment,     /* Query expression being parsed */
+  int inPhrase,                           /* True if within "..." */
+  Query *pQuery                           /* Append results here */
+){
   const sqlite3_tokenizer_module *pModule = pTokenizer->pModule;
   sqlite3_tokenizer_cursor *pCursor;
-  int is_first = 1;
-  int isOr = 0;
+  int firstIndex = pQuery->nTerms;
   
   int rc = pModule->xOpen(pTokenizer, pSegment, nSegment, &pCursor);
   if( rc!=SQLITE_OK ) return rc;
@@ -1441,19 +1462,17 @@ static int tokenizeSegment(sqlite3_tokenizer *pTokenizer,
     if( rc!=SQLITE_OK ) break;
     if( !inPhrase && pQuery->nTerms>0 && nToken==2
          && pSegment[iBegin]=='O' && pSegment[iBegin+1]=='R' ){
-      isOr = 1;
+      pQuery->nextIsOr = 1;
       continue;
     }
-    queryAdd(pQuery, !inPhrase || is_first, pToken, nToken);
-    if( !inPhrase ){
-      if( isOr ){
-        pQuery->pTerms[pQuery->nTerms-1].isOr = 1;
-      }else if( iBegin>0 && pSegment[iBegin-1]=='-' ){
-        pQuery->pTerms[pQuery->nTerms-1].isNot = 1;
-      }
+    queryAdd(pQuery, pToken, nToken);
+    if( !inPhrase && iBegin>0 && pSegment[iBegin-1]=='-' ){
+      pQuery->pTerms[pQuery->nTerms-1].isNot = 1;
     }
-    is_first = 0;
-    isOr = 0;
+  }
+
+  if( inPhrase && pQuery->nTerms>firstIndex ){
+    pQuery->pTerms[firstIndex].nPhrase = pQuery->nTerms - firstIndex - 1;
   }
 
   return pModule->xClose(pCursor);
@@ -1468,6 +1487,7 @@ static int parseQuery(fulltext_vtab *v, const char *pInput, int nInput,
   if( nInput<0 ) nInput = strlen(pInput);
   pQuery->nTerms = 0;
   pQuery->pTerms = NULL;
+  pQuery->nextIsOr = 0;
 
   for(iInput=0; iInput<nInput; ++iInput){
     int i;
@@ -1498,67 +1518,67 @@ static int parseQuery(fulltext_vtab *v, const char *pInput, int nInput,
 static int fulltextQuery(fulltext_vtab *v, const char *pInput, int nInput,
                           DocList **pResult){
   Query q;
-  int phrase_start = -1;
-  int i;
-  DocList *d = NULL;
+  int i, rc;
+  DocList *pLeft = NULL;
+  DocList *pRight, *pNew;
+  int nNot = 0;
 
-  int rc = parseQuery(v, pInput, nInput, &q);
+  rc = parseQuery(v, pInput, nInput, &q);
   if( rc!=SQLITE_OK ) return rc;
 
   /* Merge AND terms. */
-  for(i = 0 ; i < q.nTerms ; ++i){
-    int needPositions;
-    DocList *next;
+  for(i = 0 ; i < q.nTerms; i += q.pTerms[i].nPhrase + 1){
 
-    if( q.pTerms[i].isNot || q.pTerms[i].isOr ){
-      /* Handle all OR and NOT terms in a separate pass */
+    if( q.pTerms[i].isNot ){
+      /* Handle all NOT terms in a separate pass */
+      nNot++;
       continue;
     }
 
-    /* In each merge step, we need to generate positions whenever we're
-     * processing a phrase which hasn't ended yet. */
-    needPositions = i<q.nTerms-1 && !q.pTerms[i+1].firstInPhrase;
-    next = docListNew(needPositions ? DL_POSITIONS : DL_DOCIDS);
-    if( q.pTerms[i].firstInPhrase ){
-      phrase_start = i;
+    rc = docListOfTerm(v, &q.pTerms[i], &pRight);
+    if( rc ){
+      queryDestroy(&q);
+      return rc;
     }
-    rc = mergeQuery(v, q.pTerms[i].pTerm, q.pTerms[i].nTerm,
-                     d, i-phrase_start, MERGE_AND, next);
-    if( rc!=SQLITE_OK ) break;
-    if( d!=NULL ){
-      docListDelete(d);
+    if( pLeft==0 ){
+      pLeft = pRight;
+    }else{
+      pNew = docListNew(DL_DOCIDS);
+      if( q.pTerms[i].isOr ){
+        docListOrMerge(pLeft, pRight, pNew);
+      }else{
+        docListAndMerge(pLeft, pRight, pNew);
+      }
+      docListDelete(pRight);
+      docListDelete(pLeft);
+      pLeft = pNew;
     }
-    d = next;
   }
 
-  /* Do the OR terms */
-  for(i=0; i<q.nTerms; i++){
-    DocList *next;
-    if( !q.pTerms[i].isOr ) continue;
-    next = docListNew(DL_DOCIDS);
-    rc = mergeQuery(v, q.pTerms[i].pTerm, q.pTerms[i].nTerm,
-                    d, 0, MERGE_OR, next);
-    if( d ){
-      docListDelete(d);
-    }
-    d = next;
+  if( nNot && pLeft==0 ){
+    /* We do not yet know how to handle a query of only NOT terms */
+    return SQLITE_ERROR;
   }
+
 
   /* Do the EXCEPT terms */
-  for(i=0; i<q.nTerms; i++){
-    DocList *next;
+  for(i=0; i<q.nTerms;  i += q.pTerms[i].nPhrase + 1){
     if( !q.pTerms[i].isNot ) continue;
-    next = docListNew(DL_DOCIDS);
-    rc = mergeQuery(v, q.pTerms[i].pTerm, q.pTerms[i].nTerm,
-                    d, 0, MERGE_EXCEPT, next);
-    if( d ){
-      docListDelete(d);
+    rc = docListOfTerm(v, &q.pTerms[i], &pRight);
+    if( rc ){
+      queryDestroy(&q);
+      docListDelete(pLeft);
+      return rc;
     }
-    d = next;
+    pNew = docListNew(DL_DOCIDS);
+    docListExceptMerge(pLeft, pRight, pNew);
+    docListDelete(pRight);
+    docListDelete(pLeft);
+    pLeft = pNew;
   }
 
   queryDestroy(&q);
-  *pResult = d;
+  *pResult = pLeft;
   return rc;
 }
 
