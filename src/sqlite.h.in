@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.189 2006/08/24 14:59:46 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.190 2006/09/10 17:08:30 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1705,10 +1705,21 @@ int sqlite3_create_module(
 ** be taylored to the specific needs of the module implementation.   The
 ** purpose of this superclass is to define certain fields that are common
 ** to all module implementations.
+**
+** Virtual tables methods can set an error message by assigning a
+** string obtained from sqlite3_mprintf() to zErrMsg.  The method should
+** take care that any prior string is freed by a call to sqlite3_free()
+** prior to assigning a new string to zErrMsg.  After the error message
+** is delivered up to the client application, the string will be automatically
+** freed by sqlite3_free() and the zErrMsg field will be zeroed.  Note
+** that sqlite3_mprintf() and sqlite3_free() are used on the zErrMsg field
+** since virtual tables are commonly implemented in loadable extensions which
+** do not have access to sqlite3MPrintf() or sqlite3Free().
 */
 struct sqlite3_vtab {
   const sqlite3_module *pModule;  /* The module for this virtual table */
   int nRef;                       /* Used internally */
+  char *zErrMsg;                  /* Error message text */
   /* Virtual table implementations will typically add additional fields */
 };
 

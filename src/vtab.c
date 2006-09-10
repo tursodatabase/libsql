@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to help implement virtual tables.
 **
-** $Id: vtab.c,v 1.31 2006/09/02 20:57:52 drh Exp $
+** $Id: vtab.c,v 1.32 2006/09/10 17:08:30 drh Exp $
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
@@ -59,6 +59,8 @@ void sqlite3VtabLock(sqlite3_vtab *pVtab){
 void sqlite3VtabUnlock(sqlite3_vtab *pVtab){
   pVtab->nRef--;
   if( pVtab->nRef==0 ){
+    sqlite3_free(pVtab->zErrMsg);
+    pVtab->zErrMsg = 0;
     pVtab->pModule->xDisconnect(pVtab);
   }
 }
@@ -291,6 +293,7 @@ static int vtabCallConstructor(
 ){
   int rc;
   int rc2;
+  sqlite3_vtab *pVtab;
   char **azArg = pTab->azModuleArg;
   int nArg = pTab->nModuleArg;
   char *zErr = sqlite3MPrintf("vtable constructor failed: %s", pTab->zName);
@@ -303,15 +306,22 @@ static int vtabCallConstructor(
   assert( rc==SQLITE_OK );
   rc = xConstruct(db, pMod->pAux, nArg, azArg, &pTab->pVtab);
   rc2 = sqlite3SafetyOn(db);
-  if( rc==SQLITE_OK && pTab->pVtab ){
-    pTab->pVtab->pModule = pMod->pModule;
-    pTab->pVtab->nRef = 1;
+  pVtab = pTab->pVtab;
+  if( rc==SQLITE_OK && pVtab ){
+    pVtab->pModule = pMod->pModule;
+    pVtab->nRef = 1;
   }
 
   if( SQLITE_OK!=rc ){
-    *pzErr = zErr;
-    zErr = 0;
-  } else if( db->pVTab ){
+    if( pVtab && pVtab->zErrMsg ){
+      *pzErr = sqlite3MPrintf("%s", pVtab->zErrMsg);
+      sqlite3_free(pVtab->zErrMsg);
+      pVtab->zErrMsg = 0;
+    }else{
+      *pzErr = zErr;
+      zErr = 0;
+    }
+  }else if( db->pVTab ){
     const char *zFormat = "vtable constructor did not declare schema: %s";
     *pzErr = sqlite3MPrintf(zFormat, pTab->zName);
     rc = SQLITE_ERROR;
