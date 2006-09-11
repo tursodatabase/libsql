@@ -1,5 +1,5 @@
-C Add\sa\srudimentary\stokenizer\sand\sparser\sto\sFTS1\sfor\sparsing\sthe\smodule\narguments\sduring\sinitialization.\s\s\sRecognized\sarguments\sinclude\sa\ntokenizer\sselector\sand\sa\slist\sof\svirtual\stable\scolumns.\s(CVS\s3403)
-D 2006-09-11T00:34:22
+C Get\sVACUUM\sworking\swith\svirtual\stables.\s(CVS\s3404)
+D 2006-09-11T11:13:27
 F Makefile.in cabd42d34340f49260bc2a7668c38eba8d4cfd99
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -111,7 +111,7 @@ F src/trigger.c 0fc40125820409a6274834a6e04ad804d96e2793
 F src/update.c 951f95ef044cf6d28557c48dc35cb0711a0b9129
 F src/utf.c 4459801e9b00cfd69993bfca58545d3775682d6e
 F src/util.c 5409031819ee4672c5f9c3ac7cf517e267a25845
-F src/vacuum.c 5b37d0f436f8e1ffacd17934e44720b38d2247f9
+F src/vacuum.c 5dac7938d70bf0cb5182a291c8605e69cde2398d
 F src/vdbe.c a77869949ddd0afe01443611edb949e24e67c91c
 F src/vdbe.h 258b5d1c0aaa72192f09ff0568ce42b383f156fa
 F src/vdbeInt.h e3eaab262b67b84474625cfc38aec1125c32834b
@@ -397,7 +397,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P f44b8bae97b6872524580009c96d07391578c388
-R 9998640c1fac069b758db49fd22e886b
+P 227dc3feb537e6efd5b0c1d2dad40193db07d5aa
+R c821cee55c3f4e8fdfcd092fa19a7e1a
 U drh
-Z 2b1ea65d3e0e9f0fb73f4523c49b6c09
+Z ab0686f184c2e0785ce95f3b8f82b4c4
