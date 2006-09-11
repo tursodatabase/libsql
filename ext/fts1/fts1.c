@@ -806,6 +806,8 @@ typedef struct fulltext_vtab {
   sqlite3 *db;
   const char *zName;               /* virtual table name */
   sqlite3_tokenizer *pTokenizer;   /* tokenizer for inserts and queries */
+  int nColumn;                     /* Number of columns */
+  char **azColumn;                 /* Names of all columns */
 
   /* Precompiled statements which we keep as long as the table is
   ** open.
@@ -1081,6 +1083,9 @@ static int term_delete(fulltext_vtab *v, sqlite_int64 rowid){
   return sql_single_step_statement(v, TERM_DELETE_STMT, &s);
 }
 
+/*
+** Free the memory used to contain a fulltext_vtab structure.
+*/
 static void fulltext_vtab_destroy(fulltext_vtab *v){
   int iStmt;
 
@@ -1096,53 +1101,268 @@ static void fulltext_vtab_destroy(fulltext_vtab *v){
     v->pTokenizer->pModule->xDestroy(v->pTokenizer);
     v->pTokenizer = NULL;
   }
-
+  
+  free(v->azColumn);
   free((void *) v->zName);
   free(v);
 }
 
+/*
+** Token types for parsing the arguments to xConnect or xCreate.
+*/
+#define TOKEN_EOF         0    /* End of file */
+#define TOKEN_SPACE       1    /* Any kind of whitespace */
+#define TOKEN_ID          2    /* An identifier */
+#define TOKEN_STRING      3    /* A string literal */
+#define TOKEN_PUNCT       4    /* A single punctuation character */
+
+/*
+** If X is a character that can be used in an identifier then
+** IdChar(X) will be true.  Otherwise it is false.
+**
+** For ASCII, any character with the high-order bit set is
+** allowed in an identifier.  For 7-bit characters, 
+** sqlite3IsIdChar[X] must be 1.
+**
+** Ticket #1066.  the SQL standard does not allow '$' in the
+** middle of identfiers.  But many SQL implementations do. 
+** SQLite will allow '$' in identifiers for compatibility.
+** But the feature is undocumented.
+*/
+static const char isIdChar[] = {
+/* x0 x1 x2 x3 x4 x5 x6 x7 x8 x9 xA xB xC xD xE xF */
+    0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /* 2x */
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0,  /* 3x */
+    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /* 4x */
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1,  /* 5x */
+    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /* 6x */
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0,  /* 7x */
+};
+#define IdChar(C)  (((c=C)&0x80)!=0 || (c>0x1f && isIdChar[c-0x20]))
+
+
+/*
+** Return the length of the token that begins at z[0]. 
+** Store the token type in *tokenType before returning.
+*/
+static int getToken(const char *z, int *tokenType){
+  int i, c;
+  switch( *z ){
+    case 0: {
+      *tokenType = TOKEN_EOF;
+      return 0;
+    }
+    case ' ': case '\t': case '\n': case '\f': case '\r': {
+      for(i=1; isspace(z[i]); i++){}
+      *tokenType = TOKEN_SPACE;
+      return i;
+    }
+    case '\'':
+    case '"': {
+      int delim = z[0];
+      for(i=1; (c=z[i])!=0; i++){
+        if( c==delim ){
+          if( z[i+1]==delim ){
+            i++;
+          }else{
+            break;
+          }
+        }
+      }
+      *tokenType = TOKEN_STRING;
+      return i + (c!=0);
+    }
+    case '[': {
+      for(i=1, c=z[0]; c!=']' && (c=z[i])!=0; i++){}
+      *tokenType = TOKEN_ID;
+      return i;
+    }
+    default: {
+      if( !IdChar(*z) ){
+        break;
+      }
+      for(i=1; IdChar(z[i]); i++){}
+      *tokenType = TOKEN_ID;
+      return i;
+    }
+  }
+  *tokenType = TOKEN_PUNCT;
+  return 1;
+}
+
+/*
+** A token extracted from a string is an instance of the following
+** structure.
+*/
+typedef struct Token {
+  const char *z;       /* Pointer to token text.  Not '\000' terminated */
+  short int n;         /* Length of the token text in bytes. */
+} Token;
+
+/*
+** Given a input string (which is really one of the argv[] parameters
+** passed into xConnect or xCreate) split the string up into tokens.
+** Return an array of pointers to '\000' terminated strings, one string
+** for each non-whitespace token.
+**
+** The returned array is terminated by a single NULL pointer.
+**
+** Space to hold the returned array is obtained from a single
+** malloc and should be freed by passing the return value to free().
+** The individual strings within the token list are all a part of
+** the single memory allocation and will all be freed at once.
+*/
+static char **tokenizeString(const char *z, int *pnToken){
+  int nToken = 0;
+  Token *aToken = malloc( strlen(z) * sizeof(aToken[0]) );
+  int n = 1;
+  int e, i;
+  int totalSize = 0;
+  char **azToken;
+  char *zCopy;
+  while( n>0 ){
+    n = getToken(z, &e);
+    if( e!=TOKEN_SPACE ){
+      aToken[nToken].z = z;
+      aToken[nToken].n = n;
+      nToken++;
+      totalSize += n+1;
+    }
+    z += n;
+  }
+  azToken = (char**)malloc( nToken*sizeof(char*) + totalSize );
+  zCopy = (char*)&azToken[nToken];
+  nToken--;
+  for(i=0; i<nToken; i++){
+    azToken[i] = zCopy;
+    n = aToken[i].n;
+    memcpy(zCopy, aToken[i].z, n);
+    zCopy[n] = 0;
+    zCopy += n+1;
+  }
+  azToken[nToken] = 0;
+  free(aToken);
+  *pnToken = nToken;
+  return azToken;
+}
+
+/*
+** Remove the first nSkip tokens from a token list as well
+** as all "(", ",", and ")" tokens from a token list.
+**
+** The memory for a token list comes from a single malloc().
+** This routine just rearranges the pointers within that allocation.
+** The token list is still freed by a single free().
+*/
+static void removeDelimiterTokens(char **azTokens, int nSkip, int *pnToken){
+  int i, j, c;
+  for(i=nSkip, j=0; azTokens[i]; i++){
+    c = azTokens[i][0];
+    if( c=='(' || c==',' || c==')' ) continue;
+    azTokens[j++] = azTokens[i];
+  }
+  azTokens[j] = 0;
+  *pnToken = j;
+}
+
+
+
 /* Current interface:
-** argv[0] - module name
-** argv[1] - database name
-** argv[2] - table name
+** argv[0]    - module name
+** argv[1]    - database name
+** argv[2...] - arguments.
+**
+** Arguments:
+**
+**   tokenizer  NAME(ARG1,ARG2,...)
+**   columns(C1,C2,C3,...)
+
 ** argv[3] - tokenizer name (optional, a sensible default is provided)
 ** argv[4..] - passed to tokenizer (optional based on tokenizer)
 **/
-static int fulltextConnect(sqlite3 *db, void *pAux, int argc, char **argv,
-                           sqlite3_vtab **ppVTab, char **pzErr){
-  int rc;
-  fulltext_vtab *v;
+static int fulltextConnect(
+  sqlite3 *db,
+  void *pAux,
+  int argc, const char *const*argv,
+  sqlite3_vtab **ppVTab,
+  char **pzErr
+){
+  int rc, i;
+  fulltext_vtab *v = 0;
   const sqlite3_tokenizer_module *m = NULL;
+  char **azToken = 0;
+  int seen_tokenizer = 0;
+  int seen_columns = 0;
 
   assert( argc>=3 );
   v = (fulltext_vtab *) malloc(sizeof(fulltext_vtab));
+  if( v==0 ) goto connect_failed;
   memset(v, 0, sizeof(*v));
   v->db = db;
   v->zName = string_dup(argv[2]);
   v->pTokenizer = NULL;
 
-  if( argc==3 ){
-    sqlite3Fts1SimpleTokenizerModule(&m);
-  } else {
-    /* TODO(shess) For now, add new tokenizers as else if clauses. */
-    if( !strcmp(argv[3], "simple") ){
-      sqlite3Fts1SimpleTokenizerModule(&m);
-    } else {
-      *pzErr = sqlite3_mprintf("unknown tokenizer: %s", argv[3]);
-      assert( "unrecognized tokenizer"==NULL );
+  /* Process arguments to the module */
+  for(i=3; i<argc; i++){
+    int nToken;
+    azToken = tokenizeString(argv[i], &nToken);
+    if( azToken==0 ) goto connect_failed;
+    removeDelimiterTokens(azToken, 0, &nToken);
+    if( nToken>=2 && strcmp(azToken[0],"tokenizer")==0 ){
+      if( seen_tokenizer ){
+        *pzErr = sqlite3_mprintf("multiple tokenizer definitions");
+        goto connect_failed;
+      }
+      seen_tokenizer = 1;
+      if( !strcmp(azToken[1], "simple") ){
+        sqlite3Fts1SimpleTokenizerModule(&m);
+      } else {
+        *pzErr = sqlite3_mprintf("unknown tokenizer: %s", azToken[1]);
+        goto connect_failed;
+      }
+      rc = m->xCreate(nToken-2, (const char *const*)&azToken[2],&v->pTokenizer);
+      v->pTokenizer->pModule = m;
+      m = 0;
+      if( rc ){
+        goto connect_failed;
+      }
+    }else if( nToken>=2 && strcmp(azToken[0], "columns")==0 ){
+      if( seen_columns ){
+        *pzErr = sqlite3_mprintf("multiple column definitions");
+        goto connect_failed;
+      }
+      removeDelimiterTokens(azToken, 1, &nToken);
+      v->nColumn = nToken;
+      v->azColumn = azToken;
+      azToken = 0;
+      seen_columns = 1;
+    }else{
+      *pzErr = sqlite3_mprintf("bad argument: %s", argv[i]);
+      goto connect_failed;
     }
+    free(azToken);
+    azToken = 0;
   }
 
-  /* TODO(shess) Since tokenization impacts the index, the parameters
-  ** to the tokenizer need to be identical when a persistent virtual
-  ** table is re-created.  One solution would be a meta-table to track
-  ** such information in the database.  Then we could verify that the
-  ** information is identical on subsequent creates.
+  /* Put in default values for the column names and the tokenizer if
+  ** none is specified in the arguments.
   */
-  /* TODO(shess) Why isn't argv already (const char **)? */
-  rc = m->xCreate(argc-3, (const char **) (argv+3), &v->pTokenizer);
-  if( rc!=SQLITE_OK ) return rc;
-  v->pTokenizer->pModule = m;
+  if( !seen_tokenizer ){
+    sqlite3Fts1SimpleTokenizerModule(&m);      
+    rc = m->xCreate(0, 0, &v->pTokenizer);
+    v->pTokenizer->pModule = m;
+    if( rc!=SQLITE_OK ){
+      goto connect_failed;
+    }
+    m = 0;
+  }
+  if( !seen_columns ){
+    v->nColumn = 1;
+    v->azColumn = malloc( sizeof(char*)*2 );
+    if( v->azColumn==0 ) goto connect_failed;
+    v->azColumn[0] = "content";
+    v->azColumn[1] = 0;
+  }
 
   /* TODO: verify the existence of backing tables foo_content, foo_term */
 
@@ -1154,9 +1374,17 @@ static int fulltextConnect(sqlite3 *db, void *pAux, int argc, char **argv,
   *ppVTab = &v->base;
   TRACE(("FTS1 Connect %p\n", v));
   return SQLITE_OK;
+
+connect_failed:
+  if( v ){
+    fulltext_vtab_destroy(v);
+  }
+  free(azToken);
+  return SQLITE_ERROR;
 }
 
-static int fulltextCreate(sqlite3 *db, void *pAux, int argc, char **argv,
+static int fulltextCreate(sqlite3 *db, void *pAux,
+                          int argc, const char *const*argv,
                           sqlite3_vtab **ppVTab, char **pzErr){
   int rc;
   assert( argc>=3 );

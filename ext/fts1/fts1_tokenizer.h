@@ -40,7 +40,7 @@ struct sqlite3_tokenizer_module {
   ** Create and destroy a tokenizer.  argc/argv are passed down from
   ** the fulltext virtual table creation to allow customization.
   */
-  int (*xCreate)(int argc, const char **argv,
+  int (*xCreate)(int argc, const char *const*argv,
                  sqlite3_tokenizer **ppTokenizer);
   int (*xDestroy)(sqlite3_tokenizer *pTokenizer);
 

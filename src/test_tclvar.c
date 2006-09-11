@@ -16,7 +16,7 @@
 ** The emphasis of this file is a virtual table that provides
 ** access to TCL variables.
 **
-** $Id: test_tclvar.c,v 1.9 2006/09/10 17:32:00 drh Exp $
+** $Id: test_tclvar.c,v 1.10 2006/09/11 00:34:22 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -51,7 +51,7 @@ struct tclvar_cursor {
 static int tclvarConnect(
   sqlite3 *db,
   void *pAux,
-  int argc, char **argv,
+  int argc, const char *const*argv,
   sqlite3_vtab **ppVtab,
   char **pzErr
 ){
