@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.410 2006/08/14 14:23:42 drh Exp $
+** $Id: build.c,v 1.411 2006/09/11 23:45:49 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1590,7 +1590,8 @@ void sqlite3CreateView(
   Token *pName1,     /* The token that holds the name of the view */
   Token *pName2,     /* The token that holds the name of the view */
   Select *pSelect,   /* A SELECT statement that will become the new view */
-  int isTemp         /* TRUE for a TEMPORARY view */
+  int isTemp,        /* TRUE for a TEMPORARY view */
+  int noErr          /* Suppress error messages if VIEW already exists */
 ){
   Table *p;
   int n;
@@ -1605,7 +1606,7 @@ void sqlite3CreateView(
     sqlite3SelectDelete(pSelect);
     return;
   }
-  sqlite3StartTable(pParse, pName1, pName2, isTemp, 1, 0, 0);
+  sqlite3StartTable(pParse, pName1, pName2, isTemp, 1, 0, noErr);
   p = pParse->pNewTable;
   if( p==0 || pParse->nErr ){
     sqlite3SelectDelete(pSelect);

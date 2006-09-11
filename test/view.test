@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing VIEW statements.
 #
-# $Id: view.test,v 1.32 2006/06/11 23:41:56 drh Exp $
+# $Id: view.test,v 1.33 2006/09/11 23:45:50 drh Exp $
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
@@ -34,7 +34,7 @@ do_test view-1.0 {
 do_test view-1.1 {
   execsql {
     BEGIN;
-    CREATE VIEW v1 AS SELECT a,b FROM t1;
+    CREATE VIEW IF NOT EXISTS v1 AS SELECT a,b FROM t1;
     SELECT * FROM v1 ORDER BY a;
   }
 } {1 2 4 5 7 8}
@@ -59,7 +59,7 @@ do_test view-1.3.1 {
 } {1 2 4 5 7 8}
 do_test view-1.4 {
   catchsql {
-    DROP VIEW v1;
+    DROP VIEW IF EXISTS v1;
     SELECT * FROM v1 ORDER BY a;
   }
 } {1 {no such table: v1}}
@@ -482,5 +482,20 @@ do_test view-15.2 {
   }
 } {x 2 y 3}
 
+do_test view-16.1 {
+  catchsql {
+    CREATE VIEW IF NOT EXISTS v1 AS SELECT * FROM t1;
+  }
+} {0 {}}
+do_test view-16.2 {
+  execsql {
+    SELECT sql FROM sqlite_master WHERE name='v1'
+  }
+} {{CREATE VIEW v1 AS SELECT a AS 'xyz', b+c AS 'pqr', c-b FROM t1}}
+do_test view-16.3 {
+  catchsql {
+    DROP VIEW IF EXISTS nosuchview
+  }
+} {0 {}}
 
 finish_test

@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the lang-*.html files.
 #
-set rcsid {$Id: lang.tcl,v 1.116 2006/08/29 13:08:38 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.117 2006/09/11 23:45:50 drh Exp $}
 source common.tcl
 
 if {[llength $argv]>0} {
@@ -638,13 +638,13 @@ statement.  </p>
 Section {CREATE TRIGGER} createtrigger
 
 Syntax {sql-statement} {
-CREATE [TEMP | TEMPORARY] TRIGGER <trigger-name> [ BEFORE | AFTER ]
+CREATE [TEMP | TEMPORARY] TRIGGER [IF NOT EXISTS] <trigger-name> [ BEFORE | AFTER ]
 <database-event> ON [<database-name> .] <table-name>
 <trigger-action>
 }
 
 Syntax {sql-statement} {
-CREATE [TEMP | TEMPORARY] TRIGGER <trigger-name> INSTEAD OF
+CREATE [TEMP | TEMPORARY] TRIGGER [IF NOT EXISTS] <trigger-name> INSTEAD OF
 <database-event> ON [<database-name> .] <view-name>
 <trigger-action>
 }
@@ -794,7 +794,7 @@ statement.</p>
 Section {CREATE VIEW} {createview}
 
 Syntax {sql-command} {
-CREATE [TEMP | TEMPORARY] VIEW [<database-name>.] <view-name> AS <select-statement>
+CREATE [TEMP | TEMPORARY] VIEW [IF NOT EXISTS] [<database-name>.] <view-name> AS <select-statement>
 }
 
 puts {
@@ -941,7 +941,7 @@ result if the table does not exist.</p>
 
 Section {DROP TRIGGER} droptrigger
 Syntax {sql-statement} {
-DROP TRIGGER [<database-name> .] <trigger-name>
+DROP TRIGGER [IF EXISTS] [<database-name> .] <trigger-name>
 }
 puts { 
 <p>The DROP TRIGGER statement removes a trigger created by the 
@@ -954,7 +954,7 @@ dropped when the associated table is dropped.</p>
 Section {DROP VIEW} dropview
 
 Syntax {sql-command} {
-DROP VIEW <view-name>
+DROP VIEW [IF EXISTS] <view-name>
 }
 
 puts {
