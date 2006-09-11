@@ -796,7 +796,7 @@ static const char *const fulltext_zStatement[MAX_STMT] = {
   /* TERM_SELECT_ALL */
   "select doclist from %_term where term = ? order by segment",
   /* TERM_INSERT */
-  "insert into %_term (term, segment, doclist) values (?, ?, ?)",
+  "insert into %_term (rowid, term, segment, doclist) values (?, ?, ?, ?)",
   /* TERM_UPDATE */ "update %_term set doclist = ? where rowid = ?",
   /* TERM_DELETE */ "delete from %_term where rowid = ?",
 };
@@ -1036,21 +1036,34 @@ static int term_select_all(fulltext_vtab *v, const char *pTerm, int nTerm,
   return SQLITE_OK;
 }
 
-/* insert into %_term (term, segment, doclist)
-               values ([pTerm], [iSegment], [doclist]) */
-static int term_insert(fulltext_vtab *v, const char *pTerm, int nTerm,
+/* insert into %_term (rowid, term, segment, doclist)
+               values ([piRowid], [pTerm], [iSegment], [doclist])
+** Lets sqlite select rowid if piRowid is NULL, else uses *piRowid.
+**
+** NOTE(shess) piRowid is IN, with values of "space of int64" plus
+** null, it is not used to pass data back to the caller.
+*/
+static int term_insert(fulltext_vtab *v, sqlite_int64 *piRowid,
+                       const char *pTerm, int nTerm,
                        int iSegment, DocList *doclist){
   sqlite3_stmt *s;
   int rc = sql_get_statement(v, TERM_INSERT_STMT, &s);
   if( rc!=SQLITE_OK ) return rc;
 
-  rc = sqlite3_bind_text(s, 1, pTerm, nTerm, SQLITE_STATIC);
+  if( piRowid==NULL ){
+    rc = sqlite3_bind_null(s, 1);
+  }else{
+    rc = sqlite3_bind_int64(s, 1, *piRowid);
+  }
   if( rc!=SQLITE_OK ) return rc;
 
-  rc = sqlite3_bind_int(s, 2, iSegment);
+  rc = sqlite3_bind_text(s, 2, pTerm, nTerm, SQLITE_STATIC);
   if( rc!=SQLITE_OK ) return rc;
 
-  rc = sqlite3_bind_blob(s, 3, doclist->pData, doclist->nData, SQLITE_STATIC);
+  rc = sqlite3_bind_int(s, 3, iSegment);
+  if( rc!=SQLITE_OK ) return rc;
+
+  rc = sqlite3_bind_blob(s, 4, doclist->pData, doclist->nData, SQLITE_STATIC);
   if( rc!=SQLITE_OK ) return rc;
 
   return sql_single_step_statement(v, TERM_INSERT_STMT, &s);
@@ -1931,7 +1944,7 @@ static int index_insert_term(fulltext_vtab *v, const char *pTerm, int nTerm,
     docListInit(&doclist, DL_POSITIONS_OFFSETS, 0, 0);
     docListUpdate(&doclist, d);
     /* TODO(shess) Consider length(doclist)>CHUNK_MAX? */
-    rc = term_insert(v, pTerm, nTerm, iSegment, &doclist);
+    rc = term_insert(v, NULL, pTerm, nTerm, iSegment, &doclist);
     goto err;
   }
   if( rc!=SQLITE_ROW ) return SQLITE_ERROR;
@@ -1953,18 +1966,23 @@ static int index_insert_term(fulltext_vtab *v, const char *pTerm, int nTerm,
   ** bucket, and put results in the next bucket.
   */
   iSegment++;
-  while( (rc=term_insert(v, pTerm, nTerm, iSegment, &doclist))!=SQLITE_OK ){
+  while( (rc=term_insert(v, &iIndexRow, pTerm, nTerm, iSegment,
+                         &doclist))!=SQLITE_OK ){
+    sqlite_int64 iSegmentRow;
     DocList old;
     int rc2;
 
     /* Retain old error in case the term_insert() error was really an
     ** error rather than a bounced insert.
     */
-    rc2 = term_select(v, pTerm, nTerm, iSegment, &iIndexRow, &old);
+    rc2 = term_select(v, pTerm, nTerm, iSegment, &iSegmentRow, &old);
     if( rc2!=SQLITE_ROW ) goto err;
 
-    rc = term_delete(v, iIndexRow);
+    rc = term_delete(v, iSegmentRow);
     if( rc!=SQLITE_OK ) goto err;
+
+    /* Reusing lowest-number deleted row keeps the index smaller. */
+    if( iSegmentRow<iIndexRow ) iIndexRow = iSegmentRow;
 
     /* doclist contains the newer data, so accumulate it over old.
     ** Then steal accumulated data for doclist.
