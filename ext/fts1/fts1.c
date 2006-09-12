@@ -750,8 +750,11 @@ static int sql_prepare(sqlite3 *db, const char *zName, sqlite3_stmt **ppStmt,
 
 /* end utility functions */
 
-#define QUERY_GENERIC 0
-#define QUERY_FULLTEXT 1
+typedef enum QueryType {
+  QUERY_GENERIC,     /* table scan */
+  QUERY_ROWID,       /* lookup by rowid */
+  QUERY_FULLTEXT    /* full-text search */
+} QueryType;
 
 /* TODO(shess) CHUNK_MAX controls how much data we allow in segment 0
 ** before we start aggregating into larger segments.  Lower CHUNK_MAX
@@ -817,14 +820,12 @@ typedef struct fulltext_vtab {
 
 typedef struct fulltext_cursor {
   sqlite3_vtab_cursor base;
-  int iCursorType;  /* QUERY_GENERIC or QUERY_FULLTEXT */
+  QueryType iCursorType;
 
   sqlite3_stmt *pStmt;
-
   int eof;
 
-  /* The following is used only when iCursorType == QUERY_FULLTEXT. */
-  DocListReader result;
+  DocListReader result;  /* used when iCursorType == QUERY_FULLTEXT */ 
 } fulltext_cursor;
 
 static struct fulltext_vtab *cursor_vtab(fulltext_cursor *c){
@@ -1456,13 +1457,23 @@ static int fulltextBestIndex(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
   for(i=0; i<pInfo->nConstraint; ++i){
     const struct sqlite3_index_constraint *pConstraint;
     pConstraint = &pInfo->aConstraint[i];
-    if( pConstraint->iColumn==0 &&
-        pConstraint->op==SQLITE_INDEX_CONSTRAINT_MATCH &&
-        pConstraint->usable ){   /* a full-text search */
+    if( pConstraint->usable ) {
+      if( pConstraint->iColumn==-1 &&
+          pConstraint->op==SQLITE_INDEX_CONSTRAINT_EQ ){
+        pInfo->idxNum = QUERY_ROWID;      /* lookup by rowid */
+      } else if( pConstraint->iColumn==0 &&
+                 pConstraint->op==SQLITE_INDEX_CONSTRAINT_MATCH ){
+        pInfo->idxNum = QUERY_FULLTEXT;   /* full-text search */
+      } else continue;
+
       pInfo->aConstraintUsage[i].argvIndex = 1;
       pInfo->aConstraintUsage[i].omit = 1;
-      pInfo->idxNum = QUERY_FULLTEXT;
-      pInfo->estimatedCost = 1.0;   /* an arbitrary value for now */
+
+      /* An arbitrary value for now.
+       * TODO: Perhaps rowid matches should be considered cheaper than
+       * full-text searches. */
+      pInfo->estimatedCost = 1.0;   
+
       return SQLITE_OK;
     }
   }
@@ -1518,43 +1529,39 @@ static int fulltextNext(sqlite3_vtab_cursor *pCursor){
   int rc;
 
   TRACE(("FTS1 Next %p\n", pCursor));
-  switch( c->iCursorType ){
-    case QUERY_GENERIC:
-      /* TODO(shess) Handle SQLITE_SCHEMA AND SQLITE_BUSY. */
-      rc = sqlite3_step(c->pStmt);
-      switch( rc ){
-        case SQLITE_ROW:
-          c->eof = 0;
-          return SQLITE_OK;
-        case SQLITE_DONE:
-          c->eof = 1;
-          return SQLITE_OK;
-        default:
-          c->eof = 1;
-          return rc;
-      }
-    case QUERY_FULLTEXT:
-      rc = sqlite3_reset(c->pStmt);
-      if( rc!=SQLITE_OK ) return rc;
-
-      iDocid = nextValidDocid(&c->result);
-      if( iDocid==0 ){
-        c->eof = 1;
-        return SQLITE_OK;
-      }
-      rc = sqlite3_bind_int64(c->pStmt, 1, iDocid);
-      if( rc!=SQLITE_OK ) return rc;
-      /* TODO(shess) Handle SQLITE_SCHEMA AND SQLITE_BUSY. */
-      rc = sqlite3_step(c->pStmt);
-      if( rc==SQLITE_ROW ){   /* the case we expect */
+  if( c->iCursorType != QUERY_FULLTEXT ){
+    /* TODO(shess) Handle SQLITE_SCHEMA AND SQLITE_BUSY. */
+    rc = sqlite3_step(c->pStmt);
+    switch( rc ){
+      case SQLITE_ROW:
         c->eof = 0;
         return SQLITE_OK;
-      }
-      /* an error occurred; abort */
-      return rc==SQLITE_DONE ? SQLITE_ERROR : rc;
-    default:
-      assert( 0 );
-      return SQLITE_ERROR;  /* not reached */
+      case SQLITE_DONE:
+        c->eof = 1;
+        return SQLITE_OK;
+      default:
+        c->eof = 1;
+        return rc;
+    }
+  } else {  /* full-text query */
+    rc = sqlite3_reset(c->pStmt);
+    if( rc!=SQLITE_OK ) return rc;
+
+    iDocid = nextValidDocid(&c->result);
+    if( iDocid==0 ){
+      c->eof = 1;
+      return SQLITE_OK;
+    }
+    rc = sqlite3_bind_int64(c->pStmt, 1, iDocid);
+    if( rc!=SQLITE_OK ) return rc;
+    /* TODO(shess) Handle SQLITE_SCHEMA AND SQLITE_BUSY. */
+    rc = sqlite3_step(c->pStmt);
+    if( rc==SQLITE_ROW ){   /* the case we expect */
+      c->eof = 0;
+      return SQLITE_OK;
+    }
+    /* an error occurred; abort */
+    return rc==SQLITE_DONE ? SQLITE_ERROR : rc;
   }
 }
 
@@ -1830,13 +1837,21 @@ static int fulltextFilter(sqlite3_vtab_cursor *pCursor,
   fulltext_cursor *c = (fulltext_cursor *) pCursor;
   fulltext_vtab *v = cursor_vtab(c);
   int rc;
-  const char *zStatement;
 
   TRACE(("FTS1 Filter %p\n",pCursor));
   c->iCursorType = idxNum;
   switch( idxNum ){
     case QUERY_GENERIC:
-      zStatement = "select rowid, content from %_content";
+      rc = sql_prepare(v->db, v->zName, &c->pStmt,
+                       "select rowid, content from %_content");
+      break;
+
+    case QUERY_ROWID:
+      rc = sql_prepare(v->db, v->zName, &c->pStmt,
+                       "select rowid, content from %_content where rowid = ?");
+      if( rc!=SQLITE_OK ) return rc;
+
+      rc = sqlite3_bind_int64(c->pStmt, 1, sqlite3_value_int64(argv[0]));
       break;
 
     case QUERY_FULLTEXT:   /* full-text search */
@@ -1847,7 +1862,8 @@ static int fulltextFilter(sqlite3_vtab_cursor *pCursor,
       rc = fulltextQuery(v, zQuery, -1, &pResult);
       if( rc!=SQLITE_OK ) return rc;
       readerInit(&c->result, pResult);
-      zStatement = "select rowid, content from %_content where rowid = ?";
+      rc = sql_prepare(v->db, v->zName, &c->pStmt,
+                       "select rowid, content from %_content where rowid = ?");
       break;
     }
 
@@ -1855,7 +1871,6 @@ static int fulltextFilter(sqlite3_vtab_cursor *pCursor,
       assert( 0 );
   }
 
-  rc = sql_prepare(v->db, v->zName, &c->pStmt, zStatement);
   if( rc!=SQLITE_OK ) return rc;
 
   return fulltextNext(pCursor);
