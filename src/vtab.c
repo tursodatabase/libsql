@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to help implement virtual tables.
 **
-** $Id: vtab.c,v 1.34 2006/09/11 00:34:22 drh Exp $
+** $Id: vtab.c,v 1.35 2006/09/13 19:21:28 drh Exp $
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
@@ -295,6 +295,7 @@ static int vtabCallConstructor(
   const char *const*azArg = (const char *const*)pTab->azModuleArg;
   int nArg = pTab->nModuleArg;
   char *zErr = 0;
+  char *zModuleName = sqlite3MPrintf("%s", pTab->zName);
 
   assert( !db->pVTab );
   assert( xConstruct );
@@ -312,7 +313,7 @@ static int vtabCallConstructor(
 
   if( SQLITE_OK!=rc ){
     if( zErr==0 ){
-      *pzErr = sqlite3MPrintf("vtable constructor failed: %s", pTab->zName);
+      *pzErr = sqlite3MPrintf("vtable constructor failed: %s", zModuleName);
     }else {
       *pzErr = sqlite3MPrintf("%s", zErr);
       sqlite3_free(zErr);
@@ -326,6 +327,7 @@ static int vtabCallConstructor(
     rc = rc2;
   }
   db->pVTab = 0;
+  sqliteFree(zModuleName);
   return rc;
 }
 

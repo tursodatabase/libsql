@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.220 2006/09/10 03:34:06 drh Exp $
+** $Id: test1.c,v 1.221 2006/09/13 19:21:28 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -576,10 +576,14 @@ static int test_create_function(
   if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
   rc = sqlite3_create_function(db, "x_coalesce", -1, SQLITE_ANY, 0, 
         ifnullFunc, 0, 0);
-  rc = sqlite3_create_function(db, "hex8", 1, SQLITE_ANY, 0, 
-        hex8Func, 0, 0);
-  rc = sqlite3_create_function(db, "hex16", 1, SQLITE_ANY, 0, 
-        hex16Func, 0, 0);
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_function(db, "hex8", 1, SQLITE_ANY, 0, 
+          hex8Func, 0, 0);
+  }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_function(db, "hex16", 1, SQLITE_ANY, 0, 
+          hex16Func, 0, 0);
+  }
 
 #ifndef SQLITE_OMIT_UTF16
   /* Use the sqlite3_create_function16() API here. Mainly for fun, but also 

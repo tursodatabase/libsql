@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.61 2006/09/11 23:45:50 drh Exp $
+** $Id: vacuum.c,v 1.62 2006/09/13 19:21:28 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -308,14 +308,6 @@ end_of_vacuum:
     sqlite3MallocAllow();
     pDb->pBt = 0;
     pDb->pSchema = 0;
-  }
-
-  /* If one of the execSql() calls above returned SQLITE_NOMEM, then the
-  ** mallocFailed flag will be clear (because execSql() calls sqlite3_exec()).
-  ** Fix this so the flag and return code match.
-  */
-  if( rc==SQLITE_NOMEM ){
-    sqlite3MallocFailed();
   }
 
   if( zTemp ){
