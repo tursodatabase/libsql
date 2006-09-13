@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.148 2006/09/06 21:39:40 adamd Exp $
+** $Id: shell.c,v 1.149 2006/09/13 20:22:02 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -918,11 +918,16 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     if( nArg==1 ){
       run_schema_dump_query(p, 
         "SELECT name, type, sql FROM sqlite_master "
-        "WHERE sql NOT NULL AND type=='table'", 0
+        "WHERE sql NOT NULL AND type=='table' AND rootpage!=0", 0
       );
       run_schema_dump_query(p, 
         "SELECT name, type, sql FROM sqlite_master "
-        "WHERE sql NOT NULL AND type!='table' AND type!='meta'", 0
+        "WHERE sql NOT NULL AND "
+        "  AND type!='table' AND type!='meta'", 0
+      );
+      run_table_dump_query(p->out, p->db,
+        "SELECT sql FROM sqlite_master "
+        "WHERE sql NOT NULL AND rootpage==0 AND type='table'"
       );
     }else{
       int i;
@@ -931,11 +936,16 @@ static int do_meta_command(char *zLine, struct callback_data *p){
         run_schema_dump_query(p,
           "SELECT name, type, sql FROM sqlite_master "
           "WHERE tbl_name LIKE shellstatic() AND type=='table'"
-          "  AND sql NOT NULL", 0);
+          "  AND rootpage!=0 AND sql NOT NULL", 0);
         run_schema_dump_query(p,
           "SELECT name, type, sql FROM sqlite_master "
           "WHERE tbl_name LIKE shellstatic() AND type!='table'"
           "  AND type!='meta' AND sql NOT NULL", 0);
+        run_table_dump_query(p->out, p->db,
+          "SELECT sql FROM sqlite_master "
+          "WHERE sql NOT NULL AND rootpage==0 AND type='table'"
+          "  AND tbl_name LIKE shellstatic()"
+        );
         zShellStatic = 0;
       }
     }
