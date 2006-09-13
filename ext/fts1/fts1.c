@@ -2033,7 +2033,8 @@ typedef struct Query {
   int nTerms;           /* Number of terms in the query */
   QueryTerm *pTerms;    /* Array of terms.  Space obtained from malloc() */
   int nextIsOr;         /* Set the isOr flag on the next inserted term */
-  int iColumn;          /* Text word parsed must be in this column */
+  int nextColumn;       /* Next word parsed must be in this column */
+  int dfltColumn;       /* The default column */
 } Query;
 
 /* Add a new term pTerm[0..nTerm-1] to the query *q.
@@ -2054,13 +2055,13 @@ static void queryAdd(Query *q, const char *pTerm, int nTerm){
   t->nTerm = nTerm;
   t->isOr = q->nextIsOr;
   q->nextIsOr = 0;
-  t->iColumn = q->iColumn;
-  q->iColumn = -1;
+  t->iColumn = q->nextColumn;
+  q->nextColumn = q->dfltColumn;
 }
 
-/* Free all of the memory that was malloced in order to build *q.
+/* Free all of the dynamically allocated memory held by *q
 */
-static void queryDestroy(Query *q){
+static void queryClear(Query *q){
   int i;
   for(i = 0; i < q->nTerms; ++i){
     free(q->pTerms[i].pTerm);
@@ -2124,7 +2125,7 @@ static int tokenizeSegment(
     if( !inPhrase &&
         pSegment[iEnd]==':' &&
          (iCol = checkColumnSpecifier(pQuery->pFts, pToken, nToken))>=0 ){
-      pQuery->iColumn = iCol;
+      pQuery->nextColumn = iCol;
       continue;
     }
     if( !inPhrase && pQuery->nTerms>0 && nToken==2
@@ -2145,58 +2146,71 @@ static int tokenizeSegment(
   return pModule->xClose(pCursor);
 }
 
-/* Parse a query string, yielding a Query object [pQuery], which the caller
- * must free. */
-static int parseQuery(fulltext_vtab *v, const char *pInput, int nInput,
-                      Query *pQuery){
+/* Parse a query string, yielding a Query object pQuery.
+**
+** The calling function will need to queryClear() to clean up
+** the dynamically allocated memory held by pQuery.
+*/
+static int parseQuery(
+  fulltext_vtab *v,        /* The fulltext index */
+  const char *zInput,      /* Input text of the query string */
+  int nInput,              /* Size of the input text */
+  int dfltColumn,          /* Default column of the index to match against */
+  Query *pQuery            /* Write the parse results here. */
+){
   int iInput, inPhrase = 0;
 
-  if( nInput<0 ) nInput = strlen(pInput);
+  if( nInput<0 ) nInput = strlen(zInput);
   pQuery->nTerms = 0;
   pQuery->pTerms = NULL;
   pQuery->nextIsOr = 0;
-  pQuery->iColumn = -1;
+  pQuery->nextColumn = dfltColumn;
+  pQuery->dfltColumn = dfltColumn;
   pQuery->pFts = v;
 
   for(iInput=0; iInput<nInput; ++iInput){
     int i;
-    for(i=iInput; i<nInput && pInput[i]!='"'; ++i)
-      ;
+    for(i=iInput; i<nInput && zInput[i]!='"'; ++i){}
     if( i>iInput ){
-      tokenizeSegment(v->pTokenizer, pInput+iInput, i-iInput, inPhrase,
+      tokenizeSegment(v->pTokenizer, zInput+iInput, i-iInput, inPhrase,
                        pQuery);
     }
     iInput = i;
     if( i<nInput ){
-      assert( pInput[i]=='"' );
+      assert( zInput[i]=='"' );
       inPhrase = !inPhrase;
     }
   }
 
-  if( inPhrase ){  /* unmatched quote */
-    queryDestroy(pQuery);
+  if( inPhrase ){
+    /* unmatched quote */
+    queryClear(pQuery);
     return SQLITE_ERROR;
   }
   return SQLITE_OK;
 }
 
 /* Perform a full-text query using the search expression in
-** pInput[0..nInput-1].  Return a list of matching documents
+** zInput[0..nInput-1].  Return a list of matching documents
 ** in pResult.
 **
 ** Queries must match column iColumn.  Or if iColumn>=nColumn
 ** they are allowed to match against any column.
 */
-static int fulltextQuery(fulltext_vtab *v, int iColumn,
-                         const char *pInput, int nInput, DocList **pResult){
+static int fulltextQuery(
+  fulltext_vtab *v,      /* The full text index */
+  int iColumn,           /* Match against this column by default */
+  const char *zInput,    /* The query string */
+  int nInput,            /* Number of bytes in zInput[] */
+  DocList **pResult      /* Write the result doclist here */
+){
   Query q;
   int i, rc;
   DocList *pLeft = NULL;
   DocList *pRight, *pNew;
   int nNot = 0;
-  int iCol;
 
-  rc = parseQuery(v, pInput, nInput, &q);
+  rc = parseQuery(v, zInput, nInput, iColumn, &q);
   if( rc!=SQLITE_OK ) return rc;
 
   /* Merge AND terms. */
@@ -2208,11 +2222,9 @@ static int fulltextQuery(fulltext_vtab *v, int iColumn,
       continue;
     }
 
-    iCol = q.pTerms[i].iColumn;
-    if( iCol<0 ) iCol = iColumn;
-    rc = docListOfTerm(v, iCol, &q.pTerms[i], &pRight);
+    rc = docListOfTerm(v, q.pTerms[i].iColumn, &q.pTerms[i], &pRight);
     if( rc ){
-      queryDestroy(&q);
+      queryClear(&q);
       return rc;
     }
     if( pLeft==0 ){
@@ -2238,11 +2250,9 @@ static int fulltextQuery(fulltext_vtab *v, int iColumn,
   /* Do the EXCEPT terms */
   for(i=0; i<q.nTerms;  i += q.pTerms[i].nPhrase + 1){
     if( !q.pTerms[i].isNot ) continue;
-    iCol = q.pTerms[i].iColumn;
-    if( iCol<0 ) iCol = iColumn;
-    rc = docListOfTerm(v, iCol, &q.pTerms[i], &pRight);
+    rc = docListOfTerm(v, q.pTerms[i].iColumn, &q.pTerms[i], &pRight);
     if( rc ){
-      queryDestroy(&q);
+      queryClear(&q);
       docListDelete(pLeft);
       return rc;
     }
@@ -2253,7 +2263,7 @@ static int fulltextQuery(fulltext_vtab *v, int iColumn,
     pLeft = pNew;
   }
 
-  queryDestroy(&q);
+  queryClear(&q);
   *pResult = pLeft;
   return rc;
 }

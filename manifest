@@ -1,5 +1,5 @@
-C Implementation\sof\s"column:"\smodifiers\sin\sFTS1\squeries.\s(CVS\s3411)
-D 2006-09-13T16:02:44
+C Minor\scode\scleanup\sin\sFTS1.\s(CVS\s3412)
+D 2006-09-13T17:17:48
 F Makefile.in cabd42d34340f49260bc2a7668c38eba8d4cfd99
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -21,7 +21,7 @@ F ext/README.txt 913a7bd3f4837ab14d7e063304181787658b14e1
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
 F ext/fts1/ft_hash.c 3927bd880e65329bdc6f506555b228b28924921b
 F ext/fts1/ft_hash.h 1a35e654a235c2c662d3ca0dfc3138ad60b8b7d5
-F ext/fts1/fts1.c b5d7a61ae136f116427d63b4942540bdde20511e
+F ext/fts1/fts1.c 65aaeb022e4257eec3a6ce10bcf323e77078b10a
 F ext/fts1/fts1.h fe8e8f38dd6d2d2645b9b0d6972e80985249575f
 F ext/fts1/fts1_hash.c 3196cee866edbebb1c0521e21672e6d599965114
 F ext/fts1/fts1_hash.h 957d378355ed29f672cd5add012ce8b088a5e089
@@ -398,7 +398,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P adb780e0dc8bc7dcd1102efbfa4bc17eefdf968e
-R cb518158115dd87ece5a8e7690dc5840
+P 820634f71e3a3499994f82b56b784d22a7e3cdcf
+R 621d72f40c2bc2a8ff0c2901da9a946a
 U drh
-Z e9d714f2273a2ad600591f248a85a42b
+Z 31ced45237949ff98b8b01ea025e7b54
