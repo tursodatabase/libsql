@@ -432,11 +432,11 @@ static void printDoclist(DocList *p){
     printf("%s%lld", zSep, docid);
     zSep =  ",";
     if( p->iType>=DL_POSITIONS ){
-      int iPos;
+      int iPos, iCol;
       const char *zDiv = "";
       printf("(");
-      while( (iPos = readPosition(&r))>=0 ){
-        printf("%s%d", zDiv, iPos);
+      while( (iPos = readPosition(&r, &iCol))>=0 ){
+        printf("%s%d:%d", zDiv, iCol, iPos);
         zDiv = ":";
       }
       printf(")");
@@ -610,7 +610,7 @@ static void mergePosList(
       iLeftPos = readPosition(pLeft, &iLeftCol);
       iRightPos = readPosition(pRight, &iRightCol);
     }else if( iRightCol<iLeftCol ||
-              iRightCol==iLeftCol && iRightPos<iLeftPos+1 ){
+              (iRightCol==iLeftCol && iRightPos<iLeftPos+1) ){
       iRightPos = readPosition(pRight, &iRightCol);
     }else{
       iLeftPos = readPosition(pLeft, &iLeftCol);
@@ -1126,9 +1126,20 @@ static int term_select(fulltext_vtab *v, const char *pTerm, int nTerm,
 ** appropriate order into out.  Returns SQLITE_OK if successful.  If
 ** there are no segments for pTerm, successfully returns an empty
 ** doclist in out.
+**
+** Each document consists of 1 or more "columns".  The number of
+** columns is v->nColumn.  If iColumn==v->nColumn, then return
+** position information about all columns.  If iColumn<v->nColumn,
+** then only return position information about the iColumn-th column
+** (where the first column is 0).
 */
-static int term_select_all(fulltext_vtab *v, int iColumn,
-                           const char *pTerm, int nTerm, DocList *out){
+static int term_select_all(
+  fulltext_vtab *v,     /* The fulltext index we are querying against */
+  int iColumn,          /* If <nColumn, only look at the iColumn-th column */
+  const char *pTerm,    /* The term whose posting lists we want */
+  int nTerm,            /* Number of bytes in pTerm */
+  DocList *out          /* Write the resulting doclist here */
+){
   DocList doclist;
   sqlite3_stmt *s;
   int rc = sql_get_statement(v, TERM_SELECT_ALL_STMT, &s);
@@ -1446,7 +1457,7 @@ static int fulltextConnect(
   return rc;
 }
 
-  /* The %_content table holds the text of each full-text item, with
+  /* The %_content table holds the text of each document, with
   ** the rowid used as the docid.
   **
   ** The %_term table maps each term to a document list blob
@@ -1645,7 +1656,7 @@ typedef struct QueryTerm {
 */
 static int docListOfTerm(
   fulltext_vtab *v,     /* The full text index */
-  int iColumn,           /* column to restrict to */
+  int iColumn,          /* column to restrict to.  No restrition if >=nColumn */
   QueryTerm *pQTerm,    /* Term we are looking for, or 1st term of a phrase */
   DocList **ppResult    /* Write the result here */
 ){
@@ -1889,9 +1900,27 @@ static int fulltextQuery(fulltext_vtab *v, int iColumn,
   return rc;
 }
 
-static int fulltextFilter(sqlite3_vtab_cursor *pCursor,
-                          int idxNum, const char *idxStr,
-                          int argc, sqlite3_value **argv){
+/*
+** This is the xFilter interface for the virtual table.  See
+** the virtual table xFilter method documentation for additional
+** information.
+**
+** If idxNum==QUERY_GENERIC then do a full table scan against
+** the %_content table.
+**
+** If idxNum==QUERY_ROWID then do a rowid lookup for a single entry
+** in the %_content table.
+**
+** If idxNum>=QUERY_FULLTEXT then use the full text index.  The
+** column on the left-hand side of the MATCH operator is column
+** number idxNum-QUERY_FULLTEXT, 0 indexed.  argv[0] is the right-hand
+** side of the MATCH operator.
+*/
+static int fulltextFilter(
+  sqlite3_vtab_cursor *pCursor,     /* The cursor used for this query */
+  int idxNum, const char *idxStr,   /* Which indexing scheme to use */
+  int argc, sqlite3_value **argv    /* Arguments for the indexing scheme */
+){
   fulltext_cursor *c = (fulltext_cursor *) pCursor;
   fulltext_vtab *v = cursor_vtab(c);
   int rc;
