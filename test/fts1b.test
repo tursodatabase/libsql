@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing the FTS1 module.
 #
-# $Id: fts1b.test,v 1.1 2006/09/13 12:36:09 drh Exp $
+# $Id: fts1b.test,v 1.2 2006/09/13 15:20:13 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -80,5 +80,13 @@ do_test fts1b-1.6 {
 do_test fts1b-1.7 {
   execsql {SELECT rowid FROM t1 WHERE _all MATCH '"one un"'}
 } {}
+
+do_test fts1b-2.1 {
+  execsql {
+    CREATE VIRTUAL TABLE t2 USING fts1(from,to);
+    INSERT INTO t2([from],[to]) VALUES ('one two three', 'four five six');
+    SELECT [from], [to] FROM t2
+  }
+} {{one two three} {four five six}}
 
 finish_test

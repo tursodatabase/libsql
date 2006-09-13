@@ -1,5 +1,5 @@
-C Fix\sthe\sFTS1\stest\scases\sand\sadd\snew\stests.\s\sComments\sadded\sto\sthe\sFTS1\scode.\s(CVS\s3409)
-D 2006-09-13T12:36:09
+C Module\sspec\sparser\senhancements\sfor\sFTS1.\s\sNow\sable\sto\scope\swith\scolumn\nnames\sin\sthe\sspec\sthat\sare\sSQL\skeywords\sor\shave\sspecial\scharacters,\setc.\nAlso\sadded\ssupport\sfor\sadditional\scontrol\slines.\s\sColumn\snames\scan\sbe\nfollowed\sby\sa\stype\sspecifier\s(which\sis\signored.)\s(CVS\s3410)
+D 2006-09-13T15:20:13
 F Makefile.in cabd42d34340f49260bc2a7668c38eba8d4cfd99
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -21,7 +21,7 @@ F ext/README.txt 913a7bd3f4837ab14d7e063304181787658b14e1
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
 F ext/fts1/ft_hash.c 3927bd880e65329bdc6f506555b228b28924921b
 F ext/fts1/ft_hash.h 1a35e654a235c2c662d3ca0dfc3138ad60b8b7d5
-F ext/fts1/fts1.c dc11410cc77148bb8a810ccecaedcf05a13b77d0
+F ext/fts1/fts1.c de9c9027e0b4bfe84b6e304def7c90e7699ae309
 F ext/fts1/fts1.h fe8e8f38dd6d2d2645b9b0d6972e80985249575f
 F ext/fts1/fts1_hash.c 3196cee866edbebb1c0521e21672e6d599965114
 F ext/fts1/fts1_hash.h 957d378355ed29f672cd5add012ce8b088a5e089
@@ -191,7 +191,7 @@ F test/expr.test c78843f730ccbe973d0c2ad1c99978f936893131
 F test/fkey1.test 153004438d51e6769fb1ce165f6313972d6263ce
 F test/format4.test bf3bed3b13c63abfb3cfec232597a319a31d0bcc
 F test/fts1a.test 54fd9451c00fb91074d5abdc207b05dcba6d2d65
-F test/fts1b.test 8775bd07b152812b00854b01e48493ac1e744eeb
+F test/fts1b.test 7fed050efcf6ee7d8faaea6d97efdfb49e752135
 F test/func.test 7f2c91a948a0a177635835dc9afa078413c54ae1
 F test/hook.test 7e7645fd9a033f79cce8fdff151e32715e7ec50a
 F test/in.test 369cb2aa1eab02296b4ec470732fe8c131260b1d
@@ -398,7 +398,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 366a70b086c817bddecd83053472ec76ef20f309
-R 7cbb899d0d838798179d462a72c54e7a
+P 528036c828c93c78ca879bf89a52131b72e24067
+R e6dd8f2c3c3eb768669b7417f023def9
 U drh
-Z 508a1753e05074d38687e46ff3134800
+Z 48ac5c689837f5905a3d6832e62238fa
