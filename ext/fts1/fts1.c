@@ -837,6 +837,60 @@ static int sql_prepare(sqlite3 *db, const char *zName, sqlite3_stmt **ppStmt,
 
 /* end utility functions */
 
+/* Forward reference */
+typedef struct fulltext_vtab fulltext_vtab;
+
+/* A single term in a query is represented by an instances of
+** the following structure.
+*/
+typedef struct QueryTerm {
+  short int nPhrase; /* How many following terms are part of the same phrase */
+  short int iColumn; /* Column of the index that must match this term */
+  signed char isOr;  /* this term is preceded by "OR" */
+  signed char isNot; /* this term is preceded by "-" */
+  char *pTerm;       /* text of the term.  '\000' terminated.  malloced */
+  int nTerm;         /* Number of bytes in pTerm[] */
+} QueryTerm;
+
+
+/* A query string is parsed into a Query structure.
+ *
+ * We could, in theory, allow query strings to be complicated
+ * nested expressions with precedence determined by parentheses.
+ * But none of the major search engines do this.  (Perhaps the
+ * feeling is that an parenthesized expression is two complex of
+ * an idea for the average user to grasp.)  Taking our lead from
+ * the major search engines, we will allow queries to be a list
+ * of terms (with an implied AND operator) or phrases in double-quotes,
+ * with a single optional "-" before each non-phrase term to designate
+ * negation and an optional OR connector.
+ *
+ * OR binds more tightly than the implied AND, which is what the
+ * major search engines seem to do.  So, for example:
+ * 
+ *    [one two OR three]     ==>    one AND (two OR three)
+ *    [one OR two three]     ==>    (one OR two) AND three
+ *
+ * A "-" before a term matches all entries that lack that term.
+ * The "-" must occur immediately before the term with in intervening
+ * space.  This is how the search engines do it.
+ *
+ * A NOT term cannot be the right-hand operand of an OR.  If this
+ * occurs in the query string, the NOT is ignored:
+ *
+ *    [one OR -two]          ==>    one OR two
+ *
+ */
+typedef struct Query {
+  fulltext_vtab *pFts;  /* The full text index */
+  int nTerms;           /* Number of terms in the query */
+  QueryTerm *pTerms;    /* Array of terms.  Space obtained from malloc() */
+  int nextIsOr;         /* Set the isOr flag on the next inserted term */
+  int nextColumn;       /* Next word parsed must be in this column */
+  int dfltColumn;       /* The default column */
+} Query;
+
+
 typedef enum QueryType {
   QUERY_GENERIC,   /* table scan */
   QUERY_ROWID,     /* lookup by rowid */
@@ -891,9 +945,16 @@ static const char *const fulltext_zStatement[MAX_STMT] = {
   /* TERM_DELETE */ "delete from %_term where rowid = ?",
 };
 
-typedef struct fulltext_vtab {
-  sqlite3_vtab base;
-  sqlite3 *db;
+/*
+** A connection to a fulltext index is an instance of the following
+** structure.  The xCreate and xConnect methods create an instance
+** of this structure and xDestroy and xDisconnect free that instance.
+** All other methods receive a pointer to the structure as one of their
+** arguments.
+*/
+struct fulltext_vtab {
+  sqlite3_vtab base;               /* Base class used by SQLite core */
+  sqlite3 *db;                     /* The database connection */
   const char *zName;               /* virtual table name */
   int nColumn;                     /* number of columns in virtual table */
   char **azColumn;                 /* column names.  malloced */
@@ -904,15 +965,19 @@ typedef struct fulltext_vtab {
   ** open.
   */
   sqlite3_stmt *pFulltextStatements[MAX_STMT];
-} fulltext_vtab;
+};
 
+/*
+** When the core wants to do a query, it create a cursor using a
+** call to xOpen.  This structure is an instance of a cursor.  It
+** is destroyed by xClose.
+*/
 typedef struct fulltext_cursor {
-  sqlite3_vtab_cursor base;
-  QueryType iCursorType;
-
-  sqlite3_stmt *pStmt;
-  int eof;
-
+  sqlite3_vtab_cursor base;        /* Base class used by SQLite core */
+  QueryType iCursorType;           /* Type of cursor */
+  sqlite3_stmt *pStmt;             /* Prepared statement in use by the cursor */
+  int eof;                         /* True if at End Of Results */
+  Query q;                         /* Parsed query string */
   DocListReader result;  /* used when iCursorType == QUERY_FULLTEXT */ 
 } fulltext_cursor;
 
@@ -1899,10 +1964,27 @@ static int fulltextOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
   return SQLITE_OK;
 }
 
+
+/* Free all of the dynamically allocated memory held by *q
+*/
+static void queryClear(Query *q){
+  int i;
+  for(i = 0; i < q->nTerms; ++i){
+    free(q->pTerms[i].pTerm);
+  }
+  free(q->pTerms);
+  memset(q, 0, sizeof(*q));
+}
+
+/*
+** Close the cursor.  For additional information see the documentation
+** on the xClose method of the virtual table interface.
+*/
 static int fulltextClose(sqlite3_vtab_cursor *pCursor){
   fulltext_cursor *c = (fulltext_cursor *) pCursor;
   TRACE(("FTS1 Close %p\n", c));
   sqlite3_finalize(c->pStmt);
+  queryClear(&c->q);
   if( c->result.pDoclist!=NULL ){
     docListDelete(c->result.pDoclist);
   }
@@ -1952,18 +2034,6 @@ static int fulltextNext(sqlite3_vtab_cursor *pCursor){
   }
 }
 
-/* A single term in a query is represented by an instances of
-** the following structure.
-*/
-typedef struct QueryTerm {
-  short int nPhrase; /* How many following terms are part of the same phrase */
-  short int iColumn; /* Column of the index that must match this term */
-  signed char isOr;  /* this term is preceded by "OR" */
-  signed char isNot; /* this term is preceded by "-" */
-  char *pTerm;       /* text of the term.  '\000' terminated.  malloced */
-  int nTerm;         /* Number of bytes in pTerm[] */
-} QueryTerm;
-
 
 /* Return a DocList corresponding to the query term *pTerm.  If *pTerm
 ** is the first term of a phrase query, go ahead and evaluate the phrase
@@ -2000,43 +2070,6 @@ static int docListOfTerm(
   return SQLITE_OK;
 }
 
-/* Parse a query string into a Query structure.
- *
- * We could, in theory, allow query strings to be complicated
- * nested expressions with precedence determined by parentheses.
- * But none of the major search engines do this.  (Perhaps the
- * feeling is that an parenthesized expression is two complex of
- * an idea for the average user to grasp.)  Taking our lead from
- * the major search engines, we will allow queries to be a list
- * of terms (with an implied AND operator) or phrases in double-quotes,
- * with a single optional "-" before each non-phrase term to designate
- * negation and an optional OR connector.
- *
- * OR binds more tightly than the implied AND, which is what the
- * major search engines seem to do.  So, for example:
- * 
- *    [one two OR three]     ==>    one AND (two OR three)
- *    [one OR two three]     ==>    (one OR two) AND three
- *
- * A "-" before a term matches all entries that lack that term.
- * The "-" must occur immediately before the term with in intervening
- * space.  This is how the search engines do it.
- *
- * A NOT term cannot be the right-hand operand of an OR.  If this
- * occurs in the query string, the NOT is ignored:
- *
- *    [one OR -two]          ==>    one OR two
- *
- */
-typedef struct Query {
-  fulltext_vtab *pFts;  /* The full text index */
-  int nTerms;           /* Number of terms in the query */
-  QueryTerm *pTerms;    /* Array of terms.  Space obtained from malloc() */
-  int nextIsOr;         /* Set the isOr flag on the next inserted term */
-  int nextColumn;       /* Next word parsed must be in this column */
-  int dfltColumn;       /* The default column */
-} Query;
-
 /* Add a new term pTerm[0..nTerm-1] to the query *q.
 */
 static void queryAdd(Query *q, const char *pTerm, int nTerm){
@@ -2057,16 +2090,6 @@ static void queryAdd(Query *q, const char *pTerm, int nTerm){
   q->nextIsOr = 0;
   t->iColumn = q->nextColumn;
   q->nextColumn = q->dfltColumn;
-}
-
-/* Free all of the dynamically allocated memory held by *q
-*/
-static void queryClear(Query *q){
-  int i;
-  for(i = 0; i < q->nTerms; ++i){
-    free(q->pTerms[i].pTerm);
-  }
-  free(q->pTerms);
 }
 
 /*
@@ -2202,36 +2225,38 @@ static int fulltextQuery(
   int iColumn,           /* Match against this column by default */
   const char *zInput,    /* The query string */
   int nInput,            /* Number of bytes in zInput[] */
-  DocList **pResult      /* Write the result doclist here */
+  DocList **pResult,     /* Write the result doclist here */
+  Query *pQuery          /* Put parsed query string here */
 ){
-  Query q;
   int i, rc;
   DocList *pLeft = NULL;
   DocList *pRight, *pNew;
   int nNot = 0;
+  QueryTerm *aTerm;
 
-  rc = parseQuery(v, zInput, nInput, iColumn, &q);
+  rc = parseQuery(v, zInput, nInput, iColumn, pQuery);
   if( rc!=SQLITE_OK ) return rc;
 
   /* Merge AND terms. */
-  for(i = 0 ; i < q.nTerms; i += q.pTerms[i].nPhrase + 1){
+  aTerm = pQuery->pTerms;
+  for(i = 0; i<pQuery->nTerms; i += aTerm[i].nPhrase + 1){
 
-    if( q.pTerms[i].isNot ){
+    if( aTerm[i].isNot ){
       /* Handle all NOT terms in a separate pass */
       nNot++;
       continue;
     }
 
-    rc = docListOfTerm(v, q.pTerms[i].iColumn, &q.pTerms[i], &pRight);
+    rc = docListOfTerm(v, aTerm[i].iColumn, &aTerm[i], &pRight);
     if( rc ){
-      queryClear(&q);
+      queryClear(pQuery);
       return rc;
     }
     if( pLeft==0 ){
       pLeft = pRight;
     }else{
       pNew = docListNew(DL_DOCIDS);
-      if( q.pTerms[i].isOr ){
+      if( aTerm[i].isOr ){
         docListOrMerge(pLeft, pRight, pNew);
       }else{
         docListAndMerge(pLeft, pRight, pNew);
@@ -2248,11 +2273,11 @@ static int fulltextQuery(
   }
 
   /* Do the EXCEPT terms */
-  for(i=0; i<q.nTerms;  i += q.pTerms[i].nPhrase + 1){
-    if( !q.pTerms[i].isNot ) continue;
-    rc = docListOfTerm(v, q.pTerms[i].iColumn, &q.pTerms[i], &pRight);
+  for(i=0; i<pQuery->nTerms;  i += aTerm[i].nPhrase + 1){
+    if( !aTerm[i].isNot ) continue;
+    rc = docListOfTerm(v, aTerm[i].iColumn, &aTerm[i], &pRight);
     if( rc ){
-      queryClear(&q);
+      queryClear(pQuery);
       docListDelete(pLeft);
       return rc;
     }
@@ -2263,7 +2288,6 @@ static int fulltextQuery(
     pLeft = pNew;
   }
 
-  queryClear(&q);
   *pResult = pLeft;
   return rc;
 }
@@ -2318,7 +2342,8 @@ static int fulltextFilter(
       DocList *pResult;
       assert( idxNum<=QUERY_FULLTEXT+v->nColumn);
       assert( argc==1 );
-      rc = fulltextQuery(v, idxNum-QUERY_FULLTEXT, zQuery, -1, &pResult);
+      queryClear(&c->q);
+      rc = fulltextQuery(v, idxNum-QUERY_FULLTEXT, zQuery, -1, &pResult, &c->q);
       if( rc!=SQLITE_OK ) goto out;
       readerInit(&c->result, pResult);
       break;
