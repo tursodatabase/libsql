@@ -53,7 +53,7 @@ static int isDelim(simple_tokenizer *t, unsigned char c){
 }
 
 static int simpleCreate(
-  int argc, const char **argv,
+  int argc, const char * const *argv,
   sqlite3_tokenizer **ppTokenizer
 ){
   simple_tokenizer *t;
