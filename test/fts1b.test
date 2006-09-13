@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing the FTS1 module.
 #
-# $Id: fts1b.test,v 1.2 2006/09/13 15:20:13 drh Exp $
+# $Id: fts1b.test,v 1.3 2006/09/13 16:02:44 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -88,5 +88,60 @@ do_test fts1b-2.1 {
     SELECT [from], [to] FROM t2
   }
 } {{one two three} {four five six}}
+
+
+# Compute an SQL string that contains the words one, two, three,... to
+# describe bits set in the value $i.  Only the lower 5 bits are examined.
+#
+proc wordset {i} {
+  set x {}
+  for {set j 0; set k 1} {$j<5} {incr j; incr k $k} {
+    if {$k&$i} {lappend x [lindex {one two three four five} $j]}
+  }
+  return '$x'
+}
+
+# Create a new FTS table with three columns:
+#
+#    norm:      words for the bits of rowid
+#    plusone:   words for the bits of rowid+1
+#    invert:    words for the bits of ~rowid
+#
+db eval {
+   CREATE VIRTUAL TABLE t4 USING fts1([norm],'plusone',"invert");
+}
+for {set i 1} {$i<=15} {incr i} {
+  set vset [list [wordset $i] [wordset [expr {$i+1}]] [wordset [expr {~$i}]]]
+  db eval "INSERT INTO t4(norm,plusone,invert) VALUES([join $vset ,]);"
+}
+
+do_test fts1b-4.1 {
+  execsql {SELECT rowid FROM t4 WHERE _all MATCH 'norm:one'}
+} {1 3 5 7 9 11 13 15}
+do_test fts1b-4.2 {
+  execsql {SELECT rowid FROM t4 WHERE norm MATCH 'one'}
+} {1 3 5 7 9 11 13 15}
+do_test fts1b-4.3 {
+  execsql {SELECT rowid FROM t4 WHERE _all MATCH 'one'}
+} {1 2 3 4 5 6 7 8 9 10 11 12 13 14 15}
+do_test fts1b-4.4 {
+  execsql {SELECT rowid FROM t4 WHERE _all MATCH 'plusone:one'}
+} {2 4 6 8 10 12 14}
+do_test fts1b-4.5 {
+  execsql {SELECT rowid FROM t4 WHERE plusone MATCH 'one'}
+} {2 4 6 8 10 12 14}
+do_test fts1b-4.6 {
+  execsql {SELECT rowid FROM t4 WHERE _all MATCH 'norm:one plusone:two'}
+} {1 5 9 13}
+do_test fts1b-4.7 {
+  execsql {SELECT rowid FROM t4 WHERE _all MATCH 'norm:one two'}
+} {1 3 5 7 9 11 13 15}
+do_test fts1b-4.8 {
+  execsql {SELECT rowid FROM t4 WHERE _all MATCH 'plusone:two norm:one'}
+} {1 5 9 13}
+do_test fts1b-4.9 {
+  execsql {SELECT rowid FROM t4 WHERE _all MATCH 'two norm:one'}
+} {1 3 5 7 9 11 13 15}
+
 
 finish_test

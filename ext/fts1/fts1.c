@@ -1956,9 +1956,10 @@ static int fulltextNext(sqlite3_vtab_cursor *pCursor){
 ** the following structure.
 */
 typedef struct QueryTerm {
-  int nPhrase;       /* How many following terms are part of the same phrase */
-  int isOr;          /* this term is preceded by "OR" */
-  int isNot;         /* this term is preceded by "-" */
+  short int nPhrase; /* How many following terms are part of the same phrase */
+  short int iColumn; /* Column of the index that must match this term */
+  signed char isOr;  /* this term is preceded by "OR" */
+  signed char isNot; /* this term is preceded by "-" */
   char *pTerm;       /* text of the term.  '\000' terminated.  malloced */
   int nTerm;         /* Number of bytes in pTerm[] */
 } QueryTerm;
@@ -2028,9 +2029,11 @@ static int docListOfTerm(
  *
  */
 typedef struct Query {
+  fulltext_vtab *pFts;  /* The full text index */
   int nTerms;           /* Number of terms in the query */
   QueryTerm *pTerms;    /* Array of terms.  Space obtained from malloc() */
   int nextIsOr;         /* Set the isOr flag on the next inserted term */
+  int iColumn;          /* Text word parsed must be in this column */
 } Query;
 
 /* Add a new term pTerm[0..nTerm-1] to the query *q.
@@ -2051,6 +2054,8 @@ static void queryAdd(Query *q, const char *pTerm, int nTerm){
   t->nTerm = nTerm;
   t->isOr = q->nextIsOr;
   q->nextIsOr = 0;
+  t->iColumn = q->iColumn;
+  q->iColumn = -1;
 }
 
 /* Free all of the memory that was malloced in order to build *q.
@@ -2061,6 +2066,26 @@ static void queryDestroy(Query *q){
     free(q->pTerms[i].pTerm);
   }
   free(q->pTerms);
+}
+
+/*
+** Check to see if the string zToken[0...nToken-1] matches any
+** column name in the virtual table.   If it does,
+** return the zero-indexed column number.  If not, return -1.
+*/
+static int checkColumnSpecifier(
+  fulltext_vtab *pVtab,    /* The virtual table */
+  const char *zToken,      /* Text of the token */
+  int nToken               /* Number of characters in the token */
+){
+  int i;
+  for(i=0; i<pVtab->nColumn; i++){
+    if( memcmp(pVtab->azColumn[i], zToken, nToken)==0
+        && pVtab->azColumn[i][nToken]==0 ){
+      return i;
+    }
+  }
+  return -1;
 }
 
 /*
@@ -2082,6 +2107,7 @@ static int tokenizeSegment(
   const sqlite3_tokenizer_module *pModule = pTokenizer->pModule;
   sqlite3_tokenizer_cursor *pCursor;
   int firstIndex = pQuery->nTerms;
+  int iCol;
   
   int rc = pModule->xOpen(pTokenizer, pSegment, nSegment, &pCursor);
   if( rc!=SQLITE_OK ) return rc;
@@ -2095,6 +2121,12 @@ static int tokenizeSegment(
                         &pToken, &nToken,
                         &iBegin, &iEnd, &iPos);
     if( rc!=SQLITE_OK ) break;
+    if( !inPhrase &&
+        pSegment[iEnd]==':' &&
+         (iCol = checkColumnSpecifier(pQuery->pFts, pToken, nToken))>=0 ){
+      pQuery->iColumn = iCol;
+      continue;
+    }
     if( !inPhrase && pQuery->nTerms>0 && nToken==2
          && pSegment[iBegin]=='O' && pSegment[iBegin+1]=='R' ){
       pQuery->nextIsOr = 1;
@@ -2123,6 +2155,8 @@ static int parseQuery(fulltext_vtab *v, const char *pInput, int nInput,
   pQuery->nTerms = 0;
   pQuery->pTerms = NULL;
   pQuery->nextIsOr = 0;
+  pQuery->iColumn = -1;
+  pQuery->pFts = v;
 
   for(iInput=0; iInput<nInput; ++iInput){
     int i;
@@ -2149,6 +2183,9 @@ static int parseQuery(fulltext_vtab *v, const char *pInput, int nInput,
 /* Perform a full-text query using the search expression in
 ** pInput[0..nInput-1].  Return a list of matching documents
 ** in pResult.
+**
+** Queries must match column iColumn.  Or if iColumn>=nColumn
+** they are allowed to match against any column.
 */
 static int fulltextQuery(fulltext_vtab *v, int iColumn,
                          const char *pInput, int nInput, DocList **pResult){
@@ -2157,6 +2194,7 @@ static int fulltextQuery(fulltext_vtab *v, int iColumn,
   DocList *pLeft = NULL;
   DocList *pRight, *pNew;
   int nNot = 0;
+  int iCol;
 
   rc = parseQuery(v, pInput, nInput, &q);
   if( rc!=SQLITE_OK ) return rc;
@@ -2170,7 +2208,9 @@ static int fulltextQuery(fulltext_vtab *v, int iColumn,
       continue;
     }
 
-    rc = docListOfTerm(v, iColumn, &q.pTerms[i], &pRight);
+    iCol = q.pTerms[i].iColumn;
+    if( iCol<0 ) iCol = iColumn;
+    rc = docListOfTerm(v, iCol, &q.pTerms[i], &pRight);
     if( rc ){
       queryDestroy(&q);
       return rc;
@@ -2198,7 +2238,9 @@ static int fulltextQuery(fulltext_vtab *v, int iColumn,
   /* Do the EXCEPT terms */
   for(i=0; i<q.nTerms;  i += q.pTerms[i].nPhrase + 1){
     if( !q.pTerms[i].isNot ) continue;
-    rc = docListOfTerm(v, iColumn, &q.pTerms[i], &pRight);
+    iCol = q.pTerms[i].iColumn;
+    if( iCol<0 ) iCol = iColumn;
+    rc = docListOfTerm(v, iCol, &q.pTerms[i], &pRight);
     if( rc ){
       queryDestroy(&q);
       docListDelete(pLeft);
