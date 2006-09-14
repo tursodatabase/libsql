@@ -1,5 +1,5 @@
-C Remove\sfile\scontaining\sreal\semail\saddresses.\s\sTicket\s#1978.\s(CVS\s3420)
-D 2006-09-14T18:25:28
+C New\sFTS1\stest\sdata\sbased\son\senron\semails.\s(CVS\s3421)
+D 2006-09-14T21:08:55
 F Makefile.in cabd42d34340f49260bc2a7668c38eba8d4cfd99
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -192,6 +192,7 @@ F test/fkey1.test 153004438d51e6769fb1ce165f6313972d6263ce
 F test/format4.test bf3bed3b13c63abfb3cfec232597a319a31d0bcc
 F test/fts1a.test 54fd9451c00fb91074d5abdc207b05dcba6d2d65
 F test/fts1b.test 5742c32c69ec9667c8d32df5bc79aa416d5f363a
+F test/fts1c.test 653cf73bf12b2bd96a2322c7105330a02bf4663f
 F test/func.test 7f2c91a948a0a177635835dc9afa078413c54ae1
 F test/hook.test 7e7645fd9a033f79cce8fdff151e32715e7ec50a
 F test/in.test 369cb2aa1eab02296b4ec470732fe8c131260b1d
@@ -398,7 +399,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 3564b07c40ab4563482a9aa36850757963f44238
-R 603f570ffa3230c4c2fbf29b204946e0
+P 373a575f745dc2002090328f30539bbfef3119d5
+R 72387d13baea83dd775b1ba37f717ce1
 U drh
-Z be85f49f7c06280b5d878e8d82ec5eb9
+Z 84e9bd49c14301b0acf5fa8e0f7c865a
