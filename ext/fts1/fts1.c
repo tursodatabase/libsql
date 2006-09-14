@@ -41,19 +41,28 @@ SQLITE_EXTENSION_INIT1
 /* utility functions */
 
 typedef struct StringBuffer {
-  int len;  /* length, not including null terminator */
-  char *s;
+  int len;      /* length, not including null terminator */
+  int alloced;  /* Space allocated for s[] */ 
+  char *s;      /* Content of the string */
 } StringBuffer;
 
 void initStringBuffer(StringBuffer *sb){
   sb->len = 0;
-  sb->s = malloc(1);
+  sb->alloced = 100;
+  sb->s = malloc(100);
   sb->s[0] = '\0';
 }
 
 void append(StringBuffer *sb, const char *zFrom){
   int nFrom = strlen(zFrom);
-  sb->s = realloc(sb->s, sb->len + nFrom + 1);
+  if( sb->len + nFrom >= sb->alloced ){
+    sb->alloced = sb->len + nFrom + 100;
+    sb->s = realloc(sb->s, sb->alloced+1);
+    if( sb->s==0 ){
+      initStringBuffer(sb);
+      return;
+    }
+  }
   strcpy(sb->s + sb->len, zFrom);
   sb->len += nFrom;
 }
@@ -845,6 +854,7 @@ typedef struct fulltext_vtab fulltext_vtab;
 */
 typedef struct QueryTerm {
   short int nPhrase; /* How many following terms are part of the same phrase */
+  short int iPhrase; /* This is the i-th term of a phrase. */
   short int iColumn; /* Column of the index that must match this term */
   signed char isOr;  /* this term is preceded by "OR" */
   signed char isNot; /* this term is preceded by "-" */
@@ -889,6 +899,24 @@ typedef struct Query {
   int nextColumn;       /* Next word parsed must be in this column */
   int dfltColumn;       /* The default column */
 } Query;
+
+
+/*
+** An instance of the following structure keeps track of generated
+** matching-word offset information and snippets.
+*/
+typedef struct Snippet {
+  int nMatch;     /* Total number of matches */
+  int nAlloc;     /* Space allocated for aMatch[] */
+  struct {        /* One entry for each matching term */
+    int iCol;        /* The column that contains the match */
+    int iTerm;       /* The index in Query.pTerms[] of the matching term */
+    int iStart;      /* The offset to the first character of the term */
+    int nByte;       /* Number of bytes in the term */
+  } *aMatch;      /* Points to space obtained from malloc */
+  char *zOffset;  /* Text rendering of aMatch[] */
+  int nOffset;    /* strlen(zOffset) */
+} Snippet;
 
 
 typedef enum QueryType {
@@ -974,10 +1002,12 @@ struct fulltext_vtab {
 */
 typedef struct fulltext_cursor {
   sqlite3_vtab_cursor base;        /* Base class used by SQLite core */
-  QueryType iCursorType;           /* Type of cursor */
+  QueryType iCursorType;           /* Copy of sqlite3_index_info.idxNum */
   sqlite3_stmt *pStmt;             /* Prepared statement in use by the cursor */
   int eof;                         /* True if at End Of Results */
   Query q;                         /* Parsed query string */
+  Snippet snippet;                 /* Cached snippet for the current row */
+  int iColumn;                     /* Column being searched */
   DocListReader result;  /* used when iCursorType == QUERY_FULLTEXT */ 
 } fulltext_cursor;
 
@@ -1601,7 +1631,6 @@ typedef struct TableSpec {
   char **azColumn;         /* Original names of columns to be indexed */
   char *zColumnList;       /* Comma-separated list of names for %_content */
   char **azTokenizer;      /* Name of tokenizer and its arguments */
-  char **azDelimiter;      /* Delimiters used for snippets */
 } TableSpec;
 
 /*
@@ -1611,7 +1640,6 @@ void clearTableSpec(TableSpec *p) {
   free(p->azColumn);
   free(p->zColumnList);
   free(p->azTokenizer);
-  free(p->azDelimiter);
 }
 
 /* Parse a CREATE VIRTUAL TABLE statement, which looks like this:
@@ -1627,7 +1655,6 @@ int parseSpec(TableSpec *pSpec, int argc, const char *const*argv, char**pzErr){
   char *z, *zDummy;
   char **azArg;
   const char *zTokenizer = 0;    /* argv[] entry describing the tokenizer */
-  const char *zDelimiter = 0;    /* argv[] entry describing the delimiters */
 
   assert( argc>=3 );
   /* Current interface:
@@ -1664,13 +1691,10 @@ int parseSpec(TableSpec *pSpec, int argc, const char *const*argv, char**pzErr){
   pSpec->nColumn = 0;
   pSpec->azColumn = azArg;
   zTokenizer = "tokenize simple";
-  zDelimiter = "delimiters('[',']','...')";
   n = 0;
   for(i=3, j=0; i<argc; ++i){
     if( startsWith(azArg[i],"tokenize") ){
       zTokenizer = azArg[i];
-    }else if( startsWith(azArg[i],"delimiters") ){
-      zDelimiter = azArg[i];
     }else{
       z = azArg[pSpec->nColumn] = firstToken(azArg[i], &zDummy);
       pSpec->nColumn++;
@@ -1716,12 +1740,6 @@ int parseSpec(TableSpec *pSpec, int argc, const char *const*argv, char**pzErr){
   pSpec->azTokenizer = tokenizeString(zTokenizer, &n);
   tokenListToIdList(pSpec->azTokenizer);
 
-  /*
-  ** Parse the delimiter specification string.
-  */
-  pSpec->azDelimiter = tokenizeString(zDelimiter, &n);
-  tokenListToIdList(pSpec->azDelimiter);
-
   return SQLITE_OK;
 }
 
@@ -1730,7 +1748,7 @@ int parseSpec(TableSpec *pSpec, int argc, const char *const*argv, char**pzErr){
 ** the virtual table.  Return a pointer to this schema.  
 **
 ** If the addAllColumn parameter is true, then add a column named
-** "_all" to the end of the schema.
+** "_all" to the end of the schema.  Also add the "offset" column.
 **
 ** Space is obtained from sqlite3_mprintf() and should be freed
 ** using sqlite3_free().
@@ -1749,7 +1767,7 @@ static char *fulltextSchema(
     zSchema = zNext;
     zSep = ",";
   }
-  zNext = sqlite3_mprintf("%s,_all)", zSchema);
+  zNext = sqlite3_mprintf("%s,_all,offset)", zSchema);
   sqlite3_free(zSchema);
   return zNext;
 }
@@ -1976,6 +1994,169 @@ static void queryClear(Query *q){
   memset(q, 0, sizeof(*q));
 }
 
+/* Free all of the dynamically allocated memory held by the
+** Snippet
+*/
+static void snippetClear(Snippet *p){
+  free(p->aMatch);
+  free(p->zOffset);
+  memset(p, 0, sizeof(*p));
+}
+/*
+** Append a single entry to the p->aMatch[] log.
+*/
+static void snippetAppendMatch(
+  Snippet *p,               /* Append the entry to this snippet */
+  int iCol, int iTerm,      /* The column and query term */
+  int iStart, int nByte     /* Offset and size of the match */
+){
+  int i;
+  if( p->nMatch+1>=p->nAlloc ){
+    p->nAlloc = p->nAlloc*2 + 10;
+    p->aMatch = realloc(p->aMatch, p->nAlloc*sizeof(p->aMatch[0]) );
+    if( p->aMatch==0 ){
+      p->nMatch = 0;
+      p->nAlloc = 0;
+      return;
+    }
+  }
+  i = p->nMatch++;
+  p->aMatch[i].iCol = iCol;
+  p->aMatch[i].iTerm = iTerm;
+  p->aMatch[i].iStart = iStart;
+  p->aMatch[i].nByte = nByte;
+}
+
+/*
+** Sizing information for the circular buffer used in snippetOffsetsOfColumn()
+*/
+#define FTS1_ROTOR_SZ   (32)
+#define FTS1_ROTOR_MASK (FTS1_ROTOR_SZ-1)
+
+/*
+** Add entries to pSnippet->aMatch[] for every match that occurs against
+** document zDoc[0..nDoc-1] which is stored in column iColumn.
+*/
+static void snippetOffsetsOfColumn(
+  Query *pQuery,
+  Snippet *pSnippet,
+  int iColumn,
+  const char *zDoc,
+  int nDoc
+){
+  const sqlite3_tokenizer_module *pTModule;  /* The tokenizer module */
+  sqlite3_tokenizer *pTokenizer;             /* The specific tokenizer */
+  sqlite3_tokenizer_cursor *pTCursor;        /* Tokenizer cursor */
+  fulltext_vtab *pVtab;                /* The full text index */
+  int nColumn;                         /* Number of columns in the index */
+  const QueryTerm *aTerm;              /* Query string terms */
+  int nTerm;                           /* Number of query string terms */  
+  int i, j;                            /* Loop counters */
+  int rc;                              /* Return code */
+  unsigned int match, prevMatch;       /* Phrase search bitmasks */
+  const char *zToken;                  /* Next token from the tokenizer */
+  int nToken;                          /* Size of zToken */
+  int iBegin, iEnd, iPos;              /* Offsets of beginning and end */
+
+  /* The following variables keep a circular buffer of the last
+  ** few tokens */
+  unsigned int iRotor = 0;             /* Index of current token */
+  int iRotorBegin[FTS1_ROTOR_SZ];      /* Beginning offset of token */
+  int iRotorLen[FTS1_ROTOR_SZ];        /* Length of token */
+
+  pVtab = pQuery->pFts;
+  nColumn = pVtab->nColumn;
+  pTokenizer = pVtab->pTokenizer;
+  pTModule = pTokenizer->pModule;
+  rc = pTModule->xOpen(pTokenizer, zDoc, nDoc, &pTCursor);
+  if( rc ) return;
+  pTCursor->pTokenizer = pTokenizer;
+  aTerm = pQuery->pTerms;
+  nTerm = pQuery->nTerms;
+  if( nTerm>=FTS1_ROTOR_SZ ){
+    nTerm = FTS1_ROTOR_SZ - 1;
+  }
+  prevMatch = 0;
+  while(1){
+    rc = pTModule->xNext(pTCursor, &zToken, &nToken, &iBegin, &iEnd, &iPos);
+    if( rc ) break;
+    iRotorBegin[iRotor&FTS1_ROTOR_MASK] = iBegin;
+    iRotorLen[iRotor&FTS1_ROTOR_MASK] = iEnd-iBegin;
+    match = 0;
+    for(i=0; i<nTerm; i++){
+      int iCol;
+      iCol = aTerm[i].iColumn;
+      if( iCol>=0 && iCol<nColumn && iCol!=iColumn ) continue;
+      if( aTerm[i].nTerm!=nToken ) continue;
+      if( memcmp(aTerm[i].pTerm, zToken, nToken) ) continue;
+      if( aTerm[i].iPhrase>1 && (prevMatch & (1<<i))==0 ) continue;
+      match |= 1<<i;
+      if( i==nTerm-1 || aTerm[i+1].iPhrase==1 ){
+        for(j=aTerm[i].iPhrase-1; j>=0; j--){
+          int k = (iRotor-j) & FTS1_ROTOR_MASK;
+          snippetAppendMatch(pSnippet, iColumn, i-j,
+                iRotorBegin[k], iRotorLen[k]);
+        }
+      }
+    }
+    prevMatch = match<<1;
+    iRotor++;
+  }
+  pTModule->xClose(pTCursor);  
+}
+
+
+/*
+** Compute all offsets for the current row of the query.  
+** If the offsets have already been computed, this routine is a no-op.
+*/
+static void snippetAllOffsets(fulltext_cursor *p){
+  int nColumn;
+  int iColumn, i;
+  int iFirst, iLast;
+  fulltext_vtab *pFts;
+
+  if( p->snippet.nMatch ) return;
+  if( p->q.nTerms==0 ) return;
+  pFts = p->q.pFts;
+  nColumn = pFts->nColumn;
+  iColumn = p->iCursorType;
+  if( iColumn<0 || iColumn>=nColumn ){
+    iFirst = 0;
+    iLast = nColumn-1;
+  }else{
+    iFirst = iColumn;
+    iLast = iColumn;
+  }
+  for(i=iFirst; i<=iLast; i++){
+    const char *zDoc;
+    int nDoc;
+    zDoc = (const char*)sqlite3_column_text(p->pStmt, i+1);
+    nDoc = sqlite3_column_bytes(p->pStmt, i+1);
+    snippetOffsetsOfColumn(&p->q, &p->snippet, i, zDoc, nDoc);
+  }
+}
+
+/*
+** Convert the information in the aMatch[] array of the snippet
+** into the string zOffset[0..nOffset-1].
+*/
+static void snippetOffsetText(Snippet *p){
+  int i;
+  StringBuffer sb;
+  char zBuf[200];
+  if( p->zOffset ) return;
+  initStringBuffer(&sb);
+  for(i=0; i<p->nMatch; i++){
+    zBuf[0] = ' ';
+    sprintf(&zBuf[i>0], "%d %d %d %d", p->aMatch[i].iCol,
+        p->aMatch[i].iTerm, p->aMatch[i].iStart, p->aMatch[i].nByte);
+    append(&sb, zBuf);
+  }
+  p->zOffset = sb.s;
+  p->nOffset = sb.len;
+}
+
 /*
 ** Close the cursor.  For additional information see the documentation
 ** on the xClose method of the virtual table interface.
@@ -1985,6 +2166,7 @@ static int fulltextClose(sqlite3_vtab_cursor *pCursor){
   TRACE(("FTS1 Close %p\n", c));
   sqlite3_finalize(c->pStmt);
   queryClear(&c->q);
+  snippetClear(&c->snippet);
   if( c->result.pDoclist!=NULL ){
     docListDelete(c->result.pDoclist);
   }
@@ -1998,6 +2180,7 @@ static int fulltextNext(sqlite3_vtab_cursor *pCursor){
   int rc;
 
   TRACE(("FTS1 Next %p\n", pCursor));
+  snippetClear(&c->snippet);
   if( c->iCursorType < QUERY_FULLTEXT ){
     /* TODO(shess) Handle SQLITE_SCHEMA AND SQLITE_BUSY. */
     rc = sqlite3_step(c->pStmt);
@@ -2132,6 +2315,7 @@ static int tokenizeSegment(
   sqlite3_tokenizer_cursor *pCursor;
   int firstIndex = pQuery->nTerms;
   int iCol;
+  int nTerm = 1;
   
   int rc = pModule->xOpen(pTokenizer, pSegment, nSegment, &pCursor);
   if( rc!=SQLITE_OK ) return rc;
@@ -2159,6 +2343,10 @@ static int tokenizeSegment(
     queryAdd(pQuery, pToken, nToken);
     if( !inPhrase && iBegin>0 && pSegment[iBegin-1]=='-' ){
       pQuery->pTerms[pQuery->nTerms-1].isNot = 1;
+    }
+    pQuery->pTerms[pQuery->nTerms-1].iPhrase = nTerm;
+    if( inPhrase ){
+      nTerm++;
     }
   }
 
@@ -2356,28 +2544,46 @@ out:
   return rc;
 }
 
+/* This is the xEof method of the virtual table.  The SQLite core
+** calls this routine to find out if it has reached the end of
+** a query's results set.
+*/
 static int fulltextEof(sqlite3_vtab_cursor *pCursor){
   fulltext_cursor *c = (fulltext_cursor *) pCursor;
   return c->eof;
 }
 
+/* This is the xColumn method of the virtual table.  The SQLite
+** core calls this method during a query when it needs the value
+** of a column from the virtual table.  This method needs to use
+** one of the sqlite3_result_*() routines to store the requested
+** value back in the pContext.
+*/
 static int fulltextColumn(sqlite3_vtab_cursor *pCursor,
                           sqlite3_context *pContext, int idxCol){
   fulltext_cursor *c = (fulltext_cursor *) pCursor;
   fulltext_vtab *v = cursor_vtab(c);
-  const char *s;
 
-  if( idxCol==v->nColumn ){  /* a request for _all */
+  if( idxCol<v->nColumn ){
+    sqlite3_value *pVal = sqlite3_column_value(c->pStmt, idxCol+1);
+    sqlite3_result_value(pContext, pVal);
+  }else if( idxCol==v->nColumn ){
+    /* The _all column */
     sqlite3_result_null(pContext);
-  } else {
-    assert( idxCol<v->nColumn );
-    s = (const char *) sqlite3_column_text(c->pStmt, idxCol+1);
-    sqlite3_result_text(pContext, s, -1, SQLITE_TRANSIENT);
+  }else if( idxCol==v->nColumn+1 ){
+    /* The offset column */
+    snippetAllOffsets(c);
+    snippetOffsetText(&c->snippet);
+    sqlite3_result_text(pContext, c->snippet.zOffset, c->snippet.nOffset,
+                                   SQLITE_STATIC);
   }
-
   return SQLITE_OK;
 }
 
+/* This is the xRowid method.  The SQLite core calls this routine to
+** retrive the rowid for the current row of the result set.  The
+** rowid should be written to *pRowid.
+*/
 static int fulltextRowid(sqlite3_vtab_cursor *pCursor, sqlite_int64 *pRowid){
   fulltext_cursor *c = (fulltext_cursor *) pCursor;
 
@@ -2589,27 +2795,34 @@ static int fulltextUpdate(sqlite3_vtab *pVtab, int nArg, sqlite3_value **ppArg,
 
   /* ppArg[1] = rowid
    * ppArg[2..2+v->nColumn-1] = values
-   * ppArg[2+v->nColumn] = value for _all (we ignore this) */
-  assert( nArg==2+v->nColumn+1);    
+   * ppArg[2+v->nColumn] = value for _all (we ignore this)
+   * ppArg[3+v->nColumn] = value of offset (we ignore this too)
+   */
+  assert( nArg==2+v->nColumn+2);    
 
   return index_insert(v, ppArg[1], &ppArg[2], pRowid);
 }
 
 static const sqlite3_module fulltextModule = {
-  0,
-  fulltextCreate,
-  fulltextConnect,
-  fulltextBestIndex,
-  fulltextDisconnect,
-  fulltextDestroy,
-  fulltextOpen,
-  fulltextClose,
-  fulltextFilter,
-  fulltextNext,
-  fulltextEof,
-  fulltextColumn,
-  fulltextRowid,
-  fulltextUpdate
+  /* iVersion      */ 0,
+  /* xCreate       */ fulltextCreate,
+  /* xConnect      */ fulltextConnect,
+  /* xBestIndex    */ fulltextBestIndex,
+  /* xDisconnect   */ fulltextDisconnect,
+  /* xDestroy      */ fulltextDestroy,
+  /* xOpen         */ fulltextOpen,
+  /* xClose        */ fulltextClose,
+  /* xFilter       */ fulltextFilter,
+  /* xNext         */ fulltextNext,
+  /* xEof          */ fulltextEof,
+  /* xColumn       */ fulltextColumn,
+  /* xRowid        */ fulltextRowid,
+  /* xUpdate       */ fulltextUpdate,
+  /* xBegin        */ 0, 
+  /* xSync         */ 0,
+  /* xCommit       */ 0,
+  /* xRollback     */ 0,
+  /* xFindFunction */ 0,
 };
 
 int sqlite3Fts1Init(sqlite3 *db){
