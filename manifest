@@ -1,5 +1,5 @@
-C Minor\sbuild\sfixes.\s(CVS\s3419)
-D 2006-09-14T16:57:20
+C Remove\sfile\scontaining\sreal\semail\saddresses.\s\sTicket\s#1978.\s(CVS\s3420)
+D 2006-09-14T18:25:28
 F Makefile.in cabd42d34340f49260bc2a7668c38eba8d4cfd99
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -398,7 +398,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 86931854fc5a63571719639d9a23b1d6614a6153
+P 3564b07c40ab4563482a9aa36850757963f44238
 R 603f570ffa3230c4c2fbf29b204946e0
-U adamd
-Z 2c5c1bb6cd187ea9d19301da8e746bb8
+U drh
+Z be85f49f7c06280b5d878e8d82ec5eb9
