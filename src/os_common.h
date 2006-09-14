@@ -110,7 +110,7 @@ static void local_ioerr(){
    }
 #else
 #define SimulateIOError(A)
-#define SimulateDiskfullError
+#define SimulateDiskfullError(A)
 #endif
 
 /*

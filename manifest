@@ -1,5 +1,5 @@
-C Enhanced\sI/O\serror\ssimulation.\s(CVS\s3418)
-D 2006-09-14T13:47:11
+C Minor\sbuild\sfixes.\s(CVS\s3419)
+D 2006-09-14T16:57:20
 F Makefile.in cabd42d34340f49260bc2a7668c38eba8d4cfd99
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -67,7 +67,7 @@ F src/main.c f780d73b3093807bd177d21af703665b3b15a452
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/os.c 59f05de8c5777c34876607114a2fbe55ae578235
 F src/os.h 3fd6a022bafd620fdfd779a51dccb42f31c97f75
-F src/os_common.h 31e4b5c0a3eba5867fe9cf74211da45aed542d0f
+F src/os_common.h 545426356f0868a6765e70cb59e319d3acad0ed6
 F src/os_os2.c 361964755f361b5ba879549c201284ce61ee9431
 F src/os_os2.h e5f17dd69333632bbc3112881ea407c37d245eb3
 F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
@@ -116,7 +116,7 @@ F src/vdbe.c a77869949ddd0afe01443611edb949e24e67c91c
 F src/vdbe.h 258b5d1c0aaa72192f09ff0568ce42b383f156fa
 F src/vdbeInt.h e3eaab262b67b84474625cfc38aec1125c32834b
 F src/vdbeapi.c 81f531d7dc5c898131b02ef85f6c6144ab2892cf
-F src/vdbeaux.c 9fab61427a0741c9c123e8ff16e349b1f90397be
+F src/vdbeaux.c 736d6d07daf7a99f619697cf3bf5ae65643e12c9
 F src/vdbefifo.c 9efb94c8c3f4c979ebd0028219483f88e57584f5
 F src/vdbemem.c 26623176bf1c616aa478da958fac49502491a921
 F src/vtab.c 82d915c0a41546d47779c03c53ff884cec6c032e
@@ -398,7 +398,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P f25cfa1aec0e4c1fe07176039a1b7f4e6a2c66ec
-R b55f01c726f00ed378fcf34ec0beb5ca
-U drh
-Z 3359adac0d0ee93765223d8a4a325247
+P 86931854fc5a63571719639d9a23b1d6614a6153
+R 603f570ffa3230c4c2fbf29b204946e0
+U adamd
+Z 2c5c1bb6cd187ea9d19301da8e746bb8
