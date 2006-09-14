@@ -287,7 +287,7 @@ int os2Close( OsFile **pld ){
 int os2Read( OsFile *id, void *pBuf, int amt ){
   ULONG got;
   assert( id!=0 );
-  SimulateIOError( SQLITE_IOERR );
+  SimulateIOError( return SQLITE_IOERR );
   TRACE3( "READ %d lock=%d\n", ((os2File*)id)->h, ((os2File*)id)->locktype );
   DosRead( ((os2File*)id)->h, pBuf, amt, &got );
   return (got == (ULONG)amt) ? SQLITE_OK : SQLITE_IOERR;
@@ -301,8 +301,8 @@ int os2Write( OsFile *id, const void *pBuf, int amt ){
   APIRET rc = NO_ERROR;
   ULONG wrote;
   assert( id!=0 );
-  SimulateIOError( SQLITE_IOERR );
-  SimulateDiskfullError;
+  SimulateIOError( return SQLITE_IOERR );
+  SimulateDiskfullError( return SQLITE_FULL );
   TRACE3( "WRITE %d lock=%d\n", ((os2File*)id)->h, ((os2File*)id)->locktype );
   while( amt > 0 &&
       (rc = DosWrite( ((os2File*)id)->h, (PVOID)pBuf, amt, &wrote )) && wrote > 0 ){
@@ -339,7 +339,7 @@ int os2Sync( OsFile *id, int dataOnly ){
 ** than UNIX.
 */
 int sqlite3Os2SyncDirectory( const char *zDirname ){
-  SimulateIOError( SQLITE_IOERR );
+  SimulateIOError( return SQLITE_IOERR );
   return SQLITE_OK;
 }
 
@@ -351,7 +351,7 @@ int os2Truncate( OsFile *id, i64 nByte ){
   ULONG upperBits = nByte>>32;
   assert( id!=0 );
   TRACE3( "TRUNCATE %d %lld\n", ((os2File*)id)->h, nByte );
-  SimulateIOError( SQLITE_IOERR );
+  SimulateIOError( return SQLITE_IOERR );
   rc = DosSetFilePtr( ((os2File*)id)->h, nByte, FILE_BEGIN, &upperBits );
   if( rc != NO_ERROR ){
     return SQLITE_IOERR;
@@ -368,7 +368,7 @@ int os2FileSize( OsFile *id, i64 *pSize ){
   FILESTATUS3 fsts3FileInfo;
   memset(&fsts3FileInfo, 0, sizeof(fsts3FileInfo));
   assert( id!=0 );
-  SimulateIOError( SQLITE_IOERR );
+  SimulateIOError( return SQLITE_IOERR );
   rc = DosQueryFileInfo( ((os2File*)id)->h, FIL_STANDARD, &fsts3FileInfo, sizeof(FILESTATUS3) );
   if( rc == NO_ERROR ){
     *pSize = fsts3FileInfo.cbFile;

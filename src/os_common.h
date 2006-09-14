@@ -92,18 +92,18 @@ int sqlite3_io_error_hit = 0;
 int sqlite3_io_error_pending = 0;
 int sqlite3_diskfull_pending = 0;
 int sqlite3_diskfull = 0;
-#define SimulateIOError(A)  \
+#define SimulateIOError(CODE)  \
    if( sqlite3_io_error_pending ) \
-     if( sqlite3_io_error_pending-- == 1 ){ local_ioerr(); return A; }
+     if( sqlite3_io_error_pending-- == 1 ){ local_ioerr(); CODE; }
 static void local_ioerr(){
   sqlite3_io_error_hit = 1;  /* Really just a place to set a breakpoint */
 }
-#define SimulateDiskfullError \
+#define SimulateDiskfullError(CODE) \
    if( sqlite3_diskfull_pending ){ \
      if( sqlite3_diskfull_pending == 1 ){ \
        local_ioerr(); \
        sqlite3_diskfull = 1; \
-       return SQLITE_FULL; \
+       CODE; \
      }else{ \
        sqlite3_diskfull_pending--; \
      } \

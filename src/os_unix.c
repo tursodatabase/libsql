@@ -928,14 +928,13 @@ static int seekAndRead(unixFile *id, void *pBuf, int cnt){
 static int unixRead(OsFile *id, void *pBuf, int amt){
   int got;
   assert( id );
-  SimulateIOError(SQLITE_IOERR);
   TIMER_START;
   got = seekAndRead((unixFile*)id, pBuf, amt);
   TIMER_END;
   TRACE5("READ    %-3d %5d %7d %d\n", ((unixFile*)id)->h, got,
           last_page, TIMER_ELAPSED);
   SEEK(0);
-  /* if( got<0 ) got = 0; */
+  SimulateIOError( got=0 );
   if( got==amt ){
     return SQLITE_OK;
   }else{
@@ -970,8 +969,6 @@ static int unixWrite(OsFile *id, const void *pBuf, int amt){
   int wrote = 0;
   assert( id );
   assert( amt>0 );
-  SimulateIOError(SQLITE_IOERR);
-  SimulateDiskfullError;
   TIMER_START;
   while( amt>0 && (wrote = seekAndWrite((unixFile*)id, pBuf, amt))>0 ){
     amt -= wrote;
@@ -981,8 +978,14 @@ static int unixWrite(OsFile *id, const void *pBuf, int amt){
   TRACE5("WRITE   %-3d %5d %7d %d\n", ((unixFile*)id)->h, wrote,
           last_page, TIMER_ELAPSED);
   SEEK(0);
+  SimulateIOError(( wrote=(-1), amt=1 ));
+  SimulateDiskfullError(( wrote=0, amt=1 ));
   if( amt>0 ){
-    return SQLITE_FULL;
+    if( wrote<0 ){
+      return SQLITE_IOERR;
+    }else{
+      return SQLITE_FULL;
+    }
   }
   return SQLITE_OK;
 }
@@ -994,7 +997,7 @@ static int unixSeek(OsFile *id, i64 offset){
   assert( id );
   SEEK(offset/1024 + 1);
 #ifdef SQLITE_TEST
-  if( offset ) SimulateDiskfullError
+  if( offset ) SimulateDiskfullError(return SQLITE_FULL);
 #endif
   ((unixFile*)id)->offset = offset;
   return SQLITE_OK;
@@ -1096,11 +1099,13 @@ static int full_fsync(int fd, int fullSync, int dataOnly){
 ** will not roll back - possibly leading to database corruption.
 */
 static int unixSync(OsFile *id, int dataOnly){
+  int rc;
   unixFile *pFile = (unixFile*)id;
   assert( pFile );
-  SimulateIOError(SQLITE_IOERR);
   TRACE2("SYNC    %-3d\n", pFile->h);
-  if( full_fsync(pFile->h, pFile->fullSync, dataOnly) ){
+  rc = full_fsync(pFile->h, pFile->fullSync, dataOnly);
+  SimulateIOError( rc=1 );
+  if( rc ){
     return SQLITE_IOERR;
   }
   if( pFile->dirfd>=0 ){
@@ -1141,7 +1146,6 @@ int sqlite3UnixSyncDirectory(const char *zDirname){
 #else
   int fd;
   int r;
-  SimulateIOError(SQLITE_IOERR);
   fd = open(zDirname, O_RDONLY|O_BINARY, 0);
   TRACE3("DIRSYNC %-3d (%s)\n", fd, zDirname);
   if( fd<0 ){
@@ -1149,7 +1153,12 @@ int sqlite3UnixSyncDirectory(const char *zDirname){
   }
   r = fsync(fd);
   close(fd);
-  return ((r==0)?SQLITE_OK:SQLITE_IOERR);
+  SimulateIOError( r=1 );
+  if( r ){
+    return SQLITE_IOERR;
+  }else{
+    return SQLITE_OK;
+  }
 #endif
 }
 
@@ -1157,19 +1166,27 @@ int sqlite3UnixSyncDirectory(const char *zDirname){
 ** Truncate an open file to a specified size
 */
 static int unixTruncate(OsFile *id, i64 nByte){
+  int rc;
   assert( id );
-  SimulateIOError(SQLITE_IOERR);
-  return ftruncate(((unixFile*)id)->h, nByte)==0 ? SQLITE_OK : SQLITE_IOERR;
+  rc = ftruncate(((unixFile*)id)->h, nByte);
+  SimulateIOError( rc=1 );
+  if( rc ){
+    return SQLITE_IOERR;
+  }else{
+    return SQLITE_OK;
+  }
 }
 
 /*
 ** Determine the current size of a file in bytes
 */
 static int unixFileSize(OsFile *id, i64 *pSize){
+  int rc;
   struct stat buf;
   assert( id );
-  SimulateIOError(SQLITE_IOERR);
-  if( fstat(((unixFile*)id)->h, &buf)!=0 ){
+  rc = fstat(((unixFile*)id)->h, &buf);
+  SimulateIOError( rc=1 );
+  if( rc!=0 ){
     return SQLITE_IOERR;
   }
   *pSize = buf.st_size;
