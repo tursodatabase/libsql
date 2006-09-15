@@ -385,7 +385,8 @@ int sqlite3_auto_extension(void *xInit){
       aAutoExtension[nAutoExtension-1] = xInit;
     }
   }
-  sqlite3OsLeaveMutex();  
+  sqlite3OsLeaveMutex();
+  assert( (rc&0xff)==rc );
   return rc;
 }
 

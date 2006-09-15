@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.221 2006/09/13 19:21:28 drh Exp $
+** $Id: test1.c,v 1.222 2006/09/15 07:28:51 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -65,7 +65,7 @@ static int get_sqlite_pointer(
 
 const char *sqlite3TestErrorName(int rc){
   const char *zName = 0;
-  switch( rc ){
+  switch( rc & 0xff ){
     case SQLITE_OK:         zName = "SQLITE_OK";          break;
     case SQLITE_ERROR:      zName = "SQLITE_ERROR";       break;
     case SQLITE_PERM:       zName = "SQLITE_PERM";        break;
@@ -1060,6 +1060,29 @@ static int test_enable_shared(
   return TCL_OK;
 }
 #endif
+
+/*
+** Usage: sqlite3_extended_result_codes   DB    BOOLEAN
+**
+*/
+static int test_extended_result_codes(
+  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  int enable;
+  sqlite3 *db;
+
+  if( objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB BOOLEAN");
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  if( Tcl_GetBooleanFromObj(interp, objv[2], &enable) ) return TCL_ERROR;
+  sqlite3_extended_result_codes(db, enable);
+  return TCL_OK;
+}
 
 /*
 ** Usage: sqlite3_libversion_number
@@ -2331,6 +2354,8 @@ static int test_errcode(
   Tcl_Obj *CONST objv[]
 ){
   sqlite3 *db;
+  int rc;
+  char zBuf[30];
 
   if( objc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", 
@@ -2338,7 +2363,13 @@ static int test_errcode(
     return TCL_ERROR;
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
-  Tcl_SetResult(interp, (char *)errorName(sqlite3_errcode(db)), 0);
+  rc = sqlite3_errcode(db);
+  if( (rc&0xff)==rc ){
+    zBuf[0] = 0;
+  }else{
+    sprintf(zBuf,"+%d", rc>>8);
+  }
+  Tcl_AppendResult(interp, (char *)errorName(rc), zBuf, 0);
   return TCL_OK;
 }
 
@@ -3861,6 +3892,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
 
      { "sqlite3_load_extension",        test_load_extension,     0},
      { "sqlite3_enable_load_extension", test_enable_load,        0},
+     { "sqlite3_extended_result_codes", test_extended_result_codes, 0},
 
      /* sqlite3_column_*() API */
      { "sqlite3_column_count",          test_column_count  ,0 },

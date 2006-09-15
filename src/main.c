@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.356 2006/09/02 13:58:07 drh Exp $
+** $Id: main.c,v 1.357 2006/09/15 07:28:50 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -223,7 +223,7 @@ void sqlite3RollbackAll(sqlite3 *db){
 */
 const char *sqlite3ErrStr(int rc){
   const char *z;
-  switch( rc ){
+  switch( rc & 0xff ){
     case SQLITE_ROW:
     case SQLITE_DONE:
     case SQLITE_OK:         z = "not an error";                          break;
@@ -763,7 +763,7 @@ int sqlite3_errcode(sqlite3 *db){
   if( sqlite3SafetyCheck(db) ){
     return SQLITE_MISUSE;
   }
-  return db->errCode;
+  return db->errCode & db->errMask;
 }
 
 /*
@@ -841,6 +841,7 @@ static int openDatabase(
   /* Allocate the sqlite data structure */
   db = sqliteMalloc( sizeof(sqlite3) );
   if( db==0 ) goto opendb_out;
+  db->errMask = 0xff;
   db->priorNewRowid = 0;
   db->magic = SQLITE_MAGIC_BUSY;
   db->nDb = 2;
@@ -1011,6 +1012,7 @@ int sqlite3_reset(sqlite3_stmt *pStmt){
   }else{
     rc = sqlite3VdbeReset((Vdbe*)pStmt);
     sqlite3VdbeMakeReady((Vdbe*)pStmt, -1, 0, 0, 0);
+    assert( (rc & (sqlite3_db_handle(pStmt)->errMask))==rc );
   }
   return rc;
 }
@@ -1296,4 +1298,12 @@ int sqlite3_clear_bindings(sqlite3_stmt *pStmt){
 */
 int sqlite3_sleep(int ms){
   return sqlite3OsSleep(ms);
+}
+
+/*
+** Enable or disable the extended result codes.
+*/
+int sqlite3_extended_result_codes(sqlite3 *db, int onoff){
+  db->errMask = onoff ? 0xffffffff : 0xff;
+  return SQLITE_OK;
 }

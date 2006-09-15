@@ -937,8 +937,10 @@ static int unixRead(OsFile *id, void *pBuf, int amt){
   SimulateIOError( got=0 );
   if( got==amt ){
     return SQLITE_OK;
+  }else if( got<0 ){
+    return SQLITE_IOERR_READ;
   }else{
-    return SQLITE_IOERR;
+    return SQLITE_IOERR_SHORT_READ;
   }
 }
 
@@ -982,7 +984,7 @@ static int unixWrite(OsFile *id, const void *pBuf, int amt){
   SimulateDiskfullError(( wrote=0, amt=1 ));
   if( amt>0 ){
     if( wrote<0 ){
-      return SQLITE_IOERR;
+      return SQLITE_IOERR_WRITE;
     }else{
       return SQLITE_FULL;
     }
@@ -1065,19 +1067,13 @@ static int full_fsync(int fd, int fullSync, int dataOnly){
 #if HAVE_FULLFSYNC
   if( fullSync ){
     rc = fcntl(fd, F_FULLFSYNC, 0);
-  }else{
-    rc = 1;
-  }
-  /* If the FULLSYNC failed, try to do a normal fsync() */
-  if( rc ) rc = fsync(fd);
-
-#else /* if !defined(F_FULLSYNC) */
+  }else
+#endif /* HAVE_FULLFSYNC */
   if( dataOnly ){
     rc = fdatasync(fd);
   }else{
     rc = fsync(fd);
   }
-#endif /* defined(F_FULLFSYNC) */
 #endif /* defined(SQLITE_NO_SYNC) */
 
   return rc;
@@ -1106,7 +1102,7 @@ static int unixSync(OsFile *id, int dataOnly){
   rc = full_fsync(pFile->h, pFile->fullSync, dataOnly);
   SimulateIOError( rc=1 );
   if( rc ){
-    return SQLITE_IOERR;
+    return SQLITE_IOERR_FSYNC;
   }
   if( pFile->dirfd>=0 ){
     TRACE4("DIRSYNC %-3d (have_fullfsync=%d fullsync=%d)\n", pFile->dirfd,
@@ -1155,7 +1151,7 @@ int sqlite3UnixSyncDirectory(const char *zDirname){
   close(fd);
   SimulateIOError( r=1 );
   if( r ){
-    return SQLITE_IOERR;
+    return SQLITE_IOERR_DIR_FSYNC;
   }else{
     return SQLITE_OK;
   }
@@ -1171,7 +1167,7 @@ static int unixTruncate(OsFile *id, i64 nByte){
   rc = ftruncate(((unixFile*)id)->h, nByte);
   SimulateIOError( rc=1 );
   if( rc ){
-    return SQLITE_IOERR;
+    return SQLITE_IOERR_TRUNCATE;
   }else{
     return SQLITE_OK;
   }
@@ -1187,7 +1183,7 @@ static int unixFileSize(OsFile *id, i64 *pSize){
   rc = fstat(((unixFile*)id)->h, &buf);
   SimulateIOError( rc=1 );
   if( rc!=0 ){
-    return SQLITE_IOERR;
+    return SQLITE_IOERR_FSTAT;
   }
   *pSize = buf.st_size;
   return SQLITE_OK;
@@ -1397,7 +1393,7 @@ static int unixLock(OsFile *id, int locktype){
     lock.l_len = 1L;
     lock.l_type = F_UNLCK;
     if( fcntl(pFile->h, F_SETLK, &lock)!=0 ){
-      rc = SQLITE_IOERR;  /* This should never happen */
+      rc = SQLITE_IOERR_UNLOCK;  /* This should never happen */
       goto end_lock;
     }
     if( s ){
@@ -1486,7 +1482,7 @@ static int unixUnlock(OsFile *id, int locktype){
       lock.l_len = SHARED_SIZE;
       if( fcntl(pFile->h, F_SETLK, &lock)!=0 ){
         /* This should never happen */
-        rc = SQLITE_IOERR;
+        rc = SQLITE_IOERR_RDLOCK;
       }
     }
     lock.l_type = F_UNLCK;
@@ -1496,7 +1492,7 @@ static int unixUnlock(OsFile *id, int locktype){
     if( fcntl(pFile->h, F_SETLK, &lock)==0 ){
       pLock->locktype = SHARED_LOCK;
     }else{
-      rc = SQLITE_IOERR;  /* This should never happen */
+      rc = SQLITE_IOERR_UNLOCK;  /* This should never happen */
     }
   }
   if( locktype==NO_LOCK ){
@@ -1514,7 +1510,7 @@ static int unixUnlock(OsFile *id, int locktype){
       if( fcntl(pFile->h, F_SETLK, &lock)==0 ){
         pLock->locktype = NO_LOCK;
       }else{
-        rc = SQLITE_IOERR;  /* This should never happen */
+        rc = SQLITE_IOERR_UNLOCK;  /* This should never happen */
       }
     }
 

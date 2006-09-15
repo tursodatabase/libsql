@@ -15,7 +15,7 @@
 # The tests in this file use special facilities that are only
 # available in the SQLite test fixture.
 #
-# $Id: ioerr.test,v 1.26 2006/02/10 13:33:31 danielk1977 Exp $
+# $Id: ioerr.test,v 1.27 2006/09/15 07:28:51 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -28,7 +28,7 @@ source $testdir/tester.tcl
 # file when the file on disk is only 1 page. The pager layer detects that
 # this has happened and suppresses the error returned by the OS layer.
 #
-do_ioerr_test ioerr-1 -sqlprep {
+do_ioerr_test ioerr-1 -erc 1 -sqlprep {
   SELECT * FROM sqlite_master;
 } -sqlbody {
   CREATE TABLE t1(a,b,c);

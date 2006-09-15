@@ -254,6 +254,7 @@ int sqlite3_step(sqlite3_stmt *pStmt){
 
   sqlite3Error(p->db, rc, 0);
   p->rc = sqlite3ApiExit(p->db, p->rc);
+  assert( (rc&0xff)==rc );
   return rc;
 }
 
@@ -815,6 +816,7 @@ int sqlite3_transfer_bindings(sqlite3_stmt *pFromStmt, sqlite3_stmt *pToStmt){
     rc = sqlite3VdbeMemMove(&pTo->aVar[i], &pFrom->aVar[i]);
     sqlite3MallocAllow();
   }
+  assert( rc==SQLITE_OK || rc==SQLITE_NOMEM );
   return rc;
 }
 

@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.192 2006/09/11 00:34:22 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.193 2006/09/15 07:28:50 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -197,6 +197,44 @@ int sqlite3_exec(
 #define SQLITE_ROW         100  /* sqlite3_step() has another row ready */
 #define SQLITE_DONE        101  /* sqlite3_step() has finished executing */
 /* end-of-error-codes */
+
+/*
+** Using the sqlite3_extended_result_codes() API, you can cause
+** SQLite to return result codes with additional information in
+** their upper bits.  The lower 8 bits will be the same as the
+** primary result codes above.  But the upper bits might contain
+** more specific error information.
+**
+** To extract the primary result code from an extended result code,
+** simply mask off the lower 8 bits.
+**
+**        primary = extended & 0xff;
+**
+** New result error codes may be added from time to time.  Software
+** that uses the extended result codes should plan accordingly and be
+** sure to always handle new unknown codes gracefully.
+**
+** The SQLITE_OK result code will never be extended.  It will always
+** be exactly zero.
+**
+** The extended result codes always have the primary result code
+** as a prefix.  Primary result codes only contain a single "_"
+** character.  Extended result codes contain two or more "_" characters.
+*/
+#define SQLITE_IOERR_READ          (SQLITE_IOERR | (1<<8))
+#define SQLITE_IOERR_SHORT_READ    (SQLITE_IOERR | (2<<8))
+#define SQLITE_IOERR_WRITE         (SQLITE_IOERR | (3<<8))
+#define SQLITE_IOERR_FSYNC         (SQLITE_IOERR | (4<<8))
+#define SQLITE_IOERR_DIR_FSYNC     (SQLITE_IOERR | (5<<8))
+#define SQLITE_IOERR_TRUNCATE      (SQLITE_IOERR | (6<<8))
+#define SQLITE_IOERR_FSTAT         (SQLITE_IOERR | (7<<8))
+#define SQLITE_IOERR_UNLOCK        (SQLITE_IOERR | (8<<8))
+#define SQLITE_IOERR_RDLOCK        (SQLITE_IOERR | (9<<8))
+
+/*
+** Enable or disable the extended result codes.
+*/
+int sqlite3_extended_result_codes(sqlite3*, int onoff);
 
 /*
 ** Each entry in an SQLite table has a unique integer key.  (The key is

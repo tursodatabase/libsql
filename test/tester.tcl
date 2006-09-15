@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.66 2006/09/02 14:50:24 drh Exp $
+# $Id: tester.tcl,v 1.67 2006/09/15 07:28:51 drh Exp $
 
 # Make sure tclsqlite3 was compiled correctly.  Abort now with an
 # error message if not.
@@ -317,6 +317,7 @@ proc crashsql {crashdelay crashfile sql} {
 #     -tclbody          TCL script to run with IO error simulation.
 #     -sqlbody          TCL script to run with IO error simulation.
 #     -exclude          List of 'N' values not to test.
+#     -erc              Use extended result codes
 #     -start            Value of 'N' to begin with (default 1)
 #
 #     -cksum            Boolean. If true, test that the database does
@@ -326,7 +327,7 @@ proc do_ioerr_test {testname args} {
 
   set ::ioerropts(-start) 1
   set ::ioerropts(-cksum) 0
-
+  set ::ioerropts(-erc) 0
   array set ::ioerropts $args
 
   set ::go 1
@@ -347,6 +348,7 @@ proc do_ioerr_test {testname args} {
       catch {file delete -force test2.db}
       catch {file delete -force test2.db-journal}
       set ::DB [sqlite3 db test.db; sqlite3_connection_pointer db]
+      sqlite3_extended_result_codes $::DB $::ioerropts(-erc)
       if {[info exists ::ioerropts(-tclprep)]} {
         eval $::ioerropts(-tclprep)
       }
@@ -381,6 +383,7 @@ proc do_ioerr_test {testname args} {
     # a result of the script, the Nth will fail.
     do_test $testname.$n.3 {
       set r [catch $::ioerrorbody msg]
+      # puts rc=[sqlite3_errcode $::DB]
       set ::go [expr {$::sqlite_io_error_pending<=0}]
       set s [expr $::sqlite_io_error_hit==0]
       set ::sqlite_io_error_hit 0

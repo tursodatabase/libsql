@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.38 2006/08/12 13:28:23 drh Exp $
+** $Id: prepare.c,v 1.39 2006/09/15 07:28:50 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -546,6 +546,7 @@ int sqlite3_prepare(
 
   rc = sqlite3ApiExit(db, rc);
   sqlite3ReleaseThreadData();
+  assert( (rc&db->errMask)==rc );
   return rc;
 }
 

@@ -1435,18 +1435,20 @@ int sqlite3VdbeHalt(Vdbe *p){
 ** VDBE_MAGIC_INIT.
 */
 int sqlite3VdbeReset(Vdbe *p){
+  sqlite3 *db;
   if( p->magic!=VDBE_MAGIC_RUN && p->magic!=VDBE_MAGIC_HALT ){
     sqlite3Error(p->db, SQLITE_MISUSE, 0);
     return SQLITE_MISUSE;
   }
+  db = p->db;
 
   /* If the VM did not run to completion or if it encountered an
   ** error, then it might not have been halted properly.  So halt
   ** it now.
   */
-  sqlite3SafetyOn(p->db);
+  sqlite3SafetyOn(db);
   sqlite3VdbeHalt(p);
-  sqlite3SafetyOff(p->db);
+  sqlite3SafetyOff(db);
 
   /* If the VDBE has be run even partially, then transfer the error code
   ** and error message from the VDBE into the main database structure.  But
@@ -1455,21 +1457,20 @@ int sqlite3VdbeReset(Vdbe *p){
   */
   if( p->pc>=0 ){
     if( p->zErrMsg ){
-      sqlite3* db = p->db;
       sqlite3ValueSetStr(db->pErr, -1, p->zErrMsg, SQLITE_UTF8, sqlite3FreeX);
       db->errCode = p->rc;
       p->zErrMsg = 0;
     }else if( p->rc ){
-      sqlite3Error(p->db, p->rc, 0);
+      sqlite3Error(db, p->rc, 0);
     }else{
-      sqlite3Error(p->db, SQLITE_OK, 0);
+      sqlite3Error(db, SQLITE_OK, 0);
     }
   }else if( p->rc && p->expired ){
     /* The expired flag was set on the VDBE before the first call
     ** to sqlite3_step(). For consistency (since sqlite3_step() was
     ** called), set the database error in this case as well.
     */
-    sqlite3Error(p->db, p->rc, 0);
+    sqlite3Error(db, p->rc, 0);
   }
 
   /* Reclaim all memory used by the VDBE
@@ -1504,9 +1505,9 @@ int sqlite3VdbeReset(Vdbe *p){
   p->magic = VDBE_MAGIC_INIT;
   p->aborted = 0;
   if( p->rc==SQLITE_SCHEMA ){
-    sqlite3ResetInternalSchema(p->db, 0);
+    sqlite3ResetInternalSchema(db, 0);
   }
-  return p->rc;
+  return p->rc & db->errMask;
 }
  
 /*
@@ -1517,6 +1518,7 @@ int sqlite3VdbeFinalize(Vdbe *p){
   int rc = SQLITE_OK;
   if( p->magic==VDBE_MAGIC_RUN || p->magic==VDBE_MAGIC_HALT ){
     rc = sqlite3VdbeReset(p);
+    assert( (rc & p->db->errMask)==rc );
   }else if( p->magic!=VDBE_MAGIC_INIT ){
     return SQLITE_MISUSE;
   }
