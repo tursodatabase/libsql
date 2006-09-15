@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\sextended\sresult\scodes\s-\sadditional\sresult\sinformation\ncarried\sin\sthe\shigher\sbits\sof\sthe\sinteger\sreturn\scodes.\s\sThis\smust\sbe\nenabled\susing\sthe\ssqlite3_extended_result_code()\sAPI.\s\sOnly\sa\sfew\sextra\nresult\scodes\sare\scurrently\sdefined.\s(CVS\s3422)
-D 2006-09-15T07:28:50
+C Bug\sfix\sand\sbetter\stesting\sof\sthe\sextended\sresult\scodes.\s(CVS\s3423)
+D 2006-09-15T12:29:16
 F Makefile.in cabd42d34340f49260bc2a7668c38eba8d4cfd99
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -76,7 +76,7 @@ F src/os_unix.c 3ed7fd1639c052d1df167321917a39ba738c46c9
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c a66763099e093785bee7e8cff3baef01868b2e73
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 65bb33144cad89f9a52054ec884e0fd5f4b0849b
+F src/pager.c 0f966f7fa225c377da2021fbbfdd50a48d877000
 F src/pager.h 0cff9de5e9019cb695a04d18df8caaaff933a272
 F src/parse.y 3279443a2b8173230dd27b9821373b681bb1f3c8
 F src/pragma.c dcb79b8170231f3aed99d4004b4d0a0fc14c4b4d
@@ -275,7 +275,7 @@ F test/table.test feea6a3eb08cf166f570255eea5447e42ef82498
 F test/tableapi.test a1982276274d292110d549206bc365b2da43e2ee
 F test/tclsqlite.test 51334389283c74bcbe28645a73159b17e239e9f3
 F test/temptable.test c36f3e5a94507abb64f7ba23deeb4e1a8a8c3821
-F test/tester.tcl d5c5389036769acf24636965cabab90fe42020f4
+F test/tester.tcl 3015906685013d5db84ceb783c3d900c28158b8f
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
 F test/thread2.test 6d7b30102d600f51b4055ee3a5a19228799049fb
 F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
@@ -399,7 +399,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 01651a32c6e67c4ac2cd23f1da7f3cc3adad1b33
-R 245c2c9e4179a89b58543a7e5cb6292b
+P ba579ddc4361fc6e8ea66f9385770d70dfe94751
+R a475b58e8b06434ca002d3eeb56da619
 U drh
-Z dc51ea3ae28793482c78f8fbf55dff83
+Z ae82e82a4719ae81f80e03d37cfdc549

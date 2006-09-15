@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.272 2006/09/15 07:28:50 drh Exp $
+** @(#) $Id: pager.c,v 1.273 2006/09/15 12:29:16 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -231,7 +231,6 @@ struct Pager {
   u8 fullSync;                /* Do extra syncs of the journal for robustness */
   u8 full_fsync;              /* Use F_FULLFSYNC when available */
   u8 state;                   /* PAGER_UNLOCK, _SHARED, _RESERVED, etc. */
-  u8 errCode;                 /* One of several kinds of errors */
   u8 tempFile;                /* zFilename is a temporary file */
   u8 readOnly;                /* True for a read-only database */
   u8 needSync;                /* True if an fsync() is needed on the journal */
@@ -239,6 +238,7 @@ struct Pager {
   u8 alwaysRollback;          /* Disable dont_rollback() for all pages */
   u8 memDb;                   /* True to inhibit all file I/O */
   u8 setMaster;               /* True if a m-j name has been written to jrnl */
+  int errCode;                /* One of several kinds of errors */
   int dbSize;                 /* Number of pages in the file */
   int origDbSize;             /* dbSize before the current change */
   int stmtSize;               /* Size of database (in pages) at stmt_begin() */
@@ -1815,12 +1815,13 @@ void sqlite3pager_read_fileheader(Pager *pPager, int N, unsigned char *pDest){
 */
 int sqlite3pager_pagecount(Pager *pPager){
   i64 n;
+  int rc;
   assert( pPager!=0 );
   if( pPager->dbSize>=0 ){
     n = pPager->dbSize;
   } else {
-    if( sqlite3OsFileSize(pPager->fd, &n)!=SQLITE_OK ){
-      pager_error(pPager, SQLITE_IOERR);
+    if( (rc = sqlite3OsFileSize(pPager->fd, &n))!=SQLITE_OK ){
+      pager_error(pPager, rc);
       return 0;
     }
     if( n>0 && n<pPager->pageSize ){
