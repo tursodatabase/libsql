@@ -1,5 +1,5 @@
-C Bug\sfix\sand\sbetter\stesting\sof\sthe\sextended\sresult\scodes.\s(CVS\s3423)
-D 2006-09-15T12:29:16
+C Fix\san\sinitialization\sproblem\sin\sFTS1.\s\sTicket\s#1977.\s(CVS\s3424)
+D 2006-09-15T16:09:00
 F Makefile.in cabd42d34340f49260bc2a7668c38eba8d4cfd99
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -21,7 +21,7 @@ F ext/README.txt 913a7bd3f4837ab14d7e063304181787658b14e1
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
 F ext/fts1/ft_hash.c 3927bd880e65329bdc6f506555b228b28924921b
 F ext/fts1/ft_hash.h 1a35e654a235c2c662d3ca0dfc3138ad60b8b7d5
-F ext/fts1/fts1.c 9fcad5a187e62928a7a573eb09522c66a68c016b
+F ext/fts1/fts1.c ff2b92dd289123bcbd9959207341b4e77fc42317
 F ext/fts1/fts1.h 6060b8f62c1d925ea8356cb1a6598073eb9159a6
 F ext/fts1/fts1_hash.c 3196cee866edbebb1c0521e21672e6d599965114
 F ext/fts1/fts1_hash.h 957d378355ed29f672cd5add012ce8b088a5e089
@@ -399,7 +399,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P ba579ddc4361fc6e8ea66f9385770d70dfe94751
-R a475b58e8b06434ca002d3eeb56da619
+P 78ae74db1cbf605cd421e7ea321e879d3638968e
+R 0dedcde70866a12a23f0808cc8e8baad
 U drh
-Z ae82e82a4719ae81f80e03d37cfdc549
+Z 41df79c93a460e6fa69a8c835c60a380

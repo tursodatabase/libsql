@@ -1669,7 +1669,7 @@ int parseSpec(TableSpec *pSpec, int argc, const char *const*argv, char**pzErr){
   ** The argv[][] array is read-only and transient.  We can write to the
   ** copy in order to modify things and the copy is persistent.
   */
-  memset(pSpec, 0, sizeof(pSpec));
+  memset(pSpec, 0, sizeof(*pSpec));
   for(i=n=0; i<argc; i++){
     n += strlen(argv[i]) + 1;
   }
