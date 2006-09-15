@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3ref.tcl,v 1.44 2006/09/08 11:56:30 drh Exp $}
+set rcsid {$Id: capi3ref.tcl,v 1.45 2006/09/15 16:58:49 drh Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -6,14 +6,58 @@ puts {
 }
 
 proc api {name prototype desc {notused x}} {
-  global apilist
+  global apilist specialname
   if {$name==""} {
     regsub -all {sqlite3_[a-z0-9_]+\(} $prototype \
       {[lappend name [string trimright & (]]} x1
     subst $x1
+  } else {
+    lappend specialname $name
   }
   lappend apilist [list $name $prototype $desc]
 }
+
+api {extended-result-codes} {
+#define SQLITE_IOERR_READ       
+#define SQLITE_IOERR_SHORT_READ 
+#define SQLITE_IOERR_WRITE      
+#define SQLITE_IOERR_FSYNC      
+#define SQLITE_IOERR_DIR_FSYNC  
+#define SQLITE_IOERR_TRUNCATE   
+#define SQLITE_IOERR_FSTAT      
+#define SQLITE_IOERR_UNLOCK     
+#define SQLITE_IOERR_RDLOCK     
+...
+} {
+In its default configuration, SQLite API routines return one of 26 integer
+result codes described at result-codes.  However, experience has shown that
+many of these result codes are too course-grained.  They do not provide as
+much information about problems as users might like.  In an effort to
+address this, newer versions of SQLite (version 3.3.8 and later) include
+support for additional result codes that provide more detailed information
+about errors.  The extended result codes are enabled (or disabled) for 
+each database
+connection using the sqlite3_extended_result_codes() API.
+
+Some of the available extended result codes are listed above.
+We expect the number of extended result codes will be expand
+over time.  Software that uses extended result codes should expect
+to see new result codes in future releases of SQLite.
+
+The symbolic name for an extended result code always contains a related
+primary result code as a prefix.  Primary result codes contain a single
+"_" character.  Extended result codes contain two or more "_" characters.
+The numeric value of an extended result code can be converted to its
+corresponding primary result code by masking off the lower 8 bytes.
+
+A complete list of available extended result codes and
+details about the meaning of the various extended result codes can be
+found by consulting the C code, especially the sqlite3.h header
+file and its antecedent sqlite.h.in.  Additional information
+is also available at the SQLite wiki:
+http://www.sqlite.org/cvstrac/wiki?p=ExtendedResultCodes
+}
+
 
 api {result-codes} {
 #define SQLITE_OK           0   /* Successful result */
@@ -45,6 +89,27 @@ api {result-codes} {
 } {
 Many SQLite functions return an integer result code from the set shown
 above in order to indicates success or failure.
+
+The result codes above are the only ones returned by SQLite in its
+default configuration.  However, the sqlite3_extended_result_codes()
+API can be used to set a database connectoin to return more detailed
+result codes.  See the documentation on sqlite3_extended_result_codes()
+or extended-result-codes for additional information.
+}
+
+api {} {
+  int sqlite3_extended_result_codes(sqlite3*, int onoff);
+} {
+This routine enables or disabled extended-result-codes feature.
+By default, SQLite API routines return one of only 26 integer
+result codes described at result-codes.  When extended result codes
+are enabled by this routine, the repetoire of result codes can be
+much larger and can (hopefully) provide more detailed information
+about the cause of an error.
+
+The second argument is a boolean value that turns extended result
+codes on and off.  Extended result codes are off by default for
+backwards compatibility with older versions of SQLite.
 }
 
 api {} {
@@ -1650,6 +1715,9 @@ foreach name [lsort [array names name_to_idx]] {
   puts "</pre></blockquote>"
   regsub -all {\[} $desc {\[} desc
   regsub -all {sqlite3_[a-z0-9_]+} $desc "\[resolve_name $name &\]" d2
+  foreach x $specialname {
+    regsub -all $x $d2 "\[resolve_name $name &\]" d2
+  }
   regsub -all "\n( *\n)+" [subst $d2] "</p>\n\n<p>" d3
   puts "<p>$d3</p>"
 }
