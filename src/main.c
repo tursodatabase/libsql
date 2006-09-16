@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.357 2006/09/15 07:28:50 drh Exp $
+** $Id: main.c,v 1.358 2006/09/16 21:45:14 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -541,6 +541,32 @@ int sqlite3_create_function16(
 }
 #endif
 
+
+/*
+** Declare that a function has been overloaded by a virtual table.
+**
+** If the function already exists as a regular global function, then
+** this routine is a no-op.  If the function does not exist, then create
+** a new one that always throws a run-time error.  
+**
+** When virtual tables intend to provide an overloaded function, they
+** should call this routine to make sure the global function exists.
+** A global function must exist in order for name resolution to work
+** properly.
+*/
+int sqlite3_overload_function(
+  sqlite3 *db,
+  const char *zName,
+  int nArg
+){
+  int nName = strlen(zName);
+  if( sqlite3FindFunction(db, zName, nName, nArg, SQLITE_UTF8, 0)==0 ){
+    sqlite3CreateFunc(db, zName, nArg, SQLITE_UTF8,
+                      0, sqlite3InvalidFunction, 0, 0);
+  }
+  return sqlite3ApiExit(db, SQLITE_OK);
+}
+
 #ifndef SQLITE_OMIT_TRACE
 /*
 ** Register a trace function.  The pArg from the previously registered trace
@@ -908,8 +934,8 @@ static int openDatabase(
   ** is accessed.
   */
   if( !sqlite3MallocFailed() ){
-    sqlite3RegisterBuiltinFunctions(db);
     sqlite3Error(db, SQLITE_OK, 0);
+    sqlite3RegisterBuiltinFunctions(db);
   }
   db->magic = SQLITE_MAGIC_OPEN;
 

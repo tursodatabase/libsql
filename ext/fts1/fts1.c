@@ -908,11 +908,14 @@ typedef struct Query {
 typedef struct Snippet {
   int nMatch;     /* Total number of matches */
   int nAlloc;     /* Space allocated for aMatch[] */
-  struct {        /* One entry for each matching term */
-    int iCol;        /* The column that contains the match */
-    int iTerm;       /* The index in Query.pTerms[] of the matching term */
-    int iStart;      /* The offset to the first character of the term */
-    int nByte;       /* Number of bytes in the term */
+  struct snippetMatch { /* One entry for each matching term */
+    char exemplar;       /* True if this match should be shown in the snippet */
+    short int iCol;      /* The column that contains the match */
+    short int iTerm;     /* The index in Query.pTerms[] of the matching term */
+    short int nByte;     /* Number of bytes in the term */
+    short int nContext;  /* Number of bytes of context for this match */
+    int iStart;          /* The offset to the first character of the term */
+    int iContext;        /* Start of the context */
   } *aMatch;      /* Points to space obtained from malloc */
   char *zOffset;  /* Text rendering of aMatch[] */
   int nOffset;    /* strlen(zOffset) */
@@ -2011,6 +2014,7 @@ static void snippetAppendMatch(
   int iStart, int nByte     /* Offset and size of the match */
 ){
   int i;
+  struct snippetMatch *pMatch;
   if( p->nMatch+1>=p->nAlloc ){
     p->nAlloc = p->nAlloc*2 + 10;
     p->aMatch = realloc(p->aMatch, p->nAlloc*sizeof(p->aMatch[0]) );
@@ -2021,10 +2025,12 @@ static void snippetAppendMatch(
     }
   }
   i = p->nMatch++;
-  p->aMatch[i].iCol = iCol;
-  p->aMatch[i].iTerm = iTerm;
-  p->aMatch[i].iStart = iStart;
-  p->aMatch[i].nByte = nByte;
+  pMatch = &p->aMatch[i];
+  pMatch->exemplar = 0;
+  pMatch->iCol = iCol;
+  pMatch->iTerm = iTerm;
+  pMatch->iStart = iStart;
+  pMatch->nByte = nByte;
 }
 
 /*
@@ -2143,19 +2149,48 @@ static void snippetAllOffsets(fulltext_cursor *p){
 */
 static void snippetOffsetText(Snippet *p){
   int i;
+  int cnt = 0;
   StringBuffer sb;
   char zBuf[200];
   if( p->zOffset ) return;
   initStringBuffer(&sb);
   for(i=0; i<p->nMatch; i++){
+    struct snippetMatch *pMatch = &p->aMatch[i];
     zBuf[0] = ' ';
-    sprintf(&zBuf[i>0], "%d %d %d %d", p->aMatch[i].iCol,
-        p->aMatch[i].iTerm, p->aMatch[i].iStart, p->aMatch[i].nByte);
+    sprintf(&zBuf[cnt>0], "%d %d %d %d", pMatch->iCol,
+        pMatch->iTerm, pMatch->iStart, pMatch->nByte);
     append(&sb, zBuf);
+    cnt++;
   }
   p->zOffset = sb.s;
   p->nOffset = sb.len;
 }
+
+/*
+** Scan all matches in Snippet and mark the exemplars.  Exemplars are
+** matches that we definitely want to include in the snippet.
+**
+** Generally speaking, each keyword in the search phrase will have
+** a single exemplar.  When a keyword matches at multiple points
+** within the document, the trick is figuring which of these matches
+** should be the examplar.
+*/
+static void snippetFindExemplars(Snippet *p, Query *pQ){
+  int i, j;
+  for(i=0; i<pQ->nTerms; i++){
+    for(j=0; j<p->nMatch; j++){
+      if( p->aMatch[j].iTerm==i ){
+        p->aMatch[j].exemplar = 1;
+        break;
+      }
+    }
+  }
+}
+
+static void snippetText(Snippet *p, Query *pQ){
+  
+}
+
 
 /*
 ** Close the cursor.  For additional information see the documentation

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing built-in functions.
 #
-# $Id: func.test,v 1.54 2006/08/19 11:34:02 drh Exp $
+# $Id: func.test,v 1.55 2006/09/16 21:45:14 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -659,12 +659,12 @@ do_test func-19.2 {
   catchsql {
     SELECT 'abc' MATCH 'xyz';
   }
-} {1 {MATCH is not implemented}}
+} {1 {unable to use function MATCH in the requested context}}
 do_test func-19.3 {
   catchsql {
     SELECT 'abc' NOT MATCH 'xyz';
   }
-} {1 {MATCH is not implemented}}
+} {1 {unable to use function MATCH in the requested context}}
 do_test func-19.4 {
   catchsql {
     SELECT match(1,2,3);

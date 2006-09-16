@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.527 2006/09/15 07:28:50 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.528 2006/09/16 21:45:14 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1874,6 +1874,7 @@ int sqlite3VtabCallConnect(Parse*, Table*);
 int sqlite3VtabCallDestroy(sqlite3*, int, const char *);
 int sqlite3VtabBegin(sqlite3 *, sqlite3_vtab *);
 FuncDef *sqlite3VtabOverloadFunction(FuncDef*, int nArg, Expr*);
+void sqlite3InvalidFunction(sqlite3_context*,int,sqlite3_value**);
 
 #ifdef SQLITE_SSE
 #include "sseInt.h"

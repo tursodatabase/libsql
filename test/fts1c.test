@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing the FTS1 module.
 #
-# $Id: fts1c.test,v 1.4 2006/09/15 07:28:51 drh Exp $
+# $Id: fts1c.test,v 1.5 2006/09/16 21:45:14 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -351,9 +351,9 @@ Dick Jenkins:     East Marketeast
 WK 
 ');
 INSERT INTO email([from],[to],subject,body) VALUES('david.forster@enron.com', 'eol.wide@enron.com', 'Change to Stack Manager', 'Effective immediately, there is a change to the Stack Manager which will 
-affect Inactive Children.
+affect any Inactive Child.
 
-Inactive Children with links to Parent products will not have their 
+An inactive Child with links to Parent products will not have their 
 calculated prices updated until the Child product is Activated.
 
 When the Child Product is activated, the price will be recalculated and 
@@ -1066,5 +1066,56 @@ do_test fts1c-1.9 {
   }
 } {6 17 24 25 38 40 42 73 74}
 
+# Some simple tests of the automatic "offset" column.  In the sample
+# data set above, only one message, number 20, contains the words
+# "gas" and "reminder" in both body and subject.
+#
+do_test fts1c-2.1 {
+  execsql {
+    SELECT rowid, offset FROM email
+     WHERE _all MATCH 'gas reminder'
+  }
+} {20 {2 0 42 3 2 1 54 8 3 0 42 3 3 1 54 8 3 0 129 3 3 0 143 3 3 0 240 3}}
+do_test fts1c-2.2 {
+  execsql {
+    SELECT rowid, offset FROM email
+     WHERE _all MATCH 'subject:gas reminder'
+  }
+} {20 {2 0 42 3 2 1 54 8 3 1 54 8}}
+do_test fts1c-2.3 {
+  execsql {
+    SELECT rowid, offset FROM email
+     WHERE _all MATCH 'body:gas reminder'
+  }
+} {20 {2 1 54 8 3 0 42 3 3 1 54 8 3 0 129 3 3 0 143 3 3 0 240 3}}
+do_test fts1c-2.4 {
+  execsql {
+    SELECT rowid, offset FROM email
+     WHERE subject MATCH 'gas reminder'
+  }
+} {20 {2 0 42 3 2 1 54 8}}
+do_test fts1c-2.5 {
+  execsql {
+    SELECT rowid, offset FROM email
+     WHERE body MATCH 'gas reminder'
+  }
+} {20 {3 0 42 3 3 1 54 8 3 0 129 3 3 0 143 3 3 0 240 3}}
+
+# Document 32 contains 5 instances of the world "child".  But only
+# 3 of them are paired with "product".  Make sure only those instances
+# that match the phrase appear in the offset list.
+#
+do_test fts1c-3.1 {
+  execsql {
+    SELECT rowid, offset FROM email
+     WHERE body MATCH 'child product' AND +rowid=32
+  }
+} {32 {3 0 94 5 3 0 114 5 3 0 207 5 3 1 213 7 3 0 245 5 3 1 251 7 3 0 409 5 3 1 415 7 3 1 493 7}}
+do_test fts1c-3.2 {
+  execsql {
+    SELECT rowid, offset FROM email
+     WHERE body MATCH '"child product"'
+  }
+} {32 {3 0 207 5 3 1 213 7 3 0 245 5 3 1 251 7 3 0 409 5 3 1 415 7}}
 
 finish_test

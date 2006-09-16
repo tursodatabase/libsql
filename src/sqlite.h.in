@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.193 2006/09/15 07:28:50 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.194 2006/09/16 21:45:14 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1781,6 +1781,24 @@ struct sqlite3_vtab_cursor {
 ** the virtual tables they implement.
 */
 int sqlite3_declare_vtab(sqlite3*, const char *zCreateTable);
+
+/*
+** Virtual tables can provide alternative implementations of functions
+** using the xFindFunction method.  But global versions of those functions
+** must exist in order to be overloaded.
+**
+** This API makes sure a global version of a function with a particular
+** name and number of parameters exists.  If no such function exists
+** before this API is called, a new function is created.  The implementation
+** of the new function always causes an exception to be thrown.  So
+** the new function is not good for anything by itself.  Its only
+** purpose is to be a place-holder function that can be overloaded
+** by virtual tables.
+**
+** This API should be considered part of the virtual table interface,
+** which is experimental and subject to change.
+*/
+int sqlite3_overload_function(sqlite3*, const char *zFuncName, int nArg);
 
 /*
 ** The interface to the virtual-table mechanism defined above (back up

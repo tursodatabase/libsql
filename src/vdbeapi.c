@@ -268,6 +268,27 @@ void *sqlite3_user_data(sqlite3_context *p){
 }
 
 /*
+** The following is the implementation of an SQL function that always
+** fails with an error message stating that the function is used in the
+** wrong context.  The sqlite3_overload_function() API might construct
+** SQL function that use this routine so that the functions will exist
+** for name resolution but are actually overloaded by the xFindFunction
+** method of virtual tables.
+*/
+void sqlite3InvalidFunction(
+  sqlite3_context *context,  /* The function calling context */
+  int argc,                  /* Number of arguments to the function */
+  sqlite3_value **argv       /* Value of each argument */
+){
+  const char *zName = context->pFunc->zName;
+  char *zErr;
+  zErr = sqlite3MPrintf(
+      "unable to use function %s in the requested context", zName);
+  sqlite3_result_error(context, zErr, -1);
+  sqliteFree(zErr);
+}
+
+/*
 ** Allocate or return the aggregate context for a user function.  A new
 ** context is allocated on the first call.  Subsequent calls return the
 ** same context that was returned on prior calls.
