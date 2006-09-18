@@ -1,4 +1,4 @@
-C Convert\sall\snames\sto\slower\scase\sbefore\ssending\sthem\sto\sthe\sxFindFunction\nmethod\sof\sa\svirtual\stable.\s\sIn\sFTS1,\suse\sstrcmp\sinstead\sof\sstrcasecmp.\nTicket\s#1981.\s(CVS\s3428)
+C Convert\sall\snames\sto\slower\scase\sbefore\ssending\sthem\sto\sthe\sxFindFunction\nmethod\sof\sa\svirtual\stable.\s\sIn\sFTS1,\suse\sstrcmp\sinstead\sof\sstrcasecmp.\nTicket\s#1981.\s(CVS\s3429)
 D 2006-09-18T20:24:03
 F Makefile.in cabd42d34340f49260bc2a7668c38eba8d4cfd99
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
@@ -399,7 +399,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 5e35dc1ffadfe7fa47673d052501ee79903eead9
+P efa8fb32a596c7232bb1754b3231e4f2421df75b
 R 867d1b47989e3f735fc6f80577ade597
 U drh
-Z 02de4c591746aed0d8ad3108083846c8
+Z 426674e4ba6605580f3e345dc6e85b63
