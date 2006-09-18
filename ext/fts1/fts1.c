@@ -1748,17 +1748,15 @@ int parseSpec(TableSpec *pSpec, int argc, const char *const*argv, char**pzErr){
 
 /*
 ** Generate a CREATE TABLE statement that describes the schema of
-** the virtual table.  Return a pointer to this schema.  
-**
-** If the addAllColumn parameter is true, then add a column named
-** "_all" to the end of the schema.  Also add the "offset" column.
+** the virtual table.  Return a pointer to this schema string.
 **
 ** Space is obtained from sqlite3_mprintf() and should be freed
 ** using sqlite3_free().
 */
 static char *fulltextSchema(
   int nColumn,                  /* Number of columns */
-  const char *const* azColumn   /* List of columns */
+  const char *const* azColumn,  /* List of columns */
+  const char *zTableName        /* Name of the table */
 ){
   int i;
   char *zSchema, *zNext;
@@ -1770,7 +1768,7 @@ static char *fulltextSchema(
     zSchema = zNext;
     zSep = ",";
   }
-  zNext = sqlite3_mprintf("%s,_all,offset)", zSchema);
+  zNext = sqlite3_mprintf("%s,%Q)", zSchema, zTableName);
   sqlite3_free(zSchema);
   return zNext;
 }
@@ -1826,7 +1824,8 @@ static int constructVtab(
 
   /* TODO: verify the existence of backing tables foo_content, foo_term */
 
-  schema = fulltextSchema(v->nColumn, (const char*const*)v->azColumn);
+  schema = fulltextSchema(v->nColumn, (const char*const*)v->azColumn,
+                          spec->zName);
   rc = sqlite3_declare_vtab(db, schema);
   sqlite3_free(schema);
   if( rc!=SQLITE_OK ) goto err;
@@ -2603,14 +2602,10 @@ static int fulltextColumn(sqlite3_vtab_cursor *pCursor,
     sqlite3_value *pVal = sqlite3_column_value(c->pStmt, idxCol+1);
     sqlite3_result_value(pContext, pVal);
   }else if( idxCol==v->nColumn ){
-    /* The _all column */
-    sqlite3_result_null(pContext);
-  }else if( idxCol==v->nColumn+1 ){
-    /* The offset column */
-    snippetAllOffsets(c);
-    snippetOffsetText(&c->snippet);
-    sqlite3_result_text(pContext, c->snippet.zOffset, c->snippet.nOffset,
-                                   SQLITE_STATIC);
+    /* The extra column whose name is the same as the table.
+    ** Return a blob which is a pointer to the cursor
+    */
+    sqlite3_result_blob(pContext, &c, sizeof(c), SQLITE_TRANSIENT);
   }
   return SQLITE_OK;
 }
@@ -2833,9 +2828,72 @@ static int fulltextUpdate(sqlite3_vtab *pVtab, int nArg, sqlite3_value **ppArg,
    * ppArg[2+v->nColumn] = value for _all (we ignore this)
    * ppArg[3+v->nColumn] = value of offset (we ignore this too)
    */
-  assert( nArg==2+v->nColumn+2);    
+  assert( nArg==2+v->nColumn+1);    
 
   return index_insert(v, ppArg[1], &ppArg[2], pRowid);
+}
+
+/*
+** Implementation of the snippet() function for FTS1
+*/
+static void snippetFunc(
+  sqlite3_context *pContext,
+  int argc,
+  sqlite3_value **argv
+){
+  fulltext_cursor *pCursor;
+  if( argc<1 ) return;
+  if( sqlite3_value_type(argv[0])!=SQLITE_BLOB ||
+      sqlite3_value_bytes(argv[0])!=sizeof(pCursor) ){
+    sqlite3_result_error(pContext, "illegal first argument to html_snippet",-1);
+  }else{
+    memcpy(&pCursor, sqlite3_value_blob(argv[0]), sizeof(pCursor));
+    /* TODO:  Return the snippet */
+  }
+}
+
+/*
+** Implementation of the offsets() function for FTS1
+*/
+static void snippetOffsetsFunc(
+  sqlite3_context *pContext,
+  int argc,
+  sqlite3_value **argv
+){
+  fulltext_cursor *pCursor;
+  if( argc<1 ) return;
+  if( sqlite3_value_type(argv[0])!=SQLITE_BLOB ||
+      sqlite3_value_bytes(argv[0])!=sizeof(pCursor) ){
+    sqlite3_result_error(pContext, "illegal first argument to offsets",-1);
+  }else{
+    memcpy(&pCursor, sqlite3_value_blob(argv[0]), sizeof(pCursor));
+    snippetAllOffsets(pCursor);
+    snippetOffsetText(&pCursor->snippet);
+    sqlite3_result_text(pContext,
+                        pCursor->snippet.zOffset, pCursor->snippet.nOffset,
+                        SQLITE_STATIC);
+  }
+}
+
+/*
+** This routine implements the xFindFunction method for the FTS1
+** virtual table.
+*/
+static int fulltextFindFunction(
+  sqlite3_vtab *pVtab,
+  int nArg,
+  const char *zName,
+  void (**pxFunc)(sqlite3_context*,int,sqlite3_value**),
+  void **ppArg
+){
+  if( strcasecmp(zName,"snippet")==0 ){
+    *pxFunc = snippetFunc;
+    return 1;
+  }else if( strcasecmp(zName,"offsets")==0 ){
+    *pxFunc = snippetOffsetsFunc;
+    return 1;
+  }
+  return 0;
 }
 
 static const sqlite3_module fulltextModule = {
@@ -2857,18 +2915,22 @@ static const sqlite3_module fulltextModule = {
   /* xSync         */ 0,
   /* xCommit       */ 0,
   /* xRollback     */ 0,
-  /* xFindFunction */ 0,
+  /* xFindFunction */ fulltextFindFunction,
 };
 
 int sqlite3Fts1Init(sqlite3 *db){
- return sqlite3_create_module(db, "fts1", &fulltextModule, 0);
+  sqlite3_overload_function(db, "snippet", -1);
+  sqlite3_overload_function(db, "offsets", -1);
+  return sqlite3_create_module(db, "fts1", &fulltextModule, 0);
 }
 
 #if !SQLITE_CORE
 int sqlite3_extension_init(sqlite3 *db, char **pzErrMsg,
                            const sqlite3_api_routines *pApi){
- SQLITE_EXTENSION_INIT2(pApi)
- return sqlite3Fts1Init(db);
+  int rc;
+  SQLITE_EXTENSION_INIT2(pApi)
+  rc = sqlite3Fts1Init(db);
+  if( rc ) return rc;
 }
 #endif
 

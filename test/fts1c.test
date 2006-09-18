@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing the FTS1 module.
 #
-# $Id: fts1c.test,v 1.5 2006/09/16 21:45:14 drh Exp $
+# $Id: fts1c.test,v 1.6 2006/09/18 02:12:48 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -1027,93 +1027,93 @@ http://home.enron.com:84/messaging/litebytztoolzprint.jpg');
 
 do_test fts1c-1.2 {
   execsql {
-    SELECT rowid FROM email WHERE _all MATCH 'mark'
+    SELECT rowid FROM email WHERE email MATCH 'mark'
   }
 } {6 17 25 38 40 42 73 74}
 do_test fts1c-1.3 {
   execsql {
-    SELECT rowid FROM email WHERE _all MATCH 'susan'
+    SELECT rowid FROM email WHERE email MATCH 'susan'
   }
 } {24 40}
 do_test fts1c-1.4 {
   execsql {
-    SELECT rowid FROM email WHERE _all MATCH 'mark susan'
+    SELECT rowid FROM email WHERE email MATCH 'mark susan'
   }
 } {40}
 do_test fts1c-1.5 {
   execsql {
-    SELECT rowid FROM email WHERE _all MATCH 'susan mark'
+    SELECT rowid FROM email WHERE email MATCH 'susan mark'
   }
 } {40}
 do_test fts1c-1.6 {
   execsql {
-    SELECT rowid FROM email WHERE _all MATCH '"mark susan"'
+    SELECT rowid FROM email WHERE email MATCH '"mark susan"'
   }
 } {}
 do_test fts1c-1.7 {
   execsql {
-    SELECT rowid FROM email WHERE _all MATCH 'mark -susan'
+    SELECT rowid FROM email WHERE email MATCH 'mark -susan'
   }
 } {6 17 25 38 42 73 74}
 do_test fts1c-1.8 {
   execsql {
-    SELECT rowid FROM email WHERE _all MATCH '-mark susan'
+    SELECT rowid FROM email WHERE email MATCH '-mark susan'
   }
 } {24}
 do_test fts1c-1.9 {
   execsql {
-    SELECT rowid FROM email WHERE _all MATCH 'mark OR susan'
+    SELECT rowid FROM email WHERE email MATCH 'mark OR susan'
   }
 } {6 17 24 25 38 40 42 73 74}
 
-# Some simple tests of the automatic "offset" column.  In the sample
+# Some simple tests of the automatic "offsets(email)" column.  In the sample
 # data set above, only one message, number 20, contains the words
 # "gas" and "reminder" in both body and subject.
 #
 do_test fts1c-2.1 {
   execsql {
-    SELECT rowid, offset FROM email
-     WHERE _all MATCH 'gas reminder'
+    SELECT rowid, offsets(email) FROM email
+     WHERE email MATCH 'gas reminder'
   }
 } {20 {2 0 42 3 2 1 54 8 3 0 42 3 3 1 54 8 3 0 129 3 3 0 143 3 3 0 240 3}}
 do_test fts1c-2.2 {
   execsql {
-    SELECT rowid, offset FROM email
-     WHERE _all MATCH 'subject:gas reminder'
+    SELECT rowid, offsets(email) FROM email
+     WHERE email MATCH 'subject:gas reminder'
   }
 } {20 {2 0 42 3 2 1 54 8 3 1 54 8}}
 do_test fts1c-2.3 {
   execsql {
-    SELECT rowid, offset FROM email
-     WHERE _all MATCH 'body:gas reminder'
+    SELECT rowid, offsets(email) FROM email
+     WHERE email MATCH 'body:gas reminder'
   }
 } {20 {2 1 54 8 3 0 42 3 3 1 54 8 3 0 129 3 3 0 143 3 3 0 240 3}}
 do_test fts1c-2.4 {
   execsql {
-    SELECT rowid, offset FROM email
+    SELECT rowid, offsets(email) FROM email
      WHERE subject MATCH 'gas reminder'
   }
 } {20 {2 0 42 3 2 1 54 8}}
 do_test fts1c-2.5 {
   execsql {
-    SELECT rowid, offset FROM email
+    SELECT rowid, offsets(email) FROM email
      WHERE body MATCH 'gas reminder'
   }
 } {20 {3 0 42 3 3 1 54 8 3 0 129 3 3 0 143 3 3 0 240 3}}
 
 # Document 32 contains 5 instances of the world "child".  But only
 # 3 of them are paired with "product".  Make sure only those instances
-# that match the phrase appear in the offset list.
+# that match the phrase appear in the offsets(email) list.
 #
 do_test fts1c-3.1 {
   execsql {
-    SELECT rowid, offset FROM email
+    SELECT rowid, offsets(email) FROM email
      WHERE body MATCH 'child product' AND +rowid=32
   }
 } {32 {3 0 94 5 3 0 114 5 3 0 207 5 3 1 213 7 3 0 245 5 3 1 251 7 3 0 409 5 3 1 415 7 3 1 493 7}}
 do_test fts1c-3.2 {
   execsql {
-    SELECT rowid, offset FROM email
+    SELECT rowid, offsets(email) FROM email
      WHERE body MATCH '"child product"'
   }
 } {32 {3 0 207 5 3 1 213 7 3 0 245 5 3 1 251 7 3 0 409 5 3 1 415 7}}
