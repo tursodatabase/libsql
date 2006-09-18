@@ -2927,10 +2927,8 @@ int sqlite3Fts1Init(sqlite3 *db){
 #if !SQLITE_CORE
 int sqlite3_extension_init(sqlite3 *db, char **pzErrMsg,
                            const sqlite3_api_routines *pApi){
-  int rc;
   SQLITE_EXTENSION_INIT2(pApi)
-  rc = sqlite3Fts1Init(db);
-  if( rc ) return rc;
+  return sqlite3Fts1Init(db);
 }
 #endif
 
