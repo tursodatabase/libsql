@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to help implement virtual tables.
 **
-** $Id: vtab.c,v 1.36 2006/09/15 07:28:51 drh Exp $
+** $Id: vtab.c,v 1.37 2006/09/18 20:24:03 drh Exp $
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
@@ -648,6 +648,10 @@ FuncDef *sqlite3VtabOverloadFunction(
   void (*xFunc)(sqlite3_context*,int,sqlite3_value**);
   void *pArg;
   FuncDef *pNew;
+  int rc;
+  char *zLowerName;
+  unsigned char *z;
+
 
   /* Check to see the left operand is a column in a virtual table */
   if( pExpr==0 ) return pDef;
@@ -662,8 +666,15 @@ FuncDef *sqlite3VtabOverloadFunction(
   if( pMod->xFindFunction==0 ) return pDef;
  
   /* Call the xFuncFunction method on the virtual table implementation
-  ** to see if the implementation wants to overload this function */
-  if( pMod->xFindFunction(pVtab, nArg, pDef->zName, &xFunc, &pArg)==0 ){
+  ** to see if the implementation wants to overload this function 
+  */
+  zLowerName = sqlite3StrDup(pDef->zName);
+  for(z=(unsigned char*)zLowerName; *z; z++){
+    *z = sqlite3UpperToLower[*z];
+  }
+  rc = pMod->xFindFunction(pVtab, nArg, zLowerName, &xFunc, &pArg);
+  sqliteFree(zLowerName);
+  if( rc==0 ){
     return pDef;
   }
 

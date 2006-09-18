@@ -2886,10 +2886,10 @@ static int fulltextFindFunction(
   void (**pxFunc)(sqlite3_context*,int,sqlite3_value**),
   void **ppArg
 ){
-  if( strcasecmp(zName,"snippet")==0 ){
+  if( strcmp(zName,"snippet")==0 ){
     *pxFunc = snippetFunc;
     return 1;
-  }else if( strcasecmp(zName,"offsets")==0 ){
+  }else if( strcmp(zName,"offsets")==0 ){
     *pxFunc = snippetOffsetsFunc;
     return 1;
   }
