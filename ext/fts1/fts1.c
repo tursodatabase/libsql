@@ -339,7 +339,7 @@ static sqlite_int64 peekDocid(DocListReader *pReader){
   return ret;
 }
 
-/* Read the next docid.   See also nextValidDocid().
+/* Read the next docid.   See also nextDocid().
 */
 static sqlite_int64 readDocid(DocListReader *pReader){
   sqlite_int64 ret;
@@ -459,8 +459,8 @@ static void printDoclist(DocList *p){
 }
 #endif /* SQLITE_DEBUG */
 
-/* Trim the given doclist to contain only positions in column [iRestrictColumn],
- * discarding any docids without any remaining positions. */
+/* Trim the given doclist to contain only positions in column
+ * [iRestrictColumn]. */
 static void docListRestrictColumn(DocList *in, int iRestrictColumn){
   DocListReader r;
   DocList out;
@@ -471,16 +471,42 @@ static void docListRestrictColumn(DocList *in, int iRestrictColumn){
 
   while( !atEnd(&r) ){
     sqlite_int64 iDocid = readDocid(&r);
+    int iPos, iColumn;
+
+    docListAddDocid(&out, iDocid);
+    while( (iPos = readPosition(&r, &iColumn)) != -1 ){
+      if( iColumn==iRestrictColumn ){
+        docListAddPos(&out, iColumn, iPos);
+      }
+    }
+  }
+
+  docListDestroy(in);
+  *in = out;
+}
+
+/* Trim the given doclist by discarding any docids without any remaining
+ * positions. */
+static void docListDiscardEmpty(DocList *in) {
+  DocListReader r;
+  DocList out;
+
+  /* TODO: It would be nice to implement this operation in place; that
+   * could save a significant amount of memory in queries with long doclists. */
+  assert( in->iType>=DL_POSITIONS );
+  readerInit(&r, in);
+  docListInit(&out, DL_POSITIONS, NULL, 0);
+
+  while( !atEnd(&r) ){
+    sqlite_int64 iDocid = readDocid(&r);
     int match = 0;
     int iPos, iColumn;
     while( (iPos = readPosition(&r, &iColumn)) != -1 ){
-      if( iColumn==iRestrictColumn ){
-        if( !match ){
-          docListAddDocid(&out, iDocid);
-          match = 1;
-        }
-        docListAddPos(&out, iColumn, iPos);
+      if( !match ){
+        docListAddDocid(&out, iDocid);
+        match = 1;
       }
+      docListAddPos(&out, iColumn, iPos);
     }
   }
 
@@ -571,16 +597,14 @@ static void docListAccumulate(DocList *pAcc, DocList *pUpdate){
 }
 
 /*
-** Read the next non-deleted docid off of pIn.  Return
-** 0 if we reach the end of pDoclist.
+** Read the next docid off of pIn.  Return 0 if we reach the end.
+*
+* TODO: This assumes that docids are never 0, but they may actually be 0 since
+* users can choose docids when inserting into a full-text table.  Fix this.
 */
-static sqlite_int64 nextValidDocid(DocListReader *pIn){
-  sqlite_int64 docid = 0;
+static sqlite_int64 nextDocid(DocListReader *pIn){
   skipPositionList(pIn);
-  while( !atEnd(pIn) && (docid = readDocid(pIn))==0 ){
-    skipPositionList(pIn);
-  }
-  return docid;
+  return atEnd(pIn) ? 0 : readDocid(pIn);
 }
 
 /*
@@ -651,18 +675,18 @@ static void docListPhraseMerge(
 
   readerInit(&left, pLeft);
   readerInit(&right, pRight);
-  docidLeft = nextValidDocid(&left);
-  docidRight = nextValidDocid(&right);
+  docidLeft = nextDocid(&left);
+  docidRight = nextDocid(&right);
 
   while( docidLeft>0 && docidRight>0 ){
     if( docidLeft<docidRight ){
-      docidLeft = nextValidDocid(&left);
+      docidLeft = nextDocid(&left);
     }else if( docidRight<docidLeft ){
-      docidRight = nextValidDocid(&right);
+      docidRight = nextDocid(&right);
     }else{
       mergePosList(&left, &right, docidLeft, pOut);
-      docidLeft = nextValidDocid(&left);
-      docidRight = nextValidDocid(&right);
+      docidLeft = nextDocid(&left);
+      docidRight = nextDocid(&right);
     }
   }
 }
@@ -685,18 +709,18 @@ static void docListAndMerge(
 
   readerInit(&left, pLeft);
   readerInit(&right, pRight);
-  docidLeft = nextValidDocid(&left);
-  docidRight = nextValidDocid(&right);
+  docidLeft = nextDocid(&left);
+  docidRight = nextDocid(&right);
 
   while( docidLeft>0 && docidRight>0 ){
     if( docidLeft<docidRight ){
-      docidLeft = nextValidDocid(&left);
+      docidLeft = nextDocid(&left);
     }else if( docidRight<docidLeft ){
-      docidRight = nextValidDocid(&right);
+      docidRight = nextDocid(&right);
     }else{
       docListAddDocid(pOut, docidLeft);
-      docidLeft = nextValidDocid(&left);
-      docidRight = nextValidDocid(&right);
+      docidLeft = nextDocid(&left);
+      docidRight = nextDocid(&right);
     }
   }
 }
@@ -717,8 +741,8 @@ static void docListOrMerge(
 
   readerInit(&left, pLeft);
   readerInit(&right, pRight);
-  docidLeft = nextValidDocid(&left);
-  docidRight = nextValidDocid(&right);
+  docidLeft = nextDocid(&left);
+  docidRight = nextDocid(&right);
 
   while( docidLeft>0 && docidRight>0 ){
     if( docidLeft<=docidRight ){
@@ -728,19 +752,19 @@ static void docListOrMerge(
     }
     priorLeft = docidLeft;
     if( docidLeft<=docidRight ){
-      docidLeft = nextValidDocid(&left);
+      docidLeft = nextDocid(&left);
     }
     if( docidRight>0 && docidRight<=priorLeft ){
-      docidRight = nextValidDocid(&right);
+      docidRight = nextDocid(&right);
     }
   }
   while( docidLeft>0 ){
     docListAddDocid(pOut, docidLeft);
-    docidLeft = nextValidDocid(&left);
+    docidLeft = nextDocid(&left);
   }
   while( docidRight>0 ){
     docListAddDocid(pOut, docidRight);
-    docidRight = nextValidDocid(&right);
+    docidRight = nextDocid(&right);
   }
 }
 
@@ -762,8 +786,8 @@ static void docListExceptMerge(
 
   readerInit(&left, pLeft);
   readerInit(&right, pRight);
-  docidLeft = nextValidDocid(&left);
-  docidRight = nextValidDocid(&right);
+  docidLeft = nextDocid(&left);
+  docidRight = nextDocid(&right);
 
   while( docidLeft>0 && docidRight>0 ){
     priorLeft = docidLeft;
@@ -771,15 +795,15 @@ static void docListExceptMerge(
       docListAddDocid(pOut, docidLeft);
     }
     if( docidLeft<=docidRight ){
-      docidLeft = nextValidDocid(&left);
+      docidLeft = nextDocid(&left);
     }
     if( docidRight>0 && docidRight<=priorLeft ){
-      docidRight = nextValidDocid(&right);
+      docidRight = nextDocid(&right);
     }
   }
   while( docidLeft>0 ){
     docListAddDocid(pOut, docidLeft);
-    docidLeft = nextValidDocid(&left);
+    docidLeft = nextDocid(&left);
   }
 }
 
@@ -1283,6 +1307,7 @@ static int term_select_all(
     return rc;
   }
 
+  docListDiscardEmpty(&doclist);
   *out = doclist;
   return SQLITE_OK;
 }
@@ -2370,7 +2395,7 @@ static int fulltextNext(sqlite3_vtab_cursor *pCursor){
     rc = sqlite3_reset(c->pStmt);
     if( rc!=SQLITE_OK ) return rc;
 
-    iDocid = nextValidDocid(&c->result);
+    iDocid = nextDocid(&c->result);
     if( iDocid==0 ){
       c->eof = 1;
       return SQLITE_OK;
