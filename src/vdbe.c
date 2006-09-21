@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.575 2006/09/02 20:57:52 drh Exp $
+** $Id: vdbe.c,v 1.576 2006/09/21 11:02:18 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -4499,6 +4499,7 @@ case OP_AggFinal: {        /* no-push */
 }
 
 
+#ifndef SQLITE_OMIT_VACUUM
 /* Opcode: Vacuum * * *
 **
 ** Vacuum the entire database.  This opcode will cause other virtual
@@ -4511,6 +4512,7 @@ case OP_Vacuum: {        /* no-push */
   if( sqlite3SafetyOn(db) ) goto abort_due_to_misuse;
   break;
 }
+#endif
 
 /* Opcode: Expire P1 * *
 **

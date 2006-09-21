@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.209 2006/09/11 23:45:49 drh Exp $
+** @(#) $Id: parse.y,v 1.210 2006/09/21 11:02:17 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -104,7 +104,7 @@ explain ::= .           { sqlite3BeginParse(pParse, 0); }
 %ifndef SQLITE_OMIT_EXPLAIN
 explain ::= EXPLAIN.              { sqlite3BeginParse(pParse, 1); }
 explain ::= EXPLAIN QUERY PLAN.   { sqlite3BeginParse(pParse, 2); }
-%endif
+%endif  SQLITE_OMIT_EXPLAIN
 
 ///////////////////// Begin and end transactions. ////////////////////////////
 //
@@ -134,7 +134,7 @@ ifnotexists(A) ::= IF NOT EXISTS. {A = 1;}
 %type temp {int}
 %ifndef SQLITE_OMIT_TEMPDB
 temp(A) ::= TEMP.  {A = 1;}
-%endif
+%endif  SQLITE_OMIT_TEMPDB
 temp(A) ::= .      {A = 0;}
 create_table_args ::= LP columnlist conslist_opt(X) RP(Y). {
   sqlite3EndTable(pParse,&X,&Y,0);
@@ -179,7 +179,7 @@ id(A) ::= ID(X).         {A = X;}
   TEMP TRIGGER VACUUM VIEW VIRTUAL
 %ifdef SQLITE_OMIT_COMPOUND_SELECT
   EXCEPT INTERSECT UNION
-%endif
+%endif SQLITE_OMIT_COMPOUND_SELECT
   REINDEX RENAME CTIME_KW IF
   .
 %wildcard ANY.
@@ -361,7 +361,7 @@ cmd ::= CREATE(X) temp(T) VIEW ifnotexists(E) nm(Y) dbnm(Z) AS select(S). {
 cmd ::= DROP VIEW ifexists(E) fullname(X). {
   sqlite3DropTable(pParse, X, 1, E);
 }
-%endif // SQLITE_OMIT_VIEW
+%endif  SQLITE_OMIT_VIEW
 
 //////////////////////// The SELECT statement /////////////////////////////////
 //
@@ -388,7 +388,7 @@ select(A) ::= select(X) multiselect_op(Y) oneselect(Z).  {
 multiselect_op(A) ::= UNION(OP).             {A = @OP;}
 multiselect_op(A) ::= UNION ALL.             {A = TK_ALL;}
 multiselect_op(A) ::= EXCEPT|INTERSECT(OP).  {A = @OP;}
-%endif // SQLITE_OMIT_COMPOUND_SELECT
+%endif SQLITE_OMIT_COMPOUND_SELECT
 oneselect(A) ::= SELECT distinct(D) selcollist(W) from(X) where_opt(Y)
                  groupby_opt(P) having_opt(Q) orderby_opt(Z) limit_opt(L). {
   A = sqlite3SelectNew(W,X,Y,P,Q,Z,D,L.pLimit,L.pOffset);
@@ -492,7 +492,7 @@ seltablist(A) ::= stl_prefix(X) nm(Y) dbnm(D) as(Z) on_opt(N) using_opt(U). {
   seltablist_paren(A) ::= seltablist(F).  {
      A = sqlite3SelectNew(0,F,0,0,0,0,0,0,0);
   }
-%endif // SQLITE_OMIT_SUBQUERY
+%endif  SQLITE_OMIT_SUBQUERY
 
 %type dbnm {Token}
 dbnm(A) ::= .          {A.z=0; A.n=0;}
@@ -662,7 +662,7 @@ expr(A) ::= CAST(X) LP expr(E) AS typetoken(T) RP(Y). {
   A = sqlite3Expr(TK_CAST, E, 0, &T);
   sqlite3ExprSpan(A,&X,&Y);
 }
-%endif // SQLITE_OMIT_CAST
+%endif  SQLITE_OMIT_CAST
 expr(A) ::= ID(X) LP distinct(D) exprlist(Y) RP(E). {
   A = sqlite3ExprFunction(Y, &X);
   sqlite3ExprSpan(A,&X,&E);
@@ -810,7 +810,7 @@ expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
       sqlite3SelectDelete(Y);
     }
   }
-%endif // SQLITE_OMIT_SUBQUERY
+%endif SQLITE_OMIT_SUBQUERY
 
 /* CASE expressions */
 expr(A) ::= CASE(C) case_operand(X) case_exprlist(Y) case_else(Z) END(E). {
@@ -899,8 +899,10 @@ cmd ::= DROP INDEX ifexists(E) fullname(X).   {sqlite3DropIndex(pParse, X, E);}
 
 ///////////////////////////// The VACUUM command /////////////////////////////
 //
+%ifndef SQLITE_OMIT_VACUUM
 cmd ::= VACUUM.                {sqlite3Vacuum(pParse);}
 cmd ::= VACUUM nm.             {sqlite3Vacuum(pParse);}
+%endif  SQLITE_OMIT_VACUUM
 
 ///////////////////////////// The PRAGMA command /////////////////////////////
 //
@@ -913,7 +915,7 @@ cmd ::= PRAGMA nm(X) dbnm(Z) EQ minus_num(Y). {
 }
 cmd ::= PRAGMA nm(X) dbnm(Z) LP nm(Y) RP. {sqlite3Pragma(pParse,&X,&Z,&Y,0);}
 cmd ::= PRAGMA nm(X) dbnm(Z).             {sqlite3Pragma(pParse,&X,&Z,0,0);}
-%endif // SQLITE_OMIT_PRAGMA
+%endif SQLITE_OMIT_PRAGMA
 plus_num(A) ::= plus_opt number(X).   {A = X;}
 minus_num(A) ::= MINUS number(X).     {A = X;}
 number(A) ::= INTEGER|FLOAT(X).       {A = X;}
@@ -1009,7 +1011,7 @@ expr(A) ::= RAISE(X) LP raisetype(T) COMMA nm(Z) RP(Y).  {
     sqlite3ExprSpan(A, &X, &Y);
   }
 }
-%endif // !SQLITE_OMIT_TRIGGER
+%endif  !SQLITE_OMIT_TRIGGER
 
 %type raisetype {int}
 raisetype(A) ::= ROLLBACK.  {A = OE_Rollback;}
@@ -1022,7 +1024,7 @@ raisetype(A) ::= FAIL.      {A = OE_Fail;}
 cmd ::= DROP TRIGGER ifexists(NOERR) fullname(X). {
   sqlite3DropTrigger(pParse,X,NOERR);
 }
-%endif // !SQLITE_OMIT_TRIGGER
+%endif  !SQLITE_OMIT_TRIGGER
 
 //////////////////////// ATTACH DATABASE file AS name /////////////////////////
 cmd ::= ATTACH database_kw_opt expr(F) AS expr(D) key_opt(K). {
@@ -1045,7 +1047,7 @@ cmd ::= DETACH database_kw_opt expr(D). {
 %ifndef SQLITE_OMIT_REINDEX
 cmd ::= REINDEX.                {sqlite3Reindex(pParse, 0, 0);}
 cmd ::= REINDEX nm(X) dbnm(Y).  {sqlite3Reindex(pParse, &X, &Y);}
-%endif
+%endif  SQLITE_OMIT_REINDEX
 
 /////////////////////////////////// ANALYZE ///////////////////////////////////
 %ifndef SQLITE_OMIT_ANALYZE
@@ -1066,7 +1068,7 @@ add_column_fullname ::= fullname(X). {
 }
 kwcolumn_opt ::= .
 kwcolumn_opt ::= COLUMNKW.
-%endif
+%endif  SQLITE_OMIT_ALTERTABLE
 
 //////////////////////// CREATE VIRTUAL TABLE ... /////////////////////////////
 %ifndef SQLITE_OMIT_VIRTUALTABLE
@@ -1084,4 +1086,4 @@ vtabargtoken ::= lp anylist RP(X).  {sqlite3VtabArgExtend(pParse,&X);}
 lp ::= LP(X).                       {sqlite3VtabArgExtend(pParse,&X);}
 anylist ::= .
 anylist ::= anylist ANY(X).         {sqlite3VtabArgExtend(pParse,&X);}
-%endif
+%endif  SQLITE_OMIT_VIRTUALTABLE

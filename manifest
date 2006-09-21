@@ -1,5 +1,5 @@
-C Implementation\sof\sthe\ssnippet()\sfunction\sfor\sFTS1.\s\sIncludes\sa\sfew\nsimple\stest\scases\sbut\smore\stesting\sis\sneeded.\s(CVS\s3431)
-D 2006-09-21T02:03:09
+C Be\smore\saggressive\swith\sthe\sSQLITE_OMIT_VACUUM\smacro.\s\sSaves\sabout\s150\nbytes\sof\scode\sspace.\s(CVS\s3432)
+D 2006-09-21T11:02:17
 F Makefile.in cabd42d34340f49260bc2a7668c38eba8d4cfd99
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -78,7 +78,7 @@ F src/os_win.c a66763099e093785bee7e8cff3baef01868b2e73
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c 0f966f7fa225c377da2021fbbfdd50a48d877000
 F src/pager.h 0cff9de5e9019cb695a04d18df8caaaff933a272
-F src/parse.y 3279443a2b8173230dd27b9821373b681bb1f3c8
+F src/parse.y 8c79a1debbd92a4f5609511e9bf0222de78f5ecb
 F src/pragma.c dcb79b8170231f3aed99d4004b4d0a0fc14c4b4d
 F src/prepare.c bc003436a4897b8f30b940e023a70297e860f805
 F src/printf.c b179b6ed12f793e028dd169e2e2e2b2a37eedc63
@@ -111,8 +111,8 @@ F src/trigger.c 74ccec784683232f89f3b4db34a089d8cace2058
 F src/update.c 951f95ef044cf6d28557c48dc35cb0711a0b9129
 F src/utf.c 4459801e9b00cfd69993bfca58545d3775682d6e
 F src/util.c 91d4cb189476906639ae611927d939691d1365f6
-F src/vacuum.c fb65647c362589ed4ebb342c85665cadbcbf980c
-F src/vdbe.c a77869949ddd0afe01443611edb949e24e67c91c
+F src/vacuum.c f958275b353bcc54776601582ea35ed427125a9d
+F src/vdbe.c 39f775380fc3b8e30f0743b098c15e03d51bb7eb
 F src/vdbe.h 258b5d1c0aaa72192f09ff0568ce42b383f156fa
 F src/vdbeInt.h e3eaab262b67b84474625cfc38aec1125c32834b
 F src/vdbeapi.c f1858a5edc3a5e32d038514dd9e7e9091400a782
@@ -399,7 +399,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P bb2e1871cb10b470f96c793bb137c043ef30e1da
-R 2733a08fd53c5688fa09fb4ef51647ba
+P c7ee60d00976efab25a830e7416538010c734129
+R 4a4f7b1d165466da2e1372b56afee139
 U drh
-Z 50f7084cc6542485b2db3e3ffa3bb7c3
+Z 2d27498809c9282eb1d2a169b6b639c4
