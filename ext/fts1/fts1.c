@@ -53,8 +53,7 @@ void initStringBuffer(StringBuffer *sb){
   sb->s[0] = '\0';
 }
 
-void append(StringBuffer *sb, const char *zFrom){
-  int nFrom = strlen(zFrom);
+void nappend(StringBuffer *sb, const char *zFrom, int nFrom){
   if( sb->len + nFrom >= sb->alloced ){
     sb->alloced = sb->len + nFrom + 100;
     sb->s = realloc(sb->s, sb->alloced+1);
@@ -63,8 +62,12 @@ void append(StringBuffer *sb, const char *zFrom){
       return;
     }
   }
-  strcpy(sb->s + sb->len, zFrom);
+  memcpy(sb->s + sb->len, zFrom, nFrom);
   sb->len += nFrom;
+  sb->s[sb->len] = 0;
+}
+void append(StringBuffer *sb, const char *zFrom){
+  nappend(sb, zFrom, strlen(zFrom));
 }
 
 /* We encode variable-length integers in little-endian order using seven bits
@@ -909,16 +912,16 @@ typedef struct Snippet {
   int nMatch;     /* Total number of matches */
   int nAlloc;     /* Space allocated for aMatch[] */
   struct snippetMatch { /* One entry for each matching term */
-    char exemplar;       /* True if this match should be shown in the snippet */
+    char snStatus;       /* Status flag for use while constructing snippets */
     short int iCol;      /* The column that contains the match */
     short int iTerm;     /* The index in Query.pTerms[] of the matching term */
     short int nByte;     /* Number of bytes in the term */
-    short int nContext;  /* Number of bytes of context for this match */
     int iStart;          /* The offset to the first character of the term */
-    int iContext;        /* Start of the context */
   } *aMatch;      /* Points to space obtained from malloc */
   char *zOffset;  /* Text rendering of aMatch[] */
   int nOffset;    /* strlen(zOffset) */
+  char *zSnippet; /* Snippet text */
+  int nSnippet;   /* strlen(zSnippet) */
 } Snippet;
 
 
@@ -2002,6 +2005,7 @@ static void queryClear(Query *q){
 static void snippetClear(Snippet *p){
   free(p->aMatch);
   free(p->zOffset);
+  free(p->zSnippet);
   memset(p, 0, sizeof(*p));
 }
 /*
@@ -2025,7 +2029,6 @@ static void snippetAppendMatch(
   }
   i = p->nMatch++;
   pMatch = &p->aMatch[i];
-  pMatch->exemplar = 0;
   pMatch->iCol = iCol;
   pMatch->iTerm = iTerm;
   pMatch->iStart = iStart;
@@ -2166,28 +2169,162 @@ static void snippetOffsetText(Snippet *p){
 }
 
 /*
-** Scan all matches in Snippet and mark the exemplars.  Exemplars are
-** matches that we definitely want to include in the snippet.
+** zDoc[0..nDoc-1] is phrase of text.  aMatch[0..nMatch-1] are a set
+** of matching words some of which might be in zDoc.  zDoc is column
+** number iCol.
 **
-** Generally speaking, each keyword in the search phrase will have
-** a single exemplar.  When a keyword matches at multiple points
-** within the document, the trick is figuring which of these matches
-** should be the examplar.
+** iBreak is suggested spot in zDoc where we could begin or end an
+** excerpt.  Return a value similar to iBreak but possibly adjusted
+** to be a little left or right so that the break point is better.
 */
-static void snippetFindExemplars(Snippet *p, Query *pQ){
+static int wordBoundary(
+  int iBreak,                   /* The suggested break point */
+  const char *zDoc,             /* Document text */
+  int nDoc,                     /* Number of bytes in zDoc[] */
+  struct snippetMatch *aMatch,  /* Matching words */
+  int nMatch,                   /* Number of entries in aMatch[] */
+  int iCol                      /* The column number for zDoc[] */
+){
+  int i;
+  if( iBreak<=10 ){
+    return 0;
+  }
+  if( iBreak>=nDoc-10 ){
+    return nDoc;
+  }
+  for(i=0; i<nMatch && aMatch[i].iCol<iCol; i++){}
+  while( i<nMatch && aMatch[i].iStart+aMatch[i].nByte<iBreak ){ i++; }
+  if( i<nMatch ){
+    if( aMatch[i].iStart<iBreak+10 ){
+      return aMatch[i].iStart;
+    }
+    if( i>0 && aMatch[i-1].iStart+aMatch[i-1].nByte>=iBreak ){
+      return aMatch[i-1].iStart;
+    }
+  }
+  for(i=1; i<=10; i++){
+    if( isspace(zDoc[iBreak-i]) ){
+      return iBreak - i + 1;
+    }
+    if( isspace(zDoc[iBreak+i]) ){
+      return iBreak + i + 1;
+    }
+  }
+  return iBreak;
+}
+
+/*
+** Allowed values for Snippet.aMatch[].snStatus
+*/
+#define SNIPPET_IGNORE  0   /* It is ok to omit this match from the snippet */
+#define SNIPPET_DESIRED 1   /* We want to include this match in the snippet */  
+
+/*
+** Generate the text of a snippet.
+*/
+static void snippetText(
+  fulltext_cursor *pCursor,   /* The cursor we need the snippet for */
+  const char *zStartMark,     /* Markup to appear before each match */
+  const char *zEndMark,       /* Markup to appear after each match */
+  const char *zEllipsis       /* Ellipsis mark */
+){
   int i, j;
-  for(i=0; i<pQ->nTerms; i++){
-    for(j=0; j<p->nMatch; j++){
-      if( p->aMatch[j].iTerm==i ){
-        p->aMatch[j].exemplar = 1;
+  struct snippetMatch *aMatch;
+  int nMatch;
+  int nDesired;
+  StringBuffer sb;
+  int tailCol = -1;
+  int tailOffset = -1;
+  int iCol;
+  int nDoc;
+  const char *zDoc;
+  int iStart, iEnd;
+  int wantEllipsis;
+  int tailEllipsis = 0;
+  int iMatch;
+  
+
+  free(pCursor->snippet.zSnippet);
+  pCursor->snippet.zSnippet = 0;
+  aMatch = pCursor->snippet.aMatch;
+  nMatch = pCursor->snippet.nMatch;
+  initStringBuffer(&sb);
+
+  for(i=0; i<nMatch; i++){
+    aMatch[i].snStatus = SNIPPET_IGNORE;
+  }
+  nDesired = 0;
+  for(i=0; i<pCursor->q.nTerms; i++){
+    for(j=0; j<nMatch; j++){
+      if( aMatch[j].iTerm==i ){
+        aMatch[j].snStatus = SNIPPET_DESIRED;
+        nDesired++;
         break;
       }
     }
   }
-}
 
-static void snippetText(Snippet *p, Query *pQ){
-  
+  iMatch = 0;
+  for(i=0; i<nMatch && nDesired>0; i++){
+    if( aMatch[i].snStatus!=SNIPPET_DESIRED ) continue;
+    nDesired--;
+    iCol = aMatch[i].iCol;
+    zDoc = (const char*)sqlite3_column_text(pCursor->pStmt, iCol+1);
+    nDoc = sqlite3_column_bytes(pCursor->pStmt, iCol+1);
+    iStart = aMatch[i].iStart - 40;
+    iStart = wordBoundary(iStart, zDoc, nDoc, aMatch, nMatch, iCol);
+    if( iStart<=10 ){
+      iStart = 0;
+      wantEllipsis = 0;
+    }else{
+      wantEllipsis = 1;
+    }
+    if( iCol==tailCol && iStart<=tailOffset+20 ){
+      iStart = tailOffset;
+      wantEllipsis = 0;
+      tailEllipsis = 0;
+    }
+    if( wantEllipsis || tailEllipsis ){
+      append(&sb, zEllipsis);
+    }
+    iEnd = aMatch[i].iStart + aMatch[i].nByte + 40;
+    iEnd = wordBoundary(iEnd, zDoc, nDoc, aMatch, nMatch, iCol);
+    if( iEnd>=nDoc-10 ){
+      iEnd = nDoc;
+      tailEllipsis = 0;
+    }else{
+      tailEllipsis = 1;
+    }
+    while( iMatch<nMatch && aMatch[iMatch].iCol<iCol ){ iMatch++; }
+    while( iStart<iEnd ){
+      while( iMatch<nMatch && aMatch[iMatch].iStart<iStart ){ iMatch++; }
+      if( iMatch<nMatch && aMatch[iMatch].iStart<iEnd ){
+        nappend(&sb, &zDoc[iStart], aMatch[iMatch].iStart - iStart);
+        iStart = aMatch[iMatch].iStart;
+        append(&sb, zStartMark);
+        nappend(&sb, &zDoc[iStart], aMatch[iMatch].nByte);
+        append(&sb, zEndMark);
+        iStart += aMatch[iMatch].nByte;
+        for(j=iMatch+1; j<nMatch; j++){
+          if( aMatch[j].iTerm==aMatch[iMatch].iTerm
+              && aMatch[j].snStatus==SNIPPET_DESIRED ){
+            nDesired--;
+            aMatch[j].snStatus = SNIPPET_IGNORE;
+          }
+        }
+      }else{
+        nappend(&sb, &zDoc[iStart], iEnd - iStart);
+        iStart = iEnd;
+      }
+    }
+    tailCol = iCol;
+    tailOffset = iEnd;
+  }
+  if( tailEllipsis ){
+    append(&sb, zEllipsis);
+  }
+  pCursor->snippet.zSnippet = sb.s;
+  pCursor->snippet.nSnippet = sb.len;  
 }
 
 
@@ -2847,8 +2984,23 @@ static void snippetFunc(
       sqlite3_value_bytes(argv[0])!=sizeof(pCursor) ){
     sqlite3_result_error(pContext, "illegal first argument to html_snippet",-1);
   }else{
+    const char *zStart = "<b>";
+    const char *zEnd = "</b>";
+    const char *zEllipsis = "<b>...</b>";
     memcpy(&pCursor, sqlite3_value_blob(argv[0]), sizeof(pCursor));
-    /* TODO:  Return the snippet */
+    if( argc>=2 ){
+      zStart = (const char*)sqlite3_value_text(argv[1]);
+      if( argc>=3 ){
+        zEnd = (const char*)sqlite3_value_text(argv[2]);
+        if( argc>=4 ){
+          zEllipsis = (const char*)sqlite3_value_text(argv[3]);
+        }
+      }
+    }
+    snippetAllOffsets(pCursor);
+    snippetText(pCursor, zStart, zEnd, zEllipsis);
+    sqlite3_result_text(pContext, pCursor->snippet.zSnippet,
+                        pCursor->snippet.nSnippet, SQLITE_STATIC);
   }
 }
 

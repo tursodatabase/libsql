@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing the FTS1 module.
 #
-# $Id: fts1c.test,v 1.6 2006/09/18 02:12:48 drh Exp $
+# $Id: fts1c.test,v 1.7 2006/09/21 02:03:11 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -1117,5 +1117,45 @@ do_test fts1c-3.2 {
      WHERE body MATCH '"child product"'
   }
 } {32 {3 0 207 5 3 1 213 7 3 0 245 5 3 1 251 7 3 0 409 5 3 1 415 7}}
+
+# Snippet generator tests
+#
+do_test fts1c-4.1 {
+  execsql {
+    SELECT snippet(email) FROM email
+     WHERE email MATCH 'subject:gas reminder'
+  }
+} {{Alert Posted 10:00 AM November 20,2000: E-<b>GAS</b> Request <b>Reminder</b>}}
+do_test fts1c-4.2 {
+  execsql {
+    SELECT snippet(email) FROM email
+     WHERE email MATCH 'christmas candlelight'
+  }
+} {{<b>...</b>place.? What do you think about going here <b>Christmas</b> 
+eve?? They have an 11:00 a.m. service and a <b>candlelight</b> service at 5:00 p.m., 
+among others.
+
+<b>...</b>}}
+
+do_test fts1c-4.3 {
+  execsql {
+    SELECT snippet(email) FROM email
+     WHERE email MATCH 'deal sheet potential reuse'
+  }
+} {{EOL-Accenture <b>Deal</b> <b>Sheet</b><b>...</b>intent
+     Review Enron asset base for <b>potential</b> <b>reuse</b>/ licensing
+     Contract negotiations
+
+<b>...</b>}}
+do_test fts1c-4.4 {
+  execsql {
+    SELECT snippet(email,'<<<','>>>',' ') FROM email
+     WHERE email MATCH 'deal sheet potential reuse'
+  }
+} {{EOL-Accenture <<<Deal>>> <<<Sheet>>> intent
+     Review Enron asset base for <<<potential>>> <<<reuse>>>/ licensing
+     Contract negotiations
+
+ }}
 
 finish_test
