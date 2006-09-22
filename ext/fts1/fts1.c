@@ -971,6 +971,7 @@ typedef enum QueryType {
 typedef enum fulltext_statement {
   CONTENT_INSERT_STMT,
   CONTENT_SELECT_STMT,
+  CONTENT_UPDATE_STMT,
   CONTENT_DELETE_STMT,
 
   TERM_SELECT_STMT,
@@ -991,6 +992,7 @@ typedef enum fulltext_statement {
 static const char *const fulltext_zStatement[MAX_STMT] = {
   /* CONTENT_INSERT */ NULL,  /* generated in contentInsertStatement() */
   /* CONTENT_SELECT */ "select * from %_content where rowid = ?",
+  /* CONTENT_UPDATE */ NULL,  /* generated in contentUpdateStatement() */
   /* CONTENT_DELETE */ "delete from %_content where rowid = ?",
 
   /* TERM_SELECT */
@@ -1016,7 +1018,7 @@ struct fulltext_vtab {
   const char *zName;               /* virtual table name */
   int nColumn;                     /* number of columns in virtual table */
   char **azColumn;                 /* column names.  malloced */
-  char *zColumnList;               /* comma-separate list of column names */
+  char **azContentColumn;          /* column names in content table; malloced */
   sqlite3_tokenizer *pTokenizer;   /* tokenizer for inserts and queries */
 
   /* Precompiled statements which we keep as long as the table is
@@ -1047,6 +1049,15 @@ static struct fulltext_vtab *cursor_vtab(fulltext_cursor *c){
 
 static const sqlite3_module fulltextModule;   /* forward declaration */
 
+/* Append a list of strings separated by commas to a StringBuffer. */
+static void appendList(StringBuffer *sb, int nString, char **azString){
+  int i;
+  for(i=0; i<nString; ++i){
+    if( i>0 ) append(sb, ", ");
+    append(sb, azString[i]);
+  }
+}
+
 /* Return a dynamically generated statement of the form
  *   insert into %_content (rowid, ...) values (?, ...)
  */
@@ -1056,11 +1067,32 @@ static const char *contentInsertStatement(fulltext_vtab *v){
 
   initStringBuffer(&sb);
   append(&sb, "insert into %_content (rowid, ");
-  append(&sb, v->zColumnList);
+  appendList(&sb, v->nColumn, v->azContentColumn);
   append(&sb, ") values (?");
   for(i=0; i<v->nColumn; ++i)
     append(&sb, ", ?");
   append(&sb, ")");
+  return sb.s;
+}
+
+/* Return a dynamically generated statement of the form
+ *   update %_content set [col_0] = ?, [col_1] = ?, ...
+ *                    where rowid = ?
+ */
+static const char *contentUpdateStatement(fulltext_vtab *v){
+  StringBuffer sb;
+  int i;
+
+  initStringBuffer(&sb);
+  append(&sb, "update %_content set ");
+  for(i=0; i<v->nColumn; ++i) {
+    if( i>0 ){
+      append(&sb, ", ");
+    }
+    append(&sb, v->azContentColumn[i]);
+    append(&sb, " = ?");
+  }
+  append(&sb, " where rowid = ?");
   return sb.s;
 }
 
@@ -1074,11 +1106,17 @@ static int sql_get_statement(fulltext_vtab *v, fulltext_statement iStmt,
   if( v->pFulltextStatements[iStmt]==NULL ){
     const char *zStmt;
     int rc;
-    zStmt = iStmt==CONTENT_INSERT_STMT ? contentInsertStatement(v) : 
-                                         fulltext_zStatement[iStmt];
+    switch( iStmt ){
+      case CONTENT_INSERT_STMT:
+        zStmt = contentInsertStatement(v); break;
+      case CONTENT_UPDATE_STMT:
+        zStmt = contentUpdateStatement(v); break;
+      default:
+        zStmt = fulltext_zStatement[iStmt];
+    }
     rc = sql_prepare(v->db, v->zName, &v->pFulltextStatements[iStmt],
                          zStmt);
-    if( iStmt==CONTENT_INSERT_STMT ) free((void *) zStmt);
+    if( zStmt != fulltext_zStatement[iStmt]) free((void *) zStmt);
     if( rc!=SQLITE_OK ) return rc;
   } else {
     int rc = sqlite3_reset(v->pFulltextStatements[iStmt]);
@@ -1157,6 +1195,26 @@ static int content_insert(fulltext_vtab *v, sqlite3_value *rowid,
   }
 
   return sql_single_step_statement(v, CONTENT_INSERT_STMT, &s);
+}
+
+/* update %_content set col0 = pValues[0], col1 = pValues[1], ...
+ *                  where rowid = [iRowid] */
+static int content_update(fulltext_vtab *v, sqlite3_value **pValues,
+                          sqlite_int64 iRowid){
+  sqlite3_stmt *s;
+  int i;
+  int rc = sql_get_statement(v, CONTENT_UPDATE_STMT, &s);
+  if( rc!=SQLITE_OK ) return rc;
+
+  for(i=0; i<v->nColumn; ++i){
+    rc = sqlite3_bind_value(s, 1+i, pValues[i]);
+    if( rc!=SQLITE_OK ) return rc;
+  }
+
+  rc = sqlite3_bind_int64(s, 1+v->nColumn, iRowid);
+  if( rc!=SQLITE_OK ) return rc;
+
+  return sql_single_step_statement(v, CONTENT_UPDATE_STMT, &s);
 }
 
 void freeStringArray(int nString, const char **pString){
@@ -1376,7 +1434,7 @@ static int term_delete(fulltext_vtab *v, sqlite_int64 rowid){
 ** Free the memory used to contain a fulltext_vtab structure.
 */
 static void fulltext_vtab_destroy(fulltext_vtab *v){
-  int iStmt;
+  int iStmt, i;
 
   TRACE(("FTS1 Destroy %p\n", v));
   for( iStmt=0; iStmt<MAX_STMT; iStmt++ ){
@@ -1392,7 +1450,10 @@ static void fulltext_vtab_destroy(fulltext_vtab *v){
   }
   
   free(v->azColumn);
-  free(v->zColumnList);
+  for(i = 0; i < v->nColumn; ++i) {
+    sqlite3_free(v->azContentColumn[i]);
+  }
+  free(v->azContentColumn);
   free(v);
 }
 
@@ -1652,7 +1713,7 @@ static int startsWith(const char *s, const char *t){
 }
 
 /*
-** An instance of this structure defines the "spec" of a the
+** An instance of this structure defines the "spec" of a
 ** full text index.  This structure is populated by parseSpec
 ** and use by fulltextConnect and fulltextCreate.
 */
@@ -1660,7 +1721,7 @@ typedef struct TableSpec {
   const char *zName;       /* Name of the full-text index */
   int nColumn;             /* Number of columns to be indexed */
   char **azColumn;         /* Original names of columns to be indexed */
-  char *zColumnList;       /* Comma-separated list of names for %_content */
+  char **azContentColumn;  /* Column names for %_content */
   char **azTokenizer;      /* Name of tokenizer and its arguments */
 } TableSpec;
 
@@ -1669,7 +1730,7 @@ typedef struct TableSpec {
 */
 void clearTableSpec(TableSpec *p) {
   free(p->azColumn);
-  free(p->zColumnList);
+  free(p->azContentColumn);
   free(p->azTokenizer);
 }
 
@@ -1722,14 +1783,12 @@ int parseSpec(TableSpec *pSpec, int argc, const char *const*argv, char**pzErr){
   pSpec->nColumn = 0;
   pSpec->azColumn = azArg;
   zTokenizer = "tokenize simple";
-  n = 0;
   for(i=3, j=0; i<argc; ++i){
     if( startsWith(azArg[i],"tokenize") ){
       zTokenizer = azArg[i];
     }else{
       z = azArg[pSpec->nColumn] = firstToken(azArg[i], &zDummy);
       pSpec->nColumn++;
-      n += strlen(z) + 6;
     }
   }
   if( pSpec->nColumn==0 ){
@@ -1738,9 +1797,9 @@ int parseSpec(TableSpec *pSpec, int argc, const char *const*argv, char**pzErr){
   }
 
   /*
-  ** Construct the comma-separated list of column names.
+  ** Construct the list of content column names.
   **
-  ** Each column name will be of the form cNNAAAA
+  ** Each content column name will be of the form cNNAAAA
   ** where NN is the column number and AAAA is the sanitized
   ** column name.  "sanitized" means that special characters are
   ** converted to "_".  The cNN prefix guarantees that all column
@@ -1750,20 +1809,18 @@ int parseSpec(TableSpec *pSpec, int argc, const char *const*argv, char**pzErr){
   ** for the convenience of people who might examine the generated
   ** %_content table and wonder what the columns are used for.
   */
-  z = pSpec->zColumnList = malloc( n );
-  if( z==0 ){
+  pSpec->azContentColumn = malloc( pSpec->nColumn * sizeof(char *) );
+  if( pSpec->azContentColumn==0 ){
     clearTableSpec(pSpec);
     return SQLITE_NOMEM;
   }
   for(i=0; i<pSpec->nColumn; i++){
-    sqlite3_snprintf(n, z, "c%d%s", i, azArg[i]);
-    for(j=0; z[j]; j++){
-      if( !isalnum(z[j]) ) z[j] = '_';
+    char *p;
+    pSpec->azContentColumn[i] = sqlite3_mprintf("c%d%s", i, azArg[i]);
+    for (p = pSpec->azContentColumn[i]; *p ; ++p) {
+      if( !isalnum(*p) ) *p = '_';
     }
-    z[j] = ',';
-    z += j+1;
   }
-  z[-1] = 0;
 
   /*
   ** Parse the tokenizer specification string.
@@ -1824,8 +1881,8 @@ static int constructVtab(
   v->db = db;
   v->zName = spec->zName;   /* Freed when azColumn is freed */
   v->nColumn = spec->nColumn;
-  v->zColumnList = spec->zColumnList;
-  spec->zColumnList = 0;
+  v->azContentColumn = spec->azContentColumn;
+  spec->azContentColumn = 0;
   v->azColumn = spec->azColumn;
   spec->azColumn = 0;
 
@@ -1926,15 +1983,18 @@ static int fulltextCreate(sqlite3 *db, void *pAux,
                           sqlite3_vtab **ppVTab, char **pzErr){
   int rc;
   TableSpec spec;
-  char *schema;
+  StringBuffer schema;
   TRACE(("FTS1 Create\n"));
 
   rc = parseSpec(&spec, argc, argv, pzErr);
   if( rc!=SQLITE_OK ) return rc;
 
-  schema = sqlite3_mprintf("CREATE TABLE %%_content(%s)", spec.zColumnList);
-  rc = sql_exec(db, spec.zName, schema);
-  sqlite3_free(schema);
+  initStringBuffer(&schema);
+  append(&schema, "CREATE TABLE %_content(");
+  appendList(&schema, spec.nColumn, spec.azContentColumn);
+  append(&schema, ")");
+  rc = sql_exec(db, spec.zName, schema.s);
+  free(schema.s);
   if( rc!=SQLITE_OK ) goto out;
 
   rc = sql_exec(db, spec.zName,
@@ -2783,9 +2843,11 @@ static int fulltextRowid(sqlite3_vtab_cursor *pCursor, sqlite_int64 *pRowid){
   return SQLITE_OK;
 }
 
-/* Add all terms/positions in [zText] to the given hash table. */
-static int buildTerms(fulltext_vtab *v, fts1Hash *terms, int iColumn,
-                      const char *zText, int nText, sqlite_int64 iDocid){
+/* Add all terms in [zText] to the given hash table.  If [iColumn] > 0,
+ * we also store positions and offsets in the hash table using the given
+ * column number. */
+static int buildTerms(fulltext_vtab *v, fts1Hash *terms, sqlite_int64 iDocid,
+                      const char *zText, int iColumn){
   sqlite3_tokenizer *pTokenizer = v->pTokenizer;
   sqlite3_tokenizer_cursor *pCursor;
   const char *pToken;
@@ -2793,7 +2855,7 @@ static int buildTerms(fulltext_vtab *v, fts1Hash *terms, int iColumn,
   int iStartOffset, iEndOffset, iPosition;
   int rc;
 
-  rc = pTokenizer->pModule->xOpen(pTokenizer, zText, nText, &pCursor);
+  rc = pTokenizer->pModule->xOpen(pTokenizer, zText, -1, &pCursor);
   if( rc!=SQLITE_OK ) return rc;
 
   pCursor->pTokenizer = pTokenizer;
@@ -2815,7 +2877,9 @@ static int buildTerms(fulltext_vtab *v, fts1Hash *terms, int iColumn,
       docListAddDocid(p, iDocid);
       fts1HashInsert(terms, pToken, nTokenBytes, p);
     }
-    docListAddPosOffset(p, iColumn, iPosition, iStartOffset, iEndOffset);
+    if( iColumn>=0 ){
+      docListAddPosOffset(p, iColumn, iPosition, iStartOffset, iEndOffset);
+    }
   }
 
   /* TODO(shess) Check return?  Should this be able to cause errors at
@@ -2894,105 +2958,130 @@ static int index_insert_term(fulltext_vtab *v, const char *pTerm, int nTerm,
   return rc;
 }
 
-/* Insert a row into the full-text index; set *piRowid to be the ID of the
- * new row. */
+/* Add doclists for all terms in [pValues] to the hash table [terms]. */
+static int insertTerms(fulltext_vtab *v, fts1Hash *terms, sqlite_int64 iRowid,
+                sqlite3_value **pValues){
+  int i;
+  for(i = 0; i < v->nColumn ; ++i){
+    char *zText = (char*)sqlite3_value_text(pValues[i]);
+    int rc = buildTerms(v, terms, iRowid, zText, i);
+    if( rc!=SQLITE_OK ) return rc;
+  }
+  return SQLITE_OK;
+}
+
+/* Add empty doclists for all terms in the given row's content to the hash
+ * table [pTerms]. */
+static int deleteTerms(fulltext_vtab *v, fts1Hash *pTerms, sqlite_int64 iRowid){
+  const char **pValues;
+  int i;
+
+  int rc = content_select(v, iRowid, &pValues);
+  if( rc!=SQLITE_OK ) return rc;
+
+  for(i = 0 ; i < v->nColumn; ++i) {
+    rc = buildTerms(v, pTerms, iRowid, pValues[i], -1);
+    if( rc!=SQLITE_OK ) break;
+  }
+
+  freeStringArray(v->nColumn, pValues);
+  return SQLITE_OK;
+}
+
+/* Insert a row into the %_content table; set *piRowid to be the ID of the
+ * new row.  Fill [pTerms] with new doclists for the %_term table. */
 static int index_insert(fulltext_vtab *v, sqlite3_value *pRequestRowid,
                         sqlite3_value **pValues,
-                        sqlite_int64 *piRowid){
-  int i;
-  fts1Hash terms;  /* maps term string -> PosList */
-  fts1HashElem *e;
+                        sqlite_int64 *piRowid, fts1Hash *pTerms){
   int rc;
 
-  rc = content_insert(v, pRequestRowid, pValues);
+  rc = content_insert(v, pRequestRowid, pValues);  /* execute an SQL INSERT */
   if( rc!=SQLITE_OK ) return rc;
   *piRowid = sqlite3_last_insert_rowid(v->db);
-
-  fts1HashInit(&terms, FTS1_HASH_STRING, 1);
-  for(i = 0; i < v->nColumn ; ++i){
-    rc = buildTerms(v, &terms, i, (char*)sqlite3_value_text(pValues[i]), -1,
-                    *piRowid);
-    if( rc!=SQLITE_OK ) goto out;
-  }
-
-  for(e=fts1HashFirst(&terms); e; e=fts1HashNext(e)){
-    DocList *p = fts1HashData(e);
-    rc = index_insert_term(v, fts1HashKey(e), fts1HashKeysize(e), p);
-    if( rc!=SQLITE_OK ) break;
-  }
-
-out:
-  for(e=fts1HashFirst(&terms); e; e=fts1HashNext(e)){
-    DocList *p = fts1HashData(e);
-    docListDelete(p);
-  }
-  fts1HashClear(&terms);
-  return rc;
+  return insertTerms(v, pTerms, *piRowid, pValues);
 }
 
-/* Delete a row from the full-text index. */
-static int index_delete(fulltext_vtab *v, sqlite_int64 iRow){
-  const char **pValues;
-  fts1Hash terms;
-  int i;
-  fts1HashElem *e;
-  DocList doclist;
-
-  int rc = content_select(v, iRow, &pValues);
+/* Delete a row from the %_content table; fill [pTerms] with empty doclists
+ * to be written to the %_term table. */
+static int index_delete(fulltext_vtab *v, sqlite_int64 iRow, fts1Hash *pTerms){
+  int rc = deleteTerms(v, pTerms, iRow);
   if( rc!=SQLITE_OK ) return rc;
-
-  fts1HashInit(&terms, FTS1_HASH_STRING, 1);
-  for(i = 0 ; i < v->nColumn; ++i) {
-    rc = buildTerms(v, &terms, i, pValues[i], -1, iRow);
-    if( rc!=SQLITE_OK ) goto out;
-  }
-
-  /* Delete by inserting a doclist with no positions.  This will
-  ** overwrite existing data as it is merged forward by
-  ** index_insert_term().
-  */
-  docListInit(&doclist, DL_POSITIONS_OFFSETS, 0, 0);
-  docListAddDocid(&doclist, iRow);
-
-  for(e=fts1HashFirst(&terms); e; e=fts1HashNext(e)){
-    rc = index_insert_term(v, fts1HashKey(e), fts1HashKeysize(e), &doclist);
-    if( rc!=SQLITE_OK ) break;
-  }
-
-out:
-  freeStringArray(v->nColumn, pValues);
-  for(e=fts1HashFirst(&terms); e; e=fts1HashNext(e)){
-    DocList *p = fts1HashData(e);
-    docListDelete(p);
-  }
-  fts1HashClear(&terms);
-  docListDestroy(&doclist);
-
-  if( rc!=SQLITE_OK ) return rc;
-  return content_delete(v, iRow);
+  return content_delete(v, iRow);  /* execute an SQL DELETE */
 }
 
+/* Update a row in the %_content table; fill [pTerms] with new doclists for the
+ * %_term table. */
+static int index_update(fulltext_vtab *v, sqlite_int64 iRow,
+                        sqlite3_value **pValues, fts1Hash *pTerms){
+  /* Generate an empty doclist for each term that previously appeared in this
+   * row. */
+  int rc = deleteTerms(v, pTerms, iRow);
+  if( rc!=SQLITE_OK ) return rc;
+
+  /* Now add positions for terms which appear in the updated row. */
+  rc = insertTerms(v, pTerms, iRow, pValues);
+  if( rc!=SQLITE_OK ) return rc;
+
+  return content_update(v, pValues, iRow);  /* execute an SQL UPDATE */
+}
+
+/* This function implements the xUpdate callback; it's the top-level entry
+ * point for inserting, deleting or updating a row in a full-text table. */
 static int fulltextUpdate(sqlite3_vtab *pVtab, int nArg, sqlite3_value **ppArg,
                    sqlite_int64 *pRowid){
   fulltext_vtab *v = (fulltext_vtab *) pVtab;
+  fts1Hash terms;   /* maps term string -> PosList */
+  int rc;
+  fts1HashElem *e;
 
   TRACE(("FTS1 Update %p\n", pVtab));
+  
+  fts1HashInit(&terms, FTS1_HASH_STRING, 1);
+
   if( nArg<2 ){
-    return index_delete(v, sqlite3_value_int64(ppArg[0]));
+    rc = index_delete(v, sqlite3_value_int64(ppArg[0]), &terms);
+  } else if( sqlite3_value_type(ppArg[0]) != SQLITE_NULL ){
+    /* An update:
+     * ppArg[0] = old rowid
+     * ppArg[1] = new rowid
+     * ppArg[2..2+v->nColumn-1] = values
+     * ppArg[2+v->nColumn] = value for magic column (we ignore this)
+     */
+    sqlite_int64 rowid = sqlite3_value_int64(ppArg[0]);
+    if( sqlite3_value_type(ppArg[1]) != SQLITE_INTEGER ||
+      sqlite3_value_int64(ppArg[1]) != rowid ){
+      rc = SQLITE_ERROR;  /* we don't allow changing the rowid */
+    } else {
+      assert( nArg==2+v->nColumn+1);
+      rc = index_update(v, rowid, &ppArg[2], &terms);
+    }
+  } else {
+    /* An insert:
+     * ppArg[1] = requested rowid
+     * ppArg[2..2+v->nColumn-1] = values
+     * ppArg[2+v->nColumn] = value for magic column (we ignore this)
+     */
+    assert( nArg==2+v->nColumn+1);
+    rc = index_insert(v, ppArg[1], &ppArg[2], pRowid, &terms);
   }
 
-  if( sqlite3_value_type(ppArg[0]) != SQLITE_NULL ){
-    return SQLITE_ERROR;   /* an update; not yet supported */
+  if( rc==SQLITE_OK ){
+    /* Write updated doclists to disk. */
+    for(e=fts1HashFirst(&terms); e; e=fts1HashNext(e)){
+      DocList *p = fts1HashData(e);
+      rc = index_insert_term(v, fts1HashKey(e), fts1HashKeysize(e), p);
+      if( rc!=SQLITE_OK ) break;
+    }
   }
 
-  /* ppArg[1] = rowid
-   * ppArg[2..2+v->nColumn-1] = values
-   * ppArg[2+v->nColumn] = value for _all (we ignore this)
-   * ppArg[3+v->nColumn] = value of offset (we ignore this too)
-   */
-  assert( nArg==2+v->nColumn+1);    
+  /* clean up */
+  for(e=fts1HashFirst(&terms); e; e=fts1HashNext(e)){
+    DocList *p = fts1HashData(e);
+    docListDelete(p);
+  }
+  fts1HashClear(&terms);
 
-  return index_insert(v, ppArg[1], &ppArg[2], pRowid);
+  return rc;
 }
 
 /*
