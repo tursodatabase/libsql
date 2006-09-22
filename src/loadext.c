@@ -214,6 +214,7 @@ const sqlite3_api_routines sqlite3_apis = {
   ** a library that is new enough to support that API.
   *************************************************************************
   */
+  sqlite3_overload_function,
 };
 
 /*
