@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the lang-*.html files.
 #
-set rcsid {$Id: lang.tcl,v 1.117 2006/09/11 23:45:50 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.118 2006/09/23 20:46:23 drh Exp $}
 source common.tcl
 
 if {[llength $argv]>0} {
@@ -558,7 +558,7 @@ then the B-Tree key will be a automatically generated integer.  The
 B-Tree key for a row can always be accessed using one of the
 special names "<b>ROWID</b>", "<b>OID</b>", or "<b>_ROWID_</b>".
 This is true regardless of whether or not there is an INTEGER
-PRIMARY KEY.  An INTEGER PRIMARY KEY column man also include the
+PRIMARY KEY.  An INTEGER PRIMARY KEY column can also include the
 keyword AUTOINCREMENT.  The AUTOINCREMENT keyword modified the way
 that B-Tree keys are automatically generated.  Additional detail
 on automatic B-Tree key generation is available
