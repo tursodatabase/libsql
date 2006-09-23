@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.39 2006/09/15 07:28:50 drh Exp $
+** $Id: prepare.c,v 1.40 2006/09/23 20:36:02 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -41,28 +41,26 @@ static void corruptSchema(InitData *pData, const char *zExtra){
 **     argv[0] = name of thing being created
 **     argv[1] = root page number for table or index. 0 for trigger or view.
 **     argv[2] = SQL text for the CREATE statement.
-**     argv[3] = "1" for temporary files, "0" for main database, "2" or more
-**               for auxiliary database files.
 **
 */
 int sqlite3InitCallback(void *pInit, int argc, char **argv, char **azColName){
   InitData *pData = (InitData*)pInit;
   sqlite3 *db = pData->db;
-  int iDb;
+  int iDb = pData->iDb;
 
   pData->rc = SQLITE_OK;
+  DbClearProperty(db, iDb, DB_Empty);
   if( sqlite3MallocFailed() ){
     corruptSchema(pData, 0);
     return SQLITE_NOMEM;
   }
 
-  assert( argc==4 );
+  assert( argc==3 );
   if( argv==0 ) return 0;   /* Might happen if EMPTY_RESULT_CALLBACKS are on */
-  if( argv[1]==0 || argv[3]==0 ){
+  if( argv[1]==0 ){
     corruptSchema(pData, 0);
     return 1;
   }
-  iDb = atoi(argv[3]);
   assert( iDb>=0 && iDb<db->nDb );
   if( argv[2] && argv[2][0] ){
     /* Call the parser to process a CREATE TABLE, INDEX or VIEW.
@@ -125,8 +123,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   int size;
   Table *pTab;
   Db *pDb;
-  char const *azArg[5];
-  char zDbNum[30];
+  char const *azArg[4];
   int meta[10];
   InitData initData;
   char const *zMasterSchema;
@@ -177,12 +174,11 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   azArg[0] = zMasterName;
   azArg[1] = "1";
   azArg[2] = zMasterSchema;
-  sprintf(zDbNum, "%d", iDb);
-  azArg[3] = zDbNum;
-  azArg[4] = 0;
+  azArg[3] = 0;
   initData.db = db;
+  initData.iDb = iDb;
   initData.pzErrMsg = pzErrMsg;
-  rc = sqlite3InitCallback(&initData, 4, (char **)azArg, 0);
+  rc = sqlite3InitCallback(&initData, 3, (char **)azArg, 0);
   if( rc ){
     sqlite3SafetyOn(db);
     return initData.rc;
@@ -295,8 +291,8 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   }else{
     char *zSql;
     zSql = sqlite3MPrintf(
-        "SELECT name, rootpage, sql, '%s' FROM '%q'.%s",
-        zDbNum, db->aDb[iDb].zName, zMasterName);
+        "SELECT name, rootpage, sql FROM '%q'.%s",
+        db->aDb[iDb].zName, zMasterName);
     sqlite3SafetyOff(db);
     rc = sqlite3_exec(db, zSql, sqlite3InitCallback, &initData, 0);
     if( rc==SQLITE_ABORT ) rc = initData.rc;
