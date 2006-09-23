@@ -1,5 +1,5 @@
-C Fix\sdocumentation\stypo.\s\sTicket\s#1986\s(CVS\s3437)
-D 2006-09-23T20:46:23
+C Fix\sa\sbug\sin\sthe\shandling\sof\sI/O\serrors\sintroduced\sby\sthe\saddition\nof\sextended\serror\scodes\sin\scheck-in\s(3422).\s(CVS\s3438)
+D 2006-09-23T21:44:24
 F Makefile.in cabd42d34340f49260bc2a7668c38eba8d4cfd99
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -116,7 +116,7 @@ F src/vdbe.c 84a9c0b0dd037c064ffed651977e20dd9d2bc1d1
 F src/vdbe.h 258b5d1c0aaa72192f09ff0568ce42b383f156fa
 F src/vdbeInt.h e3eaab262b67b84474625cfc38aec1125c32834b
 F src/vdbeapi.c f1858a5edc3a5e32d038514dd9e7e9091400a782
-F src/vdbeaux.c 7d15dcf0eab43b0f6b1bb840dc2a3126eb370f5b
+F src/vdbeaux.c 6fcc47988bdd563755193c922695032f9d5e5e2b
 F src/vdbefifo.c 9efb94c8c3f4c979ebd0028219483f88e57584f5
 F src/vdbemem.c 26623176bf1c616aa478da958fac49502491a921
 F src/vtab.c aa30e940058ea56a1b7a9a7019ec21d307316fb4
@@ -399,7 +399,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P dc797bf4fa96deabd9ceb6cc062b98d2ac49a574
-R c64c07d59a123b00c1c923a04e96a169
+P 58c32ce35a04838b4a8e4210299bac935e60bfb9
+R 2afdb185e1e329265aedf8c7cead51f2
 U drh
-Z b6422e8d52e514594753b1da26faf8e8
+Z 50acfd17be318b0ee5e48adc5bd14aff
