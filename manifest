@@ -1,5 +1,5 @@
-C Remove\slegacy\scruft\sfrom\sshell.c.\s(CVS\s3439)
-D 2006-09-25T13:09:23
+C Bug\sfix\sin\spragma\stable_info().\s(CVS\s3440)
+D 2006-09-25T13:48:30
 F Makefile.in cabd42d34340f49260bc2a7668c38eba8d4cfd99
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -79,7 +79,7 @@ F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c 0f966f7fa225c377da2021fbbfdd50a48d877000
 F src/pager.h 0cff9de5e9019cb695a04d18df8caaaff933a272
 F src/parse.y 8c79a1debbd92a4f5609511e9bf0222de78f5ecb
-F src/pragma.c dcb79b8170231f3aed99d4004b4d0a0fc14c4b4d
+F src/pragma.c eac5926df7e10b68fd6ff7bb9188fb296883502c
 F src/prepare.c 3d9a1bb0644e8bccb3b78cb0833d269719237f4e
 F src/printf.c b179b6ed12f793e028dd169e2e2e2b2a37eedc63
 F src/random.c d40f8d356cecbd351ccfab6eaedd7ec1b54f5261
@@ -399,7 +399,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 20d7b29443ea7d9ec1ef81219c74ba725e8711e3
-R 60510ec2b80e60b23c8e8f8a7bf4e900
+P 815d8f84b317d26a3ca87405d27376e1e4493d8b
+R 871ac05fe83e4a84b72b5166004ffd47
 U drh
-Z f2443117c38a4d8a389c6ba3feada653
+Z cbd41848a05680adddcda293356aa0eb
