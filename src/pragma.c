@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.123 2006/09/25 13:48:30 drh Exp $
+** $Id: pragma.c,v 1.124 2006/09/25 18:01:57 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -946,6 +946,22 @@ void sqlite3Pragma(
   if( sqlite3StrICmp(zLeft, "key")==0 ){
     sqlite3_key(db, zRight, strlen(zRight));
   }else
+#endif
+#if SQLITE_HAS_CODEC || defined(SQLITE_ENABLE_CEROD)
+  if( sqlite3StrICmp(zLeft, "activate_extensions")==0 ){
+#if SQLITE_HAS_CODEC
+    if( sqlite3StrNICmp(zRight, "see-", 4)==0 ){
+      extern void sqlite3_activate_see(const char*);
+      sqlite3_activate_see(&zRight[4]);
+    }
+#endif
+#ifdef SQLITE_ENABLE_CEROD
+    if( sqlite3StrNICmp(zRight, "cerod-", 6)==0 ){
+      extern void sqlite3_activate_cerod(const char*);
+      sqlite3_activate_cerod(&zRight[6]);
+    }
+#endif
+  }
 #endif
 
   {}
