@@ -1,5 +1,5 @@
-C Bug\sfix\sin\spragma\stable_info().\s(CVS\s3440)
-D 2006-09-25T13:48:30
+C Fix\sa\sround-off\sproblem\sin\sthe\s%f\sconversion\sof\sstrftime().\sTicket\s#1991.\s(CVS\s3443)
+D 2006-09-25T18:01:32
 F Makefile.in cabd42d34340f49260bc2a7668c38eba8d4cfd99
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -53,7 +53,7 @@ F src/btree.h 061c50e37de7f50b58528e352d400cf33ead7418
 F src/build.c 7199949a6a3449e9ec69408cc79a48ed04fd0b85
 F src/callback.c fd9bb39f7ff6b52bad8365617abc61c720640429
 F src/complete.c 7d1a44be8f37de125fcafd3d3a018690b3799675
-F src/date.c d5519023569adf30892ff7be6deadf25ecdf1ecd
+F src/date.c 5e470f013bd3c55e7346f18771905d3bc9a12ade
 F src/delete.c 804384761144fe1a5035b99f4bd7d706976831bd
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
 F src/expr.c 0546cc60f08c426d96092dea0789d085aed3580e
@@ -399,7 +399,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 815d8f84b317d26a3ca87405d27376e1e4493d8b
-R 871ac05fe83e4a84b72b5166004ffd47
+P c037403bae0d78f9dd2703ff05cc3cd3ac54e062
+R 3473a6882a327cc3359dff5512fe210a
 U drh
-Z cbd41848a05680adddcda293356aa0eb
+Z 164dbbe3708d0b9bc91dc413e902e635
