@@ -1,5 +1,5 @@
-C Add\sa\spragma\sfor\sactivating\sproprietary\sextensions.\s(CVS\s3441)
-D 2006-09-25T18:01:57
+C Fix\sa\sroundoff\serror\sin\sthe\s%f\sconverter\sof\sstrftime().\s\sTicket\s#1991.\s(CVS\s3442)
+D 2006-09-25T18:03:29
 F Makefile.in cabd42d34340f49260bc2a7668c38eba8d4cfd99
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -174,7 +174,7 @@ F test/corrupt.test 18c7a995b1af76a8c8600b996257f2c7b7bff083
 F test/corrupt2.test 88342570828f2b8cbbd8369eff3891f5c0bdd5ba
 F test/crash.test 5f5f155393c5685b3842fef79b6fbafa55197d75
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
-F test/date.test 0f39a64f8f05c269b8568a8cbf3855d49359d328
+F test/date.test 03195d0491772c396cefc0614a4884df8f7f3747
 F test/default.test 252298e42a680146b1dd64f563b95bdf088d94fb
 F test/delete.test 525a6953bc3978780cae35f3eaf1027cf4ce887d
 F test/delete2.test c06be3806ba804bc8c6f134476816080280b40e3
@@ -399,7 +399,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P bf4608406a3246fe7a214cb31b79e51f86b7ee18
-R 9b8867776e153910d7e25ce6cb35824f
+P c63d34ce0c7412852fdcf047bc388d2f9710f297
+R 7a4af5e2d7aff26cd100e0506024ea82
 U drh
-Z de7d1c8e1819c6ae6685f009829a8d65
+Z 6e7105311691ea6dc3b1d0101e0f78d6
