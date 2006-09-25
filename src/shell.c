@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.149 2006/09/13 20:22:02 drh Exp $
+** $Id: shell.c,v 1.150 2006/09/25 13:09:23 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -239,7 +239,6 @@ struct callback_data {
                          ** .explain ON */
   char outfile[FILENAME_MAX]; /* Filename for *out */
   const char *zDbFilename;    /* name of the database file */
-  char *zKey;                 /* Encryption key */
 };
 
 /*
@@ -1725,9 +1724,6 @@ int main(int argc, char **argv){
     }else if( strcmp(argv[i],"-init")==0 ){
       i++;
       zInitFile = argv[i];
-    }else if( strcmp(argv[i],"-key")==0 ){
-      i++;
-      data.zKey = sqlite3_mprintf("%s",argv[i]);
     }
   }
   if( i<argc ){
@@ -1773,7 +1769,7 @@ int main(int argc, char **argv){
   */
   for(i=1; i<argc && argv[i][0]=='-'; i++){
     char *z = argv[i];
-    if( strcmp(z,"-init")==0 || strcmp(z,"-key")==0 ){
+    if( strcmp(z,"-init")==0 ){
       i++;
     }else if( strcmp(z,"-html")==0 ){
       data.mode = MODE_Html;

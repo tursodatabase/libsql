@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\shandling\sof\sI/O\serrors\sintroduced\sby\sthe\saddition\nof\sextended\serror\scodes\sin\scheck-in\s(3422).\s(CVS\s3438)
-D 2006-09-23T21:44:24
+C Remove\slegacy\scruft\sfrom\sshell.c.\s(CVS\s3439)
+D 2006-09-25T13:09:23
 F Makefile.in cabd42d34340f49260bc2a7668c38eba8d4cfd99
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -85,7 +85,7 @@ F src/printf.c b179b6ed12f793e028dd169e2e2e2b2a37eedc63
 F src/random.c d40f8d356cecbd351ccfab6eaedd7ec1b54f5261
 F src/select.c 0d4724930a1f34c747105ed1802fa4af0d8eb519
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
-F src/shell.c 672326e8d90394218509f1820ab0835e7ed2bc06
+F src/shell.c 1c17cd03c9cc2ff618435156038f508c159ecf12
 F src/sqlite.h.in bf935004029631fd93d119bcf2f7259b9cb9ad5e
 F src/sqlite3ext.h 2c2156cc32a158e2b7bd9042d42accf94bff2e40
 F src/sqliteInt.h 637ef229c3d8e0f98096ab31c496efdf5361d678
@@ -399,7 +399,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 58c32ce35a04838b4a8e4210299bac935e60bfb9
-R 2afdb185e1e329265aedf8c7cead51f2
+P 20d7b29443ea7d9ec1ef81219c74ba725e8711e3
+R 60510ec2b80e60b23c8e8f8a7bf4e900
 U drh
-Z 50acfd17be318b0ee5e48adc5bd14aff
+Z f2443117c38a4d8a389c6ba3feada653
