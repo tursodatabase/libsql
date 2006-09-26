@@ -495,7 +495,8 @@ int sqlite3WinDelete(const char *zFilename){
   if( zWide ){
     do{
       rc = DeleteFileW(zWide);
-    }while( rc==0 && cnt++ < MX_DELETION_ATTEMPTS && (Sleep(100), 1) );
+    }while( rc==0 && GetFileAttributesW(zWide)!=0xffffffff 
+            && cnt++ < MX_DELETION_ATTEMPTS && (Sleep(100), 1) );
     sqliteFree(zWide);
   }else{
 #if OS_WINCE
@@ -503,11 +504,12 @@ int sqlite3WinDelete(const char *zFilename){
 #else
     do{
       rc = DeleteFileA(zFilename);
-    }while( rc==0 && cnt++ < MX_DELETION_ATTEMPTS && (Sleep(100), 1) );
+    }while( rc==0 && GetFileAttributesA(zFilename)
+            && cnt++ < MX_DELETION_ATTEMPTS && (Sleep(100), 1) );
 #endif
   }
   TRACE2("DELETE \"%s\"\n", zFilename);
-  return rc==0 ? SQLITE_OK : SQLITE_IOERR;
+  return rc!=0 ? SQLITE_OK : SQLITE_IOERR;
 }
 
 /*
