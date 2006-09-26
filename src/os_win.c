@@ -504,7 +504,7 @@ int sqlite3WinDelete(const char *zFilename){
 #else
     do{
       rc = DeleteFileA(zFilename);
-    }while( rc==0 && GetFileAttributesA(zFilename)
+    }while( rc==0 && GetFileAttributesA(zFilename)!=0xffffffff
             && cnt++ < MX_DELETION_ATTEMPTS && (Sleep(100), 1) );
 #endif
   }
