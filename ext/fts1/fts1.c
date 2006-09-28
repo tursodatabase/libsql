@@ -2391,6 +2391,7 @@ static void snippetText(
       tailEllipsis = 0;
     }
     if( iCol!=tailCol || iStart!=tailOffset ){
+      trimWhiteSpace(&sb);
       appendWhiteSpace(&sb);
     }
     if( wantEllipsis || tailEllipsis ){

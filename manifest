@@ -1,5 +1,5 @@
-C Bug\sfix\sin\sthe\sFTS1\ssnippet\sgenerator.\s\sImprovements\sin\sthe\sway\sthe\ssnippet\ngenerator\shandles\swhitespace.\s(CVS\s3448)
-D 2006-09-28T18:37:16
+C More\ssnippet\sgenerator\simprovements\sand\stest\scases.\s(CVS\s3449)
+D 2006-09-28T18:58:00
 F Makefile.in cabd42d34340f49260bc2a7668c38eba8d4cfd99
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -21,7 +21,7 @@ F ext/README.txt 913a7bd3f4837ab14d7e063304181787658b14e1
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
 F ext/fts1/ft_hash.c 3927bd880e65329bdc6f506555b228b28924921b
 F ext/fts1/ft_hash.h 1a35e654a235c2c662d3ca0dfc3138ad60b8b7d5
-F ext/fts1/fts1.c 8531a2a86cc9a29d0b47762243e04f8e45655d33
+F ext/fts1/fts1.c 197909c5a7de842db70f19424f146d2aa8d0cbe1
 F ext/fts1/fts1.h 6060b8f62c1d925ea8356cb1a6598073eb9159a6
 F ext/fts1/fts1_hash.c 3196cee866edbebb1c0521e21672e6d599965114
 F ext/fts1/fts1_hash.h 957d378355ed29f672cd5add012ce8b088a5e089
@@ -192,7 +192,7 @@ F test/fkey1.test 153004438d51e6769fb1ce165f6313972d6263ce
 F test/format4.test bf3bed3b13c63abfb3cfec232597a319a31d0bcc
 F test/fts1a.test 8fa66282a2a297faebdab76279c1693eb7920a3b
 F test/fts1b.test 5d8a01aefbecc8b7442b36c94c05eb7a845462d5
-F test/fts1c.test 3e1ad5a8b9118ba2970e6e4572cbc0f0d952d184
+F test/fts1c.test 0e24394ee94d784f5f9f1209f263b4ea6f6da15b
 F test/func.test 0ed54b5aeaad319f68016c033acfebef56f5874a
 F test/hook.test 7e7645fd9a033f79cce8fdff151e32715e7ec50a
 F test/in.test 369cb2aa1eab02296b4ec470732fe8c131260b1d
@@ -399,7 +399,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 165645d30115f3171fc45489823f85639fe2bfcd
-R 02e1bfc3de0db0fdbc150a5e5d77d065
+P d3f4ae827582bd0aac54ae3211d272a1429b6523
+R b0a42d4df1bd94d2804b7ca6ec30b589
 U drh
-Z 838ab44cedca04109db513f0d883f765
+Z 590788f47d28ad4e2ac7d0df17461f98

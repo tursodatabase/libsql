@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing the FTS1 module.
 #
-# $Id: fts1c.test,v 1.8 2006/09/28 18:37:16 drh Exp $
+# $Id: fts1c.test,v 1.9 2006/09/28 18:58:00 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -1157,5 +1157,32 @@ do_test fts1c-4.5 {
      WHERE email MATCH 'first things'
   }
 } {{Re: <<<First>>> Polish Deal! Congrats!  <<<Things>>> seem to be building rapidly now on the  }}
+do_test fts1c-4.6 {
+  execsql {
+    SELECT snippet(email) FROM email
+     WHERE email MATCH 'chris is here'
+  }
+} {{<b>chris</b>.germany@enron.com Sounds good to me.  I bet this <b>is</b> next to the Warick?? Hotel. <b>...</b> place.? What do you think about going <b>here</b> Christmas 
+eve?? They have an 11:00 a.m. <b>...</b>}}
+do_test fts1c-4.7 {
+  execsql {
+    SELECT snippet(email) FROM email
+     WHERE email MATCH '"pursuant to"'
+  }
+} {{Erin:
+
+<b>Pursuant</b> <b>to</b> your request, attached are the Schedule to <b>...</b>}}
+do_test fts1c-4.8 {
+  execsql {
+    SELECT snippet(email) FROM email
+     WHERE email MATCH 'ancillary load davis'
+  }
+} {{pete.<b>davis</b>@enron.com Start Date: 4/22/01; HourAhead hour: 3;  No <b>ancillary</b> schedules awarded.  
+Variances detected.
+Variances detected in <b>Load</b> schedule.
+
+    LOG MESSAGES:
+
+PARSING <b>...</b>}}
 
 finish_test
