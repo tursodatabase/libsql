@@ -101,7 +101,13 @@ static int simpleOpen(
 
   c = (simple_tokenizer_cursor *) malloc(sizeof(simple_tokenizer_cursor));
   c->pInput = pInput;
-  c->nBytes = nBytes<0 ? (int) strlen(pInput) : nBytes;
+  if( pInput==0 ){
+    c->nBytes = 0;
+  }else if( nBytes<0 ){
+    c->nBytes = (int)strlen(pInput);
+  }else{
+    c->nBytes = nBytes;
+  }
   c->iOffset = 0;                 /* start tokenizing at the beginning */
   c->iToken = 0;
   c->pToken = NULL;               /* no space allocated, yet. */

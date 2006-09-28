@@ -2627,6 +2627,7 @@ static int parseQuery(
 ){
   int iInput, inPhrase = 0;
 
+  if( zInput==0 ) nInput = 0;
   if( nInput<0 ) nInput = strlen(zInput);
   pQuery->nTerms = 0;
   pQuery->pTerms = NULL;

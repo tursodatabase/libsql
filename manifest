@@ -1,5 +1,5 @@
-C Fix\sto\sthe\sprevious\scheck-in.\s(CVS\s3446)
-D 2006-09-26T00:37:11
+C Avoid\ssegfaults\swhen\sinserted\sNULL\svalues\sinto\sFTS1.\s(CVS\s3447)
+D 2006-09-28T11:41:41
 F Makefile.in cabd42d34340f49260bc2a7668c38eba8d4cfd99
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -21,12 +21,12 @@ F ext/README.txt 913a7bd3f4837ab14d7e063304181787658b14e1
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
 F ext/fts1/ft_hash.c 3927bd880e65329bdc6f506555b228b28924921b
 F ext/fts1/ft_hash.h 1a35e654a235c2c662d3ca0dfc3138ad60b8b7d5
-F ext/fts1/fts1.c 6efbbd6fb17ad9744f058db66fab15883ed69703
+F ext/fts1/fts1.c 5cb7829d331502a3151d6648cadd358ac97b5161
 F ext/fts1/fts1.h 6060b8f62c1d925ea8356cb1a6598073eb9159a6
 F ext/fts1/fts1_hash.c 3196cee866edbebb1c0521e21672e6d599965114
 F ext/fts1/fts1_hash.h 957d378355ed29f672cd5add012ce8b088a5e089
 F ext/fts1/fts1_tokenizer.h 12c0e7ad83120aff1f86ca848149f96f61da738b
-F ext/fts1/fts1_tokenizer1.c 79877389420de24956cb651169550ac16488e5f6
+F ext/fts1/fts1_tokenizer1.c 3c96905873123f5bf76e01e6adb17177f4f2268d
 F ext/fts1/fulltext.c d935e600d87bc86b7d64f55c7520ea41d6034c5c
 F ext/fts1/fulltext.h 08525a47852d1d62a0be81d3fc3fe2d23b094efd
 F ext/fts1/simple_tokenizer.c 1844d72f7194c3fd3d7e4173053911bf0661b70d
@@ -190,7 +190,7 @@ F test/enc3.test 890508efff6677345e93bf2a8adb0489b30df030
 F test/expr.test c78843f730ccbe973d0c2ad1c99978f936893131
 F test/fkey1.test 153004438d51e6769fb1ce165f6313972d6263ce
 F test/format4.test bf3bed3b13c63abfb3cfec232597a319a31d0bcc
-F test/fts1a.test 54fd9451c00fb91074d5abdc207b05dcba6d2d65
+F test/fts1a.test 8fa66282a2a297faebdab76279c1693eb7920a3b
 F test/fts1b.test 5d8a01aefbecc8b7442b36c94c05eb7a845462d5
 F test/fts1c.test a57cb192d59ddacba64d17c326ff99393c181dc6
 F test/func.test 0ed54b5aeaad319f68016c033acfebef56f5874a
@@ -399,7 +399,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 46ac1ac2d10cf2f1ebfb8dd4bb9a2ccffd85e816
-R 7c25623524f618ab81020ca3d377d6dd
+P 944d5f812004e2dc0065fce267accf8907235a50
+R a3b9f1ec905300375312507d7a2e50ec
 U drh
-Z 72c5b22a712991b46cad5f091360e410
+Z e44db4ed3c8a0588eb2a24973c8a730d
