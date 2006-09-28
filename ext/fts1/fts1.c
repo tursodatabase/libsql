@@ -2705,9 +2705,9 @@ static int fulltextQuery(
   DocList **pResult,     /* Write the result doclist here */
   Query *pQuery          /* Put parsed query string here */
 ){
-  int i, rc;
+  int i, iNext, rc;
   DocList *pLeft = NULL;
-  DocList *pRight, *pNew;
+  DocList *pRight, *pNew, *pOr;
   int nNot = 0;
   QueryTerm *aTerm;
 
@@ -2716,28 +2716,37 @@ static int fulltextQuery(
 
   /* Merge AND terms. */
   aTerm = pQuery->pTerms;
-  for(i = 0; i<pQuery->nTerms; i += aTerm[i].nPhrase + 1){
-
+  for(i = 0; i<pQuery->nTerms; i=iNext){
     if( aTerm[i].isNot ){
       /* Handle all NOT terms in a separate pass */
       nNot++;
+      iNext = i + aTerm[i].nPhrase+1;
       continue;
     }
-
+    iNext = i + aTerm[i].nPhrase + 1;
     rc = docListOfTerm(v, aTerm[i].iColumn, &aTerm[i], &pRight);
     if( rc ){
       queryClear(pQuery);
       return rc;
     }
+    while( iNext<pQuery->nTerms && aTerm[iNext].isOr ){
+      rc = docListOfTerm(v, aTerm[iNext].iColumn, &aTerm[iNext], &pOr);
+      iNext += aTerm[iNext].nPhrase + 1;
+      if( rc ){
+        queryClear(pQuery);
+        return rc;
+      }
+      pNew = docListNew(DL_DOCIDS);
+      docListOrMerge(pRight, pOr, pNew);
+      docListDelete(pRight);
+      docListDelete(pOr);
+      pRight = pNew;
+    }
     if( pLeft==0 ){
       pLeft = pRight;
     }else{
       pNew = docListNew(DL_DOCIDS);
-      if( aTerm[i].isOr ){
-        docListOrMerge(pLeft, pRight, pNew);
-      }else{
-        docListAndMerge(pLeft, pRight, pNew);
-      }
+      docListAndMerge(pLeft, pRight, pNew);
       docListDelete(pRight);
       docListDelete(pLeft);
       pLeft = pNew;

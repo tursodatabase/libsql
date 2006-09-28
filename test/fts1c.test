@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing the FTS1 module.
 #
-# $Id: fts1c.test,v 1.9 2006/09/28 18:58:00 drh Exp $
+# $Id: fts1c.test,v 1.10 2006/09/28 19:43:32 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -1184,5 +1184,30 @@ Variances detected in <b>Load</b> schedule.
     LOG MESSAGES:
 
 PARSING <b>...</b>}}
+
+# Combinations of AND and OR operators:
+#
+do_test fts1c-5.1 {
+  execsql {
+    SELECT snippet(email) FROM email
+     WHERE email MATCH 'questar enron OR com'
+  }
+} {{matt.smith@<b>enron</b>.<b>com</b> <b>...</b> six reports:  
+
+31 Keystone Receipts
+15 <b>Questar</b> Pipeline
+40 Rockies Production
+22 West_2 <b>...</b>}}
+do_test fts1c-5.2 {
+  execsql {
+    SELECT snippet(email) FROM email
+     WHERE email MATCH 'enron OR com questar'
+  }
+} {{matt.smith@<b>enron</b>.<b>com</b> <b>...</b> six reports:  
+
+31 Keystone Receipts
+15 <b>Questar</b> Pipeline
+40 Rockies Production
+22 West_2 <b>...</b>}}
 
 finish_test
