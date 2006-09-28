@@ -2299,10 +2299,31 @@ static int wordBoundary(
 }
 
 /*
+** If the StringBuffer does not end in white space, add a single
+** space character to the end.
+*/
+static void appendWhiteSpace(StringBuffer *p){
+  if( p->len==0 ) return;
+  if( isspace(p->s[p->len-1]) ) return;
+  append(p, " ");
+}
+
+/*
+** Remove white space from teh end of the StringBuffer
+*/
+static void trimWhiteSpace(StringBuffer *p){
+  while( p->len>0 && isspace(p->s[p->len-1]) ){
+    p->len--;
+  }
+}
+
+
+
+/*
 ** Allowed values for Snippet.aMatch[].snStatus
 */
 #define SNIPPET_IGNORE  0   /* It is ok to omit this match from the snippet */
-#define SNIPPET_DESIRED 1   /* We want to include this match in the snippet */  
+#define SNIPPET_DESIRED 1   /* We want to include this match in the snippet */
 
 /*
 ** Generate the text of a snippet.
@@ -2369,8 +2390,12 @@ static void snippetText(
       wantEllipsis = 0;
       tailEllipsis = 0;
     }
+    if( iCol!=tailCol || iStart!=tailOffset ){
+      appendWhiteSpace(&sb);
+    }
     if( wantEllipsis || tailEllipsis ){
       append(&sb, zEllipsis);
+      appendWhiteSpace(&sb);
     }
     iEnd = aMatch[i].iStart + aMatch[i].nByte + 40;
     iEnd = wordBoundary(iEnd, zDoc, nDoc, aMatch, nMatch, iCol);
@@ -2382,8 +2407,12 @@ static void snippetText(
     }
     while( iMatch<nMatch && aMatch[iMatch].iCol<iCol ){ iMatch++; }
     while( iStart<iEnd ){
-      while( iMatch<nMatch && aMatch[iMatch].iStart<iStart ){ iMatch++; }
-      if( iMatch<nMatch && aMatch[iMatch].iStart<iEnd ){
+      while( iMatch<nMatch && aMatch[iMatch].iStart<iStart
+             && aMatch[iMatch].iCol<=iCol ){
+        iMatch++;
+      }
+      if( iMatch<nMatch && aMatch[iMatch].iStart<iEnd
+             && aMatch[iMatch].iCol==iCol ){
         nappend(&sb, &zDoc[iStart], aMatch[iMatch].iStart - iStart);
         iStart = aMatch[iMatch].iStart;
         append(&sb, zStartMark);
@@ -2405,7 +2434,9 @@ static void snippetText(
     tailCol = iCol;
     tailOffset = iEnd;
   }
+  trimWhiteSpace(&sb);
   if( tailEllipsis ){
+    appendWhiteSpace(&sb);
     append(&sb, zEllipsis);
   }
   pCursor->snippet.zSnippet = sb.s;
