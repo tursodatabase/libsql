@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\shandling\sof\sthe\sOR\soperator\sin\sFTS1.\s\sTest\scases\sadded\sto\nprevent\sa\srepeat.\s(CVS\s3450)
-D 2006-09-28T19:43:32
+C Make\ssure\smemory\sdoes\snot\sleak\swhen\spatching\sup\scolumn\snames\sso\sthat\nthey\sare\sunique\sin\sa\sjoin\sor\sview.\s\sTickets\s#1952\sand\s#2002.\s(CVS\s3451)
+D 2006-09-29T14:01:05
 F Makefile.in cabd42d34340f49260bc2a7668c38eba8d4cfd99
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -83,7 +83,7 @@ F src/pragma.c 2ef4353448e202961a22312f34695128bbb6d69a
 F src/prepare.c 3d9a1bb0644e8bccb3b78cb0833d269719237f4e
 F src/printf.c b179b6ed12f793e028dd169e2e2e2b2a37eedc63
 F src/random.c d40f8d356cecbd351ccfab6eaedd7ec1b54f5261
-F src/select.c 0d4724930a1f34c747105ed1802fa4af0d8eb519
+F src/select.c e247a5e1ea64dc3273a165549f0391fde8472f39
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 1c17cd03c9cc2ff618435156038f508c159ecf12
 F src/sqlite.h.in bf935004029631fd93d119bcf2f7259b9cb9ad5e
@@ -233,7 +233,7 @@ F test/memdb.test a67bda4ff90a38f2b19f6c7f95aa7289e051d893
 F test/memleak.test df2b2b96e77f8ba159a332299535b1e5f18e49ac
 F test/minmax.test 66434d8ee04869fe4c220b665b73748accbb9163
 F test/misc1.test 27a6ad11ba6e4b73aeee650ab68053ad7dfd0433
-F test/misc2.test 9740c2fb7e4a69b2bebd4c5fd9ba45ae27b27e98
+F test/misc2.test 0b45deedcfd6ba857ea2f377c5669d3501a535c7
 F test/misc3.test 7bd937e2c62bcc6be71939faf068d506467b1e03
 F test/misc4.test b043a05dea037cca5989f3ae09552fa16119bc80
 F test/misc5.test 83bceca3d38ed10ced00271e02b26b24795def83
@@ -399,7 +399,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 0934d220b33c52024f42c89fa13326bd52333f39
-R 105e424a6b1cb9ae66050c731572cf3e
+P 8cdf1d6ae018dfc93f8f0962b2530e31aa0bebff
+R e0824515a1c2aeb5e0fc636e6263bbc4
 U drh
-Z ffcf097b13ab31485785605d678fc1c5
+Z 2aee5ccd57b1e344909056652e85b596

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.320 2006/08/11 19:08:27 drh Exp $
+** $Id: select.c,v 1.321 2006/09/29 14:01:05 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1071,7 +1071,7 @@ Table *sqlite3ResultSetOfSelect(Parse *pParse, char *zTabName, Select *pSelect){
     Expr *p, *pR;
     char *zType;
     char *zName;
-    char *zBasename;
+    int nName;
     CollSeq *pColl;
     int cnt;
     NameContext sNC;
@@ -1104,16 +1104,14 @@ Table *sqlite3ResultSetOfSelect(Parse *pParse, char *zTabName, Select *pSelect){
     /* Make sure the column name is unique.  If the name is not unique,
     ** append a integer to the name so that it becomes unique.
     */
-    zBasename = zName;
+    nName = strlen(zName);
     for(j=cnt=0; j<i; j++){
       if( sqlite3StrICmp(aCol[j].zName, zName)==0 ){
-        zName = sqlite3MPrintf("%s:%d", zBasename, ++cnt);
+        zName[nName] = 0;
+        zName = sqlite3MPrintf("%z:%d", zName, ++cnt);
         j = -1;
         if( zName==0 ) break;
       }
-    }
-    if( zBasename!=zName ){
-      sqliteFree(zBasename);
     }
     pCol->zName = zName;
 
