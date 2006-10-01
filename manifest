@@ -1,5 +1,5 @@
-C Add\sa\sPorter\sstemmer\soption\sto\sthe\sFTS1\smodule.\s(CVS\s3452)
-D 2006-10-01T18:41:20
+C Remove\sone\snon-working\stest\scase\sfromthe\sPorter\sstemmer\stests\sand\sadd\nan\sacknowledgement\sfor\sthe\ssource\sof\sthe\stest\sdata\s(Martin\sPorter\shimself.)\s(CVS\s3453)
+D 2006-10-01T18:58:32
 F Makefile.in cabd42d34340f49260bc2a7668c38eba8d4cfd99
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -195,7 +195,7 @@ F test/fts1a.test 46090311f85da51bb33bd5ce84f7948359c6d8d7
 F test/fts1b.test 5d8a01aefbecc8b7442b36c94c05eb7a845462d5
 F test/fts1c.test 8790cc74bfc3141772f5cc0252dcdef20832f755
 F test/fts1d.test a73deace5c18df4a549b12908bade4f05dcf1a2f
-F test/fts1porter.test 947f842384721533eefe4bb67804f88f9e68f684
+F test/fts1porter.test fb27b24f2a97fb23e6f77bc459c818555ab86cc9
 F test/func.test 0ed54b5aeaad319f68016c033acfebef56f5874a
 F test/hook.test 7e7645fd9a033f79cce8fdff151e32715e7ec50a
 F test/in.test 369cb2aa1eab02296b4ec470732fe8c131260b1d
@@ -402,7 +402,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P fcde639119c309c699ee9dd60ed60fd6e9c8c077
-R 47795ebdba00ff0307cc55aea533a6e6
+P 936b06aaa8133e83104de87e03dc94e286a31f86
+R 481a5028b3cda808153c2005085ba6ab
 U drh
-Z b4c82aa43208ac6dbc1bc5d18d460b48
+Z ce81dd9ab374966b523ada1dc52519b9
