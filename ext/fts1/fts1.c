@@ -1892,7 +1892,9 @@ static int constructVtab(
   /* TODO(shess) For now, add new tokenizers as else if clauses. */
   if( spec->azTokenizer[0]==0 || !strcmp(spec->azTokenizer[0], "simple") ){
     sqlite3Fts1SimpleTokenizerModule(&m);
-  } else {
+  }else if( strcmp(spec->azTokenizer[0], "porter")==0 ){
+    sqlite3Fts1PorterTokenizerModule(&m);
+  }else{
     *pzErr = sqlite3_mprintf("unknown tokenizer: %s", spec->azTokenizer[0]);
     rc = SQLITE_ERROR;
     goto err;

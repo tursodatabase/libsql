@@ -85,5 +85,6 @@ struct sqlite3_tokenizer_cursor {
 ** registration process.
 */
 void sqlite3Fts1SimpleTokenizerModule(sqlite3_tokenizer_module const**ppModule);
+void sqlite3Fts1PorterTokenizerModule(sqlite3_tokenizer_module const**ppModule);
 
 #endif /* _FTS1_TOKENIZER_H_ */

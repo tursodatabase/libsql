@@ -52,6 +52,9 @@ static int isDelim(simple_tokenizer *t, unsigned char c){
   return c<0x80 && t->delim[c];
 }
 
+/*
+** Create a new tokenizer instance.
+*/
 static int simpleCreate(
   int argc, const char * const *argv,
   sqlite3_tokenizer **ppTokenizer
@@ -87,15 +90,24 @@ static int simpleCreate(
   return SQLITE_OK;
 }
 
+/*
+** Destroy a tokenizer
+*/
 static int simpleDestroy(sqlite3_tokenizer *pTokenizer){
   free(pTokenizer);
   return SQLITE_OK;
 }
 
+/*
+** Prepare to begin tokenizing a particular string.  The input
+** string to be tokenized is pInput[0..nBytes-1].  A cursor
+** used to incrementally tokenize this string is returned in 
+** *ppCursor.
+*/
 static int simpleOpen(
-  sqlite3_tokenizer *pTokenizer,
-  const char *pInput, int nBytes,
-  sqlite3_tokenizer_cursor **ppCursor
+  sqlite3_tokenizer *pTokenizer,         /* The tokenizer */
+  const char *pInput, int nBytes,        /* String to be tokenized */
+  sqlite3_tokenizer_cursor **ppCursor    /* OUT: Tokenization cursor */
 ){
   simple_tokenizer_cursor *c;
 
@@ -117,6 +129,10 @@ static int simpleOpen(
   return SQLITE_OK;
 }
 
+/*
+** Close a tokenization cursor previously opened by a call to
+** simpleOpen() above.
+*/
 static int simpleClose(sqlite3_tokenizer_cursor *pCursor){
   simple_tokenizer_cursor *c = (simple_tokenizer_cursor *) pCursor;
   free(c->pToken);
@@ -124,10 +140,17 @@ static int simpleClose(sqlite3_tokenizer_cursor *pCursor){
   return SQLITE_OK;
 }
 
+/*
+** Extract the next token from a tokenization cursor.  The cursor must
+** have been opened by a prior call to simpleOpen().
+*/
 static int simpleNext(
-  sqlite3_tokenizer_cursor *pCursor,
-  const char **ppToken, int *pnBytes,
-  int *piStartOffset, int *piEndOffset, int *piPosition
+  sqlite3_tokenizer_cursor *pCursor,  /* Cursor returned by simpleOpen */
+  const char **ppToken,               /* OUT: *ppToken is the token text */
+  int *pnBytes,                       /* OUT: Number of bytes in token */
+  int *piStartOffset,                 /* OUT: Starting offset of token */
+  int *piEndOffset,                   /* OUT: Ending offset of token */
+  int *piPosition                     /* OUT: Position integer of token */
 ){
   simple_tokenizer_cursor *c = (simple_tokenizer_cursor *) pCursor;
   simple_tokenizer *t = (simple_tokenizer *) pCursor->pTokenizer;
@@ -150,7 +173,8 @@ static int simpleNext(
     if( c->iOffset>iStartOffset ){
       int i, n = c->iOffset-iStartOffset;
       if( n>c->nTokenAllocated ){
-        c->pToken = realloc(c->pToken, n);
+        c->nTokenAllocated = n+20;
+        c->pToken = realloc(c->pToken, c->nTokenAllocated);
       }
       for(i=0; i<n; i++){
         /* TODO(shess) This needs expansion to handle UTF-8
@@ -171,6 +195,9 @@ static int simpleNext(
   return SQLITE_DONE;
 }
 
+/*
+** The set of routines that implement the simple tokenizer
+*/
 static const sqlite3_tokenizer_module simpleTokenizerModule = {
   0,
   simpleCreate,
@@ -180,6 +207,10 @@ static const sqlite3_tokenizer_module simpleTokenizerModule = {
   simpleNext,
 };
 
+/*
+** Allocate a new simple tokenizer.  Return a pointer to the new
+** tokenizer in *ppModule
+*/
 void sqlite3Fts1SimpleTokenizerModule(
   sqlite3_tokenizer_module const**ppModule
 ){

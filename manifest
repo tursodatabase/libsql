@@ -1,5 +1,5 @@
-C Make\ssure\smemory\sdoes\snot\sleak\swhen\spatching\sup\scolumn\snames\sso\sthat\nthey\sare\sunique\sin\sa\sjoin\sor\sview.\s\sTickets\s#1952\sand\s#2002.\s(CVS\s3451)
-D 2006-09-29T14:01:05
+C Add\sa\sPorter\sstemmer\soption\sto\sthe\sFTS1\smodule.\s(CVS\s3452)
+D 2006-10-01T18:41:20
 F Makefile.in cabd42d34340f49260bc2a7668c38eba8d4cfd99
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -21,12 +21,13 @@ F ext/README.txt 913a7bd3f4837ab14d7e063304181787658b14e1
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
 F ext/fts1/ft_hash.c 3927bd880e65329bdc6f506555b228b28924921b
 F ext/fts1/ft_hash.h 1a35e654a235c2c662d3ca0dfc3138ad60b8b7d5
-F ext/fts1/fts1.c bad8872dd51a51bc433a6b2d4d199c939e033cb9
+F ext/fts1/fts1.c 4f6278a61dd57a2ead405188eb847b3f682850e3
 F ext/fts1/fts1.h 6060b8f62c1d925ea8356cb1a6598073eb9159a6
 F ext/fts1/fts1_hash.c 3196cee866edbebb1c0521e21672e6d599965114
 F ext/fts1/fts1_hash.h 957d378355ed29f672cd5add012ce8b088a5e089
-F ext/fts1/fts1_tokenizer.h 12c0e7ad83120aff1f86ca848149f96f61da738b
-F ext/fts1/fts1_tokenizer1.c 3c96905873123f5bf76e01e6adb17177f4f2268d
+F ext/fts1/fts1_porter.c 18ec3c9f8e76598db135dbcc8692f1e5b0c1186b
+F ext/fts1/fts1_tokenizer.h fdea722c38a9f82ed921642981234f666e47919c
+F ext/fts1/fts1_tokenizer1.c 98c2bb9f1feb97294256850bd84baac6799168b8
 F ext/fts1/fulltext.c d935e600d87bc86b7d64f55c7520ea41d6034c5c
 F ext/fts1/fulltext.h 08525a47852d1d62a0be81d3fc3fe2d23b094efd
 F ext/fts1/simple_tokenizer.c 1844d72f7194c3fd3d7e4173053911bf0661b70d
@@ -193,6 +194,8 @@ F test/format4.test bf3bed3b13c63abfb3cfec232597a319a31d0bcc
 F test/fts1a.test 46090311f85da51bb33bd5ce84f7948359c6d8d7
 F test/fts1b.test 5d8a01aefbecc8b7442b36c94c05eb7a845462d5
 F test/fts1c.test 8790cc74bfc3141772f5cc0252dcdef20832f755
+F test/fts1d.test a73deace5c18df4a549b12908bade4f05dcf1a2f
+F test/fts1porter.test 947f842384721533eefe4bb67804f88f9e68f684
 F test/func.test 0ed54b5aeaad319f68016c033acfebef56f5874a
 F test/hook.test 7e7645fd9a033f79cce8fdff151e32715e7ec50a
 F test/in.test 369cb2aa1eab02296b4ec470732fe8c131260b1d
@@ -399,7 +402,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 8cdf1d6ae018dfc93f8f0962b2530e31aa0bebff
-R e0824515a1c2aeb5e0fc636e6263bbc4
+P fcde639119c309c699ee9dd60ed60fd6e9c8c077
+R 47795ebdba00ff0307cc55aea533a6e6
 U drh
-Z 2aee5ccd57b1e344909056652e85b596
+Z b4c82aa43208ac6dbc1bc5d18d460b48
