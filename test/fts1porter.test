@@ -12,7 +12,7 @@
 # focus of this script is testing the FTS1 module, and in particular
 # the Porter stemmer.
 #
-# $Id: fts1porter.test,v 1.4 2006/10/01 20:41:03 drh Exp $
+# $Id: fts1porter.test,v 1.5 2006/10/03 19:37:37 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -23573,7 +23573,7 @@ set porter_test_data {
 db close
 sqlite3 db :memory:
 db eval {
-  CREATE VIRTUAL TABLE t1 USING fts1(word, tokenize porter);
+  CREATE VIRTUAL TABLE t1 USING fts1(word, tokenize Porter);
 }
 
 foreach {pfrom pto} $porter_test_data {

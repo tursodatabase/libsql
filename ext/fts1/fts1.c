@@ -14,6 +14,10 @@
 */
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_FTS1)
 
+#if defined(SQLITE_ENABLE_FTS1) && !defined(SQLITE_CORE)
+# define SQLITE_CORE 1
+#endif
+
 #include <assert.h>
 #if !defined(__APPLE__)
 #include <malloc.h>
@@ -180,15 +184,14 @@ typedef enum DocListType {
 } DocListType;
 
 /*
-** By default, positions and offsets are stored in the doclists.
-** To change this so that only positions are stored, compile
-** with
+** By default, only positions and not offsets are stored in the doclists.
+** To change this so that offsets are stored too, compile with
 **
-**          -DDL_DEFAULT=DL_POSITIONS
+**          -DDL_DEFAULT=DL_POSITIONS_OFFSETS
 **
 */
 #ifndef DL_DEFAULT
-# define DL_DEFAULT DL_POSITIONS_OFFSETS
+# define DL_DEFAULT DL_POSITIONS
 #endif
 
 typedef struct DocList {
@@ -1912,9 +1915,9 @@ static int constructVtab(
     return SQLITE_NOMEM;
   }
   /* TODO(shess) For now, add new tokenizers as else if clauses. */
-  if( spec->azTokenizer[0]==0 || !strcmp(spec->azTokenizer[0], "simple") ){
+  if( spec->azTokenizer[0]==0 || startsWith(spec->azTokenizer[0], "simple") ){
     sqlite3Fts1SimpleTokenizerModule(&m);
-  }else if( strcmp(spec->azTokenizer[0], "porter")==0 ){
+  }else if( startsWith(spec->azTokenizer[0], "porter") ){
     sqlite3Fts1PorterTokenizerModule(&m);
   }else{
     *pzErr = sqlite3_mprintf("unknown tokenizer: %s", spec->azTokenizer[0]);
