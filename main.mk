@@ -120,12 +120,25 @@ SRC = \
   $(TOP)/src/vtab.c \
   $(TOP)/src/where.c
 
+# Source code for extensions
+#
+SRC += \
+  $(TOP)/ext/fts1/fts1.c \
+  $(TOP)/ext/fts1/fts1.h \
+  $(TOP)/ext/fts1/fts1_hash.c \
+  $(TOP)/ext/fts1/fts1_hash.h \
+  $(TOP)/ext/fts1/fts1_porter.c \
+  $(TOP)/ext/fts1/fts1_tokenizer.h \
+  $(TOP)/ext/fts1/fts1_tokenizer1.c
+
+
 # Source code to the test files.
 #
 TESTSRC = \
   $(TOP)/src/btree.c \
   $(TOP)/src/date.c \
   $(TOP)/src/func.c \
+  $(TOP)/src/main.c \
   $(TOP)/src/os.c \
   $(TOP)/src/os_os2.c \
   $(TOP)/src/os_unix.c \
@@ -166,6 +179,14 @@ HDR = \
    $(TOP)/src/sqliteInt.h  \
    $(TOP)/src/vdbe.h \
    parse.h
+
+# Header files used by extensions
+#
+HDR += \
+  $(TOP)/ext/fts1/fts1.h \
+  $(TOP)/ext/fts1/fts1_hash.h \
+  $(TOP)/ext/fts1/fts1_tokenizer.h
+
 
 # Header files used by the VDBE submodule
 #
