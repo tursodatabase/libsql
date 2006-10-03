@@ -1,5 +1,5 @@
-C Add\sthe\soption\sto\somit\soffset\sinformation\sfrom\sposting\slists\sin\sFTS1.\s(CVS\s3456)
-D 2006-10-03T11:42:29
+C Fix\ssqlite3_analyzer\sso\sthat\sit\sworks\son\sdatabases\scontaining\svirtual\stables.\s(CVS\s3457)
+D 2006-10-03T12:04:11
 F Makefile.in cabd42d34340f49260bc2a7668c38eba8d4cfd99
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -344,7 +344,7 @@ F tool/report1.txt 9eae07f26a8fc53889b45fc833a66a33daa22816
 F tool/showdb.c a086a3d788c7a23cb008317c3180ceb19f20bce0
 F tool/showjournal.c ec3b171be148656827c4949fbfb8ab4370822f87
 F tool/space_used.tcl f714c41a59e326b8b9042f415b628b561bafa06b
-F tool/spaceanal.tcl 9e134a264452e877bcf7dd3575d90f11fe9e2feb
+F tool/spaceanal.tcl 347bb735f9b69a0ef8fe42fe1f4bb8cab32e7f62
 F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
@@ -402,7 +402,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 6696bda11ccad9663b15206592116d638aa3ff0a
-R c692c93a2339c5abd4c2802c5af8a551
+P fdcea7b1ffd821f3f2b6d30997d3957f705a6d0c
+R 81dddf2194aea74488df4730be478210
 U drh
-Z 8d253c126c0d6e27101f1f52b6f86a2d
+Z 585d8713843cb5b87891d74845498e32

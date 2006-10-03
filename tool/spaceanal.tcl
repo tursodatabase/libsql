@@ -119,7 +119,8 @@ set pageSize [db eval {PRAGMA page_size}]
 # database, including the sqlite_master table.
 #
 set sql {
-  SELECT name, rootpage FROM sqlite_master WHERE type='table'
+  SELECT name, rootpage FROM sqlite_master
+   WHERE type='table' AND rootpage>0
   UNION ALL
   SELECT 'sqlite_master', 1
   ORDER BY 1
