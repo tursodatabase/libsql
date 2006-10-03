@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.273 2006/09/15 12:29:16 drh Exp $
+** @(#) $Id: pager.c,v 1.274 2006/10/03 19:05:19 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1341,6 +1341,10 @@ static int pager_playback(Pager *pPager){
           pPager->journalOff = szJ;
           break;
         }else{
+          /* If we are unable to rollback a hot journal, then the database
+          ** is probably not recoverable.  Return CORRUPT.
+          */
+          rc = SQLITE_CORRUPT;
           goto end_playback;
         }
       }

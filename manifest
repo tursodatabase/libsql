@@ -1,5 +1,5 @@
-C Add\sthe\sOS-X\slocking\sstyle\spatches\sto\sos_unix.c.\s\sDisabled\sby\sdefault.\s(CVS\s3459)
-D 2006-10-03T17:40:40
+C Report\sthe\serror\sSQLITE_CORRUPT\sinstead\sof\sSQLITE_IOERR\sif\sunable\nto\srollback\sa\shot\sjournal\sthat\swas\sdamaged\s(for\sexample)\sby\sfilesystem\ncorruption\sfollowing\sa\spower\sfailure.\s(CVS\s3460)
+D 2006-10-03T19:05:19
 F Makefile.in cabd42d34340f49260bc2a7668c38eba8d4cfd99
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -77,7 +77,7 @@ F src/os_unix.c a4fa8871c85e4daf90867c3f83fd1f1c36b80d60
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c 30e51641b0cb88826f25b2afcf8db3c83b7e45dd
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 0f966f7fa225c377da2021fbbfdd50a48d877000
+F src/pager.c a1293bb4d318cfa9fa7100a08c38ad5598cb4436
 F src/pager.h 0cff9de5e9019cb695a04d18df8caaaff933a272
 F src/parse.y 8c79a1debbd92a4f5609511e9bf0222de78f5ecb
 F src/pragma.c 2ef4353448e202961a22312f34695128bbb6d69a
@@ -402,7 +402,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P e774adce8e461a70ead9474cd64cb05c2d633eb9
-R be5163749e3494dd3070e73f09b149bd
+P f4103dea5e1a87adccccca715946e174d1cc7450
+R b823a4405d336e3437b697936d5ec2bd
 U drh
-Z 94788eecca344ef23c892ffd0544d511
+Z 59798d303c6fbc42955d097c88532f23
