@@ -583,7 +583,9 @@ set user_percent [percent $user_payload $file_bytes]
 # Output the summary statistics calculated above.
 #
 puts "/** Disk-Space Utilization Report For $file_to_analyze"
-puts "*** As of [clock format [clock seconds] -format {%Y-%b-%d %H:%M:%S}]"
+catch {
+  puts "*** As of [clock format [clock seconds] -format {%Y-%b-%d %H:%M:%S}]"
+}
 puts ""
 statline {Page size in bytes} $pageSize
 statline {Pages in the whole file (measured)} $file_pgcnt
