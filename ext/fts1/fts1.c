@@ -179,6 +179,18 @@ typedef enum DocListType {
   DL_POSITIONS_OFFSETS    /* docids + positions + offsets */
 } DocListType;
 
+/*
+** By default, positions and offsets are stored in the doclists.
+** To change this so that only positions are stored, compile
+** with
+**
+**          -DDL_DEFAULT=DL_POSITIONS
+**
+*/
+#ifndef DL_DEFAULT
+# define DL_DEFAULT DL_POSITIONS_OFFSETS
+#endif
+
 typedef struct DocList {
   char *pData;
   int nData;
@@ -273,18 +285,28 @@ static void docListAddPos(DocList *d, int iColumn, int iPos){
   appendVarint(d, POS_END);  /* add new terminator */
 }
 
-static void docListAddPosOffset(DocList *d, int iColumn, int iPos,
-                                int iStartOffset, int iEndOffset){
-  assert( d->iType==DL_POSITIONS_OFFSETS );
+/*
+** Add a position and starting and ending offsets to a doclist.
+**
+** If the doclist is setup to handle only positions, then insert
+** the position only and ignore the offsets.
+*/
+static void docListAddPosOffset(
+  DocList *d,             /* Doclist under construction */
+  int iColumn,            /* Column the inserted term is part of */
+  int iPos,               /* Position of the inserted term */
+  int iStartOffset,       /* Starting offset of inserted term */
+  int iEndOffset          /* Ending offset of inserted term */
+){
+  assert( d->iType>=DL_POSITIONS );
   addPos(d, iColumn, iPos);
-
-  assert( iStartOffset>=d->iLastOffset );
-  appendVarint(d, iStartOffset-d->iLastOffset);
-  d->iLastOffset = iStartOffset;
-
-  assert( iEndOffset>=iStartOffset );
-  appendVarint(d, iEndOffset-iStartOffset);
-
+  if( d->iType==DL_POSITIONS_OFFSETS ){
+    assert( iStartOffset>=d->iLastOffset );
+    appendVarint(d, iStartOffset-d->iLastOffset);
+    d->iLastOffset = iStartOffset;
+    assert( iEndOffset>=iStartOffset );
+    appendVarint(d, iEndOffset-iStartOffset);
+  }
   appendVarint(d, POS_END);  /* add new terminator */
 }
 
@@ -1299,7 +1321,7 @@ static int term_select(fulltext_vtab *v, const char *pTerm, int nTerm,
   if( rc!=SQLITE_ROW ) return rc;
 
   *rowid = sqlite3_column_int64(s, 0);
-  docListInit(out, DL_POSITIONS_OFFSETS,
+  docListInit(out, DL_DEFAULT,
               sqlite3_column_blob(s, 1), sqlite3_column_bytes(s, 1));
 
   /* We expect only one row.  We must execute another sqlite3_step()
@@ -1334,7 +1356,7 @@ static int term_select_all(
   rc = sqlite3_bind_text(s, 1, pTerm, nTerm, SQLITE_STATIC);
   if( rc!=SQLITE_OK ) return rc;
 
-  docListInit(&doclist, DL_POSITIONS_OFFSETS, 0, 0);
+  docListInit(&doclist, DL_DEFAULT, 0, 0);
 
   /* TODO(shess) Handle schema and busy errors. */
   while( (rc=sql_step_statement(v, TERM_SELECT_ALL_STMT, &s))==SQLITE_ROW ){
@@ -2917,7 +2939,7 @@ static int buildTerms(fulltext_vtab *v, fts1Hash *terms, sqlite_int64 iDocid,
 
     p = fts1HashFind(terms, pToken, nTokenBytes);
     if( p==NULL ){
-      p = docListNew(DL_POSITIONS_OFFSETS);
+      p = docListNew(DL_DEFAULT);
       docListAddDocid(p, iDocid);
       fts1HashInsert(terms, pToken, nTokenBytes, p);
     }
@@ -2944,7 +2966,7 @@ static int index_insert_term(fulltext_vtab *v, const char *pTerm, int nTerm,
 
   rc = term_select(v, pTerm, nTerm, iSegment, &iIndexRow, &doclist);
   if( rc==SQLITE_DONE ){
-    docListInit(&doclist, DL_POSITIONS_OFFSETS, 0, 0);
+    docListInit(&doclist, DL_DEFAULT, 0, 0);
     docListUpdate(&doclist, d);
     /* TODO(shess) Consider length(doclist)>CHUNK_MAX? */
     rc = term_insert(v, NULL, pTerm, nTerm, iSegment, &doclist);
