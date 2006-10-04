@@ -195,4 +195,6 @@ do_test trigger4-7.2 {
 
 integrity_check trigger4-99.9
 
+file delete -force trigtest.db trigtest.db-journal
+
 finish_test

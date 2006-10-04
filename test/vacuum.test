@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the VACUUM statement.
 #
-# $Id: vacuum.test,v 1.37 2006/01/11 14:09:32 danielk1977 Exp $
+# $Id: vacuum.test,v 1.38 2006/10/04 11:55:50 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -39,7 +39,7 @@ proc cksum {{db db}} {
   foreach prag {default_cache_size} {
     append txt $prag-[$db eval "PRAGMA $prag"]\n
   }
-  if 1 {
+  if 0 {
     global fcnt
     set fd [open dump$fcnt.txt w]
     puts -nonewline $fd $txt
@@ -354,5 +354,6 @@ ifcapable {autoinc} {
   } $::cksum
 }
 
+file delete -force {a'z.db}
 
 finish_test

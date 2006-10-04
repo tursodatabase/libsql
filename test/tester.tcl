@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.68 2006/09/15 12:29:16 drh Exp $
+# $Id: tester.tcl,v 1.69 2006/10/04 11:55:50 drh Exp $
 
 # Make sure tclsqlite3 was compiled correctly.  Abort now with an
 # error message if not.
@@ -171,6 +171,12 @@ proc finalize_testing {} {
   if {$sqlite_open_file_count} {
     puts "$sqlite_open_file_count files were left open"
     incr nErr
+  }
+  foreach f [glob -nocomplain test.db-*-journal] {
+    file delete -force $f
+  }
+  foreach f [glob -nocomplain test.db-mj*] {
+    file delete -force $f
   }
   exit [expr {$nErr>0}]
 }
