@@ -2366,13 +2366,12 @@ static void snippetText(
   int nMatch;
   int nDesired;
   StringBuffer sb;
-  int tailCol = -1;
-  int tailOffset = -1;
+  int tailCol;
+  int tailOffset;
   int iCol;
   int nDoc;
   const char *zDoc;
   int iStart, iEnd;
-  int wantEllipsis;
   int tailEllipsis = 0;
   int iMatch;
   
@@ -2398,6 +2397,8 @@ static void snippetText(
   }
 
   iMatch = 0;
+  tailCol = -1;
+  tailOffset = 0;
   for(i=0; i<nMatch && nDesired>0; i++){
     if( aMatch[i].snStatus!=SNIPPET_DESIRED ) continue;
     nDesired--;
@@ -2408,20 +2409,13 @@ static void snippetText(
     iStart = wordBoundary(iStart, zDoc, nDoc, aMatch, nMatch, iCol);
     if( iStart<=10 ){
       iStart = 0;
-      wantEllipsis = 0;
-    }else{
-      wantEllipsis = 1;
     }
     if( iCol==tailCol && iStart<=tailOffset+20 ){
       iStart = tailOffset;
-      wantEllipsis = 0;
-      tailEllipsis = 0;
     }
-    if( iCol!=tailCol || iStart!=tailOffset ){
+    if( (iCol!=tailCol && tailCol>=0) || iStart!=tailOffset ){
       trimWhiteSpace(&sb);
       appendWhiteSpace(&sb);
-    }
-    if( wantEllipsis || tailEllipsis ){
       append(&sb, zEllipsis);
       appendWhiteSpace(&sb);
     }

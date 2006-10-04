@@ -1,5 +1,5 @@
-C Fix\sUTF\sconversions\sfor\s-O2\son\sgcc\s4.1.1.\s\sTicket\s#2008.\s(CVS\s3464)
-D 2006-10-04T15:23:22
+C The\ssnippet\sgenerator\sadds\sellipsis\sbetween\stext\sfrom\sdifferent\scolumns.\s(CVS\s3465)
+D 2006-10-04T17:35:28
 F Makefile.in 4379c909d46b38b8c5db3533084601621d4f14b2
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -21,7 +21,7 @@ F ext/README.txt 913a7bd3f4837ab14d7e063304181787658b14e1
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
 F ext/fts1/ft_hash.c 3927bd880e65329bdc6f506555b228b28924921b
 F ext/fts1/ft_hash.h 1a35e654a235c2c662d3ca0dfc3138ad60b8b7d5
-F ext/fts1/fts1.c 6eca4867e4c4288747534e548ea0c8a7026afbfa
+F ext/fts1/fts1.c 37ba4a1cf2489e98491fa2767f9e75d87dbc318e
 F ext/fts1/fts1.h 6060b8f62c1d925ea8356cb1a6598073eb9159a6
 F ext/fts1/fts1_hash.c 3196cee866edbebb1c0521e21672e6d599965114
 F ext/fts1/fts1_hash.h 957d378355ed29f672cd5add012ce8b088a5e089
@@ -193,7 +193,7 @@ F test/fkey1.test 153004438d51e6769fb1ce165f6313972d6263ce
 F test/format4.test bf3bed3b13c63abfb3cfec232597a319a31d0bcc
 F test/fts1a.test 46090311f85da51bb33bd5ce84f7948359c6d8d7
 F test/fts1b.test 5d8a01aefbecc8b7442b36c94c05eb7a845462d5
-F test/fts1c.test 8790cc74bfc3141772f5cc0252dcdef20832f755
+F test/fts1c.test 85a525ce7428907469b4cce13d5563ce542ce64c
 F test/fts1d.test a73deace5c18df4a549b12908bade4f05dcf1a2f
 F test/fts1porter.test d86e9c3e0c7f8ff95add6582b4b585fb4e02b96d
 F test/func.test 0ed54b5aeaad319f68016c033acfebef56f5874a
@@ -402,7 +402,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P eef0ec0d7ae0743d29454567f539e46ad2d5008e
-R d5b9f813970a158cf400394eee3842a8
+P 86a08bb7c5da42fbeb5a026287d67912a2ffb7f1
+R c71cdbdbaa74de712bb1ae9465bd527d
 U drh
-Z 59839b6801d726e2458ae7f941423cf8
+Z f00b4a0381f58882003326222b2c2698
