@@ -1,5 +1,5 @@
-C The\ssnippet\sgenerator\sadds\sellipsis\sbetween\stext\sfrom\sdifferent\scolumns.\s(CVS\s3465)
-D 2006-10-04T17:35:28
+C Fix\sanother\sUTF\sconversion\sproblem\son\sx64.\s\sTicket\s#2008.\s(CVS\s3466)
+D 2006-10-05T11:43:53
 F Makefile.in 4379c909d46b38b8c5db3533084601621d4f14b2
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -110,7 +110,7 @@ F src/test_tclvar.c 315e77c17f128ff8c06b38c08617fd07c825a95b
 F src/tokenize.c dfdff21768fbedd40e8d3ca84fc5d0d7af2b46dd
 F src/trigger.c 74ccec784683232f89f3b4db34a089d8cace2058
 F src/update.c 951f95ef044cf6d28557c48dc35cb0711a0b9129
-F src/utf.c 297d21e9b235ea6e7c7cba639d8f3589c4d03b59
+F src/utf.c f467b4892a75f60d36ee933be83f5d7562c5290e
 F src/util.c 91d4cb189476906639ae611927d939691d1365f6
 F src/vacuum.c f958275b353bcc54776601582ea35ed427125a9d
 F src/vdbe.c 84a9c0b0dd037c064ffed651977e20dd9d2bc1d1
@@ -402,7 +402,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 86a08bb7c5da42fbeb5a026287d67912a2ffb7f1
-R c71cdbdbaa74de712bb1ae9465bd527d
+P 6cf1fb9f801dc1b2865c0d1f9afb1b2076d4246e
+R 9efea5ab827176e7a53488d909b0349f
 U drh
-Z f00b4a0381f58882003326222b2c2698
+Z 6e964b1c9b71675dfd75236c4b3a1fbe

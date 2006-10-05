@@ -12,7 +12,7 @@
 ** This file contains routines used to translate between UTF-8, 
 ** UTF-16, UTF-16BE, and UTF-16LE.
 **
-** $Id: utf.c,v 1.41 2006/10/04 15:23:22 drh Exp $
+** $Id: utf.c,v 1.42 2006/10/05 11:43:53 drh Exp $
 **
 ** Notes on UTF-8:
 **
@@ -556,7 +556,7 @@ void sqlite3utf16Substr(
 ** characters in each encoding are inverses of each other.
 */
 void sqlite3utfSelfTest(){
-  int i;
+  unsigned int i;
   unsigned char zBuf[20];
   unsigned char *z;
   int n;
