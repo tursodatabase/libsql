@@ -1371,7 +1371,7 @@ static int term_select_all(
     ** We could additionally drop elements when we see deletes, but
     ** that would require a distinct version of docListAccumulate().
     */
-    docListInit(&old, doclist.iType,
+    docListInit(&old, DL_DEFAULT,
                 sqlite3_column_blob(s, 0), sqlite3_column_bytes(s, 0));
 
     if( iColumn<v->nColumn ){   /* querying a single column */

@@ -1,5 +1,5 @@
-C Fix\sanother\sUTF\sconversion\sproblem\son\sx64.\s\sTicket\s#2008.\s(CVS\s3466)
-D 2006-10-05T11:43:53
+C Fix\sincorrect\sdoclist\sinitialization\sin\sterm_select_all().\ndocListRestrictColumn()\sgenerates\sa\sDL_POSITIONS\sdoclist,\swhich\smeans\nthat\safter\sthe\sfirst\sdoclist\sis\sprocessed,\sthe\ssecond\sdoclist\sis\ninitialized\sas\sDL_POSITIONS,\sbut\swith\sDL_POSITIONS_OFFSETS\sdata.\n(Note\sthat\sDL_DEFAULT\sis\snow\sDL_POSITIONS,\swhich\smasks\sthis\sbug.)\s(CVS\s3467)
+D 2006-10-05T21:48:56
 F Makefile.in 4379c909d46b38b8c5db3533084601621d4f14b2
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -21,7 +21,7 @@ F ext/README.txt 913a7bd3f4837ab14d7e063304181787658b14e1
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
 F ext/fts1/ft_hash.c 3927bd880e65329bdc6f506555b228b28924921b
 F ext/fts1/ft_hash.h 1a35e654a235c2c662d3ca0dfc3138ad60b8b7d5
-F ext/fts1/fts1.c 37ba4a1cf2489e98491fa2767f9e75d87dbc318e
+F ext/fts1/fts1.c fc8ce4713c32ec013eddba7fda9b661556bbe0c5
 F ext/fts1/fts1.h 6060b8f62c1d925ea8356cb1a6598073eb9159a6
 F ext/fts1/fts1_hash.c 3196cee866edbebb1c0521e21672e6d599965114
 F ext/fts1/fts1_hash.h 957d378355ed29f672cd5add012ce8b088a5e089
@@ -402,7 +402,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 6cf1fb9f801dc1b2865c0d1f9afb1b2076d4246e
-R 9efea5ab827176e7a53488d909b0349f
-U drh
-Z 6e964b1c9b71675dfd75236c4b3a1fbe
+P d16523e555afa1e6e89409f614fd665261fa3865
+R 895b4b138542723e01540e6597db54e9
+U shess
+Z 86792b975cde027833bca5b3fe682bf1
