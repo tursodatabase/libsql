@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test8.c,v 1.42 2006/09/11 00:34:22 drh Exp $
+** $Id: test8.c,v 1.43 2006/10/08 18:56:57 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -653,11 +653,12 @@ static int echoBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
   for(ii=0; ii<pIdxInfo->nConstraint; ii++){
     const struct sqlite3_index_constraint *pConstraint;
     struct sqlite3_index_constraint_usage *pUsage;
+    int iCol;
 
     pConstraint = &pIdxInfo->aConstraint[ii];
     pUsage = &pIdxInfo->aConstraintUsage[ii];
 
-    int iCol = pConstraint->iColumn;
+    iCol = pConstraint->iColumn;
     if( pVtab->aIndex[iCol] ){
       char *zCol = pVtab->aCol[iCol];
       char *zOp = 0;
@@ -762,8 +763,8 @@ int echoUpdate(
 
   /* If apData[0] is an integer and nData>1 then do an UPDATE */
   if( nData>1 && sqlite3_value_type(apData[0])==SQLITE_INTEGER ){
-    z = sqlite3_mprintf("UPDATE %Q", pVtab->zTableName);
     char *zSep = " SET";
+    z = sqlite3_mprintf("UPDATE %Q", pVtab->zTableName);
 
     bindArgOne = (apData[1] && sqlite3_value_type(apData[1])==SQLITE_INTEGER);
     bindArgZero = 1;

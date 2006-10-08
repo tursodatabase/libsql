@@ -66,6 +66,14 @@ proc newsitem {date title text} {
   puts "<hr width=\"50%\">"
 }
 
+newsitem {2006-Oct-9} {Version 3.3.8} {
+  Version 3.3.8 adds support for full-text search using the 
+  <a href="http://www.sqlite.org/cvstrac/wiki?p=FtsOne">FTS1
+  module.</a>  There are also minor bug fixes.  Upgrade only if
+  you want to try out the new full-text search capabilities or if
+  you are having problems with 3.3.7.
+}
+
 newsitem {2006-Aug-12} {Version 3.3.7} {
   Version 3.3.7 includes support for loadable extensions and virtual
   tables.  But both features are still considered "beta" and their
@@ -103,4 +111,4 @@ puts {
 <p align="right"><a href="oldnews.html">Old news...</a></p>
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.142 2006/08/12 14:38:47 drh Exp $}
+footer {$Id: index.tcl,v 1.143 2006/10/08 18:56:57 drh Exp $}

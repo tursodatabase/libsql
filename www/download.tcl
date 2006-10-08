@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the download.html file.
 #
-set rcsid {$Id: download.tcl,v 1.22 2005/09/17 19:28:46 drh Exp $}
+set rcsid {$Id: download.tcl,v 1.23 2006/10/08 18:56:57 drh Exp $}
 source common.tcl
 header {SQLite Download Page}
 
@@ -11,9 +11,10 @@ puts {
 }
 
 proc Product {pattern desc} {
-  regsub VERSION $pattern {([0-9][0-9a-z._]+)} p2
-  set p2 [string map {* .*} $p2]
-  regsub VERSION $pattern {*} p3
+  regsub {V[23]} $pattern {*} p3
+  regsub V2 $pattern {(2[0-9a-z._]+)} pattern
+  regsub V3 $pattern {(3[0-9a-z._]+)} pattern
+  set p2 [string map {* .*} $pattern]
   set flist [glob -nocomplain $p3]
   foreach file [lsort -dict $flist] {
     if {![regexp ^$p2\$ $file all version]} continue
@@ -43,73 +44,86 @@ proc Heading {title} {
 
 Heading {Precompiled Binaries for Linux}
 
-Product sqlite3-VERSION.bin.gz {
-  A command-line program for accessing and modifing
+Product sqlite3-V3.bin.gz {
+  A command-line program for accessing and modifying
+  SQLite version 3.* databases.
+  See <a href="sqlite.html">the documentation</a> for additional information.
+}
+
+Product sqlite-V3.bin.gz {
+  A command-line program for accessing and modifying
   SQLite databases.
   See <a href="sqlite.html">the documentation</a> for additional information.
 }
 
-Product sqlite-VERSION.bin.gz {
-  A command-line program for accessing and modifing
-  SQLite databases.
-  See <a href="sqlite.html">the documentation</a> for additional information.
-}
-
-Product tclsqlite-VERSION.so.gz {
-  Bindings for TCL.  You can import this shared library into either
+Product tclsqlite-V3.so.gz {
+  Bindings for <a href="http://www.tcl.tk/">Tcl/Tk</a>.
+  You can import this shared library into either
   tclsh or wish to get SQLite database access from Tcl/Tk.
   See <a href="tclsqlite.html">the documentation</a> for details.
 }
 
-Product sqlite-VERSION.so.gz {
-  A precompiled shared-library for Linux.  This is the same as
-  <b>tclsqlite.so.gz</b> but without the TCL bindings.
+Product sqlite-V3.so.gz {
+  A precompiled shared-library for Linux without the TCL bindings.
 }
 
-Product sqlite-devel-VERSION-1.i386.rpm {
+Product fts1-V3.so.gz {
+  A precompiled 
+  <a href="http://www.sqlite.org/cvstrac/wiki?p=FtsOne">FTS Module</a> 
+  for Linux.
+}
+
+Product sqlite-devel-V3.i386.rpm {
   RPM containing documentation, header files, and static library for
   SQLite version VERSION.
 }
-Product sqlite-VERSION-1.i386.rpm {
+Product sqlite-V3-1.i386.rpm {
   RPM containing shared libraries and the <b>sqlite</b> command-line
   program for SQLite version VERSION.
 }
 
-Product sqlite*_analyzer-VERSION.bin.gz {
+Product sqlite*_analyzer-V3.bin.gz {
   An analysis program for database files compatible with SQLite 
-  version VERSION.
+  version VERSION and later.
 }
 
 Heading {Precompiled Binaries For Windows}
 
-Product sqlite-VERSION.zip {
+Product sqlite-V3.zip {
   A command-line program for accessing and modifing SQLite databases.
   See <a href="sqlite.html">the documentation</a> for additional information.
 }
-Product tclsqlite-VERSION.zip {
-  Bindings for TCL.  You can import this shared library into either
+Product tclsqlite-V3.zip {
+  Bindings for <a href="http://www.tcl.tk/">Tcl/Tk</a>.
+  You can import this shared library into either
   tclsh or wish to get SQLite database access from Tcl/Tk.
   See <a href="tclsqlite.html">the documentation</a> for details.
 }
-Product sqlitedll-VERSION.zip {
+Product sqlitedll-V3.zip {
   This is a DLL of the SQLite library without the TCL bindings.
   The only external dependency is MSVCRT.DLL.
 }
 
-Product sqlite*_analyzer-VERSION.zip {
+Product fts1dll-V3.zip {
+  A precompiled 
+  <a href="http://www.sqlite.org/cvstrac/wiki?p=FtsOne">FTS Module</a> 
+  for win32.
+}
+
+Product sqlite*_analyzer-V3.zip {
   An analysis program for database files compatible with SQLite version
-  VERSION.
+  VERSION and later.
 }
 
 
 Heading {Source Code}
 
-Product {sqlite-VERSION.tar.gz} {
+Product {sqlite-V3.tar.gz} {
   A tarball of the complete source tree for SQLite version VERSION
   including all of the documentation.
 }
 
-Product {sqlite-source-VERSION.zip} {
+Product {sqlite-source-V3.zip} {
   This ZIP archive contains pure C source code for the SQLite library.
   Unlike the tarballs below, all of the preprocessing and automatic
   code generation has already been done on these C source code, so they
@@ -118,23 +132,47 @@ Product {sqlite-source-VERSION.zip} {
   MS-Windows users who lack the build support infrastructure of Unix.
 }
 
-Product {sqlite-VERSION-tea.tar.gz} {
-  A tarball of proprocessed source code together with a 
-  Tcl Extension Architecture (TEA) compatible configure script and
-  makefile.
+Product {sqlite-V3-tea.tar.gz} {
+  A tarball of proprocessed source code together with a
+  <a href="http://www.tcl.tk/doc/tea/">Tcl Extension Architecture (TEA)</a>
+  compatible configure script and makefile.
 }
 
-Product {sqlite-VERSION.src.rpm} {
+Product {sqlite-V3.src.rpm} {
   An RPM containing complete source code for SQLite version VERSION
 }
 
 Heading {Cross-Platform Binaries}
 
-Product {sqlite-VERSION.kit} {
+Product {sqlite-V3.kit} {
   A <a href="http://www.equi4.com/starkit.html">starkit</a> containing
   precompiled SQLite binaries and Tcl bindings for Linux-x86, Windows,
-  and Mac OS-X.
+  and Mac OS-X ppc and x86.
 }
+
+Heading {Historical Binaries And Source Code}
+
+Product sqlite-V2.bin.gz {
+  A command-line program for accessing and modifying
+  SQLite version 2.* databases on Linux-x86.
+}
+Product sqlite-V2.zip {
+  A command-line program for accessing and modifying 
+  SQLite version 2.* databases on win32.
+}
+
+Product sqlite*_analyzer-V2.bin.gz {
+  An analysis program for version 2.* database files on Linux-x86
+}
+Product sqlite*_analyzer-V2.zip {
+  An analysis program for version 2.* database files on win32.
+}
+Product {sqlite-source-V2.zip} {
+  This ZIP archive contains C source code for the SQLite library
+  version VERSION.
+}
+
+
 
 
 puts {

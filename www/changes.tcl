@@ -25,6 +25,21 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2006 October 9 (3.3.8)} {
+<li>Support for full text search using the
+<a href="http://www.sqlite.org/cvstrac/wiki?p=FullTextIndex">FTS1 module</a>
+(beta)</li>
+<li>Added OS-X locking patches (beta - disabled by default)</li>
+<li>Introduce extended error codes and add error codes for various
+kinds of I/O errors.</li>
+<li>Added support for IF EXISTS on CREATE/DROP TRIGGER/VIEW</li>
+<li>Fix the regression test suite so that it works with Tcl8.5</li>
+<li>Enhance sqlite3_set_authorizer() to provide notification of calls to
+    SQL functions.</li>
+<li>Added experimental API:  sqlite3_auto_extension()</li>
+<li>Various minor bug fixes</li>
+}
+
 chng {2006 August 12 (3.3.7)} {
 <li>Added support for
 <a href="http://www.sqlite.org/cvstrac/wiki?p=VirtualTables">virtual tables</a>
