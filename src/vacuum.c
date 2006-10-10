@@ -14,27 +14,13 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.63 2006/09/21 11:02:18 drh Exp $
+** $Id: vacuum.c,v 1.64 2006/10/10 13:07:36 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
 #include "os.h"
 
 #ifndef SQLITE_OMIT_VACUUM
-/*
-** Generate a random name of 20 character in length.
-*/
-static void randomName(unsigned char *zBuf){
-  static const unsigned char zChars[] =
-    "abcdefghijklmnopqrstuvwxyz"
-    "0123456789";
-  int i;
-  sqlite3Randomness(20, zBuf);
-  for(i=0; i<20; i++){
-    zBuf[i] = zChars[ zBuf[i]%(sizeof(zChars)-1) ];
-  }
-}
-
 /*
 ** Execute zSql on database db. Return an error code.
 */
@@ -92,14 +78,12 @@ void sqlite3Vacuum(Parse *pParse){
 */
 int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   int rc = SQLITE_OK;     /* Return code from service routines */
-  const char *zFilename;  /* full pathname of the database file */
-  int nFilename;          /* number of characters  in zFilename[] */
-  char *zTemp = 0;        /* a temporary file in same directory as zFilename */
   Btree *pMain;           /* The database being vacuumed */
-  Btree *pTemp;
-  char *zSql = 0;
-  int saved_flags;       /* Saved value of the db->flags */
-  Db *pDb = 0;           /* Database to detach at end of vacuum */
+  Btree *pTemp;           /* The temporary database we vacuum into */
+  char *zSql = 0;         /* SQL statements */
+  int saved_flags;        /* Saved value of the db->flags */
+  Db *pDb = 0;            /* Database to detach at end of vacuum */
+  char zTemp[SQLITE_TEMPNAME_SIZE+1];  /* Name of the TEMP file */
 
   /* Save the current value of the write-schema flag before setting it. */
   saved_flags = db->flags;
@@ -111,40 +95,8 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
     rc = SQLITE_ERROR;
     goto end_of_vacuum;
   }
-
-  /* Get the full pathname of the database file and create a
-  ** temporary filename in the same directory as the original file.
-  */
   pMain = db->aDb[0].pBt;
-  zFilename = sqlite3BtreeGetFilename(pMain);
-  assert( zFilename );
-  if( zFilename[0]=='\0' ){
-    /* The in-memory database. Do nothing. Return directly to avoid causing
-    ** an error trying to DETACH the vacuum_db (which never got attached)
-    ** in the exit-handler.
-    */
-    return SQLITE_OK;
-  }
-  nFilename = strlen(zFilename);
-  zTemp = sqliteMalloc( nFilename+100 );
-  if( zTemp==0 ){
-    rc = SQLITE_NOMEM;
-    goto end_of_vacuum;
-  }
-  strcpy(zTemp, zFilename);
-
-  /* The randomName() procedure in the following loop uses an excellent
-  ** source of randomness to generate a name from a space of 1.3e+31 
-  ** possibilities.  So unless the directory already contains on the order
-  ** of 1.3e+31 files, the probability that the following loop will
-  ** run more than once or twice is vanishingly small.  We are certain
-  ** enough that this loop will always terminate (and terminate quickly)
-  ** that we don't even bother to set a maximum loop count.
-  */
-  do {
-    zTemp[nFilename] = '-';
-    randomName((unsigned char*)&zTemp[nFilename+1]);
-  } while( sqlite3OsFileExists(zTemp) );
+  sqlite3OsTempFileName(zTemp);
 
   /* Attach the temporary database as 'vacuum_db'. The synchronous pragma
   ** can be set to 'off' for this file, as it is not recovered if a crash
@@ -307,10 +259,6 @@ end_of_vacuum:
     pDb->pSchema = 0;
   }
 
-  if( zTemp ){
-    sqlite3OsDelete(zTemp);
-    sqliteFree(zTemp);
-  }
   sqliteFree( zSql );
   sqlite3ResetInternalSchema(db, 0);
 
