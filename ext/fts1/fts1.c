@@ -50,14 +50,14 @@ typedef struct StringBuffer {
   char *s;      /* Content of the string */
 } StringBuffer;
 
-void initStringBuffer(StringBuffer *sb){
+static void initStringBuffer(StringBuffer *sb){
   sb->len = 0;
   sb->alloced = 100;
   sb->s = malloc(100);
   sb->s[0] = '\0';
 }
 
-void nappend(StringBuffer *sb, const char *zFrom, int nFrom){
+static void nappend(StringBuffer *sb, const char *zFrom, int nFrom){
   if( sb->len + nFrom >= sb->alloced ){
     sb->alloced = sb->len + nFrom + 100;
     sb->s = realloc(sb->s, sb->alloced+1);
@@ -70,7 +70,7 @@ void nappend(StringBuffer *sb, const char *zFrom, int nFrom){
   sb->len += nFrom;
   sb->s[sb->len] = 0;
 }
-void append(StringBuffer *sb, const char *zFrom){
+static void append(StringBuffer *sb, const char *zFrom){
   nappend(sb, zFrom, strlen(zFrom));
 }
 
@@ -1242,7 +1242,7 @@ static int content_update(fulltext_vtab *v, sqlite3_value **pValues,
   return sql_single_step_statement(v, CONTENT_UPDATE_STMT, &s);
 }
 
-void freeStringArray(int nString, const char **pString){
+static void freeStringArray(int nString, const char **pString){
   int i;
 
   for (i=0 ; i < nString ; ++i) {
@@ -1634,7 +1634,7 @@ static char **tokenizeString(const char *z, int *pnToken){
 **     [pqr]   becomes   pqr
 **     `mno`   becomes   mno
 */
-void dequoteString(char *z){
+static void dequoteString(char *z){
   int quote;
   int i, j;
   if( z==0 ) return;
@@ -1676,7 +1676,7 @@ void dequoteString(char *z){
 **     input:      delimiters ( '[' , ']' , '...' )
 **     output:     [ ] ...
 */
-void tokenListToIdList(char **azIn){
+static void tokenListToIdList(char **azIn){
   int i, j;
   if( azIn ){
     for(i=0, j=-1; azIn[i]; i++){
@@ -1753,7 +1753,7 @@ typedef struct TableSpec {
 /*
 ** Reclaim all of the memory used by a TableSpec
 */
-void clearTableSpec(TableSpec *p) {
+static void clearTableSpec(TableSpec *p) {
   free(p->azColumn);
   free(p->azContentColumn);
   free(p->azTokenizer);
@@ -1767,7 +1767,8 @@ void clearTableSpec(TableSpec *p) {
  * We return parsed information in a TableSpec structure.
  * 
  */
-int parseSpec(TableSpec *pSpec, int argc, const char *const*argv, char**pzErr){
+static int parseSpec(TableSpec *pSpec, int argc, const char *const*argv,
+                     char**pzErr){
   int i, j, n;
   char *z, *zDummy;
   char **azArg;
