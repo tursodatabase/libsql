@@ -1,5 +1,5 @@
-C VACUUM\snow\suses\sa\stemporary\sfile\sin\sthe\sofficial\sTEMP\sfolder\sinstead\sof\na\sfile\sin\sthe\ssame\sdirectory\sas\sthe\soriginal\sdatabase.\s(CVS\s3470)
-D 2006-10-10T13:07:36
+C Copy\sfts1/\sto\sfts2/,\schanging\sreference\sfrom\sfts1\sto\sfts2.\s\sFor\sfuture\nreference,\sthe\ssource\sversions\scopied\swere:\n\nREADME.txt\sr1.1\nfts1.c\sr1.37\nfts1.h\sr1.2\nfts1_hash.c\sr1.1\nfts1_hash.h\sr1.1\nfts1_porter.c\sr1.1\nfts1_tokenizer.h\sr1.4\nfts1_tokenizer1.c\sr1.6\s(CVS\s3471)
+D 2006-10-10T17:37:14
 F Makefile.in 4379c909d46b38b8c5db3533084601621d4f14b2
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -32,6 +32,14 @@ F ext/fts1/fulltext.c d935e600d87bc86b7d64f55c7520ea41d6034c5c
 F ext/fts1/fulltext.h 08525a47852d1d62a0be81d3fc3fe2d23b094efd
 F ext/fts1/simple_tokenizer.c 1844d72f7194c3fd3d7e4173053911bf0661b70d
 F ext/fts1/tokenizer.h 0c53421b832366d20d720d21ea3e1f6e66a36ef9
+F ext/fts2/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
+F ext/fts2/fts2.c 1052f03493701fd11abdc904efd3190915091bfe
+F ext/fts2/fts2.h bbdab26d34f91974d5b9ade8b7836c140a7c4ce1
+F ext/fts2/fts2_hash.c b3f22116d4ef0bc8f2da6e3fdc435c86d0951a9b
+F ext/fts2/fts2_hash.h e283308156018329f042816eb09334df714e105e
+F ext/fts2/fts2_porter.c 5602fce9579831a070356f8d1956705baf3f1279
+F ext/fts2/fts2_tokenizer.h 4c5ffe31d63622869eb6eec1503df7f6996fd1bd
+F ext/fts2/fts2_tokenizer1.c b26f0d2fae967fbe5722f82d08506d35f10ac4e7
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
 F main.mk 22acd3d279ec40ba6959af643ba25975fcfbdcc7
@@ -402,7 +410,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 0658bb9e3f57e6aff4745590821a0590abc815f6
-R 63ed7158b28b067d212c207cfe64406b
-U drh
-Z 3684897c97a0c2b8fc8841fe81c42ad8
+P b743429dd54e2dcae213ec1993e9e916a9ba678d
+R 3877f9d9a9169301026353cdbbc79a36
+U shess
+Z b8a5c53e502283405abefca3dadf33fe
