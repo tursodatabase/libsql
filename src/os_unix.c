@@ -2445,7 +2445,7 @@ static int allocateUnixFile(
   const char *zFilename,  /* Name of the file being opened */
   int delFlag             /* Delete-on-or-before-close flag */
 ){
-  sqlite3LockingStyle lockStyle;
+  sqlite3LockingStyle lockingStyle;
   unixFile *pNew;
   unixFile f;
   int rc;
@@ -2485,7 +2485,7 @@ static int allocateUnixFile(
     return SQLITE_NOMEM;
   }else{
     *pNew = f;
-    switch(lockStyle) {
+    switch(lockingStyle) {
       case afpLockingStyle:
         /* afp locking uses the file path so it needs to be included in
         ** the afpLockingContext */
