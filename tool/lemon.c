@@ -3166,7 +3166,7 @@ PRIVATE char *append_str(char *zText, int n, int p1, int p2){
   if( z==0 ) return "";
   while( n-- > 0 ){
     c = *(zText++);
-    if( c=='%' && zText[0]=='d' ){
+    if( c=='%' && n>0 && zText[0]=='d' ){
       sprintf(zInt, "%d", p1);
       p1 = p2;
       strcpy(&z[used], zInt);
