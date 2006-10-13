@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.321 2006/09/29 14:01:05 drh Exp $
+** $Id: select.c,v 1.322 2006/10/13 15:34:17 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2605,7 +2605,14 @@ int sqlite3SelectResolve(
     }
   }
 
-  return SQLITE_OK;
+  /* If this is one SELECT of a compound, be sure to resolve names
+  ** in the other SELECTs.
+  */
+  if( p->pPrior ){
+    return sqlite3SelectResolve(pParse, p->pPrior, pOuterNC);
+  }else{
+    return SQLITE_OK;
+  }
 }
 
 /*

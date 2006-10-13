@@ -10,7 +10,7 @@
 # focus of this file is testing compute SELECT statements and nested
 # views.
 #
-# $Id: select7.test,v 1.7 2005/03/29 03:11:00 danielk1977 Exp $
+# $Id: select7.test,v 1.8 2006/10/13 15:34:17 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -71,5 +71,39 @@ ifcapable subquery {
     }
   } [list 0 [execsql {SELECT * FROM sqlite_master ORDER BY name}]]
 }
-finish_test
 
+# Ticket #2018 - Make sure names are resolved correctly on all
+# SELECT statements of a compound subquery.
+#
+ifcapable {subquery && compound} {
+  do_test select7-4.1 {
+    execsql {
+      CREATE TABLE IF NOT EXISTS photo(pk integer primary key, x);
+      CREATE TABLE IF NOT EXISTS tag(pk integer primary key, fk int, name);
+    
+      SELECT P.pk from PHOTO P WHERE NOT EXISTS ( 
+           SELECT T2.pk from TAG T2 WHERE T2.fk = P.pk 
+           EXCEPT 
+           SELECT T3.pk from TAG T3 WHERE T3.fk = P.pk AND T3.name LIKE '%foo%'
+      );
+    }
+  } {}
+  do_test select7-4.2 {
+    execsql {
+      INSERT INTO photo VALUES(1,1);
+      INSERT INTO photo VALUES(2,2);
+      INSERT INTO photo VALUES(3,3);
+      INSERT INTO tag VALUES(11,1,'one');
+      INSERT INTO tag VALUES(12,1,'two');
+      INSERT INTO tag VALUES(21,1,'one-b');
+      SELECT P.pk from PHOTO P WHERE NOT EXISTS ( 
+           SELECT T2.pk from TAG T2 WHERE T2.fk = P.pk 
+           EXCEPT 
+           SELECT T3.pk from TAG T3 WHERE T3.fk = P.pk AND T3.name LIKE '%foo%'
+      );
+    }
+  } {2 3}
+
+}
+
+finish_test

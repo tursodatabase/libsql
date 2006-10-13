@@ -1,5 +1,5 @@
-C Avoid\sexpanding\s%d\scontained\sin\sthe\saction\sof\sa\slemon\sparser\srule.\nTicket\s#1063.\s\sThis\sis\sa\sfix\sfor\slemon\sonly.\s\sIt\sdoes\snot\seffect\sSQLite.\s(CVS\s3476)
-D 2006-10-13T12:25:30
+C Make\ssure\sthe\snames\sof\sall\sexpressions\sin\scompound\sSELECT\sstatements\sused\nas\ssubqueries\sare\scorrectly\sresolved.\s\sTicket\s#2018.\s(CVS\s3477)
+D 2006-10-13T15:34:17
 F Makefile.in 4379c909d46b38b8c5db3533084601621d4f14b2
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -92,7 +92,7 @@ F src/pragma.c 2ef4353448e202961a22312f34695128bbb6d69a
 F src/prepare.c 3d9a1bb0644e8bccb3b78cb0833d269719237f4e
 F src/printf.c b179b6ed12f793e028dd169e2e2e2b2a37eedc63
 F src/random.c d40f8d356cecbd351ccfab6eaedd7ec1b54f5261
-F src/select.c e247a5e1ea64dc3273a165549f0391fde8472f39
+F src/select.c 6ba6d8ead43d0575ce1f8b418cc039f8f301389a
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 1c17cd03c9cc2ff618435156038f508c159ecf12
 F src/sqlite.h.in bf935004029631fd93d119bcf2f7259b9cb9ad5e
@@ -272,7 +272,7 @@ F test/select3.test 33c78663e6b1b41220dcec4eb6affb1a05001ffe
 F test/select4.test 305ba0a6e97efc5544def5e5cb49b54e1bf87fd9
 F test/select5.test 0b47058d3e916c1fc9fe81f44b438e02bade21ce
 F test/select6.test a4e97b713b096f17414f50d078ec4efe7dc43253
-F test/select7.test 1bf795b948c133a15a2a5e99d3270e652ec58ce6
+F test/select7.test 95697d8e8355ef7538e2fe768da16838bbd0fcde
 F test/server1.test e328b8e641ba8fe9273132cfef497383185dc1f5
 F test/shared.test 0ed247941236788c255b3b29b5a82d5ca71b6432
 F test/shared2.test 8b48f8d33494413ef4cf250110d89403e2bf6b23
@@ -410,7 +410,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 7a08c6272f76d53b13313019b4f9da3c8f02b650
-R 72da244980a6657de96aa81c8ad2d32c
+P 81daedcf48372949b9df009ce6121a514ecf6f2e
+R 51a343f1ad7e509354c3abfdf659cea7
 U drh
-Z 11de7993c61aa0125c5ab72259d0a36b
+Z 333f96e3dffc96d0cf5e4ba951325035
