@@ -72,7 +72,6 @@ static int porterCreate(
   porter_tokenizer *t;
   int i;
 
-for(i=0; i<argc; i++) printf("argv[%d] = %s\n", i, argv[i]);
   t = (porter_tokenizer *) calloc(sizeof(porter_tokenizer), 1);
   *ppTokenizer = &t->base;
   return SQLITE_OK;
