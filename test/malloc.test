@@ -14,7 +14,7 @@
 # special feature is used to see what happens in the library if a malloc
 # were to really fail due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.35 2006/10/04 11:55:50 drh Exp $
+# $Id: malloc.test,v 1.36 2006/10/18 23:26:39 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -229,7 +229,10 @@ do_malloc_test 5 -sqlbody {
   CREATE TABLE t1(a,b);
   CREATE TABLE t2(x,y);
   CREATE TRIGGER r1 AFTER INSERT ON t1 BEGIN
-  INSERT INTO t2(x,y) VALUES(new.rowid,1);
+    INSERT INTO t2(x,y) VALUES(new.rowid,1);
+    UPDATE t2 SET y=y+1 WHERE x=new.rowid;
+    SELECT 123;
+    DELETE FROM t2 WHERE x=new.rowid;
   END;
   INSERT INTO t1(a,b) VALUES(2,3);
   COMMIT;
