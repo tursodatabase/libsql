@@ -12,7 +12,7 @@
 ** This file contains routines used to translate between UTF-8, 
 ** UTF-16, UTF-16BE, and UTF-16LE.
 **
-** $Id: utf.c,v 1.42 2006/10/05 11:43:53 drh Exp $
+** $Id: utf.c,v 1.43 2006/10/19 01:58:44 drh Exp $
 **
 ** Notes on UTF-8:
 **
@@ -64,7 +64,7 @@
 
 /*
 ** This table maps from the first byte of a UTF-8 character to the number
-** of trailing bytes expected. A value '255' indicates that the table key
+** of trailing bytes expected. A value '4' indicates that the table key
 ** is not a legal first byte for a UTF-8 character.
 */
 static const u8 xtra_utf8_bytes[256]  = {
@@ -79,10 +79,10 @@ static const u8 xtra_utf8_bytes[256]  = {
 0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
 
 /* 10wwwwww */
-255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+4, 4, 4, 4, 4, 4, 4, 4,     4, 4, 4, 4, 4, 4, 4, 4,
+4, 4, 4, 4, 4, 4, 4, 4,     4, 4, 4, 4, 4, 4, 4, 4,
+4, 4, 4, 4, 4, 4, 4, 4,     4, 4, 4, 4, 4, 4, 4, 4,
+4, 4, 4, 4, 4, 4, 4, 4,     4, 4, 4, 4, 4, 4, 4, 4,
 
 /* 110yyyyy */
 1, 1, 1, 1, 1, 1, 1, 1,     1, 1, 1, 1, 1, 1, 1, 1,
@@ -92,7 +92,7 @@ static const u8 xtra_utf8_bytes[256]  = {
 2, 2, 2, 2, 2, 2, 2, 2,     2, 2, 2, 2, 2, 2, 2, 2,
 
 /* 11110yyy */
-3, 3, 3, 3, 3, 3, 3, 3,     255, 255, 255, 255, 255, 255, 255, 255,
+3, 3, 3, 3, 3, 3, 3, 3,     4, 4, 4, 4, 4, 4, 4, 4,
 };
 
 /*
@@ -101,11 +101,24 @@ static const u8 xtra_utf8_bytes[256]  = {
 ** read by a naive implementation of a UTF-8 character reader. The code
 ** in the READ_UTF8 macro explains things best.
 */
-static const int xtra_utf8_bits[4] =  {
-0,
-12416,          /* (0xC0 << 6) + (0x80) */
-925824,         /* (0xE0 << 12) + (0x80 << 6) + (0x80) */
-63447168        /* (0xF0 << 18) + (0x80 << 12) + (0x80 << 6) + 0x80 */
+static const int xtra_utf8_bits[] =  {
+  0,
+  12416,          /* (0xC0 << 6) + (0x80) */
+  925824,         /* (0xE0 << 12) + (0x80 << 6) + (0x80) */
+  63447168        /* (0xF0 << 18) + (0x80 << 12) + (0x80 << 6) + 0x80 */
+};
+
+/*
+** If a UTF-8 character contains N bytes extra bytes (N bytes follow
+** the initial byte so that the total character length is N+1) then
+** masking the character with utf8_mask[N] must produce a non-zero
+** result.  Otherwise, we have an (illegal) overlong encoding.
+*/
+static const int utf_mask[] = {
+  0x00000000,
+  0xffffff80,
+  0xfffff800,
+  0xffff0000,
 };
 
 #define READ_UTF8(zIn, c) { \
@@ -113,11 +126,14 @@ static const int xtra_utf8_bits[4] =  {
   c = *(zIn)++;                                        \
   xtra = xtra_utf8_bytes[c];                           \
   switch( xtra ){                                      \
-    case 255: c = (int)0xFFFD; break;                  \
+    case 4: c = (int)0xFFFD; break;                    \
     case 3: c = (c<<6) + *(zIn)++;                     \
     case 2: c = (c<<6) + *(zIn)++;                     \
     case 1: c = (c<<6) + *(zIn)++;                     \
     c -= xtra_utf8_bits[xtra];                         \
+    if( (utf_mask[xtra]&c)==0                          \
+        || (c&0xFFFFF800)==0xD800                      \
+        || (c&0xFFFFFFFE)==0xFFFE ){  c = 0xFFFD; }    \
   }                                                    \
 }
 int sqlite3ReadUtf8(const unsigned char *z){
@@ -181,6 +197,7 @@ int sqlite3ReadUtf8(const unsigned char *z){
     int c2 = (*zIn++);                                                \
     c2 += ((*zIn++)<<8);                                              \
     c = (c2&0x03FF) + ((c&0x003F)<<10) + (((c&0x03C0)+0x0040)<<10);   \
+    if( (c & 0xFFFF0000)==0 ) c = 0xFFFD;                             \
   }                                                                   \
 }
 
@@ -191,6 +208,7 @@ int sqlite3ReadUtf8(const unsigned char *z){
     int c2 = ((*zIn++)<<8);                                           \
     c2 += (*zIn++);                                                   \
     c = (c2&0x03FF) + ((c&0x003F)<<10) + (((c&0x03C0)+0x0040)<<10);   \
+    if( (c & 0xFFFF0000)==0 ) c = 0xFFFD;                             \
   }                                                                   \
 }
 
@@ -556,7 +574,7 @@ void sqlite3utf16Substr(
 ** characters in each encoding are inverses of each other.
 */
 void sqlite3utfSelfTest(){
-  unsigned int i;
+  unsigned int i, t;
   unsigned char zBuf[20];
   unsigned char *z;
   int n;
@@ -568,7 +586,10 @@ void sqlite3utfSelfTest(){
     n = z-zBuf;
     z = zBuf;
     READ_UTF8(z, c);
-    assert( c==i );
+    t = i;
+    if( i>=0xD800 && i<=0xDFFF ) t = 0xFFFD;
+    if( (i&0xFFFFFFFE)==0xFFFE ) t = 0xFFFD;
+    assert( c==t );
     assert( (z-zBuf)==n );
   }
   for(i=0; i<0x00110000; i++){
