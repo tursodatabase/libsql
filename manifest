@@ -1,5 +1,5 @@
-C Version\s2.8.17\s(CVS\s2836)
-D 2005-12-19T17:56:44
+C Fix\sa\sbad\svariable\sreference.\s\sThe\sreference\sis\sactually\sin\sunreachable\ncode\sand\sis\stherefore\sharmless.\s\sThe\sfix\sis\sto\sremove\sthe\scode.\s(CVS\s3483)
+D 2006-10-24T11:26:44
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -61,7 +61,7 @@ F src/trigger.c a9927b57c865b6f3df3fb5e40c9824d722660ded
 F src/update.c bd391079138e67d09c9af34528ca4137c29242d1
 F src/util.c c2de22342aae2cc954d3c88ef40a2ece7cee6905
 F src/vacuum.c 12de02a8dec2b3f8d30ea496b66a0f989322a2c4
-F src/vdbe.c f78a26f5bbd647fac84c26e0a54b85361613a004
+F src/vdbe.c 59100995dae315d1c756a8a754b1dd1a228751d7
 F src/vdbe.h ac987945e4dd6f987bca534c6005899f089fc270
 F src/vdbeInt.h b40ff02ce39fd076e6ff3369e19c1bbfe1986682
 F src/vdbeaux.c 14ff0eb6ed9d5998f927433c91b0a3d13d81f4f6
@@ -133,7 +133,7 @@ F test/sort.test ba07b107c16070208e6aab3cadea66ba079d85ba
 F test/subselect.test f0fea8cf9f386d416d64d152e3c65f9116d0f50f
 F test/table.test 371a1fc1c470982b2f68f9732f903a5d96f949c4
 F test/tableapi.test e0c4cce61e58343caa84dab33fa6823cb35fe1e1
-F test/tclsqlite.test 109ed5fbfe23e24f49eff6984dfa8a6bed8b5281
+F test/tclsqlite.test 0089f84fc4f007d0d396f4d0c231d4c6dd99a48b
 F test/temptable.test a770ba6308d7f7332fce985086b8e06bed6430c2
 F test/tester.tcl 2f1d43df1311c9dc06acaa7a82e87bfea85dea5f
 F test/thread1.test 53f050d5be6932d9430df7756edd379366508ff6
@@ -191,7 +191,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 94dfb4bd5d037353dc96656ccee5477e78fbbe74
-R f503d5ef99582bb008dd05f09b924c9e
+P 50d7e50a96907eeb1705687f7e54ed993b7a47c2
+R c77ec6f24381efb80d29efe1f4d9fe81
 U drh
-Z 35ea82dc1a9d01c75d6d8ef41cc528dd
+Z ae06e605951ba4d71d40035420aba202

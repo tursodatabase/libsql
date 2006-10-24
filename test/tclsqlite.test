@@ -15,7 +15,7 @@
 # interface is pretty well tested.  This file contains some addition
 # tests for fringe issues that the main test suite does not cover.
 #
-# $Id: tclsqlite.test,v 1.20.2.1 2004/07/19 19:30:50 drh Exp $
+# $Id: tclsqlite.test,v 1.20.2.2 2006/10/24 11:26:44 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -89,6 +89,7 @@ if {[sqlite -encoding]=="iso8859" && [sqlite -tcl-uses-utf]} {
     execsql "CREATE TABLE t\251x(a int, b\306 float)"
     execsql "PRAGMA table_info(t\251x)"
   } "0 a int 0 {} 0 1 b\306 float 0 {} 0"
+  unset -nocomplain result
   do_test tcl-2.2 {
     execsql "INSERT INTO t\251x VALUES(1,2.3)"
     db eval "SELECT * FROM t\251x" result break
