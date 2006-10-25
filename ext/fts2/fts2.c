@@ -297,78 +297,37 @@ SQLITE_EXTENSION_INIT1
 # define TRACE(A)
 #endif
 
-/* utility functions */
+typedef enum DocListType {
+  DL_DOCIDS,              /* docids only */
+  DL_POSITIONS,           /* docids + positions */
+  DL_POSITIONS_OFFSETS    /* docids + positions + offsets */
+} DocListType;
 
-typedef struct StringBuffer {
-  int len;      /* length, not including null terminator */
-  int alloced;  /* Space allocated for s[] */ 
-  char *s;      /* Content of the string */
-} StringBuffer;
-
-static void initStringBuffer(StringBuffer *sb){
-  sb->len = 0;
-  sb->alloced = 100;
-  sb->s = malloc(100);
-  sb->s[0] = '\0';
-}
-
-static void nappend(StringBuffer *sb, const char *zFrom, int nFrom){
-  if( sb->len + nFrom >= sb->alloced ){
-    sb->alloced = sb->len + nFrom + 100;
-    sb->s = realloc(sb->s, sb->alloced+1);
-    if( sb->s==0 ){
-      initStringBuffer(sb);
-      return;
-    }
-  }
-  memcpy(sb->s + sb->len, zFrom, nFrom);
-  sb->len += nFrom;
-  sb->s[sb->len] = 0;
-}
-static void append(StringBuffer *sb, const char *zFrom){
-  nappend(sb, zFrom, strlen(zFrom));
-}
-
-/* Helper functions for certain common memory-allocation idioms:
+/*
+** By default, only positions and not offsets are stored in the doclists.
+** To change this so that offsets are stored too, compile with
 **
-** data_dup() - malloc+memcpy to duplicate a buffer
-** data_replace() - realloc+memcpy to dup a buffer over an existing buffer
-** data_append() - realloc+memcpy to append data to an existing buffer
-** data_append2() - shorthand for calling data_append() twice.
+**          -DDL_DEFAULT=DL_POSITIONS_OFFSETS
+**
+** If DL_DEFAULT is set to DL_DOCIDS, your table can only be inserted
+** into (no deletes or updates).
 */
-/* TODO(shess) There is a "block of binary data on the heap" construct
-** in here which could be shared with (at least) the StringBuffer and
-** DocList constructs.
+#ifndef DL_DEFAULT
+# define DL_DEFAULT DL_POSITIONS
+#endif
+
+enum {
+  POS_END = 0,        /* end of this position list */
+  POS_COLUMN,         /* followed by new column number */
+  POS_BASE
+};
+
+/* MERGE_COUNT controls how often we merge segments (see comment at
+** top of file).
 */
-static void data_replace(char **ppTarget, int *pnTarget,
-                         const char *pSource, int nSource){
-  *ppTarget = realloc(*ppTarget, nSource);
-  memcpy(*ppTarget, pSource, nSource);
-  *pnTarget = nSource;
-}
+#define MERGE_COUNT 16
 
-static void data_dup(char **ppTarget, int *pnTarget,
-                     const char *pSource, int nSource){
-  *ppTarget = malloc(nSource);
-  memcpy(*ppTarget, pSource, nSource);
-  *pnTarget = nSource;
-}
-
-static void data_append(char **ppTarget, int *pnTarget,
-                        const char *pSource, int nSource){
-  *ppTarget = realloc(*ppTarget, *pnTarget+nSource);
-  memcpy(*ppTarget+*pnTarget, pSource, nSource);
-  *pnTarget += nSource;
-}
-
-static void data_append2(char **ppTarget, int *pnTarget,
-                         const char *pSource1, int nSource1,
-                         const char *pSource2, int nSource2){
-  *ppTarget = realloc(*ppTarget, *pnTarget+nSource1+nSource2);
-  memcpy(*ppTarget+*pnTarget, pSource1, nSource1);
-  memcpy(*ppTarget+*pnTarget+nSource1, pSource2, nSource2);
-  *pnTarget += nSource1+nSource2;
-}
+/* utility functions */
 
 /* We may need up to VARINT_MAX bytes to store an encoded 64-bit integer. */
 #define VARINT_MAX 10
@@ -415,504 +374,732 @@ static int getVarint32(const char *p, int *pi){
  return ret;
 }
 
-typedef enum DocListType {
-  DL_DOCIDS,              /* docids only */
-  DL_POSITIONS,           /* docids + positions */
-  DL_POSITIONS_OFFSETS    /* docids + positions + offsets */
-} DocListType;
-
-/*
-** By default, only positions and not offsets are stored in the doclists.
-** To change this so that offsets are stored too, compile with
+/*******************************************************************/
+/* DataBuffer is used to collect data into a buffer in piecemeal
+** fashion.  It implements the usual distinction between amount of
+** data currently stored (nData) and buffer capacity (nCapacity).
 **
-**          -DDL_DEFAULT=DL_POSITIONS_OFFSETS
-**
-** If DL_DEFAULT is set to DL_DOCIDS, your table can only be inserted
-** into (no deletes or updates).
+** dataBufferInit - create a buffer with given initial capacity.
+** dataBufferReset - forget buffer's data, retaining capacity.
+** dataBufferDestroy - free buffer's data.
+** dataBufferExpand - expand capacity without adding data.
+** dataBufferAppend - append data.
+** dataBufferAppend2 - append two pieces of data at once.
+** dataBufferAppendLenData - append a varint-encoded length plus data.
+** dataBufferReplace - replace buffer's data.
 */
-#ifndef DL_DEFAULT
-# define DL_DEFAULT DL_POSITIONS
-#endif
+typedef struct DataBuffer {
+  char *pData;          /* Pointer to malloc'ed buffer. */
+  int nCapacity;        /* Size of pData buffer. */
+  int nData;            /* End of data loaded into pData. */
+} DataBuffer;
 
-typedef struct DocList {
-  char *pData;
-  int nData;
-  DocListType iType;
-  int iLastColumn;    /* the last column written */
-  int iLastPos;       /* the last position written */
-  int iLastOffset;    /* the last start offset written */
-} DocList;
-
-enum {
-  POS_END = 0,        /* end of this position list */
-  POS_COLUMN,         /* followed by new column number */
-  POS_BASE
-};
-
-/* TODO(shess) I think it might be time to refactor the doclist
-** manipulation.  Broadly put, there are four fairly discrete clients,
-** tokenization, insert-time segment merging, query-time segment
-** merging and query-time analysis.  The breakdown I think might be
-** reasonable would be:
-**
-** DocListReader - Wraps const char *pData, int nData.
-**   Used to traverse doclists
-** DocListWriter - Starts empty, can add complete doclist elements.
-**   Used in merging doclists.
-** DocBuilder - Used when tokenizing documents.
-*/
-
-static void docListCoreInit(DocList *d, DocListType iType,
-                            char *pData, int nData){
-  d->nData = nData;
-  d->pData = pData;
-  d->iType = iType;
-  d->iLastColumn = 0;
-  d->iLastPos = d->iLastOffset = 0;
+static void dataBufferInit(DataBuffer *pBuffer, int nCapacity){
+  assert( nCapacity>=0 );
+  pBuffer->nData = 0;
+  pBuffer->nCapacity = nCapacity;
+  pBuffer->pData = nCapacity==0 ? NULL : malloc(nCapacity);
 }
-
-/* Initialize a new DocList pointing to static data.  Don't call
-** docListDestroy() to release, just free(d) (if you originally
-** malloced d).
-*/
-static void docListStaticInit(DocList *d, DocListType iType,
-                              const char *pData, int nData){
-  docListCoreInit(d, iType, (char *)pData, nData);
+static void dataBufferReset(DataBuffer *pBuffer){
+  pBuffer->nData = 0;
 }
-
-/* Initialize a new DocList to hold a copy of the given data. */
-static void docListInit(DocList *d, DocListType iType,
-                        const char *pData, int nData){
-  char *p = 0;
-  if( nData>0 ){
-    p = malloc(nData);
-    memcpy(p, pData, nData);
-  }
-  docListCoreInit(d, iType, p, nData);
-}
-
-/* Create a new dynamically-allocated DocList. */
-static DocList *docListNew(DocListType iType){
-  DocList *d = (DocList *) malloc(sizeof(DocList));
-  docListInit(d, iType, 0, 0);
-  return d;
-}
-
-static void docListDestroy(DocList *d){
-  free(d->pData);
+static void dataBufferDestroy(DataBuffer *pBuffer){
+  if( pBuffer->pData!=NULL ) free(pBuffer->pData);
 #ifndef NDEBUG
-  memset(d, 0x55, sizeof(*d));
+  memset(pBuffer, 0x55, sizeof(*pBuffer));
 #endif
 }
-
-static void docListDelete(DocList *d){
-  docListDestroy(d);
-  free(d);
+static void dataBufferExpand(DataBuffer *pBuffer, int nAddCapacity){
+  assert( nAddCapacity>0 );
+  /* TODO(shess) Consider expanding more aggressively.  Note that the
+  ** underlying malloc implementation may take care of such things for
+  ** us already.
+  */
+  if( pBuffer->nData+nAddCapacity>pBuffer->nCapacity ){
+    pBuffer->nCapacity = pBuffer->nData+nAddCapacity;
+    pBuffer->pData = realloc(pBuffer->pData, pBuffer->nCapacity);
+  }
 }
-
-static char *docListEnd(DocList *d){
-  return d->pData + d->nData;
+static void dataBufferAppend(DataBuffer *pBuffer,
+                             const char *pSource, int nSource){
+  assert( nSource>0 && pSource!=NULL );
+  dataBufferExpand(pBuffer, nSource);
+  memcpy(pBuffer->pData+pBuffer->nData, pSource, nSource);
+  pBuffer->nData += nSource;
 }
-
-/* Append a varint to a DocList's data. */
-static void appendVarint(DocList *d, sqlite_int64 i){
+static void dataBufferAppend2(DataBuffer *pBuffer,
+                              const char *pSource1, int nSource1,
+                              const char *pSource2, int nSource2){
+  assert( nSource1>0 && pSource1!=NULL );
+  assert( nSource2>0 && pSource2!=NULL );
+  dataBufferExpand(pBuffer, nSource1+nSource2);
+  memcpy(pBuffer->pData+pBuffer->nData, pSource1, nSource1);
+  memcpy(pBuffer->pData+pBuffer->nData+nSource1, pSource2, nSource2);
+  pBuffer->nData += nSource1+nSource2;
+}
+static void dataBufferAppendLenData(DataBuffer *pBuffer,
+                                    const char *pSource, int nSource){
   char c[VARINT_MAX];
-  int n = putVarint(c, i);
-  d->pData = realloc(d->pData, d->nData + n);
-  memcpy(d->pData + d->nData, c, n);
-  d->nData += n;
+  int n = putVarint(c, nSource);
+  dataBufferAppend2(pBuffer, c, n, pSource, nSource);
+}
+static void dataBufferReplace(DataBuffer *pBuffer,
+                              const char *pSource, int nSource){
+  dataBufferReset(pBuffer);
+  dataBufferAppend(pBuffer, pSource, nSource);
 }
 
-static void docListAddDocid(DocList *d, sqlite_int64 iDocid){
-  appendVarint(d, iDocid);
-  if( d->iType>=DL_POSITIONS ){
-    appendVarint(d, POS_END);  /* initially empty position list */
-    d->iLastColumn = 0;
-    d->iLastPos = d->iLastOffset = 0;
+/* StringBuffer is a null-terminated version of DataBuffer. */
+typedef struct StringBuffer {
+  DataBuffer b;            /* Includes null terminator. */
+} StringBuffer;
+
+static void initStringBuffer(StringBuffer *sb){
+  dataBufferInit(&sb->b, 100);
+  dataBufferReplace(&sb->b, "", 1);
+}
+static int stringBufferLength(StringBuffer *sb){
+  return sb->b.nData-1;
+}
+static char *stringBufferData(StringBuffer *sb){
+  return sb->b.pData;
+}
+static void stringBufferDestroy(StringBuffer *sb){
+  dataBufferDestroy(&sb->b);
+}
+
+static void nappend(StringBuffer *sb, const char *zFrom, int nFrom){
+  assert( sb->b.nData>0 );
+  if( nFrom>0 ){
+    sb->b.nData--;
+    dataBufferAppend2(&sb->b, zFrom, nFrom, "", 1);
   }
 }
-
-/* helper function for docListAddPos and docListAddPosOffset */
-static void addPos(DocList *d, int iColumn, int iPos){
-  assert( d->nData>0 );
-  --d->nData;  /* remove previous terminator */
-  if( iColumn!=d->iLastColumn ){
-    assert( iColumn>d->iLastColumn );
-    appendVarint(d, POS_COLUMN);
-    appendVarint(d, iColumn);
-    d->iLastColumn = iColumn;
-    d->iLastPos = d->iLastOffset = 0;
-  }
-  assert( iPos>=d->iLastPos );
-  appendVarint(d, iPos-d->iLastPos+POS_BASE);
-  d->iLastPos = iPos;
+static void append(StringBuffer *sb, const char *zFrom){
+  nappend(sb, zFrom, strlen(zFrom));
 }
 
-/* Add a position to the last position list in a doclist. */
-static void docListAddPos(DocList *d, int iColumn, int iPos){
-  assert( d->iType==DL_POSITIONS );
-  addPos(d, iColumn, iPos);
-  appendVarint(d, POS_END);  /* add new terminator */
-}
-
-/*
-** Add a position and starting and ending offsets to a doclist.
-**
-** If the doclist is setup to handle only positions, then insert
-** the position only and ignore the offsets.
-*/
-static void docListAddPosOffset(
-  DocList *d,             /* Doclist under construction */
-  int iColumn,            /* Column the inserted term is part of */
-  int iPos,               /* Position of the inserted term */
-  int iStartOffset,       /* Starting offset of inserted term */
-  int iEndOffset          /* Ending offset of inserted term */
-){
-  assert( d->iType>=DL_POSITIONS );
-  addPos(d, iColumn, iPos);
-  if( d->iType==DL_POSITIONS_OFFSETS ){
-    assert( iStartOffset>=d->iLastOffset );
-    appendVarint(d, iStartOffset-d->iLastOffset);
-    d->iLastOffset = iStartOffset;
-    assert( iEndOffset>=iStartOffset );
-    appendVarint(d, iEndOffset-iStartOffset);
-  }
-  appendVarint(d, POS_END);  /* add new terminator */
-}
-
-/*
-** A DocListReader object is a cursor into a doclist.  Initialize
-** the cursor to the beginning of the doclist by calling readerInit().
-** Then use routines
-**
-**      peekDocid()
-**      readDocid()
-**      readPosition()
-**      skipPositionList()
-**      and so forth...
-**
-** to read information out of the doclist.  When we reach the end
-** of the doclist, atEnd() returns TRUE.
-*/
-typedef struct DocListReader {
-  DocList *pDoclist;  /* The document list we are stepping through */
-  char *p;            /* Pointer to next unread byte in the doclist */
-  int iLastColumn;
-  int iLastPos;  /* the last position read, or -1 when not in a position list */
-} DocListReader;
-
-/*
-** Initialize the DocListReader r to point to the beginning of pDoclist.
-*/
-static void readerInit(DocListReader *r, DocList *pDoclist){
-  r->pDoclist = pDoclist;
-  if( pDoclist!=NULL ){
-    r->p = pDoclist->pData;
-  }
-  r->iLastColumn = -1;
-  r->iLastPos = -1;
-}
-
-/*
-** Return TRUE if we have reached then end of pReader and there is
-** nothing else left to read.
-*/
-static int atEnd(DocListReader *pReader){
-  return pReader->pDoclist==0 || (pReader->p >= docListEnd(pReader->pDoclist));
-}
-
-/* Peek at the next docid without advancing the read pointer. 
-*/
-static sqlite_int64 peekDocid(DocListReader *pReader){
-  sqlite_int64 ret;
-  assert( !atEnd(pReader) );
-  assert( pReader->iLastPos==-1 );
-  getVarint(pReader->p, &ret);
-  return ret;
-}
-
-/* Read the next docid.   See also nextDocid().
-*/
-static sqlite_int64 readDocid(DocListReader *pReader){
-  sqlite_int64 ret;
-  assert( !atEnd(pReader) );
-  assert( pReader->iLastPos==-1 );
-  pReader->p += getVarint(pReader->p, &ret);
-  if( pReader->pDoclist->iType>=DL_POSITIONS ){
-    pReader->iLastColumn = 0;
-    pReader->iLastPos = 0;
-  }
-  return ret;
-}
-
-/* Read the next position and column index from a position list.
- * Returns the position, or -1 at the end of the list. */
-static int readPosition(DocListReader *pReader, int *iColumn){
+/* Append a list of strings separated by commas. */
+static void appendList(StringBuffer *sb, int nString, char **azString){
   int i;
-  int iType = pReader->pDoclist->iType;
-
-  if( pReader->iLastPos==-1 ){
-    return -1;
-  }
-  assert( !atEnd(pReader) );
-
-  if( iType<DL_POSITIONS ){
-    return -1;
-  }
-  pReader->p += getVarint32(pReader->p, &i);
-  if( i==POS_END ){
-    pReader->iLastColumn = pReader->iLastPos = -1;
-    *iColumn = -1;
-    return -1;
-  }
-  if( i==POS_COLUMN ){
-    pReader->p += getVarint32(pReader->p, &pReader->iLastColumn);
-    pReader->iLastPos = 0;
-    pReader->p += getVarint32(pReader->p, &i);
-    assert( i>=POS_BASE );
-  }
-  pReader->iLastPos += ((int) i)-POS_BASE;
-  if( iType>=DL_POSITIONS_OFFSETS ){
-    /* Skip over offsets, ignoring them for now. */
-    int iStart, iEnd;
-    pReader->p += getVarint32(pReader->p, &iStart);
-    pReader->p += getVarint32(pReader->p, &iEnd);
-  }
-  *iColumn = pReader->iLastColumn;
-  return pReader->iLastPos;
-}
-
-/* Skip past the end of a position list. */
-static void skipPositionList(DocListReader *pReader){
-  DocList *p = pReader->pDoclist;
-  if( p && p->iType>=DL_POSITIONS ){
-    int iColumn;
-    while( readPosition(pReader, &iColumn)!=-1 ){}
+  for(i=0; i<nString; ++i){
+    if( i>0 ) append(sb, ", ");
+    append(sb, azString[i]);
   }
 }
 
-/* Skip over a docid, including its position list if the doclist has
- * positions. */
-static void skipDocument(DocListReader *pReader){
-  readDocid(pReader);
-  skipPositionList(pReader);
+static int endsInWhiteSpace(StringBuffer *p){
+  return stringBufferLength(p)>0 &&
+    isspace(stringBufferData(p)[stringBufferLength(p)-1]);
 }
 
-/* Skip past all docids which are less than [iDocid].  Returns 1 if a docid
- * matching [iDocid] was found.  */
-static int skipToDocid(DocListReader *pReader, sqlite_int64 iDocid){
-  sqlite_int64 d = 0;
-  while( !atEnd(pReader) && (d=peekDocid(pReader))<iDocid ){
-    skipDocument(pReader);
+/* If the StringBuffer ends in something other than white space, add a
+** single space character to the end.
+*/
+static void appendWhiteSpace(StringBuffer *p){
+  if( stringBufferLength(p)==0 ) return;
+  if( !endsInWhiteSpace(p) ) append(p, " ");
+}
+
+/* Remove white space from the end of the StringBuffer */
+static void trimWhiteSpace(StringBuffer *p){
+  while( endsInWhiteSpace(p) ){
+    p->b.pData[--p->b.nData-1] = '\0';
   }
-  return !atEnd(pReader) && d==iDocid;
 }
 
-#ifdef SQLITE_DEBUG
-/*
-** This routine is used for debugging purpose only.
+/*******************************************************************/
+/* DLReader is used to read document elements from a doclist.  The
+** current docid is cached, so dlrDocid() is fast.  DLReader does not
+** own the doclist buffer.
 **
-** Write the content of a doclist to standard output.
+** dlrAtEnd - true if there's no more data to read.
+** dlrDocid - docid of current document.
+** dlrDocData - doclist data for current document (including docid).
+** dlrDocDataBytes - length of same.
+** dlrAllDataBytes - length of all remaining data.
+** dlrPosData - position data for current document.
+** dlrPosDataLen - length of pos data for current document (incl POS_END).
+** dlrStep - step to current document.
+** dlrInit - initial for doclist of given type against given data.
+** dlrDestroy - clean up.
+**
+** Expected usage is something like:
+**
+**   DLReader reader;
+**   dlrInit(&reader, pData, nData);
+**   while( !dlrAtEnd(&reader) ){
+**     // calls to dlrDocid() and kin.
+**     dlrStep(&reader);
+**   }
+**   dlrDestroy(&reader);
 */
-static void printDoclist(DocList *p){
-  DocListReader r;
-  const char *zSep = "";
+typedef struct DLReader {
+  DocListType iType;
+  const char *pData;
+  int nData;
 
-  readerInit(&r, p);
-  while( !atEnd(&r) ){
-    sqlite_int64 docid = readDocid(&r);
-    if( docid==0 ){
-      skipPositionList(&r);
-      continue;
-    }
-    printf("%s%lld", zSep, docid);
-    zSep =  ",";
-    if( p->iType>=DL_POSITIONS ){
-      int iPos, iCol;
-      const char *zDiv = "";
-      printf("(");
-      while( (iPos = readPosition(&r, &iCol))>=0 ){
-        printf("%s%d:%d", zDiv, iCol, iPos);
-        zDiv = ":";
-      }
-      printf(")");
-    }
-  }
-  printf("\n");
-  fflush(stdout);
+  sqlite_int64 iDocid;
+  int nElement;
+} DLReader;
+
+static int dlrAtEnd(DLReader *pReader){
+  assert( pReader->nData>=0 );
+  return pReader->nData==0;
 }
-#endif /* SQLITE_DEBUG */
-
-/* Trim the given doclist to contain only positions in column
- * [iRestrictColumn]. */
-static void docListRestrictColumn(DocList *in, int iRestrictColumn){
-  DocListReader r;
-  DocList out;
-
-  assert( in->iType>=DL_POSITIONS );
-  readerInit(&r, in);
-  docListInit(&out, DL_POSITIONS, NULL, 0);
-
-  while( !atEnd(&r) ){
-    sqlite_int64 iDocid = readDocid(&r);
-    int iPos, iColumn;
-
-    docListAddDocid(&out, iDocid);
-    while( (iPos = readPosition(&r, &iColumn)) != -1 ){
-      if( iColumn==iRestrictColumn ){
-        docListAddPos(&out, iColumn, iPos);
-      }
-    }
-  }
-
-  docListDestroy(in);
-  *in = out;
+static sqlite_int64 dlrDocid(DLReader *pReader){
+  assert( !dlrAtEnd(pReader) );
+  return pReader->iDocid;
 }
-
-/* Trim the given doclist by discarding any docids without any remaining
- * positions. */
-static void docListDiscardEmpty(DocList *in) {
-  DocListReader r;
-  DocList out;
-
-  /* TODO: It would be nice to implement this operation in place; that
-   * could save a significant amount of memory in queries with long doclists. */
-  assert( in->iType>=DL_POSITIONS );
-  readerInit(&r, in);
-  docListInit(&out, DL_POSITIONS, NULL, 0);
-
-  while( !atEnd(&r) ){
-    sqlite_int64 iDocid = readDocid(&r);
-    int match = 0;
-    int iPos, iColumn;
-    while( (iPos = readPosition(&r, &iColumn)) != -1 ){
-      if( !match ){
-        docListAddDocid(&out, iDocid);
-        match = 1;
-      }
-      docListAddPos(&out, iColumn, iPos);
-    }
-  }
-
-  docListDestroy(in);
-  *in = out;
+static const char *dlrDocData(DLReader *pReader){
+  assert( !dlrAtEnd(pReader) );
+  return pReader->pData;
 }
-
-/* Efficiently merge left and right into out, with duplicated docids
-** from right overwriting those in left (left is effectively older
-** than right).  The previous code had a memmove() which introduced an
-** O(N^2) into merges, while this code should be O(N).
+static int dlrDocDataBytes(DLReader *pReader){
+  assert( !dlrAtEnd(pReader) );
+  return pReader->nElement;
+}
+static int dlrAllDataBytes(DLReader *pReader){
+  assert( !dlrAtEnd(pReader) );
+  return pReader->nData;
+}
+/* TODO(shess) Consider adding a field to track iDocid varint length
+** to make these two functions faster.  This might matter (a tiny bit)
+** for queries.
 */
-static void docListMerge(DocList *out, DocList *left, DocList *right){
-  DocListReader leftReader, rightReader;
-  int iData = 0;
+static const char *dlrPosData(DLReader *pReader){
+  sqlite_int64 iDummy;
+  int n = getVarint(pReader->pData, &iDummy);
+  assert( !dlrAtEnd(pReader) );
+  return pReader->pData+n;
+}
+static int dlrPosDataLen(DLReader *pReader){
+  sqlite_int64 iDummy;
+  int n = getVarint(pReader->pData, &iDummy);
+  assert( !dlrAtEnd(pReader) );
+  return pReader->nElement-n;
+}
+static void dlrStep(DLReader *pReader){
+  assert( !dlrAtEnd(pReader) );
+
+  /* Skip past current doclist element. */
+  assert( pReader->nElement<=pReader->nData );
+  pReader->pData += pReader->nElement;
+  pReader->nData -= pReader->nElement;
+
+  /* If there is more data, read the next doclist element. */
+  if( pReader->nData!=0 ){
+    int iDummy, n = getVarint(pReader->pData, &pReader->iDocid);
+    if( pReader->iType>=DL_POSITIONS ){
+      assert( n<pReader->nData );
+      while( 1 ){
+        n += getVarint32(pReader->pData+n, &iDummy);
+        assert( n<=pReader->nData );
+        if( iDummy==POS_END ) break;
+        if( iDummy==POS_COLUMN ){
+          n += getVarint32(pReader->pData+n, &iDummy);
+          assert( n<pReader->nData );
+        }else if( pReader->iType==DL_POSITIONS_OFFSETS ){
+          n += getVarint32(pReader->pData+n, &iDummy);
+          n += getVarint32(pReader->pData+n, &iDummy);
+          assert( n<pReader->nData );
+        }
+      }
+    }
+    pReader->nElement = n;
+    assert( pReader->nElement<=pReader->nData );
+  }
+}
+static void dlrInit(DLReader *pReader, DocListType iType,
+                    const char *pData, int nData){
+  assert( pData!=NULL && nData!=0 );
+  pReader->iType = iType;
+  pReader->pData = pData;
+  pReader->nData = nData;
+  pReader->nElement = 0;
+  pReader->iDocid = 0;
+
+  /* Load the first element's data.  There must be a first element. */
+  dlrStep(pReader);
+}
+static void dlrDestroy(DLReader *pReader){
 #ifndef NDEBUG
-  /* Track these to make certain that every byte is processed. */
-  int nLeftProcessed = 0, nRightProcessed = 0;
+  memset(pReader, 0x55, sizeof(pReader));
+#endif
+}
+
+#ifndef NDEBUG
+/* Verify that the doclist can be validly decoded.  Also returns the
+** last docid found because it's convenient in other assertions for
+** DLWriter.
+*/
+static int docListValidate(DocListType iType, const char *pData, int nData,
+                           sqlite_int64 *pLastDocid){
+  int has_prevDocid = 0;
+  sqlite_int64 iPrevDocid;
+  assert( pData!=0 );
+  assert( nData!=0 );
+  while( nData!=0 ){
+    int n;
+    sqlite_int64 iDocid;
+    n = getVarint(pData, &iDocid);
+    assert( !has_prevDocid || iPrevDocid<iDocid );
+    has_prevDocid = 1;
+    iPrevDocid = iDocid;
+    if( iType>DL_DOCIDS ){
+      int iDummy;
+      while( 1 ){
+        n += getVarint32(pData+n, &iDummy);
+        if( iDummy==POS_END ) break;
+        if( iDummy==POS_COLUMN ){
+          n += getVarint32(pData+n, &iDummy);
+        }else if( iType>DL_POSITIONS ){
+          n += getVarint32(pData+n, &iDummy);
+          n += getVarint32(pData+n, &iDummy);
+        }
+        assert( n<=nData );
+      }
+    }
+    assert( n<=nData );
+    pData += n;
+    nData -= n;
+  }
+  assert( has_prevDocid );
+  if( pLastDocid ) *pLastDocid = iPrevDocid;
+  return 1;
+}
 #endif
 
-  assert( left->iType==right->iType );
-
-  /* Handle edge cases. */
-  /* TODO(shess) Consider simply forbidding edge cases, in the
-  ** interests of saving copies.
-  */
-  if( left->nData==0 ){
-    docListInit(out, right->iType, right->pData, right->nData);
-    return;
-  }else if(right->nData==0 ){
-    docListInit(out, left->iType, left->pData, left->nData);
-    return;
-  }
-  docListInit(out, left->iType, 0, 0);
-
-  /* At this time, the sum of the space of the inputs is a strict
-  ** upper bound.  *out can end up smaller if elements of *right
-  ** overwrite elements of *left, but never larger.
-  */
-  out->nData = left->nData+right->nData;
-  out->pData = malloc(out->nData);
-
-  readerInit(&leftReader, left);
-  readerInit(&rightReader, right);
-
-  while( !atEnd(&leftReader) && !atEnd(&rightReader) ){
-    sqlite_int64 iLeftDocid = peekDocid(&leftReader);
-    sqlite_int64 iRightDocid = peekDocid(&rightReader);
-    const char *pStart, *pEnd;
-
-    if( iLeftDocid<iRightDocid ){
-      /* Copy from *left where less than iRightDocid. */
-      pStart = leftReader.p;
-      skipToDocid(&leftReader, iRightDocid);
-      pEnd = leftReader.p;
+/*******************************************************************/
+/* DLWriter is used to write doclist data to a DataBuffer.  DLWriter
+** always appends to the buffer and does not own it.
+**
+** dlwInit - initialize to write a given type doclistto a buffer.
+** dlwDestroy - clear the writer's memory.  Does not free buffer.
+** dlwAppend - append raw doclist data to buffer.
+** dlwAdd - construct doclist element and append to buffer.
+*/
+/* TODO(shess) Modify to handle delta-encoding docids.  This should be
+** fairly simple.  The changes to dlwAdd() are obvious.  dlwAppend()
+** would need to decode the leading docid, rencode as a delta, and
+** copy the rest of the data (which would already be delta-encoded).
+** Note that this will require a change to pass the trailing docid.
+*/
+typedef struct DLWriter {
+  DocListType iType;
+  DataBuffer *b;
 #ifndef NDEBUG
-      nLeftProcessed += pEnd-pStart;
+  int has_prevDocid;
+  sqlite_int64 iPrevDocid;
 #endif
+} DLWriter;
+
+static void dlwInit(DLWriter *pWriter, DocListType iType, DataBuffer *b){
+  pWriter->b = b;
+  pWriter->iType = iType;
+#ifndef NDEBUG
+  pWriter->has_prevDocid = 0;
+  pWriter->iPrevDocid = 0;
+#endif
+}
+static void dlwDestroy(DLWriter *pWriter){
+#ifndef NDEBUG
+  memset(pWriter, 0x55, sizeof(pWriter));
+#endif
+}
+static void dlwAppend(DLWriter *pWriter,
+                      const char *pData, int nData){
+#ifndef NDEBUG
+  sqlite_int64 iDocid;
+  int n;
+  n = getVarint(pData, &iDocid);
+  assert( n<=nData );
+  assert( !pWriter->has_prevDocid || pWriter->iPrevDocid<iDocid );
+  assert( n<nData || pWriter->iType>DL_DOCIDS );
+  assert( docListValidate(pWriter->iType, pData, nData, &iDocid) );
+  pWriter->has_prevDocid = 1;
+  pWriter->iPrevDocid = iDocid;
+#endif
+  dataBufferAppend(pWriter->b, pData, nData);
+}
+static void dlwAdd(DLWriter *pWriter, sqlite_int64 iDocid,
+                   const char *pPosList, int nPosList){
+  char c[VARINT_MAX];
+  int n = putVarint(c, iDocid);
+
+  assert( !pWriter->has_prevDocid || pWriter->iPrevDocid<iDocid );
+  assert( pPosList==0 || pWriter->iType>DL_DOCIDS );
+
+  dataBufferAppend(pWriter->b, c, n);
+
+  if( pWriter->iType>DL_DOCIDS ){
+    n = putVarint(c, 0);
+    if( nPosList>0 ){
+      dataBufferAppend2(pWriter->b, pPosList, nPosList, c, n);
     }else{
-      /* Copy from *right where less than iLeftDocid, plus the element
-      ** matching iLeftDocid, if present.  Also drop the matching
-      ** element from *left.
-      */
-      pStart = rightReader.p;
-      if( skipToDocid(&rightReader, iLeftDocid) ){
-#ifndef NDEBUG
-        const char *pLeftStart = leftReader.p;
-#endif
-        skipDocument(&leftReader);
-        skipDocument(&rightReader);
-#ifndef NDEBUG
-        nLeftProcessed += leftReader.p-pLeftStart;
-#endif
-      }
-      pEnd = rightReader.p;
-#ifndef NDEBUG
-      nRightProcessed += pEnd-pStart;
-#endif
+      dataBufferAppend(pWriter->b, c, n);
     }
-    assert( pEnd>pStart );
-    assert( iData+pEnd-pStart<=out->nData );
-    memcpy(out->pData+iData, pStart, pEnd-pStart);
-    iData += pEnd-pStart;
   }
-
-  if( !atEnd(&leftReader) ){
-    int n = left->nData-(leftReader.p-left->pData);
-    assert( atEnd(&rightReader) );
-    memcpy(out->pData+iData, leftReader.p, n);
-    iData += n;
 #ifndef NDEBUG
-    nLeftProcessed += n;
+  pWriter->has_prevDocid = 1;
+  pWriter->iPrevDocid = iDocid;
 #endif
-  }else if( !atEnd(&rightReader) ){
-    int n = right->nData-(rightReader.p-right->pData);
-    memcpy(out->pData+iData, rightReader.p, n);
-    iData += n;
-#ifndef NDEBUG
-    nRightProcessed += n;
-#endif
-  }
-  out->nData = iData;
-  out->pData = realloc(out->pData, out->nData);
-
-  assert( nLeftProcessed==left->nData );
-  assert( nRightProcessed==right->nData );
 }
 
-/*
-** Read the next docid off of pIn.  Return 0 if we reach the end.
-*
-* TODO: This assumes that docids are never 0, but they may actually be 0 since
-* users can choose docids when inserting into a full-text table.  Fix this.
+/*******************************************************************/
+/* PLReader is used to read data from a document's position list.  As
+** the caller steps through the list, data is cached so that varints
+** only need to be decoded once.
+**
+** plrInit, plrDestroy - create/destroy a reader.
+** plrColumn, plrPosition, plrStartOffset, plrEndOffset - accessors
+** plrAtEnd - at end of stream, only call plrDestroy once true.
+** plrStep - step to the next element.
 */
-static sqlite_int64 nextDocid(DocListReader *pIn){
-  skipPositionList(pIn);
-  return atEnd(pIn) ? 0 : readDocid(pIn);
+typedef struct PLReader {
+  /* These refer to the next position's data.  nData will reach 0 when
+  ** reading the last position, so plrStep() signals EOF by setting
+  ** pData to NULL.
+  */
+  const char *pData;
+  int nData;
+
+  DocListType iType;
+  int iColumn;         /* the last column read */
+  int iPosition;       /* the last position read */
+  int iStartOffset;    /* the last start offset read */
+  int iEndOffset;      /* the last end offset read */
+} PLReader;
+
+static int plrAtEnd(PLReader *pReader){
+  return pReader->pData==NULL;
+}
+static int plrColumn(PLReader *pReader){
+  assert( !plrAtEnd(pReader) );
+  return pReader->iColumn;
+}
+static int plrPosition(PLReader *pReader){
+  assert( !plrAtEnd(pReader) );
+  return pReader->iPosition;
+}
+static int plrStartOffset(PLReader *pReader){
+  assert( !plrAtEnd(pReader) );
+  return pReader->iStartOffset;
+}
+static int plrEndOffset(PLReader *pReader){
+  assert( !plrAtEnd(pReader) );
+  return pReader->iEndOffset;
+}
+static void plrStep(PLReader *pReader){
+  int i, n;
+
+  assert( !plrAtEnd(pReader) );
+
+  if( pReader->nData==0 ){
+    pReader->pData = NULL;
+    return;
+  }
+
+  n = getVarint32(pReader->pData, &i);
+  if( i==POS_COLUMN ){
+    n += getVarint32(pReader->pData+n, &pReader->iColumn);
+    pReader->iPosition = 0;
+    pReader->iStartOffset = 0;
+    n += getVarint32(pReader->pData+n, &i);
+  }
+  /* Should never see adjacent column changes. */
+  assert( i!=POS_COLUMN );
+
+  if( i==POS_END ){
+    pReader->nData = 0;
+    pReader->pData = NULL;
+    return;
+  }
+
+  pReader->iPosition += i-POS_BASE;
+  if( pReader->iType==DL_POSITIONS_OFFSETS ){
+    n += getVarint32(pReader->pData+n, &i);
+    pReader->iStartOffset += i;
+    n += getVarint32(pReader->pData+n, &i);
+    pReader->iEndOffset = pReader->iStartOffset+i;
+  }
+  assert( n<=pReader->nData );
+  pReader->pData += n;
+  pReader->nData -= n;
 }
 
-/*
-** pLeft and pRight are two DocListReaders that are pointing to
-** positions lists of the same document: iDocid. 
+static void plrInit(PLReader *pReader, DocListType iType,
+                    const char *pData, int nData){
+  pReader->pData = pData;
+  pReader->nData = nData;
+  pReader->iType = iType;
+  pReader->iColumn = 0;
+  pReader->iPosition = 0;
+  pReader->iStartOffset = 0;
+  pReader->iEndOffset = 0;
+  plrStep(pReader);
+}
+static void plrDestroy(PLReader *pReader){
+#ifndef NDEBUG
+  memset(pReader, 0x55, sizeof(pReader));
+#endif
+}
+
+/*******************************************************************/
+/* PLWriter is used in constructing a document's position list.  As a
+** convenience, if iType is DL_DOCIDS, PLWriter becomes a no-op.
+**
+** plwInit - init for writing a document's poslist.
+** plwReset - reset the writer for a new document.
+** plwDestroy - clear a writer.
+** plwNew - malloc storage and initialize it.
+** plwDelete - clear and free storage.
+** plwDlwAdd - append the docid and poslist to a doclist writer.
+** plwAdd - append position and offset information.
+*/
+/* TODO(shess) PLWriter is used in two ways.  fulltextUpdate() uses it
+** in construction of a new doclist.  docListTrim() and mergePosList()
+** use it when trimming.  In the former case, it wants to own the
+** DataBuffer, in the latter it's possible it could encode into a
+** pre-existing DataBuffer.
+*/
+typedef struct PLWriter {
+  DataBuffer b;
+
+  sqlite_int64 iDocid;
+  DocListType iType;
+  int iColumn;    /* the last column written */
+  int iPos;       /* the last position written */
+  int iOffset;    /* the last start offset written */
+} PLWriter;
+
+static void plwDlwAdd(PLWriter *pWriter, DLWriter *dlWriter){
+  dlwAdd(dlWriter, pWriter->iDocid, pWriter->b.pData, pWriter->b.nData);
+}
+static void plwAdd(PLWriter *pWriter, int iColumn, int iPos,
+                   int iStartOffset, int iEndOffset){
+  /* Worst-case space for POS_COLUMN, iColumn, iPosDelta,
+  ** iStartOffsetDelta, and iEndOffsetDelta.
+  */
+  char c[5*VARINT_MAX];
+  int n = 0;
+
+  if( pWriter->iType==DL_DOCIDS ) return;
+
+  if( iColumn!=pWriter->iColumn ){
+    n += putVarint(c+n, POS_COLUMN);
+    n += putVarint(c+n, iColumn);
+    pWriter->iColumn = iColumn;
+    pWriter->iPos = 0;
+    pWriter->iOffset = 0;
+  }
+  assert( iPos>=pWriter->iPos );
+  n += putVarint(c+n, POS_BASE+(iPos-pWriter->iPos));
+  pWriter->iPos = iPos;
+  if( pWriter->iType==DL_POSITIONS_OFFSETS ){
+    assert( iStartOffset>=pWriter->iOffset );
+    n += putVarint(c+n, iStartOffset-pWriter->iOffset);
+    pWriter->iOffset = iStartOffset;
+    assert( iEndOffset>=iStartOffset );
+    n += putVarint(c+n, iEndOffset-iStartOffset);
+  }
+  dataBufferAppend(&pWriter->b, c, n);
+}
+static void plwReset(PLWriter *pWriter,
+                     sqlite_int64 iDocid, DocListType iType){
+  dataBufferReset(&pWriter->b);
+  pWriter->iDocid = iDocid;
+  pWriter->iType = iType;
+  pWriter->iColumn = 0;
+  pWriter->iPos = 0;
+  pWriter->iOffset = 0;
+}
+static void plwInit(PLWriter *pWriter, sqlite_int64 iDocid, DocListType iType){
+  dataBufferInit(&pWriter->b, 0);
+  plwReset(pWriter, iDocid, iType);
+}
+static PLWriter *plwNew(sqlite_int64 iDocid, DocListType iType){
+  PLWriter *pWriter = malloc(sizeof(PLWriter));
+  plwInit(pWriter, iDocid, iType);
+  return pWriter;
+}
+static void plwDestroy(PLWriter *pWriter){
+  dataBufferDestroy(&pWriter->b);
+#ifndef NDEBUG
+  memset(pWriter, 0x55, sizeof(pWriter));
+#endif
+}
+static void plwDelete(PLWriter *pWriter){
+  plwDestroy(pWriter);
+  free(pWriter);
+}
+
+
+/* Copy the doclist data of iType in pData/nData into *out, trimming
+** unnecessary data as we go.  Only columns matching iColumn are
+** copied, all columns copied if iColimn is -1.  Elements with no
+** matching columns are dropped.  The output is an iOutType doclist.
+*/
+static void docListTrim(DocListType iType, const char *pData, int nData,
+                        int iColumn, DocListType iOutType, DataBuffer *out){
+  DLReader dlReader;
+  DLWriter dlWriter;
+  PLWriter plWriter;
+
+  assert( iOutType<=iType );
+
+  dlrInit(&dlReader, iType, pData, nData);
+  dlwInit(&dlWriter, iOutType, out);
+  plwInit(&plWriter, 0, iOutType);
+
+  while( !dlrAtEnd(&dlReader) ){
+    PLReader plReader;
+    int match = 0;
+
+    plrInit(&plReader, dlReader.iType,
+            dlrPosData(&dlReader), dlrPosDataLen(&dlReader));
+    plwReset(&plWriter, dlrDocid(&dlReader), iOutType);
+
+    while( !plrAtEnd(&plReader) ){
+      if( iColumn==-1 || plrColumn(&plReader)==iColumn ){
+        match = 1;
+        plwAdd(&plWriter, plrColumn(&plReader), plrPosition(&plReader),
+               plrStartOffset(&plReader), plrEndOffset(&plReader));
+      }
+      plrStep(&plReader);
+    }
+    if( match ) plwDlwAdd(&plWriter, &dlWriter);
+
+    plrDestroy(&plReader);
+    dlrStep(&dlReader);
+  }
+  plwDestroy(&plWriter);
+  dlwDestroy(&dlWriter);
+  dlrDestroy(&dlReader);
+}
+
+/* Used by docListMerge() to keep doclists in the ascending order by
+** docid, then ascending order by age (so the newest comes first).
+*/
+typedef struct OrderedDLReader {
+  DLReader *pReader;
+
+  /* TODO(shess) If we assume that docListMerge pReaders is ordered by
+  ** age (which we do), then we could use pReader comparisons to break
+  ** ties.
+  */
+  int idx;
+} OrderedDLReader;
+
+/* Order eof to end, then by docid asc, idx desc. */
+static int orderedDLReaderCmp(OrderedDLReader *r1, OrderedDLReader *r2){
+  if( dlrAtEnd(r1->pReader) ){
+    if( dlrAtEnd(r2->pReader) ) return 0;  /* Both atEnd(). */
+    return 1;                              /* Only r1 atEnd(). */
+  }
+  if( dlrAtEnd(r2->pReader) ) return -1;   /* Only r2 atEnd(). */
+
+  if( dlrDocid(r1->pReader)<dlrDocid(r2->pReader) ) return -1;
+  if( dlrDocid(r1->pReader)>dlrDocid(r2->pReader) ) return 1;
+
+  /* Descending on idx. */
+  return r2->idx-r1->idx;
+}
+
+/* Bubble p[0] to appropriate place in p[1..n-1].  Assumes that
+** p[1..n-1] is already sorted.
+*/
+/* TODO(shess) Is this frequent enough to warrant a binary search?
+** Before implementing that, instrument the code to check.  In most
+** current usage, I expect that p[0] will be less than p[1] a very
+** high proportion of the time.
+*/
+static void orderedDLReaderReorder(OrderedDLReader *p, int n){
+  while( n>1 && orderedDLReaderCmp(p, p+1)>0 ){
+    OrderedDLReader tmp = p[0];
+    p[0] = p[1];
+    p[1] = tmp;
+    n--;
+    p++;
+  }
+}
+
+/* Given an array of doclist readers, merge their doclist elements
+** into out in sorted order (by docid), dropping elements from older
+** readers when there is a duplicate docid.  pReaders is assumed to be
+** ordered by age, oldest first.
+*/
+/* TODO(shess) nReaders must be <= MERGE_COUNT.  This should probably
+** be fixed.
+*/
+static void docListMerge(DataBuffer *out,
+                         DLReader *pReaders, int nReaders){
+  OrderedDLReader readers[MERGE_COUNT];
+  DLWriter writer;
+  int i, n;
+  const char *pStart = 0;
+  int nStart = 0;
+
+  assert( nReaders>0 );
+  if( nReaders==1 ){
+    dataBufferAppend(out, dlrDocData(pReaders), dlrAllDataBytes(pReaders));
+    return;
+  }
+
+  assert( nReaders<=MERGE_COUNT );
+  n = 0;
+  for(i=0; i<nReaders; i++){
+    assert( pReaders[i].iType==pReaders[0].iType );
+    readers[i].pReader = pReaders+i;
+    readers[i].idx = i;
+    n += dlrAllDataBytes(&pReaders[i]);
+  }
+  /* Conservatively size output to sum of inputs.  Output should end
+  ** up strictly smaller than input.
+  */
+  dataBufferExpand(out, n);
+
+  /* Get the readers into sorted order. */
+  while( i-->0 ){
+    orderedDLReaderReorder(readers+i, nReaders-i);
+  }
+
+  dlwInit(&writer, pReaders[0].iType, out);
+  while( !dlrAtEnd(readers[0].pReader) ){
+    sqlite_int64 iDocid = dlrDocid(readers[0].pReader);
+
+    /* If this is a continuation of the current buffer to copy, extend
+    ** that buffer.  memcpy() seems to be more efficient if it has a
+    ** lots of data to copy.
+    */
+    if( dlrDocData(readers[0].pReader)==pStart+nStart ){
+      nStart += dlrDocDataBytes(readers[0].pReader);
+    }else{
+      if( pStart!=0 ) dlwAppend(&writer, pStart, nStart);
+      pStart = dlrDocData(readers[0].pReader);
+      nStart = dlrDocDataBytes(readers[0].pReader);
+    }
+    dlrStep(readers[0].pReader);
+
+    /* Drop all of the older elements with the same docid. */
+    for(i=1; i<nReaders &&
+             !dlrAtEnd(readers[i].pReader) &&
+             dlrDocid(readers[i].pReader)==iDocid; i++){
+      dlrStep(readers[i].pReader);
+    }
+
+    /* Get the readers back into order. */
+    while( i-->0 ){
+      orderedDLReaderReorder(readers+i, nReaders-i);
+    }
+  }
+
+  /* Copy over any remaining elements. */
+  if( nStart>0 ) dlwAppend(&writer, pStart, nStart);
+  dlwDestroy(&writer);
+}
+
+/* pLeft and pRight are DLReaders positioned to the same docid.
 **
 ** If there are no instances in pLeft or pRight where the position
 ** of pLeft is one less than the position of pRight, then this
@@ -923,191 +1110,205 @@ static sqlite_int64 nextDocid(DocListReader *pIn){
 ** document record to pOut.  If pOut wants to hold positions, then
 ** include the positions from pRight that are one more than a
 ** position in pLeft.  In other words:  pRight.iPos==pLeft.iPos+1.
-**
-** pLeft and pRight are left pointing at the next document record.
 */
-static void mergePosList(
-  DocListReader *pLeft,    /* Left position list */
-  DocListReader *pRight,   /* Right position list */
-  sqlite_int64 iDocid,     /* The docid from pLeft and pRight */
-  DocList *pOut            /* Write the merged document record here */
-){
-  int iLeftCol, iLeftPos = readPosition(pLeft, &iLeftCol);
-  int iRightCol, iRightPos = readPosition(pRight, &iRightCol);
+static void mergePosList(DLReader *pLeft, DLReader *pRight, DLWriter *pOut){
+  PLReader left, right;
+  PLWriter writer;
   int match = 0;
 
-  /* Loop until we've reached the end of both position lists. */
-  while( iLeftPos!=-1 && iRightPos!=-1 ){
-    if( iLeftCol==iRightCol && iLeftPos+1==iRightPos ){
-      if( !match ){
-        docListAddDocid(pOut, iDocid);
-        match = 1;
-      }
-      if( pOut->iType>=DL_POSITIONS ){
-        docListAddPos(pOut, iRightCol, iRightPos);
-      }
-      iLeftPos = readPosition(pLeft, &iLeftCol);
-      iRightPos = readPosition(pRight, &iRightCol);
-    }else if( iRightCol<iLeftCol ||
-              (iRightCol==iLeftCol && iRightPos<iLeftPos+1) ){
-      iRightPos = readPosition(pRight, &iRightCol);
+  assert( dlrDocid(pLeft)==dlrDocid(pRight) );
+  assert( pOut->iType!=DL_POSITIONS_OFFSETS );
+
+  plrInit(&left, pLeft->iType, dlrPosData(pLeft), dlrPosDataLen(pLeft));
+  plrInit(&right, pRight->iType, dlrPosData(pRight), dlrPosDataLen(pRight));
+  plwInit(&writer, dlrDocid(pLeft), pOut->iType);
+
+  while( !plrAtEnd(&left) && !plrAtEnd(&right) ){
+    if( plrColumn(&left)<plrColumn(&right) ){
+      plrStep(&left);
+    }else if( plrColumn(&left)>plrColumn(&right) ){
+      plrStep(&right);
+    }else if( plrPosition(&left)+1<plrPosition(&right) ){
+      plrStep(&left);
+    }else if( plrPosition(&left)+1>plrPosition(&right) ){
+      plrStep(&right);
     }else{
-      iLeftPos = readPosition(pLeft, &iLeftCol);
+      match = 1;
+      plwAdd(&writer, plrColumn(&right), plrPosition(&right), 0, 0);
+      plrStep(&left);
+      plrStep(&right);
     }
   }
-  if( iLeftPos>=0 ) skipPositionList(pLeft);
-  if( iRightPos>=0 ) skipPositionList(pRight);
+
+  /* TODO(shess) We could remember the output position, encode the
+  ** docid, then encode the poslist directly into the output.  If no
+  ** match, we back out to the stored output position.  This would
+  ** also reduce the malloc count.
+  */
+  if( match ) plwDlwAdd(&writer, pOut);
+
+  plrDestroy(&left);
+  plrDestroy(&right);
+  plwDestroy(&writer);
 }
 
-/* We have two doclists:  pLeft and pRight.
+/* We have two doclists with positions:  pLeft and pRight.
 ** Write the phrase intersection of these two doclists into pOut.
 **
 ** A phrase intersection means that two documents only match
 ** if pLeft.iPos+1==pRight.iPos.
 **
-** The output pOut may or may not contain positions.  If pOut
-** does contain positions, they are the positions of pRight.
+** iType controls the type of data written to pOut.  If iType is
+** DL_POSITIONS, the positions are those from pRight.
 */
 static void docListPhraseMerge(
-  DocList *pLeft,    /* Doclist resulting from the words on the left */
-  DocList *pRight,   /* Doclist for the next word to the right */
-  DocList *pOut      /* Write the combined doclist here */
+  const char *pLeft, int nLeft,
+  const char *pRight, int nRight,
+  DocListType iType,
+  DataBuffer *pOut      /* Write the combined doclist here */
 ){
-  DocListReader left, right;
-  sqlite_int64 docidLeft, docidRight;
+  DLReader left, right;
+  DLWriter writer;
 
-  readerInit(&left, pLeft);
-  readerInit(&right, pRight);
-  docidLeft = nextDocid(&left);
-  docidRight = nextDocid(&right);
+  if( nLeft==0 || nRight==0 ) return;
 
-  while( docidLeft>0 && docidRight>0 ){
-    if( docidLeft<docidRight ){
-      docidLeft = nextDocid(&left);
-    }else if( docidRight<docidLeft ){
-      docidRight = nextDocid(&right);
+  assert( iType!=DL_POSITIONS_OFFSETS );
+
+  dlrInit(&left, DL_POSITIONS, pLeft, nLeft);
+  dlrInit(&right, DL_POSITIONS, pRight, nRight);
+  dlwInit(&writer, iType, pOut);
+
+  while( !dlrAtEnd(&left) && !dlrAtEnd(&right) ){
+    if( dlrDocid(&left)<dlrDocid(&right) ){
+      dlrStep(&left);
+    }else if( dlrDocid(&right)<dlrDocid(&left) ){
+      dlrStep(&right);
     }else{
-      mergePosList(&left, &right, docidLeft, pOut);
-      docidLeft = nextDocid(&left);
-      docidRight = nextDocid(&right);
+      mergePosList(&left, &right, &writer);
+      dlrStep(&left);
+      dlrStep(&right);
     }
   }
+
+  dlrDestroy(&left);
+  dlrDestroy(&right);
+  dlwDestroy(&writer);
 }
 
-/* We have two doclists:  pLeft and pRight.
-** Write the intersection of these two doclists into pOut.
-** Only docids are matched.  Position information is ignored.
-**
-** The output pOut never holds positions.
+/* We have two DL_DOCIDS doclists:  pLeft and pRight.
+** Write the intersection of these two doclists into pOut as a
+** DL_DOCIDS doclist.
 */
 static void docListAndMerge(
-  DocList *pLeft,    /* Doclist resulting from the words on the left */
-  DocList *pRight,   /* Doclist for the next word to the right */
-  DocList *pOut      /* Write the combined doclist here */
+  const char *pLeft, int nLeft,
+  const char *pRight, int nRight,
+  DataBuffer *pOut      /* Write the combined doclist here */
 ){
-  DocListReader left, right;
-  sqlite_int64 docidLeft, docidRight;
+  DLReader left, right;
+  DLWriter writer;
 
-  assert( pOut->iType<DL_POSITIONS );
+  if( nLeft==0 || nRight==0 ) return;
 
-  readerInit(&left, pLeft);
-  readerInit(&right, pRight);
-  docidLeft = nextDocid(&left);
-  docidRight = nextDocid(&right);
+  dlrInit(&left, DL_DOCIDS, pLeft, nLeft);
+  dlrInit(&right, DL_DOCIDS, pRight, nRight);
+  dlwInit(&writer, DL_DOCIDS, pOut);
 
-  while( docidLeft>0 && docidRight>0 ){
-    if( docidLeft<docidRight ){
-      docidLeft = nextDocid(&left);
-    }else if( docidRight<docidLeft ){
-      docidRight = nextDocid(&right);
+  while( !dlrAtEnd(&left) && !dlrAtEnd(&right) ){
+    if( dlrDocid(&left)<dlrDocid(&right) ){
+      dlrStep(&left);
+    }else if( dlrDocid(&right)<dlrDocid(&left) ){
+      dlrStep(&right);
     }else{
-      docListAddDocid(pOut, docidLeft);
-      docidLeft = nextDocid(&left);
-      docidRight = nextDocid(&right);
+      dlwAdd(&writer, dlrDocid(&left), 0, 0);
+      dlrStep(&left);
+      dlrStep(&right);
     }
   }
+
+  dlrDestroy(&left);
+  dlrDestroy(&right);
+  dlwDestroy(&writer);
 }
 
-/* We have two doclists:  pLeft and pRight.
-** Write the union of these two doclists into pOut.
-** Only docids are matched.  Position information is ignored.
-**
-** The output pOut never holds positions.
+/* We have two DL_DOCIDS doclists:  pLeft and pRight.
+** Write the union of these two doclists into pOut as a
+** DL_DOCIDS doclist.
 */
 static void docListOrMerge(
-  DocList *pLeft,    /* Doclist resulting from the words on the left */
-  DocList *pRight,   /* Doclist for the next word to the right */
-  DocList *pOut      /* Write the combined doclist here */
+  const char *pLeft, int nLeft,
+  const char *pRight, int nRight,
+  DataBuffer *pOut      /* Write the combined doclist here */
 ){
-  DocListReader left, right;
-  sqlite_int64 docidLeft, docidRight, priorLeft;
+  DLReader left, right;
+  DLWriter writer;
 
-  readerInit(&left, pLeft);
-  readerInit(&right, pRight);
-  docidLeft = nextDocid(&left);
-  docidRight = nextDocid(&right);
+  if( nLeft==0 ){
+    dataBufferAppend(pOut, pRight, nRight);
+    return;
+  }
+  if( nRight==0 ){
+    dataBufferAppend(pOut, pLeft, nLeft);
+    return;
+  }
 
-  while( docidLeft>0 && docidRight>0 ){
-    if( docidLeft<=docidRight ){
-      docListAddDocid(pOut, docidLeft);
+  dlrInit(&left, DL_DOCIDS, pLeft, nLeft);
+  dlrInit(&right, DL_DOCIDS, pRight, nRight);
+  dlwInit(&writer, DL_DOCIDS, pOut);
+
+  while( !dlrAtEnd(&left) || !dlrAtEnd(&right) ){
+    if( dlrAtEnd(&right) || dlrDocid(&left)<dlrDocid(&right) ){
+      dlwAdd(&writer, dlrDocid(&left), 0, 0);
+      dlrStep(&left);
+    }else if( dlrAtEnd(&left) || dlrDocid(&right)<dlrDocid(&left) ){
+      dlwAdd(&writer, dlrDocid(&right), 0, 0);
+      dlrStep(&right);
     }else{
-      docListAddDocid(pOut, docidRight);
-    }
-    priorLeft = docidLeft;
-    if( docidLeft<=docidRight ){
-      docidLeft = nextDocid(&left);
-    }
-    if( docidRight>0 && docidRight<=priorLeft ){
-      docidRight = nextDocid(&right);
+      dlwAdd(&writer, dlrDocid(&left), 0, 0);
+      dlrStep(&left);
+      dlrStep(&right);
     }
   }
-  while( docidLeft>0 ){
-    docListAddDocid(pOut, docidLeft);
-    docidLeft = nextDocid(&left);
-  }
-  while( docidRight>0 ){
-    docListAddDocid(pOut, docidRight);
-    docidRight = nextDocid(&right);
-  }
+
+  dlrDestroy(&left);
+  dlrDestroy(&right);
+  dlwDestroy(&writer);
 }
 
-/* We have two doclists:  pLeft and pRight.
-** Write into pOut all documents that occur in pLeft but not
-** in pRight.
-**
-** Only docids are matched.  Position information is ignored.
-**
-** The output pOut never holds positions.
+/* We have two DL_DOCIDS doclists:  pLeft and pRight.
+** Write into pOut as DL_DOCIDS doclist containing all documents that
+** occur in pLeft but not in pRight.
 */
 static void docListExceptMerge(
-  DocList *pLeft,    /* Doclist resulting from the words on the left */
-  DocList *pRight,   /* Doclist for the next word to the right */
-  DocList *pOut      /* Write the combined doclist here */
+  const char *pLeft, int nLeft,
+  const char *pRight, int nRight,
+  DataBuffer *pOut      /* Write the combined doclist here */
 ){
-  DocListReader left, right;
-  sqlite_int64 docidLeft, docidRight, priorLeft;
+  DLReader left, right;
+  DLWriter writer;
 
-  readerInit(&left, pLeft);
-  readerInit(&right, pRight);
-  docidLeft = nextDocid(&left);
-  docidRight = nextDocid(&right);
+  if( nLeft==0 ) return;
+  if( nRight==0 ){
+    dataBufferAppend(pOut, pLeft, nLeft);
+    return;
+  }
 
-  while( docidLeft>0 && docidRight>0 ){
-    priorLeft = docidLeft;
-    if( docidLeft<docidRight ){
-      docListAddDocid(pOut, docidLeft);
+  dlrInit(&left, DL_DOCIDS, pLeft, nLeft);
+  dlrInit(&right, DL_DOCIDS, pRight, nRight);
+  dlwInit(&writer, DL_DOCIDS, pOut);
+
+  while( !dlrAtEnd(&left) ){
+    while( !dlrAtEnd(&right) && dlrDocid(&right)<dlrDocid(&left) ){
+      dlrStep(&right);
     }
-    if( docidLeft<=docidRight ){
-      docidLeft = nextDocid(&left);
+    if( dlrAtEnd(&right) || dlrDocid(&left)<dlrDocid(&right) ){
+      dlwAdd(&writer, dlrDocid(&left), 0, 0);
     }
-    if( docidRight>0 && docidRight<=priorLeft ){
-      docidRight = nextDocid(&right);
-    }
+    dlrStep(&left);
   }
-  while( docidLeft>0 ){
-    docListAddDocid(pOut, docidLeft);
-    docidLeft = nextDocid(&left);
-  }
+
+  dlrDestroy(&left);
+  dlrDestroy(&right);
+  dlwDestroy(&writer);
 }
 
 static char *string_dup_n(const char *s, int n){
@@ -1305,11 +1506,6 @@ static const char *const fulltext_zStatement[MAX_STMT] = {
   /* SEGDIR_SELECT_ALL */ "select root from %_segdir order by level desc, idx",
 };
 
-/* MERGE_COUNT controls how often we merge segments (see comment at
-** top of file).
-*/
-#define MERGE_COUNT 16
-
 /*
 ** A connection to a fulltext index is an instance of the following
 ** structure.  The xCreate and xConnect methods create an instance
@@ -1353,7 +1549,8 @@ typedef struct fulltext_cursor {
   Query q;                         /* Parsed query string */
   Snippet snippet;                 /* Cached snippet for the current row */
   int iColumn;                     /* Column being searched */
-  DocListReader result;  /* used when iCursorType == QUERY_FULLTEXT */ 
+  DataBuffer result;               /* Doclist results from fulltextQuery */
+  DLReader reader;                 /* Result reader if result not empty */
 } fulltext_cursor;
 
 static struct fulltext_vtab *cursor_vtab(fulltext_cursor *c){
@@ -1361,15 +1558,6 @@ static struct fulltext_vtab *cursor_vtab(fulltext_cursor *c){
 }
 
 static const sqlite3_module fulltextModule;   /* forward declaration */
-
-/* Append a list of strings separated by commas to a StringBuffer. */
-static void appendList(StringBuffer *sb, int nString, char **azString){
-  int i;
-  for(i=0; i<nString; ++i){
-    if( i>0 ) append(sb, ", ");
-    append(sb, azString[i]);
-  }
-}
 
 /* Return a dynamically generated statement of the form
  *   insert into %_content (rowid, ...) values (?, ...)
@@ -1385,7 +1573,7 @@ static const char *contentInsertStatement(fulltext_vtab *v){
   for(i=0; i<v->nColumn; ++i)
     append(&sb, ", ?");
   append(&sb, ")");
-  return sb.s;
+  return stringBufferData(&sb);
 }
 
 /* Return a dynamically generated statement of the form
@@ -1406,7 +1594,7 @@ static const char *contentUpdateStatement(fulltext_vtab *v){
     append(&sb, " = ?");
   }
   append(&sb, " where rowid = ?");
-  return sb.s;
+  return stringBufferData(&sb);
 }
 
 /* Puts a freshly-prepared statement determined by iStmt in *ppStmt.
@@ -2369,8 +2557,8 @@ static int fulltextCreate(sqlite3 *db, void *pAux,
   append(&schema, "CREATE TABLE %_content(");
   appendList(&schema, spec.nColumn, spec.azContentColumn);
   append(&schema, ")");
-  rc = sql_exec(db, spec.zName, schema.s);
-  free(schema.s);
+  rc = sql_exec(db, spec.zName, stringBufferData(&schema));
+  stringBufferDestroy(&schema);
   if( rc!=SQLITE_OK ) goto out;
 
   rc = sql_exec(db, spec.zName, "create table %_segments(block blob);");
@@ -2638,8 +2826,8 @@ static void snippetOffsetText(Snippet *p){
     append(&sb, zBuf);
     cnt++;
   }
-  p->zOffset = sb.s;
-  p->nOffset = sb.len;
+  p->zOffset = stringBufferData(&sb);
+  p->nOffset = stringBufferLength(&sb);
 }
 
 /*
@@ -2685,25 +2873,6 @@ static int wordBoundary(
     }
   }
   return iBreak;
-}
-
-/*
-** If the StringBuffer does not end in white space, add a single
-** space character to the end.
-*/
-static void appendWhiteSpace(StringBuffer *p){
-  if( p->len==0 ) return;
-  if( isspace(p->s[p->len-1]) ) return;
-  append(p, " ");
-}
-
-/*
-** Remove white space from teh end of the StringBuffer
-*/
-static void trimWhiteSpace(StringBuffer *p){
-  while( p->len>0 && isspace(p->s[p->len-1]) ){
-    p->len--;
-  }
 }
 
 
@@ -2823,8 +2992,8 @@ static void snippetText(
     appendWhiteSpace(&sb);
     append(&sb, zEllipsis);
   }
-  pCursor->snippet.zSnippet = sb.s;
-  pCursor->snippet.nSnippet = sb.len;  
+  pCursor->snippet.zSnippet = stringBufferData(&sb);
+  pCursor->snippet.nSnippet = stringBufferLength(&sb);
 }
 
 
@@ -2838,8 +3007,9 @@ static int fulltextClose(sqlite3_vtab_cursor *pCursor){
   sqlite3_finalize(c->pStmt);
   queryClear(&c->q);
   snippetClear(&c->snippet);
-  if( c->result.pDoclist!=NULL ){
-    docListDelete(c->result.pDoclist);
+  if( c->result.nData!=0 ){
+    dlrDestroy(&c->reader);
+    dataBufferDestroy(&c->result);
   }
   free(c);
   return SQLITE_OK;
@@ -2847,7 +3017,6 @@ static int fulltextClose(sqlite3_vtab_cursor *pCursor){
 
 static int fulltextNext(sqlite3_vtab_cursor *pCursor){
   fulltext_cursor *c = (fulltext_cursor *) pCursor;
-  sqlite_int64 iDocid;
   int rc;
 
   TRACE(("FTS2 Next %p\n", pCursor));
@@ -2870,12 +3039,12 @@ static int fulltextNext(sqlite3_vtab_cursor *pCursor){
     rc = sqlite3_reset(c->pStmt);
     if( rc!=SQLITE_OK ) return rc;
 
-    iDocid = nextDocid(&c->result);
-    if( iDocid==0 ){
+    if( c->result.nData==0 || dlrAtEnd(&c->reader) ){
       c->eof = 1;
       return SQLITE_OK;
     }
-    rc = sqlite3_bind_int64(c->pStmt, 1, iDocid);
+    rc = sqlite3_bind_int64(c->pStmt, 1, dlrDocid(&c->reader));
+    dlrStep(&c->reader);
     if( rc!=SQLITE_OK ) return rc;
     /* TODO(shess) Handle SQLITE_SCHEMA AND SQLITE_BUSY. */
     rc = sqlite3_step(c->pStmt);
@@ -2894,40 +3063,48 @@ static int fulltextNext(sqlite3_vtab_cursor *pCursor){
 ** docListOfTerm().
 */
 static int termSelect(fulltext_vtab *v, int iColumn,
-                      const char *pTerm, int nTerm, DocList *out);
+                      const char *pTerm, int nTerm,
+                      DocListType iType, DataBuffer *out);
 
 /* Return a DocList corresponding to the query term *pTerm.  If *pTerm
 ** is the first term of a phrase query, go ahead and evaluate the phrase
 ** query and return the doclist for the entire phrase query.
 **
-** The result is stored in pTerm->doclist.
+** The resulting DL_DOCIDS doclist is stored in pResult, which is
+** overwritten.
 */
 static int docListOfTerm(
-  fulltext_vtab *v,     /* The full text index */
-  int iColumn,          /* column to restrict to.  No restrition if >=nColumn */
-  QueryTerm *pQTerm,    /* Term we are looking for, or 1st term of a phrase */
-  DocList **ppResult    /* Write the result here */
+  fulltext_vtab *v,   /* The full text index */
+  int iColumn,        /* column to restrict to.  No restriction if >=nColumn */
+  QueryTerm *pQTerm,  /* Term we are looking for, or 1st term of a phrase */
+  DataBuffer *pResult /* Write the result here */
 ){
-  DocList *pLeft, *pRight, *pNew;
+  DataBuffer left, right, new;
   int i, rc;
 
-  pLeft = docListNew(DL_POSITIONS);
-  rc = termSelect(v, iColumn, pQTerm->pTerm, pQTerm->nTerm, pLeft);
+  /* No phrase search if no position info. */
+  assert( pQTerm->nPhrase==0 || DL_DEFAULT!=DL_DOCIDS );
+
+  dataBufferInit(&left, 0);
+  rc = termSelect(v, iColumn, pQTerm->pTerm, pQTerm->nTerm,
+                  0<pQTerm->nPhrase ? DL_POSITIONS : DL_DOCIDS, &left);
   if( rc ) return rc;
-  for(i=1; i<=pQTerm->nPhrase; i++){
-    pRight = docListNew(DL_POSITIONS);
-    rc = termSelect(v, iColumn, pQTerm[i].pTerm, pQTerm[i].nTerm, pRight);
+  for(i=1; i<=pQTerm->nPhrase && left.nData>0; i++){
+    dataBufferInit(&right, 0);
+    rc = termSelect(v, iColumn, pQTerm[i].pTerm, pQTerm[i].nTerm,
+                    DL_POSITIONS, &right);
     if( rc ){
-      docListDelete(pLeft);
+      dataBufferDestroy(&left);
       return rc;
     }
-    pNew = docListNew(i<pQTerm->nPhrase ? DL_POSITIONS : DL_DOCIDS);
-    docListPhraseMerge(pLeft, pRight, pNew);
-    docListDelete(pLeft);
-    docListDelete(pRight);
-    pLeft = pNew;
+    dataBufferInit(&new, 0);
+    docListPhraseMerge(left.pData, left.nData, right.pData, right.nData,
+                       i<pQTerm->nPhrase ? DL_POSITIONS : DL_DOCIDS, &new);
+    dataBufferDestroy(&left);
+    dataBufferDestroy(&right);
+    left = new;
   }
-  *ppResult = pLeft;
+  *pResult = left;
   return SQLITE_OK;
 }
 
@@ -3092,19 +3269,22 @@ static int fulltextQuery(
   int iColumn,           /* Match against this column by default */
   const char *zInput,    /* The query string */
   int nInput,            /* Number of bytes in zInput[] */
-  DocList **pResult,     /* Write the result doclist here */
+  DataBuffer *pResult,   /* Write the result doclist here */
   Query *pQuery          /* Put parsed query string here */
 ){
   int i, iNext, rc;
-  DocList *pLeft = NULL;
-  DocList *pRight, *pNew, *pOr;
+  DataBuffer left, right, or, new;
   int nNot = 0;
   QueryTerm *aTerm;
 
+  /* TODO(shess) I think that the queryClear() calls below are not
+  ** necessary, because fulltextClose() already clears the query.
+  */
   rc = parseQuery(v, zInput, nInput, iColumn, pQuery);
   if( rc!=SQLITE_OK ) return rc;
 
   /* Merge AND terms. */
+  /* TODO(shess) I think we can early-exit if( i>nNot && left.nData==0 ). */
   aTerm = pQuery->pTerms;
   for(i = 0; i<pQuery->nTerms; i=iNext){
     if( aTerm[i].isNot ){
@@ -3114,36 +3294,39 @@ static int fulltextQuery(
       continue;
     }
     iNext = i + aTerm[i].nPhrase + 1;
-    rc = docListOfTerm(v, aTerm[i].iColumn, &aTerm[i], &pRight);
+    rc = docListOfTerm(v, aTerm[i].iColumn, &aTerm[i], &right);
     if( rc ){
+      if( i!=nNot ) dataBufferDestroy(&left);
       queryClear(pQuery);
       return rc;
     }
     while( iNext<pQuery->nTerms && aTerm[iNext].isOr ){
-      rc = docListOfTerm(v, aTerm[iNext].iColumn, &aTerm[iNext], &pOr);
+      rc = docListOfTerm(v, aTerm[iNext].iColumn, &aTerm[iNext], &or);
       iNext += aTerm[iNext].nPhrase + 1;
       if( rc ){
+        if( i!=nNot ) dataBufferDestroy(&left);
+        dataBufferDestroy(&right);
         queryClear(pQuery);
         return rc;
       }
-      pNew = docListNew(DL_DOCIDS);
-      docListOrMerge(pRight, pOr, pNew);
-      docListDelete(pRight);
-      docListDelete(pOr);
-      pRight = pNew;
+      dataBufferInit(&new, 0);
+      docListOrMerge(right.pData, right.nData, or.pData, or.nData, &new);
+      dataBufferDestroy(&right);
+      dataBufferDestroy(&or);
+      right = new;
     }
-    if( pLeft==0 ){
-      pLeft = pRight;
+    if( i==nNot ){           /* first term processed. */
+      left = right;
     }else{
-      pNew = docListNew(DL_DOCIDS);
-      docListAndMerge(pLeft, pRight, pNew);
-      docListDelete(pRight);
-      docListDelete(pLeft);
-      pLeft = pNew;
+      dataBufferInit(&new, 0);
+      docListAndMerge(left.pData, left.nData, right.pData, right.nData, &new);
+      dataBufferDestroy(&right);
+      dataBufferDestroy(&left);
+      left = new;
     }
   }
 
-  if( nNot && pLeft==0 ){
+  if( nNot==pQuery->nTerms ){
     /* We do not yet know how to handle a query of only NOT terms */
     return SQLITE_ERROR;
   }
@@ -3151,20 +3334,20 @@ static int fulltextQuery(
   /* Do the EXCEPT terms */
   for(i=0; i<pQuery->nTerms;  i += aTerm[i].nPhrase + 1){
     if( !aTerm[i].isNot ) continue;
-    rc = docListOfTerm(v, aTerm[i].iColumn, &aTerm[i], &pRight);
+    rc = docListOfTerm(v, aTerm[i].iColumn, &aTerm[i], &right);
     if( rc ){
       queryClear(pQuery);
-      docListDelete(pLeft);
+      dataBufferDestroy(&left);
       return rc;
     }
-    pNew = docListNew(DL_DOCIDS);
-    docListExceptMerge(pLeft, pRight, pNew);
-    docListDelete(pRight);
-    docListDelete(pLeft);
-    pLeft = pNew;
+    dataBufferInit(&new, 0);
+    docListExceptMerge(left.pData, left.nData, right.pData, right.nData, &new);
+    dataBufferDestroy(&right);
+    dataBufferDestroy(&left);
+    left = new;
   }
 
-  *pResult = pLeft;
+  *pResult = left;
   return rc;
 }
 
@@ -3215,13 +3398,15 @@ static int fulltextFilter(
     default:   /* full-text search */
     {
       const char *zQuery = (const char *)sqlite3_value_text(argv[0]);
-      DocList *pResult;
       assert( idxNum<=QUERY_FULLTEXT+v->nColumn);
       assert( argc==1 );
       queryClear(&c->q);
-      rc = fulltextQuery(v, idxNum-QUERY_FULLTEXT, zQuery, -1, &pResult, &c->q);
-      if( rc!=SQLITE_OK ) goto out;
-      readerInit(&c->result, pResult);
+      dataBufferInit(&c->result, 0);
+      rc = fulltextQuery(v, idxNum-QUERY_FULLTEXT, zQuery, -1, &c->result, &c->q);
+      if( rc!=SQLITE_OK ) return rc;
+      if( c->result.nData!=0 ){
+        dlrInit(&c->reader, DL_DOCIDS, c->result.pData, c->result.nData);
+      }
       break;
     }
   }
@@ -3295,7 +3480,7 @@ static int buildTerms(fulltext_vtab *v, fts2Hash *terms, sqlite_int64 iDocid,
                                                &pToken, &nTokenBytes,
                                                &iStartOffset, &iEndOffset,
                                                &iPosition) ){
-    DocList *p;
+    PLWriter *p;
 
     /* Positions can't be negative; we use -1 as a terminator internally. */
     if( iPosition<0 ){
@@ -3305,12 +3490,11 @@ static int buildTerms(fulltext_vtab *v, fts2Hash *terms, sqlite_int64 iDocid,
 
     p = fts2HashFind(terms, pToken, nTokenBytes);
     if( p==NULL ){
-      p = docListNew(DL_DEFAULT);
-      docListAddDocid(p, iDocid);
+      p = plwNew(iDocid, DL_DEFAULT);
       fts2HashInsert(terms, pToken, nTokenBytes, p);
     }
     if( iColumn>=0 ){
-      docListAddPosOffset(p, iColumn, iPosition, iStartOffset, iEndOffset);
+      plwAdd(p, iColumn, iPosition, iStartOffset, iEndOffset);
     }
   }
 
@@ -3419,12 +3603,8 @@ static int index_update(fulltext_vtab *v, sqlite_int64 iRow,
 ** layer is being constructed.
 */
 typedef struct InteriorBlock {
-  char *pTerm;               /* Leftmost term in block's subtree. */
-  int nTerm;
-
-  char *pData;
-  int nData;
-
+  DataBuffer term;           /* Leftmost term in block's subtree. */
+  DataBuffer data;           /* Accumulated data for the block. */
   struct InteriorBlock *next;
 } InteriorBlock;
 
@@ -3434,11 +3614,13 @@ static InteriorBlock *interiorBlockNew(int iHeight, sqlite_int64 iChildBlock,
   char c[VARINT_MAX+VARINT_MAX];
   int n;
 
-  data_dup(&block->pTerm, &block->nTerm, pTerm, nTerm);
+  dataBufferInit(&block->term, 0);
+  dataBufferReplace(&block->term, pTerm, nTerm);
 
   n = putVarint(c, iHeight);
   n += putVarint(c+n, iChildBlock);
-  data_dup(&block->pData, &block->nData, c, n);
+  dataBufferInit(&block->data, INTERIOR_MAX);
+  dataBufferReplace(&block->data, c, n);
 
   return block;
 }
@@ -3486,14 +3668,13 @@ static void interiorWriterAppend(InteriorWriter *pWriter,
 #endif
   assert( pWriter->iLastChildBlock==iChildBlock );
 
-  if( pWriter->last->nData+n+nTerm>INTERIOR_MAX ){
+  if( pWriter->last->data.nData+n+nTerm>INTERIOR_MAX ){
     /* Overflow to a new block. */
     pWriter->last->next = interiorBlockNew(pWriter->iHeight, iChildBlock,
                                            pTerm, nTerm);
     pWriter->last = pWriter->last->next;
   }else{
-    InteriorBlock *last = pWriter->last;
-    data_append2(&last->pData, &last->nData, c, n, pTerm, nTerm);
+    dataBufferAppend2(&pWriter->last->data, c, n, pTerm, nTerm);
   }
 }
 
@@ -3506,8 +3687,8 @@ static int interiorWriterDestroy(InteriorWriter *pWriter){
   while( block!=NULL ){
     InteriorBlock *b = block;
     block = block->next;
-    free(b->pData);
-    free(b->pTerm);
+    dataBufferDestroy(&b->term);
+    dataBufferDestroy(&b->data);
     free(b);
   }
 #ifndef NDEBUG
@@ -3529,34 +3710,34 @@ static int interiorWriterRootInfo(fulltext_vtab *v, InteriorWriter *pWriter,
   int rc;
 
   /* If we can fit the segment inline */
-  if( block==pWriter->last && block->nData<ROOT_MAX ){
-    *ppRootInfo = block->pData;
-    *pnRootInfo = block->nData;
+  if( block==pWriter->last && block->data.nData<ROOT_MAX ){
+    *ppRootInfo = block->data.pData;
+    *pnRootInfo = block->data.nData;
     return SQLITE_OK;
   }
 
   /* Flush the first block to %_segments, and create a new level of
   ** interior node.
   */
-  rc = block_insert(v, block->pData, block->nData, &iBlockid);
+  rc = block_insert(v, block->data.pData, block->data.nData, &iBlockid);
   if( rc!=SQLITE_OK ) return rc;
   *piEndBlockid = iBlockid;
 
   pWriter->parentWriter = malloc(sizeof(*pWriter->parentWriter));
   interiorWriterInit(pWriter->iHeight+1,
-                     block->pTerm, block->nTerm,
+                     block->term.pData, block->term.nData,
                      iBlockid, pWriter->parentWriter);
 
   /* Flush additional blocks and append to the higher interior
   ** node.
   */
   for(block=block->next; block!=NULL; block=block->next){
-    rc = block_insert(v, block->pData, block->nData, &iBlockid);
+    rc = block_insert(v, block->data.pData, block->data.nData, &iBlockid);
     if( rc!=SQLITE_OK ) return rc;
     *piEndBlockid = iBlockid;
 
     interiorWriterAppend(pWriter->parentWriter,
-                         block->pTerm, block->nTerm, iBlockid);
+                         block->term.pData, block->term.nData, iBlockid);
   }
 
   /* Parent node gets the chance to be the root. */
@@ -3668,48 +3849,103 @@ typedef struct LeafWriter {
   sqlite_int64 iStartBlockid;     /* needed to create the root info */
   sqlite_int64 iEndBlockid;       /* when we're done writing. */
 
-  char *pTerm;                    /* previous encoded term */
-  int nTerm;
-
-  char *pData;                    /* encoding buffer */
-  int nData;
+  DataBuffer term;                /* previous encoded term */
+  DataBuffer data;                /* encoding buffer */
 
   InteriorWriter parentWriter;    /* if we overflow */
   int has_parent;
 } LeafWriter;
 
 static void leafWriterInit(int iLevel, int idx, LeafWriter *pWriter){
+  char c[VARINT_MAX];
+  int n;
+
   memset(pWriter, 0, sizeof(*pWriter));
   pWriter->iLevel = iLevel;
   pWriter->idx = idx;
 
+  dataBufferInit(&pWriter->term, 32);
+
   /* Start out with a reasonably sized block, though it can grow. */
-  pWriter->pData = malloc(LEAF_MAX);
-  pWriter->nData = putVarint(pWriter->pData, 0);
+  dataBufferInit(&pWriter->data, LEAF_MAX);
+  n = putVarint(c, 0);
+  dataBufferReplace(&pWriter->data, c, n);
 }
+
+#ifndef NDEBUG
+/* Verify that the data is readable as a leaf node. */
+static int leafNodeValidate(const char *pData, int nData){
+  int n, iDummy;
+
+  assert( pData!=0 );
+  assert( nData!=0 );
+
+  /* Must lead with a varint(0) */
+  n = getVarint32(pData, &iDummy);
+  assert( iDummy==0 );
+  if( nData==n ) return 1;
+  pData += n;
+  nData -= n;
+
+  /* Leading term length and data must fit in buffer. */
+  n = getVarint32(pData, &iDummy);
+  assert( n+iDummy<nData );
+  pData += n+iDummy;
+  nData -= n+iDummy;
+
+  /* Leading term's doclist length and data must fit. */
+  n = getVarint32(pData, &iDummy);
+  assert( n+iDummy<=nData );
+  assert( docListValidate(DL_DEFAULT, pData+n, iDummy, NULL) );
+  pData += n+iDummy;
+  nData -= n+iDummy;
+
+  /* Verify that trailing terms and doclists also are readable. */
+  while( nData!=0 ){
+    n = getVarint32(pData, &iDummy);
+    n += getVarint32(pData+n, &iDummy);
+    assert( n+iDummy<nData );
+    pData += n+iDummy;
+    nData -= n+iDummy;
+
+    n = getVarint32(pData, &iDummy);
+    assert( n+iDummy<=nData );
+    assert( docListValidate(DL_DEFAULT, pData+n, iDummy, NULL) );
+    pData += n+iDummy;
+    nData -= n+iDummy;
+  }
+  return 1;
+}
+#endif
 
 /* Flush the current leaf node to %_segments, and adding the resulting
 ** blockid and the starting term to the interior node which will
 ** contain it.
 */
-static int leafWriterInternalFlush(fulltext_vtab *v, LeafWriter *pWriter){
+static int leafWriterInternalFlush(fulltext_vtab *v, LeafWriter *pWriter,
+                                   int iData, int nData){
   sqlite_int64 iBlockid = 0;
   const char *pStartingTerm;
   int nStartingTerm, rc, n;
 
-  /* Must have the leading varint(0) flag, plus at least some data. */
-  assert( pWriter->nData>2 );
+  /* Must have the leading varint(0) flag, plus at least some
+  ** valid-looking data.
+  */
+  assert( nData>2 );
+  assert( iData>=0 );
+  assert( iData+nData<=pWriter->data.nData );
+  assert( leafNodeValidate(pWriter->data.pData+iData, nData) );
 
-  rc = block_insert(v, pWriter->pData, pWriter->nData, &iBlockid);
+  rc = block_insert(v, pWriter->data.pData+iData, nData, &iBlockid);
   if( rc!=SQLITE_OK ) return rc;
   assert( iBlockid!=0 );
 
   /* Reconstruct the first term in the leaf for purposes of building
   ** the interior node.
   */
-  n = getVarint32(pWriter->pData+1, &nStartingTerm);
-  pStartingTerm = pWriter->pData+1+n;
-  assert( pWriter->nData>1+n+nStartingTerm );
+  n = getVarint32(pWriter->data.pData+iData+1, &nStartingTerm);
+  pStartingTerm = pWriter->data.pData+iData+1+n;
+  assert( pWriter->data.nData>iData+1+n+nStartingTerm );
 
   if( pWriter->has_parent ){
     interiorWriterAppend(&pWriter->parentWriter,
@@ -3728,9 +3964,15 @@ static int leafWriterInternalFlush(fulltext_vtab *v, LeafWriter *pWriter){
     assert( iBlockid==pWriter->iEndBlockid );
   }
 
+  return SQLITE_OK;
+}
+static int leafWriterFlush(fulltext_vtab *v, LeafWriter *pWriter){
+  int rc = leafWriterInternalFlush(v, pWriter, 0, pWriter->data.nData);
+  if( rc!=SQLITE_OK ) return rc;
+
   /* Re-initialize the output buffer. */
-  pWriter->nData = putVarint(pWriter->pData, 0);
-  pWriter->nTerm = 0;
+  pWriter->data.nData = putVarint(pWriter->data.pData, 0);
+  dataBufferReset(&pWriter->term);
 
   return SQLITE_OK;
 }
@@ -3746,16 +3988,16 @@ static int leafWriterRootInfo(fulltext_vtab *v, LeafWriter *pWriter,
                               char **ppRootInfo, int *pnRootInfo,
                               sqlite_int64 *piEndBlockid){
   /* we can fit the segment entirely inline */
-  if( !pWriter->has_parent && pWriter->nData<ROOT_MAX ){
-    *ppRootInfo = pWriter->pData;
-    *pnRootInfo = pWriter->nData;
+  if( !pWriter->has_parent && pWriter->data.nData<ROOT_MAX ){
+    *ppRootInfo = pWriter->data.pData;
+    *pnRootInfo = pWriter->data.nData;
     *piEndBlockid = 0;
     return SQLITE_OK;
   }
 
   /* Flush remaining leaf data. */
-  if( pWriter->nData>1 ){
-    int rc = leafWriterInternalFlush(v, pWriter);
+  if( pWriter->data.nData>1 ){
+    int rc = leafWriterFlush(v, pWriter);
     if( rc!=SQLITE_OK ) return rc;
   }
 
@@ -3777,7 +4019,7 @@ static int leafWriterRootInfo(fulltext_vtab *v, LeafWriter *pWriter,
 ** This has the effect of flushing the segment's leaf data to
 ** %_segments, and also flushing any interior nodes to %_segments.
 */
-static int leafWriterFlush(fulltext_vtab *v, LeafWriter *pWriter){
+static int leafWriterFinalize(fulltext_vtab *v, LeafWriter *pWriter){
   sqlite_int64 iEndBlockid;
   char *pRootInfo;
   int rc, nRootInfo;
@@ -3795,69 +4037,218 @@ static int leafWriterFlush(fulltext_vtab *v, LeafWriter *pWriter){
 
 static void leafWriterDestroy(LeafWriter *pWriter){
   if( pWriter->has_parent ) interiorWriterDestroy(&pWriter->parentWriter);
-  free(pWriter->pTerm);
-  free(pWriter->pData);
+  dataBufferDestroy(&pWriter->term);
+  dataBufferDestroy(&pWriter->data);
 }
 
-/* Push pTerm[nTerm] along with the doclist data to the leaf layer of
-** %_segments.
-*/
-static int leafWriterStep(fulltext_vtab *v, LeafWriter *pWriter,
-                          const char *pTerm, int nTerm, DocList *doclist){
-  char c[VARINT_MAX+VARINT_MAX];
-  int rc, n;
-
-  /* Flush existing data if this item won't fit well. */
-  if( pWriter->nData>1 &&
-      (doclist->nData+nTerm>STANDALONE_MIN ||
-       pWriter->nData+doclist->nData+nTerm>LEAF_MAX) ){
-    rc = leafWriterInternalFlush(v, pWriter);
-    if( rc!=SQLITE_OK ) return rc;
-  }
-
-  if( pWriter->nTerm==0 ){
+/* Encode a term into the leafWriter, delta-encoding as appropriate. */
+static void leafWriterEncodeTerm(LeafWriter *pWriter,
+                                 const char *pTerm, int nTerm){
+  if( pWriter->term.nData==0 ){
     /* Encode the entire leading term as:
     **  varint(nTerm)
     **  char pTerm[nTerm]
     */
-    n = putVarint(c, nTerm);
-    assert( pWriter->nData==1 );
-    data_append2(&pWriter->pData, &pWriter->nData,
-                 c, n, pTerm, nTerm);
+    assert( pWriter->data.nData==1 );
+    dataBufferAppendLenData(&pWriter->data, pTerm, nTerm);
   }else{
     /* Delta-encode the term as:
     **  varint(nPrefix)
     **  varint(nSuffix)
     **  char pTermSuffix[nSuffix]
     */
-    int nPrefix = 0;
+    char c[VARINT_MAX+VARINT_MAX];
+    int n, nPrefix = 0;
 
-    while( nPrefix<nTerm && nPrefix<pWriter->nTerm &&
-           pTerm[nPrefix]==pWriter->pTerm[nPrefix] ){
+    while( nPrefix<nTerm && nPrefix<pWriter->term.nData &&
+           pTerm[nPrefix]==pWriter->term.pData[nPrefix] ){
       nPrefix++;
     }
 
     n = putVarint(c, nPrefix);
     n += putVarint(c+n, nTerm-nPrefix);
-
-    data_append2(&pWriter->pData, &pWriter->nData,
-                 c, n, pTerm+nPrefix, nTerm-nPrefix);
+    dataBufferAppend2(&pWriter->data, c, n, pTerm+nPrefix, nTerm-nPrefix);
   }
-  data_replace(&pWriter->pTerm, &pWriter->nTerm, pTerm, nTerm);
+  dataBufferReplace(&pWriter->term, pTerm, nTerm);
+}
+
+/* Push pTerm[nTerm] along with the doclist data to the leaf layer of
+** %_segments.
+*/
+/* TODO(shess) Revise writeZeroSegment() so that doclists are
+** constructed directly in pWriter->data.  That implies refactoring
+** leafWriterStep() and leafWriterStepMerge() to share more code.
+*/
+static int leafWriterStep(fulltext_vtab *v, LeafWriter *pWriter,
+                          const char *pTerm, int nTerm,
+                          const char *pData, int nData){
+  int rc;
+
+  /* Flush existing data if this item won't fit well. */
+  if( pWriter->data.nData>1 &&
+      (nData+nTerm>STANDALONE_MIN ||
+       pWriter->data.nData+nData+nTerm>LEAF_MAX) ){
+    rc = leafWriterFlush(v, pWriter);
+    if( rc!=SQLITE_OK ) return rc;
+  }
+
+  leafWriterEncodeTerm(pWriter, pTerm, nTerm);
 
   /* Encode the doclist as:
   **  varint(nDoclist)
   **  char pDoclist[nDoclist]
   */
-  n = putVarint(c, doclist->nData);
-  data_append2(&pWriter->pData, &pWriter->nData,
-               c, n, doclist->pData, doclist->nData);
+  dataBufferAppendLenData(&pWriter->data, pData, nData);
 
   /* Flush standalone blocks right out */
-  if( doclist->nData+nTerm>STANDALONE_MIN ){
-    rc = leafWriterInternalFlush(v, pWriter);
+  if( nData+nTerm>STANDALONE_MIN ){
+    rc = leafWriterFlush(v, pWriter);
     if( rc!=SQLITE_OK ) return rc;
   }
+
+  return SQLITE_OK;
+}
+
+/* Used to avoid a memmove when a large amount of doclist data is in
+** the buffer.  This constructs a node and term header before
+** iDoclistData and flushes the resulting complete node using
+** leafWriterInternalFlush().
+*/
+static int leafWriterInlineFlush(fulltext_vtab *v, LeafWriter *pWriter,
+                                 const char *pTerm, int nTerm,
+                                 int iDoclistData){
+  char c[VARINT_MAX+VARINT_MAX];
+  int iData, n = putVarint(c, 0);
+  n += putVarint(c+n, nTerm);
+
+  /* There should always be room for the header.  Even if pTerm shared
+  ** a substantial prefix with the previous term, the entire prefix
+  ** could be constructed from earlier data in the doclist, so there
+  ** should be room.
+  */
+  assert( iDoclistData>=n+nTerm );
+
+  iData = iDoclistData-(n+nTerm);
+  memcpy(pWriter->data.pData+iData, c, n);
+  memcpy(pWriter->data.pData+iData+n, pTerm, nTerm);
+
+  return leafWriterInternalFlush(v, pWriter, iData, pWriter->data.nData-iData);
+}
+
+/* Push pTerm[nTerm] along with the doclist data to the leaf layer of
+** %_segments.
+*/
+static int leafWriterStepMerge(fulltext_vtab *v, LeafWriter *pWriter,
+                               const char *pTerm, int nTerm,
+                               DLReader *pReaders, int nReaders){
+  char c[VARINT_MAX+VARINT_MAX];
+  int iTermData = pWriter->data.nData, iDoclistData;
+  int i, nData, n, nActualData, nActual, rc;
+
+  assert( leafNodeValidate(pWriter->data.pData, pWriter->data.nData) );
+  leafWriterEncodeTerm(pWriter, pTerm, nTerm);
+
+  iDoclistData = pWriter->data.nData;
+
+  /* Estimate the length of the merged doclist so we can leave space
+  ** to encode it.
+  */
+  for(i=0, nData=0; i<nReaders; i++){
+    nData += dlrAllDataBytes(&pReaders[i]);
+  }
+  n = putVarint(c, nData);
+  dataBufferAppend(&pWriter->data, c, n);
+
+  docListMerge(&pWriter->data, pReaders, nReaders);
+  assert( docListValidate(DL_DEFAULT,
+                          pWriter->data.pData+iDoclistData+n,
+                          pWriter->data.nData-iDoclistData-n, NULL) );
+
+  /* The actual amount of doclist data at this point could be smaller
+  ** than the length we encoded.  Additionally, the space required to
+  ** encode this length could be smaller.  For small doclists, this is
+  ** not a big deal, we can just use memmove() to adjust things.
+  */
+  nActualData = pWriter->data.nData-(iDoclistData+n);
+  nActual = putVarint(c, nActualData);
+  assert( nActualData<=nData );
+  assert( nActual<=n );
+
+  /* If the new doclist is big enough for force a standalone leaf
+  ** node, we can immediately flush it inline without doing the
+  ** memmove().
+  */
+  /* TODO(shess) This test matches leafWriterStep(), which does this
+  ** test before it knows the cost to varint-encode the term and
+  ** doclist lengths.  At some point, change to
+  ** pWriter->data.nData-iTermData>STANDALONE_MIN.
+  */
+  if( nTerm+nActualData>STANDALONE_MIN ){
+    /* Push leaf node from before this term. */
+    if( iTermData>1 ){
+      rc = leafWriterInternalFlush(v, pWriter, 0, iTermData);
+      if( rc!=SQLITE_OK ) return rc;
+    }
+
+    /* Fix the encoded doclist length. */
+    iDoclistData += n - nActual;
+    memcpy(pWriter->data.pData+iDoclistData, c, nActual);
+
+    /* Push the standalone leaf node. */
+    rc = leafWriterInlineFlush(v, pWriter, pTerm, nTerm, iDoclistData);
+    if( rc!=SQLITE_OK ) return rc;
+
+    /* Leave the node empty. */
+    pWriter->data.nData = putVarint(pWriter->data.pData, 0);
+    dataBufferReset(&pWriter->term);
+    return rc;
+  }
+
+  /* At this point, we know that the doclist was small, so do the
+  ** memmove if indicated.
+  */
+  if( nActual<n ){
+    memmove(pWriter->data.pData+iDoclistData+nActual,
+            pWriter->data.pData+iDoclistData+n,
+            pWriter->data.nData-(iDoclistData+n));
+    pWriter->data.nData -= n-nActual;
+  }
+
+  /* Replace written length with actual length. */
+  memcpy(pWriter->data.pData+iDoclistData, c, nActual);
+
+  /* If the node is too large, break things up. */
+  /* TODO(shess) This test matches leafWriterStep(), which does this
+  ** test before it knows the cost to varint-encode the term and
+  ** doclist lengths.  At some point, change to
+  ** pWriter->data.nData>LEAF_MAX.
+  */
+  if( iTermData+nTerm+nActualData>LEAF_MAX ){
+    /* Flush out the leading data as a node */
+    rc = leafWriterInternalFlush(v, pWriter, 0, iTermData);
+    if( rc!=SQLITE_OK ) return rc;
+
+    /* Rebuild header using the current term */
+    n = putVarint(pWriter->data.pData, 0);
+    n += putVarint(pWriter->data.pData+n, nTerm);
+    memcpy(pWriter->data.pData+n, pTerm, nTerm);
+    n += nTerm;
+
+    /* There should always be room, because the previous encoding
+    ** included all data necessary to construct the term.
+    */
+    assert( n<iDoclistData );
+    /* So long as STANDALONE_MIN is half or less of LEAF_MAX, the
+    ** following memcpy() is safe (as opposed to needing a memmove).
+    */
+    assert( 2*STANDALONE_MIN<=LEAF_MAX );
+    assert( n+pWriter->data.nData-iDoclistData<iDoclistData );
+    memcpy(pWriter->data.pData+n,
+           pWriter->data.pData+iDoclistData,
+           pWriter->data.nData-iDoclistData);
+    pWriter->data.nData -= iDoclistData-n;
+  }
+  assert( leafNodeValidate(pWriter->data.pData, pWriter->data.nData) );
 
   return SQLITE_OK;
 }
@@ -3866,15 +4257,14 @@ static int leafWriterStep(fulltext_vtab *v, LeafWriter *pWriter,
 /****************************************************************/
 /* LeafReader is used to iterate over an individual leaf node. */
 typedef struct LeafReader {
-  char *pTerm;              /* copy of current term. */
-  int nTerm;
+  DataBuffer term;          /* copy of current term. */
 
   const char *pData;        /* data for current term. */
   int nData;
 } LeafReader;
 
 static void leafReaderDestroy(LeafReader *pReader){
-  free(pReader->pTerm);
+  dataBufferDestroy(&pReader->term);
 #ifndef NDEBUG
   memset(pReader, 0x55, sizeof(pReader));
 #endif
@@ -3886,23 +4276,23 @@ static int leafReaderAtEnd(LeafReader *pReader){
 
 /* Access the current term. */
 static int leafReaderTermBytes(LeafReader *pReader){
-  return pReader->nTerm;
+  return pReader->term.nData;
 }
 static const char *leafReaderTerm(LeafReader *pReader){
-  assert( pReader->nTerm>0 );
-  return pReader->pTerm;
+  assert( pReader->term.nData>0 );
+  return pReader->term.pData;
 }
 
 /* Access the doclist data for the current term. */
 static int leafReaderDataBytes(LeafReader *pReader){
   int nData;
-  assert( pReader->nTerm>0 );
+  assert( pReader->term.nData>0 );
   getVarint32(pReader->pData, &nData);
   return nData;
 }
 static const char *leafReaderData(LeafReader *pReader){
   int n, nData;
-  assert( pReader->nTerm>0 );
+  assert( pReader->term.nData>0 );
   n = getVarint32(pReader->pData, &nData);
   return pReader->pData+n;
 }
@@ -3918,7 +4308,8 @@ static void leafReaderInit(const char *pData, int nData,
 
   /* Read the first term, skipping the header byte. */
   n = getVarint32(pData+1, &nTerm);
-  data_dup(&pReader->pTerm, &pReader->nTerm, pData+1+n, nTerm);
+  dataBufferInit(&pReader->term, nTerm);
+  dataBufferReplace(&pReader->term, pData+1+n, nTerm);
 
   /* Position after the first term. */
   assert( 1+n+nTerm<nData );
@@ -3944,8 +4335,8 @@ static void leafReaderStep(LeafReader *pReader){
     n = getVarint32(pReader->pData, &nPrefix);
     n += getVarint32(pReader->pData+n, &nSuffix);
     assert( n+nSuffix<pReader->nData );
-    pReader->nTerm = nPrefix;
-    data_append(&pReader->pTerm, &pReader->nTerm, pReader->pData+n, nSuffix);
+    pReader->term.nData = nPrefix;
+    dataBufferAppend(&pReader->term, pReader->pData+n, nSuffix);
 
     pReader->pData += n+nSuffix;
     pReader->nData -= n+nSuffix;
@@ -3955,16 +4346,16 @@ static void leafReaderStep(LeafReader *pReader){
 /* strcmp-style comparison of pReader's current term against pTerm. */
 static int leafReaderTermCmp(LeafReader *pReader,
                              const char *pTerm, int nTerm){
-  int c, n = pReader->nTerm<nTerm ? pReader->nTerm : nTerm;
+  int c, n = pReader->term.nData<nTerm ? pReader->term.nData : nTerm;
   if( n==0 ){
-    if( pReader->nTerm>0 ) return -1;
+    if( pReader->term.nData>0 ) return -1;
     if(nTerm>0 ) return 1;
     return 0;
   }
 
-  c = memcmp(pReader->pTerm, pTerm, n);
+  c = memcmp(pReader->term.pData, pTerm, n);
   if( c!=0 ) return c;
-  return pReader->nTerm - nTerm;
+  return pReader->term.nData - nTerm;
 }
 
 
@@ -3979,7 +4370,7 @@ typedef struct LeavesReader {
   int eof;                  /* we've seen SQLITE_DONE from pStmt. */
 
   LeafReader leafReader;    /* reader for the current leaf. */
-  char *pRootData;          /* root data for inline. */
+  DataBuffer rootData;      /* root data for inline. */
 } LeavesReader;
 
 /* Access the current term. */
@@ -4008,7 +4399,7 @@ static int leavesReaderAtEnd(LeavesReader *pReader){
 
 static void leavesReaderDestroy(LeavesReader *pReader){
   leafReaderDestroy(&pReader->leafReader);
-  if( pReader->pRootData!=0 ) free(pReader->pRootData);
+  dataBufferDestroy(&pReader->rootData);
 #ifndef NDEBUG
   memset(pReader, 0x55, sizeof(pReader));
 #endif
@@ -4027,11 +4418,12 @@ static int leavesReaderInit(fulltext_vtab *v,
   memset(pReader, 0, sizeof(*pReader));
   pReader->idx = idx;
 
+  dataBufferInit(&pReader->rootData, 0);
   if( iStartBlockid==0 ){
     /* Entire leaf level fit in root data. */
-    int n;
-    data_dup(&pReader->pRootData, &n, pRootData, nRootData);
-    leafReaderInit(pReader->pRootData, nRootData, &pReader->leafReader);
+    dataBufferReplace(&pReader->rootData, pRootData, nRootData);
+    leafReaderInit(pReader->rootData.pData, pReader->rootData.nData,
+                   &pReader->leafReader);
   }else{
     sqlite3_stmt *s;
     int rc = sql_get_leaf_statement(v, idx, &s);
@@ -4067,7 +4459,7 @@ static int leavesReaderStep(fulltext_vtab *v, LeavesReader *pReader){
 
   if( leafReaderAtEnd(&pReader->leafReader) ){
     int rc;
-    if( pReader->pRootData ){
+    if( pReader->rootData.pData ){
       pReader->eof = 1;
       return SQLITE_OK;
     }
@@ -4167,43 +4559,23 @@ static int leavesReadersInit(fulltext_vtab *v, int iLevel,
 ** is written to pWriter.  Assumes pReaders is ordered oldest to
 ** newest.
 */
-/* TODO(shess) I have a version of this that merges the doclists
-** pairwise, and is thus much faster, but is also more intricate.  So
-** I'll throw that in as a standalone change.  N-way merge would be
-** even faster.
-*/
+/* TODO(shess) Consider putting this inline in segmentMerge(). */
 static int leavesReadersMerge(fulltext_vtab *v,
                               LeavesReader *pReaders, int nReaders,
                               LeafWriter *pWriter){
+  DLReader dlReaders[MERGE_COUNT];
   const char *pTerm = leavesReaderTerm(pReaders);
-  int i, rc, nTerm = leavesReaderTermBytes(pReaders);
-  DocList doclist;
+  int i, nTerm = leavesReaderTermBytes(pReaders);
 
-  /* No need to merge, insert directly. */
-  if( nReaders==1 ){
-    docListStaticInit(&doclist, DL_DEFAULT,
-                      leavesReaderData(pReaders),
-                      leavesReaderDataBytes(pReaders));
-  }else{
-    docListInit(&doclist, DL_DEFAULT,
-                leavesReaderData(pReaders),
-                leavesReaderDataBytes(pReaders));
+  assert( nReaders<=MERGE_COUNT );
 
-    for(i=1; i<nReaders; i++){
-      DocList new, merged;
-      docListStaticInit(&new, DL_DEFAULT,
-                        leavesReaderData(pReaders+i),
-                        leavesReaderDataBytes(pReaders+i));
-      docListMerge(&merged, &doclist, &new);
-      docListDestroy(&doclist);
-      doclist = merged;
-    }
+  for(i=0; i<nReaders; i++){
+    dlrInit(&dlReaders[i], DL_DEFAULT,
+            leavesReaderData(pReaders+i),
+            leavesReaderDataBytes(pReaders+i));
   }
 
-  /* Insert the new doclist */
-  rc = leafWriterStep(v, pWriter, pTerm, nTerm, &doclist);
-  if( nReaders>1 ) docListDestroy(&doclist);
-  return rc;
+  return leafWriterStepMerge(v, pWriter, pTerm, nTerm, dlReaders, nReaders);
 }
 
 /* Forward ref due to mutual recursion with segdirNextIndex(). */
@@ -4284,7 +4656,7 @@ static int segmentMerge(fulltext_vtab *v, int iLevel){
     leavesReaderDestroy(&lrs[i]);
   }
 
-  rc = leafWriterFlush(v, &writer);
+  rc = leafWriterFinalize(v, &writer);
   leafWriterDestroy(&writer);
   if( rc!=SQLITE_OK ) return rc;
 
@@ -4304,7 +4676,7 @@ static int segmentMerge(fulltext_vtab *v, int iLevel){
 ** read from pData will overwrite those in *out).
 */
 static int loadSegmentLeaf(fulltext_vtab *v, const char *pData, int nData,
-                           const char *pTerm, int nTerm, DocList *out){
+                           const char *pTerm, int nTerm, DataBuffer *out){
   LeafReader reader;
   assert( nData>1 );
   assert( *pData=='\0' );
@@ -4313,12 +4685,20 @@ static int loadSegmentLeaf(fulltext_vtab *v, const char *pData, int nData,
   while( !leafReaderAtEnd(&reader) ){
     int c = leafReaderTermCmp(&reader, pTerm, nTerm);
     if( c==0 ){
-      DocList new, doclist;
-      docListStaticInit(&new, DL_DEFAULT,
-                        leafReaderData(&reader), leafReaderDataBytes(&reader));
-      docListMerge(&doclist, out, &new);
-      docListDestroy(out);
-      *out = doclist;
+      if( out->nData==0 ){
+        dataBufferReplace(out,
+                          leafReaderData(&reader), leafReaderDataBytes(&reader));
+      }else{
+        DLReader readers[2];
+        DataBuffer result;
+        dlrInit(&readers[0], DL_DEFAULT, out->pData, out->nData);
+        dlrInit(&readers[1], DL_DEFAULT,
+                leafReaderData(&reader), leafReaderDataBytes(&reader));
+        dataBufferInit(&result, out->nData+leafReaderDataBytes(&reader));
+        docListMerge(&result, readers, 2);
+        dataBufferDestroy(out);
+        *out = result;
+      }
     }
     if( c>=0 ) break;
     leafReaderStep(&reader);
@@ -4333,7 +4713,7 @@ static int loadSegmentLeaf(fulltext_vtab *v, const char *pData, int nData,
 ** in *out).
 */
 static int loadSegment(fulltext_vtab *v, const char *pData, int nData,
-                       const char *pTerm, int nTerm, DocList *out){
+                       const char *pTerm, int nTerm, DataBuffer *out){
   int rc;
   sqlite3_stmt *s = NULL;
 
@@ -4394,13 +4774,14 @@ static int loadSegment(fulltext_vtab *v, const char *pData, int nData,
 ** into *out.
 */
 static int termSelect(fulltext_vtab *v, int iColumn,
-                      const char *pTerm, int nTerm, DocList *out){
-  DocList doclist;
+                      const char *pTerm, int nTerm,
+                      DocListType iType, DataBuffer *out){
+  DataBuffer doclist;
   sqlite3_stmt *s;
   int rc = sql_get_statement(v, SEGDIR_SELECT_ALL_STMT, &s);
   if( rc!=SQLITE_OK ) return rc;
 
-  docListInit(&doclist, DL_DEFAULT, 0, 0);
+  dataBufferInit(&doclist, 0);
 
   /* Traverse the segments from oldest to newest so that newer doclist
   ** elements for given docids overwrite older elements.
@@ -4411,22 +4792,21 @@ static int termSelect(fulltext_vtab *v, int iColumn,
     if( rc!=SQLITE_OK ) goto err;
   }
   if( rc==SQLITE_DONE ){
-    *out = doclist;
-
-    /* TODO(shess) The old term_select_all() code applied the column
-    ** restrict as we merged segments, leading to smaller buffers.
-    ** This is probably worthwhile to bring back, once the new storage
-    ** system is checked in.
-    */
-    if( iColumn<v->nColumn ){   /* querying a single column */
-      docListRestrictColumn(out, iColumn);
+    if( doclist.nData!=0 ){
+      /* TODO(shess) The old term_select_all() code applied the column
+      ** restrict as we merged segments, leading to smaller buffers.
+      ** This is probably worthwhile to bring back, once the new storage
+      ** system is checked in.
+      */
+      if( iColumn==v->nColumn) iColumn = -1;
+      docListTrim(DL_DEFAULT, doclist.pData, doclist.nData,
+                  iColumn, iType, out);
     }
-    docListDiscardEmpty(out);
-    return SQLITE_OK;
+    rc = SQLITE_OK;
   }
 
  err:
-  docListDestroy(&doclist);
+  dataBufferDestroy(&doclist);
   return rc;
 }
 
@@ -4435,7 +4815,7 @@ static int termSelect(fulltext_vtab *v, int iColumn,
 typedef struct TermData {
   const char *pTerm;
   int nTerm;
-  DocList *pDoclist;
+  PLWriter *pWriter;
 } TermData;
 
 /* Orders TermData elements in strcmp fashion ( <0 for less-than, 0
@@ -4458,6 +4838,7 @@ static int writeZeroSegment(fulltext_vtab *v, fts2Hash *pTerms){
   int idx, rc, i, n;
   TermData *pData;
   LeafWriter writer;
+  DataBuffer dl;
 
   /* Determine the next index at level 0, merging as necessary. */
   rc = segdirNextIndex(v, 0, &idx);
@@ -4470,7 +4851,7 @@ static int writeZeroSegment(fulltext_vtab *v, fts2Hash *pTerms){
     assert( i<n );
     pData[i].pTerm = fts2HashKey(e);
     pData[i].nTerm = fts2HashKeysize(e);
-    pData[i].pDoclist = fts2HashData(e);
+    pData[i].pWriter = fts2HashData(e);
   }
   assert( i==n );
 
@@ -4479,13 +4860,22 @@ static int writeZeroSegment(fulltext_vtab *v, fts2Hash *pTerms){
   */
   if( n>1 ) qsort(pData, n, sizeof(*pData), termDataCmp);
 
+  /* TODO(shess) Refactor so that we can write directly to the segment
+  ** DataBuffer, as happens for segment merges.
+  */
   leafWriterInit(0, idx, &writer);
+  dataBufferInit(&dl, 0);
   for(i=0; i<n; i++){
+    DLWriter dlw;
+    dataBufferReset(&dl);
+    dlwInit(&dlw, DL_DEFAULT, &dl);
+    plwDlwAdd(pData[i].pWriter, &dlw);
     rc = leafWriterStep(v, &writer,
-                        pData[i].pTerm, pData[i].nTerm, pData[i].pDoclist);
+                        pData[i].pTerm, pData[i].nTerm, dl.pData, dl.nData);
+    dlwDestroy(&dlw);
     if( rc!=SQLITE_OK ) goto err;
   }
-  rc = leafWriterFlush(v, &writer);
+  rc = leafWriterFinalize(v, &writer);
 
  err:
   free(pData);
@@ -4537,8 +4927,7 @@ static int fulltextUpdate(sqlite3_vtab *pVtab, int nArg, sqlite3_value **ppArg,
 
   /* clean up */
   for(e=fts2HashFirst(&terms); e; e=fts2HashNext(e)){
-    DocList *p = fts2HashData(e);
-    docListDelete(p);
+    plwDelete(fts2HashData(e));
   }
   fts2HashClear(&terms);
 
