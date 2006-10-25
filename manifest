@@ -1,5 +1,5 @@
-C dup\sfts1\stests\sand\sedit\sfor\sfts2.\s\sfts1porter.test\somitted\sbecause\sit\ndepends\son\sbeing\sable\sto\spoke\sthrough\sto\s%_term\stable.\s(CVS\s3482)
-D 2006-10-19T23:36:26
+C Don't\sstore\sempty\ssegments.\s\sWhen\sinserting\sempty\sstrings,\sthe\scode\nwas\swriting\sout\sa\ssegment\smade\sup\sof\sa\ssingle\sleaf\snode\scontaining\sthe\n\\0\sheader.\s\sLeafReader\sassumed\sthat\sleaf\snodes\salways\scontained\sat\nleast\sone\sterm,\sso\sassertions\swould\sfail.\n\nWhile\sit\swould\sbe\spossible\sto\ssupport\sreading\sand\smerging\sempty\nsegments,\sthere's\sno\sreason\sto\sdo\sso.\s\sWhile\sthis\schange\scould\shave\nbeen\sdone\sin\swriteZeroSegment(),\sI\sput\sit\sin\sleafWriterFlush()\sso\sthat\nit\swould\swork\sright\sif\ssegmentMerge()\screated\san\sempty\ssegment,\swhich\ncould\shappen\swith\sfuture\schanges\sto\show\sdeleted\sdocuments\sare\shandled.\s(CVS\s3484)
+D 2006-10-25T05:21:55
 F Makefile.in 4379c909d46b38b8c5db3533084601621d4f14b2
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -33,7 +33,7 @@ F ext/fts1/fulltext.h 08525a47852d1d62a0be81d3fc3fe2d23b094efd
 F ext/fts1/simple_tokenizer.c 1844d72f7194c3fd3d7e4173053911bf0661b70d
 F ext/fts1/tokenizer.h 0c53421b832366d20d720d21ea3e1f6e66a36ef9
 F ext/fts2/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts2/fts2.c ddfca6aecbc5cbf13633f92aac29c2a8f24d6dec
+F ext/fts2/fts2.c 8f5e5fccec924c13c5e36382ddabf8a0bf075859
 F ext/fts2/fts2.h bbdab26d34f91974d5b9ade8b7836c140a7c4ce1
 F ext/fts2/fts2_hash.c b3f22116d4ef0bc8f2da6e3fdc435c86d0951a9b
 F ext/fts2/fts2_hash.h e283308156018329f042816eb09334df714e105e
@@ -418,7 +418,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P b01c4371d861a087623a34c38cb8db74eca95348
-R c24a94afe5bc7f2d9a795aaefd9ab181
+P 2806c3415841b98d52163fa672a747d0a47ffd41
+R 5cdccaf3295b3f3b1078e6d0239b59c8
 U shess
-Z ebbb22449f830ff82b909fcef8d93031
+Z 9691b521636d92a41ca36d38cbd27e9e

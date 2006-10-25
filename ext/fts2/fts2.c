@@ -3785,6 +3785,9 @@ static int leafWriterFlush(fulltext_vtab *v, LeafWriter *pWriter){
   rc = leafWriterRootInfo(v, pWriter, &pRootInfo, &nRootInfo, &iEndBlockid);
   if( rc!=SQLITE_OK ) return rc;
 
+  /* Don't bother storing an entirely empty segment. */
+  if( iEndBlockid==0 && nRootInfo==1 ) return SQLITE_OK;
+
   return segdir_set(v, pWriter->iLevel, pWriter->idx,
                     pWriter->iStartBlockid, pWriter->iEndBlockid,
                     iEndBlockid, pRootInfo, nRootInfo);
