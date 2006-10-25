@@ -70,8 +70,6 @@ static int porterCreate(
   sqlite3_tokenizer **ppTokenizer
 ){
   porter_tokenizer *t;
-  int i;
-
   t = (porter_tokenizer *) calloc(sizeof(porter_tokenizer), 1);
   *ppTokenizer = &t->base;
   return SQLITE_OK;
