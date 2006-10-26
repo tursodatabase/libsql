@@ -1,5 +1,5 @@
-C Remove\sunreferenced\slocal\svariable.\s(CVS\s3487)
-D 2006-10-25T23:22:04
+C Make\smemset()\suses\sless\serror-prone.\nhttp://www.sqlite.org/cvstrac/tktview?tn=2036,35\sdescribes\ssome\scases\nwhere\swe\swere\spassing\smemset()\sa\slength\swhich\swas\sthe\ssizeof\sa\npointer,\srather\sthan\sthe\sstructure\spointed\sto.\s\sInstead,\swrap\sthis\nidiom\sup\sin\sCLEAR()\sand\sSCRAMBLE()\smacros.\s(CVS\s3488)
+D 2006-10-26T00:04:31
 F Makefile.in 4379c909d46b38b8c5db3533084601621d4f14b2
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -33,7 +33,7 @@ F ext/fts1/fulltext.h 08525a47852d1d62a0be81d3fc3fe2d23b094efd
 F ext/fts1/simple_tokenizer.c 1844d72f7194c3fd3d7e4173053911bf0661b70d
 F ext/fts1/tokenizer.h 0c53421b832366d20d720d21ea3e1f6e66a36ef9
 F ext/fts2/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts2/fts2.c f3d0b37ba8c46ca93347066b99a440145a5a4845
+F ext/fts2/fts2.c bee8988db6a97104d86ad7e025f1b6e80e4aa41a
 F ext/fts2/fts2.h bbdab26d34f91974d5b9ade8b7836c140a7c4ce1
 F ext/fts2/fts2_hash.c b3f22116d4ef0bc8f2da6e3fdc435c86d0951a9b
 F ext/fts2/fts2_hash.h e283308156018329f042816eb09334df714e105e
@@ -419,7 +419,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P af5bfb986e39248abbfc6fff2e13c6f9e634a751
-R 73cf88c7c9731e5b1854a60f83bf6d34
+P 2d3b22197c7c06488b789cce333b34b6d1ae39aa
+R c18224b43b58b956ecd0a15ea9ad3008
 U shess
-Z bcb114a3f40e115c505e69af1ff62ca0
+Z 69630a14b82d73d5314cd0d1d7882fb7

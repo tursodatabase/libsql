@@ -329,6 +329,22 @@ enum {
 
 /* utility functions */
 
+/* CLEAR() and SCRAMBLE() abstract memset() on a pointer to a single
+** record to prevent errors of the form:
+**
+** my_function(SomeType *b){
+**   memset(b, '\0', sizeof(b));  // sizeof(b)!=sizeof(*b)
+** }
+*/
+/* TODO(shess) Obvious candidates for a header file. */
+#define CLEAR(b) memset(b, '\0', sizeof(*(b)))
+
+#ifndef NDEBUG
+#  define SCRAMBLE(b) memset(b, 0x55, sizeof(*(b)))
+#else
+#  define SCRAMBLE(b)
+#endif
+
 /* We may need up to VARINT_MAX bytes to store an encoded 64-bit integer. */
 #define VARINT_MAX 10
 
@@ -405,9 +421,7 @@ static void dataBufferReset(DataBuffer *pBuffer){
 }
 static void dataBufferDestroy(DataBuffer *pBuffer){
   if( pBuffer->pData!=NULL ) free(pBuffer->pData);
-#ifndef NDEBUG
-  memset(pBuffer, 0x55, sizeof(*pBuffer));
-#endif
+  SCRAMBLE(pBuffer);
 }
 static void dataBufferExpand(DataBuffer *pBuffer, int nAddCapacity){
   assert( nAddCapacity>0 );
@@ -623,9 +637,7 @@ static void dlrInit(DLReader *pReader, DocListType iType,
   dlrStep(pReader);
 }
 static void dlrDestroy(DLReader *pReader){
-#ifndef NDEBUG
-  memset(pReader, 0x55, sizeof(pReader));
-#endif
+  SCRAMBLE(pReader);
 }
 
 #ifndef NDEBUG
@@ -703,9 +715,7 @@ static void dlwInit(DLWriter *pWriter, DocListType iType, DataBuffer *b){
 #endif
 }
 static void dlwDestroy(DLWriter *pWriter){
-#ifndef NDEBUG
-  memset(pWriter, 0x55, sizeof(pWriter));
-#endif
+  SCRAMBLE(pWriter);
 }
 static void dlwAppend(DLWriter *pWriter,
                       const char *pData, int nData){
@@ -840,9 +850,7 @@ static void plrInit(PLReader *pReader, DocListType iType,
   plrStep(pReader);
 }
 static void plrDestroy(PLReader *pReader){
-#ifndef NDEBUG
-  memset(pReader, 0x55, sizeof(pReader));
-#endif
+  SCRAMBLE(pReader);
 }
 
 /*******************************************************************/
@@ -925,9 +933,7 @@ static PLWriter *plwNew(sqlite_int64 iDocid, DocListType iType){
 }
 static void plwDestroy(PLWriter *pWriter){
   dataBufferDestroy(&pWriter->b);
-#ifndef NDEBUG
-  memset(pWriter, 0x55, sizeof(pWriter));
-#endif
+  SCRAMBLE(pWriter);
 }
 static void plwDelete(PLWriter *pWriter){
   plwDestroy(pWriter);
@@ -2352,7 +2358,7 @@ static int parseSpec(TableSpec *pSpec, int argc, const char *const*argv,
   ** The argv[][] array is read-only and transient.  We can write to the
   ** copy in order to modify things and the copy is persistent.
   */
-  memset(pSpec, 0, sizeof(*pSpec));
+  CLEAR(pSpec);
   for(i=n=0; i<argc; i++){
     n += strlen(argv[i]) + 1;
   }
@@ -2467,7 +2473,7 @@ static int constructVtab(
 
   v = (fulltext_vtab *) malloc(sizeof(fulltext_vtab));
   if( v==0 ) return SQLITE_NOMEM;
-  memset(v, 0, sizeof(*v));
+  CLEAR(v);
   /* sqlite will initialize v->base */
   v->db = db;
   v->zName = spec->zName;   /* Freed when azColumn is freed */
@@ -2658,7 +2664,7 @@ static void queryClear(Query *q){
     free(q->pTerms[i].pTerm);
   }
   free(q->pTerms);
-  memset(q, 0, sizeof(*q));
+  CLEAR(q);
 }
 
 /* Free all of the dynamically allocated memory held by the
@@ -2668,7 +2674,7 @@ static void snippetClear(Snippet *p){
   free(p->aMatch);
   free(p->zOffset);
   free(p->zSnippet);
-  memset(p, 0, sizeof(*p));
+  CLEAR(p);
 }
 /*
 ** Append a single entry to the p->aMatch[] log.
@@ -3119,7 +3125,7 @@ static void queryAdd(Query *q, const char *pTerm, int nTerm){
     return;
   }
   t = &q->pTerms[q->nTerms - 1];
-  memset(t, 0, sizeof(*t));
+  CLEAR(t);
   t->pTerm = malloc(nTerm+1);
   memcpy(t->pTerm, pTerm, nTerm);
   t->pTerm[nTerm] = 0;
@@ -3644,7 +3650,7 @@ static void interiorWriterInit(int iHeight, const char *pTerm, int nTerm,
                                InteriorWriter *pWriter){
   InteriorBlock *block;
   assert( iHeight>0 );
-  memset(pWriter, 0, sizeof(*pWriter));
+  CLEAR(pWriter);
 
   pWriter->iHeight = iHeight;
 #ifndef NDEBUG
@@ -3691,9 +3697,7 @@ static int interiorWriterDestroy(InteriorWriter *pWriter){
     dataBufferDestroy(&b->data);
     free(b);
   }
-#ifndef NDEBUG
-  memset(pWriter, 0x55, sizeof(pWriter));
-#endif
+  SCRAMBLE(pWriter);
   return SQLITE_OK;
 }
 
@@ -3758,9 +3762,7 @@ typedef struct InteriorReader {
 } InteriorReader;
 
 static void interiorReaderDestroy(InteriorReader *pReader){
-#ifndef NDEBUG
-  memset(pReader, 0x55, sizeof(pReader));
-#endif
+  SCRAMBLE(pReader);
 }
 
 static void interiorReaderInit(const char *pData, int nData,
@@ -3771,7 +3773,7 @@ static void interiorReaderInit(const char *pData, int nData,
   assert( nData>0 );
   assert( pData[0]!='\0' );
 
-  memset(pReader, '\0', sizeof(pReader));
+  CLEAR(pReader);
 
   /* Decode the base blockid, and set the cursor to the first term. */
   n = getVarint(pData+1, &pReader->iBlockid);
@@ -3860,7 +3862,7 @@ static void leafWriterInit(int iLevel, int idx, LeafWriter *pWriter){
   char c[VARINT_MAX];
   int n;
 
-  memset(pWriter, 0, sizeof(*pWriter));
+  CLEAR(pWriter);
   pWriter->iLevel = iLevel;
   pWriter->idx = idx;
 
@@ -4265,9 +4267,7 @@ typedef struct LeafReader {
 
 static void leafReaderDestroy(LeafReader *pReader){
   dataBufferDestroy(&pReader->term);
-#ifndef NDEBUG
-  memset(pReader, 0x55, sizeof(pReader));
-#endif
+  SCRAMBLE(pReader);
 }
 
 static int leafReaderAtEnd(LeafReader *pReader){
@@ -4304,7 +4304,7 @@ static void leafReaderInit(const char *pData, int nData,
   assert( nData>0 );
   assert( pData[0]=='\0' );
 
-  memset(pReader, '\0', sizeof(pReader));
+  CLEAR(pReader);
 
   /* Read the first term, skipping the header byte. */
   n = getVarint32(pData+1, &nTerm);
@@ -4400,9 +4400,7 @@ static int leavesReaderAtEnd(LeavesReader *pReader){
 static void leavesReaderDestroy(LeavesReader *pReader){
   leafReaderDestroy(&pReader->leafReader);
   dataBufferDestroy(&pReader->rootData);
-#ifndef NDEBUG
-  memset(pReader, 0x55, sizeof(pReader));
-#endif
+  SCRAMBLE(pReader);
 }
 
 /* Initialize pReader with the given root data (if iStartBlockid==0
@@ -4415,7 +4413,7 @@ static int leavesReaderInit(fulltext_vtab *v,
                             sqlite_int64 iEndBlockid,
                             const char *pRootData, int nRootData,
                             LeavesReader *pReader){
-  memset(pReader, 0, sizeof(*pReader));
+  CLEAR(pReader);
   pReader->idx = idx;
 
   dataBufferInit(&pReader->rootData, 0);
