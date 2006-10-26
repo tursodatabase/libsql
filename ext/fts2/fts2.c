@@ -3289,6 +3289,12 @@ static int fulltextQuery(
   rc = parseQuery(v, zInput, nInput, iColumn, pQuery);
   if( rc!=SQLITE_OK ) return rc;
 
+  /* Empty or NULL queries return no results. */
+  if( pQuery->nTerms==0 ){
+    dataBufferInit(pResult, 0);
+    return SQLITE_OK;
+  }
+
   /* Merge AND terms. */
   /* TODO(shess) I think we can early-exit if( i>nNot && left.nData==0 ). */
   aTerm = pQuery->pTerms;
