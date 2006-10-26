@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.150 2006/09/25 13:09:23 drh Exp $
+** $Id: shell.c,v 1.151 2006/10/26 14:25:58 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -59,6 +59,12 @@
 */
 extern int isatty();
 #endif
+
+/*
+** Threat stdin as an interactive input if the following variable
+** is true.  Otherwise, assume stdin is connected to a file or pipe.
+*/
+static int stdin_is_interactive = 1;
 
 /*
 ** The following is the open SQLite database.  We make a pointer
@@ -184,10 +190,7 @@ static char *local_getline(char *zPrompt, FILE *in){
 }
 
 /*
-** Retrieve a single line of input text.  "isatty" is true if text
-** is coming from a terminal.  In that case, we issue a prompt and
-** attempt to use "readline" for command-line editing.  If "isatty"
-** is false, use "local_getline" instead of "readline" and issue no prompt.
+** Retrieve a single line of input text.
 **
 ** zPrior is a string of prior text retrieved.  If not the empty
 ** string, then issue a continuation prompt.
@@ -587,7 +590,7 @@ static void set_table_name(struct callback_data *p, const char *zName){
 ** If the third argument, quote, is not '\0', then it is used as a 
 ** quote character for zAppend.
 */
-static char * appendText(char *zIn, char const *zAppend, char quote){
+static char *appendText(char *zIn, char const *zAppend, char quote){
   int len;
   int i;
   int nAppend = strlen(zAppend);
@@ -793,7 +796,7 @@ static char zHelp[] =
 ;
 
 /* Forward reference */
-static void process_input(struct callback_data *p, FILE *in);
+static int process_input(struct callback_data *p, FILE *in);
 
 /*
 ** Make sure the database is open.  If it is not, then open it.  If
@@ -851,6 +854,23 @@ static void resolve_backslashes(char *z){
     z[j] = c;
   }
   z[j] = 0;
+}
+
+/*
+** Interpret zArg as a boolean value.  Return either 0 or 1.
+*/
+static int booleanValue(char *zArg){
+  int val = atoi(zArg);
+  int j;
+  for(j=0; zArg[j]; j++){
+    zArg[j] = tolower(zArg[j]);
+  }
+  if( strcmp(zArg,"on")==0 ){
+    val = 1;
+  }else if( strcmp(zArg,"yes")==0 ){
+    val = 1;
+  }
+  return val;
 }
 
 /*
@@ -957,18 +977,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
   }else
 
   if( c=='e' && strncmp(azArg[0], "echo", n)==0 && nArg>1 ){
-    int j;
-    char *z = azArg[1];
-    int val = atoi(azArg[1]);
-    for(j=0; z[j]; j++){
-      z[j] = tolower((unsigned char)z[j]);
-    }
-    if( strcmp(z,"on")==0 ){
-      val = 1;
-    }else if( strcmp(z,"yes")==0 ){
-      val = 1;
-    }
-    p->echoOn = val;
+    p->echoOn = booleanValue(azArg[1]);
   }else
 
   if( c=='e' && strncmp(azArg[0], "exit", n)==0 ){
@@ -976,18 +985,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
   }else
 
   if( c=='e' && strncmp(azArg[0], "explain", n)==0 ){
-    int j;
-    static char zOne[] = "1";
-    char *z = nArg>=2 ? azArg[1] : zOne;
-    int val = atoi(z);
-    for(j=0; z[j]; j++){
-      z[j] = tolower((unsigned char)z[j]);
-    }
-    if( strcmp(z,"on")==0 ){
-      val = 1;
-    }else if( strcmp(z,"yes")==0 ){
-      val = 1;
-    }
+    int val = nArg>=2 ? booleanValue(azArg[1]) : 1;
     if(val == 1) {
       if(!p->explainPrev.valid) {
         p->explainPrev.valid = 1;
@@ -1018,21 +1016,9 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     }
   }else
 
-  if( c=='h' && (strncmp(azArg[0], "header", n)==0
-                 ||
+  if( c=='h' && (strncmp(azArg[0], "header", n)==0 ||
                  strncmp(azArg[0], "headers", n)==0 )&& nArg>1 ){
-    int j;
-    char *z = azArg[1];
-    int val = atoi(azArg[1]);
-    for(j=0; z[j]; j++){
-      z[j] = tolower((unsigned char)z[j]);
-    }
-    if( strcmp(z,"on")==0 ){
-      val = 1;
-    }else if( strcmp(z,"yes")==0 ){
-      val = 1;
-    }
-    p->showHeader = val;
+    p->showHeader = booleanValue(azArg[1]);
   }else
 
   if( c=='h' && strncmp(azArg[0], "help", n)==0 ){
@@ -1482,18 +1468,26 @@ static int _is_command_terminator(const char *zLine){
 ** is coming from a file or device.  A prompt is issued and history
 ** is saved only if input is interactive.  An interrupt signal will
 ** cause this routine to exit immediately, unless input is interactive.
+**
+** Return the number of errors.
 */
-static void process_input(struct callback_data *p, FILE *in){
+static int process_input(struct callback_data *p, FILE *in){
   char *zLine;
   char *zSql = 0;
   int nSql = 0;
   char *zErrMsg;
-  int rc;
+  int rc = 0;
+  int lineno = 0;
+  int startline = 0;
   while( fflush(p->out), (zLine = one_input_line(zSql, in))!=0 ){
     if( seenInterrupt ){
       if( in!=0 ) break;
       seenInterrupt = 0;
     }
+    if( rc && (in!=0 || !stdin_is_interactive) ){
+      break;
+    }
+    lineno++;
     if( p->echoOn ) printf("%s\n", zLine);
     if( (zSql==0 || zSql[0]==0) && _all_whitespace(zLine) ) continue;
     if( zLine && zLine[0]=='.' && nSql==0 ){
@@ -1516,6 +1510,7 @@ static void process_input(struct callback_data *p, FILE *in){
           exit(1);
         }
         strcpy(zSql, zLine);
+        startline = lineno;
       }
     }else{
       int len = strlen(zLine);
@@ -1534,13 +1529,18 @@ static void process_input(struct callback_data *p, FILE *in){
       open_db(p);
       rc = sqlite3_exec(p->db, zSql, callback, p, &zErrMsg);
       if( rc || zErrMsg ){
-        /* if( in!=0 && !p->echoOn ) printf("%s\n",zSql); */
+        char zPrefix[100];
+        if( in!=0 || !stdin_is_interactive ){
+          sprintf(zPrefix, "SQL error near line %d:", startline);
+        }else{
+          sprintf(zPrefix, "SQL error:");
+        }
         if( zErrMsg!=0 ){
-          printf("SQL error: %s\n", zErrMsg);
+          printf("%s %s\n", zPrefix, zErrMsg);
           sqlite3_free(zErrMsg);
           zErrMsg = 0;
         }else{
-          printf("SQL error: %s\n", sqlite3_errmsg(p->db));
+          printf("%s %s\n", zPrefix, sqlite3_errmsg(p->db));
         }
       }
       free(zSql);
@@ -1552,6 +1552,7 @@ static void process_input(struct callback_data *p, FILE *in){
     if( !_all_whitespace(zSql) ) printf("Incomplete SQL: %s\n", zSql);
     free(zSql);
   }
+  return rc;
 }
 
 /*
@@ -1642,7 +1643,7 @@ static void process_sqliterc(
   }
   in = fopen(sqliterc,"rb");
   if( in ){
-    if( isatty(fileno(stdout)) ){
+    if( stdin_is_interactive ){
       printf("Loading resources from %s\n",sqliterc);
     }
     process_input(p,in);
@@ -1698,6 +1699,7 @@ int main(int argc, char **argv){
   const char *zInitFile = 0;
   char *zFirstCmd = 0;
   int i;
+  int rc = 0;
 
 #ifdef __MACOS__
   argc = ccommand(&argv);
@@ -1705,6 +1707,7 @@ int main(int argc, char **argv){
 
   Argv0 = argv[0];
   main_init(&data);
+  stdin_is_interactive = isatty(0);
 
   /* Make sure we have a valid signal handler early, before anything
   ** else is done.
@@ -1718,7 +1721,10 @@ int main(int argc, char **argv){
   ** and the first command to execute.
   */
   for(i=1; i<argc-1; i++){
+    char *z;
     if( argv[i][0]!='-' ) break;
+    z = argv[i];
+    if( z[0]=='-' && z[1]=='-' ) z++;
     if( strcmp(argv[i],"-separator")==0 || strcmp(argv[i],"-nullvalue")==0 ){
       i++;
     }else if( strcmp(argv[i],"-init")==0 ){
@@ -1769,6 +1775,7 @@ int main(int argc, char **argv){
   */
   for(i=1; i<argc && argv[i][0]=='-'; i++){
     char *z = argv[i];
+    if( z[1]=='-' ){ z++; }
     if( strcmp(z,"-init")==0 ){
       i++;
     }else if( strcmp(z,"-html")==0 ){
@@ -1794,6 +1801,10 @@ int main(int argc, char **argv){
     }else if( strcmp(z,"-version")==0 ){
       printf("%s\n", sqlite3_libversion());
       return 0;
+    }else if( strcmp(z,"-interactive")==0 ){
+      stdin_is_interactive = 1;
+    }else if( strcmp(z,"-batch")==0 ){
+      stdin_is_interactive = 0;
     }else if( strcmp(z,"-help")==0 || strcmp(z, "--help")==0 ){
       usage(1);
     }else{
@@ -1821,7 +1832,7 @@ int main(int argc, char **argv){
   }else{
     /* Run commands received from standard input
     */
-    if( isatty(fileno(stdout)) && isatty(fileno(stdin)) ){
+    if( stdin_is_interactive ){
       char *zHome;
       char *zHistory = 0;
       printf(
@@ -1836,7 +1847,7 @@ int main(int argc, char **argv){
 #if defined(HAVE_READLINE) && HAVE_READLINE==1
       if( zHistory ) read_history(zHistory);
 #endif
-      process_input(&data, 0);
+      rc = process_input(&data, 0);
       if( zHistory ){
         stifle_history(100);
         write_history(zHistory);
@@ -1844,7 +1855,7 @@ int main(int argc, char **argv){
       }
       free(zHome);
     }else{
-      process_input(&data, stdin);
+      rc = process_input(&data, stdin);
     }
   }
   set_table_name(&data, 0);
@@ -1853,5 +1864,5 @@ int main(int argc, char **argv){
       fprintf(stderr,"error closing database: %s\n", sqlite3_errmsg(db));
     }
   }
-  return 0;
+  return rc;
 }
