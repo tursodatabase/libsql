@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.151 2006/10/26 14:25:58 drh Exp $
+** $Id: shell.c,v 1.152 2006/10/26 18:15:42 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -59,6 +59,12 @@
 */
 extern int isatty();
 #endif
+
+/*
+** If the following flag is set, then command execution stops
+** at an error if we are not interactive.
+*/
+static int bail_on_error = 0;
 
 /*
 ** Threat stdin as an interactive input if the following variable
@@ -354,18 +360,56 @@ static void output_html_string(FILE *out, const char *z){
 }
 
 /*
+** If a field contains any character identified by a 1 in the following
+** array, then the string must be quoted for CSV.
+*/
+static const char needCsvQuote[] = {
+  1, 1, 1, 1, 1, 1, 1, 1,   1, 1, 1, 1, 1, 1, 1, 1,   
+  1, 1, 1, 1, 1, 1, 1, 1,   1, 1, 1, 1, 1, 1, 1, 1,   
+  1, 0, 1, 0, 0, 0, 0, 1,   0, 0, 0, 0, 0, 0, 0, 0, 
+  0, 0, 0, 0, 0, 0, 0, 0,   0, 0, 0, 0, 0, 0, 0, 0, 
+  0, 0, 0, 0, 0, 0, 0, 0,   0, 0, 0, 0, 0, 0, 0, 0, 
+  0, 0, 0, 0, 0, 0, 0, 0,   0, 0, 0, 0, 0, 0, 0, 0, 
+  0, 0, 0, 0, 0, 0, 0, 0,   0, 0, 0, 0, 0, 0, 0, 0, 
+  0, 0, 0, 0, 0, 0, 0, 0,   0, 0, 0, 0, 0, 0, 0, 1, 
+  1, 1, 1, 1, 1, 1, 1, 1,   1, 1, 1, 1, 1, 1, 1, 1,   
+  1, 1, 1, 1, 1, 1, 1, 1,   1, 1, 1, 1, 1, 1, 1, 1,   
+  1, 1, 1, 1, 1, 1, 1, 1,   1, 1, 1, 1, 1, 1, 1, 1,   
+  1, 1, 1, 1, 1, 1, 1, 1,   1, 1, 1, 1, 1, 1, 1, 1,   
+  1, 1, 1, 1, 1, 1, 1, 1,   1, 1, 1, 1, 1, 1, 1, 1,   
+  1, 1, 1, 1, 1, 1, 1, 1,   1, 1, 1, 1, 1, 1, 1, 1,   
+  1, 1, 1, 1, 1, 1, 1, 1,   1, 1, 1, 1, 1, 1, 1, 1,   
+  1, 1, 1, 1, 1, 1, 1, 1,   1, 1, 1, 1, 1, 1, 1, 1,   
+};
+
+/*
 ** Output a single term of CSV.  Actually, p->separator is used for
 ** the separator, which may or may not be a comma.  p->nullvalue is
 ** the null value.  Strings are quoted using ANSI-C rules.  Numbers
 ** appear outside of quotes.
 */
 static void output_csv(struct callback_data *p, const char *z, int bSep){
+  FILE *out = p->out;
   if( z==0 ){
-    fprintf(p->out,"%s",p->nullvalue);
-  }else if( isNumber(z, 0) ){
-    fprintf(p->out,"%s",z);
+    fprintf(out,"%s",p->nullvalue);
   }else{
-    output_c_string(p->out, z);
+    int i;
+    for(i=0; z[i]; i++){
+      if( needCsvQuote[((unsigned char*)z)[i]] ){
+        i = 0;
+        break;
+      }
+    }
+    if( i==0 ){
+      putc('"', out);
+      for(i=0; z[i]; i++){
+        if( z[i]=='"' ) putc('"', out);
+        putc(z[i], out);
+      }
+      putc('"', out);
+    }else{
+      fprintf(out, "%s", z);
+    }
   }
   if( bSep ){
     fprintf(p->out, p->separator);
@@ -912,6 +956,10 @@ static int do_meta_command(char *zLine, struct callback_data *p){
   if( nArg==0 ) return rc;
   n = strlen(azArg[0]);
   c = azArg[0][0];
+  if( c=='b' && n>1 && strncmp(azArg[0], "bail", n)==0 && nArg>1 ){
+    bail_on_error = booleanValue(azArg[1]);
+  }else
+
   if( c=='d' && n>1 && strncmp(azArg[0], "databases", n)==0 ){
     struct callback_data data;
     char *zErrMsg = 0;
@@ -1476,24 +1524,30 @@ static int process_input(struct callback_data *p, FILE *in){
   char *zSql = 0;
   int nSql = 0;
   char *zErrMsg;
-  int rc = 0;
+  int rc;
+  int errCnt = 0;
   int lineno = 0;
   int startline = 0;
-  while( fflush(p->out), (zLine = one_input_line(zSql, in))!=0 ){
+
+  while( errCnt==0 || !bail_on_error || (in==0 && stdin_is_interactive) ){
+    fflush(p->out);
+    zLine = one_input_line(zSql, in);
+    if( zLine==0 ){
+      break;  /* We have reached EOF */
+    }
     if( seenInterrupt ){
       if( in!=0 ) break;
       seenInterrupt = 0;
-    }
-    if( rc && (in!=0 || !stdin_is_interactive) ){
-      break;
     }
     lineno++;
     if( p->echoOn ) printf("%s\n", zLine);
     if( (zSql==0 || zSql[0]==0) && _all_whitespace(zLine) ) continue;
     if( zLine && zLine[0]=='.' && nSql==0 ){
-      int rc = do_meta_command(zLine, p);
+      rc = do_meta_command(zLine, p);
       free(zLine);
-      if( rc ) break;
+      if( rc ){
+        errCnt++;
+      }
       continue;
     }
     if( _is_command_terminator(zLine) ){
@@ -1542,6 +1596,7 @@ static int process_input(struct callback_data *p, FILE *in){
         }else{
           printf("%s %s\n", zPrefix, sqlite3_errmsg(p->db));
         }
+        errCnt++;
       }
       free(zSql);
       zSql = 0;
@@ -1552,7 +1607,7 @@ static int process_input(struct callback_data *p, FILE *in){
     if( !_all_whitespace(zSql) ) printf("Incomplete SQL: %s\n", zSql);
     free(zSql);
   }
-  return rc;
+  return errCnt;
 }
 
 /*
@@ -1660,7 +1715,11 @@ static const char zOptions[] =
   "   -init filename       read/process named file\n"
   "   -echo                print commands before execution\n"
   "   -[no]header          turn headers on or off\n"
+  "   -bail                stop after hitting an error\n"
+  "   -interactive         force interactive I/O\n"
+  "   -batch               force batch I/O\n"
   "   -column              set output mode to 'column'\n"
+  "   -csv                 set output mode to 'csv'\n"
   "   -html                set output mode to HTML\n"
   "   -line                set output mode to 'line'\n"
   "   -list                set output mode to 'list'\n"
@@ -1786,6 +1845,9 @@ int main(int argc, char **argv){
       data.mode = MODE_Line;
     }else if( strcmp(z,"-column")==0 ){
       data.mode = MODE_Column;
+    }else if( strcmp(z,"-csv")==0 ){
+      data.mode = MODE_Csv;
+      strcpy(data.separator,",");
     }else if( strcmp(z,"-separator")==0 ){
       i++;
       sprintf(data.separator,"%.*s",(int)sizeof(data.separator)-1,argv[i]);
@@ -1798,6 +1860,8 @@ int main(int argc, char **argv){
       data.showHeader = 0;
     }else if( strcmp(z,"-echo")==0 ){
       data.echoOn = 1;
+    }else if( strcmp(z,"-bail")==0 ){
+      bail_on_error = 1;
     }else if( strcmp(z,"-version")==0 ){
       printf("%s\n", sqlite3_libversion());
       return 0;

@@ -1,5 +1,5 @@
-C Command-line\sshell\senhancements.\s\sBail\sout\swhen\serrors\sare\sseen\sin\nnon-interactive\smode.\s\sOverride\sisatty()\susing\s-interactive\sor\s-batch\ncommand-line\soptions.\s\sReport\sline\snumber\sin\serror\smessages.\nTickets\s#2009,\s#2045.\s(CVS\s3490)
-D 2006-10-26T14:25:58
+C Bring\sCVS\soutput\sinto\smore\scommonly\saccepted\spractice.\s\sTickets\s#2030,\s#1573.\nAdd\scommand-line\soptions\s-bail\sand\s".bail"\scommands.\s\sDefault\sbehavior\sis\nto\scontinue\safter\sencountering\san\serror.\s\sTicket\s#2045.\s(CVS\s3491)
+D 2006-10-26T18:15:42
 F Makefile.in 4379c909d46b38b8c5db3533084601621d4f14b2
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -94,7 +94,7 @@ F src/printf.c b179b6ed12f793e028dd169e2e2e2b2a37eedc63
 F src/random.c d40f8d356cecbd351ccfab6eaedd7ec1b54f5261
 F src/select.c 6ba6d8ead43d0575ce1f8b418cc039f8f301389a
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
-F src/shell.c 73cbdcb3cdc63bca7630dc1dfe41ab9ac90d98db
+F src/shell.c 718c9dc51fd79b1a69c1c50c7fb750b522826e03
 F src/sqlite.h.in bf935004029631fd93d119bcf2f7259b9cb9ad5e
 F src/sqlite3ext.h 2c2156cc32a158e2b7bd9042d42accf94bff2e40
 F src/sqliteInt.h 637ef229c3d8e0f98096ab31c496efdf5361d678
@@ -419,7 +419,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P cde383eb467de0d752e94a22cd2f890c2dc599cc
-R 91d1f3065e90bb2f41c9cbd193a3305f
+P 3baa04cfb91039e27f642f6f78ef761b5770cb08
+R 5125f3c39d1102ce299e6d679578cc74
 U drh
-Z 74126c296022fab53cfd540120f95a5c
+Z e8dda10bb6ff8231cd4d006a2fdac63a
