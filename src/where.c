@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.229 2006/10/18 23:26:39 drh Exp $
+** $Id: where.c,v 1.230 2006/10/27 14:06:59 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1495,11 +1495,11 @@ static void disableTerm(WhereLevel *pLevel, WhereTerm *pTerm){
 **
 */
 static void buildIndexProbe(
-  Vdbe *v, 
-  int nColumn, 
-  int nExtra, 
-  int brk, 
-  Index *pIdx
+  Vdbe *v,        /* Generate code into this VM */
+  int nColumn,    /* The number of columns to check for NULL */
+  int nExtra,     /* Number of extra values beyond nColumn */
+  int brk,        /* Jump to here if no match is possible */
+  Index *pIdx     /* Index that we will be searching */
 ){
   sqlite3VdbeAddOp(v, OP_NotNull, -nColumn, sqlite3VdbeCurrentAddr(v)+3);
   sqlite3VdbeAddOp(v, OP_Pop, nColumn+nExtra, 0);
@@ -1613,6 +1613,9 @@ static void codeAllEqualityTerms(
     if( pTerm==0 ) break;
     assert( (pTerm->flags & TERM_CODED)==0 );
     codeEqualityTerm(pParse, pTerm, brk, pLevel);
+#if 0  /* WORK IN PROGRESS */
+    sqlite3VdbeAddOp(v, OP_IsNull, termsInMem ? -1 : -(j+1), brk);
+#endif
     if( termsInMem ){
       sqlite3VdbeAddOp(v, OP_MemStore, pLevel->iMem+j+1, 1);
     }

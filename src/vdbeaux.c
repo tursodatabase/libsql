@@ -1892,14 +1892,13 @@ int sqlite3VdbeRecordCompare(
     idx2 += GetVarint( aKey2+idx2, serial_type2 );
     if( d2>=nKey2 && sqlite3VdbeSerialTypeLen(serial_type2)>0 ) break;
 
-    /* Assert that there is enough space left in each key for the blob of
-    ** data to go with the serial type just read. This assert may fail if
-    ** the file is corrupted.  Then read the value from each key into mem1
-    ** and mem2 respectively.
+    /* Extract the values to be compared.
     */
     d1 += sqlite3VdbeSerialGet(&aKey1[d1], serial_type1, &mem1);
     d2 += sqlite3VdbeSerialGet(&aKey2[d2], serial_type2, &mem2);
 
+    /* Do the comparison
+    */
     rc = sqlite3MemCompare(&mem1, &mem2, i<nField ? pKeyInfo->aColl[i] : 0);
     if( mem1.flags & MEM_Dyn ) sqlite3VdbeMemRelease(&mem1);
     if( mem2.flags & MEM_Dyn ) sqlite3VdbeMemRelease(&mem2);

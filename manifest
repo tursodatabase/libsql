@@ -1,5 +1,5 @@
-C Bring\sCVS\soutput\sinto\smore\scommonly\saccepted\spractice.\s\sTickets\s#2030,\s#1573.\nAdd\scommand-line\soptions\s-bail\sand\s".bail"\scommands.\s\sDefault\sbehavior\sis\nto\scontinue\safter\sencountering\san\serror.\s\sTicket\s#2045.\s(CVS\s3491)
-D 2006-10-26T18:15:42
+C Changes\sdirected\stoward\soptimizing\sIS\sNULL\sterms\sin\sWHERE\sclauses.\s(CVS\s3492)
+D 2006-10-27T14:06:58
 F Makefile.in 4379c909d46b38b8c5db3533084601621d4f14b2
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -121,15 +121,15 @@ F src/update.c 951f95ef044cf6d28557c48dc35cb0711a0b9129
 F src/utf.c 67ecb1032bc0b42c105e88d65ef9d9f626eb0e1f
 F src/util.c 91d4cb189476906639ae611927d939691d1365f6
 F src/vacuum.c f6a7943f1f1002cb82ef2ea026cb1975a5b687cb
-F src/vdbe.c 84a9c0b0dd037c064ffed651977e20dd9d2bc1d1
+F src/vdbe.c 1d64351d52e06d55788ad342e1caf6d6a89901fe
 F src/vdbe.h 258b5d1c0aaa72192f09ff0568ce42b383f156fa
 F src/vdbeInt.h e3eaab262b67b84474625cfc38aec1125c32834b
 F src/vdbeapi.c f1858a5edc3a5e32d038514dd9e7e9091400a782
-F src/vdbeaux.c 6fcc47988bdd563755193c922695032f9d5e5e2b
+F src/vdbeaux.c 78c744f127df03ea63098ebb7dd7fe3eb303e284
 F src/vdbefifo.c 9efb94c8c3f4c979ebd0028219483f88e57584f5
 F src/vdbemem.c 26623176bf1c616aa478da958fac49502491a921
 F src/vtab.c aa30e940058ea56a1b7a9a7019ec21d307316fb4
-F src/where.c 49a0e7cc1cd4b80b7070a86bbee78db8409e762d
+F src/where.c 65a19a70c94ba78eb201d84084e8e127fbc40331
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/all.test 5df90d015ca63fcef2a4b62c24f7316b66c4bfd4
@@ -419,7 +419,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 3baa04cfb91039e27f642f6f78ef761b5770cb08
-R 5125f3c39d1102ce299e6d679578cc74
+P 517712d6fbc5ba5299942a54852298030f4d3381
+R 2570cb898b2d843f2301500c34c71dda
 U drh
-Z e8dda10bb6ff8231cd4d006a2fdac63a
+Z 06856299b267f8815d78835b6fe3e33f
