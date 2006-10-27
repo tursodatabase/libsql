@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.152 2006/10/26 18:15:42 drh Exp $
+** $Id: shell.c,v 1.153 2006/10/27 14:21:54 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -994,7 +994,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
       );
       run_table_dump_query(p->out, p->db,
         "SELECT sql FROM sqlite_master "
-        "WHERE sql NOT NULL AND rootpage==0 AND type='table'"
+        "WHERE sql NOT NULL AND rootpage==0"
       );
     }else{
       int i;
@@ -1010,7 +1010,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
           "  AND type!='meta' AND sql NOT NULL", 0);
         run_table_dump_query(p->out, p->db,
           "SELECT sql FROM sqlite_master "
-          "WHERE sql NOT NULL AND rootpage==0 AND type='table'"
+          "WHERE sql NOT NULL AND rootpage==0"
           "  AND tbl_name LIKE shellstatic()"
         );
         zShellStatic = 0;
