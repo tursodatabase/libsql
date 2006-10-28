@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.578 2006/10/27 14:06:58 drh Exp $
+** $Id: vdbe.c,v 1.579 2006/10/28 00:28:09 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -3844,38 +3844,6 @@ case OP_IdxGE: {        /* no-push */
     }
     if( res>0 ){
       pc = pOp->p2 - 1 ;
-    }
-  }
-  Release(pTos);
-  pTos--;
-  break;
-}
-
-/* Opcode: IdxIsNull P1 P2 *
-**
-** The top of the stack contains an index entry such as might be generated
-** by the MakeIdxRec opcode.  This routine looks at the first P1 fields of
-** that key.  If any of the first P1 fields are NULL, then a jump is made
-** to address P2.  Otherwise we fall straight through.
-**
-** The index entry is always popped from the stack.
-*/
-case OP_IdxIsNull: {        /* no-push */
-  int i = pOp->p1;
-  int k, n;
-  const char *z;
-  u32 serial_type;
-
-  assert( pTos>=p->aStack );
-  assert( pTos->flags & MEM_Blob );
-  z = pTos->z;
-  n = pTos->n;
-  k = sqlite3GetVarint32((u8*)z, &serial_type);
-  for(; k<n && i>0; i--){
-    k += sqlite3GetVarint32((u8*)&z[k], &serial_type);
-    if( serial_type==0 ){   /* Serial type 0 is a NULL */
-      pc = pOp->p2-1;
-      break;
     }
   }
   Release(pTos);
