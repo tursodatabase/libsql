@@ -1,5 +1,5 @@
-C Enhance\sthe\soptimizer\sso\sthat\sIS\sNULL\scan\suse\san\savailable\sindex.\s(CVS\s3494)
-D 2006-10-28T00:28:09
+C Changes\sto\ssupport\snon-ASCII\scharacters\sin\swin95\sfilenames.\nTicket\s#2047.\s(CVS\s3495)
+D 2006-10-30T13:37:22
 F Makefile.in 4379c909d46b38b8c5db3533084601621d4f14b2
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -83,7 +83,7 @@ F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
 F src/os_unix.c 523b674d93e0017320bb48b83fc0f9c9d07d3548
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
-F src/os_win.c 30e51641b0cb88826f25b2afcf8db3c83b7e45dd
+F src/os_win.c 1be3a56e96eae0561c000ba70428294a1621960d
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c a1293bb4d318cfa9fa7100a08c38ad5598cb4436
 F src/pager.h 0cff9de5e9019cb695a04d18df8caaaff933a272
@@ -419,7 +419,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 58171a41f706dd2fab1da5d83d2176d0103643fb
-R 3d00eb1d0264ea0aeb0bc4ee950a7a9d
+P 64762a9d582e4655d6bc5989d8e0ad773d659a7d
+R 5ec6d2ae141bcc5225f95a80dc3a18a6
 U drh
-Z f47a4f5a11ed13f459b99613e5b7d9ba
+Z 9d1a31671b051d96dc7533a8d807fa28
