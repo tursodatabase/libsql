@@ -1,5 +1,5 @@
-C Fix\sa\spair\sof\smemory\sleaks.\s\sThese\swere\sturned\sup\sby\srunning\svalgrind\nmemcheck\swith\svarious\s10k\sdoc\sinsert,\supdate,\sdelete,\sand\squery\stests.\s(CVS\s3497)
-D 2006-10-31T18:13:42
+C Change\sthe\sdefault\sprefix\sfor\stemporary\sfiles\sso\sthat\sit\sno\slonger\ncontains\sthe\stext\s"sqlite".\s\sIn\sthis\sway,\sperhaps\swe\swill\snot\sget\sso\nmany\sfalse\sbug\sreports\ssuch\sas\sticket\s#2049,\s#1989,\sand\s#1841.\s(CVS\s3498)
+D 2006-10-31T21:16:49
 F Makefile.in 4379c909d46b38b8c5db3533084601621d4f14b2
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -75,7 +75,7 @@ F src/loadext.c ab9b7fc502078a93f97161d28b4aac6ae2aad793
 F src/main.c 646deaa19e367fa8f3ace8b2e4577a53b1461d85
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/os.c 59f05de8c5777c34876607114a2fbe55ae578235
-F src/os.h 3fd6a022bafd620fdfd779a51dccb42f31c97f75
+F src/os.h b33ce697b30cdced1bfb86983f9dd34e49476239
 F src/os_common.h 545426356f0868a6765e70cb59e319d3acad0ed6
 F src/os_os2.c 361964755f361b5ba879549c201284ce61ee9431
 F src/os_os2.h e5f17dd69333632bbc3112881ea407c37d245eb3
@@ -419,7 +419,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P ebd44f0b5e229b990910bb44565de9a5c06cb5bc
-R fe3226a176e6e12982c395f0f1608ad5
-U shess
-Z a00c74ece01627ee9169044aee533e83
+P 3cd9b64b96018f69163ad0be0b5c07dd1be6abc6
+R 018a6674ba4f5b695adaf479843a0bf7
+U drh
+Z 54bdd0a68745edb86a0754794009ee02

@@ -83,7 +83,7 @@
 ** using -DTEMP_FILE_PREFIX=myprefix_ on the compiler command line.
 */
 #ifndef TEMP_FILE_PREFIX
-# define TEMP_FILE_PREFIX "sqlite_"
+# define TEMP_FILE_PREFIX "tfanswtpf_"
 #endif
 
 /*
