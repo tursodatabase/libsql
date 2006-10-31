@@ -1,5 +1,5 @@
-C Make\sthe\scommand-line\sshell\s".dump"\scommand\smore\sresilient\sin\sthe\sface\sof\ndatabase\scorruption.\s(CVS\s3496)
-D 2006-10-31T18:08:28
+C Fix\sa\spair\sof\smemory\sleaks.\s\sThese\swere\sturned\sup\sby\srunning\svalgrind\nmemcheck\swith\svarious\s10k\sdoc\sinsert,\supdate,\sdelete,\sand\squery\stests.\s(CVS\s3497)
+D 2006-10-31T18:13:42
 F Makefile.in 4379c909d46b38b8c5db3533084601621d4f14b2
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -33,7 +33,7 @@ F ext/fts1/fulltext.h 08525a47852d1d62a0be81d3fc3fe2d23b094efd
 F ext/fts1/simple_tokenizer.c 1844d72f7194c3fd3d7e4173053911bf0661b70d
 F ext/fts1/tokenizer.h 0c53421b832366d20d720d21ea3e1f6e66a36ef9
 F ext/fts2/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts2/fts2.c 10fe8d96a95ad09814d4a06049385b60b204e3a9
+F ext/fts2/fts2.c afa395abf388451241f807832faef20b82c2eb09
 F ext/fts2/fts2.h bbdab26d34f91974d5b9ade8b7836c140a7c4ce1
 F ext/fts2/fts2_hash.c b3f22116d4ef0bc8f2da6e3fdc435c86d0951a9b
 F ext/fts2/fts2_hash.h e283308156018329f042816eb09334df714e105e
@@ -419,7 +419,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 9fa3ae584ae4936696fd2f23a64697f0409ef313
-R 000cdc41e58c246d195b79d7b5adbe9e
-U drh
-Z b666da97eed5e567b2c6e3fa005b845f
+P ebd44f0b5e229b990910bb44565de9a5c06cb5bc
+R fe3226a176e6e12982c395f0f1608ad5
+U shess
+Z a00c74ece01627ee9169044aee533e83

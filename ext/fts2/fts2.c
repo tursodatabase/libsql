@@ -3691,7 +3691,7 @@ static void interiorWriterAppend(InteriorWriter *pWriter,
 }
 
 /* Free the space used by pWriter, including the linked-list of
-** InteriorBlocks.
+** InteriorBlocks, and parentWriter, if present.
 */
 static int interiorWriterDestroy(InteriorWriter *pWriter){
   InteriorBlock *block = pWriter->first;
@@ -3702,6 +3702,10 @@ static int interiorWriterDestroy(InteriorWriter *pWriter){
     dataBufferDestroy(&b->term);
     dataBufferDestroy(&b->data);
     free(b);
+  }
+  if( pWriter->parentWriter!=NULL ){
+    interiorWriterDestroy(pWriter->parentWriter);
+    free(pWriter->parentWriter);
   }
   SCRAMBLE(pWriter);
   return SQLITE_OK;
@@ -3843,6 +3847,26 @@ static int interiorReaderTermCmp(InteriorReader *pReader,
 /****************************************************************/
 /* LeafWriter is used to collect terms and associated doclist data
 ** into leaf blocks in %_segments (see top of file for format info).
+** Expected usage is:
+**
+** LeafWriter writer;
+** leafWriterInit(0, 0, &writer);
+** while( sorted_terms_left_to_process ){
+**   // data is doclist data for that term.
+**   rc = leafWriterStep(v, &writer, pTerm, nTerm, pData, nData);
+**   if( rc!=SQLITE_OK ) goto err;
+** }
+** rc = leafWriterFinalize(v, &writer);
+**err:
+** leafWriterDestroy(&writer);
+** return rc;
+**
+** leafWriterStep() may write a collected leaf out to %_segments.
+** leafWriterFinalize() finishes writing any buffered data and stores
+** a root node in %_segdir.  leafWriterDestroy() frees all buffers and
+** InteriorWriters allocated as part of writing this segment.
+**
+** TODO(shess) Document leafWriterStepMerge().
 */
 
 /* Put terms with data this big in their own block. */
@@ -4879,6 +4903,7 @@ static int writeZeroSegment(fulltext_vtab *v, fts2Hash *pTerms){
     dlwDestroy(&dlw);
     if( rc!=SQLITE_OK ) goto err;
   }
+  dataBufferDestroy(&dl);
   rc = leafWriterFinalize(v, &writer);
 
  err:
