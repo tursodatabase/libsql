@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.153 2006/10/27 14:21:54 drh Exp $
+** $Id: shell.c,v 1.154 2006/10/31 18:08:28 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -768,9 +768,6 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
       rc = run_table_dump_query(p->out, p->db, zSelect);
     }
     if( zSelect ) free(zSelect);
-    if( rc!=SQLITE_OK ){
-      return 1;
-    }
   }
   return 0;
 }
