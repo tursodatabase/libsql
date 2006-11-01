@@ -1,5 +1,5 @@
-C Change\sthe\sdefault\stemp\sfile\sprefix\sto\sbe\s"sqlite"\sspelled\sbackwards.\nTickets\s#2049\set\sal.\s(CVS\s3499)
-D 2006-10-31T21:27:33
+C Remove\sdead\scode\sfrom\sbtree.c.\s\sTicket\s#2050.\s(CVS\s3500)
+D 2006-11-01T12:08:41
 F Makefile.in 4379c909d46b38b8c5db3533084601621d4f14b2
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -57,7 +57,7 @@ F src/alter.c 2c79ec40f65e33deaf90ca493422c74586e481a3
 F src/analyze.c 7d2b7ab9a9c2fd6e55700f69064dfdd3e36d7a8a
 F src/attach.c b11eb4d5d3fb99a10a626956bccc7215f6b68b16
 F src/auth.c 902f4722661c796b97f007d9606bd7529c02597f
-F src/btree.c 8f18bb08f84d6a12104fd0f01255febe6289a186
+F src/btree.c 6c6a106d47e9c18047ab8740d3c9712b20ecd754
 F src/btree.h 061c50e37de7f50b58528e352d400cf33ead7418
 F src/build.c 7199949a6a3449e9ec69408cc79a48ed04fd0b85
 F src/callback.c fd9bb39f7ff6b52bad8365617abc61c720640429
@@ -419,7 +419,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 7ce48000bb0dafda8a171bfc040dfe2300f84ed2
-R b5f51730eea9e8a049400d6243353814
+P a19ce5c1c4e86d141f7e04af6babeb2ecb75b523
+R 73238275922b5fad9333a4846621a7e2
 U drh
-Z 17ffcdf12d5669a938d6a3b8728ee88d
+Z 72b5a278ab323c8b0c34502e22c57218

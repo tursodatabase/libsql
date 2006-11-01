@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.328 2006/08/16 16:42:48 drh Exp $
+** $Id: btree.c,v 1.329 2006/11/01 12:08:41 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1039,91 +1039,6 @@ static int ptrmapPutOvfl(MemPage *pPage, int iCell){
 #endif
 
 
-/*
-** Do sanity checking on a page.  Throw an exception if anything is
-** not right.
-**
-** This routine is used for internal error checking only.  It is omitted
-** from most builds.
-*/
-#if defined(BTREE_DEBUG) && !defined(NDEBUG) && 0
-static void _pageIntegrity(MemPage *pPage){
-  int usableSize;
-  u8 *data;
-  int i, j, idx, c, pc, hdr, nFree;
-  int cellOffset;
-  int nCell, cellLimit;
-  u8 *used;
-
-  used = sqliteMallocRaw( pPage->pBt->pageSize );
-  if( used==0 ) return;
-  usableSize = pPage->pBt->usableSize;
-  assert( pPage->aData==&((unsigned char*)pPage)[-pPage->pBt->pageSize] );
-  hdr = pPage->hdrOffset;
-  assert( hdr==(pPage->pgno==1 ? 100 : 0) );
-  assert( pPage->pgno==sqlite3pager_pagenumber(pPage->aData) );
-  c = pPage->aData[hdr];
-  if( pPage->isInit ){
-    assert( pPage->leaf == ((c & PTF_LEAF)!=0) );
-    assert( pPage->zeroData == ((c & PTF_ZERODATA)!=0) );
-    assert( pPage->leafData == ((c & PTF_LEAFDATA)!=0) );
-    assert( pPage->intKey == ((c & (PTF_INTKEY|PTF_LEAFDATA))!=0) );
-    assert( pPage->hasData ==
-             !(pPage->zeroData || (!pPage->leaf && pPage->leafData)) );
-    assert( pPage->cellOffset==pPage->hdrOffset+12-4*pPage->leaf );
-    assert( pPage->nCell = get2byte(&pPage->aData[hdr+3]) );
-  }
-  data = pPage->aData;
-  memset(used, 0, usableSize);
-  for(i=0; i<hdr+10-pPage->leaf*4; i++) used[i] = 1;
-  nFree = 0;
-  pc = get2byte(&data[hdr+1]);
-  while( pc ){
-    int size;
-    assert( pc>0 && pc<usableSize-4 );
-    size = get2byte(&data[pc+2]);
-    assert( pc+size<=usableSize );
-    nFree += size;
-    for(i=pc; i<pc+size; i++){
-      assert( used[i]==0 );
-      used[i] = 1;
-    }
-    pc = get2byte(&data[pc]);
-  }
-  idx = 0;
-  nCell = get2byte(&data[hdr+3]);
-  cellLimit = get2byte(&data[hdr+5]);
-  assert( pPage->isInit==0 
-         || pPage->nFree==nFree+data[hdr+7]+cellLimit-(cellOffset+2*nCell) );
-  cellOffset = pPage->cellOffset;
-  for(i=0; i<nCell; i++){
-    int size;
-    pc = get2byte(&data[cellOffset+2*i]);
-    assert( pc>0 && pc<usableSize-4 );
-    size = cellSize(pPage, &data[pc]);
-    assert( pc+size<=usableSize );
-    for(j=pc; j<pc+size; j++){
-      assert( used[j]==0 );
-      used[j] = 1;
-    }
-  }
-  for(i=cellOffset+2*nCell; i<cellimit; i++){
-    assert( used[i]==0 );
-    used[i] = 1;
-  }
-  nFree = 0;
-  for(i=0; i<usableSize; i++){
-    assert( used[i]<=1 );
-    if( used[i]==0 ) nFree++;
-  }
-  assert( nFree==data[hdr+7] );
-  sqliteFree(used);
-}
-#define pageIntegrity(X) _pageIntegrity(X)
-#else
-# define pageIntegrity(X)
-#endif
-
 /* A bunch of assert() statements to check the transaction state variables
 ** of handle p (type Btree*) are internally consistent.
 */
@@ -1430,7 +1345,6 @@ static int initPage(
   }
 
   pPage->isInit = 1;
-  pageIntegrity(pPage);
   return SQLITE_OK;
 }
 
@@ -1461,7 +1375,6 @@ static void zeroPage(MemPage *pPage, int flags){
   pPage->idxShift = 0;
   pPage->nCell = 0;
   pPage->isInit = 1;
-  pageIntegrity(pPage);
 }
 
 /*
@@ -2971,7 +2884,6 @@ static int getPayload(
   assert( pCur->eState==CURSOR_VALID );
   pBt = pCur->pBtree->pBt;
   pPage = pCur->pPage;
-  pageIntegrity(pPage);
   assert( pCur->idx>=0 && pCur->idx<pPage->nCell );
   getCellInfo(pCur);
   aPayload = pCur->info.pCell + pCur->info.nHeader;
@@ -3109,7 +3021,6 @@ static const unsigned char *fetchPayload(
   assert( pCur!=0 && pCur->pPage!=0 );
   assert( pCur->eState==CURSOR_VALID );
   pPage = pCur->pPage;
-  pageIntegrity(pPage);
   assert( pCur->idx>=0 && pCur->idx<pPage->nCell );
   getCellInfo(pCur);
   aPayload = pCur->info.pCell;
@@ -3171,7 +3082,6 @@ static int moveToChild(BtCursor *pCur, u32 newPgno){
   assert( pCur->eState==CURSOR_VALID );
   rc = getAndInitPage(pBt, newPgno, &pNewPage, pCur->pPage);
   if( rc ) return rc;
-  pageIntegrity(pNewPage);
   pNewPage->idxParent = pCur->idx;
   pOldPage = pCur->pPage;
   pOldPage->idxShift = 0;
@@ -3219,10 +3129,8 @@ static void moveToParent(BtCursor *pCur){
   pPage = pCur->pPage;
   assert( pPage!=0 );
   assert( !isRootPage(pPage) );
-  pageIntegrity(pPage);
   pParent = pPage->pParent;
   assert( pParent!=0 );
-  pageIntegrity(pParent);
   idxParent = pPage->idxParent;
   sqlite3pager_ref(pParent->aData);
   releasePage(pPage);
@@ -3252,7 +3160,6 @@ static int moveToRoot(BtCursor *pCur){
       return rc;
     }
     releasePage(pCur->pPage);
-    pageIntegrity(pRoot);
     pCur->pPage = pRoot;
   }
   pCur->idx = 0;
@@ -3406,7 +3313,6 @@ int sqlite3BtreeMoveto(BtCursor *pCur, const void *pKey, i64 nKey, int *pRes){
     if( !pPage->intKey && pKey==0 ){
       return SQLITE_CORRUPT_BKPT;
     }
-    pageIntegrity(pPage);
     while( lwr<=upr ){
       void *pCellKey;
       i64 nCellKey;
@@ -4258,7 +4164,6 @@ static int insertCell(
     put2byte(&data[ins], idx);
     put2byte(&data[hdr+3], pPage->nCell);
     pPage->idxShift = 1;
-    pageIntegrity(pPage);
 #ifndef SQLITE_OMIT_AUTOVACUUM
     if( pPage->pBt->autoVacuum ){
       /* The cell may contain a pointer to an overflow page. If so, write
@@ -4998,8 +4903,6 @@ static int balance_nonroot(MemPage *pPage){
   ** But the parent page will always be initialized.
   */
   assert( pParent->isInit );
-  /* assert( pPage->isInit ); // No! pPage might have been added to freelist */
-  /* pageIntegrity(pPage);    // No! pPage might have been added to freelist */ 
   rc = balance(pParent, 0);
   
   /*
@@ -5984,14 +5887,12 @@ int sqlite3BtreeCursorInfo(BtCursor *pCur, int *aResult, int upCnt){
     return rc;
   }
 
-  pageIntegrity(pPage);
   assert( pPage->isInit );
   getTempCursor(pCur, &tmpCur);
   while( upCnt-- ){
     moveToParent(&tmpCur);
   }
   pPage = tmpCur.pPage;
-  pageIntegrity(pPage);
   aResult[0] = sqlite3pager_pagenumber(pPage->aData);
   assert( aResult[0]==pPage->pgno );
   aResult[1] = tmpCur.idx;
