@@ -993,12 +993,14 @@ static int winRead(OsFile *id, void *pBuf, int amt){
   SimulateIOError(return SQLITE_IOERR);
   TRACE3("READ %d lock=%d\n", ((winFile*)id)->h, ((winFile*)id)->locktype);
   if( !ReadFile(((winFile*)id)->h, pBuf, amt, &got, 0) ){
-    got = 0;
+    got = -1;
   }
   if( got==(DWORD)amt ){
     return SQLITE_OK;
+  }else if( goc<0 ){
+    return SQLITE_IOERR_READ;
   }else{
-    return SQLITE_IOERR;
+    return SQLITE_IOERR_SHORT_READ;
   }
 }
 

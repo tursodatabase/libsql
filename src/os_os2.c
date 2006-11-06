@@ -290,7 +290,7 @@ int os2Read( OsFile *id, void *pBuf, int amt ){
   SimulateIOError( return SQLITE_IOERR );
   TRACE3( "READ %d lock=%d\n", ((os2File*)id)->h, ((os2File*)id)->locktype );
   DosRead( ((os2File*)id)->h, pBuf, amt, &got );
-  return (got == (ULONG)amt) ? SQLITE_OK : SQLITE_IOERR;
+  return (got == (ULONG)amt) ? SQLITE_OK : SQLITE_IOERR_SHORT_READ;
 }
 
 /*

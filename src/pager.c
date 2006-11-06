@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.274 2006/10/03 19:05:19 drh Exp $
+** @(#) $Id: pager.c,v 1.275 2006/11/06 21:20:26 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1798,14 +1798,19 @@ void enable_simulated_io_errors(void){
 ** response is to zero the memory at pDest and continue.  A real IO error 
 ** will presumably recur and be picked up later (Todo: Think about this).
 */
-void sqlite3pager_read_fileheader(Pager *pPager, int N, unsigned char *pDest){
+int sqlite3pager_read_fileheader(Pager *pPager, int N, unsigned char *pDest){
+  int rc = SQLITE_OK;
   memset(pDest, 0, N);
   if( MEMDB==0 ){
     disable_simulated_io_errors();
     sqlite3OsSeek(pPager->fd, 0);
-    sqlite3OsRead(pPager->fd, pDest, N);
     enable_simulated_io_errors();
+    rc = sqlite3OsRead(pPager->fd, pDest, N);
+    if( rc==SQLITE_IOERR_SHORT_READ ){
+      rc = SQLITE_OK;
+    }
   }
+  return rc;
 }
 
 /*
@@ -2789,19 +2794,10 @@ int sqlite3pager_get(Pager *pPager, Pgno pgno, void **ppPage){
       }
       TRACE3("FETCH %d page %d\n", PAGERID(pPager), pPg->pgno);
       CODEC1(pPager, PGHDR_TO_DATA(pPg), pPg->pgno, 3);
-      if( rc!=SQLITE_OK ){
-        i64 fileSize;
-        int rc2 = sqlite3OsFileSize(pPager->fd, &fileSize);
-        if( rc2!=SQLITE_OK || fileSize>=pgno*pPager->pageSize ){
-	  /* An IO error occured in one of the the sqlite3OsSeek() or
-          ** sqlite3OsRead() calls above. */
-          pPg->pgno = 0;
-          sqlite3pager_unref(PGHDR_TO_DATA(pPg));
-          return rc;
-        }else{
-          clear_simulated_io_error();
-          memset(PGHDR_TO_DATA(pPg), 0, pPager->pageSize);
-        }
+      if( rc!=SQLITE_OK && rc!=SQLITE_IOERR_SHORT_READ ){
+        pPg->pgno = 0;
+        sqlite3pager_unref(PGHDR_TO_DATA(pPg));
+        return rc;
       }else{
         TEST_INCR(pPager->nRead);
       }

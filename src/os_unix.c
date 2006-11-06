@@ -1026,7 +1026,7 @@ static int unixRead(OsFile *id, void *pBuf, int amt){
   TRACE5("READ    %-3d %5d %7d %d\n", ((unixFile*)id)->h, got,
           last_page, TIMER_ELAPSED);
   SEEK(0);
-  SimulateIOError( got=0 );
+  SimulateIOError( got = -1 );
   if( got==amt ){
     return SQLITE_OK;
   }else if( got<0 ){
