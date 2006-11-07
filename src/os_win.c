@@ -997,7 +997,7 @@ static int winRead(OsFile *id, void *pBuf, int amt){
   }
   if( got==(DWORD)amt ){
     return SQLITE_OK;
-  }else if( goc<0 ){
+  }else if( got<0 ){
     return SQLITE_IOERR_READ;
   }else{
     return SQLITE_IOERR_SHORT_READ;
