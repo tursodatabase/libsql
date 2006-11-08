@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.154 2006/10/31 18:08:28 drh Exp $
+** $Id: shell.c,v 1.155 2006/11/08 12:25:43 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -918,7 +918,7 @@ static int booleanValue(char *zArg){
 ** If an input line begins with "." then invoke this routine to
 ** process that line.
 **
-** Return 1 to exit and 0 to continue.
+** Return 1 on error, 2 to exit, and 0 otherwise.
 */
 static int do_meta_command(char *zLine, struct callback_data *p){
   int i = 1;
@@ -1026,7 +1026,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
   }else
 
   if( c=='e' && strncmp(azArg[0], "exit", n)==0 ){
-    rc = 1;
+    rc = 2;
   }else
 
   if( c=='e' && strncmp(azArg[0], "explain", n)==0 ){
@@ -1100,6 +1100,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     if( rc ){
       fprintf(stderr,"Error: %s\n", sqlite3_errmsg(db));
       nCol = 0;
+      rc = 1;
     }else{
       nCol = sqlite3_column_count(pStmt);
     }
@@ -1120,7 +1121,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     if( rc ){
       fprintf(stderr, "Error: %s\n", sqlite3_errmsg(db));
       sqlite3_finalize(pStmt);
-      return 0;
+      return 1;
     }
     in = fopen(zFile, "rb");
     if( in==0 ){
@@ -1166,6 +1167,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
       if( rc!=SQLITE_OK ){
         fprintf(stderr,"Error: %s\n", sqlite3_errmsg(db));
         zCommit = "ROLLBACK";
+        rc = 1;
         break;
       }
     }
@@ -1211,6 +1213,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     if( rc!=SQLITE_OK ){
       fprintf(stderr, "%s\n", zErrMsg);
       sqlite3_free(zErrMsg);
+      rc = 1;
     }
   }else
 #endif
@@ -1282,7 +1285,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
   }else
 
   if( c=='q' && strncmp(azArg[0], "quit", n)==0 ){
-    rc = 1;
+    rc = 2;
   }else
 
   if( c=='r' && strncmp(azArg[0], "read", n)==0 && nArg==2 ){
@@ -1434,6 +1437,8 @@ static int do_meta_command(char *zLine, struct callback_data *p){
         }
         printf("\n");
       }
+    }else{
+      rc = 1;
     }
     sqlite3_free_table(azResult);
   }else
@@ -1542,7 +1547,9 @@ static int process_input(struct callback_data *p, FILE *in){
     if( zLine && zLine[0]=='.' && nSql==0 ){
       rc = do_meta_command(zLine, p);
       free(zLine);
-      if( rc ){
+      if( rc==2 ){
+        break;
+      }else if( rc ){
         errCnt++;
       }
       continue;

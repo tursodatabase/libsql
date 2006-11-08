@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sos_win.c.\s\sTicket\s#2055.\s(CVS\s3504)
-D 2006-11-07T15:02:08
+C Make\sthe\s.exit\sand\s.quit\scommands\swork\sagain\sin\sthe\sshell.\s\sTicket\s#2056.\s(CVS\s3505)
+D 2006-11-08T12:25:43
 F Makefile.in 8e14898d41a53033ecb687d93c9cd5d109fb9ae3
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -94,7 +94,7 @@ F src/printf.c b179b6ed12f793e028dd169e2e2e2b2a37eedc63
 F src/random.c d40f8d356cecbd351ccfab6eaedd7ec1b54f5261
 F src/select.c 6ba6d8ead43d0575ce1f8b418cc039f8f301389a
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
-F src/shell.c e5bda308495ed580600c12325dc2007f74f85058
+F src/shell.c 41513f31dce4252198944c712b79ea4c92df2592
 F src/sqlite.h.in bf935004029631fd93d119bcf2f7259b9cb9ad5e
 F src/sqlite3ext.h 2c2156cc32a158e2b7bd9042d42accf94bff2e40
 F src/sqliteInt.h 637ef229c3d8e0f98096ab31c496efdf5361d678
@@ -419,7 +419,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 6324ea811eec1200cee89e6f377368eaf2fcda77
-R f7c488c391f8a54609e362ee14ba86d3
+P d309680ec7a806d181b601e0105aebf1e33bfb81
+R e590c00bb49173f4e5a5df7e97598d24
 U drh
-Z 7b5d97e736ec81b95b9a8c1109b28cf7
+Z 928b8f12ac488a19e769eda3ed1d6f5a
