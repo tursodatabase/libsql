@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3ref.tcl,v 1.45 2006/09/15 16:58:49 drh Exp $}
+set rcsid {$Id: capi3ref.tcl,v 1.46 2006/11/09 15:18:00 drh Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -157,7 +157,7 @@ api {} {
   #define SQLITE_STATIC      ((void(*)(void *))0)
   #define SQLITE_TRANSIENT   ((void(*)(void *))-1)
 } {
- In the SQL strings input to sqlite3_prepare() and sqlite3_prepare16(),
+ In the SQL strings input to sqlite3_prepare_v2() and sqlite3_prepare16_v2(),
  one or more literals can be replace by a parameter "?" or ":AAA" or 
  "@AAA" or "\$VVV"
  where AAA is an alphanumeric identifier and VVV is a variable name according
@@ -166,7 +166,7 @@ api {} {
  can be set using the sqlite3_bind_*() routines.
 
  The first argument to the sqlite3_bind_*() routines always is a pointer
- to the sqlite3_stmt structure returned from sqlite3_prepare().  The second
+ to the sqlite3_stmt structure returned from sqlite3_prepare_v2().  The second
  argument is the index of the parameter to be set.  The first parameter has
  an index of 1. When the same named parameter is used more than once, second
  and subsequent
@@ -194,7 +194,7 @@ api {} {
  routine returns.
 
  The sqlite3_bind_*() routines must be called after
- sqlite3_prepare() or sqlite3_reset() and before sqlite3_step().
+ sqlite3_prepare_v2() or sqlite3_reset() and before sqlite3_step().
  Bindings are not cleared by the sqlite3_reset() routine.
  Unbound parameters are interpreted as NULL.
 
@@ -381,7 +381,7 @@ int sqlite3_column_type(sqlite3_stmt*, int iCol);
  These routines return information about the information
  in a single column of the current result row of a query.  In every
  case the first argument is a pointer to the SQL statement that is being
- executed (the sqlite_stmt* that was returned from sqlite3_prepare()) and
+ executed (the sqlite_stmt* that was returned from sqlite3_prepare_v2()) and
  the second argument is the index of the column for which information 
  should be returned.  iCol is zero-indexed.  The left-most column has an
  index of 0.
@@ -894,8 +894,9 @@ api {} {
 int sqlite3_finalize(sqlite3_stmt *pStmt);
 } {
  The sqlite3_finalize() function is called to delete a prepared
- SQL statement obtained by a previous call to sqlite3_prepare()
- or sqlite3_prepare16(). If the statement was executed successfully, or
+ SQL statement obtained by a previous call to sqlite3_prepare(),
+ sqlite3_prepare_v2(), sqlite3_prepare16(), or sqlite3_prepare16_v2().
+ If the statement was executed successfully, or
  not executed at all, then SQLITE_OK is returned. If execution of the
  statement failed then an error code is returned. 
 
@@ -1123,6 +1124,20 @@ int sqlite3_open16(
 }
 
 api {} {
+int sqlite3_prepare_v2(
+  sqlite3 *db,            /* Database handle */
+  const char *zSql,       /* SQL statement, UTF-8 encoded */
+  int nBytes,             /* Length of zSql in bytes. */
+  sqlite3_stmt **ppStmt,  /* OUT: Statement handle */
+  const char **pzTail     /* OUT: Pointer to unused portion of zSql */
+);
+int sqlite3_prepare16_v2(
+  sqlite3 *db,            /* Database handle */
+  const void *zSql,       /* SQL statement, UTF-16 encoded */
+  int nBytes,             /* Length of zSql in bytes. */
+  sqlite3_stmt **ppStmt,  /* OUT: Statement handle */
+  const void **pzTail     /* OUT: Pointer to unused portion of zSql */
+);
 int sqlite3_prepare(
   sqlite3 *db,            /* Database handle */
   const char *zSql,       /* SQL statement, UTF-8 encoded */
@@ -1139,14 +1154,13 @@ int sqlite3_prepare16(
 );
 } {
  To execute an SQL query, it must first be compiled into a byte-code
- program using one of the following routines. The only difference between
- them is that the second argument, specifying the SQL statement to
- compile, is assumed to be encoded in UTF-8 for the sqlite3_prepare()
- function and UTF-16 for sqlite3_prepare16().
+ program using one of these routines. 
 
  The first argument "db" is an SQLite database handle. The second
  argument "zSql" is the statement to be compiled, encoded as either
- UTF-8 or UTF-16 (see above). If the next argument, "nBytes", is less
+ UTF-8 or UTF-16.  The sqlite3_prepare() and sqlite3_prepare_v2()
+ interfaces uses UTF-8 and sqlite3_prepare16() and sqlite3_prepare16_v2()
+ use UTF-16. If the next argument, "nBytes", is less
  than zero, then zSql is read up to the first nul terminator.  If
  "nBytes" is not less than zero, then it is the length of the string zSql
  in bytes (not characters).
@@ -1163,6 +1177,23 @@ int sqlite3_prepare16(
  using sqlite3_finalize() after it has finished with it.
 
  On success, SQLITE_OK is returned.  Otherwise an error code is returned.
+
+ The sqlite3_prepare_v2() and sqlite3_prepare16_v2() interfaces are
+ recommended for all new programs. The other two interfaces are retained
+ for backwards compatibility. In the "v2" interfaces, the prepared statement
+ that is returned (the sqlite3_stmt object) contains a copy of the original
+ SQL. This causes the sqlite3_step() interface to behave a little differently.
+ If the database schema changes, instead of returning SQLITE_SCHEMA as it
+ always used to do, sqlite3_step() will automatically recompile the SQL
+ statement and try to run it again. Only after 5 consecutive failures will
+ an SQLITE_SCHEMA failure be reported back. The other change is that
+ sqlite3_step() will return one of the detailed result-codes
+ like SQLITE_IOERR or SQLITE_FULL or SQLITE_SCHEMA directly. The
+ legacy behavior was that sqlite3_step() would only return a generic
+ SQLITE_ERROR code and you would have to make a second call to
+ sqlite3_reset() in order to find the underlying cause of the problem.
+ With the "v2" prepare interfaces, the underlying reason for the error is
+ returned directly.
 }
 
 api {} {
@@ -1200,8 +1231,9 @@ api {} {
 int sqlite3_reset(sqlite3_stmt *pStmt);
 } {
  The sqlite3_reset() function is called to reset a prepared SQL
- statement obtained by a previous call to sqlite3_prepare() or
- sqlite3_prepare16() back to it's initial state, ready to be re-executed.
+ statement obtained by a previous call to sqlite3_prepare(),
+ sqlite3_prepare_v2(), sqlite3_prepare16() or
+ sqlite3_prepare16_v2() back to it's initial state, ready to be re-executed.
  Any SQL statement variables that had values bound to them using
  the sqlite3_bind_*() API retain their values.
 }
@@ -1271,7 +1303,7 @@ int sqlite3_set_authorizer(
 #define SQLITE_IGNORE 2   /* Don't allow access, but don't generate an error */
 } {
  This routine registers a callback with the SQLite library.  The
- callback is invoked by sqlite3_prepare() to authorize various
+ callback is invoked by sqlite3_prepare_v2() to authorize various
  operations against the database.  The callback should
  return SQLITE_OK if access is allowed, SQLITE_DENY if the entire
  SQL statement should be aborted with an error and SQLITE_IGNORE
@@ -1302,10 +1334,10 @@ int sqlite3_set_authorizer(
  The return value of the authorization function should be one of the
  constants SQLITE_OK, SQLITE_DENY, or SQLITE_IGNORE.  A return of
  SQLITE_OK means that the operation is permitted and that 
- sqlite3_prepare() can proceed as normal.
- A return of SQLITE_DENY means that the sqlite3_prepare()
+ sqlite3_prepare_v2() can proceed as normal.
+ A return of SQLITE_DENY means that the sqlite3_prepare_v2()
  should fail with an error.  A return of SQLITE_IGNORE causes the 
- sqlite3_prepare() to continue as normal but the requested 
+ sqlite3_prepare_v2() to continue as normal but the requested 
  operation is silently converted into a no-op.  A return of SQLITE_IGNORE
  in response to an SQLITE_READ or SQLITE_FUNCTION causes the column
  being read or the function being invoked to return a NULL.
@@ -1320,11 +1352,21 @@ api {} {
 int sqlite3_step(sqlite3_stmt*);
 } {
  After an SQL query has been prepared with a call to either
- sqlite3_prepare() or sqlite3_prepare16(), then this function must be
+ sqlite3_prepare(), sqlite3_prepare_v2(), sqlite3_prepare16(),
+ or sqlite3_prepare16_v2(), then this function must be
  called one or more times to execute the statement.
 
- The return value will be either SQLITE_BUSY, SQLITE_DONE, 
- SQLITE_ROW, SQLITE_ERROR, or SQLITE_MISUSE.
+ The details of the behavior of this sqlite3_step() interface depend
+ on whether the statement was prepared using the newer "v2" interface
+ sqlite3_prepare_v2() and sqlite3_prepare16_v2() or the older legacy
+ interface sqlite3_prepare() and sqlite3_prepare16().  The use of the
+ new "v2" interface is recommended for new applications but the legacy
+ interface will continue to be supported.
+
+ In the lagacy interface, the return value will be either SQLITE_BUSY, 
+ SQLITE_DONE, SQLITE_ROW, SQLITE_ERROR, or SQLITE_MISUSE.  With the "v2"
+ interface, any of the other SQLite result-codes might be returned as
+ well.
 
  SQLITE_BUSY means that the database engine attempted to open
  a locked database and there is no busy callback registered.
@@ -1346,7 +1388,8 @@ int sqlite3_step(sqlite3_stmt*);
  the VM. More information may be found by calling sqlite3_errmsg().
  A more specific error code (example: SQLITE_INTERRUPT, SQLITE_SCHEMA,
  SQLITE_CORRUPT, and so forth) can be obtained by calling
- sqlite3_reset() on the prepared statement.
+ sqlite3_reset() on the prepared statement.  In the "v2" interface,
+ the more specific error code is returned directly by sqlite3_step().
 
  SQLITE_MISUSE means that the this routine was called inappropriately.
  Perhaps it was called on a virtual machine that had already been
@@ -1355,35 +1398,17 @@ int sqlite3_step(sqlite3_stmt*);
  is being used by a different thread than the one it was created it.
 
  <b>Goofy Interface Alert:</b>
- The sqlite3_step() API always returns a generic error code,
+ In the legacy interface, 
+ the sqlite3_step() API always returns a generic error code,
  SQLITE_ERROR, following any error other than SQLITE_BUSY and SQLITE_MISUSE.
  You must call sqlite3_reset() (or sqlite3_finalize()) in order to find
- the specific error code that better describes the error.  We admit that
- this is a goofy design.  Sqlite3_step() would be much easier to use if
- it returned the specific error code directly.  But we cannot change that
- now without breaking backwards compatibility.
-
- Note that there is never any harm in calling sqlite3_reset() after
- getting back an SQLITE_ERROR from sqlite3_step().  Any API that can
- be used after an sqlite3_step() can also be used after sqlite3_reset().
- You may want to create a simple wrapper around sqlite3_step() to make
- this easier.  For example:
-
- <blockquote><pre>
-    int less_goofy_sqlite3_step(sqlite3_stmt *pStatement){
-      int rc;
-      rc = sqlite3_step(pStatement);
-      if( rc==SQLITE_ERROR ){
-        rc = sqlite3_reset(pStatement);
-      }
-      return rc;
-    }
- </pre></blockquote>
-
- Simply substitute the less_goofy_sqlite3_step() call above for 
- the normal sqlite3_step() everywhere in your code, and you will
- always get back the specific error code rather than a generic
- SQLITE_ERROR error code.
+ one of the specific result-codes that better describes the error.
+ We admit that this is a goofy design.  The problem has been fixed
+ with the "v2" interface.  If you prepare all of your SQL statements
+ using either sqlite3_prepare_v2() or sqlite3_prepare16_v2() instead
+ of the legacy sqlite3_prepare() and sqlite3_prepare16(), then the 
+ more specific result-codes are returned directly by sqlite3_step().
+ The use of the "v2" interface is recommended.
 }
 
 api {} {
@@ -1391,7 +1416,7 @@ void *sqlite3_trace(sqlite3*, void(*xTrace)(void*,const char*), void*);
 } {
  Register a function that is called each time an SQL statement is evaluated.
  The callback function is invoked on the first call to sqlite3_step() after
- calls to sqlite3_prepare() or sqlite3_reset().
+ calls to sqlite3_prepare_v2() or sqlite3_reset().
  This function can be used (for example) to generate
  a log file of all SQL executed against a database.  This can be
  useful when debugging an application that uses SQLite.
@@ -1570,7 +1595,7 @@ api {} {
 
   When the shared cache is enabled, the
   following routines must always be called from the same thread:
-  sqlite3_open(), sqlite3_prepare(), sqlite3_step(), sqlite3_reset(),
+  sqlite3_open(), sqlite3_prepare_v2(), sqlite3_step(), sqlite3_reset(),
   sqlite3_finalize(), and sqlite3_close().
   This is due to the fact that the shared cache makes use of
   thread-specific storage so that it will be available for sharing
