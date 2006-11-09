@@ -49,6 +49,38 @@ Vdbe *sqlite3VdbeCreate(sqlite3 *db){
 }
 
 /*
+** Remember the SQL string for a prepared statement.
+*/
+void sqlite3VdbeSetSql(Vdbe *p, const char *z, int n){
+  if( p==0 ) return;
+  assert( p->zSql==0 );
+  p->zSql = sqlite3StrNDup(z, n);
+}
+
+/*
+** Return the SQL associated with a prepared statement
+*/
+const char *sqlite3VdbeGetSql(Vdbe *p){
+  return p->zSql;
+}
+
+/*
+** Swap the set of Opcodes between to Vdbe structures.  No
+** other parts of either Vdbe structure are changed.
+*/
+void sqlite3VdbeSwapOps(Vdbe *pA, Vdbe *pB){
+  Op *aOp;
+  int nOp;
+  
+  aOp = pA->aOp;
+  nOp = pA->nOp;
+  pA->aOp = pB->aOp;
+  pA->nOp = pB->nOp;
+  pB->aOp = aOp;
+  pB->nOp = nOp;
+}
+
+/*
 ** Turn tracing on or off
 */
 void sqlite3VdbeTrace(Vdbe *p, FILE *trace){
@@ -1574,6 +1606,7 @@ void sqlite3VdbeDelete(Vdbe *p){
   sqliteFree(p->aStack);
   releaseMemArray(p->aColName, p->nResColumn*COLNAME_N);
   sqliteFree(p->aColName);
+  sqliteFree(p->zSql);
   p->magic = VDBE_MAGIC_DEAD;
   sqliteFree(p);
 }

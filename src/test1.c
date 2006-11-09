@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.223 2006/10/19 20:27:59 shess Exp $
+** $Id: test1.c,v 1.224 2006/11/09 00:24:54 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -2489,7 +2489,60 @@ static int test_prepare(
 }
 
 /*
-** Usage: sqlite3_prepare DB sql bytes tailvar
+** Usage: sqlite3_prepare_v2 DB sql bytes tailvar
+**
+** Compile up to <bytes> bytes of the supplied SQL string <sql> using
+** database handle <DB>. The parameter <tailval> is the name of a global
+** variable that is set to the unused portion of <sql> (if any). A
+** STMT handle is returned.
+*/
+static int test_prepare_v2(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3 *db;
+  const char *zSql;
+  int bytes;
+  const char *zTail = 0;
+  sqlite3_stmt *pStmt = 0;
+  char zBuf[50];
+  int rc;
+
+  if( objc!=5 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", 
+       Tcl_GetString(objv[0]), " DB sql bytes tailvar", 0);
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  zSql = Tcl_GetString(objv[2]);
+  if( Tcl_GetIntFromObj(interp, objv[3], &bytes) ) return TCL_ERROR;
+
+  rc = sqlite3_prepare_v2(db, zSql, bytes, &pStmt, &zTail);
+  if( sqlite3TestErrCode(interp, db, rc) ) return TCL_ERROR;
+  if( zTail ){
+    if( bytes>=0 ){
+      bytes = bytes - (zTail-zSql);
+    }
+    Tcl_ObjSetVar2(interp, objv[4], 0, Tcl_NewStringObj(zTail, bytes), 0);
+  }
+  if( rc!=SQLITE_OK ){
+    assert( pStmt==0 );
+    sprintf(zBuf, "(%d) ", rc);
+    Tcl_AppendResult(interp, zBuf, sqlite3_errmsg(db), 0);
+    return TCL_ERROR;
+  }
+
+  if( pStmt ){
+    if( sqlite3TestMakePointerStr(interp, zBuf, pStmt) ) return TCL_ERROR;
+    Tcl_AppendResult(interp, zBuf, 0);
+  }
+  return TCL_OK;
+}
+
+/*
+** Usage: sqlite3_prepare16 DB sql bytes tailvar
 **
 ** Compile up to <bytes> bytes of the supplied SQL string <sql> using
 ** database handle <DB>. The parameter <tailval> is the name of a global
@@ -2523,6 +2576,64 @@ static int test_prepare16(
   if( Tcl_GetIntFromObj(interp, objv[3], &bytes) ) return TCL_ERROR;
 
   rc = sqlite3_prepare16(db, zSql, bytes, &pStmt, &zTail);
+  if( sqlite3TestErrCode(interp, db, rc) ) return TCL_ERROR;
+  if( rc ){
+    return TCL_ERROR;
+  }
+
+  if( zTail ){
+    objlen = objlen - ((u8 *)zTail-(u8 *)zSql);
+  }else{
+    objlen = 0;
+  }
+  pTail = Tcl_NewByteArrayObj((u8 *)zTail, objlen);
+  Tcl_IncrRefCount(pTail);
+  Tcl_ObjSetVar2(interp, objv[4], 0, pTail, 0);
+  Tcl_DecrRefCount(pTail);
+
+  if( pStmt ){
+    if( sqlite3TestMakePointerStr(interp, zBuf, pStmt) ) return TCL_ERROR;
+  }
+  Tcl_AppendResult(interp, zBuf, 0);
+#endif /* SQLITE_OMIT_UTF16 */
+  return TCL_OK;
+}
+
+/*
+** Usage: sqlite3_prepare16_v2 DB sql bytes tailvar
+**
+** Compile up to <bytes> bytes of the supplied SQL string <sql> using
+** database handle <DB>. The parameter <tailval> is the name of a global
+** variable that is set to the unused portion of <sql> (if any). A
+** STMT handle is returned.
+*/
+static int test_prepare16_v2(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+#ifndef SQLITE_OMIT_UTF16
+  sqlite3 *db;
+  const void *zSql;
+  const void *zTail = 0;
+  Tcl_Obj *pTail = 0;
+  sqlite3_stmt *pStmt = 0;
+  char zBuf[50]; 
+  int rc;
+  int bytes;                /* The integer specified as arg 3 */
+  int objlen;               /* The byte-array length of arg 2 */
+
+  if( objc!=5 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", 
+       Tcl_GetString(objv[0]), " DB sql bytes tailvar", 0);
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  zSql = Tcl_GetByteArrayFromObj(objv[2], &objlen);
+  if( Tcl_GetIntFromObj(interp, objv[3], &bytes) ) return TCL_ERROR;
+
+  rc = sqlite3_prepare16_v2(db, zSql, bytes, &pStmt, &zTail);
   if( sqlite3TestErrCode(interp, db, rc) ) return TCL_ERROR;
   if( rc ){
     return TCL_ERROR;
@@ -3883,6 +3994,8 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
 
      { "sqlite3_prepare",               test_prepare       ,0 },
      { "sqlite3_prepare16",             test_prepare16     ,0 },
+     { "sqlite3_prepare_v2",            test_prepare_v2    ,0 },
+     { "sqlite3_prepare16_v2",          test_prepare16_v2  ,0 },
      { "sqlite3_finalize",              test_finalize      ,0 },
      { "sqlite3_reset",                 test_reset         ,0 },
      { "sqlite3_expired",               test_expired       ,0 },

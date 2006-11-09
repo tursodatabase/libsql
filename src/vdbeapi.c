@@ -153,9 +153,13 @@ void sqlite3_result_value(sqlite3_context *pCtx, sqlite3_value *pValue){
 /*
 ** Execute the statement pStmt, either until a row of data is ready, the
 ** statement is completely executed or an error occurs.
+**
+** This routine implements the bulk of the logic behind the sqlite_step()
+** API.  The only thing omitted is the automatic recompile if a 
+** schema change has occurred.  That detail is handled by the
+** outer sqlite3_step() wrapper procedure.
 */
-int sqlite3_step(sqlite3_stmt *pStmt){
-  Vdbe *p = (Vdbe*)pStmt;
+static int sqlite3Step(Vdbe *p){
   sqlite3 *db;
   int rc;
 
@@ -172,7 +176,8 @@ int sqlite3_step(sqlite3_stmt *pStmt){
     if( p->rc==SQLITE_OK ){
       p->rc = SQLITE_SCHEMA;
     }
-    return SQLITE_ERROR;
+    rc = SQLITE_ERROR;
+    goto end_of_step;
   }
   db = p->db;
   if( sqlite3SafetyOn(db) ){
@@ -254,9 +259,42 @@ int sqlite3_step(sqlite3_stmt *pStmt){
 
   sqlite3Error(p->db, rc, 0);
   p->rc = sqlite3ApiExit(p->db, p->rc);
+end_of_step:
   assert( (rc&0xff)==rc );
+  if( p->zSql && (rc&0xff)<SQLITE_ROW ){
+    /* This behavior occurs if sqlite3_prepare_v2() was used to build
+    ** the prepared statement.  Return error codes directly */
+    return p->rc;
+  }else{
+    /* This is for legacy sqlite3_prepare() builds and when the code
+    ** is SQLITE_ROW or SQLITE_DONE */
+    return rc;
+  }
+}
+
+/*
+** This is the top-level implementation of sqlite3_step().  Call
+** sqlite3Step() to do most of the work.  If a schema error occurs,
+** call sqlite3Reprepare() and try again.
+*/
+#ifdef SQLITE_OMIT_PARSER
+int sqlite3_step(sqlite3_stmt *pStmt){
+  return sqlite3Step((Vdbe*)pStmt);
+}
+#else
+int sqlite3_step(sqlite3_stmt *pStmt){
+  int cnt = 0;
+  int rc;
+  Vdbe *v = (Vdbe*)pStmt;
+  while( (rc = sqlite3Step(v))==SQLITE_SCHEMA
+         && cnt++ < 5
+         && sqlite3Reprepare(v) ){
+    sqlite3_reset(pStmt);
+    v->expired = 0;
+  }
   return rc;
 }
+#endif
 
 /*
 ** Extract the user data from a sqlite3_context structure and return a

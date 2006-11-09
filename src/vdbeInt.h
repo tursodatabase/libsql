@@ -328,6 +328,8 @@ struct Vdbe {
   u8 inVtabMethod;        /* See comments above */
   int nChange;            /* Number of db changes made since last reset */
   i64 startTime;          /* Time when query started - used for profiling */
+  int nSql;             /* Number of bytes in zSql */
+  char *zSql;           /* Text of the SQL statement that generated this */
 #ifdef SQLITE_SSE
   int fetchId;          /* Statement number used by sqlite3_fetch_statement */
   int lru;              /* Counter used for LRU cache replacement */

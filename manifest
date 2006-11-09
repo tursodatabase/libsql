@@ -1,5 +1,5 @@
-C Make\sthe\s.exit\sand\s.quit\scommands\swork\sagain\sin\sthe\sshell.\s\sTicket\s#2056.\s(CVS\s3505)
-D 2006-11-08T12:25:43
+C First\scut\sat\sadding\sthe\ssqlite3_prepare_v2()\sAPI.\s\sTest\scases\sadded,\sbut\nmore\stesting\swould\sbe\suseful.\s\sStill\sneed\sto\supdate\sthe\sdocumentation.\s(CVS\s3506)
+D 2006-11-09T00:24:54
 F Makefile.in 8e14898d41a53033ecb687d93c9cd5d109fb9ae3
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -89,18 +89,18 @@ F src/pager.c 3114c819a6cb86a2499396819c5fd6f4f8165546
 F src/pager.h 2e6d42f4ae004ae748a037b8468112b851c447a7
 F src/parse.y 8c79a1debbd92a4f5609511e9bf0222de78f5ecb
 F src/pragma.c 2ef4353448e202961a22312f34695128bbb6d69a
-F src/prepare.c 3d9a1bb0644e8bccb3b78cb0833d269719237f4e
+F src/prepare.c f4f45b4560defbb566cf8255763625d2c09a8023
 F src/printf.c b179b6ed12f793e028dd169e2e2e2b2a37eedc63
 F src/random.c d40f8d356cecbd351ccfab6eaedd7ec1b54f5261
 F src/select.c 6ba6d8ead43d0575ce1f8b418cc039f8f301389a
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 41513f31dce4252198944c712b79ea4c92df2592
-F src/sqlite.h.in bf935004029631fd93d119bcf2f7259b9cb9ad5e
+F src/sqlite.h.in 2931f7ee2415e7a49fd12f386c23575046f0f540
 F src/sqlite3ext.h 2c2156cc32a158e2b7bd9042d42accf94bff2e40
-F src/sqliteInt.h 637ef229c3d8e0f98096ab31c496efdf5361d678
+F src/sqliteInt.h f6bac44ee7b8ee2614b046974551c22999ec674f
 F src/table.c 6d0da66dde26ee75614ed8f584a1996467088d06
 F src/tclsqlite.c e029f739bed90071789fe81a226d53e97a80a4d8
-F src/test1.c 20ca02cba62082b58a5e59f1278632dbd32024a1
+F src/test1.c 3d0cb8837eb13e6cd5fe2b76a37ba8d9c0ad77fc
 F src/test2.c ca74a1d8aeb7d9606e8f6b762c5daf85c1a3f92b
 F src/test3.c 85135c09560c48bdb0a23c9b890ab405486b8ec9
 F src/test4.c 8b784cd82de158a2317cb4ac4bc86f91ad315e25
@@ -122,10 +122,10 @@ F src/utf.c 67ecb1032bc0b42c105e88d65ef9d9f626eb0e1f
 F src/util.c 91d4cb189476906639ae611927d939691d1365f6
 F src/vacuum.c f6a7943f1f1002cb82ef2ea026cb1975a5b687cb
 F src/vdbe.c 3e31f2e49423955afb2ac905ceacf54c679b1f28
-F src/vdbe.h 258b5d1c0aaa72192f09ff0568ce42b383f156fa
-F src/vdbeInt.h e3eaab262b67b84474625cfc38aec1125c32834b
-F src/vdbeapi.c f1858a5edc3a5e32d038514dd9e7e9091400a782
-F src/vdbeaux.c 78c744f127df03ea63098ebb7dd7fe3eb303e284
+F src/vdbe.h 9720cae673359dc2bdcb106285ecf686b7d3ef24
+F src/vdbeInt.h 1ca07f2d7446c90230346aed7fbf990c032460bc
+F src/vdbeapi.c 2d1e6843af8705a1172e54a418d2a3d5febd1dd7
+F src/vdbeaux.c 05cc6f0f82b86dfb4c356e06ab07ec8cc83a2eda
 F src/vdbefifo.c 9efb94c8c3f4c979ebd0028219483f88e57584f5
 F src/vdbemem.c 26623176bf1c616aa478da958fac49502491a921
 F src/vtab.c aa30e940058ea56a1b7a9a7019ec21d307316fb4
@@ -169,6 +169,7 @@ F test/busy.test 0271c854738e23ad76e10d4096a698e5af29d211
 F test/capi2.test cb478885b8b1a6a9f703a9da1c8d7d101c0970d6
 F test/capi3.test 5f54824e8356ad25ee40a101b36452e74d68a945
 F test/capi3b.test 5f0bc94b104e11086b1103b20277e1910f59c7f4
+F test/capi3c.test d45ecc2e06879967a6a0786dff1caa2195f08ac1
 F test/cast.test f88e7b6946e9a467cf4bb142d92bb65a83747fc2
 F test/check.test e5ea0c1a06c10e81e3434ca029e2c4a562f2b673
 F test/collate1.test add9454cef160677bb8b34148b8f277ce7f9f1c4
@@ -268,13 +269,14 @@ F test/pagesize.test 05c74ea49f790734ec1e9ab765d9bf1cce79b8f2
 F test/pragma.test b81f483cac7b8fe519988a102303799cc72d25a2
 F test/printf.test cdd8e20dd901382a385afcbaa777b9377815c2ad
 F test/progress.test 8b22b4974b0a95272566385f8cb8c341c7130df8 x
-F test/quick.test 4eabf0fd67dc6e116cbebe3f8d899608239eae50
+F test/quick.test 71ed89a1a516fe1594b178e0001342eafcd2f32a
 F test/quote.test 5891f2338980916cf7415484b4ce785294044adb
 F test/reindex.test 38b138abe36bf9a08c791ed44d9f76cd6b97b78b
 F test/rollback.test 673cd8c44c685ad54987fe7f0eeba84efa09685d
 F test/rowid.test 040a3bef06f970c45f5fcd14b2355f7f4d62f0cf
 F test/safety.test 4a06934e45d03b8b50ebcd8d174eb0367d2fd851
 F test/schema.test 8a2ae440fb15f5798a68059e8746402f3137be46
+F test/schema2.test d815923e57e90b8c60ddf5e0d8fd65075e94f57f
 F test/select1.test fa4e941da0a38961635d903530bd292dc149a8e8
 F test/select2.test f3c2678c3a9f3cf08ec4988a3845bda64be6d9e3
 F test/select3.test 33c78663e6b1b41220dcec4eb6affb1a05001ffe
@@ -419,7 +421,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P d309680ec7a806d181b601e0105aebf1e33bfb81
-R e590c00bb49173f4e5a5df7e97598d24
+P f39978ef13e986a16ee322ee84ab9bd38ffc5a8b
+R dc22d9f5d0aa421e42db62c318429739
 U drh
-Z 928b8f12ac488a19e769eda3ed1d6f5a
+Z d20637c076532a0c72ad06c1b6f375c3

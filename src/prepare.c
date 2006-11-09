@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.40 2006/09/23 20:36:02 drh Exp $
+** $Id: prepare.c,v 1.41 2006/11/09 00:24:54 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -445,12 +445,13 @@ int sqlite3SchemaToIndex(sqlite3 *db, Schema *pSchema){
 /*
 ** Compile the UTF-8 encoded SQL statement zSql into a statement handle.
 */
-int sqlite3_prepare(
+int sqlite3Prepare(
   sqlite3 *db,              /* Database handle. */
   const char *zSql,         /* UTF-8 encoded SQL statement. */
   int nBytes,               /* Length of zSql in bytes. */
+  int saveSqlFlag,          /* True to copy SQL text into the sqlite3_stmt */
   sqlite3_stmt **ppStmt,    /* OUT: A pointer to the prepared statement */
-  const char** pzTail       /* OUT: End of parsed string */
+  const char **pzTail       /* OUT: End of parsed string */
 ){
   Parse sParse;
   char *zErrMsg = 0;
@@ -503,7 +504,9 @@ int sqlite3_prepare(
   if( sqlite3MallocFailed() ){
     sParse.rc = SQLITE_NOMEM;
   }
-  if( pzTail ) *pzTail = sParse.zTail;
+  if( pzTail ){
+    *pzTail = sParse.zTail;
+  }
   rc = sParse.rc;
 
 #ifndef SQLITE_OMIT_EXPLAIN
@@ -521,13 +524,16 @@ int sqlite3_prepare(
       sqlite3VdbeSetColName(sParse.pVdbe, 3, COLNAME_NAME, "p2", P3_STATIC);
       sqlite3VdbeSetColName(sParse.pVdbe, 4, COLNAME_NAME, "p3", P3_STATIC);
     }
-  } 
+  }
 #endif
 
   if( sqlite3SafetyOff(db) ){
     rc = SQLITE_MISUSE;
   }
   if( rc==SQLITE_OK ){
+    if( saveSqlFlag ){
+      sqlite3VdbeSetSql(sParse.pVdbe, zSql, sParse.zTail - zSql);
+    }
     *ppStmt = (sqlite3_stmt*)sParse.pVdbe;
   }else if( sParse.pVdbe ){
     sqlite3_finalize((sqlite3_stmt*)sParse.pVdbe);
@@ -546,14 +552,72 @@ int sqlite3_prepare(
   return rc;
 }
 
+/*
+** Rerun the compilation of a statement after a schema change.
+** Return true if the statement was recompiled successfully.
+** Return false if there is an error of some kind.
+*/
+int sqlite3Reprepare(Vdbe *p){
+  int rc;
+  Vdbe *pNew;
+  const char *zSql;
+  sqlite3 *db;
+  
+  zSql = sqlite3VdbeGetSql(p);
+  if( zSql==0 ){
+    return 0;
+  }
+  db = sqlite3VdbeDb(p);
+  rc = sqlite3Prepare(db, zSql, -1, 0, (sqlite3_stmt**)&pNew, 0);
+  if( rc ){
+    assert( pNew==0 );
+    return 0;
+  }else{
+    assert( pNew!=0 );
+  }
+  sqlite3VdbeSwapOps(pNew, p);
+  sqlite3_finalize((sqlite3_stmt*)pNew);
+  return 1;
+}
+
+
+/*
+** Two versions of the official API.  Legacy and new use.  In the legacy
+** version, the original SQL text is not saved in the prepared statement
+** and so if a schema change occurs, SQLITE_SCHEMA is returned by
+** sqlite3_step().  In the new version, the original SQL text is retained
+** and the statement is automatically recompiled if an schema change
+** occurs.
+*/
+int sqlite3_prepare(
+  sqlite3 *db,              /* Database handle. */
+  const char *zSql,         /* UTF-8 encoded SQL statement. */
+  int nBytes,               /* Length of zSql in bytes. */
+  sqlite3_stmt **ppStmt,    /* OUT: A pointer to the prepared statement */
+  const char **pzTail       /* OUT: End of parsed string */
+){
+  return sqlite3Prepare(db,zSql,nBytes,0,ppStmt,pzTail);
+}
+int sqlite3_prepare_v2(
+  sqlite3 *db,              /* Database handle. */
+  const char *zSql,         /* UTF-8 encoded SQL statement. */
+  int nBytes,               /* Length of zSql in bytes. */
+  sqlite3_stmt **ppStmt,    /* OUT: A pointer to the prepared statement */
+  const char **pzTail       /* OUT: End of parsed string */
+){
+  return sqlite3Prepare(db,zSql,nBytes,1,ppStmt,pzTail);
+}
+
+
 #ifndef SQLITE_OMIT_UTF16
 /*
 ** Compile the UTF-16 encoded SQL statement zSql into a statement handle.
 */
-int sqlite3_prepare16(
+static int sqlite3Prepare16(
   sqlite3 *db,              /* Database handle. */ 
   const void *zSql,         /* UTF-8 encoded SQL statement. */
   int nBytes,               /* Length of zSql in bytes. */
+  int saveSqlFlag,          /* True to save SQL text into the sqlite3_stmt */
   sqlite3_stmt **ppStmt,    /* OUT: A pointer to the prepared statement */
   const void **pzTail       /* OUT: End of parsed string */
 ){
@@ -570,7 +634,7 @@ int sqlite3_prepare16(
   }
   zSql8 = sqlite3utf16to8(zSql, nBytes);
   if( zSql8 ){
-    rc = sqlite3_prepare(db, zSql8, -1, ppStmt, &zTail8);
+    rc = sqlite3Prepare(db, zSql8, -1, saveSqlFlag, ppStmt, &zTail8);
   }
 
   if( zTail8 && pzTail ){
@@ -585,4 +649,32 @@ int sqlite3_prepare16(
   sqliteFree(zSql8); 
   return sqlite3ApiExit(db, rc);
 }
+
+/*
+** Two versions of the official API.  Legacy and new use.  In the legacy
+** version, the original SQL text is not saved in the prepared statement
+** and so if a schema change occurs, SQLITE_SCHEMA is returned by
+** sqlite3_step().  In the new version, the original SQL text is retained
+** and the statement is automatically recompiled if an schema change
+** occurs.
+*/
+int sqlite3_prepare16(
+  sqlite3 *db,              /* Database handle. */ 
+  const void *zSql,         /* UTF-8 encoded SQL statement. */
+  int nBytes,               /* Length of zSql in bytes. */
+  sqlite3_stmt **ppStmt,    /* OUT: A pointer to the prepared statement */
+  const void **pzTail       /* OUT: End of parsed string */
+){
+  return sqlite3Prepare16(db,zSql,nBytes,0,ppStmt,pzTail);
+}
+int sqlite3_prepare16_v2(
+  sqlite3 *db,              /* Database handle. */ 
+  const void *zSql,         /* UTF-8 encoded SQL statement. */
+  int nBytes,               /* Length of zSql in bytes. */
+  sqlite3_stmt **ppStmt,    /* OUT: A pointer to the prepared statement */
+  const void **pzTail       /* OUT: End of parsed string */
+){
+  return sqlite3Prepare16(db,zSql,nBytes,1,ppStmt,pzTail);
+}
+
 #endif /* SQLITE_OMIT_UTF16 */
