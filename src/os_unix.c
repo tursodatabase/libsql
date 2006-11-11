@@ -2450,7 +2450,7 @@ static int allocateUnixFile(
   unixFile f;
   int rc;
 
-  lockingStyle = sqlite3DetectLockingStyle(zFilename, f.h);
+  lockingStyle = sqlite3DetectLockingStyle(zFilename, h);
   if ( lockingStyle == posixLockingStyle ) {
     sqlite3OsEnterMutex();
     rc = findLockInfo(h, &f.pLock, &f.pOpen);
