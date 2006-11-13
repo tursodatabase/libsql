@@ -605,7 +605,9 @@ static void dlrStep(DLReader *pReader){
 
   /* If there is more data, read the next doclist element. */
   if( pReader->nData!=0 ){
-    int iDummy, n = getVarint(pReader->pData, &pReader->iDocid);
+    sqlite_int64 iDocidDelta;
+    int iDummy, n = getVarint(pReader->pData, &iDocidDelta);
+    pReader->iDocid += iDocidDelta;
     if( pReader->iType>=DL_POSITIONS ){
       assert( n<pReader->nData );
       while( 1 ){
@@ -649,17 +651,13 @@ static void dlrDestroy(DLReader *pReader){
 */
 static int docListValidate(DocListType iType, const char *pData, int nData,
                            sqlite_int64 *pLastDocid){
-  int has_prevDocid = 0;
-  sqlite_int64 iPrevDocid;
+  sqlite_int64 iPrevDocid = 0;
   assert( pData!=0 );
   assert( nData!=0 );
   while( nData!=0 ){
-    int n;
-    sqlite_int64 iDocid;
-    n = getVarint(pData, &iDocid);
-    assert( !has_prevDocid || iPrevDocid<iDocid );
-    has_prevDocid = 1;
-    iPrevDocid = iDocid;
+    sqlite_int64 iDocidDelta;
+    int n = getVarint(pData, &iDocidDelta);
+    iPrevDocid += iDocidDelta;
     if( iType>DL_DOCIDS ){
       int iDummy;
       while( 1 ){
@@ -678,7 +676,6 @@ static int docListValidate(DocListType iType, const char *pData, int nData,
     pData += n;
     nData -= n;
   }
-  assert( has_prevDocid );
   if( pLastDocid ) *pLastDocid = iPrevDocid;
   return 1;
 }
@@ -693,53 +690,72 @@ static int docListValidate(DocListType iType, const char *pData, int nData,
 ** dlwAppend - append raw doclist data to buffer.
 ** dlwAdd - construct doclist element and append to buffer.
 */
-/* TODO(shess) Modify to handle delta-encoding docids.  This should be
-** fairly simple.  The changes to dlwAdd() are obvious.  dlwAppend()
-** would need to decode the leading docid, rencode as a delta, and
-** copy the rest of the data (which would already be delta-encoded).
-** Note that this will require a change to pass the trailing docid.
-*/
 typedef struct DLWriter {
   DocListType iType;
   DataBuffer *b;
-#ifndef NDEBUG
-  int has_prevDocid;
   sqlite_int64 iPrevDocid;
-#endif
 } DLWriter;
 
 static void dlwInit(DLWriter *pWriter, DocListType iType, DataBuffer *b){
   pWriter->b = b;
   pWriter->iType = iType;
-#ifndef NDEBUG
-  pWriter->has_prevDocid = 0;
   pWriter->iPrevDocid = 0;
-#endif
 }
 static void dlwDestroy(DLWriter *pWriter){
   SCRAMBLE(pWriter);
 }
+/* iFirstDocid is the first docid in the doclist in pData.  It is
+** needed because pData may point within a larger doclist, in which
+** case the first item would be delta-encoded.
+**
+** iLastDocid is the final docid in the doclist in pData.  It is
+** needed to create the new iPrevDocid for future delta-encoding.  The
+** code could decode the passed doclist to recreate iLastDocid, but
+** the only current user (docListMerge) already has decoded this
+** information.
+*/
+/* TODO(shess) This has become just a helper for docListMerge.
+** Consider a refactor to make this cleaner.
+*/
 static void dlwAppend(DLWriter *pWriter,
-                      const char *pData, int nData){
+                      const char *pData, int nData,
+                      sqlite_int64 iFirstDocid, sqlite_int64 iLastDocid){
+  sqlite_int64 iDocid = 0;
+  char c[VARINT_MAX];
+  int nFirstOld, nFirstNew;     /* Old and new varint len of first docid. */
 #ifndef NDEBUG
-  sqlite_int64 iDocid;
-  int n;
-  n = getVarint(pData, &iDocid);
-  assert( n<=nData );
-  assert( !pWriter->has_prevDocid || pWriter->iPrevDocid<iDocid );
-  assert( n<nData || pWriter->iType>DL_DOCIDS );
-  assert( docListValidate(pWriter->iType, pData, nData, &iDocid) );
-  pWriter->has_prevDocid = 1;
-  pWriter->iPrevDocid = iDocid;
+  sqlite_int64 iLastDocidDelta;
 #endif
-  dataBufferAppend(pWriter->b, pData, nData);
+
+  /* Recode the initial docid as delta from iPrevDocid. */
+  nFirstOld = getVarint(pData, &iDocid);
+  assert( nFirstOld<nData || (nFirstOld==nData && pWriter->iType==DL_DOCIDS) );
+  nFirstNew = putVarint(c, iFirstDocid-pWriter->iPrevDocid);
+
+  /* Verify that the incoming doclist is valid AND that it ends with
+  ** the expected docid.  This is essential because we'll trust this
+  ** docid in future delta-encoding.
+  */
+  assert( docListValidate(pWriter->iType, pData, nData, &iLastDocidDelta) );
+  assert( iLastDocid==iFirstDocid-iDocid+iLastDocidDelta );
+
+  /* Append recoded initial docid and everything else.  Rest of docids
+  ** should have been delta-encoded from previous initial docid.
+  */
+  if( nFirstOld<nData ){
+    dataBufferAppend2(pWriter->b, c, nFirstNew,
+                      pData+nFirstOld, nData-nFirstOld);
+  }else{
+    dataBufferAppend(pWriter->b, c, nFirstNew);
+  }
+  pWriter->iPrevDocid = iLastDocid;
 }
 static void dlwAdd(DLWriter *pWriter, sqlite_int64 iDocid,
                    const char *pPosList, int nPosList){
   char c[VARINT_MAX];
-  int n = putVarint(c, iDocid);
+  int n = putVarint(c, iDocid-pWriter->iPrevDocid);
 
-  assert( !pWriter->has_prevDocid || pWriter->iPrevDocid<iDocid );
+  assert( pWriter->iPrevDocid<iDocid );
   assert( pPosList==0 || pWriter->iType>DL_DOCIDS );
 
   dataBufferAppend(pWriter->b, c, n);
@@ -752,10 +768,7 @@ static void dlwAdd(DLWriter *pWriter, sqlite_int64 iDocid,
       dataBufferAppend(pWriter->b, c, n);
     }
   }
-#ifndef NDEBUG
-  pWriter->has_prevDocid = 1;
   pWriter->iPrevDocid = iDocid;
-#endif
 }
 
 /*******************************************************************/
@@ -1047,6 +1060,7 @@ static void docListMerge(DataBuffer *out,
   int i, n;
   const char *pStart = 0;
   int nStart = 0;
+  sqlite_int64 iFirstDocid = 0, iLastDocid = 0;
 
   assert( nReaders>0 );
   if( nReaders==1 ){
@@ -1083,10 +1097,14 @@ static void docListMerge(DataBuffer *out,
     if( dlrDocData(readers[0].pReader)==pStart+nStart ){
       nStart += dlrDocDataBytes(readers[0].pReader);
     }else{
-      if( pStart!=0 ) dlwAppend(&writer, pStart, nStart);
+      if( pStart!=0 ){
+        dlwAppend(&writer, pStart, nStart, iFirstDocid, iLastDocid);
+      }
       pStart = dlrDocData(readers[0].pReader);
       nStart = dlrDocDataBytes(readers[0].pReader);
+      iFirstDocid = iDocid;
     }
+    iLastDocid = iDocid;
     dlrStep(readers[0].pReader);
 
     /* Drop all of the older elements with the same docid. */
@@ -1103,7 +1121,7 @@ static void docListMerge(DataBuffer *out,
   }
 
   /* Copy over any remaining elements. */
-  if( nStart>0 ) dlwAppend(&writer, pStart, nStart);
+  if( nStart>0 ) dlwAppend(&writer, pStart, nStart, iFirstDocid, iLastDocid);
   dlwDestroy(&writer);
 }
 
@@ -4155,6 +4173,7 @@ static int leafWriterStep(fulltext_vtab *v, LeafWriter *pWriter,
     rc = leafWriterFlush(v, pWriter);
     if( rc!=SQLITE_OK ) return rc;
   }
+  assert( leafNodeValidate(pWriter->data.pData, pWriter->data.nData) );
 
   return SQLITE_OK;
 }
