@@ -159,9 +159,11 @@
 ** iBlockid+i.
 **
 ** New data is spilled to a new interior node at the same height when
-** the current node exceeds INTERIOR_MAX bytes (default 2048).  The
-** interior nodes at a given height are naturally tracked by interior
-** nodes at height+1, and so on.
+** the current node exceeds INTERIOR_MAX bytes (default 2048).
+** INTERIOR_MIN_TERMS (default 7) keeps large terms from monopolizing
+** interior nodes and making the tree too skinny.  The interior nodes
+** at a given height are naturally tracked by interior nodes at
+** height+1, and so on.
 **
 **
 **** Segment directory ****
@@ -3598,6 +3600,16 @@ static int index_update(fulltext_vtab *v, sqlite_int64 iRow,
 /* How large interior nodes can grow. */
 #define INTERIOR_MAX 2048
 
+/* Minimum number of terms per interior node (except the root). This
+** prevents large terms from making the tree too skinny - must be >0
+** so that the tree always makes progress.  Note that the min tree
+** fanout will be INTERIOR_MIN_TERMS+1.
+*/
+#define INTERIOR_MIN_TERMS 7
+#if INTERIOR_MIN_TERMS<1
+# error INTERIOR_MIN_TERMS must be greater than 0.
+#endif
+
 /* ROOT_MAX controls how much data is stored inline in the segment
 ** directory.
 */
@@ -3642,6 +3654,7 @@ typedef struct InteriorWriter {
   InteriorBlock *first, *last;
   struct InteriorWriter *parentWriter;
 
+  sqlite_int64 iOpeningChildBlock; /* First child block in block "last". */
 #ifndef NDEBUG
   sqlite_int64 iLastChildBlock;  /* for consistency checks. */
 #endif
@@ -3659,6 +3672,7 @@ static void interiorWriterInit(int iHeight, const char *pTerm, int nTerm,
   CLEAR(pWriter);
 
   pWriter->iHeight = iHeight;
+  pWriter->iOpeningChildBlock = iChildBlock;
 #ifndef NDEBUG
   pWriter->iLastChildBlock = iChildBlock;
 #endif
@@ -3680,11 +3694,15 @@ static void interiorWriterAppend(InteriorWriter *pWriter,
 #endif
   assert( pWriter->iLastChildBlock==iChildBlock );
 
-  if( pWriter->last->data.nData+n+nTerm>INTERIOR_MAX ){
-    /* Overflow to a new block. */
+  /* Overflow to a new block if the new term makes the current block
+  ** too big, and the current block already has enough terms.
+  */
+  if( pWriter->last->data.nData+n+nTerm>INTERIOR_MAX &&
+      iChildBlock-pWriter->iOpeningChildBlock>INTERIOR_MIN_TERMS ){
     pWriter->last->next = interiorBlockNew(pWriter->iHeight, iChildBlock,
                                            pTerm, nTerm);
     pWriter->last = pWriter->last->next;
+    pWriter->iOpeningChildBlock = iChildBlock;
   }else{
     dataBufferAppend2(&pWriter->last->data, c, n, pTerm, nTerm);
   }
