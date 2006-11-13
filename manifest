@@ -1,5 +1,5 @@
-C The\suninitialized\sfile\sdescriptor\sfrom\sthe\sunixFile\sstructure\sis\spassed\sto\ssqlite3DetectLockingStyle\sin\sallocateUnixFile\srather\sthan\sthe\sfile\sdescriptor\spassed\sin.\s\sThis\swas\scausing\sthe\slocking\sdetection\son\sNFS\sfile\ssystems\sto\sbehave\ssomewhat\srandomly\sand\sthe\sresult\swas\slocks\swere\snot\srespected\sand\sdata\sloss\scould\soccur.\s(CVS\s3508)
-D 2006-11-11T01:31:58
+C Allow\sbacking\stables\sto\sbe\smissing\son\sdropping\sfts\stable.\s\sFixes\nhttp://www.sqlite.org/cvstrac/tktview?tn=1992,35\s.\s(CVS\s3509)
+D 2006-11-13T20:15:27
 F Makefile.in 8e14898d41a53033ecb687d93c9cd5d109fb9ae3
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -21,7 +21,7 @@ F ext/README.txt 913a7bd3f4837ab14d7e063304181787658b14e1
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
 F ext/fts1/ft_hash.c 3927bd880e65329bdc6f506555b228b28924921b
 F ext/fts1/ft_hash.h 1a35e654a235c2c662d3ca0dfc3138ad60b8b7d5
-F ext/fts1/fts1.c 10ab0ca252f71eb6bd855686b43e70b9fd105fb0
+F ext/fts1/fts1.c 78218fb06050899508387de38ce2769f5e57ed8e
 F ext/fts1/fts1.h 6060b8f62c1d925ea8356cb1a6598073eb9159a6
 F ext/fts1/fts1_hash.c 3196cee866edbebb1c0521e21672e6d599965114
 F ext/fts1/fts1_hash.h 957d378355ed29f672cd5add012ce8b088a5e089
@@ -33,7 +33,7 @@ F ext/fts1/fulltext.h 08525a47852d1d62a0be81d3fc3fe2d23b094efd
 F ext/fts1/simple_tokenizer.c 1844d72f7194c3fd3d7e4173053911bf0661b70d
 F ext/fts1/tokenizer.h 0c53421b832366d20d720d21ea3e1f6e66a36ef9
 F ext/fts2/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts2/fts2.c afa395abf388451241f807832faef20b82c2eb09
+F ext/fts2/fts2.c 9b28f218c003319c7cddc374e4eae62229ab4f83
 F ext/fts2/fts2.h bbdab26d34f91974d5b9ade8b7836c140a7c4ce1
 F ext/fts2/fts2_hash.c b3f22116d4ef0bc8f2da6e3fdc435c86d0951a9b
 F ext/fts2/fts2_hash.h e283308156018329f042816eb09334df714e105e
@@ -421,7 +421,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P d9e14b6121a7b6786cccafd6e1e83474554632aa
-R b9b6d86976fa6c9365d6988ebb2e1f22
-U aswift
-Z ccdfaf17a9a8b81bf7be0f75eab131fd
+P b9dd16ef3df0785d8d0eea9a6f2ad580a7289834
+R fe80027f82af0692a9ff86e7596c1cb4
+U shess
+Z fc29ce5f806e2ffd152c1e84f8a98a96

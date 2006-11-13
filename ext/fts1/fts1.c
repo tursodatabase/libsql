@@ -2082,7 +2082,9 @@ static int fulltextDestroy(sqlite3_vtab *pVTab){
 
   TRACE(("FTS1 Destroy %p\n", pVTab));
   rc = sql_exec(v->db, v->zName,
-                    "drop table %_content; drop table %_term");
+                "drop table if exists %_content;"
+                "drop table if exists %_term;"
+                );
   if( rc!=SQLITE_OK ) return rc;
 
   fulltext_vtab_destroy((fulltext_vtab *)pVTab);

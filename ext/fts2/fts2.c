@@ -2634,9 +2634,9 @@ static int fulltextDestroy(sqlite3_vtab *pVTab){
 
   TRACE(("FTS2 Destroy %p\n", pVTab));
   rc = sql_exec(v->db, v->zName,
-                "drop table %_content;"
-                "drop table %_segments;"
-                "drop table %_segdir;"
+                "drop table if exists %_content;"
+                "drop table if exists %_segments;"
+                "drop table if exists %_segdir;"
                 );
   if( rc!=SQLITE_OK ) return rc;
 
