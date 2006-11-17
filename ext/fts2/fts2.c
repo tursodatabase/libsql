@@ -82,10 +82,6 @@
 ** the type.  Due to how deletion is implemented in the segmentation
 ** system, on-disk doclists MUST store at least positions.
 **
-** TODO(shess) Delta-encode docids.  This provides a 10% win versus
-** DL_POSITIONS_OFFSETS on the first 100,000 documents of the Enron
-** corpus, greater versus DL_POSITIONS.
-**
 **
 **** Segment leaf nodes ****
 ** Segment leaf nodes store terms and doclists, ordered by term.  Leaf
@@ -403,7 +399,6 @@ static int getVarint32(const char *p, int *pi){
 ** dataBufferExpand - expand capacity without adding data.
 ** dataBufferAppend - append data.
 ** dataBufferAppend2 - append two pieces of data at once.
-** dataBufferAppendLenData - append a varint-encoded length plus data.
 ** dataBufferReplace - replace buffer's data.
 */
 typedef struct DataBuffer {
@@ -452,12 +447,6 @@ static void dataBufferAppend2(DataBuffer *pBuffer,
   memcpy(pBuffer->pData+pBuffer->nData, pSource1, nSource1);
   memcpy(pBuffer->pData+pBuffer->nData+nSource1, pSource2, nSource2);
   pBuffer->nData += nSource1+nSource2;
-}
-static void dataBufferAppendLenData(DataBuffer *pBuffer,
-                                    const char *pSource, int nSource){
-  char c[VARINT_MAX];
-  int n = putVarint(c, nSource);
-  dataBufferAppend2(pBuffer, c, n, pSource, nSource);
 }
 static void dataBufferReplace(DataBuffer *pBuffer,
                               const char *pSource, int nSource){
@@ -649,11 +638,12 @@ static void dlrDestroy(DLReader *pReader){
 ** last docid found because it's convenient in other assertions for
 ** DLWriter.
 */
-static int docListValidate(DocListType iType, const char *pData, int nData,
-                           sqlite_int64 *pLastDocid){
+static void docListValidate(DocListType iType, const char *pData, int nData,
+                            sqlite_int64 *pLastDocid){
   sqlite_int64 iPrevDocid = 0;
+  assert( nData>0 );
   assert( pData!=0 );
-  assert( nData!=0 );
+  assert( pData+nData>pData );
   while( nData!=0 ){
     sqlite_int64 iDocidDelta;
     int n = getVarint(pData, &iDocidDelta);
@@ -677,8 +667,10 @@ static int docListValidate(DocListType iType, const char *pData, int nData,
     nData -= n;
   }
   if( pLastDocid ) *pLastDocid = iPrevDocid;
-  return 1;
 }
+#define ASSERT_VALID_DOCLIST(i, p, n, o) docListValidate(i, p, n, o)
+#else
+#define ASSERT_VALID_DOCLIST(i, p, n, o) assert( 1 )
 #endif
 
 /*******************************************************************/
@@ -736,7 +728,7 @@ static void dlwAppend(DLWriter *pWriter,
   ** the expected docid.  This is essential because we'll trust this
   ** docid in future delta-encoding.
   */
-  assert( docListValidate(pWriter->iType, pData, nData, &iLastDocidDelta) );
+  ASSERT_VALID_DOCLIST(pWriter->iType, pData, nData, &iLastDocidDelta);
   assert( iLastDocid==iFirstDocid-iDocid+iLastDocidDelta );
 
   /* Append recoded initial docid and everything else.  Rest of docids
@@ -3667,6 +3659,49 @@ static InteriorBlock *interiorBlockNew(int iHeight, sqlite_int64 iChildBlock,
   return block;
 }
 
+#ifndef NDEBUG
+/* Verify that the data is readable as an interior node. */
+static void interiorBlockValidate(InteriorBlock *pBlock){
+  const char *pData = pBlock->data.pData;
+  int nData = pBlock->data.nData;
+  int n, iDummy;
+  sqlite_int64 iBlockid;
+
+  assert( nData>0 );
+  assert( pData!=0 );
+  assert( pData+nData>pData );
+
+  /* Must lead with height of node as a varint(n), n>0 */
+  n = getVarint32(pData, &iDummy);
+  assert( n>0 );
+  assert( iDummy>0 );
+  assert( n<nData );
+  pData += n;
+  nData -= n;
+
+  /* Must contain iBlockid. */
+  n = getVarint(pData, &iBlockid);
+  assert( n>0 );
+  assert( n<=nData );
+  pData += n;
+  nData -= n;
+
+  /* Zero or more terms of positive length */
+  while( nData!=0 ){
+    n = getVarint32(pData, &iDummy);
+    assert( n>0 );
+    assert( iDummy>0 );
+    assert( n+iDummy>0);
+    assert( n+iDummy<=nData );
+    pData += n+iDummy;
+    nData -= n+iDummy;
+  }
+}
+#define ASSERT_VALID_INTERIOR_BLOCK(x) interiorBlockValidate(x)
+#else
+#define ASSERT_VALID_INTERIOR_BLOCK(x) assert( 1 )
+#endif
+
 typedef struct InteriorWriter {
   int iHeight;                   /* from 0 at leaves. */
   InteriorBlock *first, *last;
@@ -3696,6 +3731,7 @@ static void interiorWriterInit(int iHeight, const char *pTerm, int nTerm,
 #endif
   block = interiorBlockNew(iHeight, iChildBlock, pTerm, nTerm);
   pWriter->last = pWriter->first = block;
+  ASSERT_VALID_INTERIOR_BLOCK(pWriter->last);
 }
 
 /* Append the child node rooted at iChildBlock to the interior node,
@@ -3706,6 +3742,8 @@ static void interiorWriterAppend(InteriorWriter *pWriter,
                                  sqlite_int64 iChildBlock){
   char c[VARINT_MAX+VARINT_MAX];
   int n = putVarint(c, nTerm);
+
+  ASSERT_VALID_INTERIOR_BLOCK(pWriter->last);
 
 #ifndef NDEBUG
   pWriter->iLastChildBlock++;
@@ -3724,6 +3762,7 @@ static void interiorWriterAppend(InteriorWriter *pWriter,
   }else{
     dataBufferAppend2(&pWriter->last->data, c, n, pTerm, nTerm);
   }
+  ASSERT_VALID_INTERIOR_BLOCK(pWriter->last);
 }
 
 /* Free the space used by pWriter, including the linked-list of
@@ -3769,6 +3808,7 @@ static int interiorWriterRootInfo(fulltext_vtab *v, InteriorWriter *pWriter,
   /* Flush the first block to %_segments, and create a new level of
   ** interior node.
   */
+  ASSERT_VALID_INTERIOR_BLOCK(block);
   rc = block_insert(v, block->data.pData, block->data.nData, &iBlockid);
   if( rc!=SQLITE_OK ) return rc;
   *piEndBlockid = iBlockid;
@@ -3782,6 +3822,7 @@ static int interiorWriterRootInfo(fulltext_vtab *v, InteriorWriter *pWriter,
   ** node.
   */
   for(block=block->next; block!=NULL; block=block->next){
+    ASSERT_VALID_INTERIOR_BLOCK(block);
     rc = block_insert(v, block->data.pData, block->data.nData, &iBlockid);
     if( rc!=SQLITE_OK ) return rc;
     *piEndBlockid = iBlockid;
@@ -3925,9 +3966,6 @@ typedef struct LeafWriter {
 } LeafWriter;
 
 static void leafWriterInit(int iLevel, int idx, LeafWriter *pWriter){
-  char c[VARINT_MAX];
-  int n;
-
   CLEAR(pWriter);
   pWriter->iLevel = iLevel;
   pWriter->idx = idx;
@@ -3936,54 +3974,74 @@ static void leafWriterInit(int iLevel, int idx, LeafWriter *pWriter){
 
   /* Start out with a reasonably sized block, though it can grow. */
   dataBufferInit(&pWriter->data, LEAF_MAX);
-  n = putVarint(c, 0);
-  dataBufferReplace(&pWriter->data, c, n);
 }
 
 #ifndef NDEBUG
 /* Verify that the data is readable as a leaf node. */
-static int leafNodeValidate(const char *pData, int nData){
+static void leafNodeValidate(const char *pData, int nData){
   int n, iDummy;
 
+  if( nData==0 ) return;
+  assert( nData>0 );
   assert( pData!=0 );
-  assert( nData!=0 );
+  assert( pData+nData>pData );
 
   /* Must lead with a varint(0) */
   n = getVarint32(pData, &iDummy);
   assert( iDummy==0 );
-  if( nData==n ) return 1;
+  assert( n>0 );
+  assert( n<nData );
   pData += n;
   nData -= n;
 
   /* Leading term length and data must fit in buffer. */
   n = getVarint32(pData, &iDummy);
+  assert( n>0 );
+  assert( iDummy>0 );
+  assert( n+iDummy>0 );
   assert( n+iDummy<nData );
   pData += n+iDummy;
   nData -= n+iDummy;
 
   /* Leading term's doclist length and data must fit. */
   n = getVarint32(pData, &iDummy);
+  assert( n>0 );
+  assert( iDummy>0 );
+  assert( n+iDummy>0 );
   assert( n+iDummy<=nData );
-  assert( docListValidate(DL_DEFAULT, pData+n, iDummy, NULL) );
+  ASSERT_VALID_DOCLIST(DL_DEFAULT, pData+n, iDummy, NULL);
   pData += n+iDummy;
   nData -= n+iDummy;
 
   /* Verify that trailing terms and doclists also are readable. */
   while( nData!=0 ){
     n = getVarint32(pData, &iDummy);
-    n += getVarint32(pData+n, &iDummy);
+    assert( n>0 );
+    assert( iDummy>=0 );
+    assert( n<nData );
+    pData += n;
+    nData -= n;
+    n = getVarint32(pData, &iDummy);
+    assert( n>0 );
+    assert( iDummy>0 );
+    assert( n+iDummy>0 );
     assert( n+iDummy<nData );
     pData += n+iDummy;
     nData -= n+iDummy;
 
     n = getVarint32(pData, &iDummy);
+    assert( n>0 );
+    assert( iDummy>0 );
+    assert( n+iDummy>0 );
     assert( n+iDummy<=nData );
-    assert( docListValidate(DL_DEFAULT, pData+n, iDummy, NULL) );
+    ASSERT_VALID_DOCLIST(DL_DEFAULT, pData+n, iDummy, NULL);
     pData += n+iDummy;
     nData -= n+iDummy;
   }
-  return 1;
 }
+#define ASSERT_VALID_LEAF_NODE(p, n) leafNodeValidate(p, n)
+#else
+#define ASSERT_VALID_LEAF_NODE(p, n) assert( 1 )
 #endif
 
 /* Flush the current leaf node to %_segments, and adding the resulting
@@ -4002,7 +4060,7 @@ static int leafWriterInternalFlush(fulltext_vtab *v, LeafWriter *pWriter,
   assert( nData>2 );
   assert( iData>=0 );
   assert( iData+nData<=pWriter->data.nData );
-  assert( leafNodeValidate(pWriter->data.pData+iData, nData) );
+  ASSERT_VALID_LEAF_NODE(pWriter->data.pData+iData, nData);
 
   rc = block_insert(v, pWriter->data.pData+iData, nData, &iBlockid);
   if( rc!=SQLITE_OK ) return rc;
@@ -4039,8 +4097,7 @@ static int leafWriterFlush(fulltext_vtab *v, LeafWriter *pWriter){
   if( rc!=SQLITE_OK ) return rc;
 
   /* Re-initialize the output buffer. */
-  pWriter->data.nData = putVarint(pWriter->data.pData, 0);
-  dataBufferReset(&pWriter->term);
+  dataBufferReset(&pWriter->data);
 
   return SQLITE_OK;
 }
@@ -4064,7 +4121,7 @@ static int leafWriterRootInfo(fulltext_vtab *v, LeafWriter *pWriter,
   }
 
   /* Flush remaining leaf data. */
-  if( pWriter->data.nData>1 ){
+  if( pWriter->data.nData>0 ){
     int rc = leafWriterFlush(v, pWriter);
     if( rc!=SQLITE_OK ) return rc;
   }
@@ -4096,7 +4153,7 @@ static int leafWriterFinalize(fulltext_vtab *v, LeafWriter *pWriter){
   if( rc!=SQLITE_OK ) return rc;
 
   /* Don't bother storing an entirely empty segment. */
-  if( iEndBlockid==0 && nRootInfo==1 ) return SQLITE_OK;
+  if( iEndBlockid==0 && nRootInfo==0 ) return SQLITE_OK;
 
   return segdir_set(v, pWriter->iLevel, pWriter->idx,
                     pWriter->iStartBlockid, pWriter->iEndBlockid,
@@ -4112,25 +4169,32 @@ static void leafWriterDestroy(LeafWriter *pWriter){
 /* Encode a term into the leafWriter, delta-encoding as appropriate. */
 static void leafWriterEncodeTerm(LeafWriter *pWriter,
                                  const char *pTerm, int nTerm){
-  if( pWriter->term.nData==0 ){
-    /* Encode the entire leading term as:
+  char c[VARINT_MAX+VARINT_MAX];
+  int n;
+
+  if( pWriter->data.nData==0 ){
+    /* Encode the node header and leading term as:
+    **  varint(0)
     **  varint(nTerm)
     **  char pTerm[nTerm]
     */
-    assert( pWriter->data.nData==1 );
-    dataBufferAppendLenData(&pWriter->data, pTerm, nTerm);
+    n = putVarint(c, '\0');
+    n += putVarint(c+n, nTerm);
+    dataBufferAppend2(&pWriter->data, c, n, pTerm, nTerm);
   }else{
     /* Delta-encode the term as:
     **  varint(nPrefix)
     **  varint(nSuffix)
     **  char pTermSuffix[nSuffix]
     */
-    char c[VARINT_MAX+VARINT_MAX];
-    int n, nPrefix = 0;
+    int nPrefix = 0;
 
-    while( nPrefix<nTerm && nPrefix<pWriter->term.nData &&
+    assert( nTerm>0 );
+    while( nPrefix<pWriter->term.nData &&
            pTerm[nPrefix]==pWriter->term.pData[nPrefix] ){
       nPrefix++;
+      /* Failing this implies that the terms weren't in order. */
+      assert( nPrefix<nTerm );
     }
 
     n = putVarint(c, nPrefix);
@@ -4138,44 +4202,6 @@ static void leafWriterEncodeTerm(LeafWriter *pWriter,
     dataBufferAppend2(&pWriter->data, c, n, pTerm+nPrefix, nTerm-nPrefix);
   }
   dataBufferReplace(&pWriter->term, pTerm, nTerm);
-}
-
-/* Push pTerm[nTerm] along with the doclist data to the leaf layer of
-** %_segments.
-*/
-/* TODO(shess) Revise writeZeroSegment() so that doclists are
-** constructed directly in pWriter->data.  That implies refactoring
-** leafWriterStep() and leafWriterStepMerge() to share more code.
-*/
-static int leafWriterStep(fulltext_vtab *v, LeafWriter *pWriter,
-                          const char *pTerm, int nTerm,
-                          const char *pData, int nData){
-  int rc;
-
-  /* Flush existing data if this item won't fit well. */
-  if( pWriter->data.nData>1 &&
-      (nData+nTerm>STANDALONE_MIN ||
-       pWriter->data.nData+nData+nTerm>LEAF_MAX) ){
-    rc = leafWriterFlush(v, pWriter);
-    if( rc!=SQLITE_OK ) return rc;
-  }
-
-  leafWriterEncodeTerm(pWriter, pTerm, nTerm);
-
-  /* Encode the doclist as:
-  **  varint(nDoclist)
-  **  char pDoclist[nDoclist]
-  */
-  dataBufferAppendLenData(&pWriter->data, pData, nData);
-
-  /* Flush standalone blocks right out */
-  if( nData+nTerm>STANDALONE_MIN ){
-    rc = leafWriterFlush(v, pWriter);
-    if( rc!=SQLITE_OK ) return rc;
-  }
-  assert( leafNodeValidate(pWriter->data.pData, pWriter->data.nData) );
-
-  return SQLITE_OK;
 }
 
 /* Used to avoid a memmove when a large amount of doclist data is in
@@ -4214,7 +4240,7 @@ static int leafWriterStepMerge(fulltext_vtab *v, LeafWriter *pWriter,
   int iTermData = pWriter->data.nData, iDoclistData;
   int i, nData, n, nActualData, nActual, rc;
 
-  assert( leafNodeValidate(pWriter->data.pData, pWriter->data.nData) );
+  ASSERT_VALID_LEAF_NODE(pWriter->data.pData, pWriter->data.nData);
   leafWriterEncodeTerm(pWriter, pTerm, nTerm);
 
   iDoclistData = pWriter->data.nData;
@@ -4229,9 +4255,9 @@ static int leafWriterStepMerge(fulltext_vtab *v, LeafWriter *pWriter,
   dataBufferAppend(&pWriter->data, c, n);
 
   docListMerge(&pWriter->data, pReaders, nReaders);
-  assert( docListValidate(DL_DEFAULT,
-                          pWriter->data.pData+iDoclistData+n,
-                          pWriter->data.nData-iDoclistData-n, NULL) );
+  ASSERT_VALID_DOCLIST(DL_DEFAULT,
+                       pWriter->data.pData+iDoclistData+n,
+                       pWriter->data.nData-iDoclistData-n, NULL);
 
   /* The actual amount of doclist data at this point could be smaller
   ** than the length we encoded.  Additionally, the space required to
@@ -4254,7 +4280,7 @@ static int leafWriterStepMerge(fulltext_vtab *v, LeafWriter *pWriter,
   */
   if( nTerm+nActualData>STANDALONE_MIN ){
     /* Push leaf node from before this term. */
-    if( iTermData>1 ){
+    if( iTermData>0 ){
       rc = leafWriterInternalFlush(v, pWriter, 0, iTermData);
       if( rc!=SQLITE_OK ) return rc;
     }
@@ -4268,8 +4294,8 @@ static int leafWriterStepMerge(fulltext_vtab *v, LeafWriter *pWriter,
     if( rc!=SQLITE_OK ) return rc;
 
     /* Leave the node empty. */
-    pWriter->data.nData = putVarint(pWriter->data.pData, 0);
-    dataBufferReset(&pWriter->term);
+    dataBufferReset(&pWriter->data);
+
     return rc;
   }
 
@@ -4317,9 +4343,28 @@ static int leafWriterStepMerge(fulltext_vtab *v, LeafWriter *pWriter,
            pWriter->data.nData-iDoclistData);
     pWriter->data.nData -= iDoclistData-n;
   }
-  assert( leafNodeValidate(pWriter->data.pData, pWriter->data.nData) );
+  ASSERT_VALID_LEAF_NODE(pWriter->data.pData, pWriter->data.nData);
 
   return SQLITE_OK;
+}
+
+/* Push pTerm[nTerm] along with the doclist data to the leaf layer of
+** %_segments.
+*/
+/* TODO(shess) Revise writeZeroSegment() so that doclists are
+** constructed directly in pWriter->data.
+*/
+static int leafWriterStep(fulltext_vtab *v, LeafWriter *pWriter,
+                          const char *pTerm, int nTerm,
+                          const char *pData, int nData){
+  int rc;
+  DLReader reader;
+
+  dlrInit(&reader, DL_DEFAULT, pData, nData);
+  rc = leafWriterStepMerge(v, pWriter, pTerm, nTerm, &reader, 1);
+  dlrDestroy(&reader);
+
+  return rc;
 }
 
 
