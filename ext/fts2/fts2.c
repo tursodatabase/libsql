@@ -152,7 +152,10 @@
 ** than the first term encoded (or all terms if no term is encoded).
 ** Otherwise, for terms greater than or equal to pTerm[i] but less
 ** than pTerm[i+1], the subtree for that term will be rooted at
-** iBlockid+i.
+** iBlockid+i.  Interior nodes only store enough term data to
+** distinguish adjacent children (if the rightmost term of the left
+** child is "something", and the leftmost term of the right child is
+** "wicked", only "w" is stored).
 **
 ** New data is spilled to a new interior node at the same height when
 ** the current node exceeds INTERIOR_MAX bytes (default 2048).
@@ -3961,6 +3964,11 @@ typedef struct LeafWriter {
   DataBuffer term;                /* previous encoded term */
   DataBuffer data;                /* encoding buffer */
 
+  /* bytes of first term in the current node which distinguishes that
+  ** term from the last term of the previous node.
+  */
+  int nTermDistinct;
+
   InteriorWriter parentWriter;    /* if we overflow */
   int has_parent;
 } LeafWriter;
@@ -4072,6 +4080,9 @@ static int leafWriterInternalFlush(fulltext_vtab *v, LeafWriter *pWriter,
   n = getVarint32(pWriter->data.pData+iData+1, &nStartingTerm);
   pStartingTerm = pWriter->data.pData+iData+1+n;
   assert( pWriter->data.nData>iData+1+n+nStartingTerm );
+  assert( pWriter->nTermDistinct>0 );
+  assert( pWriter->nTermDistinct<=nStartingTerm );
+  nStartingTerm = pWriter->nTermDistinct;
 
   if( pWriter->has_parent ){
     interiorWriterAppend(&pWriter->parentWriter,
@@ -4166,11 +4177,23 @@ static void leafWriterDestroy(LeafWriter *pWriter){
   dataBufferDestroy(&pWriter->data);
 }
 
-/* Encode a term into the leafWriter, delta-encoding as appropriate. */
-static void leafWriterEncodeTerm(LeafWriter *pWriter,
-                                 const char *pTerm, int nTerm){
+/* Encode a term into the leafWriter, delta-encoding as appropriate.
+** Returns the length of the new term which distinguishes it from the
+** previous term, which can be used to set nTermDistinct when a node
+** boundary is crossed.
+*/
+static int leafWriterEncodeTerm(LeafWriter *pWriter,
+                                const char *pTerm, int nTerm){
   char c[VARINT_MAX+VARINT_MAX];
-  int n;
+  int n, nPrefix = 0;
+
+  assert( nTerm>0 );
+  while( nPrefix<pWriter->term.nData &&
+         pTerm[nPrefix]==pWriter->term.pData[nPrefix] ){
+    nPrefix++;
+    /* Failing this implies that the terms weren't in order. */
+    assert( nPrefix<nTerm );
+  }
 
   if( pWriter->data.nData==0 ){
     /* Encode the node header and leading term as:
@@ -4187,21 +4210,13 @@ static void leafWriterEncodeTerm(LeafWriter *pWriter,
     **  varint(nSuffix)
     **  char pTermSuffix[nSuffix]
     */
-    int nPrefix = 0;
-
-    assert( nTerm>0 );
-    while( nPrefix<pWriter->term.nData &&
-           pTerm[nPrefix]==pWriter->term.pData[nPrefix] ){
-      nPrefix++;
-      /* Failing this implies that the terms weren't in order. */
-      assert( nPrefix<nTerm );
-    }
-
     n = putVarint(c, nPrefix);
     n += putVarint(c+n, nTerm-nPrefix);
     dataBufferAppend2(&pWriter->data, c, n, pTerm+nPrefix, nTerm-nPrefix);
   }
   dataBufferReplace(&pWriter->term, pTerm, nTerm);
+
+  return nPrefix+1;
 }
 
 /* Used to avoid a memmove when a large amount of doclist data is in
@@ -4238,10 +4253,13 @@ static int leafWriterStepMerge(fulltext_vtab *v, LeafWriter *pWriter,
                                DLReader *pReaders, int nReaders){
   char c[VARINT_MAX+VARINT_MAX];
   int iTermData = pWriter->data.nData, iDoclistData;
-  int i, nData, n, nActualData, nActual, rc;
+  int i, nData, n, nActualData, nActual, rc, nTermDistinct;
 
   ASSERT_VALID_LEAF_NODE(pWriter->data.pData, pWriter->data.nData);
-  leafWriterEncodeTerm(pWriter, pTerm, nTerm);
+  nTermDistinct = leafWriterEncodeTerm(pWriter, pTerm, nTerm);
+
+  /* Remember nTermDistinct if opening a new node. */
+  if( iTermData==0 ) pWriter->nTermDistinct = nTermDistinct;
 
   iDoclistData = pWriter->data.nData;
 
@@ -4283,6 +4301,8 @@ static int leafWriterStepMerge(fulltext_vtab *v, LeafWriter *pWriter,
     if( iTermData>0 ){
       rc = leafWriterInternalFlush(v, pWriter, 0, iTermData);
       if( rc!=SQLITE_OK ) return rc;
+
+      pWriter->nTermDistinct = nTermDistinct;
     }
 
     /* Fix the encoded doclist length. */
@@ -4322,6 +4342,8 @@ static int leafWriterStepMerge(fulltext_vtab *v, LeafWriter *pWriter,
     /* Flush out the leading data as a node */
     rc = leafWriterInternalFlush(v, pWriter, 0, iTermData);
     if( rc!=SQLITE_OK ) return rc;
+
+    pWriter->nTermDistinct = nTermDistinct;
 
     /* Rebuild header using the current term */
     n = putVarint(pWriter->data.pData, 0);
