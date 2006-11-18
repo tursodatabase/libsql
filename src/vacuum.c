@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.64 2006/10/10 13:07:36 drh Exp $
+** $Id: vacuum.c,v 1.65 2006/11/18 20:20:22 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -83,7 +83,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   char *zSql = 0;         /* SQL statements */
   int saved_flags;        /* Saved value of the db->flags */
   Db *pDb = 0;            /* Database to detach at end of vacuum */
-  char zTemp[SQLITE_TEMPNAME_SIZE+1];  /* Name of the TEMP file */
+  char zTemp[SQLITE_TEMPNAME_SIZE+20];  /* Name of the TEMP file */
 
   /* Save the current value of the write-schema flag before setting it. */
   saved_flags = db->flags;
@@ -259,6 +259,9 @@ end_of_vacuum:
     pDb->pSchema = 0;
   }
 
+  sqlite3OsDelete(zTemp);
+  strcat(zTemp, "-journal");
+  sqlite3OsDelete(zTemp);
   sqliteFree( zSql );
   sqlite3ResetInternalSchema(db, 0);
 
