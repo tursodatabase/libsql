@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.155 2006/11/08 12:25:43 drh Exp $
+** $Id: shell.c,v 1.156 2006/11/20 16:21:10 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -225,6 +225,7 @@ struct previous_mode_data {
   int showHeader;
   int colWidth[100];
 };
+
 /*
 ** An pointer to an instance of this structure is passed from
 ** the main program to the callback.  This is used to communicate
@@ -236,6 +237,7 @@ struct callback_data {
   int cnt;               /* Number of records displayed so far */
   FILE *out;             /* Write results here */
   int mode;              /* An output mode setting */
+  int writableSchema;    /* True if PRAGMA writable_schema=ON */
   int showHeader;        /* True to show column names in List or Column mode */
   char *zDestTable;      /* Name of destination table when MODE_Insert */
   char separator[20];    /* Separator character for MODE_List */
@@ -675,6 +677,9 @@ static char *appendText(char *zIn, char const *zAppend, char quote){
 /*
 ** Execute a query statement that has a single result column.  Print
 ** that result column on a line by itself with a semicolon terminator.
+**
+** This is used, for example, to show the schema of the database by
+** querying the SQLITE_MASTER table.
 */
 static int run_table_dump_query(FILE *out, sqlite3 *db, const char *zSelect){
   sqlite3_stmt *pSelect;
@@ -716,6 +721,19 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
     fprintf(p->out, "ANALYZE sqlite_master;\n");
   }else if( strncmp(zTable, "sqlite_", 7)==0 ){
     return 0;
+  }else if( strncmp(zSql, "CREATE VIRTUAL TABLE", 20)==0 ){
+    char *zIns;
+    if( !p->writableSchema ){
+      fprintf(p->out, "PRAGMA writable_schema=ON;\n");
+      p->writableSchema = 1;
+    }
+    zIns = sqlite3_mprintf(
+       "INSERT INTO sqlite_master(type,name,tbl_name,rootpage,sql)"
+       "VALUES('table','%q','%q',0,'%q');",
+       zTable, zTable, zSql);
+    fprintf(p->out, "%s\n", zIns);
+    sqlite3_free(zIns);
+    return 0;
   }else{
     fprintf(p->out, "%s;\n", zSql);
   }
@@ -749,7 +767,7 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
       zSelect = appendText(zSelect, zText, '"');
       rc = sqlite3_step(pTableInfo);
       if( rc==SQLITE_ROW ){
-        zSelect = appendText(zSelect, ") || ', ' || ", 0);
+        zSelect = appendText(zSelect, ") || ',' || ", 0);
       }else{
         zSelect = appendText(zSelect, ") ", 0);
       }
@@ -773,7 +791,9 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
 }
 
 /*
-** Run zQuery.  Update dump_callback() as the callback routine.
+** Run zQuery.  Use dump_callback() as the callback routine so that
+** the contents of the query are output as SQL statements.
+**
 ** If we get a SQLITE_CORRUPT error, rerun the query after appending
 ** "ORDER BY rowid DESC" to the end.
 */
@@ -979,19 +999,15 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     char *zErrMsg = 0;
     open_db(p);
     fprintf(p->out, "BEGIN TRANSACTION;\n");
+    p->writableSchema = 0;
     if( nArg==1 ){
       run_schema_dump_query(p, 
         "SELECT name, type, sql FROM sqlite_master "
-        "WHERE sql NOT NULL AND type=='table' AND rootpage!=0", 0
-      );
-      run_schema_dump_query(p, 
-        "SELECT name, type, sql FROM sqlite_master "
-        "WHERE sql NOT NULL AND "
-        "  AND type!='table' AND type!='meta'", 0
+        "WHERE sql NOT NULL AND type=='table'", 0
       );
       run_table_dump_query(p->out, p->db,
         "SELECT sql FROM sqlite_master "
-        "WHERE sql NOT NULL AND rootpage==0"
+        "WHERE sql NOT NULL AND type IN ('index','trigger','view')"
       );
     }else{
       int i;
@@ -1000,18 +1016,19 @@ static int do_meta_command(char *zLine, struct callback_data *p){
         run_schema_dump_query(p,
           "SELECT name, type, sql FROM sqlite_master "
           "WHERE tbl_name LIKE shellstatic() AND type=='table'"
-          "  AND rootpage!=0 AND sql NOT NULL", 0);
-        run_schema_dump_query(p,
-          "SELECT name, type, sql FROM sqlite_master "
-          "WHERE tbl_name LIKE shellstatic() AND type!='table'"
-          "  AND type!='meta' AND sql NOT NULL", 0);
+          "  AND sql NOT NULL", 0);
         run_table_dump_query(p->out, p->db,
           "SELECT sql FROM sqlite_master "
-          "WHERE sql NOT NULL AND rootpage==0"
+          "WHERE sql NOT NULL"
+          "  AND type IN ('index','trigger','view')"
           "  AND tbl_name LIKE shellstatic()"
         );
         zShellStatic = 0;
       }
+    }
+    if( p->writableSchema ){
+      fprintf(p->out, "PRAGMA writable_schema=OFF;\n");
+      p->writableSchema = 0;
     }
     if( zErrMsg ){
       fprintf(stderr,"Error: %s\n", zErrMsg);

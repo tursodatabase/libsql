@@ -1,5 +1,5 @@
-C Make\ssure\sVACUUM\scleans\sup\safter\sitself.\s\sTicket\s#2071.\s(CVS\s3514)
-D 2006-11-18T20:20:22
+C Fix\sthe\s".dump"\scommand\sin\sthe\sshell.\s\sTicket\s#2072.\s\sAlso\sticket\s#2065.\s(CVS\s3515)
+D 2006-11-20T16:21:10
 F Makefile.in 8e14898d41a53033ecb687d93c9cd5d109fb9ae3
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -94,7 +94,7 @@ F src/printf.c b179b6ed12f793e028dd169e2e2e2b2a37eedc63
 F src/random.c d40f8d356cecbd351ccfab6eaedd7ec1b54f5261
 F src/select.c 6ba6d8ead43d0575ce1f8b418cc039f8f301389a
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
-F src/shell.c 41513f31dce4252198944c712b79ea4c92df2592
+F src/shell.c 934cdcf67eccee6f5c1be87c98a477a2e263db3c
 F src/sqlite.h.in 2931f7ee2415e7a49fd12f386c23575046f0f540
 F src/sqlite3ext.h 2c2156cc32a158e2b7bd9042d42accf94bff2e40
 F src/sqliteInt.h f6bac44ee7b8ee2614b046974551c22999ec674f
@@ -421,7 +421,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P f6e0b080dcfaf554b2c05df5e7d4db69d012fba3
-R ad774b2735ecc59c61fa373df002cbdb
+P 2fdc147d0059dcdfff2da33bd9fedb0bee057aa1
+R 794dc2fbb3e0e83e5207db81c11bb327
 U drh
-Z bebd3b34dccaadcb360a71274b94137f
+Z 79a147f5026204797ae394029f543a2e
