@@ -12,7 +12,7 @@
 # focus of this file is testing SELECT statements that contain
 # subqueries in their FROM clause.
 #
-# $Id: select6.test,v 1.24 2006/06/11 23:41:56 drh Exp $
+# $Id: select6.test,v 1.25 2006/11/23 09:39:16 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -101,7 +101,7 @@ do_test select6-1.9 {
   }
 } {1 1 1 2 2 2 3 4 3 4 7 7 4 8 15 12 5 5 20 21}
 
-do_test select6-2.0 {
+do_speed_test select6-2.0 {
   execsql {
     CREATE TABLE t2(a INTEGER PRIMARY KEY, b);
     INSERT INTO t2 SELECT * FROM t1;
