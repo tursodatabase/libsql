@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.275 2006/11/06 21:20:26 drh Exp $
+** @(#) $Id: pager.c,v 1.276 2006/11/23 11:58:44 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -350,7 +350,9 @@ static const unsigned char aJournalMagic[] = {
 /*
 ** The default size of a disk sector
 */
-#define PAGER_SECTOR_SIZE 512
+#ifndef PAGER_SECTOR_SIZE
+# define PAGER_SECTOR_SIZE 512
+#endif
 
 /*
 ** Page number PAGER_MJ_PGNO is never used in an SQLite database (it is
