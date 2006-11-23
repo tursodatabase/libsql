@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.70 2006/11/23 09:39:16 drh Exp $
+# $Id: tester.tcl,v 1.71 2006/11/23 21:09:11 drh Exp $
 
 # Make sure tclsqlite3 was compiled correctly.  Abort now with an
 # error message if not.
@@ -124,14 +124,16 @@ proc do_test {name cmd expected} {
 # Run an SQL script.  
 # Return the number of microseconds per statement.
 #
-proc speed_trial {name numstmt sql} {
+proc speed_trial {name numstmt units sql} {
   puts -nonewline [format {%-20.20s } $name...]
   flush stdout
   set speed [time {sqlite3_exec_nr db $sql}]
   set tm [lindex $speed 0]
   set per [expr {$tm/(1.0*$numstmt)}]
   set rate [expr {1000000.0*$numstmt/$tm}]
-  puts [format {%20.1f us/stmt %20.5f stmt/s} $per $rate]
+  set u1 us/$units
+  set u2 $units/s
+  puts [format {%20.3f %-7s %20.5f %s} $per $u1 $rate $u2]
 }
 
 # The procedure uses the special "sqlite_malloc_stat" command
