@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.268 2006/08/24 15:18:25 drh Exp $
+** $Id: expr.c,v 1.269 2006/11/23 11:59:13 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1180,7 +1180,7 @@ static int nameResolverStep(void *pArg, Expr *pExpr){
       }else{
         is_agg = pDef->xFunc==0;
       }
-#ifndef SQLITE_OMIT_AUTHORIZER
+#ifndef SQLITE_OMIT_AUTHORIZATION
       if( pDef ){
         auth = sqlite3AuthCheck(pParse, SQLITE_FUNCTION, 0, pDef->zName, 0);
         if( auth!=SQLITE_OK ){

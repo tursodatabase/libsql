@@ -1,5 +1,5 @@
-C Make\sthe\spager\ssector\ssize\sconfigurable\sat\scompile-time.\s(CVS\s3517)
-D 2006-11-23T11:58:44
+C Fix\sa\stypo\sin\sthe\sOMIT_AUTORIZATION\sin\sexpr.c.\s(CVS\s3518)
+D 2006-11-23T11:59:13
 F Makefile.in 8e14898d41a53033ecb687d93c9cd5d109fb9ae3
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -65,7 +65,7 @@ F src/complete.c 7d1a44be8f37de125fcafd3d3a018690b3799675
 F src/date.c 9602457c49210f77f860d1919a8249a3118cd43f
 F src/delete.c 804384761144fe1a5035b99f4bd7d706976831bd
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
-F src/expr.c 0546cc60f08c426d96092dea0789d085aed3580e
+F src/expr.c 03420f31394b45a601c8aff5dd445c4e0d58999b
 F src/func.c af537156dfeb91dbac8ffed4db6c4fa1a3164cc9
 F src/hash.c 449f3d6620193aa557f5d86cbc5cc6b87702b185
 F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
@@ -421,7 +421,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 270c745dffad7aa24f8707720b3d68ad7a6b2749
-R 08d85b07226abddb3fca68e445263089
+P 6221cf4f52e79f53043b7c10daedf2755d8fb167
+R 11b90185f726fa653a004e2f51c3e326
 U drh
-Z 893970aa3be7b435d2dbaa192410c0d5
+Z 8861103acec46a056d202d9293d94f59
