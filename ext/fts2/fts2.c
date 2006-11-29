@@ -138,13 +138,19 @@
 **
 ** varint iHeight;           (height from leaf level, always >0)
 ** varint iBlockid;          (block id of node's leftmost subtree)
-** array {
-**   varint nTerm;           (length of term)
-**   char pTerm[nTerm];      (content of term)
+** optional {
+**   varint nTerm;           (length of first term)
+**   char pTerm[nTerm];      (content of first term)
+**   array {
+**                                (further terms are delta-encoded)
+**     varint nPrefix;            (length of shared prefix with previous term)
+**     varint nSuffix;            (length of unshared suffix)
+**     char pTermSuffix[nSuffix]; (unshared suffix of next term)
+**   }
 ** }
 **
-** Here, array { X } means zero or more occurrences of X, adjacent in
-** memory.
+** Here, optional { X } means an optional element, while array { X }
+** means zero or more occurrences of X, adjacent in memory.
 **
 ** An interior node encodes n terms separating n+1 subtrees.  The
 ** subtree blocks are contiguous, so only the first subtree's blockid
@@ -3690,7 +3696,8 @@ static void interiorBlockValidate(InteriorBlock *pBlock){
   nData -= n;
 
   /* Zero or more terms of positive length */
-  while( nData!=0 ){
+  if( nData!=0 ){
+    /* First term is not delta-encoded. */
     n = getVarint32(pData, &iDummy);
     assert( n>0 );
     assert( iDummy>0 );
@@ -3698,6 +3705,26 @@ static void interiorBlockValidate(InteriorBlock *pBlock){
     assert( n+iDummy<=nData );
     pData += n+iDummy;
     nData -= n+iDummy;
+
+    /* Following terms delta-encoded. */
+    while( nData!=0 ){
+      /* Length of shared prefix. */
+      n = getVarint32(pData, &iDummy);
+      assert( n>0 );
+      assert( iDummy>=0 );
+      assert( n<nData );
+      pData += n;
+      nData -= n;
+
+      /* Length and data of distinct suffix. */
+      n = getVarint32(pData, &iDummy);
+      assert( n>0 );
+      assert( iDummy>0 );
+      assert( n+iDummy>0);
+      assert( n+iDummy<=nData );
+      pData += n+iDummy;
+      nData -= n+iDummy;
+    }
   }
 }
 #define ASSERT_VALID_INTERIOR_BLOCK(x) interiorBlockValidate(x)
@@ -3710,6 +3737,7 @@ typedef struct InteriorWriter {
   InteriorBlock *first, *last;
   struct InteriorWriter *parentWriter;
 
+  DataBuffer term;               /* Last term written to block "last". */
   sqlite_int64 iOpeningChildBlock; /* First child block in block "last". */
 #ifndef NDEBUG
   sqlite_int64 iLastChildBlock;  /* for consistency checks. */
@@ -3735,6 +3763,7 @@ static void interiorWriterInit(int iHeight, const char *pTerm, int nTerm,
   block = interiorBlockNew(iHeight, iChildBlock, pTerm, nTerm);
   pWriter->last = pWriter->first = block;
   ASSERT_VALID_INTERIOR_BLOCK(pWriter->last);
+  dataBufferInit(&pWriter->term, 0);
 }
 
 /* Append the child node rooted at iChildBlock to the interior node,
@@ -3744,9 +3773,27 @@ static void interiorWriterAppend(InteriorWriter *pWriter,
                                  const char *pTerm, int nTerm,
                                  sqlite_int64 iChildBlock){
   char c[VARINT_MAX+VARINT_MAX];
-  int n = putVarint(c, nTerm);
+  int n, nPrefix = 0;
 
   ASSERT_VALID_INTERIOR_BLOCK(pWriter->last);
+
+  /* The first term written into an interior node is actually
+  ** associated with the second child added (the first child was added
+  ** in interiorWriterInit, or in the if clause at the bottom of this
+  ** function).  That term gets encoded straight up, with nPrefix left
+  ** at 0.
+  */
+  if( pWriter->term.nData==0 ){
+    n = putVarint(c, nTerm);
+  }else{
+    while( nPrefix<pWriter->term.nData &&
+           pTerm[nPrefix]==pWriter->term.pData[nPrefix] ){
+      nPrefix++;
+    }
+
+    n = putVarint(c, nPrefix);
+    n += putVarint(c+n, nTerm-nPrefix);
+  }
 
 #ifndef NDEBUG
   pWriter->iLastChildBlock++;
@@ -3756,14 +3803,17 @@ static void interiorWriterAppend(InteriorWriter *pWriter,
   /* Overflow to a new block if the new term makes the current block
   ** too big, and the current block already has enough terms.
   */
-  if( pWriter->last->data.nData+n+nTerm>INTERIOR_MAX &&
+  if( pWriter->last->data.nData+n+nTerm-nPrefix>INTERIOR_MAX &&
       iChildBlock-pWriter->iOpeningChildBlock>INTERIOR_MIN_TERMS ){
     pWriter->last->next = interiorBlockNew(pWriter->iHeight, iChildBlock,
                                            pTerm, nTerm);
     pWriter->last = pWriter->last->next;
     pWriter->iOpeningChildBlock = iChildBlock;
+    dataBufferReset(&pWriter->term);
   }else{
-    dataBufferAppend2(&pWriter->last->data, c, n, pTerm, nTerm);
+    dataBufferAppend2(&pWriter->last->data, c, n,
+                      pTerm+nPrefix, nTerm-nPrefix);
+    dataBufferReplace(&pWriter->term, pTerm, nTerm);
   }
   ASSERT_VALID_INTERIOR_BLOCK(pWriter->last);
 }
@@ -3785,6 +3835,7 @@ static int interiorWriterDestroy(InteriorWriter *pWriter){
     interiorWriterDestroy(pWriter->parentWriter);
     free(pWriter->parentWriter);
   }
+  dataBufferDestroy(&pWriter->term);
   SCRAMBLE(pWriter);
   return SQLITE_OK;
 }
@@ -3841,12 +3892,13 @@ static int interiorWriterRootInfo(fulltext_vtab *v, InteriorWriter *pWriter,
 
 /****************************************************************/
 /* InteriorReader is used to read off the data from an interior node
-** (see comment at top of file for the format).  InteriorReader does
-** not own its data, so interiorReaderDestroy() is a formality.
+** (see comment at top of file for the format).
 */
 typedef struct InteriorReader {
   const char *pData;
   int nData;
+
+  DataBuffer term;          /* previous term, for decoding term delta. */
 
   sqlite_int64 iBlockid;
 } InteriorReader;
@@ -3857,7 +3909,7 @@ static void interiorReaderDestroy(InteriorReader *pReader){
 
 static void interiorReaderInit(const char *pData, int nData,
                                InteriorReader *pReader){
-  int n;
+  int n, nTerm;
 
   /* Require at least the leading flag byte */
   assert( nData>0 );
@@ -3870,10 +3922,25 @@ static void interiorReaderInit(const char *pData, int nData,
   assert( 1+n<=nData );
   pReader->pData = pData+1+n;
   pReader->nData = nData-(1+n);
+
+  /* A single-child interior node (such as when a leaf node was too
+  ** large for the segment directory) won't have any terms.
+  ** Otherwise, decode the first term.
+  */
+  if( pReader->nData==0 ){
+    dataBufferInit(&pReader->term, 0);
+  }else{
+    n = getVarint32(pReader->pData, &nTerm);
+    dataBufferInit(&pReader->term, nTerm);
+    dataBufferReplace(&pReader->term, pReader->pData+n, nTerm);
+    assert( n+nTerm<=pReader->nData );
+    pReader->pData += n+nTerm;
+    pReader->nData -= n+nTerm;
+  }
 }
 
 static int interiorReaderAtEnd(InteriorReader *pReader){
-  return pReader->nData<=0;
+  return pReader->term.nData==0;
 }
 
 static sqlite_int64 interiorReaderCurrentBlockid(InteriorReader *pReader){
@@ -3881,26 +3948,37 @@ static sqlite_int64 interiorReaderCurrentBlockid(InteriorReader *pReader){
 }
 
 static int interiorReaderTermBytes(InteriorReader *pReader){
-  int nTerm;
   assert( !interiorReaderAtEnd(pReader) );
-  getVarint32(pReader->pData, &nTerm);
-  return nTerm;
+  return pReader->term.nData;
 }
 static const char *interiorReaderTerm(InteriorReader *pReader){
-  int n, nTerm;
   assert( !interiorReaderAtEnd(pReader) );
-  n = getVarint32(pReader->pData, &nTerm);
-  return pReader->pData+n;
+  return pReader->term.pData;
 }
 
 /* Step forward to the next term in the node. */
 static void interiorReaderStep(InteriorReader *pReader){
-  int n, nTerm;
   assert( !interiorReaderAtEnd(pReader) );
-  n = getVarint32(pReader->pData, &nTerm);
-  assert( n+nTerm<=pReader->nData );
-  pReader->pData += n+nTerm;
-  pReader->nData -= n+nTerm;
+
+  /* If the last term has been read, signal eof, else construct the
+  ** next term.
+  */
+  if( pReader->nData==0 ){
+    dataBufferReset(&pReader->term);
+  }else{
+    int n, nPrefix, nSuffix;
+
+    n = getVarint32(pReader->pData, &nPrefix);
+    n += getVarint32(pReader->pData+n, &nSuffix);
+
+    /* Truncate the current term and append suffix data. */
+    pReader->term.nData = nPrefix;
+    dataBufferAppend(&pReader->term, pReader->pData+n, nSuffix);
+
+    assert( n+nSuffix<=pReader->nData );
+    pReader->pData += n+nSuffix;
+    pReader->nData -= n+nSuffix;
+  }
   pReader->iBlockid++;
 }
 
