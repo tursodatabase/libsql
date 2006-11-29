@@ -2291,8 +2291,7 @@ static void tokenListToIdList(char **azIn){
 ** the result.
 */
 static char *firstToken(char *zIn, char **pzTail){
-  int i, n, ttype;
-  i = 0;
+  int n, ttype;
   while(1){
     n = getToken(zIn, &ttype);
     if( ttype==TOKEN_SPACE ){
@@ -2361,7 +2360,7 @@ static void clearTableSpec(TableSpec *p) {
  */
 static int parseSpec(TableSpec *pSpec, int argc, const char *const*argv,
                      char**pzErr){
-  int i, j, n;
+  int i, n;
   char *z, *zDummy;
   char **azArg;
   const char *zTokenizer = 0;    /* argv[] entry describing the tokenizer */
@@ -2401,7 +2400,7 @@ static int parseSpec(TableSpec *pSpec, int argc, const char *const*argv,
   pSpec->nColumn = 0;
   pSpec->azColumn = azArg;
   zTokenizer = "tokenize simple";
-  for(i=3, j=0; i<argc; ++i){
+  for(i=3; i<argc; ++i){
     if( startsWith(azArg[i],"tokenize") ){
       zTokenizer = azArg[i];
     }else{
