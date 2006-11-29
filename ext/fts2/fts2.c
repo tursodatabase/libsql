@@ -2613,6 +2613,7 @@ out:
 /* Decide how to handle an SQL query. */
 static int fulltextBestIndex(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
   int i;
+  TRACE(("FTS2 BestIndex\n"));
 
   for(i=0; i<pInfo->nConstraint; ++i){
     const struct sqlite3_index_constraint *pConstraint;
@@ -2621,10 +2622,12 @@ static int fulltextBestIndex(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
       if( pConstraint->iColumn==-1 &&
           pConstraint->op==SQLITE_INDEX_CONSTRAINT_EQ ){
         pInfo->idxNum = QUERY_ROWID;      /* lookup by rowid */
+        TRACE(("FTS2 QUERY_ROWID\n"));
       } else if( pConstraint->iColumn>=0 &&
                  pConstraint->op==SQLITE_INDEX_CONSTRAINT_MATCH ){
         /* full-text search */
         pInfo->idxNum = QUERY_FULLTEXT + pConstraint->iColumn;
+        TRACE(("FTS2 QUERY_FULLTEXT %d\n", pConstraint->iColumn));
       } else continue;
 
       pInfo->aConstraintUsage[i].argvIndex = 1;
@@ -2639,7 +2642,6 @@ static int fulltextBestIndex(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
     }
   }
   pInfo->idxNum = QUERY_GENERIC;
-  TRACE(("FTS2 BestIndex\n"));
   return SQLITE_OK;
 }
 
@@ -3034,10 +3036,8 @@ static int fulltextClose(sqlite3_vtab_cursor *pCursor){
   sqlite3_finalize(c->pStmt);
   queryClear(&c->q);
   snippetClear(&c->snippet);
-  if( c->result.nData!=0 ){
-    dlrDestroy(&c->reader);
-    dataBufferDestroy(&c->result);
-  }
+  if( c->result.nData!=0 ) dlrDestroy(&c->reader);
+  dataBufferDestroy(&c->result);
   free(c);
   return SQLITE_OK;
 }
@@ -3400,6 +3400,11 @@ static int fulltextQuery(
 ** number idxNum-QUERY_FULLTEXT, 0 indexed.  argv[0] is the right-hand
 ** side of the MATCH operator.
 */
+/* TODO(shess) Upgrade the cursor initialization and destruction to
+** account for fulltextFilter() being called multiple times on the
+** same cursor.  The current solution is very fragile.  Apply fix to
+** fts2 as appropriate.
+*/
 static int fulltextFilter(
   sqlite3_vtab_cursor *pCursor,     /* The cursor used for this query */
   int idxNum, const char *idxStr,   /* Which indexing scheme to use */
@@ -3414,9 +3419,10 @@ static int fulltextFilter(
 
   zSql = sqlite3_mprintf("select rowid, * from %%_content %s",
                           idxNum==QUERY_GENERIC ? "" : "where rowid=?");
+  sqlite3_finalize(c->pStmt);
   rc = sql_prepare(v->db, v->zName, &c->pStmt, zSql);
   sqlite3_free(zSql);
-  if( rc!=SQLITE_OK ) goto out;
+  if( rc!=SQLITE_OK ) return rc;
 
   c->iCursorType = idxNum;
   switch( idxNum ){
@@ -3425,7 +3431,7 @@ static int fulltextFilter(
 
     case QUERY_ROWID:
       rc = sqlite3_bind_int64(c->pStmt, 1, sqlite3_value_int64(argv[0]));
-      if( rc!=SQLITE_OK ) goto out;
+      if( rc!=SQLITE_OK ) return rc;
       break;
 
     default:   /* full-text search */
@@ -3434,7 +3440,13 @@ static int fulltextFilter(
       assert( idxNum<=QUERY_FULLTEXT+v->nColumn);
       assert( argc==1 );
       queryClear(&c->q);
-      dataBufferInit(&c->result, 0);
+      if( c->result.nData!=0 ){
+        /* This case happens if the same cursor is used repeatedly. */
+        dlrDestroy(&c->reader);
+        dataBufferReset(&c->result);
+      }else{
+        dataBufferInit(&c->result, 0);
+      }
       rc = fulltextQuery(v, idxNum-QUERY_FULLTEXT, zQuery, -1, &c->result, &c->q);
       if( rc!=SQLITE_OK ) return rc;
       if( c->result.nData!=0 ){
@@ -3444,10 +3456,7 @@ static int fulltextFilter(
     }
   }
 
-  rc = fulltextNext(pCursor);
-
-out:
-  return rc;
+  return fulltextNext(pCursor);
 }
 
 /* This is the xEof method of the virtual table.  The SQLite core

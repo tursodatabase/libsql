@@ -1,5 +1,5 @@
-C Delta-encode\sterms\sin\sinterior\snodes.\s\sWhile\sexperiments\shave\sshown\nthat\sthis\sis\sof\smarginal\sutility\swhen\sencoding\sterms\sresulting\sfrom\nregular\sEnglish\stext,\sit\sturns\sout\sto\sbe\svery\suseful\swhen\sencoding\ninputs\swith\svery\slarge\sterms.\s(CVS\s3520)
-D 2006-11-29T01:02:03
+C http://www.sqlite.org/cvstrac/tktview?tn=2046\n\nThe\svirtual\stable\sinterface\sallows\sfor\sa\scursor\sto\sfield\smultiple\nxFilter()\scalls.\s\sFor\sinstance,\sif\sa\sjoin\sis\sdone\swith\sa\svirtual\ntable,\sthere\scould\sbe\sa\scall\sfor\seach\srow\swhich\spotentially\smatches.\nUnfortunately,\sfulltextFilter()\sassumes\sthat\sit\shas\sa\sfresh\scursor,\nand\soverwrites\sa\sprepared\sstatement\sand\sa\smalloc'ed\spointer,\sresulting\nin\sunfinalized\sstatements\sand\sa\smemory\sleak.\n\nThis\schange\shacks\sthe\scode\sto\smanually\sclean\sup\soffending\sitems\sin\nfulltextFilter(),\semphasis\son\s"hacks",\ssince\sit's\sa\sfragile\sfix\ninsofar\sas\sfuture\sadditions\sto\sfulltext_cursor\scould\scontinue\sto\shave\nthe\sproblem.\s(CVS\s3521)
+D 2006-11-29T05:17:28
 F Makefile.in 8e14898d41a53033ecb687d93c9cd5d109fb9ae3
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -21,7 +21,7 @@ F ext/README.txt 913a7bd3f4837ab14d7e063304181787658b14e1
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
 F ext/fts1/ft_hash.c 3927bd880e65329bdc6f506555b228b28924921b
 F ext/fts1/ft_hash.h 1a35e654a235c2c662d3ca0dfc3138ad60b8b7d5
-F ext/fts1/fts1.c 78218fb06050899508387de38ce2769f5e57ed8e
+F ext/fts1/fts1.c a6b6a7b5ebc3f2fd8b1a8d65e8e7334c03b522d4
 F ext/fts1/fts1.h 6060b8f62c1d925ea8356cb1a6598073eb9159a6
 F ext/fts1/fts1_hash.c 3196cee866edbebb1c0521e21672e6d599965114
 F ext/fts1/fts1_hash.h 957d378355ed29f672cd5add012ce8b088a5e089
@@ -33,7 +33,7 @@ F ext/fts1/fulltext.h 08525a47852d1d62a0be81d3fc3fe2d23b094efd
 F ext/fts1/simple_tokenizer.c 1844d72f7194c3fd3d7e4173053911bf0661b70d
 F ext/fts1/tokenizer.h 0c53421b832366d20d720d21ea3e1f6e66a36ef9
 F ext/fts2/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts2/fts2.c 6065a73ad89e7fb0dcfc41d1b110f856dea98dc8
+F ext/fts2/fts2.c 94b438480762ba2a2cb5e5d66b80290e93c50960
 F ext/fts2/fts2.h bbdab26d34f91974d5b9ade8b7836c140a7c4ce1
 F ext/fts2/fts2_hash.c b3f22116d4ef0bc8f2da6e3fdc435c86d0951a9b
 F ext/fts2/fts2_hash.h e283308156018329f042816eb09334df714e105e
@@ -421,7 +421,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 272c1a6e61d053121b5412564948dad4366b5727
-R 64f64a706f1c764008e348249e53ac19
+P c8151a998ec2423b417566823dc9957c7d5d782c
+R f017f7c21acd0dc81410dabbd79839d6
 U shess
-Z 613a143cab46a942074b48bd6bce5a4c
+Z 7ba30b5c9f8e043c81e82dcfd18e4b5c
