@@ -1,5 +1,5 @@
-C Fix\sindentation\stypo\sin\sbtree.c.\s(CVS\s3525)
-D 2006-11-30T13:05:29
+C Improvements\sto\sthe\snew\sperformance\stests.\s(CVS\s3526)
+D 2006-11-30T13:06:00
 F Makefile.in 8e14898d41a53033ecb687d93c9cd5d109fb9ae3
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -283,7 +283,7 @@ F test/select2.test f3c2678c3a9f3cf08ec4988a3845bda64be6d9e3
 F test/select3.test 33c78663e6b1b41220dcec4eb6affb1a05001ffe
 F test/select4.test 305ba0a6e97efc5544def5e5cb49b54e1bf87fd9
 F test/select5.test 0b47058d3e916c1fc9fe81f44b438e02bade21ce
-F test/select6.test 3607be760b1d4bfd337f43c13b5f3532ca5f09d9
+F test/select6.test 399f14b9ba37b768afe5d2cd8c12e4f340a69db8
 F test/select7.test 95697d8e8355ef7538e2fe768da16838bbd0fcde
 F test/server1.test e328b8e641ba8fe9273132cfef497383185dc1f5
 F test/shared.test 0ed247941236788c255b3b29b5a82d5ca71b6432
@@ -291,7 +291,7 @@ F test/shared2.test 8b48f8d33494413ef4cf250110d89403e2bf6b23
 F test/shared3.test 01e3e124dbb3859788aabc7cfb82f7ea04421749
 F test/shared_err.test 299a9180a6376b2089e8e0d469f383fe91bfa4ff
 F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
-F test/speed1.test 40d80b115273c82200e96359180adb727ae76d68
+F test/speed1.test 4d6719b252fe90dc52f663a6b2a24cf6472ceac9
 F test/subquery.test ae324ee928c5fb463a3ce08a8860d6e7f1ca5797
 F test/subselect.test 2d13fb7f450db3595adcdd24079a0dd1d2d6abc2
 F test/sync.test d05397b8f89f423dd6dba528692019ab036bc1c3
@@ -423,7 +423,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 08c2cc0e0782cfaca89947a01b7ea4474dbe71aa
-R afc8b7dd4d57d424eccd4ab2bb82865b
+P 5d61486f0fbd21ef992879b39d4e563fbfe46596
+R 9dfc065daf8f6f83ef4ffb10f47e6804
 U drh
-Z 2c13b99e686a504487123dde383f6e5f
+Z 8559dad0de29b5c166fe60f2d278f899

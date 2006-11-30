@@ -11,11 +11,17 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is measuring executing speed.
 #
-# $Id: speed1.test,v 1.1 2006/11/29 20:53:00 drh Exp $
+# $Id: speed1.test,v 1.2 2006/11/30 13:06:00 drh Exp $
 #
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+set sqlout [open speed1.txt w]
+proc tracesql {sql} {
+  puts $::sqlout $sql\;
+}
+db trace tracesql
 
 # The number_name procedure below converts its argment (an integer)
 # into a string which is the English-language name for that number.
@@ -55,6 +61,7 @@ proc number_name {n} {
 #
 do_test speed1-1.0 {
   execsql {
+pragma page_size=4096;
     CREATE TABLE t1(a INTEGER, b INTEGER, c TEXT);
     CREATE TABLE t2(a INTEGER, b INTEGER, c TEXT);
     CREATE INDEX i2a ON t2(a);
@@ -136,36 +143,36 @@ db eval BEGIN
 speed_trial speed1-select3 5000 stmt $sql
 db eval COMMIT
 
-# 20000 random SELECTs against rowid.
+# 100000 random SELECTs against rowid.
 #
 set sql {}
-for {set i 1} {$i<=20000} {incr i} {
+for {set i 1} {$i<=100000} {incr i} {
   set id [expr {int(rand()*50000)+1}]
   append sql "SELECT c FROM t1 WHERE rowid=$id;"
 }
 db eval BEGIN
-speed_trial speed1-select4 20000 row $sql
+speed_trial speed1-select4 100000 row $sql
 db eval COMMIT
 
-# 20000 random SELECTs against a unique indexed column.
+# 100000 random SELECTs against a unique indexed column.
 #
 set sql {}
-for {set i 1} {$i<=20000} {incr i} {
+for {set i 1} {$i<=100000} {incr i} {
   set id [expr {int(rand()*50000)+1}]
   append sql "SELECT c FROM t1 WHERE a=$id;"
 }
 db eval BEGIN
-speed_trial speed1-select5 20000 row $sql
+speed_trial speed1-select5 100000 row $sql
 db eval COMMIT
 
-# 20000 random SELECTs against an indexed column text column
+# 50000 random SELECTs against an indexed column text column
 #
 set sql {}
-db eval {SELECT c FROM t1 ORDER BY random() LIMIT 20000} {
+db eval {SELECT c FROM t1 ORDER BY random() LIMIT 50000} {
   append sql "SELECT c FROM t1 WHERE c='$c';"
 }
 db eval BEGIN
-speed_trial speed1-select6 20000 row $sql
+speed_trial speed1-select6 50000 row $sql
 db eval COMMIT
 
 
