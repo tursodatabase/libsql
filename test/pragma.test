@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.44 2006/08/14 14:23:43 drh Exp $
+# $Id: pragma.test,v 1.45 2006/11/30 13:06:37 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -351,12 +351,20 @@ do_test pragma-6.2 {
     pragma table_info(t2)
   }
 } {0 a {} 0 {} 0 1 b {} 0 {} 0 2 c {} 0 {} 0}
+db nullvalue <<NULL>>
 do_test pragma-6.2.2 {
   execsql {
-    CREATE TABLE t5(a TEXT DEFAULT CURRENT_TIMESTAMP, b DEFAULT (5+3));
+    CREATE TABLE t5(
+      a TEXT DEFAULT CURRENT_TIMESTAMP, 
+      b DEFAULT (5+3),
+      c TEXT,
+      d INTEGER DEFAULT NULL,
+      e TEXT DEFAULT ''
+    );
     PRAGMA table_info(t5);
   }
-} {0 a TEXT 0 CURRENT_TIMESTAMP 0 1 b {} 0 5+3 0}
+} {0 a TEXT 0 CURRENT_TIMESTAMP 0 1 b {} 0 5+3 0 2 c TEXT 0 <<NULL>> 0 3 d INTEGER 0 NULL 0 4 e TEXT 0 '' 0}
+db nullvalue {}
 ifcapable {foreignkey} {
   do_test pragma-6.3 {
     execsql {

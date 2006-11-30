@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.124 2006/09/25 18:01:57 drh Exp $
+** $Id: pragma.c,v 1.125 2006/11/30 13:06:37 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -483,14 +483,12 @@ void sqlite3Pragma(
       sqlite3ViewGetColumnNames(pParse, pTab);
       for(i=0, pCol=pTab->aCol; i<pTab->nCol; i++, pCol++){
         const Token *pDflt;
-        static const Token noDflt =  { (unsigned char*)"", 0, 0 };
         sqlite3VdbeAddOp(v, OP_Integer, i, 0);
         sqlite3VdbeOp3(v, OP_String8, 0, 0, pCol->zName, 0);
         sqlite3VdbeOp3(v, OP_String8, 0, 0,
            pCol->zType ? pCol->zType : "", 0);
         sqlite3VdbeAddOp(v, OP_Integer, pCol->notNull, 0);
-        pDflt = pCol->pDflt ? &pCol->pDflt->span : &noDflt;
-        if( pDflt->z ){
+        if( pCol->pDflt && (pDflt = &pCol->pDflt->span)->z ){
           sqlite3VdbeOp3(v, OP_String8, 0, 0, (char*)pDflt->z, pDflt->n);
         }else{
           sqlite3VdbeAddOp(v, OP_Null, 0, 0);

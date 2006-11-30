@@ -1,5 +1,5 @@
-C Improvements\sto\sthe\snew\sperformance\stests.\s(CVS\s3526)
-D 2006-11-30T13:06:00
+C Change\sthe\stable_info\spragma\sso\sthat\sit\sreturns\sNULL\sfor\sthe\sdefault\nvalue\sif\sthere\sis\sno\sdefault\svalue.\s\sTicket\s#2078.\s(CVS\s3527)
+D 2006-11-30T13:06:37
 F Makefile.in 8e14898d41a53033ecb687d93c9cd5d109fb9ae3
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -88,7 +88,7 @@ F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c 18c9cb43b3e740c63eaa13da41c52926012e4853
 F src/pager.h 2e6d42f4ae004ae748a037b8468112b851c447a7
 F src/parse.y 8c79a1debbd92a4f5609511e9bf0222de78f5ecb
-F src/pragma.c 2ef4353448e202961a22312f34695128bbb6d69a
+F src/pragma.c d0891d3504b6291b506a5ec2226bbf79ffcef003
 F src/prepare.c f4f45b4560defbb566cf8255763625d2c09a8023
 F src/printf.c b179b6ed12f793e028dd169e2e2e2b2a37eedc63
 F src/random.c d40f8d356cecbd351ccfab6eaedd7ec1b54f5261
@@ -267,7 +267,7 @@ F test/pager.test 6ee95e90ee8295e376e39a6c6566ef6df993601a
 F test/pager2.test 49c0f57c7da0b060f0486b85fdd074025caa694e
 F test/pager3.test 2323bf27fd5bd887b580247e5bce500ceee994b4
 F test/pagesize.test 05c74ea49f790734ec1e9ab765d9bf1cce79b8f2
-F test/pragma.test b81f483cac7b8fe519988a102303799cc72d25a2
+F test/pragma.test fc04e28fca655bcd62a6691744f7cf67a18e0699
 F test/printf.test cdd8e20dd901382a385afcbaa777b9377815c2ad
 F test/progress.test 8b22b4974b0a95272566385f8cb8c341c7130df8 x
 F test/quick.test 6bc0f7c7b905f7de5fe4d3f13239ced3e4e66fe7
@@ -423,7 +423,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 5d61486f0fbd21ef992879b39d4e563fbfe46596
-R 9dfc065daf8f6f83ef4ffb10f47e6804
+P 27f56c20514030e009fc3aa7e060d2e6276ddb83
+R 7c1a7cdbe8c77d6b79a9b0d34b791a42
 U drh
-Z 8559dad0de29b5c166fe60f2d278f899
+Z 57ae5b430b0d2d59eaddb5ae882d4b0d
