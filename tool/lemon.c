@@ -361,8 +361,6 @@ struct action *ap2;
   rc = ap1->sp->index - ap2->sp->index;
   if( rc==0 ) rc = (int)ap1->type - (int)ap2->type;
   if( rc==0 ){
-    assert( ap1->type==REDUCE || ap1->type==RD_RESOLVED || ap1->type==CONFLICT);
-    assert( ap2->type==REDUCE || ap2->type==RD_RESOLVED || ap2->type==CONFLICT);
     rc = ap1->x.rp->index - ap2->x.rp->index;
   }
   return rc;
@@ -1019,6 +1017,10 @@ struct symbol *errsym;   /* The error symbol (if defined.  NULL otherwise) */
   struct symbol *spx, *spy;
   int errcnt = 0;
   assert( apx->sp==apy->sp );  /* Otherwise there would be no conflict */
+  if( apx->type==SHIFT && apy->type==SHIFT ){
+    apy->type = CONFLICT;
+    errcnt++;
+  }
   if( apx->type==SHIFT && apy->type==REDUCE ){
     spx = apx->sp;
     spy = apy->x.rp->precsym;
