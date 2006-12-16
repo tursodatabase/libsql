@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.530 2006/11/09 00:24:54 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.531 2006/12/16 16:25:16 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1617,7 +1617,9 @@ int sqlite3ArrayAllocate(void**,int,int);
 IdList *sqlite3IdListAppend(IdList*, Token*);
 int sqlite3IdListIndex(IdList*,const char*);
 SrcList *sqlite3SrcListAppend(SrcList*, Token*, Token*);
-void sqlite3SrcListAddAlias(SrcList*, Token*);
+SrcList *sqlite3SrcListAppendFromTerm(SrcList*, Token*, Token*, Token*,
+                                      Select*, Expr*, IdList*);
+void sqlite3SrcListShiftJoinType(SrcList*);
 void sqlite3SrcListAssignCursors(Parse*, SrcList*);
 void sqlite3IdListDelete(IdList*);
 void sqlite3SrcListDelete(SrcList*);

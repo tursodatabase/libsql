@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.322 2006/10/13 15:34:17 drh Exp $
+** $Id: select.c,v 1.323 2006/12/16 16:25:15 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -301,8 +301,8 @@ static int sqliteProcessJoin(Parse *pParse, Select *p){
     /* When the NATURAL keyword is present, add WHERE clause terms for
     ** every column that the two tables have in common.
     */
-    if( pLeft->jointype & JT_NATURAL ){
-      if( pLeft->pOn || pLeft->pUsing ){
+    if( pRight->jointype & JT_NATURAL ){
+      if( pRight->pOn || pRight->pUsing ){
         sqlite3ErrorMsg(pParse, "a NATURAL join may not have "
            "an ON or USING clause", 0);
         return 1;
@@ -320,7 +320,7 @@ static int sqliteProcessJoin(Parse *pParse, Select *p){
 
     /* Disallow both ON and USING clauses in the same join
     */
-    if( pLeft->pOn && pLeft->pUsing ){
+    if( pRight->pOn && pRight->pUsing ){
       sqlite3ErrorMsg(pParse, "cannot have both ON and USING "
         "clauses in the same join");
       return 1;
@@ -329,10 +329,10 @@ static int sqliteProcessJoin(Parse *pParse, Select *p){
     /* Add the ON clause to the end of the WHERE clause, connected by
     ** an AND operator.
     */
-    if( pLeft->pOn ){
-      setJoinExpr(pLeft->pOn, pRight->iCursor);
-      p->pWhere = sqlite3ExprAnd(p->pWhere, pLeft->pOn);
-      pLeft->pOn = 0;
+    if( pRight->pOn ){
+      setJoinExpr(pRight->pOn, pRight->iCursor);
+      p->pWhere = sqlite3ExprAnd(p->pWhere, pRight->pOn);
+      pRight->pOn = 0;
     }
 
     /* Create extra terms on the WHERE clause for each column named
@@ -342,8 +342,8 @@ static int sqliteProcessJoin(Parse *pParse, Select *p){
     ** Report an error if any column mentioned in the USING clause is
     ** not contained in both tables to be joined.
     */
-    if( pLeft->pUsing ){
-      IdList *pList = pLeft->pUsing;
+    if( pRight->pUsing ){
+      IdList *pList = pRight->pUsing;
       for(j=0; j<pList->nId; j++){
         char *zName = pList->a[j].zName;
         if( columnIndex(pLeftTab, zName)<0 || columnIndex(pRightTab, zName)<0 ){
@@ -1309,13 +1309,13 @@ static int prepSelectStmt(Parse *pParse, Select *p){
 
             if( i>0 ){
               struct SrcList_item *pLeft = &pTabList->a[i-1];
-              if( (pLeft->jointype & JT_NATURAL)!=0 &&
+              if( (pLeft[1].jointype & JT_NATURAL)!=0 &&
                         columnIndex(pLeft->pTab, zName)>=0 ){
                 /* In a NATURAL join, omit the join columns from the 
                 ** table on the right */
                 continue;
               }
-              if( sqlite3IdListIndex(pLeft->pUsing, zName)>=0 ){
+              if( sqlite3IdListIndex(pLeft[1].pUsing, zName)>=0 ){
                 /* In a join with a USING clause, omit columns in the
                 ** using clause from the table on the right. */
                 continue;
@@ -2175,7 +2175,7 @@ static int flattenSubquery(
   **
   ** which is not at all the same thing.
   */
-  if( pSubSrc->nSrc>1 && iFrom>0 && (pSrc->a[iFrom-1].jointype & JT_OUTER)!=0 ){
+  if( pSubSrc->nSrc>1 && (pSubitem->jointype & JT_OUTER)!=0 ){
     return 0;
   }
 
@@ -2192,8 +2192,7 @@ static int flattenSubquery(
   ** But the t2.x>0 test will always fail on a NULL row of t2, which
   ** effectively converts the OUTER JOIN into an INNER JOIN.
   */
-  if( iFrom>0 && (pSrc->a[iFrom-1].jointype & JT_OUTER)!=0 
-      && pSub->pWhere!=0 ){
+  if( (pSubitem->jointype & JT_OUTER)!=0 && pSub->pWhere!=0 ){
     return 0;
   }
 
@@ -2232,7 +2231,7 @@ static int flattenSubquery(
       pSrc->a[i+iFrom] = pSubSrc->a[i];
       memset(&pSubSrc->a[i], 0, sizeof(pSubSrc->a[i]));
     }
-    pSrc->a[iFrom+nSubSrc-1].jointype = jointype;
+    pSrc->a[iFrom].jointype = jointype;
   }
 
   /* Now begin substituting subquery result set expressions for 

@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.210 2006/09/21 11:02:17 drh Exp $
+** @(#) $Id: parse.y,v 1.211 2006/12/16 16:25:15 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -444,7 +444,10 @@ as(X) ::= .            {X.n = 0;}
 // A complete FROM clause.
 //
 from(A) ::= .                                 {A = sqliteMalloc(sizeof(*A));}
-from(A) ::= FROM seltablist(X).               {A = X;}
+from(A) ::= FROM seltablist(X).               {
+  A = X;
+  sqlite3SrcListShiftJoinType(A);
+}
 
 // "seltablist" is a "Select Table List" - the content of the FROM clause
 // in a SELECT statement.  "stl_prefix" is a prefix of this list.
@@ -455,31 +458,12 @@ stl_prefix(A) ::= seltablist(X) joinop(Y).    {
 }
 stl_prefix(A) ::= .                           {A = 0;}
 seltablist(A) ::= stl_prefix(X) nm(Y) dbnm(D) as(Z) on_opt(N) using_opt(U). {
-  A = sqlite3SrcListAppend(X,&Y,&D);
-  if( Z.n ) sqlite3SrcListAddAlias(A,&Z);
-  if( N ){
-    if( A && A->nSrc>1 ){ A->a[A->nSrc-2].pOn = N; }
-    else { sqlite3ExprDelete(N); }
-  }
-  if( U ){
-    if( A && A->nSrc>1 ){ A->a[A->nSrc-2].pUsing = U; }
-    else { sqlite3IdListDelete(U); }
-  }
+  A = sqlite3SrcListAppendFromTerm(X,&Y,&D,&Z,0,N,U);
 }
 %ifndef SQLITE_OMIT_SUBQUERY
   seltablist(A) ::= stl_prefix(X) LP seltablist_paren(S) RP
                     as(Z) on_opt(N) using_opt(U). {
-    A = sqlite3SrcListAppend(X,0,0);
-    if( A && A->nSrc>0 ) A->a[A->nSrc-1].pSelect = S;
-    if( Z.n ) sqlite3SrcListAddAlias(A,&Z);
-    if( N ){
-      if( A && A->nSrc>1 ){ A->a[A->nSrc-2].pOn = N; }
-      else { sqlite3ExprDelete(N); }
-    }
-    if( U ){
-      if( A && A->nSrc>1 ){ A->a[A->nSrc-2].pUsing = U; }
-      else { sqlite3IdListDelete(U); }
-    }
+    A = sqlite3SrcListAppendFromTerm(X,0,0,&Z,S,N,U);
   }
   
   // A seltablist_paren nonterminal represents anything in a FROM that
@@ -490,6 +474,7 @@ seltablist(A) ::= stl_prefix(X) nm(Y) dbnm(D) as(Z) on_opt(N) using_opt(U). {
   %destructor seltablist_paren {sqlite3SelectDelete($$);}
   seltablist_paren(A) ::= select(S).      {A = S;}
   seltablist_paren(A) ::= seltablist(F).  {
+     sqlite3SrcListShiftJoinType(F);
      A = sqlite3SelectNew(0,F,0,0,0,0,0,0,0);
   }
 %endif  SQLITE_OMIT_SUBQUERY

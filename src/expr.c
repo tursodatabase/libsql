@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.269 2006/11/23 11:59:13 drh Exp $
+** $Id: expr.c,v 1.270 2006/12/16 16:25:15 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -891,22 +891,23 @@ static int lookupName(
             pExpr->iColumn = j==pTab->iPKey ? -1 : j;
             pExpr->affinity = pTab->aCol[j].affinity;
             pExpr->pColl = sqlite3FindCollSeq(db, ENC(db), zColl,-1, 0);
-            if( pItem->jointype & JT_NATURAL ){
-              /* If this match occurred in the left table of a natural join,
-              ** then skip the right table to avoid a duplicate match */
-              pItem++;
-              i++;
-            }
-            if( (pUsing = pItem->pUsing)!=0 ){
-              /* If this match occurs on a column that is in the USING clause
-              ** of a join, skip the search of the right table of the join
-              ** to avoid a duplicate match there. */
-              int k;
-              for(k=0; k<pUsing->nId; k++){
-                if( sqlite3StrICmp(pUsing->a[k].zName, zCol)==0 ){
-                  pItem++;
-                  i++;
-                  break;
+            if( i<pSrcList->nSrc-1 ){
+              if( pItem[1].jointype & JT_NATURAL ){
+                /* If this match occurred in the left table of a natural join,
+                ** then skip the right table to avoid a duplicate match */
+                pItem++;
+                i++;
+              }else if( (pUsing = pItem[1].pUsing)!=0 ){
+                /* If this match occurs on a column that is in the USING clause
+                ** of a join, skip the search of the right table of the join
+                ** to avoid a duplicate match there. */
+                int k;
+                for(k=0; k<pUsing->nId; k++){
+                  if( sqlite3StrICmp(pUsing->a[k].zName, zCol)==0 ){
+                    pItem++;
+                    i++;
+                    break;
+                  }
                 }
               }
             }
