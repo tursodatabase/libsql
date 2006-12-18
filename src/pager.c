@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.276 2006/11/23 11:58:44 drh Exp $
+** @(#) $Id: pager.c,v 1.277 2006/12/18 18:34:51 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -31,6 +31,7 @@
 ** Macros for troubleshooting.  Normally turned off
 */
 #if 0
+#define sqlite3DebugPrintf printf
 #define TRACE1(X)       sqlite3DebugPrintf(X)
 #define TRACE2(X,Y)     sqlite3DebugPrintf(X,Y)
 #define TRACE3(X,Y,Z)   sqlite3DebugPrintf(X,Y,Z)
@@ -3335,7 +3336,8 @@ void sqlite3pager_dont_rollback(void *pData){
   PgHdr *pPg = DATA_TO_PGHDR(pData);
   Pager *pPager = pPg->pPager;
 
-  if( pPager->state!=PAGER_EXCLUSIVE || pPager->journalOpen==0 ) return;
+  assert( pPager->state>=PAGER_RESERVED );
+  if( pPager->journalOpen==0 ) return;
   if( pPg->alwaysRollback || pPager->alwaysRollback || MEMDB ) return;
   if( !pPg->inJournal && (int)pPg->pgno <= pPager->origDbSize ){
     assert( pPager->aInJournal!=0 );
