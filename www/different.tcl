@@ -1,4 +1,4 @@
-set rcsid {$Id: different.tcl,v 1.7 2006/05/11 13:33:15 drh Exp $}
+set rcsid {$Id: different.tcl,v 1.8 2006/12/18 14:12:21 drh Exp $}
 source common.tcl
 header {Distinctive Features Of SQLite}
 puts {
@@ -108,11 +108,15 @@ feature typing {Manifest typing} {
   PRIMARY KEY column may only store integers.  And SQLite attempts to coerce
   values into the declared datatype of the column when it can.)
   <p>
-  The SQL language specification calls for static typing.  So some people
+  As far as we can tell, the SQL language specification allows the use
+  of manifest typing.   Nevertheless, most other SQL database engines are
+  statically typed and so some people
   feel that the use of manifest typing is a bug in SQLite.  But the authors
-  of SQLite feel very strongly that this is a feature.  The authors argue
-  that static typing is a bug in the SQL specification that SQLite has fixed
-  in a backwards compatible way.
+  of SQLite feel very strongly that this is a feature.  The use of manifest
+  typing in SQLite is a deliberate design decision which has proven in practice
+  to make SQLite more reliable and easier to use, especially when used in
+  combination with dynamically typed programming languages such as Tcl and
+  Python.
 }
 
 feature flex {Variable-length records} {
