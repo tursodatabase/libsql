@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.156 2006/11/20 16:21:10 drh Exp $
+** $Id: shell.c,v 1.157 2006/12/19 18:47:41 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -1265,7 +1265,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
         set_table_name(p, "table");
       }
     }else {
-      fprintf(stderr,"mode should be on of: "
+      fprintf(stderr,"mode should be one of: "
          "column csv html insert line list tabs tcl\n");
     }
   }else
