@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the use of indices in WHERE clases.
 #
-# $Id: where.test,v 1.38 2005/11/14 22:29:06 drh Exp $
+# $Id: where.test,v 1.39 2006/12/20 03:24:19 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -589,22 +589,22 @@ do_test where-6.21 {
   cksort {
     SELECT y FROM t1 ORDER BY rowid, y LIMIT 3;
   }
-} {4 9 16 sort}
+} {4 9 16 nosort}
 do_test where-6.22 {
   cksort {
     SELECT y FROM t1 ORDER BY rowid, y DESC LIMIT 3;
   }
-} {4 9 16 sort}
+} {4 9 16 nosort}
 do_test where-6.23 {
   cksort {
     SELECT y FROM t1 WHERE y>4 ORDER BY rowid, w, x LIMIT 3;
   }
-} {9 16 25 sort}
+} {9 16 25 nosort}
 do_test where-6.24 {
   cksort {
     SELECT y FROM t1 WHERE y>=9 ORDER BY rowid, x DESC, w LIMIT 3;
   }
-} {9 16 25 sort}
+} {9 16 25 nosort}
 do_test where-6.25 {
   cksort {
     SELECT y FROM t1 WHERE y>4 AND y<25 ORDER BY rowid;
@@ -619,7 +619,7 @@ do_test where-6.27 {
   cksort {
     SELECT y FROM t1 WHERE y<=25 ORDER BY _rowid_, w+y;
   }
-} {4 9 16 25 sort}
+} {4 9 16 25 nosort}
 
 
 # Tests for reverse-order sorting.
@@ -793,7 +793,7 @@ do_test where-7.34 {
   cksort {
     SELECT y FROM t1 WHERE y<25 AND y>4 ORDER BY rowid DESC, y DESC
   }
-} {16 9 sort}
+} {16 9 nosort}
 do_test where-7.35 {
   cksort {
     SELECT y FROM t1 WHERE y<25 AND y>=4 ORDER BY rowid DESC
@@ -874,7 +874,6 @@ do_test where-10.4 {
 # that array.
 #
 do_test where-11.1 {
-btree_breakpoint
   execsql {
    CREATE TABLE t99(Dte INT, X INT);
    DELETE FROM t99 WHERE (Dte = 2451337) OR (Dte = 2451339) OR
@@ -901,6 +900,143 @@ btree_breakpoint
      (Dte BETWEEN 2451602 AND 2451603) OR (Dte = 2451606) OR (Dte = 2451611);
   }
 } {}
+
+# Ticket #2116:  Make sure sorting by index works well with nn INTEGER PRIMARY
+# KEY.
+#
+do_test where-12.1 {
+  execsql {
+    CREATE TABLE t6(a INTEGER PRIMARY KEY, b TEXT);
+    INSERT INTO t6 VALUES(1,'one');
+    INSERT INTO t6 VALUES(4,'four');
+    CREATE INDEX t6i1 ON t6(b);
+  }
+  cksort {
+    SELECT * FROM t6 ORDER BY b;
+  }
+} {4 four 1 one nosort}
+do_test where-12.2 {
+  cksort {
+    SELECT * FROM t6 ORDER BY b, a;
+  }
+} {4 four 1 one nosort}
+do_test where-12.3 {
+  cksort {
+    SELECT * FROM t6 ORDER BY a;
+  }
+} {1 one 4 four nosort}
+do_test where-12.4 {
+  cksort {
+    SELECT * FROM t6 ORDER BY a, b;
+  }
+} {1 one 4 four nosort}
+do_test where-12.5 {
+  cksort {
+    SELECT * FROM t6 ORDER BY b DESC;
+  }
+} {1 one 4 four nosort}
+do_test where-12.6 {
+  cksort {
+    SELECT * FROM t6 ORDER BY b DESC, a DESC;
+  }
+} {1 one 4 four nosort}
+do_test where-12.7 {
+  cksort {
+    SELECT * FROM t6 ORDER BY b DESC, a ASC;
+  }
+} {1 one 4 four sort}
+do_test where-12.8 {
+  cksort {
+    SELECT * FROM t6 ORDER BY b ASC, a DESC;
+  }
+} {4 four 1 one sort}
+do_test where-12.9 {
+  cksort {
+    SELECT * FROM t6 ORDER BY a DESC;
+  }
+} {4 four 1 one nosort}
+do_test where-12.10 {
+  cksort {
+    SELECT * FROM t6 ORDER BY a DESC, b DESC;
+  }
+} {4 four 1 one nosort}
+do_test where-12.11 {
+  cksort {
+    SELECT * FROM t6 ORDER BY a DESC, b ASC;
+  }
+} {4 four 1 one nosort}
+do_test where-12.12 {
+  cksort {
+    SELECT * FROM t6 ORDER BY a ASC, b DESC;
+  }
+} {1 one 4 four nosort}
+do_test where-13.1 {
+  execsql {
+    CREATE TABLE t7(a INTEGER PRIMARY KEY, b TEXT);
+    INSERT INTO t7 VALUES(1,'one');
+    INSERT INTO t7 VALUES(4,'four');
+    CREATE INDEX t7i1 ON t7(b);
+  }
+  cksort {
+    SELECT * FROM t7 ORDER BY b;
+  }
+} {4 four 1 one nosort}
+do_test where-13.2 {
+  cksort {
+    SELECT * FROM t7 ORDER BY b, a;
+  }
+} {4 four 1 one nosort}
+do_test where-13.3 {
+  cksort {
+    SELECT * FROM t7 ORDER BY a;
+  }
+} {1 one 4 four nosort}
+do_test where-13.4 {
+  cksort {
+    SELECT * FROM t7 ORDER BY a, b;
+  }
+} {1 one 4 four nosort}
+do_test where-13.5 {
+  cksort {
+    SELECT * FROM t7 ORDER BY b DESC;
+  }
+} {1 one 4 four nosort}
+do_test where-13.6 {
+  cksort {
+    SELECT * FROM t7 ORDER BY b DESC, a DESC;
+  }
+} {1 one 4 four nosort}
+do_test where-13.7 {
+  cksort {
+    SELECT * FROM t7 ORDER BY b DESC, a ASC;
+  }
+} {1 one 4 four sort}
+do_test where-13.8 {
+  cksort {
+    SELECT * FROM t7 ORDER BY b ASC, a DESC;
+  }
+} {4 four 1 one sort}
+do_test where-13.9 {
+  cksort {
+    SELECT * FROM t7 ORDER BY a DESC;
+  }
+} {4 four 1 one nosort}
+do_test where-13.10 {
+  cksort {
+    SELECT * FROM t7 ORDER BY a DESC, b DESC;
+  }
+} {4 four 1 one nosort}
+do_test where-13.11 {
+  cksort {
+    SELECT * FROM t7 ORDER BY a DESC, b ASC;
+  }
+} {4 four 1 one nosort}
+do_test where-13.12 {
+  cksort {
+    SELECT * FROM t7 ORDER BY a ASC, b DESC;
+  }
+} {1 one 4 four nosort}
+
 
 
 integrity_check {where-99.0}

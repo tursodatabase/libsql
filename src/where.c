@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.233 2006/12/16 16:25:16 drh Exp $
+** $Id: where.c,v 1.234 2006/12/20 03:24:19 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -868,11 +868,19 @@ static int isSortingIndex(
 
   /* Match terms of the ORDER BY clause against columns of
   ** the index.
+  **
+  ** Note that indices have pIdx->nColumn regular columns plus
+  ** one additional column containing the rowid.  The rowid column
+  ** of the index is also allowed to match against the ORDER BY
+  ** clause.
   */
-  for(i=j=0, pTerm=pOrderBy->a; j<nTerm && i<pIdx->nColumn; i++){
+  for(i=j=0, pTerm=pOrderBy->a; j<nTerm && i<=pIdx->nColumn; i++){
     Expr *pExpr;       /* The expression of the ORDER BY pTerm */
     CollSeq *pColl;    /* The collating sequence of pExpr */
     int termSortOrder; /* Sort order for this term */
+    int iColumn;       /* The i-th column of the index.  -1 for rowid */
+    int iSortOrder;    /* 1 for DESC, 0 for ASC on the i-th index term */
+    const char *zColl; /* Name of the collating sequence for i-th index term */
 
     pExpr = pTerm->pExpr;
     if( pExpr->op!=TK_COLUMN || pExpr->iTable!=base ){
@@ -881,9 +889,22 @@ static int isSortingIndex(
       return 0;
     }
     pColl = sqlite3ExprCollSeq(pParse, pExpr);
-    if( !pColl ) pColl = db->pDfltColl;
-    if( pExpr->iColumn!=pIdx->aiColumn[i] || 
-        sqlite3StrICmp(pColl->zName, pIdx->azColl[i]) ){
+    if( !pColl ){
+      pColl = db->pDfltColl;
+    }
+    if( i<pIdx->nColumn ){
+      iColumn = pIdx->aiColumn[i];
+      if( iColumn==pIdx->pTable->iPKey ){
+        iColumn = -1;
+      }
+      iSortOrder = pIdx->aSortOrder[i];
+      zColl = pIdx->azColl[i];
+    }else{
+      iColumn = -1;
+      iSortOrder = 0;
+      zColl = pColl->zName;
+    }
+    if( pExpr->iColumn!=iColumn || sqlite3StrICmp(pColl->zName, zColl) ){
       /* Term j of the ORDER BY clause does not match column i of the index */
       if( i<nEqCol ){
         /* If an index column that is constrained by == fails to match an
@@ -899,8 +920,8 @@ static int isSortingIndex(
     }
     assert( pIdx->aSortOrder!=0 );
     assert( pTerm->sortOrder==0 || pTerm->sortOrder==1 );
-    assert( pIdx->aSortOrder[i]==0 || pIdx->aSortOrder[i]==1 );
-    termSortOrder = pIdx->aSortOrder[i] ^ pTerm->sortOrder;
+    assert( iSortOrder==0 || iSortOrder==1 );
+    termSortOrder = iSortOrder ^ pTerm->sortOrder;
     if( i>nEqCol ){
       if( termSortOrder!=sortOrder ){
         /* Indices can only be used if all ORDER BY terms past the
@@ -912,13 +933,25 @@ static int isSortingIndex(
     }
     j++;
     pTerm++;
+    if( iColumn<0 ){
+      /* If the indexed column is the primary key and everything matches
+      ** so far, then we are assured that the index can be used to sort
+      ** because the primary key is unique and so none of the other columns
+      ** will make any difference
+      */
+      j = nTerm;
+    }
   }
 
-  /* The index can be used for sorting if all terms of the ORDER BY clause
-  ** are covered.
-  */
+  *pbRev = sortOrder!=0;
   if( j>=nTerm ){
-    *pbRev = sortOrder!=0;
+    /* All terms of the ORDER BY clause are covered by this index so
+    ** this index can be used for sorting. */
+    return 1;
+  }
+  if( j==pIdx->nColumn && pIdx->onError!=OE_None ){
+    /* All terms of this index match some prefix of the ORDER BY clause
+    ** and this index is UNIQUE, so this index can be used for sorting. */
     return 1;
   }
   return 0;
@@ -939,8 +972,7 @@ static int sortableByRowid(
   assert( pOrderBy!=0 );
   assert( pOrderBy->nExpr>0 );
   p = pOrderBy->a[0].pExpr;
-  if( pOrderBy->nExpr==1 && p->op==TK_COLUMN && p->iTable==base
-          && p->iColumn==-1 ){
+  if( p->op==TK_COLUMN && p->iTable==base && p->iColumn==-1 ){
     *pbRev = pOrderBy->a[0].sortOrder;
     return 1;
   }

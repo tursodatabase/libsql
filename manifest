@@ -1,5 +1,5 @@
-C Allow\sconstraint\snames\son\sDEFAULT\svalues\sin\sa\stable\sdefinition.\nTicket\s#2109.\s(CVS\s3535)
-D 2006-12-20T02:15:00
+C The\squery\soptimizer\sdoes\sa\sbetter\sjob\sof\soptimizing\sout\sORDER\sBY\sclauses\nthat\scontain\sthe\srowid\sor\swhich\suse\sindices\sthat\scontain\sthe\srowid.\nTicket\s#2116.\s(CVS\s3536)
+D 2006-12-20T03:24:19
 F Makefile.in 8e14898d41a53033ecb687d93c9cd5d109fb9ae3
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -129,7 +129,7 @@ F src/vdbeaux.c 05cc6f0f82b86dfb4c356e06ab07ec8cc83a2eda
 F src/vdbefifo.c 9efb94c8c3f4c979ebd0028219483f88e57584f5
 F src/vdbemem.c 26623176bf1c616aa478da958fac49502491a921
 F src/vtab.c aa30e940058ea56a1b7a9a7019ec21d307316fb4
-F src/where.c b34cc2c7f753cdf76aa37a71e579c2e266e50958
+F src/where.c f55d4459a122457a135cf9ec859bf28777d9156f
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/all.test b62fcd122052efaff1b0979aefa2dd65cfc8ee52
@@ -348,7 +348,7 @@ F test/vtab6.test ec0036f29f8a803da9935206f2d9d1b6a8026392
 F test/vtab7.test 5f9ef9fb84733e928d5d0267c821072561b198d5
 F test/vtab9.test 87afba55339b0c255e9697fbfb5bfb6120505d9d
 F test/vtab_err.test c07f7665dd90bc757f80f05e7951d826eda9bc48
-F test/where.test ee7c9a6659b07e1ee61177f6e7ff71565ee2c9df
+F test/where.test 8dcc1b1a6f17b6bad2dc6a9917eafe62d4ea57eb
 F test/where2.test 61d5b20d9bedc8788a773bbdc5b2ef887725928e
 F test/where3.test 0a30fe9808b0fa01c46d0fcf4fac0bf6cf75bb30
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
@@ -423,7 +423,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P c3d118b40811b201e4a98b62549c5439d7d5098d
-R ee31e902c9098dae721605bcf38ca561
+P 893d58c23da2a9b900a13eaa5202d94429862136
+R b71e90ccc82c8a1640aa72f2c870612e
 U drh
-Z 6de8d7d606a906d10c3edc457d084a8d
+Z 9fec3d60f3cf9eea1be494a067e0f511
