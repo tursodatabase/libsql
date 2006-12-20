@@ -1,5 +1,5 @@
-C Patch\sto\sget\sextension\sloading\sworking\son\swince.\s\sTicket\s#2023.\s(CVS\s3537)
-D 2006-12-20T03:37:35
+C Initialize\sa\svariable\sto\savoid\scompiler\swarnings\sand\shuman\sconfusion.\nTicket\s#2117.\s(CVS\s3538)
+D 2006-12-20T14:31:24
 F Makefile.in 8e14898d41a53033ecb687d93c9cd5d109fb9ae3
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -121,7 +121,7 @@ F src/update.c 951f95ef044cf6d28557c48dc35cb0711a0b9129
 F src/utf.c 67ecb1032bc0b42c105e88d65ef9d9f626eb0e1f
 F src/util.c 91d4cb189476906639ae611927d939691d1365f6
 F src/vacuum.c b620ffff5a84af88b970894a92bb330bd2b9fc45
-F src/vdbe.c 3e31f2e49423955afb2ac905ceacf54c679b1f28
+F src/vdbe.c b967a1692ca69e05c595d4c25ca14e1a97df8378
 F src/vdbe.h 9720cae673359dc2bdcb106285ecf686b7d3ef24
 F src/vdbeInt.h 1ca07f2d7446c90230346aed7fbf990c032460bc
 F src/vdbeapi.c 2d1e6843af8705a1172e54a418d2a3d5febd1dd7
@@ -423,7 +423,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P f245f5c2c2d337fe6458824beb7f9e721837765f
-R 73af098ac8d3872ee5d1cf0975d597ce
+P a81f3ddfd0626ae642c5ffd27a23c568d06f58dc
+R b4376c2c890f2d1c64ba83335f247288
 U drh
-Z 8fbc1ec3a565ddb0cd82d7fc7f801e89
+Z fa0b105ee6d7dd9bdfaf3037e9f54072
