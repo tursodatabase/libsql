@@ -223,8 +223,18 @@ const sqlite3_api_routines sqlite3_apis = {
 #if defined(_WIN32) || defined(WIN32) || defined(__MINGW32__) || defined(__BORLANDC__)
 # include <windows.h>
 # define SQLITE_LIBRARY_TYPE     HANDLE
-# define SQLITE_OPEN_LIBRARY(A)  LoadLibrary(A)
-# define SQLITE_FIND_SYMBOL(A,B) GetProcAddress(A,B)
+# ifdef _WIN32_WCE
+    static HANDLE loadLibraryUtf8(const char *z){
+      WCHAR zWide[MAX_PATH];
+      MultiByteToWideChar(CP_ACP,0,z,-1,zWide,MAX_PATH);
+      return LoadLibrary(zWide);
+    }
+#   define SQLITE_OPEN_LIBRARY(A)  loadLibraryUtf8(A)
+#   define SQLITE_FIND_SYMBOL(A,B) GetProcAddressA(A,B)
+# else
+#   define SQLITE_OPEN_LIBRARY(A)  LoadLibrary(A)
+#   define SQLITE_FIND_SYMBOL(A,B) GetProcAddress(A,B)
+# endif
 # define SQLITE_CLOSE_LIBRARY(A) FreeLibrary(A)
 #endif /* windows */
 
