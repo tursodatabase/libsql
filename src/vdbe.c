@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.580 2006/12/20 14:31:24 drh Exp $
+** $Id: vdbe.c,v 1.581 2006/12/20 14:53:38 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -4642,8 +4642,8 @@ case OP_VFilter: {   /* no-push */
   assert( (pTos[0].flags&MEM_Int)!=0 && pTos[-1].flags==MEM_Int );
   nArg = pTos[-1].i;
 
-  /* Invoke the xFilter method if one is defined. */
-  if( pModule->xFilter ){
+  /* Invoke the xFilter method */
+  {
     int res = 0;
     int i;
     Mem **apArg = p->apArg;
