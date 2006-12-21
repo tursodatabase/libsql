@@ -799,15 +799,18 @@ int sqlite3WinOpenExclusive(const char *zFilename, OsFile **pId, int delFlag){
     }while( h==INVALID_HANDLE_VALUE && cnt++ < 2 && (Sleep(100), 1) );
 #endif /* OS_WINCE */
   }
+#if OS_WINCE
+  if( delFlag && h!=INVALID_HANDLE_VALUE ){
+    f.zDeleteOnClose = zConverted;
+    zConverted = 0;
+  }
+  f.hMutex = NULL;
+#endif
   sqliteFree(zConverted);
   if( h==INVALID_HANDLE_VALUE ){
     return SQLITE_CANTOPEN;
   }
   f.h = h;
-#if OS_WINCE
-  f.zDeleteOnClose = delFlag ? utf8ToUnicode(zFilename) : 0;
-  f.hMutex = NULL;
-#endif
   TRACE3("OPEN EX %d \"%s\"\n", h, zFilename);
   return allocateWinFile(&f, pId);
 }
