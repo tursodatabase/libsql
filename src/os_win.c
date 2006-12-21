@@ -1516,7 +1516,7 @@ void *sqlite3WinDlopen(const char *zFilename){
     h = LoadLibraryW(zConverted);
   }else{
 #if OS_WINCE
-    return SQLITE_NOMEM;
+    return 0;
 #else
     h = LoadLibraryA(zConverted);
 #endif
@@ -1526,7 +1526,14 @@ void *sqlite3WinDlopen(const char *zFilename){
   
 }
 void *sqlite3WinDlsym(void *pHandle, const char *zSymbol){
+#if OS_WINCE
+  /* The GetProcAddressA() routine is only available on wince. */
+  return GetProcAddressA((HANDLE)pHandle, zSymbol);
+#else
+  /* All other windows platforms expect GetProcAddress() to take
+  ** an Ansi string regardless of the _UNICODE setting */
   return GetProcAddress((HANDLE)pHandle, zSymbol);
+#endif
 }
 int sqlite3WinDlclose(void *pHandle){
   return FreeLibrary((HANDLE)pHandle);
