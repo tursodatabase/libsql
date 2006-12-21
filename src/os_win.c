@@ -1498,6 +1498,38 @@ static int allocateWinFile(winFile *pInit, OsFile **pId){
 ** with other miscellanous aspects of the operating system interface
 ****************************************************************************/
 
+#if !defined(SQLITE_OMIT_LOAD_EXTENSION)
+/*
+** Interfaces for opening a shared library, finding entry points
+** within the shared library, and closing the shared library.
+*/
+void *sqlite3WinDlopen(const char *zFilename){
+  HANDLE h;
+  void *zConverted = convertUtf8Filename(zFilename);
+  if( zConverted==0 ){
+    return 0;
+  }
+  if( isNT() ){
+    h = LoadLibraryW(zConverted);
+  }else{
+#if OS_WINCE
+    return SQLITE_NOMEM;
+#else
+    h = LoadLibraryA(zConverted);
+#endif
+  }
+  sqliteFree(zConverted);
+  return (void*)h;
+  
+}
+void *sqlite3WinDlsym(void *pHandle, const char *zSymbol){
+  return GetProcAddress((HANDLE)pHandle, zSymbol);
+}
+int sqlite3WinDlclose(void *pHandle){
+  return FreeLibrary((HANDLE)pHandle);
+}
+#endif /* !SQLITE_OMIT_LOAD_EXTENSION */
+
 /*
 ** Get information to seed the random number generator.  The seed
 ** is written into the buffer zBuf[256].  The calling function must

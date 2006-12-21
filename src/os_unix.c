@@ -2581,6 +2581,23 @@ static int allocateUnixFile(
 ****************************************************************************/
 
 
+#ifndef SQLITE_OMIT_LOAD_EXTENSION
+/*
+** Interfaces for opening a shared library, finding entry points
+** within the shared library, and closing the shared library.
+*/
+#include <dlfcn.h>
+void *sqlite3UnixDlopen(const char *zFilename){
+  return dlopen(zFilename, RTLD_NOW | RTLD_GLOBAL);
+}
+void *sqlite3UnixDlsym(void *pHandle, const char *zSymbol){
+  return dlsym(pHandle, zSymbol);
+}
+int sqlite3UnixDlclose(void *pHandle){
+  return dlclose(pHandle);
+}
+#endif /* SQLITE_OMIT_LOAD_EXTENSION */
+
 /*
 ** Get information to seed the random number generator.  The seed
 ** is written into the buffer zBuf[256].  The calling function must

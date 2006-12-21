@@ -768,6 +768,23 @@ int allocateOs2File( os2File *pInit, OsFile **pld ){
 ** with other miscellanous aspects of the operating system interface
 ****************************************************************************/
 
+#ifndef SQLITE_OMIT_LOAD_EXTENSION
+/*
+** Interfaces for opening a shared library, finding entry points
+** within the shared library, and closing the shared library.
+*/
+void *sqlite3Os2Dlopen(const char *zFilename){
+  return 0;
+}
+void *sqlite3Os2Dlsym(void *pHandle, const char *zSymbol){
+  return 0;
+}
+int sqlite3Os2Dlclose(void *pHandle){
+  return 0;
+}
+#endif /* SQLITE_OMIT_LOAD_EXTENSION */
+
+
 /*
 ** Get information to seed the random number generator.  The seed
 ** is written into the buffer zBuf[256].  The calling function must
