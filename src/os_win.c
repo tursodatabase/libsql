@@ -124,8 +124,9 @@ int sqlite3_os_type = 0;
 #endif /* OS_WINCE */
 
 /*
-** Convert a UTF-8 string to UTF-32.  Space to hold the returned string
-** is obtained from sqliteMalloc.
+** Convert a UTF-8 string to microsoft unicode (UTF-16?). 
+**
+** Space to hold the returned string is obtained from sqliteMalloc.
 */
 static WCHAR *utf8ToUnicode(const char *zFilename){
   int nChar;
@@ -145,7 +146,7 @@ static WCHAR *utf8ToUnicode(const char *zFilename){
 }
 
 /*
-** Convert UTF-32 to UTF-8.  Space to hold the returned string is
+** Convert microsoft unicode to UTF-8.  Space to hold the returned string is
 ** obtained from sqliteMalloc().
 */
 static char *unicodeToUtf8(const WCHAR *zWideFilename){
@@ -167,20 +168,23 @@ static char *unicodeToUtf8(const WCHAR *zWideFilename){
 }
 
 /*
-** Convert a multibyte character string to UTF-32, based on the current
-** Ansi codepage (CP_ACP). Space to hold the returned string is obtained
+** Convert an ansi string to microsoft unicode, based on the
+** current codepage settings for file apis.
+** 
+** Space to hold the returned string is obtained
 ** from sqliteMalloc.
 */
 static WCHAR *mbcsToUnicode(const char *zFilename){
   int nByte;
   WCHAR *zMbcsFilename;
+  int codepage = AreFileApisANSI() ? CP_ACP : CP_OEMCP;
 
-  nByte = MultiByteToWideChar(CP_ACP, 0, zFilename, -1, NULL, 0)*sizeof(WCHAR);
+  nByte = MultiByteToWideChar(codepage, 0, zFilename, -1, NULL,0)*sizeof(WCHAR);
   zMbcsFilename = sqliteMalloc( nByte*sizeof(zMbcsFilename[0]) );
   if( zMbcsFilename==0 ){
     return 0;
   }
-  nByte = MultiByteToWideChar(CP_ACP, 0, zFilename, -1, zMbcsFilename, nByte);
+  nByte = MultiByteToWideChar(codepage, 0, zFilename, -1, zMbcsFilename, nByte);
   if( nByte==0 ){
     sqliteFree(zMbcsFilename);
     zMbcsFilename = 0;
@@ -189,20 +193,23 @@ static WCHAR *mbcsToUnicode(const char *zFilename){
 }
 
 /*
-** Convert UTF-32 to multibyte character string, based on the user's Ansi
-** codepage (CP_ACP). Space to hold the returned string is obtained from
+** Convert microsoft unicode to multibyte character string, based on the
+** user's Ansi codepage.
+**
+** Space to hold the returned string is obtained from
 ** sqliteMalloc().
 */
 static char *unicodeToMbcs(const WCHAR *zWideFilename){
   int nByte;
   char *zFilename;
+  int codepage = AreFileApisANSI() ? CP_ACP : CP_OEMCP;
 
-  nByte = WideCharToMultiByte(CP_ACP, 0, zWideFilename, -1, 0, 0, 0, 0);
+  nByte = WideCharToMultiByte(codepage, 0, zWideFilename, -1, 0, 0, 0, 0);
   zFilename = sqliteMalloc( nByte );
   if( zFilename==0 ){
     return 0;
   }
-  nByte = WideCharToMultiByte(CP_ACP, 0, zWideFilename, -1, zFilename, nByte,
+  nByte = WideCharToMultiByte(codepage, 0, zWideFilename, -1, zFilename, nByte,
                               0, 0);
   if( nByte == 0 ){
     sqliteFree(zFilename);
@@ -1513,12 +1520,12 @@ void *sqlite3WinDlopen(const char *zFilename){
     return 0;
   }
   if( isNT() ){
-    h = LoadLibraryW(zConverted);
+    h = LoadLibraryW((WCHAR*)zConverted);
   }else{
 #if OS_WINCE
     return 0;
 #else
-    h = LoadLibraryA(zConverted);
+    h = LoadLibraryA((char*)zConverted);
 #endif
   }
   sqliteFree(zConverted);

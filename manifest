@@ -1,5 +1,5 @@
-C Use\sGetProcAddressA()\son\swince.\s\sTicket\s#2123\s(CVS\s3543)
-D 2006-12-21T02:21:57
+C More\sfixes\sto\sthe\smicrosoft\scode-page\snightmare...\s(CVS\s3544)
+D 2006-12-21T03:20:41
 F Makefile.in 8e14898d41a53033ecb687d93c9cd5d109fb9ae3
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -83,7 +83,7 @@ F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
 F src/os_unix.c d4bc8cbe1c0dc330bd55bf7821db5b7dbfbf183e
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
-F src/os_win.c d7cf0fc2acd9d2a519a9442f78b4bdbf30e730d6
+F src/os_win.c ca46001d4ec446885f72d3b7fd6a657136156228
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c 814268d5bbd69f30069867142f1d460b8b7ab778
 F src/pager.h 2e6d42f4ae004ae748a037b8468112b851c447a7
@@ -423,7 +423,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 6d2ff0962dff0477fe2af0323032dc16337f42ab
-R 1a4c9add7b3dd8462c8e8800ce5e3721
+P e3dddd1cef5877c009852fd7f484973843e26e00
+R 73c89ed5916e57284a7ee348ebe00fd3
 U drh
-Z 485f836110e73c29878298d90fc161b1
+Z da8e9bd7450544645912de3f756444c4
