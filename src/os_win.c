@@ -758,7 +758,7 @@ int sqlite3WinOpenReadWrite(
 int sqlite3WinOpenExclusive(const char *zFilename, OsFile **pId, int delFlag){
   winFile f;
   HANDLE h;
-  int fileflags;
+  DWORD fileflags;
   void *zConverted = convertUtf8Filename(zFilename);
   if( zConverted==0 ){
     return SQLITE_NOMEM;
