@@ -12,6 +12,12 @@
 **
 ** This file contains code that is specific to OS/2.
 */
+
+#if (__GNUC__ > 3 || __GNUC__ == 3 && __GNUC_MINOR__ >= 3) && defined(OS2_HIGH_MEMORY)
+/* os2safe.h has to be included before os2.h, needed for high mem */
+#include <os2safe.h>
+#endif
+
 #include "sqliteInt.h"
 #include "os.h"
 

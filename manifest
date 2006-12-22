@@ -1,5 +1,5 @@
-C Disable\sextension\sloading\sby\sdefault.\s\sAt\ssome\spoint\swe\sshould\schange\nthe\sconfigure\sscript\sto\sdetect\sthe\spresence\sof\sdlopen()\sautomatically\nand\sadd\sthe\sappropriate\slibrary\sto\sthe\slink.\s\sBut\sthat\srequires\sa\nworking\sversion\sof\sautoconf,\swhich\sI\sdo\snot\shave.\s\sTicket\s#2124.\s(CVS\s3545)
-D 2006-12-21T22:38:23
+C OS/2\schange:\sadd\ssafeguard\sto\sbe\sable\sto\suse\sSQLite\sloaded\sinto\shigh\smemory\son\sOS/2\swhen\scompiled\swith\sGCC\s3.3\sor\slater.\sCurrently,\sthis\sis\sonly\sused\swhen\sbuilding\swithin\sthe\sMozilla\ssource\stree.\s(CVS\s3546)
+D 2006-12-22T20:33:14
 F Makefile.in 63a71177ed4355c829229affe11167bd28c85884
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -77,7 +77,7 @@ F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/os.c 59f05de8c5777c34876607114a2fbe55ae578235
 F src/os.h 17fc73165cb7436aa79492d2dff754baec74fcb9
 F src/os_common.h 545426356f0868a6765e70cb59e319d3acad0ed6
-F src/os_os2.c d399224753477c53dd0801af925edf92c9e388c6
+F src/os_os2.c 1ece434c4817e2925318954336cfe1731713beb0
 F src/os_os2.h e5f17dd69333632bbc3112881ea407c37d245eb3
 F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
@@ -423,7 +423,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 0b47d88060069781e7e184806d6ecaeff9b9e5d1
-R 6a280fa68a0bc3c2c848b78772b35cca
-U drh
-Z e51b7846a9a54e4c845b251e7b1cf23f
+P 87a9ee077aa53f1677667983f4566d61ea68b500
+R a42216e646608933734cf512393db380
+U pweilbacher
+Z 3e70003a2911d5bde37aa6ae5bdd9451
