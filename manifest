@@ -1,5 +1,5 @@
-C OS/2\schange:\sadd\ssafeguard\sto\sbe\sable\sto\suse\sSQLite\sloaded\sinto\shigh\smemory\son\sOS/2\swhen\scompiled\swith\sGCC\s3.3\sor\slater.\sCurrently,\sthis\sis\sonly\sused\swhen\sbuilding\swithin\sthe\sMozilla\ssource\stree.\s(CVS\s3546)
-D 2006-12-22T20:33:14
+C Update\sthe\svtab_err\stest\sto\scheck\sfor\s-DSQLITE_MEMDEBUG=1\sand\sskip\sthe\stests\nif\smissing.\s\sPager\sis\smore\scareful\sto\sclear\sits\sfile\ssize\scache.\s\sRemove\nan\sassert()\sin\sVDBE\sthat\smight\sfail\son\sa\scorrupt\sdatabase\sfile.\s(CVS\s3547)
+D 2007-01-02T18:41:55
 F Makefile.in 63a71177ed4355c829229affe11167bd28c85884
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -85,7 +85,7 @@ F src/os_unix.c d4bc8cbe1c0dc330bd55bf7821db5b7dbfbf183e
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c ca46001d4ec446885f72d3b7fd6a657136156228
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 814268d5bbd69f30069867142f1d460b8b7ab778
+F src/pager.c 5a153277b050b4fe9db3e3ced6b3a7ad7f19561e
 F src/pager.h 2e6d42f4ae004ae748a037b8468112b851c447a7
 F src/parse.y 2f571c5f6219428d7fb08737db3d113742b1cceb
 F src/pragma.c d0891d3504b6291b506a5ec2226bbf79ffcef003
@@ -121,7 +121,7 @@ F src/update.c 951f95ef044cf6d28557c48dc35cb0711a0b9129
 F src/utf.c 67ecb1032bc0b42c105e88d65ef9d9f626eb0e1f
 F src/util.c 91d4cb189476906639ae611927d939691d1365f6
 F src/vacuum.c b620ffff5a84af88b970894a92bb330bd2b9fc45
-F src/vdbe.c 5a1624c73bed143f3d56d1f0a1a1665763520a99
+F src/vdbe.c 15060804371ab78d44a131061ae85c4c66dfff7c
 F src/vdbe.h 9720cae673359dc2bdcb106285ecf686b7d3ef24
 F src/vdbeInt.h 1ca07f2d7446c90230346aed7fbf990c032460bc
 F src/vdbeapi.c 2d1e6843af8705a1172e54a418d2a3d5febd1dd7
@@ -347,7 +347,7 @@ F test/vtab5.test 9fb8f335651afe8f870011e2f68e5b00c5ad03cd
 F test/vtab6.test ec0036f29f8a803da9935206f2d9d1b6a8026392
 F test/vtab7.test 5f9ef9fb84733e928d5d0267c821072561b198d5
 F test/vtab9.test 87afba55339b0c255e9697fbfb5bfb6120505d9d
-F test/vtab_err.test c07f7665dd90bc757f80f05e7951d826eda9bc48
+F test/vtab_err.test 224cc80ad700797c48b9cd2c1e0bd7a8517d8609
 F test/where.test 8dcc1b1a6f17b6bad2dc6a9917eafe62d4ea57eb
 F test/where2.test 61d5b20d9bedc8788a773bbdc5b2ef887725928e
 F test/where3.test 0a30fe9808b0fa01c46d0fcf4fac0bf6cf75bb30
@@ -423,7 +423,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 87a9ee077aa53f1677667983f4566d61ea68b500
-R a42216e646608933734cf512393db380
-U pweilbacher
-Z 3e70003a2911d5bde37aa6ae5bdd9451
+P 720189b8fafa61e5b712b409e76c368079b4bf96
+R a594a599c63c21c9d19504b49bbf2e77
+U drh
+Z 4cc2942b88b80ed65e59fb32451d8d19
