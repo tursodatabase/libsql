@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.279 2007/01/03 15:34:30 drh Exp $
+** @(#) $Id: pager.c,v 1.280 2007/01/03 23:36:22 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -863,6 +863,7 @@ static void pager_unlock(Pager *pPager){
     pPager->dbSize = -1;
   }
   pPager->state = PAGER_UNLOCK;
+  assert( pPager->pAll==0 );
 }
 
 
@@ -892,7 +893,7 @@ static void pager_reset(Pager *pPager){
   }
   pager_unlock(pPager);
   pPager->nRef = 0;
-  assert( pPager->journalOpen==0 );
+  assert( pPager->errCode || (pPager->journalOpen==0 && pPager->stmtOpen==0) );
 }
 
 /*
@@ -2063,7 +2064,6 @@ int sqlite3pager_truncate(Pager *pPager, Pgno nPage){
 ** to the caller.
 */
 int sqlite3pager_close(Pager *pPager){
-  PgHdr *pPg, *pNext;
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
   /* A malloc() cannot fail in sqlite3ThreadData() as one or more calls to 
   ** malloc() must have already been made by this thread before it gets
@@ -2075,42 +2075,9 @@ int sqlite3pager_close(Pager *pPager){
   assert( pTsd && pTsd->nAlloc );
 #endif
 
-  switch( pPager->state ){
-    case PAGER_RESERVED:
-    case PAGER_SYNCED: 
-    case PAGER_EXCLUSIVE: {
-      /* We ignore any IO errors that occur during the rollback
-      ** operation. So disable IO error simulation so that testing
-      ** works more easily.
-      */
-      disable_simulated_io_errors();
-      sqlite3pager_rollback(pPager);
-      enable_simulated_io_errors();
-      pager_unlock(pPager);
-      assert( pPager->errCode || pPager->journalOpen==0 );
-      break;
-    }
-    case PAGER_SHARED: {
-      pager_unlock(pPager);
-      break;
-    }
-    default: {
-      /* Do nothing */
-      break;
-    }
-  }
-  for(pPg=pPager->pAll; pPg; pPg=pNext){
-#ifndef NDEBUG
-    if( MEMDB ){
-      PgHistory *pHist = PGHDR_TO_HIST(pPg, pPager);
-      assert( !pPg->alwaysRollback );
-      assert( !pHist->pOrig );
-      assert( !pHist->pStmt );
-    }
-#endif
-    pNext = pPg->pNextAll;
-    sqliteFree(pPg);
-  }
+  disable_simulated_io_errors();
+  pager_reset(pPager);
+  enable_simulated_io_errors();
   TRACE2("CLOSE %d\n", PAGERID(pPager));
   assert( pPager->errCode || (pPager->journalOpen==0 && pPager->stmtOpen==0) );
   if( pPager->journalOpen ){
@@ -2989,7 +2956,7 @@ failed_to_open_journal:
     */
     sqlite3OsDelete(pPager->zJournal);
   }else{
-    pager_unlock(pPager);
+    pager_reset(pPager);
   }
   return rc;
 }

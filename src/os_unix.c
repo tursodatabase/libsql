@@ -1032,6 +1032,7 @@ static int unixRead(OsFile *id, void *pBuf, int amt){
   }else if( got<0 ){
     return SQLITE_IOERR_READ;
   }else{
+    memset(&((char*)pBuf)[got], 0, amt-got);
     return SQLITE_IOERR_SHORT_READ;
   }
 }

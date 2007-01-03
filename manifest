@@ -1,5 +1,5 @@
-C Make\ssure\sthat\sthe\sdatabase\ssize\scache\sin\sthe\spager\sis\sinvalidated\swhenever\nthe\sdatabase\sis\sunlocked.\s\sA\sstale\svalue\sin\sthe\sdatabase\ssize\scache\scan\nresult\sin\sdatabase\scorruption\son\sa\sheavily\sloaded\ssystem\srunning\nautovacuum.\s(CVS\s3548)
-D 2007-01-03T15:34:30
+C Additional\schanges\sin\sthe\spager\sand\sos\sinterface\slayers\sto\sfix\sproblems\sthat\nmight\sbe\scontributing\sto\srecently\sobserved\sdatabase\scorruption.\s(CVS\s3549)
+D 2007-01-03T23:36:22
 F Makefile.in 63a71177ed4355c829229affe11167bd28c85884
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -81,11 +81,11 @@ F src/os_os2.c 1ece434c4817e2925318954336cfe1731713beb0
 F src/os_os2.h e5f17dd69333632bbc3112881ea407c37d245eb3
 F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
-F src/os_unix.c d4bc8cbe1c0dc330bd55bf7821db5b7dbfbf183e
+F src/os_unix.c 9fbbd8ab0a6b3992370ba0f3aae11feff2a78c96
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
-F src/os_win.c ca46001d4ec446885f72d3b7fd6a657136156228
+F src/os_win.c 92df146ed964401969831a19bb490d76ce4de4c0
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 4dbd6a12eb43f10a3c870a3006a54a7756768455
+F src/pager.c 28fdd84dc1f6eaa2ea0754bc88f7e0efd74b9eb9
 F src/pager.h 2e6d42f4ae004ae748a037b8468112b851c447a7
 F src/parse.y 2f571c5f6219428d7fb08737db3d113742b1cceb
 F src/pragma.c d0891d3504b6291b506a5ec2226bbf79ffcef003
@@ -423,7 +423,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P bf1afd016ad71dac90e58540122108f92e77ce3d
-R ffed07664ab99ec35d86454afb31b5e4
+P 6806b9ecb5e3b90e793c5862404e76485df33b25
+R 5eb75b3bfe211ed1d7c750440df7692b
 U drh
-Z 6c9f735d21716c225946d83bfcb229d4
+Z bcb83f017e9e848c1a261f1dbdf86d77
