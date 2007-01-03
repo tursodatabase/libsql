@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test8.c,v 1.43 2006/10/08 18:56:57 drh Exp $
+** $Id: test8.c,v 1.44 2007/01/03 23:37:29 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -639,6 +639,7 @@ static int echoBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
   */
   zQuery = sqlite3_mprintf("SELECT count(*) FROM %Q", pVtab->zTableName);
   rc = sqlite3_prepare(pVtab->db, zQuery, -1, &pStmt, 0);
+  sqlite3_free(zQuery);
   if( rc!=SQLITE_OK ){
     return rc;
   }

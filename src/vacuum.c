@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.65 2006/11/18 20:20:22 drh Exp $
+** $Id: vacuum.c,v 1.66 2007/01/03 23:37:29 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -89,6 +89,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   saved_flags = db->flags;
   db->flags |= SQLITE_WriteSchema | SQLITE_IgnoreChecks;
 
+  sqlite3OsTempFileName(zTemp);
   if( !db->autoCommit ){
     sqlite3SetString(pzErrMsg, "cannot VACUUM from within a transaction", 
        (char*)0);
@@ -96,7 +97,6 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
     goto end_of_vacuum;
   }
   pMain = db->aDb[0].pBt;
-  sqlite3OsTempFileName(zTemp);
 
   /* Attach the temporary database as 'vacuum_db'. The synchronous pragma
   ** can be set to 'off' for this file, as it is not recovered if a crash

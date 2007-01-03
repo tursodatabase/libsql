@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc5.test,v 1.15 2006/08/12 12:33:15 drh Exp $
+# $Id: misc5.test,v 1.16 2007/01/03 23:37:29 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -573,7 +573,7 @@ do_test misc5-7.1 {
 
 # Check the MISUSE return from sqlitee3_busy_timeout
 #
-do_test misc5-8.1 {
+do_test misc5-8.1-misuse {
   set DB [sqlite3_connection_pointer db]
   db close
   sqlite3_busy_timeout $DB 1000

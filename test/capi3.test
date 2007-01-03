@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi3.test,v 1.46 2006/08/16 16:42:48 drh Exp $
+# $Id: capi3.test,v 1.47 2007/01/03 23:37:29 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -152,14 +152,14 @@ do_test capi3-3.4 {
 do_test capi3-3.5 {
   sqlite3_close $db2
 } {SQLITE_OK}
-do_test capi3-3.6.1 {
+do_test capi3-3.6.1-misuse {
   sqlite3_close $db2
 } {SQLITE_MISUSE}
-do_test capi3-3.6.2 {
+do_test capi3-3.6.2-misuse {
   sqlite3_errmsg $db2
 } {library routine called out of sequence}
 ifcapable {utf16} {
-  do_test capi3-3.6.3 {
+  do_test capi3-3.6.3-misuse {
     utf8 [sqlite3_errmsg16 $db2]
   } {library routine called out of sequence}
 }
@@ -612,7 +612,7 @@ check_data $STMT capi3-6.3 {INTEGER} {1} {1.0} {1}
 do_test capi3-6.3 {
   sqlite3_finalize $STMT
 } {SQLITE_OK}
-do_test capi3-6.4 {
+do_test capi3-6.4-misuse {
   db cache flush
   sqlite3_close $DB
 } {SQLITE_OK}
@@ -991,7 +991,7 @@ if {[llength [info commands sqlite3_sleep]]>0} {
 
 # Ticket #1219:  Make sure binding APIs can handle a NULL pointer.
 #
-do_test capi3-14.1 {
+do_test capi3-14.1-misuse {
   set rc [catch {sqlite3_bind_text 0 1 hello 5} msg]
   lappend rc $msg
 } {1 SQLITE_MISUSE}

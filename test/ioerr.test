@@ -15,7 +15,7 @@
 # The tests in this file use special facilities that are only
 # available in the SQLite test fixture.
 #
-# $Id: ioerr.test,v 1.27 2006/09/15 07:28:51 drh Exp $
+# $Id: ioerr.test,v 1.28 2007/01/03 23:37:29 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -165,6 +165,7 @@ ifcapable crashtest {
 # These tests can't be run on windows because the windows version of 
 # SQLite holds a mandatory exclusive lock on journal files it has open.
 #
+btree_breakpoint
 if {$tcl_platform(platform)!="windows"} {
   do_ioerr_test ioerr-7 -tclprep {
     db close
