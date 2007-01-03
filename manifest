@@ -1,5 +1,5 @@
-C Update\sthe\svtab_err\stest\sto\scheck\sfor\s-DSQLITE_MEMDEBUG=1\sand\sskip\sthe\stests\nif\smissing.\s\sPager\sis\smore\scareful\sto\sclear\sits\sfile\ssize\scache.\s\sRemove\nan\sassert()\sin\sVDBE\sthat\smight\sfail\son\sa\scorrupt\sdatabase\sfile.\s(CVS\s3547)
-D 2007-01-02T18:41:55
+C Make\ssure\sthat\sthe\sdatabase\ssize\scache\sin\sthe\spager\sis\sinvalidated\swhenever\nthe\sdatabase\sis\sunlocked.\s\sA\sstale\svalue\sin\sthe\sdatabase\ssize\scache\scan\nresult\sin\sdatabase\scorruption\son\sa\sheavily\sloaded\ssystem\srunning\nautovacuum.\s(CVS\s3548)
+D 2007-01-03T15:34:30
 F Makefile.in 63a71177ed4355c829229affe11167bd28c85884
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -85,7 +85,7 @@ F src/os_unix.c d4bc8cbe1c0dc330bd55bf7821db5b7dbfbf183e
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c ca46001d4ec446885f72d3b7fd6a657136156228
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 5a153277b050b4fe9db3e3ced6b3a7ad7f19561e
+F src/pager.c 4dbd6a12eb43f10a3c870a3006a54a7756768455
 F src/pager.h 2e6d42f4ae004ae748a037b8468112b851c447a7
 F src/parse.y 2f571c5f6219428d7fb08737db3d113742b1cceb
 F src/pragma.c d0891d3504b6291b506a5ec2226bbf79ffcef003
@@ -423,7 +423,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 720189b8fafa61e5b712b409e76c368079b4bf96
-R a594a599c63c21c9d19504b49bbf2e77
+P bf1afd016ad71dac90e58540122108f92e77ce3d
+R ffed07664ab99ec35d86454afb31b5e4
 U drh
-Z 4cc2942b88b80ed65e59fb32451d8d19
+Z 6c9f735d21716c225946d83bfcb229d4
