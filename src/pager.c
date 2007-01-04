@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.280 2007/01/03 23:36:22 drh Exp $
+** @(#) $Id: pager.c,v 1.281 2007/01/04 14:58:14 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -2076,6 +2076,7 @@ int sqlite3pager_close(Pager *pPager){
 #endif
 
   disable_simulated_io_errors();
+  pPager->errCode = 0;
   pager_reset(pPager);
   enable_simulated_io_errors();
   TRACE2("CLOSE %d\n", PAGERID(pPager));

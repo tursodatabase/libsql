@@ -1,5 +1,5 @@
-C Reactivate\sdisabled\s"alter2"\stests.\s(CVS\s3553)
-D 2007-01-04T14:36:02
+C Fix\sa\smemory\sleak\sintroduced\sby\sthe\slatest\schanges\sto\spager.c.\s(CVS\s3554)
+D 2007-01-04T14:58:14
 F Makefile.in 63a71177ed4355c829229affe11167bd28c85884
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -85,7 +85,7 @@ F src/os_unix.c 9fbbd8ab0a6b3992370ba0f3aae11feff2a78c96
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c 92df146ed964401969831a19bb490d76ce4de4c0
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 28fdd84dc1f6eaa2ea0754bc88f7e0efd74b9eb9
+F src/pager.c 48296c371c44bf43f1c02e221142149797f33072
 F src/pager.h 2e6d42f4ae004ae748a037b8468112b851c447a7
 F src/parse.y 2f571c5f6219428d7fb08737db3d113742b1cceb
 F src/pragma.c d0891d3504b6291b506a5ec2226bbf79ffcef003
@@ -226,7 +226,7 @@ F test/insert2.test 5a20e1ace5fa0800b58d28284212290189b49aed
 F test/insert3.test 09a532d5b6f3a788d91be0d4d368462f522685d1
 F test/interrupt.test c38b7f7c17914f0cd6a119beed5d03bc3f47f9eb
 F test/intpkey.test af4fd826c4784ec5c93b444de07adea0254d0d30
-F test/ioerr.test 58fb371922c4c220e4794397c17e32465cacc6de
+F test/ioerr.test 565f1a47c6af6bb75dc0ff633213cec63470c19c
 F test/join.test af0443185378b64878750aa1cf4b83c216f246b4
 F test/join2.test f2171c265e57ee298a27e57e7051d22962f9f324
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
@@ -299,7 +299,7 @@ F test/table.test feea6a3eb08cf166f570255eea5447e42ef82498
 F test/tableapi.test a1982276274d292110d549206bc365b2da43e2ee
 F test/tclsqlite.test 51334389283c74bcbe28645a73159b17e239e9f3
 F test/temptable.test c36f3e5a94507abb64f7ba23deeb4e1a8a8c3821
-F test/tester.tcl 8aed3687fd9ca22026b815855fc40c78355ced43
+F test/tester.tcl 47670c2d74f466c5b22fca23f9d28cfcc7686452
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
 F test/thread2.test 6d7b30102d600f51b4055ee3a5a19228799049fb
 F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
@@ -424,7 +424,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 70f5f3b85f30bbec0ddc59ba364e1229c09ed636
-R 4e1e12242d783795ee845ef72da0f3da
+P 093467a099bb205897a58c1eeb734e1d13fba405
+R 57d9019600d275b0df85146c31fc0c93
 U drh
-Z 84abf85aae364c3791581d7583bc8ca9
+Z aa4ad04b52b36c4f44a4db466f6fe1ed
