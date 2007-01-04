@@ -28,7 +28,7 @@ proc chng {date desc} {
 chng {2007 January 4 (3.3.9)} {
 <li>Fix bugs in pager.c that could lead to database corruption if two
 processes both try to recover a hot journal at the same instant</li>
-<li>Added the <a href="capi3ref.html#sqlite3_prepare_v2>sqlite3_prepare_v2()</a>
+<li>Added the <a href="capi3ref.html#sqlite3_prepare_v2">sqlite3_prepare_v2()</a>
 API.</li>
 <li>Fixed the ".dump" command in the command-line shell to show
 triggers and views again.</li>
