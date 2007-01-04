@@ -1,5 +1,5 @@
-C Fix\sthe\strigger4\stest\sso\sthat\sit\sruns\son\swindows.\s(CVS\s3559)
-D 2007-01-04T22:13:02
+C Fix\sthe\suser_version\sand\sschema_version\spragmas\sso\sthat\sthey\sset\sa\sresult\ncolumn\sname.\s\sTicket\s#2143.\s(CVS\s3560)
+D 2007-01-04T22:13:42
 F Makefile.in 63a71177ed4355c829229affe11167bd28c85884
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -88,7 +88,7 @@ F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c 48296c371c44bf43f1c02e221142149797f33072
 F src/pager.h 2e6d42f4ae004ae748a037b8468112b851c447a7
 F src/parse.y 2f571c5f6219428d7fb08737db3d113742b1cceb
-F src/pragma.c d0891d3504b6291b506a5ec2226bbf79ffcef003
+F src/pragma.c fd4df6cf0857dd78a7cb5be5f9805419b53ae7a0
 F src/prepare.c f4f45b4560defbb566cf8255763625d2c09a8023
 F src/printf.c b179b6ed12f793e028dd169e2e2e2b2a37eedc63
 F src/random.c d40f8d356cecbd351ccfab6eaedd7ec1b54f5261
@@ -267,7 +267,7 @@ F test/pager.test 6ee95e90ee8295e376e39a6c6566ef6df993601a
 F test/pager2.test 49c0f57c7da0b060f0486b85fdd074025caa694e
 F test/pager3.test 2323bf27fd5bd887b580247e5bce500ceee994b4
 F test/pagesize.test 05c74ea49f790734ec1e9ab765d9bf1cce79b8f2
-F test/pragma.test fc04e28fca655bcd62a6691744f7cf67a18e0699
+F test/pragma.test 5b58a36e3dd830cde81f70a7373321e25560a9b3
 F test/printf.test cdd8e20dd901382a385afcbaa777b9377815c2ad
 F test/progress.test 8b22b4974b0a95272566385f8cb8c341c7130df8 x
 F test/quick.test 6bc0f7c7b905f7de5fe4d3f13239ced3e4e66fe7
@@ -424,7 +424,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 277f8faae4f014b0162713369b074520b628a465
-R 8fc8d7b316bd5f29a296d4225ad7f666
+P 5e4e65ea15c51e75e9f003fbfde3fe87e22b889b
+R cf18906d1fb7453c24d5929336361320
 U drh
-Z f1e955ae13098881651bd03924045917
+Z c02da80e664ffb1898fb3baae2d7f521
