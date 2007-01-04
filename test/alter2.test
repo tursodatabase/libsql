@@ -13,7 +13,7 @@
 # file format change that may be used in the future to implement
 # "ALTER TABLE ... ADD COLUMN".
 #
-# $Id: alter2.test,v 1.5 2006/01/03 00:33:50 drh Exp $
+# $Id: alter2.test,v 1.6 2007/01/04 14:36:02 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -25,7 +25,7 @@ ifcapable {!pragma} return
 # These tests do not work if there is a codec.  The
 # btree_open command does not know how to handle codecs.
 #
-if {[catch {sqlite3 -has_codec} r] || $r} return
+#if {[catch {sqlite3 -has_codec} r] || $r} return
 
 # The file format change affects the way row-records stored in tables (but 
 # not indices) are interpreted. Before version 3.1.3, a row-record for a 
@@ -68,17 +68,13 @@ proc get_file_format {{fname test.db}} {
 #
 proc alter_table {tbl sql {file_format 2}} {
   sqlite3 dbat test.db
-puts one
   dbat eval {
     PRAGMA writable_schema = 1;
     UPDATE sqlite_master SET sql = $sql WHERE name = $tbl AND type = 'table';
     PRAGMA writable_schema = 0;
   }
-puts two
   dbat close
-puts three
   set_file_format 2
-puts four
 }
 
 #-----------------------------------------------------------------------
@@ -96,7 +92,6 @@ do_test alter2-1.2 {
   # ALTER TABLE abc ADD COLUMN c;
   alter_table abc {CREATE TABLE abc(a, b, c);}
 } {}
-exit
 do_test alter2-1.3 {
   execsql {
     SELECT * FROM abc;
@@ -127,7 +122,7 @@ do_test alter2-1.8 {
   execsql {
     SELECT sum(a), c FROM abc GROUP BY c;
   }
-} {8.0 {} 1.0 10}
+} {8 {} 1 10}
 do_test alter2-1.9 {
   # ALTER TABLE abc ADD COLUMN d;
   alter_table abc {CREATE TABLE abc(a, b, c, d);}
@@ -234,12 +229,12 @@ ifcapable trigger {
 
 #---------------------------------------------------------------------
 # Check that an error occurs if the database is upgraded to a file
-# format that SQLite does not support (in this case 4). Note: The 
+# format that SQLite does not support (in this case 5). Note: The 
 # file format is checked each time the schema is read, so changing the
 # file format requires incrementing the schema cookie.
 #
 do_test alter2-4.1 {
-  set_file_format 4
+  set_file_format 5
 } {}
 do_test alter2-4.2 {
   catchsql {
@@ -341,7 +336,7 @@ do_test alter2-7.5 {
   execsql {
     SELECT a, typeof(a), b, typeof(b), c, typeof(c) FROM t1 LIMIT 1;
   }
-} {1 integer -123.0 real 5 text}
+} {1 integer -123 integer 5 text}
 
 #-----------------------------------------------------------------------
 # Test that UPDATE trigger tables work with default values, and that when
@@ -367,11 +362,11 @@ do_test alter2-8.2 {
     UPDATE t1 SET c = 10 WHERE a = 1;
     SELECT a, typeof(a), b, typeof(b), c, typeof(c) FROM t1 LIMIT 1;
   }
-} {1 integer -123.0 real 10 text}
+} {1 integer -123 integer 10 text}
 ifcapable trigger {
   do_test alter2-8.3 {
     set ::val
-  } {-123 real 5 text -123 real 10 text}
+  } {-123 integer 5 text -123 integer 10 text}
 }
 
 #-----------------------------------------------------------------------
@@ -395,7 +390,7 @@ ifcapable trigger {
       DELETE FROM t1 WHERE a = 2;
     }
     set ::val
-  } {-123 real 5 text}
+  } {-123 integer 5 text}
 }
 
 #-----------------------------------------------------------------------
