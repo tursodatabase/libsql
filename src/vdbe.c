@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.582 2007/01/02 18:41:55 drh Exp $
+** $Id: vdbe.c,v 1.583 2007/01/04 01:20:11 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -3082,6 +3082,9 @@ case OP_NotExists: {        /* no-push */
     pC->rowidIsValid = res==0;
     pC->nullRow = 0;
     pC->cacheStatus = CACHE_STALE;
+    /* res might be uninitialized if rc!=SQLITE_OK.  But if rc!=SQLITE_OK
+    ** processing is about to abort so we really do not care whether or not
+    ** the following jump is taken. */
     if( res!=0 ){
       pc = pOp->p2 - 1;
       pC->rowidIsValid = 0;
