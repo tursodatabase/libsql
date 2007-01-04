@@ -25,6 +25,39 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2007 January 4 (3.3.9)} {
+<li>Fix bugs in pager.c that could lead to database corruption if two
+processes both try to recover a hot journal at the same instant</li>
+<li>Added the <a href="capi3ref.html#sqlite3_prepare_v2>sqlite3_prepare_v2()</a>
+API.</li>
+<li>Fixed the ".dump" command in the command-line shell to show
+triggers and views again.</li>
+<li>Change the table_info pragma so that it returns NULL for the default
+value if there is no default value</li>
+<li>Support for non-ASCII characters in win95 filenames</li>
+<li>Query optimizer enhancements:
+<ul>
+<li>Optimizer does a better job of using indices to satisfy ORDER BY
+clauses that sort on the integer primary key</li>
+<li>Use an index to satisfy an IS NULL operator in the WHERE clause</li>
+<li>Fix a bug that was causing the optimizer to miss an OR optimization
+opportunity</li>
+<li>The optimizer has more freedom to reorder tables in the FROM clause
+even in there are LEFT joins.</li>
+</ul>
+<li>Extension loading supported added to winCE</li>
+<li>Allow constrain names on the DEFAULT clause in a table definition</li>
+<li>Added the ".bail" command to the command-line shell</li>
+<li>Make CVS (comma separate value) output from the command-line shell
+more closely aligned to accepted practice</li>
+<li>Experimental FTS2 module added</li>
+<li>Use sqlite3_mprintf() instead of strdup() to avoid libc dependencies</li>
+<li>VACUUM uses a temporary file in the official TEMP folder, not in the
+same directory as the original database</li>
+<li>The prefix on temporary filenames on windows is changed from "sqlite"
+to "etilqs".</li>
+}
+
 chng {2006 October 9 (3.3.8)} {
 <li>Support for full text search using the
 <a href="http://www.sqlite.org/cvstrac/wiki?p=FullTextIndex">FTS1 module</a>

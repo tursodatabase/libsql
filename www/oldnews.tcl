@@ -10,6 +10,18 @@ proc newsitem {date title text} {
 }
 
 
+newsitem {2006-Jun-6} {Version 3.3.6} {
+  Changes include improved tolerance for windows virus scanners
+  and faster :memory: databases.  There are also fixes for several
+  obscure bugs.  Upgrade if you are having problems.
+}
+
+newsitem {2006-Apr-5} {Version 3.3.5} {
+  This release fixes many minor bugs and documentation typos and
+  provides some minor new features and performance enhancements.
+  Upgrade only if you are having problems or need one of the new features.
+}
+
 newsitem {2006-Feb-11} {Version 3.3.4} {
   This release fixes several bugs, including a 
   a blunder that might cause a deadlock on multithreaded systems.
@@ -348,4 +360,4 @@ newsitem {2004-Apr-23} {Work Begins On SQLite Version 3} {
   Plans are to continue to support SQLite version 2.8 with
   bug fixes.  But all new development will occur in version 3.0.
 }
-footer {$Id: oldnews.tcl,v 1.16 2006/08/12 14:38:47 drh Exp $}
+footer {$Id: oldnews.tcl,v 1.17 2007/01/04 16:37:41 drh Exp $}

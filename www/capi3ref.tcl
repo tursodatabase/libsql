@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3ref.tcl,v 1.46 2006/11/09 15:18:00 drh Exp $}
+set rcsid {$Id: capi3ref.tcl,v 1.47 2007/01/04 16:37:41 drh Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -1138,6 +1138,8 @@ int sqlite3_prepare16_v2(
   sqlite3_stmt **ppStmt,  /* OUT: Statement handle */
   const void **pzTail     /* OUT: Pointer to unused portion of zSql */
 );
+
+/* Legacy Interfaces */
 int sqlite3_prepare(
   sqlite3 *db,            /* Database handle */
   const char *zSql,       /* SQL statement, UTF-8 encoded */
@@ -1158,8 +1160,8 @@ int sqlite3_prepare16(
 
  The first argument "db" is an SQLite database handle. The second
  argument "zSql" is the statement to be compiled, encoded as either
- UTF-8 or UTF-16.  The sqlite3_prepare() and sqlite3_prepare_v2()
- interfaces uses UTF-8 and sqlite3_prepare16() and sqlite3_prepare16_v2()
+ UTF-8 or UTF-16.  The sqlite3_prepare_v2()
+ interfaces uses UTF-8 and sqlite3_prepare16_v2()
  use UTF-16. If the next argument, "nBytes", is less
  than zero, then zSql is read up to the first nul terminator.  If
  "nBytes" is not less than zero, then it is the length of the string zSql
@@ -1179,7 +1181,7 @@ int sqlite3_prepare16(
  On success, SQLITE_OK is returned.  Otherwise an error code is returned.
 
  The sqlite3_prepare_v2() and sqlite3_prepare16_v2() interfaces are
- recommended for all new programs. The other two interfaces are retained
+ recommended for all new programs. The other two older interfaces are retained
  for backwards compatibility. In the "v2" interfaces, the prepared statement
  that is returned (the sqlite3_stmt object) contains a copy of the original
  SQL. This causes the sqlite3_step() interface to behave a little differently.
@@ -1231,8 +1233,8 @@ api {} {
 int sqlite3_reset(sqlite3_stmt *pStmt);
 } {
  The sqlite3_reset() function is called to reset a prepared SQL
- statement obtained by a previous call to sqlite3_prepare(),
- sqlite3_prepare_v2(), sqlite3_prepare16() or
+ statement obtained by a previous call to 
+ sqlite3_prepare_v2() or
  sqlite3_prepare16_v2() back to it's initial state, ready to be re-executed.
  Any SQL statement variables that had values bound to them using
  the sqlite3_bind_*() API retain their values.
@@ -1352,8 +1354,9 @@ api {} {
 int sqlite3_step(sqlite3_stmt*);
 } {
  After an SQL query has been prepared with a call to either
- sqlite3_prepare(), sqlite3_prepare_v2(), sqlite3_prepare16(),
- or sqlite3_prepare16_v2(), then this function must be
+ sqlite3_prepare_v2() or sqlite3_prepare16_v2() or to one of
+ the legacy interfaces sqlite3_prepare() or sqlite3_prepare16(),
+ then this function must be
  called one or more times to execute the statement.
 
  The details of the behavior of this sqlite3_step() interface depend
@@ -1380,8 +1383,8 @@ int sqlite3_step(sqlite3_stmt*);
  If the SQL statement being executed returns any data, then 
  SQLITE_ROW is returned each time a new row of data is ready
  for processing by the caller. The values may be accessed using
- the sqlite3_column_*() functions. sqlite3_step()
- is called again to retrieve the next row of data.
+ the sqlite3_column_int(), sqlite3_column_text(), and similar functions.
+ sqlite3_step() is called again to retrieve the next row of data.
  
  SQLITE_ERROR means that a run-time error (such as a constraint
  violation) has occurred.  sqlite3_step() should not be called again on
