@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: utf16.test,v 1.5 2006/01/09 23:40:26 drh Exp $
+# $Id: utf16.test,v 1.6 2007/01/04 16:37:04 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -23,7 +23,7 @@ if { [llength $argv]>0 } {
   set argv [list]
 } else {
   set F {
-    alter.test alter2.test alter3.test
+    alter.test alter3.test
     auth.test bind.test blob.test capi2.test capi3.test collate1.test
     collate2.test collate3.test collate4.test collate5.test collate6.test
     conflict.test date.test delete.test expr.test fkey1.test func.test
