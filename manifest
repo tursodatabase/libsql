@@ -1,5 +1,5 @@
-C Add\sa\scomment\sto\svdbe.c\sto\sexplain\sthe\suse\sof\san\suninitialized\svariable.\s(CVS\s3551)
-D 2007-01-04T01:20:11
+C Fix\sfor\sticket\s#2141.\s(CVS\s3552)
+D 2007-01-04T01:20:29
 F Makefile.in 63a71177ed4355c829229affe11167bd28c85884
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -65,7 +65,7 @@ F src/complete.c 7d1a44be8f37de125fcafd3d3a018690b3799675
 F src/date.c 9602457c49210f77f860d1919a8249a3118cd43f
 F src/delete.c 804384761144fe1a5035b99f4bd7d706976831bd
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
-F src/expr.c 82603dc2882797734882507ed95dfcb7f7c583e3
+F src/expr.c 3d2cf15fd9aa6b60b67f45504782cce72cd07963
 F src/func.c af537156dfeb91dbac8ffed4db6c4fa1a3164cc9
 F src/hash.c 449f3d6620193aa557f5d86cbc5cc6b87702b185
 F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
@@ -318,6 +318,7 @@ F test/tkt1567.test 18023cc3626a365f0118e17b66decedec93b1a6f
 F test/tkt1644.test 80b6a2bb17885f3cf1cb886d97cdad13232bb869
 F test/tkt1667.test ef52c857940755ea5eab24d68f808826e7dcdc94
 F test/tkt1873.test 7159a1c1bf627bbb03f11362e4ad4de11d6ff316
+F test/tkt2141.test 78fb8ea2e7e38f7e5b3e649ca9426928056ef55c
 F test/trace.test 75ffc1b992c780d054748a656e3e7fd674f18567
 F test/trans.test 06bff0246886858793fca3748721936e2f65e3df
 F test/trigger1.test 2c79e2bf76350811e362814e98779c120b6a9421
@@ -423,7 +424,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 70a862702d6dfcfe73bdeef8f0502c6c50e32a3a
-R 94e85cc99486398830120433fc02687d
+P 1773eb7badf105b0e23316d4236903049c354c71
+R 2681a104df3f1df417aa976e25f15965
 U drh
-Z c787bd483bb44df57843a66caa4432ea
+Z 9485777b9d7913cf365025cd24d25512

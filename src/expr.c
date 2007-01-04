@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.270 2006/12/16 16:25:15 drh Exp $
+** $Id: expr.c,v 1.271 2007/01/04 01:20:29 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2208,6 +2208,7 @@ static int analyzeAggregate(void *pArg, Expr *pExpr){
   
 
   switch( pExpr->op ){
+    case TK_AGG_COLUMN:
     case TK_COLUMN: {
       /* Check to see if the column is in one of the tables in the FROM
       ** clause of the aggregate query */
