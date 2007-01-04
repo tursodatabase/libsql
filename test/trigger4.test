@@ -194,7 +194,7 @@ do_test trigger4-7.2 {
 } {101 1001 102 2002 227 2127 228 2128}
 
 integrity_check trigger4-99.9
-
+db close
 file delete -force trigtest.db trigtest.db-journal
 
 finish_test

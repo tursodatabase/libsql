@@ -1,5 +1,5 @@
-C Put\sa\smissing\sdouble-quote\sinto\sthe\schanges.html\spage.\s(CVS\s3558)
-D 2007-01-04T18:01:41
+C Fix\sthe\strigger4\stest\sso\sthat\sit\sruns\son\swindows.\s(CVS\s3559)
+D 2007-01-04T22:13:02
 F Makefile.in 63a71177ed4355c829229affe11167bd28c85884
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -324,7 +324,7 @@ F test/trans.test 06bff0246886858793fca3748721936e2f65e3df
 F test/trigger1.test 2c79e2bf76350811e362814e98779c120b6a9421
 F test/trigger2.test 33bf8ae9b788013be194efe5f66c04a202facbb4
 F test/trigger3.test 9102fd3933db294dc654b5aee9edfe9e94f2b9e2
-F test/trigger4.test 1201ea45737f5aa4b6e7312360b6cfba83871ffe
+F test/trigger4.test 8e90ee98cba940cd5f96493f82e55083806ab8a0
 F test/trigger5.test 619391a3e9fc194081d22cefd830d811e7badf83
 F test/trigger6.test 0e411654f122552da6590f0b4e6f781048a4a9b9
 F test/trigger7.test 0afa870be2ce1b132cdb85b17a4a4ef45aa8cece
@@ -424,7 +424,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 8bf19a6a41ad1235b7baae28957538e800de9a80
-R 1c3105d6187d6addc1c279ab7d55b124
+P 277f8faae4f014b0162713369b074520b628a465
+R 8fc8d7b316bd5f29a296d4225ad7f666
 U drh
-Z b29bee3c50503596505992e6bce6002a
+Z f1e955ae13098881651bd03924045917
