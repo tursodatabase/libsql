@@ -12,7 +12,7 @@
 # focus of this file is testing the sqlite_exec_printf() and
 # sqlite_get_table_printf() APIs.
 #
-# $Id: tableapi.test,v 1.11 2006/06/27 20:39:05 drh Exp $
+# $Id: tableapi.test,v 1.12 2007/01/05 00:14:28 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -208,7 +208,7 @@ do_test tableapi-5.2 {
 
 do_test tableapi-6.1 {
   sqlite3_get_table_printf $::dbx {PRAGMA user_version} {}
-} {0 1 1 {} 0}
+} {0 1 1 user_version 0}
 
 do_test tableapi-99.0 {
   sqlite3_close $::dbx

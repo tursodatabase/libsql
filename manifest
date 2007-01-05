@@ -1,5 +1,5 @@
-C Fix\sthe\suser_version\sand\sschema_version\spragmas\sso\sthat\sthey\sset\sa\sresult\ncolumn\sname.\s\sTicket\s#2143.\s(CVS\s3560)
-D 2007-01-04T22:13:42
+C Fix\sa\stest\scase\sthat\schanged\sdue\sto\s(3560).\s\sTicket\s#2143\s(CVS\s3561)
+D 2007-01-05T00:14:28
 F Makefile.in 63a71177ed4355c829229affe11167bd28c85884
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -296,7 +296,7 @@ F test/subquery.test ae324ee928c5fb463a3ce08a8860d6e7f1ca5797
 F test/subselect.test 2d13fb7f450db3595adcdd24079a0dd1d2d6abc2
 F test/sync.test d05397b8f89f423dd6dba528692019ab036bc1c3
 F test/table.test feea6a3eb08cf166f570255eea5447e42ef82498
-F test/tableapi.test a1982276274d292110d549206bc365b2da43e2ee
+F test/tableapi.test 036575a98dcce7c92e9f39056839bbad8a715412
 F test/tclsqlite.test 51334389283c74bcbe28645a73159b17e239e9f3
 F test/temptable.test c36f3e5a94507abb64f7ba23deeb4e1a8a8c3821
 F test/tester.tcl 47670c2d74f466c5b22fca23f9d28cfcc7686452
@@ -424,7 +424,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 5e4e65ea15c51e75e9f003fbfde3fe87e22b889b
-R cf18906d1fb7453c24d5929336361320
+P f81c4227c26a4d43993904ab05c1eb9f988e3b66
+R 5769b6df8cac28a7a76311ce66a9c4fc
 U drh
-Z c02da80e664ffb1898fb3baae2d7f521
+Z 94d33ed4b802b7bfa69b01259815f7be
