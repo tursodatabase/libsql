@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.281 2007/01/04 14:58:14 drh Exp $
+** @(#) $Id: pager.c,v 1.282 2007/01/05 02:00:47 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -379,8 +379,8 @@ static const unsigned char aJournalMagic[] = {
     static int cnt = 0;
     if( !pager3_refinfo_enable ) return;
     sqlite3DebugPrintf(
-       "REFCNT: %4d addr=%p nRef=%d\n",
-       p->pgno, PGHDR_TO_DATA(p), p->nRef
+       "REFCNT: %4d addr=%p nRef=%-3d total=%d\n",
+       p->pgno, PGHDR_TO_DATA(p), p->nRef, p->pPager->nRef
     );
     cnt++;   /* Something to set a breakpoint on */
   }
