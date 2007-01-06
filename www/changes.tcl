@@ -46,7 +46,7 @@ opportunity</li>
 even in there are LEFT joins.</li>
 </ul>
 <li>Extension loading supported added to winCE</li>
-<li>Allow constrain names on the DEFAULT clause in a table definition</li>
+<li>Allow constraint names on the DEFAULT clause in a table definition</li>
 <li>Added the ".bail" command to the command-line shell</li>
 <li>Make CSV (comma separate value) output from the command-line shell
 more closely aligned to accepted practice</li>
