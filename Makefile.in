@@ -665,7 +665,7 @@ install:	sqlite3 libsqlite3.la sqlite3.h ${HAVE_TCL:1=tcl_install}
 	$(LTINSTALL) sqlite3 $(DESTDIR)$(exec_prefix)/bin
 	$(INSTALL) -d $(DESTDIR)$(prefix)/include
 	$(INSTALL) -m 0644 sqlite3.h $(DESTDIR)$(prefix)/include
-	$(INSTALL) -m 0644 src/sqlite3ext.h $(DESTDIR)$(prefix)/include
+	$(INSTALL) -m 0644 $(TOP)/src/sqlite3ext.h $(DESTDIR)$(prefix)/include
 	$(INSTALL) -d $(DESTDIR)$(libdir)/pkgconfig; 
 	$(INSTALL) -m 0644 sqlite3.pc $(DESTDIR)$(libdir)/pkgconfig; 
 
