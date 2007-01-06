@@ -48,7 +48,7 @@ even in there are LEFT joins.</li>
 <li>Extension loading supported added to winCE</li>
 <li>Allow constrain names on the DEFAULT clause in a table definition</li>
 <li>Added the ".bail" command to the command-line shell</li>
-<li>Make CVS (comma separate value) output from the command-line shell
+<li>Make CSV (comma separate value) output from the command-line shell
 more closely aligned to accepted practice</li>
 <li>Experimental FTS2 module added</li>
 <li>Use sqlite3_mprintf() instead of strdup() to avoid libc dependencies</li>

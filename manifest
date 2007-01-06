@@ -1,5 +1,5 @@
-C Clear\sa\scompiler\swarning\swhen\scompiling\swith\s-DSQLITE_OMIT_VIRTUALTABLE.\s(CVS\s3566)
-D 2007-01-05T16:39:43
+C Fix\stypo\sin\schanges.html.\s(CVS\s3567)
+D 2007-01-06T13:05:35
 F Makefile.in 63a71177ed4355c829229affe11167bd28c85884
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -381,7 +381,7 @@ F www/autoinc.tcl b357f5ba954b046ee35392ce0f884a2fcfcdea06
 F www/c_interface.tcl b51b08591554c16a0c3ef718364a508ac25abc7e
 F www/capi3.tcl 7a7cc225fe02eb7ab861a6019b08baa0014409e1
 F www/capi3ref.tcl 4dbc9521c06b6d5bf0b2f826106fa906c829a55a
-F www/changes.tcl d225f2cbf81ce10711f8330d3072d5c607b4ed19
+F www/changes.tcl 8f943f7ade0afbd92f25bd6a9664fdc1dc65f124
 F www/common.tcl 14d121c28532ad20c3e349caa4db708b0b822083
 F www/compile.tcl 276546d7eb445add5a867193bbd80f6919a6b084
 F www/conflict.tcl cdd0f4b59b0ba6d61f67e6a38f3ae45853bacb30
@@ -424,7 +424,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 2a7f5aaf8245026edf9cd8f6abc90e87cd7747b2
-R 9bbfba29a4e05f649377ec30ef4e4f7b
+P 520f6583e3467b964dcdba873857ace5a9c4ee19
+R f51f35f70f94fe8746337ad691614083
 U drh
-Z fdf93513e2c0e8592dcaf7be6c506d32
+Z 01287f755bda07969cabb1d81b5a00af
