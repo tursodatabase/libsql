@@ -16,7 +16,7 @@
 ** sqliteRegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.16.2.2 2004/07/20 00:40:01 drh Exp $
+** $Id: date.c,v 1.16.2.3 2007/01/08 13:43:38 drh Exp $
 **
 ** NOTES:
 **
@@ -806,7 +806,7 @@ static void strftimeFunc(sqlite_func *context, int argc, const char **argv){
           y.M = 1;
           y.D = 1;
           computeJD(&y);
-          n = x.rJD - y.rJD;
+          n = x.rJD - y.rJD + 0.5;
           if( zFmt[i]=='W' ){
             int wd;   /* 0=Monday, 1=Tuesday, ... 6=Sunday */
             wd = ((int)(x.rJD+0.5)) % 7;
