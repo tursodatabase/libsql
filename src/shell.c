@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.157 2006/12/19 18:47:41 drh Exp $
+** $Id: shell.c,v 1.158 2007/01/08 14:31:36 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -821,6 +821,7 @@ static int run_schema_dump_query(
 ** Text of a help message
 */
 static char zHelp[] =
+  ".bail ON|OFF           Stop after hitting an error.  Default OFF\n"
   ".databases             List names and files of attached databases\n"
   ".dump ?TABLE? ...      Dump the database in an SQL text format\n"
   ".echo ON|OFF           Turn command echo on or off\n"

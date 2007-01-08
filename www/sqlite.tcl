@@ -1,23 +1,23 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: sqlite.tcl,v 1.24 2006/08/19 13:32:05 drh Exp $}
+set rcsid {$Id: sqlite.tcl,v 1.25 2007/01/08 14:31:36 drh Exp $}
 source common.tcl
-header {sqlite: A command-line access program for SQLite databases}
+header {sqlite3: A command-line access program for SQLite databases}
 puts {
-<h2>sqlite: A command-line access program for SQLite databases</h2>
+<h2>sqlite3: A command-line access program for SQLite databases</h2>
 
 <p>The SQLite library includes a simple command-line utility named
-<b>sqlite</b> that allows the user to manually enter and execute SQL
+<b>sqlite3</b> that allows the user to manually enter and execute SQL
 commands against an SQLite database.  This document provides a brief
-introduction on how to use <b>sqlite</b>.
+introduction on how to use <b>sqlite3</b>.
 
 <h3>Getting Started</h3>
 
-<p>To start the <b>sqlite</b> program, just type "sqlite" followed by
+<p>To start the <b>sqlite3</b> program, just type "sqlite3" followed by
 the name the file that holds the SQLite database.  If the file does
 not exist, a new one is created automatically.
-The <b>sqlite</b> program will
+The <b>sqlite3</b> program will
 then prompt you to enter SQL.  Type in SQL statements (terminated by a
 semicolon), press "Enter" and the SQL will be executed.</p>
 
@@ -39,8 +39,8 @@ proc Code {body} {
 }
 
 Code {
-$ (((sqlite ex1)))
-SQLite version 2.0.0
+$ (((sqlite3 ex1)))
+SQLite version 3.3.10
 Enter ".help" for instructions
 sqlite> (((create table tbl1(one varchar(10), two smallint);)))
 sqlite> (((insert into tbl1 values('hello!',10);)))
@@ -52,13 +52,13 @@ sqlite>
 }
 
 puts {
-<p>You can terminate the sqlite program by typing your systems
+<p>You can terminate the sqlite3 program by typing your systems
 End-Of-File character (usually a Control-D) or the interrupt
 character (usually a Control-C).</p>
 
 <p>Make sure you type a semicolon at the end of each SQL command!
-The sqlite looks for a semicolon to know when your SQL command is
-complete.  If you omit the semicolon, sqlite will give you a
+The sqlite3 program looks for a semicolon to know when your SQL command is
+complete.  If you omit the semicolon, sqlite3 will give you a
 continuation prompt and wait for you to enter more text to be
 added to the current SQL command.  This feature allows you to
 enter SQL commands that span multiple lines.  For example:</p>
@@ -85,8 +85,8 @@ in an SQLite database.  For example:</p>
 }
 
 Code {
-$ (((sqlite ex1)))
-SQlite vresion 2.0.0
+$ (((sqlite3 ex1)))
+SQlite vresion 3.3.10
 Enter ".help" for instructions
 sqlite> (((select * from sqlite_master;)))
     type = table
@@ -114,13 +114,13 @@ is stored in another special table named "sqlite_temp_master".  The
 "sqlite_temp_master" table is temporary itself.
 </p>
 
-<h3>Special commands to sqlite</h3>
+<h3>Special commands to sqlite3</h3>
 
 <p>
-Most of the time, sqlite just reads lines of input and passes them
+Most of the time, sqlite3 just reads lines of input and passes them
 on to the SQLite library for execution.
 But if an input line begins with a dot ("."), then
-that line is intercepted and interpreted by the sqlite program itself.
+that line is intercepted and interpreted by the sqlite3 program itself.
 These "dot commands" are typically used to change the output format
 of queries, or to execute certain prepackaged query statements.
 </p>
@@ -132,27 +132,36 @@ at any time.  For example:
 
 Code {
 sqlite> (((.help)))
+.bail ON|OFF           Stop after hitting an error.  Default OFF
 .databases             List names and files of attached databases
-.dump ?TABLE? ...      Dump the database in a text format
+.dump ?TABLE? ...      Dump the database in an SQL text format
 .echo ON|OFF           Turn command echo on or off
 .exit                  Exit this program
 .explain ON|OFF        Turn output mode suitable for EXPLAIN on or off.
 .header(s) ON|OFF      Turn display of headers on or off
 .help                  Show this message
+.import FILE TABLE     Import data from FILE into TABLE
 .indices TABLE         Show names of all indices on TABLE
-.mode MODE             Set mode to one of "line(s)", "column(s)", 
-                       "insert", "list", or "html"
-.mode insert TABLE     Generate SQL insert statements for TABLE
-.nullvalue STRING      Print STRING instead of nothing for NULL data
+.load FILE ?ENTRY?     Load an extension library
+.mode MODE ?TABLE?     Set output mode where MODE is one of:
+                         csv      Comma-separated values
+                         column   Left-aligned columns.  (See .width)
+                         html     HTML <table> code
+                         insert   SQL insert statements for TABLE
+                         line     One value per line
+                         list     Values delimited by .separator string
+                         tabs     Tab-separated values
+                         tcl      TCL list elements
+.nullvalue STRING      Print STRING in place of NULL values
 .output FILENAME       Send output to FILENAME
 .output stdout         Send output to the screen
 .prompt MAIN CONTINUE  Replace the standard prompts
 .quit                  Exit this program
 .read FILENAME         Execute SQL in FILENAME
 .schema ?TABLE?        Show the CREATE statements
-.separator STRING      Change separator string for "list" mode
+.separator STRING      Change separator used by output mode and .import
 .show                  Show the current values for various settings
-.tables ?PATTERN?      List names of tables matching a pattern
+.tables ?PATTERN?      List names of tables matching a LIKE pattern
 .timeout MS            Try opening locked tables for MS milliseconds
 .width NUM NUM ...     Set column widths for "column" mode
 sqlite> 
@@ -161,8 +170,9 @@ sqlite>
 puts {
 <h3>Changing Output Formats</h3>
 
-<p>The sqlite program is able to show the results of a query
-in five different formats: "line", "column", "list", "html", and "insert".
+<p>The sqlite3 program is able to show the results of a query
+in eight different formats: "csv", "column", "html", "insert",
+"line", "tabs", and "tcl".
 You can use the ".mode" dot command to switch between these output
 formats.</p>
 
@@ -287,7 +297,7 @@ sqlite>
 }
 
 puts {
-<p>The last output mode is "html".  In this mode, sqlite writes
+<p>The last output mode is "html".  In this mode, sqlite3 writes
 the results of the query as an XHTML table.  The beginning
 &lt;TABLE&gt; and the ending &lt;/TABLE&gt; are not written, but
 all of the intervening &lt;TR&gt;s, &lt;TH&gt;s, and &lt;TD&gt;s
@@ -298,7 +308,7 @@ CGI.</p>
 puts {
 <h3>Writing results to a file</h3>
 
-<p>By default, sqlite sends query results to standard output.  You
+<p>By default, sqlite3 sends query results to standard output.  You
 can change this using the ".output" command.  Just put the name of
 an output file as an argument to the .output command and all subsequent
 query results will be written to that file.  Use ".output stdout" to
@@ -319,7 +329,7 @@ $
 puts {
 <h3>Querying the database schema</h3>
 
-<p>The sqlite program provides several convenience commands that
+<p>The sqlite3 program provides several convenience commands that
 are useful for looking at the schema of the database.  There is
 nothing that these commands do that cannot be done by some other
 means.  These commands are provided purely as a shortcut.</p>
@@ -336,16 +346,19 @@ sqlite>
 }
 
 puts {
-<p>The ".tables" command is the same as setting list mode then
+<p>The ".tables" command is similar to setting list mode then
 executing the following query:</p>
 
 <blockquote><pre>
-SELECT name FROM sqlite_master WHERE type='table' 
-UNION ALL SELECT name FROM sqlite_temp_master WHERE type='table'
-ORDER BY name;
+SELECT name FROM sqlite_master 
+WHERE type IN ('table','view') AND name NOT LIKE 'sqlite_%'
+UNION ALL 
+SELECT name FROM sqlite_temp_master 
+WHERE type IN ('table','view') 
+ORDER BY 1
 </pre></blockquote>
 
-<p>In fact, if you look at the source code to the sqlite program
+<p>In fact, if you look at the source code to the sqlite3 program
 (found in the source tree in the file src/shell.c) you'll find
 exactly the above query.</p>
 
@@ -395,16 +408,27 @@ want the schema for a single table, the query looks like this:</p>
 SELECT sql FROM
    (SELECT * FROM sqlite_master UNION ALL
     SELECT * FROM sqlite_temp_master)
-WHERE tbl_name LIKE '%s' AND type!='meta'
-ORDER BY type DESC, name
+WHERE type!='meta' AND sql NOT NULL AND name NOT LIKE 'sqlite_%'
+ORDER BY substr(type,2,1), name
 </pre></blockquote>
 
-<p>The <b>%s</b> in the query above is replaced by the argument
-to ".schema", of course.  Notice that the argument to the ".schema"
-command appears to the right of an SQL LIKE operator.  So you can
-use wildcards in the name of the table.  For example, to get the
-schema for all tables whose names contain the character string
-"abc" you could enter:</p>}
+<p>
+You can supply an argument to the .schema command.  If you do, the
+query looks like this:
+</p>
+
+<blockquote><pre>
+SELECT sql FROM
+   (SELECT * FROM sqlite_master UNION ALL
+    SELECT * FROM sqlite_temp_master)
+WHERE tbl_name LIKE '%s'
+  AND type!='meta' AND sql NOT NULL AND name NOT LIKE 'sqlite_%'
+ORDER BY substr(type,2,1), name
+</pre></blockquote>
+
+<p>The "%s" in the query is replace by your argument.  This allows you
+to view the schema for some subset of the database.</p>
+}
 
 Code {
 sqlite> (((.schema %abc%)))
@@ -436,13 +460,13 @@ puts {
 
 <p>Use the ".dump" command to convert the entire contents of a
 database into a single ASCII text file.  This file can be converted
-back into a database by piping it back into <b>sqlite</b>.</p>
+back into a database by piping it back into <b>sqlite3</b>.</p>
 
 <p>A good way to make an archival copy of a database is this:</p>
 }
 
 Code {
-$ (((echo '.dump' | sqlite ex1 | gzip -c >ex1.dump.gz)))
+$ (((echo '.dump' | sqlite3 ex1 | gzip -c >ex1.dump.gz)))
 }
 
 puts {
@@ -452,37 +476,18 @@ machine.  To reconstruct the database, just type:</p>
 }
 
 Code {
-$ (((zcat ex1.dump.gz | sqlite ex2)))
+$ (((zcat ex1.dump.gz | sqlite3 ex2)))
 }
 
 puts {
-<p>The text format used is the same as used by
-<a href="http://www.postgresql.org/">PostgreSQL</a>, so you
+<p>The text format is pure SQL so you
 can also use the .dump command to export an SQLite database
-into a PostgreSQL database.  Like this:</p>
+into other popular SQL database engines.  Like this:</p>
 }
 
 Code {
 $ (((createdb ex2)))
-$ (((echo '.dump' | sqlite ex1 | psql ex2)))
-}
-
-puts {
-<p>You can almost (but not quite) go the other way and export
-a PostgreSQL database into SQLite using the <b>pg_dump</b> utility.
-Unfortunately, when <b>pg_dump</b> writes the database schema information,
-it uses some SQL syntax that SQLite does not understand.
-So you cannot pipe the output of <b>pg_dump</b> directly 
-into <b>sqlite</b>.
-But if you can recreate the
-schema separately, you can use <b>pg_dump</b> with the <b>-a</b>
-option to list just the data
-of a PostgreSQL database and import that directly into SQLite.</p>
-}
-
-Code {
-$ (((sqlite ex3 <schema.sql)))
-$ (((pg_dump -a ex2 | sqlite ex3)))
+$ (((sqlite3 ex1 .dump | psql ex2)))
 }
 
 puts {
@@ -521,33 +526,33 @@ addr  opcode        p1     p2     p3
 
 puts {
 
-<p>The ".timeout" command sets the amount of time that the <b>sqlite</b>
+<p>The ".timeout" command sets the amount of time that the <b>sqlite3</b>
 program will wait for locks to clear on files it is trying to access
 before returning an error.  The default value of the timeout is zero so
 that an error is returned immediately if any needed database table or
 index is locked.</p>
 
 <p>And finally, we mention the ".exit" command which causes the
-sqlite program to exit.</p>
+sqlite3 program to exit.</p>
 
-<h3>Using sqlite in a shell script</h3>
+<h3>Using sqlite3 in a shell script</h3>
 
 <p>
-One way to use sqlite in a shell script is to use "echo" or
-"cat" to generate a sequence of commands in a file, then invoke sqlite 
+One way to use sqlite3 in a shell script is to use "echo" or
+"cat" to generate a sequence of commands in a file, then invoke sqlite3
 while redirecting input from the generated command file.  This
 works fine and is appropriate in many circumstances.  But as
-an added convenience, sqlite allows a single SQL command to be
+an added convenience, sqlite3 allows a single SQL command to be
 entered on the command line as a second argument after the
-database name.  When the sqlite program is launched with two
+database name.  When the sqlite3 program is launched with two
 arguments, the second argument is passed to the SQLite library
 for processing, the query results are printed on standard output
 in list mode, and the program exits.  This mechanism is designed
-to make sqlite easy to use in conjunction with programs like
+to make sqlite3 easy to use in conjunction with programs like
 "awk".  For example:</p>}
 
 Code {
-$ (((sqlite ex1 'select * from tbl1' |)))
+$ (((sqlite3 ex1 'select * from tbl1' |)))
 > ((( awk '{printf "<tr><td>%s<td>%s\n",$1,$2 }')))
 <tr><td>hello<td>10
 <tr><td>goodbye<td>20
@@ -561,17 +566,17 @@ puts {
 SQLite commands are normally terminated by a semicolon.  In the shell 
 you can also use the word "GO" (case-insensitive) or a slash character 
 "/" on a line by itself to end a command.  These are used by SQL Server 
-and Oracle, respectively.  These won't work in <b>sqlite_exec()</b>, 
+and Oracle, respectively.  These won't work in <b>sqlite3_exec()</b>, 
 because the shell translates these into a semicolon before passing them 
 to that function.</p>
 }
 
 puts {
-<h3>Compiling the sqlite program from sources</h3>
+<h3>Compiling the sqlite3 program from sources</h3>
 
 <p>
-The sqlite program is built automatically when you compile the
-sqlite library.  Just get a copy of the source tree, run
+The sqlite3 program is built automatically when you compile the
+SQLite library.  Just get a copy of the source tree, run
 "configure" and then "make".</p>
 }
 footer $rcsid
