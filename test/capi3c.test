@@ -13,7 +13,7 @@
 # This is a copy of the capi3.test file that has been adapted to
 # test the new sqlite3_prepare_v2 interface.
 #
-# $Id: capi3c.test,v 1.1 2006/11/09 00:24:55 drh Exp $
+# $Id: capi3c.test,v 1.2 2007/01/08 21:07:18 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -45,86 +45,86 @@ proc utf8 {str} {
 # These tests complement those in capi2.test. They are organized
 # as follows:
 #
-# capi3-1.*: Test sqlite3_prepare_v2 
-# capi3-2.*: Test sqlite3_prepare16_v2 
-# capi3-3.*: Test sqlite3_open
-# capi3-4.*: Test sqlite3_open16
-# capi3-5.*: Test the various sqlite3_result_* APIs
-# capi3-6.*: Test that sqlite3_close fails if there are outstanding VMs.
+# capi3c-1.*: Test sqlite3_prepare_v2 
+# capi3c-2.*: Test sqlite3_prepare16_v2 
+# capi3c-3.*: Test sqlite3_open
+# capi3c-4.*: Test sqlite3_open16
+# capi3c-5.*: Test the various sqlite3_result_* APIs
+# capi3c-6.*: Test that sqlite3_close fails if there are outstanding VMs.
 #
 
 set DB [sqlite3_connection_pointer db]
 
-do_test capi3-1.0 {
+do_test capi3c-1.0 {
   sqlite3_get_autocommit $DB
 } 1
-do_test capi3-1.1 {
+do_test capi3c-1.1 {
   set STMT [sqlite3_prepare_v2 $DB {SELECT name FROM sqlite_master} -1 TAIL]
   sqlite3_finalize $STMT
   set TAIL
 } {}
-do_test capi3-1.2 {
+do_test capi3c-1.2 {
   sqlite3_errcode $DB
 } {SQLITE_OK}
-do_test capi3-1.3 {
+do_test capi3c-1.3 {
   sqlite3_errmsg $DB
 } {not an error}
-do_test capi3-1.4 {
+do_test capi3c-1.4 {
   set sql {SELECT name FROM sqlite_master;SELECT 10}
   set STMT [sqlite3_prepare_v2 $DB $sql -1 TAIL]
   sqlite3_finalize $STMT
   set TAIL
 } {SELECT 10}
-do_test capi3-1.5 {
+do_test capi3c-1.5 {
   set sql {SELECT namex FROM sqlite_master}
   catch {
     set STMT [sqlite3_prepare_v2 $DB $sql -1 TAIL]
   }
 } {1}
-do_test capi3-1.6 {
+do_test capi3c-1.6 {
   sqlite3_errcode $DB
 } {SQLITE_ERROR}
-do_test capi3-1.7 {
+do_test capi3c-1.7 {
   sqlite3_errmsg $DB
 } {no such column: namex}
 
 ifcapable {utf16} {
-  do_test capi3-2.1 {
+  do_test capi3c-2.1 {
     set sql16 [utf16 {SELECT name FROM sqlite_master}]
     set STMT [sqlite3_prepare16_v2  $DB $sql16 -1 ::TAIL]
     sqlite3_finalize $STMT
     utf8 $::TAIL
   } {}
-  do_test capi3-2.2 {
+  do_test capi3c-2.2 {
     set sql [utf16 {SELECT name FROM sqlite_master;SELECT 10}]
     set STMT [sqlite3_prepare16_v2  $DB $sql -1 TAIL]
     sqlite3_finalize $STMT
     utf8 $TAIL
   } {SELECT 10}
-  do_test capi3-2.3 {
+  do_test capi3c-2.3 {
     set sql [utf16 {SELECT namex FROM sqlite_master}]
     catch {
       set STMT [sqlite3_prepare16_v2  $DB $sql -1 TAIL]
     }
   } {1}
-  do_test capi3-2.4 {
+  do_test capi3c-2.4 {
     sqlite3_errcode $DB
   } {SQLITE_ERROR}
-  do_test capi3-2.5 {
+  do_test capi3c-2.5 {
     sqlite3_errmsg $DB
   } {no such column: namex}
 
   ifcapable schema_pragmas {
-    do_test capi3-2.6 {
+    do_test capi3c-2.6 {
       execsql {CREATE TABLE tablename(x)}
       set sql16 [utf16 {PRAGMA table_info("TableName")}]
       set STMT [sqlite3_prepare16_v2  $DB $sql16 -1 TAIL]
       sqlite3_step $STMT
     } SQLITE_ROW
-    do_test capi3-2.7 {
+    do_test capi3c-2.7 {
       sqlite3_step $STMT
     } SQLITE_DONE
-    do_test capi3-2.8 {
+    do_test capi3c-2.8 {
       sqlite3_finalize $STMT
     } SQLITE_OK
   }
@@ -134,34 +134,34 @@ ifcapable {utf16} {
 # rename sqlite3_open sqlite3_open_old
 # proc sqlite3_open {fname options} {sqlite3_open_new $fname $options}
 
-do_test capi3-3.1 {
+do_test capi3c-3.1 {
   set db2 [sqlite3_open test.db {}]
   sqlite3_errcode $db2
 } {SQLITE_OK}
 # FIX ME: Should test the db handle works.
-do_test capi3-3.2 {
+do_test capi3c-3.2 {
   sqlite3_close $db2
 } {SQLITE_OK}
-do_test capi3-3.3 {
+do_test capi3c-3.3 {
   catch {
     set db2 [sqlite3_open /bogus/path/test.db {}]
   }
   sqlite3_errcode $db2
 } {SQLITE_CANTOPEN}
-do_test capi3-3.4 {
+do_test capi3c-3.4 {
   sqlite3_errmsg $db2
 } {unable to open database file}
-do_test capi3-3.5 {
+do_test capi3c-3.5 {
   sqlite3_close $db2
 } {SQLITE_OK}
-do_test capi3-3.6.1 {
+do_test capi3c-3.6.1-misuse {
   sqlite3_close $db2
 } {SQLITE_MISUSE}
-do_test capi3-3.6.2 {
+do_test capi3c-3.6.2-misuse {
   sqlite3_errmsg $db2
 } {library routine called out of sequence}
 ifcapable {utf16} {
-  do_test capi3-3.6.3 {
+  do_test capi3c-3.6.3-misuse {
     utf8 [sqlite3_errmsg16 $db2]
   } {library routine called out of sequence}
 }
@@ -170,24 +170,24 @@ ifcapable {utf16} {
 # rename sqlite3_open_old sqlite3_open
 
 ifcapable {utf16} {
-do_test capi3-4.1 {
+do_test capi3c-4.1 {
   set db2 [sqlite3_open16 [utf16 test.db] {}]
   sqlite3_errcode $db2
 } {SQLITE_OK}
 # FIX ME: Should test the db handle works.
-do_test capi3-4.2 {
+do_test capi3c-4.2 {
   sqlite3_close $db2
 } {SQLITE_OK}
-do_test capi3-4.3 {
+do_test capi3c-4.3 {
   catch {
     set db2 [sqlite3_open16 [utf16 /bogus/path/test.db] {}]
   }
   sqlite3_errcode $db2
 } {SQLITE_CANTOPEN}
-do_test capi3-4.4 {
+do_test capi3c-4.4 {
   utf8 [sqlite3_errmsg16 $db2]
 } {unable to open database file}
-do_test capi3-4.5 {
+do_test capi3c-4.5 {
   sqlite3_close $db2
 } {SQLITE_OK}
 } ;# utf16
@@ -531,7 +531,7 @@ ifcapable !floatingpoint {
   return
 }
 
-do_test capi3-5.0 {
+do_test capi3c-5.0 {
   execsql {
     CREATE TABLE t1(a VARINT, b BLOB, c VARCHAR(16));
     INSERT INTO t1 VALUES(1, 2, 3);
@@ -543,49 +543,49 @@ do_test capi3-5.0 {
   sqlite3_column_count $STMT
 } 3
 
-check_header $STMT capi3-5.1 {a b c} {VARINT BLOB VARCHAR(16)}
-check_origin_header $STMT capi3-5.1 {main main main} {t1 t1 t1} {a b c}
-do_test capi3-5.2 {
+check_header $STMT capi3c-5.1 {a b c} {VARINT BLOB VARCHAR(16)}
+check_origin_header $STMT capi3c-5.1 {main main main} {t1 t1 t1} {a b c}
+do_test capi3c-5.2 {
   sqlite3_step $STMT
 } SQLITE_ROW
 
-check_header $STMT capi3-5.3 {a b c} {VARINT BLOB VARCHAR(16)}
-check_origin_header $STMT capi3-5.3 {main main main} {t1 t1 t1} {a b c}
-check_data $STMT capi3-5.4 {INTEGER INTEGER TEXT} {1 2 3} {1.0 2.0 3.0} {1 2 3}
+check_header $STMT capi3c-5.3 {a b c} {VARINT BLOB VARCHAR(16)}
+check_origin_header $STMT capi3c-5.3 {main main main} {t1 t1 t1} {a b c}
+check_data $STMT capi3c-5.4 {INTEGER INTEGER TEXT} {1 2 3} {1.0 2.0 3.0} {1 2 3}
 
-do_test capi3-5.5 {
+do_test capi3c-5.5 {
   sqlite3_step $STMT
 } SQLITE_ROW
 
-check_header $STMT capi3-5.6 {a b c} {VARINT BLOB VARCHAR(16)}
-check_origin_header $STMT capi3-5.6 {main main main} {t1 t1 t1} {a b c}
-check_data $STMT capi3-5.7 {TEXT TEXT NULL} {0 0 0} {0.0 0.0 0.0} {one two {}}
+check_header $STMT capi3c-5.6 {a b c} {VARINT BLOB VARCHAR(16)}
+check_origin_header $STMT capi3c-5.6 {main main main} {t1 t1 t1} {a b c}
+check_data $STMT capi3c-5.7 {TEXT TEXT NULL} {0 0 0} {0.0 0.0 0.0} {one two {}}
 
-do_test capi3-5.8 {
+do_test capi3c-5.8 {
   sqlite3_step $STMT
 } SQLITE_ROW
 
-check_header $STMT capi3-5.9 {a b c} {VARINT BLOB VARCHAR(16)}
-check_origin_header $STMT capi3-5.9 {main main main} {t1 t1 t1} {a b c}
-check_data $STMT capi3-5.10 {FLOAT FLOAT TEXT} {1 1 1} {1.2 1.3 1.4} {1.2 1.3 1.4}
+check_header $STMT capi3c-5.9 {a b c} {VARINT BLOB VARCHAR(16)}
+check_origin_header $STMT capi3c-5.9 {main main main} {t1 t1 t1} {a b c}
+check_data $STMT capi3c-5.10 {FLOAT FLOAT TEXT} {1 1 1} {1.2 1.3 1.4} {1.2 1.3 1.4}
 
-do_test capi3-5.11 {
+do_test capi3c-5.11 {
   sqlite3_step $STMT
 } SQLITE_DONE
 
-do_test capi3-5.12 {
+do_test capi3c-5.12 {
   sqlite3_finalize $STMT
 } SQLITE_OK
 
-do_test capi3-5.20 {
+do_test capi3c-5.20 {
   set sql "SELECT a, sum(b), max(c) FROM t1 GROUP BY a"
   set STMT [sqlite3_prepare_v2 $DB $sql -1 TAIL]
   sqlite3_column_count $STMT
 } 3
 
-check_header $STMT capi3-5.21 {a sum(b) max(c)} {VARINT {} {}}
-check_origin_header $STMT capi3-5.22 {main {} {}} {t1 {} {}} {a {} {}}
-do_test capi3-5.23 {
+check_header $STMT capi3c-5.21 {a sum(b) max(c)} {VARINT {} {}}
+check_origin_header $STMT capi3c-5.22 {main {} {}} {t1 {} {}} {a {} {}}
+do_test capi3c-5.23 {
   sqlite3_finalize $STMT
 } SQLITE_OK
 
@@ -593,7 +593,7 @@ do_test capi3-5.23 {
 set ::ENC [execsql {pragma encoding}]
 db close
 
-do_test capi3-6.0 {
+do_test capi3c-6.0 {
 btree_breakpoint
   sqlite3 db test.db
   set DB [sqlite3_connection_pointer db]
@@ -603,27 +603,29 @@ btree_breakpoint
   set STMT [sqlite3_prepare_v2 $DB $sql -1 TAIL]
   expr 0
 } {0}
-do_test capi3-6.1 {
+do_test capi3c-6.1 {
   db cache flush
   sqlite3_close $DB
 } {SQLITE_BUSY}
-do_test capi3-6.2 {
+do_test capi3c-6.2 {
   sqlite3_step $STMT
 } {SQLITE_ROW}
-check_data $STMT capi3-6.3 {INTEGER} {1} {1.0} {1}
-do_test capi3-6.3 {
+check_data $STMT capi3c-6.3 {INTEGER} {1} {1.0} {1}
+do_test capi3c-6.3 {
   sqlite3_finalize $STMT
 } {SQLITE_OK}
-do_test capi3-6.4 {
+do_test capi3c-6.4 {
   db cache flush
   sqlite3_close $DB
 } {SQLITE_OK}
-db close
+do_test capi3c-6.99-misuse {
+  db close
+} {}
 
 if {![sqlite3 -has-codec]} {
   # Test what happens when the library encounters a newer file format.
   # Do this by updating the file format via the btree layer.
-  do_test capi3-7.1 {
+  do_test capi3c-7.1 {
     set ::bt [btree_open test.db 10 0]
     btree_begin_transaction $::bt
     set meta [btree_get_meta $::bt]
@@ -632,7 +634,7 @@ if {![sqlite3 -has-codec]} {
     btree_commit $::bt
     btree_close $::bt
   } {}
-  do_test capi3-7.2 {
+  do_test capi3c-7.2 {
     sqlite3 db test.db
     catchsql {
       SELECT * FROM sqlite_master;
@@ -644,7 +646,7 @@ if {![sqlite3 -has-codec]} {
 if {![sqlite3 -has-codec]} {
   # Now test that the library correctly handles bogus entries in the
   # sqlite_master table (schema corruption).
-  do_test capi3-8.1 {
+  do_test capi3c-8.1 {
     file delete -force test.db
     file delete -force test.db-journal
     sqlite3 db test.db
@@ -653,7 +655,7 @@ if {![sqlite3 -has-codec]} {
     }
     db close
   } {}
-  do_test capi3-8.2 {
+  do_test capi3c-8.2 {
     set ::bt [btree_open test.db 10 0]
     btree_begin_transaction $::bt
     set ::bc [btree_cursor $::bt 1 1]
@@ -668,13 +670,13 @@ if {![sqlite3 -has-codec]} {
     btree_commit $::bt
     btree_close $::bt
   } {}
-  do_test capi3-8.3 {
+  do_test capi3c-8.3 {
     sqlite3 db test.db
     catchsql {
       SELECT * FROM sqlite_master;
     }
   } {1 {malformed database schema}}
-  do_test capi3-8.4 {
+  do_test capi3c-8.4 {
     set ::bt [btree_open test.db 10 0]
     btree_begin_transaction $::bt
     set ::bc [btree_cursor $::bt 1 1]
@@ -695,7 +697,7 @@ if {![sqlite3 -has-codec]} {
     btree_commit $::bt
     btree_close $::bt
   } {};
-  do_test capi3-8.5 {
+  do_test capi3c-8.5 {
     db close 
     sqlite3 db test.db
     catchsql {
@@ -739,14 +741,14 @@ unknownerror      {unknown error} \
 
 set test_number 1
 foreach {code english} $code2english {
-  do_test capi3-9.$test_number "sqlite3_test_errstr $code" $english
+  do_test capi3c-9.$test_number "sqlite3_test_errstr $code" $english
   incr test_number
 }
 
 # Test the error message when a "real" out of memory occurs.
 if {[info command sqlite_malloc_stat]!=""} {
 set sqlite_malloc_fail 1
-do_test capi3-10-1 {
+do_test capi3c-10-1 {
   sqlite3 db test.db
   set DB [sqlite3_connection_pointer db]
   sqlite_malloc_fail 1
@@ -754,11 +756,11 @@ do_test capi3-10-1 {
     select * from sqlite_master;
   }
 } {1 {out of memory}}
-do_test capi3-10-2 {
+do_test capi3c-10-2 {
   sqlite3_errmsg $::DB
 } {out of memory}
 ifcapable {utf16} {
-  do_test capi3-10-3 {
+  do_test capi3c-10-3 {
     utf8 [sqlite3_errmsg16 $::DB]
   } {out of memory}
 }
@@ -766,13 +768,13 @@ db close
 sqlite_malloc_fail 0
 }
 
-# The following tests - capi3-11.* - test that a COMMIT or ROLLBACK
+# The following tests - capi3c-11.* - test that a COMMIT or ROLLBACK
 # statement issued while there are still outstanding VMs that are part of
 # the transaction fails.
 sqlite3 db test.db
 set DB [sqlite3_connection_pointer db]
 sqlite_register_test_function $DB func
-do_test capi3-11.1 {
+do_test capi3c-11.1 {
   execsql {
     BEGIN;
     CREATE TABLE t1(a, b);
@@ -780,44 +782,44 @@ do_test capi3-11.1 {
     INSERT INTO t1 VALUES(2, 'notatype');
   }
 } {}
-do_test capi3-11.1.1 {
+do_test capi3c-11.1.1 {
   sqlite3_get_autocommit $DB
 } 0
-do_test capi3-11.2 {
+do_test capi3c-11.2 {
   set STMT [sqlite3_prepare_v2 $DB "SELECT func(b, a) FROM t1" -1 TAIL]
   sqlite3_step $STMT
 } {SQLITE_ROW}
-do_test capi3-11.3 {
+do_test capi3c-11.3 {
   catchsql {
     COMMIT;
   }
 } {1 {cannot commit transaction - SQL statements in progress}}
-do_test capi3-11.3.1 {
+do_test capi3c-11.3.1 {
   sqlite3_get_autocommit $DB
 } 0
-do_test capi3-11.4 {
+do_test capi3c-11.4 {
   sqlite3_step $STMT
 } {SQLITE_ERROR}
-do_test capi3-11.5 {
+do_test capi3c-11.5 {
   sqlite3_finalize $STMT
 } {SQLITE_ERROR}
-do_test capi3-11.6 {
+do_test capi3c-11.6 {
   catchsql {
     SELECT * FROM t1;
   }
 } {0 {1 int 2 notatype}}
-do_test capi3-11.6.1 {
+do_test capi3c-11.6.1 {
   sqlite3_get_autocommit $DB
 } 0
-do_test capi3-11.7 {
+do_test capi3c-11.7 {
   catchsql {
     COMMIT;
   }
 } {0 {}}
-do_test capi3-11.7.1 {
+do_test capi3c-11.7.1 {
   sqlite3_get_autocommit $DB
 } 1
-do_test capi3-11.8 {
+do_test capi3c-11.8 {
   execsql {
     CREATE TABLE t2(a);
     INSERT INTO t2 VALUES(1);
@@ -826,53 +828,53 @@ do_test capi3-11.8 {
     INSERT INTO t2 VALUES(3);
   }
 } {}
-do_test capi3-11.8.1 {
+do_test capi3c-11.8.1 {
   sqlite3_get_autocommit $DB
 } 0
-do_test capi3-11.9 {
+do_test capi3c-11.9 {
   set STMT [sqlite3_prepare_v2 $DB "SELECT a FROM t2" -1 TAIL]
   sqlite3_step $STMT
 } {SQLITE_ROW}
-do_test capi3-11.9.1 {
+do_test capi3c-11.9.1 {
   sqlite3_get_autocommit $DB
 } 0
-do_test capi3-11.9.2 {
+do_test capi3c-11.9.2 {
   catchsql {
     ROLLBACK;
   }
 } {1 {cannot rollback transaction - SQL statements in progress}}
-do_test capi3-11.9.3 {
+do_test capi3c-11.9.3 {
   sqlite3_get_autocommit $DB
 } 0
-do_test capi3-11.10 {
+do_test capi3c-11.10 {
   sqlite3_step $STMT
 } {SQLITE_ROW}
-do_test capi3-11.11 {
+do_test capi3c-11.11 {
   sqlite3_step $STMT
 } {SQLITE_ROW}
-do_test capi3-11.12 {
+do_test capi3c-11.12 {
   sqlite3_step $STMT
 } {SQLITE_DONE}
-do_test capi3-11.13 {
+do_test capi3c-11.13 {
   sqlite3_finalize $STMT
 } {SQLITE_OK}
-do_test capi3-11.14 {
+do_test capi3c-11.14 {
   execsql {
     SELECT a FROM t2;
   }
 } {1 2 3}
-do_test capi3-11.14.1 {
+do_test capi3c-11.14.1 {
   sqlite3_get_autocommit $DB
 } 0
-do_test capi3-11.15 {
+do_test capi3c-11.15 {
   catchsql {
     ROLLBACK;
   }
 } {0 {}}
-do_test capi3-11.15.1 {
+do_test capi3c-11.15.1 {
   sqlite3_get_autocommit $DB
 } 1
-do_test capi3-11.16 {
+do_test capi3c-11.16 {
   execsql {
     SELECT a FROM t2;
   }
@@ -882,102 +884,102 @@ do_test capi3-11.16 {
 # that has had sqlite3_step() called more recently than sqlite3_finalize() or
 # sqlite3_reset(). So a VM that has just been prepared or reset does not
 # count as an active VM.
-do_test capi3-11.17 {
+do_test capi3c-11.17 {
   execsql {
     BEGIN;
   }
 } {}
-do_test capi3-11.18 {
+do_test capi3c-11.18 {
   set STMT [sqlite3_prepare_v2 $DB "SELECT a FROM t1" -1 TAIL]
   catchsql {
     COMMIT;
   }
 } {0 {}}
-do_test capi3-11.19 {
+do_test capi3c-11.19 {
   sqlite3_step $STMT
 } {SQLITE_ROW}
-do_test capi3-11.20 {
+do_test capi3c-11.20 {
   catchsql {
     BEGIN;
     COMMIT;
   }
 } {1 {cannot commit transaction - SQL statements in progress}}
-do_test capi3-11.20 {
+do_test capi3c-11.20 {
   sqlite3_reset $STMT
   catchsql {
     COMMIT;
   }
 } {0 {}}
-do_test capi3-11.21 {
+do_test capi3c-11.21 {
   sqlite3_finalize $STMT
 } {SQLITE_OK}
 
-# The following tests - capi3-12.* - check that it's Ok to start a
+# The following tests - capi3c-12.* - check that it's Ok to start a
 # transaction while other VMs are active, and that it's Ok to execute
 # atomic updates in the same situation 
 #
-do_test capi3-12.1 {
+do_test capi3c-12.1 {
   set STMT [sqlite3_prepare_v2 $DB "SELECT a FROM t2" -1 TAIL]
   sqlite3_step $STMT
 } {SQLITE_ROW}
-do_test capi3-12.2 {
+do_test capi3c-12.2 {
   catchsql {
     INSERT INTO t1 VALUES(3, NULL);
   }
 } {0 {}}
-do_test capi3-12.3 {
+do_test capi3c-12.3 {
   catchsql {
     INSERT INTO t2 VALUES(4);
   }
 } {0 {}}
-do_test capi3-12.4 {
+do_test capi3c-12.4 {
   catchsql {
     BEGIN;
     INSERT INTO t1 VALUES(4, NULL);
   }
 } {0 {}}
-do_test capi3-12.5 {
+do_test capi3c-12.5 {
   sqlite3_step $STMT
 } {SQLITE_ROW}
-do_test capi3-12.5.1 {
+do_test capi3c-12.5.1 {
   sqlite3_step $STMT
 } {SQLITE_ROW}
-do_test capi3-12.6 {
+do_test capi3c-12.6 {
   sqlite3_step $STMT
 } {SQLITE_DONE}
-do_test capi3-12.7 {
+do_test capi3c-12.7 {
   sqlite3_finalize $STMT
 } {SQLITE_OK}
-do_test capi3-12.8 {
+do_test capi3c-12.8 {
   execsql {
     COMMIT;
     SELECT a FROM t1;
   }
 } {1 2 3 4}
 
-# Test cases capi3-13.* test the sqlite3_clear_bindings() and 
+# Test cases capi3c-13.* test the sqlite3_clear_bindings() and 
 # sqlite3_sleep APIs.
 #
 if {[llength [info commands sqlite3_clear_bindings]]>0} {
-  do_test capi3-13.1 {
+  do_test capi3c-13.1 {
     execsql {
       DELETE FROM t1;
     }
     set STMT [sqlite3_prepare_v2 $DB "INSERT INTO t1 VALUES(?, ?)" -1 TAIL]
     sqlite3_step $STMT
   } {SQLITE_DONE}
-  do_test capi3-13.2 {
+  do_test capi3c-13.2 {
     sqlite3_reset $STMT
     sqlite3_bind_text $STMT 1 hello 5
     sqlite3_bind_text $STMT 2 world 5
     sqlite3_step $STMT
   } {SQLITE_DONE}
-  do_test capi3-13.3 {
+  do_test capi3c-13.3 {
     sqlite3_reset $STMT
     sqlite3_clear_bindings $STMT
     sqlite3_step $STMT
   } {SQLITE_DONE}
-  do_test capi3-13-4 {
+  do_test capi3c-13-4 {
     sqlite3_finalize $STMT
     execsql {
       SELECT * FROM t1;
@@ -985,7 +987,7 @@ if {[llength [info commands sqlite3_clear_bindings]]>0} {
   } {{} {} hello world {} {}}
 }
 if {[llength [info commands sqlite3_sleep]]>0} {
-  do_test capi3-13-5 {
+  do_test capi3c-13-5 {
     set ms [sqlite3_sleep 80]
     expr {$ms==80 || $ms==1000}
   } {1}
@@ -993,14 +995,14 @@ if {[llength [info commands sqlite3_sleep]]>0} {
 
 # Ticket #1219:  Make sure binding APIs can handle a NULL pointer.
 #
-do_test capi3-14.1 {
+do_test capi3c-14.1 {
   set rc [catch {sqlite3_bind_text 0 1 hello 5} msg]
   lappend rc $msg
 } {1 SQLITE_MISUSE}
 
 # Ticket #1650:  Honor the nBytes parameter to sqlite3_prepare.
 #
-do_test capi3-15.1 {
+do_test capi3c-15.1 {
   set sql {SELECT * FROM t2}
   set nbytes [string length $sql]
   append sql { WHERE a==1}
@@ -1008,11 +1010,11 @@ do_test capi3-15.1 {
   sqlite3_step $STMT
   sqlite3_column_int $STMT 0
 } {1}
-do_test capi3-15.2 {
+do_test capi3c-15.2 {
   sqlite3_step $STMT
   sqlite3_column_int $STMT 0
 } {2}
-do_test capi3-15.3 {
+do_test capi3c-15.3 {
   sqlite3_finalize $STMT
 } {SQLITE_OK}
 
@@ -1021,13 +1023,13 @@ do_test capi3-15.3 {
 # does exists.  That way we will always have a prepared statement
 # to expire when the schema changes.
 #
-do_test capi3-16.1 {
+do_test capi3c-16.1 {
   set sql {DROP TABLE IF EXISTS t3}
   set STMT [sqlite3_prepare_v2 $DB $sql -1 TAIL]
   sqlite3_finalize $STMT
   expr {$STMT!=""}
 } {1}
-do_test capi3-16.2 {
+do_test capi3c-16.2 {
   set sql {CREATE TABLE IF NOT EXISTS t1(x,y)}
   set STMT [sqlite3_prepare_v2 $DB $sql -1 TAIL]
   sqlite3_finalize $STMT
@@ -1036,17 +1038,95 @@ do_test capi3-16.2 {
 
 # But still we do not generate code if there is no SQL
 #
-do_test capi3-16.3 {
+do_test capi3c-16.3 {
   set STMT [sqlite3_prepare_v2 $DB {} -1 TAIL]
   sqlite3_finalize $STMT
   expr {$STMT==""}
 } {1}
-do_test capi3-16.4 {
+do_test capi3c-16.4 {
   set STMT [sqlite3_prepare_v2 $DB {;} -1 TAIL]
   sqlite3_finalize $STMT
   expr {$STMT==""}
 } {1}
 
+# Ticket #2154.
+#
+do_test capi3c-17.1 {
+  set STMT [sqlite3_prepare_v2 $DB {SELECT max(a) FROM t2} -1 TAIL]
+  sqlite3_step $STMT
+} SQLITE_ROW
+do_test capi3c-17.2 {
+  sqlite3_column_int $STMT 0
+} 4
+do_test capi3c-17.3 {
+  sqlite3_step $STMT
+} SQLITE_DONE
+do_test capi3c-17.4 {
+  sqlite3_reset $STMT
+  db eval {CREATE INDEX i2 ON t2(a)}
+  sqlite3_step $STMT
+} SQLITE_ROW
+do_test capi3c-17.5 {
+  sqlite3_column_int $STMT 0
+} 4
+do_test capi3c-17.6 {
+  sqlite3_step $STMT
+} SQLITE_DONE
+do_test capi3c-17.7 {
+  sqlite3_reset $STMT
+  db eval {DROP INDEX i2}
+  sqlite3_step $STMT
+} SQLITE_ROW
+do_test capi3c-17.8 {
+  sqlite3_column_int $STMT 0
+} 4
+do_test capi3c-17.9 {
+  sqlite3_step $STMT
+} SQLITE_DONE
+do_test capi3c-17.10 {
+  sqlite3_finalize $STMT
+  set STMT [sqlite3_prepare_v2 $DB {SELECT b FROM t1 WHERE a=?} -1 TAIL]
+  sqlite3_bind_int $STMT 1 2
+  db eval {
+    DELETE FROM t1;
+    INSERT INTO t1 VALUES(1,'one');
+    INSERT INTO t1 VALUES(2,'two');
+    INSERT INTO t1 VALUES(3,'three');
+    INSERT INTO t1 VALUES(4,'four');
+  }
+  sqlite3_step $STMT
+} SQLITE_ROW
+do_test capi3c-17.11 {
+  sqlite3_column_text $STMT 0
+} two
+do_test capi3c-17.12 {
+  sqlite3_step $STMT
+} SQLITE_DONE
+do_test capi3c-17.13 {
+  sqlite3_reset $STMT
+  db eval {CREATE INDEX i1 ON t1(a)}
+  sqlite3_step $STMT
+} SQLITE_ROW
+do_test capi3c-17.14 {
+  sqlite3_column_text $STMT 0
+} two
+do_test capi3c-17.15 {
+  sqlite3_step $STMT
+} SQLITE_DONE
+do_test capi3c-17.16 {
+  sqlite3_reset $STMT
+  db eval {DROP INDEX i1}
+  sqlite3_step $STMT
+} SQLITE_ROW
+do_test capi3c-17.17 {
+  sqlite3_column_text $STMT 0
+} two
+do_test capi3c-17.18 {
+  sqlite3_step $STMT
+} SQLITE_DONE
+do_test capi3c-17.99 {
+  sqlite3_finalize $STMT
+} SQLITE_OK
 
 
 finish_test

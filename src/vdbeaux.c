@@ -65,19 +65,27 @@ const char *sqlite3VdbeGetSql(Vdbe *p){
 }
 
 /*
-** Swap the set of Opcodes between to Vdbe structures.  No
-** other parts of either Vdbe structure are changed.
+** Swap all content between two VDBE structures.
 */
-void sqlite3VdbeSwapOps(Vdbe *pA, Vdbe *pB){
-  Op *aOp;
-  int nOp;
-  
-  aOp = pA->aOp;
-  nOp = pA->nOp;
-  pA->aOp = pB->aOp;
-  pA->nOp = pB->nOp;
-  pB->aOp = aOp;
-  pB->nOp = nOp;
+void sqlite3VdbeSwap(Vdbe *pA, Vdbe *pB){
+  Vdbe tmp, *pTmp;
+  char *zTmp;
+  int nTmp;
+  tmp = *pA;
+  *pA = *pB;
+  *pB = tmp;
+  pTmp = pA->pNext;
+  pA->pNext = pB->pNext;
+  pB->pNext = pTmp;
+  pTmp = pA->pPrev;
+  pA->pPrev = pB->pPrev;
+  pB->pPrev = pTmp;
+  zTmp = pA->zSql;
+  pA->zSql = pB->zSql;
+  pB->zSql = zTmp;
+  nTmp = pA->nSql;
+  pA->nSql = pB->nSql;
+  pB->nSql = nTmp;
 }
 
 /*
