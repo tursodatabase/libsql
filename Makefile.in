@@ -303,7 +303,7 @@ target_source:	$(SRC) parse.c opcodes.c keywordhash.h $(VDBEHDR)
 # Rules to build the LEMON compiler generator
 #
 lemon$(BEXE):	$(TOP)/tool/lemon.c $(TOP)/tool/lempar.c
-	$(BCC) -o lemon $(TOP)/tool/lemon.c
+	$(BCC) -o lemon$(BEXE) $(TOP)/tool/lemon.c
 	cp $(TOP)/tool/lempar.c .
 
 
@@ -391,7 +391,7 @@ parse.h:	parse.c
 
 parse.c:	$(TOP)/src/parse.y lemon$(BEXE) $(TOP)/addopcodes.awk
 	cp $(TOP)/src/parse.y .
-	./lemon $(OPTS) parse.y
+	./lemon$(BEXE) $(OPTS) parse.y
 	mv parse.h parse.h.temp
 	awk -f $(TOP)/addopcodes.awk parse.h.temp >parse.h
 
