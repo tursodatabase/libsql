@@ -1,5 +1,5 @@
-C Updates\sto\sthe\ssqlite3\scommand-line\sshell\sdocumentation.\s\sTicket\s#2144.\s(CVS\s3573)
-D 2007-01-08T14:31:36
+C Fix\sanother\sround-off\sproblem\sin\sstrftime().\s\sTicket\s#2153.\s(CVS\s3574)
+D 2007-01-08T16:19:07
 F Makefile.in 7fa74bf4359aa899da5586e394d17735f221315f
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -62,7 +62,7 @@ F src/btree.h 061c50e37de7f50b58528e352d400cf33ead7418
 F src/build.c 02aedde724dc73295d6e9b8dc29afb5dd38de507
 F src/callback.c fd9bb39f7ff6b52bad8365617abc61c720640429
 F src/complete.c 7d1a44be8f37de125fcafd3d3a018690b3799675
-F src/date.c bc0828d380c6cd936b9d12c79cb9863f957456a3
+F src/date.c 393c73fc027597e008dcd81454544659e978b05c
 F src/delete.c 804384761144fe1a5035b99f4bd7d706976831bd
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
 F src/expr.c 3d2cf15fd9aa6b60b67f45504782cce72cd07963
@@ -184,7 +184,7 @@ F test/corrupt.test 18c7a995b1af76a8c8600b996257f2c7b7bff083
 F test/corrupt2.test 88342570828f2b8cbbd8369eff3891f5c0bdd5ba
 F test/crash.test 5f5f155393c5685b3842fef79b6fbafa55197d75
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
-F test/date.test d46b7fa0c14cb6d79fee3be070d528bbe6f01c7d
+F test/date.test 63cc718e1d209b10c6b7be8ce72b11addb9f1e04
 F test/default.test 252298e42a680146b1dd64f563b95bdf088d94fb
 F test/delete.test 525a6953bc3978780cae35f3eaf1027cf4ce887d
 F test/delete2.test c06be3806ba804bc8c6f134476816080280b40e3
@@ -424,7 +424,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P f5989a0bd3c218b13332896d94ef85e96befd16f
-R 0562991cec1a275683a938a14875e938
+P 3a422bb9eedf5357ce4d3bed68981c000eb96ee4
+R 3f1826ef1232adee4801e9541b62cf6b
 U drh
-Z e4c92280495704ddfa5f0558fd43c7d5
+Z d092d5387dee92deb86b358d9fadda1b

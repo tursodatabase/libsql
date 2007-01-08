@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing date and time functions.
 #
-# $Id: date.test,v 1.18 2007/01/08 13:07:30 drh Exp $
+# $Id: date.test,v 1.19 2007/01/08 16:19:07 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -294,6 +294,20 @@ do_test date-13.1 {
     SELECT strftime('%Y-%m-%d %H:%M:%f', julianday('2006-09-24T10:50:26.047'))
   }
 } {{2006-09-24 10:50:26.047}}
+
+# Ticket #2153
+datetest 13.2 {strftime('%Y-%m-%d %H:%M:%S', '2007-01-01 12:34:59.6')} \
+  {2007-01-01 12:34:59}
+datetest 13.3 {strftime('%Y-%m-%d %H:%M:%f', '2007-01-01 12:34:59.6')} \
+  {2007-01-01 12:34:59.600}
+datetest 13.4 {strftime('%Y-%m-%d %H:%M:%S', '2007-01-01 12:59:59.6')} \
+  {2007-01-01 12:59:59}
+datetest 13.5 {strftime('%Y-%m-%d %H:%M:%f', '2007-01-01 12:59:59.6')} \
+  {2007-01-01 12:59:59.600}
+datetest 13.6 {strftime('%Y-%m-%d %H:%M:%S', '2007-01-01 23:59:59.6')} \
+  {2007-01-01 23:59:59}
+datetest 13.7 {strftime('%Y-%m-%d %H:%M:%f', '2007-01-01 23:59:59.6')} \
+  {2007-01-01 23:59:59.600}
 
 
 finish_test
