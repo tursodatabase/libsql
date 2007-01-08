@@ -13,7 +13,7 @@
 # This is a copy of the capi3.test file that has been adapted to
 # test the new sqlite3_prepare_v2 interface.
 #
-# $Id: capi3c.test,v 1.2 2007/01/08 21:07:18 drh Exp $
+# $Id: capi3c.test,v 1.3 2007/01/08 22:40:33 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -1127,6 +1127,31 @@ do_test capi3c-17.18 {
 do_test capi3c-17.99 {
   sqlite3_finalize $STMT
 } SQLITE_OK
+
+# On the mailing list it has been reported that finalizing after
+# an SQLITE_BUSY return leads to a segfault.  Here we test that case.
+#
+do_test capi3c-18.1 {
+  sqlite3 db2 test.db
+  set STMT [sqlite3_prepare_v2 $DB {SELECT max(a) FROM t1} -1 TAIL]
+  sqlite3_step $STMT
+} SQLITE_ROW
+do_test capi3c-18.2 {
+  sqlite3_column_int $STMT 0
+} 4
+do_test capi3c-18.3 {
+  sqlite3_reset $STMT
+  db2 eval {BEGIN EXCLUSIVE}
+  sqlite3_step $STMT
+} SQLITE_BUSY
+do_test capi3c-18.4 {
+  sqlite3_finalize $STMT
+} SQLITE_BUSY
+do_test capi3c-18.5 {
+  db2 eval {COMMIT}
+  db2 close
+} {}
+
 
 
 finish_test
