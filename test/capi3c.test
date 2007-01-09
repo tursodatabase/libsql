@@ -13,7 +13,7 @@
 # This is a copy of the capi3.test file that has been adapted to
 # test the new sqlite3_prepare_v2 interface.
 #
-# $Id: capi3c.test,v 1.4 2007/01/09 15:02:03 drh Exp $
+# $Id: capi3c.test,v 1.5 2007/01/09 15:06:42 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -1175,6 +1175,9 @@ do_test capi3c-19.4 {
   db eval {DROP TABLE t3}
   sqlite3_step $STMT
 } SQLITE_SCHEMA
+do_test capi3c-19.4.2 {
+  sqlite3_errmsg $DB
+} {no such table: t3}
 do_test capi3c-19.5 {
   sqlite3_reset $STMT
   db eval {
