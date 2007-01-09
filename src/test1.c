@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.226 2007/01/03 23:37:28 drh Exp $
+** $Id: test1.c,v 1.227 2007/01/09 14:01:13 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -756,6 +756,30 @@ static int test_create_aggregate(
         countStep,countFinalize);
   }
   if( sqlite3TestErrCode(interp, db, rc) ) return TCL_ERROR;
+  return TCL_OK;
+}
+
+
+/*
+** Usage:  printf TEXT
+**
+** Send output to printf.  Use this rather than puts to merge the output
+** in the correct sequence with debugging printfs inserted into C code.
+** Puts uses a separate buffer and debugging statements will be out of
+** sequence if it is used.
+*/
+static int test_printf(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  if( argc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+       " TEXT\"", 0);
+    return TCL_ERROR;
+  }
+  printf("%s\n", argv[1]);
   return TCL_OK;
 }
 
@@ -4035,6 +4059,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_get_autocommit",        (Tcl_CmdProc*)get_autocommit        },
      { "sqlite3_stack_used",            (Tcl_CmdProc*)test_stack_used       },
      { "sqlite3_busy_timeout",          (Tcl_CmdProc*)test_busy_timeout     },
+     { "printf",                        (Tcl_CmdProc*)test_printf           },
   };
   static struct {
      char *zName;

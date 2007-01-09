@@ -852,21 +852,6 @@ void sqlite3VdbeMakeReady(
     p->aMem[n].flags = MEM_Null;
   }
 
-#ifdef SQLITE_DEBUG
-  if( (p->db->flags & SQLITE_VdbeListing)!=0
-    || sqlite3OsFileExists("vdbe_explain")
-  ){
-    int i;
-    printf("VDBE Program Listing:\n");
-    sqlite3VdbePrintSql(p);
-    for(i=0; i<p->nOp; i++){
-      sqlite3VdbePrintOp(stdout, i, &p->aOp[i]);
-    }
-  }
-  if( sqlite3OsFileExists("vdbe_trace") ){
-    p->trace = stdout;
-  }
-#endif
   p->pTos = &p->aStack[-1];
   p->pc = -1;
   p->rc = SQLITE_OK;
@@ -1462,6 +1447,14 @@ int sqlite3VdbeHalt(Vdbe *p){
   checkActiveVdbeCnt(db);
 
   return SQLITE_OK;
+}
+
+/*
+** Each VDBE holds the result of the most recent sqlite3_step() call
+** in p->rc.  This routine sets that result back to SQLITE_OK.
+*/
+void sqlite3VdbeResetStepResult(Vdbe *p){
+  p->rc = SQLITE_OK;
 }
 
 /*

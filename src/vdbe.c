@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.584 2007/01/05 16:39:43 drh Exp $
+** $Id: vdbe.c,v 1.585 2007/01/09 14:01:14 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -454,6 +454,21 @@ int sqlite3VdbeExec(
   p->resOnStack = 0;
   db->busyHandler.nBusy = 0;
   CHECK_FOR_INTERRUPT;
+#ifdef SQLITE_DEBUG
+  if( (p->db->flags & SQLITE_VdbeListing)!=0
+    || sqlite3OsFileExists("vdbe_explain")
+  ){
+    int i;
+    printf("VDBE Program Listing:\n");
+    sqlite3VdbePrintSql(p);
+    for(i=0; i<p->nOp; i++){
+      sqlite3VdbePrintOp(stdout, i, &p->aOp[i]);
+    }
+  }
+  if( sqlite3OsFileExists("vdbe_trace") ){
+    p->trace = stdout;
+  }
+#endif
   for(pc=p->pc; rc==SQLITE_OK; pc++){
     assert( pc>=0 && pc<p->nOp );
     assert( pTos<=&p->aStack[pc] );
@@ -4004,10 +4019,14 @@ case OP_CreateTable: {
   break;
 }
 
-/* Opcode: ParseSchema P1 * P3
+/* Opcode: ParseSchema P1 P2 P3
 **
 ** Read and parse all entries from the SQLITE_MASTER table of database P1
-** that match the WHERE clause P3.
+** that match the WHERE clause P3.  P2 is the "force" flag.   Always do
+** the parsing if P2 is true.  If P2 is false, then this routine is a
+** no-op if the schema is not currently loaded.  In other words, if P2
+** is false, the SQLITE_MASTER table is only parsed if the rest of the
+** schema is already loaded into the symbol table.
 **
 ** This opcode invokes the parser to create a new virtual machine,
 ** then runs the new virtual machine.  It is thus a reentrant opcode.
@@ -4019,7 +4038,9 @@ case OP_ParseSchema: {        /* no-push */
   InitData initData;
 
   assert( iDb>=0 && iDb<db->nDb );
-  if( !DbHasProperty(db, iDb, DB_SchemaLoaded) ) break;
+  if( !pOp->p2 && !DbHasProperty(db, iDb, DB_SchemaLoaded) ){
+    break;
+  }
   zMaster = SCHEMA_TABLE(iDb);
   initData.db = db;
   initData.iDb = pOp->p1;

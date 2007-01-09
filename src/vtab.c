@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to help implement virtual tables.
 **
-** $Id: vtab.c,v 1.38 2007/01/05 14:41:07 drh Exp $
+** $Id: vtab.c,v 1.39 2007/01/09 14:01:14 drh Exp $
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
@@ -230,7 +230,7 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
 
     sqlite3VdbeAddOp(v, OP_Expire, 0, 0);
     zWhere = sqlite3MPrintf("name='%q'", pTab->zName);
-    sqlite3VdbeOp3(v, OP_ParseSchema, iDb, 0, zWhere, P3_DYNAMIC);
+    sqlite3VdbeOp3(v, OP_ParseSchema, iDb, 1, zWhere, P3_DYNAMIC);
     sqlite3VdbeOp3(v, OP_VCreate, iDb, 0, pTab->zName, strlen(pTab->zName) + 1);
   }
 
