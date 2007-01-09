@@ -15,7 +15,7 @@
 ** as extensions by SQLite should #include this file instead of 
 ** sqlite3.h.
 **
-** @(#) $Id: sqlite3ext.h,v 1.7 2006/09/22 23:38:21 shess Exp $
+** @(#) $Id: sqlite3ext.h,v 1.8 2007/01/09 14:37:18 drh Exp $
 */
 #ifndef _SQLITE3EXT_H_
 #define _SQLITE3EXT_H_
@@ -92,7 +92,7 @@ struct sqlite3_api_routines {
   void * (*get_auxdata)(sqlite3_context*,int);
   int  (*get_table)(sqlite3*,const char*,char***,int*,int*,char**);
   int  (*global_recover)(void);
-  void  (*interrupt)(sqlite3*);
+  void  (*interruptx)(sqlite3*);
   sqlite_int64  (*last_insert_rowid)(sqlite3*);
   const char * (*libversion)(void);
   int  (*libversion_number)(void);
@@ -222,7 +222,7 @@ struct sqlite3_api_routines {
 #define sqlite3_get_auxdata            sqlite3_api->get_auxdata
 #define sqlite3_get_table              sqlite3_api->get_table
 #define sqlite3_global_recover         sqlite3_api->global_recover
-#define sqlite3_interrupt              sqlite3_api->interrupt
+#define sqlite3_interrupt              sqlite3_api->interruptx
 #define sqlite3_last_insert_rowid      sqlite3_api->last_insert_rowid
 #define sqlite3_libversion             sqlite3_api->libversion
 #define sqlite3_libversion_number      sqlite3_api->libversion_number

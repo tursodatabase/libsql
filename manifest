@@ -1,5 +1,5 @@
-C When\san\sautomatic\sre-prepare\soccurs,\stake\scare\snot\sto\sreset\sthe\sinternal\nschema\ssymbol\stable.\s\sTicket\s#2156.\s\sThis\schange\salso\sincludes\ssome\sdebugging\nenhancements.\s(CVS\s3578)
-D 2007-01-09T14:01:13
+C Do\snot\suse\sthe\ssymbol\s"interrupt"\ssince\sthat\sis\sa\sreserved\sword\sin\nOpenWatcom.\s\sTicket\s#2159.\s(CVS\s3579)
+D 2007-01-09T14:37:18
 F Makefile.in 7fa74bf4359aa899da5586e394d17735f221315f
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -96,7 +96,7 @@ F src/select.c 52f09127b53697b1a95835a9b0db9309cca8079f
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c d13ca007cd18192c07a668aeddcdd6a9fe639be9
 F src/sqlite.h.in 2931f7ee2415e7a49fd12f386c23575046f0f540
-F src/sqlite3ext.h 2c2156cc32a158e2b7bd9042d42accf94bff2e40
+F src/sqlite3ext.h 011c75fd6459a61454514af07c7a4f1f5c767f27
 F src/sqliteInt.h 90dad3c0ba7a5151c48361748ccdada9ff2eff78
 F src/table.c 6d0da66dde26ee75614ed8f584a1996467088d06
 F src/tclsqlite.c d344c7f394d6f055ce3abfe0049b0480c5e34e56
@@ -424,7 +424,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P b0650aa6cfcb4c59fd8556b8f5523573538bd7e5
-R 925739aa888e1b0daa724e8337ce1a17
+P 43fe7fc1c38f8d9b3c1346cb1d890c2e25cefe15
+R e98954756609bfce82c59eadb5e3c69f
 U drh
-Z f3d972a9c7563d33546c3abd9115d1bf
+Z 5efaea5986d54f8af6d96dce43672e32
