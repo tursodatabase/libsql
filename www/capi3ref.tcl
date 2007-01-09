@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3ref.tcl,v 1.47 2007/01/04 16:37:41 drh Exp $}
+set rcsid {$Id: capi3ref.tcl,v 1.48 2007/01/09 15:02:03 drh Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -1181,14 +1181,26 @@ int sqlite3_prepare16(
  On success, SQLITE_OK is returned.  Otherwise an error code is returned.
 
  The sqlite3_prepare_v2() and sqlite3_prepare16_v2() interfaces are
- recommended for all new programs. The other two older interfaces are retained
- for backwards compatibility. In the "v2" interfaces, the prepared statement
+ recommended for all new programs. The two older interfaces are retained
+ for backwards compatibility, but their use is discouraged.
+ In the "v2" interfaces, the prepared statement
  that is returned (the sqlite3_stmt object) contains a copy of the original
- SQL. This causes the sqlite3_step() interface to behave a little differently.
+ SQL. This causes the sqlite3_step() interface to behave a differently in
+ two ways:
+
+ <ol>
+ <li>
  If the database schema changes, instead of returning SQLITE_SCHEMA as it
  always used to do, sqlite3_step() will automatically recompile the SQL
- statement and try to run it again. Only after 5 consecutive failures will
- an SQLITE_SCHEMA failure be reported back. The other change is that
+ statement and try to run it again.  If the schema has changed in a way
+ that makes the statement no longer valid, sqlite3_step() will still
+ return SQLITE_SCHEMA.  But unlike the legacy behavior, SQLITE_SCHEMA is
+ now a fatal error.  Calling sqlite3_prepare_v2() again will not make the
+ error go away.
+ </li>
+
+ <li>
+ When an error occurs, 
  sqlite3_step() will return one of the detailed result-codes
  like SQLITE_IOERR or SQLITE_FULL or SQLITE_SCHEMA directly. The
  legacy behavior was that sqlite3_step() would only return a generic
@@ -1196,6 +1208,8 @@ int sqlite3_prepare16(
  sqlite3_reset() in order to find the underlying cause of the problem.
  With the "v2" prepare interfaces, the underlying reason for the error is
  returned directly.
+ </li>
+ </ol>
 }
 
 api {} {
