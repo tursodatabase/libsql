@@ -1403,26 +1403,26 @@ char *sqlite3WinFullPathname(const char *zRelative){
   void *zConverted;
   zConverted = convertUtf8Filename(zRelative);
   if( isNT() ){
-    WCHAR *zTemp, *zNotUsedW;
-    nByte = GetFullPathNameW((WCHAR*)zConverted, 0, 0, &zNotUsedW) + 1;
+    WCHAR *zTemp;
+    nByte = GetFullPathNameW((WCHAR*)zConverted, 0, 0, 0) + 3;
     zTemp = sqliteMalloc( nByte*sizeof(zTemp[0]) );
     if( zTemp==0 ){
       sqliteFree(zConverted);
       return 0;
     }
-    GetFullPathNameW((WCHAR*)zConverted, nByte, zTemp, &zNotUsedW);
+    GetFullPathNameW((WCHAR*)zConverted, nByte, zTemp, 0);
     sqliteFree(zConverted);
     zFull = unicodeToUtf8(zTemp);
     sqliteFree(zTemp);
   }else{
-    char *zTemp, *zNotUsed;
-    nByte = GetFullPathNameA((char*)zConverted, 0, 0, &zNotUsed) + 1;
+    char *zTemp;
+    nByte = GetFullPathNameA((char*)zConverted, 0, 0, 0) + 3;
     zTemp = sqliteMalloc( nByte*sizeof(zTemp[0]) );
     if( zTemp==0 ){
       sqliteFree(zConverted);
       return 0;
     }
-    GetFullPathNameA((char*)zConverted, nByte, zTemp, &zNotUsed);
+    GetFullPathNameA((char*)zConverted, nByte, zTemp, 0);
     sqliteFree(zConverted);
     zFull = mbcsToUtf8(zTemp);
     sqliteFree(zTemp);
