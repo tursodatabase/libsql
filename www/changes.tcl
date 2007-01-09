@@ -25,13 +25,30 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2007 January 9 (3.3.10)} {
+<li>Fix bugs in the implementation of the new 
+<a href="capi3ref.html#sqlite3_prepare_v2">sqlite3_prepare_v2()</a> API
+that can lead to segfaults.</li>
+<li>Fix 1-second round-off errors in the 
+<a href="http://www.sqlite.org/cvstrac/wiki?p=DateAndTimeFunctions">
+strftime()</a> function</li>
+<li>Enhance the windows OS layer to provide detailed error codes</li>
+<li>Work around a win2k problem so that SQLite can use single-character
+database file names</li>
+<li>The
+<a href="pragma.html#pragma_user_version">user_version</a> and
+<a href="pragma.html#pragma_schema_version">schema_version</a> pragmas 
+correctly set their column names in the result set</li>
+<li>Documentation updates</li>
+}
+
 chng {2007 January 4 (3.3.9)} {
 <li>Fix bugs in pager.c that could lead to database corruption if two
 processes both try to recover a hot journal at the same instant</li>
 <li>Added the <a href="capi3ref.html#sqlite3_prepare_v2">sqlite3_prepare_v2()</a>
 API.</li>
 <li>Fixed the ".dump" command in the command-line shell to show
-triggers and views again.</li>
+indices, triggers and views again.</li>
 <li>Change the table_info pragma so that it returns NULL for the default
 value if there is no default value</li>
 <li>Support for non-ASCII characters in win95 filenames</li>
