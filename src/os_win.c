@@ -40,6 +40,7 @@
 */
 #if defined(_WIN32_WCE)
 # define OS_WINCE 1
+# define AreFileApisANSI() 1
 #else
 # define OS_WINCE 0
 #endif
