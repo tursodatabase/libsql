@@ -74,11 +74,11 @@ newsitem {2007-Jan-9} {Version 3.3.10} {
 
 newsitem {2007-Jan-4} {Version 3.3.9} {
   Version 3.3.9 fixes bugs that can lead to database corruption under
-  obsure and difficult to reproduce circumstances.  See
+  obscure and difficult to reproduce circumstances.  See
   <a href="http://www.sqlite.org/cvstrac/wiki?p=DatabaseCorruption">
   DatabaseCorruption</a> in the
   <a href="http://www.sqlite.org/cvstrac/wiki">wiki</a> for details.
-  This release also add the new
+  This release also adds the new
   <a href="capi3ref.html#sqlite3_prepare_v2">sqlite3_prepare_v2()</a>
   API and includes important bug fixes in the command-line
   shell and enhancements to the query optimizer.  Upgrading is
@@ -118,4 +118,4 @@ puts {
 <p align="right"><a href="oldnews.html">Old news...</a></p>
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.146 2007/01/10 13:32:43 drh Exp $}
+footer {$Id: index.tcl,v 1.147 2007/01/10 13:34:18 drh Exp $}
