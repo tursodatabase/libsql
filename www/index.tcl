@@ -68,7 +68,7 @@ proc newsitem {date title text} {
 }
 
 newsitem {2007-Jan-9} {Version 3.3.10} {
-  Version 3.3.10 fixes several bugs that were introduced by the
+  Version 3.3.10 fixes several bugs that were introduced by the previous
   release.  Upgrading is recommended.
 }
 
@@ -118,4 +118,4 @@ puts {
 <p align="right"><a href="oldnews.html">Old news...</a></p>
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.145 2007/01/09 23:13:06 drh Exp $}
+footer {$Id: index.tcl,v 1.146 2007/01/10 13:32:43 drh Exp $}
