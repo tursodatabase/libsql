@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.196 2007/01/10 12:54:51 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.197 2007/01/10 12:57:29 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -125,7 +125,7 @@ typedef int (*sqlite3_callback)(void*,int,char**, char**);
 ** value then the query is aborted, all subsequent SQL statements
 ** are skipped and the sqlite3_exec() function returns the SQLITE_ABORT.
 **
-** The 4th parameter is an arbitrary pointer that is passed
+** The 1st parameter is an arbitrary pointer that is passed
 ** to the callback function as its first parameter.
 **
 ** The 2nd parameter to the callback function is the number of
