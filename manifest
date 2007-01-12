@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\slemon.\s\sThe\scode\sin\swhich\sthe\serror\sappears\smight\swell\sbe\nunreachable.\s\sThe\schanges\sdoes\snot\seffect\sthe\scode\sthat\sis\sgenerated\sfor\nthe\sSQLite\sparser.\s\sTicket\s#2164.\s(CVS\s3591)
-D 2007-01-12T23:09:23
+C Fix\sa\sbug\sin\ssqlite3_prepare_v2()\sintroduced\sby\scheckin\s(3578)\sand\sreported\non\sthe\smailing\slist.\s(CVS\s3592)
+D 2007-01-12T23:43:43
 F Makefile.in 7fa74bf4359aa899da5586e394d17735f221315f
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -121,7 +121,7 @@ F src/update.c 951f95ef044cf6d28557c48dc35cb0711a0b9129
 F src/utf.c 67ecb1032bc0b42c105e88d65ef9d9f626eb0e1f
 F src/util.c 91d4cb189476906639ae611927d939691d1365f6
 F src/vacuum.c b4569b08aaa5afb141af3f76d0315745db4e9e4b
-F src/vdbe.c 074cda811466f8f752c2dd71b1dcaea001f4be64
+F src/vdbe.c 4d54659b7dbb7a61570d7136a34fbde12b61c509
 F src/vdbe.h 0025259af1939fb264a545816c69e4b5b8d52691
 F src/vdbeInt.h 1ca07f2d7446c90230346aed7fbf990c032460bc
 F src/vdbeapi.c 2d1e6843af8705a1172e54a418d2a3d5febd1dd7
@@ -169,7 +169,7 @@ F test/busy.test 0271c854738e23ad76e10d4096a698e5af29d211
 F test/capi2.test 7ecc9b342cc9ec27b53bbf95724cf2e5874fd496
 F test/capi3.test 4063c4be79fb00704154a1e459a38364de9162a9
 F test/capi3b.test 5f0bc94b104e11086b1103b20277e1910f59c7f4
-F test/capi3c.test 3d276ee4c142b9e71a867a3579906bb0876840cc
+F test/capi3c.test 5961df13666c994890ffd44f0143cf92897d18dc
 F test/cast.test f88e7b6946e9a467cf4bb142d92bb65a83747fc2
 F test/check.test e5ea0c1a06c10e81e3434ca029e2c4a562f2b673
 F test/collate1.test add9454cef160677bb8b34148b8f277ce7f9f1c4
@@ -424,7 +424,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P a72c950cdbb7ad14572ccdf9b94ceac8ea0a2588
-R a1da9ce500d2686501613055e18f40fb
+P f4ee5d83e177e7ed9f180454c01d46a395a5715d
+R 4b0815a55b922b31192db8cde97bb03b
 U drh
-Z cff8f63e04aa969446fdc95d5a9c4056
+Z 0214b95c1f9fb06ed7af23b4d12ac47e
