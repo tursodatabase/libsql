@@ -3625,7 +3625,7 @@ int mhflag;     /* Output in makeheaders format if true */
   n = acttab_size(pActtab);
   for(i=j=0; i<n; i++){
     int action = acttab_yyaction(pActtab, i);
-    if( action<0 ) action = lemp->nsymbol + lemp->nrule + 2;
+    if( action<0 ) action = lemp->nstate + lemp->nrule + 2;
     if( j==0 ) fprintf(out," /* %5d */ ", i);
     fprintf(out, " %4d,", action);
     if( j==9 || i==n-1 ){
