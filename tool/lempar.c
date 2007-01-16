@@ -476,7 +476,6 @@ static void yy_reduce(
   }
 #endif /* NDEBUG */
 
-#ifndef NDEBUG
   /* Silence complaints from purify about yygotominor being uninitialized
   ** in some cases when it is copied into the stack after the following
   ** switch.  yygotominor is uninitialized when a rule reduces that does
@@ -484,9 +483,15 @@ static void yy_reduce(
   ** value of the nonterminal uninitialized is utterly harmless as long
   ** as the value is never used.  So really the only thing this code
   ** accomplishes is to quieten purify.  
+  **
+  ** 2007-01-16:  The wireshark project (www.wireshark.org) reports that
+  ** without this code, their parser segfaults.  I'm not sure what there
+  ** parser is doing to make this happen.  This is the second bug report
+  ** from wireshark this week.  Clearly they are stressing Lemon in ways
+  ** that it has not been previously stressed...  (SQLite ticket #2172)
   */
   memset(&yygotominor, 0, sizeof(yygotominor));
-#endif
+
 
   switch( yyruleno ){
   /* Beginning here are the reduction cases.  A typical example
