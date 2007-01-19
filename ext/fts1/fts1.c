@@ -3089,11 +3089,11 @@ static int index_update(fulltext_vtab *v, sqlite_int64 iRow,
   int rc = deleteTerms(v, pTerms, iRow);
   if( rc!=SQLITE_OK ) return rc;
 
-  /* Now add positions for terms which appear in the updated row. */
-  rc = insertTerms(v, pTerms, iRow, pValues);
+  rc = content_update(v, pValues, iRow);  /* execute an SQL UPDATE */
   if( rc!=SQLITE_OK ) return rc;
 
-  return content_update(v, pValues, iRow);  /* execute an SQL UPDATE */
+  /* Now add positions for terms which appear in the updated row. */
+  return insertTerms(v, pTerms, iRow, pValues);
 }
 
 /* This function implements the xUpdate callback; it's the top-level entry
