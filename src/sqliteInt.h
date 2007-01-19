@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.532 2006/12/21 01:29:23 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.533 2007/01/19 01:06:02 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1091,6 +1091,11 @@ typedef unsigned int Bitmask;
 ** is modified by an INSERT, DELETE, or UPDATE statement.  In standard SQL,
 ** such a table must be a simple name: ID.  But in SQLite, the table can
 ** now be identified by a database name, a dot, then the table name: ID.ID.
+**
+** The jointype starts out showing the join type between the current table
+** and the next table on the list.  The parser builds the list this way.
+** But sqlite3SrcListShiftJoinType() later shifts the jointypes so that each
+** jointype expresses the join between the table and the previous table.
 */
 struct SrcList {
   i16 nSrc;        /* Number of tables or subqueries in the FROM clause */
@@ -1102,7 +1107,7 @@ struct SrcList {
     Table *pTab;      /* An SQL table corresponding to zName */
     Select *pSelect;  /* A SELECT statement used in place of a table name */
     u8 isPopulated;   /* Temporary table associated with SELECT is populated */
-    u8 jointype;      /* Type of join between this table and the next */
+    u8 jointype;      /* Type of join between this able and the previous */
     i16 iCursor;      /* The VDBE cursor number used to access this table */
     Expr *pOn;        /* The ON clause of a join */
     IdList *pUsing;   /* The USING clause of a join */

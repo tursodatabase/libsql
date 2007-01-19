@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.234 2006/12/20 03:24:19 drh Exp $
+** $Id: where.c,v 1.235 2007/01/19 01:06:03 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1275,6 +1275,7 @@ static double bestIndex(
   int rev;                    /* True to scan in reverse order */
   int flags;                  /* Flags associated with pProbe */
   int nEq;                    /* Number of == or IN constraints */
+  int eqTermMask;             /* Mask of valid equality operators */
   double cost;                /* Cost of using pProbe */
 
   TRACE(("bestIndex: tbl=%s notReady=%x\n", pSrc->pTab->zName, notReady));
@@ -1366,6 +1367,17 @@ static double bestIndex(
     bestFlags = flags;
   }
 
+  /* If the pSrc table is the right table of a LEFT JOIN then we may not
+  ** use an index to satisfy IS NULL constraints on that table.  This is
+  ** because columns might end up being NULL if the table does not match -
+  ** a circumstance which the index cannot help us discover.  Ticket #2177.
+  */
+  if( (pSrc->jointype & JT_LEFT)!=0 ){
+    eqTermMask = WO_EQ|WO_IN;
+  }else{
+    eqTermMask = WO_EQ|WO_IN|WO_ISNULL;
+  }
+
   /* Look at each index.
   */
   for(; pProbe; pProbe=pProbe->pNext){
@@ -1380,7 +1392,7 @@ static double bestIndex(
     flags = 0;
     for(i=0; i<pProbe->nColumn; i++){
       int j = pProbe->aiColumn[i];
-      pTerm = findTerm(pWC, iCur, j, notReady, WO_EQ|WO_IN|WO_ISNULL, pProbe);
+      pTerm = findTerm(pWC, iCur, j, notReady, eqTermMask, pProbe);
       if( pTerm==0 ) break;
       flags |= WHERE_COLUMN_EQ;
       if( pTerm->eOperator & WO_IN ){
@@ -1636,7 +1648,8 @@ static void codeAllEqualityTerms(
 
   /* Evaluate the equality constraints
   */
-  for(j=0; j<pIdx->nColumn; j++){
+  assert( pIdx->nColumn>=nEq );
+  for(j=0; j<nEq; j++){
     int k = pIdx->aiColumn[j];
     pTerm = findTerm(pWC, iCur, k, notReady, WO_EQ|WO_IN|WO_ISNULL, pIdx);
     if( pTerm==0 ) break;
@@ -1649,7 +1662,6 @@ static void codeAllEqualityTerms(
       sqlite3VdbeAddOp(v, OP_MemStore, pLevel->iMem+j+1, 1);
     }
   }
-  assert( j==nEq );
 
   /* Make sure all the constraint values are on the top of the stack
   */
