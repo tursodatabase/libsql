@@ -10,6 +10,27 @@ proc newsitem {date title text} {
 }
 
 
+newsitem {2006-Aug-12} {Version 3.3.7} {
+  Version 3.3.7 includes support for loadable extensions and virtual
+  tables.  But both features are still considered "beta" and their
+  APIs are subject to change in a future release.  This release is
+  mostly to make available the minor bug fixes that have accumulated
+  since 3.3.6.  Upgrading is not necessary.  Do so only if you encounter
+  one of the obscure bugs that have been fixed or if you want to try
+  out the new features.
+}
+
+newsitem {2006-Jun-19} {New Book About SQLite} {
+  <a href="http://www.apress.com/book/bookDisplay.html?bID=10130">
+  <i>The Definitive Guide to SQLite</i></a>, a new book by
+  <a href="http://www.mikesclutter.com">Mike Owens</a>.
+  is now available from <a href="http://www.apress.com">Apress</a>.
+  The books covers the latest SQLite internals as well as
+  the native C interface and bindings for PHP, Python,
+  Perl, Ruby, Tcl, and Java.  Recommended.
+}
+
+
 newsitem {2006-Jun-6} {Version 3.3.6} {
   Changes include improved tolerance for windows virus scanners
   and faster :memory: databases.  There are also fixes for several
@@ -360,4 +381,4 @@ newsitem {2004-Apr-23} {Work Begins On SQLite Version 3} {
   Plans are to continue to support SQLite version 2.8 with
   bug fixes.  But all new development will occur in version 3.0.
 }
-footer {$Id: oldnews.tcl,v 1.17 2007/01/04 16:37:41 drh Exp $}
+footer {$Id: oldnews.tcl,v 1.18 2007/01/22 13:06:03 drh Exp $}

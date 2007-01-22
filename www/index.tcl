@@ -67,6 +67,11 @@ proc newsitem {date title text} {
   puts "<hr width=\"50%\">"
 }
 
+newsitem {2007-Jan-22} {Version 3.3.11} {
+  Version 3.3.11 fixes for a few more problems in version 3.3.9 that
+  version 3.3.10 failed to catch.  Upgrading is recommended.
+}
+
 newsitem {2007-Jan-9} {Version 3.3.10} {
   Version 3.3.10 fixes several bugs that were introduced by the previous
   release.  Upgrading is recommended.
@@ -93,29 +98,8 @@ newsitem {2006-Oct-9} {Version 3.3.8} {
   you are having problems with 3.3.7.
 }
 
-newsitem {2006-Aug-12} {Version 3.3.7} {
-  Version 3.3.7 includes support for loadable extensions and virtual
-  tables.  But both features are still considered "beta" and their
-  APIs are subject to change in a future release.  This release is
-  mostly to make available the minor bug fixes that have accumulated
-  since 3.3.6.  Upgrading is not necessary.  Do so only if you encounter
-  one of the obscure bugs that have been fixed or if you want to try
-  out the new features.
-}
-
-newsitem {2006-Jun-19} {New Book About SQLite} {
-  <a href="http://www.apress.com/book/bookDisplay.html?bID=10130">
-  <i>The Definitive Guide to SQLite</i></a>, a new book by
-  <a href="http://www.mikesclutter.com">Mike Owens</a>.
-  is now available from <a href="http://www.apress.com">Apress</a>.
-  The books covers the latest SQLite internals as well as
-  the native C interface and bindings for PHP, Python,
-  Perl, Ruby, Tcl, and Java.  Recommended.
-}
-
-
 puts {
 <p align="right"><a href="oldnews.html">Old news...</a></p>
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.147 2007/01/10 13:34:18 drh Exp $}
+footer {$Id: index.tcl,v 1.148 2007/01/22 13:06:03 drh Exp $}

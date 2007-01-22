@@ -25,6 +25,18 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2007 January 22 (3.3.11)} {
+<li>Fix another bug in the implementation of the new 
+<a href="capi3ref.html#sqlite3_prepare_v2">sqlite3_prepare_v2()</a> API.
+We'll get it right eventually...</li>
+<li>Fix a bug in the IS NULL optimization that was added in version 3.3.9 -
+the bug was causing incorrect results on certain LEFT JOINs that included
+in the WHERE clause an IS NULL constraint for the right table of the
+LEFT JOIN.</li>
+<li>Make AreFileApisANSI() a no-op macro in winCE since winCE does not
+support this function.</li>
+}
+
 chng {2007 January 9 (3.3.10)} {
 <li>Fix bugs in the implementation of the new 
 <a href="capi3ref.html#sqlite3_prepare_v2">sqlite3_prepare_v2()</a> API
