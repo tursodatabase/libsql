@@ -7,11 +7,17 @@
 # focus here is testing handling of UPDATE when using UTF-16-encoded
 # databases.
 #
-# $Id: fts2i.test,v 1.1 2007/01/19 22:59:57 shess Exp $
+# $Id: fts2i.test,v 1.2 2007/01/24 03:46:35 drh Exp $
 #
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+# If SQLITE_ENABLE_FTS2 is defined, omit this file.
+ifcapable !fts2 {
+  finish_test
+  return
+}
 
 # Return the UTF-16 representation of the supplied UTF-8 string $str.
 # If $nt is true, append two 0x00 bytes as a nul terminator.
