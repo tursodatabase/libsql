@@ -1,5 +1,5 @@
-C Version\s3.3.11\s(CVS\s3599)
-D 2007-01-22T13:07:36
+C Do\snot\srun\stest\sfts1i.test\sif\sFTS1\sis\snot\sinstalled.\s(CVS\s3600)
+D 2007-01-24T03:43:20
 F Makefile.in 7fa74bf4359aa899da5586e394d17735f221315f
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -206,7 +206,7 @@ F test/fts1c.test 85a525ce7428907469b4cce13d5563ce542ce64c
 F test/fts1d.test a73deace5c18df4a549b12908bade4f05dcf1a2f
 F test/fts1e.test 77244843e925560b5a0b70069c3e7ab62f181ed2
 F test/fts1f.test cdab90834a7627a26fed2f75d2f451650fb31fad
-F test/fts1i.test 13ddf7481c95d1595f6fbc6d8223de4286151a4c
+F test/fts1i.test 6bfe08cdfdced063a39a50c8601da65e6274d879
 F test/fts1porter.test d86e9c3e0c7f8ff95add6582b4b585fb4e02b96d
 F test/fts2a.test 103fc178d134c54c44c1938a4331e9e2030792d9
 F test/fts2b.test 964abc0236c849c07ca1ae496bb25c268ae94816
@@ -427,7 +427,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P daf288302407b103051d8440df371e4cb79769eb
-R c3dcae1a356904334a6430b811042004
+P 66cbbe0442a0d270ec968a9c5bca735bd238768a
+R d2970e0b1a1e8dfc43c72d7504b5180c
 U drh
-Z bc31e581d797f8523a02ea336c62650d
+Z 98f3f4c2c4acba579fc8bd27893bef5a
