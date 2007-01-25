@@ -1,5 +1,5 @@
-C Do\snot\srun\sthe\sfts2i.test\sunless\sthe\sFTS2\smodule\sis\savailable.\s(CVS\s3601)
-D 2007-01-24T03:46:35
+C Fix\san\sadditional\sproblem\swith\sthe\sIS\sNULL\soptimization\son\sLEFT\sJOINs.\nTicket\s#2189.\s\sSee\salso\sticket\s#2177.\s(CVS\s3602)
+D 2007-01-25T16:56:07
 F Makefile.in 7fa74bf4359aa899da5586e394d17735f221315f
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -129,7 +129,7 @@ F src/vdbeaux.c c5324d62f51529bccc5be3b04bac2e4eeae1569a
 F src/vdbefifo.c 9efb94c8c3f4c979ebd0028219483f88e57584f5
 F src/vdbemem.c 26623176bf1c616aa478da958fac49502491a921
 F src/vtab.c 7fbda947e28cbe7adb3ba752a76ca9ef29936750
-F src/where.c 46dea18bc3b0fa2d71447bb6408a6c49e6a7c187
+F src/where.c 23dc1c7535c96770d214762ed0bc3c655de5061c
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/all.test b62fcd122052efaff1b0979aefa2dd65cfc8ee52
@@ -354,7 +354,7 @@ F test/vtab_err.test 224cc80ad700797c48b9cd2c1e0bd7a8517d8609
 F test/where.test 8dcc1b1a6f17b6bad2dc6a9917eafe62d4ea57eb
 F test/where2.test 61d5b20d9bedc8788a773bbdc5b2ef887725928e
 F test/where3.test 0a30fe9808b0fa01c46d0fcf4fac0bf6cf75bb30
-F test/where4.test c6b6cca0859b96f79ab47e6955fce787076e6a60
+F test/where4.test 3fcf53c5ea7af1db3980b3293c2a45b56605f26a
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/lemon.c 2938bec507110397c937bd8a03b0c9596a709a04
 F tool/lempar.c fdc1672e97f72f72e76553038501da40fec9d251
@@ -427,7 +427,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 810c0176f8413995a78963c453e4377f11b293b5
-R 37a170980624908c75f237e7f767c63e
+P 310f68585188ae49b603af9bdef4ee7738ae37c0
+R 907eca9dc3d1d6e0a6d5d294c8ad8df3
 U drh
-Z 70e488812d923808b7de40f02231550c
+Z 4ac8b3d88fe5dcdfe42a3ce7e4dec0ad

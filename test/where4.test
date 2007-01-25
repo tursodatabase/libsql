@@ -15,7 +15,7 @@
 # that IS NULL phrases are correctly optimized.  But you can never
 # have too many tests, so some other tests are thrown in as well.
 #
-# $Id: where4.test,v 1.1 2007/01/19 01:06:03 drh Exp $
+# $Id: where4.test,v 1.2 2007/01/25 16:56:08 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -138,6 +138,42 @@ do_test where4-3.2 {
     SELECT * FROM t2 LEFT JOIN t3 ON a=x WHERE y IS NULL;
   }
 } {2 2 {} 3 {} {}}
+
+# Ticket #2189.  Probably the same bug as #2177.
+#
+do_test where4-4.1 {
+  execsql {
+    CREATE TABLE test(col1 TEXT PRIMARY KEY);
+    INSERT INTO test(col1) values('a');
+    INSERT INTO test(col1) values('b');
+    INSERT INTO test(col1) values('c');
+    CREATE TABLE test2(col1 TEXT PRIMARY KEY);
+    INSERT INTO test2(col1) values('a');
+    INSERT INTO test2(col1) values('b');
+    INSERT INTO test2(col1) values('c');
+    SELECT * FROM test t1 LEFT OUTER JOIN test2 t2 ON t1.col1 = t2.col1
+      WHERE +t2.col1 IS NULL;
+  }
+} {}
+do_test where4-4.2 {
+  execsql {
+    SELECT * FROM test t1 LEFT OUTER JOIN test2 t2 ON t1.col1 = t2.col1
+      WHERE t2.col1 IS NULL;
+  }
+} {}
+do_test where4-4.3 {
+  execsql {
+    SELECT * FROM test t1 LEFT OUTER JOIN test2 t2 ON t1.col1 = t2.col1
+      WHERE +t1.col1 IS NULL;
+  }
+} {}
+do_test where4-4.4 {
+  execsql {
+    SELECT * FROM test t1 LEFT OUTER JOIN test2 t2 ON t1.col1 = t2.col1
+      WHERE t1.col1 IS NULL;
+  }
+} {}
+    
 
 integrity_check {where4-99.0}
 
