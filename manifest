@@ -1,5 +1,5 @@
-C Fix\sa\s(harmless)\sassertion\sfault\son\snested\sviews\swhere\sthe\sinner\sviews\nare\scompound\sselects.\s\sTicket\s#2192.\s(CVS\s3605)
-D 2007-01-26T19:04:00
+C Add\scode\sto\sselect.c\sfor\sprinting\sthe\scontents\sof\sparse-tree\sstructures.\nThe\scode\sis\snormally\somitted.\s\sYou\smust\scompile\swith\s-DSQLITE_TEST\nor\s-DSQLITE_DEBUG\sto\senable\sit.\s(CVS\s3606)
+D 2007-01-26T19:23:33
 F Makefile.in 7fa74bf4359aa899da5586e394d17735f221315f
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -90,9 +90,9 @@ F src/pager.h 2e6d42f4ae004ae748a037b8468112b851c447a7
 F src/parse.y 2f571c5f6219428d7fb08737db3d113742b1cceb
 F src/pragma.c fd4df6cf0857dd78a7cb5be5f9805419b53ae7a0
 F src/prepare.c 484389c6811415b8f23d259ac9c029613e1c72c3
-F src/printf.c b179b6ed12f793e028dd169e2e2e2b2a37eedc63
+F src/printf.c aade23a789d7cc88b397ec0d33a0a01a33a7a9c1
 F src/random.c 6119474a6f6917f708c1dee25b9a8e519a620e88
-F src/select.c d46aceb4eb0c3e9ca7d6c9a2b65f4c19723f9763
+F src/select.c 628f49827d5a94ed9b6246efb8dc9f5c24e413f1
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c d13ca007cd18192c07a668aeddcdd6a9fe639be9
 F src/sqlite.h.in 6b7383baf76070214f6381f603328ca9b22a7fae
@@ -428,7 +428,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P e1fae43c89253fe5ca85bd149cd7697234f9aa91
-R 740aa5a4d6cddbb1dfb22766971a0377
+P 942e7193bbf1ffe9a703891d175e016631e2ad5c
+R 86392c521ecdc1f677b7dec2a6adf709
 U drh
-Z 72ba24e0b38388758e3d22c3170f3238
+Z 3de0eae131c19c851cc5eabe5fd41eaa

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.324 2007/01/26 19:04:00 drh Exp $
+** $Id: select.c,v 1.325 2007/01/26 19:23:33 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -3300,3 +3300,99 @@ select_end:
   sqliteFree(sAggInfo.aFunc);
   return rc;
 }
+
+#if defined(SQLITE_TEST) || defined(SQLITE_DEBUG)
+/*
+*******************************************************************************
+** The following code is used for testing and debugging only.  The code
+** that follows does not appear in normal builds.
+**
+** These routines are used to print out the content of all or part of a 
+** parse structures such as Select or Expr.  Such printouts are useful
+** for helping to understand what is happening inside the code generator
+** during the execution of complex SELECT statements.
+**
+** These routine are not called anywhere from within the normal
+** code base.  Then are intended to be called from within the debugger
+** or from temporary "printf" statements inserted for debugging.
+*/
+void sqlite3PrintExpr(Expr *p){
+  if( p->token.z && p->token.n>0 ){
+    sqlite3DebugPrintf("(%.*s", p->token.n, p->token.z);
+  }else{
+    sqlite3DebugPrintf("(%d", p->op);
+  }
+  if( p->pLeft ){
+    sqlite3DebugPrintf(" ");
+    sqlite3PrintExpr(p->pLeft);
+  }
+  if( p->pRight ){
+    sqlite3DebugPrintf(" ");
+    sqlite3PrintExpr(p->pRight);
+  }
+  sqlite3DebugPrintf(")");
+}
+void sqlite3PrintExprList(ExprList *pList){
+  int i;
+  for(i=0; i<pList->nExpr; i++){
+    sqlite3PrintExpr(pList->a[i].pExpr);
+    if( i<pList->nExpr-1 ){
+      sqlite3DebugPrintf(", ");
+    }
+  }
+}
+void sqlite3PrintSelect(Select *p, int indent){
+  sqlite3DebugPrintf("%*sSELECT(%p) ", indent, "", p);
+  sqlite3PrintExprList(p->pEList);
+  sqlite3DebugPrintf("\n");
+  if( p->pSrc ){
+    char *zPrefix;
+    int i;
+    zPrefix = "FROM";
+    for(i=0; i<p->pSrc->nSrc; i++){
+      struct SrcList_item *pItem = &p->pSrc->a[i];
+      sqlite3DebugPrintf("%*s ", indent+6, zPrefix);
+      zPrefix = "";
+      if( pItem->pSelect ){
+        sqlite3DebugPrintf("(\n");
+        sqlite3PrintSelect(pItem->pSelect, indent+10);
+        sqlite3DebugPrintf("%*s)", indent+8, "");
+      }else if( pItem->zName ){
+        sqlite3DebugPrintf("%s", pItem->zName);
+      }
+      if( pItem->pTab ){
+        sqlite3DebugPrintf("(table: %s)", pItem->pTab->zName);
+      }
+      if( pItem->zAlias ){
+        sqlite3DebugPrintf(" AS %s", pItem->zAlias);
+      }
+      if( i<p->pSrc->nSrc-1 ){
+        sqlite3DebugPrintf(",");
+      }
+      sqlite3DebugPrintf("\n");
+    }
+  }
+  if( p->pWhere ){
+    sqlite3DebugPrintf("%*s WHERE ", indent, "");
+    sqlite3PrintExpr(p->pWhere);
+    sqlite3DebugPrintf("\n");
+  }
+  if( p->pGroupBy ){
+    sqlite3DebugPrintf("%*s GROUP BY ", indent, "");
+    sqlite3PrintExprList(p->pGroupBy);
+    sqlite3DebugPrintf("\n");
+  }
+  if( p->pHaving ){
+    sqlite3DebugPrintf("%*s HAVING ", indent, "");
+    sqlite3PrintExpr(p->pHaving);
+    sqlite3DebugPrintf("\n");
+  }
+  if( p->pOrderBy ){
+    sqlite3DebugPrintf("%*s ORDER BY ", indent, "");
+    sqlite3PrintExprList(p->pOrderBy);
+    sqlite3DebugPrintf("\n");
+  }
+}
+/* End of the structure debug printing code
+*****************************************************************************/
+#endif /* defined(SQLITE_TEST) || defined(SQLITE_DEBUG) */
