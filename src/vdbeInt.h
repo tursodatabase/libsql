@@ -15,6 +15,8 @@
 ** 6000 lines long) it was split up into several smaller files and
 ** this header information was factored out.
 */
+#ifndef _VDBEINT_H_
+#define _VDBEINT_H_
 
 /*
 ** intToKey() and keyToInt() used to transform the rowid.  But with
@@ -403,3 +405,5 @@ void sqlite3VdbeFifoInit(Fifo*);
 int sqlite3VdbeFifoPush(Fifo*, i64);
 int sqlite3VdbeFifoPop(Fifo*, i64*);
 void sqlite3VdbeFifoClear(Fifo*);
+
+#endif /* !defined(_VDBEINT_H_) */

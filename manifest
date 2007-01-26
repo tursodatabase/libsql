@@ -1,5 +1,5 @@
-C Fix\sprototypes\sfor\sthe\sparser.\s\sSyntactic\schange\sonly\s-\sno\seffect\son\nobject\scode.\s\sTicket\s#2193.\s(CVS\s3607)
-D 2007-01-26T19:31:01
+C Make\ssure\sthe\svdbeInt.h\sfile\sis\snot\s#included\smultiple\stimes.\s\sTicket\s#2194.\s(CVS\s3608)
+D 2007-01-26T21:08:05
 F Makefile.in 7fa74bf4359aa899da5586e394d17735f221315f
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -123,7 +123,7 @@ F src/util.c 91d4cb189476906639ae611927d939691d1365f6
 F src/vacuum.c b4569b08aaa5afb141af3f76d0315745db4e9e4b
 F src/vdbe.c 4d54659b7dbb7a61570d7136a34fbde12b61c509
 F src/vdbe.h 0025259af1939fb264a545816c69e4b5b8d52691
-F src/vdbeInt.h 1ca07f2d7446c90230346aed7fbf990c032460bc
+F src/vdbeInt.h 13ba07121cf534d5b80130d2f5eb0a4937a36bba
 F src/vdbeapi.c 2d1e6843af8705a1172e54a418d2a3d5febd1dd7
 F src/vdbeaux.c c5324d62f51529bccc5be3b04bac2e4eeae1569a
 F src/vdbefifo.c 9efb94c8c3f4c979ebd0028219483f88e57584f5
@@ -428,7 +428,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 1b26d6875612a0ed25d6e293f005ea4966692759
-R 875858167a58a0c53590c2c88e07319e
+P 02990fabd1c68fb51afc91a1b720802ef86bfec6
+R f3d4c318f331af035a24f47aae427d9a
 U drh
-Z 3707b98adf34593149245bf55750c2e1
+Z b826f35654120ae9d4f4a22ffb14f63f
