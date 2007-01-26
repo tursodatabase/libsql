@@ -1,5 +1,5 @@
-C Add\scode\sto\sselect.c\sfor\sprinting\sthe\scontents\sof\sparse-tree\sstructures.\nThe\scode\sis\snormally\somitted.\s\sYou\smust\scompile\swith\s-DSQLITE_TEST\nor\s-DSQLITE_DEBUG\sto\senable\sit.\s(CVS\s3606)
-D 2007-01-26T19:23:33
+C Fix\sprototypes\sfor\sthe\sparser.\s\sSyntactic\schange\sonly\s-\sno\seffect\son\nobject\scode.\s\sTicket\s#2193.\s(CVS\s3607)
+D 2007-01-26T19:31:01
 F Makefile.in 7fa74bf4359aa899da5586e394d17735f221315f
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -115,7 +115,7 @@ F src/test_md5.c 6c42bc0a3c0b54be34623ff77a0eec32b2fa96e3
 F src/test_schema.c ced72140a3a25c148975428e170ec1850d3c3a7d
 F src/test_server.c a6460daed0b92ecbc2531b6dc73717470e7a648c
 F src/test_tclvar.c 315e77c17f128ff8c06b38c08617fd07c825a95b
-F src/tokenize.c dfdff21768fbedd40e8d3ca84fc5d0d7af2b46dd
+F src/tokenize.c bb1732ef2b6fc2143f93ff28a45d3dcb04c1d396
 F src/trigger.c 8c55d31876013ed4e97ee7ce24478fbe00db49bb
 F src/update.c 951f95ef044cf6d28557c48dc35cb0711a0b9129
 F src/utf.c 67ecb1032bc0b42c105e88d65ef9d9f626eb0e1f
@@ -428,7 +428,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 942e7193bbf1ffe9a703891d175e016631e2ad5c
-R 86392c521ecdc1f677b7dec2a6adf709
+P 1b26d6875612a0ed25d6e293f005ea4966692759
+R 875858167a58a0c53590c2c88e07319e
 U drh
-Z 3de0eae131c19c851cc5eabe5fd41eaa
+Z 3707b98adf34593149245bf55750c2e1
