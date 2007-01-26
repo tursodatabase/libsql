@@ -75,6 +75,20 @@
 # define sqlite3_declare_vtab 0
 #endif
 
+#ifdef SQLITE_OMIT_SHARED_CACHE
+# define sqlite3_enable_shared_cache 0
+#endif
+
+#ifdef SQLITE_OMIT_TRACE
+# define sqlite3_profile       0
+# define sqlite3_trace         0
+#endif
+
+#ifdef SQLITE_OMIT_GET_TABLE
+# define sqlite3_free_table    0
+# define sqlite3_get_table     0
+#endif
+
 /*
 ** The following structure contains pointers to all SQLite API routines.
 ** A pointer to this structure is passed into extensions when they are
@@ -154,7 +168,7 @@ const sqlite3_api_routines sqlite3_apis = {
   sqlite3_get_autocommit,
   sqlite3_get_auxdata,
   sqlite3_get_table,
-  sqlite3_global_recover,
+  0,     /* Was sqlite3_global_recover(), but that function is deprecated */
   sqlite3_interrupt,
   sqlite3_last_insert_rowid,
   sqlite3_libversion,
