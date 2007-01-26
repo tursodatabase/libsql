@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.323 2006/12/16 16:25:15 drh Exp $
+** $Id: select.c,v 1.324 2007/01/26 19:04:00 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1936,6 +1936,7 @@ static int multiSelect(
         }
         sqlite3VdbeChangeP2(v, addr, nCol);
         sqlite3VdbeChangeP3(v, addr, (char*)pKeyInfo, P3_KEYINFO);
+        pLoop->addrOpenEphm[i] = -1;
       }
     }
 
