@@ -1,5 +1,5 @@
-C Make\ssure\sthe\svdbeInt.h\sfile\sis\snot\s#included\smultiple\stimes.\s\sTicket\s#2194.\s(CVS\s3608)
-D 2007-01-26T21:08:05
+C Limit\sthe\snumber\sof\serrors\sreturned\sby\sPRAGMA\sintegrity_check\sto\s100\sby\ndefault.\s\sSpecify\san\salternative\slimit\susing\san\sargument\sto\sthe\spragma.\nTicket\s#2176.\s(CVS\s3609)
+D 2007-01-27T02:24:55
 F Makefile.in 7fa74bf4359aa899da5586e394d17735f221315f
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -57,8 +57,8 @@ F src/alter.c 2c79ec40f65e33deaf90ca493422c74586e481a3
 F src/analyze.c 7d2b7ab9a9c2fd6e55700f69064dfdd3e36d7a8a
 F src/attach.c b11eb4d5d3fb99a10a626956bccc7215f6b68b16
 F src/auth.c 902f4722661c796b97f007d9606bd7529c02597f
-F src/btree.c 6837dcc4da8677e695a49fcc4505418ff1e0fc54
-F src/btree.h 061c50e37de7f50b58528e352d400cf33ead7418
+F src/btree.c 51aef6a4b18df165b83b332befd1447c011b4389
+F src/btree.h 066444ee25bd6e6accb997bfd2cf5ace14dbcd00
 F src/build.c 02aedde724dc73295d6e9b8dc29afb5dd38de507
 F src/callback.c fd9bb39f7ff6b52bad8365617abc61c720640429
 F src/complete.c 7d1a44be8f37de125fcafd3d3a018690b3799675
@@ -88,7 +88,7 @@ F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c d6ad66eb119602cb2e6a097f8f635372ba677d23
 F src/pager.h 2e6d42f4ae004ae748a037b8468112b851c447a7
 F src/parse.y 2f571c5f6219428d7fb08737db3d113742b1cceb
-F src/pragma.c fd4df6cf0857dd78a7cb5be5f9805419b53ae7a0
+F src/pragma.c 5091300911670ddaa552bfa12c45cbca1bb7e7d6
 F src/prepare.c 484389c6811415b8f23d259ac9c029613e1c72c3
 F src/printf.c aade23a789d7cc88b397ec0d33a0a01a33a7a9c1
 F src/random.c 6119474a6f6917f708c1dee25b9a8e519a620e88
@@ -102,7 +102,7 @@ F src/table.c 6d0da66dde26ee75614ed8f584a1996467088d06
 F src/tclsqlite.c d344c7f394d6f055ce3abfe0049b0480c5e34e56
 F src/test1.c 053f5224697efaefff1f4c647fd90fdea9346cc5
 F src/test2.c ca74a1d8aeb7d9606e8f6b762c5daf85c1a3f92b
-F src/test3.c fa0e85ddd1784f2dda5861a2cb4e7d27d1c932c1
+F src/test3.c 875126eab6749f9d9e2b60b6ee6a65825b3d1fed
 F src/test4.c 8b784cd82de158a2317cb4ac4bc86f91ad315e25
 F src/test5.c 7162f8526affb771c4ed256826eee7bb9eca265f
 F src/test6.c 60a02961ceb7b3edc25f5dc5c1ac2556622a76de
@@ -121,7 +121,7 @@ F src/update.c 951f95ef044cf6d28557c48dc35cb0711a0b9129
 F src/utf.c 67ecb1032bc0b42c105e88d65ef9d9f626eb0e1f
 F src/util.c 91d4cb189476906639ae611927d939691d1365f6
 F src/vacuum.c b4569b08aaa5afb141af3f76d0315745db4e9e4b
-F src/vdbe.c 4d54659b7dbb7a61570d7136a34fbde12b61c509
+F src/vdbe.c 31fe3e1e3cc00f5324a5fbde89d0ab603ad246b5
 F src/vdbe.h 0025259af1939fb264a545816c69e4b5b8d52691
 F src/vdbeInt.h 13ba07121cf534d5b80130d2f5eb0a4937a36bba
 F src/vdbeapi.c 2d1e6843af8705a1172e54a418d2a3d5febd1dd7
@@ -269,7 +269,7 @@ F test/pager.test 6ee95e90ee8295e376e39a6c6566ef6df993601a
 F test/pager2.test 49c0f57c7da0b060f0486b85fdd074025caa694e
 F test/pager3.test 2323bf27fd5bd887b580247e5bce500ceee994b4
 F test/pagesize.test 05c74ea49f790734ec1e9ab765d9bf1cce79b8f2
-F test/pragma.test d20fe81e31c6be9cb3182f1792cf5e5a6d4e97f6
+F test/pragma.test b523286a32bfab309dd42d21ccdc9f5e51e3b2e9
 F test/printf.test cdd8e20dd901382a385afcbaa777b9377815c2ad
 F test/progress.test 8b22b4974b0a95272566385f8cb8c341c7130df8 x
 F test/quick.test 6bc0f7c7b905f7de5fe4d3f13239ced3e4e66fe7
@@ -416,7 +416,7 @@ F www/opcode.tcl 5bd68059416b223515a680d410a9f7cb6736485f
 F www/optimizer.tcl d6812a10269bd0d7c488987aac0ad5036cace9dc
 F www/optimizing.tcl f0b2538988d1bbad16cbfe63ec6e8f48c9eb04e5
 F www/optoverview.tcl 815df406a38c9f69b27d37e8f7ede004c6d9f19e
-F www/pragma.tcl c3d103838ae1c66729f8286e276735618af2a88a
+F www/pragma.tcl 74544f5564bbb6d9809cf35b4c05ebdfee469165
 F www/quickstart.tcl 8708a4ca83fbf55c66af1782992626f20c3df095
 F www/shared.gif 265bae80c5b311c5a86e47662821076ffaf5c6ea
 F www/sharedcache.tcl 3ebec81110e606af6fd65a3c4c19562cb173b29c
@@ -428,7 +428,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 02990fabd1c68fb51afc91a1b720802ef86bfec6
-R f3d4c318f331af035a24f47aae427d9a
+P 93edd3b0565d08383b3034c57f221073fde6de4b
+R 557df95c56e9de3c85559166fb533aa4
 U drh
-Z b826f35654120ae9d4f4a22ffb14f63f
+Z 0cf02b2f60ab84b0a3c77c11c5fcb2c4

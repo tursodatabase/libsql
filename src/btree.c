@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.333 2007/01/05 02:00:47 drh Exp $
+** $Id: btree.c,v 1.334 2007/01/27 02:24:55 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -5958,10 +5958,12 @@ Pager *sqlite3BtreePager(Btree *p){
 typedef struct IntegrityCk IntegrityCk;
 struct IntegrityCk {
   BtShared *pBt;    /* The tree being checked out */
-  Pager *pPager; /* The associated pager.  Also accessible by pBt->pPager */
-  int nPage;     /* Number of pages in the database */
-  int *anRef;    /* Number of times each page is referenced */
-  char *zErrMsg; /* An error message.  NULL of no errors seen. */
+  Pager *pPager;    /* The associated pager.  Also accessible by pBt->pPager */
+  int nPage;        /* Number of pages in the database */
+  int *anRef;       /* Number of times each page is referenced */
+  int mxErr;        /* Stop accumulating errors when this reaches zero */
+  char *zErrMsg;    /* An error message.  NULL if no errors seen. */
+  int nErr;         /* Number of messages written to zErrMsg so far */
 };
 
 #ifndef SQLITE_OMIT_INTEGRITY_CHECK
@@ -5976,6 +5978,9 @@ static void checkAppendMsg(
 ){
   va_list ap;
   char *zMsg2;
+  if( !pCheck->mxErr ) return;
+  pCheck->mxErr--;
+  pCheck->nErr++;
   va_start(ap, zFormat);
   zMsg2 = sqlite3VMPrintf(zFormat, ap);
   va_end(ap);
@@ -6059,7 +6064,7 @@ static void checkList(
   int i;
   int expected = N;
   int iFirst = iPage;
-  while( N-- > 0 ){
+  while( N-- > 0 && pCheck->mxErr ){
     unsigned char *pOvfl;
     if( iPage<1 ){
       checkAppendMsg(pCheck, zContext,
@@ -6171,7 +6176,7 @@ static int checkTreePage(
   /* Check out all the cells.
   */
   depth = 0;
-  for(i=0; i<pPage->nCell; i++){
+  for(i=0; i<pPage->nCell && pCheck->mxErr; i++){
     u8 *pCell;
     int sz;
     CellInfo info;
@@ -6286,7 +6291,13 @@ static int checkTreePage(
 ** and a pointer to that error message is returned.  The calling function
 ** is responsible for freeing the error message when it is done.
 */
-char *sqlite3BtreeIntegrityCheck(Btree *p, int *aRoot, int nRoot){
+char *sqlite3BtreeIntegrityCheck(
+  Btree *p,     /* The btree to be checked */
+  int *aRoot,   /* An array of root pages numbers for individual trees */
+  int nRoot,    /* Number of entries in aRoot[] */
+  int mxErr,    /* Stop reporting errors after this many */
+  int *pnErr    /* Write number of errors seen to this variable */
+){
   int i;
   int nRef;
   IntegrityCk sCheck;
@@ -6299,6 +6310,9 @@ char *sqlite3BtreeIntegrityCheck(Btree *p, int *aRoot, int nRoot){
   sCheck.pBt = pBt;
   sCheck.pPager = pBt->pPager;
   sCheck.nPage = sqlite3pager_pagecount(sCheck.pPager);
+  sCheck.mxErr = mxErr;
+  sCheck.nErr = 0;
+  *pnErr = 0;
   if( sCheck.nPage==0 ){
     unlockBtreeIfUnused(pBt);
     return 0;
@@ -6306,6 +6320,7 @@ char *sqlite3BtreeIntegrityCheck(Btree *p, int *aRoot, int nRoot){
   sCheck.anRef = sqliteMallocRaw( (sCheck.nPage+1)*sizeof(sCheck.anRef[0]) );
   if( !sCheck.anRef ){
     unlockBtreeIfUnused(pBt);
+    *pnErr = 1;
     return sqlite3MPrintf("Unable to malloc %d bytes", 
         (sCheck.nPage+1)*sizeof(sCheck.anRef[0]));
   }
@@ -6323,7 +6338,7 @@ char *sqlite3BtreeIntegrityCheck(Btree *p, int *aRoot, int nRoot){
 
   /* Check all the tables.
   */
-  for(i=0; i<nRoot; i++){
+  for(i=0; i<nRoot && sCheck.mxErr; i++){
     if( aRoot[i]==0 ) continue;
 #ifndef SQLITE_OMIT_AUTOVACUUM
     if( pBt->autoVacuum && aRoot[i]>1 ){
@@ -6335,7 +6350,7 @@ char *sqlite3BtreeIntegrityCheck(Btree *p, int *aRoot, int nRoot){
 
   /* Make sure every page in the file is referenced
   */
-  for(i=1; i<=sCheck.nPage; i++){
+  for(i=1; i<=sCheck.nPage && sCheck.mxErr; i++){
 #ifdef SQLITE_OMIT_AUTOVACUUM
     if( sCheck.anRef[i]==0 ){
       checkAppendMsg(&sCheck, 0, "Page %d is never used", i);
@@ -6368,6 +6383,7 @@ char *sqlite3BtreeIntegrityCheck(Btree *p, int *aRoot, int nRoot){
   /* Clean  up and report errors.
   */
   sqliteFree(sCheck.anRef);
+  *pnErr = sCheck.nErr;
   return sCheck.zErrMsg;
 }
 #endif /* SQLITE_OMIT_INTEGRITY_CHECK */

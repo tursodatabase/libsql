@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the pragma.html file.
 #
-set rcsid {$Id: pragma.tcl,v 1.18 2006/06/20 00:22:38 drh Exp $}
+set rcsid {$Id: pragma.tcl,v 1.19 2007/01/27 02:24:57 drh Exp $}
 source common.tcl
 header {Pragma statements supported by SQLite}
 
@@ -487,12 +487,16 @@ Section {Pragmas to debug the library} debug
 puts {
 <ul>
 <a name="pragma_integrity_check"></a>
-<li><p><b>PRAGMA integrity_check;</b></p>
+<li><p><b>PRAGMA integrity_check;
+    <br>PRAGMA integrity_check(</b><i>integer</i><b>)</b></p>
     <p>The command does an integrity check of the entire database.  It
     looks for out-of-order records, missing pages, malformed records, and
     corrupt indices.
-    If any problems are found, then a single string is returned which is
-    a description of all problems.  If everything is in order, "ok" is
+    If any problems are found, then strings are returned (as multiple
+    rows with a single column per row) which describe
+    the problems.  At most <i>integer</i> errors will be reported
+    before the analysis quits.  The default value for <i>integer</i>
+    is 100.  If no errors are found, a single row with the value "ok" is
     returned.</p></li>
 
 <a name="pragma_parser_trace"></a>

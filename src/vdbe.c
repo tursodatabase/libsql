@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.586 2007/01/12 23:43:43 drh Exp $
+** $Id: vdbe.c,v 1.587 2007/01/27 02:24:56 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -4120,11 +4120,16 @@ case OP_DropTrigger: {        /* no-push */
 
 
 #ifndef SQLITE_OMIT_INTEGRITY_CHECK
-/* Opcode: IntegrityCk * P2 *
+/* Opcode: IntegrityCk P1 P2 *
 **
 ** Do an analysis of the currently open database.  Push onto the
 ** stack the text of an error message describing any problems.
-** If there are no errors, push a "ok" onto the stack.
+** If no problems are found, push a NULL onto the stack.
+**
+** P1 is the address of a memory cell that contains the maximum
+** number of allowed errors.  At most mem[P1] errors will be reported.
+** In other words, the analysis stops as soon as mem[P1] errors are 
+** seen.  Mem[P1] is updated with the number of errors remaining.
 **
 ** The root page numbers of all tables in the database are integer
 ** values on the stack.  This opcode pulls as many integers as it
@@ -4133,13 +4138,15 @@ case OP_DropTrigger: {        /* no-push */
 ** If P2 is not zero, the check is done on the auxiliary database
 ** file, not the main database file.
 **
-** This opcode is used for testing purposes only.
+** This opcode is used to implement the integrity_check pragma.
 */
 case OP_IntegrityCk: {
   int nRoot;
   int *aRoot;
   int j;
+  int nErr;
   char *z;
+  Mem *pnErr;
 
   for(nRoot=0; &pTos[-nRoot]>=p->aStack; nRoot++){
     if( (pTos[-nRoot].flags & MEM_Int)==0 ) break;
@@ -4147,6 +4154,10 @@ case OP_IntegrityCk: {
   assert( nRoot>0 );
   aRoot = sqliteMallocRaw( sizeof(int*)*(nRoot+1) );
   if( aRoot==0 ) goto no_mem;
+  j = pOp->p1;
+  assert( j>=0 && j<p->nMem );
+  pnErr = &p->aMem[j];
+  assert( (pnErr->flags & MEM_Int)!=0 );
   for(j=0; j<nRoot; j++){
     Mem *pMem = &pTos[-j];
     aRoot[j] = pMem->i;
@@ -4154,12 +4165,12 @@ case OP_IntegrityCk: {
   aRoot[j] = 0;
   popStack(&pTos, nRoot);
   pTos++;
-  z = sqlite3BtreeIntegrityCheck(db->aDb[pOp->p2].pBt, aRoot, nRoot);
-  if( z==0 || z[0]==0 ){
-    if( z ) sqliteFree(z);
-    pTos->z = "ok";
-    pTos->n = 2;
-    pTos->flags = MEM_Str | MEM_Static | MEM_Term;
+  z = sqlite3BtreeIntegrityCheck(db->aDb[pOp->p2].pBt, aRoot, nRoot,
+                                 pnErr->i, &nErr);
+  pnErr->i -= nErr;
+  if( nErr==0 ){
+    assert( z==0 );
+    pTos->flags = MEM_Null;
   }else{
     pTos->z = z;
     pTos->n = strlen(z);
