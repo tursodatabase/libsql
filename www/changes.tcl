@@ -25,6 +25,16 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2007 January 27 (3.3.12)} {
+<li>Fix another bug in the IS NULL optimization that was added in
+version 3.3.9.</li>
+<li>Fix a assertion fault that occurred on deeply nested views.</li>
+<li>Limit the amount of output that
+<a href="pragma.html#pragma_integrity_check">PRAGMA integrity_check</a>
+generates.</li>
+<li>Minor syntactic changes to support a wider variety of compilers.</li>
+}
+
 chng {2007 January 22 (3.3.11)} {
 <li>Fix another bug in the implementation of the new 
 <a href="capi3ref.html#sqlite3_prepare_v2">sqlite3_prepare_v2()</a> API.

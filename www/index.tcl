@@ -67,6 +67,15 @@ proc newsitem {date title text} {
   puts "<hr width=\"50%\">"
 }
 
+newsitem {2007-Jan-27} {Version 3.3.12} {
+  The first published build of the previous version used the wrong
+  set of source files.  Consequently, many people downloaded a build
+  that was labeled as "3.3.11" but was really 3.3.10.  Version 3.3.12
+  is released to clear up the ambiguity.  A couple more bugs have
+  also been fixed and <a href="pragma.html#pragma_integrity_check">
+  PRAGMA integrity_check</a> has been enhanced.
+}
+
 newsitem {2007-Jan-22} {Version 3.3.11} {
   Version 3.3.11 fixes for a few more problems in version 3.3.9 that
   version 3.3.10 failed to catch.  Upgrading is recommended.
@@ -102,4 +111,4 @@ puts {
 <p align="right"><a href="oldnews.html">Old news...</a></p>
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.148 2007/01/22 13:06:03 drh Exp $}
+footer {$Id: index.tcl,v 1.149 2007/01/27 13:38:26 drh Exp $}
