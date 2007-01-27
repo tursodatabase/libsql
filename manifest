@@ -1,5 +1,5 @@
-C More\sadjustments\sto\sthe\spragma\stest\sfor\swindows.\s(CVS\s3614)
-D 2007-01-27T14:11:42
+C Adjustments\sto\sthe\spragma\stest\sfor\sOS-X.\s(CVS\s3615)
+D 2007-01-27T14:26:07
 F Makefile.in 7fa74bf4359aa899da5586e394d17735f221315f
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -269,7 +269,7 @@ F test/pager.test 6ee95e90ee8295e376e39a6c6566ef6df993601a
 F test/pager2.test 49c0f57c7da0b060f0486b85fdd074025caa694e
 F test/pager3.test 2323bf27fd5bd887b580247e5bce500ceee994b4
 F test/pagesize.test 05c74ea49f790734ec1e9ab765d9bf1cce79b8f2
-F test/pragma.test 5102c356db75dce45888ceccc91e0de655611344
+F test/pragma.test 91739ef06ab9ecf91e90d25951858caba71d6fe7
 F test/printf.test cdd8e20dd901382a385afcbaa777b9377815c2ad
 F test/progress.test 8b22b4974b0a95272566385f8cb8c341c7130df8 x
 F test/quick.test 6bc0f7c7b905f7de5fe4d3f13239ced3e4e66fe7
@@ -428,7 +428,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P a79914ccbc9e33a1dbc9be3de805f99ab3b61c78
-R 0d30e32211e1a277ac029be32328fa43
+P 79a65436d1cd10ed6318edfaa7d76e2b99c7c879
+R a2972c8d5fa2fae3aaf367594ddfe702
 U drh
-Z 3a91de1bc61fb53199e8bc84b34bbb46
+Z 3f8798652a856f41f020ab0b02ce8cac
