@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.48 2007/01/27 02:24:56 drh Exp $
+# $Id: pragma.test,v 1.49 2007/01/27 14:04:13 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -389,10 +389,10 @@ Page 5 is never used
 Page 6 is never used} {rowid 1 missing from index i2}}
 }
 do_test pragma-3.99 {
-  file delete -force testerr.db testerr.db-journal
   catchsql {DETACH t3}
   catchsql {DETACH t2}
   catchsql {DROP INDEX i2}
+  file delete -force testerr.db testerr.db-journal
 } {0 {}}
 
 # Test modifying the cache_size of an attached database.
