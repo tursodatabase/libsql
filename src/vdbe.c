@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.587 2007/01/27 02:24:56 drh Exp $
+** $Id: vdbe.c,v 1.588 2007/01/27 13:37:22 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2925,7 +2925,7 @@ case OP_MoveGt: {       /* no-push */
 **
 ** The top of the stack holds a blob constructed by MakeRecord.  P1 is
 ** an index.  If no entry exists in P1 that matches the blob then jump
-** to P1.  If an entry does existing, fall through.  The cursor is left
+** to P2.  If an entry does existing, fall through.  The cursor is left
 ** pointing to the entry that matches.  The blob is popped from the stack.
 **
 ** The difference between this operation and Distinct is that

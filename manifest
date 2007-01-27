@@ -1,5 +1,5 @@
-C Parser\schanges\sto\sallow\sparenthesized\snumerical\sarguments\sto\spragmas,\nin\ssupport\sof\sthe\sintegrity_check\senhancement\sof\scheck-in\s(3609)\nand\sticket\s#2176.\s(CVS\s3610)
-D 2007-01-27T02:38:30
+C Fix\sa\sdocumentation\scomment\sin\svdbe.c.\s\sTicket\s#2188.\s(CVS\s3611)
+D 2007-01-27T13:37:22
 F Makefile.in 7fa74bf4359aa899da5586e394d17735f221315f
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -121,7 +121,7 @@ F src/update.c 951f95ef044cf6d28557c48dc35cb0711a0b9129
 F src/utf.c 67ecb1032bc0b42c105e88d65ef9d9f626eb0e1f
 F src/util.c 91d4cb189476906639ae611927d939691d1365f6
 F src/vacuum.c b4569b08aaa5afb141af3f76d0315745db4e9e4b
-F src/vdbe.c 31fe3e1e3cc00f5324a5fbde89d0ab603ad246b5
+F src/vdbe.c b5a2ad31c177b6c2d5fedb2ed180b9b57058398b
 F src/vdbe.h 0025259af1939fb264a545816c69e4b5b8d52691
 F src/vdbeInt.h 13ba07121cf534d5b80130d2f5eb0a4937a36bba
 F src/vdbeapi.c 2d1e6843af8705a1172e54a418d2a3d5febd1dd7
@@ -428,7 +428,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P d564a039f27be2bb2c3973e79dc99b25869139da
-R 391c93b26258880b34efda350f4d952f
+P ab6322bf9398c2989b648b24c1ebdf09493accdf
+R 2a6d3b18120ffcb88e9d1f8d26aaee1b
 U drh
-Z 8953b7a02ab9cda0f53ad9c4a7a06c8f
+Z c800d4c719d3b97ff8dbe2665f444051
