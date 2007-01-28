@@ -1,5 +1,5 @@
-C Adapt\sreturns\sof\sthe\sos2Read()\sfunction\sto\sthose\sof\sother\splatforms\susing\scheckin\s(3549)\sto\sprevent\spossible\scorruption\s(CVS\s3617)
-D 2007-01-28T21:12:13
+C Implement\sthe\splatform\sspecific\spart\sof\sthe\sshared\slibrary\sinterface\son\sOS/2\s(CVS\s3618)
+D 2007-01-28T21:42:08
 F Makefile.in 7fa74bf4359aa899da5586e394d17735f221315f
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -77,7 +77,7 @@ F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/os.c 59f05de8c5777c34876607114a2fbe55ae578235
 F src/os.h 17fc73165cb7436aa79492d2dff754baec74fcb9
 F src/os_common.h 545426356f0868a6765e70cb59e319d3acad0ed6
-F src/os_os2.c 79df76be8122c88fd7f7b6baad6d648e7906f688
+F src/os_os2.c 8ee8207fe218a1acf3a31d59753e165e5c23bb95
 F src/os_os2.h e5f17dd69333632bbc3112881ea407c37d245eb3
 F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
@@ -428,7 +428,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P fc66070393b48f8022500c45e063068e801c05d7
-R fd8f3a50eb43815ad290d50ceebd0cd4
+P ba76107cd1fc1898f5357b20b339727e2e034e23
+R 79a8f84a406ccc28c1097bb566a6ba96
 U pweilbacher
-Z 31c655a3b0ec171471e488960acc1029
+Z 7318492f59e9e286472c87b62bde92c0

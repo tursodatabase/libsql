@@ -787,13 +787,30 @@ int allocateOs2File( os2File *pInit, OsFile **pld ){
 ** within the shared library, and closing the shared library.
 */
 void *sqlite3Os2Dlopen(const char *zFilename){
-  return 0;
+  UCHAR loadErr[256];
+  HMODULE hmod;
+  APIRET rc;
+  rc = DosLoadModule(loadErr, sizeof(loadErr), zFilename, &hmod);
+  if (rc != NO_ERROR) return 0;
+  return (void*)hmod;
 }
 void *sqlite3Os2Dlsym(void *pHandle, const char *zSymbol){
-  return 0;
+  PFN pfn;
+  APIRET rc;
+  rc = DosQueryProcAddr((HMODULE)pHandle, 0L, zSymbol, &pfn);
+  if (rc != NO_ERROR) {
+    /* if the symbol itself was not found, search again for the same
+     * symbol with an extra underscore, that might be needed depending
+     * on the calling convention */
+    char _zSymbol[256] = "_";
+    strncat(_zSymbol, zSymbol, 255);
+    rc = DosQueryProcAddr((HMODULE)pHandle, 0L, _zSymbol, &pfn);
+  }
+  if (rc != NO_ERROR) return 0;
+  return pfn;
 }
 int sqlite3Os2Dlclose(void *pHandle){
-  return 0;
+  return DosFreeModule((HMODULE)pHandle);
 }
 #endif /* SQLITE_OMIT_LOAD_EXTENSION */
 
