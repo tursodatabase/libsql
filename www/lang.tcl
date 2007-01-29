@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the lang-*.html files.
 #
-set rcsid {$Id: lang.tcl,v 1.119 2007/01/29 15:50:06 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.120 2007/01/29 17:58:28 drh Exp $}
 source common.tcl
 
 if {[llength $argv]>0} {
@@ -1283,6 +1283,12 @@ both arguments are NULL then NULL is returned. This behaves the same as
 </tr>
 
 <tr>
+<td valign="top" align="right">hex(<i>X</i>)</td>
+<td valign="top">The argument is interpreted as a BLOB.  The result
+is a hexadecimal rendering of the content of that blob.</td>
+</tr>
+
+<tr>
 <td valign="top" align="right">last_insert_rowid()</td>
 <td valign="top">Return the ROWID of the last row insert from this
 connection to the database.  This is the same value that would be returned
@@ -1374,12 +1380,9 @@ between -9223372036854775808 and +9223372036854775807.</td>
 </tr>
 
 <tr>
-<td valign="top" align="right">randomhex(<i>N</i>)</td>
-<td valign="top">Return a pseudo-random hexadecimal string that is
-<i>N</i> characters in length.  <i>N</i> should be an even integer between
-2 and 1000.  The intended use of this function is to generate
-universally unique identifiers (UUID).  For that purpose, it is recommended
-that <i>N</i> be at least 32.</td>
+<td valign="top" align="right">randomblob(<i>N</i>)</td>
+<td valign="top">Return a <i>N</i>-byte blob containing pseudo-random bytes.
+<i>N</i> should be a postive integer.</td>
 </tr>
 
 <tr>
