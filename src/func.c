@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.134 2006/09/16 21:45:14 drh Exp $
+** $Id: func.c,v 1.135 2007/01/29 15:50:06 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -270,6 +270,33 @@ static void randomFunc(
   if( (r<<1)==0 ) r = 0;  /* Prevent 0x8000.... as the result so that we */
                           /* can always do abs() of the result */
   sqlite3_result_int64(context, r);
+}
+
+/*
+** Implementation of randomhex(N).  Return a random hexadecimal string
+** that is N characters long.
+*/
+static void randomHex(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  int n, i, j;
+  unsigned char c, zBuf[1001];
+  assert( argc==1 );
+  n = sqlite3_value_int(argv[0]);
+  if( n&1 ) n++;
+  if( n<2 ) n = 2;
+  if( n>sizeof(zBuf)-1 )  n = sizeof(zBuf)-1;
+  sqlite3Randomness(n/2, zBuf);
+  for(i=n-1, j=n/2-1; i>=1; i-=2, j--){
+    static const char zDigits[] = "0123456789ABCDEF";
+    c = zBuf[j];
+    zBuf[i] = zDigits[c&0xf];
+    zBuf[i-1] = zDigits[c>>4];
+  }
+  zBuf[n] = 0;
+  sqlite3_result_text(context, (char*)zBuf, n, SQLITE_TRANSIENT);
 }
 
 /*
@@ -1024,6 +1051,7 @@ void sqlite3RegisterBuiltinFunctions(sqlite3 *db){
     { "coalesce",           1, 0, SQLITE_UTF8,    0, 0          },
     { "ifnull",             2, 0, SQLITE_UTF8,    1, ifnullFunc },
     { "random",            -1, 0, SQLITE_UTF8,    0, randomFunc },
+    { "randomhex",          1, 0, SQLITE_UTF8,    0, randomHex  },
     { "nullif",             2, 0, SQLITE_UTF8,    1, nullifFunc },
     { "sqlite_version",     0, 0, SQLITE_UTF8,    0, versionFunc},
     { "quote",              1, 0, SQLITE_UTF8,    0, quoteFunc  },

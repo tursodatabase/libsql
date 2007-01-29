@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the lang-*.html files.
 #
-set rcsid {$Id: lang.tcl,v 1.118 2006/09/23 20:46:23 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.119 2007/01/29 15:50:06 drh Exp $}
 source common.tcl
 
 if {[llength $argv]>0} {
@@ -1371,6 +1371,15 @@ is also useful when writing triggers to implement undo/redo functionality.
 <td valign="top" align="right">random(*)</td>
 <td valign="top">Return a pseudo-random integer
 between -9223372036854775808 and +9223372036854775807.</td>
+</tr>
+
+<tr>
+<td valign="top" align="right">randomhex(<i>N</i>)</td>
+<td valign="top">Return a pseudo-random hexadecimal string that is
+<i>N</i> characters in length.  <i>N</i> should be an even integer between
+2 and 1000.  The intended use of this function is to generate
+universally unique identifiers (UUID).  For that purpose, it is recommended
+that <i>N</i> be at least 32.</td>
 </tr>
 
 <tr>
