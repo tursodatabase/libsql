@@ -565,7 +565,7 @@ static sqlite3LockingStyle sqlite3TestLockingStyle(const char *filePath,
   lockInfo.l_whence = SEEK_SET;
   lockInfo.l_type = F_RDLCK;
   
-  if (fcntl(fd, F_GETLK, (int) &lockInfo) != -1) {
+  if (fcntl(fd, F_GETLK, &lockInfo) != -1) {
     return posixLockingStyle;
   } 
   
@@ -1160,13 +1160,26 @@ static int full_fsync(int fd, int fullSync, int dataOnly){
 #if HAVE_FULLFSYNC
   if( fullSync ){
     rc = fcntl(fd, F_FULLFSYNC, 0);
-  }else
-#endif /* HAVE_FULLFSYNC */
+  }else{
+    rc = 1;
+  }
+  /* If the FULLFSYNC failed, fall back to attempting an fsync().
+   * It shouldn't be possible for fullfsync to fail on the local 
+   * file system (on OSX), so failure indicates that FULLFSYNC
+   * isn't supported for this file system. So, attempt an fsync 
+   * and (for now) ignore the overhead of a superfluous fcntl call.  
+   * It'd be better to detect fullfsync support once and avoid 
+   * the fcntl call every time sync is called.
+   */
+  if( rc ) rc = fsync(fd);
+
+#else 
   if( dataOnly ){
     rc = fdatasync(fd);
   }else{
     rc = fsync(fd);
   }
+#endif /* HAVE_FULLFSYNC */
 #endif /* defined(SQLITE_NO_SYNC) */
 
   return rc;
