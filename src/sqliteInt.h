@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.534 2007/02/01 01:40:44 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.535 2007/02/01 23:02:45 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1021,6 +1021,7 @@ struct Expr {
 #define EP_VarSelect    0x20  /* pSelect is correlated, not constant */
 #define EP_Dequoted     0x40  /* True if the string has been dequoted */
 #define EP_InfixFunc    0x80  /* True for an infix function: LIKE, GLOB, etc */
+#define EP_ExpCollate  0x100  /* Collating sequence specified explicitly */
 
 /*
 ** These macros can be used to test, set, or clear bits in the 
@@ -1777,6 +1778,7 @@ int sqlite3ReadSchema(Parse *pParse);
 CollSeq *sqlite3FindCollSeq(sqlite3*,u8 enc, const char *,int,int);
 CollSeq *sqlite3LocateCollSeq(Parse *pParse, const char *zName, int nName);
 CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr);
+Expr *sqlite3ExprSetColl(Parse *pParse, Expr *, Token *);
 int sqlite3CheckCollSeq(Parse *, CollSeq *);
 int sqlite3CheckIndexCollSeq(Parse *, Index *);
 int sqlite3CheckObjectName(Parse *, const char *);
