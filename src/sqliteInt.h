@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.533 2007/01/19 01:06:02 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.534 2007/02/01 01:40:44 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1078,8 +1078,12 @@ struct IdList {
 
 /*
 ** The bitmask datatype defined below is used for various optimizations.
+**
+** Changing this from a 64-bit to a 32-bit type limits the number of
+** tables in a join to 32 instead of 64.  But it also reduces the size
+** of the library by 738 bytes on ix86.
 */
-typedef unsigned int Bitmask;
+typedef u64 Bitmask;
 
 /*
 ** The following structure describes the FROM clause of a SELECT statement.

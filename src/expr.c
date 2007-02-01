@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.271 2007/01/04 01:20:29 drh Exp $
+** $Id: expr.c,v 1.272 2007/02/01 01:40:44 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1046,7 +1046,7 @@ static int lookupName(
       n = sizeof(Bitmask)*8-1;
     }
     assert( pMatch->iCursor==pExpr->iTable );
-    pMatch->colUsed |= 1<<n;
+    pMatch->colUsed |= ((Bitmask)1)<<n;
   }
 
 lookupname_end:
