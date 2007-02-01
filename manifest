@@ -1,5 +1,5 @@
-C Allow\sup\sto\s64\stables\sin\sa\sjoin\s(the\snumber\sof\sbits\sin\sa\slong\slong\sint).\nThe\sold\slimit\swas\s32\stables.\s(CVS\s3622)
-D 2007-02-01T01:40:44
+C Fix\sa\sbug\sin\sthe\scopy\smethod\sof\sthe\sTCL\sinterface.\s\sTicket\s#2201.\s(CVS\s3623)
+D 2007-02-01T01:53:44
 F Makefile.in 7fa74bf4359aa899da5586e394d17735f221315f
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -99,7 +99,7 @@ F src/sqlite.h.in 6b7383baf76070214f6381f603328ca9b22a7fae
 F src/sqlite3ext.h 011c75fd6459a61454514af07c7a4f1f5c767f27
 F src/sqliteInt.h f6053066ba92ed66507661fe6a78c31ca856b6f8
 F src/table.c 6d0da66dde26ee75614ed8f584a1996467088d06
-F src/tclsqlite.c d344c7f394d6f055ce3abfe0049b0480c5e34e56
+F src/tclsqlite.c cd2b3b86ab07c0e0779f6c6e71e72c6c7dc1e704
 F src/test1.c 053f5224697efaefff1f4c647fd90fdea9346cc5
 F src/test2.c ca74a1d8aeb7d9606e8f6b762c5daf85c1a3f92b
 F src/test3.c 875126eab6749f9d9e2b60b6ee6a65825b3d1fed
@@ -428,7 +428,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P f044c5f49f116ede8ab2d5ab43caa5ca9dd54ffe
-R 36fdefad905f52a7af46f62a3c9bcce2
+P 505dce8f4e8717341e04f49f6f382719c3c704f1
+R 4143445bb3574091269b3a2a42f03d6f
 U drh
-Z 18bdd43e8aebf3c5fe6ff2fcec51977d
+Z 96cc038466dba8dfd6f53c6f8d4f749d

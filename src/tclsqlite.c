@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.175 2006/12/19 18:57:11 drh Exp $
+** $Id: tclsqlite.c,v 1.176 2007/02/01 01:53:44 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -1055,7 +1055,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       return TCL_ERROR;
     }
     nByte = strlen(zSql);
-    rc = sqlite3_prepare(pDb->db, zSql, 0, &pStmt, 0);
+    rc = sqlite3_prepare(pDb->db, zSql, -1, &pStmt, 0);
     sqlite3_free(zSql);
     if( rc ){
       Tcl_AppendResult(interp, "Error: ", sqlite3_errmsg(pDb->db), 0);
@@ -1081,7 +1081,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     }
     zSql[j++] = ')';
     zSql[j] = 0;
-    rc = sqlite3_prepare(pDb->db, zSql, 0, &pStmt, 0);
+    rc = sqlite3_prepare(pDb->db, zSql, -1, &pStmt, 0);
     free(zSql);
     if( rc ){
       Tcl_AppendResult(interp, "Error: ", sqlite3_errmsg(pDb->db), 0);
