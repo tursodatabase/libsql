@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the pragma.html file.
 #
-set rcsid {$Id: pragma.tcl,v 1.19 2007/01/27 02:24:57 drh Exp $}
+set rcsid {$Id: pragma.tcl,v 1.20 2007/02/02 12:33:17 drh Exp $}
 source common.tcl
 header {Pragma statements supported by SQLite}
 
@@ -228,11 +228,11 @@ puts {
     flag.  When this flag is on, new SQLite databases are created in
     a file format that is readable and writable by all versions of
     SQLite going back to 3.0.0.  When the flag is off, new databases
-    are created using the latest file format which might to be
+    are created using the latest file format which might not be
     readable or writable by older versions of SQLite.</p>
 
-    <p>This flag only effects newly created databases.  It has no
-    effect on databases that already exists.</p>
+    <p>This flag only affects newly created databases.  It has no
+    effect on databases that already exist.</p>
 </li>
 
 
