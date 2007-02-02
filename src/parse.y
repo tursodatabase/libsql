@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.214 2007/02/01 23:02:45 drh Exp $
+** @(#) $Id: parse.y,v 1.215 2007/02/02 12:44:37 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -204,7 +204,8 @@ id(A) ::= ID(X).         {A = X;}
 %left BITAND BITOR LSHIFT RSHIFT.
 %left PLUS MINUS.
 %left STAR SLASH REM.
-%left CONCAT COLLATE.
+%left CONCAT.
+%left COLLATE.
 %right UMINUS UPLUS BITNOT.
 
 // And "ids" is an identifer-or-string.
@@ -526,13 +527,10 @@ sortlist(A) ::= sortitem(Y) sortorder(Z). {
 sortitem(A) ::= expr(X).   {A = X;}
 
 %type sortorder {int}
-%type collate {Token}
 
 sortorder(A) ::= ASC.           {A = SQLITE_SO_ASC;}
 sortorder(A) ::= DESC.          {A = SQLITE_SO_DESC;}
 sortorder(A) ::= .              {A = SQLITE_SO_ASC;}
-collate(C) ::= .                {C.z = 0; C.n = 0;}
-collate(C) ::= COLLATE id(X).   {C = X;}
 
 %type groupby_opt {ExprList*}
 %destructor groupby_opt {sqlite3ExprListDelete($$);}
@@ -879,6 +877,10 @@ idxlist(A) ::= idxitem(Y) collate(C) sortorder(Z). {
   if( A ) A->a[A->nExpr-1].sortOrder = Z;
 }
 idxitem(A) ::= nm(X).              {A = X;}
+
+%type collate {Token}
+collate(C) ::= .                {C.z = 0; C.n = 0;}
+collate(C) ::= COLLATE id(X).   {C = X;}
 
 
 ///////////////////////////// The DROP INDEX command /////////////////////////

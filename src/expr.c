@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.273 2007/02/01 23:02:45 drh Exp $
+** $Id: expr.c,v 1.274 2007/02/02 12:44:37 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -52,6 +52,9 @@ char sqlite3ExprAffinity(Expr *pExpr){
 /*
 ** Set the collating sequence for expression pExpr to be the collating
 ** sequence named by pToken.   Return a pointer to the revised expression.
+** The collating sequence is marked as "explicit" using the EP_ExpCollate
+** flag.  An explicit collating sequence will override implicit
+** collating sequences.
 */
 Expr *sqlite3ExprSetColl(Parse *pParse, Expr *pExpr, Token *pName){
   CollSeq *pColl;
@@ -220,8 +223,18 @@ Expr *sqlite3Expr(int op, Expr *pLeft, Expr *pRight, const Token *pToken){
   if( pToken ){
     assert( pToken->dyn==0 );
     pNew->span = pNew->token = *pToken;
-  }else if( pLeft && pRight ){
-    sqlite3ExprSpan(pNew, &pLeft->span, &pRight->span);
+  }else if( pLeft ){
+    if( pRight ){
+      sqlite3ExprSpan(pNew, &pLeft->span, &pRight->span);
+      if( pRight->flags && EP_ExpCollate ){
+        pNew->flags |= EP_ExpCollate;
+        pNew->pColl = pRight->pColl;
+      }
+    }
+    if( pLeft->flags && EP_ExpCollate ){
+      pNew->flags |= EP_ExpCollate;
+      pNew->pColl = pLeft->pColl;
+    }
   }
   return pNew;
 }

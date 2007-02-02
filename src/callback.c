@@ -13,7 +13,7 @@
 ** This file contains functions used to access the internal hash tables
 ** of user defined functions and collation sequences.
 **
-** $Id: callback.c,v 1.15 2006/05/24 12:43:27 drh Exp $
+** $Id: callback.c,v 1.16 2007/02/02 12:44:37 drh Exp $
 */
 
 #include "sqliteInt.h"
@@ -195,6 +195,11 @@ static CollSeq *findCollSeqEntry(
 **
 ** If the entry specified is not found and 'create' is true, then create a
 ** new entry.  Otherwise return NULL.
+**
+** A separate function sqlite3LocateCollSeq() is a wrapper around
+** this routine.  sqlite3LocateCollSeq() invokes the collation factory
+** if necessary and generates an error message if the collating sequence
+** cannot be found.
 */
 CollSeq *sqlite3FindCollSeq(
   sqlite3 *db,
