@@ -1,5 +1,5 @@
-C Minor\stweaks\sto\scollating\ssequences.\s\sWe'll\shold\sof\smaking\smajor\schanges\nuntil\s3.4.0,\ssince\swe'll\slikely\send\sup\swith\ssome\sminor\stechnical\nimcompatibilities.\s(CVS\s3626)
-D 2007-02-02T12:44:37
+C Set\sthe\sMEM_Term\sflag\swhen\san\sinternal\sstring\shas\sa\snul-terminator\sappended\sto\sit.\sFix\sfor\s#2213.\s(CVS\s3627)
+D 2007-02-05T14:21:48
 F Makefile.in 7fa74bf4359aa899da5586e394d17735f221315f
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -100,7 +100,7 @@ F src/sqlite3ext.h 011c75fd6459a61454514af07c7a4f1f5c767f27
 F src/sqliteInt.h 650d05a8c530ee3c28ad8b19684d70f889458e60
 F src/table.c 6d0da66dde26ee75614ed8f584a1996467088d06
 F src/tclsqlite.c cd2b3b86ab07c0e0779f6c6e71e72c6c7dc1e704
-F src/test1.c 053f5224697efaefff1f4c647fd90fdea9346cc5
+F src/test1.c cb314bfa3e9251b545fa3669ec80a8c8a0a86310
 F src/test2.c ca74a1d8aeb7d9606e8f6b762c5daf85c1a3f92b
 F src/test3.c 875126eab6749f9d9e2b60b6ee6a65825b3d1fed
 F src/test4.c 8b784cd82de158a2317cb4ac4bc86f91ad315e25
@@ -127,7 +127,7 @@ F src/vdbeInt.h 13ba07121cf534d5b80130d2f5eb0a4937a36bba
 F src/vdbeapi.c 2d1e6843af8705a1172e54a418d2a3d5febd1dd7
 F src/vdbeaux.c c5324d62f51529bccc5be3b04bac2e4eeae1569a
 F src/vdbefifo.c 9efb94c8c3f4c979ebd0028219483f88e57584f5
-F src/vdbemem.c 26623176bf1c616aa478da958fac49502491a921
+F src/vdbemem.c ff2424bee9eaf7c61d1f28bc0e711bebddebd653
 F src/vtab.c 7fbda947e28cbe7adb3ba752a76ca9ef29936750
 F src/where.c 23dc1c7535c96770d214762ed0bc3c655de5061c
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
@@ -322,6 +322,7 @@ F test/tkt1667.test ef52c857940755ea5eab24d68f808826e7dcdc94
 F test/tkt1873.test 7159a1c1bf627bbb03f11362e4ad4de11d6ff316
 F test/tkt2141.test 78fb8ea2e7e38f7e5b3e649ca9426928056ef55c
 F test/tkt2192.test 480d0e017ddb01a46ee20809427370f343bb3c03
+F test/tkt2213.test 8cf7c446e1fcd0627fffe7fc19046eb24ac7333b
 F test/trace.test 75ffc1b992c780d054748a656e3e7fd674f18567
 F test/trans.test 06bff0246886858793fca3748721936e2f65e3df
 F test/trigger1.test 2c79e2bf76350811e362814e98779c120b6a9421
@@ -428,7 +429,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P f0c66ad8e9bc303e3173438a56e47802c8fdde05
-R bd13f8a83574be8b00dc95661da5a69f
-U drh
-Z a941f51c66596680d325cc016ae38453
+P 9740aa95a3f848fc663c88263a911fbc76ada243
+R d73700830796fc2d1a889a0e4c3150c2
+U danielk1977
+Z 35f14111d159ab5ad3822621311305ca
