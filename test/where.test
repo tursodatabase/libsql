@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the use of indices in WHERE clases.
 #
-# $Id: where.test,v 1.39 2006/12/20 03:24:19 drh Exp $
+# $Id: where.test,v 1.40 2007/02/06 13:26:34 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -1037,6 +1037,77 @@ do_test where-13.12 {
   }
 } {1 one 4 four nosort}
 
+# Ticket #2211.
+#
+# When optimizing out ORDER BY clauses, make sure that trailing terms
+# of the ORDER BY clause do not reference other tables in a join.
+#
+do_test where-14.1 {
+  execsql {
+    CREATE TABLE t8(a INTEGER PRIMARY KEY, b TEXT UNIQUE);
+    INSERT INTO t8 VALUES(1,'one');
+    INSERT INTO t8 VALUES(4,'four');
+  }
+  cksort {
+    SELECT x.a || '/' || y.a FROM t8 x, t8 y ORDER BY x.a, y.b
+  } 
+} {1/4 1/1 4/4 4/1 sort}
+do_test where-14.2 {
+  cksort {
+    SELECT x.a || '/' || y.a FROM t8 x, t8 y ORDER BY x.a, y.b DESC
+  } 
+} {1/1 1/4 4/1 4/4 sort}
+do_test where-14.3 {
+  cksort {
+    SELECT x.a || '/' || y.a FROM t8 x, t8 y ORDER BY x.a, x.b
+  } 
+} {1/1 1/4 4/1 4/4 nosort}
+do_test where-14.4 {
+  cksort {
+    SELECT x.a || '/' || y.a FROM t8 x, t8 y ORDER BY x.a, x.b DESC
+  } 
+} {1/1 1/4 4/1 4/4 nosort}
+btree_breakpoint
+do_test where-14.5 {
+  cksort {
+    SELECT x.a || '/' || y.a FROM t8 x, t8 y ORDER BY x.b, x.a||x.b
+  } 
+} {4/1 4/4 1/1 1/4 nosort}
+do_test where-14.6 {
+  cksort {
+    SELECT x.a || '/' || y.a FROM t8 x, t8 y ORDER BY x.b, x.a||x.b DESC
+  } 
+} {4/1 4/4 1/1 1/4 nosort}
+do_test where-14.7 {
+  cksort {
+    SELECT x.a || '/' || y.a FROM t8 x, t8 y ORDER BY x.b, y.a||y.b
+  } 
+} {4/1 4/4 1/1 1/4 sort}
+do_test where-14.8 {
+  cksort {
+    SELECT x.a || '/' || y.a FROM t8 x, t8 y ORDER BY x.b, y.a||y.b DESC
+  } 
+} {4/4 4/1 1/4 1/1 sort}
+do_test where-14.9 {
+  cksort {
+    SELECT x.a || '/' || y.a FROM t8 x, t8 y ORDER BY x.b, x.a||y.b
+  } 
+} {4/4 4/1 1/4 1/1 sort}
+do_test where-14.10 {
+  cksort {
+    SELECT x.a || '/' || y.a FROM t8 x, t8 y ORDER BY x.b, x.a||y.b DESC
+  } 
+} {4/1 4/4 1/1 1/4 sort}
+do_test where-14.11 {
+  cksort {
+    SELECT x.a || '/' || y.a FROM t8 x, t8 y ORDER BY x.b, y.a||x.b
+  } 
+} {4/1 4/4 1/1 1/4 sort}
+do_test where-14.12 {
+  cksort {
+    SELECT x.a || '/' || y.a FROM t8 x, t8 y ORDER BY x.b, y.a||x.b DESC
+  } 
+} {4/4 4/1 1/4 1/1 sort}
 
 
 integrity_check {where-99.0}
