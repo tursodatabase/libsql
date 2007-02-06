@@ -1,5 +1,5 @@
-C When\soptimizing\sout\san\sORDER\sBY\sclause\sdue\sto\suniqueness\sconstraints,\smake\nsure\sunused\sterms\sto\sthe\sright\sin\sthe\sORDER\sBY\sclause\sto\snot\sreference\sother\ntables\sin\sa\sjoin.\s\sTicket\s#2211.\s\sAdditional\stest\scases\sneeded\sbefore\nclosing\sthis\sticket.\s(CVS\s3629)
-D 2007-02-06T13:26:33
+C Additional\stests\sto\sgive\sfull\scoverage\stesting\sto\sticket\s#2211.\s(CVS\s3630)
+D 2007-02-06T23:41:34
 F Makefile.in 7fa74bf4359aa899da5586e394d17735f221315f
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -353,7 +353,7 @@ F test/vtab6.test ec0036f29f8a803da9935206f2d9d1b6a8026392
 F test/vtab7.test 5f9ef9fb84733e928d5d0267c821072561b198d5
 F test/vtab9.test 87afba55339b0c255e9697fbfb5bfb6120505d9d
 F test/vtab_err.test 224cc80ad700797c48b9cd2c1e0bd7a8517d8609
-F test/where.test 1c28457a059119022a13c025e739c2e85a7eda0d
+F test/where.test 1d020f50c77f37b2dbab9766ca959e6e3278ecdb
 F test/where2.test 61d5b20d9bedc8788a773bbdc5b2ef887725928e
 F test/where3.test 0a30fe9808b0fa01c46d0fcf4fac0bf6cf75bb30
 F test/where4.test 3fcf53c5ea7af1db3980b3293c2a45b56605f26a
@@ -429,7 +429,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P e4408dd1fd32e6c5057cce0fdfa70eb2d9bd2531
-R f29bac49ff178303d3caa7ff66242000
+P 912faf18d86416b1a36660851f8a4554e6746875
+R 7671dedbcdac0acf59ed5e145bb96e0d
 U drh
-Z 7d81b673ebf7bf1811ff2651a7450761
+Z cc828275335295a30c6cbbc23706d929
