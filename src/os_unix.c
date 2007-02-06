@@ -1000,10 +1000,14 @@ int sqlite3UnixIsDirWritable(char *zBuf){
 */
 static int seekAndRead(unixFile *id, void *pBuf, int cnt){
   int got;
+  i64 newOffset;
 #ifdef USE_PREAD
   got = pread(id->h, pBuf, cnt, id->offset);
 #else
-  lseek(id->h, id->offset, SEEK_SET);
+  newOffset = lseek(id->h, id->offset, SEEK_SET);
+  if( newOffset!=id->offset ){
+    return -1;
+  }
   got = read(id->h, pBuf, cnt);
 #endif
   if( got>0 ){
@@ -1043,10 +1047,14 @@ static int unixRead(OsFile *id, void *pBuf, int amt){
 */
 static int seekAndWrite(unixFile *id, const void *pBuf, int cnt){
   int got;
+  i64 newOffset;
 #ifdef USE_PREAD
   got = pwrite(id->h, pBuf, cnt, id->offset);
 #else
-  lseek(id->h, id->offset, SEEK_SET);
+  newOffset = lseek(id->h, id->offset, SEEK_SET);
+  if( newOffset!=id->offset ){
+    return -1;
+  }
   got = write(id->h, pBuf, cnt);
 #endif
   if( got>0 ){
